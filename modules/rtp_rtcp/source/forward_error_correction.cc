@@ -52,7 +52,7 @@ int32_t ForwardErrorCorrection::Packet::Release() {
 // the std::unique_ptr's are not covariant w.r.t. the types that
 // they are pointing to.
 template <typename S, typename T>
-bool ForwardErrorCorrection::SortablePacket::LessThan::operator() (
+bool ForwardErrorCorrection::SortablePacket::LessThan::operator()(
     const S& first,
     const T& second) {
   RTC_DCHECK_EQ(first->ssrc, second->ssrc);

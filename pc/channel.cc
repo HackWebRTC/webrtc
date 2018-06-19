@@ -325,7 +325,8 @@ bool BaseChannel::SendRtcp(rtc::CopyOnWriteBuffer* packet,
   return SendPacket(true, packet, options);
 }
 
-int BaseChannel::SetOption(SocketType type, rtc::Socket::Option opt,
+int BaseChannel::SetOption(SocketType type,
+                           rtc::Socket::Option opt,
                            int value) {
   return network_thread_->Invoke<int>(
       RTC_FROM_HERE, Bind(&BaseChannel::SetOption_n, this, type, opt, value));
@@ -608,8 +609,8 @@ bool BaseChannel::UpdateLocalStreams_w(const std::vector<StreamParams>& streams,
     if (it->has_ssrcs() && !GetStreamBySsrc(streams, it->first_ssrc())) {
       if (!media_channel()->RemoveSendStream(it->first_ssrc())) {
         std::ostringstream desc;
-        desc << "Failed to remove send stream with ssrc "
-             << it->first_ssrc() << ".";
+        desc << "Failed to remove send stream with ssrc " << it->first_ssrc()
+             << ".";
         SafeSetError(desc.str(), error_desc);
         ret = false;
       }
@@ -649,8 +650,8 @@ bool BaseChannel::UpdateRemoteStreams_w(
         RTC_LOG(LS_INFO) << "Remove remote ssrc: " << it->first_ssrc();
       } else {
         std::ostringstream desc;
-        desc << "Failed to remove remote stream with ssrc "
-             << it->first_ssrc() << ".";
+        desc << "Failed to remove remote stream with ssrc " << it->first_ssrc()
+             << ".";
         SafeSetError(desc.str(), error_desc);
         ret = false;
       }
@@ -659,7 +660,7 @@ bool BaseChannel::UpdateRemoteStreams_w(
   demuxer_criteria_.ssrcs.clear();
   // Check for new streams.
   for (StreamParamsVec::const_iterator it = streams.begin();
-      it != streams.end(); ++it) {
+       it != streams.end(); ++it) {
     // We allow a StreamParams with an empty list of SSRCs, in which case the
     // MediaChannel will cache the parameters and use them for any unsignaled
     // stream received later.
@@ -689,17 +690,17 @@ RtpHeaderExtensions BaseChannel::GetFilteredRtpHeaderExtensions(
   if (crypto_options_.enable_encrypted_rtp_header_extensions) {
     RtpHeaderExtensions filtered;
     auto pred = [](const webrtc::RtpExtension& extension) {
-        return !extension.encrypt;
+      return !extension.encrypt;
     };
     std::copy_if(extensions.begin(), extensions.end(),
-        std::back_inserter(filtered), pred);
+                 std::back_inserter(filtered), pred);
     return filtered;
   }
 
   return webrtc::RtpExtension::FilterDuplicateNonEncrypted(extensions);
 }
 
-void BaseChannel::OnMessage(rtc::Message *pmsg) {
+void BaseChannel::OnMessage(rtc::Message* pmsg) {
   TRACE_EVENT0("webrtc", "BaseChannel::OnMessage");
   switch (pmsg->message_id) {
     case MSG_SEND_RTP_PACKET:
@@ -863,7 +864,7 @@ bool VoiceChannel::SetRemoteContent_w(const MediaContentDescription* content,
 
   AudioSendParameters send_params = last_send_params_;
   RtpSendParametersFromMediaDescription(audio, rtp_header_extensions,
-      &send_params);
+                                        &send_params);
   send_params.mid = content_name();
 
   bool parameters_applied = media_channel()->SetSendParameters(send_params);
@@ -998,7 +999,7 @@ bool VideoChannel::SetRemoteContent_w(const MediaContentDescription* content,
 
   VideoSendParameters send_params = last_send_params_;
   RtpSendParametersFromMediaDescription(video, rtp_header_extensions,
-      &send_params);
+                                        &send_params);
   if (video->conference_mode()) {
     send_params.conference_mode = true;
   }
@@ -1162,7 +1163,7 @@ bool RtpDataChannel::SetRemoteContent_w(const MediaContentDescription* content,
   RTC_LOG(LS_INFO) << "Setting remote data description";
   DataSendParameters send_params = last_send_params_;
   RtpSendParametersFromMediaDescription<DataCodec>(data, rtp_header_extensions,
-      &send_params);
+                                                   &send_params);
   if (!media_channel()->SetSendParameters(send_params)) {
     SafeSetError("Failed to set remote data description send parameters.",
                  error_desc);
@@ -1175,8 +1176,7 @@ bool RtpDataChannel::SetRemoteContent_w(const MediaContentDescription* content,
   // description too (without a local description, we won't be able to
   // recv them anyway).
   if (!UpdateRemoteStreams_w(data->streams(), type, error_desc)) {
-    SafeSetError("Failed to set remote data description streams.",
-                 error_desc);
+    SafeSetError("Failed to set remote data description streams.", error_desc);
     return false;
   }
 
@@ -1232,8 +1232,7 @@ void RtpDataChannel::OnMessage(rtc::Message* pmsg) {
 void RtpDataChannel::OnDataReceived(const ReceiveDataParams& params,
                                     const char* data,
                                     size_t len) {
-  DataReceivedMessageData* msg = new DataReceivedMessageData(
-      params, data, len);
+  DataReceivedMessageData* msg = new DataReceivedMessageData(params, data, len);
   signaling_thread()->Post(RTC_FROM_HERE, this, MSG_DATARECEIVED, msg);
 }
 

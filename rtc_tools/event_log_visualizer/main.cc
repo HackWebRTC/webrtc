@@ -157,7 +157,6 @@ DEFINE_bool(normalize_time,
 
 void SetAllPlotFlags(bool setting);
 
-
 int main(int argc, char* argv[]) {
   std::string program_name = argv[0];
   std::string usage =
@@ -380,7 +379,6 @@ int main(int argc, char* argv[]) {
 
   return 0;
 }
-
 
 void SetAllPlotFlags(bool setting) {
   FLAG_plot_incoming_packet_sizes = setting;

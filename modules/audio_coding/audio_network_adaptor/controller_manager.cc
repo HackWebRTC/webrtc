@@ -296,9 +296,9 @@ std::unique_ptr<ControllerManager> ControllerManagerImpl::Create(
   }
 
   if (scoring_points.size() == 0) {
-    return std::unique_ptr<ControllerManagerImpl>(new ControllerManagerImpl(
-        ControllerManagerImpl::Config(0, 0), std::move(controllers),
-        scoring_points));
+    return std::unique_ptr<ControllerManagerImpl>(
+        new ControllerManagerImpl(ControllerManagerImpl::Config(0, 0),
+                                  std::move(controllers), scoring_points));
   } else {
     RTC_CHECK(controller_manager_config.has_min_reordering_time_ms());
     RTC_CHECK(controller_manager_config.has_min_reordering_squared_distance());

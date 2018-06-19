@@ -21,8 +21,7 @@ namespace webrtc {
 static const int kDefaultStandaloneVadMode = 3;
 
 StandaloneVad::StandaloneVad(VadInst* vad)
-    : vad_(vad), buffer_(), index_(0), mode_(kDefaultStandaloneVadMode) {
-}
+    : vad_(vad), buffer_(), index_(0), mode_(kDefaultStandaloneVadMode) {}
 
 StandaloneVad::~StandaloneVad() {
   WebRtcVad_Free(vad_);

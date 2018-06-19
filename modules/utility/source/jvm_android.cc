@@ -27,10 +27,10 @@ struct {
   const char* name;
   jclass clazz;
 } loaded_classes[] = {
-  {"org/webrtc/voiceengine/BuildInfo", nullptr},
-  {"org/webrtc/voiceengine/WebRtcAudioManager", nullptr},
-  {"org/webrtc/voiceengine/WebRtcAudioRecord", nullptr},
-  {"org/webrtc/voiceengine/WebRtcAudioTrack", nullptr},
+    {"org/webrtc/voiceengine/BuildInfo", nullptr},
+    {"org/webrtc/voiceengine/WebRtcAudioManager", nullptr},
+    {"org/webrtc/voiceengine/WebRtcAudioRecord", nullptr},
+    {"org/webrtc/voiceengine/WebRtcAudioTrack", nullptr},
 };
 
 // Android's FindClass() is trickier than usual because the app-specific
@@ -68,8 +68,7 @@ jclass LookUpClass(const char* name) {
 }
 
 // AttachCurrentThreadIfNeeded implementation.
-AttachCurrentThreadIfNeeded::AttachCurrentThreadIfNeeded()
-    : attached_(false) {
+AttachCurrentThreadIfNeeded::AttachCurrentThreadIfNeeded() : attached_(false) {
   RTC_LOG(INFO) << "AttachCurrentThreadIfNeeded::ctor";
   JavaVM* jvm = JVM::GetInstance()->jvm();
   RTC_CHECK(jvm);
@@ -141,27 +140,26 @@ NativeRegistration::~NativeRegistration() {
   CHECK_EXCEPTION(jni_) << "Error during UnregisterNatives";
 }
 
-std::unique_ptr<GlobalRef> NativeRegistration::NewObject(
-    const char* name, const char* signature, ...) {
+std::unique_ptr<GlobalRef> NativeRegistration::NewObject(const char* name,
+                                                         const char* signature,
+                                                         ...) {
   RTC_LOG(INFO) << "NativeRegistration::NewObject";
   va_list args;
   va_start(args, signature);
-  jobject obj = jni_->NewObjectV(j_class_,
-                                 GetMethodID(jni_, j_class_, name, signature),
-                                 args);
+  jobject obj = jni_->NewObjectV(
+      j_class_, GetMethodID(jni_, j_class_, name, signature), args);
   CHECK_EXCEPTION(jni_) << "Error during NewObjectV";
   va_end(args);
   return std::unique_ptr<GlobalRef>(new GlobalRef(jni_, obj));
 }
 
 // JavaClass implementation.
-jmethodID JavaClass::GetMethodId(
-    const char* name, const char* signature) {
+jmethodID JavaClass::GetMethodId(const char* name, const char* signature) {
   return GetMethodID(jni_, j_class_, name, signature);
 }
 
-jmethodID JavaClass::GetStaticMethodId(
-    const char* name, const char* signature) {
+jmethodID JavaClass::GetStaticMethodId(const char* name,
+                                       const char* signature) {
   return GetStaticMethodID(jni_, j_class_, name, signature);
 }
 
@@ -192,7 +190,9 @@ JNIEnvironment::~JNIEnvironment() {
 }
 
 std::unique_ptr<NativeRegistration> JNIEnvironment::RegisterNatives(
-    const char* name, const JNINativeMethod *methods, int num_methods) {
+    const char* name,
+    const JNINativeMethod* methods,
+    int num_methods) {
   RTC_LOG(INFO) << "JNIEnvironment::RegisterNatives: " << name;
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   jclass clazz = LookUpClass(name);

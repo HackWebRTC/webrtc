@@ -25,10 +25,13 @@
  *  unpacking of bits from bitstream, i.e., vector of bytes
  *---------------------------------------------------------------*/
 
-int16_t WebRtcIlbcfix_UnpackBits( /* (o) "Empty" frame indicator */
-    const uint16_t *bitstream,    /* (i) The packatized bitstream */
-    iLBC_bits *enc_bits,  /* (o) Paramerers from bitstream */
-    int16_t mode     /* (i) Codec mode (20 or 30) */
-                                        );
+int16_t
+WebRtcIlbcfix_UnpackBits(/* (o) "Empty" frame indicator */
+                         const uint16_t*
+                             bitstream, /* (i) The packatized bitstream */
+                         iLBC_bits*
+                             enc_bits, /* (o) Paramerers from bitstream */
+                         int16_t mode  /* (i) Codec mode (20 or 30) */
+                         );
 
 #endif

@@ -23,10 +23,10 @@ class CryptStringImpl {
  public:
   virtual ~CryptStringImpl() {}
   virtual size_t GetLength() const = 0;
-  virtual void CopyTo(char * dest, bool nullterminate) const = 0;
+  virtual void CopyTo(char* dest, bool nullterminate) const = 0;
   virtual std::string UrlEncode() const = 0;
-  virtual CryptStringImpl * Copy() const = 0;
-  virtual void CopyRawTo(std::vector<unsigned char> * dest) const = 0;
+  virtual CryptStringImpl* Copy() const = 0;
+  virtual void CopyRawTo(std::vector<unsigned char>* dest) const = 0;
 };
 
 class EmptyCryptStringImpl : public CryptStringImpl {
@@ -49,7 +49,7 @@ class CryptString {
   CryptString(const CryptString& other);
   explicit CryptString(const CryptStringImpl& impl);
   ~CryptString();
-  CryptString & operator=(const CryptString & other) {
+  CryptString& operator=(const CryptString& other) {
     if (this != &other) {
       impl_.reset(other.impl_->Copy());
     }
@@ -57,7 +57,7 @@ class CryptString {
   }
   void Clear() { impl_.reset(new EmptyCryptStringImpl()); }
   std::string UrlEncode() const { return impl_->UrlEncode(); }
-  void CopyRawTo(std::vector<unsigned char> * dest) const {
+  void CopyRawTo(std::vector<unsigned char>* dest) const {
     return impl_->CopyRawTo(dest);
   }
 

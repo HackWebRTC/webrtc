@@ -40,8 +40,8 @@ DEFINE_bool(help, false, "Prints this message");
 }  // namespace
 
 int main(int argc, char* argv[]) {
-  if (rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true) ||
-      FLAG_help || argc != 1) {
+  if (rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true) || FLAG_help ||
+      argc != 1) {
     printf("%s", kUsageDescription);
     if (FLAG_help) {
       rtc::FlagList::Print(nullptr, false);
@@ -60,23 +60,23 @@ int main(int argc, char* argv[]) {
       conversational_speech::LoadTiming(config.timing_filepath());
 
   // Parse timing and audio tracks.
-  auto wavreader_factory = rtc::MakeUnique<
-      conversational_speech::WavReaderFactory>();
+  auto wavreader_factory =
+      rtc::MakeUnique<conversational_speech::WavReaderFactory>();
   conversational_speech::MultiEndCall multiend_call(
       timing, config.audiotracks_path(), std::move(wavreader_factory));
 
   // Generate output audio tracks.
-  auto generated_audiotrack_pairs = conversational_speech::Simulate(
-      multiend_call, config.output_path());
+  auto generated_audiotrack_pairs =
+      conversational_speech::Simulate(multiend_call, config.output_path());
 
   // Show paths to created audio tracks.
   std::cout << "Output files:" << std::endl;
   for (const auto& output_paths_entry : *generated_audiotrack_pairs) {
     std::cout << "  speaker: " << output_paths_entry.first << std::endl;
     std::cout << "    near end: " << output_paths_entry.second.near_end
-        << std::endl;
+              << std::endl;
     std::cout << "    far end: " << output_paths_entry.second.far_end
-        << std::endl;
+              << std::endl;
   }
 
   return 0;

@@ -75,18 +75,15 @@ int PrintVideoFrame(const I420BufferInterface& frame, FILE* file) {
   int chroma_width = frame.ChromaWidth();
   int chroma_height = frame.ChromaHeight();
 
-  if (PrintPlane(frame.DataY(), width, height,
-                 frame.StrideY(), file) < 0) {
+  if (PrintPlane(frame.DataY(), width, height, frame.StrideY(), file) < 0) {
     return -1;
   }
-  if (PrintPlane(frame.DataU(),
-                 chroma_width, chroma_height,
-                 frame.StrideU(), file) < 0) {
+  if (PrintPlane(frame.DataU(), chroma_width, chroma_height, frame.StrideU(),
+                 file) < 0) {
     return -1;
   }
-  if (PrintPlane(frame.DataV(),
-                 chroma_width, chroma_height,
-                 frame.StrideV(), file) < 0) {
+  if (PrintPlane(frame.DataV(), chroma_width, chroma_height, frame.StrideV(),
+                 file) < 0) {
     return -1;
   }
   return 0;
@@ -106,23 +103,18 @@ int ExtractBuffer(const rtc::scoped_refptr<I420BufferInterface>& input_frame,
   int height = input_frame->height();
   size_t length = CalcBufferSize(VideoType::kI420, width, height);
   if (size < length) {
-     return -1;
+    return -1;
   }
 
   int chroma_width = input_frame->ChromaWidth();
   int chroma_height = input_frame->ChromaHeight();
 
-  libyuv::I420Copy(input_frame->DataY(),
-                   input_frame->StrideY(),
-                   input_frame->DataU(),
-                   input_frame->StrideU(),
-                   input_frame->DataV(),
-                   input_frame->StrideV(),
-                   buffer, width,
-                   buffer + width*height, chroma_width,
-                   buffer + width*height + chroma_width*chroma_height,
-                   chroma_width,
-                   width, height);
+  libyuv::I420Copy(input_frame->DataY(), input_frame->StrideY(),
+                   input_frame->DataU(), input_frame->StrideU(),
+                   input_frame->DataV(), input_frame->StrideV(), buffer, width,
+                   buffer + width * height, chroma_width,
+                   buffer + width * height + chroma_width * chroma_height,
+                   chroma_width, width, height);
 
   return static_cast<int>(length);
 }
@@ -134,24 +126,25 @@ int ExtractBuffer(const VideoFrame& input_frame, size_t size, uint8_t* buffer) {
 
 int ConvertNV12ToRGB565(const uint8_t* src_frame,
                         uint8_t* dst_frame,
-                        int width, int height) {
+                        int width,
+                        int height) {
   int abs_height = (height < 0) ? -height : height;
   const uint8_t* yplane = src_frame;
   const uint8_t* uvInterlaced = src_frame + (width * abs_height);
 
-  return libyuv::NV12ToRGB565(yplane, width,
-                              uvInterlaced, (width + 1) >> 1,
-                              dst_frame, width,
-                              width, height);
+  return libyuv::NV12ToRGB565(yplane, width, uvInterlaced, (width + 1) >> 1,
+                              dst_frame, width, width, height);
 }
 
-int ConvertRGB24ToARGB(const uint8_t* src_frame, uint8_t* dst_frame,
-                       int width, int height, int dst_stride) {
+int ConvertRGB24ToARGB(const uint8_t* src_frame,
+                       uint8_t* dst_frame,
+                       int width,
+                       int height,
+                       int dst_stride) {
   if (dst_stride == 0)
     dst_stride = width;
-  return libyuv::RGB24ToARGB(src_frame, width,
-                             dst_frame, dst_stride,
-                             width, height);
+  return libyuv::RGB24ToARGB(src_frame, width, dst_frame, dst_stride, width,
+                             height);
 }
 
 int ConvertVideoType(VideoType video_type) {
@@ -371,12 +364,18 @@ double I420SSIM(const VideoFrame* ref_frame, const VideoFrame* test_frame) {
 }
 
 void NV12Scale(uint8_t* tmp_buffer,
-               const uint8_t* src_y, int src_stride_y,
-               const uint8_t* src_uv, int src_stride_uv,
-               int src_width, int src_height,
-               uint8_t* dst_y, int dst_stride_y,
-               uint8_t* dst_uv, int dst_stride_uv,
-               int dst_width, int dst_height) {
+               const uint8_t* src_y,
+               int src_stride_y,
+               const uint8_t* src_uv,
+               int src_stride_uv,
+               int src_width,
+               int src_height,
+               uint8_t* dst_y,
+               int dst_stride_y,
+               uint8_t* dst_uv,
+               int dst_stride_uv,
+               int dst_width,
+               int dst_height) {
   const int src_chroma_width = (src_width + 1) / 2;
   const int src_chroma_height = (src_height + 1) / 2;
 
@@ -400,51 +399,44 @@ void NV12Scale(uint8_t* tmp_buffer,
   uint8_t* const dst_v = dst_u + dst_chroma_width * dst_chroma_height;
 
   // Split source UV plane into separate U and V plane using the temporary data.
-  libyuv::SplitUVPlane(src_uv, src_stride_uv,
-                       src_u, src_chroma_width,
-                       src_v, src_chroma_width,
-                       src_chroma_width, src_chroma_height);
+  libyuv::SplitUVPlane(src_uv, src_stride_uv, src_u, src_chroma_width, src_v,
+                       src_chroma_width, src_chroma_width, src_chroma_height);
 
   // Scale the planes.
-  libyuv::I420Scale(src_y, src_stride_y,
-                    src_u, src_chroma_width,
-                    src_v, src_chroma_width,
-                    src_width, src_height,
-                    dst_y, dst_stride_y,
-                    dst_u, dst_chroma_width,
-                    dst_v, dst_chroma_width,
-                    dst_width, dst_height,
-                    libyuv::kFilterBox);
+  libyuv::I420Scale(
+      src_y, src_stride_y, src_u, src_chroma_width, src_v, src_chroma_width,
+      src_width, src_height, dst_y, dst_stride_y, dst_u, dst_chroma_width,
+      dst_v, dst_chroma_width, dst_width, dst_height, libyuv::kFilterBox);
 
   // Merge the UV planes into the destination.
-  libyuv::MergeUVPlane(dst_u, dst_chroma_width,
-                       dst_v, dst_chroma_width,
-                       dst_uv, dst_stride_uv,
-                       dst_chroma_width, dst_chroma_height);
+  libyuv::MergeUVPlane(dst_u, dst_chroma_width, dst_v, dst_chroma_width, dst_uv,
+                       dst_stride_uv, dst_chroma_width, dst_chroma_height);
 }
 
 NV12ToI420Scaler::NV12ToI420Scaler() = default;
 NV12ToI420Scaler::~NV12ToI420Scaler() = default;
 
-void NV12ToI420Scaler::NV12ToI420Scale(
-    const uint8_t* src_y, int src_stride_y,
-    const uint8_t* src_uv, int src_stride_uv,
-    int src_width, int src_height,
-    uint8_t* dst_y, int dst_stride_y,
-    uint8_t* dst_u, int dst_stride_u,
-    uint8_t* dst_v, int dst_stride_v,
-    int dst_width, int dst_height) {
+void NV12ToI420Scaler::NV12ToI420Scale(const uint8_t* src_y,
+                                       int src_stride_y,
+                                       const uint8_t* src_uv,
+                                       int src_stride_uv,
+                                       int src_width,
+                                       int src_height,
+                                       uint8_t* dst_y,
+                                       int dst_stride_y,
+                                       uint8_t* dst_u,
+                                       int dst_stride_u,
+                                       uint8_t* dst_v,
+                                       int dst_stride_v,
+                                       int dst_width,
+                                       int dst_height) {
   if (src_width == dst_width && src_height == dst_height) {
     // No scaling.
     tmp_uv_planes_.clear();
     tmp_uv_planes_.shrink_to_fit();
-    libyuv::NV12ToI420(
-        src_y, src_stride_y,
-        src_uv, src_stride_uv,
-        dst_y, dst_stride_y,
-        dst_u, dst_stride_u,
-        dst_v, dst_stride_v,
-        src_width, src_height);
+    libyuv::NV12ToI420(src_y, src_stride_y, src_uv, src_stride_uv, dst_y,
+                       dst_stride_y, dst_u, dst_stride_u, dst_v, dst_stride_v,
+                       src_width, src_height);
     return;
   }
 
@@ -458,21 +450,14 @@ void NV12ToI420Scaler::NV12ToI420Scale(
   // Split source UV plane into separate U and V plane using the temporary data.
   uint8_t* const src_u = tmp_uv_planes_.data();
   uint8_t* const src_v = tmp_uv_planes_.data() + src_uv_width * src_uv_height;
-  libyuv::SplitUVPlane(src_uv, src_stride_uv,
-                       src_u, src_uv_width,
-                       src_v, src_uv_width,
-                       src_uv_width, src_uv_height);
+  libyuv::SplitUVPlane(src_uv, src_stride_uv, src_u, src_uv_width, src_v,
+                       src_uv_width, src_uv_width, src_uv_height);
 
   // Scale the planes into the destination.
-  libyuv::I420Scale(src_y, src_stride_y,
-                    src_u, src_uv_width,
-                    src_v, src_uv_width,
-                    src_width, src_height,
-                    dst_y, dst_stride_y,
-                    dst_u, dst_stride_u,
-                    dst_v, dst_stride_v,
-                    dst_width, dst_height,
-                    libyuv::kFilterBox);
+  libyuv::I420Scale(src_y, src_stride_y, src_u, src_uv_width, src_v,
+                    src_uv_width, src_width, src_height, dst_y, dst_stride_y,
+                    dst_u, dst_stride_u, dst_v, dst_stride_v, dst_width,
+                    dst_height, libyuv::kFilterBox);
 }
 
 }  // namespace webrtc

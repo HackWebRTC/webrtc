@@ -108,9 +108,8 @@ bool SSLIdentity::PemToDer(const std::string& pem_type,
 
   std::string inner = pem_string.substr(body + 1, trailer - (body + 1));
 
-  *der = Base64::Decode(inner, Base64::DO_PARSE_WHITE |
-                        Base64::DO_PAD_ANY |
-                        Base64::DO_TERM_BUFFER);
+  *der = Base64::Decode(inner, Base64::DO_PARSE_WHITE | Base64::DO_PAD_ANY |
+                                   Base64::DO_TERM_BUFFER);
   return true;
 }
 

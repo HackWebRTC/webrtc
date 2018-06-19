@@ -185,8 +185,7 @@ class RTPFragmentationHeader {
         memset(fragmentationOffset + oldVectorSize, 0,
                sizeof(size_t) * (size16 - oldVectorSize));
         // copy old values
-        memcpy(fragmentationOffset, oldOffsets,
-               sizeof(size_t) * oldVectorSize);
+        memcpy(fragmentationOffset, oldOffsets, sizeof(size_t) * oldVectorSize);
         delete[] oldOffsets;
       }
       // length
@@ -195,8 +194,7 @@ class RTPFragmentationHeader {
         fragmentationLength = new size_t[size16];
         memset(fragmentationLength + oldVectorSize, 0,
                sizeof(size_t) * (size16 - oldVectorSize));
-        memcpy(fragmentationLength, oldLengths,
-               sizeof(size_t) * oldVectorSize);
+        memcpy(fragmentationLength, oldLengths, sizeof(size_t) * oldVectorSize);
         delete[] oldLengths;
       }
       // time diff

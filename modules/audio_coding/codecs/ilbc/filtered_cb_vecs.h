@@ -28,11 +28,11 @@
  *---------------------------------------------------------------*/
 
 void WebRtcIlbcfix_FilteredCbVecs(
-    int16_t *cbvectors, /* (o) Codebook vector for the higher section */
-    int16_t *CBmem,  /* (i) Codebook memory that is filtered to create a
-                                           second CB section */
-    size_t lMem,  /* (i) Length of codebook memory */
-    size_t samples    /* (i) Number of samples to filter */
-                                  );
+    int16_t* cbvectors, /* (o) Codebook vector for the higher section */
+    int16_t* CBmem,     /* (i) Codebook memory that is filtered to create a
+                                              second CB section */
+    size_t lMem,        /* (i) Length of codebook memory */
+    size_t samples      /* (i) Number of samples to filter */
+    );
 
 #endif

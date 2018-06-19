@@ -106,8 +106,7 @@ GuardedAsyncInvoker::GuardedAsyncInvoker() : thread_(Thread::Current()) {
                                         &GuardedAsyncInvoker::ThreadDestroyed);
 }
 
-GuardedAsyncInvoker::~GuardedAsyncInvoker() {
-}
+GuardedAsyncInvoker::~GuardedAsyncInvoker() {}
 
 bool GuardedAsyncInvoker::Flush(uint32_t id) {
   CritScope cs(&crit_);

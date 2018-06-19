@@ -45,17 +45,17 @@ enum H264EncoderImplEvent {
 int NumberOfThreads(int width, int height, int number_of_cores) {
   // TODO(hbos): In Chromium, multiple threads do not work with sandbox on Mac,
   // see crbug.com/583348. Until further investigated, only use one thread.
-//  if (width * height >= 1920 * 1080 && number_of_cores > 8) {
-//    return 8;  // 8 threads for 1080p on high perf machines.
-//  } else if (width * height > 1280 * 960 && number_of_cores >= 6) {
-//    return 3;  // 3 threads for 1080p.
-//  } else if (width * height > 640 * 480 && number_of_cores >= 3) {
-//    return 2;  // 2 threads for qHD/HD.
-//  } else {
-//    return 1;  // 1 thread for VGA or less.
-//  }
-// TODO(sprang): Also check sSliceArgument.uiSliceNum om GetEncoderPrams(),
-//               before enabling multithreading here.
+  //  if (width * height >= 1920 * 1080 && number_of_cores > 8) {
+  //    return 8;  // 8 threads for 1080p on high perf machines.
+  //  } else if (width * height > 1280 * 960 && number_of_cores >= 6) {
+  //    return 3;  // 3 threads for 1080p.
+  //  } else if (width * height > 640 * 480 && number_of_cores >= 3) {
+  //    return 2;  // 2 threads for qHD/HD.
+  //  } else {
+  //    return 1;  // 1 thread for VGA or less.
+  //  }
+  // TODO(sprang): Also check sSliceArgument.uiSliceNum om GetEncoderPrams(),
+  //               before enabling multithreading here.
   return 1;
 }
 
@@ -139,10 +139,10 @@ static void RtpFragmentize(EncodedImage* encoded_image,
       // Because the sum of all layer lengths, |required_size|, fits in a
       // |size_t|, we know that any indices in-between will not overflow.
       RTC_DCHECK_GE(layerInfo.pNalLengthInByte[nal], 4);
-      RTC_DCHECK_EQ(layerInfo.pBsBuf[layer_len+0], start_code[0]);
-      RTC_DCHECK_EQ(layerInfo.pBsBuf[layer_len+1], start_code[1]);
-      RTC_DCHECK_EQ(layerInfo.pBsBuf[layer_len+2], start_code[2]);
-      RTC_DCHECK_EQ(layerInfo.pBsBuf[layer_len+3], start_code[3]);
+      RTC_DCHECK_EQ(layerInfo.pBsBuf[layer_len + 0], start_code[0]);
+      RTC_DCHECK_EQ(layerInfo.pBsBuf[layer_len + 1], start_code[1]);
+      RTC_DCHECK_EQ(layerInfo.pBsBuf[layer_len + 2], start_code[2]);
+      RTC_DCHECK_EQ(layerInfo.pBsBuf[layer_len + 3], start_code[3]);
       frag_header->fragmentationOffset[frag] =
           encoded_image->_length + layer_len + sizeof(start_code);
       frag_header->fragmentationLength[frag] =
@@ -150,8 +150,7 @@ static void RtpFragmentize(EncodedImage* encoded_image,
       layer_len += layerInfo.pNalLengthInByte[nal];
     }
     // Copy the entire layer's data (including start codes).
-    memcpy(encoded_image->_buffer + encoded_image->_length,
-           layerInfo.pBsBuf,
+    memcpy(encoded_image->_buffer + encoded_image->_length, layerInfo.pBsBuf,
            layer_len);
     encoded_image->_length += layer_len;
   }
@@ -190,8 +189,7 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* codec_settings,
                                     int32_t number_of_cores,
                                     size_t max_payload_size) {
   ReportInit();
-  if (!codec_settings ||
-      codec_settings->codecType != kVideoCodecH264) {
+  if (!codec_settings || codec_settings->codecType != kVideoCodecH264) {
     ReportError();
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
@@ -222,8 +220,7 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* codec_settings,
   RTC_DCHECK(openh264_encoder_);
   if (kOpenH264EncoderDetailedLogging) {
     int trace_level = WELS_LOG_DETAIL;
-    openh264_encoder_->SetOption(ENCODER_OPTION_TRACE_LEVEL,
-                                 &trace_level);
+    openh264_encoder_->SetOption(ENCODER_OPTION_TRACE_LEVEL, &trace_level);
   }
   // else WELS_LOG_DEFAULT is used by default.
 
@@ -255,8 +252,7 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* codec_settings,
   }
   // TODO(pbos): Base init params on these values before submitting.
   int video_format = EVideoFormatType::videoFormatI420;
-  openh264_encoder_->SetOption(ENCODER_OPTION_DATAFORMAT,
-                               &video_format);
+  openh264_encoder_->SetOption(ENCODER_OPTION_DATAFORMAT, &video_format);
 
   // Initialize encoded image. Default buffer size: size of unencoded data.
   encoded_image_._size = CalcBufferSize(VideoType::kI420, codec_settings->width,
@@ -300,8 +296,7 @@ int32_t H264EncoderImpl::SetRateAllocation(
   memset(&target_bitrate, 0, sizeof(SBitrateInfo));
   target_bitrate.iLayer = SPATIAL_LAYER_ALL,
   target_bitrate.iBitrate = target_bps_;
-  openh264_encoder_->SetOption(ENCODER_OPTION_BITRATE,
-                               &target_bitrate);
+  openh264_encoder_->SetOption(ENCODER_OPTION_BITRATE, &target_bitrate);
   openh264_encoder_->SetOption(ENCODER_OPTION_FRAME_RATE, &max_frame_rate_);
   return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -485,8 +480,7 @@ void H264EncoderImpl::ReportInit() {
   if (has_reported_init_)
     return;
   RTC_HISTOGRAM_ENUMERATION("WebRTC.Video.H264EncoderImpl.Event",
-                            kH264EncoderEventInit,
-                            kH264EncoderEventMax);
+                            kH264EncoderEventInit, kH264EncoderEventMax);
   has_reported_init_ = true;
 }
 
@@ -494,13 +488,12 @@ void H264EncoderImpl::ReportError() {
   if (has_reported_error_)
     return;
   RTC_HISTOGRAM_ENUMERATION("WebRTC.Video.H264EncoderImpl.Event",
-                            kH264EncoderEventError,
-                            kH264EncoderEventMax);
+                            kH264EncoderEventError, kH264EncoderEventMax);
   has_reported_error_ = true;
 }
 
-int32_t H264EncoderImpl::SetChannelParameters(
-    uint32_t packet_loss, int64_t rtt) {
+int32_t H264EncoderImpl::SetChannelParameters(uint32_t packet_loss,
+                                              int64_t rtt) {
   return WEBRTC_VIDEO_CODEC_OK;
 }
 

@@ -98,7 +98,7 @@ class StatisticsCalculator {
   void GetNetworkStatistics(int fs_hz,
                             size_t num_samples_in_buffers,
                             size_t samples_per_packet,
-                            NetEqNetworkStatistics *stats);
+                            NetEqNetworkStatistics* stats);
 
   // Populates |preferred_buffer_size_ms|, |jitter_peaks_found| and
   // |clockdrift_ppm| in |stats|. This is a convenience method, and does not

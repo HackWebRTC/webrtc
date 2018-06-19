@@ -13,7 +13,8 @@
 #import "RTCMTLRenderer.h"
 
 /** @abstract RGB/BGR renderer.
- *  @discussion This renderer handles both kCVPixelFormatType_32BGRA and kCVPixelFormatType_32ARGB.
+ *  @discussion This renderer handles both kCVPixelFormatType_32BGRA and
+ * kCVPixelFormatType_32ARGB.
  */
 NS_AVAILABLE(10_11, 9_0)
 @interface RTCMTLRGBRenderer : RTCMTLRenderer

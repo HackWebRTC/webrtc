@@ -102,8 +102,7 @@ AudioNetworkAdaptorStates CreateAudioNetworkAdaptor() {
   config.event_log = states.event_log.get();
   // AudioNetworkAdaptorImpl governs the lifetime of controller manager.
   states.audio_network_adaptor.reset(new AudioNetworkAdaptorImpl(
-      config,
-      std::move(controller_manager), std::move(debug_dump_writer)));
+      config, std::move(controller_manager), std::move(debug_dump_writer)));
 
   return states;
 }

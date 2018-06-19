@@ -31,7 +31,7 @@ class ACMCodecDB {
   //                 build.
   // kMaxNumPacketSize - Maximum number of allowed packet sizes for one codec.
   // These might need to be increased if adding a new codec to the database
-  static const int kMaxNumCodecs =  50;
+  static const int kMaxNumCodecs = 50;
   static const int kMaxNumPacketSize = 6;
 
   // Codec specific settings

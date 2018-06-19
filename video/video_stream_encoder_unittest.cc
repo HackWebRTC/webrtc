@@ -91,16 +91,16 @@ class CpuOveruseDetectorProxy : public OveruseFrameDetector {
 
 class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
  public:
-  VideoStreamEncoderUnderTest(SendStatisticsProxy* stats_proxy,
-                      const VideoSendStream::Config::EncoderSettings& settings)
-      : VideoStreamEncoder(
-            1 /* number_of_cores */,
-            stats_proxy,
-            settings,
-            nullptr /* pre_encode_callback */,
-            std::unique_ptr<OveruseFrameDetector>(
-                overuse_detector_proxy_ = new CpuOveruseDetectorProxy(
-                    stats_proxy))) {}
+  VideoStreamEncoderUnderTest(
+      SendStatisticsProxy* stats_proxy,
+      const VideoSendStream::Config::EncoderSettings& settings)
+      : VideoStreamEncoder(1 /* number_of_cores */,
+                           stats_proxy,
+                           settings,
+                           nullptr /* pre_encode_callback */,
+                           std::unique_ptr<OveruseFrameDetector>(
+                               overuse_detector_proxy_ =
+                                   new CpuOveruseDetectorProxy(stats_proxy))) {}
 
   void PostTaskAndWait(bool down, AdaptReason reason) {
     rtc::Event event(false, false);
@@ -115,9 +115,7 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
   // encoder queue is not blocked before we start sending it frames.
   void WaitUntilTaskQueueIsIdle() {
     rtc::Event event(false, false);
-    encoder_queue()->PostTask([&event] {
-      event.Set();
-    });
+    encoder_queue()->PostTask([&event] { event.Set(); });
     ASSERT_TRUE(event.Wait(5000));
   }
 
@@ -158,7 +156,6 @@ class VideoStreamFactory
   const size_t num_temporal_layers_;
   const int framerate_;
 };
-
 
 class AdaptingFrameForwarder : public test::FrameForwarder {
  public:
@@ -2560,8 +2557,8 @@ TEST_F(VideoStreamEncoderTest, DoesntAdaptDownPastMinFramerate) {
         sink_.WaitForEncodedFrame(timestamp_ms);
       }
       timestamp_ms += kFrameIntervalMs;
-      fake_clock_.AdvanceTimeMicros(
-          kFrameIntervalMs * rtc::kNumMicrosecsPerMillisec);
+      fake_clock_.AdvanceTimeMicros(kFrameIntervalMs *
+                                    rtc::kNumMicrosecsPerMillisec);
     }
     // ...and then try to adapt again.
     video_stream_encoder_->TriggerCpuOveruse();
@@ -2969,9 +2966,8 @@ TEST_F(VideoStreamEncoderTest, AcceptsFullHdAdaptedDownSimulcastFrames) {
         int width,
         int height,
         const VideoEncoderConfig& encoder_config) override {
-      std::vector<VideoStream> streams =
-          test::CreateVideoStreams(width - width % 4, height - height % 4,
-                                   encoder_config);
+      std::vector<VideoStream> streams = test::CreateVideoStreams(
+          width - width % 4, height - height % 4, encoder_config);
       for (VideoStream& stream : streams) {
         stream.num_temporal_layers = num_temporal_layers_;
         stream.max_framerate = framerate_;

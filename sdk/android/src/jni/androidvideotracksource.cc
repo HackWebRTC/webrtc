@@ -23,10 +23,9 @@ namespace {
 const int kRequiredResolutionAlignment = 2;
 }  // namespace
 
-AndroidVideoTrackSource::AndroidVideoTrackSource(
-    rtc::Thread* signaling_thread,
-    JNIEnv* jni,
-    bool is_screencast)
+AndroidVideoTrackSource::AndroidVideoTrackSource(rtc::Thread* signaling_thread,
+                                                 JNIEnv* jni,
+                                                 bool is_screencast)
     : AdaptedVideoTrackSource(kRequiredResolutionAlignment),
       signaling_thread_(signaling_thread),
       is_screencast_(is_screencast) {

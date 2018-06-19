@@ -88,14 +88,12 @@ void ScreenCapturerWinGdi::CaptureFrame() {
 
   // Emit the current frame.
   std::unique_ptr<DesktopFrame> frame = queue_.current_frame()->Share();
-  frame->set_dpi(DesktopVector(
-      GetDeviceCaps(desktop_dc_, LOGPIXELSX),
-      GetDeviceCaps(desktop_dc_, LOGPIXELSY)));
+  frame->set_dpi(DesktopVector(GetDeviceCaps(desktop_dc_, LOGPIXELSX),
+                               GetDeviceCaps(desktop_dc_, LOGPIXELSY)));
   frame->mutable_updated_region()->SetRect(
       DesktopRect::MakeSize(frame->size()));
-  frame->set_capture_time_ms(
-      (rtc::TimeNanos() - capture_start_time_nanos) /
-      rtc::kNumNanosecsPerMillisec);
+  frame->set_capture_time_ms((rtc::TimeNanos() - capture_start_time_nanos) /
+                             rtc::kNumNanosecsPerMillisec);
   frame->set_capturer_id(DesktopCapturerId::kScreenCapturerWinGdi);
   callback_->OnCaptureResult(Result::SUCCESS, std::move(frame));
 }
@@ -216,8 +214,8 @@ bool ScreenCapturerWinGdi::CaptureImage() {
   }
 
   bool result = (BitBlt(memory_dc_, 0, 0, screen_rect.width(),
-      screen_rect.height(), desktop_dc_, screen_rect.left(), screen_rect.top(),
-      SRCCOPY | CAPTUREBLT) != FALSE);
+                        screen_rect.height(), desktop_dc_, screen_rect.left(),
+                        screen_rect.top(), SRCCOPY | CAPTUREBLT) != FALSE);
   if (!result) {
     RTC_LOG_GLE(LS_WARNING) << "BitBlt failed";
   }

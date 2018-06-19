@@ -10,11 +10,11 @@
 
 #include <memory>
 
-#include "modules/desktop_capture/mouse_cursor_monitor.h"
-#include "modules/desktop_capture/desktop_capturer.h"
 #include "modules/desktop_capture/desktop_capture_options.h"
+#include "modules/desktop_capture/desktop_capturer.h"
 #include "modules/desktop_capture/desktop_frame.h"
 #include "modules/desktop_capture/mouse_cursor.h"
+#include "modules/desktop_capture/mouse_cursor_monitor.h"
 #include "test/gtest.h"
 
 namespace webrtc {
@@ -22,9 +22,7 @@ namespace webrtc {
 class MouseCursorMonitorTest : public testing::Test,
                                public MouseCursorMonitor::Callback {
  public:
-  MouseCursorMonitorTest()
-      : position_received_(false) {
-  }
+  MouseCursorMonitorTest() : position_received_(false) {}
 
   // MouseCursorMonitor::Callback interface
   void OnMouseCursor(MouseCursor* cursor_image) override {

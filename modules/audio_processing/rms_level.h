@@ -72,4 +72,3 @@ class RmsLevel {
 }  // namespace webrtc
 
 #endif  // MODULES_AUDIO_PROCESSING_RMS_LEVEL_H_
-

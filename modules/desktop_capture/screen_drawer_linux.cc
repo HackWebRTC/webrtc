@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <string.h>
 #include <X11/Xlib.h>
+#include <string.h>
 
 #include <memory>
 

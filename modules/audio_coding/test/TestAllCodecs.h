@@ -60,8 +60,12 @@ class TestAllCodecs : public ACMTest {
   // codec name, and a sampling frequency matching is not required.
   // This is useful for codecs which support several sampling frequency.
   // Note! Only mono mode is tested in this test.
-  void RegisterSendCodec(char side, char* codec_name, int32_t sampling_freq_hz,
-                         int rate, int packet_size, size_t extra_byte);
+  void RegisterSendCodec(char side,
+                         char* codec_name,
+                         int32_t sampling_freq_hz,
+                         int rate,
+                         int packet_size,
+                         size_t extra_byte);
 
   void Run(TestPack* channel);
   void OpenOutFile(int test_number);

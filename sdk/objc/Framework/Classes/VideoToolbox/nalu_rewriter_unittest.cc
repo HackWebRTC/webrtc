@@ -25,14 +25,11 @@ static const uint8_t NALU_TEST_DATA_1[] = {0xDE, 0xAD, 0xBE, 0xEF};
 
 TEST(H264VideoToolboxNaluTest, TestCreateVideoFormatDescription) {
   const uint8_t sps_pps_buffer[] = {
-    // SPS nalu.
-    0x00, 0x00, 0x00, 0x01,
-    0x27, 0x42, 0x00, 0x1E, 0xAB, 0x40, 0xF0, 0x28, 0xD3, 0x70, 0x20, 0x20,
-    0x20, 0x20,
-    // PPS nalu.
-    0x00, 0x00, 0x00, 0x01,
-    0x28, 0xCE, 0x3C, 0x30
-  };
+      // SPS nalu.
+      0x00, 0x00, 0x00, 0x01, 0x27, 0x42, 0x00, 0x1E, 0xAB, 0x40, 0xF0, 0x28,
+      0xD3, 0x70, 0x20, 0x20, 0x20, 0x20,
+      // PPS nalu.
+      0x00, 0x00, 0x00, 0x01, 0x28, 0xCE, 0x3C, 0x30};
   CMVideoFormatDescriptionRef description =
       CreateVideoFormatDescription(sps_pps_buffer, arraysize(sps_pps_buffer));
   EXPECT_TRUE(description);
@@ -59,8 +56,8 @@ TEST(H264VideoToolboxNaluTest, TestCreateVideoFormatDescription) {
   }
 
   const uint8_t other_buffer[] = {0x00, 0x00, 0x00, 0x01, 0x28};
-  EXPECT_FALSE(CreateVideoFormatDescription(other_buffer,
-                                            arraysize(other_buffer)));
+  EXPECT_FALSE(
+      CreateVideoFormatDescription(other_buffer, arraysize(other_buffer)));
 }
 
 TEST(AnnexBBufferReaderTest, TestReadEmptyInput) {

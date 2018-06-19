@@ -53,15 +53,13 @@ struct SsrcGroup {
   bool operator==(const SsrcGroup& other) const {
     return (semantics == other.semantics && ssrcs == other.ssrcs);
   }
-  bool operator!=(const SsrcGroup &other) const {
-    return !(*this == other);
-  }
+  bool operator!=(const SsrcGroup& other) const { return !(*this == other); }
 
   bool has_semantics(const std::string& semantics) const;
 
   std::string ToString() const;
 
-  std::string semantics;  // e.g FIX, FEC, SIM.
+  std::string semantics;        // e.g FIX, FEC, SIM.
   std::vector<uint32_t> ssrcs;  // SSRCs of this type.
 };
 
@@ -88,9 +86,7 @@ struct StreamParams {
             ssrcs == other.ssrcs && ssrc_groups == other.ssrc_groups &&
             cname == other.cname && stream_ids_ == other.stream_ids_);
   }
-  bool operator!=(const StreamParams &other) const {
-    return !(*this == other);
-  }
+  bool operator!=(const StreamParams& other) const { return !(*this == other); }
 
   uint32_t first_ssrc() const {
     if (ssrcs.empty()) {
@@ -99,16 +95,12 @@ struct StreamParams {
 
     return ssrcs[0];
   }
-  bool has_ssrcs() const {
-    return !ssrcs.empty();
-  }
+  bool has_ssrcs() const { return !ssrcs.empty(); }
   bool has_ssrc(uint32_t ssrc) const {
     return std::find(ssrcs.begin(), ssrcs.end(), ssrc) != ssrcs.end();
   }
   void add_ssrc(uint32_t ssrc) { ssrcs.push_back(ssrc); }
-  bool has_ssrc_groups() const {
-    return !ssrc_groups.empty();
-  }
+  bool has_ssrc_groups() const { return !ssrc_groups.empty(); }
   bool has_ssrc_group(const std::string& semantics) const {
     return (get_ssrc_group(semantics) != NULL);
   }
@@ -179,7 +171,7 @@ struct StreamParams {
   // signaled with a=msid lines.
   std::vector<uint32_t> ssrcs;         // All SSRCs for this source
   std::vector<SsrcGroup> ssrc_groups;  // e.g. FID, FEC, SIM
-  std::string cname;  // RTCP CNAME
+  std::string cname;                   // RTCP CNAME
 
  private:
   bool AddSecondarySsrc(const std::string& semantics,
@@ -199,12 +191,8 @@ struct StreamParams {
 struct StreamSelector {
   explicit StreamSelector(uint32_t ssrc) : ssrc(ssrc) {}
 
-  StreamSelector(const std::string& groupid,
-                 const std::string& streamid) :
-      ssrc(0),
-      groupid(groupid),
-      streamid(streamid) {
-  }
+  StreamSelector(const std::string& groupid, const std::string& streamid)
+      : ssrc(0), groupid(groupid), streamid(streamid) {}
 
   explicit StreamSelector(const std::string& streamid)
       : ssrc(0), streamid(streamid) {}
@@ -248,12 +236,9 @@ struct MediaStreams {
   const std::vector<StreamParams>& data() const { return data_; }
 
   // Gets a stream, returning true if found.
-  bool GetAudioStream(
-      const StreamSelector& selector, StreamParams* stream);
-  bool GetVideoStream(
-      const StreamSelector& selector, StreamParams* stream);
-  bool GetDataStream(
-      const StreamSelector& selector, StreamParams* stream);
+  bool GetAudioStream(const StreamSelector& selector, StreamParams* stream);
+  bool GetVideoStream(const StreamSelector& selector, StreamParams* stream);
+  bool GetDataStream(const StreamSelector& selector, StreamParams* stream);
   // Adds a stream.
   void AddAudioStream(const StreamParams& stream);
   void AddVideoStream(const StreamParams& stream);
@@ -293,8 +278,8 @@ inline bool HasStreamWithNoSsrcs(const StreamParamsVec& streams) {
 
 inline const StreamParams* GetStreamBySsrc(const StreamParamsVec& streams,
                                            uint32_t ssrc) {
-  return GetStream(streams,
-      [&ssrc](const StreamParams& sp) { return sp.has_ssrc(ssrc); });
+  return GetStream(
+      streams, [&ssrc](const StreamParams& sp) { return sp.has_ssrc(ssrc); });
 }
 
 inline const StreamParams* GetStreamByIds(const StreamParamsVec& streams,
@@ -308,16 +293,16 @@ inline const StreamParams* GetStreamByIds(const StreamParamsVec& streams,
 inline StreamParams* GetStreamByIds(StreamParamsVec& streams,
                                     const std::string& groupid,
                                     const std::string& id) {
-  return GetStream(streams,
-      [&groupid, &id](const StreamParams& sp) {
-        return sp.groupid == groupid && sp.id == id;
-      });
+  return GetStream(streams, [&groupid, &id](const StreamParams& sp) {
+    return sp.groupid == groupid && sp.id == id;
+  });
 }
 
 inline const StreamParams* GetStream(const StreamParamsVec& streams,
                                      const StreamSelector& selector) {
-  return GetStream(streams,
-      [&selector](const StreamParams& sp) { return selector.Matches(sp); });
+  return GetStream(streams, [&selector](const StreamParams& sp) {
+    return selector.Matches(sp);
+  });
 }
 
 template <class Condition>
@@ -332,21 +317,21 @@ bool RemoveStream(StreamParamsVec* streams, Condition condition) {
 // Removes the stream from streams. Returns true if a stream is
 // found and removed.
 inline bool RemoveStream(StreamParamsVec* streams,
-                  const StreamSelector& selector) {
-  return RemoveStream(streams,
-      [&selector](const StreamParams& sp) { return selector.Matches(sp); });
+                         const StreamSelector& selector) {
+  return RemoveStream(streams, [&selector](const StreamParams& sp) {
+    return selector.Matches(sp);
+  });
 }
 inline bool RemoveStreamBySsrc(StreamParamsVec* streams, uint32_t ssrc) {
-  return RemoveStream(streams,
-      [&ssrc](const StreamParams& sp) { return sp.has_ssrc(ssrc); });
+  return RemoveStream(
+      streams, [&ssrc](const StreamParams& sp) { return sp.has_ssrc(ssrc); });
 }
 inline bool RemoveStreamByIds(StreamParamsVec* streams,
                               const std::string& groupid,
                               const std::string& id) {
-  return RemoveStream(streams,
-      [&groupid, &id](const StreamParams& sp) {
-        return sp.groupid == groupid && sp.id == id;
-      });
+  return RemoveStream(streams, [&groupid, &id](const StreamParams& sp) {
+    return sp.groupid == groupid && sp.id == id;
+  });
 }
 
 // Checks if |sp| defines parameters for a single primary stream. There may

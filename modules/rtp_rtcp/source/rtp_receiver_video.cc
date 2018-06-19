@@ -32,11 +32,9 @@ RTPReceiverStrategy* RTPReceiverStrategy::CreateVideoStrategy(
 }
 
 RTPReceiverVideo::RTPReceiverVideo(RtpData* data_callback)
-    : RTPReceiverStrategy(data_callback) {
-}
+    : RTPReceiverStrategy(data_callback) {}
 
-RTPReceiverVideo::~RTPReceiverVideo() {
-}
+RTPReceiverVideo::~RTPReceiverVideo() {}
 
 int32_t RTPReceiverVideo::OnNewPayloadTypeCreated(
     int payload_type,

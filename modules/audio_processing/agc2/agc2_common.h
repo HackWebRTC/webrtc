@@ -15,7 +15,6 @@
 
 #include <cmath>
 
-
 namespace webrtc {
 
 constexpr float kMinFloatS16Value = -32768.f;

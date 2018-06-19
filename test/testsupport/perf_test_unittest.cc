@@ -60,11 +60,8 @@ namespace test {
 
 class PerfTest : public ::testing::Test {
  protected:
-  void TearDown() override {
-    ClearPerfResults();
-  }
+  void TearDown() override { ClearPerfResults(); }
 };
-
 
 #if defined(WEBRTC_IOS)
 #define MAYBE_TestPrintResult DISABLED_TestPrintResult

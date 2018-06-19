@@ -69,8 +69,7 @@ class StatsCollector {
   // of filling in |reports|.  As is, there's a requirement that the caller
   // uses |reports| immediately without allowing any async activity on
   // the thread (message handling etc) and then discard the results.
-  void GetStats(MediaStreamTrackInterface* track,
-                StatsReports* reports);
+  void GetStats(MediaStreamTrackInterface* track, StatsReports* reports);
 
   // Prepare a local or remote SSRC report for the given ssrc. Used internally
   // in the ExtractStatsFromList template.
@@ -107,9 +106,10 @@ class StatsCollector {
       std::unique_ptr<rtc::SSLCertificateStats> cert_stats);
 
   StatsReport* AddConnectionInfoReport(const std::string& content_name,
-      int component, int connection_id,
-      const StatsReport::Id& channel_report_id,
-      const cricket::ConnectionInfo& info);
+                                       int component,
+                                       int connection_id,
+                                       const StatsReport::Id& channel_report_id,
+                                       const cricket::ConnectionInfo& info);
 
   void ExtractDataInfo();
   void ExtractSessionInfo();

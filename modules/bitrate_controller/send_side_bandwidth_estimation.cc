@@ -193,8 +193,8 @@ void SendSideBandwidthEstimation::CurrentEstimate(int* bitrate,
   *rtt = last_round_trip_time_ms_;
 }
 
-void SendSideBandwidthEstimation::UpdateReceiverEstimate(
-    int64_t now_ms, uint32_t bandwidth) {
+void SendSideBandwidthEstimation::UpdateReceiverEstimate(int64_t now_ms,
+                                                         uint32_t bandwidth) {
   bwe_incoming_ = bandwidth;
   CapBitrateToThresholds(now_ms, current_bitrate_bps_);
 }

@@ -74,8 +74,8 @@ TEST(MatrixTest, TestTranspose) {
       {1.1f, 5.5f}, {2.2f, 6.6f}, {3.3f, 7.7f}, {4.4f, 8.8f}};
 
   Matrix<float> initial_mat(*kValuesInitial, kNumInitialRows, kNumInitialCols);
-  Matrix<float> expected_result(
-      *kValuesExpected, kNumResultRows, kNumResultCols);
+  Matrix<float> expected_result(*kValuesExpected, kNumResultRows,
+                                kNumResultCols);
   Matrix<float> actual_result(kNumResultRows, kNumResultCols);
 
   actual_result.Transpose(initial_mat);
@@ -300,10 +300,10 @@ TEST(MatrixTest, TestComplexOperations) {
 
   Matrix<complex<float> > lh_mat(*kValuesLeft, kNumRows, kNumCols);
   Matrix<complex<float> > rh_mat(*kValuesRight, kNumRows, kNumCols);
-  Matrix<complex<float> > expected_result_add(
-      *kValuesExpectedAdd, kNumRows, kNumCols);
-  Matrix<complex<float> > expected_result_multiply(
-      *kValuesExpectedMultiply, kNumRows, kNumCols);
+  Matrix<complex<float> > expected_result_add(*kValuesExpectedAdd, kNumRows,
+                                              kNumCols);
+  Matrix<complex<float> > expected_result_multiply(*kValuesExpectedMultiply,
+                                                   kNumRows, kNumCols);
   Matrix<complex<float> > expected_result_pointwise_divide(
       *kValuesExpectedPointwiseDivide, kNumRows, kNumCols);
   Matrix<complex<float> > actual_result_add;

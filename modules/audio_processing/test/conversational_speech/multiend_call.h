@@ -51,18 +51,22 @@ class MultiEndCall {
   };
 
   MultiEndCall(
-      rtc::ArrayView<const Turn> timing, const std::string& audiotracks_path,
+      rtc::ArrayView<const Turn> timing,
+      const std::string& audiotracks_path,
       std::unique_ptr<WavReaderAbstractFactory> wavreader_abstract_factory);
   ~MultiEndCall();
 
   const std::set<std::string>& speaker_names() const { return speaker_names_; }
   const std::map<std::string, std::unique_ptr<WavReaderInterface>>&
-      audiotrack_readers() const { return audiotrack_readers_; }
+  audiotrack_readers() const {
+    return audiotrack_readers_;
+  }
   bool valid() const { return valid_; }
   int sample_rate() const { return sample_rate_hz_; }
   size_t total_duration_samples() const { return total_duration_samples_; }
   const std::vector<SpeakingTurn>& speaking_turns() const {
-      return speaking_turns_; }
+    return speaking_turns_;
+  }
 
  private:
   // Finds unique speaker names.

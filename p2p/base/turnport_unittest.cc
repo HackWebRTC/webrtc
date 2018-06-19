@@ -44,10 +44,10 @@ using rtc::SocketAddress;
 
 static const SocketAddress kLocalAddr1("11.11.11.11", 0);
 static const SocketAddress kLocalAddr2("22.22.22.22", 0);
-static const SocketAddress kLocalIPv6Addr(
-    "2401:fa00:4:1000:be30:5bff:fee5:c3", 0);
-static const SocketAddress kLocalIPv6Addr2(
-    "2401:fa00:4:2000:be30:5bff:fee5:d4", 0);
+static const SocketAddress kLocalIPv6Addr("2401:fa00:4:1000:be30:5bff:fee5:c3",
+                                          0);
+static const SocketAddress kLocalIPv6Addr2("2401:fa00:4:2000:be30:5bff:fee5:d4",
+                                           0);
 static const SocketAddress kTurnUdpIntAddr("99.99.99.3",
                                            cricket::TURN_SERVER_PORT);
 static const SocketAddress kTurnTcpIntAddr("99.99.99.4",
@@ -61,7 +61,8 @@ static const SocketAddress kTurnIPv6IntAddr(
     "2400:4030:2:2c00:be30:abcd:efab:cdef",
     cricket::TURN_SERVER_PORT);
 static const SocketAddress kTurnUdpIPv6IntAddr(
-    "2400:4030:1:2c00:be30:abcd:efab:cdef", cricket::TURN_SERVER_PORT);
+    "2400:4030:1:2c00:be30:abcd:efab:cdef",
+    cricket::TURN_SERVER_PORT);
 
 static const char kCandidateFoundation[] = "foundation";
 static const char kIceUfrag1[] = "TESTICEUFRAG0001";
@@ -81,22 +82,22 @@ static constexpr unsigned int kConnectionDestructionDelay = 1;
 // See: https://bugs.chromium.org/p/webrtc/issues/detail?id=5191
 static constexpr unsigned int kResolverTimeout = 10000;
 
-static const cricket::ProtocolAddress kTurnUdpProtoAddr(
-    kTurnUdpIntAddr, cricket::PROTO_UDP);
-static const cricket::ProtocolAddress kTurnTcpProtoAddr(
-    kTurnTcpIntAddr, cricket::PROTO_TCP);
+static const cricket::ProtocolAddress kTurnUdpProtoAddr(kTurnUdpIntAddr,
+                                                        cricket::PROTO_UDP);
+static const cricket::ProtocolAddress kTurnTcpProtoAddr(kTurnTcpIntAddr,
+                                                        cricket::PROTO_TCP);
 static const cricket::ProtocolAddress kTurnTlsProtoAddr(kTurnTcpIntAddr,
                                                         cricket::PROTO_TLS);
-static const cricket::ProtocolAddress kTurnUdpIPv6ProtoAddr(
-    kTurnUdpIPv6IntAddr, cricket::PROTO_UDP);
+static const cricket::ProtocolAddress kTurnUdpIPv6ProtoAddr(kTurnUdpIPv6IntAddr,
+                                                            cricket::PROTO_UDP);
 
 static const unsigned int MSG_TESTFINISH = 0;
 
 #if defined(WEBRTC_LINUX) && !defined(WEBRTC_ANDROID)
 static int GetFDCount() {
-  struct dirent *dp;
+  struct dirent* dp;
   int fd_count = 0;
-  DIR *dir = opendir("/proc/self/fd/");
+  DIR* dir = opendir("/proc/self/fd/");
   while ((dp = readdir(dir)) != NULL) {
     if (dp->d_name[0] == '.')
       continue;
@@ -170,12 +171,8 @@ class TurnPortTest : public testing::Test,
       test_finish_ = true;
   }
 
-  void OnTurnPortComplete(Port* port) {
-    turn_ready_ = true;
-  }
-  void OnTurnPortError(Port* port) {
-    turn_error_ = true;
-  }
+  void OnTurnPortComplete(Port* port) { turn_ready_ = true; }
+  void OnTurnPortError(Port* port) { turn_error_ = true; }
   void OnTurnUnknownAddress(PortInterface* port,
                             const SocketAddress& addr,
                             ProtocolType proto,
@@ -194,30 +191,29 @@ class TurnPortTest : public testing::Test,
   void OnTurnRefreshResult(TurnPort* port, int code) {
     turn_refresh_success_ = (code == 0);
   }
-  void OnTurnReadPacket(Connection* conn, const char* data, size_t size,
+  void OnTurnReadPacket(Connection* conn,
+                        const char* data,
+                        size_t size,
                         const rtc::PacketTime& packet_time) {
     turn_packets_.push_back(rtc::Buffer(data, size));
   }
-  void OnUdpPortComplete(Port* port) {
-    udp_ready_ = true;
-  }
-  void OnUdpReadPacket(Connection* conn, const char* data, size_t size,
+  void OnUdpPortComplete(Port* port) { udp_ready_ = true; }
+  void OnUdpReadPacket(Connection* conn,
+                       const char* data,
+                       size_t size,
                        const rtc::PacketTime& packet_time) {
     udp_packets_.push_back(rtc::Buffer(data, size));
   }
   void OnSocketReadPacket(rtc::AsyncPacketSocket* socket,
-                          const char* data, size_t size,
+                          const char* data,
+                          size_t size,
                           const rtc::SocketAddress& remote_addr,
                           const rtc::PacketTime& packet_time) {
     turn_port_->HandleIncomingPacket(socket, data, size, remote_addr,
                                      packet_time);
   }
-  void OnTurnPortClosed(TurnPort* port) {
-    turn_port_closed_ = true;
-  }
-  void OnTurnPortDestroyed(PortInterface* port) {
-    turn_port_destroyed_ = true;
-  }
+  void OnTurnPortClosed(TurnPort* port) { turn_port_closed_ = true; }
+  void OnTurnPortDestroyed(PortInterface* port) { turn_port_destroyed_ = true; }
 
   rtc::AsyncSocket* CreateServerSocket(const SocketAddress addr) {
     rtc::AsyncSocket* socket = ss_->CreateAsyncSocket(AF_INET, SOCK_STREAM);
@@ -300,15 +296,15 @@ class TurnPortTest : public testing::Test,
       socket_.reset(socket_factory_.CreateUdpSocket(
           rtc::SocketAddress(kLocalAddr1.ipaddr(), 0), 0, 0));
       ASSERT_TRUE(socket_ != NULL);
-      socket_->SignalReadPacket.connect(
-          this, &TurnPortTest::OnSocketReadPacket);
+      socket_->SignalReadPacket.connect(this,
+                                        &TurnPortTest::OnSocketReadPacket);
     }
 
     RelayCredentials credentials(username, password);
-    turn_port_.reset(TurnPort::Create(
-        &main_, &socket_factory_, MakeNetwork(kLocalAddr1), socket_.get(),
-        kIceUfrag1, kIcePwd1, server_address, credentials, 0, std::string(),
-        nullptr));
+    turn_port_.reset(TurnPort::Create(&main_, &socket_factory_,
+                                      MakeNetwork(kLocalAddr1), socket_.get(),
+                                      kIceUfrag1, kIcePwd1, server_address,
+                                      credentials, 0, std::string(), nullptr));
     // This TURN port will be the controlling.
     turn_port_->SetIceRole(ICEROLE_CONTROLLING);
     ConnectSignals();
@@ -316,19 +312,18 @@ class TurnPortTest : public testing::Test,
 
   void ConnectSignals() {
     turn_port_->SignalPortComplete.connect(this,
-        &TurnPortTest::OnTurnPortComplete);
-    turn_port_->SignalPortError.connect(this,
-        &TurnPortTest::OnTurnPortError);
-    turn_port_->SignalUnknownAddress.connect(this,
-        &TurnPortTest::OnTurnUnknownAddress);
-    turn_port_->SignalCreatePermissionResult.connect(this,
-        &TurnPortTest::OnTurnCreatePermissionResult);
+                                           &TurnPortTest::OnTurnPortComplete);
+    turn_port_->SignalPortError.connect(this, &TurnPortTest::OnTurnPortError);
+    turn_port_->SignalUnknownAddress.connect(
+        this, &TurnPortTest::OnTurnUnknownAddress);
+    turn_port_->SignalCreatePermissionResult.connect(
+        this, &TurnPortTest::OnTurnCreatePermissionResult);
     turn_port_->SignalTurnRefreshResult.connect(
         this, &TurnPortTest::OnTurnRefreshResult);
-    turn_port_->SignalTurnPortClosed.connect(
-        this, &TurnPortTest::OnTurnPortClosed);
-    turn_port_->SignalDestroyed.connect(
-        this, &TurnPortTest::OnTurnPortDestroyed);
+    turn_port_->SignalTurnPortClosed.connect(this,
+                                             &TurnPortTest::OnTurnPortClosed);
+    turn_port_->SignalDestroyed.connect(this,
+                                        &TurnPortTest::OnTurnPortDestroyed);
   }
 
   void CreateUdpPort() { CreateUdpPort(kLocalAddr2); }
@@ -339,8 +334,8 @@ class TurnPortTest : public testing::Test,
         kIcePwd2, std::string(), false, absl::nullopt));
     // UDP port will be controlled.
     udp_port_->SetIceRole(ICEROLE_CONTROLLED);
-    udp_port_->SignalPortComplete.connect(
-        this, &TurnPortTest::OnUdpPortComplete);
+    udp_port_->SignalPortComplete.connect(this,
+                                          &TurnPortTest::OnUdpPortComplete);
   }
 
   void PrepareTurnAndUdpPorts(ProtocolType protocol_type) {
@@ -568,8 +563,8 @@ class TurnPortTest : public testing::Test,
 
     // Send ping from UDP to TURN.
     ASSERT_GE(turn_port_->Candidates().size(), 1U);
-    Connection* conn1 = udp_port_->CreateConnection(
-                    turn_port_->Candidates()[0], Port::ORIGIN_MESSAGE);
+    Connection* conn1 = udp_port_->CreateConnection(turn_port_->Candidates()[0],
+                                                    Port::ORIGIN_MESSAGE);
     ASSERT_TRUE(conn1 != NULL);
     conn1->Ping(0);
     SIMULATED_WAIT(!turn_unknown_address_, kSimulatedRtt * 2, fake_clock_);
@@ -578,8 +573,8 @@ class TurnPortTest : public testing::Test,
     EXPECT_EQ(Connection::STATE_WRITE_INIT, conn1->write_state());
 
     // Send ping from TURN to UDP.
-    Connection* conn2 = turn_port_->CreateConnection(
-                    udp_port_->Candidates()[0], Port::ORIGIN_MESSAGE);
+    Connection* conn2 = turn_port_->CreateConnection(udp_port_->Candidates()[0],
+                                                     Port::ORIGIN_MESSAGE);
     ASSERT_TRUE(conn2 != NULL);
     ASSERT_TRUE_SIMULATED_WAIT(turn_create_permission_success_, kSimulatedRtt,
                                fake_clock_);
@@ -643,10 +638,10 @@ class TurnPortTest : public testing::Test,
     PrepareTurnAndUdpPorts(protocol_type);
 
     // Create connections and send pings.
-    Connection* conn1 = turn_port_->CreateConnection(
-        udp_port_->Candidates()[0], Port::ORIGIN_MESSAGE);
-    Connection* conn2 = udp_port_->CreateConnection(
-        turn_port_->Candidates()[0], Port::ORIGIN_MESSAGE);
+    Connection* conn1 = turn_port_->CreateConnection(udp_port_->Candidates()[0],
+                                                     Port::ORIGIN_MESSAGE);
+    Connection* conn2 = udp_port_->CreateConnection(turn_port_->Candidates()[0],
+                                                    Port::ORIGIN_MESSAGE);
     ASSERT_TRUE(conn1 != NULL);
     ASSERT_TRUE(conn2 != NULL);
     conn1->SignalReadPacket.connect(static_cast<TurnPortTest*>(this),
@@ -663,7 +658,7 @@ class TurnPortTest : public testing::Test,
     // Send some data.
     size_t num_packets = 256;
     for (size_t i = 0; i < num_packets; ++i) {
-      unsigned char buf[256] = { 0 };
+      unsigned char buf[256] = {0};
       for (size_t j = 0; j < i + 1; ++j) {
         buf[j] = 0xFF - static_cast<unsigned char>(j);
       }
@@ -696,10 +691,10 @@ class TurnPortTest : public testing::Test,
     PrepareTurnAndUdpPorts(protocol_type);
 
     // Create connections and send pings.
-    Connection* conn1 = turn_port_->CreateConnection(
-        udp_port_->Candidates()[0], Port::ORIGIN_MESSAGE);
-    Connection* conn2 = udp_port_->CreateConnection(
-        turn_port_->Candidates()[0], Port::ORIGIN_MESSAGE);
+    Connection* conn1 = turn_port_->CreateConnection(udp_port_->Candidates()[0],
+                                                     Port::ORIGIN_MESSAGE);
+    Connection* conn2 = udp_port_->CreateConnection(turn_port_->Candidates()[0],
+                                                    Port::ORIGIN_MESSAGE);
     ASSERT_TRUE(conn1 != NULL);
     ASSERT_TRUE(conn2 != NULL);
     conn1->SignalReadPacket.connect(static_cast<TurnPortTest*>(this),
@@ -714,7 +709,7 @@ class TurnPortTest : public testing::Test,
                              kSimulatedRtt * 2, fake_clock_);
 
     // Send some data from Udp to TurnPort.
-    unsigned char buf[256] = { 0 };
+    unsigned char buf[256] = {0};
     conn2->Send(buf, sizeof(buf), options);
 
     // Now release the TurnPort allocation.
@@ -796,7 +791,7 @@ TEST_F(TurnPortTest, TestReconstructedServerUrlForTls) {
 // Do a normal TURN allocation.
 TEST_F(TurnPortTest, TestTurnAllocate) {
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
-  EXPECT_EQ(0, turn_port_->SetOption(rtc::Socket::OPT_SNDBUF, 10*1024));
+  EXPECT_EQ(0, turn_port_->SetOption(rtc::Socket::OPT_SNDBUF, 10 * 1024));
   turn_port_->PrepareAddress();
   EXPECT_TRUE_SIMULATED_WAIT(turn_ready_, kSimulatedRtt * 2, fake_clock_);
   ASSERT_EQ(1U, turn_port_->Candidates().size());
@@ -809,7 +804,7 @@ TEST_F(TurnPortTest, TestTurnAllocate) {
 TEST_F(TurnPortTest, TestTurnTcpAllocate) {
   turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnTcpProtoAddr);
-  EXPECT_EQ(0, turn_port_->SetOption(rtc::Socket::OPT_SNDBUF, 10*1024));
+  EXPECT_EQ(0, turn_port_->SetOption(rtc::Socket::OPT_SNDBUF, 10 * 1024));
   turn_port_->PrepareAddress();
   EXPECT_TRUE_SIMULATED_WAIT(turn_ready_, kSimulatedRtt * 3, fake_clock_);
   ASSERT_EQ(1U, turn_port_->Candidates().size());
@@ -1561,11 +1556,11 @@ TEST_F(TurnPortTest, TestResolverShutdown) {
 }
 #endif
 
-class MessageObserver : public StunMessageObserver{
+class MessageObserver : public StunMessageObserver {
  public:
-  MessageObserver(unsigned int *message_counter,
+  MessageObserver(unsigned int* message_counter,
                   unsigned int* channel_data_counter,
-                  unsigned int *attr_counter)
+                  unsigned int* attr_counter)
       : message_counter_(message_counter),
         channel_data_counter_(channel_data_counter),
         attr_counter_(attr_counter) {}
@@ -1575,8 +1570,8 @@ class MessageObserver : public StunMessageObserver{
       (*message_counter_)++;
     }
     // Implementation defined attributes are returned as ByteString
-    const StunByteStringAttribute* attr = msg->GetByteString(
-        TestTurnCustomizer::STUN_ATTR_COUNTER);
+    const StunByteStringAttribute* attr =
+        msg->GetByteString(TestTurnCustomizer::STUN_ATTR_COUNTER);
     if (attr != nullptr && attr_counter_ != nullptr) {
       rtc::ByteBufferReader buf(attr->bytes(), attr->length());
       unsigned int val = ~0u;
@@ -1609,8 +1604,7 @@ TEST_F(TurnPortTest, TestTurnCustomizerCount) {
   unsigned int observer_attr_counter = 0;
   TestTurnCustomizer* customizer = new TestTurnCustomizer();
   std::unique_ptr<MessageObserver> validator(new MessageObserver(
-      &observer_message_counter,
-      &observer_channel_data_counter,
+      &observer_message_counter, &observer_channel_data_counter,
       &observer_attr_counter));
 
   turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TLS);
@@ -1640,8 +1634,7 @@ TEST_F(TurnPortTest, TestTurnCustomizerDisallowChannelData) {
   unsigned int observer_attr_counter = 0;
   TestTurnCustomizer* customizer = new TestTurnCustomizer();
   std::unique_ptr<MessageObserver> validator(new MessageObserver(
-      &observer_message_counter,
-      &observer_channel_data_counter,
+      &observer_message_counter, &observer_channel_data_counter,
       &observer_attr_counter));
   customizer->allow_channel_data_ = false;
   turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TLS);
@@ -1670,8 +1663,7 @@ TEST_F(TurnPortTest, TestTurnCustomizerAddAttribute) {
   unsigned int observer_attr_counter = 0;
   TestTurnCustomizer* customizer = new TestTurnCustomizer();
   std::unique_ptr<MessageObserver> validator(new MessageObserver(
-      &observer_message_counter,
-      &observer_channel_data_counter,
+      &observer_message_counter, &observer_channel_data_counter,
       &observer_attr_counter));
   customizer->allow_channel_data_ = false;
   customizer->add_counter_ = true;

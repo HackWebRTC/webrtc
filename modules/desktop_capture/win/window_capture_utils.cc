@@ -25,8 +25,7 @@ bool GetWindowRect(HWND window, DesktopRect* result) {
   if (!::GetWindowRect(window, &rect)) {
     return false;
   }
-  *result = DesktopRect::MakeLTRB(
-      rect.left, rect.top, rect.right, rect.bottom);
+  *result = DesktopRect::MakeLTRB(rect.left, rect.top, rect.right, rect.bottom);
   return true;
 }
 
@@ -97,22 +96,22 @@ bool GetWindowContentRect(HWND window, DesktopRect* result) {
 }
 
 int GetWindowRegionTypeWithBoundary(HWND window, DesktopRect* result) {
-  win::ScopedGDIObject<HRGN, win::DeleteObjectTraits<HRGN>>
-      scoped_hrgn(CreateRectRgn(0, 0, 0, 0));
+  win::ScopedGDIObject<HRGN, win::DeleteObjectTraits<HRGN>> scoped_hrgn(
+      CreateRectRgn(0, 0, 0, 0));
   const int region_type = GetWindowRgn(window, scoped_hrgn.Get());
 
   if (region_type == SIMPLEREGION) {
     RECT rect;
     GetRgnBox(scoped_hrgn.Get(), &rect);
-    *result = DesktopRect::MakeLTRB(
-        rect.left, rect.top, rect.right, rect.bottom);
+    *result =
+        DesktopRect::MakeLTRB(rect.left, rect.top, rect.right, rect.bottom);
   }
   return region_type;
 }
 
 bool GetDcSize(HDC hdc, DesktopSize* size) {
-  win::ScopedGDIObject<HGDIOBJ, win::DeleteObjectTraits<HGDIOBJ>>
-      scoped_hgdi(GetCurrentObject(hdc, OBJ_BITMAP));
+  win::ScopedGDIObject<HGDIOBJ, win::DeleteObjectTraits<HGDIOBJ>> scoped_hgdi(
+      GetCurrentObject(hdc, OBJ_BITMAP));
   BITMAP bitmap;
   memset(&bitmap, 0, sizeof(BITMAP));
   if (GetObject(scoped_hgdi.Get(), sizeof(BITMAP), &bitmap) == 0) {

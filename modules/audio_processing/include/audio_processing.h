@@ -18,7 +18,7 @@
 
 #include <math.h>
 #include <stddef.h>  // size_t
-#include <stdio.h>  // FILE
+#include <stdio.h>   // FILE
 #include <string.h>
 #include <vector>
 
@@ -743,8 +743,8 @@ class StreamConfig {
 
  private:
   static size_t calculate_frames(int sample_rate_hz) {
-    return static_cast<size_t>(
-        AudioProcessing::kChunkSizeMs * sample_rate_hz / 1000);
+    return static_cast<size_t>(AudioProcessing::kChunkSizeMs * sample_rate_hz /
+                               1000);
   }
 
   int sample_rate_hz_;
@@ -893,7 +893,8 @@ class EchoCancellation {
   // Deprecated. Use GetStatistics on the AudioProcessing interface instead.
   virtual int GetDelayMetrics(int* median, int* std) = 0;
   // Deprecated. Use GetStatistics on the AudioProcessing interface instead.
-  virtual int GetDelayMetrics(int* median, int* std,
+  virtual int GetDelayMetrics(int* median,
+                              int* std,
                               float* fraction_poor_delays) = 0;
 
   // Returns a pointer to the low level AEC component.  In case of multiple
@@ -1037,8 +1038,7 @@ class GainControl {
 
   // Sets the |minimum| and |maximum| analog levels of the audio capture device.
   // Must be set if and only if an analog mode is used. Limited to [0, 65535].
-  virtual int set_analog_level_limits(int minimum,
-                                      int maximum) = 0;
+  virtual int set_analog_level_limits(int minimum, int maximum) = 0;
   virtual int analog_level_minimum() const = 0;
   virtual int analog_level_maximum() const = 0;
 
@@ -1097,12 +1097,7 @@ class NoiseSuppression {
 
   // Determines the aggressiveness of the suppression. Increasing the level
   // will reduce the noise level at the expense of a higher speech distortion.
-  enum Level {
-    kLow,
-    kModerate,
-    kHigh,
-    kVeryHigh
-  };
+  enum Level { kLow, kModerate, kHigh, kVeryHigh };
 
   virtual int set_level(Level level) = 0;
   virtual Level level() const = 0;

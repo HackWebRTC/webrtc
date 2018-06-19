@@ -24,10 +24,7 @@ class RandomVector {
   static const size_t kRandomTableSize = 256;
   static const int16_t kRandomTable[kRandomTableSize];
 
-  RandomVector()
-      : seed_(777),
-        seed_increment_(1) {
-  }
+  RandomVector() : seed_(777), seed_increment_(1) {}
 
   void Reset();
 

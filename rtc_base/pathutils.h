@@ -38,7 +38,7 @@ namespace rtc {
 ///////////////////////////////////////////////////////////////////////////////
 
 class Pathname {
-public:
+ public:
   // Folder delimiters are slash and backslash
   static bool IsFolderDelimiter(char ch);
   static char DefaultFolderDelimiter();
@@ -71,11 +71,11 @@ public:
   std::string filename() const;
   bool SetFilename(const std::string& filename);
 
-private:
+ private:
   std::string folder_, basename_, extension_;
   char folder_delimiter_;
 };
 
 }  // namespace rtc
 
-#endif // RTC_BASE_PATHUTILS_H_
+#endif  // RTC_BASE_PATHUTILS_H_

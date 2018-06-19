@@ -42,8 +42,7 @@ class RtcpPacketTypeCounterObserverImpl : public RtcpPacketTypeCounterObserver {
   RtcpPacketTypeCounter counter_;
 };
 
-class TestTransport : public Transport,
-                      public RtpData {
+class TestTransport : public Transport, public RtpData {
  public:
   TestTransport() {}
 
@@ -69,7 +68,7 @@ static const uint32_t kSenderSsrc = 0x11111111;
 static const uint32_t kRemoteSsrc = 0x22222222;
 static const uint32_t kStartRtpTimestamp = 0x34567;
 static const uint32_t kRtpTimestamp = 0x45678;
-}
+}  // namespace
 
 class RtcpSenderTest : public ::testing::Test {
  protected:
@@ -309,8 +308,9 @@ TEST_F(RtcpSenderTest, SendEmptyApp) {
 TEST_F(RtcpSenderTest, SetInvalidApplicationSpecificData) {
   const uint8_t kData[] = {'t', 'e', 's', 't', 'd', 'a', 't'};
   const uint16_t kInvalidDataLength = sizeof(kData) / sizeof(kData[0]);
-  EXPECT_EQ(-1, rtcp_sender_->SetApplicationSpecificData(
-      0, 0, kData, kInvalidDataLength));  // Should by multiple of 4.
+  EXPECT_EQ(-1,
+            rtcp_sender_->SetApplicationSpecificData(
+                0, 0, kData, kInvalidDataLength));  // Should by multiple of 4.
 }
 
 TEST_F(RtcpSenderTest, SendFir) {
@@ -630,23 +630,24 @@ TEST_F(RtcpSenderTest, SendCompoundPliRemb) {
 TEST_F(RtcpSenderTest, ByeMustBeLast) {
   MockTransport mock_transport;
   EXPECT_CALL(mock_transport, SendRtcp(_, _))
-    .WillOnce(Invoke([](const uint8_t* data, size_t len) {
-    const uint8_t* next_packet = data;
-    const uint8_t* const packet_end = data + len;
-    rtcp::CommonHeader packet;
-    while (next_packet < packet_end) {
-      EXPECT_TRUE(packet.Parse(next_packet, packet_end - next_packet));
-      next_packet = packet.NextPacket();
-      if (packet.type() == rtcp::Bye::kPacketType)  // Main test expectation.
-        EXPECT_EQ(0, packet_end - next_packet)
-            << "Bye packet should be last in a compound RTCP packet.";
-      if (next_packet == packet_end)  // Validate test was set correctly.
-        EXPECT_EQ(packet.type(), rtcp::Bye::kPacketType)
-            << "Last packet in this test expected to be Bye.";
-    }
+      .WillOnce(Invoke([](const uint8_t* data, size_t len) {
+        const uint8_t* next_packet = data;
+        const uint8_t* const packet_end = data + len;
+        rtcp::CommonHeader packet;
+        while (next_packet < packet_end) {
+          EXPECT_TRUE(packet.Parse(next_packet, packet_end - next_packet));
+          next_packet = packet.NextPacket();
+          if (packet.type() ==
+              rtcp::Bye::kPacketType)  // Main test expectation.
+            EXPECT_EQ(0, packet_end - next_packet)
+                << "Bye packet should be last in a compound RTCP packet.";
+          if (next_packet == packet_end)  // Validate test was set correctly.
+            EXPECT_EQ(packet.type(), rtcp::Bye::kPacketType)
+                << "Last packet in this test expected to be Bye.";
+        }
 
-    return true;
-  }));
+        return true;
+      }));
 
   // Re-configure rtcp_sender_ with mock_transport_
   rtcp_sender_.reset(new RTCPSender(false, &clock_, receive_statistics_.get(),

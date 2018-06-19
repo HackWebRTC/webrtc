@@ -21,10 +21,10 @@
 
 #include "api/mediastreaminterface.h"
 #include "api/rtpsenderinterface.h"
-#include "rtc_base/criticalsection.h"
 #include "media/base/audiosource.h"
 #include "media/base/mediachannel.h"
 #include "pc/dtmfsender.h"
+#include "rtc_base/criticalsection.h"
 
 namespace webrtc {
 

@@ -132,8 +132,8 @@ void ErleEstimator::Update(rtc::ArrayView<const float> render_spectrum,
   }
   --hold_counter_time_domain_;
   erle_time_domain_ = (hold_counter_time_domain_ > 0)
-                        ? erle_time_domain_
-                        : std::max(min_erle_, 0.97f * erle_time_domain_);
+                          ? erle_time_domain_
+                          : std::max(min_erle_, 0.97f * erle_time_domain_);
 }
 
 }  // namespace webrtc

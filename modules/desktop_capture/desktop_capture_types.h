@@ -41,17 +41,14 @@ const ScreenId kInvalidScreenId = -2;
 // An integer to attach to each DesktopFrame to differentiate the generator of
 // the frame.
 namespace DesktopCapturerId {
-  constexpr uint32_t CreateFourCC(char a, char b, char c, char d) {
-    return ((static_cast<uint32_t>(a)) |
-            (static_cast<uint32_t>(b) << 8) |
-            (static_cast<uint32_t>(c) << 16) |
-            (static_cast<uint32_t>(d) << 24));
-  }
+constexpr uint32_t CreateFourCC(char a, char b, char c, char d) {
+  return ((static_cast<uint32_t>(a)) | (static_cast<uint32_t>(b) << 8) |
+          (static_cast<uint32_t>(c) << 16) | (static_cast<uint32_t>(d) << 24));
+}
 
-  constexpr uint32_t kUnknown = 0;
-  constexpr uint32_t kScreenCapturerWinGdi = CreateFourCC('G', 'D', 'I', ' ');
-  constexpr uint32_t kScreenCapturerWinDirectx =
-      CreateFourCC('D', 'X', 'G', 'I');
+constexpr uint32_t kUnknown = 0;
+constexpr uint32_t kScreenCapturerWinGdi = CreateFourCC('G', 'D', 'I', ' ');
+constexpr uint32_t kScreenCapturerWinDirectx = CreateFourCC('D', 'X', 'G', 'I');
 }  // namespace DesktopCapturerId
 
 }  // namespace webrtc

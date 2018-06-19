@@ -147,8 +147,7 @@ BOOL CALLBACK TopWindowVerifier(HWND hwnd, LPARAM param) {
 
 class CroppingWindowCapturerWin : public CroppingWindowCapturer {
  public:
-  CroppingWindowCapturerWin(
-      const DesktopCaptureOptions& options)
+  CroppingWindowCapturerWin(const DesktopCaptureOptions& options)
       : CroppingWindowCapturer(options) {}
 
  private:
@@ -216,8 +215,8 @@ bool CroppingWindowCapturerWin::ShouldUseScreenCapturer() {
   if (region_type == SIMPLEREGION) {
     // The |region_rect| returned from GetRgnBox() is always in window
     // coordinate.
-    region_rect.Translate(
-        window_region_rect_.left(), window_region_rect_.top());
+    region_rect.Translate(window_region_rect_.left(),
+                          window_region_rect_.top());
     // MSDN: The window region determines the area *within* the window where the
     // system permits drawing.
     // https://msdn.microsoft.com/en-us/library/windows/desktop/dd144950(v=vs.85).aspx.

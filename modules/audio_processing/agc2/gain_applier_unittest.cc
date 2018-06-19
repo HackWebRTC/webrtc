@@ -72,8 +72,7 @@ TEST(AutomaticGainController2GainApplier, RampingIsDone) {
     float last_signal_level = initial_signal_level;
     for (const auto sample : fake_audio.float_frame_view().channel(channel)) {
       const float current_change = fabs(last_signal_level - sample);
-      max_signal_change =
-          std::max(max_signal_change, current_change);
+      max_signal_change = std::max(max_signal_change, current_change);
       last_signal_level = sample;
     }
     const float total_gain_change =

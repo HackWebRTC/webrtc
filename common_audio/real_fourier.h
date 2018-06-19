@@ -72,4 +72,3 @@ class RealFourier {
 }  // namespace webrtc
 
 #endif  // COMMON_AUDIO_REAL_FOURIER_H_
-

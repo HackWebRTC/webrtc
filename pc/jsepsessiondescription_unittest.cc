@@ -81,13 +81,11 @@ class JsepSessionDescriptionTest : public testing::Test {
     cricket::Candidate candidate(cricket::ICE_CANDIDATE_COMPONENT_RTP, "udp",
                                  address, 1, "", "", "local", 0, "1");
     candidate_ = candidate;
-    const std::string session_id =
-        rtc::ToString(rtc::CreateRandomId64());
-    const std::string session_version =
-        rtc::ToString(rtc::CreateRandomId());
+    const std::string session_id = rtc::ToString(rtc::CreateRandomId64());
+    const std::string session_version = rtc::ToString(rtc::CreateRandomId());
     jsep_desc_ = rtc::MakeUnique<JsepSessionDescription>(SdpType::kOffer);
     ASSERT_TRUE(jsep_desc_->Initialize(CreateCricketSessionDescription(),
-        session_id, session_version));
+                                       session_id, session_version));
   }
 
   std::string Serialize(const SessionDescriptionInterface* desc) {

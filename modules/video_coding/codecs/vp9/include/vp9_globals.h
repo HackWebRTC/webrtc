@@ -181,12 +181,12 @@ struct RTPVideoHeaderVP9 {
   bool beginning_of_frame;   // True if this packet is the first in a VP9 layer
                              // frame.
   bool end_of_frame;  // True if this packet is the last in a VP9 layer frame.
-  bool ss_data_available;   // True if SS data is available in this payload
-                            // descriptor.
+  bool ss_data_available;  // True if SS data is available in this payload
+                           // descriptor.
   bool non_ref_for_inter_layer_pred;  // True for frame which is not used as
                                       // reference for inter-layer prediction.
-  int16_t picture_id;       // PictureID index, 15 bits;
-                            // kNoPictureId if PictureID does not exist.
+  int16_t picture_id;                 // PictureID index, 15 bits;
+                       // kNoPictureId if PictureID does not exist.
   int16_t max_picture_id;   // Maximum picture ID index; either 0x7F or 0x7FFF;
   int16_t tl0_pic_idx;      // TL0PIC_IDX, 8 bits;
                             // kNoTl0PicIdx means no value provided.

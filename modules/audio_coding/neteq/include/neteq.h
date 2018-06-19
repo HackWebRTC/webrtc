@@ -33,25 +33,25 @@ class AudioFrame;
 class AudioDecoderFactory;
 
 struct NetEqNetworkStatistics {
-  uint16_t current_buffer_size_ms;  // Current jitter buffer size in ms.
+  uint16_t current_buffer_size_ms;    // Current jitter buffer size in ms.
   uint16_t preferred_buffer_size_ms;  // Target buffer size in ms.
-  uint16_t jitter_peaks_found;  // 1 if adding extra delay due to peaky
-                                // jitter; 0 otherwise.
-  uint16_t packet_loss_rate;  // Loss rate (network + late) in Q14.
-  uint16_t expand_rate;  // Fraction (of original stream) of synthesized
-                         // audio inserted through expansion (in Q14).
+  uint16_t jitter_peaks_found;        // 1 if adding extra delay due to peaky
+                                      // jitter; 0 otherwise.
+  uint16_t packet_loss_rate;          // Loss rate (network + late) in Q14.
+  uint16_t expand_rate;         // Fraction (of original stream) of synthesized
+                                // audio inserted through expansion (in Q14).
   uint16_t speech_expand_rate;  // Fraction (of original stream) of synthesized
                                 // speech inserted through expansion (in Q14).
-  uint16_t preemptive_rate;  // Fraction of data inserted through pre-emptive
-                             // expansion (in Q14).
-  uint16_t accelerate_rate;  // Fraction of data removed through acceleration
-                             // (in Q14).
-  uint16_t secondary_decoded_rate;  // Fraction of data coming from FEC/RED
-                                    // decoding (in Q14).
+  uint16_t preemptive_rate;     // Fraction of data inserted through pre-emptive
+                                // expansion (in Q14).
+  uint16_t accelerate_rate;     // Fraction of data removed through acceleration
+                                // (in Q14).
+  uint16_t secondary_decoded_rate;    // Fraction of data coming from FEC/RED
+                                      // decoding (in Q14).
   uint16_t secondary_discarded_rate;  // Fraction of discarded FEC/RED data (in
                                       // Q14).
-  int32_t clockdrift_ppm;  // Average clock-drift in parts-per-million
-                           // (positive or negative).
+  int32_t clockdrift_ppm;     // Average clock-drift in parts-per-million
+                              // (positive or negative).
   size_t added_zero_samples;  // Number of zero samples added in "off" mode.
   // Statistics for packet waiting times, i.e., the time between a packet
   // arrives until it is decoded.
@@ -104,11 +104,7 @@ class NetEq {
     absl::optional<AudioCodecPairId> codec_pair_id;
   };
 
-  enum ReturnCodes {
-    kOK = 0,
-    kFail = -1,
-    kNotImplemented = -2
-  };
+  enum ReturnCodes { kOK = 0, kFail = -1, kNotImplemented = -2 };
 
   // Creates a new NetEq object, with parameters set in |config|. The |config|
   // object will only have to be valid for the duration of the call to this

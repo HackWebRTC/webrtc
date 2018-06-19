@@ -18,10 +18,10 @@ namespace rtc {
 TEST(string_matchTest, Matches) {
   EXPECT_TRUE(string_match("A.B.C.D", "a.b.c.d"));
   EXPECT_TRUE(string_match("www.TEST.GOOGLE.COM", "www.*.com"));
-  EXPECT_TRUE(string_match("127.0.0.1",  "12*.0.*1"));
+  EXPECT_TRUE(string_match("127.0.0.1", "12*.0.*1"));
   EXPECT_TRUE(string_match("127.1.0.21", "12*.0.*1"));
-  EXPECT_FALSE(string_match("127.0.0.0",  "12*.0.*1"));
-  EXPECT_FALSE(string_match("127.0.0.0",  "12*.0.*1"));
+  EXPECT_FALSE(string_match("127.0.0.0", "12*.0.*1"));
+  EXPECT_FALSE(string_match("127.0.0.0", "12*.0.*1"));
   EXPECT_FALSE(string_match("127.1.1.21", "12*.0.*1"));
 }
 

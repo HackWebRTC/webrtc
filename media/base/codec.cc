@@ -26,7 +26,7 @@ FeedbackParams::~FeedbackParams() = default;
 
 bool FeedbackParam::operator==(const FeedbackParam& other) const {
   return _stricmp(other.id().c_str(), id().c_str()) == 0 &&
-      _stricmp(other.param().c_str(), param().c_str()) == 0;
+         _stricmp(other.param().c_str(), param().c_str()) == 0;
 }
 
 bool FeedbackParams::operator==(const FeedbackParams& other) const {
@@ -118,7 +118,7 @@ void Codec::SetParam(const std::string& name, const std::string& value) {
   params[name] = value;
 }
 
-void Codec::SetParam(const std::string& name, int value)  {
+void Codec::SetParam(const std::string& name, int value) {
   params[name] = rtc::ToString(value);
 }
 
@@ -154,8 +154,7 @@ AudioCodec::AudioCodec(int id,
                        size_t channels)
     : Codec(id, name, clockrate), bitrate(bitrate), channels(channels) {}
 
-AudioCodec::AudioCodec() : Codec(), bitrate(0), channels(0) {
-}
+AudioCodec::AudioCodec() : Codec(), bitrate(0), channels(0) {}
 
 AudioCodec::AudioCodec(const AudioCodec& c) = default;
 AudioCodec::AudioCodec(AudioCodec&& c) = default;
@@ -177,10 +176,10 @@ bool AudioCodec::Matches(const AudioCodec& codec) const {
   // Preference is ignored.
   // TODO(juberti): Treat a zero clockrate as 8000Hz, the RTP default clockrate.
   return Codec::Matches(codec) &&
-      ((codec.clockrate == 0 /*&& clockrate == 8000*/) ||
+         ((codec.clockrate == 0 /*&& clockrate == 8000*/) ||
           clockrate == codec.clockrate) &&
-      (codec.bitrate == 0 || bitrate <= 0 || bitrate == codec.bitrate) &&
-      ((codec.channels < 2 && channels < 2) || channels == codec.channels);
+         (codec.bitrate == 0 || bitrate <= 0 || bitrate == codec.bitrate) &&
+         ((codec.channels < 2 && channels < 2) || channels == codec.channels);
 }
 
 std::string AudioCodec::ToString() const {

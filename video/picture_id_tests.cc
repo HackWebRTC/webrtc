@@ -259,8 +259,9 @@ class VideoStreamFactory
 
     // Use the same total bitrates when sending a single stream to avoid
     // lowering the bitrate estimate and requiring a subsequent rampup.
-    const int encoder_stream_bps = kEncoderBitrateBps / rtc::checked_cast<int>(
-        encoder_config.number_of_streams);
+    const int encoder_stream_bps =
+        kEncoderBitrateBps /
+        rtc::checked_cast<int>(encoder_config.number_of_streams);
 
     for (size_t i = 0; i < encoder_config.number_of_streams; ++i) {
       streams[i].min_bitrate_bps = encoder_stream_bps;

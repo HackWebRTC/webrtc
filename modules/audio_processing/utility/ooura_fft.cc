@@ -313,7 +313,6 @@ static void rftbsub_128_C(float* a) {
 }
 #endif
 
-
 }  // namespace
 
 OouraFft::OouraFft() {

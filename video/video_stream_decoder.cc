@@ -40,8 +40,7 @@ VideoStreamDecoder::VideoStreamDecoder(
 
   static const int kMaxPacketAgeToNack = 450;
   static const int kMaxNackListSize = 250;
-  video_receiver_->SetNackSettings(kMaxNackListSize,
-                                   kMaxPacketAgeToNack, 0);
+  video_receiver_->SetNackSettings(kMaxNackListSize, kMaxPacketAgeToNack, 0);
   video_receiver_->RegisterReceiveCallback(this);
   video_receiver_->RegisterFrameTypeCallback(vcm_frame_type_callback);
   video_receiver_->RegisterReceiveStatisticsCallback(this);
@@ -84,7 +83,7 @@ int32_t VideoStreamDecoder::FrameToRender(VideoFrame& video_frame,
 }
 
 int32_t VideoStreamDecoder::ReceivedDecodedReferenceFrame(
-  const uint64_t picture_id) {
+    const uint64_t picture_id) {
   RTC_NOTREACHED();
   return 0;
 }

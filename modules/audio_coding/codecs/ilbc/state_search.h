@@ -26,13 +26,13 @@
  *---------------------------------------------------------------*/
 
 void WebRtcIlbcfix_StateSearch(
-    IlbcEncoder *iLBCenc_inst,
+    IlbcEncoder* iLBCenc_inst,
     /* (i) Encoder instance */
-    iLBC_bits *iLBC_encbits,/* (i/o) Encoded bits (output idxForMax
-                               and idxVec, input state_first) */
-    int16_t *residual,   /* (i) target residual vector */
-    int16_t *syntDenum,  /* (i) lpc synthesis filter */
-    int16_t *weightDenum  /* (i) weighting filter denuminator */
-                               );
+    iLBC_bits* iLBC_encbits, /* (i/o) Encoded bits (output idxForMax
+                                and idxVec, input state_first) */
+    int16_t* residual,       /* (i) target residual vector */
+    int16_t* syntDenum,      /* (i) lpc synthesis filter */
+    int16_t* weightDenum     /* (i) weighting filter denuminator */
+    );
 
 #endif

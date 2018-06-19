@@ -30,8 +30,7 @@ RtpPacketizerGeneric::RtpPacketizerGeneric(FrameType frame_type,
       num_packets_left_(0),
       num_larger_packets_(0) {}
 
-RtpPacketizerGeneric::~RtpPacketizerGeneric() {
-}
+RtpPacketizerGeneric::~RtpPacketizerGeneric() {}
 
 size_t RtpPacketizerGeneric::SetPayloadData(
     const uint8_t* payload_data,

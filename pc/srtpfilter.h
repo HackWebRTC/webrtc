@@ -38,10 +38,7 @@ namespace cricket {
 // TODO(zhihuang): Find a better name for this class, like "SdesNegotiator".
 class SrtpFilter {
  public:
-  enum Mode {
-    PROTECT,
-    UNPROTECT
-  };
+  enum Mode { PROTECT, UNPROTECT };
   enum Error {
     ERROR_NONE,
     ERROR_FAIL,
@@ -112,13 +109,13 @@ class SrtpFilter {
                              size_t len);
 
   enum State {
-    ST_INIT,           // SRTP filter unused.
-    ST_SENTOFFER,      // Offer with SRTP parameters sent.
-    ST_RECEIVEDOFFER,  // Offer with SRTP parameters received.
+    ST_INIT,                    // SRTP filter unused.
+    ST_SENTOFFER,               // Offer with SRTP parameters sent.
+    ST_RECEIVEDOFFER,           // Offer with SRTP parameters received.
     ST_SENTPRANSWER_NO_CRYPTO,  // Sent provisional answer without crypto.
     // Received provisional answer without crypto.
     ST_RECEIVEDPRANSWER_NO_CRYPTO,
-    ST_ACTIVE,         // Offer and answer set.
+    ST_ACTIVE,  // Offer and answer set.
     // SRTP filter is active but new parameters are offered.
     // When the answer is set, the state transitions to ST_ACTIVE or ST_INIT.
     ST_SENTUPDATEDOFFER,

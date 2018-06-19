@@ -166,4 +166,3 @@ class DesktopRegion {
 }  // namespace webrtc
 
 #endif  // MODULES_DESKTOP_CAPTURE_DESKTOP_REGION_H_
-

@@ -38,7 +38,7 @@ int WebRtcIsacfix_DecodeImpl(int16_t* signal_out16,
 
 void WebRtcIsacfix_DecodePlcImpl(int16_t* decoded,
                                  IsacFixDecoderInstance* ISACdec_obj,
-                                 size_t* current_framesample );
+                                 size_t* current_framesample);
 
 int WebRtcIsacfix_EncodeImpl(int16_t* in,
                              IsacFixEncoderInstance* ISACenc_obj,
@@ -63,7 +63,6 @@ void WebRtcIsacfix_InitPitchFilter(PitchFiltstr* pitchfiltdata);
 void WebRtcIsacfix_InitPitchAnalysis(PitchAnalysisStruct* State);
 
 void WebRtcIsacfix_InitPlc(PLCstr* State);
-
 
 /* transform functions */
 

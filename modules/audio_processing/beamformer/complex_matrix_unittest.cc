@@ -61,10 +61,10 @@ TEST(ComplexMatrixTest, TestConjugateTranspose) {
       {complex<float>(3.3f, -3.3f), complex<float>(7.7f, -7.7f)},
       {complex<float>(4.4f, -4.4f), complex<float>(8.8f, -8.8f)}};
 
-  ComplexMatrix<float> initial_mat(
-      *kValuesInitial, kNumInitialRows, kNumInitialCols);
-  ComplexMatrix<float> expected_result(
-      *kValuesExpected, kNumResultRows, kNumResultCols);
+  ComplexMatrix<float> initial_mat(*kValuesInitial, kNumInitialRows,
+                                   kNumInitialCols);
+  ComplexMatrix<float> expected_result(*kValuesExpected, kNumResultRows,
+                                       kNumResultCols);
   ComplexMatrix<float> actual_result(kNumResultRows, kNumResultCols);
 
   actual_result.ConjugateTranspose(initial_mat);

@@ -81,9 +81,7 @@ int32_t FakeH264Decoder::Decode(const EncodedImage& input,
     }
     ++value;
   }
-  return FakeDecoder::Decode(input,
-                             missing_frames,
-                             codec_specific_info,
+  return FakeDecoder::Decode(input, missing_frames, codec_specific_info,
                              render_time_ms);
 }
 

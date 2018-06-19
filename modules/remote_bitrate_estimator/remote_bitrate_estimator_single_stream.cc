@@ -76,8 +76,8 @@ void RemoteBitrateEstimatorSingleStream::IncomingPacket(
     uma_recorded_ = true;
   }
   uint32_t ssrc = header.ssrc;
-  uint32_t rtp_timestamp = header.timestamp +
-      header.extension.transmissionTimeOffset;
+  uint32_t rtp_timestamp =
+      header.timestamp + header.extension.transmissionTimeOffset;
   int64_t now_ms = clock_->TimeInMilliseconds();
   rtc::CritScope cs(&crit_sect_);
   SsrcOveruseEstimatorMap::iterator it = overuse_detectors_.find(ssrc);
@@ -152,7 +152,7 @@ int64_t RemoteBitrateEstimatorSingleStream::TimeUntilNextProcess() {
   rtc::CritScope cs_(&crit_sect_);
   RTC_DCHECK_GT(process_interval_ms_, 0);
   return last_process_time_ + process_interval_ms_ -
-      clock_->TimeInMilliseconds();
+         clock_->TimeInMilliseconds();
 }
 
 void RemoteBitrateEstimatorSingleStream::UpdateEstimate(int64_t now_ms) {
@@ -184,10 +184,9 @@ void RemoteBitrateEstimatorSingleStream::UpdateEstimate(int64_t now_ms) {
   }
   AimdRateControl* remote_rate = GetRemoteRate();
 
-  double mean_noise_var = sum_var_noise /
-      static_cast<double>(overuse_detectors_.size());
-  const RateControlInput input(bw_state,
-                               incoming_bitrate_.Rate(now_ms),
+  double mean_noise_var =
+      sum_var_noise / static_cast<double>(overuse_detectors_.size());
+  const RateControlInput input(bw_state, incoming_bitrate_.Rate(now_ms),
                                mean_noise_var);
   uint32_t target_bitrate = remote_rate->Update(&input, now_ms);
   if (remote_rate->ValidEstimate()) {
@@ -237,7 +236,7 @@ void RemoteBitrateEstimatorSingleStream::GetSsrcs(
   ssrcs->resize(overuse_detectors_.size());
   int i = 0;
   for (SsrcOveruseEstimatorMap::const_iterator it = overuse_detectors_.begin();
-      it != overuse_detectors_.end(); ++it, ++i) {
+       it != overuse_detectors_.end(); ++it, ++i) {
     (*ssrcs)[i] = it->first;
   }
 }

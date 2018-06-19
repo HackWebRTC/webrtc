@@ -73,8 +73,7 @@ bool PictureIdPresent(const RTPVideoHeaderVP9& hdr) {
 //                          +-+-+-+-+-+-+-+-+
 //
 size_t LayerInfoLength(const RTPVideoHeaderVP9& hdr) {
-  if (hdr.temporal_idx == kNoTemporalIdx &&
-      hdr.spatial_idx == kNoSpatialIdx) {
+  if (hdr.temporal_idx == kNoTemporalIdx && hdr.spatial_idx == kNoSpatialIdx) {
     return 0;
   }
   return hdr.flexible_mode ? 1 : 2;
@@ -127,12 +126,12 @@ size_t SsDataLength(const RTPVideoHeaderVP9& hdr) {
   RTC_DCHECK_GT(hdr.num_spatial_layers, 0U);
   RTC_DCHECK_LE(hdr.num_spatial_layers, kMaxVp9NumberOfSpatialLayers);
   RTC_DCHECK_LE(hdr.gof.num_frames_in_gof, kMaxVp9FramesInGof);
-  size_t length = 1;                           // V
+  size_t length = 1;  // V
   if (hdr.spatial_layer_resolution_present) {
-    length += 4 * hdr.num_spatial_layers;      // Y
+    length += 4 * hdr.num_spatial_layers;  // Y
   }
   if (hdr.gof.num_frames_in_gof > 0) {
-    ++length;                                  // G
+    ++length;  // G
   }
   // N_G
   length += hdr.gof.num_frames_in_gof;  // T, U, R
@@ -194,7 +193,8 @@ bool WriteLayerInfoCommon(const RTPVideoHeaderVP9& vp9,
   RETURN_FALSE_ON_ERROR(writer->WriteBits(TemporalIdxField(vp9, 0), 3));
   RETURN_FALSE_ON_ERROR(writer->WriteBits(vp9.temporal_up_switch ? 1 : 0, 1));
   RETURN_FALSE_ON_ERROR(writer->WriteBits(SpatialIdxField(vp9, 0), 3));
-  RETURN_FALSE_ON_ERROR(writer->WriteBits(vp9.inter_layer_predicted ? 1: 0, 1));
+  RETURN_FALSE_ON_ERROR(
+      writer->WriteBits(vp9.inter_layer_predicted ? 1 : 0, 1));
   return true;
 }
 
@@ -232,8 +232,8 @@ bool WriteLayerInfo(const RTPVideoHeaderVP9& vp9,
 //
 bool WriteRefIndices(const RTPVideoHeaderVP9& vp9,
                      rtc::BitBufferWriter* writer) {
-  if (!PictureIdPresent(vp9) ||
-      vp9.num_ref_pics == 0 || vp9.num_ref_pics > kMaxVp9RefPics) {
+  if (!PictureIdPresent(vp9) || vp9.num_ref_pics == 0 ||
+      vp9.num_ref_pics > kMaxVp9RefPics) {
     return false;
   }
   for (uint8_t i = 0; i < vp9.num_ref_pics; ++i) {
@@ -469,8 +469,7 @@ RtpPacketizerVp9::RtpPacketizerVp9(const RTPVideoHeaderVP9& hdr,
       payload_size_(0),
       last_packet_reduction_len_(last_packet_reduction_len) {}
 
-RtpPacketizerVp9::~RtpPacketizerVp9() {
-}
+RtpPacketizerVp9::~RtpPacketizerVp9() {}
 
 std::string RtpPacketizerVp9::ToString() {
   return "RtpPacketizerVp9";
@@ -634,8 +633,8 @@ bool RtpPacketizerVp9::WriteHeaderAndPayload(const PacketInfo& packet_info,
     return false;
 
   // Copy payload data.
-  memcpy(&buffer[header_length],
-         &payload_[packet_info.payload_start_pos], packet_info.size);
+  memcpy(&buffer[header_length], &payload_[packet_info.payload_start_pos],
+         packet_info.size);
 
   packet->SetPayloadSize(header_length + packet_info.size);
   return true;

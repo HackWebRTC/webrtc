@@ -90,9 +90,7 @@ class DesktopFrame {
   // Not all DesktopCapturer implementations set this field; it's set to
   // kUnknown by default.
   uint32_t capturer_id() const { return capturer_id_; }
-  void set_capturer_id(uint32_t capturer_id) {
-    capturer_id_ = capturer_id;
-  }
+  void set_capturer_id(uint32_t capturer_id) { capturer_id_ = capturer_id; }
 
   // Copies various information from |other|. Anything initialized in
   // constructor are not copied.
@@ -193,4 +191,3 @@ class SharedMemoryDesktopFrame : public DesktopFrame {
 }  // namespace webrtc
 
 #endif  // MODULES_DESKTOP_CAPTURE_DESKTOP_FRAME_H_
-

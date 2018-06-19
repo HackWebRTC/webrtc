@@ -68,9 +68,9 @@ void RemixAndResample(const int16_t* src_data,
   // how much to zero here; or 2) make resampler accept a hint that the input is
   // zeroed.
   const size_t src_length = samples_per_channel * audio_ptr_num_channels;
-  int out_length = resampler->Resample(audio_ptr, src_length,
-                                       dst_frame->mutable_data(),
-                                       AudioFrame::kMaxDataSizeSamples);
+  int out_length =
+      resampler->Resample(audio_ptr, src_length, dst_frame->mutable_data(),
+                          AudioFrame::kMaxDataSizeSamples);
   if (out_length == -1) {
     FATAL() << "Resample failed: audio_ptr = " << audio_ptr
             << ", src_length = " << src_length

@@ -156,8 +156,7 @@ void AcmReceiveTestOldApi::RegisterNetEqTestCodecs() {
       continue;
     }
 
-    if (RemapPltypeAndUseThisCodec(my_codec_param.plname,
-                                   my_codec_param.plfreq,
+    if (RemapPltypeAndUseThisCodec(my_codec_param.plname, my_codec_param.plfreq,
                                    my_codec_param.channels,
                                    &my_codec_param.pltype)) {
       ASSERT_EQ(true,
@@ -204,8 +203,7 @@ void AcmReceiveTestOldApi::Run() {
     EXPECT_EQ(0,
               acm_->IncomingPacket(
                   packet->payload(),
-                  static_cast<int32_t>(packet->payload_length_bytes()),
-                  header))
+                  static_cast<int32_t>(packet->payload_length_bytes()), header))
         << "Failure when inserting packet:" << std::endl
         << "  PT = " << static_cast<int>(header.header.payloadType) << std::endl
         << "  TS = " << header.header.timestamp << std::endl

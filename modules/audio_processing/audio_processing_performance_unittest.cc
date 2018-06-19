@@ -160,13 +160,9 @@ struct SimulationConfig {
 // Handler for the frame counters.
 class FrameCounters {
  public:
-  void IncreaseRenderCounter() {
-    rtc::AtomicOps::Increment(&render_count_);
-  }
+  void IncreaseRenderCounter() { rtc::AtomicOps::Increment(&render_count_); }
 
-  void IncreaseCaptureCounter() {
-    rtc::AtomicOps::Increment(&capture_count_);
-  }
+  void IncreaseCaptureCounter() { rtc::AtomicOps::Increment(&capture_count_); }
 
   int CaptureMinusRenderCounters() const {
     // The return value will be approximate, but that's good enough since
@@ -196,9 +192,7 @@ class FrameCounters {
 // Class that represents a flag that can only be raised.
 class LockedFlag {
  public:
-  bool get_flag() const {
-    return rtc::AtomicOps::AcquireLoad(&flag_);
-  }
+  bool get_flag() const { return rtc::AtomicOps::AcquireLoad(&flag_); }
 
   void set_flag() {
     if (!get_flag())  // read-only operation to avoid affecting the cache-line.
@@ -248,9 +242,8 @@ class TimedThreadApiProcessor {
         "_" + std::to_string(simulation_config_->sample_rate_hz) + "Hz";
 
     webrtc::test::PrintResultMeanAndError(
-        "apm_timing", sample_rate_name, processor_name,
-        GetDurationAverage(), GetDurationStandardDeviation(),
-        "us", false);
+        "apm_timing", sample_rate_name, processor_name, GetDurationAverage(),
+        GetDurationStandardDeviation(), "us", false);
 
     if (kPrintAllDurations) {
       webrtc::test::PrintResultList("apm_call_durations", sample_rate_name,

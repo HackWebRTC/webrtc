@@ -58,7 +58,8 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
     const size_t num_fec_packets = generator.NumAvailableFecPackets();
     if (num_fec_packets > 0) {
       std::vector<std::unique_ptr<RedPacket>> fec_packets =
-          generator.GetUlpfecPacketsAsRed(kRedPayloadType, kFecPayloadType, 100);
+          generator.GetUlpfecPacketsAsRed(kRedPayloadType, kFecPayloadType,
+                                          100);
       RTC_CHECK_EQ(num_fec_packets, fec_packets.size());
     }
   }

@@ -11,7 +11,7 @@
 #include "modules/rtp_rtcp/source/rtp_receiver_audio.h"
 
 #include <assert.h>  // assert
-#include <math.h>   // pow()
+#include <math.h>    // pow()
 #include <string.h>  // memcpy()
 
 #include "common_types.h"  // NOLINT(build/include)
@@ -53,8 +53,7 @@ bool RTPReceiverAudio::TelephoneEventForwardToDecoder() const {
   return telephone_event_forward_to_decoder_;
 }
 
-bool RTPReceiverAudio::TelephoneEventPayloadType(
-    int8_t payload_type) const {
+bool RTPReceiverAudio::TelephoneEventPayloadType(int8_t payload_type) const {
   rtc::CritScope lock(&crit_sect_);
   return telephone_event_payload_type_ == payload_type;
 }
@@ -139,8 +138,7 @@ int32_t RTPReceiverAudio::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
   num_energy_ = rtp_header->type.Audio.numEnergy;
   if (rtp_header->type.Audio.numEnergy > 0 &&
       rtp_header->type.Audio.numEnergy <= kRtpCsrcSize) {
-    memcpy(current_remote_energy_,
-           rtp_header->type.Audio.arrOfEnergy,
+    memcpy(current_remote_energy_, rtp_header->type.Audio.arrOfEnergy,
            rtp_header->type.Audio.numEnergy);
   }
 
@@ -154,7 +152,6 @@ int32_t RTPReceiverAudio::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
 
 RTPAliveType RTPReceiverAudio::ProcessDeadOrAlive(
     uint16_t last_payload_length) const {
-
   // Our CNG is 9 bytes; if it's a likely CNG the receiver needs to check
   // kRtpNoRtp against NetEq speech_type kOutputPLCtoCNG.
   if (last_payload_length < 10) {  // our CNG is 9 bytes
@@ -264,8 +261,7 @@ int32_t RTPReceiverAudio::ParseAudioCodecSpecific(
         // don't forward event to decoder
         return 0;
       }
-      std::set<uint8_t>::iterator first =
-          telephone_event_reported_.begin();
+      std::set<uint8_t>::iterator first = telephone_event_reported_.begin();
       if (first != telephone_event_reported_.end() && *first > 15) {
         // don't forward non DTMF events
         return 0;

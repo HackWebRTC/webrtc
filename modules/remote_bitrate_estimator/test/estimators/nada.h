@@ -7,7 +7,7 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  *
-*/
+ */
 
 //  Implementation of Network-Assisted Dynamic Adaptation's (NADA's) proposal
 //  Version according to Draft Document (mentioned in references)

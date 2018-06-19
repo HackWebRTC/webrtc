@@ -32,10 +32,10 @@ static const int kTimeout = 5000;
 static rtc::AsyncSocket* CreateSocket(const rtc::SSLMode& ssl_mode) {
   rtc::SocketAddress address(rtc::IPAddress(INADDR_ANY), 0);
 
-  rtc::AsyncSocket* socket = rtc::Thread::Current()->
-      socketserver()->CreateAsyncSocket(
-      address.family(), (ssl_mode == rtc::SSL_MODE_DTLS) ?
-      SOCK_DGRAM : SOCK_STREAM);
+  rtc::AsyncSocket* socket =
+      rtc::Thread::Current()->socketserver()->CreateAsyncSocket(
+          address.family(),
+          (ssl_mode == rtc::SSL_MODE_DTLS) ? SOCK_DGRAM : SOCK_STREAM);
   socket->Bind(address);
 
   return socket;
@@ -69,10 +69,10 @@ class SSLAdapterTestDummyClient : public sigslot::has_slots<> {
     // NEVER USE THIS IN PRODUCTION CODE!
     ssl_adapter_->SetIgnoreBadCert(true);
 
-    ssl_adapter_->SignalReadEvent.connect(this,
-        &SSLAdapterTestDummyClient::OnSSLAdapterReadEvent);
-    ssl_adapter_->SignalCloseEvent.connect(this,
-        &SSLAdapterTestDummyClient::OnSSLAdapterCloseEvent);
+    ssl_adapter_->SignalReadEvent.connect(
+        this, &SSLAdapterTestDummyClient::OnSSLAdapterReadEvent);
+    ssl_adapter_->SignalCloseEvent.connect(
+        this, &SSLAdapterTestDummyClient::OnSSLAdapterCloseEvent);
   }
 
   void SetIgnoreBadCert(bool ignore_bad_cert) {
@@ -99,9 +99,7 @@ class SSLAdapterTestDummyClient : public sigslot::has_slots<> {
     return ssl_adapter_->GetState();
   }
 
-  const std::string& GetReceivedData() const {
-    return data_;
-  }
+  const std::string& GetReceivedData() const { return data_; }
 
   int Connect(const std::string& hostname, const rtc::SocketAddress& address) {
     RTC_LOG(LS_INFO) << "Initiating connection with " << address.ToString();
@@ -120,9 +118,7 @@ class SSLAdapterTestDummyClient : public sigslot::has_slots<> {
     return rv;
   }
 
-  int Close() {
-    return ssl_adapter_->Close();
-  }
+  int Close() { return ssl_adapter_->Close(); }
 
   int Send(const std::string& message) {
     RTC_LOG(LS_INFO) << "Client sending '" << message << "'";
@@ -172,8 +168,8 @@ class SSLAdapterTestDummyServer : public sigslot::has_slots<> {
     server_socket_.reset(CreateSocket(ssl_mode_));
 
     if (ssl_mode_ == rtc::SSL_MODE_TLS) {
-      server_socket_->SignalReadEvent.connect(this,
-          &SSLAdapterTestDummyServer::OnServerSocketReadEvent);
+      server_socket_->SignalReadEvent.connect(
+          this, &SSLAdapterTestDummyServer::OnServerSocketReadEvent);
 
       server_socket_->Listen(1);
     }
@@ -193,9 +189,7 @@ class SSLAdapterTestDummyServer : public sigslot::has_slots<> {
     return "example.com";
   }
 
-  const std::string& GetReceivedData() const {
-    return data_;
-  }
+  const std::string& GetReceivedData() const { return data_; }
 
   int Send(const std::string& message) {
     if (ssl_stream_adapter_ == nullptr ||
@@ -209,8 +203,8 @@ class SSLAdapterTestDummyServer : public sigslot::has_slots<> {
     size_t written;
     int error;
 
-    rtc::StreamResult r = ssl_stream_adapter_->Write(message.data(),
-        message.length(), &written, &error);
+    rtc::StreamResult r = ssl_stream_adapter_->Write(
+        message.data(), message.length(), &written, &error);
     if (r == rtc::SR_SUCCESS) {
       return written;
     } else {
@@ -280,12 +274,12 @@ class SSLAdapterTestDummyServer : public sigslot::has_slots<> {
     unsigned char digest[20];
     size_t digest_len = sizeof(digest);
     ssl_stream_adapter_->SetPeerCertificateDigest(rtc::DIGEST_SHA_1, digest,
-        digest_len);
+                                                  digest_len);
 
     ssl_stream_adapter_->StartSSL();
 
-    ssl_stream_adapter_->SignalEvent.connect(this,
-        &SSLAdapterTestDummyServer::OnSSLStreamAdapterEvent);
+    ssl_stream_adapter_->SignalEvent.connect(
+        this, &SSLAdapterTestDummyServer::OnSSLStreamAdapterEvent);
   }
 
   const rtc::SSLMode ssl_mode_;
@@ -298,8 +292,7 @@ class SSLAdapterTestDummyServer : public sigslot::has_slots<> {
   std::string data_;
 };
 
-class SSLAdapterTestBase : public testing::Test,
-                           public sigslot::has_slots<> {
+class SSLAdapterTestBase : public testing::Test, public sigslot::has_slots<> {
  public:
   explicit SSLAdapterTestBase(const rtc::SSLMode& ssl_mode,
                               const rtc::KeyParams& key_params)
@@ -310,9 +303,7 @@ class SSLAdapterTestBase : public testing::Test,
         client_(new SSLAdapterTestDummyClient(ssl_mode_)),
         handshake_wait_(kTimeout) {}
 
-  void SetHandshakeWait(int wait) {
-    handshake_wait_ = wait;
-  }
+  void SetHandshakeWait(int wait) { handshake_wait_ = wait; }
 
   void SetIgnoreBadCert(bool ignore_bad_cert) {
     client_->SetIgnoreBadCert(ignore_bad_cert);
@@ -361,7 +352,7 @@ class SSLAdapterTestBase : public testing::Test,
       // If expecting success, the client should end up in the CS_CONNECTED
       // state after handshake.
       EXPECT_EQ_WAIT(rtc::AsyncSocket::CS_CONNECTED, client_->GetState(),
-          handshake_wait_);
+                     handshake_wait_);
 
       RTC_LOG(LS_INFO) << GetSSLProtocolName(ssl_mode_)
                        << " handshake complete.";
@@ -369,7 +360,7 @@ class SSLAdapterTestBase : public testing::Test,
     } else {
       // On handshake failure the client should end up in the CS_CLOSED state.
       EXPECT_EQ_WAIT(rtc::AsyncSocket::CS_CLOSED, client_->GetState(),
-          handshake_wait_);
+                     handshake_wait_);
 
       RTC_LOG(LS_INFO) << GetSSLProtocolName(ssl_mode_) << " handshake failed.";
     }

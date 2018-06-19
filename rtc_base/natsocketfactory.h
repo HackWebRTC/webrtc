@@ -11,10 +11,10 @@
 #ifndef RTC_BASE_NATSOCKETFACTORY_H_
 #define RTC_BASE_NATSOCKETFACTORY_H_
 
-#include <string>
 #include <map>
 #include <memory>
 #include <set>
+#include <string>
 
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/natserver.h"
@@ -30,8 +30,10 @@ const size_t kNATEncodedIPv6AddressSize = 20U;
 class NATInternalSocketFactory {
  public:
   virtual ~NATInternalSocketFactory() {}
-  virtual AsyncSocket* CreateInternalSocket(int family, int type,
-      const SocketAddress& local_addr, SocketAddress* nat_addr) = 0;
+  virtual AsyncSocket* CreateInternalSocket(int family,
+                                            int type,
+                                            const SocketAddress& local_addr,
+                                            SocketAddress* nat_addr) = 0;
 };
 
 // Creates sockets that will send all traffic through a NAT, using an existing
@@ -39,7 +41,8 @@ class NATInternalSocketFactory {
 // from a socket factory, given to the constructor.
 class NATSocketFactory : public SocketFactory, public NATInternalSocketFactory {
  public:
-  NATSocketFactory(SocketFactory* factory, const SocketAddress& nat_udp_addr,
+  NATSocketFactory(SocketFactory* factory,
+                   const SocketAddress& nat_udp_addr,
                    const SocketAddress& nat_tcp_addr);
 
   // SocketFactory implementation
@@ -90,8 +93,10 @@ class NATSocketServer : public SocketServer, public NATInternalSocketFactory {
   // a specific NAT
   class Translator {
    public:
-    Translator(NATSocketServer* server, NATType type,
-               const SocketAddress& int_addr, SocketFactory* ext_factory,
+    Translator(NATSocketServer* server,
+               NATType type,
+               const SocketAddress& int_addr,
+               SocketFactory* ext_factory,
                const SocketAddress& ext_addr);
     ~Translator();
 
@@ -105,7 +110,8 @@ class NATSocketServer : public SocketServer, public NATInternalSocketFactory {
 
     Translator* GetTranslator(const SocketAddress& ext_ip);
     Translator* AddTranslator(const SocketAddress& ext_ip,
-                              const SocketAddress& int_ip, NATType type);
+                              const SocketAddress& int_ip,
+                              NATType type);
     void RemoveTranslator(const SocketAddress& ext_ip);
 
     bool AddClient(const SocketAddress& int_ip);
@@ -129,7 +135,8 @@ class NATSocketServer : public SocketServer, public NATInternalSocketFactory {
 
   Translator* GetTranslator(const SocketAddress& ext_ip);
   Translator* AddTranslator(const SocketAddress& ext_ip,
-                            const SocketAddress& int_ip, NATType type);
+                            const SocketAddress& int_ip,
+                            NATType type);
   void RemoveTranslator(const SocketAddress& ext_ip);
 
   // SocketServer implementation
@@ -154,9 +161,11 @@ class NATSocketServer : public SocketServer, public NATInternalSocketFactory {
 };
 
 // Free-standing NAT helper functions.
-size_t PackAddressForNAT(char* buf, size_t buf_size,
+size_t PackAddressForNAT(char* buf,
+                         size_t buf_size,
                          const SocketAddress& remote_addr);
-size_t UnpackAddressFromNAT(const char* buf, size_t buf_size,
+size_t UnpackAddressFromNAT(const char* buf,
+                            size_t buf_size,
                             SocketAddress* remote_addr);
 }  // namespace rtc
 

@@ -65,14 +65,13 @@ bool ScreenCapturerWinDirectx::GetScreenListFromDeviceNames(
   }
 
   for (const auto& device_name : device_names) {
-    const auto it = std::find(
-        gdi_names.begin(), gdi_names.end(), device_name);
+    const auto it = std::find(gdi_names.begin(), gdi_names.end(), device_name);
     if (it == gdi_names.end()) {
       // devices_names[i] has not been found in gdi_names, so use max_screen_id.
       max_screen_id++;
-      screens->push_back({ max_screen_id });
+      screens->push_back({max_screen_id});
     } else {
-      screens->push_back({ gdi_screens[it - gdi_names.begin()] });
+      screens->push_back({gdi_screens[it - gdi_names.begin()]});
     }
   }
 
@@ -132,8 +131,8 @@ void ScreenCapturerWinDirectx::CaptureFrame() {
   if (current_screen_id_ == kFullDesktopScreenId) {
     result = controller_->Duplicate(frames_.current_frame());
   } else {
-    result = controller_->DuplicateMonitor(
-        frames_.current_frame(), current_screen_id_);
+    result = controller_->DuplicateMonitor(frames_.current_frame(),
+                                           current_screen_id_);
   }
 
   using DuplicateResult = DxgiDuplicatorController::Result;
@@ -170,9 +169,8 @@ void ScreenCapturerWinDirectx::CaptureFrame() {
     case DuplicateResult::SUCCEEDED: {
       std::unique_ptr<DesktopFrame> frame =
           frames_.current_frame()->frame()->Share();
-      frame->set_capture_time_ms(
-          (rtc::TimeNanos() - capture_start_time_nanos) /
-          rtc::kNumNanosecsPerMillisec);
+      frame->set_capture_time_ms((rtc::TimeNanos() - capture_start_time_nanos) /
+                                 rtc::kNumNanosecsPerMillisec);
       frame->set_capturer_id(DesktopCapturerId::kScreenCapturerWinDirectx);
       callback_->OnCaptureResult(Result::SUCCESS, std::move(frame));
       break;

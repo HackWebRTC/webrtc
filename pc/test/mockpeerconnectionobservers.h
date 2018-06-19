@@ -303,9 +303,7 @@ class MockDataChannelObserver : public webrtc::DataChannelObserver {
     channel_->RegisterObserver(this);
     state_ = channel_->state();
   }
-  virtual ~MockDataChannelObserver() {
-    channel_->UnregisterObserver();
-  }
+  virtual ~MockDataChannelObserver() { channel_->UnregisterObserver(); }
 
   void OnBufferedAmountChange(uint64_t previous_amount) override {}
 
@@ -342,25 +340,25 @@ class MockStatsObserver : public webrtc::StatsObserver {
       if (r->type() == StatsReport::kStatsReportTypeSsrc) {
         stats_.timestamp = r->timestamp();
         GetIntValue(r, StatsReport::kStatsValueNameAudioOutputLevel,
-            &stats_.audio_output_level);
+                    &stats_.audio_output_level);
         GetIntValue(r, StatsReport::kStatsValueNameAudioInputLevel,
-            &stats_.audio_input_level);
+                    &stats_.audio_input_level);
         GetIntValue(r, StatsReport::kStatsValueNameBytesReceived,
-            &stats_.bytes_received);
+                    &stats_.bytes_received);
         GetIntValue(r, StatsReport::kStatsValueNameBytesSent,
-            &stats_.bytes_sent);
+                    &stats_.bytes_sent);
         GetInt64Value(r, StatsReport::kStatsValueNameCaptureStartNtpTimeMs,
-            &stats_.capture_start_ntp_time);
+                      &stats_.capture_start_ntp_time);
       } else if (r->type() == StatsReport::kStatsReportTypeBwe) {
         stats_.timestamp = r->timestamp();
         GetIntValue(r, StatsReport::kStatsValueNameAvailableReceiveBandwidth,
-            &stats_.available_receive_bandwidth);
+                    &stats_.available_receive_bandwidth);
       } else if (r->type() == StatsReport::kStatsReportTypeComponent) {
         stats_.timestamp = r->timestamp();
         GetStringValue(r, StatsReport::kStatsValueNameDtlsCipher,
-            &stats_.dtls_cipher);
+                       &stats_.dtls_cipher);
         GetStringValue(r, StatsReport::kStatsValueNameSrtpCipher,
-            &stats_.srtp_cipher);
+                       &stats_.srtp_cipher);
       }
     }
   }
@@ -422,8 +420,8 @@ class MockStatsObserver : public webrtc::StatsObserver {
   }
 
   bool GetInt64Value(const StatsReport* report,
-                   StatsReport::StatsValueName name,
-                   int64_t* value) {
+                     StatsReport::StatsValueName name,
+                     int64_t* value) {
     const StatsReport::Value* v = report->FindValue(name);
     if (v) {
       // TODO(tommi): We should really just be using an int here :-/

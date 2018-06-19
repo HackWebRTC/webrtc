@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "test/gtest.h"
 #include "video/report_block_stats.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 
@@ -54,8 +54,7 @@ class ReportBlockStatsTest : public ::testing::Test {
     ssrc12block2_.push_back(block2_2_);
   }
 
-  RtcpStatistics RtcpReportBlockToRtcpStatistics(
-      const RTCPReportBlock& stats) {
+  RtcpStatistics RtcpReportBlockToRtcpStatistics(const RTCPReportBlock& stats) {
     RtcpStatistics block;
     block.packets_lost = stats.packets_lost;
     block.fraction_lost = stats.fraction_lost;
@@ -143,4 +142,3 @@ TEST_F(ReportBlockStatsTest, StoreAndGetFractionLost) {
 }
 
 }  // namespace webrtc
-

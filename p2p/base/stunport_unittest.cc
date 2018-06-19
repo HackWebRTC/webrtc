@@ -104,21 +104,21 @@ class StunPortTestBase : public testing::Test, public sigslot::has_slots<> {
     stun_port_->SignalPortError.connect(this, &StunPortTestBase::OnPortError);
   }
 
-  void PrepareAddress() {
-    stun_port_->PrepareAddress();
-  }
+  void PrepareAddress() { stun_port_->PrepareAddress(); }
 
-  void OnReadPacket(rtc::AsyncPacketSocket* socket, const char* data,
-                    size_t size, const rtc::SocketAddress& remote_addr,
+  void OnReadPacket(rtc::AsyncPacketSocket* socket,
+                    const char* data,
+                    size_t size,
+                    const rtc::SocketAddress& remote_addr,
                     const rtc::PacketTime& packet_time) {
-    stun_port_->HandleIncomingPacket(
-        socket, data, size, remote_addr, rtc::PacketTime());
+    stun_port_->HandleIncomingPacket(socket, data, size, remote_addr,
+                                     rtc::PacketTime());
   }
 
   void SendData(const char* data, size_t len) {
-    stun_port_->HandleIncomingPacket(
-        socket_.get(), data, len, rtc::SocketAddress("22.22.22.22", 0),
-        rtc::PacketTime());
+    stun_port_->HandleIncomingPacket(socket_.get(), data, len,
+                                     rtc::SocketAddress("22.22.22.22", 0),
+                                     rtc::PacketTime());
   }
 
  protected:
@@ -136,20 +136,14 @@ class StunPortTestBase : public testing::Test, public sigslot::has_slots<> {
     done_ = true;
     error_ = true;
   }
-  void SetKeepaliveDelay(int delay) {
-    stun_keepalive_delay_ = delay;
-  }
+  void SetKeepaliveDelay(int delay) { stun_keepalive_delay_ = delay; }
 
   void SetKeepaliveLifetime(int lifetime) {
     stun_keepalive_lifetime_ = lifetime;
   }
 
-  cricket::TestStunServer* stun_server_1() {
-    return stun_server_1_.get();
-  }
-  cricket::TestStunServer* stun_server_2() {
-    return stun_server_2_.get();
-  }
+  cricket::TestStunServer* stun_server_1() { return stun_server_1_.get(); }
+  cricket::TestStunServer* stun_server_2() { return stun_server_2_.get(); }
 
  private:
   std::unique_ptr<rtc::VirtualSocketServer> ss_;

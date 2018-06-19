@@ -48,4 +48,3 @@ class DesktopFrameWin : public DesktopFrame {
 }  // namespace webrtc
 
 #endif  // MODULES_DESKTOP_CAPTURE_DESKTOP_FRAME_WIN_H_
-

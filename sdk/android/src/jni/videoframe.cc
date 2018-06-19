@@ -142,30 +142,60 @@ void Matrix::Rotate(VideoRotation rotation) {
     case kVideoRotation_0:
       break;
     case kVideoRotation_90: {
-      const float ROTATE_90[16] =
-          { elem_[4], elem_[5], elem_[6], elem_[7],
-            -elem_[0], -elem_[1], -elem_[2], -elem_[3],
-            elem_[8], elem_[9], elem_[10], elem_[11],
-            elem_[0] + elem_[12], elem_[1] + elem_[13],
-            elem_[2] + elem_[14], elem_[3] + elem_[15]};
+      const float ROTATE_90[16] = {elem_[4],
+                                   elem_[5],
+                                   elem_[6],
+                                   elem_[7],
+                                   -elem_[0],
+                                   -elem_[1],
+                                   -elem_[2],
+                                   -elem_[3],
+                                   elem_[8],
+                                   elem_[9],
+                                   elem_[10],
+                                   elem_[11],
+                                   elem_[0] + elem_[12],
+                                   elem_[1] + elem_[13],
+                                   elem_[2] + elem_[14],
+                                   elem_[3] + elem_[15]};
       memcpy(elem_, ROTATE_90, sizeof(elem_));
     } break;
     case kVideoRotation_180: {
-      const float ROTATE_180[16] =
-          { -elem_[0], -elem_[1], -elem_[2], -elem_[3],
-            -elem_[4], -elem_[5], -elem_[6], -elem_[7],
-            elem_[8], elem_[9], elem_[10], elem_[11],
-            elem_[0] + elem_[4] + elem_[12], elem_[1] + elem_[5] + elem_[13],
-            elem_[2] + elem_[6] + elem_[14], elem_[3] + elem_[11]+ elem_[15]};
-        memcpy(elem_, ROTATE_180, sizeof(elem_));
+      const float ROTATE_180[16] = {-elem_[0],
+                                    -elem_[1],
+                                    -elem_[2],
+                                    -elem_[3],
+                                    -elem_[4],
+                                    -elem_[5],
+                                    -elem_[6],
+                                    -elem_[7],
+                                    elem_[8],
+                                    elem_[9],
+                                    elem_[10],
+                                    elem_[11],
+                                    elem_[0] + elem_[4] + elem_[12],
+                                    elem_[1] + elem_[5] + elem_[13],
+                                    elem_[2] + elem_[6] + elem_[14],
+                                    elem_[3] + elem_[11] + elem_[15]};
+      memcpy(elem_, ROTATE_180, sizeof(elem_));
     } break;
     case kVideoRotation_270: {
-      const float ROTATE_270[16] =
-          { -elem_[4], -elem_[5], -elem_[6], -elem_[7],
-            elem_[0], elem_[1], elem_[2], elem_[3],
-            elem_[8], elem_[9], elem_[10], elem_[11],
-            elem_[4] + elem_[12], elem_[5] + elem_[13],
-            elem_[6] + elem_[14], elem_[7] + elem_[15]};
+      const float ROTATE_270[16] = {-elem_[4],
+                                    -elem_[5],
+                                    -elem_[6],
+                                    -elem_[7],
+                                    elem_[0],
+                                    elem_[1],
+                                    elem_[2],
+                                    elem_[3],
+                                    elem_[8],
+                                    elem_[9],
+                                    elem_[10],
+                                    elem_[11],
+                                    elem_[4] + elem_[12],
+                                    elem_[5] + elem_[13],
+                                    elem_[6] + elem_[14],
+                                    elem_[7] + elem_[15]};
       memcpy(elem_, ROTATE_270, sizeof(elem_));
     } break;
   }
@@ -191,11 +221,8 @@ void Matrix::Crop(float xFraction,
                   float yFraction,
                   float xOffset,
                   float yOffset) {
-  const float crop_matrix[16] =
-      {xFraction, 0, 0, 0,
-       0, yFraction, 0, 0,
-       0, 0, 1, 0,
-       xOffset, yOffset, 0, 1};
+  const float crop_matrix[16] = {xFraction, 0, 0, 0, 0,       yFraction, 0, 0,
+                                 0,         0, 1, 0, xOffset, yOffset,   0, 1};
   const Matrix old = *this;
   Multiply(crop_matrix, old.elem_, this->elem_);
 }

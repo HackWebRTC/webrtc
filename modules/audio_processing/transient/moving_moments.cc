@@ -18,10 +18,7 @@
 namespace webrtc {
 
 MovingMoments::MovingMoments(size_t length)
-    : length_(length),
-      queue_(),
-      sum_(0.0),
-      sum_of_squares_(0.0) {
+    : length_(length), queue_(), sum_(0.0), sum_of_squares_(0.0) {
   RTC_DCHECK_GT(length, 0);
   for (size_t i = 0; i < length; ++i) {
     queue_.push(0.0);
@@ -30,8 +27,10 @@ MovingMoments::MovingMoments(size_t length)
 
 MovingMoments::~MovingMoments() {}
 
-void MovingMoments::CalculateMoments(const float* in, size_t in_length,
-                                     float* first, float* second) {
+void MovingMoments::CalculateMoments(const float* in,
+                                     size_t in_length,
+                                     float* first,
+                                     float* second) {
   RTC_DCHECK(in);
   RTC_DCHECK_GT(in_length, 0);
   RTC_DCHECK(first);

@@ -144,7 +144,6 @@ TEST(SuppressionGain, BasicGainComputation) {
   }
   std::for_each(g.begin(), g.end(),
                 [](float a) { EXPECT_NEAR(0.f, a, 0.001); });
-
 }
 
 }  // namespace aec3

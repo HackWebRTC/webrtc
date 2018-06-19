@@ -123,7 +123,8 @@ void FillEncoderConfiguration(VideoCodecType codec_type,
 }
 
 VideoReceiveStream::Decoder CreateMatchingDecoder(
-    int payload_type, const std::string& payload_name) {
+    int payload_type,
+    const std::string& payload_name) {
   VideoReceiveStream::Decoder decoder;
   decoder.payload_type = payload_type;
   decoder.payload_name = payload_name;

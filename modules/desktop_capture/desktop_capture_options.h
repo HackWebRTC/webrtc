@@ -108,9 +108,7 @@ class DesktopCaptureOptions {
   }
   // Allowing directx based capturer or not, this capturer works on windows 7
   // with platform update / windows 8 or upper.
-  bool allow_directx_capturer() const {
-    return allow_directx_capturer_;
-  }
+  bool allow_directx_capturer() const { return allow_directx_capturer_; }
   void set_allow_directx_capturer(bool enabled) {
     allow_directx_capturer_ = enabled;
   }

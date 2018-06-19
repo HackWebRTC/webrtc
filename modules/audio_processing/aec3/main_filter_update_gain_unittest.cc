@@ -241,34 +241,34 @@ TEST(MainFilterUpdateGain, GainCausesFilterToConverge) {
 // Verifies that the magnitude of the gain on average decreases for a
 // persistently exciting signal.
 TEST(MainFilterUpdateGain, DecreasingGain) {
-    std::vector<int> blocks_with_echo_path_changes;
-    std::vector<int> blocks_with_saturation;
+  std::vector<int> blocks_with_echo_path_changes;
+  std::vector<int> blocks_with_saturation;
 
-    std::array<float, kBlockSize> e;
-    std::array<float, kBlockSize> y;
-    FftData G_a;
-    FftData G_b;
-    FftData G_c;
-    std::array<float, kFftLengthBy2Plus1> G_a_power;
-    std::array<float, kFftLengthBy2Plus1> G_b_power;
-    std::array<float, kFftLengthBy2Plus1> G_c_power;
+  std::array<float, kBlockSize> e;
+  std::array<float, kBlockSize> y;
+  FftData G_a;
+  FftData G_b;
+  FftData G_c;
+  std::array<float, kFftLengthBy2Plus1> G_a_power;
+  std::array<float, kFftLengthBy2Plus1> G_b_power;
+  std::array<float, kFftLengthBy2Plus1> G_c_power;
 
-    RunFilterUpdateTest(100, 65, 12, blocks_with_echo_path_changes,
-                        blocks_with_saturation, false, &e, &y, &G_a);
-    RunFilterUpdateTest(300, 65, 12, blocks_with_echo_path_changes,
-                        blocks_with_saturation, false, &e, &y, &G_b);
-    RunFilterUpdateTest(600, 65, 12, blocks_with_echo_path_changes,
-                        blocks_with_saturation, false, &e, &y, &G_c);
+  RunFilterUpdateTest(100, 65, 12, blocks_with_echo_path_changes,
+                      blocks_with_saturation, false, &e, &y, &G_a);
+  RunFilterUpdateTest(300, 65, 12, blocks_with_echo_path_changes,
+                      blocks_with_saturation, false, &e, &y, &G_b);
+  RunFilterUpdateTest(600, 65, 12, blocks_with_echo_path_changes,
+                      blocks_with_saturation, false, &e, &y, &G_c);
 
-    G_a.Spectrum(Aec3Optimization::kNone, G_a_power);
-    G_b.Spectrum(Aec3Optimization::kNone, G_b_power);
-    G_c.Spectrum(Aec3Optimization::kNone, G_c_power);
+  G_a.Spectrum(Aec3Optimization::kNone, G_a_power);
+  G_b.Spectrum(Aec3Optimization::kNone, G_b_power);
+  G_c.Spectrum(Aec3Optimization::kNone, G_c_power);
 
-    EXPECT_GT(std::accumulate(G_a_power.begin(), G_a_power.end(), 0.),
-              std::accumulate(G_b_power.begin(), G_b_power.end(), 0.));
+  EXPECT_GT(std::accumulate(G_a_power.begin(), G_a_power.end(), 0.),
+            std::accumulate(G_b_power.begin(), G_b_power.end(), 0.));
 
-    EXPECT_GT(std::accumulate(G_b_power.begin(), G_b_power.end(), 0.),
-              std::accumulate(G_c_power.begin(), G_c_power.end(), 0.));
+  EXPECT_GT(std::accumulate(G_b_power.begin(), G_b_power.end(), 0.),
+            std::accumulate(G_c_power.begin(), G_c_power.end(), 0.));
 }
 
 // Verifies that the gain is zero when there is saturation and that the internal

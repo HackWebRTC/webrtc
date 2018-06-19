@@ -76,8 +76,7 @@ class VideoCodecInitializerTest : public ::testing::Test {
     codec_out_ = VideoCodec();
     bitrate_allocator_out_.reset();
     temporal_layers_.clear();
-    if (!VideoCodecInitializer::SetupCodec(config_, streams_,
-                                           &codec_out_,
+    if (!VideoCodecInitializer::SetupCodec(config_, streams_, &codec_out_,
                                            &bitrate_allocator_out_)) {
       return false;
     }

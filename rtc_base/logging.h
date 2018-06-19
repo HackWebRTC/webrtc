@@ -395,7 +395,9 @@ class LogMessage {
   // Android code should use the 'const char*' version since tags are static
   // and we want to avoid allocating a std::string copy per log line.
   RTC_DEPRECATED
-  LogMessage(const char* file, int line, LoggingSeverity sev,
+  LogMessage(const char* file,
+             int line,
+             LoggingSeverity sev,
              const std::string& tag);
 
   ~LogMessage();
@@ -467,7 +469,7 @@ class LogMessage {
   // Updates min_sev_ appropriately when debug sinks change.
   static void UpdateMinLogSeverity();
 
-  // These write out the actual log messages.
+// These write out the actual log messages.
 #if defined(WEBRTC_ANDROID)
   static void OutputToDebug(const std::string& msg,
                             LoggingSeverity severity,
@@ -544,17 +546,15 @@ class LogMessage {
 // The _F version prefixes the message with the current function name.
 #if (defined(__GNUC__) && !defined(NDEBUG)) || defined(WANT_PRETTY_LOG_F)
 #define RTC_LOG_F(sev) RTC_LOG(sev) << __PRETTY_FUNCTION__ << ": "
-#define RTC_LOG_T_F(sev) RTC_LOG(sev) << this << ": " \
-  << __PRETTY_FUNCTION__ << ": "
+#define RTC_LOG_T_F(sev) \
+  RTC_LOG(sev) << this << ": " << __PRETTY_FUNCTION__ << ": "
 #else
 #define RTC_LOG_F(sev) RTC_LOG(sev) << __FUNCTION__ << ": "
 #define RTC_LOG_T_F(sev) RTC_LOG(sev) << this << ": " << __FUNCTION__ << ": "
 #endif
 
-#define RTC_LOG_CHECK_LEVEL(sev) \
-  rtc::LogCheckLevel(rtc::sev)
-#define RTC_LOG_CHECK_LEVEL_V(sev) \
-  rtc::LogCheckLevel(sev)
+#define RTC_LOG_CHECK_LEVEL(sev) rtc::LogCheckLevel(rtc::sev)
+#define RTC_LOG_CHECK_LEVEL_V(sev) rtc::LogCheckLevel(sev)
 
 inline bool LogCheckLevel(LoggingSeverity sev) {
   return (LogMessage::GetMinLogSeverity() <= sev);
@@ -571,37 +571,32 @@ inline bool LogCheckLevel(LoggingSeverity sev) {
 
 #define RTC_LOG_T(sev) RTC_LOG(sev) << this << ": "
 
-#define RTC_LOG_ERRNO_EX(sev, err) \
-  RTC_LOG_E(sev, ERRNO, err)
-#define RTC_LOG_ERRNO(sev) \
-  RTC_LOG_ERRNO_EX(sev, errno)
+#define RTC_LOG_ERRNO_EX(sev, err) RTC_LOG_E(sev, ERRNO, err)
+#define RTC_LOG_ERRNO(sev) RTC_LOG_ERRNO_EX(sev, errno)
 
 #if defined(WEBRTC_WIN)
-#define RTC_LOG_GLE_EX(sev, err) \
-  RTC_LOG_E(sev, HRESULT, err)
+#define RTC_LOG_GLE_EX(sev, err) RTC_LOG_E(sev, HRESULT, err)
 #define RTC_LOG_GLE(sev) RTC_LOG_GLE_EX(sev, static_cast<int>(GetLastError()))
-#define RTC_LOG_ERR_EX(sev, err) \
-  RTC_LOG_GLE_EX(sev, err)
-#define RTC_LOG_ERR(sev) \
-  RTC_LOG_GLE(sev)
+#define RTC_LOG_ERR_EX(sev, err) RTC_LOG_GLE_EX(sev, err)
+#define RTC_LOG_ERR(sev) RTC_LOG_GLE(sev)
 #elif defined(__native_client__) && __native_client__
-#define RTC_LOG_ERR_EX(sev, err) \
-  RTC_LOG(sev)
-#define RTC_LOG_ERR(sev) \
-  RTC_LOG(sev)
+#define RTC_LOG_ERR_EX(sev, err) RTC_LOG(sev)
+#define RTC_LOG_ERR(sev) RTC_LOG(sev)
 #elif defined(WEBRTC_POSIX)
-#define RTC_LOG_ERR_EX(sev, err) \
-  RTC_LOG_ERRNO_EX(sev, err)
-#define RTC_LOG_ERR(sev) \
-  RTC_LOG_ERRNO(sev)
+#define RTC_LOG_ERR_EX(sev, err) RTC_LOG_ERRNO_EX(sev, err)
+#define RTC_LOG_ERR(sev) RTC_LOG_ERRNO(sev)
 #endif  // WEBRTC_WIN
 
 #ifdef WEBRTC_ANDROID
 
 namespace webrtc_logging_impl {
 // TODO(kwiberg): Replace these with absl::string_view.
-inline const char* AdaptString(const char* str) { return str; }
-inline const char* AdaptString(const std::string& str) { return str.c_str(); }
+inline const char* AdaptString(const char* str) {
+  return str;
+}
+inline const char* AdaptString(const std::string& str) {
+  return str.c_str();
+}
 }  // namespace webrtc_logging_impl
 
 #define RTC_LOG_TAG(sev, tag)                                                \

@@ -39,8 +39,8 @@ Operations DecisionLogicFax::GetDecisionSpecialized(
         decoder_database_->IsComfortNoise(next_packet->payload_type);
   }
   if (is_cng_packet) {
-    if (static_cast<int32_t>((generated_noise_samples + target_timestamp)
-        - available_timestamp) >= 0) {
+    if (static_cast<int32_t>((generated_noise_samples + target_timestamp) -
+                             available_timestamp) >= 0) {
       // Time to play this packet now.
       return kRfc3389Cng;
     } else {
@@ -72,8 +72,8 @@ Operations DecisionLogicFax::GetDecisionSpecialized(
   } else if (target_timestamp == available_timestamp) {
     return kNormal;
   } else {
-    if (static_cast<int32_t>((generated_noise_samples + target_timestamp)
-        - available_timestamp) >= 0) {
+    if (static_cast<int32_t>((generated_noise_samples + target_timestamp) -
+                             available_timestamp) >= 0) {
       return kNormal;
     } else {
       // If currently playing comfort noise, continue with that. Do not
@@ -99,6 +99,5 @@ Operations DecisionLogicFax::GetDecisionSpecialized(
     }
   }
 }
-
 
 }  // namespace webrtc

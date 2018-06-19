@@ -54,7 +54,8 @@ class Normal {
   // |output| defines the number of channels that will be used when
   // de-interleaving |input|. |last_mode| contains the mode used in the previous
   // GetAudio call (i.e., not the current one).
-  int Process(const int16_t* input, size_t length,
+  int Process(const int16_t* input,
+              size_t length,
               Modes last_mode,
               AudioMultiVector* output);
 

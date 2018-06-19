@@ -114,7 +114,7 @@ bool AimdRateControl::TimeToReduceFurther(int64_t time_now,
   if (ValidEstimate()) {
     // TODO(terelius/holmer): Investigate consequences of increasing
     // the threshold to 0.95 * LatestEstimate().
-    const uint32_t threshold = static_cast<uint32_t> (0.5 * LatestEstimate());
+    const uint32_t threshold = static_cast<uint32_t>(0.5 * LatestEstimate());
     return incoming_bitrate_bps < threshold;
   }
   return false;
@@ -206,8 +206,8 @@ uint32_t AimdRateControl::ChangeBitrate(uint32_t new_bitrate_bps,
   const float incoming_bitrate_kbps = incoming_bitrate_bps / 1000.0f;
   // Calculate the max bit rate std dev given the normalized
   // variance and the current incoming bit rate.
-  const float std_max_bit_rate = sqrt(var_max_bitrate_kbps_ *
-                                      avg_max_bitrate_kbps_);
+  const float std_max_bit_rate =
+      sqrt(var_max_bitrate_kbps_ * avg_max_bitrate_kbps_);
   switch (rate_control_state_) {
     case kRcHold:
       break;
@@ -295,15 +295,17 @@ uint32_t AimdRateControl::ClampBitrate(uint32_t new_bitrate_bps,
 }
 
 uint32_t AimdRateControl::MultiplicativeRateIncrease(
-    int64_t now_ms, int64_t last_ms, uint32_t current_bitrate_bps) const {
+    int64_t now_ms,
+    int64_t last_ms,
+    uint32_t current_bitrate_bps) const {
   double alpha = 1.08;
   if (last_ms > -1) {
     auto time_since_last_update_ms =
         rtc::SafeMin<int64_t>(now_ms - last_ms, 1000);
-    alpha = pow(alpha,  time_since_last_update_ms / 1000.0);
+    alpha = pow(alpha, time_since_last_update_ms / 1000.0);
   }
-  uint32_t multiplicative_increase_bps = std::max(
-      current_bitrate_bps * (alpha - 1.0), 1000.0);
+  uint32_t multiplicative_increase_bps =
+      std::max(current_bitrate_bps * (alpha - 1.0), 1000.0);
   return multiplicative_increase_bps;
 }
 
@@ -318,13 +320,14 @@ void AimdRateControl::UpdateMaxBitRateEstimate(float incoming_bitrate_kbps) {
   if (avg_max_bitrate_kbps_ == -1.0f) {
     avg_max_bitrate_kbps_ = incoming_bitrate_kbps;
   } else {
-    avg_max_bitrate_kbps_ = (1 - alpha) * avg_max_bitrate_kbps_ +
-        alpha * incoming_bitrate_kbps;
+    avg_max_bitrate_kbps_ =
+        (1 - alpha) * avg_max_bitrate_kbps_ + alpha * incoming_bitrate_kbps;
   }
   // Estimate the max bit rate variance and normalize the variance
   // with the average max bit rate.
   const float norm = std::max(avg_max_bitrate_kbps_, 1.0f);
-  var_max_bitrate_kbps_ = (1 - alpha) * var_max_bitrate_kbps_ +
+  var_max_bitrate_kbps_ =
+      (1 - alpha) * var_max_bitrate_kbps_ +
       alpha * (avg_max_bitrate_kbps_ - incoming_bitrate_kbps) *
           (avg_max_bitrate_kbps_ - incoming_bitrate_kbps) / norm;
   // 0.4 ~= 14 kbit/s at 500 kbit/s

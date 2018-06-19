@@ -42,7 +42,7 @@ class VideoDecoderFactory;
 class VideoEncoder;
 class VideoEncoderFactory;
 struct MediaConfig;
-}
+}  // namespace webrtc
 
 namespace rtc {
 class Thread;
@@ -68,8 +68,7 @@ class UnsignalledSsrcHandler {
 class DefaultUnsignalledSsrcHandler : public UnsignalledSsrcHandler {
  public:
   DefaultUnsignalledSsrcHandler();
-  Action OnUnsignalledSsrc(WebRtcVideoChannel* channel,
-                           uint32_t ssrc) override;
+  Action OnUnsignalledSsrc(WebRtcVideoChannel* channel, uint32_t ssrc) override;
 
   rtc::VideoSinkInterface<webrtc::VideoFrame>* GetDefaultSink() const;
   void SetDefaultSink(WebRtcVideoChannel* channel,

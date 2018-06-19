@@ -820,8 +820,7 @@ void RTCPReceiver::HandleTmmbr(const CommonHeader& rtcp_block,
 
     TmmbrInformation* tmmbr_info = FindOrCreateTmmbrInfo(tmmbr.sender_ssrc());
     auto* entry = &tmmbr_info->tmmbr[sender_ssrc];
-    entry->tmmbr_item = rtcp::TmmbItem(sender_ssrc,
-                                       request.bitrate_bps(),
+    entry->tmmbr_item = rtcp::TmmbItem(sender_ssrc, request.bitrate_bps(),
                                        request.packet_overhead());
     entry->last_updated_ms = clock_->TimeInMilliseconds();
 

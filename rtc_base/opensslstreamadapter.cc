@@ -37,7 +37,7 @@
 #include "rtc_base/timeutils.h"
 
 namespace {
-  bool g_use_time_callback_for_testing = false;
+bool g_use_time_callback_for_testing = false;
 }
 
 namespace rtc {
@@ -77,8 +77,10 @@ struct SslCipherMapEntry {
   const char* rfc_name;
 };
 
-#define DEFINE_CIPHER_ENTRY_SSL3(name)  {SSL3_CK_##name, "TLS_"#name}
-#define DEFINE_CIPHER_ENTRY_TLS1(name)  {TLS1_CK_##name, "TLS_"#name}
+#define DEFINE_CIPHER_ENTRY_SSL3(name) \
+  { SSL3_CK_##name, "TLS_" #name }
+#define DEFINE_CIPHER_ENTRY_TLS1(name) \
+  { TLS1_CK_##name, "TLS_" #name }
 
 // The "SSL_CIPHER_standard_name" function is only available in OpenSSL when
 // compiled with tracing, so we need to define the mapping manually here.
@@ -452,7 +454,7 @@ bool OpenSSLStreamAdapter::GetDtlsSrtpCryptoSuite(int* crypto_suite) {
   if (state_ != SSL_CONNECTED)
     return false;
 
-  const SRTP_PROTECTION_PROFILE *srtp_profile =
+  const SRTP_PROTECTION_PROFILE* srtp_profile =
       SSL_get_selected_srtp_profile(ssl_);
 
   if (!srtp_profile)
@@ -497,8 +499,7 @@ void OpenSSLStreamAdapter::SetMaxProtocolVersion(SSLProtocolVersion version) {
   ssl_max_version_ = version;
 }
 
-void OpenSSLStreamAdapter::SetInitialRetransmissionTimeout(
-    int timeout_ms) {
+void OpenSSLStreamAdapter::SetInitialRetransmissionTimeout(int timeout_ms) {
   RTC_DCHECK(ssl_ctx_ == nullptr);
   dtls_handshake_timeout_ms_ = timeout_ms;
 }
@@ -507,31 +508,33 @@ void OpenSSLStreamAdapter::SetInitialRetransmissionTimeout(
 // StreamInterface Implementation
 //
 
-StreamResult OpenSSLStreamAdapter::Write(const void* data, size_t data_len,
-                                         size_t* written, int* error) {
+StreamResult OpenSSLStreamAdapter::Write(const void* data,
+                                         size_t data_len,
+                                         size_t* written,
+                                         int* error) {
   RTC_LOG(LS_VERBOSE) << "OpenSSLStreamAdapter::Write(" << data_len << ")";
 
   switch (state_) {
-  case SSL_NONE:
-    // pass-through in clear text
-    return StreamAdapterInterface::Write(data, data_len, written, error);
+    case SSL_NONE:
+      // pass-through in clear text
+      return StreamAdapterInterface::Write(data, data_len, written, error);
 
-  case SSL_WAIT:
-  case SSL_CONNECTING:
-    return SR_BLOCK;
-
-  case SSL_CONNECTED:
-    if (waiting_to_verify_peer_certificate()) {
+    case SSL_WAIT:
+    case SSL_CONNECTING:
       return SR_BLOCK;
-    }
-    break;
 
-  case SSL_ERROR:
-  case SSL_CLOSED:
-  default:
-    if (error)
-      *error = ssl_error_code_;
-    return SR_ERROR;
+    case SSL_CONNECTED:
+      if (waiting_to_verify_peer_certificate()) {
+        return SR_BLOCK;
+      }
+      break;
+
+    case SSL_ERROR:
+    case SSL_CLOSED:
+    default:
+      if (error)
+        *error = ssl_error_code_;
+      return SR_ERROR;
   }
 
   // OpenSSL will return an error if we try to write zero bytes
@@ -546,33 +549,35 @@ StreamResult OpenSSLStreamAdapter::Write(const void* data, size_t data_len,
   int code = SSL_write(ssl_, data, checked_cast<int>(data_len));
   int ssl_error = SSL_get_error(ssl_, code);
   switch (ssl_error) {
-  case SSL_ERROR_NONE:
-    RTC_LOG(LS_VERBOSE) << " -- success";
-    RTC_DCHECK_GT(code, 0);
-    RTC_DCHECK_LE(code, data_len);
-    if (written)
-      *written = code;
-    return SR_SUCCESS;
-  case SSL_ERROR_WANT_READ:
-    RTC_LOG(LS_VERBOSE) << " -- error want read";
-    ssl_write_needs_read_ = true;
-    return SR_BLOCK;
-  case SSL_ERROR_WANT_WRITE:
-    RTC_LOG(LS_VERBOSE) << " -- error want write";
-    return SR_BLOCK;
+    case SSL_ERROR_NONE:
+      RTC_LOG(LS_VERBOSE) << " -- success";
+      RTC_DCHECK_GT(code, 0);
+      RTC_DCHECK_LE(code, data_len);
+      if (written)
+        *written = code;
+      return SR_SUCCESS;
+    case SSL_ERROR_WANT_READ:
+      RTC_LOG(LS_VERBOSE) << " -- error want read";
+      ssl_write_needs_read_ = true;
+      return SR_BLOCK;
+    case SSL_ERROR_WANT_WRITE:
+      RTC_LOG(LS_VERBOSE) << " -- error want write";
+      return SR_BLOCK;
 
-  case SSL_ERROR_ZERO_RETURN:
-  default:
-    Error("SSL_write", (ssl_error ? ssl_error : -1), 0, false);
-    if (error)
-      *error = ssl_error_code_;
-    return SR_ERROR;
+    case SSL_ERROR_ZERO_RETURN:
+    default:
+      Error("SSL_write", (ssl_error ? ssl_error : -1), 0, false);
+      if (error)
+        *error = ssl_error_code_;
+      return SR_ERROR;
   }
   // not reached
 }
 
-StreamResult OpenSSLStreamAdapter::Read(void* data, size_t data_len,
-                                        size_t* read, int* error) {
+StreamResult OpenSSLStreamAdapter::Read(void* data,
+                                        size_t data_len,
+                                        size_t* read,
+                                        int* error) {
   RTC_LOG(LS_VERBOSE) << "OpenSSLStreamAdapter::Read(" << data_len << ")";
   switch (state_) {
     case SSL_NONE:
@@ -699,7 +704,8 @@ StreamState OpenSSLStreamAdapter::GetState() const {
   // not reached
 }
 
-void OpenSSLStreamAdapter::OnEvent(StreamInterface* stream, int events,
+void OpenSSLStreamAdapter::OnEvent(StreamInterface* stream,
+                                   int events,
                                    int err) {
   int events_to_signal = 0;
   int signal_error = 0;
@@ -717,12 +723,12 @@ void OpenSSLStreamAdapter::OnEvent(StreamInterface* stream, int events,
       }
     }
   }
-  if ((events & (SE_READ|SE_WRITE))) {
+  if ((events & (SE_READ | SE_WRITE))) {
     RTC_LOG(LS_VERBOSE) << "OpenSSLStreamAdapter::OnEvent"
                         << ((events & SE_READ) ? " SE_READ" : "")
                         << ((events & SE_WRITE) ? " SE_WRITE" : "");
     if (state_ == SSL_NONE) {
-      events_to_signal |= events & (SE_READ|SE_WRITE);
+      events_to_signal |= events & (SE_READ | SE_WRITE);
     } else if (state_ == SSL_CONNECTING) {
       if (int err = ContinueSSL()) {
         Error("ContinueSSL", err, 0, true);
@@ -791,7 +797,7 @@ int OpenSSLStreamAdapter::BeginSSL() {
   }
 
   SSL_set_mode(ssl_, SSL_MODE_ENABLE_PARTIAL_WRITE |
-               SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
+                         SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
 
 #if !defined(OPENSSL_IS_BORINGSSL)
   // Specify an ECDH group for ECDHE ciphers, otherwise OpenSSL cannot
@@ -849,9 +855,8 @@ int OpenSSLStreamAdapter::ContinueSSL() {
 
         Thread::Current()->PostDelayed(RTC_FROM_HERE, delay, this, MSG_TIMEOUT,
                                        0);
-        }
       }
-      break;
+    } break;
 
     case SSL_ERROR_WANT_WRITE:
       RTC_LOG(LS_VERBOSE) << " -- error want write";
@@ -927,7 +932,6 @@ void OpenSSLStreamAdapter::Cleanup(uint8_t alert) {
   Thread::Current()->Clear(this, MSG_TIMEOUT);
 }
 
-
 void OpenSSLStreamAdapter::OnMessage(Message* msg) {
   // Process our own messages and then pass others to the superclass
   if (MSG_TIMEOUT == msg->message_id) {
@@ -943,9 +947,8 @@ SSL_CTX* OpenSSLStreamAdapter::SetupSSLContext() {
   SSL_CTX* ctx = nullptr;
 
 #ifdef OPENSSL_IS_BORINGSSL
-    ctx = SSL_CTX_new(ssl_mode_ == SSL_MODE_DTLS ?
-        DTLS_method() : TLS_method());
-    // Version limiting for BoringSSL will be done below.
+  ctx = SSL_CTX_new(ssl_mode_ == SSL_MODE_DTLS ? DTLS_method() : TLS_method());
+// Version limiting for BoringSSL will be done below.
 #else
   const SSL_METHOD* method;
   switch (ssl_max_version_) {
@@ -991,21 +994,21 @@ SSL_CTX* OpenSSLStreamAdapter::SetupSSLContext() {
     return nullptr;
 
 #ifdef OPENSSL_IS_BORINGSSL
-  SSL_CTX_set_min_proto_version(ctx, ssl_mode_ == SSL_MODE_DTLS ?
-      DTLS1_VERSION : TLS1_VERSION);
+  SSL_CTX_set_min_proto_version(
+      ctx, ssl_mode_ == SSL_MODE_DTLS ? DTLS1_VERSION : TLS1_VERSION);
   switch (ssl_max_version_) {
     case SSL_PROTOCOL_TLS_10:
-      SSL_CTX_set_max_proto_version(ctx, ssl_mode_ == SSL_MODE_DTLS ?
-          DTLS1_VERSION : TLS1_VERSION);
+      SSL_CTX_set_max_proto_version(
+          ctx, ssl_mode_ == SSL_MODE_DTLS ? DTLS1_VERSION : TLS1_VERSION);
       break;
     case SSL_PROTOCOL_TLS_11:
-      SSL_CTX_set_max_proto_version(ctx, ssl_mode_ == SSL_MODE_DTLS ?
-          DTLS1_VERSION : TLS1_1_VERSION);
+      SSL_CTX_set_max_proto_version(
+          ctx, ssl_mode_ == SSL_MODE_DTLS ? DTLS1_VERSION : TLS1_1_VERSION);
       break;
     case SSL_PROTOCOL_TLS_12:
     default:
-      SSL_CTX_set_max_proto_version(ctx, ssl_mode_ == SSL_MODE_DTLS ?
-          DTLS1_2_VERSION : TLS1_2_VERSION);
+      SSL_CTX_set_max_proto_version(
+          ctx, ssl_mode_ == SSL_MODE_DTLS ? DTLS1_2_VERSION : TLS1_2_VERSION);
       break;
   }
   if (g_use_time_callback_for_testing) {
@@ -1146,26 +1149,26 @@ struct cipher_list {
 
 // TODO(torbjorng): Perhaps add more cipher suites to these lists.
 static const cipher_list OK_RSA_ciphers[] = {
-  CDEF(ECDHE_RSA_WITH_AES_128_CBC_SHA),
-  CDEF(ECDHE_RSA_WITH_AES_256_CBC_SHA),
-  CDEF(ECDHE_RSA_WITH_AES_128_GCM_SHA256),
+    CDEF(ECDHE_RSA_WITH_AES_128_CBC_SHA),
+    CDEF(ECDHE_RSA_WITH_AES_256_CBC_SHA),
+    CDEF(ECDHE_RSA_WITH_AES_128_GCM_SHA256),
 #ifdef TLS1_CK_ECDHE_RSA_WITH_AES_256_GCM_SHA256
-  CDEF(ECDHE_RSA_WITH_AES_256_GCM_SHA256),
+    CDEF(ECDHE_RSA_WITH_AES_256_GCM_SHA256),
 #endif
 #ifdef TLS1_CK_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
-  CDEF(ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256),
+    CDEF(ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256),
 #endif
 };
 
 static const cipher_list OK_ECDSA_ciphers[] = {
-  CDEF(ECDHE_ECDSA_WITH_AES_128_CBC_SHA),
-  CDEF(ECDHE_ECDSA_WITH_AES_256_CBC_SHA),
-  CDEF(ECDHE_ECDSA_WITH_AES_128_GCM_SHA256),
+    CDEF(ECDHE_ECDSA_WITH_AES_128_CBC_SHA),
+    CDEF(ECDHE_ECDSA_WITH_AES_256_CBC_SHA),
+    CDEF(ECDHE_ECDSA_WITH_AES_128_GCM_SHA256),
 #ifdef TLS1_CK_ECDHE_ECDSA_WITH_AES_256_GCM_SHA256
-  CDEF(ECDHE_ECDSA_WITH_AES_256_GCM_SHA256),
+    CDEF(ECDHE_ECDSA_WITH_AES_256_GCM_SHA256),
 #endif
 #ifdef TLS1_CK_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256
-  CDEF(ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256),
+    CDEF(ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256),
 #endif
 };
 #undef CDEF

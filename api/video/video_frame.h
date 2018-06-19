@@ -13,8 +13,8 @@
 
 #include <stdint.h>
 
-#include "api/video/video_rotation.h"
 #include "api/video/video_frame_buffer.h"
+#include "api/video/video_rotation.h"
 
 namespace webrtc {
 

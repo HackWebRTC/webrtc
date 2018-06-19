@@ -95,7 +95,8 @@ void CallTest::RunBaseTest(BaseTest* test) {
         audio_state_config.audio_device_module = fake_recv_audio_device_;
         recv_config.audio_state = AudioState::Create(audio_state_config);
         fake_recv_audio_device_->RegisterAudioCallback(
-            recv_config.audio_state->audio_transport());      }
+            recv_config.audio_state->audio_transport());
+      }
       CreateReceiverCall(recv_config);
     }
     test->OnCallsCreated(sender_call_.get(), receiver_call_.get());
@@ -487,8 +488,7 @@ BaseTest::BaseTest() : event_log_(RtcEventLog::CreateNull()) {}
 BaseTest::BaseTest(unsigned int timeout_ms)
     : RtpRtcpObserver(timeout_ms), event_log_(RtcEventLog::CreateNull()) {}
 
-BaseTest::~BaseTest() {
-}
+BaseTest::~BaseTest() {}
 
 std::unique_ptr<TestAudioDeviceModule::Capturer> BaseTest::CreateCapturer() {
   return TestAudioDeviceModule::CreatePulsedNoiseCapturer(256, 48000);
@@ -513,8 +513,7 @@ Call::Config BaseTest::GetReceiverCallConfig() {
 void BaseTest::OnRtpTransportControllerSendCreated(
     RtpTransportControllerSend* controller) {}
 
-void BaseTest::OnCallsCreated(Call* sender_call, Call* receiver_call) {
-}
+void BaseTest::OnCallsCreated(Call* sender_call, Call* receiver_call) {}
 
 test::PacketTransport* BaseTest::CreateSendTransport(
     SingleThreadedTaskQueueForTesting* task_queue,
@@ -571,14 +570,11 @@ void BaseTest::OnFlexfecStreamsCreated(
     const std::vector<FlexfecReceiveStream*>& receive_streams) {}
 
 void BaseTest::OnFrameGeneratorCapturerCreated(
-    FrameGeneratorCapturer* frame_generator_capturer) {
-}
+    FrameGeneratorCapturer* frame_generator_capturer) {}
 
-void BaseTest::OnStreamsStopped() {
-}
+void BaseTest::OnStreamsStopped() {}
 
-SendTest::SendTest(unsigned int timeout_ms) : BaseTest(timeout_ms) {
-}
+SendTest::SendTest(unsigned int timeout_ms) : BaseTest(timeout_ms) {}
 
 bool SendTest::ShouldCreateReceivers() const {
   return false;
@@ -586,8 +582,7 @@ bool SendTest::ShouldCreateReceivers() const {
 
 EndToEndTest::EndToEndTest() {}
 
-EndToEndTest::EndToEndTest(unsigned int timeout_ms) : BaseTest(timeout_ms) {
-}
+EndToEndTest::EndToEndTest(unsigned int timeout_ms) : BaseTest(timeout_ms) {}
 
 bool EndToEndTest::ShouldCreateReceivers() const {
   return true;

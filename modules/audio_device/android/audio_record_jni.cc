@@ -140,7 +140,7 @@ int32_t AudioRecordJni::InitRecording() {
   RTC_DCHECK(!recording_);
   ScopedHistogramTimer timer("WebRTC.Audio.InitRecordingDurationMs");
   int frames_per_buffer = j_audio_record_->InitRecording(
-        audio_parameters_.sample_rate(), audio_parameters_.channels());
+      audio_parameters_.sample_rate(), audio_parameters_.channels());
   if (frames_per_buffer < 0) {
     direct_buffer_address_ = nullptr;
     RTC_LOG(LS_ERROR) << "InitRecording failed";
@@ -246,7 +246,7 @@ void AudioRecordJni::OnCacheDirectBufferAddress(JNIEnv* env,
   RTC_DCHECK(!direct_buffer_address_);
   direct_buffer_address_ = env->GetDirectBufferAddress(byte_buffer);
   jlong capacity = env->GetDirectBufferCapacity(byte_buffer);
-  RTC_LOG(INFO) <<  "direct buffer capacity: " << capacity;
+  RTC_LOG(INFO) << "direct buffer capacity: " << capacity;
   direct_buffer_capacity_in_bytes_ = static_cast<size_t>(capacity);
 }
 

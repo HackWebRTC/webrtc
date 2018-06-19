@@ -11,8 +11,8 @@
 #ifndef API_ARRAY_VIEW_H_
 #define API_ARRAY_VIEW_H_
 
-#include <array>
 #include <algorithm>
+#include <array>
 #include <type_traits>
 
 #include "rtc_base/checks.h"

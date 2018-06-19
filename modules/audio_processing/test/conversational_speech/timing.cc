@@ -19,7 +19,7 @@ namespace webrtc {
 namespace test {
 namespace conversational_speech {
 
-bool Turn::operator==(const Turn &b) const {
+bool Turn::operator==(const Turn& b) const {
   return b.speaker_name == speaker_name &&
          b.audiotrack_file_name == audiotrack_file_name && b.offset == offset &&
          b.gain == gain;

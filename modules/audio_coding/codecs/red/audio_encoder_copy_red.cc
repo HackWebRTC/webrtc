@@ -58,10 +58,8 @@ AudioEncoder::EncodedInfo AudioEncoderCopyRed::EncodeImpl(
     uint32_t rtp_timestamp,
     rtc::ArrayView<const int16_t> audio,
     rtc::Buffer* encoded) {
-
   const size_t primary_offset = encoded->size();
-  EncodedInfo info =
-      speech_encoder_->Encode(rtp_timestamp, audio, encoded);
+  EncodedInfo info = speech_encoder_->Encode(rtp_timestamp, audio, encoded);
 
   RTC_CHECK(info.redundant.empty()) << "Cannot use nested redundant encoders.";
   RTC_DCHECK_EQ(encoded->size() - primary_offset, info.encoded_bytes);

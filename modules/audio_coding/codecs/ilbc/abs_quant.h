@@ -27,13 +27,13 @@
  *---------------------------------------------------------------*/
 
 void WebRtcIlbcfix_AbsQuant(
-    IlbcEncoder *iLBCenc_inst,
+    IlbcEncoder* iLBCenc_inst,
     /* (i) Encoder instance */
-    iLBC_bits *iLBC_encbits, /* (i/o) Encoded bits (outputs idxForMax
+    iLBC_bits* iLBC_encbits, /* (i/o) Encoded bits (outputs idxForMax
                                    and idxVec, uses state_first as
                                    input) */
-    int16_t *in,     /* (i) vector to encode */
-    int16_t *weightDenum   /* (i) denominator of synthesis filter */
-                            );
+    int16_t* in,             /* (i) vector to encode */
+    int16_t* weightDenum     /* (i) denominator of synthesis filter */
+    );
 
 #endif

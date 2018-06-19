@@ -211,8 +211,11 @@ void OpusTest::Perform() {
 #endif
 }
 
-void OpusTest::Run(TestPackStereo* channel, size_t channels, int bitrate,
-                   size_t frame_length, int percent_loss) {
+void OpusTest::Run(TestPackStereo* channel,
+                   size_t channels,
+                   int bitrate,
+                   size_t frame_length,
+                   int percent_loss) {
   AudioFrame audio_frame;
   int32_t out_freq_hz_b = out_file_.SamplingFrequency();
   const size_t kBufferSizeSamples = 480 * 12 * 2;  // 120 ms stereo audio.
@@ -237,8 +240,8 @@ void OpusTest::Run(TestPackStereo* channel, size_t channels, int bitrate,
   // default.
   const int kOpusComplexity5 = 5;
   EXPECT_EQ(0, WebRtcOpus_SetComplexity(opus_mono_encoder_, kOpusComplexity5));
-  EXPECT_EQ(0, WebRtcOpus_SetComplexity(opus_stereo_encoder_,
-                                        kOpusComplexity5));
+  EXPECT_EQ(0,
+            WebRtcOpus_SetComplexity(opus_stereo_encoder_, kOpusComplexity5));
 #endif
 
   // Fast-forward 1 second (100 blocks) since the files start with silence.
@@ -263,19 +266,16 @@ void OpusTest::Run(TestPackStereo* channel, size_t channels, int bitrate,
     }
 
     // If input audio is sampled at 32 kHz, resampling to 48 kHz is required.
-    EXPECT_EQ(480,
-              resampler_.Resample10Msec(audio_frame.data(),
-                                        audio_frame.sample_rate_hz_,
-                                        48000,
-                                        channels,
-                                        kBufferSizeSamples - written_samples,
-                                        &audio[written_samples]));
+    EXPECT_EQ(480, resampler_.Resample10Msec(
+                       audio_frame.data(), audio_frame.sample_rate_hz_, 48000,
+                       channels, kBufferSizeSamples - written_samples,
+                       &audio[written_samples]));
     written_samples += 480 * channels;
 
     // Sometimes we need to loop over the audio vector to produce the right
     // number of packets.
-    size_t loop_encode = (written_samples - read_samples) /
-        (channels * frame_length);
+    size_t loop_encode =
+        (written_samples - read_samples) / (channels * frame_length);
 
     if (loop_encode > 0) {
       const size_t kMaxBytes = 1000;  // Maximum number of bytes for one packet.
@@ -319,9 +319,9 @@ void OpusTest::Run(TestPackStereo* channel, size_t channels, int bitrate,
                 opus_stereo_decoder_, bitstream, bitstream_len_byte,
                 &out_audio[decoded_samples * channels], &audio_type);
           } else {
-            decoded_samples += WebRtcOpus_DecodePlc(
-                opus_stereo_decoder_, &out_audio[decoded_samples * channels],
-                1);
+            decoded_samples +=
+                WebRtcOpus_DecodePlc(opus_stereo_decoder_,
+                                     &out_audio[decoded_samples * channels], 1);
           }
         }
 
@@ -377,14 +377,14 @@ void OpusTest::Run(TestPackStereo* channel, size_t channels, int bitrate,
 void OpusTest::OpenOutFile(int test_number) {
   std::string file_name;
   std::stringstream file_stream;
-  file_stream << webrtc::test::OutputPath() << "opustest_out_"
-      << test_number << ".pcm";
+  file_stream << webrtc::test::OutputPath() << "opustest_out_" << test_number
+              << ".pcm";
   file_name = file_stream.str();
   out_file_.Open(file_name, 48000, "wb");
   file_stream.str("");
   file_name = file_stream.str();
   file_stream << webrtc::test::OutputPath() << "opusstandalone_out_"
-      << test_number << ".pcm";
+              << test_number << ".pcm";
   file_name = file_stream.str();
   out_file_standalone_.Open(file_name, 48000, "wb");
 }

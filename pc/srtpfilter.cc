@@ -26,11 +26,9 @@
 
 namespace cricket {
 
-SrtpFilter::SrtpFilter() {
-}
+SrtpFilter::SrtpFilter() {}
 
-SrtpFilter::~SrtpFilter() {
-}
+SrtpFilter::~SrtpFilter() {}
 
 bool SrtpFilter::IsActive() const {
   return state_ >= ST_ACTIVE;
@@ -82,10 +80,9 @@ bool SrtpFilter::SetProvisionalAnswer(
 }
 
 bool SrtpFilter::ExpectOffer(ContentSource source) {
-  return ((state_ == ST_INIT) ||
-          (state_ == ST_ACTIVE) ||
-          (state_  == ST_SENTOFFER && source == CS_LOCAL) ||
-          (state_  == ST_SENTUPDATEDOFFER && source == CS_LOCAL) ||
+  return ((state_ == ST_INIT) || (state_ == ST_ACTIVE) ||
+          (state_ == ST_SENTOFFER && source == CS_LOCAL) ||
+          (state_ == ST_SENTUPDATEDOFFER && source == CS_LOCAL) ||
           (state_ == ST_RECEIVEDOFFER && source == CS_REMOTE) ||
           (state_ == ST_RECEIVEDUPDATEDOFFER && source == CS_REMOTE));
 }
@@ -130,8 +127,8 @@ bool SrtpFilter::DoSetAnswer(const std::vector<CryptoParams>& answer_params,
     } else {
       // Need to wait for the final answer to decide if
       // we should go to Active state.
-      state_ = (source == CS_LOCAL) ? ST_SENTPRANSWER_NO_CRYPTO :
-                                      ST_RECEIVEDPRANSWER_NO_CRYPTO;
+      state_ = (source == CS_LOCAL) ? ST_SENTPRANSWER_NO_CRYPTO
+                                    : ST_RECEIVEDPRANSWER_NO_CRYPTO;
       return true;
     }
   }
@@ -153,8 +150,7 @@ bool SrtpFilter::DoSetAnswer(const std::vector<CryptoParams>& answer_params,
     offer_params_.clear();
     state_ = ST_ACTIVE;
   } else {
-    state_ =
-        (source == CS_LOCAL) ? ST_SENTPRANSWER : ST_RECEIVEDPRANSWER;
+    state_ = (source == CS_LOCAL) ? ST_SENTPRANSWER : ST_RECEIVEDPRANSWER;
   }
   return true;
 }

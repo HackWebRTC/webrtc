@@ -27,10 +27,10 @@
  *---------------------------------------------------------------*/
 
 void WebRtcIlbcfix_Poly2Lsp(
-    int16_t *a,  /* (o) A coefficients in Q12 */
-    int16_t *lsp, /* (i) LSP coefficients in Q15 */
-    int16_t *old_lsp /* (i) old LSP coefficients that are used if the new
+    int16_t* a,      /* (o) A coefficients in Q12 */
+    int16_t* lsp,    /* (i) LSP coefficients in Q15 */
+    int16_t* old_lsp /* (i) old LSP coefficients that are used if the new
                               coefficients turn out to be unstable */
-                            );
+    );
 
 #endif

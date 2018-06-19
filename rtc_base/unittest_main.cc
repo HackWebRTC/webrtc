@@ -37,7 +37,8 @@ DEFINE_string(
     " will assign the group Enable to field trial WebRTC-FooFeature.");
 #if defined(WEBRTC_WIN)
 DEFINE_int(crt_break_alloc, -1, "memory allocation to break on");
-DEFINE_bool(default_error_handlers, false,
+DEFINE_bool(default_error_handlers,
+            false,
             "leave the default exception/dbg handler functions in place");
 
 void TestInvalidParameterHandler(const wchar_t* expression,
@@ -90,7 +91,7 @@ int main(int argc, char* argv[]) {
   }
 
 #if !defined(NDEBUG)  // Turn on memory leak checking on Windows.
-  _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF |_CRTDBG_LEAK_CHECK_DF);
+  _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
   if (FLAG_crt_break_alloc >= 0) {
     _crtBreakAlloc = FLAG_crt_break_alloc;
   }

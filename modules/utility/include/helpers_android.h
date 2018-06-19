@@ -42,11 +42,15 @@ jlong PointerTojlong(void* ptr);
 // JNIEnv-helper methods that wraps the API which uses the JNI interface
 // pointer (JNIEnv*). It allows us to RTC_CHECK success and that no Java
 // exception is thrown while calling the method.
-jmethodID GetMethodID(
-    JNIEnv* jni, jclass c, const char* name, const char* signature);
+jmethodID GetMethodID(JNIEnv* jni,
+                      jclass c,
+                      const char* name,
+                      const char* signature);
 
-jmethodID GetStaticMethodID(
-    JNIEnv* jni, jclass c, const char* name, const char* signature);
+jmethodID GetStaticMethodID(JNIEnv* jni,
+                            jclass c,
+                            const char* name,
+                            const char* signature);
 
 jclass FindClass(JNIEnv* jni, const char* name);
 

@@ -70,8 +70,7 @@ bool Event::Wait(int milliseconds) {
 #endif
 
 Event::Event(bool manual_reset, bool initially_signaled)
-    : is_manual_reset_(manual_reset),
-      event_status_(initially_signaled) {
+    : is_manual_reset_(manual_reset), event_status_(initially_signaled) {
   RTC_CHECK(pthread_mutex_init(&event_mutex_, nullptr) == 0);
   pthread_condattr_t cond_attr;
   RTC_CHECK(pthread_condattr_init(&cond_attr) == 0);

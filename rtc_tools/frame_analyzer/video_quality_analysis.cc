@@ -14,8 +14,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <algorithm>
-#include <string>
 #include <map>
+#include <string>
 #include <utility>
 
 #include "test/testsupport/perf_test.h"
@@ -35,7 +35,7 @@ int GetI420FrameSize(int width, int height) {
   int half_width = (width + 1) >> 1;
   int half_height = (height + 1) >> 1;
 
-  int y_plane = width * height;  // I420 Y plane.
+  int y_plane = width * height;            // I420 Y plane.
   int u_plane = half_width * half_height;  // I420 U plane.
   int v_plane = half_width * half_height;  // I420 V plane.
 
@@ -88,7 +88,7 @@ bool GetNextStatsLine(FILE* stats_file, char* line) {
     line[chars] = buf;
     ++chars;
   }
-  line[chars-1] = '\0';  // Strip the trailing \n and put end of string.
+  line[chars - 1] = '\0';  // Strip the trailing \n and put end of string.
   return true;
 }
 
@@ -112,8 +112,7 @@ bool ExtractFrameFromYuvFile(const char* i420_file_name,
   fseek(input_file, offset, SEEK_SET);
 
   size_t bytes_read = fread(result_frame, 1, frame_size, input_file);
-  if (bytes_read != static_cast<size_t>(frame_size) &&
-      ferror(input_file)) {
+  if (bytes_read != static_cast<size_t>(frame_size) && ferror(input_file)) {
     fprintf(stdout, "Error while reading frame no %d from file %s\n",
             frame_number, i420_file_name);
     errors = true;
@@ -144,8 +143,7 @@ bool ExtractFrameFromY4mFile(const char* y4m_file_name,
   size_t bytes_read =
       fread(frame_header, 1, Y4M_FILE_HEADER_MAX_SIZE - 1, input_file);
   if (bytes_read != static_cast<size_t>(frame_size) && ferror(input_file)) {
-    fprintf(stdout, "Error while reading frame from file %s\n",
-        y4m_file_name);
+    fprintf(stdout, "Error while reading frame from file %s\n", y4m_file_name);
     fclose(input_file);
     return false;
   }
@@ -154,7 +152,7 @@ bool ExtractFrameFromY4mFile(const char* y4m_file_name,
   std::size_t found = header_contents.find(Y4M_FRAME_DELIMITER);
   if (found == std::string::npos) {
     fprintf(stdout, "Corrupted Y4M header, could not find \"FRAME\" in %s\n",
-        header_contents.c_str());
+            header_contents.c_str());
     fclose(input_file);
     return false;
   }
@@ -206,19 +204,17 @@ double CalculateMetrics(VideoAnalysisMetricsType video_metrics_type,
   switch (video_metrics_type) {
     case kPSNR:
       // In the following: stride is determined by width.
-      result = libyuv::I420Psnr(src_y_a, width, src_u_a, half_width,
-                                src_v_a, half_width, src_y_b, width,
-                                src_u_b, half_width, src_v_b, half_width,
-                                width, height);
+      result = libyuv::I420Psnr(src_y_a, width, src_u_a, half_width, src_v_a,
+                                half_width, src_y_b, width, src_u_b, half_width,
+                                src_v_b, half_width, width, height);
       // LibYuv sets the max psnr value to 128, we restrict it to 48.
       // In case of 0 mse in one frame, 128 can skew the results significantly.
       result = (result > 48.0) ? 48.0 : result;
       break;
     case kSSIM:
-      result = libyuv::I420Ssim(src_y_a, stride_y, src_u_a, stride_uv,
-                                src_v_a, stride_uv, src_y_b, stride_y,
-                                src_u_b, stride_uv, src_v_b, stride_uv,
-                                width, height);
+      result = libyuv::I420Ssim(src_y_a, stride_y, src_u_a, stride_uv, src_v_a,
+                                stride_uv, src_y_b, stride_y, src_u_b,
+                                stride_uv, src_v_b, stride_uv, width, height);
       break;
     default:
       assert(false);
@@ -471,7 +467,8 @@ void PrintAnalysisResults(const std::string& label, ResultsContainer* results) {
   PrintAnalysisResults(stdout, label, results);
 }
 
-void PrintAnalysisResults(FILE* output, const std::string& label,
+void PrintAnalysisResults(FILE* output,
+                          const std::string& label,
                           ResultsContainer* results) {
   SetPerfResultsOutput(output);
 

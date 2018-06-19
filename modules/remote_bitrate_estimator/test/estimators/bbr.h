@@ -230,6 +230,7 @@ class BbrBweReceiver : public BweReceiver {
   void ReceivePacket(int64_t arrival_time_ms,
                      const MediaPacket& media_packet) override;
   FeedbackPacket* GetFeedback(int64_t now_ms) override;
+
  private:
   SimulatedClock clock_;
   std::vector<uint16_t> packet_feedbacks_;

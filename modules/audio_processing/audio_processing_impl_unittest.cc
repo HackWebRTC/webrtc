@@ -72,15 +72,13 @@ TEST(AudioProcessingImplTest, AudioParameterChangeTriggersInit) {
 
   // New sample rate. (Only impacts ProcessStream).
   SetFrameSampleRate(&frame, 32000);
-  EXPECT_CALL(mock, InitializeLocked())
-      .Times(1);
+  EXPECT_CALL(mock, InitializeLocked()).Times(1);
   EXPECT_NOERR(mock.ProcessStream(&frame));
 
   // New number of channels.
   // TODO(peah): Investigate why this causes 2 inits.
   frame.num_channels_ = 2;
-  EXPECT_CALL(mock, InitializeLocked())
-      .Times(2);
+  EXPECT_CALL(mock, InitializeLocked()).Times(2);
   EXPECT_NOERR(mock.ProcessStream(&frame));
   // ProcessStream sets num_channels_ == num_output_channels.
   frame.num_channels_ = 2;

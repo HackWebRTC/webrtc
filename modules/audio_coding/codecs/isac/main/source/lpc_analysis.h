@@ -21,24 +21,26 @@
 #include "modules/audio_coding/codecs/isac/main/source/settings.h"
 #include "modules/audio_coding/codecs/isac/main/source/structs.h"
 
-void WebRtcIsac_GetLpcCoefLb(double *inLo, double *inHi, MaskFiltstr *maskdata,
-                             double signal_noise_ratio, const int16_t *pitchGains_Q12,
-                             double *lo_coeff, double *hi_coeff);
+void WebRtcIsac_GetLpcCoefLb(double* inLo,
+                             double* inHi,
+                             MaskFiltstr* maskdata,
+                             double signal_noise_ratio,
+                             const int16_t* pitchGains_Q12,
+                             double* lo_coeff,
+                             double* hi_coeff);
 
-void WebRtcIsac_GetLpcGain(
-    double         signal_noise_ratio,
-    const double*  filtCoeffVecs,
-    int            numVecs,
-    double*        gain,
-    double         corrLo[][UB_LPC_ORDER + 1],
-    const double*  varscale);
+void WebRtcIsac_GetLpcGain(double signal_noise_ratio,
+                           const double* filtCoeffVecs,
+                           int numVecs,
+                           double* gain,
+                           double corrLo[][UB_LPC_ORDER + 1],
+                           const double* varscale);
 
-void WebRtcIsac_GetLpcCoefUb(
-    double*      inSignal,
-    MaskFiltstr* maskdata,
-    double*      lpCoeff,
-    double       corr[][UB_LPC_ORDER + 1],
-    double*      varscale,
-    int16_t  bandwidth);
+void WebRtcIsac_GetLpcCoefUb(double* inSignal,
+                             MaskFiltstr* maskdata,
+                             double* lpCoeff,
+                             double corr[][UB_LPC_ORDER + 1],
+                             double* varscale,
+                             int16_t bandwidth);
 
 #endif /* MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_SOURCE_LPC_ANALYIS_H_ */

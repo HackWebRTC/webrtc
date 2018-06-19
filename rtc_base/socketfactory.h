@@ -17,7 +17,7 @@
 namespace rtc {
 
 class SocketFactory {
-public:
+ public:
   virtual ~SocketFactory() {}
 
   // Returns a new socket for blocking communication.  The type can be
@@ -28,6 +28,6 @@ public:
   virtual AsyncSocket* CreateAsyncSocket(int family, int type) = 0;
 };
 
-} // namespace rtc
+}  // namespace rtc
 
-#endif // RTC_BASE_SOCKETFACTORY_H_
+#endif  // RTC_BASE_SOCKETFACTORY_H_

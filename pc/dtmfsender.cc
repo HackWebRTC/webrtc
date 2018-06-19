@@ -69,8 +69,7 @@ rtc::scoped_refptr<DtmfSender> DtmfSender::Create(
     return nullptr;
   }
   rtc::scoped_refptr<DtmfSender> dtmf_sender(
-      new rtc::RefCountedObject<DtmfSender>(track, signaling_thread,
-                                                  provider));
+      new rtc::RefCountedObject<DtmfSender>(track, signaling_thread, provider));
   return dtmf_sender;
 }
 
@@ -113,19 +112,19 @@ bool DtmfSender::CanInsertDtmf() {
   return provider_->CanInsertDtmf();
 }
 
-bool DtmfSender::InsertDtmf(const std::string& tones, int duration,
+bool DtmfSender::InsertDtmf(const std::string& tones,
+                            int duration,
                             int inter_tone_gap) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
 
-  if (duration > kDtmfMaxDurationMs ||
-      duration < kDtmfMinDurationMs ||
+  if (duration > kDtmfMaxDurationMs || duration < kDtmfMinDurationMs ||
       inter_tone_gap < kDtmfMinGapMs) {
     RTC_LOG(LS_ERROR)
         << "InsertDtmf is called with invalid duration or tones gap. "
            "The duration cannot be more than "
         << kDtmfMaxDurationMs << "ms or less than " << kDtmfMinDurationMs
-        << "ms. The gap between tones must be at least "
-        << kDtmfMinGapMs << "ms.";
+        << "ms. The gap between tones must be at least " << kDtmfMinGapMs
+        << "ms.";
     return false;
   }
 

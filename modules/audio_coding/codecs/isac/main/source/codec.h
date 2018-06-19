@@ -25,10 +25,12 @@
 
 void WebRtcIsac_ResetBitstream(Bitstr* bit_stream);
 
-int WebRtcIsac_EstimateBandwidth(BwEstimatorstr* bwest_str, Bitstr* streamdata,
+int WebRtcIsac_EstimateBandwidth(BwEstimatorstr* bwest_str,
+                                 Bitstr* streamdata,
                                  size_t packet_size,
                                  uint16_t rtp_seq_number,
-                                 uint32_t send_ts, uint32_t arr_ts,
+                                 uint32_t send_ts,
+                                 uint32_t arr_ts,
                                  enum IsacSamplingRate encoderSampRate,
                                  enum IsacSamplingRate decoderSampRate);
 
@@ -38,7 +40,8 @@ int WebRtcIsac_DecodeLb(const TransformTables* transform_tables,
                         int16_t* current_framesamples,
                         int16_t isRCUPayload);
 
-int WebRtcIsac_DecodeRcuLb(float* signal_out, ISACLBDecStruct* ISACdec_obj,
+int WebRtcIsac_DecodeRcuLb(float* signal_out,
+                           ISACLBDecStruct* ISACdec_obj,
                            int16_t* current_framesamples);
 
 int WebRtcIsac_EncodeLb(const TransformTables* transform_tables,
@@ -48,15 +51,20 @@ int WebRtcIsac_EncodeLb(const TransformTables* transform_tables,
                         int16_t bottleneckIndex);
 
 int WebRtcIsac_EncodeStoredDataLb(const IsacSaveEncoderData* ISACSavedEnc_obj,
-                                  Bitstr* ISACBitStr_obj, int BWnumber,
+                                  Bitstr* ISACBitStr_obj,
+                                  int BWnumber,
                                   float scale);
 
 int WebRtcIsac_EncodeStoredDataUb(
-    const ISACUBSaveEncDataStruct* ISACSavedEnc_obj, Bitstr* bitStream,
-    int32_t jitterInfo, float scale, enum ISACBandwidth bandwidth);
+    const ISACUBSaveEncDataStruct* ISACSavedEnc_obj,
+    Bitstr* bitStream,
+    int32_t jitterInfo,
+    float scale,
+    enum ISACBandwidth bandwidth);
 
 int16_t WebRtcIsac_GetRedPayloadUb(
-    const ISACUBSaveEncDataStruct* ISACSavedEncObj, Bitstr* bitStreamObj,
+    const ISACUBSaveEncDataStruct* ISACSavedEncObj,
+    Bitstr* bitStreamObj,
     enum ISACBandwidth bandwidth);
 
 /******************************************************************************
@@ -81,7 +89,6 @@ int16_t WebRtcIsac_RateAllocation(int32_t inRateBitPerSec,
                                   double* rateLBBitPerSec,
                                   double* rateUBBitPerSec,
                                   enum ISACBandwidth* bandwidthKHz);
-
 
 /******************************************************************************
  * WebRtcIsac_DecodeUb16()
@@ -169,7 +176,6 @@ void WebRtcIsac_InitMasking(MaskFiltstr* maskdata);
 
 void WebRtcIsac_InitPostFilterbank(PostFiltBankstr* postfiltdata);
 
-
 /**************************** transform functions ****************************/
 
 void WebRtcIsac_InitTransform(TransformTables* tables);
@@ -190,18 +196,25 @@ void WebRtcIsac_Spec2time(const TransformTables* tables,
 
 /***************************** filterbank functions **************************/
 
-void WebRtcIsac_FilterAndCombineFloat(float* InLP, float* InHP, float* Out,
+void WebRtcIsac_FilterAndCombineFloat(float* InLP,
+                                      float* InHP,
+                                      float* Out,
                                       PostFiltBankstr* postfiltdata);
-
 
 /************************* normalized lattice filters ************************/
 
-void WebRtcIsac_NormLatticeFilterMa(int orderCoef, float* stateF, float* stateG,
-                                    float* lat_in, double* filtcoeflo,
+void WebRtcIsac_NormLatticeFilterMa(int orderCoef,
+                                    float* stateF,
+                                    float* stateG,
+                                    float* lat_in,
+                                    double* filtcoeflo,
                                     double* lat_out);
 
-void WebRtcIsac_NormLatticeFilterAr(int orderCoef, float* stateF, float* stateG,
-                                    double* lat_in, double* lo_filt_coef,
+void WebRtcIsac_NormLatticeFilterAr(int orderCoef,
+                                    float* stateF,
+                                    float* stateG,
+                                    double* lat_in,
+                                    double* lo_filt_coef,
                                     float* lat_out);
 
 void WebRtcIsac_Dir2Lat(double* a, int orderCoef, float* sth, float* cth);

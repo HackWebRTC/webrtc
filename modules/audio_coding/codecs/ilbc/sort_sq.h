@@ -26,11 +26,11 @@
  *---------------------------------------------------------------*/
 
 void WebRtcIlbcfix_SortSq(
-    int16_t *xq,   /* (o) the quantized value */
-    int16_t *index,  /* (o) the quantization index */
-    int16_t x,   /* (i) the value to quantize */
-    const int16_t *cb, /* (i) the quantization codebook */
-    int16_t cb_size  /* (i) the size of the quantization codebook */
-                           );
+    int16_t* xq,       /* (o) the quantized value */
+    int16_t* index,    /* (o) the quantization index */
+    int16_t x,         /* (i) the value to quantize */
+    const int16_t* cb, /* (i) the quantization codebook */
+    int16_t cb_size    /* (i) the size of the quantization codebook */
+    );
 
 #endif

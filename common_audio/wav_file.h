@@ -60,7 +60,7 @@ class WavWriter final : public WavFile {
   const int sample_rate_;
   const size_t num_channels_;
   size_t num_samples_;  // Total number of samples written to file.
-  FILE* file_handle_;  // Output file, owned by this class
+  FILE* file_handle_;   // Output file, owned by this class
 
   RTC_DISALLOW_COPY_AND_ASSIGN(WavWriter);
 };

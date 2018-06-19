@@ -109,9 +109,8 @@ int ParseVP8Extension(RTPVideoHeaderVP8* vp8,
   }
 
   if (has_tid || has_key_idx) {
-    if (ParseVP8TIDAndKeyIdx(
-            vp8, &data, &data_length, &parsed_bytes, has_tid, has_key_idx) !=
-        0) {
+    if (ParseVP8TIDAndKeyIdx(vp8, &data, &data_length, &parsed_bytes, has_tid,
+                             has_key_idx) != 0) {
       return -1;
     }
   }
@@ -171,8 +170,7 @@ RtpPacketizerVp8::RtpPacketizerVp8(const RTPVideoHeaderVP8& hdr_info,
   RTC_DCHECK(ValidateHeader(hdr_info));
 }
 
-RtpPacketizerVp8::~RtpPacketizerVp8() {
-}
+RtpPacketizerVp8::~RtpPacketizerVp8() {}
 
 size_t RtpPacketizerVp8::SetPayloadData(
     const uint8_t* payload_data,
@@ -252,8 +250,8 @@ void RtpPacketizerVp8::GeneratePacketsSplitPayloadBalanced(size_t payload_len,
     if (num_packets_left == 2 && current_packet_bytes == remaining_data) {
       --current_packet_bytes;
     }
-    QueuePacket(payload_len - remaining_data,
-                current_packet_bytes, remaining_data == payload_len);
+    QueuePacket(payload_len - remaining_data, current_packet_bytes,
+                remaining_data == payload_len);
     remaining_data -= current_packet_bytes;
     --num_packets_left;
   }
@@ -302,8 +300,7 @@ int RtpPacketizerVp8::WriteHeaderAndPayload(const InfoStruct& packet_info,
     return -1;
 
   memcpy(&buffer[vp8_fixed_payload_descriptor_bytes_ + extension_length],
-         &payload_data_[packet_info.payload_start_pos],
-         packet_info.size);
+         &payload_data_[packet_info.payload_start_pos], packet_info.size);
 
   // Return total length of written data.
   return packet_info.size + vp8_fixed_payload_descriptor_bytes_ +
@@ -318,20 +315,20 @@ int RtpPacketizerVp8::WriteExtensionFields(uint8_t* buffer,
     *x_field = 0;
     extension_length = 1;  // One octet for the X field.
     if (PictureIdPresent()) {
-      if (WritePictureIDFields(
-              x_field, buffer, buffer_length, &extension_length) < 0) {
+      if (WritePictureIDFields(x_field, buffer, buffer_length,
+                               &extension_length) < 0) {
         return -1;
       }
     }
     if (TL0PicIdxFieldPresent()) {
-      if (WriteTl0PicIdxFields(
-              x_field, buffer, buffer_length, &extension_length) < 0) {
+      if (WriteTl0PicIdxFields(x_field, buffer, buffer_length,
+                               &extension_length) < 0) {
         return -1;
       }
     }
     if (TIDFieldPresent() || KeyIdxFieldPresent()) {
-      if (WriteTIDAndKeyIdxFields(
-              x_field, buffer, buffer_length, &extension_length) < 0) {
+      if (WriteTIDAndKeyIdxFields(x_field, buffer, buffer_length,
+                                  &extension_length) < 0) {
         return -1;
       }
     }
@@ -516,8 +513,7 @@ bool RtpDepacketizerVp8::Parse(ParsedPayload* parsed_payload,
   if (extension) {
     const int parsed_bytes =
         ParseVP8Extension(&parsed_payload->type.Video.codecHeader.VP8,
-                          payload_data,
-                          payload_data_length);
+                          payload_data, payload_data_length);
     if (parsed_bytes < 0)
       return false;
     payload_data += parsed_bytes;

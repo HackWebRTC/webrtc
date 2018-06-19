@@ -216,7 +216,6 @@ void ResidualEchoEstimator::NonLinearEstimate(
     const std::array<float, kFftLengthBy2Plus1>& X2,
     const std::array<float, kFftLengthBy2Plus1>& Y2,
     std::array<float, kFftLengthBy2Plus1>* R2) {
-
   // Compute preliminary residual echo.
   std::transform(X2.begin(), X2.end(), R2->begin(), [echo_path_gain](float a) {
     return a * echo_path_gain * echo_path_gain;

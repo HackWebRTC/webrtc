@@ -61,14 +61,10 @@ struct DataChannelInit {
 // as binary or text.
 struct DataBuffer {
   DataBuffer(const rtc::CopyOnWriteBuffer& data, bool binary)
-      : data(data),
-        binary(binary) {
-  }
+      : data(data), binary(binary) {}
   // For convenience for unit tests.
   explicit DataBuffer(const std::string& text)
-      : data(text.data(), text.length()),
-        binary(false) {
-  }
+      : data(text.data(), text.length()), binary(false) {}
   size_t size() const { return data.size(); }
 
   rtc::CopyOnWriteBuffer data;

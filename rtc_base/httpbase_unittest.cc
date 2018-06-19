@@ -17,35 +17,35 @@
 namespace rtc {
 
 const char* const kHttpResponse =
-  "HTTP/1.1 200\r\n"
-  "Connection: Keep-Alive\r\n"
-  "Content-Type: text/plain\r\n"
-  "Proxy-Authorization: 42\r\n"
-  "Transfer-Encoding: chunked\r\n"
-  "\r\n"
-  "00000008\r\n"
-  "Goodbye!\r\n"
-  "0\r\n\r\n";
+    "HTTP/1.1 200\r\n"
+    "Connection: Keep-Alive\r\n"
+    "Content-Type: text/plain\r\n"
+    "Proxy-Authorization: 42\r\n"
+    "Transfer-Encoding: chunked\r\n"
+    "\r\n"
+    "00000008\r\n"
+    "Goodbye!\r\n"
+    "0\r\n\r\n";
 
 const char* const kHttpEmptyResponse =
-  "HTTP/1.1 200\r\n"
-  "Connection: Keep-Alive\r\n"
-  "Content-Length: 0\r\n"
-  "Proxy-Authorization: 42\r\n"
-  "\r\n";
+    "HTTP/1.1 200\r\n"
+    "Connection: Keep-Alive\r\n"
+    "Content-Length: 0\r\n"
+    "Proxy-Authorization: 42\r\n"
+    "\r\n";
 
 const char* const kHttpResponsePrefix =
-  "HTTP/1.1 200\r\n"
-  "Connection: Keep-Alive\r\n"
-  "Content-Type: text/plain\r\n"
-  "Proxy-Authorization: 42\r\n"
-  "Transfer-Encoding: chunked\r\n"
-  "\r\n"
-  "8\r\n"
-  "Goodbye!\r\n";
+    "HTTP/1.1 200\r\n"
+    "Connection: Keep-Alive\r\n"
+    "Content-Type: text/plain\r\n"
+    "Proxy-Authorization: 42\r\n"
+    "Transfer-Encoding: chunked\r\n"
+    "\r\n"
+    "8\r\n"
+    "Goodbye!\r\n";
 
 class HttpBaseTest : public testing::Test, public IHttpNotify {
-public:
+ public:
   enum EventType { E_HEADER_COMPLETE, E_COMPLETE, E_CLOSED };
   struct Event {
     EventType event;
@@ -64,7 +64,7 @@ public:
 
   HttpError onHttpHeaderComplete(bool chunked, size_t& data_size) override {
     RTC_LOG_F(LS_VERBOSE) << "chunked: " << chunked << " size: " << data_size;
-    Event e = { E_HEADER_COMPLETE, chunked, data_size, HM_NONE, HE_NONE};
+    Event e = {E_HEADER_COMPLETE, chunked, data_size, HM_NONE, HE_NONE};
     events.push_back(e);
     if (obtain_stream) {
       ObtainDocumentStream();
@@ -73,12 +73,12 @@ public:
   }
   void onHttpComplete(HttpMode mode, HttpError err) override {
     RTC_LOG_F(LS_VERBOSE) << "mode: " << mode << " err: " << err;
-    Event e = { E_COMPLETE, false, 0, mode, err };
+    Event e = {E_COMPLETE, false, 0, mode, err};
     events.push_back(e);
   }
   void onHttpClosed(HttpError err) override {
     RTC_LOG_F(LS_VERBOSE) << "err: " << err;
-    Event e = { E_CLOSED, false, 0, HM_NONE, err };
+    Event e = {E_CLOSED, false, 0, HM_NONE, err};
     events.push_back(e);
   }
 
@@ -200,7 +200,7 @@ void HttpBaseTest::VerifyDocumentStreamIsOpening() {
   EXPECT_EQ(SS_OPENING, http_stream->GetState());
 
   size_t read = 0;
-  char buffer[5] = { 0 };
+  char buffer[5] = {0};
   EXPECT_EQ(SR_BLOCK,
             http_stream->Read(buffer, sizeof(buffer), &read, nullptr));
   RTC_LOG_F(LS_VERBOSE) << "Exit";
@@ -230,7 +230,7 @@ void HttpBaseTest::ReadDocumentStreamData(const char* expected_data) {
   const size_t expected_length = strlen(expected_data);
   while (verified_length < expected_length) {
     size_t read = 0;
-    char buffer[5] = { 0 };
+    char buffer[5] = {0};
     size_t amt_to_read =
         std::min(expected_length - verified_length, sizeof(buffer));
     EXPECT_EQ(SR_SUCCESS,
@@ -247,7 +247,7 @@ void HttpBaseTest::VerifyDocumentStreamIsEOS() {
 
   ASSERT_TRUE(nullptr != http_stream);
   size_t read = 0;
-  char buffer[5] = { 0 };
+  char buffer[5] = {0};
   EXPECT_EQ(SR_EOS, http_stream->Read(buffer, sizeof(buffer), &read, nullptr));
   EXPECT_EQ(SS_CLOSED, http_stream->GetState());
 
@@ -403,11 +403,9 @@ TEST_F(HttpBaseTest, SupportsReceiveViaStreamPull) {
 }
 
 TEST_F(HttpBaseTest, DISABLED_AllowsCloseStreamBeforeDocumentIsComplete) {
-
   // TODO: Remove extra logging once test failure is understood
   LoggingSeverity old_sev = rtc::LogMessage::GetLogToDebug();
   rtc::LogMessage::LogToDebug(LS_VERBOSE);
-
 
   // Switch to pull mode
   ObtainDocumentStream();
@@ -511,7 +509,7 @@ TEST_F(HttpBaseTest, SignalsDocumentStreamCloseOnUnexpectedClose) {
 
   // Future reads give an error
   int error = 0;
-  char buffer[5] = { 0 };
+  char buffer[5] = {0};
   EXPECT_EQ(SR_ERROR,
             http_stream->Read(buffer, sizeof(buffer), nullptr, &error));
   EXPECT_EQ(HE_DISCONNECTED, error);
@@ -522,4 +520,4 @@ TEST_F(HttpBaseTest, SignalsDocumentStreamCloseOnUnexpectedClose) {
   VerifyDocumentContents("");
 }
 
-} // namespace rtc
+}  // namespace rtc

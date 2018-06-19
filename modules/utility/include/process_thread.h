@@ -74,4 +74,4 @@ class ProcessThread {
 
 }  // namespace webrtc
 
-#endif // MODULES_UTILITY_INCLUDE_PROCESS_THREAD_H_
+#endif  // MODULES_UTILITY_INCLUDE_PROCESS_THREAD_H_

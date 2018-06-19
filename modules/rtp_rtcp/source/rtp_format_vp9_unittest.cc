@@ -225,7 +225,7 @@ TEST_F(RtpPacketizerVp9Test, TestOneBytePictureId) {
   const size_t kFrameSize = 30;
   const size_t kPacketSize = 12;
 
-  expected_.picture_id = kMaxOneBytePictureId;   // 2 byte payload descriptor
+  expected_.picture_id = kMaxOneBytePictureId;  // 2 byte payload descriptor
   expected_.max_picture_id = kMaxOneBytePictureId;
   Init(kFrameSize, kPacketSize);
 
@@ -584,8 +584,7 @@ TEST_F(RtpPacketizerVp9Test, TestNonRefForInterLayerPred) {
 
 class RtpDepacketizerVp9Test : public ::testing::Test {
  protected:
-  RtpDepacketizerVp9Test()
-      : depacketizer_(new RtpDepacketizerVp9()) {}
+  RtpDepacketizerVp9Test() : depacketizer_(new RtpDepacketizerVp9()) {}
 
   void SetUp() override { expected_.InitRTPVideoHeaderVP9(); }
 
@@ -705,8 +704,8 @@ TEST_F(RtpDepacketizerVp9Test, ParseRefIdx) {
 TEST_F(RtpDepacketizerVp9Test, ParseRefIdxFailsWithNoPictureId) {
   const uint8_t kPdiff = 3;
   uint8_t packet[13] = {0};
-  packet[0] = 0x58;            // I:0 P:1 L:0 F:1 B:1 E:0 V:0 Z:0
-  packet[1] = (kPdiff << 1);   // P,F:  P_DIFF:3 N:0
+  packet[0] = 0x58;           // I:0 P:1 L:0 F:1 B:1 E:0 V:0 Z:0
+  packet[1] = (kPdiff << 1);  // P,F:  P_DIFF:3 N:0
 
   RtpDepacketizer::ParsedPayload parsed;
   EXPECT_FALSE(depacketizer_->Parse(&parsed, packet, sizeof(packet)));

@@ -150,8 +150,10 @@ class AudioSendStream {
       std::unique_ptr<webrtc::AudioFrame> audio_frame) = 0;
 
   // TODO(solenberg): Make payload_type a config property instead.
-  virtual bool SendTelephoneEvent(int payload_type, int payload_frequency,
-                                  int event, int duration_ms) = 0;
+  virtual bool SendTelephoneEvent(int payload_type,
+                                  int payload_frequency,
+                                  int event,
+                                  int duration_ms) = 0;
 
   virtual void SetMuted(bool muted) = 0;
 

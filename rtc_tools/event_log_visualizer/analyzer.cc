@@ -483,7 +483,7 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLogNew& log,
     }
   }
   RTC_LOG(LS_INFO) << "Found " << log_segments_.size()
-               << " (LOG_START, LOG_END) segments in log.";
+                   << " (LOG_START, LOG_END) segments in log.";
 }
 
 class BitrateObserver : public NetworkChangedObserver,
@@ -641,8 +641,7 @@ void EventLogAnalyzer::CreateAudioLevelGraph(PacketDirection direction,
 
   plot->SetXAxis(ToCallTimeSec(begin_time_), call_duration_s_, "Time (s)",
                  kLeftMargin, kRightMargin);
-  plot->SetYAxis(-127, 0, "Audio level (dBov)", kBottomMargin,
-                 kTopMargin);
+  plot->SetYAxis(-127, 0, "Audio level (dBov)", kBottomMargin, kTopMargin);
   plot->SetTitle(GetDirectionAsString(direction) + " audio level");
 }
 

@@ -84,8 +84,7 @@ class DtmfToneGeneratorTest : public ::testing::Test {
           // Verify that the attenuation is correct.
           for (int channel = 0; channel < channels; ++channel) {
             EXPECT_NEAR(attenuation_factor * ref_signal[channel][n],
-                        signal[channel][n],
-                        2);
+                        signal[channel][n], 2);
           }
         }
 

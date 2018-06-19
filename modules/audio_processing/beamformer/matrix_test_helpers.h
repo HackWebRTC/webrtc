@@ -66,11 +66,9 @@ class MatrixTestHelpers {
     for (size_t i = 0; i < expected.num_rows(); ++i) {
       for (size_t j = 0; j < expected.num_columns(); ++j) {
         EXPECT_NEAR(expected_elements[i][j].real(),
-                    actual_elements[i][j].real(),
-                    kTolerance);
+                    actual_elements[i][j].real(), kTolerance);
         EXPECT_NEAR(expected_elements[i][j].imag(),
-                    actual_elements[i][j].imag(),
-                    kTolerance);
+                    actual_elements[i][j].imag(), kTolerance);
       }
     }
   }
@@ -87,11 +85,9 @@ class MatrixTestHelpers {
     for (size_t i = 0; i < expected.num_rows(); ++i) {
       for (size_t j = 0; j < expected.num_columns(); ++j) {
         EXPECT_NEAR(expected_elements[i][j].real(),
-                    actual_elements[i][j].real(),
-                    tolerance);
+                    actual_elements[i][j].real(), tolerance);
         EXPECT_NEAR(expected_elements[i][j].imag(),
-                    actual_elements[i][j].imag(),
-                    tolerance);
+                    actual_elements[i][j].imag(), tolerance);
       }
     }
   }

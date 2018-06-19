@@ -67,8 +67,8 @@ ThreadManager::ThreadManager() : main_thread_ref_(CurrentThreadRef()) {
 }
 #endif
 
-Thread *ThreadManager::CurrentThread() {
-  return static_cast<Thread *>(pthread_getspecific(key_));
+Thread* ThreadManager::CurrentThread() {
+  return static_cast<Thread*>(pthread_getspecific(key_));
 }
 
 void ThreadManager::SetCurrentThread(Thread* thread) {
@@ -83,20 +83,19 @@ void ThreadManager::SetCurrentThread(Thread* thread) {
 
 #if defined(WEBRTC_WIN)
 ThreadManager::ThreadManager()
-    : key_(TlsAlloc()), main_thread_ref_(CurrentThreadRef()) {
+    : key_(TlsAlloc()), main_thread_ref_(CurrentThreadRef()) {}
+
+Thread* ThreadManager::CurrentThread() {
+  return static_cast<Thread*>(TlsGetValue(key_));
 }
 
-Thread *ThreadManager::CurrentThread() {
-  return static_cast<Thread *>(TlsGetValue(key_));
-}
-
-void ThreadManager::SetCurrentThread(Thread *thread) {
+void ThreadManager::SetCurrentThread(Thread* thread) {
   RTC_DCHECK(!CurrentThread() || !thread);
   TlsSetValue(key_, thread);
 }
 #endif
 
-Thread *ThreadManager::WrapCurrentThread() {
+Thread* ThreadManager::WrapCurrentThread() {
   Thread* result = CurrentThread();
   if (nullptr == result) {
     result = new Thread(SocketServer::CreateDefault());
@@ -118,9 +117,8 @@ bool ThreadManager::IsMainThread() {
 }
 
 Thread::ScopedDisallowBlockingCalls::ScopedDisallowBlockingCalls()
-  : thread_(Thread::Current()),
-    previous_state_(thread_->SetAllowBlockingCalls(false)) {
-}
+    : thread_(Thread::Current()),
+      previous_state_(thread_->SetAllowBlockingCalls(false)) {}
 
 Thread::ScopedDisallowBlockingCalls::~ScopedDisallowBlockingCalls() {
   RTC_DCHECK(thread_->IsCurrent());
@@ -363,7 +361,7 @@ void Thread::Send(const Location& posted_from,
   AssertBlockingIsAllowedOnCurrentThread();
 
   AutoThread thread;
-  Thread *current_thread = Thread::Current();
+  Thread* current_thread = Thread::Current();
   RTC_DCHECK(current_thread != nullptr);  // AutoThread ensures this
 
   bool ready = false;

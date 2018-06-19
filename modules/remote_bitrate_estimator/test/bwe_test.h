@@ -133,8 +133,7 @@ class BweTest {
   Link uplink_;
 
  private:
-  void FindPacketsToProcess(const FlowIds& flow_ids, Packets* in,
-                            Packets* out);
+  void FindPacketsToProcess(const FlowIds& flow_ids, Packets* in, Packets* out);
   void GiveFeedbackToAffectedSenders(PacketReceiver* receiver);
 
   int64_t run_time_ms_;

@@ -143,11 +143,9 @@ void SendSideBweSender::Process() {
 }
 
 SendSideBweReceiver::SendSideBweReceiver(int flow_id)
-    : BweReceiver(flow_id), last_feedback_ms_(0) {
-}
+    : BweReceiver(flow_id), last_feedback_ms_(0) {}
 
-SendSideBweReceiver::~SendSideBweReceiver() {
-}
+SendSideBweReceiver::~SendSideBweReceiver() {}
 
 void SendSideBweReceiver::ReceivePacket(int64_t arrival_time_ms,
                                         const MediaPacket& media_packet) {

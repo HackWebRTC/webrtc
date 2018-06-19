@@ -102,8 +102,7 @@ AudioReceiveStream::AudioReceiveStream(
     const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
     webrtc::RtcEventLog* event_log,
     std::unique_ptr<voe::ChannelProxy> channel_proxy)
-    : audio_state_(audio_state),
-      channel_proxy_(std::move(channel_proxy)) {
+    : audio_state_(audio_state), channel_proxy_(std::move(channel_proxy)) {
   RTC_LOG(LS_INFO) << "AudioReceiveStream: " << config.rtp.remote_ssrc;
   RTC_DCHECK(receiver_controller);
   RTC_DCHECK(packet_router);
@@ -120,9 +119,8 @@ AudioReceiveStream::AudioReceiveStream(
   channel_proxy_->RegisterReceiverCongestionControlObjects(packet_router);
 
   // Register with transport.
-  rtp_stream_receiver_ =
-      receiver_controller->CreateReceiver(config.rtp.remote_ssrc,
-                                          channel_proxy_.get());
+  rtp_stream_receiver_ = receiver_controller->CreateReceiver(
+      config.rtp.remote_ssrc, channel_proxy_.get());
 
   ConfigureStream(this, config, true);
 }
@@ -273,9 +271,7 @@ absl::optional<Syncable::Info> AudioReceiveStream::GetInfo() const {
     return absl::nullopt;
   }
   if (rtp_rtcp->RemoteNTP(&info.capture_time_ntp_secs,
-                          &info.capture_time_ntp_frac,
-                          nullptr,
-                          nullptr,
+                          &info.capture_time_ntp_frac, nullptr, nullptr,
                           &info.capture_time_source_clock) != 0) {
     return absl::nullopt;
   }
@@ -329,8 +325,8 @@ const webrtc::AudioReceiveStream::Config& AudioReceiveStream::config() const {
   return config_;
 }
 
-const AudioSendStream*
-    AudioReceiveStream::GetAssociatedSendStreamForTesting() const {
+const AudioSendStream* AudioReceiveStream::GetAssociatedSendStreamForTesting()
+    const {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   return associated_send_stream_;
 }

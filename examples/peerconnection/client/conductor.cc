@@ -41,8 +41,7 @@ class DummySetSessionDescriptionObserver
     : public webrtc::SetSessionDescriptionObserver {
  public:
   static DummySetSessionDescriptionObserver* Create() {
-    return
-        new rtc::RefCountedObject<DummySetSessionDescriptionObserver>();
+    return new rtc::RefCountedObject<DummySetSessionDescriptionObserver>();
   }
   virtual void OnSuccess() { RTC_LOG(INFO) << __FUNCTION__; }
   virtual void OnFailure(webrtc::RTCError error) {
@@ -52,10 +51,7 @@ class DummySetSessionDescriptionObserver
 };
 
 Conductor::Conductor(PeerConnectionClient* client, MainWindow* main_wnd)
-  : peer_id_(-1),
-    loopback_(false),
-    client_(client),
-    main_wnd_(main_wnd) {
+    : peer_id_(-1), loopback_(false), client_(client), main_wnd_(main_wnd) {
   client_->RegisterObserver(this);
   main_wnd->RegisterObserver(this);
 }
@@ -87,15 +83,14 @@ bool Conductor::InitializePeerConnection() {
       nullptr /* audio_processing */);
 
   if (!peer_connection_factory_) {
-    main_wnd_->MessageBox("Error",
-        "Failed to initialize PeerConnectionFactory", true);
+    main_wnd_->MessageBox("Error", "Failed to initialize PeerConnectionFactory",
+                          true);
     DeletePeerConnection();
     return false;
   }
 
   if (!CreatePeerConnection(/*dtls=*/true)) {
-    main_wnd_->MessageBox("Error",
-        "CreatePeerConnection failed", true);
+    main_wnd_->MessageBox("Error", "CreatePeerConnection failed", true);
     DeletePeerConnection();
   }
 
@@ -363,8 +358,8 @@ void Conductor::ConnectToPeer(int peer_id) {
   RTC_DCHECK(peer_id != -1);
 
   if (peer_connection_.get()) {
-    main_wnd_->MessageBox("Error",
-        "We only support connecting to one peer at a time", true);
+    main_wnd_->MessageBox(
+        "Error", "We only support connecting to one peer at a time", true);
     return;
   }
 

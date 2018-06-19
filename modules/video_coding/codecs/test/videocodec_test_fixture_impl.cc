@@ -308,9 +308,9 @@ bool VideoCodecTestFixtureImpl::Config::IsAsyncCodec() const {
 
 // TODO(kthelgason): Move this out of the test fixture impl and
 // make available as a shared utility class.
-void VideoCodecTestFixtureImpl::H264KeyframeChecker::
-    CheckEncodedFrame(webrtc::VideoCodecType codec,
-                      const EncodedImage& encoded_frame) const {
+void VideoCodecTestFixtureImpl::H264KeyframeChecker::CheckEncodedFrame(
+    webrtc::VideoCodecType codec,
+    const EncodedImage& encoded_frame) const {
   EXPECT_EQ(kVideoCodecH264, codec);
   bool contains_sps = false;
   bool contains_pps = false;
@@ -390,8 +390,7 @@ VideoCodecTestFixtureImpl::VideoCodecTestFixtureImpl(
       decoder_factory_(std::move(decoder_factory)),
       config_(config) {}
 
-VideoCodecTestFixtureImpl::
-    ~VideoCodecTestFixtureImpl() = default;
+VideoCodecTestFixtureImpl::~VideoCodecTestFixtureImpl() = default;
 
 // Processes all frames in the clip and verifies the result.
 void VideoCodecTestFixtureImpl::RunTest(

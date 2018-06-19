@@ -36,11 +36,14 @@ class I420Buffer : public I420BufferInterface {
     return Copy(*buffer.GetI420());
   }
 
-  static rtc::scoped_refptr<I420Buffer> Copy(
-      int width, int height,
-      const uint8_t* data_y, int stride_y,
-      const uint8_t* data_u, int stride_u,
-      const uint8_t* data_v, int stride_v);
+  static rtc::scoped_refptr<I420Buffer> Copy(int width,
+                                             int height,
+                                             const uint8_t* data_y,
+                                             int stride_y,
+                                             const uint8_t* data_u,
+                                             int stride_u,
+                                             const uint8_t* data_v,
+                                             int stride_v);
 
   // Returns a rotated copy of |src|.
   static rtc::scoped_refptr<I420Buffer> Rotate(const I420BufferInterface& src,

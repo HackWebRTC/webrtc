@@ -20,10 +20,7 @@ namespace rtc {
 ///////////////////////////////////////////////////////////////////////////////
 
 SignalThread::SignalThread()
-    : main_(Thread::Current()),
-      worker_(this),
-      state_(kInit),
-      refcount_(1) {
+    : main_(Thread::Current()), worker_(this), state_(kInit), refcount_(1) {
   main_->SignalQueueDestroyed.connect(this,
                                       &SignalThread::OnMainThreadDestroyed);
   worker_.SetName("SignalThread", this);
@@ -94,7 +91,7 @@ bool SignalThread::ContinueWork() {
   return worker_.ProcessMessages(0);
 }
 
-void SignalThread::OnMessage(Message *msg) {
+void SignalThread::OnMessage(Message* msg) {
   EnterExit ee(this);
   if (ST_MSG_WORKER_DONE == msg->message_id) {
     RTC_DCHECK(main_->IsCurrent());

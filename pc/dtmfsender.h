@@ -49,17 +49,15 @@ class DtmfProviderInterface {
   virtual ~DtmfProviderInterface() {}
 };
 
-class DtmfSender
-    : public DtmfSenderInterface,
-      public sigslot::has_slots<>,
-      public rtc::MessageHandler {
+class DtmfSender : public DtmfSenderInterface,
+                   public sigslot::has_slots<>,
+                   public rtc::MessageHandler {
  public:
   // |track| is only there for backwards compatibility, since there's a track
   // accessor method.
-  static rtc::scoped_refptr<DtmfSender> Create(
-      AudioTrackInterface* track,
-      rtc::Thread* signaling_thread,
-      DtmfProviderInterface* provider);
+  static rtc::scoped_refptr<DtmfSender> Create(AudioTrackInterface* track,
+                                               rtc::Thread* signaling_thread,
+                                               DtmfProviderInterface* provider);
 
   // Implements DtmfSenderInterface.
   void RegisterObserver(DtmfSenderObserverInterface* observer) override;
@@ -105,15 +103,15 @@ class DtmfSender
 
 // Define proxy for DtmfSenderInterface.
 BEGIN_SIGNALING_PROXY_MAP(DtmfSender)
-  PROXY_SIGNALING_THREAD_DESTRUCTOR()
-  PROXY_METHOD1(void, RegisterObserver, DtmfSenderObserverInterface*)
-  PROXY_METHOD0(void, UnregisterObserver)
-  PROXY_METHOD0(bool, CanInsertDtmf)
-  PROXY_METHOD3(bool, InsertDtmf, const std::string&, int, int)
-  PROXY_CONSTMETHOD0(const AudioTrackInterface*, track)
-  PROXY_CONSTMETHOD0(std::string, tones)
-  PROXY_CONSTMETHOD0(int, duration)
-  PROXY_CONSTMETHOD0(int, inter_tone_gap)
+PROXY_SIGNALING_THREAD_DESTRUCTOR()
+PROXY_METHOD1(void, RegisterObserver, DtmfSenderObserverInterface*)
+PROXY_METHOD0(void, UnregisterObserver)
+PROXY_METHOD0(bool, CanInsertDtmf)
+PROXY_METHOD3(bool, InsertDtmf, const std::string&, int, int)
+PROXY_CONSTMETHOD0(const AudioTrackInterface*, track)
+PROXY_CONSTMETHOD0(std::string, tones)
+PROXY_CONSTMETHOD0(int, duration)
+PROXY_CONSTMETHOD0(int, inter_tone_gap)
 END_PROXY_MAP()
 
 // Get DTMF code from the DTMF event character.

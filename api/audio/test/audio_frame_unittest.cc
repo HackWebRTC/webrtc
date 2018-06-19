@@ -87,9 +87,8 @@ TEST(AudioFrameTest, CopyFrom) {
   AudioFrame frame2;
 
   int16_t samples[kNumChannels * kSamplesPerChannel] = {17};
-  frame2.UpdateFrame(kTimestamp, samples, kSamplesPerChannel,
-                     kSampleRateHz, AudioFrame::kPLC, AudioFrame::kVadActive,
-                     kNumChannels);
+  frame2.UpdateFrame(kTimestamp, samples, kSamplesPerChannel, kSampleRateHz,
+                     AudioFrame::kPLC, AudioFrame::kVadActive, kNumChannels);
   frame1.CopyFrom(frame2);
 
   EXPECT_EQ(frame2.timestamp_, frame1.timestamp_);

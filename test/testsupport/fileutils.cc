@@ -31,8 +31,8 @@
 #endif
 
 #include <sys/stat.h>  // To check for directory existence.
-#ifndef S_ISDIR  // Not defined in stat.h on Windows.
-#define S_ISDIR(mode) (((mode) & S_IFMT) == S_IFDIR)
+#ifndef S_ISDIR        // Not defined in stat.h on Windows.
+#define S_ISDIR(mode) (((mode)&S_IFMT) == S_IFDIR)
 #endif
 
 #include <stdio.h>
@@ -92,9 +92,9 @@ void SetExecutablePath(const std::string& path) {
   if (path.find(working_dir) != std::string::npos) {
     temp_path = path.substr(working_dir.length() + 1);
   }
-  // On Windows, when tests are run under memory tools like DrMemory and TSan,
-  // slashes occur in the path as directory separators. Make sure we replace
-  // such cases with backslashes in order for the paths to be correct.
+// On Windows, when tests are run under memory tools like DrMemory and TSan,
+// slashes occur in the path as directory separators. Make sure we replace
+// such cases with backslashes in order for the paths to be correct.
 #ifdef WIN32
   std::replace(temp_path.begin(), temp_path.end(), '/', '\\');
 #endif
@@ -112,8 +112,8 @@ bool FileExists(const std::string& file_name) {
 
 bool DirExists(const std::string& directory_name) {
   struct stat directory_info = {0};
-  return stat(directory_name.c_str(), &directory_info) == 0 && S_ISDIR(
-      directory_info.st_mode);
+  return stat(directory_name.c_str(), &directory_info) == 0 &&
+         S_ISDIR(directory_info.st_mode);
 }
 
 #ifdef WEBRTC_ANDROID
@@ -190,11 +190,11 @@ std::string WorkingDir() {
 
 // Generate a temporary filename in a safe way.
 // Largely copied from talk/base/{unixfilesystem,win32filesystem}.cc.
-std::string TempFilename(const std::string &dir, const std::string &prefix) {
+std::string TempFilename(const std::string& dir, const std::string& prefix) {
 #ifdef WIN32
   wchar_t filename[MAX_PATH];
-  if (::GetTempFileName(rtc::ToUtf16(dir).c_str(),
-                        rtc::ToUtf16(prefix).c_str(), 0, filename) != 0)
+  if (::GetTempFileName(rtc::ToUtf16(dir).c_str(), rtc::ToUtf16(prefix).c_str(),
+                        0, filename) != 0)
     return rtc::ToUtf8(filename);
   assert(false);
   return "";
@@ -202,8 +202,7 @@ std::string TempFilename(const std::string &dir, const std::string &prefix) {
   int len = dir.size() + prefix.size() + 2 + 6;
   std::unique_ptr<char[]> tempname(new char[len]);
 
-  snprintf(tempname.get(), len, "%s/%sXXXXXX", dir.c_str(),
-           prefix.c_str());
+  snprintf(tempname.get(), len, "%s/%sXXXXXX", dir.c_str(), prefix.c_str());
   int fd = ::mkstemp(tempname.get());
   if (fd == -1) {
     assert(false);
@@ -279,7 +278,8 @@ bool CreateDir(const std::string& directory_name) {
   // Check if the path exists already:
   if (stat(directory_name.c_str(), &path_info) == 0) {
     if (!S_ISDIR(path_info.st_mode)) {
-      fprintf(stderr, "Path %s exists but is not a directory! Remove this "
+      fprintf(stderr,
+              "Path %s exists but is not a directory! Remove this "
               "file and re-run to create the directory.\n",
               directory_name.c_str());
       return false;
@@ -288,7 +288,7 @@ bool CreateDir(const std::string& directory_name) {
 #ifdef WIN32
     return _mkdir(directory_name.c_str()) == 0;
 #else
-    return mkdir(directory_name.c_str(),  S_IRWXU | S_IRWXG | S_IRWXO) == 0;
+    return mkdir(directory_name.c_str(), S_IRWXU | S_IRWXG | S_IRWXO) == 0;
 #endif
   }
   return true;
@@ -296,9 +296,9 @@ bool CreateDir(const std::string& directory_name) {
 
 bool RemoveDir(const std::string& directory_name) {
 #ifdef WIN32
-    return RemoveDirectoryA(directory_name.c_str()) != FALSE;
+  return RemoveDirectoryA(directory_name.c_str()) != FALSE;
 #else
-    return rmdir(directory_name.c_str()) == 0;
+  return rmdir(directory_name.c_str()) == 0;
 #endif
 }
 
@@ -332,10 +332,10 @@ std::string ResourcePath(const std::string& name,
   std::string architecture = "32";
 #endif  // WEBRTC_ARCH_64_BITS
 
-  std::string resources_path = ProjectRootPath() + kResourcesDirName +
-      kPathDelimiter;
+  std::string resources_path =
+      ProjectRootPath() + kResourcesDirName + kPathDelimiter;
   std::string resource_file = resources_path + name + "_" + platform + "_" +
-      architecture + "." + extension;
+                              architecture + "." + extension;
   if (FileExists(resource_file)) {
     return resource_file;
   }

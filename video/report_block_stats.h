@@ -59,4 +59,3 @@ class ReportBlockStats {
 }  // namespace webrtc
 
 #endif  // VIDEO_REPORT_BLOCK_STATS_H_
-

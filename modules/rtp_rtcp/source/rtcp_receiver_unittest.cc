@@ -1235,8 +1235,8 @@ TEST_F(RtcpReceiverTest, HandlesInvalidTransportFeedback) {
 
   // Modify the TransportFeedback packet so that it is invalid.
   const size_t kStatusCountOffset = 14;
-  ByteWriter<uint16_t>::WriteBigEndian(
-      &built_packet.data()[kStatusCountOffset], 42);
+  ByteWriter<uint16_t>::WriteBigEndian(&built_packet.data()[kStatusCountOffset],
+                                       42);
 
   // Stress no transport feedback is expected.
   EXPECT_CALL(transport_feedback_observer_, OnTransportFeedback(_)).Times(0);

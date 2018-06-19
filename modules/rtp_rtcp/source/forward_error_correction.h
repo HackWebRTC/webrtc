@@ -67,7 +67,7 @@ class ForwardErrorCorrection {
     // packets belonging to the same SSRC.
     struct LessThan {
       template <typename S, typename T>
-      bool operator() (const S& first, const T& second);
+      bool operator()(const S& first, const T& second);
     };
 
     uint32_t ssrc;
@@ -83,8 +83,8 @@ class ForwardErrorCorrection {
     ReceivedPacket();
     ~ReceivedPacket();
 
-    bool is_fec;    // Set to true if this is an FEC packet and false
-                    // otherwise.
+    bool is_fec;  // Set to true if this is an FEC packet and false
+                  // otherwise.
     rtc::scoped_refptr<Packet> pkt;  // Pointer to the packet storage.
   };
 

@@ -32,10 +32,10 @@ static cricket::StreamParams CreateStreamParamsWithSsrcGroup(
 
 TEST(SsrcGroup, EqualNotEqual) {
   cricket::SsrcGroup ssrc_groups[] = {
-    cricket::SsrcGroup("ABC", MAKE_VECTOR(kSsrcs1)),
-    cricket::SsrcGroup("ABC", MAKE_VECTOR(kSsrcs2)),
-    cricket::SsrcGroup("Abc", MAKE_VECTOR(kSsrcs2)),
-    cricket::SsrcGroup("abc", MAKE_VECTOR(kSsrcs2)),
+      cricket::SsrcGroup("ABC", MAKE_VECTOR(kSsrcs1)),
+      cricket::SsrcGroup("ABC", MAKE_VECTOR(kSsrcs2)),
+      cricket::SsrcGroup("Abc", MAKE_VECTOR(kSsrcs2)),
+      cricket::SsrcGroup("abc", MAKE_VECTOR(kSsrcs2)),
   };
 
   for (size_t i = 0; i < arraysize(ssrc_groups); ++i) {
@@ -69,7 +69,7 @@ TEST(StreamParams, CreateLegacy) {
   EXPECT_EQ(ssrc, one_sp.first_ssrc());
   EXPECT_TRUE(one_sp.has_ssrcs());
   EXPECT_TRUE(one_sp.has_ssrc(ssrc));
-  EXPECT_FALSE(one_sp.has_ssrc(ssrc+1));
+  EXPECT_FALSE(one_sp.has_ssrc(ssrc + 1));
   EXPECT_FALSE(one_sp.has_ssrc_groups());
   EXPECT_EQ(0U, one_sp.ssrc_groups.size());
 }
@@ -149,7 +149,7 @@ TEST(StreamParams, FidFunctions) {
   std::vector<uint32_t> fid_vector;
   fid_vector.push_back(13);
   cricket::SsrcGroup invalid_fid_group(cricket::kFidSsrcGroupSemantics,
-                                        fid_vector);
+                                       fid_vector);
   cricket::StreamParams sp_invalid;
   sp_invalid.add_ssrc(13);
   sp_invalid.ssrc_groups.push_back(invalid_fid_group);
@@ -261,10 +261,8 @@ TEST(StreamParams, TestIsOneSsrcStream_SimulcastStream) {
 }
 
 TEST(StreamParams, TestIsOneSsrcStream_SimRtxStream) {
-  cricket::StreamParams stream =
-      cricket::CreateSimWithRtxStreamParams("cname",
-                                            MAKE_VECTOR(kSsrcs3),
-                                            MAKE_VECTOR(kRtxSsrcs3));
+  cricket::StreamParams stream = cricket::CreateSimWithRtxStreamParams(
+      "cname", MAKE_VECTOR(kSsrcs3), MAKE_VECTOR(kRtxSsrcs3));
   EXPECT_FALSE(cricket::IsOneSsrcStream(stream));
 }
 
@@ -288,19 +286,15 @@ TEST(StreamParams, TestIsSimulcastStream_SimulcastStream) {
 }
 
 TEST(StreamParams, TestIsSimulcastStream_SimRtxStream) {
-  cricket::StreamParams stream =
-      cricket::CreateSimWithRtxStreamParams("cname",
-                                            MAKE_VECTOR(kSsrcs3),
-                                            MAKE_VECTOR(kRtxSsrcs3));
+  cricket::StreamParams stream = cricket::CreateSimWithRtxStreamParams(
+      "cname", MAKE_VECTOR(kSsrcs3), MAKE_VECTOR(kRtxSsrcs3));
   EXPECT_TRUE(cricket::IsSimulcastStream(stream));
 }
 
 TEST(StreamParams, TestIsSimulcastStream_InvalidStreams) {
   // stream1 has extra non-sim, non-fid ssrc.
-  cricket::StreamParams stream1 =
-      cricket::CreateSimWithRtxStreamParams("cname",
-                                            MAKE_VECTOR(kSsrcs3),
-                                            MAKE_VECTOR(kRtxSsrcs3));
+  cricket::StreamParams stream1 = cricket::CreateSimWithRtxStreamParams(
+      "cname", MAKE_VECTOR(kSsrcs3), MAKE_VECTOR(kRtxSsrcs3));
   stream1.add_ssrc(25);
   EXPECT_FALSE(cricket::IsSimulcastStream(stream1));
 

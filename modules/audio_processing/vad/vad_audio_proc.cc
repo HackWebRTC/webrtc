@@ -67,8 +67,7 @@ VadAudioProc::VadAudioProc()
   WebRtcIsac_InitPitchAnalysis(pitch_analysis_handle_.get());
 }
 
-VadAudioProc::~VadAudioProc() {
-}
+VadAudioProc::~VadAudioProc() {}
 
 void VadAudioProc::ResetBuffer() {
   memcpy(audio_buffer_, &audio_buffer_[kNumSamplesToProcess],

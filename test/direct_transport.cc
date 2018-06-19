@@ -42,8 +42,7 @@ DirectTransport::DirectTransport(
     : DirectTransport(task_queue,
                       FakeNetworkPipe::Config(),
                       send_call,
-                      payload_type_map) {
-}
+                      payload_type_map) {}
 
 DirectTransport::DirectTransport(
     SingleThreadedTaskQueueForTesting* task_queue,
@@ -139,9 +138,8 @@ void DirectTransport::SendPackets() {
   fake_network_->Process();
 
   int64_t delay_ms = fake_network_->TimeUntilNextProcess();
-  next_scheduled_task_ = task_queue_->PostDelayedTask([this]() {
-    SendPackets();
-  }, delay_ms);
+  next_scheduled_task_ =
+      task_queue_->PostDelayedTask([this]() { SendPackets(); }, delay_ms);
 }
 }  // namespace test
 }  // namespace webrtc

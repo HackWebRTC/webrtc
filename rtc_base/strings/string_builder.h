@@ -55,7 +55,7 @@ class SimpleStringBuilder {
   // compatibility reasons.
   size_t size() const { return size_; }
 
-  // Allows appending a printf style formatted string.
+// Allows appending a printf style formatted string.
 #if defined(__GNUC__)
   __attribute__((__format__(__printf__, 2, 3)))
 #endif

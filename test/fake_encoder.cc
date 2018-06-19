@@ -116,8 +116,8 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
         (simulcast_streams[i].minBitrate * 1000) / framerate);
     size_t max_stream_bits = static_cast<size_t>(
         (simulcast_streams[i].maxBitrate * 1000) / framerate);
-    size_t stream_bits = (bits_available > max_stream_bits) ? max_stream_bits :
-        bits_available;
+    size_t stream_bits =
+        (bits_available > max_stream_bits) ? max_stream_bits : bits_available;
     size_t stream_bytes = (stream_bits + 7) / 8;
     if (keyframe) {
       // The first frame is a key frame and should be larger.
@@ -172,7 +172,9 @@ int32_t FakeEncoder::RegisterEncodeCompleteCallback(
   return 0;
 }
 
-int32_t FakeEncoder::Release() { return 0; }
+int32_t FakeEncoder::Release() {
+  return 0;
+}
 
 int32_t FakeEncoder::SetChannelParameters(uint32_t packet_loss, int64_t rtt) {
   return 0;

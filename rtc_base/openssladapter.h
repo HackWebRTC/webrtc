@@ -81,7 +81,11 @@ class OpenSSLAdapter : public SSLAdapter, public MessageHandler {
 
  private:
   enum SSLState {
-    SSL_NONE, SSL_WAIT, SSL_CONNECTING, SSL_CONNECTED, SSL_ERROR
+    SSL_NONE,
+    SSL_WAIT,
+    SSL_CONNECTING,
+    SSL_CONNECTED,
+    SSL_ERROR
   };
 
   enum { MSG_TIMEOUT };

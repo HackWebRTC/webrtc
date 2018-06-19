@@ -21,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class RTCNSGLVideoView;
 
-@protocol RTCNSGLVideoViewDelegate<RTCVideoViewDelegate>
+@protocol RTCNSGLVideoViewDelegate <RTCVideoViewDelegate>
 @end
 
 @interface RTCNSGLVideoView : NSOpenGLView <RTCVideoRenderer>

@@ -11,8 +11,8 @@
 #ifndef MODULES_AUDIO_DEVICE_ANDROID_AUDIO_MANAGER_H_
 #define MODULES_AUDIO_DEVICE_ANDROID_AUDIO_MANAGER_H_
 
-#include <jni.h>
 #include <SLES/OpenSLES.h>
+#include <jni.h>
 
 #include <memory>
 

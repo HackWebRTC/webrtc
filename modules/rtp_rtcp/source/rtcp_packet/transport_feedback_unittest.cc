@@ -79,8 +79,8 @@ class FeedbackTester {
     ASSERT_TRUE(feedback_->IsConsistent());
     serialized_ = feedback_->Build();
     VerifyInternal();
-    feedback_ = TransportFeedback::ParseFrom(serialized_.data(),
-                                             serialized_.size());
+    feedback_ =
+        TransportFeedback::ParseFrom(serialized_.data(), serialized_.size());
     ASSERT_TRUE(feedback_->IsConsistent());
     ASSERT_NE(nullptr, feedback_.get());
     VerifyInternal();
@@ -209,10 +209,7 @@ TEST(RtcpPacketTest, TransportFeedback_TwoBitVectorFull) {
 TEST(RtcpPacketTest, TransportFeedback_LargeAndNegativeDeltas) {
   const uint16_t kReceived[] = {1, 2, 6, 7, 8};
   const int64_t kReceiveTimes[] = {
-      2000,
-      1000,
-      4000,
-      3000,
+      2000, 1000, 4000, 3000,
       3000 + TransportFeedback::kDeltaScaleFactor * (1 << 8)};
   const size_t kLength = sizeof(kReceived) / sizeof(uint16_t);
   const size_t kExpectedSizeBytes =

@@ -12,10 +12,10 @@
 #define RTC_BASE_IPADDRESS_H_
 
 #if defined(WEBRTC_POSIX)
-#include <netinet/in.h>
-#include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
 #endif
 #if defined(WEBRTC_WIN)
 #include <winsock2.h>
@@ -33,33 +33,29 @@
 namespace rtc {
 
 enum IPv6AddressFlag {
-  IPV6_ADDRESS_FLAG_NONE =           0x00,
+  IPV6_ADDRESS_FLAG_NONE = 0x00,
 
   // Temporary address is dynamic by nature and will not carry MAC
   // address.
-  IPV6_ADDRESS_FLAG_TEMPORARY =      1 << 0,
+  IPV6_ADDRESS_FLAG_TEMPORARY = 1 << 0,
 
   // Temporary address could become deprecated once the preferred
   // lifetime is reached. It is still valid but just shouldn't be used
   // to create new connection.
-  IPV6_ADDRESS_FLAG_DEPRECATED =     1 << 1,
+  IPV6_ADDRESS_FLAG_DEPRECATED = 1 << 1,
 };
 
 // Version-agnostic IP address class, wraps a union of in_addr and in6_addr.
 class IPAddress {
  public:
-  IPAddress() : family_(AF_UNSPEC) {
-    ::memset(&u_, 0, sizeof(u_));
-  }
+  IPAddress() : family_(AF_UNSPEC) { ::memset(&u_, 0, sizeof(u_)); }
 
   explicit IPAddress(const in_addr& ip4) : family_(AF_INET) {
     memset(&u_, 0, sizeof(u_));
     u_.ip4 = ip4;
   }
 
-  explicit IPAddress(const in6_addr& ip6) : family_(AF_INET6) {
-    u_.ip6 = ip6;
-  }
+  explicit IPAddress(const in6_addr& ip6) : family_(AF_INET6) { u_.ip6 = ip6; }
 
   explicit IPAddress(uint32_t ip_in_host_byte_order) : family_(AF_INET) {
     memset(&u_, 0, sizeof(u_));
@@ -72,7 +68,7 @@ class IPAddress {
 
   virtual ~IPAddress() {}
 
-  const IPAddress & operator=(const IPAddress& other) {
+  const IPAddress& operator=(const IPAddress& other) {
     family_ = other.family_;
     ::memcpy(&u_, &other.u_, sizeof(u_));
     return *this;
@@ -80,8 +76,8 @@ class IPAddress {
 
   bool operator==(const IPAddress& other) const;
   bool operator!=(const IPAddress& other) const;
-  bool operator <(const IPAddress& other) const;
-  bool operator >(const IPAddress& other) const;
+  bool operator<(const IPAddress& other) const;
+  bool operator>(const IPAddress& other) const;
 
 #ifdef UNIT_TEST
   inline std::ostream& operator<<(  // no-presubmit-check TODO(webrtc:8982)
@@ -135,12 +131,12 @@ class InterfaceAddress : public IPAddress {
       : IPAddress(ip), ipv6_flags_(IPV6_ADDRESS_FLAG_NONE) {}
 
   InterfaceAddress(IPAddress addr, int ipv6_flags)
-    : IPAddress(addr), ipv6_flags_(ipv6_flags) {}
+      : IPAddress(addr), ipv6_flags_(ipv6_flags) {}
 
   InterfaceAddress(const in6_addr& ip6, int ipv6_flags)
-    : IPAddress(ip6), ipv6_flags_(ipv6_flags) {}
+      : IPAddress(ip6), ipv6_flags_(ipv6_flags) {}
 
-  const InterfaceAddress & operator=(const InterfaceAddress& other);
+  const InterfaceAddress& operator=(const InterfaceAddress& other);
 
   bool operator==(const InterfaceAddress& other) const;
   bool operator!=(const InterfaceAddress& other) const;
@@ -155,8 +151,7 @@ class InterfaceAddress : public IPAddress {
 
 bool IPFromAddrInfo(struct addrinfo* info, IPAddress* out);
 bool IPFromString(const std::string& str, IPAddress* out);
-bool IPFromString(const std::string& str, int flags,
-                  InterfaceAddress* out);
+bool IPFromString(const std::string& str, int flags, InterfaceAddress* out);
 bool IPIsAny(const IPAddress& ip);
 bool IPIsLoopback(const IPAddress& ip);
 bool IPIsLinkLocal(const IPAddress& ip);

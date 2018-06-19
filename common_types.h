@@ -296,7 +296,7 @@ struct AudioDecodingCallStats {
   int decoded_normal;  // Number of calls where audio RTP packet decoded.
   int decoded_plc;     // Number of calls resulted in PLC.
   int decoded_cng;  // Number of calls where comfort noise generated due to DTX.
-  int decoded_plc_cng;  // Number of calls resulted where PLC faded to CNG.
+  int decoded_plc_cng;       // Number of calls resulted where PLC faded to CNG.
   int decoded_muted_output;  // Number of calls returning a muted state output.
 };
 

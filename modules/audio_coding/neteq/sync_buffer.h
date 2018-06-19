@@ -92,7 +92,7 @@ class SyncBuffer : public AudioMultiVector {
  private:
   size_t next_index_;
   uint32_t end_timestamp_;  // The timestamp of the last sample in the buffer.
-  size_t dtmf_index_;  // Index to the first non-DTMF sample in the buffer.
+  size_t dtmf_index_;       // Index to the first non-DTMF sample in the buffer.
 
   RTC_DISALLOW_COPY_AND_ASSIGN(SyncBuffer);
 };

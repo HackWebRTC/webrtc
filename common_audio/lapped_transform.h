@@ -35,7 +35,8 @@ class LappedTransform {
     virtual ~Callback() {}
 
     virtual void ProcessAudioBlock(const std::complex<float>* const* in_block,
-                                   size_t num_in_channels, size_t frames,
+                                   size_t num_in_channels,
+                                   size_t frames,
                                    size_t num_out_channels,
                                    std::complex<float>* const* out_block) = 0;
   };
@@ -128,4 +129,3 @@ class LappedTransform {
 }  // namespace webrtc
 
 #endif  // COMMON_AUDIO_LAPPED_TRANSFORM_H_
-

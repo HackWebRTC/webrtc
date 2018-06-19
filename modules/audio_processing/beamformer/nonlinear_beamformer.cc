@@ -234,13 +234,9 @@ void NonlinearBeamformer::Initialize(int chunk_size_ms, int sample_rate_hz) {
   hold_target_blocks_ = kHoldTargetSeconds * 2 * sample_rate_hz / kFftSize;
   interference_blocks_count_ = hold_target_blocks_;
 
-  process_transform_.reset(new LappedTransform(num_input_channels_,
-                                               0u,
-                                               chunk_length_,
-                                               window_,
-                                               kFftSize,
-                                               kFftSize / 2,
-                                               this));
+  process_transform_.reset(new LappedTransform(num_input_channels_, 0u,
+                                               chunk_length_, window_, kFftSize,
+                                               kFftSize / 2, this));
   postfilter_transform_.reset(new PostFilterTransform(
       num_postfilter_channels_, chunk_length_, window_, kFftSize));
   const float wave_number_step =
@@ -267,10 +263,10 @@ void NonlinearBeamformer::Initialize(int chunk_size_ms, int sample_rate_hz) {
 //             low_mean_end_bin_       high_mean_end_bin_
 //
 void NonlinearBeamformer::InitLowFrequencyCorrectionRanges() {
-  low_mean_start_bin_ = Round(static_cast<float>(kLowMeanStartHz) *
-                                  kFftSize / sample_rate_hz_);
-  low_mean_end_bin_ = Round(static_cast<float>(kLowMeanEndHz) *
-                                  kFftSize / sample_rate_hz_);
+  low_mean_start_bin_ =
+      Round(static_cast<float>(kLowMeanStartHz) * kFftSize / sample_rate_hz_);
+  low_mean_end_bin_ =
+      Round(static_cast<float>(kLowMeanEndHz) * kFftSize / sample_rate_hz_);
 
   RTC_DCHECK_GT(low_mean_start_bin_, 0U);
   RTC_DCHECK_LT(low_mean_start_bin_, low_mean_end_bin_);
@@ -280,10 +276,10 @@ void NonlinearBeamformer::InitHighFrequencyCorrectionRanges() {
   const float kAliasingFreqHz =
       kSpeedOfSoundMeterSeconds /
       (min_mic_spacing_ * (1.f + std::abs(std::cos(target_angle_radians_))));
-  const float kHighMeanStartHz = std::min(0.5f *  kAliasingFreqHz,
-                                          sample_rate_hz_ / 2.f);
-  const float kHighMeanEndHz = std::min(0.75f *  kAliasingFreqHz,
-                                        sample_rate_hz_ / 2.f);
+  const float kHighMeanStartHz =
+      std::min(0.5f * kAliasingFreqHz, sample_rate_hz_ / 2.f);
+  const float kHighMeanEndHz =
+      std::min(0.75f * kAliasingFreqHz, sample_rate_hz_ / 2.f);
   high_mean_start_bin_ = Round(kHighMeanStartHz * kFftSize / sample_rate_hz_);
   high_mean_end_bin_ = Round(kHighMeanEndHz * kFftSize / sample_rate_hz_);
 
@@ -366,14 +362,8 @@ void NonlinearBeamformer::InitInterfCovMats() {
           new ComplexMatrixF(num_input_channels_, num_input_channels_)));
       ComplexMatrixF angled_cov_mat(num_input_channels_, num_input_channels_);
       CovarianceMatrixGenerator::AngledCovarianceMatrix(
-          kSpeedOfSoundMeterSeconds,
-          interf_angles_radians_[j],
-          i,
-          kFftSize,
-          kNumFreqBins,
-          sample_rate_hz_,
-          array_geometry_,
-          &angled_cov_mat);
+          kSpeedOfSoundMeterSeconds, interf_angles_radians_[j], i, kFftSize,
+          kNumFreqBins, sample_rate_hz_, array_geometry_, &angled_cov_mat);
       // Normalize matrices before averaging them.
       complex_f normalization_factor = angled_cov_mat.elements()[0][0];
       angled_cov_mat.Scale(1.f / normalization_factor);
@@ -442,7 +432,9 @@ bool NonlinearBeamformer::IsInBeam(const SphericalPointf& spherical_point) {
          kHalfBeamWidthRadians;
 }
 
-bool NonlinearBeamformer::is_target_present() { return is_target_present_; }
+bool NonlinearBeamformer::is_target_present() {
+  return is_target_present_;
+}
 
 void NonlinearBeamformer::ProcessAudioBlock(const complex_f* const* input,
                                             size_t num_input_channels,
@@ -473,15 +465,11 @@ void NonlinearBeamformer::ProcessAudioBlock(const complex_f* const* input,
     rmw *= rmw;
     float rmw_r = rmw.real();
 
-    new_mask_[i] = CalculatePostfilterMask(*interf_cov_mats_[i][0],
-                                           rpsiws_[i][0],
-                                           ratio_rxiw_rxim,
-                                           rmw_r);
+    new_mask_[i] = CalculatePostfilterMask(
+        *interf_cov_mats_[i][0], rpsiws_[i][0], ratio_rxiw_rxim, rmw_r);
     for (size_t j = 1; j < interf_angles_radians_.size(); ++j) {
-      float tmp_mask = CalculatePostfilterMask(*interf_cov_mats_[i][j],
-                                               rpsiws_[i][j],
-                                               ratio_rxiw_rxim,
-                                               rmw_r);
+      float tmp_mask = CalculatePostfilterMask(
+          *interf_cov_mats_[i][j], rpsiws_[i][j], ratio_rxiw_rxim, rmw_r);
       if (tmp_mask < new_mask_[i]) {
         new_mask_[i] = tmp_mask;
       }
@@ -577,8 +565,8 @@ void NonlinearBeamformer::ApplyHighFrequencyCorrection() {
 // Compute mean over the given range of time_smooth_mask_, [first, last).
 float NonlinearBeamformer::MaskRangeMean(size_t first, size_t last) {
   RTC_DCHECK_GT(last, first);
-  const float sum = std::accumulate(time_smooth_mask_ + first,
-                                    time_smooth_mask_ + last, 0.f);
+  const float sum =
+      std::accumulate(time_smooth_mask_ + first, time_smooth_mask_ + last, 0.f);
   return sum / (last - first);
 }
 

@@ -31,20 +31,16 @@ IceCandidateInterface* CreateIceCandidate(const std::string& sdp_mid,
 
 JsepIceCandidate::JsepIceCandidate(const std::string& sdp_mid,
                                    int sdp_mline_index)
-    : sdp_mid_(sdp_mid),
-      sdp_mline_index_(sdp_mline_index) {
-}
+    : sdp_mid_(sdp_mid), sdp_mline_index_(sdp_mline_index) {}
 
 JsepIceCandidate::JsepIceCandidate(const std::string& sdp_mid,
                                    int sdp_mline_index,
                                    const cricket::Candidate& candidate)
     : sdp_mid_(sdp_mid),
       sdp_mline_index_(sdp_mline_index),
-      candidate_(candidate) {
-}
+      candidate_(candidate) {}
 
-JsepIceCandidate::~JsepIceCandidate() {
-}
+JsepIceCandidate::~JsepIceCandidate() {}
 
 bool JsepIceCandidate::Initialize(const std::string& sdp, SdpParseError* err) {
   return SdpDeserializeCandidate(sdp, this, err);
@@ -68,7 +64,7 @@ bool JsepCandidateCollection::HasCandidate(
     const IceCandidateInterface* candidate) const {
   bool ret = false;
   for (std::vector<JsepIceCandidate*>::const_iterator it = candidates_.begin();
-      it != candidates_.end(); ++it) {
+       it != candidates_.end(); ++it) {
     if ((*it)->sdp_mid() == candidate->sdp_mid() &&
         (*it)->sdp_mline_index() == candidate->sdp_mline_index() &&
         (*it)->candidate().IsEquivalent(candidate->candidate())) {

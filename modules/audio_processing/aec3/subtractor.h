@@ -11,8 +11,8 @@
 #ifndef MODULES_AUDIO_PROCESSING_AEC3_SUBTRACTOR_H_
 #define MODULES_AUDIO_PROCESSING_AEC3_SUBTRACTOR_H_
 
-#include <array>
 #include <algorithm>
+#include <array>
 #include <vector>
 
 #include "modules/audio_processing/aec3/adaptive_fir_filter.h"

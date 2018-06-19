@@ -183,14 +183,17 @@ class VirtualSocketServer : public SocketServer, public sigslot::has_slots<> {
                         const SocketAddress& server);
 
   // Connects the given socket to the socket at the given address
-  int Connect(VirtualSocket* socket, const SocketAddress& remote_addr,
+  int Connect(VirtualSocket* socket,
+              const SocketAddress& remote_addr,
               bool use_delay);
 
   // Sends a disconnect message to the socket at the given address
   bool Disconnect(VirtualSocket* socket);
 
   // Sends the given packet to the socket at the given address (if one exists).
-  int SendUdp(VirtualSocket* socket, const char* data, size_t data_size,
+  int SendUdp(VirtualSocket* socket,
+              const char* data,
+              size_t data_size,
               const SocketAddress& remote_addr);
 
   // Moves as much data as possible from the sender's buffer to the network

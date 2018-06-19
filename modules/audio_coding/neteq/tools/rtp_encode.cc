@@ -247,11 +247,16 @@ AudioEncoderCng::Config GetCngConfig(int sample_rate_hz) {
   AudioEncoderCng::Config cng_config;
   const auto default_payload_type = [&] {
     switch (sample_rate_hz) {
-      case 8000: return 13;
-      case 16000: return 98;
-      case 32000: return 99;
-      case 48000: return 100;
-      default: RTC_NOTREACHED();
+      case 8000:
+        return 13;
+      case 16000:
+        return 98;
+      case 32000:
+        return 99;
+      case 48000:
+        return 100;
+      default:
+        RTC_NOTREACHED();
     }
     return 0;
   };

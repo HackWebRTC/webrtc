@@ -31,7 +31,7 @@ class NetEqExternalDecoderTest {
                            int sample_rate_hz,
                            AudioDecoder* decoder);
 
-  virtual ~NetEqExternalDecoderTest() { }
+  virtual ~NetEqExternalDecoderTest() {}
 
   // In Init(), we register the external decoder.
   void Init();

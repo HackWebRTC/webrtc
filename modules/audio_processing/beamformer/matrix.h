@@ -33,7 +33,7 @@ template <typename S>
 std::complex<S> sqrt_wrapper(std::complex<S> x) {
   return sqrt(x);
 }
-} // namespace
+}  // namespace
 
 namespace webrtc {
 

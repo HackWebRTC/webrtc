@@ -81,20 +81,20 @@ class VCMGenericDecoder {
   ~VCMGenericDecoder();
 
   /**
-  * Initialize the decoder with the information from the VideoCodec
-  */
+   * Initialize the decoder with the information from the VideoCodec
+   */
   int32_t InitDecode(const VideoCodec* settings, int32_t numberOfCores);
 
   /**
-  * Decode to a raw I420 frame,
-  *
-  * inputVideoBuffer reference to encoded video frame
-  */
+   * Decode to a raw I420 frame,
+   *
+   * inputVideoBuffer reference to encoded video frame
+   */
   int32_t Decode(const VCMEncodedFrame& inputFrame, int64_t nowMs);
 
   /**
-  * Set decode callback. Deregistering while decoding is illegal.
-  */
+   * Set decode callback. Deregistering while decoding is illegal.
+   */
   int32_t RegisterDecodeCompleteCallback(VCMDecodedFrameCallback* callback);
 
   bool External() const;

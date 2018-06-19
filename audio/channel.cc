@@ -20,8 +20,8 @@
 #include "api/array_view.h"
 #include "audio/utility/audio_frame_operations.h"
 #include "call/rtp_transport_controller_send_interface.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
 #include "logging/rtc_event_log/events/rtc_event_audio_playout.h"
+#include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor_config.h"
 #include "modules/audio_coding/codecs/audio_format_conversion.h"
 #include "modules/audio_device/include/audio_device.h"
@@ -943,9 +943,8 @@ int32_t Channel::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
   uint32_t ntp_secs = 0;
   uint32_t ntp_frac = 0;
   uint32_t rtp_timestamp = 0;
-  if (0 !=
-      _rtpRtcpModule->RemoteNTP(&ntp_secs, &ntp_frac, NULL, NULL,
-                                &rtp_timestamp)) {
+  if (0 != _rtpRtcpModule->RemoteNTP(&ntp_secs, &ntp_frac, NULL, NULL,
+                                     &rtp_timestamp)) {
     // Waiting for RTCP.
     return 0;
   }
@@ -993,7 +992,7 @@ int Channel::SendTelephoneEventOutband(int event, int duration_ms) {
     return -1;
   }
   if (_rtpRtcpModule->SendTelephoneEventOutband(
-      event, duration_ms, kTelephoneEventAttenuationdB) != 0) {
+          event, duration_ms, kTelephoneEventAttenuationdB) != 0) {
     RTC_DLOG(LS_ERROR) << "SendTelephoneEventOutband() failed to send event";
     return -1;
   }

@@ -76,7 +76,7 @@ __android_log_print(ANDROID_LOG_VERBOSE, TAG_ENCODER, __VA_ARGS__)
 #define ALOGW RTC_LOG_TAG(rtc::LS_WARNING, TAG_ENCODER)
 #define ALOGE RTC_LOG_TAG(rtc::LS_ERROR, TAG_ENCODER)
 
-namespace {
+    namespace {
   // Maximum time limit between incoming frames before requesting a key frame.
   const int64_t kFrameDiffThresholdMs = 350;
   const int kMinKeyFrameInterval = 6;
@@ -212,20 +212,20 @@ class MediaCodecVideoEncoder : public VideoEncoder {
   bool inited_;
   bool use_surface_;
   enum libyuv::FourCC encoder_fourcc_;  // Encoder color space format.
-  uint32_t last_set_bitrate_kbps_;  // Last-requested bitrate in kbps.
-  uint32_t last_set_fps_;  // Last-requested frame rate.
-  int64_t current_timestamp_us_;  // Current frame timestamps in us.
-  int frames_received_;  // Number of frames received by encoder.
-  int frames_encoded_;  // Number of frames encoded by encoder.
-  int frames_dropped_media_encoder_;  // Number of frames dropped by encoder.
+  uint32_t last_set_bitrate_kbps_;      // Last-requested bitrate in kbps.
+  uint32_t last_set_fps_;               // Last-requested frame rate.
+  int64_t current_timestamp_us_;        // Current frame timestamps in us.
+  int frames_received_;                 // Number of frames received by encoder.
+  int frames_encoded_;                  // Number of frames encoded by encoder.
+  int frames_dropped_media_encoder_;    // Number of frames dropped by encoder.
   // Number of dropped frames caused by full queue.
   int consecutive_full_queue_frame_drops_;
   int64_t stat_start_time_ms_;  // Start time for statistics.
   int current_frames_;  // Number of frames in the current statistics interval.
-  int current_bytes_;  // Encoded bytes in the current statistics interval.
+  int current_bytes_;   // Encoded bytes in the current statistics interval.
   int current_acc_qp_;  // Accumulated QP in the current statistics interval.
   int current_encoding_time_ms_;  // Overall encoding time in the current second
-  int64_t last_input_timestamp_ms_;  // Timestamp of last received yuv frame.
+  int64_t last_input_timestamp_ms_;   // Timestamp of last received yuv frame.
   int64_t last_output_timestamp_ms_;  // Timestamp of last encoded frame.
   // Holds the task while the polling loop is paused.
   std::unique_ptr<rtc::QueuedTask> encode_task_;
@@ -753,16 +753,15 @@ bool MediaCodecVideoEncoder::MaybeReconfigureEncoder(JNIEnv* jni,
       frame.width() != width_ || frame.height() != height_;
 
   if (reconfigure_due_to_format) {
-      ALOGD << "Reconfigure encoder due to format change. "
-            << (use_surface_ ?
-                "Reconfiguring to encode from byte buffer." :
-                "Reconfiguring to encode from texture.");
-      LogStatistics(true);
+    ALOGD << "Reconfigure encoder due to format change. "
+          << (use_surface_ ? "Reconfiguring to encode from byte buffer."
+                           : "Reconfiguring to encode from texture.");
+    LogStatistics(true);
   }
   if (reconfigure_due_to_size) {
     ALOGW << "Reconfigure encoder due to frame resolution change from "
-        << width_ << " x " << height_ << " to " << frame.width() << " x "
-        << frame.height();
+          << width_ << " x " << height_ << " to " << frame.width() << " x "
+          << frame.height();
     LogStatistics(true);
     width_ = frame.width();
     height_ = frame.height();
@@ -1066,9 +1065,9 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
             H264::FindNaluIndices(payload, payload_size);
         if (nalu_idxs.empty()) {
           ALOGE << "Start code is not found!";
-          ALOGE << "Data:" <<  image->_buffer[0] << " " << image->_buffer[1]
-              << " " << image->_buffer[2] << " " << image->_buffer[3]
-              << " " << image->_buffer[4] << " " << image->_buffer[5];
+          ALOGE << "Data:" << image->_buffer[0] << " " << image->_buffer[1]
+                << " " << image->_buffer[2] << " " << image->_buffer[3] << " "
+                << image->_buffer[4] << " " << image->_buffer[5];
           ProcessHWError(true /* reset_if_fallback_unavailable */);
           return false;
         }
@@ -1122,21 +1121,21 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
 
 void MediaCodecVideoEncoder::LogStatistics(bool force_log) {
   int statistic_time_ms = rtc::TimeMillis() - stat_start_time_ms_;
-  if ((statistic_time_ms >= kMediaCodecStatisticsIntervalMs || force_log)
-      && statistic_time_ms > 0) {
+  if ((statistic_time_ms >= kMediaCodecStatisticsIntervalMs || force_log) &&
+      statistic_time_ms > 0) {
     // Prevent division by zero.
     int current_frames_divider = current_frames_ != 0 ? current_frames_ : 1;
 
     int current_bitrate = current_bytes_ * 8 / statistic_time_ms;
     int current_fps =
         (current_frames_ * 1000 + statistic_time_ms / 2) / statistic_time_ms;
-    ALOGD << "Encoded frames: " << frames_encoded_ <<
-        ". Bitrate: " << current_bitrate <<
-        ", target: " << last_set_bitrate_kbps_ << " kbps" <<
-        ", fps: " << current_fps <<
-        ", encTime: " << (current_encoding_time_ms_ / current_frames_divider) <<
-        ". QP: " << (current_acc_qp_ / current_frames_divider) <<
-        " for last " << statistic_time_ms << " ms.";
+    ALOGD << "Encoded frames: " << frames_encoded_
+          << ". Bitrate: " << current_bitrate
+          << ", target: " << last_set_bitrate_kbps_ << " kbps"
+          << ", fps: " << current_fps << ", encTime: "
+          << (current_encoding_time_ms_ / current_frames_divider)
+          << ". QP: " << (current_acc_qp_ / current_frames_divider)
+          << " for last " << statistic_time_ms << " ms.";
     stat_start_time_ms_ = rtc::TimeMillis();
     current_frames_ = 0;
     current_bytes_ = 0;
@@ -1274,8 +1273,8 @@ MediaCodecVideoEncoderFactory::~MediaCodecVideoEncoderFactory() {
   }
 }
 
-void MediaCodecVideoEncoderFactory::SetEGLContext(
-    JNIEnv* jni, jobject egl_context) {
+void MediaCodecVideoEncoderFactory::SetEGLContext(JNIEnv* jni,
+                                                  jobject egl_context) {
   ALOGD << "MediaCodecVideoEncoderFactory::SetEGLContext";
   if (egl_context_) {
     jni->DeleteGlobalRef(egl_context_);

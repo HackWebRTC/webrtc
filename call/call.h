@@ -30,12 +30,7 @@
 
 namespace webrtc {
 
-enum class MediaType {
-  ANY,
-  AUDIO,
-  VIDEO,
-  DATA
-};
+enum class MediaType { ANY, AUDIO, VIDEO, DATA };
 
 class PacketReceiver {
  public:

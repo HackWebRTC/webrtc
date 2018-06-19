@@ -127,8 +127,7 @@ RtpTransportControllerAdapter::~RtpTransportControllerAdapter() {
   }
   // Call must be destroyed on the worker thread.
   worker_thread_->Invoke<void>(
-      RTC_FROM_HERE,
-      rtc::Bind(&RtpTransportControllerAdapter::Close_w, this));
+      RTC_FROM_HERE, rtc::Bind(&RtpTransportControllerAdapter::Close_w, this));
 }
 
 RTCErrorOr<std::unique_ptr<RtpTransportInterface>>
@@ -636,8 +635,7 @@ RtpTransportControllerAdapter::RtpTransportControllerAdapter(
   remote_video_description_.AddCodec(dummy_video);
 
   worker_thread_->Invoke<void>(
-      RTC_FROM_HERE,
-      rtc::Bind(&RtpTransportControllerAdapter::Init_w, this));
+      RTC_FROM_HERE, rtc::Bind(&RtpTransportControllerAdapter::Init_w, this));
 }
 
 // TODO(nisse): Duplicates corresponding method in PeerConnection (used

@@ -15,12 +15,12 @@
 #if defined(WEBRTC_LINUX)
 #include <time.h>
 #elif defined(WEBRTC_MAC)
-#include <sys/resource.h>
-#include <sys/types.h>
-#include <sys/times.h>
-#include <mach/thread_info.h>
-#include <mach/thread_act.h>
 #include <mach/mach_init.h>
+#include <mach/thread_act.h>
+#include <mach/thread_info.h>
+#include <sys/resource.h>
+#include <sys/times.h>
+#include <sys/types.h>
 #include <unistd.h>
 #elif defined(WEBRTC_WIN)
 #include <windows.h>

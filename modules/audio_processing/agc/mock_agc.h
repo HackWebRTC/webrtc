@@ -20,8 +20,8 @@ namespace webrtc {
 class MockAgc : public Agc {
  public:
   MOCK_METHOD2(AnalyzePreproc, float(const int16_t* audio, size_t length));
-  MOCK_METHOD3(Process, void(const int16_t* audio, size_t length,
-                             int sample_rate_hz));
+  MOCK_METHOD3(Process,
+               void(const int16_t* audio, size_t length, int sample_rate_hz));
   MOCK_METHOD1(GetRmsErrorDb, bool(int* error));
   MOCK_METHOD0(Reset, void());
   MOCK_METHOD1(set_target_level_dbfs, int(int level));

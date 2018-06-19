@@ -260,10 +260,10 @@ class P2PTransportChannel : public IceTransportInternal {
   void AddAllocatorSession(std::unique_ptr<PortAllocatorSession> session);
   void AddConnection(Connection* connection);
 
-  void OnPortReady(PortAllocatorSession *session, PortInterface* port);
+  void OnPortReady(PortAllocatorSession* session, PortInterface* port);
   void OnPortsPruned(PortAllocatorSession* session,
                      const std::vector<PortInterface*>& ports);
-  void OnCandidatesReady(PortAllocatorSession *session,
+  void OnCandidatesReady(PortAllocatorSession* session,
                          const std::vector<Candidate>& candidates);
   void OnCandidatesRemoved(PortAllocatorSession* session,
                            const std::vector<Candidate>& candidates);
@@ -284,11 +284,13 @@ class P2PTransportChannel : public IceTransportInternal {
   void OnRoleConflict(PortInterface* port);
 
   void OnConnectionStateChange(Connection* connection);
-  void OnReadPacket(Connection *connection, const char *data, size_t len,
+  void OnReadPacket(Connection* connection,
+                    const char* data,
+                    size_t len,
                     const rtc::PacketTime& packet_time);
   void OnSentPacket(const rtc::SentPacket& sent_packet);
   void OnReadyToSend(Connection* connection);
-  void OnConnectionDestroyed(Connection *connection);
+  void OnConnectionDestroyed(Connection* connection);
 
   void OnNominated(Connection* conn);
 
@@ -376,7 +378,7 @@ class P2PTransportChannel : public IceTransportInternal {
   // |pinged_connections_| and |unpinged_connections_| has the same
   // connections as |connections_|. These 2 sets maintain whether a
   // connection should be pinged next or not.
-  std::vector<Connection *> connections_;
+  std::vector<Connection*> connections_;
   std::set<Connection*> pinged_connections_;
   std::set<Connection*> unpinged_connections_;
 

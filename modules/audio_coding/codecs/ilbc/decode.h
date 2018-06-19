@@ -31,8 +31,8 @@ int WebRtcIlbcfix_DecodeImpl(
     const uint16_t* bytes,     /* (i) encoded signal bits */
     IlbcDecoder* iLBCdec_inst, /* (i/o) the decoder state
                                            structure */
-    int16_t mode               /* (i) 0: bad packet, PLC,
-                                      1: normal */
+    int16_t mode /* (i) 0: bad packet, PLC,
+                        1: normal */
     ) RTC_WARN_UNUSED_RESULT;
 
 #endif

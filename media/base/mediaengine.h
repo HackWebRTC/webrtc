@@ -34,7 +34,7 @@ class AudioDeviceModule;
 class AudioMixer;
 class AudioProcessing;
 class Call;
-}
+}  // namespace webrtc
 
 namespace cricket {
 
@@ -84,7 +84,6 @@ class MediaEngineInterface {
   // Stops recording AEC dump.
   virtual void StopAecDump() = 0;
 };
-
 
 // CompositeMediaEngine constructs a MediaEngine from separate
 // voice and video engine classes.

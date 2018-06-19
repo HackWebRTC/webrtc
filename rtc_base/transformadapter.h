@@ -17,8 +17,8 @@ namespace rtc {
 ///////////////////////////////////////////////////////////////////////////////
 
 class TransformInterface {
-public:
-  virtual ~TransformInterface() { }
+ public:
+  virtual ~TransformInterface() {}
 
   // Transform should convert the in_len bytes of input into the out_len-sized
   // output buffer.  If flush is true, there will be no more data following
@@ -27,8 +27,10 @@ public:
   // out_len contains the number of bytes ready in output.
   // Note: Transform should not return SR_BLOCK, as there is no asynchronous
   // notification available.
-  virtual StreamResult Transform(const void * input, size_t * in_len,
-                                 void * output, size_t * out_len,
+  virtual StreamResult Transform(const void* input,
+                                 size_t* in_len,
+                                 void* output,
+                                 size_t* out_len,
                                  bool flush) = 0;
 };
 
@@ -39,11 +41,11 @@ public:
 // etc.
 
 class TransformAdapter : public StreamAdapterInterface {
-public:
+ public:
   // Note that the transformation is unidirectional, in the direction specified
   // by the constructor.  Operations in the opposite direction result in SR_EOS.
-  TransformAdapter(StreamInterface * stream,
-                   TransformInterface * transform,
+  TransformAdapter(StreamInterface* stream,
+                   TransformInterface* transform,
                    bool direction_read);
   ~TransformAdapter() override;
 
@@ -64,11 +66,11 @@ public:
   // Transformations might not be restartable
   virtual bool Rewind();
 
-private:
+ private:
   enum State { ST_PROCESSING, ST_FLUSHING, ST_COMPLETE, ST_ERROR };
   enum { BUFFER_SIZE = 1024 };
 
-  TransformInterface * transform_;
+  TransformInterface* transform_;
   bool direction_read_;
   State state_;
   int error_;
@@ -79,6 +81,6 @@ private:
 
 ///////////////////////////////////////////////////////////////////////////////
 
-} // namespace rtc
+}  // namespace rtc
 
-#endif // RTC_BASE_TRANSFORMADAPTER_H_
+#endif  // RTC_BASE_TRANSFORMADAPTER_H_

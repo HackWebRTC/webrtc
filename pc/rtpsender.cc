@@ -554,7 +554,7 @@ void VideoRtpSender::SetVideoSend() {
       break;
   }
   bool success = worker_thread_->Invoke<bool>(RTC_FROM_HERE, [&] {
-      return media_channel_->SetVideoSend(ssrc_, &options, track_);
+    return media_channel_->SetVideoSend(ssrc_, &options, track_);
   });
   RTC_DCHECK(success);
 }

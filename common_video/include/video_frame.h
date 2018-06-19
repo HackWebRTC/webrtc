@@ -20,7 +20,7 @@
 #include "api/video/video_rotation.h"
 #include "api/video/video_timing.h"
 #include "common_types.h"  // NOLINT(build/include)
-#include "typedefs.h"  // NOLINT(build/include)
+#include "typedefs.h"      // NOLINT(build/include)
 
 namespace webrtc {
 

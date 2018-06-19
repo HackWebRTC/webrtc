@@ -23,8 +23,8 @@
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/event.h"
 #include "rtc_base/task_queue.h"
-#include "video/send_delay_stats.h"
 #include "video/payload_router.h"
+#include "video/send_delay_stats.h"
 #include "video/send_statistics_proxy.h"
 #include "video/video_stream_encoder.h"
 

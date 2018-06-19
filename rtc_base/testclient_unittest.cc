@@ -31,9 +31,9 @@ using namespace rtc;
   }
 
 void TestUdpInternal(const SocketAddress& loopback) {
-  Thread *main = Thread::Current();
-  AsyncSocket* socket = main->socketserver()
-      ->CreateAsyncSocket(loopback.family(), SOCK_DGRAM);
+  Thread* main = Thread::Current();
+  AsyncSocket* socket =
+      main->socketserver()->CreateAsyncSocket(loopback.family(), SOCK_DGRAM);
   socket->Bind(loopback);
 
   TestClient client(MakeUnique<AsyncUDPSocket>(socket));
@@ -45,11 +45,11 @@ void TestUdpInternal(const SocketAddress& loopback) {
 }
 
 void TestTcpInternal(const SocketAddress& loopback) {
-  Thread *main = Thread::Current();
+  Thread* main = Thread::Current();
   TestEchoServer server(main, loopback);
 
-  AsyncSocket* socket = main->socketserver()
-      ->CreateAsyncSocket(loopback.family(), SOCK_STREAM);
+  AsyncSocket* socket =
+      main->socketserver()->CreateAsyncSocket(loopback.family(), SOCK_STREAM);
   std::unique_ptr<AsyncTCPSocket> tcp_socket =
       WrapUnique(AsyncTCPSocket::Create(socket, loopback, server.address()));
   ASSERT_TRUE(tcp_socket != nullptr);

@@ -24,8 +24,7 @@ namespace webrtc {
 namespace {
 
 rtc::scoped_refptr<I420Buffer> CreateGradient(int width, int height) {
-  rtc::scoped_refptr<I420Buffer> buffer(
-      I420Buffer::Create(width, height));
+  rtc::scoped_refptr<I420Buffer> buffer(I420Buffer::Create(width, height));
   // Initialize with gradient, Y = 128(x/w + y/h), U = 256 x/w, V = 256 y/h
   for (int x = 0; x < width; x++) {
     for (int y = 0; y < height; y++) {
@@ -92,13 +91,16 @@ void CheckRotate(int width,
   EXPECT_EQ(rotated_height, rotated.height());
 
   // Clock-wise order (with 0,0 at top-left)
-  const struct { int x; int y; } corners[] = {
-    { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 }
-  };
+  const struct {
+    int x;
+    int y;
+  } corners[] = {{0, 0}, {1, 0}, {1, 1}, {0, 1}};
   // Corresponding corner colors of the frame produced by CreateGradient.
-  const struct { int y; int u; int v; } colors[] = {
-    {0, 0, 0}, { 127, 255, 0}, { 255, 255, 255 }, {127, 0, 255}
-  };
+  const struct {
+    int y;
+    int u;
+    int v;
+  } colors[] = {{0, 0, 0}, {127, 255, 0}, {255, 255, 255}, {127, 0, 255}};
   int corner_offset = static_cast<int>(rotation) / 90;
 
   for (int i = 0; i < 4; i++) {
@@ -150,12 +152,9 @@ TEST(TestVideoFrame, ShallowCopy) {
   memset(buffer_u, 8, kSizeU);
   memset(buffer_v, 4, kSizeV);
 
-  VideoFrame frame1(
-      I420Buffer::Copy(width, height,
-                       buffer_y, stride_y,
-                       buffer_u, stride_u,
-                       buffer_v, stride_v),
-      kRotation, 0);
+  VideoFrame frame1(I420Buffer::Copy(width, height, buffer_y, stride_y,
+                                     buffer_u, stride_u, buffer_v, stride_v),
+                    kRotation, 0);
   frame1.set_timestamp(timestamp);
   frame1.set_ntp_time_ms(ntp_time_ms);
   frame1.set_timestamp_us(timestamp_us);
@@ -204,8 +203,7 @@ TEST(TestVideoFrame, TextureInitialValues) {
 }
 
 TEST(TestI420FrameBuffer, Copy) {
-  rtc::scoped_refptr<I420Buffer> buf1(
-      I420Buffer::Create(20, 10));
+  rtc::scoped_refptr<I420Buffer> buf1(I420Buffer::Create(20, 10));
   memset(buf1->MutableDataY(), 1, 200);
   memset(buf1->MutableDataU(), 2, 50);
   memset(buf1->MutableDataV(), 3, 50);
@@ -217,8 +215,7 @@ TEST(TestI420FrameBuffer, Scale) {
   rtc::scoped_refptr<I420Buffer> buf = CreateGradient(200, 100);
 
   // Pure scaling, no cropping.
-  rtc::scoped_refptr<I420Buffer> scaled_buffer(
-      I420Buffer::Create(150, 75));
+  rtc::scoped_refptr<I420Buffer> scaled_buffer(I420Buffer::Create(150, 75));
 
   scaled_buffer->ScaleFrom(*buf);
   CheckCrop(*scaled_buffer, 0.0, 0.0, 1.0, 1.0);
@@ -228,8 +225,7 @@ TEST(TestI420FrameBuffer, CropXCenter) {
   rtc::scoped_refptr<I420Buffer> buf = CreateGradient(200, 100);
 
   // Pure center cropping, no scaling.
-  rtc::scoped_refptr<I420Buffer> scaled_buffer(
-      I420Buffer::Create(100, 100));
+  rtc::scoped_refptr<I420Buffer> scaled_buffer(I420Buffer::Create(100, 100));
 
   scaled_buffer->CropAndScaleFrom(*buf, 50, 0, 100, 100);
   CheckCrop(*scaled_buffer, 0.25, 0.0, 0.5, 1.0);
@@ -239,8 +235,7 @@ TEST(TestI420FrameBuffer, CropXNotCenter) {
   rtc::scoped_refptr<I420Buffer> buf = CreateGradient(200, 100);
 
   // Non-center cropping, no scaling.
-  rtc::scoped_refptr<I420Buffer> scaled_buffer(
-      I420Buffer::Create(100, 100));
+  rtc::scoped_refptr<I420Buffer> scaled_buffer(I420Buffer::Create(100, 100));
 
   scaled_buffer->CropAndScaleFrom(*buf, 25, 0, 100, 100);
   CheckCrop(*scaled_buffer, 0.125, 0.0, 0.5, 1.0);
@@ -250,8 +245,7 @@ TEST(TestI420FrameBuffer, CropYCenter) {
   rtc::scoped_refptr<I420Buffer> buf = CreateGradient(100, 200);
 
   // Pure center cropping, no scaling.
-  rtc::scoped_refptr<I420Buffer> scaled_buffer(
-      I420Buffer::Create(100, 100));
+  rtc::scoped_refptr<I420Buffer> scaled_buffer(I420Buffer::Create(100, 100));
 
   scaled_buffer->CropAndScaleFrom(*buf, 0, 50, 100, 100);
   CheckCrop(*scaled_buffer, 0.0, 0.25, 1.0, 0.5);
@@ -261,8 +255,7 @@ TEST(TestI420FrameBuffer, CropYNotCenter) {
   rtc::scoped_refptr<I420Buffer> buf = CreateGradient(100, 200);
 
   // Non-center cropping, no scaling.
-  rtc::scoped_refptr<I420Buffer> scaled_buffer(
-      I420Buffer::Create(100, 100));
+  rtc::scoped_refptr<I420Buffer> scaled_buffer(I420Buffer::Create(100, 100));
 
   scaled_buffer->CropAndScaleFrom(*buf, 0, 25, 100, 100);
   CheckCrop(*scaled_buffer, 0.0, 0.125, 1.0, 0.5);
@@ -272,8 +265,7 @@ TEST(TestI420FrameBuffer, CropAndScale16x9) {
   rtc::scoped_refptr<I420Buffer> buf = CreateGradient(640, 480);
 
   // Center crop to 640 x 360 (16/9 aspect), then scale down by 2.
-  rtc::scoped_refptr<I420Buffer> scaled_buffer(
-      I420Buffer::Create(320, 180));
+  rtc::scoped_refptr<I420Buffer> scaled_buffer(I420Buffer::Create(320, 180));
 
   scaled_buffer->CropAndScaleFrom(*buf);
   CheckCrop(*scaled_buffer, 0.0, 0.125, 1.0, 0.75);
@@ -289,7 +281,8 @@ TEST_P(TestI420BufferRotate, Rotates) {
   CheckRotate(640, 480, GetParam(), *rotated_buffer);
 }
 
-INSTANTIATE_TEST_CASE_P(Rotate, TestI420BufferRotate,
+INSTANTIATE_TEST_CASE_P(Rotate,
+                        TestI420BufferRotate,
                         ::testing::Values(kVideoRotation_0,
                                           kVideoRotation_90,
                                           kVideoRotation_180,

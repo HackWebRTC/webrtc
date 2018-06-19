@@ -25,7 +25,7 @@
 namespace {
 const int kMaxPicInitQpDeltaValue = 25;
 const int kMinPicInitQpDeltaValue = -26;
-}
+}  // namespace
 
 namespace webrtc {
 

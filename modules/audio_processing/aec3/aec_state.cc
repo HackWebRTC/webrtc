@@ -387,7 +387,7 @@ void AecState::UpdateReverb(const std::vector<float>& impulse_response) {
           } x = {in};
           float out = x.a;
           out *= 1.1920929e-7f;  // 1/2^23
-          out -= 126.942695f;  // Remove bias.
+          out -= 126.942695f;    // Remove bias.
           return out;
         };
         RTC_DCHECK_GT(matching_data.size(), start_index + i);

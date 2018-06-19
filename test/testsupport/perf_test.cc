@@ -121,8 +121,7 @@ class PerfResultsLogger {
   }
 
   rtc::CriticalSection crit_;
-  FILE* output_
-      RTC_GUARDED_BY(&crit_);
+  FILE* output_ RTC_GUARDED_BY(&crit_);
   std::map<std::string, std::vector<std::string>> graphs_
       RTC_GUARDED_BY(&crit_);
 };

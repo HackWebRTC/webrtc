@@ -37,8 +37,8 @@ struct CodecSpecificInfoVP8 {
 
 struct CodecSpecificInfoVP9 {
   bool first_frame_in_picture;  // First frame, increment picture_id.
-  bool inter_pic_predicted;  // This layer frame is dependent on previously
-                             // coded frame(s).
+  bool inter_pic_predicted;     // This layer frame is dependent on previously
+                                // coded frame(s).
   bool flexible_mode;
   bool ss_data_available;
   bool non_ref_for_inter_layer_pred;

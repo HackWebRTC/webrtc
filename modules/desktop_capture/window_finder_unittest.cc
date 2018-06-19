@@ -28,8 +28,8 @@
 #if defined(WEBRTC_WIN)
 #include <windows.h>
 
-#include "modules/desktop_capture/window_finder_win.h"
 #include "modules/desktop_capture/win/window_capture_utils.h"
+#include "modules/desktop_capture/window_finder_win.h"
 #endif
 
 namespace webrtc {
@@ -64,8 +64,8 @@ TEST(WindowFinderTest, FindConsoleWindow) {
   MoveWindow(console_window, 0, 0, kMaxSize, kMaxSize, true);
 
   // Brings console window to top.
-  SetWindowPos(
-      console_window, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+  SetWindowPos(console_window, HWND_TOPMOST, 0, 0, 0, 0,
+               SWP_NOMOVE | SWP_NOSIZE);
   BringWindowToTop(console_window);
 
   WindowFinderWin finder;
@@ -154,14 +154,14 @@ TEST(WindowFinderTest, ShouldReturnNullWindowIfSpotIsOutOfScreen) {
     return;
   }
 
-  ASSERT_EQ(kNullWindowId, finder->GetWindowUnderPoint(
-      DesktopVector(INT16_MAX, INT16_MAX)));
-  ASSERT_EQ(kNullWindowId, finder->GetWindowUnderPoint(
-      DesktopVector(INT16_MAX, INT16_MIN)));
-  ASSERT_EQ(kNullWindowId, finder->GetWindowUnderPoint(
-      DesktopVector(INT16_MIN, INT16_MAX)));
-  ASSERT_EQ(kNullWindowId, finder->GetWindowUnderPoint(
-      DesktopVector(INT16_MIN, INT16_MIN)));
+  ASSERT_EQ(kNullWindowId,
+            finder->GetWindowUnderPoint(DesktopVector(INT16_MAX, INT16_MAX)));
+  ASSERT_EQ(kNullWindowId,
+            finder->GetWindowUnderPoint(DesktopVector(INT16_MAX, INT16_MIN)));
+  ASSERT_EQ(kNullWindowId,
+            finder->GetWindowUnderPoint(DesktopVector(INT16_MIN, INT16_MAX)));
+  ASSERT_EQ(kNullWindowId,
+            finder->GetWindowUnderPoint(DesktopVector(INT16_MIN, INT16_MIN)));
 }
 
 }  // namespace

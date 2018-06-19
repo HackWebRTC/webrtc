@@ -32,9 +32,7 @@ namespace rtc {
 // right version for your build configuration.
 class ThreadCheckerDoNothing {
  public:
-  bool CalledOnValidThread() const {
-    return true;
-  }
+  bool CalledOnValidThread() const { return true; }
 
   void DetachFromThread() {}
 };
@@ -86,7 +84,7 @@ class RTC_SCOPED_LOCKABLE AnnounceOnThread {
       RTC_EXCLUSIVE_LOCK_FUNCTION(thread_like_object) {}
   ~AnnounceOnThread() RTC_UNLOCK_FUNCTION() {}
 
-  template<typename ThreadLikeObject>
+  template <typename ThreadLikeObject>
   static bool IsCurrent(const ThreadLikeObject* thread_like_object) {
     return thread_like_object->IsCurrent();
   }
@@ -163,9 +161,10 @@ class RTC_SCOPED_LOCKABLE AnnounceOnThread {
 // }
 
 // Document if a function expected to be called from same thread/task queue.
-#define RTC_RUN_ON(x) RTC_THREAD_ANNOTATION_ATTRIBUTE__(exclusive_locks_required(x))
+#define RTC_RUN_ON(x) \
+  RTC_THREAD_ANNOTATION_ATTRIBUTE__(exclusive_locks_required(x))
 
-#define RTC_DCHECK_RUN_ON(thread_like_object) \
+#define RTC_DCHECK_RUN_ON(thread_like_object)                           \
   rtc::internal::AnnounceOnThread thread_announcer(thread_like_object); \
   RTC_DCHECK(rtc::internal::AnnounceOnThread::IsCurrent(thread_like_object))
 

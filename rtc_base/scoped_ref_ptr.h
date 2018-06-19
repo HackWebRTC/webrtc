@@ -118,8 +118,8 @@ class scoped_refptr {
     // AddRef first so that self assignment should work
     if (p)
       p->AddRef();
-    if (ptr_ )
-      ptr_ ->Release();
+    if (ptr_)
+      ptr_->Release();
     ptr_ = p;
     return *this;
   }
@@ -150,9 +150,7 @@ class scoped_refptr {
     *pp = p;
   }
 
-  void swap(scoped_refptr<T>& r) {
-    swap(&r.ptr_);
-  }
+  void swap(scoped_refptr<T>& r) { swap(&r.ptr_); }
 
  protected:
   T* ptr_;

@@ -11,8 +11,8 @@
 #ifndef RTC_BASE_STRING_TO_NUMBER_H_
 #define RTC_BASE_STRING_TO_NUMBER_H_
 
-#include <string>
 #include <limits>
+#include <string>
 
 #include "api/optional.h"
 
@@ -44,7 +44,7 @@ namespace rtc {
 namespace string_to_number_internal {
 // These must be (unsigned) long long, to match the signature of strto(u)ll.
 using unsigned_type = unsigned long long;  // NOLINT(runtime/int)
-using signed_type = long long;  // NOLINT(runtime/int)
+using signed_type = long long;             // NOLINT(runtime/int)
 
 rtc::Optional<signed_type> ParseSigned(const char* str, int base);
 rtc::Optional<unsigned_type> ParseUnsigned(const char* str, int base);

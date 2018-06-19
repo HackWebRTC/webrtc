@@ -73,13 +73,8 @@ void CovarianceMatrixGenerator::AngledCovarianceMatrix(
 
   ComplexMatrix<float> interf_cov_vector(1, geometry.size());
   ComplexMatrix<float> interf_cov_vector_transposed(geometry.size(), 1);
-  PhaseAlignmentMasks(frequency_bin,
-                      fft_size,
-                      sample_rate,
-                      sound_speed,
-                      geometry,
-                      angle,
-                      &interf_cov_vector);
+  PhaseAlignmentMasks(frequency_bin, fft_size, sample_rate, sound_speed,
+                      geometry, angle, &interf_cov_vector);
   interf_cov_vector.Scale(1.f / Norm(interf_cov_vector));
   interf_cov_vector_transposed.Transpose(interf_cov_vector);
   interf_cov_vector.PointwiseConjugate();

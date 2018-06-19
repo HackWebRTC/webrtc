@@ -91,9 +91,9 @@ void WriteFloatData(const float* const* data,
   }
   // TODO(aluebs): Use ScaleToInt16Range() from audio_util
   for (size_t i = 0; i < length; ++i) {
-    buffer[i] = buffer[i] > 0 ?
-                buffer[i] * std::numeric_limits<int16_t>::max() :
-                -buffer[i] * std::numeric_limits<int16_t>::min();
+    buffer[i] = buffer[i] > 0
+                    ? buffer[i] * std::numeric_limits<int16_t>::max()
+                    : -buffer[i] * std::numeric_limits<int16_t>::min();
   }
   if (wav_file) {
     wav_file->WriteSamples(buffer.get(), length);
@@ -113,11 +113,10 @@ size_t SamplesFromRate(int rate) {
   return static_cast<size_t>(AudioProcessing::kChunkSizeMs * rate / 1000);
 }
 
-void SetFrameSampleRate(AudioFrame* frame,
-                        int sample_rate_hz) {
+void SetFrameSampleRate(AudioFrame* frame, int sample_rate_hz) {
   frame->sample_rate_hz_ = sample_rate_hz;
-  frame->samples_per_channel_ = AudioProcessing::kChunkSizeMs *
-      sample_rate_hz / 1000;
+  frame->samples_per_channel_ =
+      AudioProcessing::kChunkSizeMs * sample_rate_hz / 1000;
 }
 
 AudioProcessing::ChannelLayout LayoutFromChannels(size_t num_channels) {

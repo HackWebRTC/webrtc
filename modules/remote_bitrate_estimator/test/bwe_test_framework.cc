@@ -39,9 +39,7 @@ class DelayCapHelper {
     return (max_delay_us_ == 0 || max_delay_us_ >= packet_delay_us);
   }
 
-  const Stats<double>& delay_stats() const {
-    return delay_stats_;
-  }
+  const Stats<double>& delay_stats() const { return delay_stats_; }
 
  private:
   int64_t max_delay_us_;
@@ -50,7 +48,7 @@ class DelayCapHelper {
   RTC_DISALLOW_COPY_AND_ASSIGN(DelayCapHelper);
 };
 
-const FlowIds CreateFlowIds(const int *flow_ids_array, size_t num_flow_ids) {
+const FlowIds CreateFlowIds(const int* flow_ids_array, size_t num_flow_ids) {
   FlowIds flow_ids(&flow_ids_array[0], flow_ids_array + num_flow_ids);
   return flow_ids;
 }
@@ -109,8 +107,7 @@ Packet::Packet(int flow_id, int64_t send_time_us, size_t payload_size)
       sender_timestamp_us_(send_time_us),
       payload_size_(payload_size) {}
 
-Packet::~Packet() {
-}
+Packet::~Packet() {}
 
 bool Packet::operator<(const Packet& rhs) const {
   return send_time_us_ < rhs.send_time_us_;
@@ -138,8 +135,7 @@ MediaPacket::MediaPacket(int flow_id,
                          int64_t send_time_us,
                          size_t payload_size,
                          const RTPHeader& header)
-    : Packet(flow_id, send_time_us, payload_size), header_(header) {
-}
+    : Packet(flow_id, send_time_us, payload_size), header_(header) {}
 
 MediaPacket::MediaPacket(int64_t send_time_us, uint16_t sequence_number)
     : Packet(0, send_time_us, 0) {
@@ -149,8 +145,9 @@ MediaPacket::MediaPacket(int64_t send_time_us, uint16_t sequence_number)
 
 void MediaPacket::SetAbsSendTimeMs(int64_t abs_send_time_ms) {
   header_.extension.hasAbsoluteSendTime = true;
-  header_.extension.absoluteSendTime = ((static_cast<int64_t>(abs_send_time_ms *
-    (1 << 18)) + 500) / 1000) & 0x00fffffful;
+  header_.extension.absoluteSendTime =
+      ((static_cast<int64_t>(abs_send_time_ms * (1 << 18)) + 500) / 1000) &
+      0x00fffffful;
 }
 
 BbrBweFeedback::BbrBweFeedback(
@@ -168,8 +165,7 @@ RembFeedback::RembFeedback(int flow_id,
                            RTCPReportBlock report_block)
     : FeedbackPacket(flow_id, send_time_us, last_send_time_ms),
       estimated_bps_(estimated_bps),
-      report_block_(report_block) {
-}
+      report_block_(report_block) {}
 
 SendSideBweFeedback::SendSideBweFeedback(
     int flow_id,
@@ -272,7 +268,6 @@ RateCounterFilter::~RateCounterFilter() {
   LogStats();
 }
 
-
 void RateCounterFilter::LogStats() {
   BWE_TEST_LOGGING_CONTEXT("RateCounterFilter");
   packets_per_second_stats_.Log("pps");
@@ -315,15 +310,13 @@ void RateCounterFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
 LossFilter::LossFilter(PacketProcessorListener* listener, int flow_id)
     : PacketProcessor(listener, flow_id, kRegular),
       random_(0x12345678),
-      loss_fraction_(0.0f) {
-}
+      loss_fraction_(0.0f) {}
 
 LossFilter::LossFilter(PacketProcessorListener* listener,
                        const FlowIds& flow_ids)
     : PacketProcessor(listener, flow_ids, kRegular),
       random_(0x12345678),
-      loss_fraction_(0.0f) {
-}
+      loss_fraction_(0.0f) {}
 
 void LossFilter::SetLoss(float loss_percent) {
   BWE_TEST_LOGGING_ENABLE(false);
@@ -335,7 +328,7 @@ void LossFilter::SetLoss(float loss_percent) {
 
 void LossFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
   assert(in_out);
-  for (PacketsIt it = in_out->begin(); it != in_out->end(); ) {
+  for (PacketsIt it = in_out->begin(); it != in_out->end();) {
     if (random_.Rand<float>() < loss_fraction_) {
       delete *it;
       it = in_out->erase(it);
@@ -350,15 +343,13 @@ const int64_t kDefaultOneWayDelayUs = 0;
 DelayFilter::DelayFilter(PacketProcessorListener* listener, int flow_id)
     : PacketProcessor(listener, flow_id, kRegular),
       one_way_delay_us_(kDefaultOneWayDelayUs),
-      last_send_time_us_(0) {
-}
+      last_send_time_us_(0) {}
 
 DelayFilter::DelayFilter(PacketProcessorListener* listener,
                          const FlowIds& flow_ids)
     : PacketProcessor(listener, flow_ids, kRegular),
       one_way_delay_us_(kDefaultOneWayDelayUs),
-      last_send_time_us_(0) {
-}
+      last_send_time_us_(0) {}
 
 void DelayFilter::SetOneWayDelayMs(int64_t one_way_delay_ms) {
   BWE_TEST_LOGGING_ENABLE(false);
@@ -381,8 +372,7 @@ JitterFilter::JitterFilter(PacketProcessorListener* listener, int flow_id)
       random_(0x89674523),
       stddev_jitter_us_(0),
       last_send_time_us_(0),
-      reordering_(false) {
-}
+      reordering_(false) {}
 
 JitterFilter::JitterFilter(PacketProcessorListener* listener,
                            const FlowIds& flow_ids)
@@ -390,8 +380,7 @@ JitterFilter::JitterFilter(PacketProcessorListener* listener,
       random_(0x89674523),
       stddev_jitter_us_(0),
       last_send_time_us_(0),
-      reordering_(false) {
-}
+      reordering_(false) {}
 
 const int kN = 3;  // Truncated N sigma gaussian.
 
@@ -410,7 +399,7 @@ inline int64_t TruncatedNSigmaGaussian(Random* const random,
   const int64_t gaussian_random = random->Gaussian(mean, std_dev);
   return rtc::SafeClamp(gaussian_random, -kN * std_dev, kN * std_dev);
 }
-}
+}  // namespace
 
 void JitterFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
   assert(in_out);
@@ -448,15 +437,13 @@ int64_t JitterFilter::MeanUs() {
 ReorderFilter::ReorderFilter(PacketProcessorListener* listener, int flow_id)
     : PacketProcessor(listener, flow_id, kRegular),
       random_(0x27452389),
-      reorder_fraction_(0.0f) {
-}
+      reorder_fraction_(0.0f) {}
 
 ReorderFilter::ReorderFilter(PacketProcessorListener* listener,
                              const FlowIds& flow_ids)
     : PacketProcessor(listener, flow_ids, kRegular),
       random_(0x27452389),
-      reorder_fraction_(0.0f) {
-}
+      reorder_fraction_(0.0f) {}
 
 void ReorderFilter::SetReorder(float reorder_percent) {
   BWE_TEST_LOGGING_ENABLE(false);
@@ -490,16 +477,14 @@ ChokeFilter::ChokeFilter(PacketProcessorListener* listener, int flow_id)
     : PacketProcessor(listener, flow_id, kRegular),
       capacity_kbps_(kDefaultKbps),
       last_send_time_us_(0),
-      delay_cap_helper_(new DelayCapHelper()) {
-}
+      delay_cap_helper_(new DelayCapHelper()) {}
 
 ChokeFilter::ChokeFilter(PacketProcessorListener* listener,
                          const FlowIds& flow_ids)
     : PacketProcessor(listener, flow_ids, kRegular),
       capacity_kbps_(kDefaultKbps),
       last_send_time_us_(0),
-      delay_cap_helper_(new DelayCapHelper()) {
-}
+      delay_cap_helper_(new DelayCapHelper()) {}
 
 ChokeFilter::~ChokeFilter() {}
 
@@ -515,7 +500,7 @@ uint32_t ChokeFilter::capacity_kbps() {
 
 void ChokeFilter::RunFor(int64_t /*time_ms*/, Packets* in_out) {
   assert(in_out);
-  for (PacketsIt it = in_out->begin(); it != in_out->end(); ) {
+  for (PacketsIt it = in_out->begin(); it != in_out->end();) {
     int64_t earliest_send_time_us =
         std::max(last_send_time_us_, (*it)->send_time_us());
     int64_t new_send_time_us =
@@ -556,8 +541,7 @@ TraceBasedDeliveryFilter::TraceBasedDeliveryFilter(
       name_(""),
       delay_cap_helper_(new DelayCapHelper()),
       packets_per_second_stats_(),
-      kbps_stats_() {
-}
+      kbps_stats_() {}
 
 TraceBasedDeliveryFilter::TraceBasedDeliveryFilter(
     PacketProcessorListener* listener,
@@ -571,8 +555,7 @@ TraceBasedDeliveryFilter::TraceBasedDeliveryFilter(
       name_(""),
       delay_cap_helper_(new DelayCapHelper()),
       packets_per_second_stats_(),
-      kbps_stats_() {
-}
+      kbps_stats_() {}
 
 TraceBasedDeliveryFilter::TraceBasedDeliveryFilter(
     PacketProcessorListener* listener,
@@ -587,11 +570,9 @@ TraceBasedDeliveryFilter::TraceBasedDeliveryFilter(
       name_(name),
       delay_cap_helper_(new DelayCapHelper()),
       packets_per_second_stats_(),
-      kbps_stats_() {
-}
+      kbps_stats_() {}
 
-TraceBasedDeliveryFilter::~TraceBasedDeliveryFilter() {
-}
+TraceBasedDeliveryFilter::~TraceBasedDeliveryFilter() {}
 
 bool TraceBasedDeliveryFilter::Init(const std::string& filename) {
   FILE* trace_file = fopen(filename.c_str(), "r");
@@ -769,8 +750,7 @@ AdaptiveVideoSource::AdaptiveVideoSource(int flow_id,
                                          uint32_t kbps,
                                          uint32_t ssrc,
                                          int64_t first_frame_offset_ms)
-    : VideoSource(flow_id, fps, kbps, ssrc, first_frame_offset_ms) {
-}
+    : VideoSource(flow_id, fps, kbps, ssrc, first_frame_offset_ms) {}
 
 void AdaptiveVideoSource::SetBitrateBps(int bitrate_bps) {
   bits_per_second_ = bitrate_bps;
@@ -787,8 +767,7 @@ PeriodicKeyFrameSource::PeriodicKeyFrameSource(int flow_id,
       key_frame_interval_(key_frame_interval),
       frame_counter_(0),
       compensation_bytes_(0),
-      compensation_per_frame_(0) {
-}
+      compensation_per_frame_(0) {}
 
 uint32_t PeriodicKeyFrameSource::NextFrameSize() {
   uint32_t payload_size = frame_size_bytes_;

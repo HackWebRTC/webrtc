@@ -34,15 +34,13 @@ BweReceiver::BweReceiver(int flow_id)
     : flow_id_(flow_id),
       received_packets_(kSetCapacity),
       rate_counter_(),
-      loss_account_() {
-}
+      loss_account_() {}
 
 BweReceiver::BweReceiver(int flow_id, int64_t window_size_ms)
     : flow_id_(flow_id),
       received_packets_(kSetCapacity),
       rate_counter_(window_size_ms),
-      loss_account_() {
-}
+      loss_account_() {}
 
 void BweReceiver::ReceivePacket(int64_t arrival_time_ms,
                                 const MediaPacket& media_packet) {

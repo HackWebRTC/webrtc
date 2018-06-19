@@ -242,8 +242,10 @@ DEFINE_bool(use_flexfec, false, "Use FlexFEC forward error correction.");
 
 DEFINE_bool(audio, false, "Add audio stream");
 
-DEFINE_bool(audio_video_sync, false, "Sync audio and video stream (no effect if"
-    " audio is false)");
+DEFINE_bool(audio_video_sync,
+            false,
+            "Sync audio and video stream (no effect if"
+            " audio is false)");
 
 DEFINE_bool(audio_dtx, false, "Enable audio DTX (no effect if audio is false)");
 
@@ -308,8 +310,12 @@ void Loopback() {
   params.logging = {flags::FLAG_logs, flags::FLAG_rtc_event_log_name,
                     flags::FLAG_rtp_dump_name, flags::FLAG_encoded_frame_path};
   params.screenshare[0].enabled = false;
-  params.analyzer = {"video", 0.0, 0.0, flags::DurationSecs(),
-      flags::OutputFilename(), flags::GraphTitle()};
+  params.analyzer = {"video",
+                     0.0,
+                     0.0,
+                     flags::DurationSecs(),
+                     flags::OutputFilename(),
+                     flags::GraphTitle()};
   params.pipe = pipe_config;
 
   if (flags::NumStreams() > 1 && flags::Stream0().empty() &&

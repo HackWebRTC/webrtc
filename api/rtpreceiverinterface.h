@@ -128,17 +128,17 @@ class RtpReceiverInterface : public rtc::RefCountInterface {
 // TODO(deadbeef): Move this to .cc file and out of api/. What threads methods
 // are called on is an implementation detail.
 BEGIN_SIGNALING_PROXY_MAP(RtpReceiver)
-  PROXY_SIGNALING_THREAD_DESTRUCTOR()
-  PROXY_CONSTMETHOD0(rtc::scoped_refptr<MediaStreamTrackInterface>, track)
-  PROXY_CONSTMETHOD0(std::vector<rtc::scoped_refptr<MediaStreamInterface>>,
-                     streams)
-  PROXY_CONSTMETHOD0(cricket::MediaType, media_type)
-  PROXY_CONSTMETHOD0(std::string, id)
-  PROXY_CONSTMETHOD0(RtpParameters, GetParameters);
-  PROXY_METHOD1(bool, SetParameters, const RtpParameters&)
-  PROXY_METHOD1(void, SetObserver, RtpReceiverObserverInterface*);
-  PROXY_CONSTMETHOD0(std::vector<RtpSource>, GetSources);
-  END_PROXY_MAP()
+PROXY_SIGNALING_THREAD_DESTRUCTOR()
+PROXY_CONSTMETHOD0(rtc::scoped_refptr<MediaStreamTrackInterface>, track)
+PROXY_CONSTMETHOD0(std::vector<rtc::scoped_refptr<MediaStreamInterface>>,
+                   streams)
+PROXY_CONSTMETHOD0(cricket::MediaType, media_type)
+PROXY_CONSTMETHOD0(std::string, id)
+PROXY_CONSTMETHOD0(RtpParameters, GetParameters);
+PROXY_METHOD1(bool, SetParameters, const RtpParameters&)
+PROXY_METHOD1(void, SetObserver, RtpReceiverObserverInterface*);
+PROXY_CONSTMETHOD0(std::vector<RtpSource>, GetSources);
+END_PROXY_MAP()
 
 }  // namespace webrtc
 

@@ -62,9 +62,15 @@ class FuzzyPacketBuffer : public video_coding::PacketBuffer {
   explicit FuzzyPacketBuffer(DataReader* reader)
       : PacketBuffer(nullptr, 2, 4, nullptr), reader(reader) {
     switch (reader->GetNum<uint8_t>() % 3) {
-      case 0: codec = kVideoCodecVP8; break;
-      case 1: codec = kVideoCodecVP9; break;
-      case 2: codec = kVideoCodecH264; break;
+      case 0:
+        codec = kVideoCodecVP8;
+        break;
+      case 1:
+        codec = kVideoCodecVP9;
+        break;
+      case 2:
+        codec = kVideoCodecH264;
+        break;
     }
   }
 

@@ -127,8 +127,7 @@ std::unique_ptr<CertificateInfo> CreateFakeCertificateAndInfoFromDers(
   info->ders = ders;
   for (const std::string& der : ders) {
     info->pems.push_back(rtc::SSLIdentity::DerToPem(
-        "CERTIFICATE",
-        reinterpret_cast<const unsigned char*>(der.c_str()),
+        "CERTIFICATE", reinterpret_cast<const unsigned char*>(der.c_str()),
         der.length()));
   }
   info->certificate =
@@ -136,12 +135,11 @@ std::unique_ptr<CertificateInfo> CreateFakeCertificateAndInfoFromDers(
           new rtc::FakeSSLIdentity(info->pems)));
   // Strip header/footer and newline characters of PEM strings.
   for (size_t i = 0; i < info->pems.size(); ++i) {
-    rtc::replace_substrs("-----BEGIN CERTIFICATE-----", 27,
-                         "", 0, &info->pems[i]);
-    rtc::replace_substrs("-----END CERTIFICATE-----", 25,
-                         "", 0, &info->pems[i]);
-    rtc::replace_substrs("\n", 1,
-                         "", 0, &info->pems[i]);
+    rtc::replace_substrs("-----BEGIN CERTIFICATE-----", 27, "", 0,
+                         &info->pems[i]);
+    rtc::replace_substrs("-----END CERTIFICATE-----", 25, "", 0,
+                         &info->pems[i]);
+    rtc::replace_substrs("\n", 1, "", 0, &info->pems[i]);
   }
   // Fingerprints for the whole certificate chain, starting with leaf
   // certificate.
@@ -172,8 +170,7 @@ std::unique_ptr<cricket::Candidate> CreateFakeCandidate(
   return candidate;
 }
 
-class FakeAudioTrackForStats
-    : public MediaStreamTrack<AudioTrackInterface> {
+class FakeAudioTrackForStats : public MediaStreamTrack<AudioTrackInterface> {
  public:
   static rtc::scoped_refptr<FakeAudioTrackForStats> Create(
       const std::string& id,
@@ -199,8 +196,7 @@ class FakeAudioTrackForStats
   }
 };
 
-class FakeVideoTrackForStats
-    : public MediaStreamTrack<VideoTrackInterface> {
+class FakeVideoTrackForStats : public MediaStreamTrack<VideoTrackInterface> {
  public:
   static rtc::scoped_refptr<FakeVideoTrackForStats> Create(
       const std::string& id,
@@ -246,16 +242,17 @@ rtc::scoped_refptr<MockRtpSenderInternal> CreateMockSender(
       new rtc::RefCountedObject<MockRtpSenderInternal>());
   EXPECT_CALL(*sender, track()).WillRepeatedly(Return(track));
   EXPECT_CALL(*sender, ssrc()).WillRepeatedly(Return(ssrc));
-  EXPECT_CALL(*sender, media_type()).WillRepeatedly(Return(
-      track->kind() == MediaStreamTrackInterface::kAudioKind
-          ? cricket::MEDIA_TYPE_AUDIO : cricket::MEDIA_TYPE_VIDEO));
-  EXPECT_CALL(*sender, GetParameters()).WillRepeatedly(Invoke(
-    [ssrc]() {
-      RtpParameters params;
-      params.encodings.push_back(RtpEncodingParameters());
-      params.encodings[0].ssrc = ssrc;
-      return params;
-    }));
+  EXPECT_CALL(*sender, media_type())
+      .WillRepeatedly(
+          Return(track->kind() == MediaStreamTrackInterface::kAudioKind
+                     ? cricket::MEDIA_TYPE_AUDIO
+                     : cricket::MEDIA_TYPE_VIDEO));
+  EXPECT_CALL(*sender, GetParameters()).WillRepeatedly(Invoke([ssrc]() {
+    RtpParameters params;
+    params.encodings.push_back(RtpEncodingParameters());
+    params.encodings[0].ssrc = ssrc;
+    return params;
+  }));
   EXPECT_CALL(*sender, AttachmentId()).WillRepeatedly(Return(attachment_id));
   EXPECT_CALL(*sender, stream_ids()).WillRepeatedly(Return(local_stream_ids));
   return sender;
@@ -272,16 +269,17 @@ rtc::scoped_refptr<MockRtpReceiverInternal> CreateMockReceiver(
       .WillRepeatedly(
           Return(std::vector<rtc::scoped_refptr<MediaStreamInterface>>({})));
 
-  EXPECT_CALL(*receiver, media_type()).WillRepeatedly(Return(
-      track->kind() == MediaStreamTrackInterface::kAudioKind
-          ? cricket::MEDIA_TYPE_AUDIO : cricket::MEDIA_TYPE_VIDEO));
-  EXPECT_CALL(*receiver, GetParameters()).WillRepeatedly(Invoke(
-    [ssrc]() {
-      RtpParameters params;
-      params.encodings.push_back(RtpEncodingParameters());
-      params.encodings[0].ssrc = ssrc;
-      return params;
-    }));
+  EXPECT_CALL(*receiver, media_type())
+      .WillRepeatedly(
+          Return(track->kind() == MediaStreamTrackInterface::kAudioKind
+                     ? cricket::MEDIA_TYPE_AUDIO
+                     : cricket::MEDIA_TYPE_VIDEO));
+  EXPECT_CALL(*receiver, GetParameters()).WillRepeatedly(Invoke([ssrc]() {
+    RtpParameters params;
+    params.encodings.push_back(RtpEncodingParameters());
+    params.encodings[0].ssrc = ssrc;
+    return params;
+  }));
   EXPECT_CALL(*receiver, AttachmentId()).WillRepeatedly(Return(attachment_id));
   return receiver;
 }
@@ -510,8 +508,7 @@ class RTCStatsCollectorTest : public testing::Test {
       const CertificateInfo& certinfo) {
     for (size_t i = 0; i < certinfo.fingerprints.size(); ++i) {
       RTCCertificateStats expected_certificate_stats(
-          "RTCCertificate_" + certinfo.fingerprints[i],
-          report->timestamp_us());
+          "RTCCertificate_" + certinfo.fingerprints[i], report->timestamp_us());
       expected_certificate_stats.fingerprint = certinfo.fingerprints[i];
       expected_certificate_stats.fingerprint_algorithm = "sha-1";
       expected_certificate_stats.base64_certificate = certinfo.pems[i];
@@ -521,8 +518,8 @@ class RTCStatsCollectorTest : public testing::Test {
       }
       ASSERT_TRUE(report->Get(expected_certificate_stats.id()));
       EXPECT_EQ(expected_certificate_stats,
-                report->Get(expected_certificate_stats.id())->cast_to<
-                      RTCCertificateStats>());
+                report->Get(expected_certificate_stats.id())
+                    ->cast_to<RTCCertificateStats>());
     }
   }
 
@@ -699,12 +696,12 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsSingle) {
 
   std::unique_ptr<CertificateInfo> local_certinfo =
       CreateFakeCertificateAndInfoFromDers(
-          std::vector<std::string>({ "(local) single certificate" }));
+          std::vector<std::string>({"(local) single certificate"}));
   pc_->SetLocalCertificate(kTransportName, local_certinfo->certificate);
 
   std::unique_ptr<CertificateInfo> remote_certinfo =
       CreateFakeCertificateAndInfoFromDers(
-          std::vector<std::string>({ "(remote) single certificate" }));
+          std::vector<std::string>({"(remote) single certificate"}));
   pc_->SetRemoteCertChain(
       kTransportName,
       remote_certinfo->certificate->ssl_cert_chain().UniqueCopy());
@@ -787,24 +784,24 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCodecStats) {
   expected_outbound_video_codec.clock_rate = 1340;
 
   ASSERT_TRUE(report->Get(expected_inbound_audio_codec.id()));
-  EXPECT_EQ(expected_inbound_audio_codec,
-            report->Get(expected_inbound_audio_codec.id())->cast_to<
-                  RTCCodecStats>());
+  EXPECT_EQ(
+      expected_inbound_audio_codec,
+      report->Get(expected_inbound_audio_codec.id())->cast_to<RTCCodecStats>());
 
   ASSERT_TRUE(report->Get(expected_outbound_audio_codec.id()));
   EXPECT_EQ(expected_outbound_audio_codec,
-            report->Get(expected_outbound_audio_codec.id())->cast_to<
-                  RTCCodecStats>());
+            report->Get(expected_outbound_audio_codec.id())
+                ->cast_to<RTCCodecStats>());
 
   ASSERT_TRUE(report->Get(expected_inbound_video_codec.id()));
-  EXPECT_EQ(expected_inbound_video_codec,
-            report->Get(expected_inbound_video_codec.id())->cast_to<
-                  RTCCodecStats>());
+  EXPECT_EQ(
+      expected_inbound_video_codec,
+      report->Get(expected_inbound_video_codec.id())->cast_to<RTCCodecStats>());
 
   ASSERT_TRUE(report->Get(expected_outbound_video_codec.id()));
   EXPECT_EQ(expected_outbound_video_codec,
-            report->Get(expected_outbound_video_codec.id())->cast_to<
-                  RTCCodecStats>());
+            report->Get(expected_outbound_video_codec.id())
+                ->cast_to<RTCCodecStats>());
 }
 
 TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsMultiple) {
@@ -814,11 +811,11 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsMultiple) {
   pc_->AddVoiceChannel("audio", kAudioTransport);
   std::unique_ptr<CertificateInfo> audio_local_certinfo =
       CreateFakeCertificateAndInfoFromDers(
-          std::vector<std::string>({ "(local) audio" }));
+          std::vector<std::string>({"(local) audio"}));
   pc_->SetLocalCertificate(kAudioTransport, audio_local_certinfo->certificate);
   std::unique_ptr<CertificateInfo> audio_remote_certinfo =
       CreateFakeCertificateAndInfoFromDers(
-          std::vector<std::string>({ "(remote) audio" }));
+          std::vector<std::string>({"(remote) audio"}));
   pc_->SetRemoteCertChain(
       kAudioTransport,
       audio_remote_certinfo->certificate->ssl_cert_chain().UniqueCopy());
@@ -826,11 +823,11 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsMultiple) {
   pc_->AddVideoChannel("video", kVideoTransport);
   std::unique_ptr<CertificateInfo> video_local_certinfo =
       CreateFakeCertificateAndInfoFromDers(
-          std::vector<std::string>({ "(local) video" }));
+          std::vector<std::string>({"(local) video"}));
   pc_->SetLocalCertificate(kVideoTransport, video_local_certinfo->certificate);
   std::unique_ptr<CertificateInfo> video_remote_certinfo =
       CreateFakeCertificateAndInfoFromDers(
-          std::vector<std::string>({ "(remote) video" }));
+          std::vector<std::string>({"(remote) video"}));
   pc_->SetRemoteCertChain(
       kVideoTransport,
       video_remote_certinfo->certificate->ssl_cert_chain().UniqueCopy());
@@ -920,21 +917,21 @@ TEST_F(RTCStatsCollectorTest, CollectRTCDataChannelStats) {
   rtc::scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
 
   ASSERT_TRUE(report->Get(expected_data_channel0.id()));
-  EXPECT_EQ(expected_data_channel0,
-            report->Get(expected_data_channel0.id())->cast_to<
-                RTCDataChannelStats>());
+  EXPECT_EQ(
+      expected_data_channel0,
+      report->Get(expected_data_channel0.id())->cast_to<RTCDataChannelStats>());
   ASSERT_TRUE(report->Get(expected_data_channel1.id()));
-  EXPECT_EQ(expected_data_channel1,
-            report->Get(expected_data_channel1.id())->cast_to<
-                RTCDataChannelStats>());
+  EXPECT_EQ(
+      expected_data_channel1,
+      report->Get(expected_data_channel1.id())->cast_to<RTCDataChannelStats>());
   ASSERT_TRUE(report->Get(expected_data_channel2.id()));
-  EXPECT_EQ(expected_data_channel2,
-            report->Get(expected_data_channel2.id())->cast_to<
-                RTCDataChannelStats>());
+  EXPECT_EQ(
+      expected_data_channel2,
+      report->Get(expected_data_channel2.id())->cast_to<RTCDataChannelStats>());
   ASSERT_TRUE(report->Get(expected_data_channel3.id()));
-  EXPECT_EQ(expected_data_channel3,
-            report->Get(expected_data_channel3.id())->cast_to<
-                RTCDataChannelStats>());
+  EXPECT_EQ(
+      expected_data_channel3,
+      report->Get(expected_data_channel3.id())->cast_to<RTCDataChannelStats>());
 }
 
 TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
@@ -1000,8 +997,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
   std::unique_ptr<cricket::Candidate> b_local =
       CreateFakeCandidate("42.42.42.42", 42, "b_local's protocol",
                           rtc::ADAPTER_TYPE_WIFI, cricket::LOCAL_PORT_TYPE, 42);
-  RTCLocalIceCandidateStats expected_b_local(
-      "RTCIceCandidate_" + b_local->id(), 0);
+  RTCLocalIceCandidateStats expected_b_local("RTCIceCandidate_" + b_local->id(),
+                                             0);
   expected_b_local.transport_id = "RTCTransport_b_0";
   expected_b_local.network_type = "wifi";
   expected_b_local.ip = "42.42.42.42";
@@ -1057,29 +1054,26 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
   rtc::scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
 
   ASSERT_TRUE(report->Get(expected_a_local_host.id()));
-  EXPECT_EQ(expected_a_local_host,
-            report->Get(expected_a_local_host.id())->cast_to<
-                RTCLocalIceCandidateStats>());
+  EXPECT_EQ(expected_a_local_host, report->Get(expected_a_local_host.id())
+                                       ->cast_to<RTCLocalIceCandidateStats>());
   ASSERT_TRUE(report->Get(expected_a_remote_srflx.id()));
   EXPECT_EQ(expected_a_remote_srflx,
-            report->Get(expected_a_remote_srflx.id())->cast_to<
-                RTCRemoteIceCandidateStats>());
+            report->Get(expected_a_remote_srflx.id())
+                ->cast_to<RTCRemoteIceCandidateStats>());
   ASSERT_TRUE(report->Get(expected_a_local_prflx.id()));
-  EXPECT_EQ(expected_a_local_prflx,
-            report->Get(expected_a_local_prflx.id())->cast_to<
-                RTCLocalIceCandidateStats>());
+  EXPECT_EQ(expected_a_local_prflx, report->Get(expected_a_local_prflx.id())
+                                        ->cast_to<RTCLocalIceCandidateStats>());
   ASSERT_TRUE(report->Get(expected_a_remote_relay.id()));
   EXPECT_EQ(expected_a_remote_relay,
-            report->Get(expected_a_remote_relay.id())->cast_to<
-                RTCRemoteIceCandidateStats>());
+            report->Get(expected_a_remote_relay.id())
+                ->cast_to<RTCRemoteIceCandidateStats>());
   ASSERT_TRUE(report->Get(expected_b_local.id()));
-  EXPECT_EQ(expected_b_local,
-            report->Get(expected_b_local.id())->cast_to<
-                RTCLocalIceCandidateStats>());
+  EXPECT_EQ(
+      expected_b_local,
+      report->Get(expected_b_local.id())->cast_to<RTCLocalIceCandidateStats>());
   ASSERT_TRUE(report->Get(expected_b_remote.id()));
-  EXPECT_EQ(expected_b_remote,
-            report->Get(expected_b_remote.id())->cast_to<
-                RTCRemoteIceCandidateStats>());
+  EXPECT_EQ(expected_b_remote, report->Get(expected_b_remote.id())
+                                   ->cast_to<RTCRemoteIceCandidateStats>());
   EXPECT_TRUE(report->Get("RTCTransport_a_0"));
   EXPECT_TRUE(report->Get("RTCTransport_b_0"));
 }
@@ -1219,8 +1213,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
   EXPECT_FALSE(*expected_local_candidate.is_remote);
   ASSERT_TRUE(report->Get(expected_local_candidate.id()));
   EXPECT_EQ(expected_local_candidate,
-            report->Get(expected_local_candidate.id())->cast_to<
-                RTCLocalIceCandidateStats>());
+            report->Get(expected_local_candidate.id())
+                ->cast_to<RTCLocalIceCandidateStats>());
 
   RTCRemoteIceCandidateStats expected_remote_candidate(
       *expected_pair.remote_candidate_id, report->timestamp_us());
@@ -1234,8 +1228,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidatePairStats) {
   EXPECT_TRUE(*expected_remote_candidate.is_remote);
   ASSERT_TRUE(report->Get(expected_remote_candidate.id()));
   EXPECT_EQ(expected_remote_candidate,
-            report->Get(expected_remote_candidate.id())->cast_to<
-                RTCRemoteIceCandidateStats>());
+            report->Get(expected_remote_candidate.id())
+                ->cast_to<RTCRemoteIceCandidateStats>());
 }
 
 TEST_F(RTCStatsCollectorTest, CollectRTCPeerConnectionStats) {
@@ -1246,9 +1240,9 @@ TEST_F(RTCStatsCollectorTest, CollectRTCPeerConnectionStats) {
     expected.data_channels_opened = 0;
     expected.data_channels_closed = 0;
     ASSERT_TRUE(report->Get("RTCPeerConnection"));
-    EXPECT_EQ(expected,
-              report->Get("RTCPeerConnection")->cast_to<
-                  RTCPeerConnectionStats>());
+    EXPECT_EQ(
+        expected,
+        report->Get("RTCPeerConnection")->cast_to<RTCPeerConnectionStats>());
   }
 
   rtc::scoped_refptr<DataChannel> dummy_channel_a = DataChannel::Create(
@@ -1270,9 +1264,9 @@ TEST_F(RTCStatsCollectorTest, CollectRTCPeerConnectionStats) {
     expected.data_channels_opened = 1;
     expected.data_channels_closed = 0;
     ASSERT_TRUE(report->Get("RTCPeerConnection"));
-    EXPECT_EQ(expected,
-              report->Get("RTCPeerConnection")->cast_to<
-                  RTCPeerConnectionStats>());
+    EXPECT_EQ(
+        expected,
+        report->Get("RTCPeerConnection")->cast_to<RTCPeerConnectionStats>());
   }
 
   dummy_channel_b->SignalOpened(dummy_channel_b.get());
@@ -1286,9 +1280,9 @@ TEST_F(RTCStatsCollectorTest, CollectRTCPeerConnectionStats) {
     expected.data_channels_opened = 2;
     expected.data_channels_closed = 1;
     ASSERT_TRUE(report->Get("RTCPeerConnection"));
-    EXPECT_EQ(expected,
-              report->Get("RTCPeerConnection")->cast_to<
-                  RTCPeerConnectionStats>());
+    EXPECT_EQ(
+        expected,
+        report->Get("RTCPeerConnection")->cast_to<RTCPeerConnectionStats>());
   }
 
   // Re-opening a data channel (or opening a new data channel that is re-using
@@ -1303,9 +1297,9 @@ TEST_F(RTCStatsCollectorTest, CollectRTCPeerConnectionStats) {
     expected.data_channels_opened = 3;
     expected.data_channels_closed = 1;
     ASSERT_TRUE(report->Get("RTCPeerConnection"));
-    EXPECT_EQ(expected,
-              report->Get("RTCPeerConnection")->cast_to<
-                  RTCPeerConnectionStats>());
+    EXPECT_EQ(
+        expected,
+        report->Get("RTCPeerConnection")->cast_to<RTCPeerConnectionStats>());
   }
 
   dummy_channel_a->SignalClosed(dummy_channel_a.get());
@@ -1319,9 +1313,9 @@ TEST_F(RTCStatsCollectorTest, CollectRTCPeerConnectionStats) {
     expected.data_channels_opened = 3;
     expected.data_channels_closed = 3;
     ASSERT_TRUE(report->Get("RTCPeerConnection"));
-    EXPECT_EQ(expected,
-              report->Get("RTCPeerConnection")->cast_to<
-                  RTCPeerConnectionStats>());
+    EXPECT_EQ(
+        expected,
+        report->Get("RTCPeerConnection")->cast_to<RTCPeerConnectionStats>());
   }
 }
 
@@ -1335,8 +1329,8 @@ TEST_F(RTCStatsCollectorTest,
   rtc::scoped_refptr<MediaStreamTrackInterface> local_audio_track =
       CreateFakeTrack(cricket::MEDIA_TYPE_AUDIO, "LocalAudioTrackID",
                       MediaStreamTrackInterface::kEnded);
-  local_stream->AddTrack(static_cast<AudioTrackInterface*>(
-      local_audio_track.get()));
+  local_stream->AddTrack(
+      static_cast<AudioTrackInterface*>(local_audio_track.get()));
 
   cricket::VoiceSenderInfo voice_sender_info_ssrc1;
   voice_sender_info_ssrc1.local_stats.push_back(cricket::SsrcSenderInfo());
@@ -1395,8 +1389,8 @@ TEST_F(RTCStatsCollectorTest,
   rtc::scoped_refptr<MediaStreamTrackInterface> remote_audio_track =
       CreateFakeTrack(cricket::MEDIA_TYPE_AUDIO, "RemoteAudioTrackID",
                       MediaStreamTrackInterface::kLive);
-  remote_stream->AddTrack(static_cast<AudioTrackInterface*>(
-      remote_audio_track.get()));
+  remote_stream->AddTrack(
+      static_cast<AudioTrackInterface*>(remote_audio_track.get()));
 
   cricket::VoiceReceiverInfo voice_receiver_info;
   voice_receiver_info.local_stats.push_back(cricket::SsrcReceiverInfo());
@@ -1423,9 +1417,9 @@ TEST_F(RTCStatsCollectorTest,
   ASSERT_TRUE(report->Get(expected_remote_stream.id()))
       << "Did not find " << expected_remote_stream.id() << " in "
       << report->ToJson();
-  EXPECT_EQ(expected_remote_stream,
-            report->Get(expected_remote_stream.id())->cast_to<
-                RTCMediaStreamStats>());
+  EXPECT_EQ(
+      expected_remote_stream,
+      report->Get(expected_remote_stream.id())->cast_to<RTCMediaStreamStats>());
 
   RTCMediaStreamTrackStats expected_remote_audio_track(
       IdForType<RTCMediaStreamTrackStats>(report), report->timestamp_us(),
@@ -1443,8 +1437,8 @@ TEST_F(RTCStatsCollectorTest,
   expected_remote_audio_track.jitter_buffer_delay = 3456;
   ASSERT_TRUE(report->Get(expected_remote_audio_track.id()));
   EXPECT_EQ(expected_remote_audio_track,
-            report->Get(expected_remote_audio_track.id())->cast_to<
-                RTCMediaStreamTrackStats>());
+            report->Get(expected_remote_audio_track.id())
+                ->cast_to<RTCMediaStreamTrackStats>());
 }
 
 TEST_F(RTCStatsCollectorTest,
@@ -1457,8 +1451,8 @@ TEST_F(RTCStatsCollectorTest,
   rtc::scoped_refptr<MediaStreamTrackInterface> local_video_track =
       CreateFakeTrack(cricket::MEDIA_TYPE_VIDEO, "LocalVideoTrackID",
                       MediaStreamTrackInterface::kLive);
-  local_stream->AddTrack(static_cast<VideoTrackInterface*>(
-      local_video_track.get()));
+  local_stream->AddTrack(
+      static_cast<VideoTrackInterface*>(local_video_track.get()));
 
   cricket::VideoSenderInfo video_sender_info_ssrc1;
   video_sender_info_ssrc1.local_stats.push_back(cricket::SsrcSenderInfo());
@@ -1518,8 +1512,8 @@ TEST_F(RTCStatsCollectorTest,
   rtc::scoped_refptr<MediaStreamTrackInterface> remote_video_track_ssrc3 =
       CreateFakeTrack(cricket::MEDIA_TYPE_VIDEO, "RemoteVideoTrackID3",
                       MediaStreamTrackInterface::kEnded);
-  remote_stream->AddTrack(static_cast<VideoTrackInterface*>(
-      remote_video_track_ssrc3.get()));
+  remote_stream->AddTrack(
+      static_cast<VideoTrackInterface*>(remote_video_track_ssrc3.get()));
 
   cricket::VideoReceiverInfo video_receiver_info_ssrc3;
   video_receiver_info_ssrc3.local_stats.push_back(cricket::SsrcReceiverInfo());
@@ -1551,9 +1545,9 @@ TEST_F(RTCStatsCollectorTest,
   expected_remote_stream.track_ids =
       std::vector<std::string>({stats_of_track_type[0]->id()});
   ASSERT_TRUE(report->Get(expected_remote_stream.id()));
-  EXPECT_EQ(expected_remote_stream,
-            report->Get(expected_remote_stream.id())->cast_to<
-                RTCMediaStreamStats>());
+  EXPECT_EQ(
+      expected_remote_stream,
+      report->Get(expected_remote_stream.id())->cast_to<RTCMediaStreamStats>());
 
   RTCMediaStreamTrackStats expected_remote_video_track_ssrc3(
       stats_of_track_type[0]->id(), report->timestamp_us(),
@@ -1570,8 +1564,8 @@ TEST_F(RTCStatsCollectorTest,
   expected_remote_video_track_ssrc3.frames_dropped = 1000 - 990;
   ASSERT_TRUE(report->Get(expected_remote_video_track_ssrc3.id()));
   EXPECT_EQ(expected_remote_video_track_ssrc3,
-            report->Get(expected_remote_video_track_ssrc3.id())->cast_to<
-                RTCMediaStreamTrackStats>());
+            report->Get(expected_remote_video_track_ssrc3.id())
+                ->cast_to<RTCMediaStreamTrackStats>());
 }
 
 TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Audio) {
@@ -1606,8 +1600,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Audio) {
   auto stats_of_track_type = report->GetStatsOfType<RTCMediaStreamTrackStats>();
   ASSERT_EQ(1, stats_of_track_type.size());
 
-  RTCInboundRTPStreamStats expected_audio(
-      "RTCInboundRTPAudioStream_1", report->timestamp_us());
+  RTCInboundRTPStreamStats expected_audio("RTCInboundRTPAudioStream_1",
+                                          report->timestamp_us());
   expected_audio.ssrc = 1;
   expected_audio.is_remote = false;
   expected_audio.media_type = "audio";
@@ -1661,8 +1655,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
 
   rtc::scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
 
-  RTCInboundRTPStreamStats expected_video(
-      "RTCInboundRTPVideoStream_1", report->timestamp_us());
+  RTCInboundRTPStreamStats expected_video("RTCInboundRTPVideoStream_1",
+                                          report->timestamp_us());
   expected_video.ssrc = 1;
   expected_video.is_remote = false;
   expected_video.media_type = "video";
@@ -1725,8 +1719,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Audio) {
 
   rtc::scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
 
-  RTCOutboundRTPStreamStats expected_audio(
-      "RTCOutboundRTPAudioStream_1", report->timestamp_us());
+  RTCOutboundRTPStreamStats expected_audio("RTCOutboundRTPAudioStream_1",
+                                           report->timestamp_us());
   expected_audio.ssrc = 1;
   expected_audio.is_remote = false;
   expected_audio.media_type = "audio";

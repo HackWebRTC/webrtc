@@ -27,9 +27,9 @@ bool StreamConfig::operator==(const StreamConfig& other) const {
 StreamConfig::Codec::Codec(const std::string& payload_name,
                            int payload_type,
                            int rtx_payload_type)
-        : payload_name(payload_name),
-          payload_type(payload_type),
-          rtx_payload_type(rtx_payload_type) {}
+    : payload_name(payload_name),
+      payload_type(payload_type),
+      rtx_payload_type(rtx_payload_type) {}
 
 bool StreamConfig::Codec::operator==(const Codec& other) const {
   return payload_name == other.payload_name &&

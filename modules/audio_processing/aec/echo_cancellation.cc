@@ -291,7 +291,7 @@ int32_t WebRtcAec_BufferFarend(void* aecInst,
 
   aecpc->farend_started = 1;
   WebRtcAec_SetSystemDelay(aecpc->aec, WebRtcAec_system_delay(aecpc->aec) +
-                           static_cast<int>(newNrOfSamples));
+                                           static_cast<int>(newNrOfSamples));
 
   // Write the time-domain data to |far_pre_buf|.
   WebRtc_WriteBuffer(aecpc->far_pre_buf, farend_ptr, newNrOfSamples);
@@ -302,8 +302,8 @@ int32_t WebRtcAec_BufferFarend(void* aecInst,
     {
       float* ptmp = NULL;
       float tmp[PART_LEN2];
-      WebRtc_ReadBuffer(aecpc->far_pre_buf,
-                        reinterpret_cast<void**>(&ptmp), tmp, PART_LEN2);
+      WebRtc_ReadBuffer(aecpc->far_pre_buf, reinterpret_cast<void**>(&ptmp),
+                        tmp, PART_LEN2);
       WebRtcAec_BufferFarendBlock(aecpc->aec, &ptmp[PART_LEN]);
     }
 
@@ -545,9 +545,9 @@ static int ProcessNormal(Aec* aecInst,
   const float minSkewEst = -0.5f;
   const float maxSkewEst = 1.0f;
 
-  reported_delay_ms =
-      reported_delay_ms > kMaxTrustedDelayMs ? kMaxTrustedDelayMs :
-      reported_delay_ms;
+  reported_delay_ms = reported_delay_ms > kMaxTrustedDelayMs
+                          ? kMaxTrustedDelayMs
+                          : reported_delay_ms;
   // TODO(andrew): we need to investigate if this +10 is really wanted.
   reported_delay_ms += 10;
   aecInst->msInSndCardBuf = reported_delay_ms;
@@ -642,9 +642,8 @@ static int ProcessNormal(Aec* aecInst,
       // for too long). When the far-end buffer is filled with
       // approximately the same amount of data as reported by the system
       // we end the startup phase.
-      int overhead_elements =
-          WebRtcAec_system_delay(aecInst->aec) / PART_LEN -
-          aecInst->bufSizeStart;
+      int overhead_elements = WebRtcAec_system_delay(aecInst->aec) / PART_LEN -
+                              aecInst->bufSizeStart;
       if (overhead_elements == 0) {
         // Enable the AEC
         aecInst->startup_phase = 0;
@@ -780,10 +779,8 @@ static void EstBufDelayNormal(Aec* aecInst) {
   // We use -1 to signal an initialized state in the "extended" implementation;
   // compensate for that.
   aecInst->filtDelay = aecInst->filtDelay < 0 ? 0 : aecInst->filtDelay;
-  aecInst->filtDelay =
-      WEBRTC_SPL_MAX(0, static_cast<int16_t>(0.8 *
-                                             aecInst->filtDelay +
-                                             0.2 * current_delay));
+  aecInst->filtDelay = WEBRTC_SPL_MAX(
+      0, static_cast<int16_t>(0.8 * aecInst->filtDelay + 0.2 * current_delay));
 
   delay_difference = aecInst->filtDelay - aecInst->knownDelay;
   if (delay_difference > 224) {
@@ -809,8 +806,8 @@ static void EstBufDelayNormal(Aec* aecInst) {
 }
 
 static void EstBufDelayExtended(Aec* aecInst) {
-  int reported_delay = aecInst->msInSndCardBuf * sampMsNb *
-      aecInst->rate_factor;
+  int reported_delay =
+      aecInst->msInSndCardBuf * sampMsNb * aecInst->rate_factor;
   int current_delay = reported_delay - WebRtcAec_system_delay(aecInst->aec);
   int delay_difference = 0;
 
@@ -839,8 +836,8 @@ static void EstBufDelayExtended(Aec* aecInst) {
     aecInst->filtDelay = WEBRTC_SPL_MAX(0, 0.5 * current_delay);
   } else {
     aecInst->filtDelay = WEBRTC_SPL_MAX(
-        0, static_cast<int16_t>(0.95 * aecInst->filtDelay + 0.05 *
-                                current_delay));
+        0,
+        static_cast<int16_t>(0.95 * aecInst->filtDelay + 0.05 * current_delay));
   }
 
   delay_difference = aecInst->filtDelay - aecInst->knownDelay;

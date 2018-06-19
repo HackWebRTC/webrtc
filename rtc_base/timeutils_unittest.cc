@@ -33,7 +33,7 @@ TEST(TimeTest, Intervals) {
 
   // We can't depend on ts_later and ts_earlier to be exactly 500 apart
   // since time elapses between the calls to TimeMillis() and TimeAfter(500)
-  EXPECT_LE(500,  TimeDiff(ts_later, ts_earlier));
+  EXPECT_LE(500, TimeDiff(ts_later, ts_earlier));
   EXPECT_GE(-500, TimeDiff(ts_earlier, ts_later));
 
   // Time has elapsed since ts_earlier
@@ -125,7 +125,6 @@ class TmToSeconds : public testing::Test {
   void TestTmToSeconds(int times) {
     static char mdays[12] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
     for (int i = 0; i < times; i++) {
-
       // First generate something correct and check that TmToSeconds is happy.
       int year = rtc::CreateRandomId() % 400 + 1970;
 

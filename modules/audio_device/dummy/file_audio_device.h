@@ -38,8 +38,7 @@ class FileAudioDevice : public AudioDeviceGeneric {
   // The input file should be a readable 48k stereo raw file, and the output
   // file should point to a writable location. The output format will also be
   // 48k stereo raw audio.
-  FileAudioDevice(const char* inputFilename,
-                  const char* outputFilename);
+  FileAudioDevice(const char* inputFilename, const char* outputFilename);
   virtual ~FileAudioDevice();
 
   // Retrieve the currently utilized audio layer
@@ -138,7 +137,7 @@ class FileAudioDevice : public AudioDeviceGeneric {
   int32_t _record_index;
   AudioDeviceBuffer* _ptrAudioBuffer;
   int8_t* _recordingBuffer;  // In bytes.
-  int8_t* _playoutBuffer;  // In bytes.
+  int8_t* _playoutBuffer;    // In bytes.
   uint32_t _recordingFramesLeft;
   uint32_t _playoutFramesLeft;
   rtc::CriticalSection _critSect;

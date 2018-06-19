@@ -11,8 +11,8 @@
 #ifndef PC_TEST_FAKEPERIODICVIDEOTRACKSOURCE_H_
 #define PC_TEST_FAKEPERIODICVIDEOTRACKSOURCE_H_
 
-#include "pc/videotracksource.h"
 #include "pc/test/fakeperiodicvideosource.h"
+#include "pc/videotracksource.h"
 
 namespace webrtc {
 

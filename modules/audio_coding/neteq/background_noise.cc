@@ -58,11 +58,11 @@ void BackgroundNoise::Update(const AudioMultiVector& input,
     int16_t temp_signal_array[kVecLen + kMaxLpcOrder] = {0};
     int16_t* temp_signal = &temp_signal_array[kMaxLpcOrder];
     input[channel_ix].CopyTo(kVecLen, input.Size() - kVecLen, temp_signal);
-    int32_t sample_energy = CalculateAutoCorrelation(temp_signal, kVecLen,
-                                                     auto_correlation);
+    int32_t sample_energy =
+        CalculateAutoCorrelation(temp_signal, kVecLen, auto_correlation);
 
     if ((!vad.running() &&
-        sample_energy < parameters.energy_update_threshold) ||
+         sample_energy < parameters.energy_update_threshold) ||
         (vad.running() && !vad.active_speech())) {
       // Generate LPC coefficients.
       if (auto_correlation[0] > 0) {
@@ -91,10 +91,8 @@ void BackgroundNoise::Update(const AudioMultiVector& input,
       WebRtcSpl_FilterMAFastQ12(temp_signal + kVecLen - kResidualLength,
                                 fiter_output, lpc_coefficients,
                                 kMaxLpcOrder + 1, kResidualLength);
-      int32_t residual_energy = WebRtcSpl_DotProductWithScale(fiter_output,
-                                                              fiter_output,
-                                                              kResidualLength,
-                                                              0);
+      int32_t residual_energy = WebRtcSpl_DotProductWithScale(
+          fiter_output, fiter_output, kResidualLength, 0);
 
       // Check spectral flatness.
       // Comparing the residual variance with the input signal variance tells
@@ -146,7 +144,8 @@ const int16_t* BackgroundNoise::FilterState(size_t channel) const {
   return channel_parameters_[channel].filter_state;
 }
 
-void BackgroundNoise::SetFilterState(size_t channel, const int16_t* input,
+void BackgroundNoise::SetFilterState(size_t channel,
+                                     const int16_t* input,
                                      size_t length) {
   assert(channel < num_channels_);
   length = std::min(length, kMaxLpcOrder);
@@ -164,7 +163,9 @@ int16_t BackgroundNoise::ScaleShift(size_t channel) const {
 }
 
 int32_t BackgroundNoise::CalculateAutoCorrelation(
-    const int16_t* signal, size_t length, int32_t* auto_correlation) const {
+    const int16_t* signal,
+    size_t length,
+    int32_t* auto_correlation) const {
   static const int kCorrelationStep = -1;
   const int correlation_scale =
       CrossCorrelationWithAutoShift(signal, signal, length, kMaxLpcOrder + 1,
@@ -185,15 +186,16 @@ void BackgroundNoise::IncrementEnergyThreshold(size_t channel,
   assert(channel < num_channels_);
   ChannelParameters& parameters = channel_parameters_[channel];
   int32_t temp_energy =
-    (kThresholdIncrement * parameters.low_energy_update_threshold) >> 16;
-  temp_energy += kThresholdIncrement *
-      (parameters.energy_update_threshold & 0xFF);
-  temp_energy += (kThresholdIncrement *
-      ((parameters.energy_update_threshold>>8) & 0xFF)) << 8;
+      (kThresholdIncrement * parameters.low_energy_update_threshold) >> 16;
+  temp_energy +=
+      kThresholdIncrement * (parameters.energy_update_threshold & 0xFF);
+  temp_energy +=
+      (kThresholdIncrement * ((parameters.energy_update_threshold >> 8) & 0xFF))
+      << 8;
   parameters.low_energy_update_threshold += temp_energy;
 
-  parameters.energy_update_threshold += kThresholdIncrement *
-      (parameters.energy_update_threshold>>16);
+  parameters.energy_update_threshold +=
+      kThresholdIncrement * (parameters.energy_update_threshold >> 16);
   parameters.energy_update_threshold +=
       parameters.low_energy_update_threshold >> 16;
   parameters.low_energy_update_threshold =
@@ -201,8 +203,7 @@ void BackgroundNoise::IncrementEnergyThreshold(size_t channel,
 
   // Update maximum energy.
   // Decrease by a factor 1/1024 each time.
-  parameters.max_energy = parameters.max_energy -
-      (parameters.max_energy >> 10);
+  parameters.max_energy = parameters.max_energy - (parameters.max_energy >> 10);
   if (sample_energy > parameters.max_energy) {
     parameters.max_energy = sample_energy;
   }
@@ -223,9 +224,8 @@ void BackgroundNoise::SaveParameters(size_t channel,
   assert(channel < num_channels_);
   ChannelParameters& parameters = channel_parameters_[channel];
   memcpy(parameters.filter, lpc_coefficients,
-         (kMaxLpcOrder+1) * sizeof(int16_t));
-  memcpy(parameters.filter_state, filter_state,
-         kMaxLpcOrder * sizeof(int16_t));
+         (kMaxLpcOrder + 1) * sizeof(int16_t));
+  memcpy(parameters.filter_state, filter_state, kMaxLpcOrder * sizeof(int16_t));
   // Save energy level and update energy threshold levels.
   // Never get under 1.0 in average sample energy.
   parameters.energy = std::max(sample_energy, 1);

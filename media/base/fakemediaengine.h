@@ -42,7 +42,8 @@ class FakeVideoEngine;
 class FakeVoiceEngine;
 
 // A common helper class that handles sending and receiving RTP/RTCP packets.
-template <class Base> class RtpHelper : public Base {
+template <class Base>
+class RtpHelper : public Base {
  public:
   RtpHelper()
       : sending_(false),
@@ -217,9 +218,7 @@ template <class Base> class RtpHelper : public Base {
   const RtcpParameters& send_rtcp_parameters() { return send_rtcp_parameters_; }
   const RtcpParameters& recv_rtcp_parameters() { return recv_rtcp_parameters_; }
 
-  bool ready_to_send() const {
-    return ready_to_send_;
-  }
+  bool ready_to_send() const { return ready_to_send_; }
 
   int transport_overhead_per_packet() const {
     return transport_overhead_per_packet_;
@@ -270,9 +269,7 @@ template <class Base> class RtpHelper : public Base {
                               const rtc::PacketTime& packet_time) {
     rtcp_packets_.push_back(std::string(packet->data<char>(), packet->size()));
   }
-  virtual void OnReadyToSend(bool ready) {
-    ready_to_send_ = ready;
-  }
+  virtual void OnReadyToSend(bool ready) { ready_to_send_ = ready; }
 
   virtual void OnNetworkRouteChanged(const std::string& transport_name,
                                      const rtc::NetworkRoute& network_route) {
@@ -311,9 +308,7 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
  public:
   struct DtmfInfo {
     DtmfInfo(uint32_t ssrc, int event_code, int duration)
-        : ssrc(ssrc),
-          event_code(event_code),
-          duration(duration) {}
+        : ssrc(ssrc), event_code(event_code), duration(duration) {}
     uint32_t ssrc;
     int event_code;
     int duration;
@@ -392,9 +387,7 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
     }
     return false;
   }
-  virtual bool InsertDtmf(uint32_t ssrc,
-                          int event_code,
-                          int duration) {
+  virtual bool InsertDtmf(uint32_t ssrc, int event_code, int duration) {
     dtmf_info_queue_.push_back(DtmfInfo(ssrc, event_code, duration));
     return true;
   }
@@ -735,9 +728,7 @@ class FakeDataMediaChannel : public RtpHelper<DataMediaChannel> {
 // and FakeVideoEngine.
 class FakeBaseEngine {
  public:
-  FakeBaseEngine()
-      : options_changed_(false),
-        fail_create_channel_(false) {}
+  FakeBaseEngine() : options_changed_(false), fail_create_channel_(false) {}
   void set_fail_create_channel(bool fail) { fail_create_channel_ = fail; }
 
   RtpCapabilities GetCapabilities() const { return capabilities_; }
@@ -875,8 +866,8 @@ class FakeVideoEngine : public FakeBaseEngine {
   friend class FakeMediaEngine;
 };
 
-class FakeMediaEngine :
-    public CompositeMediaEngine<FakeVoiceEngine, FakeVideoEngine> {
+class FakeMediaEngine
+    : public CompositeMediaEngine<FakeVoiceEngine, FakeVideoEngine> {
  public:
   FakeMediaEngine()
       : CompositeMediaEngine<FakeVoiceEngine, FakeVideoEngine>(std::tuple<>(),

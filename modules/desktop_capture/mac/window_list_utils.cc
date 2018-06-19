@@ -19,9 +19,9 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/macutils.h"
 
-static_assert(
-    static_cast<webrtc::WindowId>(kCGNullWindowID) == webrtc::kNullWindowId,
-    "kNullWindowId needs to equal to kCGNullWindowID.");
+static_assert(static_cast<webrtc::WindowId>(kCGNullWindowID) ==
+                  webrtc::kNullWindowId,
+              "kNullWindowId needs to equal to kCGNullWindowID.");
 
 namespace webrtc {
 
@@ -69,8 +69,8 @@ bool GetWindowList(rtc::FunctionView<bool(CFDictionaryRef)> on_window,
 
   // Only get on screen, non-desktop windows.
   // According to
-  // https://developer.apple.com/documentation/coregraphics/cgwindowlistoption/1454105-optiononscreenonly ,
-  // when kCGWindowListOptionOnScreenOnly is used, the order of windows are in
+  // https://developer.apple.com/documentation/coregraphics/cgwindowlistoption/1454105-optiononscreenonly
+  // , when kCGWindowListOptionOnScreenOnly is used, the order of windows are in
   // decreasing z-order.
   CFArrayRef window_array = CGWindowListCopyWindowInfo(
       kCGWindowListOptionOnScreenOnly | kCGWindowListExcludeDesktopElements,
@@ -143,7 +143,7 @@ bool GetWindowList(DesktopCapturer::SourceList* windows,
         WindowId id = GetWindowId(window);
         std::string title = GetWindowTitle(window);
         if (id != kNullWindowId && !title.empty()) {
-          windows->push_back(DesktopCapturer::Source{ id, title });
+          windows->push_back(DesktopCapturer::Source{id, title});
         }
         return true;
       },
@@ -151,9 +151,8 @@ bool GetWindowList(DesktopCapturer::SourceList* windows,
 }
 
 // Returns true if the window is occupying a full screen.
-bool IsWindowFullScreen(
-    const MacDesktopConfiguration& desktop_config,
-    CFDictionaryRef window) {
+bool IsWindowFullScreen(const MacDesktopConfiguration& desktop_config,
+                        CFDictionaryRef window) {
   bool fullscreen = false;
   CFDictionaryRef bounds_ref = reinterpret_cast<CFDictionaryRef>(
       CFDictionaryGetValue(window, kCGWindowBounds));
@@ -164,10 +163,9 @@ bool IsWindowFullScreen(
     for (MacDisplayConfigurations::const_iterator it =
              desktop_config.displays.begin();
          it != desktop_config.displays.end(); it++) {
-      if (it->bounds.equals(DesktopRect::MakeXYWH(bounds.origin.x,
-                                                  bounds.origin.y,
-                                                  bounds.size.width,
-                                                  bounds.size.height))) {
+      if (it->bounds.equals(
+              DesktopRect::MakeXYWH(bounds.origin.x, bounds.origin.y,
+                                    bounds.size.width, bounds.size.height))) {
         fullscreen = true;
         break;
       }
@@ -185,10 +183,9 @@ bool IsWindowOnScreen(CFDictionaryRef window) {
 
 bool IsWindowOnScreen(CGWindowID id) {
   bool on_screen;
-  if (GetWindowRef(id,
-                   [&on_screen](CFDictionaryRef window) {
-                     on_screen = IsWindowOnScreen(window);
-                   })) {
+  if (GetWindowRef(id, [&on_screen](CFDictionaryRef window) {
+        on_screen = IsWindowOnScreen(window);
+      })) {
     return on_screen;
   }
   return false;
@@ -265,18 +262,16 @@ DesktopRect GetWindowBounds(CFDictionaryRef window) {
     return DesktopRect();
   }
 
-  return DesktopRect::MakeXYWH(gc_window_rect.origin.x,
-                               gc_window_rect.origin.y,
+  return DesktopRect::MakeXYWH(gc_window_rect.origin.x, gc_window_rect.origin.y,
                                gc_window_rect.size.width,
                                gc_window_rect.size.height);
 }
 
 DesktopRect GetWindowBounds(CGWindowID id) {
   DesktopRect result;
-  if (GetWindowRef(id,
-                   [&result](CFDictionaryRef window) {
-                     result = GetWindowBounds(window);
-                   })) {
+  if (GetWindowRef(id, [&result](CFDictionaryRef window) {
+        result = GetWindowBounds(window);
+      })) {
     return result;
   }
   return DesktopRect();

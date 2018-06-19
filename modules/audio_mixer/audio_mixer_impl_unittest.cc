@@ -188,11 +188,11 @@ TEST(AudioMixer, LargestEnergyVadActiveMixed) {
     if (i == kAudioSources - 1 ||
         i < kAudioSources - 1 -
                 AudioMixerImpl::kMaximumAmountOfMixedAudioSources) {
-      EXPECT_FALSE(is_mixed) << "Mixing status of AudioSource #" << i
-                             << " wrong.";
+      EXPECT_FALSE(is_mixed)
+          << "Mixing status of AudioSource #" << i << " wrong.";
     } else {
-      EXPECT_TRUE(is_mixed) << "Mixing status of AudioSource #" << i
-                            << " wrong.";
+      EXPECT_TRUE(is_mixed)
+          << "Mixing status of AudioSource #" << i << " wrong.";
     }
   }
 }
@@ -221,9 +221,8 @@ TEST(AudioMixer, FrameNotModifiedForSingleParticipant) {
                &audio_frame);
   }
 
-  EXPECT_EQ(
-      0,
-      memcmp(participant.fake_frame()->data(), audio_frame.data(), n_samples));
+  EXPECT_EQ(0, memcmp(participant.fake_frame()->data(), audio_frame.data(),
+                      n_samples));
 }
 
 TEST(AudioMixer, SourceAtNativeRateShouldNeverResample) {

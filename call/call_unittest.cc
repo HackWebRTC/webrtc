@@ -15,8 +15,8 @@
 
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/test/mock_audio_mixer.h"
-#include "audio/audio_send_stream.h"
 #include "audio/audio_receive_stream.h"
+#include "audio/audio_send_stream.h"
 #include "call/audio_state.h"
 #include "call/call.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
@@ -250,7 +250,6 @@ TEST(CallTest, MultipleFlexfecReceiveStreamsProtectingSingleVideoStream) {
   }
 }
 
-
 TEST(CallTest, RecreatingAudioStreamWithSameSsrcReusesRtpState) {
   constexpr uint32_t kSSRC = 12345;
   CallHelper call;
@@ -276,6 +275,5 @@ TEST(CallTest, RecreatingAudioStreamWithSameSsrcReusesRtpState) {
             rtp_state2.last_timestamp_time_ms);
   EXPECT_EQ(rtp_state1.media_has_been_sent, rtp_state2.media_has_been_sent);
 }
-
 
 }  // namespace webrtc

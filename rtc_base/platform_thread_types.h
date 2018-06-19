@@ -11,7 +11,12 @@
 #ifndef RTC_BASE_PLATFORM_THREAD_TYPES_H_
 #define RTC_BASE_PLATFORM_THREAD_TYPES_H_
 
+// clang-format off
+// clang formating would change include order.
 #if defined(WEBRTC_WIN)
+// Include winsock2.h before including <windows.h> to maintain consistency with
+// win32.h. To include win32.h directly, it must be broken out into its own
+// build target.
 #include <winsock2.h>
 #include <windows.h>
 #elif defined(WEBRTC_FUCHSIA)
@@ -21,6 +26,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #endif
+// clang-format on
 
 namespace rtc {
 #if defined(WEBRTC_WIN)

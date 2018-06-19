@@ -11,6 +11,10 @@
 #ifndef RTC_BASE_SYSTEM_ASM_DEFINES_H_
 #define RTC_BASE_SYSTEM_ASM_DEFINES_H_
 
+// clang-format off
+// clang formatting breaks everything here, e.g. concatenating directives,
+// due to absence of context via asm keyword.
+
 #if defined(__linux__) && defined(__ELF__)
 .section .note.GNU-stack,"",%progbits
 #endif
@@ -62,5 +66,7 @@ strheq \reg1, \reg2, \num
 #endif
 
 .text
+
+// clang-format on
 
 #endif  // RTC_BASE_SYSTEM_ASM_DEFINES_H_

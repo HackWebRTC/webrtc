@@ -183,11 +183,10 @@ class MediaSessionDescriptionFactory {
                             const SessionDescription* current_description,
                             RtpHeaderExtensions* audio_extensions,
                             RtpHeaderExtensions* video_extensions) const;
-  bool AddTransportOffer(
-      const std::string& content_name,
-      const TransportOptions& transport_options,
-      const SessionDescription* current_desc,
-      SessionDescription* offer) const;
+  bool AddTransportOffer(const std::string& content_name,
+                         const TransportOptions& transport_options,
+                         const SessionDescription* current_desc,
+                         SessionDescription* offer) const;
 
   TransportDescription* CreateTransportAnswer(
       const std::string& content_name,
@@ -196,10 +195,9 @@ class MediaSessionDescriptionFactory {
       const SessionDescription* current_desc,
       bool require_transport_attributes) const;
 
-  bool AddTransportAnswer(
-      const std::string& content_name,
-      const TransportDescription& transport_desc,
-      SessionDescription* answer_desc) const;
+  bool AddTransportAnswer(const std::string& content_name,
+                          const TransportDescription& transport_desc,
+                          SessionDescription* answer_desc) const;
 
   // Helpers for adding media contents to the SessionDescription. Returns true
   // it succeeds or the media content is not needed, or false if there is any

@@ -32,7 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
 NS_CLASS_AVAILABLE_IOS(9)
 
 RTC_EXPORT
-@interface RTCMTLVideoView : UIView <RTCVideoRenderer>
+@interface RTCMTLVideoView : UIView<RTCVideoRenderer>
 
 @property(nonatomic, weak) id<RTCVideoViewDelegate> delegate;
 

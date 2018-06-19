@@ -17,17 +17,12 @@ namespace webrtc {
 RTCStatsReport::ConstIterator::ConstIterator(
     const rtc::scoped_refptr<const RTCStatsReport>& report,
     StatsMap::const_iterator it)
-    : report_(report),
-      it_(it) {
-}
+    : report_(report), it_(it) {}
 
 RTCStatsReport::ConstIterator::ConstIterator(const ConstIterator&& other)
-    : report_(std::move(other.report_)),
-      it_(std::move(other.it_)) {
-}
+    : report_(std::move(other.report_)), it_(std::move(other.it_)) {}
 
-RTCStatsReport::ConstIterator::~ConstIterator() {
-}
+RTCStatsReport::ConstIterator::~ConstIterator() {}
 
 RTCStatsReport::ConstIterator& RTCStatsReport::ConstIterator::operator++() {
   ++it_;
@@ -63,11 +58,9 @@ rtc::scoped_refptr<RTCStatsReport> RTCStatsReport::Create(
 }
 
 RTCStatsReport::RTCStatsReport(int64_t timestamp_us)
-    : timestamp_us_(timestamp_us) {
-}
+    : timestamp_us_(timestamp_us) {}
 
-RTCStatsReport::~RTCStatsReport() {
-}
+RTCStatsReport::~RTCStatsReport() {}
 
 rtc::scoped_refptr<RTCStatsReport> RTCStatsReport::Copy() const {
   rtc::scoped_refptr<RTCStatsReport> copy = Create(timestamp_us_);
@@ -78,11 +71,12 @@ rtc::scoped_refptr<RTCStatsReport> RTCStatsReport::Copy() const {
 }
 
 void RTCStatsReport::AddStats(std::unique_ptr<const RTCStats> stats) {
-  auto result = stats_.insert(std::make_pair(std::string(stats->id()),
-                              std::move(stats)));
-  RTC_DCHECK(result.second) <<
-      "A stats object with ID " << result.first->second->id() << " is already "
-      "present in this stats report.";
+  auto result =
+      stats_.insert(std::make_pair(std::string(stats->id()), std::move(stats)));
+  RTC_DCHECK(result.second)
+      << "A stats object with ID " << result.first->second->id()
+      << " is already "
+         "present in this stats report.";
 }
 
 const RTCStats* RTCStatsReport::Get(const std::string& id) const {

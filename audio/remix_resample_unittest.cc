@@ -113,7 +113,8 @@ void VerifyParams(const AudioFrame& ref_frame, const AudioFrame& test_frame) {
 // Computes the best SNR based on the error between |ref_frame| and
 // |test_frame|. It allows for up to a |max_delay| in samples between the
 // signals to compensate for the resampling delay.
-float ComputeSNR(const AudioFrame& ref_frame, const AudioFrame& test_frame,
+float ComputeSNR(const AudioFrame& ref_frame,
+                 const AudioFrame& test_frame,
                  size_t max_delay) {
   VerifyParams(ref_frame, test_frame);
   float best_snr = 0;
@@ -123,8 +124,9 @@ float ComputeSNR(const AudioFrame& ref_frame, const AudioFrame& test_frame,
     float variance = 0;
     const int16_t* ref_frame_data = ref_frame.data();
     const int16_t* test_frame_data = test_frame.data();
-    for (size_t i = 0; i < ref_frame.samples_per_channel_ *
-        ref_frame.num_channels_ - delay; i++) {
+    for (size_t i = 0;
+         i < ref_frame.samples_per_channel_ * ref_frame.num_channels_ - delay;
+         i++) {
       int error = ref_frame_data[i] - test_frame_data[i + delay];
       mse += error * error;
       variance += ref_frame_data[i] * ref_frame_data[i];
@@ -145,7 +147,7 @@ void VerifyFramesAreEqual(const AudioFrame& ref_frame,
                           const AudioFrame& test_frame) {
   VerifyParams(ref_frame, test_frame);
   const int16_t* ref_frame_data = ref_frame.data();
-  const int16_t* test_frame_data  = test_frame.data();
+  const int16_t* test_frame_data = test_frame.data();
   for (size_t i = 0;
        i < ref_frame.samples_per_channel_ * ref_frame.num_channels_; i++) {
     EXPECT_EQ(ref_frame_data[i], test_frame_data[i]);
@@ -161,8 +163,8 @@ void UtilityTest::RunResampleTest(int src_channels,
   const int16_t kSrcCh2 = 15;
   const int16_t kSrcCh3 = 22;
   const int16_t kSrcCh4 = 8;
-  const float resampling_factor = (1.0 * src_sample_rate_hz) /
-      dst_sample_rate_hz;
+  const float resampling_factor =
+      (1.0 * src_sample_rate_hz) / dst_sample_rate_hz;
   const float dst_ch1 = resampling_factor * kSrcCh1;
   const float dst_ch2 = resampling_factor * kSrcCh2;
   const float dst_ch3 = resampling_factor * kSrcCh3;
@@ -206,7 +208,7 @@ void UtilityTest::RunResampleTest(int src_channels,
       static_cast<double>(dst_sample_rate_hz) / src_sample_rate_hz *
       kInputKernelDelaySamples * dst_channels * 2);
   printf("(%d, %d Hz) -> (%d, %d Hz) ",  // SNR reported on the same line later.
-      src_channels, src_sample_rate_hz, dst_channels, dst_sample_rate_hz);
+         src_channels, src_sample_rate_hz, dst_channels, dst_sample_rate_hz);
   RemixAndResample(src_frame_, &resampler, &dst_frame_);
 
   if (src_sample_rate_hz == 96000 && dst_sample_rate_hz == 8000) {
@@ -258,8 +260,7 @@ TEST_F(UtilityTest, RemixAndResampleSucceeds) {
 
   for (int src_rate = 0; src_rate < kSampleRatesSize; src_rate++) {
     for (int dst_rate = 0; dst_rate < kSampleRatesSize; dst_rate++) {
-      for (int src_channel = 0; src_channel < kSrcChannelsSize;
-           src_channel++) {
+      for (int src_channel = 0; src_channel < kSrcChannelsSize; src_channel++) {
         for (int dst_channel = 0; dst_channel < kDstChannelsSize;
              dst_channel++) {
           RunResampleTest(kSrcChannels[src_channel], kSampleRates[src_rate],

@@ -118,7 +118,7 @@ std::unique_ptr<rtclog::StreamConfig> CreateRtcLogStreamConfig(
     const int* search =
         FindKeyByValue(config.rtp.rtx_associated_payload_types, d.payload_type);
     rtclog_config->codecs.emplace_back(d.payload_name, d.payload_type,
-                                      search ? *search : 0);
+                                       search ? *search : 0);
   }
   return rtclog_config;
 }
@@ -239,7 +239,8 @@ class Call final : public webrtc::Call,
                                  bool has_packet_feedback) override;
 
  private:
-  DeliveryStatus DeliverRtcp(MediaType media_type, const uint8_t* packet,
+  DeliveryStatus DeliverRtcp(MediaType media_type,
+                             const uint8_t* packet,
                              size_t length);
   DeliveryStatus DeliverRtp(MediaType media_type,
                             rtc::CopyOnWriteBuffer packet,

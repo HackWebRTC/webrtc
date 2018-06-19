@@ -30,8 +30,7 @@ MediaOptimization::MediaOptimization(Clock* clock)
   memset(incoming_frame_times_, -1, sizeof(incoming_frame_times_));
 }
 
-MediaOptimization::~MediaOptimization(void) {
-}
+MediaOptimization::~MediaOptimization(void) {}
 
 void MediaOptimization::Reset() {
   rtc::CritScope lock(&crit_sect_);

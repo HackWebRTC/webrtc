@@ -62,15 +62,15 @@ extern const int16_t WebRtcIsacfix_kRc6Levels[11];
 /* quantization boundary levels for reflection coefficients */
 extern const int16_t WebRtcIsacfix_kRcBound[12];
 
-/* initial indices for AR reflection coefficient quantizer and cdf table search */
+/* initial indices for AR reflection coefficient quantizer and cdf table search
+ */
 extern const uint16_t WebRtcIsacfix_kRcInitInd[AR_ORDER];
 
 /* pointers to AR cdf tables */
-extern const uint16_t *WebRtcIsacfix_kRcCdfPtr[AR_ORDER];
+extern const uint16_t* WebRtcIsacfix_kRcCdfPtr[AR_ORDER];
 
 /* pointers to AR representation levels tables */
-extern const int16_t *WebRtcIsacfix_kRcLevPtr[AR_ORDER];
-
+extern const int16_t* WebRtcIsacfix_kRcLevPtr[AR_ORDER];
 
 /******************** GAIN Coefficient Tables ***********************/
 /* cdf for Gain coefficient */
@@ -83,7 +83,7 @@ extern const int32_t WebRtcIsacfix_kGain2Lev[18];
 extern const int32_t WebRtcIsacfix_kGain2Bound[19];
 
 /* pointer to Gain cdf table */
-extern const uint16_t *WebRtcIsacfix_kGainPtr[1];
+extern const uint16_t* WebRtcIsacfix_kGainPtr[1];
 
 /* Gain initial index for gain quantizer and cdf table search */
 extern const uint16_t WebRtcIsacfix_kGainInitInd[1];
@@ -92,4 +92,5 @@ extern const uint16_t WebRtcIsacfix_kGainInitInd[1];
 /* Cosine table */
 extern const int16_t WebRtcIsacfix_kCos[6][60];
 
-#endif /* MODULES_AUDIO_CODING_CODECS_ISAC_FIX_SOURCE_SPECTRUM_AR_MODEL_TABLES_H_ */
+#endif /* MODULES_AUDIO_CODING_CODECS_ISAC_FIX_SOURCE_SPECTRUM_AR_MODEL_TABLES_H_ \
+        */

@@ -31,7 +31,7 @@ static const int kDefaultTimeout = 10000;  // 10 seconds.
 // Use ports other than the default 5000 for testing.
 static const int kTransport1Port = 5001;
 static const int kTransport2Port = 5002;
-}
+}  // namespace
 
 namespace cricket {
 

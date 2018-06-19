@@ -16,4 +16,3 @@ MockRtcEventLog::MockRtcEventLog() = default;
 MockRtcEventLog::~MockRtcEventLog() = default;
 
 }  // namespace webrtc
-

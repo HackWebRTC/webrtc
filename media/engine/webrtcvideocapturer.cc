@@ -23,7 +23,7 @@
 
 #if defined(WEBRTC_WIN)
 #include "rtc_base/win32.h"  // Need this to #include the impl files.
-#endif  // WEBRTC_WIN
+#endif                       // WEBRTC_WIN
 #include "system_wrappers/include/field_trial.h"
 
 namespace cricket {
@@ -326,8 +326,7 @@ bool WebRtcVideoCapturer::GetPreferredFourccs(std::vector<uint32_t>* fourccs) {
   return true;
 }
 
-void WebRtcVideoCapturer::OnFrame(
-    const webrtc::VideoFrame& sample) {
+void WebRtcVideoCapturer::OnFrame(const webrtc::VideoFrame& sample) {
   // This can only happen between Start() and Stop().
   RTC_DCHECK(start_thread_);
 

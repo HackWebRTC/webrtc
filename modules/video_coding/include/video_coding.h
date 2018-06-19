@@ -72,8 +72,8 @@ class VideoCodingModule : public Module {
   static VideoCodingModule* Create(Clock* clock, EventFactory* event_factory);
 
   /*
-  *   Sender
-  */
+   *   Sender
+   */
 
   // Registers a codec to be used for encoding. Calling this
   // API multiple times overwrites any previously registered codecs.
@@ -182,8 +182,8 @@ class VideoCodingModule : public Module {
   virtual int32_t EnableFrameDropper(bool enable) = 0;
 
   /*
-  *   Receiver
-  */
+   *   Receiver
+   */
 
   // Register possible receive codecs, can be called multiple times for
   // different codecs.

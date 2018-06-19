@@ -34,7 +34,7 @@ const PacedPacketInfo kPacingInfo1(1, 8, 4000);
 const PacedPacketInfo kPacingInfo2(2, 14, 7000);
 const PacedPacketInfo kPacingInfo3(3, 20, 10000);
 const PacedPacketInfo kPacingInfo4(4, 22, 10000);
-}
+}  // namespace
 
 namespace test {
 
@@ -85,8 +85,7 @@ TEST_F(LegacyTransportFeedbackAdapterTest, ObserverSanity) {
   const std::vector<PacketFeedback> packets = {
       PacketFeedback(100, 200, 0, 1000, kPacingInfo0),
       PacketFeedback(110, 210, 1, 2000, kPacingInfo0),
-      PacketFeedback(120, 220, 2, 3000, kPacingInfo0)
-  };
+      PacketFeedback(120, 220, 2, 3000, kPacingInfo0)};
 
   rtcp::TransportFeedback feedback;
   feedback.SetBase(packets[0].sequence_number,
@@ -171,8 +170,7 @@ TEST_F(LegacyTransportFeedbackAdapterTest, FeedbackVectorReportsUnreceived) {
       PacketFeedback(130, 230, 3, 1500, kPacingInfo0),
       PacketFeedback(140, 240, 4, 1500, kPacingInfo0),
       PacketFeedback(150, 250, 5, 1500, kPacingInfo0),
-      PacketFeedback(160, 260, 6, 1500, kPacingInfo0)
-  };
+      PacketFeedback(160, 260, 6, 1500, kPacingInfo0)};
 
   for (const PacketFeedback& packet : sent_packets)
     OnSentPacket(packet);
@@ -180,8 +178,7 @@ TEST_F(LegacyTransportFeedbackAdapterTest, FeedbackVectorReportsUnreceived) {
   // Note: Important to include the last packet, as only unreceived packets in
   // between received packets can be inferred.
   std::vector<PacketFeedback> received_packets = {
-    sent_packets[0], sent_packets[2], sent_packets[6]
-  };
+      sent_packets[0], sent_packets[2], sent_packets[6]};
 
   rtcp::TransportFeedback feedback;
   feedback.SetBase(received_packets[0].sequence_number,

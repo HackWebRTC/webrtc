@@ -28,7 +28,8 @@ namespace webrtc {
 class JsepIceCandidate : public IceCandidateInterface {
  public:
   JsepIceCandidate(const std::string& sdp_mid, int sdp_mline_index);
-  JsepIceCandidate(const std::string& sdp_mid, int sdp_mline_index,
+  JsepIceCandidate(const std::string& sdp_mid,
+                   int sdp_mline_index,
                    const cricket::Candidate& candidate);
   ~JsepIceCandidate();
   // |err| may be null.
@@ -39,9 +40,7 @@ class JsepIceCandidate : public IceCandidateInterface {
 
   virtual std::string sdp_mid() const { return sdp_mid_; }
   virtual int sdp_mline_index() const { return sdp_mline_index_; }
-  virtual const cricket::Candidate& candidate() const {
-    return candidate_;
-  }
+  virtual const cricket::Candidate& candidate() const { return candidate_; }
 
   virtual std::string server_url() const { return candidate_.url(); }
 
@@ -64,9 +63,7 @@ class JsepCandidateCollection : public IceCandidateCollection {
   JsepCandidateCollection(JsepCandidateCollection&& o)
       : candidates_(std::move(o.candidates_)) {}
   ~JsepCandidateCollection();
-  virtual size_t count() const {
-    return candidates_.size();
-  }
+  virtual size_t count() const { return candidates_.size(); }
   virtual bool HasCandidate(const IceCandidateInterface* candidate) const;
   // Adds and takes ownership of the JsepIceCandidate.
   // TODO(deadbeef): Make this use an std::unique_ptr<>, so ownership logic is

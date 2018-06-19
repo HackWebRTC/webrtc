@@ -76,7 +76,7 @@ class RTCStatsReport : public rtc::RefCountInterface {
 
   // Gets the subset of stats that are of type |T|, where |T| is any class
   // descending from |RTCStats|.
-  template<typename T>
+  template <typename T>
   std::vector<const T*> GetStatsOfType() const {
     std::vector<const T*> stats_of_type;
     for (const RTCStats& stats : *this) {

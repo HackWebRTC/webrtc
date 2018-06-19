@@ -49,8 +49,7 @@ class RtcpRttStatsTestImpl : public RtcpRttStats {
   int64_t rtt_ms_;
 };
 
-class SendTransport : public Transport,
-                      public RtpData {
+class SendTransport : public Transport, public RtpData {
  public:
   SendTransport()
       : receiver_(nullptr),
@@ -61,9 +60,7 @@ class SendTransport : public Transport,
         keepalive_payload_type_(0),
         num_keepalive_sent_(0) {}
 
-  void SetRtpRtcpModule(ModuleRtpRtcpImpl* receiver) {
-    receiver_ = receiver;
-  }
+  void SetRtpRtcpModule(ModuleRtpRtcpImpl* receiver) { receiver_ = receiver; }
   void SimulateNetworkDelay(int64_t delay_ms, SimulatedClock* clock) {
     clock_ = clock;
     delay_ms_ = delay_ms;
@@ -156,9 +153,7 @@ class RtpRtcpModule : public RtcpPacketTypeCounterObserver {
     // Received RTCP stats for (own) local SSRC.
     return counter_map_[impl_->SSRC()];
   }
-  int RtpSent() {
-    return transport_.rtp_packets_sent_;
-  }
+  int RtpSent() { return transport_.rtp_packets_sent_; }
   uint16_t LastRtpSequenceNumber() {
     return transport_.last_rtp_header_.sequenceNumber;
   }
@@ -250,8 +245,8 @@ class RtpRtcpImplTest : public ::testing::Test {
 
     const uint8_t payload[100] = {0};
     EXPECT_EQ(true, module->impl_->SendOutgoingData(
-                     kVideoFrameKey, codec_.plType, 0, 0, payload,
-                     sizeof(payload), nullptr, &rtp_video_header, nullptr));
+                        kVideoFrameKey, codec_.plType, 0, 0, payload,
+                        sizeof(payload), nullptr, &rtp_video_header, nullptr));
   }
 
   void IncomingRtcpNack(const RtpRtcpModule* module, uint16_t sequence_number) {
@@ -348,16 +343,16 @@ TEST_F(RtpRtcpImplTest, Rtt) {
   int64_t avg_rtt;
   int64_t min_rtt;
   int64_t max_rtt;
-  EXPECT_EQ(0,
-      sender_.impl_->RTT(kReceiverSsrc, &rtt, &avg_rtt, &min_rtt, &max_rtt));
+  EXPECT_EQ(
+      0, sender_.impl_->RTT(kReceiverSsrc, &rtt, &avg_rtt, &min_rtt, &max_rtt));
   EXPECT_NEAR(2 * kOneWayNetworkDelayMs, rtt, 1);
   EXPECT_NEAR(2 * kOneWayNetworkDelayMs, avg_rtt, 1);
   EXPECT_NEAR(2 * kOneWayNetworkDelayMs, min_rtt, 1);
   EXPECT_NEAR(2 * kOneWayNetworkDelayMs, max_rtt, 1);
 
   // No RTT from other ssrc.
-  EXPECT_EQ(-1,
-      sender_.impl_->RTT(kReceiverSsrc+1, &rtt, &avg_rtt, &min_rtt, &max_rtt));
+  EXPECT_EQ(-1, sender_.impl_->RTT(kReceiverSsrc + 1, &rtt, &avg_rtt, &min_rtt,
+                                   &max_rtt));
 
   // Verify RTT from rtt_stats config.
   EXPECT_EQ(0, sender_.rtt_stats_.LastProcessedRtt());
@@ -464,8 +459,8 @@ TEST_F(RtpRtcpImplTest, AddStreamDataCounters) {
   rtp.transmitted.header_bytes = 2;
   rtp.transmitted.padding_bytes = 3;
   EXPECT_EQ(rtp.transmitted.TotalBytes(), rtp.transmitted.payload_bytes +
-                                          rtp.transmitted.header_bytes +
-                                          rtp.transmitted.padding_bytes);
+                                              rtp.transmitted.header_bytes +
+                                              rtp.transmitted.padding_bytes);
 
   StreamDataCounters rtp2;
   rtp2.first_packet_time_ms = -1;

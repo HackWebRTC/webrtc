@@ -25,7 +25,7 @@ namespace webrtc {
 namespace {
 
 const uint32_t kTestRate = 64000u;
-const uint8_t kTestPayload[] = { 't', 'e', 's', 't' };
+const uint8_t kTestPayload[] = {'t', 'e', 's', 't'};
 const uint8_t kPcmuPayloadType = 96;
 const uint8_t kDtmfPayloadType = 97;
 

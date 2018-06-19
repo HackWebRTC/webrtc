@@ -34,7 +34,7 @@ struct CpuOveruseOptions {
   // General settings.
   int frame_timeout_interval_ms;  // The maximum allowed interval between two
                                   // frames before resetting estimations.
-  int min_frame_samples;  // The minimum number of frames required.
+  int min_frame_samples;          // The minimum number of frames required.
   int min_process_count;  // The number of initial process times required before
                           // triggering an overuse/underuse.
   int high_threshold_consecutive_count;  // The number of consecutive checks

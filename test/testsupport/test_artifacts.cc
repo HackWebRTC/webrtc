@@ -22,7 +22,7 @@ const std::string& DefaultArtifactPath() {
   static const std::string path = webrtc::test::OutputPath();
   return path;
 }
-}
+}  // namespace
 
 DEFINE_string(test_artifacts_dir,
               DefaultArtifactPath().c_str(),

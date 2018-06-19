@@ -13,9 +13,13 @@
 namespace webrtc {
 namespace video_coding {
 
-bool EncodedFrame::delayed_by_retransmission() const { return 0; }
+bool EncodedFrame::delayed_by_retransmission() const {
+  return 0;
+}
 
-uint32_t EncodedFrame::Timestamp() const { return timestamp; }
+uint32_t EncodedFrame::Timestamp() const {
+  return timestamp;
+}
 
 }  // namespace video_coding
 }  // namespace webrtc

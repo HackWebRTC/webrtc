@@ -11,8 +11,8 @@
 #ifndef TEST_FIELD_TRIAL_H_
 #define TEST_FIELD_TRIAL_H_
 
-#include <string>
 #include <map>
+#include <string>
 
 namespace webrtc {
 namespace test {
@@ -38,6 +38,7 @@ class ScopedFieldTrials {
  public:
   explicit ScopedFieldTrials(const std::string& config);
   ~ScopedFieldTrials();
+
  private:
   std::string current_field_trials_;
   const char* previous_field_trials_;

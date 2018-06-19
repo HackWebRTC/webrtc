@@ -92,8 +92,7 @@ RtpPacketizerH264::RtpPacketizerH264(size_t max_payload_len,
   RTC_CHECK_GT(max_payload_len, last_packet_reduction_len);
 }
 
-RtpPacketizerH264::~RtpPacketizerH264() {
-}
+RtpPacketizerH264::~RtpPacketizerH264() {}
 
 RtpPacketizerH264::Fragment::~Fragment() = default;
 
@@ -582,8 +581,8 @@ bool RtpDepacketizerH264::ProcessStapAOrSingleNalu(
         uint32_t pps_id;
         uint32_t sps_id;
         if (PpsParser::ParsePpsIds(&payload_data[start_offset],
-                                    end_offset - start_offset, &pps_id,
-                                    &sps_id)) {
+                                   end_offset - start_offset, &pps_id,
+                                   &sps_id)) {
           nalu.pps_id = pps_id;
           nalu.sps_id = sps_id;
         } else {

@@ -26,20 +26,16 @@ namespace {
 // attributes that are checked at compile-time.
 class CompileTimeTestForGuardedBy {
  public:
-  int CalledOnSequence() RTC_RUN_ON(sequence_checker_) {
-    return guarded_;
-  }
+  int CalledOnSequence() RTC_RUN_ON(sequence_checker_) { return guarded_; }
 
   void CallMeFromSequence() {
-    RTC_DCHECK_RUN_ON(&sequence_checker_)
-        << "Should be called on sequence";
+    RTC_DCHECK_RUN_ON(&sequence_checker_) << "Should be called on sequence";
   }
 
  private:
   int guarded_ RTC_GUARDED_BY(sequence_checker_);
   rtc::SequencedTaskChecker sequence_checker_;
 };
-
 
 // Calls SequencedTaskChecker::CalledSequentially on another thread.
 class CallCalledSequentiallyOnThread {

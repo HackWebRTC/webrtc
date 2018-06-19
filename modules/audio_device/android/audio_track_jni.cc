@@ -221,11 +221,11 @@ void AudioTrackJni::OnCacheDirectBufferAddress(JNIEnv* env,
   RTC_DCHECK(!direct_buffer_address_);
   direct_buffer_address_ = env->GetDirectBufferAddress(byte_buffer);
   jlong capacity = env->GetDirectBufferCapacity(byte_buffer);
-  RTC_LOG(INFO) <<  "direct buffer capacity: " << capacity;
+  RTC_LOG(INFO) << "direct buffer capacity: " << capacity;
   direct_buffer_capacity_in_bytes_ = static_cast<size_t>(capacity);
   const size_t bytes_per_frame = audio_parameters_.channels() * sizeof(int16_t);
   frames_per_buffer_ = direct_buffer_capacity_in_bytes_ / bytes_per_frame;
-  RTC_LOG(INFO) <<  "frames_per_buffer: " << frames_per_buffer_;
+  RTC_LOG(INFO) << "frames_per_buffer: " << frames_per_buffer_;
 }
 
 JNI_FUNCTION_ALIGN

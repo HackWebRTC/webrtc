@@ -1109,8 +1109,7 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan, AddTrackErrorIfClosed) {
   caller->pc()->Close();
 
   caller->observer()->clear_negotiation_needed();
-  auto result = caller->pc()
-                ->AddTrack(audio_track, std::vector<std::string>());
+  auto result = caller->pc()->AddTrack(audio_track, std::vector<std::string>());
   EXPECT_EQ(RTCErrorType::INVALID_STATE, result.error().type());
   EXPECT_FALSE(caller->observer()->negotiation_needed());
 }
@@ -1122,8 +1121,7 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan, AddTrackErrorIfTrackAlreadyHasSender) {
   ASSERT_TRUE(caller->AddTrack(audio_track));
 
   caller->observer()->clear_negotiation_needed();
-  auto result = caller->pc()
-                ->AddTrack(audio_track, std::vector<std::string>());
+  auto result = caller->pc()->AddTrack(audio_track, std::vector<std::string>());
   EXPECT_EQ(RTCErrorType::INVALID_PARAMETER, result.error().type());
   EXPECT_FALSE(caller->observer()->negotiation_needed());
 }

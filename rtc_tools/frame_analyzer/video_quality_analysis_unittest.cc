@@ -43,10 +43,10 @@ class VideoQualityAnalysisTest : public ::testing::Test {
 
 TEST_F(VideoQualityAnalysisTest, MatchExtractedY4mFrame) {
   std::string video_file =
-         webrtc::test::ResourcePath("reference_less_video_test_file", "y4m");
+      webrtc::test::ResourcePath("reference_less_video_test_file", "y4m");
 
   std::string extracted_frame_from_video_file =
-         webrtc::test::ResourcePath("video_quality_analysis_frame", "txt");
+      webrtc::test::ResourcePath("video_quality_analysis_frame", "txt");
 
   int frame_height = 720, frame_width = 1280;
   int frame_number = 2;
@@ -57,8 +57,7 @@ TEST_F(VideoQualityAnalysisTest, MatchExtractedY4mFrame) {
   FILE* input_file = fopen(extracted_frame_from_video_file.c_str(), "rb");
   fread(expected_frame, 1, size, input_file);
 
-  ExtractFrameFromY4mFile(video_file.c_str(),
-                          frame_width, frame_height,
+  ExtractFrameFromY4mFile(video_file.c_str(), frame_width, frame_height,
                           frame_number, result_frame);
 
   EXPECT_EQ(*expected_frame, *result_frame);
@@ -92,8 +91,7 @@ TEST_F(VideoQualityAnalysisTest, GetMaxRepeatedAndSkippedFramesInvalidFile) {
   GetMaxRepeatedAndSkippedFrames(stats_filename_ref_, stats_filename_, &result);
 }
 
-TEST_F(VideoQualityAnalysisTest,
-       GetMaxRepeatedAndSkippedFramesEmptyStatsFile) {
+TEST_F(VideoQualityAnalysisTest, GetMaxRepeatedAndSkippedFramesEmptyStatsFile) {
   ResultsContainer result;
   std::ofstream stats_file;
   stats_file.open(stats_filename_ref_.c_str());

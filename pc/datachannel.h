@@ -53,11 +53,7 @@ class DataChannelProviderInterface {
 };
 
 struct InternalDataChannelInit : public DataChannelInit {
-  enum OpenHandshakeRole {
-    kOpener,
-    kAcker,
-    kNone
-  };
+  enum OpenHandshakeRole { kOpener, kAcker, kNone };
   // The default role is kOpener because the default |negotiated| is false.
   InternalDataChannelInit() : open_handshake_role(kOpener) {}
   explicit InternalDataChannelInit(const DataChannelInit& base)
@@ -223,9 +219,7 @@ class DataChannel : public DataChannelInterface,
     PacketQueue();
     ~PacketQueue();
 
-    size_t byte_count() const {
-      return byte_count_;
-    }
+    size_t byte_count() const { return byte_count_; }
 
     bool Empty() const;
 
@@ -301,25 +295,25 @@ class DataChannel : public DataChannelInterface,
 
 // Define proxy for DataChannelInterface.
 BEGIN_SIGNALING_PROXY_MAP(DataChannel)
-  PROXY_SIGNALING_THREAD_DESTRUCTOR()
-  PROXY_METHOD1(void, RegisterObserver, DataChannelObserver*)
-  PROXY_METHOD0(void, UnregisterObserver)
-  PROXY_CONSTMETHOD0(std::string, label)
-  PROXY_CONSTMETHOD0(bool, reliable)
-  PROXY_CONSTMETHOD0(bool, ordered)
-  PROXY_CONSTMETHOD0(uint16_t, maxRetransmitTime)
-  PROXY_CONSTMETHOD0(uint16_t, maxRetransmits)
-  PROXY_CONSTMETHOD0(std::string, protocol)
-  PROXY_CONSTMETHOD0(bool, negotiated)
-  PROXY_CONSTMETHOD0(int, id)
-  PROXY_CONSTMETHOD0(DataState, state)
-  PROXY_CONSTMETHOD0(uint32_t, messages_sent)
-  PROXY_CONSTMETHOD0(uint64_t, bytes_sent)
-  PROXY_CONSTMETHOD0(uint32_t, messages_received)
-  PROXY_CONSTMETHOD0(uint64_t, bytes_received)
-  PROXY_CONSTMETHOD0(uint64_t, buffered_amount)
-  PROXY_METHOD0(void, Close)
-  PROXY_METHOD1(bool, Send, const DataBuffer&)
+PROXY_SIGNALING_THREAD_DESTRUCTOR()
+PROXY_METHOD1(void, RegisterObserver, DataChannelObserver*)
+PROXY_METHOD0(void, UnregisterObserver)
+PROXY_CONSTMETHOD0(std::string, label)
+PROXY_CONSTMETHOD0(bool, reliable)
+PROXY_CONSTMETHOD0(bool, ordered)
+PROXY_CONSTMETHOD0(uint16_t, maxRetransmitTime)
+PROXY_CONSTMETHOD0(uint16_t, maxRetransmits)
+PROXY_CONSTMETHOD0(std::string, protocol)
+PROXY_CONSTMETHOD0(bool, negotiated)
+PROXY_CONSTMETHOD0(int, id)
+PROXY_CONSTMETHOD0(DataState, state)
+PROXY_CONSTMETHOD0(uint32_t, messages_sent)
+PROXY_CONSTMETHOD0(uint64_t, bytes_sent)
+PROXY_CONSTMETHOD0(uint32_t, messages_received)
+PROXY_CONSTMETHOD0(uint64_t, bytes_received)
+PROXY_CONSTMETHOD0(uint64_t, buffered_amount)
+PROXY_METHOD0(void, Close)
+PROXY_METHOD1(bool, Send, const DataBuffer&)
 END_PROXY_MAP()
 
 }  // namespace webrtc

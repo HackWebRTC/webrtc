@@ -26,10 +26,10 @@
  *---------------------------------------------------------------*/
 
 void WebRtcIlbcfix_Lsp2Lsf(
-    int16_t *lsp, /* (i) lsp vector -1...+1 in Q15 */
-    int16_t *lsf, /* (o) Lsf vector 0...Pi in Q13
+    int16_t* lsp, /* (i) lsp vector -1...+1 in Q15 */
+    int16_t* lsf, /* (o) Lsf vector 0...Pi in Q13
                            (ordered, so that lsf[i]<lsf[i+1]) */
-    int16_t m  /* (i) Number of coefficients */
-                           );
+    int16_t m     /* (i) Number of coefficients */
+    );
 
 #endif

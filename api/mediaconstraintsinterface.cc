@@ -89,8 +89,7 @@ const char MediaConstraintsInterface::kMaxFrameRate[] = "maxFrameRate";
 const char MediaConstraintsInterface::kMinFrameRate[] = "minFrameRate";
 
 // Audio constraints.
-const char MediaConstraintsInterface::kEchoCancellation[] =
-    "echoCancellation";
+const char MediaConstraintsInterface::kEchoCancellation[] = "echoCancellation";
 const char MediaConstraintsInterface::kGoogEchoCancellation[] =
     "googEchoCancellation";
 const char MediaConstraintsInterface::kExtendedFilterEchoCancellation[] =
@@ -107,8 +106,7 @@ const char MediaConstraintsInterface::kExperimentalNoiseSuppression[] =
     "googNoiseSuppression2";
 const char MediaConstraintsInterface::kIntelligibilityEnhancer[] =
     "intelligibilityEnhancer";
-const char MediaConstraintsInterface::kHighpassFilter[] =
-    "googHighpassFilter";
+const char MediaConstraintsInterface::kHighpassFilter[] = "googHighpassFilter";
 const char MediaConstraintsInterface::kTypingNoiseDetection[] =
     "googTypingNoiseDetection";
 const char MediaConstraintsInterface::kAudioMirroring[] = "googAudioMirroring";
@@ -125,11 +123,9 @@ const char MediaConstraintsInterface::kOfferToReceiveVideo[] =
     "OfferToReceiveVideo";
 const char MediaConstraintsInterface::kVoiceActivityDetection[] =
     "VoiceActivityDetection";
-const char MediaConstraintsInterface::kIceRestart[] =
-    "IceRestart";
+const char MediaConstraintsInterface::kIceRestart[] = "IceRestart";
 // Google specific constraint for BUNDLE enable/disable.
-const char MediaConstraintsInterface::kUseRtpMux[] =
-    "googUseRtpMUX";
+const char MediaConstraintsInterface::kUseRtpMux[] = "googUseRtpMUX";
 
 // Below constraints should be used during PeerConnection construction.
 const char MediaConstraintsInterface::kEnableDtlsSrtp[] =
@@ -150,11 +146,11 @@ const char MediaConstraintsInterface::kCpuOveruseDetection[] =
     "googCpuOveruseDetection";
 const char MediaConstraintsInterface::kPayloadPadding[] = "googPayloadPadding";
 
-
 // Set |value| to the value associated with the first appearance of |key|, or
 // return false if |key| is not found.
 bool MediaConstraintsInterface::Constraints::FindFirst(
-    const std::string& key, std::string* value) const {
+    const std::string& key,
+    std::string* value) const {
   for (Constraints::const_iterator iter = begin(); iter != end(); ++iter) {
     if (iter->key == key) {
       *value = iter->value;
@@ -165,7 +161,8 @@ bool MediaConstraintsInterface::Constraints::FindFirst(
 }
 
 bool FindConstraint(const MediaConstraintsInterface* constraints,
-                    const std::string& key, bool* value,
+                    const std::string& key,
+                    bool* value,
                     size_t* mandatory_constraints) {
   return ::FindConstraint<bool>(constraints, key, value, mandatory_constraints);
 }
@@ -192,9 +189,9 @@ void CopyConstraintsIntoRtcConfiguration(
   }
   FindConstraint(constraints, MediaConstraintsInterface::kEnableDscp,
                  &configuration->media_config.enable_dscp, nullptr);
-  FindConstraint(
-      constraints, MediaConstraintsInterface::kCpuOveruseDetection,
-      &configuration->media_config.video.enable_cpu_adaptation, nullptr);
+  FindConstraint(constraints, MediaConstraintsInterface::kCpuOveruseDetection,
+                 &configuration->media_config.video.enable_cpu_adaptation,
+                 nullptr);
   FindConstraint(constraints, MediaConstraintsInterface::kEnableRtpDataChannels,
                  &configuration->enable_rtp_data_channel, nullptr);
   // Find Suspend Below Min Bitrate constraint.

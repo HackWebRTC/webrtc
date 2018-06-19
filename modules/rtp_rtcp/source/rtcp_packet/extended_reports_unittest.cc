@@ -39,16 +39,13 @@ bool operator==(const RTCPVoIPMetric& metric1, const RTCPVoIPMetric& metric2) {
          metric1.endSystemDelay == metric2.endSystemDelay &&
          metric1.signalLevel == metric2.signalLevel &&
          metric1.noiseLevel == metric2.noiseLevel &&
-         metric1.RERL == metric2.RERL &&
-         metric1.Gmin == metric2.Gmin &&
+         metric1.RERL == metric2.RERL && metric1.Gmin == metric2.Gmin &&
          metric1.Rfactor == metric2.Rfactor &&
          metric1.extRfactor == metric2.extRfactor &&
-         metric1.MOSLQ == metric2.MOSLQ &&
-         metric1.MOSCQ == metric2.MOSCQ &&
+         metric1.MOSLQ == metric2.MOSLQ && metric1.MOSCQ == metric2.MOSCQ &&
          metric1.RXconfig == metric2.RXconfig &&
          metric1.JBnominal == metric2.JBnominal &&
-         metric1.JBmax == metric2.JBmax &&
-         metric1.JBabsMax == metric2.JBabsMax;
+         metric1.JBmax == metric2.JBmax && metric1.JBabsMax == metric2.JBabsMax;
 }
 
 namespace rtcp {
@@ -57,8 +54,7 @@ bool operator==(const Rrtr& rrtr1, const Rrtr& rrtr2) {
 }
 
 bool operator==(const ReceiveTimeInfo& time1, const ReceiveTimeInfo& time2) {
-  return time1.ssrc == time2.ssrc &&
-         time1.last_rr == time2.last_rr &&
+  return time1.ssrc == time2.ssrc && time1.last_rr == time2.last_rr &&
          time1.delay_since_last_rr == time2.delay_since_last_rr;
 }
 
@@ -113,26 +109,26 @@ Rrtr RtcpPacketExtendedReportsTest::Rand<Rrtr>() {
 template <>
 RTCPVoIPMetric RtcpPacketExtendedReportsTest::Rand<RTCPVoIPMetric>() {
   RTCPVoIPMetric metric;
-  metric.lossRate       = Rand<uint8_t>();
-  metric.discardRate    = Rand<uint8_t>();
-  metric.burstDensity   = Rand<uint8_t>();
-  metric.gapDensity     = Rand<uint8_t>();
-  metric.burstDuration  = Rand<uint16_t>();
-  metric.gapDuration    = Rand<uint16_t>();
+  metric.lossRate = Rand<uint8_t>();
+  metric.discardRate = Rand<uint8_t>();
+  metric.burstDensity = Rand<uint8_t>();
+  metric.gapDensity = Rand<uint8_t>();
+  metric.burstDuration = Rand<uint16_t>();
+  metric.gapDuration = Rand<uint16_t>();
   metric.roundTripDelay = Rand<uint16_t>();
   metric.endSystemDelay = Rand<uint16_t>();
-  metric.signalLevel    = Rand<uint8_t>();
-  metric.noiseLevel     = Rand<uint8_t>();
-  metric.RERL           = Rand<uint8_t>();
-  metric.Gmin           = Rand<uint8_t>();
-  metric.Rfactor        = Rand<uint8_t>();
-  metric.extRfactor     = Rand<uint8_t>();
-  metric.MOSLQ          = Rand<uint8_t>();
-  metric.MOSCQ          = Rand<uint8_t>();
-  metric.RXconfig       = Rand<uint8_t>();
-  metric.JBnominal      = Rand<uint16_t>();
-  metric.JBmax          = Rand<uint16_t>();
-  metric.JBabsMax       = Rand<uint16_t>();
+  metric.signalLevel = Rand<uint8_t>();
+  metric.noiseLevel = Rand<uint8_t>();
+  metric.RERL = Rand<uint8_t>();
+  metric.Gmin = Rand<uint8_t>();
+  metric.Rfactor = Rand<uint8_t>();
+  metric.extRfactor = Rand<uint8_t>();
+  metric.MOSLQ = Rand<uint8_t>();
+  metric.MOSCQ = Rand<uint8_t>();
+  metric.RXconfig = Rand<uint8_t>();
+  metric.JBnominal = Rand<uint16_t>();
+  metric.JBmax = Rand<uint16_t>();
+  metric.JBabsMax = Rand<uint16_t>();
   return metric;
 }
 

@@ -28,26 +28,27 @@ class PCMFile {
   PCMFile(uint32_t timestamp);
   ~PCMFile();
 
-  void Open(const std::string& filename, uint16_t frequency, const char* mode,
+  void Open(const std::string& filename,
+            uint16_t frequency,
+            const char* mode,
             bool auto_rewind = false);
 
   int32_t Read10MsData(AudioFrame& audio_frame);
 
-  void Write10MsData(const int16_t *playout_buffer, size_t length_smpls);
+  void Write10MsData(const int16_t* playout_buffer, size_t length_smpls);
   void Write10MsData(const AudioFrame& audio_frame);
 
   uint16_t PayloadLength10Ms() const;
   int32_t SamplingFrequency() const;
   void Close();
-  bool EndOfFile() const {
-    return end_of_file_;
-  }
+  bool EndOfFile() const { return end_of_file_; }
   // Moves forward the specified number of 10 ms blocks. If a limit has been set
   // with SetNum10MsBlocksToRead, fast-forwarding does not count towards this
   // limit.
   void FastForward(int num_10ms_blocks);
   void Rewind();
-  static int16_t ChooseFile(std::string* file_name, int16_t max_len,
+  static int16_t ChooseFile(std::string* file_name,
+                            int16_t max_len,
                             uint16_t* frequency_hz);
   bool Rewinded();
   void SaveStereo(bool is_stereo = true);

@@ -55,14 +55,12 @@ class Thread;
 
 struct StreamEventData : public MessageData {
   int events, error;
-  StreamEventData(int ev, int er) : events(ev), error(er) { }
+  StreamEventData(int ev, int er) : events(ev), error(er) {}
 };
 
 class StreamInterface : public MessageHandler {
  public:
-  enum {
-    MSG_POST_EVENT = 0xF1F1, MSG_MAX = MSG_POST_EVENT
-  };
+  enum { MSG_POST_EVENT = 0xF1F1, MSG_MAX = MSG_POST_EVENT };
 
   ~StreamInterface() override;
 
@@ -81,10 +79,14 @@ class StreamInterface : public MessageHandler {
   //    block, or the stream is in SS_OPENING state.
   //  SR_EOS: the end-of-stream has been reached, or the stream is in the
   //    SS_CLOSED state.
-  virtual StreamResult Read(void* buffer, size_t buffer_len,
-                            size_t* read, int* error) = 0;
-  virtual StreamResult Write(const void* data, size_t data_len,
-                             size_t* written, int* error) = 0;
+  virtual StreamResult Read(void* buffer,
+                            size_t buffer_len,
+                            size_t* read,
+                            int* error) = 0;
+  virtual StreamResult Write(const void* data,
+                             size_t data_len,
+                             size_t* written,
+                             int* error) = 0;
   // Attempt to transition to the SS_CLOSED state.  SE_CLOSE will not be
   // signalled as a result of this call.
   virtual void Close() = 0;
@@ -158,7 +160,7 @@ class StreamInterface : public MessageHandler {
   // NOTE: This interface is being considered experimentally at the moment.  It
   // would be used by JUDP and BandwidthStream as a way to circumvent certain
   // soft limits in writing.
-  //virtual bool ForceWrite(const void* data, size_t data_len, int* error) {
+  // virtual bool ForceWrite(const void* data, size_t data_len, int* error) {
   //  if (error) *error = -1;
   //  return false;
   //}
@@ -208,13 +210,17 @@ class StreamInterface : public MessageHandler {
   // unlike Write, the argument 'written' is always set, and may be non-zero
   // on results other than SR_SUCCESS.  The remaining arguments have the
   // same semantics as Write.
-  StreamResult WriteAll(const void* data, size_t data_len,
-                        size_t* written, int* error);
+  StreamResult WriteAll(const void* data,
+                        size_t data_len,
+                        size_t* written,
+                        int* error);
 
   // Similar to ReadAll.  Calls Read until buffer_len bytes have been read, or
   // until a non-SR_SUCCESS result is returned.  'read' is always set.
-  StreamResult ReadAll(void* buffer, size_t buffer_len,
-                       size_t* read, int* error);
+  StreamResult ReadAll(void* buffer,
+                       size_t buffer_len,
+                       size_t* read,
+                       int* error);
 
   // ReadLine is a helper function which repeatedly calls Read until it hits
   // the end-of-line character, or something other than SR_SUCCESS.
@@ -375,8 +381,10 @@ class FileStream : public StreamInterface {
 
   // The semantics of filename and mode are the same as stdio's fopen
   virtual bool Open(const std::string& filename, const char* mode, int* error);
-  virtual bool OpenShare(const std::string& filename, const char* mode,
-                         int shflag, int* error);
+  virtual bool OpenShare(const std::string& filename,
+                         const char* mode,
+                         int shflag,
+                         int* error);
 
   // By default, reads and writes are buffered for efficiency.  Disabling
   // buffering causes writes to block until the bytes on disk are updated.
@@ -499,14 +507,18 @@ class FifoBuffer : public StreamInterface {
   // is specified in number of bytes.
   // This method doesn't adjust read position nor the number of available
   // bytes, user has to call ConsumeReadData() to do this.
-  StreamResult ReadOffset(void* buffer, size_t bytes, size_t offset,
+  StreamResult ReadOffset(void* buffer,
+                          size_t bytes,
+                          size_t offset,
                           size_t* bytes_read);
 
   // Write |buffer| with an offset from the current write position, offset is
   // specified in number of bytes.
   // This method doesn't adjust the number of buffered bytes, user has to call
   // ConsumeWriteBuffer() to do this.
-  StreamResult WriteOffset(const void* buffer, size_t bytes, size_t offset,
+  StreamResult WriteOffset(const void* buffer,
+                           size_t bytes,
+                           size_t offset,
                            size_t* bytes_written);
 
   // StreamInterface methods
@@ -606,6 +618,7 @@ class StringStream : public StreamInterface {
 
 class StreamReference : public StreamAdapterInterface {
   class StreamRefCount;
+
  public:
   // Constructor for the first reference to a stream
   // Note: get more references through NewReference(). Use this
@@ -619,8 +632,7 @@ class StreamReference : public StreamAdapterInterface {
   class StreamRefCount {
    public:
     explicit StreamRefCount(StreamInterface* stream)
-        : stream_(stream), ref_count_(1) {
-    }
+        : stream_(stream), ref_count_(1) {}
     void AddReference() {
       CritScope lock(&cs_);
       ++ref_count_;
@@ -636,6 +648,7 @@ class StreamReference : public StreamAdapterInterface {
         delete this;
       }
     }
+
    private:
     StreamInterface* stream_;
     int ref_count_;

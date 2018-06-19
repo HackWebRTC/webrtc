@@ -32,8 +32,7 @@ TEST(CovarianceMatrixGeneratorTest, TestUniformCovarianceMatrix2Mics) {
     geometry.push_back(Point(i * kMicSpacing - first_mic, 0.f, 0.f));
   }
   ComplexMatrix<float> actual_covariance_matrix(kNumberMics, kNumberMics);
-  CovarianceMatrixGenerator::UniformCovarianceMatrix(kWaveNumber,
-                                                     geometry,
+  CovarianceMatrixGenerator::UniformCovarianceMatrix(kWaveNumber, geometry,
                                                      &actual_covariance_matrix);
 
   complex<float>* const* actual_els = actual_covariance_matrix.elements();
@@ -60,8 +59,7 @@ TEST(CovarianceMatrixGeneratorTest, TestUniformCovarianceMatrix3Mics) {
     geometry.push_back(Point(i * kMicSpacing - first_mic, 0.f, 0.f));
   }
   ComplexMatrix<float> actual_covariance_matrix(kNumberMics, kNumberMics);
-  CovarianceMatrixGenerator::UniformCovarianceMatrix(kWaveNumber,
-                                                     geometry,
+  CovarianceMatrixGenerator::UniformCovarianceMatrix(kWaveNumber, geometry,
                                                      &actual_covariance_matrix);
 
   complex<float>* const* actual_els = actual_covariance_matrix.elements();
@@ -97,8 +95,7 @@ TEST(CovarianceMatrixGeneratorTest, TestUniformCovarianceMatrix3DArray) {
   geometry.push_back(Point(-0.025f, 0.15f, -0.075f));
   geometry.push_back(Point(-0.025f, -0.05f, 0.225f));
   ComplexMatrix<float> actual_covariance_matrix(kNumberMics, kNumberMics);
-  CovarianceMatrixGenerator::UniformCovarianceMatrix(kWaveNumber,
-                                                     geometry,
+  CovarianceMatrixGenerator::UniformCovarianceMatrix(kWaveNumber, geometry,
                                                      &actual_covariance_matrix);
 
   complex<float>* const* actual_els = actual_covariance_matrix.elements();
@@ -154,14 +151,9 @@ TEST(CovarianceMatrixGeneratorTest, TestAngledCovarianceMatrix2Mics) {
     geometry.push_back(Point(i * kMicSpacing - first_mic, 0.f, 0.f));
   }
   ComplexMatrix<float> actual_covariance_matrix(kNumberMics, kNumberMics);
-  CovarianceMatrixGenerator::AngledCovarianceMatrix(kSpeedOfSound,
-                                                    kAngle,
-                                                    kFrequencyBin,
-                                                    kFftSize,
-                                                    kNumberFrequencyBins,
-                                                    kSampleRate,
-                                                    geometry,
-                                                    &actual_covariance_matrix);
+  CovarianceMatrixGenerator::AngledCovarianceMatrix(
+      kSpeedOfSound, kAngle, kFrequencyBin, kFftSize, kNumberFrequencyBins,
+      kSampleRate, geometry, &actual_covariance_matrix);
 
   complex<float>* const* actual_els = actual_covariance_matrix.elements();
 
@@ -192,14 +184,9 @@ TEST(CovarianceMatrixGeneratorTest, TestAngledCovarianceMatrix3Mics) {
     geometry.push_back(Point(i * kMicSpacing - first_mic, 0.f, 0.f));
   }
   ComplexMatrix<float> actual_covariance_matrix(kNumberMics, kNumberMics);
-  CovarianceMatrixGenerator::AngledCovarianceMatrix(kSpeedOfSound,
-                                                    kAngle,
-                                                    kFrequencyBin,
-                                                    kFftSize,
-                                                    kNumberFrequencyBins,
-                                                    kSampleRate,
-                                                    geometry,
-                                                    &actual_covariance_matrix);
+  CovarianceMatrixGenerator::AngledCovarianceMatrix(
+      kSpeedOfSound, kAngle, kFrequencyBin, kFftSize, kNumberFrequencyBins,
+      kSampleRate, geometry, &actual_covariance_matrix);
 
   complex<float>* const* actual_els = actual_covariance_matrix.elements();
 

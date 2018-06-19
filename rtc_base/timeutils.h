@@ -80,7 +80,6 @@ int64_t TimeMicros();
 // Returns the current time in nanoseconds.
 int64_t TimeNanos();
 
-
 // Returns a future timestamp, 'elapsed' milliseconds from now.
 int64_t TimeAfter(int64_t elapsed);
 

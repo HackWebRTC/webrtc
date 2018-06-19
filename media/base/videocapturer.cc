@@ -319,9 +319,10 @@ int64_t VideoCapturer::GetFormatDistance(const VideoFormat& desired,
   // Require camera fps to be at least 96% of what is requested, or higher,
   // if resolution differs. 96% allows for slight variations in fps. e.g. 29.97
   if (delta_fps < 0) {
-    float min_desirable_fps = delta_w ?
-    VideoFormat::IntervalToFpsFloat(desired.interval) * 28.f / 30.f :
-    VideoFormat::IntervalToFpsFloat(desired.interval) * 23.f / 30.f;
+    float min_desirable_fps =
+        delta_w
+            ? VideoFormat::IntervalToFpsFloat(desired.interval) * 28.f / 30.f
+            : VideoFormat::IntervalToFpsFloat(desired.interval) * 23.f / 30.f;
     delta_fps = -delta_fps;
     if (supported_fps < min_desirable_fps) {
       distance |= static_cast<int64_t>(1) << 62;

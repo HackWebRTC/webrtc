@@ -51,8 +51,10 @@ struct TestMessage : public MessageData {
 // Receives on a socket and sends by posting messages.
 class SocketClient : public TestGenerator, public sigslot::has_slots<> {
  public:
-  SocketClient(AsyncSocket* socket, const SocketAddress& addr,
-               Thread* post_thread, MessageHandler* phandler)
+  SocketClient(AsyncSocket* socket,
+               const SocketAddress& addr,
+               Thread* post_thread,
+               MessageHandler* phandler)
       : socket_(AsyncUDPSocket::Create(socket, addr)),
         post_thread_(post_thread),
         post_handler_(phandler) {
@@ -63,7 +65,9 @@ class SocketClient : public TestGenerator, public sigslot::has_slots<> {
 
   SocketAddress address() const { return socket_->GetLocalAddress(); }
 
-  void OnPacket(AsyncPacketSocket* socket, const char* buf, size_t size,
+  void OnPacket(AsyncPacketSocket* socket,
+                const char* buf,
+                size_t size,
                 const SocketAddress& remote_addr,
                 const PacketTime& packet_time) {
     EXPECT_EQ(size, sizeof(uint32_t));
@@ -83,9 +87,7 @@ class SocketClient : public TestGenerator, public sigslot::has_slots<> {
 // Receives messages and sends on a socket.
 class MessageClient : public MessageHandler, public TestGenerator {
  public:
-  MessageClient(Thread* pth, Socket* socket)
-      : socket_(socket) {
-  }
+  MessageClient(Thread* pth, Socket* socket) : socket_(socket) {}
 
   ~MessageClient() override { delete socket_; }
 
@@ -107,14 +109,9 @@ class CustomThread : public rtc::Thread {
   ~CustomThread() override { Stop(); }
   bool Start() { return false; }
 
-  bool WrapCurrent() {
-    return Thread::WrapCurrent();
-  }
-  void UnwrapCurrent() {
-    Thread::UnwrapCurrent();
-  }
+  bool WrapCurrent() { return Thread::WrapCurrent(); }
+  void UnwrapCurrent() { Thread::UnwrapCurrent(); }
 };
-
 
 // A thread that does nothing when it runs and signals an event
 // when it is destroyed.
@@ -176,7 +173,11 @@ struct FunctorA {
 class FunctorB {
  public:
   explicit FunctorB(AtomicBool* flag) : flag_(flag) {}
-  void operator()() { if (flag_) *flag_ = true; }
+  void operator()() {
+    if (flag_)
+      *flag_ = true;
+  }
+
  private:
   AtomicBool* flag_;
 };
@@ -191,7 +192,11 @@ struct FunctorD {
   explicit FunctorD(AtomicBool* flag) : flag_(flag) {}
   FunctorD(FunctorD&&) = default;
   FunctorD& operator=(FunctorD&&) = default;
-  void operator()() { if (flag_) *flag_ = true; }
+  void operator()() {
+    if (flag_)
+      *flag_ = true;
+  }
+
  private:
   AtomicBool* flag_;
   RTC_DISALLOW_COPY_AND_ASSIGN(FunctorD);
@@ -431,9 +436,7 @@ class AsyncInvokeTest : public testing::Test {
 
  protected:
   enum { kWaitTimeout = 1000 };
-  AsyncInvokeTest()
-      : int_value_(0),
-        expected_thread_(nullptr) {}
+  AsyncInvokeTest() : int_value_(0), expected_thread_(nullptr) {}
 
   int int_value_;
   Thread* expected_thread_;
@@ -580,9 +583,7 @@ class GuardedAsyncInvokeTest : public testing::Test {
 
  protected:
   const static int kWaitTimeout = 1000;
-  GuardedAsyncInvokeTest()
-      : int_value_(0),
-        expected_thread_(nullptr) {}
+  GuardedAsyncInvokeTest() : int_value_(0), expected_thread_(nullptr) {}
 
   int int_value_;
   Thread* expected_thread_;

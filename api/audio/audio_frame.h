@@ -43,11 +43,7 @@ class AudioFrame {
     kMaxDataSizeBytes = kMaxDataSizeSamples * sizeof(int16_t),
   };
 
-  enum VADActivity {
-    kVadActive = 0,
-    kVadPassive = 1,
-    kVadUnknown = 2
-  };
+  enum VADActivity { kVadActive = 0, kVadPassive = 1, kVadUnknown = 2 };
   enum SpeechType {
     kNormalSpeech = 0,
     kPLC = 1,
@@ -66,9 +62,12 @@ class AudioFrame {
   // ResetWithoutMuting() to skip this wasteful zeroing.
   void ResetWithoutMuting();
 
-  void UpdateFrame(uint32_t timestamp, const int16_t* data,
-                   size_t samples_per_channel, int sample_rate_hz,
-                   SpeechType speech_type, VADActivity vad_activity,
+  void UpdateFrame(uint32_t timestamp,
+                   const int16_t* data,
+                   size_t samples_per_channel,
+                   int sample_rate_hz,
+                   SpeechType speech_type,
+                   VADActivity vad_activity,
                    size_t num_channels = 1);
 
   void CopyFrom(const AudioFrame& src);

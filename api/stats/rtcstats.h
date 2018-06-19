@@ -78,7 +78,7 @@ class RTCStats {
 
   // Downcasts the stats object to an |RTCStats| subclass |T|. DCHECKs that the
   // object is of type |T|.
-  template<typename T>
+  template <typename T>
   const T& cast_to() const {
     RTC_DCHECK_EQ(type(), T::kType);
     return static_cast<const T&>(*this);
@@ -90,8 +90,7 @@ class RTCStats {
   // shall be reserved in the vector (so that subclasses can allocate a vector
   // with room for both parent and child members without it having to resize).
   virtual std::vector<const RTCStatsMemberInterface*>
-  MembersOfThisObjectAndAncestors(
-      size_t additional_capacity) const;
+  MembersOfThisObjectAndAncestors(size_t additional_capacity) const;
 
   std::string const id_;
   int64_t timestamp_us_;
@@ -138,18 +137,18 @@ class RTCStats {
 //         bar("bar") {
 //   }
 //
-#define WEBRTC_RTCSTATS_DECL()                                                 \
- public:                                                                       \
-  static const char kType[];                                                   \
-                                                                               \
-  std::unique_ptr<webrtc::RTCStats> copy() const override;                     \
-  const char* type() const override;                                           \
-                                                                               \
- protected:                                                                    \
-  std::vector<const webrtc::RTCStatsMemberInterface*>                          \
-  MembersOfThisObjectAndAncestors(                                             \
-      size_t local_var_additional_capacity) const override;                    \
-                                                                               \
+#define WEBRTC_RTCSTATS_DECL()                                          \
+ public:                                                                \
+  static const char kType[];                                            \
+                                                                        \
+  std::unique_ptr<webrtc::RTCStats> copy() const override;              \
+  const char* type() const override;                                    \
+                                                                        \
+ protected:                                                             \
+  std::vector<const webrtc::RTCStatsMemberInterface*>                   \
+  MembersOfThisObjectAndAncestors(size_t local_var_additional_capacity) \
+      const override;                                                   \
+                                                                        \
  public:
 
 #define WEBRTC_RTCSTATS_IMPL(this_class, parent_class, type_str, ...)          \
@@ -159,20 +158,17 @@ class RTCStats {
     return std::unique_ptr<webrtc::RTCStats>(new this_class(*this));           \
   }                                                                            \
                                                                                \
-  const char* this_class::type() const {                                       \
-    return this_class::kType;                                                  \
-  }                                                                            \
+  const char* this_class::type() const { return this_class::kType; }           \
                                                                                \
   std::vector<const webrtc::RTCStatsMemberInterface*>                          \
   this_class::MembersOfThisObjectAndAncestors(                                 \
       size_t local_var_additional_capacity) const {                            \
     const webrtc::RTCStatsMemberInterface* local_var_members[] = {             \
-      __VA_ARGS__                                                              \
-    };                                                                         \
+        __VA_ARGS__};                                                          \
     size_t local_var_members_count =                                           \
         sizeof(local_var_members) / sizeof(local_var_members[0]);              \
-    std::vector<const webrtc::RTCStatsMemberInterface*> local_var_members_vec =\
-        parent_class::MembersOfThisObjectAndAncestors(                         \
+    std::vector<const webrtc::RTCStatsMemberInterface*>                        \
+        local_var_members_vec = parent_class::MembersOfThisObjectAndAncestors( \
             local_var_members_count + local_var_additional_capacity);          \
     RTC_DCHECK_GE(                                                             \
         local_var_members_vec.capacity() - local_var_members_vec.size(),       \
@@ -191,21 +187,21 @@ class RTCStatsMemberInterface {
  public:
   // Member value types.
   enum Type {
-    kBool,                  // bool
-    kInt32,                 // int32_t
-    kUint32,                // uint32_t
-    kInt64,                 // int64_t
-    kUint64,                // uint64_t
-    kDouble,                // double
-    kString,                // std::string
+    kBool,    // bool
+    kInt32,   // int32_t
+    kUint32,  // uint32_t
+    kInt64,   // int64_t
+    kUint64,  // uint64_t
+    kDouble,  // double
+    kString,  // std::string
 
-    kSequenceBool,          // std::vector<bool>
-    kSequenceInt32,         // std::vector<int32_t>
-    kSequenceUint32,        // std::vector<uint32_t>
-    kSequenceInt64,         // std::vector<int64_t>
-    kSequenceUint64,        // std::vector<uint64_t>
-    kSequenceDouble,        // std::vector<double>
-    kSequenceString,        // std::vector<std::string>
+    kSequenceBool,    // std::vector<bool>
+    kSequenceInt32,   // std::vector<int32_t>
+    kSequenceUint32,  // std::vector<uint32_t>
+    kSequenceInt64,   // std::vector<int64_t>
+    kSequenceUint64,  // std::vector<uint64_t>
+    kSequenceDouble,  // std::vector<double>
+    kSequenceString,  // std::vector<std::string>
   };
 
   virtual ~RTCStatsMemberInterface() {}
@@ -229,7 +225,7 @@ class RTCStatsMemberInterface {
   // instead.
   virtual std::string ValueToJson() const = 0;
 
-  template<typename T>
+  template <typename T>
   const T& cast_to() const {
     RTC_DCHECK_EQ(type(), T::kType);
     return static_cast<const T&>(*this);
@@ -247,20 +243,17 @@ class RTCStatsMemberInterface {
 // specialized in rtcstats.cc, using a different |T| results in a linker error
 // (undefined reference to |kType|). The supported types are the ones described
 // by |RTCStatsMemberInterface::Type|.
-template<typename T>
+template <typename T>
 class RTCStatsMember : public RTCStatsMemberInterface {
  public:
   static const Type kType;
 
   explicit RTCStatsMember(const char* name)
-      : RTCStatsMemberInterface(name, false),
-        value_() {}
+      : RTCStatsMemberInterface(name, false), value_() {}
   RTCStatsMember(const char* name, const T& value)
-      : RTCStatsMemberInterface(name, true),
-        value_(value) {}
+      : RTCStatsMemberInterface(name, true), value_(value) {}
   RTCStatsMember(const char* name, T&& value)
-      : RTCStatsMemberInterface(name, true),
-        value_(std::move(value)) {}
+      : RTCStatsMemberInterface(name, true), value_(std::move(value)) {}
   explicit RTCStatsMember(const RTCStatsMember<T>& other)
       : RTCStatsMemberInterface(other.name_, other.is_defined_),
         value_(other.value_) {}

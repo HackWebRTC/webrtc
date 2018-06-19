@@ -118,10 +118,10 @@ class RTCStatsIntegrationTest : public testing::Test {
     PeerConnectionTestWrapper::Connect(caller_.get(), callee_.get());
 
     // Get user media for audio and video
-    caller_->GetAndAddUserMedia(true, cricket::AudioOptions(),
-                                true, FakeConstraints());
-    callee_->GetAndAddUserMedia(true, cricket::AudioOptions(),
-                                true, FakeConstraints());
+    caller_->GetAndAddUserMedia(true, cricket::AudioOptions(), true,
+                                FakeConstraints());
+    callee_->GetAndAddUserMedia(true, cricket::AudioOptions(), true,
+                                FakeConstraints());
 
     // Create data channels
     DataChannelInit init;
@@ -199,67 +199,65 @@ class RTCStatsVerifier {
     }
   }
 
-  void MarkMemberTested(
-      const RTCStatsMemberInterface& member, bool test_successful) {
+  void MarkMemberTested(const RTCStatsMemberInterface& member,
+                        bool test_successful) {
     untested_members_.erase(&member);
     all_tests_successful_ &= test_successful;
   }
 
   void TestMemberIsDefined(const RTCStatsMemberInterface& member) {
-    EXPECT_TRUE(member.is_defined()) <<
-        stats_->type() << "." << member.name() << "[" << stats_->id() <<
-        "] was undefined.";
+    EXPECT_TRUE(member.is_defined())
+        << stats_->type() << "." << member.name() << "[" << stats_->id()
+        << "] was undefined.";
     MarkMemberTested(member, member.is_defined());
   }
 
   void TestMemberIsUndefined(const RTCStatsMemberInterface& member) {
-    EXPECT_FALSE(member.is_defined()) <<
-        stats_->type() << "." << member.name() << "[" << stats_->id() <<
-        "] was defined (" << member.ValueToString() << ").";
+    EXPECT_FALSE(member.is_defined())
+        << stats_->type() << "." << member.name() << "[" << stats_->id()
+        << "] was defined (" << member.ValueToString() << ").";
     MarkMemberTested(member, !member.is_defined());
   }
 
-  template<typename T>
+  template <typename T>
   void TestMemberIsPositive(const RTCStatsMemberInterface& member) {
-    EXPECT_TRUE(member.is_defined()) <<
-        stats_->type() << "." << member.name() << "[" << stats_->id() <<
-        "] was undefined.";
+    EXPECT_TRUE(member.is_defined())
+        << stats_->type() << "." << member.name() << "[" << stats_->id()
+        << "] was undefined.";
     if (!member.is_defined()) {
       MarkMemberTested(member, false);
       return;
     }
     bool is_positive = *member.cast_to<RTCStatsMember<T>>() > T(0);
-    EXPECT_TRUE(is_positive) <<
-        stats_->type() << "." << member.name() << "[" << stats_->id() <<
-        "] was not positive (" << member.ValueToString() << ").";
+    EXPECT_TRUE(is_positive)
+        << stats_->type() << "." << member.name() << "[" << stats_->id()
+        << "] was not positive (" << member.ValueToString() << ").";
     MarkMemberTested(member, is_positive);
   }
 
-  template<typename T>
+  template <typename T>
   void TestMemberIsNonNegative(const RTCStatsMemberInterface& member) {
-    EXPECT_TRUE(member.is_defined()) <<
-        stats_->type() << "." << member.name() << "[" << stats_->id() <<
-        "] was undefined.";
+    EXPECT_TRUE(member.is_defined())
+        << stats_->type() << "." << member.name() << "[" << stats_->id()
+        << "] was undefined.";
     if (!member.is_defined()) {
       MarkMemberTested(member, false);
       return;
     }
     bool is_non_negative = *member.cast_to<RTCStatsMember<T>>() >= T(0);
-    EXPECT_TRUE(is_non_negative) <<
-        stats_->type() << "." << member.name() << "[" << stats_->id() <<
-        "] was not non-negative (" << member.ValueToString() << ").";
+    EXPECT_TRUE(is_non_negative)
+        << stats_->type() << "." << member.name() << "[" << stats_->id()
+        << "] was not non-negative (" << member.ValueToString() << ").";
     MarkMemberTested(member, is_non_negative);
   }
 
-  void TestMemberIsIDReference(
-      const RTCStatsMemberInterface& member,
-      const char* expected_type) {
+  void TestMemberIsIDReference(const RTCStatsMemberInterface& member,
+                               const char* expected_type) {
     TestMemberIsIDReference(member, expected_type, false);
   }
 
-  void TestMemberIsOptionalIDReference(
-      const RTCStatsMemberInterface& member,
-      const char* expected_type) {
+  void TestMemberIsOptionalIDReference(const RTCStatsMemberInterface& member,
+                                       const char* expected_type) {
     TestMemberIsIDReference(member, expected_type, true);
   }
 
@@ -267,18 +265,16 @@ class RTCStatsVerifier {
     if (untested_members_.empty())
       return all_tests_successful_;
     for (const RTCStatsMemberInterface* member : untested_members_) {
-      EXPECT_TRUE(false) <<
-          stats_->type() << "." << member->name() << "[" << stats_->id() <<
-          "] was not tested.";
+      EXPECT_TRUE(false) << stats_->type() << "." << member->name() << "["
+                         << stats_->id() << "] was not tested.";
     }
     return false;
   }
 
  private:
-  void TestMemberIsIDReference(
-      const RTCStatsMemberInterface& member,
-      const char* expected_type,
-      bool optional) {
+  void TestMemberIsIDReference(const RTCStatsMemberInterface& member,
+                               const char* expected_type,
+                               bool optional) {
     if (optional && !member.is_defined()) {
       MarkMemberTested(member, true);
       return;
@@ -306,10 +302,11 @@ class RTCStatsVerifier {
         }
       }
     }
-    EXPECT_TRUE(valid_reference) <<
-      stats_->type() << "." << member.name() << " is not a reference to an " <<
-      "existing dictionary of type " << expected_type << " (" <<
-      member.ValueToString() << ").";
+    EXPECT_TRUE(valid_reference)
+        << stats_->type() << "." << member.name()
+        << " is not a reference to an "
+        << "existing dictionary of type " << expected_type << " ("
+        << member.ValueToString() << ").";
     MarkMemberTested(member, valid_reference);
   }
 
@@ -339,8 +336,7 @@ class RTCStatsReportVerifier {
   }
 
   explicit RTCStatsReportVerifier(const RTCStatsReport* report)
-      : report_(report) {
-  }
+      : report_(report) {}
 
   void VerifyReport(std::vector<const char*> allowed_missing_stats) {
     std::set<const char*> missing_stats = StatsTypes();
@@ -353,14 +349,14 @@ class RTCStatsReportVerifier {
     for (const RTCStats& stats : *report_) {
       missing_stats.erase(stats.type());
       if (stats.type() == RTCCertificateStats::kType) {
-        verify_successful &= VerifyRTCCertificateStats(
-            stats.cast_to<RTCCertificateStats>());
+        verify_successful &=
+            VerifyRTCCertificateStats(stats.cast_to<RTCCertificateStats>());
       } else if (stats.type() == RTCCodecStats::kType) {
-        verify_successful &= VerifyRTCCodecStats(
-            stats.cast_to<RTCCodecStats>());
+        verify_successful &=
+            VerifyRTCCodecStats(stats.cast_to<RTCCodecStats>());
       } else if (stats.type() == RTCDataChannelStats::kType) {
-        verify_successful &= VerifyRTCDataChannelStats(
-            stats.cast_to<RTCDataChannelStats>());
+        verify_successful &=
+            VerifyRTCDataChannelStats(stats.cast_to<RTCDataChannelStats>());
       } else if (stats.type() == RTCIceCandidatePairStats::kType) {
         verify_successful &= VerifyRTCIceCandidatePairStats(
             stats.cast_to<RTCIceCandidatePairStats>(),
@@ -372,8 +368,8 @@ class RTCStatsReportVerifier {
         verify_successful &= VerifyRTCRemoteIceCandidateStats(
             stats.cast_to<RTCRemoteIceCandidateStats>());
       } else if (stats.type() == RTCMediaStreamStats::kType) {
-        verify_successful &= VerifyRTCMediaStreamStats(
-            stats.cast_to<RTCMediaStreamStats>());
+        verify_successful &=
+            VerifyRTCMediaStreamStats(stats.cast_to<RTCMediaStreamStats>());
       } else if (stats.type() == RTCMediaStreamTrackStats::kType) {
         verify_successful &= VerifyRTCMediaStreamTrackStats(
             stats.cast_to<RTCMediaStreamTrackStats>());
@@ -387,8 +383,8 @@ class RTCStatsReportVerifier {
         verify_successful &= VerifyRTCOutboundRTPStreamStats(
             stats.cast_to<RTCOutboundRTPStreamStats>());
       } else if (stats.type() == RTCTransportStats::kType) {
-        verify_successful &= VerifyRTCTransportStats(
-            stats.cast_to<RTCTransportStats>());
+        verify_successful &=
+            VerifyRTCTransportStats(stats.cast_to<RTCTransportStats>());
       } else {
         EXPECT_TRUE(false) << "Unrecognized stats type: " << stats.type();
         verify_successful = false;
@@ -401,24 +397,22 @@ class RTCStatsReportVerifier {
         EXPECT_TRUE(false) << "Missing expected stats type: " << missing;
       }
     }
-    EXPECT_TRUE(verify_successful) <<
-        "One or more problems with the stats. This is the report:\n" <<
-        report_->ToJson();
+    EXPECT_TRUE(verify_successful)
+        << "One or more problems with the stats. This is the report:\n"
+        << report_->ToJson();
   }
 
-  bool VerifyRTCCertificateStats(
-      const RTCCertificateStats& certificate) {
+  bool VerifyRTCCertificateStats(const RTCCertificateStats& certificate) {
     RTCStatsVerifier verifier(report_, &certificate);
     verifier.TestMemberIsDefined(certificate.fingerprint);
     verifier.TestMemberIsDefined(certificate.fingerprint_algorithm);
     verifier.TestMemberIsDefined(certificate.base64_certificate);
-    verifier.TestMemberIsOptionalIDReference(
-        certificate.issuer_certificate_id, RTCCertificateStats::kType);
+    verifier.TestMemberIsOptionalIDReference(certificate.issuer_certificate_id,
+                                             RTCCertificateStats::kType);
     return verifier.ExpectAllMembersSuccessfullyTested();
   }
 
-  bool VerifyRTCCodecStats(
-      const RTCCodecStats& codec) {
+  bool VerifyRTCCodecStats(const RTCCodecStats& codec) {
     RTCStatsVerifier verifier(report_, &codec);
     verifier.TestMemberIsDefined(codec.payload_type);
     verifier.TestMemberIsDefined(codec.mime_type);
@@ -429,8 +423,7 @@ class RTCStatsReportVerifier {
     return verifier.ExpectAllMembersSuccessfullyTested();
   }
 
-  bool VerifyRTCDataChannelStats(
-      const RTCDataChannelStats& data_channel) {
+  bool VerifyRTCDataChannelStats(const RTCDataChannelStats& data_channel) {
     RTCStatsVerifier verifier(report_, &data_channel);
     verifier.TestMemberIsDefined(data_channel.label);
     verifier.TestMemberIsDefined(data_channel.protocol);
@@ -444,14 +437,15 @@ class RTCStatsReportVerifier {
   }
 
   bool VerifyRTCIceCandidatePairStats(
-      const RTCIceCandidatePairStats& candidate_pair, bool is_selected_pair) {
+      const RTCIceCandidatePairStats& candidate_pair,
+      bool is_selected_pair) {
     RTCStatsVerifier verifier(report_, &candidate_pair);
-    verifier.TestMemberIsIDReference(
-        candidate_pair.transport_id, RTCTransportStats::kType);
-    verifier.TestMemberIsIDReference(
-        candidate_pair.local_candidate_id, RTCLocalIceCandidateStats::kType);
-    verifier.TestMemberIsIDReference(
-        candidate_pair.remote_candidate_id, RTCRemoteIceCandidateStats::kType);
+    verifier.TestMemberIsIDReference(candidate_pair.transport_id,
+                                     RTCTransportStats::kType);
+    verifier.TestMemberIsIDReference(candidate_pair.local_candidate_id,
+                                     RTCLocalIceCandidateStats::kType);
+    verifier.TestMemberIsIDReference(candidate_pair.remote_candidate_id,
+                                     RTCRemoteIceCandidateStats::kType);
     verifier.TestMemberIsDefined(candidate_pair.state);
     verifier.TestMemberIsNonNegative<uint64_t>(candidate_pair.priority);
     verifier.TestMemberIsDefined(candidate_pair.nominated);
@@ -488,11 +482,10 @@ class RTCStatsReportVerifier {
     return verifier.ExpectAllMembersSuccessfullyTested();
   }
 
-  bool VerifyRTCIceCandidateStats(
-      const RTCIceCandidateStats& candidate) {
+  bool VerifyRTCIceCandidateStats(const RTCIceCandidateStats& candidate) {
     RTCStatsVerifier verifier(report_, &candidate);
-    verifier.TestMemberIsIDReference(
-        candidate.transport_id, RTCTransportStats::kType);
+    verifier.TestMemberIsIDReference(candidate.transport_id,
+                                     RTCTransportStats::kType);
     verifier.TestMemberIsDefined(candidate.is_remote);
     if (*candidate.is_remote) {
       verifier.TestMemberIsUndefined(candidate.network_type);
@@ -519,12 +512,11 @@ class RTCStatsReportVerifier {
     return VerifyRTCIceCandidateStats(remote_candidate);
   }
 
-  bool VerifyRTCMediaStreamStats(
-      const RTCMediaStreamStats& media_stream) {
+  bool VerifyRTCMediaStreamStats(const RTCMediaStreamStats& media_stream) {
     RTCStatsVerifier verifier(report_, &media_stream);
     verifier.TestMemberIsDefined(media_stream.stream_identifier);
-    verifier.TestMemberIsIDReference(
-        media_stream.track_ids, RTCMediaStreamTrackStats::kType);
+    verifier.TestMemberIsIDReference(media_stream.track_ids,
+                                     RTCMediaStreamTrackStats::kType);
     return verifier.ExpectAllMembersSuccessfullyTested();
   }
 
@@ -573,8 +565,7 @@ class RTCStatsReportVerifier {
       verifier.TestMemberIsUndefined(media_stream_track.total_audio_energy);
       verifier.TestMemberIsUndefined(media_stream_track.total_samples_duration);
     } else {
-      RTC_DCHECK_EQ(*media_stream_track.kind,
-                    RTCMediaStreamTrackKind::kAudio);
+      RTC_DCHECK_EQ(*media_stream_track.kind, RTCMediaStreamTrackKind::kAudio);
       // Video-only members should be undefined
       verifier.TestMemberIsUndefined(media_stream_track.frame_width);
       verifier.TestMemberIsUndefined(media_stream_track.frame_height);
@@ -598,8 +589,8 @@ class RTCStatsReportVerifier {
       // test run until available or is there a way to have it always be
       // defined? crbug.com/627816
       verifier.MarkMemberTested(media_stream_track.echo_return_loss, true);
-      verifier.MarkMemberTested(
-          media_stream_track.echo_return_loss_enhancement, true);
+      verifier.MarkMemberTested(media_stream_track.echo_return_loss_enhancement,
+                                true);
     }
     // totalSamplesReceived, concealedSamples and concealmentEvents are only
     // present on inbound audio tracks.
@@ -633,16 +624,16 @@ class RTCStatsReportVerifier {
     return verifier.ExpectAllMembersSuccessfullyTested();
   }
 
-  void VerifyRTCRTPStreamStats(
-      const RTCRTPStreamStats& stream, RTCStatsVerifier* verifier) {
+  void VerifyRTCRTPStreamStats(const RTCRTPStreamStats& stream,
+                               RTCStatsVerifier* verifier) {
     verifier->TestMemberIsDefined(stream.ssrc);
     verifier->TestMemberIsUndefined(stream.associate_stats_id);
     verifier->TestMemberIsDefined(stream.is_remote);
     verifier->TestMemberIsDefined(stream.media_type);
-    verifier->TestMemberIsIDReference(
-        stream.track_id, RTCMediaStreamTrackStats::kType);
-    verifier->TestMemberIsIDReference(
-        stream.transport_id, RTCTransportStats::kType);
+    verifier->TestMemberIsIDReference(stream.track_id,
+                                      RTCMediaStreamTrackStats::kType);
+    verifier->TestMemberIsIDReference(stream.transport_id,
+                                      RTCTransportStats::kType);
     verifier->TestMemberIsIDReference(stream.codec_id, RTCCodecStats::kType);
     if (stream.media_type.is_defined() && *stream.media_type == "video") {
       verifier->TestMemberIsNonNegative<uint32_t>(stream.fir_count);
@@ -720,20 +711,19 @@ class RTCStatsReportVerifier {
     return verifier.ExpectAllMembersSuccessfullyTested();
   }
 
-  bool VerifyRTCTransportStats(
-      const RTCTransportStats& transport) {
+  bool VerifyRTCTransportStats(const RTCTransportStats& transport) {
     RTCStatsVerifier verifier(report_, &transport);
     verifier.TestMemberIsNonNegative<uint64_t>(transport.bytes_sent);
     verifier.TestMemberIsNonNegative<uint64_t>(transport.bytes_received);
-    verifier.TestMemberIsOptionalIDReference(
-        transport.rtcp_transport_stats_id, RTCTransportStats::kType);
+    verifier.TestMemberIsOptionalIDReference(transport.rtcp_transport_stats_id,
+                                             RTCTransportStats::kType);
     verifier.TestMemberIsDefined(transport.dtls_state);
-    verifier.TestMemberIsIDReference(
-        transport.selected_candidate_pair_id, RTCIceCandidatePairStats::kType);
-    verifier.TestMemberIsIDReference(
-        transport.local_certificate_id, RTCCertificateStats::kType);
-    verifier.TestMemberIsIDReference(
-        transport.remote_certificate_id, RTCCertificateStats::kType);
+    verifier.TestMemberIsIDReference(transport.selected_candidate_pair_id,
+                                     RTCIceCandidatePairStats::kType);
+    verifier.TestMemberIsIDReference(transport.local_certificate_id,
+                                     RTCCertificateStats::kType);
+    verifier.TestMemberIsIDReference(transport.remote_certificate_id,
+                                     RTCCertificateStats::kType);
     return verifier.ExpectAllMembersSuccessfullyTested();
   }
 

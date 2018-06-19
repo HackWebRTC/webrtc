@@ -36,7 +36,7 @@ void FakeMetricsObserver::IncrementEnumCounter(
 }
 
 void FakeMetricsObserver::AddHistogramSample(PeerConnectionMetricsName type,
-    int value) {
+                                             int value) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK_EQ(histogram_samples_[type], 0);
   histogram_samples_[type] = value;

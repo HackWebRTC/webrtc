@@ -100,9 +100,7 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     return receiver_time;
   }
 
-  void Process() override {
-    receiver_.Process();
-  }
+  void Process() override { receiver_.Process(); }
 
   int32_t RegisterSendCodec(const VideoCodec* sendCodec,
                             uint32_t numberOfCores,
@@ -125,8 +123,7 @@ class VideoCodingModuleImpl : public VideoCodingModule {
   int32_t RegisterExternalEncoder(VideoEncoder* externalEncoder,
                                   uint8_t /* payloadType */,
                                   bool internalSource) override {
-    sender_.RegisterExternalEncoder(externalEncoder,
-                                    internalSource);
+    sender_.RegisterExternalEncoder(externalEncoder, internalSource);
     return 0;
   }
 

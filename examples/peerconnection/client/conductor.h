@@ -30,11 +30,10 @@ namespace cricket {
 class VideoRenderer;
 }  // namespace cricket
 
-class Conductor
-  : public webrtc::PeerConnectionObserver,
-    public webrtc::CreateSessionDescriptionObserver,
-    public PeerConnectionClientObserver,
-    public MainWndCallback {
+class Conductor : public webrtc::PeerConnectionObserver,
+                  public webrtc::CreateSessionDescriptionObserver,
+                  public PeerConnectionClientObserver,
+                  public MainWndCallback {
  public:
   enum CallbackID {
     MEDIA_CHANNELS_INITIALIZED = 1,

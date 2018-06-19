@@ -234,11 +234,10 @@ TEST(PacketRouterTest, TimeToSendPadding) {
   EXPECT_CALL(rtp_1, TimeToSendPadding(requested_padding_bytes, _)).Times(0);
   EXPECT_CALL(rtp_2, SendingMedia()).Times(1).WillOnce(Return(false));
   EXPECT_CALL(rtp_2, TimeToSendPadding(_, _)).Times(0);
-  EXPECT_EQ(0u,
-            packet_router.TimeToSendPadding(
-                requested_padding_bytes,
-                PacedPacketInfo(PacedPacketInfo::kNotAProbe, kProbeMinBytes,
-                                kProbeMinBytes)));
+  EXPECT_EQ(0u, packet_router.TimeToSendPadding(
+                    requested_padding_bytes,
+                    PacedPacketInfo(PacedPacketInfo::kNotAProbe, kProbeMinBytes,
+                                    kProbeMinBytes)));
 
   // Only one module has BWE extensions.
   EXPECT_CALL(rtp_1, SendingMedia()).Times(1).WillOnce(Return(true));
@@ -262,11 +261,10 @@ TEST(PacketRouterTest, TimeToSendPadding) {
   EXPECT_CALL(rtp_2, SendingMedia()).Times(1).WillOnce(Return(true));
   EXPECT_CALL(rtp_2, HasBweExtensions()).Times(1).WillOnce(Return(true));
   EXPECT_CALL(rtp_2, TimeToSendPadding(requested_padding_bytes, _)).Times(1);
-  EXPECT_EQ(0u,
-            packet_router.TimeToSendPadding(
-                requested_padding_bytes,
-                PacedPacketInfo(PacedPacketInfo::kNotAProbe, kProbeMinBytes,
-                                kProbeMinBytes)));
+  EXPECT_EQ(0u, packet_router.TimeToSendPadding(
+                    requested_padding_bytes,
+                    PacedPacketInfo(PacedPacketInfo::kNotAProbe, kProbeMinBytes,
+                                    kProbeMinBytes)));
 
   packet_router.RemoveSendRtpModule(&rtp_2);
 }
@@ -360,14 +358,14 @@ TEST(PacketRouterTest, SenderOnlyFunctionsRespectSendingMedia) {
   // Verify that TimeToSendPacket does not end up in a receiver.
   EXPECT_CALL(rtp, TimeToSendPacket(_, _, _, _, _)).Times(0);
   EXPECT_TRUE(packet_router.TimeToSendPacket(
-      kSsrc, 1, 1, false, PacedPacketInfo(PacedPacketInfo::kNotAProbe,
-                                          kProbeMinBytes, kProbeMinBytes)));
+      kSsrc, 1, 1, false,
+      PacedPacketInfo(PacedPacketInfo::kNotAProbe, kProbeMinBytes,
+                      kProbeMinBytes)));
   // Verify that TimeToSendPadding does not end up in a receiver.
   EXPECT_CALL(rtp, TimeToSendPadding(_, _)).Times(0);
-  EXPECT_EQ(0u,
-            packet_router.TimeToSendPadding(
-                200, PacedPacketInfo(PacedPacketInfo::kNotAProbe,
-                                     kProbeMinBytes, kProbeMinBytes)));
+  EXPECT_EQ(0u, packet_router.TimeToSendPadding(
+                    200, PacedPacketInfo(PacedPacketInfo::kNotAProbe,
+                                         kProbeMinBytes, kProbeMinBytes)));
 
   packet_router.RemoveSendRtpModule(&rtp);
 }

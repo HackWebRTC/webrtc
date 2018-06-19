@@ -102,8 +102,7 @@ class RTCCertificateGenerationTask : public RefCountInterface,
 }  // namespace
 
 // static
-scoped_refptr<RTCCertificate>
-RTCCertificateGenerator::GenerateCertificate(
+scoped_refptr<RTCCertificate> RTCCertificateGenerator::GenerateCertificate(
     const KeyParams& key_params,
     const Optional<uint64_t>& expires_ms) {
   if (!key_params.IsValid())
@@ -122,8 +121,8 @@ RTCCertificateGenerator::GenerateCertificate(
     // |SSLIdentity::Generate| should stop relying on |time_t|.
     // See bugs.webrtc.org/5720.
     time_t cert_lifetime_s = static_cast<time_t>(expires_s);
-    identity = SSLIdentity::GenerateWithExpiration(
-        kIdentityName, key_params, cert_lifetime_s);
+    identity = SSLIdentity::GenerateWithExpiration(kIdentityName, key_params,
+                                                   cert_lifetime_s);
   }
   if (!identity)
     return nullptr;
@@ -131,10 +130,9 @@ RTCCertificateGenerator::GenerateCertificate(
   return RTCCertificate::Create(std::move(identity_sptr));
 }
 
-RTCCertificateGenerator::RTCCertificateGenerator(
-    Thread* signaling_thread, Thread* worker_thread)
-    : signaling_thread_(signaling_thread),
-      worker_thread_(worker_thread) {
+RTCCertificateGenerator::RTCCertificateGenerator(Thread* signaling_thread,
+                                                 Thread* worker_thread)
+    : signaling_thread_(signaling_thread), worker_thread_(worker_thread) {
   RTC_DCHECK(signaling_thread_);
   RTC_DCHECK(worker_thread_);
 }

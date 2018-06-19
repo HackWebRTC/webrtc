@@ -68,10 +68,9 @@ std::vector<AudioDecoder::ParseResult> LegacyEncodedAudioFrame::SplitBySamples(
         split_size_bytes * timestamps_per_ms / bytes_per_ms);
     size_t byte_offset;
     uint32_t timestamp_offset;
-    for (byte_offset = 0, timestamp_offset = 0;
-         byte_offset < payload.size();
+    for (byte_offset = 0, timestamp_offset = 0; byte_offset < payload.size();
          byte_offset += split_size_bytes,
-             timestamp_offset += timestamps_per_chunk) {
+        timestamp_offset += timestamps_per_chunk) {
       split_size_bytes =
           std::min(split_size_bytes, payload.size() - byte_offset);
       rtc::Buffer new_payload(payload.data() + byte_offset, split_size_bytes);

@@ -94,7 +94,7 @@ int main(int argc, char* argv[]) {
     for (SocketArray::iterator i = sockets.begin(); i != sockets.end(); ++i)
       FD_SET((*i)->socket(), &socket_set);
 
-    struct timeval timeout = { 10, 0 };
+    struct timeval timeout = {10, 0};
     if (select(FD_SETSIZE, &socket_set, NULL, NULL, &timeout) == SOCKET_ERROR) {
       printf("select failed\n");
       break;
@@ -111,8 +111,7 @@ int main(int argc, char* argv[]) {
               if (s->PathEquals("/sign_in")) {
                 clients.AddMember(s);
               } else {
-                printf("No member found for: %s\n",
-                    s->request_path().c_str());
+                printf("No member found for: %s\n", s->request_path().c_str());
                 s->Send("500 Error", true, "text/plain", "",
                         "Peer most likely gone.");
               }
@@ -127,7 +126,7 @@ int main(int argc, char* argv[]) {
                 s->Send("200 OK", true, "text/plain", "", "");
               } else {
                 printf("Couldn't find target for request: %s\n",
-                    s->request_path().c_str());
+                       s->request_path().c_str());
                 s->Send("500 Error", true, "text/plain", "",
                         "Peer most likely gone.");
               }

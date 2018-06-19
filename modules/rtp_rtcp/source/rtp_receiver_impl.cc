@@ -89,7 +89,6 @@ RtpReceiverImpl::RtpReceiverImpl(Clock* clock,
       current_remote_csrc_(),
       last_received_timestamp_(0),
       last_received_frame_time_ms_(-1) {
-
   memset(current_remote_csrc_, 0, sizeof(current_remote_csrc_));
 }
 
@@ -122,8 +121,7 @@ int32_t RtpReceiverImpl::RegisterReceivePayload(const VideoCodec& video_codec) {
   return rtp_payload_registry_->RegisterReceivePayload(video_codec);
 }
 
-int32_t RtpReceiverImpl::DeRegisterReceivePayload(
-    const int8_t payload_type) {
+int32_t RtpReceiverImpl::DeRegisterReceivePayload(const int8_t payload_type) {
   rtc::CritScope lock(&critical_section_rtp_receiver_);
   return rtp_payload_registry_->DeRegisterReceivePayload(payload_type);
 }
@@ -140,13 +138,12 @@ int32_t RtpReceiverImpl::CSRCs(uint32_t array_of_csrcs[kRtpCsrcSize]) const {
   assert(num_csrcs_ <= kRtpCsrcSize);
 
   if (num_csrcs_ > 0) {
-    memcpy(array_of_csrcs, current_remote_csrc_, sizeof(uint32_t)*num_csrcs_);
+    memcpy(array_of_csrcs, current_remote_csrc_, sizeof(uint32_t) * num_csrcs_);
   }
   return num_csrcs_;
 }
 
-int32_t RtpReceiverImpl::Energy(
-    uint8_t array_of_energy[kRtpCsrcSize]) const {
+int32_t RtpReceiverImpl::Energy(uint8_t array_of_energy[kRtpCsrcSize]) const {
   return rtp_media_receiver_->Energy(array_of_energy);
 }
 
@@ -157,8 +154,7 @@ bool RtpReceiverImpl::IncomingRtpPacket(const RTPHeader& rtp_header,
   // Trigger our callbacks.
   CheckSSRCChanged(rtp_header);
 
-  if (CheckPayloadChanged(rtp_header,
-                          &payload_specific) == -1) {
+  if (CheckPayloadChanged(rtp_header, &payload_specific) == -1) {
     if (payload_length == 0) {
       // OK, keep-alive packet.
       return true;
@@ -282,9 +278,8 @@ int32_t RtpReceiverImpl::CheckPayloadChanged(const RTPHeader& rtp_header,
     if (payload_type != last_received_payload_type) {
       bool should_discard_changes = false;
 
-      rtp_media_receiver_->CheckPayloadChanged(
-        payload_type, specific_payload,
-        &should_discard_changes);
+      rtp_media_receiver_->CheckPayloadChanged(payload_type, specific_payload,
+                                               &should_discard_changes);
 
       if (should_discard_changes) {
         return 0;
@@ -314,8 +309,7 @@ void RtpReceiverImpl::CheckCSRC(const WebRtcRTPHeader& rtp_header) {
     rtc::CritScope lock(&critical_section_rtp_receiver_);
 
     // Copy new.
-    memcpy(current_remote_csrc_,
-           rtp_header.header.arrOfCSRCs,
+    memcpy(current_remote_csrc_, rtp_header.header.arrOfCSRCs,
            num_csrcs * sizeof(uint32_t));
 
     num_csrcs_ = num_csrcs;

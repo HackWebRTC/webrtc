@@ -45,8 +45,8 @@ class FakeAudioSendStream final : public webrtc::AudioSendStream {
     int duration_ms = 0;
   };
 
-  explicit FakeAudioSendStream(
-      int id, const webrtc::AudioSendStream::Config& config);
+  explicit FakeAudioSendStream(int id,
+                               const webrtc::AudioSendStream::Config& config);
 
   int id() const { return id_; }
   const webrtc::AudioSendStream::Config& GetConfig() const override;
@@ -62,7 +62,9 @@ class FakeAudioSendStream final : public webrtc::AudioSendStream {
   void Stop() override { sending_ = false; }
   void SendAudioData(std::unique_ptr<webrtc::AudioFrame> audio_frame) override {
   }
-  bool SendTelephoneEvent(int payload_type, int payload_frequency, int event,
+  bool SendTelephoneEvent(int payload_type,
+                          int payload_frequency,
+                          int event,
                           int duration_ms) override;
   void SetMuted(bool muted) override;
   webrtc::AudioSendStream::Stats GetStats() const override;
@@ -80,7 +82,8 @@ class FakeAudioSendStream final : public webrtc::AudioSendStream {
 class FakeAudioReceiveStream final : public webrtc::AudioReceiveStream {
  public:
   explicit FakeAudioReceiveStream(
-      int id, const webrtc::AudioReceiveStream::Config& config);
+      int id,
+      const webrtc::AudioReceiveStream::Config& config);
 
   int id() const { return id_; }
   const webrtc::AudioReceiveStream::Config& GetConfig() const;

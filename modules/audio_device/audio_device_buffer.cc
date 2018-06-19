@@ -244,8 +244,7 @@ void AudioDeviceBuffer::NativeAudioRecordingInterrupted() {
   recording_thread_checker_.DetachFromThread();
 }
 
-void AudioDeviceBuffer::SetVQEData(int play_delay_ms,
-                                   int rec_delay_ms) {
+void AudioDeviceBuffer::SetVQEData(int play_delay_ms, int rec_delay_ms) {
   RTC_DCHECK_RUN_ON(&recording_thread_checker_);
   play_delay_ms_ = play_delay_ms;
   rec_delay_ms_ = rec_delay_ms;

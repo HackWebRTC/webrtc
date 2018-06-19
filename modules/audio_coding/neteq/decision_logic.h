@@ -97,9 +97,7 @@ class DecisionLogic {
   virtual void ExpandDecision(Operations operation);
 
   // Adds |value| to |sample_memory_|.
-  void AddSampleMemory(int32_t value) {
-    sample_memory_ += value;
-  }
+  void AddSampleMemory(int32_t value) { sample_memory_ += value; }
 
   // Accessors and mutators.
   void set_sample_memory(int32_t value) { sample_memory_ = value; }
@@ -115,11 +113,7 @@ class DecisionLogic {
   // The value 5 sets maximum time-stretch rate to about 100 ms/s.
   static const int kMinTimescaleInterval = 5;
 
-  enum CngState {
-    kCngOff,
-    kCngRfc3389On,
-    kCngInternalOn
-  };
+  enum CngState { kCngOff, kCngRfc3389On, kCngInternalOn };
 
   // Returns the operation that should be done next. |sync_buffer| and |expand|
   // are provided for reference. |decoder_frame_length| is the number of samples

@@ -1951,8 +1951,7 @@ int32_t AudioDeviceLinuxPulse::ReadRecordedData(const void* bufferData,
 int32_t AudioDeviceLinuxPulse::ProcessRecordedData(int8_t* bufferData,
                                                    uint32_t bufferSizeInSamples,
                                                    uint32_t recDelay)
-  RTC_EXCLUSIVE_LOCKS_REQUIRED(_critSect) {
-
+    RTC_EXCLUSIVE_LOCKS_REQUIRED(_critSect) {
   _ptrAudioBuffer->SetRecordedBuffer(bufferData, bufferSizeInSamples);
 
   // TODO(andrew): this is a temporary hack, to avoid non-causal far- and

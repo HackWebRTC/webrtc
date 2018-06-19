@@ -56,6 +56,8 @@ TEST(WavWriterTest, MAYBE_CPP) {
     fclose(f);
   }
   static const uint8_t kExpectedContents[] = {
+      // clang-format off
+      // clang formatting doesn't respect inline comments.
     'R', 'I', 'F', 'F',
     42, 0, 0, 0,  // size of whole file - 8: 6 + 44 - 8
     'W', 'A', 'V', 'E',
@@ -73,6 +75,7 @@ TEST(WavWriterTest, MAYBE_CPP) {
     10, 0,  // second sample: 10.0
     0xff, 0x7f,  // third sample: 4e4 (saturated)
     kMetadata[0], kMetadata[1],
+      // clang-format on
   };
   static const size_t kContentSize =
       kWavHeaderSize + kNumSamples * sizeof(int16_t) + sizeof(kMetadata);
@@ -112,6 +115,8 @@ TEST(WavWriterTest, C) {
   EXPECT_EQ(kNumSamples, rtc_WavNumSamples(w));
   rtc_WavClose(w);
   static const uint8_t kExpectedContents[] = {
+      // clang-format off
+      // clang formatting doesn't respect inline comments.
     'R', 'I', 'F', 'F',
     44, 0, 0, 0,  // size of whole file - 8: 8 + 44 - 8
     'W', 'A', 'V', 'E',
@@ -129,6 +134,7 @@ TEST(WavWriterTest, C) {
     10, 0,  // second sample: 10.0
     0xff, 0x7f,  // third sample: 4e4 (saturated)
     0, 0x80,  // fourth sample: -1e9 (saturated)
+      // clang-format on
   };
   static const size_t kContentSize =
       kWavHeaderSize + kNumSamples * sizeof(int16_t);
@@ -209,6 +215,7 @@ TEST(WavWriterTest, MAYBE_CPPFileDescriptor) {
   }
   static const uint8_t kExpectedContents[] = {
       // clang-format off
+      // clang formatting doesn't respect inline comments.
     'R', 'I', 'F', 'F',
     42, 0, 0, 0,       // size of whole file - 8: 6 + 44 - 8
     'W', 'A', 'V', 'E',

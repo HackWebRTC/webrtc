@@ -10,8 +10,8 @@
 
 #include "common_audio/real_fourier_ooura.h"
 
-#include <cmath>
 #include <algorithm>
+#include <cmath>
 
 #include "common_audio/fft4g.h"
 #include "rtc_base/checks.h"
@@ -28,8 +28,8 @@ void Conjugate(complex<float>* array, size_t complex_length) {
 }
 
 size_t ComputeWorkIpSize(size_t fft_length) {
-  return static_cast<size_t>(2 + std::ceil(std::sqrt(
-      static_cast<float>(fft_length))));
+  return static_cast<size_t>(
+      2 + std::ceil(std::sqrt(static_cast<float>(fft_length))));
 }
 
 }  // namespace
@@ -73,8 +73,8 @@ void RealFourierOoura::Inverse(const complex<float>* src, float* dest) const {
     // Restore Ooura's conjugate definition.
     Conjugate(dest_complex, dest_complex_length);
     // Restore real[n/2] to imag[0].
-    dest_complex[0] = complex<float>(dest_complex[0].real(),
-                                     src[complex_length_ - 1].real());
+    dest_complex[0] =
+        complex<float>(dest_complex[0].real(), src[complex_length_ - 1].real());
   }
 
   WebRtc_rdft(length_, -1, dest, work_ip_.get(), work_w_.get());

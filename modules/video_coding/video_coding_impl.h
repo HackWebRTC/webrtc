@@ -63,8 +63,7 @@ class VideoSender {
  public:
   typedef VideoCodingModule::SenderNackMode SenderNackMode;
 
-  VideoSender(Clock* clock,
-              EncodedImageCallback* post_encode_callback);
+  VideoSender(Clock* clock, EncodedImageCallback* post_encode_callback);
 
   ~VideoSender();
 

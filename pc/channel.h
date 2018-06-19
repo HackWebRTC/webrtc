@@ -166,8 +166,7 @@ class BaseChannel : public rtc::MessageHandler,
   void OnTransportReadyToSend(bool ready);
 
   // Only public for unit tests.  Otherwise, consider protected.
-  int SetOption(SocketType type, rtc::Socket::Option o, int val)
-      override;
+  int SetOption(SocketType type, rtc::Socket::Option o, int val) override;
   int SetOption_n(SocketType type, rtc::Socket::Option o, int val);
 
   virtual cricket::MediaType media_type() = 0;
@@ -443,9 +442,7 @@ class RtpDataChannel : public BaseChannel {
                         SendDataResult* result);
 
   // Should be called on the signaling thread only.
-  bool ready_to_send_data() const {
-    return ready_to_send_data_;
-  }
+  bool ready_to_send_data() const { return ready_to_send_data_; }
 
   sigslot::signal2<const ReceiveDataParams&, const rtc::CopyOnWriteBuffer&>
       SignalDataReceived;
@@ -466,11 +463,7 @@ class RtpDataChannel : public BaseChannel {
     SendDataMessageData(const SendDataParams& params,
                         const rtc::CopyOnWriteBuffer* payload,
                         SendDataResult* result)
-        : params(params),
-          payload(payload),
-          result(result),
-          succeeded(false) {
-    }
+        : params(params), payload(payload), result(result), succeeded(false) {}
 
     const SendDataParams& params;
     const rtc::CopyOnWriteBuffer* payload;
@@ -482,11 +475,10 @@ class RtpDataChannel : public BaseChannel {
     // We copy the data because the data will become invalid after we
     // handle DataMediaChannel::SignalDataReceived but before we fire
     // SignalDataReceived.
-    DataReceivedMessageData(
-        const ReceiveDataParams& params, const char* data, size_t len)
-        : params(params),
-          payload(data, len) {
-    }
+    DataReceivedMessageData(const ReceiveDataParams& params,
+                            const char* data,
+                            size_t len)
+        : params(params), payload(data, len) {}
     const ReceiveDataParams params;
     const rtc::CopyOnWriteBuffer payload;
   };
@@ -506,8 +498,9 @@ class RtpDataChannel : public BaseChannel {
   void UpdateMediaSendRecvState_w() override;
 
   void OnMessage(rtc::Message* pmsg) override;
-  void OnDataReceived(
-      const ReceiveDataParams& params, const char* data, size_t len);
+  void OnDataReceived(const ReceiveDataParams& params,
+                      const char* data,
+                      size_t len);
   void OnDataChannelReadyToSend(bool writable);
 
   bool ready_to_send_data_ = false;

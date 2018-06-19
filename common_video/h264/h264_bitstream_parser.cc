@@ -22,7 +22,7 @@ namespace {
 const int kMaxAbsQpDeltaValue = 51;
 const int kMinQpValue = 0;
 const int kMaxQpValue = 51;
-}
+}  // namespace
 
 namespace webrtc {
 
@@ -247,8 +247,8 @@ H264BitstreamParser::Result H264BitstreamParser::ParseNonParameterSetNalu(
       }
     }
   }
-  if (pps_->entropy_coding_mode_flag &&
-      slice_type != H264::SliceType::kI && slice_type != H264::SliceType::kSi) {
+  if (pps_->entropy_coding_mode_flag && slice_type != H264::SliceType::kI &&
+      slice_type != H264::SliceType::kSi) {
     // cabac_init_idc: ue(v)
     RETURN_INV_ON_FAIL(slice_reader.ReadExponentialGolomb(&golomb_tmp));
   }

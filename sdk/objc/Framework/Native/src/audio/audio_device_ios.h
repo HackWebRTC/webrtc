@@ -13,14 +13,14 @@
 
 #include <memory>
 
-#include "sdk/objc/Framework/Headers/WebRTC/RTCMacros.h"
-#include "modules/audio_device/audio_device_generic.h"
 #include "audio_session_observer.h"
-#include "voice_processing_audio_unit.h"
+#include "modules/audio_device/audio_device_generic.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/thread_checker.h"
+#include "sdk/objc/Framework/Headers/WebRTC/RTCMacros.h"
+#include "voice_processing_audio_unit.h"
 
 RTC_FWD_DECL_OBJC_CLASS(RTCNativeAudioSessionDelegateAdapter);
 
@@ -155,7 +155,7 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
                             AudioBufferList* io_data) override;
 
   // Handles messages from posts.
-  void OnMessage(rtc::Message *msg) override;
+  void OnMessage(rtc::Message* msg) override;
 
   bool IsInterrupted();
 

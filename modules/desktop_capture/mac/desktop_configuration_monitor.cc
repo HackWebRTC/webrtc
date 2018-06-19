@@ -43,7 +43,7 @@ DesktopConfigurationMonitor::~DesktopConfigurationMonitor() {
 
 void DesktopConfigurationMonitor::Lock() {
   if (!display_configuration_capture_event_->Wait(
-              kDisplayConfigurationEventTimeoutMs)) {
+          kDisplayConfigurationEventTimeoutMs)) {
     RTC_LOG_F(LS_ERROR) << "Event wait timed out.";
     abort();
   }
@@ -57,7 +57,7 @@ void DesktopConfigurationMonitor::Unlock() {
 void DesktopConfigurationMonitor::DisplaysReconfiguredCallback(
     CGDirectDisplayID display,
     CGDisplayChangeSummaryFlags flags,
-    void *user_parameter) {
+    void* user_parameter) {
   DesktopConfigurationMonitor* monitor =
       reinterpret_cast<DesktopConfigurationMonitor*>(user_parameter);
   monitor->DisplaysReconfigured(display, flags);

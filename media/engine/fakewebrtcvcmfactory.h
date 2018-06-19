@@ -23,7 +23,8 @@ class FakeWebRtcVcmFactory : public cricket::WebRtcVcmFactoryInterface {
  public:
   virtual rtc::scoped_refptr<webrtc::VideoCaptureModule> Create(
       const char* device_id) {
-    if (!device_info.GetDeviceById(device_id)) return NULL;
+    if (!device_info.GetDeviceById(device_id))
+      return NULL;
     rtc::scoped_refptr<FakeWebRtcVideoCaptureModule> module(
         new rtc::RefCountedObject<FakeWebRtcVideoCaptureModule>());
     modules.push_back(module);

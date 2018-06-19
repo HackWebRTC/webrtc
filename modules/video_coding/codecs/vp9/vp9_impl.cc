@@ -15,10 +15,10 @@
 #include <limits>
 #include <vector>
 
-#include "vpx/vpx_encoder.h"
-#include "vpx/vpx_decoder.h"
 #include "vpx/vp8cx.h"
 #include "vpx/vp8dx.h"
+#include "vpx/vpx_decoder.h"
+#include "vpx/vpx_encoder.h"
 
 #include "common_video/include/video_frame_buffer.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
@@ -164,9 +164,8 @@ bool VP9EncoderImpl::SetSvcRates(
         RTC_LOG(LS_ERROR) << "Scaling factors not specified!";
         return false;
       }
-      rate_ratio[i] =
-          static_cast<float>(svc_params_.scaling_factor_num[i]) /
-          svc_params_.scaling_factor_den[i];
+      rate_ratio[i] = static_cast<float>(svc_params_.scaling_factor_num[i]) /
+                      svc_params_.scaling_factor_den[i];
       total += rate_ratio[i];
     }
 
@@ -409,7 +408,7 @@ int VP9EncoderImpl::NumberOfThreads(int width,
   } else if (width * height >= 640 * 360 && number_of_cores > 2) {
     return 2;
   } else {
-    // Use 2 threads for low res on ARM.
+// Use 2 threads for low res on ARM.
 #if defined(WEBRTC_ARCH_ARM) || defined(WEBRTC_ARCH_ARM64) || \
     defined(WEBRTC_ANDROID)
     if (width * height >= 320 * 180 && number_of_cores > 2) {
@@ -531,7 +530,7 @@ int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
   vpx_codec_control(encoder_, VP9E_SET_ROW_MT, 1);
 
 #if !defined(WEBRTC_ARCH_ARM) && !defined(WEBRTC_ARCH_ARM64) && \
-  !defined(ANDROID)
+    !defined(ANDROID)
   // Do not enable the denoiser on ARM since optimization is pending.
   // Denoiser is on by default on other platforms.
   vpx_codec_control(encoder_, VP9E_SET_NOISE_SENSITIVITY,
@@ -716,11 +715,9 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
   if (vp9_info->ss_data_available) {
     vp9_info->spatial_layer_resolution_present = true;
     for (size_t i = 0; i < vp9_info->num_spatial_layers; ++i) {
-      vp9_info->width[i] = codec_.width *
-                           svc_params_.scaling_factor_num[i] /
+      vp9_info->width[i] = codec_.width * svc_params_.scaling_factor_num[i] /
                            svc_params_.scaling_factor_den[i];
-      vp9_info->height[i] = codec_.height *
-                            svc_params_.scaling_factor_num[i] /
+      vp9_info->height[i] = codec_.height * svc_params_.scaling_factor_num[i] /
                             svc_params_.scaling_factor_den[i];
     }
     if (!vp9_info->flexible_mode) {

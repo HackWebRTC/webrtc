@@ -144,18 +144,15 @@ TEST(PayloadRouterTest, SendSimulcastSetActive) {
                                       encoded_image._length, nullptr, _, _))
       .Times(1)
       .WillOnce(Return(true));
-  EXPECT_CALL(rtp_1, SendOutgoingData(_, _, _, _, _, _, _, _, _))
-      .Times(0);
+  EXPECT_CALL(rtp_1, SendOutgoingData(_, _, _, _, _, _, _, _, _)).Times(0);
   EXPECT_EQ(EncodedImageCallback::Result::OK,
             payload_router.OnEncodedImage(encoded_image, &codec_info_2, nullptr)
                 .error);
 
   // Inactive.
   payload_router.SetActive(false);
-  EXPECT_CALL(rtp_1, SendOutgoingData(_, _, _, _, _, _, _, _, _))
-      .Times(0);
-  EXPECT_CALL(rtp_2, SendOutgoingData(_, _, _, _, _, _, _, _, _))
-      .Times(0);
+  EXPECT_CALL(rtp_1, SendOutgoingData(_, _, _, _, _, _, _, _, _)).Times(0);
+  EXPECT_CALL(rtp_2, SendOutgoingData(_, _, _, _, _, _, _, _, _)).Times(0);
   EXPECT_NE(EncodedImageCallback::Result::OK,
             payload_router.OnEncodedImage(encoded_image, &codec_info_1, nullptr)
                 .error);

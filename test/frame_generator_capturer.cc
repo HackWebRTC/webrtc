@@ -13,13 +13,13 @@
 #include <utility>
 #include <vector>
 
+#include "call/video_send_stream.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/timeutils.h"
 #include "system_wrappers/include/clock.h"
-#include "call/video_send_stream.h"
 
 namespace webrtc {
 namespace test {
@@ -125,8 +125,8 @@ FrameGeneratorCapturer* FrameGeneratorCapturer::CreateSlideGenerator(
     int target_fps,
     Clock* clock) {
   std::unique_ptr<FrameGeneratorCapturer> capturer(new FrameGeneratorCapturer(
-      clock, FrameGenerator::CreateSlideGenerator(width, height,
-                                                  frame_repeat_count),
+      clock,
+      FrameGenerator::CreateSlideGenerator(width, height, frame_repeat_count),
       target_fps));
   if (!capturer->Init())
     return nullptr;
@@ -145,8 +145,7 @@ FrameGeneratorCapturer::FrameGeneratorCapturer(
       frame_generator_(std::move(frame_generator)),
       target_fps_(target_fps),
       first_frame_capture_time_(-1),
-      task_queue_("FrameGenCapQ",
-                  rtc::TaskQueue::Priority::HIGH) {
+      task_queue_("FrameGenCapQ", rtc::TaskQueue::Priority::HIGH) {
   RTC_DCHECK(frame_generator_);
   RTC_DCHECK_GT(target_fps, 0);
 }

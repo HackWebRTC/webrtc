@@ -70,8 +70,8 @@ TEST(VideoCodecTestMediaCodec, ForemanCif500kbpsVp8) {
 
 TEST(VideoCodecTestMediaCodec, ForemanCif500kbpsH264CBP) {
   auto config = CreateConfig();
-  const auto frame_checker = rtc::MakeUnique<
-      VideoCodecTestFixtureImpl::H264KeyframeChecker>();
+  const auto frame_checker =
+      rtc::MakeUnique<VideoCodecTestFixtureImpl::H264KeyframeChecker>();
   config.encoded_frame_checker = frame_checker.get();
   config.SetCodecSettings(cricket::kH264CodecName, 1, 1, 1, false, false, false,
                           352, 288);
@@ -95,8 +95,8 @@ TEST(VideoCodecTestMediaCodec, ForemanCif500kbpsH264CBP) {
 // HW encoders that support CHP.
 TEST(VideoCodecTestMediaCodec, DISABLED_ForemanCif500kbpsH264CHP) {
   auto config = CreateConfig();
-  const auto frame_checker = rtc::MakeUnique<
-      VideoCodecTestFixtureImpl::H264KeyframeChecker>();
+  const auto frame_checker =
+      rtc::MakeUnique<VideoCodecTestFixtureImpl::H264KeyframeChecker>();
 
   config.h264_codec_settings.profile = H264::kProfileConstrainedHigh;
   config.encoded_frame_checker = frame_checker.get();

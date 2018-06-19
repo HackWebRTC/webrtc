@@ -166,8 +166,8 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
       const std::vector<RtpTransceiverStatsInfo>& transceiver_stats_infos,
       RTCStatsReport* report) const;
   // Produces |RTCDataChannelStats|.
-  void ProduceDataChannelStats_s(
-      int64_t timestamp_us, RTCStatsReport* report) const;
+  void ProduceDataChannelStats_s(int64_t timestamp_us,
+                                 RTCStatsReport* report) const;
   // Produces |RTCIceCandidatePairStats| and |RTCIceCandidateStats|.
   void ProduceIceCandidateAndPairStats_n(
       int64_t timestamp_us,
@@ -182,8 +182,8 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
   void ProduceMediaStreamTrackStats_s(int64_t timestamp_us,
                                       RTCStatsReport* report) const;
   // Produces |RTCPeerConnectionStats|.
-  void ProducePeerConnectionStats_s(
-      int64_t timestamp_us, RTCStatsReport* report) const;
+  void ProducePeerConnectionStats_s(int64_t timestamp_us,
+                                    RTCStatsReport* report) const;
   // Produces |RTCInboundRTPStreamStats| and |RTCOutboundRTPStreamStats|.
   void ProduceRTPStreamStats_n(
       int64_t timestamp_us,
@@ -248,8 +248,7 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
   // Data recorded and maintained by the stats collector during its lifetime.
   // Some stats are produced from this record instead of other components.
   struct InternalRecord {
-    InternalRecord() : data_channels_opened(0),
-                       data_channels_closed(0) {}
+    InternalRecord() : data_channels_opened(0), data_channels_closed(0) {}
 
     // The opened count goes up when a channel is fully opened and the closed
     // count goes up if a previously opened channel has fully closed. The opened

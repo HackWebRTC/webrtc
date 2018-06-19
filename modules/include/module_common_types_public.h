@@ -68,9 +68,7 @@ class Unwrapper {
   }
 
   // Only update the internal state to the specified last (unwrapped) value.
-  void UpdateLast(int64_t last_value) {
-    last_value_ = last_value;
-  }
+  void UpdateLast(int64_t last_value) { last_value_ = last_value; }
 
   // Unwrap the value and update the internal state.
   int64_t Unwrap(U value) {

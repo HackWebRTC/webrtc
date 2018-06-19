@@ -54,9 +54,7 @@ class SendSideBandwidthEstimation {
   // Call when we receive a RTCP message with a ReceiveBlock.
   void UpdateRtt(int64_t rtt, int64_t now_ms);
 
-  void SetBitrates(int send_bitrate,
-                   int min_bitrate,
-                   int max_bitrate);
+  void SetBitrates(int send_bitrate, int min_bitrate, int max_bitrate);
   void SetSendBitrate(int bitrate);
   void SetMinMaxBitrate(int min_bitrate, int max_bitrate);
   int GetMinBitrate() const;

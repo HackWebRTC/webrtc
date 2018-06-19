@@ -28,8 +28,7 @@ class FakeMetricsObserver : public MetricsObserverInterface {
   void IncrementEnumCounter(PeerConnectionEnumCounterType,
                             int counter,
                             int counter_max) override;
-  void AddHistogramSample(PeerConnectionMetricsName type,
-                          int value) override;
+  void AddHistogramSample(PeerConnectionMetricsName type, int value) override;
 
   // Accessors to be used by the tests.
   int GetEnumCounter(PeerConnectionEnumCounterType type, int counter) const;

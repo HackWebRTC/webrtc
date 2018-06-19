@@ -24,16 +24,14 @@ FileRotatingLogSink::FileRotatingLogSink(const std::string& log_dir_path,
     : FileRotatingLogSink(new FileRotatingStream(log_dir_path,
                                                  log_prefix,
                                                  max_log_size,
-                                                 num_log_files)) {
-}
+                                                 num_log_files)) {}
 
 FileRotatingLogSink::FileRotatingLogSink(FileRotatingStream* stream)
     : stream_(stream) {
   RTC_DCHECK(stream);
 }
 
-FileRotatingLogSink::~FileRotatingLogSink() {
-}
+FileRotatingLogSink::~FileRotatingLogSink() {}
 
 void FileRotatingLogSink::OnLogMessage(const std::string& message) {
   if (stream_->GetState() != SS_OPEN) {
@@ -58,7 +56,6 @@ CallSessionFileRotatingLogSink::CallSessionFileRotatingLogSink(
           new CallSessionFileRotatingStream(log_dir_path, max_total_log_size)) {
 }
 
-CallSessionFileRotatingLogSink::~CallSessionFileRotatingLogSink() {
-}
+CallSessionFileRotatingLogSink::~CallSessionFileRotatingLogSink() {}
 
 }  // namespace rtc

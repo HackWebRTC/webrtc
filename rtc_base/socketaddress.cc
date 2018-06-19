@@ -12,9 +12,9 @@
 #include "rtc_base/numerics/safe_conversions.h"
 
 #if defined(WEBRTC_POSIX)
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <netinet/in.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #if defined(OPENBSD)
 #include <netinet/in_systm.h>
 #endif
@@ -204,8 +204,8 @@ bool SocketAddress::IsAnyIP() const {
 }
 
 bool SocketAddress::IsLoopbackIP() const {
-  return IPIsLoopback(ip_) || (IPIsAny(ip_) &&
-                               0 == strcmp(hostname_.c_str(), "localhost"));
+  return IPIsLoopback(ip_) ||
+         (IPIsAny(ip_) && 0 == strcmp(hostname_.c_str(), "localhost"));
 }
 
 bool SocketAddress::IsPrivateIP() const {
@@ -234,7 +234,7 @@ bool SocketAddress::operator<(const SocketAddress& addr) const {
 
 bool SocketAddress::EqualIPs(const SocketAddress& addr) const {
   return (ip_ == addr.ip_) &&
-      ((!IPIsAny(ip_) && !IPIsUnspec(ip_)) || (hostname_ == addr.hostname_));
+         ((!IPIsAny(ip_) && !IPIsUnspec(ip_)) || (hostname_ == addr.hostname_));
 }
 
 bool SocketAddress::EqualPorts(const SocketAddress& addr) const {
@@ -293,7 +293,7 @@ static size_t ToSockAddrStorageHelper(sockaddr_storage* addr,
   return 0;
 }
 
-size_t SocketAddress::ToDualStackSockAddrStorage(sockaddr_storage *addr) const {
+size_t SocketAddress::ToDualStackSockAddrStorage(sockaddr_storage* addr) const {
   return ToSockAddrStorageHelper(addr, ip_.AsIPv6Address(), port_, scope_id_);
 }
 

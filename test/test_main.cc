@@ -21,10 +21,12 @@
 #if defined(WEBRTC_IOS)
 #include "test/ios/test_support.h"
 
-DEFINE_string(NSTreatUnknownArgumentsAsOpen, "",
-    "Intentionally ignored flag intended for iOS simulator.");
-DEFINE_string(ApplePersistenceIgnoreState, "",
-    "Intentionally ignored flag intended for iOS simulator.");
+DEFINE_string(NSTreatUnknownArgumentsAsOpen,
+              "",
+              "Intentionally ignored flag intended for iOS simulator.");
+DEFINE_string(ApplePersistenceIgnoreState,
+              "",
+              "Intentionally ignored flag intended for iOS simulator.");
 DEFINE_bool(
     save_chartjson_result,
     false,
@@ -35,10 +37,9 @@ DEFINE_bool(
 
 #else
 
-DEFINE_string(
-    isolated_script_test_output,
-    "",
-    "Intentionally ignored flag intended for Chromium.");
+DEFINE_string(isolated_script_test_output,
+              "",
+              "Intentionally ignored flag intended for Chromium.");
 
 DEFINE_string(
     isolated_script_test_perf_output,
@@ -52,7 +53,9 @@ DEFINE_string(
 
 DEFINE_bool(logs, false, "print logs to stderr");
 
-DEFINE_string(force_fieldtrials, "",
+DEFINE_string(
+    force_fieldtrials,
+    "",
     "Field trials control experimental feature code which can be forced. "
     "E.g. running with --force_fieldtrials=WebRTC-FooFeature/Enable/"
     " will assign the group Enable to field trial WebRTC-FooFeature.");
@@ -81,7 +84,6 @@ int main(int argc, char* argv[]) {
   // the application.
   webrtc::field_trial::InitFieldTrialsFromString(FLAG_force_fieldtrials);
   webrtc::metrics::Enable();
-
 
   rtc::LogMessage::SetLogToStderr(FLAG_logs);
 

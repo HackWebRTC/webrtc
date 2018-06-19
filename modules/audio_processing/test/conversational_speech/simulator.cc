@@ -38,28 +38,27 @@ using conversational_speech::WavReaderInterface;
 // Combines output path and speaker names to define the output file paths for
 // the near-end and far=end audio tracks.
 std::unique_ptr<std::map<std::string, SpeakerOutputFilePaths>>
-    InitSpeakerOutputFilePaths(const std::set<std::string>& speaker_names,
-                               const std::string& output_path) {
+InitSpeakerOutputFilePaths(const std::set<std::string>& speaker_names,
+                           const std::string& output_path) {
   // Create map.
-  auto speaker_output_file_paths_map = rtc::MakeUnique<
-      std::map<std::string, SpeakerOutputFilePaths>>();
+  auto speaker_output_file_paths_map =
+      rtc::MakeUnique<std::map<std::string, SpeakerOutputFilePaths>>();
 
   // Add near-end and far-end output paths into the map.
   for (const auto& speaker_name : speaker_names) {
-    const rtc::Pathname near_end_path(
-        output_path, "s_" + speaker_name + "-near_end.wav");
+    const rtc::Pathname near_end_path(output_path,
+                                      "s_" + speaker_name + "-near_end.wav");
     RTC_LOG(LS_VERBOSE) << "The near-end audio track will be created in "
                         << near_end_path.pathname() << ".";
 
-    const rtc::Pathname far_end_path(
-        output_path, "s_" + speaker_name + "-far_end.wav");
+    const rtc::Pathname far_end_path(output_path,
+                                     "s_" + speaker_name + "-far_end.wav");
     RTC_LOG(LS_VERBOSE) << "The far-end audio track will be created in "
                         << far_end_path.pathname() << ".";
 
     // Add to map.
     speaker_output_file_paths_map->emplace(
-        std::piecewise_construct,
-        std::forward_as_tuple(speaker_name),
+        std::piecewise_construct, std::forward_as_tuple(speaker_name),
         std::forward_as_tuple(near_end_path.pathname(),
                               far_end_path.pathname()));
   }
@@ -71,16 +70,13 @@ std::unique_ptr<std::map<std::string, SpeakerOutputFilePaths>>
 // output track of a speaker.
 class SpeakerWavWriters {
  public:
-  SpeakerWavWriters(
-      const SpeakerOutputFilePaths& output_file_paths, int sample_rate)
-          : near_end_wav_writer_(output_file_paths.near_end, sample_rate, 1u),
-            far_end_wav_writer_(output_file_paths.far_end, sample_rate, 1u) {}
-  WavWriter* near_end_wav_writer() {
-    return &near_end_wav_writer_;
-  }
-  WavWriter* far_end_wav_writer() {
-    return &far_end_wav_writer_;
-  }
+  SpeakerWavWriters(const SpeakerOutputFilePaths& output_file_paths,
+                    int sample_rate)
+      : near_end_wav_writer_(output_file_paths.near_end, sample_rate, 1u),
+        far_end_wav_writer_(output_file_paths.far_end, sample_rate, 1u) {}
+  WavWriter* near_end_wav_writer() { return &near_end_wav_writer_; }
+  WavWriter* far_end_wav_writer() { return &far_end_wav_writer_; }
+
  private:
   WavWriter near_end_wav_writer_;
   WavWriter far_end_wav_writer_;
@@ -89,18 +85,18 @@ class SpeakerWavWriters {
 // Initializes one WavWriter instance for each speaker and both the near-end and
 // far-end output tracks.
 std::unique_ptr<std::map<std::string, SpeakerWavWriters>>
-    InitSpeakersWavWriters(const std::map<std::string, SpeakerOutputFilePaths>&
-                           speaker_output_file_paths, int sample_rate) {
+InitSpeakersWavWriters(const std::map<std::string, SpeakerOutputFilePaths>&
+                           speaker_output_file_paths,
+                       int sample_rate) {
   // Create map.
-  auto speaker_wav_writers_map = rtc::MakeUnique<
-      std::map<std::string, SpeakerWavWriters>>();
+  auto speaker_wav_writers_map =
+      rtc::MakeUnique<std::map<std::string, SpeakerWavWriters>>();
 
   // Add SpeakerWavWriters instance into the map.
   for (auto it = speaker_output_file_paths.begin();
-      it != speaker_output_file_paths.end(); ++it) {
+       it != speaker_output_file_paths.end(); ++it) {
     speaker_wav_writers_map->emplace(
-        std::piecewise_construct,
-        std::forward_as_tuple(it->first),
+        std::piecewise_construct, std::forward_as_tuple(it->first),
         std::forward_as_tuple(it->second, sample_rate));
   }
 
@@ -112,17 +108,16 @@ std::unique_ptr<std::map<std::string, std::vector<int16_t>>> PreloadAudioTracks(
     const std::map<std::string, std::unique_ptr<WavReaderInterface>>&
         audiotrack_readers) {
   // Create map.
-  auto audiotracks_map = rtc::MakeUnique<
-      std::map<std::string, std::vector<int16_t>>>();
+  auto audiotracks_map =
+      rtc::MakeUnique<std::map<std::string, std::vector<int16_t>>>();
 
   // Add audio track vectors.
   for (auto it = audiotrack_readers.begin(); it != audiotrack_readers.end();
-      ++it) {
+       ++it) {
     // Add map entry.
-    audiotracks_map->emplace(
-        std::piecewise_construct,
-        std::forward_as_tuple(it->first),
-        std::forward_as_tuple(it->second->NumSamples()));
+    audiotracks_map->emplace(std::piecewise_construct,
+                             std::forward_as_tuple(it->first),
+                             std::forward_as_tuple(it->second->NumSamples()));
 
     // Read samples.
     it->second->ReadInt16Samples(audiotracks_map->at(it->first));
@@ -136,7 +131,8 @@ std::unique_ptr<std::map<std::string, std::vector<int16_t>>> PreloadAudioTracks(
 // adds zeros as left padding. The padding corresponds to intervals during which
 // a speaker is not active.
 void PadLeftWriteChunk(rtc::ArrayView<const int16_t> source_samples,
-                       size_t interval_begin, WavWriter* wav_writer) {
+                       size_t interval_begin,
+                       WavWriter* wav_writer) {
   // Add left padding.
   RTC_CHECK(wav_writer);
   RTC_CHECK_GE(interval_begin, wav_writer->num_samples());
@@ -179,11 +175,12 @@ void ScaleSignal(rtc::ArrayView<const int16_t> source_samples,
 namespace conversational_speech {
 
 std::unique_ptr<std::map<std::string, SpeakerOutputFilePaths>> Simulate(
-    const MultiEndCall& multiend_call, const std::string& output_path) {
+    const MultiEndCall& multiend_call,
+    const std::string& output_path) {
   // Set output file paths and initialize wav writers.
   const auto& speaker_names = multiend_call.speaker_names();
-  auto speaker_output_file_paths = InitSpeakerOutputFilePaths(
-      speaker_names, output_path);
+  auto speaker_output_file_paths =
+      InitSpeakerOutputFilePaths(speaker_names, output_path);
   auto speakers_wav_writers = InitSpeakersWavWriters(
       *speaker_output_file_paths, multiend_call.sample_rate());
 

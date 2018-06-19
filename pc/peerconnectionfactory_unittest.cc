@@ -45,14 +45,12 @@ static const char kStunIceServer[] = "stun:stun.l.google.com:19302";
 static const char kTurnIceServer[] = "turn:test%40hello.com@test.com:1234";
 static const char kTurnIceServerWithTransport[] =
     "turn:test@hello.com?transport=tcp";
-static const char kSecureTurnIceServer[] =
-    "turns:test@hello.com?transport=tcp";
+static const char kSecureTurnIceServer[] = "turns:test@hello.com?transport=tcp";
 static const char kSecureTurnIceServerWithoutTransportParam[] =
     "turns:test_no_transport@hello.com:443";
 static const char kSecureTurnIceServerWithoutTransportAndPortParam[] =
     "turns:test_no_transport@hello.com";
-static const char kTurnIceServerWithNoUsernameInUri[] =
-    "turn:test.com:1234";
+static const char kTurnIceServerWithNoUsernameInUri[] = "turn:test.com:1234";
 static const char kTurnPassword[] = "turnpassword";
 static const int kDefaultStunPort = 3478;
 static const int kDefaultStunTlsPort = 5349;
@@ -80,8 +78,8 @@ class NullPeerConnectionObserver : public PeerConnectionObserver {
       PeerConnectionInterface::IceConnectionState new_state) override {}
   void OnIceGatheringChange(
       PeerConnectionInterface::IceGatheringState new_state) override {}
-  void OnIceCandidate(
-      const webrtc::IceCandidateInterface* candidate) override {}
+  void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override {
+  }
 };
 
 }  // namespace

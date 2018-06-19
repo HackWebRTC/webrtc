@@ -21,17 +21,16 @@
 
 namespace cricket {
 FakeAudioSendStream::FakeAudioSendStream(
-    int id, const webrtc::AudioSendStream::Config& config)
-    : id_(id), config_(config) {
-}
+    int id,
+    const webrtc::AudioSendStream::Config& config)
+    : id_(id), config_(config) {}
 
 void FakeAudioSendStream::Reconfigure(
     const webrtc::AudioSendStream::Config& config) {
   config_ = config;
 }
 
-const webrtc::AudioSendStream::Config&
-    FakeAudioSendStream::GetConfig() const {
+const webrtc::AudioSendStream::Config& FakeAudioSendStream::GetConfig() const {
   return config_;
 }
 
@@ -41,12 +40,13 @@ void FakeAudioSendStream::SetStats(
 }
 
 FakeAudioSendStream::TelephoneEvent
-    FakeAudioSendStream::GetLatestTelephoneEvent() const {
+FakeAudioSendStream::GetLatestTelephoneEvent() const {
   return latest_telephone_event_;
 }
 
 bool FakeAudioSendStream::SendTelephoneEvent(int payload_type,
-                                             int payload_frequency, int event,
+                                             int payload_frequency,
+                                             int event,
                                              int duration_ms) {
   latest_telephone_event_.payload_type = payload_type;
   latest_telephone_event_.payload_frequency = payload_frequency;
@@ -69,12 +69,12 @@ webrtc::AudioSendStream::Stats FakeAudioSendStream::GetStats(
 }
 
 FakeAudioReceiveStream::FakeAudioReceiveStream(
-    int id, const webrtc::AudioReceiveStream::Config& config)
-    : id_(id), config_(config) {
-}
+    int id,
+    const webrtc::AudioReceiveStream::Config& config)
+    : id_(id), config_(config) {}
 
-const webrtc::AudioReceiveStream::Config&
-    FakeAudioReceiveStream::GetConfig() const {
+const webrtc::AudioReceiveStream::Config& FakeAudioReceiveStream::GetConfig()
+    const {
   return config_;
 }
 
@@ -189,8 +189,7 @@ int64_t FakeVideoSendStream::GetLastTimestamp() const {
 
 void FakeVideoSendStream::OnFrame(const webrtc::VideoFrame& frame) {
   ++num_swapped_frames_;
-  if (!last_frame_ ||
-      frame.width() != last_frame_->width() ||
+  if (!last_frame_ || frame.width() != last_frame_->width() ||
       frame.height() != last_frame_->height() ||
       frame.rotation() != last_frame_->rotation()) {
     video_streams_ = encoder_config_.video_stream_factory->CreateEncoderStreams(
@@ -224,8 +223,8 @@ void FakeVideoSendStream::ReconfigureVideoEncoder(
   } else {
     width = height = 0;
   }
-  video_streams_ = config.video_stream_factory->CreateEncoderStreams(
-      width, height, config);
+  video_streams_ =
+      config.video_stream_factory->CreateEncoderStreams(width, height, config);
   if (config.encoder_specific_settings != NULL) {
     const unsigned char num_temporal_layers = static_cast<unsigned char>(
         video_streams_.back().num_temporal_layers.value_or(1));
@@ -457,16 +456,15 @@ webrtc::NetworkState FakeCall::GetNetworkState(webrtc::MediaType media) const {
 
 webrtc::AudioSendStream* FakeCall::CreateAudioSendStream(
     const webrtc::AudioSendStream::Config& config) {
-  FakeAudioSendStream* fake_stream = new FakeAudioSendStream(next_stream_id_++,
-                                                             config);
+  FakeAudioSendStream* fake_stream =
+      new FakeAudioSendStream(next_stream_id_++, config);
   audio_send_streams_.push_back(fake_stream);
   ++num_created_send_streams_;
   return fake_stream;
 }
 
 void FakeCall::DestroyAudioSendStream(webrtc::AudioSendStream* send_stream) {
-  auto it = std::find(audio_send_streams_.begin(),
-                      audio_send_streams_.end(),
+  auto it = std::find(audio_send_streams_.begin(), audio_send_streams_.end(),
                       static_cast<FakeAudioSendStream*>(send_stream));
   if (it == audio_send_streams_.end()) {
     ADD_FAILURE() << "DestroyAudioSendStream called with unknown parameter.";
@@ -478,17 +476,17 @@ void FakeCall::DestroyAudioSendStream(webrtc::AudioSendStream* send_stream) {
 
 webrtc::AudioReceiveStream* FakeCall::CreateAudioReceiveStream(
     const webrtc::AudioReceiveStream::Config& config) {
-  audio_receive_streams_.push_back(new FakeAudioReceiveStream(next_stream_id_++,
-                                                              config));
+  audio_receive_streams_.push_back(
+      new FakeAudioReceiveStream(next_stream_id_++, config));
   ++num_created_receive_streams_;
   return audio_receive_streams_.back();
 }
 
 void FakeCall::DestroyAudioReceiveStream(
     webrtc::AudioReceiveStream* receive_stream) {
-  auto it = std::find(audio_receive_streams_.begin(),
-                      audio_receive_streams_.end(),
-                      static_cast<FakeAudioReceiveStream*>(receive_stream));
+  auto it =
+      std::find(audio_receive_streams_.begin(), audio_receive_streams_.end(),
+                static_cast<FakeAudioReceiveStream*>(receive_stream));
   if (it == audio_receive_streams_.end()) {
     ADD_FAILURE() << "DestroyAudioReceiveStream called with unknown parameter.";
   } else {
@@ -508,8 +506,7 @@ webrtc::VideoSendStream* FakeCall::CreateVideoSendStream(
 }
 
 void FakeCall::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {
-  auto it = std::find(video_send_streams_.begin(),
-                      video_send_streams_.end(),
+  auto it = std::find(video_send_streams_.begin(), video_send_streams_.end(),
                       static_cast<FakeVideoSendStream*>(send_stream));
   if (it == video_send_streams_.end()) {
     ADD_FAILURE() << "DestroyVideoSendStream called with unknown parameter.";
@@ -529,9 +526,9 @@ webrtc::VideoReceiveStream* FakeCall::CreateVideoReceiveStream(
 
 void FakeCall::DestroyVideoReceiveStream(
     webrtc::VideoReceiveStream* receive_stream) {
-  auto it = std::find(video_receive_streams_.begin(),
-                      video_receive_streams_.end(),
-                      static_cast<FakeVideoReceiveStream*>(receive_stream));
+  auto it =
+      std::find(video_receive_streams_.begin(), video_receive_streams_.end(),
+                static_cast<FakeVideoReceiveStream*>(receive_stream));
   if (it == video_receive_streams_.end()) {
     ADD_FAILURE() << "DestroyVideoReceiveStream called with unknown parameter.";
   } else {

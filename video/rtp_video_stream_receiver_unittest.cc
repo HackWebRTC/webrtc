@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "test/gtest.h"
 #include "test/gmock.h"
+#include "test/gtest.h"
 
 #include "common_video/h264/h264_common.h"
 #include "media/base/mediaconstants.h"
@@ -129,8 +129,8 @@ class RtpVideoStreamReceiverTest : public testing::Test {
     rtp_video_stream_receiver_ = rtc::MakeUnique<RtpVideoStreamReceiver>(
         &mock_transport_, nullptr, &packet_router_, &config_,
         rtp_receive_statistics_.get(), nullptr, process_thread_.get(),
-        &mock_nack_sender_,
-        &mock_key_frame_request_sender_, &mock_on_complete_frame_callback_);
+        &mock_nack_sender_, &mock_key_frame_request_sender_,
+        &mock_on_complete_frame_callback_);
   }
 
   WebRtcRTPHeader GetDefaultPacket() {
@@ -219,13 +219,14 @@ TEST_F(RtpVideoStreamReceiverTest, NoInfiniteRecursionOnEncapsulatedRedPacket) {
   VideoCodec codec;
   codec.plType = kRedPayloadType;
   rtp_video_stream_receiver_->AddReceiveCodec(codec, {});
-  const std::vector<uint8_t> data({0x80,                // RTP version.
-                                   kRedPayloadType,     // Payload type.
-                                   0, 0, 0, 0, 0, 0,    // Don't care.
-                                   0, 0, 0x4, 0x57,     // SSRC
-                                   kRedPayloadType,     // RED header.
-                                   0, 0, 0, 0, 0        // Don't care.
-                                 });
+  const std::vector<uint8_t> data({
+      0x80,              // RTP version.
+      kRedPayloadType,   // Payload type.
+      0, 0, 0, 0, 0, 0,  // Don't care.
+      0, 0, 0x4, 0x57,   // SSRC
+      kRedPayloadType,   // RED header.
+      0, 0, 0, 0, 0      // Don't care.
+  });
   RtpPacketReceived packet;
   EXPECT_TRUE(packet.Parse(data.data(), data.size()));
   rtp_video_stream_receiver_->StartReceive();

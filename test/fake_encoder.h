@@ -11,8 +11,8 @@
 #ifndef TEST_FAKE_ENCODER_H_
 #define TEST_FAKE_ENCODER_H_
 
-#include <vector>
 #include <memory>
+#include <vector>
 
 #include "api/video_codecs/video_encoder.h"
 #include "common_types.h"  // NOLINT(build/include)

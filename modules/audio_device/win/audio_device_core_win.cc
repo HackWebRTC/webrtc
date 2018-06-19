@@ -28,9 +28,9 @@
 #include <assert.h>
 #include <string.h>
 
-#include <functiondiscoverykeys_devpkey.h>
 #include <comdef.h>
 #include <dmo.h>
+#include <functiondiscoverykeys_devpkey.h>
 #include <mmsystem.h>
 #include <strsafe.h>
 #include <uuids.h>
@@ -1959,8 +1959,7 @@ int32_t AudioDeviceWindowsCore::InitPlayout() {
     RTC_LOG(LS_VERBOSE) << "cbSize             : " << Wfx.cbSize;
     RTC_LOG(LS_VERBOSE) << "Additional settings:";
     RTC_LOG(LS_VERBOSE) << "_playAudioFrameSize: " << _playAudioFrameSize;
-    RTC_LOG(LS_VERBOSE) << "_playBlockSize     : "
-                        << _playBlockSize;
+    RTC_LOG(LS_VERBOSE) << "_playBlockSize     : " << _playBlockSize;
     RTC_LOG(LS_VERBOSE) << "_playChannels      : " << _playChannels;
   }
 

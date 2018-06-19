@@ -20,19 +20,17 @@
 namespace rtc {
 
 template <typename Base>
-class LogSinkImpl
-    : public LogSink,
-      public Base {
+class LogSinkImpl : public LogSink, public Base {
  public:
   LogSinkImpl() {}
 
-  template<typename P>
+  template <typename P>
   explicit LogSinkImpl(P* p) : Base(p) {}
 
  private:
   void OnLogMessage(const std::string& message) override {
-    static_cast<Base*>(this)->WriteAll(
-        message.data(), message.size(), nullptr, nullptr);
+    static_cast<Base*>(this)->WriteAll(message.data(), message.size(), nullptr,
+                                       nullptr);
   }
 };
 
@@ -192,7 +190,6 @@ TEST(LogTest, MultipleThreads) {
 
   EXPECT_EQ(sev, LogMessage::GetLogToStream(nullptr));
 }
-
 
 TEST(LogTest, WallClockStartTime) {
   uint32_t time = LogMessage::WallClockStartTime();

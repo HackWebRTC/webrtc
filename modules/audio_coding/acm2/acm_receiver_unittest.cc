@@ -30,12 +30,11 @@ namespace acm2 {
 namespace {
 
 bool CodecsEqual(const CodecInst& codec_a, const CodecInst& codec_b) {
-    if (strcmp(codec_a.plname, codec_b.plname) != 0 ||
-        codec_a.plfreq != codec_b.plfreq ||
-        codec_a.pltype != codec_b.pltype ||
-        codec_b.channels != codec_a.channels)
-      return false;
-    return true;
+  if (strcmp(codec_a.plname, codec_b.plname) != 0 ||
+      codec_a.plfreq != codec_b.plfreq || codec_a.pltype != codec_b.pltype ||
+      codec_b.channels != codec_a.channels)
+    return false;
+  return true;
 }
 
 struct CodecIdInst {
@@ -115,7 +114,7 @@ class AcmReceiverTestOldApi : public AudioPacketizationCallback,
   }
 
   template <size_t N>
-  void AddSetOfCodecs(const RentACodec::CodecId(&ids)[N]) {
+  void AddSetOfCodecs(const RentACodec::CodecId (&ids)[N]) {
     for (auto id : ids) {
       const auto i = RentACodec::CodecIndexFromId(id);
       ASSERT_TRUE(i);
@@ -186,13 +185,13 @@ TEST_F(AcmReceiverTestOldApi, MAYBE_AddCodecGetCodec) {
     CodecInst my_codec;
     if (n & 0x1) {
       // Codecs with odd index should match the reference.
-      EXPECT_EQ(0, receiver_->DecoderByPayloadType(codecs_[n].pltype,
-                                                   &my_codec));
+      EXPECT_EQ(0,
+                receiver_->DecoderByPayloadType(codecs_[n].pltype, &my_codec));
       EXPECT_TRUE(CodecsEqual(codecs_[n], my_codec));
     } else {
       // Codecs with even index are not registered.
-      EXPECT_EQ(-1, receiver_->DecoderByPayloadType(codecs_[n].pltype,
-                                                    &my_codec));
+      EXPECT_EQ(-1,
+                receiver_->DecoderByPayloadType(codecs_[n].pltype, &my_codec));
     }
   }
 }
@@ -326,7 +325,8 @@ class AcmReceiverTestFaxModeOldApi : public AcmReceiverTestOldApi {
     // Expect the first output timestamp to be 5*fs/8000 samples before the
     // first inserted timestamp (because of NetEq's look-ahead). (This value is
     // defined in Expand::overlap_length_.)
-    uint32_t expected_output_ts = last_packet_send_timestamp_ -
+    uint32_t expected_output_ts =
+        last_packet_send_timestamp_ -
         rtc::CheckedDivExact(5 * output_sample_rate_hz, 8000);
 
     AudioFrame frame;

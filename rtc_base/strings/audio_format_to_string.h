@@ -16,9 +16,9 @@
 #include "api/audio_codecs/audio_format.h"
 
 namespace rtc {
-  std::string ToString(const webrtc::SdpAudioFormat& saf);
-  std::string ToString(const webrtc::AudioCodecInfo& saf);
-  std::string ToString(const webrtc::AudioCodecSpec& acs);
+std::string ToString(const webrtc::SdpAudioFormat& saf);
+std::string ToString(const webrtc::AudioCodecInfo& saf);
+std::string ToString(const webrtc::AudioCodecSpec& acs);
 }  // namespace rtc
 
 #endif  // RTC_BASE_STRINGS_AUDIO_FORMAT_TO_STRING_H_

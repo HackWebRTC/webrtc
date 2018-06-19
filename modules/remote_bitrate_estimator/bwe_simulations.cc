@@ -551,4 +551,3 @@ TEST_P(BweSimulation, GoogCcComparisonChoke) {
 }  // namespace bwe
 }  // namespace testing
 }  // namespace webrtc
-

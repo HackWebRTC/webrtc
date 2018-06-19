@@ -39,7 +39,7 @@ int ExpandProcess120ms(AudioMultiVector* output) {
   return 0;
 }
 
-} // namespace
+}  // namespace
 
 TEST(Normal, CreateAndDestroy) {
   MockDecoderDatabase db;
@@ -84,10 +84,7 @@ TEST(Normal, AvoidDivideByZero) {
   // and using this as a denominator would lead to problems.
   int input_size_samples = 63;
   EXPECT_EQ(input_size_samples,
-            normal.Process(input,
-                           input_size_samples,
-                           kModeExpand,
-                           &output));
+            normal.Process(input, input_size_samples, kModeExpand, &output));
 
   EXPECT_CALL(db, Die());      // Called when |db| goes out of scope.
   EXPECT_CALL(expand, Die());  // Called when |expand| goes out of scope.
@@ -139,10 +136,7 @@ TEST(Normal, LastModeExpand120msPacket) {
   EXPECT_CALL(expand, Process(_)).WillOnce(Invoke(ExpandProcess120ms));
   EXPECT_CALL(expand, Reset());
   EXPECT_EQ(static_cast<int>(kPacketsizeBytes),
-            normal.Process(input,
-                           kPacketsizeBytes,
-                           kModeExpand,
-                           &output));
+            normal.Process(input, kPacketsizeBytes, kModeExpand, &output));
 
   EXPECT_EQ(kPacketsizeBytes, output.Size());
 

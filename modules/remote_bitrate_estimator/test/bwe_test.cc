@@ -34,8 +34,7 @@ namespace testing {
 namespace bwe {
 
 PacketProcessorRunner::PacketProcessorRunner(PacketProcessor* processor)
-    : processor_(processor) {
-}
+    : processor_(processor) {}
 
 PacketProcessorRunner::~PacketProcessorRunner() {
   for (Packet* packet : queue_)
@@ -97,8 +96,7 @@ void PacketProcessorRunner::QueuePackets(Packets* batch,
 }
 
 // Plot link capacity by default.
-BweTest::BweTest() : BweTest(true) {
-}
+BweTest::BweTest() : BweTest(true) {}
 
 BweTest::BweTest(bool plot_capacity)
     : run_time_ms_(0),
@@ -117,9 +115,8 @@ BweTest::~BweTest() {
 void BweTest::SetUp() {
   const ::testing::TestInfo* const test_info =
       ::testing::UnitTest::GetInstance()->current_test_info();
-  std::string test_name =
-      std::string(test_info->test_case_name()) + "_" +
-      std::string(test_info->name());
+  std::string test_name = std::string(test_info->test_case_name()) + "_" +
+                          std::string(test_info->name());
   BWE_TEST_LOGGING_GLOBAL_CONTEXT(test_name);
   BWE_TEST_LOGGING_GLOBAL_ENABLE(false);
 }
@@ -769,8 +766,8 @@ void BweTest::RunLongTcpFairness(BandwidthEstimatorType bwe_type) {
   // max_delay_ms = 1000;
 
   std::string title("5.6_Long_TCP_Fairness");
-  std::string flow_name = std::string() +
-      bwe_names[bwe_type] + 'x' + bwe_names[kTcpEstimator];
+  std::string flow_name =
+      std::string() + bwe_names[bwe_type] + 'x' + bwe_names[kTcpEstimator];
 
   RunFairnessTest(bwe_type, kNumRmcatFlows, kNumTcpFlows, kRunTimeS,
                   kCapacityKbps, max_delay_ms, rtt_ms, kMaxJitterMs, kOffSetsMs,

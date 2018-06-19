@@ -20,7 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
 @class RTCEAGLVideoView;
 
 RTC_EXPORT
-@protocol RTCEAGLVideoViewDelegate<RTCVideoViewDelegate>
+@protocol RTCEAGLVideoViewDelegate <RTCVideoViewDelegate>
 @end
 
 /**

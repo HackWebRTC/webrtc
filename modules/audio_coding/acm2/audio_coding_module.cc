@@ -323,9 +323,10 @@ int DownMix(const AudioFrame& frame,
   if (!frame.muted()) {
     const int16_t* frame_data = frame.data();
     for (size_t n = 0; n < frame.samples_per_channel_; ++n) {
-      out_buff[n] = static_cast<int16_t>(
-          (static_cast<int32_t>(frame_data[2 * n]) +
-           static_cast<int32_t>(frame_data[2 * n + 1])) >> 1);
+      out_buff[n] =
+          static_cast<int16_t>((static_cast<int32_t>(frame_data[2 * n]) +
+                                static_cast<int32_t>(frame_data[2 * n + 1])) >>
+                               1);
     }
   } else {
     std::fill(out_buff, out_buff + frame.samples_per_channel_, 0);
@@ -472,7 +473,7 @@ int32_t AudioCodingModuleImpl::Encode(const InputData& input_data) {
   if (!HaveValidEncoder("Process"))
     return -1;
 
-  if(!first_frame_) {
+  if (!first_frame_) {
     RTC_DCHECK(IsNewerTimestamp(input_data.input_timestamp, last_timestamp_))
         << "Time should not move backwards";
   }
@@ -493,9 +494,10 @@ int32_t AudioCodingModuleImpl::Encode(const InputData& input_data) {
   // Clear the buffer before reuse - encoded data will get appended.
   encode_buffer_.Clear();
   encoded_info = encoder_stack_->Encode(
-      rtp_timestamp, rtc::ArrayView<const int16_t>(
-                         input_data.audio, input_data.audio_channel *
-                                               input_data.length_per_channel),
+      rtp_timestamp,
+      rtc::ArrayView<const int16_t>(
+          input_data.audio,
+          input_data.audio_channel * input_data.length_per_channel),
       &encode_buffer_);
 
   bitrate_logger_.MaybeLog(encoder_stack_->GetTargetBitrate() / 1000);
@@ -767,7 +769,6 @@ int AudioCodingModuleImpl::PreprocessToAddData(const AudioFrame& in_frame,
     expected_in_ts_ = in_frame.timestamp_;
   }
 
-
   if (!down_mix && !resample) {
     // No pre-processing is required.
     if (expected_in_ts_ == expected_codec_ts_) {
@@ -793,8 +794,8 @@ int AudioCodingModuleImpl::PreprocessToAddData(const AudioFrame& in_frame,
   if (down_mix) {
     // If a resampling is required the output of a down-mix is written into a
     // local buffer, otherwise, it will be written to the output frame.
-    int16_t* dest_ptr_audio = resample ?
-        audio : preprocess_frame_.mutable_data();
+    int16_t* dest_ptr_audio =
+        resample ? audio : preprocess_frame_.mutable_data();
     if (DownMix(in_frame, WEBRTC_10MS_PCM_AUDIO, dest_ptr_audio) < 0)
       return -1;
     preprocess_frame_.num_channels_ = 1;
@@ -912,7 +913,8 @@ int AudioCodingModuleImpl::SetVAD(bool enable_dtx,
 }
 
 // Get VAD/DTX settings.
-int AudioCodingModuleImpl::VAD(bool* dtx_enabled, bool* vad_enabled,
+int AudioCodingModuleImpl::VAD(bool* dtx_enabled,
+                               bool* vad_enabled,
                                ACMVADMode* mode) const {
   rtc::CritScope lock(&acm_crit_sect_);
   const auto* sp = encoder_factory_->codec_manager.GetStackParams();
@@ -1229,7 +1231,7 @@ int AudioCodingModuleImpl::LeastRequiredDelayMs() const {
 }
 
 void AudioCodingModuleImpl::GetDecodingCallStatistics(
-      AudioDecodingCallStats* call_stats) const {
+    AudioDecodingCallStats* call_stats) const {
   receiver_.GetDecodingCallStatistics(call_stats);
 }
 

@@ -21,7 +21,7 @@ namespace {
 
 // Produces "[a,b,c]". Works for non-vector |RTCStatsMemberInterface::Type|
 // types.
-template<typename T>
+template <typename T>
 std::string VectorToString(const std::vector<T>& vector) {
   if (vector.empty())
     return "[]";
@@ -36,7 +36,7 @@ std::string VectorToString(const std::vector<T>& vector) {
 
 // Produces "[\"a\",\"b\",\"c\"]". Works for vectors of both const char* and
 // std::string element types.
-template<typename T>
+template <typename T>
 std::string VectorOfStringsToString(const std::vector<T>& strings) {
   if (strings.empty())
     return "[]";
@@ -118,8 +118,7 @@ std::vector<const RTCStatsMemberInterface*> RTCStats::Members() const {
 }
 
 std::vector<const RTCStatsMemberInterface*>
-RTCStats::MembersOfThisObjectAndAncestors(
-    size_t additional_capacity) const {
+RTCStats::MembersOfThisObjectAndAncestors(size_t additional_capacity) const {
   std::vector<const RTCStatsMemberInterface*> members;
   members.reserve(additional_capacity);
   return members;
@@ -184,12 +183,7 @@ WEBRTC_DEFINE_RTCSTATSMEMBER(double,
                              false,
                              rtc::ToString(value_),
                              ToStringAsDouble(value_));
-WEBRTC_DEFINE_RTCSTATSMEMBER(std::string,
-                             kString,
-                             false,
-                             true,
-                             value_,
-                             value_);
+WEBRTC_DEFINE_RTCSTATSMEMBER(std::string, kString, false, true, value_, value_);
 WEBRTC_DEFINE_RTCSTATSMEMBER(std::vector<bool>,
                              kSequenceBool,
                              true,

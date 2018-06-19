@@ -231,8 +231,8 @@ int32_t AcmReceiver::AddCodec(int acm_codec_id,
   if (!audio_decoder) {
     ret_val = neteq_->RegisterPayloadType(neteq_decoder, name, payload_type);
   } else {
-    ret_val = neteq_->RegisterExternalDecoder(
-        audio_decoder, neteq_decoder, name, payload_type);
+    ret_val = neteq_->RegisterExternalDecoder(audio_decoder, neteq_decoder,
+                                              name, payload_type);
   }
   if (ret_val != NetEq::kOK) {
     RTC_LOG(LERROR) << "AcmReceiver::AddCodec " << acm_codec_id
@@ -402,10 +402,9 @@ uint32_t AcmReceiver::NowInTimestamp(int decoder_sampling_rate) const {
   // the least significant bits. (32-6) bits cover 2^(32-6) = 67108864 ms.
   // We masked 6 most significant bits of 32-bit so there is no overflow in
   // the conversion from milliseconds to timestamp.
-  const uint32_t now_in_ms = static_cast<uint32_t>(
-      clock_->TimeInMilliseconds() & 0x03ffffff);
-  return static_cast<uint32_t>(
-      (decoder_sampling_rate / 1000) * now_in_ms);
+  const uint32_t now_in_ms =
+      static_cast<uint32_t>(clock_->TimeInMilliseconds() & 0x03ffffff);
+  return static_cast<uint32_t>((decoder_sampling_rate / 1000) * now_in_ms);
 }
 
 void AcmReceiver::GetDecodingCallStatistics(

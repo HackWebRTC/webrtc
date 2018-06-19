@@ -15,7 +15,6 @@
 #include <string>
 #include <vector>
 
-
 #include "pc/audiotrack.h"
 #include "rtc_base/fakeclock.h"
 #include "rtc_base/gunit.h"
@@ -46,12 +45,8 @@ class FakeDtmfObserver : public DtmfSenderObserverInterface {
   }
 
   // getters
-  const std::vector<std::string>& tones() const {
-    return tones_;
-  }
-  bool completed() const {
-    return completed_;
-  }
+  const std::vector<std::string>& tones() const { return tones_; }
+  bool completed() const { return completed_; }
 
  private:
   std::vector<std::string> tones_;
@@ -62,9 +57,7 @@ class FakeDtmfProvider : public DtmfProviderInterface {
  public:
   struct DtmfInfo {
     DtmfInfo(int code, int duration, int gap)
-      : code(code),
-        duration(duration),
-        gap(gap) {}
+        : code(code), duration(duration), gap(gap) {}
     int code;
     int duration;
     int gap;
@@ -72,9 +65,7 @@ class FakeDtmfProvider : public DtmfProviderInterface {
 
   FakeDtmfProvider() : last_insert_dtmf_call_(0) {}
 
-  ~FakeDtmfProvider() {
-    SignalDestroyed();
-  }
+  ~FakeDtmfProvider() { SignalDestroyed(); }
 
   // Implements DtmfProviderInterface.
   bool CanInsertDtmf() override { return can_insert_; }
@@ -118,8 +109,7 @@ class DtmfSenderTest : public testing::Test {
         observer_(new rtc::RefCountedObject<FakeDtmfObserver>()),
         provider_(new FakeDtmfProvider()) {
     provider_->SetCanInsertDtmf(true);
-    dtmf_ = DtmfSender::Create(track_, rtc::Thread::Current(),
-                               provider_.get());
+    dtmf_ = DtmfSender::Create(track_, rtc::Thread::Current(), provider_.get());
     dtmf_->RegisterObserver(observer_.get());
   }
 
@@ -131,7 +121,8 @@ class DtmfSenderTest : public testing::Test {
 
   // Constructs a list of DtmfInfo from |tones|, |duration| and
   // |inter_tone_gap|.
-  void GetDtmfInfoFromString(const std::string& tones, int duration,
+  void GetDtmfInfoFromString(const std::string& tones,
+                             int duration,
                              int inter_tone_gap,
                              std::vector<FakeDtmfProvider::DtmfInfo>* dtmfs) {
     // Init extra_delay as -inter_tone_gap - duration to ensure the first
@@ -146,16 +137,17 @@ class DtmfSenderTest : public testing::Test {
       if (tone == ',') {
         extra_delay = 2000;  // 2 seconds
       } else {
-        dtmfs->push_back(FakeDtmfProvider::DtmfInfo(code, duration,
-                         duration + inter_tone_gap + extra_delay));
+        dtmfs->push_back(FakeDtmfProvider::DtmfInfo(
+            code, duration, duration + inter_tone_gap + extra_delay));
         extra_delay = 0;
       }
     }
   }
 
   void VerifyExpectedState(AudioTrackInterface* track,
-                          const std::string& tones,
-                          int duration, int inter_tone_gap) {
+                           const std::string& tones,
+                           int duration,
+                           int inter_tone_gap) {
     EXPECT_EQ(track, dtmf_->track());
     EXPECT_EQ(tones, dtmf_->tones());
     EXPECT_EQ(duration, dtmf_->duration());
@@ -163,7 +155,8 @@ class DtmfSenderTest : public testing::Test {
   }
 
   // Verify the provider got all the expected calls.
-  void VerifyOnProvider(const std::string& tones, int duration,
+  void VerifyOnProvider(const std::string& tones,
+                        int duration,
                         int inter_tone_gap) {
     std::vector<FakeDtmfProvider::DtmfInfo> dtmf_queue_ref;
     GetDtmfInfoFromString(tones, duration, inter_tone_gap, &dtmf_queue_ref);

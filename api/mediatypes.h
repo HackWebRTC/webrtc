@@ -15,11 +15,7 @@
 
 namespace cricket {
 
-enum MediaType {
-  MEDIA_TYPE_AUDIO,
-  MEDIA_TYPE_VIDEO,
-  MEDIA_TYPE_DATA
-};
+enum MediaType { MEDIA_TYPE_AUDIO, MEDIA_TYPE_VIDEO, MEDIA_TYPE_DATA };
 
 std::string MediaTypeToString(MediaType type);
 // Aborts on invalid string. Only expected to be used on strings that are

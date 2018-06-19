@@ -25,12 +25,11 @@
  * find the smoothed output data
  *---------------------------------------------------------------*/
 
-void WebRtcIlbcfix_Smooth(
-    int16_t *odata,   /* (o) smoothed output */
-    int16_t *current,  /* (i) the un enhanced residual for
-                                this block */
-    int16_t *surround  /* (i) The approximation from the
-                                surrounding sequences */
+void WebRtcIlbcfix_Smooth(int16_t* odata,   /* (o) smoothed output */
+                          int16_t* current, /* (i) the un enhanced residual for
+                                                     this block */
+                          int16_t* surround /* (i) The approximation from the
+                                                     surrounding sequences */
                           );
 
 #endif

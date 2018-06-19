@@ -43,23 +43,23 @@ TEST_F(HexEncodeTest, TestWithNoDelimiter) {
 
 // Test that we can convert to/from hex with a colon delimiter.
 TEST_F(HexEncodeTest, TestWithDelimiter) {
-  enc_res_ = hex_encode_with_delimiter(encoded_, sizeof(encoded_),
-                                       data_, sizeof(data_), ':');
+  enc_res_ = hex_encode_with_delimiter(encoded_, sizeof(encoded_), data_,
+                                       sizeof(data_), ':');
   ASSERT_EQ(sizeof(data_) * 3 - 1, enc_res_);
   ASSERT_STREQ("80:81:82:83:84:85:86:87:88:89", encoded_);
-  dec_res_ = hex_decode_with_delimiter(decoded_, sizeof(decoded_),
-                                       encoded_, enc_res_, ':');
+  dec_res_ = hex_decode_with_delimiter(decoded_, sizeof(decoded_), encoded_,
+                                       enc_res_, ':');
   ASSERT_EQ(sizeof(data_), dec_res_);
   ASSERT_EQ(0, memcmp(data_, decoded_, dec_res_));
 }
 
 // Test that encoding with one delimiter and decoding with another fails.
 TEST_F(HexEncodeTest, TestWithWrongDelimiter) {
-  enc_res_ = hex_encode_with_delimiter(encoded_, sizeof(encoded_),
-                                       data_, sizeof(data_), ':');
+  enc_res_ = hex_encode_with_delimiter(encoded_, sizeof(encoded_), data_,
+                                       sizeof(data_), ':');
   ASSERT_EQ(sizeof(data_) * 3 - 1, enc_res_);
-  dec_res_ = hex_decode_with_delimiter(decoded_, sizeof(decoded_),
-                                       encoded_, enc_res_, '/');
+  dec_res_ = hex_decode_with_delimiter(decoded_, sizeof(decoded_), encoded_,
+                                       enc_res_, '/');
   ASSERT_EQ(0U, dec_res_);
 }
 
@@ -67,15 +67,15 @@ TEST_F(HexEncodeTest, TestWithWrongDelimiter) {
 TEST_F(HexEncodeTest, TestExpectedDelimiter) {
   enc_res_ = hex_encode(encoded_, sizeof(encoded_), data_, sizeof(data_));
   ASSERT_EQ(sizeof(data_) * 2, enc_res_);
-  dec_res_ = hex_decode_with_delimiter(decoded_, sizeof(decoded_),
-                                       encoded_, enc_res_, ':');
+  dec_res_ = hex_decode_with_delimiter(decoded_, sizeof(decoded_), encoded_,
+                                       enc_res_, ':');
   ASSERT_EQ(0U, dec_res_);
 }
 
 // Test that encoding with a delimiter and decoding without one fails.
 TEST_F(HexEncodeTest, TestExpectedNoDelimiter) {
-  enc_res_ = hex_encode_with_delimiter(encoded_, sizeof(encoded_),
-                                       data_, sizeof(data_), ':');
+  enc_res_ = hex_encode_with_delimiter(encoded_, sizeof(encoded_), data_,
+                                       sizeof(data_), ':');
   ASSERT_EQ(sizeof(data_) * 3 - 1, enc_res_);
   dec_res_ = hex_decode(decoded_, sizeof(decoded_), encoded_, enc_res_);
   ASSERT_EQ(0U, dec_res_);
@@ -93,8 +93,8 @@ TEST_F(HexEncodeTest, TestZeroLengthNoDelimiter) {
 TEST_F(HexEncodeTest, TestZeroLengthWithDelimiter) {
   enc_res_ = hex_encode_with_delimiter(encoded_, sizeof(encoded_), "", 0, ':');
   ASSERT_EQ(0U, enc_res_);
-  dec_res_ = hex_decode_with_delimiter(decoded_, sizeof(decoded_),
-                                       encoded_, enc_res_, ':');
+  dec_res_ = hex_decode_with_delimiter(decoded_, sizeof(decoded_), encoded_,
+                                       enc_res_, ':');
   ASSERT_EQ(0U, dec_res_);
 }
 
@@ -118,15 +118,15 @@ TEST_F(HexEncodeTest, TestHelpersWithDelimiter) {
 
 // Test that encoding into a too-small output buffer (without delimiter) fails.
 TEST_F(HexEncodeTest, TestEncodeTooShort) {
-  enc_res_ = hex_encode_with_delimiter(encoded_, sizeof(data_) * 2,
-                                       data_, sizeof(data_), 0);
+  enc_res_ = hex_encode_with_delimiter(encoded_, sizeof(data_) * 2, data_,
+                                       sizeof(data_), 0);
   ASSERT_EQ(0U, enc_res_);
 }
 
 // Test that encoding into a too-small output buffer (with delimiter) fails.
 TEST_F(HexEncodeTest, TestEncodeWithDelimiterTooShort) {
-  enc_res_ = hex_encode_with_delimiter(encoded_, sizeof(data_) * 3 - 1,
-                                       data_, sizeof(data_), ':');
+  enc_res_ = hex_encode_with_delimiter(encoded_, sizeof(data_) * 3 - 1, data_,
+                                       sizeof(data_), ':');
   ASSERT_EQ(0U, enc_res_);
 }
 

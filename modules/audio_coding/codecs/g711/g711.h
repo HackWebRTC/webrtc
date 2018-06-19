@@ -17,7 +17,8 @@
  * Modifications for WebRtc, 2011/04/28, by tlegrand:
  * -Changed to use WebRtc types
  * -Changed __inline__ to __inline
- * -Two changes to make implementation bitexact with ITU-T reference implementation
+ * -Two changes to make implementation bitexact with ITU-T reference
+ * implementation
  */
 
 /*! \page g711_page A-law and mu-law handling
@@ -58,10 +59,11 @@ extern "C" {
 static __inline__ int top_bit(unsigned int bits) {
   int res;
 
-  __asm__ __volatile__(" movl $-1,%%edx;\n"
-                       " bsrl %%eax,%%edx;\n"
-                       : "=d" (res)
-                       : "a" (bits));
+  __asm__ __volatile__(
+      " movl $-1,%%edx;\n"
+      " bsrl %%eax,%%edx;\n"
+      : "=d"(res)
+      : "a"(bits));
   return res;
 }
 
@@ -71,30 +73,33 @@ static __inline__ int top_bit(unsigned int bits) {
 static __inline__ int bottom_bit(unsigned int bits) {
   int res;
 
-  __asm__ __volatile__(" movl $-1,%%edx;\n"
-                       " bsfl %%eax,%%edx;\n"
-                       : "=d" (res)
-                       : "a" (bits));
+  __asm__ __volatile__(
+      " movl $-1,%%edx;\n"
+      " bsfl %%eax,%%edx;\n"
+      : "=d"(res)
+      : "a"(bits));
   return res;
 }
 #elif defined(__x86_64__)
 static __inline__ int top_bit(unsigned int bits) {
   int res;
 
-  __asm__ __volatile__(" movq $-1,%%rdx;\n"
-                       " bsrq %%rax,%%rdx;\n"
-                       : "=d" (res)
-                       : "a" (bits));
+  __asm__ __volatile__(
+      " movq $-1,%%rdx;\n"
+      " bsrq %%rax,%%rdx;\n"
+      : "=d"(res)
+      : "a"(bits));
   return res;
 }
 
 static __inline__ int bottom_bit(unsigned int bits) {
   int res;
 
-  __asm__ __volatile__(" movq $-1,%%rdx;\n"
-                       " bsfq %%rax,%%rdx;\n"
-                       : "=d" (res)
-                       : "a" (bits));
+  __asm__ __volatile__(
+      " movq $-1,%%rdx;\n"
+      " bsfq %%rax,%%rdx;\n"
+      : "=d"(res)
+      : "a"(bits));
   return res;
 }
 #else
@@ -166,8 +171,8 @@ static __inline int bottom_bit(unsigned int bits) {
  *      linear sound like peanuts these days, and shouldn't an array lookup be
  *      real fast? No! When the cache sloshes as badly as this one will, a tight
  *      calculation may be better. The messiest part is normally finding the
- *      segment, but a little inline assembly can fix that on an i386, x86_64 and
- *      many other modern processors.
+ *      segment, but a little inline assembly can fix that on an i386, x86_64
+ * and many other modern processors.
  */
 
 /*
@@ -196,8 +201,9 @@ static __inline int bottom_bit(unsigned int bits) {
  * John Wiley & Sons, pps 98-111 and 472-476.
  */
 
-//#define ULAW_ZEROTRAP                 /* turn on the trap as per the MIL-STD */
-#define ULAW_BIAS 0x84  /* Bias for linear code. */
+//#define ULAW_ZEROTRAP                 /* turn on the trap as per the MIL-STD
+//*/
+#define ULAW_BIAS 0x84 /* Bias for linear code. */
 
 /*! \brief Encode a linear sample to u-law
     \param linear The sample to encode.
@@ -249,7 +255,7 @@ static __inline int16_t ulaw_to_linear(uint8_t ulaw) {
    * Extract and bias the quantization bits. Then
    * shift up by the segment number and subtract out the bias.
    */
-  t = (((ulaw & 0x0F) << 3) + ULAW_BIAS) << (((int) ulaw & 0x70) >> 4);
+  t = (((ulaw & 0x0F) << 3) + ULAW_BIAS) << (((int)ulaw & 0x70) >> 4);
   return (int16_t)((ulaw & 0x80) ? (ULAW_BIAS - t) : (t - ULAW_BIAS));
 }
 
@@ -317,7 +323,7 @@ static __inline int16_t alaw_to_linear(uint8_t alaw) {
 
   alaw ^= ALAW_AMI_MASK;
   i = ((alaw & 0x0F) << 4);
-  seg = (((int) alaw & 0x70) >> 4);
+  seg = (((int)alaw & 0x70) >> 4);
   if (seg)
     i = (i + 0x108) << (seg - 1);
   else

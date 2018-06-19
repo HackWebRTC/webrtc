@@ -30,8 +30,8 @@ bool PayloadIsCompatible(const RtpUtility::Payload& payload,
 bool PayloadIsCompatible(const RtpUtility::Payload& payload,
                          const VideoCodec& video_codec) {
   if (!payload.typeSpecific.is_video() ||
-      _stricmp(payload.name,
-               CodecTypeToPayloadString(video_codec.codecType)) != 0)
+      _stricmp(payload.name, CodecTypeToPayloadString(video_codec.codecType)) !=
+          0)
     return false;
   // For H264, profiles must match as well.
   if (video_codec.codecType == kVideoCodecH264) {
@@ -72,15 +72,15 @@ bool IsPayloadTypeValid(int8_t payload_type) {
   // Sanity check.
   switch (payload_type) {
     // Reserved payload types to avoid RTCP conflicts when marker bit is set.
-    case 64:        //  192 Full INTRA-frame request.
-    case 72:        //  200 Sender report.
-    case 73:        //  201 Receiver report.
-    case 74:        //  202 Source description.
-    case 75:        //  203 Goodbye.
-    case 76:        //  204 Application-defined.
-    case 77:        //  205 Transport layer FB message.
-    case 78:        //  206 Payload-specific FB message.
-    case 79:        //  207 Extended report.
+    case 64:  //  192 Full INTRA-frame request.
+    case 72:  //  200 Sender report.
+    case 73:  //  201 Receiver report.
+    case 74:  //  202 Source description.
+    case 75:  //  203 Goodbye.
+    case 76:  //  204 Application-defined.
+    case 77:  //  205 Transport layer FB message.
+    case 78:  //  206 Payload-specific FB message.
+    case 79:  //  207 Extended report.
       RTC_LOG(LS_ERROR) << "Can't register invalid receiver payload type: "
                         << payload_type;
       return false;
@@ -91,8 +91,7 @@ bool IsPayloadTypeValid(int8_t payload_type) {
 
 }  // namespace
 
-RTPPayloadRegistry::RTPPayloadRegistry()
-    : last_received_payload_type_(-1) {}
+RTPPayloadRegistry::RTPPayloadRegistry() : last_received_payload_type_(-1) {}
 
 RTPPayloadRegistry::~RTPPayloadRegistry() = default;
 
@@ -215,8 +214,7 @@ void RTPPayloadRegistry::DeregisterAudioCodecOrRedTypeRegardlessOfPayloadType(
   }
 }
 
-int RTPPayloadRegistry::GetPayloadTypeFrequency(
-    uint8_t payload_type) const {
+int RTPPayloadRegistry::GetPayloadTypeFrequency(uint8_t payload_type) const {
   const auto payload = PayloadTypeToPayload(payload_type);
   if (!payload) {
     return -1;

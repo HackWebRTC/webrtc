@@ -27,8 +27,7 @@ namespace internal {
 
 AudioState::AudioState(const AudioState::Config& config)
     : config_(config),
-      audio_transport_(config_.audio_mixer,
-                       config_.audio_processing.get()) {
+      audio_transport_(config_.audio_mixer, config_.audio_processing.get()) {
   process_thread_checker_.DetachFromThread();
   RTC_DCHECK(config_.audio_mixer);
   RTC_DCHECK(config_.audio_device_module);
@@ -50,7 +49,7 @@ void AudioState::AddReceivingStream(webrtc::AudioReceiveStream* stream) {
   RTC_DCHECK_EQ(0, receiving_streams_.count(stream));
   receiving_streams_.insert(stream);
   if (!config_.audio_mixer->AddSource(
-      static_cast<internal::AudioReceiveStream*>(stream))) {
+          static_cast<internal::AudioReceiveStream*>(stream))) {
     RTC_DLOG(LS_ERROR) << "Failed to add source to mixer.";
   }
 
@@ -79,7 +78,8 @@ void AudioState::RemoveReceivingStream(webrtc::AudioReceiveStream* stream) {
 }
 
 void AudioState::AddSendingStream(webrtc::AudioSendStream* stream,
-                                  int sample_rate_hz, size_t num_channels) {
+                                  int sample_rate_hz,
+                                  size_t num_channels) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   auto& properties = sending_streams_[stream];
   properties.sample_rate_hz = sample_rate_hz;
@@ -121,8 +121,7 @@ void AudioState::SetPlayout(bool enabled) {
       }
     } else {
       config_.audio_device_module->StopPlayout();
-      null_audio_poller_ =
-          rtc::MakeUnique<NullAudioPoller>(&audio_transport_);
+      null_audio_poller_ = rtc::MakeUnique<NullAudioPoller>(&audio_transport_);
     }
   }
 }

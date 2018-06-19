@@ -116,13 +116,13 @@
 namespace rtc {
 class SSLIdentity;
 class Thread;
-}
+}  // namespace rtc
 
 namespace cricket {
 class MediaEngineInterface;
 class WebRtcVideoDecoderFactory;
 class WebRtcVideoEncoderFactory;
-}
+}  // namespace cricket
 
 namespace webrtc {
 class AudioDeviceModule;
@@ -139,10 +139,8 @@ class StreamCollectionInterface : public rtc::RefCountInterface {
   virtual size_t count() = 0;
   virtual MediaStreamInterface* at(size_t index) = 0;
   virtual MediaStreamInterface* find(const std::string& label) = 0;
-  virtual MediaStreamTrackInterface* FindAudioTrack(
-      const std::string& id) = 0;
-  virtual MediaStreamTrackInterface* FindVideoTrack(
-      const std::string& id) = 0;
+  virtual MediaStreamTrackInterface* FindAudioTrack(const std::string& id) = 0;
+  virtual MediaStreamTrackInterface* FindVideoTrack(const std::string& id) = 0;
 
  protected:
   // Dtor protected as objects shouldn't be deleted via this interface.
@@ -262,10 +260,7 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     kCandidateNetworkPolicyLowCost
   };
 
-  enum ContinualGatheringPolicy {
-    GATHER_ONCE,
-    GATHER_CONTINUALLY
-  };
+  enum ContinualGatheringPolicy { GATHER_ONCE, GATHER_CONTINUALLY };
 
   enum class RTCConfigurationType {
     // A configuration that is safer to use, despite not having the best
@@ -634,14 +629,12 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   // Accessor methods to active local streams.
   // This method is not supported with kUnifiedPlan semantics. Please use
   // GetSenders() instead.
-  virtual rtc::scoped_refptr<StreamCollectionInterface>
-      local_streams() = 0;
+  virtual rtc::scoped_refptr<StreamCollectionInterface> local_streams() = 0;
 
   // Accessor methods to remote streams.
   // This method is not supported with kUnifiedPlan semantics. Please use
   // GetReceivers() instead.
-  virtual rtc::scoped_refptr<StreamCollectionInterface>
-      remote_streams() = 0;
+  virtual rtc::scoped_refptr<StreamCollectionInterface> remote_streams() = 0;
 
   // Add a new MediaStream to be sent on this PeerConnection.
   // Note that a SessionDescription negotiation is needed before the
@@ -1374,9 +1367,9 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
       VideoTrackSourceInterface* source) = 0;
 
   // Creates an new AudioTrack. At the moment |source| can be null.
-  virtual rtc::scoped_refptr<AudioTrackInterface>
-      CreateAudioTrack(const std::string& label,
-                       AudioSourceInterface* source) = 0;
+  virtual rtc::scoped_refptr<AudioTrackInterface> CreateAudioTrack(
+      const std::string& label,
+      AudioSourceInterface* source) = 0;
 
   // Starts AEC dump using existing file. Takes ownership of |file| and passes
   // it on to VoiceEngine (via other objects) immediately, which will take
@@ -1394,7 +1387,7 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
   // Dtor and ctor protected as objects shouldn't be created or deleted via
   // this interface.
   PeerConnectionFactoryInterface() {}
-  ~PeerConnectionFactoryInterface() {} // NOLINT
+  ~PeerConnectionFactoryInterface() {}  // NOLINT
 };
 
 // Create a new instance of PeerConnectionFactoryInterface.

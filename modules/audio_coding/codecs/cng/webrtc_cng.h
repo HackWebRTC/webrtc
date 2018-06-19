@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-
 #ifndef MODULES_AUDIO_CODING_CODECS_CNG_WEBRTC_CNG_H_
 #define MODULES_AUDIO_CODING_CODECS_CNG_WEBRTC_CNG_H_
 
@@ -54,8 +53,8 @@ class ComfortNoiseDecoder {
   int16_t dec_filtstate_[WEBRTC_CNG_MAX_LPC_ORDER + 1];
   int16_t dec_filtstateLow_[WEBRTC_CNG_MAX_LPC_ORDER + 1];
   uint16_t dec_order_;
-  int16_t dec_target_scale_factor_;  /* Q29 */
-  int16_t dec_used_scale_factor_;  /* Q29 */
+  int16_t dec_target_scale_factor_; /* Q29 */
+  int16_t dec_used_scale_factor_;   /* Q29 */
 };
 
 class ComfortNoiseEncoder {

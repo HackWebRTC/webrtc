@@ -37,8 +37,8 @@ std::unique_ptr<VideoCodecTestFixture> CreateTestFixtureWithConfig(
     VideoCodecTestFixture::Config config) {
   auto decoder_factory = CreateObjCDecoderFactory();
   auto encoder_factory = CreateObjCEncoderFactory();
-  return CreateVideoCodecTestFixture(
-      config, std::move(decoder_factory), std::move(encoder_factory));
+  return CreateVideoCodecTestFixture(config, std::move(decoder_factory),
+                                     std::move(encoder_factory));
 }
 }  // namespace
 
@@ -53,8 +53,8 @@ std::unique_ptr<VideoCodecTestFixture> CreateTestFixtureWithConfig(
 // TODO(kthelgason): Use RC Thresholds when the internal bitrateAdjuster is no
 // longer in use.
 MAYBE_TEST(VideoCodecTestVideoToolbox, ForemanCif500kbpsH264CBP) {
-  const auto frame_checker = rtc::MakeUnique<
-      VideoCodecTestFixtureImpl::H264KeyframeChecker>();
+  const auto frame_checker =
+      rtc::MakeUnique<VideoCodecTestFixtureImpl::H264KeyframeChecker>();
   auto config = CreateConfig();
   config.SetCodecSettings(cricket::kH264CodecName, 1, 1, 1, false, false, false,
                           352, 288);
@@ -69,8 +69,8 @@ MAYBE_TEST(VideoCodecTestVideoToolbox, ForemanCif500kbpsH264CBP) {
 }
 
 MAYBE_TEST(VideoCodecTestVideoToolbox, ForemanCif500kbpsH264CHP) {
-  const auto frame_checker = rtc::MakeUnique<
-      VideoCodecTestFixtureImpl::H264KeyframeChecker>();
+  const auto frame_checker =
+      rtc::MakeUnique<VideoCodecTestFixtureImpl::H264KeyframeChecker>();
   auto config = CreateConfig();
   config.h264_codec_settings.profile = H264::kProfileConstrainedHigh;
   config.SetCodecSettings(cricket::kH264CodecName, 1, 1, 1, false, false, false,

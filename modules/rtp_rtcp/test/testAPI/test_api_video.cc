@@ -27,7 +27,6 @@
 namespace {
 
 const unsigned char kPayloadType = 100;
-
 };
 
 namespace webrtc {
@@ -75,13 +74,13 @@ class RtpRtcpVideoTest : public ::testing::Test {
     payload_data_length_ = sizeof(video_frame_);
 
     for (size_t n = 0; n < payload_data_length_; n++) {
-      video_frame_[n] = n%10;
+      video_frame_[n] = n % 10;
     }
   }
 
   size_t BuildRTPheader(uint8_t* dataBuffer,
-                         uint32_t timestamp,
-                         uint32_t sequence_number) {
+                        uint32_t timestamp,
+                        uint32_t sequence_number) {
     dataBuffer[0] = static_cast<uint8_t>(0x80);  // version 2
     dataBuffer[1] = static_cast<uint8_t>(kPayloadType);
     ByteWriter<uint16_t>::WriteBigEndian(dataBuffer + 2, sequence_number);
@@ -105,8 +104,7 @@ class RtpRtcpVideoTest : public ::testing::Test {
     // Correct seq num, timestamp and payload type.
     size_t header_length = BuildRTPheader(buffer, timestamp, sequence_number);
     buffer[0] |= 0x20;  // Set padding bit.
-    int32_t* data =
-        reinterpret_cast<int32_t*>(&(buffer[header_length]));
+    int32_t* data = reinterpret_cast<int32_t*>(&(buffer[header_length]));
 
     // Fill data buffer with random data.
     for (size_t j = 0; j < (padding_bytes_in_packet >> 2); j++) {
@@ -134,7 +132,7 @@ class RtpRtcpVideoTest : public ::testing::Test {
   uint32_t test_ssrc_;
   uint32_t test_timestamp_;
   uint16_t test_sequence_number_;
-  uint8_t  video_frame_[65000];
+  uint8_t video_frame_[65000];
   size_t payload_data_length_;
   SimulatedClock fake_clock;
   RateLimiter retransmission_rate_limiter_;
@@ -158,8 +156,8 @@ TEST_F(RtpRtcpVideoTest, PaddingOnlyFrames) {
   EXPECT_EQ(0, rtp_payload_registry_.RegisterReceivePayload(codec));
   for (int frame_idx = 0; frame_idx < 10; ++frame_idx) {
     for (int packet_idx = 0; packet_idx < 5; ++packet_idx) {
-      size_t packet_size = PaddingPacket(padding_packet, timestamp, seq_num,
-                                         kPadSize);
+      size_t packet_size =
+          PaddingPacket(padding_packet, timestamp, seq_num, kPadSize);
       ++seq_num;
       RTPHeader header;
       std::unique_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());

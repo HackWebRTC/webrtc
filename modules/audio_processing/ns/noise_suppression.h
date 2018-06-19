@@ -93,9 +93,9 @@ void WebRtcNs_Analyze(NsHandle* NS_inst, const float* spframe);
  *      - outframe      : Pointer to output frame for each band
  */
 void WebRtcNs_Process(NsHandle* NS_inst,
-                     const float* const* spframe,
-                     size_t num_bands,
-                     float* const* outframe);
+                      const float* const* spframe,
+                      size_t num_bands,
+                      float* const* outframe);
 
 /* Returns the internally used prior speech probability of the current frame.
  * There is a frequency bin based one as well, with which this should not be

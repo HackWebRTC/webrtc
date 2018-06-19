@@ -82,7 +82,6 @@ class RenderBuffer {
     return headroom;
   }
 
-
   // Returns a reference to the spectrum buffer.
   const VectorBuffer& GetSpectrumBuffer() const { return *spectrum_buffer_; }
 

@@ -10,8 +10,8 @@
 
 #include "modules/audio_processing/aec3/aec3_common.h"
 
-#include "typedefs.h"  // NOLINT(build/include)
 #include "system_wrappers/include/cpu_features_wrapper.h"
+#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

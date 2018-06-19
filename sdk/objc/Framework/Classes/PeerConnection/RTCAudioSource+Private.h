@@ -22,11 +22,11 @@
 
 /** Initialize an RTCAudioSource from a native AudioSourceInterface. */
 - (instancetype)initWithNativeAudioSource:
-    (rtc::scoped_refptr<webrtc::AudioSourceInterface>)nativeAudioSource
+        (rtc::scoped_refptr<webrtc::AudioSourceInterface>)nativeAudioSource
     NS_DESIGNATED_INITIALIZER;
 
 - (instancetype)initWithNativeMediaSource:
-    (rtc::scoped_refptr<webrtc::MediaSourceInterface>)nativeMediaSource
+                    (rtc::scoped_refptr<webrtc::MediaSourceInterface>)nativeMediaSource
                                      type:(RTCMediaSourceType)type NS_UNAVAILABLE;
 
 @end

@@ -149,8 +149,7 @@ WrappedI420Buffer::WrappedI420Buffer(int width,
       y_stride_(y_stride),
       u_stride_(u_stride),
       v_stride_(v_stride),
-      no_longer_used_cb_(no_longer_used) {
-}
+      no_longer_used_cb_(no_longer_used) {}
 
 WrappedI420Buffer::~WrappedI420Buffer() {
   no_longer_used_cb_();

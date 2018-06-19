@@ -48,15 +48,19 @@ class FirewallSocketServer : public SocketServer {
   void set_tcp_listen_enabled(bool enabled) { tcp_listen_enabled_ = enabled; }
 
   // Rules govern the behavior of Connect/Accept/Send/Recv attempts.
-  void AddRule(bool allow, FirewallProtocol p = FP_ANY,
+  void AddRule(bool allow,
+               FirewallProtocol p = FP_ANY,
                FirewallDirection d = FD_ANY,
                const SocketAddress& addr = SocketAddress());
-  void AddRule(bool allow, FirewallProtocol p,
-               const SocketAddress& src, const SocketAddress& dst);
+  void AddRule(bool allow,
+               FirewallProtocol p,
+               const SocketAddress& src,
+               const SocketAddress& dst);
   void ClearRules();
 
   bool Check(FirewallProtocol p,
-             const SocketAddress& src, const SocketAddress& dst);
+             const SocketAddress& src,
+             const SocketAddress& dst);
 
   // Set the IP addresses for which Bind will fail. By default this list is
   // empty. This can be used to simulate a real OS that refuses to bind to
@@ -75,12 +79,12 @@ class FirewallSocketServer : public SocketServer {
   bool Wait(int cms, bool process_io) override;
   void WakeUp() override;
 
-  Socket * WrapSocket(Socket * sock, int type);
-  AsyncSocket * WrapSocket(AsyncSocket * sock, int type);
+  Socket* WrapSocket(Socket* sock, int type);
+  AsyncSocket* WrapSocket(AsyncSocket* sock, int type);
 
  private:
-  SocketServer * server_;
-  FirewallManager * manager_;
+  SocketServer* server_;
+  FirewallManager* manager_;
   CriticalSection crit_;
   struct Rule {
     bool allow;
@@ -104,17 +108,18 @@ class FirewallManager {
   FirewallManager();
   ~FirewallManager();
 
-  void AddServer(FirewallSocketServer * server);
-  void RemoveServer(FirewallSocketServer * server);
+  void AddServer(FirewallSocketServer* server);
+  void RemoveServer(FirewallSocketServer* server);
 
-  void AddRule(bool allow, FirewallProtocol p = FP_ANY,
+  void AddRule(bool allow,
+               FirewallProtocol p = FP_ANY,
                FirewallDirection d = FD_ANY,
                const SocketAddress& addr = SocketAddress());
   void ClearRules();
 
  private:
   CriticalSection crit_;
-  std::vector<FirewallSocketServer *> servers_;
+  std::vector<FirewallSocketServer*> servers_;
 };
 
 }  // namespace rtc

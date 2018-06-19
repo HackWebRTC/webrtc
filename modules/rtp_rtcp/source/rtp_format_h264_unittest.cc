@@ -493,7 +493,7 @@ const uint8_t kRewrittenSps[] = {kSps, 0x00, 0x00, 0x03, 0x03, 0xF4, 0x05, 0x03,
                                  0xC7, 0xE0, 0x1B, 0x41, 0x10, 0x8D, 0x00};
 const uint8_t kIdrOne[] = {kIdr, 0xFF, 0x00, 0x00, 0x04};
 const uint8_t kIdrTwo[] = {kIdr, 0xFF, 0x00, 0x11};
-}
+}  // namespace
 
 class RtpPacketizerH264TestSpsRewriting : public ::testing::Test {
  public:
@@ -665,7 +665,7 @@ TEST_F(RtpDepacketizerH264Test, TestStapAKey) {
 
 TEST_F(RtpDepacketizerH264Test, TestStapANaluSpsWithResolution) {
   uint8_t packet[] = {kStapA,  // F=0, NRI=0, Type=24.
-                      // Length (2 bytes), nal header, payload.
+                               // Length (2 bytes), nal header, payload.
                       0x00, 0x19, kSps, 0x7A, 0x00, 0x1F, 0xBC, 0xD9, 0x40,
                       0x50, 0x05, 0xBA, 0x10, 0x00, 0x00, 0x03, 0x00, 0xC0,
                       0x00, 0x00, 0x03, 0x2A, 0xE0, 0xF1, 0x83, 0x25, 0x80,
@@ -796,9 +796,9 @@ TEST_F(RtpDepacketizerH264Test, DepacketizeWithDoubleRewriting) {
 
 TEST_F(RtpDepacketizerH264Test, TestStapADelta) {
   uint8_t packet[16] = {kStapA,  // F=0, NRI=0, Type=24.
-                        // Length, nal header, payload.
-                        0,      0x02, kSlice, 0xFF,   0,    0x03, kSlice, 0xFF,
-                        0x00,   0,    0x04,   kSlice, 0xFF, 0x00, 0x11};
+                                 // Length, nal header, payload.
+                        0, 0x02, kSlice, 0xFF, 0, 0x03, kSlice, 0xFF, 0x00, 0,
+                        0x04, kSlice, 0xFF, 0x00, 0x11};
   RtpDepacketizer::ParsedPayload payload;
 
   ASSERT_TRUE(depacketizer_->Parse(&payload, packet, sizeof(packet)));
@@ -904,7 +904,7 @@ TEST_F(RtpDepacketizerH264Test, TestTruncatedSingleStapANalu) {
 }
 
 TEST_F(RtpDepacketizerH264Test, TestStapAPacketWithTruncatedNalUnits) {
-  const uint8_t kPayload[] = { 0x58, 0xCB, 0xED, 0xDF};
+  const uint8_t kPayload[] = {0x58, 0xCB, 0xED, 0xDF};
   RtpDepacketizer::ParsedPayload payload;
   EXPECT_FALSE(depacketizer_->Parse(&payload, kPayload, sizeof(kPayload)));
 }
@@ -923,7 +923,7 @@ TEST_F(RtpDepacketizerH264Test, TestShortSpsPacket) {
 
 TEST_F(RtpDepacketizerH264Test, TestSeiPacket) {
   const uint8_t kPayload[] = {
-      kSei,  // F=0, NRI=0, Type=6.
+      kSei,                   // F=0, NRI=0, Type=6.
       0x03, 0x03, 0x03, 0x03  // Payload.
   };
   RtpDepacketizer::ParsedPayload payload;

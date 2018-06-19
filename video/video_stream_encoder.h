@@ -104,12 +104,8 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
 
   class VideoFrameInfo {
    public:
-    VideoFrameInfo(int width,
-                   int height,
-                   bool is_texture)
-        : width(width),
-          height(height),
-          is_texture(is_texture) {}
+    VideoFrameInfo(int width, int height, bool is_texture)
+        : width(width), height(height), is_texture(is_texture) {}
     int width;
     int height;
     bool is_texture;
@@ -204,8 +200,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   vcm::VideoSender video_sender_ RTC_GUARDED_BY(&encoder_queue_);
   const std::unique_ptr<OveruseFrameDetector> overuse_detector_
       RTC_PT_GUARDED_BY(&encoder_queue_);
-  std::unique_ptr<QualityScaler> quality_scaler_
-      RTC_GUARDED_BY(&encoder_queue_)
+  std::unique_ptr<QualityScaler> quality_scaler_ RTC_GUARDED_BY(&encoder_queue_)
       RTC_PT_GUARDED_BY(&encoder_queue_);
 
   SendStatisticsProxy* const stats_proxy_;
@@ -218,8 +213,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   std::unique_ptr<VideoEncoder> encoder_ RTC_GUARDED_BY(&encoder_queue_)
       RTC_PT_GUARDED_BY(&encoder_queue_);
   std::unique_ptr<VideoBitrateAllocator> rate_allocator_
-      RTC_GUARDED_BY(&encoder_queue_)
-      RTC_PT_GUARDED_BY(&encoder_queue_);
+      RTC_GUARDED_BY(&encoder_queue_) RTC_PT_GUARDED_BY(&encoder_queue_);
   // The maximum frame rate of the current codec configuration, as determined
   // at the last ReconfigureEncoder() call.
   int max_framerate_ RTC_GUARDED_BY(&encoder_queue_);

@@ -44,7 +44,7 @@ inline size_t GetOutLengthToDyadicDecimate(size_t in_length,
 //         GetOutLengthToDyadicDecimate().
 //         Must be previously allocated.
 // Returns the number of output samples, -1 on error.
-template<typename T>
+template <typename T>
 static size_t DyadicDecimate(const T* in,
                              size_t in_length,
                              bool odd_sequence,

@@ -246,7 +246,6 @@ TEST(RtcpTransceiverImplTest, SendsNoRtcpWhenNetworkStateIsDown) {
   config.outgoing_transport = &mock_transport;
   RtcpTransceiverImpl rtcp_transceiver(config);
 
-
   EXPECT_CALL(mock_transport, SendRtcp(_, _)).Times(0);
 
   const uint8_t raw[] = {1, 2, 3, 4};

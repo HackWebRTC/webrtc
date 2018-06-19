@@ -11,8 +11,8 @@
 #ifndef MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_PACKET_SENDER_H_
 #define MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_PACKET_SENDER_H_
 
-#include <list>
 #include <limits>
+#include <list>
 #include <memory>
 #include <set>
 #include <string>

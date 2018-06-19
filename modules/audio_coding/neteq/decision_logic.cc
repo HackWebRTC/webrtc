@@ -95,7 +95,7 @@ void DecisionLogic::SoftReset() {
 
 void DecisionLogic::SetSampleRate(int fs_hz, size_t output_size_samples) {
   // TODO(hlundin): Change to an enumerator and skip assert.
-  assert(fs_hz == 8000 || fs_hz == 16000 || fs_hz ==  32000 || fs_hz == 48000);
+  assert(fs_hz == 8000 || fs_hz == 16000 || fs_hz == 32000 || fs_hz == 48000);
   fs_mult_ = fs_hz / 8000;
   output_size_samples_ = output_size_samples;
 }
@@ -122,11 +122,11 @@ Operations DecisionLogic::GetDecision(const SyncBuffer& sync_buffer,
   const size_t cur_size_samples =
       samples_left + packet_buffer_.NumSamplesInBuffer(decoder_frame_length);
 
-  prev_time_scale_ = prev_time_scale_ &&
-      (prev_mode == kModeAccelerateSuccess ||
-          prev_mode == kModeAccelerateLowEnergy ||
-          prev_mode == kModePreemptiveExpandSuccess ||
-          prev_mode == kModePreemptiveExpandLowEnergy);
+  prev_time_scale_ =
+      prev_time_scale_ && (prev_mode == kModeAccelerateSuccess ||
+                           prev_mode == kModeAccelerateLowEnergy ||
+                           prev_mode == kModePreemptiveExpandSuccess ||
+                           prev_mode == kModePreemptiveExpandLowEnergy);
 
   FilterBufferLevel(cur_size_samples, prev_mode);
 

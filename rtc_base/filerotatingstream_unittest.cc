@@ -31,7 +31,7 @@ void CleanupLogDirectory(const FileRotatingStream& stream) {
 
 }  // namespace
 
-#if defined (WEBRTC_ANDROID)
+#if defined(WEBRTC_ANDROID)
 // Fails on Android: https://bugs.chromium.org/p/webrtc/issues/detail?id=4364.
 #define MAYBE_FileRotatingStreamTest DISABLED_FileRotatingStreamTest
 #else
@@ -202,13 +202,13 @@ TEST_F(MAYBE_FileRotatingStreamTest, GetFilePath) {
   }
 }
 
-#if defined (WEBRTC_ANDROID)
+#if defined(WEBRTC_ANDROID)
 // Fails on Android: https://bugs.chromium.org/p/webrtc/issues/detail?id=4364.
 #define MAYBE_CallSessionFileRotatingStreamTest \
-    DISABLED_CallSessionFileRotatingStreamTest
+  DISABLED_CallSessionFileRotatingStreamTest
 #else
 #define MAYBE_CallSessionFileRotatingStreamTest \
-    CallSessionFileRotatingStreamTest
+  CallSessionFileRotatingStreamTest
 #endif
 
 class MAYBE_CallSessionFileRotatingStreamTest : public ::testing::Test {

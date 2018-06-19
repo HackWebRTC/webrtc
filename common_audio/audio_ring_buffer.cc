@@ -28,7 +28,8 @@ AudioRingBuffer::~AudioRingBuffer() {
     WebRtc_FreeBuffer(buf);
 }
 
-void AudioRingBuffer::Write(const float* const* data, size_t channels,
+void AudioRingBuffer::Write(const float* const* data,
+                            size_t channels,
                             size_t frames) {
   RTC_DCHECK_EQ(buffers_.size(), channels);
   for (size_t i = 0; i < channels; ++i) {

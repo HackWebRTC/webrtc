@@ -85,4 +85,4 @@ class ProcessThreadImpl : public ProcessThread {
 
 }  // namespace webrtc
 
-#endif // MODULES_UTILITY_SOURCE_PROCESS_THREAD_IMPL_H_
+#endif  // MODULES_UTILITY_SOURCE_PROCESS_THREAD_IMPL_H_

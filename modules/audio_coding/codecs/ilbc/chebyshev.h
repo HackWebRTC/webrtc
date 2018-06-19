@@ -30,8 +30,8 @@
 
 int16_t WebRtcIlbcfix_Chebyshev(
     /* (o) Result of C(x) */
-    int16_t x,  /* (i) Value to the Chevyshev polynomial */
-    int16_t *f  /* (i) The coefficients in the polynomial */
-                                      );
+    int16_t x, /* (i) Value to the Chevyshev polynomial */
+    int16_t* f /* (i) The coefficients in the polynomial */
+    );
 
 #endif

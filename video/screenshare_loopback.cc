@@ -235,9 +235,10 @@ int MinTransmitBitrateKbps() {
   return FLAG_min_transmit_bitrate;
 }
 
-DEFINE_bool(generate_slides,
-           false,
-           "Whether to use randomly generated slides or read them from files.");
+DEFINE_bool(
+    generate_slides,
+    false,
+    "Whether to use randomly generated slides or read them from files.");
 bool GenerateSlides() {
   return static_cast<int>(FLAG_generate_slides);
 }
@@ -306,8 +307,12 @@ void Loopback() {
   params.screenshare[0] = {true, flags::GenerateSlides(),
                            flags::SlideChangeInterval(),
                            flags::ScrollDuration(), flags::Slides()};
-  params.analyzer = {"screenshare", 0.0, 0.0, flags::DurationSecs(),
-      flags::OutputFilename(), flags::GraphTitle()};
+  params.analyzer = {"screenshare",
+                     0.0,
+                     0.0,
+                     flags::DurationSecs(),
+                     flags::OutputFilename(),
+                     flags::GraphTitle()};
   params.pipe = pipe_config;
   params.logging = {flags::FLAG_logs, flags::RtcEventLogName(),
                     flags::RtpDumpName(), flags::EncodedFramePath()};

@@ -29,11 +29,8 @@ namespace {
 class NewTimestampIsLarger {
  public:
   explicit NewTimestampIsLarger(const Packet& new_packet)
-      : new_packet_(new_packet) {
-  }
-  bool operator()(const Packet& packet) {
-    return (new_packet_ >= packet);
-  }
+      : new_packet_(new_packet) {}
+  bool operator()(const Packet& packet) { return (new_packet_ >= packet); }
 
  private:
   const Packet& new_packet_;
@@ -102,8 +99,7 @@ int PacketBuffer::InsertPacket(Packet&& packet, StatisticsCalculator* stats) {
   // should be inserted. The list is searched from the back, since the most
   // likely case is that the new packet should be near the end of the list.
   PacketList::reverse_iterator rit = std::find_if(
-      buffer_.rbegin(), buffer_.rend(),
-      NewTimestampIsLarger(packet));
+      buffer_.rbegin(), buffer_.rend(), NewTimestampIsLarger(packet));
 
   // The new packet is to be inserted to the right of |rit|. If it has the same
   // timestamp as |rit|, which has a higher priority, do not insert the new

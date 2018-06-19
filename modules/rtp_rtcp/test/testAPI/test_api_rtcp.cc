@@ -28,11 +28,8 @@ namespace {
 
 class RtcpCallback : public RtcpIntraFrameObserver {
  public:
-  void SetModule(RtpRtcp* module) {
-    _rtpRtcpModule = module;
-  }
-  virtual void OnRTCPPacketTimeout(const int32_t id) {
-  }
+  void SetModule(RtpRtcp* module) { _rtpRtcpModule = module; }
+  virtual void OnRTCPPacketTimeout(const int32_t id) {}
   virtual void OnLipSyncUpdate(const int32_t id,
                                const int32_t audioVideoOffset) {}
   void OnReceivedIntraFrameRequest(uint32_t ssrc) override {}

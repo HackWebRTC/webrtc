@@ -87,7 +87,6 @@ class RtpPacketizerVp9 : public RtpPacketizer {
   RTC_DISALLOW_COPY_AND_ASSIGN(RtpPacketizerVp9);
 };
 
-
 class RtpDepacketizerVp9 : public RtpDepacketizer {
  public:
   ~RtpDepacketizerVp9() override = default;

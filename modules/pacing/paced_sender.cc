@@ -14,8 +14,8 @@
 #include <map>
 #include <queue>
 #include <set>
-#include <vector>
 #include <utility>
+#include <vector>
 
 #include "modules/include/module_common_types.h"
 #include "modules/pacing/alr_detector.h"
@@ -194,9 +194,9 @@ void PacedSender::InsertPacket(RtpPacketSender::Priority priority,
   if (capture_time_ms < 0)
     capture_time_ms = now_ms;
 
-  packets_->Push(PacketQueueInterface::Packet(priority, ssrc, sequence_number,
-                                     capture_time_ms, now_ms, bytes,
-                                     retransmission, packet_counter_++));
+  packets_->Push(PacketQueueInterface::Packet(
+      priority, ssrc, sequence_number, capture_time_ms, now_ms, bytes,
+      retransmission, packet_counter_++));
 }
 
 void PacedSender::SetAccountForAudioPackets(bool account_for_audio) {

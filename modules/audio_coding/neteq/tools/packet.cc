@@ -158,11 +158,10 @@ void Packet::CopyToHeader(RTPHeader* destination) const {
   destination->paddingLength = header_.paddingLength;
   destination->headerLength = header_.headerLength;
   destination->payload_type_frequency = header_.payload_type_frequency;
-  memcpy(&destination->arrOfCSRCs,
-         &header_.arrOfCSRCs,
+  memcpy(&destination->arrOfCSRCs, &header_.arrOfCSRCs,
          sizeof(header_.arrOfCSRCs));
-  memcpy(
-      &destination->extension, &header_.extension, sizeof(header_.extension));
+  memcpy(&destination->extension, &header_.extension,
+         sizeof(header_.extension));
 }
 
 }  // namespace test

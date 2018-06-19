@@ -29,8 +29,8 @@
 static const int kMaxLogLineSize = 1024 - 60;
 #endif  // WEBRTC_MAC && !defined(WEBRTC_IOS) || WEBRTC_ANDROID
 
-#include <time.h>
 #include <limits.h>
+#include <time.h>
 
 #include <algorithm>
 #include <cstdarg>
@@ -81,7 +81,6 @@ std::ostream& GetNoopStream() {
 CriticalSection g_log_crit;
 }  // namespace
 
-
 /////////////////////////////////////////////////////////////////////////////
 // LogMessage
 /////////////////////////////////////////////////////////////////////////////
@@ -128,7 +127,7 @@ LogMessage::LogMessage(const char* file,
   }
 
   if (file != nullptr)
-    print_stream_ << "(" << FilenameFromPath(file)  << ":" << line << "): ";
+    print_stream_ << "(" << FilenameFromPath(file) << ":" << line << "): ";
 
   if (err_ctx != ERRCTX_NONE) {
     char tmp_buf[1024];
@@ -141,13 +140,13 @@ LogMessage::LogMessage(const char* file,
 #ifdef WEBRTC_WIN
       case ERRCTX_HRESULT: {
         char msgbuf[256];
-        DWORD flags = FORMAT_MESSAGE_FROM_SYSTEM |
-                      FORMAT_MESSAGE_IGNORE_INSERTS;
+        DWORD flags =
+            FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS;
         if (DWORD len = FormatMessageA(
                 flags, nullptr, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                 msgbuf, sizeof(msgbuf) / sizeof(msgbuf[0]), nullptr)) {
           while ((len > 0) &&
-              isspace(static_cast<unsigned char>(msgbuf[len-1]))) {
+                 isspace(static_cast<unsigned char>(msgbuf[len - 1]))) {
             msgbuf[--len] = 0;
           }
           tmp << " " << msgbuf;
@@ -174,11 +173,7 @@ LogMessage::LogMessage(const char* file,
                        int line,
                        LoggingSeverity sev,
                        const char* tag)
-    : LogMessage(file,
-                 line,
-                 sev,
-                 ERRCTX_NONE,
-                 0 /* err */) {
+    : LogMessage(file, line, sev, ERRCTX_NONE, 0 /* err */) {
   if (!is_noop_) {
     tag_ = tag;
     print_stream_ << tag << ": ";
@@ -189,7 +184,9 @@ LogMessage::LogMessage(const char* file,
 // DEPRECATED. Currently only used by downstream projects that use
 // implementation details of logging.h. Work is ongoing to remove those
 // dependencies.
-LogMessage::LogMessage(const char* file, int line, LoggingSeverity sev,
+LogMessage::LogMessage(const char* file,
+                       int line,
+                       LoggingSeverity sev,
                        const std::string& tag)
     : LogMessage(file, line, sev) {
   if (!is_noop_)
@@ -320,7 +317,7 @@ void LogMessage::ConfigureLogging(const char* params) {
     } else if (token == "thread") {
       LogThreads();
 
-    // Logging levels
+      // Logging levels
     } else if (token == "sensitive") {
       current_level = LS_SENSITIVE;
     } else if (token == "verbose") {
@@ -334,7 +331,7 @@ void LogMessage::ConfigureLogging(const char* params) {
     } else if (token == "none") {
       current_level = LS_NONE;
 
-    // Logging targets
+      // Logging targets
     } else if (token == "debug") {
       debug_level = current_level;
     }
@@ -377,9 +374,8 @@ void LogMessage::OutputToDebug(const std::string& str,
   // On the Mac, all stderr output goes to the Console log and causes clutter.
   // So in opt builds, don't log to stderr unless the user specifically sets
   // a preference to do so.
-  CFStringRef key = CFStringCreateWithCString(kCFAllocatorDefault,
-                                              "logToStdErr",
-                                              kCFStringEncodingUTF8);
+  CFStringRef key = CFStringCreateWithCString(
+      kCFAllocatorDefault, "logToStdErr", kCFStringEncodingUTF8);
   CFStringRef domain = CFBundleGetIdentifier(CFBundleGetMainBundle());
   if (key != nullptr && domain != nullptr) {
     Boolean exists_and_is_valid;

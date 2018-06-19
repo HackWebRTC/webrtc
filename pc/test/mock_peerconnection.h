@@ -51,10 +51,8 @@ class MockPeerConnection
             factory,
             std::unique_ptr<RtcEventLog>(),
             std::unique_ptr<Call>()) {}
-  MOCK_METHOD0(local_streams,
-               rtc::scoped_refptr<StreamCollectionInterface>());
-  MOCK_METHOD0(remote_streams,
-               rtc::scoped_refptr<StreamCollectionInterface>());
+  MOCK_METHOD0(local_streams, rtc::scoped_refptr<StreamCollectionInterface>());
+  MOCK_METHOD0(remote_streams, rtc::scoped_refptr<StreamCollectionInterface>());
   MOCK_CONST_METHOD0(GetSenders,
                      std::vector<rtc::scoped_refptr<RtpSenderInterface>>());
   MOCK_CONST_METHOD0(GetReceivers,

@@ -412,34 +412,30 @@ TEST_P(TransportFeedbackPacketLossTrackerTest, InsertionCompletesTwoPairs) {
 TEST_P(TransportFeedbackPacketLossTrackerTest, SanityGapsInSequenceNumbers) {
   TransportFeedbackPacketLossTracker tracker(50 * kDefaultSendIntervalMs, 5, 1);
 
-  SendPackets(&tracker,
-              {static_cast<uint16_t>(base_),
-               static_cast<uint16_t>(base_ + 2),
-               static_cast<uint16_t>(base_ + 4),
-               static_cast<uint16_t>(base_ + 6),
-               static_cast<uint16_t>(base_ + 8)},
-              kDefaultSendIntervalMs);
+  SendPackets(
+      &tracker,
+      {static_cast<uint16_t>(base_), static_cast<uint16_t>(base_ + 2),
+       static_cast<uint16_t>(base_ + 4), static_cast<uint16_t>(base_ + 6),
+       static_cast<uint16_t>(base_ + 8)},
+      kDefaultSendIntervalMs);
 
   // Gaps in sequence numbers not considered as gaps in window, because  only
   // those sequence numbers which were associated with the stream count.
   // Expected window contents: [] -> [11011].
   AddTransportFeedbackAndValidate(
       // Note: Left packets belong to this stream, right ones ignored.
-      &tracker, base_, {true, false,
-                        true, false,
-                        false, false,
-                        true, false,
-                        true, true});
+      &tracker, base_,
+      {true, false, true, false, false, false, true, false, true, true});
   ValidatePacketLossStatistics(tracker, 1.0f / 5.0f, 1.0f / 4.0f);
 
   // Create gap by sending [base + 10] but not acking it.
   // Note: Acks for [base + 11] and [base + 13] ignored (other stream).
   // Expected window contents: [11011] -> [11011-GAP-01].
-  SendPackets(&tracker,
-              {static_cast<uint16_t>(base_ + 10),
-               static_cast<uint16_t>(base_ + 12),
-               static_cast<uint16_t>(base_ + 14)},
-              kDefaultSendIntervalMs);
+  SendPackets(
+      &tracker,
+      {static_cast<uint16_t>(base_ + 10), static_cast<uint16_t>(base_ + 12),
+       static_cast<uint16_t>(base_ + 14)},
+      kDefaultSendIntervalMs);
   AddTransportFeedbackAndValidate(&tracker, base_ + 11,
                                   {false, false, false, true, true});
   ValidatePacketLossStatistics(tracker, 2.0f / 7.0f, 2.0f / 5.0f);

@@ -185,8 +185,8 @@ class CopyOnWriteBuffer {
       return;
     }
 
-    CloneDataIfReferenced(std::max(buffer_->capacity(),
-        buffer_->size() + size));
+    CloneDataIfReferenced(
+        std::max(buffer_->capacity(), buffer_->size() + size));
     buffer_->AppendData(data, size);
     RTC_DCHECK(IsConsistent());
   }
@@ -229,9 +229,7 @@ class CopyOnWriteBuffer {
   void CloneDataIfReferenced(size_t new_capacity);
 
   // Pre- and postcondition of all methods.
-  bool IsConsistent() const {
-    return (!buffer_ || buffer_->capacity() > 0);
-  }
+  bool IsConsistent() const { return (!buffer_ || buffer_->capacity() > 0); }
 
   // buffer_ is either null, or points to an rtc::Buffer with capacity > 0.
   scoped_refptr<RefCountedObject<Buffer>> buffer_;

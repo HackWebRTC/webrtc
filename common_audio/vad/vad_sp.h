@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-
 // This file includes specific signal processing tools used in vad_core.c.
 
 #ifndef COMMON_AUDIO_VAD_VAD_SP_H_

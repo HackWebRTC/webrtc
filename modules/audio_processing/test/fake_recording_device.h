@@ -15,8 +15,8 @@
 #include <memory>
 #include <vector>
 
-#include "api/audio/audio_frame.h"
 #include "api/array_view.h"
+#include "api/audio/audio_frame.h"
 #include "common_audio/channel_buffer.h"
 #include "rtc_base/checks.h"
 

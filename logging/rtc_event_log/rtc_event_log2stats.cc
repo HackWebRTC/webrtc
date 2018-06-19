@@ -189,8 +189,8 @@ int main(int argc, char* argv[]) {
       " --help for usage.\n"
       "Example usage:\n" +
       program_name + " input.rel\n";
-  if (rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true) ||
-      FLAG_help || argc != 2) {
+  if (rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true) || FLAG_help ||
+      argc != 2) {
     std::cout << usage;
     if (FLAG_help) {
       rtc::FlagList::Print(nullptr, false);

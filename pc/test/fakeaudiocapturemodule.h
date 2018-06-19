@@ -32,9 +32,8 @@ namespace rtc {
 class Thread;
 }  // namespace rtc
 
-class FakeAudioCaptureModule
-    : public webrtc::AudioDeviceModule,
-      public rtc::MessageHandler {
+class FakeAudioCaptureModule : public webrtc::AudioDeviceModule,
+                               public rtc::MessageHandler {
  public:
   typedef uint16_t Sample;
 

@@ -26,9 +26,9 @@
  *---------------------------------------------------------------*/
 
 void WebRtcIlbcfix_InterpolateSamples(
-    int16_t *interpSamples, /* (o) The interpolated samples */
-    int16_t *CBmem,   /* (i) The CB memory */
-    size_t lMem    /* (i) Length of the CB memory */
-                                      );
+    int16_t* interpSamples, /* (o) The interpolated samples */
+    int16_t* CBmem,         /* (i) The CB memory */
+    size_t lMem             /* (i) Length of the CB memory */
+    );
 
 #endif

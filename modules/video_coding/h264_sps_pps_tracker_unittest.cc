@@ -12,9 +12,9 @@
 
 #include <vector>
 
+#include "common_video/h264/h264_common.h"
 #include "modules/video_coding/packet.h"
 #include "test/gtest.h"
-#include "common_video/h264/h264_common.h"
 
 namespace webrtc {
 namespace video_coding {

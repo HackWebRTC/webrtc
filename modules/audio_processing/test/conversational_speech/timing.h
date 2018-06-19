@@ -20,7 +20,7 @@ namespace webrtc {
 namespace test {
 namespace conversational_speech {
 
-struct Turn{
+struct Turn {
   Turn(std::string new_speaker_name,
        std::string new_audiotrack_file_name,
        int new_offset,
@@ -29,7 +29,7 @@ struct Turn{
         audiotrack_file_name(new_audiotrack_file_name),
         offset(new_offset),
         gain(gain) {}
-  bool operator==(const Turn &b) const;
+  bool operator==(const Turn& b) const;
   std::string speaker_name;
   std::string audiotrack_file_name;
   int offset;

@@ -120,12 +120,13 @@ static bool IsMediaContentOfType(const ContentInfo* content,
   return content->media_description()->type() == media_type;
 }
 
-static bool CreateCryptoParams(int tag, const std::string& cipher,
-                               CryptoParams *out) {
+static bool CreateCryptoParams(int tag,
+                               const std::string& cipher,
+                               CryptoParams* out) {
   int key_len;
   int salt_len;
-  if (!rtc::GetSrtpKeyAndSaltLengths(
-      rtc::SrtpCryptoSuiteFromName(cipher), &key_len, &salt_len)) {
+  if (!rtc::GetSrtpKeyAndSaltLengths(rtc::SrtpCryptoSuiteFromName(cipher),
+                                     &key_len, &salt_len)) {
     return false;
   }
 
@@ -146,7 +147,7 @@ static bool CreateCryptoParams(int tag, const std::string& cipher,
 }
 
 static bool AddCryptoParams(const std::string& cipher_suite,
-                            CryptoParamsVec *out) {
+                            CryptoParamsVec* out) {
   int size = static_cast<int>(out->size());
 
   out->resize(size + 1);
@@ -254,12 +255,12 @@ void GetSupportedDataSdesCryptoSuiteNames(
 static bool SelectCrypto(const MediaContentDescription* offer,
                          bool bundle,
                          const rtc::CryptoOptions& crypto_options,
-                         CryptoParams *crypto) {
+                         CryptoParams* crypto) {
   bool audio = offer->type() == MEDIA_TYPE_AUDIO;
   const CryptoParamsVec& cryptos = offer->cryptos();
 
-  for (CryptoParamsVec::const_iterator i = cryptos.begin();
-       i != cryptos.end(); ++i) {
+  for (CryptoParamsVec::const_iterator i = cryptos.begin(); i != cryptos.end();
+       ++i) {
     if ((crypto_options.enable_gcm_crypto_suites &&
          rtc::IsGcmCryptoSuiteName(i->cipher_suite)) ||
         rtc::CS_AES_CM_128_HMAC_SHA1_80 == i->cipher_suite ||
@@ -325,8 +326,7 @@ class UsedIds {
   UsedIds(int min_allowed_id, int max_allowed_id)
       : min_allowed_id_(min_allowed_id),
         max_allowed_id_(max_allowed_id),
-        next_id_(max_allowed_id) {
-  }
+        next_id_(max_allowed_id) {}
 
   // Loops through all Id in |ids| and changes its id if it is
   // already in use by another IdStruct. Call this methods with all Id
@@ -334,8 +334,8 @@ class UsedIds {
   // Note that typename Id must be a type of IdStruct.
   template <typename Id>
   void FindAndSetIdUsed(std::vector<Id>* ids) {
-    for (typename std::vector<Id>::iterator it = ids->begin();
-         it != ids->end(); ++it) {
+    for (typename std::vector<Id>::iterator it = ids->begin(); it != ids->end();
+         ++it) {
       FindAndSetIdUsed(&*it);
     }
   }
@@ -372,13 +372,9 @@ class UsedIds {
     return next_id_;
   }
 
-  bool IsIdUsed(int new_id) {
-    return id_set_.find(new_id) != id_set_.end();
-  }
+  bool IsIdUsed(int new_id) { return id_set_.find(new_id) != id_set_.end(); }
 
-  void SetIdUsed(int new_id) {
-    id_set_.insert(new_id);
-  }
+  void SetIdUsed(int new_id) { id_set_.insert(new_id); }
 
   const int min_allowed_id_;
   const int max_allowed_id_;
@@ -391,9 +387,7 @@ class UsedIds {
 class UsedPayloadTypes : public UsedIds<Codec> {
  public:
   UsedPayloadTypes()
-      : UsedIds<Codec>(kDynamicPayloadTypeMin, kDynamicPayloadTypeMax) {
-  }
-
+      : UsedIds<Codec>(kDynamicPayloadTypeMin, kDynamicPayloadTypeMax) {}
 
  private:
   static const int kDynamicPayloadTypeMin = 96;
@@ -427,7 +421,6 @@ static bool AddStreamParams(
 
   const bool include_rtx_streams =
       ContainsRtxCodec(content_description->codecs());
-
 
   const bool include_flexfec_stream =
       ContainsFlexfecCodec(content_description->codecs());
@@ -519,8 +512,7 @@ static bool UpdateTransportInfoForBundle(const ContentGroup& bundle_group,
       selected_transport_info->description.ice_pwd;
   ConnectionRole selected_connection_role =
       selected_transport_info->description.connection_role;
-  for (TransportInfos::iterator it =
-           sdesc->transport_infos().begin();
+  for (TransportInfos::iterator it = sdesc->transport_infos().begin();
        it != sdesc->transport_infos().end(); ++it) {
     if (bundle_group.HasContentName(it->content_name) &&
         it->content_name != selected_content_name) {
@@ -931,11 +923,12 @@ static bool FindByUri(const RtpHeaderExtensions& extensions,
 
 static bool FindByUriWithEncryptionPreference(
     const RtpHeaderExtensions& extensions,
-    const webrtc::RtpExtension& ext_to_match, bool encryption_preference,
+    const webrtc::RtpExtension& ext_to_match,
+    bool encryption_preference,
     webrtc::RtpExtension* found_extension) {
   const webrtc::RtpExtension* unencrypted_extension = nullptr;
   for (RtpHeaderExtensions::const_iterator it = extensions.begin();
-       it  != extensions.end(); ++it) {
+       it != extensions.end(); ++it) {
     // We assume that all URIs are given in a canonical format.
     if (it->uri == ext_to_match.uri) {
       if (!encryption_preference || it->encrypt) {
@@ -1008,7 +1001,8 @@ static void AddEncryptedVersionsOfHdrExts(RtpHeaderExtensions* extensions,
     if (extension.encrypt ||
         !webrtc::RtpExtension::IsEncryptionSupported(extension.uri) ||
         (FindByUriWithEncryptionPreference(*extensions, extension, true,
-            &existing) && existing.encrypt)) {
+                                           &existing) &&
+         existing.encrypt)) {
       continue;
     }
 
@@ -1023,7 +1017,7 @@ static void AddEncryptedVersionsOfHdrExts(RtpHeaderExtensions* extensions,
     }
   }
   extensions->insert(extensions->end(), encrypted_extensions.begin(),
-      encrypted_extensions.end());
+                     encrypted_extensions.end());
 }
 
 static void NegotiateRtpHeaderExtensions(
@@ -1032,11 +1026,12 @@ static void NegotiateRtpHeaderExtensions(
     bool enable_encrypted_rtp_header_extensions,
     RtpHeaderExtensions* negotiated_extenstions) {
   RtpHeaderExtensions::const_iterator ours;
-  for (ours = local_extensions.begin();
-       ours != local_extensions.end(); ++ours) {
+  for (ours = local_extensions.begin(); ours != local_extensions.end();
+       ++ours) {
     webrtc::RtpExtension theirs;
-    if (FindByUriWithEncryptionPreference(offered_extensions, *ours,
-        enable_encrypted_rtp_header_extensions, &theirs)) {
+    if (FindByUriWithEncryptionPreference(
+            offered_extensions, *ours, enable_encrypted_rtp_header_extensions,
+            &theirs)) {
       // We respond with their RTP header extension id.
       negotiated_extenstions->push_back(theirs);
     }
@@ -1079,10 +1074,9 @@ static bool CreateMediaContentAnswer(
   answer->AddCodecs(negotiated_codecs);
   answer->set_protocol(offer->protocol());
   RtpHeaderExtensions negotiated_rtp_extensions;
-  NegotiateRtpHeaderExtensions(local_rtp_extenstions,
-                               offer->rtp_header_extensions(),
-                               enable_encrypted_rtp_header_extensions,
-                               &negotiated_rtp_extensions);
+  NegotiateRtpHeaderExtensions(
+      local_rtp_extenstions, offer->rtp_header_extensions(),
+      enable_encrypted_rtp_header_extensions, &negotiated_rtp_extensions);
   answer->set_rtp_header_extensions(negotiated_rtp_extensions);
 
   answer->set_rtcp_mux(session_options.rtcp_mux_enabled && offer->rtcp_mux());
@@ -1260,7 +1254,8 @@ const AudioCodecs& MediaSessionDescriptionFactory::audio_recv_codecs() const {
 }
 
 void MediaSessionDescriptionFactory::set_audio_codecs(
-    const AudioCodecs& send_codecs, const AudioCodecs& recv_codecs) {
+    const AudioCodecs& send_codecs,
+    const AudioCodecs& recv_codecs) {
   audio_send_codecs_ = send_codecs;
   audio_recv_codecs_ = recv_codecs;
   ComputeAudioCodecsIntersectionAndUnion();
@@ -1771,18 +1766,19 @@ void MediaSessionDescriptionFactory::GetRtpHdrExtsToOffer(
 }
 
 bool MediaSessionDescriptionFactory::AddTransportOffer(
-  const std::string& content_name,
-  const TransportOptions& transport_options,
-  const SessionDescription* current_desc,
-  SessionDescription* offer_desc) const {
+    const std::string& content_name,
+    const TransportOptions& transport_options,
+    const SessionDescription* current_desc,
+    SessionDescription* offer_desc) const {
   if (!transport_desc_factory_)
-     return false;
+    return false;
   const TransportDescription* current_tdesc =
       GetTransportDescription(content_name, current_desc);
   std::unique_ptr<TransportDescription> new_tdesc(
       transport_desc_factory_->CreateOffer(transport_options, current_tdesc));
-  bool ret = (new_tdesc.get() != NULL &&
-      offer_desc->AddTransportInfo(TransportInfo(content_name, *new_tdesc)));
+  bool ret =
+      (new_tdesc.get() != NULL &&
+       offer_desc->AddTransportInfo(TransportInfo(content_name, *new_tdesc)));
   if (!ret) {
     RTC_LOG(LS_ERROR) << "Failed to AddTransportOffer, content name="
                       << content_name;
@@ -1811,8 +1807,8 @@ bool MediaSessionDescriptionFactory::AddTransportAnswer(
     const std::string& content_name,
     const TransportDescription& transport_desc,
     SessionDescription* answer_desc) const {
-  if (!answer_desc->AddTransportInfo(TransportInfo(content_name,
-                                                   transport_desc))) {
+  if (!answer_desc->AddTransportInfo(
+          TransportInfo(content_name, transport_desc))) {
     RTC_LOG(LS_ERROR) << "Failed to AddTransportAnswer, content name="
                       << content_name;
     return false;
@@ -2006,8 +2002,8 @@ bool MediaSessionDescriptionFactory::AddDataContentForOffer(
     // TODO(deadbeef): Offer kMediaProtocolUdpDtlsSctp (or TcpDtlsSctp), once
     // it's safe to do so. Older versions of webrtc would reject these
     // protocols; see https://bugs.chromium.org/p/webrtc/issues/detail?id=7706.
-    data->set_protocol(
-        secure_transport ? kMediaProtocolDtlsSctp : kMediaProtocolSctp);
+    data->set_protocol(secure_transport ? kMediaProtocolDtlsSctp
+                                        : kMediaProtocolSctp);
   } else {
     GetSupportedDataSdesCryptoSuiteNames(session_options.crypto_options,
                                          &crypto_suites);
@@ -2385,7 +2381,8 @@ const ContentInfo* GetFirstDataContent(const SessionDescription* sdesc) {
 }
 
 const MediaContentDescription* GetFirstMediaContentDescription(
-    const SessionDescription* sdesc, MediaType media_type) {
+    const SessionDescription* sdesc,
+    MediaType media_type) {
   const ContentInfo* content = GetFirstMediaContent(sdesc, media_type);
   return (content ? content->media_description() : nullptr);
 }

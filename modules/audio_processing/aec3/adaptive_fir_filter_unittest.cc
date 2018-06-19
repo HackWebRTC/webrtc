@@ -357,9 +357,8 @@ TEST(AdaptiveFirFilter, FilterAndAdapt) {
 
       RandomizeSampleVector(&random_generator, n);
       static constexpr float kNoiseScaling = 1.f / 100.f;
-      std::transform(
-          y.begin(), y.end(), n.begin(), y.begin(),
-          [](float a, float b) { return a + b * kNoiseScaling; });
+      std::transform(y.begin(), y.end(), n.begin(), y.begin(),
+                     [](float a, float b) { return a + b * kNoiseScaling; });
 
       x_hp_filter.Process(x[0]);
       y_hp_filter.Process(y);

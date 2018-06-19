@@ -110,4 +110,3 @@ class MouseCursorMonitor {
 }  // namespace webrtc
 
 #endif  // MODULES_DESKTOP_CAPTURE_MOUSE_CURSOR_MONITOR_H_
-

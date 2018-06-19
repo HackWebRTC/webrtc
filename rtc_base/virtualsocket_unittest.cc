@@ -100,7 +100,9 @@ struct Receiver : public MessageHandler, public sigslot::has_slots<> {
 
   ~Receiver() override { thread->Clear(this); }
 
-  void OnReadPacket(AsyncPacketSocket* s, const char* data, size_t size,
+  void OnReadPacket(AsyncPacketSocket* s,
+                    const char* data,
+                    size_t size,
                     const SocketAddress& remote_addr,
                     const PacketTime& packet_time) {
     ASSERT_EQ(socket.get(), s);
@@ -282,7 +284,7 @@ class VirtualSocketServerTest : public testing::Test {
 
     // Attempt connect to listening socket
     EXPECT_EQ(0, client->Connect(server->GetLocalAddress()));
-    EXPECT_NE(client->GetLocalAddress(), kEmptyAddr);  // Implicit Bind
+    EXPECT_NE(client->GetLocalAddress(), kEmptyAddr);          // Implicit Bind
     EXPECT_NE(AF_UNSPEC, client->GetLocalAddress().family());  // Implicit Bind
     EXPECT_NE(client->GetLocalAddress(), server->GetLocalAddress());
 
@@ -633,7 +635,7 @@ class VirtualSocketServerTest : public testing::Test {
     ss_.ProcessMessagesUntilIdle();
 
     // First, deliver all packets in 0 ms.
-    char buffer[2] = { 0, 0 };
+    char buffer[2] = {0, 0};
     const char cNumPackets = 10;
     for (char i = 0; i < cNumPackets; ++i) {
       buffer[0] = '0' + i;
@@ -937,105 +939,89 @@ TEST_F(VirtualSocketServerTest, delay_v6) {
 // Works, receiving socket sees 127.0.0.2.
 TEST_F(VirtualSocketServerTest, CanConnectFromMappedIPv6ToIPv4Any) {
   CrossFamilyConnectionTest(SocketAddress("::ffff:127.0.0.2", 0),
-                            SocketAddress("0.0.0.0", 5000),
-                            true);
+                            SocketAddress("0.0.0.0", 5000), true);
 }
 
 // Fails.
 TEST_F(VirtualSocketServerTest, CantConnectFromUnMappedIPv6ToIPv4Any) {
   CrossFamilyConnectionTest(SocketAddress("::2", 0),
-                            SocketAddress("0.0.0.0", 5000),
-                            false);
+                            SocketAddress("0.0.0.0", 5000), false);
 }
 
 // Fails.
 TEST_F(VirtualSocketServerTest, CantConnectFromUnMappedIPv6ToMappedIPv6) {
   CrossFamilyConnectionTest(SocketAddress("::2", 0),
-                            SocketAddress("::ffff:127.0.0.1", 5000),
-                            false);
+                            SocketAddress("::ffff:127.0.0.1", 5000), false);
 }
 
 // Works. receiving socket sees ::ffff:127.0.0.2.
 TEST_F(VirtualSocketServerTest, CanConnectFromIPv4ToIPv6Any) {
   CrossFamilyConnectionTest(SocketAddress("127.0.0.2", 0),
-                            SocketAddress("::", 5000),
-                            true);
+                            SocketAddress("::", 5000), true);
 }
 
 // Fails.
 TEST_F(VirtualSocketServerTest, CantConnectFromIPv4ToUnMappedIPv6) {
   CrossFamilyConnectionTest(SocketAddress("127.0.0.2", 0),
-                            SocketAddress("::1", 5000),
-                            false);
+                            SocketAddress("::1", 5000), false);
 }
 
 // Works. Receiving socket sees ::ffff:127.0.0.1.
 TEST_F(VirtualSocketServerTest, CanConnectFromIPv4ToMappedIPv6) {
   CrossFamilyConnectionTest(SocketAddress("127.0.0.1", 0),
-                            SocketAddress("::ffff:127.0.0.2", 5000),
-                            true);
+                            SocketAddress("::ffff:127.0.0.2", 5000), true);
 }
 
 // Works, receiving socket sees a result from GetNextIP.
 TEST_F(VirtualSocketServerTest, CanConnectFromUnboundIPv6ToIPv4Any) {
   CrossFamilyConnectionTest(SocketAddress("::", 0),
-                            SocketAddress("0.0.0.0", 5000),
-                            true);
+                            SocketAddress("0.0.0.0", 5000), true);
 }
 
 // Works, receiving socket sees whatever GetNextIP gave the client.
 TEST_F(VirtualSocketServerTest, CanConnectFromUnboundIPv4ToIPv6Any) {
   CrossFamilyConnectionTest(SocketAddress("0.0.0.0", 0),
-                            SocketAddress("::", 5000),
-                            true);
+                            SocketAddress("::", 5000), true);
 }
 
 TEST_F(VirtualSocketServerTest, CanSendDatagramFromUnboundIPv4ToIPv6Any) {
   CrossFamilyDatagramTest(SocketAddress("0.0.0.0", 0),
-                          SocketAddress("::", 5000),
-                          true);
+                          SocketAddress("::", 5000), true);
 }
 
 TEST_F(VirtualSocketServerTest, CanSendDatagramFromMappedIPv6ToIPv4Any) {
   CrossFamilyDatagramTest(SocketAddress("::ffff:127.0.0.1", 0),
-                          SocketAddress("0.0.0.0", 5000),
-                          true);
+                          SocketAddress("0.0.0.0", 5000), true);
 }
 
 TEST_F(VirtualSocketServerTest, CantSendDatagramFromUnMappedIPv6ToIPv4Any) {
   CrossFamilyDatagramTest(SocketAddress("::2", 0),
-                          SocketAddress("0.0.0.0", 5000),
-                          false);
+                          SocketAddress("0.0.0.0", 5000), false);
 }
 
 TEST_F(VirtualSocketServerTest, CantSendDatagramFromUnMappedIPv6ToMappedIPv6) {
   CrossFamilyDatagramTest(SocketAddress("::2", 0),
-                          SocketAddress("::ffff:127.0.0.1", 5000),
-                          false);
+                          SocketAddress("::ffff:127.0.0.1", 5000), false);
 }
 
 TEST_F(VirtualSocketServerTest, CanSendDatagramFromIPv4ToIPv6Any) {
   CrossFamilyDatagramTest(SocketAddress("127.0.0.2", 0),
-                          SocketAddress("::", 5000),
-                          true);
+                          SocketAddress("::", 5000), true);
 }
 
 TEST_F(VirtualSocketServerTest, CantSendDatagramFromIPv4ToUnMappedIPv6) {
   CrossFamilyDatagramTest(SocketAddress("127.0.0.2", 0),
-                          SocketAddress("::1", 5000),
-                          false);
+                          SocketAddress("::1", 5000), false);
 }
 
 TEST_F(VirtualSocketServerTest, CanSendDatagramFromIPv4ToMappedIPv6) {
   CrossFamilyDatagramTest(SocketAddress("127.0.0.1", 0),
-                          SocketAddress("::ffff:127.0.0.2", 5000),
-                          true);
+                          SocketAddress("::ffff:127.0.0.2", 5000), true);
 }
 
 TEST_F(VirtualSocketServerTest, CanSendDatagramFromUnboundIPv6ToIPv4Any) {
   CrossFamilyDatagramTest(SocketAddress("::", 0),
-                          SocketAddress("0.0.0.0", 5000),
-                          true);
+                          SocketAddress("0.0.0.0", 5000), true);
 }
 
 TEST_F(VirtualSocketServerTest, SetSendingBlockedWithUdpSocket) {
@@ -1104,7 +1090,7 @@ TEST_F(VirtualSocketServerTest, SetSendingBlockedWithTcpSocket) {
 
 TEST_F(VirtualSocketServerTest, CreatesStandardDistribution) {
   const uint32_t kTestMean[] = {10, 100, 333, 1000};
-  const double kTestDev[] = { 0.25, 0.1, 0.01 };
+  const double kTestDev[] = {0.25, 0.1, 0.01};
   // TODO(deadbeef): The current code only works for 1000 data points or more.
   const uint32_t kTestSamples[] = {/*10, 100,*/ 1000};
   for (size_t midx = 0; midx < arraysize(kTestMean); ++midx) {
@@ -1114,8 +1100,7 @@ TEST_F(VirtualSocketServerTest, CreatesStandardDistribution) {
         const uint32_t kStdDev =
             static_cast<uint32_t>(kTestDev[didx] * kTestMean[midx]);
         VirtualSocketServer::Function* f =
-            VirtualSocketServer::CreateDistribution(kTestMean[midx],
-                                                    kStdDev,
+            VirtualSocketServer::CreateDistribution(kTestMean[midx], kStdDev,
                                                     kTestSamples[sidx]);
         ASSERT_TRUE(nullptr != f);
         ASSERT_EQ(kTestSamples[sidx], f->size());
@@ -1131,13 +1116,11 @@ TEST_F(VirtualSocketServerTest, CreatesStandardDistribution) {
         }
         const double stddev = sqrt(sum_sq_dev / f->size());
         EXPECT_NEAR(kTestMean[midx], mean, 0.1 * kTestMean[midx])
-          << "M=" << kTestMean[midx]
-          << " SD=" << kStdDev
-          << " N=" << kTestSamples[sidx];
+            << "M=" << kTestMean[midx] << " SD=" << kStdDev
+            << " N=" << kTestSamples[sidx];
         EXPECT_NEAR(kStdDev, stddev, 0.1 * kStdDev)
-          << "M=" << kTestMean[midx]
-          << " SD=" << kStdDev
-          << " N=" << kTestSamples[sidx];
+            << "M=" << kTestMean[midx] << " SD=" << kStdDev
+            << " N=" << kTestSamples[sidx];
         delete f;
       }
     }

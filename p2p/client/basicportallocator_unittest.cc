@@ -1339,9 +1339,8 @@ TEST_F(BasicPortAllocatorTest,
 // a NAT, there is no local candidate. However, this specified default route
 // (kClientAddr) which was discovered when sending STUN requests, will become
 // the srflx addresses.
-TEST_F(
-    BasicPortAllocatorTest,
-    TestDisableAdapterEnumerationWithoutNatLocalhostCandDisabledDiffRoute) {
+TEST_F(BasicPortAllocatorTest,
+       TestDisableAdapterEnumerationWithoutNatLocalhostCandDisabledDiffRoute) {
   ResetWithStunServerNoNat(kStunAddr);
   AddInterfaceAsDefaultRoute(kClientAddr);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));

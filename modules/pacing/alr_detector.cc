@@ -11,8 +11,8 @@
 #include "modules/pacing/alr_detector.h"
 
 #include <algorithm>
-#include <string>
 #include <cstdio>
+#include <string>
 
 #include "logging/rtc_event_log/events/rtc_event_alr_state.h"
 #include "logging/rtc_event_log/rtc_event_log.h"

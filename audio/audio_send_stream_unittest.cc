@@ -56,8 +56,8 @@ const double kEchoReturnLoss = -65;
 const double kEchoReturnLossEnhancement = 101;
 const double kResidualEchoLikelihood = -1.0f;
 const double kResidualEchoLikelihoodMax = 23.0f;
-const CallStatistics kCallStats = {
-    1345,  1678,  1901, 1234,  112, 13456, 17890, 1567, -1890, -1123};
+const CallStatistics kCallStats = {1345,  1678,  1901, 1234,  112,
+                                   13456, 17890, 1567, -1890, -1123};
 const ReportBlock kReportBlock = {456, 780, 123, 567, 890, 132, 143, 13354};
 const int kTelephoneEventPayloadType = 123;
 const int kTelephoneEventPayloadFrequency = 65432;
@@ -181,9 +181,8 @@ struct ConfigHelper {
   TimeInterval* active_lifetime() { return &active_lifetime_; }
 
   static void AddBweToConfig(AudioSendStream::Config* config) {
-    config->rtp.extensions.push_back(
-        RtpExtension(RtpExtension::kTransportSequenceNumberUri,
-                     kTransportSequenceNumberId));
+    config->rtp.extensions.push_back(RtpExtension(
+        RtpExtension::kTransportSequenceNumberUri, kTransportSequenceNumberId));
     config->send_codec_spec->transport_cc_enabled = true;
   }
 
@@ -254,13 +253,14 @@ struct ConfigHelper {
 
   void SetupMockForSendTelephoneEvent() {
     EXPECT_TRUE(channel_proxy_);
-    EXPECT_CALL(*channel_proxy_,
-        SetSendTelephoneEventPayloadType(kTelephoneEventPayloadType,
-                                         kTelephoneEventPayloadFrequency))
-            .WillOnce(Return(true));
-    EXPECT_CALL(*channel_proxy_,
+    EXPECT_CALL(*channel_proxy_, SetSendTelephoneEventPayloadType(
+                                     kTelephoneEventPayloadType,
+                                     kTelephoneEventPayloadFrequency))
+        .WillOnce(Return(true));
+    EXPECT_CALL(
+        *channel_proxy_,
         SendTelephoneEventOutband(kTelephoneEventCode, kTelephoneEventDuration))
-            .WillOnce(Return(true));
+        .WillOnce(Return(true));
   }
 
   void SetupMockForGetStats() {
@@ -355,9 +355,9 @@ TEST(AudioSendStreamTest, SendTelephoneEvent) {
   ConfigHelper helper(false, true);
   auto send_stream = helper.CreateAudioSendStream();
   helper.SetupMockForSendTelephoneEvent();
-  EXPECT_TRUE(send_stream->SendTelephoneEvent(kTelephoneEventPayloadType,
-      kTelephoneEventPayloadFrequency, kTelephoneEventCode,
-      kTelephoneEventDuration));
+  EXPECT_TRUE(send_stream->SendTelephoneEvent(
+      kTelephoneEventPayloadType, kTelephoneEventPayloadFrequency,
+      kTelephoneEventCode, kTelephoneEventDuration));
 }
 
 TEST(AudioSendStreamTest, SetMuted) {
@@ -518,7 +518,7 @@ TEST(AudioSendStreamTest, ReconfigureTransportCcResetsFirst) {
     EXPECT_CALL(*helper.channel_proxy(), ResetSenderCongestionControlObjects())
         .Times(1);
     EXPECT_CALL(*helper.channel_proxy(), RegisterSenderCongestionControlObjects(
-        helper.transport(), Ne(nullptr)))
+                                             helper.transport(), Ne(nullptr)))
         .Times(1);
   }
   send_stream->Reconfigure(new_config);

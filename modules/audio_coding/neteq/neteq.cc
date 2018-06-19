@@ -27,14 +27,12 @@ NetEq::Config& NetEq::Config::operator=(Config&&) = default;
 std::string NetEq::Config::ToString() const {
   char buf[1024];
   rtc::SimpleStringBuilder ss(buf);
-  ss << "sample_rate_hz=" << sample_rate_hz
-     << ", enable_post_decode_vad="
+  ss << "sample_rate_hz=" << sample_rate_hz << ", enable_post_decode_vad="
      << (enable_post_decode_vad ? "true" : "false")
      << ", max_packets_in_buffer=" << max_packets_in_buffer
-     << ", playout_mode=" << playout_mode
-     << ", enable_fast_accelerate="
-     << (enable_fast_accelerate ? " true": "false")
-     << ", enable_muted_state=" << (enable_muted_state ? " true": "false");
+     << ", playout_mode=" << playout_mode << ", enable_fast_accelerate="
+     << (enable_fast_accelerate ? " true" : "false")
+     << ", enable_muted_state=" << (enable_muted_state ? " true" : "false");
   return ss.str();
 }
 

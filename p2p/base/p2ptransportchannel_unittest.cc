@@ -53,8 +53,8 @@ static const int kOnlyLocalPorts = cricket::PORTALLOCATOR_DISABLE_STUN |
                                    cricket::PORTALLOCATOR_DISABLE_TCP;
 static const int LOW_RTT = 20;
 // Addresses on the public internet.
-static const SocketAddress kPublicAddrs[2] =
-    { SocketAddress("11.11.11.11", 0), SocketAddress("22.22.22.22", 0) };
+static const SocketAddress kPublicAddrs[2] = {SocketAddress("11.11.11.11", 0),
+                                              SocketAddress("22.22.22.22", 0)};
 // IPv6 Addresses on the public internet.
 static const SocketAddress kIPv6PublicAddrs[2] = {
     SocketAddress("2400:4030:1:2c00:be30:abcd:efab:cdef", 0),
@@ -66,23 +66,23 @@ static const SocketAddress kIPv6AlternateAddrs[2] = {
     SocketAddress("2401:4030:1:2c00:be30:abcd:efab:cdef", 0),
     SocketAddress("2601:0:1000:1b03:2e41:38ff:fea6:f2a4", 0)};
 // Addresses for HTTP proxy servers.
-static const SocketAddress kHttpsProxyAddrs[2] =
-    { SocketAddress("11.11.11.1", 443), SocketAddress("22.22.22.1", 443) };
+static const SocketAddress kHttpsProxyAddrs[2] = {
+    SocketAddress("11.11.11.1", 443), SocketAddress("22.22.22.1", 443)};
 // Addresses for SOCKS proxy servers.
-static const SocketAddress kSocksProxyAddrs[2] =
-    { SocketAddress("11.11.11.1", 1080), SocketAddress("22.22.22.1", 1080) };
+static const SocketAddress kSocksProxyAddrs[2] = {
+    SocketAddress("11.11.11.1", 1080), SocketAddress("22.22.22.1", 1080)};
 // Internal addresses for NAT boxes.
-static const SocketAddress kNatAddrs[2] =
-    { SocketAddress("192.168.1.1", 0), SocketAddress("192.168.2.1", 0) };
+static const SocketAddress kNatAddrs[2] = {SocketAddress("192.168.1.1", 0),
+                                           SocketAddress("192.168.2.1", 0)};
 // Private addresses inside the NAT private networks.
-static const SocketAddress kPrivateAddrs[2] =
-    { SocketAddress("192.168.1.11", 0), SocketAddress("192.168.2.22", 0) };
+static const SocketAddress kPrivateAddrs[2] = {
+    SocketAddress("192.168.1.11", 0), SocketAddress("192.168.2.22", 0)};
 // For cascaded NATs, the internal addresses of the inner NAT boxes.
-static const SocketAddress kCascadedNatAddrs[2] =
-    { SocketAddress("192.168.10.1", 0), SocketAddress("192.168.20.1", 0) };
+static const SocketAddress kCascadedNatAddrs[2] = {
+    SocketAddress("192.168.10.1", 0), SocketAddress("192.168.20.1", 0)};
 // For cascaded NATs, private addresses inside the inner private networks.
-static const SocketAddress kCascadedPrivateAddrs[2] =
-    { SocketAddress("192.168.10.11", 0), SocketAddress("192.168.20.22", 0) };
+static const SocketAddress kCascadedPrivateAddrs[2] = {
+    SocketAddress("192.168.10.11", 0), SocketAddress("192.168.20.22", 0)};
 // The address of the public STUN server.
 static const SocketAddress kStunAddr("99.99.99.1", cricket::STUN_SERVER_PORT);
 // The addresses for the public turn server.
@@ -219,18 +219,18 @@ class P2PTransportChannelTestBase : public testing::Test,
 
  protected:
   enum Config {
-    OPEN,                           // Open to the Internet
-    NAT_FULL_CONE,                  // NAT, no filtering
-    NAT_ADDR_RESTRICTED,            // NAT, must send to an addr to recv
-    NAT_PORT_RESTRICTED,            // NAT, must send to an addr+port to recv
-    NAT_SYMMETRIC,                  // NAT, endpoint-dependent bindings
-    NAT_DOUBLE_CONE,                // Double NAT, both cone
-    NAT_SYMMETRIC_THEN_CONE,        // Double NAT, symmetric outer, cone inner
-    BLOCK_UDP,                      // Firewall, UDP in/out blocked
-    BLOCK_UDP_AND_INCOMING_TCP,     // Firewall, UDP in/out and TCP in blocked
-    BLOCK_ALL_BUT_OUTGOING_HTTP,    // Firewall, only TCP out on 80/443
-    PROXY_HTTPS,                    // All traffic through HTTPS proxy
-    PROXY_SOCKS,                    // All traffic through SOCKS proxy
+    OPEN,                         // Open to the Internet
+    NAT_FULL_CONE,                // NAT, no filtering
+    NAT_ADDR_RESTRICTED,          // NAT, must send to an addr to recv
+    NAT_PORT_RESTRICTED,          // NAT, must send to an addr+port to recv
+    NAT_SYMMETRIC,                // NAT, endpoint-dependent bindings
+    NAT_DOUBLE_CONE,              // Double NAT, both cone
+    NAT_SYMMETRIC_THEN_CONE,      // Double NAT, symmetric outer, cone inner
+    BLOCK_UDP,                    // Firewall, UDP in/out blocked
+    BLOCK_UDP_AND_INCOMING_TCP,   // Firewall, UDP in/out and TCP in blocked
+    BLOCK_ALL_BUT_OUTGOING_HTTP,  // Firewall, only TCP out on 80/443
+    PROXY_HTTPS,                  // All traffic through HTTPS proxy
+    PROXY_SOCKS,                  // All traffic through SOCKS proxy
     NUM_CONFIGS
   };
 
@@ -260,7 +260,7 @@ class P2PTransportChannelTestBase : public testing::Test,
     bool CheckData(const char* data, int len) {
       bool ret = false;
       if (!ch_packets_.empty()) {
-        std::string packet =  ch_packets_.front();
+        std::string packet = ch_packets_.front();
         ret = (packet == std::string(data, len));
         ch_packets_.pop_front();
       }
@@ -458,8 +458,8 @@ class P2PTransportChannelTestBase : public testing::Test,
   void SetProxy(int endpoint, rtc::ProxyType type) {
     rtc::ProxyInfo info;
     info.type = type;
-    info.address = (type == rtc::PROXY_HTTPS) ?
-        kHttpsProxyAddrs[endpoint] : kSocksProxyAddrs[endpoint];
+    info.address = (type == rtc::PROXY_HTTPS) ? kHttpsProxyAddrs[endpoint]
+                                              : kSocksProxyAddrs[endpoint];
     GetAllocator(endpoint)->set_proxy("unittest/1.0", info);
   }
   void SetAllocatorFlags(int endpoint, int flags) {
@@ -563,8 +563,8 @@ class P2PTransportChannelTestBase : public testing::Test,
     if (connect_time < expected.connect_wait) {
       RTC_LOG(LS_INFO) << "Connect time: " << connect_time << " ms";
     } else {
-      RTC_LOG(LS_INFO) << "Connect time: TIMEOUT ("
-                       << expected.connect_wait << " ms)";
+      RTC_LOG(LS_INFO) << "Connect time: TIMEOUT (" << expected.connect_wait
+                       << " ms)";
     }
 
     // Allow a few turns of the crank for the selected connections to emerge.
@@ -588,8 +588,8 @@ class P2PTransportChannelTestBase : public testing::Test,
       if (converge_time < converge_wait) {
         RTC_LOG(LS_INFO) << "Converge time: " << converge_time << " ms";
       } else {
-        RTC_LOG(LS_INFO) << "Converge time: TIMEOUT ("
-                         << converge_wait << " ms)";
+        RTC_LOG(LS_INFO) << "Converge time: TIMEOUT (" << converge_wait
+                         << " ms)";
       }
     }
     // Try sending some data to other end.
@@ -873,9 +873,7 @@ class P2PTransportChannelTestBase : public testing::Test,
     remote_ice_parameter_source_ = source;
   }
 
-  void set_force_relay(bool relay) {
-    force_relay_ = relay;
-  }
+  void set_force_relay(bool relay) { force_relay_ = relay; }
 
   void ConnectSignalNominated(Connection* conn) {
     conn->SignalNominated.connect(this,
@@ -1018,20 +1016,22 @@ class P2PTransportChannelTest : public P2PTransportChannelTestBase {
       case NAT_SYMMETRIC:
         AddAddress(endpoint, kPrivateAddrs[endpoint]);
         // Add a single NAT of the desired type
-        nat()->AddTranslator(kPublicAddrs[endpoint], kNatAddrs[endpoint],
-            static_cast<rtc::NATType>(config - NAT_FULL_CONE))->
-            AddClient(kPrivateAddrs[endpoint]);
+        nat()
+            ->AddTranslator(kPublicAddrs[endpoint], kNatAddrs[endpoint],
+                            static_cast<rtc::NATType>(config - NAT_FULL_CONE))
+            ->AddClient(kPrivateAddrs[endpoint]);
         break;
       case NAT_DOUBLE_CONE:
       case NAT_SYMMETRIC_THEN_CONE:
         AddAddress(endpoint, kCascadedPrivateAddrs[endpoint]);
         // Add a two cascaded NATs of the desired types
-        nat()->AddTranslator(kPublicAddrs[endpoint], kNatAddrs[endpoint],
-            (config == NAT_DOUBLE_CONE) ?
-                rtc::NAT_OPEN_CONE : rtc::NAT_SYMMETRIC)->
-            AddTranslator(kPrivateAddrs[endpoint], kCascadedNatAddrs[endpoint],
-                rtc::NAT_OPEN_CONE)->
-                AddClient(kCascadedPrivateAddrs[endpoint]);
+        nat()
+            ->AddTranslator(kPublicAddrs[endpoint], kNatAddrs[endpoint],
+                            (config == NAT_DOUBLE_CONE) ? rtc::NAT_OPEN_CONE
+                                                        : rtc::NAT_SYMMETRIC)
+            ->AddTranslator(kPrivateAddrs[endpoint],
+                            kCascadedNatAddrs[endpoint], rtc::NAT_OPEN_CONE)
+            ->AddClient(kCascadedPrivateAddrs[endpoint]);
         break;
       case BLOCK_UDP:
       case BLOCK_UDP_AND_INCOMING_TCP:
@@ -1040,8 +1040,7 @@ class P2PTransportChannelTest : public P2PTransportChannelTestBase {
       case PROXY_SOCKS:
         AddAddress(endpoint, kPublicAddrs[endpoint]);
         // Block all UDP
-        fw()->AddRule(false, rtc::FP_UDP, rtc::FD_ANY,
-                      kPublicAddrs[endpoint]);
+        fw()->AddRule(false, rtc::FP_UDP, rtc::FD_ANY, kPublicAddrs[endpoint]);
         if (config == BLOCK_UDP_AND_INCOMING_TCP) {
           // Block TCP inbound to the endpoint
           fw()->AddRule(false, rtc::FP_TCP, SocketAddress(),
@@ -1103,19 +1102,43 @@ class P2PTransportChannelTest : public P2PTransportChannelTestBase {
 // TODO(?): Rearrange rows/columns from best to worst.
 const P2PTransportChannelTest::Result*
     P2PTransportChannelTest::kMatrix[NUM_CONFIGS][NUM_CONFIGS] = {
-//      OPEN  CONE  ADDR  PORT  SYMM  2CON  SCON  !UDP  !TCP  HTTP  PRXH  PRXS
-/*OP*/ {LULU, LUSU, LUSU, LUSU, LUPU, LUSU, LUPU, LTPT, LTPT, LSRS, NULL, LTPT},
-/*CO*/ {SULU, SUSU, SUSU, SUSU, SUPU, SUSU, SUPU, NULL, NULL, LSRS, NULL, LTRT},
-/*AD*/ {SULU, SUSU, SUSU, SUSU, SUPU, SUSU, SUPU, NULL, NULL, LSRS, NULL, LTRT},
-/*PO*/ {SULU, SUSU, SUSU, SUSU, RUPU, SUSU, RUPU, NULL, NULL, LSRS, NULL, LTRT},
-/*SY*/ {PULU, PUSU, PUSU, PURU, PURU, PUSU, PURU, NULL, NULL, LSRS, NULL, LTRT},
-/*2C*/ {SULU, SUSU, SUSU, SUSU, SUPU, SUSU, SUPU, NULL, NULL, LSRS, NULL, LTRT},
-/*SC*/ {PULU, PUSU, PUSU, PURU, PURU, PUSU, PURU, NULL, NULL, LSRS, NULL, LTRT},
-/*!U*/ {LTPT, NULL, NULL, NULL, NULL, NULL, NULL, LTPT, LTPT, LSRS, NULL, LTRT},
-/*!T*/ {PTLT, NULL, NULL, NULL, NULL, NULL, NULL, PTLT, LTRT, LSRS, NULL, LTRT},
-/*HT*/ {LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, NULL, LSRS},
-/*PR*/ {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL},
-/*PR*/ {LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LSRS, NULL, LTRT},
+        //      OPEN  CONE  ADDR  PORT  SYMM  2CON  SCON  !UDP  !TCP  HTTP  PRXH
+        //      PRXS
+        /*OP*/ {LULU, LUSU, LUSU, LUSU, LUPU, LUSU, LUPU, LTPT, LTPT, LSRS,
+                NULL, LTPT},
+        /*CO*/
+        {SULU, SUSU, SUSU, SUSU, SUPU, SUSU, SUPU, NULL, NULL, LSRS, NULL,
+         LTRT},
+        /*AD*/
+        {SULU, SUSU, SUSU, SUSU, SUPU, SUSU, SUPU, NULL, NULL, LSRS, NULL,
+         LTRT},
+        /*PO*/
+        {SULU, SUSU, SUSU, SUSU, RUPU, SUSU, RUPU, NULL, NULL, LSRS, NULL,
+         LTRT},
+        /*SY*/
+        {PULU, PUSU, PUSU, PURU, PURU, PUSU, PURU, NULL, NULL, LSRS, NULL,
+         LTRT},
+        /*2C*/
+        {SULU, SUSU, SUSU, SUSU, SUPU, SUSU, SUPU, NULL, NULL, LSRS, NULL,
+         LTRT},
+        /*SC*/
+        {PULU, PUSU, PUSU, PURU, PURU, PUSU, PURU, NULL, NULL, LSRS, NULL,
+         LTRT},
+        /*!U*/
+        {LTPT, NULL, NULL, NULL, NULL, NULL, NULL, LTPT, LTPT, LSRS, NULL,
+         LTRT},
+        /*!T*/
+        {PTLT, NULL, NULL, NULL, NULL, NULL, NULL, PTLT, LTRT, LSRS, NULL,
+         LTRT},
+        /*HT*/
+        {LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, LSRS, NULL,
+         LSRS},
+        /*PR*/
+        {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+         NULL},
+        /*PR*/
+        {LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LTRT, LSRS, NULL,
+         LTRT},
 };
 
 // The actual tests that exercise all the various configurations.
@@ -1325,9 +1348,10 @@ TEST_F(P2PTransportChannelTest,
   // Adding address in ep1 will trigger continual gathering.
   AddAddress(0, kAlternateAddrs[0]);
   EXPECT_EQ_SIMULATED_WAIT(
-      1, GetMetricsObserver(0)->GetEnumCounter(
-             webrtc::kEnumCounterIceRegathering,
-             static_cast<int>(IceRegatheringReason::NETWORK_CHANGE)),
+      1,
+      GetMetricsObserver(0)->GetEnumCounter(
+          webrtc::kEnumCounterIceRegathering,
+          static_cast<int>(IceRegatheringReason::NETWORK_CHANGE)),
       kDefaultTimeout, clock);
 
   ep2_ch1()->SetIceParameters(kIceParams[3]);
@@ -1386,8 +1410,8 @@ TEST_F(P2PTransportChannelTest, TestIceRegatherOnAllNetworksContinual) {
   // ep1 gathers continually but ep2 does not.
   const int kRegatherInterval = 2000;
   IceConfig config1 = CreateIceConfig(1000, GATHER_CONTINUALLY);
-  config1.regather_all_networks_interval_range.emplace(
-      kRegatherInterval, kRegatherInterval);
+  config1.regather_all_networks_interval_range.emplace(kRegatherInterval,
+                                                       kRegatherInterval);
   IceConfig config2;
   CreateChannels(config1, config2);
 
@@ -1421,7 +1445,7 @@ class P2PTransportRegatherAllNetworksTest : public P2PTransportChannelTest {
   void TestWithRoles(IceRole p1_role, IceRole p2_role) {
     rtc::ScopedFakeClock clock;
     ConfigureEndpoints(NAT_SYMMETRIC, NAT_SYMMETRIC, kDefaultPortAllocatorFlags,
-        kDefaultPortAllocatorFlags);
+                       kDefaultPortAllocatorFlags);
     set_force_relay(true);
 
     const int kRegatherInterval = 2000;
@@ -1429,8 +1453,8 @@ class P2PTransportRegatherAllNetworksTest : public P2PTransportChannelTest {
 
     // Set up peer 1 to auto regather every 2s.
     IceConfig config1 = CreateIceConfig(1000, GATHER_CONTINUALLY);
-    config1.regather_all_networks_interval_range.emplace(
-        kRegatherInterval, kRegatherInterval);
+    config1.regather_all_networks_interval_range.emplace(kRegatherInterval,
+                                                         kRegatherInterval);
     IceConfig config2 = CreateIceConfig(1000, GATHER_CONTINUALLY);
 
     // Set peer roles.
@@ -1440,11 +1464,10 @@ class P2PTransportRegatherAllNetworksTest : public P2PTransportChannelTest {
     CreateChannels(config1, config2);
 
     // Wait for initial connection to be made.
-    EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->receiving() &&
-                                   ep1_ch1()->writable() &&
-                                   ep2_ch1()->receiving() &&
-                                   ep2_ch1()->writable(),
-                               kMediumTimeout, clock);
+    EXPECT_TRUE_SIMULATED_WAIT(
+        ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+            ep2_ch1()->receiving() && ep2_ch1()->writable(),
+        kMediumTimeout, clock);
 
     const Connection* initial_selected = ep1_ch1()->selected_connection();
 
@@ -1453,9 +1476,10 @@ class P2PTransportRegatherAllNetworksTest : public P2PTransportChannelTest {
     const int kWaitRegather =
         kRegatherInterval * kNumRegathers + kRegatherInterval / 2;
     SIMULATED_WAIT(false, kWaitRegather, clock);
-    EXPECT_EQ(kNumRegathers, GetMetricsObserver(0)->GetEnumCounter(
-        webrtc::kEnumCounterIceRegathering,
-        static_cast<int>(IceRegatheringReason::OCCASIONAL_REFRESH)));
+    EXPECT_EQ(kNumRegathers,
+              GetMetricsObserver(0)->GetEnumCounter(
+                  webrtc::kEnumCounterIceRegathering,
+                  static_cast<int>(IceRegatheringReason::OCCASIONAL_REFRESH)));
 
     const Connection* new_selected = ep1_ch1()->selected_connection();
 
@@ -1814,26 +1838,16 @@ TEST_F(P2PTransportChannelTest, TestDefaultDscpValue) {
   AddAddress(1, kPublicAddrs[1]);
 
   CreateChannels();
-  EXPECT_EQ(rtc::DSCP_NO_CHANGE,
-            GetEndpoint(0)->cd1_.ch_->DefaultDscpValue());
-  EXPECT_EQ(rtc::DSCP_NO_CHANGE,
-            GetEndpoint(1)->cd1_.ch_->DefaultDscpValue());
-  GetEndpoint(0)->cd1_.ch_->SetOption(
-      rtc::Socket::OPT_DSCP, rtc::DSCP_CS6);
-  GetEndpoint(1)->cd1_.ch_->SetOption(
-      rtc::Socket::OPT_DSCP, rtc::DSCP_CS6);
-  EXPECT_EQ(rtc::DSCP_CS6,
-            GetEndpoint(0)->cd1_.ch_->DefaultDscpValue());
-  EXPECT_EQ(rtc::DSCP_CS6,
-            GetEndpoint(1)->cd1_.ch_->DefaultDscpValue());
-  GetEndpoint(0)->cd1_.ch_->SetOption(
-      rtc::Socket::OPT_DSCP, rtc::DSCP_AF41);
-  GetEndpoint(1)->cd1_.ch_->SetOption(
-      rtc::Socket::OPT_DSCP, rtc::DSCP_AF41);
-  EXPECT_EQ(rtc::DSCP_AF41,
-            GetEndpoint(0)->cd1_.ch_->DefaultDscpValue());
-  EXPECT_EQ(rtc::DSCP_AF41,
-            GetEndpoint(1)->cd1_.ch_->DefaultDscpValue());
+  EXPECT_EQ(rtc::DSCP_NO_CHANGE, GetEndpoint(0)->cd1_.ch_->DefaultDscpValue());
+  EXPECT_EQ(rtc::DSCP_NO_CHANGE, GetEndpoint(1)->cd1_.ch_->DefaultDscpValue());
+  GetEndpoint(0)->cd1_.ch_->SetOption(rtc::Socket::OPT_DSCP, rtc::DSCP_CS6);
+  GetEndpoint(1)->cd1_.ch_->SetOption(rtc::Socket::OPT_DSCP, rtc::DSCP_CS6);
+  EXPECT_EQ(rtc::DSCP_CS6, GetEndpoint(0)->cd1_.ch_->DefaultDscpValue());
+  EXPECT_EQ(rtc::DSCP_CS6, GetEndpoint(1)->cd1_.ch_->DefaultDscpValue());
+  GetEndpoint(0)->cd1_.ch_->SetOption(rtc::Socket::OPT_DSCP, rtc::DSCP_AF41);
+  GetEndpoint(1)->cd1_.ch_->SetOption(rtc::Socket::OPT_DSCP, rtc::DSCP_AF41);
+  EXPECT_EQ(rtc::DSCP_AF41, GetEndpoint(0)->cd1_.ch_->DefaultDscpValue());
+  EXPECT_EQ(rtc::DSCP_AF41, GetEndpoint(1)->cd1_.ch_->DefaultDscpValue());
 }
 
 // Verify IPv6 connection is preferred over IPv4.
@@ -2240,15 +2254,16 @@ class P2PTransportChannelSameNatTest : public P2PTransportChannelTestBase {
   void ConfigureEndpoints(Config nat_type, Config config1, Config config2) {
     RTC_CHECK_GE(nat_type, NAT_FULL_CONE);
     RTC_CHECK_LE(nat_type, NAT_SYMMETRIC);
-    rtc::NATSocketServer::Translator* outer_nat =
-        nat()->AddTranslator(kPublicAddrs[0], kNatAddrs[0],
-            static_cast<rtc::NATType>(nat_type - NAT_FULL_CONE));
+    rtc::NATSocketServer::Translator* outer_nat = nat()->AddTranslator(
+        kPublicAddrs[0], kNatAddrs[0],
+        static_cast<rtc::NATType>(nat_type - NAT_FULL_CONE));
     ConfigureEndpoint(outer_nat, 0, config1);
     ConfigureEndpoint(outer_nat, 1, config2);
     set_remote_ice_parameter_source(FROM_SETICEPARAMETERS);
   }
   void ConfigureEndpoint(rtc::NATSocketServer::Translator* nat,
-                         int endpoint, Config config) {
+                         int endpoint,
+                         Config config) {
     RTC_CHECK(config <= NAT_SYMMETRIC);
     if (config == OPEN) {
       AddAddress(endpoint, kPrivateAddrs[endpoint]);
@@ -2256,8 +2271,8 @@ class P2PTransportChannelSameNatTest : public P2PTransportChannelTestBase {
     } else {
       AddAddress(endpoint, kCascadedPrivateAddrs[endpoint]);
       nat->AddTranslator(kPrivateAddrs[endpoint], kCascadedNatAddrs[endpoint],
-          static_cast<rtc::NATType>(config - NAT_FULL_CONE))->AddClient(
-              kCascadedPrivateAddrs[endpoint]);
+                         static_cast<rtc::NATType>(config - NAT_FULL_CONE))
+          ->AddClient(kCascadedPrivateAddrs[endpoint]);
     }
   }
 };
@@ -2420,7 +2435,7 @@ TEST_F(P2PTransportChannelMultihomedTest, TestFailoverControllingSide) {
                                  ep2_ch1()->selected_connection()->receiving(),
                              kMediumTimeout, clock);
   EXPECT_TRUE(
-    LocalCandidate(ep1_ch1())->address().EqualIPs(kAlternateAddrs[0]));
+      LocalCandidate(ep1_ch1())->address().EqualIPs(kAlternateAddrs[0]));
   EXPECT_TRUE(RemoteCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[1]));
   EXPECT_TRUE(
       RemoteCandidate(ep2_ch1())->address().EqualIPs(kAlternateAddrs[0]));
@@ -2982,10 +2997,10 @@ TEST_F(P2PTransportChannelMultihomedTest,
                                  ep2_ch1()->receiving() &&
                                  ep2_ch1()->writable(),
                              kMediumTimeout, clock);
-  EXPECT_TRUE(
-      ep1_ch1()->selected_connection() && ep2_ch1()->selected_connection() &&
-      LocalCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[0]) &&
-      RemoteCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[1]));
+  EXPECT_TRUE(ep1_ch1()->selected_connection() &&
+              ep2_ch1()->selected_connection() &&
+              LocalCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[0]) &&
+              RemoteCandidate(ep1_ch1())->address().EqualIPs(kPublicAddrs[1]));
 
   // Add the new address first and then remove the other one.
   RTC_LOG(LS_INFO) << "Draining...";

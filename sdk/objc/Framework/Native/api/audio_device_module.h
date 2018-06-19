@@ -21,4 +21,4 @@ rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceModule();
 
 }  // namespace webrtc
 
-#endif // SDK_OBJC_FRAMEWORK_NATIVE_API_AUDIO_DEVICE_MODULE_H_
+#endif  // SDK_OBJC_FRAMEWORK_NATIVE_API_AUDIO_DEVICE_MODULE_H_

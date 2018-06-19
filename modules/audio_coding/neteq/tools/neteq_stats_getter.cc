@@ -26,8 +26,7 @@ std::string NetEqStatsGetter::ConcealmentEvent::ToString() const {
   rtc::SimpleStringBuilder ss(ss_buf);
   ss << "ConcealmentEvent duration_ms:" << duration_ms
      << " event_number:" << concealment_event_number
-     << " time_from_previous_event_end_ms:"
-     << time_from_previous_event_end_ms;
+     << " time_from_previous_event_end_ms:" << time_from_previous_event_end_ms;
   return ss.str();
 }
 
@@ -115,12 +114,10 @@ NetEqStatsGetter::Stats NetEqStatsGetter::AverageStats() const {
         a.added_zero_samples += b.added_zero_samples;
         a.mean_waiting_time_ms += b.mean_waiting_time_ms;
         a.median_waiting_time_ms += b.median_waiting_time_ms;
-        a.min_waiting_time_ms =
-            std::min(a.min_waiting_time_ms,
-                     static_cast<double>(b.min_waiting_time_ms));
-        a.max_waiting_time_ms =
-            std::max(a.max_waiting_time_ms,
-                     static_cast<double>(b.max_waiting_time_ms));
+        a.min_waiting_time_ms = std::min(
+            a.min_waiting_time_ms, static_cast<double>(b.min_waiting_time_ms));
+        a.max_waiting_time_ms = std::max(
+            a.max_waiting_time_ms, static_cast<double>(b.max_waiting_time_ms));
         return a;
       });
 

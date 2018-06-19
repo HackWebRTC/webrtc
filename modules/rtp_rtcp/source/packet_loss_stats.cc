@@ -23,24 +23,24 @@ namespace webrtc {
 PacketLossStats::PacketLossStats()
     : single_loss_historic_count_(0),
       multiple_loss_historic_event_count_(0),
-      multiple_loss_historic_packet_count_(0) {
-}
+      multiple_loss_historic_packet_count_(0) {}
 
 PacketLossStats::~PacketLossStats() = default;
 
 void PacketLossStats::AddLostPacket(uint16_t sequence_number) {
   // Detect sequence number wrap around.
   if (!lost_packets_buffer_.empty() &&
-      static_cast<int>(*(lost_packets_buffer_.rbegin())) - sequence_number
-      > 0x8000) {
+      static_cast<int>(*(lost_packets_buffer_.rbegin())) - sequence_number >
+          0x8000) {
     // The buffer contains large numbers and this is a small number.
     lost_packets_wrapped_buffer_.insert(sequence_number);
   } else {
     lost_packets_buffer_.insert(sequence_number);
   }
-  if (lost_packets_wrapped_buffer_.size() + lost_packets_buffer_.size()
-      > kBufferSize || (!lost_packets_wrapped_buffer_.empty() &&
-                        *(lost_packets_wrapped_buffer_.rbegin()) > 0x4000)) {
+  if (lost_packets_wrapped_buffer_.size() + lost_packets_buffer_.size() >
+          kBufferSize ||
+      (!lost_packets_wrapped_buffer_.empty() &&
+       *(lost_packets_wrapped_buffer_.rbegin()) > 0x4000)) {
     PruneBuffer();
   }
 }

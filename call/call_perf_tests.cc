@@ -49,12 +49,8 @@ namespace webrtc {
 
 class CallPerfTest : public test::CallTest {
  protected:
-  enum class FecMode {
-    kOn, kOff
-  };
-  enum class CreateOrder {
-    kAudioFirst, kVideoFirst
-  };
+  enum class FecMode { kOn, kOff };
+  enum class CreateOrder { kAudioFirst, kVideoFirst };
   void TestAudioVideoSync(FecMode fec,
                           CreateOrder create_first,
                           float video_ntp_speed,
@@ -545,8 +541,7 @@ TEST_F(CallPerfTest, ReceivesCpuOveruseAndUnderuse) {
     void ModifyVideoConfigs(
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
-        VideoEncoderConfig* encoder_config) override {
-    }
+        VideoEncoderConfig* encoder_config) override {}
 
     void PerformTest() override {
       EXPECT_TRUE(Wait()) << "Timed out before receiving an overuse callback.";
@@ -643,7 +638,9 @@ void CallPerfTest::TestMinTransmitBitrate(bool pad_to_min_bitrate) {
   RunBaseTest(&test);
 }
 
-TEST_F(CallPerfTest, PadsToMinTransmitBitrate) { TestMinTransmitBitrate(true); }
+TEST_F(CallPerfTest, PadsToMinTransmitBitrate) {
+  TestMinTransmitBitrate(true);
+}
 
 TEST_F(CallPerfTest, NoPadWithoutMinTransmitBitrate) {
   TestMinTransmitBitrate(false);
@@ -938,11 +935,9 @@ void CallPerfTest::TestMinAudioVideoBitrate(
 
 // TODO(bugs.webrtc.org/8878)
 #if defined(WEBRTC_MAC)
-#define MAYBE_MinVideoAndAudioBitrate \
-  DISABLED_MinVideoAndAudioBitrate
+#define MAYBE_MinVideoAndAudioBitrate DISABLED_MinVideoAndAudioBitrate
 #else
-#define MAYBE_MinVideoAndAudioBitrate \
-  MinVideoAndAudioBitrate
+#define MAYBE_MinVideoAndAudioBitrate MinVideoAndAudioBitrate
 #endif
 TEST_F(CallPerfTest, MAYBE_MinVideoAndAudioBitrate) {
   TestMinAudioVideoBitrate(false, 110, 40, -10, 10000, 70000, 200000);

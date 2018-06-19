@@ -15,7 +15,7 @@
 
 // For ComplexFFT(), the maximum fft order is 10;
 // WebRTC APM uses orders of only 7 and 8.
-enum {kMaxFFTOrder = 10};
+enum { kMaxFFTOrder = 10 };
 
 struct RealFFT;
 

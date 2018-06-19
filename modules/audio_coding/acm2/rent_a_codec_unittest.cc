@@ -54,8 +54,7 @@ class RentACodecTestF : public ::testing::Test {
                        int expected_send_even_if_empty) {
     rtc::Buffer out;
     AudioEncoder::EncodedInfo encoded_info;
-    encoded_info =
-        encoder_->Encode(timestamp_, kZeroData, &out);
+    encoded_info = encoder_->Encode(timestamp_, kZeroData, &out);
     timestamp_ += kDataLengthSamples;
     EXPECT_TRUE(encoded_info.redundant.empty());
     EXPECT_EQ(expected_out_length, encoded_info.encoded_bytes);
@@ -132,9 +131,8 @@ TEST(RentACodecTest, ExternalEncoder) {
   {
     ::testing::InSequence s;
     info.encoded_timestamp = 0;
-    EXPECT_CALL(
-        *external_encoder,
-        EncodeImpl(0, rtc::ArrayView<const int16_t>(audio), &encoded))
+    EXPECT_CALL(*external_encoder,
+                EncodeImpl(0, rtc::ArrayView<const int16_t>(audio), &encoded))
         .WillOnce(Return(info));
     EXPECT_CALL(marker, Mark("A"));
     EXPECT_CALL(marker, Mark("B"));

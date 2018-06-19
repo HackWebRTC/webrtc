@@ -10,10 +10,10 @@
 
 #include "modules/audio_coding/test/EncodeDecodeTest.h"
 
-#include <memory>
-#include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
+#include <memory>
+#include <sstream>  // no-presubmit-check TODO(webrtc:8982)
 
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "common_types.h"  // NOLINT(build/include)

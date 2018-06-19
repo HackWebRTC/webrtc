@@ -55,8 +55,8 @@ class NetEqExternalDecoderUnitTest : public test::NetEqExternalDecoderTest {
   }
 
   virtual ~NetEqExternalDecoderUnitTest() {
-    delete [] input_;
-    delete [] encoded_;
+    delete[] input_;
+    delete[] encoded_;
     // ~NetEqExternalDecoderTest() will delete |external_decoder_|, so expecting
     // Die() to be called.
     EXPECT_CALL(*external_decoder_, Die()).Times(1);
@@ -75,8 +75,8 @@ class NetEqExternalDecoderUnitTest : public test::NetEqExternalDecoderTest {
     if (!input_file_->Read(frame_size_samples_, input_)) {
       return -1;
     }
-    payload_size_bytes_ = WebRtcPcm16b_Encode(input_, frame_size_samples_,
-                                              encoded_);
+    payload_size_bytes_ =
+        WebRtcPcm16b_Encode(input_, frame_size_samples_, encoded_);
 
     int next_send_time = rtp_generator_->GetRtpHeader(
         kPayloadType, frame_size_samples_, &rtp_header_);
@@ -111,9 +111,10 @@ class NetEqExternalDecoderUnitTest : public test::NetEqExternalDecoderTest {
     uint32_t time_now = 0;
     for (int k = 0; k < num_loops; ++k) {
       while (time_now >= next_arrival_time) {
-        InsertPacket(rtp_header_, rtc::ArrayView<const uint8_t>(
-                                      encoded_, payload_size_bytes_),
-                     next_arrival_time);
+        InsertPacket(
+            rtp_header_,
+            rtc::ArrayView<const uint8_t>(encoded_, payload_size_bytes_),
+            next_arrival_time);
         // Get next input packet.
         do {
           next_send_time = GetNewPacket();
@@ -148,6 +149,7 @@ class NetEqExternalDecoderUnitTest : public test::NetEqExternalDecoderTest {
   }
 
   int samples_per_ms() const { return samples_per_ms_; }
+
  private:
   std::unique_ptr<MockExternalPcm16B> external_decoder_;
   int samples_per_ms_;
@@ -337,11 +339,9 @@ TEST_F(LargeTimestampJumpTest, JumpLongerThanHalfRange) {
       static_cast<uint32_t>(kJumpToTimestamp - kJumpFromTimestamp) > 0x7FFFFFFF,
       "jump should be larger than half range");
   // Replace the default RTP generator with one that jumps in timestamp.
-  ResetRtpGenerator(new test::TimestampJumpRtpGenerator(samples_per_ms(),
-                                                        kStartSeqeunceNumber,
-                                                        kStartTimestamp,
-                                                        kJumpFromTimestamp,
-                                                        kJumpToTimestamp));
+  ResetRtpGenerator(new test::TimestampJumpRtpGenerator(
+      samples_per_ms(), kStartSeqeunceNumber, kStartTimestamp,
+      kJumpFromTimestamp, kJumpToTimestamp));
 
   RunTest(130);  // Run 130 laps @ 10 ms each in the test loop.
   EXPECT_EQ(kRecovered, test_state_);
@@ -361,11 +361,9 @@ TEST_F(LargeTimestampJumpTest, JumpLongerThanHalfRangeAndWrap) {
       static_cast<uint32_t>(kJumpToTimestamp - kJumpFromTimestamp) > 0x7FFFFFFF,
       "jump should be larger than half range");
   // Replace the default RTP generator with one that jumps in timestamp.
-  ResetRtpGenerator(new test::TimestampJumpRtpGenerator(samples_per_ms(),
-                                                        kStartSeqeunceNumber,
-                                                        kStartTimestamp,
-                                                        kJumpFromTimestamp,
-                                                        kJumpToTimestamp));
+  ResetRtpGenerator(new test::TimestampJumpRtpGenerator(
+      samples_per_ms(), kStartSeqeunceNumber, kStartTimestamp,
+      kJumpFromTimestamp, kJumpToTimestamp));
 
   RunTest(130);  // Run 130 laps @ 10 ms each in the test loop.
   EXPECT_EQ(kRecovered, test_state_);
@@ -420,11 +418,9 @@ TEST_F(ShortTimestampJumpTest, JumpShorterThanHalfRange) {
       static_cast<uint32_t>(kJumpToTimestamp - kJumpFromTimestamp) < 0x7FFFFFFF,
       "jump should be smaller than half range");
   // Replace the default RTP generator with one that jumps in timestamp.
-  ResetRtpGenerator(new test::TimestampJumpRtpGenerator(samples_per_ms(),
-                                                        kStartSeqeunceNumber,
-                                                        kStartTimestamp,
-                                                        kJumpFromTimestamp,
-                                                        kJumpToTimestamp));
+  ResetRtpGenerator(new test::TimestampJumpRtpGenerator(
+      samples_per_ms(), kStartSeqeunceNumber, kStartTimestamp,
+      kJumpFromTimestamp, kJumpToTimestamp));
 
   RunTest(130);  // Run 130 laps @ 10 ms each in the test loop.
   EXPECT_EQ(kRecovered, test_state_);
@@ -444,11 +440,9 @@ TEST_F(ShortTimestampJumpTest, JumpShorterThanHalfRangeAndWrap) {
       static_cast<uint32_t>(kJumpToTimestamp - kJumpFromTimestamp) < 0x7FFFFFFF,
       "jump should be smaller than half range");
   // Replace the default RTP generator with one that jumps in timestamp.
-  ResetRtpGenerator(new test::TimestampJumpRtpGenerator(samples_per_ms(),
-                                                        kStartSeqeunceNumber,
-                                                        kStartTimestamp,
-                                                        kJumpFromTimestamp,
-                                                        kJumpToTimestamp));
+  ResetRtpGenerator(new test::TimestampJumpRtpGenerator(
+      samples_per_ms(), kStartSeqeunceNumber, kStartTimestamp,
+      kJumpFromTimestamp, kJumpToTimestamp));
 
   RunTest(130);  // Run 130 laps @ 10 ms each in the test loop.
   EXPECT_EQ(kRecovered, test_state_);

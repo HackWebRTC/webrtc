@@ -86,8 +86,7 @@ VideoSender::VideoSender(PacketProcessorListener* listener,
   modules_.push_back(bwe_.get());
 }
 
-VideoSender::~VideoSender() {
-}
+VideoSender::~VideoSender() {}
 
 void VideoSender::Pause() {
   previous_sending_bitrate_ = TargetBitrateKbps();
@@ -338,8 +337,7 @@ const int kPacketSizeBytes = 1200;
 TcpSender::TcpSender(PacketProcessorListener* listener,
                      int flow_id,
                      int64_t offset_ms)
-    : TcpSender(listener, flow_id, offset_ms, kNoLimit) {
-}
+    : TcpSender(listener, flow_id, offset_ms, kNoLimit) {}
 
 TcpSender::TcpSender(PacketProcessorListener* listener,
                      int flow_id,
@@ -358,8 +356,7 @@ TcpSender::TcpSender(PacketProcessorListener* listener,
       send_limit_bytes_(send_limit_bytes),
       last_generated_packets_ms_(0),
       num_recent_sent_packets_(0),
-      bitrate_kbps_(0) {
-}
+      bitrate_kbps_(0) {}
 
 void TcpSender::RunFor(int64_t time_ms, Packets* in_out) {
   if (clock_.TimeInMilliseconds() + time_ms < offset_ms_) {
@@ -477,8 +474,8 @@ Packets TcpSender::GeneratePackets(size_t num_packets) {
     generated.push_back(
         new MediaPacket(*flow_ids().begin(), 1000 * clock_.TimeInMilliseconds(),
                         kPacketSizeBytes, next_sequence_number_++));
-    generated.back()->set_sender_timestamp_us(
-        1000 * clock_.TimeInMilliseconds());
+    generated.back()->set_sender_timestamp_us(1000 *
+                                              clock_.TimeInMilliseconds());
 
     total_sent_bytes_ += kPacketSizeBytes;
   }

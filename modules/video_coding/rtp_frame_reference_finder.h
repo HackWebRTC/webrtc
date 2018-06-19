@@ -12,9 +12,9 @@
 #define MODULES_VIDEO_CODING_RTP_FRAME_REFERENCE_FINDER_H_
 
 #include <array>
+#include <deque>
 #include <map>
 #include <memory>
-#include <deque>
 #include <set>
 #include <utility>
 

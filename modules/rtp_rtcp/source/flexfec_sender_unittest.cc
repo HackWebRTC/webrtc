@@ -281,11 +281,11 @@ TEST(FlexfecSenderTest, MaxPacketOverheadWithExtensions) {
   SimulatedClock clock(kInitialSimulatedClockTime);
   const size_t kExtensionHeaderLength = 1;
   const size_t kRtpOneByteHeaderLength = 4;
-  const size_t kExtensionsTotalSize = Word32Align(
-      kRtpOneByteHeaderLength +
-      kExtensionHeaderLength + AbsoluteSendTime::kValueSizeBytes +
-      kExtensionHeaderLength + TransmissionOffset::kValueSizeBytes +
-      kExtensionHeaderLength + TransportSequenceNumber::kValueSizeBytes);
+  const size_t kExtensionsTotalSize =
+      Word32Align(kRtpOneByteHeaderLength + kExtensionHeaderLength +
+                  AbsoluteSendTime::kValueSizeBytes + kExtensionHeaderLength +
+                  TransmissionOffset::kValueSizeBytes + kExtensionHeaderLength +
+                  TransportSequenceNumber::kValueSizeBytes);
   FlexfecSender sender(kFlexfecPayloadType, kFlexfecSsrc, kMediaSsrc, kNoMid,
                        kRtpHeaderExtensions, RTPSender::FecExtensionSizes(),
                        nullptr /* rtp_state */, &clock);

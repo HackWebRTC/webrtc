@@ -23,8 +23,8 @@
 #endif  // WEBRTC_POSIX
 
 #if defined(WEBRTC_WIN)
-#include "rtc_base/win32.h"
 #include <iphlpapi.h>
+#include "rtc_base/win32.h"
 #elif !defined(__native_client__)
 #include "rtc_base/ifaddrs_converter.h"
 #endif
@@ -165,7 +165,8 @@ const char kPublicIPv4Host[] = "8.8.8.8";
 const char kPublicIPv6Host[] = "2001:4860:4860::8888";
 const int kPublicPort = 53;  // DNS port.
 
-std::string MakeNetworkKey(const std::string& name, const IPAddress& prefix,
+std::string MakeNetworkKey(const std::string& name,
+                           const IPAddress& prefix,
                            int prefix_length) {
   std::ostringstream ost;
   ost << name << "%" << prefix.ToString() << "/" << prefix_length;
@@ -232,11 +233,9 @@ AdapterType GetAdapterTypeFromName(const char* network_name) {
   return ADAPTER_TYPE_UNKNOWN;
 }
 
-NetworkManager::NetworkManager() {
-}
+NetworkManager::NetworkManager() {}
 
-NetworkManager::~NetworkManager() {
-}
+NetworkManager::~NetworkManager() {}
 
 NetworkManager::EnumerationPermission NetworkManager::enumeration_permission()
     const {
@@ -249,8 +248,7 @@ bool NetworkManager::GetDefaultLocalAddress(int family, IPAddress* addr) const {
 
 NetworkManagerBase::NetworkManagerBase()
     : enumeration_permission_(NetworkManager::ENUMERATION_ALLOWED),
-      ipv6_enabled_(true) {
-}
+      ipv6_enabled_(true) {}
 
 NetworkManagerBase::~NetworkManagerBase() {
   for (const auto& kv : networks_map_) {
@@ -308,8 +306,7 @@ void NetworkManagerBase::MergeNetworkList(const NetworkList& new_networks,
   // First, build a set of network-keys to the ipaddresses.
   for (Network* network : list) {
     bool might_add_to_merged_list = false;
-    std::string key = MakeNetworkKey(network->name(),
-                                     network->prefix(),
+    std::string key = MakeNetworkKey(network->name(), network->prefix(),
                                      network->prefix_length());
     if (consolidated_address_list.find(key) ==
         consolidated_address_list.end()) {
@@ -460,8 +457,7 @@ BasicNetworkManager::BasicNetworkManager()
       start_count_(0),
       ignore_non_default_routes_(false) {}
 
-BasicNetworkManager::~BasicNetworkManager() {
-}
+BasicNetworkManager::~BasicNetworkManager() {}
 
 void BasicNetworkManager::OnNetworksChanged() {
   RTC_LOG(LS_INFO) << "Network change was observed";
@@ -543,8 +539,8 @@ void BasicNetworkManager::ConvertIfAddrs(struct ifaddrs* interfaces,
     }
     int prefix_length = CountIPMaskBits(mask);
     prefix = TruncateIP(ip, prefix_length);
-    std::string key = MakeNetworkKey(std::string(cursor->ifa_name),
-                                     prefix, prefix_length);
+    std::string key =
+        MakeNetworkKey(std::string(cursor->ifa_name), prefix, prefix_length);
     auto iter = current_networks.find(key);
     if (iter == current_networks.end()) {
       // TODO(phoglund): Need to recognize other types as well.
@@ -593,7 +589,8 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
 #elif defined(WEBRTC_WIN)
 
 unsigned int GetPrefix(PIP_ADAPTER_PREFIX prefixlist,
-              const IPAddress& ip, IPAddress* prefix) {
+                       const IPAddress& ip,
+                       IPAddress* prefix) {
   IPAddress current_prefix;
   IPAddress best_prefix;
   unsigned int best_length = 0;
@@ -612,10 +609,10 @@ unsigned int GetPrefix(PIP_ADAPTER_PREFIX prefixlist,
         break;
       }
       case AF_INET6: {
-          sockaddr_in6* v6_addr =
-              reinterpret_cast<sockaddr_in6*>(prefixlist->Address.lpSockaddr);
-          current_prefix = IPAddress(v6_addr->sin6_addr);
-          break;
+        sockaddr_in6* v6_addr =
+            reinterpret_cast<sockaddr_in6*>(prefixlist->Address.lpSockaddr);
+        current_prefix = IPAddress(v6_addr->sin6_addr);
+        break;
       }
       default: {
         prefixlist = prefixlist->Next;
@@ -647,8 +644,7 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
   do {
     adapter_info.reset(new char[buffer_size]);
     adapter_addrs = reinterpret_cast<PIP_ADAPTER_ADDRESSES>(adapter_info.get());
-    ret = GetAdaptersAddresses(AF_UNSPEC, adapter_flags,
-                               0, adapter_addrs,
+    ret = GetAdaptersAddresses(AF_UNSPEC, adapter_flags, 0, adapter_addrs,
                                reinterpret_cast<PULONG>(&buffer_size));
   } while (ret == ERROR_BUFFER_OVERFLOW);
   if (ret != ERROR_SUCCESS) {
@@ -698,9 +694,7 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
               continue;
             }
           }
-          default: {
-            continue;
-          }
+          default: { continue; }
         }
 
         IPAddress prefix;
@@ -771,12 +765,9 @@ bool IsDefaultRoute(const std::string& network_name) {
     while (fs.ReadLine(&line) == SR_SUCCESS) {
       char iface_name[256];
       unsigned int iface_ip, iface_gw, iface_mask, iface_flags;
-      if (sscanf(line.c_str(),
-                 "%255s %8X %8X %4X %*d %*u %*d %8X",
-                 iface_name, &iface_ip, &iface_gw,
-                 &iface_flags, &iface_mask) == 5 &&
-          network_name == iface_name &&
-          iface_mask == 0 &&
+      if (sscanf(line.c_str(), "%255s %8X %8X %4X %*d %*u %*d %8X", iface_name,
+                 &iface_ip, &iface_gw, &iface_flags, &iface_mask) == 5 &&
+          network_name == iface_name && iface_mask == 0 &&
           (iface_flags & (RTF_UP | RTF_HOST)) == RTF_UP) {
         return true;
       }
@@ -883,7 +874,7 @@ void BasicNetworkManager::OnMessage(Message* msg) {
       UpdateNetworksContinually();
       break;
     }
-    case kSignalNetworksMessage:  {
+    case kSignalNetworksMessage: {
       SignalNetworksChanged();
       break;
     }
@@ -907,8 +898,8 @@ IPAddress BasicNetworkManager::QueryDefaultLocalAddress(int family) const {
   if (socket->Connect(SocketAddress(
           family == AF_INET ? kPublicIPv4Host : kPublicIPv6Host, kPublicPort)) <
       0) {
-    if (socket->GetError() != ENETUNREACH
-        && socket->GetError() != EHOSTUNREACH) {
+    if (socket->GetError() != ENETUNREACH &&
+        socket->GetError() != EHOSTUNREACH) {
       // Ignore the expected case of "host/net unreachable" - which happens if
       // the network is V4- or V6-only.
       RTC_LOG(LS_INFO) << "Connect failed with " << socket->GetError();

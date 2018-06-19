@@ -104,8 +104,8 @@ bool GetWindowDrawableRect(HWND window,
   }
 
   if (is_maximized) {
-    return GetCroppedWindowRect(
-        window, drawable_rect, /* original_rect */ nullptr);
+    return GetCroppedWindowRect(window, drawable_rect,
+                                /* original_rect */ nullptr);
   }
   *drawable_rect = *original_rect;
   return true;
@@ -198,8 +198,8 @@ bool WindowCapturerWin::FocusOnSelectedSource() {
 
 bool WindowCapturerWin::IsOccluded(const DesktopVector& pos) {
   DesktopVector sys_pos = pos.add(GetFullscreenRect().top_left());
-  return reinterpret_cast<HWND>(window_finder_.GetWindowUnderPoint(sys_pos))
-      != window_;
+  return reinterpret_cast<HWND>(window_finder_.GetWindowUnderPoint(sys_pos)) !=
+         window_;
 }
 
 void WindowCapturerWin::Start(Callback* callback) {
@@ -317,10 +317,8 @@ void WindowCapturerWin::CaptureFrame() {
   // Aero is enabled or PrintWindow() failed, use BitBlt.
   if (!result) {
     result = BitBlt(mem_dc, 0, 0, frame->size().width(), frame->size().height(),
-                    window_dc,
-                    cropped_rect.left() - original_rect.left(),
-                    cropped_rect.top() - original_rect.top(),
-                    SRCCOPY);
+                    window_dc, cropped_rect.left() - original_rect.left(),
+                    cropped_rect.top() - original_rect.top(), SRCCOPY);
   }
 
   SelectObject(mem_dc, previous_object);

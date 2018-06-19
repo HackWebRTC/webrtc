@@ -69,9 +69,7 @@ class NetEqStatsGetter : public NetEqGetAudioCallback {
 
   double AverageSpeechExpandRate() const;
 
-  NetEqDelayAnalyzer* delay_analyzer() const {
-    return delay_analyzer_.get();
-  }
+  NetEqDelayAnalyzer* delay_analyzer() const { return delay_analyzer_.get(); }
 
   const std::vector<ConcealmentEvent>& concealment_events() const {
     // Do not account for the last concealment event to avoid potential end

@@ -66,7 +66,8 @@ void AudioFrame::UpdateFrame(uint32_t timestamp,
 }
 
 void AudioFrame::CopyFrom(const AudioFrame& src) {
-  if (this == &src) return;
+  if (this == &src)
+    return;
 
   timestamp_ = src.timestamp_;
   elapsed_time_ms_ = src.elapsed_time_ms_;
@@ -116,7 +117,9 @@ void AudioFrame::Mute() {
   muted_ = true;
 }
 
-bool AudioFrame::muted() const { return muted_; }
+bool AudioFrame::muted() const {
+  return muted_;
+}
 
 // static
 const int16_t* AudioFrame::empty_data() {

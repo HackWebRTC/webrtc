@@ -28,33 +28,23 @@ class FakeDataChannelObserver : public webrtc::DataChannelObserver {
         on_state_change_count_(0),
         on_buffered_amount_change_count_(0) {}
 
-  void OnStateChange() {
-    ++on_state_change_count_;
-  }
+  void OnStateChange() { ++on_state_change_count_; }
 
   void OnBufferedAmountChange(uint64_t previous_amount) {
     ++on_buffered_amount_change_count_;
   }
 
-  void OnMessage(const webrtc::DataBuffer& buffer) {
-    ++messages_received_;
-  }
+  void OnMessage(const webrtc::DataBuffer& buffer) { ++messages_received_; }
 
-  size_t messages_received() const {
-    return messages_received_;
-  }
+  size_t messages_received() const { return messages_received_; }
 
-  void ResetOnStateChangeCount() {
-    on_state_change_count_ = 0;
-  }
+  void ResetOnStateChangeCount() { on_state_change_count_ = 0; }
 
   void ResetOnBufferedAmountChangeCount() {
     on_buffered_amount_change_count_ = 0;
   }
 
-  size_t on_state_change_count() const {
-    return on_state_change_count_;
-  }
+  size_t on_state_change_count() const { return on_state_change_count_; }
 
   size_t on_buffered_amount_change_count() const {
     return on_buffered_amount_change_count_;
@@ -103,13 +93,9 @@ class StateSignalsListener : public sigslot::has_slots<> {
   int opened_count() const { return opened_count_; }
   int closed_count() const { return closed_count_; }
 
-  void OnSignalOpened(DataChannel* data_channel) {
-    ++opened_count_;
-  }
+  void OnSignalOpened(DataChannel* data_channel) { ++opened_count_; }
 
-  void OnSignalClosed(DataChannel* data_channel) {
-    ++closed_count_;
-  }
+  void OnSignalClosed(DataChannel* data_channel) { ++closed_count_; }
 
  private:
   int opened_count_ = 0;
@@ -234,12 +220,10 @@ TEST_F(SctpDataChannelTest, VerifyMessagesAndBytesSent) {
   AddObserver();
   SetChannelReady();
   std::vector<webrtc::DataBuffer> buffers({
-    webrtc::DataBuffer("message 1"),
-    webrtc::DataBuffer("msg 2"),
-    webrtc::DataBuffer("message three"),
-    webrtc::DataBuffer("quadra message"),
-    webrtc::DataBuffer("fifthmsg"),
-    webrtc::DataBuffer("message of the beast"),
+      webrtc::DataBuffer("message 1"), webrtc::DataBuffer("msg 2"),
+      webrtc::DataBuffer("message three"), webrtc::DataBuffer("quadra message"),
+      webrtc::DataBuffer("fifthmsg"),
+      webrtc::DataBuffer("message of the beast"),
   });
 
   // Default values.
@@ -306,8 +290,7 @@ TEST_F(SctpDataChannelTest, LateCreatedChannelTransitionToOpen) {
   rtc::scoped_refptr<DataChannel> dc =
       DataChannel::Create(provider_.get(), cricket::DCT_SCTP, "test1", init);
   EXPECT_EQ(webrtc::DataChannelInterface::kConnecting, dc->state());
-  EXPECT_TRUE_WAIT(webrtc::DataChannelInterface::kOpen == dc->state(),
-                   1000);
+  EXPECT_TRUE_WAIT(webrtc::DataChannelInterface::kOpen == dc->state(), 1000);
 }
 
 // Tests that an unordered DataChannel sends data as ordered until the OPEN_ACK
@@ -459,12 +442,10 @@ TEST_F(SctpDataChannelTest, NoMsgSentIfNegotiatedAndNotFromOpenMsg) {
 TEST_F(SctpDataChannelTest, VerifyMessagesAndBytesReceived) {
   AddObserver();
   std::vector<webrtc::DataBuffer> buffers({
-    webrtc::DataBuffer("message 1"),
-    webrtc::DataBuffer("msg 2"),
-    webrtc::DataBuffer("message three"),
-    webrtc::DataBuffer("quadra message"),
-    webrtc::DataBuffer("fifthmsg"),
-    webrtc::DataBuffer("message of the beast"),
+      webrtc::DataBuffer("message 1"), webrtc::DataBuffer("msg 2"),
+      webrtc::DataBuffer("message three"), webrtc::DataBuffer("quadra message"),
+      webrtc::DataBuffer("fifthmsg"),
+      webrtc::DataBuffer("message of the beast"),
   });
 
   webrtc_data_channel_->SetSctpSid(1);
@@ -584,13 +565,11 @@ TEST_F(SctpDataChannelTest, ClosedWhenReceivedBufferFull) {
 TEST_F(SctpDataChannelTest, SendEmptyData) {
   webrtc_data_channel_->SetSctpSid(1);
   SetChannelReady();
-  EXPECT_EQ(webrtc::DataChannelInterface::kOpen,
-            webrtc_data_channel_->state());
+  EXPECT_EQ(webrtc::DataChannelInterface::kOpen, webrtc_data_channel_->state());
 
   webrtc::DataBuffer buffer("");
   EXPECT_TRUE(webrtc_data_channel_->Send(buffer));
-  EXPECT_EQ(webrtc::DataChannelInterface::kOpen,
-            webrtc_data_channel_->state());
+  EXPECT_EQ(webrtc::DataChannelInterface::kOpen, webrtc_data_channel_->state());
 }
 
 // Tests that a channel can be closed without being opened or assigned an sid.

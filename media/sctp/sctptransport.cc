@@ -16,7 +16,7 @@ enum PreservedErrno {
   SCTP_EINPROGRESS = EINPROGRESS,
   SCTP_EWOULDBLOCK = EWOULDBLOCK
 };
-}
+}  // namespace
 
 #include "media/sctp/sctptransport.h"
 

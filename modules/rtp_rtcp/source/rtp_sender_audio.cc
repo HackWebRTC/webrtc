@@ -26,8 +26,7 @@
 namespace webrtc {
 
 RTPSenderAudio::RTPSenderAudio(Clock* clock, RTPSender* rtp_sender)
-    : clock_(clock),
-      rtp_sender_(rtp_sender) {}
+    : clock_(clock), rtp_sender_(rtp_sender) {}
 
 RTPSenderAudio::~RTPSenderAudio() {}
 
@@ -190,7 +189,8 @@ bool RTPSenderAudio::SendAudio(FrameType frame_type,
         dtmf_duration_samples -= 0xffff;
         dtmf_length_samples_ -= 0xffff;
 
-        return SendTelephoneEventPacket(ended, dtmf_timestamp_,
+        return SendTelephoneEventPacket(
+            ended, dtmf_timestamp_,
             static_cast<uint16_t>(dtmf_duration_samples), false);
       } else {
         if (!SendTelephoneEventPacket(ended, dtmf_timestamp_,

@@ -14,11 +14,9 @@
 
 namespace rtc {
 
-ThreadCheckerImpl::ThreadCheckerImpl() : valid_thread_(CurrentThreadRef()) {
-}
+ThreadCheckerImpl::ThreadCheckerImpl() : valid_thread_(CurrentThreadRef()) {}
 
-ThreadCheckerImpl::~ThreadCheckerImpl() {
-}
+ThreadCheckerImpl::~ThreadCheckerImpl() {}
 
 bool ThreadCheckerImpl::CalledOnValidThread() const {
   const PlatformThreadRef current_thread = CurrentThreadRef();

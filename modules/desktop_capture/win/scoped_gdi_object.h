@@ -20,19 +20,15 @@ namespace webrtc {
 namespace win {
 
 // Scoper for GDI objects.
-template<class T, class Traits>
+template <class T, class Traits>
 class ScopedGDIObject {
  public:
   ScopedGDIObject() : handle_(NULL) {}
   explicit ScopedGDIObject(T object) : handle_(object) {}
 
-  ~ScopedGDIObject() {
-    Traits::Close(handle_);
-  }
+  ~ScopedGDIObject() { Traits::Close(handle_); }
 
-  T Get() {
-    return handle_;
-  }
+  T Get() { return handle_; }
 
   void Set(T object) {
     if (handle_ && object != handle_)

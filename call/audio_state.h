@@ -42,7 +42,8 @@ class AudioState : public rtc::RefCountInterface {
   struct Stats {
     // Audio peak level (max(abs())), linearly on the interval [0,32767].
     int32_t audio_level = -1;
-    // See: https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats-totalaudioenergy
+    // See:
+    // https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats-totalaudioenergy
     double total_energy = 0.0f;
     double total_duration = 0.0f;
   };

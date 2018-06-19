@@ -19,16 +19,13 @@ int FractionLost(uint32_t num_lost_sequence_numbers,
     return 0;
   }
   return ((num_lost_sequence_numbers * 255) + (num_sequence_numbers / 2)) /
-      num_sequence_numbers;
+         num_sequence_numbers;
 }
 }  // namespace
 
-
 // Helper class for rtcp statistics.
 ReportBlockStats::ReportBlockStats()
-    : num_sequence_numbers_(0),
-      num_lost_sequence_numbers_(0) {
-}
+    : num_sequence_numbers_(0), num_lost_sequence_numbers_(0) {}
 
 void ReportBlockStats::Store(const RtcpStatistics& rtcp_stats,
                              uint32_t remote_ssrc,
@@ -43,8 +40,8 @@ void ReportBlockStats::Store(const RtcpStatistics& rtcp_stats,
   block.source_ssrc = source_ssrc;
   uint32_t num_sequence_numbers = 0;
   uint32_t num_lost_sequence_numbers = 0;
-  StoreAndAddPacketIncrement(
-      block, &num_sequence_numbers, &num_lost_sequence_numbers);
+  StoreAndAddPacketIncrement(block, &num_sequence_numbers,
+                             &num_lost_sequence_numbers);
 }
 
 RTCPReportBlock ReportBlockStats::AggregateAndStore(
@@ -59,8 +56,7 @@ RTCPReportBlock ReportBlockStats::AggregateAndStore(
   for (; report_block != report_blocks.end(); ++report_block) {
     aggregate.packets_lost += report_block->packets_lost;
     aggregate.jitter += report_block->jitter;
-    StoreAndAddPacketIncrement(*report_block,
-                               &num_sequence_numbers,
+    StoreAndAddPacketIncrement(*report_block, &num_sequence_numbers,
                                &num_lost_sequence_numbers);
   }
 
@@ -105,9 +101,8 @@ int ReportBlockStats::FractionLostInPercent() const {
   if (num_sequence_numbers_ == 0) {
     return -1;
   }
-  return FractionLost(
-      num_lost_sequence_numbers_, num_sequence_numbers_) * 100 / 255;
+  return FractionLost(num_lost_sequence_numbers_, num_sequence_numbers_) * 100 /
+         255;
 }
 
 }  // namespace webrtc
-

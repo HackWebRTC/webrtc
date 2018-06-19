@@ -171,9 +171,7 @@ class FakeDtlsTransport : public DtlsTransportInternal {
     *crypto_suite = crypto_suite_;
     return true;
   }
-  void SetSrtpCryptoSuite(int crypto_suite) {
-    crypto_suite_ = crypto_suite;
-  }
+  void SetSrtpCryptoSuite(int crypto_suite) { crypto_suite_ = crypto_suite; }
   bool GetSslCipherSuite(int* cipher_suite) override { return false; }
   rtc::scoped_refptr<rtc::RTCCertificate> GetLocalCertificate() const override {
     return local_cert_;

@@ -112,19 +112,19 @@ size_t WebRtcG711_DecodeU(const uint8_t* encoded,
                           int16_t* speechType);
 
 /**********************************************************************
-* WebRtcG711_Version(...)
-*
-* This function gives the version string of the G.711 codec.
-*
-* Input:
-*      - lenBytes:     the size of Allocated space (in Bytes) where
-*                      the version number is written to (in string format).
-*
-* Output:
-*      - version:      Pointer to a buffer where the version number is
-*                      written to.
-*
-*/
+ * WebRtcG711_Version(...)
+ *
+ * This function gives the version string of the G.711 codec.
+ *
+ * Input:
+ *      - lenBytes:     the size of Allocated space (in Bytes) where
+ *                      the version number is written to (in string format).
+ *
+ * Output:
+ *      - version:      Pointer to a buffer where the version number is
+ *                      written to.
+ *
+ */
 
 int16_t WebRtcG711_Version(char* version, int16_t lenBytes);
 

@@ -122,8 +122,8 @@ void ExecuteDifferWrapperCase(BlackWhiteDesktopFramePainter* frame_painter,
               OnCaptureResultPtr(DesktopCapturer::Result::SUCCESS, testing::_))
       .Times(1)
       .WillOnce(testing::Invoke([&updated_region, check_result, exactly_match](
-          DesktopCapturer::Result result,
-          std::unique_ptr<DesktopFrame>* frame) {
+                                    DesktopCapturer::Result result,
+                                    std::unique_ptr<DesktopFrame>* frame) {
         ASSERT_EQ(result, DesktopCapturer::Result::SUCCESS);
         if (check_result) {
           if (exactly_match) {

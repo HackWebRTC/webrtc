@@ -42,8 +42,8 @@ int32_t ConfigurableFrameSizeEncoder::Encode(
     const VideoFrame& inputImage,
     const CodecSpecificInfo* codecSpecificInfo,
     const std::vector<FrameType>* frame_types) {
-  EncodedImage encodedImage(
-      buffer_.get(), current_frame_size_, max_frame_size_);
+  EncodedImage encodedImage(buffer_.get(), current_frame_size_,
+                            max_frame_size_);
   encodedImage._completeFrame = true;
   encodedImage._encodedHeight = inputImage.height();
   encodedImage._encodedWidth = inputImage.width();

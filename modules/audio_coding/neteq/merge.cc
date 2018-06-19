@@ -43,10 +43,11 @@ Merge::Merge(int fs_hz,
 
 Merge::~Merge() = default;
 
-size_t Merge::Process(int16_t* input, size_t input_length,
+size_t Merge::Process(int16_t* input,
+                      size_t input_length,
                       AudioMultiVector* output) {
   // TODO(hlundin): Change to an enumerator and skip assert.
-  assert(fs_hz_ == 8000 || fs_hz_ == 16000 || fs_hz_ ==  32000 ||
+  assert(fs_hz_ == 8000 || fs_hz_ == 16000 || fs_hz_ == 32000 ||
          fs_hz_ == 48000);
   assert(fs_hz_ <= kMaxSampleRate);  // Should not be possible.
 
@@ -68,8 +69,8 @@ size_t Merge::Process(int16_t* input, size_t input_length,
       new int16_t[input_length_per_channel]);
   std::unique_ptr<int16_t[]> expanded_channel(new int16_t[expanded_length]);
   for (size_t channel = 0; channel < num_channels_; ++channel) {
-    input_vector[channel].CopyTo(
-        input_length_per_channel, 0, input_channel.get());
+    input_vector[channel].CopyTo(input_length_per_channel, 0,
+                                 input_channel.get());
     expanded_[channel].CopyTo(expanded_length, 0, expanded_channel.get());
 
     const int16_t new_mute_factor = std::min<int16_t>(
@@ -93,11 +94,11 @@ size_t Merge::Process(int16_t* input, size_t input_length,
 
     // Mute the new decoded data if needed (and unmute it linearly).
     // This is the overlapping part of expanded_signal.
-    size_t interpolation_length = std::min(
-        kMaxCorrelationLength * fs_mult_,
-        expanded_length - best_correlation_index);
-    interpolation_length = std::min(interpolation_length,
-                                    input_length_per_channel);
+    size_t interpolation_length =
+        std::min(kMaxCorrelationLength * fs_mult_,
+                 expanded_length - best_correlation_index);
+    interpolation_length =
+        std::min(interpolation_length, input_length_per_channel);
 
     RTC_DCHECK_LE(new_mute_factor, 16384);
     int16_t mute_factor =
@@ -203,30 +204,28 @@ size_t Merge::GetExpandedSignal(size_t* old_length, size_t* expand_period) {
   return required_length;
 }
 
-int16_t Merge::SignalScaling(const int16_t* input, size_t input_length,
+int16_t Merge::SignalScaling(const int16_t* input,
+                             size_t input_length,
                              const int16_t* expanded_signal) const {
   // Adjust muting factor if new vector is more or less of the BGN energy.
   const auto mod_input_length = rtc::SafeMin<size_t>(
       64 * rtc::dchecked_cast<size_t>(fs_mult_), input_length);
   const int16_t expanded_max =
       WebRtcSpl_MaxAbsValueW16(expanded_signal, mod_input_length);
-  int32_t factor = (expanded_max * expanded_max) /
-      (std::numeric_limits<int32_t>::max() /
-          static_cast<int32_t>(mod_input_length));
+  int32_t factor =
+      (expanded_max * expanded_max) / (std::numeric_limits<int32_t>::max() /
+                                       static_cast<int32_t>(mod_input_length));
   const int expanded_shift = factor == 0 ? 0 : 31 - WebRtcSpl_NormW32(factor);
-  int32_t energy_expanded = WebRtcSpl_DotProductWithScale(expanded_signal,
-                                                          expanded_signal,
-                                                          mod_input_length,
-                                                          expanded_shift);
+  int32_t energy_expanded = WebRtcSpl_DotProductWithScale(
+      expanded_signal, expanded_signal, mod_input_length, expanded_shift);
 
   // Calculate energy of input signal.
   const int16_t input_max = WebRtcSpl_MaxAbsValueW16(input, mod_input_length);
   factor = (input_max * input_max) / (std::numeric_limits<int32_t>::max() /
-      static_cast<int32_t>(mod_input_length));
+                                      static_cast<int32_t>(mod_input_length));
   const int input_shift = factor == 0 ? 0 : 31 - WebRtcSpl_NormW32(factor);
-  int32_t energy_input = WebRtcSpl_DotProductWithScale(input, input,
-                                                       mod_input_length,
-                                                       input_shift);
+  int32_t energy_input = WebRtcSpl_DotProductWithScale(
+      input, input, mod_input_length, input_shift);
 
   // Align to the same Q-domain.
   if (input_shift > expanded_shift) {
@@ -257,8 +256,10 @@ int16_t Merge::SignalScaling(const int16_t* input, size_t input_length,
 
 // TODO(hlundin): There are some parameter values in this method that seem
 // strange. Compare with Expand::Correlation.
-void Merge::Downsample(const int16_t* input, size_t input_length,
-                       const int16_t* expanded_signal, size_t expanded_length) {
+void Merge::Downsample(const int16_t* input,
+                       size_t input_length,
+                       const int16_t* expanded_signal,
+                       size_t expanded_length) {
   const int16_t* filter_coefficients;
   size_t num_coefficients;
   int decimation_factor = fs_hz_ / 4000;
@@ -278,11 +279,10 @@ void Merge::Downsample(const int16_t* input, size_t input_length,
     num_coefficients = 7;
   }
   size_t signal_offset = num_coefficients - 1;
-  WebRtcSpl_DownsampleFast(&expanded_signal[signal_offset],
-                           expanded_length - signal_offset,
-                           expanded_downsampled_, kExpandDownsampLength,
-                           filter_coefficients, num_coefficients,
-                           decimation_factor, kCompensateDelay);
+  WebRtcSpl_DownsampleFast(
+      &expanded_signal[signal_offset], expanded_length - signal_offset,
+      expanded_downsampled_, kExpandDownsampLength, filter_coefficients,
+      num_coefficients, decimation_factor, kCompensateDelay);
   if (input_length <= length_limit) {
     // Not quite long enough, so we have to cheat a bit.
     // If the input is really short, we'll just use the input length as is, and
@@ -301,15 +301,15 @@ void Merge::Downsample(const int16_t* input, size_t input_length,
     memset(&input_downsampled_[downsamp_temp_len], 0,
            sizeof(int16_t) * (kInputDownsampLength - downsamp_temp_len));
   } else {
-    WebRtcSpl_DownsampleFast(&input[signal_offset],
-                             input_length - signal_offset, input_downsampled_,
-                             kInputDownsampLength, filter_coefficients,
-                             num_coefficients, decimation_factor,
-                             kCompensateDelay);
+    WebRtcSpl_DownsampleFast(
+        &input[signal_offset], input_length - signal_offset, input_downsampled_,
+        kInputDownsampLength, filter_coefficients, num_coefficients,
+        decimation_factor, kCompensateDelay);
   }
 }
 
-size_t Merge::CorrelateAndPeakSearch(size_t start_position, size_t input_length,
+size_t Merge::CorrelateAndPeakSearch(size_t start_position,
+                                     size_t input_length,
                                      size_t expand_period) const {
   // Calculate correlation without any normalization.
   const size_t max_corr_length = kMaxCorrelationLength;
@@ -328,8 +328,8 @@ size_t Merge::CorrelateAndPeakSearch(size_t start_position, size_t input_length,
       new int16_t[correlation_buffer_size]);
   memset(correlation16.get(), 0, correlation_buffer_size * sizeof(int16_t));
   int16_t* correlation_ptr = &correlation16[pad_length];
-  int32_t max_correlation = WebRtcSpl_MaxAbsValueW32(correlation,
-                                                     stop_position_downsamp);
+  int32_t max_correlation =
+      WebRtcSpl_MaxAbsValueW32(correlation, stop_position_downsamp);
   int norm_shift = std::max(0, 17 - WebRtcSpl_NormW32(max_correlation));
   WebRtcSpl_VectorBitShiftW32ToW16(correlation_ptr, stop_position_downsamp,
                                    correlation, norm_shift);
@@ -366,7 +366,7 @@ size_t Merge::CorrelateAndPeakSearch(size_t start_position, size_t input_length,
   while (((best_correlation_index + input_length) <
           (timestamps_per_call_ + expand_->overlap_length())) ||
          ((best_correlation_index + input_length) < start_position)) {
-    assert(false);  // Should never happen.
+    assert(false);                            // Should never happen.
     best_correlation_index += expand_period;  // Jump one lag ahead.
   }
   return best_correlation_index;
@@ -375,6 +375,5 @@ size_t Merge::CorrelateAndPeakSearch(size_t start_position, size_t input_length,
 size_t Merge::RequiredFutureSamples() {
   return fs_hz_ / 100 * num_channels_;  // 10 ms.
 }
-
 
 }  // namespace webrtc

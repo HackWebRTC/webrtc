@@ -205,9 +205,7 @@ class CreateSessionDescriptionObserver : public rtc::RefCountInterface {
   // is deprecated; in order to let clients remove the old version, it has a
   // default implementation. If both versions are unimplemented, the
   // result will be a runtime error (stack overflow). This is intentional.
-  virtual void OnFailure(RTCError error) {
-    OnFailure(error.message());
-  }
+  virtual void OnFailure(RTCError error) { OnFailure(error.message()); }
   virtual void OnFailure(const std::string& error) {
     OnFailure(RTCError(RTCErrorType::INTERNAL_ERROR, std::string(error)));
   }

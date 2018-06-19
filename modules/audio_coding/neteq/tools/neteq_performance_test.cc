@@ -95,9 +95,8 @@ int64_t NetEqPerformanceTest::Run(int runtime_ms,
       }
 
       // Get next packet.
-      packet_input_time_ms = rtp_gen.GetRtpHeader(kPayloadType,
-                                                  kInputBlockSizeSamples,
-                                                  &rtp_header);
+      packet_input_time_ms = rtp_gen.GetRtpHeader(
+          kPayloadType, kInputBlockSizeSamples, &rtp_header);
       input_samples = audio_loop.GetNextBlock();
       if (input_samples.empty())
         return -1;

@@ -99,8 +99,8 @@ class FrameGenerator {
 
   // Creates a frame generator that produces randomly generated slides.
   // frame_repeat_count determines how many times each slide is shown.
-  static std::unique_ptr<FrameGenerator> CreateSlideGenerator(
-      int width, int height, int frame_repeat_count);
+  static std::unique_ptr<FrameGenerator>
+  CreateSlideGenerator(int width, int height, int frame_repeat_count);
 };
 }  // namespace test
 }  // namespace webrtc

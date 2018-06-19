@@ -80,4 +80,3 @@ class SharedMemoryFactory {
 }  // namespace webrtc
 
 #endif  // MODULES_DESKTOP_CAPTURE_SHARED_MEMORY_H_
-

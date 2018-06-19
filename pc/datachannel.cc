@@ -122,10 +122,9 @@ rtc::scoped_refptr<DataChannel> DataChannel::Create(
   return channel;
 }
 
-DataChannel::DataChannel(
-    DataChannelProviderInterface* provider,
-    cricket::DataChannelType dct,
-    const std::string& label)
+DataChannel::DataChannel(DataChannelProviderInterface* provider,
+                         cricket::DataChannelType dct,
+                         const std::string& label)
     : label_(label),
       observer_(nullptr),
       state_(kConnecting),
@@ -141,14 +140,11 @@ DataChannel::DataChannel(
       receive_ssrc_set_(false),
       writable_(false),
       send_ssrc_(0),
-      receive_ssrc_(0) {
-}
+      receive_ssrc_(0) {}
 
 bool DataChannel::Init(const InternalDataChannelInit& config) {
   if (data_channel_type_ == cricket::DCT_RTP) {
-    if (config.reliable ||
-        config.id != -1 ||
-        config.maxRetransmits != -1 ||
+    if (config.reliable || config.id != -1 || config.maxRetransmits != -1 ||
         config.maxRetransmitTime != -1) {
       RTC_LOG(LS_ERROR) << "Failed to initialize the RTP data channel due to "
                            "invalid DataChannelInit.";
@@ -156,8 +152,7 @@ bool DataChannel::Init(const InternalDataChannelInit& config) {
     }
     handshake_state_ = kHandshakeReady;
   } else if (data_channel_type_ == cricket::DCT_SCTP) {
-    if (config.id < -1 ||
-        config.maxRetransmits < -1 ||
+    if (config.id < -1 || config.maxRetransmits < -1 ||
         config.maxRetransmitTime < -1) {
       RTC_LOG(LS_ERROR) << "Failed to initialize the SCTP data channel due to "
                            "invalid DataChannelInit.";
@@ -171,15 +166,15 @@ bool DataChannel::Init(const InternalDataChannelInit& config) {
     config_ = config;
 
     switch (config_.open_handshake_role) {
-    case webrtc::InternalDataChannelInit::kNone:  // pre-negotiated
-      handshake_state_ = kHandshakeReady;
-      break;
-    case webrtc::InternalDataChannelInit::kOpener:
-      handshake_state_ = kHandshakeShouldSendOpen;
-      break;
-    case webrtc::InternalDataChannelInit::kAcker:
-      handshake_state_ = kHandshakeShouldSendAck;
-      break;
+      case webrtc::InternalDataChannelInit::kNone:  // pre-negotiated
+        handshake_state_ = kHandshakeReady;
+        break;
+      case webrtc::InternalDataChannelInit::kOpener:
+        handshake_state_ = kHandshakeShouldSendOpen;
+        break;
+      case webrtc::InternalDataChannelInit::kAcker:
+        handshake_state_ = kHandshakeShouldSendAck;
+        break;
     }
 
     // Try to connect to the transport in case the transport channel already
@@ -214,8 +209,7 @@ bool DataChannel::reliable() const {
   if (data_channel_type_ == cricket::DCT_RTP) {
     return false;
   } else {
-    return config_.maxRetransmits == -1 &&
-           config_.maxRetransmitTime == -1;
+    return config_.maxRetransmits == -1 && config_.maxRetransmitTime == -1;
   }
 }
 
@@ -476,9 +470,8 @@ void DataChannel::UpdateState() {
             WriteDataChannelOpenAckMessage(&payload);
             SendControlMessage(payload);
           }
-          if (writable_ &&
-              (handshake_state_ == kHandshakeReady ||
-               handshake_state_ == kHandshakeWaitingForAck)) {
+          if (writable_ && (handshake_state_ == kHandshakeReady ||
+                            handshake_state_ == kHandshakeWaitingForAck)) {
             SetState(kOpen);
             // If we have received buffers before the channel got writable.
             // Deliver them now.

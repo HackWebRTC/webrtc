@@ -12,8 +12,8 @@
 #define RTC_TOOLS_FRAME_ANALYZER_VIDEO_QUALITY_ANALYSIS_H_
 
 #include <string>
-#include <vector>
 #include <utility>
+#include <vector>
 
 #include "third_party/libyuv/include/libyuv/compare.h"
 #include "third_party/libyuv/include/libyuv/convert.h"
@@ -44,7 +44,7 @@ struct ResultsContainer {
   int decode_errors_test;
 };
 
-enum VideoAnalysisMetricsType {kPSNR, kSSIM};
+enum VideoAnalysisMetricsType { kPSNR, kSSIM };
 
 // A function to run the PSNR and SSIM analysis on the test file. The test file
 // comprises the frames that were captured during the quality measurement test.
@@ -85,7 +85,8 @@ double CalculateMetrics(VideoAnalysisMetricsType video_metrics_type,
 void PrintAnalysisResults(const std::string& label, ResultsContainer* results);
 
 // Similar to the above, but will print to the specified file handle.
-void PrintAnalysisResults(FILE* output, const std::string& label,
+void PrintAnalysisResults(FILE* output,
+                          const std::string& label,
                           ResultsContainer* results);
 
 // The barcode number that means that the barcode could not be decoded.

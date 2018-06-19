@@ -25,7 +25,7 @@ class AsyncPacketSocket;
 struct PacketTime;
 struct SentPacket;
 class SocketAddress;
-}
+}  // namespace rtc
 
 namespace cricket {
 

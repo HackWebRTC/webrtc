@@ -572,7 +572,7 @@ void RtpFrameReferenceFinder::FrameReceivedVp9(uint16_t picture_id,
 
     last_picture_id = Add<kPicIdLength>(last_picture_id, 1);
     while (last_picture_id != picture_id) {
-      gof_idx = (gof_idx  + 1) % gof_size;
+      gof_idx = (gof_idx + 1) % gof_size;
       RTC_CHECK(gof_idx < kMaxVp9FramesInGof);
 
       size_t temporal_idx = info->gof->temporal_idx[gof_idx];

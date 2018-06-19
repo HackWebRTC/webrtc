@@ -79,10 +79,14 @@ const char* FrameTypeToString(FrameType frame_type) {
   switch (frame_type) {
     case kEmptyFrame:
       return "empty";
-    case kAudioFrameSpeech: return "audio_speech";
-    case kAudioFrameCN: return "audio_cn";
-    case kVideoFrameKey: return "video_key";
-    case kVideoFrameDelta: return "video_delta";
+    case kAudioFrameSpeech:
+      return "audio_speech";
+    case kAudioFrameCN:
+      return "audio_cn";
+    case kVideoFrameKey:
+      return "video_key";
+    case kVideoFrameDelta:
+      return "video_delta";
   }
   return "";
 }
@@ -260,8 +264,8 @@ int32_t RTPSender::RegisterPayload(
     RTC_DCHECK(payload);
 
     // Check if it's the same as we already have.
-    if (RtpUtility::StringCompare(
-            payload->name, payload_name, RTP_PAYLOAD_NAME_SIZE - 1)) {
+    if (RtpUtility::StringCompare(payload->name, payload_name,
+                                  RTP_PAYLOAD_NAME_SIZE - 1)) {
       if (audio_configured_ && payload->typeSpecific.is_audio()) {
         auto& p = payload->typeSpecific.audio_payload();
         if (rtc::SafeEq(p.format.clockrate_hz, frequency) &&
@@ -439,8 +443,8 @@ bool RTPSender::SendOutgoingData(FrameType frame_type,
     result = audio_->SendAudio(frame_type, payload_type, rtp_timestamp,
                                payload_data, payload_size);
   } else {
-    TRACE_EVENT_ASYNC_STEP1("webrtc", "Video", capture_time_ms,
-                            "Send", "type", FrameTypeToString(frame_type));
+    TRACE_EVENT_ASYNC_STEP1("webrtc", "Video", capture_time_ms, "Send", "type",
+                            FrameTypeToString(frame_type));
     if (frame_type == kEmptyFrame)
       return true;
 
@@ -983,9 +987,9 @@ void RTPSender::UpdateDelayStatistics(int64_t capture_time_ms, int64_t now_ms) {
     rtc::CritScope cs(&statistics_crit_);
     // TODO(holmer): Compute this iteratively instead.
     send_delays_[now_ms] = now_ms - capture_time_ms;
-    send_delays_.erase(send_delays_.begin(),
-                       send_delays_.lower_bound(now_ms -
-                       kSendSideDelayWindowMs));
+    send_delays_.erase(
+        send_delays_.begin(),
+        send_delays_.lower_bound(now_ms - kSendSideDelayWindowMs));
     int num_delays = 0;
     for (auto it = send_delays_.upper_bound(now_ms - kSendSideDelayWindowMs);
          it != send_delays_.end(); ++it) {

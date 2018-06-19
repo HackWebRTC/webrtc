@@ -67,7 +67,10 @@ class VideoSendStreamPeer {
 };
 }  // namespace test
 
-enum VideoFormat { kGeneric, kVP8, };
+enum VideoFormat {
+  kGeneric,
+  kVP8,
+};
 
 void ExpectEqualFramesVector(const std::vector<VideoFrame>& frames1,
                              const std::vector<VideoFrame>& frames2);
@@ -1169,8 +1172,8 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
 
   // Don't auto increment if FEC is used; continue sending frame size until
   // a FEC packet has been received.
-  FrameFragmentationTest test(
-      kMaxPacketSize, start, stop, format == kGeneric, with_fec);
+  FrameFragmentationTest test(kMaxPacketSize, start, stop, format == kGeneric,
+                              with_fec);
 
   RunBaseTest(&test);
 }
@@ -1357,8 +1360,7 @@ TEST_F(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
         : SendTest(kDefaultTimeoutMs),
           clock_(Clock::GetRealTimeClock()),
           last_packet_time_ms_(-1),
-          capturer_(nullptr) {
-    }
+          capturer_(nullptr) {}
 
    private:
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
@@ -1530,12 +1532,9 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
         EXPECT_EQ(1u, stats.substreams.size());
         int total_bitrate_bps =
             stats.substreams.begin()->second.total_bitrate_bps;
-        test::PrintResult("bitrate_stats_",
-                          "min_transmit_bitrate_low_remb",
-                          "bitrate_bps",
-                          static_cast<size_t>(total_bitrate_bps),
-                          "bps",
-                          false);
+        test::PrintResult("bitrate_stats_", "min_transmit_bitrate_low_remb",
+                          "bitrate_bps", static_cast<size_t>(total_bitrate_bps),
+                          "bps", false);
         if (total_bitrate_bps > kHighBitrateBps) {
           rtp_rtcp_->SetRemb(kRembBitrateBps,
                              std::vector<uint32_t>(1, header.ssrc));
@@ -2115,19 +2114,13 @@ TEST_F(VideoSendStreamTest, VideoSendStreamStopSetEncoderRateToZero) {
 
   EXPECT_TRUE(encoder.WaitForEncoderInit());
 
-  task_queue_.SendTask([this]() {
-    video_send_stream_->Start();
-  });
+  task_queue_.SendTask([this]() { video_send_stream_->Start(); });
   EXPECT_TRUE(encoder.WaitBitrateChanged(true));
 
-  task_queue_.SendTask([this]() {
-    video_send_stream_->Stop();
-  });
+  task_queue_.SendTask([this]() { video_send_stream_->Stop(); });
   EXPECT_TRUE(encoder.WaitBitrateChanged(false));
 
-  task_queue_.SendTask([this]() {
-    video_send_stream_->Start();
-  });
+  task_queue_.SendTask([this]() { video_send_stream_->Start(); });
   EXPECT_TRUE(encoder.WaitBitrateChanged(true));
 
   task_queue_.SendTask([this]() {
@@ -2707,9 +2700,10 @@ TEST_F(VideoSendStreamTest, EncoderSetupPropagatesH264Config) {
 TEST_F(VideoSendStreamTest, RtcpSenderReportContainsMediaBytesSent) {
   class RtcpSenderReportTest : public test::SendTest {
    public:
-    RtcpSenderReportTest() : SendTest(kDefaultTimeoutMs),
-                             rtp_packets_sent_(0),
-                             media_bytes_sent_(0) {}
+    RtcpSenderReportTest()
+        : SendTest(kDefaultTimeoutMs),
+          rtp_packets_sent_(0),
+          media_bytes_sent_(0) {}
 
    private:
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
@@ -2795,8 +2789,8 @@ TEST_F(VideoSendStreamTest, TranslatesTwoLayerScreencastToTargetBitrate) {
       EXPECT_EQ(static_cast<unsigned int>(kScreencastMaxTargetBitrateDeltaKbps),
                 config->maxBitrate - config->targetBitrate);
       observation_complete_.Set();
-      return test::FakeEncoder::InitEncode(
-          config, number_of_cores, max_payload_size);
+      return test::FakeEncoder::InitEncode(config, number_of_cores,
+                                           max_payload_size);
     }
     void ModifyVideoConfigs(
         VideoSendStream::Config* send_config,
@@ -3008,8 +3002,7 @@ TEST_F(VideoSendStreamTest, ReportsSentResolution) {
   static const struct {
     int width;
     int height;
-  } kEncodedResolution[kNumStreams] = {
-      {241, 181}, {300, 121}, {121, 221}};
+  } kEncodedResolution[kNumStreams] = {{241, 181}, {300, 121}, {121, 221}};
   class ScreencastTargetBitrateTest : public test::SendTest,
                                       public test::FakeEncoder {
    public:
@@ -3142,7 +3135,7 @@ class Vp9HeaderObserver : public test::SendTest {
     send_config->rtp.payload_type = kVp9PayloadType;
     ModifyVideoConfigsHook(send_config, receive_configs, encoder_config);
     encoder_config->encoder_specific_settings = new rtc::RefCountedObject<
-      VideoEncoderConfig::Vp9EncoderSpecificSettings>(vp9_settings_);
+        VideoEncoderConfig::Vp9EncoderSpecificSettings>(vp9_settings_);
     EXPECT_EQ(1u, encoder_config->number_of_streams);
     encoder_config->video_stream_factory =
         new rtc::RefCountedObject<VideoStreamFactory>(

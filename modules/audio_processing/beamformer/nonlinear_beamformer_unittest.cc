@@ -260,8 +260,7 @@ TEST(BeamformerBitExactnessTest,
                       TargetDirection1, kOutputReference);
 }
 
-TEST(BeamformerBitExactnessTest,
-     Stereo16kHz_ArrayGeometry1_TargetDirection1) {
+TEST(BeamformerBitExactnessTest, Stereo16kHz_ArrayGeometry1_TargetDirection1) {
   const float kOutputReference[] = {-0.000077f, -0.000147f, -0.000138f,
                                     -0.000077f, -0.000147f, -0.000138f};
 
@@ -269,8 +268,7 @@ TEST(BeamformerBitExactnessTest,
                       TargetDirection1, kOutputReference);
 }
 
-TEST(BeamformerBitExactnessTest,
-     Stereo32kHz_ArrayGeometry1_TargetDirection1) {
+TEST(BeamformerBitExactnessTest, Stereo32kHz_ArrayGeometry1_TargetDirection1) {
   const float kOutputReference[] = {-0.000061f, -0.000061f, -0.000061f,
                                     -0.000061f, -0.000061f, -0.000061f};
 
@@ -278,8 +276,7 @@ TEST(BeamformerBitExactnessTest,
                       TargetDirection1, kOutputReference);
 }
 
-TEST(BeamformerBitExactnessTest,
-     Stereo48kHz_ArrayGeometry1_TargetDirection1) {
+TEST(BeamformerBitExactnessTest, Stereo48kHz_ArrayGeometry1_TargetDirection1) {
   const float kOutputReference[] = {0.000450f, 0.000436f, 0.000433f,
                                     0.000450f, 0.000436f, 0.000433f};
 
@@ -298,8 +295,7 @@ TEST(BeamformerBitExactnessTest,
                       TargetDirection2, kOutputReference);
 }
 
-TEST(BeamformerBitExactnessTest,
-     Stereo16kHz_ArrayGeometry1_TargetDirection2) {
+TEST(BeamformerBitExactnessTest, Stereo16kHz_ArrayGeometry1_TargetDirection2) {
   const float kOutputReference[] = {0.000221f, -0.000249f, 0.000140f,
                                     0.000221f, -0.000249f, 0.000140f};
 
@@ -307,8 +303,7 @@ TEST(BeamformerBitExactnessTest,
                       TargetDirection2, kOutputReference);
 }
 
-TEST(BeamformerBitExactnessTest,
-     Stereo32kHz_ArrayGeometry1_TargetDirection2) {
+TEST(BeamformerBitExactnessTest, Stereo32kHz_ArrayGeometry1_TargetDirection2) {
   const float kOutputReference[] = {0.000763f, -0.000336f, 0.000549f,
                                     0.000763f, -0.000336f, 0.000549f};
 
@@ -316,8 +311,7 @@ TEST(BeamformerBitExactnessTest,
                       TargetDirection2, kOutputReference);
 }
 
-TEST(BeamformerBitExactnessTest,
-     Stereo48kHz_ArrayGeometry1_TargetDirection2) {
+TEST(BeamformerBitExactnessTest, Stereo48kHz_ArrayGeometry1_TargetDirection2) {
   const float kOutputReference[] = {-0.000004f, -0.000494f, 0.000255f,
                                     -0.000004f, -0.000494f, 0.000255f};
 
@@ -325,8 +319,7 @@ TEST(BeamformerBitExactnessTest,
                       TargetDirection2, kOutputReference);
 }
 
-TEST(BeamformerBitExactnessTest,
-     Stereo8kHz_ArrayGeometry2_TargetDirection2) {
+TEST(BeamformerBitExactnessTest, Stereo8kHz_ArrayGeometry2_TargetDirection2) {
   const float kOutputReference[] = {-0.000914f, 0.002170f, -0.002382f,
                                     -0.000914f, 0.002170f, -0.002382f};
 
@@ -334,8 +327,7 @@ TEST(BeamformerBitExactnessTest,
                       TargetDirection2, kOutputReference);
 }
 
-TEST(BeamformerBitExactnessTest,
-     Stereo16kHz_ArrayGeometry2_TargetDirection2) {
+TEST(BeamformerBitExactnessTest, Stereo16kHz_ArrayGeometry2_TargetDirection2) {
   const float kOutputReference[] = {0.000179f, -0.000179f, 0.000081f,
                                     0.000179f, -0.000179f, 0.000081f};
 
@@ -343,8 +335,7 @@ TEST(BeamformerBitExactnessTest,
                       TargetDirection2, kOutputReference);
 }
 
-TEST(BeamformerBitExactnessTest,
-     Stereo32kHz_ArrayGeometry2_TargetDirection2) {
+TEST(BeamformerBitExactnessTest, Stereo32kHz_ArrayGeometry2_TargetDirection2) {
   const float kOutputReference[] = {0.000549f, -0.000214f, 0.000366f,
                                     0.000549f, -0.000214f, 0.000366f};
 
@@ -352,8 +343,7 @@ TEST(BeamformerBitExactnessTest,
                       TargetDirection2, kOutputReference);
 }
 
-TEST(BeamformerBitExactnessTest,
-     Stereo48kHz_ArrayGeometry2_TargetDirection2) {
+TEST(BeamformerBitExactnessTest, Stereo48kHz_ArrayGeometry2_TargetDirection2) {
   const float kOutputReference[] = {0.000019f, -0.000310f, 0.000182f,
                                     0.000019f, -0.000310f, 0.000182f};
 

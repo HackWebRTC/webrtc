@@ -423,15 +423,19 @@ void WebRtcSessionDescriptionFactory::FailPendingRequests(
   while (!create_session_description_requests_.empty()) {
     const CreateSessionDescriptionRequest& request =
         create_session_description_requests_.front();
-    PostCreateSessionDescriptionFailed(request.observer,
-        ((request.type == CreateSessionDescriptionRequest::kOffer) ?
-            "CreateOffer" : "CreateAnswer") + reason);
+    PostCreateSessionDescriptionFailed(
+        request.observer,
+        ((request.type == CreateSessionDescriptionRequest::kOffer)
+             ? "CreateOffer"
+             : "CreateAnswer") +
+            reason);
     create_session_description_requests_.pop();
   }
 }
 
 void WebRtcSessionDescriptionFactory::PostCreateSessionDescriptionFailed(
-    CreateSessionDescriptionObserver* observer, const std::string& error) {
+    CreateSessionDescriptionObserver* observer,
+    const std::string& error) {
   CreateSessionDescriptionMsg* msg = new CreateSessionDescriptionMsg(
       observer, RTCError(RTCErrorType::INTERNAL_ERROR, std::string(error)));
   signaling_thread_->Post(RTC_FROM_HERE, this,

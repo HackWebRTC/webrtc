@@ -209,8 +209,9 @@ class RTCIceCandidateStats : public RTCStats {
   RTCStatsMember<bool> deleted;  // = false
 
  protected:
-  RTCIceCandidateStats(
-      const std::string& id, int64_t timestamp_us, bool is_remote);
+  RTCIceCandidateStats(const std::string& id,
+                       int64_t timestamp_us,
+                       bool is_remote);
   RTCIceCandidateStats(std::string&& id, int64_t timestamp_us, bool is_remote);
 };
 
@@ -258,9 +259,11 @@ class RTCMediaStreamTrackStats final : public RTCStats {
  public:
   WEBRTC_RTCSTATS_DECL();
 
-  RTCMediaStreamTrackStats(const std::string& id, int64_t timestamp_us,
+  RTCMediaStreamTrackStats(const std::string& id,
+                           int64_t timestamp_us,
                            const char* kind);
-  RTCMediaStreamTrackStats(std::string&& id, int64_t timestamp_us,
+  RTCMediaStreamTrackStats(std::string&& id,
+                           int64_t timestamp_us,
                            const char* kind);
   RTCMediaStreamTrackStats(const RTCMediaStreamTrackStats& other);
   ~RTCMediaStreamTrackStats() override;

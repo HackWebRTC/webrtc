@@ -53,8 +53,7 @@ class CallStats : public Module, public RtcpRttStats {
 
   // Helper struct keeping track of the time a rtt value is reported.
   struct RttTime {
-    RttTime(int64_t new_rtt, int64_t rtt_time)
-        : rtt(new_rtt), time(rtt_time) {}
+    RttTime(int64_t new_rtt, int64_t rtt_time) : rtt(new_rtt), time(rtt_time) {}
     const int64_t rtt;
     const int64_t time;
   };

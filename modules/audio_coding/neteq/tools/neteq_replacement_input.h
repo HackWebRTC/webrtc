@@ -42,7 +42,7 @@ class NetEqReplacementInput : public NetEqInput {
   const uint8_t replacement_payload_type_;
   const std::set<uint8_t> comfort_noise_types_;
   const std::set<uint8_t> forbidden_types_;
-  std::unique_ptr<PacketData> packet_;  // The next packet to deliver.
+  std::unique_ptr<PacketData> packet_;         // The next packet to deliver.
   uint32_t last_frame_size_timestamps_ = 960;  // Initial guess: 20 ms @ 48 kHz.
 };
 

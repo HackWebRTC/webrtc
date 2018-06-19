@@ -326,7 +326,7 @@ class RtcEventLogSession
   std::vector<rtc::Buffer> outgoing_rtcp_packets;
   std::vector<uint32_t> playout_ssrcs;
   std::vector<BweLossEvent> bwe_loss_updates;
-  std::vector<std::pair<int32_t, BandwidthUsage> > bwe_delay_updates;
+  std::vector<std::pair<int32_t, BandwidthUsage>> bwe_delay_updates;
   std::vector<rtclog::StreamConfig> receiver_configs;
   std::vector<rtclog::StreamConfig> sender_configs;
   std::vector<EventType> event_types;

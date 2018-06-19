@@ -59,20 +59,21 @@ enum { kMaxWarningLogFrames = 2 };
 
 class MediaCodecVideoDecoder : public VideoDecoder, public rtc::MessageHandler {
  public:
-  explicit MediaCodecVideoDecoder(
-      JNIEnv* jni, VideoCodecType codecType, jobject render_egl_context);
+  explicit MediaCodecVideoDecoder(JNIEnv* jni,
+                                  VideoCodecType codecType,
+                                  jobject render_egl_context);
   ~MediaCodecVideoDecoder() override;
 
-  int32_t InitDecode(const VideoCodec* codecSettings, int32_t numberOfCores)
-      override;
+  int32_t InitDecode(const VideoCodec* codecSettings,
+                     int32_t numberOfCores) override;
 
-  int32_t Decode(
-      const EncodedImage& inputImage, bool missingFrames,
-      const CodecSpecificInfo* codecSpecificInfo = NULL,
-      int64_t renderTimeMs = -1) override;
+  int32_t Decode(const EncodedImage& inputImage,
+                 bool missingFrames,
+                 const CodecSpecificInfo* codecSpecificInfo = NULL,
+                 int64_t renderTimeMs = -1) override;
 
-  int32_t RegisterDecodeCompleteCallback(DecodedImageCallback* callback)
-      override;
+  int32_t RegisterDecodeCompleteCallback(
+      DecodedImageCallback* callback) override;
 
   int32_t Release() override;
 
@@ -113,15 +114,15 @@ class MediaCodecVideoDecoder : public VideoDecoder, public rtc::MessageHandler {
   I420BufferPool decoded_frame_pool_;
   DecodedImageCallback* callback_;
   int frames_received_;  // Number of frames received by decoder.
-  int frames_decoded_;  // Number of frames decoded by decoder.
+  int frames_decoded_;   // Number of frames decoded by decoder.
   // Number of decoded frames for which log information is displayed.
   int frames_decoded_logged_;
   int64_t start_time_ms_;  // Start time for statistics.
   int current_frames_;  // Number of frames in the current statistics interval.
-  int current_bytes_;  // Encoded bytes in the current statistics interval.
+  int current_bytes_;   // Encoded bytes in the current statistics interval.
   int current_decoding_time_ms_;  // Overall decoding time in the current second
-  int current_delay_time_ms_;  // Overall delay time in the current second.
-  int32_t max_pending_frames_;  // Maximum number of pending input frames.
+  int current_delay_time_ms_;     // Overall delay time in the current second.
+  int32_t max_pending_frames_;    // Maximum number of pending input frames.
   H264BitstreamParser h264_bitstream_parser_;
   std::deque<rtc::Optional<uint8_t>> pending_frame_qps_;
 
@@ -162,7 +163,7 @@ MediaCodecVideoDecoder::~MediaCodecVideoDecoder() {
 }
 
 int32_t MediaCodecVideoDecoder::InitDecode(const VideoCodec* inst,
-    int32_t numberOfCores) {
+                                           int32_t numberOfCores) {
   ALOGD << "InitDecode.";
   if (inst == NULL) {
     ALOGE << "NULL VideoCodec instance";
@@ -270,8 +271,8 @@ int32_t MediaCodecVideoDecoder::ResetDecodeOnCodecThread() {
   ScopedLocalRefFrame local_ref_frame(jni);
   ALOGD << "ResetDecodeOnCodecThread Type: " << static_cast<int>(codecType_)
         << ". " << codec_.width << " x " << codec_.height;
-  ALOGD << "  Frames received: " << frames_received_ <<
-      ". Frames decoded: " << frames_decoded_;
+  ALOGD << "  Frames received: " << frames_received_
+        << ". Frames decoded: " << frames_decoded_;
 
   inited_ = false;
   rtc::MessageQueueManager::Clear(this);
@@ -304,8 +305,8 @@ int32_t MediaCodecVideoDecoder::ReleaseOnCodecThread() {
   }
   CheckOnCodecThread();
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
-  ALOGD << "DecoderReleaseOnCodecThread: Frames received: " <<
-      frames_received_ << ". Frames decoded: " << frames_decoded_;
+  ALOGD << "DecoderReleaseOnCodecThread: Frames received: " << frames_received_
+        << ". Frames decoded: " << frames_decoded_;
   ScopedLocalRefFrame local_ref_frame(jni);
   input_buffers_.clear();
   Java_MediaCodecVideoDecoder_release(jni, j_media_codec_video_decoder_);
@@ -326,8 +327,8 @@ void MediaCodecVideoDecoder::CheckOnCodecThread() {
 
 void MediaCodecVideoDecoder::EnableFrameLogOnWarning() {
   // Log next 2 output frames.
-  frames_decoded_logged_ = std::max(
-      frames_decoded_logged_, frames_decoded_ + kMaxWarningLogFrames);
+  frames_decoded_logged_ =
+      std::max(frames_decoded_logged_, frames_decoded_ + kMaxWarningLogFrames);
 }
 
 int32_t MediaCodecVideoDecoder::ProcessHWErrorOnCodecThread() {
@@ -381,10 +382,10 @@ int32_t MediaCodecVideoDecoder::Decode(
   // Check if encoded frame dimension has changed.
   if ((inputImage._encodedWidth * inputImage._encodedHeight > 0) &&
       (inputImage._encodedWidth != codec_.width ||
-      inputImage._encodedHeight != codec_.height)) {
-    ALOGW << "Input resolution changed from " <<
-        codec_.width << " x " << codec_.height << " to " <<
-        inputImage._encodedWidth << " x " << inputImage._encodedHeight;
+       inputImage._encodedHeight != codec_.height)) {
+    ALOGW << "Input resolution changed from " << codec_.width << " x "
+          << codec_.height << " to " << inputImage._encodedWidth << " x "
+          << inputImage._encodedHeight;
     codec_.width = inputImage._encodedWidth;
     codec_.height = inputImage._encodedHeight;
     int32_t ret;
@@ -437,22 +438,22 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
   if (codecType_ == kVideoCodecH264 &&
       frames_received_ > frames_decoded_ + max_pending_frames_) {
     // Print warning for H.264 only - for VP8/VP9 one frame delay is ok.
-    ALOGW << "Decoder is too far behind. Try to drain. Received: " <<
-        frames_received_ << ". Decoded: " << frames_decoded_;
+    ALOGW << "Decoder is too far behind. Try to drain. Received: "
+          << frames_received_ << ". Decoded: " << frames_decoded_;
     EnableFrameLogOnWarning();
   }
   const int64 drain_start = rtc::TimeMillis();
   while ((frames_received_ > frames_decoded_ + max_pending_frames_) &&
          (rtc::TimeMillis() - drain_start) < kMediaCodecTimeoutMs) {
     if (!DeliverPendingOutputs(jni, kMediaCodecPollMs)) {
-      ALOGE << "DeliverPendingOutputs error. Frames received: " <<
-          frames_received_ << ". Frames decoded: " << frames_decoded_;
+      ALOGE << "DeliverPendingOutputs error. Frames received: "
+            << frames_received_ << ". Frames decoded: " << frames_decoded_;
       return ProcessHWErrorOnCodecThread();
     }
   }
   if (frames_received_ > frames_decoded_ + max_pending_frames_) {
-    ALOGE << "Output buffer dequeue timeout. Frames received: " <<
-        frames_received_ << ". Frames decoded: " << frames_decoded_;
+    ALOGE << "Output buffer dequeue timeout. Frames received: "
+          << frames_received_ << ". Frames decoded: " << frames_decoded_;
     return ProcessHWErrorOnCodecThread();
   }
 
@@ -460,13 +461,13 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
   int j_input_buffer_index = Java_MediaCodecVideoDecoder_dequeueInputBuffer(
       jni, j_media_codec_video_decoder_);
   if (CheckException(jni) || j_input_buffer_index < 0) {
-    ALOGE << "dequeueInputBuffer error: " << j_input_buffer_index <<
-        ". Retry DeliverPendingOutputs.";
+    ALOGE << "dequeueInputBuffer error: " << j_input_buffer_index
+          << ". Retry DeliverPendingOutputs.";
     EnableFrameLogOnWarning();
     // Try to drain the decoder.
     if (!DeliverPendingOutputs(jni, kMediaCodecPollMs)) {
-      ALOGE << "DeliverPendingOutputs error. Frames received: " <<
-          frames_received_ << ". Frames decoded: " << frames_decoded_;
+      ALOGE << "DeliverPendingOutputs error. Frames received: "
+            << frames_received_ << ". Frames decoded: " << frames_decoded_;
       return ProcessHWErrorOnCodecThread();
     }
     // Try dequeue input buffer one last time.
@@ -483,11 +484,11 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
   uint8_t* buffer =
       reinterpret_cast<uint8_t*>(jni->GetDirectBufferAddress(j_input_buffer));
   RTC_CHECK(buffer) << "Indirect buffer??";
-  size_t buffer_capacity = rtc::dchecked_cast<size_t>(
-      jni->GetDirectBufferCapacity(j_input_buffer));
+  size_t buffer_capacity =
+      rtc::dchecked_cast<size_t>(jni->GetDirectBufferCapacity(j_input_buffer));
   if (CheckException(jni) || buffer_capacity < inputImage._length) {
-    ALOGE << "Input frame size "<<  inputImage._length <<
-        " is bigger than buffer size " << buffer_capacity;
+    ALOGE << "Input frame size " << inputImage._length
+          << " is bigger than buffer size " << buffer_capacity;
     return ProcessHWErrorOnCodecThread();
   }
   jlong presentation_timestamp_us = static_cast<jlong>(
@@ -495,11 +496,11 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
   memcpy(buffer, inputImage._buffer, inputImage._length);
 
   if (frames_decoded_ < frames_decoded_logged_) {
-    ALOGD << "Decoder frame in # " << frames_received_ <<
-        ". Type: " << inputImage._frameType <<
-        ". Buffer # " << j_input_buffer_index <<
-        ". TS: " << presentation_timestamp_us / 1000 <<
-        ". Size: " << inputImage._length;
+    ALOGD << "Decoder frame in # " << frames_received_
+          << ". Type: " << inputImage._frameType << ". Buffer # "
+          << j_input_buffer_index
+          << ". TS: " << presentation_timestamp_us / 1000
+          << ". Size: " << inputImage._length;
   }
 
   // Save input image timestamps for later output.
@@ -540,8 +541,8 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-bool MediaCodecVideoDecoder::DeliverPendingOutputs(
-    JNIEnv* jni, int dequeue_timeout_ms) {
+bool MediaCodecVideoDecoder::DeliverPendingOutputs(JNIEnv* jni,
+                                                   int dequeue_timeout_ms) {
   CheckOnCodecThread();
   if (frames_received_ <= frames_decoded_) {
     // No need to query for output buffers - decoder is drained.
@@ -638,8 +639,8 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
             jni, j_media_codec_video_decoder_);
     jobject output_buffer =
         jni->GetObjectArrayElement(output_buffers.obj(), output_buffer_index);
-    uint8_t* payload = reinterpret_cast<uint8_t*>(jni->GetDirectBufferAddress(
-        output_buffer));
+    uint8_t* payload =
+        reinterpret_cast<uint8_t*>(jni->GetDirectBufferAddress(output_buffer));
     if (CheckException(jni)) {
       return false;
     }
@@ -665,15 +666,12 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
           (slice_height % 2 == 0) ? (height + 1) / 2 : height / 2;
       const int u_offset = uv_stride * slice_height / 2;
       const uint8_t* v_ptr = u_ptr + u_offset;
-      libyuv::CopyPlane(y_ptr, stride,
-                        i420_buffer->MutableDataY(), i420_buffer->StrideY(),
-                        width, height);
-      libyuv::CopyPlane(u_ptr, uv_stride,
-                        i420_buffer->MutableDataU(), i420_buffer->StrideU(),
-                        chroma_width, chroma_height);
-      libyuv::CopyPlane(v_ptr, uv_stride,
-                        i420_buffer->MutableDataV(), i420_buffer->StrideV(),
-                        chroma_width, chroma_height);
+      libyuv::CopyPlane(y_ptr, stride, i420_buffer->MutableDataY(),
+                        i420_buffer->StrideY(), width, height);
+      libyuv::CopyPlane(u_ptr, uv_stride, i420_buffer->MutableDataU(),
+                        i420_buffer->StrideU(), chroma_width, chroma_height);
+      libyuv::CopyPlane(v_ptr, uv_stride, i420_buffer->MutableDataV(),
+                        i420_buffer->StrideV(), chroma_width, chroma_height);
       if (slice_height % 2 == 1) {
         RTC_CHECK_EQ(height, slice_height);
         // Duplicate the last chroma rows.
@@ -707,12 +705,11 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
     }
   }
   if (frames_decoded_ < frames_decoded_logged_) {
-    ALOGD << "Decoder frame out # " << frames_decoded_ <<
-        ". " << width << " x " << height <<
-        ". Color: " << color_format <<
-        ". TS: " << presentation_timestamps_ms <<
-        ". DecTime: " << static_cast<int>(decode_time_ms) <<
-          ". DelayTime: " << static_cast<int>(frame_delayed_ms);
+    ALOGD << "Decoder frame out # " << frames_decoded_ << ". " << width << " x "
+          << height << ". Color: " << color_format
+          << ". TS: " << presentation_timestamps_ms
+          << ". DecTime: " << static_cast<int>(decode_time_ms)
+          << ". DelayTime: " << static_cast<int>(frame_delayed_ms);
   }
 
   // Calculate and print decoding statistics - every 3 seconds.
@@ -726,13 +723,13 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(
     int current_bitrate = current_bytes_ * 8 / statistic_time_ms;
     int current_fps =
         (current_frames_ * 1000 + statistic_time_ms / 2) / statistic_time_ms;
-    ALOGD << "Frames decoded: " << frames_decoded_ <<
-        ". Received: " <<  frames_received_ <<
-        ". Bitrate: " << current_bitrate << " kbps" <<
-        ". Fps: " << current_fps <<
-        ". DecTime: " << (current_decoding_time_ms_ / current_frames_) <<
-        ". DelayTime: " << (current_delay_time_ms_ / current_frames_) <<
-        " for last " << statistic_time_ms << " ms.";
+    ALOGD << "Frames decoded: " << frames_decoded_
+          << ". Received: " << frames_received_
+          << ". Bitrate: " << current_bitrate << " kbps"
+          << ". Fps: " << current_fps
+          << ". DecTime: " << (current_decoding_time_ms_ / current_frames_)
+          << ". DelayTime: " << (current_delay_time_ms_ / current_frames_)
+          << " for last " << statistic_time_ms << " ms.";
     start_time_ms_ = rtc::TimeMillis();
     current_frames_ = 0;
     current_bytes_ = 0;
@@ -813,8 +810,8 @@ MediaCodecVideoDecoderFactory::~MediaCodecVideoDecoderFactory() {
   }
 }
 
-void MediaCodecVideoDecoderFactory::SetEGLContext(
-    JNIEnv* jni, jobject egl_context) {
+void MediaCodecVideoDecoderFactory::SetEGLContext(JNIEnv* jni,
+                                                  jobject egl_context) {
   ALOGD << "MediaCodecVideoDecoderFactory::SetEGLContext";
   if (egl_context_) {
     jni->DeleteGlobalRef(egl_context_);

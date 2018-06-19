@@ -13,40 +13,40 @@
 #include "rtc_base/strings/string_builder.h"
 
 namespace rtc {
-  std::string ToString(const webrtc::SdpAudioFormat& saf) {
-    char sb_buf[1024];
-    rtc::SimpleStringBuilder sb(sb_buf);
-    sb << "{name: " << saf.name;
-    sb << ", clockrate_hz: " << saf.clockrate_hz;
-    sb << ", num_channels: " << saf.num_channels;
-    sb << ", parameters: {";
-    const char* sep = "";
-    for (const auto& kv : saf.parameters) {
-      sb << sep << kv.first << ": " << kv.second;
-      sep = ", ";
-    }
-    sb << "}}";
-    return sb.str();
+std::string ToString(const webrtc::SdpAudioFormat& saf) {
+  char sb_buf[1024];
+  rtc::SimpleStringBuilder sb(sb_buf);
+  sb << "{name: " << saf.name;
+  sb << ", clockrate_hz: " << saf.clockrate_hz;
+  sb << ", num_channels: " << saf.num_channels;
+  sb << ", parameters: {";
+  const char* sep = "";
+  for (const auto& kv : saf.parameters) {
+    sb << sep << kv.first << ": " << kv.second;
+    sep = ", ";
   }
-  std::string ToString(const webrtc::AudioCodecInfo& aci) {
-    char sb_buf[1024];
-    rtc::SimpleStringBuilder sb(sb_buf);
-    sb << "{sample_rate_hz: " << aci.sample_rate_hz;
-    sb << ", num_channels: " << aci.num_channels;
-    sb << ", default_bitrate_bps: " << aci.default_bitrate_bps;
-    sb << ", min_bitrate_bps: " << aci.min_bitrate_bps;
-    sb << ", max_bitrate_bps: " << aci.max_bitrate_bps;
-    sb << ", allow_comfort_noise: " << aci.allow_comfort_noise;
-    sb << ", supports_network_adaption: " << aci.supports_network_adaption;
-    sb << "}";
-    return sb.str();
-  }
-  std::string ToString(const webrtc::AudioCodecSpec& acs) {
-    char sb_buf[1024];
-    rtc::SimpleStringBuilder sb(sb_buf);
-    sb << "{format: " << ToString(acs.format);
-    sb << ", info: " << ToString(acs.info);
-    sb << "}";
-    return sb.str();
-  }
+  sb << "}}";
+  return sb.str();
+}
+std::string ToString(const webrtc::AudioCodecInfo& aci) {
+  char sb_buf[1024];
+  rtc::SimpleStringBuilder sb(sb_buf);
+  sb << "{sample_rate_hz: " << aci.sample_rate_hz;
+  sb << ", num_channels: " << aci.num_channels;
+  sb << ", default_bitrate_bps: " << aci.default_bitrate_bps;
+  sb << ", min_bitrate_bps: " << aci.min_bitrate_bps;
+  sb << ", max_bitrate_bps: " << aci.max_bitrate_bps;
+  sb << ", allow_comfort_noise: " << aci.allow_comfort_noise;
+  sb << ", supports_network_adaption: " << aci.supports_network_adaption;
+  sb << "}";
+  return sb.str();
+}
+std::string ToString(const webrtc::AudioCodecSpec& acs) {
+  char sb_buf[1024];
+  rtc::SimpleStringBuilder sb(sb_buf);
+  sb << "{format: " << ToString(acs.format);
+  sb << ", info: " << ToString(acs.info);
+  sb << "}";
+  return sb.str();
+}
 }  // namespace rtc

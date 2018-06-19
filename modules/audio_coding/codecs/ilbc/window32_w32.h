@@ -25,11 +25,10 @@
  *  window multiplication
  *---------------------------------------------------------------*/
 
-void WebRtcIlbcfix_Window32W32(
-    int32_t *z,    /* Output */
-    int32_t *x,    /* Input (same domain as Output)*/
-    const int32_t  *y,  /* Q31 Window */
-    size_t N     /* length to process */
+void WebRtcIlbcfix_Window32W32(int32_t* z, /* Output */
+                               int32_t* x, /* Input (same domain as Output)*/
+                               const int32_t* y, /* Q31 Window */
+                               size_t N          /* length to process */
                                );
 
 #endif

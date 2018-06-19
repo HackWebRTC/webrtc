@@ -194,7 +194,6 @@ VoiceChannel* ChannelManager::CreateVoiceChannel(
   return voice_channel_ptr;
 }
 
-
 void ChannelManager::DestroyVoiceChannel(VoiceChannel* voice_channel) {
   TRACE_EVENT0("webrtc", "ChannelManager::DestroyVoiceChannel");
   if (!voice_channel) {
@@ -260,8 +259,6 @@ VideoChannel* ChannelManager::CreateVideoChannel(
   video_channels_.push_back(std::move(video_channel));
   return video_channel_ptr;
 }
-
-
 
 void ChannelManager::DestroyVideoChannel(VideoChannel* video_channel) {
   TRACE_EVENT0("webrtc", "ChannelManager::DestroyVideoChannel");

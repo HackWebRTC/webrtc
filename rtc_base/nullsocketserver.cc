@@ -25,7 +25,6 @@ void NullSocketServer::WakeUp() {
   event_.Set();
 }
 
-
 rtc::Socket* NullSocketServer::CreateSocket(int /* family */, int /* type */) {
   RTC_NOTREACHED();
   return nullptr;

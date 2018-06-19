@@ -22,13 +22,12 @@ namespace test {
 
 using Config = VideoCodecTestFixture::Config;
 
-std::unique_ptr<VideoCodecTestFixture>
-CreateVideoCodecTestFixture(const Config& config) {
+std::unique_ptr<VideoCodecTestFixture> CreateVideoCodecTestFixture(
+    const Config& config) {
   return rtc::MakeUnique<VideoCodecTestFixtureImpl>(config);
 }
 
-std::unique_ptr<VideoCodecTestFixture>
-CreateVideoCodecTestFixture(
+std::unique_ptr<VideoCodecTestFixture> CreateVideoCodecTestFixture(
     const Config& config,
     std::unique_ptr<VideoDecoderFactory> decoder_factory,
     std::unique_ptr<VideoEncoderFactory> encoder_factory) {

@@ -114,7 +114,7 @@ class Expand {
     int16_t ar_filter_state[kUnvoicedLpcOrder];
     int16_t ar_gain;
     int16_t ar_gain_scale;
-    int16_t voice_mix_factor; /* Q14 */
+    int16_t voice_mix_factor;         /* Q14 */
     int16_t current_voice_mix_factor; /* Q14 */
     AudioVector expand_vector0;
     AudioVector expand_vector1;

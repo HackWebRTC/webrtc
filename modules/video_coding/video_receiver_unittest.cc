@@ -76,7 +76,7 @@ class TestVideoReceiver : public ::testing::Test {
     EXPECT_EQ(0, receiver_->IncomingPacket(payload, length, *header));
     ++header->header.sequenceNumber;
     EXPECT_CALL(packet_request_callback_, ResendPackets(_, _)).Times(0);
-    receiver_->Process();;
+    receiver_->Process();
     EXPECT_CALL(decoder_, Decode(_, _, _, _)).Times(1);
     EXPECT_EQ(0, receiver_->Decode(100));
   }

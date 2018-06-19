@@ -58,15 +58,14 @@ class DecisionLogicNormal : public DecisionLogic {
 
   // Returns the operation to do given that the expected packet is not
   // available, but a packet further into the future is at hand.
-  virtual Operations FuturePacketAvailable(
-      const SyncBuffer& sync_buffer,
-      const Expand& expand,
-      size_t decoder_frame_length,
-      Modes prev_mode,
-      uint32_t target_timestamp,
-      uint32_t available_timestamp,
-      bool play_dtmf,
-      size_t generated_noise_samples);
+  virtual Operations FuturePacketAvailable(const SyncBuffer& sync_buffer,
+                                           const Expand& expand,
+                                           size_t decoder_frame_length,
+                                           Modes prev_mode,
+                                           uint32_t target_timestamp,
+                                           uint32_t available_timestamp,
+                                           bool play_dtmf,
+                                           size_t generated_noise_samples);
 
   // Returns the operation to do given that the expected packet is available.
   virtual Operations ExpectedPacketAvailable(Modes prev_mode, bool play_dtmf);

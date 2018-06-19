@@ -44,7 +44,8 @@ const int kDefaultNetworkIgnoreMask = ADAPTER_TYPE_LOOPBACK;
 // Makes a string key for this network. Used in the network manager's maps.
 // Network objects are keyed on interface name, network prefix and the
 // length of that prefix.
-std::string MakeNetworkKey(const std::string& name, const IPAddress& prefix,
+std::string MakeNetworkKey(const std::string& name,
+                           const IPAddress& prefix,
                            int prefix_length);
 
 // Utility function that attempts to determine an adapter type by an interface
@@ -352,7 +353,7 @@ class Network {
   // detected. Passing true to already_changed skips this check.
   bool SetIPs(const std::vector<InterfaceAddress>& ips, bool already_changed);
   // Get the list of IP Addresses associated with this network.
-  const std::vector<InterfaceAddress>& GetIPs() const { return ips_;}
+  const std::vector<InterfaceAddress>& GetIPs() const { return ips_; }
   // Clear the network's list of addresses.
   void ClearIPs() { ips_.clear(); }
 

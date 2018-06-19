@@ -10,9 +10,9 @@
 
 #include <string.h>
 
+#include <X11/Xutil.h>
 #include <X11/extensions/Xcomposite.h>
 #include <X11/extensions/Xrender.h>
-#include <X11/Xutil.h>
 
 #include <utility>
 
@@ -93,15 +93,14 @@ WindowCapturerLinux::~WindowCapturerLinux() {
 }
 
 bool WindowCapturerLinux::GetSourceList(SourceList* sources) {
-  return GetWindowList(&atom_cache_,
-                       [this, sources](::Window window) {
-                         Source w;
-                         w.id = window;
-                         if (this->GetWindowTitle(window, &w.title)) {
-                           sources->push_back(w);
-                         }
-                         return true;
-                       });
+  return GetWindowList(&atom_cache_, [this, sources](::Window window) {
+    Source w;
+    w.id = window;
+    if (this->GetWindowTitle(window, &w.title)) {
+      sources->push_back(w);
+    }
+    return true;
+  });
 }
 
 bool WindowCapturerLinux::SelectSource(SourceId id) {
@@ -134,8 +133,8 @@ bool WindowCapturerLinux::FocusOnSelectedSource() {
   ::Window parent;
   ::Window root;
   // Find the root window to pass event to.
-  int status = XQueryTree(
-      display(), selected_window_, &root, &parent, &children, &num_children);
+  int status = XQueryTree(display(), selected_window_, &root, &parent,
+                          &children, &num_children);
   if (status == 0) {
     RTC_LOG(LS_ERROR) << "Failed to query for the root window.";
     return false;
@@ -164,11 +163,8 @@ bool WindowCapturerLinux::FocusOnSelectedSource() {
 
     memset(xev.xclient.data.l, 0, sizeof(xev.xclient.data.l));
 
-    XSendEvent(display(),
-               root,
-               False,
-               SubstructureRedirectMask | SubstructureNotifyMask,
-               &xev);
+    XSendEvent(display(), root, False,
+               SubstructureRedirectMask | SubstructureNotifyMask, &xev);
   }
   XFlush(display());
   return true;
@@ -229,7 +225,7 @@ void WindowCapturerLinux::CaptureFrame() {
 
 bool WindowCapturerLinux::IsOccluded(const DesktopVector& pos) {
   return window_finder_.GetWindowUnderPoint(pos) !=
-      static_cast<WindowId>(selected_window_);
+         static_cast<WindowId>(selected_window_);
 }
 
 bool WindowCapturerLinux::HandleXEvent(const XEvent& event) {
@@ -237,7 +233,7 @@ bool WindowCapturerLinux::HandleXEvent(const XEvent& event) {
     XConfigureEvent xce = event.xconfigure;
     if (xce.window == selected_window_) {
       if (!DesktopRectFromXAttributes(xce).equals(
-            x_server_pixel_buffer_.window_rect())) {
+              x_server_pixel_buffer_.window_rect())) {
         if (!x_server_pixel_buffer_.Init(display(), selected_window_)) {
           RTC_LOG(LS_ERROR)
               << "Failed to initialize pixel buffer after resizing.";
@@ -260,8 +256,8 @@ bool WindowCapturerLinux::GetWindowTitle(::Window window, std::string* title) {
     if (status && window_name.value && window_name.nitems) {
       int cnt;
       char** list = nullptr;
-      status = Xutf8TextPropertyToTextList(display(), &window_name, &list,
-                                           &cnt);
+      status =
+          Xutf8TextPropertyToTextList(display(), &window_name, &list, &cnt);
       if (status >= Success && cnt && *list) {
         if (cnt > 1) {
           RTC_LOG(LS_INFO) << "Window has " << cnt

@@ -24,7 +24,7 @@ namespace webrtc {
 // y: the depth dimension, with positive forward from the camera's
 //    perspective.
 // z: the vertical dimension, with positive upwards.
-template<typename T>
+template <typename T>
 struct CartesianPoint {
   CartesianPoint() {
     c[0] = 0;
@@ -74,7 +74,7 @@ absl::optional<Point> GetArrayNormalIfExists(
 // The resulting Point will be in the xy-plane.
 Point AzimuthToPoint(float azimuth);
 
-template<typename T>
+template <typename T>
 float Distance(CartesianPoint<T> a, CartesianPoint<T> b) {
   return std::sqrt((a.x() - b.x()) * (a.x() - b.x()) +
                    (a.y() - b.y()) * (a.y() - b.y()) +

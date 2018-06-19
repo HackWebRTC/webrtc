@@ -37,18 +37,30 @@ static const char kTestKeyParamsGcm3[] =
     "inline:YKlABGZWMgX32xuMotrG0v0T7G83veegaVzubQ==";
 static const char kTestKeyParamsGcm4[] =
     "inline:gJ6tWoUym2v+/F6xjr7xaxiS3QbJJozl3ZD/0A==";
-static const cricket::CryptoParams kTestCryptoParams1(
-    1, "AES_CM_128_HMAC_SHA1_80", kTestKeyParams1, "");
-static const cricket::CryptoParams kTestCryptoParams2(
-    1, "AES_CM_128_HMAC_SHA1_80", kTestKeyParams2, "");
-static const cricket::CryptoParams kTestCryptoParamsGcm1(
-    1, "AEAD_AES_256_GCM", kTestKeyParamsGcm1, "");
-static const cricket::CryptoParams kTestCryptoParamsGcm2(
-    1, "AEAD_AES_256_GCM", kTestKeyParamsGcm2, "");
-static const cricket::CryptoParams kTestCryptoParamsGcm3(
-    1, "AEAD_AES_128_GCM", kTestKeyParamsGcm3, "");
-static const cricket::CryptoParams kTestCryptoParamsGcm4(
-    1, "AEAD_AES_128_GCM", kTestKeyParamsGcm4, "");
+static const cricket::CryptoParams kTestCryptoParams1(1,
+                                                      "AES_CM_128_HMAC_SHA1_80",
+                                                      kTestKeyParams1,
+                                                      "");
+static const cricket::CryptoParams kTestCryptoParams2(1,
+                                                      "AES_CM_128_HMAC_SHA1_80",
+                                                      kTestKeyParams2,
+                                                      "");
+static const cricket::CryptoParams kTestCryptoParamsGcm1(1,
+                                                         "AEAD_AES_256_GCM",
+                                                         kTestKeyParamsGcm1,
+                                                         "");
+static const cricket::CryptoParams kTestCryptoParamsGcm2(1,
+                                                         "AEAD_AES_256_GCM",
+                                                         kTestKeyParamsGcm2,
+                                                         "");
+static const cricket::CryptoParams kTestCryptoParamsGcm3(1,
+                                                         "AEAD_AES_128_GCM",
+                                                         kTestKeyParamsGcm3,
+                                                         "");
+static const cricket::CryptoParams kTestCryptoParamsGcm4(1,
+                                                         "AEAD_AES_128_GCM",
+                                                         kTestKeyParamsGcm4,
+                                                         "");
 
 class SrtpFilterTest : public testing::Test {
  protected:

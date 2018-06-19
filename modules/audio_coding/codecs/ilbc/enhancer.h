@@ -27,13 +27,13 @@
  *---------------------------------------------------------------*/
 
 void WebRtcIlbcfix_Enhancer(
-    int16_t *odata,   /* (o) smoothed block, dimension blockl */
-    int16_t *idata,   /* (i) data buffer used for enhancing */
-    size_t idatal,   /* (i) dimension idata */
+    int16_t* odata,        /* (o) smoothed block, dimension blockl */
+    int16_t* idata,        /* (i) data buffer used for enhancing */
+    size_t idatal,         /* (i) dimension idata */
     size_t centerStartPos, /* (i) first sample current block within idata */
-    size_t *period,   /* (i) pitch period array (pitch bward-in time) */
-    const size_t *plocs,   /* (i) locations where period array values valid */
-    size_t periodl   /* (i) dimension of period and plocs */
-                            );
+    size_t* period,        /* (i) pitch period array (pitch bward-in time) */
+    const size_t* plocs,   /* (i) locations where period array values valid */
+    size_t periodl         /* (i) dimension of period and plocs */
+    );
 
 #endif

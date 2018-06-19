@@ -17,8 +17,8 @@
 
 #include "api/turncustomizer.h"
 #include "p2p/base/portallocator.h"
-#include "p2p/client/turnportfactory.h"
 #include "p2p/client/relayportfactoryinterface.h"
+#include "p2p/client/turnportfactory.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/messagequeue.h"
 #include "rtc_base/network.h"
@@ -186,9 +186,7 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
       }
       has_pairable_candidate_ = has_pairable_candidate;
     }
-    void set_complete() {
-      state_ = STATE_COMPLETE;
-    }
+    void set_complete() { state_ = STATE_COMPLETE; }
     void set_error() {
       RTC_DCHECK(state_ == STATE_INPROGRESS);
       state_ = STATE_ERROR;
@@ -218,7 +216,8 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
   void DisableEquivalentPhases(rtc::Network* network,
                                PortConfiguration* config,
                                uint32_t* flags);
-  void AddAllocatedPort(Port* port, AllocationSequence* seq,
+  void AddAllocatedPort(Port* port,
+                        AllocationSequence* seq,
                         bool prepare_address);
   void OnCandidateReady(Port* port, const Candidate& c);
   void OnPortComplete(Port* port);
@@ -308,8 +307,8 @@ struct PortConfiguration : public rtc::MessageData {
   bool SupportsProtocol(RelayType turn_type, ProtocolType type) const;
   // Helper method returns the server addresses for the matching RelayType and
   // Protocol type.
-  ServerAddresses GetRelayServerAddresses(
-      RelayType turn_type, ProtocolType type) const;
+  ServerAddresses GetRelayServerAddresses(RelayType turn_type,
+                                          ProtocolType type) const;
 };
 
 class UDPPort;

@@ -39,9 +39,9 @@ class MessageQueue;
 
 class MessageQueueManager {
  public:
-  static void Add(MessageQueue *message_queue);
-  static void Remove(MessageQueue *message_queue);
-  static void Clear(MessageHandler *handler);
+  static void Add(MessageQueue* message_queue);
+  static void Remove(MessageQueue* message_queue);
+  static void Clear(MessageHandler* handler);
 
   // For testing purposes, we expose whether or not the MessageQueueManager
   // instance has been initialized. It has no other use relative to the rest of
@@ -60,9 +60,9 @@ class MessageQueueManager {
   MessageQueueManager();
   ~MessageQueueManager();
 
-  void AddInternal(MessageQueue *message_queue);
-  void RemoveInternal(MessageQueue *message_queue);
-  void ClearInternal(MessageHandler *handler);
+  void AddInternal(MessageQueue* message_queue);
+  void RemoveInternal(MessageQueue* message_queue);
+  void ClearInternal(MessageHandler* handler);
   void ProcessAllMessageQueuesInternal();
 
   static MessageQueueManager* instance_;
@@ -88,9 +88,10 @@ class MessageData {
 template <class T>
 class TypedMessageData : public MessageData {
  public:
-  explicit TypedMessageData(const T& data) : data_(data) { }
+  explicit TypedMessageData(const T& data) : data_(data) {}
   const T& data() const { return data_; }
   T& data() { return data_; }
+
  private:
   T data_;
 };
@@ -122,28 +123,30 @@ class ScopedMessageData : public MessageData {
 template <class T>
 class ScopedRefMessageData : public MessageData {
  public:
-  explicit ScopedRefMessageData(T* data) : data_(data) { }
+  explicit ScopedRefMessageData(T* data) : data_(data) {}
   const scoped_refptr<T>& data() const { return data_; }
   scoped_refptr<T>& data() { return data_; }
+
  private:
   scoped_refptr<T> data_;
 };
 
-template<class T>
+template <class T>
 inline MessageData* WrapMessageData(const T& data) {
   return new TypedMessageData<T>(data);
 }
 
-template<class T>
+template <class T>
 inline const T& UseMessageData(MessageData* data) {
-  return static_cast< TypedMessageData<T>* >(data)->data();
+  return static_cast<TypedMessageData<T>*>(data)->data();
 }
 
-template<class T>
+template <class T>
 class DisposeData : public MessageData {
  public:
-  explicit DisposeData(T* data) : data_(data) { }
+  explicit DisposeData(T* data) : data_(data) {}
   virtual ~DisposeData() { delete data_; }
+
  private:
   T* data_;
 };
@@ -161,9 +164,9 @@ struct Message {
            (id == MQID_ANY || id == message_id);
   }
   Location posted_from;
-  MessageHandler *phandler;
+  MessageHandler* phandler;
   uint32_t message_id;
-  MessageData *pdata;
+  MessageData* pdata;
   int64_t ts_sensitive;
 };
 
@@ -180,9 +183,9 @@ class DelayedMessage {
                  const Message& msg)
       : cmsDelay_(delay), msTrigger_(trigger), num_(num), msg_(msg) {}
 
-  bool operator< (const DelayedMessage& dmsg) const {
-    return (dmsg.msTrigger_ < msTrigger_)
-           || ((dmsg.msTrigger_ == msTrigger_) && (dmsg.num_ < num_));
+  bool operator<(const DelayedMessage& dmsg) const {
+    return (dmsg.msTrigger_ < msTrigger_) ||
+           ((dmsg.msTrigger_ == msTrigger_) && (dmsg.num_ < num_));
   }
 
   int64_t cmsDelay_;  // for debugging
@@ -229,9 +232,10 @@ class MessageQueue {
   //  1) A message is available (returns true)
   //  2) cmsWait seconds have elapsed (returns false)
   //  3) Stop() is called (returns false)
-  virtual bool Get(Message *pmsg, int cmsWait = kForever,
+  virtual bool Get(Message* pmsg,
+                   int cmsWait = kForever,
                    bool process_io = true);
-  virtual bool Peek(Message *pmsg, int cmsWait = 0);
+  virtual bool Peek(Message* pmsg, int cmsWait = 0);
   virtual void Post(const Location& posted_from,
                     MessageHandler* phandler,
                     uint32_t id = 0,
@@ -256,7 +260,7 @@ class MessageQueue {
   virtual void Clear(MessageHandler* phandler,
                      uint32_t id = MQID_ANY,
                      MessageList* removed = nullptr);
-  virtual void Dispatch(Message *pmsg);
+  virtual void Dispatch(Message* pmsg);
   virtual void ReceiveSends();
 
   // Amount of time until the next message can be retrieved
@@ -269,7 +273,8 @@ class MessageQueue {
   }
 
   // Internally posts a message which causes the doomed object to be deleted
-  template<class T> void Dispose(T* doomed) {
+  template <class T>
+  void Dispose(T* doomed) {
     if (doomed) {
       Post(RTC_FROM_HERE, nullptr, MQID_DISPOSE, new DisposeData<T>(doomed));
     }

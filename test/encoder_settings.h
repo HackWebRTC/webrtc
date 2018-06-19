@@ -45,11 +45,13 @@ std::vector<VideoStream> CreateVideoStreams(
     int height,
     const webrtc::VideoEncoderConfig& encoder_config);
 
-void FillEncoderConfiguration(VideoCodecType codec_type, size_t num_streams,
+void FillEncoderConfiguration(VideoCodecType codec_type,
+                              size_t num_streams,
                               VideoEncoderConfig* configuration);
 
 VideoReceiveStream::Decoder CreateMatchingDecoder(
-    int payload_type, const std::string& payload_name);
+    int payload_type,
+    const std::string& payload_name);
 
 VideoReceiveStream::Decoder CreateMatchingDecoder(
     const VideoSendStream::Config& config);

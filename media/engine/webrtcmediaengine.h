@@ -25,11 +25,11 @@ class AudioMixer;
 class AudioProcessing;
 class VideoDecoderFactory;
 class VideoEncoderFactory;
-}
+}  // namespace webrtc
 namespace cricket {
 class WebRtcVideoDecoderFactory;
 class WebRtcVideoEncoderFactory;
-}
+}  // namespace cricket
 
 namespace cricket {
 

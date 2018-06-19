@@ -28,7 +28,7 @@
 namespace webrtc {
 class MetricsObserverInterface;
 class TurnCustomizer;
-}
+}  // namespace webrtc
 
 namespace cricket {
 
@@ -269,8 +269,8 @@ class PortAllocatorSession : public sigslot::has_slots<> {
   // ready(pairable).
   sigslot::signal2<PortAllocatorSession*, const std::vector<PortInterface*>&>
       SignalPortsPruned;
-  sigslot::signal2<PortAllocatorSession*,
-                   const std::vector<Candidate>&> SignalCandidatesReady;
+  sigslot::signal2<PortAllocatorSession*, const std::vector<Candidate>&>
+      SignalCandidatesReady;
   // Candidates should be signaled to be removed when the port that generated
   // the candidates is removed.
   sigslot::signal2<PortAllocatorSession*, const std::vector<Candidate>&>

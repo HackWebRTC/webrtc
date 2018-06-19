@@ -75,8 +75,7 @@ RampUpTester::RampUpTester(size_t num_video_streams,
   EXPECT_LE(num_audio_streams_, 1u);
 }
 
-RampUpTester::~RampUpTester() {
-}
+RampUpTester::~RampUpTester() {}
 
 Call::Config RampUpTester::GetSenderCallConfig() {
   Call::Config call_config(&event_log_);

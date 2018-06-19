@@ -430,7 +430,7 @@ NetworkControlUpdate BbrNetworkController::OnTransportPacketsFeedback(
       } else {
         bytes_acked_since_queue_drained_ += data_acked;
       }
-      }
+    }
   }
 
   // Handle logic specific to PROBE_BW mode.

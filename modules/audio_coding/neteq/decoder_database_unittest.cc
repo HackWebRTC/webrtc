@@ -110,7 +110,7 @@ TEST(DecoderDatabase, GetDecoderInfo) {
   EXPECT_EQ(kCodecName, info->get_name());
   EXPECT_EQ(decoder, db.GetDecoder(kPayloadType));
   info = db.GetDecoderInfo(kPayloadType + 1);  // Other payload type.
-  EXPECT_TRUE(info == NULL);  // Should not be found.
+  EXPECT_TRUE(info == NULL);                   // Should not be found.
 }
 
 TEST(DecoderDatabase, GetDecoder) {
@@ -292,7 +292,6 @@ TEST(DecoderDatabase, IF_ISAC(ActiveDecoders)) {
   // Try to set non-existing codecs as active.
   EXPECT_EQ(DecoderDatabase::kDecoderNotFound,
             db.SetActiveDecoder(17, &changed));
-  EXPECT_EQ(DecoderDatabase::kDecoderNotFound,
-            db.SetActiveCngDecoder(17));
+  EXPECT_EQ(DecoderDatabase::kDecoderNotFound, db.SetActiveCngDecoder(17));
 }
 }  // namespace webrtc

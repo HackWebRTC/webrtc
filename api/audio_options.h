@@ -112,7 +112,7 @@ struct AudioOptions {
     ost << ToStringIfSet("residual_echo_detector", residual_echo_detector);
     ost << ToStringIfSet("tx_agc_target_dbov", tx_agc_target_dbov);
     ost << ToStringIfSet("tx_agc_digital_compression_gain",
-        tx_agc_digital_compression_gain);
+                         tx_agc_digital_compression_gain);
     ost << ToStringIfSet("tx_agc_limiter", tx_agc_limiter);
     ost << ToStringIfSet("combined_audio_video_bwe", combined_audio_video_bwe);
     ost << ToStringIfSet("audio_network_adaptor", audio_network_adaptor);

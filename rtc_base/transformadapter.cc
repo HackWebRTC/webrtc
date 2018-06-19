@@ -18,21 +18,24 @@ namespace rtc {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-TransformAdapter::TransformAdapter(StreamInterface * stream,
-                                   TransformInterface * transform,
+TransformAdapter::TransformAdapter(StreamInterface* stream,
+                                   TransformInterface* transform,
                                    bool direction_read)
-    : StreamAdapterInterface(stream), transform_(transform),
-      direction_read_(direction_read), state_(ST_PROCESSING), len_(0) {
-}
+    : StreamAdapterInterface(stream),
+      transform_(transform),
+      direction_read_(direction_read),
+      state_(ST_PROCESSING),
+      len_(0) {}
 
 TransformAdapter::~TransformAdapter() {
   TransformAdapter::Close();
   delete transform_;
 }
 
-StreamResult
-TransformAdapter::Read(void * buffer, size_t buffer_len,
-                       size_t * read, int * error) {
+StreamResult TransformAdapter::Read(void* buffer,
+                                    size_t buffer_len,
+                                    size_t* read,
+                                    int* error) {
   if (!direction_read_)
     return SR_EOS;
 
@@ -44,10 +47,7 @@ TransformAdapter::Read(void * buffer, size_t buffer_len,
     if ((state_ == ST_PROCESSING) && (len_ < sizeof(buffer_))) {
       size_t subread;
       StreamResult result = StreamAdapterInterface::Read(
-                              buffer_ + len_,
-                              sizeof(buffer_) - len_,
-                              &subread,
-                              &error_);
+          buffer_ + len_, sizeof(buffer_) - len_, &subread, &error_);
       if (result == SR_BLOCK) {
         return SR_BLOCK;
       } else if (result == SR_ERROR) {
@@ -63,21 +63,20 @@ TransformAdapter::Read(void * buffer, size_t buffer_len,
     // Process buffered data
     size_t in_len = len_;
     size_t out_len = buffer_len;
-    StreamResult result = transform_->Transform(buffer_, &in_len,
-                                                buffer, &out_len,
-                                                (state_ == ST_FLUSHING));
+    StreamResult result = transform_->Transform(
+        buffer_, &in_len, buffer, &out_len, (state_ == ST_FLUSHING));
     RTC_DCHECK(result != SR_BLOCK);
     if (result == SR_EOS) {
       // Note: Don't signal SR_EOS this iteration, unless out_len is zero
       state_ = ST_COMPLETE;
     } else if (result == SR_ERROR) {
       state_ = ST_ERROR;
-      error_ = -1; // TODO: propagate error
+      error_ = -1;  // TODO: propagate error
       break;
     } else if ((out_len == 0) && (state_ == ST_FLUSHING)) {
       // If there is no output AND no more input, then something is wrong
       state_ = ST_ERROR;
-      error_ = -1; // TODO: better error code?
+      error_ = -1;  // TODO: better error code?
       break;
     }
 
@@ -98,9 +97,10 @@ TransformAdapter::Read(void * buffer, size_t buffer_len,
   return SR_ERROR;
 }
 
-StreamResult
-TransformAdapter::Write(const void * data, size_t data_len,
-                        size_t * written, int * error) {
+StreamResult TransformAdapter::Write(const void* data,
+                                     size_t data_len,
+                                     size_t* written,
+                                     int* error) {
   if (direction_read_)
     return SR_EOS;
 
@@ -113,9 +113,8 @@ TransformAdapter::Write(const void * data, size_t data_len,
       // Process buffered data
       size_t in_len = data_len;
       size_t out_len = sizeof(buffer_) - len_;
-      StreamResult result = transform_->Transform(data, &in_len,
-                                                  buffer_ + len_, &out_len,
-                                                  (state_ == ST_FLUSHING));
+      StreamResult result = transform_->Transform(
+          data, &in_len, buffer_ + len_, &out_len, (state_ == ST_FLUSHING));
 
       RTC_DCHECK(result != SR_BLOCK);
       if (result == SR_EOS) {
@@ -124,7 +123,7 @@ TransformAdapter::Write(const void * data, size_t data_len,
       } else if (result == SR_ERROR) {
         RTC_NOTREACHED();  // When this happens, think about what should be done
         state_ = ST_ERROR;
-        error_ = -1; // TODO: propagate error
+        error_ = -1;  // TODO: propagate error
         break;
       }
 
@@ -135,10 +134,8 @@ TransformAdapter::Write(const void * data, size_t data_len,
     size_t pos = 0;
     while (pos < len_) {
       size_t subwritten;
-      StreamResult result = StreamAdapterInterface::Write(buffer_ + pos,
-                                                          len_ - pos,
-                                                          &subwritten,
-                                                          &error_);
+      StreamResult result = StreamAdapterInterface::Write(
+          buffer_ + pos, len_ - pos, &subwritten, &error_);
       if (result == SR_BLOCK) {
         RTC_NOTREACHED();  // We should handle this
         return SR_BLOCK;
@@ -170,8 +167,7 @@ TransformAdapter::Write(const void * data, size_t data_len,
   return SR_ERROR;
 }
 
-void
-TransformAdapter::Close() {
+void TransformAdapter::Close() {
   if (!direction_read_ && (state_ == ST_PROCESSING)) {
     state_ = ST_FLUSHING;
     do {
@@ -194,4 +190,4 @@ bool TransformAdapter::Rewind() {
   return false;
 }
 
-} // namespace rtc
+}  // namespace rtc

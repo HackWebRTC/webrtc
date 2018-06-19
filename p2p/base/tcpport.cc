@@ -140,8 +140,7 @@ Connection* TCPPort::CreateConnection(const Candidate& address,
   }
 
   TCPConnection* conn = NULL;
-  if (rtc::AsyncPacketSocket* socket =
-      GetIncoming(address.address(), true)) {
+  if (rtc::AsyncPacketSocket* socket = GetIncoming(address.address(), true)) {
     // Incoming connection; we already created a socket and connected signals,
     // so we need to hand off the "read packet" responsibility to
     // TCPConnection.
@@ -191,11 +190,12 @@ void TCPPort::PrepareAddress() {
   }
 }
 
-int TCPPort::SendTo(const void* data, size_t size,
+int TCPPort::SendTo(const void* data,
+                    size_t size,
                     const rtc::SocketAddress& addr,
                     const rtc::PacketOptions& options,
                     bool payload) {
-  rtc::AsyncPacketSocket * socket = NULL;
+  rtc::AsyncPacketSocket* socket = NULL;
   TCPConnection* conn = static_cast<TCPConnection*>(GetConnection(addr));
 
   // For Connection, this is the code path used by Ping() to establish
@@ -224,8 +224,8 @@ int TCPPort::SendTo(const void* data, size_t size,
     // Error from this code path for a Connection (instead of from a bare
     // socket) will not trigger reconnecting. In theory, this shouldn't matter
     // as OnClose should always be called and set connected to false.
-    RTC_LOG(LS_ERROR) << ToString() << ": TCP send of "
-                      << size << " bytes failed with error " << error_;
+    RTC_LOG(LS_ERROR) << ToString() << ": TCP send of " << size
+                      << " bytes failed with error " << error_;
   }
   return sent;
 }
@@ -269,8 +269,7 @@ void TCPPort::OnNewConnection(rtc::AsyncPacketSocket* socket,
   incoming.socket->SignalReadyToSend.connect(this, &TCPPort::OnReadyToSend);
   incoming.socket->SignalSentPacket.connect(this, &TCPPort::OnSentPacket);
 
-  RTC_LOG(LS_VERBOSE) << ToString()
-                      << ": Accepted connection from "
+  RTC_LOG(LS_VERBOSE) << ToString() << ": Accepted connection from "
                       << incoming.addr.ToSensitiveString();
   incoming_.push_back(incoming);
 }
@@ -289,8 +288,8 @@ void TCPPort::TryCreateServerSocket() {
   socket_->SignalAddressReady.connect(this, &TCPPort::OnAddressReady);
 }
 
-rtc::AsyncPacketSocket* TCPPort::GetIncoming(
-    const rtc::SocketAddress& addr, bool remove) {
+rtc::AsyncPacketSocket* TCPPort::GetIncoming(const rtc::SocketAddress& addr,
+                                             bool remove) {
   rtc::AsyncPacketSocket* socket = NULL;
   for (std::list<Incoming>::iterator it = incoming_.begin();
        it != incoming_.end(); ++it) {
@@ -305,7 +304,8 @@ rtc::AsyncPacketSocket* TCPPort::GetIncoming(
 }
 
 void TCPPort::OnReadPacket(rtc::AsyncPacketSocket* socket,
-                           const char* data, size_t size,
+                           const char* data,
+                           size_t size,
                            const rtc::SocketAddress& remote_addr,
                            const rtc::PacketTime& packet_time) {
   Port::OnReadPacket(data, size, remote_addr, PROTO_TCP);
@@ -360,10 +360,10 @@ TCPConnection::TCPConnection(TCPPort* port,
   }
 }
 
-TCPConnection::~TCPConnection() {
-}
+TCPConnection::~TCPConnection() {}
 
-int TCPConnection::Send(const void* data, size_t size,
+int TCPConnection::Send(const void* data,
+                        size_t size,
                         const rtc::PacketOptions& options) {
   if (!socket_) {
     error_ = ENOTCONN;
@@ -442,8 +442,7 @@ void TCPConnection::OnConnect(rtc::AsyncPacketSocket* socket) {
                    [socket_address](const rtc::InterfaceAddress& addr) {
                      return socket_address.ipaddr() == addr;
                    }) != desired_addresses.end()) {
-    RTC_LOG(LS_VERBOSE) << ToString()
-                        << ": Connection established to "
+    RTC_LOG(LS_VERBOSE) << ToString() << ": Connection established to "
                         << socket->GetRemoteAddress().ToSensitiveString();
   } else {
     if (socket->GetLocalAddress().IsLoopbackIP()) {
@@ -477,8 +476,7 @@ void TCPConnection::OnConnect(rtc::AsyncPacketSocket* socket) {
 
 void TCPConnection::OnClose(rtc::AsyncPacketSocket* socket, int error) {
   RTC_DCHECK(socket == socket_.get());
-  RTC_LOG(LS_INFO) << ToString()
-                   << ": Connection closed with error " << error;
+  RTC_LOG(LS_INFO) << ToString() << ": Connection closed with error " << error;
 
   // Guard against the condition where IPC socket will call OnClose for every
   // packet it can't send.
@@ -533,10 +531,11 @@ void TCPConnection::MaybeReconnect() {
   error_ = EPIPE;
 }
 
-void TCPConnection::OnReadPacket(
-  rtc::AsyncPacketSocket* socket, const char* data, size_t size,
-  const rtc::SocketAddress& remote_addr,
-  const rtc::PacketTime& packet_time) {
+void TCPConnection::OnReadPacket(rtc::AsyncPacketSocket* socket,
+                                 const char* data,
+                                 size_t size,
+                                 const rtc::SocketAddress& remote_addr,
+                                 const rtc::PacketTime& packet_time) {
   RTC_DCHECK(socket == socket_.get());
   Connection::OnReadPacket(data, size, packet_time);
 }
@@ -557,8 +556,7 @@ void TCPConnection::CreateOutgoingTcpSocket() {
       remote_candidate().address(), port()->proxy(), port()->user_agent(),
       opts));
   if (socket_) {
-    RTC_LOG(LS_VERBOSE) << ToString()
-                        << ": Connecting from "
+    RTC_LOG(LS_VERBOSE) << ToString() << ": Connecting from "
                         << socket_->GetLocalAddress().ToSensitiveString()
                         << " to "
                         << remote_candidate().address().ToSensitiveString();
@@ -566,8 +564,7 @@ void TCPConnection::CreateOutgoingTcpSocket() {
     connection_pending_ = true;
     ConnectSocketSignals(socket_.get());
   } else {
-    RTC_LOG(LS_WARNING) << ToString()
-                        << ": Failed to create connection to "
+    RTC_LOG(LS_WARNING) << ToString() << ": Failed to create connection to "
                         << remote_candidate().address().ToSensitiveString();
   }
 }

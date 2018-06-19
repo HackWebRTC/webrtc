@@ -33,8 +33,8 @@ void MaybeResetBuffer(std::unique_ptr<ChannelBuffer<float>>* buffer,
   auto& buffer_ref = *buffer;
   if (!buffer_ref.get() || buffer_ref->num_frames() != config.num_frames() ||
       buffer_ref->num_channels() != config.num_channels()) {
-    buffer_ref.reset(new ChannelBuffer<float>(config.num_frames(),
-                                             config.num_channels()));
+    buffer_ref.reset(
+        new ChannelBuffer<float>(config.num_frames(), config.num_channels()));
   }
 }
 
@@ -87,7 +87,8 @@ class DebugDumpGenerator {
   AudioProcessing* apm() const { return apm_.get(); }
 
  private:
-  static void ReadAndDeinterleave(ResampleInputAudioFile* audio, int channels,
+  static void ReadAndDeinterleave(ResampleInputAudioFile* audio,
+                                  int channels,
                                   const StreamConfig& config,
                                   float* const* buffer);
 
@@ -227,11 +228,10 @@ void DebugDumpGenerator::Process(size_t num_blocks) {
                  apm_->ProcessStream(input_->channels(), input_config_,
                                      output_config_, output_->channels()));
 
-    RTC_CHECK_EQ(AudioProcessing::kNoError,
-                 apm_->ProcessReverseStream(reverse_->channels(),
-                                            reverse_config_,
-                                            reverse_config_,
-                                            reverse_->channels()));
+    RTC_CHECK_EQ(
+        AudioProcessing::kNoError,
+        apm_->ProcessReverseStream(reverse_->channels(), reverse_config_,
+                                   reverse_config_, reverse_->channels()));
   }
 }
 
@@ -288,9 +288,9 @@ void DebugDumpTest::VerifyDebugDump(const std::string& in_filename) {
       ASSERT_EQ(output_config.num_frames() * sizeof(float),
                 msg->output_channel(0).size());
       for (int i = 0; i < msg->output_channel_size(); ++i) {
-        ASSERT_EQ(0, memcmp(output->channels()[i],
-                            msg->output_channel(i).data(),
-                            msg->output_channel(i).size()));
+        ASSERT_EQ(0,
+                  memcmp(output->channels()[i], msg->output_channel(i).data(),
+                         msg->output_channel(i).size()));
       }
     }
   }

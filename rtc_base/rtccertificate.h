@@ -29,11 +29,9 @@ namespace rtc {
 // the string representations used by OpenSSL.
 class RTCCertificatePEM {
  public:
-  RTCCertificatePEM(
-      const std::string& private_key,
-      const std::string& certificate)
-      : private_key_(private_key),
-        certificate_(certificate) {}
+  RTCCertificatePEM(const std::string& private_key,
+                    const std::string& certificate)
+      : private_key_(private_key), certificate_(certificate) {}
 
   const std::string& private_key() const { return private_key_; }
   const std::string& certificate() const { return certificate_; }

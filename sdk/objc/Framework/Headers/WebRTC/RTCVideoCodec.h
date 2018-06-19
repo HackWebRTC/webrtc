@@ -172,9 +172,9 @@ RTC_EXPORT
     DEPRECATED_MSG_ATTRIBUTE("use startDecodeWithNumberOfCores: instead");
 - (NSInteger)releaseDecoder;
 - (NSInteger)decode:(RTCEncodedImage *)encodedImage
-          missingFrames:(BOOL)missingFrames
-      codecSpecificInfo:(nullable id<RTCCodecSpecificInfo>)info
-           renderTimeMs:(int64_t)renderTimeMs;
+        missingFrames:(BOOL)missingFrames
+    codecSpecificInfo:(nullable id<RTCCodecSpecificInfo>)info
+         renderTimeMs:(int64_t)renderTimeMs;
 - (NSString *)implementationName;
 
 // TODO(andersc): Make non-optional when `startDecodeWithSettings:numberOfCores:` is removed.

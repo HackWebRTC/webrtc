@@ -83,26 +83,25 @@ class DelayTest {
 
   void Initialize() {
     test_cntr_ = 0;
-    std::string file_name = webrtc::test::ResourcePath(
-        "audio_coding/testfile32kHz", "pcm");
+    std::string file_name =
+        webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm");
     if (strlen(FLAG_input_file) > 0)
       file_name = FLAG_input_file;
     in_file_a_.Open(file_name, 32000, "rb");
-    ASSERT_EQ(0, acm_a_->InitializeReceiver()) <<
-        "Couldn't initialize receiver.\n";
-    ASSERT_EQ(0, acm_b_->InitializeReceiver()) <<
-        "Couldn't initialize receiver.\n";
+    ASSERT_EQ(0, acm_a_->InitializeReceiver())
+        << "Couldn't initialize receiver.\n";
+    ASSERT_EQ(0, acm_b_->InitializeReceiver())
+        << "Couldn't initialize receiver.\n";
 
     if (FLAG_delay > 0) {
-      ASSERT_EQ(0, acm_b_->SetMinimumPlayoutDelay(FLAG_delay)) <<
-          "Failed to set minimum delay.\n";
+      ASSERT_EQ(0, acm_b_->SetMinimumPlayoutDelay(FLAG_delay))
+          << "Failed to set minimum delay.\n";
     }
 
     int num_encoders = acm_a_->NumberOfCodecs();
     CodecInst my_codec_param;
     for (int n = 0; n < num_encoders; n++) {
-      EXPECT_EQ(0, acm_b_->Codec(n, &my_codec_param)) <<
-          "Failed to get codec.";
+      EXPECT_EQ(0, acm_b_->Codec(n, &my_codec_param)) << "Failed to get codec.";
       if (STR_CASE_CMP(my_codec_param.plname, "opus") == 0)
         my_codec_param.channels = 1;
       else if (my_codec_param.channels > 1)
@@ -118,12 +117,14 @@ class DelayTest {
     }
 
     // Create and connect the channel
-    ASSERT_EQ(0, acm_a_->RegisterTransportCallback(channel_a2b_)) <<
-        "Couldn't register Transport callback.\n";
+    ASSERT_EQ(0, acm_a_->RegisterTransportCallback(channel_a2b_))
+        << "Couldn't register Transport callback.\n";
     channel_a2b_->RegisterReceiverACM(acm_b_.get());
   }
 
-  void Perform(const TestSettings* config, size_t num_tests, int duration_sec,
+  void Perform(const TestSettings* config,
+               size_t num_tests,
+               int duration_sec,
                const char* output_prefix) {
     for (size_t n = 0; n < num_tests; ++n) {
       ApplyConfig(config[n]);
@@ -134,14 +135,15 @@ class DelayTest {
  private:
   void ApplyConfig(const TestSettings& config) {
     printf("====================================\n");
-    printf("Test %d \n"
-           "Codec: %s, %d kHz, %d channel(s)\n"
-           "ACM: DTX %s, FEC %s\n"
-           "Channel: %s\n",
-           ++test_cntr_, config.codec.name, config.codec.sample_rate_hz,
-           config.codec.num_channels, config.acm.dtx ? "on" : "off",
-           config.acm.fec ? "on" : "off",
-           config.packet_loss ? "with packet-loss" : "no packet-loss");
+    printf(
+        "Test %d \n"
+        "Codec: %s, %d kHz, %d channel(s)\n"
+        "ACM: DTX %s, FEC %s\n"
+        "Channel: %s\n",
+        ++test_cntr_, config.codec.name, config.codec.sample_rate_hz,
+        config.codec.num_channels, config.acm.dtx ? "on" : "off",
+        config.acm.fec ? "on" : "off",
+        config.packet_loss ? "with packet-loss" : "no packet-loss");
     SendCodec(config.codec);
     ConfigAcm(config.acm);
     ConfigChannel(config.packet_loss);
@@ -149,20 +151,20 @@ class DelayTest {
 
   void SendCodec(const CodecSettings& config) {
     CodecInst my_codec_param;
-    ASSERT_EQ(0, AudioCodingModule::Codec(
-              config.name, &my_codec_param, config.sample_rate_hz,
-              config.num_channels)) << "Specified codec is not supported.\n";
+    ASSERT_EQ(
+        0, AudioCodingModule::Codec(config.name, &my_codec_param,
+                                    config.sample_rate_hz, config.num_channels))
+        << "Specified codec is not supported.\n";
 
     encoding_sample_rate_hz_ = my_codec_param.plfreq;
-    ASSERT_EQ(0, acm_a_->RegisterSendCodec(my_codec_param)) <<
-        "Failed to register send-codec.\n";
+    ASSERT_EQ(0, acm_a_->RegisterSendCodec(my_codec_param))
+        << "Failed to register send-codec.\n";
   }
 
   void ConfigAcm(const AcmSettings& config) {
-    ASSERT_EQ(0, acm_a_->SetVAD(config.dtx, config.dtx, VADAggr)) <<
-        "Failed to set VAD.\n";
-    ASSERT_EQ(0, acm_a_->SetREDStatus(config.fec)) <<
-        "Failed to set RED.\n";
+    ASSERT_EQ(0, acm_a_->SetVAD(config.dtx, config.dtx, VADAggr))
+        << "Failed to set VAD.\n";
+    ASSERT_EQ(0, acm_a_->SetREDStatus(config.fec)) << "Failed to set RED.\n";
   }
 
   void ConfigChannel(bool packet_loss) {
@@ -172,7 +174,8 @@ class DelayTest {
   void OpenOutFile(const char* output_id) {
     std::stringstream file_stream;
     file_stream << "delay_test_" << FLAG_codec << "_" << FLAG_sample_rate_hz
-        << "Hz" << "_" << FLAG_delay << "ms.pcm";
+                << "Hz"
+                << "_" << FLAG_delay << "ms.pcm";
     std::cout << "Output file: " << file_stream.str() << std::endl << std::endl;
     std::string file_name = webrtc::test::OutputPath() + file_stream.str();
     out_file_b_.Open(file_name.c_str(), 32000, "wb");
@@ -197,14 +200,15 @@ class DelayTest {
       if ((num_frames & 0x3F) == 0x3F) {
         NetworkStatistics statistics;
         acm_b_->GetNetworkStatistics(&statistics);
-        fprintf(stdout, "delay: min=%3d  max=%3d  mean=%3d  median=%3d"
+        fprintf(stdout,
+                "delay: min=%3d  max=%3d  mean=%3d  median=%3d"
                 " ts-based average = %6.3f, "
                 "curr buff-lev = %4u opt buff-lev = %4u \n",
                 statistics.minWaitingTimeMs, statistics.maxWaitingTimeMs,
                 statistics.meanWaitingTimeMs, statistics.medianWaitingTimeMs,
                 average_delay, statistics.currentBufferSize,
                 statistics.preferredBufferSize);
-        fflush (stdout);
+        fflush(stdout);
       }
 
       in_file_a_.Read10MsData(audio_frame);
@@ -256,10 +260,8 @@ int main(int argc, char* argv[]) {
   webrtc::TestSettings test_setting;
   strcpy(test_setting.codec.name, FLAG_codec);
 
-  if (FLAG_sample_rate_hz != 8000 &&
-      FLAG_sample_rate_hz != 16000 &&
-      FLAG_sample_rate_hz != 32000 &&
-      FLAG_sample_rate_hz != 48000) {
+  if (FLAG_sample_rate_hz != 8000 && FLAG_sample_rate_hz != 16000 &&
+      FLAG_sample_rate_hz != 32000 && FLAG_sample_rate_hz != 48000) {
     std::cout << "Invalid sampling rate.\n";
     return 1;
   }

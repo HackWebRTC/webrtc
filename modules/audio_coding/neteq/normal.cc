@@ -76,8 +76,7 @@ int Normal::Process(const int16_t* input,
       // Adjust muting factor if needed (to BGN level).
       size_t energy_length =
           std::min(static_cast<size_t>(fs_mult * 64), length_per_channel);
-      int scaling = 6 + fs_shift
-          - WebRtcSpl_NormW32(decoded_max * decoded_max);
+      int scaling = 6 + fs_shift - WebRtcSpl_NormW32(decoded_max * decoded_max);
       scaling = std::max(scaling, 0);  // |scaling| should always be >= 0.
       int32_t energy = WebRtcSpl_DotProductWithScale(signal.get(), signal.get(),
                                                      energy_length, scaling);
@@ -90,8 +89,7 @@ int Normal::Process(const int16_t* input,
       }
 
       int local_mute_factor = 16384;  // 1.0 in Q14.
-      if ((energy != 0) &&
-          (energy > background_noise_.Energy(channel_ix))) {
+      if ((energy != 0) && (energy > background_noise_.Energy(channel_ix))) {
         // Normalize new frame energy to 15 bits.
         scaling = WebRtcSpl_NormW32(energy) - 16;
         // We want background_noise_.energy() / energy in Q14.

@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-
 #ifndef MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_SOURCE_OS_SPECIFIC_INLINE_H_
 #define MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_SOURCE_OS_SPECIFIC_INLINE_H_
 
@@ -24,11 +23,12 @@ static __inline long int WebRtcIsac_lrint(double x_dbl) {
   __asm {
     fld x_dbl
     fistp x_int
-  };
+  }
+  ;
 
   return x_int;
 }
-#else // Do a slow but correct implementation of lrint
+#else  // Do a slow but correct implementation of lrint
 
 static __inline long int WebRtcIsac_lrint(double x_dbl) {
   long int x_int;

@@ -111,8 +111,7 @@ enum {
 struct SetSessionDescriptionMsg : public rtc::MessageData {
   explicit SetSessionDescriptionMsg(
       webrtc::SetSessionDescriptionObserver* observer)
-      : observer(observer) {
-  }
+      : observer(observer) {}
 
   rtc::scoped_refptr<webrtc::SetSessionDescriptionObserver> observer;
   RTCError error;
@@ -130,8 +129,7 @@ struct CreateSessionDescriptionMsg : public rtc::MessageData {
 struct GetStatsMsg : public rtc::MessageData {
   GetStatsMsg(webrtc::StatsObserver* observer,
               webrtc::MediaStreamTrackInterface* track)
-      : observer(observer), track(track) {
-  }
+      : observer(observer), track(track) {}
   rtc::scoped_refptr<webrtc::StatsObserver> observer;
   rtc::scoped_refptr<webrtc::MediaStreamTrackInterface> track;
 };
@@ -1055,16 +1053,14 @@ RTCError PeerConnection::ValidateConfiguration(
   return result;
 }
 
-rtc::scoped_refptr<StreamCollectionInterface>
-PeerConnection::local_streams() {
+rtc::scoped_refptr<StreamCollectionInterface> PeerConnection::local_streams() {
   RTC_CHECK(!IsUnifiedPlan()) << "local_streams is not available with Unified "
                                  "Plan SdpSemantics. Please use GetSenders "
                                  "instead.";
   return local_streams_;
 }
 
-rtc::scoped_refptr<StreamCollectionInterface>
-PeerConnection::remote_streams() {
+rtc::scoped_refptr<StreamCollectionInterface> PeerConnection::remote_streams() {
   RTC_CHECK(!IsUnifiedPlan()) << "remote_streams is not available with Unified "
                                  "Plan SdpSemantics. Please use GetReceivers "
                                  "instead.";
@@ -1695,8 +1691,7 @@ PeerConnection::ice_gathering_state() {
   return ice_gathering_state_;
 }
 
-rtc::scoped_refptr<DataChannelInterface>
-PeerConnection::CreateDataChannel(
+rtc::scoped_refptr<DataChannelInterface> PeerConnection::CreateDataChannel(
     const std::string& label,
     const DataChannelInit* config) {
   TRACE_EVENT0("webrtc", "PeerConnection::CreateDataChannel");
@@ -3076,7 +3071,7 @@ void PeerConnection::SetMetricObserver_n(UMAObserver* observer) {
 RTCError PeerConnection::SetBitrate(const BitrateSettings& bitrate) {
   if (!worker_thread()->IsCurrent()) {
     return worker_thread()->Invoke<RTCError>(
-        RTC_FROM_HERE, [&](){ return SetBitrate(bitrate); });
+        RTC_FROM_HERE, [&]() { return SetBitrate(bitrate); });
   }
 
   const bool has_min = bitrate.min_bitrate_bps.has_value();
@@ -3096,8 +3091,7 @@ RTCError PeerConnection::SetBitrate(const BitrateSettings& bitrate) {
     }
   }
   if (has_max) {
-    if (has_start &&
-        *bitrate.max_bitrate_bps < *bitrate.start_bitrate_bps) {
+    if (has_start && *bitrate.max_bitrate_bps < *bitrate.start_bitrate_bps) {
       LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
                            "max_bitrate_bps < start_bitrate_bps");
     } else if (has_min && *bitrate.max_bitrate_bps < *bitrate.min_bitrate_bps) {
@@ -3279,9 +3273,8 @@ void PeerConnection::Close() {
   transport_controller_.reset();
 
   network_thread()->Invoke<void>(
-      RTC_FROM_HERE,
-      rtc::Bind(&cricket::PortAllocator::DiscardCandidatePool,
-                port_allocator_.get()));
+      RTC_FROM_HERE, rtc::Bind(&cricket::PortAllocator::DiscardCandidatePool,
+                               port_allocator_.get()));
 
   worker_thread()->Invoke<void>(RTC_FROM_HERE, [this] {
     call_.reset();
@@ -4897,10 +4890,9 @@ RTCError PeerConnection::PushdownMediaDescription(
       continue;
     }
     std::string error;
-    bool success =
-        (source == cricket::CS_LOCAL)
-            ? channel->SetLocalContent(content_desc, type, &error)
-            : channel->SetRemoteContent(content_desc, type, &error);
+    bool success = (source == cricket::CS_LOCAL)
+                       ? channel->SetLocalContent(content_desc, type, &error)
+                       : channel->SetRemoteContent(content_desc, type, &error);
     if (!success) {
       LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER, std::move(error));
     }
@@ -4918,8 +4910,7 @@ RTCError PeerConnection::PushdownMediaDescription(
         bool success =
             (source == cricket::CS_LOCAL)
                 ? rtp_data_channel_->SetLocalContent(data_desc, type, &error)
-                : rtp_data_channel_->SetRemoteContent(data_desc, type,
-                                                      &error);
+                : rtp_data_channel_->SetRemoteContent(data_desc, type, &error);
         if (!success) {
           LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
                                std::move(error));

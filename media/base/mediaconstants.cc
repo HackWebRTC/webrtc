@@ -39,12 +39,12 @@ const char kCodecParamAssociatedCodecName[] = "acn";
 
 const char kOpusCodecName[] = "opus";
 const char kIsacCodecName[] = "ISAC";
-const char kL16CodecName[]  = "L16";
+const char kL16CodecName[] = "L16";
 const char kG722CodecName[] = "G722";
 const char kIlbcCodecName[] = "ILBC";
 const char kPcmuCodecName[] = "PCMU";
 const char kPcmaCodecName[] = "PCMA";
-const char kCnCodecName[]   = "CN";
+const char kCnCodecName[] = "CN";
 const char kDtmfCodecName[] = "telephone-event";
 
 // draft-spittka-payload-rtp-opus-03.txt

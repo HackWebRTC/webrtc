@@ -22,7 +22,8 @@ namespace test {
 
 class GlxRenderer : public GlRenderer {
  public:
-  static GlxRenderer* Create(const char* window_title, size_t width,
+  static GlxRenderer* Create(const char* window_title,
+                             size_t width,
                              size_t height);
   virtual ~GlxRenderer();
 
@@ -41,7 +42,7 @@ class GlxRenderer : public GlRenderer {
   Window window_;
   GLXContext context_;
 };
-}  // test
-}  // webrtc
+}  // namespace test
+}  // namespace webrtc
 
 #endif  // TEST_LINUX_GLX_RENDERER_H_

@@ -110,8 +110,7 @@ void BitrateAllocator::OnNetworkChanged(uint32_t target_bitrate_bps,
   for (auto& config : bitrate_observer_configs_) {
     uint32_t allocated_bitrate = allocation[config.observer];
     uint32_t protection_bitrate = config.observer->OnBitrateUpdated(
-        allocated_bitrate, last_fraction_loss_, last_rtt_,
-        last_bwe_period_ms_);
+        allocated_bitrate, last_fraction_loss_, last_rtt_, last_bwe_period_ms_);
 
     if (allocated_bitrate == 0 && config.allocated_bitrate_bps > 0) {
       if (target_bitrate_bps > 0)

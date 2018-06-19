@@ -88,8 +88,7 @@ uint32_t VideoRenderFrames::TimeToNextFrameRelease() {
     return kEventMaxWaitTimeMs;
   }
   const int64_t time_to_release = incoming_frames_.front().render_time_ms() -
-                                  render_delay_ms_ -
-                                  rtc::TimeMillis();
+                                  render_delay_ms_ - rtc::TimeMillis();
   return time_to_release < 0 ? 0u : static_cast<uint32_t>(time_to_release);
 }
 

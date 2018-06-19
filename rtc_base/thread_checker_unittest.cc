@@ -38,9 +38,7 @@ class ThreadCheckerClass : public ThreadChecker {
   // Verifies that it was called on the same thread as the constructor.
   void DoStuff() { RTC_DCHECK(CalledOnValidThread()); }
 
-  void DetachFromThread() {
-    ThreadChecker::DetachFromThread();
-  }
+  void DetachFromThread() { ThreadChecker::DetachFromThread(); }
 
   static void MethodOnDifferentThreadImpl();
   static void DetachThenCallFromDifferentThreadImpl();
@@ -62,9 +60,7 @@ class CallDoStuffOnThread : public Thread {
 
   // New method. Needed since Thread::Join is protected, and it is called by
   // the TEST.
-  void Join() {
-    Thread::Join();
-  }
+  void Join() { Thread::Join(); }
 
  private:
   ThreadCheckerClass* thread_checker_class_;
@@ -86,9 +82,7 @@ class DeleteThreadCheckerClassOnThread : public Thread {
 
   // New method. Needed since Thread::Join is protected, and it is called by
   // the TEST.
-  void Join() {
-    Thread::Join();
-  }
+  void Join() { Thread::Join(); }
 
   bool has_been_deleted() const { return !thread_checker_class_; }
 
@@ -157,9 +151,7 @@ void ThreadCheckerClass::MethodOnDifferentThreadImpl() {
 
 #if ENABLE_THREAD_CHECKER
 TEST(ThreadCheckerDeathTest, MethodNotAllowedOnDifferentThreadInDebug) {
-  ASSERT_DEATH({
-      ThreadCheckerClass::MethodOnDifferentThreadImpl();
-    }, "");
+  ASSERT_DEATH({ ThreadCheckerClass::MethodOnDifferentThreadImpl(); }, "");
 }
 #else
 TEST(ThreadCheckerTest, MethodAllowedOnDifferentThreadInRelease) {
@@ -186,9 +178,8 @@ void ThreadCheckerClass::DetachThenCallFromDifferentThreadImpl() {
 
 #if ENABLE_THREAD_CHECKER
 TEST(ThreadCheckerDeathTest, DetachFromThreadInDebug) {
-  ASSERT_DEATH({
-    ThreadCheckerClass::DetachThenCallFromDifferentThreadImpl();
-    }, "");
+  ASSERT_DEATH({ ThreadCheckerClass::DetachThenCallFromDifferentThreadImpl(); },
+               "");
 }
 #else
 TEST(ThreadCheckerTest, DetachFromThreadInRelease) {
@@ -204,12 +195,12 @@ class ThreadAnnotateTest {
   // specific T).
   // TODO(danilchap): Find a way to test they do not compile when thread
   // annotation checks enabled.
-  template<typename T>
+  template <typename T>
   void access_var_no_annotate() {
     var_thread_ = 42;
   }
 
-  template<typename T>
+  template <typename T>
   void access_fun_no_annotate() {
     function();
   }

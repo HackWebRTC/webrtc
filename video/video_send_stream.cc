@@ -16,7 +16,6 @@
 
 namespace webrtc {
 
-
 namespace {
 
 size_t CalculateMaxHeaderSize(const VideoSendStream::Config::Rtp& config) {
@@ -54,7 +53,6 @@ size_t CalculateMaxHeaderSize(const VideoSendStream::Config::Rtp& config) {
 
 namespace internal {
 
-
 VideoSendStream::VideoSendStream(
     int num_cpu_cores,
     ProcessThread* module_process_thread,
@@ -80,8 +78,7 @@ VideoSendStream::VideoSendStream(
   RTC_DCHECK(config_.encoder_settings.encoder_factory);
 
   video_stream_encoder_ = rtc::MakeUnique<VideoStreamEncoder>(
-      num_cpu_cores, &stats_proxy_,
-      config_.encoder_settings,
+      num_cpu_cores, &stats_proxy_, config_.encoder_settings,
       config_.pre_encode_callback,
       rtc::MakeUnique<OveruseFrameDetector>(&stats_proxy_));
   // TODO(srte): Initialization should not be done posted on a task queue.

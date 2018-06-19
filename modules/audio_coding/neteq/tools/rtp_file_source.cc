@@ -44,8 +44,7 @@ bool RtpFileSource::ValidPcap(const std::string& file_name) {
   return !!temp_file;
 }
 
-RtpFileSource::~RtpFileSource() {
-}
+RtpFileSource::~RtpFileSource() {}
 
 bool RtpFileSource::RegisterRtpHeaderExtension(RTPExtensionType type,
                                                uint8_t id) {
@@ -82,8 +81,7 @@ std::unique_ptr<Packet> RtpFileSource::NextPacket() {
 }
 
 RtpFileSource::RtpFileSource()
-    : PacketSource(),
-      parser_(RtpHeaderParser::Create()) {}
+    : PacketSource(), parser_(RtpHeaderParser::Create()) {}
 
 bool RtpFileSource::OpenFile(const std::string& file_name) {
   rtp_reader_.reset(RtpFileReader::Create(RtpFileReader::kRtpDump, file_name));

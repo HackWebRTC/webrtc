@@ -21,16 +21,12 @@ namespace webrtc {
 
 class FakeConstraints : public webrtc::MediaConstraintsInterface {
  public:
-  FakeConstraints() { }
-  virtual ~FakeConstraints() { }
+  FakeConstraints() {}
+  virtual ~FakeConstraints() {}
 
-  virtual const Constraints& GetMandatory() const {
-    return mandatory_;
-  }
+  virtual const Constraints& GetMandatory() const { return mandatory_; }
 
-  virtual const Constraints& GetOptional() const {
-    return optional_;
-  }
+  virtual const Constraints& GetOptional() const { return optional_; }
 
   template <class T>
   void AddMandatory(const std::string& key, const T& value) {

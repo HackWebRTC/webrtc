@@ -97,10 +97,10 @@ void SortPacketFeedbackVector(
 }
 
 bool IsPacerPushbackExperimentEnabled() {
-  return webrtc::field_trial::IsEnabled(kPacerPushbackExperiment) || (
-      !webrtc::field_trial::IsDisabled(kPacerPushbackExperiment) &&
-      webrtc::runtime_enabled_features::IsFeatureEnabled(
-          webrtc::runtime_enabled_features::kDualStreamModeFeatureName));
+  return webrtc::field_trial::IsEnabled(kPacerPushbackExperiment) ||
+         (!webrtc::field_trial::IsDisabled(kPacerPushbackExperiment) &&
+          webrtc::runtime_enabled_features::IsFeatureEnabled(
+              webrtc::runtime_enabled_features::kDualStreamModeFeatureName));
 }
 
 }  // namespace

@@ -50,7 +50,7 @@ class PacketSocketFactory {
     OPT_SSLTCP = OPT_TLS_FAKE,
   };
 
-  PacketSocketFactory() { }
+  PacketSocketFactory() {}
   virtual ~PacketSocketFactory() = default;
 
   virtual AsyncPacketSocket* CreateUdpSocket(const SocketAddress& address,

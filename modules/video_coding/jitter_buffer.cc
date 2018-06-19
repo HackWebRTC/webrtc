@@ -761,9 +761,8 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
       } else {
         incomplete_frames_.InsertFrame(frame);
         // If NACKs are enabled, keyframes are triggered by |GetNackList|.
-        if (nack_mode_ == kNoNack &&
-            NonContinuousOrIncompleteDuration() >
-                90 * kMaxDiscontinuousFramesTime) {
+        if (nack_mode_ == kNoNack && NonContinuousOrIncompleteDuration() >
+                                         90 * kMaxDiscontinuousFramesTime) {
           return kFlushIndicator;
         }
       }
@@ -777,9 +776,8 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
       } else {
         incomplete_frames_.InsertFrame(frame);
         // If NACKs are enabled, keyframes are triggered by |GetNackList|.
-        if (nack_mode_ == kNoNack &&
-            NonContinuousOrIncompleteDuration() >
-                90 * kMaxDiscontinuousFramesTime) {
+        if (nack_mode_ == kNoNack && NonContinuousOrIncompleteDuration() >
+                                         90 * kMaxDiscontinuousFramesTime) {
           return kFlushIndicator;
         }
       }

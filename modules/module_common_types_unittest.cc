@@ -112,7 +112,6 @@ TEST(LatestTimestamp, Wrap) {
   EXPECT_EQ(0x0000FFFFu, LatestTimestamp(0xFFFF0000, 0x0000FFFF));
 }
 
-
 TEST(SequenceNumberUnwrapper, Limits) {
   SequenceNumberUnwrapper unwrapper;
 

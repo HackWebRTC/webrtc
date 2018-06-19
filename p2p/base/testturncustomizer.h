@@ -24,12 +24,11 @@ class TestTurnCustomizer : public webrtc::TurnCustomizer {
 
   enum TestTurnAttributeExtensions {
     // Test only attribute
-    STUN_ATTR_COUNTER                     = 0xFF02   // Number
+    STUN_ATTR_COUNTER = 0xFF02  // Number
   };
 
-  void MaybeModifyOutgoingStunMessage(
-      cricket::PortInterface* port,
-      cricket::StunMessage* message) override {
+  void MaybeModifyOutgoingStunMessage(cricket::PortInterface* port,
+                                      cricket::StunMessage* message) override {
     modify_cnt_++;
 
     ASSERT_NE(0, message->type());

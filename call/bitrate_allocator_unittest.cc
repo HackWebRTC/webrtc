@@ -78,7 +78,7 @@ class TestBitrateObserver : public BitrateAllocatorObserver {
 namespace {
 constexpr int64_t kDefaultProbingIntervalMs = 3000;
 const double kDefaultBitratePriority = 1.0;
-}
+}  // namespace
 
 class BitrateAllocatorTest : public ::testing::Test {
  protected:
@@ -295,14 +295,14 @@ TEST_F(BitrateAllocatorTestNoEnforceMin, ThreeBitrateObservers) {
   allocator_->OnNetworkChanged(300000, 0, 0, kDefaultProbingIntervalMs);
   EXPECT_EQ(100000u, bitrate_observer_1.last_bitrate_bps_);  // Min bitrate.
   EXPECT_EQ(200000u, bitrate_observer_2.last_bitrate_bps_);  // Min bitrate.
-  EXPECT_EQ(0u, bitrate_observer_3.last_bitrate_bps_);  // Nothing.
+  EXPECT_EQ(0u, bitrate_observer_3.last_bitrate_bps_);       // Nothing.
 
   // Increased BWE, but still below the sum of configured min bitrates for all
   // observers and too little for observer 3. 1 and 2 will share the rest.
   allocator_->OnNetworkChanged(500000, 0, 0, kDefaultProbingIntervalMs);
   EXPECT_EQ(200000u, bitrate_observer_1.last_bitrate_bps_);  // Min + split.
   EXPECT_EQ(300000u, bitrate_observer_2.last_bitrate_bps_);  // Min + split.
-  EXPECT_EQ(0u, bitrate_observer_3.last_bitrate_bps_);  // Nothing.
+  EXPECT_EQ(0u, bitrate_observer_3.last_bitrate_bps_);       // Nothing.
 
   // Below min for all.
   allocator_->OnNetworkChanged(10000, 0, 0, kDefaultProbingIntervalMs);

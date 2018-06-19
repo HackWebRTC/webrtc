@@ -23,8 +23,8 @@ void MaybeResetBuffer(std::unique_ptr<ChannelBuffer<float>>* buffer,
   auto& buffer_ref = *buffer;
   if (!buffer_ref.get() || buffer_ref->num_frames() != config.num_frames() ||
       buffer_ref->num_channels() != config.num_channels()) {
-    buffer_ref.reset(new ChannelBuffer<float>(config.num_frames(),
-                                             config.num_channels()));
+    buffer_ref.reset(
+        new ChannelBuffer<float>(config.num_frames(), config.num_channels()));
   }
 }
 

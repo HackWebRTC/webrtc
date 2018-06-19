@@ -20,7 +20,7 @@ WindowFinderWin::WindowFinderWin() = default;
 WindowFinderWin::~WindowFinderWin() = default;
 
 WindowId WindowFinderWin::GetWindowUnderPoint(DesktopVector point) {
-  HWND window = WindowFromPoint(POINT { point.x(), point.y() });
+  HWND window = WindowFromPoint(POINT{point.x(), point.y()});
   if (!window) {
     return kNullWindowId;
   }

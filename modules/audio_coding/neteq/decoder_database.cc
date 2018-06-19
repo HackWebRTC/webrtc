@@ -134,9 +134,13 @@ DecoderDatabase::DecoderInfo::SubtypeFromFormat(const SdpAudioFormat& format) {
   return Subtype::kNormal;
 }
 
-bool DecoderDatabase::Empty() const { return decoders_.empty(); }
+bool DecoderDatabase::Empty() const {
+  return decoders_.empty();
+}
 
-int DecoderDatabase::Size() const { return static_cast<int>(decoders_.size()); }
+int DecoderDatabase::Size() const {
+  return static_cast<int>(decoders_.size());
+}
 
 void DecoderDatabase::Reset() {
   decoders_.clear();
@@ -276,7 +280,7 @@ const DecoderDatabase::DecoderInfo* DecoderDatabase::GetDecoderInfo(
 int DecoderDatabase::SetActiveDecoder(uint8_t rtp_payload_type,
                                       bool* new_decoder) {
   // Check that |rtp_payload_type| exists in the database.
-  const DecoderInfo *info = GetDecoderInfo(rtp_payload_type);
+  const DecoderInfo* info = GetDecoderInfo(rtp_payload_type);
   if (!info) {
     // Decoder not found.
     return kDecoderNotFound;
@@ -289,7 +293,7 @@ int DecoderDatabase::SetActiveDecoder(uint8_t rtp_payload_type,
     *new_decoder = true;
   } else if (active_decoder_type_ != rtp_payload_type) {
     // Moving from one active decoder to another. Delete the first one.
-    const DecoderInfo *old_info = GetDecoderInfo(active_decoder_type_);
+    const DecoderInfo* old_info = GetDecoderInfo(active_decoder_type_);
     RTC_DCHECK(old_info);
     old_info->DropDecoder();
     *new_decoder = true;
@@ -308,7 +312,7 @@ AudioDecoder* DecoderDatabase::GetActiveDecoder() const {
 
 int DecoderDatabase::SetActiveCngDecoder(uint8_t rtp_payload_type) {
   // Check that |rtp_payload_type| exists in the database.
-  const DecoderInfo *info = GetDecoderInfo(rtp_payload_type);
+  const DecoderInfo* info = GetDecoderInfo(rtp_payload_type);
   if (!info) {
     // Decoder not found.
     return kDecoderNotFound;
@@ -335,7 +339,7 @@ ComfortNoiseDecoder* DecoderDatabase::GetActiveCngDecoder() const {
 }
 
 AudioDecoder* DecoderDatabase::GetDecoder(uint8_t rtp_payload_type) const {
-  const DecoderInfo *info = GetDecoderInfo(rtp_payload_type);
+  const DecoderInfo* info = GetDecoderInfo(rtp_payload_type);
   return info ? info->GetDecoder() : nullptr;
 }
 
@@ -350,17 +354,17 @@ bool DecoderDatabase::IsType(uint8_t rtp_payload_type,
 }
 
 bool DecoderDatabase::IsComfortNoise(uint8_t rtp_payload_type) const {
-  const DecoderInfo *info = GetDecoderInfo(rtp_payload_type);
+  const DecoderInfo* info = GetDecoderInfo(rtp_payload_type);
   return info && info->IsComfortNoise();
 }
 
 bool DecoderDatabase::IsDtmf(uint8_t rtp_payload_type) const {
-  const DecoderInfo *info = GetDecoderInfo(rtp_payload_type);
+  const DecoderInfo* info = GetDecoderInfo(rtp_payload_type);
   return info && info->IsDtmf();
 }
 
 bool DecoderDatabase::IsRed(uint8_t rtp_payload_type) const {
-  const DecoderInfo *info = GetDecoderInfo(rtp_payload_type);
+  const DecoderInfo* info = GetDecoderInfo(rtp_payload_type);
   return info && info->IsRed();
 }
 

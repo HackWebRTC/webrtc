@@ -27,13 +27,12 @@ template <typename T>
 double NormLp(T sum, size_t size, double p) {
   return pow(sum / size, 1.0 / p);
 }
-}
+}  // namespace
 
 const double kP = 1.0;  // Used for Norm Lp.
 
 LinkShare::LinkShare(ChokeFilter* choke_filter)
-    : choke_filter_(choke_filter), running_flows_(choke_filter->flow_ids()) {
-}
+    : choke_filter_(choke_filter), running_flows_(choke_filter->flow_ids()) {}
 
 void LinkShare::PauseFlow(int flow_id) {
   running_flows_.erase(flow_id);
@@ -288,10 +287,10 @@ void MetricRecorder::PlotThroughputHistogram(
       average_bitrate_kbps + pos_error + extra_error, "estimate_error",
       optimal_bitrate_per_flow_kbps, optimum_title, flow_id_);
 
-  BWE_TEST_LOGGING_LOG1("RESULTS >>> " + bwe_name + " Channel utilization : ",
-                        "%lf %%",
-                        100.0 * static_cast<double>(average_bitrate_kbps) /
-                            optimal_bitrate_per_flow_kbps);
+  BWE_TEST_LOGGING_LOG1(
+      "RESULTS >>> " + bwe_name + " Channel utilization : ", "%lf %%",
+      100.0 * static_cast<double>(average_bitrate_kbps) /
+          optimal_bitrate_per_flow_kbps);
 
   RTC_UNUSED(pos_error);
   RTC_UNUSED(neg_error);

@@ -383,8 +383,8 @@ int main(int argc, char* argv[]) {
       " --help for usage.\n"
       "Example usage:\n" +
       program_name + " input.rel\n";
-  if (rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true) ||
-      FLAG_help || argc != 2) {
+  if (rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true) || FLAG_help ||
+      argc != 2) {
     std::cout << usage;
     if (FLAG_help) {
       rtc::FlagList::Print(nullptr, false);
@@ -492,8 +492,8 @@ int main(int argc, char* argv[]) {
                       << parsed_header.extension.transmissionTimeOffset;
           }
           if (parsed_header.extension.hasAudioLevel) {
-            std::cout << "\tAudioLevel=" <<
-                static_cast<int>(parsed_header.extension.audioLevel);
+            std::cout << "\tAudioLevel="
+                      << static_cast<int>(parsed_header.extension.audioLevel);
           }
           std::cout << std::endl;
           if (FLAG_print_full_packets) {

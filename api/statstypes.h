@@ -369,13 +369,14 @@ class StatsReport {
   static Id NewBandwidthEstimationId();
   static Id NewTypedId(StatsType type, const std::string& id);
   static Id NewTypedIntId(StatsType type, int id);
-  static Id NewIdWithDirection(
-      StatsType type, const std::string& id, Direction direction);
+  static Id NewIdWithDirection(StatsType type,
+                               const std::string& id,
+                               Direction direction);
   static Id NewCandidateId(bool local, const std::string& id);
-  static Id NewComponentId(
-      const std::string& content_name, int component);
-  static Id NewCandidatePairId(
-      const std::string& content_name, int component, int index);
+  static Id NewComponentId(const std::string& content_name, int component);
+  static Id NewCandidatePairId(const std::string& content_name,
+                               int component,
+                               int index);
 
   const Id& id() const { return id_; }
   StatsType type() const { return id_->type(); }

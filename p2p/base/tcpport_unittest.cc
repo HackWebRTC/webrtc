@@ -54,8 +54,7 @@ class TCPPortTest : public testing::Test, public sigslot::has_slots<> {
         main_(ss_.get()),
         socket_factory_(rtc::Thread::Current()),
         username_(rtc::CreateRandomString(ICE_UFRAG_LENGTH)),
-        password_(rtc::CreateRandomString(ICE_PWD_LENGTH)) {
-  }
+        password_(rtc::CreateRandomString(ICE_PWD_LENGTH)) {}
 
   rtc::Network* MakeNetwork(const SocketAddress& addr) {
     networks_.emplace_back("unittest", "unittest", addr.ipaddr(), 32);

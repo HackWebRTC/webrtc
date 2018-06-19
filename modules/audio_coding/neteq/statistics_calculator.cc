@@ -42,8 +42,7 @@ StatisticsCalculator::PeriodicUmaLogger::PeriodicUmaLogger(
     : uma_name_(uma_name),
       report_interval_ms_(report_interval_ms),
       max_value_(max_value),
-      timer_(0) {
-}
+      timer_(0) {}
 
 StatisticsCalculator::PeriodicUmaLogger::~PeriodicUmaLogger() = default;
 
@@ -66,8 +65,7 @@ StatisticsCalculator::PeriodicUmaCount::PeriodicUmaCount(
     const std::string& uma_name,
     int report_interval_ms,
     int max_value)
-    : PeriodicUmaLogger(uma_name, report_interval_ms, max_value) {
-}
+    : PeriodicUmaLogger(uma_name, report_interval_ms, max_value) {}
 
 StatisticsCalculator::PeriodicUmaCount::~PeriodicUmaCount() {
   // Log the count for the current (incomplete) interval.
@@ -90,8 +88,7 @@ StatisticsCalculator::PeriodicUmaAverage::PeriodicUmaAverage(
     const std::string& uma_name,
     int report_interval_ms,
     int max_value)
-    : PeriodicUmaLogger(uma_name, report_interval_ms, max_value) {
-}
+    : PeriodicUmaLogger(uma_name, report_interval_ms, max_value) {}
 
 StatisticsCalculator::PeriodicUmaAverage::~PeriodicUmaAverage() {
   // Log the average for the current (incomplete) interval.
@@ -266,11 +263,10 @@ void StatisticsCalculator::StoreWaitingTime(int waiting_time_ms) {
   waiting_times_.push_back(waiting_time_ms);
 }
 
-void StatisticsCalculator::GetNetworkStatistics(
-    int fs_hz,
-    size_t num_samples_in_buffers,
-    size_t samples_per_packet,
-    NetEqNetworkStatistics *stats) {
+void StatisticsCalculator::GetNetworkStatistics(int fs_hz,
+                                                size_t num_samples_in_buffers,
+                                                size_t samples_per_packet,
+                                                NetEqNetworkStatistics* stats) {
   RTC_DCHECK_GT(fs_hz, 0);
   RTC_DCHECK(stats);
 
@@ -291,20 +287,18 @@ void StatisticsCalculator::GetNetworkStatistics(
       CalculateQ14Ratio(expanded_speech_samples_ + expanded_noise_samples_,
                         timestamps_since_last_report_);
 
-  stats->speech_expand_rate =
-      CalculateQ14Ratio(expanded_speech_samples_,
-                        timestamps_since_last_report_);
+  stats->speech_expand_rate = CalculateQ14Ratio(expanded_speech_samples_,
+                                                timestamps_since_last_report_);
 
-  stats->secondary_decoded_rate =
-      CalculateQ14Ratio(secondary_decoded_samples_,
-                        timestamps_since_last_report_);
+  stats->secondary_decoded_rate = CalculateQ14Ratio(
+      secondary_decoded_samples_, timestamps_since_last_report_);
 
   const size_t discarded_secondary_samples =
       discarded_secondary_packets_ * samples_per_packet;
-  stats->secondary_discarded_rate = CalculateQ14Ratio(
-      discarded_secondary_samples,
-      static_cast<uint32_t>(discarded_secondary_samples +
-        secondary_decoded_samples_));
+  stats->secondary_discarded_rate =
+      CalculateQ14Ratio(discarded_secondary_samples,
+                        static_cast<uint32_t>(discarded_secondary_samples +
+                                              secondary_decoded_samples_));
 
   if (waiting_times_.size() == 0) {
     stats->mean_waiting_time_ms = -1;

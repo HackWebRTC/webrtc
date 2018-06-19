@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#include "call/video_send_stream.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/include/video_coding_defines.h"
@@ -28,7 +29,6 @@
 #include "video/report_block_stats.h"
 #include "video/stats_counter.h"
 #include "video/video_stream_encoder.h"
-#include "call/video_send_stream.h"
 
 namespace webrtc {
 

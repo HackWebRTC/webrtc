@@ -79,8 +79,8 @@ Operations DecisionLogicNormal::GetDecisionSpecialized(
   // Note that the MuteFactor is in Q14, so a value of 16384 corresponds to 1.
   if (postpone_decoding_after_expand_ && prev_mode == kModeExpand &&
       !packet_buffer_.ContainsDtxOrCngPacket(decoder_database_) &&
-      cur_size_samples < static_cast<size_t>(delay_manager_->TargetLevel() *
-                                             packet_length_samples_) >> 8 &&
+      cur_size_samples<static_cast<size_t>(delay_manager_->TargetLevel() *
+                                           packet_length_samples_)>> 8 &&
       expand.MuteFactor(0) < 16384 / 2) {
     return kExpand;
   }
@@ -92,10 +92,9 @@ Operations DecisionLogicNormal::GetDecisionSpecialized(
     return ExpectedPacketAvailable(prev_mode, play_dtmf);
   } else if (!PacketBuffer::IsObsoleteTimestamp(
                  available_timestamp, target_timestamp, five_seconds_samples)) {
-    return FuturePacketAvailable(sync_buffer, expand, decoder_frame_length,
-                                 prev_mode, target_timestamp,
-                                 available_timestamp, play_dtmf,
-                                 generated_noise_samples);
+    return FuturePacketAvailable(
+        sync_buffer, expand, decoder_frame_length, prev_mode, target_timestamp,
+        available_timestamp, play_dtmf, generated_noise_samples);
   } else {
     // This implies that available_timestamp < target_timestamp, which can
     // happen when a new stream or codec is received. Signal for a reset.
@@ -183,10 +182,8 @@ Operations DecisionLogicNormal::FuturePacketAvailable(
   // Check if we should continue with an ongoing expand because the new packet
   // is too far into the future.
   uint32_t timestamp_leap = available_timestamp - target_timestamp;
-  if ((prev_mode == kModeExpand) &&
-      !ReinitAfterExpands(timestamp_leap) &&
-      !MaxWaitForPacket() &&
-      PacketTooEarly(timestamp_leap) &&
+  if ((prev_mode == kModeExpand) && !ReinitAfterExpands(timestamp_leap) &&
+      !MaxWaitForPacket() && PacketTooEarly(timestamp_leap) &&
       UnderTargetLevel()) {
     if (play_dtmf) {
       // Still have DTMF to play, so do not do expand.
@@ -199,12 +196,11 @@ Operations DecisionLogicNormal::FuturePacketAvailable(
 
   const size_t samples_left =
       sync_buffer.FutureLength() - expand.overlap_length();
-  const size_t cur_size_samples = samples_left +
-      packet_buffer_.NumPacketsInBuffer() * decoder_frame_length;
+  const size_t cur_size_samples =
+      samples_left + packet_buffer_.NumPacketsInBuffer() * decoder_frame_length;
 
   // If previous was comfort noise, then no merge is needed.
-  if (prev_mode == kModeRfc3389Cng ||
-      prev_mode == kModeCodecInternalCng) {
+  if (prev_mode == kModeRfc3389Cng || prev_mode == kModeCodecInternalCng) {
     // Keep the same delay as before the CNG, but make sure that the number of
     // samples in buffer is no higher than 4 times the optimal level. (Note that
     // TargetLevel() is in Q8.)
@@ -212,7 +208,7 @@ Operations DecisionLogicNormal::FuturePacketAvailable(
             available_timestamp ||
         cur_size_samples >
             ((delay_manager_->TargetLevel() * packet_length_samples_) >> 8) *
-            4) {
+                4) {
       // Time to play this new packet.
       return kNormal;
     } else {
@@ -237,17 +233,17 @@ Operations DecisionLogicNormal::FuturePacketAvailable(
 
 bool DecisionLogicNormal::UnderTargetLevel() const {
   return buffer_level_filter_->filtered_current_level() <=
-      delay_manager_->TargetLevel();
+         delay_manager_->TargetLevel();
 }
 
 bool DecisionLogicNormal::ReinitAfterExpands(uint32_t timestamp_leap) const {
   return timestamp_leap >=
-      static_cast<uint32_t>(output_size_samples_ * kReinitAfterExpands);
+         static_cast<uint32_t>(output_size_samples_ * kReinitAfterExpands);
 }
 
 bool DecisionLogicNormal::PacketTooEarly(uint32_t timestamp_leap) const {
   return timestamp_leap >
-      static_cast<uint32_t>(output_size_samples_ * num_consecutive_expands_);
+         static_cast<uint32_t>(output_size_samples_ * num_consecutive_expands_);
 }
 
 bool DecisionLogicNormal::MaxWaitForPacket() const {

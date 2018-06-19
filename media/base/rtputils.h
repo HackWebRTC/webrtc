@@ -31,13 +31,13 @@ struct RtpHeader {
 };
 
 enum RtcpTypes {
-  kRtcpTypeSR = 200,      // Sender report payload type.
-  kRtcpTypeRR = 201,      // Receiver report payload type.
-  kRtcpTypeSDES = 202,    // SDES payload type.
-  kRtcpTypeBye = 203,     // BYE payload type.
-  kRtcpTypeApp = 204,     // APP payload type.
-  kRtcpTypeRTPFB = 205,   // Transport layer Feedback message payload type.
-  kRtcpTypePSFB = 206,    // Payload-specific Feedback message payload type.
+  kRtcpTypeSR = 200,     // Sender report payload type.
+  kRtcpTypeRR = 201,     // Receiver report payload type.
+  kRtcpTypeSDES = 202,   // SDES payload type.
+  kRtcpTypeBye = 203,    // BYE payload type.
+  kRtcpTypeApp = 204,    // APP payload type.
+  kRtcpTypeRTPFB = 205,  // Transport layer Feedback message payload type.
+  kRtcpTypePSFB = 206,   // Payload-specific Feedback message payload type.
 };
 
 bool GetRtpPayloadType(const void* data, size_t len, int* value);
@@ -84,7 +84,6 @@ bool ApplyPacketOptions(uint8_t* data,
                         size_t length,
                         const rtc::PacketTimeUpdateParams& packet_time_params,
                         uint64_t time_us);
-
 
 }  // namespace cricket
 

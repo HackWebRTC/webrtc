@@ -85,7 +85,7 @@ std::vector<SpatialLayer> ConfigureSvcNormalVideo(size_t input_width,
     spatial_layer.minBitrate =
         std::max(static_cast<size_t>(min_bitrate), kMinVp9SvcBitrateKbps);
     spatial_layer.maxBitrate =
-         static_cast<int>((1.6 * num_pixels + 50 * 1000) / 1000);
+        static_cast<int>((1.6 * num_pixels + 50 * 1000) / 1000);
     spatial_layer.targetBitrate =
         (spatial_layer.minBitrate + spatial_layer.maxBitrate) / 2;
     spatial_layers.push_back(spatial_layer);

@@ -249,7 +249,7 @@ TEST_F(LegacyProbeControllerTest, PeriodicProbingAfterReset) {
   // Make sure we use |kStartBitrateBps| as the estimated bitrate
   // until SetEstimatedBitrate is called with an updated estimate.
   clock_.AdvanceTimeMilliseconds(10000);
-  EXPECT_CALL(local_pacer, CreateProbeCluster(kStartBitrateBps*2));
+  EXPECT_CALL(local_pacer, CreateProbeCluster(kStartBitrateBps * 2));
   probe_controller_->Process();
 }
 

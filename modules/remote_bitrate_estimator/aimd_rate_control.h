@@ -64,7 +64,8 @@ class AimdRateControl {
   // large compared to the bitrate actually being received by the other end.
   uint32_t ClampBitrate(uint32_t new_bitrate_bps,
                         uint32_t incoming_bitrate_bps) const;
-  uint32_t MultiplicativeRateIncrease(int64_t now_ms, int64_t last_ms,
+  uint32_t MultiplicativeRateIncrease(int64_t now_ms,
+                                      int64_t last_ms,
                                       uint32_t current_bitrate_bps) const;
   uint32_t AdditiveRateIncrease(int64_t now_ms, int64_t last_ms) const;
   void UpdateChangePeriod(int64_t now_ms);

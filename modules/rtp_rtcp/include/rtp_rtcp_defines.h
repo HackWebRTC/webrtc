@@ -22,8 +22,8 @@
 #include "system_wrappers/include/clock.h"
 #include "typedefs.h"  // NOLINT(build/include)
 
-#define RTCP_CNAME_SIZE 256    // RFC 3550 page 44, including null termination
-#define IP_PACKET_SIZE 1500    // we assume ethernet
+#define RTCP_CNAME_SIZE 256  // RFC 3550 page 44, including null termination
+#define IP_PACKET_SIZE 1500  // we assume ethernet
 #define MAX_NUMBER_OF_PARALLEL_TELEPHONE_EVENTS 10
 
 namespace webrtc {
@@ -97,15 +97,9 @@ class PayloadUnion {
 
 enum RTPAliveType { kRtpDead = 0, kRtpNoRtp = 1, kRtpAlive = 2 };
 
-enum ProtectionType {
-  kUnprotectedPacket,
-  kProtectedPacket
-};
+enum ProtectionType { kUnprotectedPacket, kProtectedPacket };
 
-enum StorageType {
-  kDontRetransmit,
-  kAllowRetransmission
-};
+enum StorageType { kDontRetransmit, kAllowRetransmission };
 
 enum RTPExtensionType {
   kRtpExtensionNone,
@@ -166,10 +160,10 @@ enum RetransmissionMode : uint8_t {
 };
 
 enum RtxMode {
-  kRtxOff                 = 0x0,
-  kRtxRetransmitted       = 0x1,  // Only send retransmissions over RTX.
-  kRtxRedundantPayloads   = 0x2   // Preventively send redundant payloads
-                                  // instead of padding.
+  kRtxOff = 0x0,
+  kRtxRetransmitted = 0x1,     // Only send retransmissions over RTX.
+  kRtxRedundantPayloads = 0x2  // Preventively send redundant payloads
+                               // instead of padding.
 };
 
 const size_t kRtxHeaderSize = 2;

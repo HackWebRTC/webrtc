@@ -18,12 +18,16 @@
 #include "typedefs.h"  // NOLINT(build/include)
 
 #if defined(WEBRTC_WIN)
+// clang-format off
+// clang formating would change include order.
+
 // Include winsock2.h before including <windows.h> to maintain consistency with
 // win32.h. To include win32.h directly, it must be broken out into its own
 // build target.
 #include <winsock2.h>
 #include <windows.h>
 #include <sal.h>  // must come after windows headers.
+// clang-format on
 #endif  // defined(WEBRTC_WIN)
 
 #if defined(WEBRTC_POSIX)
@@ -66,7 +70,7 @@ class RTC_LOCKABLE CriticalSection {
 #if defined(WEBRTC_WIN)
   mutable CRITICAL_SECTION crit_;
 #elif defined(WEBRTC_POSIX)
-# if defined(WEBRTC_MAC) && !USE_NATIVE_MUTEX_ON_MAC
+#if defined(WEBRTC_MAC) && !USE_NATIVE_MUTEX_ON_MAC
   // Number of times the lock has been locked + number of threads waiting.
   // TODO(tommi): We could use this number and subtract the recursion count
   // to find places where we have multiple threads contending on the same lock.
@@ -78,13 +82,13 @@ class RTC_LOCKABLE CriticalSection {
   mutable dispatch_semaphore_t semaphore_;
   // The thread that currently holds the lock. Required to handle recursion.
   mutable PlatformThreadRef owning_thread_;
-# else
+#else
   mutable pthread_mutex_t mutex_;
-# endif
+#endif
   mutable PlatformThreadRef thread_;  // Only used by RTC_DCHECKs.
   mutable int recursion_count_;       // Only used by RTC_DCHECKs.
 #else  // !defined(WEBRTC_WIN) && !defined(WEBRTC_POSIX)
-# error Unsupported platform.
+#error Unsupported platform.
 #endif
 };
 
@@ -113,9 +117,9 @@ class TryCritScope {
 #if defined(WEBRTC_WIN)
   _Check_return_ bool locked() const;
 #elif defined(WEBRTC_POSIX)
-  bool locked() const __attribute__ ((__warn_unused_result__));
+  bool locked() const __attribute__((__warn_unused_result__));
 #else  // !defined(WEBRTC_WIN) && !defined(WEBRTC_POSIX)
-# error Unsupported platform.
+#error Unsupported platform.
 #endif
  private:
   const CriticalSection* const cs_;
@@ -152,6 +156,6 @@ class RTC_SCOPED_LOCKABLE GlobalLockScope {
   RTC_DISALLOW_COPY_AND_ASSIGN(GlobalLockScope);
 };
 
-} // namespace rtc
+}  // namespace rtc
 
-#endif // RTC_BASE_CRITICALSECTION_H_
+#endif  // RTC_BASE_CRITICALSECTION_H_

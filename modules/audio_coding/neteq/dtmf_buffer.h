@@ -28,19 +28,9 @@ struct DtmfEvent {
 
   // Constructors
   DtmfEvent()
-      : timestamp(0),
-        event_no(0),
-        volume(0),
-        duration(0),
-        end_bit(false) {
-  }
+      : timestamp(0), event_no(0), volume(0), duration(0), end_bit(false) {}
   DtmfEvent(uint32_t ts, int ev, int vol, int dur, bool end)
-      : timestamp(ts),
-        event_no(ev),
-        volume(vol),
-        duration(dur),
-        end_bit(end) {
-  }
+      : timestamp(ts), event_no(ev), volume(vol), duration(dur), end_bit(end) {}
 };
 
 // This is the buffer holding DTMF events while waiting for them to be played.

@@ -10,8 +10,8 @@
 
 #include "rtc_base/win32socketserver.h"
 
-#include <algorithm>
 #include <ws2tcpip.h>  // NOLINT
+#include <algorithm>
 
 #include "rtc_base/byteorder.h"
 #include "rtc_base/checks.h"
@@ -26,7 +26,7 @@ namespace rtc {
 
 // TODO: Enable for production builds also? Use FormatMessage?
 #if !defined(NDEBUG)
-LPCSTR WSAErrorToString(int error, LPCSTR *description_result) {
+LPCSTR WSAErrorToString(int error, LPCSTR* description_result) {
   LPCSTR string = "Unspecified";
   LPCSTR description = "Unspecified description";
   switch (error) {
@@ -107,8 +107,8 @@ void ReportWSAError(LPCSTR context, int error, const SocketAddress& address) {}
 // Win32Socket::EventSink
 /////////////////////////////////////////////////////////////////////////////
 
-#define WM_SOCKETNOTIFY  (WM_USER + 50)
-#define WM_DNSNOTIFY     (WM_USER + 51)
+#define WM_SOCKETNOTIFY (WM_USER + 50)
+#define WM_DNSNOTIFY (WM_USER + 51)
 
 struct Win32Socket::DnsLookup {
   HANDLE handle;
@@ -118,7 +118,7 @@ struct Win32Socket::DnsLookup {
 
 class Win32Socket::EventSink : public Win32Window {
  public:
-  explicit EventSink(Win32Socket * parent) : parent_(parent) { }
+  explicit EventSink(Win32Socket* parent) : parent_(parent) {}
 
   void Dispose();
 
@@ -132,7 +132,7 @@ class Win32Socket::EventSink : public Win32Window {
   bool OnSocketNotify(UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT& result);
   bool OnDnsNotify(WPARAM wParam, LPARAM lParam, LRESULT& result);
 
-  Win32Socket * parent_;
+  Win32Socket* parent_;
 };
 
 void Win32Socket::EventSink::Dispose() {
@@ -144,20 +144,24 @@ void Win32Socket::EventSink::Dispose() {
   }
 }
 
-bool Win32Socket::EventSink::OnMessage(UINT uMsg, WPARAM wParam,
-                                       LPARAM lParam, LRESULT& result) {
+bool Win32Socket::EventSink::OnMessage(UINT uMsg,
+                                       WPARAM wParam,
+                                       LPARAM lParam,
+                                       LRESULT& result) {
   switch (uMsg) {
-  case WM_SOCKETNOTIFY:
-  case WM_TIMER:
-    return OnSocketNotify(uMsg, wParam, lParam, result);
-  case WM_DNSNOTIFY:
-    return OnDnsNotify(wParam, lParam, result);
+    case WM_SOCKETNOTIFY:
+    case WM_TIMER:
+      return OnSocketNotify(uMsg, wParam, lParam, result);
+    case WM_DNSNOTIFY:
+      return OnDnsNotify(wParam, lParam, result);
   }
   return false;
 }
 
-bool Win32Socket::EventSink::OnSocketNotify(UINT uMsg, WPARAM wParam,
-                                            LPARAM lParam, LRESULT& result) {
+bool Win32Socket::EventSink::OnSocketNotify(UINT uMsg,
+                                            WPARAM wParam,
+                                            LPARAM lParam,
+                                            LRESULT& result) {
   result = 0;
 
   int wsa_event = WSAGETSELECTEVENT(lParam);
@@ -174,7 +178,8 @@ bool Win32Socket::EventSink::OnSocketNotify(UINT uMsg, WPARAM wParam,
   return true;
 }
 
-bool Win32Socket::EventSink::OnDnsNotify(WPARAM wParam, LPARAM lParam,
+bool Win32Socket::EventSink::OnDnsNotify(WPARAM wParam,
+                                         LPARAM lParam,
                                          LRESULT& result) {
   result = 0;
 
@@ -251,8 +256,8 @@ void Win32Socket::SetTimeout(int ms) {
 SocketAddress Win32Socket::GetLocalAddress() const {
   sockaddr_storage addr = {0};
   socklen_t addrlen = sizeof(addr);
-  int result = ::getsockname(socket_, reinterpret_cast<sockaddr*>(&addr),
-                             &addrlen);
+  int result =
+      ::getsockname(socket_, reinterpret_cast<sockaddr*>(&addr), &addrlen);
   SocketAddress address;
   if (result >= 0) {
     SocketAddressFromSockAddrStorage(addr, &address);
@@ -266,8 +271,8 @@ SocketAddress Win32Socket::GetLocalAddress() const {
 SocketAddress Win32Socket::GetRemoteAddress() const {
   sockaddr_storage addr = {0};
   socklen_t addrlen = sizeof(addr);
-  int result = ::getpeername(socket_, reinterpret_cast<sockaddr*>(&addr),
-                             &addrlen);
+  int result =
+      ::getpeername(socket_, reinterpret_cast<sockaddr*>(&addr), &addrlen);
   SocketAddress address;
   if (result >= 0) {
     SocketAddressFromSockAddrStorage(addr, &address);
@@ -285,8 +290,7 @@ int Win32Socket::Bind(const SocketAddress& addr) {
 
   sockaddr_storage saddr;
   size_t len = addr.ToSockAddrStorage(&saddr);
-  int err = ::bind(socket_,
-                   reinterpret_cast<sockaddr*>(&saddr),
+  int err = ::bind(socket_, reinterpret_cast<sockaddr*>(&saddr),
                    static_cast<int>(len));
   UpdateLastError();
   return err;
@@ -303,7 +307,7 @@ int Win32Socket::Connect(const SocketAddress& addr) {
   }
 
   RTC_LOG_F(LS_INFO) << "async dns lookup (" << addr.hostname() << ")";
-  DnsLookup * dns = new DnsLookup;
+  DnsLookup* dns = new DnsLookup;
   if (!sink_) {
     // Explicitly create the sink ourselves here; we can't rely on SetAsync
     // because we don't have a socket_ yet.
@@ -339,8 +343,7 @@ int Win32Socket::DoConnect(const SocketAddress& addr) {
   sockaddr_storage saddr = {0};
   size_t len = addr.ToSockAddrStorage(&saddr);
   connect_time_ = Time();
-  int result = connect(socket_,
-                       reinterpret_cast<SOCKADDR*>(&saddr),
+  int result = connect(socket_, reinterpret_cast<SOCKADDR*>(&saddr),
                        static_cast<int>(len));
   if (result != SOCKET_ERROR) {
     state_ = CS_CONNECTED;
@@ -394,22 +397,20 @@ int Win32Socket::SetOption(Option opt, int value) {
 }
 
 int Win32Socket::Send(const void* buffer, size_t length) {
-  int sent = ::send(socket_,
-                    reinterpret_cast<const char*>(buffer),
-                    static_cast<int>(length),
-                    0);
+  int sent = ::send(socket_, reinterpret_cast<const char*>(buffer),
+                    static_cast<int>(length), 0);
   UpdateLastError();
   return sent;
 }
 
-int Win32Socket::SendTo(const void* buffer, size_t length,
+int Win32Socket::SendTo(const void* buffer,
+                        size_t length,
                         const SocketAddress& addr) {
   sockaddr_storage saddr;
   size_t addr_len = addr.ToSockAddrStorage(&saddr);
-  int sent = ::sendto(socket_, reinterpret_cast<const char*>(buffer),
-                      static_cast<int>(length), 0,
-                      reinterpret_cast<sockaddr*>(&saddr),
-                      static_cast<int>(addr_len));
+  int sent = ::sendto(
+      socket_, reinterpret_cast<const char*>(buffer), static_cast<int>(length),
+      0, reinterpret_cast<sockaddr*>(&saddr), static_cast<int>(addr_len));
   UpdateLastError();
   return sent;
 }
@@ -418,8 +419,8 @@ int Win32Socket::Recv(void* buffer, size_t length, int64_t* timestamp) {
   if (timestamp) {
     *timestamp = -1;
   }
-  int received = ::recv(socket_, static_cast<char*>(buffer),
-                        static_cast<int>(length), 0);
+  int received =
+      ::recv(socket_, static_cast<char*>(buffer), static_cast<int>(length), 0);
   UpdateLastError();
   if (closing_ && received <= static_cast<int>(length))
     PostClosed();
@@ -435,9 +436,9 @@ int Win32Socket::RecvFrom(void* buffer,
   }
   sockaddr_storage saddr;
   socklen_t addr_len = sizeof(saddr);
-  int received = ::recvfrom(socket_, static_cast<char*>(buffer),
-                            static_cast<int>(length), 0,
-                            reinterpret_cast<sockaddr*>(&saddr), &addr_len);
+  int received =
+      ::recvfrom(socket_, static_cast<char*>(buffer), static_cast<int>(length),
+                 0, reinterpret_cast<sockaddr*>(&saddr), &addr_len);
   UpdateLastError();
   if (received != SOCKET_ERROR)
     SocketAddressFromSockAddrStorage(saddr, out_addr);
@@ -511,8 +512,8 @@ bool Win32Socket::SetAsync(int events) {
   }
 
   // start the async select
-  if (WSAAsyncSelect(socket_, sink_->handle(), WM_SOCKETNOTIFY, events)
-      == SOCKET_ERROR) {
+  if (WSAAsyncSelect(socket_, sink_->handle(), WM_SOCKETNOTIFY, events) ==
+      SOCKET_ERROR) {
     UpdateLastError();
     Close();
     return false;
@@ -533,8 +534,8 @@ bool Win32Socket::HandleClosed(int close_error) {
 void Win32Socket::PostClosed() {
   // If we see that the buffer is indeed drained, then send the close.
   closing_ = false;
-  ::PostMessage(sink_->handle(), WM_SOCKETNOTIFY,
-                socket_, WSAMAKESELECTREPLY(FD_CLOSE, close_error_));
+  ::PostMessage(sink_->handle(), WM_SOCKETNOTIFY, socket_,
+                WSAMAKESELECTREPLY(FD_CLOSE, close_error_));
 }
 
 void Win32Socket::UpdateLastError() {
@@ -667,9 +668,7 @@ static UINT s_wm_wakeup_id = 0;
 const TCHAR Win32SocketServer::kWindowName[] = L"libjingle Message Window";
 
 Win32SocketServer::Win32SocketServer()
-    : wnd_(this),
-      posted_(false),
-      hdlg_(nullptr) {
+    : wnd_(this), posted_(false), hdlg_(nullptr) {
   if (s_wm_wakeup_id == 0)
     s_wm_wakeup_id = RegisterWindowMessage(L"WM_WAKEUP");
   if (!wnd_.Create(nullptr, kWindowName, 0, 0, 0, 0, 0, 0)) {
@@ -718,7 +717,7 @@ bool Win32SocketServer::Wait(int cms, bool process_io) {
       if (b == -1) {
         RTC_LOG_GLE(LS_ERROR) << "GetMessage failed.";
         return false;
-      } else if(b) {
+      } else if (b) {
         if (!hdlg_ || !IsDialogMessage(hdlg_, &msg)) {
           TranslateMessage(&msg);
           DispatchMessage(&msg);
@@ -784,8 +783,10 @@ void Win32SocketServer::Pump() {
   }
 }
 
-bool Win32SocketServer::MessageWindow::OnMessage(UINT wm, WPARAM wp,
-                                                 LPARAM lp, LRESULT& lr) {
+bool Win32SocketServer::MessageWindow::OnMessage(UINT wm,
+                                                 WPARAM wp,
+                                                 LPARAM lp,
+                                                 LRESULT& lr) {
   bool handled = false;
   if (wm == s_wm_wakeup_id || (wm == WM_TIMER && wp == 1)) {
     ss_->Pump();

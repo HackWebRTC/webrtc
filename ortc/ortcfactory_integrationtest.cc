@@ -227,8 +227,7 @@ class OrtcFactoryIntegrationTest : public testing::Test {
         new rtc::RefCountedObject<FakePeriodicVideoTrackSource>(
             false /* remote */));
     return rtc::scoped_refptr<VideoTrackInterface>(
-        ortc_factory->CreateVideoTrack(
-            id, fake_video_track_sources_.back()));
+        ortc_factory->CreateVideoTrack(id, fake_video_track_sources_.back()));
   }
 
   // Helper function used to test two way RTP senders and receivers with basic
@@ -325,15 +324,15 @@ class OrtcFactoryIntegrationTest : public testing::Test {
               fake_audio_capture_module2_->frames_received() >
                   kDefaultNumFrames &&
               fake_video_renderer2.num_rendered_frames() > kDefaultNumFrames,
-          kDefaultTimeout) << "Audio capture module 1 received "
-                           << fake_audio_capture_module1_->frames_received()
-                           << " frames, Video renderer 1 rendered "
-                           << fake_video_renderer1.num_rendered_frames()
-                           << " frames, Audio capture module 2 received "
-                           << fake_audio_capture_module2_->frames_received()
-                           << " frames, Video renderer 2 rendered "
-                           << fake_video_renderer2.num_rendered_frames()
-                           << " frames.";
+          kDefaultTimeout)
+          << "Audio capture module 1 received "
+          << fake_audio_capture_module1_->frames_received()
+          << " frames, Video renderer 1 rendered "
+          << fake_video_renderer1.num_rendered_frames()
+          << " frames, Audio capture module 2 received "
+          << fake_audio_capture_module2_->frames_received()
+          << " frames, Video renderer 2 rendered "
+          << fake_video_renderer2.num_rendered_frames() << " frames.";
     } else {
       WAIT(false, kReceivingDuration);
       rendered_video_frames1_ = fake_video_renderer1.num_rendered_frames();

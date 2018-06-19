@@ -121,7 +121,7 @@ void StreamStatisticianImpl::UpdateJitter(const RTPHeader& header,
   uint32_t last_receive_time_rtp =
       NtpToRtp(last_receive_time_ntp_, header.payload_type_frequency);
   int32_t time_diff_samples = (receive_time_rtp - last_receive_time_rtp) -
-      (header.timestamp - last_received_timestamp_);
+                              (header.timestamp - last_received_timestamp_);
 
   time_diff_samples = std::abs(time_diff_samples);
 
@@ -219,9 +219,9 @@ RtcpStatistics StreamStatisticianImpl::CalculateRtcpStatistics() {
 
   // Number of received RTP packets since last report, counts all packets but
   // not re-transmissions.
-  uint32_t rec_since_last =
-      (receive_counters_.transmitted.packets -
-       receive_counters_.retransmitted.packets) - last_report_inorder_packets_;
+  uint32_t rec_since_last = (receive_counters_.transmitted.packets -
+                             receive_counters_.retransmitted.packets) -
+                            last_report_inorder_packets_;
 
   // With NACK we don't know the expected retransmissions during the last
   // second. We know how many "old" packets we have received. We just count
@@ -243,8 +243,7 @@ RtcpStatistics StreamStatisticianImpl::CalculateRtcpStatistics() {
   uint8_t local_fraction_lost = 0;
   if (exp_since_last) {
     // Scale 0 to 255, where 255 is 100% loss.
-    local_fraction_lost =
-        static_cast<uint8_t>(255 * missing / exp_since_last);
+    local_fraction_lost = static_cast<uint8_t>(255 * missing / exp_since_last);
   }
   stats.fraction_lost = local_fraction_lost;
 
@@ -261,9 +260,8 @@ RtcpStatistics StreamStatisticianImpl::CalculateRtcpStatistics() {
   last_reported_statistics_ = stats;
 
   // Only for report blocks in RTCP SR and RR.
-  last_report_inorder_packets_ =
-      receive_counters_.transmitted.packets -
-      receive_counters_.retransmitted.packets;
+  last_report_inorder_packets_ = receive_counters_.transmitted.packets -
+                                 receive_counters_.retransmitted.packets;
   last_report_old_packets_ = receive_counters_.retransmitted.packets;
   last_report_seq_max_ = received_seq_max_;
   BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "cumulative_loss_pkts",
@@ -276,8 +274,8 @@ RtcpStatistics StreamStatisticianImpl::CalculateRtcpStatistics() {
   return stats;
 }
 
-void StreamStatisticianImpl::GetDataCounters(
-    size_t* bytes_received, uint32_t* packets_received) const {
+void StreamStatisticianImpl::GetDataCounters(size_t* bytes_received,
+                                             uint32_t* packets_received) const {
   rtc::CritScope cs(&stream_lock_);
   if (bytes_received) {
     *bytes_received = receive_counters_.transmitted.payload_bytes +
@@ -309,8 +307,7 @@ bool StreamStatisticianImpl::IsRetransmitOfOldPacket(
   uint32_t frequency_khz = header.payload_type_frequency / 1000;
   assert(frequency_khz > 0);
 
-  int64_t time_diff_ms = clock_->TimeInMilliseconds() -
-      last_receive_time_ms_;
+  int64_t time_diff_ms = clock_->TimeInMilliseconds() - last_receive_time_ms_;
 
   // Diff in time stamp since last received in order.
   uint32_t timestamp_diff = header.timestamp - last_received_timestamp_;
@@ -347,8 +344,8 @@ bool StreamStatisticianImpl::InOrderPacketInternal(
     return true;
   } else {
     // If we have a restart of the remote side this packet is still in order.
-    return !IsNewerSequenceNumber(sequence_number, received_seq_max_ -
-                                  max_reordering_threshold_);
+    return !IsNewerSequenceNumber(
+        sequence_number, received_seq_max_ - max_reordering_threshold_);
   }
 }
 

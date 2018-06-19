@@ -32,9 +32,8 @@ class AudioSink {
   // Writes |audio_frame| to the AudioSink. Returns true if successful,
   // otherwise false.
   bool WriteAudioFrame(const AudioFrame& audio_frame) {
-    return WriteArray(
-        audio_frame.data(),
-        audio_frame.samples_per_channel_ * audio_frame.num_channels_);
+    return WriteArray(audio_frame.data(), audio_frame.samples_per_channel_ *
+                                              audio_frame.num_channels_);
   }
 
  private:

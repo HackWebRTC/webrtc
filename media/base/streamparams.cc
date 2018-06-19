@@ -22,7 +22,7 @@ namespace {
 void AddStream(std::vector<StreamParams>* streams, const StreamParams& stream) {
   streams->push_back(stream);
 }
-}
+}  // namespace
 
 const char kFecSsrcGroupSemantics[] = "FEC";
 const char kFecFrSsrcGroupSemantics[] = "FEC-FR";
@@ -41,18 +41,18 @@ bool GetStream(const StreamParamsVec& streams,
 MediaStreams::MediaStreams() = default;
 MediaStreams::~MediaStreams() = default;
 
-bool MediaStreams::GetAudioStream(
-    const StreamSelector& selector, StreamParams* stream) {
+bool MediaStreams::GetAudioStream(const StreamSelector& selector,
+                                  StreamParams* stream) {
   return GetStream(audio_, selector, stream);
 }
 
-bool MediaStreams::GetVideoStream(
-    const StreamSelector& selector, StreamParams* stream) {
+bool MediaStreams::GetVideoStream(const StreamSelector& selector,
+                                  StreamParams* stream) {
   return GetStream(video_, selector, stream);
 }
 
-bool MediaStreams::GetDataStream(
-    const StreamSelector& selector, StreamParams* stream) {
+bool MediaStreams::GetDataStream(const StreamSelector& selector,
+                                 StreamParams* stream) {
   return GetStream(data_, selector, stream);
 }
 
@@ -74,18 +74,15 @@ void MediaStreams::AddDataStream(const StreamParams& stream) {
   AddStream(&data_, stream);
 }
 
-bool MediaStreams::RemoveAudioStream(
-    const StreamSelector& selector) {
+bool MediaStreams::RemoveAudioStream(const StreamSelector& selector) {
   return RemoveStream(&audio_, selector);
 }
 
-bool MediaStreams::RemoveVideoStream(
-    const StreamSelector& selector) {
+bool MediaStreams::RemoveVideoStream(const StreamSelector& selector) {
   return RemoveStream(&video_, selector);
 }
 
-bool MediaStreams::RemoveDataStream(
-    const StreamSelector& selector) {
+bool MediaStreams::RemoveDataStream(const StreamSelector& selector) {
   return RemoveStream(&data_, selector);
 }
 
@@ -212,9 +209,8 @@ bool StreamParams::GetSecondarySsrc(const std::string& semantics,
                                     uint32_t* secondary_ssrc) const {
   for (std::vector<SsrcGroup>::const_iterator it = ssrc_groups.begin();
        it != ssrc_groups.end(); ++it) {
-    if (it->has_semantics(semantics) &&
-          it->ssrcs.size() >= 2 &&
-          it->ssrcs[0] == primary_ssrc) {
+    if (it->has_semantics(semantics) && it->ssrcs.size() >= 2 &&
+        it->ssrcs[0] == primary_ssrc) {
       *secondary_ssrc = it->ssrcs[1];
       return true;
     }

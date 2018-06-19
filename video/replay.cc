@@ -107,8 +107,8 @@ static int RedPayloadTypeRtx() {
 
 // Flag for SSRC.
 const std::string& DefaultSsrc() {
-  static const std::string ssrc = std::to_string(
-      test::CallTest::kVideoSendSsrcs[0]);
+  static const std::string ssrc =
+      std::to_string(test::CallTest::kVideoSendSsrcs[0]);
   return ssrc;
 }
 DEFINE_string(ssrc, DefaultSsrc().c_str(), "Incoming SSRC");
@@ -117,8 +117,8 @@ static uint32_t Ssrc() {
 }
 
 const std::string& DefaultSsrcRtx() {
-  static const std::string ssrc_rtx = std::to_string(
-      test::CallTest::kSendRtxSsrcs[0]);
+  static const std::string ssrc_rtx =
+      std::to_string(test::CallTest::kSendRtxSsrcs[0]);
   return ssrc_rtx;
 }
 DEFINE_string(ssrc_rtx, DefaultSsrcRtx().c_str(), "Incoming RTX SSRC");
@@ -128,7 +128,9 @@ static uint32_t SsrcRtx() {
 
 // Flag for abs-send-time id.
 DEFINE_int(abs_send_time_id, -1, "RTP extension ID for abs-send-time");
-static int AbsSendTimeId() { return static_cast<int>(FLAG_abs_send_time_id); }
+static int AbsSendTimeId() {
+  return static_cast<int>(FLAG_abs_send_time_id);
+}
 
 // Flag for transmission-offset id.
 DEFINE_int(transmission_offset_id,
@@ -157,7 +159,9 @@ static std::string DecoderBitstreamFilename() {
 
 // Flag for video codec.
 DEFINE_string(codec, "VP8", "Video codec");
-static std::string Codec() { return static_cast<std::string>(FLAG_codec); }
+static std::string Codec() {
+  return static_cast<std::string>(FLAG_codec);
+}
 
 DEFINE_bool(help, false, "Print this message.");
 }  // namespace flags
@@ -254,8 +258,8 @@ void RtpReplay() {
         flags::DecoderBitstreamFilename().c_str()));
     receive_config.pre_decode_callback = bitstream_writer.get();
   }
-  decoder = test::CreateMatchingDecoder(flags::MediaPayloadType(),
-                                        flags::Codec());
+  decoder =
+      test::CreateMatchingDecoder(flags::MediaPayloadType(), flags::Codec());
   if (!flags::DecoderBitstreamFilename().empty()) {
     // Replace with a null decoder if we're writing the bitstream to a file
     // instead.
@@ -334,10 +338,9 @@ void RtpReplay() {
   fprintf(stderr, "num_packets: %d\n", num_packets);
 
   for (std::map<uint32_t, int>::const_iterator it = unknown_packets.begin();
-       it != unknown_packets.end();
-       ++it) {
-    fprintf(
-        stderr, "Packets for unknown ssrc '%u': %d\n", it->first, it->second);
+       it != unknown_packets.end(); ++it) {
+    fprintf(stderr, "Packets for unknown ssrc '%u': %d\n", it->first,
+            it->second);
   }
 
   call->DestroyVideoReceiveStream(receive_stream);
@@ -366,8 +369,8 @@ int main(int argc, char* argv[]) {
   RTC_CHECK(ValidateSsrc(webrtc::flags::FLAG_ssrc));
   RTC_CHECK(ValidateSsrc(webrtc::flags::FLAG_ssrc_rtx));
   RTC_CHECK(ValidateRtpHeaderExtensionId(webrtc::flags::FLAG_abs_send_time_id));
-  RTC_CHECK(ValidateRtpHeaderExtensionId(
-      webrtc::flags::FLAG_transmission_offset_id));
+  RTC_CHECK(
+      ValidateRtpHeaderExtensionId(webrtc::flags::FLAG_transmission_offset_id));
   RTC_CHECK(ValidateInputFilenameNotEmpty(webrtc::flags::FLAG_input_file));
 
   webrtc::test::RunTest(webrtc::RtpReplay);

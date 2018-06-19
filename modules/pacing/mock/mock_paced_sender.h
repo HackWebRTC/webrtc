@@ -23,12 +23,13 @@ class MockPacedSender : public PacedSender {
  public:
   MockPacedSender()
       : PacedSender(Clock::GetRealTimeClock(), nullptr, nullptr) {}
-  MOCK_METHOD6(SendPacket, bool(Priority priority,
-                                uint32_t ssrc,
-                                uint16_t sequence_number,
-                                int64_t capture_time_ms,
-                                size_t bytes,
-                                bool retransmission));
+  MOCK_METHOD6(SendPacket,
+               bool(Priority priority,
+                    uint32_t ssrc,
+                    uint16_t sequence_number,
+                    int64_t capture_time_ms,
+                    size_t bytes,
+                    bool retransmission));
   MOCK_METHOD1(CreateProbeCluster, void(int));
   MOCK_METHOD1(SetEstimatedBitrate, void(uint32_t));
   MOCK_METHOD2(SetPacingRates, void(uint32_t, uint32_t));

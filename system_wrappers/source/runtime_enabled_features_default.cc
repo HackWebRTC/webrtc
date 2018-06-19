@@ -13,9 +13,7 @@
 #include "rtc_base/flags.h"
 
 namespace flags {
-DEFINE_bool(enable_dual_stream_mode,
-            false,
-            "Enables dual video stream mode.");
+DEFINE_bool(enable_dual_stream_mode, false, "Enables dual video stream mode.");
 }
 
 namespace webrtc {

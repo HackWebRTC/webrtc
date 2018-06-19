@@ -23,20 +23,18 @@ class StreamCollection : public StreamCollectionInterface {
  public:
   static rtc::scoped_refptr<StreamCollection> Create() {
     rtc::RefCountedObject<StreamCollection>* implementation =
-         new rtc::RefCountedObject<StreamCollection>();
+        new rtc::RefCountedObject<StreamCollection>();
     return implementation;
   }
 
   static rtc::scoped_refptr<StreamCollection> Create(
       StreamCollection* streams) {
     rtc::RefCountedObject<StreamCollection>* implementation =
-         new rtc::RefCountedObject<StreamCollection>(streams);
+        new rtc::RefCountedObject<StreamCollection>(streams);
     return implementation;
   }
 
-  virtual size_t count() {
-    return media_streams_.size();
-  }
+  virtual size_t count() { return media_streams_.size(); }
 
   virtual MediaStreamInterface* at(size_t index) {
     return media_streams_.at(index);
@@ -52,8 +50,7 @@ class StreamCollection : public StreamCollectionInterface {
     return NULL;
   }
 
-  virtual MediaStreamTrackInterface* FindAudioTrack(
-      const std::string& id) {
+  virtual MediaStreamTrackInterface* FindAudioTrack(const std::string& id) {
     for (size_t i = 0; i < media_streams_.size(); ++i) {
       MediaStreamTrackInterface* track = media_streams_[i]->FindAudioTrack(id);
       if (track) {
@@ -63,8 +60,7 @@ class StreamCollection : public StreamCollectionInterface {
     return NULL;
   }
 
-  virtual MediaStreamTrackInterface* FindVideoTrack(
-      const std::string& id) {
+  virtual MediaStreamTrackInterface* FindVideoTrack(const std::string& id) {
     for (size_t i = 0; i < media_streams_.size(); ++i) {
       MediaStreamTrackInterface* track = media_streams_[i]->FindVideoTrack(id);
       if (track) {
@@ -96,10 +92,8 @@ class StreamCollection : public StreamCollectionInterface {
  protected:
   StreamCollection() {}
   explicit StreamCollection(StreamCollection* original)
-      : media_streams_(original->media_streams_) {
-  }
-  typedef std::vector<rtc::scoped_refptr<MediaStreamInterface> >
-      StreamVector;
+      : media_streams_(original->media_streams_) {}
+  typedef std::vector<rtc::scoped_refptr<MediaStreamInterface> > StreamVector;
   StreamVector media_streams_;
 };
 

@@ -8,7 +8,7 @@
  * Author: Phil Burk, http://www.softsynth.com
  * modified for SMP safety on OS X by Bjorn Roche.
  * also allowed for const where possible.
- * modified for multiple-byte-sized data elements by Sven Fischer 
+ * modified for multiple-byte-sized data elements by Sven Fischer
  *
  * Note that this is safe only for a single-thread reader
  * and a single-thread writer.
@@ -38,13 +38,13 @@
  */
 
 /*
- * The text above constitutes the entire PortAudio license; however, 
+ * The text above constitutes the entire PortAudio license; however,
  * the PortAudio community also makes the following non-binding requests:
  *
  * Any person wishing to distribute modifications to the Software is
  * requested to send the modifications to the original developer so that
- * they can be incorporated into the canonical version. It is also 
- * requested that these non-binding requests be included along with the 
+ * they can be incorporated into the canonical version. It is also
+ * requested that these non-binding requests be included along with the
  * license above.
  */
 
@@ -58,11 +58,11 @@
  a single reader and a single writer (ie. one thread or callback writes
  to the ring buffer, another thread or callback reads from it).
 
- The PaUtilRingBuffer structure manages a ring buffer containing N 
- elements, where N must be a power of two. An element may be any size 
+ The PaUtilRingBuffer structure manages a ring buffer containing N
+ elements, where N must be a power of two. An element may be any size
  (specified in bytes).
 
- The memory area used to store the buffer elements must be allocated by 
+ The memory area used to store the buffer elements must be allocated by
  the client prior to calling PaUtil_InitializeRingBuffer() and must outlive
  the use of the ring buffer.
 */
@@ -70,7 +70,7 @@
 #if defined(__APPLE__)
 #include <sys/types.h>
 typedef int32_t PaRingBufferSize;
-#elif defined( __GNUC__ )
+#elif defined(__GNUC__)
 typedef long PaRingBufferSize;
 #elif (_MSC_VER >= 1400)
 typedef long PaRingBufferSize;
@@ -80,23 +80,24 @@ typedef long PaRingBufferSize;
 typedef long PaRingBufferSize;
 #endif
 
-
-
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif /* __cplusplus */
 
-typedef struct PaUtilRingBuffer
-{
-    PaRingBufferSize  bufferSize; /**< Number of elements in FIFO. Power of 2. Set by PaUtil_InitRingBuffer. */
-    PaRingBufferSize  writeIndex; /**< Index of next writable element. Set by PaUtil_AdvanceRingBufferWriteIndex. */
-    PaRingBufferSize  readIndex;  /**< Index of next readable element. Set by PaUtil_AdvanceRingBufferReadIndex. */
-    PaRingBufferSize  bigMask;    /**< Used for wrapping indices with extra bit to distinguish full/empty. */
-    PaRingBufferSize  smallMask;  /**< Used for fitting indices to buffer. */
-    PaRingBufferSize  elementSizeBytes; /**< Number of bytes per element. */
-    char  *buffer;    /**< Pointer to the buffer containing the actual data. */
-}PaUtilRingBuffer;
+typedef struct PaUtilRingBuffer {
+  PaRingBufferSize
+      bufferSize;                    /**< Number of elements in FIFO. Power of 2. Set by
+                                        PaUtil_InitRingBuffer. */
+  PaRingBufferSize writeIndex;       /**< Index of next writable element. Set by
+                                        PaUtil_AdvanceRingBufferWriteIndex. */
+  PaRingBufferSize readIndex;        /**< Index of next readable element. Set by
+                                        PaUtil_AdvanceRingBufferReadIndex. */
+  PaRingBufferSize bigMask;          /**< Used for wrapping indices with extra bit to
+                                        distinguish full/empty. */
+  PaRingBufferSize smallMask;        /**< Used for fitting indices to buffer. */
+  PaRingBufferSize elementSizeBytes; /**< Number of bytes per element. */
+  char* buffer; /**< Pointer to the buffer containing the actual data. */
+} PaUtilRingBuffer;
 
 /** Initialize Ring Buffer.
 
@@ -111,13 +112,16 @@ typedef struct PaUtilRingBuffer
 
  @return -1 if elementCount is not a power of 2, otherwise 0.
 */
-PaRingBufferSize PaUtil_InitializeRingBuffer( PaUtilRingBuffer *rbuf, PaRingBufferSize elementSizeBytes, PaRingBufferSize elementCount, void *dataPtr );
+PaRingBufferSize PaUtil_InitializeRingBuffer(PaUtilRingBuffer* rbuf,
+                                             PaRingBufferSize elementSizeBytes,
+                                             PaRingBufferSize elementCount,
+                                             void* dataPtr);
 
 /** Clear buffer. Should only be called when buffer is NOT being read.
 
  @param rbuf The ring buffer.
 */
-void PaUtil_FlushRingBuffer( PaUtilRingBuffer *rbuf );
+void PaUtil_FlushRingBuffer(PaUtilRingBuffer* rbuf);
 
 /** Retrieve the number of elements available in the ring buffer for writing.
 
@@ -125,7 +129,7 @@ void PaUtil_FlushRingBuffer( PaUtilRingBuffer *rbuf );
 
  @return The number of elements available for writing.
 */
-PaRingBufferSize PaUtil_GetRingBufferWriteAvailable( PaUtilRingBuffer *rbuf );
+PaRingBufferSize PaUtil_GetRingBufferWriteAvailable(PaUtilRingBuffer* rbuf);
 
 /** Retrieve the number of elements available in the ring buffer for reading.
 
@@ -133,7 +137,7 @@ PaRingBufferSize PaUtil_GetRingBufferWriteAvailable( PaUtilRingBuffer *rbuf );
 
  @return The number of elements available for reading.
 */
-PaRingBufferSize PaUtil_GetRingBufferReadAvailable( PaUtilRingBuffer *rbuf );
+PaRingBufferSize PaUtil_GetRingBufferReadAvailable(PaUtilRingBuffer* rbuf);
 
 /** Write data to the ring buffer.
 
@@ -145,7 +149,9 @@ PaRingBufferSize PaUtil_GetRingBufferReadAvailable( PaUtilRingBuffer *rbuf );
 
  @return The number of elements written.
 */
-PaRingBufferSize PaUtil_WriteRingBuffer( PaUtilRingBuffer *rbuf, const void *data, PaRingBufferSize elementCount );
+PaRingBufferSize PaUtil_WriteRingBuffer(PaUtilRingBuffer* rbuf,
+                                        const void* data,
+                                        PaRingBufferSize elementCount);
 
 /** Read data from the ring buffer.
 
@@ -157,7 +163,9 @@ PaRingBufferSize PaUtil_WriteRingBuffer( PaUtilRingBuffer *rbuf, const void *dat
 
  @return The number of elements read.
 */
-PaRingBufferSize PaUtil_ReadRingBuffer( PaUtilRingBuffer *rbuf, void *data, PaRingBufferSize elementCount );
+PaRingBufferSize PaUtil_ReadRingBuffer(PaUtilRingBuffer* rbuf,
+                                       void* data,
+                                       PaRingBufferSize elementCount);
 
 /** Get address of region(s) to which we can write data.
 
@@ -179,9 +187,12 @@ PaRingBufferSize PaUtil_ReadRingBuffer( PaUtilRingBuffer *rbuf, void *data, PaRi
 
  @return The room available to be written or elementCount, whichever is smaller.
 */
-PaRingBufferSize PaUtil_GetRingBufferWriteRegions( PaUtilRingBuffer *rbuf, PaRingBufferSize elementCount,
-                                       void **dataPtr1, PaRingBufferSize *sizePtr1,
-                                       void **dataPtr2, PaRingBufferSize *sizePtr2 );
+PaRingBufferSize PaUtil_GetRingBufferWriteRegions(PaUtilRingBuffer* rbuf,
+                                                  PaRingBufferSize elementCount,
+                                                  void** dataPtr1,
+                                                  PaRingBufferSize* sizePtr1,
+                                                  void** dataPtr2,
+                                                  PaRingBufferSize* sizePtr2);
 
 /** Advance the write index to the next location to be written.
 
@@ -191,7 +202,9 @@ PaRingBufferSize PaUtil_GetRingBufferWriteRegions( PaUtilRingBuffer *rbuf, PaRin
 
  @return The new position.
 */
-PaRingBufferSize PaUtil_AdvanceRingBufferWriteIndex( PaUtilRingBuffer *rbuf, PaRingBufferSize elementCount );
+PaRingBufferSize PaUtil_AdvanceRingBufferWriteIndex(
+    PaUtilRingBuffer* rbuf,
+    PaRingBufferSize elementCount);
 
 /** Get address of region(s) from which we can write data.
 
@@ -213,9 +226,12 @@ PaRingBufferSize PaUtil_AdvanceRingBufferWriteIndex( PaUtilRingBuffer *rbuf, PaR
 
  @return The number of elements available for reading.
 */
-PaRingBufferSize PaUtil_GetRingBufferReadRegions( PaUtilRingBuffer *rbuf, PaRingBufferSize elementCount,
-                                      void **dataPtr1, PaRingBufferSize *sizePtr1,
-                                      void **dataPtr2, PaRingBufferSize *sizePtr2 );
+PaRingBufferSize PaUtil_GetRingBufferReadRegions(PaUtilRingBuffer* rbuf,
+                                                 PaRingBufferSize elementCount,
+                                                 void** dataPtr1,
+                                                 PaRingBufferSize* sizePtr1,
+                                                 void** dataPtr2,
+                                                 PaRingBufferSize* sizePtr2);
 
 /** Advance the read index to the next location to be read.
 
@@ -225,7 +241,9 @@ PaRingBufferSize PaUtil_GetRingBufferReadRegions( PaUtilRingBuffer *rbuf, PaRing
 
  @return The new position.
 */
-PaRingBufferSize PaUtil_AdvanceRingBufferReadIndex( PaUtilRingBuffer *rbuf, PaRingBufferSize elementCount );
+PaRingBufferSize PaUtil_AdvanceRingBufferReadIndex(
+    PaUtilRingBuffer* rbuf,
+    PaRingBufferSize elementCount);
 
 #ifdef __cplusplus
 }

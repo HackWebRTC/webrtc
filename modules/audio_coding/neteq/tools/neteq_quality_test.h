@@ -36,7 +36,7 @@ enum LossModes {
 
 class LossModel {
  public:
-  virtual ~LossModel() {};
+  virtual ~LossModel(){};
   virtual bool Lost(int now_ms) = 0;
 };
 
@@ -110,8 +110,10 @@ class NetEqQualityTest : public ::testing::Test {
   // |block_size_samples| (samples per channel),
   // 2. save the bit stream to |payload| of |max_bytes| bytes in size,
   // 3. returns the length of the payload (in bytes),
-  virtual int EncodeBlock(int16_t* in_data, size_t block_size_samples,
-                          rtc::Buffer* payload, size_t max_bytes) = 0;
+  virtual int EncodeBlock(int16_t* in_data,
+                          size_t block_size_samples,
+                          rtc::Buffer* payload,
+                          size_t max_bytes) = 0;
 
   // PacketLost(...) determines weather a packet sent at an indicated time gets
   // lost or not.

@@ -195,7 +195,8 @@ class SendProcessingUsage1 : public OveruseFrameDetector::ProcessingUsage {
   float InitialUsageInPercent() const {
     // Start in between the underuse and overuse threshold.
     return (options_.low_encode_usage_threshold_percent +
-            options_.high_encode_usage_threshold_percent) / 2.0f;
+            options_.high_encode_usage_threshold_percent) /
+           2.0f;
   }
 
   float InitialProcessingMs() const {
@@ -442,8 +443,7 @@ CpuOveruseOptions::CpuOveruseOptions()
 }
 
 std::unique_ptr<OveruseFrameDetector::ProcessingUsage>
-OveruseFrameDetector::CreateProcessingUsage(
-    const CpuOveruseOptions& options) {
+OveruseFrameDetector::CreateProcessingUsage(const CpuOveruseOptions& options) {
   std::unique_ptr<ProcessingUsage> instance;
   if (options.filter_time_ms > 0) {
     instance = rtc::MakeUnique<SendProcessingUsage2>(options);
@@ -461,8 +461,8 @@ OveruseFrameDetector::CreateProcessingUsage(
       if (normal_period_ms > 0 && overuse_period_ms > 0 &&
           underuse_period_ms > 0) {
         instance = rtc::MakeUnique<OverdoseInjector>(
-            std::move(instance), normal_period_ms,
-            overuse_period_ms, underuse_period_ms);
+            std::move(instance), normal_period_ms, overuse_period_ms,
+            underuse_period_ms);
       } else {
         RTC_LOG(LS_WARNING)
             << "Invalid (non-positive) normal/overuse/underuse periods: "
@@ -572,7 +572,7 @@ bool OveruseFrameDetector::FrameTimeoutDetected(int64_t now_us) const {
   if (last_capture_time_us_ == -1)
     return false;
   return (now_us - last_capture_time_us_) >
-      options_.frame_timeout_interval_ms * rtc::kNumMicrosecsPerMillisec;
+         options_.frame_timeout_interval_ms * rtc::kNumMicrosecsPerMillisec;
 }
 
 void OveruseFrameDetector::ResetAll(int num_pixels) {

@@ -75,8 +75,8 @@ class SimulcastRateAllocatorTest : public ::testing::TestWithParam<bool> {
       if (layer_bitrate == 0) {
         EXPECT_FALSE(actual.IsSpatialLayerUsed(i));
       }
-      EXPECT_EQ(expected[i] * 1000U, layer_bitrate) << "Mismatch at index "
-                                                    << i;
+      EXPECT_EQ(expected[i] * 1000U, layer_bitrate)
+          << "Mismatch at index " << i;
       sum += layer_bitrate;
     }
     EXPECT_EQ(sum, actual.get_sum_bps());

@@ -166,8 +166,7 @@ TEST(TaskQueueTest, PostMultipleDelayed) {
   std::vector<std::unique_ptr<Event>> events;
   for (int i = 0; i < 100; ++i) {
     events.push_back(std::unique_ptr<Event>(new Event(false, false)));
-    queue.PostDelayedTask(
-        Bind(&CheckCurrent, events.back().get(), &queue), i);
+    queue.PostDelayedTask(Bind(&CheckCurrent, events.back().get(), &queue), i);
   }
 
   for (const auto& e : events)
@@ -191,9 +190,9 @@ TEST(TaskQueueTest, PostAndReply) {
   TaskQueue post_queue(kPostQueue);
   TaskQueue reply_queue(kReplyQueue);
 
-  post_queue.PostTaskAndReply(
-      Bind(&CheckCurrent, nullptr, &post_queue),
-      Bind(&CheckCurrent, &event, &reply_queue), &reply_queue);
+  post_queue.PostTaskAndReply(Bind(&CheckCurrent, nullptr, &post_queue),
+                              Bind(&CheckCurrent, &event, &reply_queue),
+                              &reply_queue);
   EXPECT_TRUE(event.Wait(1000));
 }
 
@@ -372,12 +371,10 @@ TEST(TaskQueueTest, PostAndReplyDeadlock) {
   EXPECT_TRUE(event.Wait(1000));
 }
 
-void TestPostTaskAndReply(TaskQueue* work_queue,
-                          Event* event) {
+void TestPostTaskAndReply(TaskQueue* work_queue, Event* event) {
   ASSERT_FALSE(work_queue->IsCurrent());
-  work_queue->PostTaskAndReply(
-      Bind(&CheckCurrent, nullptr, work_queue),
-      NewClosure([event]() { event->Set(); }));
+  work_queue->PostTaskAndReply(Bind(&CheckCurrent, nullptr, work_queue),
+                               NewClosure([event]() { event->Set(); }));
 }
 
 // Does a PostTaskAndReply from within a task to post and reply to the current
@@ -389,8 +386,7 @@ TEST(TaskQueueTest, PostAndReply2) {
   TaskQueue queue(kQueueName);
   TaskQueue work_queue(kWorkQueueName);
 
-  queue.PostTask(
-      Bind(&TestPostTaskAndReply, &work_queue, &event));
+  queue.PostTask(Bind(&TestPostTaskAndReply, &work_queue, &event));
   EXPECT_TRUE(event.Wait(1000));
 }
 

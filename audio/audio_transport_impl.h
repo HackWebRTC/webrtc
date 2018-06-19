@@ -30,8 +30,7 @@ class AudioSendStream;
 
 class AudioTransportImpl : public AudioTransport {
  public:
-  AudioTransportImpl(AudioMixer* mixer,
-                     AudioProcessing* audio_processing);
+  AudioTransportImpl(AudioMixer* mixer, AudioProcessing* audio_processing);
   ~AudioTransportImpl() override;
 
   int32_t RecordedDataIsAvailable(const void* audioSamples,
@@ -63,12 +62,11 @@ class AudioTransportImpl : public AudioTransport {
                       int64_t* ntp_time_ms) override;
 
   void UpdateSendingStreams(std::vector<AudioSendStream*> streams,
-                            int send_sample_rate_hz, size_t send_num_channels);
+                            int send_sample_rate_hz,
+                            size_t send_num_channels);
   void SetStereoChannelSwapping(bool enable);
   bool typing_noise_detected() const;
-  const voe::AudioLevel& audio_level() const {
-    return audio_level_;
-  }
+  const voe::AudioLevel& audio_level() const { return audio_level_; }
 
  private:
   // Shared.

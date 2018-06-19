@@ -38,12 +38,12 @@ namespace cricket {
 
 // Current state of the capturer.
 enum CaptureState {
-  CS_STOPPED,    // The capturer has been stopped or hasn't started yet.
-  CS_STARTING,   // The capturer is in the process of starting. Note, it may
-                 // still fail to start.
-  CS_RUNNING,    // The capturer has been started successfully and is now
-                 // capturing.
-  CS_FAILED,     // The capturer failed to start.
+  CS_STOPPED,   // The capturer has been stopped or hasn't started yet.
+  CS_STARTING,  // The capturer is in the process of starting. Note, it may
+                // still fail to start.
+  CS_RUNNING,   // The capturer has been started successfully and is now
+                // capturing.
+  CS_FAILED,    // The capturer failed to start.
 };
 
 // VideoCapturer is an abstract class that defines the interfaces for video
@@ -126,17 +126,13 @@ class VideoCapturer : public sigslot::has_slots<>,
   // Note that the width and height of the captured frames may differ from the
   // capture format. For example, the capture format is HD but the captured
   // frames may be smaller than HD.
-  const VideoFormat* GetCaptureFormat() const {
-    return capture_format_.get();
-  }
+  const VideoFormat* GetCaptureFormat() const { return capture_format_.get(); }
 
   // Stop the video capturer.
   virtual void Stop() = 0;
   // Check if the video capturer is running.
   virtual bool IsRunning() = 0;
-  CaptureState capture_state() const {
-    return capture_state_;
-  }
+  CaptureState capture_state() const { return capture_state_; }
 
   virtual bool apply_rotation() { return apply_rotation_; }
 
@@ -154,9 +150,7 @@ class VideoCapturer : public sigslot::has_slots<>,
   void set_enable_camera_list(bool enable_camera_list) {
     enable_camera_list_ = enable_camera_list;
   }
-  bool enable_camera_list() {
-    return enable_camera_list_;
-  }
+  bool enable_camera_list() { return enable_camera_list_; }
 
   // Signal all capture state changes that are not a direct result of calling
   // Start().
@@ -227,9 +221,7 @@ class VideoCapturer : public sigslot::has_slots<>,
   virtual bool GetPreferredFourccs(std::vector<uint32_t>* fourccs) = 0;
 
   // mutators to set private attributes
-  void SetId(const std::string& id) {
-    id_ = id;
-  }
+  void SetId(const std::string& id) { id_ = id; }
 
   void SetCaptureFormat(const VideoFormat* format) {
     capture_format_.reset(format ? new VideoFormat(*format) : NULL);
