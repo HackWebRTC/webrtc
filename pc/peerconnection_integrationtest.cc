@@ -2581,6 +2581,27 @@ TEST_P(PeerConnectionIntegrationTest,
   ASSERT_TRUE(inbound_stream_stats[0]->track_id.is_defined());
 }
 
+// Same as above but for the legacy stats implementation.
+TEST_P(PeerConnectionIntegrationTest,
+       GetStatsForUnsignaledStreamWithOldStatsApi) {
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+  caller()->AddAudioTrack();
+  // Remove SSRCs and MSIDs from the received offer SDP.
+  callee()->SetReceivedSdpMunger(RemoveSsrcsAndMsids);
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  // Note that, since the old stats implementation associates SSRCs with tracks
+  // using SDP, when SSRCs aren't signaled in SDP these stats won't have an
+  // associated track ID. So we can't use the track "selector" argument.
+  //
+  // Also, we use "EXPECT_TRUE_WAIT" because the stats collector may decide to
+  // return cached stats if not enough time has passed since the last update.
+  EXPECT_TRUE_WAIT(callee()->OldGetStats()->BytesReceived() > 0U,
+                   kDefaultTimeout);
+}
+
 // Test that we can successfully get the media related stats (audio level
 // etc.) for the unsignaled stream.
 TEST_P(PeerConnectionIntegrationTest,

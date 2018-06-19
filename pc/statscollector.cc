@@ -554,6 +554,9 @@ void StatsCollector::UpdateStats(
   const double kMinGatherStatsPeriod = 50;
   if (stats_gathering_started_ != 0 &&
       stats_gathering_started_ + kMinGatherStatsPeriod > time_now) {
+    RTC_LOG(LS_INFO)
+        << "Not updating stats again, since they were updated within "
+        << kMinGatherStatsPeriod << "ms.";
     return;
   }
   stats_gathering_started_ = time_now;
@@ -586,18 +589,15 @@ StatsReport* StatsCollector::PrepareReport(bool local,
   // Use the ID of the track that is currently mapped to the SSRC, if any.
   std::string track_id;
   if (!GetTrackIdBySsrc(ssrc, &track_id, direction)) {
-    if (!report) {
-      // The ssrc is not used by any track or existing report, return NULL
-      // in such case to indicate no report is prepared for the ssrc.
-      return NULL;
+    // The SSRC is not used by any existing track (or lookup failed since the
+    // SSRC wasn't signaled in SDP). Try copying the track ID from a previous
+    // report: if one exists.
+    if (report) {
+      const StatsReport::Value* v =
+          report->FindValue(StatsReport::kStatsValueNameTrackId);
+      if (v)
+        track_id = v->string_val();
     }
-
-    // The ssrc is not used by any existing track. Keeps the old track id
-    // since we want to report the stats for inactive ssrc.
-    const StatsReport::Value* v =
-        report->FindValue(StatsReport::kStatsValueNameTrackId);
-    if (v)
-      track_id = v->string_val();
   }
 
   if (!report)
@@ -607,7 +607,9 @@ StatsReport* StatsCollector::PrepareReport(bool local,
   report->set_timestamp(stats_gathering_started_);
 
   report->AddInt64(StatsReport::kStatsValueNameSsrc, ssrc);
-  report->AddString(StatsReport::kStatsValueNameTrackId, track_id);
+  if (!track_id.empty()) {
+    report->AddString(StatsReport::kStatsValueNameTrackId, track_id);
+  }
   // Add the mapping of SSRC to transport.
   report->AddId(StatsReport::kStatsValueNameTransportId, transport_id);
   return report;
