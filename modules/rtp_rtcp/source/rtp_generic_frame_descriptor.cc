@@ -51,7 +51,7 @@ void RtpGenericFrameDescriptor::SetFrameId(uint16_t frame_id) {
 }
 
 rtc::ArrayView<const uint16_t>
-RtpGenericFrameDescriptor::FrameDepedenciesDiffs() const {
+RtpGenericFrameDescriptor::FrameDependenciesDiffs() const {
   RTC_DCHECK(FirstPacketInSubFrame());
   return rtc::MakeArrayView(frame_deps_id_diffs_, num_frame_deps_);
 }
