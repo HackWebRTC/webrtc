@@ -73,7 +73,7 @@ TEST(RenderSignalAnalyzer, NoFalseDetectionOfNarrowBands) {
     render_delay_buffer->PrepareCaptureProcessing();
 
     analyzer.Update(*render_delay_buffer->GetRenderBuffer(),
-                    rtc::Optional<size_t>(0));
+                    absl::optional<size_t>(0));
   }
 
   mask.fill(1.f);
@@ -112,7 +112,7 @@ TEST(RenderSignalAnalyzer, NarrowBandDetection) {
       render_delay_buffer->PrepareCaptureProcessing();
 
       analyzer.Update(*render_delay_buffer->GetRenderBuffer(),
-                      known_delay ? rtc::Optional<size_t>(0) : rtc::nullopt);
+                      known_delay ? absl::optional<size_t>(0) : absl::nullopt);
     }
   };
 

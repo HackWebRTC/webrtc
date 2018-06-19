@@ -48,7 +48,7 @@ constexpr size_t kDownSamplingFactors[] = {2, 4, 8};
 TEST(RenderDelayController, NoRenderSignal) {
   std::vector<float> block(kBlockSize, 0.f);
   EchoCanceller3Config config;
-  rtc::Optional<int> echo_remover_delay_;
+  absl::optional<int> echo_remover_delay_;
   for (size_t num_matched_filters = 4; num_matched_filters == 10;
        num_matched_filters++) {
     for (auto down_sampling_factor : kDownSamplingFactors) {
@@ -75,8 +75,8 @@ TEST(RenderDelayController, NoRenderSignal) {
 // Verifies the basic API call sequence.
 TEST(RenderDelayController, BasicApiCalls) {
   std::vector<float> capture_block(kBlockSize, 0.f);
-  rtc::Optional<DelayEstimate> delay_blocks;
-  rtc::Optional<int> echo_remover_delay;
+  absl::optional<DelayEstimate> delay_blocks;
+  absl::optional<int> echo_remover_delay;
   for (size_t num_matched_filters = 4; num_matched_filters == 10;
        num_matched_filters++) {
     for (auto down_sampling_factor : kDownSamplingFactors) {
@@ -111,7 +111,7 @@ TEST(RenderDelayController, BasicApiCalls) {
 // simple timeshifts between the signals.
 TEST(RenderDelayController, Alignment) {
   Random random_generator(42U);
-  rtc::Optional<int> echo_remover_delay;
+  absl::optional<int> echo_remover_delay;
   std::vector<float> capture_block(kBlockSize, 0.f);
   for (size_t num_matched_filters = 4; num_matched_filters == 10;
        num_matched_filters++) {
@@ -125,7 +125,7 @@ TEST(RenderDelayController, Alignment) {
             NumBandsForRate(rate), std::vector<float>(kBlockSize, 0.f));
 
         for (size_t delay_samples : {15, 50, 150, 200, 800, 4000}) {
-          rtc::Optional<DelayEstimate> delay_blocks;
+          absl::optional<DelayEstimate> delay_blocks;
           SCOPED_TRACE(ProduceDebugText(rate, delay_samples));
           std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
               RenderDelayBuffer::Create(config, NumBandsForRate(rate)));
@@ -162,7 +162,7 @@ TEST(RenderDelayController, Alignment) {
 // delays.
 TEST(RenderDelayController, NonCausalAlignment) {
   Random random_generator(42U);
-  rtc::Optional<int> echo_remover_delay;
+  absl::optional<int> echo_remover_delay;
   for (size_t num_matched_filters = 4; num_matched_filters == 10;
        num_matched_filters++) {
     for (auto down_sampling_factor : kDownSamplingFactors) {
@@ -176,7 +176,7 @@ TEST(RenderDelayController, NonCausalAlignment) {
             NumBandsForRate(rate), std::vector<float>(kBlockSize, 0.f));
 
         for (int delay_samples : {-15, -50, -150, -200}) {
-          rtc::Optional<DelayEstimate> delay_blocks;
+          absl::optional<DelayEstimate> delay_blocks;
           SCOPED_TRACE(ProduceDebugText(rate, -delay_samples));
           std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
               RenderDelayBuffer::Create(config, NumBandsForRate(rate)));
@@ -208,7 +208,7 @@ TEST(RenderDelayController, NonCausalAlignment) {
 // simple timeshifts between the signals when there is jitter in the API calls.
 TEST(RenderDelayController, AlignmentWithJitter) {
   Random random_generator(42U);
-  rtc::Optional<int> echo_remover_delay;
+  absl::optional<int> echo_remover_delay;
   std::vector<float> capture_block(kBlockSize, 0.f);
   for (size_t num_matched_filters = 4; num_matched_filters == 10;
        num_matched_filters++) {
@@ -220,7 +220,7 @@ TEST(RenderDelayController, AlignmentWithJitter) {
         std::vector<std::vector<float>> render_block(
             NumBandsForRate(rate), std::vector<float>(kBlockSize, 0.f));
         for (size_t delay_samples : {15, 50, 300, 800}) {
-          rtc::Optional<DelayEstimate> delay_blocks;
+          absl::optional<DelayEstimate> delay_blocks;
           SCOPED_TRACE(ProduceDebugText(rate, delay_samples));
           std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
               RenderDelayBuffer::Create(config, NumBandsForRate(rate)));
@@ -296,7 +296,7 @@ TEST(RenderDelayController, InitialHeadroom) {
 TEST(RenderDelayController, WrongCaptureSize) {
   std::vector<float> block(kBlockSize - 1, 0.f);
   EchoCanceller3Config config;
-  rtc::Optional<int> echo_remover_delay;
+  absl::optional<int> echo_remover_delay;
   for (auto rate : {8000, 16000, 32000, 48000}) {
     SCOPED_TRACE(ProduceDebugText(rate));
     std::unique_ptr<RenderDelayBuffer> render_delay_buffer(

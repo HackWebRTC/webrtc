@@ -22,9 +22,9 @@
 #include <string.h>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "api/audio/echo_canceller3_config.h"
 #include "api/audio/echo_control.h"
-#include "api/optional.h"
 #include "modules/audio_processing/beamformer/array_util.h"
 #include "modules/audio_processing/include/audio_generator.h"
 #include "modules/audio_processing/include/audio_processing_statistics.h"

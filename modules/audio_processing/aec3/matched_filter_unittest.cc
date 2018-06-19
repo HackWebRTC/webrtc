@@ -183,7 +183,7 @@ TEST(MatchedFilter, LagEstimation) {
       auto lag_estimates = filter.GetLagEstimates();
 
       // Find which lag estimate should be the most accurate.
-      rtc::Optional<size_t> expected_most_accurate_lag_estimate;
+      absl::optional<size_t> expected_most_accurate_lag_estimate;
       size_t alignment_shift_sub_blocks = 0;
       for (size_t k = 0; k < config.delay.num_filters; ++k) {
         if ((alignment_shift_sub_blocks + 3 * kWindowSizeSubBlocks / 4) *

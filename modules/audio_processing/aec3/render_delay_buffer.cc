@@ -77,8 +77,8 @@ class RenderDelayBufferImpl final : public RenderDelayBuffer {
   MatrixBuffer blocks_;
   VectorBuffer spectra_;
   FftBuffer ffts_;
-  rtc::Optional<size_t> delay_;
-  rtc::Optional<int> internal_delay_;
+  absl::optional<size_t> delay_;
+  absl::optional<int> internal_delay_;
   RenderBuffer echo_remover_buffer_;
   DownsampledRenderBuffer low_rate_;
   Decimator render_decimator_;
@@ -93,7 +93,7 @@ class RenderDelayBufferImpl final : public RenderDelayBuffer {
   size_t render_call_counter_ = 0;
   bool render_activity_ = false;
   size_t render_activity_counter_ = 0;
-  rtc::Optional<size_t> external_audio_buffer_delay_;
+  absl::optional<size_t> external_audio_buffer_delay_;
   bool external_delay_verified_after_reset_ = false;
 
   int LowRateBufferOffset() const { return DelayEstimatorOffset(config_) >> 1; }
@@ -120,7 +120,7 @@ void IncreaseWriteIndices(int sub_block_size,
 }
 
 // Increases the read indices for the render buffers.
-void IncreaseReadIndices(const rtc::Optional<int>& delay,
+void IncreaseReadIndices(const absl::optional<int>& delay,
                          int sub_block_size,
                          MatrixBuffer* blocks,
                          VectorBuffer* spectra,
@@ -147,7 +147,7 @@ bool RenderOverrun(const MatrixBuffer& b, const DownsampledRenderBuffer& l) {
 // Checks for a render buffer underrun. If the delay is not specified, only the
 // low rate buffer underrun is counted as the delay offset for the other buffers
 // is unknown.
-bool RenderUnderrun(const rtc::Optional<int>& delay,
+bool RenderUnderrun(const absl::optional<int>& delay,
                     const MatrixBuffer& b,
                     const DownsampledRenderBuffer& l) {
   return l.read == l.write || (delay && b.read == b.write);
@@ -243,8 +243,8 @@ void RenderDelayBufferImpl::Reset() {
     ApplyDelay(config_.delay.default_delay);
 
     // Unset the delays which are set by SetDelay.
-    delay_ = rtc::nullopt;
-    internal_delay_ = rtc::nullopt;
+    delay_ = absl::nullopt;
+    internal_delay_ = absl::nullopt;
   }
 }
 

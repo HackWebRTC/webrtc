@@ -13,7 +13,7 @@
 
 #include <vector>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "modules/audio_processing/aec3/echo_path_variability.h"
 #include "modules/audio_processing/aec3/echo_remover.h"
 #include "modules/audio_processing/aec3/render_buffer.h"
@@ -29,10 +29,10 @@ class MockEchoRemover : public EchoRemover {
   MOCK_METHOD5(ProcessCapture,
                void(const EchoPathVariability& echo_path_variability,
                     bool capture_signal_saturation,
-                    const rtc::Optional<DelayEstimate>& delay_estimate,
+                    const absl::optional<DelayEstimate>& delay_estimate,
                     RenderBuffer* render_buffer,
                     std::vector<std::vector<float>>* capture));
-  MOCK_CONST_METHOD0(Delay, rtc::Optional<int>());
+  MOCK_CONST_METHOD0(Delay, absl::optional<int>());
   MOCK_METHOD1(UpdateEchoLeakageStatus, void(bool leakage_detected));
   MOCK_CONST_METHOD1(GetMetrics, void(EchoControl::Metrics* metrics));
 };

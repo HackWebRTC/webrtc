@@ -56,7 +56,7 @@ bool ArePerpendicular(const Point& a, const Point& b) {
   return std::abs(DotProduct(a, b)) < kMaxDotProduct;
 }
 
-rtc::Optional<Point> GetDirectionIfLinear(
+absl::optional<Point> GetDirectionIfLinear(
     const std::vector<Point>& array_geometry) {
   RTC_DCHECK_GT(array_geometry.size(), 1);
   const Point first_pair_direction =
@@ -65,13 +65,13 @@ rtc::Optional<Point> GetDirectionIfLinear(
     const Point pair_direction =
         PairDirection(array_geometry[i - 1], array_geometry[i]);
     if (!AreParallel(first_pair_direction, pair_direction)) {
-      return rtc::nullopt;
+      return absl::nullopt;
     }
   }
   return first_pair_direction;
 }
 
-rtc::Optional<Point> GetNormalIfPlanar(
+absl::optional<Point> GetNormalIfPlanar(
     const std::vector<Point>& array_geometry) {
   RTC_DCHECK_GT(array_geometry.size(), 1);
   const Point first_pair_direction =
@@ -86,30 +86,30 @@ rtc::Optional<Point> GetNormalIfPlanar(
     }
   }
   if (is_linear) {
-    return rtc::nullopt;
+    return absl::nullopt;
   }
   const Point normal_direction =
       CrossProduct(first_pair_direction, pair_direction);
   for (; i < array_geometry.size(); ++i) {
     pair_direction = PairDirection(array_geometry[i - 1], array_geometry[i]);
     if (!ArePerpendicular(normal_direction, pair_direction)) {
-      return rtc::nullopt;
+      return absl::nullopt;
     }
   }
   return normal_direction;
 }
 
-rtc::Optional<Point> GetArrayNormalIfExists(
+absl::optional<Point> GetArrayNormalIfExists(
     const std::vector<Point>& array_geometry) {
-  const rtc::Optional<Point> direction = GetDirectionIfLinear(array_geometry);
+  const absl::optional<Point> direction = GetDirectionIfLinear(array_geometry);
   if (direction) {
     return Point(direction->y(), -direction->x(), 0.f);
   }
-  const rtc::Optional<Point> normal = GetNormalIfPlanar(array_geometry);
+  const absl::optional<Point> normal = GetNormalIfPlanar(array_geometry);
   if (normal && normal->z() < kMaxDotProduct) {
     return normal;
   }
-  return rtc::nullopt;
+  return absl::nullopt;
 }
 
 Point AzimuthToPoint(float azimuth) {

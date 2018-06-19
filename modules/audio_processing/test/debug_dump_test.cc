@@ -275,8 +275,8 @@ class DebugDumpTest : public ::testing::Test {
 void DebugDumpTest::VerifyDebugDump(const std::string& in_filename) {
   ASSERT_TRUE(debug_dump_replayer_.SetDumpFile(in_filename));
 
-  while (const rtc::Optional<audioproc::Event> event =
-      debug_dump_replayer_.GetNextEvent()) {
+  while (const absl::optional<audioproc::Event> event =
+             debug_dump_replayer_.GetNextEvent()) {
     debug_dump_replayer_.RunNextEvent();
     if (event->type() == audioproc::Event::STREAM) {
       const audioproc::Stream* msg = &event->stream();
@@ -388,7 +388,7 @@ TEST_F(DebugDumpTest, VerifyRefinedAdaptiveFilterExperimentalString) {
 
   ASSERT_TRUE(debug_dump_replayer_.SetDumpFile(generator.dump_file_name()));
 
-  while (const rtc::Optional<audioproc::Event> event =
+  while (const absl::optional<audioproc::Event> event =
              debug_dump_replayer_.GetNextEvent()) {
     debug_dump_replayer_.RunNextEvent();
     if (event->type() == audioproc::Event::CONFIG) {
@@ -416,7 +416,7 @@ TEST_F(DebugDumpTest, VerifyCombinedExperimentalStringInclusive) {
 
   ASSERT_TRUE(debug_dump_replayer_.SetDumpFile(generator.dump_file_name()));
 
-  while (const rtc::Optional<audioproc::Event> event =
+  while (const absl::optional<audioproc::Event> event =
              debug_dump_replayer_.GetNextEvent()) {
     debug_dump_replayer_.RunNextEvent();
     if (event->type() == audioproc::Event::CONFIG) {
@@ -444,7 +444,7 @@ TEST_F(DebugDumpTest, VerifyCombinedExperimentalStringExclusive) {
 
   ASSERT_TRUE(debug_dump_replayer_.SetDumpFile(generator.dump_file_name()));
 
-  while (const rtc::Optional<audioproc::Event> event =
+  while (const absl::optional<audioproc::Event> event =
              debug_dump_replayer_.GetNextEvent()) {
     debug_dump_replayer_.RunNextEvent();
     if (event->type() == audioproc::Event::CONFIG) {
@@ -472,7 +472,7 @@ TEST_F(DebugDumpTest, VerifyAec3ExperimentalString) {
 
   ASSERT_TRUE(debug_dump_replayer_.SetDumpFile(generator.dump_file_name()));
 
-  while (const rtc::Optional<audioproc::Event> event =
+  while (const absl::optional<audioproc::Event> event =
              debug_dump_replayer_.GetNextEvent()) {
     debug_dump_replayer_.RunNextEvent();
     if (event->type() == audioproc::Event::CONFIG) {
@@ -497,7 +497,7 @@ TEST_F(DebugDumpTest, VerifyAgcClippingLevelExperimentalString) {
 
   ASSERT_TRUE(debug_dump_replayer_.SetDumpFile(generator.dump_file_name()));
 
-  while (const rtc::Optional<audioproc::Event> event =
+  while (const absl::optional<audioproc::Event> event =
              debug_dump_replayer_.GetNextEvent()) {
     debug_dump_replayer_.RunNextEvent();
     if (event->type() == audioproc::Event::CONFIG) {
@@ -520,7 +520,7 @@ TEST_F(DebugDumpTest, VerifyEmptyExperimentalString) {
 
   ASSERT_TRUE(debug_dump_replayer_.SetDumpFile(generator.dump_file_name()));
 
-  while (const rtc::Optional<audioproc::Event> event =
+  while (const absl::optional<audioproc::Event> event =
              debug_dump_replayer_.GetNextEvent()) {
     debug_dump_replayer_.RunNextEvent();
     if (event->type() == audioproc::Event::CONFIG) {

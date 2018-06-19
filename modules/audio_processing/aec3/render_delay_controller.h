@@ -11,9 +11,9 @@
 #ifndef MODULES_AUDIO_PROCESSING_AEC3_RENDER_DELAY_CONTROLLER_H_
 #define MODULES_AUDIO_PROCESSING_AEC3_RENDER_DELAY_CONTROLLER_H_
 
+#include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/audio/echo_canceller3_config.h"
-#include "api/optional.h"
 #include "modules/audio_processing/aec3/delay_estimate.h"
 #include "modules/audio_processing/aec3/downsampled_render_buffer.h"
 #include "modules/audio_processing/aec3/render_delay_buffer.h"
@@ -36,10 +36,10 @@ class RenderDelayController {
   virtual void LogRenderCall() = 0;
 
   // Aligns the render buffer content with the capture signal.
-  virtual rtc::Optional<DelayEstimate> GetDelay(
+  virtual absl::optional<DelayEstimate> GetDelay(
       const DownsampledRenderBuffer& render_buffer,
       size_t render_delay_buffer_delay,
-      const rtc::Optional<int>& echo_remover_delay,
+      const absl::optional<int>& echo_remover_delay,
       rtc::ArrayView<const float> capture) = 0;
 };
 }  // namespace webrtc

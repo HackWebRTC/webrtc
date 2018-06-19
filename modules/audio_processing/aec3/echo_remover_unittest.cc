@@ -43,7 +43,7 @@ std::string ProduceDebugText(int sample_rate_hz, int delay) {
 
 // Verifies the basic API call sequence
 TEST(EchoRemover, BasicApiCalls) {
-  rtc::Optional<DelayEstimate> delay_estimate;
+  absl::optional<DelayEstimate> delay_estimate;
   for (auto rate : {8000, 16000, 32000, 48000}) {
     SCOPED_TRACE(ProduceDebugText(rate));
     std::unique_ptr<EchoRemover> remover(
@@ -84,7 +84,7 @@ TEST(EchoRemover, DISABLED_WrongSampleRate) {
 
 // Verifies the check for the capture block size.
 TEST(EchoRemover, WrongCaptureBlockSize) {
-  rtc::Optional<DelayEstimate> delay_estimate;
+  absl::optional<DelayEstimate> delay_estimate;
   for (auto rate : {8000, 16000, 32000, 48000}) {
     SCOPED_TRACE(ProduceDebugText(rate));
     std::unique_ptr<EchoRemover> remover(
@@ -106,7 +106,7 @@ TEST(EchoRemover, WrongCaptureBlockSize) {
 // TODO(peah): Re-enable the test once the issue with memory leaks during DEATH
 // tests on test bots has been fixed.c
 TEST(EchoRemover, DISABLED_WrongCaptureNumBands) {
-  rtc::Optional<DelayEstimate> delay_estimate;
+  absl::optional<DelayEstimate> delay_estimate;
   for (auto rate : {16000, 32000, 48000}) {
     SCOPED_TRACE(ProduceDebugText(rate));
     std::unique_ptr<EchoRemover> remover(
@@ -127,7 +127,7 @@ TEST(EchoRemover, DISABLED_WrongCaptureNumBands) {
 
 // Verifies the check for non-null capture block.
 TEST(EchoRemover, NullCapture) {
-  rtc::Optional<DelayEstimate> delay_estimate;
+  absl::optional<DelayEstimate> delay_estimate;
   std::unique_ptr<EchoRemover> remover(
       EchoRemover::Create(EchoCanceller3Config(), 8000));
   std::unique_ptr<RenderDelayBuffer> render_buffer(
@@ -147,7 +147,7 @@ TEST(EchoRemover, NullCapture) {
 TEST(EchoRemover, BasicEchoRemoval) {
   constexpr int kNumBlocksToProcess = 500;
   Random random_generator(42U);
-  rtc::Optional<DelayEstimate> delay_estimate;
+  absl::optional<DelayEstimate> delay_estimate;
   for (auto rate : {8000, 16000, 32000, 48000}) {
     std::vector<std::vector<float>> x(NumBandsForRate(rate),
                                       std::vector<float>(kBlockSize, 0.f));

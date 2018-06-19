@@ -17,9 +17,9 @@
 #include <memory>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/audio/echo_canceller3_config.h"
-#include "api/optional.h"
 #include "modules/audio_processing/aec3/aec3_common.h"
 #include "modules/audio_processing/aec3/delay_estimate.h"
 #include "modules/audio_processing/aec3/echo_audibility.h"
@@ -84,7 +84,7 @@ class AecState {
   int FilterDelayBlocks() const { return filter_delay_blocks_; }
 
   // Returns the internal delay estimate based on the linear filter.
-  rtc::Optional<int> InternalDelay() const { return internal_delay_; }
+  absl::optional<int> InternalDelay() const { return internal_delay_; }
 
   // Returns whether the capture signal is saturated.
   bool SaturatedCapture() const { return capture_signal_saturation_; }
@@ -125,7 +125,7 @@ class AecState {
   bool InitialState() const { return initial_state_; }
 
   // Updates the aec state.
-  void Update(const rtc::Optional<DelayEstimate>& external_delay,
+  void Update(const absl::optional<DelayEstimate>& external_delay,
               const std::vector<std::array<float, kFftLengthBy2Plus1>>&
                   adaptive_filter_frequency_response,
               const std::vector<float>& adaptive_filter_impulse_response,
@@ -188,7 +188,7 @@ class AecState {
   SuppressionGainUpperLimiter suppression_gain_limiter_;
   FilterAnalyzer filter_analyzer_;
   bool use_linear_filter_output_ = false;
-  rtc::Optional<int> internal_delay_;
+  absl::optional<int> internal_delay_;
   size_t diverged_blocks_ = 0;
   bool filter_should_have_converged_ = false;
   size_t blocks_since_converged_filter_;
@@ -196,7 +196,7 @@ class AecState {
   bool converged_filter_seen_ = false;
   bool consistent_filter_seen_ = false;
   bool external_delay_seen_ = false;
-  rtc::Optional<DelayEstimate> external_delay_;
+  absl::optional<DelayEstimate> external_delay_;
   size_t frames_since_external_delay_change_ = 0;
   size_t converged_filter_count_ = 0;
   bool finite_erl_ = false;

@@ -30,7 +30,7 @@ void MatchedFilterLagAggregator::Reset() {
   significant_candidate_found_ = false;
 }
 
-rtc::Optional<DelayEstimate> MatchedFilterLagAggregator::Aggregate(
+absl::optional<DelayEstimate> MatchedFilterLagAggregator::Aggregate(
     rtc::ArrayView<const MatchedFilter::LagEstimate> lag_estimates) {
   // Choose the strongest lag estimate as the best one.
   float best_accuracy = 0.f;
@@ -72,7 +72,7 @@ rtc::Optional<DelayEstimate> MatchedFilterLagAggregator::Aggregate(
       return DelayEstimate(DelayEstimate::Quality::kRefined, candidate);
     }
   }
-  return rtc::nullopt;
+  return absl::nullopt;
 }
 
 }  // namespace webrtc

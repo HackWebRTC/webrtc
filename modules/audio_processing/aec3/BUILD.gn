@@ -112,7 +112,6 @@ rtc_static_library("aec3") {
     "..:audio_processing",
     "../../..:typedefs",
     "../../../api:array_view",
-    "../../../api:optional",
     "../../../api/audio:aec3_config",
     "../../../api/audio:echo_control",
     "../../../common_audio:common_audio_c",
@@ -122,6 +121,7 @@ rtc_static_library("aec3") {
     "../../../system_wrappers:cpu_features_api",
     "../../../system_wrappers:field_trial_api",
     "../../../system_wrappers:metrics_api",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 
   configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
@@ -146,13 +146,13 @@ if (rtc_include_tests) {
       "..:audio_processing_unittests",
       "../../..:typedefs",
       "../../../api:array_view",
-      "../../../api:optional",
       "../../../api/audio:aec3_config",
       "../../../rtc_base:checks",
       "../../../rtc_base:rtc_base_approved",
       "../../../rtc_base:safe_minmax",
       "../../../system_wrappers:cpu_features_api",
       "../../../test:test_support",
+      "//third_party/abseil-cpp/absl/types:optional",
     ]
 
     defines = []

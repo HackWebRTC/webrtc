@@ -126,7 +126,6 @@ rtc_static_library("audio_processing") {
     "../..:typedefs",
     "../..:webrtc_common",
     "../../api:array_view",
-    "../../api:optional",
     "../../api/audio:aec3_config",
     "../../api/audio:audio_frame_api",
     "../../api/audio:echo_control",
@@ -144,6 +143,7 @@ rtc_static_library("audio_processing") {
     "agc2:fixed_digital",
     "agc2:gain_applier",
     "vad",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 
   if (aec_untrusted_delay_for_testing) {
@@ -187,7 +187,7 @@ rtc_source_set("audio_processing_statistics") {
     "include/audio_processing_statistics.h",
   ]
   deps = [
-    "../../api:optional",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 
@@ -510,7 +510,6 @@ if (rtc_include_tests) {
       "../..:typedefs",
       "../..:webrtc_common",
       "../../api:array_view",
-      "../../api:optional",
       "../../api/audio:aec3_config",
       "../../api/audio:aec3_factory",
       "../../common_audio:common_audio",
@@ -536,6 +535,7 @@ if (rtc_include_tests) {
       "test/conversational_speech:unittest",
       "vad:vad_unittests",
       "//testing/gtest",
+      "//third_party/abseil-cpp/absl/types:optional",
     ]
 
     defines = []
@@ -650,11 +650,11 @@ if (rtc_include_tests) {
     ]
     deps = [
       "../../api:array_view",
-      "../../api:optional",
       "../../api/audio:audio_frame_api",
       "../../common_audio:common_audio",
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
+      "//third_party/abseil-cpp/absl/types:optional",
     ]
   }
 
@@ -678,7 +678,6 @@ if (rtc_include_tests) {
         ":audioproc_debug_proto",
         ":audioproc_protobuf_utils",
         ":audioproc_test_utils",
-        "../../api:optional",
         "../../api/audio:aec3_factory",
         "../../common_audio:common_audio",
         "../../rtc_base:checks",
@@ -693,6 +692,7 @@ if (rtc_include_tests) {
         "aec_dump",
         "aec_dump:aec_dump_impl",
         "//testing/gtest",
+        "//third_party/abseil-cpp/absl/types:optional",
       ]
     }  # audioproc_f_impl
     rtc_executable("audioproc_f") {
@@ -727,7 +727,6 @@ if (rtc_include_tests) {
     deps = [
       ":audio_processing",
       "../../api:array_view",
-      "../../api:optional",
       "../../api/audio:audio_frame_api",
       "../../common_audio",
       "../../rtc_base:checks",
@@ -737,6 +736,7 @@ if (rtc_include_tests) {
       "../../test:test_support",
       "../audio_coding:neteq_input_audio_tools",
       "//testing/gtest",
+      "//third_party/abseil-cpp/absl/types:optional",
     ]
   }
 

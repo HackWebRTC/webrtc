@@ -61,11 +61,11 @@ void EchoPathDelayEstimator::Reset(bool soft_reset) {
     matched_filter_lag_aggregator_.Reset();
   }
   matched_filter_.Reset();
-  old_aggregated_lag_ = rtc::nullopt;
+  old_aggregated_lag_ = absl::nullopt;
   consistent_estimate_counter_ = 0;
 }
 
-rtc::Optional<DelayEstimate> EchoPathDelayEstimator::EstimateDelay(
+absl::optional<DelayEstimate> EchoPathDelayEstimator::EstimateDelay(
     const DownsampledRenderBuffer& render_buffer,
     rtc::ArrayView<const float> capture) {
   RTC_DCHECK_EQ(kBlockSize, capture.size());
@@ -81,7 +81,7 @@ rtc::Optional<DelayEstimate> EchoPathDelayEstimator::EstimateDelay(
                         16000 / down_sampling_factor_, 1);
   matched_filter_.Update(render_buffer, downsampled_capture);
 
-  rtc::Optional<DelayEstimate> aggregated_matched_filter_lag =
+  absl::optional<DelayEstimate> aggregated_matched_filter_lag =
       matched_filter_lag_aggregator_.Aggregate(
           matched_filter_.GetLagEstimates());
 

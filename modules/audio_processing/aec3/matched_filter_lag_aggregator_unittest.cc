@@ -40,7 +40,7 @@ TEST(MatchedFilterLagAggregator, MostAccurateLagChosen) {
     aggregator.Aggregate(lag_estimates);
   }
 
-  rtc::Optional<DelayEstimate> aggregated_lag =
+  absl::optional<DelayEstimate> aggregated_lag =
       aggregator.Aggregate(lag_estimates);
   EXPECT_TRUE(aggregated_lag);
   EXPECT_EQ(kLag1, aggregated_lag->delay);
@@ -68,7 +68,7 @@ TEST(MatchedFilterLagAggregator,
   std::vector<MatchedFilter::LagEstimate> lag_estimates(1);
   MatchedFilterLagAggregator aggregator(&data_dumper, 100);
 
-  rtc::Optional<DelayEstimate> aggregated_lag;
+  absl::optional<DelayEstimate> aggregated_lag;
   for (size_t k = 0; k < kNumLagsBeforeDetection; ++k) {
     lag_estimates[0] = MatchedFilter::LagEstimate(1.f, true, 10, true);
     aggregated_lag = aggregator.Aggregate(lag_estimates);
@@ -98,7 +98,7 @@ TEST(MatchedFilterLagAggregator,
   MatchedFilterLagAggregator aggregator(&data_dumper, kLag);
   for (size_t k = 0; k < kNumLagsBeforeDetection * 10; ++k) {
     lag_estimates[0] = MatchedFilter::LagEstimate(1.f, true, kLag, false);
-    rtc::Optional<DelayEstimate> aggregated_lag =
+    absl::optional<DelayEstimate> aggregated_lag =
         aggregator.Aggregate(lag_estimates);
     EXPECT_FALSE(aggregated_lag);
     EXPECT_EQ(kLag, aggregated_lag->delay);
@@ -114,7 +114,7 @@ TEST(MatchedFilterLagAggregator, DISABLED_PersistentAggregatedLag) {
   ApmDataDumper data_dumper(0);
   std::vector<MatchedFilter::LagEstimate> lag_estimates(1);
   MatchedFilterLagAggregator aggregator(&data_dumper, std::max(kLag1, kLag2));
-  rtc::Optional<DelayEstimate> aggregated_lag;
+  absl::optional<DelayEstimate> aggregated_lag;
   for (size_t k = 0; k < kNumLagsBeforeDetection; ++k) {
     lag_estimates[0] = MatchedFilter::LagEstimate(1.f, true, kLag1, true);
     aggregated_lag = aggregator.Aggregate(lag_estimates);

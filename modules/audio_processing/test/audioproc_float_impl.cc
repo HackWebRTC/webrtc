@@ -184,19 +184,19 @@ DEFINE_string(aec3_settings,
 DEFINE_bool(help, false, "Print this message");
 
 void SetSettingIfSpecified(const std::string& value,
-                           rtc::Optional<std::string>* parameter) {
+                           absl::optional<std::string>* parameter) {
   if (value.compare("") != 0) {
     *parameter = value;
   }
 }
 
-void SetSettingIfSpecified(int value, rtc::Optional<int>* parameter) {
+void SetSettingIfSpecified(int value, absl::optional<int>* parameter) {
   if (value != kParameterNotSpecifiedValue) {
     *parameter = value;
   }
 }
 
-void SetSettingIfFlagSet(int32_t flag, rtc::Optional<bool>* parameter) {
+void SetSettingIfFlagSet(int32_t flag, absl::optional<bool>* parameter) {
   if (flag == 0) {
     *parameter = false;
   } else if (flag == 1) {

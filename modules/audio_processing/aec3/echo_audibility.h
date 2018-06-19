@@ -17,8 +17,8 @@
 #include <memory>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "api/array_view.h"
-#include "api/optional.h"
 #include "modules/audio_processing/aec3/matrix_buffer.h"
 #include "modules/audio_processing/aec3/render_buffer.h"
 #include "modules/audio_processing/aec3/stationarity_estimator.h"
@@ -70,7 +70,7 @@ class EchoAudibility {
   // values.
   bool IsRenderTooLow(const MatrixBuffer& block_buffer);
 
-  rtc::Optional<int> render_spectrum_write_prev_;
+  absl::optional<int> render_spectrum_write_prev_;
   int render_block_write_prev_;
   bool non_zero_render_seen_;
   StationarityEstimator render_stationarity_;

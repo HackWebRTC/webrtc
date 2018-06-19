@@ -1677,15 +1677,15 @@ AudioProcessingStats AudioProcessingImpl::GetStatistics(
                Error::kNoError) {
       if (metrics.divergent_filter_fraction != -1.0f) {
         stats.divergent_filter_fraction =
-            rtc::Optional<double>(metrics.divergent_filter_fraction);
+            absl::optional<double>(metrics.divergent_filter_fraction);
       }
       if (metrics.echo_return_loss.instant != -100) {
         stats.echo_return_loss =
-            rtc::Optional<double>(metrics.echo_return_loss.instant);
+            absl::optional<double>(metrics.echo_return_loss.instant);
       }
       if (metrics.echo_return_loss_enhancement.instant != -100) {
-        stats.echo_return_loss_enhancement =
-            rtc::Optional<double>(metrics.echo_return_loss_enhancement.instant);
+        stats.echo_return_loss_enhancement = absl::optional<double>(
+            metrics.echo_return_loss_enhancement.instant);
       }
     }
     if (config_.residual_echo_detector.enabled) {
@@ -1702,10 +1702,10 @@ AudioProcessingStats AudioProcessingImpl::GetStatistics(
             &delay_median, &delay_std, &fraction_poor_delays) ==
         Error::kNoError) {
       if (delay_median >= 0) {
-        stats.delay_median_ms = rtc::Optional<int32_t>(delay_median);
+        stats.delay_median_ms = absl::optional<int32_t>(delay_median);
       }
       if (delay_std >= 0) {
-        stats.delay_standard_deviation_ms = rtc::Optional<int32_t>(delay_std);
+        stats.delay_standard_deviation_ms = absl::optional<int32_t>(delay_std);
       }
     }
   }

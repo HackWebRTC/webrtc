@@ -30,7 +30,7 @@ TEST(SkewEstimator, SkewChangeAdaptation) {
 
   estimator.LogRenderCall();
 
-  rtc::Optional<int> skew;
+  absl::optional<int> skew;
   for (int k = 0; k < kNumSkews; ++k) {
     estimator.LogRenderCall();
     skew = estimator.GetSkewFromCapture();
@@ -63,7 +63,7 @@ TEST(SkewEstimator, SkewForSurplusRender) {
 
   estimator.LogRenderCall();
 
-  rtc::Optional<int> skew;
+  absl::optional<int> skew;
   for (int k = 0; k < kNumSkews; ++k) {
     estimator.LogRenderCall();
     skew = estimator.GetSkewFromCapture();
@@ -85,7 +85,7 @@ TEST(SkewEstimator, SkewForSurplusCapture) {
     EXPECT_FALSE(skew);
   }
 
-  rtc::Optional<int> skew;
+  absl::optional<int> skew;
   skew = estimator.GetSkewFromCapture();
 
   for (int k = 0; k < kNumSkews; ++k) {
@@ -128,7 +128,7 @@ TEST(SkewEstimator, SkewRounding) {
 
   SkewEstimator estimator(kNumSkewsLog2);
 
-  rtc::Optional<int> skew;
+  absl::optional<int> skew;
   for (int k = 0; k < kNumSkews; ++k) {
     if (k == kNumSkews - 1) {
       // Reverse call order once.

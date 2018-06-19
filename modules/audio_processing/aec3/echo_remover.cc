@@ -68,14 +68,14 @@ class EchoRemoverImpl final : public EchoRemover {
   // signal.
   void ProcessCapture(const EchoPathVariability& echo_path_variability,
                       bool capture_signal_saturation,
-                      const rtc::Optional<DelayEstimate>& external_delay,
+                      const absl::optional<DelayEstimate>& external_delay,
                       RenderBuffer* render_buffer,
                       std::vector<std::vector<float>>* capture) override;
 
   // Returns the internal delay estimate in blocks.
-  rtc::Optional<int> Delay() const override {
+  absl::optional<int> Delay() const override {
     // TODO(peah): Remove or reactivate this functionality.
-    return rtc::nullopt;
+    return absl::nullopt;
   }
 
   // Updates the status on whether echo leakage is detected in the output of the
@@ -143,7 +143,7 @@ void EchoRemoverImpl::GetMetrics(EchoControl::Metrics* metrics) const {
 void EchoRemoverImpl::ProcessCapture(
     const EchoPathVariability& echo_path_variability,
     bool capture_signal_saturation,
-    const rtc::Optional<DelayEstimate>& external_delay,
+    const absl::optional<DelayEstimate>& external_delay,
     RenderBuffer* render_buffer,
     std::vector<std::vector<float>>* capture) {
   const std::vector<std::vector<float>>& x = render_buffer->Block(0);

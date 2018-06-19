@@ -12,7 +12,7 @@
 
 #include <algorithm>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/ptr_util.h"
 
@@ -44,7 +44,7 @@ class FakeRecordingDeviceWorker {
   // Mic level to simulate.
   int mic_level_;
   // Optional mic level to undo.
-  rtc::Optional<int> undo_mic_level_;
+  absl::optional<int> undo_mic_level_;
 };
 
 namespace {

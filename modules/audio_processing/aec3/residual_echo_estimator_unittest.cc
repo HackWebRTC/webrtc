@@ -63,7 +63,7 @@ TEST(ResidualEchoEstimator, DISABLED_BasicTest) {
   Random random_generator(42U);
   std::array<float, kBlockSize> s;
   Aec3Fft fft;
-  rtc::Optional<DelayEstimate> delay_estimate;
+  absl::optional<DelayEstimate> delay_estimate;
 
   for (auto& H2_k : H2) {
     H2_k.fill(0.01f);

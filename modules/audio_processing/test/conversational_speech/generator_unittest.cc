@@ -42,7 +42,7 @@
 #include <memory>
 #include <vector>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "common_audio/wav_file.h"
 #include "modules/audio_processing/test/conversational_speech/config.h"
 #include "modules/audio_processing/test/conversational_speech/mock_wavreader_factory.h"
@@ -149,7 +149,7 @@ void CheckAudioTrackParams(const WavReaderFactory& wav_reader_factory,
 
 void DeleteFolderAndContents(const std::string& dir) {
   if (!DirExists(dir)) { return; }
-  rtc::Optional<std::vector<std::string>> dir_content = ReadDirectory(dir);
+  absl::optional<std::vector<std::string>> dir_content = ReadDirectory(dir);
   EXPECT_TRUE(dir_content);
   for (const auto& path : *dir_content) {
     if (DirExists(path)) {

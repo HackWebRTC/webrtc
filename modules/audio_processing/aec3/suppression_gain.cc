@@ -54,7 +54,7 @@ void AdjustForExternalFilters(std::array<float, kFftLengthBy2Plus1>* gain) {
 
 // Computes the gain to apply for the bands beyond the first band.
 float UpperBandsGain(
-    const rtc::Optional<int>& narrow_peak_band,
+    const absl::optional<int>& narrow_peak_band,
     bool saturated_echo,
     const std::vector<std::vector<float>>& render,
     const std::array<float, kFftLengthBy2Plus1>& low_band_gain) {
@@ -415,7 +415,7 @@ void SuppressionGain::GetGain(
 
   // Compute gain for the lower band.
   bool low_noise_render = low_render_detector_.Detect(render);
-  const rtc::Optional<int> narrow_peak_band =
+  const absl::optional<int> narrow_peak_band =
       render_signal_analyzer.NarrowPeakBand();
   LowerBandGain(low_noise_render, aec_state, nearend_spectrum, echo_spectrum,
                 comfort_noise_spectrum, low_band_gain);

@@ -13,9 +13,9 @@
 
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "api/audio/echo_canceller3_config.h"
 #include "api/audio/echo_control.h"
-#include "api/optional.h"
 #include "modules/audio_processing/aec3/delay_estimate.h"
 #include "modules/audio_processing/aec3/echo_path_variability.h"
 #include "modules/audio_processing/aec3/render_buffer.h"
@@ -38,12 +38,12 @@ class EchoRemover {
   virtual void ProcessCapture(
       const EchoPathVariability& echo_path_variability,
       bool capture_signal_saturation,
-      const rtc::Optional<DelayEstimate>& external_delay,
+      const absl::optional<DelayEstimate>& external_delay,
       RenderBuffer* render_buffer,
       std::vector<std::vector<float>>* capture) = 0;
 
   // Returns the internal delay estimate in blocks.
-  virtual rtc::Optional<int> Delay() const = 0;
+  virtual absl::optional<int> Delay() const = 0;
 
   // Updates the status on whether echo leakage is detected in the output of the
   // echo remover.

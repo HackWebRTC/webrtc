@@ -10,7 +10,7 @@
 
 #include "modules/audio_processing/gain_control_impl.h"
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "modules/audio_processing/agc/legacy/gain_control.h"
 #include "modules/audio_processing/audio_buffer.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
@@ -80,7 +80,7 @@ class GainControlImpl::GainController {
   Handle* state_;
   // TODO(peah): Remove the optional once the initialization is moved into the
   // ctor.
-  rtc::Optional<int> capture_level_;
+  absl::optional<int> capture_level_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(GainController);
 };

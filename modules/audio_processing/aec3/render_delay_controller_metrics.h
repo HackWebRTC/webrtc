@@ -11,7 +11,7 @@
 #ifndef MODULES_AUDIO_PROCESSING_AEC3_RENDER_DELAY_CONTROLLER_METRICS_H_
 #define MODULES_AUDIO_PROCESSING_AEC3_RENDER_DELAY_CONTROLLER_METRICS_H_
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "rtc_base/constructormagic.h"
 
 namespace webrtc {
@@ -22,9 +22,9 @@ class RenderDelayControllerMetrics {
   RenderDelayControllerMetrics();
 
   // Updates the metric with new data.
-  void Update(rtc::Optional<size_t> delay_samples,
+  void Update(absl::optional<size_t> delay_samples,
               size_t buffer_delay_blocks,
-              rtc::Optional<int> skew_shift_blocks);
+              absl::optional<int> skew_shift_blocks);
 
   // Returns true if the metrics have just been reported, otherwise false.
   bool MetricsReported() { return metrics_reported_; }

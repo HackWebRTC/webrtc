@@ -72,7 +72,7 @@ TEST(EchoPathDelayEstimator, DelayEstimation) {
           delay_samples + 2 * config.delay.api_call_jitter_blocks * 64);
       EchoPathDelayEstimator estimator(&data_dumper, config);
 
-      rtc::Optional<DelayEstimate> estimated_delay_samples;
+      absl::optional<DelayEstimate> estimated_delay_samples;
       for (size_t k = 0; k < (500 + (delay_samples) / kBlockSize); ++k) {
         RandomizeSampleVector(&random_generator, render[0]);
         signal_delay_buffer.Delay(render[0], capture);

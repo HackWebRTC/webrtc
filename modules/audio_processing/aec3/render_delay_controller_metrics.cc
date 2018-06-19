@@ -43,9 +43,9 @@ constexpr int kMaxSkewShiftCount = 20;
 RenderDelayControllerMetrics::RenderDelayControllerMetrics() = default;
 
 void RenderDelayControllerMetrics::Update(
-    rtc::Optional<size_t> delay_samples,
+    absl::optional<size_t> delay_samples,
     size_t buffer_delay_blocks,
-    rtc::Optional<int> skew_shift_blocks) {
+    absl::optional<int> skew_shift_blocks) {
   ++call_counter_;
 
   if (!initial_update) {

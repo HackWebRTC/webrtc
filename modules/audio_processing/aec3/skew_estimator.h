@@ -13,7 +13,7 @@
 
 #include <vector>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "rtc_base/constructormagic.h"
 
 namespace webrtc {
@@ -32,7 +32,7 @@ class SkewEstimator {
 
   // Updates and computes the skew at a capture call. Returns an optional which
   // is non-null if a reliable skew has been found.
-  rtc::Optional<int> GetSkewFromCapture();
+  absl::optional<int> GetSkewFromCapture();
 
  private:
   const int skew_history_size_log2_;

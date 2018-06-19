@@ -325,7 +325,7 @@ TEST(AdaptiveFirFilter, FilterAndAdapt) {
   std::vector<float> y(kBlockSize, 0.f);
   AecState aec_state(EchoCanceller3Config{});
   RenderSignalAnalyzer render_signal_analyzer(config);
-  rtc::Optional<DelayEstimate> delay_estimate;
+  absl::optional<DelayEstimate> delay_estimate;
   std::vector<float> e(kBlockSize, 0.f);
   std::array<float, kFftLength> s_scratch;
   std::array<float, kBlockSize> s;

@@ -22,7 +22,7 @@ TEST(AecState, NormalUsage) {
   ApmDataDumper data_dumper(42);
   EchoCanceller3Config config;
   AecState state(config);
-  rtc::Optional<DelayEstimate> delay_estimate =
+  absl::optional<DelayEstimate> delay_estimate =
       DelayEstimate(DelayEstimate::Quality::kRefined, 10);
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(config, 3));
@@ -173,7 +173,7 @@ TEST(AecState, ConvergedFilterDelay) {
   AecState state(config);
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(config, 3));
-  rtc::Optional<DelayEstimate> delay_estimate;
+  absl::optional<DelayEstimate> delay_estimate;
   std::array<float, kFftLengthBy2Plus1> E2_main;
   std::array<float, kFftLengthBy2Plus1> Y2;
   std::array<float, kBlockSize> x;

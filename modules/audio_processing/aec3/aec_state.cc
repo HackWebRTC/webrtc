@@ -115,7 +115,7 @@ void AecState::HandleEchoPathChange(
 }
 
 void AecState::Update(
-    const rtc::Optional<DelayEstimate>& external_delay,
+    const absl::optional<DelayEstimate>& external_delay,
     const std::vector<std::array<float, kFftLengthBy2Plus1>>&
         adaptive_filter_frequency_response,
     const std::vector<float>& adaptive_filter_impulse_response,
@@ -143,7 +143,7 @@ void AecState::Update(
   if (filter_analyzer_.Consistent()) {
     internal_delay_ = filter_analyzer_.DelayBlocks();
   } else {
-    internal_delay_ = rtc::nullopt;
+    internal_delay_ = absl::nullopt;
   }
 
   external_delay_seen_ = external_delay_seen_ || external_delay;
