@@ -354,7 +354,7 @@ public class HardwareVideoEncoderTest {
   // # Tests
   @Before
   public void setUp() {
-    NativeLibrary.initialize(new NativeLibrary.DefaultLoader());
+    NativeLibrary.initialize(new NativeLibrary.DefaultLoader(), TestConstants.NATIVE_LIBRARY);
 
     eglBase = new EglBase14(null, EglBase.CONFIG_PLAIN);
     eglBase.createDummyPbufferSurface();

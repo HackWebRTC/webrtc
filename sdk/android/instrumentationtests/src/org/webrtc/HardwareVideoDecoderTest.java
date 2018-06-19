@@ -155,7 +155,7 @@ public final class HardwareVideoDecoderTest {
 
   @Before
   public void setUp() {
-    NativeLibrary.initialize(new NativeLibrary.DefaultLoader());
+    NativeLibrary.initialize(new NativeLibrary.DefaultLoader(), TestConstants.NATIVE_LIBRARY);
 
     TEST_FRAMES = generateTestFrames();
 

@@ -106,7 +106,7 @@ public class SurfaceTextureHelperTest {
   @Before
   public void setUp() {
     // Load the JNI library for textureToYuv.
-    NativeLibrary.initialize(new NativeLibrary.DefaultLoader());
+    NativeLibrary.initialize(new NativeLibrary.DefaultLoader(), TestConstants.NATIVE_LIBRARY);
   }
 
   /**

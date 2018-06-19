@@ -61,7 +61,7 @@ public class VideoFrameBufferTest {
   @BeforeClass
   public static void setUp() {
     // Needed for JniCommon.nativeAllocateByteBuffer() to work, which is used from JavaI420Buffer.
-    System.loadLibrary("jingle_peerconnection_so");
+    System.loadLibrary(TestConstants.NATIVE_LIBRARY);
   }
 
   private final BufferType bufferType;

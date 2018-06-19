@@ -41,15 +41,17 @@ public class PeerConnectionFactory {
     final boolean enableInternalTracer;
     final boolean enableVideoHwAcceleration;
     final NativeLibraryLoader nativeLibraryLoader;
+    final String nativeLibraryName;
 
     private InitializationOptions(Context applicationContext, String fieldTrials,
         boolean enableInternalTracer, boolean enableVideoHwAcceleration,
-        NativeLibraryLoader nativeLibraryLoader) {
+        NativeLibraryLoader nativeLibraryLoader, String nativeLibraryName) {
       this.applicationContext = applicationContext;
       this.fieldTrials = fieldTrials;
       this.enableInternalTracer = enableInternalTracer;
       this.enableVideoHwAcceleration = enableVideoHwAcceleration;
       this.nativeLibraryLoader = nativeLibraryLoader;
+      this.nativeLibraryName = nativeLibraryName;
     }
 
     public static Builder builder(Context applicationContext) {
@@ -62,6 +64,7 @@ public class PeerConnectionFactory {
       private boolean enableInternalTracer = false;
       private boolean enableVideoHwAcceleration = true;
       private NativeLibraryLoader nativeLibraryLoader = new NativeLibrary.DefaultLoader();
+      private String nativeLibraryName = "jingle_peerconnection_so";
 
       Builder(Context applicationContext) {
         this.applicationContext = applicationContext;
@@ -86,10 +89,15 @@ public class PeerConnectionFactory {
         this.nativeLibraryLoader = nativeLibraryLoader;
         return this;
       }
+      public Builder setNativeLibraryName(String nativeLibraryName) {
+        this.nativeLibraryName = nativeLibraryName;
+        return this;
+      }
 
       public PeerConnectionFactory.InitializationOptions createInitializationOptions() {
         return new PeerConnectionFactory.InitializationOptions(applicationContext, fieldTrials,
-            enableInternalTracer, enableVideoHwAcceleration, nativeLibraryLoader);
+            enableInternalTracer, enableVideoHwAcceleration, nativeLibraryLoader,
+            nativeLibraryName);
       }
     }
   }
@@ -193,7 +201,7 @@ public class PeerConnectionFactory {
    */
   public static void initialize(InitializationOptions options) {
     ContextUtils.initialize(options.applicationContext);
-    NativeLibrary.initialize(options.nativeLibraryLoader);
+    NativeLibrary.initialize(options.nativeLibraryLoader, options.nativeLibraryName);
     nativeInitializeAndroidGlobals(options.enableVideoHwAcceleration);
     nativeInitializeFieldTrials(options.fieldTrials);
     if (options.enableInternalTracer && !internalTracerInitialized) {

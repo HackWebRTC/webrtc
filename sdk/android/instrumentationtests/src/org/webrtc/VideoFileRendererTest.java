@@ -31,7 +31,7 @@ import org.junit.runner.RunWith;
 public class VideoFileRendererTest {
   @Before
   public void setUp() {
-    NativeLibrary.initialize(new NativeLibrary.DefaultLoader());
+    NativeLibrary.initialize(new NativeLibrary.DefaultLoader(), TestConstants.NATIVE_LIBRARY);
   }
 
   @Test

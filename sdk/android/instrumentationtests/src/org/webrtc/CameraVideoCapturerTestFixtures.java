@@ -334,6 +334,7 @@ class CameraVideoCapturerTestFixtures {
   CameraVideoCapturerTestFixtures(TestObjectFactory testObjectFactory) {
     PeerConnectionFactory.initialize(
         PeerConnectionFactory.InitializationOptions.builder(testObjectFactory.getAppContext())
+            .setNativeLibraryName(TestConstants.NATIVE_LIBRARY)
             .createInitializationOptions());
 
     this.peerConnectionFactory = PeerConnectionFactory.builder().createPeerConnectionFactory();

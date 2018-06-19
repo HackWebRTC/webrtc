@@ -55,7 +55,7 @@ public class YuvHelperTest {
 
   @Before
   public void setUp() {
-    NativeLibrary.initialize(new NativeLibrary.DefaultLoader());
+    NativeLibrary.initialize(new NativeLibrary.DefaultLoader(), TestConstants.NATIVE_LIBRARY);
   }
 
   @SmallTest

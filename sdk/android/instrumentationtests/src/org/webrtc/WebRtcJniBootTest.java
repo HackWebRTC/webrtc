@@ -27,6 +27,7 @@ public class WebRtcJniBootTest {
   public void testJniLoadsWithoutError() throws InterruptedException {
     PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions
                                          .builder(InstrumentationRegistry.getTargetContext())
+                                         .setNativeLibraryName(TestConstants.NATIVE_LIBRARY)
                                          .createInitializationOptions());
     PeerConnectionFactory.builder().createPeerConnectionFactory();
   }
