@@ -210,60 +210,9 @@ public class VideoFrameBufferTest {
           return surfaceTextureHelper.createTextureBuffer(width, height,
               RendererCommon.convertMatrixToAndroidGraphicsMatrix(listener.transformMatrix));
         });
+    renderThread.quit();
 
-    // Wrap |oesBuffer| to quit |renderThread| once |oesBuffer| is released.
-    return new VideoFrame.TextureBuffer() {
-      private final RefCountDelegate refCountDelegate = new RefCountDelegate(() -> {
-        oesBuffer.release();
-        renderThread.quit();
-      });
-
-      @Override
-      public void retain() {
-        refCountDelegate.retain();
-      }
-
-      @Override
-      public void release() {
-        refCountDelegate.release();
-      }
-
-      @Override
-      public VideoFrame.TextureBuffer.Type getType() {
-        return oesBuffer.getType();
-      }
-
-      @Override
-      public int getTextureId() {
-        return oesBuffer.getTextureId();
-      }
-
-      @Override
-      public Matrix getTransformMatrix() {
-        return oesBuffer.getTransformMatrix();
-      }
-
-      @Override
-      public int getWidth() {
-        return oesBuffer.getWidth();
-      }
-
-      @Override
-      public int getHeight() {
-        return oesBuffer.getHeight();
-      }
-
-      @Override
-      public VideoFrame.I420Buffer toI420() {
-        return oesBuffer.toI420();
-      }
-
-      @Override
-      public VideoFrame.Buffer cropAndScale(
-          int cropX, int cropY, int cropWidth, int cropHeight, int scaleWidth, int scaleHeight) {
-        return oesBuffer.cropAndScale(cropX, cropY, cropWidth, cropHeight, scaleWidth, scaleHeight);
-      }
-    };
+    return oesBuffer;
   }
 
   /** Create an NV21Buffer with the same pixel content as the given I420 buffer. */
