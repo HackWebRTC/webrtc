@@ -3038,6 +3038,11 @@ TEST_P(PeerConnectionIntegrationTest,
   MockDataChannelObserver new_observer(callee()->data_channel());
   EXPECT_EQ_SIMULATED_WAIT(data, new_observer.last_message(), kDefaultTimeout,
                            fake_clock);
+  // Closing the PeerConnections destroys the ports before the ScopedFakeClock.
+  // If this is not done a DCHECK can be hit in ports.cc, because a large
+  // negative number is calculated for the rtt due to the global clock changing.
+  caller()->pc()->Close();
+  callee()->pc()->Close();
 }
 
 // This test sets up a call between two parties with audio, video and but only
@@ -3934,6 +3939,11 @@ TEST_P(PeerConnectionIntegrationTest, EndToEndConnectionTimeWithTurnTurnPair) {
   caller()->CreateAndSetAndSignalOffer();
   EXPECT_TRUE_SIMULATED_WAIT(DtlsConnected(), total_connection_time_ms,
                              fake_clock);
+  // Closing the PeerConnections destroys the ports before the ScopedFakeClock.
+  // If this is not done a DCHECK can be hit in ports.cc, because a large
+  // negative number is calculated for the rtt due to the global clock changing.
+  caller()->pc()->Close();
+  callee()->pc()->Close();
 }
 
 // Verify that a TurnCustomizer passed in through RTCConfiguration
