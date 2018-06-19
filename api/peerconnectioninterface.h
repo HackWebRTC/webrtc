@@ -745,8 +745,11 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   // This API is no longer part of the standard; instead DtmfSenders are
   // obtained from RtpSenders. Which is what the implementation does; it finds
   // an RtpSender for |track| and just returns its DtmfSender.
+  // TODO(bugs.webrtc.org/9426): Remove this method.
   virtual rtc::scoped_refptr<DtmfSenderInterface> CreateDtmfSender(
-      AudioTrackInterface* track) = 0;
+      AudioTrackInterface* track) {
+    return nullptr;
+  }
 
   // TODO(deadbeef): Make these pure virtual once all subclasses implement them.
 

@@ -74,7 +74,8 @@ class DtmfSenderInterface : public rtc::RefCountInterface {
   // Returns the track given as argument to the constructor. Only exists for
   // backwards compatibilty; now that DtmfSenders are tied to RtpSenders, it's
   // no longer relevant.
-  virtual const AudioTrackInterface* track() const = 0;
+  // TODO(bugs.webrtc.org/9426): Remove this method.
+  virtual const AudioTrackInterface* track() const { return nullptr; }
 
   // Returns the tones remaining to be played out.
   virtual std::string tones() const = 0;
