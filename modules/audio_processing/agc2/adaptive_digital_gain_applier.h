@@ -13,8 +13,8 @@
 
 #include "modules/audio_processing/agc2/agc2_common.h"
 #include "modules/audio_processing/agc2/gain_applier.h"
+#include "modules/audio_processing/agc2/vad_with_level.h"
 #include "modules/audio_processing/include/audio_frame_view.h"
-#include "modules/audio_processing/vad/vad_with_level.h"
 
 namespace webrtc {
 
@@ -24,11 +24,10 @@ class AdaptiveDigitalGainApplier {
  public:
   explicit AdaptiveDigitalGainApplier(ApmDataDumper* apm_data_dumper);
   // Decide what gain to apply.
-  void Process(
-      float input_level_dbfs,
-      float input_noise_level_dbfs,
-      rtc::ArrayView<const VadWithLevel::LevelAndProbability> vad_results,
-      AudioFrameView<float> float_frame);
+  void Process(float input_level_dbfs,
+               float input_noise_level_dbfs,
+               const VadWithLevel::LevelAndProbability vad_result,
+               AudioFrameView<float> float_frame);
 
  private:
   float last_gain_db_ = kInitialAdaptiveDigitalGainDb;

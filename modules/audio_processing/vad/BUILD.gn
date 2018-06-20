@@ -44,16 +44,6 @@ rtc_static_library("vad") {
   ]
 }
 
-rtc_source_set("vad_with_level") {
-  sources = [
-    "vad_with_level.h",
-  ]
-  deps = [
-    "..:audio_frame_view",
-    "../../../api:array_view",
-  ]
-}
-
 if (rtc_include_tests) {
   rtc_static_library("vad_unittests") {
     testonly = true

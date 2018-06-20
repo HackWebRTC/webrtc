@@ -8,10 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_AUDIO_PROCESSING_VAD_VAD_WITH_LEVEL_H_
-#define MODULES_AUDIO_PROCESSING_VAD_VAD_WITH_LEVEL_H_
+#ifndef MODULES_AUDIO_PROCESSING_AGC2_VAD_WITH_LEVEL_H_
+#define MODULES_AUDIO_PROCESSING_AGC2_VAD_WITH_LEVEL_H_
 
 #include "api/array_view.h"
+#include "common_audio/resampler/include/push_resampler.h"
+#include "modules/audio_processing/agc2/rnn_vad/features_extraction.h"
+#include "modules/audio_processing/agc2/rnn_vad/rnn.h"
 #include "modules/audio_processing/include/audio_frame_view.h"
 
 namespace webrtc {
@@ -28,13 +31,19 @@ class VadWithLevel {
     float speech_peak_dbfs = 0;
   };
 
-  // TODO(webrtc:7494): This is a stub. Add implementation.
-  rtc::ArrayView<const LevelAndProbability> AnalyzeFrame(
-      AudioFrameView<const float> frame) {
-    return {nullptr, 0};
-  }
+  VadWithLevel();
+  ~VadWithLevel();
+
+  LevelAndProbability AnalyzeFrame(AudioFrameView<const float> frame);
+
+ private:
+  void SetSampleRate(int sample_rate_hz);
+
+  rnn_vad::RnnBasedVad rnn_vad_;
+  rnn_vad::FeaturesExtractor features_extractor_;
+  PushResampler<float> resampler_;
 };
 
 }  // namespace webrtc
 
-#endif  // MODULES_AUDIO_PROCESSING_VAD_VAD_WITH_LEVEL_H_
+#endif  // MODULES_AUDIO_PROCESSING_AGC2_VAD_WITH_LEVEL_H_

@@ -30,6 +30,7 @@ float RunOnConstantLevel(int num_iterations,
     max_difference =
         std::max(max_difference, std::abs(new_margin - last_margin));
     last_margin = new_margin;
+    saturation_protector->DebugDumpEstimate();
   }
   return max_difference;
 }
@@ -126,6 +127,12 @@ TEST(AutomaticGainController2SaturationProtector,
               1.f, -90.f, kLaterSpeechLevelDbfs + kInitialSaturationMarginDb),
           kLaterSpeechLevelDbfs, &saturation_protector),
       max_difference);
+
+  // The saturation protector expects that the RMS changes roughly
+  // 'kFullBufferSizeMs' after peaks change. This is to account for
+  // delay introduces by the level estimator. Therefore, the input
+  // above is 'normal' and 'expected', and shouldn't influence the
+  // margin by much.
 
   const float total_difference =
       std::abs(saturation_protector.LastMargin() - kInitialSaturationMarginDb);

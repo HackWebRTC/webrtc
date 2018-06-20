@@ -14,8 +14,8 @@
 #include <numeric>
 
 #include "common_audio/include/audio_util.h"
+#include "modules/audio_processing/agc2/vad_with_level.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
-#include "modules/audio_processing/vad/voice_activity_detector.h"
 
 namespace webrtc {
 
@@ -38,17 +38,14 @@ void AdaptiveAgc::Process(AudioFrameView<float> float_frame) {
   // frames, and no estimates for other frames. We want to feed all to
   // the level estimator, but only care about the last level it
   // produces.
-  rtc::ArrayView<const VadWithLevel::LevelAndProbability> vad_results =
+  const VadWithLevel::LevelAndProbability vad_result =
       vad_.AnalyzeFrame(float_frame);
-  for (const auto& vad_result : vad_results) {
-    apm_data_dumper_->DumpRaw("agc2_vad_probability",
-                              vad_result.speech_probability);
-    apm_data_dumper_->DumpRaw("agc2_vad_rms_dbfs", vad_result.speech_rms_dbfs);
+  apm_data_dumper_->DumpRaw("agc2_vad_probability",
+                            vad_result.speech_probability);
+  apm_data_dumper_->DumpRaw("agc2_vad_rms_dbfs", vad_result.speech_rms_dbfs);
 
-    apm_data_dumper_->DumpRaw("agc2_vad_peak_dbfs",
-                              vad_result.speech_peak_dbfs);
-    speech_level_estimator_.UpdateEstimation(vad_result);
-  }
+  apm_data_dumper_->DumpRaw("agc2_vad_peak_dbfs", vad_result.speech_peak_dbfs);
+  speech_level_estimator_.UpdateEstimation(vad_result);
 
   const float speech_level_dbfs = speech_level_estimator_.LatestLevelEstimate();
 
@@ -57,7 +54,7 @@ void AdaptiveAgc::Process(AudioFrameView<float> float_frame) {
   apm_data_dumper_->DumpRaw("agc2_noise_estimate_dbfs", noise_level_dbfs);
 
   // The gain applier applies the gain.
-  gain_applier_.Process(speech_level_dbfs, noise_level_dbfs, vad_results,
+  gain_applier_.Process(speech_level_dbfs, noise_level_dbfs, vad_result,
                         float_frame);
 }
 

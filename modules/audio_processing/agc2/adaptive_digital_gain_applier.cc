@@ -74,7 +74,7 @@ AdaptiveDigitalGainApplier::AdaptiveDigitalGainApplier(
 void AdaptiveDigitalGainApplier::Process(
     float input_level_dbfs,
     float input_noise_level_dbfs,
-    rtc::ArrayView<const VadWithLevel::LevelAndProbability> vad_results,
+    const VadWithLevel::LevelAndProbability vad_result,
     AudioFrameView<float> float_frame) {
   RTC_DCHECK_GE(input_level_dbfs, -150.f);
   RTC_DCHECK_LE(input_level_dbfs, 0.f);
@@ -85,21 +85,9 @@ void AdaptiveDigitalGainApplier::Process(
       LimitGainByNoise(ComputeGainDb(input_level_dbfs), input_noise_level_dbfs,
                        apm_data_dumper_);
 
-  // TODO(webrtc:7494): Remove this construct. Remove the vectors from
-  // VadWithData after we move to a VAD that outputs an estimate every
-  // kFrameDurationMs ms.
-  //
-  // Forbid increasing the gain when there is no speech. For some
-  // VADs, 'vad_results' has either many or 0 results. If there are 0
-  // results, keep the old flag. If there are many results, and at
-  // least one is confident speech, we allow attenuation.
-  if (!vad_results.empty()) {
-    gain_increase_allowed_ = std::all_of(
-        vad_results.begin(), vad_results.end(),
-        [](const VadWithLevel::LevelAndProbability& vad_result) {
-          return vad_result.speech_probability > kVadConfidenceThreshold;
-        });
-  }
+  // Forbid increasing the gain when there is no speech.
+  gain_increase_allowed_ =
+      vad_result.speech_probability > kVadConfidenceThreshold;
 
   const float gain_change_this_frame_db = ComputeGainChangeThisFrameDb(
       target_gain_db, last_gain_db_, gain_increase_allowed_);

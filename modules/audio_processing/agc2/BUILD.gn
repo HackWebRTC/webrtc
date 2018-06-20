@@ -33,6 +33,7 @@ rtc_source_set("adaptive_digital") {
     ":common",
     ":gain_applier",
     ":noise_level_estimator",
+    ":rnn_vad_with_level",
     "..:aec_core",
     "..:apm_logging",
     "..:audio_frame_view",
@@ -41,9 +42,6 @@ rtc_source_set("adaptive_digital") {
     "../../../rtc_base:checks",
     "../../../rtc_base:rtc_base_approved",
     "../../../rtc_base:safe_minmax",
-    "../vad",
-    "../vad:vad_with_level",
-    "rnn_vad",
   ]
 }
 
@@ -133,6 +131,20 @@ rtc_source_set("noise_level_estimator") {
   configs += [ "..:apm_debug_dump" ]
 }
 
+rtc_source_set("rnn_vad_with_level") {
+  sources = [
+    "vad_with_level.cc",
+    "vad_with_level.h",
+  ]
+  deps = [
+    "..:audio_frame_view",
+    "../../../api:array_view",
+    "../../../common_audio",
+    "../../../rtc_base:checks",
+    "rnn_vad:lib",
+  ]
+}
+
 rtc_source_set("adaptive_digital_unittests") {
   testonly = true
   configs += [ "..:apm_debug_dump" ]
@@ -155,7 +167,6 @@ rtc_source_set("adaptive_digital_unittests") {
     "../../../rtc_base:checks",
     "../../../rtc_base:rtc_base_approved",
     "../../../rtc_base:rtc_base_tests_utils",
-    "../vad:vad_with_level",
   ]
 }
 

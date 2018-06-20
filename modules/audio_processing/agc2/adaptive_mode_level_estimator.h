@@ -12,7 +12,7 @@
 #define MODULES_AUDIO_PROCESSING_AGC2_ADAPTIVE_MODE_LEVEL_ESTIMATOR_H_
 
 #include "modules/audio_processing/agc2/saturation_protector.h"
-#include "modules/audio_processing/vad/vad_with_level.h"
+#include "modules/audio_processing/agc2/vad_with_level.h"
 
 namespace webrtc {
 class ApmDataDumper;
