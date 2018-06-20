@@ -473,9 +473,6 @@ if (rtc_include_tests) {
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
 
-    # TODO(jschuh): Bug 1348: fix this warning.
-    configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
-
     deps = [
       ":peerconnection",
       ":rtc_pc_base",

@@ -338,9 +338,6 @@ if (rtc_include_tests) {
       "testsupport/yuv_frame_writer_unittest.cc",
     ]
 
-    # TODO(jschuh): Bug 1348: fix this warning.
-    configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
-
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]

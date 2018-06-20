@@ -45,9 +45,6 @@ rtc_static_library("nack_module") {
     "nack_module.h",
   ]
 
-  # TODO(jschuh): Bug 1348: fix this warning.
-  configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
-
   if (!build_with_chromium && is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
     suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
@@ -143,9 +140,6 @@ rtc_static_library("video_coding") {
     "video_receiver.cc",
     "video_sender.cc",
   ]
-
-  # TODO(jschuh): Bug 1348: fix this warning.
-  configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
 
   if (!build_with_chromium && is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -399,9 +393,6 @@ rtc_static_library("webrtc_vp8_helpers") {
     "codecs/vp8/temporal_layers.h",
   ]
 
-  # TODO(jschuh): Bug 1348: fix this warning.
-  configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
-
   if (!build_with_chromium && is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
     suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
@@ -440,9 +431,6 @@ rtc_static_library("webrtc_vp8") {
     "codecs/vp8/libvpx_vp8_encoder.h",
   ]
 
-  # TODO(jschuh): Bug 1348: fix this warning.
-  configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
-
   if (!build_with_chromium && is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
     suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
@@ -480,9 +468,6 @@ rtc_static_library("webrtc_vp9_helpers") {
     "codecs/vp9/svc_rate_allocator.cc",
     "codecs/vp9/svc_rate_allocator.h",
   ]
-
-  # TODO(jschuh): Bug 1348: fix this warning.
-  configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
 
   if (!build_with_chromium && is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -895,9 +880,6 @@ if (rtc_include_tests) {
     if (rtc_build_libvpx) {
       deps += [ rtc_libvpx_dir ]
     }
-
-    # TODO(jschuh): bugs.webrtc.org/1348: fix this warning.
-    configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]

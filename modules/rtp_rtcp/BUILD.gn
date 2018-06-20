@@ -224,9 +224,6 @@ rtc_static_library("rtp_rtcp") {
     "../remote_bitrate_estimator",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
-
-  # TODO(jschuh): Bug 1348: fix this warning.
-  configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
 }
 
 rtc_source_set("rtcp_transceiver") {
@@ -271,9 +268,6 @@ rtc_source_set("fec_test_helper") {
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
   ]
-
-  # TODO(jschuh): bugs.webrtc.org/1348: fix this warning.
-  configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
 }
 
 rtc_source_set("mock_rtp_rtcp") {
@@ -434,8 +428,5 @@ if (rtc_include_tests) {
       "../audio_coding:audio_format_conversion",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
-
-    # TODO(jschuh): bugs.webrtc.org/1348: fix this warning.
-    configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
   }
 }

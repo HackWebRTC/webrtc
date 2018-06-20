@@ -333,9 +333,6 @@ rtc_static_library("video_jni") {
     "src/jni/yuvhelper.cc",
   ]
 
-  # TODO(jschuh): Bug 1348: fix this warning.
-  configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
-
   if (rtc_use_builtin_sw_codecs) {
     sources += [
       "src/jni/androidmediacodeccommon.h",
@@ -553,9 +550,6 @@ rtc_static_library("peerconnection_jni") {
       "//build/config/clang:find_bad_constructs",
     ]
   }
-
-  # TODO(jschuh): Bug 1348: fix this warning.
-  configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
 
   deps = [
     ":base_jni",

@@ -125,8 +125,6 @@ rtc_static_library("aec3") {
     "../../../system_wrappers:metrics_api",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
-
-  configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
 }
 
 if (rtc_include_tests) {
@@ -202,7 +200,5 @@ if (rtc_include_tests) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
-
-    configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
   }
 }

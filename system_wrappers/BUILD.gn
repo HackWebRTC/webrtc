@@ -83,9 +83,6 @@ rtc_static_library("system_wrappers") {
     defines += [ "WEBRTC_THREAD_RR" ]
   }
 
-  # TODO(jschuh): Bug 1348: fix this warning.
-  configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
-
   if (is_win) {
     libs += [ "winmm.lib" ]
 
@@ -218,12 +215,9 @@ if (rtc_include_tests) {
       "source/ntp_time_unittest.cc",
       "source/rtp_to_ntp_estimator_unittest.cc",
     ]
-    configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
 
     if (is_posix || is_fuchsia) {
-      sources += [
-        "source/event_timer_posix_unittest.cc",
-      ]
+      sources += [ "source/event_timer_posix_unittest.cc" ]
     }
 
     if (!build_with_chromium && is_clang) {

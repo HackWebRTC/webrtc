@@ -168,9 +168,6 @@ rtc_static_library("audio_processing") {
     defines += [ "WEBRTC_NS_FLOAT" ]
   }
 
-  # TODO(jschuh): Bug 1348: fix this warning.
-  configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
-
   deps += [
     "../../common_audio",
     "../../common_audio:fir_filter",
@@ -420,9 +417,6 @@ rtc_source_set("aec_core") {
   } else {
     sources += [ "aecm/aecm_core_c.cc" ]
   }
-
-  # TODO(jschuh): Bug 1348: fix this warning.
-  configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
 }
 
 if (rtc_include_tests) {
