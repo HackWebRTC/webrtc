@@ -394,6 +394,7 @@ class P2PTransportChannelTestBase : public testing::Test,
     return channel;
   }
   void DestroyChannels() {
+    main_.Clear(this);
     ep1_.cd1_.ch_.reset();
     ep2_.cd1_.ch_.reset();
     ep1_.cd2_.ch_.reset();
