@@ -1148,15 +1148,20 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsWithOneSecondStepDelay) {
   allocator_->set_step_delay(kDefaultStepDelay);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
+  // Host and STUN candidates from kClientAddr.
   ASSERT_EQ_SIMULATED_WAIT(2U, candidates_.size(), 1000, fake_clock);
+  // UDP and STUN ports on kClientAddr.
   EXPECT_EQ(2U, ports_.size());
+  // Host, STUN and relay candidates from kClientAddr.
   ASSERT_EQ_SIMULATED_WAIT(6U, candidates_.size(), 2000, fake_clock);
+  // UDP, STUN and relay ports on kClientAddr.
   EXPECT_EQ(3U, ports_.size());
   EXPECT_TRUE(HasCandidate(candidates_, "relay", "udp", kRelayUdpIntAddr));
   EXPECT_TRUE(HasCandidate(candidates_, "relay", "udp", kRelayUdpExtAddr));
   EXPECT_TRUE(HasCandidate(candidates_, "relay", "tcp", kRelayTcpIntAddr));
   EXPECT_TRUE(
       HasCandidate(candidates_, "relay", "ssltcp", kRelaySslTcpIntAddr));
+  // One more TCP candidate from kClientAddr.
   ASSERT_EQ_SIMULATED_WAIT(7U, candidates_.size(), 1500, fake_clock);
   EXPECT_TRUE(HasCandidate(candidates_, "local", "tcp", kClientAddr));
   EXPECT_EQ(4U, ports_.size());
@@ -1466,17 +1471,20 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsNoSockets) {
 // Testing STUN timeout.
 TEST_F(BasicPortAllocatorTest, TestGetAllPortsNoUdpAllowed) {
   fss_->AddRule(false, rtc::FP_UDP, rtc::FD_ANY, kClientAddr);
+  fss_->AddRule(false, rtc::FP_UDP, rtc::FD_ANY, kAnyAddr);
   AddInterface(kClientAddr);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
   EXPECT_EQ_SIMULATED_WAIT(2U, candidates_.size(), kDefaultAllocationTimeout,
                            fake_clock);
+  // UDP and TCP ports on kClientAddr.
   EXPECT_EQ(2U, ports_.size());
   EXPECT_TRUE(HasCandidate(candidates_, "local", "udp", kClientAddr));
   EXPECT_TRUE(HasCandidate(candidates_, "local", "tcp", kClientAddr));
   // RelayPort connection timeout is 3sec. TCP connection with RelayServer
   // will be tried after about 3 seconds.
   EXPECT_EQ_SIMULATED_WAIT(6U, candidates_.size(), 3500, fake_clock);
+  // UDP, TCP and relay ports on kClientAddr.
   EXPECT_EQ(3U, ports_.size());
   EXPECT_TRUE(HasCandidate(candidates_, "relay", "udp", kRelayUdpIntAddr));
   EXPECT_TRUE(HasCandidate(candidates_, "relay", "tcp", kRelayTcpIntAddr));
@@ -1983,17 +1991,150 @@ TEST_F(BasicPortAllocatorTest, TestSharedSocketNoUdpAllowed) {
                         PORTALLOCATOR_DISABLE_TCP |
                         PORTALLOCATOR_ENABLE_SHARED_SOCKET);
   fss_->AddRule(false, rtc::FP_UDP, rtc::FD_ANY, kClientAddr);
+  fss_->AddRule(false, rtc::FP_UDP, rtc::FD_ANY, kAnyAddr);
   AddInterface(kClientAddr);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  ASSERT_EQ_SIMULATED_WAIT(1U, ports_.size(), kDefaultAllocationTimeout,
+  ASSERT_EQ_SIMULATED_WAIT(1U, candidates_.size(), kDefaultAllocationTimeout,
                            fake_clock);
-  EXPECT_EQ(1U, candidates_.size());
+  // UDP ports on kClientAddr.
+  EXPECT_EQ(1U, ports_.size());
   EXPECT_TRUE(HasCandidate(candidates_, "local", "udp", kClientAddr));
   // STUN timeout is 9.5sec. We need to wait to get candidate done signal.
   EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_, kStunTimeoutMs,
                              fake_clock);
   EXPECT_EQ(1U, candidates_.size());
+}
+
+// Test that any address ports that are redundant do not surface.
+TEST_F(BasicPortAllocatorTest, RedundantAnyAddressPortsDoNotSurface) {
+  allocator().set_flags(allocator().flags() | PORTALLOCATOR_DISABLE_RELAY |
+                        PORTALLOCATOR_DISABLE_TCP |
+                        PORTALLOCATOR_ENABLE_SHARED_SOCKET);
+  AddInterface(kClientAddr);
+  // The any address ports will be duplicates of kClientAddr.
+  vss_->SetAlternativeLocalAddress(kAnyAddr.ipaddr(), kClientAddr.ipaddr());
+  ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_, kStunTimeoutMs,
+                             fake_clock);
+  EXPECT_EQ(1U, ports_.size());
+  EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_UDP, kClientAddr));
+}
+
+// Test that candidates from the any address ports are not pruned if the
+// explicit binding to enumerated networks fails.
+TEST_F(BasicPortAllocatorTest,
+       CandidatesFromAnyAddressPortsCanSurfaceWhenExplicitBindingFails) {
+  allocator().set_flags(allocator().flags() | PORTALLOCATOR_DISABLE_RELAY |
+                        PORTALLOCATOR_DISABLE_TCP |
+                        PORTALLOCATOR_ENABLE_SHARED_SOCKET);
+  AddInterface(kClientAddr);
+  fss_->SetUnbindableIps({kClientAddr.ipaddr()});
+  // The any address ports will be duplicates of kClientAddr, but the explict
+  // binding will fail.
+  vss_->SetAlternativeLocalAddress(kAnyAddr.ipaddr(), kClientAddr.ipaddr());
+  ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_, kStunTimeoutMs,
+                             fake_clock);
+  EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_UDP, kAnyAddr));
+  EXPECT_EQ(1U, candidates_.size());
+  EXPECT_TRUE(HasCandidate(candidates_, "local", "udp", kClientAddr));
+}
+
+// Test that for an endpoint whose network enumeration only reveals one address
+// (kClientAddr), it can observe a different address when binding to the "any"
+// address. BasicPortAllocator should detect this and surface candidates for
+// each address.
+TEST_F(BasicPortAllocatorTest,
+       CandidatesFromAnyAddressPortsCanSurfaceIfNotRedundant) {
+  allocator().set_flags(allocator().flags() | PORTALLOCATOR_DISABLE_RELAY |
+                        PORTALLOCATOR_DISABLE_TCP |
+                        PORTALLOCATOR_ENABLE_SHARED_SOCKET);
+  AddInterface(kClientAddr);
+  // When bound to the any address, the port allocator should discover the
+  // alternative local address.
+  vss_->SetAlternativeLocalAddress(kAnyAddr.ipaddr(), kClientAddr2.ipaddr());
+  ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_, kStunTimeoutMs,
+                             fake_clock);
+  EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_UDP, kAnyAddr));
+  EXPECT_EQ(2U, candidates_.size());
+  EXPECT_TRUE(HasCandidate(candidates_, "local", "udp", kClientAddr));
+  EXPECT_TRUE(HasCandidate(candidates_, "local", "udp", kClientAddr2));
+}
+
+// Test that any address ports and their candidates are eventually signaled
+// after the maximum wait interval for the completion of candidate allocation,
+// when the any address ports and candidates are not redundant.
+TEST_F(BasicPortAllocatorTest,
+       GetAnyAddressPortsAfterMaximumWaitForCandidateAllocationDone) {
+  ResetWithTurnServersNoNat(kTurnUdpIntAddr, rtc::SocketAddress());
+  AddInterface(kClientAddr);
+  vss_->SetAlternativeLocalAddress(kAnyAddr.ipaddr(), kClientAddr2.ipaddr());
+  // STUN binding request and TURN allocation request will time out.
+  fss_->AddRule(false, rtc::FP_UDP, rtc::FD_ANY, kClientAddr);
+  ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  SIMULATED_WAIT(false, kMaxWaitMsBeforeSignalingAnyAddressPortsAndCandidates,
+                 fake_clock);
+  EXPECT_EQ(2U, candidates_.size());
+  EXPECT_TRUE(HasCandidate(candidates_, "local", "udp", kClientAddr));
+  EXPECT_TRUE(HasCandidate(candidates_, "local", "tcp", kClientAddr));
+  SIMULATED_WAIT(false, 1, fake_clock);
+  EXPECT_FALSE(candidate_allocation_done_);
+  // Candidates from the any address ports.
+  EXPECT_EQ(6U, candidates_.size());
+  EXPECT_TRUE(HasCandidate(candidates_, "local", "udp", kClientAddr2));
+  EXPECT_TRUE(HasCandidate(candidates_, "stun", "udp", kClientAddr2));
+  EXPECT_TRUE(HasCandidate(candidates_, "relay", "udp", kTurnUdpExtAddr));
+  EXPECT_TRUE(HasCandidate(candidates_, "local", "tcp", kClientAddr2));
+}
+
+// Test that the TCP port with the wildcard address is signaled if no ports are
+// bound to enuemrated networks.
+TEST_F(BasicPortAllocatorTest,
+       GetAnyAddressTcpPortWhenNoPortsBoundToEnumeratedNetworks) {
+  ResetWithTurnServersNoNat(kTurnUdpIntAddr, rtc::SocketAddress());
+  AddInterface(kClientAddr);
+  fss_->SetUnbindableIps({kClientAddr.ipaddr()});
+  ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  SIMULATED_WAIT(false,
+                 kMaxWaitMsBeforeSignalingAnyAddressPortsAndCandidates + 1,
+                 fake_clock);
+  EXPECT_EQ(1, CountPorts(ports_, "local", PROTO_TCP, kAnyAddr));
+}
+
+// Test that the STUN candidate from the any address port can still surface, if
+// it is gathered after this port is signaled, .
+TEST_F(BasicPortAllocatorTest,
+       StunCandidateFromAnyAddressPortsGatheredLateCanBeSignaled) {
+  ResetWithTurnServersNoNat(kTurnUdpIntAddr, rtc::SocketAddress());
+  AddInterface(kClientAddr);
+  vss_->SetAlternativeLocalAddress(kAnyAddr.ipaddr(), kClientAddr2.ipaddr());
+  fss_->AddRule(false, rtc::FP_UDP, rtc::FD_ANY, kClientAddr);
+  fss_->AddRule(false, rtc::FP_UDP, rtc::FD_ANY, kClientAddr2);
+  ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  SIMULATED_WAIT(false,
+                 kMaxWaitMsBeforeSignalingAnyAddressPortsAndCandidates + 1000,
+                 fake_clock);
+  EXPECT_FALSE(candidate_allocation_done_);
+  EXPECT_EQ(4U, candidates_.size());
+  EXPECT_TRUE(HasCandidate(candidates_, "local", "udp", kClientAddr));
+  EXPECT_TRUE(HasCandidate(candidates_, "local", "tcp", kClientAddr));
+  EXPECT_TRUE(HasCandidate(candidates_, "local", "udp", kClientAddr2));
+  EXPECT_TRUE(HasCandidate(candidates_, "local", "tcp", kClientAddr2));
+  fss_->ClearRules();
+  EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
+                             kDefaultAllocationTimeout, fake_clock);
+  EXPECT_EQ(7U, candidates_.size());
+  EXPECT_TRUE(HasCandidate(candidates_, "stun", "udp", kClientAddr));
+  EXPECT_TRUE(HasCandidate(candidates_, "stun", "udp", kClientAddr2));
+  EXPECT_TRUE(HasCandidate(candidates_, "relay", "udp", kTurnUdpExtAddr));
 }
 
 // Test that when the NetworkManager doesn't have permission to enumerate

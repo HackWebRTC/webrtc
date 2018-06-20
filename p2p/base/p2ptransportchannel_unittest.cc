@@ -52,6 +52,7 @@ static const int kOnlyLocalPorts = cricket::PORTALLOCATOR_DISABLE_STUN |
                                    cricket::PORTALLOCATOR_DISABLE_RELAY |
                                    cricket::PORTALLOCATOR_DISABLE_TCP;
 static const int LOW_RTT = 20;
+static const SocketAddress kAnyAddr("0.0.0.0", 0);
 // Addresses on the public internet.
 static const SocketAddress kPublicAddrs[2] = {SocketAddress("11.11.11.11", 0),
                                               SocketAddress("22.22.22.22", 0)};
@@ -425,6 +426,7 @@ class P2PTransportChannelTestBase : public testing::Test,
 
   rtc::NATSocketServer* nat() { return nss_.get(); }
   rtc::FirewallSocketServer* fw() { return ss_.get(); }
+  rtc::VirtualSocketServer* vss() { return vss_.get(); }
 
   Endpoint* GetEndpoint(int endpoint) {
     if (endpoint == 0) {
@@ -1041,10 +1043,12 @@ class P2PTransportChannelTest : public P2PTransportChannelTestBase {
         AddAddress(endpoint, kPublicAddrs[endpoint]);
         // Block all UDP
         fw()->AddRule(false, rtc::FP_UDP, rtc::FD_ANY, kPublicAddrs[endpoint]);
+        fw()->AddRule(false, rtc::FP_UDP, rtc::FD_ANY, kAnyAddr);
         if (config == BLOCK_UDP_AND_INCOMING_TCP) {
           // Block TCP inbound to the endpoint
           fw()->AddRule(false, rtc::FP_TCP, SocketAddress(),
                         kPublicAddrs[endpoint]);
+          fw()->AddRule(false, rtc::FP_TCP, SocketAddress(), kAnyAddr);
         } else if (config == BLOCK_ALL_BUT_OUTGOING_HTTP) {
           // Block all TCP to/from the endpoint except 80/443 out
           fw()->AddRule(true, rtc::FP_TCP, kPublicAddrs[endpoint],
@@ -1053,12 +1057,14 @@ class P2PTransportChannelTest : public P2PTransportChannelTestBase {
                         SocketAddress(rtc::IPAddress(INADDR_ANY), 443));
           fw()->AddRule(false, rtc::FP_TCP, rtc::FD_ANY,
                         kPublicAddrs[endpoint]);
+          fw()->AddRule(false, rtc::FP_TCP, rtc::FD_ANY, kAnyAddr);
         } else if (config == PROXY_HTTPS) {
           // Block all TCP to/from the endpoint except to the proxy server
           fw()->AddRule(true, rtc::FP_TCP, kPublicAddrs[endpoint],
                         kHttpsProxyAddrs[endpoint]);
           fw()->AddRule(false, rtc::FP_TCP, rtc::FD_ANY,
                         kPublicAddrs[endpoint]);
+          fw()->AddRule(false, rtc::FP_TCP, rtc::FD_ANY, kAnyAddr);
           SetProxy(endpoint, rtc::PROXY_HTTPS);
         } else if (config == PROXY_SOCKS) {
           // Block all TCP to/from the endpoint except to the proxy server
@@ -1066,6 +1072,7 @@ class P2PTransportChannelTest : public P2PTransportChannelTestBase {
                         kSocksProxyAddrs[endpoint]);
           fw()->AddRule(false, rtc::FP_TCP, rtc::FD_ANY,
                         kPublicAddrs[endpoint]);
+          fw()->AddRule(false, rtc::FP_TCP, rtc::FD_ANY, kAnyAddr);
           SetProxy(endpoint, rtc::PROXY_SOCKS5);
         }
         break;
@@ -1708,16 +1715,8 @@ TEST_F(P2PTransportChannelTest, IncomingOnlyOpen) {
 // connections. This has been observed in some scenarios involving
 // VPNs/firewalls.
 TEST_F(P2PTransportChannelTest, CanOnlyMakeOutgoingTcpConnections) {
-  // The PORTALLOCATOR_ENABLE_ANY_ADDRESS_PORTS flag is required if the
-  // application needs this use case to work, since the application must accept
-  // the tradeoff that more candidates need to be allocated.
-  //
-  // TODO(deadbeef): Later, make this flag the default, and do more elegant
-  // things to ensure extra candidates don't waste resources?
-  ConfigureEndpoints(
-      OPEN, OPEN,
-      kDefaultPortAllocatorFlags | PORTALLOCATOR_ENABLE_ANY_ADDRESS_PORTS,
-      kDefaultPortAllocatorFlags);
+  ConfigureEndpoints(OPEN, OPEN, kDefaultPortAllocatorFlags,
+                     kDefaultPortAllocatorFlags);
   // In order to simulate nothing working but outgoing TCP connections, prevent
   // the endpoint from binding to its interface's address as well as the
   // "any" addresses. It can then only make a connection by using "Connect()".
@@ -3064,6 +3063,33 @@ TEST_F(P2PTransportChannelMultihomedTest, TestRestoreBackupConnection) {
               nullptr &&
           conn != ep1_ch1()->selected_connection() && conn->writable(),
       kDefaultTimeout, clock);
+
+  DestroyChannels();
+}
+
+// Test that when explicit binding to network interfaces is disallowed, we may
+// still establish a connection by using the any address fallback.
+TEST_F(P2PTransportChannelMultihomedTest,
+       BindingToAnyAddressRevealsViableRouteWhenExplicitBindingFails) {
+  rtc::ScopedFakeClock clock;
+  AddAddress(0, kPublicAddrs[0]);
+  AddAddress(1, kPublicAddrs[1]);
+  fw()->SetUnbindableIps({kPublicAddrs[0].ipaddr()});
+  // When bound to the any address, the port allocator should discover the
+  // alternative local address.
+  vss()->SetAlternativeLocalAddress(kAnyAddr.ipaddr(),
+                                    kAlternateAddrs[0].ipaddr());
+  SetAllocatorFlags(0, kOnlyLocalPorts);
+  SetAllocatorFlags(1, kOnlyLocalPorts);
+  IceConfig default_config;
+  CreateChannels(default_config, default_config);
+  EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->receiving() && ep1_ch1()->writable() &&
+                                 ep2_ch1()->receiving() &&
+                                 ep2_ch1()->writable(),
+                             kMediumTimeout, clock);
+  EXPECT_TRUE(
+      ep1_ch1()->selected_connection() && ep2_ch1()->selected_connection() &&
+      LocalCandidate(ep1_ch1())->address().EqualIPs(kAlternateAddrs[0]));
 
   DestroyChannels();
 }
