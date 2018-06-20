@@ -809,6 +809,8 @@ def CommonChecks(input_api, output_api):
       input_api, output_api))
   results.extend(input_api.canned_checks.CheckChangeTodoHasOwner(
       input_api, output_api, source_file_filter=non_third_party_sources))
+  results.extend(input_api.canned_checks.CheckPatchFormatted(
+      input_api, output_api))
   results.extend(CheckNativeApiHeaderChanges(input_api, output_api))
   results.extend(CheckNoIOStreamInHeaders(
       input_api, output_api, source_file_filter=non_third_party_sources))
