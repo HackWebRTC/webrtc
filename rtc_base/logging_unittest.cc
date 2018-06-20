@@ -19,6 +19,112 @@
 
 namespace rtc {
 
+namespace {
+
+class StringStream : public StreamInterface {
+ public:
+  explicit StringStream(std::string* str);
+  explicit StringStream(const std::string& str);
+
+  StreamState GetState() const override;
+  StreamResult Read(void* buffer,
+                    size_t buffer_len,
+                    size_t* read,
+                    int* error) override;
+  StreamResult Write(const void* data,
+                     size_t data_len,
+                     size_t* written,
+                     int* error) override;
+  void Close() override;
+  bool SetPosition(size_t position) override;
+  bool GetPosition(size_t* position) const override;
+  bool GetSize(size_t* size) const override;
+  bool GetAvailable(size_t* size) const override;
+  bool ReserveSize(size_t size) override;
+
+ private:
+  std::string& str_;
+  size_t read_pos_;
+  bool read_only_;
+};
+
+StringStream::StringStream(std::string* str)
+    : str_(*str), read_pos_(0), read_only_(false) {}
+
+StringStream::StringStream(const std::string& str)
+    : str_(const_cast<std::string&>(str)), read_pos_(0), read_only_(true) {}
+
+StreamState StringStream::GetState() const {
+  return SS_OPEN;
+}
+
+StreamResult StringStream::Read(void* buffer,
+                                size_t buffer_len,
+                                size_t* read,
+                                int* error) {
+  size_t available = std::min(buffer_len, str_.size() - read_pos_);
+  if (!available)
+    return SR_EOS;
+  memcpy(buffer, str_.data() + read_pos_, available);
+  read_pos_ += available;
+  if (read)
+    *read = available;
+  return SR_SUCCESS;
+}
+
+StreamResult StringStream::Write(const void* data,
+                                 size_t data_len,
+                                 size_t* written,
+                                 int* error) {
+  if (read_only_) {
+    if (error) {
+      *error = -1;
+    }
+    return SR_ERROR;
+  }
+  str_.append(static_cast<const char*>(data),
+              static_cast<const char*>(data) + data_len);
+  if (written)
+    *written = data_len;
+  return SR_SUCCESS;
+}
+
+void StringStream::Close() {}
+
+bool StringStream::SetPosition(size_t position) {
+  if (position > str_.size())
+    return false;
+  read_pos_ = position;
+  return true;
+}
+
+bool StringStream::GetPosition(size_t* position) const {
+  if (position)
+    *position = read_pos_;
+  return true;
+}
+
+bool StringStream::GetSize(size_t* size) const {
+  if (size)
+    *size = str_.size();
+  return true;
+}
+
+bool StringStream::GetAvailable(size_t* size) const {
+  if (size)
+    *size = str_.size() - read_pos_;
+  return true;
+}
+
+bool StringStream::ReserveSize(size_t size) {
+  if (read_only_)
+    return false;
+  str_.reserve(size);
+  return true;
+}
+
+}  // namespace
+
 template <typename Base>
 class LogSinkImpl : public LogSink, public Base {
  public:
@@ -170,9 +276,6 @@ class LogThread {
 
 // Ensure we don't crash when adding/removing streams while threads are going.
 // We should restore the correct global state at the end.
-// This test also makes sure that the 'noop' stream() singleton object, can be
-// safely used from mutiple threads since the threads log at LS_SENSITIVE
-// (by default 'noop' entries).
 TEST(LogTest, MultipleThreads) {
   int sev = LogMessage::GetLogToStream(nullptr);
 
@@ -181,7 +284,8 @@ TEST(LogTest, MultipleThreads) {
   thread2.Start();
   thread3.Start();
 
-  LogSinkImpl<NullStream> stream1, stream2, stream3;
+  std::string s1, s2, s3;
+  LogSinkImpl<StringStream> stream1(&s1), stream2(&s2), stream3(&s3);
   for (int i = 0; i < 1000; ++i) {
     LogMessage::AddLogToStream(&stream1, LS_INFO);
     LogMessage::AddLogToStream(&stream2, LS_VERBOSE);
