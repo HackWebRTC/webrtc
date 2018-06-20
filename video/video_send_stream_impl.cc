@@ -709,8 +709,8 @@ void VideoSendStreamImpl::OnPacketFeedbackVector(
   }
   // Lost feedbacks are not considered to be lost packets.
   for (const PacketFeedback& packet : packet_feedback_vector) {
-    if (auto it = feedback_packet_seq_num_set_.find(packet.sequence_number) !=
-                  feedback_packet_seq_num_set_.end()) {
+    auto it = feedback_packet_seq_num_set_.find(packet.sequence_number);
+    if (it != feedback_packet_seq_num_set_.end()) {
       const bool lost = packet.arrival_time_ms == PacketFeedback::kNotReceived;
       loss_mask_vector_.push_back(lost);
       feedback_packet_seq_num_set_.erase(it);
