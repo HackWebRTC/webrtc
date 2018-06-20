@@ -476,13 +476,6 @@ if (rtc_include_tests) {
     # TODO(jschuh): Bug 1348: fix this warning.
     configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
 
-    if (is_win) {
-      cflags = [
-        "/wd4245",  # conversion from int to size_t, signed/unsigned mismatch.
-        "/wd4389",  # signed/unsigned mismatch.
-      ]
-    }
-
     deps = [
       ":peerconnection",
       ":rtc_pc_base",

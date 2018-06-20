@@ -178,14 +178,6 @@ rtc_static_library("rtc_internal_video_codecs") {
     suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 
-  if (is_win) {
-    cflags = [
-      "/wd4245",  # conversion from "int" to "size_t", signed/unsigned mismatch.
-      "/wd4267",  # conversion from "size_t" to "int", possible loss of data.
-      "/wd4389",  # signed/unsigned mismatch.
-    ]
-  }
-
   include_dirs = []
 
   public_configs = []
@@ -260,14 +252,6 @@ rtc_static_library("rtc_audio_video") {
   if (!build_with_chromium && is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
     suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-
-  if (is_win) {
-    cflags = [
-      "/wd4245",  # conversion from "int" to "size_t", signed/unsigned mismatch.
-      "/wd4267",  # conversion from "size_t" to "int", possible loss of data.
-      "/wd4389",  # signed/unsigned mismatch.
-    ]
   }
 
   if (rtc_enable_intelligibility_enhancer) {
@@ -352,14 +336,6 @@ rtc_static_library("rtc_data") {
   if (!build_with_chromium && is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
     suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-
-  if (is_win) {
-    cflags = [
-      "/wd4245",  # conversion from "int" to "size_t", signed/unsigned mismatch.
-      "/wd4267",  # conversion from "size_t" to "int", possible loss of data.
-      "/wd4389",  # signed/unsigned mismatch.
-    ]
   }
 
   if (rtc_enable_sctp && rtc_build_usrsctp) {
@@ -547,13 +523,6 @@ if (rtc_include_tests) {
       defines += [ "WEBRTC_OPUS_SUPPORT_120MS_PTIME=1" ]
     } else {
       defines += [ "WEBRTC_OPUS_SUPPORT_120MS_PTIME=0" ]
-    }
-
-    if (is_win) {
-      cflags = [
-        "/wd4245",  # conversion from int to size_t, signed/unsigned mismatch.
-        "/wd4389",  # signed/unsigned mismatch.
-      ]
     }
 
     if (!build_with_chromium && is_clang) {

@@ -128,13 +128,6 @@ rtc_static_library("audio_coding") {
     ]
   }
 
-  if (is_win) {
-    cflags = [
-      # TODO(kjellander): Bug 261: fix this warning.
-      "/wd4373",  # virtual function override.
-    ]
-  }
-
   deps = audio_coding_deps + [
            "../../api/audio:audio_frame_api",
            "..:module_api",
@@ -1433,12 +1426,6 @@ if (rtc_include_tests) {
       "//third_party/abseil-cpp/absl/types:optional",
     ]
     defines = audio_coding_defines
-    if (is_win) {
-      cflags = [
-        # TODO(kjellander): bugs.webrtc.org/261: Fix this warning.
-        "/wd4373",  # virtual function override.
-      ]
-    }
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
@@ -1630,13 +1617,6 @@ if (rtc_include_tests) {
       if (!build_with_chromium && is_clang) {
         # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
         suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-      }
-
-      if (is_win) {
-        cflags = [
-          # TODO(kjellander): bugs.webrtc.org/261: Fix this warning.
-          "/wd4373",  # virtual function override.
-        ]
       }
 
       deps += [
@@ -1980,13 +1960,6 @@ if (rtc_include_tests) {
     data = [
       "../../resources/speech_and_misc_wb.pcm",
     ]
-
-    if (is_win) {
-      cflags = [
-        # Disable warnings to enable Win64 build, issue 1323.
-        "/wd4267",  # size_t to int truncation
-      ]
-    }
   }
 
   rtc_source_set("isac_test_util") {

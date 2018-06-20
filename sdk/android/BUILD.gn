@@ -336,13 +336,6 @@ rtc_static_library("video_jni") {
   # TODO(jschuh): Bug 1348: fix this warning.
   configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
 
-  if (is_win) {
-    cflags += [
-      "/wd4245",  # conversion from "int" to "size_t", signed/unsigned mismatch.
-      "/wd4389",  # signed/unsigned mismatch.
-    ]
-  }
-
   if (rtc_use_builtin_sw_codecs) {
     sources += [
       "src/jni/androidmediacodeccommon.h",
@@ -563,13 +556,6 @@ rtc_static_library("peerconnection_jni") {
 
   # TODO(jschuh): Bug 1348: fix this warning.
   configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
-
-  if (is_win) {
-    cflags += [
-      "/wd4245",  # conversion from "int" to "size_t", signed/unsigned mismatch.
-      "/wd4389",  # signed/unsigned mismatch.
-    ]
-  }
 
   deps = [
     ":base_jni",

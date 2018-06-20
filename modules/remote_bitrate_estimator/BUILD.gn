@@ -218,12 +218,6 @@ if (rtc_include_tests) {
       "../pacing:pacing",
       "../rtp_rtcp:rtp_rtcp_format",
     ]
-    if (is_win) {
-      cflags = [
-        # TODO(kjellander): bugs.webrtc.org/261: Fix this warning.
-        "/wd4373",  # virtual function override.
-      ]
-    }
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
@@ -254,13 +248,6 @@ if (rtc_include_tests) {
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
-
-    if (is_win) {
-      cflags = [
-        # TODO(kjellander): bugs.webrtc.org/261: Fix this warning.
-        "/wd4373",  # virtual function override.
-      ]
     }
   }
 }
