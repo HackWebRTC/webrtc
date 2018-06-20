@@ -495,10 +495,6 @@ rtc_source_set("base64") {
     "base64.cc",
     "base64.h",
   ]
-
-  deps = [
-    ":checks",
-  ]
 }
 
 rtc_source_set("rtc_task_queue") {
