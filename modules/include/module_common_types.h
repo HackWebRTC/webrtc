@@ -70,6 +70,8 @@ union RTPTypeHeader {
 struct WebRtcRTPHeader {
   RTPHeader header;
   FrameType frameType;
+  // TODO(philipel): Remove with RTPTypeHeader.
+  RTPVideoHeader& video_header() { return type.Video; }
   RTPTypeHeader type;
   // NTP time of the capture time in local timebase in milliseconds.
   int64_t ntp_time_ms;
