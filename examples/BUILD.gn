@@ -303,11 +303,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
         "../sdk:videosource_objc",
       ]
     }
-    libs = [
-      "AVFoundation.framework",
-      "CoreMedia.framework",
-      "QuartzCore.framework",
-    ]
+    libs = [ "QuartzCore.framework" ]
   }
 
   if (is_ios) {
@@ -346,8 +342,6 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
         ":apprtc_signaling",
         "../sdk:framework_objc",
       ]
-
-      libs = [ "AVFoundation.framework" ]
     }
 
     ios_app_bundle("AppRTCMobile") {
