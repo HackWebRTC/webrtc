@@ -898,7 +898,7 @@ chrome.fileManagerPrivate.configureVolume = function(volumeId, callback) {};
  * Requests fetching list of actions for the specified set of entries. If not
  * possible, then returns an error via chrome.runtime.lastError.
  * @param {!Array<!Entry>} entries
- * @param {function((!Array<!EntryAction>|undefined))} callback
+ * @param {function((!Array<!chrome.fileSystemProvider.Action>|undefined))} callback
  */
 chrome.fileManagerPrivate.getCustomActions = function(entries, callback) {};
 
@@ -967,17 +967,3 @@ chrome.fileManagerPrivate.onDriveSyncError;
 
 /** @type {!ChromeEvent} */
 chrome.fileManagerPrivate.onAppsUpdated;
-
-/* The declaration below (EntryAction) doesn't have any corresponding entry in
- * the file_manager_private.idl file.
- *
- * TODO(nigeltao): delete it.
- */
-
-/**
- * @typedef {{
- *   id: string,
- *   title: (string|undefined)
- * }}
- */
-var EntryAction;

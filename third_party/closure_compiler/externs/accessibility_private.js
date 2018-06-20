@@ -21,7 +21,6 @@ chrome.accessibilityPrivate = {};
  * @typedef {{
  *   message: string
  * }}
- * @see https://developer.chrome.com/extensions/accessibilityPrivate#type-AlertInfo
  */
 chrome.accessibilityPrivate.AlertInfo;
 
@@ -33,13 +32,11 @@ chrome.accessibilityPrivate.AlertInfo;
  *   width: number,
  *   height: number
  * }}
- * @see https://developer.chrome.com/extensions/accessibilityPrivate#type-ScreenRect
  */
 chrome.accessibilityPrivate.ScreenRect;
 
 /**
  * @enum {string}
- * @see https://developer.chrome.com/extensions/accessibilityPrivate#type-Gesture
  */
 chrome.accessibilityPrivate.Gesture = {
   CLICK: 'click',
@@ -63,7 +60,6 @@ chrome.accessibilityPrivate.Gesture = {
 
 /**
  * @enum {string}
- * @see https://developer.chrome.com/extensions/accessibilityPrivate#type-SyntheticKeyboardEventType
  */
 chrome.accessibilityPrivate.SyntheticKeyboardEventType = {
   KEYUP: 'keyup',
@@ -77,7 +73,6 @@ chrome.accessibilityPrivate.SyntheticKeyboardEventType = {
  *   search: (boolean|undefined),
  *   shift: (boolean|undefined)
  * }}
- * @see https://developer.chrome.com/extensions/accessibilityPrivate#type-SyntheticKeyboardModifiers
  */
 chrome.accessibilityPrivate.SyntheticKeyboardModifiers;
 
@@ -87,13 +82,11 @@ chrome.accessibilityPrivate.SyntheticKeyboardModifiers;
  *   keyCode: number,
  *   modifiers: (!chrome.accessibilityPrivate.SyntheticKeyboardModifiers|undefined)
  * }}
- * @see https://developer.chrome.com/extensions/accessibilityPrivate#type-SyntheticKeyboardEvent
  */
 chrome.accessibilityPrivate.SyntheticKeyboardEvent;
 
 /**
  * @enum {string}
- * @see https://developer.chrome.com/extensions/accessibilityPrivate#type-KeyboardMode
  */
 chrome.accessibilityPrivate.KeyboardMode = {
   FULL_WIDTH: 'FULL_WIDTH',
@@ -102,7 +95,6 @@ chrome.accessibilityPrivate.KeyboardMode = {
 
 /**
  * @enum {string}
- * @see https://developer.chrome.com/extensions/accessibilityPrivate#type-SelectToSpeakState
  */
 chrome.accessibilityPrivate.SelectToSpeakState = {
   SELECTING: 'selecting',
@@ -115,7 +107,6 @@ chrome.accessibilityPrivate.SelectToSpeakState = {
  * the calling extension to provide accessibility for web contents.
  * @param {boolean} enabled True if native accessibility support should be
  *     enabled.
- * @see https://developer.chrome.com/extensions/accessibilityPrivate#method-setNativeAccessibilityEnabled
  */
 chrome.accessibilityPrivate.setNativeAccessibilityEnabled = function(enabled) {};
 
@@ -125,7 +116,6 @@ chrome.accessibilityPrivate.setNativeAccessibilityEnabled = function(enabled) {}
  *     rectangles to draw the accessibility focus ring around.
  * @param {string=} color CSS-style hex color string beginning with # like
  *     #FF9982 or #EEE.
- * @see https://developer.chrome.com/extensions/accessibilityPrivate#method-setFocusRing
  */
 chrome.accessibilityPrivate.setFocusRing = function(rects, color) {};
 
@@ -135,7 +125,6 @@ chrome.accessibilityPrivate.setFocusRing = function(rects, color) {};
  *     rectangles to draw the highlight around.
  * @param {string} color CSS-style hex color string beginning with # like
  *     #FF9982 or #EEE.
- * @see https://developer.chrome.com/extensions/accessibilityPrivate#method-setHighlights
  */
 chrome.accessibilityPrivate.setHighlights = function(rects, color) {};
 
@@ -149,14 +138,12 @@ chrome.accessibilityPrivate.setHighlights = function(rects, color) {};
  * @param {boolean} capture True if key events should be swallowed natively and
  *     not propagated if preventDefault() gets called by the extension's
  *     background page.
- * @see https://developer.chrome.com/extensions/accessibilityPrivate#method-setKeyboardListener
  */
 chrome.accessibilityPrivate.setKeyboardListener = function(enabled, capture) {};
 
 /**
  * Darkens or undarkens the screen.
  * @param {boolean} enabled True to darken screen; false to undarken screen.
- * @see https://developer.chrome.com/extensions/accessibilityPrivate#method-darkenScreen
  */
 chrome.accessibilityPrivate.darkenScreen = function(enabled) {};
 
@@ -164,14 +151,12 @@ chrome.accessibilityPrivate.darkenScreen = function(enabled) {};
  * Change the keyboard keys captured by Switch Access.
  * @param {!Array<number>} key_codes The key codes for the keys that will be
  *     captured.
- * @see https://developer.chrome.com/extensions/accessibilityPrivate#method-setSwitchAccessKeys
  */
 chrome.accessibilityPrivate.setSwitchAccessKeys = function(key_codes) {};
 
 /**
  * Sets current ARC app to use native ARC support.
  * @param {boolean} enabled True for ChromeVox (native), false for TalkBack.
- * @see https://developer.chrome.com/extensions/accessibilityPrivate#method-setNativeChromeVoxArcSupportForCurrentApp
  */
 chrome.accessibilityPrivate.setNativeChromeVoxArcSupportForCurrentApp = function(enabled) {};
 
@@ -179,14 +164,12 @@ chrome.accessibilityPrivate.setNativeChromeVoxArcSupportForCurrentApp = function
  * Sends a fabricated key event.
  * @param {!chrome.accessibilityPrivate.SyntheticKeyboardEvent} keyEvent The
  *     event to send.
- * @see https://developer.chrome.com/extensions/accessibilityPrivate#method-sendSyntheticKeyEvent
  */
 chrome.accessibilityPrivate.sendSyntheticKeyEvent = function(keyEvent) {};
 
 /**
  * Fired whenever ChromeVox should output introduction.
  * @type {!ChromeEvent}
- * @see https://developer.chrome.com/extensions/accessibilityPrivate#event-onIntroduceChromeVox
  */
 chrome.accessibilityPrivate.onIntroduceChromeVox;
 
@@ -194,7 +177,6 @@ chrome.accessibilityPrivate.onIntroduceChromeVox;
  * Fired when an accessibility gesture is detected by the touch exploration
  * controller.
  * @type {!ChromeEvent}
- * @see https://developer.chrome.com/extensions/accessibilityPrivate#event-onAccessibilityGesture
  */
 chrome.accessibilityPrivate.onAccessibilityGesture;
 
@@ -202,7 +184,6 @@ chrome.accessibilityPrivate.onAccessibilityGesture;
  * Fired when we first detect two fingers are held down, which can be used to
  * toggle spoken feedback on some touch-only devices.
  * @type {!ChromeEvent}
- * @see https://developer.chrome.com/extensions/accessibilityPrivate#event-onTwoFingerTouchStart
  */
 chrome.accessibilityPrivate.onTwoFingerTouchStart;
 
@@ -210,7 +191,6 @@ chrome.accessibilityPrivate.onTwoFingerTouchStart;
  * Fired when  the user is no longer holding down two fingers (including
  * releasing one, holding down three, or moving them).
  * @type {!ChromeEvent}
- * @see https://developer.chrome.com/extensions/accessibilityPrivate#event-onTwoFingerTouchStop
  */
 chrome.accessibilityPrivate.onTwoFingerTouchStop;
 
@@ -219,7 +199,6 @@ chrome.accessibilityPrivate.onTwoFingerTouchStop;
  * between selecting with the mouse, speaking, and inactive.
  * @param {!chrome.accessibilityPrivate.SelectToSpeakState} state The current
  *    state of the Select-to-Speak extension
- * @see https://developer.chrome.com/extensions/accessibilityPrivate#method-onSelectToSpeakStateChanged
  */
 chrome.accessibilityPrivate.onSelectToSpeakStateChanged = function(state) {};
 
@@ -227,6 +206,5 @@ chrome.accessibilityPrivate.onSelectToSpeakStateChanged = function(state) {};
  * Called when Chrome OS wants to toggle the Select-to-Speak state, between selecting
  * with the mouse, speaking, and inactive
  * @type {!ChromeEvent}
- * @see https://developer.chrome.com/extensions/accessibilityPrivate#event-onSelectToSpeakStateChangeRequested
  */
 chrome.accessibilityPrivate.onSelectToSpeakStateChangeRequested;
