@@ -1861,18 +1861,6 @@ TEST_F(PeerConnectionInterfaceTestPlanB, RemoveTrackAfterAddStream) {
   EXPECT_TRUE(video_desc == nullptr);
 }
 
-// Verify that CreateDtmfSender only succeeds if called with a valid local
-// track. Other aspects of DtmfSenders are tested in
-// peerconnection_integrationtest.cc.
-TEST_P(PeerConnectionInterfaceTest, CreateDtmfSenderWithInvalidParams) {
-  CreatePeerConnection();
-  AddAudioTrack(kAudioTracks[0]);
-  EXPECT_EQ(nullptr, pc_->CreateDtmfSender(nullptr));
-  rtc::scoped_refptr<webrtc::AudioTrackInterface> non_localtrack(
-      pc_factory_->CreateAudioTrack("dummy_track", nullptr));
-  EXPECT_EQ(nullptr, pc_->CreateDtmfSender(non_localtrack));
-}
-
 // Test creating a sender with a stream ID, and ensure the ID is populated
 // in the offer.
 // Don't run under Unified Plan since the stream API is not available.
@@ -2727,11 +2715,6 @@ TEST_F(PeerConnectionInterfaceTestPlanB, CloseAndTestMethods) {
 
   pc_->RemoveStream(local_stream);
   EXPECT_FALSE(pc_->AddStream(local_stream));
-
-  ASSERT_FALSE(local_stream->GetAudioTracks().empty());
-  rtc::scoped_refptr<webrtc::DtmfSenderInterface> dtmf_sender(
-      pc_->CreateDtmfSender(local_stream->GetAudioTracks()[0]));
-  EXPECT_TRUE(NULL == dtmf_sender);  // local stream has been removed.
 
   EXPECT_TRUE(pc_->CreateDataChannel("test", NULL) == NULL);
 

@@ -77,11 +77,6 @@ class FakePeerConnectionBase : public PeerConnectionInternal {
     return RTCError(RTCErrorType::UNSUPPORTED_OPERATION, "Not implemented");
   }
 
-  rtc::scoped_refptr<DtmfSenderInterface> CreateDtmfSender(
-      AudioTrackInterface* track) override {
-    return nullptr;
-  }
-
   rtc::scoped_refptr<RtpSenderInterface> CreateSender(
       const std::string& kind,
       const std::string& stream_id) override {

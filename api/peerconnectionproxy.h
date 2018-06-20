@@ -51,9 +51,6 @@ PROXY_METHOD2(RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>>,
               AddTransceiver,
               cricket::MediaType,
               const RtpTransceiverInit&)
-PROXY_METHOD1(rtc::scoped_refptr<DtmfSenderInterface>,
-              CreateDtmfSender,
-              AudioTrackInterface*)
 PROXY_METHOD2(rtc::scoped_refptr<RtpSenderInterface>,
               CreateSender,
               const std::string&,

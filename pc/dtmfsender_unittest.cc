@@ -15,18 +15,14 @@
 #include <string>
 #include <vector>
 
-#include "pc/audiotrack.h"
 #include "rtc_base/fakeclock.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/timeutils.h"
 
-using webrtc::AudioTrackInterface;
-using webrtc::AudioTrack;
 using webrtc::DtmfProviderInterface;
 using webrtc::DtmfSender;
 using webrtc::DtmfSenderObserverInterface;
 
-static const char kTestAudioLabel[] = "test_audio_track";
 // TODO(deadbeef): Even though this test now uses a fake clock, it has a
 // generous 3-second timeout for every test case. The timeout could be tuned
 // to each test based on the tones sent, instead.
@@ -105,11 +101,10 @@ class FakeDtmfProvider : public DtmfProviderInterface {
 class DtmfSenderTest : public testing::Test {
  protected:
   DtmfSenderTest()
-      : track_(AudioTrack::Create(kTestAudioLabel, NULL)),
-        observer_(new rtc::RefCountedObject<FakeDtmfObserver>()),
+      : observer_(new rtc::RefCountedObject<FakeDtmfObserver>()),
         provider_(new FakeDtmfProvider()) {
     provider_->SetCanInsertDtmf(true);
-    dtmf_ = DtmfSender::Create(track_, rtc::Thread::Current(), provider_.get());
+    dtmf_ = DtmfSender::Create(rtc::Thread::Current(), provider_.get());
     dtmf_->RegisterObserver(observer_.get());
   }
 
@@ -144,11 +139,9 @@ class DtmfSenderTest : public testing::Test {
     }
   }
 
-  void VerifyExpectedState(AudioTrackInterface* track,
-                           const std::string& tones,
+  void VerifyExpectedState(const std::string& tones,
                            int duration,
                            int inter_tone_gap) {
-    EXPECT_EQ(track, dtmf_->track());
     EXPECT_EQ(tones, dtmf_->tones());
     EXPECT_EQ(duration, dtmf_->duration());
     EXPECT_EQ(inter_tone_gap, dtmf_->inter_tone_gap());
@@ -198,7 +191,6 @@ class DtmfSenderTest : public testing::Test {
     }
   }
 
-  rtc::scoped_refptr<AudioTrackInterface> track_;
   std::unique_ptr<FakeDtmfObserver> observer_;
   std::unique_ptr<FakeDtmfProvider> provider_;
   rtc::scoped_refptr<DtmfSender> dtmf_;
@@ -230,14 +222,14 @@ TEST_F(DtmfSenderTest, InsertDtmfTwice) {
   int duration = 100;
   int inter_tone_gap = 50;
   EXPECT_TRUE(dtmf_->InsertDtmf(tones1, duration, inter_tone_gap));
-  VerifyExpectedState(track_, tones1, duration, inter_tone_gap);
+  VerifyExpectedState(tones1, duration, inter_tone_gap);
   // Wait until the first tone got sent.
   EXPECT_TRUE_SIMULATED_WAIT(observer_->tones().size() == 1, kMaxWaitMs,
                              fake_clock_);
-  VerifyExpectedState(track_, "2", duration, inter_tone_gap);
+  VerifyExpectedState("2", duration, inter_tone_gap);
   // Insert with another tone buffer.
   EXPECT_TRUE(dtmf_->InsertDtmf(tones2, duration, inter_tone_gap));
-  VerifyExpectedState(track_, tones2, duration, inter_tone_gap);
+  VerifyExpectedState(tones2, duration, inter_tone_gap);
   // Wait until it's completed.
   EXPECT_TRUE_SIMULATED_WAIT(observer_->completed(), kMaxWaitMs, fake_clock_);
 
@@ -334,9 +326,9 @@ TEST_F(DtmfSenderTest, InsertDtmfSendsAfterWait) {
   int duration = 100;
   int inter_tone_gap = 50;
   EXPECT_TRUE(dtmf_->InsertDtmf(tones, duration, inter_tone_gap));
-  VerifyExpectedState(track_, "ABC", duration, inter_tone_gap);
+  VerifyExpectedState("ABC", duration, inter_tone_gap);
   // Wait until the first tone got sent.
   EXPECT_TRUE_SIMULATED_WAIT(observer_->tones().size() == 1, kMaxWaitMs,
                              fake_clock_);
-  VerifyExpectedState(track_, "BC", duration, inter_tone_gap);
+  VerifyExpectedState("BC", duration, inter_tone_gap);
 }

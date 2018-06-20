@@ -62,31 +62,28 @@ bool GetDtmfCode(char tone, int* code) {
 }
 
 rtc::scoped_refptr<DtmfSender> DtmfSender::Create(
-    AudioTrackInterface* track,
     rtc::Thread* signaling_thread,
     DtmfProviderInterface* provider) {
   if (!signaling_thread) {
     return nullptr;
   }
   rtc::scoped_refptr<DtmfSender> dtmf_sender(
-      new rtc::RefCountedObject<DtmfSender>(track, signaling_thread, provider));
+      new rtc::RefCountedObject<DtmfSender>(signaling_thread, provider));
   return dtmf_sender;
 }
 
-DtmfSender::DtmfSender(AudioTrackInterface* track,
-                       rtc::Thread* signaling_thread,
+DtmfSender::DtmfSender(rtc::Thread* signaling_thread,
                        DtmfProviderInterface* provider)
-    : track_(track),
-      observer_(NULL),
+    : observer_(nullptr),
       signaling_thread_(signaling_thread),
       provider_(provider),
       duration_(kDtmfDefaultDurationMs),
       inter_tone_gap_(kDtmfDefaultGapMs) {
-  RTC_DCHECK(signaling_thread_ != NULL);
+  RTC_DCHECK(signaling_thread_);
   // TODO(deadbeef): Once we can use shared_ptr and weak_ptr,
   // do that instead of relying on a "destroyed" signal.
   if (provider_) {
-    RTC_DCHECK(provider_->GetOnDestroyedSignal() != NULL);
+    RTC_DCHECK(provider_->GetOnDestroyedSignal());
     provider_->GetOnDestroyedSignal()->connect(
         this, &DtmfSender::OnProviderDestroyed);
   }
@@ -101,7 +98,7 @@ void DtmfSender::RegisterObserver(DtmfSenderObserverInterface* observer) {
 }
 
 void DtmfSender::UnregisterObserver() {
-  observer_ = NULL;
+  observer_ = nullptr;
 }
 
 bool DtmfSender::CanInsertDtmf() {
@@ -142,10 +139,6 @@ bool DtmfSender::InsertDtmf(const std::string& tones,
   // Kick off a new DTMF task queue.
   signaling_thread_->PostDelayed(RTC_FROM_HERE, 1, this, MSG_DO_INSERT_DTMF);
   return true;
-}
-
-const AudioTrackInterface* DtmfSender::track() const {
-  return track_;
 }
 
 std::string DtmfSender::tones() const {
@@ -232,7 +225,7 @@ void DtmfSender::DoInsertDtmf() {
 void DtmfSender::OnProviderDestroyed() {
   RTC_LOG(LS_INFO) << "The Dtmf provider is deleted. Clear the sending queue.";
   StopSending();
-  provider_ = NULL;
+  provider_ = nullptr;
 }
 
 void DtmfSender::StopSending() {

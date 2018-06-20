@@ -14,19 +14,15 @@
 #include <string>
 
 #include "api/dtmfsenderinterface.h"
-#include "api/mediastreaminterface.h"
 #include "api/proxy.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/messagehandler.h"
 #include "rtc_base/refcount.h"
+#include "rtc_base/thread.h"
 
 // DtmfSender is the native implementation of the RTCDTMFSender defined by
 // the WebRTC W3C Editor's Draft.
 // http://dev.w3.org/2011/webrtc/editor/webrtc.html
-
-namespace rtc {
-class Thread;
-}
 
 namespace webrtc {
 
@@ -53,10 +49,7 @@ class DtmfSender : public DtmfSenderInterface,
                    public sigslot::has_slots<>,
                    public rtc::MessageHandler {
  public:
-  // |track| is only there for backwards compatibility, since there's a track
-  // accessor method.
-  static rtc::scoped_refptr<DtmfSender> Create(AudioTrackInterface* track,
-                                               rtc::Thread* signaling_thread,
+  static rtc::scoped_refptr<DtmfSender> Create(rtc::Thread* signaling_thread,
                                                DtmfProviderInterface* provider);
 
   // Implements DtmfSenderInterface.
@@ -66,15 +59,12 @@ class DtmfSender : public DtmfSenderInterface,
   bool InsertDtmf(const std::string& tones,
                   int duration,
                   int inter_tone_gap) override;
-  const AudioTrackInterface* track() const override;
   std::string tones() const override;
   int duration() const override;
   int inter_tone_gap() const override;
 
  protected:
-  DtmfSender(AudioTrackInterface* track,
-             rtc::Thread* signaling_thread,
-             DtmfProviderInterface* provider);
+  DtmfSender(rtc::Thread* signaling_thread, DtmfProviderInterface* provider);
   virtual ~DtmfSender();
 
  private:
@@ -90,7 +80,6 @@ class DtmfSender : public DtmfSenderInterface,
 
   void StopSending();
 
-  rtc::scoped_refptr<AudioTrackInterface> track_;
   DtmfSenderObserverInterface* observer_;
   rtc::Thread* signaling_thread_;
   DtmfProviderInterface* provider_;
@@ -108,7 +97,6 @@ PROXY_METHOD1(void, RegisterObserver, DtmfSenderObserverInterface*)
 PROXY_METHOD0(void, UnregisterObserver)
 PROXY_METHOD0(bool, CanInsertDtmf)
 PROXY_METHOD3(bool, InsertDtmf, const std::string&, int, int)
-PROXY_CONSTMETHOD0(const AudioTrackInterface*, track)
 PROXY_CONSTMETHOD0(std::string, tones)
 PROXY_CONSTMETHOD0(int, duration)
 PROXY_CONSTMETHOD0(int, inter_tone_gap)

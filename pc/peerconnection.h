@@ -113,9 +113,6 @@ class PeerConnection : public PeerConnectionInternal,
   // Version of the above method that returns the full certificate chain.
   std::unique_ptr<rtc::SSLCertChain> GetRemoteAudioSSLCertChain();
 
-  rtc::scoped_refptr<DtmfSenderInterface> CreateDtmfSender(
-      AudioTrackInterface* track) override;
-
   rtc::scoped_refptr<RtpSenderInterface> CreateSender(
       const std::string& kind,
       const std::string& stream_id) override;

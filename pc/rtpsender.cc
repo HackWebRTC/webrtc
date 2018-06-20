@@ -129,7 +129,7 @@ AudioRtpSender::AudioRtpSender(rtc::Thread* worker_thread,
       track_(track),
       dtmf_sender_proxy_(DtmfSenderProxy::Create(
           rtc::Thread::Current(),
-          DtmfSender::Create(track_, rtc::Thread::Current(), this))),
+          DtmfSender::Create(rtc::Thread::Current(), this))),
       cached_track_enabled_(track ? track->enabled() : false),
       sink_adapter_(new LocalAudioSinkAdapter()),
       attachment_id_(track ? GenerateUniqueId() : 0) {

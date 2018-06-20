@@ -1471,25 +1471,6 @@ void PeerConnection::OnNegotiationNeeded() {
   observer_->OnRenegotiationNeeded();
 }
 
-rtc::scoped_refptr<DtmfSenderInterface> PeerConnection::CreateDtmfSender(
-    AudioTrackInterface* track) {
-  TRACE_EVENT0("webrtc", "PeerConnection::CreateDtmfSender");
-  if (IsClosed()) {
-    return nullptr;
-  }
-  if (!track) {
-    RTC_LOG(LS_ERROR) << "CreateDtmfSender - track is NULL.";
-    return nullptr;
-  }
-  auto track_sender = FindSenderForTrack(track);
-  if (!track_sender) {
-    RTC_LOG(LS_ERROR) << "CreateDtmfSender called with a non-added track.";
-    return nullptr;
-  }
-
-  return track_sender->GetDtmfSender();
-}
-
 rtc::scoped_refptr<RtpSenderInterface> PeerConnection::CreateSender(
     const std::string& kind,
     const std::string& stream_id) {
