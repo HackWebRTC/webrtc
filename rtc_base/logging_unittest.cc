@@ -45,6 +45,9 @@ class LogMessageForTesting : public LogMessage {
 
   const std::string& get_extra() const { return extra_; }
   bool is_noop() const { return is_noop_; }
+#if defined(WEBRTC_ANDROID)
+  const char* get_tag() const { return tag_; }
+#endif
 
   // Returns the contents of the internal log stream.
   // Note that parts of the stream won't (as is) be available until *after* the
@@ -215,8 +218,27 @@ TEST(LogTest, CheckFilePathParsed) {
   log_msg.stream() << "<- Does this look right?";
 
   const std::string stream = log_msg.GetPrintStream();
+#if defined(WEBRTC_ANDROID)
+  const char* tag = log_msg.get_tag();
+  EXPECT_NE(nullptr, strstr(tag, "myfile.cc"));
+  EXPECT_NE(std::string::npos, stream.find("100"));
+#else
   EXPECT_NE(std::string::npos, stream.find("(myfile.cc:100)"));
+#endif
 }
+
+#if defined(WEBRTC_ANDROID)
+TEST(LogTest, CheckTagAddedToStringInDefaultOnLogMessageAndroid) {
+  std::string str;
+  LogSinkImpl<StringStream> stream(&str);
+  LogMessage::AddLogToStream(&stream, LS_INFO);
+  EXPECT_EQ(LS_INFO, LogMessage::GetLogToStream(&stream));
+
+  RTC_LOG_TAG(LS_INFO, "my_tag") << "INFO";
+  EXPECT_NE(std::string::npos, str.find("INFO"));
+  EXPECT_NE(std::string::npos, str.find("my_tag"));
+}
+#endif
 
 TEST(LogTest, CheckNoopLogEntry) {
   if (LogMessage::GetLogToDebug() <= LS_SENSITIVE) {

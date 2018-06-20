@@ -41,6 +41,18 @@ void FileRotatingLogSink::OnLogMessage(const std::string& message) {
   stream_->WriteAll(message.c_str(), message.size(), nullptr, nullptr);
 }
 
+void FileRotatingLogSink::OnLogMessage(const std::string& message,
+                                       LoggingSeverity sev,
+                                       const char* tag) {
+  if (stream_->GetState() != SS_OPEN) {
+    std::fprintf(stderr, "Init() must be called before adding this sink.\n");
+    return;
+  }
+  stream_->WriteAll(tag, strlen(tag), nullptr, nullptr);
+  stream_->WriteAll(": ", 2, nullptr, nullptr);
+  stream_->WriteAll(message.c_str(), message.size(), nullptr, nullptr);
+}
+
 bool FileRotatingLogSink::Init() {
   return stream_->Open();
 }
