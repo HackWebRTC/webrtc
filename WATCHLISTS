@@ -100,6 +100,7 @@
                    'peah@webrtc.org',
                    'qiang.lu@intel.com',
                    'yujie.mao@webrtc.org'],
+    'build_files': ['mbonadei@webrtc.org'],
     'common_audio': ['alessiob@webrtc.org',
                      'aluebs@webrtc.org',
                      'andrew@webrtc.org',
