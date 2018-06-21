@@ -446,7 +446,7 @@ rtc_source_set("rtc_base_approved_generic") {
   deps += [
     "..:webrtc_common",
     "../api:array_view",
-    "../api:optional",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 
   if (is_android) {
@@ -661,7 +661,7 @@ rtc_static_library("rtc_numerics") {
     ":checks",
     ":rtc_base_approved",
     ":safe_compare",
-    "../api:optional",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 
@@ -728,7 +728,7 @@ rtc_static_library("rtc_base_generic") {
     ":stringutils",
     "..:webrtc_common",
     "../api:array_view",
-    "../api:optional",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
   public_deps = [
     ":rtc_base_approved",
@@ -1304,9 +1304,9 @@ if (rtc_include_tests) {
       ":rtc_base_tests_utils",
       ":stringutils",
       "../api:array_view",
-      "../api:optional",
       "../test:fileutils",
       "../test:test_support",
+      "//third_party/abseil-cpp/absl/types:optional",
     ]
     public_deps = [
       ":rtc_base",

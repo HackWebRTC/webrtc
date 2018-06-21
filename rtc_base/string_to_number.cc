@@ -18,7 +18,7 @@
 namespace rtc {
 namespace string_to_number_internal {
 
-rtc::Optional<signed_type> ParseSigned(const char* str, int base) {
+absl::optional<signed_type> ParseSigned(const char* str, int base) {
   RTC_DCHECK(str);
   if (isdigit(str[0]) || str[0] == '-') {
     char* end = nullptr;
@@ -28,10 +28,10 @@ rtc::Optional<signed_type> ParseSigned(const char* str, int base) {
       return value;
     }
   }
-  return rtc::nullopt;
+  return absl::nullopt;
 }
 
-rtc::Optional<unsigned_type> ParseUnsigned(const char* str, int base) {
+absl::optional<unsigned_type> ParseUnsigned(const char* str, int base) {
   RTC_DCHECK(str);
   if (isdigit(str[0]) || str[0] == '-') {
     // Explicitly discard negative values. std::strtoull parsing causes unsigned
@@ -45,7 +45,7 @@ rtc::Optional<unsigned_type> ParseUnsigned(const char* str, int base) {
       return value;
     }
   }
-  return rtc::nullopt;
+  return absl::nullopt;
 }
 
 }  // namespace string_to_number_internal

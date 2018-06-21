@@ -43,14 +43,14 @@ enum class CustomEnum {
 // Providing a custom parser for an enum can make the trial string easier to
 // read, but also adds more code and makes the string more verbose.
 template <>
-rtc::Optional<CustomEnum> ParseTypedParameter<CustomEnum>(std::string str) {
+absl::optional<CustomEnum> ParseTypedParameter<CustomEnum>(std::string str) {
   if (str == "default")
     return CustomEnum::kDefault;
   else if (str == "red")
     return CustomEnum::kRed;
   else if (str == "blue")
     return CustomEnum::kBlue;
-  return rtc::nullopt;
+  return absl::nullopt;
 }
 
 TEST(FieldTrialParserTest, ParsesValidParameters) {
@@ -104,7 +104,7 @@ TEST(FieldTrialParserTest, IgnoresInvalid) {
   EXPECT_EQ(exp.hash.Get(), "a80");
 }
 TEST(FieldTrialParserTest, ParsesOptionalParameters) {
-  FieldTrialOptional<int> max_count("c", rtc::nullopt);
+  FieldTrialOptional<int> max_count("c", absl::nullopt);
   ParseFieldTrial({&max_count}, "");
   EXPECT_FALSE(max_count.Get().has_value());
   ParseFieldTrial({&max_count}, "c:10");

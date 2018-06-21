@@ -31,10 +31,10 @@ bool CongestionControllerExperiment::InjectedControllerEnabled() {
   return trial_string.find("Enabled,Injected") == 0;
 }
 
-rtc::Optional<CongestionControllerExperiment::BbrExperimentConfig>
+absl::optional<CongestionControllerExperiment::BbrExperimentConfig>
 CongestionControllerExperiment::GetBbrExperimentConfig() {
   if (!BbrControllerEnabled())
-    return rtc::nullopt;
+    return absl::nullopt;
   std::string trial_string =
       webrtc::field_trial::FindFullName(kControllerExperiment);
   BbrExperimentConfig config;
@@ -56,7 +56,7 @@ CongestionControllerExperiment::GetBbrExperimentConfig() {
           &config.probe_rtt_congestion_window_gain) == 17) {
     return config;
   } else {
-    return rtc::nullopt;
+    return absl::nullopt;
   }
 }
 

@@ -11,7 +11,7 @@
 #ifndef RTC_BASE_NUMERICS_SAMPLE_COUNTER_H_
 #define RTC_BASE_NUMERICS_SAMPLE_COUNTER_H_
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 
 namespace rtc {
 
@@ -22,9 +22,9 @@ class SampleCounter {
   SampleCounter();
   ~SampleCounter();
   void Add(int sample);
-  rtc::Optional<int> Avg(int64_t min_required_samples) const;
-  rtc::Optional<int64_t> Variance(int64_t min_required_samples) const;
-  rtc::Optional<int> Max() const;
+  absl::optional<int> Avg(int64_t min_required_samples) const;
+  absl::optional<int64_t> Variance(int64_t min_required_samples) const;
+  absl::optional<int> Max() const;
   void Reset();
   // Adds all the samples from the |other| SampleCounter as if they were all
   // individually added using |Add(int)| method.
@@ -34,7 +34,7 @@ class SampleCounter {
   int64_t sum_ = 0;
   int64_t sum_squared_ = 0;
   int64_t num_samples_ = 0;
-  rtc::Optional<int> max_;
+  absl::optional<int> max_;
 };
 
 }  // namespace rtc

@@ -21,7 +21,7 @@ struct DummyExperiment {
   FieldTrialParameter<TimeDelta> period =
       FieldTrialParameter<TimeDelta>("p", TimeDelta::ms(100));
   FieldTrialOptional<DataSize> max_buffer =
-      FieldTrialOptional<DataSize>("b", rtc::nullopt);
+      FieldTrialOptional<DataSize>("b", absl::nullopt);
 
   explicit DummyExperiment(std::string field_trial) {
     ParseFieldTrial({&target_rate, &max_buffer, &period}, field_trial);

@@ -54,24 +54,24 @@ void SampleCounter::Add(const SampleCounter& other) {
     max_ = other.max_;
 }
 
-rtc::Optional<int> SampleCounter::Avg(int64_t min_required_samples) const {
+absl::optional<int> SampleCounter::Avg(int64_t min_required_samples) const {
   RTC_DCHECK_GT(min_required_samples, 0);
   if (num_samples_ < min_required_samples)
-    return rtc::nullopt;
+    return absl::nullopt;
   return rtc::dchecked_cast<int>(sum_ / num_samples_);
 }
 
-rtc::Optional<int64_t> SampleCounter::Variance(
+absl::optional<int64_t> SampleCounter::Variance(
     int64_t min_required_samples) const {
   RTC_DCHECK_GT(min_required_samples, 0);
   if (num_samples_ < min_required_samples)
-    return rtc::nullopt;
+    return absl::nullopt;
   // E[(x-mean)^2] = E[x^2] - mean^2
   int64_t mean = sum_ / num_samples_;
   return sum_squared_ / num_samples_ - mean * mean;
 }
 
-rtc::Optional<int> SampleCounter::Max() const {
+absl::optional<int> SampleCounter::Max() const {
   return max_;
 }
 

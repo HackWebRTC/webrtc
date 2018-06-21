@@ -47,7 +47,7 @@ void ParseFieldTrial(
     int key_end = std::min(val_end, colon_pos);
     int val_begin = key_end + 1;
     std::string key = trial_string.substr(i, key_end - i);
-    rtc::Optional<std::string> opt_value;
+    absl::optional<std::string> opt_value;
     if (val_end >= val_begin)
       opt_value = trial_string.substr(val_begin, val_end - val_begin);
     i = val_end + 1;
@@ -65,37 +65,37 @@ void ParseFieldTrial(
 }
 
 template <>
-rtc::Optional<bool> ParseTypedParameter<bool>(std::string str) {
+absl::optional<bool> ParseTypedParameter<bool>(std::string str) {
   if (str == "true" || str == "1") {
     return true;
   } else if (str == "false" || str == "0") {
     return false;
   }
-  return rtc::nullopt;
+  return absl::nullopt;
 }
 
 template <>
-rtc::Optional<double> ParseTypedParameter<double>(std::string str) {
+absl::optional<double> ParseTypedParameter<double>(std::string str) {
   double value;
   if (sscanf(str.c_str(), "%lf", &value) == 1) {
     return value;
   } else {
-    return rtc::nullopt;
+    return absl::nullopt;
   }
 }
 
 template <>
-rtc::Optional<int> ParseTypedParameter<int>(std::string str) {
+absl::optional<int> ParseTypedParameter<int>(std::string str) {
   int value;
   if (sscanf(str.c_str(), "%i", &value) == 1) {
     return value;
   } else {
-    return rtc::nullopt;
+    return absl::nullopt;
   }
 }
 
 template <>
-rtc::Optional<std::string> ParseTypedParameter<std::string>(std::string str) {
+absl::optional<std::string> ParseTypedParameter<std::string>(std::string str) {
   return std::move(str);
 }
 
@@ -108,10 +108,10 @@ bool FieldTrialFlag::Get() const {
   return value_;
 }
 
-bool FieldTrialFlag::Parse(rtc::Optional<std::string> str_value) {
+bool FieldTrialFlag::Parse(absl::optional<std::string> str_value) {
   // Only set the flag if there is no argument provided.
   if (str_value) {
-    rtc::Optional<bool> opt_value = ParseTypedParameter<bool>(*str_value);
+    absl::optional<bool> opt_value = ParseTypedParameter<bool>(*str_value);
     if (!opt_value)
       return false;
     value_ = *opt_value;

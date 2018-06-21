@@ -25,7 +25,7 @@
 #include "rtc_base/win32.h"
 #endif
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/socketaddress.h"
 
@@ -147,8 +147,8 @@ struct PacketInfo {
 
   PacketType packet_type = PacketType::kUnknown;
   PacketInfoProtocolType protocol = PacketInfoProtocolType::kUnknown;
-  // A unique id assigned by the network manager, and rtc::nullopt if not set.
-  rtc::Optional<uint16_t> network_id;
+  // A unique id assigned by the network manager, and absl::nullopt if not set.
+  absl::optional<uint16_t> network_id;
   size_t packet_size_bytes = 0;
   size_t turn_overhead_bytes = 0;
   SocketAddress local_socket_address;

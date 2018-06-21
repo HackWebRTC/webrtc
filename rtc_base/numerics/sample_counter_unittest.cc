@@ -23,9 +23,9 @@ namespace rtc {
 TEST(SampleCounterTest, ProcessesNoSamples) {
   constexpr int kMinSamples = 1;
   SampleCounter counter;
-  EXPECT_THAT(counter.Avg(kMinSamples), Eq(rtc::nullopt));
-  EXPECT_THAT(counter.Avg(kMinSamples), Eq(rtc::nullopt));
-  EXPECT_THAT(counter.Max(), Eq(rtc::nullopt));
+  EXPECT_THAT(counter.Avg(kMinSamples), Eq(absl::nullopt));
+  EXPECT_THAT(counter.Avg(kMinSamples), Eq(absl::nullopt));
+  EXPECT_THAT(counter.Max(), Eq(absl::nullopt));
 }
 
 TEST(SampleCounterTest, NotEnoughSamples) {
@@ -34,8 +34,8 @@ TEST(SampleCounterTest, NotEnoughSamples) {
   for (int value : {1, 2, 3, 4, 5}) {
     counter.Add(value);
   }
-  EXPECT_THAT(counter.Avg(kMinSamples), Eq(rtc::nullopt));
-  EXPECT_THAT(counter.Avg(kMinSamples), Eq(rtc::nullopt));
+  EXPECT_THAT(counter.Avg(kMinSamples), Eq(absl::nullopt));
+  EXPECT_THAT(counter.Avg(kMinSamples), Eq(absl::nullopt));
   EXPECT_THAT(counter.Max(), Eq(5));
 }
 

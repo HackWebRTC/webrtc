@@ -13,7 +13,7 @@
 #include <stdint.h>
 #include <initializer_list>
 #include <string>
-#include "api/optional.h"
+#include "absl/types/optional.h"
 
 // Field trial parser functionality. Provides funcitonality to parse field trial
 // argument strings in key:value format. Each parameter is described using
@@ -39,7 +39,7 @@ class FieldTrialParameterInterface {
   friend void ParseFieldTrial(
       std::initializer_list<FieldTrialParameterInterface*> fields,
       std::string raw_string);
-  virtual bool Parse(rtc::Optional<std::string> str_value) = 0;
+  virtual bool Parse(absl::optional<std::string> str_value) = 0;
   std::string Key() const;
 
  private:
@@ -52,10 +52,10 @@ void ParseFieldTrial(
     std::initializer_list<FieldTrialParameterInterface*> fields,
     std::string raw_string);
 
-// Specialize this in code file for custom types. Should return rtc::nullopt if
+// Specialize this in code file for custom types. Should return absl::nullopt if
 // the given string cannot be properly parsed.
 template <typename T>
-rtc::Optional<T> ParseTypedParameter(std::string);
+absl::optional<T> ParseTypedParameter(std::string);
 
 // This class uses the ParseTypedParameter function to implement a parameter
 // implementation with an enforced default value.
@@ -68,9 +68,9 @@ class FieldTrialParameter : public FieldTrialParameterInterface {
   operator T() const { return Get(); }
 
  protected:
-  bool Parse(rtc::Optional<std::string> str_value) override {
+  bool Parse(absl::optional<std::string> str_value) override {
     if (str_value) {
-      rtc::Optional<T> value = ParseTypedParameter<T>(*str_value);
+      absl::optional<T> value = ParseTypedParameter<T>(*str_value);
       if (value.has_value()) {
         value_ = value.value();
         return true;
@@ -84,31 +84,31 @@ class FieldTrialParameter : public FieldTrialParameterInterface {
 };
 
 // This class uses the ParseTypedParameter function to implement an optional
-// parameter implementation that can default to rtc::nullopt.
+// parameter implementation that can default to absl::nullopt.
 template <typename T>
 class FieldTrialOptional : public FieldTrialParameterInterface {
  public:
   explicit FieldTrialOptional(std::string key)
       : FieldTrialParameterInterface(key) {}
-  FieldTrialOptional(std::string key, rtc::Optional<T> default_value)
+  FieldTrialOptional(std::string key, absl::optional<T> default_value)
       : FieldTrialParameterInterface(key), value_(default_value) {}
-  rtc::Optional<T> Get() const { return value_; }
+  absl::optional<T> Get() const { return value_; }
 
  protected:
-  bool Parse(rtc::Optional<std::string> str_value) override {
+  bool Parse(absl::optional<std::string> str_value) override {
     if (str_value) {
-      rtc::Optional<T> value = ParseTypedParameter<T>(*str_value);
+      absl::optional<T> value = ParseTypedParameter<T>(*str_value);
       if (!value.has_value())
         return false;
       value_ = value.value();
     } else {
-      value_ = rtc::nullopt;
+      value_ = absl::nullopt;
     }
     return true;
   }
 
  private:
-  rtc::Optional<T> value_;
+  absl::optional<T> value_;
 };
 
 // Equivalent to a FieldTrialParameter<bool> in the case that both key and value
@@ -121,7 +121,7 @@ class FieldTrialFlag : public FieldTrialParameterInterface {
   bool Get() const;
 
  protected:
-  bool Parse(rtc::Optional<std::string> str_value) override;
+  bool Parse(absl::optional<std::string> str_value) override;
 
  private:
   bool value_;

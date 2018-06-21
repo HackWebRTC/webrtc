@@ -34,7 +34,7 @@ class CongestionControllerExperiment {
   };
   static bool BbrControllerEnabled();
   static bool InjectedControllerEnabled();
-  static rtc::Optional<BbrExperimentConfig> GetBbrExperimentConfig();
+  static absl::optional<BbrExperimentConfig> GetBbrExperimentConfig();
 };
 
 }  // namespace webrtc

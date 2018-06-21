@@ -12,7 +12,7 @@
 #include <limits>
 #include <string>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 
 // Large enough to fit "seconds", the longest supported unit name.
 #define RTC_TRIAL_UNIT_LENGTH_STR "7"
@@ -26,7 +26,7 @@ struct ValueWithUnit {
   std::string unit;
 };
 
-rtc::Optional<ValueWithUnit> ParseValueWithUnit(std::string str) {
+absl::optional<ValueWithUnit> ParseValueWithUnit(std::string str) {
   if (str == "inf") {
     return ValueWithUnit{std::numeric_limits<double>::infinity(), ""};
   } else if (str == "-inf") {
@@ -40,13 +40,13 @@ rtc::Optional<ValueWithUnit> ParseValueWithUnit(std::string str) {
       return ValueWithUnit{double_val, unit_char};
     }
   }
-  return rtc::nullopt;
+  return absl::nullopt;
 }
 }  // namespace
 
 template <>
-rtc::Optional<DataRate> ParseTypedParameter<DataRate>(std::string str) {
-  rtc::Optional<ValueWithUnit> result = ParseValueWithUnit(str);
+absl::optional<DataRate> ParseTypedParameter<DataRate>(std::string str) {
+  absl::optional<ValueWithUnit> result = ParseValueWithUnit(str);
   if (result) {
     if (result->unit.empty() || result->unit == "kbps") {
       return DataRate::kbps(result->value);
@@ -54,22 +54,22 @@ rtc::Optional<DataRate> ParseTypedParameter<DataRate>(std::string str) {
       return DataRate::bps(result->value);
     }
   }
-  return rtc::nullopt;
+  return absl::nullopt;
 }
 
 template <>
-rtc::Optional<DataSize> ParseTypedParameter<DataSize>(std::string str) {
-  rtc::Optional<ValueWithUnit> result = ParseValueWithUnit(str);
+absl::optional<DataSize> ParseTypedParameter<DataSize>(std::string str) {
+  absl::optional<ValueWithUnit> result = ParseValueWithUnit(str);
   if (result) {
     if (result->unit.empty() || result->unit == "bytes")
       return DataSize::bytes(result->value);
   }
-  return rtc::nullopt;
+  return absl::nullopt;
 }
 
 template <>
-rtc::Optional<TimeDelta> ParseTypedParameter<TimeDelta>(std::string str) {
-  rtc::Optional<ValueWithUnit> result = ParseValueWithUnit(str);
+absl::optional<TimeDelta> ParseTypedParameter<TimeDelta>(std::string str) {
+  absl::optional<ValueWithUnit> result = ParseValueWithUnit(str);
   if (result) {
     if (result->unit == "s" || result->unit == "seconds") {
       return TimeDelta::seconds(result->value);
@@ -79,7 +79,7 @@ rtc::Optional<TimeDelta> ParseTypedParameter<TimeDelta>(std::string str) {
       return TimeDelta::ms(result->value);
     }
   }
-  return rtc::nullopt;
+  return absl::nullopt;
 }
 
 template class FieldTrialParameter<DataRate>;
