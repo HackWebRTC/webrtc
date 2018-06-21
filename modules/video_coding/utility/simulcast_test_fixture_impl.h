@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_VIDEO_CODING_CODECS_VP8_SIMULCAST_TEST_FIXTURE_IMPL_H_
-#define MODULES_VIDEO_CODING_CODECS_VP8_SIMULCAST_TEST_FIXTURE_IMPL_H_
+#ifndef MODULES_VIDEO_CODING_UTILITY_SIMULCAST_TEST_FIXTURE_IMPL_H_
+#define MODULES_VIDEO_CODING_UTILITY_SIMULCAST_TEST_FIXTURE_IMPL_H_
 
 #include <memory>
 #include <vector>
@@ -20,7 +20,7 @@
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
 #include "common_types.h"  // NOLINT(build/include)
-#include "modules/video_coding/codecs/vp8/simulcast_rate_allocator.h"
+#include "modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "modules/video_coding/include/mock/mock_video_codec_interface.h"
 
 namespace webrtc {
@@ -30,7 +30,8 @@ class SimulcastTestFixtureImpl final : public SimulcastTestFixture {
  public:
   SimulcastTestFixtureImpl(
       std::unique_ptr<VideoEncoderFactory> encoder_factory,
-      std::unique_ptr<VideoDecoderFactory> decoder_factory);
+      std::unique_ptr<VideoDecoderFactory> decoder_factory,
+      SdpVideoFormat video_format);
   ~SimulcastTestFixtureImpl() final;
 
   // Implements SimulcastTestFixture.
@@ -51,11 +52,12 @@ class SimulcastTestFixtureImpl final : public SimulcastTestFixture {
   void TestStrideEncodeDecode() override;
 
   static void DefaultSettings(VideoCodec* settings,
-                              const int* temporal_layer_profile);
+                              const int* temporal_layer_profile,
+                              VideoCodecType codec_type);
 
  private:
-  class Vp8TestEncodedImageCallback;
-  class Vp8TestDecodedImageCallback;
+  class TestEncodedImageCallback;
+  class TestDecodedImageCallback;
 
   void SetUpCodec(const int* temporal_layer_profile);
   void SetUpRateAllocator();
@@ -66,7 +68,7 @@ class SimulcastTestFixtureImpl final : public SimulcastTestFixture {
                      const std::vector<bool> expected_streams_active);
   void ExpectStreams(FrameType frame_type, int expected_video_streams);
   void VerifyTemporalIdxAndSyncForAllSpatialLayers(
-      Vp8TestEncodedImageCallback* encoder_callback,
+      TestEncodedImageCallback* encoder_callback,
       const int* expected_temporal_idx,
       const bool* expected_layer_sync,
       int num_spatial_layers);
@@ -80,9 +82,10 @@ class SimulcastTestFixtureImpl final : public SimulcastTestFixture {
   rtc::scoped_refptr<I420Buffer> input_buffer_;
   std::unique_ptr<VideoFrame> input_frame_;
   std::unique_ptr<SimulcastRateAllocator> rate_allocator_;
+  VideoCodecType codec_type_;
 };
 
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // MODULES_VIDEO_CODING_CODECS_VP8_SIMULCAST_TEST_FIXTURE_IMPL_H_
+#endif  // MODULES_VIDEO_CODING_UTILITY_SIMULCAST_TEST_FIXTURE_IMPL_H_

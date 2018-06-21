@@ -18,10 +18,10 @@
 #include <limits>
 
 #include "modules/include/module_common_types.h"
-#include "modules/video_coding/codecs/vp8/include/vp8_common_types.h"
 #include "modules/video_coding/fec_rate_table.h"
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "modules/video_coding/nack_fec_tables.h"
+#include "modules/video_coding/utility/simulcast_rate_allocator.h"
 
 namespace webrtc {
 // Max value of loss rates in off-line model
@@ -400,8 +400,7 @@ bool VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters) {
 int VCMFecMethod::BitsPerFrame(const VCMProtectionParameters* parameters) {
   // When temporal layers are available FEC will only be applied on the base
   // layer.
-  const float bitRateRatio =
-      kVp8LayerRateAlloction[parameters->numLayers - 1][0];
+  const float bitRateRatio = kLayerRateAllocation[parameters->numLayers - 1][0];
   float frameRateRatio = powf(1 / 2.0, parameters->numLayers - 1);
   float bitRate = parameters->bitRate * bitRateRatio;
   float frameRate = parameters->frameRate * frameRateRatio;

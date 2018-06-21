@@ -19,7 +19,7 @@
 #include <vector>
 
 #include "media/engine/webrtcvideoencoderfactory.h"
-#include "modules/video_coding/codecs/vp8/include/vp8.h"
+#include "modules/video_coding/include/video_codec_interface.h"
 #include "rtc_base/atomicops.h"
 #include "rtc_base/sequenced_task_checker.h"
 
@@ -32,7 +32,7 @@ class VideoEncoderFactory;
 // webrtc::VideoEncoder instances with the given VideoEncoderFactory.
 // The object is created and destroyed on the worker thread, but all public
 // interfaces should be called from the encoder task queue.
-class SimulcastEncoderAdapter : public VP8Encoder {
+class SimulcastEncoderAdapter : public VideoEncoder {
  public:
   explicit SimulcastEncoderAdapter(VideoEncoderFactory* factory,
                                    const SdpVideoFormat& format);

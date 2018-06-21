@@ -37,7 +37,8 @@ constexpr int ScreenshareLayers::kMaxNumTemporalLayers;
 // been exceeded. This prevents needless keyframe requests.
 const int ScreenshareLayers::kMaxFrameIntervalMs = 2750;
 
-ScreenshareLayers::ScreenshareLayers(int num_temporal_layers, Clock* clock)
+ScreenshareLayers::ScreenshareLayers(int num_temporal_layers,
+                                     Clock* clock)
     : clock_(clock),
       number_of_temporal_layers_(
           std::min(kMaxNumTemporalLayers, num_temporal_layers)),

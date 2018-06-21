@@ -429,9 +429,22 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
     int qp_h264 = it.second.h264.Avg(kMinRequiredMetricsSamples);
     if (qp_h264 != -1) {
       int spatial_idx = it.first;
-      RTC_DCHECK_EQ(-1, spatial_idx);
-      RTC_HISTOGRAMS_COUNTS_100(kIndex, uma_prefix_ + "Encoded.Qp.H264",
-                                qp_h264);
+      if (spatial_idx == -1) {
+        RTC_HISTOGRAMS_COUNTS_200(kIndex, uma_prefix_ + "Encoded.Qp.H264",
+                                  qp_h264);
+      } else if (spatial_idx == 0) {
+        RTC_HISTOGRAMS_COUNTS_200(kIndex, uma_prefix_ + "Encoded.Qp.H264.S0",
+                                  qp_h264);
+      } else if (spatial_idx == 1) {
+        RTC_HISTOGRAMS_COUNTS_200(kIndex, uma_prefix_ + "Encoded.Qp.H264.S1",
+                                  qp_h264);
+      } else if (spatial_idx == 2) {
+        RTC_HISTOGRAMS_COUNTS_200(kIndex, uma_prefix_ + "Encoded.Qp.H264.S2",
+                                  qp_h264);
+      } else {
+        RTC_LOG(LS_WARNING)
+            << "QP stats not recorded for H264 spatial idx " << spatial_idx;
+      }
     }
   }
 
@@ -858,6 +871,8 @@ void SendStatisticsProxy::OnSendEncodedImage(
   if (codec_info) {
     if (codec_info->codecType == kVideoCodecVP8) {
       simulcast_idx = codec_info->codecSpecific.VP8.simulcastIdx;
+    } else if (codec_info->codecType == kVideoCodecH264) {
+      simulcast_idx = codec_info->codecSpecific.H264.simulcast_idx;
     } else if (codec_info->codecType == kVideoCodecGeneric) {
       simulcast_idx = codec_info->codecSpecific.generic.simulcast_idx;
     }
@@ -906,7 +921,9 @@ void SendStatisticsProxy::OnSendEncodedImage(
                 : codec_info->codecSpecific.VP9.spatial_idx;
         uma_container_->qp_counters_[spatial_idx].vp9.Add(encoded_image.qp_);
       } else if (codec_info->codecType == kVideoCodecH264) {
-        int spatial_idx = -1;
+        int spatial_idx = (rtp_config_.ssrcs.size() == 1)
+                              ? -1
+                              : static_cast<int>(simulcast_idx);
         uma_container_->qp_counters_[spatial_idx].h264.Add(encoded_image.qp_);
       }
     }

@@ -16,7 +16,6 @@
 #include "common_types.h"  // NOLINT(build/include)
 #include "common_video/include/video_bitrate_allocator.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
-#include "modules/video_coding/codecs/vp8/temporal_layers.h"
 #include "modules/video_coding/encoded_frame.h"
 #include "modules/video_coding/include/video_codec_initializer.h"
 #include "modules/video_coding/include/video_codec_interface.h"
@@ -105,17 +104,16 @@ class VideoCodingModuleImpl : public VideoCodingModule {
   int32_t RegisterSendCodec(const VideoCodec* sendCodec,
                             uint32_t numberOfCores,
                             uint32_t maxPayloadSize) override {
-    if (sendCodec != nullptr && sendCodec->codecType == kVideoCodecVP8) {
-      // Set up a rate allocator and temporal layers factory for this vp8
+    if (sendCodec != nullptr && ((sendCodec->codecType == kVideoCodecVP8) ||
+                                 (sendCodec->codecType == kVideoCodecH264))) {
+      // Set up a rate allocator and temporal layers factory for this codec
       // instance. The codec impl will have a raw pointer to the TL factory,
       // and will call it when initializing. Since this can happen
       // asynchronously keep the instance alive until destruction or until a
       // new send codec is registered.
-      VideoCodec vp8_codec = *sendCodec;
-      rate_allocator_ =
-          VideoCodecInitializer::CreateBitrateAllocator(vp8_codec);
-      return sender_.RegisterSendCodec(&vp8_codec, numberOfCores,
-                                       maxPayloadSize);
+      VideoCodec codec = *sendCodec;
+      rate_allocator_ = VideoCodecInitializer::CreateBitrateAllocator(codec);
+      return sender_.RegisterSendCodec(&codec, numberOfCores, maxPayloadSize);
     }
     return sender_.RegisterSendCodec(sendCodec, numberOfCores, maxPayloadSize);
   }

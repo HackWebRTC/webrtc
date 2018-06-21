@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_VIDEO_CODING_CODECS_VP8_SIMULCAST_RATE_ALLOCATOR_H_
-#define MODULES_VIDEO_CODING_CODECS_VP8_SIMULCAST_RATE_ALLOCATOR_H_
+#ifndef MODULES_VIDEO_CODING_UTILITY_SIMULCAST_RATE_ALLOCATOR_H_
+#define MODULES_VIDEO_CODING_UTILITY_SIMULCAST_RATE_ALLOCATOR_H_
 
 #include <stdint.h>
 
@@ -20,10 +20,19 @@
 #include "api/video_codecs/video_encoder.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "common_video/include/video_bitrate_allocator.h"
-#include "modules/video_coding/codecs/vp8/temporal_layers.h"
 #include "rtc_base/constructormagic.h"
 
 namespace webrtc {
+
+// Ratio allocation between temporal streams:
+// Values as required for the VP8 codec (accumulating).
+static const float
+    kLayerRateAllocation[kMaxSimulcastStreams][kMaxTemporalStreams] = {
+        {1.0f, 1.0f, 1.0f, 1.0f},  // 1 layer
+        {0.6f, 1.0f, 1.0f, 1.0f},  // 2 layers {60%, 40%}
+        {0.4f, 0.6f, 1.0f, 1.0f},  // 3 layers {40%, 20%, 40%}
+        {0.25f, 0.4f, 0.6f, 1.0f}  // 4 layers {25%, 15%, 20%, 40%}
+};
 
 class SimulcastRateAllocator : public VideoBitrateAllocator {
  public:
@@ -58,4 +67,4 @@ class SimulcastRateAllocator : public VideoBitrateAllocator {
 
 }  // namespace webrtc
 
-#endif  // MODULES_VIDEO_CODING_CODECS_VP8_SIMULCAST_RATE_ALLOCATOR_H_
+#endif  // MODULES_VIDEO_CODING_UTILITY_SIMULCAST_RATE_ALLOCATOR_H_

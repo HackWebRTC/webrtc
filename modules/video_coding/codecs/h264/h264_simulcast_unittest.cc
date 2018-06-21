@@ -12,7 +12,7 @@
 
 #include "api/test/create_simulcast_test_fixture.h"
 #include "api/test/simulcast_test_fixture.h"
-#include "modules/video_coding/codecs/vp8/include/vp8.h"
+#include "modules/video_coding/codecs/h264/include/h264.h"
 #include "rtc_base/ptr_util.h"
 #include "test/function_video_decoder_factory.h"
 #include "test/function_video_encoder_factory.h"
@@ -25,82 +25,72 @@ namespace {
 std::unique_ptr<SimulcastTestFixture> CreateSpecificSimulcastTestFixture() {
   std::unique_ptr<VideoEncoderFactory> encoder_factory =
       rtc::MakeUnique<FunctionVideoEncoderFactory>(
-          []() { return VP8Encoder::Create(); });
+          []() { return H264Encoder::Create(cricket::VideoCodec("H264")); });
   std::unique_ptr<VideoDecoderFactory> decoder_factory =
       rtc::MakeUnique<FunctionVideoDecoderFactory>(
-          []() { return VP8Decoder::Create(); });
+          []() { return H264Decoder::Create(); });
   return CreateSimulcastTestFixture(std::move(encoder_factory),
                                     std::move(decoder_factory),
-                                    SdpVideoFormat("VP8"));
+                                    SdpVideoFormat("H264"));
 }
 }  // namespace
 
-TEST(LibvpxVp8SimulcastTest, TestKeyFrameRequestsOnAllStreams) {
+TEST(TestH264Simulcast, TestKeyFrameRequestsOnAllStreams) {
   auto fixture = CreateSpecificSimulcastTestFixture();
   fixture->TestKeyFrameRequestsOnAllStreams();
 }
 
-TEST(LibvpxVp8SimulcastTest, TestPaddingAllStreams) {
+TEST(TestH264Simulcast, TestPaddingAllStreams) {
   auto fixture = CreateSpecificSimulcastTestFixture();
   fixture->TestPaddingAllStreams();
 }
 
-TEST(LibvpxVp8SimulcastTest, TestPaddingTwoStreams) {
+TEST(TestH264Simulcast, TestPaddingTwoStreams) {
   auto fixture = CreateSpecificSimulcastTestFixture();
   fixture->TestPaddingTwoStreams();
 }
 
-TEST(LibvpxVp8SimulcastTest, TestPaddingTwoStreamsOneMaxedOut) {
+TEST(TestH264Simulcast, TestPaddingTwoStreamsOneMaxedOut) {
   auto fixture = CreateSpecificSimulcastTestFixture();
   fixture->TestPaddingTwoStreamsOneMaxedOut();
 }
 
-TEST(LibvpxVp8SimulcastTest, TestPaddingOneStream) {
+TEST(TestH264Simulcast, TestPaddingOneStream) {
   auto fixture = CreateSpecificSimulcastTestFixture();
   fixture->TestPaddingOneStream();
 }
 
-TEST(LibvpxVp8SimulcastTest, TestPaddingOneStreamTwoMaxedOut) {
+TEST(TestH264Simulcast, TestPaddingOneStreamTwoMaxedOut) {
   auto fixture = CreateSpecificSimulcastTestFixture();
   fixture->TestPaddingOneStreamTwoMaxedOut();
 }
 
-TEST(LibvpxVp8SimulcastTest, TestSendAllStreams) {
+TEST(TestH264Simulcast, TestSendAllStreams) {
   auto fixture = CreateSpecificSimulcastTestFixture();
   fixture->TestSendAllStreams();
 }
 
-TEST(LibvpxVp8SimulcastTest, TestDisablingStreams) {
+TEST(TestH264Simulcast, TestDisablingStreams) {
   auto fixture = CreateSpecificSimulcastTestFixture();
   fixture->TestDisablingStreams();
 }
 
-TEST(LibvpxVp8SimulcastTest, TestActiveStreams) {
+TEST(TestH264Simulcast, TestActiveStreams) {
   auto fixture = CreateSpecificSimulcastTestFixture();
   fixture->TestActiveStreams();
 }
 
-TEST(LibvpxVp8SimulcastTest, TestSwitchingToOneStream) {
+TEST(TestH264Simulcast, TestSwitchingToOneStream) {
   auto fixture = CreateSpecificSimulcastTestFixture();
   fixture->TestSwitchingToOneStream();
 }
 
-TEST(LibvpxVp8SimulcastTest, TestSwitchingToOneOddStream) {
+TEST(TestH264Simulcast, TestSwitchingToOneOddStream) {
   auto fixture = CreateSpecificSimulcastTestFixture();
   fixture->TestSwitchingToOneOddStream();
 }
 
-TEST(LibvpxVp8SimulcastTest, TestSwitchingToOneSmallStream) {
-  auto fixture = CreateSpecificSimulcastTestFixture();
-  fixture->TestSwitchingToOneSmallStream();
-}
-
-TEST(LibvpxVp8SimulcastTest, TestSpatioTemporalLayers333PatternEncoder) {
-  auto fixture = CreateSpecificSimulcastTestFixture();
-  fixture->TestSpatioTemporalLayers333PatternEncoder();
-}
-
-TEST(LibvpxVp8SimulcastTest, TestStrideEncodeDecode) {
+TEST(TestH264Simulcast, TestStrideEncodeDecode) {
   auto fixture = CreateSpecificSimulcastTestFixture();
   fixture->TestStrideEncodeDecode();
 }
