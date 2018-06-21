@@ -292,7 +292,7 @@ TEST_F(AcmReceiverTestOldApi, MAYBE_SampleRate) {
 class AcmReceiverTestFaxModeOldApi : public AcmReceiverTestOldApi {
  protected:
   AcmReceiverTestFaxModeOldApi() {
-    config_.neteq_config.playout_mode = kPlayoutFax;
+    config_.neteq_config.for_test_no_time_stretching = true;
   }
 
   void RunVerifyAudioFrame(RentACodec::CodecId codec_id) {
@@ -301,7 +301,7 @@ class AcmReceiverTestFaxModeOldApi : public AcmReceiverTestOldApi {
     // timestamp increments predictable; in normal mode, NetEq may decide to do
     // accelerate or pre-emptive expand operations after some time, offsetting
     // the timestamp.
-    EXPECT_EQ(kPlayoutFax, config_.neteq_config.playout_mode);
+    EXPECT_TRUE(config_.neteq_config.for_test_no_time_stretching);
 
     const RentACodec::CodecId kCodecId[] = {codec_id};
     AddSetOfCodecs(kCodecId);
