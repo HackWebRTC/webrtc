@@ -1775,17 +1775,15 @@ EventLogAnalyzer::NetEqStatsGetterMap EventLogAnalyzer::SimulateNetEq(
 // incoming audio SSRC. If the stream contains more than one incoming audio
 // SSRC, all but the first will be ignored.
 void EventLogAnalyzer::CreateAudioJitterBufferGraph(
-    const NetEqStatsGetterMap& neteq_stats,
+    uint32_t ssrc,
+    const test::NetEqStatsGetter* stats_getter,
     Plot* plot) const {
-  RTC_CHECK(!neteq_stats.empty());
-  const uint32_t ssrc = neteq_stats.begin()->first;
-
   test::NetEqDelayAnalyzer::Delays arrival_delay_ms;
   test::NetEqDelayAnalyzer::Delays corrected_arrival_delay_ms;
   test::NetEqDelayAnalyzer::Delays playout_delay_ms;
   test::NetEqDelayAnalyzer::Delays target_delay_ms;
 
-  neteq_stats.at(ssrc)->delay_analyzer()->CreateGraphs(
+  stats_getter->delay_analyzer()->CreateGraphs(
       &arrival_delay_ms, &corrected_arrival_delay_ms, &playout_delay_ms,
       &target_delay_ms);
 

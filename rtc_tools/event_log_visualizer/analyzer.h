@@ -76,9 +76,9 @@ class EventLogAnalyzer {
       std::map<uint32_t, std::unique_ptr<test::NetEqStatsGetter>>;
   NetEqStatsGetterMap SimulateNetEq(const std::string& replacement_file_name,
                                     int file_sample_rate_hz) const;
-  void CreateAudioJitterBufferGraph(
-      const NetEqStatsGetterMap& neteq_stats_getters,
-      Plot* plot) const;
+  void CreateAudioJitterBufferGraph(uint32_t ssrc,
+                                    const test::NetEqStatsGetter* stats_getter,
+                                    Plot* plot) const;
   void CreateNetEqStatsGraph(
       const NetEqStatsGetterMap& neteq_stats_getters,
       rtc::FunctionView<float(const NetEqNetworkStatistics&)> stats_extractor,

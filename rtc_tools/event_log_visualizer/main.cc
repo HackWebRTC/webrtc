@@ -335,12 +335,12 @@ int main(int argc, char* argv[]) {
           "audio_processing/conversational_speech/EN_script2_F_sp2_B1", "wav");
     }
     auto neteq_stats = analyzer.SimulateNetEq(wav_path, 48000);
-
-    if (!neteq_stats.empty()) {
-      analyzer.CreateAudioJitterBufferGraph(neteq_stats,
+    for (webrtc::EventLogAnalyzer::NetEqStatsGetterMap::const_iterator it =
+             neteq_stats.cbegin();
+         it != neteq_stats.cend(); ++it) {
+      analyzer.CreateAudioJitterBufferGraph(it->first, it->second.get(),
                                             collection->AppendNewPlot());
     }
-
     analyzer.CreateNetEqStatsGraph(
         neteq_stats,
         [](const webrtc::NetEqNetworkStatistics& stats) {
