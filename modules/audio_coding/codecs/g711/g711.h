@@ -50,7 +50,7 @@ specification by other means.
 extern "C" {
 #endif
 
-#include "typedefs.h"  // NOLINT(build/include)
+#include <stdint.h>
 
 #if defined(__i386__)
 /*! \brief Find the bit position of the highest set bit in a word
