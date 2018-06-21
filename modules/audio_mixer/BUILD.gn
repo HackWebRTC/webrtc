@@ -39,6 +39,7 @@ rtc_static_library("audio_mixer_impl") {
     "../..:webrtc_common",
     "../../:typedefs",
     "../../api:array_view",
+    "../../api/audio:audio_frame_api",
     "../../api/audio:audio_mixer_api",
     "../../audio/utility:audio_frame_operations",
     "../../common_audio",

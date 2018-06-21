@@ -24,10 +24,9 @@ namespace webrtc {
 
 namespace {
 using LimiterType = FrameCombiner::LimiterType;
-using NativeRate = AudioProcessing::NativeRate;
 struct FrameCombinerConfig {
-  LimiterType limiter_type;
-  NativeRate sample_rate_hz;
+  bool use_limiter;
+  int sample_rate_hz;
   int number_of_channels;
   float wave_frequency;
 };
@@ -46,13 +45,7 @@ std::string ProduceDebugText(const FrameCombinerConfig& config) {
   std::ostringstream ss;
   ss << "Sample rate: " << config.sample_rate_hz << " ,";
   ss << "number of channels: " << config.number_of_channels << " ,";
-  ss << "limiter active: "
-     << (config.limiter_type == LimiterType::kNoLimiter
-             ? "off"
-
-             : (config.limiter_type == LimiterType::kApmAgcLimiter ? "agc1"
-                                                                   : "agc2"))
-     << " ,";
+  ss << "limiter active: " << (config.use_limiter ? "on" : "off") << " ,";
   ss << "wave frequency: " << config.wave_frequency << " ,";
   return ss.str();
 }
@@ -70,9 +63,10 @@ void SetUpFrames(int sample_rate_hz, int number_of_channels) {
 }
 }  // namespace
 
+// The limiter requires sample rate divisible by 2000.
 TEST(FrameCombiner, BasicApiCallsLimiter) {
-  FrameCombiner combiner(LimiterType::kApmAgcLimiter);
-  for (const int rate : {8000, 16000, 32000, 48000}) {
+  FrameCombiner combiner(true);
+  for (const int rate : {8000, 18000, 34000, 48000}) {
     for (const int number_of_channels : {1, 2}) {
       const std::vector<AudioFrame*> all_frames = {&frame1, &frame2};
       SetUpFrames(rate, number_of_channels);
@@ -89,11 +83,10 @@ TEST(FrameCombiner, BasicApiCallsLimiter) {
   }
 }
 
-// No APM limiter means no AudioProcessing::NativeRate restriction
-// on rate. The rate has to be divisible by 100 since we use
-// 10 ms frames, though.
+// With no limiter, the rate has to be divisible by 100 since we use
+// 10 ms frames.
 TEST(FrameCombiner, BasicApiCallsNoLimiter) {
-  FrameCombiner combiner(LimiterType::kNoLimiter);
+  FrameCombiner combiner(false);
   for (const int rate : {8000, 10000, 11000, 32000, 44100}) {
     for (const int number_of_channels : {1, 2}) {
       const std::vector<AudioFrame*> all_frames = {&frame1, &frame2};
@@ -112,7 +105,7 @@ TEST(FrameCombiner, BasicApiCallsNoLimiter) {
 }
 
 TEST(FrameCombiner, CombiningZeroFramesShouldProduceSilence) {
-  FrameCombiner combiner(LimiterType::kNoLimiter);
+  FrameCombiner combiner(false);
   for (const int rate : {8000, 10000, 11000, 32000, 44100}) {
     for (const int number_of_channels : {1, 2}) {
       SCOPED_TRACE(ProduceDebugText(rate, number_of_channels, 0));
@@ -134,7 +127,7 @@ TEST(FrameCombiner, CombiningZeroFramesShouldProduceSilence) {
 }
 
 TEST(FrameCombiner, CombiningOneFrameShouldNotChangeFrame) {
-  FrameCombiner combiner(LimiterType::kNoLimiter);
+  FrameCombiner combiner(false);
   for (const int rate : {8000, 10000, 11000, 32000, 44100}) {
     for (const int number_of_channels : {1, 2}) {
       SCOPED_TRACE(ProduceDebugText(rate, number_of_channels, 1));
@@ -164,22 +157,17 @@ TEST(FrameCombiner, CombiningOneFrameShouldNotChangeFrame) {
 // that it is inside reasonable bounds. This is to catch issues like
 // chromium:695993 and chromium:816875.
 TEST(FrameCombiner, GainCurveIsSmoothForAlternatingNumberOfStreams) {
+  // Rates are divisible by 2000 when limiter is active.
   std::vector<FrameCombinerConfig> configs = {
-      {LimiterType::kNoLimiter, NativeRate::kSampleRate32kHz, 2, 50.f},
-      {LimiterType::kNoLimiter, NativeRate::kSampleRate16kHz, 1, 3200.f},
-      {LimiterType::kApmAgcLimiter, NativeRate::kSampleRate8kHz, 1, 3200.f},
-      {LimiterType::kApmAgcLimiter, NativeRate::kSampleRate16kHz, 1, 50.f},
-      {LimiterType::kApmAgcLimiter, NativeRate::kSampleRate16kHz, 2, 3200.f},
-      {LimiterType::kApmAgcLimiter, NativeRate::kSampleRate8kHz, 2, 50.f},
-      {LimiterType::kApmAgc2Limiter, NativeRate::kSampleRate8kHz, 1, 3200.f},
-      {LimiterType::kApmAgc2Limiter, NativeRate::kSampleRate32kHz, 1, 50.f},
-      {LimiterType::kApmAgc2Limiter, NativeRate::kSampleRate48kHz, 2, 3200.f},
+      {false, 30100, 2, 50.f},  {false, 16500, 1, 3200.f},
+      {true, 8000, 1, 3200.f},  {true, 16000, 1, 50.f},
+      {true, 18000, 2, 3200.f}, {true, 10000, 2, 50.f},
   };
 
   for (const auto& config : configs) {
     SCOPED_TRACE(ProduceDebugText(config));
 
-    FrameCombiner combiner(config.limiter_type);
+    FrameCombiner combiner(config.use_limiter);
 
     constexpr int16_t wave_amplitude = 30000;
     SineWaveGenerator wave_generator(config.wave_frequency, wave_amplitude);

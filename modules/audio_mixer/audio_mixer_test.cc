@@ -28,7 +28,7 @@ DEFINE_bool(
     false,
     "Enable stereo (interleaved). Inputs need not be as this parameter.");
 
-DEFINE_int(limiter, 0, "0-2. No limiter, AGC1, AGC2");
+DEFINE_bool(limiter, true, "Enable limiter.");
 DEFINE_string(output_file,
               "mixed_file.wav",
               "File in which to store the mixed result.");
@@ -115,9 +115,7 @@ int main(int argc, char* argv[]) {
       webrtc::AudioMixerImpl::Create(
           std::unique_ptr<webrtc::OutputRateCalculator>(
               new webrtc::DefaultOutputRateCalculator()),
-          false));
-  mixer->SetLimiterType(
-      static_cast<webrtc::FrameCombiner::LimiterType>(FLAG_limiter));
+          FLAG_limiter));
 
   const std::vector<std::string> input_files = parse_input_files();
   std::vector<webrtc::test::FilePlayingSource> sources;
@@ -143,10 +141,7 @@ int main(int argc, char* argv[]) {
   }
 
   // Print stats.
-  std::cout << "Limiting is: "
-            << (FLAG_limiter == 0 ? "off"
-                                  : (FLAG_limiter == 1 ? "agc" : "agc2"))
-            << "\n"
+  std::cout << "Limiting is: " << (FLAG_limiter ? "on" : "off") << "\n"
             << "Channels: " << num_channels << "\n"
             << "Rate: " << sample_rate << "\n"
             << "Number of input streams: " << input_files.size() << "\n";
