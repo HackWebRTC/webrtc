@@ -8,12 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/video_coding/codecs/vp8/simulcast_rate_allocator.h"
+#include "modules/video_coding/utility/simulcast_rate_allocator.h"
 
 #include <limits>
 #include <memory>
 #include <utility>
 #include <vector>
+
+#include "modules/video_coding/codecs/vp8/temporal_layers.h"
 
 #include "test/gmock.h"
 #include "test/gtest.h"

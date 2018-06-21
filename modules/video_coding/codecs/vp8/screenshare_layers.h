@@ -28,7 +28,8 @@ class ScreenshareLayers : public TemporalLayers {
   static const double kAcceptableTargetOvershoot;
   static const int kMaxFrameIntervalMs;
 
-  ScreenshareLayers(int num_temporal_layers, Clock* clock);
+  ScreenshareLayers(int num_temporal_layers,
+                    Clock* clock);
   virtual ~ScreenshareLayers();
 
   // Returns the recommended VP8 encode flags needed. May refresh the decoder

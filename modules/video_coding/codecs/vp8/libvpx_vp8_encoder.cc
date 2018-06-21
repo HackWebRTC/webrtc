@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2018 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2012 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -14,7 +14,8 @@
 
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/video_coding/codecs/vp8/libvpx_vp8_encoder.h"
-#include "modules/video_coding/codecs/vp8/simulcast_rate_allocator.h"
+#include "modules/video_coding/utility/simulcast_rate_allocator.h"
+#include "modules/video_coding/utility/simulcast_utility.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/ptr_util.h"
 #include "rtc_base/timeutils.h"
@@ -47,7 +48,7 @@ enum denoiserState {
 };
 
 // Greatest common divisior
-int GCD(int a, int b) {
+static int GCD(int a, int b) {
   int c = a % b;
   while (c != 0) {
     a = b;
@@ -55,53 +56,6 @@ int GCD(int a, int b) {
     c = a % b;
   }
   return b;
-}
-
-uint32_t SumStreamMaxBitrate(int streams, const VideoCodec& codec) {
-  uint32_t bitrate_sum = 0;
-  for (int i = 0; i < streams; ++i) {
-    bitrate_sum += codec.simulcastStream[i].maxBitrate;
-  }
-  return bitrate_sum;
-}
-
-int NumberOfStreams(const VideoCodec& codec) {
-  int streams =
-      codec.numberOfSimulcastStreams < 1 ? 1 : codec.numberOfSimulcastStreams;
-  uint32_t simulcast_max_bitrate = SumStreamMaxBitrate(streams, codec);
-  if (simulcast_max_bitrate == 0) {
-    streams = 1;
-  }
-  return streams;
-}
-
-bool ValidSimulcastResolutions(const VideoCodec& codec, int num_streams) {
-  if (codec.width != codec.simulcastStream[num_streams - 1].width ||
-      codec.height != codec.simulcastStream[num_streams - 1].height) {
-    return false;
-  }
-  for (int i = 0; i < num_streams; ++i) {
-    if (codec.width * codec.simulcastStream[i].height !=
-        codec.height * codec.simulcastStream[i].width) {
-      return false;
-    }
-  }
-  for (int i = 1; i < num_streams; ++i) {
-    if (codec.simulcastStream[i].width !=
-        codec.simulcastStream[i - 1].width * 2) {
-      return false;
-    }
-  }
-  return true;
-}
-
-bool ValidSimulcastTemporalLayers(const VideoCodec& codec, int num_streams) {
-  for (int i = 0; i < num_streams - 1; ++i) {
-    if (codec.simulcastStream[i].numberOfTemporalLayers !=
-        codec.simulcastStream[i + 1].numberOfTemporalLayers)
-      return false;
-  }
-  return true;
 }
 
 bool GetGfBoostPercentageFromFieldTrialGroup(int* boost_percentage) {
@@ -369,12 +323,13 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
     return retVal;
   }
 
-  int number_of_streams = NumberOfStreams(*inst);
+  int number_of_streams = SimulcastUtility::NumberOfSimulcastStreams(*inst);
   bool doing_simulcast = (number_of_streams > 1);
 
-  if (doing_simulcast &&
-      (!ValidSimulcastResolutions(*inst, number_of_streams) ||
-       !ValidSimulcastTemporalLayers(*inst, number_of_streams))) {
+  if (doing_simulcast && (!SimulcastUtility::ValidSimulcastResolutions(
+                              *inst, number_of_streams) ||
+                          !SimulcastUtility::ValidSimulcastTemporalLayers(
+                              *inst, number_of_streams))) {
     return WEBRTC_VIDEO_CODEC_ERR_SIMULCAST_PARAMETERS_NOT_SUPPORTED;
   }
 

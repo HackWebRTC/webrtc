@@ -152,7 +152,6 @@ rtc_static_library("video_coding") {
     ":packet",
     ":video_codec_interface",
     ":video_coding_utility",
-    ":webrtc_vp8_helpers",
     ":webrtc_vp9_helpers",
     "..:module_api",
     "..:module_api_public",
@@ -237,6 +236,10 @@ rtc_source_set("video_coding_utility") {
     "utility/moving_average.h",
     "utility/quality_scaler.cc",
     "utility/quality_scaler.h",
+    "utility/simulcast_rate_allocator.cc",
+    "utility/simulcast_rate_allocator.h",
+    "utility/simulcast_utility.cc",
+    "utility/simulcast_utility.h",
     "utility/vp8_header_parser.cc",
     "utility/vp8_header_parser.h",
     "utility/vp9_uncompressed_header_parser.cc",
@@ -263,6 +266,8 @@ rtc_source_set("video_coding_utility") {
     "../../rtc_base:sequenced_task_checker",
     "../../rtc_base/experiments:quality_scaling_experiment",
     "../../system_wrappers",
+    "../../system_wrappers:field_trial_api",
+    "../../system_wrappers:metrics_api",
     "../rtp_rtcp:rtp_rtcp_format",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
@@ -291,6 +296,7 @@ rtc_static_library("webrtc_h264") {
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base",
     "../../system_wrappers:metrics_api",
+    "//third_party/libyuv",
   ]
 
   if (rtc_use_h264) {
@@ -377,18 +383,20 @@ rtc_static_library("webrtc_multiplex") {
   ]
 }
 
-# This target includes VP8 files that may be used for any VP8 codec, internal SW or external HW.
-rtc_static_library("webrtc_vp8_helpers") {
+# This target includes the internal SW codec.
+rtc_static_library("webrtc_vp8") {
   visibility = [ "*" ]
+  poisonous = [ "software_video_codecs" ]
   sources = [
     "codecs/vp8/default_temporal_layers.cc",
     "codecs/vp8/default_temporal_layers.h",
     "codecs/vp8/include/vp8.h",
-    "codecs/vp8/include/vp8_common_types.h",
+    "codecs/vp8/libvpx_vp8_decoder.cc",
+    "codecs/vp8/libvpx_vp8_decoder.h",
+    "codecs/vp8/libvpx_vp8_encoder.cc",
+    "codecs/vp8/libvpx_vp8_encoder.h",
     "codecs/vp8/screenshare_layers.cc",
     "codecs/vp8/screenshare_layers.h",
-    "codecs/vp8/simulcast_rate_allocator.cc",
-    "codecs/vp8/simulcast_rate_allocator.h",
     "codecs/vp8/temporal_layers.cc",
     "codecs/vp8/temporal_layers.h",
   ]
@@ -401,45 +409,6 @@ rtc_static_library("webrtc_vp8_helpers") {
   deps = [
     ":video_codec_interface",
     ":video_coding_utility",
-    "..:module_api",
-    "../..:webrtc_common",
-    "../../:typedefs",
-    "../../api/video:video_frame",
-    "../../api/video_codecs:video_codecs_api",
-    "../../common_video",
-    "../../rtc_base:checks",
-    "../../rtc_base:rtc_base_approved",
-    "../../rtc_base:rtc_numerics",
-    "../../system_wrappers",
-    "../../system_wrappers:field_trial_api",
-    "../../system_wrappers:metrics_api",
-    "//third_party/abseil-cpp/absl/types:optional",
-    "//third_party/libyuv",
-  ]
-}
-
-# This target includes the internal SW codec.
-rtc_static_library("webrtc_vp8") {
-  visibility = [ "*" ]
-  poisonous = [ "software_video_codecs" ]
-  sources = [
-    "codecs/vp8/include/vp8.h",
-    "codecs/vp8/include/vp8_common_types.h",
-    "codecs/vp8/libvpx_vp8_decoder.cc",
-    "codecs/vp8/libvpx_vp8_decoder.h",
-    "codecs/vp8/libvpx_vp8_encoder.cc",
-    "codecs/vp8/libvpx_vp8_encoder.h",
-  ]
-
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-
-  deps = [
-    ":video_codec_interface",
-    ":video_coding_utility",
-    ":webrtc_vp8_helpers",
     "..:module_api",
     "../..:webrtc_common",
     "../../:typedefs",
@@ -574,8 +543,8 @@ if (rtc_include_tests) {
   rtc_source_set("simulcast_test_fixture_impl") {
     testonly = true
     sources = [
-      "codecs/vp8/simulcast_test_fixture_impl.cc",
-      "codecs/vp8/simulcast_test_fixture_impl.h",
+      "utility/simulcast_test_fixture_impl.cc",
+      "utility/simulcast_test_fixture_impl.h",
     ]
 
     if (!build_with_chromium && is_clang) {
@@ -587,7 +556,7 @@ if (rtc_include_tests) {
       ":mock_headers",
       ":video_codec_interface",
       ":video_coding",
-      ":webrtc_vp8_helpers",
+      ":video_coding_utility",
       "../../:webrtc_common",
       "../../api:simulcast_test_fixture_api",
       "../../api/video:video_frame",
@@ -618,7 +587,6 @@ if (rtc_include_tests) {
       ":video_codec_interface",
       ":video_coding",
       ":video_coding_utility",
-      ":webrtc_vp8_helpers",
       ":webrtc_vp9_helpers",
       "../..:webrtc_common",
       "../../:typedefs",
@@ -738,7 +706,7 @@ if (rtc_include_tests) {
       ":videocodec_test_impl",
       ":webrtc_h264",
       ":webrtc_multiplex",
-      ":webrtc_vp8_helpers",
+      ":webrtc_vp8",
       ":webrtc_vp9",
       ":webrtc_vp9_helpers",
       "../..:webrtc_common",
@@ -828,7 +796,10 @@ if (rtc_include_tests) {
       "video_sender_unittest.cc",
     ]
     if (rtc_use_h264) {
-      sources += [ "codecs/h264/h264_encoder_impl_unittest.cc" ]
+      sources += [
+        "codecs/h264/h264_encoder_impl_unittest.cc",
+        "codecs/h264/h264_simulcast_unittest.cc",
+      ]
     }
 
     deps = [
@@ -837,6 +808,7 @@ if (rtc_include_tests) {
       ":mock_headers",
       ":nack_module",
       ":packet",
+      ":simulcast_test_fixture_impl",
       ":video_codec_interface",
       ":video_codecs_test_framework",
       ":video_coding",
@@ -844,7 +816,6 @@ if (rtc_include_tests) {
       ":videocodec_test_impl",
       ":webrtc_h264",
       ":webrtc_vp8",
-      ":webrtc_vp8_helpers",
       ":webrtc_vp9",
       ":webrtc_vp9_helpers",
       "..:module_api",

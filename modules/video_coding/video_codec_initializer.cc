@@ -13,14 +13,13 @@
 #include "api/video_codecs/video_encoder.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "common_video/include/video_bitrate_allocator.h"
-#include "modules/video_coding/codecs/vp8/screenshare_layers.h"
-#include "modules/video_coding/codecs/vp8/simulcast_rate_allocator.h"
-#include "modules/video_coding/codecs/vp8/temporal_layers.h"
 #include "modules/video_coding/codecs/vp9/svc_config.h"
 #include "modules/video_coding/codecs/vp9/svc_rate_allocator.h"
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "modules/video_coding/utility/default_video_bitrate_allocator.h"
+#include "modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/system/fallthrough.h"
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {
@@ -53,7 +52,8 @@ VideoCodecInitializer::CreateBitrateAllocator(const VideoCodec& codec) {
 
   switch (codec.codecType) {
     case kVideoCodecVP8:
-      // Set up default VP8 temporal layer factory, if not provided.
+      RTC_FALLTHROUGH();
+    case kVideoCodecH264:
       rate_allocator.reset(new SimulcastRateAllocator(codec));
       break;
     case kVideoCodecVP9:

@@ -13,13 +13,12 @@
 
 #include "api/video/i420_buffer.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
-#include "modules/video_coding/codecs/vp8/include/vp8_common_types.h"
-#include "modules/video_coding/codecs/vp8/simulcast_rate_allocator.h"
 #include "modules/video_coding/codecs/vp8/temporal_layers.h"
 #include "modules/video_coding/include/mock/mock_vcm_callbacks.h"
 #include "modules/video_coding/include/mock/mock_video_codec_interface.h"
 #include "modules/video_coding/include/video_coding.h"
 #include "modules/video_coding/utility/default_video_bitrate_allocator.h"
+#include "modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "modules/video_coding/video_coding_impl.h"
 #include "system_wrappers/include/clock.h"
 #include "test/frame_generator.h"
@@ -472,9 +471,9 @@ class TestVideoSenderWithVp8 : public TestVideoSender {
 #define MAYBE_FixedTemporalLayersStrategy FixedTemporalLayersStrategy
 #endif
 TEST_F(TestVideoSenderWithVp8, MAYBE_FixedTemporalLayersStrategy) {
-  const int low_b = codec_bitrate_kbps_ * kVp8LayerRateAlloction[2][0];
-  const int mid_b = codec_bitrate_kbps_ * kVp8LayerRateAlloction[2][1];
-  const int high_b = codec_bitrate_kbps_ * kVp8LayerRateAlloction[2][2];
+  const int low_b = codec_bitrate_kbps_ * kLayerRateAllocation[2][0];
+  const int mid_b = codec_bitrate_kbps_ * kLayerRateAllocation[2][1];
+  const int high_b = codec_bitrate_kbps_ * kLayerRateAllocation[2][2];
   {
     Vp8StreamInfo expected = {{7.5, 15.0, 30.0}, {low_b, mid_b, high_b}};
     EXPECT_THAT(SimulateWithFramerate(30.0), MatchesVp8StreamInfo(expected));
