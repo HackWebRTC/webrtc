@@ -22,6 +22,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "api/mediatypes.h"
 #include "api/candidate.h"
 #include "api/cryptoparams.h"
 #include "api/jsepicecandidate.h"
@@ -232,7 +233,7 @@ template <class T>
 static void AddFmtpLine(const T& codec, std::string* message);
 static void BuildMediaDescription(const ContentInfo* content_info,
                                   const TransportInfo* transport_info,
-                                  const MediaType media_type,
+                                  const cricket::MediaType media_type,
                                   const std::vector<Candidate>& candidates,
                                   int msid_signaling,
                                   std::string* message);
@@ -240,11 +241,11 @@ static void BuildSctpContentAttributes(std::string* message,
                                        int sctp_port,
                                        bool use_sctpmap);
 static void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
-                                      const MediaType media_type,
+                                      const cricket::MediaType media_type,
                                       int msid_signaling,
                                       std::string* message);
 static void BuildRtpMap(const MediaContentDescription* media_desc,
-                        const MediaType media_type,
+                        const cricket::MediaType media_type,
                         std::string* message);
 static void BuildCandidate(const std::vector<Candidate>& candidates,
                            bool include_ufrag,
@@ -275,7 +276,7 @@ static bool ParseMediaDescription(
     std::vector<JsepIceCandidate*>* candidates,
     SdpParseError* error);
 static bool ParseContent(const std::string& message,
-                         const MediaType media_type,
+                         const cricket::MediaType media_type,
                          int mline_index,
                          const std::string& protocol,
                          const std::vector<int>& payload_types,
@@ -298,12 +299,12 @@ static bool ParseCryptoAttribute(const std::string& line,
                                  MediaContentDescription* media_desc,
                                  SdpParseError* error);
 static bool ParseRtpmapAttribute(const std::string& line,
-                                 const MediaType media_type,
+                                 const cricket::MediaType media_type,
                                  const std::vector<int>& payload_types,
                                  MediaContentDescription* media_desc,
                                  SdpParseError* error);
 static bool ParseFmtpAttributes(const std::string& line,
-                                const MediaType media_type,
+                                const cricket::MediaType media_type,
                                 MediaContentDescription* media_desc,
                                 SdpParseError* error);
 static bool ParseFmtpParam(const std::string& line,
@@ -315,7 +316,7 @@ static bool ParseCandidate(const std::string& message,
                            SdpParseError* error,
                            bool is_raw);
 static bool ParseRtcpFbAttribute(const std::string& line,
-                                 const MediaType media_type,
+                                 const cricket::MediaType media_type,
                                  MediaContentDescription* media_desc,
                                  SdpParseError* error);
 static bool ParseIceOptions(const std::string& line,
@@ -1243,7 +1244,7 @@ bool ParseExtmap(const std::string& line,
 
 void BuildMediaDescription(const ContentInfo* content_info,
                            const TransportInfo* transport_info,
-                           const MediaType media_type,
+                           const cricket::MediaType media_type,
                            const std::vector<Candidate>& candidates,
                            int msid_signaling,
                            std::string* message) {
@@ -1477,7 +1478,7 @@ void BuildSctpContentAttributes(std::string* message,
 }
 
 void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
-                               const MediaType media_type,
+                               const cricket::MediaType media_type,
                                int msid_signaling,
                                std::string* message) {
   std::ostringstream os;
@@ -1767,7 +1768,7 @@ bool GetParameter(const std::string& name,
 }
 
 void BuildRtpMap(const MediaContentDescription* media_desc,
-                 const MediaType media_type,
+                 const cricket::MediaType media_type,
                  std::string* message) {
   RTC_DCHECK(message != NULL);
   RTC_DCHECK(media_desc != NULL);
@@ -2328,7 +2329,7 @@ void MaybeCreateStaticPayloadAudioCodecs(const std::vector<int>& fmts,
 
 template <class C>
 static C* ParseContentDescription(const std::string& message,
-                                  const MediaType media_type,
+                                  const cricket::MediaType media_type,
                                   int mline_index,
                                   const std::string& protocol,
                                   const std::vector<int>& payload_types,
@@ -2709,7 +2710,7 @@ void AddAudioAttribute(const std::string& name,
 }
 
 bool ParseContent(const std::string& message,
-                  const MediaType media_type,
+                  const cricket::MediaType media_type,
                   int mline_index,
                   const std::string& protocol,
                   const std::vector<int>& payload_types,
@@ -3198,7 +3199,7 @@ void UpdateCodec(int payload_type,
 }
 
 bool ParseRtpmapAttribute(const std::string& line,
-                          const MediaType media_type,
+                          const cricket::MediaType media_type,
                           const std::vector<int>& payload_types,
                           MediaContentDescription* media_desc,
                           SdpParseError* error) {
@@ -3281,7 +3282,7 @@ bool ParseFmtpParam(const std::string& line,
 }
 
 bool ParseFmtpAttributes(const std::string& line,
-                         const MediaType media_type,
+                         const cricket::MediaType media_type,
                          MediaContentDescription* media_desc,
                          SdpParseError* error) {
   if (media_type != cricket::MEDIA_TYPE_AUDIO &&
@@ -3345,7 +3346,7 @@ bool ParseFmtpAttributes(const std::string& line,
 }
 
 bool ParseRtcpFbAttribute(const std::string& line,
-                          const MediaType media_type,
+                          const cricket::MediaType media_type,
                           MediaContentDescription* media_desc,
                           SdpParseError* error) {
   if (media_type != cricket::MEDIA_TYPE_AUDIO &&

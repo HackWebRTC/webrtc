@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "api/mediatypes.h"
 #include "call/audio_receive_stream.h"
 #include "call/audio_send_stream.h"
 #include "call/call_config.h"
@@ -29,8 +30,6 @@
 #include "rtc_base/socket.h"
 
 namespace webrtc {
-
-enum class MediaType { ANY, AUDIO, VIDEO, DATA };
 
 class PacketReceiver {
  public:

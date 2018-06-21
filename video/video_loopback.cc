@@ -334,11 +334,11 @@ void Loopback() {
       flags::SelectedStream(), flags::NumSpatialLayers(), flags::SelectedSL(),
       flags::InterLayerPred(), SL_descriptors);
 
-  VideoQualityTest test;
+  auto fixture = rtc::MakeUnique<VideoQualityTest>(nullptr);
   if (flags::DurationSecs()) {
-    test.RunWithAnalyzer(params);
+    fixture->RunWithAnalyzer(params);
   } else {
-    test.RunWithRenderers(params);
+    fixture->RunWithRenderers(params);
   }
 }
 }  // namespace webrtc

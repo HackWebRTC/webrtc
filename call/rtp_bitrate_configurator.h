@@ -11,8 +11,8 @@
 #ifndef CALL_RTP_BITRATE_CONFIGURATOR_H_
 #define CALL_RTP_BITRATE_CONFIGURATOR_H_
 
+#include "api/bitrate_constraints.h"
 #include "api/transport/bitrate_settings.h"
-#include "call/bitrate_constraints.h"
 #include "rtc_base/constructormagic.h"
 
 namespace webrtc {

@@ -146,12 +146,20 @@ if (rtc_include_tests) {
   }
   rtc_source_set("video_quality_test") {
     testonly = true
-    visibility = [ ":*" ]  # Only targets in this file can depend on this.
+
+    # Only targets in this file and api/ can depend on this.
+    visibility = [
+      ":*",
+      "../api:create_video_quality_test_fixture_api",
+    ]
     sources = [
       "video_quality_test.cc",
       "video_quality_test.h",
     ]
     deps = [
+      "../api:fec_controller_api",
+      "../api:video_quality_test_fixture_api",
+      "../call:fake_network",
       "../logging:rtc_event_log_api",
       "../logging:rtc_event_log_impl_output",
       "../media:rtc_audio_video",

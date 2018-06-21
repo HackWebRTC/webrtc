@@ -48,6 +48,7 @@ rtc_static_library("libjingle_peerconnection_api") {
   visibility = [ "*" ]
   cflags = []
   sources = [
+    "bitrate_constraints.h",
     "candidate.cc",
     "candidate.h",
     "cryptoparams.h",
@@ -130,6 +131,48 @@ rtc_static_library("libjingle_peerconnection_api") {
   }
 }
 
+rtc_source_set("video_quality_test_fixture_api") {
+  visibility = [ "*" ]
+  testonly = true
+  sources = [
+    "test/video_quality_test_fixture.h",
+  ]
+  deps = [
+    ":libjingle_peerconnection_api",
+    ":simulated_network_api",
+    "../call:fake_network",
+    "../call:rtp_interfaces",
+    "../test:test_common",
+    "../test:video_test_common",
+    "video_codecs:video_codecs_api",
+  ]
+  if (!build_with_chromium && is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+  }
+}
+
+if (rtc_include_tests) {
+  rtc_source_set("create_video_quality_test_fixture_api") {
+    visibility = [ "*" ]
+    testonly = true
+    sources = [
+      "test/create_video_quality_test_fixture.cc",
+      "test/create_video_quality_test_fixture.h",
+    ]
+    deps = [
+      ":fec_controller_api",
+      ":video_quality_test_fixture_api",
+      "../rtc_base:ptr_util",
+      "../video:video_quality_test",
+    ]
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+}
+
 rtc_source_set("libjingle_logging_api") {
   visibility = [ "*" ]
   sources = [
@@ -204,6 +247,18 @@ rtc_source_set("transport_api") {
   sources = [
     "call/transport.cc",
     "call/transport.h",
+  ]
+}
+
+rtc_source_set("simulated_network_api") {
+  visibility = [ "*" ]
+  sources = [
+    "test/simulated_network.h",
+  ]
+  deps = [
+    ":optional",
+    "../rtc_base:criticalsection",
+    "../rtc_base:rtc_base",
   ]
 }
 

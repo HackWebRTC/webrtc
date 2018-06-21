@@ -51,7 +51,6 @@ rtc_source_set("call_interfaces") {
 # when interfaces have stabilized. See also TODO for |mock_rtp_interfaces|.
 rtc_source_set("rtp_interfaces") {
   sources = [
-    "bitrate_constraints.h",
     "rtcp_packet_sink_interface.h",
     "rtp_config.cc",
     "rtp_config.h",
@@ -61,6 +60,7 @@ rtc_source_set("rtp_interfaces") {
   ]
   deps = [
     "../api:array_view",
+    "../api:libjingle_peerconnection_api",
     "../api/transport:bitrate_settings",
     "../rtc_base:rtc_base_approved",
     "//third_party/abseil-cpp/absl/types:optional",
@@ -123,6 +123,7 @@ rtc_source_set("bitrate_configurator") {
   ]
   deps = [
     ":rtp_interfaces",
+    "../api:libjingle_peerconnection_api",
     "../api/transport:bitrate_settings",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
@@ -240,6 +241,7 @@ rtc_source_set("fake_network") {
     ":call_interfaces",
     "..:typedefs",
     "..:webrtc_common",
+    "../api:simulated_network_api",
     "../api:transport_api",
     "../modules:module_api",
     "../rtc_base:rtc_base_approved",
@@ -366,6 +368,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":rtp_interfaces",
+      "../api:libjingle_peerconnection_api",
       "../modules/congestion_controller",
       "../modules/pacing",
       "../rtc_base:rate_limiter",

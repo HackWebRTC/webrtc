@@ -10,11 +10,11 @@
 #ifndef CALL_CALL_CONFIG_H_
 #define CALL_CALL_CONFIG_H_
 
+#include "api/bitrate_constraints.h"
 #include "api/fec_controller.h"
 #include "api/rtcerror.h"
 #include "api/transport/network_control.h"
 #include "call/audio_state.h"
-#include "call/bitrate_constraints.h"
 #include "rtc_base/platform_file.h"
 
 namespace webrtc {
