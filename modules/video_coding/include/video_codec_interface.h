@@ -70,7 +70,6 @@ struct CodecSpecificInfoGeneric {
 
 struct CodecSpecificInfoH264 {
   H264PacketizationMode packetization_mode;
-  uint8_t simulcast_idx;
 };
 
 union CodecSpecificInfoUnion {
@@ -84,9 +83,7 @@ union CodecSpecificInfoUnion {
 // must be fitted with a copy-constructor. This is because it is copied
 // in the copy-constructor of VCMEncodedFrame.
 struct CodecSpecificInfo {
-  CodecSpecificInfo() : codecType(kVideoCodecUnknown), codec_name(nullptr) {
-    memset(&codecSpecific, 0, sizeof(codecSpecific));
-  }
+  CodecSpecificInfo() : codecType(kVideoCodecUnknown), codec_name(nullptr) {}
   VideoCodecType codecType;
   const char* codec_name;
   CodecSpecificInfoUnion codecSpecific;

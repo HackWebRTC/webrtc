@@ -16,7 +16,8 @@
 #include "api/video/video_bitrate_allocation.h"
 #include "api/video_codecs/video_encoder_factory.h"
 #include "media/engine/scopedvideoencoder.h"
-#include "modules/video_coding/utility/simulcast_rate_allocator.h"
+#include "modules/video_coding/codecs/vp8/screenshare_layers.h"
+#include "modules/video_coding/codecs/vp8/simulcast_rate_allocator.h"
 #include "rtc_base/checks.h"
 #include "system_wrappers/include/clock.h"
 #include "third_party/libyuv/include/libyuv/scale.h"
@@ -75,8 +76,7 @@ int VerifyCodec(const webrtc::VideoCodec* inst) {
   if (inst->width <= 1 || inst->height <= 1) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
-  if (inst->codecType == webrtc::kVideoCodecVP8 &&
-      inst->VP8().automaticResizeOn && inst->numberOfSimulcastStreams > 1) {
+  if (inst->VP8().automaticResizeOn && inst->numberOfSimulcastStreams > 1) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
   return WEBRTC_VIDEO_CODEC_OK;
@@ -219,8 +219,7 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
       encoder = std::move(stored_encoders_.top());
       stored_encoders_.pop();
     } else {
-      encoder = factory_->CreateVideoEncoder(SdpVideoFormat(
-          codec_.codecType == webrtc::kVideoCodecVP8 ? "VP8" : "H264"));
+      encoder = factory_->CreateVideoEncoder(video_format_);
     }
 
     ret = encoder->InitEncode(&stream_codec, number_of_cores, max_payload_size);
@@ -436,11 +435,8 @@ EncodedImageCallback::Result SimulcastEncoderAdapter::OnEncodedImage(
     const RTPFragmentationHeader* fragmentation) {
   CodecSpecificInfo stream_codec_specific = *codecSpecificInfo;
   stream_codec_specific.codec_name = implementation_name_.c_str();
-  if (stream_codec_specific.codecType == webrtc::kVideoCodecVP8) {
-    stream_codec_specific.codecSpecific.VP8.simulcastIdx = stream_idx;
-  } else if (stream_codec_specific.codecType == webrtc::kVideoCodecH264) {
-    stream_codec_specific.codecSpecific.H264.simulcast_idx = stream_idx;
-  }
+  CodecSpecificInfoVP8* vp8Info = &(stream_codec_specific.codecSpecific.VP8);
+  vp8Info->simulcastIdx = stream_idx;
 
   return encoded_complete_callback_->OnEncodedImage(
       encodedImage, &stream_codec_specific, fragmentation);
@@ -455,6 +451,8 @@ void SimulcastEncoderAdapter::PopulateStreamCodec(
   *stream_codec = inst;
 
   // Stream specific settings.
+  stream_codec->VP8()->numberOfTemporalLayers =
+      inst.simulcastStream[stream_index].numberOfTemporalLayers;
   stream_codec->numberOfSimulcastStreams = 0;
   stream_codec->width = inst.simulcastStream[stream_index].width;
   stream_codec->height = inst.simulcastStream[stream_index].height;
@@ -467,20 +465,16 @@ void SimulcastEncoderAdapter::PopulateStreamCodec(
     // Settings for lowest spatial resolutions.
     stream_codec->qpMax = kLowestResMaxQp;
   }
-  if (inst.codecType == webrtc::kVideoCodecVP8) {
-    stream_codec->VP8()->numberOfTemporalLayers =
-        inst.simulcastStream[stream_index].numberOfTemporalLayers;
-    if (!highest_resolution_stream) {
-      // For resolutions below CIF, set the codec |complexity| parameter to
-      // kComplexityHigher, which maps to cpu_used = -4.
-      int pixels_per_frame = stream_codec->width * stream_codec->height;
-      if (pixels_per_frame < 352 * 288) {
-        stream_codec->VP8()->complexity =
-            webrtc::VideoCodecComplexity::kComplexityHigher;
-      }
-      // Turn off denoising for all streams but the highest resolution.
-      stream_codec->VP8()->denoisingOn = false;
+  if (!highest_resolution_stream) {
+    // For resolutions below CIF, set the codec |complexity| parameter to
+    // kComplexityHigher, which maps to cpu_used = -4.
+    int pixels_per_frame = stream_codec->width * stream_codec->height;
+    if (pixels_per_frame < 352 * 288) {
+      stream_codec->VP8()->complexity =
+          webrtc::VideoCodecComplexity::kComplexityHigher;
     }
+    // Turn off denoising for all streams but the highest resolution.
+    stream_codec->VP8()->denoisingOn = false;
   }
   // TODO(ronghuawu): what to do with targetBitrate.
 

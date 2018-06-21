@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/video_coding/utility/simulcast_test_fixture_impl.h"
+#include "modules/video_coding/codecs/vp8/simulcast_test_fixture_impl.h"
 
 #include <algorithm>
 #include <map>
@@ -18,6 +18,8 @@
 #include "api/video_codecs/sdp_video_format.h"
 #include "common_video/include/video_frame.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "modules/video_coding/codecs/vp8/include/vp8.h"
+#include "modules/video_coding/codecs/vp8/temporal_layers.h"
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "rtc_base/checks.h"
 #include "test/gtest.h"
@@ -42,7 +44,6 @@ const int kMaxBitrates[kNumberOfSimulcastStreams] = {150, 600, 1200};
 const int kMinBitrates[kNumberOfSimulcastStreams] = {50, 150, 600};
 const int kTargetBitrates[kNumberOfSimulcastStreams] = {100, 450, 1000};
 const int kDefaultTemporalLayerProfile[3] = {3, 3, 3};
-const int kNoTemporalLayerProfile[3] = {0, 0, 0};
 
 template <typename T>
 void SetExpectedValues3(T value0, T value1, T value2, T* expected_values) {
@@ -60,15 +61,15 @@ enum PlaneType {
 
 }  // namespace
 
-class SimulcastTestFixtureImpl::TestEncodedImageCallback
+class SimulcastTestFixtureImpl::Vp8TestEncodedImageCallback
     : public EncodedImageCallback {
  public:
-  TestEncodedImageCallback() {
+  Vp8TestEncodedImageCallback() : picture_id_(-1) {
     memset(temporal_layer_, -1, sizeof(temporal_layer_));
     memset(layer_sync_, false, sizeof(layer_sync_));
   }
 
-  ~TestEncodedImageCallback() {
+  ~Vp8TestEncodedImageCallback() {
     delete[] encoded_key_frame_._buffer;
     delete[] encoded_frame_._buffer;
   }
@@ -76,15 +77,8 @@ class SimulcastTestFixtureImpl::TestEncodedImageCallback
   virtual Result OnEncodedImage(const EncodedImage& encoded_image,
                                 const CodecSpecificInfo* codec_specific_info,
                                 const RTPFragmentationHeader* fragmentation) {
-    uint16_t simulcast_idx = 0;
-    bool is_vp8 = (codec_specific_info->codecType == kVideoCodecVP8);
-    if (is_vp8) {
-      simulcast_idx = codec_specific_info->codecSpecific.VP8.simulcastIdx;
-    } else {
-      simulcast_idx = codec_specific_info->codecSpecific.H264.simulcast_idx;
-    }
     // Only store the base layer.
-    if (simulcast_idx) {
+    if (codec_specific_info->codecSpecific.VP8.simulcastIdx == 0) {
       if (encoded_image._frameType == kVideoFrameKey) {
         delete[] encoded_key_frame_._buffer;
         encoded_key_frame_._buffer = new uint8_t[encoded_image._size];
@@ -103,18 +97,17 @@ class SimulcastTestFixtureImpl::TestEncodedImageCallback
                encoded_image._length);
       }
     }
-    if (is_vp8) {
-      layer_sync_[codec_specific_info->codecSpecific.VP8.simulcastIdx] =
-          codec_specific_info->codecSpecific.VP8.layerSync;
-      temporal_layer_[codec_specific_info->codecSpecific.VP8.simulcastIdx] =
-          codec_specific_info->codecSpecific.VP8.temporalIdx;
-    }
+    layer_sync_[codec_specific_info->codecSpecific.VP8.simulcastIdx] =
+        codec_specific_info->codecSpecific.VP8.layerSync;
+    temporal_layer_[codec_specific_info->codecSpecific.VP8.simulcastIdx] =
+        codec_specific_info->codecSpecific.VP8.temporalIdx;
     return Result(Result::OK, encoded_image._timeStamp);
   }
-  // This method only makes sense for VP8.
-  void GetLastEncodedFrameInfo(int* temporal_layer,
+  void GetLastEncodedFrameInfo(int* picture_id,
+                               int* temporal_layer,
                                bool* layer_sync,
                                int stream) {
+    *picture_id = picture_id_;
     *temporal_layer = temporal_layer_[stream];
     *layer_sync = layer_sync_[stream];
   }
@@ -128,14 +121,15 @@ class SimulcastTestFixtureImpl::TestEncodedImageCallback
  private:
   EncodedImage encoded_key_frame_;
   EncodedImage encoded_frame_;
+  int picture_id_;
   int temporal_layer_[kNumberOfSimulcastStreams];
   bool layer_sync_[kNumberOfSimulcastStreams];
 };
 
-class SimulcastTestFixtureImpl::TestDecodedImageCallback
+class SimulcastTestFixtureImpl::Vp8TestDecodedImageCallback
     : public DecodedImageCallback {
  public:
-  TestDecodedImageCallback() : decoded_frames_(0) {}
+  Vp8TestDecodedImageCallback() : decoded_frames_(0) {}
   int32_t Decoded(VideoFrame& decoded_image) override {
     rtc::scoped_refptr<I420BufferInterface> i420_buffer =
         decoded_image.video_frame_buffer()->ToI420();
@@ -204,9 +198,7 @@ void ConfigureStream(int width,
   stream->maxBitrate = max_bitrate;
   stream->minBitrate = min_bitrate;
   stream->targetBitrate = target_bitrate;
-  if (num_temporal_layers >= 0) {
-    stream->numberOfTemporalLayers = num_temporal_layers;
-  }
+  stream->numberOfTemporalLayers = num_temporal_layers;
   stream->qpMax = 45;
   stream->active = true;
 }
@@ -215,11 +207,10 @@ void ConfigureStream(int width,
 
 void SimulcastTestFixtureImpl::DefaultSettings(
     VideoCodec* settings,
-    const int* temporal_layer_profile,
-    VideoCodecType codec_type) {
+    const int* temporal_layer_profile) {
   RTC_CHECK(settings);
   memset(settings, 0, sizeof(VideoCodec));
-  settings->codecType = codec_type;
+  settings->codecType = kVideoCodecVP8;
   // 96 to 127 dynamic payload types for video codecs
   settings->plType = 120;
   settings->startBitrate = 300;
@@ -242,26 +233,18 @@ void SimulcastTestFixtureImpl::DefaultSettings(
   ConfigureStream(kDefaultWidth, kDefaultHeight, kMaxBitrates[2],
                   kMinBitrates[2], kTargetBitrates[2],
                   &settings->simulcastStream[2], temporal_layer_profile[2]);
-    if (codec_type == kVideoCodecVP8) {
-      settings->VP8()->denoisingOn = true;
-      settings->VP8()->automaticResizeOn = false;
-      settings->VP8()->frameDroppingOn = true;
-      settings->VP8()->keyFrameInterval = 3000;
-    } else {
-      settings->H264()->frameDroppingOn = true;
-      settings->H264()->keyFrameInterval = 3000;
-    }
+  settings->VP8()->denoisingOn = true;
+  settings->VP8()->automaticResizeOn = false;
+  settings->VP8()->frameDroppingOn = true;
+  settings->VP8()->keyFrameInterval = 3000;
 }
 
 SimulcastTestFixtureImpl::SimulcastTestFixtureImpl(
     std::unique_ptr<VideoEncoderFactory> encoder_factory,
-    std::unique_ptr<VideoDecoderFactory> decoder_factory,
-    SdpVideoFormat video_format)
-    : codec_type_(PayloadStringToCodecType(video_format.name)) {
-  encoder_ = encoder_factory->CreateVideoEncoder(video_format);
-  decoder_ = decoder_factory->CreateVideoDecoder(video_format);
-  SetUpCodec(codec_type_ == kVideoCodecVP8 ? kDefaultTemporalLayerProfile
-    : kNoTemporalLayerProfile);
+    std::unique_ptr<VideoDecoderFactory> decoder_factory) {
+  encoder_ = encoder_factory->CreateVideoEncoder(SdpVideoFormat("VP8"));
+  decoder_ = decoder_factory->CreateVideoDecoder(SdpVideoFormat("VP8"));
+  SetUpCodec(kDefaultTemporalLayerProfile);
 }
 
 SimulcastTestFixtureImpl::~SimulcastTestFixtureImpl() {
@@ -272,7 +255,7 @@ SimulcastTestFixtureImpl::~SimulcastTestFixtureImpl() {
 void SimulcastTestFixtureImpl::SetUpCodec(const int* temporal_layer_profile) {
   encoder_->RegisterEncodeCompleteCallback(&encoder_callback_);
   decoder_->RegisterDecodeCompleteCallback(&decoder_callback_);
-  DefaultSettings(&settings_, temporal_layer_profile, codec_type_);
+  DefaultSettings(&settings_, temporal_layer_profile);
   SetUpRateAllocator();
   EXPECT_EQ(0, encoder_->InitEncode(&settings_, 1, 1200));
   EXPECT_EQ(0, decoder_->InitDecode(&settings_, 1));
@@ -378,14 +361,16 @@ void SimulcastTestFixtureImpl::ExpectStreams(FrameType frame_type,
 }
 
 void SimulcastTestFixtureImpl::VerifyTemporalIdxAndSyncForAllSpatialLayers(
-    TestEncodedImageCallback* encoder_callback,
+    Vp8TestEncodedImageCallback* encoder_callback,
     const int* expected_temporal_idx,
     const bool* expected_layer_sync,
     int num_spatial_layers) {
+  int picture_id = -1;
   int temporal_layer = -1;
   bool layer_sync = false;
   for (int i = 0; i < num_spatial_layers; i++) {
-    encoder_callback->GetLastEncodedFrameInfo(&temporal_layer, &layer_sync, i);
+    encoder_callback->GetLastEncodedFrameInfo(&picture_id, &temporal_layer,
+                                              &layer_sync, i);
     EXPECT_EQ(expected_temporal_idx[i], temporal_layer);
     EXPECT_EQ(expected_layer_sync[i], layer_sync);
   }
@@ -573,15 +558,9 @@ void SimulcastTestFixtureImpl::TestActiveStreams() {
 }
 
 void SimulcastTestFixtureImpl::SwitchingToOneStream(int width, int height) {
-  const int* temporal_layer_profile = nullptr;
   // Disable all streams except the last and set the bitrate of the last to
   // 100 kbps. This verifies the way GTP switches to screenshare mode.
-  if (codec_type_ == kVideoCodecVP8) {
-    settings_.VP8()->numberOfTemporalLayers = 1;
-    temporal_layer_profile = kDefaultTemporalLayerProfile;
-  } else {
-    temporal_layer_profile = kNoTemporalLayerProfile;
-  }
+  settings_.VP8()->numberOfTemporalLayers = 1;
   settings_.maxBitrate = 100;
   settings_.startBitrate = 100;
   settings_.width = width;
@@ -626,7 +605,7 @@ void SimulcastTestFixtureImpl::SwitchingToOneStream(int width, int height) {
   EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
 
   // Switch back.
-  DefaultSettings(&settings_, temporal_layer_profile, codec_type_);
+  DefaultSettings(&settings_, kDefaultTemporalLayerProfile);
   // Start at the lowest bitrate for enabling base stream.
   settings_.startBitrate = kMinBitrates[0];
   SetUpRateAllocator();
@@ -657,8 +636,7 @@ void SimulcastTestFixtureImpl::TestSwitchingToOneSmallStream() {
 // 3-3-3 pattern: 3 temporal layers for all spatial streams, so same
 // temporal_layer id and layer_sync is expected for all streams.
 void SimulcastTestFixtureImpl::TestSpatioTemporalLayers333PatternEncoder() {
-  EXPECT_EQ(codec_type_, kVideoCodecVP8);
-  TestEncodedImageCallback encoder_callback;
+  Vp8TestEncodedImageCallback encoder_callback;
   encoder_->RegisterEncodeCompleteCallback(&encoder_callback);
   SetRates(kMaxBitrates[2], 30);  // To get all three streams.
 
@@ -725,10 +703,9 @@ void SimulcastTestFixtureImpl::TestSpatioTemporalLayers333PatternEncoder() {
 // Since CodecSpecificInfoVP8.temporalIdx is uint8_t, this will wrap to 255.
 // TODO(marpan): Although this seems safe for now, we should fix this.
 void SimulcastTestFixtureImpl::TestSpatioTemporalLayers321PatternEncoder() {
-  EXPECT_EQ(codec_type_, kVideoCodecVP8);
   int temporal_layer_profile[3] = {3, 2, 1};
   SetUpCodec(temporal_layer_profile);
-  TestEncodedImageCallback encoder_callback;
+  Vp8TestEncodedImageCallback encoder_callback;
   encoder_->RegisterEncodeCompleteCallback(&encoder_callback);
   SetRates(kMaxBitrates[2], 30);  // To get all three streams.
 
@@ -784,8 +761,8 @@ void SimulcastTestFixtureImpl::TestSpatioTemporalLayers321PatternEncoder() {
 }
 
 void SimulcastTestFixtureImpl::TestStrideEncodeDecode() {
-  TestEncodedImageCallback encoder_callback;
-  TestDecodedImageCallback decoder_callback;
+  Vp8TestEncodedImageCallback encoder_callback;
+  Vp8TestDecodedImageCallback decoder_callback;
   encoder_->RegisterEncodeCompleteCallback(&encoder_callback);
   decoder_->RegisterDecodeCompleteCallback(&decoder_callback);
 

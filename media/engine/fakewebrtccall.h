@@ -134,7 +134,6 @@ class FakeVideoSendStream final
   bool IsSending() const;
   bool GetVp8Settings(webrtc::VideoCodecVP8* settings) const;
   bool GetVp9Settings(webrtc::VideoCodecVP9* settings) const;
-  bool GetH264Settings(webrtc::VideoCodecH264* settings) const;
 
   int GetNumberOfSwappedFrames() const;
   int GetLastWidth() const;
@@ -180,11 +179,10 @@ class FakeVideoSendStream final
   rtc::VideoSinkWants sink_wants_;
 
   bool codec_settings_set_;
-  union CodecSpecificSettings {
+  union VpxSettings {
     webrtc::VideoCodecVP8 vp8;
     webrtc::VideoCodecVP9 vp9;
-    webrtc::VideoCodecH264 h264;
-  } codec_specific_settings_;
+  } vpx_settings_;
   bool resolution_scaling_enabled_;
   bool framerate_scaling_enabled_;
   rtc::VideoSourceInterface<webrtc::VideoFrame>* source_;

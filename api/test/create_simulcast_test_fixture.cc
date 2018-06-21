@@ -14,7 +14,7 @@
 #include <utility>
 
 #include "api/test/simulcast_test_fixture.h"
-#include "modules/video_coding/utility/simulcast_test_fixture_impl.h"
+#include "modules/video_coding/codecs/vp8/simulcast_test_fixture_impl.h"
 #include "rtc_base/ptr_util.h"
 
 namespace webrtc {
@@ -22,11 +22,9 @@ namespace test {
 
 std::unique_ptr<SimulcastTestFixture> CreateSimulcastTestFixture(
     std::unique_ptr<VideoEncoderFactory> encoder_factory,
-    std::unique_ptr<VideoDecoderFactory> decoder_factory,
-    SdpVideoFormat video_format) {
+    std::unique_ptr<VideoDecoderFactory> decoder_factory) {
   return rtc::MakeUnique<SimulcastTestFixtureImpl>(std::move(encoder_factory),
-                                                   std::move(decoder_factory),
-                                                   video_format);
+                                                   std::move(decoder_factory));
 }
 
 }  // namespace test

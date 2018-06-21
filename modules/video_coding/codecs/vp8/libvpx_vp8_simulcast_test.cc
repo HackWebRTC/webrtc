@@ -30,8 +30,7 @@ std::unique_ptr<SimulcastTestFixture> CreateSpecificSimulcastTestFixture() {
       rtc::MakeUnique<FunctionVideoDecoderFactory>(
           []() { return VP8Decoder::Create(); });
   return CreateSimulcastTestFixture(std::move(encoder_factory),
-                                    std::move(decoder_factory),
-                                    SdpVideoFormat("VP8"));
+                                    std::move(decoder_factory));
 }
 }  // namespace
 

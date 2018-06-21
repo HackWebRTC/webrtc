@@ -770,9 +770,7 @@ TEST_F(WebRtcVideoEngineTest,
   ASSERT_EQ(0u, encoder_factory_->encoders().size());
 }
 
-TEST_F(WebRtcVideoEngineTest, SimulcastEnabledForH264BehindFieldTrial) {
-  webrtc::test::ScopedFieldTrials override_field_trials_(
-      "WebRTC-H264Simulcast/Enabled/");
+TEST_F(WebRtcVideoEngineTest, SimulcastDisabledForH264) {
   encoder_factory_->AddSupportedVideoCodecType("H264");
 
   std::unique_ptr<VideoMediaChannel> channel(
@@ -798,7 +796,7 @@ TEST_F(WebRtcVideoEngineTest, SimulcastEnabledForH264BehindFieldTrial) {
   FakeWebRtcVideoEncoder* encoder = encoder_factory_->encoders()[0];
   ASSERT_TRUE(encoder_factory_->encoders()[0]->WaitForInitEncode());
   EXPECT_EQ(webrtc::kVideoCodecH264, encoder->GetCodecSettings().codecType);
-  EXPECT_LT(1u, encoder->GetCodecSettings().numberOfSimulcastStreams);
+  EXPECT_EQ(1u, encoder->GetCodecSettings().numberOfSimulcastStreams);
   EXPECT_TRUE(channel->SetVideoSend(ssrcs[0], nullptr, nullptr));
 }
 
@@ -6186,7 +6184,7 @@ class WebRtcVideoChannelSimulcastTest : public testing::Test {
       expected_streams = GetSimulcastConfig(
           num_configured_streams, capture_width, capture_height, 0,
           webrtc::kDefaultBitratePriority, kDefaultQpMax,
-          kDefaultVideoMaxFramerate, screenshare, true);
+          kDefaultVideoMaxFramerate, screenshare);
       if (screenshare) {
         for (const webrtc::VideoStream& stream : expected_streams) {
           // Never scale screen content.

@@ -31,16 +31,14 @@ void BoostMaxSimulcastLayer(int max_bitrate_bps,
 
 // Gets simulcast settings.
 // TODO(asapersson): Remove max_bitrate_bps.
-std::vector<webrtc::VideoStream> GetSimulcastConfig(
-    size_t max_layers,
-    int width,
-    int height,
-    int /*max_bitrate_bps*/,
-    double bitrate_priority,
-    int max_qp,
-    int max_framerate,
-    bool is_screenshare,
-    bool temporal_layers_supported);
+std::vector<webrtc::VideoStream> GetSimulcastConfig(size_t max_layers,
+                                                    int width,
+                                                    int height,
+                                                    int /*max_bitrate_bps*/,
+                                                    double bitrate_priority,
+                                                    int max_qp,
+                                                    int max_framerate,
+                                                    bool is_screenshare);
 
 // Gets the simulcast config layers for a non-screensharing case.
 std::vector<webrtc::VideoStream> GetNormalSimulcastLayers(
@@ -49,8 +47,7 @@ std::vector<webrtc::VideoStream> GetNormalSimulcastLayers(
     int height,
     double bitrate_priority,
     int max_qp,
-    int max_framerate,
-    bool temporal_layers_supported);
+    int max_framerate);
 
 // Gets simulcast config layers for screenshare settings.
 std::vector<webrtc::VideoStream> GetScreenshareLayers(
@@ -60,8 +57,7 @@ std::vector<webrtc::VideoStream> GetScreenshareLayers(
     double bitrate_priority,
     int max_qp,
     int max_framerate,
-    bool screenshare_simulcast_enabled,
-    bool temporal_layers_supported);
+    bool screenshare_simulcast_enabled);
 
 bool ScreenshareSimulcastFieldTrialEnabled();
 

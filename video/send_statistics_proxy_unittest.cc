@@ -1253,18 +1253,12 @@ TEST_F(SendStatisticsProxyTest, VerifyQpHistogramStats_H264) {
   codec_info.codecType = kVideoCodecH264;
 
   for (int i = 0; i < SendStatisticsProxy::kMinRequiredMetricsSamples; ++i) {
-    codec_info.codecSpecific.H264.simulcast_idx = 0;
     encoded_image.qp_ = kQpIdx0;
-    statistics_proxy_->OnSendEncodedImage(encoded_image, &codec_info);
-    codec_info.codecSpecific.H264.simulcast_idx = 1;
-    encoded_image.qp_ = kQpIdx1;
     statistics_proxy_->OnSendEncodedImage(encoded_image, &codec_info);
   }
   statistics_proxy_.reset();
-  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.Encoded.Qp.H264.S0"));
-  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.Encoded.Qp.H264.S0", kQpIdx0));
-  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.Encoded.Qp.H264.S1"));
-  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.Encoded.Qp.H264.S1", kQpIdx1));
+  EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.Encoded.Qp.H264"));
+  EXPECT_EQ(1, metrics::NumEvents("WebRTC.Video.Encoded.Qp.H264", kQpIdx0));
 }
 
 TEST_F(SendStatisticsProxyTest,

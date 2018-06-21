@@ -318,10 +318,8 @@ static bool ValidateStreamParams(const StreamParams& sp) {
 
 // Returns true if the given codec is disallowed from doing simulcast.
 bool IsCodecBlacklistedForSimulcast(const std::string& codec_name) {
-  return webrtc::field_trial::IsEnabled("WebRTC-H264Simulcast")
-    ? CodecNamesEq(codec_name, kVp9CodecName)
-    : CodecNamesEq(codec_name, kH264CodecName) ||
-      CodecNamesEq(codec_name, kVp9CodecName);
+  return CodecNamesEq(codec_name, kH264CodecName) ||
+         CodecNamesEq(codec_name, kVp9CodecName);
 }
 
 // The selected thresholds for QVGA and VGA corresponded to a QP around 10.
@@ -2715,14 +2713,11 @@ std::vector<webrtc::VideoStream> EncoderStreamFactory::CreateEncoderStreams(
   std::vector<webrtc::VideoStream> layers;
 
   if (encoder_config.number_of_streams > 1 ||
-     ((CodecNamesEq(codec_name_, kVp8CodecName) ||
-        CodecNamesEq(codec_name_, kH264CodecName)) &&
-       is_screenshare_ && screenshare_config_explicitly_enabled_)) {
-    bool temporal_layers_supported = CodecNamesEq(codec_name_, kVp8CodecName);
+      (CodecNamesEq(codec_name_, kVp8CodecName) && is_screenshare_ &&
+       screenshare_config_explicitly_enabled_)) {
     layers = GetSimulcastConfig(encoder_config.number_of_streams, width, height,
                                 0 /*not used*/, encoder_config.bitrate_priority,
-                                max_qp_, max_framerate_, is_screenshare_,
-                                temporal_layers_supported);
+                                max_qp_, max_framerate_, is_screenshare_);
     // Update the active simulcast layers and configured bitrates.
     bool is_highest_layer_max_bitrate_configured = false;
     for (size_t i = 0; i < layers.size(); ++i) {

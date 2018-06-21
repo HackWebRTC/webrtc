@@ -456,7 +456,6 @@ bool RtpDepacketizerH264::ProcessStapAOrSingleNalu(
   parsed_payload->type.Video.width = 0;
   parsed_payload->type.Video.height = 0;
   parsed_payload->type.Video.codec = kVideoCodecH264;
-  parsed_payload->type.Video.simulcastIdx = 0;
   parsed_payload->type.Video.is_first_packet_in_frame = true;
   RTPVideoHeaderH264* h264_header =
       &parsed_payload->type.Video.codecHeader.H264;
@@ -675,7 +674,6 @@ bool RtpDepacketizerH264::ParseFuaNalu(
   parsed_payload->type.Video.width = 0;
   parsed_payload->type.Video.height = 0;
   parsed_payload->type.Video.codec = kVideoCodecH264;
-  parsed_payload->type.Video.simulcastIdx = 0;
   parsed_payload->type.Video.is_first_packet_in_frame = first_fragment;
   RTPVideoHeaderH264* h264 = &parsed_payload->type.Video.codecHeader.H264;
   h264->packetization_type = kH264FuA;

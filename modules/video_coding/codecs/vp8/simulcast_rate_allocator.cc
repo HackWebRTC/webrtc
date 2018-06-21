@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/video_coding/utility/simulcast_rate_allocator.h"
+#include "modules/video_coding/codecs/vp8/simulcast_rate_allocator.h"
 
 #include <algorithm>
 #include <memory>
 #include <utility>
 #include <vector>
 
-#include "common_types.h"  // NOLINT(build/include)
+#include "modules/video_coding/codecs/vp8/include/vp8_common_types.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {
@@ -190,7 +190,7 @@ std::vector<uint32_t> SimulcastRateAllocator::DefaultTemporalLayerAllocation(
   std::vector<uint32_t> bitrates;
   for (size_t i = 0; i < num_temporal_layers; ++i) {
     float layer_bitrate =
-        bitrate_kbps * kLayerRateAllocation[num_temporal_layers - 1][i];
+        bitrate_kbps * kVp8LayerRateAlloction[num_temporal_layers - 1][i];
     bitrates.push_back(static_cast<uint32_t>(layer_bitrate + 0.5));
   }
 
@@ -235,10 +235,9 @@ const VideoCodec& webrtc::SimulcastRateAllocator::GetCodec() const {
 
 int SimulcastRateAllocator::NumTemporalStreams(size_t simulcast_id) const {
   return std::max<uint8_t>(
-      1,
-      codec_.codecType == kVideoCodecVP8 && codec_.numberOfSimulcastStreams == 0
-          ? codec_.VP8().numberOfTemporalLayers
-          : codec_.simulcastStream[simulcast_id].numberOfTemporalLayers);
+      1, codec_.numberOfSimulcastStreams == 0
+             ? codec_.VP8().numberOfTemporalLayers
+             : codec_.simulcastStream[simulcast_id].numberOfTemporalLayers);
 }
 
 }  // namespace webrtc
