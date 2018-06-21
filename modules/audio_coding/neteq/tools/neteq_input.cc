@@ -28,50 +28,5 @@ std::string NetEqInput::PacketData::ToString() const {
   return ss.str();
 }
 
-TimeLimitedNetEqInput::TimeLimitedNetEqInput(std::unique_ptr<NetEqInput> input,
-                                             int64_t duration_ms)
-    : input_(std::move(input)),
-      start_time_ms_(input_->NextEventTime()),
-      duration_ms_(duration_ms) {}
-
-rtc::Optional<int64_t> TimeLimitedNetEqInput::NextPacketTime() const {
-  return ended_ ? rtc::Optional<int64_t>() : input_->NextPacketTime();
-}
-
-rtc::Optional<int64_t> TimeLimitedNetEqInput::NextOutputEventTime() const {
-  return ended_ ? rtc::Optional<int64_t>() : input_->NextOutputEventTime();
-}
-
-std::unique_ptr<NetEqInput::PacketData> TimeLimitedNetEqInput::PopPacket() {
-  if (ended_) {
-    return std::unique_ptr<PacketData>();
-  }
-  auto packet = input_->PopPacket();
-  MaybeSetEnded();
-  return packet;
-}
-
-void TimeLimitedNetEqInput::AdvanceOutputEvent() {
-  if (!ended_) {
-    input_->AdvanceOutputEvent();
-    MaybeSetEnded();
-  }
-}
-
-bool TimeLimitedNetEqInput::ended() const {
-  return ended_ || input_->ended();
-}
-
-rtc::Optional<RTPHeader> TimeLimitedNetEqInput::NextHeader() const {
-  return ended_ ? rtc::Optional<RTPHeader>() : input_->NextHeader();
-}
-
-void TimeLimitedNetEqInput::MaybeSetEnded() {
-  if (NextEventTime() && start_time_ms_ &&
-      *NextEventTime() - *start_time_ms_ > duration_ms_) {
-    ended_ = true;
-  }
-}
-
 }  // namespace test
 }  // namespace webrtc

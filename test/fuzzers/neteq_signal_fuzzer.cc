@@ -167,22 +167,31 @@ void FuzzOneInputTest(const uint8_t* data, size_t size) {
   NetEq::Config config;
   config.enable_post_decode_vad = true;
   config.enable_fast_accelerate = true;
-  auto codecs = NetEqTest::StandardDecoderMap();
-  // rate_types contains the payload types that will be used for encoding.
-  // Verify that they all are included in the standard decoder map, and that
-  // they point to the expected decoder types.
-  RTC_CHECK_EQ(codecs.count(rate_types[0].second), 1);
-  RTC_CHECK(codecs[rate_types[0].second].first == NetEqDecoder::kDecoderPCM16B);
-  RTC_CHECK_EQ(codecs.count(rate_types[1].second), 1);
-  RTC_CHECK(codecs[rate_types[1].second].first ==
-            NetEqDecoder::kDecoderPCM16Bwb);
-  RTC_CHECK_EQ(codecs.count(rate_types[2].second), 1);
-  RTC_CHECK(codecs[rate_types[2].second].first ==
-            NetEqDecoder::kDecoderPCM16Bswb32kHz);
-  RTC_CHECK_EQ(codecs.count(rate_types[3].second), 1);
-  RTC_CHECK(codecs[rate_types[3].second].first ==
-            NetEqDecoder::kDecoderPCM16Bswb48kHz);
-
+  NetEqTest::DecoderMap codecs;
+  codecs[0] = std::make_pair(NetEqDecoder::kDecoderPCMu, "pcmu");
+  codecs[8] = std::make_pair(NetEqDecoder::kDecoderPCMa, "pcma");
+  codecs[103] = std::make_pair(NetEqDecoder::kDecoderISAC, "isac");
+  codecs[104] = std::make_pair(NetEqDecoder::kDecoderISACswb, "isac-swb");
+  codecs[111] = std::make_pair(NetEqDecoder::kDecoderOpus, "opus");
+  codecs[9] = std::make_pair(NetEqDecoder::kDecoderG722, "g722");
+  codecs[106] = std::make_pair(NetEqDecoder::kDecoderAVT, "avt");
+  codecs[114] = std::make_pair(NetEqDecoder::kDecoderAVT16kHz, "avt-16");
+  codecs[115] = std::make_pair(NetEqDecoder::kDecoderAVT32kHz, "avt-32");
+  codecs[116] = std::make_pair(NetEqDecoder::kDecoderAVT48kHz, "avt-48");
+  codecs[117] = std::make_pair(NetEqDecoder::kDecoderRED, "red");
+  codecs[13] = std::make_pair(NetEqDecoder::kDecoderCNGnb, "cng-nb");
+  codecs[98] = std::make_pair(NetEqDecoder::kDecoderCNGwb, "cng-wb");
+  codecs[99] = std::make_pair(NetEqDecoder::kDecoderCNGswb32kHz, "cng-swb32");
+  codecs[100] = std::make_pair(NetEqDecoder::kDecoderCNGswb48kHz, "cng-swb48");
+  // One of these payload types will be used for encoding.
+  codecs[rate_types[0].second] =
+      std::make_pair(NetEqDecoder::kDecoderPCM16B, "pcm16-nb");
+  codecs[rate_types[1].second] =
+      std::make_pair(NetEqDecoder::kDecoderPCM16Bwb, "pcm16-wb");
+  codecs[rate_types[2].second] =
+      std::make_pair(NetEqDecoder::kDecoderPCM16Bswb32kHz, "pcm16-swb32");
+  codecs[rate_types[3].second] =
+      std::make_pair(NetEqDecoder::kDecoderPCM16Bswb48kHz, "pcm16-swb48");
   NetEqTest::ExtDecoderMap ext_codecs;
 
   NetEqTest test(config, codecs, ext_codecs, std::move(input),

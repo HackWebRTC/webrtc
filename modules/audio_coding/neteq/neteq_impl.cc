@@ -101,6 +101,7 @@ NetEqImpl::NetEqImpl(const NetEq::Config& config,
       reset_decoder_(false),
       ssrc_(0),
       first_packet_(true),
+      playout_mode_(config.playout_mode),
       enable_fast_accelerate_(config.enable_fast_accelerate),
       nack_enabled_(false),
       enable_muted_state_(config.enable_muted_state),
@@ -109,8 +110,7 @@ NetEqImpl::NetEqImpl(const NetEq::Config& config,
                          tick_timer_.get()),
       speech_expand_uma_logger_("WebRTC.Audio.SpeechExpandRatePercent",
                                 10,  // Report once every 10 s.
-                                tick_timer_.get()),
-      no_time_stretching_(config.for_test_no_time_stretching) {
+                                tick_timer_.get()) {
   RTC_LOG(LS_INFO) << "NetEq config: " << config.ToString();
   int fs = config.sample_rate_hz;
   if (fs != 8000 && fs != 16000 && fs != 32000 && fs != 48000) {
@@ -356,6 +356,23 @@ int NetEqImpl::FilteredCurrentDelayMs() const {
       packet_buffer_samples + sync_buffer_->FutureLength();
   // The division below will truncate. The return value is in ms.
   return static_cast<int>(delay_samples) / rtc::CheckedDivExact(fs_hz_, 1000);
+}
+
+// Deprecated.
+// TODO(henrik.lundin) Delete.
+void NetEqImpl::SetPlayoutMode(NetEqPlayoutMode mode) {
+  rtc::CritScope lock(&crit_sect_);
+  if (mode != playout_mode_) {
+    playout_mode_ = mode;
+    CreateDecisionLogic();
+  }
+}
+
+// Deprecated.
+// TODO(henrik.lundin) Delete.
+NetEqPlayoutMode NetEqImpl::PlayoutMode() const {
+  rtc::CritScope lock(&crit_sect_);
+  return playout_mode_;
 }
 
 int NetEqImpl::NetworkStatistics(NetEqNetworkStatistics* stats) {
@@ -920,6 +937,33 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame, bool* muted) {
       return_value = DoDtmf(dtmf_event, &play_dtmf);
       break;
     }
+    case kAlternativePlc: {
+      // TODO(hlundin): Write test for this.
+      DoAlternativePlc(false);
+      break;
+    }
+    case kAlternativePlcIncreaseTimestamp: {
+      // TODO(hlundin): Write test for this.
+      DoAlternativePlc(true);
+      break;
+    }
+    case kAudioRepetitionIncreaseTimestamp: {
+      // TODO(hlundin): Write test for this.
+      sync_buffer_->IncreaseEndTimestamp(
+          static_cast<uint32_t>(output_size_samples_));
+      // Skipping break on purpose. Execution should move on into the
+      // next case.
+      RTC_FALLTHROUGH();
+    }
+    case kAudioRepetition: {
+      // TODO(hlundin): Write test for this.
+      // Copy last |output_size_samples_| from |sync_buffer_| to
+      // |algorithm_buffer|.
+      algorithm_buffer_->PushBackFromIndex(
+          *sync_buffer_, sync_buffer_->Size() - output_size_samples_);
+      expand_->Reset();
+      break;
+    }
     case kUndefined: {
       RTC_LOG(LS_ERROR) << "Invalid operation kUndefined.";
       assert(false);  // This should not happen.
@@ -1247,7 +1291,10 @@ int NetEqImpl::GetDecision(Operations* operation,
 
   // Get packets from buffer.
   int extracted_samples = 0;
-  if (packet) {
+  if (packet && *operation != kAlternativePlc &&
+      *operation != kAlternativePlcIncreaseTimestamp &&
+      *operation != kAudioRepetition &&
+      *operation != kAudioRepetitionIncreaseTimestamp) {
     sync_buffer_->IncreaseEndTimestamp(packet->timestamp - end_timestamp);
     if (decision_logic_->CngOff()) {
       // Adjustment of timestamp only corresponds to an actual packet loss
@@ -1836,6 +1883,29 @@ int NetEqImpl::DoDtmf(const DtmfEvent& dtmf_event, bool* play_dtmf) {
   return 0;
 }
 
+void NetEqImpl::DoAlternativePlc(bool increase_timestamp) {
+  AudioDecoder* decoder = decoder_database_->GetActiveDecoder();
+  size_t length;
+  if (decoder && decoder->HasDecodePlc()) {
+    // Use the decoder's packet-loss concealment.
+    // TODO(hlundin): Will probably need a longer buffer for multi-channel.
+    int16_t decoded_buffer[kMaxFrameSize];
+    length = decoder->DecodePlc(1, decoded_buffer);
+    if (length > 0)
+      algorithm_buffer_->PushBackInterleaved(decoded_buffer, length);
+  } else {
+    // Do simple zero-stuffing.
+    length = output_size_samples_;
+    algorithm_buffer_->Zeros(length);
+    // By not advancing the timestamp, NetEq inserts samples.
+    stats_.AddZeros(length);
+  }
+  if (increase_timestamp) {
+    sync_buffer_->IncreaseEndTimestamp(static_cast<uint32_t>(length));
+  }
+  expand_->Reset();
+}
+
 int NetEqImpl::DtmfOverdub(const DtmfEvent& dtmf_event,
                            size_t num_channels,
                            int16_t* output) const {
@@ -2060,8 +2130,8 @@ NetEqImpl::OutputType NetEqImpl::LastOutputType() {
 
 void NetEqImpl::CreateDecisionLogic() {
   decision_logic_.reset(DecisionLogic::Create(
-      fs_hz_, output_size_samples_, no_time_stretching_,
-      decoder_database_.get(), *packet_buffer_.get(), delay_manager_.get(),
-      buffer_level_filter_.get(), tick_timer_.get()));
+      fs_hz_, output_size_samples_, playout_mode_, decoder_database_.get(),
+      *packet_buffer_.get(), delay_manager_.get(), buffer_level_filter_.get(),
+      tick_timer_.get()));
 }
 }  // namespace webrtc

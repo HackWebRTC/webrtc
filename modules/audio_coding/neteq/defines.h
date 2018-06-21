@@ -24,6 +24,10 @@ enum Operations {
   kRfc3389CngNoPacket,
   kCodecInternalCng,
   kDtmf,
+  kAlternativePlc,
+  kAlternativePlcIncreaseTimestamp,
+  kAudioRepetition,
+  kAudioRepetitionIncreaseTimestamp,
   kUndefined = -1
 };
 

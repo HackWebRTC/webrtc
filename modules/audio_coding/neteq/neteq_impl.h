@@ -168,6 +168,16 @@ class NetEqImpl : public webrtc::NetEq {
 
   int FilteredCurrentDelayMs() const override;
 
+  // Sets the playout mode to |mode|.
+  // Deprecated.
+  // TODO(henrik.lundin) Delete.
+  void SetPlayoutMode(NetEqPlayoutMode mode) override;
+
+  // Returns the current playout mode.
+  // Deprecated.
+  // TODO(henrik.lundin) Delete.
+  NetEqPlayoutMode PlayoutMode() const override;
+
   // Writes the current network statistics to |stats|. The statistics are reset
   // after the call.
   int NetworkStatistics(NetEqNetworkStatistics* stats) override;
@@ -326,6 +336,12 @@ class NetEqImpl : public webrtc::NetEq {
   int DoDtmf(const DtmfEvent& dtmf_event, bool* play_dtmf)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
+  // Produces packet-loss concealment using alternative methods. If the codec
+  // has an internal PLC, it is called to generate samples. Otherwise, the
+  // method performs zero-stuffing.
+  void DoAlternativePlc(bool increase_timestamp)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+
   // Overdub DTMF on top of |output|.
   int DtmfOverdub(const DtmfEvent& dtmf_event,
                   size_t num_channels,
@@ -413,6 +429,7 @@ class NetEqImpl : public webrtc::NetEq {
       RTC_GUARDED_BY(crit_sect_);
   uint32_t ssrc_ RTC_GUARDED_BY(crit_sect_);
   bool first_packet_ RTC_GUARDED_BY(crit_sect_);
+  NetEqPlayoutMode playout_mode_ RTC_GUARDED_BY(crit_sect_);
   bool enable_fast_accelerate_ RTC_GUARDED_BY(crit_sect_);
   std::unique_ptr<NackTracker> nack_ RTC_GUARDED_BY(crit_sect_);
   bool nack_enabled_ RTC_GUARDED_BY(crit_sect_);
@@ -424,7 +441,6 @@ class NetEqImpl : public webrtc::NetEq {
   std::vector<uint32_t> last_decoded_timestamps_ RTC_GUARDED_BY(crit_sect_);
   ExpandUmaLogger expand_uma_logger_ RTC_GUARDED_BY(crit_sect_);
   ExpandUmaLogger speech_expand_uma_logger_ RTC_GUARDED_BY(crit_sect_);
-  bool no_time_stretching_ RTC_GUARDED_BY(crit_sect_);  // Only used for test.
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(NetEqImpl);

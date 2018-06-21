@@ -1377,6 +1377,32 @@ class NetEqImplTest120ms : public NetEqImplTest {
   uint16_t sequence_number_ = 1;
 };
 
+TEST_F(NetEqImplTest120ms, AudioRepetition) {
+  config_.playout_mode = kPlayoutFax;
+  CreateInstanceNoMocks();
+  Register120msCodec(AudioDecoder::kSpeech);
+
+  InsertPacket(first_timestamp());
+  GetFirstPacket();
+
+  bool muted;
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_, &muted));
+  EXPECT_EQ(kAudioRepetition, neteq_->last_operation_for_test());
+}
+
+TEST_F(NetEqImplTest120ms, AlternativePlc) {
+  config_.playout_mode = kPlayoutOff;
+  CreateInstanceNoMocks();
+  Register120msCodec(AudioDecoder::kSpeech);
+
+  InsertPacket(first_timestamp());
+  GetFirstPacket();
+
+  bool muted;
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output_, &muted));
+  EXPECT_EQ(kAlternativePlc, neteq_->last_operation_for_test());
+}
+
 TEST_F(NetEqImplTest120ms, CodecInternalCng) {
   CreateInstanceNoMocks();
   Register120msCodec(AudioDecoder::kComfortNoise);

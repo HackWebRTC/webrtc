@@ -74,6 +74,13 @@ struct NetEqLifetimeStatistics {
   uint64_t voice_concealed_samples = 0;
 };
 
+enum NetEqPlayoutMode {
+  kPlayoutOn,
+  kPlayoutOff,
+  kPlayoutFax,
+  kPlayoutStreaming
+};
+
 // This is the interface class for NetEq.
 class NetEq {
  public:
@@ -91,10 +98,10 @@ class NetEq {
     bool enable_post_decode_vad = false;
     size_t max_packets_in_buffer = 50;
     int max_delay_ms = 2000;
+    NetEqPlayoutMode playout_mode = kPlayoutOn;
     bool enable_fast_accelerate = false;
     bool enable_muted_state = false;
     absl::optional<AudioCodecPairId> codec_pair_id;
-    bool for_test_no_time_stretching = false;  // Use only for testing.
   };
 
   enum ReturnCodes { kOK = 0, kFail = -1, kNotImplemented = -2 };
@@ -201,6 +208,16 @@ class NetEq {
   // with smoothing applied to even out short-time fluctuations due to jitter.
   // The packet buffer part of the delay is not updated during DTX/CNG periods.
   virtual int FilteredCurrentDelayMs() const = 0;
+
+  // Sets the playout mode to |mode|.
+  // Deprecated. Set the mode in the Config struct passed to the constructor.
+  // TODO(henrik.lundin) Delete.
+  virtual void SetPlayoutMode(NetEqPlayoutMode mode) = 0;
+
+  // Returns the current playout mode.
+  // Deprecated.
+  // TODO(henrik.lundin) Delete.
+  virtual NetEqPlayoutMode PlayoutMode() const = 0;
 
   // Writes the current network statistics to |stats|. The statistics are reset
   // after the call.

@@ -133,13 +133,29 @@ void FuzzOneInputTest(const uint8_t* data, size_t size) {
   std::unique_ptr<AudioChecksum> output(new AudioChecksum);
   NetEqTest::Callbacks callbacks;
   NetEq::Config config;
-  auto codecs = NetEqTest::StandardDecoderMap();
-  // kPayloadType is the payload type that will be used for encoding. Verify
-  // that it is included in the standard decoder map, and that it points to the
-  // expected decoder type.
-  RTC_CHECK_EQ(codecs.count(kPayloadType), 1);
-  RTC_CHECK(codecs[kPayloadType].first == NetEqDecoder::kDecoderPCM16Bswb32kHz);
-
+  NetEqTest::DecoderMap codecs;
+  codecs[0] = std::make_pair(NetEqDecoder::kDecoderPCMu, "pcmu");
+  codecs[8] = std::make_pair(NetEqDecoder::kDecoderPCMa, "pcma");
+  codecs[103] = std::make_pair(NetEqDecoder::kDecoderISAC, "isac");
+  codecs[104] = std::make_pair(NetEqDecoder::kDecoderISACswb, "isac-swb");
+  codecs[111] = std::make_pair(NetEqDecoder::kDecoderOpus, "opus");
+  codecs[93] = std::make_pair(NetEqDecoder::kDecoderPCM16B, "pcm16-nb");
+  codecs[94] = std::make_pair(NetEqDecoder::kDecoderPCM16Bwb, "pcm16-wb");
+  codecs[96] =
+      std::make_pair(NetEqDecoder::kDecoderPCM16Bswb48kHz, "pcm16-swb48");
+  codecs[9] = std::make_pair(NetEqDecoder::kDecoderG722, "g722");
+  codecs[106] = std::make_pair(NetEqDecoder::kDecoderAVT, "avt");
+  codecs[114] = std::make_pair(NetEqDecoder::kDecoderAVT16kHz, "avt-16");
+  codecs[115] = std::make_pair(NetEqDecoder::kDecoderAVT32kHz, "avt-32");
+  codecs[116] = std::make_pair(NetEqDecoder::kDecoderAVT48kHz, "avt-48");
+  codecs[117] = std::make_pair(NetEqDecoder::kDecoderRED, "red");
+  codecs[13] = std::make_pair(NetEqDecoder::kDecoderCNGnb, "cng-nb");
+  codecs[98] = std::make_pair(NetEqDecoder::kDecoderCNGwb, "cng-wb");
+  codecs[99] = std::make_pair(NetEqDecoder::kDecoderCNGswb32kHz, "cng-swb32");
+  codecs[100] = std::make_pair(NetEqDecoder::kDecoderCNGswb48kHz, "cng-swb48");
+  // This is the payload type that will be used for encoding.
+  codecs[kPayloadType] =
+      std::make_pair(NetEqDecoder::kDecoderPCM16Bswb32kHz, "pcm16-swb32");
   NetEqTest::ExtDecoderMap ext_codecs;
 
   NetEqTest test(config, codecs, ext_codecs, std::move(input),

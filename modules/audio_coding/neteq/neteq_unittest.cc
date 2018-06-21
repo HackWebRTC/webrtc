@@ -25,8 +25,6 @@
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/pcm16b/pcm16b.h"
 #include "modules/audio_coding/neteq/tools/audio_loop.h"
-#include "modules/audio_coding/neteq/tools/neteq_packet_source_input.h"
-#include "modules/audio_coding/neteq/tools/neteq_test.h"
 #include "modules/audio_coding/neteq/tools/rtp_file_source.h"
 #include "rtc_base/ignore_wundef.h"
 #include "rtc_base/messagedigest.h"
@@ -557,7 +555,7 @@ TEST_F(NetEqDecodingTest, MAYBE_TestOpusDtxBitExactness) {
 class NetEqDecodingTestFaxMode : public NetEqDecodingTest {
  protected:
   NetEqDecodingTestFaxMode() : NetEqDecodingTest() {
-    config_.for_test_no_time_stretching = true;
+    config_.playout_mode = kPlayoutFax;
   }
   void TestJitterBufferDelay(bool apply_packet_loss);
 };
@@ -1725,37 +1723,4 @@ TEST_F(NetEqDecodingTestFaxMode, TestJitterBufferDelayWithLoss) {
   TestJitterBufferDelay(true);
 }
 
-namespace test {
-// TODO(henrik.lundin) NetEqRtpDumpInput requires protobuf support. It shouldn't
-// need it, but because it is bundled with NetEqEventLogInput, it is neded.
-// This should be refactored.
-#if WEBRTC_ENABLE_PROTOBUF
-TEST(NetEqNoTimeStretchingMode, RunTest) {
-  NetEq::Config config;
-  config.for_test_no_time_stretching = true;
-  auto codecs = NetEqTest::StandardDecoderMap();
-  NetEqTest::ExtDecoderMap ext_codecs;
-  NetEqPacketSourceInput::RtpHeaderExtensionMap rtp_ext_map = {
-      {1, kRtpExtensionAudioLevel},
-      {3, kRtpExtensionAbsoluteSendTime},
-      {5, kRtpExtensionTransportSequenceNumber},
-      {7, kRtpExtensionVideoContentType},
-      {8, kRtpExtensionVideoTiming}};
-  std::unique_ptr<NetEqInput> input(new NetEqRtpDumpInput(
-      webrtc::test::ResourcePath("audio_coding/neteq_universal_new", "rtp"),
-      rtp_ext_map));
-  std::unique_ptr<TimeLimitedNetEqInput> input_time_limit(
-      new TimeLimitedNetEqInput(std::move(input), 20000));
-  std::unique_ptr<AudioSink> output(new VoidAudioSink);
-  NetEqTest::Callbacks callbacks;
-  NetEqTest test(config, codecs, ext_codecs, std::move(input_time_limit),
-                 std::move(output), callbacks);
-  test.Run();
-  const auto stats = test.SimulationStats();
-  EXPECT_EQ(0, stats.accelerate_rate);
-  EXPECT_EQ(0, stats.preemptive_rate);
-}
-#endif
-
-}  // namespace test
 }  // namespace webrtc

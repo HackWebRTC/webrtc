@@ -78,28 +78,6 @@ class NetEqInput {
   virtual absl::optional<RTPHeader> NextHeader() const = 0;
 };
 
-// Wrapper class to impose a time limit on a NetEqInput object, typically
-// another time limit than what the object itself provides. For example, an
-// input taken from a file can be cut shorter by wrapping it in this class.
-class TimeLimitedNetEqInput : public NetEqInput {
- public:
-  TimeLimitedNetEqInput(std::unique_ptr<NetEqInput> input, int64_t duration_ms);
-  rtc::Optional<int64_t> NextPacketTime() const override;
-  rtc::Optional<int64_t> NextOutputEventTime() const override;
-  std::unique_ptr<PacketData> PopPacket() override;
-  void AdvanceOutputEvent() override;
-  bool ended() const override;
-  rtc::Optional<RTPHeader> NextHeader() const override;
-
- private:
-  void MaybeSetEnded();
-
-  std::unique_ptr<NetEqInput> input_;
-  const rtc::Optional<int64_t> start_time_ms_;
-  const int64_t duration_ms_;
-  bool ended_ = false;
-};
-
 }  // namespace test
 }  // namespace webrtc
 #endif  // MODULES_AUDIO_CODING_NETEQ_TOOLS_NETEQ_INPUT_H_
