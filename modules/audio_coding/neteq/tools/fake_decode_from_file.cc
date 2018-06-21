@@ -37,8 +37,10 @@ int FakeDecodeFromFile::DecodeInternal(const uint8_t* encoded,
       ByteReader<uint32_t>::ReadLittleEndian(encoded);
   uint32_t samples_to_decode =
       ByteReader<uint32_t>::ReadLittleEndian(&encoded[4]);
-  if (samples_to_decode == 0) {
-    // Number of samples in packet is unknown.
+  if (samples_to_decode == 0 ||
+      samples_to_decode % rtc::CheckedDivExact(sample_rate_hz, 100) != 0) {
+    // Number of samples being zero or non-multiple of 10ms is considered
+    // erroneous.
     if (last_decoded_length_ > 0) {
       // Use length of last decoded packet, but since this is the total for all
       // channels, we have to divide by 2 in the stereo case.
