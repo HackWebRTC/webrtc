@@ -40,10 +40,10 @@ rtc_static_library("system_wrappers") {
     ":runtime_enabled_features_api",
     "..:webrtc_common",
     "../:typedefs",
-    "../api:optional",
     "../modules:module_api_public",
     "../rtc_base:checks",
     "../rtc_base/synchronization:rw_lock_wrapper",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 
   if (is_posix || is_fuchsia) {

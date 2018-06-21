@@ -315,10 +315,10 @@ bool CoreAudioInput::OnDataCallback(uint64_t device_frequency) {
   return true;
 }
 
-rtc::Optional<int> CoreAudioInput::EstimateLatencyMillis(
+absl::optional<int> CoreAudioInput::EstimateLatencyMillis(
     uint64_t capture_time_100ns) {
   if (!qpc_to_100ns_) {
-    return rtc::nullopt;
+    return absl::nullopt;
   }
   // Input parameter |capture_time_100ns| contains the performance counter at
   // the time that the audio endpoint device recorded the device position of
@@ -329,7 +329,7 @@ rtc::Optional<int> CoreAudioInput::EstimateLatencyMillis(
   // - subtracting |capture_time_100ns| from now_time_100ns.
   LARGE_INTEGER perf_counter_now = {};
   if (!::QueryPerformanceCounter(&perf_counter_now)) {
-    return rtc::nullopt;
+    return absl::nullopt;
   }
   uint64_t qpc_now_raw = perf_counter_now.QuadPart;
   uint64_t now_time_100ns = qpc_now_raw * (*qpc_to_100ns_);

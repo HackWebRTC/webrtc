@@ -64,7 +64,6 @@ rtc_static_library("common_audio") {
     ":sinc_resampler",
     "..:webrtc_common",
     "../:typedefs",
-    "../api:optional",
     "../rtc_base:checks",
     "../rtc_base:gtest_prod",
     "../rtc_base:rtc_base_approved",
@@ -72,6 +71,7 @@ rtc_static_library("common_audio") {
     "../rtc_base/memory:aligned_malloc",
     "../system_wrappers",
     "../system_wrappers:cpu_features_api",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 
   defines = []

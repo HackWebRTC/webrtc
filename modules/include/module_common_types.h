@@ -17,7 +17,7 @@
 #include <algorithm>
 #include <limits>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "api/rtp_headers.h"
 #include "api/transport/network_types.h"
 #include "api/video/video_rotation.h"

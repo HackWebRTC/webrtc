@@ -16,7 +16,7 @@
 #include <SLES/OpenSLES_AndroidConfiguration.h>
 
 #include <memory>
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "modules/audio_device/audio_device_buffer.h"
 #include "modules/audio_device/fine_audio_buffer.h"
 #include "modules/audio_device/include/audio_device_defines.h"
@@ -75,9 +75,9 @@ class OpenSLESPlayer : public AudioOutput {
 
   bool SpeakerVolumeIsAvailable() override;
   int SetSpeakerVolume(uint32_t volume) override;
-  rtc::Optional<uint32_t> SpeakerVolume() const override;
-  rtc::Optional<uint32_t> MaxSpeakerVolume() const override;
-  rtc::Optional<uint32_t> MinSpeakerVolume() const override;
+  absl::optional<uint32_t> SpeakerVolume() const override;
+  absl::optional<uint32_t> MaxSpeakerVolume() const override;
+  absl::optional<uint32_t> MinSpeakerVolume() const override;
 
   void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) override;
 

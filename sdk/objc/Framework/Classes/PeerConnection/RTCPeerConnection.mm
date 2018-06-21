@@ -470,13 +470,13 @@ void PeerConnectionDelegateAdapter::OnAddTrack(
               maxBitrateBps:(nullable NSNumber *)maxBitrateBps {
   webrtc::PeerConnectionInterface::BitrateParameters params;
   if (minBitrateBps != nil) {
-    params.min_bitrate_bps = rtc::Optional<int>(minBitrateBps.intValue);
+    params.min_bitrate_bps = absl::optional<int>(minBitrateBps.intValue);
   }
   if (currentBitrateBps != nil) {
-    params.current_bitrate_bps = rtc::Optional<int>(currentBitrateBps.intValue);
+    params.current_bitrate_bps = absl::optional<int>(currentBitrateBps.intValue);
   }
   if (maxBitrateBps != nil) {
-    params.max_bitrate_bps = rtc::Optional<int>(maxBitrateBps.intValue);
+    params.max_bitrate_bps = absl::optional<int>(maxBitrateBps.intValue);
   }
   return _peerConnection->SetBitrate(params).ok();
 }

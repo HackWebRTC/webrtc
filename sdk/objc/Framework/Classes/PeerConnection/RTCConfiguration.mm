@@ -171,8 +171,8 @@
   // Generate non-default certificate.
   if (keyType != rtc::KT_DEFAULT) {
     rtc::scoped_refptr<rtc::RTCCertificate> certificate =
-        rtc::RTCCertificateGenerator::GenerateCertificate(
-            rtc::KeyParams(keyType), rtc::Optional<uint64_t>());
+        rtc::RTCCertificateGenerator::GenerateCertificate(rtc::KeyParams(keyType),
+                                                          absl::optional<uint64_t>());
     if (!certificate) {
       RTCLogError(@"Failed to generate certificate.");
       return nullptr;
@@ -184,14 +184,13 @@
   nativeConfig->presume_writable_when_fully_relayed =
       _shouldPresumeWritableWhenFullyRelayed ? true : false;
   if (_iceCheckMinInterval != nil) {
-    nativeConfig->ice_check_min_interval =
-        rtc::Optional<int>(_iceCheckMinInterval.intValue);
+    nativeConfig->ice_check_min_interval = absl::optional<int>(_iceCheckMinInterval.intValue);
   }
   if (_iceRegatherIntervalRange != nil) {
     std::unique_ptr<rtc::IntervalRange> nativeIntervalRange(
         _iceRegatherIntervalRange.nativeIntervalRange);
     nativeConfig->ice_regather_interval_range =
-        rtc::Optional<rtc::IntervalRange>(*nativeIntervalRange);
+        absl::optional<rtc::IntervalRange>(*nativeIntervalRange);
   }
   nativeConfig->sdp_semantics = [[self class] nativeSdpSemanticsForSdpSemantics:_sdpSemantics];
   if (_turnCustomizer) {

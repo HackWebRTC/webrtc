@@ -13,7 +13,7 @@
 
 #include <list>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "modules/include/module_common_types_public.h"
 #include "rtc_base/numerics/moving_median_filter.h"
 #include "system_wrappers/include/ntp_time.h"
@@ -72,7 +72,7 @@ class RtpToNtpEstimator {
   bool Estimate(int64_t rtp_timestamp, int64_t* rtp_timestamp_ms) const;
 
   // Returns estimated rtp to ntp linear transform parameters.
-  const rtc::Optional<Parameters> params() const;
+  const absl::optional<Parameters> params() const;
 
   static const int kMaxInvalidSamples = 3;
 

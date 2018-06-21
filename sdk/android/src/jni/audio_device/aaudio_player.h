@@ -14,7 +14,7 @@
 #include <aaudio/AAudio.h>
 #include <memory>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "modules/audio_device/audio_device_buffer.h"
 #include "modules/audio_device/include/audio_device_defines.h"
 #include "rtc_base/messagehandler.h"
@@ -73,9 +73,9 @@ class AAudioPlayer final : public AudioOutput,
   // Not implemented in AAudio.
   bool SpeakerVolumeIsAvailable() override;
   int SetSpeakerVolume(uint32_t volume) override;
-  rtc::Optional<uint32_t> SpeakerVolume() const override;
-  rtc::Optional<uint32_t> MaxSpeakerVolume() const override;
-  rtc::Optional<uint32_t> MinSpeakerVolume() const override;
+  absl::optional<uint32_t> SpeakerVolume() const override;
+  absl::optional<uint32_t> MaxSpeakerVolume() const override;
+  absl::optional<uint32_t> MinSpeakerVolume() const override;
 
  protected:
   // AAudioObserverInterface implementation.

@@ -204,9 +204,9 @@ rtc_source_set("audio_device_module_from_input_and_output") {
       ":audio_device_api",
       ":audio_device_buffer",
       ":windows_core_audio_utility",
-      "../../api:optional",
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
+      "//third_party/abseil-cpp/absl/types:optional",
     ]
   }
 }
@@ -483,7 +483,6 @@ if (rtc_include_tests) {
       ":audio_device_impl",
       ":mock_audio_device",
       "../../api:array_view",
-      "../../api:optional",
       "../../common_audio",
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
@@ -491,6 +490,7 @@ if (rtc_include_tests) {
       "../../test:fileutils",
       "../../test:test_support",
       "../utility:utility",
+      "//third_party/abseil-cpp/absl/types:optional",
     ]
     if (is_linux || is_mac || is_win) {
       sources += [ "audio_device_unittest.cc" ]

@@ -13,7 +13,7 @@
 
 #include <limits>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
@@ -78,7 +78,7 @@ class Unwrapper {
   }
 
  private:
-  rtc::Optional<int64_t> last_value_;
+  absl::optional<int64_t> last_value_;
 };
 
 using SequenceNumberUnwrapper = Unwrapper<uint16_t>;

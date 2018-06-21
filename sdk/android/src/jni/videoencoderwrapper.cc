@@ -165,10 +165,10 @@ VideoEncoderWrapper::ScalingSettings VideoEncoderWrapper::GetScalingSettings()
   if (!isOn)
     return ScalingSettings::kOff;
 
-  rtc::Optional<int> low = JavaToNativeOptionalInt(
+  absl::optional<int> low = JavaToNativeOptionalInt(
       jni,
       Java_VideoEncoderWrapper_getScalingSettingsLow(jni, j_scaling_settings));
-  rtc::Optional<int> high = JavaToNativeOptionalInt(
+  absl::optional<int> high = JavaToNativeOptionalInt(
       jni,
       Java_VideoEncoderWrapper_getScalingSettingsHigh(jni, j_scaling_settings));
 

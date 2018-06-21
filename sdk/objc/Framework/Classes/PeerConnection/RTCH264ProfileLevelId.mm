@@ -31,7 +31,7 @@
   if (self = [super init]) {
     self.hexString = hexString;
 
-    rtc::Optional<webrtc::H264::ProfileLevelId> profile_level_id =
+    absl::optional<webrtc::H264::ProfileLevelId> profile_level_id =
         webrtc::H264::ParseProfileLevelId([hexString cStringUsingEncoding:NSUTF8StringEncoding]);
     if (profile_level_id.has_value()) {
       self.profile = static_cast<RTCH264Profile>(profile_level_id->profile);
@@ -46,7 +46,7 @@
     self.profile = profile;
     self.level = level;
 
-    rtc::Optional<std::string> hex_string =
+    absl::optional<std::string> hex_string =
         webrtc::H264::ProfileLevelIdToString(webrtc::H264::ProfileLevelId(
             static_cast<webrtc::H264::Profile>(profile), static_cast<webrtc::H264::Level>(level)));
     self.hexString =

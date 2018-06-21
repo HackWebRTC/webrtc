@@ -347,7 +347,7 @@ int32_t MediaCodecVideoEncoder::InitEncode(const VideoCodec* codec_settings,
   // Check allowed H.264 profile
   profile_ = H264::Profile::kProfileBaseline;
   if (codec_type == kVideoCodecH264) {
-    const rtc::Optional<H264::ProfileLevelId> profile_level_id =
+    const absl::optional<H264::ProfileLevelId> profile_level_id =
         H264::ParseSdpProfileLevelId(codec_.params);
     RTC_DCHECK(profile_level_id);
     profile_ = profile_level_id->profile;

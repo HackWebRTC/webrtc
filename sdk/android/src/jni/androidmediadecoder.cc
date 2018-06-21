@@ -124,7 +124,7 @@ class MediaCodecVideoDecoder : public VideoDecoder, public rtc::MessageHandler {
   int current_delay_time_ms_;     // Overall delay time in the current second.
   int32_t max_pending_frames_;    // Maximum number of pending input frames.
   H264BitstreamParser h264_bitstream_parser_;
-  std::deque<rtc::Optional<uint8_t>> pending_frame_qps_;
+  std::deque<absl::optional<uint8_t>> pending_frame_qps_;
 
   // State that is constant for the lifetime of this object once the ctor
   // returns.
@@ -506,7 +506,7 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
   // Save input image timestamps for later output.
   frames_received_++;
   current_bytes_ += inputImage._length;
-  rtc::Optional<uint8_t> qp;
+  absl::optional<uint8_t> qp;
   if (codecType_ == kVideoCodecVP8) {
     int qp_int;
     if (vp8::GetQp(inputImage._buffer, inputImage._length, &qp_int)) {
@@ -743,7 +743,7 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(JNIEnv* jni,
     decoded_frame.set_timestamp(output_timestamps_ms);
     decoded_frame.set_ntp_time_ms(output_ntp_timestamps_ms);
 
-    rtc::Optional<uint8_t> qp = pending_frame_qps_.front();
+    absl::optional<uint8_t> qp = pending_frame_qps_.front();
     pending_frame_qps_.pop_front();
     callback_->Decoded(decoded_frame, decode_time_ms, qp);
   }

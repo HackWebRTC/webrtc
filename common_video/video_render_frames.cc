@@ -73,8 +73,8 @@ int32_t VideoRenderFrames::AddFrame(VideoFrame&& new_frame) {
   return static_cast<int32_t>(incoming_frames_.size());
 }
 
-rtc::Optional<VideoFrame> VideoRenderFrames::FrameToRender() {
-  rtc::Optional<VideoFrame> render_frame;
+absl::optional<VideoFrame> VideoRenderFrames::FrameToRender() {
+  absl::optional<VideoFrame> render_frame;
   // Get the newest frame that can be released for rendering.
   while (!incoming_frames_.empty() && TimeToNextFrameRelease() <= 0) {
     render_frame = std::move(incoming_frames_.front());

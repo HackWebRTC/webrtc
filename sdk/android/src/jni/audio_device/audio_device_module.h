@@ -13,7 +13,7 @@
 
 #include <memory>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "modules/audio_device/audio_device_buffer.h"
 #include "sdk/android/native_api/jni/scoped_java_ref.h"
 
@@ -58,9 +58,9 @@ class AudioOutput {
   virtual bool Playing() const = 0;
   virtual bool SpeakerVolumeIsAvailable() = 0;
   virtual int SetSpeakerVolume(uint32_t volume) = 0;
-  virtual rtc::Optional<uint32_t> SpeakerVolume() const = 0;
-  virtual rtc::Optional<uint32_t> MaxSpeakerVolume() const = 0;
-  virtual rtc::Optional<uint32_t> MinSpeakerVolume() const = 0;
+  virtual absl::optional<uint32_t> SpeakerVolume() const = 0;
+  virtual absl::optional<uint32_t> MaxSpeakerVolume() const = 0;
+  virtual absl::optional<uint32_t> MinSpeakerVolume() const = 0;
   virtual void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) = 0;
 };
 

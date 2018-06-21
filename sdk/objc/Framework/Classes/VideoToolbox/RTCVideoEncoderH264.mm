@@ -172,7 +172,7 @@ void compressionOutputCallback(void *encoder,
 // returned. The user must initialize the encoder with a resolution and
 // framerate conforming to the selected H264 level regardless.
 CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
-  const rtc::Optional<webrtc::H264::ProfileLevelId> profile_level_id =
+  const absl::optional<webrtc::H264::ProfileLevelId> profile_level_id =
       webrtc::H264::ParseSdpProfileLevelId(videoFormat.parameters);
   RTC_DCHECK(profile_level_id);
   switch (profile_level_id->profile) {

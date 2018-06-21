@@ -37,7 +37,7 @@ class AndroidVideoTrackSource : public rtc::AdaptedVideoTrackSource {
   // Indicates that the encoder should denoise video before encoding it.
   // If it is not set, the default configuration is used which is different
   // depending on video codec.
-  rtc::Optional<bool> needs_denoising() const override;
+  absl::optional<bool> needs_denoising() const override;
 
   // Called by the native capture observer
   void SetState(SourceState state);

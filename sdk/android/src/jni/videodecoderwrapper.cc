@@ -30,9 +30,9 @@ namespace {
 const int64_t kNumRtpTicksPerMillisec = 90000 / rtc::kNumMillisecsPerSec;
 
 template <typename Dst, typename Src>
-inline rtc::Optional<Dst> cast_optional(const rtc::Optional<Src>& value) {
-  return value ? rtc::Optional<Dst>(rtc::dchecked_cast<Dst, Src>(*value))
-               : rtc::nullopt;
+inline absl::optional<Dst> cast_optional(const absl::optional<Src>& value) {
+  return value ? absl::optional<Dst>(rtc::dchecked_cast<Dst, Src>(*value))
+               : absl::nullopt;
 }
 }  // namespace
 
@@ -106,7 +106,7 @@ int32_t VideoDecoderWrapper::Decode(
   frame_extra_info.timestamp_rtp = input_image._timeStamp;
   frame_extra_info.timestamp_ntp = input_image.ntp_time_ms_;
   frame_extra_info.qp =
-      qp_parsing_enabled_ ? ParseQP(input_image) : rtc::nullopt;
+      qp_parsing_enabled_ ? ParseQP(input_image) : absl::nullopt;
   {
     rtc::CritScope cs(&frame_extra_infos_lock_);
     frame_extra_infos_.push_back(frame_extra_info);
@@ -183,10 +183,10 @@ void VideoDecoderWrapper::OnDecodedFrame(
       JavaToNativeFrame(env, j_frame, frame_extra_info.timestamp_rtp);
   frame.set_ntp_time_ms(frame_extra_info.timestamp_ntp);
 
-  rtc::Optional<int32_t> decoding_time_ms =
+  absl::optional<int32_t> decoding_time_ms =
       JavaToNativeOptionalInt(env, j_decode_time_ms);
 
-  rtc::Optional<uint8_t> decoder_qp =
+  absl::optional<uint8_t> decoder_qp =
       cast_optional<uint8_t, int32_t>(JavaToNativeOptionalInt(env, j_qp));
   // If the decoder provides QP values itself, no need to parse the bitstream.
   // Enable QP parsing if decoder does not provide QP values itself.
@@ -226,13 +226,13 @@ int32_t VideoDecoderWrapper::HandleReturnCode(JNIEnv* jni,
   return WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE;
 }
 
-rtc::Optional<uint8_t> VideoDecoderWrapper::ParseQP(
+absl::optional<uint8_t> VideoDecoderWrapper::ParseQP(
     const EncodedImage& input_image) {
   if (input_image.qp_ != -1) {
     return input_image.qp_;
   }
 
-  rtc::Optional<uint8_t> qp;
+  absl::optional<uint8_t> qp;
   switch (codec_settings_.codecType) {
     case kVideoCodecVP8: {
       int qp_int;

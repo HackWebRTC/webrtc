@@ -270,7 +270,7 @@ void Conductor::OnMessageFromPeer(int peer_id, const std::string& message) {
       }
       return;
     }
-    rtc::Optional<webrtc::SdpType> type_maybe =
+    absl::optional<webrtc::SdpType> type_maybe =
         webrtc::SdpTypeFromString(type_str);
     if (!type_maybe) {
       RTC_LOG(LS_ERROR) << "Unknown SDP type: " << type_str;

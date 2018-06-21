@@ -112,7 +112,7 @@ class H264SpsParserTest : public ::testing::Test {
   H264SpsParserTest() {}
   virtual ~H264SpsParserTest() {}
 
-  rtc::Optional<SpsParser::SpsState> sps_;
+  absl::optional<SpsParser::SpsState> sps_;
 };
 
 TEST_F(H264SpsParserTest, TestSampleSPSHdLandscape) {

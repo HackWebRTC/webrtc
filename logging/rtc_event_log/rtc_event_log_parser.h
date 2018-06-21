@@ -57,8 +57,8 @@ class ParsedRtcEventLog {
   struct BweProbeResultEvent {
     uint64_t timestamp;
     uint32_t id;
-    rtc::Optional<uint64_t> bitrate_bps;
-    rtc::Optional<ProbeFailureReason> failure_reason;
+    absl::optional<uint64_t> bitrate_bps;
+    absl::optional<ProbeFailureReason> failure_reason;
   };
 
   struct BweDelayBasedUpdate {

@@ -57,7 +57,6 @@ rtc_static_library("common_video") {
   deps = [
     "..:webrtc_common",
     "../:typedefs",
-    "../api:optional",
     "../api/video:video_bitrate_allocation",
     "../api/video:video_frame",
     "../api/video:video_frame_i420",
@@ -67,6 +66,7 @@ rtc_static_library("common_video") {
     "../rtc_base:rtc_base",
     "../rtc_base:rtc_task_queue",
     "../rtc_base:safe_minmax",
+    "//third_party/abseil-cpp/absl/types:optional",
     "//third_party/libyuv",
   ]
 }

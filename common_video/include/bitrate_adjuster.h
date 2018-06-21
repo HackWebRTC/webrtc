@@ -44,7 +44,7 @@ class BitrateAdjuster {
   uint32_t GetAdjustedBitrateBps() const;
 
   // Returns what we think the current bitrate is.
-  rtc::Optional<uint32_t> GetEstimatedBitrateBps();
+  absl::optional<uint32_t> GetEstimatedBitrateBps();
 
   // This should be called after each frame is encoded. The timestamp at which
   // it is called is used to estimate the output bitrate of the encoder.

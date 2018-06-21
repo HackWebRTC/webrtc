@@ -89,7 +89,7 @@ ScopedJavaLocalRef<jstring> JNI_RtpTransceiver_GetMid(
     JNIEnv* jni,
     const base::android::JavaParamRef<jclass>&,
     jlong j_rtp_transceiver_pointer) {
-  rtc::Optional<std::string> mid =
+  absl::optional<std::string> mid =
       reinterpret_cast<RtpTransceiverInterface*>(j_rtp_transceiver_pointer)
           ->mid();
   return NativeToJavaString(jni, mid);
@@ -133,7 +133,7 @@ ScopedJavaLocalRef<jobject> JNI_RtpTransceiver_CurrentDirection(
     JNIEnv* jni,
     const base::android::JavaParamRef<jclass>&,
     jlong j_rtp_transceiver_pointer) {
-  rtc::Optional<RtpTransceiverDirection> direction =
+  absl::optional<RtpTransceiverDirection> direction =
       reinterpret_cast<RtpTransceiverInterface*>(j_rtp_transceiver_pointer)
           ->current_direction();
   return direction ? NativeToJavaRtpTransceiverDirection(jni, *direction)

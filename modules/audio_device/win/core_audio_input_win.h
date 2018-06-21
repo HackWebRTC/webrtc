@@ -14,7 +14,7 @@
 #include <memory>
 #include <string>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "modules/audio_device/win/audio_device_module_win.h"
 #include "modules/audio_device/win/core_audio_base_win.h"
 
@@ -53,11 +53,11 @@ class CoreAudioInput final : public CoreAudioBase, public AudioInput {
 
  private:
   bool OnDataCallback(uint64_t device_frequency);
-  rtc::Optional<int> EstimateLatencyMillis(uint64_t capture_time_100ns);
+  absl::optional<int> EstimateLatencyMillis(uint64_t capture_time_100ns);
 
   std::unique_ptr<FineAudioBuffer> fine_audio_buffer_;
   Microsoft::WRL::ComPtr<IAudioCaptureClient> audio_capture_client_;
-  rtc::Optional<double> qpc_to_100ns_;
+  absl::optional<double> qpc_to_100ns_;
 };
 
 }  // namespace webrtc_win

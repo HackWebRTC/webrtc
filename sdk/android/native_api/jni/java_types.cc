@@ -125,18 +125,18 @@ int64_t JavaToNativeLong(JNIEnv* env, const JavaRef<jobject>& j_long) {
   return JNI_Long::Java_Long_longValue(env, j_long);
 }
 
-rtc::Optional<bool> JavaToNativeOptionalBool(JNIEnv* jni,
-                                             const JavaRef<jobject>& boolean) {
+absl::optional<bool> JavaToNativeOptionalBool(JNIEnv* jni,
+                                              const JavaRef<jobject>& boolean) {
   if (IsNull(jni, boolean))
-    return rtc::nullopt;
+    return absl::nullopt;
   return JNI_Boolean::Java_Boolean_booleanValue(jni, boolean);
 }
 
-rtc::Optional<int32_t> JavaToNativeOptionalInt(
+absl::optional<int32_t> JavaToNativeOptionalInt(
     JNIEnv* jni,
     const JavaRef<jobject>& integer) {
   if (IsNull(jni, integer))
-    return rtc::nullopt;
+    return absl::nullopt;
   return JNI_Integer::Java_Integer_intValue(jni, integer);
 }
 
@@ -196,13 +196,13 @@ ScopedJavaLocalRef<jstring> NativeToJavaString(JNIEnv* jni,
 
 ScopedJavaLocalRef<jobject> NativeToJavaInteger(
     JNIEnv* jni,
-    const rtc::Optional<int32_t>& optional_int) {
+    const absl::optional<int32_t>& optional_int) {
   return optional_int ? NativeToJavaInteger(jni, *optional_int) : nullptr;
 }
 
 ScopedJavaLocalRef<jstring> NativeToJavaString(
     JNIEnv* jni,
-    const rtc::Optional<std::string>& str) {
+    const absl::optional<std::string>& str) {
   return str ? NativeToJavaString(jni, *str) : nullptr;
 }
 

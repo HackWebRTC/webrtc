@@ -93,10 +93,10 @@ const NSString * const kRTCH264CodecName = @(cricket::kH264CodecName);
     RTC_NOTREACHED();
   }
   if (_clockRate != nil) {
-    parameters.clock_rate = rtc::Optional<int>(_clockRate.intValue);
+    parameters.clock_rate = absl::optional<int>(_clockRate.intValue);
   }
   if (_numChannels != nil) {
-    parameters.num_channels = rtc::Optional<int>(_numChannels.intValue);
+    parameters.num_channels = absl::optional<int>(_numChannels.intValue);
   }
   for (NSString *paramKey in _parameters.allKeys) {
     std::string key = [NSString stdStringForString:paramKey];

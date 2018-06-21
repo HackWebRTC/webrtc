@@ -14,6 +14,6 @@
 
 @interface UIDevice (H264Profile)
 
-+ (rtc::Optional<webrtc::H264::ProfileLevelId>)maxSupportedH264Profile;
++ (absl::optional<webrtc::H264::ProfileLevelId>)maxSupportedH264Profile;
 
 @end

@@ -304,12 +304,12 @@ if (is_ios || is_mac) {
         ":videoframebuffer_objc",
         ":videosource_objc",
         "../api:libjingle_peerconnection_api",
-        "../api:optional",
         "../api/video:video_frame",
         "../common_video",
         "../media:rtc_media_base",
         "../rtc_base:checks",
         "../rtc_base:rtc_base",
+        "//third_party/abseil-cpp/absl/types:optional",
       ]
 
       configs += [

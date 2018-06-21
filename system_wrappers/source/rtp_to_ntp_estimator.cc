@@ -193,9 +193,9 @@ bool RtpToNtpEstimator::Estimate(int64_t rtp_timestamp,
   return true;
 }
 
-const rtc::Optional<RtpToNtpEstimator::Parameters> RtpToNtpEstimator::params()
+const absl::optional<RtpToNtpEstimator::Parameters> RtpToNtpEstimator::params()
     const {
-  rtc::Optional<Parameters> res;
+  absl::optional<Parameters> res;
   if (params_calculated_) {
     res.emplace(smoothing_filter_.GetFilteredValue());
   }

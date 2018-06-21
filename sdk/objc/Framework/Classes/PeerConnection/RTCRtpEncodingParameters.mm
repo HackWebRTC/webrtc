@@ -44,13 +44,13 @@
   webrtc::RtpEncodingParameters parameters;
   parameters.active = _isActive;
   if (_maxBitrateBps != nil) {
-    parameters.max_bitrate_bps = rtc::Optional<int>(_maxBitrateBps.intValue);
+    parameters.max_bitrate_bps = absl::optional<int>(_maxBitrateBps.intValue);
   }
   if (_minBitrateBps != nil) {
-    parameters.min_bitrate_bps = rtc::Optional<int>(_minBitrateBps.intValue);
+    parameters.min_bitrate_bps = absl::optional<int>(_minBitrateBps.intValue);
   }
   if (_ssrc != nil) {
-    parameters.ssrc = rtc::Optional<uint32_t>(_ssrc.unsignedLongValue);
+    parameters.ssrc = absl::optional<uint32_t>(_ssrc.unsignedLongValue);
   }
   return parameters;
 }

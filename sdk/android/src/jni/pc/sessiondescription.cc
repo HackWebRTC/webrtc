@@ -27,7 +27,7 @@ std::unique_ptr<SessionDescriptionInterface> JavaToNativeSessionDescription(
       jni, Java_SessionDescription_getTypeInCanonicalForm(jni, j_sdp));
   std::string std_description =
       JavaToStdString(jni, Java_SessionDescription_getDescription(jni, j_sdp));
-  rtc::Optional<SdpType> sdp_type_maybe = SdpTypeFromString(std_type);
+  absl::optional<SdpType> sdp_type_maybe = SdpTypeFromString(std_type);
   if (!sdp_type_maybe) {
     RTC_LOG(LS_ERROR) << "Unexpected SDP type: " << std_type;
     return nullptr;

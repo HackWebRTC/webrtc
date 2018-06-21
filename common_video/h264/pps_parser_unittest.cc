@@ -192,7 +192,7 @@ class PpsParserTest : public ::testing::Test {
 
   PpsParser::PpsState generated_pps_;
   rtc::Buffer buffer_;
-  rtc::Optional<PpsParser::PpsState> parsed_pps_;
+  absl::optional<PpsParser::PpsState> parsed_pps_;
 };
 
 TEST_F(PpsParserTest, ZeroPps) {
@@ -215,7 +215,7 @@ TEST_F(PpsParserTest, MaxPps) {
 }
 
 TEST_F(PpsParserTest, PpsIdFromSlice) {
-  rtc::Optional<uint32_t> pps_id = PpsParser::ParsePpsIdFromSlice(
+  absl::optional<uint32_t> pps_id = PpsParser::ParsePpsIdFromSlice(
       kH264BitstreamChunk, sizeof(kH264BitstreamChunk));
   ASSERT_TRUE(pps_id);
   EXPECT_EQ(2u, *pps_id);

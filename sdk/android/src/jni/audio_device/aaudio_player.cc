@@ -135,16 +135,16 @@ int AAudioPlayer::SetSpeakerVolume(uint32_t volume) {
   return -1;
 }
 
-rtc::Optional<uint32_t> AAudioPlayer::SpeakerVolume() const {
-  return rtc::nullopt;
+absl::optional<uint32_t> AAudioPlayer::SpeakerVolume() const {
+  return absl::nullopt;
 }
 
-rtc::Optional<uint32_t> AAudioPlayer::MaxSpeakerVolume() const {
-  return rtc::nullopt;
+absl::optional<uint32_t> AAudioPlayer::MaxSpeakerVolume() const {
+  return absl::nullopt;
 }
 
-rtc::Optional<uint32_t> AAudioPlayer::MinSpeakerVolume() const {
-  return rtc::nullopt;
+absl::optional<uint32_t> AAudioPlayer::MinSpeakerVolume() const {
+  return absl::nullopt;
 }
 
 void AAudioPlayer::OnErrorCallback(aaudio_result_t error) {

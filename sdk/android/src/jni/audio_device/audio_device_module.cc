@@ -341,7 +341,7 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
     RTC_LOG(INFO) << __FUNCTION__;
     if (!initialized_)
       return -1;
-    rtc::Optional<uint32_t> volume = output_->SpeakerVolume();
+    absl::optional<uint32_t> volume = output_->SpeakerVolume();
     if (!volume)
       return -1;
     *output_volume = *volume;
@@ -353,7 +353,7 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
     RTC_LOG(INFO) << __FUNCTION__;
     if (!initialized_)
       return -1;
-    rtc::Optional<uint32_t> max_volume = output_->MaxSpeakerVolume();
+    absl::optional<uint32_t> max_volume = output_->MaxSpeakerVolume();
     if (!max_volume)
       return -1;
     *output_max_volume = *max_volume;
@@ -364,7 +364,7 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
     RTC_LOG(INFO) << __FUNCTION__;
     if (!initialized_)
       return -1;
-    rtc::Optional<uint32_t> min_volume = output_->MinSpeakerVolume();
+    absl::optional<uint32_t> min_volume = output_->MinSpeakerVolume();
     if (!min_volume)
       return -1;
     *output_min_volume = *min_volume;

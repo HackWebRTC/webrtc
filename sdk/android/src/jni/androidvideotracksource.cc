@@ -38,7 +38,7 @@ bool AndroidVideoTrackSource::is_screencast() const {
   return is_screencast_;
 }
 
-rtc::Optional<bool> AndroidVideoTrackSource::needs_denoising() const {
+absl::optional<bool> AndroidVideoTrackSource::needs_denoising() const {
   return false;
 }
 

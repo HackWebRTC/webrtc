@@ -22,7 +22,7 @@
 #include <string>
 #include <vector>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/thread_checker.h"
 #include "sdk/android/native_api/jni/scoped_java_ref.h"
@@ -126,10 +126,11 @@ ScopedJavaLocalRef<jobject> GetJavaMapEntryValue(
 
 int64_t JavaToNativeLong(JNIEnv* env, const JavaRef<jobject>& j_long);
 
-rtc::Optional<bool> JavaToNativeOptionalBool(JNIEnv* jni,
-                                             const JavaRef<jobject>& boolean);
-rtc::Optional<int32_t> JavaToNativeOptionalInt(JNIEnv* jni,
-                                               const JavaRef<jobject>& integer);
+absl::optional<bool> JavaToNativeOptionalBool(JNIEnv* jni,
+                                              const JavaRef<jobject>& boolean);
+absl::optional<int32_t> JavaToNativeOptionalInt(
+    JNIEnv* jni,
+    const JavaRef<jobject>& integer);
 
 // Given a (UTF-16) jstring return a new UTF-8 native string.
 std::string JavaToNativeString(JNIEnv* jni, const JavaRef<jstring>& j_string);
@@ -196,10 +197,10 @@ ScopedJavaLocalRef<jstring> NativeToJavaString(JNIEnv* jni,
 
 ScopedJavaLocalRef<jobject> NativeToJavaInteger(
     JNIEnv* jni,
-    const rtc::Optional<int32_t>& optional_int);
+    const absl::optional<int32_t>& optional_int);
 ScopedJavaLocalRef<jstring> NativeToJavaString(
     JNIEnv* jni,
-    const rtc::Optional<std::string>& str);
+    const absl::optional<std::string>& str);
 
 // Helper function for converting std::vector<T> into a Java array.
 template <typename T, typename Convert>

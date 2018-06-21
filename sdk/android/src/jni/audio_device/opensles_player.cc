@@ -182,16 +182,16 @@ int OpenSLESPlayer::SetSpeakerVolume(uint32_t volume) {
   return -1;
 }
 
-rtc::Optional<uint32_t> OpenSLESPlayer::SpeakerVolume() const {
-  return rtc::nullopt;
+absl::optional<uint32_t> OpenSLESPlayer::SpeakerVolume() const {
+  return absl::nullopt;
 }
 
-rtc::Optional<uint32_t> OpenSLESPlayer::MaxSpeakerVolume() const {
-  return rtc::nullopt;
+absl::optional<uint32_t> OpenSLESPlayer::MaxSpeakerVolume() const {
+  return absl::nullopt;
 }
 
-rtc::Optional<uint32_t> OpenSLESPlayer::MinSpeakerVolume() const {
-  return rtc::nullopt;
+absl::optional<uint32_t> OpenSLESPlayer::MinSpeakerVolume() const {
+  return absl::nullopt;
 }
 
 void OpenSLESPlayer::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {

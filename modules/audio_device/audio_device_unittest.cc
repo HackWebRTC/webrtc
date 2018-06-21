@@ -13,8 +13,8 @@
 #include <memory>
 #include <numeric>
 
+#include "absl/types/optional.h"
 #include "api/array_view.h"
-#include "api/optional.h"
 #include "modules/audio_device/audio_device_impl.h"
 #include "modules/audio_device/include/audio_device.h"
 #include "modules/audio_device/include/mock_audio_transport.h"
@@ -294,7 +294,7 @@ class LatencyAudioStream : public AudioStream {
   rtc::ThreadChecker read_thread_checker_;
   rtc::ThreadChecker write_thread_checker_;
 
-  rtc::Optional<int64_t> pulse_time_ RTC_GUARDED_BY(lock_);
+  absl::optional<int64_t> pulse_time_ RTC_GUARDED_BY(lock_);
   std::vector<int> latencies_ RTC_GUARDED_BY(race_checker_);
   size_t read_count_ RTC_GUARDED_BY(read_thread_checker_) = 0;
   size_t write_count_ RTC_GUARDED_BY(write_thread_checker_) = 0;

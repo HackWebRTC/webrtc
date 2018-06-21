@@ -43,9 +43,9 @@ namespace {
 using namespace webrtc::H264;
 
 NSString *MaxSupportedLevelForProfile(Profile profile) {
-  const rtc::Optional<ProfileLevelId> profileLevelId = [UIDevice maxSupportedH264Profile];
+  const absl::optional<ProfileLevelId> profileLevelId = [UIDevice maxSupportedH264Profile];
   if (profileLevelId && profileLevelId->profile >= profile) {
-    const rtc::Optional<std::string> profileString =
+    const absl::optional<std::string> profileString =
         ProfileLevelIdToString(ProfileLevelId(profile, profileLevelId->level));
     if (profileString) {
       return [NSString stringForStdString:*profileString];
