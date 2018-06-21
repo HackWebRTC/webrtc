@@ -15,8 +15,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "api/mediatypes.h"
-#include "api/optional.h"
 
 namespace webrtc {
 
@@ -94,7 +94,7 @@ struct RtcpFeedback {
   // 1. It's an enum instead of a string.
   // 2. Generic NACK feedback is represented by a GENERIC_NACK message type,
   //    rather than an unset "parameter" value.
-  rtc::Optional<RtcpFeedbackMessageType> message_type;
+  absl::optional<RtcpFeedbackMessageType> message_type;
 
   // Constructors for convenience.
   RtcpFeedback();
@@ -125,23 +125,23 @@ struct RtpCodecCapability {
   cricket::MediaType kind = cricket::MEDIA_TYPE_AUDIO;
 
   // Clock rate in Hertz. If unset, the codec is applicable to any clock rate.
-  rtc::Optional<int> clock_rate;
+  absl::optional<int> clock_rate;
 
   // Default payload type for this codec. Mainly needed for codecs that use
   // that have statically assigned payload types.
-  rtc::Optional<int> preferred_payload_type;
+  absl::optional<int> preferred_payload_type;
 
   // Maximum packetization time supported by an RtpReceiver for this codec.
   // TODO(deadbeef): Not implemented.
-  rtc::Optional<int> max_ptime;
+  absl::optional<int> max_ptime;
 
   // Preferred packetization time for an RtpReceiver or RtpSender of this
   // codec.
   // TODO(deadbeef): Not implemented.
-  rtc::Optional<int> ptime;
+  absl::optional<int> ptime;
 
   // The number of audio channels supported. Unused for video codecs.
-  rtc::Optional<int> num_channels;
+  absl::optional<int> num_channels;
 
   // Feedback mechanisms supported for this codec.
   std::vector<RtcpFeedback> rtcp_feedback;
@@ -204,7 +204,7 @@ struct RtpHeaderExtensionCapability {
   std::string uri;
 
   // Preferred value of ID that goes in the packet.
-  rtc::Optional<int> preferred_id;
+  absl::optional<int> preferred_id;
 
   // If true, it's preferred that the value in the header is encrypted.
   // TODO(deadbeef): Not implemented.
@@ -313,7 +313,7 @@ typedef RtpExtension RtpHeaderExtensionParameters;
 struct RtpFecParameters {
   // If unset, a value is chosen by the implementation.
   // Works just like RtpEncodingParameters::ssrc.
-  rtc::Optional<uint32_t> ssrc;
+  absl::optional<uint32_t> ssrc;
 
   FecMechanism mechanism = FecMechanism::RED;
 
@@ -332,7 +332,7 @@ struct RtpFecParameters {
 struct RtpRtxParameters {
   // If unset, a value is chosen by the implementation.
   // Works just like RtpEncodingParameters::ssrc.
-  rtc::Optional<uint32_t> ssrc;
+  absl::optional<uint32_t> ssrc;
 
   // Constructors for convenience.
   RtpRtxParameters();
@@ -353,7 +353,7 @@ struct RtpEncodingParameters {
   // may change due to an SSRC conflict, in which case the conflict is handled
   // internally without any event. Another way of looking at this is that an
   // unset SSRC acts as a "wildcard" SSRC.
-  rtc::Optional<uint32_t> ssrc;
+  absl::optional<uint32_t> ssrc;
 
   // Can be used to reference a codec in the |codecs| member of the
   // RtpParameters that contains this RtpEncodingParameters. If unset, the
@@ -361,23 +361,23 @@ struct RtpEncodingParameters {
   // prepare to receive any codec (for a receiver).
   // TODO(deadbeef): Not implemented. Implementation of RtpSender will always
   // choose the first codec from the list.
-  rtc::Optional<int> codec_payload_type;
+  absl::optional<int> codec_payload_type;
 
   // Specifies the FEC mechanism, if set.
   // TODO(deadbeef): Not implemented. Current implementation will use whatever
   // FEC codecs are available, including red+ulpfec.
-  rtc::Optional<RtpFecParameters> fec;
+  absl::optional<RtpFecParameters> fec;
 
   // Specifies the RTX parameters, if set.
   // TODO(deadbeef): Not implemented with PeerConnection senders/receivers.
-  rtc::Optional<RtpRtxParameters> rtx;
+  absl::optional<RtpRtxParameters> rtx;
 
   // Only used for audio. If set, determines whether or not discontinuous
   // transmission will be used, if an available codec supports it. If not
   // set, the implementation default setting will be used.
   // TODO(deadbeef): Not implemented. Current implementation will use a CN
   // codec as long as it's present.
-  rtc::Optional<DtxStatus> dtx;
+  absl::optional<DtxStatus> dtx;
 
   // The relative bitrate priority of this encoding. Currently this is
   // implemented for the entire rtp sender by using the value of the first
@@ -394,7 +394,7 @@ struct RtpEncodingParameters {
   // creates a ptime for a specific codec, which is later changed in the
   // RtpEncodingParameters by the application.
   // TODO(bugs.webrtc.org/8819): Not implemented.
-  rtc::Optional<int> ptime;
+  absl::optional<int> ptime;
 
   // If set, this represents the Transport Independent Application Specific
   // maximum bandwidth defined in RFC3890. If unset, there is no maximum
@@ -407,23 +407,23 @@ struct RtpEncodingParameters {
   // bandwidth for the entire bandwidth estimator (audio and video). This is
   // just always how "b=AS" was handled, but it's not correct and should be
   // fixed.
-  rtc::Optional<int> max_bitrate_bps;
+  absl::optional<int> max_bitrate_bps;
 
   // Specifies the minimum bitrate in bps for video.
   // TODO(asapersson): Not implemented for ORTC API.
   // TODO(asapersson): Not implemented for single layer.
-  rtc::Optional<int> min_bitrate_bps;
+  absl::optional<int> min_bitrate_bps;
 
   // TODO(deadbeef): Not implemented.
-  rtc::Optional<int> max_framerate;
+  absl::optional<int> max_framerate;
 
   // For video, scale the resolution down by this factor.
   // TODO(deadbeef): Not implemented.
-  rtc::Optional<double> scale_resolution_down_by;
+  absl::optional<double> scale_resolution_down_by;
 
   // Scale the framerate down by this factor.
   // TODO(deadbeef): Not implemented.
-  rtc::Optional<double> scale_framerate_down_by;
+  absl::optional<double> scale_framerate_down_by;
 
   // For an RtpSender, set to true to cause this encoding to be encoded and
   // sent, and false for it not to be encoded and sent. This allows control
@@ -478,24 +478,24 @@ struct RtpCodecParameters {
   int payload_type = 0;
 
   // If unset, the implementation default is used.
-  rtc::Optional<int> clock_rate;
+  absl::optional<int> clock_rate;
 
   // The number of audio channels used. Unset for video codecs. If unset for
   // audio, the implementation default is used.
   // TODO(deadbeef): The "implementation default" part isn't fully implemented.
   // Only defaults to 1, even though some codecs (such as opus) should really
   // default to 2.
-  rtc::Optional<int> num_channels;
+  absl::optional<int> num_channels;
 
   // The maximum packetization time to be used by an RtpSender.
   // If |ptime| is also set, this will be ignored.
   // TODO(deadbeef): Not implemented.
-  rtc::Optional<int> max_ptime;
+  absl::optional<int> max_ptime;
 
   // The packetization time to be used by an RtpSender.
   // If unset, will use any time up to max_ptime.
   // TODO(deadbeef): Not implemented.
-  rtc::Optional<int> ptime;
+  absl::optional<int> ptime;
 
   // Feedback mechanisms to be used for this codec.
   // TODO(deadbeef): Not implemented with PeerConnection senders/receivers.
@@ -551,7 +551,7 @@ struct RtcpParameters final {
   // The SSRC to be used in the "SSRC of packet sender" field. If not set, one
   // will be chosen by the implementation.
   // TODO(deadbeef): Not implemented.
-  rtc::Optional<uint32_t> ssrc;
+  absl::optional<uint32_t> ssrc;
 
   // The Canonical Name (CNAME) used by RTCP (e.g. in SDES messages).
   //

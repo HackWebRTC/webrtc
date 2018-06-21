@@ -39,8 +39,8 @@ class DecodedImageCallback {
   // TODO(sakal): Remove other implementations when upstream projects have been
   // updated.
   virtual void Decoded(VideoFrame& decodedImage,
-                       rtc::Optional<int32_t> decode_time_ms,
-                       rtc::Optional<uint8_t> qp);
+                       absl::optional<int32_t> decode_time_ms,
+                       absl::optional<uint8_t> qp);
 
   virtual int32_t ReceivedDecodedReferenceFrame(const uint64_t pictureId);
 

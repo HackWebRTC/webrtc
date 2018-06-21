@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
@@ -77,7 +77,7 @@ class VideoBitrateAllocation {
 
  private:
   uint32_t sum_;
-  rtc::Optional<uint32_t> bitrates_[kMaxSpatialLayers][kMaxTemporalStreams];
+  absl::optional<uint32_t> bitrates_[kMaxSpatialLayers][kMaxTemporalStreams];
 };
 
 }  // namespace webrtc

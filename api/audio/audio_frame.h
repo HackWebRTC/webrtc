@@ -110,7 +110,7 @@ class AudioFrame {
   // Monotonically increasing timestamp intended for profiling of audio frames.
   // Typically used for measuring elapsed time between two different points in
   // the audio path. No lock is used to save resources and we are thread safe
-  // by design. Also, rtc::Optional is not used since it will cause a "complex
+  // by design. Also, absl::optional is not used since it will cause a "complex
   // class/struct needs an explicit out-of-line destructor" build error.
   int64_t profile_timestamp_ms_ = 0;
 

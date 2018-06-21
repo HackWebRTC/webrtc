@@ -22,7 +22,7 @@
 #include <string>
 #include <vector>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "api/video/video_frame.h"
 // TODO(zhihuang): Remove unrelated headers once downstream applications stop
 // relying on them; they were previously transitively included by
@@ -132,7 +132,7 @@ class VideoTrackSourceInterface : public MediaSourceInterface,
   // depending on video codec.
   // TODO(perkj): Remove this once denoising is done by the source, and not by
   // the encoder.
-  virtual rtc::Optional<bool> needs_denoising() const = 0;
+  virtual absl::optional<bool> needs_denoising() const = 0;
 
   // Returns false if no stats are available, e.g, for a remote source, or a
   // source which has not seen its first frame yet.

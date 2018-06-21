@@ -59,11 +59,11 @@ bool FindConstraint(const webrtc::MediaConstraintsInterface* constraints,
 }
 
 // Converts a constraint (mandatory takes precedence over optional) to an
-// rtc::Optional.
+// absl::optional.
 template <typename T>
 void ConstraintToOptional(const webrtc::MediaConstraintsInterface* constraints,
                           const std::string& key,
-                          rtc::Optional<T>* value_out) {
+                          absl::optional<T>* value_out) {
   T value;
   bool present = FindConstraint<T>(constraints, key, &value, nullptr);
   if (present) {

@@ -17,8 +17,8 @@
 
 namespace webrtc {
 
-rtc::Optional<AudioEncoderIsacFloat::Config> AudioEncoderIsacFloat::SdpToConfig(
-    const SdpAudioFormat& format) {
+absl::optional<AudioEncoderIsacFloat::Config>
+AudioEncoderIsacFloat::SdpToConfig(const SdpAudioFormat& format) {
   if (STR_CASE_CMP(format.name.c_str(), "ISAC") == 0 &&
       (format.clockrate_hz == 16000 || format.clockrate_hz == 32000) &&
       format.num_channels == 1) {
@@ -37,7 +37,7 @@ rtc::Optional<AudioEncoderIsacFloat::Config> AudioEncoderIsacFloat::SdpToConfig(
     }
     return config;
   } else {
-    return rtc::nullopt;
+    return absl::nullopt;
   }
 }
 
@@ -62,7 +62,7 @@ AudioCodecInfo AudioEncoderIsacFloat::QueryAudioEncoder(
 std::unique_ptr<AudioEncoder> AudioEncoderIsacFloat::MakeAudioEncoder(
     const AudioEncoderIsacFloat::Config& config,
     int payload_type,
-    rtc::Optional<AudioCodecPairId> /*codec_pair_id*/) {
+    absl::optional<AudioCodecPairId> /*codec_pair_id*/) {
   RTC_DCHECK(config.IsOk());
   AudioEncoderIsacFloatImpl::Config c;
   c.sample_rate_hz = config.sample_rate_hz;

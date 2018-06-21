@@ -57,8 +57,8 @@ class RtpSource {
   // The source can be either a contributing source or a synchronization source.
   RtpSourceType source_type() const { return source_type_; }
 
-  rtc::Optional<uint8_t> audio_level() const { return audio_level_; }
-  void set_audio_level(const rtc::Optional<uint8_t>& level) {
+  absl::optional<uint8_t> audio_level() const { return audio_level_; }
+  void set_audio_level(const absl::optional<uint8_t>& level) {
     audio_level_ = level;
   }
 
@@ -71,7 +71,7 @@ class RtpSource {
   int64_t timestamp_ms_;
   uint32_t source_id_;
   RtpSourceType source_type_;
-  rtc::Optional<uint8_t> audio_level_;
+  absl::optional<uint8_t> audio_level_;
 };
 
 class RtpReceiverObserverInterface {

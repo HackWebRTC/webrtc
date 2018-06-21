@@ -19,12 +19,12 @@
 
 namespace webrtc {
 
-rtc::Optional<AudioDecoderIlbc::Config> AudioDecoderIlbc::SdpToConfig(
+absl::optional<AudioDecoderIlbc::Config> AudioDecoderIlbc::SdpToConfig(
     const SdpAudioFormat& format) {
   return STR_CASE_CMP(format.name.c_str(), "ILBC") == 0 &&
                  format.clockrate_hz == 8000 && format.num_channels == 1
-             ? rtc::Optional<Config>(Config())
-             : rtc::nullopt;
+             ? absl::optional<Config>(Config())
+             : absl::nullopt;
 }
 
 void AudioDecoderIlbc::AppendSupportedDecoders(
@@ -34,7 +34,7 @@ void AudioDecoderIlbc::AppendSupportedDecoders(
 
 std::unique_ptr<AudioDecoder> AudioDecoderIlbc::MakeAudioDecoder(
     Config config,
-    rtc::Optional<AudioCodecPairId> /*codec_pair_id*/) {
+    absl::optional<AudioCodecPairId> /*codec_pair_id*/) {
   return rtc::MakeUnique<AudioDecoderIlbcImpl>();
 }
 

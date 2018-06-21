@@ -26,9 +26,9 @@ rtc_source_set("video_frame") {
   ]
 
   deps = [
-    "..:optional",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 
@@ -66,11 +66,11 @@ rtc_source_set("video_bitrate_allocation") {
     "video_bitrate_allocation.h",
   ]
   deps = [
-    "..:optional",
     "../..:typedefs",
     "../../rtc_base:checks",
     "../../rtc_base:safe_conversions",
     "../../rtc_base:stringutils",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 
@@ -83,8 +83,8 @@ rtc_source_set("video_stream_decoder") {
   deps = [
     ":encoded_frame",
     ":video_frame",
-    "..:optional",
     "../video_codecs:video_codecs_api",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 

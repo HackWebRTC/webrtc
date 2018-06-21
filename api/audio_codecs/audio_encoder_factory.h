@@ -14,10 +14,10 @@
 #include <memory>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "api/audio_codecs/audio_codec_pair_id.h"
 #include "api/audio_codecs/audio_encoder.h"
 #include "api/audio_codecs/audio_format.h"
-#include "api/optional.h"
 #include "rtc_base/refcount.h"
 
 namespace webrtc {
@@ -32,7 +32,7 @@ class AudioEncoderFactory : public rtc::RefCountInterface {
   // Returns information about how this format would be encoded, provided it's
   // supported. More format and format variations may be supported than those
   // returned by GetSupportedEncoders().
-  virtual rtc::Optional<AudioCodecInfo> QueryAudioEncoder(
+  virtual absl::optional<AudioCodecInfo> QueryAudioEncoder(
       const SdpAudioFormat& format) = 0;
 
   // Creates an AudioEncoder for the specified format. The encoder will tags
@@ -50,7 +50,7 @@ class AudioEncoderFactory : public rtc::RefCountInterface {
   virtual std::unique_ptr<AudioEncoder> MakeAudioEncoder(
       int payload_type,
       const SdpAudioFormat& format,
-      rtc::Optional<AudioCodecPairId> codec_pair_id) = 0;
+      absl::optional<AudioCodecPairId> codec_pair_id) = 0;
 };
 
 }  // namespace webrtc

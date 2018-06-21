@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "api/video/video_frame.h"
 #include "api/video_codecs/video_codec.h"
@@ -90,7 +90,7 @@ class VideoEncoder {
 
    public:
     // TODO(nisse): Would be nicer if kOff were a constant ScalingSettings
-    // rather than a magic value. However, rtc::Optional is not trivially copy
+    // rather than a magic value. However, absl::optional is not trivially copy
     // constructible, and hence a constant ScalingSettings needs a static
     // initializer, which is strongly discouraged in Chrome. We can hopefully
     // fix this when we switch to absl::optional or std::optional.
@@ -102,7 +102,7 @@ class VideoEncoder {
     ScalingSettings(KOff);  // NOLINT(runtime/explicit)
     ~ScalingSettings();
 
-    const rtc::Optional<QpThresholds> thresholds;
+    const absl::optional<QpThresholds> thresholds;
 
     // We will never ask for a resolution lower than this.
     // TODO(kthelgason): Lower this limit when better testing

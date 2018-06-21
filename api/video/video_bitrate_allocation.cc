@@ -27,7 +27,7 @@ bool VideoBitrateAllocation::SetBitrate(size_t spatial_index,
   RTC_CHECK_LT(spatial_index, kMaxSpatialLayers);
   RTC_CHECK_LT(temporal_index, kMaxTemporalStreams);
   int64_t new_bitrate_sum_bps = sum_;
-  rtc::Optional<uint32_t>& layer_bitrate =
+  absl::optional<uint32_t>& layer_bitrate =
       bitrates_[spatial_index][temporal_index];
   if (layer_bitrate) {
     RTC_DCHECK_LE(*layer_bitrate, sum_);

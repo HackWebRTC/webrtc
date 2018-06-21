@@ -13,7 +13,7 @@
 #include <stdint.h>
 #include <vector>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "api/units/data_rate.h"
 #include "api/units/data_size.h"
 #include "api/units/time_delta.h"
@@ -32,10 +32,10 @@ struct StreamsConfig {
   ~StreamsConfig();
   Timestamp at_time = Timestamp::Infinity();
   bool requests_alr_probing = false;
-  rtc::Optional<double> pacing_factor;
-  rtc::Optional<DataRate> min_pacing_rate;
-  rtc::Optional<DataRate> max_padding_rate;
-  rtc::Optional<DataRate> max_total_allocated_bitrate;
+  absl::optional<double> pacing_factor;
+  absl::optional<DataRate> min_pacing_rate;
+  absl::optional<DataRate> max_padding_rate;
+  absl::optional<DataRate> max_total_allocated_bitrate;
 };
 
 struct TargetRateConstraints {
@@ -43,8 +43,8 @@ struct TargetRateConstraints {
   TargetRateConstraints(const TargetRateConstraints&);
   ~TargetRateConstraints();
   Timestamp at_time = Timestamp::Infinity();
-  rtc::Optional<DataRate> min_data_rate;
-  rtc::Optional<DataRate> max_data_rate;
+  absl::optional<DataRate> min_data_rate;
+  absl::optional<DataRate> max_data_rate;
 };
 
 // Send side information
@@ -62,7 +62,7 @@ struct NetworkRouteChange {
   // The TargetRateConstraints are set here so they can be changed synchronously
   // when network route changes.
   TargetRateConstraints constraints;
-  rtc::Optional<DataRate> starting_rate;
+  absl::optional<DataRate> starting_rate;
 };
 
 struct PacedPacketInfo {
@@ -121,7 +121,7 @@ struct PacketResult {
   PacketResult(const PacketResult&);
   ~PacketResult();
 
-  rtc::Optional<SentPacket> sent_packet;
+  absl::optional<SentPacket> sent_packet;
   Timestamp receive_time = Timestamp::Infinity();
 };
 
@@ -185,10 +185,10 @@ struct NetworkControlUpdate {
   NetworkControlUpdate();
   NetworkControlUpdate(const NetworkControlUpdate&);
   ~NetworkControlUpdate();
-  rtc::Optional<DataSize> congestion_window;
-  rtc::Optional<PacerConfig> pacer_config;
+  absl::optional<DataSize> congestion_window;
+  absl::optional<PacerConfig> pacer_config;
   std::vector<ProbeClusterConfig> probe_cluster_configs;
-  rtc::Optional<TargetTransferRate> target_rate;
+  absl::optional<TargetTransferRate> target_rate;
 };
 
 // Process control

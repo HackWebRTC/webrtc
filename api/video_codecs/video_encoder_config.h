@@ -14,9 +14,9 @@
 #include <string>
 #include <vector>
 
-#include "api/optional.h"
-#include "api/video_codecs/video_codec.h"
+#include "absl/types/optional.h"
 #include "api/video_codecs/sdp_video_format.h"
+#include "api/video_codecs/video_codec.h"
 #include "rtc_base/refcount.h"
 #include "rtc_base/scoped_ref_ptr.h"
 
@@ -37,9 +37,9 @@ struct VideoStream {
   int max_bitrate_bps;
   int max_qp;
 
-  rtc::Optional<size_t> num_temporal_layers;
+  absl::optional<size_t> num_temporal_layers;
 
-  rtc::Optional<double> bitrate_priority;
+  absl::optional<double> bitrate_priority;
 
   // TODO(bugs.webrtc.org/8653): Support active per-simulcast layer.
   bool active;
@@ -50,7 +50,7 @@ class VideoEncoderConfig {
   // These are reference counted to permit copying VideoEncoderConfig and be
   // kept alive until all encoder_specific_settings go out of scope.
   // TODO(kthelgason): Consider removing the need for copying VideoEncoderConfig
-  // and use rtc::Optional for encoder_specific_settings instead.
+  // and use absl::optional for encoder_specific_settings instead.
   class EncoderSpecificSettings : public rtc::RefCountInterface {
    public:
     // TODO(pbos): Remove FillEncoderSpecificSettings as soon as VideoCodec is

@@ -11,7 +11,7 @@
 #ifndef API_TRANSPORT_BITRATE_SETTINGS_H_
 #define API_TRANSPORT_BITRATE_SETTINGS_H_
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 
 namespace webrtc {
 
@@ -25,9 +25,9 @@ struct BitrateSettings {
   ~BitrateSettings();
   BitrateSettings(const BitrateSettings&);
   // 0 <= min <= start <= max should hold for set parameters.
-  rtc::Optional<int> min_bitrate_bps;
-  rtc::Optional<int> start_bitrate_bps;
-  rtc::Optional<int> max_bitrate_bps;
+  absl::optional<int> min_bitrate_bps;
+  absl::optional<int> start_bitrate_bps;
+  absl::optional<int> max_bitrate_bps;
 };
 
 }  // namespace webrtc

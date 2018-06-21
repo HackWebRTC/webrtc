@@ -14,8 +14,8 @@
 #include <string>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "api/array_view.h"
-#include "api/optional.h"
 #include "api/rtpreceiverinterface.h"
 #include "api/rtpsenderinterface.h"
 #include "rtc_base/refcount.h"
@@ -68,7 +68,7 @@ class RtpTransceiverInterface : public rtc::RefCountInterface {
   // remote descriptions. Before negotiation is complete, the mid value may be
   // null. After rollbacks, the value may change from a non-null value to null.
   // https://w3c.github.io/webrtc-pc/#dom-rtcrtptransceiver-mid
-  virtual rtc::Optional<std::string> mid() const = 0;
+  virtual absl::optional<std::string> mid() const = 0;
 
   // The sender attribute exposes the RtpSender corresponding to the RTP media
   // that may be sent with the transceiver's mid. The sender is always present,
@@ -105,7 +105,7 @@ class RtpTransceiverInterface : public rtc::RefCountInterface {
   // for this transceiver. If this transceiver has never been represented in an
   // offer/answer exchange, or if the transceiver is stopped, the value is null.
   // https://w3c.github.io/webrtc-pc/#dom-rtcrtptransceiver-currentdirection
-  virtual rtc::Optional<RtpTransceiverDirection> current_direction() const = 0;
+  virtual absl::optional<RtpTransceiverDirection> current_direction() const = 0;
 
   // The Stop method irreversibly stops the RtpTransceiver. The sender of this
   // transceiver will no longer send, the receiver will no longer receive.

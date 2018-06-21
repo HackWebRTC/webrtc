@@ -19,8 +19,8 @@ int32_t DecodedImageCallback::Decoded(VideoFrame& decodedImage,
 }
 
 void DecodedImageCallback::Decoded(VideoFrame& decodedImage,
-                                   rtc::Optional<int32_t> decode_time_ms,
-                                   rtc::Optional<uint8_t> qp) {
+                                   absl::optional<int32_t> decode_time_ms,
+                                   absl::optional<uint8_t> qp) {
   Decoded(decodedImage, decode_time_ms.value_or(-1));
 }
 

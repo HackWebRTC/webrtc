@@ -16,8 +16,8 @@
 #include <string>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "api/array_view.h"
-#include "api/optional.h"
 #include "api/video/video_content_type.h"
 #include "api/video/video_rotation.h"
 #include "api/video/video_timing.h"
@@ -102,7 +102,7 @@ struct RTPHeaderExtension {
   bool hasVideoRotation;
   VideoRotation videoRotation;
 
-  // TODO(ilnik): Refactor this and one above to be rtc::Optional() and remove
+  // TODO(ilnik): Refactor this and one above to be absl::optional() and remove
   // a corresponding bool flag.
   bool hasVideoContentType;
   VideoContentType videoContentType;

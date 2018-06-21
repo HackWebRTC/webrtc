@@ -37,8 +37,8 @@ class VideoStreamDecoder {
 
     // Called with the decoded frame.
     virtual void OnDecodedFrame(VideoFrame decodedImage,
-                                rtc::Optional<int> decode_time_ms,
-                                rtc::Optional<int> qp) = 0;
+                                absl::optional<int> decode_time_ms,
+                                absl::optional<int> qp) = 0;
   };
 
   virtual ~VideoStreamDecoder() = default;

@@ -13,7 +13,7 @@
 
 #include <string>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "rtc_base/stringencode.h"
 
 namespace cricket {
@@ -126,53 +126,53 @@ struct AudioOptions {
 
   // Audio processing that attempts to filter away the output signal from
   // later inbound pickup.
-  rtc::Optional<bool> echo_cancellation;
+  absl::optional<bool> echo_cancellation;
 #if defined(WEBRTC_IOS)
   // Forces software echo cancellation on iOS. This is a temporary workaround
   // (until Apple fixes the bug) for a device with non-functioning AEC. May
   // improve performance on that particular device, but will cause unpredictable
   // behavior in all other cases. See http://bugs.webrtc.org/8682.
-  rtc::Optional<bool> ios_force_software_aec_HACK;
+  absl::optional<bool> ios_force_software_aec_HACK;
 #endif
   // Audio processing to adjust the sensitivity of the local mic dynamically.
-  rtc::Optional<bool> auto_gain_control;
+  absl::optional<bool> auto_gain_control;
   // Audio processing to filter out background noise.
-  rtc::Optional<bool> noise_suppression;
+  absl::optional<bool> noise_suppression;
   // Audio processing to remove background noise of lower frequencies.
-  rtc::Optional<bool> highpass_filter;
+  absl::optional<bool> highpass_filter;
   // Audio processing to swap the left and right channels.
-  rtc::Optional<bool> stereo_swapping;
+  absl::optional<bool> stereo_swapping;
   // Audio receiver jitter buffer (NetEq) max capacity in number of packets.
-  rtc::Optional<int> audio_jitter_buffer_max_packets;
+  absl::optional<int> audio_jitter_buffer_max_packets;
   // Audio receiver jitter buffer (NetEq) fast accelerate mode.
-  rtc::Optional<bool> audio_jitter_buffer_fast_accelerate;
+  absl::optional<bool> audio_jitter_buffer_fast_accelerate;
   // Audio processing to detect typing.
-  rtc::Optional<bool> typing_detection;
-  rtc::Optional<bool> aecm_generate_comfort_noise;
-  rtc::Optional<bool> experimental_agc;
-  rtc::Optional<bool> extended_filter_aec;
-  rtc::Optional<bool> delay_agnostic_aec;
-  rtc::Optional<bool> experimental_ns;
-  rtc::Optional<bool> intelligibility_enhancer;
+  absl::optional<bool> typing_detection;
+  absl::optional<bool> aecm_generate_comfort_noise;
+  absl::optional<bool> experimental_agc;
+  absl::optional<bool> extended_filter_aec;
+  absl::optional<bool> delay_agnostic_aec;
+  absl::optional<bool> experimental_ns;
+  absl::optional<bool> intelligibility_enhancer;
   // Note that tx_agc_* only applies to non-experimental AGC.
-  rtc::Optional<bool> residual_echo_detector;
-  rtc::Optional<uint16_t> tx_agc_target_dbov;
-  rtc::Optional<uint16_t> tx_agc_digital_compression_gain;
-  rtc::Optional<bool> tx_agc_limiter;
+  absl::optional<bool> residual_echo_detector;
+  absl::optional<uint16_t> tx_agc_target_dbov;
+  absl::optional<uint16_t> tx_agc_digital_compression_gain;
+  absl::optional<bool> tx_agc_limiter;
   // Enable combined audio+bandwidth BWE.
   // TODO(pthatcher): This flag is set from the
   // "googCombinedAudioVideoBwe", but not used anywhere. So delete it,
   // and check if any other AudioOptions members are unused.
-  rtc::Optional<bool> combined_audio_video_bwe;
+  absl::optional<bool> combined_audio_video_bwe;
   // Enable audio network adaptor.
-  rtc::Optional<bool> audio_network_adaptor;
+  absl::optional<bool> audio_network_adaptor;
   // Config string for audio network adaptor.
-  rtc::Optional<std::string> audio_network_adaptor_config;
+  absl::optional<std::string> audio_network_adaptor_config;
 
  private:
   template <class T>
   static std::string ToStringIfSet(const char* key,
-                                   const rtc::Optional<T>& val) {
+                                   const absl::optional<T>& val) {
     std::string str;
     if (val) {
       str = key;
@@ -184,7 +184,7 @@ struct AudioOptions {
   }
 
   template <typename T>
-  static void SetFrom(rtc::Optional<T>* s, const rtc::Optional<T>& o) {
+  static void SetFrom(absl::optional<T>* s, const absl::optional<T>& o) {
     if (o) {
       *s = o;
     }
