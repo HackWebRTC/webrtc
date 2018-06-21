@@ -9,9 +9,8 @@ import("//build/config/android/rules.gni")
 # the full guava and one that supports android. Please keep the versions in
 # sync with one another.
 
-java_prebuilt("guava_android_java") {
+android_java_prebuilt("guava_android_java") {
   testonly = true
-  supports_android = true
   jar_path = "lib/guava-android.jar"
 
   # Avoids dependency cycle.
