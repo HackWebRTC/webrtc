@@ -22,7 +22,6 @@ chrome.safeBrowsingPrivate = {};
  *   userName: string,
  *   isPhishing: boolean
  * }}
- * @see https://developer.chrome.com/extensions/safeBrowsingPrivate#type-PolicySpecifiedPasswordReuse
  */
 chrome.safeBrowsingPrivate.PolicySpecifiedPasswordReuse;
 
@@ -33,7 +32,6 @@ chrome.safeBrowsingPrivate.PolicySpecifiedPasswordReuse;
  *   sha256: string,
  *   userName: (string|undefined)
  * }}
- * @see https://developer.chrome.com/extensions/safeBrowsingPrivate#type-DangerousDownloadInfo
  */
 chrome.safeBrowsingPrivate.DangerousDownloadInfo;
 
@@ -43,41 +41,35 @@ chrome.safeBrowsingPrivate.DangerousDownloadInfo;
  *   reason: string,
  *   netErrorCode: (number|undefined)
  * }}
- * @see https://developer.chrome.com/extensions/safeBrowsingPrivate#type-InterstitialInfo
  */
 chrome.safeBrowsingPrivate.InterstitialInfo;
 
 /**
  * Fired when Chrome detects a reuse of a policy specified password.
  * @type {!ChromeEvent}
- * @see https://developer.chrome.com/extensions/safeBrowsingPrivate#event-onPolicySpecifiedPasswordReuseDetected
  */
 chrome.safeBrowsingPrivate.onPolicySpecifiedPasswordReuseDetected;
 
 /**
  * Fired when the user changed their policy specified password.
  * @type {!ChromeEvent}
- * @see https://developer.chrome.com/extensions/safeBrowsingPrivate#event-onPolicySpecifiedPasswordChanged
  */
 chrome.safeBrowsingPrivate.onPolicySpecifiedPasswordChanged;
 
 /**
  * Fired when the user opened a dangerous download.
  * @type {!ChromeEvent}
- * @see https://developer.chrome.com/extensions/safeBrowsingPrivate#event-onDangerousDownloadOpened
  */
 chrome.safeBrowsingPrivate.onDangerousDownloadOpened;
 
 /**
  * Fired when a security interstitial is shown to the user.
  * @type {!ChromeEvent}
- * @see https://developer.chrome.com/extensions/safeBrowsingPrivate#event-onInterstitialShown
  */
 chrome.safeBrowsingPrivate.onInterstitialShown;
 
 /**
  * Fired when the user clicked-through a security interstitial.
  * @type {!ChromeEvent}
- * @see https://developer.chrome.com/extensions/safeBrowsingPrivate#event-onInterstitialProceeded
  */
 chrome.safeBrowsingPrivate.onInterstitialProceeded;

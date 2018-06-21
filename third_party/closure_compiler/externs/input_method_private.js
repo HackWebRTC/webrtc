@@ -22,7 +22,6 @@ chrome.inputMethodPrivate = {};
  *   isPhysicalKeyboardAutocorrectEnabled: boolean,
  *   isImeMenuActivated: boolean
  * }):void} callback Callback which is called with the config object.
- * @see https://developer.chrome.com/extensions/inputMethodPrivate#method-getInputMethodConfig
  */
 chrome.inputMethodPrivate.getInputMethodConfig = function(callback) {};
 
@@ -33,7 +32,6 @@ chrome.inputMethodPrivate.getInputMethodConfig = function(callback) {};
  *   name: string,
  *   indicator: string
  * }>):void} callback Callback which is called with the input method objects.
- * @see https://developer.chrome.com/extensions/inputMethodPrivate#method-getInputMethods
  */
 chrome.inputMethodPrivate.getInputMethods = function(callback) {};
 
@@ -41,7 +39,6 @@ chrome.inputMethodPrivate.getInputMethods = function(callback) {};
  * Gets the current input method.
  * @param {function(string):void} callback Callback which is called with the
  *     current input method.
- * @see https://developer.chrome.com/extensions/inputMethodPrivate#method-getCurrentInputMethod
  */
 chrome.inputMethodPrivate.getCurrentInputMethod = function(callback) {};
 
@@ -51,7 +48,6 @@ chrome.inputMethodPrivate.getCurrentInputMethod = function(callback) {};
  *     method.
  * @param {function():void=} callback Callback which is called once the current
  *     input method is set. If unsuccessful $(ref:runtime.lastError) is set.
- * @see https://developer.chrome.com/extensions/inputMethodPrivate#method-setCurrentInputMethod
  */
 chrome.inputMethodPrivate.setCurrentInputMethod = function(inputMethodId, callback) {};
 
@@ -59,7 +55,6 @@ chrome.inputMethodPrivate.setCurrentInputMethod = function(inputMethodId, callba
  * Fetches a list of all the words currently in the dictionary.
  * @param {function(!Array<string>):void} callback Callback which is called once
  *     the list of dictionary words are ready.
- * @see https://developer.chrome.com/extensions/inputMethodPrivate#method-fetchAllDictionaryWords
  */
 chrome.inputMethodPrivate.fetchAllDictionaryWords = function(callback) {};
 
@@ -68,7 +63,6 @@ chrome.inputMethodPrivate.fetchAllDictionaryWords = function(callback) {};
  * @param {string} word A new word to add to the dictionary.
  * @param {function():void=} callback Callback which is called once the word is
  *     added. If unsuccessful $(ref:runtime.lastError) is set.
- * @see https://developer.chrome.com/extensions/inputMethodPrivate#method-addWordToDictionary
  */
 chrome.inputMethodPrivate.addWordToDictionary = function(word, callback) {};
 
@@ -76,7 +70,6 @@ chrome.inputMethodPrivate.addWordToDictionary = function(word, callback) {};
  * Gets whether the encrypt sync is enabled.
  * @param {function(boolean):void=} callback Callback which is called to provide
  *     the result.
- * @see https://developer.chrome.com/extensions/inputMethodPrivate#method-getEncryptSyncEnabled
  */
 chrome.inputMethodPrivate.getEncryptSyncEnabled = function(callback) {};
 
@@ -85,41 +78,35 @@ chrome.inputMethodPrivate.getEncryptSyncEnabled = function(callback) {};
  * @param {string} xkb_name The XKB layout name.
  * @param {function():void=} callback Callback which is called when the layout
  *     is set.
- * @see https://developer.chrome.com/extensions/inputMethodPrivate#method-setXkbLayout
  */
 chrome.inputMethodPrivate.setXkbLayout = function(xkb_name, callback) {};
 
 /**
  * Fired when the input method is changed.
  * @type {!ChromeEvent}
- * @see https://developer.chrome.com/extensions/inputMethodPrivate#event-onChanged
  */
 chrome.inputMethodPrivate.onChanged;
 
 /**
  * Fired when the composition bounds or cursor bounds are changed.
  * @type {!ChromeEvent}
- * @see https://developer.chrome.com/extensions/inputMethodPrivate#event-onCompositionBoundsChanged
  */
 chrome.inputMethodPrivate.onCompositionBoundsChanged;
 
 /**
  * Fired when the custom spelling dictionary is loaded.
  * @type {!ChromeEvent}
- * @see https://developer.chrome.com/extensions/inputMethodPrivate#event-onDictionaryLoaded
  */
 chrome.inputMethodPrivate.onDictionaryLoaded;
 
 /**
  * Fired when words are added or removed from the custom spelling dictionary.
  * @type {!ChromeEvent}
- * @see https://developer.chrome.com/extensions/inputMethodPrivate#event-onDictionaryChanged
  */
 chrome.inputMethodPrivate.onDictionaryChanged;
 
 /**
  * Fired when the IME menu is activated or deactivated.
  * @type {!ChromeEvent}
- * @see https://developer.chrome.com/extensions/inputMethodPrivate#event-onImeMenuActivationChanged
  */
 chrome.inputMethodPrivate.onImeMenuActivationChanged;

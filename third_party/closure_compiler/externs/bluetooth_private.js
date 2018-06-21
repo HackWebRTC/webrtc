@@ -21,7 +21,6 @@ chrome.bluetoothPrivate = {};
 
 /**
  * @enum {string}
- * @see https://developer.chrome.com/extensions/bluetoothPrivate#type-PairingEventType
  */
 chrome.bluetoothPrivate.PairingEventType = {
   REQUEST_PINCODE: 'requestPincode',
@@ -36,7 +35,6 @@ chrome.bluetoothPrivate.PairingEventType = {
 
 /**
  * @enum {string}
- * @see https://developer.chrome.com/extensions/bluetoothPrivate#type-ConnectResultType
  */
 chrome.bluetoothPrivate.ConnectResultType = {
   ALREADY_CONNECTED: 'alreadyConnected',
@@ -53,7 +51,6 @@ chrome.bluetoothPrivate.ConnectResultType = {
 
 /**
  * @enum {string}
- * @see https://developer.chrome.com/extensions/bluetoothPrivate#type-PairingResponse
  */
 chrome.bluetoothPrivate.PairingResponse = {
   CONFIRM: 'confirm',
@@ -63,7 +60,6 @@ chrome.bluetoothPrivate.PairingResponse = {
 
 /**
  * @enum {string}
- * @see https://developer.chrome.com/extensions/bluetoothPrivate#type-TransportType
  */
 chrome.bluetoothPrivate.TransportType = {
   LE: 'le',
@@ -79,7 +75,6 @@ chrome.bluetoothPrivate.TransportType = {
  *   passkey: (number|undefined),
  *   enteredKey: (number|undefined)
  * }}
- * @see https://developer.chrome.com/extensions/bluetoothPrivate#type-PairingEvent
  */
 chrome.bluetoothPrivate.PairingEvent;
 
@@ -89,7 +84,6 @@ chrome.bluetoothPrivate.PairingEvent;
  *   powered: (boolean|undefined),
  *   discoverable: (boolean|undefined)
  * }}
- * @see https://developer.chrome.com/extensions/bluetoothPrivate#type-NewAdapterState
  */
 chrome.bluetoothPrivate.NewAdapterState;
 
@@ -100,7 +94,6 @@ chrome.bluetoothPrivate.NewAdapterState;
  *   pincode: (string|undefined),
  *   passkey: (number|undefined)
  * }}
- * @see https://developer.chrome.com/extensions/bluetoothPrivate#type-SetPairingResponseOptions
  */
 chrome.bluetoothPrivate.SetPairingResponseOptions;
 
@@ -111,7 +104,6 @@ chrome.bluetoothPrivate.SetPairingResponseOptions;
  *   rssi: (number|undefined),
  *   pathloss: (number|undefined)
  * }}
- * @see https://developer.chrome.com/extensions/bluetoothPrivate#type-DiscoveryFilter
  */
 chrome.bluetoothPrivate.DiscoveryFilter;
 
@@ -119,14 +111,12 @@ chrome.bluetoothPrivate.DiscoveryFilter;
  * Changes the state of the Bluetooth adapter.
  * @param {!chrome.bluetoothPrivate.NewAdapterState} adapterState
  * @param {function():void=} callback
- * @see https://developer.chrome.com/extensions/bluetoothPrivate#method-setAdapterState
  */
 chrome.bluetoothPrivate.setAdapterState = function(adapterState, callback) {};
 
 /**
  * @param {!chrome.bluetoothPrivate.SetPairingResponseOptions} options
  * @param {function():void=} callback
- * @see https://developer.chrome.com/extensions/bluetoothPrivate#method-setPairingResponse
  */
 chrome.bluetoothPrivate.setPairingResponse = function(options, callback) {};
 
@@ -134,7 +124,6 @@ chrome.bluetoothPrivate.setPairingResponse = function(options, callback) {};
  * Tears down all connections to the given device.
  * @param {string} deviceAddress
  * @param {function():void=} callback
- * @see https://developer.chrome.com/extensions/bluetoothPrivate#method-disconnectAll
  */
 chrome.bluetoothPrivate.disconnectAll = function(deviceAddress, callback) {};
 
@@ -142,7 +131,6 @@ chrome.bluetoothPrivate.disconnectAll = function(deviceAddress, callback) {};
  * Forgets the given device.
  * @param {string} deviceAddress
  * @param {function():void=} callback
- * @see https://developer.chrome.com/extensions/bluetoothPrivate#method-forgetDevice
  */
 chrome.bluetoothPrivate.forgetDevice = function(deviceAddress, callback) {};
 
@@ -150,7 +138,6 @@ chrome.bluetoothPrivate.forgetDevice = function(deviceAddress, callback) {};
  * Set or clear discovery filter.
  * @param {!chrome.bluetoothPrivate.DiscoveryFilter} discoveryFilter
  * @param {function():void=} callback
- * @see https://developer.chrome.com/extensions/bluetoothPrivate#method-setDiscoveryFilter
  */
 chrome.bluetoothPrivate.setDiscoveryFilter = function(discoveryFilter, callback) {};
 
@@ -160,7 +147,6 @@ chrome.bluetoothPrivate.setDiscoveryFilter = function(discoveryFilter, callback)
  * succeed and invoke |callback| with ConnectResultType.
  * @param {string} deviceAddress
  * @param {function(!chrome.bluetoothPrivate.ConnectResultType):void=} callback
- * @see https://developer.chrome.com/extensions/bluetoothPrivate#method-connect
  */
 chrome.bluetoothPrivate.connect = function(deviceAddress, callback) {};
 
@@ -168,13 +154,11 @@ chrome.bluetoothPrivate.connect = function(deviceAddress, callback) {};
  * Pairs the given device.
  * @param {string} deviceAddress
  * @param {function():void=} callback
- * @see https://developer.chrome.com/extensions/bluetoothPrivate#method-pair
  */
 chrome.bluetoothPrivate.pair = function(deviceAddress, callback) {};
 
 /**
  * Fired when a pairing event occurs.
  * @type {!ChromeEvent}
- * @see https://developer.chrome.com/extensions/bluetoothPrivate#event-onPairing
  */
 chrome.bluetoothPrivate.onPairing;

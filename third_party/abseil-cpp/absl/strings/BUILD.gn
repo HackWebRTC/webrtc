@@ -22,7 +22,12 @@ source_set("strings") {
   public_configs = [ "//third_party/abseil-cpp:absl_include_config" ]
   sources = [
     "ascii.cc",
+    "charconv.cc",
     "escaping.cc",
+    "internal/charconv_bigint.cc",
+    "internal/charconv_bigint.h",
+    "internal/charconv_parse.cc",
+    "internal/charconv_parse.h",
     "internal/memutil.cc",
     "internal/memutil.h",
     "internal/stl_type_traits.h",
@@ -38,6 +43,7 @@ source_set("strings") {
   ]
   public = [
     "ascii.h",
+    "charconv.h",
     "escaping.h",
     "match.h",
     "numbers.h",

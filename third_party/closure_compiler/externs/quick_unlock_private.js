@@ -21,13 +21,11 @@ chrome.quickUnlockPrivate = {};
  *   token: string,
  *   lifetimeSeconds: number
  * }}
- * @see https://developer.chrome.com/extensions/quickUnlockPrivate#type-TokenInfo
  */
 chrome.quickUnlockPrivate.TokenInfo;
 
 /**
  * @enum {string}
- * @see https://developer.chrome.com/extensions/quickUnlockPrivate#type-QuickUnlockMode
  */
 chrome.quickUnlockPrivate.QuickUnlockMode = {
   PIN: 'PIN',
@@ -35,7 +33,6 @@ chrome.quickUnlockPrivate.QuickUnlockMode = {
 
 /**
  * @enum {string}
- * @see https://developer.chrome.com/extensions/quickUnlockPrivate#type-CredentialProblem
  */
 chrome.quickUnlockPrivate.CredentialProblem = {
   TOO_SHORT: 'TOO_SHORT',
@@ -49,7 +46,6 @@ chrome.quickUnlockPrivate.CredentialProblem = {
  *   errors: !Array<!chrome.quickUnlockPrivate.CredentialProblem>,
  *   warnings: !Array<!chrome.quickUnlockPrivate.CredentialProblem>
  * }}
- * @see https://developer.chrome.com/extensions/quickUnlockPrivate#type-CredentialCheck
  */
 chrome.quickUnlockPrivate.CredentialCheck;
 
@@ -58,7 +54,6 @@ chrome.quickUnlockPrivate.CredentialCheck;
  *   minLength: number,
  *   maxLength: number
  * }}
- * @see https://developer.chrome.com/extensions/quickUnlockPrivate#type-CredentialRequirements
  */
 chrome.quickUnlockPrivate.CredentialRequirements;
 
@@ -67,7 +62,6 @@ chrome.quickUnlockPrivate.CredentialRequirements;
  * seconds until the token expires.
  * @param {string} accountPassword The account password for the logged in user.
  * @param {function(!chrome.quickUnlockPrivate.TokenInfo):void} onComplete
- * @see https://developer.chrome.com/extensions/quickUnlockPrivate#method-getAuthToken
  */
 chrome.quickUnlockPrivate.getAuthToken = function(accountPassword, onComplete) {};
 
@@ -79,7 +73,6 @@ chrome.quickUnlockPrivate.getAuthToken = function(accountPassword, onComplete) {
  * @param {string} token The token returned by $(ref:getAuthToken).
  * @param {boolean} enabled
  * @param {function():void=} onComplete
- * @see https://developer.chrome.com/extensions/quickUnlockPrivate#method-setLockScreenEnabled
  */
 chrome.quickUnlockPrivate.setLockScreenEnabled = function(token, enabled, onComplete) {};
 
@@ -88,7 +81,6 @@ chrome.quickUnlockPrivate.setLockScreenEnabled = function(token, enabled, onComp
  * Some quick unlock modes may be disabled by policy.
  * @param {function(!Array<!chrome.quickUnlockPrivate.QuickUnlockMode>):void}
  *     onComplete
- * @see https://developer.chrome.com/extensions/quickUnlockPrivate#method-getAvailableModes
  */
 chrome.quickUnlockPrivate.getAvailableModes = function(onComplete) {};
 
@@ -97,7 +89,6 @@ chrome.quickUnlockPrivate.getAvailableModes = function(onComplete) {};
  * lock screen.
  * @param {function(!Array<!chrome.quickUnlockPrivate.QuickUnlockMode>):void}
  *     onComplete
- * @see https://developer.chrome.com/extensions/quickUnlockPrivate#method-getActiveModes
  */
 chrome.quickUnlockPrivate.getActiveModes = function(onComplete) {};
 
@@ -110,7 +101,6 @@ chrome.quickUnlockPrivate.getActiveModes = function(onComplete) {};
  * @param {function(!chrome.quickUnlockPrivate.CredentialCheck):void} onComplete
  *     Called with a list of warnings and errors the given     |credential| has
  *     (or an empty list if there are none).
- * @see https://developer.chrome.com/extensions/quickUnlockPrivate#method-checkCredential
  */
 chrome.quickUnlockPrivate.checkCredential = function(mode, credential, onComplete) {};
 
@@ -121,7 +111,6 @@ chrome.quickUnlockPrivate.checkCredential = function(mode, credential, onComplet
  * @param {function(!chrome.quickUnlockPrivate.CredentialRequirements):void}
  *     onComplete Called with the credential requirements of the given
  *     |mode|.
- * @see https://developer.chrome.com/extensions/quickUnlockPrivate#method-getCredentialRequirements
  */
 chrome.quickUnlockPrivate.getCredentialRequirements = function(mode, onComplete) {};
 
@@ -136,13 +125,11 @@ chrome.quickUnlockPrivate.getCredentialRequirements = function(mode, onComplete)
  * @param {function():void} onComplete Called with true if the quick unlock
  *     state was updated,     false otherwise. The update is treated as a single
  *     atomic operation.
- * @see https://developer.chrome.com/extensions/quickUnlockPrivate#method-setModes
  */
 chrome.quickUnlockPrivate.setModes = function(token, modes, credentials, onComplete) {};
 
 /**
  * Called after the active set of quick unlock modes has changed.
  * @type {!ChromeEvent}
- * @see https://developer.chrome.com/extensions/quickUnlockPrivate#event-onActiveModesChanged
  */
 chrome.quickUnlockPrivate.onActiveModesChanged;
