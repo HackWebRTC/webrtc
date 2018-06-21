@@ -73,6 +73,7 @@ class LayerFilteringTransport : public test::DirectTransport {
   const int selected_tl_;
   const int selected_sl_;
   bool discarded_last_packet_;
+  int num_active_spatial_layers_;
   const uint32_t ssrc_to_filter_min_;
   const uint32_t ssrc_to_filter_max_;
 };

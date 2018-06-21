@@ -134,6 +134,12 @@ bool VP9EncoderImpl::SetSvcRates(
 
   config_->rc_target_bitrate = bitrate_allocation.get_sum_kbps();
 
+  num_active_spatial_layers_ = 0;
+  for (i = 0; i < num_spatial_layers_; ++i)
+    num_active_spatial_layers_ += bitrate_allocation.IsSpatialLayerUsed(i);
+  RTC_DCHECK_GT(num_active_spatial_layers_, 0);
+  RTC_DCHECK_LE(num_active_spatial_layers_, num_spatial_layers_);
+
   if (ExplicitlyConfiguredSpatialLayers()) {
     for (size_t sl_idx = 0; sl_idx < num_spatial_layers_; ++sl_idx) {
       const bool was_layer_enabled = (config_->ss_target_bitrate[sl_idx] > 0);
@@ -157,8 +163,7 @@ bool VP9EncoderImpl::SetSvcRates(
   } else {
     float rate_ratio[VPX_MAX_LAYERS] = {0};
     float total = 0;
-
-    for (i = 0; i < num_spatial_layers_; ++i) {
+    for (i = 0; i < num_active_spatial_layers_; ++i) {
       if (svc_params_.scaling_factor_num[i] <= 0 ||
           svc_params_.scaling_factor_den[i] <= 0) {
         RTC_LOG(LS_ERROR) << "Scaling factors not specified!";
@@ -169,7 +174,7 @@ bool VP9EncoderImpl::SetSvcRates(
       total += rate_ratio[i];
     }
 
-    for (i = 0; i < num_spatial_layers_; ++i) {
+    for (i = 0; i < num_active_spatial_layers_; ++i) {
       config_->ss_target_bitrate[i] = static_cast<unsigned int>(
           config_->rc_target_bitrate * rate_ratio[i] / total);
       if (num_temporal_layers_ == 1) {
@@ -645,14 +650,14 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
   vpx_codec_control(encoder_, VP9E_GET_SVC_LAYER_ID, &layer_id);
 
   RTC_CHECK_GT(num_temporal_layers_, 0);
-  RTC_CHECK_GT(num_spatial_layers_, 0);
+  RTC_CHECK_GT(num_active_spatial_layers_, 0);
   if (num_temporal_layers_ == 1) {
     RTC_CHECK_EQ(layer_id.temporal_layer_id, 0);
     vp9_info->temporal_idx = kNoTemporalIdx;
   } else {
     vp9_info->temporal_idx = layer_id.temporal_layer_id;
   }
-  if (num_spatial_layers_ == 1) {
+  if (num_active_spatial_layers_ == 1) {
     RTC_CHECK_EQ(layer_id.spatial_layer_id, 0);
     vp9_info->spatial_idx = kNoSpatialIdx;
   } else {
@@ -686,13 +691,13 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
       first_frame_in_picture ? false : is_inter_layer_pred_allowed;
 
   const bool is_last_layer =
-      (layer_id.spatial_layer_id + 1 == num_spatial_layers_);
+      (layer_id.spatial_layer_id + 1 == num_active_spatial_layers_);
   vp9_info->non_ref_for_inter_layer_pred =
       is_last_layer ? true : !is_inter_layer_pred_allowed;
 
   // Always populate this, so that the packetizer can properly set the marker
   // bit.
-  vp9_info->num_spatial_layers = num_spatial_layers_;
+  vp9_info->num_spatial_layers = num_active_spatial_layers_;
 
   RTC_DCHECK(!vp9_info->flexible_mode);
 
@@ -710,11 +715,9 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
 
   vp9_info->inter_pic_predicted = (!is_key_pic && vp9_info->num_ref_pics > 0);
 
-  vp9_info->num_spatial_layers = num_spatial_layers_;
-
   if (vp9_info->ss_data_available) {
     vp9_info->spatial_layer_resolution_present = true;
-    for (size_t i = 0; i < vp9_info->num_spatial_layers; ++i) {
+    for (size_t i = 0; i < num_active_spatial_layers_; ++i) {
       vp9_info->width[i] = codec_.width * svc_params_.scaling_factor_num[i] /
                            svc_params_.scaling_factor_den[i];
       vp9_info->height[i] = codec_.height * svc_params_.scaling_factor_num[i] /

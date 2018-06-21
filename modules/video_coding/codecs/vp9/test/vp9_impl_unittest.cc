@@ -310,7 +310,7 @@ TEST_F(TestVp9Impl, EndOfPicture) {
             encoder_->Encode(*NextInputFrame(), nullptr, nullptr));
 
   ASSERT_TRUE(WaitForEncodedFrames(&frames, &codec_specific));
-  EXPECT_EQ(codec_specific[0].codecSpecific.VP9.spatial_idx, 0);
+  EXPECT_EQ(codec_specific[0].codecSpecific.VP9.spatial_idx, kNoSpatialIdx);
   EXPECT_TRUE(codec_specific[0].codecSpecific.VP9.end_of_picture);
 }
 
