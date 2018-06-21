@@ -194,9 +194,8 @@ enum LinkerInitialized {
 #if defined(NDEBUG)
 #define ABSL_ASSERT(expr) (false ? (void)(expr) : (void)0)
 #else
-#define ABSL_ASSERT(expr)              \
-  (ABSL_PREDICT_TRUE((expr)) ? (void)0 \
-                             : [] { assert(false && #expr); }())  // NOLINT
+#define ABSL_ASSERT(expr) \
+  (ABSL_PREDICT_TRUE((expr)) ? (void)0 : [] { assert(false && #expr); }())
 #endif
 
 #endif  // ABSL_BASE_MACROS_H_

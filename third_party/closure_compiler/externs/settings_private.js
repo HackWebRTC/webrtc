@@ -18,6 +18,7 @@ chrome.settingsPrivate = {};
 
 /**
  * @enum {string}
+ * @see https://developer.chrome.com/extensions/settingsPrivate#type-PrefType
  */
 chrome.settingsPrivate.PrefType = {
   BOOLEAN: 'BOOLEAN',
@@ -30,6 +31,7 @@ chrome.settingsPrivate.PrefType = {
 
 /**
  * @enum {string}
+ * @see https://developer.chrome.com/extensions/settingsPrivate#type-ControlledBy
  */
 chrome.settingsPrivate.ControlledBy = {
   DEVICE_POLICY: 'DEVICE_POLICY',
@@ -41,6 +43,7 @@ chrome.settingsPrivate.ControlledBy = {
 
 /**
  * @enum {string}
+ * @see https://developer.chrome.com/extensions/settingsPrivate#type-Enforcement
  */
 chrome.settingsPrivate.Enforcement = {
   ENFORCED: 'ENFORCED',
@@ -59,6 +62,7 @@ chrome.settingsPrivate.Enforcement = {
  *   extensionId: (string|undefined),
  *   extensionCanBeDisabled: (boolean|undefined)
  * }}
+ * @see https://developer.chrome.com/extensions/settingsPrivate#type-PrefObject
  */
 chrome.settingsPrivate.PrefObject;
 
@@ -69,12 +73,14 @@ chrome.settingsPrivate.PrefObject;
  * @param {string} pageId The user metrics identifier or null.
  * @param {function(boolean):void} callback The callback for whether the pref
  *     was set or not.
+ * @see https://developer.chrome.com/extensions/settingsPrivate#method-setPref
  */
 chrome.settingsPrivate.setPref = function(name, value, pageId, callback) {};
 
 /**
  * Gets an array of all the prefs.
  * @param {function(!Array<!chrome.settingsPrivate.PrefObject>):void} callback
+ * @see https://developer.chrome.com/extensions/settingsPrivate#method-getAllPrefs
  */
 chrome.settingsPrivate.getAllPrefs = function(callback) {};
 
@@ -82,6 +88,7 @@ chrome.settingsPrivate.getAllPrefs = function(callback) {};
  * Gets the value of a specific pref.
  * @param {string} name
  * @param {function(!chrome.settingsPrivate.PrefObject):void} callback
+ * @see https://developer.chrome.com/extensions/settingsPrivate#method-getPref
  */
 chrome.settingsPrivate.getPref = function(name, callback) {};
 
@@ -89,6 +96,7 @@ chrome.settingsPrivate.getPref = function(name, callback) {};
  * Gets the default page zoom factor. Possible values are currently between 0.25
  * and 5. For a full list, see zoom::kPresetZoomFactors.
  * @param {function(number):void} callback
+ * @see https://developer.chrome.com/extensions/settingsPrivate#method-getDefaultZoom
  */
 chrome.settingsPrivate.getDefaultZoom = function(callback) {};
 
@@ -97,6 +105,7 @@ chrome.settingsPrivate.getDefaultZoom = function(callback) {};
  * zoom::kPresetZoomFactors.
  * @param {number} zoom
  * @param {function(boolean):void=} callback
+ * @see https://developer.chrome.com/extensions/settingsPrivate#method-setDefaultZoom
  */
 chrome.settingsPrivate.setDefaultZoom = function(zoom, callback) {};
 
@@ -104,5 +113,6 @@ chrome.settingsPrivate.setDefaultZoom = function(zoom, callback) {};
  * <p>Fired when a set of prefs has changed.</p><p>|prefs| The prefs that
  * changed.</p>
  * @type {!ChromeEvent}
+ * @see https://developer.chrome.com/extensions/settingsPrivate#event-onPrefsChanged
  */
 chrome.settingsPrivate.onPrefsChanged;

@@ -17,7 +17,6 @@
 
 list(APPEND STRINGS_PUBLIC_HEADERS
   "ascii.h"
-  "charconv.h"
   "escaping.h"
   "match.h"
   "numbers.h"
@@ -34,8 +33,6 @@ list(APPEND STRINGS_PUBLIC_HEADERS
 list(APPEND STRINGS_INTERNAL_HEADERS
   "internal/bits.h"
   "internal/char_map.h"
-  "internal/charconv_bigint.h"
-  "internal/charconv_parse.h"
   "internal/memutil.h"
   "internal/ostringstream.h"
   "internal/resize_uninitialized.h"
@@ -50,10 +47,7 @@ list(APPEND STRINGS_INTERNAL_HEADERS
 # add string library
 list(APPEND STRINGS_SRC
   "ascii.cc"
-  "charconv.cc"
   "escaping.cc"
-  "internal/charconv_bigint.cc"
-  "internal/charconv_parse.cc"
   "internal/memutil.cc"
   "internal/memutil.h"
   "internal/utf8.cc"
@@ -307,43 +301,5 @@ absl_test(
 )
 
 
-# test charconv_test
-set(CHARCONV_TEST_SRC "charconv_test.cc")
-set(CHARCONV_TEST_PUBLIC_LIBRARIES absl::strings)
-
-absl_test(
-  TARGET
-    charconv_test
-  SOURCES
-    ${CHARCONV_TEST_SRC}
-  PUBLIC_LIBRARIES
-    ${CHARCONV_TEST_PUBLIC_LIBRARIES}
-)
 
 
-# test charconv_parse_test
-set(CHARCONV_PARSE_TEST_SRC "internal/charconv_parse_test.cc")
-set(CHARCONV_PARSE_TEST_PUBLIC_LIBRARIES absl::strings)
-
-absl_test(
-  TARGET
-    charconv_parse_test
-  SOURCES
-    ${CHARCONV_PARSE_TEST_SRC}
-  PUBLIC_LIBRARIES
-    ${CHARCONV_PARSE_TEST_PUBLIC_LIBRARIES}
-)
-
-
-# test charconv_bigint_test
-set(CHARCONV_BIGINT_TEST_SRC "internal/charconv_bigint_test.cc")
-set(CHARCONV_BIGINT_TEST_PUBLIC_LIBRARIES absl::strings)
-
-absl_test(
-  TARGET
-    charconv_bigint_test
-  SOURCES
-    ${CHARCONV_BIGINT_TEST_SRC}
-  PUBLIC_LIBRARIES
-    ${CHARCONV_BIGINT_TEST_PUBLIC_LIBRARIES}
-)

@@ -25,12 +25,14 @@ chrome.usersPrivate = {};
  *   isSupervised: boolean,
  *   isChild: boolean
  * }}
+ * @see https://developer.chrome.com/extensions/usersPrivate#type-User
  */
 chrome.usersPrivate.User;
 
 /**
  * Gets a list of the currently whitelisted users.
  * @param {function(!Array<!chrome.usersPrivate.User>):void} callback
+ * @see https://developer.chrome.com/extensions/usersPrivate#method-getWhitelistedUsers
  */
 chrome.usersPrivate.getWhitelistedUsers = function(callback) {};
 
@@ -40,6 +42,7 @@ chrome.usersPrivate.getWhitelistedUsers = function(callback) {};
  * because the user was already present, or the current user isn't the owner).
  * @param {string} email
  * @param {function(boolean):void} callback
+ * @see https://developer.chrome.com/extensions/usersPrivate#method-addWhitelistedUser
  */
 chrome.usersPrivate.addWhitelistedUser = function(email, callback) {};
 
@@ -50,17 +53,20 @@ chrome.usersPrivate.addWhitelistedUser = function(email, callback) {};
  * owner).
  * @param {string} email
  * @param {function(boolean):void} callback
+ * @see https://developer.chrome.com/extensions/usersPrivate#method-removeWhitelistedUser
  */
 chrome.usersPrivate.removeWhitelistedUser = function(email, callback) {};
 
 /**
  * Whether the whitelist is managed by enterprise.
  * @param {function(boolean):void} callback
+ * @see https://developer.chrome.com/extensions/usersPrivate#method-isWhitelistManaged
  */
 chrome.usersPrivate.isWhitelistManaged = function(callback) {};
 
 /**
  * Returns the current user.
  * @param {function(!chrome.usersPrivate.User):void} callback
+ * @see https://developer.chrome.com/extensions/usersPrivate#method-getCurrentUser
  */
 chrome.usersPrivate.getCurrentUser = function(callback) {};

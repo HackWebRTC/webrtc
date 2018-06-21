@@ -63,34 +63,18 @@ void BM_StdVectorFill(benchmark::State& state) {
 }
 BENCHMARK(BM_StdVectorFill)->Range(0, 1024);
 
-// The purpose of the next two benchmarks is to verify that
-// absl::InlinedVector is efficient when moving is more efficent than
-// copying. To do so, we use strings that are larger than the short
-// std::string optimization.
 bool StringRepresentedInline(std::string s) {
   const char* chars = s.data();
   std::string s1 = std::move(s);
   return s1.data() != chars;
 }
 
-int GetNonShortStringOptimizationSize() {
-  for (int i = 24; i <= 192; i *= 2) {
-    if (!StringRepresentedInline(std::string(i, 'A'))) {
-      return i;
-    }
-  }
-  ABSL_RAW_LOG(
-      FATAL,
-      "Failed to find a std::string larger than the short std::string optimization");
-  return -1;
-}
-
 void BM_InlinedVectorFillString(benchmark::State& state) {
   const int len = state.range(0);
-  const int no_sso = GetNonShortStringOptimizationSize();
-  std::string strings[4] = {std::string(no_sso, 'A'), std::string(no_sso, 'B'),
-                       std::string(no_sso, 'C'), std::string(no_sso, 'D')};
-
+  std::string strings[4] = {"a quite long string",
+                       "another long string",
+                       "012345678901234567",
+                       "to cause allocation"};
   for (auto _ : state) {
     absl::InlinedVector<std::string, 8> v;
     for (int i = 0; i < len; i++) {
@@ -103,10 +87,10 @@ BENCHMARK(BM_InlinedVectorFillString)->Range(0, 1024);
 
 void BM_StdVectorFillString(benchmark::State& state) {
   const int len = state.range(0);
-  const int no_sso = GetNonShortStringOptimizationSize();
-  std::string strings[4] = {std::string(no_sso, 'A'), std::string(no_sso, 'B'),
-                       std::string(no_sso, 'C'), std::string(no_sso, 'D')};
-
+  std::string strings[4] = {"a quite long string",
+                       "another long string",
+                       "012345678901234567",
+                       "to cause allocation"};
   for (auto _ : state) {
     std::vector<std::string> v;
     for (int i = 0; i < len; i++) {
@@ -114,6 +98,11 @@ void BM_StdVectorFillString(benchmark::State& state) {
     }
   }
   state.SetItemsProcessed(static_cast<int64_t>(state.iterations()) * len);
+  // The purpose of the benchmark is to verify that inlined vector is
+  // efficient when moving is more efficent than copying. To do so, we
+  // use strings that are larger than the small std::string optimization.
+  ABSL_RAW_CHECK(!StringRepresentedInline(strings[0]),
+                 "benchmarked with strings that are too small");
 }
 BENCHMARK(BM_StdVectorFillString)->Range(0, 1024);
 

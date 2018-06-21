@@ -18,6 +18,7 @@ chrome.metricsPrivate = {};
 
 /**
  * @enum {string}
+ * @see https://developer.chrome.com/extensions/metricsPrivate#type-MetricTypeType
  */
 chrome.metricsPrivate.MetricTypeType = {
   HISTOGRAM_LOG: 'histogram-log',
@@ -33,12 +34,14 @@ chrome.metricsPrivate.MetricTypeType = {
  *   max: number,
  *   buckets: number
  * }}
+ * @see https://developer.chrome.com/extensions/metricsPrivate#type-MetricType
  */
 chrome.metricsPrivate.MetricType;
 
 /**
  * Returns true if the user opted in to sending crash reports.
  * @param {function(boolean):void} callback
+ * @see https://developer.chrome.com/extensions/metricsPrivate#method-getIsCrashReportingEnabled
  */
 chrome.metricsPrivate.getIsCrashReportingEnabled = function(callback) {};
 
@@ -47,6 +50,7 @@ chrome.metricsPrivate.getIsCrashReportingEnabled = function(callback) {};
  * trial does not exist or is not enabled.
  * @param {string} name
  * @param {function(string):void} callback
+ * @see https://developer.chrome.com/extensions/metricsPrivate#method-getFieldTrial
  */
 chrome.metricsPrivate.getFieldTrial = function(name, callback) {};
 
@@ -55,12 +59,14 @@ chrome.metricsPrivate.getFieldTrial = function(name, callback) {};
  * otherwise.
  * @param {string} name
  * @param {function((Object|undefined)):void} callback
+ * @see https://developer.chrome.com/extensions/metricsPrivate#method-getVariationParams
  */
 chrome.metricsPrivate.getVariationParams = function(name, callback) {};
 
 /**
  * Records an action performed by the user.
  * @param {string} name
+ * @see https://developer.chrome.com/extensions/metricsPrivate#method-recordUserAction
  */
 chrome.metricsPrivate.recordUserAction = function(name) {};
 
@@ -68,6 +74,7 @@ chrome.metricsPrivate.recordUserAction = function(name) {};
  * Records a percentage value from 1 to 100.
  * @param {string} metricName
  * @param {number} value
+ * @see https://developer.chrome.com/extensions/metricsPrivate#method-recordPercentage
  */
 chrome.metricsPrivate.recordPercentage = function(metricName, value) {};
 
@@ -75,6 +82,7 @@ chrome.metricsPrivate.recordPercentage = function(metricName, value) {};
  * Records a value than can range from 1 to 1,000,000.
  * @param {string} metricName
  * @param {number} value
+ * @see https://developer.chrome.com/extensions/metricsPrivate#method-recordCount
  */
 chrome.metricsPrivate.recordCount = function(metricName, value) {};
 
@@ -82,6 +90,7 @@ chrome.metricsPrivate.recordCount = function(metricName, value) {};
  * Records a value than can range from 1 to 100.
  * @param {string} metricName
  * @param {number} value
+ * @see https://developer.chrome.com/extensions/metricsPrivate#method-recordSmallCount
  */
 chrome.metricsPrivate.recordSmallCount = function(metricName, value) {};
 
@@ -89,6 +98,7 @@ chrome.metricsPrivate.recordSmallCount = function(metricName, value) {};
  * Records a value than can range from 1 to 10,000.
  * @param {string} metricName
  * @param {number} value
+ * @see https://developer.chrome.com/extensions/metricsPrivate#method-recordMediumCount
  */
 chrome.metricsPrivate.recordMediumCount = function(metricName, value) {};
 
@@ -97,6 +107,7 @@ chrome.metricsPrivate.recordMediumCount = function(metricName, value) {};
  * specified in milliseconds.
  * @param {string} metricName
  * @param {number} value
+ * @see https://developer.chrome.com/extensions/metricsPrivate#method-recordTime
  */
 chrome.metricsPrivate.recordTime = function(metricName, value) {};
 
@@ -105,6 +116,7 @@ chrome.metricsPrivate.recordTime = function(metricName, value) {};
  * specified in milliseconds.
  * @param {string} metricName
  * @param {number} value
+ * @see https://developer.chrome.com/extensions/metricsPrivate#method-recordMediumTime
  */
 chrome.metricsPrivate.recordMediumTime = function(metricName, value) {};
 
@@ -113,6 +125,7 @@ chrome.metricsPrivate.recordMediumTime = function(metricName, value) {};
  * specified in milliseconds.
  * @param {string} metricName
  * @param {number} value
+ * @see https://developer.chrome.com/extensions/metricsPrivate#method-recordLongTime
  */
 chrome.metricsPrivate.recordLongTime = function(metricName, value) {};
 
@@ -121,6 +134,7 @@ chrome.metricsPrivate.recordLongTime = function(metricName, value) {};
  * histogram defined by the |metricName|.
  * @param {string} metricName
  * @param {string} value
+ * @see https://developer.chrome.com/extensions/metricsPrivate#method-recordSparseHashable
  */
 chrome.metricsPrivate.recordSparseHashable = function(metricName, value) {};
 
@@ -129,6 +143,7 @@ chrome.metricsPrivate.recordSparseHashable = function(metricName, value) {};
  * by the |metricName|.
  * @param {string} metricName
  * @param {number} value
+ * @see https://developer.chrome.com/extensions/metricsPrivate#method-recordSparseValue
  */
 chrome.metricsPrivate.recordSparseValue = function(metricName, value) {};
 
@@ -136,6 +151,7 @@ chrome.metricsPrivate.recordSparseValue = function(metricName, value) {};
  * Adds a value to the given metric.
  * @param {!chrome.metricsPrivate.MetricType} metric
  * @param {number} value
+ * @see https://developer.chrome.com/extensions/metricsPrivate#method-recordValue
  */
 chrome.metricsPrivate.recordValue = function(metric, value) {};
 
@@ -144,6 +160,7 @@ chrome.metricsPrivate.recordValue = function(metric, value) {};
  * base::UmaHistogramBoolean().
  * @param {string} metricName
  * @param {boolean} value
+ * @see https://developer.chrome.com/extensions/metricsPrivate#method-recordBoolean
  */
 chrome.metricsPrivate.recordBoolean = function(metricName, value) {};
 
@@ -154,5 +171,6 @@ chrome.metricsPrivate.recordBoolean = function(metricName, value) {};
  * @param {string} metricName
  * @param {number} value
  * @param {number} enumSize
+ * @see https://developer.chrome.com/extensions/metricsPrivate#method-recordEnumerationValue
  */
 chrome.metricsPrivate.recordEnumerationValue = function(metricName, value, enumSize) {};
