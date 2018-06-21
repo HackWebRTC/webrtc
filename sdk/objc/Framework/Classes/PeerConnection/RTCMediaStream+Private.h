@@ -26,8 +26,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initWithFactory:(RTCPeerConnectionFactory *)factory streamId:(NSString *)streamId;
 
 /** Initialize an RTCMediaStream from a native MediaStreamInterface. */
-- (instancetype)initWithNativeMediaStream:
-        (rtc::scoped_refptr<webrtc::MediaStreamInterface>)nativeMediaStream;
+- (instancetype)initWithFactory:(RTCPeerConnectionFactory *)factory
+              nativeMediaStream:(rtc::scoped_refptr<webrtc::MediaStreamInterface>)nativeMediaStream;
 
 @end
 

@@ -28,18 +28,36 @@
     RTCMediaConstraints *contraints =
         [[RTCMediaConstraints alloc] initWithMandatoryConstraints:@{} optionalConstraints:nil];
 
-    RTCPeerConnectionFactory *factory = [[RTCPeerConnectionFactory alloc] init];
+    RTCPeerConnectionFactory *factory;
+    RTCPeerConnection *peerConnection;
 
-    RTCPeerConnection *peerConnection =
-        [factory peerConnectionWithConfiguration:config constraints:contraints delegate:nil];
-
-    [peerConnection close];
-
-    factory = nil;
+    @autoreleasepool {
+      factory = [[RTCPeerConnectionFactory alloc] init];
+      peerConnection =
+          [factory peerConnectionWithConfiguration:config constraints:contraints delegate:nil];
+      [peerConnection close];
+      factory = nil;
+    }
     peerConnection = nil;
   }
 
   XCTAssertTrue(true, @"Expect test does not crash");
+}
+
+- (void)testMediaStreamLifetime {
+  @autoreleasepool {
+    RTCPeerConnectionFactory *factory;
+    RTCMediaStream *mediaStream;
+
+    @autoreleasepool {
+      factory = [[RTCPeerConnectionFactory alloc] init];
+      mediaStream = [factory mediaStreamWithStreamId:@"mediaStream"];
+      factory = nil;
+    }
+    mediaStream = nil;
+  }
+
+  XCTAssertTrue(true, "Expect test does not crash");
 }
 
 @end

@@ -132,18 +132,19 @@ void PeerConnectionDelegateAdapter::OnSignalingChange(
 
 void PeerConnectionDelegateAdapter::OnAddStream(
     rtc::scoped_refptr<MediaStreamInterface> stream) {
-  RTCMediaStream *mediaStream =
-      [[RTCMediaStream alloc] initWithNativeMediaStream:stream];
   RTCPeerConnection *peer_connection = peer_connection_;
+  RTCMediaStream *mediaStream =
+      [[RTCMediaStream alloc] initWithFactory:peer_connection.factory nativeMediaStream:stream];
   [peer_connection.delegate peerConnection:peer_connection
                               didAddStream:mediaStream];
 }
 
 void PeerConnectionDelegateAdapter::OnRemoveStream(
     rtc::scoped_refptr<MediaStreamInterface> stream) {
-  RTCMediaStream *mediaStream =
-      [[RTCMediaStream alloc] initWithNativeMediaStream:stream];
   RTCPeerConnection *peer_connection = peer_connection_;
+  RTCMediaStream *mediaStream =
+      [[RTCMediaStream alloc] initWithFactory:peer_connection.factory nativeMediaStream:stream];
+
   [peer_connection.delegate peerConnection:peer_connection
                            didRemoveStream:mediaStream];
 }
@@ -225,7 +226,8 @@ void PeerConnectionDelegateAdapter::OnAddTrack(
           respondsToSelector:@selector(peerConnection:didAddReceiver:streams:)]) {
     NSMutableArray *mediaStreams = [NSMutableArray arrayWithCapacity:streams.size()];
     for (const auto& nativeStream : streams) {
-      RTCMediaStream *mediaStream = [[RTCMediaStream alloc] initWithNativeMediaStream:nativeStream];
+      RTCMediaStream *mediaStream = [[RTCMediaStream alloc] initWithFactory:peer_connection.factory
+                                                          nativeMediaStream:nativeStream];
       [mediaStreams addObject:mediaStream];
     }
     RTCRtpReceiver *rtpReceiver = [[RTCRtpReceiver alloc] initWithNativeRtpReceiver:receiver];
@@ -249,6 +251,7 @@ void PeerConnectionDelegateAdapter::OnAddTrack(
 }
 
 @synthesize delegate = _delegate;
+@synthesize factory = _factory;
 
 - (instancetype)initWithFactory:(RTCPeerConnectionFactory *)factory
                   configuration:(RTCConfiguration *)configuration

@@ -56,6 +56,9 @@ class PeerConnectionDelegateAdapter : public PeerConnectionObserver {
 
 @interface RTCPeerConnection ()
 
+/** The factory used to create this RTCPeerConnection */
+@property(nonatomic, readonly) RTCPeerConnectionFactory *factory;
+
 /** The native PeerConnectionInterface created during construction. */
 @property(nonatomic, readonly) rtc::scoped_refptr<webrtc::PeerConnectionInterface>
     nativePeerConnection;
