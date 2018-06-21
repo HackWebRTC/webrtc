@@ -1777,49 +1777,43 @@ EventLogAnalyzer::NetEqStatsGetterMap EventLogAnalyzer::SimulateNetEq(
 void EventLogAnalyzer::CreateAudioJitterBufferGraph(
     const NetEqStatsGetterMap& neteq_stats,
     Plot* plot) const {
-  if (neteq_stats.size() < 1)
-    return;
-
+  RTC_CHECK(!neteq_stats.empty());
   const uint32_t ssrc = neteq_stats.begin()->first;
 
-  std::vector<float> send_times_s;
-  std::vector<float> arrival_delay_ms;
-  std::vector<float> corrected_arrival_delay_ms;
-  std::vector<absl::optional<float>> playout_delay_ms;
-  std::vector<absl::optional<float>> target_delay_ms;
+  test::NetEqDelayAnalyzer::Delays arrival_delay_ms;
+  test::NetEqDelayAnalyzer::Delays corrected_arrival_delay_ms;
+  test::NetEqDelayAnalyzer::Delays playout_delay_ms;
+  test::NetEqDelayAnalyzer::Delays target_delay_ms;
+
   neteq_stats.at(ssrc)->delay_analyzer()->CreateGraphs(
-      &send_times_s, &arrival_delay_ms, &corrected_arrival_delay_ms,
-      &playout_delay_ms, &target_delay_ms);
-  RTC_DCHECK_EQ(send_times_s.size(), arrival_delay_ms.size());
-  RTC_DCHECK_EQ(send_times_s.size(), corrected_arrival_delay_ms.size());
-  RTC_DCHECK_EQ(send_times_s.size(), playout_delay_ms.size());
-  RTC_DCHECK_EQ(send_times_s.size(), target_delay_ms.size());
+      &arrival_delay_ms, &corrected_arrival_delay_ms, &playout_delay_ms,
+      &target_delay_ms);
 
   std::map<uint32_t, TimeSeries> time_series_packet_arrival;
   std::map<uint32_t, TimeSeries> time_series_relative_packet_arrival;
   std::map<uint32_t, TimeSeries> time_series_play_time;
   std::map<uint32_t, TimeSeries> time_series_target_time;
-  float min_y_axis = 0.f;
-  float max_y_axis = 0.f;
-  for (size_t i = 0; i < send_times_s.size(); ++i) {
-    time_series_packet_arrival[ssrc].points.emplace_back(
-        TimeSeriesPoint(send_times_s[i], arrival_delay_ms[i]));
+
+  for (const auto& data : arrival_delay_ms) {
+    const float x = ToCallTimeSec(data.first * 1000);  // ms to us.
+    const float y = data.second;
+    time_series_packet_arrival[ssrc].points.emplace_back(TimeSeriesPoint(x, y));
+  }
+  for (const auto& data : corrected_arrival_delay_ms) {
+    const float x = ToCallTimeSec(data.first * 1000);  // ms to us.
+    const float y = data.second;
     time_series_relative_packet_arrival[ssrc].points.emplace_back(
-        TimeSeriesPoint(send_times_s[i], corrected_arrival_delay_ms[i]));
-    min_y_axis = std::min(min_y_axis, corrected_arrival_delay_ms[i]);
-    max_y_axis = std::max(max_y_axis, corrected_arrival_delay_ms[i]);
-    if (playout_delay_ms[i]) {
-      time_series_play_time[ssrc].points.emplace_back(
-          TimeSeriesPoint(send_times_s[i], *playout_delay_ms[i]));
-      min_y_axis = std::min(min_y_axis, *playout_delay_ms[i]);
-      max_y_axis = std::max(max_y_axis, *playout_delay_ms[i]);
-    }
-    if (target_delay_ms[i]) {
-      time_series_target_time[ssrc].points.emplace_back(
-          TimeSeriesPoint(send_times_s[i], *target_delay_ms[i]));
-      min_y_axis = std::min(min_y_axis, *target_delay_ms[i]);
-      max_y_axis = std::max(max_y_axis, *target_delay_ms[i]);
-    }
+        TimeSeriesPoint(x, y));
+  }
+  for (const auto& data : playout_delay_ms) {
+    const float x = ToCallTimeSec(data.first * 1000);  // ms to us.
+    const float y = data.second;
+    time_series_play_time[ssrc].points.emplace_back(TimeSeriesPoint(x, y));
+  }
+  for (const auto& data : target_delay_ms) {
+    const float x = ToCallTimeSec(data.first * 1000);  // ms to us.
+    const float y = data.second;
+    time_series_target_time[ssrc].points.emplace_back(TimeSeriesPoint(x, y));
   }
 
   // This code is adapted for a single stream. The creation of the streams above
@@ -1847,8 +1841,8 @@ void EventLogAnalyzer::CreateAudioJitterBufferGraph(
 
   plot->SetXAxis(ToCallTimeSec(begin_time_), call_duration_s_, "Time (s)",
                  kLeftMargin, kRightMargin);
-  plot->SetYAxis(min_y_axis, max_y_axis, "Relative delay (ms)", kBottomMargin,
-                 kTopMargin);
+  plot->SetSuggestedYAxis(0, 1, "Relative delay (ms)", kBottomMargin,
+                          kTopMargin);
   plot->SetTitle("NetEq timing for " + GetStreamName(kIncomingPacket, ssrc));
 }
 
@@ -1857,12 +1851,7 @@ void EventLogAnalyzer::CreateNetEqStatsGraph(
     rtc::FunctionView<float(const NetEqNetworkStatistics&)> stats_extractor,
     const std::string& plot_name,
     Plot* plot) const {
-  if (neteq_stats.size() < 1)
-    return;
-
   std::map<uint32_t, TimeSeries> time_series;
-  float min_y_axis = std::numeric_limits<float>::max();
-  float max_y_axis = std::numeric_limits<float>::min();
 
   for (const auto& st : neteq_stats) {
     const uint32_t ssrc = st.first;
@@ -1872,8 +1861,6 @@ void EventLogAnalyzer::CreateNetEqStatsGraph(
       const float time = ToCallTimeSec(stats[i].first * 1000);  // ms to us.
       const float value = stats_extractor(stats[i].second);
       time_series[ssrc].points.emplace_back(TimeSeriesPoint(time, value));
-      min_y_axis = std::min(min_y_axis, value);
-      max_y_axis = std::max(max_y_axis, value);
     }
   }
 
@@ -1885,7 +1872,7 @@ void EventLogAnalyzer::CreateNetEqStatsGraph(
 
   plot->SetXAxis(ToCallTimeSec(begin_time_), call_duration_s_, "Time (s)",
                  kLeftMargin, kRightMargin);
-  plot->SetYAxis(min_y_axis, max_y_axis, plot_name, kBottomMargin, kTopMargin);
+  plot->SetSuggestedYAxis(0, 1, plot_name, kBottomMargin, kTopMargin);
   plot->SetTitle(plot_name);
 }
 

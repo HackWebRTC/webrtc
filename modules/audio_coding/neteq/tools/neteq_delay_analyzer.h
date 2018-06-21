@@ -37,11 +37,11 @@ class NetEqDelayAnalyzer : public test::NetEqPostInsertPacket,
                      bool muted,
                      NetEq* neteq) override;
 
-  void CreateGraphs(std::vector<float>* send_times_s,
-                    std::vector<float>* arrival_delay_ms,
-                    std::vector<float>* corrected_arrival_delay_ms,
-                    std::vector<absl::optional<float>>* playout_delay_ms,
-                    std::vector<absl::optional<float>>* target_delay_ms) const;
+  using Delays = std::vector<std::pair<int64_t, float>>;
+  void CreateGraphs(Delays* arrival_delay_ms,
+                    Delays* corrected_arrival_delay_ms,
+                    Delays* playout_delay_ms,
+                    Delays* target_delay_ms) const;
 
   // Creates a matlab script with file name script_name. When executed in
   // Matlab, the script will generate graphs with the same timing information
@@ -55,8 +55,8 @@ class NetEqDelayAnalyzer : public test::NetEqPostInsertPacket,
 
  private:
   struct TimingData {
-    explicit TimingData(double at) : arrival_time_ms(at) {}
-    double arrival_time_ms;
+    explicit TimingData(int64_t at) : arrival_time_ms(at) {}
+    int64_t arrival_time_ms;
     absl::optional<int64_t> decode_get_audio_count;
     absl::optional<int64_t> sync_delay_ms;
     absl::optional<int> target_delay_ms;
