@@ -46,7 +46,6 @@ std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
   // configurable public components of APM.
   bool exp_agc = fuzz_data->ReadOrDefaultValue(true);
   bool exp_ns = fuzz_data->ReadOrDefaultValue(true);
-  bool bf = fuzz_data->ReadOrDefaultValue(true);
   bool ef = fuzz_data->ReadOrDefaultValue(true);
   bool raf = fuzz_data->ReadOrDefaultValue(true);
   static_cast<void>(fuzz_data->ReadOrDefaultValue(true));
@@ -105,9 +104,6 @@ std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
 
   config.Set<ExperimentalAgc>(new ExperimentalAgc(exp_agc));
   config.Set<ExperimentalNs>(new ExperimentalNs(exp_ns));
-  if (bf) {
-    config.Set<Beamforming>(new Beamforming());
-  }
   config.Set<ExtendedFilter>(new ExtendedFilter(ef));
   config.Set<RefinedAdaptiveFilter>(new RefinedAdaptiveFilter(raf));
   config.Set<DelayAgnostic>(new DelayAgnostic(true));

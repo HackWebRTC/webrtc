@@ -48,14 +48,6 @@ rtc_static_library("audio_processing") {
     "audio_buffer.h",
     "audio_processing_impl.cc",
     "audio_processing_impl.h",
-    "beamformer/array_util.cc",
-    "beamformer/array_util.h",
-    "beamformer/complex_matrix.h",
-    "beamformer/covariance_matrix_generator.cc",
-    "beamformer/covariance_matrix_generator.h",
-    "beamformer/matrix.h",
-    "beamformer/nonlinear_beamformer.cc",
-    "beamformer/nonlinear_beamformer.h",
     "common.h",
     "echo_cancellation_impl.cc",
     "echo_cancellation_impl.h",
@@ -437,7 +429,6 @@ if (rtc_include_tests) {
     deps = [
       ":audioproc_test_utils",
       ":click_annotate",
-      ":nonlinear_beamformer_test",
       ":transient_suppression_test",
     ]
 
@@ -468,12 +459,6 @@ if (rtc_include_tests) {
       "agc/mock_agc.h",
       "audio_buffer_unittest.cc",
       "audio_frame_view_unittest.cc",
-      "beamformer/array_util_unittest.cc",
-      "beamformer/complex_matrix_unittest.cc",
-      "beamformer/covariance_matrix_generator_unittest.cc",
-      "beamformer/matrix_test_helpers.h",
-      "beamformer/matrix_unittest.cc",
-      "beamformer/mock_nonlinear_beamformer.h",
       "config_unittest.cc",
       "echo_cancellation_impl_unittest.cc",
       "gain_controller2_unittest.cc",
@@ -566,7 +551,6 @@ if (rtc_include_tests) {
         "audio_processing_impl_locking_unittest.cc",
         "audio_processing_impl_unittest.cc",
         "audio_processing_unittest.cc",
-        "beamformer/nonlinear_beamformer_unittest.cc",
         "echo_cancellation_bit_exact_unittest.cc",
         "echo_control_mobile_unittest.cc",
         "echo_detector/circular_buffer_unittest.cc",
@@ -769,21 +753,6 @@ if (rtc_include_tests) {
       "../..:webrtc_common",
       "../../rtc_base/system:file_wrapper",
       "../../system_wrappers",
-      "../../system_wrappers:metrics_default",
-    ]
-  }
-
-  rtc_executable("nonlinear_beamformer_test") {
-    testonly = true
-    sources = [
-      "beamformer/nonlinear_beamformer_test.cc",
-    ]
-    deps = [
-      ":audio_processing",
-      ":audioproc_test_utils",
-      "../../common_audio:common_audio",
-      "../../rtc_base:checks",
-      "../../rtc_base:rtc_base_approved",
       "../../system_wrappers:metrics_default",
     ]
   }

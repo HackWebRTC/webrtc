@@ -14,25 +14,6 @@
 
 namespace webrtc {
 
-Beamforming::Beamforming()
-    : enabled(false),
-      array_geometry(),
-      target_direction(
-          SphericalPointf(static_cast<float>(M_PI) / 2.f, 0.f, 1.f)) {}
-Beamforming::Beamforming(bool enabled, const std::vector<Point>& array_geometry)
-    : Beamforming(enabled,
-                  array_geometry,
-                  SphericalPointf(static_cast<float>(M_PI) / 2.f, 0.f, 1.f)) {}
-
-Beamforming::Beamforming(bool enabled,
-                         const std::vector<Point>& array_geometry,
-                         SphericalPointf target_direction)
-    : enabled(enabled),
-      array_geometry(array_geometry),
-      target_direction(target_direction) {}
-
-Beamforming::~Beamforming() {}
-
 void CustomProcessing::SetRuntimeSetting(
     AudioProcessing::RuntimeSetting setting) {}
 
