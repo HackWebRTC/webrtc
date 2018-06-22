@@ -93,8 +93,13 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
   void OnIceConnectionChange(
       PeerConnectionInterface::IceConnectionState new_state) override {
     RTC_DCHECK(pc_->ice_connection_state() == new_state);
+    // When ICE is finished, the caller will get to a kIceConnectionCompleted
+    // state, because it has the ICE controlling role, while the callee
+    // will get to a kIceConnectionConnected state. This means that both ICE
+    // and DTLS are connected.
     ice_connected_ =
-        (new_state == PeerConnectionInterface::kIceConnectionConnected);
+        (new_state == PeerConnectionInterface::kIceConnectionConnected) ||
+        (new_state == PeerConnectionInterface::kIceConnectionCompleted);
     callback_triggered_ = true;
   }
   void OnIceGatheringChange(
@@ -186,6 +191,14 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
     } else {
       return candidates_.back().get();
     }
+  }
+
+  std::vector<const IceCandidateInterface*> GetAllCandidates() {
+    std::vector<const IceCandidateInterface*> candidates;
+    for (const auto& candidate : candidates_) {
+      candidates.push_back(candidate.get());
+    }
+    return candidates;
   }
 
   std::vector<IceCandidateInterface*> GetCandidatesByMline(int mline_index) {

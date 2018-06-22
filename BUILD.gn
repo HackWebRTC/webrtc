@@ -546,13 +546,13 @@ if (rtc_include_tests) {
   rtc_test("webrtc_perf_tests") {
     testonly = true
     configs += [ ":rtc_unittests_config" ]
-
     deps = [
       "audio:audio_perf_tests",
       "call:call_perf_tests",
       "modules/audio_coding:audio_coding_perf_tests",
       "modules/audio_processing:audio_processing_perf_tests",
       "modules/remote_bitrate_estimator:remote_bitrate_estimator_perf_tests",
+      "pc:peerconnection_perf_tests",
       "test:test_main",
       "video:video_full_stack_tests",
     ]

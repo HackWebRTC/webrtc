@@ -344,6 +344,39 @@ if (rtc_include_tests) {
     }
   }
 
+  rtc_source_set("peerconnection_perf_tests") {
+    testonly = true
+    sources = [
+      "peerconnection_rampup_tests.cc",
+      "peerconnectionwrapper.cc",
+      "peerconnectionwrapper.h",
+    ]
+    deps = [
+      ":pc_test_utils",
+      "../api:fakemetricsobserver",
+      "../api:libjingle_peerconnection_api",
+      "../api:libjingle_peerconnection_test_api",
+      "../api:rtc_stats_api",
+      "../api/audio_codecs:builtin_audio_decoder_factory",
+      "../api/audio_codecs:builtin_audio_encoder_factory",
+      "../api/video_codecs:builtin_video_decoder_factory",
+      "../api/video_codecs:builtin_video_encoder_factory",
+      "../media:rtc_media_tests_utils",
+      "../p2p:p2p_test_utils",
+      "../p2p:rtc_p2p",
+      "../pc:peerconnection",
+      "../rtc_base:rtc_base",
+      "../rtc_base:rtc_base_approved",
+      "../rtc_base:rtc_base_tests_utils",
+      "../test:perf_test",
+      "../test:test_support",
+    ]
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
+
   rtc_source_set("pc_test_utils") {
     testonly = true
     sources = [
@@ -358,6 +391,7 @@ if (rtc_include_tests) {
       "test/fakesctptransport.h",
       "test/fakevideotrackrenderer.h",
       "test/fakevideotracksource.h",
+      "test/framegeneratorcapturervideotracksource.h",
       "test/mock_datachannel.h",
       "test/mock_peerconnection.h",
       "test/mock_rtpreceiverinternal.h",
@@ -395,6 +429,7 @@ if (rtc_include_tests) {
       "../rtc_base:rtc_base_tests_utils",
       "../rtc_base:rtc_task_queue",
       "../test:test_support",
+      "../test:video_test_common",
     ]
 
     if (!build_with_chromium && is_clang) {
