@@ -7,4 +7,6 @@
 package: chromium/third_party/byte_buddy
 description: byte_buddy Java library
 data:
+  - file: lib/byte-buddy-agent.jar
+  - file: lib/byte-buddy-android.jar
   - file: lib/byte-buddy.jar

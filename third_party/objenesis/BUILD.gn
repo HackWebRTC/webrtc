@@ -5,6 +5,7 @@
 import("//build/config/android/rules.gni")
 
 java_prebuilt("objenesis_java") {
+  supports_android = true
   testonly = true
   jar_path = "lib/objenesis.jar"
 }
