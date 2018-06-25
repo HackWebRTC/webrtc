@@ -353,13 +353,7 @@ struct AudioDecoderUnicornSparklesRainbow {
 
 }  // namespace
 
-// Disabled for TSan v2, see
-// https://bugs.chromium.org/p/webrtc/issues/detail?id=4719 for details.
-#if defined(THREAD_SANITIZER)
-TEST_P(PeerConnectionEndToEndTest, DISABLED_Call) {
-#else
 TEST_P(PeerConnectionEndToEndTest, Call) {
-#endif  //  defined(THREAD_SANITIZER)
   rtc::scoped_refptr<webrtc::AudioDecoderFactory> real_decoder_factory =
       webrtc::CreateBuiltinAudioDecoderFactory();
   CreatePcs(nullptr, webrtc::CreateBuiltinAudioEncoderFactory(),
