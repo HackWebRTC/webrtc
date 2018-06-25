@@ -1969,6 +1969,8 @@ WebRtcVideoChannel::WebRtcVideoSendStream::CreateVideoEncoderConfig(
   // Application-controlled state is held in the encoder_config's
   // simulcast_layers. Currently this is used to control which simulcast layers
   // are active and for configuring the min/max bitrate.
+  // The encoder_config's simulcast_layers is also used for non-simulcast (when
+  // there is a single layer).
   RTC_DCHECK_GE(rtp_parameters_.encodings.size(),
                 encoder_config.number_of_streams);
   RTC_DCHECK_GT(encoder_config.number_of_streams, 0);
@@ -2710,6 +2712,7 @@ std::vector<webrtc::VideoStream> EncoderStreamFactory::CreateEncoderStreams(
   if (is_screenshare_ && !screenshare_simulcast_enabled) {
     RTC_DCHECK_EQ(1, encoder_config.number_of_streams);
   }
+  RTC_DCHECK_GT(encoder_config.number_of_streams, 0);
   RTC_DCHECK_EQ(encoder_config.simulcast_layers.size(),
                 encoder_config.number_of_streams);
   std::vector<webrtc::VideoStream> layers;
@@ -2775,15 +2778,23 @@ std::vector<webrtc::VideoStream> EncoderStreamFactory::CreateEncoderStreams(
           ? encoder_config.max_bitrate_bps
           : GetMaxDefaultVideoBitrateKbps(width, height) * 1000;
 
+  int min_bitrate_bps = GetMinVideoBitrateBps();
+  if (encoder_config.simulcast_layers[0].min_bitrate_bps > 0) {
+    // Use set min bitrate.
+    min_bitrate_bps = encoder_config.simulcast_layers[0].min_bitrate_bps;
+    // If only min bitrate is configured, make sure max is above min.
+    if (encoder_config.max_bitrate_bps <= 0)
+      max_bitrate_bps = std::max(min_bitrate_bps, max_bitrate_bps);
+  }
+
   webrtc::VideoStream layer;
   layer.width = width;
   layer.height = height;
   layer.max_framerate = max_framerate_;
-  // The min bitrate is hardcoded, but the max_bitrate_bps is set by the
-  // application. In the case that the application sets a max bitrate
-  // that's lower than the min bitrate, we adjust it down (see
-  // bugs.webrtc.org/9141).
-  layer.min_bitrate_bps = std::min(GetMinVideoBitrateBps(), max_bitrate_bps);
+
+  // In the case that the application sets a max bitrate that's lower than the
+  // min bitrate, we adjust it down (see bugs.webrtc.org/9141).
+  layer.min_bitrate_bps = std::min(min_bitrate_bps, max_bitrate_bps);
   layer.target_bitrate_bps = layer.max_bitrate_bps = max_bitrate_bps;
   layer.max_qp = max_qp_;
   layer.bitrate_priority = encoder_config.bitrate_priority;

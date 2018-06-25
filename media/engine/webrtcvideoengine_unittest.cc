@@ -161,6 +161,19 @@ cricket::MediaConfig GetMediaConfig() {
   return media_config;
 }
 
+// Values from GetMaxDefaultVideoBitrateKbps in webrtcvideoengine.cc.
+int GetMaxDefaultBitrateBps(size_t width, size_t height) {
+  if (width * height <= 320 * 240) {
+    return 600000;
+  } else if (width * height <= 640 * 480) {
+    return 1700000;
+  } else if (width * height <= 960 * 540) {
+    return 2000000;
+  } else {
+    return 2500000;
+  }
+}
+
 }  // namespace
 
 #define EXPECT_FRAME_WAIT(c, w, h, t)                        \
@@ -5231,7 +5244,8 @@ TEST_F(WebRtcVideoChannelTest, CannotSetMaxBitrateForNonexistentStream) {
 
 TEST_F(WebRtcVideoChannelTest,
        SetLowMaxBitrateOverwritesVideoStreamMinBitrate) {
-  AddSendStream();
+  FakeVideoSendStream* stream = AddSendStream();
+
   webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(last_ssrc_);
   EXPECT_EQ(1UL, parameters.encodings.size());
   EXPECT_FALSE(parameters.encodings[0].max_bitrate_bps.has_value());
@@ -5241,10 +5255,8 @@ TEST_F(WebRtcVideoChannelTest,
   // also calls to CreateEncoderStreams to get the VideoStreams, so essentially
   // we are just testing the behavior of
   // EncoderStreamFactory::CreateEncoderStreams.
-  std::vector<webrtc::VideoStream> video_streams =
-      fake_call_->GetVideoSendStreams().front()->GetVideoStreams();
-  ASSERT_EQ(1UL, video_streams.size());
-  EXPECT_EQ(kMinVideoBitrateBps, video_streams[0].min_bitrate_bps);
+  ASSERT_EQ(1UL, stream->GetVideoStreams().size());
+  EXPECT_EQ(kMinVideoBitrateBps, stream->GetVideoStreams()[0].min_bitrate_bps);
 
   // Set a low max bitrate & check that VideoStream.min_bitrate_bps is limited
   // by this amount.
@@ -5253,9 +5265,55 @@ TEST_F(WebRtcVideoChannelTest,
   parameters.encodings[0].max_bitrate_bps = low_max_bitrate_bps;
   EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters).ok());
 
-  video_streams = fake_call_->GetVideoSendStreams().front()->GetVideoStreams();
-  ASSERT_EQ(1UL, video_streams.size());
-  EXPECT_GE(low_max_bitrate_bps, video_streams[0].min_bitrate_bps);
+  ASSERT_EQ(1UL, stream->GetVideoStreams().size());
+  EXPECT_EQ(low_max_bitrate_bps, stream->GetVideoStreams()[0].min_bitrate_bps);
+  EXPECT_EQ(low_max_bitrate_bps, stream->GetVideoStreams()[0].max_bitrate_bps);
+}
+
+TEST_F(WebRtcVideoChannelTest,
+       SetHighMinBitrateOverwritesVideoStreamMaxBitrate) {
+  FakeVideoSendStream* stream = AddSendStream();
+
+  // Note that this is testing the behavior of the FakeVideoSendStream, which
+  // also calls to CreateEncoderStreams to get the VideoStreams, so essentially
+  // we are just testing the behavior of
+  // EncoderStreamFactory::CreateEncoderStreams.
+  ASSERT_EQ(1UL, stream->GetVideoStreams().size());
+  int high_min_bitrate_bps = stream->GetVideoStreams()[0].max_bitrate_bps + 1;
+
+  // Set a high min bitrate and check that max_bitrate_bps is adjusted up.
+  webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(last_ssrc_);
+  EXPECT_EQ(1UL, parameters.encodings.size());
+  parameters.encodings[0].min_bitrate_bps = high_min_bitrate_bps;
+  EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters).ok());
+
+  ASSERT_EQ(1UL, stream->GetVideoStreams().size());
+  EXPECT_EQ(high_min_bitrate_bps, stream->GetVideoStreams()[0].min_bitrate_bps);
+  EXPECT_EQ(high_min_bitrate_bps, stream->GetVideoStreams()[0].max_bitrate_bps);
+}
+
+TEST_F(WebRtcVideoChannelTest,
+       SetMinBitrateAboveMaxBitrateLimitAdjustsMinBitrateDown) {
+  send_parameters_.max_bandwidth_bps = 99999;
+  FakeVideoSendStream* stream = AddSendStream();
+  ExpectSetMaxBitrate(send_parameters_.max_bandwidth_bps);
+  ASSERT_TRUE(channel_->SetSendParameters(send_parameters_));
+  ASSERT_EQ(1UL, stream->GetVideoStreams().size());
+  EXPECT_EQ(kMinVideoBitrateBps, stream->GetVideoStreams()[0].min_bitrate_bps);
+  EXPECT_EQ(send_parameters_.max_bandwidth_bps,
+            stream->GetVideoStreams()[0].max_bitrate_bps);
+
+  // Set min bitrate above global max bitrate and check that min_bitrate_bps is
+  // adjusted down.
+  webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(last_ssrc_);
+  EXPECT_EQ(1UL, parameters.encodings.size());
+  parameters.encodings[0].min_bitrate_bps = 99999 + 1;
+  EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters).ok());
+  ASSERT_EQ(1UL, stream->GetVideoStreams().size());
+  EXPECT_EQ(send_parameters_.max_bandwidth_bps,
+            stream->GetVideoStreams()[0].min_bitrate_bps);
+  EXPECT_EQ(send_parameters_.max_bandwidth_bps,
+            stream->GetVideoStreams()[0].max_bitrate_bps);
 }
 
 TEST_F(WebRtcVideoChannelTest,
@@ -5732,6 +5790,61 @@ TEST_F(WebRtcVideoChannelTest,
   EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, nullptr, nullptr));
 }
 
+// Test that min and max bitrate values set via RtpParameters are correctly
+// propagated to the underlying encoder for a single stream.
+TEST_F(WebRtcVideoChannelTest, MinAndMaxBitratePropagatedToEncoder) {
+  FakeVideoSendStream* stream = AddSendStream();
+  EXPECT_TRUE(channel_->SetSend(true));
+  EXPECT_TRUE(stream->IsSending());
+
+  // Set min and max bitrate.
+  webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(last_ssrc_);
+  EXPECT_EQ(1u, parameters.encodings.size());
+  parameters.encodings[0].min_bitrate_bps = 80000;
+  parameters.encodings[0].max_bitrate_bps = 150000;
+  EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters).ok());
+
+  // Check that WebRtcVideoSendStream updates VideoEncoderConfig correctly.
+  webrtc::VideoEncoderConfig encoder_config = stream->GetEncoderConfig().Copy();
+  EXPECT_EQ(1u, encoder_config.number_of_streams);
+  EXPECT_EQ(1u, encoder_config.simulcast_layers.size());
+  EXPECT_EQ(80000, encoder_config.simulcast_layers[0].min_bitrate_bps);
+  EXPECT_EQ(150000, encoder_config.simulcast_layers[0].max_bitrate_bps);
+
+  // FakeVideoSendStream calls CreateEncoderStreams, test that the vector of
+  // VideoStreams are created appropriately.
+  EXPECT_EQ(1u, stream->GetVideoStreams().size());
+  EXPECT_EQ(80000, stream->GetVideoStreams()[0].min_bitrate_bps);
+  EXPECT_EQ(150000, stream->GetVideoStreams()[0].target_bitrate_bps);
+  EXPECT_EQ(150000, stream->GetVideoStreams()[0].max_bitrate_bps);
+}
+
+// Test the default min and max bitrate value are correctly propagated to the
+// underlying encoder for a single stream (when the values are not set via
+// RtpParameters).
+TEST_F(WebRtcVideoChannelTest, DefaultMinAndMaxBitratePropagatedToEncoder) {
+  FakeVideoSendStream* stream = AddSendStream();
+  EXPECT_TRUE(channel_->SetSend(true));
+  EXPECT_TRUE(stream->IsSending());
+
+  // Check that WebRtcVideoSendStream updates VideoEncoderConfig correctly.
+  webrtc::VideoEncoderConfig encoder_config = stream->GetEncoderConfig().Copy();
+  EXPECT_EQ(1u, encoder_config.number_of_streams);
+  EXPECT_EQ(1u, encoder_config.simulcast_layers.size());
+  EXPECT_EQ(-1, encoder_config.simulcast_layers[0].min_bitrate_bps);
+  EXPECT_EQ(-1, encoder_config.simulcast_layers[0].max_bitrate_bps);
+
+  // FakeVideoSendStream calls CreateEncoderStreams, test that the vector of
+  // VideoStreams are created appropriately.
+  EXPECT_EQ(1u, stream->GetVideoStreams().size());
+  EXPECT_EQ(cricket::kMinVideoBitrateBps,
+            stream->GetVideoStreams()[0].min_bitrate_bps);
+  EXPECT_GT(stream->GetVideoStreams()[0].max_bitrate_bps,
+            stream->GetVideoStreams()[0].min_bitrate_bps);
+  EXPECT_EQ(stream->GetVideoStreams()[0].max_bitrate_bps,
+            stream->GetVideoStreams()[0].target_bitrate_bps);
+}
+
 // Test that a stream will not be sending if its encoding is made inactive
 // through SetRtpSendParameters.
 TEST_F(WebRtcVideoChannelTest, SetRtpSendParametersOneEncodingActive) {
@@ -6200,18 +6313,8 @@ class WebRtcVideoChannelSimulcastTest : public testing::Test {
       stream.height = capture_height;
       stream.max_framerate = kDefaultVideoMaxFramerate;
       stream.min_bitrate_bps = cricket::kMinVideoBitrateBps;
-      int max_bitrate_kbps;
-      if (capture_width * capture_height <= 320 * 240) {
-        max_bitrate_kbps = 600;
-      } else if (capture_width * capture_height <= 640 * 480) {
-        max_bitrate_kbps = 1700;
-      } else if (capture_width * capture_height <= 960 * 540) {
-        max_bitrate_kbps = 2000;
-      } else {
-        max_bitrate_kbps = 2500;
-      }
       stream.target_bitrate_bps = stream.max_bitrate_bps =
-          max_bitrate_kbps * 1000;
+          GetMaxDefaultBitrateBps(capture_width, capture_height);
       stream.max_qp = kDefaultQpMax;
       expected_streams.push_back(stream);
     }

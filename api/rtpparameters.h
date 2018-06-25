@@ -411,7 +411,6 @@ struct RtpEncodingParameters {
 
   // Specifies the minimum bitrate in bps for video.
   // TODO(asapersson): Not implemented for ORTC API.
-  // TODO(asapersson): Not implemented for single layer.
   absl::optional<int> min_bitrate_bps;
 
   // TODO(deadbeef): Not implemented.

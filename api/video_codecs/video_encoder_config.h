@@ -146,6 +146,8 @@ class VideoEncoderConfig {
   // The simulcast layer's configurations set by the application for this video
   // sender. These are modified by the video_stream_factory before being passed
   // down to lower layers for the video encoding.
+  // |simulcast_layers| is also used for configuring non-simulcast (when there
+  // is a single VideoStream).
   std::vector<VideoStream> simulcast_layers;
 
   // Max number of encoded VideoStreams to produce.
