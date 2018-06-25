@@ -862,8 +862,6 @@ rtc_static_library("rtc_base_generic") {
       "optionsfile.h",
       "rollingaccumulator.h",
       "sslroots.h",
-      "transformadapter.cc",
-      "transformadapter.h",
     ]
 
     if (is_win) {
