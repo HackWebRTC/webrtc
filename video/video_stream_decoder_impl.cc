@@ -186,7 +186,7 @@ VideoStreamDecoderImpl::DecodeResult VideoStreamDecoderImpl::DecodeNextFrame(
     }
 
     int64_t decode_start_time_ms = rtc::TimeMillis();
-    int64_t timestamp = frame->timestamp;
+    int64_t timestamp = frame->Timestamp();
     int64_t render_time_us = frame->RenderTimeMs() * 1000;
     bookkeeping_queue_.PostTask(
         [this, decode_start_time_ms, timestamp, render_time_us]() {

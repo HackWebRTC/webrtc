@@ -54,7 +54,7 @@ bool HasNonEmptyState(FrameListPair pair) {
 }
 
 void FrameList::InsertFrame(VCMFrameBuffer* frame) {
-  insert(rbegin().base(), FrameListPair(frame->TimeStamp(), frame));
+  insert(rbegin().base(), FrameListPair(frame->Timestamp(), frame));
 }
 
 VCMFrameBuffer* FrameList::PopFrame(uint32_t timestamp) {
@@ -110,7 +110,7 @@ void FrameList::CleanUpOldOrEmptyFrames(VCMDecodingState* decoding_state,
     }
     free_frames->push_back(oldest_frame);
     TRACE_EVENT_INSTANT1("webrtc", "JB::OldOrEmptyFrameDropped", "timestamp",
-                         oldest_frame->TimeStamp());
+                         oldest_frame->Timestamp());
     erase(begin());
   }
 }
@@ -206,7 +206,7 @@ void Vp9SsMap::UpdateFrames(FrameList* frames) {
       continue;
     }
     SsMap::iterator ss_it;
-    if (Find(frame_it.second->TimeStamp(), &ss_it)) {
+    if (Find(frame_it.second->Timestamp(), &ss_it)) {
       if (gof_idx >= ss_it->second.num_frames_in_gof) {
         continue;  // Assume corresponding SS not yet received.
       }
@@ -522,7 +522,7 @@ bool VCMJitterBuffer::NextMaybeIncompleteTimestamp(uint32_t* timestamp) {
     }
   }
 
-  *timestamp = oldest_frame->TimeStamp();
+  *timestamp = oldest_frame->Timestamp();
   return true;
 }
 
@@ -558,7 +558,7 @@ VCMEncodedFrame* VCMJitterBuffer::ExtractAndSetDecode(uint32_t timestamp) {
       // Wait for this one to get complete.
       waiting_for_completion_.frame_size = frame->Length();
       waiting_for_completion_.latest_packet_time = frame->LatestPacketTimeMs();
-      waiting_for_completion_.timestamp = frame->TimeStamp();
+      waiting_for_completion_.timestamp = frame->Timestamp();
     }
   }
 
@@ -709,8 +709,8 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
       frame->InsertPacket(packet, now_ms, decode_error_mode_, frame_data);
 
   if (previous_state != kStateComplete) {
-    TRACE_EVENT_ASYNC_BEGIN1("webrtc", "Video", frame->TimeStamp(), "timestamp",
-                             frame->TimeStamp());
+    TRACE_EVENT_ASYNC_BEGIN1("webrtc", "Video", frame->Timestamp(), "timestamp",
+                             frame->Timestamp());
   }
 
   if (buffer_state > 0) {
@@ -825,7 +825,7 @@ bool VCMJitterBuffer::IsContinuous(const VCMFrameBuffer& frame) const {
   for (FrameList::const_iterator it = decodable_frames_.begin();
        it != decodable_frames_.end(); ++it) {
     VCMFrameBuffer* decodable_frame = it->second;
-    if (IsNewerTimestamp(decodable_frame->TimeStamp(), frame.TimeStamp())) {
+    if (IsNewerTimestamp(decodable_frame->Timestamp(), frame.Timestamp())) {
       break;
     }
     decoding_state.SetState(decodable_frame);
@@ -859,7 +859,7 @@ void VCMJitterBuffer::FindAndInsertContinuousFramesWithState(
        it != incomplete_frames_.end();) {
     VCMFrameBuffer* frame = it->second;
     if (IsNewerTimestamp(original_decoded_state.time_stamp(),
-                         frame->TimeStamp())) {
+                         frame->Timestamp())) {
       ++it;
       continue;
     }
@@ -941,11 +941,11 @@ int VCMJitterBuffer::NonContinuousOrIncompleteDuration() {
   if (incomplete_frames_.empty()) {
     return 0;
   }
-  uint32_t start_timestamp = incomplete_frames_.Front()->TimeStamp();
+  uint32_t start_timestamp = incomplete_frames_.Front()->Timestamp();
   if (!decodable_frames_.empty()) {
-    start_timestamp = decodable_frames_.Back()->TimeStamp();
+    start_timestamp = decodable_frames_.Back()->Timestamp();
   }
-  return incomplete_frames_.Back()->TimeStamp() - start_timestamp;
+  return incomplete_frames_.Back()->Timestamp() - start_timestamp;
 }
 
 uint16_t VCMJitterBuffer::EstimatedLowSequenceNumber(
@@ -1178,10 +1178,10 @@ void VCMJitterBuffer::CountFrame(const VCMFrameBuffer& frame) {
   incoming_frame_count_++;
 
   if (frame.FrameType() == kVideoFrameKey) {
-    TRACE_EVENT_ASYNC_STEP0("webrtc", "Video", frame.TimeStamp(),
+    TRACE_EVENT_ASYNC_STEP0("webrtc", "Video", frame.Timestamp(),
                             "KeyComplete");
   } else {
-    TRACE_EVENT_ASYNC_STEP0("webrtc", "Video", frame.TimeStamp(),
+    TRACE_EVENT_ASYNC_STEP0("webrtc", "Video", frame.Timestamp(),
                             "DeltaComplete");
   }
 
@@ -1257,7 +1257,7 @@ void VCMJitterBuffer::UpdateJitterEstimate(const VCMFrameBuffer& frame,
   }
   // No retransmitted frames should be a part of the jitter
   // estimate.
-  UpdateJitterEstimate(frame.LatestPacketTimeMs(), frame.TimeStamp(),
+  UpdateJitterEstimate(frame.LatestPacketTimeMs(), frame.Timestamp(),
                        frame.Length(), incomplete_frame);
 }
 

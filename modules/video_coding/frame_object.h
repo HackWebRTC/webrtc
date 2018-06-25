@@ -37,7 +37,6 @@ class RtpFrameObject : public EncodedFrame {
   enum FrameType frame_type() const;
   VideoCodecType codec_type() const;
   bool GetBitstream(uint8_t* destination) const override;
-  uint32_t Timestamp() const override;
   int64_t ReceivedTime() const override;
   int64_t RenderTime() const override;
   bool delayed_by_retransmission() const override;
@@ -49,7 +48,6 @@ class RtpFrameObject : public EncodedFrame {
   VideoCodecType codec_type_;
   uint16_t first_seq_num_;
   uint16_t last_seq_num_;
-  uint32_t timestamp_;
   int64_t received_time_;
 
   // Equal to times nacked of the packet with the highet times nacked
