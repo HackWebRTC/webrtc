@@ -103,46 +103,28 @@ class FilesystemInterface {
 
 class Filesystem {
  public:
-  static FilesystemInterface* default_filesystem() {
-    RTC_DCHECK(default_filesystem_);
-    return default_filesystem_;
-  }
-
-  static void set_default_filesystem(FilesystemInterface* filesystem) {
-    default_filesystem_ = filesystem;
-  }
-
-  static FilesystemInterface* swap_default_filesystem(
-      FilesystemInterface* filesystem) {
-    FilesystemInterface* cur = default_filesystem_;
-    default_filesystem_ = filesystem;
-    return cur;
-  }
-
   static bool DeleteFile(const Pathname& filename) {
-    return EnsureDefaultFilesystem()->DeleteFile(filename);
+    return GetFilesystem()->DeleteFile(filename);
   }
 
   static bool MoveFile(const Pathname& old_path, const Pathname& new_path) {
-    return EnsureDefaultFilesystem()->MoveFile(old_path, new_path);
+    return GetFilesystem()->MoveFile(old_path, new_path);
   }
 
   static bool IsFolder(const Pathname& pathname) {
-    return EnsureDefaultFilesystem()->IsFolder(pathname);
+    return GetFilesystem()->IsFolder(pathname);
   }
 
   static bool IsFile(const Pathname& pathname) {
-    return EnsureDefaultFilesystem()->IsFile(pathname);
+    return GetFilesystem()->IsFile(pathname);
   }
 
   static bool GetFileSize(const Pathname& path, size_t* size) {
-    return EnsureDefaultFilesystem()->GetFileSize(path, size);
+    return GetFilesystem()->GetFileSize(path, size);
   }
 
  private:
-  static FilesystemInterface* default_filesystem_;
-
-  static FilesystemInterface* EnsureDefaultFilesystem();
+  static FilesystemInterface* GetFilesystem();
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(Filesystem);
 };
 

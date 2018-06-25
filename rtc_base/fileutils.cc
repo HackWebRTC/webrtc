@@ -117,17 +117,14 @@ std::string DirectoryIterator::Name() const {
 #endif
 }
 
-FilesystemInterface* Filesystem::default_filesystem_ = nullptr;
-
-FilesystemInterface* Filesystem::EnsureDefaultFilesystem() {
-  if (!default_filesystem_) {
+FilesystemInterface* Filesystem::GetFilesystem() {
 #if defined(WEBRTC_WIN)
-    default_filesystem_ = new Win32Filesystem();
+  static FilesystemInterface* const filesystem = new Win32Filesystem();
 #else
-    default_filesystem_ = new UnixFilesystem();
+  static FilesystemInterface* const filesystem = new UnixFilesystem();
 #endif
-  }
-  return default_filesystem_;
+
+  return filesystem;
 }
 
 }  // namespace rtc
