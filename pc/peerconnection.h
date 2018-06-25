@@ -364,6 +364,7 @@ class PeerConnection : public PeerConnectionInternal,
 
   rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>>
   CreateSender(cricket::MediaType media_type,
+               const std::string& id,
                rtc::scoped_refptr<MediaStreamTrackInterface> track,
                const std::vector<std::string>& stream_ids);
 

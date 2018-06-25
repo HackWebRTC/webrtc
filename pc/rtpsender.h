@@ -90,15 +90,10 @@ class AudioRtpSender : public DtmfProviderInterface,
   // StatsCollector provided so that Add/RemoveLocalAudioTrack can be called
   // at the appropriate times.
 
-  // Construct an AudioRtpSender with a null track, a single, randomly generated
-  // stream id, and a randomly generated ID.
-  AudioRtpSender(rtc::Thread* worker_thread, StatsCollector* stats);
-
-  // Construct an AudioRtpSender with the given track and stream ids. The
-  // sender ID will be set to the track's ID.
+  // Construct an RtpSender for audio with the given sender ID.
+  // The sender is initialized with no track to send and no associated streams.
   AudioRtpSender(rtc::Thread* worker_thread,
-                 rtc::scoped_refptr<AudioTrackInterface> track,
-                 const std::vector<std::string>& stream_ids,
+                 const std::string& id,
                  StatsCollector* stats);
 
   virtual ~AudioRtpSender();
@@ -168,7 +163,7 @@ class AudioRtpSender : public DtmfProviderInterface,
   const std::string id_;
   std::vector<std::string> stream_ids_;
   cricket::VoiceMediaChannel* media_channel_ = nullptr;
-  StatsCollector* stats_;
+  StatsCollector* stats_ = nullptr;
   rtc::scoped_refptr<AudioTrackInterface> track_;
   rtc::scoped_refptr<DtmfSenderInterface> dtmf_sender_proxy_;
   absl::optional<std::string> last_transaction_id_;
@@ -185,15 +180,9 @@ class AudioRtpSender : public DtmfProviderInterface,
 class VideoRtpSender : public ObserverInterface,
                        public rtc::RefCountedObject<RtpSenderInternal> {
  public:
-  // Construct a VideoRtpSender with a null track, a single, randomly generated
-  // stream id, and a randomly generated ID.
-  explicit VideoRtpSender(rtc::Thread* worker_thread);
-
-  // Construct a VideoRtpSender with the given track and stream ids. The
-  // sender ID will be set to the track's ID.
-  VideoRtpSender(rtc::Thread* worker_thread,
-                 rtc::scoped_refptr<VideoTrackInterface> track,
-                 const std::vector<std::string>& stream_ids);
+  // Construct an RtpSender for video with the given sender ID.
+  // The sender is initialized with no track to send and no associated streams.
+  VideoRtpSender(rtc::Thread* worker_thread, const std::string& id);
 
   virtual ~VideoRtpSender();
 

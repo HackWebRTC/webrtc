@@ -114,30 +114,16 @@ void LocalAudioSinkAdapter::SetSink(cricket::AudioSource::Sink* sink) {
 }
 
 AudioRtpSender::AudioRtpSender(rtc::Thread* worker_thread,
-                               StatsCollector* stats)
-    : AudioRtpSender(worker_thread, nullptr, {rtc::CreateRandomUuid()}, stats) {
-}
-
-AudioRtpSender::AudioRtpSender(rtc::Thread* worker_thread,
-                               rtc::scoped_refptr<AudioTrackInterface> track,
-                               const std::vector<std::string>& stream_ids,
+                               const std::string& id,
                                StatsCollector* stats)
     : worker_thread_(worker_thread),
-      id_(track ? track->id() : rtc::CreateRandomUuid()),
-      stream_ids_(stream_ids),
+      id_(id),
       stats_(stats),
-      track_(track),
       dtmf_sender_proxy_(DtmfSenderProxy::Create(
           rtc::Thread::Current(),
           DtmfSender::Create(rtc::Thread::Current(), this))),
-      cached_track_enabled_(track ? track->enabled() : false),
-      sink_adapter_(new LocalAudioSinkAdapter()),
-      attachment_id_(track ? GenerateUniqueId() : 0) {
+      sink_adapter_(new LocalAudioSinkAdapter()) {
   RTC_DCHECK(worker_thread);
-  if (track_) {
-    track_->RegisterObserver(this);
-    track_->AddSink(sink_adapter_.get());
-  }
 }
 
 AudioRtpSender::~AudioRtpSender() {
@@ -238,7 +224,7 @@ bool AudioRtpSender::SetTrack(MediaStreamTrackInterface* track) {
   } else if (prev_can_send_track) {
     ClearAudioSend();
   }
-  attachment_id_ = GenerateUniqueId();
+  attachment_id_ = (track_ ? GenerateUniqueId() : 0);
   return true;
 }
 
@@ -377,24 +363,10 @@ void AudioRtpSender::ClearAudioSend() {
   }
 }
 
-VideoRtpSender::VideoRtpSender(rtc::Thread* worker_thread)
-    : VideoRtpSender(worker_thread, nullptr, {rtc::CreateRandomUuid()}) {}
-
 VideoRtpSender::VideoRtpSender(rtc::Thread* worker_thread,
-                               rtc::scoped_refptr<VideoTrackInterface> track,
-                               const std::vector<std::string>& stream_ids)
-    : worker_thread_(worker_thread),
-      id_(track ? track->id() : rtc::CreateRandomUuid()),
-      stream_ids_(stream_ids),
-      track_(track),
-      cached_track_content_hint_(track
-                                     ? track->content_hint()
-                                     : VideoTrackInterface::ContentHint::kNone),
-      attachment_id_(track ? GenerateUniqueId() : 0) {
+                               const std::string& id)
+    : worker_thread_(worker_thread), id_(id) {
   RTC_DCHECK(worker_thread);
-  if (track_) {
-    track_->RegisterObserver(this);
-  }
 }
 
 VideoRtpSender::~VideoRtpSender() {
@@ -447,7 +419,7 @@ bool VideoRtpSender::SetTrack(MediaStreamTrackInterface* track) {
   } else if (prev_can_send_track) {
     ClearVideoSend();
   }
-  attachment_id_ = GenerateUniqueId();
+  attachment_id_ = (track_ ? GenerateUniqueId() : 0);
   return true;
 }
 
