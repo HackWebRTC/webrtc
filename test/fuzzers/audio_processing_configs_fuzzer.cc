@@ -46,6 +46,7 @@ std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
   // configurable public components of APM.
   bool exp_agc = fuzz_data->ReadOrDefaultValue(true);
   bool exp_ns = fuzz_data->ReadOrDefaultValue(true);
+  static_cast<void>(fuzz_data->ReadOrDefaultValue(true));
   bool ef = fuzz_data->ReadOrDefaultValue(true);
   bool raf = fuzz_data->ReadOrDefaultValue(true);
   static_cast<void>(fuzz_data->ReadOrDefaultValue(true));
