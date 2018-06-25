@@ -330,6 +330,13 @@ TEST(RTCStatsTest, RTCStatsPrintsValidJson) {
   std::cout << stats.ToJson() << std::endl;
 }
 
+TEST(RTCStatsTest, IsStandardized) {
+  RTCStatsMember<int32_t> standardized("standardized");
+  RTCNonStandardStatsMember<int32_t> unstandardized("unstandardized");
+  EXPECT_TRUE(standardized.is_standardized());
+  EXPECT_FALSE(unstandardized.is_standardized());
+}
+
 // Death tests.
 // Disabled on Android because death tests misbehave on Android, see
 // base/test/gtest_util.h.
