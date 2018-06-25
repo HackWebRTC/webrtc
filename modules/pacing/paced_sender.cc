@@ -63,6 +63,7 @@ PacedSender::PacedSender(const Clock* clock,
     : clock_(clock),
       packet_sender_(packet_sender),
       alr_detector_(rtc::MakeUnique<AlrDetector>(event_log)),
+      drain_large_queues_(!field_trial::IsDisabled("WebRTC-Pacer-DrainQueue")),
       send_padding_if_silent_(
           field_trial::IsEnabled("WebRTC-Pacer-PadInSilence")),
       video_blocks_audio_(!field_trial::IsDisabled("WebRTC-Pacer-BlockAudio")),
@@ -83,6 +84,9 @@ PacedSender::PacedSender(const Clock* clock,
       pacing_factor_(kDefaultPaceMultiplier),
       queue_time_limit(kMaxQueueLengthMs),
       account_for_audio_(false) {
+  if (!drain_large_queues_)
+    RTC_LOG(LS_WARNING) << "Pacer queues will not be drained,"
+                           "pushback experiment must be enabled.";
   UpdateBudgetWithElapsedTime(kMinPacketLimitMs);
 }
 
@@ -291,12 +295,14 @@ void PacedSender::Process() {
       // has avg_time_left_ms left to get queue_size_bytes out of the queue, if
       // time constraint shall be met. Determine bitrate needed for that.
       packets_->UpdateQueueTime(clock_->TimeInMilliseconds());
-      int64_t avg_time_left_ms = std::max<int64_t>(
-          1, queue_time_limit - packets_->AverageQueueTimeMs());
-      int min_bitrate_needed_kbps =
-          static_cast<int>(queue_size_bytes * 8 / avg_time_left_ms);
-      if (min_bitrate_needed_kbps > target_bitrate_kbps)
-        target_bitrate_kbps = min_bitrate_needed_kbps;
+      if (drain_large_queues_) {
+        int64_t avg_time_left_ms = std::max<int64_t>(
+            1, queue_time_limit - packets_->AverageQueueTimeMs());
+        int min_bitrate_needed_kbps =
+            static_cast<int>(queue_size_bytes * 8 / avg_time_left_ms);
+        if (min_bitrate_needed_kbps > target_bitrate_kbps)
+          target_bitrate_kbps = min_bitrate_needed_kbps;
+      }
     }
 
     media_budget_->set_target_rate_kbps(target_bitrate_kbps);

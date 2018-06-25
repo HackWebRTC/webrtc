@@ -162,6 +162,8 @@ class PacedSender : public Pacer {
   const Clock* const clock_;
   PacketSender* const packet_sender_;
   const std::unique_ptr<AlrDetector> alr_detector_ RTC_PT_GUARDED_BY(critsect_);
+
+  const bool drain_large_queues_;
   const bool send_padding_if_silent_;
   const bool video_blocks_audio_;
   rtc::CriticalSection critsect_;
