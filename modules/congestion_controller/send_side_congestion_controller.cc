@@ -19,7 +19,6 @@
 #include "modules/bitrate_controller/include/bitrate_controller.h"
 #include "modules/congestion_controller/goog_cc/acknowledged_bitrate_estimator.h"
 #include "modules/congestion_controller/probe_controller.h"
-#include "modules/pacing/alr_detector.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/format_macros.h"

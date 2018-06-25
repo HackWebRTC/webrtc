@@ -19,8 +19,6 @@ config("bwe_test_logging") {
 rtc_static_library("goog_cc") {
   configs += [ ":bwe_test_logging" ]
   sources = [
-    "alr_detector.cc",
-    "alr_detector.h",
     "goog_cc_factory.cc",
     "goog_cc_network_control.cc",
     "goog_cc_network_control.h",
@@ -35,6 +33,7 @@ rtc_static_library("goog_cc") {
   }
 
   deps = [
+    ":alr_detector",
     ":delay_based_bwe",
     ":estimators",
     "../..:module_api",
@@ -50,13 +49,34 @@ rtc_static_library("goog_cc") {
     "../../../system_wrappers:field_trial_api",
     "../../../system_wrappers:metrics_api",
     "../../bitrate_controller",
-    "../../pacing",
     "../../remote_bitrate_estimator",
     "../../rtp_rtcp:rtp_rtcp_format",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 
+rtc_source_set("alr_detector") {
+  sources = [
+    "alr_detector.cc",
+    "alr_detector.h",
+  ]
+  if (!build_with_chromium && is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+  }
+  deps = [
+    "../../..:webrtc_common",
+    "../../../:typedefs",
+    "../../../logging:rtc_event_log_api",
+    "../../../logging:rtc_event_pacing",
+    "../../../rtc_base:checks",
+    "../../../rtc_base:rtc_base_approved",
+    "../../../rtc_base/experiments:alr_experiment",
+    "../../../system_wrappers:field_trial_api",
+    "../../pacing:interval_budget",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
+}
 rtc_source_set("estimators") {
   configs += [ ":bwe_test_logging" ]
   sources = [
@@ -138,6 +158,7 @@ if (rtc_include_tests) {
       "trendline_estimator_unittest.cc",
     ]
     deps = [
+      ":alr_detector",
       ":delay_based_bwe",
       ":estimators",
       ":goog_cc",

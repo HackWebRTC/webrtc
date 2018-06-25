@@ -20,12 +20,12 @@
 #include "rtc_base/experiments/alr_experiment.h"
 #include "rtc_base/format_macros.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/ptr_util.h"
 #include "rtc_base/timeutils.h"
 #include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
-namespace webrtc_cc {
 AlrDetector::AlrDetector() : AlrDetector(nullptr) {}
 
 AlrDetector::AlrDetector(RtcEventLog* event_log)
@@ -93,5 +93,4 @@ absl::optional<int64_t> AlrDetector::GetApplicationLimitedRegionStartTime()
     const {
   return alr_started_time_ms_;
 }
-}  // namespace webrtc_cc
 }  // namespace webrtc

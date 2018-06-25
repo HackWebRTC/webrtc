@@ -17,8 +17,8 @@
 #include <utility>
 #include <vector>
 
+#include "modules/congestion_controller/goog_cc/alr_detector.h"
 #include "modules/include/module_common_types.h"
-#include "modules/pacing/alr_detector.h"
 #include "modules/pacing/bitrate_prober.h"
 #include "modules/pacing/interval_budget.h"
 #include "modules/pacing/round_robin_packet_queue.h"
@@ -280,7 +280,7 @@ void PacedSender::Process() {
       if (packet_counter_ > 0) {
         PacedPacketInfo pacing_info;
         size_t bytes_sent = SendPadding(1, pacing_info);
-        alr_detector_->OnBytesSent(bytes_sent, elapsed_time_ms);
+        alr_detector_->OnBytesSent(bytes_sent, now_us / 1000);
       }
     }
   }
@@ -355,7 +355,7 @@ void PacedSender::Process() {
     if (!probing_send_failure_)
       prober_->ProbeSent(clock_->TimeInMilliseconds(), bytes_sent);
   }
-  alr_detector_->OnBytesSent(bytes_sent, elapsed_time_ms);
+  alr_detector_->OnBytesSent(bytes_sent, now_us / 1000);
 }
 
 void PacedSender::ProcessThreadAttached(ProcessThread* process_thread) {

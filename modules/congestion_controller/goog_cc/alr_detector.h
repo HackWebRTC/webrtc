@@ -14,15 +14,12 @@
 #include "absl/types/optional.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/pacing/interval_budget.h"
-#include "modules/pacing/paced_sender.h"
 #include "rtc_base/rate_statistics.h"
 #include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 
 class RtcEventLog;
-
-namespace webrtc_cc {
 
 // Application limited region detector is a class that utilizes signals of
 // elapsed time and bytes sent to estimate whether network traffic is
@@ -70,8 +67,6 @@ class AlrDetector {
 
   RtcEventLog* event_log_;
 };
-
-}  // namespace webrtc_cc
 }  // namespace webrtc
 
 #endif  // MODULES_CONGESTION_CONTROLLER_GOOG_CC_ALR_DETECTOR_H_
