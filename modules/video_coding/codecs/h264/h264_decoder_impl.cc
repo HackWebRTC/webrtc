@@ -45,21 +45,6 @@ enum H264DecoderImplEvent {
   kH264DecoderEventMax = 16,
 };
 
-#if defined(WEBRTC_INITIALIZE_FFMPEG)
-
-rtc::CriticalSection ffmpeg_init_lock;
-bool ffmpeg_initialized = false;
-
-void InitializeFFmpeg() {
-  rtc::CritScope cs(&ffmpeg_init_lock);
-  if (!ffmpeg_initialized) {
-    av_register_all();
-    ffmpeg_initialized = true;
-  }
-}
-
-#endif  // defined(WEBRTC_INITIALIZE_FFMPEG)
-
 }  // namespace
 
 int H264DecoderImpl::AVGetBuffer2(
@@ -170,18 +155,6 @@ int32_t H264DecoderImpl::InitDecode(const VideoCodec* codec_settings,
     ReportError();
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
-
-  // FFmpeg must have been initialized (with |av_register_all|) before we
-  // proceed. |InitializeFFmpeg| does this, which makes sense for WebRTC
-  // standalone. In other cases, such as Chromium, FFmpeg is initialized
-  // externally and calling |InitializeFFmpeg| would be thread-unsafe and result
-  // in FFmpeg being initialized twice, which could break other FFmpeg usage.
-  // See the |rtc_initialize_ffmpeg| flag.
-#if defined(WEBRTC_INITIALIZE_FFMPEG)
-  // Make sure FFmpeg has been initialized. Subsequent |InitializeFFmpeg| calls
-  // do nothing.
-  InitializeFFmpeg();
-#endif
 
   // Release necessary in case of re-initializing.
   int32_t ret = Release();

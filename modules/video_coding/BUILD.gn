@@ -301,9 +301,6 @@ rtc_static_library("webrtc_h264") {
 
   if (rtc_use_h264) {
     defines += [ "WEBRTC_USE_H264" ]
-    if (rtc_initialize_ffmpeg) {
-      defines += [ "WEBRTC_INITIALIZE_FFMPEG" ]
-    }
     sources += [
       "codecs/h264/h264_decoder_impl.cc",
       "codecs/h264/h264_decoder_impl.h",
@@ -315,11 +312,6 @@ rtc_static_library("webrtc_h264") {
       "//third_party/ffmpeg:ffmpeg",
       "//third_party/openh264:encoder",
     ]
-
-    # TODO(bugs.webrtc.org/9352): Stop using ffmpeg deprecated functions.
-    if (!is_win) {
-      cflags = [ "-Wno-deprecated-declarations" ]
-    }
 
     if (!build_with_mozilla) {
       deps += [ "../../media:rtc_media_base" ]
