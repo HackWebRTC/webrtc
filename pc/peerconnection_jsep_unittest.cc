@@ -259,12 +259,16 @@ TEST_F(PeerConnectionJsepTest, SetRemoteOfferCreatesTransceivers) {
 
   auto transceivers = callee->pc()->GetTransceivers();
   ASSERT_EQ(2u, transceivers.size());
+
   EXPECT_EQ(cricket::MEDIA_TYPE_AUDIO, transceivers[0]->media_type());
   EXPECT_EQ(caller_audio->mid(), transceivers[0]->mid());
   EXPECT_EQ(RtpTransceiverDirection::kRecvOnly, transceivers[0]->direction());
+  EXPECT_EQ(0u, transceivers[0]->sender()->stream_ids().size());
+
   EXPECT_EQ(cricket::MEDIA_TYPE_VIDEO, transceivers[1]->media_type());
   EXPECT_EQ(caller_video->mid(), transceivers[1]->mid());
   EXPECT_EQ(RtpTransceiverDirection::kRecvOnly, transceivers[1]->direction());
+  EXPECT_EQ(0u, transceivers[1]->sender()->stream_ids().size());
 }
 
 // Test that setting a remote offer with an audio track will reuse the

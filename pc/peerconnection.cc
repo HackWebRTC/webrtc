@@ -2739,9 +2739,7 @@ PeerConnection::AssociateTransceiver(cricket::ContentSource source,
                        << " at i=" << mline_index
                        << " in response to the remote description.";
       std::string sender_id = rtc::CreateRandomUuid();
-      std::vector<std::string> stream_ids = {rtc::CreateRandomUuid()};
-      auto sender =
-          CreateSender(media_desc->type(), sender_id, nullptr, stream_ids);
+      auto sender = CreateSender(media_desc->type(), sender_id, nullptr, {});
       std::string receiver_id;
       if (!media_desc->streams().empty()) {
         receiver_id = media_desc->streams()[0].id;
