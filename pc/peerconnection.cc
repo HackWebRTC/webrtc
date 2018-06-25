@@ -106,7 +106,10 @@ enum {
   MSG_CREATE_SESSIONDESCRIPTION_FAILED,
   MSG_GETSTATS,
   MSG_FREE_DATACHANNELS,
+  MSG_REPORT_USAGE_PATTERN,
 };
+
+static const int REPORT_USAGE_PATTERN_DELAY_MS = 60000;
 
 struct SetSessionDescriptionMsg : public rtc::MessageData {
   explicit SetSessionDescriptionMsg(
@@ -1037,6 +1040,10 @@ bool PeerConnection::Initialize(
         RtpTransceiverProxyWithInternal<RtpTransceiver>::Create(
             signaling_thread(), new RtpTransceiver(cricket::MEDIA_TYPE_VIDEO)));
   }
+  signaling_thread()->PostDelayed(
+      RTC_FROM_HERE,
+      return_histogram_very_quickly_ ? 0 : REPORT_USAGE_PATTERN_DELAY_MS, this,
+      MSG_REPORT_USAGE_PATTERN, nullptr);
   return true;
 }
 
@@ -3298,6 +3305,10 @@ void PeerConnection::OnMessage(rtc::Message* msg) {
     }
     case MSG_FREE_DATACHANNELS: {
       sctp_data_channels_to_free_.clear();
+      break;
+    }
+    case MSG_REPORT_USAGE_PATTERN: {
+      ReportUsagePattern();
       break;
     }
     default:

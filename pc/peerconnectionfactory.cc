@@ -338,7 +338,7 @@ PeerConnectionFactory::CreatePeerConnection(
   rtc::scoped_refptr<PeerConnection> pc(
       new rtc::RefCountedObject<PeerConnection>(this, std::move(event_log),
                                                 std::move(call)));
-
+  ActionsBeforeInitializeForTesting(pc);
   if (!pc->Initialize(configuration, std::move(dependencies))) {
     return nullptr;
   }

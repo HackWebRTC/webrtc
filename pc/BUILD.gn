@@ -435,6 +435,7 @@ if (rtc_include_tests) {
       "peerconnection_bundle_unittest.cc",
       "peerconnection_crypto_unittest.cc",
       "peerconnection_datachannel_unittest.cc",
+      "peerconnection_histogram_unittest.cc",
       "peerconnection_ice_unittest.cc",
       "peerconnection_integrationtest.cc",
       "peerconnection_jsep_unittest.cc",
