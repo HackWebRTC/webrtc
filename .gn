@@ -83,4 +83,6 @@ default_args = {
   # WebRTC does not provide the gflags dependency. Because libyuv uses it only
   # for unittests, it can be disabled (see third_party/libyuv/BUILD.gn)
   libyuv_use_gflags = false
+
+  gtest_enable_absl_printers = true
 }
