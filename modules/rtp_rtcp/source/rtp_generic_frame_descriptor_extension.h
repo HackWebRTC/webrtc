@@ -14,13 +14,16 @@
 #include <stdint.h>
 
 #include "api/array_view.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor.h"
 
 namespace webrtc {
 
 class RtpGenericFrameDescriptorExtension {
  public:
-  // TODO(bugs.webrtc.org/9361): Add kId and kUri to make it extension trait.
+  static constexpr RTPExtensionType kId = kRtpExtensionGenericFrameDescriptor;
+  static constexpr char kUri[] =
+      "http://www.webrtc.org/experiments/rtp-hdrext/generic-frame-descriptor";
 
   static bool Parse(rtc::ArrayView<const uint8_t> data,
                     RtpGenericFrameDescriptor* descriptor);

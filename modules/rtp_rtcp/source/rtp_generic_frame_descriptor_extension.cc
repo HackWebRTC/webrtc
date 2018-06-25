@@ -44,6 +44,8 @@ constexpr uint8_t kFlageXtendedOffset = 0x02;
 //      +---------------+
 //      |      ...      |
 //      +-+-+-+-+-+-+-+-+
+constexpr RTPExtensionType RtpGenericFrameDescriptorExtension::kId;
+constexpr char RtpGenericFrameDescriptorExtension::kUri[];
 
 bool RtpGenericFrameDescriptorExtension::Parse(
     rtc::ArrayView<const uint8_t> data,
