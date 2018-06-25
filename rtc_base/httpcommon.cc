@@ -169,10 +169,6 @@ struct Enum {
 static const char* kHttpVersions[HVER_LAST + 1] = {"1.0", "1.1", "Unknown"};
 ENUM(HttpVersion, kHttpVersions);
 
-static const char* kHttpVerbs[HV_LAST + 1] = {"GET",    "POST",    "PUT",
-                                              "DELETE", "CONNECT", "HEAD"};
-ENUM(HttpVerb, kHttpVerbs);
-
 static const char* kHttpHeaders[HH_LAST + 1] = {
     "Age",
     "Cache-Control",
@@ -213,39 +209,12 @@ bool FromString(HttpVersion& version, const std::string& str) {
   return Enum<HttpVersion>::Parse(version, str);
 }
 
-const char* ToString(HttpVerb verb) {
-  return Enum<HttpVerb>::Name(verb);
-}
-
-bool FromString(HttpVerb& verb, const std::string& str) {
-  return Enum<HttpVerb>::Parse(verb, str);
-}
-
 const char* ToString(HttpHeader header) {
   return Enum<HttpHeader>::Name(header);
 }
 
 bool FromString(HttpHeader& header, const std::string& str) {
   return Enum<HttpHeader>::Parse(header, str);
-}
-
-bool HttpCodeHasBody(uint32_t code) {
-  return !HttpCodeIsInformational(code) && (code != HC_NO_CONTENT) &&
-         (code != HC_NOT_MODIFIED);
-}
-
-bool HttpCodeIsCacheable(uint32_t code) {
-  switch (code) {
-    case HC_OK:
-    case HC_NON_AUTHORITATIVE:
-    case HC_PARTIAL_CONTENT:
-    case HC_MULTIPLE_CHOICES:
-    case HC_MOVED_PERMANENTLY:
-    case HC_GONE:
-      return true;
-    default:
-      return false;
-  }
 }
 
 bool HttpHeaderIsEndToEnd(HttpHeader header) {
@@ -494,10 +463,6 @@ void HttpData::clear(bool release_document) {
   }
 }
 
-void HttpData::copy(const HttpData& src) {
-  headers_ = src.headers_;
-}
-
 void HttpData::changeHeader(const std::string& name,
                             const std::string& value,
                             HeaderCombine combine) {
@@ -572,21 +537,14 @@ void HttpData::setDocumentAndLength(StreamInterface* document) {
 //
 
 void HttpRequestData::clear(bool release_document) {
-  verb = HV_GET;
   path.clear();
   HttpData::clear(release_document);
 }
 
-void HttpRequestData::copy(const HttpRequestData& src) {
-  verb = src.verb;
-  path = src.path;
-  HttpData::copy(src);
-}
-
 size_t HttpRequestData::formatLeader(char* buffer, size_t size) const {
   RTC_DCHECK(path.find(' ') == std::string::npos);
-  return sprintfn(buffer, size, "%s %.*s HTTP/%s", ToString(verb), path.size(),
-                  path.data(), ToString(version));
+  return sprintfn(buffer, size, "GET %.*s HTTP/%s", path.size(), path.data(),
+                  ToString(version));
 }
 
 HttpError HttpRequestData::parseLeader(const char* line, size_t len) {
@@ -608,8 +566,7 @@ HttpError HttpRequestData::parseLeader(const char* line, size_t len) {
   } else {
     return HE_PROTOCOL;
   }
-  std::string sverb(line, vend);
-  if (!FromString(verb, sverb.c_str())) {
+  if (vend != 3 || memcmp(line, "GET", 3)) {
     return HE_PROTOCOL;  // !?! HC_METHOD_NOT_SUPPORTED?
   }
   path.assign(line + dstart, line + dend);
@@ -617,8 +574,6 @@ HttpError HttpRequestData::parseLeader(const char* line, size_t len) {
 }
 
 bool HttpRequestData::getAbsoluteUri(std::string* uri) const {
-  if (HV_CONNECT == verb)
-    return false;
   Url<char> url(path);
   if (url.valid()) {
     uri->assign(path);
@@ -635,8 +590,6 @@ bool HttpRequestData::getAbsoluteUri(std::string* uri) const {
 
 bool HttpRequestData::getRelativeUri(std::string* host,
                                      std::string* path) const {
-  if (HV_CONNECT == verb)
-    return false;
   Url<char> url(this->path);
   if (url.valid()) {
     host->assign(url.address());
@@ -659,31 +612,9 @@ void HttpResponseData::clear(bool release_document) {
   HttpData::clear(release_document);
 }
 
-void HttpResponseData::copy(const HttpResponseData& src) {
-  scode = src.scode;
-  message = src.message;
-  HttpData::copy(src);
-}
-
 void HttpResponseData::set_success(uint32_t scode) {
   this->scode = scode;
   message.clear();
-  setHeader(HH_CONTENT_LENGTH, "0", false);
-}
-
-void HttpResponseData::set_success(const std::string& content_type,
-                                   StreamInterface* document,
-                                   uint32_t scode) {
-  this->scode = scode;
-  message.erase(message.begin(), message.end());
-  setContent(content_type, document);
-}
-
-void HttpResponseData::set_redirect(const std::string& location,
-                                    uint32_t scode) {
-  this->scode = scode;
-  message.clear();
-  setHeader(HH_LOCATION, location);
   setHeader(HH_CONTENT_LENGTH, "0", false);
 }
 

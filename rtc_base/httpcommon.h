@@ -31,40 +31,10 @@ class SocketAddress;
 
 enum HttpCode {
   HC_OK = 200,
-  HC_NON_AUTHORITATIVE = 203,
-  HC_NO_CONTENT = 204,
-  HC_PARTIAL_CONTENT = 206,
-
-  HC_MULTIPLE_CHOICES = 300,
-  HC_MOVED_PERMANENTLY = 301,
-  HC_FOUND = 302,
-  HC_SEE_OTHER = 303,
-  HC_NOT_MODIFIED = 304,
-  HC_MOVED_TEMPORARILY = 307,
-
-  HC_BAD_REQUEST = 400,
-  HC_UNAUTHORIZED = 401,
-  HC_FORBIDDEN = 403,
-  HC_NOT_FOUND = 404,
-  HC_PROXY_AUTHENTICATION_REQUIRED = 407,
-  HC_GONE = 410,
-
   HC_INTERNAL_SERVER_ERROR = 500,
-  HC_NOT_IMPLEMENTED = 501,
-  HC_SERVICE_UNAVAILABLE = 503,
 };
 
 enum HttpVersion { HVER_1_0, HVER_1_1, HVER_UNKNOWN, HVER_LAST = HVER_UNKNOWN };
-
-enum HttpVerb {
-  HV_GET,
-  HV_POST,
-  HV_PUT,
-  HV_DELETE,
-  HV_CONNECT,
-  HV_HEAD,
-  HV_LAST = HV_HEAD
-};
 
 enum HttpError {
   HE_NONE,
@@ -121,37 +91,12 @@ const uint16_t HTTP_SECURE_PORT = 443;
 // Utility Functions
 //////////////////////////////////////////////////////////////////////
 
-inline HttpError mkerr(HttpError err, HttpError def_err = HE_DEFAULT) {
-  return (err != HE_NONE) ? err : def_err;
-}
-
 const char* ToString(HttpVersion version);
 bool FromString(HttpVersion& version, const std::string& str);
-
-const char* ToString(HttpVerb verb);
-bool FromString(HttpVerb& verb, const std::string& str);
 
 const char* ToString(HttpHeader header);
 bool FromString(HttpHeader& header, const std::string& str);
 
-inline bool HttpCodeIsInformational(uint32_t code) {
-  return ((code / 100) == 1);
-}
-inline bool HttpCodeIsSuccessful(uint32_t code) {
-  return ((code / 100) == 2);
-}
-inline bool HttpCodeIsRedirection(uint32_t code) {
-  return ((code / 100) == 3);
-}
-inline bool HttpCodeIsClientError(uint32_t code) {
-  return ((code / 100) == 4);
-}
-inline bool HttpCodeIsServerError(uint32_t code) {
-  return ((code / 100) == 5);
-}
-
-bool HttpCodeHasBody(uint32_t code);
-bool HttpCodeIsCacheable(uint32_t code);
 bool HttpHeaderIsEndToEnd(HttpHeader header);
 bool HttpHeaderIsCollapsible(HttpHeader header);
 
@@ -382,20 +327,17 @@ struct HttpData {
  protected:
   virtual ~HttpData();
   void clear(bool release_document);
-  void copy(const HttpData& src);
 
  private:
   HeaderMap headers_;
 };
 
 struct HttpRequestData : public HttpData {
-  HttpVerb verb;
   std::string path;
 
-  HttpRequestData() : verb(HV_GET) {}
+  HttpRequestData() {}
 
   void clear(bool release_document);
-  void copy(const HttpRequestData& src);
 
   size_t formatLeader(char* buffer, size_t size) const override;
   HttpError parseLeader(const char* line, size_t len) override;
@@ -410,15 +352,9 @@ struct HttpResponseData : public HttpData {
 
   HttpResponseData() : scode(HC_INTERNAL_SERVER_ERROR) {}
   void clear(bool release_document);
-  void copy(const HttpResponseData& src);
 
   // Convenience methods
   void set_success(uint32_t scode = HC_OK);
-  void set_success(const std::string& content_type,
-                   StreamInterface* document,
-                   uint32_t scode = HC_OK);
-  void set_redirect(const std::string& location,
-                    uint32_t scode = HC_MOVED_TEMPORARILY);
   void set_error(uint32_t scode);
 
   size_t formatLeader(char* buffer, size_t size) const override;

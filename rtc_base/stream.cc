@@ -553,22 +553,6 @@ StreamResult MemoryStream::DoReserve(size_t size, int* error) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-
-ExternalMemoryStream::ExternalMemoryStream() {}
-
-ExternalMemoryStream::ExternalMemoryStream(void* data, size_t length) {
-  SetData(data, length);
-}
-
-ExternalMemoryStream::~ExternalMemoryStream() {}
-
-void ExternalMemoryStream::SetData(void* data, size_t length) {
-  data_length_ = buffer_length_ = length;
-  buffer_ = static_cast<char*>(data);
-  seek_position_ = 0;
-}
-
-///////////////////////////////////////////////////////////////////////////////
 // FifoBuffer
 ///////////////////////////////////////////////////////////////////////////////
 

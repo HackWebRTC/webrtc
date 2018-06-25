@@ -119,11 +119,6 @@ class HttpBase : private HttpParser, public sigslot::has_slots<> {
   void set_ignore_data(bool ignore) { ignore_data_ = ignore; }
   bool ignore_data() const { return ignore_data_; }
 
-  // Obtaining this stream puts HttpBase into stream mode until the stream
-  // is closed.  HttpBase can only expose one open stream interface at a time.
-  // Further calls will return null.
-  StreamInterface* GetDocumentStream();
-
  protected:
   // Do cleanup when the http stream closes (error may be 0 for a clean
   // shutdown), and return the error code to signal.
@@ -180,7 +175,6 @@ class HttpBase : private HttpParser, public sigslot::has_slots<> {
   HttpData* data_;
   IHttpNotify* notify_;
   StreamInterface* http_stream_;
-  DocumentStream* doc_stream_;
   char buffer_[kBufferSize];
   size_t len_;
 

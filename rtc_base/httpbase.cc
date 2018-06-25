@@ -224,149 +224,11 @@ void HttpParser::complete(HttpError error) {
 }
 
 //////////////////////////////////////////////////////////////////////
-// HttpBase::DocumentStream
-//////////////////////////////////////////////////////////////////////
-
-class BlockingMemoryStream : public ExternalMemoryStream {
- public:
-  BlockingMemoryStream(char* buffer, size_t size)
-      : ExternalMemoryStream(buffer, size) {}
-
-  StreamResult DoReserve(size_t size, int* error) override {
-    return (buffer_length_ >= size) ? SR_SUCCESS : SR_BLOCK;
-  }
-};
-
-class HttpBase::DocumentStream : public StreamInterface {
- public:
-  DocumentStream(HttpBase* base) : base_(base), error_(HE_DEFAULT) {}
-
-  StreamState GetState() const override {
-    if (nullptr == base_)
-      return SS_CLOSED;
-    if (HM_RECV == base_->mode_)
-      return SS_OPEN;
-    return SS_OPENING;
-  }
-
-  StreamResult Read(void* buffer,
-                    size_t buffer_len,
-                    size_t* read,
-                    int* error) override {
-    if (!base_) {
-      if (error)
-        *error = error_;
-      return (HE_NONE == error_) ? SR_EOS : SR_ERROR;
-    }
-
-    if (HM_RECV != base_->mode_) {
-      return SR_BLOCK;
-    }
-
-    // DoReceiveLoop writes http document data to the StreamInterface* document
-    // member of HttpData.  In this case, we want this data to be written
-    // directly to our buffer.  To accomplish this, we wrap our buffer with a
-    // StreamInterface, and replace the existing document with our wrapper.
-    // When the method returns, we restore the old document.  Ideally, we would
-    // pass our StreamInterface* to DoReceiveLoop, but due to the callbacks
-    // of HttpParser, we would still need to store the pointer temporarily.
-    std::unique_ptr<StreamInterface> stream(
-        new BlockingMemoryStream(reinterpret_cast<char*>(buffer), buffer_len));
-
-    // Replace the existing document with our wrapped buffer.
-    base_->data_->document.swap(stream);
-
-    // Pump the I/O loop.  DoReceiveLoop is guaranteed not to attempt to
-    // complete the I/O process, which means that our wrapper is not in danger
-    // of being deleted.  To ensure this, DoReceiveLoop returns true when it
-    // wants complete to be called.  We make sure to uninstall our wrapper
-    // before calling complete().
-    HttpError http_error;
-    bool complete = base_->DoReceiveLoop(&http_error);
-
-    // Reinstall the original output document.
-    base_->data_->document.swap(stream);
-
-    // If we reach the end of the receive stream, we disconnect our stream
-    // adapter from the HttpBase, and further calls to read will either return
-    // EOS or ERROR, appropriately.  Finally, we call complete().
-    StreamResult result = SR_BLOCK;
-    if (complete) {
-      HttpBase* base = Disconnect(http_error);
-      if (error)
-        *error = error_;
-      result = (HE_NONE == error_) ? SR_EOS : SR_ERROR;
-      base->complete(http_error);
-    }
-
-    // Even if we are complete, if some data was read we must return SUCCESS.
-    // Future Reads will return EOS or ERROR based on the error_ variable.
-    size_t position;
-    stream->GetPosition(&position);
-    if (position > 0) {
-      if (read)
-        *read = position;
-      result = SR_SUCCESS;
-    }
-    return result;
-  }
-
-  StreamResult Write(const void* data,
-                     size_t data_len,
-                     size_t* written,
-                     int* error) override {
-    if (error)
-      *error = -1;
-    return SR_ERROR;
-  }
-
-  void Close() override {
-    if (base_) {
-      HttpBase* base = Disconnect(HE_NONE);
-      if (HM_RECV == base->mode_ && base->http_stream_) {
-        // Read I/O could have been stalled on the user of this DocumentStream,
-        // so restart the I/O process now that we've removed ourselves.
-        base->http_stream_->PostEvent(SE_READ, 0);
-      }
-    }
-  }
-
-  bool GetAvailable(size_t* size) const override {
-    if (!base_ || HM_RECV != base_->mode_)
-      return false;
-    size_t data_size = base_->GetDataRemaining();
-    if (SIZE_UNKNOWN == data_size)
-      return false;
-    if (size)
-      *size = data_size;
-    return true;
-  }
-
-  HttpBase* Disconnect(HttpError error) {
-    RTC_DCHECK(nullptr != base_);
-    RTC_DCHECK(nullptr != base_->doc_stream_);
-    HttpBase* base = base_;
-    base_->doc_stream_ = nullptr;
-    base_ = nullptr;
-    error_ = error;
-    return base;
-  }
-
- private:
-  HttpBase* base_;
-  HttpError error_;
-};
-
-//////////////////////////////////////////////////////////////////////
 // HttpBase
 //////////////////////////////////////////////////////////////////////
 
 HttpBase::HttpBase()
-    : mode_(HM_NONE),
-      data_(nullptr),
-      notify_(nullptr),
-      http_stream_(nullptr),
-      doc_stream_(nullptr) {}
+    : mode_(HM_NONE), data_(nullptr), notify_(nullptr), http_stream_(nullptr) {}
 
 HttpBase::~HttpBase() {
   RTC_DCHECK(HM_NONE == mode_);
@@ -451,11 +313,7 @@ void HttpBase::recv(HttpData* data) {
   ignore_data_ = chunk_data_ = false;
 
   reset();
-  if (doc_stream_) {
-    doc_stream_->SignalEvent(doc_stream_, SE_OPEN | SE_READ, 0);
-  } else {
-    read_and_process_data();
-  }
+  read_and_process_data();
 }
 
 void HttpBase::abort(HttpError err) {
@@ -465,13 +323,6 @@ void HttpBase::abort(HttpError err) {
     }
     do_complete(err);
   }
-}
-
-StreamInterface* HttpBase::GetDocumentStream() {
-  if (doc_stream_)
-    return nullptr;
-  doc_stream_ = new DocumentStream(this);
-  return doc_stream_;
 }
 
 HttpError HttpBase::HandleStreamClose(int error) {
@@ -730,13 +581,6 @@ void HttpBase::do_complete(HttpError err) {
     data_->document->SignalEvent.disconnect(this);
   }
   data_ = nullptr;
-  if ((HM_RECV == mode) && doc_stream_) {
-    RTC_DCHECK(HE_NONE !=
-               err);  // We should have Disconnected doc_stream_ already.
-    DocumentStream* ds = doc_stream_;
-    ds->Disconnect(err);
-    ds->SignalEvent(ds, SE_CLOSE, err);
-  }
   if (notify_) {
     notify_->onHttpComplete(mode, err);
   }
@@ -761,11 +605,7 @@ void HttpBase::OnHttpStreamEvent(StreamInterface* stream,
   }
 
   if ((events & SE_READ) && (mode_ == HM_RECV)) {
-    if (doc_stream_) {
-      doc_stream_->SignalEvent(doc_stream_, SE_READ, 0);
-    } else {
-      read_and_process_data();
-    }
+    read_and_process_data();
     return;
   }
 
@@ -825,7 +665,6 @@ HttpParser::ProcessResult HttpBase::ProcessHeader(const char* name,
 HttpParser::ProcessResult HttpBase::ProcessHeaderComplete(bool chunked,
                                                           size_t& data_size,
                                                           HttpError* error) {
-  StreamInterface* old_docstream = doc_stream_;
   if (notify_) {
     *error = notify_->onHttpHeaderComplete(chunked, data_size);
     // The request must not be aborted as a result of this callback.
@@ -836,10 +675,6 @@ HttpParser::ProcessResult HttpBase::ProcessHeaderComplete(bool chunked,
   }
   if (HE_NONE != *error) {
     return PR_COMPLETE;
-  }
-  if (old_docstream != doc_stream_) {
-    // Break out of Process loop, since our I/O model just changed.
-    return PR_BLOCK;
   }
   return PR_CONTINUE;
 }

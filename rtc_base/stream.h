@@ -421,18 +421,6 @@ class MemoryStream : public MemoryStreamBase {
   StreamResult DoReserve(size_t size, int* error) override;
 };
 
-// ExternalMemoryStream adapts an external memory buffer, so writes which would
-// extend past the end of the buffer will return end-of-stream.
-
-class ExternalMemoryStream : public MemoryStreamBase {
- public:
-  ExternalMemoryStream();
-  ExternalMemoryStream(void* data, size_t length);
-  ~ExternalMemoryStream() override;
-
-  void SetData(void* data, size_t length);
-};
-
 // FifoBuffer allows for efficient, thread-safe buffering of data between
 // writer and reader. As the data can wrap around the end of the buffer,
 // MemoryStreamBase can't help us here.
