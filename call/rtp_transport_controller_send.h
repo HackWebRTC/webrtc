@@ -85,6 +85,8 @@ class RtpTransportControllerSend final
   void SetSdpBitrateParameters(const BitrateConstraints& constraints) override;
   void SetClientBitratePreferences(const BitrateSettings& preferences) override;
 
+  void SetAllocatedBitrateWithoutFeedback(uint32_t bitrate_bps) override;
+
  private:
   const Clock* const clock_;
   PacketRouter packet_router_;

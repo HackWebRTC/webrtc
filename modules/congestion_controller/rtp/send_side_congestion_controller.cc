@@ -773,6 +773,9 @@ void SendSideCongestionController::SetPacingFactor(float pacing_factor) {
   });
 }
 
+void SendSideCongestionController::SetAllocatedBitrateWithoutFeedback(
+    uint32_t bitrate_bps) {}
+
 void SendSideCongestionController::DisablePeriodicTasks() {
   task_queue_->PostTask([this]() {
     RTC_DCHECK_RUN_ON(task_queue_);

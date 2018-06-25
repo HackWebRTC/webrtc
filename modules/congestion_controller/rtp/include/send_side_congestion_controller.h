@@ -139,6 +139,8 @@ class SendSideCongestionController
 
   void SetPacingFactor(float pacing_factor) override;
 
+  void SetAllocatedBitrateWithoutFeedback(uint32_t bitrate_bps) override;
+
  protected:
   // TODO(srte): The tests should be rewritten to not depend on internals and
   // these functions should be removed.

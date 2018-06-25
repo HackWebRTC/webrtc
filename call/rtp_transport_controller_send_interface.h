@@ -110,6 +110,8 @@ class RtpTransportControllerSendInterface {
       const BitrateConstraints& constraints) = 0;
   virtual void SetClientBitratePreferences(
       const BitrateSettings& preferences) = 0;
+
+  virtual void SetAllocatedBitrateWithoutFeedback(uint32_t bitrate_bps) = 0;
 };
 
 }  // namespace webrtc

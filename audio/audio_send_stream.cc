@@ -294,7 +294,8 @@ void AudioSendStream::Start() {
       !webrtc::field_trial::IsEnabled("WebRTC-Audio-ForceNoTWCC");
   if (config_.min_bitrate_bps != -1 && config_.max_bitrate_bps != -1 &&
       (has_transport_sequence_number ||
-       !webrtc::field_trial::IsEnabled("WebRTC-Audio-SendSideBwe"))) {
+       !webrtc::field_trial::IsEnabled("WebRTC-Audio-SendSideBwe") ||
+       webrtc::field_trial::IsEnabled("WebRTC-Audio-ABWENoTWCC"))) {
     // Audio BWE is enabled.
     transport_->packet_sender()->SetAccountForAudioPackets(true);
     ConfigureBitrateObserver(config_.min_bitrate_bps, config_.max_bitrate_bps,
@@ -409,6 +410,12 @@ uint32_t AudioSendStream::OnBitrateUpdated(uint32_t bitrate_bps,
                                            uint8_t fraction_loss,
                                            int64_t rtt,
                                            int64_t bwe_period_ms) {
+  // Audio transport feedback will not be reported in this mode, instead update
+  // acknowledged bitrate estimator with the bitrate allocated for audio.
+  if (webrtc::field_trial::IsEnabled("WebRTC-Audio-ABWENoTWCC")) {
+    transport_->SetAllocatedBitrateWithoutFeedback(bitrate_bps);
+  }
+
   // A send stream may be allocated a bitrate of zero if the allocator decides
   // to disable it. For now we ignore this decision and keep sending on min
   // bitrate.

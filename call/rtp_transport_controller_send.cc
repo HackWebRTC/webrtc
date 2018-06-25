@@ -264,4 +264,9 @@ void RtpTransportControllerSend::SetClientBitratePreferences(
         << "nothing to update";
   }
 }
+
+void RtpTransportControllerSend::SetAllocatedBitrateWithoutFeedback(
+    uint32_t bitrate_bps) {
+  send_side_cc_->SetAllocatedBitrateWithoutFeedback(bitrate_bps);
+}
 }  // namespace webrtc

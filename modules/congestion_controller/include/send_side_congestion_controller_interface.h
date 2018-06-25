@@ -64,6 +64,7 @@ class SendSideCongestionControllerInterface : public CallStatsObserver,
   virtual void EnablePeriodicAlrProbing(bool enable) = 0;
   virtual void OnSentPacket(const rtc::SentPacket& sent_packet) = 0;
   virtual void SetPacingFactor(float pacing_factor) = 0;
+  virtual void SetAllocatedBitrateWithoutFeedback(uint32_t bitrate_bps) = 0;
   RTC_DISALLOW_COPY_AND_ASSIGN(SendSideCongestionControllerInterface);
 };
 

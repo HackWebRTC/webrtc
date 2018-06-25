@@ -120,6 +120,8 @@ class SendSideCongestionController
 
   void SetPacingFactor(float pacing_factor) override;
 
+  void SetAllocatedBitrateWithoutFeedback(uint32_t bitrate_bps) override;
+
  private:
   void MaybeTriggerOnNetworkChanged();
 

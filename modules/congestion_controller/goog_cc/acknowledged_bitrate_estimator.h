@@ -33,11 +33,13 @@ class AcknowledgedBitrateEstimator {
       const std::vector<PacketFeedback>& packet_feedback_vector);
   absl::optional<uint32_t> bitrate_bps() const;
   void SetAlrEndedTimeMs(int64_t alr_ended_time_ms);
+  void SetAllocatedBitrateWithoutFeedback(uint32_t bitrate_bps);
 
  private:
   void MaybeExpectFastRateChange(int64_t packet_arrival_time_ms);
   absl::optional<int64_t> alr_ended_time_ms_;
   std::unique_ptr<BitrateEstimator> bitrate_estimator_;
+  absl::optional<uint32_t> allocated_bitrate_without_feedback_bps_;
 };
 
 }  // namespace webrtc
