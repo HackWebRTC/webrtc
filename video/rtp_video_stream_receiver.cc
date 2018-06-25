@@ -286,8 +286,6 @@ void RtpVideoStreamReceiver::OnRtpPacket(const RtpPacketReceived& packet) {
 
   header.payload_type_frequency = kVideoPayloadTypeFrequency;
 
-  bool in_order = IsPacketInOrder(header);
-
   ReceivePacket(packet.data(), packet.size(), header);
   // Update receive statistics after ReceivePacket.
   // Receive statistics will be reset if the payload type changes (make sure
@@ -295,8 +293,8 @@ void RtpVideoStreamReceiver::OnRtpPacket(const RtpPacketReceived& packet) {
   if (!packet.recovered()) {
     // TODO(nisse): We should pass a recovered flag to stats, to aid
     // fixing bug bugs.webrtc.org/6339.
-    rtp_receive_statistics_->IncomingPacket(
-        header, packet.size(), IsPacketRetransmitted(header, in_order));
+    rtp_receive_statistics_->IncomingPacket(header, packet.size(),
+                                            IsPacketRetransmitted(header));
   }
 
   for (RtpPacketSinkInterface* secondary_sink : secondary_sinks_) {
@@ -528,16 +526,8 @@ void RtpVideoStreamReceiver::StopReceive() {
   receiving_ = false;
 }
 
-bool RtpVideoStreamReceiver::IsPacketInOrder(const RTPHeader& header) const {
-  StreamStatistician* statistician =
-      rtp_receive_statistics_->GetStatistician(header.ssrc);
-  if (!statistician)
-    return false;
-  return statistician->IsPacketInOrder(header.sequenceNumber);
-}
-
-bool RtpVideoStreamReceiver::IsPacketRetransmitted(const RTPHeader& header,
-                                                   bool in_order) const {
+bool RtpVideoStreamReceiver::IsPacketRetransmitted(
+    const RTPHeader& header) const {
   // Retransmissions are handled separately if RTX is enabled.
   if (config_.rtp.rtx_ssrc != 0)
     return false;
@@ -545,7 +535,7 @@ bool RtpVideoStreamReceiver::IsPacketRetransmitted(const RTPHeader& header,
       rtp_receive_statistics_->GetStatistician(header.ssrc);
   if (!statistician)
     return false;
-  return !in_order && statistician->IsRetransmitOfOldPacket(header);
+  return statistician->IsRetransmitOfOldPacket(header);
 }
 
 void RtpVideoStreamReceiver::UpdateHistograms() {

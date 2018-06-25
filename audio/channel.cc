@@ -872,9 +872,8 @@ void Channel::OnRtpPacket(const RtpPacketReceived& packet) {
   header.payload_type_frequency =
       rtp_payload_registry_->GetPayloadTypeFrequency(header.payloadType);
   if (header.payload_type_frequency >= 0) {
-    bool in_order = IsPacketInOrder(header);
-    rtp_receive_statistics_->IncomingPacket(
-        header, packet.size(), IsPacketRetransmitted(header, in_order));
+    rtp_receive_statistics_->IncomingPacket(header, packet.size(),
+                                            IsPacketRetransmitted(header));
 
     ReceivePacket(packet.data(), packet.size(), header);
   }
@@ -895,22 +894,13 @@ bool Channel::ReceivePacket(const uint8_t* packet,
                                           pl->typeSpecific);
 }
 
-bool Channel::IsPacketInOrder(const RTPHeader& header) const {
-  StreamStatistician* statistician =
-      rtp_receive_statistics_->GetStatistician(header.ssrc);
-  if (!statistician)
-    return false;
-  return statistician->IsPacketInOrder(header.sequenceNumber);
-}
-
-bool Channel::IsPacketRetransmitted(const RTPHeader& header,
-                                    bool in_order) const {
+bool Channel::IsPacketRetransmitted(const RTPHeader& header) const {
   StreamStatistician* statistician =
       rtp_receive_statistics_->GetStatistician(header.ssrc);
   if (!statistician)
     return false;
   // Check if this is a retransmission.
-  return !in_order && statistician->IsRetransmitOfOldPacket(header);
+  return statistician->IsRetransmitOfOldPacket(header);
 }
 
 int32_t Channel::ReceivedRTCPPacket(const uint8_t* data, size_t length) {

@@ -310,11 +310,6 @@ bool StreamStatisticianImpl::IsRetransmitOfOldPacket(
   return time_diff_ms > rtp_time_stamp_diff_ms + max_delay_ms;
 }
 
-bool StreamStatisticianImpl::IsPacketInOrder(uint16_t sequence_number) const {
-  rtc::CritScope cs(&stream_lock_);
-  return InOrderPacketInternal(sequence_number);
-}
-
 bool StreamStatisticianImpl::InOrderPacketInternal(
     uint16_t sequence_number) const {
   // First packet is always in order.
