@@ -27,8 +27,6 @@ class VCMFrameBuffer : public VCMEncodedFrame {
   VCMFrameBuffer();
   virtual ~VCMFrameBuffer();
 
-  VCMFrameBuffer(const VCMFrameBuffer& rhs);
-
   virtual void Reset();
 
   VCMFrameBufferEnum InsertPacket(const VCMPacket& packet,

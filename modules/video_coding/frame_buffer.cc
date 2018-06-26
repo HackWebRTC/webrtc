@@ -25,16 +25,6 @@ VCMFrameBuffer::VCMFrameBuffer()
 
 VCMFrameBuffer::~VCMFrameBuffer() {}
 
-VCMFrameBuffer::VCMFrameBuffer(const VCMFrameBuffer& rhs)
-    : VCMEncodedFrame(rhs),
-      _state(rhs._state),
-      _sessionInfo(),
-      _nackCount(rhs._nackCount),
-      _latestPacketTimeMs(rhs._latestPacketTimeMs) {
-  _sessionInfo = rhs._sessionInfo;
-  _sessionInfo.UpdateDataPointers(rhs._buffer, _buffer);
-}
-
 webrtc::FrameType VCMFrameBuffer::FrameType() const {
   return _sessionInfo.FrameType();
 }

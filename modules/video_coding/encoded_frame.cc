@@ -22,43 +22,6 @@ VCMEncodedFrame::VCMEncodedFrame()
   _codecSpecificInfo.codecType = kVideoCodecUnknown;
 }
 
-VCMEncodedFrame::VCMEncodedFrame(const webrtc::EncodedImage& rhs)
-    : webrtc::EncodedImage(rhs),
-      _renderTimeMs(-1),
-      _payloadType(0),
-      _missingFrame(false),
-      _codec(kVideoCodecUnknown),
-      _rotation_set(false) {
-  _codecSpecificInfo.codecType = kVideoCodecUnknown;
-  _buffer = NULL;
-  _size = 0;
-  _length = 0;
-  if (rhs._buffer != NULL) {
-    VerifyAndAllocate(rhs._length +
-                      EncodedImage::GetBufferPaddingBytes(_codec));
-    memcpy(_buffer, rhs._buffer, rhs._length);
-  }
-}
-
-VCMEncodedFrame::VCMEncodedFrame(const VCMEncodedFrame& rhs)
-    : webrtc::EncodedImage(rhs),
-      _renderTimeMs(rhs._renderTimeMs),
-      _payloadType(rhs._payloadType),
-      _missingFrame(rhs._missingFrame),
-      _codecSpecificInfo(rhs._codecSpecificInfo),
-      _codec(rhs._codec),
-      _rotation_set(rhs._rotation_set) {
-  _buffer = NULL;
-  _size = 0;
-  _length = 0;
-  if (rhs._buffer != NULL) {
-    VerifyAndAllocate(rhs._length +
-                      EncodedImage::GetBufferPaddingBytes(_codec));
-    memcpy(_buffer, rhs._buffer, rhs._length);
-    _length = rhs._length;
-  }
-}
-
 VCMEncodedFrame::~VCMEncodedFrame() {
   Free();
 }
