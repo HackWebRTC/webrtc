@@ -1762,7 +1762,7 @@ TEST_P(PeerConnectionInterfaceTest, IceCandidates) {
 
 // Test that CreateOffer and CreateAnswer will fail if the track labels are
 // not unique.
-TEST_P(PeerConnectionInterfaceTest, CreateOfferAnswerWithInvalidStream) {
+TEST_F(PeerConnectionInterfaceTestPlanB, CreateOfferAnswerWithInvalidStream) {
   CreatePeerConnectionWithoutDtls();
   // Create a regular offer for the CreateAnswer test later.
   std::unique_ptr<SessionDescriptionInterface> offer;

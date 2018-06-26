@@ -1253,6 +1253,67 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan, AddRemoveAddTrackOffersWorksVideo) {
   EXPECT_EQ(sender1, sender2);
 }
 
+// Test that CreateOffer succeeds if two tracks with the same label are added.
+TEST_F(PeerConnectionRtpTestUnifiedPlan, CreateOfferSameTrackLabel) {
+  auto caller = CreatePeerConnection();
+
+  auto audio_sender = caller->AddAudioTrack("track", {});
+  auto video_sender = caller->AddVideoTrack("track", {});
+
+  EXPECT_TRUE(caller->CreateOffer());
+
+  EXPECT_EQ(audio_sender->track()->id(), video_sender->track()->id());
+  EXPECT_NE(audio_sender->id(), video_sender->id());
+}
+
+// Test that CreateAnswer succeeds if two tracks with the same label are added.
+TEST_F(PeerConnectionRtpTestUnifiedPlan, CreateAnswerSameTrackLabel) {
+  auto caller = CreatePeerConnection();
+  auto callee = CreatePeerConnection();
+
+  RtpTransceiverInit recvonly;
+  recvonly.direction = RtpTransceiverDirection::kRecvOnly;
+  caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO, recvonly);
+  caller->AddTransceiver(cricket::MEDIA_TYPE_VIDEO, recvonly);
+
+  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOffer()));
+
+  auto audio_sender = callee->AddAudioTrack("track", {});
+  auto video_sender = callee->AddVideoTrack("track", {});
+
+  EXPECT_TRUE(callee->CreateAnswer());
+
+  EXPECT_EQ(audio_sender->track()->id(), video_sender->track()->id());
+  EXPECT_NE(audio_sender->id(), video_sender->id());
+}
+
+// Test that calling AddTrack, RemoveTrack and AddTrack again creates a second
+// m= section with a random sender id (different from the first, now rejected,
+// m= section).
+TEST_F(PeerConnectionRtpTestUnifiedPlan,
+       AddRemoveAddTrackGeneratesNewSenderId) {
+  auto caller = CreatePeerConnection();
+  auto callee = CreatePeerConnection();
+
+  auto track = caller->CreateVideoTrack("video");
+  auto sender1 = caller->AddTrack(track);
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+
+  caller->pc()->RemoveTrack(sender1);
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+
+  auto sender2 = caller->AddTrack(track);
+
+  EXPECT_NE(sender1, sender2);
+  EXPECT_NE(sender1->id(), sender2->id());
+  std::string sender2_id = sender2->id();
+
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+
+  // The sender's ID should not change after negotiation.
+  EXPECT_EQ(sender2_id, sender2->id());
+}
+
 // Test that OnRenegotiationNeeded is fired if SetDirection is called on an
 // active RtpTransceiver with a new direction.
 TEST_F(PeerConnectionRtpTestUnifiedPlan,

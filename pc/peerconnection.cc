@@ -1254,7 +1254,14 @@ PeerConnection::AddTrackUnifiedPlan(
              : cricket::MEDIA_TYPE_VIDEO);
     RTC_LOG(LS_INFO) << "Adding " << cricket::MediaTypeToString(media_type)
                      << " transceiver in response to a call to AddTrack.";
-    auto sender = CreateSender(media_type, track->id(), track, stream_ids);
+    std::string sender_id = track->id();
+    // Avoid creating a sender with an existing ID by generating a random ID.
+    // This can happen if this is the second time AddTrack has created a sender
+    // for this track.
+    if (FindSenderById(sender_id)) {
+      sender_id = rtc::CreateRandomUuid();
+    }
+    auto sender = CreateSender(media_type, sender_id, track, stream_ids);
     auto receiver = CreateReceiver(media_type, rtc::CreateRandomUuid());
     transceiver = CreateAndAddTransceiver(sender, receiver);
     transceiver->internal()->set_created_by_addtrack(true);
@@ -1399,9 +1406,12 @@ PeerConnection::AddTransceiver(
 
   RTC_LOG(LS_INFO) << "Adding " << cricket::MediaTypeToString(media_type)
                    << " transceiver in response to a call to AddTransceiver.";
-  auto sender =
-      CreateSender(media_type, (track ? track->id() : rtc::CreateRandomUuid()),
-                   track, init.stream_ids);
+  // Set the sender ID equal to the track ID if the track is specified unless
+  // that sender ID is already in use.
+  std::string sender_id =
+      (track && !FindSenderById(track->id()) ? track->id()
+                                             : rtc::CreateRandomUuid());
+  auto sender = CreateSender(media_type, sender_id, track, init.stream_ids);
   auto receiver = CreateReceiver(media_type, rtc::CreateRandomUuid());
   auto transceiver = CreateAndAddTransceiver(sender, receiver);
   transceiver->internal()->set_direction(init.direction);
@@ -1466,6 +1476,11 @@ PeerConnection::CreateAndAddTransceiver(
     rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> sender,
     rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
         receiver) {
+  // Ensure that the new sender does not have an ID that is already in use by
+  // another sender.
+  // Allow receiver IDs to conflict since those come from remote SDP (which
+  // could be invalid, but should not cause a crash).
+  RTC_DCHECK(!FindSenderById(sender->id()));
   auto transceiver = RtpTransceiverProxyWithInternal<RtpTransceiver>::Create(
       signaling_thread(), new RtpTransceiver(sender, receiver));
   transceivers_.push_back(transceiver);
