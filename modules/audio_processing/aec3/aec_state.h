@@ -136,8 +136,10 @@ class AecState {
               const std::array<float, kFftLengthBy2Plus1>& Y2,
               const std::array<float, kBlockSize>& s);
 
-  // Returns the gain at the tail of the linear filter.
-  float GetFilterTailGain() const { return filter_analyzer_.GetTailGain(); }
+  // Returns the tail freq. response of the linear filter.
+  rtc::ArrayView<const float> GetFreqRespTail() const {
+    return filter_analyzer_.GetFreqRespTail();
+  }
 
   // Returns filter length in blocks.
   int FilterLengthBlocks() const {

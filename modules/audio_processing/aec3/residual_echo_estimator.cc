@@ -106,7 +106,8 @@ void ResidualEchoEstimator::Estimate(
     if (echo_reverb_) {
       echo_reverb_->AddReverb(
           render_buffer.Spectrum(aec_state.FilterLengthBlocks() + 1),
-          aec_state.GetFilterTailGain(), aec_state.ReverbDecay(), *R2);
+          aec_state.GetFreqRespTail(), aec_state.ReverbDecay(), *R2);
+
     } else {
       RTC_DCHECK(echo_reverb_fallback);
       echo_reverb_fallback->AddEchoReverb(S2_linear,
@@ -151,7 +152,7 @@ void ResidualEchoEstimator::Estimate(
 
     if (!(aec_state.TransparentMode() && soft_transparent_mode_)) {
       if (echo_reverb_) {
-        echo_reverb_->AddReverb(
+        echo_reverb_->AddReverbNoFreqShaping(
             render_buffer.Spectrum(aec_state.FilterDelayBlocks() + 1),
             echo_path_gain * echo_path_gain, aec_state.ReverbDecay(), *R2);
       } else {

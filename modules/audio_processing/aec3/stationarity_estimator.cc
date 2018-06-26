@@ -78,8 +78,8 @@ void StationarityEstimator::UpdateStationarityFlags(
       spectrum_buffer.OffsetIndex(idx_current, -(num_lookahead_bounded + 1)));
 
   int idx_past = spectrum_buffer.IncIndex(idx_current);
-  render_reverb_.UpdateReverbContributions(spectrum_buffer.buffer[idx_past], 1.,
-                                           reverb_decay);
+  render_reverb_.UpdateReverbContributionsNoFreqShaping(
+      spectrum_buffer.buffer[idx_past], 1.0f, reverb_decay);
   for (size_t k = 0; k < stationarity_flags_.size(); ++k) {
     stationarity_flags_[k] = EstimateBandStationarity(
         spectrum_buffer, render_reverb_.GetPowerSpectrum(), indexes, k);

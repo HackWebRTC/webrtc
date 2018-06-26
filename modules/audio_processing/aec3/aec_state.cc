@@ -126,7 +126,8 @@ void AecState::Update(
     const std::array<float, kFftLengthBy2Plus1>& Y2,
     const std::array<float, kBlockSize>& s) {
   // Analyze the filter and compute the delays.
-  filter_analyzer_.Update(adaptive_filter_impulse_response, render_buffer);
+  filter_analyzer_.Update(adaptive_filter_impulse_response,
+                          adaptive_filter_frequency_response, render_buffer);
   filter_delay_blocks_ = filter_analyzer_.DelayBlocks();
   if (enforce_delay_after_realignment_) {
     if (external_delay &&
@@ -307,7 +308,7 @@ void AecState::Update(
                         recently_converged_filter);
   data_dumper_->DumpRaw("aec3_suppresion_gain_limiter_running",
                         IsSuppressionGainLimitActive());
-  data_dumper_->DumpRaw("aec3_filter_tail_energy", GetFilterTailGain());
+  data_dumper_->DumpRaw("aec3_filter_tail_freq_resp_est", GetFreqRespTail());
 }
 
 void AecState::UpdateReverb(const std::vector<float>& impulse_response) {
