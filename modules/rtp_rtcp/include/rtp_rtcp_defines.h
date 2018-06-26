@@ -15,6 +15,7 @@
 #include <list>
 #include <vector>
 
+#include "absl/types/variant.h"
 #include "api/audio_codecs/audio_format.h"
 #include "api/rtp_headers.h"
 #include "common_types.h"  // NOLINT(build/include)
@@ -71,28 +72,23 @@ class PayloadUnion {
   PayloadUnion& operator=(const PayloadUnion&);
   PayloadUnion& operator=(PayloadUnion&&);
 
-  bool is_audio() const { return audio_payload_.has_value(); }
-  bool is_video() const { return video_payload_.has_value(); }
+  bool is_audio() const {
+    return absl::holds_alternative<AudioPayload>(payload_);
+  }
+  bool is_video() const {
+    return absl::holds_alternative<VideoPayload>(payload_);
+  }
   const AudioPayload& audio_payload() const {
-    RTC_DCHECK(audio_payload_);
-    return *audio_payload_;
+    return absl::get<AudioPayload>(payload_);
   }
   const VideoPayload& video_payload() const {
-    RTC_DCHECK(video_payload_);
-    return *video_payload_;
+    return absl::get<VideoPayload>(payload_);
   }
-  AudioPayload& audio_payload() {
-    RTC_DCHECK(audio_payload_);
-    return *audio_payload_;
-  }
-  VideoPayload& video_payload() {
-    RTC_DCHECK(video_payload_);
-    return *video_payload_;
-  }
+  AudioPayload& audio_payload() { return absl::get<AudioPayload>(payload_); }
+  VideoPayload& video_payload() { return absl::get<VideoPayload>(payload_); }
 
  private:
-  absl::optional<AudioPayload> audio_payload_;
-  absl::optional<VideoPayload> video_payload_;
+  absl::variant<AudioPayload, VideoPayload> payload_;
 };
 
 enum RTPAliveType { kRtpDead = 0, kRtpNoRtp = 1, kRtpAlive = 2 };

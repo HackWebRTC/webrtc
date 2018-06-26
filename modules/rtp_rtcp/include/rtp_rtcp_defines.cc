@@ -33,10 +33,8 @@ void StreamId::Set(const char* data, size_t size) {
 // and thus assume trivial destructibility.
 static_assert(std::is_trivially_destructible<StreamId>::value, "");
 
-PayloadUnion::PayloadUnion(const AudioPayload& payload)
-    : audio_payload_(payload) {}
-PayloadUnion::PayloadUnion(const VideoPayload& payload)
-    : video_payload_(payload) {}
+PayloadUnion::PayloadUnion(const AudioPayload& payload) : payload_(payload) {}
+PayloadUnion::PayloadUnion(const VideoPayload& payload) : payload_(payload) {}
 PayloadUnion::PayloadUnion(const PayloadUnion&) = default;
 PayloadUnion::PayloadUnion(PayloadUnion&&) = default;
 PayloadUnion::~PayloadUnion() = default;
