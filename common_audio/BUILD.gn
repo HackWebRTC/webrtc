@@ -61,6 +61,7 @@ rtc_static_library("common_audio") {
 
   deps = [
     ":common_audio_c",
+    ":fft4g",
     ":sinc_resampler",
     "..:webrtc_common",
     "../:typedefs",
@@ -130,8 +131,6 @@ rtc_source_set("common_audio_c_arm_asm") {
 rtc_source_set("common_audio_c") {
   visibility += webrtc_default_visibility
   sources = [
-    "fft4g.c",
-    "fft4g.h",
     "ring_buffer.c",
     "ring_buffer.h",
     "signal_processing/auto_corr_to_refl_coef.c",
@@ -216,6 +215,7 @@ rtc_source_set("common_audio_c") {
   deps = [
     ":common_audio_c_arm_asm",
     ":common_audio_cc",
+    ":fft4g",
     "..:webrtc_common",
     "../:typedefs",
     "../rtc_base:checks",
@@ -224,6 +224,14 @@ rtc_source_set("common_audio_c") {
     "../rtc_base:sanitizer",
     "../system_wrappers",
     "../system_wrappers:cpu_features_api",
+  ]
+}
+
+rtc_source_set("fft4g") {
+  visibility += webrtc_default_visibility
+  sources = [
+    "fft4g.c",
+    "fft4g.h",
   ]
 }
 
