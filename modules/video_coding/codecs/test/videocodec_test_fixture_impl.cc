@@ -76,6 +76,8 @@ void ConfigureSvc(VideoCodec* codec_settings) {
                    codec_settings->VP9()->numberOfSpatialLayers,
                    codec_settings->VP9()->numberOfTemporalLayers,
                    /* is_screen_sharing = */ false);
+  ASSERT_EQ(codec_settings->VP9()->numberOfSpatialLayers, layers.size())
+      << "GetSvcConfig returned fewer spatial layers than configured.";
 
   for (size_t i = 0; i < layers.size(); ++i) {
     codec_settings->spatialLayers[i] = layers[i];

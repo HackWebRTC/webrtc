@@ -175,6 +175,7 @@ bool VP9EncoderImpl::SetSvcRates(
     }
 
     for (i = 0; i < num_active_spatial_layers_; ++i) {
+      RTC_CHECK_GT(total, 0);
       config_->ss_target_bitrate[i] = static_cast<unsigned int>(
           config_->rc_target_bitrate * rate_ratio[i] / total);
       if (num_temporal_layers_ == 1) {
@@ -436,6 +437,7 @@ int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
   if (ExplicitlyConfiguredSpatialLayers()) {
     for (int i = 0; i < num_spatial_layers_; ++i) {
       const auto& layer = codec_.spatialLayers[i];
+      RTC_CHECK_GT(layer.width, 0);
       const int scale_factor = codec_.width / layer.width;
       RTC_DCHECK_GT(scale_factor, 0);
 
