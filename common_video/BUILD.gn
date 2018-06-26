@@ -95,8 +95,8 @@ if (rtc_include_tests) {
       "h264/sps_parser_unittest.cc",
       "h264/sps_vui_rewriter_unittest.cc",
       "i420_buffer_pool_unittest.cc",
-      "i420_video_frame_unittest.cc",
       "libyuv/libyuv_unittest.cc",
+      "video_frame_unittest.cc",
     ]
 
     if (!build_with_chromium && is_clang) {
@@ -107,6 +107,7 @@ if (rtc_include_tests) {
     deps = [
       ":common_video",
       "../api/video:video_frame",
+      "../api/video:video_frame_i010",
       "../api/video:video_frame_i420",
       "../modules/video_capture:video_capture",
       "../rtc_base:rtc_base",
