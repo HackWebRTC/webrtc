@@ -121,6 +121,37 @@ bool FieldTrialFlag::Parse(absl::optional<std::string> str_value) {
   return true;
 }
 
+AbstractFieldTrialEnum::AbstractFieldTrialEnum(
+    std::string key,
+    int default_value,
+    std::map<std::string, int> mapping)
+    : FieldTrialParameterInterface(key),
+      value_(default_value),
+      enum_mapping_(mapping) {
+  for (auto& key_val : enum_mapping_)
+    valid_values_.insert(key_val.second);
+}
+AbstractFieldTrialEnum::AbstractFieldTrialEnum(const AbstractFieldTrialEnum&) =
+    default;
+AbstractFieldTrialEnum::~AbstractFieldTrialEnum() = default;
+
+bool AbstractFieldTrialEnum::Parse(absl::optional<std::string> str_value) {
+  if (str_value) {
+    auto it = enum_mapping_.find(*str_value);
+    if (it != enum_mapping_.end()) {
+      value_ = it->second;
+      return true;
+    }
+    absl::optional<int> value = ParseTypedParameter<int>(*str_value);
+    if (value.has_value() &&
+        (valid_values_.find(*value) != valid_values_.end())) {
+      value_ = *value;
+      return true;
+    }
+  }
+  return false;
+}
+
 template class FieldTrialParameter<bool>;
 template class FieldTrialParameter<double>;
 template class FieldTrialParameter<int>;

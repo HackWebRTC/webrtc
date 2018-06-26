@@ -12,6 +12,8 @@
 
 #include <stdint.h>
 #include <initializer_list>
+#include <map>
+#include <set>
 #include <string>
 #include "absl/types/optional.h"
 
@@ -81,6 +83,47 @@ class FieldTrialParameter : public FieldTrialParameterInterface {
 
  private:
   T value_;
+};
+
+class AbstractFieldTrialEnum : public FieldTrialParameterInterface {
+ public:
+  AbstractFieldTrialEnum(std::string key,
+                         int default_value,
+                         std::map<std::string, int> mapping);
+  ~AbstractFieldTrialEnum() override;
+  AbstractFieldTrialEnum(const AbstractFieldTrialEnum&);
+
+ protected:
+  bool Parse(absl::optional<std::string> str_value) override;
+
+ protected:
+  int value_;
+  std::map<std::string, int> enum_mapping_;
+  std::set<int> valid_values_;
+};
+
+// The FieldTrialEnum class can be used to quickly define a parser for a
+// specific enum. It handles values provided as integers and as strings if a
+// mapping is provided.
+template <typename T>
+class FieldTrialEnum : public AbstractFieldTrialEnum {
+ public:
+  FieldTrialEnum(std::string key,
+                 T default_value,
+                 std::map<std::string, T> mapping)
+      : AbstractFieldTrialEnum(key,
+                               static_cast<int>(default_value),
+                               ToIntMap(mapping)) {}
+  T Get() const { return static_cast<T>(value_); }
+  operator T() const { return Get(); }
+
+ private:
+  static std::map<std::string, int> ToIntMap(std::map<std::string, T> mapping) {
+    std::map<std::string, int> res;
+    for (const auto& it : mapping)
+      res[it.first] = static_cast<int>(it.second);
+    return res;
+  }
 };
 
 // This class uses the ParseTypedParameter function to implement an optional
