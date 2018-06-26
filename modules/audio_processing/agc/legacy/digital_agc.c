@@ -412,8 +412,10 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc* stt,
     }
     tmp32 = ((uint32_t)cur_level << zeros) & 0x7FFFFFFF;
     frac = (int16_t)(tmp32 >> 19);  // Q12.
-    tmp32 = (stt->gainTable[zeros - 1] - stt->gainTable[zeros]) * frac;
-    gains[k + 1] = stt->gainTable[zeros] + (tmp32 >> 12);
+    // Interpolate between gainTable[zeros] and gainTable[zeros-1].
+    tmp32 = ((stt->gainTable[zeros - 1] - stt->gainTable[zeros]) *
+             (int64_t)frac) >> 12;
+    gains[k + 1] = stt->gainTable[zeros] + tmp32;
 #ifdef WEBRTC_AGC_DEBUG_DUMP
     if (k == 0) {
       fprintf(stt->logFile, "%d\t%d\t%d\t%d\t%d\n", env[0], cur_level,
