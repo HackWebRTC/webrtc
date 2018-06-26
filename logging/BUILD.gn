@@ -39,6 +39,7 @@ rtc_source_set("rtc_event_log_api") {
 
   deps = [
     "../api:libjingle_logging_api",
+    "../rtc_base:ptr_util",
     "../rtc_base:rtc_base_approved",
     "../rtc_base:rtc_task_queue",
   ]
@@ -66,6 +67,7 @@ rtc_source_set("rtc_event_pacing") {
   deps = [
     ":rtc_event_log_api",
     "../:typedefs",
+    "../rtc_base:ptr_util",
   ]
 }
 
@@ -85,6 +87,7 @@ rtc_source_set("rtc_event_audio") {
     ":rtc_event_log_api",
     ":rtc_stream_config",
     "../modules/audio_coding:audio_network_adaptor_config",
+    "../rtc_base:ptr_util",
   ]
 }
 
@@ -105,6 +108,7 @@ rtc_source_set("rtc_event_bwe") {
   deps = [
     ":rtc_event_log_api",
     "../modules/remote_bitrate_estimator:remote_bitrate_estimator",
+    "../rtc_base:ptr_util",
   ]
 }
 
@@ -124,6 +128,7 @@ rtc_source_set("rtc_event_rtp_rtcp") {
     ":rtc_event_log_api",
     "../api:array_view",
     "../modules/rtp_rtcp:rtp_rtcp_format",
+    "../rtc_base:ptr_util",
     "../rtc_base:rtc_base_approved",
   ]
 }
@@ -139,6 +144,7 @@ rtc_source_set("rtc_event_video") {
   deps = [
     ":rtc_event_log_api",
     ":rtc_stream_config",
+    "../rtc_base:ptr_util",
   ]
 }
 
@@ -314,6 +320,7 @@ if (rtc_enable_protobuf) {
         "rtc_event_log/rtc_event_log_unittest_helper.h",
       ]
       deps = [
+        ":ice_log",
         ":rtc_event_audio",
         ":rtc_event_bwe",
         ":rtc_event_log_api",
@@ -322,6 +329,7 @@ if (rtc_enable_protobuf) {
         ":rtc_event_log_impl_output",
         ":rtc_event_log_parser",
         ":rtc_event_log_proto",
+        ":rtc_event_pacing",
         ":rtc_event_rtp_rtcp",
         ":rtc_event_video",
         ":rtc_stream_config",

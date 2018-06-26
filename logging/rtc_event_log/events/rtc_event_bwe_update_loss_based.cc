@@ -10,6 +10,8 @@
 
 #include "logging/rtc_event_log/events/rtc_event_bwe_update_loss_based.h"
 
+#include "rtc_base/ptr_util.h"
+
 namespace webrtc {
 
 RtcEventBweUpdateLossBased::RtcEventBweUpdateLossBased(int32_t bitrate_bps,
@@ -27,6 +29,11 @@ RtcEvent::Type RtcEventBweUpdateLossBased::GetType() const {
 
 bool RtcEventBweUpdateLossBased::IsConfigEvent() const {
   return false;
+}
+
+std::unique_ptr<RtcEvent> RtcEventBweUpdateLossBased::Copy() const {
+  return rtc::MakeUnique<RtcEventBweUpdateLossBased>(
+      bitrate_bps_, fraction_loss_, total_packets_);
 }
 
 }  // namespace webrtc

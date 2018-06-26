@@ -677,6 +677,23 @@ class ParsedRtcEventLogNew {
     return outgoing_audio_ssrcs_;
   }
 
+  // Stream configurations.
+  const std::vector<LoggedAudioRecvConfig>& audio_recv_configs() const {
+    return audio_recv_configs_;
+  }
+
+  const std::vector<LoggedAudioSendConfig>& audio_send_configs() const {
+    return audio_send_configs_;
+  }
+
+  const std::vector<LoggedVideoRecvConfig>& video_recv_configs() const {
+    return video_recv_configs_;
+  }
+
+  const std::vector<LoggedVideoSendConfig>& video_send_configs() const {
+    return video_send_configs_;
+  }
+
   // Beginning and end of log segments.
   const std::vector<LoggedStartEvent>& start_log_events() const {
     return start_log_events_;

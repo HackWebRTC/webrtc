@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "logging/rtc_event_log/rtc_stream_config.h"
+#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 
@@ -28,6 +29,11 @@ RtcEvent::Type RtcEventAudioSendStreamConfig::GetType() const {
 
 bool RtcEventAudioSendStreamConfig::IsConfigEvent() const {
   return true;
+}
+
+std::unique_ptr<RtcEvent> RtcEventAudioSendStreamConfig::Copy() const {
+  auto config_copy = rtc::MakeUnique<rtclog::StreamConfig>(*config_);
+  return rtc::MakeUnique<RtcEventAudioSendStreamConfig>(std::move(config_copy));
 }
 
 }  // namespace webrtc

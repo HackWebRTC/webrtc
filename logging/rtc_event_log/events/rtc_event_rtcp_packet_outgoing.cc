@@ -10,6 +10,8 @@
 
 #include "logging/rtc_event_log/events/rtc_event_rtcp_packet_outgoing.h"
 
+#include "rtc_base/ptr_util.h"
+
 namespace webrtc {
 
 RtcEventRtcpPacketOutgoing::RtcEventRtcpPacketOutgoing(
@@ -24,6 +26,11 @@ RtcEvent::Type RtcEventRtcpPacketOutgoing::GetType() const {
 
 bool RtcEventRtcpPacketOutgoing::IsConfigEvent() const {
   return false;
+}
+
+std::unique_ptr<RtcEvent> RtcEventRtcpPacketOutgoing::Copy() const {
+  return rtc::MakeUnique<RtcEventRtcpPacketOutgoing>(
+      rtc::ArrayView<const uint8_t>(packet_.data(), packet_.size()));
 }
 
 }  // namespace webrtc

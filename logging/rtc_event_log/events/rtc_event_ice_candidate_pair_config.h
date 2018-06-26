@@ -11,9 +11,9 @@
 #ifndef LOGGING_RTC_EVENT_LOG_EVENTS_RTC_EVENT_ICE_CANDIDATE_PAIR_CONFIG_H_
 #define LOGGING_RTC_EVENT_LOG_EVENTS_RTC_EVENT_ICE_CANDIDATE_PAIR_CONFIG_H_
 
-#include "logging/rtc_event_log/events/rtc_event.h"
+#include <memory>
 
-#include <string>
+#include "logging/rtc_event_log/events/rtc_event.h"
 
 namespace webrtc {
 
@@ -91,6 +91,8 @@ class RtcEventIceCandidatePairConfig final : public RtcEvent {
   Type GetType() const override;
 
   bool IsConfigEvent() const override;
+
+  std::unique_ptr<RtcEvent> Copy() const override;
 
   const IceCandidatePairConfigType type_;
   const uint32_t candidate_pair_id_;

@@ -10,6 +10,8 @@
 
 #include "logging/rtc_event_log/events/rtc_event_probe_cluster_created.h"
 
+#include "rtc_base/ptr_util.h"
+
 namespace webrtc {
 
 RtcEventProbeClusterCreated::RtcEventProbeClusterCreated(int32_t id,
@@ -27,6 +29,11 @@ RtcEvent::Type RtcEventProbeClusterCreated::GetType() const {
 
 bool RtcEventProbeClusterCreated::IsConfigEvent() const {
   return false;
+}
+
+std::unique_ptr<RtcEvent> RtcEventProbeClusterCreated::Copy() const {
+  return rtc::MakeUnique<RtcEventProbeClusterCreated>(id_, bitrate_bps_,
+                                                      min_probes_, min_bytes_);
 }
 
 }  // namespace webrtc

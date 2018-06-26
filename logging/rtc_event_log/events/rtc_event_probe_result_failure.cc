@@ -10,6 +10,8 @@
 
 #include "logging/rtc_event_log/events/rtc_event_probe_result_failure.h"
 
+#include "rtc_base/ptr_util.h"
+
 namespace webrtc {
 
 RtcEventProbeResultFailure::RtcEventProbeResultFailure(
@@ -23,6 +25,10 @@ RtcEvent::Type RtcEventProbeResultFailure::GetType() const {
 
 bool RtcEventProbeResultFailure::IsConfigEvent() const {
   return false;
+}
+
+std::unique_ptr<RtcEvent> RtcEventProbeResultFailure::Copy() const {
+  return rtc::MakeUnique<RtcEventProbeResultFailure>(id_, failure_reason_);
 }
 
 }  // namespace webrtc

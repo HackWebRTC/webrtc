@@ -12,6 +12,8 @@
 
 #include <utility>
 
+#include "rtc_base/ptr_util.h"
+
 namespace webrtc {
 
 RtcEventVideoSendStreamConfig::RtcEventVideoSendStreamConfig(
@@ -26,6 +28,11 @@ RtcEvent::Type RtcEventVideoSendStreamConfig::GetType() const {
 
 bool RtcEventVideoSendStreamConfig::IsConfigEvent() const {
   return true;
+}
+
+std::unique_ptr<RtcEvent> RtcEventVideoSendStreamConfig::Copy() const {
+  auto config_copy = rtc::MakeUnique<rtclog::StreamConfig>(*config_);
+  return rtc::MakeUnique<RtcEventVideoSendStreamConfig>(std::move(config_copy));
 }
 
 }  // namespace webrtc

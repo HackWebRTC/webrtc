@@ -12,6 +12,8 @@
 
 #include <utility>
 
+#include "rtc_base/ptr_util.h"
+
 namespace webrtc {
 
 RtcEventVideoReceiveStreamConfig::RtcEventVideoReceiveStreamConfig(
@@ -26,6 +28,12 @@ RtcEvent::Type RtcEventVideoReceiveStreamConfig::GetType() const {
 
 bool RtcEventVideoReceiveStreamConfig::IsConfigEvent() const {
   return true;
+}
+
+std::unique_ptr<RtcEvent> RtcEventVideoReceiveStreamConfig::Copy() const {
+  auto config_copy = rtc::MakeUnique<rtclog::StreamConfig>(*config_);
+  return rtc::MakeUnique<RtcEventVideoReceiveStreamConfig>(
+      std::move(config_copy));
 }
 
 }  // namespace webrtc

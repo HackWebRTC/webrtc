@@ -10,6 +10,8 @@
 
 #include "logging/rtc_event_log/events/rtc_event_audio_playout.h"
 
+#include "rtc_base/ptr_util.h"
+
 namespace webrtc {
 
 RtcEventAudioPlayout::RtcEventAudioPlayout(uint32_t ssrc) : ssrc_(ssrc) {}
@@ -20,6 +22,10 @@ RtcEvent::Type RtcEventAudioPlayout::GetType() const {
 
 bool RtcEventAudioPlayout::IsConfigEvent() const {
   return false;
+}
+
+std::unique_ptr<RtcEvent> RtcEventAudioPlayout::Copy() const {
+  return rtc::MakeUnique<RtcEventAudioPlayout>(ssrc_);
 }
 
 }  // namespace webrtc

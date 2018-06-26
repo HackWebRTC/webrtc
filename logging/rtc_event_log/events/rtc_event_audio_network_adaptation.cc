@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor_config.h"
+#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 
@@ -28,6 +29,12 @@ RtcEvent::Type RtcEventAudioNetworkAdaptation::GetType() const {
 
 bool RtcEventAudioNetworkAdaptation::IsConfigEvent() const {
   return false;
+}
+
+std::unique_ptr<RtcEvent> RtcEventAudioNetworkAdaptation::Copy() const {
+  auto config_copy = rtc::MakeUnique<AudioEncoderRuntimeConfig>(*config_);
+  return rtc::MakeUnique<RtcEventAudioNetworkAdaptation>(
+      std::move(config_copy));
 }
 
 }  // namespace webrtc

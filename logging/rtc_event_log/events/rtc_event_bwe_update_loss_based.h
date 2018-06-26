@@ -11,6 +11,8 @@
 #ifndef LOGGING_RTC_EVENT_LOG_EVENTS_RTC_EVENT_BWE_UPDATE_LOSS_BASED_H_
 #define LOGGING_RTC_EVENT_LOG_EVENTS_RTC_EVENT_BWE_UPDATE_LOSS_BASED_H_
 
+#include <memory>
+
 #include "logging/rtc_event_log/events/rtc_event.h"
 
 namespace webrtc {
@@ -25,6 +27,8 @@ class RtcEventBweUpdateLossBased final : public RtcEvent {
   Type GetType() const override;
 
   bool IsConfigEvent() const override;
+
+  std::unique_ptr<RtcEvent> Copy() const override;
 
   const int32_t bitrate_bps_;
   const uint8_t fraction_loss_;

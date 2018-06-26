@@ -11,6 +11,8 @@
 #ifndef LOGGING_RTC_EVENT_LOG_EVENTS_RTC_EVENT_RTCP_PACKET_INCOMING_H_
 #define LOGGING_RTC_EVENT_LOG_EVENTS_RTC_EVENT_RTCP_PACKET_INCOMING_H_
 
+#include <memory>
+
 #include "api/array_view.h"
 #include "logging/rtc_event_log/events/rtc_event.h"
 #include "rtc_base/buffer.h"
@@ -25,6 +27,8 @@ class RtcEventRtcpPacketIncoming final : public RtcEvent {
   Type GetType() const override;
 
   bool IsConfigEvent() const override;
+
+  std::unique_ptr<RtcEvent> Copy() const override;
 
   rtc::Buffer packet_;
 };

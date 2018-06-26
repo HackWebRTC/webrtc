@@ -10,6 +10,8 @@
 
 #include "logging/rtc_event_log/events/rtc_event_ice_candidate_pair_config.h"
 
+#include "rtc_base/ptr_util.h"
+
 namespace webrtc {
 
 IceCandidatePairDescription::IceCandidatePairDescription() {
@@ -53,6 +55,11 @@ RtcEvent::Type RtcEventIceCandidatePairConfig::GetType() const {
 // event.
 bool RtcEventIceCandidatePairConfig::IsConfigEvent() const {
   return false;
+}
+
+std::unique_ptr<RtcEvent> RtcEventIceCandidatePairConfig::Copy() const {
+  return rtc::MakeUnique<RtcEventIceCandidatePairConfig>(
+      type_, candidate_pair_id_, candidate_pair_desc_);
 }
 
 }  // namespace webrtc

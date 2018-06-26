@@ -10,6 +10,8 @@
 
 #include "logging/rtc_event_log/events/rtc_event_probe_result_success.h"
 
+#include "rtc_base/ptr_util.h"
+
 namespace webrtc {
 
 RtcEventProbeResultSuccess::RtcEventProbeResultSuccess(int32_t id,
@@ -22,6 +24,10 @@ RtcEvent::Type RtcEventProbeResultSuccess::GetType() const {
 
 bool RtcEventProbeResultSuccess::IsConfigEvent() const {
   return false;
+}
+
+std::unique_ptr<RtcEvent> RtcEventProbeResultSuccess::Copy() const {
+  return rtc::MakeUnique<RtcEventProbeResultSuccess>(id_, bitrate_bps_);
 }
 
 }  // namespace webrtc

@@ -9,6 +9,7 @@
  */
 
 #include "logging/rtc_event_log/events/rtc_event_alr_state.h"
+#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 
@@ -22,6 +23,10 @@ RtcEvent::Type RtcEventAlrState::GetType() const {
 
 bool RtcEventAlrState::IsConfigEvent() const {
   return false;
+}
+
+std::unique_ptr<RtcEvent> RtcEventAlrState::Copy() const {
+  return rtc::MakeUnique<RtcEventAlrState>(in_alr_);
 }
 
 }  // namespace webrtc
