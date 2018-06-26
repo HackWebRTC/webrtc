@@ -26,6 +26,7 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
     : packet_buffer_(packet_buffer),
       first_seq_num_(first_seq_num),
       last_seq_num_(last_seq_num),
+      timestamp_(0),
       received_time_(received_time),
       times_nacked_(times_nacked) {
   VCMPacket* first_packet = packet_buffer_->GetPacket(first_seq_num);
@@ -68,7 +69,7 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
   _encodedHeight = first_packet->height;
 
   // EncodedFrame members
-  SetTimestamp(first_packet->timestamp);
+  timestamp = first_packet->timestamp;
 
   VCMPacket* last_packet = packet_buffer_->GetPacket(last_seq_num);
   RTC_CHECK(last_packet);
@@ -137,6 +138,10 @@ VideoCodecType RtpFrameObject::codec_type() const {
 
 bool RtpFrameObject::GetBitstream(uint8_t* destination) const {
   return packet_buffer_->GetBitstream(*this, destination);
+}
+
+uint32_t RtpFrameObject::Timestamp() const {
+  return timestamp_;
 }
 
 int64_t RtpFrameObject::ReceivedTime() const {

@@ -37,14 +37,6 @@ class EncodedImage {
   EncodedImage(const EncodedImage&);
   EncodedImage(uint8_t* buffer, size_t length, size_t size);
 
-  // TODO(nisse): Change style to timestamp(), set_timestamp(), for consistency
-  // with the VideoFrame class.
-  // Set frame timestamp (90kHz).
-  void SetTimestamp(uint32_t timestamp) { _timeStamp = timestamp; }
-
-  // Get frame timestamp (90kHz).
-  uint32_t Timestamp() const { return _timeStamp; }
-
   void SetEncodeTime(int64_t encode_start_ms, int64_t encode_finish_ms);
 
   uint32_t _encodedWidth = 0;
