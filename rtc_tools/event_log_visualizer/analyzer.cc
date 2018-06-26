@@ -1844,20 +1844,23 @@ void EventLogAnalyzer::CreateAudioJitterBufferGraph(
   plot->SetTitle("NetEq timing for " + GetStreamName(kIncomingPacket, ssrc));
 }
 
-void EventLogAnalyzer::CreateNetEqStatsGraph(
+template <typename NetEqStatsType>
+void EventLogAnalyzer::CreateNetEqStatsGraphInternal(
     const NetEqStatsGetterMap& neteq_stats,
-    rtc::FunctionView<float(const NetEqNetworkStatistics&)> stats_extractor,
+    rtc::FunctionView<const std::vector<std::pair<int64_t, NetEqStatsType>>*(
+        const test::NetEqStatsGetter*)> data_extractor,
+    rtc::FunctionView<float(const NetEqStatsType&)> stats_extractor,
     const std::string& plot_name,
     Plot* plot) const {
   std::map<uint32_t, TimeSeries> time_series;
 
   for (const auto& st : neteq_stats) {
     const uint32_t ssrc = st.first;
-    const auto& stats = st.second->stats();
-
-    for (size_t i = 0; i < stats.size(); ++i) {
-      const float time = ToCallTimeSec(stats[i].first * 1000);  // ms to us.
-      const float value = stats_extractor(stats[i].second);
+    const std::vector<std::pair<int64_t, NetEqStatsType>>* data_vector =
+        data_extractor(st.second.get());
+    for (const auto& data : *data_vector) {
+      const float time = ToCallTimeSec(data.first * 1000);  // ms to us.
+      const float value = stats_extractor(data.second);
       time_series[ssrc].points.emplace_back(TimeSeriesPoint(time, value));
     }
   }
@@ -1872,6 +1875,32 @@ void EventLogAnalyzer::CreateNetEqStatsGraph(
                  kLeftMargin, kRightMargin);
   plot->SetSuggestedYAxis(0, 1, plot_name, kBottomMargin, kTopMargin);
   plot->SetTitle(plot_name);
+}
+
+void EventLogAnalyzer::CreateNetEqNetworkStatsGraph(
+    const NetEqStatsGetterMap& neteq_stats,
+    rtc::FunctionView<float(const NetEqNetworkStatistics&)> stats_extractor,
+    const std::string& plot_name,
+    Plot* plot) const {
+  CreateNetEqStatsGraphInternal<NetEqNetworkStatistics>(
+      neteq_stats,
+      [](const test::NetEqStatsGetter* stats_getter) {
+        return stats_getter->stats();
+      },
+      stats_extractor, plot_name, plot);
+}
+
+void EventLogAnalyzer::CreateNetEqLifetimeStatsGraph(
+    const NetEqStatsGetterMap& neteq_stats,
+    rtc::FunctionView<float(const NetEqLifetimeStatistics&)> stats_extractor,
+    const std::string& plot_name,
+    Plot* plot) const {
+  CreateNetEqStatsGraphInternal<NetEqLifetimeStatistics>(
+      neteq_stats,
+      [](const test::NetEqStatsGetter* stats_getter) {
+        return stats_getter->lifetime_stats();
+      },
+      stats_extractor, plot_name, plot);
 }
 
 void EventLogAnalyzer::CreateIceCandidatePairConfigGraph(Plot* plot) {

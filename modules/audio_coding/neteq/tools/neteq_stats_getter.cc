@@ -46,15 +46,17 @@ void NetEqStatsGetter::AfterGetAudio(int64_t time_now_ms,
                                      NetEq* neteq) {
   // TODO(minyue): Get stats should better not be called as a call back after
   // get audio. It is called independently from get audio in practice.
+  const auto lifetime_stat = neteq->GetLifetimeStatistics();
   if (last_stats_query_time_ms_ == 0 ||
       rtc::TimeDiff(time_now_ms, last_stats_query_time_ms_) >=
           stats_query_interval_ms_) {
     NetEqNetworkStatistics stats;
     RTC_CHECK_EQ(neteq->NetworkStatistics(&stats), 0);
     stats_.push_back(std::make_pair(time_now_ms, stats));
+    lifetime_stats_.push_back(std::make_pair(time_now_ms, lifetime_stat));
     last_stats_query_time_ms_ = time_now_ms;
   }
-  const auto lifetime_stat = neteq->GetLifetimeStatistics();
+
   if (current_concealment_event_ != lifetime_stat.concealment_events &&
       voice_concealed_samples_until_last_event_ <
           lifetime_stat.voice_concealed_samples) {

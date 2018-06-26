@@ -341,30 +341,36 @@ int main(int argc, char* argv[]) {
       analyzer.CreateAudioJitterBufferGraph(it->first, it->second.get(),
                                             collection->AppendNewPlot());
     }
-    analyzer.CreateNetEqStatsGraph(
+    analyzer.CreateNetEqNetworkStatsGraph(
         neteq_stats,
         [](const webrtc::NetEqNetworkStatistics& stats) {
           return stats.expand_rate / 16384.f;
         },
         "Expand rate", collection->AppendNewPlot());
-    analyzer.CreateNetEqStatsGraph(
+    analyzer.CreateNetEqNetworkStatsGraph(
         neteq_stats,
         [](const webrtc::NetEqNetworkStatistics& stats) {
           return stats.speech_expand_rate / 16384.f;
         },
         "Speech expand rate", collection->AppendNewPlot());
-    analyzer.CreateNetEqStatsGraph(
+    analyzer.CreateNetEqNetworkStatsGraph(
         neteq_stats,
         [](const webrtc::NetEqNetworkStatistics& stats) {
           return stats.accelerate_rate / 16384.f;
         },
         "Accelerate rate", collection->AppendNewPlot());
-    analyzer.CreateNetEqStatsGraph(
+    analyzer.CreateNetEqNetworkStatsGraph(
         neteq_stats,
         [](const webrtc::NetEqNetworkStatistics& stats) {
           return stats.packet_loss_rate / 16384.f;
         },
         "Packet loss rate", collection->AppendNewPlot());
+    analyzer.CreateNetEqLifetimeStatsGraph(
+        neteq_stats,
+        [](const webrtc::NetEqLifetimeStatistics& stats) {
+          return static_cast<float>(stats.concealment_events);
+        },
+        "Concealment events", collection->AppendNewPlot());
   }
 
   if (FLAG_plot_ice_candidate_pair_config) {
