@@ -269,6 +269,9 @@ void VideoProcessor::ProcessFrame() {
                          webrtc::kVideoRotation_0);
   // Store input frame as a reference for quality calculations.
   if (config_.decode && !config_.measure_cpu) {
+    if (input_frames_.size() == kMaxBufferedInputFrames) {
+      input_frames_.erase(input_frames_.begin());
+    }
     input_frames_.emplace(frame_number, input_frame);
   }
   last_inputed_timestamp_ = timestamp;
