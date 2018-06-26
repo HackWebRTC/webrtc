@@ -75,16 +75,9 @@ enum {
   // When specified, do not collect IPv6 ICE candidates on Wi-Fi.
   PORTALLOCATOR_ENABLE_IPV6_ON_WIFI = 0x4000,
 
-  // This flag is deprecated; we now always enable any address ports, only
-  // using them if they end up using interfaces that weren't otherwise
-  // accessible.
-  //
-  // TODO(qingsi): Remove this flag when downstream projects no longer use it.
-  PORTALLOCATOR_ENABLE_ANY_ADDRESS_PORTS = 0x8000,
-
   // Exclude link-local network interfaces
   // from considertaion after adapter enumeration.
-  PORTALLOCATOR_DISABLE_LINK_LOCAL_NETWORKS = 0x10000,
+  PORTALLOCATOR_DISABLE_LINK_LOCAL_NETWORKS = 0x8000,
 };
 
 // Defines various reasons that have caused ICE regathering.
