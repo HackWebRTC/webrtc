@@ -16,9 +16,9 @@
 #include <vector>
 
 #include "rtc_base/checks.h"
-#include "rtc_base/experiments/congestion_controller_experiment.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/system/fallthrough.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 namespace bbr {
@@ -77,65 +77,84 @@ const int64_t kInitialCongestionWindowPackets = 32;
 const int64_t kDefaultMinCongestionWindowPackets = 4;
 const int64_t kDefaultMaxCongestionWindowPackets = 2000;
 
+const char kBbrConfigTrial[] = "WebRTC-BweBbrConfig";
+
 }  // namespace
 
+BbrNetworkController::BbrControllerConfig::BbrControllerConfig(
+    std::string field_trial)
+    : probe_bw_pacing_gain_offset("probe_bw_pacing_gain_offset", 0.25),
+      encoder_rate_gain("encoder_rate_gain", 1),
+      encoder_rate_gain_in_probe_rtt("encoder_rate_gain_in_probe_rtt", 1),
+      exit_startup_rtt_threshold("exit_startup_rtt_threshold",
+                                 TimeDelta::PlusInfinity()),
+      initial_congestion_window(
+          "initial_cwin",
+          kInitialCongestionWindowPackets * kDefaultTCPMSS),
+      min_congestion_window(
+          "min_cwin",
+          kDefaultMinCongestionWindowPackets * kDefaultTCPMSS),
+      max_congestion_window(
+          "max_cwin",
+          kDefaultMaxCongestionWindowPackets * kDefaultTCPMSS),
+      probe_rtt_congestion_window_gain("probe_rtt_cwin_gain", 0.75),
+      pacing_rate_as_target("pacing_rate_as_target", false),
+      exit_startup_on_loss("exit_startup_on_loss", true),
+      num_startup_rtts("num_startup_rtts", 3),
+      rate_based_recovery("rate_based_recovery", false),
+      max_aggregation_bytes_multiplier("max_aggregation_bytes_multiplier", 0),
+      slower_startup("slower_startup", false),
+      rate_based_startup("rate_based_startup", false),
+      initial_conservation_in_startup("initial_conservation",
+                                      CONSERVATION,
+                                      {
+                                          {"NOT_IN_RECOVERY", NOT_IN_RECOVERY},
+                                          {"CONSERVATION", CONSERVATION},
+                                          {"MEDIUM_GROWTH", MEDIUM_GROWTH},
+                                          {"GROWTH", GROWTH},
+                                      }),
+      fully_drain_queue("fully_drain_queue", false),
+      max_ack_height_window_multiplier("max_ack_height_window_multiplier", 1),
+      probe_rtt_based_on_bdp("probe_rtt_based_on_bdp", false),
+      probe_rtt_skipped_if_similar_rtt("probe_rtt_skipped_if_similar_rtt",
+                                       false),
+      probe_rtt_disabled_if_app_limited("probe_rtt_disabled_if_app_limited",
+                                        false) {
+  ParseFieldTrial(
+      {
+          &exit_startup_on_loss,
+          &encoder_rate_gain,
+          &encoder_rate_gain_in_probe_rtt,
+          &exit_startup_rtt_threshold,
+          &fully_drain_queue,
+          &initial_congestion_window,
+          &initial_conservation_in_startup,
+          &max_ack_height_window_multiplier,
+          &max_aggregation_bytes_multiplier,
+          &max_congestion_window,
+          &min_congestion_window,
+          &num_startup_rtts,
+          &pacing_rate_as_target,
+          &probe_bw_pacing_gain_offset,
+          &probe_rtt_based_on_bdp,
+          &probe_rtt_congestion_window_gain,
+          &probe_rtt_disabled_if_app_limited,
+          &probe_rtt_skipped_if_similar_rtt,
+          &rate_based_recovery,
+          &rate_based_startup,
+          &slower_startup,
+      },
+      field_trial);
+}
+BbrNetworkController::BbrControllerConfig::~BbrControllerConfig() = default;
+BbrNetworkController::BbrControllerConfig::BbrControllerConfig(
+    const BbrControllerConfig&) = default;
 BbrNetworkController::BbrControllerConfig
-BbrNetworkController::BbrControllerConfig::DefaultConfig() {
-  BbrControllerConfig config;
-  config.probe_bw_pacing_gain_offset = 0.25;
-  config.encoder_rate_gain = 1;
-  config.encoder_rate_gain_in_probe_rtt = 1;
-  config.exit_startup_rtt_threshold_ms = 0;
-  config.probe_rtt_congestion_window_gain = 0.75;
-  config.exit_startup_on_loss = true;
-  config.num_startup_rtts = 3;
-  config.rate_based_recovery = false;
-  config.max_aggregation_bytes_multiplier = 0;
-  config.slower_startup = false;
-  config.rate_based_startup = false;
-  config.fully_drain_queue = false;
-  config.initial_conservation_in_startup = CONSERVATION;
-  config.max_ack_height_window_multiplier = 1;
-  config.probe_rtt_based_on_bdp = false;
-  config.probe_rtt_skipped_if_similar_rtt = false;
-  config.probe_rtt_disabled_if_app_limited = false;
-
-  return config;
+BbrNetworkController::BbrControllerConfig::FromTrial() {
+  return BbrControllerConfig(
+      webrtc::field_trial::FindFullName(kBbrConfigTrial));
 }
 
-BbrNetworkController::BbrControllerConfig
-BbrNetworkController::BbrControllerConfig::ExperimentConfig() {
-  auto exp = CongestionControllerExperiment::GetBbrExperimentConfig();
-  if (exp) {
-    BbrControllerConfig config;
-    config.exit_startup_on_loss = exp->exit_startup_on_loss;
-    config.exit_startup_rtt_threshold_ms = exp->exit_startup_rtt_threshold_ms;
-    config.fully_drain_queue = exp->fully_drain_queue;
-    config.initial_conservation_in_startup =
-        static_cast<RecoveryState>(exp->initial_conservation_in_startup);
-    config.num_startup_rtts = exp->num_startup_rtts;
-    config.probe_rtt_based_on_bdp = exp->probe_rtt_based_on_bdp;
-    config.probe_rtt_disabled_if_app_limited =
-        exp->probe_rtt_disabled_if_app_limited;
-    config.probe_rtt_skipped_if_similar_rtt =
-        exp->probe_rtt_skipped_if_similar_rtt;
-    config.rate_based_recovery = exp->rate_based_recovery;
-    config.rate_based_startup = exp->rate_based_startup;
-    config.slower_startup = exp->slower_startup;
-    config.encoder_rate_gain = exp->encoder_rate_gain;
-    config.encoder_rate_gain_in_probe_rtt = exp->encoder_rate_gain_in_probe_rtt;
-    config.max_ack_height_window_multiplier =
-        exp->max_ack_height_window_multiplier;
-    config.max_aggregation_bytes_multiplier =
-        exp->max_aggregation_bytes_multiplier;
-    config.probe_bw_pacing_gain_offset = exp->probe_bw_pacing_gain_offset;
-    config.probe_rtt_congestion_window_gain =
-        exp->probe_rtt_congestion_window_gain;
-    return config;
-  } else {
-    return DefaultConfig();
-  }
-}
 
 BbrNetworkController::DebugState::DebugState(const BbrNetworkController& sender)
     : mode(sender.mode_),
@@ -156,7 +175,8 @@ BbrNetworkController::DebugState::DebugState(const BbrNetworkController& sender)
 BbrNetworkController::DebugState::DebugState(const DebugState& state) = default;
 
 BbrNetworkController::BbrNetworkController(NetworkControllerConfig config)
-    : rtt_stats_(),
+    : config_(BbrControllerConfig::FromTrial()),
+      rtt_stats_(),
       random_(10),
       loss_rate_(),
       mode_(STARTUP),
@@ -174,13 +194,10 @@ BbrNetworkController::BbrNetworkController(NetworkControllerConfig config)
       min_rtt_(TimeDelta::Zero()),
       last_rtt_(TimeDelta::Zero()),
       min_rtt_timestamp_(Timestamp::ms(0)),
-      congestion_window_(kInitialCongestionWindowPackets * kDefaultTCPMSS),
-      initial_congestion_window_(kInitialCongestionWindowPackets *
-                                 kDefaultTCPMSS),
-      min_congestion_window_(kDefaultMinCongestionWindowPackets *
-                             kDefaultTCPMSS),
-      max_congestion_window_(kDefaultMaxCongestionWindowPackets *
-                             kDefaultTCPMSS),
+      congestion_window_(config_.initial_congestion_window),
+      initial_congestion_window_(config_.initial_congestion_window),
+      min_congestion_window_(config_.min_congestion_window),
+      max_congestion_window_(config_.max_congestion_window),
       pacing_rate_(DataRate::Zero()),
       pacing_gain_(1),
       congestion_window_gain_constant_(kProbeBWCongestionWindowGain),
@@ -200,7 +217,6 @@ BbrNetworkController::BbrNetworkController(NetworkControllerConfig config)
       app_limited_since_last_probe_rtt_(false),
       min_rtt_since_last_probe_rtt_(TimeDelta::PlusInfinity()) {
   RTC_LOG(LS_INFO) << "Creating BBR controller";
-  config_ = BbrControllerConfig::ExperimentConfig();
   if (config.starting_bandwidth.IsFinite())
     default_bandwidth_ = config.starting_bandwidth;
   constraints_ = config.constraints;
@@ -227,11 +243,13 @@ NetworkControlUpdate BbrNetworkController::CreateRateUpdate(Timestamp at_time) {
     bandwidth = default_bandwidth_;
   TimeDelta rtt = GetMinRtt();
   DataRate pacing_rate = PacingRate();
-  DataRate target_rate = bandwidth;
+  DataRate target_rate =
+      config_.pacing_rate_as_target ? pacing_rate : bandwidth;
+
   if (mode_ == PROBE_RTT)
-    target_rate = bandwidth * config_.encoder_rate_gain_in_probe_rtt;
+    target_rate = target_rate * config_.encoder_rate_gain_in_probe_rtt;
   else
-    target_rate = bandwidth * config_.encoder_rate_gain;
+    target_rate = target_rate * config_.encoder_rate_gain;
   target_rate = std::min(target_rate, pacing_rate);
 
   if (constraints_) {
@@ -669,15 +687,14 @@ void BbrNetworkController::CheckIfFullBandwidthReached() {
 
 void BbrNetworkController::MaybeExitStartupOrDrain(
     const TransportPacketsFeedback& msg) {
-  int64_t exit_threshold_ms = config_.exit_startup_rtt_threshold_ms;
-  bool rtt_over_threshold =
-      exit_threshold_ms > 0 && (last_rtt_ - min_rtt_).ms() > exit_threshold_ms;
-  if (mode_ == STARTUP && (is_at_full_bandwidth_ || rtt_over_threshold)) {
-    if (rtt_over_threshold)
+  TimeDelta exit_threshold = config_.exit_startup_rtt_threshold;
+  TimeDelta rtt_delta = last_rtt_ - min_rtt_;
+  if (mode_ == STARTUP &&
+      (is_at_full_bandwidth_ || rtt_delta > exit_threshold)) {
+    if (rtt_delta > exit_threshold)
       RTC_LOG(LS_INFO) << "Exiting startup due to rtt increase from: "
                        << ToString(min_rtt_) << " to:" << ToString(last_rtt_)
-                       << " > "
-                       << ToString(min_rtt_ + TimeDelta::ms(exit_threshold_ms));
+                       << " > " << ToString(min_rtt_ + exit_threshold);
     mode_ = DRAIN;
     pacing_gain_ = kDrainGain;
     congestion_window_gain_ = kHighGain;
