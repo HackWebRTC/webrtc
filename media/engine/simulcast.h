@@ -11,15 +11,11 @@
 #ifndef MEDIA_ENGINE_SIMULCAST_H_
 #define MEDIA_ENGINE_SIMULCAST_H_
 
-#include <string>
 #include <vector>
 
 #include "api/video_codecs/video_encoder_config.h"
 
 namespace cricket {
-
-// TODO(pthatcher): Write unit tests just for these functions,
-// independent of WebrtcVideoEngine.
 
 // Gets the total maximum bitrate for the |streams|.
 int GetTotalMaxBitrateBps(const std::vector<webrtc::VideoStream>& streams);

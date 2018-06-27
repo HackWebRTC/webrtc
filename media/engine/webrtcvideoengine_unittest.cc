@@ -5344,7 +5344,7 @@ TEST_F(WebRtcVideoChannelTest, SetRtpSendParametersPriorityOneStream) {
 // streams.
 TEST_F(WebRtcVideoChannelTest, SetRtpSendParametersPrioritySimulcastStreams) {
   // Create the stream params with multiple ssrcs for simulcast.
-  const int kNumSimulcastStreams = 3;
+  const size_t kNumSimulcastStreams = 3;
   std::vector<uint32_t> ssrcs = MAKE_VECTOR(kSsrcs3);
   StreamParams stream_params = CreateSimStreamParams("cname", ssrcs);
   AddSendStream(stream_params);
@@ -5365,8 +5365,7 @@ TEST_F(WebRtcVideoChannelTest, SetRtpSendParametersPrioritySimulcastStreams) {
   // Get and set the rtp encoding parameters.
   webrtc::RtpParameters parameters =
       channel_->GetRtpSendParameters(primary_ssrc);
-  EXPECT_EQ(rtc::checked_cast<size_t>(kNumSimulcastStreams),
-            parameters.encodings.size());
+  EXPECT_EQ(kNumSimulcastStreams, parameters.encodings.size());
   EXPECT_EQ(webrtc::kDefaultBitratePriority,
             parameters.encodings[0].bitrate_priority);
   // Change the value and set it on the VideoChannel.
@@ -5376,8 +5375,7 @@ TEST_F(WebRtcVideoChannelTest, SetRtpSendParametersPrioritySimulcastStreams) {
 
   // Verify that the encoding parameters priority is set on the VideoChannel.
   parameters = channel_->GetRtpSendParameters(primary_ssrc);
-  EXPECT_EQ(rtc::checked_cast<size_t>(kNumSimulcastStreams),
-            parameters.encodings.size());
+  EXPECT_EQ(kNumSimulcastStreams, parameters.encodings.size());
   EXPECT_EQ(new_bitrate_priority, parameters.encodings[0].bitrate_priority);
 
   // Verify that the new value propagated down to the encoder.
@@ -5387,15 +5385,14 @@ TEST_F(WebRtcVideoChannelTest, SetRtpSendParametersPrioritySimulcastStreams) {
   FakeVideoSendStream* video_send_stream = video_send_streams.front();
   // Check that the WebRtcVideoSendStream updated the VideoEncoderConfig
   // appropriately.
-  EXPECT_EQ(rtc::checked_cast<size_t>(kNumSimulcastStreams),
+  EXPECT_EQ(kNumSimulcastStreams,
             video_send_stream->GetEncoderConfig().number_of_streams);
   EXPECT_EQ(new_bitrate_priority,
             video_send_stream->GetEncoderConfig().bitrate_priority);
   // Check that the vector of VideoStreams also propagated correctly. The
   // FakeVideoSendStream calls CreateEncoderStreams, and we are testing that
   // these are created appropriately for the simulcast case.
-  EXPECT_EQ(rtc::checked_cast<size_t>(kNumSimulcastStreams),
-            video_send_stream->GetVideoStreams().size());
+  EXPECT_EQ(kNumSimulcastStreams, video_send_stream->GetVideoStreams().size());
   EXPECT_EQ(absl::optional<double>(new_bitrate_priority),
             video_send_stream->GetVideoStreams()[0].bitrate_priority);
   // Since we are only setting bitrate priority per-sender, the other
@@ -5807,7 +5804,7 @@ TEST_F(WebRtcVideoChannelTest, SetRtpSendParametersOneEncodingActive) {
 // new appropriate active simulcast streams.
 TEST_F(WebRtcVideoChannelTest, SetRtpSendParametersMultipleEncodingsActive) {
   // Create the stream params with multiple ssrcs for simulcast.
-  const int kNumSimulcastStreams = 3;
+  const size_t kNumSimulcastStreams = 3;
   std::vector<uint32_t> ssrcs = MAKE_VECTOR(kSsrcs3);
   StreamParams stream_params = CreateSimStreamParams("cname", ssrcs);
   FakeVideoSendStream* fake_video_send_stream = AddSendStream(stream_params);
@@ -5829,8 +5826,7 @@ TEST_F(WebRtcVideoChannelTest, SetRtpSendParametersMultipleEncodingsActive) {
   // Check that all encodings are initially active.
   webrtc::RtpParameters parameters =
       channel_->GetRtpSendParameters(primary_ssrc);
-  EXPECT_EQ(rtc::checked_cast<size_t>(kNumSimulcastStreams),
-            parameters.encodings.size());
+  EXPECT_EQ(kNumSimulcastStreams, parameters.encodings.size());
   EXPECT_TRUE(parameters.encodings[0].active);
   EXPECT_TRUE(parameters.encodings[1].active);
   EXPECT_TRUE(parameters.encodings[2].active);
@@ -5843,8 +5839,7 @@ TEST_F(WebRtcVideoChannelTest, SetRtpSendParametersMultipleEncodingsActive) {
   EXPECT_TRUE(channel_->SetRtpSendParameters(primary_ssrc, parameters).ok());
   // Verify that the active fields are set on the VideoChannel.
   parameters = channel_->GetRtpSendParameters(primary_ssrc);
-  EXPECT_EQ(rtc::checked_cast<size_t>(kNumSimulcastStreams),
-            parameters.encodings.size());
+  EXPECT_EQ(kNumSimulcastStreams, parameters.encodings.size());
   EXPECT_FALSE(parameters.encodings[0].active);
   EXPECT_TRUE(parameters.encodings[1].active);
   EXPECT_FALSE(parameters.encodings[2].active);
@@ -5853,8 +5848,7 @@ TEST_F(WebRtcVideoChannelTest, SetRtpSendParametersMultipleEncodingsActive) {
   EXPECT_TRUE(fake_video_send_stream->IsSending());
   std::vector<webrtc::VideoStream> simulcast_streams =
       fake_video_send_stream->GetVideoStreams();
-  EXPECT_EQ(rtc::checked_cast<size_t>(kNumSimulcastStreams),
-            simulcast_streams.size());
+  EXPECT_EQ(kNumSimulcastStreams, simulcast_streams.size());
   EXPECT_FALSE(simulcast_streams[0].active);
   EXPECT_TRUE(simulcast_streams[1].active);
   EXPECT_FALSE(simulcast_streams[2].active);
@@ -5866,16 +5860,14 @@ TEST_F(WebRtcVideoChannelTest, SetRtpSendParametersMultipleEncodingsActive) {
   EXPECT_TRUE(channel_->SetRtpSendParameters(primary_ssrc, parameters).ok());
   // Verify that the active fields are set on the VideoChannel.
   parameters = channel_->GetRtpSendParameters(primary_ssrc);
-  EXPECT_EQ(rtc::checked_cast<size_t>(kNumSimulcastStreams),
-            parameters.encodings.size());
+  EXPECT_EQ(kNumSimulcastStreams, parameters.encodings.size());
   EXPECT_FALSE(parameters.encodings[0].active);
   EXPECT_FALSE(parameters.encodings[1].active);
   EXPECT_FALSE(parameters.encodings[2].active);
   // Check that the VideoSendStream is off.
   EXPECT_FALSE(fake_video_send_stream->IsSending());
   simulcast_streams = fake_video_send_stream->GetVideoStreams();
-  EXPECT_EQ(rtc::checked_cast<size_t>(kNumSimulcastStreams),
-            simulcast_streams.size());
+  EXPECT_EQ(kNumSimulcastStreams, simulcast_streams.size());
   EXPECT_FALSE(simulcast_streams[0].active);
   EXPECT_FALSE(simulcast_streams[1].active);
   EXPECT_FALSE(simulcast_streams[2].active);
