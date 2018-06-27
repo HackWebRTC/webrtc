@@ -163,7 +163,7 @@ bool VP9EncoderImpl::SetSvcRates(
   } else {
     float rate_ratio[VPX_MAX_LAYERS] = {0};
     float total = 0;
-    for (i = 0; i < num_active_spatial_layers_; ++i) {
+    for (i = 0; i < num_spatial_layers_; ++i) {
       if (svc_params_.scaling_factor_num[i] <= 0 ||
           svc_params_.scaling_factor_den[i] <= 0) {
         RTC_LOG(LS_ERROR) << "Scaling factors not specified!";
@@ -174,7 +174,7 @@ bool VP9EncoderImpl::SetSvcRates(
       total += rate_ratio[i];
     }
 
-    for (i = 0; i < num_active_spatial_layers_; ++i) {
+    for (i = 0; i < num_spatial_layers_; ++i) {
       RTC_CHECK_GT(total, 0);
       config_->ss_target_bitrate[i] = static_cast<unsigned int>(
           config_->rc_target_bitrate * rate_ratio[i] / total);
@@ -200,14 +200,6 @@ bool VP9EncoderImpl::SetSvcRates(
       }
     }
   }
-
-  // For now, temporal layers only supported when having one spatial layer.
-  if (num_spatial_layers_ == 1) {
-    for (i = 0; i < num_temporal_layers_; ++i) {
-      config_->ts_target_bitrate[i] = config_->layer_target_bitrate[i];
-    }
-  }
-
   return true;
 }
 
