@@ -422,7 +422,7 @@ void Thread::ReceiveSendsFromThread(const Thread* source) {
   while (PopSendMessageFromThread(source, &smsg)) {
     crit_.Leave();
 
-    smsg.msg.phandler->OnMessage(&smsg.msg);
+    Dispatch(&smsg.msg);
 
     crit_.Enter();
     *smsg.ready = true;
