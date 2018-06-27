@@ -103,9 +103,9 @@ def _RunNinja(output_directory, args):
 
 def _EncodeForGN(value):
   """Encodes value as a GN literal."""
-  if type(value) is str:
+  if isinstance(value, str):
     return '"' + value + '"'
-  elif type(value) is bool:
+  elif isinstance(value, bool):
     return repr(value).lower()
   else:
     return repr(value)

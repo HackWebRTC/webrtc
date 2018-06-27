@@ -90,7 +90,7 @@ def RunCommand(command, working_dir=None, ignore_exit_code=False,
   logging.debug('CMD: %s CWD: %s', ' '.join(command), working_dir)
   env = os.environ.copy()
   if extra_env:
-    assert all(type(value) == str for value in extra_env.values())
+    assert all(isinstance(value, str) for value in extra_env.values())
     logging.debug('extra env: %s', extra_env)
     env.update(extra_env)
   p = subprocess.Popen(command,
