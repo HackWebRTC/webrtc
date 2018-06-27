@@ -93,8 +93,7 @@ class TestRollChromiumRevision(unittest.TestCase):
 
     current_rev = TEST_DATA_VARS['chromium_revision']
     UpdateDepsFile(self._webrtc_depsfile,
-                   ChromiumRevisionUpdate(
-                       current_rev, new_rev, current_rev, new_rev),
+                   ChromiumRevisionUpdate(current_rev, new_rev),
                    [])
     with open(self._webrtc_depsfile) as deps_file:
       deps_contents = deps_file.read()

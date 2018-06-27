@@ -2,9 +2,6 @@
 
 vars = {
   'chromium_git': 'https://chromium.googlesource.com',
-  # Used by the WebRTC DEPS autoroller to update third_party/. If you need to run autoroller localy,
-  # you can set it via custom_vars section in the .gclient file.
-  'roll_chromium_into_webrtc': False,
   # By default, we should check out everything needed to run on the main
   # chromium waterfalls. More info at: crbug.com/570091.
   'checkout_configuration': 'default',
@@ -40,10 +37,6 @@ vars = {
   # the commit queue can handle CLs rolling HarfBuzz
   # and whatever else without interference from each other.
   'harfbuzz_revision': '957e7756634a4fdf1654041e20e883cf964ecac9',
-  # Three lines of non-changing comments so that
-  # the commit queue can handle CLs rolling Chromium third_party
-  # and whatever else without interference from each other.
-  'chromium_third_party_revision': '46683344d7566fa1caceb097e212afc22afc4312',
 }
 deps = {
   # TODO(kjellander): Move this to be Android-only once the libevent dependency
@@ -66,11 +59,8 @@ deps = {
   },
   'src/testing':
     Var('chromium_git') + '/chromium/src/testing' + '@' + '8354b28f744d5b1b1a0b4e7c8cb713408323ee03',
-  # This entry is used for chromium third_party rolling into webrtc third_party only.
-  'src/third_party_chromium': {
-      'url': Var('chromium_git') + '/chromium/src/third_party' + '@' + Var('chromium_third_party_revision'),
-      'condition': 'roll_chromium_into_webrtc',
-  },
+  'src/third_party':
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + '46683344d7566fa1caceb097e212afc22afc4312',
   'src/third_party/android_ndk': {
       'url': Var('chromium_git') + '/android_ndk.git' + '@' + '5cd86312e794bdf542a3685c6f10cbb96072990b',
       'condition': 'checkout_android',

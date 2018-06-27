@@ -39,7 +39,6 @@ CPPLINT_BLACKLIST = [
   'test',
   'tools_webrtc',
   'voice_engine',
-  'third_party',
 ]
 
 # These filters will always be removed, even if the caller specifies a filter
@@ -766,7 +765,6 @@ def CommonChecks(input_api, output_api):
                   r'^out.*[\\\/].*\.py$',
                   r'^testing[\\\/].*\.py$',
                   r'^third_party[\\\/].*\.py$',
-                  r'^third_party_chromium[\\\/].*\.py$',
                   r'^tools[\\\/].*\.py$',
                   # TODO(phoglund): should arguably be checked.
                   r'^tools_webrtc[\\\/]mb[\\\/].*\.py$',
@@ -785,8 +783,7 @@ def CommonChecks(input_api, output_api):
   # Skip long-lines check for DEPS and GN files.
   build_file_filter_list = (r'.+\.gn$', r'.+\.gni$', 'DEPS')
   # Also we will skip most checks for third_party directory.
-  third_party_filter_list = (r'^third_party[\\\/].+',
-                             r'^third_party_chromium[\\\/].+')
+  third_party_filter_list = (r'^third_party[\\\/].+',)
   eighty_char_sources = lambda x: input_api.FilterSourceFile(x,
       black_list=build_file_filter_list + objc_filter_list +
                  third_party_filter_list)
@@ -795,7 +792,6 @@ def CommonChecks(input_api, output_api):
   non_third_party_sources = lambda x: input_api.FilterSourceFile(x,
       black_list=third_party_filter_list)
 
-  results.extend(CheckNoGitRepoInThirdParty(input_api, output_api))
   results.extend(input_api.canned_checks.CheckLongLines(
       input_api, output_api, maxlen=80, source_file_filter=eighty_char_sources))
   results.extend(input_api.canned_checks.CheckLongLines(
@@ -833,26 +829,7 @@ def CommonChecks(input_api, output_api):
       input_api, output_api, source_file_filter=non_third_party_sources))
   results.extend(CheckNoStreamUsageIsAdded(
       input_api, output_api, non_third_party_sources))
-  results.extend(CheckThirdPartyChanges(input_api, output_api))
   return results
-
-
-def CheckNoGitRepoInThirdParty(input_api, output_api):
-  if os.path.isdir(input_api.os_path.join(
-      input_api.PresubmitLocalPath(), 'third_party', '.git')):
-    return [output_api.PresubmitError("Please remove third_party/.git "
-                                      "directory. This error means that "
-                                      "possibly you also have to apply other "
-                                      "instructions from the May 11th PSA from "
-                                      "titovartem@.")]
-  return []
-
-
-def CheckThirdPartyChanges(input_api, output_api):
-  with _AddToPath(input_api.os_path.join(
-      input_api.PresubmitLocalPath(), 'tools_webrtc', 'presubmit_checks_lib')):
-    from check_3pp import CheckThirdPartyDirectory
-  return CheckThirdPartyDirectory(input_api, output_api)
 
 
 def CheckChangeOnUpload(input_api, output_api):
@@ -866,23 +843,9 @@ def CheckChangeOnUpload(input_api, output_api):
 
 def CheckChangeOnCommit(input_api, output_api):
   results = []
-
-  # We have to skip OWNERS check for chromium-specific third_party deps.
-  chromium_deps_file = input_api.os_path.join(
-      input_api.PresubmitLocalPath(),
-      'THIRD_PARTY_CHROMIUM_DEPS.json')
-  with open(chromium_deps_file, 'rb') as f:
-    chromium_deps = json.load(f).get('dependencies', [])
-  deps_blacklist = []
-  for dep in chromium_deps:
-    deps_blacklist.append(r'^third_party[\\\/]%s[\\\/].+' % dep)
-  deps_filter = lambda x: input_api.FilterSourceFile(
-      x, black_list=deps_blacklist)
-
   results.extend(CommonChecks(input_api, output_api))
   results.extend(VerifyNativeApiHeadersListIsValid(input_api, output_api))
-  results.extend(input_api.canned_checks.CheckOwners(input_api, output_api,
-      source_file_filter=deps_filter))
+  results.extend(input_api.canned_checks.CheckOwners(input_api, output_api))
   results.extend(input_api.canned_checks.CheckChangeWasUploaded(
       input_api, output_api))
   results.extend(input_api.canned_checks.CheckChangeHasDescription(
