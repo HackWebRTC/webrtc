@@ -163,9 +163,9 @@ void PeerConnectionDelegateAdapter::OnTrack(
 
 void PeerConnectionDelegateAdapter::OnDataChannel(
     rtc::scoped_refptr<DataChannelInterface> data_channel) {
-  RTCDataChannel *dataChannel =
-      [[RTCDataChannel alloc] initWithNativeDataChannel:data_channel];
   RTCPeerConnection *peer_connection = peer_connection_;
+  RTCDataChannel *dataChannel = [[RTCDataChannel alloc] initWithFactory:peer_connection.factory
+                                                      nativeDataChannel:data_channel];
   [peer_connection.delegate peerConnection:peer_connection
                         didOpenDataChannel:dataChannel];
 }

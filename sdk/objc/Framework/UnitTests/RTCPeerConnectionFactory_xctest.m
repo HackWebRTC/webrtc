@@ -9,6 +9,8 @@
  */
 
 #import <WebRTC/RTCConfiguration.h>
+#import <WebRTC/RTCDataChannel.h>
+#import <WebRTC/RTCDataChannelConfiguration.h>
 #import <WebRTC/RTCMediaConstraints.h>
 #import <WebRTC/RTCPeerConnection.h>
 #import <WebRTC/RTCPeerConnectionFactory.h>
@@ -55,6 +57,34 @@
       factory = nil;
     }
     mediaStream = nil;
+  }
+
+  XCTAssertTrue(true, "Expect test does not crash");
+}
+
+- (void)testDataChannelLifetime {
+  @autoreleasepool {
+    RTCConfiguration *config = [[RTCConfiguration alloc] init];
+    RTCMediaConstraints *contraints =
+        [[RTCMediaConstraints alloc] initWithMandatoryConstraints:@{} optionalConstraints:nil];
+    RTCDataChannelConfiguration *dataChannelConfig = [[RTCDataChannelConfiguration alloc] init];
+
+    RTCPeerConnectionFactory *factory;
+    RTCPeerConnection *peerConnection;
+    RTCDataChannel *dataChannel;
+
+    @autoreleasepool {
+      factory = [[RTCPeerConnectionFactory alloc] init];
+      peerConnection =
+          [factory peerConnectionWithConfiguration:config constraints:contraints delegate:nil];
+      dataChannel =
+          [peerConnection dataChannelForLabel:@"test_channel" configuration:dataChannelConfig];
+      XCTAssertTrue(dataChannel != nil);
+      [peerConnection close];
+      peerConnection = nil;
+      factory = nil;
+    }
+    dataChannel = nil;
   }
 
   XCTAssertTrue(true, "Expect test does not crash");

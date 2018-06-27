@@ -15,6 +15,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class RTCPeerConnectionFactory;
+
 @interface RTCDataBuffer ()
 
 /**
@@ -31,8 +33,8 @@ NS_ASSUME_NONNULL_BEGIN
 @interface RTCDataChannel ()
 
 /** Initialize an RTCDataChannel from a native DataChannelInterface. */
-- (instancetype)initWithNativeDataChannel:
-        (rtc::scoped_refptr<webrtc::DataChannelInterface>)nativeDataChannel
+- (instancetype)initWithFactory:(RTCPeerConnectionFactory *)factory
+              nativeDataChannel:(rtc::scoped_refptr<webrtc::DataChannelInterface>)nativeDataChannel
     NS_DESIGNATED_INITIALIZER;
 
 + (webrtc::DataChannelInterface::DataState)nativeDataChannelStateForState:
