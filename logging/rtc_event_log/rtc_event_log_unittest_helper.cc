@@ -235,6 +235,8 @@ EventGenerator::NewRtcpPacketIncoming() {
     }
     default:
       RTC_NOTREACHED();
+      rtc::Buffer buffer;
+      return rtc::MakeUnique<RtcEventRtcpPacketIncoming>(buffer);
   }
 }
 
@@ -254,6 +256,8 @@ EventGenerator::NewRtcpPacketOutgoing() {
     }
     default:
       RTC_NOTREACHED();
+      rtc::Buffer buffer;
+      return rtc::MakeUnique<RtcEventRtcpPacketOutgoing>(buffer);
   }
 }
 
