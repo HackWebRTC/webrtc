@@ -19,6 +19,12 @@ RtcEventIceCandidatePair::RtcEventIceCandidatePair(
     uint32_t candidate_pair_id)
     : type_(type), candidate_pair_id_(candidate_pair_id) {}
 
+RtcEventIceCandidatePair::RtcEventIceCandidatePair(
+    const RtcEventIceCandidatePair& other)
+    : RtcEvent(other.timestamp_us_),
+      type_(other.type_),
+      candidate_pair_id_(other.candidate_pair_id_) {}
+
 RtcEventIceCandidatePair::~RtcEventIceCandidatePair() = default;
 
 RtcEvent::Type RtcEventIceCandidatePair::GetType() const {
@@ -30,7 +36,7 @@ bool RtcEventIceCandidatePair::IsConfigEvent() const {
 }
 
 std::unique_ptr<RtcEvent> RtcEventIceCandidatePair::Copy() const {
-  return rtc::MakeUnique<RtcEventIceCandidatePair>(type_, candidate_pair_id_);
+  return rtc::WrapUnique<RtcEvent>(new RtcEventIceCandidatePair(*this));
 }
 
 }  // namespace webrtc

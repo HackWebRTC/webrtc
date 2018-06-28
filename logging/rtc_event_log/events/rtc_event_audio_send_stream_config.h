@@ -34,6 +34,9 @@ class RtcEventAudioSendStreamConfig final : public RtcEvent {
   std::unique_ptr<RtcEvent> Copy() const override;
 
   const std::unique_ptr<const rtclog::StreamConfig> config_;
+
+ private:
+  RtcEventAudioSendStreamConfig(const RtcEventAudioSendStreamConfig& other);
 };
 
 }  // namespace webrtc

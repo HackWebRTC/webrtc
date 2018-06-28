@@ -16,6 +16,9 @@ namespace webrtc {
 
 RtcEventAudioPlayout::RtcEventAudioPlayout(uint32_t ssrc) : ssrc_(ssrc) {}
 
+RtcEventAudioPlayout::RtcEventAudioPlayout(const RtcEventAudioPlayout& other)
+    : RtcEvent(other.timestamp_us_), ssrc_(other.ssrc_) {}
+
 RtcEvent::Type RtcEventAudioPlayout::GetType() const {
   return RtcEvent::Type::AudioPlayout;
 }
@@ -25,7 +28,7 @@ bool RtcEventAudioPlayout::IsConfigEvent() const {
 }
 
 std::unique_ptr<RtcEvent> RtcEventAudioPlayout::Copy() const {
-  return rtc::MakeUnique<RtcEventAudioPlayout>(ssrc_);
+  return rtc::WrapUnique<RtcEvent>(new RtcEventAudioPlayout(*this));
 }
 
 }  // namespace webrtc

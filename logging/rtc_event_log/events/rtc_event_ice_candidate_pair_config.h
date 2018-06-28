@@ -97,6 +97,9 @@ class RtcEventIceCandidatePairConfig final : public RtcEvent {
   const IceCandidatePairConfigType type_;
   const uint32_t candidate_pair_id_;
   const IceCandidatePairDescription candidate_pair_desc_;
+
+ private:
+  RtcEventIceCandidatePairConfig(const RtcEventIceCandidatePairConfig& other);
 };
 
 }  // namespace webrtc

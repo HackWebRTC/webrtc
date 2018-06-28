@@ -23,7 +23,6 @@ class RtpPacketReceived;
 class RtcEventRtpPacketIncoming final : public RtcEvent {
  public:
   explicit RtcEventRtpPacketIncoming(const RtpPacketReceived& packet);
-  RtcEventRtpPacketIncoming(const RtcEventRtpPacketIncoming& other);
   ~RtcEventRtpPacketIncoming() override;
 
   Type GetType() const override;
@@ -34,6 +33,9 @@ class RtcEventRtpPacketIncoming final : public RtcEvent {
 
   RtpPacket header_;            // Only the packet's header will be stored here.
   const size_t packet_length_;  // Length before stripping away all but header.
+
+ private:
+  RtcEventRtpPacketIncoming(const RtcEventRtpPacketIncoming& other);
 };
 
 }  // namespace webrtc

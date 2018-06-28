@@ -21,6 +21,13 @@ RtcEventBweUpdateLossBased::RtcEventBweUpdateLossBased(int32_t bitrate_bps,
       fraction_loss_(fraction_loss),
       total_packets_(total_packets) {}
 
+RtcEventBweUpdateLossBased::RtcEventBweUpdateLossBased(
+    const RtcEventBweUpdateLossBased& other)
+    : RtcEvent(other.timestamp_us_),
+      bitrate_bps_(other.bitrate_bps_),
+      fraction_loss_(other.fraction_loss_),
+      total_packets_(other.total_packets_) {}
+
 RtcEventBweUpdateLossBased::~RtcEventBweUpdateLossBased() = default;
 
 RtcEvent::Type RtcEventBweUpdateLossBased::GetType() const {
@@ -32,8 +39,7 @@ bool RtcEventBweUpdateLossBased::IsConfigEvent() const {
 }
 
 std::unique_ptr<RtcEvent> RtcEventBweUpdateLossBased::Copy() const {
-  return rtc::MakeUnique<RtcEventBweUpdateLossBased>(
-      bitrate_bps_, fraction_loss_, total_packets_);
+  return rtc::WrapUnique<RtcEvent>(new RtcEventBweUpdateLossBased(*this));
 }
 
 }  // namespace webrtc

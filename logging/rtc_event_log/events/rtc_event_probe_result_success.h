@@ -30,6 +30,9 @@ class RtcEventProbeResultSuccess final : public RtcEvent {
 
   const int32_t id_;
   const int32_t bitrate_bps_;
+
+ private:
+  RtcEventProbeResultSuccess(const RtcEventProbeResultSuccess& other);
 };
 
 }  // namespace webrtc

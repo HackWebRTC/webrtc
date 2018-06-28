@@ -37,6 +37,9 @@ class RtcEventProbeResultFailure final : public RtcEvent {
 
   const int32_t id_;
   const ProbeFailureReason failure_reason_;
+
+ private:
+  RtcEventProbeResultFailure(const RtcEventProbeResultFailure& other);
 };
 
 }  // namespace webrtc

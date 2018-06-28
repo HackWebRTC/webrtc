@@ -31,6 +31,10 @@ class RtcEventVideoReceiveStreamConfig final : public RtcEvent {
   std::unique_ptr<RtcEvent> Copy() const override;
 
   const std::unique_ptr<const rtclog::StreamConfig> config_;
+
+ private:
+  RtcEventVideoReceiveStreamConfig(
+      const RtcEventVideoReceiveStreamConfig& other);
 };
 
 }  // namespace webrtc

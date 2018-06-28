@@ -45,6 +45,13 @@ RtcEventIceCandidatePairConfig::RtcEventIceCandidatePairConfig(
       candidate_pair_id_(candidate_pair_id),
       candidate_pair_desc_(candidate_pair_desc) {}
 
+RtcEventIceCandidatePairConfig::RtcEventIceCandidatePairConfig(
+    const RtcEventIceCandidatePairConfig& other)
+    : RtcEvent(other.timestamp_us_),
+      type_(other.type_),
+      candidate_pair_id_(other.candidate_pair_id_),
+      candidate_pair_desc_(other.candidate_pair_desc_) {}
+
 RtcEventIceCandidatePairConfig::~RtcEventIceCandidatePairConfig() = default;
 
 RtcEvent::Type RtcEventIceCandidatePairConfig::GetType() const {
@@ -58,8 +65,7 @@ bool RtcEventIceCandidatePairConfig::IsConfigEvent() const {
 }
 
 std::unique_ptr<RtcEvent> RtcEventIceCandidatePairConfig::Copy() const {
-  return rtc::MakeUnique<RtcEventIceCandidatePairConfig>(
-      type_, candidate_pair_id_, candidate_pair_desc_);
+  return rtc::WrapUnique<RtcEvent>(new RtcEventIceCandidatePairConfig(*this));
 }
 
 }  // namespace webrtc

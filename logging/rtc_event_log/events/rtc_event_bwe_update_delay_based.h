@@ -33,6 +33,9 @@ class RtcEventBweUpdateDelayBased final : public RtcEvent {
 
   const int32_t bitrate_bps_;
   const BandwidthUsage detector_state_;
+
+ private:
+  RtcEventBweUpdateDelayBased(const RtcEventBweUpdateDelayBased& other);
 };
 
 }  // namespace webrtc

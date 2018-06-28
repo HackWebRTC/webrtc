@@ -20,6 +20,11 @@ RtcEventVideoSendStreamConfig::RtcEventVideoSendStreamConfig(
     std::unique_ptr<rtclog::StreamConfig> config)
     : config_(std::move(config)) {}
 
+RtcEventVideoSendStreamConfig::RtcEventVideoSendStreamConfig(
+    const RtcEventVideoSendStreamConfig& other)
+    : RtcEvent(other.timestamp_us_),
+      config_(rtc::MakeUnique<rtclog::StreamConfig>(*other.config_)) {}
+
 RtcEventVideoSendStreamConfig::~RtcEventVideoSendStreamConfig() = default;
 
 RtcEvent::Type RtcEventVideoSendStreamConfig::GetType() const {
@@ -31,8 +36,7 @@ bool RtcEventVideoSendStreamConfig::IsConfigEvent() const {
 }
 
 std::unique_ptr<RtcEvent> RtcEventVideoSendStreamConfig::Copy() const {
-  auto config_copy = rtc::MakeUnique<rtclog::StreamConfig>(*config_);
-  return rtc::MakeUnique<RtcEventVideoSendStreamConfig>(std::move(config_copy));
+  return rtc::WrapUnique<RtcEvent>(new RtcEventVideoSendStreamConfig(*this));
 }
 
 }  // namespace webrtc

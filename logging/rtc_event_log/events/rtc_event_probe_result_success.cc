@@ -18,6 +18,12 @@ RtcEventProbeResultSuccess::RtcEventProbeResultSuccess(int32_t id,
                                                        int32_t bitrate_bps)
     : id_(id), bitrate_bps_(bitrate_bps) {}
 
+RtcEventProbeResultSuccess::RtcEventProbeResultSuccess(
+    const RtcEventProbeResultSuccess& other)
+    : RtcEvent(other.timestamp_us_),
+      id_(other.id_),
+      bitrate_bps_(other.bitrate_bps_) {}
+
 RtcEvent::Type RtcEventProbeResultSuccess::GetType() const {
   return RtcEvent::Type::ProbeResultSuccess;
 }
@@ -27,7 +33,7 @@ bool RtcEventProbeResultSuccess::IsConfigEvent() const {
 }
 
 std::unique_ptr<RtcEvent> RtcEventProbeResultSuccess::Copy() const {
-  return rtc::MakeUnique<RtcEventProbeResultSuccess>(id_, bitrate_bps_);
+  return rtc::WrapUnique<RtcEvent>(new RtcEventProbeResultSuccess(*this));
 }
 
 }  // namespace webrtc

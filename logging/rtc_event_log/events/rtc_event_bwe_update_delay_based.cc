@@ -20,6 +20,12 @@ RtcEventBweUpdateDelayBased::RtcEventBweUpdateDelayBased(
     BandwidthUsage detector_state)
     : bitrate_bps_(bitrate_bps), detector_state_(detector_state) {}
 
+RtcEventBweUpdateDelayBased::RtcEventBweUpdateDelayBased(
+    const RtcEventBweUpdateDelayBased& other)
+    : RtcEvent(other.timestamp_us_),
+      bitrate_bps_(other.bitrate_bps_),
+      detector_state_(other.detector_state_) {}
+
 RtcEventBweUpdateDelayBased::~RtcEventBweUpdateDelayBased() = default;
 
 RtcEvent::Type RtcEventBweUpdateDelayBased::GetType() const {
@@ -31,8 +37,7 @@ bool RtcEventBweUpdateDelayBased::IsConfigEvent() const {
 }
 
 std::unique_ptr<RtcEvent> RtcEventBweUpdateDelayBased::Copy() const {
-  return rtc::MakeUnique<RtcEventBweUpdateDelayBased>(bitrate_bps_,
-                                                      detector_state_);
+  return rtc::WrapUnique<RtcEvent>(new RtcEventBweUpdateDelayBased(*this));
 }
 
 }  // namespace webrtc

@@ -21,6 +21,11 @@ RtcEventAudioSendStreamConfig::RtcEventAudioSendStreamConfig(
     std::unique_ptr<rtclog::StreamConfig> config)
     : config_(std::move(config)) {}
 
+RtcEventAudioSendStreamConfig::RtcEventAudioSendStreamConfig(
+    const RtcEventAudioSendStreamConfig& other)
+    : RtcEvent(other.timestamp_us_),
+      config_(rtc::MakeUnique<rtclog::StreamConfig>(*other.config_)) {}
+
 RtcEventAudioSendStreamConfig::~RtcEventAudioSendStreamConfig() = default;
 
 RtcEvent::Type RtcEventAudioSendStreamConfig::GetType() const {
@@ -33,7 +38,7 @@ bool RtcEventAudioSendStreamConfig::IsConfigEvent() const {
 
 std::unique_ptr<RtcEvent> RtcEventAudioSendStreamConfig::Copy() const {
   auto config_copy = rtc::MakeUnique<rtclog::StreamConfig>(*config_);
-  return rtc::MakeUnique<RtcEventAudioSendStreamConfig>(std::move(config_copy));
+  return rtc::WrapUnique<RtcEvent>(new RtcEventAudioSendStreamConfig(*this));
 }
 
 }  // namespace webrtc

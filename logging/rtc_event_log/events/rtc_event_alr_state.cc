@@ -15,6 +15,9 @@ namespace webrtc {
 
 RtcEventAlrState::RtcEventAlrState(bool in_alr) : in_alr_(in_alr) {}
 
+RtcEventAlrState::RtcEventAlrState(const RtcEventAlrState& other)
+    : RtcEvent(other.timestamp_us_), in_alr_(other.in_alr_) {}
+
 RtcEventAlrState::~RtcEventAlrState() = default;
 
 RtcEvent::Type RtcEventAlrState::GetType() const {
@@ -26,7 +29,7 @@ bool RtcEventAlrState::IsConfigEvent() const {
 }
 
 std::unique_ptr<RtcEvent> RtcEventAlrState::Copy() const {
-  return rtc::MakeUnique<RtcEventAlrState>(in_alr_);
+  return rtc::WrapUnique<RtcEvent>(new RtcEventAlrState(*this));
 }
 
 }  // namespace webrtc

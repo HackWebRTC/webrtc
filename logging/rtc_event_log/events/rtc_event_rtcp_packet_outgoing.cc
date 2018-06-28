@@ -18,6 +18,11 @@ RtcEventRtcpPacketOutgoing::RtcEventRtcpPacketOutgoing(
     rtc::ArrayView<const uint8_t> packet)
     : packet_(packet.data(), packet.size()) {}
 
+RtcEventRtcpPacketOutgoing::RtcEventRtcpPacketOutgoing(
+    const RtcEventRtcpPacketOutgoing& other)
+    : RtcEvent(other.timestamp_us_),
+      packet_(other.packet_.data(), other.packet_.size()) {}
+
 RtcEventRtcpPacketOutgoing::~RtcEventRtcpPacketOutgoing() = default;
 
 RtcEvent::Type RtcEventRtcpPacketOutgoing::GetType() const {
@@ -29,8 +34,7 @@ bool RtcEventRtcpPacketOutgoing::IsConfigEvent() const {
 }
 
 std::unique_ptr<RtcEvent> RtcEventRtcpPacketOutgoing::Copy() const {
-  return rtc::MakeUnique<RtcEventRtcpPacketOutgoing>(
-      rtc::ArrayView<const uint8_t>(packet_.data(), packet_.size()));
+  return rtc::WrapUnique<RtcEvent>(new RtcEventRtcpPacketOutgoing(*this));
 }
 
 }  // namespace webrtc

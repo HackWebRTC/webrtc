@@ -21,6 +21,11 @@ RtcEventAudioNetworkAdaptation::RtcEventAudioNetworkAdaptation(
     std::unique_ptr<AudioEncoderRuntimeConfig> config)
     : config_(std::move(config)) {}
 
+RtcEventAudioNetworkAdaptation::RtcEventAudioNetworkAdaptation(
+    const RtcEventAudioNetworkAdaptation& other)
+    : RtcEvent(other.timestamp_us_),
+      config_(rtc::MakeUnique<AudioEncoderRuntimeConfig>(*other.config_)) {}
+
 RtcEventAudioNetworkAdaptation::~RtcEventAudioNetworkAdaptation() = default;
 
 RtcEvent::Type RtcEventAudioNetworkAdaptation::GetType() const {
@@ -32,9 +37,7 @@ bool RtcEventAudioNetworkAdaptation::IsConfigEvent() const {
 }
 
 std::unique_ptr<RtcEvent> RtcEventAudioNetworkAdaptation::Copy() const {
-  auto config_copy = rtc::MakeUnique<AudioEncoderRuntimeConfig>(*config_);
-  return rtc::MakeUnique<RtcEventAudioNetworkAdaptation>(
-      std::move(config_copy));
+  return rtc::WrapUnique(new RtcEventAudioNetworkAdaptation(*this));
 }
 
 }  // namespace webrtc

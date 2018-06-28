@@ -23,6 +23,14 @@ RtcEventProbeClusterCreated::RtcEventProbeClusterCreated(int32_t id,
       min_probes_(min_probes),
       min_bytes_(min_bytes) {}
 
+RtcEventProbeClusterCreated::RtcEventProbeClusterCreated(
+    const RtcEventProbeClusterCreated& other)
+    : RtcEvent(other.timestamp_us_),
+      id_(other.id_),
+      bitrate_bps_(other.bitrate_bps_),
+      min_probes_(other.min_probes_),
+      min_bytes_(other.min_bytes_) {}
+
 RtcEvent::Type RtcEventProbeClusterCreated::GetType() const {
   return RtcEvent::Type::ProbeClusterCreated;
 }
@@ -32,8 +40,7 @@ bool RtcEventProbeClusterCreated::IsConfigEvent() const {
 }
 
 std::unique_ptr<RtcEvent> RtcEventProbeClusterCreated::Copy() const {
-  return rtc::MakeUnique<RtcEventProbeClusterCreated>(id_, bitrate_bps_,
-                                                      min_probes_, min_bytes_);
+  return rtc::WrapUnique<RtcEvent>(new RtcEventProbeClusterCreated(*this));
 }
 
 }  // namespace webrtc

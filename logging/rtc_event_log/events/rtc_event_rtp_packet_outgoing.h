@@ -24,7 +24,6 @@ class RtcEventRtpPacketOutgoing final : public RtcEvent {
  public:
   RtcEventRtpPacketOutgoing(const RtpPacketToSend& packet,
                             int probe_cluster_id);
-  RtcEventRtpPacketOutgoing(const RtcEventRtpPacketOutgoing& other);
   ~RtcEventRtpPacketOutgoing() override;
 
   Type GetType() const override;
@@ -36,6 +35,9 @@ class RtcEventRtpPacketOutgoing final : public RtcEvent {
   RtpPacket header_;            // Only the packet's header will be stored here.
   const size_t packet_length_;  // Length before stripping away all but header.
   const int probe_cluster_id_;
+
+ private:
+  RtcEventRtpPacketOutgoing(const RtcEventRtpPacketOutgoing& other);
 };
 
 }  // namespace webrtc

@@ -33,6 +33,9 @@ class RtcEventBweUpdateLossBased final : public RtcEvent {
   const int32_t bitrate_bps_;
   const uint8_t fraction_loss_;
   const int32_t total_packets_;
+
+ private:
+  RtcEventBweUpdateLossBased(const RtcEventBweUpdateLossBased& other);
 };
 
 }  // namespace webrtc

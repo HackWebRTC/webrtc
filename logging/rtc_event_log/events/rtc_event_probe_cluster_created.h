@@ -35,6 +35,9 @@ class RtcEventProbeClusterCreated final : public RtcEvent {
   const int32_t bitrate_bps_;
   const uint32_t min_probes_;
   const uint32_t min_bytes_;
+
+ private:
+  RtcEventProbeClusterCreated(const RtcEventProbeClusterCreated& other);
 };
 
 }  // namespace webrtc
