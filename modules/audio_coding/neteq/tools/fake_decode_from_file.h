@@ -50,6 +50,8 @@ class FakeDecodeFromFile : public AudioDecoder {
                      int16_t* decoded,
                      SpeechType* speech_type) override;
 
+  int PacketDuration(const uint8_t* encoded, size_t encoded_len) const override;
+
   // Helper method. Writes |timestamp|, |samples| and
   // |original_payload_size_bytes| to |encoded| in a format that the
   // FakeDecodeFromFile decoder will understand. |encoded| must be at least 12
