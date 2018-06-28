@@ -38,6 +38,11 @@ bool EnableEnforcingDelayAfterRealignment() {
       "WebRTC-Aec3EnforceDelayAfterRealignmentKillSwitch");
 }
 
+bool EnableLinearModeWithDivergedFilter() {
+  return !field_trial::IsEnabled(
+      "WebRTC-Aec3LinearModeWithDivergedFilterKillSwitch");
+}
+
 float ComputeGainRampupIncrease(const EchoCanceller3Config& config) {
   const auto& c = config.echo_removal_control.gain_rampup;
   return powf(1.f / c.first_non_zero_gain, 1.f / c.non_zero_gain_blocks);
@@ -59,6 +64,8 @@ AecState::AecState(const EchoCanceller3Config& config)
           EnableStationaryRenderImprovements() &&
           config_.echo_audibility.use_stationary_properties),
       enforce_delay_after_realignment_(EnableEnforcingDelayAfterRealignment()),
+      allow_linear_mode_with_diverged_filter_(
+          EnableLinearModeWithDivergedFilter()),
       erle_estimator_(config.erle.min, config.erle.max_l, config.erle.max_h),
       max_render_(config_.filter.main.length_blocks, 0.f),
       reverb_decay_(fabsf(config_.ep_strength.default_len)),
@@ -77,6 +84,7 @@ void AecState::HandleEchoPathChange(
     filter_analyzer_.Reset();
     blocks_since_last_saturation_ = 0;
     usable_linear_estimate_ = false;
+    diverged_linear_filter_ = false;
     capture_signal_saturation_ = false;
     echo_saturation_ = false;
     std::fill(max_render_.begin(), max_render_.end(), 0.f);
@@ -269,10 +277,13 @@ void AecState::Update(
   if (!config_.echo_removal_control.linear_and_stable_echo_path) {
     usable_linear_estimate_ =
         usable_linear_estimate_ && recently_converged_filter;
-    usable_linear_estimate_ = usable_linear_estimate_ && !diverged_filter;
+    if (!allow_linear_mode_with_diverged_filter_) {
+      usable_linear_estimate_ = usable_linear_estimate_ && !diverged_filter;
+    }
   }
 
   use_linear_filter_output_ = usable_linear_estimate_ && !TransparentMode();
+  diverged_linear_filter_ = diverged_filter;
 
   UpdateReverb(adaptive_filter_impulse_response);
 

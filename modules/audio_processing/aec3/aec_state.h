@@ -69,6 +69,14 @@ class AecState {
     return erle_estimator_.Erle();
   }
 
+  // Returns any uncertainty in the ERLE estimate.
+  absl::optional<float> ErleUncertainty() const {
+    if (allow_linear_mode_with_diverged_filter_ && diverged_linear_filter_) {
+      return 10.f;
+    }
+    return absl::nullopt;
+  }
+
   // Returns the time-domain ERLE.
   float ErleTimeDomain() const { return erle_estimator_.ErleTimeDomain(); }
 
@@ -159,6 +167,7 @@ class AecState {
   const bool allow_transparent_mode_;
   const bool use_stationary_properties_;
   const bool enforce_delay_after_realignment_;
+  const bool allow_linear_mode_with_diverged_filter_;
   ErlEstimator erl_estimator_;
   ErleEstimator erle_estimator_;
   size_t capture_block_counter_ = 0;
@@ -166,6 +175,7 @@ class AecState {
   size_t blocks_with_proper_filter_adaptation_ = 0;
   size_t blocks_with_active_render_ = 0;
   bool usable_linear_estimate_ = false;
+  bool diverged_linear_filter_ = false;
   bool capture_signal_saturation_ = false;
   bool echo_saturation_ = false;
   bool transparent_mode_ = false;

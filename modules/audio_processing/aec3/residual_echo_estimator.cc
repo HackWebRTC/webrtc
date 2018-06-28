@@ -100,7 +100,8 @@ void ResidualEchoEstimator::Estimate(
   // Estimate the residual echo power.
   if (aec_state.UsableLinearEstimate()) {
     RTC_DCHECK(!aec_state.SaturatedEcho());
-    LinearEstimate(S2_linear, aec_state.Erle(), R2);
+    LinearEstimate(S2_linear, aec_state.Erle(), aec_state.ErleUncertainty(),
+                   R2);
     // Adds the estimated unmodelled echo power to the residual echo power
     // estimate.
     if (echo_reverb_) {
@@ -203,13 +204,20 @@ void ResidualEchoEstimator::Reset() {
 void ResidualEchoEstimator::LinearEstimate(
     const std::array<float, kFftLengthBy2Plus1>& S2_linear,
     const std::array<float, kFftLengthBy2Plus1>& erle,
+    absl::optional<float> erle_uncertainty,
     std::array<float, kFftLengthBy2Plus1>* R2) {
   std::fill(R2_hold_counter_.begin(), R2_hold_counter_.end(), 10.f);
-  std::transform(erle.begin(), erle.end(), S2_linear.begin(), R2->begin(),
-                 [](float a, float b) {
-                   RTC_DCHECK_LT(0.f, a);
-                   return b / a;
-                 });
+  if (erle_uncertainty) {
+    for (size_t k = 0; k < R2->size(); ++k) {
+      (*R2)[k] = S2_linear[k] * *erle_uncertainty;
+    }
+  } else {
+    std::transform(erle.begin(), erle.end(), S2_linear.begin(), R2->begin(),
+                   [](float a, float b) {
+                     RTC_DCHECK_LT(0.f, a);
+                     return b / a;
+                   });
+  }
 }
 
 void ResidualEchoEstimator::NonLinearEstimate(

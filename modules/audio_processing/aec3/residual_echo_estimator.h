@@ -56,6 +56,7 @@ class ResidualEchoEstimator {
   // (ERLE) and the linear power estimate.
   void LinearEstimate(const std::array<float, kFftLengthBy2Plus1>& S2_linear,
                       const std::array<float, kFftLengthBy2Plus1>& erle,
+                      absl::optional<float> erle_uncertainty,
                       std::array<float, kFftLengthBy2Plus1>* R2);
 
   // Estimates the residual echo power based on the estimate of the echo path
