@@ -376,6 +376,7 @@ TEST_P(PeerConnectionEndToEndTest, CallWithLegacySdp) {
 }
 #endif  // !defined(ADDRESS_SANITIZER)
 
+#if !defined(WEBRTC_WIN) || !defined(ADDRESS_SANITIZER)
 TEST_P(PeerConnectionEndToEndTest, CallWithCustomCodec) {
   class IdLoggingAudioEncoderFactory : public webrtc::AudioEncoderFactory {
    public:
@@ -466,6 +467,7 @@ TEST_P(PeerConnectionEndToEndTest, CallWithCustomCodec) {
   EXPECT_EQ(encoder_id2, decoder_id2);
   EXPECT_NE(encoder_id1, encoder_id2);
 }
+#endif  // !defined(WEBRTC_WIN) || !defined(ADDRESS_SANITIZER)
 
 #ifdef HAVE_SCTP
 // Verifies that a DataChannel created before the negotiation can transition to
