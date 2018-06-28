@@ -43,9 +43,9 @@ AimdRateControlStates CreateAimdRateControlStates() {
 
 void UpdateRateControl(const AimdRateControlStates& states,
                        const BandwidthUsage& bandwidth_usage,
-                       absl::optional<uint32_t> bitrate,
+                       absl::optional<uint32_t> throughput_estimate,
                        int64_t now_ms) {
-  RateControlInput input(bandwidth_usage, bitrate, now_ms);
+  RateControlInput input(bandwidth_usage, throughput_estimate);
   states.aimd_rate_control->Update(&input, now_ms);
 }
 

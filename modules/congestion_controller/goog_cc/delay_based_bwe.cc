@@ -286,9 +286,7 @@ DelayBasedBwe::Result DelayBasedBwe::MaybeUpdateEstimate(
 bool DelayBasedBwe::UpdateEstimate(int64_t now_ms,
                                    absl::optional<uint32_t> acked_bitrate_bps,
                                    uint32_t* target_bitrate_bps) {
-  // TODO(terelius): RateControlInput::noise_var is deprecated and will be
-  // removed. In the meantime, we set it to zero.
-  const RateControlInput input(delay_detector_->State(), acked_bitrate_bps, 0);
+  const RateControlInput input(delay_detector_->State(), acked_bitrate_bps);
   *target_bitrate_bps = rate_control_.Update(&input, now_ms);
   return rate_control_.ValidEstimate();
 }

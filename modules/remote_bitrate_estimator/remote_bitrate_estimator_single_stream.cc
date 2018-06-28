@@ -157,7 +157,6 @@ int64_t RemoteBitrateEstimatorSingleStream::TimeUntilNextProcess() {
 
 void RemoteBitrateEstimatorSingleStream::UpdateEstimate(int64_t now_ms) {
   BandwidthUsage bw_state = BandwidthUsage::kBwNormal;
-  double sum_var_noise = 0.0;
   SsrcOveruseEstimatorMap::iterator it = overuse_detectors_.begin();
   while (it != overuse_detectors_.end()) {
     const int64_t time_of_last_received_packet =
@@ -169,7 +168,6 @@ void RemoteBitrateEstimatorSingleStream::UpdateEstimate(int64_t now_ms) {
       delete it->second;
       overuse_detectors_.erase(it++);
     } else {
-      sum_var_noise += it->second->estimator.var_noise();
       // Make sure that we trigger an over-use if any of the over-use detectors
       // is detecting over-use.
       if (it->second->detector.State() > bw_state) {
@@ -184,10 +182,7 @@ void RemoteBitrateEstimatorSingleStream::UpdateEstimate(int64_t now_ms) {
   }
   AimdRateControl* remote_rate = GetRemoteRate();
 
-  double mean_noise_var =
-      sum_var_noise / static_cast<double>(overuse_detectors_.size());
-  const RateControlInput input(bw_state, incoming_bitrate_.Rate(now_ms),
-                               mean_noise_var);
+  const RateControlInput input(bw_state, incoming_bitrate_.Rate(now_ms));
   uint32_t target_bitrate = remote_rate->Update(&input, now_ms);
   if (remote_rate->ValidEstimate()) {
     process_interval_ms_ = remote_rate->GetFeedbackInterval();

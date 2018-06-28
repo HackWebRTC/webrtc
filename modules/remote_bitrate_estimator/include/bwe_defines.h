@@ -48,13 +48,11 @@ enum RateControlRegion { kRcNearMax, kRcAboveMax, kRcMaxUnknown };
 
 struct RateControlInput {
   RateControlInput(BandwidthUsage bw_state,
-                   const absl::optional<uint32_t>& incoming_bitrate,
-                   double noise_var);
+                   const absl::optional<uint32_t>& estimated_throughput_bps);
   ~RateControlInput();
 
   BandwidthUsage bw_state;
-  absl::optional<uint32_t> incoming_bitrate;
-  double noise_var;
+  absl::optional<uint32_t> estimated_throughput_bps;
 };
 }  // namespace webrtc
 
