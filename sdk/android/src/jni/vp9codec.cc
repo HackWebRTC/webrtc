@@ -25,7 +25,7 @@ static jlong JNI_VP9Encoder_CreateEncoder(JNIEnv* jni,
 
 static jboolean JNI_VP9Encoder_IsSupported(JNIEnv* jni,
                                            const JavaParamRef<jclass>&) {
-  return VP9Encoder::IsSupported();
+  return !SupportedVP9Codecs().empty();
 }
 
 static jlong JNI_VP9Decoder_CreateDecoder(JNIEnv* jni,
@@ -35,7 +35,7 @@ static jlong JNI_VP9Decoder_CreateDecoder(JNIEnv* jni,
 
 static jboolean JNI_VP9Decoder_IsSupported(JNIEnv* jni,
                                            const JavaParamRef<jclass>&) {
-  return VP9Decoder::IsSupported();
+  return !SupportedVP9Codecs().empty();
 }
 
 }  // namespace jni

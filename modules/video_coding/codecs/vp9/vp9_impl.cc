@@ -52,12 +52,19 @@ int GetCpuSpeed(int width, int height) {
 #endif
 }
 
-bool VP9Encoder::IsSupported() {
-  return true;
+std::vector<SdpVideoFormat> SupportedVP9Codecs() {
+  return {SdpVideoFormat(
+      cricket::kVp9CodecName,
+      {{kVP9FmtpProfileId, VP9ProfileToString(VP9Profile::kProfile0)}})};
 }
 
 std::unique_ptr<VP9Encoder> VP9Encoder::Create() {
-  return rtc::MakeUnique<VP9EncoderImpl>();
+  return rtc::MakeUnique<VP9EncoderImpl>(cricket::VideoCodec());
+}
+
+std::unique_ptr<VP9Encoder> VP9Encoder::Create(
+    const cricket::VideoCodec& codec) {
+  return rtc::MakeUnique<VP9EncoderImpl>(codec);
 }
 
 void VP9EncoderImpl::EncoderOutputCodedPacketCallback(vpx_codec_cx_pkt* pkt,
@@ -66,9 +73,11 @@ void VP9EncoderImpl::EncoderOutputCodedPacketCallback(vpx_codec_cx_pkt* pkt,
   enc->GetEncodedLayerFrame(pkt);
 }
 
-VP9EncoderImpl::VP9EncoderImpl()
+VP9EncoderImpl::VP9EncoderImpl(const cricket::VideoCodec& codec)
     : encoded_image_(),
       encoded_complete_callback_(nullptr),
+      profile_(
+          ParseSdpForVP9Profile(codec.params).value_or(VP9Profile::kProfile0)),
       inited_(false),
       timestamp_(0),
       cpu_speed_(3),
@@ -88,6 +97,7 @@ VP9EncoderImpl::VP9EncoderImpl()
       is_flexible_mode_(false) {
   memset(&codec_, 0, sizeof(codec_));
   memset(&svc_params_, 0, sizeof(vpx_svc_extra_cfg_t));
+  RTC_DCHECK(VP9Profile::kProfile0 == profile_);
 }
 
 VP9EncoderImpl::~VP9EncoderImpl() {
@@ -958,10 +968,6 @@ int VP9EncoderImpl::RegisterEncodeCompleteCallback(
 
 const char* VP9EncoderImpl::ImplementationName() const {
   return "libvpx";
-}
-
-bool VP9Decoder::IsSupported() {
-  return true;
 }
 
 std::unique_ptr<VP9Decoder> VP9Decoder::Create() {

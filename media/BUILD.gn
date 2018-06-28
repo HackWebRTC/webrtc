@@ -53,6 +53,20 @@ rtc_source_set("rtc_media_config") {
   ]
 }
 
+rtc_source_set("rtc_vp9_profile") {
+  sources = [
+    "base/vp9_profile.cc",
+    "base/vp9_profile.h",
+  ]
+
+  deps = [
+    "..:webrtc_common",
+    "../api/video_codecs:video_codecs_api",
+    "../rtc_base:rtc_base_approved",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
+}
+
 rtc_static_library("rtc_media_base") {
   visibility = [ "*" ]
   defines = []
@@ -109,6 +123,7 @@ rtc_static_library("rtc_media_base") {
   deps += [
     ":rtc_h264_profile_id",
     ":rtc_media_config",
+    ":rtc_vp9_profile",
     "..:webrtc_common",
     "../api:libjingle_peerconnection_api",
     "../api/audio_codecs:audio_codecs_api",
@@ -551,6 +566,7 @@ if (rtc_include_tests) {
       ":rtc_media",
       ":rtc_media_base",
       ":rtc_media_tests_utils",
+      ":rtc_vp9_profile",
       "../api:create_simulcast_test_fixture_api",
       "../api:libjingle_peerconnection_api",
       "../api:mock_video_codec_factory",

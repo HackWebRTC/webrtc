@@ -13,6 +13,7 @@
 #include <algorithm>
 
 #include "media/base/h264_profile_level_id.h"
+#include "media/base/vp9_profile.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/stringencode.h"
@@ -270,6 +271,8 @@ bool VideoCodec::Matches(const VideoCodec& other) const {
   if (CodecNamesEq(name.c_str(), kH264CodecName))
     return webrtc::H264::IsSameH264Profile(params, other.params) &&
            IsSameH264PacketizationMode(params, other.params);
+  if (CodecNamesEq(name.c_str(), kVp9CodecName))
+    return webrtc::IsSameVP9Profile(params, other.params);
   return true;
 }
 
@@ -386,9 +389,12 @@ bool IsSameCodec(const std::string& name1,
   // If different names (case insensitive), then not same formats.
   if (!CodecNamesEq(name1, name2))
     return false;
-  // For every format besides H264, comparing names is enough.
-  return !CodecNamesEq(name1.c_str(), kH264CodecName) ||
-         webrtc::H264::IsSameH264Profile(params1, params2);
+  // For every format besides H264 and VP9, comparing names is enough.
+  if (CodecNamesEq(name1.c_str(), kH264CodecName))
+    return webrtc::H264::IsSameH264Profile(params1, params2);
+  if (CodecNamesEq(name1.c_str(), kVp9CodecName))
+    return webrtc::IsSameVP9Profile(params1, params2);
+  return true;
 }
 
 }  // namespace cricket

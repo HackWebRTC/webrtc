@@ -17,6 +17,8 @@
 #include <vector>
 
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
+
+#include "media/base/vp9_profile.h"
 #include "modules/video_coding/codecs/vp9/vp9_frame_buffer_pool.h"
 #include "rtc_base/rate_statistics.h"
 
@@ -28,7 +30,7 @@ namespace webrtc {
 
 class VP9EncoderImpl : public VP9Encoder {
  public:
-  VP9EncoderImpl();
+  explicit VP9EncoderImpl(const cricket::VideoCodec& codec);
 
   virtual ~VP9EncoderImpl();
 
@@ -94,6 +96,7 @@ class VP9EncoderImpl : public VP9Encoder {
   CodecSpecificInfo codec_specific_;
   EncodedImageCallback* encoded_complete_callback_;
   VideoCodec codec_;
+  const VP9Profile profile_;
   bool inited_;
   int64_t timestamp_;
   int cpu_speed_;
