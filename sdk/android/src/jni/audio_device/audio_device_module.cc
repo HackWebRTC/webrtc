@@ -119,6 +119,8 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
     int32_t err = input_->Terminate();
     err |= output_->Terminate();
     initialized_ = false;
+    thread_checker_.DetachFromThread();
+    audio_device_buffer_.reset(nullptr);
     RTC_DCHECK_EQ(err, 0);
     return err;
   }

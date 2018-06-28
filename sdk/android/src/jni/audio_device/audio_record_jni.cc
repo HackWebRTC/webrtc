@@ -95,6 +95,7 @@ int32_t AudioRecordJni::Terminate() {
   RTC_LOG(INFO) << "Terminate";
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   StopRecording();
+  thread_checker_.DetachFromThread();
   return 0;
 }
 

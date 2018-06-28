@@ -69,6 +69,7 @@ int32_t AudioTrackJni::Terminate() {
   RTC_LOG(INFO) << "Terminate";
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   StopPlayout();
+  thread_checker_.DetachFromThread();
   return 0;
 }
 
