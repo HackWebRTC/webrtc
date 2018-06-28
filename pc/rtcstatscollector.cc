@@ -168,6 +168,7 @@ const char* NetworkAdapterTypeToStatsType(rtc::AdapterType type) {
       return RTCNetworkType::kVpn;
     case rtc::ADAPTER_TYPE_UNKNOWN:
     case rtc::ADAPTER_TYPE_LOOPBACK:
+    case rtc::ADAPTER_TYPE_ANY:
       return RTCNetworkType::kUnknown;
   }
   RTC_NOTREACHED();

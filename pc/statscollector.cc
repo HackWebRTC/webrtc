@@ -414,6 +414,7 @@ const char* IceCandidateTypeToStatsType(const std::string& candidate_type) {
 
 const char* AdapterTypeToStatsType(rtc::AdapterType type) {
   switch (type) {
+    case rtc::ADAPTER_TYPE_ANY:
     case rtc::ADAPTER_TYPE_UNKNOWN:
       return "unknown";
     case rtc::ADAPTER_TYPE_ETHERNET:

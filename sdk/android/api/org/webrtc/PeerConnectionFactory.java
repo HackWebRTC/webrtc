@@ -127,6 +127,7 @@ public class PeerConnectionFactory {
     static final int ADAPTER_TYPE_CELLULAR = 1 << 2;
     static final int ADAPTER_TYPE_VPN = 1 << 3;
     static final int ADAPTER_TYPE_LOOPBACK = 1 << 4;
+    static final int ADAPTER_TYPE_ANY = 1 << 5;
 
     public int networkIgnoreMask;
     public boolean disableEncryption;

@@ -94,6 +94,7 @@ bool SortNetworks(const Network* a, const Network* b) {
 
 std::string AdapterTypeToString(AdapterType type) {
   switch (type) {
+    case ADAPTER_TYPE_ANY:
     case ADAPTER_TYPE_UNKNOWN:
       return "Unknown";
     case ADAPTER_TYPE_ETHERNET:
@@ -121,6 +122,17 @@ uint16_t ComputeNetworkCostByType(int type) {
       return kNetworkCostLow;
     case rtc::ADAPTER_TYPE_CELLULAR:
       return kNetworkCostHigh;
+    case rtc::ADAPTER_TYPE_ANY:
+      // Candidates gathered from the any-address/wildcard ports, as backups,
+      // are given the maximum cost so that if there are other candidates with
+      // known interface types, we would not select candidate pairs using these
+      // backup candidates if other selection criteria with higher precedence
+      // (network conditions over the route) are the same. Note that setting the
+      // cost to kNetworkCostUnknown would be problematic since
+      // ADAPTER_TYPE_CELLULAR would then have a higher cost. See
+      // P2PTransportChannel::SortConnectionsAndUpdateState for how we rank and
+      // select candidate pairs, where the network cost is among the criteria.
+      return kNetworkCostMax;
     case rtc::ADAPTER_TYPE_VPN:
       // The cost of a VPN should be computed using its underlying network type.
       RTC_NOTREACHED();
@@ -265,7 +277,7 @@ void NetworkManagerBase::GetAnyAddressNetworks(NetworkList* networks) {
   if (!ipv4_any_address_network_) {
     const rtc::IPAddress ipv4_any_address(INADDR_ANY);
     ipv4_any_address_network_.reset(
-        new rtc::Network("any", "any", ipv4_any_address, 0));
+        new rtc::Network("any", "any", ipv4_any_address, 0, ADAPTER_TYPE_ANY));
     ipv4_any_address_network_->set_default_local_address_provider(this);
     ipv4_any_address_network_->AddIP(ipv4_any_address);
   }
@@ -274,8 +286,8 @@ void NetworkManagerBase::GetAnyAddressNetworks(NetworkList* networks) {
   if (ipv6_enabled()) {
     if (!ipv6_any_address_network_) {
       const rtc::IPAddress ipv6_any_address(in6addr_any);
-      ipv6_any_address_network_.reset(
-          new rtc::Network("any", "any", ipv6_any_address, 0));
+      ipv6_any_address_network_.reset(new rtc::Network(
+          "any", "any", ipv6_any_address, 0, ADAPTER_TYPE_ANY));
       ipv6_any_address_network_->set_default_local_address_provider(this);
       ipv6_any_address_network_->AddIP(ipv6_any_address);
     }
