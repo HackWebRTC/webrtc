@@ -134,6 +134,11 @@ class PeerConnectionUsageHistogramTest : public ::testing::Test {
         RTCConfiguration(), PeerConnectionFactoryInterface::Options(), false);
   }
 
+  WrapperPtr CreatePeerConnection(const RTCConfiguration& config) {
+    return CreatePeerConnection(
+        config, PeerConnectionFactoryInterface::Options(), false);
+  }
+
   WrapperPtr CreatePeerConnectionWithImmediateReport() {
     return CreatePeerConnection(
         RTCConfiguration(), PeerConnectionFactoryInterface::Options(), true);
@@ -241,5 +246,50 @@ TEST_F(PeerConnectionUsageHistogramTest, FingerprintDataOnly) {
 }
 #endif  // HAVE_SCTP
 #endif  // WEBRTC_ANDROID
+
+TEST_F(PeerConnectionUsageHistogramTest, FingerprintStunTurn) {
+  RTCConfiguration configuration;
+  PeerConnection::IceServer server;
+  server.urls = {"stun:dummy.stun.server/"};
+  configuration.servers.push_back(server);
+  server.urls = {"turn:dummy.turn.server/"};
+  server.username = "username";
+  server.password = "password";
+  configuration.servers.push_back(server);
+  auto caller = CreatePeerConnection(configuration);
+  ASSERT_TRUE(caller);
+  auto caller_observer = caller->RegisterFakeMetricsObserver();
+  caller->pc()->Close();
+  int expected_fingerprint =
+      MakeUsageFingerprint({PeerConnection::UsageEvent::STUN_SERVER_ADDED,
+                            PeerConnection::UsageEvent::TURN_SERVER_ADDED,
+                            PeerConnection::UsageEvent::CLOSE_CALLED});
+  EXPECT_TRUE(caller_observer->ExpectOnlySingleEnumCount(
+      webrtc::kEnumCounterUsagePattern, expected_fingerprint));
+}
+
+TEST_F(PeerConnectionUsageHistogramTest, FingerprintStunTurnInReconfiguration) {
+  RTCConfiguration configuration;
+  PeerConnection::IceServer server;
+  server.urls = {"stun:dummy.stun.server/"};
+  configuration.servers.push_back(server);
+  server.urls = {"turn:dummy.turn.server/"};
+  server.username = "username";
+  server.password = "password";
+  configuration.servers.push_back(server);
+  auto caller = CreatePeerConnection();
+  ASSERT_TRUE(caller);
+  auto caller_observer = caller->RegisterFakeMetricsObserver();
+  RTCError error;
+  caller->pc()->SetConfiguration(configuration, &error);
+  ASSERT_TRUE(error.ok());
+  caller->pc()->Close();
+  int expected_fingerprint =
+      MakeUsageFingerprint({PeerConnection::UsageEvent::STUN_SERVER_ADDED,
+                            PeerConnection::UsageEvent::TURN_SERVER_ADDED,
+                            PeerConnection::UsageEvent::CLOSE_CALLED});
+  EXPECT_TRUE(caller_observer->ExpectOnlySingleEnumCount(
+      webrtc::kEnumCounterUsagePattern, expected_fingerprint));
+}
 
 }  // namespace webrtc

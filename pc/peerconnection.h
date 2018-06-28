@@ -657,7 +657,10 @@ class PeerConnection : public PeerConnectionInternal,
   DataChannel* FindDataChannelBySid(int sid) const;
 
   // Called when first configuring the port allocator.
-  bool InitializePortAllocator_n(const RTCConfiguration& configuration);
+  bool InitializePortAllocator_n(
+      const cricket::ServerAddresses& stun_servers,
+      const std::vector<cricket::RelayServerConfig>& turn_servers,
+      const RTCConfiguration& configuration);
   // Called when SetConfiguration is called to apply the supported subset
   // of the configuration on the network thread.
   bool ReconfigurePortAllocator_n(

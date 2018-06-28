@@ -913,12 +913,30 @@ bool PeerConnection::Initialize(
   port_allocator_ = std::move(dependencies.allocator);
   tls_cert_verifier_ = std::move(dependencies.tls_cert_verifier);
 
+  cricket::ServerAddresses stun_servers;
+  std::vector<cricket::RelayServerConfig> turn_servers;
+
+  RTCErrorType parse_error =
+      ParseIceServers(configuration.servers, &stun_servers, &turn_servers);
+  if (parse_error != RTCErrorType::NONE) {
+    return false;
+  }
+
   // The port allocator lives on the network thread and should be initialized
   // there.
   if (!network_thread()->Invoke<bool>(
-          RTC_FROM_HERE, rtc::Bind(&PeerConnection::InitializePortAllocator_n,
-                                   this, configuration))) {
+          RTC_FROM_HERE,
+          rtc::Bind(&PeerConnection::InitializePortAllocator_n, this,
+                    stun_servers, turn_servers, configuration))) {
     return false;
+  }
+  // If initialization was successful, note if STUN or TURN servers
+  // were supplied.
+  if (!stun_servers.empty()) {
+    NoteUsageEvent(UsageEvent::STUN_SERVER_ADDED);
+  }
+  if (!turn_servers.empty()) {
+    NoteUsageEvent(UsageEvent::TURN_SERVER_ADDED);
   }
 
   const PeerConnectionFactoryInterface::Options& options = factory_->options();
@@ -4669,14 +4687,9 @@ DataChannel* PeerConnection::FindDataChannelBySid(int sid) const {
 }
 
 bool PeerConnection::InitializePortAllocator_n(
+    const cricket::ServerAddresses& stun_servers,
+    const std::vector<cricket::RelayServerConfig>& turn_servers,
     const RTCConfiguration& configuration) {
-  cricket::ServerAddresses stun_servers;
-  std::vector<cricket::RelayServerConfig> turn_servers;
-  if (ParseIceServers(configuration.servers, &stun_servers, &turn_servers) !=
-      RTCErrorType::NONE) {
-    return false;
-  }
-
   port_allocator_->Initialize();
   // To handle both internal and externally created port allocator, we will
   // enable BUNDLE here.
@@ -4721,15 +4734,16 @@ bool PeerConnection::InitializePortAllocator_n(
       ConvertIceTransportTypeToCandidateFilter(configuration.type));
   port_allocator_->set_max_ipv6_networks(configuration.max_ipv6_networks);
 
+  auto turn_servers_copy = turn_servers;
   if (tls_cert_verifier_ != nullptr) {
-    for (auto& turn_server : turn_servers) {
+    for (auto& turn_server : turn_servers_copy) {
       turn_server.tls_cert_verifier = tls_cert_verifier_.get();
     }
   }
   // Call this last since it may create pooled allocator sessions using the
   // properties set above.
   port_allocator_->SetConfiguration(
-      stun_servers, turn_servers, configuration.ice_candidate_pool_size,
+      stun_servers, turn_servers_copy, configuration.ice_candidate_pool_size,
       configuration.prune_turn_ports, configuration.turn_customizer,
       configuration.stun_candidate_keepalive_interval);
   return true;
