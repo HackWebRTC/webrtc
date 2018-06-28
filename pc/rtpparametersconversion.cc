@@ -8,10 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "ortc/rtpparametersconversion.h"
+#include "pc/rtpparametersconversion.h"
 
 #include <set>
-#include <sstream>
 #include <utility>
 
 #include "media/base/rtputils.h"
@@ -136,9 +135,10 @@ RTCErrorOr<C> ToCricketCodec(const RtpCodecParameters& codec) {
   }
   cricket_codec.name = codec.name;
   if (!cricket::IsValidRtpPayloadType(codec.payload_type)) {
-    std::ostringstream oss;
-    oss << "Invalid payload type: " << codec.payload_type;
-    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_RANGE, oss.str());
+    char buf[40];
+    rtc::SimpleStringBuilder sb(buf);
+    sb << "Invalid payload type: " << codec.payload_type;
+    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_RANGE, sb.str());
   }
   cricket_codec.id = codec.payload_type;
   for (const RtcpFeedback& feedback : codec.rtcp_feedback) {
@@ -168,9 +168,10 @@ RTCErrorOr<std::vector<C>> ToCricketCodecs(
       return result.MoveError();
     }
     if (!seen_payload_types.insert(codec.payload_type).second) {
-      std::ostringstream oss;
-      oss << "Duplicate payload type: " << codec.payload_type;
-      LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER, oss.str());
+      char buf[40];
+      rtc::SimpleStringBuilder sb(buf);
+      sb << "Duplicate payload type: " << codec.payload_type;
+      LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER, sb.str());
     }
     cricket_codecs.push_back(result.MoveValue());
   }
@@ -186,17 +187,20 @@ template RTCErrorOr<std::vector<cricket::VideoCodec>> ToCricketCodecs<
 RTCErrorOr<cricket::RtpHeaderExtensions> ToCricketRtpHeaderExtensions(
     const std::vector<RtpHeaderExtensionParameters>& extensions) {
   cricket::RtpHeaderExtensions cricket_extensions;
-  std::ostringstream err_writer;
   std::set<int> seen_header_extension_ids;
   for (const RtpHeaderExtensionParameters& extension : extensions) {
     if (extension.id < RtpHeaderExtensionParameters::kMinId ||
         extension.id > RtpHeaderExtensionParameters::kMaxId) {
-      err_writer << "Invalid header extension id: " << extension.id;
-      LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_RANGE, err_writer.str());
+      char buf[50];
+      rtc::SimpleStringBuilder sb(buf);
+      sb << "Invalid header extension id: " << extension.id;
+      LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_RANGE, sb.str());
     }
     if (!seen_header_extension_ids.insert(extension.id).second) {
-      err_writer << "Duplicate header extension id: " << extension.id;
-      LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER, err_writer.str());
+      char buf[50];
+      rtc::SimpleStringBuilder sb(buf);
+      sb << "Duplicate header extension id: " << extension.id;
+      LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER, sb.str());
     }
     cricket_extensions.push_back(extension);
   }

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef ORTC_RTPPARAMETERSCONVERSION_H_
-#define ORTC_RTPPARAMETERSCONVERSION_H_
+#ifndef PC_RTPPARAMETERSCONVERSION_H_
+#define PC_RTPPARAMETERSCONVERSION_H_
 
 #include <memory>
 #include <vector>
@@ -105,4 +105,4 @@ RtpParameters ToRtpParameters(
 
 }  // namespace webrtc
 
-#endif  // ORTC_RTPPARAMETERSCONVERSION_H_
+#endif  // PC_RTPPARAMETERSCONVERSION_H_

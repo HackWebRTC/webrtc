@@ -11,6 +11,7 @@
 #include "pc/peerconnectionfactory.h"
 
 #include <utility>
+#include <vector>
 
 #include "api/fec_controller.h"
 #include "api/mediaconstraintsinterface.h"
@@ -23,6 +24,7 @@
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "media/base/rtpdataengine.h"
 #include "media/sctp/sctptransport.h"
+#include "pc/rtpparametersconversion.h"
 #include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/ptr_util.h"
@@ -229,6 +231,60 @@ bool PeerConnectionFactory::Initialize() {
 
 void PeerConnectionFactory::SetOptions(const Options& options) {
   options_ = options;
+}
+
+RtpCapabilities PeerConnectionFactory::GetRtpSenderCapabilities(
+    cricket::MediaType kind) const {
+  RTC_DCHECK_RUN_ON(signaling_thread_);
+  switch (kind) {
+    case cricket::MEDIA_TYPE_AUDIO: {
+      cricket::AudioCodecs cricket_codecs;
+      cricket::RtpHeaderExtensions cricket_extensions;
+      channel_manager_->GetSupportedAudioSendCodecs(&cricket_codecs);
+      channel_manager_->GetSupportedAudioRtpHeaderExtensions(
+          &cricket_extensions);
+      return ToRtpCapabilities(cricket_codecs, cricket_extensions);
+    }
+    case cricket::MEDIA_TYPE_VIDEO: {
+      cricket::VideoCodecs cricket_codecs;
+      cricket::RtpHeaderExtensions cricket_extensions;
+      channel_manager_->GetSupportedVideoCodecs(&cricket_codecs);
+      channel_manager_->GetSupportedVideoRtpHeaderExtensions(
+          &cricket_extensions);
+      return ToRtpCapabilities(cricket_codecs, cricket_extensions);
+    }
+    case cricket::MEDIA_TYPE_DATA:
+      return RtpCapabilities();
+  }
+  // Not reached; avoids compile warning.
+  FATAL();
+}
+
+RtpCapabilities PeerConnectionFactory::GetRtpReceiverCapabilities(
+    cricket::MediaType kind) const {
+  RTC_DCHECK_RUN_ON(signaling_thread_);
+  switch (kind) {
+    case cricket::MEDIA_TYPE_AUDIO: {
+      cricket::AudioCodecs cricket_codecs;
+      cricket::RtpHeaderExtensions cricket_extensions;
+      channel_manager_->GetSupportedAudioReceiveCodecs(&cricket_codecs);
+      channel_manager_->GetSupportedAudioRtpHeaderExtensions(
+          &cricket_extensions);
+      return ToRtpCapabilities(cricket_codecs, cricket_extensions);
+    }
+    case cricket::MEDIA_TYPE_VIDEO: {
+      cricket::VideoCodecs cricket_codecs;
+      cricket::RtpHeaderExtensions cricket_extensions;
+      channel_manager_->GetSupportedVideoCodecs(&cricket_codecs);
+      channel_manager_->GetSupportedVideoRtpHeaderExtensions(
+          &cricket_extensions);
+      return ToRtpCapabilities(cricket_codecs, cricket_extensions);
+    }
+    case cricket::MEDIA_TYPE_DATA:
+      return RtpCapabilities();
+  }
+  // Not reached; avoids compile warning.
+  FATAL();
 }
 
 rtc::scoped_refptr<AudioSourceInterface>

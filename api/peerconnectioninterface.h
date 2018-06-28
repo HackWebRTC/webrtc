@@ -1307,6 +1307,22 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
     return nullptr;
   }
 
+  // Returns the capabilities of an RTP sender of type |kind|.
+  // If for some reason you pass in MEDIA_TYPE_DATA, returns an empty structure.
+  // TODO(orphis): Make pure virtual when all subclasses implement it.
+  virtual RtpCapabilities GetRtpSenderCapabilities(
+      cricket::MediaType kind) const {
+    return {};
+  }
+
+  // Returns the capabilities of an RTP receiver of type |kind|.
+  // If for some reason you pass in MEDIA_TYPE_DATA, returns an empty structure.
+  // TODO(orphis): Make pure virtual when all subclasses implement it.
+  virtual RtpCapabilities GetRtpReceiverCapabilities(
+      cricket::MediaType kind) const {
+    return {};
+  }
+
   virtual rtc::scoped_refptr<MediaStreamInterface> CreateLocalMediaStream(
       const std::string& stream_id) = 0;
 
