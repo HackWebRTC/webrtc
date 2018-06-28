@@ -363,7 +363,6 @@ TEST_P(PeerConnectionEndToEndTest, Call) {
   WaitForCallEstablished();
 }
 
-#if !defined(ADDRESS_SANITIZER)
 TEST_P(PeerConnectionEndToEndTest, CallWithLegacySdp) {
   FakeConstraints pc_constraints;
   pc_constraints.AddMandatory(MediaConstraintsInterface::kEnableDtlsSrtp,
@@ -374,7 +373,6 @@ TEST_P(PeerConnectionEndToEndTest, CallWithLegacySdp) {
   Negotiate();
   WaitForCallEstablished();
 }
-#endif  // !defined(ADDRESS_SANITIZER)
 
 #if !defined(WEBRTC_WIN) || !defined(ADDRESS_SANITIZER)
 TEST_P(PeerConnectionEndToEndTest, CallWithCustomCodec) {
