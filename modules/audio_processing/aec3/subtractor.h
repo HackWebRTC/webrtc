@@ -82,6 +82,7 @@ class Subtractor {
   ApmDataDumper* data_dumper_;
   const Aec3Optimization optimization_;
   const EchoCanceller3Config config_;
+  const bool adaptation_during_saturation_;
   AdaptiveFirFilter main_filter_;
   AdaptiveFirFilter shadow_filter_;
   MainFilterUpdateGain G_main_;

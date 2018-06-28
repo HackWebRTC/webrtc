@@ -17,16 +17,22 @@
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/numerics/safe_minmax.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 
 namespace {
+
+bool EnableAdaptationDuringSaturation() {
+  return !field_trial::IsEnabled("WebRTC-Aec3RapidAgcGainRecoveryKillSwitch");
+}
 
 void PredictionError(const Aec3Fft& fft,
                      const FftData& S,
                      rtc::ArrayView<const float> y,
                      std::array<float, kBlockSize>* e,
                      std::array<float, kBlockSize>* s,
+                     bool adaptation_during_saturation,
                      bool* saturation) {
   std::array<float, kFftLength> tmp;
   fft.Ifft(S, &tmp);
@@ -48,8 +54,12 @@ void PredictionError(const Aec3Fft& fft,
     *saturation = *result.first <= -32768 || *result.first >= 32767;
   }
 
-  std::for_each(e->begin(), e->end(),
-                [](float& a) { a = rtc::SafeClamp(a, -32768.f, 32767.f); });
+  if (!adaptation_during_saturation) {
+    std::for_each(e->begin(), e->end(),
+                  [](float& a) { a = rtc::SafeClamp(a, -32768.f, 32767.f); });
+  } else {
+    *saturation = false;
+  }
 }
 
 }  // namespace
@@ -61,6 +71,7 @@ Subtractor::Subtractor(const EchoCanceller3Config& config,
       data_dumper_(data_dumper),
       optimization_(optimization),
       config_(config),
+      adaptation_during_saturation_(EnableAdaptationDuringSaturation()),
       main_filter_(config_.filter.main.length_blocks,
                    config_.filter.main_initial.length_blocks,
                    config.filter.config_change_duration_blocks,
@@ -144,13 +155,15 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
   // Form the output of the main filter.
   main_filter_.Filter(render_buffer, &S);
   bool main_saturation = false;
-  PredictionError(fft_, S, y, &e_main, &output->s_main, &main_saturation);
+  PredictionError(fft_, S, y, &e_main, &output->s_main,
+                  adaptation_during_saturation_, &main_saturation);
   fft_.ZeroPaddedFft(e_main, Aec3Fft::Window::kHanning, &E_main);
 
   // Form the output of the shadow filter.
   shadow_filter_.Filter(render_buffer, &S);
   bool shadow_saturation = false;
-  PredictionError(fft_, S, y, &e_shadow, nullptr, &shadow_saturation);
+  PredictionError(fft_, S, y, &e_shadow, nullptr, adaptation_during_saturation_,
+                  &shadow_saturation);
   fft_.ZeroPaddedFft(e_shadow, Aec3Fft::Window::kHanning, &E_shadow);
 
   // Check for filter convergence.
@@ -195,6 +208,11 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
   data_dumper_->DumpRaw("aec3_subtractor_G_shadow", G.im);
 
   DumpFilters();
+
+  if (adaptation_during_saturation_) {
+    std::for_each(e_main.begin(), e_main.end(),
+                  [](float& a) { a = rtc::SafeClamp(a, -32768.f, 32767.f); });
+  }
 }
 
 }  // namespace webrtc
