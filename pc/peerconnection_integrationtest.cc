@@ -178,14 +178,6 @@ int FindFirstMediaStatsIndexByKind(
   return -1;
 }
 
-int MakeUsageFingerprint(std::set<PeerConnection::UsageEvent> events) {
-  int signature = 0;
-  for (const auto it : events) {
-    signature |= static_cast<int>(it);
-  }
-  return signature;
-}
-
 class SignalingMessageReceiver {
  public:
   virtual void ReceiveSdpMessage(SdpType type, const std::string& msg) = 0;
@@ -4631,38 +4623,6 @@ TEST_P(PeerConnectionIntegrationInteropTest,
   media_expectations.CallerExpectsSomeVideo();
   media_expectations.CalleeExpectsSomeAudio();
   ASSERT_TRUE(ExpectNewFrames(media_expectations));
-}
-
-// Test getting the usage fingerprint for a simple test case.
-TEST_P(PeerConnectionIntegrationTest, UsageFingerprintHistogram) {
-  ASSERT_TRUE(CreatePeerConnectionWrappers());
-  ConnectFakeSignaling();
-  // Register UMA observer before signaling begins.
-  rtc::scoped_refptr<webrtc::FakeMetricsObserver> caller_observer =
-      new rtc::RefCountedObject<webrtc::FakeMetricsObserver>();
-  caller()->pc()->RegisterUMAObserver(caller_observer);
-  rtc::scoped_refptr<webrtc::FakeMetricsObserver> callee_observer =
-      new rtc::RefCountedObject<webrtc::FakeMetricsObserver>();
-  callee()->pc()->RegisterUMAObserver(callee_observer);
-  caller()->AddAudioTrack();
-  caller()->AddVideoTrack();
-  caller()->CreateAndSetAndSignalOffer();
-  ASSERT_TRUE_WAIT(DtlsConnected(), kDefaultTimeout);
-  caller()->pc()->Close();
-  callee()->pc()->Close();
-  int expected_fingerprint = MakeUsageFingerprint(
-      {PeerConnection::UsageEvent::AUDIO_ADDED,
-       PeerConnection::UsageEvent::VIDEO_ADDED,
-       PeerConnection::UsageEvent::SET_LOCAL_DESCRIPTION_CALLED,
-       PeerConnection::UsageEvent::SET_REMOTE_DESCRIPTION_CALLED,
-       PeerConnection::UsageEvent::CANDIDATE_COLLECTED,
-       PeerConnection::UsageEvent::REMOTE_CANDIDATE_ADDED,
-       PeerConnection::UsageEvent::ICE_STATE_CONNECTED,
-       PeerConnection::UsageEvent::CLOSE_CALLED});
-  EXPECT_TRUE(caller_observer->ExpectOnlySingleEnumCount(
-      webrtc::kEnumCounterUsagePattern, expected_fingerprint));
-  EXPECT_TRUE(callee_observer->ExpectOnlySingleEnumCount(
-      webrtc::kEnumCounterUsagePattern, expected_fingerprint));
 }
 
 INSTANTIATE_TEST_CASE_P(
