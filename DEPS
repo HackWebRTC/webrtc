@@ -104,6 +104,15 @@ deps = {
     Var('chromium_git') + '/external/github.com/google/gtest-parallel' + '@' + 'cb3514a0858be0f66281d892e2242d1073fd75fe',
   'src/third_party/googletest/src':
     Var('chromium_git') + '/external/github.com/google/googletest.git' + '@' + 'ce468a17c434e4e79724396ee1b51d86bfc8a88b',
+  'src/third_party/gn': {
+      'packages': [
+          {
+              'package': 'gn/gn/${{platform}}',
+              'version': 'git_revision:f30b5738e20fdd2f00eba6298c536d66c13b09e3',
+          },
+      ],
+      'dep_type': 'cipd',
+  },
   'src/third_party/icu': {
     'url': Var('chromium_git') + '/chromium/deps/icu.git' + '@' + '172d33141cd16df9d027cfd49bfe940b1dc66f1a',
   },
@@ -495,7 +504,12 @@ hooks = [
     'action': ['python', 'src/build/util/lastchange.py',
                '-o', 'src/build/util/LASTCHANGE'],
   },
-  # Pull GN binaries.
+  # Downloads a old stub where the GN binary used to live. This is *not* the GN
+  # binary that anything should use any more (see third_party/gn, which is
+  # pulled by cipd above). This stub simply prints that it's the wrong location,
+  # and returns with an exit code of 1, so that we: a) notice that the wrong
+  # binary is being used; 2) help users who rely on gn's automatic regeneration
+  # so that they know to re-run `gn gen`.
   {
     'name': 'gn_win',
     'pattern': '.',
