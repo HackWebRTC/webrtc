@@ -8,52 +8,22 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_TEST_MOCK_PEERCONNECTION_H_
-#define PC_TEST_MOCK_PEERCONNECTION_H_
+#ifndef API_TEST_MOCK_PEERCONNECTIONINTERFACE_H_
+#define API_TEST_MOCK_PEERCONNECTIONINTERFACE_H_
 
-#include <map>
 #include <memory>
-#include <set>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "call/call.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
-#include "pc/peerconnection.h"
-#include "rtc_base/thread.h"
+#include "api/peerconnectioninterface.h"
 #include "test/gmock.h"
 
 namespace webrtc {
 
-// The factory isn't really used; it just satisfies the base PeerConnection.
-class FakePeerConnectionFactory
-    : public rtc::RefCountedObject<webrtc::PeerConnectionFactory> {
+class MockPeerConnectionInterface
+    : public rtc::RefCountedObject<webrtc::PeerConnectionInterface> {
  public:
-  explicit FakePeerConnectionFactory(
-      std::unique_ptr<cricket::MediaEngineInterface> media_engine)
-      : rtc::RefCountedObject<webrtc::PeerConnectionFactory>(
-            rtc::Thread::Current(),
-            rtc::Thread::Current(),
-            rtc::Thread::Current(),
-            std::move(media_engine),
-            std::unique_ptr<webrtc::CallFactoryInterface>(),
-            std::unique_ptr<RtcEventLogFactoryInterface>()) {}
-};
-
-class MockPeerConnection
-    : public rtc::RefCountedObject<webrtc::PeerConnection> {
- public:
-  // TODO(nisse): Valid overrides commented out, because the gmock
-  // methods don't use any override declarations, and we want to avoid
-  // warnings from -Winconsistent-missing-override. See
-  // http://crbug.com/428099.
-  explicit MockPeerConnection(PeerConnectionFactory* factory)
-      : rtc::RefCountedObject<webrtc::PeerConnection>(
-            factory,
-            std::unique_ptr<RtcEventLog>(),
-            std::unique_ptr<Call>()) {}
-
   // PeerConnectionInterface
   MOCK_METHOD0(local_streams, rtc::scoped_refptr<StreamCollectionInterface>());
   MOCK_METHOD0(remote_streams, rtc::scoped_refptr<StreamCollectionInterface>());
@@ -163,44 +133,8 @@ class MockPeerConnection
                bool(std::unique_ptr<RtcEventLogOutput>, int64_t));
   MOCK_METHOD0(StopRtcEventLog, void());
   MOCK_METHOD0(Close, void());
-
-  // PeerConnectionInternal
-  MOCK_CONST_METHOD0(network_thread, rtc::Thread*());
-  MOCK_CONST_METHOD0(worker_thread, rtc::Thread*());
-  MOCK_CONST_METHOD0(signaling_thread, rtc::Thread*());
-  MOCK_CONST_METHOD0(session_id, std::string());
-  MOCK_CONST_METHOD0(initial_offerer, bool());
-  MOCK_CONST_METHOD0(GetTransceiversInternal,
-                     std::vector<rtc::scoped_refptr<
-                         RtpTransceiverProxyWithInternal<RtpTransceiver>>>());
-  MOCK_METHOD2(GetLocalTrackIdBySsrc, bool(uint32_t, std::string*));
-  MOCK_METHOD2(GetRemoteTrackIdBySsrc, bool(uint32_t, std::string*));
-  MOCK_METHOD0(SignalDataChannelCreated, sigslot::signal1<DataChannel*>&());
-  MOCK_CONST_METHOD0(rtp_data_channel, cricket::RtpDataChannel*());
-  MOCK_CONST_METHOD0(sctp_data_channels,
-                     std::vector<rtc::scoped_refptr<DataChannel>>());
-  MOCK_CONST_METHOD0(sctp_content_name, absl::optional<std::string>());
-  MOCK_CONST_METHOD0(sctp_transport_name, absl::optional<std::string>());
-  MOCK_CONST_METHOD0(GetPooledCandidateStats, cricket::CandidateStatsList());
-
-  typedef std::map<std::string, std::string> TransportNamesByMid;
-  MOCK_CONST_METHOD0(GetTransportNamesByMid, TransportNamesByMid());
-
-  typedef std::map<std::string, cricket::TransportStats> TransportStatsByNames;
-  MOCK_METHOD1(GetTransportStatsByNames,
-               TransportStatsByNames(const std::set<std::string>&));
-  MOCK_METHOD0(GetCallStats, Call::Stats());
-  MOCK_METHOD2(GetLocalCertificate,
-               bool(const std::string&,
-                    rtc::scoped_refptr<rtc::RTCCertificate>*));
-  MOCK_METHOD1(GetRemoteSSLCertChain,
-               std::unique_ptr<rtc::SSLCertChain>(const std::string&));
-  MOCK_CONST_METHOD1(IceRestartPending, bool(const std::string&));
-  MOCK_CONST_METHOD1(NeedsIceRestart, bool(const std::string&));
-  MOCK_METHOD2(GetSslRole,
-               bool(const std::string& content_name, rtc::SSLRole*));
 };
 
 }  // namespace webrtc
 
-#endif  // PC_TEST_MOCK_PEERCONNECTION_H_
+#endif  // API_TEST_MOCK_PEERCONNECTIONINTERFACE_H_

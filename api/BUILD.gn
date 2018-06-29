@@ -414,6 +414,18 @@ if (rtc_include_tests) {
     ]
   }
 
+  rtc_source_set("mock_peerconnectioninterface") {
+    testonly = true
+    sources = [
+      "test/mock_peerconnectioninterface.h",
+    ]
+
+    deps = [
+      ":libjingle_peerconnection_api",
+      "../test:test_support",
+    ]
+  }
+
   rtc_source_set("mock_rtp") {
     testonly = true
     sources = [
