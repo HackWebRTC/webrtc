@@ -123,6 +123,9 @@ rtc_source_set("ptr_util") {
     "ptr_util.h",
     "scoped_ref_ptr.h",
   ]
+  deps = [
+    "//third_party/abseil-cpp/absl/memory",
+  ]
 }
 
 rtc_source_set("refcount") {

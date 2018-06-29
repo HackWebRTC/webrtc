@@ -8,74 +8,30 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-// This implementation is borrowed from chromium.
+// This file contains rtc::MakeUnique and rtc::WrapUnique, which are backwards
+// compatibility aliases for absl::make_unique and absl::WrapUnique,
+// respectively. This file will go away soon; use the Abseil types directly in
+// new code.
 
 #ifndef RTC_BASE_PTR_UTIL_H_
 #define RTC_BASE_PTR_UTIL_H_
 
-#include <memory>
-#include <utility>
+#include "absl/memory/memory.h"
 
 namespace rtc {
 
-// Helper to transfer ownership of a raw pointer to a std::unique_ptr<T>.
-// Note that std::unique_ptr<T> has very different semantics from
-// std::unique_ptr<T[]>: do not use this helper for array allocations.
-template <typename T>
-std::unique_ptr<T> WrapUnique(T* ptr) {
-  return std::unique_ptr<T>(ptr);
-}
-
-namespace internal {
-
-template <typename T>
-struct MakeUniqueResult {
-  using Scalar = std::unique_ptr<T>;
-};
-
-template <typename T>
-struct MakeUniqueResult<T[]> {
-  using Array = std::unique_ptr<T[]>;
-};
-
-template <typename T, size_t N>
-struct MakeUniqueResult<T[N]> {
-  using Invalid = void;
-};
-
-}  // namespace internal
-
-// Helper to construct an object wrapped in a std::unique_ptr. This is an
-// implementation of C++14's std::make_unique that can be used in Chrome.
-//
-// MakeUnique<T>(args) should be preferred over WrapUnique(new T(args)): bare
-// calls to `new` should be treated with scrutiny.
-//
-// Usage:
-//   // ptr is a std::unique_ptr<std::string>
-//   auto ptr = MakeUnique<std::string>("hello world!");
-//
-//   // arr is a std::unique_ptr<int[]>
-//   auto arr = MakeUnique<int[]>(5);
-
-// Overload for non-array types. Arguments are forwarded to T's constructor.
 template <typename T, typename... Args>
-typename internal::MakeUniqueResult<T>::Scalar MakeUnique(Args&&... args) {
-  return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+auto MakeUnique(Args&&... args)
+    -> decltype(absl::make_unique<T, Args...>(std::forward<Args>(args)...)) {
+  return absl::make_unique<T, Args...>(std::forward<Args>(args)...);
 }
 
-// Overload for array types of unknown bound, e.g. T[]. The array is allocated
-// with `new T[n]()` and value-initialized: note that this is distinct from
-// `new T[n]`, which default-initializes.
 template <typename T>
-typename internal::MakeUniqueResult<T>::Array MakeUnique(size_t size) {
-  return std::unique_ptr<T>(new typename std::remove_extent<T>::type[size]());
+auto MakeUnique(size_t n) -> decltype(absl::make_unique<T>(n)) {
+  return absl::make_unique<T>(n);
 }
 
-// Overload to reject array types of known bound, e.g. T[n].
-template <typename T, typename... Args>
-typename internal::MakeUniqueResult<T>::Invalid MakeUnique(Args&&... args) =
-    delete;
+using absl::WrapUnique;
 
 }  // namespace rtc
 
