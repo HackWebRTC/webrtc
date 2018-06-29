@@ -616,4 +616,18 @@ void AdaptiveFirFilter::Constrain() {
                                 : 0;
 }
 
+void AdaptiveFirFilter::ScaleFilter(float factor) {
+  for (auto& H : H_) {
+    for (auto& re : H.re) {
+      re *= factor;
+    }
+    for (auto& im : H.im) {
+      im *= factor;
+    }
+  }
+  for (auto& h : h_) {
+    h *= factor;
+  }
+}
+
 }  // namespace webrtc

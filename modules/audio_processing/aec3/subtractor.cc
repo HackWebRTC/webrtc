@@ -27,6 +27,10 @@ bool EnableAdaptationDuringSaturation() {
   return !field_trial::IsEnabled("WebRTC-Aec3RapidAgcGainRecoveryKillSwitch");
 }
 
+bool EnableMisadjustmentEstimator() {
+  return !field_trial::IsEnabled("WebRTC-Aec3MisadjustmentEstimatorKillSwitch");
+}
+
 void PredictionError(const Aec3Fft& fft,
                      const FftData& S,
                      rtc::ArrayView<const float> y,
@@ -72,6 +76,7 @@ Subtractor::Subtractor(const EchoCanceller3Config& config,
       optimization_(optimization),
       config_(config),
       adaptation_during_saturation_(EnableAdaptationDuringSaturation()),
+      enable_misadjustment_estimator_(EnableMisadjustmentEstimator()),
       main_filter_(config_.filter.main.length_blocks,
                    config_.filter.main_initial.length_blocks,
                    config.filter.config_change_duration_blocks,
@@ -182,6 +187,15 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
       main_filter_once_converged_ || main_filter_converged_;
   main_filter_diverged_ = e2_main > 1.5f * y2 && y2 > 30.f * 30.f * kBlockSize;
 
+  if (enable_misadjustment_estimator_) {
+    filter_misadjustment_estimator_.Update(e2_main, y2);
+    if (filter_misadjustment_estimator_.IsAdjustmentNeeded()) {
+      float scale = filter_misadjustment_estimator_.GetMisadjustment();
+      main_filter_.ScaleFilter(scale);
+      output->ScaleOutputMainFilter(scale);
+      filter_misadjustment_estimator_.Reset();
+    }
+  }
   // Compute spectra for future use.
   E_shadow.Spectrum(optimization_, output->E2_shadow);
   E_main.Spectrum(optimization_, output->E2_main);
@@ -206,13 +220,48 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
 
   data_dumper_->DumpRaw("aec3_subtractor_G_shadow", G.re);
   data_dumper_->DumpRaw("aec3_subtractor_G_shadow", G.im);
-
+  filter_misadjustment_estimator_.Dump(data_dumper_);
   DumpFilters();
 
   if (adaptation_during_saturation_) {
     std::for_each(e_main.begin(), e_main.end(),
                   [](float& a) { a = rtc::SafeClamp(a, -32768.f, 32767.f); });
   }
+}
+
+void Subtractor::FilterMisadjustmentEstimator::Update(float e2, float y2) {
+  e2_acum_ += e2;
+  y2_acum_ += y2;
+  if (++n_blocks_acum_ == n_blocks_) {
+    if (y2_acum_ > n_blocks_ * 200.f * 200.f * kBlockSize) {
+      float update = (e2_acum_ / y2_acum_);
+      if (e2_acum_ > n_blocks_ * 7500.f * 7500.f * kBlockSize) {
+        overhang_ = 4;  // Duration equal to blockSizeMs * n_blocks_ * 4
+      } else {
+        overhang_ = std::max(overhang_ - 1, 0);
+      }
+
+      if ((update < inv_misadjustment_) || (overhang_ > 0)) {
+        inv_misadjustment_ += 0.1f * (update - inv_misadjustment_);
+      }
+    }
+    e2_acum_ = 0.f;
+    y2_acum_ = 0.f;
+    n_blocks_acum_ = 0;
+  }
+}
+
+void Subtractor::FilterMisadjustmentEstimator::Reset() {
+  e2_acum_ = 0.f;
+  y2_acum_ = 0.f;
+  n_blocks_acum_ = 0;
+  inv_misadjustment_ = 0.f;
+  overhang_ = 0.f;
+}
+
+void Subtractor::FilterMisadjustmentEstimator::Dump(
+    ApmDataDumper* data_dumper) const {
+  data_dumper->DumpRaw("aec3_inv_misadjustment_factor", inv_misadjustment_);
 }
 
 }  // namespace webrtc
