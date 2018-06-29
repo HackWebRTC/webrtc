@@ -20,6 +20,7 @@
 #include "pc/peerconnectionwrapper.h"
 #include "pc/test/fakeaudiocapturemodule.h"
 #include "pc/test/fakeperiodicvideotracksource.h"
+#include "pc/test/fakertccertificategenerator.h"
 #include "pc/test/fakevideotrackrenderer.h"
 #include "pc/test/framegeneratorcapturervideotracksource.h"
 #include "rtc_base/fakenetwork.h"
@@ -27,6 +28,7 @@
 #include "rtc_base/gunit.h"
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/socketaddress.h"
+#include "rtc_base/testcertificateverifier.h"
 #include "rtc_base/virtualsocketserver.h"
 #include "test/gtest.h"
 #include "test/testsupport/perf_test.h"
@@ -39,6 +41,10 @@ static const int kRampUpTimeMs = 5000;
 static const int kPollIntervalTimeMs = 50;
 static const int kDefaultTimeoutMs = 10000;
 static const rtc::SocketAddress kDefaultLocalAddress("1.1.1.1", 0);
+static const char kTurnInternalAddress[] = "88.88.88.0";
+static const char kTurnExternalAddress[] = "88.88.88.1";
+static const int kTurnInternalPort = 3478;
+static const int kTurnExternalPort = 0;
 // The video's configured max bitrate in webrtcvideoengine.cc is 1.7 Mbps.
 // Setting the network bandwidth to 1 Mbps allows the video's bitrate to push
 // the network's limitations.
@@ -69,12 +75,10 @@ class PeerConnectionWrapperForRampUpTest : public PeerConnectionWrapper {
   PeerConnectionWrapperForRampUpTest(
       rtc::scoped_refptr<PeerConnectionFactoryInterface> pc_factory,
       rtc::scoped_refptr<PeerConnectionInterface> pc,
-      std::unique_ptr<MockPeerConnectionObserver> observer,
-      rtc::FakeNetworkManager* fake_network_manager)
+      std::unique_ptr<MockPeerConnectionObserver> observer)
       : PeerConnectionWrapper::PeerConnectionWrapper(pc_factory,
                                                      pc,
-                                                     std::move(observer)),
-        fake_network_manager_(std::move(fake_network_manager)) {}
+                                                     std::move(observer)) {}
 
   bool AddIceCandidates(std::vector<const IceCandidateInterface*> candidates) {
     bool success = true;
@@ -106,10 +110,6 @@ class PeerConnectionWrapperForRampUpTest : public PeerConnectionWrapper {
   }
 
  private:
-  // This is owned by the Test, not the Wrapper. It needs to outlive the
-  // Wrapper, because the port allocator expects its lifetime to be longer than
-  // the PeerConnection's lifetime.
-  rtc::FakeNetworkManager* fake_network_manager_;
   std::vector<rtc::scoped_refptr<FrameGeneratorCapturerVideoTrackSource>>
       video_track_sources_;
 };
@@ -155,19 +155,25 @@ class PeerConnectionRampUpTest : public ::testing::Test {
     auto* fake_network_manager = new rtc::FakeNetworkManager();
     fake_network_manager->AddInterface(kDefaultLocalAddress);
     fake_network_managers_.emplace_back(fake_network_manager);
-    auto port_allocator =
-        rtc::MakeUnique<cricket::BasicPortAllocator>(fake_network_manager);
 
-    port_allocator->set_step_delay(cricket::kDefaultStepDelay);
     auto observer = rtc::MakeUnique<MockPeerConnectionObserver>();
-    auto pc = pc_factory_->CreatePeerConnection(
-        config, std::move(port_allocator), nullptr, observer.get());
+    webrtc::PeerConnectionDependencies dependencies(observer.get());
+    cricket::BasicPortAllocator* port_allocator =
+        new cricket::BasicPortAllocator(fake_network_manager);
+    port_allocator->set_step_delay(cricket::kDefaultStepDelay);
+    dependencies.allocator =
+        std::unique_ptr<cricket::BasicPortAllocator>(port_allocator);
+    dependencies.tls_cert_verifier =
+        rtc::MakeUnique<rtc::TestCertificateVerifier>();
+
+    auto pc =
+        pc_factory_->CreatePeerConnection(config, std::move(dependencies));
     if (!pc) {
       return nullptr;
     }
 
     return rtc::MakeUnique<PeerConnectionWrapperForRampUpTest>(
-        pc_factory_, pc, std::move(observer), fake_network_manager);
+        pc_factory_, pc, std::move(observer));
   }
 
   void SetupOneWayCall() {
@@ -198,18 +204,20 @@ class PeerConnectionRampUpTest : public ::testing::Test {
     ASSERT_TRUE_WAIT(caller_->IsIceConnected(), kDefaultTimeoutMs);
   }
 
-  void CreateTurnServer(cricket::ProtocolType type) {
+  void CreateTurnServer(cricket::ProtocolType type,
+                        const std::string& common_name = "test turn server") {
     rtc::Thread* thread = network_thread();
     std::unique_ptr<cricket::TestTurnServer> turn_server =
         network_thread_->Invoke<std::unique_ptr<cricket::TestTurnServer>>(
-            RTC_FROM_HERE, [thread, type] {
+            RTC_FROM_HERE, [thread, type, common_name] {
               static const rtc::SocketAddress turn_server_internal_address{
-                  "88.88.88.0", 3478};
+                  kTurnInternalAddress, kTurnInternalPort};
               static const rtc::SocketAddress turn_server_external_address{
-                  "88.88.88.1", 0};
+                  kTurnExternalAddress, kTurnExternalPort};
               return rtc::MakeUnique<cricket::TestTurnServer>(
                   thread, turn_server_internal_address,
-                  turn_server_external_address, type);
+                  turn_server_external_address, type,
+                  true /*ignore_bad_certs=*/, common_name);
             });
     turn_servers_.push_back(std::move(turn_server));
   }
@@ -236,6 +244,10 @@ class PeerConnectionRampUpTest : public ::testing::Test {
   }
 
   rtc::Thread* network_thread() { return network_thread_.get(); }
+
+  rtc::FirewallSocketServer* firewall_socket_server() {
+    return firewall_socket_server_.get();
+  }
 
   PeerConnectionWrapperForRampUpTest* caller() { return caller_.get(); }
 
@@ -298,7 +310,10 @@ class PeerConnectionRampUpTest : public ::testing::Test {
 TEST_F(PeerConnectionRampUpTest, TurnOverTCP) {
   CreateTurnServer(cricket::ProtocolType::PROTO_TCP);
   PeerConnectionInterface::IceServer ice_server;
-  ice_server.urls.push_back("turn:88.88.88.0:3478?transport=tcp");
+  std::string ice_server_url = "turn:" + std::string(kTurnInternalAddress) +
+                               ":" + std::to_string(kTurnInternalPort) +
+                               "?transport=tcp";
+  ice_server.urls.push_back(ice_server_url);
   ice_server.username = "test";
   ice_server.password = "test";
   PeerConnectionInterface::RTCConfiguration client_1_config;
@@ -313,6 +328,70 @@ TEST_F(PeerConnectionRampUpTest, TurnOverTCP) {
   RunTest("turn_over_tcp");
 }
 
-// TODO(bugs.webrtc.org/7668): Test other ICE configurations.
+TEST_F(PeerConnectionRampUpTest, TurnOverUDP) {
+  CreateTurnServer(cricket::ProtocolType::PROTO_UDP);
+  PeerConnectionInterface::IceServer ice_server;
+  std::string ice_server_url = "turn:" + std::string(kTurnInternalAddress) +
+                               ":" + std::to_string(kTurnInternalPort);
+
+  ice_server.urls.push_back(ice_server_url);
+  ice_server.username = "test";
+  ice_server.password = "test";
+  PeerConnectionInterface::RTCConfiguration client_1_config;
+  client_1_config.servers.push_back(ice_server);
+  client_1_config.type = PeerConnectionInterface::kRelay;
+  PeerConnectionInterface::RTCConfiguration client_2_config;
+  client_2_config.servers.push_back(ice_server);
+  client_2_config.type = PeerConnectionInterface::kRelay;
+  ASSERT_TRUE(CreatePeerConnectionWrappers(client_1_config, client_2_config));
+
+  SetupOneWayCall();
+  RunTest("turn_over_udp");
+}
+
+TEST_F(PeerConnectionRampUpTest, TurnOverTLS) {
+  CreateTurnServer(cricket::ProtocolType::PROTO_TLS, kTurnInternalAddress);
+  PeerConnectionInterface::IceServer ice_server;
+  std::string ice_server_url = "turns:" + std::string(kTurnInternalAddress) +
+                               ":" + std::to_string(kTurnInternalPort) +
+                               "?transport=tcp";
+  ice_server.urls.push_back(ice_server_url);
+  ice_server.username = "test";
+  ice_server.password = "test";
+  PeerConnectionInterface::RTCConfiguration client_1_config;
+  client_1_config.servers.push_back(ice_server);
+  client_1_config.type = PeerConnectionInterface::kRelay;
+  PeerConnectionInterface::RTCConfiguration client_2_config;
+  client_2_config.servers.push_back(ice_server);
+  client_2_config.type = PeerConnectionInterface::kRelay;
+
+  ASSERT_TRUE(CreatePeerConnectionWrappers(client_1_config, client_2_config));
+
+  SetupOneWayCall();
+  RunTest("turn_over_tls");
+}
+
+TEST_F(PeerConnectionRampUpTest, UDPPeerToPeer) {
+  PeerConnectionInterface::RTCConfiguration client_1_config;
+  client_1_config.tcp_candidate_policy =
+      PeerConnection::kTcpCandidatePolicyDisabled;
+  PeerConnectionInterface::RTCConfiguration client_2_config;
+  client_2_config.tcp_candidate_policy =
+      PeerConnection::kTcpCandidatePolicyDisabled;
+  ASSERT_TRUE(CreatePeerConnectionWrappers(client_1_config, client_2_config));
+
+  SetupOneWayCall();
+  RunTest("udp_peer_to_peer");
+}
+
+TEST_F(PeerConnectionRampUpTest, TCPPeerToPeer) {
+  firewall_socket_server()->set_udp_sockets_enabled(false);
+  ASSERT_TRUE(CreatePeerConnectionWrappers(
+      PeerConnectionInterface::RTCConfiguration(),
+      PeerConnectionInterface::RTCConfiguration()));
+
+  SetupOneWayCall();
+  RunTest("tcp_peer_to_peer");
+}
 
 }  // namespace webrtc
