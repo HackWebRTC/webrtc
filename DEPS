@@ -7,7 +7,7 @@ vars = {
   'checkout_configuration': 'default',
   'checkout_instrumented_libraries': 'checkout_linux and checkout_configuration == "default"',
   'webrtc_git': 'https://webrtc.googlesource.com',
-  'chromium_revision': '810d8218caad40a4a75949e8f06464e4484c9682',
+  'chromium_revision': 'f06b8215fecae3d2c5d8bb74d93bdf353aeee939',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
@@ -24,7 +24,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling catapult
   # and whatever else without interference from each other.
-  'catapult_revision': 'f76f0b44062c7426569f3a41801255a91e90d2c7',
+  'catapult_revision': '34f0d7e2e45f3c8796b6f37fd99ea1117f6218b2',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling libFuzzer
   # and whatever else without interference from each other.
@@ -42,11 +42,11 @@ deps = {
   # TODO(kjellander): Move this to be Android-only once the libevent dependency
   # in base/third_party/libevent is solved.
   'src/base':
-    Var('chromium_git') + '/chromium/src/base' + '@' + 'fe70ab13e466a161a3022044df6207b14d7e49f4',
+    Var('chromium_git') + '/chromium/src/base' + '@' + '05a0132eb3b458c427cb4b72ad3614bcb766a645',
   'src/build':
     Var('chromium_git') + '/chromium/src/build' + '@' + 'b79f5b50ec5e446f6368a2bff5ad94a78ef6acc3',
   'src/buildtools':
-    Var('chromium_git') + '/chromium/buildtools.git' + '@' + 'aec56e26079fba121e589006a88b7cbc1c398cfb',
+    Var('chromium_git') + '/chromium/buildtools.git' + '@' + '0dd5c6f980d22be96b728155249df2da355989d9',
   # Gradle 4.3-rc4. Used for testing Android Studio project generation for WebRTC.
   'src/examples/androidtests/third_party/gradle': {
     'url': Var('chromium_git') + '/external/github.com/gradle/gradle.git' + '@' +
@@ -54,13 +54,13 @@ deps = {
     'condition': 'checkout_android',
   },
   'src/ios': {
-    'url': Var('chromium_git') + '/chromium/src/ios' + '@' + 'df92b7461a72cb1bce89871a863c45720270db4d',
+    'url': Var('chromium_git') + '/chromium/src/ios' + '@' + 'e7915b2a8e12a71577bbf7eeb69036fcc5cc9a1d',
     'condition': 'checkout_ios',
   },
   'src/testing':
-    Var('chromium_git') + '/chromium/src/testing' + '@' + 'a70a01c4a1ca9263f3711fffc1170c29f4e0276a',
+    Var('chromium_git') + '/chromium/src/testing' + '@' + 'f7b8fb322b19ece4c466b0c32b0f54473633a981',
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + '500196de1481aada993c7206dc38e3a176303371',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + 'c59f378278ef3de5dddfc02ae2c70d184a487d0e',
   'src/third_party/android_ndk': {
       'url': Var('chromium_git') + '/android_ndk.git' + '@' + '5cd86312e794bdf542a3685c6f10cbb96072990b',
       'condition': 'checkout_android',
@@ -84,7 +84,7 @@ deps = {
   'src/third_party/colorama/src':
     Var('chromium_git') + '/external/colorama.git' + '@' + '799604a1041e9b3bc5d2789ecbd7e8db2e18e6b8',
   'src/third_party/depot_tools':
-    Var('chromium_git') + '/chromium/tools/depot_tools.git' + '@' + 'a4dec94a1aa32ca213e43c0a5d58d6d073e0d1b2',
+    Var('chromium_git') + '/chromium/tools/depot_tools.git' + '@' + 'd4c2a87998610abd6c7d8d1bfe55c9408ebac5b8',
   'src/third_party/errorprone/lib': {
       'url': Var('chromium_git') + '/chromium/third_party/errorprone.git' + '@' + '980d49e839aa4984015efed34b0134d4b2c9b6d7',
       'condition': 'checkout_android',
@@ -175,7 +175,7 @@ deps = {
   'src/third_party/yasm/source/patched-yasm':
     Var('chromium_git') + '/chromium/deps/yasm/patched-yasm.git' + '@' + 'b98114e18d8b9b84586b10d24353ab8616d4c5fc',
   'src/tools':
-    Var('chromium_git') + '/chromium/src/tools' + '@' + 'e4cbb07d3cd1ad186cfc1b48044040fe9fdeffa8',
+    Var('chromium_git') + '/chromium/src/tools' + '@' + 'c468102a6f45638fd8e3781978652fb10d29ebcd',
   'src/tools/swarming_client':
     Var('chromium_git') + '/infra/luci/client-py.git' + '@' +  Var('swarming_revision'),
 
