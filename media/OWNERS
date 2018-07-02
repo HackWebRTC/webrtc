@@ -8,3 +8,4 @@ solenberg@webrtc.org
 # structural changes, please get a review from a reviewer in this file.
 per-file *.gn=*
 per-file *.gni=*
+per-file engine/simulcast*=sprang@webrtc.org
