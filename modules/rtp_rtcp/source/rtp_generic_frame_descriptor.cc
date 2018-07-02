@@ -60,6 +60,8 @@ bool RtpGenericFrameDescriptor::AddFrameDependencyDiff(uint16_t fdiff) {
   RTC_DCHECK(FirstPacketInSubFrame());
   if (num_frame_deps_ == kMaxNumFrameDependencies)
     return false;
+  if (fdiff == 0)
+    return false;
   RTC_DCHECK_LT(fdiff, 1 << 14);
   RTC_DCHECK_GT(fdiff, 0);
   frame_deps_id_diffs_[num_frame_deps_] = fdiff;
