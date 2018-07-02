@@ -239,7 +239,7 @@ if (!build_with_chromium) {
         # TODO(kwiberg): Remove this dependency.
         "../api/audio_codecs:audio_codecs_api",
         "../modules/congestion_controller",
-        "../modules/congestion_controller:delay_based_bwe",
+        "../modules/congestion_controller/goog_cc:delay_based_bwe",
         "../modules/congestion_controller/goog_cc:estimators",
         "../modules/pacing",
         "../modules/rtp_rtcp",

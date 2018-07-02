@@ -70,7 +70,6 @@ size_t ReadTrendlineFilterWindowSize() {
 }  // namespace
 
 namespace webrtc {
-namespace webrtc_cc {
 
 DelayBasedBwe::Result::Result()
     : updated(false),
@@ -312,7 +311,7 @@ bool DelayBasedBwe::LatestEstimate(std::vector<uint32_t>* ssrcs,
 }
 
 void DelayBasedBwe::SetStartBitrate(int start_bitrate_bps) {
-  RTC_LOG(LS_WARNING) << "BWE Setting start bitrate to: " << start_bitrate_bps;
+  RTC_LOG(LS_INFO) << "BWE Setting start bitrate to: " << start_bitrate_bps;
   rate_control_.SetStartBitrate(start_bitrate_bps);
 }
 
@@ -325,5 +324,4 @@ void DelayBasedBwe::SetMinBitrate(int min_bitrate_bps) {
 int64_t DelayBasedBwe::GetExpectedBwePeriodMs() const {
   return rate_control_.GetExpectedBandwidthPeriodMs();
 }
-}  // namespace webrtc_cc
 }  // namespace webrtc

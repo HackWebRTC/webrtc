@@ -18,8 +18,6 @@
 #include "rtc_base/ptr_util.h"
 
 namespace webrtc {
-namespace webrtc_cc {
-
 constexpr size_t kMtu = 1200;
 constexpr uint32_t kAcceptedBitrateErrorBps = 50000;
 
@@ -513,5 +511,4 @@ void DelayBasedBweTest::TestWrappingHelper(int silence_time_s) {
   bitrate_estimator_->LatestEstimate(&ssrcs, &bitrate_after);
   EXPECT_LT(bitrate_after, bitrate_before);
 }
-}  // namespace webrtc_cc
 }  // namespace webrtc

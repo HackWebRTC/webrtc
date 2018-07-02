@@ -27,8 +27,6 @@
 namespace webrtc {
 class RtcEventLog;
 
-namespace webrtc_cc {
-
 class DelayBasedBwe {
  public:
   static const int64_t kStreamTimeOutMs = 2000;
@@ -88,7 +86,6 @@ class DelayBasedBwe {
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(DelayBasedBwe);
 };
 
-}  // namespace webrtc_cc
 }  // namespace webrtc
 
 #endif  // MODULES_CONGESTION_CONTROLLER_GOOG_CC_DELAY_BASED_BWE_H_

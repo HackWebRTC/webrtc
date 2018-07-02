@@ -25,7 +25,6 @@
 #include "test/gtest.h"
 
 namespace webrtc {
-namespace webrtc_cc {
 namespace test {
 
 class TestBitrateObserver : public RemoteBitrateObserver {
@@ -174,7 +173,6 @@ class DelayBasedBweTest : public ::testing::Test {
 
   RTC_DISALLOW_COPY_AND_ASSIGN(DelayBasedBweTest);
 };
-}  // namespace webrtc_cc
 }  // namespace webrtc
 
 #endif  // MODULES_CONGESTION_CONTROLLER_GOOG_CC_DELAY_BASED_BWE_UNITTEST_HELPER_H_

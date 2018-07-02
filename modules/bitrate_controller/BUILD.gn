@@ -37,7 +37,7 @@ rtc_static_library("bitrate_controller") {
     "../../system_wrappers",
     "../../system_wrappers:field_trial_api",
     "../../system_wrappers:metrics_api",
-    "../congestion_controller:delay_based_bwe",
+    "../congestion_controller/goog_cc:delay_based_bwe",
     "../pacing",
     "../remote_bitrate_estimator:remote_bitrate_estimator",
     "../rtp_rtcp",
