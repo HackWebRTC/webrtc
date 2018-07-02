@@ -29,7 +29,7 @@ class SyncBuffer;
 struct Packet;
 
 // This is the class for the decision tree implementation.
-class DecisionLogic {
+class DecisionLogic final {
  public:
   // Static factory function which creates different types of objects depending
   // on the |playout_mode|.
@@ -119,26 +119,6 @@ class DecisionLogic {
   // Updates the |buffer_level_filter_| with the current buffer level
   // |buffer_size_packets|.
   void FilterBufferLevel(size_t buffer_size_packets, Modes prev_mode);
-
-  // Returns the operation that should be done next. |sync_buffer| and |expand|
-  // are provided for reference. |decoder_frame_length| is the number of samples
-  // obtained from the last decoded frame. If there is a packet available, it
-  // should be supplied in |next_packet|; otherwise it should be NULL. The mode
-  // resulting from the last call to NetEqImpl::GetAudio is supplied in
-  // |prev_mode|. If there is a DTMF event to play, |play_dtmf| should be set to
-  // true. The output variable |reset_decoder| will be set to true if a reset is
-  // required; otherwise it is left unchanged (i.e., it can remain true if it
-  // was true before the call).
-  // TODO(henrik.lundin) Fold this method into GetDecision.
-  Operations GetDecisionSpecialized(const SyncBuffer& sync_buffer,
-                                    const Expand& expand,
-                                    size_t decoder_frame_length,
-                                    const Packet* next_packet,
-                                    Modes prev_mode,
-                                    bool play_dtmf,
-                                    bool* reset_decoder,
-                                    size_t generated_noise_samples,
-                                    size_t cur_size_samples);
 
   // Returns the operation given that the next available packet is a comfort
   // noise payload (RFC 3389 only, not codec-internal).
