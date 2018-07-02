@@ -14,6 +14,7 @@
 #include <memory>
 
 #include "modules/audio_processing/agc/agc.h"
+#include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/constructormagic.h"
 
 namespace webrtc {
@@ -84,6 +85,9 @@ class AgcManagerDirect final {
   int CheckVolumeAndReset();
   void UpdateGain();
   void UpdateCompressor();
+
+  std::unique_ptr<ApmDataDumper> data_dumper_;
+  static int instance_counter_;
 
   std::unique_ptr<Agc> agc_;
   GainControl* gctrl_;

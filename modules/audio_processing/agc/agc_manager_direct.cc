@@ -25,6 +25,8 @@
 
 namespace webrtc {
 
+int AgcManagerDirect::instance_counter_ = 0;
+
 namespace {
 
 // Amount the microphone level is lowered with every clipping event.
@@ -110,7 +112,8 @@ AgcManagerDirect::AgcManagerDirect(GainControl* gctrl,
                                    VolumeCallbacks* volume_callbacks,
                                    int startup_min_level,
                                    int clipped_level_min)
-    : agc_(new Agc()),
+    : data_dumper_(new ApmDataDumper(instance_counter_)),
+      agc_(new Agc()),
       gctrl_(gctrl),
       volume_callbacks_(volume_callbacks),
       frames_since_clipped_(kClippedWaitFrames),
@@ -126,14 +129,17 @@ AgcManagerDirect::AgcManagerDirect(GainControl* gctrl,
       startup_min_level_(ClampLevel(startup_min_level)),
       clipped_level_min_(clipped_level_min),
       file_preproc_(new DebugFile("agc_preproc.pcm")),
-      file_postproc_(new DebugFile("agc_postproc.pcm")) {}
+      file_postproc_(new DebugFile("agc_postproc.pcm")) {
+  instance_counter_++;
+}
 
 AgcManagerDirect::AgcManagerDirect(Agc* agc,
                                    GainControl* gctrl,
                                    VolumeCallbacks* volume_callbacks,
                                    int startup_min_level,
                                    int clipped_level_min)
-    : agc_(agc),
+    : data_dumper_(new ApmDataDumper(instance_counter_)),
+      agc_(agc),
       gctrl_(gctrl),
       volume_callbacks_(volume_callbacks),
       frames_since_clipped_(kClippedWaitFrames),
@@ -149,7 +155,9 @@ AgcManagerDirect::AgcManagerDirect(Agc* agc,
       startup_min_level_(ClampLevel(startup_min_level)),
       clipped_level_min_(clipped_level_min),
       file_preproc_(new DebugFile("agc_preproc.pcm")),
-      file_postproc_(new DebugFile("agc_postproc.pcm")) {}
+      file_postproc_(new DebugFile("agc_postproc.pcm")) {
+  instance_counter_++;
+}
 
 AgcManagerDirect::~AgcManagerDirect() {}
 
@@ -163,6 +171,8 @@ int AgcManagerDirect::Initialize() {
   check_volume_on_next_process_ = true;
   // TODO(bjornv): Investigate if we need to reset |startup_| as well. For
   // example, what happens when we change devices.
+
+  data_dumper_->InitiateNewSetOfRecordings();
 
   if (gctrl_->set_mode(GainControl::kFixedDigital) != 0) {
     RTC_LOG(LS_ERROR) << "set_mode(GainControl::kFixedDigital) failed.";
@@ -249,6 +259,9 @@ void AgcManagerDirect::Process(const int16_t* audio,
   UpdateCompressor();
 
   file_postproc_->Write(audio, length);
+
+  data_dumper_->DumpRaw("experimental_gain_control_compression_gain_db", 1,
+                        &compression_);
 }
 
 void AgcManagerDirect::SetLevel(int new_level) {
