@@ -162,6 +162,7 @@ webrtc_fuzzer_test("ulpfec_generator_fuzzer") {
     "ulpfec_generator_fuzzer.cc",
   ]
   deps = [
+    "../../modules:module_api_public",
     "../../modules/rtp_rtcp",
     "../../modules/rtp_rtcp:fec_test_helper",
     "../../modules/rtp_rtcp:rtp_rtcp_format",
