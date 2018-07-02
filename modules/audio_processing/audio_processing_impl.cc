@@ -366,9 +366,13 @@ AudioProcessingImpl::AudioProcessingImpl(
       constants_(config.Get<ExperimentalAgc>().startup_min_volume,
                  config.Get<ExperimentalAgc>().clipped_level_min,
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
+                 false,
+                 false,
                  false),
 #else
-                 config.Get<ExperimentalAgc>().enabled),
+                 config.Get<ExperimentalAgc>().enabled,
+                 config.Get<ExperimentalAgc>().enabled_agc2_level_estimator,
+                 config.Get<ExperimentalAgc>().enabled_agc2_digital_adaptive),
 #endif
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
       capture_(false),
@@ -542,7 +546,9 @@ int AudioProcessingImpl::InitializeLocked() {
       private_submodules_->agc_manager.reset(new AgcManagerDirect(
           public_submodules_->gain_control.get(),
           public_submodules_->gain_control_for_experimental_agc.get(),
-          constants_.agc_startup_min_volume, constants_.agc_clipped_level_min));
+          constants_.agc_startup_min_volume, constants_.agc_clipped_level_min,
+          constants_.use_experimental_agc_agc2_level_estimation,
+          constants_.use_experimental_agc_agc2_digital_adaptive));
     }
     private_submodules_->agc_manager->Initialize();
     private_submodules_->agc_manager->SetCaptureMuted(

@@ -122,6 +122,13 @@ static constexpr int kClippedLevelMin = 70;
 struct ExperimentalAgc {
   ExperimentalAgc() = default;
   explicit ExperimentalAgc(bool enabled) : enabled(enabled) {}
+  ExperimentalAgc(bool enabled,
+                  bool enabled_agc2_level_estimator,
+                  bool enabled_agc2_digital_adaptive)
+      : enabled(enabled),
+        enabled_agc2_level_estimator(enabled_agc2_level_estimator),
+        enabled_agc2_digital_adaptive(enabled_agc2_digital_adaptive) {}
+
   ExperimentalAgc(bool enabled, int startup_min_volume)
       : enabled(enabled), startup_min_volume(startup_min_volume) {}
   ExperimentalAgc(bool enabled, int startup_min_volume, int clipped_level_min)
@@ -133,6 +140,8 @@ struct ExperimentalAgc {
   int startup_min_volume = kAgcStartupMinVolume;
   // Lowest microphone level that will be applied in response to clipping.
   int clipped_level_min = kClippedLevelMin;
+  bool enabled_agc2_level_estimator = false;
+  bool enabled_agc2_digital_adaptive = false;
 };
 
 // Use to enable experimental noise suppression. It can be set in the

@@ -352,14 +352,23 @@ class AudioProcessingImpl : public AudioProcessing {
   const struct ApmConstants {
     ApmConstants(int agc_startup_min_volume,
                  int agc_clipped_level_min,
-                 bool use_experimental_agc)
+                 bool use_experimental_agc,
+                 bool use_experimental_agc_agc2_level_estimation,
+                 bool use_experimental_agc_agc2_digital_adaptive)
         :  // Format of processing streams at input/output call sites.
           agc_startup_min_volume(agc_startup_min_volume),
           agc_clipped_level_min(agc_clipped_level_min),
-          use_experimental_agc(use_experimental_agc) {}
+          use_experimental_agc(use_experimental_agc),
+          use_experimental_agc_agc2_level_estimation(
+              use_experimental_agc_agc2_level_estimation),
+          use_experimental_agc_agc2_digital_adaptive(
+              use_experimental_agc_agc2_digital_adaptive) {}
     int agc_startup_min_volume;
     int agc_clipped_level_min;
     bool use_experimental_agc;
+    bool use_experimental_agc_agc2_level_estimation;
+    bool use_experimental_agc_agc2_digital_adaptive;
+
   } constants_;
 
   struct ApmCaptureState {

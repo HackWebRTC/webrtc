@@ -48,7 +48,10 @@ class AgcManagerDirect final {
   AgcManagerDirect(GainControl* gctrl,
                    VolumeCallbacks* volume_callbacks,
                    int startup_min_level,
-                   int clipped_level_min);
+                   int clipped_level_min,
+                   bool use_agc2_level_estimation,
+                   bool use_agc2_digital_adaptive);
+
   // Dependency injection for testing. Don't delete |agc| as the memory is owned
   // by the manager.
   AgcManagerDirect(Agc* agc,
@@ -56,6 +59,15 @@ class AgcManagerDirect final {
                    VolumeCallbacks* volume_callbacks,
                    int startup_min_level,
                    int clipped_level_min);
+
+  // Most general c-tor.
+  AgcManagerDirect(Agc* agc,
+                   GainControl* gctrl,
+                   VolumeCallbacks* volume_callbacks,
+                   int startup_min_level,
+                   int clipped_level_min,
+                   bool use_agc2_level_estimation,
+                   bool use_agc2_digital_adaptive);
   ~AgcManagerDirect();
 
   int Initialize();
@@ -103,6 +115,8 @@ class AgcManagerDirect final {
   bool capture_muted_;
   bool check_volume_on_next_process_;
   bool startup_;
+  const bool use_agc2_level_estimation_;
+  const bool use_agc2_digital_adaptive_;
   int startup_min_level_;
   const int clipped_level_min_;
 

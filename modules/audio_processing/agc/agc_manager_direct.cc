@@ -111,33 +111,37 @@ class DebugFile {
 AgcManagerDirect::AgcManagerDirect(GainControl* gctrl,
                                    VolumeCallbacks* volume_callbacks,
                                    int startup_min_level,
-                                   int clipped_level_min)
-    : data_dumper_(new ApmDataDumper(instance_counter_)),
-      agc_(new Agc()),
-      gctrl_(gctrl),
-      volume_callbacks_(volume_callbacks),
-      frames_since_clipped_(kClippedWaitFrames),
-      level_(0),
-      max_level_(kMaxMicLevel),
-      max_compression_gain_(kMaxCompressionGain),
-      target_compression_(kDefaultCompressionGain),
-      compression_(target_compression_),
-      compression_accumulator_(compression_),
-      capture_muted_(false),
-      check_volume_on_next_process_(true),  // Check at startup.
-      startup_(true),
-      startup_min_level_(ClampLevel(startup_min_level)),
-      clipped_level_min_(clipped_level_min),
-      file_preproc_(new DebugFile("agc_preproc.pcm")),
-      file_postproc_(new DebugFile("agc_postproc.pcm")) {
-  instance_counter_++;
-}
+                                   int clipped_level_min,
+                                   bool use_agc2_level_estimation,
+                                   bool use_agc2_digital_adaptive)
+    : AgcManagerDirect(new Agc(),
+                       gctrl,
+                       volume_callbacks,
+                       startup_min_level,
+                       clipped_level_min,
+                       use_agc2_level_estimation,
+                       use_agc2_digital_adaptive) {}
 
 AgcManagerDirect::AgcManagerDirect(Agc* agc,
                                    GainControl* gctrl,
                                    VolumeCallbacks* volume_callbacks,
                                    int startup_min_level,
                                    int clipped_level_min)
+    : AgcManagerDirect(agc,
+                       gctrl,
+                       volume_callbacks,
+                       startup_min_level,
+                       clipped_level_min,
+                       false,
+                       false) {}
+
+AgcManagerDirect::AgcManagerDirect(Agc* agc,
+                                   GainControl* gctrl,
+                                   VolumeCallbacks* volume_callbacks,
+                                   int startup_min_level,
+                                   int clipped_level_min,
+                                   bool use_agc2_level_estimation,
+                                   bool use_agc2_digital_adaptive)
     : data_dumper_(new ApmDataDumper(instance_counter_)),
       agc_(agc),
       gctrl_(gctrl),
@@ -152,11 +156,19 @@ AgcManagerDirect::AgcManagerDirect(Agc* agc,
       capture_muted_(false),
       check_volume_on_next_process_(true),  // Check at startup.
       startup_(true),
+      use_agc2_level_estimation_(use_agc2_level_estimation),
+      use_agc2_digital_adaptive_(use_agc2_digital_adaptive),
       startup_min_level_(ClampLevel(startup_min_level)),
       clipped_level_min_(clipped_level_min),
       file_preproc_(new DebugFile("agc_preproc.pcm")),
       file_postproc_(new DebugFile("agc_postproc.pcm")) {
   instance_counter_++;
+  if (use_agc2_level_estimation_) {
+    RTC_NOTREACHED() << "Agc2 level estimation not implemented.";
+  }
+  if (use_agc2_digital_adaptive_) {
+    RTC_NOTREACHED() << "Agc2 digital adaptive not implemented.";
+  }
 }
 
 AgcManagerDirect::~AgcManagerDirect() {}

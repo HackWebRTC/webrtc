@@ -615,7 +615,11 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
   config.Set<DelayAgnostic>(new DelayAgnostic(!settings_.use_delay_agnostic ||
                                               *settings_.use_delay_agnostic));
   config.Set<ExperimentalAgc>(new ExperimentalAgc(
-      !settings_.use_experimental_agc || *settings_.use_experimental_agc));
+      !settings_.use_experimental_agc || *settings_.use_experimental_agc,
+      !!settings_.use_experimental_agc_agc2_level_estimator &&
+          *settings_.use_experimental_agc_agc2_level_estimator,
+      !!settings_.use_experimental_agc_agc2_digital_adaptive &&
+          *settings_.use_experimental_agc_agc2_digital_adaptive));
   if (settings_.use_ed) {
     apm_config.residual_echo_detector.enabled = *settings_.use_ed;
   }
