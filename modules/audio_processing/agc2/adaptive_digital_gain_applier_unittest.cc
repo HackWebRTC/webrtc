@@ -175,4 +175,14 @@ TEST(AutomaticGainController2AdaptiveGainApplier, NoiseLimitsGain) {
     }
   }
 }
+
+TEST(AutomaticGainController2GainApplier, CanHandlePositiveSpeechLevels) {
+  ApmDataDumper apm_data_dumper(0);
+  AdaptiveDigitalGainApplier gain_applier(&apm_data_dumper);
+
+  // Make one call with positive audio level values and settings.
+  VectorFloatFrame fake_audio(2, 480, 10000.f);
+  gain_applier.Process(5.0f, kNoNoiseDbfs, kVadSpeech,
+                       fake_audio.float_frame_view());
+}
 }  // namespace webrtc

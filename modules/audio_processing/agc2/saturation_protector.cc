@@ -80,6 +80,10 @@ float SaturationProtector::LastMargin() const {
   return last_margin_;
 }
 
+void SaturationProtector::Reset() {
+  peak_enveloper_ = PeakEnveloper();
+}
+
 void SaturationProtector::DebugDumpEstimate() const {
   apm_data_dumper_->DumpRaw(
       "agc2_adaptive_saturation_protector_delayed_peak_dbfs",

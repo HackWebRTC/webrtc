@@ -35,6 +35,9 @@ class SaturationProtector {
   // detected.
   float LastMargin() const;
 
+  // Resets the internal memory.
+  void Reset();
+
   void DebugDumpEstimate() const;
 
  private:

@@ -76,8 +76,9 @@ void AdaptiveDigitalGainApplier::Process(
     float input_noise_level_dbfs,
     const VadWithLevel::LevelAndProbability vad_result,
     AudioFrameView<float> float_frame) {
+  input_level_dbfs = std::min(input_level_dbfs, 0.f);
+
   RTC_DCHECK_GE(input_level_dbfs, -150.f);
-  RTC_DCHECK_LE(input_level_dbfs, 0.f);
   RTC_DCHECK_GE(float_frame.num_channels(), 1);
   RTC_DCHECK_GE(float_frame.samples_per_channel(), 1);
 

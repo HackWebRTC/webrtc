@@ -56,7 +56,15 @@ void AdaptiveModeLevelEstimator::UpdateEstimation(
 float AdaptiveModeLevelEstimator::LatestLevelEstimate() const {
   return rtc::SafeClamp<float>(
       last_estimate_with_offset_dbfs_ + saturation_protector_.LastMargin(),
-      -90.f, 0.f);
+      -90.f, 30.f);
+}
+
+void AdaptiveModeLevelEstimator::Reset() {
+  buffer_size_ms_ = 0;
+  last_estimate_with_offset_dbfs_ = kInitialSpeechLevelEstimateDbfs;
+  estimate_numerator_ = 0.f;
+  estimate_denominator_ = 0.f;
+  saturation_protector_.Reset();
 }
 
 void AdaptiveModeLevelEstimator::DebugDumpEstimate() {

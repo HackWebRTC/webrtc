@@ -76,7 +76,7 @@ TEST(AutomaticGainController2AdaptiveModeLevelEstimator, TimeToAdapt) {
   ApmDataDumper apm_data_dumper(0);
   AdaptiveModeLevelEstimator level_estimator(&apm_data_dumper);
 
-  // Run for one 'window size' interval
+  // Run for one 'window size' interval.
   constexpr float kInitialSpeechRmsDbfs = -30.f;
   RunOnConstantLevel(
       kFullBufferSizeMs / kFrameDurationMs,
@@ -88,7 +88,7 @@ TEST(AutomaticGainController2AdaptiveModeLevelEstimator, TimeToAdapt) {
   // Run for one half 'window size' interval. This should not be enough to
   // adapt.
   constexpr float kDifferentSpeechRmsDbfs = -10.f;
-  // It should at most differ by 25% after one 'window size' interval.
+  // It should at most differ by 25% after one half 'window size' interval.
   const float kMaxDifferenceDb =
       0.25 * std::abs(kDifferentSpeechRmsDbfs - kInitialSpeechRmsDbfs);
   RunOnConstantLevel(
@@ -109,7 +109,41 @@ TEST(AutomaticGainController2AdaptiveModeLevelEstimator, TimeToAdapt) {
           kDifferentSpeechRmsDbfs),
       &level_estimator);
   EXPECT_NEAR(level_estimator.LatestLevelEstimate(), kDifferentSpeechRmsDbfs,
-              kMaxDifferenceDb);
+              kMaxDifferenceDb * 0.5f);
+}
+
+TEST(AutomaticGainController2AdaptiveModeLevelEstimator,
+     ResetGivesFastAdaptation) {
+  ApmDataDumper apm_data_dumper(0);
+  AdaptiveModeLevelEstimator level_estimator(&apm_data_dumper);
+
+  // Run the level estimator for one window size interval. This gives time to
+  // adapt.
+  constexpr float kInitialSpeechRmsDbfs = -30.f;
+  RunOnConstantLevel(
+      kFullBufferSizeMs / kFrameDurationMs,
+      VadWithLevel::LevelAndProbability(
+          1.f, kInitialSpeechRmsDbfs - kInitialSaturationMarginDb,
+          kInitialSpeechRmsDbfs),
+      &level_estimator);
+
+  constexpr float kDifferentSpeechRmsDbfs = -10.f;
+  // Reset and run one half window size interval.
+  level_estimator.Reset();
+
+  RunOnConstantLevel(
+      kFullBufferSizeMs / kFrameDurationMs / 2,
+      VadWithLevel::LevelAndProbability(
+          1.f, kDifferentSpeechRmsDbfs - kInitialSaturationMarginDb,
+          kDifferentSpeechRmsDbfs),
+      &level_estimator);
+
+  // The level should be close to 'kDifferentSpeechRmsDbfs'.
+  const float kMaxDifferenceDb =
+      0.1f * std::abs(kDifferentSpeechRmsDbfs - kInitialSpeechRmsDbfs);
+  EXPECT_LT(
+      std::abs(kDifferentSpeechRmsDbfs - level_estimator.LatestLevelEstimate()),
+      kMaxDifferenceDb);
 }
 
 }  // namespace webrtc

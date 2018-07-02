@@ -22,6 +22,7 @@ class AdaptiveModeLevelEstimator {
   explicit AdaptiveModeLevelEstimator(ApmDataDumper* apm_data_dumper);
   void UpdateEstimation(const VadWithLevel::LevelAndProbability& vad_data);
   float LatestLevelEstimate() const;
+  void Reset();
 
  private:
   void DebugDumpEstimate();
