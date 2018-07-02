@@ -13,7 +13,6 @@
 #include <algorithm>
 #include <limits>
 
-#include "modules/audio_coding/neteq/tools/rtc_event_log_source.h"
 #include "modules/audio_coding/neteq/tools/rtp_file_source.h"
 #include "rtc_base/checks.h"
 
@@ -88,31 +87,6 @@ void NetEqRtpDumpInput::AdvanceOutputEvent() {
 }
 
 PacketSource* NetEqRtpDumpInput::source() {
-  return source_.get();
-}
-
-NetEqEventLogInput::NetEqEventLogInput(const std::string& file_name,
-                                       const RtpHeaderExtensionMap& hdr_ext_map)
-    : source_(RtcEventLogSource::Create(file_name)) {
-  for (const auto& ext_pair : hdr_ext_map) {
-    source_->RegisterRtpHeaderExtension(ext_pair.second, ext_pair.first);
-  }
-  LoadNextPacket();
-  AdvanceOutputEvent();
-}
-
-absl::optional<int64_t> NetEqEventLogInput::NextOutputEventTime() const {
-  return next_output_event_ms_;
-}
-
-void NetEqEventLogInput::AdvanceOutputEvent() {
-  next_output_event_ms_ = source_->NextAudioOutputEventMs();
-  if (*next_output_event_ms_ == std::numeric_limits<int64_t>::max()) {
-    next_output_event_ms_ = absl::nullopt;
-  }
-}
-
-PacketSource* NetEqEventLogInput::source() {
   return source_.get();
 }
 

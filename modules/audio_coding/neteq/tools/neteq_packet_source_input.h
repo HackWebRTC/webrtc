@@ -21,7 +21,6 @@ namespace webrtc {
 namespace test {
 
 class RtpFileSource;
-class RtcEventLogSource;
 
 // An adapter class to dress up a PacketSource object as a NetEqInput.
 class NetEqPacketSourceInput : public NetEqInput {
@@ -61,23 +60,6 @@ class NetEqRtpDumpInput final : public NetEqPacketSourceInput {
   static constexpr int64_t kOutputPeriodMs = 10;
 
   std::unique_ptr<RtpFileSource> source_;
-};
-
-// Implementation of NetEqPacketSourceInput to be used with an
-// RtcEventLogSource.
-class NetEqEventLogInput final : public NetEqPacketSourceInput {
- public:
-  NetEqEventLogInput(const std::string& file_name,
-                     const RtpHeaderExtensionMap& hdr_ext_map);
-
-  absl::optional<int64_t> NextOutputEventTime() const override;
-  void AdvanceOutputEvent() override;
-
- protected:
-  PacketSource* source() override;
-
- private:
-  std::unique_ptr<RtcEventLogSource> source_;
 };
 
 }  // namespace test

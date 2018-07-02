@@ -21,6 +21,7 @@
 #include "modules/audio_coding/neteq/tools/fake_decode_from_file.h"
 #include "modules/audio_coding/neteq/tools/input_audio_file.h"
 #include "modules/audio_coding/neteq/tools/neteq_delay_analyzer.h"
+#include "modules/audio_coding/neteq/tools/neteq_event_log_input.h"
 #include "modules/audio_coding/neteq/tools/neteq_packet_source_input.h"
 #include "modules/audio_coding/neteq/tools/neteq_replacement_input.h"
 #include "modules/audio_coding/neteq/tools/neteq_stats_getter.h"

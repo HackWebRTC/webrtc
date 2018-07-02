@@ -1726,10 +1726,6 @@ TEST_F(NetEqDecodingTestFaxMode, TestJitterBufferDelayWithLoss) {
 }
 
 namespace test {
-// TODO(henrik.lundin) NetEqRtpDumpInput requires protobuf support. It shouldn't
-// need it, but because it is bundled with NetEqEventLogInput, it is neded.
-// This should be refactored.
-#if WEBRTC_ENABLE_PROTOBUF
 TEST(NetEqNoTimeStretchingMode, RunTest) {
   NetEq::Config config;
   config.for_test_no_time_stretching = true;
@@ -1755,7 +1751,6 @@ TEST(NetEqNoTimeStretchingMode, RunTest) {
   EXPECT_EQ(0, stats.accelerate_rate);
   EXPECT_EQ(0, stats.preemptive_rate);
 }
-#endif
 
 }  // namespace test
 }  // namespace webrtc
