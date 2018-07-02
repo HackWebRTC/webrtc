@@ -559,6 +559,7 @@ void TurnServer::DestroyInternalSocket(rtc::AsyncPacketSocket* socket) {
   InternalSocketMap::iterator iter = server_sockets_.find(socket);
   if (iter != server_sockets_.end()) {
     rtc::AsyncPacketSocket* socket = iter->first;
+    socket->SignalReadPacket.disconnect(this);
     server_sockets_.erase(iter);
     // We must destroy the socket async to avoid invalidating the sigslot
     // callback list iterator inside a sigslot callback. (In other words,
