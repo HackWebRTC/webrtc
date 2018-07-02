@@ -129,8 +129,8 @@ int ParseVP8FrameSize(RtpDepacketizer::ParsedPayload* parsed_payload,
     // in the beginning of the partition.
     return -1;
   }
-  parsed_payload->type.Video.width = ((data[7] << 8) + data[6]) & 0x3FFF;
-  parsed_payload->type.Video.height = ((data[9] << 8) + data[8]) & 0x3FFF;
+  parsed_payload->video_header().width = ((data[7] << 8) + data[6]) & 0x3FFF;
+  parsed_payload->video_header().height = ((data[9] << 8) + data[8]) & 0x3FFF;
   return 0;
 }
 
@@ -480,22 +480,22 @@ bool RtpDepacketizerVp8::Parse(ParsedPayload* parsed_payload,
   bool beginning_of_partition = (*payload_data & 0x10) ? true : false;  // S bit
   int partition_id = (*payload_data & 0x0F);  // PartID field
 
-  parsed_payload->type.Video.width = 0;
-  parsed_payload->type.Video.height = 0;
-  parsed_payload->type.Video.is_first_packet_in_frame =
+  parsed_payload->video_header().width = 0;
+  parsed_payload->video_header().height = 0;
+  parsed_payload->video_header().is_first_packet_in_frame =
       beginning_of_partition && (partition_id == 0);
-  parsed_payload->type.Video.simulcastIdx = 0;
-  parsed_payload->type.Video.codec = kVideoCodecVP8;
-  parsed_payload->type.Video.codecHeader.VP8.nonReference =
+  parsed_payload->video_header().simulcastIdx = 0;
+  parsed_payload->video_header().codec = kVideoCodecVP8;
+  parsed_payload->video_header().codecHeader.VP8.nonReference =
       (*payload_data & 0x20) ? true : false;  // N bit
-  parsed_payload->type.Video.codecHeader.VP8.partitionId = partition_id;
-  parsed_payload->type.Video.codecHeader.VP8.beginningOfPartition =
+  parsed_payload->video_header().codecHeader.VP8.partitionId = partition_id;
+  parsed_payload->video_header().codecHeader.VP8.beginningOfPartition =
       beginning_of_partition;
-  parsed_payload->type.Video.codecHeader.VP8.pictureId = kNoPictureId;
-  parsed_payload->type.Video.codecHeader.VP8.tl0PicIdx = kNoTl0PicIdx;
-  parsed_payload->type.Video.codecHeader.VP8.temporalIdx = kNoTemporalIdx;
-  parsed_payload->type.Video.codecHeader.VP8.layerSync = false;
-  parsed_payload->type.Video.codecHeader.VP8.keyIdx = kNoKeyIdx;
+  parsed_payload->video_header().codecHeader.VP8.pictureId = kNoPictureId;
+  parsed_payload->video_header().codecHeader.VP8.tl0PicIdx = kNoTl0PicIdx;
+  parsed_payload->video_header().codecHeader.VP8.temporalIdx = kNoTemporalIdx;
+  parsed_payload->video_header().codecHeader.VP8.layerSync = false;
+  parsed_payload->video_header().codecHeader.VP8.keyIdx = kNoKeyIdx;
 
   if (partition_id > 8) {
     // Weak check for corrupt payload_data: PartID MUST NOT be larger than 8.
@@ -512,7 +512,7 @@ bool RtpDepacketizerVp8::Parse(ParsedPayload* parsed_payload,
 
   if (extension) {
     const int parsed_bytes =
-        ParseVP8Extension(&parsed_payload->type.Video.codecHeader.VP8,
+        ParseVP8Extension(&parsed_payload->video_header().codecHeader.VP8,
                           payload_data, payload_data_length);
     if (parsed_bytes < 0)
       return false;

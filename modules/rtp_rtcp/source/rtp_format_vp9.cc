@@ -712,14 +712,14 @@ bool RtpDepacketizerVp9::Parse(ParsedPayload* parsed_payload,
   RETURN_FALSE_ON_ERROR(parser.ReadBits(&z_bit, 1));
 
   // Parsed payload.
-  parsed_payload->type.Video.width = 0;
-  parsed_payload->type.Video.height = 0;
-  parsed_payload->type.Video.simulcastIdx = 0;
-  parsed_payload->type.Video.codec = kVideoCodecVP9;
+  parsed_payload->video_header().width = 0;
+  parsed_payload->video_header().height = 0;
+  parsed_payload->video_header().simulcastIdx = 0;
+  parsed_payload->video_header().codec = kVideoCodecVP9;
 
   parsed_payload->frame_type = p_bit ? kVideoFrameDelta : kVideoFrameKey;
 
-  RTPVideoHeaderVP9* vp9 = &parsed_payload->type.Video.codecHeader.VP9;
+  RTPVideoHeaderVP9* vp9 = &parsed_payload->video_header().codecHeader.VP9;
   vp9->InitRTPVideoHeaderVP9();
   vp9->inter_pic_predicted = p_bit ? true : false;
   vp9->flexible_mode = f_bit ? true : false;
@@ -748,11 +748,11 @@ bool RtpDepacketizerVp9::Parse(ParsedPayload* parsed_payload,
     }
     if (vp9->spatial_layer_resolution_present) {
       // TODO(asapersson): Add support for spatial layers.
-      parsed_payload->type.Video.width = vp9->width[0];
-      parsed_payload->type.Video.height = vp9->height[0];
+      parsed_payload->video_header().width = vp9->width[0];
+      parsed_payload->video_header().height = vp9->height[0];
     }
   }
-  parsed_payload->type.Video.is_first_packet_in_frame =
+  parsed_payload->video_header().is_first_packet_in_frame =
       b_bit && (!l_bit || !vp9->inter_layer_predicted);
 
   uint64_t rem_bits = parser.RemainingBitCount();

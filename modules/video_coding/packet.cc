@@ -50,20 +50,21 @@ VCMPacket::VCMPacket(const uint8_t* ptr,
       timesNacked(-1),
       frameType(rtpHeader.frameType),
       codec(kVideoCodecUnknown),
-      is_first_packet_in_frame(rtpHeader.type.Video.is_first_packet_in_frame),
+      is_first_packet_in_frame(
+          rtpHeader.video_header().is_first_packet_in_frame),
       completeNALU(kNaluComplete),
       insertStartCode(false),
-      width(rtpHeader.type.Video.width),
-      height(rtpHeader.type.Video.height),
-      video_header(rtpHeader.type.Video) {
-  CopyCodecSpecifics(rtpHeader.type.Video);
+      width(rtpHeader.video_header().width),
+      height(rtpHeader.video_header().height),
+      video_header(rtpHeader.video_header()) {
+  CopyCodecSpecifics(rtpHeader.video_header());
 
   if (markerBit) {
-    video_header.rotation = rtpHeader.type.Video.rotation;
+    video_header.rotation = rtpHeader.video_header().rotation;
   }
   // Playout decisions are made entirely based on first packet in a frame.
   if (is_first_packet_in_frame) {
-    video_header.playout_delay = rtpHeader.type.Video.playout_delay;
+    video_header.playout_delay = rtpHeader.video_header().playout_delay;
   } else {
     video_header.playout_delay = {-1, -1};
   }

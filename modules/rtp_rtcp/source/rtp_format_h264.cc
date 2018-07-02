@@ -429,7 +429,7 @@ bool RtpDepacketizerH264::Parse(ParsedPayload* parsed_payload,
   modified_buffer_.reset();
 
   uint8_t nal_type = payload_data[0] & kTypeMask;
-  parsed_payload->type.Video.codecHeader.H264.nalus_length = 0;
+  parsed_payload->video_header().codecHeader.H264.nalus_length = 0;
   if (nal_type == H264::NaluType::kFuA) {
     // Fragmented NAL units (FU-A).
     if (!ParseFuaNalu(parsed_payload, payload_data))
@@ -453,13 +453,13 @@ bool RtpDepacketizerH264::Parse(ParsedPayload* parsed_payload,
 bool RtpDepacketizerH264::ProcessStapAOrSingleNalu(
     ParsedPayload* parsed_payload,
     const uint8_t* payload_data) {
-  parsed_payload->type.Video.width = 0;
-  parsed_payload->type.Video.height = 0;
-  parsed_payload->type.Video.codec = kVideoCodecH264;
-  parsed_payload->type.Video.simulcastIdx = 0;
-  parsed_payload->type.Video.is_first_packet_in_frame = true;
+  parsed_payload->video_header().width = 0;
+  parsed_payload->video_header().height = 0;
+  parsed_payload->video_header().codec = kVideoCodecH264;
+  parsed_payload->video_header().simulcastIdx = 0;
+  parsed_payload->video_header().is_first_packet_in_frame = true;
   RTPVideoHeaderH264* h264_header =
-      &parsed_payload->type.Video.codecHeader.H264;
+      &parsed_payload->video_header().codecHeader.H264;
 
   const uint8_t* nalu_start = payload_data + kNalHeaderSize;
   const size_t nalu_length = length_ - kNalHeaderSize;
@@ -569,8 +569,8 @@ bool RtpDepacketizerH264::ProcessStapAOrSingleNalu(
         }
 
         if (sps) {
-          parsed_payload->type.Video.width = sps->width;
-          parsed_payload->type.Video.height = sps->height;
+          parsed_payload->video_header().width = sps->width;
+          parsed_payload->video_header().height = sps->height;
           nalu.sps_id = sps->id;
         } else {
           RTC_LOG(LS_WARNING) << "Failed to parse SPS id from SPS slice.";
@@ -618,7 +618,7 @@ bool RtpDepacketizerH264::ProcessStapAOrSingleNalu(
         RTC_LOG(LS_WARNING) << "Unexpected STAP-A or FU-A received.";
         return false;
     }
-    RTPVideoHeaderH264* h264 = &parsed_payload->type.Video.codecHeader.H264;
+    RTPVideoHeaderH264* h264 = &parsed_payload->video_header().codecHeader.H264;
     if (h264->nalus_length == kMaxNalusPerPacket) {
       RTC_LOG(LS_WARNING)
           << "Received packet containing more than " << kMaxNalusPerPacket
@@ -672,12 +672,12 @@ bool RtpDepacketizerH264::ParseFuaNalu(
   } else {
     parsed_payload->frame_type = kVideoFrameDelta;
   }
-  parsed_payload->type.Video.width = 0;
-  parsed_payload->type.Video.height = 0;
-  parsed_payload->type.Video.codec = kVideoCodecH264;
-  parsed_payload->type.Video.simulcastIdx = 0;
-  parsed_payload->type.Video.is_first_packet_in_frame = first_fragment;
-  RTPVideoHeaderH264* h264 = &parsed_payload->type.Video.codecHeader.H264;
+  parsed_payload->video_header().width = 0;
+  parsed_payload->video_header().height = 0;
+  parsed_payload->video_header().codec = kVideoCodecH264;
+  parsed_payload->video_header().simulcastIdx = 0;
+  parsed_payload->video_header().is_first_packet_in_frame = first_fragment;
+  RTPVideoHeaderH264* h264 = &parsed_payload->video_header().codecHeader.H264;
   h264->packetization_type = kH264FuA;
   h264->nalu_type = original_nal_type;
   if (first_fragment) {

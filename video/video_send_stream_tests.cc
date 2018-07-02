@@ -3170,19 +3170,19 @@ class Vp9HeaderObserver : public test::SendTest {
       RtpDepacketizer::ParsedPayload parsed;
       RtpDepacketizerVp9 depacketizer;
       EXPECT_TRUE(depacketizer.Parse(&parsed, payload, payload_length));
-      EXPECT_EQ(VideoCodecType::kVideoCodecVP9, parsed.type.Video.codec);
+      EXPECT_EQ(VideoCodecType::kVideoCodecVP9, parsed.video_header().codec);
       // Verify common fields for all configurations.
-      VerifyCommonHeader(parsed.type.Video.codecHeader.VP9);
-      CompareConsecutiveFrames(header, parsed.type.Video);
+      VerifyCommonHeader(parsed.video_header().codecHeader.VP9);
+      CompareConsecutiveFrames(header, parsed.video_header());
       // Verify configuration specific settings.
-      InspectHeader(parsed.type.Video.codecHeader.VP9);
+      InspectHeader(parsed.video_header().codecHeader.VP9);
 
       ++packets_sent_;
       if (header.markerBit) {
         ++frames_sent_;
       }
       last_header_ = header;
-      last_vp9_ = parsed.type.Video.codecHeader.VP9;
+      last_vp9_ = parsed.video_header().codecHeader.VP9;
     }
     return SEND_PACKET;
   }

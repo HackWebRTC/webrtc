@@ -242,7 +242,7 @@ class TestBasicJitterBuffer : public ::testing::TestWithParam<std::string>,
     rtpHeader.header.timestamp = timestamp_;
     rtpHeader.header.markerBit = true;
     rtpHeader.frameType = kVideoFrameDelta;
-    rtpHeader.type.Video.codec = kVideoCodecUnknown;
+    rtpHeader.video_header().codec = kVideoCodecUnknown;
     packet_.reset(new VCMPacket(data_, size_, rtpHeader));
   }
 
@@ -800,7 +800,7 @@ TEST_F(TestBasicJitterBuffer, TestReorderingWithPadding) {
   rtpHeader.header.sequenceNumber = seq_num_ + 2;
   rtpHeader.header.timestamp = timestamp_ + (33 * 90);
   rtpHeader.header.markerBit = false;
-  rtpHeader.type.Video.codec = kVideoCodecUnknown;
+  rtpHeader.video_header().codec = kVideoCodecUnknown;
   VCMPacket empty_packet(data_, 0, rtpHeader);
   EXPECT_EQ(kOldPacket,
             jitter_buffer_->InsertPacket(empty_packet, &retransmitted));
@@ -2164,7 +2164,7 @@ TEST_F(TestBasicJitterBuffer, H264IncompleteNalu) {
   timestamp_ += 33 * 90;
   WebRtcRTPHeader rtpHeader;
   memset(&rtpHeader, 0, sizeof(rtpHeader));
-  rtpHeader.type.Video.codec = kVideoCodecUnknown;
+  rtpHeader.video_header().codec = kVideoCodecUnknown;
   VCMPacket emptypacket(data_, 0, rtpHeader);
   emptypacket.seqNum = seq_num_;
   emptypacket.timestamp = timestamp_;

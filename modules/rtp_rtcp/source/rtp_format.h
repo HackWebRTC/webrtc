@@ -55,6 +55,8 @@ class RtpDepacketizer {
     const uint8_t* payload;
     size_t payload_length;
     FrameType frame_type;
+    RTPVideoHeader& video_header() { return type.Video; }
+    const RTPVideoHeader& video_header() const { return type.Video; }
     RTPTypeHeader type;
   };
 

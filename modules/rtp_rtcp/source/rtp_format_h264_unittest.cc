@@ -600,11 +600,11 @@ TEST_F(RtpDepacketizerH264Test, TestSingleNalu) {
   ASSERT_TRUE(depacketizer_->Parse(&payload, packet, sizeof(packet)));
   ExpectPacket(&payload, packet, sizeof(packet));
   EXPECT_EQ(kVideoFrameKey, payload.frame_type);
-  EXPECT_EQ(kVideoCodecH264, payload.type.Video.codec);
-  EXPECT_TRUE(payload.type.Video.is_first_packet_in_frame);
+  EXPECT_EQ(kVideoCodecH264, payload.video_header().codec);
+  EXPECT_TRUE(payload.video_header().is_first_packet_in_frame);
   EXPECT_EQ(kH264SingleNalu,
-            payload.type.Video.codecHeader.H264.packetization_type);
-  EXPECT_EQ(kIdr, payload.type.Video.codecHeader.H264.nalu_type);
+            payload.video_header().codecHeader.H264.packetization_type);
+  EXPECT_EQ(kIdr, payload.video_header().codecHeader.H264.nalu_type);
 }
 
 TEST_F(RtpDepacketizerH264Test, TestSingleNaluSpsWithResolution) {
@@ -616,12 +616,12 @@ TEST_F(RtpDepacketizerH264Test, TestSingleNaluSpsWithResolution) {
   ASSERT_TRUE(depacketizer_->Parse(&payload, packet, sizeof(packet)));
   ExpectPacket(&payload, packet, sizeof(packet));
   EXPECT_EQ(kVideoFrameKey, payload.frame_type);
-  EXPECT_EQ(kVideoCodecH264, payload.type.Video.codec);
-  EXPECT_TRUE(payload.type.Video.is_first_packet_in_frame);
+  EXPECT_EQ(kVideoCodecH264, payload.video_header().codec);
+  EXPECT_TRUE(payload.video_header().is_first_packet_in_frame);
   EXPECT_EQ(kH264SingleNalu,
-            payload.type.Video.codecHeader.H264.packetization_type);
-  EXPECT_EQ(1280u, payload.type.Video.width);
-  EXPECT_EQ(720u, payload.type.Video.height);
+            payload.video_header().codecHeader.H264.packetization_type);
+  EXPECT_EQ(1280u, payload.video_header().width);
+  EXPECT_EQ(720u, payload.video_header().height);
 }
 
 TEST_F(RtpDepacketizerH264Test, TestStapAKey) {
@@ -646,9 +646,9 @@ TEST_F(RtpDepacketizerH264Test, TestStapAKey) {
   ASSERT_TRUE(depacketizer_->Parse(&payload, packet, sizeof(packet)));
   ExpectPacket(&payload, packet, sizeof(packet));
   EXPECT_EQ(kVideoFrameKey, payload.frame_type);
-  EXPECT_EQ(kVideoCodecH264, payload.type.Video.codec);
-  EXPECT_TRUE(payload.type.Video.is_first_packet_in_frame);
-  const RTPVideoHeaderH264& h264 = payload.type.Video.codecHeader.H264;
+  EXPECT_EQ(kVideoCodecH264, payload.video_header().codec);
+  EXPECT_TRUE(payload.video_header().is_first_packet_in_frame);
+  const RTPVideoHeaderH264& h264 = payload.video_header().codecHeader.H264;
   EXPECT_EQ(kH264StapA, h264.packetization_type);
   // NALU type for aggregated packets is the type of the first packet only.
   EXPECT_EQ(kSps, h264.nalu_type);
@@ -677,11 +677,12 @@ TEST_F(RtpDepacketizerH264Test, TestStapANaluSpsWithResolution) {
   ASSERT_TRUE(depacketizer_->Parse(&payload, packet, sizeof(packet)));
   ExpectPacket(&payload, packet, sizeof(packet));
   EXPECT_EQ(kVideoFrameKey, payload.frame_type);
-  EXPECT_EQ(kVideoCodecH264, payload.type.Video.codec);
-  EXPECT_TRUE(payload.type.Video.is_first_packet_in_frame);
-  EXPECT_EQ(kH264StapA, payload.type.Video.codecHeader.H264.packetization_type);
-  EXPECT_EQ(1280u, payload.type.Video.width);
-  EXPECT_EQ(720u, payload.type.Video.height);
+  EXPECT_EQ(kVideoCodecH264, payload.video_header().codec);
+  EXPECT_TRUE(payload.video_header().is_first_packet_in_frame);
+  EXPECT_EQ(kH264StapA,
+            payload.video_header().codecHeader.H264.packetization_type);
+  EXPECT_EQ(1280u, payload.video_header().width);
+  EXPECT_EQ(720u, payload.video_header().height);
 }
 
 TEST_F(RtpDepacketizerH264Test, TestEmptyStapARejected) {
@@ -804,11 +805,12 @@ TEST_F(RtpDepacketizerH264Test, TestStapADelta) {
   ASSERT_TRUE(depacketizer_->Parse(&payload, packet, sizeof(packet)));
   ExpectPacket(&payload, packet, sizeof(packet));
   EXPECT_EQ(kVideoFrameDelta, payload.frame_type);
-  EXPECT_EQ(kVideoCodecH264, payload.type.Video.codec);
-  EXPECT_TRUE(payload.type.Video.is_first_packet_in_frame);
-  EXPECT_EQ(kH264StapA, payload.type.Video.codecHeader.H264.packetization_type);
+  EXPECT_EQ(kVideoCodecH264, payload.video_header().codec);
+  EXPECT_TRUE(payload.video_header().is_first_packet_in_frame);
+  EXPECT_EQ(kH264StapA,
+            payload.video_header().codecHeader.H264.packetization_type);
   // NALU type for aggregated packets is the type of the first packet only.
-  EXPECT_EQ(kSlice, payload.type.Video.codecHeader.H264.nalu_type);
+  EXPECT_EQ(kSlice, payload.video_header().codecHeader.H264.nalu_type);
 }
 
 TEST_F(RtpDepacketizerH264Test, TestFuA) {
@@ -843,9 +845,9 @@ TEST_F(RtpDepacketizerH264Test, TestFuA) {
   ASSERT_TRUE(depacketizer_->Parse(&payload, packet1, sizeof(packet1)));
   ExpectPacket(&payload, kExpected1, sizeof(kExpected1));
   EXPECT_EQ(kVideoFrameKey, payload.frame_type);
-  EXPECT_EQ(kVideoCodecH264, payload.type.Video.codec);
-  EXPECT_TRUE(payload.type.Video.is_first_packet_in_frame);
-  const RTPVideoHeaderH264& h264 = payload.type.Video.codecHeader.H264;
+  EXPECT_EQ(kVideoCodecH264, payload.video_header().codec);
+  EXPECT_TRUE(payload.video_header().is_first_packet_in_frame);
+  const RTPVideoHeaderH264& h264 = payload.video_header().codecHeader.H264;
   EXPECT_EQ(kH264FuA, h264.packetization_type);
   EXPECT_EQ(kIdr, h264.nalu_type);
   ASSERT_EQ(1u, h264.nalus_length);
@@ -859,10 +861,10 @@ TEST_F(RtpDepacketizerH264Test, TestFuA) {
   ASSERT_TRUE(depacketizer_->Parse(&payload, packet2, sizeof(packet2)));
   ExpectPacket(&payload, kExpected2, sizeof(kExpected2));
   EXPECT_EQ(kVideoFrameKey, payload.frame_type);
-  EXPECT_EQ(kVideoCodecH264, payload.type.Video.codec);
-  EXPECT_FALSE(payload.type.Video.is_first_packet_in_frame);
+  EXPECT_EQ(kVideoCodecH264, payload.video_header().codec);
+  EXPECT_FALSE(payload.video_header().is_first_packet_in_frame);
   {
-    const RTPVideoHeaderH264& h264 = payload.type.Video.codecHeader.H264;
+    const RTPVideoHeaderH264& h264 = payload.video_header().codecHeader.H264;
     EXPECT_EQ(kH264FuA, h264.packetization_type);
     EXPECT_EQ(kIdr, h264.nalu_type);
     // NALU info is only expected for the first FU-A packet.
@@ -873,10 +875,10 @@ TEST_F(RtpDepacketizerH264Test, TestFuA) {
   ASSERT_TRUE(depacketizer_->Parse(&payload, packet3, sizeof(packet3)));
   ExpectPacket(&payload, kExpected3, sizeof(kExpected3));
   EXPECT_EQ(kVideoFrameKey, payload.frame_type);
-  EXPECT_EQ(kVideoCodecH264, payload.type.Video.codec);
-  EXPECT_FALSE(payload.type.Video.is_first_packet_in_frame);
+  EXPECT_EQ(kVideoCodecH264, payload.video_header().codec);
+  EXPECT_FALSE(payload.video_header().is_first_packet_in_frame);
   {
-    const RTPVideoHeaderH264& h264 = payload.type.Video.codecHeader.H264;
+    const RTPVideoHeaderH264& h264 = payload.video_header().codecHeader.H264;
     EXPECT_EQ(kH264FuA, h264.packetization_type);
     EXPECT_EQ(kIdr, h264.nalu_type);
     // NALU info is only expected for the first FU-A packet.
@@ -928,7 +930,7 @@ TEST_F(RtpDepacketizerH264Test, TestSeiPacket) {
   };
   RtpDepacketizer::ParsedPayload payload;
   ASSERT_TRUE(depacketizer_->Parse(&payload, kPayload, sizeof(kPayload)));
-  const RTPVideoHeaderH264& h264 = payload.type.Video.codecHeader.H264;
+  const RTPVideoHeaderH264& h264 = payload.video_header().codecHeader.H264;
   EXPECT_EQ(kVideoFrameDelta, payload.frame_type);
   EXPECT_EQ(kH264SingleNalu, h264.packetization_type);
   EXPECT_EQ(kSei, h264.nalu_type);
