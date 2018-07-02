@@ -91,6 +91,8 @@ class NetEqTest {
   NetEqNetworkStatistics SimulationStats();
   NetEqLifetimeStatistics LifetimeStats() const;
 
+  static DecoderMap StandardDecoderMap();
+
  private:
   void RegisterDecoders(const DecoderMap& codecs);
   void RegisterExternalDecoders(const ExtDecoderMap& codecs);

@@ -40,8 +40,9 @@ TwoWayCommunication::TwoWayCommunication(int testMode)
           AudioCodingModule::Config(CreateBuiltinAudioDecoderFactory()))),
       _testMode(testMode) {
   AudioCodingModule::Config config;
-  // The clicks will be more obvious in FAX mode. TODO(henrik.lundin) Really?
-  config.neteq_config.playout_mode = kPlayoutFax;
+  // The clicks will be more obvious if time-stretching is not allowed.
+  // TODO(henrik.lundin) Really?
+  config.neteq_config.for_test_no_time_stretching = true;
   config.decoder_factory = CreateBuiltinAudioDecoderFactory();
   _acmB.reset(AudioCodingModule::Create(config));
   _acmRefB.reset(AudioCodingModule::Create(config));
