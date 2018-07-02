@@ -27,7 +27,7 @@ constexpr int kInitialMicLevel = 100;
 
 // TODO(alessiob): Add new fake recording device kind values here as they are
 // added in FakeRecordingDevice::FakeRecordingDevice.
-const std::vector<int> kFakeRecDeviceKinds = {0, 1};
+const std::vector<int> kFakeRecDeviceKinds = {0, 1, 2};
 
 const std::vector<std::vector<float>> kTestMultiChannelSamples{
     std::vector<float>{-10.f, -1.f, -0.1f, 0.f, 0.1f, 1.f, 10.f}};

@@ -39,7 +39,6 @@ rtc_static_library("audio_processing") {
     "agc/agc.h",
     "agc/agc_manager_direct.cc",
     "agc/agc_manager_direct.h",
-    "agc/gain_map_internal.h",
     "agc/loudness_histogram.cc",
     "agc/loudness_histogram.h",
     "agc/utility.cc",
@@ -110,6 +109,7 @@ rtc_static_library("audio_processing") {
   defines = []
   deps = [
     ":aec_core",
+    ":agc_gain_map_internal",
     ":apm_logging",
     ":audio_frame_view",
     ":audio_generator_interface",
@@ -413,6 +413,12 @@ rtc_source_set("aec_core") {
   }
 }
 
+rtc_source_set("agc_gain_map_internal") {
+  sources = [
+    "agc/gain_map_internal.h",
+  ]
+}
+
 if (rtc_include_tests) {
   rtc_source_set("mocks") {
     testonly = true
@@ -629,11 +635,13 @@ if (rtc_include_tests) {
       "test/fake_recording_device.h",
     ]
     deps = [
+      ":agc_gain_map_internal",
       "../../api:array_view",
       "../../api/audio:audio_frame_api",
       "../../common_audio:common_audio",
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
+      "../../rtc_base:safe_minmax",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
   }
