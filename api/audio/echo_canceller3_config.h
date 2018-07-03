@@ -158,6 +158,14 @@ struct EchoCanceller3Config {
   struct Suppressor {
     size_t bands_with_reliable_coherence = 5;
     size_t nearend_average_blocks = 4;
+
+    struct MaskingThresholds {
+      float enr_transparent;
+      float enr_suppress;
+      float emr_transparent;
+    };
+    MaskingThresholds mask_lf = {.2f, .3f, .3f};
+    MaskingThresholds mask_hf = {.07f, .1f, .3f};
   } suppressor;
 };
 }  // namespace webrtc
