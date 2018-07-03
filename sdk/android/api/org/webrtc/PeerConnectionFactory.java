@@ -349,6 +349,12 @@ public class PeerConnectionFactory {
     return createPeerConnection(rtcConfig, null /* constraints */, observer);
   }
 
+  @Nullable
+  public PeerConnection createPeerConnection(
+      PeerConnection.RTCConfiguration rtcConfig, PeerConnectionDependencies dependencies) {
+    return createPeerConnection(rtcConfig, null /* constraints */, dependencies.getObserver());
+  }
+
   public MediaStream createLocalMediaStream(String label) {
     return new MediaStream(nativeCreateLocalMediaStream(nativeFactory, label));
   }

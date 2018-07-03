@@ -970,6 +970,7 @@ rtc_android_library("peerconnection_java") {
     "api/org/webrtc/NetworkMonitor.java",  # TODDO(sakal): Break dependencies and move to base_java.
     "api/org/webrtc/NetworkMonitorAutoDetect.java",  # TODDO(sakal): Break dependencies and move to base_java.
     "api/org/webrtc/PeerConnection.java",
+    "api/org/webrtc/PeerConnectionDependencies.java",
     "api/org/webrtc/PeerConnectionFactory.java",
     "api/org/webrtc/RTCStats.java",
     "api/org/webrtc/RTCStatsCollectorCallback.java",
