@@ -488,6 +488,7 @@ if (rtc_include_tests) {
       ":rtc_data",
       "../api/video:video_frame_i420",
       "../modules/audio_processing:mocks",
+      "../modules/rtp_rtcp",
       "../modules/video_coding:video_codec_interface",
       "../modules/video_coding:webrtc_vp8",
       "../pc:rtc_pc",

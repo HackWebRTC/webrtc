@@ -38,6 +38,7 @@
 #include "media/engine/simulcast.h"
 #include "media/engine/webrtcvideoengine.h"
 #include "media/engine/webrtcvoiceengine.h"
+#include "modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/numerics/safe_conversions.h"
@@ -1272,82 +1273,16 @@ class WebRtcVideoChannelBaseTest : public testing::Test {
     return network_interface_.GetRtpPacket(index);
   }
   static int GetPayloadType(const rtc::CopyOnWriteBuffer* p) {
-    int pt = -1;
-    ParseRtpPacket(p, NULL, &pt, NULL, NULL, NULL, NULL);
-    return pt;
+    webrtc::RTPHeader header;
+    EXPECT_TRUE(ParseRtpPacket(p, &header));
+    return header.payloadType;
   }
+
   static bool ParseRtpPacket(const rtc::CopyOnWriteBuffer* p,
-                             bool* x,
-                             int* pt,
-                             int* seqnum,
-                             uint32_t* tstamp,
-                             uint32_t* ssrc,
-                             std::string* payload) {
-    rtc::ByteBufferReader buf(p->data<char>(), p->size());
-    uint8_t u08 = 0;
-    uint16_t u16 = 0;
-    uint32_t u32 = 0;
-
-    // Read X and CC fields.
-    if (!buf.ReadUInt8(&u08))
-      return false;
-    bool extension = ((u08 & 0x10) != 0);
-    uint8_t cc = (u08 & 0x0F);
-    if (x)
-      *x = extension;
-
-    // Read PT field.
-    if (!buf.ReadUInt8(&u08))
-      return false;
-    if (pt)
-      *pt = (u08 & 0x7F);
-
-    // Read Sequence Number field.
-    if (!buf.ReadUInt16(&u16))
-      return false;
-    if (seqnum)
-      *seqnum = u16;
-
-    // Read Timestamp field.
-    if (!buf.ReadUInt32(&u32))
-      return false;
-    if (tstamp)
-      *tstamp = u32;
-
-    // Read SSRC field.
-    if (!buf.ReadUInt32(&u32))
-      return false;
-    if (ssrc)
-      *ssrc = u32;
-
-    // Skip CSRCs.
-    for (uint8_t i = 0; i < cc; ++i) {
-      if (!buf.ReadUInt32(&u32))
-        return false;
-    }
-
-    // Skip extension header.
-    if (extension) {
-      // Read Profile-specific extension header ID
-      if (!buf.ReadUInt16(&u16))
-        return false;
-
-      // Read Extension header length
-      if (!buf.ReadUInt16(&u16))
-        return false;
-      uint16_t ext_header_len = u16;
-
-      // Read Extension header
-      for (uint16_t i = 0; i < ext_header_len; ++i) {
-        if (!buf.ReadUInt32(&u32))
-          return false;
-      }
-    }
-
-    if (payload) {
-      return buf.ReadString(payload, buf.Length());
-    }
-    return true;
+                             webrtc::RTPHeader* header) {
+    std::unique_ptr<webrtc::RtpHeaderParser> parser(
+        webrtc::RtpHeaderParser::Create());
+    return parser->Parse(p->cdata(), p->size(), header);
   }
 
   // Tests that we can send and receive frames.
@@ -1649,14 +1584,15 @@ TEST_F(WebRtcVideoChannelBaseTest, SetSendSsrc) {
   EXPECT_TRUE(SetSend(true));
   EXPECT_TRUE(SendFrame());
   EXPECT_TRUE_WAIT(NumRtpPackets() > 0, kTimeout);
-  uint32_t ssrc = 0;
+  webrtc::RTPHeader header;
   std::unique_ptr<const rtc::CopyOnWriteBuffer> p(GetRtpPacket(0));
-  ParseRtpPacket(p.get(), NULL, NULL, NULL, NULL, &ssrc, NULL);
-  EXPECT_EQ(kSsrc, ssrc);
+  EXPECT_TRUE(ParseRtpPacket(p.get(), &header));
+  EXPECT_EQ(kSsrc, header.ssrc);
+
   // Packets are being paced out, so these can mismatch between the first and
   // second call to NumRtpPackets until pending packets are paced out.
-  EXPECT_EQ_WAIT(NumRtpPackets(), NumRtpPackets(ssrc), kTimeout);
-  EXPECT_EQ_WAIT(NumRtpBytes(), NumRtpBytes(ssrc), kTimeout);
+  EXPECT_EQ_WAIT(NumRtpPackets(), NumRtpPackets(header.ssrc), kTimeout);
+  EXPECT_EQ_WAIT(NumRtpBytes(), NumRtpBytes(header.ssrc), kTimeout);
   EXPECT_EQ(1, NumSentSsrcs());
   EXPECT_EQ(0, NumRtpPackets(kSsrc - 1));
   EXPECT_EQ(0, NumRtpBytes(kSsrc - 1));
@@ -1673,14 +1609,14 @@ TEST_F(WebRtcVideoChannelBaseTest, SetSendSsrcAfterSetCodecs) {
   EXPECT_TRUE(SetSend(true));
   EXPECT_TRUE(WaitAndSendFrame(0));
   EXPECT_TRUE_WAIT(NumRtpPackets() > 0, kTimeout);
-  uint32_t ssrc = 0;
+  webrtc::RTPHeader header;
   std::unique_ptr<const rtc::CopyOnWriteBuffer> p(GetRtpPacket(0));
-  ParseRtpPacket(p.get(), NULL, NULL, NULL, NULL, &ssrc, NULL);
-  EXPECT_EQ(999u, ssrc);
+  EXPECT_TRUE(ParseRtpPacket(p.get(), &header));
+  EXPECT_EQ(999u, header.ssrc);
   // Packets are being paced out, so these can mismatch between the first and
   // second call to NumRtpPackets until pending packets are paced out.
-  EXPECT_EQ_WAIT(NumRtpPackets(), NumRtpPackets(ssrc), kTimeout);
-  EXPECT_EQ_WAIT(NumRtpBytes(), NumRtpBytes(ssrc), kTimeout);
+  EXPECT_EQ_WAIT(NumRtpPackets(), NumRtpPackets(header.ssrc), kTimeout);
+  EXPECT_EQ_WAIT(NumRtpBytes(), NumRtpBytes(header.ssrc), kTimeout);
   EXPECT_EQ(1, NumSentSsrcs());
   EXPECT_EQ(0, NumRtpPackets(kSsrc));
   EXPECT_EQ(0, NumRtpBytes(kSsrc));
@@ -1712,12 +1648,12 @@ TEST_F(WebRtcVideoChannelBaseTest, AddRemoveSendStreams) {
   EXPECT_TRUE(SendFrame());
   EXPECT_FRAME_WAIT(1, kVideoWidth, kVideoHeight, kTimeout);
   EXPECT_GT(NumRtpPackets(), 0);
-  uint32_t ssrc = 0;
+  webrtc::RTPHeader header;
   size_t last_packet = NumRtpPackets() - 1;
   std::unique_ptr<const rtc::CopyOnWriteBuffer> p(
       GetRtpPacket(static_cast<int>(last_packet)));
-  ParseRtpPacket(p.get(), NULL, NULL, NULL, NULL, &ssrc, NULL);
-  EXPECT_EQ(kSsrc, ssrc);
+  EXPECT_TRUE(ParseRtpPacket(p.get(), &header));
+  EXPECT_EQ(kSsrc, header.ssrc);
 
   // Remove the send stream that was added during Setup.
   EXPECT_TRUE(channel_->RemoveSendStream(kSsrc));
@@ -1733,8 +1669,8 @@ TEST_F(WebRtcVideoChannelBaseTest, AddRemoveSendStreams) {
 
   last_packet = NumRtpPackets() - 1;
   p.reset(GetRtpPacket(static_cast<int>(last_packet)));
-  ParseRtpPacket(p.get(), NULL, NULL, NULL, NULL, &ssrc, NULL);
-  EXPECT_EQ(789u, ssrc);
+  EXPECT_TRUE(ParseRtpPacket(p.get(), &header));
+  EXPECT_EQ(789u, header.ssrc);
 }
 
 // Tests the behavior of incoming streams in a conference scenario.
