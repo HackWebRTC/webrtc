@@ -543,8 +543,6 @@ if (rtc_include_tests) {
 
     if (!build_with_chromium && is_clang) {
       suppressed_configs += [
-        "//build/config/clang:extra_warnings",
-
         # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
         "//build/config/clang:find_bad_constructs",
       ]
