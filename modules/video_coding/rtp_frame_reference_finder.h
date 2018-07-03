@@ -129,25 +129,6 @@ class RtpFrameReferenceFinder {
   void UnwrapPictureIds(RtpFrameObject* frame)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
-  // Returns true if the frame is old and should be dropped.
-  // TODO(philipel): Remove when VP9 PID/TL0 does not jump mid-stream (should be
-  //                 around M59).
-  bool Vp9PidTl0Fix(const RtpFrameObject& frame,
-                    int16_t* picture_id,
-                    int16_t* tl0_pic_idx) RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
-
-  // TODO(philipel): Remove when VP9 PID/TL0 does not jump mid-stream (should be
-  //                 around M59).
-  bool DetectVp9PicIdJump(int fixed_pid,
-                          int fixed_tl0,
-                          uint32_t timestamp) const
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
-
-  // TODO(philipel): Remove when VP9 PID/TL0 does not jump mid-stream (should be
-  //                 around M59).
-  bool DetectVp9Tl0PicIdxJump(int fixed_tl0, uint32_t timestamp) const
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
-
   // For every group of pictures, hold two sequence numbers. The first being
   // the sequence number of the last packet of the last completed frame, and
   // the second being the sequence number of the last packet of the last
