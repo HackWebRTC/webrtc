@@ -143,6 +143,17 @@ rtc_source_set("delay_based_bwe") {
 }
 
 if (rtc_include_tests) {
+  rtc_source_set("test_goog_cc_printer") {
+    testonly = true
+    sources = [
+      "test/goog_cc_printer.cc",
+      "test/goog_cc_printer.h",
+    ]
+    deps = [
+      ":goog_cc",
+      "..:test_controller_printer",
+    ]
+  }
   rtc_source_set("goog_cc_unittests") {
     testonly = true
 

@@ -76,6 +76,21 @@ rtc_static_library("transport_feedback") {
 }
 
 if (rtc_include_tests) {
+  rtc_source_set("test_controller_printer") {
+    testonly = true
+    sources = [
+      "test/controller_printer.cc",
+      "test/controller_printer.h",
+    ]
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+    deps = [
+      "../../api/transport:network_control",
+      "../../rtc_base:checks",
+    ]
+  }
   rtc_source_set("congestion_controller_unittests") {
     testonly = true
 

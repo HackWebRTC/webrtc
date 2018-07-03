@@ -113,6 +113,18 @@ rtc_source_set("windowed_filter") {
   ]
 }
 if (rtc_include_tests) {
+  rtc_source_set("test_bbr_printer") {
+    testonly = true
+    sources = [
+      "test/bbr_printer.cc",
+      "test/bbr_printer.h",
+    ]
+    deps = [
+      ":bbr",
+      ":bbr_controller",
+      "..:test_controller_printer",
+    ]
+  }
   rtc_source_set("bbr_unittests") {
     testonly = true
     sources = [

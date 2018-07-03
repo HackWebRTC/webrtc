@@ -237,7 +237,8 @@ void BbrNetworkController::Reset() {
   }
 }
 
-NetworkControlUpdate BbrNetworkController::CreateRateUpdate(Timestamp at_time) {
+NetworkControlUpdate BbrNetworkController::CreateRateUpdate(
+    Timestamp at_time) const {
   DataRate bandwidth = BandwidthEstimate();
   if (bandwidth.IsZero())
     bandwidth = default_bandwidth_;

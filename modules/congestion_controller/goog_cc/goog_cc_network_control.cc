@@ -336,6 +336,26 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
   return update;
 }
 
+NetworkControlUpdate GoogCcNetworkController::GetNetworkState(
+    Timestamp at_time) const {
+  DataRate bandwidth = DataRate::bps(last_estimated_bitrate_bps_);
+  TimeDelta rtt = TimeDelta::ms(last_estimated_rtt_ms_);
+  NetworkControlUpdate update;
+  update.target_rate = TargetTransferRate();
+  update.target_rate->network_estimate.at_time = at_time;
+  update.target_rate->network_estimate.bandwidth = bandwidth;
+  update.target_rate->network_estimate.loss_rate_ratio =
+      last_estimated_fraction_loss_ / 255.0;
+  update.target_rate->network_estimate.round_trip_time = rtt;
+  update.target_rate->network_estimate.bwe_period =
+      TimeDelta::ms(delay_based_bwe_->GetExpectedBwePeriodMs());
+  update.target_rate->at_time = at_time;
+  update.target_rate->target_rate = bandwidth;
+  update.pacer_config = UpdatePacingRates(at_time);
+  update.congestion_window = current_data_window_;
+  return update;
+}
+
 absl::optional<DataSize>
 GoogCcNetworkController::MaybeUpdateCongestionWindow() {
   if (!in_cwnd_experiment_)
@@ -432,7 +452,8 @@ NetworkControlUpdate GoogCcNetworkController::OnNetworkEstimate(
   return update;
 }
 
-PacerConfig GoogCcNetworkController::UpdatePacingRates(Timestamp at_time) {
+PacerConfig GoogCcNetworkController::UpdatePacingRates(
+    Timestamp at_time) const {
   DataRate pacing_rate =
       std::max(min_pacing_rate_, last_bandwidth_) * pacing_factor_;
   DataRate padding_rate = std::min(max_padding_rate_, last_bandwidth_);

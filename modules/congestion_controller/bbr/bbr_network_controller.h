@@ -165,10 +165,10 @@ class BbrNetworkController : public NetworkControllerInterface {
   NetworkControlUpdate OnRoundTripTimeUpdate(RoundTripTimeUpdate msg) override;
   NetworkControlUpdate OnTransportLossReport(TransportLossReport msg) override;
 
+  NetworkControlUpdate CreateRateUpdate(Timestamp at_time) const;
+
  private:
   void Reset();
-  NetworkControlUpdate CreateRateUpdate(Timestamp at_time);
-
   bool InSlowStart() const;
   bool InRecovery() const;
   bool IsProbingForMoreBandwidth() const;

@@ -49,6 +49,8 @@ class GoogCcNetworkController : public NetworkControllerInterface {
   NetworkControlUpdate OnTransportPacketsFeedback(
       TransportPacketsFeedback msg) override;
 
+  NetworkControlUpdate GetNetworkState(Timestamp at_time) const;
+
  private:
   void UpdateBitrateConstraints(TargetRateConstraints constraints,
                                 absl::optional<DataRate> starting_rate);
@@ -59,7 +61,7 @@ class GoogCcNetworkController : public NetworkControllerInterface {
                             int64_t* rtt_ms,
                             Timestamp at_time);
   NetworkControlUpdate OnNetworkEstimate(NetworkEstimate msg);
-  PacerConfig UpdatePacingRates(Timestamp at_time);
+  PacerConfig UpdatePacingRates(Timestamp at_time) const;
 
   RtcEventLog* const event_log_;
 
