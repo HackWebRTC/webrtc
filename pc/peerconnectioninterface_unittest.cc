@@ -3408,13 +3408,13 @@ TEST_P(PeerConnectionInterfaceTest, SetConfigurationCausingPartialIceRestart) {
 
   // Grab the ufrags.
   std::vector<std::string> initial_ufrags = GetUfrags(pc_->local_description());
-  ASSERT_EQ(2, initial_ufrags.size());
+  ASSERT_EQ(2U, initial_ufrags.size());
 
   // Create offer and grab the new ufrags.
   CreateOfferAsLocalDescription();
   std::vector<std::string> subsequent_ufrags =
       GetUfrags(pc_->local_description());
-  ASSERT_EQ(2, subsequent_ufrags.size());
+  ASSERT_EQ(2U, subsequent_ufrags.size());
 
   // Ensure that only the ufrag for the second m= section changed.
   EXPECT_EQ(initial_ufrags[0], subsequent_ufrags[0]);

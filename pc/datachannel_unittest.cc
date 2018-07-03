@@ -15,6 +15,7 @@
 #include "pc/sctputils.h"
 #include "pc/test/fakedatachannelprovider.h"
 #include "rtc_base/gunit.h"
+#include "rtc_base/numerics/safe_conversions.h"
 
 using webrtc::DataChannel;
 using webrtc::SctpSidAllocator;
@@ -172,7 +173,8 @@ TEST_F(SctpDataChannelTest, BufferedAmountWhenBlocked) {
   }
   EXPECT_EQ(buffer.data.size() * number_of_packets,
             webrtc_data_channel_->buffered_amount());
-  EXPECT_EQ(number_of_packets, observer_->on_buffered_amount_change_count());
+  EXPECT_EQ(rtc::checked_cast<size_t>(number_of_packets),
+            observer_->on_buffered_amount_change_count());
 }
 
 // Tests that the queued data are sent when the channel transitions from blocked

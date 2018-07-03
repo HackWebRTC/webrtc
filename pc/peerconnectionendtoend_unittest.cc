@@ -459,8 +459,8 @@ TEST_P(PeerConnectionEndToEndTest, CallWithCustomCodec) {
   // the same ID because they were passed to the same PeerConnectionFactory,
   // and the second pair got the same ID---but these two IDs are not equal,
   // because each PeerConnectionFactory has its own ID.
-  EXPECT_EQ(1, encoder_id1.size());
-  EXPECT_EQ(1, encoder_id2.size());
+  EXPECT_EQ(1U, encoder_id1.size());
+  EXPECT_EQ(1U, encoder_id2.size());
   EXPECT_EQ(encoder_id1, decoder_id1);
   EXPECT_EQ(encoder_id2, decoder_id2);
   EXPECT_NE(encoder_id1, encoder_id2);
@@ -540,16 +540,16 @@ TEST_P(PeerConnectionEndToEndTest, DataChannelIdAssignment) {
   Negotiate();
   WaitForConnection();
 
-  EXPECT_EQ(1U, caller_dc_1->id() % 2);
-  EXPECT_EQ(0U, callee_dc_1->id() % 2);
+  EXPECT_EQ(1, caller_dc_1->id() % 2);
+  EXPECT_EQ(0, callee_dc_1->id() % 2);
 
   rtc::scoped_refptr<DataChannelInterface> caller_dc_2(
       caller_->CreateDataChannel("data", init));
   rtc::scoped_refptr<DataChannelInterface> callee_dc_2(
       callee_->CreateDataChannel("data", init));
 
-  EXPECT_EQ(1U, caller_dc_2->id() % 2);
-  EXPECT_EQ(0U, callee_dc_2->id() % 2);
+  EXPECT_EQ(1, caller_dc_2->id() % 2);
+  EXPECT_EQ(0, callee_dc_2->id() % 2);
 }
 
 // Verifies that the message is received by the right remote DataChannel when

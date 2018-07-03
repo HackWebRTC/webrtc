@@ -110,7 +110,7 @@ template <typename T>
 std::string IdForType(const RTCStatsReport* report) {
   auto stats_of_my_type = report->RTCStatsReport::GetStatsOfType<T>();
   // We cannot use ASSERT here, since we're within a function.
-  EXPECT_EQ(1, stats_of_my_type.size())
+  EXPECT_EQ(1U, stats_of_my_type.size())
       << "Unexpected number of stats of this type";
   if (stats_of_my_type.size() == 1) {
     return stats_of_my_type[0]->id();
@@ -1470,9 +1470,9 @@ TEST_F(RTCStatsCollectorTest,
   rtc::scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
 
   auto stats_of_my_type = report->GetStatsOfType<RTCMediaStreamStats>();
-  ASSERT_EQ(1, stats_of_my_type.size()) << "No stream in " << report->ToJson();
+  ASSERT_EQ(1U, stats_of_my_type.size()) << "No stream in " << report->ToJson();
   auto stats_of_track_type = report->GetStatsOfType<RTCMediaStreamTrackStats>();
-  ASSERT_EQ(1, stats_of_track_type.size())
+  ASSERT_EQ(1U, stats_of_track_type.size())
       << "Wrong number of tracks in " << report->ToJson();
 
   RTCMediaStreamStats expected_local_stream(stats_of_my_type[0]->id(),
@@ -1533,9 +1533,9 @@ TEST_F(RTCStatsCollectorTest,
   rtc::scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
 
   auto stats_of_my_type = report->GetStatsOfType<RTCMediaStreamStats>();
-  ASSERT_EQ(1, stats_of_my_type.size()) << "No stream in " << report->ToJson();
+  ASSERT_EQ(1U, stats_of_my_type.size()) << "No stream in " << report->ToJson();
   auto stats_of_track_type = report->GetStatsOfType<RTCMediaStreamTrackStats>();
-  ASSERT_EQ(1, stats_of_track_type.size())
+  ASSERT_EQ(1U, stats_of_track_type.size())
       << "Wrong number of tracks in " << report->ToJson();
   ASSERT_TRUE(*(stats_of_track_type[0]->remote_source));
 
@@ -1598,7 +1598,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Audio) {
   rtc::scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
 
   auto stats_of_track_type = report->GetStatsOfType<RTCMediaStreamTrackStats>();
-  ASSERT_EQ(1, stats_of_track_type.size());
+  ASSERT_EQ(1U, stats_of_track_type.size());
 
   RTCInboundRTPStreamStats expected_audio("RTCInboundRTPAudioStream_1",
                                           report->timestamp_us());
@@ -1775,9 +1775,9 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
   rtc::scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
 
   auto stats_of_my_type = report->GetStatsOfType<RTCOutboundRTPStreamStats>();
-  ASSERT_EQ(1, stats_of_my_type.size());
+  ASSERT_EQ(1U, stats_of_my_type.size());
   auto stats_of_track_type = report->GetStatsOfType<RTCMediaStreamTrackStats>();
-  ASSERT_EQ(1, stats_of_track_type.size());
+  ASSERT_EQ(1U, stats_of_track_type.size());
 
   RTCOutboundRTPStreamStats expected_video(stats_of_my_type[0]->id(),
                                            report->timestamp_us());
@@ -2086,11 +2086,11 @@ TEST_F(RTCStatsCollectorTest, StatsReportedOnZeroSsrc) {
 
   std::vector<const RTCMediaStreamTrackStats*> track_stats =
       report->GetStatsOfType<RTCMediaStreamTrackStats>();
-  EXPECT_EQ(1, track_stats.size());
+  EXPECT_EQ(1U, track_stats.size());
 
   std::vector<const RTCRTPStreamStats*> rtp_stream_stats =
       report->GetStatsOfType<RTCRTPStreamStats>();
-  EXPECT_EQ(0, rtp_stream_stats.size());
+  EXPECT_EQ(0U, rtp_stream_stats.size());
 }
 
 TEST_F(RTCStatsCollectorTest, DoNotCrashOnSsrcChange) {
@@ -2106,7 +2106,7 @@ TEST_F(RTCStatsCollectorTest, DoNotCrashOnSsrcChange) {
 
   std::vector<const RTCMediaStreamTrackStats*> track_stats =
       report->GetStatsOfType<RTCMediaStreamTrackStats>();
-  EXPECT_EQ(1, track_stats.size());
+  EXPECT_EQ(1U, track_stats.size());
 }
 
 // Used for test below, to test calling GetStatsReport during a callback.

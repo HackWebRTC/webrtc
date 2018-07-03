@@ -343,7 +343,7 @@ class RTCStatsReportVerifier {
     bool verify_successful = true;
     std::vector<const RTCTransportStats*> transport_stats =
         report_->GetStatsOfType<RTCTransportStats>();
-    EXPECT_EQ(transport_stats.size(), 1);
+    EXPECT_EQ(transport_stats.size(), 1U);
     std::string selected_candidate_pair_id =
         *transport_stats[0]->selected_candidate_pair_id;
     for (const RTCStats& stats : *report_) {

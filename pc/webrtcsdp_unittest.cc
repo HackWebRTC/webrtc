@@ -3544,7 +3544,7 @@ TEST_F(WebRtcSdpTest, IceCredentialsInCandidateStringIgnored) {
       SdpDeserialize(kSdpWithIceCredentialsInCandidateString, &jdesc_output));
   const IceCandidateCollection* candidates = jdesc_output.candidates(0);
   ASSERT_NE(nullptr, candidates);
-  ASSERT_EQ(1, candidates->count());
+  ASSERT_EQ(1U, candidates->count());
   cricket::Candidate c = candidates->at(0)->candidate();
   EXPECT_EQ("ufrag_voice", c.username());
   EXPECT_EQ("pwd_voice", c.password());
