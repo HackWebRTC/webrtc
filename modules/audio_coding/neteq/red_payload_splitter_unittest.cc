@@ -319,6 +319,30 @@ TEST(RedPayloadSplitter, CheckRedPayloads) {
   EXPECT_TRUE(packet_list.empty());
 }
 
+// This test creates a RED packet where the payloads also have the payload type
+// for RED. That is, some kind of weird nested RED packet. This is not supported
+// and the splitter should discard all packets.
+TEST(RedPayloadSplitter, CheckRedPayloadsRecursiveRed) {
+  PacketList packet_list;
+  for (uint8_t i = 0; i <= 3; ++i) {
+    // Create packet with RED payload type, payload length 10 bytes, all 0.
+    packet_list.push_back(CreatePacket(kRedPayloadType, 10, 0));
+  }
+
+  // Use a real DecoderDatabase object here instead of a mock, since it is
+  // easier to just register the payload types and let the actual implementation
+  // do its job.
+  DecoderDatabase decoder_database(
+      new rtc::RefCountedObject<MockAudioDecoderFactory>, absl::nullopt);
+  decoder_database.RegisterPayload(kRedPayloadType, NetEqDecoder::kDecoderRED,
+                                   "red");
+
+  RedPayloadSplitter splitter;
+  splitter.CheckRedPayloads(&packet_list, decoder_database);
+
+  EXPECT_TRUE(packet_list.empty());  // Should have dropped all packets.
+}
+
 // Packet A is split into A1, A2 and A3. But the length parameter is off, so
 // the last payloads should be discarded.
 TEST(RedPayloadSplitter, WrongPayloadLength) {

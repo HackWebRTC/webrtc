@@ -612,6 +612,9 @@ int NetEqImpl::InsertPacketInternal(const RTPHeader& rtp_header,
     // Only accept a few RED payloads of the same type as the main data,
     // DTMF events and CNG.
     red_payload_splitter_->CheckRedPayloads(&packet_list, *decoder_database_);
+    if (packet_list.empty()) {
+      return kRedundancySplitError;
+    }
   }
 
   // Check payload types.
