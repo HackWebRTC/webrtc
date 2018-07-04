@@ -15,7 +15,9 @@
 #include <numeric>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "api/array_view.h"
+#include "modules/audio_processing/aec3/aec3_common.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/atomicops.h"
 #include "rtc_base/checks.h"
@@ -68,13 +70,13 @@ AecState::AecState(const EchoCanceller3Config& config)
           EnableLinearModeWithDivergedFilter()),
       erle_estimator_(config.erle.min, config.erle.max_l, config.erle.max_h),
       max_render_(config_.filter.main.length_blocks, 0.f),
-      reverb_decay_(fabsf(config_.ep_strength.default_len)),
       gain_rampup_increase_(ComputeGainRampupIncrease(config_)),
       suppression_gain_limiter_(config_),
       filter_analyzer_(config_),
       blocks_since_converged_filter_(kBlocksSinceConvergencedFilterInit),
       active_blocks_since_consistent_filter_estimate_(
-          kBlocksSinceConsistentEstimateInit) {}
+          kBlocksSinceConsistentEstimateInit),
+      reverb_model_estimator_(config) {}
 
 AecState::~AecState() = default;
 
@@ -285,12 +287,15 @@ void AecState::Update(
   use_linear_filter_output_ = usable_linear_estimate_ && !TransparentMode();
   diverged_linear_filter_ = diverged_filter;
 
-  UpdateReverb(adaptive_filter_impulse_response);
+  reverb_model_estimator_.Update(
+      adaptive_filter_impulse_response, adaptive_filter_frequency_response,
+      erle_estimator_.GetInstLinearQualityEstimate(), filter_delay_blocks_,
+      usable_linear_estimate_, config_.ep_strength.default_len,
+      IsBlockStationary());
 
-  data_dumper_->DumpRaw("aec3_erle", Erle());
-  data_dumper_->DumpRaw("aec3_erle_onset", erle_estimator_.ErleOnsets());
+  erle_estimator_.Dump(data_dumper_);
+  reverb_model_estimator_.Dump(data_dumper_);
   data_dumper_->DumpRaw("aec3_erl", Erl());
-  data_dumper_->DumpRaw("aec3_erle_time_domain", ErleTimeDomain());
   data_dumper_->DumpRaw("aec3_erl_time_domain", ErlTimeDomain());
   data_dumper_->DumpRaw("aec3_usable_linear_estimate", UsableLinearEstimate());
   data_dumper_->DumpRaw("aec3_transparent_mode", transparent_mode_);
@@ -320,192 +325,7 @@ void AecState::Update(
   data_dumper_->DumpRaw("aec3_suppresion_gain_limiter_running",
                         IsSuppressionGainLimitActive());
   data_dumper_->DumpRaw("aec3_filter_tail_freq_resp_est", GetFreqRespTail());
-}
 
-void AecState::UpdateReverb(const std::vector<float>& impulse_response) {
-  // Echo tail estimation enabled if the below variable is set as negative.
-  if (config_.ep_strength.default_len >= 0.f) {
-    return;
-  }
-
-  if ((!(filter_delay_blocks_ && usable_linear_estimate_)) ||
-      (filter_delay_blocks_ >
-       static_cast<int>(config_.filter.main.length_blocks) - 4)) {
-    return;
-  }
-
-  constexpr float kOneByFftLengthBy2 = 1.f / kFftLengthBy2;
-
-  // Form the data to match against by squaring the impulse response
-  // coefficients.
-  std::array<float, GetTimeDomainLength(kMaxAdaptiveFilterLength)>
-      matching_data_data;
-  RTC_DCHECK_LE(GetTimeDomainLength(config_.filter.main.length_blocks),
-                matching_data_data.size());
-  rtc::ArrayView<float> matching_data(
-      matching_data_data.data(),
-      GetTimeDomainLength(config_.filter.main.length_blocks));
-  std::transform(impulse_response.begin(), impulse_response.end(),
-                 matching_data.begin(), [](float a) { return a * a; });
-
-  if (current_reverb_decay_section_ < config_.filter.main.length_blocks) {
-    // Update accumulated variables for the current filter section.
-
-    const size_t start_index = current_reverb_decay_section_ * kFftLengthBy2;
-
-    RTC_DCHECK_GT(matching_data.size(), start_index);
-    RTC_DCHECK_GE(matching_data.size(), start_index + kFftLengthBy2);
-    float section_energy =
-        std::accumulate(matching_data.begin() + start_index,
-                        matching_data.begin() + start_index + kFftLengthBy2,
-                        0.f) *
-        kOneByFftLengthBy2;
-
-    section_energy = std::max(
-        section_energy, 1e-32f);  // Regularization to avoid division by 0.
-
-    RTC_DCHECK_LT(current_reverb_decay_section_, block_energies_.size());
-    const float energy_ratio =
-        block_energies_[current_reverb_decay_section_] / section_energy;
-
-    main_filter_is_adapting_ = main_filter_is_adapting_ ||
-                               (energy_ratio > 1.1f || energy_ratio < 0.9f);
-
-    // Count consecutive number of "good" filter sections, where "good" means:
-    // 1) energy is above noise floor.
-    // 2) energy of current section has not changed too much from last check.
-    if (!found_end_of_reverb_decay_ && section_energy > tail_energy_ &&
-        !main_filter_is_adapting_) {
-      ++num_reverb_decay_sections_next_;
-    } else {
-      found_end_of_reverb_decay_ = true;
-    }
-
-    block_energies_[current_reverb_decay_section_] = section_energy;
-
-    if (num_reverb_decay_sections_ > 0) {
-      // Linear regression of log squared magnitude of impulse response.
-      for (size_t i = 0; i < kFftLengthBy2; i++) {
-        auto fast_approx_log2f = [](const float in) {
-          RTC_DCHECK_GT(in, .0f);
-          // Read and interpret float as uint32_t and then cast to float.
-          // This is done to extract the exponent (bits 30 - 23).
-          // "Right shift" of the exponent is then performed by multiplying
-          // with the constant (1/2^23). Finally, we subtract a constant to
-          // remove the bias (https://en.wikipedia.org/wiki/Exponent_bias).
-          union {
-            float dummy;
-            uint32_t a;
-          } x = {in};
-          float out = x.a;
-          out *= 1.1920929e-7f;  // 1/2^23
-          out -= 126.942695f;    // Remove bias.
-          return out;
-        };
-        RTC_DCHECK_GT(matching_data.size(), start_index + i);
-        float z = fast_approx_log2f(matching_data[start_index + i]);
-        accumulated_nz_ += accumulated_count_ * z;
-        ++accumulated_count_;
-      }
-    }
-
-    num_reverb_decay_sections_ =
-        num_reverb_decay_sections_ > 0 ? num_reverb_decay_sections_ - 1 : 0;
-    ++current_reverb_decay_section_;
-
-  } else {
-    constexpr float kMaxDecay = 0.95f;  // ~1 sec min RT60.
-    constexpr float kMinDecay = 0.02f;  // ~15 ms max RT60.
-
-    // Accumulated variables throughout whole filter.
-
-    // Solve for decay rate.
-
-    float decay = reverb_decay_;
-
-    if (accumulated_nn_ != 0.f) {
-      const float exp_candidate = -accumulated_nz_ / accumulated_nn_;
-      decay = powf(2.0f, -exp_candidate * kFftLengthBy2);
-      decay = std::min(decay, kMaxDecay);
-      decay = std::max(decay, kMinDecay);
-    }
-
-    // Filter tail energy (assumed to be noise).
-
-    constexpr size_t kTailLength = kFftLength;
-    constexpr float k1ByTailLength = 1.f / kTailLength;
-    const size_t tail_index =
-        GetTimeDomainLength(config_.filter.main.length_blocks) - kTailLength;
-
-    RTC_DCHECK_GT(matching_data.size(), tail_index);
-    tail_energy_ = std::accumulate(matching_data.begin() + tail_index,
-                                   matching_data.end(), 0.f) *
-                   k1ByTailLength;
-
-    // Update length of decay.
-    num_reverb_decay_sections_ = num_reverb_decay_sections_next_;
-    num_reverb_decay_sections_next_ = 0;
-    // Must have enough data (number of sections) in order
-    // to estimate decay rate.
-    if (num_reverb_decay_sections_ < 5) {
-      num_reverb_decay_sections_ = 0;
-    }
-
-    const float N = num_reverb_decay_sections_ * kFftLengthBy2;
-    accumulated_nz_ = 0.f;
-    const float k1By12 = 1.f / 12.f;
-    // Arithmetic sum $2 \sum_{i=0.5}^{(N-1)/2}i^2$ calculated directly.
-    accumulated_nn_ = N * (N * N - 1.0f) * k1By12;
-    accumulated_count_ = -N * 0.5f;
-    // Linear regression approach assumes symmetric index around 0.
-    accumulated_count_ += 0.5f;
-
-    // Identify the peak index of the impulse response.
-    const size_t peak_index = std::distance(
-        matching_data.begin(),
-        std::max_element(matching_data.begin(), matching_data.end()));
-
-    current_reverb_decay_section_ = peak_index * kOneByFftLengthBy2 + 3;
-    // Make sure we're not out of bounds.
-    if (current_reverb_decay_section_ + 1 >=
-        config_.filter.main.length_blocks) {
-      current_reverb_decay_section_ = config_.filter.main.length_blocks;
-    }
-    size_t start_index = current_reverb_decay_section_ * kFftLengthBy2;
-    float first_section_energy =
-        std::accumulate(matching_data.begin() + start_index,
-                        matching_data.begin() + start_index + kFftLengthBy2,
-                        0.f) *
-        kOneByFftLengthBy2;
-
-    // To estimate the reverb decay, the energy of the first filter section
-    // must be substantially larger than the last.
-    // Also, the first filter section energy must not deviate too much
-    // from the max peak.
-    bool main_filter_has_reverb = first_section_energy > 4.f * tail_energy_;
-    bool main_filter_is_sane = first_section_energy > 2.f * tail_energy_ &&
-                               matching_data[peak_index] < 100.f;
-
-    // Not detecting any decay, but tail is over noise - assume max decay.
-    if (num_reverb_decay_sections_ == 0 && main_filter_is_sane &&
-        main_filter_has_reverb) {
-      decay = kMaxDecay;
-    }
-
-    if (!main_filter_is_adapting_ && main_filter_is_sane &&
-        num_reverb_decay_sections_ > 0) {
-      decay = std::max(.97f * reverb_decay_, decay);
-      reverb_decay_ -= .1f * (reverb_decay_ - decay);
-    }
-
-    found_end_of_reverb_decay_ =
-        !(main_filter_is_sane && main_filter_has_reverb);
-    main_filter_is_adapting_ = false;
-  }
-
-  data_dumper_->DumpRaw("aec3_reverb_decay", reverb_decay_);
-  data_dumper_->DumpRaw("aec3_reverb_tail_energy", tail_energy_);
-  data_dumper_->DumpRaw("aec3_suppression_gain_limit", SuppressionGainLimit());
 }
 
 bool AecState::DetectActiveRender(rtc::ArrayView<const float> x) const {

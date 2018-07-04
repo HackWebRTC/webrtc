@@ -51,11 +51,6 @@ class FilterAnalyzer {
   // Returns the estimated filter gain.
   float Gain() const { return gain_; }
 
-  // Return the estimated freq. response of the tail of the filter.
-  rtc::ArrayView<const float> GetFreqRespTail() const {
-    return freq_resp_tail_;
-  }
-
   // Returns the number of blocks for the current used filter.
   float FilterLengthBlocks() const { return filter_length_blocks_; }
 
@@ -82,8 +77,6 @@ class FilterAnalyzer {
   size_t consistent_estimate_counter_ = 0;
   int consistent_delay_reference_ = -10;
   float gain_;
-  std::array<float, kFftLengthBy2Plus1> freq_resp_tail_;
-  float ratio_tail_to_direct_path_ = 0.f;
   int filter_length_blocks_;
   RTC_DISALLOW_COPY_AND_ASSIGN(FilterAnalyzer);
 };

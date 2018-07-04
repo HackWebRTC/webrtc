@@ -47,6 +47,9 @@ class StationarityEstimator {
     return stationarity_flags_[band] && (hangovers_[band] == 0);
   }
 
+  // Returns true if the current block is estimated as stationary.
+  bool IsBlockStationary() const;
+
  private:
   static constexpr int kWindowLength = 13;
   // Returns the power of the stationary noise spectrum at a band.

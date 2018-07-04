@@ -51,6 +51,11 @@ class EchoAudibility {
     }
   }
 
+  // Returns true if the current render block is estimated as stationary.
+  bool IsBlockStationary() const {
+    return render_stationarity_.IsBlockStationary();
+  }
+
  private:
   // Reset the EchoAudibility class.
   void Reset();

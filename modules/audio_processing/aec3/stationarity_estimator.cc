@@ -48,6 +48,8 @@ void StationarityEstimator::UpdateNoiseEstimator(
     rtc::ArrayView<const float> spectrum) {
   noise_.Update(spectrum);
   data_dumper_->DumpRaw("aec3_stationarity_noise_spectrum", noise_.Spectrum());
+  data_dumper_->DumpRaw("aec3_stationarity_is_block_stationary",
+                        IsBlockStationary());
 }
 
 void StationarityEstimator::UpdateStationarityFlags(
@@ -86,6 +88,16 @@ void StationarityEstimator::UpdateStationarityFlags(
   }
   UpdateHangover();
   SmoothStationaryPerFreq();
+}
+
+bool StationarityEstimator::IsBlockStationary() const {
+  float acum_stationarity = 0.f;
+  RTC_DCHECK_EQ(stationarity_flags_.size(), kFftLengthBy2Plus1);
+  for (size_t band = 0; band < stationarity_flags_.size(); ++band) {
+    bool st = IsBandStationary(band);
+    acum_stationarity += static_cast<float>(st);
+  }
+  return ((acum_stationarity * (1.f / kFftLengthBy2Plus1)) > 0.75f);
 }
 
 bool StationarityEstimator::EstimateBandStationarity(

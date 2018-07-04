@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <cmath>
+
 #include "modules/audio_processing/aec3/erle_estimator.h"
 #include "api/array_view.h"
 #include "test/gtest.h"
@@ -39,7 +41,7 @@ void VerifyErle(rtc::ArrayView<const float> erle,
                 float reference_lf,
                 float reference_hf) {
   VerifyErleBands(erle, reference_lf, reference_hf);
-  EXPECT_NEAR(reference_lf, erle_time_domain, 0.001);
+  EXPECT_NEAR(reference_lf, erle_time_domain, 0.5);
 }
 
 void FormFarendFrame(std::array<float, kFftLengthBy2Plus1>* X2,
@@ -74,7 +76,8 @@ TEST(ErleEstimator, VerifyErleIncreaseAndHold) {
   for (size_t k = 0; k < 200; ++k) {
     estimator.Update(X2, Y2, E2, true);
   }
-  VerifyErle(estimator.Erle(), estimator.ErleTimeDomain(), 8.f, 1.5f);
+  VerifyErle(estimator.Erle(), std::pow(2.f, estimator.ErleTimeDomainLog2()),
+             kMaxErleLf, kMaxErleHf);
 
   FormNearendFrame(&X2, &E2, &Y2);
   // Verifies that the ERLE is not immediately decreased during nearend
@@ -82,7 +85,8 @@ TEST(ErleEstimator, VerifyErleIncreaseAndHold) {
   for (size_t k = 0; k < 50; ++k) {
     estimator.Update(X2, Y2, E2, true);
   }
-  VerifyErle(estimator.Erle(), estimator.ErleTimeDomain(), 8.f, 1.5f);
+  VerifyErle(estimator.Erle(), std::pow(2.f, estimator.ErleTimeDomainLog2()),
+             kMaxErleLf, kMaxErleHf);
 }
 
 TEST(ErleEstimator, VerifyErleTrackingOnOnsets) {
@@ -112,7 +116,8 @@ TEST(ErleEstimator, VerifyErleTrackingOnOnsets) {
     estimator.Update(X2, Y2, E2, true);
   }
   // Verifies that during ne activity, Erle converges to the Erle for onsets.
-  VerifyErle(estimator.Erle(), estimator.ErleTimeDomain(), kMinErle, kMinErle);
+  VerifyErle(estimator.Erle(), std::pow(2.f, estimator.ErleTimeDomainLog2()),
+             kMinErle, kMinErle);
 }
 
 TEST(ErleEstimator, VerifyNoErleUpdateDuringLowActivity) {
@@ -128,7 +133,8 @@ TEST(ErleEstimator, VerifyNoErleUpdateDuringLowActivity) {
   for (size_t k = 0; k < 200; ++k) {
     estimator.Update(X2, Y2, E2, true);
   }
-  VerifyErle(estimator.Erle(), estimator.ErleTimeDomain(), kMinErle, kMinErle);
+  VerifyErle(estimator.Erle(), std::pow(2.f, estimator.ErleTimeDomainLog2()),
+             kMinErle, kMinErle);
 }
 
 }  // namespace webrtc
