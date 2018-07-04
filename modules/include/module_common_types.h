@@ -63,17 +63,14 @@ struct RTPVideoHeader {
   VideoCodecType codec;
   RTPVideoTypeHeader codecHeader;
 };
-union RTPTypeHeader {
-  RTPVideoHeader Video;
-};
 
 struct WebRtcRTPHeader {
+  RTPVideoHeader& video_header() { return video; }
+  const RTPVideoHeader& video_header() const { return video; }
+  RTPVideoHeader video;
+
   RTPHeader header;
   FrameType frameType;
-  // TODO(philipel): Remove with RTPTypeHeader.
-  RTPVideoHeader& video_header() { return type.Video; }
-  const RTPVideoHeader& video_header() const { return type.Video; }
-  RTPTypeHeader type;
   // NTP time of the capture time in local timebase in milliseconds.
   int64_t ntp_time_ms;
 };
