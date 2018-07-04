@@ -133,17 +133,7 @@ class VideoProcessor {
       RTC_DCHECK(task_queue_);
     }
 
-    int32_t Decoded(webrtc::VideoFrame& image) override {
-      // Post the callback to the right task queue, if needed.
-      if (!task_queue_->IsCurrent()) {
-        task_queue_->PostTask([this, image]() {
-          video_processor_->FrameDecoded(image, simulcast_svc_idx_);
-        });
-        return 0;
-      }
-      video_processor_->FrameDecoded(image, simulcast_svc_idx_);
-      return 0;
-    }
+    int32_t Decoded(webrtc::VideoFrame& image) override;
 
     int32_t Decoded(webrtc::VideoFrame& image,
                     int64_t decode_time_ms) override {

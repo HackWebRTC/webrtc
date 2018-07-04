@@ -310,6 +310,25 @@ void VideoProcessor::SetRates(size_t bitrate_kbps, size_t framerate_fps) {
       << "Failed to update encoder with new rate " << bitrate_kbps << ".";
 }
 
+int32_t VideoProcessor::VideoProcessorDecodeCompleteCallback::Decoded(
+    VideoFrame& image) {
+  // Post the callback to the right task queue, if needed.
+  if (!task_queue_->IsCurrent()) {
+    // There might be a limited amount of output buffers, make a copy to make
+    // sure we don't block the decoder.
+    VideoFrame copy(I420Buffer::Copy(*image.video_frame_buffer()->ToI420()),
+                    image.rotation(), image.timestamp_us());
+    copy.set_timestamp(image.timestamp());
+
+    task_queue_->PostTask([this, copy]() {
+      video_processor_->FrameDecoded(copy, simulcast_svc_idx_);
+    });
+    return 0;
+  }
+  video_processor_->FrameDecoded(image, simulcast_svc_idx_);
+  return 0;
+}
+
 void VideoProcessor::FrameEncoded(
     const webrtc::EncodedImage& encoded_image,
     const webrtc::CodecSpecificInfo& codec_specific) {
