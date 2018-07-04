@@ -124,10 +124,6 @@ class FuzzRtpInput : public NetEqInput {
 }  // namespace
 
 void FuzzOneInputTest(const uint8_t* data, size_t size) {
-  // Limit the input size to 100000 bytes to avoid fuzzer timeout.
-  if (size > 100000)
-    return;
-
   std::unique_ptr<FuzzRtpInput> input(
       new FuzzRtpInput(rtc::ArrayView<const uint8_t>(data, size)));
   std::unique_ptr<AudioChecksum> output(new AudioChecksum);

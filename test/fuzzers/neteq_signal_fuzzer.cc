@@ -142,9 +142,6 @@ class FuzzSignalInput : public NetEqInput {
 void FuzzOneInputTest(const uint8_t* data, size_t size) {
   if (size < 1)
     return;
-  // Limit the input size to 100000 bytes to avoid fuzzer timeout.
-  if (size > 100000)
-    return;
 
   FuzzDataHelper fuzz_data(rtc::ArrayView<const uint8_t>(data, size));
 
