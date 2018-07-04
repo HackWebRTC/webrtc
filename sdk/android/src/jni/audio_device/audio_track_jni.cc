@@ -76,7 +76,10 @@ int32_t AudioTrackJni::Terminate() {
 int32_t AudioTrackJni::InitPlayout() {
   RTC_LOG(INFO) << "InitPlayout";
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  RTC_DCHECK(!initialized_);
+  if (initialized_) {
+    // Already initialized.
+    return 0;
+  }
   RTC_DCHECK(!playing_);
   if (!Java_WebRtcAudioTrack_initPlayout(
           env_, j_audio_track_, audio_parameters_.sample_rate(),
@@ -95,7 +98,10 @@ bool AudioTrackJni::PlayoutIsInitialized() const {
 int32_t AudioTrackJni::StartPlayout() {
   RTC_LOG(INFO) << "StartPlayout";
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  RTC_DCHECK(!playing_);
+  if (playing_) {
+    // Already playing.
+    return 0;
+  }
   if (!initialized_) {
     RTC_DLOG(LS_WARNING)
         << "Playout can not start since InitPlayout must succeed first";

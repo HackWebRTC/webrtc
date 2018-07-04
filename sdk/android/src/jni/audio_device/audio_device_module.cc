@@ -241,11 +241,15 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
     if (Playing()) {
       return 0;
     }
-    audio_device_buffer_->StartPlayout();
     int32_t result = output_->StartPlayout();
     RTC_LOG(INFO) << "output: " << result;
     RTC_HISTOGRAM_BOOLEAN("WebRTC.Audio.StartPlayoutSuccess",
                           static_cast<int>(result == 0));
+    if (result == 0) {
+      // Only start playing the audio device buffer if starting the audio
+      // output succeeded.
+      audio_device_buffer_->StartPlayout();
+    }
     return result;
   }
 
@@ -276,11 +280,15 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
     if (Recording()) {
       return 0;
     }
-    audio_device_buffer_->StartRecording();
     int32_t result = input_->StartRecording();
     RTC_LOG(INFO) << "output: " << result;
     RTC_HISTOGRAM_BOOLEAN("WebRTC.Audio.StartRecordingSuccess",
                           static_cast<int>(result == 0));
+    if (result == 0) {
+      // Only start recording the audio device buffer if starting the audio
+      // input succeeded.
+      audio_device_buffer_->StartRecording();
+    }
     return result;
   }
 

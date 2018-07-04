@@ -1135,6 +1135,36 @@ TEST_F(AudioDeviceTest, DISABLED_MeasureLoopbackLatency) {
   latency_audio_stream->PrintResults();
 }
 
+TEST(JavaAudioDeviceTest, TestRunningTwoAdmsSimultaneously) {
+  JNIEnv* jni = AttachCurrentThreadIfNeeded();
+  ScopedJavaLocalRef<jobject> context =
+      Java_ApplicationContextProvider_getApplicationContextForTest(jni);
+
+  // Create and start the first ADM.
+  rtc::scoped_refptr<AudioDeviceModule> adm_1 =
+      CreateJavaAudioDeviceModule(jni, context.obj());
+  EXPECT_EQ(0, adm_1->Init());
+  EXPECT_EQ(0, adm_1->InitRecording());
+  EXPECT_EQ(0, adm_1->StartRecording());
+
+  // Create and start a second ADM. Expect this to fail due to the microphone
+  // already being in use.
+  rtc::scoped_refptr<AudioDeviceModule> adm_2 =
+      CreateJavaAudioDeviceModule(jni, context.obj());
+  int32_t err = adm_2->Init();
+  err |= adm_2->InitRecording();
+  err |= adm_2->StartRecording();
+  EXPECT_NE(0, err);
+
+  // Stop and terminate second adm.
+  adm_2->StopRecording();
+  adm_2->Terminate();
+
+  // Stop first ADM.
+  EXPECT_EQ(0, adm_1->StopRecording());
+  EXPECT_EQ(0, adm_1->Terminate());
+}
+
 }  // namespace jni
 
 }  // namespace webrtc
