@@ -50,9 +50,6 @@ void FuzzOneInputTest(rtc::ArrayView<const uint8_t> data) {
 }  // namespace test
 
 void FuzzOneInput(const uint8_t* data, size_t size) {
-  // Limit the input size to 100000 bytes to avoid fuzzer timeout.
-  if (size > 200000)
-    return;
   test::FuzzOneInputTest(rtc::ArrayView<const uint8_t>(data, size));
 }
 

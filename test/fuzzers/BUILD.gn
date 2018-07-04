@@ -505,6 +505,8 @@ webrtc_fuzzer_test("comfort_noise_decoder_fuzzer") {
     "../../modules/audio_coding:cng",
     "../../rtc_base:rtc_base_approved",
   ]
+
+  libfuzzer_options = [ "max_len=5000" ]
 }
 
 webrtc_fuzzer_test("rtp_frame_reference_finder_fuzzer") {
