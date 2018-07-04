@@ -726,7 +726,6 @@ if (is_linux || is_win) {
         "peerconnection/client/main_wnd.cc",
         "peerconnection/client/main_wnd.h",
       ]
-      cflags = [ "/wd4245" ]
       configs += [ "//build/config/win:windowed" ]
       deps += [ "../media:rtc_media_base" ]
     }
@@ -877,7 +876,6 @@ if (is_win || is_android) {
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
     if (is_win) {
-      cflags = [ "/wd4245" ]
       configs += [
         "//build/config/win:windowed",
         ":peerconnection_client_warnings_config",
