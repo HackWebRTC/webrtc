@@ -17,8 +17,37 @@
 
 #include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/checks.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
+namespace {
+// Ratio allocation between temporal streams:
+// Values as required for the VP8 codec (accumulating).
+static const float
+    kLayerRateAllocation[kMaxTemporalStreams][kMaxTemporalStreams] = {
+        {1.0f, 1.0f, 1.0f, 1.0f},  // 1 layer
+        {0.6f, 1.0f, 1.0f, 1.0f},  // 2 layers {60%, 40%}
+        {0.4f, 0.6f, 1.0f, 1.0f},  // 3 layers {40%, 20%, 40%}
+        {0.25f, 0.4f, 0.6f, 1.0f}  // 4 layers {25%, 15%, 20%, 40%}
+};
+
+static const float kShort3TlRateAllocation[kMaxTemporalStreams] = {
+    0.6f, 0.8f, 1.0f, 1.0f  // 3 layers {60%, 20%, 20%}
+};
+}  // namespace
+
+float SimulcastRateAllocator::GetTemporalRateAllocation(int num_layers,
+                                                        int temporal_id) {
+  RTC_CHECK_GT(num_layers, 0);
+  RTC_CHECK_LE(num_layers, kMaxTemporalStreams);
+  RTC_CHECK_GE(temporal_id, 0);
+  RTC_CHECK_LT(temporal_id, num_layers);
+  if (num_layers == 3 &&
+      field_trial::IsEnabled("WebRTC-UseShortVP8TL3Pattern")) {
+    return kShort3TlRateAllocation[temporal_id];
+  }
+  return kLayerRateAllocation[num_layers - 1][temporal_id];
+}
 
 SimulcastRateAllocator::SimulcastRateAllocator(const VideoCodec& codec)
     : codec_(codec) {}
@@ -190,7 +219,7 @@ std::vector<uint32_t> SimulcastRateAllocator::DefaultTemporalLayerAllocation(
   std::vector<uint32_t> bitrates;
   for (size_t i = 0; i < num_temporal_layers; ++i) {
     float layer_bitrate =
-        bitrate_kbps * kLayerRateAllocation[num_temporal_layers - 1][i];
+        bitrate_kbps * GetTemporalRateAllocation(num_temporal_layers, i);
     bitrates.push_back(static_cast<uint32_t>(layer_bitrate + 0.5));
   }
 

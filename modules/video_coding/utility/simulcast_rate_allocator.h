@@ -24,16 +24,6 @@
 
 namespace webrtc {
 
-// Ratio allocation between temporal streams:
-// Values as required for the VP8 codec (accumulating).
-static const float
-    kLayerRateAllocation[kMaxSimulcastStreams][kMaxTemporalStreams] = {
-        {1.0f, 1.0f, 1.0f, 1.0f},  // 1 layer
-        {0.6f, 1.0f, 1.0f, 1.0f},  // 2 layers {60%, 40%}
-        {0.4f, 0.6f, 1.0f, 1.0f},  // 3 layers {40%, 20%, 40%}
-        {0.25f, 0.4f, 0.6f, 1.0f}  // 4 layers {25%, 15%, 20%, 40%}
-};
-
 class SimulcastRateAllocator : public VideoBitrateAllocator {
  public:
   explicit SimulcastRateAllocator(const VideoCodec& codec);
@@ -41,6 +31,8 @@ class SimulcastRateAllocator : public VideoBitrateAllocator {
   VideoBitrateAllocation GetAllocation(uint32_t total_bitrate_bps,
                                        uint32_t framerate) override;
   const VideoCodec& GetCodec() const;
+
+  static float GetTemporalRateAllocation(int num_layers, int temporal_id);
 
  private:
   void DistributeAllocationToSimulcastLayers(

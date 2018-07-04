@@ -400,7 +400,9 @@ bool VCMFecMethod::ProtectionFactor(const VCMProtectionParameters* parameters) {
 int VCMFecMethod::BitsPerFrame(const VCMProtectionParameters* parameters) {
   // When temporal layers are available FEC will only be applied on the base
   // layer.
-  const float bitRateRatio = kLayerRateAllocation[parameters->numLayers - 1][0];
+  const float bitRateRatio =
+      webrtc::SimulcastRateAllocator::GetTemporalRateAllocation(
+          parameters->numLayers, 0);
   float frameRateRatio = powf(1 / 2.0, parameters->numLayers - 1);
   float bitRate = parameters->bitRate * bitRateRatio;
   float frameRate = parameters->frameRate * frameRateRatio;

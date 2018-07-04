@@ -93,7 +93,11 @@ std::vector<bool> GetTemporalLayerSync(size_t num_layers) {
     case 1:
       return {false};
     case 2:
-      return {false, true, false, false, false, false, false, false};
+      if (field_trial::IsEnabled("WebRTC-UseShortVP8TL2Pattern")) {
+        return {false, true, false, false};
+      } else {
+        return {false, true, false, false, false, false, false, false};
+      }
     case 3:
       if (field_trial::IsEnabled("WebRTC-UseShortVP8TL3Pattern")) {
         return {false, true, true, false};
@@ -135,30 +139,55 @@ std::vector<TemporalLayers::FrameConfig> GetTemporalPattern(size_t num_layers) {
       // that the 'alt' buffer reference is effectively the last keyframe.
       // TL0 also references and updates the 'last' buffer.
       // TL1 also references 'last' and references and updates 'golden'.
-      return {TemporalLayers::FrameConfig(TemporalLayers::kReferenceAndUpdate,
-                                          TemporalLayers::kNone,
-                                          TemporalLayers::kReference),
-              TemporalLayers::FrameConfig(TemporalLayers::kReference,
-                                          TemporalLayers::kUpdate,
-                                          TemporalLayers::kReference),
-              TemporalLayers::FrameConfig(TemporalLayers::kReferenceAndUpdate,
-                                          TemporalLayers::kNone,
-                                          TemporalLayers::kReference),
-              TemporalLayers::FrameConfig(TemporalLayers::kReference,
-                                          TemporalLayers::kReferenceAndUpdate,
-                                          TemporalLayers::kReference),
-              TemporalLayers::FrameConfig(TemporalLayers::kReferenceAndUpdate,
-                                          TemporalLayers::kNone,
-                                          TemporalLayers::kReference),
-              TemporalLayers::FrameConfig(TemporalLayers::kReference,
-                                          TemporalLayers::kReferenceAndUpdate,
-                                          TemporalLayers::kReference),
-              TemporalLayers::FrameConfig(TemporalLayers::kReferenceAndUpdate,
-                                          TemporalLayers::kNone,
-                                          TemporalLayers::kReference),
-              TemporalLayers::FrameConfig(
-                  TemporalLayers::kReference, TemporalLayers::kReference,
-                  TemporalLayers::kReference, TemporalLayers::kFreezeEntropy)};
+      if (field_trial::IsEnabled("WebRTC-UseShortVP8TL2Pattern")) {
+        // Shortened 4-frame pattern:
+        //   1---1   1---1 ...
+        //  /   /   /   /
+        // 0---0---0---0 ...
+        return {TemporalLayers::FrameConfig(TemporalLayers::kReferenceAndUpdate,
+                                            TemporalLayers::kNone,
+                                            TemporalLayers::kReference),
+                TemporalLayers::FrameConfig(TemporalLayers::kReference,
+                                            TemporalLayers::kUpdate,
+                                            TemporalLayers::kReference),
+                TemporalLayers::FrameConfig(TemporalLayers::kReferenceAndUpdate,
+                                            TemporalLayers::kNone,
+                                            TemporalLayers::kReference),
+                TemporalLayers::FrameConfig(TemporalLayers::kReference,
+                                            TemporalLayers::kReference,
+                                            TemporalLayers::kReference,
+                                            TemporalLayers::kFreezeEntropy)};
+      } else {
+        // "Default" 8-frame pattern:
+        //   1---1---1---1   1---1---1---1 ...
+        //  /   /   /   /   /   /   /   /
+        // 0---0---0---0---0---0---0---0 ...
+        return {TemporalLayers::FrameConfig(TemporalLayers::kReferenceAndUpdate,
+                                            TemporalLayers::kNone,
+                                            TemporalLayers::kReference),
+                TemporalLayers::FrameConfig(TemporalLayers::kReference,
+                                            TemporalLayers::kUpdate,
+                                            TemporalLayers::kReference),
+                TemporalLayers::FrameConfig(TemporalLayers::kReferenceAndUpdate,
+                                            TemporalLayers::kNone,
+                                            TemporalLayers::kReference),
+                TemporalLayers::FrameConfig(TemporalLayers::kReference,
+                                            TemporalLayers::kReferenceAndUpdate,
+                                            TemporalLayers::kReference),
+                TemporalLayers::FrameConfig(TemporalLayers::kReferenceAndUpdate,
+                                            TemporalLayers::kNone,
+                                            TemporalLayers::kReference),
+                TemporalLayers::FrameConfig(TemporalLayers::kReference,
+                                            TemporalLayers::kReferenceAndUpdate,
+                                            TemporalLayers::kReference),
+                TemporalLayers::FrameConfig(TemporalLayers::kReferenceAndUpdate,
+                                            TemporalLayers::kNone,
+                                            TemporalLayers::kReference),
+                TemporalLayers::FrameConfig(TemporalLayers::kReference,
+                                            TemporalLayers::kReference,
+                                            TemporalLayers::kReference,
+                                            TemporalLayers::kFreezeEntropy)};
+      }
     case 3:
       if (field_trial::IsEnabled("WebRTC-UseShortVP8TL3Pattern")) {
         // This field trial is intended to check if it is worth using a shorter

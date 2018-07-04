@@ -471,9 +471,15 @@ class TestVideoSenderWithVp8 : public TestVideoSender {
 #define MAYBE_FixedTemporalLayersStrategy FixedTemporalLayersStrategy
 #endif
 TEST_F(TestVideoSenderWithVp8, MAYBE_FixedTemporalLayersStrategy) {
-  const int low_b = codec_bitrate_kbps_ * kLayerRateAllocation[2][0];
-  const int mid_b = codec_bitrate_kbps_ * kLayerRateAllocation[2][1];
-  const int high_b = codec_bitrate_kbps_ * kLayerRateAllocation[2][2];
+  const int low_b =
+      codec_bitrate_kbps_ *
+      webrtc::SimulcastRateAllocator::GetTemporalRateAllocation(3, 0);
+  const int mid_b =
+      codec_bitrate_kbps_ *
+      webrtc::SimulcastRateAllocator::GetTemporalRateAllocation(3, 1);
+  const int high_b =
+      codec_bitrate_kbps_ *
+      webrtc::SimulcastRateAllocator::GetTemporalRateAllocation(3, 2);
   {
     Vp8StreamInfo expected = {{7.5, 15.0, 30.0}, {low_b, mid_b, high_b}};
     EXPECT_THAT(SimulateWithFramerate(30.0), MatchesVp8StreamInfo(expected));
