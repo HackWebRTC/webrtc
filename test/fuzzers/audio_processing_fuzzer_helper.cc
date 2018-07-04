@@ -86,6 +86,9 @@ void FuzzAudioProcessing(test::FuzzDataHelper* fuzz_data,
     // API call needed for AEC-2 and AEC-m to run.
     apm->set_stream_delay_ms(stream_delay);
 
+    const bool key_pressed = fuzz_data->ReadOrDefaultValue(true);
+    apm->set_stream_key_pressed(key_pressed);
+
     // Make the APM call depending on capture/render mode and float /
     // fix interface.
     const bool is_capture = fuzz_data->ReadOrDefaultValue(true);
