@@ -59,6 +59,10 @@ class RtpReceiverInternal : public RtpReceiverInterface {
   // Set the associated remote media streams for this receiver. The remote track
   // will be removed from any streams that are no longer present and added to
   // any new streams.
+  virtual void set_stream_ids(std::vector<std::string> stream_ids) = 0;
+  // TODO(https://crbug.com/webrtc/9480): Remove SetStreams() in favor of
+  // set_stream_ids() as soon as downstream projects are no longer dependent on
+  // stream objects.
   virtual void SetStreams(
       const std::vector<rtc::scoped_refptr<MediaStreamInterface>>& streams) = 0;
 
@@ -72,6 +76,10 @@ class AudioRtpReceiver : public ObserverInterface,
                          public AudioSourceInterface::AudioObserver,
                          public rtc::RefCountedObject<RtpReceiverInternal> {
  public:
+  AudioRtpReceiver(rtc::Thread* worker_thread,
+                   std::string receiver_id,
+                   std::vector<std::string> stream_ids);
+  // TODO(https://crbug.com/webrtc/9480): Remove this when streams() is removed.
   AudioRtpReceiver(
       rtc::Thread* worker_thread,
       const std::string& receiver_id,
@@ -92,6 +100,7 @@ class AudioRtpReceiver : public ObserverInterface,
   rtc::scoped_refptr<MediaStreamTrackInterface> track() const override {
     return track_.get();
   }
+  std::vector<std::string> stream_ids() const override;
   std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams()
       const override {
     return streams_;
@@ -111,6 +120,7 @@ class AudioRtpReceiver : public ObserverInterface,
   void SetupMediaChannel(uint32_t ssrc) override;
   uint32_t ssrc() const override { return ssrc_.value_or(0); }
   void NotifyFirstPacketReceived() override;
+  void set_stream_ids(std::vector<std::string> stream_ids) override;
   void SetStreams(const std::vector<rtc::scoped_refptr<MediaStreamInterface>>&
                       streams) override;
 
@@ -151,6 +161,11 @@ class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInternal> {
  public:
   // An SSRC of 0 will create a receiver that will match the first SSRC it
   // sees.
+  VideoRtpReceiver(rtc::Thread* worker_thread,
+                   std::string receiver_id,
+                   std::vector<std::string> streams_ids);
+  // TODO(hbos): Remove this when streams() is removed.
+  // https://crbug.com/webrtc/9480
   VideoRtpReceiver(
       rtc::Thread* worker_thread,
       const std::string& receiver_id,
@@ -166,6 +181,7 @@ class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInternal> {
   rtc::scoped_refptr<MediaStreamTrackInterface> track() const override {
     return track_.get();
   }
+  std::vector<std::string> stream_ids() const override;
   std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams()
       const override {
     return streams_;
@@ -185,6 +201,7 @@ class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInternal> {
   void SetupMediaChannel(uint32_t ssrc) override;
   uint32_t ssrc() const override { return ssrc_.value_or(0); }
   void NotifyFirstPacketReceived() override;
+  void set_stream_ids(std::vector<std::string> stream_ids) override;
   void SetStreams(const std::vector<rtc::scoped_refptr<MediaStreamInterface>>&
                       streams) override;
 

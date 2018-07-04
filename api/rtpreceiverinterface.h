@@ -93,8 +93,12 @@ class RtpReceiverInterface : public rtc::RefCountInterface {
   virtual rtc::scoped_refptr<MediaStreamTrackInterface> track() const = 0;
   // The list of streams that |track| is associated with. This is the same as
   // the [[AssociatedRemoteMediaStreams]] internal slot in the spec.
-  // https://w3c.github.io/webrtc-pc/#dfn-x%5B%5Bassociatedremotemediastreams%5D%5D
+  // https://w3c.github.io/webrtc-pc/#dfn-associatedremotemediastreams
   // TODO(hbos): Make pure virtual as soon as Chromium's mock implements this.
+  // TODO(https://crbug.com/webrtc/9480): Remove streams() in favor of
+  // stream_ids() as soon as downstream projects are no longer dependent on
+  // stream objects.
+  virtual std::vector<std::string> stream_ids() const;
   virtual std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams() const;
 
   // Audio or video receiver?

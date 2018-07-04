@@ -32,6 +32,10 @@ RtpSource::RtpSource(const RtpSource&) = default;
 RtpSource& RtpSource::operator=(const RtpSource&) = default;
 RtpSource::~RtpSource() = default;
 
+std::vector<std::string> RtpReceiverInterface::stream_ids() const {
+  return {};
+}
+
 std::vector<rtc::scoped_refptr<MediaStreamInterface>>
 RtpReceiverInterface::streams() const {
   return {};
