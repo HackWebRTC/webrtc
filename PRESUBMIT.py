@@ -415,14 +415,37 @@ def CheckNoPackageBoundaryViolations(input_api, gn_files, output_api):
   return []
 
 
-def _ReportErrorFileAndLineNumber(filename, line_num):
+def _ReportFileAndLine(filename, line_num):
   """Default error formatter for _FindNewViolationsOfRule."""
   return '%s (line %s)' % (filename, line_num)
 
 
+def CheckNoWarningSuppressionFlagsAreAdded(gn_files, input_api, output_api,
+                                           error_formatter=_ReportFileAndLine):
+  """Make sure that warning suppression flags are not added wihtout a reason."""
+  msg = ('Usage of //build/config/clang:extra_warnings is discouraged '
+         'in WebRTC.\n'
+         'If you are not adding this code (e.g. you are just moving '
+         'existing code) or you want to add an exception,\n'
+         'you can add a comment on the line that causes the problem:\n\n'
+         '"-Wno-odr"  # no-presubmit-check TODO(bugs.webrtc.org/BUG_ID)\n'
+         '\n'
+         'Affected files:\n')
+  errors = []  # 2-element tuples with (file, line number)
+  clang_warn_re = input_api.re.compile(r'//build/config/clang:extra_warnings')
+  no_presubmit_re = input_api.re.compile(
+      r'# no-presubmit-check TODO\(bugs\.webrtc\.org/\d+\)')
+  for f in gn_files:
+    for line_num, line in f.ChangedContents():
+      if clang_warn_re.search(line) and not no_presubmit_re.search(line):
+        errors.append(error_formatter(f.LocalPath(), line_num))
+  if errors:
+    return [output_api.PresubmitError(msg, errors)]
+  return []
+
 def CheckNoStreamUsageIsAdded(input_api, output_api,
                               source_file_filter,
-                              error_formatter=_ReportErrorFileAndLineNumber):
+                              error_formatter=_ReportFileAndLine):
   """Make sure that no more dependencies on stringstream are added."""
   error_msg = ('Usage of <sstream>, <istream> and <ostream> in WebRTC is '
                'deprecated.\n'
@@ -501,11 +524,10 @@ def CheckCheckIncludesIsNotUsed(gn_files, output_api):
   return result
 
 
-def CheckGnChanges(input_api, output_api, source_file_filter):
+def CheckGnChanges(input_api, output_api):
   file_filter = lambda x: (input_api.FilterSourceFile(
       x, white_list=(r'.+\.(gn|gni)$',),
-      black_list=(r'.*/presubmit_checks_lib/testdata/.*',))
-      and source_file_filter(x))
+      black_list=(r'.*/presubmit_checks_lib/testdata/.*',)))
 
   gn_files = []
   for f in input_api.AffectedSourceFiles(file_filter):
@@ -519,6 +541,8 @@ def CheckGnChanges(input_api, output_api, source_file_filter):
                                                    output_api))
     result.extend(CheckPublicDepsIsNotUsed(gn_files, input_api, output_api))
     result.extend(CheckCheckIncludesIsNotUsed(gn_files, output_api))
+    result.extend(CheckNoWarningSuppressionFlagsAreAdded(gn_files, input_api,
+                                                          output_api))
   return result
 
 
@@ -814,8 +838,7 @@ def CommonChecks(input_api, output_api):
       input_api, output_api, source_file_filter=non_third_party_sources))
   results.extend(CheckNoFRIEND_TEST(
       input_api, output_api, source_file_filter=non_third_party_sources))
-  results.extend(CheckGnChanges(
-      input_api, output_api, source_file_filter=non_third_party_sources))
+  results.extend(CheckGnChanges(input_api, output_api))
   results.extend(CheckUnwantedDependencies(
       input_api, output_api, source_file_filter=non_third_party_sources))
   results.extend(CheckJSONParseErrors(
