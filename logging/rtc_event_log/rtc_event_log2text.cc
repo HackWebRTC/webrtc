@@ -369,30 +369,53 @@ void PrintPsFeedback(const webrtc::ParsedRtcEventLogNew& parsed_stream,
   }
 }
 
+enum class InputSource {
+  STDIN,
+  FILE,
+};
+
+void PrintUsageGuide(const std::string& program_name) {
+  std::cout
+      << "Tool for printing packet information from an RtcEventLog as text.\n"
+      << "* Run " + program_name + " --help for usage.\n"
+      << "* Example usage for parsing a file:\n"
+      << "  " << program_name + " input.rel\n"
+      << "* Example usage for parsing the stdin:\n"
+      << "  " << program_name + "\n";
+}
+
+// TODO(eladalon): Return a stream or file descriptor instead.
+InputSource ParseCommandLineFlags(int argc, char* argv[]) {
+  if (rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true) != 0) {
+    PrintUsageGuide(argv[0]);
+    exit(-1);
+  }
+
+  if (FLAG_help) {
+    PrintUsageGuide(argv[0]);
+    std::cout << std::endl;
+    rtc::FlagList::Print(nullptr, false);
+    exit(0);
+  }
+
+  switch (argc) {
+    case 1:
+      return InputSource::STDIN;
+    case 2:
+      return InputSource::FILE;
+    default:
+      PrintUsageGuide(argv[0]);
+      exit(-1);
+  }
+}
+
 }  // namespace
 
 // This utility will print basic information about each packet to stdout.
 // Note that parser will assert if the protobuf event is missing some required
 // fields and we attempt to access them. We don't handle this at the moment.
 int main(int argc, char* argv[]) {
-  std::string program_name = argv[0];
-  std::string usage =
-      "Tool for printing packet information from an RtcEventLog as text.\n"
-      "Run " +
-      program_name +
-      " --help for usage.\n"
-      "Example usage:\n" +
-      program_name + " input.rel\n";
-  if (rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true) || FLAG_help ||
-      argc != 2) {
-    std::cout << usage;
-    if (FLAG_help) {
-      rtc::FlagList::Print(nullptr, false);
-      return 0;
-    }
-    return 1;
-  }
-  std::string input_file = argv[1];
+  InputSource input_source = ParseCommandLineFlags(argc, argv);
 
   if (strlen(FLAG_ssrc) > 0)
     RTC_CHECK(ParseSsrc(FLAG_ssrc)) << "Flag verification has failed.";
@@ -401,9 +424,23 @@ int main(int argc, char* argv[]) {
   bool default_map_used = false;
 
   webrtc::ParsedRtcEventLogNew parsed_stream;
-  if (!parsed_stream.ParseFile(input_file)) {
-    std::cerr << "Error while parsing input file: " << input_file << std::endl;
-    return -1;
+
+  switch (input_source) {
+    case InputSource::STDIN: {
+      if (!parsed_stream.ParseStream(std::cin)) {
+        std::cerr << "Error while parsing input stream." << std::endl;
+        return -1;
+      }
+      break;
+    }
+    case InputSource::FILE: {
+      if (!parsed_stream.ParseFile(argv[1])) {
+        std::cerr << "Error while parsing input file: " << argv[1] << std::endl;
+        return -1;
+      }
+      break;
+    }
+    default: { RTC_NOTREACHED() << "Unsupported input source."; }
   }
 
   for (size_t i = 0; i < parsed_stream.GetNumberOfEvents(); i++) {
