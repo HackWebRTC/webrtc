@@ -166,7 +166,7 @@ int WebRtcSpl_ComplexIFFT(int16_t frfi[], int stages, int mode)
     /* The 1024-value is a constant given from the size of kSinTable1024[],
      * and should not be changed depending on the input parameter 'stages'
      */
-    n = 1 << stages;
+    n = ((size_t)1) << stages;
     if (n > 1024)
         return -1;
 

@@ -81,10 +81,6 @@ rtc_static_library("common_audio") {
     deps += [ ":common_audio_neon" ]
   }
 
-  if (is_win) {
-    cflags = [ "/wd4334" ]  # Ignore warning on shift operator promotion.
-  }
-
   public_configs = [ ":common_audio_config" ]
 
   if (!build_with_chromium && is_clang) {
@@ -205,10 +201,6 @@ rtc_source_set("common_audio_c") {
       "signal_processing/filter_ar_fast_q12.c",
       "signal_processing/spl_sqrt_floor.c",
     ]
-  }
-
-  if (is_win) {
-    cflags = [ "/wd4334" ]  # Ignore warning on shift operator promotion.
   }
 
   public_configs = [ ":common_audio_config" ]

@@ -31,7 +31,7 @@ int RealFourier::FftOrder(size_t length) {
 
 size_t RealFourier::FftLength(int order) {
   RTC_CHECK_GE(order, 0);
-  return static_cast<size_t>(1 << order);
+  return size_t{1} << order;
 }
 
 size_t RealFourier::ComplexLength(int order) {
