@@ -33,8 +33,8 @@ const size_t kSizeEnable = sizeof(kEnable) / sizeof(*kEnable);
 class DelayEstimatorTest : public ::testing::Test {
  protected:
   DelayEstimatorTest();
-  virtual void SetUp();
-  virtual void TearDown();
+  void SetUp() override;
+  void TearDown() override;
 
   void Init();
   void InitBinary();

@@ -34,7 +34,6 @@ rtc_source_set("adaptive_digital") {
     ":gain_applier",
     ":noise_level_estimator",
     ":rnn_vad_with_level",
-    "..:aec_core",
     "..:apm_logging",
     "..:audio_frame_view",
     "../../../api:array_view",
@@ -119,13 +118,13 @@ rtc_source_set("noise_level_estimator") {
   ]
   deps = [
     ":biquad_filter",
-    "..:aec_core",
     "..:apm_logging",
     "..:audio_frame_view",
     "../../../api:array_view",
     "../../../common_audio",
     "../../../rtc_base:checks",
     "../../../rtc_base:macromagic",
+    "../utility:ooura_fft",
   ]
 
   configs += [ "..:apm_debug_dump" ]

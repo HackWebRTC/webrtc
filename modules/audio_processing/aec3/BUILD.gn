@@ -111,7 +111,6 @@ rtc_static_library("aec3") {
 
   defines = []
   deps = [
-    "..:aec_core",
     "..:apm_logging",
     "..:audio_processing",
     "../../..:typedefs",
@@ -125,6 +124,7 @@ rtc_static_library("aec3") {
     "../../../system_wrappers:cpu_features_api",
     "../../../system_wrappers:field_trial_api",
     "../../../system_wrappers:metrics_api",
+    "../utility:ooura_fft",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }

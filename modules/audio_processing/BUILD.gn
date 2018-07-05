@@ -335,16 +335,6 @@ rtc_source_set("aec_core") {
     "aecm/aecm_defines.h",
     "aecm/echo_control_mobile.cc",
     "aecm/echo_control_mobile.h",
-    "utility/block_mean_calculator.cc",
-    "utility/block_mean_calculator.h",
-    "utility/delay_estimator.cc",
-    "utility/delay_estimator.h",
-    "utility/delay_estimator_internal.h",
-    "utility/delay_estimator_wrapper.cc",
-    "utility/delay_estimator_wrapper.h",
-    "utility/ooura_fft.cc",
-    "utility/ooura_fft.h",
-    "utility/ooura_fft_tables_common.h",
   ]
   deps = [
     ":apm_logging",
@@ -358,16 +348,15 @@ rtc_source_set("aec_core") {
     "../../rtc_base:sanitizer",
     "../../system_wrappers:cpu_features_api",
     "../../system_wrappers:metrics_api",
+    "utility:block_mean_calculator",
+    "utility:legacy_delay_estimator",
+    "utility:ooura_fft",
   ]
   cflags = []
   defines = []
 
   if (current_cpu == "x86" || current_cpu == "x64") {
-    sources += [
-      "aec/aec_core_sse2.cc",
-      "utility/ooura_fft_sse2.cc",
-      "utility/ooura_fft_tables_neon_sse2.h",
-    ]
+    sources += [ "aec/aec_core_sse2.cc" ]
     if (is_posix || is_fuchsia) {
       cflags += [ "-msse2" ]
     }
@@ -377,8 +366,6 @@ rtc_source_set("aec_core") {
     sources += [
       "aec/aec_core_neon.cc",
       "aecm/aecm_core_neon.cc",
-      "utility/ooura_fft_neon.cc",
-      "utility/ooura_fft_tables_neon_sse2.h",
     ]
 
     if (current_cpu != "arm64") {
@@ -404,10 +391,7 @@ rtc_source_set("aec_core") {
   if (current_cpu == "mipsel") {
     sources += [ "aecm/aecm_core_mips.cc" ]
     if (mips_float_abi == "hard") {
-      sources += [
-        "aec/aec_core_mips.cc",
-        "utility/ooura_fft_mips.cc",
-      ]
+      sources += [ "aec/aec_core_mips.cc" ]
     }
   } else {
     sources += [ "aecm/aecm_core_c.cc" ]
@@ -482,8 +466,6 @@ if (rtc_include_tests) {
       "transient/transient_suppressor_unittest.cc",
       "transient/wpd_node_unittest.cc",
       "transient/wpd_tree_unittest.cc",
-      "utility/block_mean_calculator_unittest.cc",
-      "utility/delay_estimator_unittest.cc",
     ]
 
     deps = [
@@ -521,6 +503,8 @@ if (rtc_include_tests) {
       "agc2:noise_estimator_unittests",
       "agc2/rnn_vad:unittests",
       "test/conversational_speech:unittest",
+      "utility:block_mean_calculator_unittest",
+      "utility:legacy_delay_estimator_unittest",
       "vad:vad_unittests",
       "//testing/gtest",
       "//third_party/abseil-cpp/absl/memory",
