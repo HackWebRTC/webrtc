@@ -218,17 +218,14 @@ TEST_F(TestVp9Impl, EncoderExplicitLayering) {
 }
 
 TEST_F(TestVp9Impl, EnableDisableSpatialLayers) {
-  // Configure encoder to produce N spatial layers. Encode frames of layer 0
-  // then enable layer 1 and encode more frames and so on until layer N-1.
+  // Configure encoder to produce N spatial layers. Encode few frames of layer 0
+  // then enable layer 1 and encode few more frames and so on until layer N-1.
   // Then disable layers one by one in the same way.
-  // Note: bit rate allocation is high to avoid frame dropping due to rate
-  // control, the encoder should always produce a frame. A dropped
-  // frame indicates a problem and the test will fail.
   const size_t num_spatial_layers = 3;
-  const size_t num_frames_to_encode = 5;
+  const size_t num_frames_to_encode = 2;
 
   ConfigureSvc(num_spatial_layers);
-  codec_settings_.VP9()->frameDroppingOn = true;
+  codec_settings_.VP9()->frameDroppingOn = false;
 
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             encoder_->InitEncode(&codec_settings_, 1 /* number of cores */,
@@ -236,10 +233,8 @@ TEST_F(TestVp9Impl, EnableDisableSpatialLayers) {
 
   VideoBitrateAllocation bitrate_allocation;
   for (size_t sl_idx = 0; sl_idx < num_spatial_layers; ++sl_idx) {
-    // Allocate high bit rate to avoid frame dropping due to rate control.
     bitrate_allocation.SetBitrate(
-        sl_idx, 0,
-        codec_settings_.spatialLayers[sl_idx].targetBitrate * 1000 * 2);
+        sl_idx, 0, codec_settings_.spatialLayers[sl_idx].targetBitrate * 1000);
     EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
               encoder_->SetRateAllocation(bitrate_allocation,
                                           codec_settings_.maxFramerate));
