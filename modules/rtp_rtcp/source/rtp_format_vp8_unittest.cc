@@ -61,9 +61,9 @@ constexpr RtpPacketToSend::ExtensionManager* kNoExtensions = nullptr;
 //      +-+-+-+-+-+-+-+-+
 void VerifyBasicHeader(RTPVideoHeader* header, bool N, bool S, int part_id) {
   ASSERT_TRUE(header != NULL);
-  EXPECT_EQ(N, header->codecHeader.VP8.nonReference);
-  EXPECT_EQ(S, header->codecHeader.VP8.beginningOfPartition);
-  EXPECT_EQ(part_id, header->codecHeader.VP8.partitionId);
+  EXPECT_EQ(N, header->vp8().nonReference);
+  EXPECT_EQ(S, header->vp8().beginningOfPartition);
+  EXPECT_EQ(part_id, header->vp8().partitionId);
 }
 
 void VerifyExtensions(RTPVideoHeader* header,
@@ -72,10 +72,10 @@ void VerifyExtensions(RTPVideoHeader* header,
                       uint8_t temporal_idx, /* T */
                       int key_idx /* K */) {
   ASSERT_TRUE(header != NULL);
-  EXPECT_EQ(picture_id, header->codecHeader.VP8.pictureId);
-  EXPECT_EQ(tl0_pic_idx, header->codecHeader.VP8.tl0PicIdx);
-  EXPECT_EQ(temporal_idx, header->codecHeader.VP8.temporalIdx);
-  EXPECT_EQ(key_idx, header->codecHeader.VP8.keyIdx);
+  EXPECT_EQ(picture_id, header->vp8().pictureId);
+  EXPECT_EQ(tl0_pic_idx, header->vp8().tl0PicIdx);
+  EXPECT_EQ(temporal_idx, header->vp8().temporalIdx);
+  EXPECT_EQ(key_idx, header->vp8().keyIdx);
 }
 }  // namespace
 
@@ -372,7 +372,7 @@ TEST_F(RtpDepacketizerVp8Test, TIDAndLayerSync) {
   VerifyBasicHeader(&payload.video_header(), 0, 0, 8);
   VerifyExtensions(&payload.video_header(), kNoPictureId, kNoTl0PicIdx, 2,
                    kNoKeyIdx);
-  EXPECT_FALSE(payload.video_header().codecHeader.VP8.layerSync);
+  EXPECT_FALSE(payload.video_header().vp8().layerSync);
 }
 
 TEST_F(RtpDepacketizerVp8Test, KeyIdx) {
@@ -453,8 +453,7 @@ TEST_F(RtpDepacketizerVp8Test, TestWithPacketizer) {
   VerifyExtensions(&payload.video_header(), input_header.pictureId,
                    input_header.tl0PicIdx, input_header.temporalIdx,
                    input_header.keyIdx);
-  EXPECT_EQ(payload.video_header().codecHeader.VP8.layerSync,
-            input_header.layerSync);
+  EXPECT_EQ(payload.video_header().vp8().layerSync, input_header.layerSync);
 }
 
 TEST_F(RtpDepacketizerVp8Test, TestEmptyPayload) {

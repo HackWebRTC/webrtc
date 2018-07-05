@@ -38,6 +38,7 @@ namespace webrtc {
 // TODO(nisse): Deprecated, use webrtc::VideoCodecType instead.
 using RtpVideoCodecTypes = VideoCodecType;
 
+// TODO(philipel): Change from union to abls::variant.
 union RTPVideoTypeHeader {
   RTPVideoHeaderVP8 VP8;
   RTPVideoHeaderVP9 VP9;
@@ -47,6 +48,13 @@ union RTPVideoTypeHeader {
 // Since RTPVideoHeader is used as a member of a union, it can't have a
 // non-trivial default constructor.
 struct RTPVideoHeader {
+  RTPVideoHeaderVP8& vp8() { return codecHeader.VP8; }
+  const RTPVideoHeaderVP8& vp8() const { return codecHeader.VP8; }
+  RTPVideoHeaderVP9& vp9() { return codecHeader.VP9; }
+  const RTPVideoHeaderVP9& vp9() const { return codecHeader.VP9; }
+  RTPVideoHeaderH264& h264() { return codecHeader.H264; }
+  const RTPVideoHeaderH264& h264() const { return codecHeader.H264; }
+
   uint16_t width;  // size
   uint16_t height;
   VideoRotation rotation;

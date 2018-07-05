@@ -36,7 +36,7 @@ H264SpsPpsTracker::PacketAction H264SpsPpsTracker::CopyAndFixBitstream(
   const uint8_t* data = packet->dataPtr;
   const size_t data_size = packet->sizeBytes;
   const RTPVideoHeader& video_header = packet->video_header;
-  RTPVideoHeaderH264* codec_header = &packet->video_header.codecHeader.H264;
+  RTPVideoHeaderH264* codec_header = &packet->video_header.h264();
 
   bool append_sps_pps = false;
   auto sps = sps_data_.end();

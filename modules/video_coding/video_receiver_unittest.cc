@@ -183,8 +183,8 @@ TEST_F(TestVideoReceiver, PaddingOnlyAndVideo) {
   header.header.ssrc = 1;
   header.header.headerLength = 12;
   header.video_header().codec = kVideoCodecVP8;
-  header.video_header().codecHeader.VP8.pictureId = -1;
-  header.video_header().codecHeader.VP8.tl0PicIdx = -1;
+  header.video_header().vp8().pictureId = -1;
+  header.video_header().vp8().tl0PicIdx = -1;
   for (int i = 0; i < 3; ++i) {
     // Insert 2 video frames.
     for (int j = 0; j < 2; ++j) {

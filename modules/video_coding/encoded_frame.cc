@@ -64,16 +64,15 @@ void VCMEncodedFrame::CopyCodecSpecific(const RTPVideoHeader* header) {
           _codecSpecificInfo.codecType = kVideoCodecVP8;
         }
         _codecSpecificInfo.codecSpecific.VP8.nonReference =
-            header->codecHeader.VP8.nonReference;
-        if (header->codecHeader.VP8.temporalIdx != kNoTemporalIdx) {
+            header->vp8().nonReference;
+        if (header->vp8().temporalIdx != kNoTemporalIdx) {
           _codecSpecificInfo.codecSpecific.VP8.temporalIdx =
-              header->codecHeader.VP8.temporalIdx;
+              header->vp8().temporalIdx;
           _codecSpecificInfo.codecSpecific.VP8.layerSync =
-              header->codecHeader.VP8.layerSync;
+              header->vp8().layerSync;
         }
-        if (header->codecHeader.VP8.keyIdx != kNoKeyIdx) {
-          _codecSpecificInfo.codecSpecific.VP8.keyIdx =
-              header->codecHeader.VP8.keyIdx;
+        if (header->vp8().keyIdx != kNoKeyIdx) {
+          _codecSpecificInfo.codecSpecific.VP8.keyIdx = header->vp8().keyIdx;
         }
         break;
       }
@@ -87,50 +86,48 @@ void VCMEncodedFrame::CopyCodecSpecific(const RTPVideoHeader* header) {
           _codecSpecificInfo.codecType = kVideoCodecVP9;
         }
         _codecSpecificInfo.codecSpecific.VP9.inter_pic_predicted =
-            header->codecHeader.VP9.inter_pic_predicted;
+            header->vp9().inter_pic_predicted;
         _codecSpecificInfo.codecSpecific.VP9.flexible_mode =
-            header->codecHeader.VP9.flexible_mode;
+            header->vp9().flexible_mode;
         _codecSpecificInfo.codecSpecific.VP9.num_ref_pics =
-            header->codecHeader.VP9.num_ref_pics;
-        for (uint8_t r = 0; r < header->codecHeader.VP9.num_ref_pics; ++r) {
+            header->vp9().num_ref_pics;
+        for (uint8_t r = 0; r < header->vp9().num_ref_pics; ++r) {
           _codecSpecificInfo.codecSpecific.VP9.p_diff[r] =
-              header->codecHeader.VP9.pid_diff[r];
+              header->vp9().pid_diff[r];
         }
         _codecSpecificInfo.codecSpecific.VP9.ss_data_available =
-            header->codecHeader.VP9.ss_data_available;
-        if (header->codecHeader.VP9.temporal_idx != kNoTemporalIdx) {
+            header->vp9().ss_data_available;
+        if (header->vp9().temporal_idx != kNoTemporalIdx) {
           _codecSpecificInfo.codecSpecific.VP9.temporal_idx =
-              header->codecHeader.VP9.temporal_idx;
+              header->vp9().temporal_idx;
           _codecSpecificInfo.codecSpecific.VP9.temporal_up_switch =
-              header->codecHeader.VP9.temporal_up_switch;
+              header->vp9().temporal_up_switch;
         }
-        if (header->codecHeader.VP9.spatial_idx != kNoSpatialIdx) {
+        if (header->vp9().spatial_idx != kNoSpatialIdx) {
           _codecSpecificInfo.codecSpecific.VP9.spatial_idx =
-              header->codecHeader.VP9.spatial_idx;
+              header->vp9().spatial_idx;
           _codecSpecificInfo.codecSpecific.VP9.inter_layer_predicted =
-              header->codecHeader.VP9.inter_layer_predicted;
+              header->vp9().inter_layer_predicted;
         }
-        if (header->codecHeader.VP9.gof_idx != kNoGofIdx) {
-          _codecSpecificInfo.codecSpecific.VP9.gof_idx =
-              header->codecHeader.VP9.gof_idx;
+        if (header->vp9().gof_idx != kNoGofIdx) {
+          _codecSpecificInfo.codecSpecific.VP9.gof_idx = header->vp9().gof_idx;
         }
-        if (header->codecHeader.VP9.ss_data_available) {
+        if (header->vp9().ss_data_available) {
           _codecSpecificInfo.codecSpecific.VP9.num_spatial_layers =
-              header->codecHeader.VP9.num_spatial_layers;
+              header->vp9().num_spatial_layers;
           _codecSpecificInfo.codecSpecific.VP9
               .spatial_layer_resolution_present =
-              header->codecHeader.VP9.spatial_layer_resolution_present;
-          if (header->codecHeader.VP9.spatial_layer_resolution_present) {
-            for (size_t i = 0; i < header->codecHeader.VP9.num_spatial_layers;
-                 ++i) {
+              header->vp9().spatial_layer_resolution_present;
+          if (header->vp9().spatial_layer_resolution_present) {
+            for (size_t i = 0; i < header->vp9().num_spatial_layers; ++i) {
               _codecSpecificInfo.codecSpecific.VP9.width[i] =
-                  header->codecHeader.VP9.width[i];
+                  header->vp9().width[i];
               _codecSpecificInfo.codecSpecific.VP9.height[i] =
-                  header->codecHeader.VP9.height[i];
+                  header->vp9().height[i];
             }
           }
           _codecSpecificInfo.codecSpecific.VP9.gof.CopyGofInfoVP9(
-              header->codecHeader.VP9.gof);
+              header->vp9().gof);
         }
         break;
       }

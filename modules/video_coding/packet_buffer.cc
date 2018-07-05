@@ -304,7 +304,7 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
 
         if (is_h264 && !is_h264_keyframe) {
           const RTPVideoHeaderH264& header =
-              data_buffer_[start_index].video_header.codecHeader.H264;
+              data_buffer_[start_index].video_header.h264();
 
           if (header.nalus_length >= kMaxNalusPerPacket)
             return found_frames;

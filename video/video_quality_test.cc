@@ -561,11 +561,11 @@ class VideoAnalyzer : public PacketReceiver,
           depacketizer->Parse(&parsed_payload, payload, payload_data_length);
       RTC_DCHECK(result);
       const int temporal_idx = static_cast<int>(
-          is_vp8 ? parsed_payload.video_header().codecHeader.VP8.temporalIdx
-                 : parsed_payload.video_header().codecHeader.VP9.temporal_idx);
+          is_vp8 ? parsed_payload.video_header().vp8().temporalIdx
+                 : parsed_payload.video_header().vp9().temporal_idx);
       const int spatial_idx = static_cast<int>(
           is_vp8 ? kNoSpatialIdx
-                 : parsed_payload.video_header().codecHeader.VP9.spatial_idx);
+                 : parsed_payload.video_header().vp9().spatial_idx);
       return (selected_tl_ < 0 || temporal_idx == kNoTemporalIdx ||
               temporal_idx <= selected_tl_) &&
              (selected_sl_ < 0 || spatial_idx == kNoSpatialIdx ||

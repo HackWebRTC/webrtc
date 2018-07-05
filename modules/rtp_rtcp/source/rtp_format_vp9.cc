@@ -719,7 +719,7 @@ bool RtpDepacketizerVp9::Parse(ParsedPayload* parsed_payload,
 
   parsed_payload->frame_type = p_bit ? kVideoFrameDelta : kVideoFrameKey;
 
-  RTPVideoHeaderVP9* vp9 = &parsed_payload->video_header().codecHeader.VP9;
+  RTPVideoHeaderVP9* vp9 = &parsed_payload->video_header().vp9();
   vp9->InitRTPVideoHeaderVP9();
   vp9->inter_pic_predicted = p_bit ? true : false;
   vp9->flexible_mode = f_bit ? true : false;

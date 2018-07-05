@@ -352,7 +352,7 @@ bool RTPSenderVideo::SendVideo(enum VideoCodecType video_type,
 
   std::unique_ptr<RtpPacketizer> packetizer(RtpPacketizer::Create(
       video_type, max_data_payload_length, last_packet_reduction_len,
-      video_header ? &(video_header->codecHeader) : nullptr, frame_type));
+      video_header, frame_type));
 
   const uint8_t temporal_id =
       video_header ? GetTemporalId(*video_header) : kNoTemporalIdx;
@@ -472,9 +472,9 @@ StorageType RTPSenderVideo::GetStorageType(
 uint8_t RTPSenderVideo::GetTemporalId(const RTPVideoHeader& header) {
   switch (header.codec) {
     case kVideoCodecVP8:
-      return header.codecHeader.VP8.temporalIdx;
+      return header.vp8().temporalIdx;
     case kVideoCodecVP9:
-      return header.codecHeader.VP9.temporal_idx;
+      return header.vp9().temporal_idx;
     default:
       return kNoTemporalIdx;
   }

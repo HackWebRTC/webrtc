@@ -108,10 +108,10 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
     packet.seqNum = seq_num_start;
     packet.markerBit = (seq_num_start == seq_num_end);
     packet.frameType = keyframe ? kVideoFrameKey : kVideoFrameDelta;
-    packet.video_header.codecHeader.VP8.pictureId = pid % (1 << 15);
-    packet.video_header.codecHeader.VP8.temporalIdx = tid;
-    packet.video_header.codecHeader.VP8.tl0PicIdx = tl0;
-    packet.video_header.codecHeader.VP8.layerSync = sync;
+    packet.video_header.vp8().pictureId = pid % (1 << 15);
+    packet.video_header.vp8().temporalIdx = tid;
+    packet.video_header.vp8().tl0PicIdx = tl0;
+    packet.video_header.vp8().layerSync = sync;
     ref_packet_buffer_->InsertPacket(&packet);
 
     if (seq_num_start != seq_num_end) {
@@ -140,21 +140,21 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
     packet.seqNum = seq_num_start;
     packet.markerBit = (seq_num_start == seq_num_end);
     packet.frameType = keyframe ? kVideoFrameKey : kVideoFrameDelta;
-    packet.video_header.codecHeader.VP9.flexible_mode = false;
-    packet.video_header.codecHeader.VP9.picture_id = pid % (1 << 15);
-    packet.video_header.codecHeader.VP9.temporal_idx = tid;
-    packet.video_header.codecHeader.VP9.spatial_idx = sid;
-    packet.video_header.codecHeader.VP9.tl0_pic_idx = tl0;
-    packet.video_header.codecHeader.VP9.temporal_up_switch = up_switch;
+    packet.video_header.vp9().flexible_mode = false;
+    packet.video_header.vp9().picture_id = pid % (1 << 15);
+    packet.video_header.vp9().temporal_idx = tid;
+    packet.video_header.vp9().spatial_idx = sid;
+    packet.video_header.vp9().tl0_pic_idx = tl0;
+    packet.video_header.vp9().temporal_up_switch = up_switch;
     if (ss != nullptr) {
-      packet.video_header.codecHeader.VP9.ss_data_available = true;
-      packet.video_header.codecHeader.VP9.gof = *ss;
+      packet.video_header.vp9().ss_data_available = true;
+      packet.video_header.vp9().gof = *ss;
     }
     ref_packet_buffer_->InsertPacket(&packet);
 
     if (seq_num_start != seq_num_end) {
       packet.markerBit = true;
-      packet.video_header.codecHeader.VP9.ss_data_available = false;
+      packet.video_header.vp9().ss_data_available = false;
       packet.seqNum = seq_num_end;
       ref_packet_buffer_->InsertPacket(&packet);
     }
@@ -179,15 +179,15 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
     packet.seqNum = seq_num_start;
     packet.markerBit = (seq_num_start == seq_num_end);
     packet.frameType = keyframe ? kVideoFrameKey : kVideoFrameDelta;
-    packet.video_header.codecHeader.VP9.inter_layer_predicted = inter;
-    packet.video_header.codecHeader.VP9.flexible_mode = true;
-    packet.video_header.codecHeader.VP9.picture_id = pid % (1 << 15);
-    packet.video_header.codecHeader.VP9.temporal_idx = tid;
-    packet.video_header.codecHeader.VP9.spatial_idx = sid;
-    packet.video_header.codecHeader.VP9.tl0_pic_idx = tl0;
-    packet.video_header.codecHeader.VP9.num_ref_pics = refs.size();
+    packet.video_header.vp9().inter_layer_predicted = inter;
+    packet.video_header.vp9().flexible_mode = true;
+    packet.video_header.vp9().picture_id = pid % (1 << 15);
+    packet.video_header.vp9().temporal_idx = tid;
+    packet.video_header.vp9().spatial_idx = sid;
+    packet.video_header.vp9().tl0_pic_idx = tl0;
+    packet.video_header.vp9().num_ref_pics = refs.size();
     for (size_t i = 0; i < refs.size(); ++i)
-      packet.video_header.codecHeader.VP9.pid_diff[i] = refs[i];
+      packet.video_header.vp9().pid_diff[i] = refs[i];
     ref_packet_buffer_->InsertPacket(&packet);
 
     if (seq_num_start != seq_num_end) {

@@ -97,20 +97,14 @@ class PictureIdObserver : public test::RtpRtcpObserver {
 
     switch (codec_type_) {
       case kVideoCodecVP8:
-        parsed->picture_id =
-            parsed_payload.video_header().codecHeader.VP8.pictureId;
-        parsed->tl0_pic_idx =
-            parsed_payload.video_header().codecHeader.VP8.tl0PicIdx;
-        parsed->temporal_idx =
-            parsed_payload.video_header().codecHeader.VP8.temporalIdx;
+        parsed->picture_id = parsed_payload.video_header().vp8().pictureId;
+        parsed->tl0_pic_idx = parsed_payload.video_header().vp8().tl0PicIdx;
+        parsed->temporal_idx = parsed_payload.video_header().vp8().temporalIdx;
         break;
       case kVideoCodecVP9:
-        parsed->picture_id =
-            parsed_payload.video_header().codecHeader.VP9.picture_id;
-        parsed->tl0_pic_idx =
-            parsed_payload.video_header().codecHeader.VP9.tl0_pic_idx;
-        parsed->temporal_idx =
-            parsed_payload.video_header().codecHeader.VP9.temporal_idx;
+        parsed->picture_id = parsed_payload.video_header().vp9().picture_id;
+        parsed->tl0_pic_idx = parsed_payload.video_header().vp9().tl0_pic_idx;
+        parsed->temporal_idx = parsed_payload.video_header().vp9().temporal_idx;
         break;
       default:
         RTC_NOTREACHED();

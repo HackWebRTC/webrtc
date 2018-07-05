@@ -83,7 +83,7 @@ void ParseAndCheckPacket(const uint8_t* packet,
   RtpDepacketizer::ParsedPayload parsed;
   ASSERT_TRUE(depacketizer->Parse(&parsed, packet, expected_length));
   EXPECT_EQ(kVideoCodecVP9, parsed.video_header().codec);
-  VerifyHeader(expected, parsed.video_header().codecHeader.VP9);
+  VerifyHeader(expected, parsed.video_header().vp9());
   const size_t kExpectedPayloadLength = expected_length - expected_hdr_length;
   VerifyPayload(parsed, packet + expected_hdr_length, kExpectedPayloadLength);
 }

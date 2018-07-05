@@ -152,8 +152,8 @@ class RtpVideoStreamReceiverTest : public testing::Test {
     data->push_back(H264::NaluType::kSps);
     data->push_back(sps_id);
     packet->video_header()
-        .codecHeader.H264
-        .nalus[packet->video_header().codecHeader.H264.nalus_length++] = info;
+        .h264()
+        .nalus[packet->video_header().h264().nalus_length++] = info;
   }
 
   void AddPps(WebRtcRTPHeader* packet,
@@ -167,8 +167,8 @@ class RtpVideoStreamReceiverTest : public testing::Test {
     data->push_back(H264::NaluType::kPps);
     data->push_back(pps_id);
     packet->video_header()
-        .codecHeader.H264
-        .nalus[packet->video_header().codecHeader.H264.nalus_length++] = info;
+        .h264()
+        .nalus[packet->video_header().h264().nalus_length++] = info;
   }
 
   void AddIdr(WebRtcRTPHeader* packet, int pps_id) {
@@ -177,8 +177,8 @@ class RtpVideoStreamReceiverTest : public testing::Test {
     info.sps_id = -1;
     info.pps_id = pps_id;
     packet->video_header()
-        .codecHeader.H264
-        .nalus[packet->video_header().codecHeader.H264.nalus_length++] = info;
+        .h264()
+        .nalus[packet->video_header().h264().nalus_length++] = info;
   }
 
  protected:

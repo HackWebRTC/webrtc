@@ -60,9 +60,9 @@ int VCMSessionInfo::PictureId() const {
   if (packets_.empty())
     return kNoPictureId;
   if (packets_.front().video_header.codec == kVideoCodecVP8) {
-    return packets_.front().video_header.codecHeader.VP8.pictureId;
+    return packets_.front().video_header.vp8().pictureId;
   } else if (packets_.front().video_header.codec == kVideoCodecVP9) {
-    return packets_.front().video_header.codecHeader.VP9.picture_id;
+    return packets_.front().video_header.vp9().picture_id;
   } else {
     return kNoPictureId;
   }
@@ -72,9 +72,9 @@ int VCMSessionInfo::TemporalId() const {
   if (packets_.empty())
     return kNoTemporalIdx;
   if (packets_.front().video_header.codec == kVideoCodecVP8) {
-    return packets_.front().video_header.codecHeader.VP8.temporalIdx;
+    return packets_.front().video_header.vp8().temporalIdx;
   } else if (packets_.front().video_header.codec == kVideoCodecVP9) {
-    return packets_.front().video_header.codecHeader.VP9.temporal_idx;
+    return packets_.front().video_header.vp9().temporal_idx;
   } else {
     return kNoTemporalIdx;
   }
@@ -84,9 +84,9 @@ bool VCMSessionInfo::LayerSync() const {
   if (packets_.empty())
     return false;
   if (packets_.front().video_header.codec == kVideoCodecVP8) {
-    return packets_.front().video_header.codecHeader.VP8.layerSync;
+    return packets_.front().video_header.vp8().layerSync;
   } else if (packets_.front().video_header.codec == kVideoCodecVP9) {
-    return packets_.front().video_header.codecHeader.VP9.temporal_up_switch;
+    return packets_.front().video_header.vp9().temporal_up_switch;
   } else {
     return false;
   }
@@ -96,9 +96,9 @@ int VCMSessionInfo::Tl0PicId() const {
   if (packets_.empty())
     return kNoTl0PicIdx;
   if (packets_.front().video_header.codec == kVideoCodecVP8) {
-    return packets_.front().video_header.codecHeader.VP8.tl0PicIdx;
+    return packets_.front().video_header.vp8().tl0PicIdx;
   } else if (packets_.front().video_header.codec == kVideoCodecVP9) {
-    return packets_.front().video_header.codecHeader.VP9.tl0_pic_idx;
+    return packets_.front().video_header.vp9().tl0_pic_idx;
   } else {
     return kNoTl0PicIdx;
   }
@@ -110,9 +110,8 @@ std::vector<NaluInfo> VCMSessionInfo::GetNaluInfos() const {
     return std::vector<NaluInfo>();
   std::vector<NaluInfo> nalu_infos;
   for (const VCMPacket& packet : packets_) {
-    for (size_t i = 0; i < packet.video_header.codecHeader.H264.nalus_length;
-         ++i) {
-      nalu_infos.push_back(packet.video_header.codecHeader.H264.nalus[i]);
+    for (size_t i = 0; i < packet.video_header.h264().nalus_length; ++i) {
+      nalu_infos.push_back(packet.video_header.h264().nalus[i]);
     }
   }
   return nalu_infos;
@@ -121,18 +120,15 @@ std::vector<NaluInfo> VCMSessionInfo::GetNaluInfos() const {
 void VCMSessionInfo::SetGofInfo(const GofInfoVP9& gof_info, size_t idx) {
   if (packets_.empty() ||
       packets_.front().video_header.codec != kVideoCodecVP9 ||
-      packets_.front().video_header.codecHeader.VP9.flexible_mode) {
+      packets_.front().video_header.vp9().flexible_mode) {
     return;
   }
-  packets_.front().video_header.codecHeader.VP9.temporal_idx =
-      gof_info.temporal_idx[idx];
-  packets_.front().video_header.codecHeader.VP9.temporal_up_switch =
+  packets_.front().video_header.vp9().temporal_idx = gof_info.temporal_idx[idx];
+  packets_.front().video_header.vp9().temporal_up_switch =
       gof_info.temporal_up_switch[idx];
-  packets_.front().video_header.codecHeader.VP9.num_ref_pics =
-      gof_info.num_ref_pics[idx];
+  packets_.front().video_header.vp9().num_ref_pics = gof_info.num_ref_pics[idx];
   for (uint8_t i = 0; i < gof_info.num_ref_pics[idx]; ++i) {
-    packets_.front().video_header.codecHeader.VP9.pid_diff[i] =
-        gof_info.pid_diff[idx][i];
+    packets_.front().video_header.vp9().pid_diff[i] = gof_info.pid_diff[idx][i];
   }
 }
 
@@ -180,7 +176,7 @@ size_t VCMSessionInfo::InsertBuffer(uint8_t* frame_buffer,
   const size_t kH264NALHeaderLengthInBytes = 1;
   const size_t kLengthFieldLength = 2;
   if (packet.video_header.codec == kVideoCodecH264 &&
-      packet.video_header.codecHeader.H264.packetization_type == kH264StapA) {
+      packet.video_header.h264().packetization_type == kH264StapA) {
     size_t required_length = 0;
     const uint8_t* nalu_ptr = packet_buffer + kH264NALHeaderLengthInBytes;
     while (nalu_ptr < packet_buffer + packet.sizeBytes) {
@@ -336,7 +332,7 @@ size_t VCMSessionInfo::DeletePacketData(PacketIterator start,
 VCMSessionInfo::PacketIterator VCMSessionInfo::FindNextPartitionBeginning(
     PacketIterator it) const {
   while (it != packets_.end()) {
-    if ((*it).video_header.codecHeader.VP8.beginningOfPartition) {
+    if ((*it).video_header.vp8().beginningOfPartition) {
       return it;
     }
     ++it;
@@ -348,10 +344,10 @@ VCMSessionInfo::PacketIterator VCMSessionInfo::FindPartitionEnd(
     PacketIterator it) const {
   assert((*it).codec == kVideoCodecVP8);
   PacketIterator prev_it = it;
-  const int partition_id = (*it).video_header.codecHeader.VP8.partitionId;
+  const int partition_id = (*it).video_header.vp8().partitionId;
   while (it != packets_.end()) {
-    bool beginning = (*it).video_header.codecHeader.VP8.beginningOfPartition;
-    int current_partition_id = (*it).video_header.codecHeader.VP8.partitionId;
+    bool beginning = (*it).video_header.vp8().beginningOfPartition;
+    int current_partition_id = (*it).video_header.vp8().partitionId;
     bool packet_loss_found = (!beginning && !InSequence(it, prev_it));
     if (packet_loss_found ||
         (beginning && current_partition_id != partition_id)) {

@@ -124,10 +124,10 @@ void FrameList::Reset(UnorderedFrameList* free_frames) {
 }
 
 bool Vp9SsMap::Insert(const VCMPacket& packet) {
-  if (!packet.video_header.codecHeader.VP9.ss_data_available)
+  if (!packet.video_header.vp9().ss_data_available)
     return false;
 
-  ss_map_[packet.timestamp] = packet.video_header.codecHeader.VP9.gof;
+  ss_map_[packet.timestamp] = packet.video_header.vp9().gof;
   return true;
 }
 
@@ -175,7 +175,7 @@ void Vp9SsMap::AdvanceFront(uint32_t timestamp) {
 
 // TODO(asapersson): Update according to updates in RTP payload profile.
 bool Vp9SsMap::UpdatePacket(VCMPacket* packet) {
-  uint8_t gof_idx = packet->video_header.codecHeader.VP9.gof_idx;
+  uint8_t gof_idx = packet->video_header.vp9().gof_idx;
   if (gof_idx == kNoGofIdx)
     return false;  // No update needed.
 
@@ -186,7 +186,7 @@ bool Vp9SsMap::UpdatePacket(VCMPacket* packet) {
   if (gof_idx >= it->second.num_frames_in_gof)
     return false;  // Assume corresponding SS not yet received.
 
-  RTPVideoHeaderVP9* vp9 = &packet->video_header.codecHeader.VP9;
+  RTPVideoHeaderVP9* vp9 = &packet->video_header.vp9();
   vp9->temporal_idx = it->second.temporal_idx[gof_idx];
   vp9->temporal_up_switch = it->second.temporal_up_switch[gof_idx];
 

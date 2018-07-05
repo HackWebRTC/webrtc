@@ -136,23 +136,23 @@ bool LayerFilteringTransport::SendRtp(const uint8_t* packet,
     RtpDepacketizer::ParsedPayload parsed_payload;
     if (depacketizer->Parse(&parsed_payload, payload, payload_data_length)) {
       const int temporal_idx = static_cast<int>(
-          is_vp8 ? parsed_payload.video_header().codecHeader.VP8.temporalIdx
-                 : parsed_payload.video_header().codecHeader.VP9.temporal_idx);
+          is_vp8 ? parsed_payload.video_header().vp8().temporalIdx
+                 : parsed_payload.video_header().vp9().temporal_idx);
       const int spatial_idx = static_cast<int>(
           is_vp8 ? kNoSpatialIdx
-                 : parsed_payload.video_header().codecHeader.VP9.spatial_idx);
+                 : parsed_payload.video_header().vp9().spatial_idx);
       const bool non_ref_for_inter_layer_pred =
           is_vp8 ? false
                  : parsed_payload.video_header()
-                       .codecHeader.VP9.non_ref_for_inter_layer_pred;
+                       .vp9()
+                       .non_ref_for_inter_layer_pred;
       // The number of spatial layers is sent in ssData, which is included only
       // in the first packet of the first spatial layer of a key frame.
-      if (!parsed_payload.video_header().codecHeader.VP9.inter_pic_predicted &&
-          parsed_payload.video_header().codecHeader.VP9.beginning_of_frame ==
-              1 &&
+      if (!parsed_payload.video_header().vp9().inter_pic_predicted &&
+          parsed_payload.video_header().vp9().beginning_of_frame == 1 &&
           spatial_idx == 0) {
         num_active_spatial_layers_ =
-            parsed_payload.video_header().codecHeader.VP9.num_spatial_layers;
+            parsed_payload.video_header().vp9().num_spatial_layers;
       } else if (spatial_idx == kNoSpatialIdx)
         num_active_spatial_layers_ = 1;
       RTC_CHECK_GT(num_active_spatial_layers_, 0);
@@ -160,7 +160,7 @@ bool LayerFilteringTransport::SendRtp(const uint8_t* packet,
       if (selected_sl_ >= 0 &&
           spatial_idx ==
               std::min(num_active_spatial_layers_ - 1, selected_sl_) &&
-          parsed_payload.video_header().codecHeader.VP9.end_of_frame) {
+          parsed_payload.video_header().vp9().end_of_frame) {
         // This layer is now the last in the superframe.
         set_marker_bit = true;
       } else {

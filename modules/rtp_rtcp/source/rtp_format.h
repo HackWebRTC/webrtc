@@ -26,7 +26,7 @@ class RtpPacketizer {
   static RtpPacketizer* Create(VideoCodecType type,
                                size_t max_payload_len,
                                size_t last_packet_reduction_len,
-                               const RTPVideoTypeHeader* rtp_type_header,
+                               const RTPVideoHeader* rtp_video_header,
                                FrameType frame_type);
 
   virtual ~RtpPacketizer() {}

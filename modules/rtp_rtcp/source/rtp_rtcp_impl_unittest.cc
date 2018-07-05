@@ -240,7 +240,7 @@ class RtpRtcpImplTest : public ::testing::Test {
     rtp_video_header.is_first_packet_in_frame = true;
     rtp_video_header.simulcastIdx = 0;
     rtp_video_header.codec = kVideoCodecVP8;
-    rtp_video_header.codecHeader = {vp8_header};
+    rtp_video_header.vp8() = vp8_header;
     rtp_video_header.video_timing = {0u, 0u, 0u, 0u, 0u, 0u, false};
 
     const uint8_t payload[100] = {0};
