@@ -80,7 +80,7 @@ void FuzzAudioProcessing(test::FuzzDataHelper* fuzz_data,
     const auto output_rate =
         static_cast<size_t>(fuzz_data->SelectOneOf(rate_kinds));
 
-    const bool num_channels = fuzz_data->ReadOrDefaultValue(true) ? 2 : 1;
+    const int num_channels = fuzz_data->ReadOrDefaultValue(true) ? 2 : 1;
     const uint8_t stream_delay = fuzz_data->ReadOrDefaultValue<uint8_t>(0);
 
     // API call needed for AEC-2 and AEC-m to run.
@@ -121,6 +121,7 @@ void FuzzAudioProcessing(test::FuzzDataHelper* fuzz_data,
     // codeways.
     static_cast<void>(apm->GetStatistics());
     static_cast<void>(apm->GetStatistics(true));
+    static_cast<void>(apm->UpdateHistogramsOnCallEnd());
 
     RTC_DCHECK_NE(apm_return_code, AudioProcessing::kBadDataLengthError);
   }

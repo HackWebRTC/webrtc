@@ -90,7 +90,9 @@ std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
       fuzz_data->ReadByteArray(kSizeOfConfigSegment - fuzz_data->BytesRead()));
 
   // Filter out incompatible settings that lead to CHECK failures.
-  if (use_aecm && use_aec) {
+  if ((use_aecm && use_aec) ||      // These settings cause CHECK failure.
+      (use_aecm && aec3 && use_ns)  // These settings trigger webrtc:9489.
+      ) {
     return nullptr;
   }
 
