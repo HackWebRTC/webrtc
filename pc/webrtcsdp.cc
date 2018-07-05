@@ -1282,7 +1282,7 @@ void BuildMediaDescription(const ContentInfo* content_info,
              video_desc->codecs().begin();
          it != video_desc->codecs().end(); ++it) {
       fmt.append(" ");
-      fmt.append(rtc::ToString<int>(it->id));
+      fmt.append(rtc::ToString(it->id));
     }
   } else if (media_type == cricket::MEDIA_TYPE_AUDIO) {
     const AudioContentDescription* audio_desc = media_desc->as_audio();
@@ -1290,7 +1290,7 @@ void BuildMediaDescription(const ContentInfo* content_info,
              audio_desc->codecs().begin();
          it != audio_desc->codecs().end(); ++it) {
       fmt.append(" ");
-      fmt.append(rtc::ToString<int>(it->id));
+      fmt.append(rtc::ToString(it->id));
     }
   } else if (media_type == cricket::MEDIA_TYPE_DATA) {
     const DataContentDescription* data_desc = media_desc->as_data();
@@ -1308,7 +1308,7 @@ void BuildMediaDescription(const ContentInfo* content_info,
           }
         }
 
-        fmt.append(rtc::ToString<int>(sctp_port));
+        fmt.append(rtc::ToString(sctp_port));
       } else {
         fmt.append(kDefaultSctpmapProtocol);
       }
@@ -1317,7 +1317,7 @@ void BuildMediaDescription(const ContentInfo* content_info,
                data_desc->codecs().begin();
            it != data_desc->codecs().end(); ++it) {
         fmt.append(" ");
-        fmt.append(rtc::ToString<int>(it->id));
+        fmt.append(rtc::ToString(it->id));
       }
     }
   }
@@ -1596,7 +1596,7 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
       std::vector<uint32_t>::const_iterator ssrc =
           track->ssrc_groups[i].ssrcs.begin();
       for (; ssrc != track->ssrc_groups[i].ssrcs.end(); ++ssrc) {
-        os << kSdpDelimiterSpace << rtc::ToString<uint32_t>(*ssrc);
+        os << kSdpDelimiterSpace << rtc::ToString(*ssrc);
       }
       AddLine(os.str(), message);
     }

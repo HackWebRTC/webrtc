@@ -582,7 +582,7 @@ StatsReport* StatsCollector::PrepareReport(bool local,
   StatsReport::Id id(StatsReport::NewIdWithDirection(
       local ? StatsReport::kStatsReportTypeSsrc
             : StatsReport::kStatsReportTypeRemoteSsrc,
-      rtc::ToString<uint32_t>(ssrc), direction));
+      rtc::ToString(ssrc), direction));
   StatsReport* report = reports_.Find(id);
 
   // Use the ID of the track that is currently mapped to the SSRC, if any.
@@ -1004,8 +1004,8 @@ void StatsCollector::ExtractSenderInfo() {
       continue;
     }
     const StatsReport::Id stats_id = StatsReport::NewIdWithDirection(
-        StatsReport::kStatsReportTypeSsrc,
-        rtc::ToString<uint32_t>(sender->ssrc()), StatsReport::kSend);
+        StatsReport::kStatsReportTypeSsrc, rtc::ToString(sender->ssrc()),
+        StatsReport::kSend);
     StatsReport* report = reports_.FindOrAddNew(stats_id);
     report->AddInt(StatsReport::kStatsValueNameFrameWidthInput,
                    stats.input_width);
@@ -1051,9 +1051,8 @@ void StatsCollector::UpdateStatsFromExistingLocalAudioTracks(
   for (const auto& it : local_audio_tracks_) {
     AudioTrackInterface* track = it.first;
     uint32_t ssrc = it.second;
-    StatsReport* report =
-        GetReport(StatsReport::kStatsReportTypeSsrc,
-                  rtc::ToString<uint32_t>(ssrc), StatsReport::kSend);
+    StatsReport* report = GetReport(StatsReport::kStatsReportTypeSsrc,
+                                    rtc::ToString(ssrc), StatsReport::kSend);
     if (report == NULL) {
       // This can happen if a local audio track is added to a stream on the
       // fly and the report has not been set up yet. Do nothing in this case.

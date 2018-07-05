@@ -449,7 +449,7 @@ TEST_F(VideoCapturerTrackSourceTest, ScreencastResolutionWithConstraint) {
 
 TEST_F(VideoCapturerTrackSourceTest, MandatorySubOneFpsConstraints) {
   FakeConstraints constraints;
-  constraints.AddMandatory(MediaConstraintsInterface::kMaxFrameRate, 0.5);
+  constraints.AddMandatory(MediaConstraintsInterface::kMaxFrameRate, 0);
 
   CreateVideoCapturerSource(&constraints);
   EXPECT_EQ_WAIT(MediaSourceInterface::kEnded, state_observer_->state(),
@@ -459,7 +459,7 @@ TEST_F(VideoCapturerTrackSourceTest, MandatorySubOneFpsConstraints) {
 
 TEST_F(VideoCapturerTrackSourceTest, OptionalSubOneFpsConstraints) {
   FakeConstraints constraints;
-  constraints.AddOptional(MediaConstraintsInterface::kMaxFrameRate, 0.5);
+  constraints.AddOptional(MediaConstraintsInterface::kMaxFrameRate, 0);
 
   CreateVideoCapturerSource(&constraints);
   EXPECT_EQ_WAIT(MediaSourceInterface::kLive, state_observer_->state(),

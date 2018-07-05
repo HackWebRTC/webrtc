@@ -99,7 +99,7 @@ class TypedIntId : public StatsReport::IdBase {
 
   std::string ToString() const override {
     return std::string(InternalTypeToString(type_)) + kSeparator +
-           rtc::ToString<int>(id_);
+           rtc::ToString(id_);
   }
 
  protected:
@@ -165,7 +165,7 @@ class ComponentId : public StatsReport::IdBase {
     std::string ret(prefix);
     ret += content_name_;
     ret += '-';
-    ret += rtc::ToString<>(component_);
+    ret += rtc::ToString(component_);
     return ret;
   }
 
@@ -190,7 +190,7 @@ class CandidatePairId : public ComponentId {
   std::string ToString() const override {
     std::string ret(ComponentId::ToString("Conn-"));
     ret += '-';
-    ret += rtc::ToString<>(index_);
+    ret += rtc::ToString(index_);
     return ret;
   }
 

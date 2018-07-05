@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "rtc_base/checks.h"
+#include "rtc_base/string_to_number.h"
 
 namespace rtc {
 
@@ -147,43 +148,44 @@ bool tokenize_first(const std::string& source,
                     std::string* rest);
 
 // Convert arbitrary values to/from a string.
+// TODO(jonasolsson): Remove these when absl::StrCat becomes available.
+std::string ToString(bool b);
 
-template <class T>
-static bool ToString(const T& t, std::string* s) {
-  RTC_DCHECK(s);
-  std::ostringstream oss;
-  oss << std::boolalpha << t;
-  *s = oss.str();
-  return !oss.fail();
-}
+std::string ToString(const char* s);
+std::string ToString(std::string t);
 
-template <class T>
+std::string ToString(short s);
+std::string ToString(unsigned short s);
+std::string ToString(int s);
+std::string ToString(unsigned int s);
+std::string ToString(long int s);
+std::string ToString(unsigned long int s);
+std::string ToString(long long int s);
+std::string ToString(unsigned long long int s);
+
+std::string ToString(double t);
+
+std::string ToString(const void* p);
+
+template <typename T,
+          typename std::enable_if<std::is_arithmetic<T>::value &&
+                                      !std::is_same<T, bool>::value,
+                                  int>::type = 0>
 static bool FromString(const std::string& s, T* t) {
   RTC_DCHECK(t);
-  std::istringstream iss(s);
-  iss >> std::boolalpha >> *t;
-  return !iss.fail();
+  absl::optional<T> result = StringToNumber<T>(s);
+
+  if (result)
+    *t = *result;
+
+  return result.has_value();
 }
 
-// Inline versions of the string conversion routines.
-
-template <typename T>
-static inline std::string ToString(const T& val) {
-  std::string str;
-  ToString(val, &str);
-  return str;
-}
+bool FromString(const std::string& s, bool* b);
 
 template <typename T>
 static inline T FromString(const std::string& str) {
   T val;
-  FromString(str, &val);
-  return val;
-}
-
-template <typename T>
-static inline T FromString(const T& defaultValue, const std::string& str) {
-  T val(defaultValue);
   FromString(str, &val);
   return val;
 }

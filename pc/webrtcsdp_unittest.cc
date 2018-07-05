@@ -1713,7 +1713,7 @@ class WebRtcSdpTest : public testing::Test {
                             int expected_value) {
     cricket::CodecParameterMap::const_iterator found = params.find(name);
     ASSERT_TRUE(found != params.end());
-    EXPECT_EQ(found->second, rtc::ToString<int>(expected_value));
+    EXPECT_EQ(found->second, rtc::ToString(expected_value));
   }
 
   void TestDeserializeCodecParams(const CodecParams& params,

@@ -48,6 +48,9 @@ using signed_type = long long;             // NOLINT(runtime/int)
 
 absl::optional<signed_type> ParseSigned(const char* str, int base);
 absl::optional<unsigned_type> ParseUnsigned(const char* str, int base);
+
+template <typename T>
+absl::optional<T> ParseFloatingPoint(const char* str);
 }  // namespace string_to_number_internal
 
 template <typename T>
@@ -86,6 +89,17 @@ StringToNumber(const char* str, int base = 10) {
     return static_cast<T>(*value);
   }
   return absl::nullopt;
+}
+
+template <typename T>
+typename std::enable_if<std::is_floating_point<T>::value,
+                        absl::optional<T>>::type
+StringToNumber(const char* str, int base = 10) {
+  static_assert(
+      std::numeric_limits<T>::max() <= std::numeric_limits<long double>::max(),
+      "StringToNumber only supports floating-point numbers as large "
+      "as long double");
+  return string_to_number_internal::ParseFloatingPoint<T>(str);
 }
 
 // The std::string overloads only exists if there is a matching const char*

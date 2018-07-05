@@ -208,7 +208,7 @@ static std::string ComputeFoundation(const std::string& type,
                                      const rtc::SocketAddress& base_address) {
   std::ostringstream ost;
   ost << type << base_address.ipaddr().ToString() << protocol << relay_protocol;
-  return rtc::ToString<uint32_t>(rtc::ComputeCrc32(ost.str()));
+  return rtc::ToString(rtc::ComputeCrc32(ost.str()));
 }
 
 CandidateStats::CandidateStats() = default;

@@ -26,9 +26,9 @@ std::string VectorToString(const std::vector<T>& vector) {
   if (vector.empty())
     return "[]";
   std::ostringstream oss;
-  oss << "[" << rtc::ToString<T>(vector[0]);
+  oss << "[" << rtc::ToString(vector[0]);
   for (size_t i = 1; i < vector.size(); ++i) {
-    oss << "," << rtc::ToString<T>(vector[i]);
+    oss << "," << rtc::ToString(vector[i]);
   }
   oss << "]";
   return oss.str();
@@ -41,9 +41,9 @@ std::string VectorOfStringsToString(const std::vector<T>& strings) {
   if (strings.empty())
     return "[]";
   std::ostringstream oss;
-  oss << "[\"" << rtc::ToString<T>(strings[0]) << '\"';
+  oss << "[\"" << rtc::ToString(strings[0]) << '\"';
   for (size_t i = 1; i < strings.size(); ++i) {
-    oss << ",\"" << rtc::ToString<T>(strings[i]) << '\"';
+    oss << ",\"" << rtc::ToString(strings[i]) << '\"';
   }
   oss << "]";
   return oss.str();

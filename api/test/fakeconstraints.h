@@ -30,7 +30,7 @@ class FakeConstraints : public webrtc::MediaConstraintsInterface {
 
   template <class T>
   void AddMandatory(const std::string& key, const T& value) {
-    mandatory_.push_back(Constraint(key, rtc::ToString<T>(value)));
+    mandatory_.push_back(Constraint(key, rtc::ToString(value)));
   }
 
   template <class T>
@@ -45,12 +45,12 @@ class FakeConstraints : public webrtc::MediaConstraintsInterface {
         }
       }
     }
-    mandatory_.push_back(Constraint(key, rtc::ToString<T>(value)));
+    mandatory_.push_back(Constraint(key, rtc::ToString(value)));
   }
 
   template <class T>
   void AddOptional(const std::string& key, const T& value) {
-    optional_.push_back(Constraint(key, rtc::ToString<T>(value)));
+    optional_.push_back(Constraint(key, rtc::ToString(value)));
   }
 
   void SetMandatoryMinAspectRatio(double ratio) {

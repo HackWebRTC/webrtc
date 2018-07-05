@@ -283,69 +283,67 @@ void VerifyVoiceReceiverInfoReport(const StatsReport* report,
   std::string value_in_report;
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameAudioOutputLevel,
                        &value_in_report));
-  EXPECT_EQ(rtc::ToString<int>(info.audio_level), value_in_report);
+  EXPECT_EQ(rtc::ToString(info.audio_level), value_in_report);
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameBytesReceived,
                        &value_in_report));
-  EXPECT_EQ(rtc::ToString<int64_t>(info.bytes_rcvd), value_in_report);
+  EXPECT_EQ(rtc::ToString(info.bytes_rcvd), value_in_report);
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameJitterReceived,
                        &value_in_report));
-  EXPECT_EQ(rtc::ToString<int>(info.jitter_ms), value_in_report);
+  EXPECT_EQ(rtc::ToString(info.jitter_ms), value_in_report);
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameJitterBufferMs,
                        &value_in_report));
-  EXPECT_EQ(rtc::ToString<int>(info.jitter_buffer_ms), value_in_report);
+  EXPECT_EQ(rtc::ToString(info.jitter_buffer_ms), value_in_report);
   EXPECT_TRUE(GetValue(report,
                        StatsReport::kStatsValueNamePreferredJitterBufferMs,
                        &value_in_report));
-  EXPECT_EQ(rtc::ToString<int>(info.jitter_buffer_preferred_ms),
-            value_in_report);
+  EXPECT_EQ(rtc::ToString(info.jitter_buffer_preferred_ms), value_in_report);
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameCurrentDelayMs,
                        &value_in_report));
-  EXPECT_EQ(rtc::ToString<int>(info.delay_estimate_ms), value_in_report);
+  EXPECT_EQ(rtc::ToString(info.delay_estimate_ms), value_in_report);
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameExpandRate,
                        &value_in_report));
-  EXPECT_EQ(rtc::ToString<float>(info.expand_rate), value_in_report);
+  EXPECT_EQ(rtc::ToString(info.expand_rate), value_in_report);
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameSpeechExpandRate,
                        &value_in_report));
-  EXPECT_EQ(rtc::ToString<float>(info.speech_expand_rate), value_in_report);
+  EXPECT_EQ(rtc::ToString(info.speech_expand_rate), value_in_report);
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameAccelerateRate,
                        &value_in_report));
-  EXPECT_EQ(rtc::ToString<float>(info.accelerate_rate), value_in_report);
+  EXPECT_EQ(rtc::ToString(info.accelerate_rate), value_in_report);
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNamePreemptiveExpandRate,
                        &value_in_report));
-  EXPECT_EQ(rtc::ToString<float>(info.preemptive_expand_rate), value_in_report);
+  EXPECT_EQ(rtc::ToString(info.preemptive_expand_rate), value_in_report);
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameSecondaryDecodedRate,
                        &value_in_report));
-  EXPECT_EQ(rtc::ToString<float>(info.secondary_decoded_rate), value_in_report);
+  EXPECT_EQ(rtc::ToString(info.secondary_decoded_rate), value_in_report);
   EXPECT_TRUE(GetValue(report,
                        StatsReport::kStatsValueNameSecondaryDiscardedRate,
                        &value_in_report));
-  EXPECT_EQ(rtc::ToString<float>(info.secondary_discarded_rate),
-            value_in_report);
+  EXPECT_EQ(rtc::ToString(info.secondary_discarded_rate), value_in_report);
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNamePacketsReceived,
                        &value_in_report));
-  EXPECT_EQ(rtc::ToString<int>(info.packets_rcvd), value_in_report);
+  EXPECT_EQ(rtc::ToString(info.packets_rcvd), value_in_report);
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameDecodingCTSG,
                        &value_in_report));
-  EXPECT_EQ(rtc::ToString<int>(info.decoding_calls_to_silence_generator),
+  EXPECT_EQ(rtc::ToString(info.decoding_calls_to_silence_generator),
             value_in_report);
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameDecodingCTN,
                        &value_in_report));
-  EXPECT_EQ(rtc::ToString<int>(info.decoding_calls_to_neteq), value_in_report);
+  EXPECT_EQ(rtc::ToString(info.decoding_calls_to_neteq), value_in_report);
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameDecodingNormal,
                        &value_in_report));
-  EXPECT_EQ(rtc::ToString<int>(info.decoding_normal), value_in_report);
+  EXPECT_EQ(rtc::ToString(info.decoding_normal), value_in_report);
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameDecodingPLC,
                        &value_in_report));
-  EXPECT_EQ(rtc::ToString<int>(info.decoding_plc), value_in_report);
+  EXPECT_EQ(rtc::ToString(info.decoding_plc), value_in_report);
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameDecodingCNG,
                        &value_in_report));
-  EXPECT_EQ(rtc::ToString<int>(info.decoding_cng), value_in_report);
+  EXPECT_EQ(rtc::ToString(info.decoding_cng), value_in_report);
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameDecodingPLCCNG,
                        &value_in_report));
-  EXPECT_EQ(rtc::ToString<int>(info.decoding_plc_cng), value_in_report);
+  EXPECT_EQ(rtc::ToString(info.decoding_plc_cng), value_in_report);
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameDecodingMutedOutput,
                        &value_in_report));
-  EXPECT_EQ(rtc::ToString<int>(info.decoding_muted_output), value_in_report);
+  EXPECT_EQ(rtc::ToString(info.decoding_muted_output), value_in_report);
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameCodecName,
                        &value_in_report));
 }
@@ -358,26 +356,26 @@ void VerifyVoiceSenderInfoReport(const StatsReport* report,
   EXPECT_EQ(sinfo.codec_name, value_in_report);
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameBytesSent,
                        &value_in_report));
-  EXPECT_EQ(rtc::ToString<int64_t>(sinfo.bytes_sent), value_in_report);
+  EXPECT_EQ(rtc::ToString(sinfo.bytes_sent), value_in_report);
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNamePacketsSent,
                        &value_in_report));
-  EXPECT_EQ(rtc::ToString<int>(sinfo.packets_sent), value_in_report);
+  EXPECT_EQ(rtc::ToString(sinfo.packets_sent), value_in_report);
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNamePacketsLost,
                        &value_in_report));
-  EXPECT_EQ(rtc::ToString<int>(sinfo.packets_lost), value_in_report);
+  EXPECT_EQ(rtc::ToString(sinfo.packets_lost), value_in_report);
   EXPECT_TRUE(
       GetValue(report, StatsReport::kStatsValueNameRtt, &value_in_report));
-  EXPECT_EQ(rtc::ToString<int>(sinfo.rtt_ms), value_in_report);
+  EXPECT_EQ(rtc::ToString(sinfo.rtt_ms), value_in_report);
   EXPECT_TRUE(
       GetValue(report, StatsReport::kStatsValueNameRtt, &value_in_report));
-  EXPECT_EQ(rtc::ToString<int>(sinfo.rtt_ms), value_in_report);
+  EXPECT_EQ(rtc::ToString(sinfo.rtt_ms), value_in_report);
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameJitterReceived,
                        &value_in_report));
-  EXPECT_EQ(rtc::ToString<int>(sinfo.jitter_ms), value_in_report);
+  EXPECT_EQ(rtc::ToString(sinfo.jitter_ms), value_in_report);
   if (sinfo.apm_statistics.delay_median_ms) {
     EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameEchoDelayMedian,
                          &value_in_report));
-    EXPECT_EQ(rtc::ToString<int>(*sinfo.apm_statistics.delay_median_ms),
+    EXPECT_EQ(rtc::ToString(*sinfo.apm_statistics.delay_median_ms),
               value_in_report);
   } else {
     EXPECT_FALSE(GetValue(report, StatsReport::kStatsValueNameEchoDelayMedian,
@@ -386,9 +384,8 @@ void VerifyVoiceSenderInfoReport(const StatsReport* report,
   if (sinfo.apm_statistics.delay_standard_deviation_ms) {
     EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameEchoDelayStdDev,
                          &value_in_report));
-    EXPECT_EQ(
-        rtc::ToString<int>(*sinfo.apm_statistics.delay_standard_deviation_ms),
-        value_in_report);
+    EXPECT_EQ(rtc::ToString(*sinfo.apm_statistics.delay_standard_deviation_ms),
+              value_in_report);
   } else {
     EXPECT_FALSE(GetValue(report, StatsReport::kStatsValueNameEchoDelayStdDev,
                           &value_in_report));
@@ -396,7 +393,7 @@ void VerifyVoiceSenderInfoReport(const StatsReport* report,
   if (sinfo.apm_statistics.echo_return_loss) {
     EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameEchoReturnLoss,
                          &value_in_report));
-    EXPECT_EQ(rtc::ToString<int>(*sinfo.apm_statistics.echo_return_loss),
+    EXPECT_EQ(rtc::ToString(*sinfo.apm_statistics.echo_return_loss),
               value_in_report);
   } else {
     EXPECT_FALSE(GetValue(report, StatsReport::kStatsValueNameEchoReturnLoss,
@@ -406,9 +403,8 @@ void VerifyVoiceSenderInfoReport(const StatsReport* report,
     EXPECT_TRUE(GetValue(report,
                          StatsReport::kStatsValueNameEchoReturnLossEnhancement,
                          &value_in_report));
-    EXPECT_EQ(
-        rtc::ToString<int>(*sinfo.apm_statistics.echo_return_loss_enhancement),
-        value_in_report);
+    EXPECT_EQ(rtc::ToString(*sinfo.apm_statistics.echo_return_loss_enhancement),
+              value_in_report);
   } else {
     EXPECT_FALSE(GetValue(report,
                           StatsReport::kStatsValueNameEchoReturnLossEnhancement,
@@ -418,9 +414,8 @@ void VerifyVoiceSenderInfoReport(const StatsReport* report,
     EXPECT_TRUE(GetValue(report,
                          StatsReport::kStatsValueNameResidualEchoLikelihood,
                          &value_in_report));
-    EXPECT_EQ(
-        rtc::ToString<float>(*sinfo.apm_statistics.residual_echo_likelihood),
-        value_in_report);
+    EXPECT_EQ(rtc::ToString(*sinfo.apm_statistics.residual_echo_likelihood),
+              value_in_report);
   } else {
     EXPECT_FALSE(GetValue(report,
                           StatsReport::kStatsValueNameResidualEchoLikelihood,
@@ -430,7 +425,7 @@ void VerifyVoiceSenderInfoReport(const StatsReport* report,
     EXPECT_TRUE(GetValue(
         report, StatsReport::kStatsValueNameResidualEchoLikelihoodRecentMax,
         &value_in_report));
-    EXPECT_EQ(rtc::ToString<float>(
+    EXPECT_EQ(rtc::ToString(
                   *sinfo.apm_statistics.residual_echo_likelihood_recent_max),
               value_in_report);
   } else {
@@ -440,7 +435,7 @@ void VerifyVoiceSenderInfoReport(const StatsReport* report,
   }
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameAudioInputLevel,
                        &value_in_report));
-  EXPECT_EQ(rtc::ToString<int>(sinfo.audio_level), value_in_report);
+  EXPECT_EQ(rtc::ToString(sinfo.audio_level), value_in_report);
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameTypingNoiseState,
                        &value_in_report));
   std::string typing_detected = sinfo.typing_noise_detected ? "true" : "false";
@@ -449,47 +444,42 @@ void VerifyVoiceSenderInfoReport(const StatsReport* report,
                        StatsReport::kStatsValueNameAnaBitrateActionCounter,
                        &value_in_report));
   ASSERT_TRUE(sinfo.ana_statistics.bitrate_action_counter);
-  EXPECT_EQ(
-      rtc::ToString<uint32_t>(*sinfo.ana_statistics.bitrate_action_counter),
-      value_in_report);
+  EXPECT_EQ(rtc::ToString(*sinfo.ana_statistics.bitrate_action_counter),
+            value_in_report);
   EXPECT_TRUE(GetValue(report,
                        StatsReport::kStatsValueNameAnaChannelActionCounter,
                        &value_in_report));
   ASSERT_TRUE(sinfo.ana_statistics.channel_action_counter);
-  EXPECT_EQ(
-      rtc::ToString<uint32_t>(*sinfo.ana_statistics.channel_action_counter),
-      value_in_report);
+  EXPECT_EQ(rtc::ToString(*sinfo.ana_statistics.channel_action_counter),
+            value_in_report);
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameAnaDtxActionCounter,
                        &value_in_report));
   ASSERT_TRUE(sinfo.ana_statistics.dtx_action_counter);
-  EXPECT_EQ(rtc::ToString<uint32_t>(*sinfo.ana_statistics.dtx_action_counter),
+  EXPECT_EQ(rtc::ToString(*sinfo.ana_statistics.dtx_action_counter),
             value_in_report);
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameAnaFecActionCounter,
                        &value_in_report));
   ASSERT_TRUE(sinfo.ana_statistics.fec_action_counter);
-  EXPECT_EQ(rtc::ToString<uint32_t>(*sinfo.ana_statistics.fec_action_counter),
+  EXPECT_EQ(rtc::ToString(*sinfo.ana_statistics.fec_action_counter),
             value_in_report);
   EXPECT_TRUE(GetValue(
       report, StatsReport::kStatsValueNameAnaFrameLengthIncreaseCounter,
       &value_in_report));
   ASSERT_TRUE(sinfo.ana_statistics.frame_length_increase_counter);
-  EXPECT_EQ(rtc::ToString<uint32_t>(
-                *sinfo.ana_statistics.frame_length_increase_counter),
+  EXPECT_EQ(rtc::ToString(*sinfo.ana_statistics.frame_length_increase_counter),
             value_in_report);
   EXPECT_TRUE(GetValue(
       report, StatsReport::kStatsValueNameAnaFrameLengthDecreaseCounter,
       &value_in_report));
   ASSERT_TRUE(sinfo.ana_statistics.frame_length_decrease_counter);
-  EXPECT_EQ(rtc::ToString<uint32_t>(
-                *sinfo.ana_statistics.frame_length_decrease_counter),
+  EXPECT_EQ(rtc::ToString(*sinfo.ana_statistics.frame_length_decrease_counter),
             value_in_report);
   EXPECT_TRUE(GetValue(report,
                        StatsReport::kStatsValueNameAnaUplinkPacketLossFraction,
                        &value_in_report));
   ASSERT_TRUE(sinfo.ana_statistics.uplink_packet_loss_fraction);
-  EXPECT_EQ(
-      rtc::ToString<float>(*sinfo.ana_statistics.uplink_packet_loss_fraction),
-      value_in_report);
+  EXPECT_EQ(rtc::ToString(*sinfo.ana_statistics.uplink_packet_loss_fraction),
+            value_in_report);
 }
 
 // Helper methods to avoid duplication of code.
@@ -591,7 +581,7 @@ class StatsCollectorTest : public testing::Test {
     EXPECT_EQ(audio_track->id(), track_id);
     std::string ssrc_id =
         ExtractSsrcStatsValue(*reports, StatsReport::kStatsValueNameSsrc);
-    EXPECT_EQ(rtc::ToString<uint32_t>(kSsrcOfTrack), ssrc_id);
+    EXPECT_EQ(rtc::ToString(kSsrcOfTrack), ssrc_id);
 
     std::string media_type =
         ExtractSsrcStatsValue(*reports, StatsReport::kStatsValueNameMediaType);
@@ -617,7 +607,7 @@ class StatsCollectorTest : public testing::Test {
     EXPECT_EQ(audio_track->id(), track_id);
     ssrc_id =
         ExtractSsrcStatsValue(track_reports, StatsReport::kStatsValueNameSsrc);
-    EXPECT_EQ(rtc::ToString<uint32_t>(kSsrcOfTrack), ssrc_id);
+    EXPECT_EQ(rtc::ToString(kSsrcOfTrack), ssrc_id);
     if (!voice_info.senders.empty()) {
       VerifyVoiceSenderInfoReport(track_report, voice_info.senders[0]);
     }
@@ -823,7 +813,7 @@ TEST_F(StatsCollectorTest, ExtractDataInfo) {
   EXPECT_EQ(kDataChannelLabel,
             ExtractStatsValue(StatsReport::kStatsReportTypeDataChannel, reports,
                               StatsReport::kStatsValueNameLabel));
-  EXPECT_EQ(rtc::ToString<int64_t>(kDataChannelId),
+  EXPECT_EQ(rtc::ToString(kDataChannelId),
             ExtractStatsValue(StatsReport::kStatsReportTypeDataChannel, reports,
                               StatsReport::kStatsValueNameDataChannelId));
   EXPECT_EQ(kConnectingString,
@@ -1054,7 +1044,7 @@ TEST_P(StatsCollectorTrackTest, TrackAndSsrcObjectExistAfterUpdateSsrcStats) {
 
   std::string ssrc_id =
       ExtractSsrcStatsValue(reports, StatsReport::kStatsValueNameSsrc);
-  EXPECT_EQ(rtc::ToString<uint32_t>(kSsrcOfTrack), ssrc_id);
+  EXPECT_EQ(rtc::ToString(kSsrcOfTrack), ssrc_id);
 
   std::string track_id =
       ExtractSsrcStatsValue(reports, StatsReport::kStatsValueNameTrackId);
@@ -1190,7 +1180,7 @@ TEST_P(StatsCollectorTrackTest, ReportsFromRemoteTrack) {
 
   std::string ssrc_id =
       ExtractSsrcStatsValue(reports, StatsReport::kStatsValueNameSsrc);
-  EXPECT_EQ(rtc::ToString<uint32_t>(kSsrcOfTrack), ssrc_id);
+  EXPECT_EQ(rtc::ToString(kSsrcOfTrack), ssrc_id);
 
   std::string track_id =
       ExtractSsrcStatsValue(reports, StatsReport::kStatsValueNameTrackId);
@@ -1573,7 +1563,7 @@ TEST_P(StatsCollectorTrackTest, GetStatsAfterRemoveAudioStream) {
   EXPECT_EQ(kLocalTrackId, track_id);
   std::string ssrc_id =
       ExtractSsrcStatsValue(reports, StatsReport::kStatsValueNameSsrc);
-  EXPECT_EQ(rtc::ToString<uint32_t>(kSsrcOfTrack), ssrc_id);
+  EXPECT_EQ(rtc::ToString(kSsrcOfTrack), ssrc_id);
 
   // Verifies the values in the track report, no value will be changed by the
   // AudioTrackInterface::GetSignalValue() and

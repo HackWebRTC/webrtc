@@ -13,6 +13,8 @@
 #include "rtc_base/gunit.h"
 #include "rtc_base/stringutils.h"
 
+#include <sstream>  // no-presubmit-check TODO(webrtc:8982)
+
 namespace rtc {
 
 class HexEncodeTest : public testing::Test {
@@ -351,53 +353,79 @@ TEST(SplitTest, CompareSubstrings) {
   ASSERT_STREQ("", fields.at(0).c_str());
 }
 
-TEST(BoolTest, DecodeValid) {
-  bool value;
-  EXPECT_TRUE(FromString("true", &value));
-  EXPECT_TRUE(value);
-  EXPECT_TRUE(FromString("true,", &value));
-  EXPECT_TRUE(value);
-  EXPECT_TRUE(FromString("true , true", &value));
-  EXPECT_TRUE(value);
-  EXPECT_TRUE(FromString("true ,\n false", &value));
-  EXPECT_TRUE(value);
-  EXPECT_TRUE(FromString("  true  \n", &value));
-  EXPECT_TRUE(value);
+TEST(ToString, SanityCheck) {
+  EXPECT_EQ(ToString(true), "true");
+  EXPECT_EQ(ToString(false), "false");
 
-  EXPECT_TRUE(FromString("false", &value));
-  EXPECT_FALSE(value);
-  EXPECT_TRUE(FromString("  false ", &value));
-  EXPECT_FALSE(value);
-  EXPECT_TRUE(FromString("  false, ", &value));
-  EXPECT_FALSE(value);
+  const char* c = "message";
+  EXPECT_EQ(ToString(c), c);
+  EXPECT_EQ(ToString(std::string(c)), c);
 
-  EXPECT_TRUE(FromString<bool>("true\n"));
-  EXPECT_FALSE(FromString<bool>("false\n"));
+  EXPECT_EQ(ToString(short{-123}), "-123");
+  EXPECT_EQ(ToString((unsigned short)123), "123");
+  EXPECT_EQ(ToString(int{-123}), "-123");
+  EXPECT_EQ(ToString((unsigned int)123), "123");
+  EXPECT_EQ(ToString((long int)-123), "-123");
+  EXPECT_EQ(ToString((unsigned long int)123), "123");
+  EXPECT_EQ(ToString((long long int)-123), "-123");
+  EXPECT_EQ(ToString((unsigned long long int)123), "123");
+
+  int i = 10;
+  int* p = &i;
+  std::ostringstream s;  // no-presubmit-check TODO(webrtc:8982)
+  s << p;
+  EXPECT_EQ(s.str(), ToString(p));
+
+  EXPECT_EQ(ToString(0.5), "0.5");
 }
 
-TEST(BoolTest, DecodeInvalid) {
-  bool value;
-  EXPECT_FALSE(FromString("True", &value));
-  EXPECT_FALSE(FromString("TRUE", &value));
-  EXPECT_FALSE(FromString("False", &value));
-  EXPECT_FALSE(FromString("FALSE", &value));
-  EXPECT_FALSE(FromString("0", &value));
-  EXPECT_FALSE(FromString("1", &value));
-  EXPECT_FALSE(FromString("0,", &value));
-  EXPECT_FALSE(FromString("1,", &value));
-  EXPECT_FALSE(FromString("1,0", &value));
-  EXPECT_FALSE(FromString("1.", &value));
-  EXPECT_FALSE(FromString("1.0", &value));
-  EXPECT_FALSE(FromString("", &value));
-  EXPECT_FALSE(FromString<bool>("false\nfalse"));
+template <typename T>
+void ParsesTo(std::string s, T t) {
+  T value;
+  EXPECT_TRUE(FromString(s, &value));
+  EXPECT_EQ(value, t);
 }
 
-TEST(BoolTest, RoundTrip) {
-  bool value;
-  EXPECT_TRUE(FromString(ToString(true), &value));
-  EXPECT_TRUE(value);
-  EXPECT_TRUE(FromString(ToString(false), &value));
-  EXPECT_FALSE(value);
+TEST(FromString, DecodeValid) {
+  ParsesTo("true", true);
+  ParsesTo("false", false);
+
+  ParsesTo("105", 105);
+  ParsesTo("0.25", 0.25);
+}
+
+template <typename T>
+void FailsToParse(std::string s) {
+  T value;
+  EXPECT_FALSE(FromString(s, &value)) << "[" << s << "]";
+}
+
+TEST(FromString, DecodeInvalid) {
+  FailsToParse<bool>("True");
+  FailsToParse<bool>("0");
+  FailsToParse<bool>("yes");
+
+  FailsToParse<int>("0.5");
+  FailsToParse<int>("XIV");
+  FailsToParse<double>("");
+  FailsToParse<double>("  ");
+  FailsToParse<int>("1 2");
+}
+
+template <typename T>
+void RoundTrip(T t) {
+  std::string s = ToString(t);
+  T value;
+  EXPECT_TRUE(FromString(s, &value));
+  EXPECT_EQ(value, t);
+}
+
+TEST(FromString, RoundTrip) {
+  RoundTrip<int>(123);
+  RoundTrip(false);
+  RoundTrip(true);
+  RoundTrip(0.5);
+  RoundTrip(-15l);
 }
 
 }  // namespace rtc

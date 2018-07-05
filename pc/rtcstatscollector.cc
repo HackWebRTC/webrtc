@@ -995,7 +995,7 @@ void RTCStatsCollector::ProduceDataChannelStats_s(
        pc_->sctp_data_channels()) {
     std::unique_ptr<RTCDataChannelStats> data_channel_stats(
         new RTCDataChannelStats(
-            "RTCDataChannel_" + rtc::ToString<>(data_channel->id()),
+            "RTCDataChannel_" + rtc::ToString(data_channel->id()),
             timestamp_us));
     data_channel_stats->label = data_channel->label();
     data_channel_stats->protocol = data_channel->protocol();

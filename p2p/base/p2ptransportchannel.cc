@@ -867,7 +867,7 @@ void P2PTransportChannel::OnUnknownAddress(
     // The foundation of the candidate is set to an arbitrary value, different
     // from the foundation for all other remote candidates.
     remote_candidate.set_foundation(
-        rtc::ToString<uint32_t>(rtc::ComputeCrc32(remote_candidate.id())));
+        rtc::ToString(rtc::ComputeCrc32(remote_candidate.id())));
   }
 
   // RFC5245, the agent constructs a pair whose local candidate is equal to
