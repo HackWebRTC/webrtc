@@ -10,6 +10,7 @@
 
 #import <Foundation/Foundation.h>
 
+#import <WebRTC/RTCCertificate.h>
 #import <WebRTC/RTCMacros.h>
 
 @class RTCIceServer;
@@ -67,12 +68,14 @@ typedef NS_ENUM(NSInteger, RTCSdpSemantics) {
 };
 
 NS_ASSUME_NONNULL_BEGIN
-
 RTC_EXPORT
 @interface RTCConfiguration : NSObject
 
 /** An array of Ice Servers available to be used by ICE. */
 @property(nonatomic, copy) NSArray<RTCIceServer *> *iceServers;
+
+/** An RTCCertificate for 're' use. */
+@property(nonatomic, nullable) RTCCertificate *certificate;
 
 /** Which candidates the ICE agent is allowed to use. The W3C calls it
  * |iceTransportPolicy|, while in C++ it is called |type|. */

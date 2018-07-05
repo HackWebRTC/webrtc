@@ -23,6 +23,7 @@
 @implementation RTCConfiguration
 
 @synthesize iceServers = _iceServers;
+@synthesize certificate = _certificate;
 @synthesize iceTransportPolicy = _iceTransportPolicy;
 @synthesize bundlePolicy = _bundlePolicy;
 @synthesize rtcpMuxPolicy = _rtcpMuxPolicy;
@@ -63,6 +64,14 @@
       [iceServers addObject:iceServer];
     }
     _iceServers = iceServers;
+    if (!config.certificates.empty()) {
+      rtc::scoped_refptr<rtc::RTCCertificate> native_cert;
+      native_cert = config.certificates[0];
+      rtc::RTCCertificatePEM native_pem = native_cert->ToPEM();
+      _certificate =
+          [[RTCCertificate alloc] initWithPrivateKey:@(native_pem.private_key().c_str())
+                                         certificate:@(native_pem.certificate().c_str())];
+    }
     _iceTransportPolicy =
         [[self class] transportPolicyForTransportsType:config.type];
     _bundlePolicy =
@@ -168,16 +177,32 @@
       _iceBackupCandidatePairPingInterval;
   rtc::KeyType keyType =
       [[self class] nativeEncryptionKeyTypeForKeyType:_keyType];
-  // Generate non-default certificate.
-  if (keyType != rtc::KT_DEFAULT) {
-    rtc::scoped_refptr<rtc::RTCCertificate> certificate =
-        rtc::RTCCertificateGenerator::GenerateCertificate(rtc::KeyParams(keyType),
-                                                          absl::optional<uint64_t>());
+  if (_certificate != nullptr) {
+    // if offered a pemcert use it...
+    RTC_LOG(LS_INFO) << "Have configured cert - using it.";
+    std::string pem_private_key = [[_certificate private_key] UTF8String];
+    std::string pem_certificate = [[_certificate certificate] UTF8String];
+    rtc::RTCCertificatePEM pem = rtc::RTCCertificatePEM(pem_private_key, pem_certificate);
+    rtc::scoped_refptr<rtc::RTCCertificate> certificate = rtc::RTCCertificate::FromPEM(pem);
+    RTC_LOG(LS_INFO) << "Created cert from PEM strings.";
     if (!certificate) {
-      RTCLogError(@"Failed to generate certificate.");
+      RTC_LOG(LS_ERROR) << "Failed to generate certificate from PEM.";
       return nullptr;
     }
     nativeConfig->certificates.push_back(certificate);
+  } else {
+    RTC_LOG(LS_INFO) << "Don't have configured cert.";
+    // Generate non-default certificate.
+    if (keyType != rtc::KT_DEFAULT) {
+      rtc::scoped_refptr<rtc::RTCCertificate> certificate =
+          rtc::RTCCertificateGenerator::GenerateCertificate(rtc::KeyParams(keyType),
+                                                            absl::optional<uint64_t>());
+      if (!certificate) {
+        RTCLogError(@"Failed to generate certificate.");
+        return nullptr;
+      }
+      nativeConfig->certificates.push_back(certificate);
+    }
   }
   nativeConfig->ice_candidate_pool_size = _iceCandidatePoolSize;
   nativeConfig->prune_turn_ports = _shouldPruneTurnPorts ? true : false;
