@@ -10,6 +10,8 @@
 
 #include "modules/audio_processing/aec3/reverb_model_estimator.h"
 
+#include <math.h>
+
 #include <algorithm>
 #include <array>
 #include <memory>
