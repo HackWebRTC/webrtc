@@ -287,7 +287,7 @@ public class SurfaceTextureHelper {
    * The returned TextureBuffer holds a reference to the SurfaceTextureHelper that created it. The
    * buffer calls returnTextureFrame() when it is released.
    */
-  public TextureBuffer createTextureBuffer(int width, int height, Matrix transformMatrix) {
+  public TextureBufferImpl createTextureBuffer(int width, int height, Matrix transformMatrix) {
     return new TextureBufferImpl(width, height, TextureBuffer.Type.OES, oesTextureId,
         transformMatrix, handler, yuvConverter, this ::returnTextureFrame);
   }

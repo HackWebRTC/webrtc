@@ -118,7 +118,7 @@ public class VideoFrame implements RefCounted {
      * homogeneous coordinates of the form (s, t, 1) with s and t in the inclusive range [0, 1] to
      * the coordinate that should be used to sample that location from the buffer.
      */
-    public Matrix getTransformMatrix();
+    Matrix getTransformMatrix();
   }
 
   private final Buffer buffer;
