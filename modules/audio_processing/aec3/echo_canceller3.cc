@@ -46,6 +46,10 @@ bool EnableSuppressorNearendAveraging() {
       "WebRTC-Aec3SuppressorNearendAveragingKillSwitch");
 }
 
+bool EnableSlowFilterAdaptation() {
+  return !field_trial::IsEnabled("WebRTC-Aec3SlowFilterAdaptationKillSwitch");
+}
+
 // Method for adjusting config parameter dependencies..
 EchoCanceller3Config AdjustConfig(const EchoCanceller3Config& config) {
   EchoCanceller3Config adjusted_cfg = config;
@@ -96,6 +100,13 @@ EchoCanceller3Config AdjustConfig(const EchoCanceller3Config& config) {
 
   if (!EnableSuppressorNearendAveraging()) {
     adjusted_cfg.suppressor.nearend_average_blocks = 1;
+  }
+
+  if (!EnableSlowFilterAdaptation()) {
+    adjusted_cfg.filter.main.leakage_converged = 0.005f;
+    adjusted_cfg.filter.main.leakage_diverged = 0.1f;
+    adjusted_cfg.filter.main_initial.leakage_converged = 0.05f;
+    adjusted_cfg.filter.main_initial.leakage_diverged = 5.f;
   }
 
   return adjusted_cfg;

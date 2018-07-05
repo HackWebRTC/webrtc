@@ -221,7 +221,7 @@ TEST(MainFilterUpdateGain, GainCausesFilterToConverge) {
       std::array<float, kBlockSize> y;
       FftData G;
 
-      RunFilterUpdateTest(500, delay_samples, filter_length_blocks,
+      RunFilterUpdateTest(600, delay_samples, filter_length_blocks,
                           blocks_with_echo_path_changes, blocks_with_saturation,
                           false, &e, &y, &G);
 
@@ -253,11 +253,11 @@ TEST(MainFilterUpdateGain, DecreasingGain) {
   std::array<float, kFftLengthBy2Plus1> G_b_power;
   std::array<float, kFftLengthBy2Plus1> G_c_power;
 
-  RunFilterUpdateTest(100, 65, 12, blocks_with_echo_path_changes,
+  RunFilterUpdateTest(250, 65, 12, blocks_with_echo_path_changes,
                       blocks_with_saturation, false, &e, &y, &G_a);
-  RunFilterUpdateTest(300, 65, 12, blocks_with_echo_path_changes,
+  RunFilterUpdateTest(500, 65, 12, blocks_with_echo_path_changes,
                       blocks_with_saturation, false, &e, &y, &G_b);
-  RunFilterUpdateTest(600, 65, 12, blocks_with_echo_path_changes,
+  RunFilterUpdateTest(750, 65, 12, blocks_with_echo_path_changes,
                       blocks_with_saturation, false, &e, &y, &G_c);
 
   G_a.Spectrum(Aec3Optimization::kNone, G_a_power);
