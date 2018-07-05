@@ -745,6 +745,7 @@ rtc_android_library("video_api_java") {
     "api/org/webrtc/EncodedImage.java",
     "api/org/webrtc/VideoCapturer.java",
     "api/org/webrtc/VideoCodecInfo.java",
+    "api/org/webrtc/CapturerObserver.java",
     "api/org/webrtc/VideoCodecStatus.java",
     "api/org/webrtc/VideoDecoder.java",
     "api/org/webrtc/VideoDecoderFactory.java",
@@ -833,7 +834,6 @@ rtc_android_library("video_java") {
     "api/org/webrtc/GlRectDrawer.java",
     "api/org/webrtc/VideoDecoderFallback.java",
     "api/org/webrtc/VideoEncoderFallback.java",
-    "src/java/org/webrtc/NativeCapturerObserver.java",
     "src/java/org/webrtc/NV21Buffer.java",
     "src/java/org/webrtc/VideoDecoderWrapper.java",
     "src/java/org/webrtc/VideoEncoderWrapper.java",
@@ -990,6 +990,7 @@ rtc_android_library("peerconnection_java") {
     "api/org/webrtc/VideoSource.java",
     "api/org/webrtc/VideoTrack.java",
     "src/java/org/webrtc/NativeLibrary.java",
+    "src/java/org/webrtc/NativeCapturerObserver.java",
   ]
 
   deps = [

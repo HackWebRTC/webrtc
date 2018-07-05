@@ -40,7 +40,7 @@ public class VideoSource extends MediaSource {
     nativeAdaptOutputFormat(nativeSource, width, height, fps);
   }
 
-  public VideoCapturer.CapturerObserver getCapturerObserver() {
+  public CapturerObserver getCapturerObserver() {
     return capturerObserver;
   }
 

@@ -22,8 +22,8 @@ namespace webrtc {
 // Java object that can be used to feed frames to the source.
 class JavaVideoTrackSourceInterface : public VideoTrackSourceInterface {
  public:
-  // Returns VideoCapturer.CapturerObserver object that can be used to feed
-  // frames to the video source.
+  // Returns CapturerObserver object that can be used to feed frames to the
+  // video source.
   virtual ScopedJavaLocalRef<jobject> GetJavaVideoCapturerObserver(
       JNIEnv* env) = 0;
 };

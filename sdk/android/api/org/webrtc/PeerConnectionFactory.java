@@ -357,6 +357,7 @@ public class PeerConnectionFactory {
     return new VideoSource(nativeCreateVideoSource(nativeFactory, isScreencast));
   }
 
+  @Deprecated
   public VideoSource createVideoSource(VideoCapturer capturer) {
     final EglBase.Context eglContext =
         localEglbase == null ? null : localEglbase.getEglBaseContext();
