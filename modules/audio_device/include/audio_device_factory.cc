@@ -17,8 +17,8 @@
 #include "modules/audio_device/win/core_audio_utility_win.h"
 #endif
 
+#include "absl/memory/memory.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 
@@ -33,8 +33,8 @@ CreateWindowsCoreAudioAudioDeviceModule() {
     return nullptr;
   }
   return CreateWindowsCoreAudioAudioDeviceModuleFromInputAndOutput(
-      rtc::MakeUnique<webrtc_win::CoreAudioInput>(),
-      rtc::MakeUnique<webrtc_win::CoreAudioOutput>());
+      absl::make_unique<webrtc_win::CoreAudioInput>(),
+      absl::make_unique<webrtc_win::CoreAudioOutput>());
 }
 
 }  // namespace webrtc

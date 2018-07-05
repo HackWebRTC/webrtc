@@ -578,7 +578,7 @@ void Loopback() {
       flags::VideoSelectedStream(), flags::VideoNumSpatialLayers(),
       flags::VideoSelectedSL(), flags::VideoInterLayerPred(), SL_descriptors);
 
-  auto fixture = rtc::MakeUnique<VideoQualityTest>(nullptr);
+  auto fixture = absl::make_unique<VideoQualityTest>(nullptr);
   if (flags::DurationSecs()) {
     fixture->RunWithAnalyzer(params);
   } else {

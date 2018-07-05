@@ -14,6 +14,7 @@
 
 #include "pc/channel.h"
 
+#include "absl/memory/memory.h"
 #include "api/call/audio_sink.h"
 #include "media/base/mediaconstants.h"
 #include "media/base/rtputils.h"
@@ -25,7 +26,6 @@
 #include "rtc_base/dscp.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/networkroute.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/trace_event.h"
 // Adding 'nogncheck' to disable the gn include headers check to support modular
 // WebRTC build targets.

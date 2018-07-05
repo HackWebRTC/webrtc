@@ -14,9 +14,9 @@
 #include <string>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/messagedigest.h"
-#include "rtc_base/ptr_util.h"
 
 namespace rtc {
 
@@ -77,13 +77,13 @@ FakeSSLIdentity::FakeSSLIdentity(const std::string& pem_string)
 FakeSSLIdentity::FakeSSLIdentity(const std::vector<std::string>& pem_strings) {
   std::vector<std::unique_ptr<SSLCertificate>> certs;
   for (const std::string& pem_string : pem_strings) {
-    certs.push_back(MakeUnique<FakeSSLCertificate>(pem_string));
+    certs.push_back(absl::make_unique<FakeSSLCertificate>(pem_string));
   }
-  cert_chain_ = MakeUnique<SSLCertChain>(std::move(certs));
+  cert_chain_ = absl::make_unique<SSLCertChain>(std::move(certs));
 }
 
 FakeSSLIdentity::FakeSSLIdentity(const FakeSSLCertificate& cert)
-    : cert_chain_(MakeUnique<SSLCertChain>(&cert)) {}
+    : cert_chain_(absl::make_unique<SSLCertChain>(&cert)) {}
 
 FakeSSLIdentity::FakeSSLIdentity(const FakeSSLIdentity& o)
     : cert_chain_(o.cert_chain_->UniqueCopy()) {}

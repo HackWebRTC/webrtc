@@ -323,6 +323,7 @@ if (rtc_include_tests) {
       "../rtc_base:rtc_base_approved",
       "../test:single_threaded_task_queue",
       "//testing/gtest",
+      "//third_party/abseil-cpp/absl/memory",
     ]
     sources = [
       "direct_transport_unittest.cc",
@@ -477,6 +478,7 @@ rtc_source_set("direct_transport") {
     "../rtc_base:rtc_base_approved",
     "../rtc_base:sequenced_task_checker",
     "../system_wrappers",
+    "//third_party/abseil-cpp/absl/memory",
   ]
   public_deps = [
     ":single_threaded_task_queue",
@@ -493,6 +495,7 @@ rtc_source_set("single_threaded_task_queue") {
   deps = [
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
+    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 
@@ -588,6 +591,7 @@ rtc_source_set("test_common") {
     "../system_wrappers:runtime_enabled_features_api",
     "../video",
     "//testing/gtest",
+    "//third_party/abseil-cpp/absl/memory",
   ]
   if (!is_android && !build_with_chromium) {
     deps += [ "../modules/video_capture:video_capture_internal_impl" ]

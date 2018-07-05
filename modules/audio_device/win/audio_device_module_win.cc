@@ -84,7 +84,7 @@ class WindowsAudioDeviceModule : public AudioDeviceModule {
     if (initialized_) {
       return 0;
     }
-    audio_device_buffer_ = rtc::MakeUnique<AudioDeviceBuffer>();
+    audio_device_buffer_ = absl::make_unique<AudioDeviceBuffer>();
     AttachAudioBuffer();
     InitStatus status;
     if (output_->Init() != 0) {

@@ -570,7 +570,7 @@ class StatsCollectorTest : public testing::Test {
 
   std::unique_ptr<StatsCollectorForTest> CreateStatsCollector(
       PeerConnectionInternal* pc) {
-    return rtc::MakeUnique<StatsCollectorForTest>(pc);
+    return absl::make_unique<StatsCollectorForTest>(pc);
   }
 
   void VerifyAudioTrackStats(FakeAudioTrack* audio_track,

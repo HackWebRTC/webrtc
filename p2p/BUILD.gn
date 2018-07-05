@@ -91,6 +91,7 @@ rtc_static_library("rtc_p2p") {
     "../rtc_base:safe_minmax",
     "../rtc_base:stringutils",
     "../system_wrappers:field_trial_api",
+    "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 
@@ -138,6 +139,7 @@ if (rtc_include_tests) {
       "../rtc_base:rtc_base_approved",
       "../rtc_base:rtc_base_tests_utils",
       "../test:test_support",
+      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 
@@ -178,6 +180,7 @@ if (rtc_include_tests) {
       "../rtc_base:stringutils",
       "../test:test_support",
       "//testing/gtest",
+      "//third_party/abseil-cpp/absl/memory",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).

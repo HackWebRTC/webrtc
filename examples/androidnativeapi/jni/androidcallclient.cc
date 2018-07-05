@@ -12,6 +12,7 @@
 
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/peerconnectioninterface.h"
@@ -20,7 +21,6 @@
 #include "media/engine/internalencoderfactory.h"
 #include "media/engine/webrtcmediaengine.h"
 #include "modules/audio_processing/include/audio_processing.h"
-#include "rtc_base/ptr_util.h"
 #include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/native_api/video/wrapper.h"
 
@@ -75,7 +75,7 @@ class SetLocalSessionDescriptionObserver
 }  // namespace
 
 AndroidCallClient::AndroidCallClient()
-    : call_started_(false), pc_observer_(rtc::MakeUnique<PCObserver>(this)) {
+    : call_started_(false), pc_observer_(absl::make_unique<PCObserver>(this)) {
   thread_checker_.DetachFromThread();
   CreatePeerConnectionFactory();
 }
@@ -155,8 +155,8 @@ void AndroidCallClient::CreatePeerConnectionFactory() {
       cricket::WebRtcMediaEngineFactory::Create(
           nullptr /* adm */, webrtc::CreateBuiltinAudioEncoderFactory(),
           webrtc::CreateBuiltinAudioDecoderFactory(),
-          rtc::MakeUnique<webrtc::InternalEncoderFactory>(),
-          rtc::MakeUnique<webrtc::InternalDecoderFactory>(),
+          absl::make_unique<webrtc::InternalEncoderFactory>(),
+          absl::make_unique<webrtc::InternalDecoderFactory>(),
           nullptr /* audio_mixer */, webrtc::AudioProcessingBuilder().Create());
   RTC_LOG(LS_INFO) << "Media engine created: " << media_engine.get();
 

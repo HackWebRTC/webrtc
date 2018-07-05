@@ -12,11 +12,11 @@
 
 #include <memory>
 
+#include "absl/memory/memory.h"
 #include "p2p/base/port.h"
 #include "pc/mediasession.h"
 #include "pc/webrtcsdp.h"
 #include "rtc_base/arraysize.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/stringencode.h"
 
 using cricket::SessionDescription;
@@ -160,7 +160,7 @@ std::unique_ptr<SessionDescriptionInterface> CreateSessionDescription(
     SdpType type,
     const std::string& sdp,
     SdpParseError* error_out) {
-  auto jsep_desc = rtc::MakeUnique<JsepSessionDescription>(type);
+  auto jsep_desc = absl::make_unique<JsepSessionDescription>(type);
   if (!SdpDeserialize(sdp, jsep_desc.get(), error_out)) {
     return nullptr;
   }

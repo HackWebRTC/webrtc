@@ -10,7 +10,7 @@
 
 #include "logging/rtc_event_log/events/rtc_event_probe_result_success.h"
 
-#include "rtc_base/ptr_util.h"
+#include "absl/memory/memory.h"
 
 namespace webrtc {
 
@@ -33,7 +33,7 @@ bool RtcEventProbeResultSuccess::IsConfigEvent() const {
 }
 
 std::unique_ptr<RtcEvent> RtcEventProbeResultSuccess::Copy() const {
-  return rtc::WrapUnique<RtcEvent>(new RtcEventProbeResultSuccess(*this));
+  return absl::WrapUnique<RtcEvent>(new RtcEventProbeResultSuccess(*this));
 }
 
 }  // namespace webrtc

@@ -15,13 +15,13 @@
 #include <string>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "api/video_codecs/video_decoder.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_factory.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/event.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/thread_annotations.h"
 
 namespace cricket {

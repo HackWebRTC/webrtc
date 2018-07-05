@@ -885,7 +885,7 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
       ASSERT_TRUE(fake_video_renderers_.find(video_track->id()) ==
                   fake_video_renderers_.end());
       fake_video_renderers_[video_track->id()] =
-          rtc::MakeUnique<FakeVideoTrackRenderer>(video_track);
+          absl::make_unique<FakeVideoTrackRenderer>(video_track);
     }
   }
   void OnRemoveTrack(
@@ -1165,7 +1165,7 @@ class PeerConnectionIntegrationBaseTest : public testing::Test {
     modified_config.sdp_semantics = sdp_semantics_;
     if (!dependencies.cert_generator) {
       dependencies.cert_generator =
-          rtc::MakeUnique<FakeRTCCertificateGenerator>();
+          absl::make_unique<FakeRTCCertificateGenerator>();
     }
     std::unique_ptr<PeerConnectionWrapper> client(
         new PeerConnectionWrapper(debug_name));
@@ -1303,7 +1303,7 @@ class PeerConnectionIntegrationBaseTest : public testing::Test {
         network_thread()->Invoke<std::unique_ptr<cricket::TestTurnServer>>(
             RTC_FROM_HERE,
             [thread, internal_address, external_address, type, common_name] {
-              return rtc::MakeUnique<cricket::TestTurnServer>(
+              return absl::make_unique<cricket::TestTurnServer>(
                   thread, internal_address, external_address, type,
                   /*ignore_bad_certs=*/true, common_name);
             });
@@ -1316,7 +1316,7 @@ class PeerConnectionIntegrationBaseTest : public testing::Test {
     std::unique_ptr<cricket::TestTurnCustomizer> turn_customizer =
         network_thread()->Invoke<std::unique_ptr<cricket::TestTurnCustomizer>>(
             RTC_FROM_HERE,
-            [] { return rtc::MakeUnique<cricket::TestTurnCustomizer>(); });
+            [] { return absl::make_unique<cricket::TestTurnCustomizer>(); });
     turn_customizers_.push_back(std::move(turn_customizer));
     // Interactions with the turn customizer should be done on the network
     // thread.
@@ -4282,7 +4282,7 @@ TEST_P(PeerConnectionIntegrationTest, RtcEventLogOutputWriteCalled) {
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
 
-  auto output = rtc::MakeUnique<testing::NiceMock<MockRtcEventLogOutput>>();
+  auto output = absl::make_unique<testing::NiceMock<MockRtcEventLogOutput>>();
   ON_CALL(*output, IsActive()).WillByDefault(testing::Return(true));
   ON_CALL(*output, Write(::testing::_)).WillByDefault(testing::Return(true));
   EXPECT_CALL(*output, Write(::testing::_)).Times(::testing::AtLeast(1));

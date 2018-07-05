@@ -20,9 +20,9 @@
 #ifdef WEBRTC_ANDROID
 #include "pc/test/androidtestinitializer.h"
 #endif
+#include "absl/memory/memory.h"
 #include "pc/test/fakesctptransport.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/virtualsocketserver.h"
 
 namespace webrtc {
@@ -39,13 +39,13 @@ class PeerConnectionFactoryForDataChannelTest
             rtc::Thread::Current(),
             rtc::Thread::Current(),
             rtc::Thread::Current(),
-            rtc::MakeUnique<cricket::FakeMediaEngine>(),
+            absl::make_unique<cricket::FakeMediaEngine>(),
             CreateCallFactory(),
             nullptr) {}
 
   std::unique_ptr<cricket::SctpTransportInternalFactory>
   CreateSctpTransportInternalFactory() {
-    auto factory = rtc::MakeUnique<FakeSctpTransportFactory>();
+    auto factory = absl::make_unique<FakeSctpTransportFactory>();
     last_fake_sctp_transport_factory_ = factory.get();
     return factory;
   }
@@ -114,7 +114,7 @@ class PeerConnectionDataChannelBaseTest : public ::testing::Test {
         new PeerConnectionFactoryForDataChannelTest());
     pc_factory->SetOptions(factory_options);
     RTC_CHECK(pc_factory->Initialize());
-    auto observer = rtc::MakeUnique<MockPeerConnectionObserver>();
+    auto observer = absl::make_unique<MockPeerConnectionObserver>();
     RTCConfiguration modified_config = config;
     modified_config.sdp_semantics = sdp_semantics_;
     auto pc = pc_factory->CreatePeerConnection(modified_config, nullptr,
@@ -123,7 +123,7 @@ class PeerConnectionDataChannelBaseTest : public ::testing::Test {
       return nullptr;
     }
 
-    auto wrapper = rtc::MakeUnique<PeerConnectionWrapperForDataChannelTest>(
+    auto wrapper = absl::make_unique<PeerConnectionWrapperForDataChannelTest>(
         pc_factory, pc, std::move(observer));
     RTC_DCHECK(pc_factory->last_fake_sctp_transport_factory_);
     wrapper->set_sctp_transport_factory(

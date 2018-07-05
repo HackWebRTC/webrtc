@@ -11,13 +11,13 @@
 #include <string>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "p2p/base/stun.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/bytebuffer.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/messagedigest.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/socketaddress.h"
 
 namespace cricket {
@@ -1116,7 +1116,7 @@ TEST_F(StunTest, WriteMessageWithOriginAttribute) {
       std::string(reinterpret_cast<const char*>(kTestTransactionId1),
                   kStunTransactionIdLength));
   auto origin =
-      rtc::MakeUnique<StunByteStringAttribute>(STUN_ATTR_ORIGIN, kTestOrigin);
+      absl::make_unique<StunByteStringAttribute>(STUN_ATTR_ORIGIN, kTestOrigin);
   msg.AddAttribute(std::move(origin));
 
   rtc::ByteBufferWriter out;

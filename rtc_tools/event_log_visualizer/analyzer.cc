@@ -17,6 +17,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "call/audio_receive_stream.h"
 #include "call/audio_send_stream.h"
 #include "call/call.h"
@@ -53,7 +54,6 @@
 #include "rtc_base/function_view.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/sequence_number_util.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/rate_statistics.h"
 
 #ifndef BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
@@ -1127,7 +1127,7 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
   // we don't instantiate the AcknowledgedBitrateEstimator both here and in
   // SendSideCongestionController since that would lead to duplicate outputs.
   AcknowledgedBitrateEstimator acknowledged_bitrate_estimator(
-      rtc::MakeUnique<BitrateEstimator>());
+      absl::make_unique<BitrateEstimator>());
 #endif  // !(BWE_TEST_LOGGING_COMPILE_TIME_ENABLE)
   int64_t time_us = std::min(NextRtpTime(), NextRtcpTime());
   int64_t last_update_us = 0;

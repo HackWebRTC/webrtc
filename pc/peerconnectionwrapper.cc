@@ -15,12 +15,12 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "api/jsepsessiondescription.h"
 #include "pc/sdputils.h"
 #include "pc/test/fakevideotracksource.h"
 #include "rtc_base/function_view.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 

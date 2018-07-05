@@ -13,10 +13,10 @@
 #include <string>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/system/fallthrough.h"
 #include "rtc_base/trace_event.h"
 
@@ -217,7 +217,7 @@ VideoDecoder& VideoDecoderSoftwareFallbackWrapper::active_decoder() const {
 std::unique_ptr<VideoDecoder> CreateVideoDecoderSoftwareFallbackWrapper(
     std::unique_ptr<VideoDecoder> sw_fallback_decoder,
     std::unique_ptr<VideoDecoder> hw_decoder) {
-  return rtc::MakeUnique<VideoDecoderSoftwareFallbackWrapper>(
+  return absl::make_unique<VideoDecoderSoftwareFallbackWrapper>(
       std::move(sw_fallback_decoder), std::move(hw_decoder));
 }
 

@@ -16,6 +16,7 @@
 #include <unordered_map>
 #include <utility>  // For std::move.
 
+#include "absl/memory/memory.h"
 #include "api/proxy.h"
 #include "media/base/mediaconstants.h"
 #include "ortc/ortcrtpreceiveradapter.h"
@@ -24,7 +25,6 @@
 #include "pc/rtpmediautils.h"
 #include "pc/rtpparametersconversion.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 
@@ -654,7 +654,7 @@ void RtpTransportControllerAdapter::Init_w() {
   call_config.bitrate_config.start_bitrate_bps = kStartBandwidthBps;
   call_config.bitrate_config.max_bitrate_bps = kMaxBandwidthBps;
   std::unique_ptr<RtpTransportControllerSend> controller_send =
-      rtc::MakeUnique<RtpTransportControllerSend>(
+      absl::make_unique<RtpTransportControllerSend>(
           Clock::GetRealTimeClock(), event_log_,
           call_config.network_controller_factory, call_config.bitrate_config);
   call_send_rtp_transport_controller_ = controller_send.get();

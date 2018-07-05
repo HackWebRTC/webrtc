@@ -14,13 +14,13 @@
 #include <set>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "modules/include/module_common_types.h"
 #include "modules/video_coding/codecs/vp8/default_temporal_layers.h"
 #include "modules/video_coding/codecs/vp8/screenshare_layers.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/field_trial.h"
 
@@ -51,10 +51,10 @@ std::unique_ptr<TemporalLayers> TemporalLayers::CreateTemporalLayers(
     size_t spatial_id) {
   if (IsConferenceModeScreenshare(codec) && spatial_id == 0) {
     // Conference mode temporal layering for screen content in base stream.
-    return rtc::MakeUnique<ScreenshareLayers>(2, Clock::GetRealTimeClock());
+    return absl::make_unique<ScreenshareLayers>(2, Clock::GetRealTimeClock());
   }
 
-  return rtc::MakeUnique<DefaultTemporalLayers>(
+  return absl::make_unique<DefaultTemporalLayers>(
       NumTemporalLayers(codec, spatial_id));
 }
 
@@ -64,10 +64,10 @@ TemporalLayers::CreateTemporalLayersChecker(const VideoCodec& codec,
   if (IsConferenceModeScreenshare(codec) && spatial_id == 0) {
     // Conference mode temporal layering for screen content in base stream,
     // use generic checker.
-    return rtc::MakeUnique<TemporalLayersChecker>(2);
+    return absl::make_unique<TemporalLayersChecker>(2);
   }
 
-  return rtc::MakeUnique<DefaultTemporalLayersChecker>(
+  return absl::make_unique<DefaultTemporalLayersChecker>(
       NumTemporalLayers(codec, spatial_id));
 }
 

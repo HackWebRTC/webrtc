@@ -10,9 +10,9 @@
 
 #include "api/audio_codecs/isac/audio_encoder_isac_fix.h"
 
+#include "absl/memory/memory.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/isac/fix/include/audio_encoder_isacfix.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/string_to_number.h"
 
 namespace webrtc {
@@ -56,7 +56,7 @@ std::unique_ptr<AudioEncoder> AudioEncoderIsacFix::MakeAudioEncoder(
   AudioEncoderIsacFixImpl::Config c;
   c.frame_size_ms = config.frame_size_ms;
   c.payload_type = payload_type;
-  return rtc::MakeUnique<AudioEncoderIsacFixImpl>(c);
+  return absl::make_unique<AudioEncoderIsacFixImpl>(c);
 }
 
 }  // namespace webrtc

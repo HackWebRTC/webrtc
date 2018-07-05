@@ -17,6 +17,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "api/array_view.h"
 #include "common_audio/include/audio_util.h"
 #include "common_audio/wav_file.h"
@@ -25,7 +26,6 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/pathutils.h"
-#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 namespace test {
@@ -42,7 +42,7 @@ InitSpeakerOutputFilePaths(const std::set<std::string>& speaker_names,
                            const std::string& output_path) {
   // Create map.
   auto speaker_output_file_paths_map =
-      rtc::MakeUnique<std::map<std::string, SpeakerOutputFilePaths>>();
+      absl::make_unique<std::map<std::string, SpeakerOutputFilePaths>>();
 
   // Add near-end and far-end output paths into the map.
   for (const auto& speaker_name : speaker_names) {
@@ -90,7 +90,7 @@ InitSpeakersWavWriters(const std::map<std::string, SpeakerOutputFilePaths>&
                        int sample_rate) {
   // Create map.
   auto speaker_wav_writers_map =
-      rtc::MakeUnique<std::map<std::string, SpeakerWavWriters>>();
+      absl::make_unique<std::map<std::string, SpeakerWavWriters>>();
 
   // Add SpeakerWavWriters instance into the map.
   for (auto it = speaker_output_file_paths.begin();
@@ -109,7 +109,7 @@ std::unique_ptr<std::map<std::string, std::vector<int16_t>>> PreloadAudioTracks(
         audiotrack_readers) {
   // Create map.
   auto audiotracks_map =
-      rtc::MakeUnique<std::map<std::string, std::vector<int16_t>>>();
+      absl::make_unique<std::map<std::string, std::vector<int16_t>>>();
 
   // Add audio track vectors.
   for (auto it = audiotrack_readers.begin(); it != audiotrack_readers.end();

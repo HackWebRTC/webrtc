@@ -51,6 +51,7 @@ rtc_static_library("congestion_controller") {
     "../rtp_rtcp:rtp_rtcp_format",
     "goog_cc:delay_based_bwe",
     "goog_cc:estimators",
+    "//third_party/abseil-cpp/absl/memory",
   ]
 
   if (!build_with_mozilla) {

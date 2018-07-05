@@ -10,7 +10,7 @@
 
 #include "logging/rtc_event_log/events/rtc_event_probe_cluster_created.h"
 
-#include "rtc_base/ptr_util.h"
+#include "absl/memory/memory.h"
 
 namespace webrtc {
 
@@ -40,7 +40,7 @@ bool RtcEventProbeClusterCreated::IsConfigEvent() const {
 }
 
 std::unique_ptr<RtcEvent> RtcEventProbeClusterCreated::Copy() const {
-  return rtc::WrapUnique<RtcEvent>(new RtcEventProbeClusterCreated(*this));
+  return absl::WrapUnique<RtcEvent>(new RtcEventProbeClusterCreated(*this));
 }
 
 }  // namespace webrtc

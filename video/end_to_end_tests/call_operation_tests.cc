@@ -115,9 +115,9 @@ TEST_P(CallOperationEndToEndTest, RendersSingleDelayedFrame) {
                         &receiver_transport]() {
     CreateCalls(Call::Config(event_log_.get()), Call::Config(event_log_.get()));
 
-    sender_transport = rtc::MakeUnique<test::DirectTransport>(
+    sender_transport = absl::make_unique<test::DirectTransport>(
         &task_queue_, sender_call_.get(), payload_type_map_);
-    receiver_transport = rtc::MakeUnique<test::DirectTransport>(
+    receiver_transport = absl::make_unique<test::DirectTransport>(
         &task_queue_, receiver_call_.get(), payload_type_map_);
     sender_transport->SetReceiver(receiver_call_->Receiver());
     receiver_transport->SetReceiver(sender_call_->Receiver());
@@ -175,9 +175,9 @@ TEST_P(CallOperationEndToEndTest, TransmitsFirstFrame) {
                         &sender_transport, &receiver_transport]() {
     CreateCalls(Call::Config(event_log_.get()), Call::Config(event_log_.get()));
 
-    sender_transport = rtc::MakeUnique<test::DirectTransport>(
+    sender_transport = absl::make_unique<test::DirectTransport>(
         &task_queue_, sender_call_.get(), payload_type_map_);
-    receiver_transport = rtc::MakeUnique<test::DirectTransport>(
+    receiver_transport = absl::make_unique<test::DirectTransport>(
         &task_queue_, receiver_call_.get(), payload_type_map_);
     sender_transport->SetReceiver(receiver_call_->Receiver());
     receiver_transport->SetReceiver(sender_call_->Receiver());
@@ -242,9 +242,9 @@ TEST_P(CallOperationEndToEndTest, ObserversEncodedFrames) {
   task_queue_.SendTask([&]() {
     CreateCalls(Call::Config(event_log_.get()), Call::Config(event_log_.get()));
 
-    sender_transport = rtc::MakeUnique<test::DirectTransport>(
+    sender_transport = absl::make_unique<test::DirectTransport>(
         &task_queue_, sender_call_.get(), payload_type_map_);
-    receiver_transport = rtc::MakeUnique<test::DirectTransport>(
+    receiver_transport = absl::make_unique<test::DirectTransport>(
         &task_queue_, receiver_call_.get(), payload_type_map_);
     sender_transport->SetReceiver(receiver_call_->Receiver());
     receiver_transport->SetReceiver(sender_call_->Receiver());

@@ -19,9 +19,9 @@
 #include "modules/video_coding/codecs/h264/h264_encoder_impl.h"
 #endif
 
+#include "absl/memory/memory.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 
@@ -87,7 +87,7 @@ std::unique_ptr<H264Encoder> H264Encoder::Create(
 #if defined(WEBRTC_USE_H264)
   RTC_CHECK(g_rtc_use_h264);
   RTC_LOG(LS_INFO) << "Creating H264EncoderImpl.";
-  return rtc::MakeUnique<H264EncoderImpl>(codec);
+  return absl::make_unique<H264EncoderImpl>(codec);
 #else
   RTC_NOTREACHED();
   return nullptr;
@@ -103,7 +103,7 @@ std::unique_ptr<H264Decoder> H264Decoder::Create() {
 #if defined(WEBRTC_USE_H264)
   RTC_CHECK(g_rtc_use_h264);
   RTC_LOG(LS_INFO) << "Creating H264DecoderImpl.";
-  return rtc::MakeUnique<H264DecoderImpl>();
+  return absl::make_unique<H264DecoderImpl>();
 #else
   RTC_NOTREACHED();
   return nullptr;

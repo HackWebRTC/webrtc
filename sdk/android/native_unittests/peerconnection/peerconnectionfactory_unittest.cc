@@ -9,6 +9,7 @@
  */
 #include "sdk/android/native_api/peerconnection/peerconnectionfactory.h"
 
+#include "absl/memory/memory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "media/base/mediaengine.h"
@@ -17,7 +18,6 @@
 #include "media/engine/webrtcmediaengine.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 #include "sdk/android/generated_native_unittests_jni/jni/PeerConnectionFactoryInitializationHelper_jni.h"
 #include "sdk/android/native_api/jni/jvm.h"
 #include "test/gtest.h"
@@ -42,8 +42,8 @@ rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> CreateTestPCF(
       cricket::WebRtcMediaEngineFactory::Create(
           nullptr /* adm */, webrtc::CreateBuiltinAudioEncoderFactory(),
           webrtc::CreateBuiltinAudioDecoderFactory(),
-          rtc::MakeUnique<webrtc::InternalEncoderFactory>(),
-          rtc::MakeUnique<webrtc::InternalDecoderFactory>(),
+          absl::make_unique<webrtc::InternalEncoderFactory>(),
+          absl::make_unique<webrtc::InternalDecoderFactory>(),
           nullptr /* audio_mixer */, webrtc::AudioProcessingBuilder().Create());
   RTC_LOG(LS_INFO) << "Media engine created: " << media_engine.get();
 

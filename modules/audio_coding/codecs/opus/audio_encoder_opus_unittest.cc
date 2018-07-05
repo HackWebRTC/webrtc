@@ -12,6 +12,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "api/audio_codecs/opus/audio_encoder_opus.h"
 #include "common_audio/mocks/mock_smoothing_filter.h"
 #include "common_types.h"  // NOLINT(build/include)
@@ -21,7 +22,6 @@
 #include "modules/audio_coding/neteq/tools/audio_loop.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/fakeclock.h"
-#include "rtc_base/ptr_util.h"
 #include "test/field_trial.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -64,7 +64,7 @@ struct AudioEncoderOpusStates {
 
 std::unique_ptr<AudioEncoderOpusStates> CreateCodec(size_t num_channels) {
   std::unique_ptr<AudioEncoderOpusStates> states =
-      rtc::MakeUnique<AudioEncoderOpusStates>();
+      absl::make_unique<AudioEncoderOpusStates>();
   states->mock_audio_network_adaptor = nullptr;
   states->fake_clock.reset(new rtc::ScopedFakeClock());
   states->fake_clock->SetTimeMicros(kInitialTimeUs);

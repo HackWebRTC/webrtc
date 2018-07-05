@@ -10,8 +10,8 @@
 
 #include "sdk/objc/Framework/Native/api/video_capturer.h"
 
+#include "absl/memory/memory.h"
 #include "api/videosourceproxy.h"
-#include "rtc_base/ptr_util.h"
 #include "sdk/objc/Framework/Native/src/objc_video_track_source.h"
 
 namespace webrtc {

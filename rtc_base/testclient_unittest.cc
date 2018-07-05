@@ -9,10 +9,10 @@
  */
 
 #include "rtc_base/testclient.h"
+#include "absl/memory/memory.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/nethelpers.h"
 #include "rtc_base/physicalsocketserver.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/testechoserver.h"
 #include "rtc_base/thread.h"
 
@@ -36,7 +36,7 @@ void TestUdpInternal(const SocketAddress& loopback) {
       main->socketserver()->CreateAsyncSocket(loopback.family(), SOCK_DGRAM);
   socket->Bind(loopback);
 
-  TestClient client(MakeUnique<AsyncUDPSocket>(socket));
+  TestClient client(absl::make_unique<AsyncUDPSocket>(socket));
   SocketAddress addr = client.address(), from;
   EXPECT_EQ(3, client.SendTo("foo", 3, addr));
   EXPECT_TRUE(client.CheckNextPacket("foo", 3, &from));
@@ -50,8 +50,8 @@ void TestTcpInternal(const SocketAddress& loopback) {
 
   AsyncSocket* socket =
       main->socketserver()->CreateAsyncSocket(loopback.family(), SOCK_STREAM);
-  std::unique_ptr<AsyncTCPSocket> tcp_socket =
-      WrapUnique(AsyncTCPSocket::Create(socket, loopback, server.address()));
+  std::unique_ptr<AsyncTCPSocket> tcp_socket = absl::WrapUnique(
+      AsyncTCPSocket::Create(socket, loopback, server.address()));
   ASSERT_TRUE(tcp_socket != nullptr);
 
   TestClient client(std::move(tcp_socket));

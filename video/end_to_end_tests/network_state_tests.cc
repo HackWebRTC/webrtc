@@ -114,7 +114,7 @@ void NetworkStateEndToEndTest::VerifyNewVideoReceiveStreamsRespectNetworkState(
     Call::Config config(event_log_.get());
     CreateCalls(config, config);
     receiver_call_->SignalChannelNetworkState(network_to_bring_up, kNetworkUp);
-    sender_transport = rtc::MakeUnique<test::DirectTransport>(
+    sender_transport = absl::make_unique<test::DirectTransport>(
         &task_queue_, sender_call_.get(), payload_type_map_);
     sender_transport->SetReceiver(receiver_call_->Receiver());
     CreateSendConfig(1, 0, 0, sender_transport.get());

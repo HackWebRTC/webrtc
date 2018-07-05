@@ -22,7 +22,7 @@ namespace webrtc {
 //  public:
 //   rtc::scoped_refptr<AudioDeviceModule> CreateAudioDevice() {
 //     // Tell COM that this thread shall live in the MTA.
-//     com_initializer_ = rtc::MakeUnique<webrtc_win::ScopedCOMInitializer>(
+//     com_initializer_ = absl::make_unique<webrtc_win::ScopedCOMInitializer>(
 //         webrtc_win::ScopedCOMInitializer::kMTA);
 //     if (!com_initializer_->Succeeded()) {
 //       return nullptr;

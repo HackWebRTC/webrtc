@@ -15,13 +15,13 @@
 #include <string>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "media/base/fakeframesource.h"
 #include "media/base/mediachannel.h"
 #include "media/base/testutils.h"
 #include "media/base/videoadapter.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 
 namespace cricket {
 namespace {
@@ -35,11 +35,11 @@ class VideoAdapterTest : public testing::Test {
   void SetUp() override {
     capture_format_ = {kWidth, kHeight, VideoFormat::FpsToInterval(kDefaultFps),
                        cricket::FOURCC_I420};
-    frame_source_ = rtc::MakeUnique<FakeFrameSource>(
+    frame_source_ = absl::make_unique<FakeFrameSource>(
         kWidth, kHeight,
         VideoFormat::FpsToInterval(kDefaultFps) / rtc::kNumNanosecsPerMicrosec);
 
-    adapter_wrapper_ = rtc::MakeUnique<VideoAdapterWrapper>(&adapter_);
+    adapter_wrapper_ = absl::make_unique<VideoAdapterWrapper>(&adapter_);
   }
 
  protected:

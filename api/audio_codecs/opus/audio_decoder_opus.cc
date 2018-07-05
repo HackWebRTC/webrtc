@@ -14,9 +14,9 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/opus/audio_decoder_opus.h"
-#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 
@@ -57,7 +57,7 @@ void AudioDecoderOpus::AppendSupportedDecoders(
 std::unique_ptr<AudioDecoder> AudioDecoderOpus::MakeAudioDecoder(
     Config config,
     absl::optional<AudioCodecPairId> /*codec_pair_id*/) {
-  return rtc::MakeUnique<AudioDecoderOpusImpl>(config.num_channels);
+  return absl::make_unique<AudioDecoderOpusImpl>(config.num_channels);
 }
 
 }  // namespace webrtc

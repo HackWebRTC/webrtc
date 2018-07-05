@@ -16,10 +16,10 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "p2p/base/dtlstransportinternal.h"
 #include "p2p/base/fakeicetransport.h"
 #include "rtc_base/fakesslidentity.h"
-#include "rtc_base/ptr_util.h"
 
 namespace cricket {
 
@@ -55,7 +55,8 @@ class FakeDtlsTransport : public DtlsTransportInternal {
   // If this constructor is called, a new fake ICE transport will be created,
   // and this FakeDtlsTransport will take the ownership.
   explicit FakeDtlsTransport(const std::string& name, int component)
-      : FakeDtlsTransport(rtc::MakeUnique<FakeIceTransport>(name, component)) {}
+      : FakeDtlsTransport(
+            absl::make_unique<FakeIceTransport>(name, component)) {}
 
   ~FakeDtlsTransport() override {
     if (dest_ && dest_->dest_ == this) {
@@ -177,7 +178,7 @@ class FakeDtlsTransport : public DtlsTransportInternal {
     return local_cert_;
   }
   std::unique_ptr<rtc::SSLCertChain> GetRemoteSSLCertChain() const override {
-    return remote_cert_ ? rtc::MakeUnique<rtc::SSLCertChain>(remote_cert_)
+    return remote_cert_ ? absl::make_unique<rtc::SSLCertChain>(remote_cert_)
                         : nullptr;
   }
   bool ExportKeyingMaterial(const std::string& label,

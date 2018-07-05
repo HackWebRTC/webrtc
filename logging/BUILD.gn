@@ -68,6 +68,7 @@ rtc_source_set("rtc_event_pacing") {
     ":rtc_event_log_api",
     "../:typedefs",
     "../rtc_base:ptr_util",
+    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 
@@ -88,6 +89,7 @@ rtc_source_set("rtc_event_audio") {
     ":rtc_stream_config",
     "../modules/audio_coding:audio_network_adaptor_config",
     "../rtc_base:ptr_util",
+    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 
@@ -109,6 +111,7 @@ rtc_source_set("rtc_event_bwe") {
     ":rtc_event_log_api",
     "../modules/remote_bitrate_estimator:remote_bitrate_estimator",
     "../rtc_base:ptr_util",
+    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 
@@ -130,6 +133,7 @@ rtc_source_set("rtc_event_rtp_rtcp") {
     "../modules/rtp_rtcp:rtp_rtcp_format",
     "../rtc_base:ptr_util",
     "../rtc_base:rtc_base_approved",
+    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 
@@ -145,6 +149,7 @@ rtc_source_set("rtc_event_video") {
     ":rtc_event_log_api",
     ":rtc_stream_config",
     "../rtc_base:ptr_util",
+    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 
@@ -225,6 +230,7 @@ rtc_static_library("rtc_event_log_impl_base") {
     "../rtc_base:rtc_task_queue",
     "../rtc_base:safe_minmax",
     "../rtc_base:sequenced_task_checker",
+    "//third_party/abseil-cpp/absl/memory",
   ]
 
   if (rtc_enable_protobuf) {
@@ -296,6 +302,7 @@ if (rtc_enable_protobuf) {
       "../rtc_base:checks",
       "../rtc_base:protobuf_utils",
       "../rtc_base:rtc_base_approved",
+      "//third_party/abseil-cpp/absl/memory",
     ]
 
     if (!build_with_chromium && is_clang) {
@@ -345,6 +352,7 @@ if (rtc_enable_protobuf) {
         "../test:fileutils",
         "../test:test_support",
         "//testing/gtest",
+        "//third_party/abseil-cpp/absl/memory",
       ]
       if (!build_with_chromium && is_clang) {
         # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -437,6 +445,7 @@ rtc_source_set("ice_log") {
     ":rtc_event_log_api",
     "../api:libjingle_logging_api",
     "../rtc_base:rtc_base_approved",
+    "//third_party/abseil-cpp/absl/memory",
   ]
 
   if (!build_with_chromium && is_clang) {

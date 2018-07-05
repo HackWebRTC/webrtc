@@ -12,9 +12,9 @@
 
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/fakeclock.h"
-#include "rtc_base/ptr_util.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 
@@ -46,10 +46,10 @@ struct AcknowledgedBitrateEstimatorTestStates {
 
 AcknowledgedBitrateEstimatorTestStates CreateTestStates() {
   AcknowledgedBitrateEstimatorTestStates states;
-  auto mock_bitrate_estimator = rtc::MakeUnique<MockBitrateEstimator>();
+  auto mock_bitrate_estimator = absl::make_unique<MockBitrateEstimator>();
   states.mock_bitrate_estimator = mock_bitrate_estimator.get();
   states.acknowledged_bitrate_estimator =
-      rtc::MakeUnique<AcknowledgedBitrateEstimator>(
+      absl::make_unique<AcknowledgedBitrateEstimator>(
           std::move(mock_bitrate_estimator));
   return states;
 }

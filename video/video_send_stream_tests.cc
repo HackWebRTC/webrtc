@@ -204,7 +204,7 @@ TEST_F(VideoSendStreamTest, SupportsTransmissionTimeOffset) {
    public:
     TransmissionTimeOffsetObserver()
         : SendTest(kDefaultTimeoutMs), encoder_factory_([]() {
-            return rtc::MakeUnique<test::DelayedEncoder>(
+            return absl::make_unique<test::DelayedEncoder>(
                 Clock::GetRealTimeClock(), kEncodeDelayMs);
           }) {
       EXPECT_TRUE(parser_->RegisterRtpHeaderExtension(
@@ -251,7 +251,7 @@ TEST_F(VideoSendStreamTest, SupportsTransportWideSequenceNumbers) {
    public:
     TransportWideSequenceNumberObserver()
         : SendTest(kDefaultTimeoutMs), encoder_factory_([]() {
-            return rtc::MakeUnique<test::FakeEncoder>(
+            return absl::make_unique<test::FakeEncoder>(
                 Clock::GetRealTimeClock());
           }) {
       EXPECT_TRUE(parser_->RegisterRtpHeaderExtension(
@@ -612,7 +612,7 @@ TEST_F(VideoSendStreamWithoutUlpfecTest, NoUlpfecIfDisabledThroughFieldTrial) {
 // that the received state is actually decodable.
 TEST_F(VideoSendStreamTest, DoesNotUtilizeUlpfecForH264WithNackEnabled) {
   test::FunctionVideoEncoderFactory encoder_factory([]() {
-    return rtc::MakeUnique<test::FakeH264Encoder>(Clock::GetRealTimeClock());
+    return absl::make_unique<test::FakeH264Encoder>(Clock::GetRealTimeClock());
   });
   UlpfecObserver test(false, true, true, false, "H264", &encoder_factory);
   RunBaseTest(&test);
@@ -621,7 +621,7 @@ TEST_F(VideoSendStreamTest, DoesNotUtilizeUlpfecForH264WithNackEnabled) {
 // Without retransmissions FEC for H264 is fine.
 TEST_F(VideoSendStreamTest, DoesUtilizeUlpfecForH264WithoutNackEnabled) {
   test::FunctionVideoEncoderFactory encoder_factory([]() {
-    return rtc::MakeUnique<test::FakeH264Encoder>(Clock::GetRealTimeClock());
+    return absl::make_unique<test::FakeH264Encoder>(Clock::GetRealTimeClock());
   });
   UlpfecObserver test(false, false, true, true, "H264", &encoder_factory);
   RunBaseTest(&test);
@@ -647,7 +647,7 @@ TEST_F(VideoSendStreamTest, DISABLED_DoesUtilizeUlpfecForVp9WithNackEnabled) {
 
 TEST_F(VideoSendStreamTest, SupportsUlpfecWithMultithreadedH264) {
   test::FunctionVideoEncoderFactory encoder_factory([]() {
-    return rtc::MakeUnique<test::MultithreadedFakeH264Encoder>(
+    return absl::make_unique<test::MultithreadedFakeH264Encoder>(
         Clock::GetRealTimeClock());
   });
   UlpfecObserver test(false, false, true, true, "H264", &encoder_factory);
@@ -801,7 +801,7 @@ TEST_F(VideoSendStreamTest, SupportsFlexfecWithNackVp9) {
 
 TEST_F(VideoSendStreamTest, SupportsFlexfecH264) {
   test::FunctionVideoEncoderFactory encoder_factory([]() {
-    return rtc::MakeUnique<test::FakeH264Encoder>(Clock::GetRealTimeClock());
+    return absl::make_unique<test::FakeH264Encoder>(Clock::GetRealTimeClock());
   });
   FlexfecObserver test(false, false, "H264", &encoder_factory, 1);
   RunBaseTest(&test);
@@ -809,7 +809,7 @@ TEST_F(VideoSendStreamTest, SupportsFlexfecH264) {
 
 TEST_F(VideoSendStreamTest, SupportsFlexfecWithNackH264) {
   test::FunctionVideoEncoderFactory encoder_factory([]() {
-    return rtc::MakeUnique<test::FakeH264Encoder>(Clock::GetRealTimeClock());
+    return absl::make_unique<test::FakeH264Encoder>(Clock::GetRealTimeClock());
   });
   FlexfecObserver test(false, true, "H264", &encoder_factory, 1);
   RunBaseTest(&test);
@@ -817,7 +817,7 @@ TEST_F(VideoSendStreamTest, SupportsFlexfecWithNackH264) {
 
 TEST_F(VideoSendStreamTest, SupportsFlexfecWithMultithreadedH264) {
   test::FunctionVideoEncoderFactory encoder_factory([]() {
-    return rtc::MakeUnique<test::MultithreadedFakeH264Encoder>(
+    return absl::make_unique<test::MultithreadedFakeH264Encoder>(
         Clock::GetRealTimeClock());
   });
 

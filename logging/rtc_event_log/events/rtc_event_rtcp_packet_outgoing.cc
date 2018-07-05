@@ -10,7 +10,7 @@
 
 #include "logging/rtc_event_log/events/rtc_event_rtcp_packet_outgoing.h"
 
-#include "rtc_base/ptr_util.h"
+#include "absl/memory/memory.h"
 
 namespace webrtc {
 
@@ -34,7 +34,7 @@ bool RtcEventRtcpPacketOutgoing::IsConfigEvent() const {
 }
 
 std::unique_ptr<RtcEvent> RtcEventRtcpPacketOutgoing::Copy() const {
-  return rtc::WrapUnique<RtcEvent>(new RtcEventRtcpPacketOutgoing(*this));
+  return absl::WrapUnique<RtcEvent>(new RtcEventRtcpPacketOutgoing(*this));
 }
 
 }  // namespace webrtc

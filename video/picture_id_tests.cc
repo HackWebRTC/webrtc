@@ -409,7 +409,7 @@ TEST_P(PictureIdTest, ContinuousAfterReconfigureSimulcastEncoderAdapter) {
   InternalEncoderFactory internal_encoder_factory;
   test::FunctionVideoEncoderFactory encoder_factory(
       [&internal_encoder_factory]() {
-        return rtc::MakeUnique<SimulcastEncoderAdapter>(
+        return absl::make_unique<SimulcastEncoderAdapter>(
             &internal_encoder_factory, SdpVideoFormat("VP8"));
       });
   SetupEncoder(&encoder_factory, "VP8");
@@ -420,7 +420,7 @@ TEST_P(PictureIdTest, IncreasingAfterRecreateStreamSimulcastEncoderAdapter) {
   InternalEncoderFactory internal_encoder_factory;
   test::FunctionVideoEncoderFactory encoder_factory(
       [&internal_encoder_factory]() {
-        return rtc::MakeUnique<SimulcastEncoderAdapter>(
+        return absl::make_unique<SimulcastEncoderAdapter>(
             &internal_encoder_factory, SdpVideoFormat("VP8"));
       });
   SetupEncoder(&encoder_factory, "VP8");
@@ -431,7 +431,7 @@ TEST_P(PictureIdTest, ContinuousAfterStreamCountChangeSimulcastEncoderAdapter) {
   InternalEncoderFactory internal_encoder_factory;
   test::FunctionVideoEncoderFactory encoder_factory(
       [&internal_encoder_factory]() {
-        return rtc::MakeUnique<SimulcastEncoderAdapter>(
+        return absl::make_unique<SimulcastEncoderAdapter>(
             &internal_encoder_factory, SdpVideoFormat("VP8"));
       });
   // Make sure that the picture id is not reset if the stream count goes

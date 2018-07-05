@@ -133,7 +133,7 @@ std::unique_ptr<FlexfecSender> MaybeCreateFlexfecSender(
   }
 
   RTC_DCHECK_EQ(1U, config.rtp.flexfec.protected_media_ssrcs.size());
-  return rtc::MakeUnique<FlexfecSender>(
+  return absl::make_unique<FlexfecSender>(
       config.rtp.flexfec.payload_type, config.rtp.flexfec.ssrc,
       config.rtp.flexfec.protected_media_ssrcs[0], config.rtp.mid,
       config.rtp.extensions, RTPSender::FecExtensionSizes(), rtp_state,

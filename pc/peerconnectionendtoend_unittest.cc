@@ -10,6 +10,7 @@
 
 #include <memory>
 
+#include "absl/memory/memory.h"
 #include "api/audio_codecs/L16/audio_decoder_L16.h"
 #include "api/audio_codecs/L16/audio_encoder_L16.h"
 #include "api/audio_codecs/audio_codec_pair_id.h"
@@ -19,7 +20,6 @@
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/stringencode.h"
 #include "rtc_base/stringutils.h"
 
@@ -210,7 +210,7 @@ std::unique_ptr<webrtc::AudioDecoder> CreateForwardingMockDecoder(
 
   const auto dec = real_decoder.get();  // For lambda capturing.
   auto mock_decoder =
-      rtc::MakeUnique<ForwardingMockDecoder>(std::move(real_decoder));
+      absl::make_unique<ForwardingMockDecoder>(std::move(real_decoder));
   EXPECT_CALL(*mock_decoder, Channels())
       .Times(AtLeast(1))
       .WillRepeatedly(Invoke([dec] { return dec->Channels(); }));

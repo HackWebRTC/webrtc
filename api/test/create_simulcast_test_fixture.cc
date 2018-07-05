@@ -13,9 +13,9 @@
 #include <memory>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "api/test/simulcast_test_fixture.h"
 #include "modules/video_coding/utility/simulcast_test_fixture_impl.h"
-#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 namespace test {
@@ -24,9 +24,8 @@ std::unique_ptr<SimulcastTestFixture> CreateSimulcastTestFixture(
     std::unique_ptr<VideoEncoderFactory> encoder_factory,
     std::unique_ptr<VideoDecoderFactory> decoder_factory,
     SdpVideoFormat video_format) {
-  return rtc::MakeUnique<SimulcastTestFixtureImpl>(std::move(encoder_factory),
-                                                   std::move(decoder_factory),
-                                                   video_format);
+  return absl::make_unique<SimulcastTestFixtureImpl>(
+      std::move(encoder_factory), std::move(decoder_factory), video_format);
 }
 
 }  // namespace test

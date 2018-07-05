@@ -10,9 +10,9 @@
 
 #include "video/video_stream_decoder_impl.h"
 
+#include "absl/memory/memory.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/mod_ops.h"
-#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 
@@ -63,7 +63,7 @@ void VideoStreamDecoderImpl::OnFrame(
     };
 
     bookkeeping_queue_.PostTask(
-        rtc::MakeUnique<OnFrameTask>(std::move(frame), this));
+        absl::make_unique<OnFrameTask>(std::move(frame), this));
     return;
   }
 

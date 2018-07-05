@@ -13,9 +13,9 @@
 #include <limits>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "modules/congestion_controller/goog_cc/delay_based_bwe.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 constexpr size_t kMtu = 1200;
@@ -150,7 +150,7 @@ int64_t StreamGenerator::GenerateFrame(std::vector<PacketFeedback>* packets,
 DelayBasedBweTest::DelayBasedBweTest()
     : clock_(100000000),
       acknowledged_bitrate_estimator_(
-          rtc::MakeUnique<AcknowledgedBitrateEstimator>()),
+          absl::make_unique<AcknowledgedBitrateEstimator>()),
       bitrate_estimator_(new DelayBasedBwe(nullptr)),
       stream_generator_(new test::StreamGenerator(1e6,  // Capacity.
                                                   clock_.TimeInMicroseconds())),

@@ -10,9 +10,9 @@
 
 #include "modules/desktop_capture/window_finder_x11.h"
 
+#include "absl/memory/memory.h"
 #include "modules/desktop_capture/x11/window_list_utils.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 
@@ -43,7 +43,7 @@ std::unique_ptr<WindowFinder> WindowFinder::Create(
     return nullptr;
   }
 
-  return rtc::MakeUnique<WindowFinderX11>(options.cache);
+  return absl::make_unique<WindowFinderX11>(options.cache);
 }
 
 }  // namespace webrtc

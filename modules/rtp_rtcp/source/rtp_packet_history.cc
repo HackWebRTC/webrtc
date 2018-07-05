@@ -14,10 +14,10 @@
 #include <limits>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {
@@ -143,7 +143,7 @@ std::unique_ptr<RtpPacketToSend> RtpPacketHistory::GetPacketAndSetSendTime(
     // Remove from history and return actual packet instance.
     return RemovePacket(rtp_it);
   }
-  return rtc::MakeUnique<RtpPacketToSend>(*packet.packet);
+  return absl::make_unique<RtpPacketToSend>(*packet.packet);
 }
 
 absl::optional<RtpPacketHistory::PacketState> RtpPacketHistory::GetPacketState(
@@ -203,7 +203,7 @@ std::unique_ptr<RtpPacketToSend> RtpPacketHistory::GetBestFittingPacket(
     }
   }
 
-  return rtc::MakeUnique<RtpPacketToSend>(*best_packet);
+  return absl::make_unique<RtpPacketToSend>(*best_packet);
 }
 
 void RtpPacketHistory::Reset() {

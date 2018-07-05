@@ -16,11 +16,11 @@
 
 #include <memory>
 
+#include "absl/memory/memory.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/fakeclock.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/testclient.h"
 #include "rtc_base/testutils.h"
 #include "rtc_base/thread.h"
@@ -40,7 +40,7 @@ using webrtc::testing::StreamSink;
 struct Sender : public MessageHandler {
   Sender(Thread* th, AsyncSocket* s, uint32_t rt)
       : thread(th),
-        socket(MakeUnique<AsyncUDPSocket>(s)),
+        socket(absl::make_unique<AsyncUDPSocket>(s)),
         done(false),
         rate(rt),
         count(0) {
@@ -86,7 +86,7 @@ struct Sender : public MessageHandler {
 struct Receiver : public MessageHandler, public sigslot::has_slots<> {
   Receiver(Thread* th, AsyncSocket* s, uint32_t bw)
       : thread(th),
-        socket(MakeUnique<AsyncUDPSocket>(s)),
+        socket(absl::make_unique<AsyncUDPSocket>(s)),
         bandwidth(bw),
         done(false),
         count(0),
@@ -184,8 +184,8 @@ class VirtualSocketServerTest : public testing::Test {
     socket->Bind(EmptySocketAddressWithFamily(default_route.family()));
     SocketAddress client1_any_addr = socket->GetLocalAddress();
     EXPECT_TRUE(client1_any_addr.IsAnyIP());
-    auto client1 = MakeUnique<TestClient>(MakeUnique<AsyncUDPSocket>(socket),
-                                          &fake_clock_);
+    auto client1 = absl::make_unique<TestClient>(
+        absl::make_unique<AsyncUDPSocket>(socket), &fake_clock_);
 
     // Create client2 bound to the default route.
     AsyncSocket* socket2 =
@@ -193,8 +193,8 @@ class VirtualSocketServerTest : public testing::Test {
     socket2->Bind(SocketAddress(default_route, 0));
     SocketAddress client2_addr = socket2->GetLocalAddress();
     EXPECT_FALSE(client2_addr.IsAnyIP());
-    auto client2 = MakeUnique<TestClient>(MakeUnique<AsyncUDPSocket>(socket2),
-                                          &fake_clock_);
+    auto client2 = absl::make_unique<TestClient>(
+        absl::make_unique<AsyncUDPSocket>(socket2), &fake_clock_);
 
     // Client1 sends to client2, client2 should see the default route as
     // client1's address.
@@ -217,12 +217,12 @@ class VirtualSocketServerTest : public testing::Test {
     // Make sure VSS didn't switch families on us.
     EXPECT_EQ(server_addr.family(), initial_addr.family());
 
-    auto client1 = MakeUnique<TestClient>(MakeUnique<AsyncUDPSocket>(socket),
-                                          &fake_clock_);
+    auto client1 = absl::make_unique<TestClient>(
+        absl::make_unique<AsyncUDPSocket>(socket), &fake_clock_);
     AsyncSocket* socket2 =
         ss_.CreateAsyncSocket(initial_addr.family(), SOCK_DGRAM);
-    auto client2 = MakeUnique<TestClient>(MakeUnique<AsyncUDPSocket>(socket2),
-                                          &fake_clock_);
+    auto client2 = absl::make_unique<TestClient>(
+        absl::make_unique<AsyncUDPSocket>(socket2), &fake_clock_);
 
     SocketAddress client2_addr;
     EXPECT_EQ(3, client2->SendTo("foo", 3, server_addr));
@@ -235,8 +235,8 @@ class VirtualSocketServerTest : public testing::Test {
 
     SocketAddress empty = EmptySocketAddressWithFamily(initial_addr.family());
     for (int i = 0; i < 10; i++) {
-      client2 = MakeUnique<TestClient>(
-          WrapUnique(AsyncUDPSocket::Create(&ss_, empty)), &fake_clock_);
+      client2 = absl::make_unique<TestClient>(
+          absl::WrapUnique(AsyncUDPSocket::Create(&ss_, empty)), &fake_clock_);
 
       SocketAddress next_client2_addr;
       EXPECT_EQ(3, client2->SendTo("foo", 3, server_addr));
@@ -261,15 +261,15 @@ class VirtualSocketServerTest : public testing::Test {
         EmptySocketAddressWithFamily(initial_addr.family());
 
     // Create client
-    std::unique_ptr<AsyncSocket> client =
-        WrapUnique(ss_.CreateAsyncSocket(initial_addr.family(), SOCK_STREAM));
+    std::unique_ptr<AsyncSocket> client = absl::WrapUnique(
+        ss_.CreateAsyncSocket(initial_addr.family(), SOCK_STREAM));
     sink.Monitor(client.get());
     EXPECT_EQ(client->GetState(), AsyncSocket::CS_CLOSED);
     EXPECT_TRUE(client->GetLocalAddress().IsNil());
 
     // Create server
-    std::unique_ptr<AsyncSocket> server =
-        WrapUnique(ss_.CreateAsyncSocket(initial_addr.family(), SOCK_STREAM));
+    std::unique_ptr<AsyncSocket> server = absl::WrapUnique(
+        ss_.CreateAsyncSocket(initial_addr.family(), SOCK_STREAM));
     sink.Monitor(server.get());
     EXPECT_NE(0, server->Listen(5));  // Bind required
     EXPECT_EQ(0, server->Bind(initial_addr));
@@ -302,7 +302,8 @@ class VirtualSocketServerTest : public testing::Test {
 
     // Server has pending connection
     EXPECT_TRUE(sink.Check(server.get(), SSE_READ));
-    std::unique_ptr<Socket> accepted = WrapUnique(server->Accept(&accept_addr));
+    std::unique_ptr<Socket> accepted =
+        absl::WrapUnique(server->Accept(&accept_addr));
     EXPECT_TRUE(nullptr != accepted);
     EXPECT_NE(accept_addr, kEmptyAddr);
     EXPECT_EQ(accepted->GetRemoteAddress(), accept_addr);
@@ -329,13 +330,13 @@ class VirtualSocketServerTest : public testing::Test {
         EmptySocketAddressWithFamily(initial_addr.family());
 
     // Create client
-    std::unique_ptr<AsyncSocket> client =
-        WrapUnique(ss_.CreateAsyncSocket(initial_addr.family(), SOCK_STREAM));
+    std::unique_ptr<AsyncSocket> client = absl::WrapUnique(
+        ss_.CreateAsyncSocket(initial_addr.family(), SOCK_STREAM));
     sink.Monitor(client.get());
 
     // Create server
-    std::unique_ptr<AsyncSocket> server =
-        WrapUnique(ss_.CreateAsyncSocket(initial_addr.family(), SOCK_STREAM));
+    std::unique_ptr<AsyncSocket> server = absl::WrapUnique(
+        ss_.CreateAsyncSocket(initial_addr.family(), SOCK_STREAM));
     sink.Monitor(server.get());
     EXPECT_EQ(0, server->Bind(initial_addr));
     EXPECT_EQ(server->GetLocalAddress().family(), initial_addr.family());
@@ -448,14 +449,14 @@ class VirtualSocketServerTest : public testing::Test {
     const SocketAddress kEmptyAddr;
 
     // Create clients
-    std::unique_ptr<AsyncSocket> a =
-        WrapUnique(ss_.CreateAsyncSocket(initial_addr.family(), SOCK_STREAM));
+    std::unique_ptr<AsyncSocket> a = absl::WrapUnique(
+        ss_.CreateAsyncSocket(initial_addr.family(), SOCK_STREAM));
     sink.Monitor(a.get());
     a->Bind(initial_addr);
     EXPECT_EQ(a->GetLocalAddress().family(), initial_addr.family());
 
-    std::unique_ptr<AsyncSocket> b =
-        WrapUnique(ss_.CreateAsyncSocket(initial_addr.family(), SOCK_STREAM));
+    std::unique_ptr<AsyncSocket> b = absl::WrapUnique(
+        ss_.CreateAsyncSocket(initial_addr.family(), SOCK_STREAM));
     sink.Monitor(b.get());
     b->Bind(initial_addr);
     EXPECT_EQ(b->GetLocalAddress().family(), initial_addr.family());
@@ -498,14 +499,14 @@ class VirtualSocketServerTest : public testing::Test {
     const SocketAddress kEmptyAddr;
 
     // Connect two sockets
-    std::unique_ptr<AsyncSocket> a =
-        WrapUnique(ss_.CreateAsyncSocket(initial_addr.family(), SOCK_STREAM));
+    std::unique_ptr<AsyncSocket> a = absl::WrapUnique(
+        ss_.CreateAsyncSocket(initial_addr.family(), SOCK_STREAM));
     sink.Monitor(a.get());
     a->Bind(initial_addr);
     EXPECT_EQ(a->GetLocalAddress().family(), initial_addr.family());
 
-    std::unique_ptr<AsyncSocket> b =
-        WrapUnique(ss_.CreateAsyncSocket(initial_addr.family(), SOCK_STREAM));
+    std::unique_ptr<AsyncSocket> b = absl::WrapUnique(
+        ss_.CreateAsyncSocket(initial_addr.family(), SOCK_STREAM));
     sink.Monitor(b.get());
     b->Bind(initial_addr);
     EXPECT_EQ(b->GetLocalAddress().family(), initial_addr.family());
@@ -620,10 +621,10 @@ class VirtualSocketServerTest : public testing::Test {
     const SocketAddress kEmptyAddr;
 
     // Connect two sockets
-    std::unique_ptr<AsyncSocket> a =
-        WrapUnique(ss_.CreateAsyncSocket(initial_addr.family(), SOCK_STREAM));
-    std::unique_ptr<AsyncSocket> b =
-        WrapUnique(ss_.CreateAsyncSocket(initial_addr.family(), SOCK_STREAM));
+    std::unique_ptr<AsyncSocket> a = absl::WrapUnique(
+        ss_.CreateAsyncSocket(initial_addr.family(), SOCK_STREAM));
+    std::unique_ptr<AsyncSocket> b = absl::WrapUnique(
+        ss_.CreateAsyncSocket(initial_addr.family(), SOCK_STREAM));
     a->Bind(initial_addr);
     EXPECT_EQ(a->GetLocalAddress().family(), initial_addr.family());
 
@@ -771,8 +772,8 @@ class VirtualSocketServerTest : public testing::Test {
     const SocketAddress kEmptyAddr;
 
     // Client gets a IPv4 address
-    std::unique_ptr<AsyncSocket> client =
-        WrapUnique(ss_.CreateAsyncSocket(client_addr.family(), SOCK_STREAM));
+    std::unique_ptr<AsyncSocket> client = absl::WrapUnique(
+        ss_.CreateAsyncSocket(client_addr.family(), SOCK_STREAM));
     sink.Monitor(client.get());
     EXPECT_EQ(client->GetState(), AsyncSocket::CS_CLOSED);
     EXPECT_EQ(client->GetLocalAddress(), kEmptyAddr);
@@ -780,8 +781,8 @@ class VirtualSocketServerTest : public testing::Test {
 
     // Server gets a non-mapped non-any IPv6 address.
     // IPv4 sockets should not be able to connect to this.
-    std::unique_ptr<AsyncSocket> server =
-        WrapUnique(ss_.CreateAsyncSocket(server_addr.family(), SOCK_STREAM));
+    std::unique_ptr<AsyncSocket> server = absl::WrapUnique(
+        ss_.CreateAsyncSocket(server_addr.family(), SOCK_STREAM));
     sink.Monitor(server.get());
     server->Bind(server_addr);
     server->Listen(5);
@@ -791,7 +792,7 @@ class VirtualSocketServerTest : public testing::Test {
       ss_.ProcessMessagesUntilIdle();
       EXPECT_TRUE(sink.Check(server.get(), SSE_READ));
       std::unique_ptr<Socket> accepted =
-          WrapUnique(server->Accept(&accept_address));
+          absl::WrapUnique(server->Accept(&accept_address));
       EXPECT_TRUE(nullptr != accepted);
       EXPECT_NE(kEmptyAddr, accept_address);
       ss_.ProcessMessagesUntilIdle();
@@ -820,13 +821,13 @@ class VirtualSocketServerTest : public testing::Test {
     AsyncSocket* socket = ss_.CreateAsyncSocket(AF_INET, SOCK_DGRAM);
     socket->Bind(server_addr);
     SocketAddress bound_server_addr = socket->GetLocalAddress();
-    auto client1 = MakeUnique<TestClient>(MakeUnique<AsyncUDPSocket>(socket),
-                                          &fake_clock_);
+    auto client1 = absl::make_unique<TestClient>(
+        absl::make_unique<AsyncUDPSocket>(socket), &fake_clock_);
 
     AsyncSocket* socket2 = ss_.CreateAsyncSocket(AF_INET, SOCK_DGRAM);
     socket2->Bind(client_addr);
-    auto client2 = MakeUnique<TestClient>(MakeUnique<AsyncUDPSocket>(socket2),
-                                          &fake_clock_);
+    auto client2 = absl::make_unique<TestClient>(
+        absl::make_unique<AsyncUDPSocket>(socket2), &fake_clock_);
     SocketAddress client2_addr;
 
     if (shouldSucceed) {
@@ -1027,12 +1028,12 @@ TEST_F(VirtualSocketServerTest, CanSendDatagramFromUnboundIPv6ToIPv4Any) {
 TEST_F(VirtualSocketServerTest, SetSendingBlockedWithUdpSocket) {
   AsyncSocket* socket1 =
       ss_.CreateAsyncSocket(kIPv4AnyAddress.family(), SOCK_DGRAM);
-  std::unique_ptr<AsyncSocket> socket2 =
-      WrapUnique(ss_.CreateAsyncSocket(kIPv4AnyAddress.family(), SOCK_DGRAM));
+  std::unique_ptr<AsyncSocket> socket2 = absl::WrapUnique(
+      ss_.CreateAsyncSocket(kIPv4AnyAddress.family(), SOCK_DGRAM));
   socket1->Bind(kIPv4AnyAddress);
   socket2->Bind(kIPv4AnyAddress);
-  auto client1 =
-      MakeUnique<TestClient>(MakeUnique<AsyncUDPSocket>(socket1), &fake_clock_);
+  auto client1 = absl::make_unique<TestClient>(
+      absl::make_unique<AsyncUDPSocket>(socket1), &fake_clock_);
 
   ss_.SetSendingBlocked(true);
   EXPECT_EQ(-1, client1->SendTo("foo", 3, socket2->GetLocalAddress()));
@@ -1050,10 +1051,10 @@ TEST_F(VirtualSocketServerTest, SetSendingBlockedWithTcpSocket) {
   ss_.set_recv_buffer_capacity(kBufferSize);
 
   StreamSink sink;
-  std::unique_ptr<AsyncSocket> socket1 =
-      WrapUnique(ss_.CreateAsyncSocket(kIPv4AnyAddress.family(), SOCK_STREAM));
-  std::unique_ptr<AsyncSocket> socket2 =
-      WrapUnique(ss_.CreateAsyncSocket(kIPv4AnyAddress.family(), SOCK_STREAM));
+  std::unique_ptr<AsyncSocket> socket1 = absl::WrapUnique(
+      ss_.CreateAsyncSocket(kIPv4AnyAddress.family(), SOCK_STREAM));
+  std::unique_ptr<AsyncSocket> socket2 = absl::WrapUnique(
+      ss_.CreateAsyncSocket(kIPv4AnyAddress.family(), SOCK_STREAM));
   sink.Monitor(socket1.get());
   sink.Monitor(socket2.get());
   socket1->Bind(kIPv4AnyAddress);

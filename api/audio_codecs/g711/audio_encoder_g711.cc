@@ -13,11 +13,11 @@
 #include <memory>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/g711/audio_encoder_pcm.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/numerics/safe_minmax.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/string_to_number.h"
 
 namespace webrtc {
@@ -70,14 +70,14 @@ std::unique_ptr<AudioEncoder> AudioEncoderG711::MakeAudioEncoder(
       impl_config.num_channels = config.num_channels;
       impl_config.frame_size_ms = config.frame_size_ms;
       impl_config.payload_type = payload_type;
-      return rtc::MakeUnique<AudioEncoderPcmU>(impl_config);
+      return absl::make_unique<AudioEncoderPcmU>(impl_config);
     }
     case Config::Type::kPcmA: {
       AudioEncoderPcmA::Config impl_config;
       impl_config.num_channels = config.num_channels;
       impl_config.frame_size_ms = config.frame_size_ms;
       impl_config.payload_type = payload_type;
-      return rtc::MakeUnique<AudioEncoderPcmA>(impl_config);
+      return absl::make_unique<AudioEncoderPcmA>(impl_config);
     }
     default: { return nullptr; }
   }

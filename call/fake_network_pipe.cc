@@ -16,10 +16,10 @@
 #include <cmath>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "call/call.h"
 #include "call/fake_network_pipe.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {
@@ -79,7 +79,7 @@ FakeNetworkPipe::FakeNetworkPipe(Clock* clock,
                                  PacketReceiver* receiver,
                                  uint64_t seed)
     : clock_(clock),
-      network_simulation_(rtc::MakeUnique<SimulatedNetwork>(config, seed)),
+      network_simulation_(absl::make_unique<SimulatedNetwork>(config, seed)),
       receiver_(receiver),
       transport_(nullptr),
       clock_offset_ms_(0),
@@ -93,7 +93,7 @@ FakeNetworkPipe::FakeNetworkPipe(Clock* clock,
                                  const FakeNetworkPipe::Config& config,
                                  Transport* transport)
     : clock_(clock),
-      network_simulation_(rtc::MakeUnique<SimulatedNetwork>(config, 1)),
+      network_simulation_(absl::make_unique<SimulatedNetwork>(config, 1)),
       receiver_(nullptr),
       transport_(transport),
       clock_offset_ms_(0),

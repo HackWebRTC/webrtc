@@ -14,6 +14,7 @@
 #include <functional>
 #include <memory>
 #include <vector>
+#include "absl/memory/memory.h"
 #include "api/transport/network_types.h"
 #include "modules/congestion_controller/goog_cc/include/goog_cc_factory.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
@@ -23,7 +24,6 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/numerics/safe_minmax.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/rate_limiter.h"
 #include "rtc_base/sequenced_task_checker.h"
 #include "rtc_base/socket.h"
@@ -31,7 +31,7 @@
 #include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/runtime_enabled_features.h"
 
-using rtc::MakeUnique;
+using absl::make_unique;
 
 namespace webrtc {
 namespace webrtc_cc {
@@ -136,10 +136,10 @@ class PeriodicTaskImpl final : public PeriodicTask {
     if (!running_)
       return true;
     closure_();
-    // WrapUnique lets us repost this task on the TaskQueue.
-    task_queue_->PostDelayedTask(rtc::WrapUnique(this), period_ms_);
+    // absl::WrapUnique lets us repost this task on the TaskQueue.
+    task_queue_->PostDelayedTask(absl::WrapUnique(this), period_ms_);
     // Return false to tell TaskQueue to not destruct this object, since we have
-    // taken ownership with WrapUnique.
+    // taken ownership with absl::WrapUnique.
     return false;
   }
   void Stop() override {
@@ -163,7 +163,7 @@ template <class Closure>
 static PeriodicTask* StartPeriodicTask(rtc::TaskQueue* task_queue,
                                        int64_t period_ms,
                                        Closure&& closure) {
-  auto periodic_task = rtc::MakeUnique<PeriodicTaskImpl<Closure>>(
+  auto periodic_task = absl::make_unique<PeriodicTaskImpl<Closure>>(
       task_queue, period_ms, std::forward<Closure>(closure));
   PeriodicTask* periodic_task_ptr = periodic_task.get();
   task_queue->PostDelayedTask(std::move(periodic_task), period_ms);
@@ -377,8 +377,8 @@ SendSideCongestionController::SendSideCongestionController(
       transport_feedback_adapter_(clock_),
       controller_factory_with_feedback_(controller_factory),
       controller_factory_fallback_(
-          rtc::MakeUnique<GoogCcNetworkControllerFactory>(event_log)),
-      pacer_controller_(MakeUnique<PacerController>(pacer_)),
+          absl::make_unique<GoogCcNetworkControllerFactory>(event_log)),
+      pacer_controller_(absl::make_unique<PacerController>(pacer_)),
       process_interval_(controller_factory_fallback_->GetProcessInterval()),
       last_report_block_time_(Timestamp::ms(clock_->TimeInMilliseconds())),
       observer_(nullptr),
@@ -416,7 +416,7 @@ void SendSideCongestionController::MaybeRecreateControllers() {
   if (!network_available_ || !observer_)
     return;
   if (!control_handler_) {
-    control_handler_ = MakeUnique<send_side_cc_internal::ControlHandler>(
+    control_handler_ = absl::make_unique<send_side_cc_internal::ControlHandler>(
         observer_, pacer_controller_.get(), clock_);
   }
 

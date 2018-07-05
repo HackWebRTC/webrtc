@@ -11,6 +11,7 @@
 #include <list>
 #include <memory>
 
+#include "absl/memory/memory.h"
 #include "p2p/base/basicpacketsocketfactory.h"
 #include "p2p/base/p2pconstants.h"
 #include "p2p/base/relayport.h"
@@ -28,7 +29,6 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/natserver.h"
 #include "rtc_base/natsocketfactory.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/socketaddress.h"
 #include "rtc_base/ssladapter.h"
 #include "rtc_base/stringutils.h"
@@ -762,8 +762,8 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
   IceMessage* CreateStunMessageWithUsername(int type,
                                             const std::string& username) {
     IceMessage* msg = CreateStunMessage(type);
-    msg->AddAttribute(
-        rtc::MakeUnique<StunByteStringAttribute>(STUN_ATTR_USERNAME, username));
+    msg->AddAttribute(absl::make_unique<StunByteStringAttribute>(
+        STUN_ATTR_USERNAME, username));
     return msg;
   }
   TestPort* CreateTestPort(const rtc::SocketAddress& addr,
@@ -1412,11 +1412,11 @@ TEST_F(PortTest, TestLoopbackCall) {
       CreateStunMessage(STUN_BINDING_REQUEST));
   const StunByteStringAttribute* username_attr =
       msg->GetByteString(STUN_ATTR_USERNAME);
-  modified_req->AddAttribute(rtc::MakeUnique<StunByteStringAttribute>(
+  modified_req->AddAttribute(absl::make_unique<StunByteStringAttribute>(
       STUN_ATTR_USERNAME, username_attr->GetString()));
   // To make sure we receive error response, adding tiebreaker less than
   // what's present in request.
-  modified_req->AddAttribute(rtc::MakeUnique<StunUInt64Attribute>(
+  modified_req->AddAttribute(absl::make_unique<StunUInt64Attribute>(
       STUN_ATTR_ICE_CONTROLLING, kTiebreaker1 - 1));
   modified_req->AddMessageIntegrity("lpass");
   modified_req->AddFingerprint();
@@ -2058,7 +2058,7 @@ TEST_F(PortTest, TestHandleStunMessage) {
 
   // BINDING-RESPONSE without username, with MESSAGE-INTEGRITY and FINGERPRINT.
   in_msg.reset(CreateStunMessage(STUN_BINDING_RESPONSE));
-  in_msg->AddAttribute(rtc::MakeUnique<StunXorAddressAttribute>(
+  in_msg->AddAttribute(absl::make_unique<StunXorAddressAttribute>(
       STUN_ATTR_XOR_MAPPED_ADDRESS, kLocalAddr2));
   in_msg->AddMessageIntegrity("rpass");
   in_msg->AddFingerprint();
@@ -2070,7 +2070,7 @@ TEST_F(PortTest, TestHandleStunMessage) {
 
   // BINDING-ERROR-RESPONSE without username, with error, M-I, and FINGERPRINT.
   in_msg.reset(CreateStunMessage(STUN_BINDING_ERROR_RESPONSE));
-  in_msg->AddAttribute(rtc::MakeUnique<StunErrorCodeAttribute>(
+  in_msg->AddAttribute(absl::make_unique<StunErrorCodeAttribute>(
       STUN_ATTR_ERROR_CODE, STUN_ERROR_SERVER_ERROR,
       STUN_ERROR_REASON_SERVER_ERROR));
   in_msg->AddFingerprint();
@@ -2222,7 +2222,7 @@ TEST_F(PortTest, TestHandleStunMessageBadFingerprint) {
 
   // Valid BINDING-RESPONSE, except no FINGERPRINT.
   in_msg.reset(CreateStunMessage(STUN_BINDING_RESPONSE));
-  in_msg->AddAttribute(rtc::MakeUnique<StunXorAddressAttribute>(
+  in_msg->AddAttribute(absl::make_unique<StunXorAddressAttribute>(
       STUN_ATTR_XOR_MAPPED_ADDRESS, kLocalAddr2));
   in_msg->AddMessageIntegrity("rpass");
   WriteStunMessage(in_msg.get(), buf.get());
@@ -2240,7 +2240,7 @@ TEST_F(PortTest, TestHandleStunMessageBadFingerprint) {
 
   // Valid BINDING-ERROR-RESPONSE, except no FINGERPRINT.
   in_msg.reset(CreateStunMessage(STUN_BINDING_ERROR_RESPONSE));
-  in_msg->AddAttribute(rtc::MakeUnique<StunErrorCodeAttribute>(
+  in_msg->AddAttribute(absl::make_unique<StunErrorCodeAttribute>(
       STUN_ATTR_ERROR_CODE, STUN_ERROR_SERVER_ERROR,
       STUN_ERROR_REASON_SERVER_ERROR));
   in_msg->AddMessageIntegrity("rpass");

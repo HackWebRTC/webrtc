@@ -10,9 +10,9 @@
 
 #include "modules/video_coding/rtp_frame_reference_finder.h"
 
+#include "absl/memory/memory.h"
 #include "modules/video_coding/frame_object.h"
 #include "modules/video_coding/packet_buffer.h"
-#include "rtc_base/ptr_util.h"
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {
@@ -107,7 +107,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
   video_coding::RtpFrameReferenceFinder reference_finder(&cb);
 
   while (reader.MoreToRead()) {
-    auto frame = rtc::MakeUnique<video_coding::RtpFrameObject>(
+    auto frame = absl::make_unique<video_coding::RtpFrameObject>(
         pb, reader.GetNum<uint16_t>(), reader.GetNum<uint16_t>(), 0, 0, 0);
     reference_finder.ManageFrame(std::move(frame));
   }

@@ -14,10 +14,10 @@
 #include <memory>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/helpers.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/stringencode.h"
 
 namespace cricket {
@@ -190,8 +190,8 @@ StunRequest::~StunRequest() {
 void StunRequest::Construct() {
   if (msg_->type() == 0) {
     if (!origin_.empty()) {
-      msg_->AddAttribute(
-          rtc::MakeUnique<StunByteStringAttribute>(STUN_ATTR_ORIGIN, origin_));
+      msg_->AddAttribute(absl::make_unique<StunByteStringAttribute>(
+          STUN_ATTR_ORIGIN, origin_));
     }
     Prepare(msg_);
     RTC_DCHECK(msg_->type() != 0);

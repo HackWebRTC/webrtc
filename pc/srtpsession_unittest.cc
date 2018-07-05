@@ -12,11 +12,11 @@
 
 #include <string>
 
+#include "absl/memory/memory.h"
 #include "api/fakemetricsobserver.h"
 #include "media/base/fakertp.h"
 #include "pc/srtptestutil.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/sslstreamadapter.h"  // For rtc::SRTP_*
 #include "third_party/libsrtp/include/srtp.h"
 

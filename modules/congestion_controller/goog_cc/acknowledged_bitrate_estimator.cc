@@ -12,9 +12,9 @@
 
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/numerics/safe_conversions.h"
-#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 
@@ -25,7 +25,7 @@ bool IsInSendTimeHistory(const PacketFeedback& packet) {
 }  // namespace
 
 AcknowledgedBitrateEstimator::AcknowledgedBitrateEstimator()
-    : AcknowledgedBitrateEstimator(rtc::MakeUnique<BitrateEstimator>()) {}
+    : AcknowledgedBitrateEstimator(absl::make_unique<BitrateEstimator>()) {}
 
 AcknowledgedBitrateEstimator::~AcknowledgedBitrateEstimator() {}
 

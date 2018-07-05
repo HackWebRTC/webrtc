@@ -12,8 +12,8 @@
 
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "logging/rtc_event_log/rtc_stream_config.h"
-#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 
@@ -24,7 +24,7 @@ RtcEventAudioSendStreamConfig::RtcEventAudioSendStreamConfig(
 RtcEventAudioSendStreamConfig::RtcEventAudioSendStreamConfig(
     const RtcEventAudioSendStreamConfig& other)
     : RtcEvent(other.timestamp_us_),
-      config_(rtc::MakeUnique<rtclog::StreamConfig>(*other.config_)) {}
+      config_(absl::make_unique<rtclog::StreamConfig>(*other.config_)) {}
 
 RtcEventAudioSendStreamConfig::~RtcEventAudioSendStreamConfig() = default;
 
@@ -37,8 +37,8 @@ bool RtcEventAudioSendStreamConfig::IsConfigEvent() const {
 }
 
 std::unique_ptr<RtcEvent> RtcEventAudioSendStreamConfig::Copy() const {
-  auto config_copy = rtc::MakeUnique<rtclog::StreamConfig>(*config_);
-  return rtc::WrapUnique<RtcEvent>(new RtcEventAudioSendStreamConfig(*this));
+  auto config_copy = absl::make_unique<rtclog::StreamConfig>(*config_);
+  return absl::WrapUnique<RtcEvent>(new RtcEventAudioSendStreamConfig(*this));
 }
 
 }  // namespace webrtc

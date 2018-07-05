@@ -65,18 +65,18 @@ void ShuffleInPlace(Random* prng, rtc::ArrayView<T> array) {
 }  // namespace
 
 std::unique_ptr<RtcEventAlrState> EventGenerator::NewAlrState() {
-  return rtc::MakeUnique<RtcEventAlrState>(prng_.Rand<bool>());
+  return absl::make_unique<RtcEventAlrState>(prng_.Rand<bool>());
 }
 
 std::unique_ptr<RtcEventAudioPlayout> EventGenerator::NewAudioPlayout(
     uint32_t ssrc) {
-  return rtc::MakeUnique<RtcEventAudioPlayout>(ssrc);
+  return absl::make_unique<RtcEventAudioPlayout>(ssrc);
 }
 
 std::unique_ptr<RtcEventAudioNetworkAdaptation>
 EventGenerator::NewAudioNetworkAdaptation() {
   std::unique_ptr<AudioEncoderRuntimeConfig> config =
-      rtc::MakeUnique<AudioEncoderRuntimeConfig>();
+      absl::make_unique<AudioEncoderRuntimeConfig>();
 
   config->bitrate_bps = prng_.Rand(0, 3000000);
   config->enable_fec = prng_.Rand<bool>();
@@ -85,7 +85,7 @@ EventGenerator::NewAudioNetworkAdaptation() {
   config->num_channels = prng_.Rand(1, 2);
   config->uplink_packet_loss_fraction = prng_.Rand<float>();
 
-  return rtc::MakeUnique<RtcEventAudioNetworkAdaptation>(std::move(config));
+  return absl::make_unique<RtcEventAudioNetworkAdaptation>(std::move(config));
 }
 
 std::unique_ptr<RtcEventBweUpdateDelayBased>
@@ -94,7 +94,7 @@ EventGenerator::NewBweUpdateDelayBased() {
   int32_t bitrate_bps = prng_.Rand(0, kMaxBweBps);
   BandwidthUsage state = static_cast<BandwidthUsage>(
       prng_.Rand(static_cast<uint32_t>(BandwidthUsage::kLast) - 1));
-  return rtc::MakeUnique<RtcEventBweUpdateDelayBased>(bitrate_bps, state);
+  return absl::make_unique<RtcEventBweUpdateDelayBased>(bitrate_bps, state);
 }
 
 std::unique_ptr<RtcEventBweUpdateLossBased>
@@ -105,8 +105,8 @@ EventGenerator::NewBweUpdateLossBased() {
   uint8_t fraction_lost = prng_.Rand<uint8_t>();
   int32_t total_packets = prng_.Rand(1, kMaxPackets);
 
-  return rtc::MakeUnique<RtcEventBweUpdateLossBased>(bitrate_bps, fraction_lost,
-                                                     total_packets);
+  return absl::make_unique<RtcEventBweUpdateLossBased>(
+      bitrate_bps, fraction_lost, total_packets);
 }
 
 std::unique_ptr<RtcEventProbeClusterCreated>
@@ -118,8 +118,8 @@ EventGenerator::NewProbeClusterCreated() {
   int min_probes = prng_.Rand(5, 50);
   int min_bytes = prng_.Rand(500, 50000);
 
-  return rtc::MakeUnique<RtcEventProbeClusterCreated>(id, bitrate_bps,
-                                                      min_probes, min_bytes);
+  return absl::make_unique<RtcEventProbeClusterCreated>(id, bitrate_bps,
+                                                        min_probes, min_bytes);
 }
 
 std::unique_ptr<RtcEventProbeResultFailure>
@@ -129,7 +129,7 @@ EventGenerator::NewProbeResultFailure() {
   ProbeFailureReason reason = static_cast<ProbeFailureReason>(
       prng_.Rand(static_cast<uint32_t>(ProbeFailureReason::kLast) - 1));
 
-  return rtc::MakeUnique<RtcEventProbeResultFailure>(id, reason);
+  return absl::make_unique<RtcEventProbeResultFailure>(id, reason);
 }
 
 std::unique_ptr<RtcEventProbeResultSuccess>
@@ -139,7 +139,7 @@ EventGenerator::NewProbeResultSuccess() {
   int id = prng_.Rand(1, kMaxNumProbes);
   int bitrate_bps = prng_.Rand(0, kMaxBweBps);
 
-  return rtc::MakeUnique<RtcEventProbeResultSuccess>(id, bitrate_bps);
+  return absl::make_unique<RtcEventProbeResultSuccess>(id, bitrate_bps);
 }
 
 std::unique_ptr<RtcEventIceCandidatePairConfig>
@@ -176,7 +176,7 @@ EventGenerator::NewIceCandidatePairConfig() {
       static_cast<IceCandidatePairConfigType>(prng_.Rand(
           static_cast<uint32_t>(IceCandidatePairConfigType::kNumValues) - 1));
   uint32_t pair_id = prng_.Rand<uint32_t>();
-  return rtc::MakeUnique<RtcEventIceCandidatePairConfig>(type, pair_id, desc);
+  return absl::make_unique<RtcEventIceCandidatePairConfig>(type, pair_id, desc);
 }
 
 std::unique_ptr<RtcEventIceCandidatePair>
@@ -186,7 +186,7 @@ EventGenerator::NewIceCandidatePair() {
           static_cast<uint32_t>(IceCandidatePairEventType::kNumValues) - 1));
   uint32_t pair_id = prng_.Rand<uint32_t>();
 
-  return rtc::MakeUnique<RtcEventIceCandidatePair>(type, pair_id);
+  return absl::make_unique<RtcEventIceCandidatePair>(type, pair_id);
 }
 
 rtcp::ReportBlock EventGenerator::NewReportBlock() {
@@ -226,17 +226,17 @@ EventGenerator::NewRtcpPacketIncoming() {
     case 0: {
       rtcp::SenderReport sender_report = NewSenderReport();
       rtc::Buffer buffer = sender_report.Build();
-      return rtc::MakeUnique<RtcEventRtcpPacketIncoming>(buffer);
+      return absl::make_unique<RtcEventRtcpPacketIncoming>(buffer);
     }
     case 1: {
       rtcp::ReceiverReport receiver_report = NewReceiverReport();
       rtc::Buffer buffer = receiver_report.Build();
-      return rtc::MakeUnique<RtcEventRtcpPacketIncoming>(buffer);
+      return absl::make_unique<RtcEventRtcpPacketIncoming>(buffer);
     }
     default:
       RTC_NOTREACHED();
       rtc::Buffer buffer;
-      return rtc::MakeUnique<RtcEventRtcpPacketIncoming>(buffer);
+      return absl::make_unique<RtcEventRtcpPacketIncoming>(buffer);
   }
 }
 
@@ -247,17 +247,17 @@ EventGenerator::NewRtcpPacketOutgoing() {
     case 0: {
       rtcp::SenderReport sender_report = NewSenderReport();
       rtc::Buffer buffer = sender_report.Build();
-      return rtc::MakeUnique<RtcEventRtcpPacketOutgoing>(buffer);
+      return absl::make_unique<RtcEventRtcpPacketOutgoing>(buffer);
     }
     case 1: {
       rtcp::ReceiverReport receiver_report = NewReceiverReport();
       rtc::Buffer buffer = receiver_report.Build();
-      return rtc::MakeUnique<RtcEventRtcpPacketOutgoing>(buffer);
+      return absl::make_unique<RtcEventRtcpPacketOutgoing>(buffer);
     }
     default:
       RTC_NOTREACHED();
       rtc::Buffer buffer;
-      return rtc::MakeUnique<RtcEventRtcpPacketOutgoing>(buffer);
+      return absl::make_unique<RtcEventRtcpPacketOutgoing>(buffer);
   }
 }
 
@@ -313,7 +313,7 @@ std::unique_ptr<RtcEventRtpPacketIncoming> EventGenerator::NewRtpPacketIncoming(
   RtpPacketReceived rtp_packet(&extension_map);
   RandomizeRtpPacket(packet_size, ssrc, extension_map, &rtp_packet);
 
-  return rtc::MakeUnique<RtcEventRtpPacketIncoming>(rtp_packet);
+  return absl::make_unique<RtcEventRtpPacketIncoming>(rtp_packet);
 }
 
 std::unique_ptr<RtcEventRtpPacketOutgoing> EventGenerator::NewRtpPacketOutgoing(
@@ -329,8 +329,8 @@ std::unique_ptr<RtcEventRtpPacketOutgoing> EventGenerator::NewRtpPacketOutgoing(
   RandomizeRtpPacket(packet_size, ssrc, extension_map, &rtp_packet);
 
   int probe_cluster_id = prng_.Rand(0, 100000);
-  return rtc::MakeUnique<RtcEventRtpPacketOutgoing>(rtp_packet,
-                                                    probe_cluster_id);
+  return absl::make_unique<RtcEventRtpPacketOutgoing>(rtp_packet,
+                                                      probe_cluster_id);
 }
 
 RtpHeaderExtensionMap EventGenerator::NewRtpHeaderExtensionMap() {
@@ -362,7 +362,7 @@ std::unique_ptr<RtcEventAudioReceiveStreamConfig>
 EventGenerator::NewAudioReceiveStreamConfig(
     uint32_t ssrc,
     const RtpHeaderExtensionMap& extensions) {
-  auto config = rtc::MakeUnique<rtclog::StreamConfig>();
+  auto config = absl::make_unique<rtclog::StreamConfig>();
   // Add SSRCs for the stream.
   config->remote_ssrc = ssrc;
   config->local_ssrc = prng_.Rand<uint32_t>();
@@ -374,14 +374,14 @@ EventGenerator::NewAudioReceiveStreamConfig(
     }
   }
 
-  return rtc::MakeUnique<RtcEventAudioReceiveStreamConfig>(std::move(config));
+  return absl::make_unique<RtcEventAudioReceiveStreamConfig>(std::move(config));
 }
 
 std::unique_ptr<RtcEventAudioSendStreamConfig>
 EventGenerator::NewAudioSendStreamConfig(
     uint32_t ssrc,
     const RtpHeaderExtensionMap& extensions) {
-  auto config = rtc::MakeUnique<rtclog::StreamConfig>();
+  auto config = absl::make_unique<rtclog::StreamConfig>();
   // Add SSRC to the stream.
   config->local_ssrc = ssrc;
   // Add header extensions.
@@ -391,14 +391,14 @@ EventGenerator::NewAudioSendStreamConfig(
       config->rtp_extensions.emplace_back(kExtensions[i].name, id);
     }
   }
-  return rtc::MakeUnique<RtcEventAudioSendStreamConfig>(std::move(config));
+  return absl::make_unique<RtcEventAudioSendStreamConfig>(std::move(config));
 }
 
 std::unique_ptr<RtcEventVideoReceiveStreamConfig>
 EventGenerator::NewVideoReceiveStreamConfig(
     uint32_t ssrc,
     const RtpHeaderExtensionMap& extensions) {
-  auto config = rtc::MakeUnique<rtclog::StreamConfig>();
+  auto config = absl::make_unique<rtclog::StreamConfig>();
 
   // Add SSRCs for the stream.
   config->remote_ssrc = ssrc;
@@ -417,14 +417,14 @@ EventGenerator::NewVideoReceiveStreamConfig(
       config->rtp_extensions.emplace_back(kExtensions[i].name, id);
     }
   }
-  return rtc::MakeUnique<RtcEventVideoReceiveStreamConfig>(std::move(config));
+  return absl::make_unique<RtcEventVideoReceiveStreamConfig>(std::move(config));
 }
 
 std::unique_ptr<RtcEventVideoSendStreamConfig>
 EventGenerator::NewVideoSendStreamConfig(
     uint32_t ssrc,
     const RtpHeaderExtensionMap& extensions) {
-  auto config = rtc::MakeUnique<rtclog::StreamConfig>();
+  auto config = absl::make_unique<rtclog::StreamConfig>();
 
   config->codecs.emplace_back(prng_.Rand<bool>() ? "VP8" : "H264",
                               prng_.Rand(127), prng_.Rand(127));
@@ -437,7 +437,7 @@ EventGenerator::NewVideoSendStreamConfig(
       config->rtp_extensions.emplace_back(kExtensions[i].name, id);
     }
   }
-  return rtc::MakeUnique<RtcEventVideoSendStreamConfig>(std::move(config));
+  return absl::make_unique<RtcEventVideoSendStreamConfig>(std::move(config));
 }
 
 bool VerifyLoggedAlrStateEvent(const RtcEventAlrState& original_event,

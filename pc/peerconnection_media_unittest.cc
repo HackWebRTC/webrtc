@@ -25,9 +25,9 @@
 #ifdef WEBRTC_ANDROID
 #include "pc/test/androidtestinitializer.h"
 #endif
+#include "absl/memory/memory.h"
 #include "pc/test/fakertccertificategenerator.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/virtualsocketserver.h"
 #include "test/gmock.h"
 
@@ -72,16 +72,16 @@ class PeerConnectionMediaBaseTest : public ::testing::Test {
   }
 
   WrapperPtr CreatePeerConnection(const RTCConfiguration& config) {
-    auto media_engine = rtc::MakeUnique<FakeMediaEngine>();
+    auto media_engine = absl::make_unique<FakeMediaEngine>();
     auto* media_engine_ptr = media_engine.get();
     auto pc_factory = CreateModularPeerConnectionFactory(
         rtc::Thread::Current(), rtc::Thread::Current(), rtc::Thread::Current(),
         std::move(media_engine), CreateCallFactory(),
         CreateRtcEventLogFactory());
 
-    auto fake_port_allocator = rtc::MakeUnique<cricket::FakePortAllocator>(
+    auto fake_port_allocator = absl::make_unique<cricket::FakePortAllocator>(
         rtc::Thread::Current(), nullptr);
-    auto observer = rtc::MakeUnique<MockPeerConnectionObserver>();
+    auto observer = absl::make_unique<MockPeerConnectionObserver>();
     auto modified_config = config;
     modified_config.sdp_semantics = sdp_semantics_;
     auto pc = pc_factory->CreatePeerConnection(modified_config,
@@ -91,7 +91,7 @@ class PeerConnectionMediaBaseTest : public ::testing::Test {
       return nullptr;
     }
 
-    auto wrapper = rtc::MakeUnique<PeerConnectionWrapperForMediaTest>(
+    auto wrapper = absl::make_unique<PeerConnectionWrapperForMediaTest>(
         pc_factory, pc, std::move(observer));
     wrapper->set_media_engine(media_engine_ptr);
     return wrapper;

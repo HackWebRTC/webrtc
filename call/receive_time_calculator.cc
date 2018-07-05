@@ -9,8 +9,8 @@
  */
 
 #include "call/receive_time_calculator.h"
+#include "absl/memory/memory.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 #include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
@@ -36,7 +36,7 @@ ReceiveTimeCalculator::CreateFromFieldTrial() {
     RTC_LOG(LS_WARNING) << "Invalid number of parameters provided.";
     return nullptr;
   }
-  return rtc::MakeUnique<ReceiveTimeCalculator>(min, max);
+  return absl::make_unique<ReceiveTimeCalculator>(min, max);
 }
 
 int64_t ReceiveTimeCalculator::ReconcileReceiveTimes(int64_t packet_time_us_,

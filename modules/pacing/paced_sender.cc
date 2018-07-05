@@ -17,6 +17,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "modules/congestion_controller/goog_cc/alr_detector.h"
 #include "modules/include/module_common_types.h"
 #include "modules/pacing/bitrate_prober.h"
@@ -25,7 +26,6 @@
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/runtime_enabled_features.h"
@@ -54,7 +54,7 @@ PacedSender::PacedSender(const Clock* clock,
     : PacedSender(clock,
                   packet_sender,
                   event_log,
-                  rtc::MakeUnique<RoundRobinPacketQueue>(clock)) {}
+                  absl::make_unique<RoundRobinPacketQueue>(clock)) {}
 
 PacedSender::PacedSender(const Clock* clock,
                          PacketSender* packet_sender,
@@ -62,15 +62,15 @@ PacedSender::PacedSender(const Clock* clock,
                          std::unique_ptr<PacketQueueInterface> packets)
     : clock_(clock),
       packet_sender_(packet_sender),
-      alr_detector_(rtc::MakeUnique<AlrDetector>(event_log)),
+      alr_detector_(absl::make_unique<AlrDetector>(event_log)),
       drain_large_queues_(!field_trial::IsDisabled("WebRTC-Pacer-DrainQueue")),
       send_padding_if_silent_(
           field_trial::IsEnabled("WebRTC-Pacer-PadInSilence")),
       video_blocks_audio_(!field_trial::IsDisabled("WebRTC-Pacer-BlockAudio")),
       paused_(false),
-      media_budget_(rtc::MakeUnique<IntervalBudget>(0)),
-      padding_budget_(rtc::MakeUnique<IntervalBudget>(0)),
-      prober_(rtc::MakeUnique<BitrateProber>(event_log)),
+      media_budget_(absl::make_unique<IntervalBudget>(0)),
+      padding_budget_(absl::make_unique<IntervalBudget>(0)),
+      prober_(absl::make_unique<BitrateProber>(event_log)),
       probing_send_failure_(false),
       estimated_bitrate_bps_(0),
       min_send_bitrate_kbps_(0u),

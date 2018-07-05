@@ -17,6 +17,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "logging/rtc_event_log/encoder/rtc_event_log_encoder_legacy.h"
 #include "logging/rtc_event_log/output/rtc_event_log_output_file.h"
 #include "rtc_base/checks.h"
@@ -25,7 +26,6 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/numerics/safe_minmax.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/sequenced_task_checker.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread_annotations.h"
@@ -64,7 +64,7 @@ std::unique_ptr<RtcEventLogEncoder> CreateEncoder(
     RtcEventLog::EncodingType type) {
   switch (type) {
     case RtcEventLog::EncodingType::Legacy:
-      return rtc::MakeUnique<RtcEventLogEncoderLegacy>();
+      return absl::make_unique<RtcEventLogEncoderLegacy>();
     default:
       RTC_LOG(LS_ERROR) << "Unknown RtcEventLog encoder type (" << int(type)
                         << ")";
@@ -182,8 +182,9 @@ bool RtcEventLogImpl::StartLogging(std::unique_ptr<RtcEventLogOutput> output,
     LogEventsFromMemoryToOutput();
   };
 
-  task_queue_->PostTask(rtc::MakeUnique<ResourceOwningTask<RtcEventLogOutput>>(
-      std::move(output), start));
+  task_queue_->PostTask(
+      absl::make_unique<ResourceOwningTask<RtcEventLogOutput>>(
+          std::move(output), start));
 
   return true;
 }
@@ -222,7 +223,7 @@ void RtcEventLogImpl::Log(std::unique_ptr<RtcEvent> event) {
       ScheduleOutput();
   };
 
-  task_queue_->PostTask(rtc::MakeUnique<ResourceOwningTask<RtcEvent>>(
+  task_queue_->PostTask(absl::make_unique<ResourceOwningTask<RtcEvent>>(
       std::move(event), event_handler));
 }
 
@@ -354,15 +355,15 @@ void RtcEventLogImpl::WriteToOutput(const std::string& output_string) {
 // RtcEventLog member functions.
 std::unique_ptr<RtcEventLog> RtcEventLog::Create(EncodingType encoding_type) {
   return Create(encoding_type,
-                rtc::MakeUnique<rtc::TaskQueue>("rtc_event_log"));
+                absl::make_unique<rtc::TaskQueue>("rtc_event_log"));
 }
 
 std::unique_ptr<RtcEventLog> RtcEventLog::Create(
     EncodingType encoding_type,
     std::unique_ptr<rtc::TaskQueue> task_queue) {
 #ifdef ENABLE_RTC_EVENT_LOG
-  return rtc::MakeUnique<RtcEventLogImpl>(CreateEncoder(encoding_type),
-                                          std::move(task_queue));
+  return absl::make_unique<RtcEventLogImpl>(CreateEncoder(encoding_type),
+                                            std::move(task_queue));
 #else
   return CreateNull();
 #endif  // ENABLE_RTC_EVENT_LOG

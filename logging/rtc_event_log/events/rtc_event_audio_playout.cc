@@ -10,7 +10,7 @@
 
 #include "logging/rtc_event_log/events/rtc_event_audio_playout.h"
 
-#include "rtc_base/ptr_util.h"
+#include "absl/memory/memory.h"
 
 namespace webrtc {
 
@@ -28,7 +28,7 @@ bool RtcEventAudioPlayout::IsConfigEvent() const {
 }
 
 std::unique_ptr<RtcEvent> RtcEventAudioPlayout::Copy() const {
-  return rtc::WrapUnique<RtcEvent>(new RtcEventAudioPlayout(*this));
+  return absl::WrapUnique<RtcEvent>(new RtcEventAudioPlayout(*this));
 }
 
 }  // namespace webrtc

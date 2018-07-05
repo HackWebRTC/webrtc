@@ -446,9 +446,9 @@ std::unique_ptr<OveruseFrameDetector::ProcessingUsage>
 OveruseFrameDetector::CreateProcessingUsage(const CpuOveruseOptions& options) {
   std::unique_ptr<ProcessingUsage> instance;
   if (options.filter_time_ms > 0) {
-    instance = rtc::MakeUnique<SendProcessingUsage2>(options);
+    instance = absl::make_unique<SendProcessingUsage2>(options);
   } else {
-    instance = rtc::MakeUnique<SendProcessingUsage1>(options);
+    instance = absl::make_unique<SendProcessingUsage1>(options);
   }
   std::string toggling_interval =
       field_trial::FindFullName("WebRTC-ForceSimulatedOveruseIntervalMs");
@@ -460,7 +460,7 @@ OveruseFrameDetector::CreateProcessingUsage(const CpuOveruseOptions& options) {
                &overuse_period_ms, &underuse_period_ms) == 3) {
       if (normal_period_ms > 0 && overuse_period_ms > 0 &&
           underuse_period_ms > 0) {
-        instance = rtc::MakeUnique<OverdoseInjector>(
+        instance = absl::make_unique<OverdoseInjector>(
             std::move(instance), normal_period_ms, overuse_period_ms,
             underuse_period_ms);
       } else {

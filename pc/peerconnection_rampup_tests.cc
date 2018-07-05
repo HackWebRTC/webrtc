@@ -156,7 +156,7 @@ class PeerConnectionRampUpTest : public ::testing::Test {
     fake_network_manager->AddInterface(kDefaultLocalAddress);
     fake_network_managers_.emplace_back(fake_network_manager);
 
-    auto observer = rtc::MakeUnique<MockPeerConnectionObserver>();
+    auto observer = absl::make_unique<MockPeerConnectionObserver>();
     webrtc::PeerConnectionDependencies dependencies(observer.get());
     cricket::BasicPortAllocator* port_allocator =
         new cricket::BasicPortAllocator(fake_network_manager);
@@ -164,7 +164,7 @@ class PeerConnectionRampUpTest : public ::testing::Test {
     dependencies.allocator =
         std::unique_ptr<cricket::BasicPortAllocator>(port_allocator);
     dependencies.tls_cert_verifier =
-        rtc::MakeUnique<rtc::TestCertificateVerifier>();
+        absl::make_unique<rtc::TestCertificateVerifier>();
 
     auto pc =
         pc_factory_->CreatePeerConnection(config, std::move(dependencies));
@@ -172,7 +172,7 @@ class PeerConnectionRampUpTest : public ::testing::Test {
       return nullptr;
     }
 
-    return rtc::MakeUnique<PeerConnectionWrapperForRampUpTest>(
+    return absl::make_unique<PeerConnectionWrapperForRampUpTest>(
         pc_factory_, pc, std::move(observer));
   }
 
@@ -214,7 +214,7 @@ class PeerConnectionRampUpTest : public ::testing::Test {
                   kTurnInternalAddress, kTurnInternalPort};
               static const rtc::SocketAddress turn_server_external_address{
                   kTurnExternalAddress, kTurnExternalPort};
-              return rtc::MakeUnique<cricket::TestTurnServer>(
+              return absl::make_unique<cricket::TestTurnServer>(
                   thread, turn_server_internal_address,
                   turn_server_external_address, type,
                   true /*ignore_bad_certs=*/, common_name);

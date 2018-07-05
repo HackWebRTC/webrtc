@@ -15,10 +15,10 @@
 #include <memory>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/thread.h"
 
 namespace webrtc {
@@ -66,7 +66,8 @@ void RemoteAudioSource::Start(cricket::VoiceMediaChannel* media_channel,
   // notified when a channel goes out of scope (signaled when "AudioDataProxy"
   // is destroyed).
   worker_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
-    media_channel->SetRawAudioSink(ssrc, rtc::MakeUnique<AudioDataProxy>(this));
+    media_channel->SetRawAudioSink(ssrc,
+                                   absl::make_unique<AudioDataProxy>(this));
   });
 }
 

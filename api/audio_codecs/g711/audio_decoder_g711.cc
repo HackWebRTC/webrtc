@@ -13,10 +13,10 @@
 #include <memory>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/g711/audio_decoder_pcm.h"
 #include "rtc_base/numerics/safe_conversions.h"
-#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 
@@ -49,9 +49,9 @@ std::unique_ptr<AudioDecoder> AudioDecoderG711::MakeAudioDecoder(
   RTC_DCHECK(config.IsOk());
   switch (config.type) {
     case Config::Type::kPcmU:
-      return rtc::MakeUnique<AudioDecoderPcmU>(config.num_channels);
+      return absl::make_unique<AudioDecoderPcmU>(config.num_channels);
     case Config::Type::kPcmA:
-      return rtc::MakeUnique<AudioDecoderPcmA>(config.num_channels);
+      return absl::make_unique<AudioDecoderPcmA>(config.num_channels);
     default:
       return nullptr;
   }

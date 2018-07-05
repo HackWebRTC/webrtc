@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "api/candidate.h"
 #include "api/mediastreaminterface.h"
 #include "api/peerconnectioninterface.h"
@@ -24,7 +25,6 @@
 #include "pc/peerconnection.h"
 #include "pc/rtcstatstraversal.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/timeutils.h"
 #include "rtc_base/trace_event.h"
@@ -1195,7 +1195,7 @@ void RTCStatsCollector::ProduceAudioRTPStreamStats_n(
        track_media_info_map.voice_media_info()->receivers) {
     if (!voice_receiver_info.connected())
       continue;
-    auto inbound_audio = rtc::MakeUnique<RTCInboundRTPStreamStats>(
+    auto inbound_audio = absl::make_unique<RTCInboundRTPStreamStats>(
         RTCInboundRTPStreamStatsIDFromSSRC(true, voice_receiver_info.ssrc()),
         timestamp_us);
     SetInboundRTPStreamStatsFromVoiceReceiverInfo(mid, voice_receiver_info,
@@ -1217,7 +1217,7 @@ void RTCStatsCollector::ProduceAudioRTPStreamStats_n(
        track_media_info_map.voice_media_info()->senders) {
     if (!voice_sender_info.connected())
       continue;
-    auto outbound_audio = rtc::MakeUnique<RTCOutboundRTPStreamStats>(
+    auto outbound_audio = absl::make_unique<RTCOutboundRTPStreamStats>(
         RTCOutboundRTPStreamStatsIDFromSSRC(true, voice_sender_info.ssrc()),
         timestamp_us);
     SetOutboundRTPStreamStatsFromVoiceSenderInfo(mid, voice_sender_info,
@@ -1253,7 +1253,7 @@ void RTCStatsCollector::ProduceVideoRTPStreamStats_n(
        track_media_info_map.video_media_info()->receivers) {
     if (!video_receiver_info.connected())
       continue;
-    auto inbound_video = rtc::MakeUnique<RTCInboundRTPStreamStats>(
+    auto inbound_video = absl::make_unique<RTCInboundRTPStreamStats>(
         RTCInboundRTPStreamStatsIDFromSSRC(false, video_receiver_info.ssrc()),
         timestamp_us);
     SetInboundRTPStreamStatsFromVideoReceiverInfo(mid, video_receiver_info,
@@ -1274,7 +1274,7 @@ void RTCStatsCollector::ProduceVideoRTPStreamStats_n(
        track_media_info_map.video_media_info()->senders) {
     if (!video_sender_info.connected())
       continue;
-    auto outbound_video = rtc::MakeUnique<RTCOutboundRTPStreamStats>(
+    auto outbound_video = absl::make_unique<RTCOutboundRTPStreamStats>(
         RTCOutboundRTPStreamStatsIDFromSSRC(false, video_sender_info.ssrc()),
         timestamp_us);
     SetOutboundRTPStreamStatsFromVideoSenderInfo(mid, video_sender_info,
@@ -1429,13 +1429,13 @@ RTCStatsCollector::PrepareTransceiverStatsInfos_s() const {
       RTC_DCHECK(voice_stats.find(voice_channel->media_channel()) ==
                  voice_stats.end());
       voice_stats[voice_channel->media_channel()] =
-          rtc::MakeUnique<cricket::VoiceMediaInfo>();
+          absl::make_unique<cricket::VoiceMediaInfo>();
     } else if (media_type == cricket::MEDIA_TYPE_VIDEO) {
       auto* video_channel = static_cast<cricket::VideoChannel*>(channel);
       RTC_DCHECK(video_stats.find(video_channel->media_channel()) ==
                  video_stats.end());
       video_stats[video_channel->media_channel()] =
-          rtc::MakeUnique<cricket::VideoMediaInfo>();
+          absl::make_unique<cricket::VideoMediaInfo>();
     } else {
       RTC_NOTREACHED();
     }
@@ -1485,7 +1485,7 @@ RTCStatsCollector::PrepareTransceiverStatsInfos_s() const {
     for (auto receiver : transceiver->receivers()) {
       receivers.push_back(receiver->internal());
     }
-    stats.track_media_info_map = rtc::MakeUnique<TrackMediaInfoMap>(
+    stats.track_media_info_map = absl::make_unique<TrackMediaInfoMap>(
         std::move(voice_media_info), std::move(video_media_info), senders,
         receivers);
   }

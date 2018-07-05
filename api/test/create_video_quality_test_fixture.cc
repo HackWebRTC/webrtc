@@ -11,22 +11,22 @@
 #include <memory>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "api/test/create_video_quality_test_fixture.h"
 #include "video/video_quality_test.h"
-#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 
 std::unique_ptr<VideoQualityTestFixtureInterface>
 CreateVideoQualityTestFixture() {
   // By default, we don't override the FEC module, so pass an empty factory.
-  return rtc::MakeUnique<VideoQualityTest>(nullptr);
+  return absl::make_unique<VideoQualityTest>(nullptr);
 }
 
 std::unique_ptr<VideoQualityTestFixtureInterface>
 CreateVideoQualityTestFixture(
     std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory) {
-  return rtc::MakeUnique<VideoQualityTest>(std::move(fec_controller_factory));
+  return absl::make_unique<VideoQualityTest>(std::move(fec_controller_factory));
 }
 
 }  // namespace webrtc

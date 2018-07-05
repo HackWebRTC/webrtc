@@ -10,12 +10,12 @@
 
 #include "modules/audio_processing/agc2/fixed_gain_controller.h"
 
+#include "absl/memory/memory.h"
 #include "api/array_view.h"
 #include "modules/audio_processing/agc2/agc2_testing_common.h"
 #include "modules/audio_processing/agc2/vector_float_frame.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 namespace {
@@ -51,7 +51,7 @@ std::unique_ptr<FixedGainController> CreateFixedGainController(
     float gain_to_apply,
     size_t rate) {
   std::unique_ptr<FixedGainController> fgc =
-      rtc::MakeUnique<FixedGainController>(&test_data_dumper);
+      absl::make_unique<FixedGainController>(&test_data_dumper);
   fgc->SetGain(gain_to_apply);
   fgc->SetSampleRate(rate);
   return fgc;

@@ -20,6 +20,7 @@
 #include "vpx/vpx_decoder.h"
 #include "vpx/vpx_encoder.h"
 
+#include "absl/memory/memory.h"
 #include "common_video/include/video_frame_buffer.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -27,7 +28,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/keep_ref_until_done.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/timeutils.h"
 #include "rtc_base/trace_event.h"
 
@@ -59,12 +59,12 @@ std::vector<SdpVideoFormat> SupportedVP9Codecs() {
 }
 
 std::unique_ptr<VP9Encoder> VP9Encoder::Create() {
-  return rtc::MakeUnique<VP9EncoderImpl>(cricket::VideoCodec());
+  return absl::make_unique<VP9EncoderImpl>(cricket::VideoCodec());
 }
 
 std::unique_ptr<VP9Encoder> VP9Encoder::Create(
     const cricket::VideoCodec& codec) {
-  return rtc::MakeUnique<VP9EncoderImpl>(codec);
+  return absl::make_unique<VP9EncoderImpl>(codec);
 }
 
 void VP9EncoderImpl::EncoderOutputCodedPacketCallback(vpx_codec_cx_pkt* pkt,
@@ -971,7 +971,7 @@ const char* VP9EncoderImpl::ImplementationName() const {
 }
 
 std::unique_ptr<VP9Decoder> VP9Decoder::Create() {
-  return rtc::MakeUnique<VP9DecoderImpl>();
+  return absl::make_unique<VP9DecoderImpl>();
 }
 
 VP9DecoderImpl::VP9DecoderImpl()

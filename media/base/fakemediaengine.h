@@ -20,6 +20,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "api/call/audio_sink.h"
 #include "media/base/audiosource.h"
 #include "media/base/mediaengine.h"
@@ -30,7 +31,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/copyonwritebuffer.h"
 #include "rtc_base/networkroute.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/stringutils.h"
 
 using webrtc::RtpExtension;
@@ -479,7 +479,7 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
         RTC_CHECK(it->second->source() == source);
       } else {
         local_sinks_.insert(std::make_pair(
-            ssrc, rtc::MakeUnique<VoiceChannelAudioSink>(source)));
+            ssrc, absl::make_unique<VoiceChannelAudioSink>(source)));
       }
     } else {
       if (it != local_sinks_.end()) {

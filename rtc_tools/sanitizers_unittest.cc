@@ -12,9 +12,9 @@
 #include <stdio.h>
 #include <random>
 
+#include "absl/memory/memory.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/nullsocketserver.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/thread.h"
 #include "test/gtest.h"
 
@@ -83,7 +83,7 @@ TEST(SanitizersDeathTest, UndefinedSanitizer) {
 class IncrementThread : public Thread {
  public:
   explicit IncrementThread(int* value)
-      : Thread(rtc::MakeUnique<NullSocketServer>()), value_(value) {}
+      : Thread(absl::make_unique<NullSocketServer>()), value_(value) {}
 
   void Run() override {
     ++*value_;

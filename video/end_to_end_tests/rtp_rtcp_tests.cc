@@ -275,11 +275,11 @@ void RtpRtcpEndToEndTest::TestRtpStatePreservation(
                         &config, &one_stream, use_rtx]() {
     CreateCalls(config, config);
 
-    send_transport = rtc::MakeUnique<test::PacketTransport>(
+    send_transport = absl::make_unique<test::PacketTransport>(
         &task_queue_, sender_call_.get(), &observer,
         test::PacketTransport::kSender, payload_type_map_,
         FakeNetworkPipe::Config());
-    receive_transport = rtc::MakeUnique<test::PacketTransport>(
+    receive_transport = absl::make_unique<test::PacketTransport>(
         &task_queue_, nullptr, &observer, test::PacketTransport::kReceiver,
         payload_type_map_, FakeNetworkPipe::Config());
     send_transport->SetReceiver(receiver_call_->Receiver());
@@ -478,13 +478,13 @@ TEST_F(RtpRtcpEndToEndTest, TestFlexfecRtpStatePreservation) {
     lossy_delayed_link.loss_percent = 2;
     lossy_delayed_link.queue_delay_ms = 50;
 
-    send_transport = rtc::MakeUnique<test::PacketTransport>(
+    send_transport = absl::make_unique<test::PacketTransport>(
         &task_queue_, sender_call_.get(), &observer,
         test::PacketTransport::kSender, payload_type_map_, lossy_delayed_link);
     send_transport->SetReceiver(receiver_call_->Receiver());
 
     FakeNetworkPipe::Config flawless_link;
-    receive_transport = rtc::MakeUnique<test::PacketTransport>(
+    receive_transport = absl::make_unique<test::PacketTransport>(
         &task_queue_, nullptr, &observer, test::PacketTransport::kReceiver,
         payload_type_map_, flawless_link);
     receive_transport->SetReceiver(sender_call_->Receiver());

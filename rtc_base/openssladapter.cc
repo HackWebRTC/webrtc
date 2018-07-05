@@ -988,7 +988,8 @@ OpenSSLAdapter* OpenSSLAdapterFactory::CreateAdapter(AsyncSocket* socket) {
       return nullptr;
     }
     // The OpenSSLSessionCache will upref the ssl_ctx.
-    ssl_session_cache_ = MakeUnique<OpenSSLSessionCache>(ssl_mode_, ssl_ctx);
+    ssl_session_cache_ =
+        absl::make_unique<OpenSSLSessionCache>(ssl_mode_, ssl_ctx);
     SSL_CTX_free(ssl_ctx);
   }
   return new OpenSSLAdapter(socket, ssl_session_cache_.get(),

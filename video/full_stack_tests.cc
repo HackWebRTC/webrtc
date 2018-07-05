@@ -69,7 +69,7 @@ struct ParamsWithLogging : public VideoQualityTest::Params {
 
 std::unique_ptr<VideoQualityTestFixtureInterface>
 CreateVideoQualityTestFixture() {
-  return rtc::MakeUnique<VideoQualityTest>(nullptr);
+  return absl::make_unique<VideoQualityTest>(nullptr);
 }
 
 }  // namespace

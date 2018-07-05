@@ -11,6 +11,7 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 
+#include "absl/memory/memory.h"
 #include "common_video/h264/h264_common.h"
 #include "media/base/mediaconstants.h"
 #include "modules/pacing/packet_router.h"
@@ -22,7 +23,6 @@
 #include "modules/video_coding/rtp_frame_reference_finder.h"
 #include "rtc_base/bytebuffer.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/field_trial_default.h"
 #include "test/field_trial.h"
@@ -102,7 +102,7 @@ constexpr uint16_t kSequenceNumber = 222;
 std::unique_ptr<RtpPacketReceived> CreateRtpPacketReceived(
     uint32_t ssrc = kSsrc,
     uint16_t sequence_number = kSequenceNumber) {
-  auto packet = rtc::MakeUnique<RtpPacketReceived>();
+  auto packet = absl::make_unique<RtpPacketReceived>();
   packet->SetSsrc(ssrc);
   packet->SetSequenceNumber(sequence_number);
   return packet;
@@ -125,8 +125,8 @@ class RtpVideoStreamReceiverTest : public testing::Test {
 
   void SetUp() {
     rtp_receive_statistics_ =
-        rtc::WrapUnique(ReceiveStatistics::Create(Clock::GetRealTimeClock()));
-    rtp_video_stream_receiver_ = rtc::MakeUnique<RtpVideoStreamReceiver>(
+        absl::WrapUnique(ReceiveStatistics::Create(Clock::GetRealTimeClock()));
+    rtp_video_stream_receiver_ = absl::make_unique<RtpVideoStreamReceiver>(
         &mock_transport_, nullptr, &packet_router_, &config_,
         rtp_receive_statistics_.get(), nullptr, process_thread_.get(),
         &mock_nack_sender_, &mock_key_frame_request_sender_,

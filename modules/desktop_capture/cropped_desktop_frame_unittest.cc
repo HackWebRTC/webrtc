@@ -11,15 +11,15 @@
 #include <memory>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "modules/desktop_capture/cropped_desktop_frame.h"
 #include "modules/desktop_capture/desktop_frame.h"
-#include "rtc_base/ptr_util.h"
 #include "test/gtest.h"
 
 namespace webrtc {
 
 std::unique_ptr<DesktopFrame> CreateTestFrame() {
-  return rtc::MakeUnique<BasicDesktopFrame>(DesktopSize(10, 20));
+  return absl::make_unique<BasicDesktopFrame>(DesktopSize(10, 20));
 }
 
 TEST(CroppedDesktopFrameTest, DoNotCreateWrapperIfSizeIsNotChanged) {

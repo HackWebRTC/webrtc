@@ -31,11 +31,11 @@ static jlong JNI_JavaAudioDeviceModule_CreateAudioDeviceModule(
   GetAudioParameters(env, j_context, j_audio_manager, sample_rate,
                      j_use_stereo_input, j_use_stereo_output, &input_parameters,
                      &output_parameters);
-  auto audio_input = rtc::MakeUnique<AudioRecordJni>(
+  auto audio_input = absl::make_unique<AudioRecordJni>(
       env, input_parameters, kHighLatencyModeDelayEstimateInMilliseconds,
       j_webrtc_audio_record);
-  auto audio_output = rtc::MakeUnique<AudioTrackJni>(env, output_parameters,
-                                                     j_webrtc_audio_track);
+  auto audio_output = absl::make_unique<AudioTrackJni>(env, output_parameters,
+                                                       j_webrtc_audio_track);
   return jlongFromPointer(CreateAudioDeviceModuleFromInputAndOutput(
                               AudioDeviceModule::kAndroidJavaAudio,
                               j_use_stereo_input, j_use_stereo_output,

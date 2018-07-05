@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "media/base/rtputils.h"
 #include "pc/rtptransport.h"
 #include "pc/srtpsession.h"
@@ -20,7 +21,6 @@
 #include "rtc_base/base64.h"
 #include "rtc_base/copyonwritebuffer.h"
 #include "rtc_base/numerics/safe_conversions.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/trace_event.h"
 #include "rtc_base/zero_memory.h"
 

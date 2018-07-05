@@ -10,8 +10,8 @@
 
 #include "rtc_base/testclient.h"
 
+#include "absl/memory/memory.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/timeutils.h"
 
@@ -146,7 +146,8 @@ void TestClient::OnPacket(AsyncPacketSocket* socket,
                           const SocketAddress& remote_addr,
                           const PacketTime& packet_time) {
   CritScope cs(&crit_);
-  packets_.push_back(MakeUnique<Packet>(remote_addr, buf, size, packet_time));
+  packets_.push_back(
+      absl::make_unique<Packet>(remote_addr, buf, size, packet_time));
 }
 
 void TestClient::OnReadyToSend(AsyncPacketSocket* socket) {

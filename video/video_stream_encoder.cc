@@ -611,9 +611,10 @@ void VideoStreamEncoder::ConfigureQualityScaler() {
         experimental_thresholds = QualityScalingExperiment::GetQpThresholds(
             encoder_config_.codec_type);
       }
-      // Since the interface is non-public, MakeUnique can't do this upcast.
+      // Since the interface is non-public, absl::make_unique can't do this
+      // upcast.
       AdaptationObserverInterface* observer = this;
-      quality_scaler_ = rtc::MakeUnique<QualityScaler>(
+      quality_scaler_ = absl::make_unique<QualityScaler>(
           observer, experimental_thresholds ? *experimental_thresholds
                                             : *(scaling_settings.thresholds));
     }

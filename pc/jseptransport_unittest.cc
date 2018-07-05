@@ -44,7 +44,7 @@ class JsepTransport2Test : public testing::Test, public sigslot::has_slots<> {
   std::unique_ptr<webrtc::SrtpTransport> CreateSdesTransport(
       rtc::PacketTransportInternal* rtp_packet_transport,
       rtc::PacketTransportInternal* rtcp_packet_transport) {
-    auto srtp_transport = rtc::MakeUnique<webrtc::SrtpTransport>(
+    auto srtp_transport = absl::make_unique<webrtc::SrtpTransport>(
         rtcp_packet_transport == nullptr);
 
     srtp_transport->SetRtpPacketTransport(rtp_packet_transport);
@@ -57,7 +57,7 @@ class JsepTransport2Test : public testing::Test, public sigslot::has_slots<> {
   std::unique_ptr<webrtc::DtlsSrtpTransport> CreateDtlsSrtpTransport(
       cricket::DtlsTransportInternal* rtp_dtls_transport,
       cricket::DtlsTransportInternal* rtcp_dtls_transport) {
-    auto dtls_srtp_transport = rtc::MakeUnique<webrtc::DtlsSrtpTransport>(
+    auto dtls_srtp_transport = absl::make_unique<webrtc::DtlsSrtpTransport>(
         rtcp_dtls_transport == nullptr);
     dtls_srtp_transport->SetDtlsTransports(rtp_dtls_transport,
                                            rtcp_dtls_transport);
@@ -68,16 +68,17 @@ class JsepTransport2Test : public testing::Test, public sigslot::has_slots<> {
   // FakeIceTransport.
   std::unique_ptr<JsepTransport> CreateJsepTransport2(bool rtcp_mux_enabled,
                                                       SrtpMode srtp_mode) {
-    auto ice = rtc::MakeUnique<FakeIceTransport>(kTransportName,
-                                                 ICE_CANDIDATE_COMPONENT_RTP);
+    auto ice = absl::make_unique<FakeIceTransport>(kTransportName,
+                                                   ICE_CANDIDATE_COMPONENT_RTP);
     auto rtp_dtls_transport =
-        rtc::MakeUnique<FakeDtlsTransport>(std::move(ice));
+        absl::make_unique<FakeDtlsTransport>(std::move(ice));
 
     std::unique_ptr<FakeDtlsTransport> rtcp_dtls_transport;
     if (!rtcp_mux_enabled) {
-      ice = rtc::MakeUnique<FakeIceTransport>(kTransportName,
-                                              ICE_CANDIDATE_COMPONENT_RTCP);
-      rtcp_dtls_transport = rtc::MakeUnique<FakeDtlsTransport>(std::move(ice));
+      ice = absl::make_unique<FakeIceTransport>(kTransportName,
+                                                ICE_CANDIDATE_COMPONENT_RTCP);
+      rtcp_dtls_transport =
+          absl::make_unique<FakeDtlsTransport>(std::move(ice));
     }
 
     std::unique_ptr<webrtc::RtpTransport> unencrypted_rtp_transport;
@@ -97,7 +98,7 @@ class JsepTransport2Test : public testing::Test, public sigslot::has_slots<> {
         RTC_NOTREACHED();
     }
 
-    auto jsep_transport = rtc::MakeUnique<JsepTransport>(
+    auto jsep_transport = absl::make_unique<JsepTransport>(
         kTransportName, /*local_certificate=*/nullptr,
         std::move(unencrypted_rtp_transport), std::move(sdes_transport),
         std::move(dtls_srtp_transport), std::move(rtp_dtls_transport),

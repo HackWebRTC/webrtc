@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "absl/memory/memory.h"
 #include "modules/audio_processing/audio_buffer.h"
 #include "modules/audio_processing/gain_control_impl.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "rtc_base/numerics/safe_minmax.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/thread_annotations.h"
 #include "test/fuzzers/fuzz_data_helper.h"
 
@@ -112,7 +112,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
   test::FuzzDataHelper fuzz_data(rtc::ArrayView<const uint8_t>(data, size));
   rtc::CriticalSection crit_capture;
   rtc::CriticalSection crit_render;
-  auto gci = rtc::MakeUnique<GainControlImpl>(&crit_render, &crit_capture);
+  auto gci = absl::make_unique<GainControlImpl>(&crit_render, &crit_capture);
   FuzzGainController(&fuzz_data, gci.get());
 }
 }  // namespace webrtc

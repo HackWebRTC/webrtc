@@ -45,6 +45,7 @@ rtc_source_set("mock_aec_dump_unittests") {
     "../",
     "../../../rtc_base:rtc_base_approved",
     "//testing/gtest",
+    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 
@@ -69,6 +70,7 @@ if (rtc_enable_protobuf) {
       "../../../rtc_base:rtc_task_queue",
       "../../../rtc_base/system:file_wrapper",
       "../../../system_wrappers",
+      "//third_party/abseil-cpp/absl/memory",
     ]
 
     deps += [ "../:audioproc_debug_proto" ]

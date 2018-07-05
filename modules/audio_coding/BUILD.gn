@@ -917,6 +917,7 @@ rtc_static_library("webrtc_opus") {
     "../../rtc_base:rtc_numerics",
     "../../rtc_base:safe_minmax",
     "../../system_wrappers:field_trial_api",
+    "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
   public_deps = [
@@ -1034,6 +1035,7 @@ rtc_static_library("audio_network_adaptor") {
     "../../rtc_base/system:file_wrapper",
     "../../system_wrappers",
     "../../system_wrappers:field_trial_api",
+    "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 
@@ -1775,6 +1777,7 @@ if (rtc_include_tests) {
     testonly = true
 
     deps = audio_coding_deps + [
+             "//third_party/abseil-cpp/absl/memory",
              "../..:typedefs",
              ":audio_coding",
              ":neteq_input_audio_tools",
@@ -2248,6 +2251,7 @@ if (rtc_include_tests) {
       "../../test:test_common",
       "../../test:test_support",
       "//testing/gtest",
+      "//third_party/abseil-cpp/absl/memory",
     ]
 
     defines = audio_coding_defines

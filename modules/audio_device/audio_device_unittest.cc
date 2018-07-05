@@ -523,7 +523,7 @@ class AudioDeviceTest
       // We must initialize the COM library on a thread before we calling any of
       // the library functions. All COM functions in the ADM will return
       // CO_E_NOTINITIALIZED otherwise.
-      com_initializer_ = rtc::MakeUnique<webrtc_win::ScopedCOMInitializer>(
+      com_initializer_ = absl::make_unique<webrtc_win::ScopedCOMInitializer>(
           webrtc_win::ScopedCOMInitializer::kMTA);
       EXPECT_TRUE(com_initializer_->Succeeded());
       EXPECT_TRUE(webrtc_win::core_audio_utility::IsSupported());

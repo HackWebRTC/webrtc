@@ -55,6 +55,7 @@ rtc_static_library("builtin_video_decoder_factory") {
     ":video_codecs_api",
     "../../media:rtc_internal_video_codecs",
     "../../rtc_base:ptr_util",
+    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 
@@ -74,6 +75,7 @@ rtc_static_library("builtin_video_encoder_factory") {
     "../../media:rtc_internal_video_codecs",
     "../../media:rtc_media_base",
     "../../rtc_base:ptr_util",
+    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 
@@ -102,5 +104,6 @@ rtc_static_library("rtc_software_fallback_wrappers") {
     "../../rtc_base/system:fallthrough",
     "../../system_wrappers:field_trial_api",
     "../video:video_bitrate_allocation",
+    "//third_party/abseil-cpp/absl/memory",
   ]
 }

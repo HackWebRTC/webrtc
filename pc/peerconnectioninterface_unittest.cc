@@ -14,6 +14,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/jsepsessiondescription.h"
@@ -44,7 +45,6 @@
 #include "pc/videocapturertracksource.h"
 #include "pc/videotrack.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/stringutils.h"
 #include "rtc_base/virtualsocketserver.h"
 #include "test/gmock.h"
@@ -826,7 +826,7 @@ class PeerConnectionInterfaceBaseTest : public testing::Test {
   rtc::scoped_refptr<VideoTrackInterface> CreateVideoTrack(
       const std::string& label) {
     auto video_source = pc_factory_->CreateVideoSource(
-        rtc::MakeUnique<cricket::FakeVideoCapturer>(), nullptr);
+        absl::make_unique<cricket::FakeVideoCapturer>(), nullptr);
     return pc_factory_->CreateVideoTrack(label, video_source);
   }
 
@@ -3200,8 +3200,8 @@ TEST_P(PeerConnectionInterfaceTest,
   std::unique_ptr<SessionDescriptionInterface> offer;
   ASSERT_TRUE(DoCreateOffer(&offer, nullptr));
   // Grab a copy of the offer before it gets passed into the PC.
-  auto modified_offer =
-      rtc::MakeUnique<webrtc::JsepSessionDescription>(webrtc::SdpType::kOffer);
+  auto modified_offer = absl::make_unique<webrtc::JsepSessionDescription>(
+      webrtc::SdpType::kOffer);
   modified_offer->Initialize(offer->description()->Copy(), offer->session_id(),
                              offer->session_version());
   EXPECT_TRUE(DoSetLocalDescription(std::move(offer)));
@@ -3531,7 +3531,7 @@ TEST_P(PeerConnectionInterfaceTest,
   rtc::PlatformFile file = 0;
   int64_t max_size_bytes = 1024;
   EXPECT_FALSE(pc_->StartRtcEventLog(
-      rtc::MakeUnique<webrtc::RtcEventLogOutputFile>(file, max_size_bytes),
+      absl::make_unique<webrtc::RtcEventLogOutputFile>(file, max_size_bytes),
       webrtc::RtcEventLog::kImmediateOutput));
   pc_->StopRtcEventLog();
 }

@@ -11,11 +11,11 @@
 #include <algorithm>
 #include <string>
 
+#include "absl/memory/memory.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/video_coding/codecs/vp8/libvpx_vp8_decoder.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/numerics/exp_filter.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/timeutils.h"
 #include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/metrics.h"
@@ -56,7 +56,7 @@ void GetPostProcParamsFromFieldTrialGroup(
 }  // namespace
 
 std::unique_ptr<VP8Decoder> VP8Decoder::Create() {
-  return rtc::MakeUnique<LibvpxVp8Decoder>();
+  return absl::make_unique<LibvpxVp8Decoder>();
 }
 
 class LibvpxVp8Decoder::QpSmoother {

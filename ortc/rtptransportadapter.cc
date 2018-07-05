@@ -15,9 +15,9 @@
 #include <sstream>
 #include <utility>  // For std::move.
 
+#include "absl/memory/memory.h"
 #include "api/proxy.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 
@@ -154,10 +154,11 @@ RtpTransportAdapter::RtpTransportAdapter(
   RTC_DCHECK(rtp_transport_controller);
 
   if (is_srtp_transport) {
-    srtp_transport_ = rtc::MakeUnique<SrtpTransport>(rtcp == nullptr);
+    srtp_transport_ = absl::make_unique<SrtpTransport>(rtcp == nullptr);
     transport_ = srtp_transport_.get();
   } else {
-    unencrypted_rtp_transport_ = rtc::MakeUnique<RtpTransport>(rtcp == nullptr);
+    unencrypted_rtp_transport_ =
+        absl::make_unique<RtpTransport>(rtcp == nullptr);
     transport_ = unencrypted_rtp_transport_.get();
   }
   RTC_DCHECK(transport_);

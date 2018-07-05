@@ -31,6 +31,7 @@ rtc_static_library("primitives") {
     "../..:webrtc_common",
     "../../:typedefs",
     "../../rtc_base:checks",
+    "//third_party/abseil-cpp/absl/memory",
   ]
 
   if (!build_with_mozilla) {
@@ -45,6 +46,7 @@ if (rtc_include_tests) {
     sources = []
     deps = [
       "../../rtc_base:checks",
+      "//third_party/abseil-cpp/absl/memory",
     ]
     if (rtc_desktop_capture_supported) {
       deps += [
@@ -100,6 +102,7 @@ if (rtc_include_tests) {
       "../../rtc_base:rtc_base_approved",
       "../../system_wrappers:cpu_features_api",
       "../../test:test_support",
+      "//third_party/abseil-cpp/absl/memory",
     ]
     if (rtc_desktop_capture_supported) {
       sources += [
@@ -136,6 +139,7 @@ if (rtc_include_tests) {
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
       "../../system_wrappers",
+      "//third_party/abseil-cpp/absl/memory",
     ]
 
     if (is_posix || is_fuchsia) {
@@ -380,6 +384,7 @@ rtc_static_library("desktop_capture_generic") {
     "../../system_wrappers",
     "../../system_wrappers:cpu_features_api",
     "../../system_wrappers:metrics_api",
+    "//third_party/abseil-cpp/absl/memory",
   ]
 
   if (build_with_mozilla) {

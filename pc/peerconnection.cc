@@ -17,6 +17,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "api/jsepicecandidate.h"
 #include "api/jsepsessiondescription.h"
 #include "api/mediaconstraintsinterface.h"
@@ -46,7 +47,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/stringencode.h"
 #include "rtc_base/stringutils.h"
 #include "rtc_base/trace_event.h"
@@ -3142,7 +3142,7 @@ void PeerConnection::SetBitrateAllocationStrategy(
         bitrate_allocation_strategy.release();
     auto functor = [this, strategy_raw]() {
       call_->SetBitrateAllocationStrategy(
-          rtc::WrapUnique<rtc::BitrateAllocationStrategy>(strategy_raw));
+          absl::WrapUnique<rtc::BitrateAllocationStrategy>(strategy_raw));
     };
     worker_thread->Invoke<void>(RTC_FROM_HERE, functor);
     return;
@@ -3211,7 +3211,7 @@ bool PeerConnection::StartRtcEventLog(rtc::PlatformFile file,
                               ? RtcEventLog::kUnlimitedOutput
                               : rtc::saturated_cast<size_t>(max_size_bytes);
   return StartRtcEventLog(
-      rtc::MakeUnique<RtcEventLogOutputFile>(file, max_size),
+      absl::make_unique<RtcEventLogOutputFile>(file, max_size),
       webrtc::RtcEventLog::kImmediateOutput);
 }
 

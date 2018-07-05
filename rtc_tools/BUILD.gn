@@ -244,6 +244,7 @@ if (!build_with_chromium) {
         "../modules/pacing",
         "../modules/rtp_rtcp",
         "../system_wrappers:system_wrappers_default",
+        "//third_party/abseil-cpp/absl/memory",
       ]
     }
   }
@@ -343,6 +344,7 @@ if (rtc_include_tests) {
       "../test:fileutils",
       "../test:test_main",
       "//testing/gtest",
+      "//third_party/abseil-cpp/absl/memory",
     ]
 
     if (rtc_enable_protobuf) {

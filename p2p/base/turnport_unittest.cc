@@ -16,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "p2p/base/basicpacketsocketfactory.h"
 #include "p2p/base/p2pconstants.h"
 #include "p2p/base/portallocator.h"
@@ -33,7 +34,6 @@
 #include "rtc_base/gunit.h"
 #include "rtc_base/helpers.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/socketadapters.h"
 #include "rtc_base/socketaddress.h"
 #include "rtc_base/ssladapter.h"

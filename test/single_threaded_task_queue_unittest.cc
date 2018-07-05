@@ -14,8 +14,8 @@
 #include <memory>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "rtc_base/event.h"
-#include "rtc_base/ptr_util.h"
 #include "test/gtest.h"
 
 namespace webrtc {
@@ -60,7 +60,7 @@ TEST(SingleThreadedTaskQueueForTestingTest,
 
   std::vector<std::unique_ptr<rtc::Event>> done_events;
   for (size_t i = 0; i < kCount; i++) {
-    done_events.emplace_back(rtc::MakeUnique<rtc::Event>(false, false));
+    done_events.emplace_back(absl::make_unique<rtc::Event>(false, false));
   }
 
   // To avoid the tasks which comprise the actual test from running before they
@@ -327,7 +327,7 @@ TEST(SingleThreadedTaskQueueForTestingTest, SendTask) {
 TEST(SingleThreadedTaskQueueForTestingTest,
      DestructTaskQueueWhileTasksPending) {
   auto task_queue =
-      rtc::MakeUnique<SingleThreadedTaskQueueForTesting>("task_queue");
+      absl::make_unique<SingleThreadedTaskQueueForTesting>("task_queue");
 
   std::atomic<size_t> counter(0);
 

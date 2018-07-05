@@ -10,8 +10,8 @@
 
 #include "logging/rtc_event_log/icelogger.h"
 
+#include "absl/memory/memory.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
-#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 
@@ -26,7 +26,7 @@ void IceEventLog::LogCandidatePairConfig(
     return;
   }
   candidate_pair_desc_by_id_[candidate_pair_id] = candidate_pair_desc;
-  event_log_->Log(rtc::MakeUnique<RtcEventIceCandidatePairConfig>(
+  event_log_->Log(absl::make_unique<RtcEventIceCandidatePairConfig>(
       type, candidate_pair_id, candidate_pair_desc));
 }
 
@@ -36,12 +36,12 @@ void IceEventLog::LogCandidatePairEvent(IceCandidatePairEventType type,
     return;
   }
   event_log_->Log(
-      rtc::MakeUnique<RtcEventIceCandidatePair>(type, candidate_pair_id));
+      absl::make_unique<RtcEventIceCandidatePair>(type, candidate_pair_id));
 }
 
 void IceEventLog::DumpCandidatePairDescriptionToMemoryAsConfigEvents() const {
   for (const auto& desc_id_pair : candidate_pair_desc_by_id_) {
-    event_log_->Log(rtc::MakeUnique<RtcEventIceCandidatePairConfig>(
+    event_log_->Log(absl::make_unique<RtcEventIceCandidatePairConfig>(
         IceCandidatePairConfigType::kUpdated, desc_id_pair.first,
         desc_id_pair.second));
   }

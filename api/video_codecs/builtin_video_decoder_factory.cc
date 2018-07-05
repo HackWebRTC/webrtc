@@ -10,13 +10,13 @@
 
 #include "api/video_codecs/builtin_video_decoder_factory.h"
 
+#include "absl/memory/memory.h"
 #include "media/engine/internaldecoderfactory.h"
-#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 
 std::unique_ptr<VideoDecoderFactory> CreateBuiltinVideoDecoderFactory() {
-  return rtc::MakeUnique<InternalDecoderFactory>();
+  return absl::make_unique<InternalDecoderFactory>();
 }
 
 }  // namespace webrtc

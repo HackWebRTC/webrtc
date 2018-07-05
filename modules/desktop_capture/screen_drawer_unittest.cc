@@ -13,11 +13,11 @@
 #include <stdint.h>
 #include <atomic>
 
+#include "absl/memory/memory.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/function_view.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/random.h"
 #include "rtc_base/timeutils.h"
 #include "system_wrappers/include/sleep.h"
@@ -148,7 +148,7 @@ TEST(ScreenDrawerTest, TwoScreenDrawerLocks) {
   ScreenDrawerLockPosix::Unlink(semaphore_name);
 
   TestScreenDrawerLock([semaphore_name]() {
-    return rtc::MakeUnique<ScreenDrawerLockPosix>(semaphore_name);
+    return absl::make_unique<ScreenDrawerLockPosix>(semaphore_name);
   });
 #elif defined(WEBRTC_WIN)
   TestScreenDrawerLock([]() { return ScreenDrawerLock::Create(); });

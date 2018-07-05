@@ -12,9 +12,9 @@
 
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/numerics/safe_conversions.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/timeutils.h"
 
 namespace webrtc {
@@ -70,7 +70,8 @@ SingleThreadedTaskQueueForTesting::PostDelayedTask(Task task,
       break;
     }
   }
-  tasks_.insert(it, rtc::MakeUnique<QueuedTask>(id, earliest_exec_time, task));
+  tasks_.insert(it,
+                absl::make_unique<QueuedTask>(id, earliest_exec_time, task));
 
   // This class is optimized for simplicty, not for performance. This will wake
   // the thread up even if the next task in the queue is only scheduled for

@@ -40,7 +40,7 @@ TEST_F(StatsEndToEndTest, GetStats) {
     StatsObserver()
         : EndToEndTest(kLongTimeoutMs),
           encoder_factory_([]() {
-            return rtc::MakeUnique<test::DelayedEncoder>(
+            return absl::make_unique<test::DelayedEncoder>(
                 Clock::GetRealTimeClock(), 10);
           }),
           send_stream_(nullptr),
@@ -712,10 +712,10 @@ TEST_F(StatsEndToEndTest, CallReportsRttForSender) {
     FakeNetworkPipe::Config config;
     config.queue_delay_ms = kSendDelayMs;
     CreateCalls(Call::Config(event_log_.get()), Call::Config(event_log_.get()));
-    sender_transport = rtc::MakeUnique<test::DirectTransport>(
+    sender_transport = absl::make_unique<test::DirectTransport>(
         &task_queue_, config, sender_call_.get(), payload_type_map_);
     config.queue_delay_ms = kReceiveDelayMs;
-    receiver_transport = rtc::MakeUnique<test::DirectTransport>(
+    receiver_transport = absl::make_unique<test::DirectTransport>(
         &task_queue_, config, receiver_call_.get(), payload_type_map_);
     sender_transport->SetReceiver(receiver_call_->Receiver());
     receiver_transport->SetReceiver(sender_call_->Receiver());

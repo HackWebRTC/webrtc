@@ -12,8 +12,8 @@
 
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor_config.h"
-#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 
@@ -24,7 +24,7 @@ RtcEventAudioNetworkAdaptation::RtcEventAudioNetworkAdaptation(
 RtcEventAudioNetworkAdaptation::RtcEventAudioNetworkAdaptation(
     const RtcEventAudioNetworkAdaptation& other)
     : RtcEvent(other.timestamp_us_),
-      config_(rtc::MakeUnique<AudioEncoderRuntimeConfig>(*other.config_)) {}
+      config_(absl::make_unique<AudioEncoderRuntimeConfig>(*other.config_)) {}
 
 RtcEventAudioNetworkAdaptation::~RtcEventAudioNetworkAdaptation() = default;
 
@@ -37,7 +37,7 @@ bool RtcEventAudioNetworkAdaptation::IsConfigEvent() const {
 }
 
 std::unique_ptr<RtcEvent> RtcEventAudioNetworkAdaptation::Copy() const {
-  return rtc::WrapUnique(new RtcEventAudioNetworkAdaptation(*this));
+  return absl::WrapUnique(new RtcEventAudioNetworkAdaptation(*this));
 }
 
 }  // namespace webrtc

@@ -14,6 +14,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "call/video_config.h"
 #include "common_types.h"  // NOLINT(build/include)
@@ -28,7 +29,6 @@
 #include "rtc_base/cpu_time.h"
 #include "rtc_base/event.h"
 #include "rtc_base/file.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/strings/string_builder.h"
 #include "system_wrappers/include/cpu_info.h"
 #include "system_wrappers/include/sleep.h"
@@ -380,8 +380,8 @@ class VideoCodecTestFixtureImpl::CpuProcessTime final {
 };
 
 VideoCodecTestFixtureImpl::VideoCodecTestFixtureImpl(Config config)
-    : encoder_factory_(rtc::MakeUnique<InternalEncoderFactory>()),
-      decoder_factory_(rtc::MakeUnique<InternalDecoderFactory>()),
+    : encoder_factory_(absl::make_unique<InternalEncoderFactory>()),
+      decoder_factory_(absl::make_unique<InternalDecoderFactory>()),
       config_(config) {}
 
 VideoCodecTestFixtureImpl::VideoCodecTestFixtureImpl(
@@ -647,7 +647,7 @@ void VideoCodecTestFixtureImpl::SetUpAndInitObjects(
 
   task_queue->SendTask([this]() {
     CreateEncoderAndDecoder();
-    processor_ = rtc::MakeUnique<VideoProcessor>(
+    processor_ = absl::make_unique<VideoProcessor>(
         encoder_.get(), &decoders_, source_frame_reader_.get(), config_,
         &stats_,
         encoded_frame_writers_.empty() ? nullptr : &encoded_frame_writers_,

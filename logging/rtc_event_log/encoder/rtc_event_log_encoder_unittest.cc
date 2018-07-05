@@ -12,6 +12,7 @@
 #include <limits>
 #include <string>
 
+#include "absl/memory/memory.h"
 #include "logging/rtc_event_log/encoder/rtc_event_log_encoder_legacy.h"
 #include "logging/rtc_event_log/events/rtc_event_alr_state.h"
 #include "logging/rtc_event_log/events/rtc_event_audio_network_adaptation.h"
@@ -34,7 +35,6 @@
 #include "modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor_config.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/random.h"
 #include "test/gtest.h"
 
@@ -83,7 +83,7 @@ void RtcEventLogEncoderTest::TestRtcEventAudioNetworkAdaptation(
   // This function is called repeatedly. Clear state between calls.
   history_.clear();
   auto original_runtime_config = *runtime_config;
-  auto event = rtc::MakeUnique<RtcEventAudioNetworkAdaptation>(
+  auto event = absl::make_unique<RtcEventAudioNetworkAdaptation>(
       std::move(runtime_config));
   const int64_t timestamp_us = event->timestamp_us_;
   history_.push_back(std::move(event));
@@ -98,7 +98,7 @@ void RtcEventLogEncoderTest::TestRtcEventAudioNetworkAdaptation(
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventAudioNetworkAdaptationBitrate) {
-  auto runtime_config = rtc::MakeUnique<AudioEncoderRuntimeConfig>();
+  auto runtime_config = absl::make_unique<AudioEncoderRuntimeConfig>();
   const int bitrate_bps = rtc::checked_cast<int>(
       prng_.Rand(0, std::numeric_limits<int32_t>::max()));
   runtime_config->bitrate_bps = bitrate_bps;
@@ -106,7 +106,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventAudioNetworkAdaptationBitrate) {
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventAudioNetworkAdaptationFrameLength) {
-  auto runtime_config = rtc::MakeUnique<AudioEncoderRuntimeConfig>();
+  auto runtime_config = absl::make_unique<AudioEncoderRuntimeConfig>();
   const int frame_length_ms = prng_.Rand(1, 1000);
   runtime_config->frame_length_ms = frame_length_ms;
   TestRtcEventAudioNetworkAdaptation(std::move(runtime_config));
@@ -115,7 +115,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventAudioNetworkAdaptationFrameLength) {
 TEST_P(RtcEventLogEncoderTest, RtcEventAudioNetworkAdaptationPacketLoss) {
   // To simplify the test, we just check powers of two.
   const float plr = std::pow(0.5f, prng_.Rand(1, 8));
-  auto runtime_config = rtc::MakeUnique<AudioEncoderRuntimeConfig>();
+  auto runtime_config = absl::make_unique<AudioEncoderRuntimeConfig>();
   runtime_config->uplink_packet_loss_fraction = plr;
   TestRtcEventAudioNetworkAdaptation(std::move(runtime_config));
 }
@@ -124,7 +124,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventAudioNetworkAdaptationFec) {
   // The test might be trivially passing for one of the two boolean values, so
   // for safety's sake, we test both.
   for (bool fec_enabled : {false, true}) {
-    auto runtime_config = rtc::MakeUnique<AudioEncoderRuntimeConfig>();
+    auto runtime_config = absl::make_unique<AudioEncoderRuntimeConfig>();
     runtime_config->enable_fec = fec_enabled;
     TestRtcEventAudioNetworkAdaptation(std::move(runtime_config));
   }
@@ -134,7 +134,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventAudioNetworkAdaptationDtx) {
   // The test might be trivially passing for one of the two boolean values, so
   // for safety's sake, we test both.
   for (bool dtx_enabled : {false, true}) {
-    auto runtime_config = rtc::MakeUnique<AudioEncoderRuntimeConfig>();
+    auto runtime_config = absl::make_unique<AudioEncoderRuntimeConfig>();
     runtime_config->enable_dtx = dtx_enabled;
     TestRtcEventAudioNetworkAdaptation(std::move(runtime_config));
   }
@@ -144,7 +144,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventAudioNetworkAdaptationChannels) {
   // The test might be trivially passing for one of the two possible values, so
   // for safety's sake, we test both.
   for (size_t channels : {1, 2}) {
-    auto runtime_config = rtc::MakeUnique<AudioEncoderRuntimeConfig>();
+    auto runtime_config = absl::make_unique<AudioEncoderRuntimeConfig>();
     runtime_config->num_channels = channels;
     TestRtcEventAudioNetworkAdaptation(std::move(runtime_config));
   }
@@ -158,7 +158,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventAudioNetworkAdaptationAll) {
   for (bool fec_enabled : {false, true}) {
     for (bool dtx_enabled : {false, true}) {
       for (size_t channels : {1, 2}) {
-        auto runtime_config = rtc::MakeUnique<AudioEncoderRuntimeConfig>();
+        auto runtime_config = absl::make_unique<AudioEncoderRuntimeConfig>();
         runtime_config->bitrate_bps = bitrate_bps;
         runtime_config->frame_length_ms = frame_length_ms;
         runtime_config->uplink_packet_loss_fraction = plr;

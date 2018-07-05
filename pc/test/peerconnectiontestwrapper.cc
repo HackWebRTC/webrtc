@@ -115,7 +115,7 @@ void PeerConnectionTestWrapper::OnAddTrack(
   if (receiver->track()->kind() == MediaStreamTrackInterface::kVideoKind) {
     auto* video_track =
         static_cast<VideoTrackInterface*>(receiver->track().get());
-    renderer_ = rtc::MakeUnique<FakeVideoTrackRenderer>(video_track);
+    renderer_ = absl::make_unique<FakeVideoTrackRenderer>(video_track);
   }
 }
 

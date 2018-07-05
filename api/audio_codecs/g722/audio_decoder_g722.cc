@@ -13,10 +13,10 @@
 #include <memory>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/g722/audio_decoder_g722.h"
 #include "rtc_base/numerics/safe_conversions.h"
-#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 
@@ -40,9 +40,9 @@ std::unique_ptr<AudioDecoder> AudioDecoderG722::MakeAudioDecoder(
     absl::optional<AudioCodecPairId> /*codec_pair_id*/) {
   switch (config.num_channels) {
     case 1:
-      return rtc::MakeUnique<AudioDecoderG722Impl>();
+      return absl::make_unique<AudioDecoderG722Impl>();
     case 2:
-      return rtc::MakeUnique<AudioDecoderG722StereoImpl>();
+      return absl::make_unique<AudioDecoderG722StereoImpl>();
     default:
       return nullptr;
   }

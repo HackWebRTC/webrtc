@@ -15,11 +15,11 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "api/jsep.h"
 #include "api/jsepsessiondescription.h"
 #include "api/mediaconstraintsinterface.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/sslidentity.h"
 
 using cricket::MediaSessionOptions;
@@ -343,7 +343,7 @@ void WebRtcSessionDescriptionFactory::InternalCreateOffer(
   // is created regardless if it's identical to the previous one or not.
   // The |session_version_| is a uint64_t, the wrap around should not happen.
   RTC_DCHECK(session_version_ + 1 > session_version_);
-  auto offer = rtc::MakeUnique<JsepSessionDescription>(SdpType::kOffer);
+  auto offer = absl::make_unique<JsepSessionDescription>(SdpType::kOffer);
   if (!offer->Initialize(desc, session_id_,
                          rtc::ToString(session_version_++))) {
     PostCreateSessionDescriptionFailed(request.observer,
@@ -396,7 +396,7 @@ void WebRtcSessionDescriptionFactory::InternalCreateAnswer(
   // Get a new version number by increasing the |session_version_answer_|.
   // The |session_version_| is a uint64_t, the wrap around should not happen.
   RTC_DCHECK(session_version_ + 1 > session_version_);
-  auto answer = rtc::MakeUnique<JsepSessionDescription>(SdpType::kAnswer);
+  auto answer = absl::make_unique<JsepSessionDescription>(SdpType::kAnswer);
   if (!answer->Initialize(desc, session_id_,
                           rtc::ToString(session_version_++))) {
     PostCreateSessionDescriptionFailed(request.observer,

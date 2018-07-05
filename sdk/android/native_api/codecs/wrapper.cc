@@ -10,7 +10,7 @@
 
 #include "sdk/android/native_api/codecs/wrapper.h"
 
-#include "rtc_base/ptr_util.h"
+#include "absl/memory/memory.h"
 #include "sdk/android/src/jni/videodecoderfactorywrapper.h"
 #include "sdk/android/src/jni/videoencoderfactorywrapper.h"
 
@@ -19,14 +19,14 @@ namespace webrtc {
 std::unique_ptr<VideoDecoderFactory> JavaToNativeVideoDecoderFactory(
     JNIEnv* jni,
     jobject decoder_factory) {
-  return rtc::MakeUnique<jni::VideoDecoderFactoryWrapper>(
+  return absl::make_unique<jni::VideoDecoderFactoryWrapper>(
       jni, JavaParamRef<jobject>(decoder_factory));
 }
 
 std::unique_ptr<VideoEncoderFactory> JavaToNativeVideoEncoderFactory(
     JNIEnv* jni,
     jobject en) {
-  return rtc::MakeUnique<jni::VideoEncoderFactoryWrapper>(
+  return absl::make_unique<jni::VideoEncoderFactoryWrapper>(
       jni, JavaParamRef<jobject>(en));
 }
 

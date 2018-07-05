@@ -11,6 +11,7 @@
 #include <memory>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/jsep.h"
@@ -28,7 +29,6 @@
 #include "pc/test/mockpeerconnectionobservers.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/refcountedobject.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/thread.h"
@@ -111,11 +111,11 @@ class PeerConnectionRtpBaseTest : public testing::Test {
   // adjustment.
   std::unique_ptr<PeerConnectionWrapper> CreatePeerConnectionInternal(
       const RTCConfiguration& config) {
-    auto observer = rtc::MakeUnique<MockPeerConnectionObserver>();
+    auto observer = absl::make_unique<MockPeerConnectionObserver>();
     auto pc = pc_factory_->CreatePeerConnection(config, nullptr, nullptr,
                                                 observer.get());
-    return rtc::MakeUnique<PeerConnectionWrapper>(pc_factory_, pc,
-                                                  std::move(observer));
+    return absl::make_unique<PeerConnectionWrapper>(pc_factory_, pc,
+                                                    std::move(observer));
   }
 };
 

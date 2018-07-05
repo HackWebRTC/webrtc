@@ -97,7 +97,7 @@ FakeWebRtcVideoDecoderFactory::CreateVideoDecoder(
   if (IsFormatSupported(supported_codec_formats_, format)) {
     num_created_decoders_++;
     std::unique_ptr<FakeWebRtcVideoDecoder> decoder =
-        rtc::MakeUnique<FakeWebRtcVideoDecoder>(this);
+        absl::make_unique<FakeWebRtcVideoDecoder>(this);
     decoders_.push_back(decoder.get());
     return decoder;
   }
@@ -224,11 +224,12 @@ FakeWebRtcVideoEncoderFactory::CreateVideoEncoder(
       // encoders. Enter vp8_factory_mode so that we now create these encoders
       // instead of more adapters.
       vp8_factory_mode_ = true;
-      encoder = rtc::MakeUnique<webrtc::SimulcastEncoderAdapter>(this, format);
+      encoder =
+          absl::make_unique<webrtc::SimulcastEncoderAdapter>(this, format);
     } else {
       num_created_encoders_++;
       created_video_encoder_event_.Set();
-      encoder = rtc::MakeUnique<FakeWebRtcVideoEncoder>(this);
+      encoder = absl::make_unique<FakeWebRtcVideoEncoder>(this);
       encoders_.push_back(static_cast<FakeWebRtcVideoEncoder*>(encoder.get()));
     }
   }

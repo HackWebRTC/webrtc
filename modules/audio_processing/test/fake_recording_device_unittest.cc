@@ -14,9 +14,9 @@
 #include <string>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "api/array_view.h"
 #include "modules/audio_processing/test/fake_recording_device.h"
-#include "rtc_base/ptr_util.h"
 #include "test/gtest.h"
 
 namespace webrtc {
@@ -47,7 +47,7 @@ void WritesDataIntoChannelBuffer(const std::vector<std::vector<float>>& data,
 std::unique_ptr<ChannelBuffer<float>> CreateChannelBufferWithData(
     const std::vector<std::vector<float>>& data) {
   auto buff =
-      rtc::MakeUnique<ChannelBuffer<float>>(data[0].size(), data.size());
+      absl::make_unique<ChannelBuffer<float>>(data[0].size(), data.size());
   WritesDataIntoChannelBuffer(data, buff.get());
   return buff;
 }

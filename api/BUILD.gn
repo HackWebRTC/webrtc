@@ -165,6 +165,7 @@ if (rtc_include_tests) {
       ":video_quality_test_fixture_api",
       "../rtc_base:ptr_util",
       "../video:video_quality_test",
+      "//third_party/abseil-cpp/absl/memory",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -357,6 +358,7 @@ if (rtc_include_tests) {
       "../modules/video_coding:simulcast_test_fixture_impl",
       "../rtc_base:rtc_base_approved",
       "video_codecs:video_codecs_api",
+      "//third_party/abseil-cpp/absl/memory",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -392,6 +394,7 @@ if (rtc_include_tests) {
       "../modules/video_coding:videocodec_test_impl",
       "../rtc_base:rtc_base_approved",
       "video_codecs:video_codecs_api",
+      "//third_party/abseil-cpp/absl/memory",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).

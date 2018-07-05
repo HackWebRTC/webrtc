@@ -16,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "p2p/base/portallocator.h"
 #include "rtc_base/base64.h"
 #include "rtc_base/checks.h"
@@ -25,7 +26,6 @@
 #include "rtc_base/messagedigest.h"
 #include "rtc_base/network.h"
 #include "rtc_base/numerics/safe_minmax.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/stringencode.h"
 #include "rtc_base/stringutils.h"
 
@@ -762,7 +762,7 @@ void Port::SendBindingResponse(StunMessage* request,
   if (retransmit_attr) {
     // Inherit the incoming retransmit value in the response so the other side
     // can see our view of lost pings.
-    response.AddAttribute(rtc::MakeUnique<StunUInt32Attribute>(
+    response.AddAttribute(absl::make_unique<StunUInt32Attribute>(
         STUN_ATTR_RETRANSMIT_COUNT, retransmit_attr->value()));
 
     if (retransmit_attr->value() > CONNECTION_WRITE_CONNECT_FAILURES) {
@@ -773,7 +773,7 @@ void Port::SendBindingResponse(StunMessage* request,
     }
   }
 
-  response.AddAttribute(rtc::MakeUnique<StunXorAddressAttribute>(
+  response.AddAttribute(absl::make_unique<StunXorAddressAttribute>(
       STUN_ATTR_XOR_MAPPED_ADDRESS, addr));
   response.AddMessageIntegrity(password_);
   response.AddFingerprint();
@@ -954,38 +954,38 @@ class ConnectionRequest : public StunRequest {
     std::string username;
     connection_->port()->CreateStunUsername(
         connection_->remote_candidate().username(), &username);
-    request->AddAttribute(
-        rtc::MakeUnique<StunByteStringAttribute>(STUN_ATTR_USERNAME, username));
+    request->AddAttribute(absl::make_unique<StunByteStringAttribute>(
+        STUN_ATTR_USERNAME, username));
 
     // connection_ already holds this ping, so subtract one from count.
     if (connection_->port()->send_retransmit_count_attribute()) {
-      request->AddAttribute(rtc::MakeUnique<StunUInt32Attribute>(
+      request->AddAttribute(absl::make_unique<StunUInt32Attribute>(
           STUN_ATTR_RETRANSMIT_COUNT,
           static_cast<uint32_t>(connection_->pings_since_last_response_.size() -
                                 1)));
     }
     uint32_t network_info = connection_->port()->Network()->id();
     network_info = (network_info << 16) | connection_->port()->network_cost();
-    request->AddAttribute(rtc::MakeUnique<StunUInt32Attribute>(
+    request->AddAttribute(absl::make_unique<StunUInt32Attribute>(
         STUN_ATTR_NETWORK_INFO, network_info));
 
     // Adding ICE_CONTROLLED or ICE_CONTROLLING attribute based on the role.
     if (connection_->port()->GetIceRole() == ICEROLE_CONTROLLING) {
-      request->AddAttribute(rtc::MakeUnique<StunUInt64Attribute>(
+      request->AddAttribute(absl::make_unique<StunUInt64Attribute>(
           STUN_ATTR_ICE_CONTROLLING, connection_->port()->IceTiebreaker()));
       // We should have either USE_CANDIDATE attribute or ICE_NOMINATION
       // attribute but not both. That was enforced in p2ptransportchannel.
       if (connection_->use_candidate_attr()) {
-        request->AddAttribute(
-            rtc::MakeUnique<StunByteStringAttribute>(STUN_ATTR_USE_CANDIDATE));
+        request->AddAttribute(absl::make_unique<StunByteStringAttribute>(
+            STUN_ATTR_USE_CANDIDATE));
       }
       if (connection_->nomination() &&
           connection_->nomination() != connection_->acked_nomination()) {
-        request->AddAttribute(rtc::MakeUnique<StunUInt32Attribute>(
+        request->AddAttribute(absl::make_unique<StunUInt32Attribute>(
             STUN_ATTR_NOMINATION, connection_->nomination()));
       }
     } else if (connection_->port()->GetIceRole() == ICEROLE_CONTROLLED) {
-      request->AddAttribute(rtc::MakeUnique<StunUInt64Attribute>(
+      request->AddAttribute(absl::make_unique<StunUInt64Attribute>(
           STUN_ATTR_ICE_CONTROLLED, connection_->port()->IceTiebreaker()));
     } else {
       RTC_NOTREACHED();
@@ -1004,7 +1004,7 @@ class ConnectionRequest : public StunRequest {
     uint32_t prflx_priority =
         type_preference << 24 |
         (connection_->local_candidate().priority() & 0x00FFFFFF);
-    request->AddAttribute(rtc::MakeUnique<StunUInt32Attribute>(
+    request->AddAttribute(absl::make_unique<StunUInt32Attribute>(
         STUN_ATTR_PRIORITY, prflx_priority));
 
     // Adding Message Integrity attribute.

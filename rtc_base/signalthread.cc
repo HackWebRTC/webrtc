@@ -10,8 +10,8 @@
 
 #include "rtc_base/signalthread.h"
 
+#include "absl/memory/memory.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/ptr_util.h"
 
 namespace rtc {
 
@@ -123,7 +123,7 @@ void SignalThread::OnMessage(Message* msg) {
 }
 
 SignalThread::Worker::Worker(SignalThread* parent)
-    : Thread(MakeUnique<NullSocketServer>(), /*do_init=*/false),
+    : Thread(absl::make_unique<NullSocketServer>(), /*do_init=*/false),
       parent_(parent) {
   DoInit();
 }

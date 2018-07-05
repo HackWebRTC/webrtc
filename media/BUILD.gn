@@ -166,6 +166,7 @@ rtc_static_library("rtc_internal_video_codecs") {
   deps = [
     ":rtc_h264_profile_id",
     "../modules/video_coding:video_codec_interface",
+    "//third_party/abseil-cpp/absl/memory",
   ]
   sources = [
     "engine/convert_legacy_video_factory.cc",
@@ -407,6 +408,7 @@ if (rtc_include_tests) {
       "../rtc_base:checks",
       "../rtc_base:rtc_task_queue",
       "../rtc_base:stringutils",
+      "//third_party/abseil-cpp/absl/memory",
     ]
     sources = [
       "base/fakeframesource.cc",
@@ -498,6 +500,7 @@ if (rtc_include_tests) {
       "../rtc_base:stringutils",
       "../test:field_trial",
       "../test:test_common",
+      "//third_party/abseil-cpp/absl/memory",
     ]
     sources = [
       "base/codec_unittest.cc",

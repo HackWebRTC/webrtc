@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "modules/rtp_rtcp/source/rtp_format_video_generic.h"
@@ -27,7 +28,6 @@
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/trace_event.h"
 
 namespace webrtc {
@@ -289,7 +289,7 @@ bool RTPSenderVideo::SendVideo(enum VideoCodecType video_type,
   rtp_header->SetPayloadType(payload_type);
   rtp_header->SetTimestamp(rtp_timestamp);
   rtp_header->set_capture_time_ms(capture_time_ms);
-  auto last_packet = rtc::MakeUnique<RtpPacketToSend>(*rtp_header);
+  auto last_packet = absl::make_unique<RtpPacketToSend>(*rtp_header);
 
   size_t fec_packet_overhead;
   bool red_enabled;
@@ -368,7 +368,7 @@ bool RTPSenderVideo::SendVideo(enum VideoCodecType video_type,
   for (size_t i = 0; i < num_packets; ++i) {
     bool last = (i + 1) == num_packets;
     auto packet = last ? std::move(last_packet)
-                       : rtc::MakeUnique<RtpPacketToSend>(*rtp_header);
+                       : absl::make_unique<RtpPacketToSend>(*rtp_header);
     if (!packetizer->NextPacket(packet.get()))
       return false;
     RTC_DCHECK_LE(packet->payload_size(),

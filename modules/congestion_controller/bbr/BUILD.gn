@@ -17,6 +17,7 @@ rtc_static_library("bbr") {
     ":bbr_controller",
     "../../../api/transport:network_control",
     "../../../rtc_base:rtc_base_approved",
+    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 

@@ -61,8 +61,8 @@ class RtpSenderReceiverTest : public testing::Test,
         // Create fake media engine/etc. so we can create channels to use to
         // test RtpSenders/RtpReceivers.
         media_engine_(new cricket::FakeMediaEngine()),
-        channel_manager_(rtc::WrapUnique(media_engine_),
-                         rtc::MakeUnique<cricket::RtpDataEngine>(),
+        channel_manager_(absl::WrapUnique(media_engine_),
+                         absl::make_unique<cricket::RtpDataEngine>(),
                          worker_thread_,
                          network_thread_),
         fake_call_(),
@@ -70,7 +70,7 @@ class RtpSenderReceiverTest : public testing::Test,
     // Create channels to be used by the RtpSenders and RtpReceivers.
     channel_manager_.Init();
     bool srtp_required = true;
-    rtp_dtls_transport_ = rtc::MakeUnique<cricket::FakeDtlsTransport>(
+    rtp_dtls_transport_ = absl::make_unique<cricket::FakeDtlsTransport>(
         "fake_dtls_transport", cricket::ICE_CANDIDATE_COMPONENT_RTP);
     rtp_transport_ = CreateDtlsSrtpTransport();
 
@@ -114,8 +114,8 @@ class RtpSenderReceiverTest : public testing::Test,
   }
 
   std::unique_ptr<webrtc::RtpTransportInternal> CreateDtlsSrtpTransport() {
-    auto dtls_srtp_transport =
-        rtc::MakeUnique<webrtc::DtlsSrtpTransport>(/*rtcp_mux_required=*/true);
+    auto dtls_srtp_transport = absl::make_unique<webrtc::DtlsSrtpTransport>(
+        /*rtcp_mux_required=*/true);
     dtls_srtp_transport->SetDtlsTransports(rtp_dtls_transport_.get(),
                                            /*rtcp_dtls_transport=*/nullptr);
     return dtls_srtp_transport;

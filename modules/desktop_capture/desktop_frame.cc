@@ -14,9 +14,9 @@
 
 #include <string.h>
 
+#include "absl/memory/memory.h"
 #include "modules/desktop_capture/desktop_geometry.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 
@@ -129,7 +129,7 @@ std::unique_ptr<DesktopFrame> SharedMemoryDesktopFrame::Create(
   if (!shared_memory)
     return nullptr;
 
-  return rtc::MakeUnique<SharedMemoryDesktopFrame>(
+  return absl::make_unique<SharedMemoryDesktopFrame>(
       size, size.width() * kBytesPerPixel, std::move(shared_memory));
 }
 

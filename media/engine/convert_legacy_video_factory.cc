@@ -13,6 +13,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_decoder_software_fallback_wrapper.h"
 #include "api/video_codecs/video_encoder_factory.h"
@@ -27,7 +28,6 @@
 #include "media/engine/webrtcvideodecoderfactory.h"
 #include "media/engine/webrtcvideoencoderfactory.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/ptr_util.h"
 
 namespace cricket {
 
@@ -98,7 +98,7 @@ class EncoderAdapter : public webrtc::VideoEncoderFactory {
       std::unique_ptr<WebRtcVideoEncoderFactory> external_encoder_factory)
       : internal_encoder_factory_(new webrtc::InternalEncoderFactory()),
         external_encoder_factory_(
-            rtc::MakeUnique<CricketToWebRtcEncoderFactory>(
+            absl::make_unique<CricketToWebRtcEncoderFactory>(
                 std::move(external_encoder_factory))) {}
 
   webrtc::VideoEncoderFactory::CodecInfo QueryVideoEncoder(
@@ -125,7 +125,7 @@ class EncoderAdapter : public webrtc::VideoEncoderFactory {
                           format)) {
       internal_encoder =
           CodecNamesEq(format.name.c_str(), kVp8CodecName)
-              ? rtc::MakeUnique<webrtc::VP8EncoderSimulcastProxy>(
+              ? absl::make_unique<webrtc::VP8EncoderSimulcastProxy>(
                     internal_encoder_factory_.get(), format)
               : internal_encoder_factory_->CreateVideoEncoder(format);
     }
@@ -136,7 +136,7 @@ class EncoderAdapter : public webrtc::VideoEncoderFactory {
                           format)) {
       external_encoder =
           CodecNamesEq(format.name.c_str(), kVp8CodecName)
-              ? rtc::MakeUnique<webrtc::SimulcastEncoderAdapter>(
+              ? absl::make_unique<webrtc::SimulcastEncoderAdapter>(
                     external_encoder_factory_.get(), format)
               : external_encoder_factory_->CreateVideoEncoder(format);
     }

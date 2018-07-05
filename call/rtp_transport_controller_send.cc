@@ -9,12 +9,12 @@
  */
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "call/rtp_transport_controller_send.h"
 #include "modules/congestion_controller/include/send_side_congestion_controller.h"
 #include "modules/congestion_controller/rtp/include/send_side_congestion_controller.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 #include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
@@ -37,13 +37,13 @@ std::unique_ptr<SendSideCongestionControllerInterface> CreateController(
     NetworkControllerFactoryInterface* controller_factory) {
   if (task_queue_controller) {
     RTC_LOG(LS_INFO) << "Using TaskQueue based SSCC";
-    return rtc::MakeUnique<webrtc::webrtc_cc::SendSideCongestionController>(
+    return absl::make_unique<webrtc::webrtc_cc::SendSideCongestionController>(
         clock, task_queue, event_log, pacer, bitrate_config.start_bitrate_bps,
         bitrate_config.min_bitrate_bps, bitrate_config.max_bitrate_bps,
         controller_factory);
   }
   RTC_LOG(LS_INFO) << "Using Legacy SSCC";
-  auto cc = rtc::MakeUnique<webrtc::SendSideCongestionController>(
+  auto cc = absl::make_unique<webrtc::SendSideCongestionController>(
       clock, nullptr /* observer */, event_log, pacer);
   cc->SignalNetworkState(kNetworkDown);
   cc->SetBweBitrates(bitrate_config.min_bitrate_bps,

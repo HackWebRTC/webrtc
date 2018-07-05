@@ -13,6 +13,7 @@
 #include <memory>
 #include <utility>  // for std::pair
 
+#include "absl/memory/memory.h"
 #include "api/candidate.h"
 #include "p2p/base/p2pconstants.h"
 #include "p2p/base/p2ptransportchannel.h"
@@ -20,7 +21,6 @@
 #include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/strings/string_builder.h"
 
 using webrtc::SdpType;
@@ -490,7 +490,7 @@ webrtc::RTCError JsepTransport::NegotiateAndSetDtlsParameters(
   rtc::SSLFingerprint* remote_fp =
       remote_description_->transport_desc.identity_fingerprint.get();
   if (remote_fp && local_fp) {
-    remote_fingerprint = rtc::MakeUnique<rtc::SSLFingerprint>(*remote_fp);
+    remote_fingerprint = absl::make_unique<rtc::SSLFingerprint>(*remote_fp);
     webrtc::RTCError error =
         NegotiateDtlsRole(local_description_type,
                           local_description_->transport_desc.connection_role,
@@ -505,7 +505,7 @@ webrtc::RTCError JsepTransport::NegotiateAndSetDtlsParameters(
         "Local fingerprint supplied when caller didn't offer DTLS.");
   } else {
     // We are not doing DTLS
-    remote_fingerprint = rtc::MakeUnique<rtc::SSLFingerprint>("", nullptr, 0);
+    remote_fingerprint = absl::make_unique<rtc::SSLFingerprint>("", nullptr, 0);
   }
   // Now that we have negotiated everything, push it downward.
   // Note that we cache the result so that if we have race conditions

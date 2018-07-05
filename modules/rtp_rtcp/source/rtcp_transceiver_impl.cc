@@ -12,6 +12,7 @@
 
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "api/call/transport.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "modules/rtp_rtcp/include/receive_statistics.h"
@@ -30,7 +31,6 @@
 #include "modules/rtp_rtcp/source/time_util.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/timeutils.h"
 
@@ -334,7 +334,7 @@ void RtcpTransceiverImpl::SchedulePeriodicCompoundPackets(int64_t delay_ms) {
       if (!ptr_)
         return true;
       ptr_->SendPeriodicCompoundPacket();
-      task_queue_->PostDelayedTask(rtc::WrapUnique(this),
+      task_queue_->PostDelayedTask(absl::WrapUnique(this),
                                    ptr_->config_.report_period_ms);
       return false;
     }
@@ -346,7 +346,7 @@ void RtcpTransceiverImpl::SchedulePeriodicCompoundPackets(int64_t delay_ms) {
 
   RTC_DCHECK(config_.schedule_periodic_compound_packets);
 
-  auto task = rtc::MakeUnique<SendPeriodicCompoundPacketTask>(
+  auto task = absl::make_unique<SendPeriodicCompoundPacketTask>(
       config_.task_queue, ptr_factory_.GetWeakPtr());
   if (delay_ms > 0)
     config_.task_queue->PostDelayedTask(std::move(task), delay_ms);

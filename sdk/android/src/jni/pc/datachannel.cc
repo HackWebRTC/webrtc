@@ -12,9 +12,9 @@
 
 #include <limits>
 
+#include "absl/memory/memory.h"
 #include "api/datachannelinterface.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 #include "sdk/android/generated_peerconnection_jni/jni/DataChannel_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/src/jni/jni_helpers.h"
@@ -97,7 +97,7 @@ static jlong JNI_DataChannel_RegisterObserver(
     JNIEnv* jni,
     const JavaParamRef<jobject>& j_dc,
     const JavaParamRef<jobject>& j_observer) {
-  auto observer = rtc::MakeUnique<DataChannelObserverJni>(jni, j_observer);
+  auto observer = absl::make_unique<DataChannelObserverJni>(jni, j_observer);
   ExtractNativeDC(jni, j_dc)->RegisterObserver(observer.get());
   return jlongFromPointer(observer.release());
 }

@@ -10,7 +10,7 @@
 
 #include "sdk/android/src/jni/pc/mediaconstraints.h"
 
-#include "rtc_base/ptr_util.h"
+#include "absl/memory/memory.h"
 #include "sdk/android/generated_peerconnection_jni/jni/MediaConstraints_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/src/jni/jni_helpers.h"
@@ -60,7 +60,7 @@ class MediaConstraintsJni : public MediaConstraintsInterface {
 std::unique_ptr<MediaConstraintsInterface> JavaToNativeMediaConstraints(
     JNIEnv* env,
     const JavaRef<jobject>& j_constraints) {
-  return rtc::MakeUnique<MediaConstraintsJni>(env, j_constraints);
+  return absl::make_unique<MediaConstraintsJni>(env, j_constraints);
 }
 
 }  // namespace jni

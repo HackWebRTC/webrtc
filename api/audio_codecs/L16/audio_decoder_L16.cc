@@ -10,11 +10,11 @@
 
 #include "api/audio_codecs/L16/audio_decoder_L16.h"
 
+#include "absl/memory/memory.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/pcm16b/audio_decoder_pcm16b.h"
 #include "modules/audio_coding/codecs/pcm16b/pcm16b_common.h"
 #include "rtc_base/numerics/safe_conversions.h"
-#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 
@@ -36,7 +36,7 @@ void AudioDecoderL16::AppendSupportedDecoders(
 std::unique_ptr<AudioDecoder> AudioDecoderL16::MakeAudioDecoder(
     const Config& config,
     absl::optional<AudioCodecPairId> /*codec_pair_id*/) {
-  return config.IsOk() ? rtc::MakeUnique<AudioDecoderPcm16B>(
+  return config.IsOk() ? absl::make_unique<AudioDecoderPcm16B>(
                              config.sample_rate_hz, config.num_channels)
                        : nullptr;
 }

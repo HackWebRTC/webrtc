@@ -13,6 +13,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "api/fec_controller.h"
 #include "api/mediaconstraintsinterface.h"
 #include "api/mediastreamproxy.h"
@@ -27,7 +28,6 @@
 #include "pc/rtpparametersconversion.h"
 #include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/ptr_util.h"
 // Adding 'nogncheck' to disable the gn include headers check to support modular
 // WebRTC build targets.
 // TODO(zhihuang): This wouldn't be necessary if the interface and
@@ -147,7 +147,7 @@ PeerConnectionFactory::PeerConnectionFactory(
       injected_network_controller_factory_(
           std::move(network_controller_factory)),
       bbr_network_controller_factory_(
-          rtc::MakeUnique<BbrNetworkControllerFactory>()) {
+          absl::make_unique<BbrNetworkControllerFactory>()) {
   if (!network_thread_) {
     owned_network_thread_ = rtc::Thread::CreateWithSocketServer();
     owned_network_thread_->SetName("pc_network_thread", nullptr);
@@ -217,8 +217,8 @@ bool PeerConnectionFactory::Initialize() {
     return false;
   }
 
-  channel_manager_ = rtc::MakeUnique<cricket::ChannelManager>(
-      std::move(media_engine_), rtc::MakeUnique<cricket::RtpDataEngine>(),
+  channel_manager_ = absl::make_unique<cricket::ChannelManager>(
+      std::move(media_engine_), absl::make_unique<cricket::RtpDataEngine>(),
       worker_thread_, network_thread_);
 
   channel_manager_->SetVideoRtxEnabled(true);
@@ -368,8 +368,9 @@ PeerConnectionFactory::CreatePeerConnection(
 
   // Set internal defaults if optional dependencies are not set.
   if (!dependencies.cert_generator) {
-    dependencies.cert_generator = rtc::MakeUnique<rtc::RTCCertificateGenerator>(
-        signaling_thread_, network_thread_);
+    dependencies.cert_generator =
+        absl::make_unique<rtc::RTCCertificateGenerator>(signaling_thread_,
+                                                        network_thread_);
   }
   if (!dependencies.allocator) {
     dependencies.allocator.reset(new cricket::BasicPortAllocator(
@@ -428,7 +429,7 @@ rtc::scoped_refptr<AudioTrackInterface> PeerConnectionFactory::CreateAudioTrack(
 std::unique_ptr<cricket::SctpTransportInternalFactory>
 PeerConnectionFactory::CreateSctpTransportInternalFactory() {
 #ifdef HAVE_SCTP
-  return rtc::MakeUnique<cricket::SctpTransportFactory>(network_thread());
+  return absl::make_unique<cricket::SctpTransportFactory>(network_thread());
 #else
   return nullptr;
 #endif
@@ -457,7 +458,7 @@ std::unique_ptr<RtcEventLog> PeerConnectionFactory::CreateRtcEventLog_w() {
   const auto encoding_type = RtcEventLog::EncodingType::Legacy;
   return event_log_factory_
              ? event_log_factory_->CreateRtcEventLog(encoding_type)
-             : rtc::MakeUnique<RtcEventLogNullImpl>();
+             : absl::make_unique<RtcEventLogNullImpl>();
 }
 
 std::unique_ptr<Call> PeerConnectionFactory::CreateCall_w(

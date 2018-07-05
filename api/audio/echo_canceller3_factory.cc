@@ -11,8 +11,8 @@
 
 #include <memory>
 
+#include "absl/memory/memory.h"
 #include "modules/audio_processing/aec3/echo_canceller3.h"
-#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 
@@ -22,6 +22,6 @@ EchoCanceller3Factory::EchoCanceller3Factory(const EchoCanceller3Config& config)
     : config_(config) {}
 
 std::unique_ptr<EchoControl> EchoCanceller3Factory::Create(int sample_rate_hz) {
-  return rtc::MakeUnique<EchoCanceller3>(config_, sample_rate_hz, true);
+  return absl::make_unique<EchoCanceller3>(config_, sample_rate_hz, true);
 }
 }  // namespace webrtc

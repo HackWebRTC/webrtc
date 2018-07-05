@@ -115,6 +115,7 @@ rtc_source_set("video_stream_decoder_create") {
     ":video_stream_decoder",
     "../../rtc_base:rtc_base_approved",
     "../../video:video_stream_decoder_impl",
+    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 

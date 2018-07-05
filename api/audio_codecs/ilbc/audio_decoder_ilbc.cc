@@ -13,9 +13,9 @@
 #include <memory>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/ilbc/audio_decoder_ilbc.h"
-#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 
@@ -35,7 +35,7 @@ void AudioDecoderIlbc::AppendSupportedDecoders(
 std::unique_ptr<AudioDecoder> AudioDecoderIlbc::MakeAudioDecoder(
     Config config,
     absl::optional<AudioCodecPairId> /*codec_pair_id*/) {
-  return rtc::MakeUnique<AudioDecoderIlbcImpl>();
+  return absl::make_unique<AudioDecoderIlbcImpl>();
 }
 
 }  // namespace webrtc

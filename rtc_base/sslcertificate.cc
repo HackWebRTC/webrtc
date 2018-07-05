@@ -14,11 +14,11 @@
 #include <string>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "rtc_base/base64.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/opensslcertificate.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/sslfingerprint.h"
 
 namespace rtc {
@@ -66,13 +66,13 @@ std::unique_ptr<SSLCertificateStats> SSLCertificate::GetStats() const {
   std::string der_base64;
   Base64::EncodeFromArray(der_buffer.data(), der_buffer.size(), &der_base64);
 
-  return rtc::MakeUnique<SSLCertificateStats>(std::move(fingerprint),
-                                              std::move(digest_algorithm),
-                                              std::move(der_base64), nullptr);
+  return absl::make_unique<SSLCertificateStats>(std::move(fingerprint),
+                                                std::move(digest_algorithm),
+                                                std::move(der_base64), nullptr);
 }
 
 std::unique_ptr<SSLCertificate> SSLCertificate::GetUniqueReference() const {
-  return WrapUnique(GetReference());
+  return absl::WrapUnique(GetReference());
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -113,7 +113,7 @@ SSLCertChain* SSLCertChain::Copy() const {
 }
 
 std::unique_ptr<SSLCertChain> SSLCertChain::UniqueCopy() const {
-  return WrapUnique(Copy());
+  return absl::WrapUnique(Copy());
 }
 
 std::unique_ptr<SSLCertificateStats> SSLCertChain::GetStats() const {

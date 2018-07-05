@@ -12,12 +12,12 @@
 
 #include "rtc_base/socket_unittest.h"
 
+#include "absl/memory/memory.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/asyncudpsocket.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/nethelpers.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/socketserver.h"
 #include "rtc_base/testclient.h"
 #include "rtc_base/testutils.h"
@@ -905,9 +905,9 @@ void SocketTest::UdpInternal(const IPAddress& loopback) {
 
   // Test send/receive behavior.
   std::unique_ptr<TestClient> client1(
-      new TestClient(WrapUnique(AsyncUDPSocket::Create(ss_, addr1))));
+      new TestClient(absl::WrapUnique(AsyncUDPSocket::Create(ss_, addr1))));
   std::unique_ptr<TestClient> client2(
-      new TestClient(WrapUnique(AsyncUDPSocket::Create(ss_, empty))));
+      new TestClient(absl::WrapUnique(AsyncUDPSocket::Create(ss_, empty))));
 
   SocketAddress addr2;
   EXPECT_EQ(3, client2->SendTo("foo", 3, addr1));
@@ -920,7 +920,7 @@ void SocketTest::UdpInternal(const IPAddress& loopback) {
   // TODO: figure out what the intent is here
   for (int i = 0; i < 10; ++i) {
     client2.reset(
-        new TestClient(WrapUnique(AsyncUDPSocket::Create(ss_, empty))));
+        new TestClient(absl::WrapUnique(AsyncUDPSocket::Create(ss_, empty))));
 
     SocketAddress addr4;
     EXPECT_EQ(3, client2->SendTo("foo", 3, addr1));
@@ -947,7 +947,7 @@ void SocketTest::UdpReadyToSend(const IPAddress& loopback) {
 
   // Test send
   std::unique_ptr<TestClient> client(
-      new TestClient(WrapUnique(AsyncUDPSocket::Create(ss_, empty))));
+      new TestClient(absl::WrapUnique(AsyncUDPSocket::Create(ss_, empty))));
   int test_packet_size = 1200;
   std::unique_ptr<char[]> test_packet(new char[test_packet_size]);
   // Init the test packet just to avoid memcheck warning.

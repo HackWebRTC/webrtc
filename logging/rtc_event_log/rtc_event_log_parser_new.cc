@@ -20,6 +20,7 @@
 #include <map>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "api/rtp_headers.h"
 #include "api/rtpparameters.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
@@ -32,7 +33,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/protobuf_utils.h"
-#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 

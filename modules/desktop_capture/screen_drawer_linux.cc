@@ -13,11 +13,11 @@
 
 #include <memory>
 
+#include "absl/memory/memory.h"
 #include "modules/desktop_capture/screen_drawer.h"
 #include "modules/desktop_capture/screen_drawer_lock_posix.h"
 #include "modules/desktop_capture/x11/shared_x_display.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/ptr_util.h"
 #include "system_wrappers/include/sleep.h"
 
 namespace webrtc {
@@ -167,13 +167,13 @@ void ScreenDrawerLinux::BringToFront() {
 
 // static
 std::unique_ptr<ScreenDrawerLock> ScreenDrawerLock::Create() {
-  return rtc::MakeUnique<ScreenDrawerLockPosix>();
+  return absl::make_unique<ScreenDrawerLockPosix>();
 }
 
 // static
 std::unique_ptr<ScreenDrawer> ScreenDrawer::Create() {
   if (SharedXDisplay::CreateDefault().get()) {
-    return rtc::MakeUnique<ScreenDrawerLinux>();
+    return absl::make_unique<ScreenDrawerLinux>();
   }
   return nullptr;
 }

@@ -14,13 +14,13 @@
 
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "modules/desktop_capture/desktop_capturer.h"
 #include "modules/desktop_capture/desktop_frame.h"
 #include "modules/desktop_capture/mouse_cursor.h"
 #include "modules/desktop_capture/mouse_cursor_monitor.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructormagic.h"
-#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 
@@ -176,7 +176,7 @@ void DesktopAndCursorComposer::OnCaptureResult(
           cursor_position_.subtract(frame->top_left());
       relative_position.set(relative_position.x() * scale,
                             relative_position.y() * scale);
-      frame = rtc::MakeUnique<DesktopFrameWithCursor>(
+      frame = absl::make_unique<DesktopFrameWithCursor>(
           std::move(frame), *cursor_, relative_position);
     }
   }

@@ -10,6 +10,7 @@
 
 #include <tuple>
 
+#include "absl/memory/memory.h"
 #include "api/fakemetricsobserver.h"
 #include "api/peerconnectionproxy.h"
 #include "media/base/fakemediaengine.h"
@@ -20,7 +21,6 @@
 #include "pc/sdputils.h"
 #include "pc/test/fakesctptransport.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/virtualsocketserver.h"
 
 namespace webrtc {
@@ -47,7 +47,7 @@ class PeerConnectionFactoryForUsageHistogramTest
             rtc::Thread::Current(),
             rtc::Thread::Current(),
             rtc::Thread::Current(),
-            rtc::MakeUnique<cricket::FakeMediaEngine>(),
+            absl::make_unique<cricket::FakeMediaEngine>(),
             CreateCallFactory(),
             nullptr) {}
 
@@ -155,15 +155,16 @@ class PeerConnectionUsageHistogramTest : public ::testing::Test {
     if (immediate_report) {
       pc_factory->ReturnHistogramVeryQuickly();
     }
-    auto observer = rtc::MakeUnique<ObserverForUsageHistogramTest>();
+    auto observer = absl::make_unique<ObserverForUsageHistogramTest>();
     auto pc = pc_factory->CreatePeerConnection(config, nullptr, nullptr,
                                                observer.get());
     if (!pc) {
       return nullptr;
     }
 
-    auto wrapper = rtc::MakeUnique<PeerConnectionWrapperForUsageHistogramTest>(
-        pc_factory, pc, std::move(observer));
+    auto wrapper =
+        absl::make_unique<PeerConnectionWrapperForUsageHistogramTest>(
+            pc_factory, pc, std::move(observer));
     return wrapper;
   }
 

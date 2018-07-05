@@ -15,11 +15,11 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "modules/desktop_capture/desktop_frame.h"
 #include "modules/desktop_capture/win/screen_capture_utils.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/timeutils.h"
 #include "rtc_base/trace_event.h"
 
@@ -124,7 +124,7 @@ void ScreenCapturerWinDirectx::CaptureFrame() {
   frames_.MoveToNextFrame();
   if (!frames_.current_frame()) {
     frames_.ReplaceCurrentFrame(
-        rtc::MakeUnique<DxgiFrame>(shared_memory_factory_.get()));
+        absl::make_unique<DxgiFrame>(shared_memory_factory_.get()));
   }
 
   DxgiDuplicatorController::Result result;

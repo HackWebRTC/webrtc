@@ -12,6 +12,7 @@
 #include <memory>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "api/test/create_simulcast_test_fixture.h"
 #include "api/test/simulcast_test_fixture.h"
 #include "api/video_codecs/sdp_video_format.h"
@@ -22,7 +23,6 @@
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/utility/simulcast_test_fixture_impl.h"
-#include "rtc_base/ptr_util.h"
 #include "test/function_video_decoder_factory.h"
 #include "test/function_video_encoder_factory.h"
 #include "test/gmock.h"
@@ -42,14 +42,14 @@ constexpr int kDefaultHeight = 720;
 std::unique_ptr<SimulcastTestFixture> CreateSpecificSimulcastTestFixture(
     VideoEncoderFactory* internal_encoder_factory) {
   std::unique_ptr<VideoEncoderFactory> encoder_factory =
-      rtc::MakeUnique<FunctionVideoEncoderFactory>(
+      absl::make_unique<FunctionVideoEncoderFactory>(
           [internal_encoder_factory]() {
-            return rtc::MakeUnique<SimulcastEncoderAdapter>(
+            return absl::make_unique<SimulcastEncoderAdapter>(
                 internal_encoder_factory,
                 SdpVideoFormat(cricket::kVp8CodecName));
           });
   std::unique_ptr<VideoDecoderFactory> decoder_factory =
-      rtc::MakeUnique<FunctionVideoDecoderFactory>(
+      absl::make_unique<FunctionVideoDecoderFactory>(
           []() { return VP8Decoder::Create(); });
   return CreateSimulcastTestFixture(std::move(encoder_factory),
                                     std::move(decoder_factory),

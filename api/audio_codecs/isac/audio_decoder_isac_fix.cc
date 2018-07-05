@@ -10,9 +10,9 @@
 
 #include "api/audio_codecs/isac/audio_decoder_isac_fix.h"
 
+#include "absl/memory/memory.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/isac/fix/include/audio_decoder_isacfix.h"
-#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 
@@ -32,7 +32,7 @@ void AudioDecoderIsacFix::AppendSupportedDecoders(
 std::unique_ptr<AudioDecoder> AudioDecoderIsacFix::MakeAudioDecoder(
     Config config,
     absl::optional<AudioCodecPairId> /*codec_pair_id*/) {
-  return rtc::MakeUnique<AudioDecoderIsacFixImpl>(16000);
+  return absl::make_unique<AudioDecoderIsacFixImpl>(16000);
 }
 
 }  // namespace webrtc

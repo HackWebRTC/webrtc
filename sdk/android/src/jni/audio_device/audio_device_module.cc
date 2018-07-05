@@ -86,7 +86,7 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
   int32_t Init() override {
     RTC_LOG(INFO) << __FUNCTION__;
     RTC_DCHECK(thread_checker_.CalledOnValidThread());
-    audio_device_buffer_ = rtc::MakeUnique<AudioDeviceBuffer>();
+    audio_device_buffer_ = absl::make_unique<AudioDeviceBuffer>();
     AttachAudioBuffer();
     if (initialized_) {
       return 0;

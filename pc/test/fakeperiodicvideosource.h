@@ -13,10 +13,10 @@
 
 #include <memory>
 
+#include "absl/memory/memory.h"
 #include "api/video/video_source_interface.h"
 #include "media/base/fakeframesource.h"
 #include "media/base/videobroadcaster.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/task_queue.h"
 
 namespace webrtc {
@@ -38,9 +38,9 @@ class FakePeriodicVideoSource final
   FakePeriodicVideoSource() : FakePeriodicVideoSource(Config()) {}
   explicit FakePeriodicVideoSource(Config config)
       : task_queue_(
-            rtc::MakeUnique<rtc::TaskQueue>("FakePeriodicVideoTrackSource")) {
+            absl::make_unique<rtc::TaskQueue>("FakePeriodicVideoTrackSource")) {
     thread_checker_.DetachFromThread();
-    task_queue_->PostTask(rtc::MakeUnique<FrameTask>(config, &broadcaster_));
+    task_queue_->PostTask(absl::make_unique<FrameTask>(config, &broadcaster_));
   }
 
   void RemoveSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) override {
@@ -79,7 +79,7 @@ class FakePeriodicVideoSource final
         broadcaster_->OnFrame(frame_source_.GetFrame());
       }
 
-      rtc::TaskQueue::Current()->PostDelayedTask(rtc::WrapUnique(this),
+      rtc::TaskQueue::Current()->PostDelayedTask(absl::WrapUnique(this),
                                                  frame_interval_ms_);
       return false;
     }

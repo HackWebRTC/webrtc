@@ -47,8 +47,8 @@
 // C++ target.
 // TODO(zhihuang): Remove nogncheck once MediaEngineInterface is moved to C++
 // API layer.
+#include "absl/memory/memory.h"
 #include "media/engine/webrtcmediaengine.h"  // nogncheck
-#include "rtc_base/ptr_util.h"
 
 @implementation RTCPeerConnectionFactory {
   std::unique_ptr<rtc::Thread> _networkThread;

@@ -12,12 +12,12 @@
 #include <string>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/video_coding/codecs/vp8/libvpx_vp8_encoder.h"
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "modules/video_coding/utility/simulcast_utility.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/timeutils.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/field_trial.h"
@@ -123,7 +123,7 @@ bool UpdateVpxConfiguration(TemporalLayers* temporal_layers,
 }  // namespace
 
 std::unique_ptr<VP8Encoder> VP8Encoder::Create() {
-  return rtc::MakeUnique<LibvpxVp8Encoder>();
+  return absl::make_unique<LibvpxVp8Encoder>();
 }
 
 vpx_enc_frame_flags_t LibvpxVp8Encoder::EncodeFlags(

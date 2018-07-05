@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "modules/congestion_controller/goog_cc/acknowledged_bitrate_estimator.h"
 #include "modules/congestion_controller/goog_cc/alr_detector.h"
 #include "modules/congestion_controller/goog_cc/include/goog_cc_factory.h"
@@ -27,7 +28,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/format_macros.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/timeutils.h"
 #include "system_wrappers/include/field_trial.h"
 
@@ -117,11 +117,11 @@ GoogCcNetworkController::GoogCcNetworkController(RtcEventLog* event_log,
     : event_log_(event_log),
       probe_controller_(new ProbeController()),
       bandwidth_estimation_(
-          rtc::MakeUnique<SendSideBandwidthEstimation>(event_log_)),
-      alr_detector_(rtc::MakeUnique<AlrDetector>()),
+          absl::make_unique<SendSideBandwidthEstimation>(event_log_)),
+      alr_detector_(absl::make_unique<AlrDetector>()),
       delay_based_bwe_(new DelayBasedBwe(event_log_)),
       acknowledged_bitrate_estimator_(
-          rtc::MakeUnique<AcknowledgedBitrateEstimator>()),
+          absl::make_unique<AcknowledgedBitrateEstimator>()),
       last_bandwidth_(config.starting_bandwidth),
       pacing_factor_(kDefaultPaceMultiplier),
       min_pacing_rate_(DataRate::Zero()),
@@ -157,7 +157,7 @@ NetworkControlUpdate GoogCcNetworkController::OnNetworkRouteChange(
   ClampBitrates(&start_bitrate_bps, &min_bitrate_bps, &max_bitrate_bps);
 
   bandwidth_estimation_ =
-      rtc::MakeUnique<SendSideBandwidthEstimation>(event_log_);
+      absl::make_unique<SendSideBandwidthEstimation>(event_log_);
   bandwidth_estimation_->SetBitrates(start_bitrate_bps, min_bitrate_bps,
                                      max_bitrate_bps);
   delay_based_bwe_.reset(new DelayBasedBwe(event_log_));

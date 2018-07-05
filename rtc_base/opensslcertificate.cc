@@ -26,6 +26,7 @@
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
 
+#include "absl/memory/memory.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/helpers.h"
@@ -35,7 +36,6 @@
 #include "rtc_base/openssldigest.h"
 #include "rtc_base/opensslidentity.h"
 #include "rtc_base/opensslutility.h"
-#include "rtc_base/ptr_util.h"
 #ifdef WEBRTC_BUILT_IN_SSL_ROOT_CERTIFICATES
 #include "rtc_base/sslroots.h"
 #endif

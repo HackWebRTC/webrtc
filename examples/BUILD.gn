@@ -901,6 +901,7 @@ if (is_win || is_android) {
       "../system_wrappers:field_trial_default",
       "../system_wrappers:metrics_default",
       "../system_wrappers:runtime_enabled_features_default",
+      "//third_party/abseil-cpp/absl/memory",
     ]
     if (is_android) {
       deps += [

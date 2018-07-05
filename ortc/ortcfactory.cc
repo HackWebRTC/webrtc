@@ -14,6 +14,7 @@
 #include <utility>  // For std::move.
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "api/mediastreamtrackproxy.h"
 #include "api/proxy.h"
 #include "api/rtcerror.h"
@@ -40,7 +41,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/helpers.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 
 namespace {
 
@@ -533,7 +533,7 @@ RTCError OrtcFactory::Initialize(
   }
 
   channel_manager_.reset(new cricket::ChannelManager(
-      std::move(media_engine), rtc::MakeUnique<cricket::RtpDataEngine>(),
+      std::move(media_engine), absl::make_unique<cricket::RtpDataEngine>(),
       worker_thread_.get(), network_thread_));
   channel_manager_->SetVideoRtxEnabled(true);
   if (!channel_manager_->Init()) {

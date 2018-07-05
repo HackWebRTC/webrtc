@@ -12,6 +12,7 @@
 
 #include <algorithm>
 
+#include "absl/memory/memory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/video_codecs/video_encoder_config.h"
@@ -19,7 +20,6 @@
 #include "modules/audio_mixer/audio_mixer_impl.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/event.h"
-#include "rtc_base/ptr_util.h"
 #include "test/fake_encoder.h"
 #include "test/testsupport/fileutils.h"
 
@@ -39,7 +39,7 @@ CallTest::CallTest()
       audio_send_config_(nullptr),
       audio_send_stream_(nullptr),
       fake_encoder_factory_([this]() {
-        auto encoder = rtc::MakeUnique<test::FakeEncoder>(clock_);
+        auto encoder = absl::make_unique<test::FakeEncoder>(clock_);
         encoder->SetMaxBitrate(fake_encoder_max_bitrate_);
         return encoder;
       }),
@@ -178,7 +178,7 @@ void CallTest::CreateCalls(const Call::Config& sender_config,
 
 void CallTest::CreateSenderCall(const Call::Config& config) {
   std::unique_ptr<RtpTransportControllerSend> controller_send =
-      rtc::MakeUnique<RtpTransportControllerSend>(
+      absl::make_unique<RtpTransportControllerSend>(
           Clock::GetRealTimeClock(), config.event_log,
           config.network_controller_factory, config.bitrate_config);
   sender_call_transport_controller_ = controller_send.get();

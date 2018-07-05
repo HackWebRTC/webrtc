@@ -13,6 +13,7 @@
 #include <memory>
 #include <string>
 
+#include "absl/memory/memory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "api/video_codecs/video_encoder_config.h"
@@ -24,7 +25,6 @@
 #include "modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "rtc_base/bitrateallocationstrategy.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/metrics_default.h"
 #include "test/call_test.h"
@@ -199,18 +199,18 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
                    return pair.second == MediaType::VIDEO;
                  });
 
-    audio_send_transport = rtc::MakeUnique<test::PacketTransport>(
+    audio_send_transport = absl::make_unique<test::PacketTransport>(
         &task_queue_, sender_call_.get(), &observer,
         test::PacketTransport::kSender, audio_pt_map, audio_net_config);
     audio_send_transport->SetReceiver(receiver_call_->Receiver());
 
-    video_send_transport = rtc::MakeUnique<test::PacketTransport>(
+    video_send_transport = absl::make_unique<test::PacketTransport>(
         &task_queue_, sender_call_.get(), &observer,
         test::PacketTransport::kSender, video_pt_map,
         FakeNetworkPipe::Config());
     video_send_transport->SetReceiver(receiver_call_->Receiver());
 
-    receive_transport = rtc::MakeUnique<test::PacketTransport>(
+    receive_transport = absl::make_unique<test::PacketTransport>(
         &task_queue_, receiver_call_.get(), &observer,
         test::PacketTransport::kReceiver, payload_type_map_,
         FakeNetworkPipe::Config());
@@ -256,7 +256,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
     }
     EXPECT_EQ(1u, video_receive_streams_.size());
     observer.set_receive_stream(video_receive_streams_[0]);
-    drifting_clock = rtc::MakeUnique<DriftingClock>(clock_, video_ntp_speed);
+    drifting_clock = absl::make_unique<DriftingClock>(clock_, video_ntp_speed);
     CreateFrameGeneratorCapturerWithDrift(drifting_clock.get(), video_rtp_speed,
                                           kDefaultFramerate, kDefaultWidth,
                                           kDefaultHeight);

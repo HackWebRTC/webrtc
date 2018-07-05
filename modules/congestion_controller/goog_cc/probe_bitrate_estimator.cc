@@ -12,13 +12,13 @@
 
 #include <algorithm>
 
+#include "absl/memory/memory.h"
 #include "logging/rtc_event_log/events/rtc_event_probe_result_failure.h"
 #include "logging/rtc_event_log/events/rtc_event_probe_result_success.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
-#include "rtc_base/ptr_util.h"
 
 namespace {
 // The minumum number of probes we need to receive feedback about in percent
@@ -108,7 +108,7 @@ int ProbeBitrateEstimator::HandleProbeAndEstimateBitrate(
                      << "] [send interval: " << send_interval_ms << " ms]"
                      << " [receive interval: " << receive_interval_ms << " ms]";
     if (event_log_) {
-      event_log_->Log(rtc::MakeUnique<RtcEventProbeResultFailure>(
+      event_log_->Log(absl::make_unique<RtcEventProbeResultFailure>(
           cluster_id, ProbeFailureReason::kInvalidSendReceiveInterval));
     }
     return -1;
@@ -141,7 +141,7 @@ int ProbeBitrateEstimator::HandleProbeAndEstimateBitrate(
                      << send_bps / 1000 << " = " << ratio
                      << " > kMaxValidRatio (" << kMaxValidRatio << ")]";
     if (event_log_) {
-      event_log_->Log(rtc::MakeUnique<RtcEventProbeResultFailure>(
+      event_log_->Log(absl::make_unique<RtcEventProbeResultFailure>(
           cluster_id, ProbeFailureReason::kInvalidSendReceiveRatio));
     }
     return -1;
@@ -164,7 +164,7 @@ int ProbeBitrateEstimator::HandleProbeAndEstimateBitrate(
   }
   if (event_log_) {
     event_log_->Log(
-        rtc::MakeUnique<RtcEventProbeResultSuccess>(cluster_id, res));
+        absl::make_unique<RtcEventProbeResultSuccess>(cluster_id, res));
   }
   estimated_bitrate_bps_ = res;
   return *estimated_bitrate_bps_;

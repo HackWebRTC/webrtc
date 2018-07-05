@@ -12,6 +12,7 @@
 #include <memory>
 #include <string>
 
+#include "absl/memory/memory.h"
 #include "rtc_base/asynctcpsocket.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/logging.h"
@@ -20,7 +21,6 @@
 #include "rtc_base/nethelpers.h"
 #include "rtc_base/network.h"
 #include "rtc_base/physicalsocketserver.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/testclient.h"
 #include "rtc_base/virtualsocketserver.h"
 
@@ -37,11 +37,11 @@ bool CheckReceive(TestClient* client,
 TestClient* CreateTestClient(SocketFactory* factory,
                              const SocketAddress& local_addr) {
   return new TestClient(
-      WrapUnique(AsyncUDPSocket::Create(factory, local_addr)));
+      absl::WrapUnique(AsyncUDPSocket::Create(factory, local_addr)));
 }
 
 TestClient* CreateTCPTestClient(AsyncSocket* socket) {
-  return new TestClient(MakeUnique<AsyncTCPSocket>(socket, false));
+  return new TestClient(absl::make_unique<AsyncTCPSocket>(socket, false));
 }
 
 // Tests that when sending from internal_addr to external_addrs through the

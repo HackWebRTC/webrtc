@@ -53,11 +53,11 @@ void MultiStreamTester::RunTest() {
       []() { return VP8Encoder::Create(); });
 
   task_queue_->SendTask([&]() {
-    sender_call = rtc::WrapUnique(Call::Create(config));
-    receiver_call = rtc::WrapUnique(Call::Create(config));
+    sender_call = absl::WrapUnique(Call::Create(config));
+    receiver_call = absl::WrapUnique(Call::Create(config));
     sender_transport =
-        rtc::WrapUnique(CreateSendTransport(task_queue_, sender_call.get()));
-    receiver_transport = rtc::WrapUnique(
+        absl::WrapUnique(CreateSendTransport(task_queue_, sender_call.get()));
+    receiver_transport = absl::WrapUnique(
         CreateReceiveTransport(task_queue_, receiver_call.get()));
 
     sender_transport->SetReceiver(receiver_call->Receiver());

@@ -12,6 +12,7 @@
 
 #include <android/log.h>
 
+#include "absl/memory/memory.h"
 #include "api/array_view.h"
 #include "modules/audio_device/android/audio_common.h"
 #include "modules/audio_device/android/audio_manager.h"
@@ -20,7 +21,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/format_macros.h"
 #include "rtc_base/platform_thread.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/timeutils.h"
 
 #define TAG "OpenSLESRecorder"
@@ -341,7 +341,7 @@ void OpenSLESRecorder::AllocateDataBuffers() {
         audio_parameters_.GetBytesPerBuffer());
   ALOGD("native sample rate: %d", audio_parameters_.sample_rate());
   RTC_DCHECK(audio_device_buffer_);
-  fine_audio_buffer_ = rtc::MakeUnique<FineAudioBuffer>(audio_device_buffer_);
+  fine_audio_buffer_ = absl::make_unique<FineAudioBuffer>(audio_device_buffer_);
   // Allocate queue of audio buffers that stores recorded audio samples.
   const int buffer_size_samples =
       audio_parameters_.frames_per_buffer() * audio_parameters_.channels();

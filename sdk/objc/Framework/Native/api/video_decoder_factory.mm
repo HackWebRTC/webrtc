@@ -10,14 +10,14 @@
 
 #include "sdk/objc/Framework/Native/api/video_decoder_factory.h"
 
-#include "rtc_base/ptr_util.h"
+#include "absl/memory/memory.h"
 #include "sdk/objc/Framework/Native/src/objc_video_decoder_factory.h"
 
 namespace webrtc {
 
 std::unique_ptr<VideoDecoderFactory> ObjCToNativeVideoDecoderFactory(
     id<RTCVideoDecoderFactory> objc_video_decoder_factory) {
-  return rtc::MakeUnique<ObjCVideoDecoderFactory>(objc_video_decoder_factory);
+  return absl::make_unique<ObjCVideoDecoderFactory>(objc_video_decoder_factory);
 }
 
 }  // namespace webrtc

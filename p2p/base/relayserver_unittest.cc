@@ -12,11 +12,11 @@
 #include <string>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "p2p/base/relayserver.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/helpers.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/socketaddress.h"
 #include "rtc_base/ssladapter.h"
 #include "rtc_base/testclient.h"
@@ -59,10 +59,10 @@ class RelayServerTest : public testing::Test {
     server_->AddExternalSocket(
         rtc::AsyncUDPSocket::Create(ss_.get(), server_ext_addr));
 
-    client1_.reset(new rtc::TestClient(
-        WrapUnique(rtc::AsyncUDPSocket::Create(ss_.get(), client1_addr))));
-    client2_.reset(new rtc::TestClient(
-        WrapUnique(rtc::AsyncUDPSocket::Create(ss_.get(), client2_addr))));
+    client1_.reset(new rtc::TestClient(absl::WrapUnique(
+        rtc::AsyncUDPSocket::Create(ss_.get(), client1_addr))));
+    client2_.reset(new rtc::TestClient(absl::WrapUnique(
+        rtc::AsyncUDPSocket::Create(ss_.get(), client2_addr))));
   }
 
   void Allocate() {

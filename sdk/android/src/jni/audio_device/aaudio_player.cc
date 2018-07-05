@@ -10,11 +10,11 @@
 
 #include "sdk/android/src/jni/audio_device/aaudio_player.h"
 
+#include "absl/memory/memory.h"
 #include "api/array_view.h"
 #include "modules/audio_device/fine_audio_buffer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 
@@ -124,7 +124,7 @@ void AAudioPlayer::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
   // Create a modified audio buffer class which allows us to ask for any number
   // of samples (and not only multiple of 10ms) to match the optimal buffer
   // size per callback used by AAudio.
-  fine_audio_buffer_ = rtc::MakeUnique<FineAudioBuffer>(audio_device_buffer_);
+  fine_audio_buffer_ = absl::make_unique<FineAudioBuffer>(audio_device_buffer_);
 }
 
 bool AAudioPlayer::SpeakerVolumeIsAvailable() {

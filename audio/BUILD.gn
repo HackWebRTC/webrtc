@@ -86,6 +86,7 @@ rtc_static_library("audio") {
     "../system_wrappers:field_trial_api",
     "../system_wrappers:metrics_api",
     "utility:audio_frame_operations",
+    "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
@@ -155,6 +156,7 @@ if (rtc_include_tests) {
       "../test:test_support",
       "utility:utility_tests",
       "//testing/gtest",
+      "//third_party/abseil-cpp/absl/memory",
     ]
 
     if (!rtc_use_memcheck) {
@@ -258,6 +260,7 @@ if (rtc_include_tests) {
       "../test:test_common",
       "../test:test_main",
       "//testing/gtest",
+      "//third_party/abseil-cpp/absl/memory",
     ]
 
     data = [

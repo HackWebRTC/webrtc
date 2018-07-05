@@ -40,7 +40,7 @@ VideoCodecTestFixture::Config CreateConfig() {
 
 TEST(VideoCodecTestOpenH264, ConstantHighBitrate) {
   auto frame_checker =
-      rtc::MakeUnique<VideoCodecTestFixtureImpl::H264KeyframeChecker>();
+      absl::make_unique<VideoCodecTestFixtureImpl::H264KeyframeChecker>();
   auto config = CreateConfig();
   config.SetCodecSettings(cricket::kH264CodecName, 1, 1, 1, false, true, false,
                           kCifWidth, kCifHeight);
@@ -61,7 +61,7 @@ TEST(VideoCodecTestOpenH264, ConstantHighBitrate) {
 // large frames into multiple slices and limit length of NAL units.
 TEST(VideoCodecTestOpenH264, SingleNalUnit) {
   auto frame_checker =
-      rtc::MakeUnique<VideoCodecTestFixtureImpl::H264KeyframeChecker>();
+      absl::make_unique<VideoCodecTestFixtureImpl::H264KeyframeChecker>();
   auto config = CreateConfig();
   config.h264_codec_settings.packetization_mode =
       H264PacketizationMode::SingleNalUnit;

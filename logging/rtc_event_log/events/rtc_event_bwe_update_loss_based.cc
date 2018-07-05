@@ -10,7 +10,7 @@
 
 #include "logging/rtc_event_log/events/rtc_event_bwe_update_loss_based.h"
 
-#include "rtc_base/ptr_util.h"
+#include "absl/memory/memory.h"
 
 namespace webrtc {
 
@@ -39,7 +39,7 @@ bool RtcEventBweUpdateLossBased::IsConfigEvent() const {
 }
 
 std::unique_ptr<RtcEvent> RtcEventBweUpdateLossBased::Copy() const {
-  return rtc::WrapUnique<RtcEvent>(new RtcEventBweUpdateLossBased(*this));
+  return absl::WrapUnique<RtcEvent>(new RtcEventBweUpdateLossBased(*this));
 }
 
 }  // namespace webrtc

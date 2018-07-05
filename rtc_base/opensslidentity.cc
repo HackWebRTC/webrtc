@@ -26,6 +26,7 @@
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
 
+#include "absl/memory/memory.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/helpers.h"
 #include "rtc_base/logging.h"
@@ -33,7 +34,6 @@
 #include "rtc_base/openssl.h"
 #include "rtc_base/openssldigest.h"
 #include "rtc_base/opensslutility.h"
-#include "rtc_base/ptr_util.h"
 
 namespace rtc {
 
@@ -303,7 +303,7 @@ SSLIdentity* OpenSSLIdentity::FromPEMChainStrings(
   }
 
   return new OpenSSLIdentity(std::move(key_pair),
-                             MakeUnique<SSLCertChain>(std::move(certs)));
+                             absl::make_unique<SSLCertChain>(std::move(certs)));
 }
 
 const OpenSSLCertificate& OpenSSLIdentity::certificate() const {
@@ -315,8 +315,8 @@ const SSLCertChain& OpenSSLIdentity::cert_chain() const {
 }
 
 OpenSSLIdentity* OpenSSLIdentity::GetReference() const {
-  return new OpenSSLIdentity(WrapUnique(key_pair_->GetReference()),
-                             WrapUnique(cert_chain_->Copy()));
+  return new OpenSSLIdentity(absl::WrapUnique(key_pair_->GetReference()),
+                             absl::WrapUnique(cert_chain_->Copy()));
 }
 
 bool OpenSSLIdentity::ConfigureIdentity(SSL_CTX* ctx) {

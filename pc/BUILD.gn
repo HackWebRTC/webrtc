@@ -85,6 +85,7 @@ rtc_static_library("rtc_pc_base") {
     "../rtc_base:rtc_task_queue",
     "../rtc_base:stringutils",
     "../system_wrappers:metrics_api",
+    "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 
@@ -205,6 +206,7 @@ rtc_static_library("peerconnection") {
     "../stats",
     "../system_wrappers",
     "../system_wrappers:field_trial_api",
+    "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
@@ -311,6 +313,7 @@ if (rtc_include_tests) {
       "../system_wrappers:metrics_default",
       "../system_wrappers:runtime_enabled_features_default",
       "../test:test_support",
+      "//third_party/abseil-cpp/absl/memory",
     ]
 
     if (rtc_build_libsrtp) {
@@ -348,6 +351,7 @@ if (rtc_include_tests) {
       "../rtc_base:rtc_base_tests_utils",
       "../test:perf_test",
       "../test:test_support",
+      "//third_party/abseil-cpp/absl/memory",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -408,6 +412,7 @@ if (rtc_include_tests) {
       "../rtc_base:rtc_task_queue",
       "../test:test_support",
       "../test:video_test_common",
+      "//third_party/abseil-cpp/absl/memory",
     ]
 
     if (!build_with_chromium && is_clang) {
@@ -478,6 +483,7 @@ if (rtc_include_tests) {
       "../rtc_base:checks",
       "../rtc_base:stringutils",
       "../test:fileutils",
+      "//third_party/abseil-cpp/absl/memory",
     ]
     if (is_android) {
       deps += [ ":android_black_magic" ]

@@ -12,7 +12,7 @@
 
 #include "call/degraded_call.h"
 
-#include "rtc_base/ptr_util.h"
+#include "absl/memory/memory.h"
 
 namespace webrtc {
 DegradedCall::DegradedCall(
@@ -28,7 +28,7 @@ DegradedCall::DegradedCall(
       receive_config_(receive_config) {
   if (receive_config_) {
     receive_pipe_ =
-        rtc::MakeUnique<webrtc::FakeNetworkPipe>(clock_, *receive_config_);
+        absl::make_unique<webrtc::FakeNetworkPipe>(clock_, *receive_config_);
     receive_pipe_->SetReceiver(call_->Receiver());
   }
   if (send_process_thread_) {
@@ -68,8 +68,8 @@ VideoSendStream* DegradedCall::CreateVideoSendStream(
     VideoSendStream::Config config,
     VideoEncoderConfig encoder_config) {
   if (send_config_ && !send_pipe_) {
-    send_pipe_ = rtc::MakeUnique<FakeNetworkPipe>(clock_, *send_config_,
-                                                  config.send_transport);
+    send_pipe_ = absl::make_unique<FakeNetworkPipe>(clock_, *send_config_,
+                                                    config.send_transport);
     config.send_transport = this;
     send_process_thread_->RegisterModule(send_pipe_.get(), RTC_FROM_HERE);
   }
@@ -83,8 +83,8 @@ VideoSendStream* DegradedCall::CreateVideoSendStream(
     VideoEncoderConfig encoder_config,
     std::unique_ptr<FecController> fec_controller) {
   if (send_config_ && !send_pipe_) {
-    send_pipe_ = rtc::MakeUnique<FakeNetworkPipe>(clock_, *send_config_,
-                                                  config.send_transport);
+    send_pipe_ = absl::make_unique<FakeNetworkPipe>(clock_, *send_config_,
+                                                    config.send_transport);
     config.send_transport = this;
     send_process_thread_->RegisterModule(send_pipe_.get(), RTC_FROM_HERE);
   }

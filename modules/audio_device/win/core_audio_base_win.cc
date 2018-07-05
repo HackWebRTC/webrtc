@@ -12,11 +12,11 @@
 
 #include <string>
 
+#include "absl/memory/memory.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/win/windows_version.h"
 
 using Microsoft::WRL::ComPtr;
@@ -266,7 +266,7 @@ bool CoreAudioBase::Start() {
   RTC_DLOG(INFO) << __FUNCTION__ << "[" << DirectionToString(direction())
                  << "]";
 
-  audio_thread_ = rtc::MakeUnique<rtc::PlatformThread>(
+  audio_thread_ = absl::make_unique<rtc::PlatformThread>(
       Run, this, IsInput() ? "wasapi_capture_thread" : "wasapi_render_thread",
       rtc::kRealtimePriority);
   audio_thread_->Start();

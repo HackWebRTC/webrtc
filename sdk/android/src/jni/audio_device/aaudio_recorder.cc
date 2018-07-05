@@ -10,11 +10,11 @@
 
 #include "sdk/android/src/jni/audio_device/aaudio_recorder.h"
 
+#include "absl/memory/memory.h"
 #include "api/array_view.h"
 #include "modules/audio_device/fine_audio_buffer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/timeutils.h"
 
 #include "system_wrappers/include/sleep.h"
@@ -120,7 +120,7 @@ void AAudioRecorder::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
   // Create a modified audio buffer class which allows us to deliver any number
   // of samples (and not only multiples of 10ms which WebRTC uses) to match the
   // native AAudio buffer size.
-  fine_audio_buffer_ = rtc::MakeUnique<FineAudioBuffer>(audio_device_buffer_);
+  fine_audio_buffer_ = absl::make_unique<FineAudioBuffer>(audio_device_buffer_);
 }
 
 bool AAudioRecorder::IsAcousticEchoCancelerSupported() const {

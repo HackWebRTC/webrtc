@@ -11,10 +11,10 @@
 #include <memory>
 #include <string>
 
+#include "absl/memory/memory.h"
 #include "p2p/base/stunserver.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/testclient.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/virtualsocketserver.h"
@@ -33,7 +33,7 @@ class StunServerTest : public testing::Test {
     server_.reset(
         new StunServer(rtc::AsyncUDPSocket::Create(ss_.get(), server_addr)));
     client_.reset(new rtc::TestClient(
-        WrapUnique(rtc::AsyncUDPSocket::Create(ss_.get(), client_addr))));
+        absl::WrapUnique(rtc::AsyncUDPSocket::Create(ss_.get(), client_addr))));
 
     network_.Start();
   }

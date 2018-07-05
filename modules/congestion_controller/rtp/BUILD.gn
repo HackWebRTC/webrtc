@@ -51,6 +51,7 @@ rtc_static_library("congestion_controller") {
     "../../remote_bitrate_estimator",
     "../../rtp_rtcp:rtp_rtcp_format",
     "../goog_cc",
+    "//third_party/abseil-cpp/absl/memory",
   ]
 
   if (!build_with_mozilla) {

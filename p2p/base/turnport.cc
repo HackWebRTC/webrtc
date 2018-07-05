@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 #include "p2p/base/stun.h"
 #include "rtc_base/asyncpacketsocket.h"
@@ -22,7 +23,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/nethelpers.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/socketaddress.h"
 #include "rtc_base/stringencode.h"
 
@@ -1058,12 +1058,12 @@ void TurnPort::SendRequest(StunRequest* req, int delay) {
 void TurnPort::AddRequestAuthInfo(StunMessage* msg) {
   // If we've gotten the necessary data from the server, add it to our request.
   RTC_DCHECK(!hash_.empty());
-  msg->AddAttribute(rtc::MakeUnique<StunByteStringAttribute>(
+  msg->AddAttribute(absl::make_unique<StunByteStringAttribute>(
       STUN_ATTR_USERNAME, credentials_.username));
   msg->AddAttribute(
-      rtc::MakeUnique<StunByteStringAttribute>(STUN_ATTR_REALM, realm_));
+      absl::make_unique<StunByteStringAttribute>(STUN_ATTR_REALM, realm_));
   msg->AddAttribute(
-      rtc::MakeUnique<StunByteStringAttribute>(STUN_ATTR_NONCE, nonce_));
+      absl::make_unique<StunByteStringAttribute>(STUN_ATTR_NONCE, nonce_));
   const bool success = msg->AddMessageIntegrity(hash());
   RTC_DCHECK(success);
 }
@@ -1453,7 +1453,7 @@ void TurnRefreshRequest::Prepare(StunMessage* request) {
   request->SetType(TURN_REFRESH_REQUEST);
   if (lifetime_ > -1) {
     request->AddAttribute(
-        rtc::MakeUnique<StunUInt32Attribute>(STUN_ATTR_LIFETIME, lifetime_));
+        absl::make_unique<StunUInt32Attribute>(STUN_ATTR_LIFETIME, lifetime_));
   }
 
   port_->AddRequestAuthInfo(request);
@@ -1536,7 +1536,7 @@ TurnCreatePermissionRequest::TurnCreatePermissionRequest(
 void TurnCreatePermissionRequest::Prepare(StunMessage* request) {
   // Create the request as indicated in RFC5766, Section 9.1.
   request->SetType(TURN_CREATE_PERMISSION_REQUEST);
-  request->AddAttribute(rtc::MakeUnique<StunXorAddressAttribute>(
+  request->AddAttribute(absl::make_unique<StunXorAddressAttribute>(
       STUN_ATTR_XOR_PEER_ADDRESS, ext_addr_));
   port_->AddRequestAuthInfo(request);
   port_->TurnCustomizerMaybeModifyOutgoingStunMessage(request);
@@ -1604,9 +1604,9 @@ TurnChannelBindRequest::TurnChannelBindRequest(
 void TurnChannelBindRequest::Prepare(StunMessage* request) {
   // Create the request as indicated in RFC5766, Section 11.1.
   request->SetType(TURN_CHANNEL_BIND_REQUEST);
-  request->AddAttribute(rtc::MakeUnique<StunUInt32Attribute>(
+  request->AddAttribute(absl::make_unique<StunUInt32Attribute>(
       STUN_ATTR_CHANNEL_NUMBER, channel_id_ << 16));
-  request->AddAttribute(rtc::MakeUnique<StunXorAddressAttribute>(
+  request->AddAttribute(absl::make_unique<StunXorAddressAttribute>(
       STUN_ATTR_XOR_PEER_ADDRESS, ext_addr_));
   port_->AddRequestAuthInfo(request);
   port_->TurnCustomizerMaybeModifyOutgoingStunMessage(request);
@@ -1697,10 +1697,10 @@ int TurnEntry::Send(const void* data,
     TurnMessage msg;
     msg.SetType(TURN_SEND_INDICATION);
     msg.SetTransactionID(rtc::CreateRandomString(kStunTransactionIdLength));
-    msg.AddAttribute(rtc::MakeUnique<StunXorAddressAttribute>(
+    msg.AddAttribute(absl::make_unique<StunXorAddressAttribute>(
         STUN_ATTR_XOR_PEER_ADDRESS, ext_addr_));
     msg.AddAttribute(
-        rtc::MakeUnique<StunByteStringAttribute>(STUN_ATTR_DATA, data, size));
+        absl::make_unique<StunByteStringAttribute>(STUN_ATTR_DATA, data, size));
 
     port_->TurnCustomizerMaybeModifyOutgoingStunMessage(&msg);
 

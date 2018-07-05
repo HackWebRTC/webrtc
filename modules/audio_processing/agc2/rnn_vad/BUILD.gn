@@ -62,6 +62,7 @@ if (rtc_include_tests) {
       "../../../../rtc_base:ptr_util",
       "../../../../test:fileutils",
       "../../../../test:test_support",
+      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 

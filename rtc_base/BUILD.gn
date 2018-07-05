@@ -533,6 +533,7 @@ rtc_source_set("rtc_task_queue_api") {
   deps = [
     ":macromagic",
     ":ptr_util",
+    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 
@@ -727,6 +728,7 @@ rtc_static_library("rtc_base_generic") {
     ":stringutils",
     "..:webrtc_common",
     "../api:array_view",
+    "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
   public_deps = [
@@ -1036,6 +1038,7 @@ rtc_source_set("rtc_base_tests_utils") {
     "../test:field_trial",
     "../test:test_support",
     "system:fallthrough",
+    "//third_party/abseil-cpp/absl/memory",
   ]
   public_deps = [
     "//testing/gtest",
@@ -1100,6 +1103,7 @@ if (rtc_include_tests) {
       "../test:fileutils",
       "../test:test_support",
       "//testing/gtest",
+      "//third_party/abseil-cpp/absl/memory",
     ]
     if (is_win) {
       sources += [ "win32socketserver_unittest.cc" ]
@@ -1178,6 +1182,7 @@ if (rtc_include_tests) {
       "../test:fileutils",
       "../test:test_support",
       "memory:unittests",
+      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 
@@ -1303,6 +1308,7 @@ if (rtc_include_tests) {
       "../api:array_view",
       "../test:fileutils",
       "../test:test_support",
+      "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
     public_deps = [

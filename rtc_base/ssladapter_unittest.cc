@@ -12,9 +12,9 @@
 #include <string>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/ipaddress.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/socketstream.h"
 #include "rtc_base/ssladapter.h"
 #include "rtc_base/sslidentity.h"
@@ -322,7 +322,7 @@ class SSLAdapterTestBase : public testing::Test, public sigslot::has_slots<> {
   }
 
   void SetMockCertVerifier(bool return_value) {
-    auto mock_verifier = rtc::MakeUnique<MockCertVerifier>();
+    auto mock_verifier = absl::make_unique<MockCertVerifier>();
     EXPECT_CALL(*mock_verifier, Verify(_)).WillRepeatedly(Return(return_value));
     cert_verifier_ =
         std::unique_ptr<rtc::SSLCertificateVerifier>(std::move(mock_verifier));

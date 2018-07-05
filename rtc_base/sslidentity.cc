@@ -15,11 +15,11 @@
 #include <string>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "rtc_base/base64.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/opensslidentity.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/sslfingerprint.h"
 
 namespace rtc {

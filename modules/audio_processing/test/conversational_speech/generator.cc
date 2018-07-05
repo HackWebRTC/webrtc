@@ -10,13 +10,13 @@
 
 #include <iostream>
 
+#include "absl/memory/memory.h"
 #include "modules/audio_processing/test/conversational_speech/config.h"
 #include "modules/audio_processing/test/conversational_speech/multiend_call.h"
 #include "modules/audio_processing/test/conversational_speech/simulator.h"
 #include "modules/audio_processing/test/conversational_speech/timing.h"
 #include "modules/audio_processing/test/conversational_speech/wavreader_factory.h"
 #include "rtc_base/flags.h"
-#include "rtc_base/ptr_util.h"
 #include "test/testsupport/fileutils.h"
 
 namespace webrtc {
@@ -61,7 +61,7 @@ int main(int argc, char* argv[]) {
 
   // Parse timing and audio tracks.
   auto wavreader_factory =
-      rtc::MakeUnique<conversational_speech::WavReaderFactory>();
+      absl::make_unique<conversational_speech::WavReaderFactory>();
   conversational_speech::MultiEndCall multiend_call(
       timing, config.audiotracks_path(), std::move(wavreader_factory));
 

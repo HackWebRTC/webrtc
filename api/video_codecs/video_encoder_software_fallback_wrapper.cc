@@ -15,12 +15,12 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "media/base/codec.h"
 #include "media/base/h264_profile_level_id.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/timeutils.h"
 #include "system_wrappers/include/field_trial.h"
 
@@ -380,7 +380,7 @@ void VideoEncoderSoftwareFallbackWrapper::ValidateSettingsForForcedFallback() {
 std::unique_ptr<VideoEncoder> CreateVideoEncoderSoftwareFallbackWrapper(
     std::unique_ptr<VideoEncoder> sw_fallback_encoder,
     std::unique_ptr<VideoEncoder> hw_encoder) {
-  return rtc::MakeUnique<VideoEncoderSoftwareFallbackWrapper>(
+  return absl::make_unique<VideoEncoderSoftwareFallbackWrapper>(
       std::move(sw_fallback_encoder), std::move(hw_encoder));
 }
 

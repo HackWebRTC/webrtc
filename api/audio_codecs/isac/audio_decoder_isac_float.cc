@@ -10,9 +10,9 @@
 
 #include "api/audio_codecs/isac/audio_decoder_isac_float.h"
 
+#include "absl/memory/memory.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/isac/main/include/audio_decoder_isac.h"
-#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 
@@ -39,7 +39,7 @@ std::unique_ptr<AudioDecoder> AudioDecoderIsacFloat::MakeAudioDecoder(
     Config config,
     absl::optional<AudioCodecPairId> /*codec_pair_id*/) {
   RTC_DCHECK(config.IsOk());
-  return rtc::MakeUnique<AudioDecoderIsacFloatImpl>(config.sample_rate_hz);
+  return absl::make_unique<AudioDecoderIsacFloatImpl>(config.sample_rate_hz);
 }
 
 }  // namespace webrtc

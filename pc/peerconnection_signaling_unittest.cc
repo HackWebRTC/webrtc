@@ -24,10 +24,10 @@
 #ifdef WEBRTC_ANDROID
 #include "pc/test/androidtestinitializer.h"
 #endif
+#include "absl/memory/memory.h"
 #include "pc/test/fakeaudiocapturemodule.h"
 #include "pc/test/fakertccertificategenerator.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/stringutils.h"
 #include "rtc_base/virtualsocketserver.h"
 #include "test/gmock.h"
@@ -81,7 +81,7 @@ class PeerConnectionSignalingBaseTest : public ::testing::Test {
   }
 
   WrapperPtr CreatePeerConnection(const RTCConfiguration& config) {
-    auto observer = rtc::MakeUnique<MockPeerConnectionObserver>();
+    auto observer = absl::make_unique<MockPeerConnectionObserver>();
     RTCConfiguration modified_config = config;
     modified_config.sdp_semantics = sdp_semantics_;
     auto pc = pc_factory_->CreatePeerConnection(modified_config, nullptr,
@@ -90,7 +90,7 @@ class PeerConnectionSignalingBaseTest : public ::testing::Test {
       return nullptr;
     }
 
-    return rtc::MakeUnique<PeerConnectionWrapperForSignalingTest>(
+    return absl::make_unique<PeerConnectionWrapperForSignalingTest>(
         pc_factory_, pc, std::move(observer));
   }
 

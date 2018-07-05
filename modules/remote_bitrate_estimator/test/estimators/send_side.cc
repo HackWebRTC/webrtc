@@ -12,10 +12,10 @@
 
 #include <algorithm>
 
+#include "absl/memory/memory.h"
 #include "modules/congestion_controller/goog_cc/delay_based_bwe.h"
 #include "modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 namespace testing {
@@ -31,7 +31,7 @@ SendSideBweSender::SendSideBweSender(int kbps,
                                                      observer,
                                                      &event_log_)),
       acknowledged_bitrate_estimator_(
-          rtc::MakeUnique<AcknowledgedBitrateEstimator>()),
+          absl::make_unique<AcknowledgedBitrateEstimator>()),
       bwe_(new DelayBasedBwe(nullptr)),
       feedback_observer_(bitrate_controller_.get()),
       clock_(clock),

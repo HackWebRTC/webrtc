@@ -12,10 +12,10 @@
 
 #include "modules/audio_processing/aec_dump/aec_dump_impl.h"
 
+#include "absl/memory/memory.h"
 #include "modules/audio_processing/aec_dump/aec_dump_factory.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/event.h"
-#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 
@@ -168,8 +168,8 @@ void AecDumpImpl::WriteConfig(const InternalAPMConfig& config) {
 }
 
 std::unique_ptr<WriteToFileTask> AecDumpImpl::CreateWriteToFileTask() {
-  return rtc::MakeUnique<WriteToFileTask>(debug_file_.get(),
-                                          &num_bytes_left_for_log_);
+  return absl::make_unique<WriteToFileTask>(debug_file_.get(),
+                                            &num_bytes_left_for_log_);
 }
 
 std::unique_ptr<AecDump> AecDumpFactory::Create(rtc::PlatformFile file,
@@ -184,8 +184,8 @@ std::unique_ptr<AecDump> AecDumpFactory::Create(rtc::PlatformFile file,
   if (!debug_file->OpenFromFileHandle(handle)) {
     return nullptr;
   }
-  return rtc::MakeUnique<AecDumpImpl>(std::move(debug_file), max_log_size_bytes,
-                                      worker_queue);
+  return absl::make_unique<AecDumpImpl>(std::move(debug_file),
+                                        max_log_size_bytes, worker_queue);
 }
 
 std::unique_ptr<AecDump> AecDumpFactory::Create(std::string file_name,
@@ -196,8 +196,8 @@ std::unique_ptr<AecDump> AecDumpFactory::Create(std::string file_name,
   if (!debug_file->OpenFile(file_name.c_str(), false)) {
     return nullptr;
   }
-  return rtc::MakeUnique<AecDumpImpl>(std::move(debug_file), max_log_size_bytes,
-                                      worker_queue);
+  return absl::make_unique<AecDumpImpl>(std::move(debug_file),
+                                        max_log_size_bytes, worker_queue);
 }
 
 std::unique_ptr<AecDump> AecDumpFactory::Create(FILE* handle,
@@ -209,7 +209,7 @@ std::unique_ptr<AecDump> AecDumpFactory::Create(FILE* handle,
   if (!debug_file->OpenFromFileHandle(handle)) {
     return nullptr;
   }
-  return rtc::MakeUnique<AecDumpImpl>(std::move(debug_file), max_log_size_bytes,
-                                      worker_queue);
+  return absl::make_unique<AecDumpImpl>(std::move(debug_file),
+                                        max_log_size_bytes, worker_queue);
 }
 }  // namespace webrtc

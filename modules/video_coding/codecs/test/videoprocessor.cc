@@ -219,7 +219,7 @@ VideoProcessor::VideoProcessor(webrtc::VideoEncoder* encoder,
 
   for (size_t i = 0; i < num_simulcast_or_spatial_layers_; ++i) {
     decode_callback_.push_back(
-        rtc::MakeUnique<VideoProcessorDecodeCompleteCallback>(this, i));
+        absl::make_unique<VideoProcessorDecodeCompleteCallback>(this, i));
     RTC_CHECK_EQ(
         decoders_->at(i)->InitDecode(&config_.codec_settings,
                                      static_cast<int>(config_.NumberOfCores())),

@@ -20,11 +20,11 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "api/datachannelinterface.h"
 #include "api/jsepicecandidate.h"
 #include "pc/streamcollection.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 
@@ -112,7 +112,7 @@ class MockPeerConnectionObserver : public PeerConnectionObserver {
   void OnIceCandidate(const IceCandidateInterface* candidate) override {
     RTC_DCHECK(PeerConnectionInterface::kIceGatheringNew !=
                pc_->ice_gathering_state());
-    candidates_.push_back(rtc::MakeUnique<JsepIceCandidate>(
+    candidates_.push_back(absl::make_unique<JsepIceCandidate>(
         candidate->sdp_mid(), candidate->sdp_mline_index(),
         candidate->candidate()));
     callback_triggered_ = true;

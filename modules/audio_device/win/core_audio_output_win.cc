@@ -10,12 +10,12 @@
 
 #include "modules/audio_device/win/core_audio_output_win.h"
 
+#include "absl/memory/memory.h"
 #include "modules/audio_device/audio_device_buffer.h"
 #include "modules/audio_device/fine_audio_buffer.h"
 #include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ptr_util.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -125,7 +125,7 @@ int CoreAudioOutput::InitPlayout() {
   // of samples (and not only multiple of 10ms) to match the optimal
   // buffer size per callback used by Core Audio.
   // TODO(henrika): can we use a shared buffer instead?
-  fine_audio_buffer_ = rtc::MakeUnique<FineAudioBuffer>(audio_device_buffer_);
+  fine_audio_buffer_ = absl::make_unique<FineAudioBuffer>(audio_device_buffer_);
 
   // Create an IAudioRenderClient for an initialized IAudioClient.
   // The IAudioRenderClient interface enables us to write output data to

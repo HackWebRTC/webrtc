@@ -16,12 +16,12 @@
 #import <WebRTC/RTCVideoCodecFactory.h>
 #import <WebRTC/RTCVideoRenderer.h>
 
+#include "absl/memory/memory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/peerconnectioninterface.h"
 #include "media/engine/webrtcmediaengine.h"
 #include "modules/audio_processing/include/audio_processing.h"
-#include "rtc_base/ptr_util.h"
 #include "sdk/objc/Framework/Native/api/video_capturer.h"
 #include "sdk/objc/Framework/Native/api/video_decoder_factory.h"
 #include "sdk/objc/Framework/Native/api/video_encoder_factory.h"
@@ -56,7 +56,7 @@ class SetLocalSessionDescriptionObserver : public webrtc::SetSessionDescriptionO
 }  // namespace
 
 ObjCCallClient::ObjCCallClient()
-    : call_started_(false), pc_observer_(rtc::MakeUnique<PCObserver>(this)) {
+    : call_started_(false), pc_observer_(absl::make_unique<PCObserver>(this)) {
   thread_checker_.DetachFromThread();
   CreatePeerConnectionFactory();
 }

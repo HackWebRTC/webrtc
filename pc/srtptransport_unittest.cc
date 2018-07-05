@@ -12,6 +12,7 @@
 
 #include "pc/srtptransport.h"
 
+#include "absl/memory/memory.h"
 #include "media/base/fakertp.h"
 #include "p2p/base/dtlstransportinternal.h"
 #include "p2p/base/fakepackettransport.h"
@@ -20,7 +21,6 @@
 #include "pc/srtptestutil.h"
 #include "rtc_base/asyncpacketsocket.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/sslstreamadapter.h"
 
 using rtc::kTestKey1;
@@ -44,16 +44,16 @@ class SrtpTransportTest : public testing::Test, public sigslot::has_slots<> {
     bool rtcp_mux_enabled = true;
 
     rtp_packet_transport1_ =
-        rtc::MakeUnique<rtc::FakePacketTransport>("fake_packet_transport1");
+        absl::make_unique<rtc::FakePacketTransport>("fake_packet_transport1");
     rtp_packet_transport2_ =
-        rtc::MakeUnique<rtc::FakePacketTransport>("fake_packet_transport2");
+        absl::make_unique<rtc::FakePacketTransport>("fake_packet_transport2");
 
     bool asymmetric = false;
     rtp_packet_transport1_->SetDestination(rtp_packet_transport2_.get(),
                                            asymmetric);
 
-    srtp_transport1_ = rtc::MakeUnique<SrtpTransport>(rtcp_mux_enabled);
-    srtp_transport2_ = rtc::MakeUnique<SrtpTransport>(rtcp_mux_enabled);
+    srtp_transport1_ = absl::make_unique<SrtpTransport>(rtcp_mux_enabled);
+    srtp_transport2_ = absl::make_unique<SrtpTransport>(rtcp_mux_enabled);
 
     srtp_transport1_->SetRtpPacketTransport(rtp_packet_transport1_.get());
     srtp_transport2_->SetRtpPacketTransport(rtp_packet_transport2_.get());

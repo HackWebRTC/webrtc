@@ -1078,10 +1078,10 @@ std::unique_ptr<VideoEncoder>
 VideoQualityTest::TestVideoEncoderFactory::CreateVideoEncoder(
     const SdpVideoFormat& format) {
   if (format.name == "VP8") {
-    return rtc::MakeUnique<VP8EncoderSimulcastProxy>(&internal_encoder_factory_,
-                                                     format);
+    return absl::make_unique<VP8EncoderSimulcastProxy>(
+        &internal_encoder_factory_, format);
   } else if (format.name == "multiplex") {
-    return rtc::MakeUnique<MultiplexEncoderAdapter>(
+    return absl::make_unique<MultiplexEncoderAdapter>(
         &internal_encoder_factory_, SdpVideoFormat(cricket::kVp9CodecName));
   } else {
     return internal_encoder_factory_.CreateVideoEncoder(format);
@@ -1837,7 +1837,7 @@ void VideoQualityTest::CreateCapturers() {
 
 std::unique_ptr<test::LayerFilteringTransport>
 VideoQualityTest::CreateSendTransport() {
-  return rtc::MakeUnique<test::LayerFilteringTransport>(
+  return absl::make_unique<test::LayerFilteringTransport>(
       &task_queue_, params_.pipe, sender_call_.get(), kPayloadTypeVP8,
       kPayloadTypeVP9, params_.video[0].selected_tl, params_.ss[0].selected_sl,
       payload_type_map_, kVideoSendSsrcs[0],
@@ -1847,7 +1847,7 @@ VideoQualityTest::CreateSendTransport() {
 
 std::unique_ptr<test::DirectTransport>
 VideoQualityTest::CreateReceiveTransport() {
-  return rtc::MakeUnique<test::DirectTransport>(
+  return absl::make_unique<test::DirectTransport>(
       &task_queue_, params_.pipe, receiver_call_.get(), payload_type_map_);
 }
 
@@ -1929,11 +1929,11 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
     send_event_log_ = RtcEventLog::Create(RtcEventLog::EncodingType::Legacy);
     recv_event_log_ = RtcEventLog::Create(RtcEventLog::EncodingType::Legacy);
     std::unique_ptr<RtcEventLogOutputFile> send_output(
-        rtc::MakeUnique<RtcEventLogOutputFile>(
+        absl::make_unique<RtcEventLogOutputFile>(
             params.logging.rtc_event_log_name + "_send",
             RtcEventLog::kUnlimitedOutput));
     std::unique_ptr<RtcEventLogOutputFile> recv_output(
-        rtc::MakeUnique<RtcEventLogOutputFile>(
+        absl::make_unique<RtcEventLogOutputFile>(
             params.logging.rtc_event_log_name + "_recv",
             RtcEventLog::kUnlimitedOutput));
     bool event_log_started =
@@ -1963,7 +1963,7 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   if (graph_title.empty())
     graph_title = VideoQualityTest::GenerateGraphTitle();
   bool is_quick_test_enabled = field_trial::IsEnabled("WebRTC-QuickPerfTest");
-  analyzer = rtc::MakeUnique<VideoAnalyzer>(
+  analyzer = absl::make_unique<VideoAnalyzer>(
       send_transport.get(), params_.analyzer.test_label,
       params_.analyzer.avg_psnr_threshold, params_.analyzer.avg_ssim_threshold,
       is_quick_test_enabled

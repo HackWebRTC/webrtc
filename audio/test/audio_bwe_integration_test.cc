@@ -10,8 +10,8 @@
 
 #include "audio/test/audio_bwe_integration_test.h"
 
+#include "absl/memory/memory.h"
 #include "common_audio/wav_file.h"
-#include "rtc_base/ptr_util.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"

@@ -10,10 +10,10 @@
 
 #include <memory>
 
+#include "absl/memory/memory.h"
 #include "api/test/create_simulcast_test_fixture.h"
 #include "api/test/simulcast_test_fixture.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
-#include "rtc_base/ptr_util.h"
 #include "test/function_video_decoder_factory.h"
 #include "test/function_video_encoder_factory.h"
 #include "test/gtest.h"
@@ -24,10 +24,10 @@ namespace test {
 namespace {
 std::unique_ptr<SimulcastTestFixture> CreateSpecificSimulcastTestFixture() {
   std::unique_ptr<VideoEncoderFactory> encoder_factory =
-      rtc::MakeUnique<FunctionVideoEncoderFactory>(
+      absl::make_unique<FunctionVideoEncoderFactory>(
           []() { return VP8Encoder::Create(); });
   std::unique_ptr<VideoDecoderFactory> decoder_factory =
-      rtc::MakeUnique<FunctionVideoDecoderFactory>(
+      absl::make_unique<FunctionVideoDecoderFactory>(
           []() { return VP8Decoder::Create(); });
   return CreateSimulcastTestFixture(std::move(encoder_factory),
                                     std::move(decoder_factory),

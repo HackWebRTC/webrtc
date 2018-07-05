@@ -214,6 +214,7 @@ rtc_source_set("audio_generator_factory") {
     "../../common_audio:common_audio",
     "../../rtc_base:rtc_base_approved",
     "../../system_wrappers:system_wrappers",
+    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 
@@ -522,6 +523,7 @@ if (rtc_include_tests) {
       "test/conversational_speech:unittest",
       "vad:vad_unittests",
       "//testing/gtest",
+      "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
 
@@ -642,6 +644,7 @@ if (rtc_include_tests) {
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
       "../../rtc_base:safe_minmax",
+      "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
   }
@@ -680,6 +683,7 @@ if (rtc_include_tests) {
         "aec_dump",
         "aec_dump:aec_dump_impl",
         "//testing/gtest",
+        "//third_party/abseil-cpp/absl/memory",
         "//third_party/abseil-cpp/absl/types:optional",
       ]
     }  # audioproc_f_impl
@@ -692,6 +696,7 @@ if (rtc_include_tests) {
         ":audio_processing",
         "../../api:audioproc_f_api",
         "../../rtc_base:rtc_base_approved",
+        "//third_party/abseil-cpp/absl/memory",
       ]
     }  # audioproc_f
   }

@@ -21,6 +21,7 @@
 #include <map>
 #include <string>
 
+#include "absl/memory/memory.h"
 #include "api/audio/audio_frame.h"
 #include "api/audio_codecs/L16/audio_encoder_L16.h"
 #include "api/audio_codecs/g711/audio_encoder_g711.h"
@@ -33,7 +34,6 @@
 #include "modules/audio_coding/neteq/tools/input_audio_file.h"
 #include "rtc_base/flags.h"
 #include "rtc_base/numerics/safe_conversions.h"
-#include "rtc_base/ptr_util.h"
 #include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
@@ -313,7 +313,7 @@ int RunRtpEncode(int argc, char* argv[]) {
     AudioEncoderCng::Config cng_config = GetCngConfig(codec->SampleRateHz());
     RTC_DCHECK(codec);
     cng_config.speech_encoder = std::move(codec);
-    codec = rtc::MakeUnique<AudioEncoderCng>(std::move(cng_config));
+    codec = absl::make_unique<AudioEncoderCng>(std::move(cng_config));
   }
   RTC_DCHECK(codec);
 

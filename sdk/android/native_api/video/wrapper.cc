@@ -10,7 +10,7 @@
 
 #include "sdk/android/native_api/video/wrapper.h"
 
-#include "rtc_base/ptr_util.h"
+#include "absl/memory/memory.h"
 #include "sdk/android/native_api/jni/scoped_java_ref.h"
 #include "sdk/android/src/jni/videoframe.h"
 #include "sdk/android/src/jni/videosink.h"
@@ -20,7 +20,7 @@ namespace webrtc {
 std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>> JavaToNativeVideoSink(
     JNIEnv* jni,
     jobject video_sink) {
-  return rtc::MakeUnique<jni::VideoSinkWrapper>(
+  return absl::make_unique<jni::VideoSinkWrapper>(
       jni, JavaParamRef<jobject>(video_sink));
 }
 

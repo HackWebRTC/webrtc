@@ -10,7 +10,7 @@
 
 #include "logging/rtc_event_log/events/rtc_event_ice_candidate_pair_config.h"
 
-#include "rtc_base/ptr_util.h"
+#include "absl/memory/memory.h"
 
 namespace webrtc {
 
@@ -65,7 +65,7 @@ bool RtcEventIceCandidatePairConfig::IsConfigEvent() const {
 }
 
 std::unique_ptr<RtcEvent> RtcEventIceCandidatePairConfig::Copy() const {
-  return rtc::WrapUnique<RtcEvent>(new RtcEventIceCandidatePairConfig(*this));
+  return absl::WrapUnique<RtcEvent>(new RtcEventIceCandidatePairConfig(*this));
 }
 
 }  // namespace webrtc

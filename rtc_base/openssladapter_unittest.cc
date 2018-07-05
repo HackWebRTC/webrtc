@@ -12,10 +12,10 @@
 #include <string>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "rtc_base/asyncsocket.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/openssladapter.h"
-#include "rtc_base/ptr_util.h"
 #include "test/gmock.h"
 
 namespace rtc {

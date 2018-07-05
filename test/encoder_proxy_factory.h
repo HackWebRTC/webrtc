@@ -14,9 +14,9 @@
 #include <memory>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_factory.h"
-#include "rtc_base/ptr_util.h"
 
 namespace webrtc {
 namespace test {
@@ -43,7 +43,7 @@ class EncoderProxyFactory final : public VideoEncoderFactory {
 
   std::unique_ptr<VideoEncoder> CreateVideoEncoder(
       const SdpVideoFormat& format) override {
-    return rtc::MakeUnique<EncoderProxy>(encoder_);
+    return absl::make_unique<EncoderProxy>(encoder_);
   }
 
   void SetIsHardwareAccelerated(bool is_hardware_accelerated) {

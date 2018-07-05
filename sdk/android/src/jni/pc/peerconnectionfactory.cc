@@ -142,7 +142,7 @@ static void JNI_PeerConnectionFactory_InitializeFieldTrials(
     field_trial::InitFieldTrialsFromString(nullptr);
     return;
   }
-  field_trials_init_string = rtc::MakeUnique<std::string>(
+  field_trials_init_string = absl::make_unique<std::string>(
       JavaToNativeString(jni, j_trials_init_string));
   RTC_LOG(LS_INFO) << "initializeFieldTrials: " << *field_trials_init_string;
   field_trial::InitFieldTrialsFromString(field_trials_init_string->c_str());
@@ -510,7 +510,7 @@ static void JNI_PeerConnectionFactory_InjectLoggable(
   if (jni_log_sink) {
     rtc::LogMessage::RemoveLogToStream(jni_log_sink.get());
   }
-  jni_log_sink = rtc::MakeUnique<JNILogSink>(jni, j_logging);
+  jni_log_sink = absl::make_unique<JNILogSink>(jni, j_logging);
   rtc::LogMessage::AddLogToStream(
       jni_log_sink.get(), static_cast<rtc::LoggingSeverity>(nativeSeverity));
   rtc::LogMessage::LogToDebug(rtc::LS_NONE);

@@ -14,6 +14,7 @@
 #include <cstdio>
 #include <string>
 
+#include "absl/memory/memory.h"
 #include "logging/rtc_event_log/events/rtc_event_alr_state.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "rtc_base/checks.h"
@@ -21,7 +22,6 @@
 #include "rtc_base/format_macros.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
-#include "rtc_base/ptr_util.h"
 #include "rtc_base/timeutils.h"
 #include "system_wrappers/include/field_trial.h"
 
@@ -78,7 +78,7 @@ void AlrDetector::OnBytesSent(size_t bytes_sent, int64_t send_time_ms) {
   }
   if (event_log_ && state_changed) {
     event_log_->Log(
-        rtc::MakeUnique<RtcEventAlrState>(alr_started_time_ms_.has_value()));
+        absl::make_unique<RtcEventAlrState>(alr_started_time_ms_.has_value()));
   }
 }
 

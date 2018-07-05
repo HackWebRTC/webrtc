@@ -10,8 +10,8 @@
 
 #include "modules/congestion_controller/goog_cc/include/goog_cc_factory.h"
 
+#include "absl/memory/memory.h"
 #include "modules/congestion_controller/goog_cc/goog_cc_network_control.h"
-#include "rtc_base/ptr_util.h"
 namespace webrtc {
 GoogCcNetworkControllerFactory::GoogCcNetworkControllerFactory(
     RtcEventLog* event_log)
@@ -19,8 +19,8 @@ GoogCcNetworkControllerFactory::GoogCcNetworkControllerFactory(
 
 std::unique_ptr<NetworkControllerInterface>
 GoogCcNetworkControllerFactory::Create(NetworkControllerConfig config) {
-  return rtc::MakeUnique<webrtc_cc::GoogCcNetworkController>(event_log_,
-                                                             config);
+  return absl::make_unique<webrtc_cc::GoogCcNetworkController>(event_log_,
+                                                               config);
 }
 
 TimeDelta GoogCcNetworkControllerFactory::GetProcessInterval() const {

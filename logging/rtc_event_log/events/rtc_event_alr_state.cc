@@ -9,7 +9,7 @@
  */
 
 #include "logging/rtc_event_log/events/rtc_event_alr_state.h"
-#include "rtc_base/ptr_util.h"
+#include "absl/memory/memory.h"
 
 namespace webrtc {
 
@@ -29,7 +29,7 @@ bool RtcEventAlrState::IsConfigEvent() const {
 }
 
 std::unique_ptr<RtcEvent> RtcEventAlrState::Copy() const {
-  return rtc::WrapUnique<RtcEvent>(new RtcEventAlrState(*this));
+  return absl::WrapUnique<RtcEvent>(new RtcEventAlrState(*this));
 }
 
 }  // namespace webrtc
