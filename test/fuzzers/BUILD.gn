@@ -277,6 +277,8 @@ webrtc_fuzzer_test("audio_decoder_ilbc_fuzzer") {
     ":audio_decoder_fuzzer",
     "../../modules/audio_coding:ilbc",
   ]
+
+  libfuzzer_options = [ "max_len=10000" ]
 }
 
 webrtc_fuzzer_test("audio_decoder_isac_fuzzer") {
@@ -287,6 +289,8 @@ webrtc_fuzzer_test("audio_decoder_isac_fuzzer") {
     ":audio_decoder_fuzzer",
     "../../modules/audio_coding:isac",
   ]
+
+  libfuzzer_options = [ "max_len=20000" ]
 }
 
 webrtc_fuzzer_test("audio_decoder_isac_incoming_packet_fuzzer") {
@@ -297,6 +301,8 @@ webrtc_fuzzer_test("audio_decoder_isac_incoming_packet_fuzzer") {
     ":audio_decoder_fuzzer",
     "../../modules/audio_coding:isac",
   ]
+
+  libfuzzer_options = [ "max_len=20000" ]
 }
 
 webrtc_fuzzer_test("audio_decoder_isacfix_fuzzer") {
@@ -307,6 +313,8 @@ webrtc_fuzzer_test("audio_decoder_isacfix_fuzzer") {
     ":audio_decoder_fuzzer",
     "../../modules/audio_coding:isac_fix",
   ]
+
+  libfuzzer_options = [ "max_len=20000" ]
 }
 
 webrtc_fuzzer_test("audio_decoder_opus_fuzzer") {
