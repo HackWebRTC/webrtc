@@ -34,6 +34,14 @@ public class GlRectDrawerTest {
   // When comparing pixels, allow some slack for float arithmetic and integer rounding.
   private static final float MAX_DIFF = 1.5f;
 
+  // clang-format off
+  private static final float[] IDENTITY_MATRIX = {
+      1, 0, 0, 0,
+      0, 1, 0, 0,
+      0, 0, 1, 0,
+      0, 0, 0, 1};
+  // clang-format on
+
   private static float normalizedByte(byte b) {
     return (b & 0xFF) / 255.0f;
   }
@@ -110,8 +118,8 @@ public class GlRectDrawerTest {
 
     // Draw the RGB frame onto the pixel buffer.
     final GlRectDrawer drawer = new GlRectDrawer();
-    drawer.drawRgb(rgbTexture, RendererCommon.identityMatrix(), WIDTH, HEIGHT, 0 /* viewportX */,
-        0 /* viewportY */, WIDTH, HEIGHT);
+    drawer.drawRgb(rgbTexture, IDENTITY_MATRIX, WIDTH, HEIGHT, 0 /* viewportX */, 0 /* viewportY */,
+        WIDTH, HEIGHT);
 
     // Download the pixels in the pixel buffer as RGBA. Not all platforms support RGB, e.g. Nexus 9.
     final ByteBuffer rgbaData = ByteBuffer.allocateDirect(WIDTH * HEIGHT * 4);
@@ -161,7 +169,7 @@ public class GlRectDrawerTest {
 
     // Draw the YUV frame onto the pixel buffer.
     final GlRectDrawer drawer = new GlRectDrawer();
-    drawer.drawYuv(yuvTextures, RendererCommon.identityMatrix(), WIDTH, HEIGHT, 0 /* viewportX */,
+    drawer.drawYuv(yuvTextures, IDENTITY_MATRIX, WIDTH, HEIGHT, 0 /* viewportX */,
         0 /* viewportY */, WIDTH, HEIGHT);
 
     // Download the pixels in the pixel buffer as RGBA. Not all platforms support RGB, e.g. Nexus 9.
@@ -252,8 +260,8 @@ public class GlRectDrawerTest {
         GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGB, WIDTH, HEIGHT, 0, GLES20.GL_RGB,
             GLES20.GL_UNSIGNED_BYTE, rgbPlane);
         // Draw the RGB data onto the SurfaceTexture.
-        drawer.drawRgb(rgbTexture, RendererCommon.identityMatrix(), WIDTH, HEIGHT,
-            0 /* viewportX */, 0 /* viewportY */, WIDTH, HEIGHT);
+        drawer.drawRgb(rgbTexture, IDENTITY_MATRIX, WIDTH, HEIGHT, 0 /* viewportX */,
+            0 /* viewportY */, WIDTH, HEIGHT);
         eglBase.swapBuffers();
       }
 
