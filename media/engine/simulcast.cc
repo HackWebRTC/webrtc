@@ -243,16 +243,25 @@ std::vector<webrtc::VideoStream> GetNormalSimulcastLayers(
     layers[s].max_bitrate_bps = FindSimulcastMaxBitrateBps(width, height);
     layers[s].target_bitrate_bps = FindSimulcastTargetBitrateBps(width, height);
     int num_temporal_layers = DefaultNumberOfTemporalLayers(s);
-    if (s == 0 && num_temporal_layers != 3) {
+    if (s == 0) {
       // If alternative number temporal layers is selected, adjust the
       // bitrate of the lowest simulcast stream so that absolute bitrate for
       // the base temporal layer matches the bitrate for the base temporal
       // layer with the default 3 simulcast streams. Otherwise we risk a
       // higher threshold for receiving a feed at all.
-      const float rate_factor =
-          webrtc::SimulcastRateAllocator::GetTemporalRateAllocation(3, 0) /
-          webrtc::SimulcastRateAllocator::GetTemporalRateAllocation(
-              num_temporal_layers, 0);
+      float rate_factor = 1.0;
+      if (num_temporal_layers == 3) {
+        if (webrtc::field_trial::IsEnabled("WebRTC-UseShortVP8TL3Pattern")) {
+          // Shortened pattern increases TL0 bitrate from 40% to 60%.
+          rate_factor = 0.4 / 0.6;
+        }
+      } else {
+        rate_factor =
+            webrtc::SimulcastRateAllocator::GetTemporalRateAllocation(3, 0) /
+            webrtc::SimulcastRateAllocator::GetTemporalRateAllocation(
+                num_temporal_layers, 0);
+      }
+
       layers[s].max_bitrate_bps =
           static_cast<int>(layers[s].max_bitrate_bps * rate_factor);
       layers[s].target_bitrate_bps =
