@@ -15,6 +15,8 @@
 #include "modules/audio_coding/codecs/pcm16b/audio_encoder_pcm16b.h"
 #include "modules/audio_coding/codecs/pcm16b/pcm16b_common.h"
 #include "rtc_base/numerics/safe_conversions.h"
+#include "rtc_base/numerics/safe_minmax.h"
+#include "rtc_base/string_to_number.h"
 
 namespace webrtc {
 
@@ -26,6 +28,13 @@ absl::optional<AudioEncoderL16::Config> AudioEncoderL16::SdpToConfig(
   Config config;
   config.sample_rate_hz = format.clockrate_hz;
   config.num_channels = rtc::dchecked_cast<int>(format.num_channels);
+  auto ptime_iter = format.parameters.find("ptime");
+  if (ptime_iter != format.parameters.end()) {
+    const auto ptime = rtc::StringToNumber<int>(ptime_iter->second);
+    if (ptime && *ptime > 0) {
+      config.frame_size_ms = rtc::SafeClamp(10 * (*ptime / 10), 10, 60);
+    }
+  }
   return STR_CASE_CMP(format.name.c_str(), "L16") == 0 && config.IsOk()
              ? absl::optional<Config>(config)
              : absl::nullopt;

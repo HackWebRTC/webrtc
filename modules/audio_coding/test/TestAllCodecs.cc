@@ -15,12 +15,14 @@
 #include <string>
 
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/audio_format_conversion.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "modules/audio_coding/test/utility.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/stringencode.h"
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
 
@@ -405,7 +407,14 @@ void TestAllCodecs::RegisterSendCodec(char side,
                                        sampling_freq_hz, 1));
   my_codec_param.rate = rate;
   my_codec_param.pacsize = packet_size;
-  CHECK_ERROR(my_acm->RegisterSendCodec(my_codec_param));
+
+  auto factory = CreateBuiltinAudioEncoderFactory();
+  constexpr int payload_type = 17;
+  SdpAudioFormat format = CodecInstToSdp(my_codec_param);
+  format.parameters["ptime"] = rtc::ToString(rtc::CheckedDivExact(
+      packet_size, rtc::CheckedDivExact(sampling_freq_hz, 1000)));
+  my_acm->SetEncoder(
+      factory->MakeAudioEncoder(payload_type, format, absl::nullopt));
 }
 
 void TestAllCodecs::Run(TestPack* channel) {

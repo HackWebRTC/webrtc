@@ -24,6 +24,7 @@ rtc_static_library("audio_encoder_L16") {
     "../../..:webrtc_common",
     "../../../modules/audio_coding:pcm16b",
     "../../../rtc_base:rtc_base_approved",
+    "../../../rtc_base:safe_minmax",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
