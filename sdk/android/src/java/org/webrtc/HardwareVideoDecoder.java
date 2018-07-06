@@ -27,8 +27,7 @@ import org.webrtc.ThreadUtils.ThreadChecker;
 /** Android hardware video decoder. */
 @TargetApi(16)
 @SuppressWarnings("deprecation") // Cannot support API 16 without using deprecated methods.
-class HardwareVideoDecoder
-    implements VideoDecoder, SurfaceTextureHelper.OnTextureFrameAvailableListener {
+class HardwareVideoDecoder implements VideoDecoder, VideoSink {
   private static final String TAG = "HardwareVideoDecoder";
 
   // TODO(magjed): Use MediaFormat.KEY_* constants when part of the public API.
@@ -106,17 +105,10 @@ class HardwareVideoDecoder
   @Nullable private Surface surface = null;
 
   private static class DecodedTextureMetadata {
-    final int width;
-    final int height;
-    final int rotation;
     final long presentationTimestampUs;
     final Integer decodeTimeMs;
 
-    DecodedTextureMetadata(
-        int width, int height, int rotation, long presentationTimestampUs, Integer decodeTimeMs) {
-      this.width = width;
-      this.height = height;
-      this.rotation = rotation;
+    DecodedTextureMetadata(long presentationTimestampUs, Integer decodeTimeMs) {
       this.presentationTimestampUs = presentationTimestampUs;
       this.decodeTimeMs = decodeTimeMs;
     }
@@ -223,7 +215,8 @@ class HardwareVideoDecoder
     }
 
     // Load dimensions from shared memory under the dimension lock.
-    int width, height;
+    final int width;
+    final int height;
     synchronized (dimensionLock) {
       width = this.width;
       height = this.height;
@@ -418,7 +411,8 @@ class HardwareVideoDecoder
   private void deliverTextureFrame(final int index, final MediaCodec.BufferInfo info,
       final int rotation, final Integer decodeTimeMs) {
     // Load dimensions from shared memory under the dimension lock.
-    final int width, height;
+    final int width;
+    final int height;
     synchronized (dimensionLock) {
       width = this.width;
       height = this.height;
@@ -428,32 +422,31 @@ class HardwareVideoDecoder
       if (renderedTextureMetadata != null) {
         return; // We are still waiting for texture for the previous frame, drop this one.
       }
-      renderedTextureMetadata = new DecodedTextureMetadata(
-          width, height, rotation, info.presentationTimeUs, decodeTimeMs);
-      codec.releaseOutputBuffer(index, true);
+      surfaceTextureHelper.setTextureSize(width, height);
+      surfaceTextureHelper.setFrameRotation(rotation);
+      renderedTextureMetadata = new DecodedTextureMetadata(info.presentationTimeUs, decodeTimeMs);
+      codec.releaseOutputBuffer(index, /* render= */ true);
     }
   }
 
   @Override
-  public void onTextureFrameAvailable(int oesTextureId, float[] transformMatrix, long timestampNs) {
-    final VideoFrame frame;
+  public void onFrame(VideoFrame frame) {
+    final VideoFrame newFrame;
     final int decodeTimeMs;
+    final long timestampNs;
     synchronized (renderedTextureMetadataLock) {
       if (renderedTextureMetadata == null) {
         throw new IllegalStateException(
             "Rendered texture metadata was null in onTextureFrameAvailable.");
       }
-      VideoFrame.TextureBuffer oesBuffer = surfaceTextureHelper.createTextureBuffer(
-          renderedTextureMetadata.width, renderedTextureMetadata.height,
-          RendererCommon.convertMatrixToAndroidGraphicsMatrix(transformMatrix));
-      frame = new VideoFrame(oesBuffer, renderedTextureMetadata.rotation,
-          renderedTextureMetadata.presentationTimestampUs * 1000);
+      timestampNs = renderedTextureMetadata.presentationTimestampUs * 1000;
       decodeTimeMs = renderedTextureMetadata.decodeTimeMs;
       renderedTextureMetadata = null;
     }
-
-    callback.onDecodedFrame(frame, decodeTimeMs, null /* qp */);
-    frame.release();
+    // Change timestamp of frame.
+    final VideoFrame frameWithModifiedTimeStamp =
+        new VideoFrame(frame.getBuffer(), frame.getRotation(), timestampNs);
+    callback.onDecodedFrame(frameWithModifiedTimeStamp, decodeTimeMs, null /* qp */);
   }
 
   private void deliverByteFrame(
@@ -493,7 +486,7 @@ class HardwareVideoDecoder
       // All other supported color formats are NV12.
       frameBuffer = copyNV12ToI420Buffer(buffer, stride, sliceHeight, width, height);
     }
-    codec.releaseOutputBuffer(result, false);
+    codec.releaseOutputBuffer(result, /* render= */ false);
 
     long presentationTimeNs = info.presentationTimeUs * 1000;
     VideoFrame frame = new VideoFrame(frameBuffer, rotation, presentationTimeNs);

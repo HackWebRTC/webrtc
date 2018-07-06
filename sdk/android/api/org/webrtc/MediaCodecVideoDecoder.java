@@ -368,6 +368,7 @@ public class MediaCodecVideoDecoder {
             SurfaceTextureHelper.create("Decoder SurfaceTextureHelper", eglContext);
         if (surfaceTextureHelper != null) {
           textureListener = new TextureListener(surfaceTextureHelper);
+          textureListener.setSize(width, height);
           surface = new Surface(surfaceTextureHelper.getSurfaceTexture());
         }
       }
@@ -414,6 +415,9 @@ public class MediaCodecVideoDecoder {
 
     this.width = width;
     this.height = height;
+    if (textureListener != null) {
+      textureListener.setSize(width, height);
+    }
     decodeStartTimeMs.clear();
     dequeuedSurfaceOutputBuffers.clear();
     hasDecodedFirstFrame = false;
@@ -634,12 +638,12 @@ public class MediaCodecVideoDecoder {
   }
 
   // Poll based texture listener.
-  private class TextureListener implements SurfaceTextureHelper.OnTextureFrameAvailableListener {
+  private class TextureListener implements VideoSink {
     private final SurfaceTextureHelper surfaceTextureHelper;
     // |newFrameLock| is used to synchronize arrival of new frames with wait()/notifyAll().
     private final Object newFrameLock = new Object();
     // |bufferToRender| is non-null when waiting for transition between addBufferToRender() to
-    // onTextureFrameAvailable().
+    // onFrame().
     @Nullable private DecodedOutputBuffer bufferToRender;
     @Nullable private DecodedTextureBuffer renderedBuffer;
 
@@ -662,19 +666,21 @@ public class MediaCodecVideoDecoder {
       }
     }
 
+    public void setSize(int width, int height) {
+      surfaceTextureHelper.setTextureSize(width, height);
+    }
+
     // Callback from |surfaceTextureHelper|. May be called on an arbitrary thread.
     @Override
-    public void onTextureFrameAvailable(
-        int oesTextureId, float[] transformMatrix, long timestampNs) {
+    public void onFrame(VideoFrame frame) {
       synchronized (newFrameLock) {
         if (renderedBuffer != null) {
-          Logging.e(
-              TAG, "Unexpected onTextureFrameAvailable() called while already holding a texture.");
+          Logging.e(TAG, "Unexpected onFrame() called while already holding a texture.");
           throw new IllegalStateException("Already holding a texture.");
         }
         // |timestampNs| is always zero on some Android versions.
-        final VideoFrame.Buffer buffer = surfaceTextureHelper.createTextureBuffer(
-            width, height, RendererCommon.convertMatrixToAndroidGraphicsMatrix(transformMatrix));
+        final VideoFrame.Buffer buffer = frame.getBuffer();
+        buffer.retain();
         renderedBuffer = new DecodedTextureBuffer(buffer, bufferToRender.presentationTimeStampMs,
             bufferToRender.timeStampMs, bufferToRender.ntpTimeStampMs, bufferToRender.decodeTimeMs,
             SystemClock.elapsedRealtime() - bufferToRender.endDecodeTimeMs);
@@ -703,9 +709,9 @@ public class MediaCodecVideoDecoder {
     }
 
     public void release() {
-      // SurfaceTextureHelper.stopListening() will block until any onTextureFrameAvailable() in
-      // progress is done. Therefore, the call must be outside any synchronized
-      // statement that is also used in the onTextureFrameAvailable() above to avoid deadlocks.
+      // SurfaceTextureHelper.stopListening() will block until any onFrame() in progress is done.
+      // Therefore, the call must be outside any synchronized statement that is also used in the
+      // onFrame() above to avoid deadlocks.
       surfaceTextureHelper.stopListening();
       synchronized (newFrameLock) {
         if (renderedBuffer != null) {
@@ -763,6 +769,9 @@ public class MediaCodecVideoDecoder {
           }
           width = newWidth;
           height = newHeight;
+          if (textureListener != null) {
+            textureListener.setSize(width, height);
+          }
 
           if (!useSurface && format.containsKey(MediaFormat.KEY_COLOR_FORMAT)) {
             colorFormat = format.getInteger(MediaFormat.KEY_COLOR_FORMAT);

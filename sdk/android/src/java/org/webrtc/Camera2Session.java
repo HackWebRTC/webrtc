@@ -121,9 +121,8 @@ class Camera2Session implements CameraSession {
       Logging.d(TAG, "Camera opened.");
       cameraDevice = camera;
 
-      final SurfaceTexture surfaceTexture = surfaceTextureHelper.getSurfaceTexture();
-      surfaceTexture.setDefaultBufferSize(captureFormat.width, captureFormat.height);
-      surface = new Surface(surfaceTexture);
+      surfaceTextureHelper.setTextureSize(captureFormat.width, captureFormat.height);
+      surface = new Surface(surfaceTextureHelper.getSurfaceTexture());
       try {
         camera.createCaptureSession(
             Arrays.asList(surface), new CaptureSessionCallback(), cameraThreadHandler);
@@ -183,43 +182,33 @@ class Camera2Session implements CameraSession {
         return;
       }
 
-      surfaceTextureHelper.startListening(
-          new SurfaceTextureHelper.OnTextureFrameAvailableListener() {
-            @Override
-            public void onTextureFrameAvailable(
-                int oesTextureId, float[] transformMatrix, long timestampNs) {
-              checkIsOnCameraThread();
+      surfaceTextureHelper.startListening((VideoFrame frame) -> {
+        checkIsOnCameraThread();
 
-              final TextureBufferImpl buffer = surfaceTextureHelper.createTextureBuffer(
-                  captureFormat.width, captureFormat.height,
-                  RendererCommon.convertMatrixToAndroidGraphicsMatrix(transformMatrix));
+        if (state != SessionState.RUNNING) {
+          Logging.d(TAG, "Texture frame captured but camera is no longer running.");
+          return;
+        }
 
-              if (state != SessionState.RUNNING) {
-                Logging.d(TAG, "Texture frame captured but camera is no longer running.");
-                buffer.release();
-                return;
-              }
+        if (!firstFrameReported) {
+          firstFrameReported = true;
+          final int startTimeMs =
+              (int) TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - constructionTimeNs);
+          camera2StartTimeMsHistogram.addSample(startTimeMs);
+        }
 
-              if (!firstFrameReported) {
-                firstFrameReported = true;
-                final int startTimeMs =
-                    (int) TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - constructionTimeNs);
-                camera2StartTimeMsHistogram.addSample(startTimeMs);
-              }
-
-              // Undo the mirror that the OS "helps" us with.
-              // http://developer.android.com/reference/android/hardware/Camera.html#setDisplayOrientation(int)
-              // Also, undo camera orientation, we report it as rotation instead.
-              final VideoFrame frame = new VideoFrame(
-                  CameraSession.createTextureBufferWithModifiedTransformMatrix(buffer,
-                      /* mirror= */ isCameraFrontFacing,
-                      /* rotation= */ -cameraOrientation),
-                  /* rotation= */ getFrameOrientation(), timestampNs);
-              buffer.release();
-              events.onFrameCaptured(Camera2Session.this, frame);
-              frame.release();
-            }
-          });
+        // Undo the mirror that the OS "helps" us with.
+        // http://developer.android.com/reference/android/hardware/Camera.html#setDisplayOrientation(int)
+        // Also, undo camera orientation, we report it as rotation instead.
+        final VideoFrame modifiedFrame =
+            new VideoFrame(CameraSession.createTextureBufferWithModifiedTransformMatrix(
+                               (TextureBufferImpl) frame.getBuffer(),
+                               /* mirror= */ isCameraFrontFacing,
+                               /* rotation= */ -cameraOrientation),
+                /* rotation= */ getFrameOrientation(), frame.getTimestampNs());
+        events.onFrameCaptured(Camera2Session.this, modifiedFrame);
+        modifiedFrame.release();
+      });
       Logging.d(TAG, "Camera device successfully started.");
       callback.onDone(Camera2Session.this);
     }

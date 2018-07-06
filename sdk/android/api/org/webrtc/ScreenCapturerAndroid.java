@@ -33,8 +33,7 @@ import javax.annotation.Nullable;
  * frames. At any time, at most one frame is being processed.
  */
 @TargetApi(21)
-public class ScreenCapturerAndroid
-    implements VideoCapturer, SurfaceTextureHelper.OnTextureFrameAvailableListener {
+public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   private static final int DISPLAY_FLAGS =
       DisplayManager.VIRTUAL_DISPLAY_FLAG_PUBLIC | DisplayManager.VIRTUAL_DISPLAY_FLAG_PRESENTATION;
   // DPI for VirtualDisplay, does not seem to matter for us.
@@ -186,7 +185,7 @@ public class ScreenCapturerAndroid
   }
 
   private void createVirtualDisplay() {
-    surfaceTextureHelper.getSurfaceTexture().setDefaultBufferSize(width, height);
+    surfaceTextureHelper.setTextureSize(width, height);
     virtualDisplay = mediaProjection.createVirtualDisplay("WebRTC_ScreenCapture", width, height,
         VIRTUAL_DISPLAY_DPI, DISPLAY_FLAGS, new Surface(surfaceTextureHelper.getSurfaceTexture()),
         null /* callback */, null /* callback handler */);
@@ -194,13 +193,9 @@ public class ScreenCapturerAndroid
 
   // This is called on the internal looper thread of {@Code SurfaceTextureHelper}.
   @Override
-  public void onTextureFrameAvailable(int oesTextureId, float[] transformMatrix, long timestampNs) {
+  public void onFrame(VideoFrame frame) {
     numCapturedFrames++;
-    final VideoFrame.Buffer buffer = surfaceTextureHelper.createTextureBuffer(
-        width, height, RendererCommon.convertMatrixToAndroidGraphicsMatrix(transformMatrix));
-    final VideoFrame frame = new VideoFrame(buffer, 0 /* rotation */, timestampNs);
     capturerObserver.onFrameCaptured(frame);
-    frame.release();
   }
 
   @Override

@@ -237,11 +237,11 @@ public class GlRectDrawerTest {
       private final GlRectDrawer drawer;
       private final int rgbTexture;
 
-      public StubOesTextureProducer(
-          EglBase.Context sharedContext, SurfaceTexture surfaceTexture, int width, int height) {
+      public StubOesTextureProducer(EglBase.Context sharedContext,
+          SurfaceTextureHelper surfaceTextureHelper, int width, int height) {
         eglBase = EglBase.create(sharedContext, EglBase.CONFIG_PLAIN);
-        surfaceTexture.setDefaultBufferSize(width, height);
-        eglBase.createSurface(surfaceTexture);
+        surfaceTextureHelper.setTextureSize(width, height);
+        eglBase.createSurface(surfaceTextureHelper.getSurfaceTexture());
         assertEquals(eglBase.surfaceWidth(), width);
         assertEquals(eglBase.surfaceHeight(), height);
 
@@ -281,7 +281,7 @@ public class GlRectDrawerTest {
     final SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create(
         "SurfaceTextureHelper test" /* threadName */, eglBase.getEglBaseContext());
     final StubOesTextureProducer oesProducer = new StubOesTextureProducer(
-        eglBase.getEglBaseContext(), surfaceTextureHelper.getSurfaceTexture(), WIDTH, HEIGHT);
+        eglBase.getEglBaseContext(), surfaceTextureHelper, WIDTH, HEIGHT);
     final SurfaceTextureHelperTest.MockTextureListener listener =
         new SurfaceTextureHelperTest.MockTextureListener();
     surfaceTextureHelper.startListening(listener);

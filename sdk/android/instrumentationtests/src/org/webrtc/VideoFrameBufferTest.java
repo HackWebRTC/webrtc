@@ -181,8 +181,7 @@ public class VideoFrameBufferTest {
     // Create resources for generating OES textures.
     final SurfaceTextureHelper surfaceTextureHelper =
         SurfaceTextureHelper.create("SurfaceTextureHelper test", eglContext);
-    final SurfaceTexture surfaceTexture = surfaceTextureHelper.getSurfaceTexture();
-    surfaceTexture.setDefaultBufferSize(width, height);
+    surfaceTextureHelper.setTextureSize(width, height);
 
     final HandlerThread renderThread = new HandlerThread("OES texture thread");
     renderThread.start();
@@ -191,7 +190,7 @@ public class VideoFrameBufferTest {
         ThreadUtils.invokeAtFrontUninterruptibly(renderThreadHandler, () -> {
           // Create EGL base with the SurfaceTexture as display output.
           final EglBase eglBase = EglBase.create(eglContext, EglBase.CONFIG_PLAIN);
-          eglBase.createSurface(surfaceTexture);
+          eglBase.createSurface(surfaceTextureHelper.getSurfaceTexture());
           eglBase.makeCurrent();
           assertEquals(width, eglBase.surfaceWidth());
           assertEquals(height, eglBase.surfaceHeight());

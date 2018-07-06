@@ -129,7 +129,7 @@ public class SurfaceTextureHelperTest {
         "SurfaceTextureHelper test" /* threadName */, eglBase.getEglBaseContext());
     final MockTextureListener listener = new MockTextureListener();
     surfaceTextureHelper.startListening(listener);
-    surfaceTextureHelper.getSurfaceTexture().setDefaultBufferSize(width, height);
+    surfaceTextureHelper.setTextureSize(width, height);
 
     // Create resources for stubbing an OES texture producer. |eglOesBase| has the SurfaceTexture in
     // |surfaceTextureHelper| as the target EGLSurface.
@@ -197,7 +197,7 @@ public class SurfaceTextureHelperTest {
         "SurfaceTextureHelper test" /* threadName */, eglBase.getEglBaseContext());
     final MockTextureListener listener = new MockTextureListener();
     surfaceTextureHelper.startListening(listener);
-    surfaceTextureHelper.getSurfaceTexture().setDefaultBufferSize(width, height);
+    surfaceTextureHelper.setTextureSize(width, height);
 
     // Create resources for stubbing an OES texture producer. |eglOesBase| has the SurfaceTexture in
     // |surfaceTextureHelper| as the target EGLSurface.
@@ -453,7 +453,7 @@ public class SurfaceTextureHelperTest {
         "SurfaceTextureHelper test" /* threadName */, eglBase.getEglBaseContext());
     final MockTextureListener listener = new MockTextureListener();
     surfaceTextureHelper.startListening(listener);
-    surfaceTextureHelper.getSurfaceTexture().setDefaultBufferSize(width, height);
+    surfaceTextureHelper.setTextureSize(width, height);
 
     // Create resources for stubbing an OES texture producer. |eglBase| has the SurfaceTexture in
     // |surfaceTextureHelper| as the target EGLSurface.
