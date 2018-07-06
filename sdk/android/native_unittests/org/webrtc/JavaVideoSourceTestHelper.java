@@ -14,18 +14,17 @@ import org.webrtc.VideoCapturer;
 
 public class JavaVideoSourceTestHelper {
   @CalledByNative
-  public static void startCapture(VideoCapturer.CapturerObserver observer, boolean success) {
+  public static void startCapture(CapturerObserver observer, boolean success) {
     observer.onCapturerStarted(success);
   }
 
   @CalledByNative
-  public static void stopCapture(VideoCapturer.CapturerObserver observer) {
+  public static void stopCapture(CapturerObserver observer) {
     observer.onCapturerStopped();
   }
 
   @CalledByNative
-  public static void deliverFrame(
-      int width, int height, int rotation, VideoCapturer.CapturerObserver observer) {
+  public static void deliverFrame(int width, int height, int rotation, CapturerObserver observer) {
     observer.onFrameCaptured(
         new VideoFrame(JavaI420Buffer.allocate(width, height), rotation, 0 /* timestampNs= */));
   }

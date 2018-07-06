@@ -27,7 +27,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(BaseJUnit4ClassRunner.class)
 public class FileVideoCapturerTest {
-  public static class MockCapturerObserver implements VideoCapturer.CapturerObserver {
+  public static class MockCapturerObserver implements CapturerObserver {
     private final ArrayList<VideoFrame> frames = new ArrayList<VideoFrame>();
 
     @Override
