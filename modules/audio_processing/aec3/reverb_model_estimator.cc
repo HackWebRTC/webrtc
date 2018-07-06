@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <memory>
 #include <numeric>
 
@@ -58,7 +59,7 @@ float ComputeRatioEnergies(
 
 ReverbModelEstimator::ReverbModelEstimator(const EchoCanceller3Config& config)
     : filter_main_length_blocks_(config.filter.main.length_blocks),
-      reverb_decay_(fabsf(config.ep_strength.default_len)),
+      reverb_decay_(std::fabs(config.ep_strength.default_len)),
       enable_smooth_freq_resp_tail_updates_(EnableSmoothUpdatesTailFreqResp()) {
   block_energies_.fill(0.f);
   freq_resp_tail_.fill(0.f);
@@ -203,7 +204,7 @@ void ReverbModelEstimator::UpdateReverbDecay(
 
     if (accumulated_nn_ != 0.f) {
       const float exp_candidate = -accumulated_nz_ / accumulated_nn_;
-      decay = powf(2.0f, -exp_candidate * kFftLengthBy2);
+      decay = std::pow(2.0f, -exp_candidate * kFftLengthBy2);
       decay = std::min(decay, kMaxDecay);
       decay = std::max(decay, kMinDecay);
     }
