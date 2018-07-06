@@ -1213,6 +1213,7 @@ rtc_static_library("native_api_codecs") {
 
   deps = [
     ":base_jni",
+    ":native_api_jni",
     ":video_jni",
     "//api/video_codecs:video_codecs_api",
     "//rtc_base:checks",

@@ -14,10 +14,14 @@
 #include <jni.h>
 #include <memory>
 
+#include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
 
 namespace webrtc {
+
+// Creates an instance of webrtc::SdpVideoFormat from Java VideoCodecInfo.
+SdpVideoFormat JavaToNativeVideoCodecInfo(JNIEnv* jni, jobject codec_info);
 
 // Creates an instance of webrtc::VideoDecoderFactory from Java
 // VideoDecoderFactory.
