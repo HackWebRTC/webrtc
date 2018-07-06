@@ -13,6 +13,7 @@ package org.webrtc.examples.androidnativeapi;
 import android.content.Context;
 import android.os.Handler;
 import android.os.HandlerThread;
+import org.webrtc.CapturerObserver;
 import org.webrtc.SurfaceTextureHelper;
 import org.webrtc.VideoCapturer;
 import org.webrtc.VideoSink;
@@ -66,6 +67,6 @@ public class CallClient {
       long nativeAndroidCallClient, VideoSink localSink, VideoSink remoteSink);
   private static native void nativeHangup(long nativeAndroidCallClient);
   private static native void nativeDelete(long nativeAndroidCallClient);
-  private static native VideoCapturer.CapturerObserver nativeGetJavaVideoCapturerObserver(
+  private static native CapturerObserver nativeGetJavaVideoCapturerObserver(
       long nativeAndroidCallClient);
 }
