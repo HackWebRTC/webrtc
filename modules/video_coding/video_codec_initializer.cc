@@ -84,9 +84,6 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
       break;
     case VideoEncoderConfig::ContentType::kScreen:
       video_codec.mode = VideoCodecMode::kScreensharing;
-      if (!streams.empty() && streams[0].num_temporal_layers == 2u) {
-        video_codec.targetBitrate = streams[0].target_bitrate_bps / 1000;
-      }
       break;
   }
 

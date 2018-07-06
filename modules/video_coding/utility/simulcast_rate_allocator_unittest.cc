@@ -24,10 +24,11 @@ namespace webrtc {
 namespace {
 using ::testing::_;
 
-constexpr uint32_t kMinBitrateKbps = 50;
-constexpr uint32_t kTargetBitrateKbps = 100;
-constexpr uint32_t kMaxBitrateKbps = 1000;
 constexpr uint32_t kFramerateFps = 5;
+constexpr uint32_t kMinBitrateKbps = 50;
+// These correspond to kLegacyScreenshareTl(0|1)BitrateKbps in cc.
+constexpr uint32_t kTargetBitrateKbps = 200;
+constexpr uint32_t kMaxBitrateKbps = 1000;
 
 class MockTemporalLayers : public TemporalLayers {
  public:
@@ -52,7 +53,6 @@ class SimulcastRateAllocatorTest : public ::testing::TestWithParam<bool> {
     memset(&codec_, 0, sizeof(VideoCodec));
     codec_.codecType = kVideoCodecVP8;
     codec_.minBitrate = kMinBitrateKbps;
-    codec_.targetBitrate = kTargetBitrateKbps;
     codec_.maxBitrate = kMaxBitrateKbps;
     codec_.active = true;
     CreateAllocator();
@@ -481,7 +481,6 @@ class ScreenshareRateAllocationTest : public SimulcastRateAllocatorTest {
       codec_.simulcastStream[0].active = active;
     } else {
       codec_.numberOfSimulcastStreams = 0;
-      codec_.targetBitrate = kTargetBitrateKbps;
       codec_.VP8()->numberOfTemporalLayers = 2;
       codec_.active = active;
     }

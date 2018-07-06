@@ -18,7 +18,6 @@ static const int kEncodeTimeoutMs = 100;
 static const int kDecodeTimeoutMs = 25;
 // Set bitrate to get higher quality.
 static const int kStartBitrate = 300;
-static const int kTargetBitrate = 2000;
 static const int kMaxBitrate = 4000;
 static const int kWidth = 176;        // Width of the input image.
 static const int kHeight = 144;       // Height of the input image.
@@ -61,7 +60,6 @@ void VideoCodecUnitTest::FakeDecodeCompleteCallback::Decoded(
 void VideoCodecUnitTest::SetUp() {
   webrtc::test::CodecSettings(kVideoCodecVP8, &codec_settings_);
   codec_settings_.startBitrate = kStartBitrate;
-  codec_settings_.targetBitrate = kTargetBitrate;
   codec_settings_.maxBitrate = kMaxBitrate;
   codec_settings_.maxFramerate = kMaxFramerate;
   codec_settings_.width = kWidth;

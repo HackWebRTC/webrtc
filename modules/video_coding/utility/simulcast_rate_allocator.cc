@@ -34,6 +34,9 @@ static const float
 static const float kShort3TlRateAllocation[kMaxTemporalStreams] = {
     0.6f, 0.8f, 1.0f, 1.0f  // 3 layers {60%, 20%, 20%}
 };
+
+const uint32_t kLegacyScreenshareTl0BitrateKbps = 200;
+const uint32_t kLegacyScreenshareTl1BitrateKbps = 1000;
 }  // namespace
 
 float SimulcastRateAllocator::GetTemporalRateAllocation(int num_layers,
@@ -164,7 +167,6 @@ void SimulcastRateAllocator::DistributeAllocationToTemporalLayers(
     // with legacy mode for simulcast stream 0.
     const bool conference_screenshare_mode =
         codec_.mode == VideoCodecMode::kScreensharing &&
-        codec_.targetBitrate > 0 &&
         ((num_spatial_streams == 1 && num_temporal_streams == 2) ||  // Legacy.
          (num_spatial_streams > 1 && simulcast_id == 0));  // Simulcast.
     if (conference_screenshare_mode) {
@@ -173,9 +175,10 @@ void SimulcastRateAllocator::DistributeAllocationToTemporalLayers(
       // to allow for a different max bitrate, so if the codec can't meet
       // the target we still allow it to overshoot up to the max before dropping
       // frames. This hack should be improved.
-      int tl0_bitrate = std::min(codec_.targetBitrate, target_bitrate_kbps);
-      max_bitrate_kbps = std::min(codec_.maxBitrate, target_bitrate_kbps);
-      target_bitrate_kbps = tl0_bitrate;
+      max_bitrate_kbps =
+          std::min(kLegacyScreenshareTl1BitrateKbps, target_bitrate_kbps);
+      target_bitrate_kbps =
+          std::min(kLegacyScreenshareTl0BitrateKbps, target_bitrate_kbps);
     } else if (num_spatial_streams == 1) {
       max_bitrate_kbps = codec_.maxBitrate;
     } else {

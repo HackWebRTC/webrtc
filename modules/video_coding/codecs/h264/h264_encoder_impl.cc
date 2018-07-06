@@ -281,11 +281,7 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* inst,
 
     // Codec_settings uses kbits/second; encoder uses bits/second.
     configurations_[i].max_bps = codec_.maxBitrate * 1000;
-    if (codec_.targetBitrate == 0) {
-      configurations_[i].target_bps = codec_.startBitrate * 1000;
-    } else {
-      configurations_[i].target_bps = codec_.targetBitrate * 1000;
-    }
+    configurations_[i].target_bps = codec_.startBitrate * 1000;
 
     // Create encoder parameters based on the layer configuration.
     SEncParamExt encoder_params = CreateEncoderParams(i);
@@ -315,9 +311,7 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* inst,
 
   SimulcastRateAllocator init_allocator(codec_);
   BitrateAllocation allocation = init_allocator.GetAllocation(
-      codec_.targetBitrate ? codec_.targetBitrate * 1000
-                           : codec_.startBitrate * 1000,
-      codec_.maxFramerate);
+      codec_.startBitrate * 1000, codec_.maxFramerate);
   return SetRateAllocation(allocation, codec_.maxFramerate);
 }
 

@@ -56,7 +56,6 @@ std::vector<uint32_t> GetTemporalLayerRates(int target_bitrate_kbps,
   VideoCodec codec;
   codec.codecType = VideoCodecType::kVideoCodecVP8;
   codec.numberOfSimulcastStreams = 1;
-  codec.targetBitrate = target_bitrate_kbps;
   codec.maxBitrate = target_bitrate_kbps;
   codec.maxFramerate = framerate_fps;
   codec.simulcastStream[0].targetBitrate = target_bitrate_kbps;

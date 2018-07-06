@@ -2786,8 +2786,10 @@ TEST_F(VideoSendStreamTest, TranslatesTwoLayerScreencastToTargetBitrate) {
     int32_t InitEncode(const VideoCodec* config,
                        int32_t number_of_cores,
                        size_t max_payload_size) override {
+      EXPECT_EQ(config->numberOfSimulcastStreams, 1);
       EXPECT_EQ(static_cast<unsigned int>(kScreencastMaxTargetBitrateDeltaKbps),
-                config->maxBitrate - config->targetBitrate);
+                config->simulcastStream[0].maxBitrate -
+                    config->simulcastStream[0].targetBitrate);
       observation_complete_.Set();
       return test::FakeEncoder::InitEncode(config, number_of_cores,
                                            max_payload_size);
