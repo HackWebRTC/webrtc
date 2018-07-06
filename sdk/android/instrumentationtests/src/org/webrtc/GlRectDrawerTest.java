@@ -293,14 +293,15 @@ public class GlRectDrawerTest {
 
     // Draw the frame and block until an OES texture is delivered.
     oesProducer.draw(rgbPlane);
-    listener.waitForNewFrame();
+    final VideoFrame.TextureBuffer textureBuffer = listener.waitForTextureBuffer();
 
     // Real test starts here.
     // Draw the OES texture on the pixel buffer.
     eglBase.makeCurrent();
     final GlRectDrawer drawer = new GlRectDrawer();
-    drawer.drawOes(listener.oesTextureId, listener.transformMatrix, WIDTH, HEIGHT,
-        0 /* viewportX */, 0 /* viewportY */, WIDTH, HEIGHT);
+    drawer.drawOes(textureBuffer.getTextureId(),
+        RendererCommon.convertMatrixFromAndroidGraphicsMatrix(textureBuffer.getTransformMatrix()),
+        WIDTH, HEIGHT, 0 /* viewportX */, 0 /* viewportY */, WIDTH, HEIGHT);
 
     // Download the pixels in the pixel buffer as RGBA. Not all platforms support RGB, e.g. Nexus 9.
     final ByteBuffer rgbaData = ByteBuffer.allocateDirect(WIDTH * HEIGHT * 4);
@@ -311,7 +312,7 @@ public class GlRectDrawerTest {
     assertByteBufferEquals(WIDTH, HEIGHT, stripAlphaChannel(rgbaData), rgbPlane);
 
     drawer.release();
-    surfaceTextureHelper.returnTextureFrame();
+    textureBuffer.release();
     oesProducer.release();
     surfaceTextureHelper.dispose();
     eglBase.release();

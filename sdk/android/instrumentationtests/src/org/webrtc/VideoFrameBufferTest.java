@@ -202,12 +202,11 @@ public class VideoFrameBufferTest {
           // Draw the frame and block until an OES texture is delivered.
           drawI420Buffer(i420Buffer);
           eglBase.swapBuffers();
-          listener.waitForNewFrame();
+          final VideoFrame.TextureBuffer textureBuffer = listener.waitForTextureBuffer();
           surfaceTextureHelper.stopListening();
           surfaceTextureHelper.dispose();
 
-          return surfaceTextureHelper.createTextureBuffer(width, height,
-              RendererCommon.convertMatrixToAndroidGraphicsMatrix(listener.transformMatrix));
+          return textureBuffer;
         });
     renderThread.quit();
 
