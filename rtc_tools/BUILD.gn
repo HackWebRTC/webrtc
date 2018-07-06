@@ -290,7 +290,7 @@ if (rtc_include_tests) {
 
     deps = [
       "../api/audio:audio_frame_api",
-      "../modules/audio_processing",
+      "../modules/audio_processing/agc:level_estimation",
       "../modules/audio_processing/vad",
       "../rtc_base:rtc_base_approved",
       "../rtc_base:safe_minmax",

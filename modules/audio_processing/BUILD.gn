@@ -34,14 +34,6 @@ rtc_static_library("audio_processing") {
     "aec/aec_resampler.h",
     "aec/echo_cancellation.cc",
     "aec/echo_cancellation.h",
-    "agc/agc.cc",
-    "agc/agc.h",
-    "agc/agc_manager_direct.cc",
-    "agc/agc_manager_direct.h",
-    "agc/loudness_histogram.cc",
-    "agc/loudness_histogram.h",
-    "agc/utility.cc",
-    "agc/utility.h",
     "audio_buffer.cc",
     "audio_buffer.h",
     "audio_processing_impl.cc",
@@ -108,12 +100,12 @@ rtc_static_library("audio_processing") {
   defines = []
   deps = [
     ":aec_core",
-    ":agc_gain_map_internal",
     ":apm_logging",
     ":audio_frame_view",
     ":audio_generator_interface",
     ":audio_processing_c",
     ":audio_processing_statistics",
+    ":gain_control_interface",
     "../..:typedefs",
     "../..:webrtc_common",
     "../../api:array_view",
@@ -131,6 +123,8 @@ rtc_static_library("audio_processing") {
     "../../system_wrappers:cpu_features_api",
     "../../system_wrappers:field_trial_api",
     "../../system_wrappers:metrics_api",
+    "agc",
+    "agc:agc_legacy_c",
     "agc2:adaptive_digital",
     "agc2:fixed_digital",
     "agc2:gain_applier",
@@ -166,6 +160,12 @@ rtc_static_library("audio_processing") {
     "../../common_audio:fir_filter_factory",
     "../../rtc_base:rtc_base_approved",
     "../../system_wrappers",
+  ]
+}
+
+rtc_source_set("gain_control_interface") {
+  sources = [
+    "include/gain_control.h",
   ]
 }
 
@@ -232,13 +232,7 @@ rtc_source_set("file_audio_generator") {
 
 rtc_source_set("audio_processing_c") {
   visibility = [ ":*" ]  # Only targets in this file can depend on this.
-  sources = [
-    "agc/legacy/analog_agc.c",
-    "agc/legacy/analog_agc.h",
-    "agc/legacy/digital_agc.c",
-    "agc/legacy/digital_agc.h",
-    "agc/legacy/gain_control.h",
-  ]
+  sources = []
 
   if (rtc_prefer_fixed_point) {
     sources += [
@@ -273,6 +267,7 @@ rtc_source_set("audio_processing_c") {
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
     "../../system_wrappers:cpu_features_api",
+    "agc:agc_legacy_c",
   ]
 
   if (rtc_build_with_neon) {
@@ -397,12 +392,6 @@ rtc_source_set("aec_core") {
   }
 }
 
-rtc_source_set("agc_gain_map_internal") {
-  sources = [
-    "agc/gain_map_internal.h",
-  ]
-}
-
 if (rtc_include_tests) {
   rtc_source_set("mocks") {
     testonly = true
@@ -446,9 +435,6 @@ if (rtc_include_tests) {
     sources = [
       "aec/echo_cancellation_unittest.cc",
       "aec/system_delay_unittest.cc",
-      "agc/agc_manager_direct_unittest.cc",
-      "agc/loudness_histogram_unittest.cc",
-      "agc/mock_agc.h",
       "audio_buffer_unittest.cc",
       "audio_frame_view_unittest.cc",
       "config_unittest.cc",
@@ -496,6 +482,7 @@ if (rtc_include_tests) {
       "../../test:test_support",
       "../audio_coding:neteq_input_audio_tools",
       "aec_dump:mock_aec_dump_unittests",
+      "agc:agc_unittests",
       "agc2:adaptive_digital_unittests",
       "agc2:biquad_filter_unittests",
       "agc2:fixed_digital_unittests",
@@ -620,13 +607,13 @@ if (rtc_include_tests) {
       "test/fake_recording_device.h",
     ]
     deps = [
-      ":agc_gain_map_internal",
       "../../api:array_view",
       "../../api/audio:audio_frame_api",
       "../../common_audio:common_audio",
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
       "../../rtc_base:safe_minmax",
+      "agc:gain_map",
       "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
@@ -734,6 +721,7 @@ if (rtc_include_tests) {
       "../../system_wrappers:metrics_default",
       "../../test:fileutils",
       "../../test:test_support",
+      "agc:level_estimation",
       "//testing/gtest",
     ]
   }
