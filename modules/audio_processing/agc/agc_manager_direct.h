@@ -52,22 +52,6 @@ class AgcManagerDirect final {
                    bool use_agc2_level_estimation,
                    bool use_agc2_digital_adaptive);
 
-  // Dependency injection for testing. Don't delete |agc| as the memory is owned
-  // by the manager.
-  AgcManagerDirect(Agc* agc,
-                   GainControl* gctrl,
-                   VolumeCallbacks* volume_callbacks,
-                   int startup_min_level,
-                   int clipped_level_min);
-
-  // Most general c-tor.
-  AgcManagerDirect(Agc* agc,
-                   GainControl* gctrl,
-                   VolumeCallbacks* volume_callbacks,
-                   int startup_min_level,
-                   int clipped_level_min,
-                   bool use_agc2_level_estimation,
-                   bool use_agc2_digital_adaptive);
   ~AgcManagerDirect();
 
   int Initialize();
@@ -85,6 +69,25 @@ class AgcManagerDirect final {
   float voice_probability();
 
  private:
+  friend class AgcManagerDirectTest;
+
+  // Dependency injection for testing. Don't delete |agc| as the memory is owned
+  // by the manager.
+  AgcManagerDirect(Agc* agc,
+                   GainControl* gctrl,
+                   VolumeCallbacks* volume_callbacks,
+                   int startup_min_level,
+                   int clipped_level_min);
+
+  // Most general c-tor.
+  AgcManagerDirect(Agc* agc,
+                   GainControl* gctrl,
+                   VolumeCallbacks* volume_callbacks,
+                   int startup_min_level,
+                   int clipped_level_min,
+                   bool use_agc2_level_estimation,
+                   bool use_agc2_digital_adaptive);
+
   // Sets a new microphone level, after first checking that it hasn't been
   // updated by the user, in which case no action is taken.
   void SetLevel(int new_level);

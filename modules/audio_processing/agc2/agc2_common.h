@@ -38,9 +38,9 @@ constexpr float kInitialAdaptiveDigitalGainDb = 8.f;
 // This parameter must be tuned together with the noise estimator.
 constexpr float kMaxNoiseLevelDbfs = -50.f;
 
-// Used in the Level Estimator for deciding when to update the speech
-// level estimate. Also used in the adaptive digital gain applier to
-// decide when to allow target gain reduction.
+// This is the threshold for speech. Speech frames are used for updating the
+// speech level, measuring the amount of speech, and decide when to allow target
+// gain reduction.
 constexpr float kVadConfidenceThreshold = 0.4f;
 
 // The amount of 'memory' of the Level Estimator. Decides leak factors.

@@ -26,6 +26,7 @@ rtc_source_set("agc") {
     "../../../rtc_base:macromagic",
     "../../../rtc_base:safe_minmax",
     "../../../system_wrappers:metrics_api",
+    "../agc2:level_estimation_agc",
     "../vad",
   ]
 }
