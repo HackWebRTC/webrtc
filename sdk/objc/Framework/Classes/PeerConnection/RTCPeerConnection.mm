@@ -386,7 +386,8 @@ void PeerConnectionDelegateAdapter::OnAddTrack(
     RTCLogError(@"Failed to add track %@: %s", track, nativeSenderOrError.error().message());
     return nil;
   }
-  return [[RTCRtpSender alloc] initWithNativeRtpSender:nativeSenderOrError.MoveValue()];
+  return [[RTCRtpSender alloc] initWithFactory:self.factory
+                               nativeRtpSender:nativeSenderOrError.MoveValue()];
 }
 
 - (BOOL)removeTrack:(RTCRtpSender *)sender {
@@ -522,8 +523,8 @@ void PeerConnectionDelegateAdapter::OnAddTrack(
   rtc::scoped_refptr<webrtc::RtpSenderInterface> nativeSender(
       _peerConnection->CreateSender(nativeKind, nativeStreamId));
   return nativeSender ?
-      [[RTCRtpSender alloc] initWithNativeRtpSender:nativeSender]
-      : nil;
+      [[RTCRtpSender alloc] initWithFactory:self.factory nativeRtpSender:nativeSender] :
+      nil;
 }
 
 - (NSArray<RTCRtpSender *> *)senders {
@@ -532,7 +533,7 @@ void PeerConnectionDelegateAdapter::OnAddTrack(
   NSMutableArray *senders = [[NSMutableArray alloc] init];
   for (const auto &nativeSender : nativeSenders) {
     RTCRtpSender *sender =
-        [[RTCRtpSender alloc] initWithNativeRtpSender:nativeSender];
+        [[RTCRtpSender alloc] initWithFactory:self.factory nativeRtpSender:nativeSender];
     [senders addObject:sender];
   }
   return senders;

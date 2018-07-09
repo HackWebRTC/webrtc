@@ -129,7 +129,8 @@
   if (self = [super init]) {
     _factory = factory;
     _nativeRtpTransceiver = nativeRtpTransceiver;
-    _sender = [[RTCRtpSender alloc] initWithNativeRtpSender:nativeRtpTransceiver->sender()];
+    _sender = [[RTCRtpSender alloc] initWithFactory:_factory
+                                    nativeRtpSender:nativeRtpTransceiver->sender()];
     _receiver = [[RTCRtpReceiver alloc] initWithNativeRtpReceiver:nativeRtpTransceiver->receiver()];
     RTCLogInfo(@"RTCRtpTransceiver(%p): created transceiver: %@", self, self.description);
   }

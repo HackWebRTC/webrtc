@@ -19,6 +19,7 @@
 #include "api/mediastreaminterface.h"
 
 @implementation RTCRtpSender {
+  RTCPeerConnectionFactory *_factory;
   rtc::scoped_refptr<webrtc::RtpSenderInterface> _nativeRtpSender;
 }
 
@@ -84,10 +85,12 @@
   return _nativeRtpSender;
 }
 
-- (instancetype)initWithNativeRtpSender:
-    (rtc::scoped_refptr<webrtc::RtpSenderInterface>)nativeRtpSender {
+- (instancetype)initWithFactory:(RTCPeerConnectionFactory *)factory
+                nativeRtpSender:(rtc::scoped_refptr<webrtc::RtpSenderInterface>)nativeRtpSender {
+  NSParameterAssert(factory);
   NSParameterAssert(nativeRtpSender);
   if (self = [super init]) {
+    _factory = factory;
     _nativeRtpSender = nativeRtpSender;
     rtc::scoped_refptr<webrtc::DtmfSenderInterface> nativeDtmfSender(
         _nativeRtpSender->GetDtmfSender());

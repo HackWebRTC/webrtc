@@ -12,8 +12,10 @@
 #import <WebRTC/RTCDataChannel.h>
 #import <WebRTC/RTCDataChannelConfiguration.h>
 #import <WebRTC/RTCMediaConstraints.h>
+#import <WebRTC/RTCMediaStreamTrack.h>
 #import <WebRTC/RTCPeerConnection.h>
 #import <WebRTC/RTCPeerConnectionFactory.h>
+#import <WebRTC/RTCRtpSender.h>
 #import <WebRTC/RTCRtpTransceiver.h>
 
 #import <XCTest/XCTest.h>
@@ -114,6 +116,32 @@
       factory = nil;
     }
     tranceiver = nil;
+  }
+
+  XCTAssertTrue(true, "Expect test does not crash");
+}
+
+- (void)testRTCRtpSenderLifetime {
+  @autoreleasepool {
+    RTCConfiguration *config = [[RTCConfiguration alloc] init];
+    RTCMediaConstraints *contraints =
+        [[RTCMediaConstraints alloc] initWithMandatoryConstraints:@{} optionalConstraints:nil];
+
+    RTCPeerConnectionFactory *factory;
+    RTCPeerConnection *peerConnection;
+    RTCRtpSender *sender;
+
+    @autoreleasepool {
+      factory = [[RTCPeerConnectionFactory alloc] init];
+      peerConnection =
+          [factory peerConnectionWithConfiguration:config constraints:contraints delegate:nil];
+      sender = [peerConnection senderWithKind:kRTCMediaStreamTrackKindVideo streamId:@"stream"];
+      XCTAssertTrue(sender != nil);
+      [peerConnection close];
+      peerConnection = nil;
+      factory = nil;
+    }
+    sender = nil;
   }
 
   XCTAssertTrue(true, "Expect test does not crash");
