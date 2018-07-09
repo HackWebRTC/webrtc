@@ -442,7 +442,7 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
           << frames_received_ << ". Decoded: " << frames_decoded_;
     EnableFrameLogOnWarning();
   }
-  const int64 drain_start = rtc::TimeMillis();
+  const int64_t drain_start = rtc::TimeMillis();
   while ((frames_received_ > frames_decoded_ + max_pending_frames_) &&
          (rtc::TimeMillis() - drain_start) < kMediaCodecTimeoutMs) {
     if (!DeliverPendingOutputs(jni, kMediaCodecPollMs)) {
