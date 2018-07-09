@@ -36,7 +36,7 @@ using FrameStatistics = VideoCodecTestStats::FrameStatistics;
 
 namespace {
 const int kMsToRtpTimestamp = kVideoPayloadTypeFrequency / 1000;
-const int kMaxBufferedInputFrames = 10;
+const int kMaxBufferedInputFrames = 20;
 
 size_t GetMaxNaluSizeBytes(const EncodedImage& encoded_frame,
                            const VideoCodecTestFixture::Config& config) {
