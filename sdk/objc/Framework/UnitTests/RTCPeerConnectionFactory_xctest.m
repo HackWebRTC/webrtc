@@ -14,6 +14,7 @@
 #import <WebRTC/RTCMediaConstraints.h>
 #import <WebRTC/RTCPeerConnection.h>
 #import <WebRTC/RTCPeerConnectionFactory.h>
+#import <WebRTC/RTCRtpTransceiver.h>
 
 #import <XCTest/XCTest.h>
 
@@ -85,6 +86,34 @@
       factory = nil;
     }
     dataChannel = nil;
+  }
+
+  XCTAssertTrue(true, "Expect test does not crash");
+}
+
+- (void)testRTCRtpTransceiverLifetime {
+  @autoreleasepool {
+    RTCConfiguration *config = [[RTCConfiguration alloc] init];
+    config.sdpSemantics = RTCSdpSemanticsUnifiedPlan;
+    RTCMediaConstraints *contraints =
+        [[RTCMediaConstraints alloc] initWithMandatoryConstraints:@{} optionalConstraints:nil];
+    RTCRtpTransceiverInit *init = [[RTCRtpTransceiverInit alloc] init];
+
+    RTCPeerConnectionFactory *factory;
+    RTCPeerConnection *peerConnection;
+    RTCRtpTransceiver *tranceiver;
+
+    @autoreleasepool {
+      factory = [[RTCPeerConnectionFactory alloc] init];
+      peerConnection =
+          [factory peerConnectionWithConfiguration:config constraints:contraints delegate:nil];
+      tranceiver = [peerConnection addTransceiverOfType:RTCRtpMediaTypeAudio init:init];
+      XCTAssertTrue(tranceiver != nil);
+      [peerConnection close];
+      peerConnection = nil;
+      factory = nil;
+    }
+    tranceiver = nil;
   }
 
   XCTAssertTrue(true, "Expect test does not crash");

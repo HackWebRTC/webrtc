@@ -151,9 +151,10 @@ void PeerConnectionDelegateAdapter::OnRemoveStream(
 
 void PeerConnectionDelegateAdapter::OnTrack(
     rtc::scoped_refptr<RtpTransceiverInterface> nativeTransceiver) {
-  RTCRtpTransceiver *transceiver =
-      [[RTCRtpTransceiver alloc] initWithNativeRtpTransceiver:nativeTransceiver];
   RTCPeerConnection *peer_connection = peer_connection_;
+  RTCRtpTransceiver *transceiver =
+      [[RTCRtpTransceiver alloc] initWithFactory:peer_connection.factory
+                            nativeRtpTransceiver:nativeTransceiver];
   if ([peer_connection.delegate
           respondsToSelector:@selector(peerConnection:didStartReceivingOnTransceiver:)]) {
     [peer_connection.delegate peerConnection:peer_connection
@@ -409,8 +410,8 @@ void PeerConnectionDelegateAdapter::OnAddTrack(
         @"Failed to add transceiver %@: %s", track, nativeTransceiverOrError.error().message());
     return nil;
   }
-  return
-      [[RTCRtpTransceiver alloc] initWithNativeRtpTransceiver:nativeTransceiverOrError.MoveValue()];
+  return [[RTCRtpTransceiver alloc] initWithFactory:self.factory
+                               nativeRtpTransceiver:nativeTransceiverOrError.MoveValue()];
 }
 
 - (RTCRtpTransceiver *)addTransceiverOfType:(RTCRtpMediaType)mediaType {
@@ -428,8 +429,8 @@ void PeerConnectionDelegateAdapter::OnAddTrack(
                 nativeTransceiverOrError.error().message());
     return nil;
   }
-  return
-      [[RTCRtpTransceiver alloc] initWithNativeRtpTransceiver:nativeTransceiverOrError.MoveValue()];
+  return [[RTCRtpTransceiver alloc] initWithFactory:self.factory
+                               nativeRtpTransceiver:nativeTransceiverOrError.MoveValue()];
 }
 
 - (void)offerForConstraints:(RTCMediaConstraints *)constraints
@@ -554,8 +555,8 @@ void PeerConnectionDelegateAdapter::OnAddTrack(
       _peerConnection->GetTransceivers());
   NSMutableArray *transceivers = [[NSMutableArray alloc] init];
   for (auto nativeTransceiver : nativeTransceivers) {
-    RTCRtpTransceiver *transceiver =
-        [[RTCRtpTransceiver alloc] initWithNativeRtpTransceiver:nativeTransceiver];
+    RTCRtpTransceiver *transceiver = [[RTCRtpTransceiver alloc] initWithFactory:self.factory
+                                                           nativeRtpTransceiver:nativeTransceiver];
     [transceivers addObject:transceiver];
   }
   return transceivers;
