@@ -257,9 +257,9 @@ rtc_source_set("simulated_network_api") {
     "test/simulated_network.h",
   ]
   deps = [
-    ":optional",
     "../rtc_base:criticalsection",
     "../rtc_base:rtc_base",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 
@@ -283,18 +283,6 @@ rtc_source_set("array_view") {
   deps = [
     "../rtc_base:checks",
     "../rtc_base:type_traits",
-  ]
-}
-
-# TODO(bugs.webrtc.org/9078): Deprecated, replaced by absl/types:optional.
-# Delete after webrtc and downstreams users are updated.
-rtc_source_set("optional") {
-  visibility = [ "*" ]
-  sources = [
-    "optional.h",
-  ]
-  deps = [
-    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 
@@ -477,10 +465,6 @@ if (rtc_include_tests) {
 
     sources = [
       "array_view_unittest.cc",
-
-      # TODO(bugs.webrtc.org/8821): Remove optional_unittests when webrtc starts
-      # running absl unittest on each commit.
-      "optional_unittest.cc",
       "ortc/mediadescription_unittest.cc",
       "ortc/sessiondescription_unittest.cc",
       "rtcerror_unittest.cc",
@@ -496,7 +480,6 @@ if (rtc_include_tests) {
       ":array_view",
       ":libjingle_peerconnection_api",
       ":libjingle_peerconnection_test_api",
-      ":optional",
       ":ortc_api",
       "../rtc_base:checks",
       "../rtc_base:rtc_base_approved",

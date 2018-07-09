@@ -34,12 +34,12 @@ TimeLimitedNetEqInput::TimeLimitedNetEqInput(std::unique_ptr<NetEqInput> input,
       start_time_ms_(input_->NextEventTime()),
       duration_ms_(duration_ms) {}
 
-rtc::Optional<int64_t> TimeLimitedNetEqInput::NextPacketTime() const {
-  return ended_ ? rtc::Optional<int64_t>() : input_->NextPacketTime();
+absl::optional<int64_t> TimeLimitedNetEqInput::NextPacketTime() const {
+  return ended_ ? absl::nullopt : input_->NextPacketTime();
 }
 
-rtc::Optional<int64_t> TimeLimitedNetEqInput::NextOutputEventTime() const {
-  return ended_ ? rtc::Optional<int64_t>() : input_->NextOutputEventTime();
+absl::optional<int64_t> TimeLimitedNetEqInput::NextOutputEventTime() const {
+  return ended_ ? absl::nullopt : input_->NextOutputEventTime();
 }
 
 std::unique_ptr<NetEqInput::PacketData> TimeLimitedNetEqInput::PopPacket() {
@@ -62,8 +62,8 @@ bool TimeLimitedNetEqInput::ended() const {
   return ended_ || input_->ended();
 }
 
-rtc::Optional<RTPHeader> TimeLimitedNetEqInput::NextHeader() const {
-  return ended_ ? rtc::Optional<RTPHeader>() : input_->NextHeader();
+absl::optional<RTPHeader> TimeLimitedNetEqInput::NextHeader() const {
+  return ended_ ? absl::nullopt : input_->NextHeader();
 }
 
 void TimeLimitedNetEqInput::MaybeSetEnded() {

@@ -42,8 +42,8 @@ class FrameGeneratorCapturerVideoTrackSource : public VideoTrackSource {
   FrameGeneratorCapturerVideoTrackSource(Config config, Clock* clock)
       : VideoTrackSource(false /* remote */) {
     video_capturer_.reset(test::FrameGeneratorCapturer::Create(
-        config.width, config.height, rtc::nullopt, config.num_squares_generated,
-        config.frames_per_second, clock));
+        config.width, config.height, absl::nullopt,
+        config.num_squares_generated, config.frames_per_second, clock));
   }
 
   ~FrameGeneratorCapturerVideoTrackSource() = default;
