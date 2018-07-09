@@ -1269,6 +1269,7 @@ generate_jni("generated_native_unittests_jni") {
   sources = [
     "native_unittests/org/webrtc/ApplicationContextProvider.java",
     "native_unittests/org/webrtc/BuildInfo.java",
+    "native_unittests/org/webrtc/CodecsWrapperTestHelper.java",
     "native_unittests/org/webrtc/JavaTypesTestHelper.java",
     "native_unittests/org/webrtc/JavaVideoSourceTestHelper.java",
     "native_unittests/org/webrtc/PeerConnectionFactoryInitializationHelper.java",
@@ -1284,6 +1285,7 @@ rtc_android_library("native_unittests_java") {
   java_files = [
     "native_unittests/org/webrtc/ApplicationContextProvider.java",
     "native_unittests/org/webrtc/BuildInfo.java",
+    "native_unittests/org/webrtc/CodecsWrapperTestHelper.java",
     "native_unittests/org/webrtc/JavaTypesTestHelper.java",
     "native_unittests/org/webrtc/JavaVideoSourceTestHelper.java",
     "native_unittests/org/webrtc/PeerConnectionFactoryInitializationHelper.java",
@@ -1300,6 +1302,7 @@ rtc_source_set("native_unittests") {
 
   sources = [
     "native_unittests/audio_device/audio_device_unittest.cc",
+    "native_unittests/codecs/wrapper_unittest.cc",
     "native_unittests/java_types_unittest.cc",
     "native_unittests/peerconnection/peerconnectionfactory_unittest.cc",
     "native_unittests/test_jni_onload.cc",
@@ -1324,6 +1327,7 @@ rtc_source_set("native_unittests") {
     ":media_jni",
     ":native_api_audio_device_module",
     ":native_api_base",
+    ":native_api_codecs",
     ":native_api_jni",
     ":native_api_peerconnection",
     ":native_api_video",
