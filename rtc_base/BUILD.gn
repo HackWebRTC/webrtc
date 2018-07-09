@@ -950,11 +950,6 @@ rtc_static_library("rtc_base_generic") {
       "secur32.lib",
     ]
 
-    cflags += [
-      # Suppress warnings about WIN32_LEAN_AND_MEAN.
-      "/wd4005",
-    ]
-
     defines += [ "_CRT_NONSTDC_NO_DEPRECATE" ]
   }
 

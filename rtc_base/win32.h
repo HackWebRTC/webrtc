@@ -15,10 +15,6 @@
 #error "Only #include this header in Windows builds"
 #endif
 
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-
 // Make sure we don't get min/max macros
 #ifndef NOMINMAX
 #define NOMINMAX

@@ -9,9 +9,6 @@
  */
 
 #if defined(WEBRTC_WIN)
-#if !defined(WIN32_LEAN_AND_MEAN)
-#define WIN32_LEAN_AND_MEAN
-#endif
 #include <windows.h>
 #if _MSC_VER < 1900
 #define snprintf _snprintf
