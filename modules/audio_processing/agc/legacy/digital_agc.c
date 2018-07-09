@@ -467,9 +467,10 @@ int32_t WebRtcAgc_ProcessDigital(DigitalAgc* stt,
 
   // Limit gain to avoid overload distortion
   for (k = 0; k < 10; k++) {
-    // To prevent wrap around
+    // Find a shift of gains[k + 1] such that it can be squared without
+    // overflow, but at least by 10 bits.
     zeros = 10;
-    if (gains[k + 1] > 47453132) {
+    if (gains[k + 1] > 47452159) {
       zeros = 16 - WebRtcSpl_NormW32(gains[k + 1]);
     }
     gain32 = (gains[k + 1] >> zeros) + 1;
