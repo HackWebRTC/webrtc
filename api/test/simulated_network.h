@@ -17,7 +17,7 @@
 #include <queue>
 #include <vector>
 
-#include "api/optional.h"
+#include "absl/types/optional.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/random.h"
 #include "rtc_base/thread_annotations.h"

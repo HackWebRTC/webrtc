@@ -17,7 +17,6 @@
 #include <vector>
 
 #include "api/array_view.h"
-#include "api/optional.h"
 // TODO(sprang): Remove this include when all usage includes it directly.
 #include "api/video/video_bitrate_allocation.h"
 #include "rtc_base/checks.h"
