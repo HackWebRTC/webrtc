@@ -17,7 +17,7 @@
 #include "sdk/android/native_api/jni/class_loader.h"
 #include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/src/jni/videocodecinfo.h"
-#include "sdk/android/src/jni/wrappednativecodec.h"
+#include "sdk/android/src/jni/videoencoderwrapper.h"
 
 namespace webrtc {
 namespace jni {
@@ -60,7 +60,7 @@ VideoEncoderFactory::CodecInfo VideoEncoderFactoryWrapper::QueryVideoEncoder(
 
   CodecInfo codec_info;
   // Check if this is a wrapped native software encoder implementation.
-  codec_info.is_hardware_accelerated = !IsWrappedSoftwareEncoder(jni, encoder);
+  codec_info.is_hardware_accelerated = IsHardwareVideoEncoder(jni, encoder);
   codec_info.has_internal_source = false;
   return codec_info;
 }

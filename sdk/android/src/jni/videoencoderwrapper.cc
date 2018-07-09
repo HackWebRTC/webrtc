@@ -453,5 +453,23 @@ std::string VideoEncoderWrapper::GetImplementationName(JNIEnv* jni) const {
       jni, Java_VideoEncoder_getImplementationName(jni, encoder_));
 }
 
+std::unique_ptr<VideoEncoder> JavaToNativeVideoEncoder(
+    JNIEnv* jni,
+    const JavaRef<jobject>& j_encoder) {
+  const jlong native_encoder =
+      Java_VideoEncoder_createNativeVideoEncoder(jni, j_encoder);
+  VideoEncoder* encoder;
+  if (native_encoder == 0) {
+    encoder = new VideoEncoderWrapper(jni, j_encoder);
+  } else {
+    encoder = reinterpret_cast<VideoEncoder*>(native_encoder);
+  }
+  return std::unique_ptr<VideoEncoder>(encoder);
+}
+
+bool IsHardwareVideoEncoder(JNIEnv* jni, const JavaRef<jobject>& j_encoder) {
+  return Java_VideoEncoder_isHardwareEncoder(jni, j_encoder);
+}
+
 }  // namespace jni
 }  // namespace webrtc

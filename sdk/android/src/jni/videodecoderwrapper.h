@@ -110,6 +110,13 @@ class VideoDecoderWrapper : public VideoDecoder {
       RTC_GUARDED_BY(frame_extra_infos_lock_);
 };
 
+/* If the j_decoder is a wrapped native decoder, unwrap it. If it is not,
+ * wrap it in a VideoDecoderWrapper.
+ */
+std::unique_ptr<VideoDecoder> JavaToNativeVideoDecoder(
+    JNIEnv* jni,
+    const JavaRef<jobject>& j_decoder);
+
 }  // namespace jni
 }  // namespace webrtc
 

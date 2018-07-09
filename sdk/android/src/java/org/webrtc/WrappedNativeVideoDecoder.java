@@ -14,7 +14,7 @@ package org.webrtc;
  * Wraps a native webrtc::VideoDecoder.
  */
 abstract class WrappedNativeVideoDecoder implements VideoDecoder {
-  @CalledByNative abstract long createNativeDecoder();
+  @Override public abstract long createNativeVideoDecoder();
 
   @Override
   public VideoCodecStatus initDecode(Settings settings, Callback decodeCallback) {
@@ -39,10 +39,5 @@ abstract class WrappedNativeVideoDecoder implements VideoDecoder {
   @Override
   public String getImplementationName() {
     throw new UnsupportedOperationException("Not implemented.");
-  }
-
-  @CalledByNative
-  static boolean isInstanceOf(VideoDecoder decoder) {
-    return decoder instanceof WrappedNativeVideoDecoder;
   }
 }

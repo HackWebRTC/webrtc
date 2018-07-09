@@ -164,6 +164,36 @@ public interface VideoEncoder {
   }
 
   /**
+   * The encoder implementation backing this interface is either 1) a Java
+   * encoder (e.g., an Android platform encoder), or alternatively 2) a native
+   * encoder (e.g., a software encoder or a C++ encoder adapter).
+   *
+   * For case 1), createNativeVideoEncoder() should return zero.
+   * In this case, we expect the native library to call the encoder through
+   * JNI using the Java interface declared below.
+   *
+   * For case 2), createNativeVideoEncoder() should return a non-zero value.
+   * In this case, we expect the native library to treat the returned value as
+   * a raw pointer of type webrtc::VideoEncoder* (ownership is transferred to
+   * the caller). The native library should then directly call the
+   * webrtc::VideoEncoder interface without going through JNI. All calls to
+   * the Java interface methods declared below should thus throw an
+   * UnsupportedOperationException.
+   */
+  @CalledByNative
+  default long createNativeVideoEncoder() {
+    return 0;
+  }
+
+  /**
+   * Returns true if the encoder is backed by hardware.
+   */
+  @CalledByNative
+  default boolean isHardwareEncoder() {
+    return true;
+  }
+
+  /**
    * Initializes the encoding process. Call before any calls to encode.
    */
   @CalledByNative VideoCodecStatus initEncode(Settings settings, Callback encodeCallback);

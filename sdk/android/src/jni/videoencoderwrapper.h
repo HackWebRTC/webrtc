@@ -112,6 +112,15 @@ class VideoEncoderWrapper : public VideoEncoder {
   size_t gof_idx_;
 };
 
+/* If the j_encoder is a wrapped native encoder, unwrap it. If it is not,
+ * wrap it in a VideoEncoderWrapper.
+ */
+std::unique_ptr<VideoEncoder> JavaToNativeVideoEncoder(
+    JNIEnv* jni,
+    const JavaRef<jobject>& j_encoder);
+
+bool IsHardwareVideoEncoder(JNIEnv* jni, const JavaRef<jobject>& j_encoder);
+
 }  // namespace jni
 }  // namespace webrtc
 

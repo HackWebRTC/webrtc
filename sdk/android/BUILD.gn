@@ -282,8 +282,6 @@ generate_jni("generated_video_jni") {
     "src/java/org/webrtc/VideoDecoderWrapper.java",
     "src/java/org/webrtc/VideoEncoderWrapper.java",
     "src/java/org/webrtc/WrappedNativeI420Buffer.java",
-    "src/java/org/webrtc/WrappedNativeVideoDecoder.java",
-    "src/java/org/webrtc/WrappedNativeVideoEncoder.java",
   ]
   jni_package = ""
   namespace = "webrtc::jni"
@@ -327,8 +325,6 @@ rtc_static_library("video_jni") {
     "src/jni/videotrack.cc",
     "src/jni/wrapped_native_i420_buffer.cc",
     "src/jni/wrapped_native_i420_buffer.h",
-    "src/jni/wrappednativecodec.cc",
-    "src/jni/wrappednativecodec.h",
     "src/jni/yuvhelper.cc",
   ]
 
