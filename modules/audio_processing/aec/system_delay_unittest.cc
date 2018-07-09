@@ -19,8 +19,8 @@ namespace {
 class SystemDelayTest : public ::testing::Test {
  protected:
   SystemDelayTest();
-  virtual void SetUp();
-  virtual void TearDown();
+  void SetUp() override;
+  void TearDown() override;
 
   // Initialization of AEC handle with respect to |sample_rate_hz|. Since the
   // device sample rate is unimportant we set that value to 48000 Hz.

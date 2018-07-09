@@ -27,7 +27,6 @@ rtc_source_set("level_estimation_agc") {
     ":gain_applier",
     ":noise_level_estimator",
     ":rnn_vad_with_level",
-    "..:aec_core",
     "..:apm_logging",
     "..:audio_frame_view",
     "../../..:typedefs",
