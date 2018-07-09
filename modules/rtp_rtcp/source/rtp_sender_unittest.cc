@@ -1682,7 +1682,7 @@ TEST_P(RtpSenderVideoTest, KeyFrameHasCVO) {
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
                    kRtpExtensionVideoRotation, kVideoRotationExtensionId));
 
-  RTPVideoHeader hdr = {0};
+  RTPVideoHeader hdr;
   hdr.rotation = kVideoRotation_0;
   rtp_sender_video_->SendVideo(kVideoCodecGeneric, kVideoFrameKey, kPayload,
                                kTimestamp, 0, kFrame, sizeof(kFrame), nullptr,
@@ -1704,7 +1704,7 @@ TEST_P(RtpSenderVideoTest, TimingFrameHasPacketizationTimstampSet) {
 
   const int64_t kCaptureTimestamp = fake_clock_.TimeInMilliseconds();
 
-  RTPVideoHeader hdr = {0};
+  RTPVideoHeader hdr;
   hdr.video_timing.flags = VideoSendTiming::kTriggeredByTimer;
   hdr.video_timing.encode_start_delta_ms = kEncodeStartDeltaMs;
   hdr.video_timing.encode_finish_delta_ms = kEncodeFinishDeltaMs;
@@ -1727,7 +1727,7 @@ TEST_P(RtpSenderVideoTest, DeltaFrameHasCVOWhenChanged) {
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
                    kRtpExtensionVideoRotation, kVideoRotationExtensionId));
 
-  RTPVideoHeader hdr = {0};
+  RTPVideoHeader hdr;
   hdr.rotation = kVideoRotation_90;
   EXPECT_TRUE(rtp_sender_video_->SendVideo(
       kVideoCodecGeneric, kVideoFrameKey, kPayload, kTimestamp, 0, kFrame,
@@ -1749,7 +1749,7 @@ TEST_P(RtpSenderVideoTest, DeltaFrameHasCVOWhenNonZero) {
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
                    kRtpExtensionVideoRotation, kVideoRotationExtensionId));
 
-  RTPVideoHeader hdr = {0};
+  RTPVideoHeader hdr;
   hdr.rotation = kVideoRotation_90;
   EXPECT_TRUE(rtp_sender_video_->SendVideo(
       kVideoCodecGeneric, kVideoFrameKey, kPayload, kTimestamp, 0, kFrame,

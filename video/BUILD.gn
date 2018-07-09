@@ -72,6 +72,7 @@ rtc_static_library("video") {
     "../call:rtp_interfaces",
     "../call:video_stream_api",
     "../modules/rtp_rtcp:rtp_rtcp_format",
+    "../modules/rtp_rtcp:rtp_video_header",
     "../modules/video_coding:codec_globals_headers",
     "../modules/video_coding:nack_module",
     "../modules/video_coding:packet",

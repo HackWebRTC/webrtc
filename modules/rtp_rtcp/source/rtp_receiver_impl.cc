@@ -159,8 +159,7 @@ bool RtpReceiverImpl::IncomingRtpPacket(const RTPHeader& rtp_header,
     return false;
   }
 
-  WebRtcRTPHeader webrtc_rtp_header;
-  memset(&webrtc_rtp_header, 0, sizeof(webrtc_rtp_header));
+  WebRtcRTPHeader webrtc_rtp_header{};
   webrtc_rtp_header.header = rtp_header;
   CheckCSRC(webrtc_rtp_header);
 

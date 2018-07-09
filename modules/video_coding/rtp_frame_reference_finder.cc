@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <limits>
 
+#include "absl/types/variant.h"
 #include "modules/video_coding/frame_object.h"
 #include "modules/video_coding/packet_buffer.h"
 #include "rtc_base/checks.h"
@@ -247,7 +248,8 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp8(
     return kDrop;
   }
 
-  const RTPVideoHeaderVP8& codec_header = rtp_codec_header->VP8;
+  const RTPVideoHeaderVP8& codec_header =
+      absl::get<RTPVideoHeaderVP8>(*rtp_codec_header);
 
   if (codec_header.pictureId == kNoPictureId ||
       codec_header.temporalIdx == kNoTemporalIdx ||
@@ -398,7 +400,8 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp9(
     return kDrop;
   }
 
-  const RTPVideoHeaderVP9& codec_header = rtp_codec_header->VP9;
+  const RTPVideoHeaderVP9& codec_header =
+      absl::get<RTPVideoHeaderVP9>(*rtp_codec_header);
 
   if (codec_header.picture_id == kNoPictureId ||
       codec_header.temporal_idx == kNoTemporalIdx ||

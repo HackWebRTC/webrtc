@@ -16,6 +16,8 @@
 
 #include <string>
 
+#include "rtc_base/checks.h"
+
 namespace webrtc {
 
 // The packetization types that we support: single, aggregated, and fragmented.

@@ -179,6 +179,7 @@ rtc_static_library("video_coding") {
     "../rtp_rtcp:rtp_rtcp_format",
     "../utility:utility",
     "//third_party/abseil-cpp/absl/types:optional",
+    "//third_party/abseil-cpp/absl/types:variant",
   ]
 }
 
@@ -220,6 +221,10 @@ rtc_source_set("codec_globals_headers") {
     "codecs/interface/common_constants.h",
     "codecs/vp8/include/vp8_globals.h",
     "codecs/vp9/include/vp9_globals.h",
+  ]
+
+  deps = [
+    "../../rtc_base:checks",
   ]
 }
 

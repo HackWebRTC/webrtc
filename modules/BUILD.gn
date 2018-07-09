@@ -56,6 +56,7 @@ rtc_source_set("module_api") {
     "../api/transport:network_control",
     "../api/video:video_frame",
     "../api/video:video_frame_i420",
+    "../modules/rtp_rtcp:rtp_video_header",
     "../rtc_base:deprecation",
     "../rtc_base:rtc_base_approved",
     "video_coding:codec_globals_headers",

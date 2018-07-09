@@ -24,9 +24,7 @@
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/include/module_common_types_public.h"
 #include "modules/include/module_fec_types.h"
-#include "modules/video_coding/codecs/h264/include/h264_globals.h"
-#include "modules/video_coding/codecs/vp8/include/vp8_globals.h"
-#include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
+#include "modules/rtp_rtcp/source/rtp_video_header.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/deprecation.h"
 #include "rtc_base/numerics/safe_conversions.h"
@@ -37,40 +35,6 @@ namespace webrtc {
 
 // TODO(nisse): Deprecated, use webrtc::VideoCodecType instead.
 using RtpVideoCodecTypes = VideoCodecType;
-
-// TODO(philipel): Change from union to abls::variant.
-union RTPVideoTypeHeader {
-  RTPVideoHeaderVP8 VP8;
-  RTPVideoHeaderVP9 VP9;
-  RTPVideoHeaderH264 H264;
-};
-
-// Since RTPVideoHeader is used as a member of a union, it can't have a
-// non-trivial default constructor.
-struct RTPVideoHeader {
-  RTPVideoHeaderVP8& vp8() { return codecHeader.VP8; }
-  const RTPVideoHeaderVP8& vp8() const { return codecHeader.VP8; }
-  RTPVideoHeaderVP9& vp9() { return codecHeader.VP9; }
-  const RTPVideoHeaderVP9& vp9() const { return codecHeader.VP9; }
-  RTPVideoHeaderH264& h264() { return codecHeader.H264; }
-  const RTPVideoHeaderH264& h264() const { return codecHeader.H264; }
-
-  uint16_t width;  // size
-  uint16_t height;
-  VideoRotation rotation;
-
-  PlayoutDelay playout_delay;
-
-  VideoContentType content_type;
-
-  VideoSendTiming video_timing;
-
-  bool is_first_packet_in_frame;
-  uint8_t simulcastIdx;  // Index if the simulcast encoder creating
-                         // this frame, 0 if not using simulcast.
-  VideoCodecType codec;
-  RTPVideoTypeHeader codecHeader;
-};
 
 struct WebRtcRTPHeader {
   RTPVideoHeader& video_header() { return video; }

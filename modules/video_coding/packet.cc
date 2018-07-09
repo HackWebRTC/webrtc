@@ -86,7 +86,7 @@ void VCMPacket::Reset() {
   insertStartCode = false;
   width = 0;
   height = 0;
-  memset(&video_header, 0, sizeof(RTPVideoHeader));
+  video_header = {};
 }
 
 void VCMPacket::CopyCodecSpecifics(const RTPVideoHeader& videoHeader) {

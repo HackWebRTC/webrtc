@@ -230,7 +230,6 @@ EncodedImageCallback::Result PayloadRouter::OnEncodedImage(
     return Result(Result::ERROR_SEND_FAILED);
 
   RTPVideoHeader rtp_video_header;
-  memset(&rtp_video_header, 0, sizeof(RTPVideoHeader));
   if (codec_specific_info)
     CopyCodecSpecific(codec_specific_info, &rtp_video_header);
 
