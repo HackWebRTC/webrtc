@@ -11,7 +11,6 @@
 #include <tuple>
 
 #include "absl/memory/memory.h"
-#include "api/fakemetricsobserver.h"
 #include "api/peerconnectionproxy.h"
 #include "media/base/fakemediaengine.h"
 #include "pc/mediasession.h"
@@ -22,6 +21,7 @@
 #include "pc/test/fakesctptransport.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/virtualsocketserver.h"
+#include "system_wrappers/include/metrics_default.h"
 
 namespace webrtc {
 
@@ -127,6 +127,7 @@ class PeerConnectionUsageHistogramTest : public ::testing::Test {
 
   PeerConnectionUsageHistogramTest()
       : vss_(new rtc::VirtualSocketServer()), main_(vss_.get()) {
+    webrtc::metrics::Reset();
   }
 
   WrapperPtr CreatePeerConnection() {
@@ -175,14 +176,12 @@ class PeerConnectionUsageHistogramTest : public ::testing::Test {
 TEST_F(PeerConnectionUsageHistogramTest, UsageFingerprintHistogramFromTimeout) {
   auto pc = CreatePeerConnectionWithImmediateReport();
 
-  // Register UMA observer before signaling begins.
-  rtc::scoped_refptr<webrtc::FakeMetricsObserver> caller_observer =
-      new rtc::RefCountedObject<webrtc::FakeMetricsObserver>();
-  pc->GetInternalPeerConnection()->RegisterUMAObserver(caller_observer);
   int expected_fingerprint = MakeUsageFingerprint({});
-  ASSERT_TRUE_WAIT(caller_observer->ExpectOnlySingleEnumCount(
-                       webrtc::kEnumCounterUsagePattern, expected_fingerprint),
-                   kDefaultTimeout);
+  ASSERT_TRUE_WAIT(
+      1u == webrtc::metrics::NumSamples("WebRTC.PeerConnection.UsagePattern"),
+      kDefaultTimeout);
+  EXPECT_EQ(1, webrtc::metrics::NumEvents("WebRTC.PeerConnection.UsagePattern",
+                                          expected_fingerprint));
 }
 
 #ifndef WEBRTC_ANDROID
@@ -193,9 +192,6 @@ TEST_F(PeerConnectionUsageHistogramTest, UsageFingerprintHistogramFromTimeout) {
 TEST_F(PeerConnectionUsageHistogramTest, FingerprintAudioVideo) {
   auto caller = CreatePeerConnection();
   auto callee = CreatePeerConnection();
-  // Register UMA observer before signaling begins.
-  auto caller_observer = caller->RegisterFakeMetricsObserver();
-  auto callee_observer = callee->RegisterFakeMetricsObserver();
   caller->AddAudioTrack("audio");
   caller->AddVideoTrack("video");
   caller->PrepareToExchangeCandidates(callee.get());
@@ -213,19 +209,16 @@ TEST_F(PeerConnectionUsageHistogramTest, FingerprintAudioVideo) {
        PeerConnection::UsageEvent::REMOTE_CANDIDATE_ADDED,
        PeerConnection::UsageEvent::ICE_STATE_CONNECTED,
        PeerConnection::UsageEvent::CLOSE_CALLED});
-  EXPECT_TRUE(caller_observer->ExpectOnlySingleEnumCount(
-      webrtc::kEnumCounterUsagePattern, expected_fingerprint));
-  EXPECT_TRUE(callee_observer->ExpectOnlySingleEnumCount(
-      webrtc::kEnumCounterUsagePattern, expected_fingerprint));
+  EXPECT_EQ(2,
+            webrtc::metrics::NumSamples("WebRTC.PeerConnection.UsagePattern"));
+  EXPECT_EQ(2, webrtc::metrics::NumEvents("WebRTC.PeerConnection.UsagePattern",
+                                          expected_fingerprint));
 }
 
 #ifdef HAVE_SCTP
 TEST_F(PeerConnectionUsageHistogramTest, FingerprintDataOnly) {
   auto caller = CreatePeerConnection();
   auto callee = CreatePeerConnection();
-  // Register UMA observer before signaling begins.
-  auto caller_observer = caller->RegisterFakeMetricsObserver();
-  auto callee_observer = callee->RegisterFakeMetricsObserver();
   caller->CreateDataChannel("foodata");
   caller->PrepareToExchangeCandidates(callee.get());
   ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
@@ -240,10 +233,10 @@ TEST_F(PeerConnectionUsageHistogramTest, FingerprintDataOnly) {
        PeerConnection::UsageEvent::REMOTE_CANDIDATE_ADDED,
        PeerConnection::UsageEvent::ICE_STATE_CONNECTED,
        PeerConnection::UsageEvent::CLOSE_CALLED});
-  EXPECT_TRUE(caller_observer->ExpectOnlySingleEnumCount(
-      webrtc::kEnumCounterUsagePattern, expected_fingerprint));
-  EXPECT_TRUE(callee_observer->ExpectOnlySingleEnumCount(
-      webrtc::kEnumCounterUsagePattern, expected_fingerprint));
+  EXPECT_EQ(2,
+            webrtc::metrics::NumSamples("WebRTC.PeerConnection.UsagePattern"));
+  EXPECT_EQ(2, webrtc::metrics::NumEvents("WebRTC.PeerConnection.UsagePattern",
+                                          expected_fingerprint));
 }
 #endif  // HAVE_SCTP
 #endif  // WEBRTC_ANDROID
@@ -259,14 +252,15 @@ TEST_F(PeerConnectionUsageHistogramTest, FingerprintStunTurn) {
   configuration.servers.push_back(server);
   auto caller = CreatePeerConnection(configuration);
   ASSERT_TRUE(caller);
-  auto caller_observer = caller->RegisterFakeMetricsObserver();
   caller->pc()->Close();
   int expected_fingerprint =
       MakeUsageFingerprint({PeerConnection::UsageEvent::STUN_SERVER_ADDED,
                             PeerConnection::UsageEvent::TURN_SERVER_ADDED,
                             PeerConnection::UsageEvent::CLOSE_CALLED});
-  EXPECT_TRUE(caller_observer->ExpectOnlySingleEnumCount(
-      webrtc::kEnumCounterUsagePattern, expected_fingerprint));
+  EXPECT_EQ(1,
+            webrtc::metrics::NumSamples("WebRTC.PeerConnection.UsagePattern"));
+  EXPECT_EQ(1, webrtc::metrics::NumEvents("WebRTC.PeerConnection.UsagePattern",
+                                          expected_fingerprint));
 }
 
 TEST_F(PeerConnectionUsageHistogramTest, FingerprintStunTurnInReconfiguration) {
@@ -280,7 +274,6 @@ TEST_F(PeerConnectionUsageHistogramTest, FingerprintStunTurnInReconfiguration) {
   configuration.servers.push_back(server);
   auto caller = CreatePeerConnection();
   ASSERT_TRUE(caller);
-  auto caller_observer = caller->RegisterFakeMetricsObserver();
   RTCError error;
   caller->pc()->SetConfiguration(configuration, &error);
   ASSERT_TRUE(error.ok());
@@ -289,8 +282,10 @@ TEST_F(PeerConnectionUsageHistogramTest, FingerprintStunTurnInReconfiguration) {
       MakeUsageFingerprint({PeerConnection::UsageEvent::STUN_SERVER_ADDED,
                             PeerConnection::UsageEvent::TURN_SERVER_ADDED,
                             PeerConnection::UsageEvent::CLOSE_CALLED});
-  EXPECT_TRUE(caller_observer->ExpectOnlySingleEnumCount(
-      webrtc::kEnumCounterUsagePattern, expected_fingerprint));
+  EXPECT_EQ(1,
+            webrtc::metrics::NumSamples("WebRTC.PeerConnection.UsagePattern"));
+  EXPECT_EQ(1, webrtc::metrics::NumEvents("WebRTC.PeerConnection.UsagePattern",
+                                          expected_fingerprint));
 }
 
 }  // namespace webrtc

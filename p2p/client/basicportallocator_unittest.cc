@@ -34,6 +34,7 @@
 #include "rtc_base/ssladapter.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/virtualsocketserver.h"
+#include "system_wrappers/include/metrics_default.h"
 
 using rtc::IPAddress;
 using rtc::SocketAddress;
@@ -2366,6 +2367,23 @@ TEST_F(BasicPortAllocatorTest,
                              kDefaultAllocationTimeout, fake_clock);
   CheckStunKeepaliveIntervalOfAllReadyPorts(session_.get(),
                                             expected_stun_keepalive_interval);
+}
+
+TEST_F(BasicPortAllocatorTest, IceRegatheringMetricsLoggedWhenNetworkChanges) {
+  // Only test local ports to simplify test.
+  ResetWithNoServersOrNat();
+  AddInterface(kClientAddr, "test_net0");
+  ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
+                             kDefaultAllocationTimeout, fake_clock);
+  candidate_allocation_done_ = false;
+  AddInterface(kClientAddr2, "test_net1");
+  EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
+                             kDefaultAllocationTimeout, fake_clock);
+  EXPECT_EQ(1, webrtc::metrics::NumEvents(
+                   "WebRTC.PeerConnection.IceRegatheringReason",
+                   static_cast<int>(IceRegatheringReason::NETWORK_CHANGE)));
 }
 
 }  // namespace cricket

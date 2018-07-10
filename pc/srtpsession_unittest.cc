@@ -13,20 +13,21 @@
 #include <string>
 
 #include "absl/memory/memory.h"
-#include "api/fakemetricsobserver.h"
 #include "media/base/fakertp.h"
 #include "pc/srtptestutil.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/sslstreamadapter.h"  // For rtc::SRTP_*
+#include "system_wrappers/include/metrics_default.h"
 #include "third_party/libsrtp/include/srtp.h"
 
 namespace rtc {
 
-using webrtc::FakeMetricsObserver;
-
 std::vector<int> kEncryptedHeaderExtensionIds;
 
 class SrtpSessionTest : public testing::Test {
+ public:
+  SrtpSessionTest() { webrtc::metrics::Reset(); }
+
  protected:
   virtual void SetUp() {
     rtp_len_ = sizeof(kPcmuFrame);
@@ -136,9 +137,6 @@ TEST_F(SrtpSessionTest, TestGetSendStreamPacketIndex) {
 
 // Test that we fail to unprotect if someone tampers with the RTP/RTCP paylaods.
 TEST_F(SrtpSessionTest, TestTamperReject) {
-  rtc::scoped_refptr<FakeMetricsObserver> metrics_observer(
-      new rtc::RefCountedObject<FakeMetricsObserver>());
-  s2_.SetMetricsObserver(metrics_observer);
   int out_len;
   EXPECT_TRUE(s1_.SetSend(SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen,
                           kEncryptedHeaderExtensionIds));
@@ -149,29 +147,38 @@ TEST_F(SrtpSessionTest, TestTamperReject) {
   rtp_packet_[0] = 0x12;
   rtcp_packet_[1] = 0x34;
   EXPECT_FALSE(s2_.UnprotectRtp(rtp_packet_, rtp_len_, &out_len));
-  EXPECT_TRUE(metrics_observer->ExpectOnlySingleEnumCount(
-      webrtc::kEnumCounterSrtpUnprotectError, srtp_err_status_bad_param));
+  EXPECT_EQ(1, webrtc::metrics::NumSamples(
+                   "WebRTC.PeerConnection.SrtpUnprotectError"));
+  EXPECT_EQ(
+      1, webrtc::metrics::NumEvents("WebRTC.PeerConnection.SrtpUnprotectError",
+                                    srtp_err_status_bad_param));
   EXPECT_FALSE(s2_.UnprotectRtcp(rtcp_packet_, rtcp_len_, &out_len));
-  EXPECT_TRUE(metrics_observer->ExpectOnlySingleEnumCount(
-      webrtc::kEnumCounterSrtcpUnprotectError, srtp_err_status_auth_fail));
+  EXPECT_EQ(1, webrtc::metrics::NumSamples(
+                   "WebRTC.PeerConnection.SrtcpUnprotectError"));
+  EXPECT_EQ(
+      1, webrtc::metrics::NumEvents("WebRTC.PeerConnection.SrtcpUnprotectError",
+                                    srtp_err_status_auth_fail));
 }
 
 // Test that we fail to unprotect if the payloads are not authenticated.
 TEST_F(SrtpSessionTest, TestUnencryptReject) {
-  rtc::scoped_refptr<FakeMetricsObserver> metrics_observer(
-      new rtc::RefCountedObject<FakeMetricsObserver>());
-  s2_.SetMetricsObserver(metrics_observer);
   int out_len;
   EXPECT_TRUE(s1_.SetSend(SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen,
                           kEncryptedHeaderExtensionIds));
   EXPECT_TRUE(s2_.SetRecv(SRTP_AES128_CM_SHA1_80, kTestKey1, kTestKeyLen,
                           kEncryptedHeaderExtensionIds));
   EXPECT_FALSE(s2_.UnprotectRtp(rtp_packet_, rtp_len_, &out_len));
-  EXPECT_TRUE(metrics_observer->ExpectOnlySingleEnumCount(
-      webrtc::kEnumCounterSrtpUnprotectError, srtp_err_status_auth_fail));
+  EXPECT_EQ(1, webrtc::metrics::NumSamples(
+                   "WebRTC.PeerConnection.SrtpUnprotectError"));
+  EXPECT_EQ(
+      1, webrtc::metrics::NumEvents("WebRTC.PeerConnection.SrtpUnprotectError",
+                                    srtp_err_status_auth_fail));
   EXPECT_FALSE(s2_.UnprotectRtcp(rtcp_packet_, rtcp_len_, &out_len));
-  EXPECT_TRUE(metrics_observer->ExpectOnlySingleEnumCount(
-      webrtc::kEnumCounterSrtcpUnprotectError, srtp_err_status_cant_check));
+  EXPECT_EQ(1, webrtc::metrics::NumSamples(
+                   "WebRTC.PeerConnection.SrtcpUnprotectError"));
+  EXPECT_EQ(
+      1, webrtc::metrics::NumEvents("WebRTC.PeerConnection.SrtcpUnprotectError",
+                                    srtp_err_status_cant_check));
 }
 
 // Test that we fail when using buffers that are too small.

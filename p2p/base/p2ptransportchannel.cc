@@ -28,6 +28,7 @@
 #include "rtc_base/stringencode.h"
 #include "rtc_base/timeutils.h"
 #include "system_wrappers/include/field_trial.h"
+#include "system_wrappers/include/metrics.h"
 
 namespace {
 
@@ -675,7 +676,7 @@ void P2PTransportChannel::MaybeStartGathering() {
       SignalGatheringState(this);
     }
 
-    if (metrics_observer_ && !allocator_sessions_.empty()) {
+    if (!allocator_sessions_.empty()) {
       IceRestartState state;
       if (writable()) {
         state = IceRestartState::CONNECTED;
@@ -684,9 +685,9 @@ void P2PTransportChannel::MaybeStartGathering() {
       } else {
         state = IceRestartState::DISCONNECTED;
       }
-      metrics_observer_->IncrementEnumCounter(
-          webrtc::kEnumCounterIceRestart, static_cast<int>(state),
-          static_cast<int>(IceRestartState::MAX_VALUE));
+      RTC_HISTOGRAM_ENUMERATION("WebRTC.PeerConnection.IceRestartState",
+                                static_cast<int>(state),
+                                static_cast<int>(IceRestartState::MAX_VALUE));
     }
 
     // Time for a new allocator.
