@@ -41,6 +41,14 @@ class CallbackLogSink : public rtc::LogSink {
 
 @synthesize severity = _severity;
 
+- (instancetype)init {
+  self = [super init];
+  if (self != nil) {
+    _severity = RTCLoggingSeverityInfo;
+  }
+  return self;
+}
+
 - (void)dealloc {
   [self stop];
 }
