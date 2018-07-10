@@ -415,18 +415,6 @@ if (use_libfuzzer || use_drfuzz || use_afl) {
 }
 
 if (rtc_include_tests) {
-  config("rtc_unittests_config") {
-    # GN orders flags on a target before flags from configs. The default config
-    # adds -Wall, and this flag have to be after -Wall -- so they need to
-    # come from a config and can"t be on the target directly.
-    if (is_clang) {
-      cflags = [
-        "-Wno-sign-compare",
-        "-Wno-unused-const-variable",
-      ]
-    }
-  }
-
   rtc_test("rtc_unittests") {
     testonly = true
 
@@ -545,7 +533,6 @@ if (rtc_include_tests) {
 
   rtc_test("webrtc_perf_tests") {
     testonly = true
-    configs += [ ":rtc_unittests_config" ]
     deps = [
       "audio:audio_perf_tests",
       "call:call_perf_tests",
