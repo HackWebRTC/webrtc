@@ -27,8 +27,26 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
       video_coding::PacketBuffer::Create(&clock, 8, 1024, &callback));
   test::FuzzDataHelper helper(rtc::ArrayView<const uint8_t>(data, size));
 
-  while (helper.BytesLeft())
+  while (helper.BytesLeft()) {
+    // The RTPVideoHeader is a complex type, so overwriting it with random data
+    // will put it in an invalid state. Therefore we save/restore it.
+    uint8_t video_header_backup[sizeof(packet.video_header)];
+    memcpy(&video_header_backup, &packet.video_header,
+           sizeof(packet.video_header));
+
     helper.CopyTo(&packet);
+
+    memcpy(&packet.video_header, &video_header_backup,
+           sizeof(packet.video_header));
+
+    // The packet buffer owns the payload of the packet.
+    uint8_t payload_size;
+    helper.CopyTo(&payload_size);
+    packet.sizeBytes = payload_size;
+    packet.dataPtr = new uint8_t[payload_size];
+
+    packet_buffer->InsertPacket(&packet);
+  }
 }
 
 }  // namespace webrtc
