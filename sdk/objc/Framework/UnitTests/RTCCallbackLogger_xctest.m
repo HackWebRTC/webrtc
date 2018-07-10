@@ -30,6 +30,10 @@
   self.logger = nil;
 }
 
+- (void)testDefaultSeverityLevel {
+  XCTAssertEqual(self.logger.severity, RTCLoggingSeverityInfo);
+}
+
 - (void)testCallbackGetsCalledForAppropriateLevel {
   self.logger.severity = RTCLoggingSeverityWarning;
 
