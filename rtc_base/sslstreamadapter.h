@@ -22,6 +22,7 @@ namespace rtc {
 
 // Constants for SSL profile.
 const int TLS_NULL_WITH_NULL_NULL = 0;
+const int SSL_CIPHER_SUITE_MAX_VALUE = 0xFFFF;
 
 // Constants for SRTP profiles.
 const int SRTP_INVALID_CRYPTO_SUITE = 0;
@@ -37,6 +38,7 @@ const int SRTP_AEAD_AES_128_GCM = 0x0007;
 #ifndef SRTP_AEAD_AES_256_GCM
 const int SRTP_AEAD_AES_256_GCM = 0x0008;
 #endif
+const int SRTP_CRYPTO_SUITE_MAX_VALUE = 0xFFFF;
 
 // Names of SRTP profiles listed above.
 // 128-bit AES with 80-bit SHA-1 HMAC.

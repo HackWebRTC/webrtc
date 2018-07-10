@@ -127,6 +127,9 @@
 
 // Histogram for enumerators (evenly spaced buckets).
 // |boundary| should be above the max enumerator sample.
+//
+// TODO(qingsi): Refactor the default implementation given by RtcHistogram,
+// which is already sparse, and remove the boundary argument from the macro.
 #define RTC_HISTOGRAM_ENUMERATION_SPARSE(name, sample, boundary) \
   RTC_HISTOGRAM_COMMON_BLOCK(                                    \
       name, sample,                                              \

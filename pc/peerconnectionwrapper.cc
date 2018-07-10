@@ -320,12 +320,4 @@ PeerConnectionWrapper::GetStats() {
   return callback->report();
 }
 
-rtc::scoped_refptr<FakeMetricsObserver>
-PeerConnectionWrapper::RegisterFakeMetricsObserver() {
-  RTC_DCHECK(!fake_metrics_observer_);
-  fake_metrics_observer_ = new rtc::RefCountedObject<FakeMetricsObserver>();
-  pc_->RegisterUMAObserver(fake_metrics_observer_);
-  return fake_metrics_observer_;
-}
-
 }  // namespace webrtc

@@ -206,6 +206,7 @@ rtc_static_library("peerconnection") {
     "../stats",
     "../system_wrappers",
     "../system_wrappers:field_trial_api",
+    "../system_wrappers:metrics_api",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
@@ -296,7 +297,6 @@ if (rtc_include_tests) {
       ":rtc_pc",
       ":rtc_pc_base",
       "../api:array_view",
-      "../api:fakemetricsobserver",
       "../api:libjingle_peerconnection_api",
       "../call:rtp_interfaces",
       "../logging:rtc_event_log_api",
@@ -334,7 +334,6 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":pc_test_utils",
-      "../api:fakemetricsobserver",
       "../api:libjingle_peerconnection_api",
       "../api:libjingle_peerconnection_test_api",
       "../api:rtc_stats_api",
@@ -494,7 +493,6 @@ if (rtc_include_tests) {
       ":pc_test_utils",
       "..:webrtc_common",
       "../api:callfactory_api",
-      "../api:fakemetricsobserver",
       "../api:libjingle_peerconnection_test_api",
       "../api:rtc_stats_api",
       "../api/audio_codecs:audio_codecs_api",

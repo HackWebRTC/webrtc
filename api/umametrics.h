@@ -176,13 +176,13 @@ class MetricsObserverInterface : public rtc::RefCountInterface {
   // number after the highest counter.
   virtual void IncrementEnumCounter(PeerConnectionEnumCounterType type,
                                     int counter,
-                                    int counter_max) {}
+                                    int counter_max) = 0;
 
   // This is used to handle sparse counters like SSL cipher suites.
   // TODO(guoweis): Remove the implementation once the dependency's interface
   // definition is updated.
   virtual void IncrementSparseEnumCounter(PeerConnectionEnumCounterType type,
-                                          int counter);
+                                          int counter) = 0;
 
   virtual void AddHistogramSample(PeerConnectionMetricsName type,
                                   int value) = 0;
