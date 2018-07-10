@@ -9,6 +9,7 @@
  */
 #include <stdio.h>
 
+#include "media/base/vp9_profile.h"
 #include "rtc_base/experiments/alr_experiment.h"
 #include "rtc_base/flags.h"
 #include "test/field_trial.h"
@@ -109,6 +110,30 @@ TEST(FullStackTest, ForemanCifPlr5Vp9) {
   foreman_cif.pipe.loss_percent = 5;
   foreman_cif.pipe.queue_delay_ms = 50;
   fixture->RunWithAnalyzer(foreman_cif);
+}
+
+// Disabled until https://bugs.chromium.org/p/webm/issues/detail?id=1544 is
+// solved.
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_GeneratorWithoutPacketLossVp9Profile2 \
+  DISABLED_GeneratorWithoutPacketLossVp9Profile2
+#else
+#define MAYBE_GeneratorWithoutPacketLossVp9Profile2 \
+  GeneratorWithoutPacketLossVp9Profile2
+#endif
+TEST(FullStackTest, MAYBE_GeneratorWithoutPacketLossVp9Profile2) {
+  auto fixture = CreateVideoQualityTestFixture();
+
+  SdpVideoFormat::Parameters vp92 = {
+      {kVP9FmtpProfileId, VP9ProfileToString(VP9Profile::kProfile2)}};
+  ParamsWithLogging generator;
+  generator.call.send_side_bwe = true;
+  generator.video[0] = {
+      true, 352, 288, 30,    700000, 700000, 700000,          false, "VP9",
+      1,    0,   0,   false, false,  false,  "GeneratorI010", 0,     vp92};
+  generator.analyzer = {"generator_net_delay_0_0_plr_0_VP9Profile2", 0.0, 0.0,
+                        kFullStackTestDurationSecs};
+  fixture->RunWithAnalyzer(generator);
 }
 
 TEST(FullStackTest, ForemanCifWithoutPacketLossMultiplexI420Frame) {

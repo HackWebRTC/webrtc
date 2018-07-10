@@ -92,9 +92,8 @@ VideoQualityTest::TestVideoEncoderFactory::CreateVideoEncoder(
   } else if (format.name == "multiplex") {
     return absl::make_unique<MultiplexEncoderAdapter>(
         &internal_encoder_factory_, SdpVideoFormat(cricket::kVp9CodecName));
-  } else {
-    return internal_encoder_factory_.CreateVideoEncoder(format);
   }
+  return internal_encoder_factory_.CreateVideoEncoder(format);
 }
 
 VideoQualityTest::VideoQualityTest(
@@ -391,7 +390,6 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
     RTC_CHECK_GT(num_video_substreams, 0);
     CreateVideoSendConfig(&video_send_configs_[video_idx], num_video_substreams,
                           total_streams_used, send_transport);
-
     int payload_type;
     if (params_.video[video_idx].codec == "H264") {
       payload_type = kPayloadTypeH264;
@@ -434,6 +432,9 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
 
     video_encoder_configs_[video_idx].video_format.name =
         params_.video[video_idx].codec;
+
+    video_encoder_configs_[video_idx].video_format.parameters =
+        params_.video[video_idx].sdp_params;
 
     video_encoder_configs_[video_idx].codec_type =
         PayloadStringToCodecType(params_.video[video_idx].codec);
@@ -813,6 +814,12 @@ void VideoQualityTest::CreateCapturers() {
             static_cast<int>(params_.video[video_idx].width),
             static_cast<int>(params_.video[video_idx].height),
             test::FrameGenerator::OutputType::I420A, absl::nullopt,
+            params_.video[video_idx].fps, clock_));
+      } else if (params_.video[video_idx].clip_name == "GeneratorI010") {
+        video_capturers_[video_idx].reset(test::FrameGeneratorCapturer::Create(
+            static_cast<int>(params_.video[video_idx].width),
+            static_cast<int>(params_.video[video_idx].height),
+            test::FrameGenerator::OutputType::I010, absl::nullopt,
             params_.video[video_idx].fps, clock_));
       } else if (params_.video[video_idx].clip_name.empty()) {
         video_capturers_[video_idx].reset(test::VcmCapturer::Create(

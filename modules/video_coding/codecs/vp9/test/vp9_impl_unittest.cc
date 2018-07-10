@@ -10,11 +10,13 @@
 
 #include "api/video/i420_buffer.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "media/base/vp9_profile.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/video_coding/codecs/test/video_codec_unittest.h"
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
 #include "modules/video_coding/codecs/vp9/svc_config.h"
 #include "test/video_codec_settings.h"
+#include "third_party/libyuv/include/libyuv/convert.h"
 
 namespace webrtc {
 
@@ -458,6 +460,56 @@ TEST_F(TestVp9ImplFrameDropping, PreEncodeFrameDropping) {
   const float encoded_framerate_fps = num_encoded_frames / video_duration_secs;
   EXPECT_NEAR(encoded_framerate_fps, expected_framerate_fps,
               max_abs_framerate_error_fps);
+}
+
+class TestVp9ImplProfile2 : public TestVp9Impl {
+ protected:
+  void SetUp() override {
+    TestVp9Impl::SetUp();
+    input_frame_generator_ = test::FrameGenerator::CreateSquareGenerator(
+        codec_settings_.width, codec_settings_.height,
+        test::FrameGenerator::OutputType::I010, absl::optional<int>());
+  }
+
+  std::unique_ptr<VideoEncoder> CreateEncoder() override {
+    cricket::VideoCodec profile2_codec;
+    profile2_codec.SetParam(kVP9FmtpProfileId,
+                            VP9ProfileToString(VP9Profile::kProfile2));
+    return VP9Encoder::Create(profile2_codec);
+  }
+
+  std::unique_ptr<VideoDecoder> CreateDecoder() override {
+    return VP9Decoder::Create();
+  }
+};
+
+// Disabled until https://bugs.chromium.org/p/webm/issues/detail?id=1544 is
+// solved.
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_EncodeDecode DISABLED_EncodeDecode
+#else
+#define MAYBE_EncodeDecode EncodeDecode
+#endif
+TEST_F(TestVp9ImplProfile2, MAYBE_EncodeDecode) {
+  VideoFrame* input_frame = NextInputFrame();
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->Encode(*input_frame, nullptr, nullptr));
+  EncodedImage encoded_frame;
+  CodecSpecificInfo codec_specific_info;
+  ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
+  // First frame should be a key frame.
+  encoded_frame._frameType = kVideoFrameKey;
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            decoder_->Decode(encoded_frame, false, nullptr, 0));
+  std::unique_ptr<VideoFrame> decoded_frame;
+  absl::optional<uint8_t> decoded_qp;
+  ASSERT_TRUE(WaitForDecodedFrame(&decoded_frame, &decoded_qp));
+  ASSERT_TRUE(decoded_frame);
+
+  // TODO(emircan): Add PSNR for different color depths.
+  EXPECT_GT(I420PSNR(*input_frame->video_frame_buffer()->ToI420(),
+                     *decoded_frame->video_frame_buffer()->ToI420()),
+            31);
 }
 
 }  // namespace webrtc
