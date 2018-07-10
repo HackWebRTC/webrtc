@@ -13,6 +13,7 @@
 #include <memory>
 
 #include "absl/memory/memory.h"
+#include "api/fakemetricsobserver.h"
 #include "p2p/base/fakeportallocator.h"
 #include "p2p/base/icetransportinternal.h"
 #include "p2p/base/p2ptransportchannel.h"
@@ -36,7 +37,6 @@
 #include "rtc_base/ssladapter.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/virtualsocketserver.h"
-#include "system_wrappers/include/metrics_default.h"
 
 namespace {
 
@@ -207,10 +207,15 @@ class P2PTransportChannelTestBase : public testing::Test,
     ep1_.allocator_.reset(
         CreateBasicPortAllocator(&ep1_.network_manager_, stun_servers,
                                  kTurnUdpIntAddr, rtc::SocketAddress()));
+    ep1_.metrics_observer_ =
+        new rtc::RefCountedObject<webrtc::FakeMetricsObserver>();
+    ep1_.allocator_->SetMetricsObserver(ep1_.metrics_observer_);
     ep2_.allocator_.reset(
         CreateBasicPortAllocator(&ep2_.network_manager_, stun_servers,
                                  kTurnUdpIntAddr, rtc::SocketAddress()));
-    webrtc::metrics::Reset();
+    ep2_.metrics_observer_ =
+        new rtc::RefCountedObject<webrtc::FakeMetricsObserver>();
+    ep2_.allocator_->SetMetricsObserver(ep2_.metrics_observer_);
   }
 
  protected:
@@ -277,7 +282,7 @@ class P2PTransportChannelTestBase : public testing::Test,
     Candidates candidates;
   };
 
-  struct Endpoint : public sigslot::has_slots<> {
+  struct Endpoint {
     Endpoint()
         : role_(ICEROLE_UNKNOWN),
           tiebreaker_(0),
@@ -308,15 +313,10 @@ class P2PTransportChannelTestBase : public testing::Test,
       allocator_->set_allow_tcp_listen(allow_tcp_listen);
     }
 
-    void OnIceRegathering(PortAllocatorSession*, IceRegatheringReason reason) {
-      ++ice_regathering_counter_[reason];
-    }
-
-    int GetIceRegatheringCountForReason(IceRegatheringReason reason) {
-      return ice_regathering_counter_[reason];
-    }
-
     rtc::FakeNetworkManager network_manager_;
+    // |metrics_observer_| should outlive |allocator_| as the former may be
+    // used by the latter.
+    rtc::scoped_refptr<webrtc::FakeMetricsObserver> metrics_observer_;
     std::unique_ptr<BasicPortAllocator> allocator_;
     ChannelData cd1_;
     ChannelData cd2_;
@@ -326,7 +326,6 @@ class P2PTransportChannelTestBase : public testing::Test,
     bool save_candidates_;
     std::vector<std::unique_ptr<CandidatesData>> saved_candidates_;
     bool ready_to_send_ = false;
-    std::map<IceRegatheringReason, int> ice_regathering_counter_;
   };
 
   ChannelData* GetChannelData(rtc::PacketTransportInternal* transport) {
@@ -354,14 +353,12 @@ class P2PTransportChannelTestBase : public testing::Test,
                                       ice_ep1_cd1_ch, ice_ep2_cd1_ch));
     ep2_.cd1_.ch_.reset(CreateChannel(1, ICE_CANDIDATE_COMPONENT_DEFAULT,
                                       ice_ep2_cd1_ch, ice_ep1_cd1_ch));
+    ep1_.cd1_.ch_->SetMetricsObserver(ep1_.metrics_observer_);
+    ep2_.cd1_.ch_->SetMetricsObserver(ep2_.metrics_observer_);
     ep1_.cd1_.ch_->SetIceConfig(ep1_config);
     ep2_.cd1_.ch_->SetIceConfig(ep2_config);
     ep1_.cd1_.ch_->MaybeStartGathering();
     ep2_.cd1_.ch_->MaybeStartGathering();
-    ep1_.cd1_.ch_->allocator_session()->SignalIceRegathering.connect(
-        &ep1_, &Endpoint::OnIceRegathering);
-    ep2_.cd1_.ch_->allocator_session()->SignalIceRegathering.connect(
-        &ep2_, &Endpoint::OnIceRegathering);
   }
 
   void CreateChannels() {
@@ -443,6 +440,9 @@ class P2PTransportChannelTestBase : public testing::Test,
   }
   BasicPortAllocator* GetAllocator(int endpoint) {
     return GetEndpoint(endpoint)->allocator_.get();
+  }
+  webrtc::FakeMetricsObserver* GetMetricsObserver(int endpoint) {
+    return GetEndpoint(endpoint)->metrics_observer_;
   }
   void AddAddress(int endpoint, const SocketAddress& addr) {
     GetEndpoint(endpoint)->network_manager_.AddInterface(addr);
@@ -1266,15 +1266,15 @@ TEST_F(P2PTransportChannelTest, TestUMAIceRestartWhileDisconnected) {
   ep1_ch1()->SetIceParameters(kIceParams[2]);
   ep1_ch1()->SetRemoteIceParameters(kIceParams[3]);
   ep1_ch1()->MaybeStartGathering();
-  EXPECT_EQ(1, webrtc::metrics::NumEvents(
-                   "WebRTC.PeerConnection.IceRestartState",
+  EXPECT_EQ(1, GetMetricsObserver(0)->GetEnumCounter(
+                   webrtc::kEnumCounterIceRestart,
                    static_cast<int>(IceRestartState::DISCONNECTED)));
 
   ep2_ch1()->SetIceParameters(kIceParams[3]);
   ep2_ch1()->SetRemoteIceParameters(kIceParams[2]);
   ep2_ch1()->MaybeStartGathering();
-  EXPECT_EQ(2, webrtc::metrics::NumEvents(
-                   "WebRTC.PeerConnection.IceRestartState",
+  EXPECT_EQ(1, GetMetricsObserver(1)->GetEnumCounter(
+                   webrtc::kEnumCounterIceRestart,
                    static_cast<int>(IceRestartState::DISCONNECTED)));
 
   DestroyChannels();
@@ -1295,15 +1295,15 @@ TEST_F(P2PTransportChannelTest, TestUMAIceRestartWhileConnected) {
   ep1_ch1()->SetIceParameters(kIceParams[2]);
   ep1_ch1()->SetRemoteIceParameters(kIceParams[3]);
   ep1_ch1()->MaybeStartGathering();
-  EXPECT_EQ(1, webrtc::metrics::NumEvents(
-                   "WebRTC.PeerConnection.IceRestartState",
+  EXPECT_EQ(1, GetMetricsObserver(0)->GetEnumCounter(
+                   webrtc::kEnumCounterIceRestart,
                    static_cast<int>(IceRestartState::CONNECTED)));
 
   ep2_ch1()->SetIceParameters(kIceParams[3]);
   ep2_ch1()->SetRemoteIceParameters(kIceParams[2]);
   ep2_ch1()->MaybeStartGathering();
-  EXPECT_EQ(2, webrtc::metrics::NumEvents(
-                   "WebRTC.PeerConnection.IceRestartState",
+  EXPECT_EQ(1, GetMetricsObserver(1)->GetEnumCounter(
+                   webrtc::kEnumCounterIceRestart,
                    static_cast<int>(IceRestartState::CONNECTED)));
 
   DestroyChannels();
@@ -1321,15 +1321,15 @@ TEST_F(P2PTransportChannelTest, TestUMAIceRestartWhileConnecting) {
   ep1_ch1()->SetIceParameters(kIceParams[2]);
   ep1_ch1()->SetRemoteIceParameters(kIceParams[3]);
   ep1_ch1()->MaybeStartGathering();
-  EXPECT_EQ(1, webrtc::metrics::NumEvents(
-                   "WebRTC.PeerConnection.IceRestartState",
+  EXPECT_EQ(1, GetMetricsObserver(0)->GetEnumCounter(
+                   webrtc::kEnumCounterIceRestart,
                    static_cast<int>(IceRestartState::CONNECTING)));
 
   ep2_ch1()->SetIceParameters(kIceParams[3]);
   ep2_ch1()->SetRemoteIceParameters(kIceParams[2]);
   ep2_ch1()->MaybeStartGathering();
-  EXPECT_EQ(2, webrtc::metrics::NumEvents(
-                   "WebRTC.PeerConnection.IceRestartState",
+  EXPECT_EQ(1, GetMetricsObserver(1)->GetEnumCounter(
+                   webrtc::kEnumCounterIceRestart,
                    static_cast<int>(IceRestartState::CONNECTING)));
 
   DestroyChannels();
@@ -1355,10 +1355,12 @@ TEST_F(P2PTransportChannelTest,
 
   // Adding address in ep1 will trigger continual gathering.
   AddAddress(0, kAlternateAddrs[0]);
-  EXPECT_EQ_SIMULATED_WAIT(1,
-                           GetEndpoint(0)->GetIceRegatheringCountForReason(
-                               IceRegatheringReason::NETWORK_CHANGE),
-                           kDefaultTimeout, clock);
+  EXPECT_EQ_SIMULATED_WAIT(
+      1,
+      GetMetricsObserver(0)->GetEnumCounter(
+          webrtc::kEnumCounterIceRegathering,
+          static_cast<int>(IceRegatheringReason::NETWORK_CHANGE)),
+      kDefaultTimeout, clock);
 
   ep2_ch1()->SetIceParameters(kIceParams[3]);
   ep2_ch1()->SetRemoteIceParameters(kIceParams[2]);
@@ -1367,8 +1369,9 @@ TEST_F(P2PTransportChannelTest,
   AddAddress(1, kAlternateAddrs[1]);
   SIMULATED_WAIT(false, kDefaultTimeout, clock);
   // ep2 has not enabled continual gathering.
-  EXPECT_EQ(0, GetEndpoint(1)->GetIceRegatheringCountForReason(
-                   IceRegatheringReason::NETWORK_CHANGE));
+  EXPECT_EQ(0, GetMetricsObserver(1)->GetEnumCounter(
+                   webrtc::kEnumCounterIceRegathering,
+                   static_cast<int>(IceRegatheringReason::NETWORK_CHANGE)));
 
   DestroyChannels();
 }
@@ -1396,13 +1399,12 @@ TEST_F(P2PTransportChannelTest,
   // Timeout value such that all connections are deleted.
   const int kNetworkFailureTimeout = 35000;
   SIMULATED_WAIT(false, kNetworkFailureTimeout, clock);
-  EXPECT_LE(1, GetEndpoint(0)->GetIceRegatheringCountForReason(
-                   IceRegatheringReason::NETWORK_FAILURE));
-  EXPECT_LE(1, webrtc::metrics::NumEvents(
-                   "WebRTC.PeerConnection.IceRegatheringReason",
+  EXPECT_LE(1, GetMetricsObserver(0)->GetEnumCounter(
+                   webrtc::kEnumCounterIceRegathering,
                    static_cast<int>(IceRegatheringReason::NETWORK_FAILURE)));
-  EXPECT_EQ(0, GetEndpoint(1)->GetIceRegatheringCountForReason(
-                   IceRegatheringReason::NETWORK_FAILURE));
+  EXPECT_EQ(0, GetMetricsObserver(1)->GetEnumCounter(
+                   webrtc::kEnumCounterIceRegathering,
+                   static_cast<int>(IceRegatheringReason::NETWORK_FAILURE)));
 
   DestroyChannels();
 }
@@ -1431,14 +1433,13 @@ TEST_F(P2PTransportChannelTest, TestIceRegatherOnAllNetworksContinual) {
   const int kNetworkGatherDuration = 11000;
   SIMULATED_WAIT(false, kNetworkGatherDuration, clock);
   // Expect regathering to happen 5 times in 11s with 2s interval.
-  EXPECT_LE(5, GetEndpoint(0)->GetIceRegatheringCountForReason(
-                   IceRegatheringReason::OCCASIONAL_REFRESH));
-  EXPECT_LE(5, webrtc::metrics::NumEvents(
-                   "WebRTC.PeerConnection.IceRegatheringReason",
+  EXPECT_LE(5, GetMetricsObserver(0)->GetEnumCounter(
+                   webrtc::kEnumCounterIceRegathering,
                    static_cast<int>(IceRegatheringReason::OCCASIONAL_REFRESH)));
   // Expect no regathering if continual gathering not configured.
-  EXPECT_EQ(0, GetEndpoint(1)->GetIceRegatheringCountForReason(
-                   IceRegatheringReason::OCCASIONAL_REFRESH));
+  EXPECT_EQ(0, GetMetricsObserver(1)->GetEnumCounter(
+                   webrtc::kEnumCounterIceRegathering,
+                   static_cast<int>(IceRegatheringReason::OCCASIONAL_REFRESH)));
 
   DestroyChannels();
 }
@@ -1483,8 +1484,10 @@ class P2PTransportRegatherAllNetworksTest : public P2PTransportChannelTest {
     const int kWaitRegather =
         kRegatherInterval * kNumRegathers + kRegatherInterval / 2;
     SIMULATED_WAIT(false, kWaitRegather, clock);
-    EXPECT_EQ(kNumRegathers, GetEndpoint(0)->GetIceRegatheringCountForReason(
-                                 IceRegatheringReason::OCCASIONAL_REFRESH));
+    EXPECT_EQ(kNumRegathers,
+              GetMetricsObserver(0)->GetEnumCounter(
+                  webrtc::kEnumCounterIceRegathering,
+                  static_cast<int>(IceRegatheringReason::OCCASIONAL_REFRESH)));
 
     const Connection* new_selected = ep1_ch1()->selected_connection();
 
