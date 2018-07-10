@@ -23,11 +23,6 @@ class MultiStreamEndToEndTest
  public:
   MultiStreamEndToEndTest() : field_trial_(GetParam()) {}
 
-  virtual ~MultiStreamEndToEndTest() {
-    EXPECT_EQ(nullptr, video_send_stream_);
-    EXPECT_TRUE(video_receive_streams_.empty());
-  }
-
  private:
   test::ScopedFieldTrials field_trial_;
 };

@@ -162,9 +162,6 @@ class MultiCodecReceiveTest : public test::CallTest {
   }
 
   virtual ~MultiCodecReceiveTest() {
-    EXPECT_EQ(nullptr, video_send_stream_);
-    EXPECT_TRUE(video_receive_streams_.empty());
-
     task_queue_.SendTask([this]() {
       send_transport_.reset();
       receive_transport_.reset();

@@ -26,11 +26,6 @@ class BandwidthEndToEndTest : public test::CallTest,
  public:
   BandwidthEndToEndTest() : field_trial_(GetParam()) {}
 
-  virtual ~BandwidthEndToEndTest() {
-    EXPECT_EQ(nullptr, video_send_stream_);
-    EXPECT_TRUE(video_receive_streams_.empty());
-  }
-
  private:
   test::ScopedFieldTrials field_trial_;
 };

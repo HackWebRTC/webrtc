@@ -19,8 +19,6 @@ class ProbingEndToEndTest : public test::CallTest,
   ProbingEndToEndTest() : field_trial_(GetParam()) {}
 
   virtual ~ProbingEndToEndTest() {
-    EXPECT_EQ(nullptr, video_send_stream_);
-    EXPECT_TRUE(video_receive_streams_.empty());
   }
 
  private:
@@ -40,8 +38,6 @@ class ProbingTest : public test::EndToEndTest {
         start_bitrate_bps_(start_bitrate_bps),
         state_(0),
         sender_call_(nullptr) {}
-
-  ~ProbingTest() {}
 
   Call::Config GetSenderCallConfig() override {
     Call::Config config(event_log_.get());

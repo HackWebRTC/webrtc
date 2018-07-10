@@ -23,11 +23,6 @@ class FecEndToEndTest : public test::CallTest,
  public:
   FecEndToEndTest() : field_trial_(GetParam()) {}
 
-  virtual ~FecEndToEndTest() {
-    EXPECT_EQ(nullptr, video_send_stream_);
-    EXPECT_TRUE(video_receive_streams_.empty());
-  }
-
  private:
   test::ScopedFieldTrials field_trial_;
 };
