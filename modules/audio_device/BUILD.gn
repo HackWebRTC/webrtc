@@ -29,7 +29,6 @@ config("audio_device_warnings_config") {
       "-Wno-bool-conversion",
       "-Wno-delete-non-virtual-dtor",
       "-Wno-logical-op-parentheses",
-      "-Wno-microsoft-extra-qualification",
       "-Wno-microsoft-goto",
       "-Wno-reorder",
       "-Wno-shift-overflow",

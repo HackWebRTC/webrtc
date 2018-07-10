@@ -60,7 +60,7 @@ class ScopedCOMInitializer {
     Initialize(COINIT_MULTITHREADED);
   }
 
-  ScopedCOMInitializer::~ScopedCOMInitializer() {
+  ~ScopedCOMInitializer() {
     if (SUCCEEDED(hr_))
       CoUninitialize();
   }
