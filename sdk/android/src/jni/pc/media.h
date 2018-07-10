@@ -29,8 +29,6 @@ class VideoDecoderFactory;
 
 namespace cricket {
 class MediaEngineInterface;
-class WebRtcVideoEncoderFactory;
-class WebRtcVideoDecoderFactory;
 }  // namespace cricket
 
 namespace webrtc {
@@ -38,15 +36,6 @@ namespace jni {
 
 CallFactoryInterface* CreateCallFactory();
 RtcEventLogFactoryInterface* CreateRtcEventLogFactory();
-
-cricket::MediaEngineInterface* CreateMediaEngine(
-    AudioDeviceModule* adm,
-    const rtc::scoped_refptr<AudioEncoderFactory>& audio_encoder_factory,
-    const rtc::scoped_refptr<AudioDecoderFactory>& audio_decoder_factory,
-    cricket::WebRtcVideoEncoderFactory* video_encoder_factory,
-    cricket::WebRtcVideoDecoderFactory* video_decoder_factory,
-    rtc::scoped_refptr<AudioMixer> audio_mixer,
-    rtc::scoped_refptr<AudioProcessing> audio_processor);
 
 cricket::MediaEngineInterface* CreateMediaEngine(
     rtc::scoped_refptr<AudioDeviceModule> adm,

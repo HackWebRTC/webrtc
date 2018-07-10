@@ -10,6 +10,9 @@
 
 #include "sdk/android/src/jni/pc/video.h"
 
+#include "api/video_codecs/video_decoder_factory.h"
+#include "api/video_codecs/video_encoder_factory.h"
+
 namespace webrtc {
 namespace jni {
 
@@ -26,10 +29,10 @@ VideoDecoderFactory* CreateVideoDecoderFactory(
 }
 
 void SetEglContext(JNIEnv* env,
-                   cricket::WebRtcVideoEncoderFactory* encoder_factory,
+                   VideoEncoderFactory* encoder_factory,
                    const JavaRef<jobject>& egl_context) {}
 void SetEglContext(JNIEnv* env,
-                   cricket::WebRtcVideoDecoderFactory* decoder_factory,
+                   VideoDecoderFactory* decoder_factory,
                    const JavaRef<jobject>& egl_context) {}
 
 void* CreateVideoSource(JNIEnv* env,
@@ -39,28 +42,21 @@ void* CreateVideoSource(JNIEnv* env,
   return nullptr;
 }
 
-void SetEglContext(JNIEnv* env,
-                   cricket::WebRtcVideoEncoderFactory* encoder_factory,
-                   jobject egl_context) {}
-void SetEglContext(JNIEnv* env,
-                   cricket::WebRtcVideoDecoderFactory* decoder_factory,
-                   jobject egl_context) {}
-
-cricket::WebRtcVideoEncoderFactory* CreateLegacyVideoEncoderFactory() {
+std::unique_ptr<VideoEncoderFactory> CreateLegacyVideoEncoderFactory() {
   return nullptr;
 }
 
-cricket::WebRtcVideoDecoderFactory* CreateLegacyVideoDecoderFactory() {
+std::unique_ptr<VideoDecoderFactory> CreateLegacyVideoDecoderFactory() {
   return nullptr;
 }
 
-VideoEncoderFactory* WrapLegacyVideoEncoderFactory(
-    cricket::WebRtcVideoEncoderFactory* legacy_encoder_factory) {
+std::unique_ptr<VideoEncoderFactory> WrapLegacyVideoEncoderFactory(
+    std::unique_ptr<VideoEncoderFactory> legacy_encoder_factory) {
   return nullptr;
 }
 
-VideoDecoderFactory* WrapLegacyVideoDecoderFactory(
-    cricket::WebRtcVideoDecoderFactory* legacy_decoder_factory) {
+std::unique_ptr<VideoDecoderFactory> WrapLegacyVideoDecoderFactory(
+    std::unique_ptr<VideoDecoderFactory> legacy_decoder_factory) {
   return nullptr;
 }
 

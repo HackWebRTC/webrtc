@@ -17,11 +17,6 @@
 #include "rtc_base/thread.h"
 #include "sdk/android/native_api/jni/scoped_java_ref.h"
 
-namespace cricket {
-class WebRtcVideoEncoderFactory;
-class WebRtcVideoDecoderFactory;
-}  // namespace cricket
-
 namespace webrtc {
 class VideoEncoderFactory;
 class VideoDecoderFactory;
@@ -39,10 +34,10 @@ VideoDecoderFactory* CreateVideoDecoderFactory(
     const JavaRef<jobject>& j_decoder_factory);
 
 void SetEglContext(JNIEnv* env,
-                   cricket::WebRtcVideoEncoderFactory* encoder_factory,
+                   VideoEncoderFactory* encoder_factory,
                    const JavaRef<jobject>& egl_context);
 void SetEglContext(JNIEnv* env,
-                   cricket::WebRtcVideoDecoderFactory* decoder_factory,
+                   VideoDecoderFactory* decoder_factory,
                    const JavaRef<jobject>& egl_context);
 
 void* CreateVideoSource(JNIEnv* env,
@@ -50,13 +45,13 @@ void* CreateVideoSource(JNIEnv* env,
                         rtc::Thread* worker_thread,
                         jboolean is_screencast);
 
-cricket::WebRtcVideoEncoderFactory* CreateLegacyVideoEncoderFactory();
-cricket::WebRtcVideoDecoderFactory* CreateLegacyVideoDecoderFactory();
+std::unique_ptr<VideoEncoderFactory> CreateLegacyVideoEncoderFactory();
+std::unique_ptr<VideoDecoderFactory> CreateLegacyVideoDecoderFactory();
 
-VideoEncoderFactory* WrapLegacyVideoEncoderFactory(
-    cricket::WebRtcVideoEncoderFactory* legacy_encoder_factory);
-VideoDecoderFactory* WrapLegacyVideoDecoderFactory(
-    cricket::WebRtcVideoDecoderFactory* legacy_decoder_factory);
+std::unique_ptr<VideoEncoderFactory> WrapLegacyVideoEncoderFactory(
+    std::unique_ptr<VideoEncoderFactory> legacy_encoder_factory);
+std::unique_ptr<VideoDecoderFactory> WrapLegacyVideoDecoderFactory(
+    std::unique_ptr<VideoDecoderFactory> legacy_decoder_factory);
 
 }  // namespace jni
 }  // namespace webrtc

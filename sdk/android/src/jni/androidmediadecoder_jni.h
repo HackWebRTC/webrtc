@@ -13,31 +13,30 @@
 
 #include <vector>
 
-#include "media/engine/webrtcvideodecoderfactory.h"
+#include "api/video_codecs/video_decoder_factory.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {
 namespace jni {
 
 // Implementation of Android MediaCodec based decoder factory.
-class MediaCodecVideoDecoderFactory
-    : public cricket::WebRtcVideoDecoderFactory {
+class MediaCodecVideoDecoderFactory : public VideoDecoderFactory {
  public:
   MediaCodecVideoDecoderFactory();
   ~MediaCodecVideoDecoderFactory() override;
 
   void SetEGLContext(JNIEnv* jni, jobject render_egl_context);
 
-  // WebRtcVideoDecoderFactory implementation.
-  VideoDecoder* CreateVideoDecoder(VideoCodecType type) override;
-
-  void DestroyVideoDecoder(VideoDecoder* decoder) override;
+  // VideoDecoderFactory implementation.
+  std::vector<SdpVideoFormat> GetSupportedFormats() const override;
+  std::unique_ptr<VideoDecoder> CreateVideoDecoder(
+      const SdpVideoFormat& format) override;
 
   static bool IsH264HighProfileSupported(JNIEnv* env);
 
  private:
   jobject egl_context_;
-  std::vector<VideoCodecType> supported_codec_types_;
+  std::vector<SdpVideoFormat> supported_formats_;
 };
 
 }  // namespace jni

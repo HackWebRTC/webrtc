@@ -13,32 +13,32 @@
 
 #include <vector>
 
-#include "media/engine/webrtcvideoencoderfactory.h"
+#include "api/video_codecs/video_encoder_factory.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {
 namespace jni {
 
 // Implementation of Android MediaCodec based encoder factory.
-class MediaCodecVideoEncoderFactory
-    : public cricket::WebRtcVideoEncoderFactory {
+class MediaCodecVideoEncoderFactory : public VideoEncoderFactory {
  public:
   MediaCodecVideoEncoderFactory();
   ~MediaCodecVideoEncoderFactory() override;
 
   void SetEGLContext(JNIEnv* jni, jobject egl_context);
 
-  // WebRtcVideoEncoderFactory implementation.
-  VideoEncoder* CreateVideoEncoder(const cricket::VideoCodec& codec) override;
-  const std::vector<cricket::VideoCodec>& supported_codecs() const override;
-  void DestroyVideoEncoder(VideoEncoder* encoder) override;
+  // VideoEncoderFactory implementation.
+  std::vector<SdpVideoFormat> GetSupportedFormats() const override;
+  CodecInfo QueryVideoEncoder(const SdpVideoFormat& format) const override;
+  std::unique_ptr<VideoEncoder> CreateVideoEncoder(
+      const SdpVideoFormat& format) override;
 
  private:
   jobject egl_context_;
 
   // Empty if platform support is lacking, const after ctor returns.
-  std::vector<cricket::VideoCodec> supported_codecs_;
-  std::vector<cricket::VideoCodec> supported_codecs_with_h264_hp_;
+  std::vector<SdpVideoFormat> supported_formats_;
+  std::vector<SdpVideoFormat> supported_formats_with_h264_hp_;
 };
 
 }  // namespace jni

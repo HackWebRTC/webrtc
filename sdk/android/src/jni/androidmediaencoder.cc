@@ -18,11 +18,14 @@
 #include <string>
 #include <utility>
 
+#include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_encoder.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "common_video/h264/h264_bitstream_parser.h"
 #include "common_video/h264/h264_common.h"
 #include "common_video/h264/profile_level_id.h"
+#include "media/base/codec.h"
+#include "media/base/mediaconstants.h"
 #include "media/engine/internalencoderfactory.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/utility/quality_scaler.h"
@@ -31,6 +34,7 @@
 #include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/ptr_util.h"
 #include "rtc_base/sequenced_task_checker.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread.h"
@@ -93,7 +97,7 @@ class MediaCodecVideoEncoder : public VideoEncoder {
  public:
   ~MediaCodecVideoEncoder() override;
   MediaCodecVideoEncoder(JNIEnv* jni,
-                         const cricket::VideoCodec& codec,
+                         const SdpVideoFormat& format,
                          jobject egl_context);
 
   // VideoEncoder implementation.
@@ -197,7 +201,7 @@ class MediaCodecVideoEncoder : public VideoEncoder {
 #endif
 
   // Type of video codec.
-  const cricket::VideoCodec codec_;
+  const SdpVideoFormat format_;
 
   EncodedImageCallback* callback_;
 
@@ -297,9 +301,9 @@ MediaCodecVideoEncoder::~MediaCodecVideoEncoder() {
 }
 
 MediaCodecVideoEncoder::MediaCodecVideoEncoder(JNIEnv* jni,
-                                               const cricket::VideoCodec& codec,
+                                               const SdpVideoFormat& format,
                                                jobject egl_context)
-    : codec_(codec),
+    : format_(format),
       callback_(NULL),
       j_media_codec_video_encoder_(
           jni,
@@ -348,7 +352,7 @@ int32_t MediaCodecVideoEncoder::InitEncode(const VideoCodec* codec_settings,
   profile_ = H264::Profile::kProfileBaseline;
   if (codec_type == kVideoCodecH264) {
     const absl::optional<H264::ProfileLevelId> profile_level_id =
-        H264::ParseSdpProfileLevelId(codec_.params);
+        H264::ParseSdpProfileLevelId(format_.parameters);
     RTC_DCHECK(profile_level_id);
     profile_ = profile_level_id->profile;
     ALOGD << "H.264 profile: " << profile_;
@@ -425,12 +429,14 @@ bool MediaCodecVideoEncoder::EncodeTask::Run() {
   return false;
 }
 
-bool IsFormatSupported(
-    const std::vector<webrtc::SdpVideoFormat>& supported_formats,
-    const std::string& name) {
-  for (const webrtc::SdpVideoFormat& supported_format : supported_formats) {
-    if (cricket::CodecNamesEq(name, supported_format.name))
+bool IsFormatSupported(const std::vector<SdpVideoFormat>& supported_formats,
+                       const SdpVideoFormat& format) {
+  for (const SdpVideoFormat& supported_format : supported_formats) {
+    if (cricket::IsSameCodec(format.name, format.parameters,
+                             supported_format.name,
+                             supported_format.parameters)) {
       return true;
+    }
   }
   return false;
 }
@@ -439,7 +445,7 @@ bool MediaCodecVideoEncoder::ProcessHWError(
     bool reset_if_fallback_unavailable) {
   ALOGE << "ProcessHWError";
   if (IsFormatSupported(InternalEncoderFactory().GetSupportedFormats(),
-                        codec_.name)) {
+                        format_)) {
     ALOGE << "Fallback to SW encoder.";
     sw_fallback_required_ = true;
     return false;
@@ -457,7 +463,7 @@ int32_t MediaCodecVideoEncoder::ProcessHWErrorOnEncode() {
 }
 
 VideoCodecType MediaCodecVideoEncoder::GetCodecType() const {
-  return PayloadStringToCodecType(codec_.name);
+  return PayloadStringToCodecType(format_.name);
 }
 
 int32_t MediaCodecVideoEncoder::InitEncodeInternal(int width,
@@ -1210,20 +1216,20 @@ MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory()
     : egl_context_(nullptr) {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
-  supported_codecs_.clear();
+  supported_formats_.clear();
 
   bool is_vp8_hw_supported = Java_MediaCodecVideoEncoder_isVp8HwSupported(jni);
   if (is_vp8_hw_supported) {
     ALOGD << "VP8 HW Encoder supported.";
-    supported_codecs_.push_back(cricket::VideoCodec(cricket::kVp8CodecName));
+    supported_formats_.push_back(SdpVideoFormat(cricket::kVp8CodecName));
   }
 
   bool is_vp9_hw_supported = Java_MediaCodecVideoEncoder_isVp9HwSupported(jni);
   if (is_vp9_hw_supported) {
     ALOGD << "VP9 HW Encoder supported.";
-    supported_codecs_.push_back(cricket::VideoCodec(cricket::kVp9CodecName));
+    supported_formats_.push_back(SdpVideoFormat(cricket::kVp9CodecName));
   }
-  supported_codecs_with_h264_hp_ = supported_codecs_;
+  supported_formats_with_h264_hp_ = supported_formats_;
 
   // Check if high profile is supported by decoder. If yes, encoder can always
   // fall back to baseline profile as a subset as high profile.
@@ -1233,15 +1239,14 @@ MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory()
     ALOGD << "H.264 High Profile HW Encoder supported.";
     // TODO(magjed): Enumerate actual level instead of using hardcoded level
     // 3.1. Level 3.1 is 1280x720@30fps which is enough for now.
-    cricket::VideoCodec constrained_high(cricket::kH264CodecName);
+    SdpVideoFormat constrained_high(cricket::kH264CodecName);
     const H264::ProfileLevelId constrained_high_profile(
         H264::kProfileConstrainedHigh, H264::kLevel3_1);
-    constrained_high.SetParam(
-        cricket::kH264FmtpProfileLevelId,
-        *H264::ProfileLevelIdToString(constrained_high_profile));
-    constrained_high.SetParam(cricket::kH264FmtpLevelAsymmetryAllowed, "1");
-    constrained_high.SetParam(cricket::kH264FmtpPacketizationMode, "1");
-    supported_codecs_with_h264_hp_.push_back(constrained_high);
+    constrained_high.parameters[cricket::kH264FmtpProfileLevelId] =
+        *H264::ProfileLevelIdToString(constrained_high_profile);
+    constrained_high.parameters[cricket::kH264FmtpLevelAsymmetryAllowed] = "1";
+    constrained_high.parameters[cricket::kH264FmtpPacketizationMode] = "1";
+    supported_formats_with_h264_hp_.push_back(constrained_high);
   }
 
   bool is_h264_hw_supported =
@@ -1252,16 +1257,16 @@ MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory()
     // ready, http://crbug/webrtc/6337. We can negotiate Constrained High
     // profile as long as we have decode support for it and still send Baseline
     // since Baseline is a subset of the High profile.
-    cricket::VideoCodec constrained_baseline(cricket::kH264CodecName);
+    SdpVideoFormat constrained_baseline(cricket::kH264CodecName);
     const H264::ProfileLevelId constrained_baseline_profile(
         H264::kProfileConstrainedBaseline, H264::kLevel3_1);
-    constrained_baseline.SetParam(
-        cricket::kH264FmtpProfileLevelId,
-        *H264::ProfileLevelIdToString(constrained_baseline_profile));
-    constrained_baseline.SetParam(cricket::kH264FmtpLevelAsymmetryAllowed, "1");
-    constrained_baseline.SetParam(cricket::kH264FmtpPacketizationMode, "1");
-    supported_codecs_.push_back(constrained_baseline);
-    supported_codecs_with_h264_hp_.push_back(constrained_baseline);
+    constrained_baseline.parameters[cricket::kH264FmtpProfileLevelId] =
+        *H264::ProfileLevelIdToString(constrained_baseline_profile);
+    constrained_baseline.parameters[cricket::kH264FmtpLevelAsymmetryAllowed] =
+        "1";
+    constrained_baseline.parameters[cricket::kH264FmtpPacketizationMode] = "1";
+    supported_formats_.push_back(constrained_baseline);
+    supported_formats_with_h264_hp_.push_back(constrained_baseline);
   }
 }
 
@@ -1286,30 +1291,34 @@ void MediaCodecVideoEncoderFactory::SetEGLContext(JNIEnv* jni,
   }
 }
 
-VideoEncoder* MediaCodecVideoEncoderFactory::CreateVideoEncoder(
-    const cricket::VideoCodec& codec) {
-  if (supported_codecs().empty()) {
-    ALOGW << "No HW video encoder for codec " << codec.name;
+std::unique_ptr<VideoEncoder> MediaCodecVideoEncoderFactory::CreateVideoEncoder(
+    const SdpVideoFormat& format) {
+  if (GetSupportedFormats().empty()) {
+    ALOGW << "No HW video encoder for codec " << format.name;
     return nullptr;
   }
-  if (FindMatchingCodec(supported_codecs(), codec)) {
-    ALOGD << "Create HW video encoder for " << codec.name;
+  if (IsFormatSupported(GetSupportedFormats(), format)) {
+    ALOGD << "Create HW video encoder for " << format.name;
     JNIEnv* jni = AttachCurrentThreadIfNeeded();
     ScopedLocalRefFrame local_ref_frame(jni);
-    return new MediaCodecVideoEncoder(jni, codec, egl_context_);
+    return rtc::MakeUnique<MediaCodecVideoEncoder>(jni, format, egl_context_);
   }
-  ALOGW << "Can not find HW video encoder for type " << codec.name;
+  ALOGW << "Can not find HW video encoder for type " << format.name;
   return nullptr;
 }
 
-const std::vector<cricket::VideoCodec>&
-MediaCodecVideoEncoderFactory::supported_codecs() const {
-  return supported_codecs_with_h264_hp_;
+std::vector<SdpVideoFormat> MediaCodecVideoEncoderFactory::GetSupportedFormats()
+    const {
+  return supported_formats_with_h264_hp_;
 }
 
-void MediaCodecVideoEncoderFactory::DestroyVideoEncoder(VideoEncoder* encoder) {
-  ALOGD << "Destroy video encoder.";
-  delete encoder;
+VideoEncoderFactory::CodecInfo MediaCodecVideoEncoderFactory::QueryVideoEncoder(
+    const SdpVideoFormat& format) const {
+  VideoEncoderFactory::CodecInfo codec_info;
+  codec_info.is_hardware_accelerated =
+      IsFormatSupported(supported_formats_, format);
+  codec_info.has_internal_source = false;
+  return codec_info;
 }
 
 static void JNI_MediaCodecVideoEncoder_FillInputBuffer(

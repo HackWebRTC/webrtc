@@ -113,6 +113,7 @@ if (is_android) {
       "../sdk/android:audio_api_java",
       "../sdk/android:base_java",
       "../sdk/android:camera_java",
+      "../sdk/android:default_video_codec_factory_java",
       "../sdk/android:filevideo_java",
       "../sdk/android:hwcodecs_java",
       "../sdk/android:java_audio_device_module_java",

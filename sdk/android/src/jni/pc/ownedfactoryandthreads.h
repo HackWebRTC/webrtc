@@ -18,8 +18,6 @@
 #include "api/peerconnectioninterface.h"
 #include "rtc_base/thread.h"
 
-using cricket::WebRtcVideoDecoderFactory;
-using cricket::WebRtcVideoEncoderFactory;
 using rtc::Thread;
 
 namespace webrtc {
@@ -38,8 +36,8 @@ class OwnedFactoryAndThreads {
   OwnedFactoryAndThreads(std::unique_ptr<Thread> network_thread,
                          std::unique_ptr<Thread> worker_thread,
                          std::unique_ptr<Thread> signaling_thread,
-                         WebRtcVideoEncoderFactory* legacy_encoder_factory,
-                         WebRtcVideoDecoderFactory* legacy_decoder_factory,
+                         VideoEncoderFactory* legacy_encoder_factory,
+                         VideoDecoderFactory* legacy_decoder_factory,
                          rtc::NetworkMonitorFactory* network_monitor_factory,
                          PeerConnectionFactoryInterface* factory)
       : network_thread_(std::move(network_thread)),
@@ -56,10 +54,10 @@ class OwnedFactoryAndThreads {
   Thread* network_thread() { return network_thread_.get(); }
   Thread* signaling_thread() { return signaling_thread_.get(); }
   Thread* worker_thread() { return worker_thread_.get(); }
-  WebRtcVideoEncoderFactory* legacy_encoder_factory() {
+  VideoEncoderFactory* legacy_encoder_factory() {
     return legacy_encoder_factory_;
   }
-  WebRtcVideoDecoderFactory* legacy_decoder_factory() {
+  VideoDecoderFactory* legacy_decoder_factory() {
     return legacy_decoder_factory_;
   }
   rtc::NetworkMonitorFactory* network_monitor_factory() {
@@ -72,8 +70,8 @@ class OwnedFactoryAndThreads {
   const std::unique_ptr<Thread> network_thread_;
   const std::unique_ptr<Thread> worker_thread_;
   const std::unique_ptr<Thread> signaling_thread_;
-  WebRtcVideoEncoderFactory* legacy_encoder_factory_;
-  WebRtcVideoDecoderFactory* legacy_decoder_factory_;
+  VideoEncoderFactory* legacy_encoder_factory_;
+  VideoDecoderFactory* legacy_decoder_factory_;
   rtc::NetworkMonitorFactory* network_monitor_factory_;
   PeerConnectionFactoryInterface* factory_;  // Const after ctor except dtor.
 };
