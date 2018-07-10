@@ -568,9 +568,11 @@ NSString * const kRTCAudioSessionOutputVolumeSelector = @"outputVolume";
 }
 
 - (void)handleApplicationDidBecomeActive:(NSNotification *)notification {
+  BOOL isInterrupted = self.isInterrupted;
   RTCLog(@"Application became active after an interruption. Treating as interruption "
-         " end. isInterrupted changed from %d to 0.", self.isInterrupted);
-  if (self.isInterrupted) {
+          "end. isInterrupted changed from %d to 0.",
+         isInterrupted);
+  if (isInterrupted) {
     self.isInterrupted = NO;
     [self updateAudioSessionAfterEvent];
   }
@@ -809,14 +811,26 @@ NSString * const kRTCAudioSessionOutputVolumeSelector = @"outputVolume";
   if (_session != session) {
     RTCLogError(@"audioSessionDidActivate called on different AVAudioSession");
   }
+  RTCLog(@"Audio session was externally activated.");
   [self incrementActivationCount];
   self.isActive = YES;
+  // When a CallKit call begins, it's possible that we receive an interruption
+  // begin without a corresponding end. Since we know that we have an activated
+  // audio session at this point, just clear any saved interruption flag since
+  // the app may never be foregrounded during the duration of the call.
+  if (self.isInterrupted) {
+    RTCLog(@"Clearing interrupted state due to external activation.");
+    self.isInterrupted = NO;
+  }
+  // Treat external audio session activation as an end interruption event.
+  [self notifyDidEndInterruptionWithShouldResumeSession:YES];
 }
 
 - (void)audioSessionDidDeactivate:(AVAudioSession *)session {
   if (_session != session) {
     RTCLogError(@"audioSessionDidDeactivate called on different AVAudioSession");
   }
+  RTCLog(@"Audio session was externally deactivated.");
   self.isActive = NO;
   [self decrementActivationCount];
 }
