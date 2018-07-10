@@ -679,12 +679,6 @@ if (is_linux || is_win) {
         "-Wno-reorder",
       ]
     }
-    if (is_linux && target_cpu == "x86") {
-      cflags += [
-        # Needed to compile on Linux 32-bit.
-        "-Wno-sentinel",
-      ]
-    }
   }
 
   rtc_executable("peerconnection_client") {
