@@ -555,9 +555,6 @@ void StatsCollector::UpdateStats(
   const double kMinGatherStatsPeriod = 50;
   if (stats_gathering_started_ != 0 &&
       stats_gathering_started_ + kMinGatherStatsPeriod > time_now) {
-    RTC_LOG(LS_INFO)
-        << "Not updating stats again, since they were updated within "
-        << kMinGatherStatsPeriod << "ms.";
     return;
   }
   stats_gathering_started_ = time_now;
