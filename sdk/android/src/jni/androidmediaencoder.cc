@@ -1229,7 +1229,6 @@ MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory()
     ALOGD << "VP9 HW Encoder supported.";
     supported_formats_.push_back(SdpVideoFormat(cricket::kVp9CodecName));
   }
-  supported_formats_with_h264_hp_ = supported_formats_;
 
   // Check if high profile is supported by decoder. If yes, encoder can always
   // fall back to baseline profile as a subset as high profile.
@@ -1246,7 +1245,7 @@ MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory()
         *H264::ProfileLevelIdToString(constrained_high_profile);
     constrained_high.parameters[cricket::kH264FmtpLevelAsymmetryAllowed] = "1";
     constrained_high.parameters[cricket::kH264FmtpPacketizationMode] = "1";
-    supported_formats_with_h264_hp_.push_back(constrained_high);
+    supported_formats_.push_back(constrained_high);
   }
 
   bool is_h264_hw_supported =
@@ -1266,7 +1265,6 @@ MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory()
         "1";
     constrained_baseline.parameters[cricket::kH264FmtpPacketizationMode] = "1";
     supported_formats_.push_back(constrained_baseline);
-    supported_formats_with_h264_hp_.push_back(constrained_baseline);
   }
 }
 
@@ -1309,7 +1307,7 @@ std::unique_ptr<VideoEncoder> MediaCodecVideoEncoderFactory::CreateVideoEncoder(
 
 std::vector<SdpVideoFormat> MediaCodecVideoEncoderFactory::GetSupportedFormats()
     const {
-  return supported_formats_with_h264_hp_;
+  return supported_formats_;
 }
 
 VideoEncoderFactory::CodecInfo MediaCodecVideoEncoderFactory::QueryVideoEncoder(

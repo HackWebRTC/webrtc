@@ -38,7 +38,6 @@ class MediaCodecVideoEncoderFactory : public VideoEncoderFactory {
 
   // Empty if platform support is lacking, const after ctor returns.
   std::vector<SdpVideoFormat> supported_formats_;
-  std::vector<SdpVideoFormat> supported_formats_with_h264_hp_;
 };
 
 }  // namespace jni
