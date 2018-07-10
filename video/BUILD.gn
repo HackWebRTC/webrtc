@@ -155,6 +155,8 @@ if (rtc_include_tests) {
       "../api:create_video_quality_test_fixture_api",
     ]
     sources = [
+      "video_analyzer.cc",
+      "video_analyzer.h",
       "video_quality_test.cc",
       "video_quality_test.h",
     ]
