@@ -224,14 +224,6 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
 
   config("apprtc_signaling_config") {
     include_dirs = [ "objc/AppRTCMobile" ]
-
-    # GN orders flags on a target before flags from configs. The default config
-    # adds these flags so to cancel them out they need to come from a config and
-    # cannot be on the target directly.
-    cflags = [
-      "-Wno-sign-compare",
-      "-Wno-unused-variable",
-    ]
   }
 
   rtc_static_library("apprtc_signaling") {
@@ -681,14 +673,9 @@ if (is_linux || is_win) {
     cflags = []
     if (is_win && is_clang) {
       cflags += [
-        # Disable warnings failing when compiling with Clang on Windows.
-        # https://bugs.chromium.org/p/webrtc/issues/detail?id=5366
-        "-Wno-format",
-
         # See https://bugs.chromium.org/p/webrtc/issues/detail?id=6271
         # for -Wno-reorder and -Wno-sign-compare
         "-Wno-reorder",
-        "-Wno-sign-compare",
       ]
     }
     if (is_linux && target_cpu == "x86") {
