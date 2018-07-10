@@ -336,6 +336,8 @@ rtc_static_library("video_jni") {
     "../..:webrtc_common",
     "../../api:libjingle_peerconnection_api",
     "../../api/video:video_frame",
+    "../../api/video_codecs:builtin_video_decoder_factory",
+    "../../api/video_codecs:builtin_video_encoder_factory",
     "../../api/video_codecs:rtc_software_fallback_wrappers",
     "../../api/video_codecs:video_codecs_api",
     "../../common_video:common_video",

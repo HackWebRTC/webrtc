@@ -243,36 +243,47 @@ jlong CreatePeerConnectionFactoryForJava(
 
   VideoEncoderFactory* legacy_video_encoder_factory = nullptr;
   VideoDecoderFactory* legacy_video_decoder_factory = nullptr;
+  std::unique_ptr<VideoEncoderFactory> video_encoder_factory;
+  std::unique_ptr<VideoDecoderFactory> video_decoder_factory;
   std::unique_ptr<cricket::MediaEngineInterface> media_engine;
 
-  std::unique_ptr<VideoEncoderFactory> video_encoder_factory = nullptr;
-  if (jencoder_factory.is_null()) {
-    // TODO(bugs.webrtc.org/7925): When all clients switched to injectable
-    // factories, remove the legacy codec factories
-    std::unique_ptr<VideoEncoderFactory> legacy_factory =
-        CreateLegacyVideoEncoderFactory();
-    legacy_video_encoder_factory = legacy_factory.get();
+  if (jencoder_factory.is_null() && jdecoder_factory.is_null() &&
+      !video_hw_acceleration_enabled) {
+    // Legacy path for clients that are explicitly calling
+    // setEnableVideoHwAcceleration(false) and not injecting neither encoder nor
+    // decoder. These clients should be migrated to only pass in
+    // SoftwareVideoEncoderFactory instead.
     video_encoder_factory =
-        WrapLegacyVideoEncoderFactory(std::move(legacy_factory));
-  } else {
-    video_encoder_factory = std::unique_ptr<VideoEncoderFactory>(
-        CreateVideoEncoderFactory(jni, jencoder_factory));
-  }
-
-  std::unique_ptr<VideoDecoderFactory> video_decoder_factory = nullptr;
-  if (jdecoder_factory.is_null()) {
-    // TODO(bugs.webrtc.org/7925): When all clients switched to injectable
-    // factories, remove the legacy codec factories
-    std::unique_ptr<VideoDecoderFactory> legacy_factory =
-        CreateLegacyVideoDecoderFactory();
-    legacy_video_decoder_factory = legacy_factory.get();
+        WrapLegacyVideoEncoderFactory(/* legacy_encoder_factory= */ nullptr);
     video_decoder_factory =
-        WrapLegacyVideoDecoderFactory(std::move(legacy_factory));
+        WrapLegacyVideoDecoderFactory(/* legacy_decoder_factory= */ nullptr);
   } else {
-    video_decoder_factory = std::unique_ptr<VideoDecoderFactory>(
-        CreateVideoDecoderFactory(jni, jdecoder_factory));
-  }
+    if (jencoder_factory.is_null()) {
+      // TODO(bugs.webrtc.org/7925): When all clients switched to injectable
+      // factories, remove the legacy codec factories
+      std::unique_ptr<VideoEncoderFactory> legacy_factory =
+          CreateLegacyVideoEncoderFactory();
+      legacy_video_encoder_factory = legacy_factory.get();
+      video_encoder_factory =
+          WrapLegacyVideoEncoderFactory(std::move(legacy_factory));
+    } else {
+      video_encoder_factory = std::unique_ptr<VideoEncoderFactory>(
+          CreateVideoEncoderFactory(jni, jencoder_factory));
+    }
 
+    if (jdecoder_factory.is_null()) {
+      // TODO(bugs.webrtc.org/7925): When all clients switched to injectable
+      // factories, remove the legacy codec factories
+      std::unique_ptr<VideoDecoderFactory> legacy_factory =
+          CreateLegacyVideoDecoderFactory();
+      legacy_video_decoder_factory = legacy_factory.get();
+      video_decoder_factory =
+          WrapLegacyVideoDecoderFactory(std::move(legacy_factory));
+    } else {
+      video_decoder_factory = std::unique_ptr<VideoDecoderFactory>(
+          CreateVideoDecoderFactory(jni, jdecoder_factory));
+    }
+  }
   media_engine.reset(CreateMediaEngine(
       audio_device_module, audio_encoder_factory, audio_decoder_factory,
       std::move(video_encoder_factory), std::move(video_decoder_factory),

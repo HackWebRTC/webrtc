@@ -13,6 +13,8 @@
 #include <jni.h>
 #include <memory>
 
+#include "api/video_codecs/builtin_video_decoder_factory.h"
+#include "api/video_codecs/builtin_video_encoder_factory.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
 #include "api/videosourceproxy.h"
@@ -88,14 +90,18 @@ std::unique_ptr<VideoDecoderFactory> CreateLegacyVideoDecoderFactory() {
 
 std::unique_ptr<VideoEncoderFactory> WrapLegacyVideoEncoderFactory(
     std::unique_ptr<VideoEncoderFactory> legacy_encoder_factory) {
-  return std::unique_ptr<VideoEncoderFactory>(
-      cricket::ConvertVideoEncoderFactory(std::move(legacy_encoder_factory)));
+  return legacy_encoder_factory ? std::unique_ptr<VideoEncoderFactory>(
+                                      cricket::ConvertVideoEncoderFactory(
+                                          std::move(legacy_encoder_factory)))
+                                : CreateBuiltinVideoEncoderFactory();
 }
 
 std::unique_ptr<VideoDecoderFactory> WrapLegacyVideoDecoderFactory(
     std::unique_ptr<VideoDecoderFactory> legacy_decoder_factory) {
-  return std::unique_ptr<VideoDecoderFactory>(
-      cricket::ConvertVideoDecoderFactory(std::move(legacy_decoder_factory)));
+  return legacy_decoder_factory ? std::unique_ptr<VideoDecoderFactory>(
+                                      cricket::ConvertVideoDecoderFactory(
+                                          std::move(legacy_decoder_factory)))
+                                : CreateBuiltinVideoDecoderFactory();
 }
 
 }  // namespace jni
