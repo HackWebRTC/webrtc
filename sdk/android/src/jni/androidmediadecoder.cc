@@ -36,7 +36,7 @@
 #include "sdk/android/src/jni/androidmediacodeccommon.h"
 #include "sdk/android/src/jni/videoframe.h"
 #include "third_party/libyuv/include/libyuv/convert.h"
-#include "third_party/libyuv/include/libyuv/convert_from.h"
+#include "third_party/libyuv/include/libyuv/planar_functions.h"
 #include "third_party/libyuv/include/libyuv/video_common.h"
 
 using rtc::Bind;
