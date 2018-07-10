@@ -559,11 +559,6 @@ void RampUpDownUpTester::EvolveTestState(int bitrate_bps, bool suspended) {
 class RampUpTest : public test::CallTest {
  public:
   RampUpTest() {}
-
-  virtual ~RampUpTest() {
-    EXPECT_EQ(nullptr, video_send_stream_);
-    EXPECT_TRUE(video_receive_streams_.empty());
-  }
 };
 
 static const uint32_t kStartBitrateBps = 60000;
