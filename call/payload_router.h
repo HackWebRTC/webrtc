@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VIDEO_PAYLOAD_ROUTER_H_
-#define VIDEO_PAYLOAD_ROUTER_H_
+#ifndef CALL_PAYLOAD_ROUTER_H_
+#define CALL_PAYLOAD_ROUTER_H_
 
 #include <map>
 #include <vector>
@@ -41,7 +41,7 @@ class PayloadRouter : public EncodedImageCallback {
                 const std::vector<uint32_t>& ssrcs,
                 int payload_type,
                 const std::map<uint32_t, RtpPayloadState>& states);
-  ~PayloadRouter();
+  ~PayloadRouter() override;
 
   // PayloadRouter will only route packets if being active, all packets will be
   // dropped otherwise.
@@ -81,4 +81,4 @@ class PayloadRouter : public EncodedImageCallback {
 
 }  // namespace webrtc
 
-#endif  // VIDEO_PAYLOAD_ROUTER_H_
+#endif  // CALL_PAYLOAD_ROUTER_H_

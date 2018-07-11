@@ -20,7 +20,6 @@
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/metrics.h"
 #include "video/call_stats.h"
-#include "video/payload_router.h"
 #include "video/receive_statistics_proxy.h"
 
 namespace webrtc {

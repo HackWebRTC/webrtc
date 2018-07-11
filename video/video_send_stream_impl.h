@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "call/bitrate_allocator.h"
+#include "call/payload_router.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "common_video/include/video_bitrate_allocator.h"
 #include "modules/rtp_rtcp/include/flexfec_sender.h"
@@ -24,7 +25,6 @@
 #include "rtc_base/weak_ptr.h"
 #include "video/call_stats.h"
 #include "video/encoder_rtcp_feedback.h"
-#include "video/payload_router.h"
 #include "video/send_delay_stats.h"
 #include "video/send_statistics_proxy.h"
 #include "video/video_send_stream.h"

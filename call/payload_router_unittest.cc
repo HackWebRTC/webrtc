@@ -11,13 +11,13 @@
 #include <memory>
 #include <string>
 
+#include "call/payload_router.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "test/field_trial.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
-#include "video/payload_router.h"
 
 using ::testing::_;
 using ::testing::AnyNumber;
