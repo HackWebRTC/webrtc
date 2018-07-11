@@ -49,15 +49,24 @@ VCMPacket::VCMPacket(const uint8_t* ptr,
       markerBit(rtpHeader.header.markerBit),
       timesNacked(-1),
       frameType(rtpHeader.frameType),
-      codec(kVideoCodecUnknown),
+      codec(rtpHeader.video_header().codec),
       is_first_packet_in_frame(
           rtpHeader.video_header().is_first_packet_in_frame),
-      completeNALU(kNaluComplete),
-      insertStartCode(false),
+      completeNALU(kNaluIncomplete),
+      insertStartCode(rtpHeader.video_header().codec == kVideoCodecH264 &&
+                      rtpHeader.video_header().is_first_packet_in_frame),
       width(rtpHeader.video_header().width),
       height(rtpHeader.video_header().height),
       video_header(rtpHeader.video_header()) {
-  CopyCodecSpecifics(rtpHeader.video_header());
+  if (is_first_packet_in_frame && markerBit) {
+    completeNALU = kNaluComplete;
+  } else if (is_first_packet_in_frame) {
+    completeNALU = kNaluStart;
+  } else if (markerBit) {
+    completeNALU = kNaluEnd;
+  } else {
+    completeNALU = kNaluIncomplete;
+  }
 
   if (markerBit) {
     video_header.rotation = rtpHeader.video_header().rotation;
@@ -67,76 +76,6 @@ VCMPacket::VCMPacket(const uint8_t* ptr,
     video_header.playout_delay = rtpHeader.video_header().playout_delay;
   } else {
     video_header.playout_delay = {-1, -1};
-  }
-}
-
-void VCMPacket::Reset() {
-  payloadType = 0;
-  timestamp = 0;
-  ntp_time_ms_ = 0;
-  seqNum = 0;
-  dataPtr = NULL;
-  sizeBytes = 0;
-  markerBit = false;
-  timesNacked = -1;
-  frameType = kEmptyFrame;
-  codec = kVideoCodecUnknown;
-  is_first_packet_in_frame = false;
-  completeNALU = kNaluUnset;
-  insertStartCode = false;
-  width = 0;
-  height = 0;
-  video_header = {};
-}
-
-void VCMPacket::CopyCodecSpecifics(const RTPVideoHeader& videoHeader) {
-  codec = videoHeader.codec;
-  switch (videoHeader.codec) {
-    case kVideoCodecVP8:
-      // Handle all packets within a frame as depending on the previous packet
-      // TODO(holmer): This should be changed to make fragments independent
-      // when the VP8 RTP receiver supports fragments.
-      if (is_first_packet_in_frame && markerBit)
-        completeNALU = kNaluComplete;
-      else if (is_first_packet_in_frame)
-        completeNALU = kNaluStart;
-      else if (markerBit)
-        completeNALU = kNaluEnd;
-      else
-        completeNALU = kNaluIncomplete;
-
-      return;
-    case kVideoCodecVP9:
-      if (is_first_packet_in_frame && markerBit)
-        completeNALU = kNaluComplete;
-      else if (is_first_packet_in_frame)
-        completeNALU = kNaluStart;
-      else if (markerBit)
-        completeNALU = kNaluEnd;
-      else
-        completeNALU = kNaluIncomplete;
-
-      return;
-    case kVideoCodecH264:
-      is_first_packet_in_frame = videoHeader.is_first_packet_in_frame;
-      if (is_first_packet_in_frame)
-        insertStartCode = true;
-
-      if (is_first_packet_in_frame && markerBit) {
-        completeNALU = kNaluComplete;
-      } else if (is_first_packet_in_frame) {
-        completeNALU = kNaluStart;
-      } else if (markerBit) {
-        completeNALU = kNaluEnd;
-      } else {
-        completeNALU = kNaluIncomplete;
-      }
-      return;
-    case kVideoCodecGeneric:
-      return;
-    default:
-      codec = kVideoCodecUnknown;
-      return;
   }
 }
 

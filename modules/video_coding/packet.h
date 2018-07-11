@@ -23,8 +23,6 @@ class VCMPacket {
             const size_t size,
             const WebRtcRTPHeader& rtpHeader);
 
-  void Reset();
-
   uint8_t payloadType;
   uint32_t timestamp;
   // NTP time of the capture time in local timebase in milliseconds.
@@ -47,9 +45,6 @@ class VCMPacket {
   RTPVideoHeader video_header;
 
   int64_t receive_time_ms;
-
- protected:
-  void CopyCodecSpecifics(const RTPVideoHeader& videoHeader);
 };
 
 }  // namespace webrtc
