@@ -29,10 +29,11 @@ class FunctionVideoEncoderFactory final : public VideoEncoderFactory {
  public:
   explicit FunctionVideoEncoderFactory(
       std::function<std::unique_ptr<VideoEncoder>()> create)
-      : create_(std::move(create)) {
-    codec_info_.is_hardware_accelerated = false;
-    codec_info_.has_internal_source = false;
-  }
+      : create_([create](const SdpVideoFormat&) { return create(); }) {}
+  explicit FunctionVideoEncoderFactory(
+      std::function<std::unique_ptr<VideoEncoder>(const SdpVideoFormat&)>
+          create)
+      : create_(std::move(create)) {}
 
   // Unused by tests.
   std::vector<SdpVideoFormat> GetSupportedFormats() const override {
@@ -42,17 +43,20 @@ class FunctionVideoEncoderFactory final : public VideoEncoderFactory {
 
   CodecInfo QueryVideoEncoder(
       const SdpVideoFormat& /* format */) const override {
-    return codec_info_;
+    CodecInfo codec_info;
+    codec_info.is_hardware_accelerated = false;
+    codec_info.has_internal_source = false;
+    return codec_info;
   }
 
   std::unique_ptr<VideoEncoder> CreateVideoEncoder(
-      const SdpVideoFormat& /* format */) override {
-    return create_();
+      const SdpVideoFormat& format) override {
+    return create_(format);
   }
 
  private:
-  const std::function<std::unique_ptr<VideoEncoder>()> create_;
-  CodecInfo codec_info_;
+  const std::function<std::unique_ptr<VideoEncoder>(const SdpVideoFormat&)>
+      create_;
 };
 
 }  // namespace test

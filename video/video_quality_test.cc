@@ -67,24 +67,7 @@ class VideoStreamFactory
 
 namespace webrtc {
 
-// Not used by these tests.
-std::vector<SdpVideoFormat>
-VideoQualityTest::TestVideoEncoderFactory::GetSupportedFormats() const {
-  RTC_NOTREACHED();
-  return {};
-}
-
-VideoEncoderFactory::CodecInfo
-VideoQualityTest::TestVideoEncoderFactory::QueryVideoEncoder(
-    const SdpVideoFormat& format) const {
-  CodecInfo codec_info;
-  codec_info.is_hardware_accelerated = false;
-  codec_info.has_internal_source = false;
-  return codec_info;
-}
-
-std::unique_ptr<VideoEncoder>
-VideoQualityTest::TestVideoEncoderFactory::CreateVideoEncoder(
+std::unique_ptr<VideoEncoder> VideoQualityTest::CreateVideoEncoder(
     const SdpVideoFormat& format) {
   if (format.name == "VP8") {
     return absl::make_unique<VP8EncoderSimulcastProxy>(
@@ -99,7 +82,12 @@ VideoQualityTest::TestVideoEncoderFactory::CreateVideoEncoder(
 
 VideoQualityTest::VideoQualityTest(
     std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory)
-    : clock_(Clock::GetRealTimeClock()), receive_logs_(0), send_logs_(0) {
+    : clock_(Clock::GetRealTimeClock()),
+      video_encoder_factory_([this](const SdpVideoFormat& format) {
+        return this->CreateVideoEncoder(format);
+      }),
+      receive_logs_(0),
+      send_logs_(0) {
   payload_type_map_ = test::CallTest::payload_type_map_;
   RTC_DCHECK(payload_type_map_.find(kPayloadTypeH264) ==
              payload_type_map_.end());

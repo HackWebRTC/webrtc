@@ -55,18 +55,6 @@ class VideoQualityTest :
   static std::vector<int> ParseCSV(const std::string& str);
 
  protected:
-  class TestVideoEncoderFactory : public VideoEncoderFactory {
-    std::vector<SdpVideoFormat> GetSupportedFormats() const override;
-
-    CodecInfo QueryVideoEncoder(const SdpVideoFormat& format) const override;
-
-    std::unique_ptr<VideoEncoder> CreateVideoEncoder(
-        const SdpVideoFormat& format) override;
-
-   private:
-    InternalEncoderFactory internal_encoder_factory_;
-  };
-
   std::map<uint8_t, webrtc::MediaType> payload_type_map_;
   std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory_;
 
@@ -84,6 +72,8 @@ class VideoQualityTest :
   void CreateCapturers();
   std::unique_ptr<test::FrameGenerator> CreateFrameGenerator(size_t video_idx);
   void SetupThumbnailCapturers(size_t num_thumbnail_streams);
+  std::unique_ptr<VideoEncoder> CreateVideoEncoder(
+      const SdpVideoFormat& format);
   void SetupVideo(Transport* send_transport, Transport* recv_transport);
   void SetupThumbnails(Transport* send_transport, Transport* recv_transport);
   void DestroyThumbnailStreams();
@@ -98,8 +88,10 @@ class VideoQualityTest :
 
   std::vector<std::unique_ptr<test::VideoCapturer>> video_capturers_;
   std::vector<std::unique_ptr<test::VideoCapturer>> thumbnail_capturers_;
-  TestVideoEncoderFactory video_encoder_factory_;
+  Clock* const clock_;
 
+  test::FunctionVideoEncoderFactory video_encoder_factory_;
+  InternalEncoderFactory internal_encoder_factory_;
   std::vector<VideoSendStream::Config> thumbnail_send_configs_;
   std::vector<VideoEncoderConfig> thumbnail_encoder_configs_;
   std::vector<VideoSendStream*> thumbnail_send_streams_;
@@ -109,9 +101,6 @@ class VideoQualityTest :
   std::vector<VideoSendStream::Config> video_send_configs_;
   std::vector<VideoEncoderConfig> video_encoder_configs_;
   std::vector<VideoSendStream*> video_send_streams_;
-
-  Clock* const clock_;
-
   int receive_logs_;
   int send_logs_;
 
