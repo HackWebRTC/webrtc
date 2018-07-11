@@ -405,7 +405,8 @@ void RtpVideoStreamReceiver::ParseAndHandleEncapsulatingHeader(
     size_t packet_length,
     const RTPHeader& header) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_task_checker_);
-  if (header.payloadType == config_.rtp.red_payload_type) {
+  if (header.payloadType == config_.rtp.red_payload_type &&
+      packet_length > header.headerLength + header.paddingLength) {
     if (packet[header.headerLength] == config_.rtp.ulpfec_payload_type) {
       rtp_receive_statistics_->FecPacketReceived(header, packet_length);
       // Notify video_receiver about received FEC packets to avoid NACKing these

@@ -236,6 +236,29 @@ TEST_F(RtpVideoStreamReceiverTest, NoInfiniteRecursionOnEncapsulatedRedPacket) {
   rtp_video_stream_receiver_->OnRtpPacket(packet);
 }
 
+TEST_F(RtpVideoStreamReceiverTest,
+       DropsPacketWithRedPayloadTypeAndEmptyPayload) {
+  const uint8_t kRedPayloadType = 125;
+  config_.rtp.red_payload_type = kRedPayloadType;
+  SetUp();  // re-create rtp_video_stream_receiver with red payload type.
+  // clang-format off
+  const uint8_t data[] = {
+      0x80,              // RTP version.
+      kRedPayloadType,   // Payload type.
+      0, 0, 0, 0, 0, 0,  // Don't care.
+      0, 0, 0x4, 0x57,   // SSRC
+      // Empty rtp payload.
+  };
+  // clang-format on
+  RtpPacketReceived packet;
+  // Manually convert to CopyOnWriteBuffer to be sure capacity == size
+  // and asan bot can catch read buffer overflow.
+  EXPECT_TRUE(packet.Parse(rtc::CopyOnWriteBuffer(data)));
+  rtp_video_stream_receiver_->StartReceive();
+  rtp_video_stream_receiver_->OnRtpPacket(packet);
+  // Expect asan doesn't find anything.
+}
+
 TEST_F(RtpVideoStreamReceiverTest, GenericKeyFrameBitstreamError) {
   WebRtcRTPHeader rtp_header;
   const std::vector<uint8_t> data({1, 2, 3, 4});
