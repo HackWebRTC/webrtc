@@ -36,15 +36,11 @@ class OwnedFactoryAndThreads {
   OwnedFactoryAndThreads(std::unique_ptr<Thread> network_thread,
                          std::unique_ptr<Thread> worker_thread,
                          std::unique_ptr<Thread> signaling_thread,
-                         VideoEncoderFactory* legacy_encoder_factory,
-                         VideoDecoderFactory* legacy_decoder_factory,
                          rtc::NetworkMonitorFactory* network_monitor_factory,
                          PeerConnectionFactoryInterface* factory)
       : network_thread_(std::move(network_thread)),
         worker_thread_(std::move(worker_thread)),
         signaling_thread_(std::move(signaling_thread)),
-        legacy_encoder_factory_(legacy_encoder_factory),
-        legacy_decoder_factory_(legacy_decoder_factory),
         network_monitor_factory_(network_monitor_factory),
         factory_(factory) {}
 
@@ -54,12 +50,6 @@ class OwnedFactoryAndThreads {
   Thread* network_thread() { return network_thread_.get(); }
   Thread* signaling_thread() { return signaling_thread_.get(); }
   Thread* worker_thread() { return worker_thread_.get(); }
-  VideoEncoderFactory* legacy_encoder_factory() {
-    return legacy_encoder_factory_;
-  }
-  VideoDecoderFactory* legacy_decoder_factory() {
-    return legacy_decoder_factory_;
-  }
   rtc::NetworkMonitorFactory* network_monitor_factory() {
     return network_monitor_factory_;
   }
@@ -70,8 +60,6 @@ class OwnedFactoryAndThreads {
   const std::unique_ptr<Thread> network_thread_;
   const std::unique_ptr<Thread> worker_thread_;
   const std::unique_ptr<Thread> signaling_thread_;
-  VideoEncoderFactory* legacy_encoder_factory_;
-  VideoDecoderFactory* legacy_decoder_factory_;
   rtc::NetworkMonitorFactory* network_monitor_factory_;
   PeerConnectionFactoryInterface* factory_;  // Const after ctor except dtor.
 };

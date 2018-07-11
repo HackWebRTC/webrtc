@@ -33,8 +33,6 @@ public class PeerConnectionFactory {
   @Nullable private static Thread networkThread;
   @Nullable private static Thread workerThread;
   @Nullable private static Thread signalingThread;
-  private EglBase localEglbase;
-  private EglBase remoteEglbase;
 
   public static class InitializationOptions {
     final Context applicationContext;
@@ -88,6 +86,8 @@ public class PeerConnectionFactory {
         return this;
       }
 
+      // Deprecated, this method only affects the deprecated HW codecs and not the new ones.
+      @Deprecated
       public Builder setEnableVideoHwAcceleration(boolean enableVideoHwAcceleration) {
         this.enableVideoHwAcceleration = enableVideoHwAcceleration;
         return this;
@@ -365,10 +365,8 @@ public class PeerConnectionFactory {
 
   @Deprecated
   public VideoSource createVideoSource(VideoCapturer capturer) {
-    final EglBase.Context eglContext =
-        localEglbase == null ? null : localEglbase.getEglBaseContext();
-    final SurfaceTextureHelper surfaceTextureHelper =
-        SurfaceTextureHelper.create(VIDEO_CAPTURER_THREAD_NAME, eglContext);
+    final SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create(
+        VIDEO_CAPTURER_THREAD_NAME, MediaCodecVideoEncoder.getEglContext());
     final VideoSource videoSource = new VideoSource(
         nativeCreateVideoSource(nativeFactory, capturer.isScreencast()), surfaceTextureHelper);
     capturer.initialize(surfaceTextureHelper, ContextUtils.getApplicationContext(),
@@ -401,26 +399,20 @@ public class PeerConnectionFactory {
     nativeStopAecDump(nativeFactory);
   }
 
-  /** Set the EGL context used by HW Video encoding and decoding.
+  /**
+   * Set the EGL context used by HW Video encoding and decoding.
    *
    * @param localEglContext   Must be the same as used by VideoCapturerAndroid and any local video
    *                          renderer.
    * @param remoteEglContext  Must be the same as used by any remote video renderer.
+   * @deprecated Use new HW video encoded/decoder instead, and use createVideoSource(boolean
+   * isScreencast) instead of createVideoSource(VideoCapturer).
    */
+  @Deprecated
   public void setVideoHwAccelerationOptions(
       EglBase.Context localEglContext, EglBase.Context remoteEglContext) {
-    if (localEglbase != null) {
-      Logging.w(TAG, "Egl context already set.");
-      localEglbase.release();
-    }
-    if (remoteEglbase != null) {
-      Logging.w(TAG, "Egl context already set.");
-      remoteEglbase.release();
-    }
-    localEglbase = EglBase.create(localEglContext);
-    remoteEglbase = EglBase.create(remoteEglContext);
-    nativeSetVideoHwAccelerationOptions(
-        nativeFactory, localEglbase.getEglBaseContext(), remoteEglbase.getEglBaseContext());
+    MediaCodecVideoEncoder.setEglContext(localEglContext);
+    MediaCodecVideoDecoder.setEglContext(remoteEglContext);
   }
 
   public void dispose() {
@@ -428,10 +420,8 @@ public class PeerConnectionFactory {
     networkThread = null;
     workerThread = null;
     signalingThread = null;
-    if (localEglbase != null)
-      localEglbase.release();
-    if (remoteEglbase != null)
-      remoteEglbase.release();
+    MediaCodecVideoEncoder.disposeEglContext();
+    MediaCodecVideoDecoder.disposeEglContext();
   }
 
   public void threadsCallbacks() {
@@ -510,8 +500,6 @@ public class PeerConnectionFactory {
   private static native boolean nativeStartAecDump(
       long factory, int file_descriptor, int filesize_limit_bytes);
   private static native void nativeStopAecDump(long factory);
-  private static native void nativeSetVideoHwAccelerationOptions(
-      long factory, Object localEGLContext, Object remoteEGLContext);
   private static native void nativeInvokeThreadsCallbacks(long factory);
   private static native void nativeFreeFactory(long factory);
   private static native long nativeGetNativePeerConnectionFactory(long factory);

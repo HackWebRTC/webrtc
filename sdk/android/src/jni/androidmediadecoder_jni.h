@@ -25,8 +25,6 @@ class MediaCodecVideoDecoderFactory : public VideoDecoderFactory {
   MediaCodecVideoDecoderFactory();
   ~MediaCodecVideoDecoderFactory() override;
 
-  void SetEGLContext(JNIEnv* jni, jobject render_egl_context);
-
   // VideoDecoderFactory implementation.
   std::vector<SdpVideoFormat> GetSupportedFormats() const override;
   std::unique_ptr<VideoDecoder> CreateVideoDecoder(
@@ -35,7 +33,6 @@ class MediaCodecVideoDecoderFactory : public VideoDecoderFactory {
   static bool IsH264HighProfileSupported(JNIEnv* env);
 
  private:
-  jobject egl_context_;
   std::vector<SdpVideoFormat> supported_formats_;
 };
 

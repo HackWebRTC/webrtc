@@ -61,11 +61,6 @@ class EglBase14 implements EglBase {
     public Context(android.opengl.EGLContext eglContext) {
       this.egl14Context = eglContext;
     }
-
-    @CalledByNative("Context")
-    static boolean isEgl14Context(EglBase.Context context) {
-      return context instanceof EglBase14.Context;
-    }
   }
 
   // Create a new context with the specified config type, sharing data with sharedContext.

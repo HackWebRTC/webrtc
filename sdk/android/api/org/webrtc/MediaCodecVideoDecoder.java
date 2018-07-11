@@ -36,6 +36,7 @@ import org.webrtc.VideoFrame;
 // Java-side of peerconnection.cc:MediaCodecVideoDecoder.
 // This class is an implementation detail of the Java PeerConnection API.
 @SuppressWarnings("deprecation")
+@Deprecated
 public class MediaCodecVideoDecoder {
   // This class is constructed, operated, and destroyed by its C++ incarnation,
   // so the class and its methods have non-public visibility.  The API this
@@ -79,6 +80,7 @@ public class MediaCodecVideoDecoder {
   private static int codecErrors = 0;
   // List of disabled codec types - can be set from application.
   private static Set<String> hwDecoderDisabledTypes = new HashSet<String>();
+  @Nullable private static EglBase eglBase;
 
   @Nullable private Thread mediaCodecThread;
   @Nullable private MediaCodec mediaCodec;
@@ -141,7 +143,6 @@ public class MediaCodecVideoDecoder {
   private int sliceHeight;
   private boolean hasDecodedFirstFrame;
   private final Queue<TimeStamps> decodeStartTimeMs = new ArrayDeque<TimeStamps>();
-  private boolean useSurface;
 
   // The below variables are only used when decoding to a Surface.
   @Nullable private TextureListener textureListener;
@@ -155,6 +156,28 @@ public class MediaCodecVideoDecoder {
   // is hanging and can no longer be used in the next call.
   public static interface MediaCodecVideoDecoderErrorCallback {
     void onMediaCodecVideoDecoderCriticalError(int codecErrors);
+  }
+
+  /** Set EGL context used by HW decoding. The EGL context must be shared with the remote render. */
+  public static void setEglContext(EglBase.Context eglContext) {
+    if (eglBase != null) {
+      Logging.w(TAG, "Egl context already set.");
+      eglBase.release();
+    }
+    eglBase = EglBase.create(eglContext);
+  }
+
+  /** Dispose the EGL context used by HW decoding. */
+  public static void disposeEglContext() {
+    if (eglBase != null) {
+      eglBase.release();
+      eglBase = null;
+    }
+  }
+
+  @CalledByNative
+  static boolean useSurface() {
+    return eglBase != null;
   }
 
   public static void setErrorCallback(MediaCodecVideoDecoderErrorCallback errorCallback) {
@@ -323,16 +346,13 @@ public class MediaCodecVideoDecoder {
     }
   }
 
-  // Pass null in |eglContext| to configure the codec for ByteBuffer output.
   @CalledByNativeUnchecked
-  private boolean initDecode(
-      VideoCodecType type, int width, int height, @Nullable EglBase.Context eglContext) {
+  private boolean initDecode(VideoCodecType type, int width, int height) {
     if (mediaCodecThread != null) {
       throw new RuntimeException("initDecode: Forgot to release()?");
     }
 
     String mime = null;
-    useSurface = (eglContext != null);
     String[] supportedCodecPrefixes = null;
     if (type == VideoCodecType.VIDEO_CODEC_VP8) {
       mime = VP8_MIME_TYPE;
@@ -351,8 +371,9 @@ public class MediaCodecVideoDecoder {
       throw new RuntimeException("Cannot find HW decoder for " + type);
     }
 
-    Logging.d(TAG, "Java initDecode: " + type + " : " + width + " x " + height + ". Color: 0x"
-            + Integer.toHexString(properties.colorFormat) + ". Use Surface: " + useSurface);
+    Logging.d(TAG,
+        "Java initDecode: " + type + " : " + width + " x " + height + ". Color: 0x"
+            + Integer.toHexString(properties.colorFormat) + ". Use Surface: " + useSurface());
 
     runningInstance = this; // Decoder is now running and can be queried for stack traces.
     mediaCodecThread = Thread.currentThread();
@@ -362,10 +383,10 @@ public class MediaCodecVideoDecoder {
       stride = width;
       sliceHeight = height;
 
-      if (useSurface) {
+      if (useSurface()) {
         @Nullable
-        final SurfaceTextureHelper surfaceTextureHelper =
-            SurfaceTextureHelper.create("Decoder SurfaceTextureHelper", eglContext);
+        final SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create(
+            "Decoder SurfaceTextureHelper", eglBase.getEglBaseContext());
         if (surfaceTextureHelper != null) {
           textureListener = new TextureListener(surfaceTextureHelper);
           textureListener.setSize(width, height);
@@ -374,7 +395,7 @@ public class MediaCodecVideoDecoder {
       }
 
       MediaFormat format = MediaFormat.createVideoFormat(mime, width, height);
-      if (!useSurface) {
+      if (!useSurface()) {
         format.setInteger(MediaFormat.KEY_COLOR_FORMAT, properties.colorFormat);
       }
       Logging.d(TAG, "  Format: " + format);
@@ -461,7 +482,7 @@ public class MediaCodecVideoDecoder {
     mediaCodec = null;
     mediaCodecThread = null;
     runningInstance = null;
-    if (useSurface) {
+    if (useSurface()) {
       surface.release();
       surface = null;
       textureListener.release();
@@ -773,7 +794,7 @@ public class MediaCodecVideoDecoder {
             textureListener.setSize(width, height);
           }
 
-          if (!useSurface && format.containsKey(MediaFormat.KEY_COLOR_FORMAT)) {
+          if (!useSurface() && format.containsKey(MediaFormat.KEY_COLOR_FORMAT)) {
             colorFormat = format.getInteger(MediaFormat.KEY_COLOR_FORMAT);
             Logging.d(TAG, "Color: 0x" + Integer.toHexString(colorFormat));
             if (!supportedColorList.contains(colorFormat)) {
@@ -817,7 +838,7 @@ public class MediaCodecVideoDecoder {
   @CalledByNativeUnchecked
   private @Nullable DecodedTextureBuffer dequeueTextureBuffer(int dequeueTimeoutMs) {
     checkOnMediaCodecThread();
-    if (!useSurface) {
+    if (!useSurface()) {
       throw new IllegalStateException("dequeueTexture() called for byte buffer decoding.");
     }
     DecodedOutputBuffer outputBuffer = dequeueOutputBuffer(dequeueTimeoutMs);
@@ -881,7 +902,7 @@ public class MediaCodecVideoDecoder {
   private void returnDecodedOutputBuffer(int index)
       throws IllegalStateException, MediaCodec.CodecException {
     checkOnMediaCodecThread();
-    if (useSurface) {
+    if (useSurface()) {
       throw new IllegalStateException("returnDecodedOutputBuffer() called for surface decoding.");
     }
     mediaCodec.releaseOutputBuffer(index, false /* render */);

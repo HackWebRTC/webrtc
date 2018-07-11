@@ -40,8 +40,8 @@ public class MediaCodecVideoEncoderTest {
       return;
     }
     MediaCodecVideoEncoder encoder = new MediaCodecVideoEncoder();
-    assertTrue(encoder.initEncode(
-        MediaCodecVideoEncoder.VideoCodecType.VIDEO_CODEC_VP8, profile, 640, 480, 300, 30, null));
+    assertTrue(encoder.initEncode(MediaCodecVideoEncoder.VideoCodecType.VIDEO_CODEC_VP8, profile,
+        640, 480, 300, 30, /* useSurface= */ false));
     encoder.release();
   }
 
@@ -53,10 +53,12 @@ public class MediaCodecVideoEncoderTest {
       return;
     }
     EglBase14 eglBase = new EglBase14(null, EglBase.CONFIG_PLAIN);
+    MediaCodecVideoEncoder.setEglContext(eglBase.getEglBaseContext());
     MediaCodecVideoEncoder encoder = new MediaCodecVideoEncoder();
     assertTrue(encoder.initEncode(MediaCodecVideoEncoder.VideoCodecType.VIDEO_CODEC_VP8, profile,
-        640, 480, 300, 30, eglBase.getEglBaseContext()));
+        640, 480, 300, 30, /* useSurface= */ true));
     encoder.release();
+    MediaCodecVideoEncoder.disposeEglContext();
     eglBase.release();
   }
 
@@ -68,13 +70,15 @@ public class MediaCodecVideoEncoderTest {
       return;
     }
     MediaCodecVideoEncoder encoder = new MediaCodecVideoEncoder();
-    assertTrue(encoder.initEncode(
-        MediaCodecVideoEncoder.VideoCodecType.VIDEO_CODEC_VP8, profile, 640, 480, 300, 30, null));
+    assertTrue(encoder.initEncode(MediaCodecVideoEncoder.VideoCodecType.VIDEO_CODEC_VP8, profile,
+        640, 480, 300, 30, /* useSurface= */ false));
     encoder.release();
     EglBase14 eglBase = new EglBase14(null, EglBase.CONFIG_PLAIN);
+    MediaCodecVideoEncoder.setEglContext(eglBase.getEglBaseContext());
     assertTrue(encoder.initEncode(MediaCodecVideoEncoder.VideoCodecType.VIDEO_CODEC_VP8, profile,
-        640, 480, 300, 30, eglBase.getEglBaseContext()));
+        640, 480, 300, 30, /* useSurface= */ true));
     encoder.release();
+    MediaCodecVideoEncoder.disposeEglContext();
     eglBase.release();
   }
 
@@ -94,7 +98,7 @@ public class MediaCodecVideoEncoderTest {
     MediaCodecVideoEncoder encoder = new MediaCodecVideoEncoder();
 
     assertTrue(encoder.initEncode(MediaCodecVideoEncoder.VideoCodecType.VIDEO_CODEC_VP8, profile,
-        width, height, 300, 30, null));
+        width, height, 300, 30, /* useSurface= */ false));
     ByteBuffer[] inputBuffers = encoder.getInputBuffers();
     assertNotNull(inputBuffers);
     assertTrue(min_size <= inputBuffers[0].capacity());

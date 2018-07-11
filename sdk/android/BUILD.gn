@@ -278,7 +278,6 @@ generate_jni("generated_video_jni") {
     "api/org/webrtc/VideoSource.java",
     "api/org/webrtc/VideoTrack.java",
     "api/org/webrtc/YuvHelper.java",
-    "src/java/org/webrtc/EglBase14.java",
     "src/java/org/webrtc/NV12Buffer.java",
     "src/java/org/webrtc/NV21Buffer.java",
     "src/java/org/webrtc/NativeCapturerObserver.java",

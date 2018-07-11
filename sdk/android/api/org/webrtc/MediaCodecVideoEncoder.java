@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
+import org.webrtc.EglBase;
 import org.webrtc.EglBase14;
 import org.webrtc.VideoFrame;
 
@@ -37,6 +38,7 @@ import org.webrtc.VideoFrame;
 // This class is an implementation detail of the Java PeerConnection API.
 @TargetApi(19)
 @SuppressWarnings("deprecation")
+@Deprecated
 public class MediaCodecVideoEncoder {
   // This class is constructed, operated, and destroyed by its C++ incarnation,
   // so the class and its methods have non-public visibility.  The API this
@@ -79,6 +81,7 @@ public class MediaCodecVideoEncoder {
   private static int codecErrors = 0;
   // List of disabled codec types - can be set from application.
   private static Set<String> hwEncoderDisabledTypes = new HashSet<String>();
+  @Nullable private static EglBase staticEglBase;
 
   @Nullable private Thread mediaCodecThread;
   @Nullable private MediaCodec mediaCodec;
@@ -145,6 +148,36 @@ public class MediaCodecVideoEncoder {
       this.minSdk = minSdk;
       this.bitrateAdjustmentType = bitrateAdjustmentType;
     }
+  }
+
+  /**
+   * Set EGL context used by HW encoding. The EGL context must be shared with the video capturer
+   * and any local render.
+   */
+  public static void setEglContext(EglBase.Context eglContext) {
+    if (staticEglBase != null) {
+      Logging.w(TAG, "Egl context already set.");
+      staticEglBase.release();
+    }
+    staticEglBase = EglBase.create(eglContext);
+  }
+
+  /** Dispose the EGL context used by HW encoding. */
+  public static void disposeEglContext() {
+    if (staticEglBase != null) {
+      staticEglBase.release();
+      staticEglBase = null;
+    }
+  }
+
+  @Nullable
+  static EglBase.Context getEglContext() {
+    return staticEglBase == null ? null : staticEglBase.getEglBaseContext();
+  }
+
+  @CalledByNative
+  static boolean hasEgl14Context() {
+    return staticEglBase instanceof EglBase14;
   }
 
   // List of supported HW VP8 encoders.
@@ -446,8 +479,7 @@ public class MediaCodecVideoEncoder {
 
   @CalledByNativeUnchecked
   boolean initEncode(VideoCodecType type, int profile, int width, int height, int kbps, int fps,
-      @Nullable EglBase14.Context sharedContext) {
-    final boolean useSurface = sharedContext != null;
+      boolean useSurface) {
     Logging.d(TAG,
         "Java initEncode: " + type + ". Profile: " + profile + " : " + width + " x " + height
             + ". @ " + kbps + " kbps. Fps: " + fps + ". Encode from texture : " + useSurface);
@@ -548,7 +580,7 @@ public class MediaCodecVideoEncoder {
       mediaCodec.configure(format, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE);
 
       if (useSurface) {
-        eglBase = new EglBase14(sharedContext, EglBase.CONFIG_RECORDABLE);
+        eglBase = new EglBase14((EglBase14.Context) getEglContext(), EglBase.CONFIG_RECORDABLE);
         // Create an input surface and keep a reference since we must release the surface when done.
         inputSurface = mediaCodec.createInputSurface();
         eglBase.createSurface(inputSurface);

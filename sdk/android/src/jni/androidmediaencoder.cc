@@ -98,7 +98,7 @@ class MediaCodecVideoEncoder : public VideoEncoder {
   ~MediaCodecVideoEncoder() override;
   MediaCodecVideoEncoder(JNIEnv* jni,
                          const SdpVideoFormat& format,
-                         jobject egl_context);
+                         bool has_egl_context);
 
   // VideoEncoder implementation.
   int32_t InitEncode(const VideoCodec* codec_settings,
@@ -115,7 +115,7 @@ class MediaCodecVideoEncoder : public VideoEncoder {
   int32_t SetRateAllocation(const VideoBitrateAllocation& rate_allocation,
                             uint32_t frame_rate) override;
 
-  bool SupportsNativeHandle() const override { return egl_context_ != nullptr; }
+  bool SupportsNativeHandle() const override { return has_egl_context_; }
   const char* ImplementationName() const override;
 
   // Fills the input buffer with data from the buffers passed as parameters.
@@ -275,9 +275,7 @@ class MediaCodecVideoEncoder : public VideoEncoder {
                     // non-flexible VP9 mode.
   size_t gof_idx_;
 
-  // EGL context - owned by factory, should not be allocated/destroyed
-  // by MediaCodecVideoEncoder.
-  jobject egl_context_;
+  const bool has_egl_context_;
 
   // Temporary fix for VP8.
   // Sends a key frame if frames are largely spaced apart (possibly
@@ -302,7 +300,7 @@ MediaCodecVideoEncoder::~MediaCodecVideoEncoder() {
 
 MediaCodecVideoEncoder::MediaCodecVideoEncoder(JNIEnv* jni,
                                                const SdpVideoFormat& format,
-                                               jobject egl_context)
+                                               bool has_egl_context)
     : format_(format),
       callback_(NULL),
       j_media_codec_video_encoder_(
@@ -310,7 +308,7 @@ MediaCodecVideoEncoder::MediaCodecVideoEncoder(JNIEnv* jni,
           Java_MediaCodecVideoEncoder_Constructor(jni)),
       inited_(false),
       use_surface_(false),
-      egl_context_(egl_context),
+      has_egl_context_(has_egl_context),
       sw_fallback_required_(false) {
   encoder_queue_checker_.Detach();
 }
@@ -361,7 +359,7 @@ int32_t MediaCodecVideoEncoder::InitEncode(const VideoCodec* codec_settings,
   return InitEncodeInternal(
       init_width, init_height, codec_settings->startBitrate,
       codec_settings->maxFramerate,
-      codec_settings->expect_encode_from_texture && (egl_context_ != nullptr));
+      codec_settings->expect_encode_from_texture && has_egl_context_);
 }
 
 int32_t MediaCodecVideoEncoder::SetChannelParameters(uint32_t /* packet_loss */,
@@ -475,7 +473,7 @@ int32_t MediaCodecVideoEncoder::InitEncodeInternal(int width,
   if (sw_fallback_required_) {
     return WEBRTC_VIDEO_CODEC_OK;
   }
-  RTC_CHECK(!use_surface || egl_context_ != nullptr) << "EGL context not set.";
+  RTC_CHECK(!use_surface || has_egl_context_) << "EGL context not set.";
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
 
@@ -522,8 +520,8 @@ int32_t MediaCodecVideoEncoder::InitEncodeInternal(int width,
       Java_VideoCodecType_fromNativeIndex(jni, codec_type);
   const bool encode_status = Java_MediaCodecVideoEncoder_initEncode(
       jni, j_media_codec_video_encoder_, j_video_codec_enum, profile_, width,
-      height, kbps, fps,
-      JavaParamRef<jobject>(use_surface ? egl_context_ : nullptr));
+      height, kbps, fps, use_surface);
+
   if (!encode_status) {
     ALOGE << "Failed to configure encoder.";
     ProcessHWError(false /* reset_if_fallback_unavailable */);
@@ -1212,8 +1210,7 @@ const char* MediaCodecVideoEncoder::ImplementationName() const {
   return "MediaCodec";
 }
 
-MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory()
-    : egl_context_(nullptr) {
+MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory() {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
   supported_formats_.clear();
@@ -1270,23 +1267,6 @@ MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory()
 
 MediaCodecVideoEncoderFactory::~MediaCodecVideoEncoderFactory() {
   ALOGD << "MediaCodecVideoEncoderFactory dtor";
-  if (egl_context_) {
-    JNIEnv* jni = AttachCurrentThreadIfNeeded();
-    jni->DeleteGlobalRef(egl_context_);
-  }
-}
-
-void MediaCodecVideoEncoderFactory::SetEGLContext(JNIEnv* jni,
-                                                  jobject egl_context) {
-  ALOGD << "MediaCodecVideoEncoderFactory::SetEGLContext";
-  if (egl_context_) {
-    jni->DeleteGlobalRef(egl_context_);
-    egl_context_ = nullptr;
-  }
-  egl_context_ = jni->NewGlobalRef(egl_context);
-  if (CheckException(jni)) {
-    ALOGE << "error calling NewGlobalRef for EGL Context.";
-  }
 }
 
 std::unique_ptr<VideoEncoder> MediaCodecVideoEncoderFactory::CreateVideoEncoder(
@@ -1299,7 +1279,8 @@ std::unique_ptr<VideoEncoder> MediaCodecVideoEncoderFactory::CreateVideoEncoder(
     ALOGD << "Create HW video encoder for " << format.name;
     JNIEnv* jni = AttachCurrentThreadIfNeeded();
     ScopedLocalRefFrame local_ref_frame(jni);
-    return rtc::MakeUnique<MediaCodecVideoEncoder>(jni, format, egl_context_);
+    return rtc::MakeUnique<MediaCodecVideoEncoder>(
+        jni, format, Java_MediaCodecVideoEncoder_hasEgl14Context(jni));
   }
   ALOGW << "Can not find HW video encoder for type " << format.name;
   return nullptr;

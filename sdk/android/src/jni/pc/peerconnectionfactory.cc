@@ -112,9 +112,7 @@ jobject NativeToJavaPeerConnectionFactory(
     rtc::NetworkMonitorFactory* network_monitor_factory) {
   jni::OwnedFactoryAndThreads* owned_factory = new jni::OwnedFactoryAndThreads(
       std::move(network_thread), std::move(worker_thread),
-      std::move(signaling_thread), nullptr /* legacy_encoder_factory */,
-      nullptr /* legacy_decoder_factory */, network_monitor_factory,
-      pcf.release());
+      std::move(signaling_thread), network_monitor_factory, pcf.release());
   owned_factory->InvokeJavaCallbacksOnFactoryThreads();
 
   return Java_PeerConnectionFactory_Constructor(
@@ -241,8 +239,6 @@ jlong CreatePeerConnectionFactoryForJava(
   std::unique_ptr<RtcEventLogFactoryInterface> rtc_event_log_factory(
       CreateRtcEventLogFactory());
 
-  VideoEncoderFactory* legacy_video_encoder_factory = nullptr;
-  VideoDecoderFactory* legacy_video_decoder_factory = nullptr;
   std::unique_ptr<VideoEncoderFactory> video_encoder_factory;
   std::unique_ptr<VideoDecoderFactory> video_decoder_factory;
   std::unique_ptr<cricket::MediaEngineInterface> media_engine;
@@ -261,11 +257,8 @@ jlong CreatePeerConnectionFactoryForJava(
     if (jencoder_factory.is_null()) {
       // TODO(bugs.webrtc.org/7925): When all clients switched to injectable
       // factories, remove the legacy codec factories
-      std::unique_ptr<VideoEncoderFactory> legacy_factory =
-          CreateLegacyVideoEncoderFactory();
-      legacy_video_encoder_factory = legacy_factory.get();
       video_encoder_factory =
-          WrapLegacyVideoEncoderFactory(std::move(legacy_factory));
+          WrapLegacyVideoEncoderFactory(CreateLegacyVideoEncoderFactory());
     } else {
       video_encoder_factory = std::unique_ptr<VideoEncoderFactory>(
           CreateVideoEncoderFactory(jni, jencoder_factory));
@@ -274,11 +267,8 @@ jlong CreatePeerConnectionFactoryForJava(
     if (jdecoder_factory.is_null()) {
       // TODO(bugs.webrtc.org/7925): When all clients switched to injectable
       // factories, remove the legacy codec factories
-      std::unique_ptr<VideoDecoderFactory> legacy_factory =
-          CreateLegacyVideoDecoderFactory();
-      legacy_video_decoder_factory = legacy_factory.get();
       video_decoder_factory =
-          WrapLegacyVideoDecoderFactory(std::move(legacy_factory));
+          WrapLegacyVideoDecoderFactory(CreateLegacyVideoDecoderFactory());
     } else {
       video_decoder_factory = std::unique_ptr<VideoDecoderFactory>(
           CreateVideoDecoderFactory(jni, jdecoder_factory));
@@ -303,8 +293,7 @@ jlong CreatePeerConnectionFactoryForJava(
   }
   OwnedFactoryAndThreads* owned_factory = new OwnedFactoryAndThreads(
       std::move(network_thread), std::move(worker_thread),
-      std::move(signaling_thread), legacy_video_encoder_factory,
-      legacy_video_decoder_factory, network_monitor_factory, factory.release());
+      std::move(signaling_thread), network_monitor_factory, factory.release());
   owned_factory->InvokeJavaCallbacksOnFactoryThreads();
   return jlongFromPointer(owned_factory);
 }
@@ -476,20 +465,6 @@ static jlong JNI_PeerConnectionFactory_CreateVideoTrack(
       JavaToStdString(jni, id),
       reinterpret_cast<VideoTrackSourceInterface*>(native_source)));
   return jlongFromPointer(track.release());
-}
-
-static void JNI_PeerConnectionFactory_SetVideoHwAccelerationOptions(
-    JNIEnv* jni,
-    const JavaParamRef<jclass>&,
-    jlong native_factory,
-    const JavaParamRef<jobject>& local_egl_context,
-    const JavaParamRef<jobject>& remote_egl_context) {
-  OwnedFactoryAndThreads* owned_factory =
-      reinterpret_cast<OwnedFactoryAndThreads*>(native_factory);
-  SetEglContext(jni, owned_factory->legacy_encoder_factory(),
-                local_egl_context);
-  SetEglContext(jni, owned_factory->legacy_decoder_factory(),
-                remote_egl_context);
 }
 
 static jlong JNI_PeerConnectionFactory_GetNativePeerConnectionFactory(

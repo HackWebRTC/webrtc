@@ -28,13 +28,6 @@ VideoDecoderFactory* CreateVideoDecoderFactory(
   return nullptr;
 }
 
-void SetEglContext(JNIEnv* env,
-                   VideoEncoderFactory* encoder_factory,
-                   const JavaRef<jobject>& egl_context) {}
-void SetEglContext(JNIEnv* env,
-                   VideoDecoderFactory* decoder_factory,
-                   const JavaRef<jobject>& egl_context) {}
-
 void* CreateVideoSource(JNIEnv* env,
                         rtc::Thread* signaling_thread,
                         rtc::Thread* worker_thread,
