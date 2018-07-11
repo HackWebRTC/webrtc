@@ -514,6 +514,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
         "../system_wrappers:field_trial_default",
         "../system_wrappers:metrics_default",
         "../system_wrappers:runtime_enabled_features_default",
+        "//third_party/abseil-cpp/absl/memory",
       ]
 
       if (current_cpu == "arm64") {

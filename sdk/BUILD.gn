@@ -805,6 +805,7 @@ if (is_ios || is_mac) {
         "../pc:peerconnection",
         "../rtc_base:checks",
         "../rtc_base:rtc_base",
+        "//third_party/abseil-cpp/absl/memory",
       ]
 
       if (is_ios) {
@@ -1186,6 +1187,7 @@ if (is_ios || is_mac) {
         "../api/video_codecs:video_codecs_api",
         "../common_video",
         "../rtc_base:rtc_base",
+        "//third_party/abseil-cpp/absl/memory",
       ]
     }
 
@@ -1232,6 +1234,7 @@ if (is_ios || is_mac) {
         "../modules/video_coding:video_codec_interface",
         "../rtc_base:checks",
         "../rtc_base:rtc_base",
+        "//third_party/abseil-cpp/absl/memory",
       ]
     }
 

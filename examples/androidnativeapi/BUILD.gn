@@ -67,6 +67,7 @@ rtc_shared_library("examples_androidnativeapi_jni") {
     "//system_wrappers:field_trial_default",
     "//system_wrappers:metrics_default",
     "//system_wrappers:runtime_enabled_features_default",
+    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 
