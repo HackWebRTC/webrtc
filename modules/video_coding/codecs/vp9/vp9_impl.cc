@@ -55,8 +55,11 @@ int GetCpuSpeed(int width, int height) {
 
 std::vector<SdpVideoFormat> SupportedVP9Codecs() {
   return {SdpVideoFormat(
-      cricket::kVp9CodecName,
-      {{kVP9FmtpProfileId, VP9ProfileToString(VP9Profile::kProfile0)}})};
+              cricket::kVp9CodecName,
+              {{kVP9FmtpProfileId, VP9ProfileToString(VP9Profile::kProfile0)}}),
+          SdpVideoFormat(cricket::kVp9CodecName,
+                         {{kVP9FmtpProfileId,
+                           VP9ProfileToString(VP9Profile::kProfile2)}})};
 }
 
 std::unique_ptr<VP9Encoder> VP9Encoder::Create() {
