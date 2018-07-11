@@ -20,7 +20,6 @@
 #include "rtc_base/ssladapter.h"
 #include "rtc_base/sslstreamadapter.h"
 #include "system_wrappers/include/field_trial_default.h"
-#include "system_wrappers/include/metrics_default.h"
 #include "test/field_trial.h"
 #include "test/testsupport/fileutils.h"
 
@@ -82,7 +81,6 @@ int main(int argc, char* argv[]) {
   // InitFieldTrialsFromString stores the char*, so the char array must outlive
   // the application.
   webrtc::field_trial::InitFieldTrialsFromString(FLAG_force_fieldtrials);
-  webrtc::metrics::Enable();
 
 #if defined(WEBRTC_WIN)
   if (!FLAG_default_error_handlers) {

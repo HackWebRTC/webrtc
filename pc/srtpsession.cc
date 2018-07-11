@@ -139,7 +139,11 @@ bool SrtpSession::UnprotectRtp(void* p, int in_len, int* out_len) {
   int err = srtp_unprotect(session_, p, out_len);
   if (err != srtp_err_status_ok) {
     RTC_LOG(LS_WARNING) << "Failed to unprotect SRTP packet, err=" << err;
-    RTC_HISTOGRAM_ENUMERATION("WebRTC.PeerConnection.SrtpUnprotectError",
+    if (metrics_observer_) {
+      metrics_observer_->IncrementSparseEnumCounter(
+          webrtc::kEnumCounterSrtpUnprotectError, err);
+    }
+    RTC_HISTOGRAM_ENUMERATION("WebRTC.PeerConnection.UnprotectSrtpError",
                               static_cast<int>(err), kSrtpErrorCodeBoundary);
     return false;
   }
@@ -157,7 +161,11 @@ bool SrtpSession::UnprotectRtcp(void* p, int in_len, int* out_len) {
   int err = srtp_unprotect_rtcp(session_, p, out_len);
   if (err != srtp_err_status_ok) {
     RTC_LOG(LS_WARNING) << "Failed to unprotect SRTCP packet, err=" << err;
-    RTC_HISTOGRAM_ENUMERATION("WebRTC.PeerConnection.SrtcpUnprotectError",
+    if (metrics_observer_) {
+      metrics_observer_->IncrementSparseEnumCounter(
+          webrtc::kEnumCounterSrtcpUnprotectError, err);
+    }
+    RTC_HISTOGRAM_ENUMERATION("WebRTC.PeerConnection.UnprotectSrtcpError",
                               static_cast<int>(err), kSrtpErrorCodeBoundary);
     return false;
   }

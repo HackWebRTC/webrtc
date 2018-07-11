@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include "api/fakemetricsobserver.h"
 #include "p2p/base/fakeportallocator.h"
 #include "p2p/base/mockicetransport.h"
 #include "p2p/base/p2pconstants.h"
