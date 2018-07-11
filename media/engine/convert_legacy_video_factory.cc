@@ -186,8 +186,11 @@ class CricketToWebRtcDecoderFactory : public webrtc::VideoDecoderFactory {
 
   std::unique_ptr<webrtc::VideoDecoder> CreateVideoDecoder(
       const webrtc::SdpVideoFormat& format) override {
-    return CreateScopedVideoDecoder(external_decoder_factory_.get(),
-                                    VideoCodec(format), {});
+    if (external_decoder_factory_ != nullptr) {
+      return CreateScopedVideoDecoder(external_decoder_factory_.get(),
+                                      VideoCodec(format), {});
+    }
+    return nullptr;
   }
 
   std::vector<webrtc::SdpVideoFormat> GetSupportedFormats() const override {
