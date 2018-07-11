@@ -84,18 +84,18 @@ class NetEqInput {
 class TimeLimitedNetEqInput : public NetEqInput {
  public:
   TimeLimitedNetEqInput(std::unique_ptr<NetEqInput> input, int64_t duration_ms);
-  absl::optional<int64_t> NextPacketTime() const override;
-  absl::optional<int64_t> NextOutputEventTime() const override;
+  rtc::Optional<int64_t> NextPacketTime() const override;
+  rtc::Optional<int64_t> NextOutputEventTime() const override;
   std::unique_ptr<PacketData> PopPacket() override;
   void AdvanceOutputEvent() override;
   bool ended() const override;
-  absl::optional<RTPHeader> NextHeader() const override;
+  rtc::Optional<RTPHeader> NextHeader() const override;
 
  private:
   void MaybeSetEnded();
 
   std::unique_ptr<NetEqInput> input_;
-  const absl::optional<int64_t> start_time_ms_;
+  const rtc::Optional<int64_t> start_time_ms_;
   const int64_t duration_ms_;
   bool ended_ = false;
 };

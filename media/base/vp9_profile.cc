@@ -54,8 +54,8 @@ absl::optional<VP9Profile> ParseSdpForVP9Profile(
 
 bool IsSameVP9Profile(const SdpVideoFormat::Parameters& params1,
                       const SdpVideoFormat::Parameters& params2) {
-  const absl::optional<VP9Profile> profile = ParseSdpForVP9Profile(params1);
-  const absl::optional<VP9Profile> other_profile =
+  const rtc::Optional<VP9Profile> profile = ParseSdpForVP9Profile(params1);
+  const rtc::Optional<VP9Profile> other_profile =
       ParseSdpForVP9Profile(params2);
   return profile && other_profile && profile == other_profile;
 }
