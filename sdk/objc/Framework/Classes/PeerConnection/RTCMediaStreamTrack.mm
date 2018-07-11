@@ -20,6 +20,7 @@ NSString * const kRTCMediaStreamTrackKindVideo =
     @(webrtc::MediaStreamTrackInterface::kVideoKind);
 
 @implementation RTCMediaStreamTrack {
+  RTCPeerConnectionFactory *_factory;
   rtc::scoped_refptr<webrtc::MediaStreamTrackInterface> _nativeTrack;
   RTCMediaStreamTrackType _type;
 }
@@ -73,29 +74,31 @@ NSString * const kRTCMediaStreamTrackKindVideo =
   return _nativeTrack;
 }
 
-- (instancetype)initWithNativeTrack:
-    (rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)nativeTrack
-                               type:(RTCMediaStreamTrackType)type {
+@synthesize factory = _factory;
+
+- (instancetype)initWithFactory:(RTCPeerConnectionFactory *)factory
+                    nativeTrack:(rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)nativeTrack
+                           type:(RTCMediaStreamTrackType)type {
   NSParameterAssert(nativeTrack);
+  NSParameterAssert(factory);
   if (self = [super init]) {
+    _factory = factory;
     _nativeTrack = nativeTrack;
     _type = type;
   }
   return self;
 }
 
-- (instancetype)initWithNativeTrack:
-    (rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)nativeTrack {
+- (instancetype)initWithFactory:(RTCPeerConnectionFactory *)factory
+                    nativeTrack:(rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)nativeTrack {
   NSParameterAssert(nativeTrack);
   if (nativeTrack->kind() ==
       std::string(webrtc::MediaStreamTrackInterface::kAudioKind)) {
-    return [self initWithNativeTrack:nativeTrack
-                                type:RTCMediaStreamTrackTypeAudio];
+    return [self initWithFactory:factory nativeTrack:nativeTrack type:RTCMediaStreamTrackTypeAudio];
   }
   if (nativeTrack->kind() ==
       std::string(webrtc::MediaStreamTrackInterface::kVideoKind)) {
-    return [self initWithNativeTrack:nativeTrack
-                                type:RTCMediaStreamTrackTypeVideo];
+    return [self initWithFactory:factory nativeTrack:nativeTrack type:RTCMediaStreamTrackTypeVideo];
   }
   return nil;
 }
@@ -137,16 +140,20 @@ NSString * const kRTCMediaStreamTrackKindVideo =
 }
 
 + (RTCMediaStreamTrack *)mediaTrackForNativeTrack:
-        (rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)nativeTrack {
+                             (rtc::scoped_refptr<webrtc::MediaStreamTrackInterface>)nativeTrack
+                                          factory:(RTCPeerConnectionFactory *)factory {
   NSParameterAssert(nativeTrack);
+  NSParameterAssert(factory);
   if (nativeTrack->kind() == webrtc::MediaStreamTrackInterface::kAudioKind) {
-    return
-        [[RTCAudioTrack alloc] initWithNativeTrack:nativeTrack type:RTCMediaStreamTrackTypeAudio];
+    return [[RTCAudioTrack alloc] initWithFactory:factory
+                                      nativeTrack:nativeTrack
+                                             type:RTCMediaStreamTrackTypeAudio];
   } else if (nativeTrack->kind() == webrtc::MediaStreamTrackInterface::kVideoKind) {
-    return
-        [[RTCVideoTrack alloc] initWithNativeTrack:nativeTrack type:RTCMediaStreamTrackTypeVideo];
+    return [[RTCVideoTrack alloc] initWithFactory:factory
+                                      nativeTrack:nativeTrack
+                                             type:RTCMediaStreamTrackTypeVideo];
   } else {
-    return [[RTCMediaStreamTrack alloc] initWithNativeTrack:nativeTrack];
+    return [[RTCMediaStreamTrack alloc] initWithFactory:factory nativeTrack:nativeTrack];
   }
 }
 

@@ -180,7 +180,7 @@
 
   rtc::scoped_refptr<webrtc::AudioSourceInterface> source =
       _nativeFactory->CreateAudioSource(options);
-  return [[RTCAudioSource alloc] initWithNativeAudioSource:source];
+  return [[RTCAudioSource alloc] initWithFactory:self nativeAudioSource:source];
 }
 
 - (RTCAudioTrack *)audioTrackWithTrackId:(NSString *)trackId {
@@ -196,8 +196,9 @@
 }
 
 - (RTCVideoSource *)videoSource {
-  return [[RTCVideoSource alloc] initWithSignalingThread:_signalingThread.get()
-                                            workerThread:_workerThread.get()];
+  return [[RTCVideoSource alloc] initWithFactory:self
+                                 signalingThread:_signalingThread.get()
+                                    workerThread:_workerThread.get()];
 }
 
 - (RTCVideoTrack *)videoTrackWithSource:(RTCVideoSource *)source

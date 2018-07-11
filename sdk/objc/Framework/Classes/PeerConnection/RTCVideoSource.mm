@@ -28,30 +28,35 @@ static webrtc::ObjCVideoTrackSource *getObjCVideoSource(
   rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> _nativeVideoSource;
 }
 
-- (instancetype)initWithNativeVideoSource:
-    (rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>)nativeVideoSource {
+- (instancetype)initWithFactory:(RTCPeerConnectionFactory *)factory
+              nativeVideoSource:
+                  (rtc::scoped_refptr<webrtc::VideoTrackSourceInterface>)nativeVideoSource {
+  RTC_DCHECK(factory);
   RTC_DCHECK(nativeVideoSource);
-  if (self = [super initWithNativeMediaSource:nativeVideoSource
-                                         type:RTCMediaSourceTypeVideo]) {
+  if (self = [super initWithFactory:factory
+                  nativeMediaSource:nativeVideoSource
+                               type:RTCMediaSourceTypeVideo]) {
     _nativeVideoSource = nativeVideoSource;
   }
   return self;
 }
 
-- (instancetype)initWithNativeMediaSource:
-    (rtc::scoped_refptr<webrtc::MediaSourceInterface>)nativeMediaSource
-                                     type:(RTCMediaSourceType)type {
+- (instancetype)initWithFactory:(RTCPeerConnectionFactory *)factory
+              nativeMediaSource:(rtc::scoped_refptr<webrtc::MediaSourceInterface>)nativeMediaSource
+                           type:(RTCMediaSourceType)type {
   RTC_NOTREACHED();
   return nil;
 }
 
-- (instancetype)initWithSignalingThread:(rtc::Thread *)signalingThread
-                           workerThread:(rtc::Thread *)workerThread {
+- (instancetype)initWithFactory:(RTCPeerConnectionFactory *)factory
+                signalingThread:(rtc::Thread *)signalingThread
+                   workerThread:(rtc::Thread *)workerThread {
   rtc::scoped_refptr<webrtc::ObjCVideoTrackSource> objCVideoTrackSource(
       new rtc::RefCountedObject<webrtc::ObjCVideoTrackSource>());
 
-  return [self initWithNativeVideoSource:webrtc::VideoTrackSourceProxy::Create(
-                                             signalingThread, workerThread, objCVideoTrackSource)];
+  return [self initWithFactory:factory
+             nativeVideoSource:webrtc::VideoTrackSourceProxy::Create(
+                                   signalingThread, workerThread, objCVideoTrackSource)];
 }
 
 - (NSString *)description {

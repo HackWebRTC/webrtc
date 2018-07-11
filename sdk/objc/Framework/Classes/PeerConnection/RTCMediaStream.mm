@@ -109,14 +109,14 @@
     for (auto &track : audioTracks) {
       RTCMediaStreamTrackType type = RTCMediaStreamTrackTypeAudio;
       RTCAudioTrack *audioTrack =
-          [[RTCAudioTrack alloc] initWithNativeTrack:track type:type];
+          [[RTCAudioTrack alloc] initWithFactory:_factory nativeTrack:track type:type];
       [_audioTracks addObject:audioTrack];
     }
 
     for (auto &track : videoTracks) {
       RTCMediaStreamTrackType type = RTCMediaStreamTrackTypeVideo;
       RTCVideoTrack *videoTrack =
-          [[RTCVideoTrack alloc] initWithNativeTrack:track type:type];
+          [[RTCVideoTrack alloc] initWithFactory:_factory nativeTrack:track type:type];
       [_videoTracks addObject:videoTrack];
     }
   }

@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#import <WebRTC/RTCAudioSource.h>
 #import <WebRTC/RTCConfiguration.h>
 #import <WebRTC/RTCDataChannel.h>
 #import <WebRTC/RTCDataChannelConfiguration.h>
@@ -18,6 +19,7 @@
 #import <WebRTC/RTCRtpReceiver.h>
 #import <WebRTC/RTCRtpSender.h>
 #import <WebRTC/RTCRtpTransceiver.h>
+#import <WebRTC/RTCVideoSource.h>
 
 #import <XCTest/XCTest.h>
 
@@ -188,6 +190,74 @@
     }
     receivers1 = nil;
     receivers2 = nil;
+  }
+
+  XCTAssertTrue(true, "Expect test does not crash");
+}
+
+- (void)testAudioSourceLifetime {
+  @autoreleasepool {
+    RTCPeerConnectionFactory *factory;
+    RTCAudioSource *audioSource;
+
+    @autoreleasepool {
+      factory = [[RTCPeerConnectionFactory alloc] init];
+      audioSource = [factory audioSourceWithConstraints:nil];
+      XCTAssertNotNil(audioSource);
+      factory = nil;
+    }
+    audioSource = nil;
+  }
+
+  XCTAssertTrue(true, "Expect test does not crash");
+}
+
+- (void)testVideoSourceLifetime {
+  @autoreleasepool {
+    RTCPeerConnectionFactory *factory;
+    RTCVideoSource *videoSource;
+
+    @autoreleasepool {
+      factory = [[RTCPeerConnectionFactory alloc] init];
+      videoSource = [factory videoSource];
+      XCTAssertNotNil(videoSource);
+      factory = nil;
+    }
+    videoSource = nil;
+  }
+
+  XCTAssertTrue(true, "Expect test does not crash");
+}
+
+- (void)testAudioTrackLifetime {
+  @autoreleasepool {
+    RTCPeerConnectionFactory *factory;
+    RTCAudioTrack *audioTrack;
+
+    @autoreleasepool {
+      factory = [[RTCPeerConnectionFactory alloc] init];
+      audioTrack = [factory audioTrackWithTrackId:@"audioTrack"];
+      XCTAssertNotNil(audioTrack);
+      factory = nil;
+    }
+    audioTrack = nil;
+  }
+
+  XCTAssertTrue(true, "Expect test does not crash");
+}
+
+- (void)testVideoTrackLifetime {
+  @autoreleasepool {
+    RTCPeerConnectionFactory *factory;
+    RTCVideoTrack *videoTrack;
+
+    @autoreleasepool {
+      factory = [[RTCPeerConnectionFactory alloc] init];
+      videoTrack = [factory videoTrackWithSource:[factory videoSource] trackId:@"videoTrack"];
+      XCTAssertNotNil(videoTrack);
+      factory = nil;
+    }
+    videoTrack = nil;
   }
 
   XCTAssertTrue(true, "Expect test does not crash");
