@@ -231,7 +231,8 @@ void PeerConnectionDelegateAdapter::OnAddTrack(
                                                           nativeMediaStream:nativeStream];
       [mediaStreams addObject:mediaStream];
     }
-    RTCRtpReceiver *rtpReceiver = [[RTCRtpReceiver alloc] initWithNativeRtpReceiver:receiver];
+    RTCRtpReceiver *rtpReceiver =
+        [[RTCRtpReceiver alloc] initWithFactory:peer_connection.factory nativeRtpReceiver:receiver];
 
     [peer_connection.delegate peerConnection:peer_connection
                               didAddReceiver:rtpReceiver
@@ -545,7 +546,7 @@ void PeerConnectionDelegateAdapter::OnAddTrack(
   NSMutableArray *receivers = [[NSMutableArray alloc] init];
   for (const auto &nativeReceiver : nativeReceivers) {
     RTCRtpReceiver *receiver =
-        [[RTCRtpReceiver alloc] initWithNativeRtpReceiver:nativeReceiver];
+        [[RTCRtpReceiver alloc] initWithFactory:self.factory nativeRtpReceiver:nativeReceiver];
     [receivers addObject:receiver];
   }
   return receivers;

@@ -15,13 +15,13 @@
 #import <WebRTC/RTCMediaStreamTrack.h>
 #import <WebRTC/RTCPeerConnection.h>
 #import <WebRTC/RTCPeerConnectionFactory.h>
+#import <WebRTC/RTCRtpReceiver.h>
 #import <WebRTC/RTCRtpSender.h>
 #import <WebRTC/RTCRtpTransceiver.h>
 
 #import <XCTest/XCTest.h>
 
 @interface RTCPeerConnectionFactoryTests : XCTestCase
-- (void)testPeerConnectionLifetime;
 @end
 
 @implementation RTCPeerConnectionFactoryTests
@@ -30,7 +30,7 @@
   @autoreleasepool {
     RTCConfiguration *config = [[RTCConfiguration alloc] init];
 
-    RTCMediaConstraints *contraints =
+    RTCMediaConstraints *constraints =
         [[RTCMediaConstraints alloc] initWithMandatoryConstraints:@{} optionalConstraints:nil];
 
     RTCPeerConnectionFactory *factory;
@@ -39,7 +39,7 @@
     @autoreleasepool {
       factory = [[RTCPeerConnectionFactory alloc] init];
       peerConnection =
-          [factory peerConnectionWithConfiguration:config constraints:contraints delegate:nil];
+          [factory peerConnectionWithConfiguration:config constraints:constraints delegate:nil];
       [peerConnection close];
       factory = nil;
     }
@@ -68,7 +68,7 @@
 - (void)testDataChannelLifetime {
   @autoreleasepool {
     RTCConfiguration *config = [[RTCConfiguration alloc] init];
-    RTCMediaConstraints *contraints =
+    RTCMediaConstraints *constraints =
         [[RTCMediaConstraints alloc] initWithMandatoryConstraints:@{} optionalConstraints:nil];
     RTCDataChannelConfiguration *dataChannelConfig = [[RTCDataChannelConfiguration alloc] init];
 
@@ -79,10 +79,10 @@
     @autoreleasepool {
       factory = [[RTCPeerConnectionFactory alloc] init];
       peerConnection =
-          [factory peerConnectionWithConfiguration:config constraints:contraints delegate:nil];
+          [factory peerConnectionWithConfiguration:config constraints:constraints delegate:nil];
       dataChannel =
           [peerConnection dataChannelForLabel:@"test_channel" configuration:dataChannelConfig];
-      XCTAssertTrue(dataChannel != nil);
+      XCTAssertNotNil(dataChannel);
       [peerConnection close];
       peerConnection = nil;
       factory = nil;
@@ -110,7 +110,7 @@
       peerConnection =
           [factory peerConnectionWithConfiguration:config constraints:contraints delegate:nil];
       tranceiver = [peerConnection addTransceiverOfType:RTCRtpMediaTypeAudio init:init];
-      XCTAssertTrue(tranceiver != nil);
+      XCTAssertNotNil(tranceiver);
       [peerConnection close];
       peerConnection = nil;
       factory = nil;
@@ -124,7 +124,7 @@
 - (void)testRTCRtpSenderLifetime {
   @autoreleasepool {
     RTCConfiguration *config = [[RTCConfiguration alloc] init];
-    RTCMediaConstraints *contraints =
+    RTCMediaConstraints *constraints =
         [[RTCMediaConstraints alloc] initWithMandatoryConstraints:@{} optionalConstraints:nil];
 
     RTCPeerConnectionFactory *factory;
@@ -134,9 +134,9 @@
     @autoreleasepool {
       factory = [[RTCPeerConnectionFactory alloc] init];
       peerConnection =
-          [factory peerConnectionWithConfiguration:config constraints:contraints delegate:nil];
+          [factory peerConnectionWithConfiguration:config constraints:constraints delegate:nil];
       sender = [peerConnection senderWithKind:kRTCMediaStreamTrackKindVideo streamId:@"stream"];
-      XCTAssertTrue(sender != nil);
+      XCTAssertNotNil(sender);
       [peerConnection close];
       peerConnection = nil;
       factory = nil;
@@ -145,6 +145,103 @@
   }
 
   XCTAssertTrue(true, "Expect test does not crash");
+}
+
+- (void)testRTCRtpReceiverLifetime {
+  @autoreleasepool {
+    RTCConfiguration *config = [[RTCConfiguration alloc] init];
+    RTCMediaConstraints *constraints =
+        [[RTCMediaConstraints alloc] initWithMandatoryConstraints:@{} optionalConstraints:nil];
+
+    RTCPeerConnectionFactory *factory;
+    RTCPeerConnection *pc1;
+    RTCPeerConnection *pc2;
+
+    NSArray<RTCRtpReceiver *> *receivers1;
+    NSArray<RTCRtpReceiver *> *receivers2;
+
+    @autoreleasepool {
+      factory = [[RTCPeerConnectionFactory alloc] init];
+      pc1 = [factory peerConnectionWithConfiguration:config constraints:constraints delegate:nil];
+      [pc1 senderWithKind:kRTCMediaStreamTrackKindAudio streamId:@"stream"];
+
+      pc2 = [factory peerConnectionWithConfiguration:config constraints:constraints delegate:nil];
+      [pc2 senderWithKind:kRTCMediaStreamTrackKindAudio streamId:@"stream"];
+
+      NSTimeInterval negotiationTimeout = 15;
+      XCTAssertTrue([self negotiatePeerConnection:pc1
+                               withPeerConnection:pc2
+                               negotiationTimeout:negotiationTimeout]);
+
+      XCTAssertEqual(pc1.signalingState, RTCSignalingStateStable);
+      XCTAssertEqual(pc2.signalingState, RTCSignalingStateStable);
+
+      receivers1 = pc1.receivers;
+      receivers2 = pc2.receivers;
+      XCTAssertTrue(receivers1.count > 0);
+      XCTAssertTrue(receivers2.count > 0);
+      [pc1 close];
+      [pc2 close];
+      pc1 = nil;
+      pc2 = nil;
+      factory = nil;
+    }
+    receivers1 = nil;
+    receivers2 = nil;
+  }
+
+  XCTAssertTrue(true, "Expect test does not crash");
+}
+
+- (bool)negotiatePeerConnection:(RTCPeerConnection *)pc1
+             withPeerConnection:(RTCPeerConnection *)pc2
+             negotiationTimeout:(NSTimeInterval)timeout {
+  __weak RTCPeerConnection *weakPC1 = pc1;
+  __weak RTCPeerConnection *weakPC2 = pc2;
+  RTCMediaConstraints *sdpConstraints =
+      [[RTCMediaConstraints alloc] initWithMandatoryConstraints:@{
+        kRTCMediaConstraintsOfferToReceiveAudio : kRTCMediaConstraintsValueTrue
+      }
+                                            optionalConstraints:nil];
+
+  dispatch_semaphore_t negotiatedSem = dispatch_semaphore_create(0);
+  [weakPC1 offerForConstraints:sdpConstraints
+             completionHandler:^(RTCSessionDescription *offer, NSError *error) {
+               XCTAssertNil(error);
+               XCTAssertNotNil(offer);
+               [weakPC1
+                   setLocalDescription:offer
+                     completionHandler:^(NSError *error) {
+                       XCTAssertNil(error);
+                       [weakPC2
+                           setRemoteDescription:offer
+                              completionHandler:^(NSError *error) {
+                                XCTAssertNil(error);
+                                [weakPC2
+                                    answerForConstraints:sdpConstraints
+                                       completionHandler:^(RTCSessionDescription *answer,
+                                                           NSError *error) {
+                                         XCTAssertNil(error);
+                                         XCTAssertNotNil(answer);
+                                         [weakPC2
+                                             setLocalDescription:answer
+                                               completionHandler:^(NSError *error) {
+                                                 XCTAssertNil(error);
+                                                 [weakPC1
+                                                     setRemoteDescription:answer
+                                                        completionHandler:^(NSError *error) {
+                                                          XCTAssertNil(error);
+                                                          dispatch_semaphore_signal(negotiatedSem);
+                                                        }];
+                                               }];
+                                       }];
+                              }];
+                     }];
+             }];
+
+  return 0 ==
+      dispatch_semaphore_wait(negotiatedSem,
+                              dispatch_time(DISPATCH_TIME_NOW, (int64_t)(timeout * NSEC_PER_SEC)));
 }
 
 @end

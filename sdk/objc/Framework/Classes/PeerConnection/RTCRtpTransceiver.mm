@@ -131,7 +131,8 @@
     _nativeRtpTransceiver = nativeRtpTransceiver;
     _sender = [[RTCRtpSender alloc] initWithFactory:_factory
                                     nativeRtpSender:nativeRtpTransceiver->sender()];
-    _receiver = [[RTCRtpReceiver alloc] initWithNativeRtpReceiver:nativeRtpTransceiver->receiver()];
+    _receiver = [[RTCRtpReceiver alloc] initWithFactory:_factory
+                                      nativeRtpReceiver:nativeRtpTransceiver->receiver()];
     RTCLogInfo(@"RTCRtpTransceiver(%p): created transceiver: %@", self, self.description);
   }
   return self;
