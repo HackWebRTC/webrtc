@@ -284,7 +284,7 @@ void Loopback() {
   BitrateConstraints call_bitrate_config;
   call_bitrate_config.min_bitrate_bps = flags::MinBitrateKbps() * 1000;
   call_bitrate_config.start_bitrate_bps = flags::StartBitrateKbps() * 1000;
-  call_bitrate_config.max_bitrate_bps = flags::MaxBitrateKbps() * 1000;
+  call_bitrate_config.max_bitrate_bps = -1;  // Don't cap bandwidth estimate.
 
   VideoQualityTest::Params params;
   params.call = {flags::FLAG_send_side_bwe, call_bitrate_config, 0};
