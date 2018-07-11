@@ -609,8 +609,8 @@ void ForwardErrorCorrection::XorPayloads(const Packet& src,
                                          size_t dst_offset,
                                          Packet* dst) {
   // XOR the payload.
-  RTC_DCHECK_LE(kRtpHeaderSize + payload_length, sizeof(src.data));
-  RTC_DCHECK_LE(dst_offset + payload_length, sizeof(dst->data));
+  RTC_CHECK_LE(kRtpHeaderSize + payload_length, sizeof(src.data));
+  RTC_CHECK_LE(dst_offset + payload_length, sizeof(dst->data));
   for (size_t i = 0; i < payload_length; ++i) {
     dst->data[dst_offset + i] ^= src.data[kRtpHeaderSize + i];
   }
@@ -627,7 +627,8 @@ bool ForwardErrorCorrection::RecoverPacket(const ReceivedFecPacket& fec_packet,
       recovered_packet->seq_num = protected_packet->seq_num;
     } else {
       XorHeaders(*protected_packet->pkt, recovered_packet->pkt);
-      XorPayloads(*protected_packet->pkt, protected_packet->pkt->length,
+      XorPayloads(*protected_packet->pkt,
+                  protected_packet->pkt->length - kRtpHeaderSize,
                   kRtpHeaderSize, recovered_packet->pkt);
     }
   }
