@@ -1155,25 +1155,6 @@ void PeerConnection::RemoveStream(MediaStreamInterface* local_stream) {
   observer_->OnRenegotiationNeeded();
 }
 
-rtc::scoped_refptr<RtpSenderInterface> PeerConnection::AddTrack(
-    MediaStreamTrackInterface* track,
-    std::vector<MediaStreamInterface*> streams) {
-  TRACE_EVENT0("webrtc", "PeerConnection::AddTrack");
-  std::vector<std::string> stream_ids;
-  for (auto* stream : streams) {
-    if (!stream) {
-      RTC_LOG(LS_ERROR) << "Stream list has null element.";
-      return nullptr;
-    }
-    stream_ids.push_back(stream->id());
-  }
-  auto sender_or_error = AddTrack(track, stream_ids);
-  if (!sender_or_error.ok()) {
-    return nullptr;
-  }
-  return sender_or_error.MoveValue();
-}
-
 RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>> PeerConnection::AddTrack(
     rtc::scoped_refptr<MediaStreamTrackInterface> track,
     const std::vector<std::string>& stream_ids) {

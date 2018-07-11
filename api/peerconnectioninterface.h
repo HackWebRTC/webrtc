@@ -666,24 +666,9 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   // - INVALID_PARAMETER: |track| is null, has a kind other than audio or video,
   //       or a sender already exists for the track.
   // - INVALID_STATE: The PeerConnection is closed.
-  // TODO(steveanton): Remove default implementation once downstream
-  // implementations have been updated.
   virtual RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>> AddTrack(
       rtc::scoped_refptr<MediaStreamTrackInterface> track,
-      const std::vector<std::string>& stream_ids) {
-    return RTCError(RTCErrorType::UNSUPPORTED_OPERATION, "Not implemented");
-  }
-  // |streams| indicates which stream ids the track should be associated
-  // with.
-  // TODO(steveanton): Remove this overload once callers have moved to the
-  // signature with stream ids.
-  virtual rtc::scoped_refptr<RtpSenderInterface> AddTrack(
-      MediaStreamTrackInterface* track,
-      std::vector<MediaStreamInterface*> streams) {
-    // Default implementation provided so downstream implementations can remove
-    // this.
-    return nullptr;
-  }
+      const std::vector<std::string>& stream_ids) = 0;
 
   // Remove an RtpSender from this PeerConnection.
   // Returns true on success.

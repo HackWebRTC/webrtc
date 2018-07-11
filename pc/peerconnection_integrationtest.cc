@@ -4248,16 +4248,11 @@ TEST_F(PeerConnectionIntegrationTestPlanB, RemoveAndAddTrackWithNewStreamId) {
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
 
-  rtc::scoped_refptr<MediaStreamInterface> stream_1 =
-      caller()->pc_factory()->CreateLocalMediaStream("stream_1");
-  rtc::scoped_refptr<MediaStreamInterface> stream_2 =
-      caller()->pc_factory()->CreateLocalMediaStream("stream_2");
-
   // Add track using stream 1, do offer/answer.
   rtc::scoped_refptr<webrtc::AudioTrackInterface> track =
       caller()->CreateLocalAudioTrack();
   rtc::scoped_refptr<webrtc::RtpSenderInterface> sender =
-      caller()->pc()->AddTrack(track, {stream_1.get()});
+      caller()->AddTrack(track, {"stream_1"});
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
   {
@@ -4267,7 +4262,7 @@ TEST_F(PeerConnectionIntegrationTestPlanB, RemoveAndAddTrackWithNewStreamId) {
   }
   // Remove the sender, and create a new one with the new stream.
   caller()->pc()->RemoveTrack(sender);
-  sender = caller()->pc()->AddTrack(track, {stream_2.get()});
+  sender = caller()->AddTrack(track, {"stream_2"});
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
   // Wait for additional audio frames to be received by the callee.

@@ -47,12 +47,6 @@ class FakePeerConnectionBase : public PeerConnectionInternal {
     return RTCError(RTCErrorType::UNSUPPORTED_OPERATION, "Not implemented");
   }
 
-  rtc::scoped_refptr<RtpSenderInterface> AddTrack(
-      MediaStreamTrackInterface* track,
-      std::vector<MediaStreamInterface*> streams) override {
-    return nullptr;
-  }
-
   bool RemoveTrack(RtpSenderInterface* sender) override { return false; }
 
   RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>> AddTransceiver(
