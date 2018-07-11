@@ -724,29 +724,24 @@ void VideoSendStreamImpl::ConfigureProtection() {
 
   // Shorthands.
   auto IsRedEnabled = [&]() { return red_payload_type >= 0; };
-  auto DisableRed = [&]() { red_payload_type = -1; };
   auto IsUlpfecEnabled = [&]() { return ulpfec_payload_type >= 0; };
-  auto DisableUlpfec = [&]() { ulpfec_payload_type = -1; };
+  auto DisableRedAndUlpfec = [&]() {
+    red_payload_type = -1;
+    ulpfec_payload_type = -1;
+  };
 
   if (webrtc::field_trial::IsEnabled("WebRTC-DisableUlpFecExperiment")) {
     RTC_LOG(LS_INFO) << "Experiment to disable sending ULPFEC is enabled.";
-    DisableUlpfec();
+    DisableRedAndUlpfec();
   }
 
   // If enabled, FlexFEC takes priority over RED+ULPFEC.
   if (flexfec_enabled) {
-    // We can safely disable RED here, because if the remote supports FlexFEC,
-    // we know that it has a receiver without the RED/RTX workaround.
-    // See http://crbug.com/webrtc/6650 for more information.
-    if (IsRedEnabled()) {
-      RTC_LOG(LS_INFO) << "Both FlexFEC and RED are configured. Disabling RED.";
-      DisableRed();
-    }
     if (IsUlpfecEnabled()) {
       RTC_LOG(LS_INFO)
           << "Both FlexFEC and ULPFEC are configured. Disabling ULPFEC.";
-      DisableUlpfec();
     }
+    DisableRedAndUlpfec();
   }
 
   // Payload types without picture ID cannot determine that a stream is complete
@@ -759,29 +754,14 @@ void VideoSendStreamImpl::ConfigureProtection() {
         << "Transmitting payload type without picture ID using "
            "NACK+ULPFEC is a waste of bandwidth since ULPFEC packets "
            "also have to be retransmitted. Disabling ULPFEC.";
-    DisableUlpfec();
+    DisableRedAndUlpfec();
   }
 
   // Verify payload types.
-  //
-  // Due to how old receivers work, we need to always send RED if it has been
-  // negotiated. This is a remnant of an old RED/RTX workaround, see
-  // https://codereview.webrtc.org/2469093003.
-  // TODO(brandtr): This change went into M56, so we can remove it in ~M59.
-  // At that time, we can disable RED whenever ULPFEC is disabled, as there is
-  // no point in using RED without ULPFEC.
-  if (IsRedEnabled()) {
-    RTC_DCHECK_GE(red_payload_type, 0);
-    RTC_DCHECK_LE(red_payload_type, 127);
-  }
-  if (IsUlpfecEnabled()) {
-    RTC_DCHECK_GE(ulpfec_payload_type, 0);
-    RTC_DCHECK_LE(ulpfec_payload_type, 127);
-    if (!IsRedEnabled()) {
-      RTC_LOG(LS_WARNING)
-          << "ULPFEC is enabled but RED is disabled. Disabling ULPFEC.";
-      DisableUlpfec();
-    }
+  if (IsUlpfecEnabled() ^ IsRedEnabled()) {
+    RTC_LOG(LS_WARNING)
+        << "Only RED or only ULPFEC enabled, but not both. Disabling both.";
+    DisableRedAndUlpfec();
   }
 
   for (RtpRtcp* rtp_rtcp : rtp_rtcp_modules_) {

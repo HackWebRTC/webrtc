@@ -602,7 +602,7 @@ class VideoSendStreamWithoutUlpfecTest : public VideoSendStreamTest {
 TEST_F(VideoSendStreamWithoutUlpfecTest, NoUlpfecIfDisabledThroughFieldTrial) {
   test::FunctionVideoEncoderFactory encoder_factory(
       []() { return VP8Encoder::Create(); });
-  UlpfecObserver test(false, false, true, false, "VP8", &encoder_factory);
+  UlpfecObserver test(false, false, false, false, "VP8", &encoder_factory);
   RunBaseTest(&test);
 }
 
@@ -614,7 +614,7 @@ TEST_F(VideoSendStreamTest, DoesNotUtilizeUlpfecForH264WithNackEnabled) {
   test::FunctionVideoEncoderFactory encoder_factory([]() {
     return absl::make_unique<test::FakeH264Encoder>(Clock::GetRealTimeClock());
   });
-  UlpfecObserver test(false, true, true, false, "H264", &encoder_factory);
+  UlpfecObserver test(false, true, false, false, "H264", &encoder_factory);
   RunBaseTest(&test);
 }
 

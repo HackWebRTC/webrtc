@@ -218,10 +218,7 @@ void RTPSenderVideo::SetUlpfecConfig(int red_payload_type,
   ulpfec_payload_type_ = ulpfec_payload_type;
 
   // Must not enable ULPFEC without RED.
-  // TODO(brandtr): We currently support enabling RED without ULPFEC. Change
-  // this when we have removed the RED/RTX send-side workaround, so that we
-  // ensure that RED and ULPFEC are only enabled together.
-  RTC_DCHECK(red_enabled() || !ulpfec_enabled());
+  RTC_DCHECK(!(red_enabled() ^ ulpfec_enabled()));
 
   // Reset FEC parameters.
   delta_fec_params_ = FecProtectionParams{0, 1, kFecMaskRandom};
