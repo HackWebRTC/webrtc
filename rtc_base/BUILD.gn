@@ -1066,6 +1066,7 @@ if (rtc_include_tests) {
       ":rtc_base_approved",
       ":rtc_base_tests_utils",
       "../system_wrappers:field_trial_default",
+      "../system_wrappers:metrics_default",
       "../test:field_trial",
       "../test:fileutils",
       "../test:test_support",
