@@ -28,7 +28,6 @@ config("audio_device_warnings_config") {
       # https://bugs.chromium.org/p/webrtc/issues/detail?id=5366
       "-Wno-delete-non-virtual-dtor",
       "-Wno-microsoft-goto",
-      "-Wno-reorder",
     ]
   }
 }
