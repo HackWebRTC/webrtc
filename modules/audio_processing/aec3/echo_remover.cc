@@ -210,9 +210,8 @@ void EchoRemoverImpl::ProcessCapture(
 
   // Update the AEC state information.
   aec_state_.Update(external_delay, subtractor_.FilterFrequencyResponse(),
-                    subtractor_.FilterImpulseResponse(),
-                    subtractor_.ConvergedFilter(), subtractor_.DivergedFilter(),
-                    *render_buffer, E2, Y2, subtractor_output.s_main);
+                    subtractor_.FilterImpulseResponse(), *render_buffer, E2, Y2,
+                    subtractor_output, y0);
 
   // Compute spectra.
   const bool suppression_gain_uses_ffts =

@@ -111,11 +111,8 @@ void Subtractor::HandleEchoPathChange(
     G_shadow_.HandleEchoPathChange();
     G_main_.SetConfig(config_.filter.main_initial, true);
     G_shadow_.SetConfig(config_.filter.shadow_initial, true);
-    main_filter_converged_ = false;
-    shadow_filter_converged_ = false;
     main_filter_.SetSizePartitions(config_.filter.main_initial.length_blocks,
                                    true);
-    main_filter_once_converged_ = false;
     shadow_filter_.SetSizePartitions(
         config_.filter.shadow_initial.length_blocks, true);
   };
@@ -171,24 +168,8 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
                   &shadow_saturation);
   fft_.ZeroPaddedFft(e_shadow, Aec3Fft::Window::kHanning, &E_shadow);
 
-  // Check for filter convergence.
-  const auto sum_of_squares = [](float a, float b) { return a + b * b; };
-  const float y2 = std::accumulate(y.begin(), y.end(), 0.f, sum_of_squares);
-  const float e2_main =
-      std::accumulate(e_main.begin(), e_main.end(), 0.f, sum_of_squares);
-  const float e2_shadow =
-      std::accumulate(e_shadow.begin(), e_shadow.end(), 0.f, sum_of_squares);
-
-  constexpr float kConvergenceThreshold = 50 * 50 * kBlockSize;
-  main_filter_converged_ = e2_main < 0.5f * y2 && y2 > kConvergenceThreshold;
-  shadow_filter_converged_ =
-      e2_shadow < 0.05 * y2 && y2 > kConvergenceThreshold;
-  main_filter_once_converged_ =
-      main_filter_once_converged_ || main_filter_converged_;
-  main_filter_diverged_ = e2_main > 1.5f * y2 && y2 > 30.f * 30.f * kBlockSize;
-
   if (enable_misadjustment_estimator_) {
-    filter_misadjustment_estimator_.Update(e2_main, y2);
+    filter_misadjustment_estimator_.Update(e_main, y);
     if (filter_misadjustment_estimator_.IsAdjustmentNeeded()) {
       float scale = filter_misadjustment_estimator_.GetMisadjustment();
       main_filter_.ScaleFilter(scale);
@@ -229,7 +210,13 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
   }
 }
 
-void Subtractor::FilterMisadjustmentEstimator::Update(float e2, float y2) {
+void Subtractor::FilterMisadjustmentEstimator::Update(
+    rtc::ArrayView<const float> e,
+    rtc::ArrayView<const float> y) {
+  const auto sum_of_squares = [](float a, float b) { return a + b * b; };
+  const float y2 = std::accumulate(y.begin(), y.end(), 0.f, sum_of_squares);
+  const float e2 = std::accumulate(e.begin(), e.end(), 0.f, sum_of_squares);
+
   e2_acum_ += e2;
   y2_acum_ += y2;
   if (++n_blocks_acum_ == n_blocks_) {

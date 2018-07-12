@@ -328,7 +328,7 @@ TEST(AdaptiveFirFilter, FilterAndAdapt) {
   absl::optional<DelayEstimate> delay_estimate;
   std::vector<float> e(kBlockSize, 0.f);
   std::array<float, kFftLength> s_scratch;
-  std::array<float, kBlockSize> s;
+  SubtractorOutput output;
   FftData S;
   FftData G;
   FftData E;
@@ -342,6 +342,7 @@ TEST(AdaptiveFirFilter, FilterAndAdapt) {
   Y2.fill(0.f);
   E2_main.fill(0.f);
   E2_shadow.fill(0.f);
+  output.Reset();
 
   constexpr float kScale = 1.0f / kFftLengthBy2;
 
@@ -382,7 +383,7 @@ TEST(AdaptiveFirFilter, FilterAndAdapt) {
                     [](float& a) { a = rtc::SafeClamp(a, -32768.f, 32767.f); });
       fft.ZeroPaddedFft(e, Aec3Fft::Window::kRectangular, &E);
       for (size_t k = 0; k < kBlockSize; ++k) {
-        s[k] = kScale * s_scratch[k + kFftLengthBy2];
+        output.s_main[k] = kScale * s_scratch[k + kFftLengthBy2];
       }
 
       std::array<float, kFftLengthBy2Plus1> render_power;
@@ -394,8 +395,8 @@ TEST(AdaptiveFirFilter, FilterAndAdapt) {
           false, EchoPathVariability::DelayAdjustment::kNone, false));
 
       aec_state.Update(delay_estimate, filter.FilterFrequencyResponse(),
-                       filter.FilterImpulseResponse(), true, false,
-                       *render_buffer, E2_main, Y2, s);
+                       filter.FilterImpulseResponse(), *render_buffer, E2_main,
+                       Y2, output, y);
     }
     // Verify that the filter is able to perform well.
     EXPECT_LT(1000 * std::inner_product(e.begin(), e.end(), e.begin(), 0.f),

@@ -85,9 +85,8 @@ float RunSubtractorTest(int num_blocks_to_process,
         false, EchoPathVariability::DelayAdjustment::kNone, false));
     aec_state.Update(delay_estimate, subtractor.FilterFrequencyResponse(),
                      subtractor.FilterImpulseResponse(),
-                     subtractor.ConvergedFilter(), subtractor.DivergedFilter(),
                      *render_delay_buffer->GetRenderBuffer(), E2_main, Y2,
-                     output.s_main);
+                     output, y);
   }
 
   const float output_power = std::inner_product(

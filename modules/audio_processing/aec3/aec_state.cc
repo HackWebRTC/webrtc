@@ -122,6 +122,8 @@ void AecState::HandleEchoPathChange(
   } else if (echo_path_variability.gain_change) {
     blocks_since_reset_ = kNumBlocksPerSecond;
   }
+
+  subtractor_output_analyzer_.HandleEchoPathChange();
 }
 
 void AecState::Update(
@@ -129,12 +131,17 @@ void AecState::Update(
     const std::vector<std::array<float, kFftLengthBy2Plus1>>&
         adaptive_filter_frequency_response,
     const std::vector<float>& adaptive_filter_impulse_response,
-    bool converged_filter,
-    bool diverged_filter,
     const RenderBuffer& render_buffer,
     const std::array<float, kFftLengthBy2Plus1>& E2_main,
     const std::array<float, kFftLengthBy2Plus1>& Y2,
-    const std::array<float, kBlockSize>& s) {
+    const SubtractorOutput& subtractor_output,
+    rtc::ArrayView<const float> y) {
+  // Analyze the filter output.
+  subtractor_output_analyzer_.Update(y, subtractor_output);
+
+  const bool converged_filter = subtractor_output_analyzer_.ConvergedFilter();
+  const bool diverged_filter = subtractor_output_analyzer_.DivergedFilter();
+
   // Analyze the filter and compute the delays.
   filter_analyzer_.Update(adaptive_filter_impulse_response,
                           adaptive_filter_frequency_response, render_buffer);

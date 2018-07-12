@@ -29,6 +29,8 @@
 #include "modules/audio_processing/aec3/filter_analyzer.h"
 #include "modules/audio_processing/aec3/render_buffer.h"
 #include "modules/audio_processing/aec3/reverb_model_estimator.h"
+#include "modules/audio_processing/aec3/subtractor_output.h"
+#include "modules/audio_processing/aec3/subtractor_output_analyzer.h"
 #include "modules/audio_processing/aec3/suppression_gain_limiter.h"
 #include "rtc_base/constructormagic.h"
 
@@ -151,12 +153,11 @@ class AecState {
               const std::vector<std::array<float, kFftLengthBy2Plus1>>&
                   adaptive_filter_frequency_response,
               const std::vector<float>& adaptive_filter_impulse_response,
-              bool converged_filter,
-              bool diverged_filter,
               const RenderBuffer& render_buffer,
               const std::array<float, kFftLengthBy2Plus1>& E2_main,
               const std::array<float, kFftLengthBy2Plus1>& Y2,
-              const std::array<float, kBlockSize>& s);
+              const SubtractorOutput& subtractor_output,
+              rtc::ArrayView<const float> y);
 
   // Returns the tail freq. response of the linear filter.
   rtc::ArrayView<const float> GetFreqRespTail() const {
@@ -218,6 +219,7 @@ class AecState {
   size_t active_blocks_since_converged_filter_ = 0;
   EchoAudibility echo_audibility_;
   ReverbModelEstimator reverb_model_estimator_;
+  SubtractorOutputAnalyzer subtractor_output_analyzer_;
   RTC_DISALLOW_COPY_AND_ASSIGN(AecState);
 };
 

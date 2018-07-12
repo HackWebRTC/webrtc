@@ -97,6 +97,8 @@ rtc_static_library("aec3") {
     "subtractor.cc",
     "subtractor.h",
     "subtractor_output.h",
+    "subtractor_output_analyzer.cc",
+    "subtractor_output_analyzer.h",
     "suppression_filter.cc",
     "suppression_filter.h",
     "suppression_gain.cc",

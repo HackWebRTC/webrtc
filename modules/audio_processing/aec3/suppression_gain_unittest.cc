@@ -13,6 +13,7 @@
 #include "modules/audio_processing/aec3/aec_state.h"
 #include "modules/audio_processing/aec3/render_delay_buffer.h"
 #include "modules/audio_processing/aec3/subtractor.h"
+#include "modules/audio_processing/aec3/subtractor_output.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/checks.h"
 #include "system_wrappers/include/cpu_features_wrapper.h"
@@ -67,7 +68,8 @@ TEST(SuppressionGain, BasicGainComputation) {
   std::array<float, kFftLengthBy2Plus1> R2;
   std::array<float, kFftLengthBy2Plus1> N2;
   std::array<float, kFftLengthBy2Plus1> g;
-  std::array<float, kBlockSize> s;
+  SubtractorOutput output;
+  std::array<float, kBlockSize> y;
   FftData E;
   FftData X;
   FftData Y;
@@ -85,7 +87,8 @@ TEST(SuppressionGain, BasicGainComputation) {
   Y2.fill(10.f);
   R2.fill(0.1f);
   N2.fill(100.f);
-  s.fill(10.f);
+  output.Reset();
+  y.fill(0.f);
   E.re.fill(sqrtf(E2[0]));
   E.im.fill(0.f);
   X.re.fill(sqrtf(R2[0]));
@@ -97,15 +100,15 @@ TEST(SuppressionGain, BasicGainComputation) {
   for (int k = 0; k <= kNumBlocksPerSecond / 5 + 1; ++k) {
     aec_state.Update(delay_estimate, subtractor.FilterFrequencyResponse(),
                      subtractor.FilterImpulseResponse(),
-                     subtractor.ConvergedFilter(), subtractor.DivergedFilter(),
-                     *render_delay_buffer->GetRenderBuffer(), E2, Y2, s);
+                     *render_delay_buffer->GetRenderBuffer(), E2, Y2, output,
+                     y);
   }
 
   for (int k = 0; k < 100; ++k) {
     aec_state.Update(delay_estimate, subtractor.FilterFrequencyResponse(),
                      subtractor.FilterImpulseResponse(),
-                     subtractor.ConvergedFilter(), subtractor.DivergedFilter(),
-                     *render_delay_buffer->GetRenderBuffer(), E2, Y2, s);
+                     *render_delay_buffer->GetRenderBuffer(), E2, Y2, output,
+                     y);
     suppression_gain.GetGain(E2, R2, N2, E, X, Y, analyzer, aec_state, x,
                              &high_bands_gain, &g);
   }
@@ -124,8 +127,8 @@ TEST(SuppressionGain, BasicGainComputation) {
   for (int k = 0; k < 100; ++k) {
     aec_state.Update(delay_estimate, subtractor.FilterFrequencyResponse(),
                      subtractor.FilterImpulseResponse(),
-                     subtractor.ConvergedFilter(), subtractor.DivergedFilter(),
-                     *render_delay_buffer->GetRenderBuffer(), E2, Y2, s);
+                     *render_delay_buffer->GetRenderBuffer(), E2, Y2, output,
+                     y);
     suppression_gain.GetGain(E2, R2, N2, E, X, Y, analyzer, aec_state, x,
                              &high_bands_gain, &g);
   }
