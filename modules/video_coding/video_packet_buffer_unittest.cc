@@ -508,17 +508,19 @@ class TestPacketBufferH264 : public TestPacketBuffer {
                   uint8_t* data = nullptr) {  // data pointer
     VCMPacket packet;
     packet.codec = kVideoCodecH264;
+    auto& h264_header =
+        packet.video_header.video_type_header.emplace<RTPVideoHeaderH264>();
     packet.seqNum = seq_num;
     packet.timestamp = timestamp;
     if (keyframe == kKeyFrame) {
       if (sps_pps_idr_is_keyframe_) {
-        packet.video_header.h264().nalus[0].type = H264::NaluType::kSps;
-        packet.video_header.h264().nalus[1].type = H264::NaluType::kPps;
-        packet.video_header.h264().nalus[2].type = H264::NaluType::kIdr;
-        packet.video_header.h264().nalus_length = 3;
+        h264_header.nalus[0].type = H264::NaluType::kSps;
+        h264_header.nalus[1].type = H264::NaluType::kPps;
+        h264_header.nalus[2].type = H264::NaluType::kIdr;
+        h264_header.nalus_length = 3;
       } else {
-        packet.video_header.h264().nalus[0].type = H264::NaluType::kIdr;
-        packet.video_header.h264().nalus_length = 1;
+        h264_header.nalus[0].type = H264::NaluType::kIdr;
+        h264_header.nalus_length = 1;
       }
     }
     packet.is_first_packet_in_frame = first == kFirst;
@@ -592,12 +594,14 @@ TEST_P(TestPacketBufferH264Parameterized, GetBitstreamBufferPadding) {
       new uint8_t[sizeof(data_data) + EncodedImage::kBufferPaddingBytesH264]);
 
   VCMPacket packet;
-  packet.video_header.h264().nalus_length = 1;
-  packet.video_header.h264().nalus[0].type = H264::NaluType::kIdr;
+  auto& h264_header =
+      packet.video_header.video_type_header.emplace<RTPVideoHeaderH264>();
+  h264_header.nalus_length = 1;
+  h264_header.nalus[0].type = H264::NaluType::kIdr;
+  h264_header.packetization_type = kH264SingleNalu;
   packet.seqNum = seq_num;
   packet.codec = kVideoCodecH264;
   packet.insertStartCode = true;
-  packet.video_header.h264().packetization_type = kH264SingleNalu;
   packet.dataPtr = data;
   packet.sizeBytes = sizeof(data_data);
   packet.is_first_packet_in_frame = true;
@@ -755,7 +759,9 @@ TEST_F(TestPacketBuffer, IncomingCodecChange) {
   EXPECT_TRUE(packet_buffer_->InsertPacket(&packet));
 
   packet.codec = kVideoCodecH264;
-  packet.video_header.h264().nalus_length = 1;
+  auto& h264_header =
+      packet.video_header.video_type_header.emplace<RTPVideoHeaderH264>();
+  h264_header.nalus_length = 1;
   packet.timestamp = 3;
   packet.seqNum = 3;
   EXPECT_TRUE(packet_buffer_->InsertPacket(&packet));
@@ -778,7 +784,9 @@ TEST_F(TestPacketBuffer, TooManyNalusInPacket) {
   packet.frameType = kVideoFrameKey;
   packet.is_first_packet_in_frame = true;
   packet.markerBit = true;
-  packet.video_header.h264().nalus_length = kMaxNalusPerPacket;
+  auto& h264_header =
+      packet.video_header.video_type_header.emplace<RTPVideoHeaderH264>();
+  h264_header.nalus_length = kMaxNalusPerPacket;
   packet.sizeBytes = 0;
   packet.dataPtr = nullptr;
   EXPECT_TRUE(packet_buffer_->InsertPacket(&packet));
@@ -873,9 +881,10 @@ class TestPacketBufferH264IdrIsKeyframe
 };
 
 TEST_F(TestPacketBufferH264IdrIsKeyframe, IdrIsKeyframe) {
-  packet_.video_header.h264().nalus[0].type = H264::NaluType::kIdr;
-  packet_.video_header.h264().nalus_length = 1;
-
+  auto& h264_header =
+      packet_.video_header.video_type_header.emplace<RTPVideoHeaderH264>();
+  h264_header.nalus[0].type = H264::NaluType::kIdr;
+  h264_header.nalus_length = 1;
   packet_buffer_->InsertPacket(&packet_);
 
   ASSERT_EQ(1u, frames_from_callback_.size());
@@ -883,10 +892,12 @@ TEST_F(TestPacketBufferH264IdrIsKeyframe, IdrIsKeyframe) {
 }
 
 TEST_F(TestPacketBufferH264IdrIsKeyframe, SpsPpsIdrIsKeyframe) {
-  packet_.video_header.h264().nalus[0].type = H264::NaluType::kSps;
-  packet_.video_header.h264().nalus[1].type = H264::NaluType::kPps;
-  packet_.video_header.h264().nalus[2].type = H264::NaluType::kIdr;
-  packet_.video_header.h264().nalus_length = 3;
+  auto& h264_header =
+      packet_.video_header.video_type_header.emplace<RTPVideoHeaderH264>();
+  h264_header.nalus[0].type = H264::NaluType::kSps;
+  h264_header.nalus[1].type = H264::NaluType::kPps;
+  h264_header.nalus[2].type = H264::NaluType::kIdr;
+  h264_header.nalus_length = 3;
 
   packet_buffer_->InsertPacket(&packet_);
 
@@ -902,8 +913,10 @@ class TestPacketBufferH264SpsPpsIdrIsKeyframe
 };
 
 TEST_F(TestPacketBufferH264SpsPpsIdrIsKeyframe, IdrIsNotKeyframe) {
-  packet_.video_header.h264().nalus[0].type = H264::NaluType::kIdr;
-  packet_.video_header.h264().nalus_length = 1;
+  auto& h264_header =
+      packet_.video_header.video_type_header.emplace<RTPVideoHeaderH264>();
+  h264_header.nalus[0].type = H264::NaluType::kIdr;
+  h264_header.nalus_length = 1;
 
   packet_buffer_->InsertPacket(&packet_);
 
@@ -912,9 +925,11 @@ TEST_F(TestPacketBufferH264SpsPpsIdrIsKeyframe, IdrIsNotKeyframe) {
 }
 
 TEST_F(TestPacketBufferH264SpsPpsIdrIsKeyframe, SpsPpsIsNotKeyframe) {
-  packet_.video_header.h264().nalus[0].type = H264::NaluType::kSps;
-  packet_.video_header.h264().nalus[1].type = H264::NaluType::kPps;
-  packet_.video_header.h264().nalus_length = 2;
+  auto& h264_header =
+      packet_.video_header.video_type_header.emplace<RTPVideoHeaderH264>();
+  h264_header.nalus[0].type = H264::NaluType::kSps;
+  h264_header.nalus[1].type = H264::NaluType::kPps;
+  h264_header.nalus_length = 2;
 
   packet_buffer_->InsertPacket(&packet_);
 
@@ -923,10 +938,12 @@ TEST_F(TestPacketBufferH264SpsPpsIdrIsKeyframe, SpsPpsIsNotKeyframe) {
 }
 
 TEST_F(TestPacketBufferH264SpsPpsIdrIsKeyframe, SpsPpsIdrIsKeyframe) {
-  packet_.video_header.h264().nalus[0].type = H264::NaluType::kSps;
-  packet_.video_header.h264().nalus[1].type = H264::NaluType::kPps;
-  packet_.video_header.h264().nalus[2].type = H264::NaluType::kIdr;
-  packet_.video_header.h264().nalus_length = 3;
+  auto& h264_header =
+      packet_.video_header.video_type_header.emplace<RTPVideoHeaderH264>();
+  h264_header.nalus[0].type = H264::NaluType::kSps;
+  h264_header.nalus[1].type = H264::NaluType::kPps;
+  h264_header.nalus[2].type = H264::NaluType::kIdr;
+  h264_header.nalus_length = 3;
 
   packet_buffer_->InsertPacket(&packet_);
 

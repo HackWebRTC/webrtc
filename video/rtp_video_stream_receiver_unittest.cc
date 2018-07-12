@@ -134,9 +134,9 @@ class RtpVideoStreamReceiverTest : public testing::Test {
   }
 
   WebRtcRTPHeader GetDefaultPacket() {
-    WebRtcRTPHeader packet;
-    memset(&packet, 0, sizeof(packet));
+    WebRtcRTPHeader packet = {};
     packet.video_header().codec = kVideoCodecH264;
+    packet.video_header().video_type_header.emplace<RTPVideoHeaderH264>();
     return packet;
   }
 
@@ -151,9 +151,9 @@ class RtpVideoStreamReceiverTest : public testing::Test {
     info.pps_id = -1;
     data->push_back(H264::NaluType::kSps);
     data->push_back(sps_id);
-    packet->video_header()
-        .h264()
-        .nalus[packet->video_header().h264().nalus_length++] = info;
+    auto& h264 =
+        absl::get<RTPVideoHeaderH264>(packet->video_header().video_type_header);
+    h264.nalus[h264.nalus_length++] = info;
   }
 
   void AddPps(WebRtcRTPHeader* packet,
@@ -166,9 +166,9 @@ class RtpVideoStreamReceiverTest : public testing::Test {
     info.pps_id = pps_id;
     data->push_back(H264::NaluType::kPps);
     data->push_back(pps_id);
-    packet->video_header()
-        .h264()
-        .nalus[packet->video_header().h264().nalus_length++] = info;
+    auto& h264 =
+        absl::get<RTPVideoHeaderH264>(packet->video_header().video_type_header);
+    h264.nalus[h264.nalus_length++] = info;
   }
 
   void AddIdr(WebRtcRTPHeader* packet, int pps_id) {
@@ -176,9 +176,9 @@ class RtpVideoStreamReceiverTest : public testing::Test {
     info.type = H264::NaluType::kIdr;
     info.sps_id = -1;
     info.pps_id = pps_id;
-    packet->video_header()
-        .h264()
-        .nalus[packet->video_header().h264().nalus_length++] = info;
+    auto& h264 =
+        absl::get<RTPVideoHeaderH264>(packet->video_header().video_type_header);
+    h264.nalus[h264.nalus_length++] = info;
   }
 
  protected:
@@ -202,9 +202,8 @@ class RtpVideoStreamReceiverTest : public testing::Test {
 };
 
 TEST_F(RtpVideoStreamReceiverTest, GenericKeyFrame) {
-  WebRtcRTPHeader rtp_header;
+  WebRtcRTPHeader rtp_header = {};
   const std::vector<uint8_t> data({1, 2, 3, 4});
-  memset(&rtp_header, 0, sizeof(rtp_header));
   rtp_header.header.sequenceNumber = 1;
   rtp_header.header.markerBit = 1;
   rtp_header.video_header().is_first_packet_in_frame = true;
@@ -260,9 +259,8 @@ TEST_F(RtpVideoStreamReceiverTest,
 }
 
 TEST_F(RtpVideoStreamReceiverTest, GenericKeyFrameBitstreamError) {
-  WebRtcRTPHeader rtp_header;
+  WebRtcRTPHeader rtp_header = {};
   const std::vector<uint8_t> data({1, 2, 3, 4});
-  memset(&rtp_header, 0, sizeof(rtp_header));
   rtp_header.header.sequenceNumber = 1;
   rtp_header.header.markerBit = 1;
   rtp_header.video_header().is_first_packet_in_frame = true;
@@ -409,9 +407,8 @@ TEST_F(RtpVideoStreamReceiverTest, PaddingInMediaStream) {
 }
 
 TEST_F(RtpVideoStreamReceiverTest, RequestKeyframeIfFirstFrameIsDelta) {
-  WebRtcRTPHeader rtp_header;
+  WebRtcRTPHeader rtp_header = {};
   const std::vector<uint8_t> data({1, 2, 3, 4});
-  memset(&rtp_header, 0, sizeof(rtp_header));
   rtp_header.header.sequenceNumber = 1;
   rtp_header.header.markerBit = 1;
   rtp_header.video_header().is_first_packet_in_frame = true;

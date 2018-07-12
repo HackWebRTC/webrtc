@@ -1155,17 +1155,19 @@ TEST_F(TestBasicJitterBuffer, H264InsertStartCode) {
 TEST_F(TestBasicJitterBuffer, SpsAndPpsHandling) {
   jitter_buffer_->SetDecodeErrorMode(kNoErrors);
 
+  auto& h264_header =
+      packet_->video_header.video_type_header.emplace<RTPVideoHeaderH264>();
   packet_->timestamp = timestamp_;
   packet_->frameType = kVideoFrameKey;
   packet_->is_first_packet_in_frame = true;
   packet_->markerBit = true;
   packet_->codec = kVideoCodecH264;
   packet_->video_header.codec = kVideoCodecH264;
-  packet_->video_header.h264().nalu_type = H264::NaluType::kIdr;
-  packet_->video_header.h264().nalus[0].type = H264::NaluType::kIdr;
-  packet_->video_header.h264().nalus[0].sps_id = -1;
-  packet_->video_header.h264().nalus[0].pps_id = 0;
-  packet_->video_header.h264().nalus_length = 1;
+  h264_header.nalu_type = H264::NaluType::kIdr;
+  h264_header.nalus[0].type = H264::NaluType::kIdr;
+  h264_header.nalus[0].sps_id = -1;
+  h264_header.nalus[0].pps_id = 0;
+  h264_header.nalus_length = 1;
   bool retransmitted = false;
   EXPECT_EQ(kCompleteSession,
             jitter_buffer_->InsertPacket(*packet_, &retransmitted));
@@ -1181,14 +1183,14 @@ TEST_F(TestBasicJitterBuffer, SpsAndPpsHandling) {
   packet_->markerBit = false;
   packet_->codec = kVideoCodecH264;
   packet_->video_header.codec = kVideoCodecH264;
-  packet_->video_header.h264().nalu_type = H264::NaluType::kStapA;
-  packet_->video_header.h264().nalus[0].type = H264::NaluType::kSps;
-  packet_->video_header.h264().nalus[0].sps_id = 0;
-  packet_->video_header.h264().nalus[0].pps_id = -1;
-  packet_->video_header.h264().nalus[1].type = H264::NaluType::kPps;
-  packet_->video_header.h264().nalus[1].sps_id = 0;
-  packet_->video_header.h264().nalus[1].pps_id = 0;
-  packet_->video_header.h264().nalus_length = 2;
+  h264_header.nalu_type = H264::NaluType::kStapA;
+  h264_header.nalus[0].type = H264::NaluType::kSps;
+  h264_header.nalus[0].sps_id = 0;
+  h264_header.nalus[0].pps_id = -1;
+  h264_header.nalus[1].type = H264::NaluType::kPps;
+  h264_header.nalus[1].sps_id = 0;
+  h264_header.nalus[1].pps_id = 0;
+  h264_header.nalus_length = 2;
   // Not complete since the marker bit hasn't been received.
   EXPECT_EQ(kIncomplete,
             jitter_buffer_->InsertPacket(*packet_, &retransmitted));
@@ -1200,11 +1202,11 @@ TEST_F(TestBasicJitterBuffer, SpsAndPpsHandling) {
   packet_->markerBit = true;
   packet_->codec = kVideoCodecH264;
   packet_->video_header.codec = kVideoCodecH264;
-  packet_->video_header.h264().nalu_type = H264::NaluType::kIdr;
-  packet_->video_header.h264().nalus[0].type = H264::NaluType::kIdr;
-  packet_->video_header.h264().nalus[0].sps_id = -1;
-  packet_->video_header.h264().nalus[0].pps_id = 0;
-  packet_->video_header.h264().nalus_length = 1;
+  h264_header.nalu_type = H264::NaluType::kIdr;
+  h264_header.nalus[0].type = H264::NaluType::kIdr;
+  h264_header.nalus[0].sps_id = -1;
+  h264_header.nalus[0].pps_id = 0;
+  h264_header.nalus_length = 1;
   // Complete and decodable since the pps and sps are received in the first
   // packet of this frame.
   EXPECT_EQ(kCompleteSession,
@@ -1222,11 +1224,11 @@ TEST_F(TestBasicJitterBuffer, SpsAndPpsHandling) {
   packet_->markerBit = true;
   packet_->codec = kVideoCodecH264;
   packet_->video_header.codec = kVideoCodecH264;
-  packet_->video_header.h264().nalu_type = H264::NaluType::kSlice;
-  packet_->video_header.h264().nalus[0].type = H264::NaluType::kSlice;
-  packet_->video_header.h264().nalus[0].sps_id = -1;
-  packet_->video_header.h264().nalus[0].pps_id = 0;
-  packet_->video_header.h264().nalus_length = 1;
+  h264_header.nalu_type = H264::NaluType::kSlice;
+  h264_header.nalus[0].type = H264::NaluType::kSlice;
+  h264_header.nalus[0].sps_id = -1;
+  h264_header.nalus[0].pps_id = 0;
+  h264_header.nalus_length = 1;
   // Complete and decodable since sps, pps and key frame has been received.
   EXPECT_EQ(kCompleteSession,
             jitter_buffer_->InsertPacket(*packet_, &retransmitted));

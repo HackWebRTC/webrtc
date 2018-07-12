@@ -110,8 +110,10 @@ std::vector<NaluInfo> VCMSessionInfo::GetNaluInfos() const {
     return std::vector<NaluInfo>();
   std::vector<NaluInfo> nalu_infos;
   for (const VCMPacket& packet : packets_) {
-    for (size_t i = 0; i < packet.video_header.h264().nalus_length; ++i) {
-      nalu_infos.push_back(packet.video_header.h264().nalus[i]);
+    const auto& h264 =
+        absl::get<RTPVideoHeaderH264>(packet.video_header.video_type_header);
+    for (size_t i = 0; i < h264.nalus_length; ++i) {
+      nalu_infos.push_back(h264.nalus[i]);
     }
   }
   return nalu_infos;
@@ -175,8 +177,9 @@ size_t VCMSessionInfo::InsertBuffer(uint8_t* frame_buffer,
   // header supplied by the H264 depacketizer.
   const size_t kH264NALHeaderLengthInBytes = 1;
   const size_t kLengthFieldLength = 2;
-  if (packet.video_header.codec == kVideoCodecH264 &&
-      packet.video_header.h264().packetization_type == kH264StapA) {
+  const auto* h264 =
+      absl::get_if<RTPVideoHeaderH264>(&packet.video_header.video_type_header);
+  if (h264 && h264->packetization_type == kH264StapA) {
     size_t required_length = 0;
     const uint8_t* nalu_ptr = packet_buffer + kH264NALHeaderLengthInBytes;
     while (nalu_ptr < packet_buffer + packet.sizeBytes) {
