@@ -12,6 +12,7 @@
 
 #include "absl/memory/memory.h"
 #include "api/fakemetricsobserver.h"
+#include "api/jsep.h"
 #include "api/peerconnectionproxy.h"
 #include "media/base/fakemediaengine.h"
 #include "pc/mediasession.h"
@@ -111,12 +112,44 @@ class PeerConnectionWrapperForUsageHistogramTest
     return static_cast<ObserverForUsageHistogramTest*>(observer())
         ->HaveDataChannel();
   }
+  void AddOrBufferIceCandidate(const webrtc::IceCandidateInterface* candidate) {
+    if (!pc()->AddIceCandidate(candidate)) {
+      std::string sdp;
+      EXPECT_TRUE(candidate->ToString(&sdp));
+      std::unique_ptr<webrtc::IceCandidateInterface> candidate_copy(
+          CreateIceCandidate(candidate->sdp_mid(), candidate->sdp_mline_index(),
+                             sdp, nullptr));
+      buffered_candidates_.push_back(std::move(candidate_copy));
+    }
+  }
+  void AddBufferedIceCandidates() {
+    for (const auto& candidate : buffered_candidates_) {
+      EXPECT_TRUE(pc()->AddIceCandidate(candidate.get()));
+    }
+    buffered_candidates_.clear();
+  }
+  bool ConnectTo(PeerConnectionWrapperForUsageHistogramTest* callee) {
+    PrepareToExchangeCandidates(callee);
+    EXPECT_TRUE(ExchangeOfferAnswerWith(callee));
+    AddBufferedIceCandidates();
+    callee->AddBufferedIceCandidates();
+    EXPECT_TRUE_WAIT(IsConnected(), kDefaultTimeout);
+    EXPECT_TRUE_WAIT(callee->IsConnected(), kDefaultTimeout);
+    return IsConnected() && callee->IsConnected();
+  }
+
+ private:
+  // Candidates that have been sent but not yet configured
+  std::vector<std::unique_ptr<webrtc::IceCandidateInterface>>
+      buffered_candidates_;
 };
 
 void ObserverForUsageHistogramTest::OnIceCandidate(
     const webrtc::IceCandidateInterface* candidate) {
   if (candidate_target_) {
-    candidate_target_->pc()->AddIceCandidate(candidate);
+    this->candidate_target_->AddOrBufferIceCandidate(candidate);
+  } else {
+    FAIL() << "Early candidate detected";
   }
 }
 
@@ -198,10 +231,7 @@ TEST_F(PeerConnectionUsageHistogramTest, FingerprintAudioVideo) {
   auto callee_observer = callee->RegisterFakeMetricsObserver();
   caller->AddAudioTrack("audio");
   caller->AddVideoTrack("video");
-  caller->PrepareToExchangeCandidates(callee.get());
-  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
-  ASSERT_TRUE_WAIT(caller->IsConnected(), kDefaultTimeout);
-  ASSERT_TRUE_WAIT(callee->IsConnected(), kDefaultTimeout);
+  ASSERT_TRUE(caller->ConnectTo(callee.get()));
   caller->pc()->Close();
   callee->pc()->Close();
   int expected_fingerprint = MakeUsageFingerprint(
@@ -227,8 +257,7 @@ TEST_F(PeerConnectionUsageHistogramTest, FingerprintDataOnly) {
   auto caller_observer = caller->RegisterFakeMetricsObserver();
   auto callee_observer = callee->RegisterFakeMetricsObserver();
   caller->CreateDataChannel("foodata");
-  caller->PrepareToExchangeCandidates(callee.get());
-  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+  ASSERT_TRUE(caller->ConnectTo(callee.get()));
   ASSERT_TRUE_WAIT(callee->HaveDataChannel(), kDefaultTimeout);
   caller->pc()->Close();
   callee->pc()->Close();
