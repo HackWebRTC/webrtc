@@ -762,6 +762,9 @@ TEST(FullStackTest, VP9SVC_3SL_Low) {
   fixture->RunWithAnalyzer(simulcast);
 }
 
+// bugs.webrtc.org/9506
+#if !defined(WEBRTC_MAC)
+
 TEST(FullStackTest, VP9KSVC_3SL_High) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging simulcast;
@@ -814,6 +817,7 @@ TEST(FullStackTest, VP9KSVC_3SL_Medium_Network_Restricted) {
   simulcast.pipe.link_capacity_kbps = 1000;
   fixture->RunWithAnalyzer(simulcast);
 }
+#endif  // !defined(WEBRTC_MAC)
 
 #endif  // !defined(RTC_DISABLE_VP9)
 
