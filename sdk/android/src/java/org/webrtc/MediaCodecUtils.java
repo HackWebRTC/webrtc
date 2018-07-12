@@ -84,13 +84,7 @@ class MediaCodecUtils {
       case VP9:
         return new HashMap<String, String>();
       case H264:
-        Map<String, String> properties = new HashMap<>();
-        properties.put(VideoCodecInfo.H264_FMTP_LEVEL_ASYMMETRY_ALLOWED, "1");
-        properties.put(VideoCodecInfo.H264_FMTP_PACKETIZATION_MODE, "1");
-        properties.put(VideoCodecInfo.H264_FMTP_PROFILE_LEVEL_ID,
-            highProfile ? VideoCodecInfo.H264_CONSTRAINED_HIGH_3_1
-                        : VideoCodecInfo.H264_CONSTRAINED_BASELINE_3_1);
-        return properties;
+        return H264Utils.getDefaultH264Params(highProfile);
       default:
         throw new IllegalArgumentException("Unsupported codec: " + type);
     }

@@ -262,7 +262,6 @@ generate_jni("generated_java_audio_device_module_native_jni") {
 generate_jni("generated_video_jni") {
   sources = [
     "api/org/webrtc/EncodedImage.java",
-    "api/org/webrtc/HardwareVideoEncoderFactory.java",
     "api/org/webrtc/MediaCodecVideoDecoder.java",
     "api/org/webrtc/MediaCodecVideoEncoder.java",
     "api/org/webrtc/VideoCodecInfo.java",
@@ -278,6 +277,7 @@ generate_jni("generated_video_jni") {
     "api/org/webrtc/VideoSource.java",
     "api/org/webrtc/VideoTrack.java",
     "api/org/webrtc/YuvHelper.java",
+    "src/java/org/webrtc/H264Utils.java",
     "src/java/org/webrtc/NV12Buffer.java",
     "src/java/org/webrtc/NV21Buffer.java",
     "src/java/org/webrtc/NativeCapturerObserver.java",
@@ -299,7 +299,7 @@ rtc_static_library("video_jni") {
     "src/jni/androidvideotracksource.h",
     "src/jni/encodedimage.cc",
     "src/jni/encodedimage.h",
-    "src/jni/hardwarevideoencoderfactory.cc",
+    "src/jni/h264utils.cc",
     "src/jni/jni_generator_helper.h",
     "src/jni/nativecapturerobserver.cc",
     "src/jni/nativecapturerobserver.h",
@@ -879,6 +879,7 @@ rtc_android_library("video_java") {
     "api/org/webrtc/VideoDecoderFallback.java",
     "api/org/webrtc/VideoEncoderFallback.java",
     "src/java/org/webrtc/NV21Buffer.java",
+    "src/java/org/webrtc/H264Utils.java",
     "src/java/org/webrtc/VideoDecoderWrapper.java",
     "src/java/org/webrtc/VideoEncoderWrapper.java",
     "src/java/org/webrtc/WrappedNativeI420Buffer.java",
