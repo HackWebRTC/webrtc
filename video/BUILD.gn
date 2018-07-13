@@ -202,7 +202,9 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":video_quality_test",
+      "../media:rtc_vp9_profile",
       "../modules/pacing:pacing",
+      "../modules/video_coding:webrtc_vp9",
       "../rtc_base:rtc_base_approved",
       "../rtc_base/experiments:alr_experiment",
       "../test:field_trial",

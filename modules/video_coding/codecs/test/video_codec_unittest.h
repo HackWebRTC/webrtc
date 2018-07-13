@@ -105,6 +105,7 @@ class VideoCodecUnitTest : public ::testing::Test {
 
   std::unique_ptr<VideoEncoder> encoder_;
   std::unique_ptr<VideoDecoder> decoder_;
+  std::unique_ptr<test::FrameGenerator> input_frame_generator_;
 
  private:
   FakeEncodeCompleteCallback encode_complete_callback_;
@@ -124,7 +125,6 @@ class VideoCodecUnitTest : public ::testing::Test {
       RTC_GUARDED_BY(decoded_frame_section_);
   absl::optional<uint8_t> decoded_qp_ RTC_GUARDED_BY(decoded_frame_section_);
 
-  std::unique_ptr<test::FrameGenerator> input_frame_generator_;
   uint32_t last_input_frame_timestamp_;
 };
 

@@ -21,6 +21,7 @@
 #include "vpx/vpx_encoder.h"
 
 #include "absl/memory/memory.h"
+#include "api/video/i010_buffer.h"
 #include "common_video/include/video_frame_buffer.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -53,12 +54,23 @@ int GetCpuSpeed(int width, int height) {
 }
 
 std::vector<SdpVideoFormat> SupportedVP9Codecs() {
-  return {SdpVideoFormat(
-              cricket::kVp9CodecName,
-              {{kVP9FmtpProfileId, VP9ProfileToString(VP9Profile::kProfile0)}}),
-          SdpVideoFormat(cricket::kVp9CodecName,
-                         {{kVP9FmtpProfileId,
-                           VP9ProfileToString(VP9Profile::kProfile2)}})};
+  // Profile 2 might not be available on some platforms until
+  // https://bugs.chromium.org/p/webm/issues/detail?id=1544 is solved.
+  static bool vpx_supports_high_bit_depth =
+      (vpx_codec_get_caps(vpx_codec_vp9_cx()) & VPX_CODEC_CAP_HIGHBITDEPTH) !=
+          0 &&
+      (vpx_codec_get_caps(vpx_codec_vp9_dx()) & VPX_CODEC_CAP_HIGHBITDEPTH) !=
+          0;
+
+  std::vector<SdpVideoFormat> supported_formats{SdpVideoFormat(
+      cricket::kVp9CodecName,
+      {{kVP9FmtpProfileId, VP9ProfileToString(VP9Profile::kProfile0)}})};
+  if (vpx_supports_high_bit_depth) {
+    supported_formats.push_back(SdpVideoFormat(
+        cricket::kVp9CodecName,
+        {{kVP9FmtpProfileId, VP9ProfileToString(VP9Profile::kProfile2)}}));
+  }
+  return supported_formats;
 }
 
 std::unique_ptr<VP9Encoder> VP9Encoder::Create() {
@@ -100,7 +112,6 @@ VP9EncoderImpl::VP9EncoderImpl(const cricket::VideoCodec& codec)
       is_flexible_mode_(false) {
   memset(&codec_, 0, sizeof(codec_));
   memset(&svc_params_, 0, sizeof(vpx_svc_extra_cfg_t));
-  RTC_DCHECK(VP9Profile::kProfile0 == profile_);
 }
 
 VP9EncoderImpl::~VP9EncoderImpl() {
@@ -316,15 +327,37 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
       CalcBufferSize(VideoType::kI420, codec_.width, codec_.height);
   encoded_image_._buffer = new uint8_t[encoded_image_._size];
   encoded_image_._completeFrame = true;
-  // Creating a wrapper to the image - setting image data to nullptr. Actual
-  // pointer will be set in encode. Setting align to 1, as it is meaningless
-  // (actual memory is not allocated).
-  raw_ = vpx_img_wrap(nullptr, VPX_IMG_FMT_I420, codec_.width, codec_.height, 1,
-                      nullptr);
   // Populate encoder configuration with default values.
   if (vpx_codec_enc_config_default(vpx_codec_vp9_cx(), config_, 0)) {
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
+
+  vpx_img_fmt img_fmt = VPX_IMG_FMT_NONE;
+  unsigned int bits_for_storage = 8;
+  switch (profile_) {
+    case VP9Profile::kProfile0:
+      img_fmt = VPX_IMG_FMT_I420;
+      bits_for_storage = 8;
+      config_->g_bit_depth = VPX_BITS_8;
+      config_->g_profile = 0;
+      config_->g_input_bit_depth = 8;
+      break;
+    case VP9Profile::kProfile2:
+      img_fmt = VPX_IMG_FMT_I42016;
+      bits_for_storage = 16;
+      config_->g_bit_depth = VPX_BITS_10;
+      config_->g_profile = 2;
+      config_->g_input_bit_depth = 10;
+      break;
+  }
+
+  // Creating a wrapper to the image - setting image data to nullptr. Actual
+  // pointer will be set in encode. Setting align to 1, as it is meaningless
+  // (actual memory is not allocated).
+  raw_ =
+      vpx_img_wrap(nullptr, img_fmt, codec_.width, codec_.height, 1, nullptr);
+  raw_->bit_depth = bits_for_storage;
+
   config_->g_w = codec_.width;
   config_->g_h = codec_.height;
   config_->rc_target_bitrate = inst->startBitrate;  // in kbit/s
@@ -481,7 +514,11 @@ int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
 
-  if (vpx_codec_enc_init(encoder_, vpx_codec_vp9_cx(), config_, 0)) {
+  const vpx_codec_err_t rv = vpx_codec_enc_init(
+      encoder_, vpx_codec_vp9_cx(), config_,
+      config_->g_bit_depth == VPX_BITS_8 ? 0 : VPX_CODEC_USE_HIGHBITDEPTH);
+  if (rv != VPX_CODEC_OK) {
+    RTC_LOG(LS_ERROR) << "Init error: " << vpx_codec_err_to_string(rv);
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
   vpx_codec_control(encoder_, VP8E_SET_CPUUSED, cpu_speed_);
@@ -606,16 +643,47 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
   // doing this.
   input_image_ = &input_image;
 
-  rtc::scoped_refptr<I420BufferInterface> i420_buffer =
-      input_image.video_frame_buffer()->ToI420();
-  // Image in vpx_image_t format.
-  // Input image is const. VPX's raw image is not defined as const.
-  raw_->planes[VPX_PLANE_Y] = const_cast<uint8_t*>(i420_buffer->DataY());
-  raw_->planes[VPX_PLANE_U] = const_cast<uint8_t*>(i420_buffer->DataU());
-  raw_->planes[VPX_PLANE_V] = const_cast<uint8_t*>(i420_buffer->DataV());
-  raw_->stride[VPX_PLANE_Y] = i420_buffer->StrideY();
-  raw_->stride[VPX_PLANE_U] = i420_buffer->StrideU();
-  raw_->stride[VPX_PLANE_V] = i420_buffer->StrideV();
+  // Keep reference to buffer until encode completes.
+  rtc::scoped_refptr<I420BufferInterface> i420_buffer;
+  rtc::scoped_refptr<I010BufferInterface> i010_buffer;
+  switch (profile_) {
+    case VP9Profile::kProfile0: {
+      i420_buffer = input_image.video_frame_buffer()->ToI420();
+      // Image in vpx_image_t format.
+      // Input image is const. VPX's raw image is not defined as const.
+      raw_->planes[VPX_PLANE_Y] = const_cast<uint8_t*>(i420_buffer->DataY());
+      raw_->planes[VPX_PLANE_U] = const_cast<uint8_t*>(i420_buffer->DataU());
+      raw_->planes[VPX_PLANE_V] = const_cast<uint8_t*>(i420_buffer->DataV());
+      raw_->stride[VPX_PLANE_Y] = i420_buffer->StrideY();
+      raw_->stride[VPX_PLANE_U] = i420_buffer->StrideU();
+      raw_->stride[VPX_PLANE_V] = i420_buffer->StrideV();
+      break;
+    }
+    case VP9Profile::kProfile2: {
+      // We can inject kI010 frames directly for encode. All other formats
+      // should be converted to it.
+      switch (input_image.video_frame_buffer()->type()) {
+        case VideoFrameBuffer::Type::kI010: {
+          i010_buffer = input_image.video_frame_buffer()->GetI010();
+          break;
+        }
+        default: {
+          i010_buffer =
+              I010Buffer::Copy(*input_image.video_frame_buffer()->ToI420());
+        }
+      }
+      raw_->planes[VPX_PLANE_Y] = const_cast<uint8_t*>(
+          reinterpret_cast<const uint8_t*>(i010_buffer->DataY()));
+      raw_->planes[VPX_PLANE_U] = const_cast<uint8_t*>(
+          reinterpret_cast<const uint8_t*>(i010_buffer->DataU()));
+      raw_->planes[VPX_PLANE_V] = const_cast<uint8_t*>(
+          reinterpret_cast<const uint8_t*>(i010_buffer->DataV()));
+      raw_->stride[VPX_PLANE_Y] = i010_buffer->StrideY() * 2;
+      raw_->stride[VPX_PLANE_U] = i010_buffer->StrideU() * 2;
+      raw_->stride[VPX_PLANE_V] = i010_buffer->StrideV() * 2;
+      break;
+    }
+  }
 
   vpx_enc_frame_flags_t flags = 0;
   if (force_key_frame_) {
@@ -625,8 +693,13 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
   RTC_CHECK_GT(codec_.maxFramerate, 0);
   uint32_t duration =
       90000 / target_framerate_fps_.value_or(codec_.maxFramerate);
-  if (vpx_codec_encode(encoder_, raw_, timestamp_, duration, flags,
-                       VPX_DL_REALTIME)) {
+  const vpx_codec_err_t rv = vpx_codec_encode(encoder_, raw_, timestamp_,
+                                              duration, flags, VPX_DL_REALTIME);
+  if (rv != VPX_CODEC_OK) {
+    RTC_LOG(LS_ERROR) << "Encoding error: " << vpx_codec_err_to_string(rv)
+                      << "\n"
+                      << "Details: " << vpx_codec_error(encoder_) << "\n"
+                      << vpx_codec_error_detail(encoder_);
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
   timestamp_ += duration;
@@ -1087,10 +1160,13 @@ int VP9DecoderImpl::ReturnFrame(const vpx_image_t* img,
   // vpx_codec_decode calls or vpx_codec_destroy).
   Vp9FrameBufferPool::Vp9FrameBuffer* img_buffer =
       static_cast<Vp9FrameBufferPool::Vp9FrameBuffer*>(img->fb_priv);
+
   // The buffer can be used directly by the VideoFrame (without copy) by
-  // using a WrappedI420Buffer.
-  rtc::scoped_refptr<WrappedI420Buffer> img_wrapped_buffer(
-      new rtc::RefCountedObject<webrtc::WrappedI420Buffer>(
+  // using a Wrapped*Buffer.
+  rtc::scoped_refptr<VideoFrameBuffer> img_wrapped_buffer;
+  switch (img->bit_depth) {
+    case 8:
+      img_wrapped_buffer = WrapI420Buffer(
           img->d_w, img->d_h, img->planes[VPX_PLANE_Y],
           img->stride[VPX_PLANE_Y], img->planes[VPX_PLANE_U],
           img->stride[VPX_PLANE_U], img->planes[VPX_PLANE_V],
@@ -1098,8 +1174,22 @@ int VP9DecoderImpl::ReturnFrame(const vpx_image_t* img,
           // WrappedI420Buffer's mechanism for allowing the release of its frame
           // buffer is through a callback function. This is where we should
           // release |img_buffer|.
-          rtc::KeepRefUntilDone(img_buffer)));
-
+          rtc::KeepRefUntilDone(img_buffer));
+      break;
+    case 10:
+      img_wrapped_buffer = WrapI010Buffer(
+          img->d_w, img->d_h,
+          reinterpret_cast<const uint16_t*>(img->planes[VPX_PLANE_Y]),
+          img->stride[VPX_PLANE_Y] / 2,
+          reinterpret_cast<const uint16_t*>(img->planes[VPX_PLANE_U]),
+          img->stride[VPX_PLANE_U] / 2,
+          reinterpret_cast<const uint16_t*>(img->planes[VPX_PLANE_V]),
+          img->stride[VPX_PLANE_V] / 2, rtc::KeepRefUntilDone(img_buffer));
+      break;
+    default:
+      RTC_NOTREACHED();
+      return WEBRTC_VIDEO_CODEC_NO_OUTPUT;
+  }
   VideoFrame decoded_image(img_wrapped_buffer, timestamp,
                            0 /* render_time_ms */, webrtc::kVideoRotation_0);
   decoded_image.set_ntp_time_ms(ntp_time_ms);

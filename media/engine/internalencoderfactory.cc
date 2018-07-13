@@ -44,7 +44,7 @@ std::unique_ptr<VideoEncoder> InternalEncoderFactory::CreateVideoEncoder(
   if (cricket::CodecNamesEq(format.name, cricket::kVp8CodecName))
     return VP8Encoder::Create();
   if (cricket::CodecNamesEq(format.name, cricket::kVp9CodecName))
-    return VP9Encoder::Create();
+    return VP9Encoder::Create(cricket::VideoCodec(format));
   if (cricket::CodecNamesEq(format.name, cricket::kH264CodecName))
     return H264Encoder::Create(cricket::VideoCodec(format));
   RTC_LOG(LS_ERROR) << "Trying to created encoder of unsupported format "
