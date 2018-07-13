@@ -814,7 +814,7 @@ std::unique_ptr<VideoDecoder> MediaCodecVideoDecoderFactory::CreateVideoDecoder(
     return nullptr;
   }
   for (SdpVideoFormat supported_format : supported_formats_) {
-    if (supported_format == format) {
+    if (supported_format.name == format.name) {
       ALOGD << "Create HW video decoder for type " << format.name;
       JNIEnv* jni = AttachCurrentThreadIfNeeded();
       ScopedLocalRefFrame local_ref_frame(jni);
