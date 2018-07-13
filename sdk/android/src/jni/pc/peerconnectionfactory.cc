@@ -80,7 +80,6 @@ static std::unique_ptr<std::string> field_trials_init_string;
 
 // Set in PeerConnectionFactory_initializeAndroidGlobals().
 static bool factory_static_initialized = false;
-static bool video_hw_acceleration_enabled = true;
 
 // Set in PeerConnectionFactory_InjectLoggable().
 static std::unique_ptr<JNILogSink> jni_log_sink;
@@ -122,9 +121,7 @@ jobject NativeToJavaPeerConnectionFactory(
 
 static void JNI_PeerConnectionFactory_InitializeAndroidGlobals(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
-    jboolean video_hw_acceleration) {
-  video_hw_acceleration_enabled = video_hw_acceleration;
+    const JavaParamRef<jclass>&) {
   if (!factory_static_initialized) {
     JVM::Initialize(GetJVM());
     factory_static_initialized = true;
@@ -239,44 +236,12 @@ jlong CreatePeerConnectionFactoryForJava(
   std::unique_ptr<RtcEventLogFactoryInterface> rtc_event_log_factory(
       CreateRtcEventLogFactory());
 
-  std::unique_ptr<VideoEncoderFactory> video_encoder_factory;
-  std::unique_ptr<VideoDecoderFactory> video_decoder_factory;
-  std::unique_ptr<cricket::MediaEngineInterface> media_engine;
-
-  if (jencoder_factory.is_null() && jdecoder_factory.is_null() &&
-      !video_hw_acceleration_enabled) {
-    // Legacy path for clients that are explicitly calling
-    // setEnableVideoHwAcceleration(false) and not injecting neither encoder nor
-    // decoder. These clients should be migrated to only pass in
-    // SoftwareVideoEncoderFactory instead.
-    video_encoder_factory =
-        WrapLegacyVideoEncoderFactory(/* legacy_encoder_factory= */ nullptr);
-    video_decoder_factory =
-        WrapLegacyVideoDecoderFactory(/* legacy_decoder_factory= */ nullptr);
-  } else {
-    if (jencoder_factory.is_null()) {
-      // TODO(bugs.webrtc.org/7925): When all clients switched to injectable
-      // factories, remove the legacy codec factories
-      video_encoder_factory =
-          WrapLegacyVideoEncoderFactory(CreateLegacyVideoEncoderFactory());
-    } else {
-      video_encoder_factory = std::unique_ptr<VideoEncoderFactory>(
-          CreateVideoEncoderFactory(jni, jencoder_factory));
-    }
-
-    if (jdecoder_factory.is_null()) {
-      // TODO(bugs.webrtc.org/7925): When all clients switched to injectable
-      // factories, remove the legacy codec factories
-      video_decoder_factory =
-          WrapLegacyVideoDecoderFactory(CreateLegacyVideoDecoderFactory());
-    } else {
-      video_decoder_factory = std::unique_ptr<VideoDecoderFactory>(
-          CreateVideoDecoderFactory(jni, jdecoder_factory));
-    }
-  }
-  media_engine.reset(CreateMediaEngine(
+  std::unique_ptr<cricket::MediaEngineInterface> media_engine(CreateMediaEngine(
       audio_device_module, audio_encoder_factory, audio_decoder_factory,
-      std::move(video_encoder_factory), std::move(video_decoder_factory),
+      std::unique_ptr<VideoEncoderFactory>(
+          CreateVideoEncoderFactory(jni, jencoder_factory)),
+      std::unique_ptr<VideoDecoderFactory>(
+          CreateVideoDecoderFactory(jni, jdecoder_factory)),
       audio_mixer, audio_processor));
 
   rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(

@@ -23,6 +23,7 @@ import android.os.Bundle;
 import android.view.Surface;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -46,6 +47,93 @@ public class MediaCodecVideoEncoder {
   // possibly to minimize the amount of translation work necessary.
 
   private static final String TAG = "MediaCodecVideoEncoder";
+
+  /**
+   * Create a VideoEncoderFactory that can be injected in the PeerConnectionFactory and replicate
+   * the old behavior.
+   */
+  public static VideoEncoderFactory createFactory() {
+    return new DefaultVideoEncoderFactory(new HwEncoderFactory());
+  }
+
+  // Factory for creating HW MediaCodecVideoEncoder instances.
+  static class HwEncoderFactory implements VideoEncoderFactory {
+    private static boolean isSameCodec(VideoCodecInfo codecA, VideoCodecInfo codecB) {
+      if (!codecA.name.equalsIgnoreCase(codecB.name)) {
+        return false;
+      }
+      return codecA.name.equalsIgnoreCase("H264")
+          ? H264Utils.isSameH264Profile(codecA.params, codecB.params)
+          : true;
+    }
+
+    private static boolean isCodecSupported(
+        VideoCodecInfo[] supportedCodecs, VideoCodecInfo codec) {
+      for (VideoCodecInfo supportedCodec : supportedCodecs) {
+        if (isSameCodec(supportedCodec, codec)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    private static VideoCodecInfo[] getSupportedHardwareCodecs() {
+      final List<VideoCodecInfo> codecs = new ArrayList<VideoCodecInfo>();
+
+      if (isVp8HwSupported()) {
+        Logging.d(TAG, "VP8 HW Encoder supported.");
+        codecs.add(new VideoCodecInfo("VP8", new HashMap<>()));
+      }
+
+      if (isVp9HwSupported()) {
+        Logging.d(TAG, "VP9 HW Encoder supported.");
+        codecs.add(new VideoCodecInfo("VP9", new HashMap<>()));
+      }
+
+      // Check if high profile is supported by decoder. If yes, encoder can always
+      // fall back to baseline profile as a subset as high profile.
+      if (MediaCodecVideoDecoder.isH264HighProfileHwSupported()) {
+        Logging.d(TAG, "H.264 High Profile HW Encoder supported.");
+        codecs.add(H264Utils.DEFAULT_H264_HIGH_PROFILE_CODEC);
+      }
+
+      if (isH264HwSupported()) {
+        Logging.d(TAG, "H.264 HW Encoder supported.");
+        codecs.add(H264Utils.DEFAULT_H264_BASELINE_PROFILE_CODEC);
+      }
+
+      return codecs.toArray(new VideoCodecInfo[codecs.size()]);
+    }
+
+    private final VideoCodecInfo[] supportedHardwareCodecs = getSupportedHardwareCodecs();
+
+    @Override
+    public VideoCodecInfo[] getSupportedCodecs() {
+      return supportedHardwareCodecs;
+    }
+
+    @Nullable
+    @Override
+    public VideoEncoder createEncoder(VideoCodecInfo info) {
+      if (!isCodecSupported(supportedHardwareCodecs, info)) {
+        Logging.d(TAG, "No HW video encoder for codec " + info.name);
+        return null;
+      }
+      Logging.d(TAG, "Create HW video encoder for " + info.name);
+      return new WrappedNativeVideoEncoder() {
+        @Override
+        public long createNativeVideoEncoder() {
+          return nativeCreateEncoder(
+              info, /* hasEgl14Context= */ staticEglBase instanceof EglBase14);
+        }
+
+        @Override
+        public boolean isHardwareEncoder() {
+          return true;
+        }
+      };
+    }
+  }
 
   // Tracks webrtc::VideoCodecType.
   public enum VideoCodecType {
@@ -175,11 +263,6 @@ public class MediaCodecVideoEncoder {
     return staticEglBase == null ? null : staticEglBase.getEglBaseContext();
   }
 
-  @CalledByNative
-  static boolean hasEgl14Context() {
-    return staticEglBase instanceof EglBase14;
-  }
-
   // List of supported HW VP8 encoders.
   private static final MediaCodecProperties qcomVp8HwProperties = new MediaCodecProperties(
       "OMX.qcom.", Build.VERSION_CODES.KITKAT, BitrateAdjustmentType.NO_ADJUSTMENT);
@@ -297,7 +380,6 @@ public class MediaCodecVideoEncoder {
   }
 
   // Functions to query if HW encoding is supported.
-  @CalledByNative
   public static boolean isVp8HwSupported() {
     return !hwEncoderDisabledTypes.contains(VP8_MIME_TYPE)
         && (findHwEncoder(VP8_MIME_TYPE, vp8HwList(), supportedColorList) != null);
@@ -311,13 +393,11 @@ public class MediaCodecVideoEncoder {
     }
   }
 
-  @CalledByNative
   public static boolean isVp9HwSupported() {
     return !hwEncoderDisabledTypes.contains(VP9_MIME_TYPE)
         && (findHwEncoder(VP9_MIME_TYPE, vp9HwList, supportedColorList) != null);
   }
 
-  @CalledByNative
   public static boolean isH264HwSupported() {
     return !hwEncoderDisabledTypes.contains(H264_MIME_TYPE)
         && (findHwEncoder(H264_MIME_TYPE, h264HwList(), supportedColorList) != null);
@@ -1022,4 +1102,5 @@ public class MediaCodecVideoEncoder {
   /** Fills an inputBuffer with the given index with data from the byte buffers. */
   private static native void nativeFillInputBuffer(long encoder, int inputBuffer, ByteBuffer dataY,
       int strideY, ByteBuffer dataU, int strideU, ByteBuffer dataV, int strideV);
+  private static native long nativeCreateEncoder(VideoCodecInfo info, boolean hasEgl14Context);
 }

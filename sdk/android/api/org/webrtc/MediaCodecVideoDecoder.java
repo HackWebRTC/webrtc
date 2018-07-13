@@ -21,6 +21,7 @@ import android.os.SystemClock;
 import android.view.Surface;
 import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
+import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -44,6 +45,86 @@ public class MediaCodecVideoDecoder {
   // possibly to minimize the amount of translation work necessary.
 
   private static final String TAG = "MediaCodecVideoDecoder";
+
+  /**
+   * Create a VideoDecoderFactory that can be injected in the PeerConnectionFactory and replicate
+   * the old behavior.
+   */
+  public static VideoDecoderFactory createFactory() {
+    return new DefaultVideoDecoderFactory(new HwDecoderFactory());
+  }
+
+  // Factory for creating HW MediaCodecVideoDecoder instances.
+  static class HwDecoderFactory implements VideoDecoderFactory {
+    private static boolean isSameCodec(VideoCodecInfo codecA, VideoCodecInfo codecB) {
+      if (!codecA.name.equalsIgnoreCase(codecB.name)) {
+        return false;
+      }
+      return codecA.name.equalsIgnoreCase("H264")
+          ? H264Utils.isSameH264Profile(codecA.params, codecB.params)
+          : true;
+    }
+
+    private static boolean isCodecSupported(
+        VideoCodecInfo[] supportedCodecs, VideoCodecInfo codec) {
+      for (VideoCodecInfo supportedCodec : supportedCodecs) {
+        if (isSameCodec(supportedCodec, codec)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    private static VideoCodecInfo[] getSupportedHardwareCodecs() {
+      final List<VideoCodecInfo> codecs = new ArrayList<VideoCodecInfo>();
+
+      if (isVp8HwSupported()) {
+        Logging.d(TAG, "VP8 HW Decoder supported.");
+        codecs.add(new VideoCodecInfo("VP8", new HashMap<>()));
+      }
+
+      if (isVp9HwSupported()) {
+        Logging.d(TAG, "VP9 HW Decoder supported.");
+        codecs.add(new VideoCodecInfo("VP9", new HashMap<>()));
+      }
+
+      if (isH264HighProfileHwSupported()) {
+        Logging.d(TAG, "H.264 High Profile HW Decoder supported.");
+        codecs.add(H264Utils.DEFAULT_H264_HIGH_PROFILE_CODEC);
+      }
+
+      if (isH264HwSupported()) {
+        Logging.d(TAG, "H.264 HW Decoder supported.");
+        codecs.add(H264Utils.DEFAULT_H264_BASELINE_PROFILE_CODEC);
+      }
+
+      return codecs.toArray(new VideoCodecInfo[codecs.size()]);
+    }
+
+    private final VideoCodecInfo[] supportedHardwareCodecs = getSupportedHardwareCodecs();
+
+    @Override
+    public VideoCodecInfo[] getSupportedCodecs() {
+      return supportedHardwareCodecs;
+    }
+
+    @Nullable
+    @Override
+    public VideoDecoder createDecoder(VideoCodecInfo codec) {
+      if (!isCodecSupported(supportedHardwareCodecs, codec)) {
+        Logging.d(TAG, "No HW video decoder for codec " + codec.name);
+        return null;
+      }
+      Logging.d(TAG, "Create HW video decoder for " + codec.name);
+      return new WrappedNativeVideoDecoder() {
+        @Override
+        public long createNativeVideoDecoder() {
+          return nativeCreateDecoder(codec.name, useSurface());
+        }
+      };
+    }
+  }
+
   private static final long MAX_DECODE_TIME_MS = 200;
 
   // TODO(magjed): Use MediaFormat constants when part of the public API.
@@ -175,7 +256,6 @@ public class MediaCodecVideoDecoder {
     }
   }
 
-  @CalledByNative
   static boolean useSurface() {
     return eglBase != null;
   }
@@ -203,25 +283,21 @@ public class MediaCodecVideoDecoder {
   }
 
   // Functions to query if HW decoding is supported.
-  @CalledByNativeUnchecked
   public static boolean isVp8HwSupported() {
     return !hwDecoderDisabledTypes.contains(VP8_MIME_TYPE)
         && (findDecoder(VP8_MIME_TYPE, supportedVp8HwCodecPrefixes()) != null);
   }
 
-  @CalledByNativeUnchecked
   public static boolean isVp9HwSupported() {
     return !hwDecoderDisabledTypes.contains(VP9_MIME_TYPE)
         && (findDecoder(VP9_MIME_TYPE, supportedVp9HwCodecPrefixes) != null);
   }
 
-  @CalledByNativeUnchecked
   public static boolean isH264HwSupported() {
     return !hwDecoderDisabledTypes.contains(H264_MIME_TYPE)
         && (findDecoder(H264_MIME_TYPE, supportedH264HwCodecPrefixes()) != null);
   }
 
-  @CalledByNative
   public static boolean isH264HighProfileHwSupported() {
     if (hwDecoderDisabledTypes.contains(H264_MIME_TYPE)) {
       return false;
@@ -942,4 +1018,6 @@ public class MediaCodecVideoDecoder {
   int getSliceHeight() {
     return sliceHeight;
   }
+
+  private static native long nativeCreateDecoder(String codec, boolean useSurface);
 }

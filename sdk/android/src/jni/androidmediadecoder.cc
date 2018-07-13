@@ -13,10 +13,6 @@
 #include <memory>
 #include <vector>
 
-// NOTICE: androidmediadecoder_jni.h must be included before
-// androidmediacodeccommon.h to avoid build errors.
-#include "sdk/android/src/jni/androidmediadecoder_jni.h"
-
 #include "api/video_codecs/sdp_video_format.h"
 #include "common_video/h264/h264_bitstream_parser.h"
 #include "common_video/include/i420_buffer_pool.h"
@@ -42,7 +38,6 @@
 using rtc::Bind;
 using rtc::Thread;
 using rtc::ThreadManager;
-
 namespace webrtc {
 namespace jni {
 
@@ -773,66 +768,19 @@ void MediaCodecVideoDecoder::OnMessage(rtc::Message* msg) {
   codec_thread_->PostDelayed(RTC_FROM_HERE, kMediaCodecPollMs, this);
 }
 
-MediaCodecVideoDecoderFactory::MediaCodecVideoDecoderFactory() {
-  ALOGD << "MediaCodecVideoDecoderFactory ctor";
-  JNIEnv* jni = AttachCurrentThreadIfNeeded();
-  ScopedLocalRefFrame local_ref_frame(jni);
-  supported_formats_.clear();
-
-  if (Java_MediaCodecVideoDecoder_isVp8HwSupported(jni) &&
-      !CheckException(jni)) {
-    ALOGD << "VP8 HW Decoder supported.";
-    supported_formats_.push_back(SdpVideoFormat(cricket::kVp8CodecName));
-  }
-
-  if (Java_MediaCodecVideoDecoder_isVp9HwSupported(jni) &&
-      !CheckException(jni)) {
-    ALOGD << "VP9 HW Decoder supported.";
-    supported_formats_.push_back(SdpVideoFormat(cricket::kVp9CodecName));
-  }
-
-  if (Java_MediaCodecVideoDecoder_isH264HwSupported(jni) &&
-      !CheckException(jni)) {
-    ALOGD << "H264 HW Decoder supported.";
-    supported_formats_.push_back(SdpVideoFormat(cricket::kH264CodecName));
-  }
-}
-
-MediaCodecVideoDecoderFactory::~MediaCodecVideoDecoderFactory() {
-  ALOGD << "MediaCodecVideoDecoderFactory dtor";
-}
-
-std::vector<SdpVideoFormat> MediaCodecVideoDecoderFactory::GetSupportedFormats()
-    const {
-  return supported_formats_;
-}
-
-std::unique_ptr<VideoDecoder> MediaCodecVideoDecoderFactory::CreateVideoDecoder(
-    const SdpVideoFormat& format) {
-  if (supported_formats_.empty()) {
-    ALOGW << "No HW video decoder for type " << format.name;
-    return nullptr;
-  }
-  for (SdpVideoFormat supported_format : supported_formats_) {
-    if (supported_format.name == format.name) {
-      ALOGD << "Create HW video decoder for type " << format.name;
-      JNIEnv* jni = AttachCurrentThreadIfNeeded();
-      ScopedLocalRefFrame local_ref_frame(jni);
-      return rtc::MakeUnique<MediaCodecVideoDecoder>(
-          jni, PayloadStringToCodecType(format.name),
-          Java_MediaCodecVideoDecoder_useSurface(jni));
-    }
-  }
-  ALOGW << "Can not find HW video decoder for type " << format.name;
-  return nullptr;
-}
-
-bool MediaCodecVideoDecoderFactory::IsH264HighProfileSupported(JNIEnv* env) {
-  return Java_MediaCodecVideoDecoder_isH264HighProfileHwSupported(env);
-}
-
 const char* MediaCodecVideoDecoder::ImplementationName() const {
   return "MediaCodec";
+}
+
+static jlong JNI_MediaCodecVideoDecoder_CreateDecoder(
+    JNIEnv* env,
+    const JavaParamRef<jclass>&,
+    const JavaParamRef<jstring>& codec,
+    jboolean use_surface) {
+  ScopedLocalRefFrame local_ref_frame(env);
+  return jlongFromPointer(new MediaCodecVideoDecoder(
+      env, PayloadStringToCodecType(JavaToNativeString(env, codec)),
+      use_surface));
 }
 
 }  // namespace jni

@@ -8,10 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-// NOTICE: androidmediaencoder_jni.h must be included before
-// androidmediacodeccommon.h to avoid build errors.
-#include "sdk/android/src/jni/androidmediaencoder_jni.h"
-
 #include <algorithm>
 #include <list>
 #include <memory>
@@ -43,8 +39,8 @@
 #include "sdk/android/generated_video_jni/jni/MediaCodecVideoEncoder_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/src/jni/androidmediacodeccommon.h"
-#include "sdk/android/src/jni/androidmediadecoder_jni.h"
 #include "sdk/android/src/jni/jni_helpers.h"
+#include "sdk/android/src/jni/videocodecinfo.h"
 #include "sdk/android/src/jni/videoframe.h"
 #include "system_wrappers/include/field_trial.h"
 #include "third_party/libyuv/include/libyuv/convert.h"
@@ -1210,96 +1206,6 @@ const char* MediaCodecVideoEncoder::ImplementationName() const {
   return "MediaCodec";
 }
 
-MediaCodecVideoEncoderFactory::MediaCodecVideoEncoderFactory() {
-  JNIEnv* jni = AttachCurrentThreadIfNeeded();
-  ScopedLocalRefFrame local_ref_frame(jni);
-  supported_formats_.clear();
-
-  bool is_vp8_hw_supported = Java_MediaCodecVideoEncoder_isVp8HwSupported(jni);
-  if (is_vp8_hw_supported) {
-    ALOGD << "VP8 HW Encoder supported.";
-    supported_formats_.push_back(SdpVideoFormat(cricket::kVp8CodecName));
-  }
-
-  bool is_vp9_hw_supported = Java_MediaCodecVideoEncoder_isVp9HwSupported(jni);
-  if (is_vp9_hw_supported) {
-    ALOGD << "VP9 HW Encoder supported.";
-    supported_formats_.push_back(SdpVideoFormat(cricket::kVp9CodecName));
-  }
-
-  // Check if high profile is supported by decoder. If yes, encoder can always
-  // fall back to baseline profile as a subset as high profile.
-  bool is_h264_high_profile_hw_supported =
-      MediaCodecVideoDecoderFactory::IsH264HighProfileSupported(jni);
-  if (is_h264_high_profile_hw_supported) {
-    ALOGD << "H.264 High Profile HW Encoder supported.";
-    // TODO(magjed): Enumerate actual level instead of using hardcoded level
-    // 3.1. Level 3.1 is 1280x720@30fps which is enough for now.
-    SdpVideoFormat constrained_high(cricket::kH264CodecName);
-    const H264::ProfileLevelId constrained_high_profile(
-        H264::kProfileConstrainedHigh, H264::kLevel3_1);
-    constrained_high.parameters[cricket::kH264FmtpProfileLevelId] =
-        *H264::ProfileLevelIdToString(constrained_high_profile);
-    constrained_high.parameters[cricket::kH264FmtpLevelAsymmetryAllowed] = "1";
-    constrained_high.parameters[cricket::kH264FmtpPacketizationMode] = "1";
-    supported_formats_.push_back(constrained_high);
-  }
-
-  bool is_h264_hw_supported =
-      Java_MediaCodecVideoEncoder_isH264HwSupported(jni);
-  if (is_h264_hw_supported) {
-    ALOGD << "H.264 HW Encoder supported.";
-    // TODO(magjed): Push Constrained High profile as well when negotiation is
-    // ready, http://crbug/webrtc/6337. We can negotiate Constrained High
-    // profile as long as we have decode support for it and still send Baseline
-    // since Baseline is a subset of the High profile.
-    SdpVideoFormat constrained_baseline(cricket::kH264CodecName);
-    const H264::ProfileLevelId constrained_baseline_profile(
-        H264::kProfileConstrainedBaseline, H264::kLevel3_1);
-    constrained_baseline.parameters[cricket::kH264FmtpProfileLevelId] =
-        *H264::ProfileLevelIdToString(constrained_baseline_profile);
-    constrained_baseline.parameters[cricket::kH264FmtpLevelAsymmetryAllowed] =
-        "1";
-    constrained_baseline.parameters[cricket::kH264FmtpPacketizationMode] = "1";
-    supported_formats_.push_back(constrained_baseline);
-  }
-}
-
-MediaCodecVideoEncoderFactory::~MediaCodecVideoEncoderFactory() {
-  ALOGD << "MediaCodecVideoEncoderFactory dtor";
-}
-
-std::unique_ptr<VideoEncoder> MediaCodecVideoEncoderFactory::CreateVideoEncoder(
-    const SdpVideoFormat& format) {
-  if (GetSupportedFormats().empty()) {
-    ALOGW << "No HW video encoder for codec " << format.name;
-    return nullptr;
-  }
-  if (IsFormatSupported(GetSupportedFormats(), format)) {
-    ALOGD << "Create HW video encoder for " << format.name;
-    JNIEnv* jni = AttachCurrentThreadIfNeeded();
-    ScopedLocalRefFrame local_ref_frame(jni);
-    return rtc::MakeUnique<MediaCodecVideoEncoder>(
-        jni, format, Java_MediaCodecVideoEncoder_hasEgl14Context(jni));
-  }
-  ALOGW << "Can not find HW video encoder for type " << format.name;
-  return nullptr;
-}
-
-std::vector<SdpVideoFormat> MediaCodecVideoEncoderFactory::GetSupportedFormats()
-    const {
-  return supported_formats_;
-}
-
-VideoEncoderFactory::CodecInfo MediaCodecVideoEncoderFactory::QueryVideoEncoder(
-    const SdpVideoFormat& format) const {
-  VideoEncoderFactory::CodecInfo codec_info;
-  codec_info.is_hardware_accelerated =
-      IsFormatSupported(supported_formats_, format);
-  codec_info.has_internal_source = false;
-  return codec_info;
-}
-
 static void JNI_MediaCodecVideoEncoder_FillInputBuffer(
     JNIEnv* jni,
     const JavaParamRef<jclass>&,
@@ -1328,6 +1234,16 @@ static void JNI_MediaCodecVideoEncoder_FillInputBuffer(
   reinterpret_cast<MediaCodecVideoEncoder*>(native_encoder)
       ->FillInputBuffer(jni, input_buffer, buffer_y, stride_y, buffer_u,
                         stride_u, buffer_v, stride_v);
+}
+
+static jlong JNI_MediaCodecVideoEncoder_CreateEncoder(
+    JNIEnv* env,
+    const JavaParamRef<jclass>&,
+    const JavaParamRef<jobject>& format,
+    jboolean has_egl_context) {
+  ScopedLocalRefFrame local_ref_frame(env);
+  return jlongFromPointer(new MediaCodecVideoEncoder(
+      env, VideoCodecInfoToSdpVideoFormat(env, format), has_egl_context));
 }
 
 }  // namespace jni

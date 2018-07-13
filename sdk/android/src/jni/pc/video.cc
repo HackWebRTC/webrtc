@@ -13,16 +13,12 @@
 #include <jni.h>
 #include <memory>
 
-#include "api/video_codecs/builtin_video_decoder_factory.h"
-#include "api/video_codecs/builtin_video_encoder_factory.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
 #include "api/videosourceproxy.h"
 #include "media/engine/convert_legacy_video_factory.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/ptr_util.h"
-#include "sdk/android/src/jni/androidmediadecoder_jni.h"
-#include "sdk/android/src/jni/androidmediaencoder_jni.h"
 #include "sdk/android/src/jni/androidvideotracksource.h"
 #include "sdk/android/src/jni/videodecoderfactorywrapper.h"
 #include "sdk/android/src/jni/videoencoderfactorywrapper.h"
@@ -51,30 +47,6 @@ void* CreateVideoSource(JNIEnv* env,
                                                          is_screencast));
   return VideoTrackSourceProxy::Create(signaling_thread, worker_thread, source)
       .release();
-}
-
-std::unique_ptr<VideoEncoderFactory> CreateLegacyVideoEncoderFactory() {
-  return rtc::MakeUnique<MediaCodecVideoEncoderFactory>();
-}
-
-std::unique_ptr<VideoDecoderFactory> CreateLegacyVideoDecoderFactory() {
-  return rtc::MakeUnique<MediaCodecVideoDecoderFactory>();
-}
-
-std::unique_ptr<VideoEncoderFactory> WrapLegacyVideoEncoderFactory(
-    std::unique_ptr<VideoEncoderFactory> legacy_encoder_factory) {
-  return legacy_encoder_factory ? std::unique_ptr<VideoEncoderFactory>(
-                                      cricket::ConvertVideoEncoderFactory(
-                                          std::move(legacy_encoder_factory)))
-                                : CreateBuiltinVideoEncoderFactory();
-}
-
-std::unique_ptr<VideoDecoderFactory> WrapLegacyVideoDecoderFactory(
-    std::unique_ptr<VideoDecoderFactory> legacy_decoder_factory) {
-  return legacy_decoder_factory ? std::unique_ptr<VideoDecoderFactory>(
-                                      cricket::ConvertVideoDecoderFactory(
-                                          std::move(legacy_decoder_factory)))
-                                : CreateBuiltinVideoDecoderFactory();
 }
 
 }  // namespace jni

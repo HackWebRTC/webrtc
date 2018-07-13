@@ -295,6 +295,9 @@ rtc_static_library("video_jni") {
   deps = []
 
   sources += [
+    "src/jni/androidmediacodeccommon.h",
+    "src/jni/androidmediadecoder.cc",
+    "src/jni/androidmediaencoder.cc",
     "src/jni/androidvideotracksource.cc",
     "src/jni/androidvideotracksource.h",
     "src/jni/encodedimage.cc",
@@ -330,7 +333,6 @@ rtc_static_library("video_jni") {
   deps += [
     ":base_jni",
     ":generated_video_jni",
-    ":legacy_video_jni",  # TODO(bugs.webrtc.org/7925): Remove.
     ":native_api_jni",
     ":videoframe_jni",
     ":vp8_jni",  # TODO(bugs.webrtc.org/7925): Remove.
@@ -382,39 +384,6 @@ rtc_static_library("videoframe_jni") {
     "../../rtc_base:rtc_base",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base/memory:aligned_malloc",
-    "//third_party/libyuv",
-  ]
-}
-
-# TODO(bugs.webrtc.org/7925): Remove.
-rtc_static_library("legacy_video_jni") {
-  sources = [
-    "src/jni/androidmediacodeccommon.h",
-    "src/jni/androidmediadecoder.cc",
-    "src/jni/androidmediadecoder_jni.h",
-    "src/jni/androidmediaencoder.cc",
-    "src/jni/androidmediaencoder_jni.h",
-  ]
-
-  deps = [
-    ":base_jni",
-    ":generated_video_jni",
-    ":native_api_jni",
-    ":videoframe_jni",
-    "../..:webrtc_common",
-    "../../api/video_codecs:video_codecs_api",
-    "../../common_video:common_video",
-    "../../media:rtc_internal_video_codecs",
-    "../../media:rtc_media_base",
-    "../../modules/video_coding:video_codec_interface",
-    "../../modules/video_coding:video_coding_utility",
-    "../../rtc_base:checks",
-    "../../rtc_base:rtc_base",
-    "../../rtc_base:rtc_base_approved",
-    "../../rtc_base:rtc_task_queue",
-    "../../rtc_base:sequenced_task_checker",
-    "../../rtc_base:weak_ptr",
-    "../../system_wrappers:field_trial_api",
     "//third_party/libyuv",
   ]
 }
@@ -1040,7 +1009,9 @@ rtc_android_library("peerconnection_java") {
   deps = [
     ":audio_api_java",
     ":base_java",
+    ":default_video_codec_factory_java",
     ":logging_java",
+    ":swcodecs_java",
     ":video_api_java",
     ":video_java",
     "//modules/audio_device:audio_device_java",

@@ -35,23 +35,5 @@ void* CreateVideoSource(JNIEnv* env,
   return nullptr;
 }
 
-std::unique_ptr<VideoEncoderFactory> CreateLegacyVideoEncoderFactory() {
-  return nullptr;
-}
-
-std::unique_ptr<VideoDecoderFactory> CreateLegacyVideoDecoderFactory() {
-  return nullptr;
-}
-
-std::unique_ptr<VideoEncoderFactory> WrapLegacyVideoEncoderFactory(
-    std::unique_ptr<VideoEncoderFactory> legacy_encoder_factory) {
-  return nullptr;
-}
-
-std::unique_ptr<VideoDecoderFactory> WrapLegacyVideoDecoderFactory(
-    std::unique_ptr<VideoDecoderFactory> legacy_decoder_factory) {
-  return nullptr;
-}
-
 }  // namespace jni
 }  // namespace webrtc

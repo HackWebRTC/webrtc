@@ -38,14 +38,6 @@ void* CreateVideoSource(JNIEnv* env,
                         rtc::Thread* worker_thread,
                         jboolean is_screencast);
 
-std::unique_ptr<VideoEncoderFactory> CreateLegacyVideoEncoderFactory();
-std::unique_ptr<VideoDecoderFactory> CreateLegacyVideoDecoderFactory();
-
-std::unique_ptr<VideoEncoderFactory> WrapLegacyVideoEncoderFactory(
-    std::unique_ptr<VideoEncoderFactory> legacy_encoder_factory);
-std::unique_ptr<VideoDecoderFactory> WrapLegacyVideoDecoderFactory(
-    std::unique_ptr<VideoDecoderFactory> legacy_decoder_factory);
-
 }  // namespace jni
 }  // namespace webrtc
 

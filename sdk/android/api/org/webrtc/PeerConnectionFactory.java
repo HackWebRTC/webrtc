@@ -29,6 +29,7 @@ public class PeerConnectionFactory {
   private static final String VIDEO_CAPTURER_THREAD_NAME = "VideoCapturerThread";
 
   private final long nativeFactory;
+  private static boolean enableVideoHwAcceleration;
   private static volatile boolean internalTracerInitialized = false;
   @Nullable private static Thread networkThread;
   @Nullable private static Thread workerThread;
@@ -201,6 +202,22 @@ public class PeerConnectionFactory {
     }
 
     public PeerConnectionFactory createPeerConnectionFactory() {
+      VideoEncoderFactory encoderFactory = this.encoderFactory;
+      VideoDecoderFactory decoderFactory = this.decoderFactory;
+      // For legacy reasons, we provide implicit built-in codec factories.
+      // TODO(bugs.webrtc.org/9181): Remove code below. All codec factories should be injected
+      // explicitly.
+      if (encoderFactory == null && decoderFactory == null && !enableVideoHwAcceleration) {
+        encoderFactory = new SoftwareVideoEncoderFactory();
+        decoderFactory = new SoftwareVideoDecoderFactory();
+      } else {
+        if (encoderFactory == null) {
+          encoderFactory = MediaCodecVideoEncoder.createFactory();
+        }
+        if (decoderFactory == null) {
+          decoderFactory = MediaCodecVideoDecoder.createFactory();
+        }
+      }
       return new PeerConnectionFactory(options, audioDeviceModule, encoderFactory, decoderFactory,
           audioProcessingFactory, fecControllerFactoryFactory);
     }
@@ -218,7 +235,8 @@ public class PeerConnectionFactory {
   public static void initialize(InitializationOptions options) {
     ContextUtils.initialize(options.applicationContext);
     NativeLibrary.initialize(options.nativeLibraryLoader, options.nativeLibraryName);
-    nativeInitializeAndroidGlobals(options.enableVideoHwAcceleration);
+    enableVideoHwAcceleration = options.enableVideoHwAcceleration;
+    nativeInitializeAndroidGlobals();
     nativeInitializeFieldTrials(options.fieldTrials);
     if (options.enableInternalTracer && !internalTracerInitialized) {
       initializeInternalTracer();
@@ -476,7 +494,7 @@ public class PeerConnectionFactory {
 
   // Must be called at least once before creating a PeerConnectionFactory
   // (for example, at application startup time).
-  private static native void nativeInitializeAndroidGlobals(boolean videoHwAcceleration);
+  private static native void nativeInitializeAndroidGlobals();
   private static native void nativeInitializeFieldTrials(String fieldTrialsInitString);
   private static native String nativeFindFieldTrialsFullName(String name);
   private static native void nativeInitializeInternalTracer();
