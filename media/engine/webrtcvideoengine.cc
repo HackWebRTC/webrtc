@@ -221,23 +221,23 @@ std::vector<VideoCodec> AssignPayloadTypesAndDefaultCodecs(
 
     // Increment payload type.
     ++payload_type;
-    if (payload_type > kLastDynamicPayloadType)
+    if (payload_type > kLastDynamicPayloadType) {
+      RTC_LOG(LS_ERROR) << "Out of dynamic payload types, skipping the rest.";
       break;
+    }
 
-    // Add associated RTX codec for recognized codecs.
-    // TODO(deadbeef): Should we add RTX codecs for external codecs whose names
-    // we don't recognize?
-    if (CodecNamesEq(codec.name, kVp8CodecName) ||
-        CodecNamesEq(codec.name, kVp9CodecName) ||
-        CodecNamesEq(codec.name, kH264CodecName) ||
-        CodecNamesEq(codec.name, kRedCodecName)) {
+    // Add associated RTX codec for non-FEC codecs.
+    if (!CodecNamesEq(codec.name, kUlpfecCodecName) &&
+        !CodecNamesEq(codec.name, kFlexfecCodecName)) {
       output_codecs.push_back(
           VideoCodec::CreateRtxCodec(payload_type, codec.id));
 
       // Increment payload type.
       ++payload_type;
-      if (payload_type > kLastDynamicPayloadType)
+      if (payload_type > kLastDynamicPayloadType) {
+        RTC_LOG(LS_ERROR) << "Out of dynamic payload types, skipping the rest.";
         break;
+      }
     }
   }
   return output_codecs;

@@ -869,13 +869,22 @@ TEST_F(WebRtcVideoEngineTest, ReportSupportedAddedCodec) {
   // Add second codec.
   encoder_factory_->AddSupportedVideoCodecType(kFakeExternalCodecName2);
   std::vector<cricket::VideoCodec> codecs_after(engine_.codecs());
-  EXPECT_EQ(codecs_before.size() + 1, codecs_after.size());
+  // The codec itself and RTX should have been added.
+  EXPECT_EQ(codecs_before.size() + 2, codecs_after.size());
 
   // Check that both fake codecs are present and that the second fake codec
   // appears after the first fake codec.
   const size_t fake_codec_index1 = GetEngineCodecIndex(kFakeExternalCodecName1);
   const size_t fake_codec_index2 = GetEngineCodecIndex(kFakeExternalCodecName2);
   EXPECT_LT(fake_codec_index1, fake_codec_index2);
+}
+
+TEST_F(WebRtcVideoEngineTest, ReportRtxForExternalCodec) {
+  const char* kFakeCodecName = "FakeCodec";
+  encoder_factory_->AddSupportedVideoCodecType(kFakeCodecName);
+
+  const size_t fake_codec_index = GetEngineCodecIndex(kFakeCodecName);
+  EXPECT_EQ("rtx", engine_.codecs().at(fake_codec_index + 1).name);
 }
 
 TEST_F(WebRtcVideoEngineTest, RegisterDecodersIfSupported) {
