@@ -40,24 +40,28 @@ public final class HardwareVideoDecoderTest {
 
   static {
     CLASS_PARAMS.add(new ParameterSet()
-                         .value("VP8" /* codecType */, false /* useEglContext */)
+                         .value(/* codecName= */ "VP8", false /* useEglContext */)
                          .name("VP8WithoutEglContext"));
     CLASS_PARAMS.add(new ParameterSet()
-                         .value("VP8" /* codecType */, true /* useEglContext */)
+                         .value(/* codecName= */ "VP8", true /* useEglContext */)
                          .name("VP8WithEglContext"));
     CLASS_PARAMS.add(new ParameterSet()
-                         .value("H264" /* codecType */, false /* useEglContext */)
+                         .value(/* codecName= */ "H264", false /* useEglContext */)
                          .name("H264WithoutEglContext"));
     CLASS_PARAMS.add(new ParameterSet()
-                         .value("H264" /* codecType */, true /* useEglContext */)
+                         .value(/* codecName= */ "H264", true /* useEglContext */)
                          .name("H264WithEglContext"));
   }
 
-  private final String codecType;
+  private final VideoCodecInfo codecType;
   private final boolean useEglContext;
 
-  public HardwareVideoDecoderTest(String codecType, boolean useEglContext) {
-    this.codecType = codecType;
+  public HardwareVideoDecoderTest(String codecName, boolean useEglContext) {
+    if (codecName.equals("H264")) {
+      this.codecType = H264Utils.DEFAULT_H264_BASELINE_PROFILE_CODEC;
+    } else {
+      this.codecType = new VideoCodecInfo(codecName, new HashMap<>());
+    }
     this.useEglContext = useEglContext;
   }
 
@@ -134,8 +138,7 @@ public final class HardwareVideoDecoderTest {
   private void encodeTestFrames() {
     VideoEncoderFactory encoderFactory = new HardwareVideoEncoderFactory(
         eglBase.getEglBaseContext(), ENABLE_INTEL_VP8_ENCODER, ENABLE_H264_HIGH_PROFILE);
-    VideoEncoder encoder =
-        encoderFactory.createEncoder(new VideoCodecInfo(codecType, new HashMap<>()));
+    VideoEncoder encoder = encoderFactory.createEncoder(codecType);
     HardwareVideoEncoderTest.MockEncoderCallback encodeCallback =
         new HardwareVideoEncoderTest.MockEncoderCallback();
     assertEquals(VideoCodecStatus.OK, encoder.initEncode(ENCODER_SETTINGS, encodeCallback));

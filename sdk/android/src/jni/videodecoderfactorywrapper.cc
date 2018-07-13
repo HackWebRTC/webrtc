@@ -31,8 +31,10 @@ VideoDecoderFactoryWrapper::~VideoDecoderFactoryWrapper() = default;
 std::unique_ptr<VideoDecoder> VideoDecoderFactoryWrapper::CreateVideoDecoder(
     const SdpVideoFormat& format) {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
+  ScopedJavaLocalRef<jobject> j_codec_info =
+      SdpVideoFormatToVideoCodecInfo(jni, format);
   ScopedJavaLocalRef<jobject> decoder = Java_VideoDecoderFactory_createDecoder(
-      jni, decoder_factory_, NativeToJavaString(jni, format.name));
+      jni, decoder_factory_, j_codec_info);
   if (!decoder.obj())
     return nullptr;
   return JavaToNativeVideoDecoder(jni, decoder);

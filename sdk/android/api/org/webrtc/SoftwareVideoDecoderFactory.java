@@ -18,11 +18,11 @@ import javax.annotation.Nullable;
 public class SoftwareVideoDecoderFactory implements VideoDecoderFactory {
   @Nullable
   @Override
-  public VideoDecoder createDecoder(String codecType) {
-    if (codecType.equalsIgnoreCase("VP8")) {
+  public VideoDecoder createDecoder(VideoCodecInfo codecType) {
+    if (codecType.getName().equalsIgnoreCase("VP8")) {
       return new VP8Decoder();
     }
-    if (codecType.equalsIgnoreCase("VP9") && VP9Decoder.nativeIsSupported()) {
+    if (codecType.getName().equalsIgnoreCase("VP9") && VP9Decoder.nativeIsSupported()) {
       return new VP9Decoder();
     }
 
