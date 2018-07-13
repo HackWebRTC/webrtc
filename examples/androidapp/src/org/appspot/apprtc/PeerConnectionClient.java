@@ -331,13 +331,10 @@ public class PeerConnectionClient {
 
     final String fieldTrials = getFieldTrials(peerConnectionParameters);
     executor.execute(() -> {
-      Log.d(TAG,
-          "Initialize WebRTC. Field trials: " + fieldTrials + " Enable video HW acceleration: "
-              + peerConnectionParameters.videoCodecHwAcceleration);
+      Log.d(TAG, "Initialize WebRTC. Field trials: " + fieldTrials);
       PeerConnectionFactory.initialize(
           PeerConnectionFactory.InitializationOptions.builder(appContext)
               .setFieldTrials(fieldTrials)
-              .setEnableVideoHwAcceleration(peerConnectionParameters.videoCodecHwAcceleration)
               .setEnableInternalTracer(true)
               .createInitializationOptions());
     });
@@ -636,11 +633,6 @@ public class PeerConnectionClient {
     Log.d(TAG, "Create peer connection.");
 
     queuedRemoteCandidates = new ArrayList<>();
-
-    if (isVideoCallEnabled()) {
-      factory.setVideoHwAccelerationOptions(
-          rootEglBase.getEglBaseContext(), rootEglBase.getEglBaseContext());
-    }
 
     PeerConnection.RTCConfiguration rtcConfig =
         new PeerConnection.RTCConfiguration(signalingParameters.iceServers);

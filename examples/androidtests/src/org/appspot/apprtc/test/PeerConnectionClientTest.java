@@ -37,7 +37,6 @@ import org.webrtc.Camera2Enumerator;
 import org.webrtc.CameraEnumerator;
 import org.webrtc.EglBase;
 import org.webrtc.IceCandidate;
-import org.webrtc.MediaCodecVideoEncoder;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.SessionDescription;
@@ -528,12 +527,6 @@ public class PeerConnectionClientTest implements PeerConnectionEvents {
       Log.i(TAG, "Encode to textures is not supported. Requires SDK version 19");
       return;
     }
-    // TODO(perkj): If we can always capture to textures, there is no need to check if the
-    // hardware encoder supports to encode from a texture.
-    if (!MediaCodecVideoEncoder.isVp8HwSupportedUsingTextures()) {
-      Log.i(TAG, "VP8 encode to textures is not supported.");
-      return;
-    }
     doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_VP8),
         createCameraCapturer(true /* captureToTexture */), true /* decodeToTexture */);
   }
@@ -543,12 +536,6 @@ public class PeerConnectionClientTest implements PeerConnectionEvents {
   public void testLoopbackH264CaptureToTexture() throws InterruptedException {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
       Log.i(TAG, "Encode to textures is not supported. Requires KITKAT");
-      return;
-    }
-    // TODO(perkj): If we can always capture to textures, there is no need to check if the
-    // hardware encoder supports to encode from a texture.
-    if (!MediaCodecVideoEncoder.isH264HwSupportedUsingTextures()) {
-      Log.i(TAG, "H264 encode to textures is not supported.");
       return;
     }
     doLoopbackTest(createParametersForVideoCall(VIDEO_CODEC_H264),
