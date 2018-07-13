@@ -525,9 +525,17 @@ bool AudioSendStream::SetupSendCodec(AudioSendStream* stream,
                        << rtc::ToString(spec.format);
     return false;
   }
+
+  // If other side does not support audio TWCC and WebRTC-Audio-ABWENoTWCC is
+  // not enabled, do not update target audio bitrate if we are in
+  // WebRTC-Audio-SendSideBwe-For-Video experiment
+  const bool do_not_update_target_bitrate =
+      !webrtc::field_trial::IsEnabled("WebRTC-Audio-ABWENoTWCC") &&
+      webrtc::field_trial::IsEnabled("WebRTC-Audio-SendSideBwe-For-Video") &&
+      !FindExtensionIds(new_config.rtp.extensions).transport_sequence_number;
   // If a bitrate has been specified for the codec, use it over the
   // codec's default.
-  if (spec.target_bitrate_bps) {
+  if (!do_not_update_target_bitrate && spec.target_bitrate_bps) {
     encoder->OnReceivedTargetAudioBitrate(*spec.target_bitrate_bps);
   }
 
@@ -590,11 +598,19 @@ bool AudioSendStream::ReconfigureSendCodec(AudioSendStream* stream,
     return SetupSendCodec(stream, new_config);
   }
 
+  // If other side does not support audio TWCC and WebRTC-Audio-ABWENoTWCC is
+  // not enabled, do not update target audio bitrate if we are in
+  // WebRTC-Audio-SendSideBwe-For-Video experiment
+  const bool do_not_update_target_bitrate =
+      !webrtc::field_trial::IsEnabled("WebRTC-Audio-ABWENoTWCC") &&
+      webrtc::field_trial::IsEnabled("WebRTC-Audio-SendSideBwe-For-Video") &&
+      !FindExtensionIds(new_config.rtp.extensions).transport_sequence_number;
+
   const absl::optional<int>& new_target_bitrate_bps =
       new_config.send_codec_spec->target_bitrate_bps;
   // If a bitrate has been specified for the codec, use it over the
   // codec's default.
-  if (new_target_bitrate_bps &&
+  if (!do_not_update_target_bitrate && new_target_bitrate_bps &&
       new_target_bitrate_bps !=
           old_config.send_codec_spec->target_bitrate_bps) {
     CallEncoder(stream->channel_proxy_, [&](AudioEncoder* encoder) {
