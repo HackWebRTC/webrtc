@@ -23,8 +23,6 @@ rtc_static_library("goog_cc") {
     "goog_cc_network_control.cc",
     "goog_cc_network_control.h",
     "include/goog_cc_factory.h",
-    "probe_controller.cc",
-    "probe_controller.h",
   ]
 
   if (!build_with_chromium && is_clang) {
@@ -36,6 +34,7 @@ rtc_static_library("goog_cc") {
     ":alr_detector",
     ":delay_based_bwe",
     ":estimators",
+    ":probe_controller",
     "../..:module_api",
     "../../..:webrtc_common",
     "../../../:typedefs",
@@ -146,6 +145,29 @@ rtc_source_set("delay_based_bwe") {
   }
 }
 
+rtc_source_set("probe_controller") {
+  sources = [
+    "probe_controller.cc",
+    "probe_controller.h",
+  ]
+
+  deps = [
+    "../../../api/transport:network_control",
+    "../../../logging:rtc_event_log_api",
+    "../../../logging:rtc_event_pacing",
+    "../../../rtc_base:checks",
+    "../../../rtc_base:rtc_base_approved",
+    "../../../system_wrappers:field_trial_api",
+    "../../../system_wrappers:metrics_api",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
+
+  if (!build_with_chromium && is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+  }
+}
+
 if (rtc_include_tests) {
   rtc_source_set("test_goog_cc_printer") {
     testonly = true
@@ -177,6 +199,7 @@ if (rtc_include_tests) {
       ":delay_based_bwe",
       ":estimators",
       ":goog_cc",
+      ":probe_controller",
       "../../../api/transport:network_control",
       "../../../api/transport:network_control_test",
       "../../../rtc_base:checks",
