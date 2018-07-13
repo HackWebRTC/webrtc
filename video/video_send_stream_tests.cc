@@ -1085,12 +1085,9 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
       }
       encoder_.SetFrameSize(static_cast<size_t>(current_size_frame_));
     }
-
-    Call::Config GetSenderCallConfig() override {
-      Call::Config config(event_log_.get());
+    void ModifySenderCallConfig(Call::Config* config) override {
       const int kMinBitrateBps = 30000;
-      config.bitrate_config.min_bitrate_bps = kMinBitrateBps;
-      return config;
+      config->bitrate_config.min_bitrate_bps = kMinBitrateBps;
     }
 
     void ModifyVideoConfigs(
@@ -2900,12 +2897,10 @@ TEST_F(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
       EXPECT_EQ(expected_bitrate, target_bitrate_);
     }
 
-    Call::Config GetSenderCallConfig() override {
-      Call::Config config(event_log_.get());
-      config.bitrate_config.min_bitrate_bps = kMinBitrateKbps * 1000;
-      config.bitrate_config.start_bitrate_bps = kStartBitrateKbps * 1000;
-      config.bitrate_config.max_bitrate_bps = kMaxBitrateKbps * 1000;
-      return config;
+    void ModifySenderCallConfig(Call::Config* config) override {
+      config->bitrate_config.min_bitrate_bps = kMinBitrateKbps * 1000;
+      config->bitrate_config.start_bitrate_bps = kStartBitrateKbps * 1000;
+      config->bitrate_config.max_bitrate_bps = kMaxBitrateKbps * 1000;
     }
 
     class VideoStreamFactory

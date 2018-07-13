@@ -234,11 +234,8 @@ TEST_F(StatsEndToEndTest, GetStats) {
                                        test::PacketTransport::kSender,
                                        payload_type_map_, network_config);
     }
-
-    Call::Config GetSenderCallConfig() override {
-      Call::Config config = EndToEndTest::GetSenderCallConfig();
-      config.bitrate_config.start_bitrate_bps = kStartBitrateBps;
-      return config;
+    void ModifySenderCallConfig(Call::Config* config) override {
+      config->bitrate_config.start_bitrate_bps = kStartBitrateBps;
     }
 
     // This test use other VideoStream settings than the the default settings
@@ -511,8 +508,11 @@ TEST_F(StatsEndToEndTest, MAYBE_ContentTypeSwitches) {
 
   metrics::Reset();
 
-  Call::Config send_config(test.GetSenderCallConfig());
-  Call::Config recv_config(test.GetReceiverCallConfig());
+  Call::Config send_config(send_event_log_.get());
+  test.ModifySenderCallConfig(&send_config);
+  Call::Config recv_config(recv_event_log_.get());
+  test.ModifyReceiverCallConfig(&recv_config);
+
   VideoEncoderConfig encoder_config_with_screenshare;
 
   task_queue_.SendTask([this, &test, &send_config, &recv_config,

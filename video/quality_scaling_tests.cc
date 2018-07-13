@@ -103,11 +103,8 @@ void QualityScalingTest::RunTest(VideoEncoderFactory* encoder_factory,
       EXPECT_LT(wants.max_pixel_count, kWidth * kHeight) << "Not a downscale.";
       observation_complete_.Set();
     }
-
-    Call::Config GetSenderCallConfig() override {
-      Call::Config config(event_log_.get());
-      config.bitrate_config.start_bitrate_bps = start_bps_;
-      return config;
+    void ModifySenderCallConfig(Call::Config* config) override {
+      config->bitrate_config.start_bitrate_bps = start_bps_;
     }
 
     void ModifyVideoConfigs(

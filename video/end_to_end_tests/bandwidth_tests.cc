@@ -168,11 +168,9 @@ TEST_P(BandwidthEndToEndTest, RembWithSendSideBwe) {
       return receive_transport_;
     }
 
-    Call::Config GetSenderCallConfig() override {
-      Call::Config config(event_log_.get());
+    void ModifySenderCallConfig(Call::Config* config) override {
       // Set a high start bitrate to reduce the test completion time.
-      config.bitrate_config.start_bitrate_bps = remb_bitrate_bps_;
-      return config;
+      config->bitrate_config.start_bitrate_bps = remb_bitrate_bps_;
     }
 
     void ModifyVideoConfigs(

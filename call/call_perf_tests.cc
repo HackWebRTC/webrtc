@@ -724,11 +724,8 @@ TEST_F(CallPerfTest, MAYBE_KeepsHighBitrateWhenReconfiguringSender) {
       return FakeEncoder::SetRateAllocation(rate_allocation, framerate);
     }
 
-    Call::Config GetSenderCallConfig() override {
-      Call::Config config = EndToEndTest::GetSenderCallConfig();
-      config.event_log = event_log_.get();
-      config.bitrate_config.start_bitrate_bps = kInitialBitrateKbps * 1000;
-      return config;
+    void ModifySenderCallConfig(Call::Config* config) override {
+      config->bitrate_config.start_bitrate_bps = kInitialBitrateKbps * 1000;
     }
 
     void ModifyVideoConfigs(
