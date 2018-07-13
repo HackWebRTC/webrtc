@@ -1090,6 +1090,7 @@ rtc_android_library("default_video_codec_factory_java") {
     ":hwcodecs_java",
     ":swcodecs_java",
     ":video_api_java",
+    ":video_java",
   ]
 }
 

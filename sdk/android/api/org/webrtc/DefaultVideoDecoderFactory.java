@@ -10,27 +10,36 @@
 
 package org.webrtc;
 
+import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
-import javax.annotation.Nullable;
 
+/** Helper class that combines HW and SW decoders. */
 public class DefaultVideoDecoderFactory implements VideoDecoderFactory {
-  private final HardwareVideoDecoderFactory hardwareVideoDecoderFactory;
-  private final SoftwareVideoDecoderFactory softwareVideoDecoderFactory;
+  private final VideoDecoderFactory hardwareVideoDecoderFactory;
+  private final VideoDecoderFactory softwareVideoDecoderFactory = new SoftwareVideoDecoderFactory();
 
+  /** Create decoder factory using default hardware decoder factory. */
   public DefaultVideoDecoderFactory(EglBase.Context eglContext) {
-    hardwareVideoDecoderFactory = new HardwareVideoDecoderFactory(eglContext);
-    softwareVideoDecoderFactory = new SoftwareVideoDecoderFactory();
+    this.hardwareVideoDecoderFactory = new HardwareVideoDecoderFactory(eglContext);
+  }
+
+  /** Create decoder factory using explicit hardware decoder factory. */
+  DefaultVideoDecoderFactory(VideoDecoderFactory hardwareVideoDecoderFactory) {
+    this.hardwareVideoDecoderFactory = hardwareVideoDecoderFactory;
   }
 
   @Override
   public @Nullable VideoDecoder createDecoder(String codecType) {
-    VideoDecoder decoder = hardwareVideoDecoderFactory.createDecoder(codecType);
-    if (decoder != null) {
-      return decoder;
+    final VideoDecoder softwareDecoder = softwareVideoDecoderFactory.createDecoder(codecType);
+    final VideoDecoder hardwareDecoder = hardwareVideoDecoderFactory.createDecoder(codecType);
+    if (hardwareDecoder != null && softwareDecoder != null) {
+      // Both hardware and software supported, wrap it in a software fallback
+      return new VideoDecoderFallback(
+          /* fallback= */ softwareDecoder, /* primary= */ hardwareDecoder);
     }
-    return softwareVideoDecoderFactory.createDecoder(codecType);
+    return hardwareDecoder != null ? hardwareDecoder : softwareDecoder;
   }
 
   @Override
