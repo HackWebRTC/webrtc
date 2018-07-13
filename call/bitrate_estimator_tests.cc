@@ -103,9 +103,7 @@ class BitrateEstimatorTest : public test::CallTest {
 
   virtual void SetUp() {
     task_queue_.SendTask([this]() {
-      Call::Config config(event_log_.get());
-      receiver_call_.reset(Call::Create(config));
-      sender_call_.reset(Call::Create(config));
+      CreateCalls();
 
       send_transport_.reset(new test::DirectTransport(
           &task_queue_, sender_call_.get(), payload_type_map_));
@@ -145,8 +143,7 @@ class BitrateEstimatorTest : public test::CallTest {
       send_transport_.reset();
       receive_transport_.reset();
 
-      receiver_call_.reset();
-      sender_call_.reset();
+      DestroyCalls();
     });
   }
 
@@ -224,8 +221,6 @@ class BitrateEstimatorTest : public test::CallTest {
   LogObserver receiver_log_;
   std::unique_ptr<test::DirectTransport> send_transport_;
   std::unique_ptr<test::DirectTransport> receive_transport_;
-  std::unique_ptr<Call> sender_call_;
-  std::unique_ptr<Call> receiver_call_;
   VideoReceiveStream::Config receive_config_;
   std::vector<Stream*> streams_;
 };

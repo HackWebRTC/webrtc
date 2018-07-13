@@ -32,7 +32,8 @@ const int kVideoRotationRtpExtensionId = 4;
 
 CallTest::CallTest()
     : clock_(Clock::GetRealTimeClock()),
-      event_log_(RtcEventLog::CreateNull()),
+      send_event_log_(RtcEventLog::CreateNull()),
+      recv_event_log_(RtcEventLog::CreateNull()),
       sender_call_transport_controller_(nullptr),
       video_send_config_(nullptr),
       video_send_stream_(nullptr),
@@ -170,10 +171,19 @@ void CallTest::RunBaseTest(BaseTest* test) {
   });
 }
 
+void CallTest::CreateCalls() {
+  CreateCalls(Call::Config(send_event_log_.get()),
+              Call::Config(recv_event_log_.get()));
+}
+
 void CallTest::CreateCalls(const Call::Config& sender_config,
                            const Call::Config& receiver_config) {
   CreateSenderCall(sender_config);
   CreateReceiverCall(receiver_config);
+}
+
+void CallTest::CreateSenderCall() {
+  CreateSenderCall(Call::Config(send_event_log_.get()));
 }
 
 void CallTest::CreateSenderCall(const Call::Config& config) {

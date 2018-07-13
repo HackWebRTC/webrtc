@@ -119,9 +119,6 @@ class VideoQualityTest :
       DegradationPreference::MAINTAIN_FRAMERATE;
   Params params_;
 
-  std::unique_ptr<webrtc::RtcEventLog> recv_event_log_;
-  std::unique_ptr<webrtc::RtcEventLog> send_event_log_;
-
   size_t num_video_streams_;
 };
 

@@ -90,7 +90,7 @@ class VideoSendStreamTest : public test::CallTest {
 
 TEST_F(VideoSendStreamTest, CanStartStartedStream) {
   task_queue_.SendTask([this]() {
-    CreateSenderCall(Call::Config(event_log_.get()));
+    CreateSenderCall();
 
     test::NullTransport transport;
     CreateSendConfig(1, 0, 0, &transport);
@@ -104,7 +104,7 @@ TEST_F(VideoSendStreamTest, CanStartStartedStream) {
 
 TEST_F(VideoSendStreamTest, CanStopStoppedStream) {
   task_queue_.SendTask([this]() {
-    CreateSenderCall(Call::Config(event_log_.get()));
+    CreateSenderCall();
 
     test::NullTransport transport;
     CreateSendConfig(1, 0, 0, &transport);
@@ -1937,7 +1937,7 @@ TEST_F(VideoSendStreamTest,
   test::EncoderProxyFactory encoder_factory(&encoder);
 
   task_queue_.SendTask([this, &transport, &encoder_factory]() {
-    CreateSenderCall(Call::Config(event_log_.get()));
+    CreateSenderCall();
     CreateSendConfig(1, 0, 0, &transport);
     video_send_config_.encoder_settings.encoder_factory = &encoder_factory;
     CreateVideoStreams();
@@ -2000,7 +2000,7 @@ TEST_F(VideoSendStreamTest, CanReconfigureToUseStartBitrateAbovePreviousMax) {
     int start_bitrate_kbps_ RTC_GUARDED_BY(crit_);
   };
 
-  CreateSenderCall(Call::Config(event_log_.get()));
+  CreateSenderCall();
 
   test::NullTransport transport;
   CreateSendConfig(1, 0, 0, &transport);
@@ -2099,7 +2099,7 @@ TEST_F(VideoSendStreamTest, VideoSendStreamStopSetEncoderRateToZero) {
   test::FrameForwarder forwarder;
 
   task_queue_.SendTask([this, &transport, &encoder_factory, &forwarder]() {
-    CreateSenderCall(Call::Config(event_log_.get()));
+    CreateSenderCall();
     CreateSendConfig(1, 0, 0, &transport);
 
     sender_call_->SignalChannelNetworkState(MediaType::VIDEO, kNetworkUp);
@@ -2141,7 +2141,7 @@ TEST_F(VideoSendStreamTest, VideoSendStreamUpdateActiveSimulcastLayers) {
   test::FrameForwarder forwarder;
 
   task_queue_.SendTask([this, &transport, &encoder_factory, &forwarder]() {
-    CreateSenderCall(Call::Config(event_log_.get()));
+    CreateSenderCall();
     // Create two simulcast streams.
     CreateSendConfig(2, 0, 0, &transport);
 
@@ -2228,7 +2228,7 @@ TEST_F(VideoSendStreamTest, CapturesTextureAndVideoFrames) {
 
   task_queue_.SendTask([this, &transport, &observer, &input_frames]() {
     // Initialize send stream.
-    CreateSenderCall(Call::Config(event_log_.get()));
+    CreateSenderCall();
 
     CreateSendConfig(1, 0, 0, &transport);
     video_send_config_.pre_encode_callback = &observer;
@@ -3600,7 +3600,7 @@ TEST_F(VideoSendStreamTest, MAYBE_Vp9FlexModeRefCount) {
 
 void VideoSendStreamTest::TestRequestSourceRotateVideo(
     bool support_orientation_ext) {
-  CreateSenderCall(Call::Config(event_log_.get()));
+  CreateSenderCall();
 
   test::NullTransport transport;
   CreateSendConfig(1, 0, 0, &transport);

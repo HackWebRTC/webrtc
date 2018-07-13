@@ -711,7 +711,7 @@ TEST_F(StatsEndToEndTest, CallReportsRttForSender) {
   task_queue_.SendTask([this, &sender_transport, &receiver_transport]() {
     FakeNetworkPipe::Config config;
     config.queue_delay_ms = kSendDelayMs;
-    CreateCalls(Call::Config(event_log_.get()), Call::Config(event_log_.get()));
+    CreateCalls();
     sender_transport = absl::make_unique<test::DirectTransport>(
         &task_queue_, config, sender_call_.get(), payload_type_map_);
     config.queue_delay_ms = kReceiveDelayMs;

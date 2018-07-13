@@ -268,12 +268,11 @@ void RtpRtcpEndToEndTest::TestRtpStatePreservation(
   std::unique_ptr<test::PacketTransport> send_transport;
   std::unique_ptr<test::PacketTransport> receive_transport;
 
-  Call::Config config(event_log_.get());
   VideoEncoderConfig one_stream;
 
   task_queue_.SendTask([this, &observer, &send_transport, &receive_transport,
-                        &config, &one_stream, use_rtx]() {
-    CreateCalls(config, config);
+                        &one_stream, use_rtx]() {
+    CreateCalls();
 
     send_transport = absl::make_unique<test::PacketTransport>(
         &task_queue_, sender_call_.get(), &observer,
@@ -464,15 +463,13 @@ TEST_F(RtpRtcpEndToEndTest, TestFlexfecRtpStatePreservation) {
   static constexpr int kFrameMaxHeight = 180;
   static constexpr int kFrameRate = 15;
 
-  Call::Config config(event_log_.get());
-
   std::unique_ptr<test::PacketTransport> send_transport;
   std::unique_ptr<test::PacketTransport> receive_transport;
   test::FunctionVideoEncoderFactory encoder_factory(
       []() { return VP8Encoder::Create(); });
 
   task_queue_.SendTask([&]() {
-    CreateCalls(config, config);
+    CreateCalls();
 
     FakeNetworkPipe::Config lossy_delayed_link;
     lossy_delayed_link.loss_percent = 2;

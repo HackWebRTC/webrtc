@@ -282,8 +282,7 @@ void PictureIdTest::SetupEncoder(VideoEncoderFactory* encoder_factory,
       new PictureIdObserver(PayloadStringToCodecType(payload_name)));
 
   task_queue_.SendTask([this, encoder_factory, payload_name]() {
-    Call::Config config(event_log_.get());
-    CreateCalls(config, config);
+    CreateCalls();
 
     send_transport_.reset(new test::PacketTransport(
         &task_queue_, sender_call_.get(), observer_.get(),

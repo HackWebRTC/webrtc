@@ -1048,8 +1048,6 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
 
   analyzer->Wait();
 
-  event_log_->StopLogging();
-
   task_queue_.SendTask([&]() {
     for (std::unique_ptr<test::VideoCapturer>& video_caputurer :
          thumbnail_capturers_)
@@ -1128,6 +1126,7 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
   std::unique_ptr<test::VideoRenderer> local_preview;
   std::vector<std::unique_ptr<test::VideoRenderer>> loopback_renderers;
   AudioReceiveStream* audio_receive_stream = nullptr;
+  RtcEventLogNullImpl null_event_log;
 
   task_queue_.SendTask([&]() {
     params_ = params;
@@ -1135,7 +1134,7 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
 
     // TODO(ivica): Remove bitrate_config and use the default Call::Config(), to
     // match the full stack tests.
-    Call::Config call_config(event_log_.get());
+    Call::Config call_config(&null_event_log);
     call_config.bitrate_config = params_.call.call_bitrate_config;
 
     rtc::scoped_refptr<TestAudioDeviceModule> fake_audio_device =

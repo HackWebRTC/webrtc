@@ -70,8 +70,10 @@ class CallTest : public ::testing::Test {
   // to simplify test code.
   void RunBaseTest(BaseTest* test);
 
+  void CreateCalls();
   void CreateCalls(const Call::Config& sender_config,
                    const Call::Config& receiver_config);
+  void CreateSenderCall();
   void CreateSenderCall(const Call::Config& config);
   void CreateReceiverCall(const Call::Config& config);
   void DestroyCalls();
@@ -118,7 +120,8 @@ class CallTest : public ::testing::Test {
 
   Clock* const clock_;
 
-  std::unique_ptr<webrtc::RtcEventLog> event_log_;
+  std::unique_ptr<webrtc::RtcEventLog> send_event_log_;
+  std::unique_ptr<webrtc::RtcEventLog> recv_event_log_;
   std::unique_ptr<Call> sender_call_;
   RtpTransportControllerSend* sender_call_transport_controller_;
   std::unique_ptr<PacketTransport> send_transport_;
