@@ -56,7 +56,6 @@ class VideoQualityTest :
 
  protected:
   std::map<uint8_t, webrtc::MediaType> payload_type_map_;
-  std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory_;
 
   // No-op implementation to be able to instantiate this class from non-TEST_F
   // locations.
@@ -67,8 +66,6 @@ class VideoQualityTest :
   void CheckParams();
 
   // Helper methods for setting up the call.
-  void CreateVideoStreams();
-  void DestroyStreams();
   void CreateCapturers();
   std::unique_ptr<test::FrameGenerator> CreateFrameGenerator(size_t video_idx);
   void SetupThumbnailCapturers(size_t num_thumbnail_streams);
@@ -77,8 +74,7 @@ class VideoQualityTest :
   void SetupVideo(Transport* send_transport, Transport* recv_transport);
   void SetupThumbnails(Transport* send_transport, Transport* recv_transport);
   void DestroyThumbnailStreams();
-  void SetupAudio(Transport* transport,
-                  AudioReceiveStream** audio_receive_stream);
+  void SetupAudio(Transport* transport);
 
   void StartEncodedFrameLogs(VideoSendStream* stream);
   void StartEncodedFrameLogs(VideoReceiveStream* stream);
@@ -86,7 +82,6 @@ class VideoQualityTest :
   virtual std::unique_ptr<test::LayerFilteringTransport> CreateSendTransport();
   virtual std::unique_ptr<test::DirectTransport> CreateReceiveTransport();
 
-  std::vector<std::unique_ptr<test::VideoCapturer>> video_capturers_;
   std::vector<std::unique_ptr<test::VideoCapturer>> thumbnail_capturers_;
   Clock* const clock_;
 
@@ -98,16 +93,14 @@ class VideoQualityTest :
   std::vector<VideoReceiveStream::Config> thumbnail_receive_configs_;
   std::vector<VideoReceiveStream*> thumbnail_receive_streams_;
 
-  std::vector<VideoSendStream::Config> video_send_configs_;
-  std::vector<VideoEncoderConfig> video_encoder_configs_;
-  std::vector<VideoSendStream*> video_send_streams_;
   int receive_logs_;
   int send_logs_;
 
-  DegradationPreference degradation_preference_ =
-      DegradationPreference::MAINTAIN_FRAMERATE;
   Params params_;
 
+  // Note: not same as similarly named member in CallTest. This is the number of
+  // separate send streams, the one in CallTest is the number of substreams for
+  // a single send stream.
   size_t num_video_streams_;
 };
 
