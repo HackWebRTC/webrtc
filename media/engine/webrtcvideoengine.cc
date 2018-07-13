@@ -1940,6 +1940,10 @@ WebRtcVideoChannel::WebRtcVideoSendStream::CreateVideoEncoderConfig(
     encoder_config.number_of_streams = 1;
   }
 
+  // parameters_.max_bitrate comes from the max bitrate set at the SDP
+  // (m-section) level with the attribute "b=AS." Note that we override this
+  // value below if the RtpParameters max bitrate set with
+  // RtpSender::SetParameters has a lower value.
   int stream_max_bitrate = parameters_.max_bitrate_bps;
   // When simulcast is enabled (when there are multiple encodings),
   // encodings[i].max_bitrate_bps will be enforced by
@@ -1953,8 +1957,13 @@ WebRtcVideoChannel::WebRtcVideoSendStream::CreateVideoEncoderConfig(
                             parameters_.max_bitrate_bps);
   }
 
+  // The codec max bitrate comes from the "x-google-max-bitrate" parameter
+  // attribute set in the SDP for a specific codec. As done in
+  // WebRtcVideoChannel::SetSendParameters, this value does not override the
+  // stream max_bitrate set above.
   int codec_max_bitrate_kbps;
-  if (codec.GetParam(kCodecParamMaxBitrate, &codec_max_bitrate_kbps)) {
+  if (codec.GetParam(kCodecParamMaxBitrate, &codec_max_bitrate_kbps) &&
+      stream_max_bitrate == -1) {
     stream_max_bitrate = codec_max_bitrate_kbps * 1000;
   }
   encoder_config.max_bitrate_bps = stream_max_bitrate;
