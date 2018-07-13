@@ -38,7 +38,14 @@ const std::string kFieldTrialNames[] = {
     "WebRTC-Aec3ZeroExternalDelayHeadroomKillSwitch",
     "WebRTC-Aec3DownSamplingFactor8KillSwitch",
     "WebRTC-Aec3EnforceSkewHysteresis1",
-    "WebRTC-Aec3EnforceSkewHysteresis2"};
+    "WebRTC-Aec3EnforceSkewHysteresis2",
+    "WebRTC-Aec3NewSuppressionKillSwitch",
+    "WebRTC-Aec3LinearModeWithDivergedFilterKillSwitch",
+    "WebRTC-Aec3MisadjustmentEstimatorKillSwitch",
+    "WebRTC-Aec3RapidAgcGainRecoveryKillSwitch",
+    "WebRTC-Aec3SlowFilterAdaptationKillSwitch",
+    "WebRTC-Aec3SmoothUpdatesTailFreqRespKillSwitch",
+    "WebRTC-Aec3SuppressorNearendAveragingKillSwitch"};
 
 std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
                                            std::string* field_trial_string) {
@@ -69,11 +76,11 @@ std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
       rtc::SafeClamp<int>(fuzz_data->ReadOrDefaultValue<int8_t>(0), -50, 50);
 
   constexpr size_t kNumFieldTrials = arraysize(kFieldTrialNames);
-  // This check ensures the uint16_t that is read has enough bits to cover all
-  // the field trials.
-  RTC_DCHECK_LE(kNumFieldTrials, 16);
+  // Verify that the read data type has enough bits to fuzz the field trials.
+  using FieldTrialBitmaskType = uint32_t;
+  RTC_DCHECK_LE(kNumFieldTrials, sizeof(FieldTrialBitmaskType) * 8);
   std::bitset<kNumFieldTrials> field_trial_bitmask(
-      fuzz_data->ReadOrDefaultValue<uint16_t>(0));
+      fuzz_data->ReadOrDefaultValue<FieldTrialBitmaskType>(0));
   for (size_t i = 0; i < kNumFieldTrials; ++i) {
     if (field_trial_bitmask[i]) {
       *field_trial_string += kFieldTrialNames[i] + "/Enabled/";
