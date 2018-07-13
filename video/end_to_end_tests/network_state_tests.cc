@@ -87,7 +87,7 @@ void NetworkStateEndToEndTest::VerifyNewVideoSendStreamsRespectNetworkState(
     sender_call_->SignalChannelNetworkState(network_to_bring_up, kNetworkUp);
 
     CreateSendConfig(1, 0, 0, transport);
-    video_send_config_.encoder_settings.encoder_factory = &encoder_factory;
+    GetVideoSendConfig()->encoder_settings.encoder_factory = &encoder_factory;
     CreateVideoStreams();
     CreateFrameGeneratorCapturer(kDefaultFramerate, kDefaultWidth,
                                  kDefaultHeight);

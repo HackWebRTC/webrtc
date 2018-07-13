@@ -112,17 +112,20 @@ class BitrateEstimatorTest : public test::CallTest {
           &task_queue_, receiver_call_.get(), payload_type_map_));
       receive_transport_->SetReceiver(sender_call_->Receiver());
 
-      video_send_config_ = VideoSendStream::Config(send_transport_.get());
-      video_send_config_.rtp.ssrcs.push_back(kVideoSendSsrcs[0]);
-      video_send_config_.encoder_settings.encoder_factory =
+      VideoSendStream::Config video_send_config(send_transport_.get());
+      video_send_config.rtp.ssrcs.push_back(kVideoSendSsrcs[0]);
+      video_send_config.encoder_settings.encoder_factory =
           &fake_encoder_factory_;
-      video_send_config_.rtp.payload_name = "FAKE";
-      video_send_config_.rtp.payload_type = kFakeVideoSendPayloadType;
-      test::FillEncoderConfiguration(kVideoCodecVP8, 1, &video_encoder_config_);
+      video_send_config.rtp.payload_name = "FAKE";
+      video_send_config.rtp.payload_type = kFakeVideoSendPayloadType;
+      SetVideoSendConfig(video_send_config);
+      VideoEncoderConfig video_encoder_config;
+      test::FillEncoderConfiguration(kVideoCodecVP8, 1, &video_encoder_config);
+      SetVideoEncoderConfig(video_encoder_config);
 
       receive_config_ = VideoReceiveStream::Config(receive_transport_.get());
       // receive_config_.decoders will be set by every stream separately.
-      receive_config_.rtp.remote_ssrc = video_send_config_.rtp.ssrcs[0];
+      receive_config_.rtp.remote_ssrc = GetVideoSendConfig()->rtp.ssrcs[0];
       receive_config_.rtp.local_ssrc = kReceiverLocalVideoSsrc;
       receive_config_.rtp.remb = true;
       receive_config_.rtp.extensions.push_back(
@@ -158,11 +161,11 @@ class BitrateEstimatorTest : public test::CallTest {
           send_stream_(nullptr),
           frame_generator_capturer_(),
           fake_decoder_() {
-      test_->video_send_config_.rtp.ssrcs[0]++;
+      test_->GetVideoSendConfig()->rtp.ssrcs[0]++;
       send_stream_ = test_->sender_call_->CreateVideoSendStream(
-          test_->video_send_config_.Copy(),
-          test_->video_encoder_config_.Copy());
-      RTC_DCHECK_EQ(1, test_->video_encoder_config_.number_of_streams);
+          test_->GetVideoSendConfig()->Copy(),
+          test_->GetVideoEncoderConfig()->Copy());
+      RTC_DCHECK_EQ(1, test_->GetVideoEncoderConfig()->number_of_streams);
       frame_generator_capturer_.reset(test::FrameGeneratorCapturer::Create(
           kDefaultWidth, kDefaultHeight, absl::nullopt, absl::nullopt,
           kDefaultFramerate, Clock::GetRealTimeClock()));
@@ -173,12 +176,12 @@ class BitrateEstimatorTest : public test::CallTest {
 
       VideoReceiveStream::Decoder decoder;
       decoder.decoder = &fake_decoder_;
-      decoder.payload_type = test_->video_send_config_.rtp.payload_type;
-      decoder.payload_name = test_->video_send_config_.rtp.payload_name;
+      decoder.payload_type = test_->GetVideoSendConfig()->rtp.payload_type;
+      decoder.payload_name = test_->GetVideoSendConfig()->rtp.payload_name;
       test_->receive_config_.decoders.clear();
       test_->receive_config_.decoders.push_back(decoder);
       test_->receive_config_.rtp.remote_ssrc =
-          test_->video_send_config_.rtp.ssrcs[0];
+          test_->GetVideoSendConfig()->rtp.ssrcs[0];
       test_->receive_config_.rtp.local_ssrc++;
       test_->receive_config_.renderer = &test->fake_renderer_;
       video_receive_stream_ = test_->receiver_call_->CreateVideoReceiveStream(
@@ -232,7 +235,7 @@ static const char* kSingleStreamLog =
 
 TEST_F(BitrateEstimatorTest, InstantiatesTOFPerDefaultForVideo) {
   task_queue_.SendTask([this]() {
-    video_send_config_.rtp.extensions.push_back(
+    GetVideoSendConfig()->rtp.extensions.push_back(
         RtpExtension(RtpExtension::kTimestampOffsetUri, kTOFExtensionId));
     receiver_log_.PushExpectedLogLine(kSingleStreamLog);
     receiver_log_.PushExpectedLogLine(kSingleStreamLog);
@@ -243,7 +246,7 @@ TEST_F(BitrateEstimatorTest, InstantiatesTOFPerDefaultForVideo) {
 
 TEST_F(BitrateEstimatorTest, ImmediatelySwitchToASTForVideo) {
   task_queue_.SendTask([this]() {
-    video_send_config_.rtp.extensions.push_back(
+    GetVideoSendConfig()->rtp.extensions.push_back(
         RtpExtension(RtpExtension::kAbsSendTimeUri, kASTExtensionId));
     receiver_log_.PushExpectedLogLine(kSingleStreamLog);
     receiver_log_.PushExpectedLogLine(kSingleStreamLog);
@@ -256,7 +259,7 @@ TEST_F(BitrateEstimatorTest, ImmediatelySwitchToASTForVideo) {
 
 TEST_F(BitrateEstimatorTest, SwitchesToASTForVideo) {
   task_queue_.SendTask([this]() {
-    video_send_config_.rtp.extensions.push_back(
+    GetVideoSendConfig()->rtp.extensions.push_back(
         RtpExtension(RtpExtension::kTimestampOffsetUri, kTOFExtensionId));
     receiver_log_.PushExpectedLogLine(kSingleStreamLog);
     receiver_log_.PushExpectedLogLine(kSingleStreamLog);
@@ -265,7 +268,7 @@ TEST_F(BitrateEstimatorTest, SwitchesToASTForVideo) {
   EXPECT_TRUE(receiver_log_.Wait());
 
   task_queue_.SendTask([this]() {
-    video_send_config_.rtp.extensions[0] =
+    GetVideoSendConfig()->rtp.extensions[0] =
         RtpExtension(RtpExtension::kAbsSendTimeUri, kASTExtensionId);
     receiver_log_.PushExpectedLogLine("Switching to absolute send time RBE.");
     receiver_log_.PushExpectedLogLine(kAbsSendTimeLog);
@@ -277,7 +280,7 @@ TEST_F(BitrateEstimatorTest, SwitchesToASTForVideo) {
 // This test is flaky. See webrtc:5790.
 TEST_F(BitrateEstimatorTest, DISABLED_SwitchesToASTThenBackToTOFForVideo) {
   task_queue_.SendTask([this]() {
-    video_send_config_.rtp.extensions.push_back(
+    GetVideoSendConfig()->rtp.extensions.push_back(
         RtpExtension(RtpExtension::kTimestampOffsetUri, kTOFExtensionId));
     receiver_log_.PushExpectedLogLine(kSingleStreamLog);
     receiver_log_.PushExpectedLogLine(kAbsSendTimeLog);
@@ -287,7 +290,7 @@ TEST_F(BitrateEstimatorTest, DISABLED_SwitchesToASTThenBackToTOFForVideo) {
   EXPECT_TRUE(receiver_log_.Wait());
 
   task_queue_.SendTask([this]() {
-    video_send_config_.rtp.extensions[0] =
+    GetVideoSendConfig()->rtp.extensions[0] =
         RtpExtension(RtpExtension::kAbsSendTimeUri, kASTExtensionId);
     receiver_log_.PushExpectedLogLine(kAbsSendTimeLog);
     receiver_log_.PushExpectedLogLine("Switching to absolute send time RBE.");
@@ -296,7 +299,7 @@ TEST_F(BitrateEstimatorTest, DISABLED_SwitchesToASTThenBackToTOFForVideo) {
   EXPECT_TRUE(receiver_log_.Wait());
 
   task_queue_.SendTask([this]() {
-    video_send_config_.rtp.extensions[0] =
+    GetVideoSendConfig()->rtp.extensions[0] =
         RtpExtension(RtpExtension::kTimestampOffsetUri, kTOFExtensionId);
     receiver_log_.PushExpectedLogLine(kAbsSendTimeLog);
     receiver_log_.PushExpectedLogLine(

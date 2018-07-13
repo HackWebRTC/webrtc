@@ -531,16 +531,16 @@ TEST_F(StatsEndToEndTest, MAYBE_ContentTypeSwitches) {
     CreateMatchingReceiveConfigs(receive_transport_.get());
 
     // Modify send and receive configs.
-    video_send_config_.rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
+    GetVideoSendConfig()->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
     video_receive_configs_[0].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
     video_receive_configs_[0].renderer = &test;
     // RTT needed for RemoteNtpTimeEstimator for the receive stream.
     video_receive_configs_[0].rtp.rtcp_xr.receiver_reference_time_report = true;
     // Start with realtime video.
-    video_encoder_config_.content_type =
+    GetVideoEncoderConfig()->content_type =
         VideoEncoderConfig::ContentType::kRealtimeVideo;
     // Second encoder config for the second part of the test uses screenshare
-    encoder_config_with_screenshare = video_encoder_config_.Copy();
+    encoder_config_with_screenshare = GetVideoEncoderConfig()->Copy();
     encoder_config_with_screenshare.content_type =
         VideoEncoderConfig::ContentType::kScreen;
 
@@ -554,12 +554,10 @@ TEST_F(StatsEndToEndTest, MAYBE_ContentTypeSwitches) {
 
   // Replace old send stream.
   task_queue_.SendTask([this, &encoder_config_with_screenshare]() {
-    sender_call_->DestroyVideoSendStream(video_send_stream_);
-    video_send_stream_ = sender_call_->CreateVideoSendStream(
-        video_send_config_.Copy(), encoder_config_with_screenshare.Copy());
-    video_send_stream_->SetSource(frame_generator_capturer_.get(),
-                                  DegradationPreference::BALANCED);
-    video_send_stream_->Start();
+    DestroyVideoSendStreams();
+    CreateVideoSendStream(encoder_config_with_screenshare);
+    SetVideoDegradation(DegradationPreference::BALANCED);
+    GetVideoSendStream()->Start();
   });
 
   // Continue to run test but now with screenshare.

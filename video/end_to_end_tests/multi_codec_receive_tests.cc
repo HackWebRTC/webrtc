@@ -204,13 +204,14 @@ void MultiCodecReceiveTest::ConfigureDecoders(
 }
 
 void MultiCodecReceiveTest::ConfigureEncoder(const CodecConfig& config) {
-  video_send_config_.encoder_settings.encoder_factory = config.encoder_factory;
-  video_send_config_.rtp.payload_name = config.payload_name;
-  video_send_config_.rtp.payload_type =
+  GetVideoSendConfig()->encoder_settings.encoder_factory =
+      config.encoder_factory;
+  GetVideoSendConfig()->rtp.payload_name = config.payload_name;
+  GetVideoSendConfig()->rtp.payload_type =
       PayloadNameToPayloadType(config.payload_name);
-  video_encoder_config_.codec_type =
+  GetVideoEncoderConfig()->codec_type =
       PayloadStringToCodecType(config.payload_name);
-  video_encoder_config_.video_stream_factory =
+  GetVideoEncoderConfig()->video_stream_factory =
       new rtc::RefCountedObject<VideoStreamFactoryTest>(
           config.num_temporal_layers);
 }
@@ -236,14 +237,14 @@ void MultiCodecReceiveTest::RunTestWithCodecs(
     // Recreate VideoSendStream with new config (codec, temporal layers).
     task_queue_.SendTask([this, i, &configs]() {
       frame_generator_capturer_->Stop();
-      sender_call_->DestroyVideoSendStream(video_send_stream_);
+      DestroyVideoSendStreams();
       observer_.Reset();
 
       ConfigureEncoder(configs[i]);
-      video_send_stream_ = sender_call_->CreateVideoSendStream(
-          video_send_config_.Copy(), video_encoder_config_.Copy());
-      video_send_stream_->Start();
+      CreateVideoSendStreams();
+      GetVideoSendStream()->Start();
       CreateFrameGeneratorCapturer(kFps, kWidth / 2, kHeight / 2);
+      ConnectVideoSourcesToStreams();
       frame_generator_capturer_->Start();
     });
     EXPECT_TRUE(observer_.Wait()) << "Timed out waiting for frames.";

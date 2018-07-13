@@ -290,12 +290,13 @@ void PictureIdTest::SetupEncoder(VideoEncoderFactory* encoder_factory,
         FakeNetworkPipe::Config()));
 
     CreateSendConfig(kNumSimulcastStreams, 0, 0, send_transport_.get());
-    video_send_config_.encoder_settings.encoder_factory = encoder_factory;
-    video_send_config_.rtp.payload_name = payload_name;
-    video_encoder_config_.codec_type = PayloadStringToCodecType(payload_name);
-    video_encoder_config_.video_stream_factory =
+    GetVideoSendConfig()->encoder_settings.encoder_factory = encoder_factory;
+    GetVideoSendConfig()->rtp.payload_name = payload_name;
+    GetVideoEncoderConfig()->codec_type =
+        PayloadStringToCodecType(payload_name);
+    GetVideoEncoderConfig()->video_stream_factory =
         new rtc::RefCountedObject<VideoStreamFactory>(num_temporal_layers_);
-    video_encoder_config_.number_of_streams = 1;
+    GetVideoEncoderConfig()->number_of_streams = 1;
   });
 }
 
@@ -315,12 +316,13 @@ void PictureIdTest::TestPictureIdContinuousAfterReconfigure(
   // Expect continuously increasing picture id, equivalent to no gaps.
   observer_->SetMaxExpectedPictureIdGap(0);
   for (int ssrc_count : ssrc_counts) {
-    video_encoder_config_.number_of_streams = ssrc_count;
+    GetVideoEncoderConfig()->number_of_streams = ssrc_count;
     observer_->SetExpectedSsrcs(ssrc_count);
     observer_->ResetObservedSsrcs();
     // Make sure the picture_id sequence is continuous on reinit and recreate.
     task_queue_.SendTask([this]() {
-      video_send_stream_->ReconfigureVideoEncoder(video_encoder_config_.Copy());
+      GetVideoSendStream()->ReconfigureVideoEncoder(
+          GetVideoEncoderConfig()->Copy());
     });
     EXPECT_TRUE(observer_->Wait()) << "Timed out waiting for packets.";
   }
@@ -350,15 +352,14 @@ void PictureIdTest::TestPictureIdIncreaseAfterRecreateStreams(
   for (int ssrc_count : ssrc_counts) {
     task_queue_.SendTask([this, &ssrc_count]() {
       frame_generator_capturer_->Stop();
-      sender_call_->DestroyVideoSendStream(video_send_stream_);
+      DestroyVideoSendStreams();
 
-      video_encoder_config_.number_of_streams = ssrc_count;
+      GetVideoEncoderConfig()->number_of_streams = ssrc_count;
       observer_->SetExpectedSsrcs(ssrc_count);
       observer_->ResetObservedSsrcs();
 
-      video_send_stream_ = sender_call_->CreateVideoSendStream(
-          video_send_config_.Copy(), video_encoder_config_.Copy());
-      video_send_stream_->Start();
+      CreateVideoSendStreams();
+      GetVideoSendStream()->Start();
       CreateFrameGeneratorCapturer(kFrameRate, kFrameMaxWidth, kFrameMaxHeight);
       frame_generator_capturer_->Start();
     });

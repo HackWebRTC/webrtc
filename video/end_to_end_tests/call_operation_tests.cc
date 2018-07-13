@@ -130,8 +130,8 @@ TEST_P(CallOperationEndToEndTest, RendersSingleDelayedFrame) {
     std::unique_ptr<test::FrameGenerator> frame_generator(
         test::FrameGenerator::CreateSquareGenerator(
             kWidth, kHeight, absl::nullopt, absl::nullopt));
-    video_send_stream_->SetSource(&frame_forwarder,
-                                  DegradationPreference::MAINTAIN_FRAMERATE);
+    GetVideoSendStream()->SetSource(&frame_forwarder,
+                                    DegradationPreference::MAINTAIN_FRAMERATE);
 
     frame_forwarder.IncomingCapturedFrame(*frame_generator->NextFrame());
   });
@@ -186,8 +186,8 @@ TEST_P(CallOperationEndToEndTest, TransmitsFirstFrame) {
 
     frame_generator = test::FrameGenerator::CreateSquareGenerator(
         kDefaultWidth, kDefaultHeight, absl::nullopt, absl::nullopt);
-    video_send_stream_->SetSource(&frame_forwarder,
-                                  DegradationPreference::MAINTAIN_FRAMERATE);
+    GetVideoSendStream()->SetSource(&frame_forwarder,
+                                    DegradationPreference::MAINTAIN_FRAMERATE);
     frame_forwarder.IncomingCapturedFrame(*frame_generator->NextFrame());
   });
 
@@ -246,15 +246,15 @@ TEST_P(CallOperationEndToEndTest, ObserversEncodedFrames) {
 
     CreateSendConfig(1, 0, 0, sender_transport.get());
     CreateMatchingReceiveConfigs(receiver_transport.get());
-    video_send_config_.post_encode_callback = &post_encode_observer;
+    GetVideoSendConfig()->post_encode_callback = &post_encode_observer;
 
     CreateVideoStreams();
     Start();
 
     frame_generator = test::FrameGenerator::CreateSquareGenerator(
         kDefaultWidth, kDefaultHeight, absl::nullopt, absl::nullopt);
-    video_send_stream_->SetSource(&forwarder,
-                                  DegradationPreference::MAINTAIN_FRAMERATE);
+    GetVideoSendStream()->SetSource(&forwarder,
+                                    DegradationPreference::MAINTAIN_FRAMERATE);
     forwarder.IncomingCapturedFrame(*frame_generator->NextFrame());
   });
 

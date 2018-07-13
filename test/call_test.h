@@ -107,16 +107,31 @@ class CallTest : public ::testing::Test {
       std::unique_ptr<TestAudioDeviceModule::Renderer> renderer);
 
   void CreateVideoStreams();
+  void CreateVideoSendStreams();
+  void CreateVideoSendStream(const VideoEncoderConfig& encoder_config);
   void CreateAudioStreams();
   void CreateFlexfecStreams();
+
+  void ConnectVideoSourcesToStreams();
 
   void AssociateFlexfecStreamsWithVideoStreams();
   void DissociateFlexfecStreamsFromVideoStreams();
 
   void Start();
+  void StartVideoStreams();
+  void StartVideoCapture();
   void Stop();
   void DestroyStreams();
+  void DestroyVideoSendStreams();
   void SetFakeVideoCaptureRotation(VideoRotation rotation);
+
+  void SetVideoDegradation(DegradationPreference preference);
+
+  VideoSendStream::Config* GetVideoSendConfig();
+  void SetVideoSendConfig(const VideoSendStream::Config& config);
+  VideoEncoderConfig* GetVideoEncoderConfig();
+  void SetVideoEncoderConfig(const VideoEncoderConfig& config);
+  VideoSendStream* GetVideoSendStream();
 
   Clock* const clock_;
 
@@ -125,9 +140,6 @@ class CallTest : public ::testing::Test {
   std::unique_ptr<Call> sender_call_;
   RtpTransportControllerSend* sender_call_transport_controller_;
   std::unique_ptr<PacketTransport> send_transport_;
-  VideoSendStream::Config video_send_config_;
-  VideoEncoderConfig video_encoder_config_;
-  VideoSendStream* video_send_stream_;
   AudioSendStream::Config audio_send_config_;
   AudioSendStream* audio_send_stream_;
 
@@ -154,6 +166,13 @@ class CallTest : public ::testing::Test {
   SingleThreadedTaskQueueForTesting task_queue_;
 
  private:
+  VideoSendStream::Config video_send_config_;
+  VideoEncoderConfig video_encoder_config_;
+  VideoSendStream* video_send_stream_;
+
+  DegradationPreference degradation_preference_ =
+      DegradationPreference::MAINTAIN_FRAMERATE;
+
   rtc::scoped_refptr<AudioProcessing> apm_send_;
   rtc::scoped_refptr<AudioProcessing> apm_recv_;
   rtc::scoped_refptr<TestAudioDeviceModule> fake_send_audio_device_;

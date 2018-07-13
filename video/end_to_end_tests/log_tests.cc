@@ -36,10 +36,10 @@ class LogEndToEndTest : public test::CallTest {
 
   void LogSend(bool open) {
     if (open) {
-      video_send_stream_->EnableEncodedFrameRecording(
+      GetVideoSendStream()->EnableEncodedFrameRecording(
           std::vector<rtc::PlatformFile>(1, OpenFile(AddFile())), 0);
     } else {
-      video_send_stream_->DisableEncodedFrameRecording();
+      GetVideoSendStream()->DisableEncodedFrameRecording();
     }
   }
   void LogReceive(bool open) {
