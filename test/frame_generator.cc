@@ -15,6 +15,7 @@
 
 #include <memory>
 
+#include "api/video/i010_buffer.h"
 #include "api/video/i420_buffer.h"
 #include "common_video/include/video_frame_buffer.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
@@ -68,7 +69,8 @@ class SquareGenerator : public FrameGenerator {
 
     rtc::scoped_refptr<VideoFrameBuffer> buffer = nullptr;
     switch (type_) {
-      case OutputType::I420: {
+      case OutputType::I420:
+      case OutputType::I010: {
         buffer = CreateI420Buffer(width_, height_);
         break;
       }
@@ -89,6 +91,10 @@ class SquareGenerator : public FrameGenerator {
 
     for (const auto& square : squares_)
       square->Draw(buffer);
+
+    if (type_ == OutputType::I010) {
+      buffer = I010Buffer::Copy(*buffer->ToI420());
+    }
 
     frame_.reset(
         new VideoFrame(buffer, webrtc::kVideoRotation_0, 0 /* timestamp_us */));

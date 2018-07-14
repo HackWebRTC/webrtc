@@ -479,6 +479,7 @@ rtc_static_library("webrtc_vp9") {
     ":webrtc_vp9_helpers",
     "..:module_api",
     "../..:webrtc_common",
+    "../../api/video:video_frame_i010",
     "../../api/video_codecs:video_codecs_api",
     "../../common_video",
     "../../media:rtc_media_base",
@@ -724,6 +725,7 @@ if (rtc_include_tests) {
       "../../media:rtc_h264_profile_id",
       "../../media:rtc_internal_video_codecs",
       "../../media:rtc_media_base",
+      "../../media:rtc_vp9_profile",
       "../../rtc_base:rtc_base",
       "../../test:fileutils",
       "../../test:test_common",
@@ -732,6 +734,7 @@ if (rtc_include_tests) {
       "../rtp_rtcp:rtp_rtcp_format",
       "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
+      "//third_party/libyuv",
     ]
 
     data = video_coding_modules_tests_resources

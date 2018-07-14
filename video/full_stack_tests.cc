@@ -9,6 +9,8 @@
  */
 #include <stdio.h>
 
+#include "media/base/vp9_profile.h"
+#include "modules/video_coding/codecs/vp9/include/vp9.h"
 #include "rtc_base/experiments/alr_experiment.h"
 #include "rtc_base/flags.h"
 #include "test/field_trial.h"
@@ -103,6 +105,32 @@ TEST(FullStackTest, ForemanCifPlr5Vp9) {
   foreman_cif.pipe.loss_percent = 5;
   foreman_cif.pipe.queue_delay_ms = 50;
   fixture->RunWithAnalyzer(foreman_cif);
+}
+
+TEST(FullStackTest, GeneratorWithoutPacketLossVp9Profile2) {
+  // Profile 2 might not be available on some platforms until
+  // https://bugs.chromium.org/p/webm/issues/detail?id=1544 is solved.
+  bool profile_2_is_supported = false;
+  for (const auto& codec : SupportedVP9Codecs()) {
+    if (ParseSdpForVP9Profile(codec.parameters)
+            .value_or(VP9Profile::kProfile0) == VP9Profile::kProfile2) {
+      profile_2_is_supported = true;
+    }
+  }
+  if (!profile_2_is_supported)
+    return;
+  auto fixture = CreateVideoQualityTestFixture();
+
+  SdpVideoFormat::Parameters vp92 = {
+      {kVP9FmtpProfileId, VP9ProfileToString(VP9Profile::kProfile2)}};
+  ParamsWithLogging generator;
+  generator.call.send_side_bwe = true;
+  generator.video[0] = {
+      true, 352, 288, 30,    700000, 700000, 700000,          false, "VP9",
+      1,    0,   0,   false, false,  false,  "GeneratorI010", 0,     vp92};
+  generator.analyzer = {"generator_net_delay_0_0_plr_0_VP9Profile2", 0.0, 0.0,
+                        kFullStackTestDurationSecs};
+  fixture->RunWithAnalyzer(generator);
 }
 
 TEST(FullStackTest, ForemanCifWithoutPacketLossMultiplexI420Frame) {

@@ -58,7 +58,7 @@ class FrameGenerator {
     RTC_NOTREACHED();
   }
 
-  enum class OutputType { I420, I420A };
+  enum class OutputType { I420, I420A, I010 };
 
   // Creates a frame generator that produces frames with small squares that
   // move randomly towards the lower right corner.
