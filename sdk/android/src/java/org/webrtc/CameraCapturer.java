@@ -50,11 +50,11 @@ abstract class CameraCapturer implements CameraVideoCapturer {
             stateLock.notifyAll();
 
             if (switchState == SwitchState.IN_PROGRESS) {
+              switchState = SwitchState.IDLE;
               if (switchEventsHandler != null) {
                 switchEventsHandler.onCameraSwitchDone(cameraEnumerator.isFrontFacing(cameraName));
                 switchEventsHandler = null;
               }
-              switchState = SwitchState.IDLE;
             } else if (switchState == SwitchState.PENDING) {
               switchState = SwitchState.IDLE;
               switchCameraInternal(switchEventsHandler);
