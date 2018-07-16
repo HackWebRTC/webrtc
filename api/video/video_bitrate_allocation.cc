@@ -107,6 +107,23 @@ std::vector<uint32_t> VideoBitrateAllocation::GetTemporalLayerAllocation(
   return temporal_rates;
 }
 
+std::vector<absl::optional<VideoBitrateAllocation>>
+VideoBitrateAllocation::GetSimulcastAllocations() const {
+  std::vector<absl::optional<VideoBitrateAllocation>> bitrates;
+  for (size_t si = 0; si < kMaxSpatialLayers; ++si) {
+    absl::optional<VideoBitrateAllocation> layer_bitrate;
+    if (IsSpatialLayerUsed(si)) {
+      layer_bitrate = VideoBitrateAllocation();
+      for (int tl = 0; tl < kMaxTemporalStreams; ++tl) {
+        if (HasBitrate(si, tl))
+          layer_bitrate->SetBitrate(0, tl, GetBitrate(si, tl));
+      }
+    }
+    bitrates.push_back(layer_bitrate);
+  }
+  return bitrates;
+}
+
 bool VideoBitrateAllocation::operator==(
     const VideoBitrateAllocation& other) const {
   for (size_t si = 0; si < kMaxSpatialLayers; ++si) {
