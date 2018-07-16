@@ -90,7 +90,7 @@ class WindowsRealTimeClock : public RealTimeClock {
         num_timer_wraps_(0),
         ref_point_(GetSystemReferencePoint()) {}
 
-  virtual ~WindowsRealTimeClock() {}
+  ~WindowsRealTimeClock() override {}
 
  protected:
   struct ReferencePoint {

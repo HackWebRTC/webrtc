@@ -22,13 +22,13 @@ namespace webrtc {
 class EventTimerWin : public EventTimerWrapper {
  public:
   EventTimerWin();
-  virtual ~EventTimerWin();
+  ~EventTimerWin() override;
 
-  virtual EventTypeWrapper Wait(unsigned long max_time);
-  virtual bool Set();
+  EventTypeWrapper Wait(unsigned long max_time) override;
+  bool Set() override;
 
-  virtual bool StartTimer(bool periodic, unsigned long time);
-  virtual bool StopTimer();
+  bool StartTimer(bool periodic, unsigned long time) override;
+  bool StopTimer() override;
 
  private:
   HANDLE event_;

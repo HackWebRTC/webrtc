@@ -91,11 +91,6 @@ rtc_static_library("system_wrappers") {
     deps += [ "../rtc_base:rtc_base" ]
   }
 
-  if (is_win && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-
   deps += [
     "../rtc_base:rtc_base_approved",
     "../rtc_base:rtc_numerics",
@@ -216,11 +211,6 @@ if (rtc_include_tests) {
 
     if (is_posix || is_fuchsia) {
       sources += [ "source/event_timer_posix_unittest.cc" ]
-    }
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
 
     deps = [
