@@ -21,6 +21,7 @@
 #include "vpx/vpx_encoder.h"
 
 #include "absl/memory/memory.h"
+#include "api/video/color_space.h"
 #include "api/video/i010_buffer.h"
 #include "common_video/include/video_frame_buffer.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
@@ -1178,10 +1179,72 @@ int VP9DecoderImpl::ReturnFrame(const vpx_image_t* img,
       RTC_NOTREACHED();
       return WEBRTC_VIDEO_CODEC_NO_OUTPUT;
   }
-  VideoFrame decoded_image(img_wrapped_buffer, timestamp,
-                           0 /* render_time_ms */, webrtc::kVideoRotation_0);
-  decoded_image.set_ntp_time_ms(ntp_time_ms);
 
+  ColorSpace::PrimaryID primaries = ColorSpace::PrimaryID::kInvalid;
+  ColorSpace::TransferID transfer = ColorSpace::TransferID::kInvalid;
+  ColorSpace::MatrixID matrix = ColorSpace::MatrixID::kInvalid;
+  switch (img->cs) {
+    case VPX_CS_BT_601:
+    case VPX_CS_SMPTE_170:
+      primaries = ColorSpace::PrimaryID::kSMPTE170M;
+      transfer = ColorSpace::TransferID::kSMPTE170M;
+      matrix = ColorSpace::MatrixID::kSMPTE170M;
+      break;
+    case VPX_CS_SMPTE_240:
+      primaries = ColorSpace::PrimaryID::kSMPTE240M;
+      transfer = ColorSpace::TransferID::kSMPTE240M;
+      matrix = ColorSpace::MatrixID::kSMPTE240M;
+      break;
+    case VPX_CS_BT_709:
+      primaries = ColorSpace::PrimaryID::kBT709;
+      transfer = ColorSpace::TransferID::kBT709;
+      matrix = ColorSpace::MatrixID::kBT709;
+      break;
+    case VPX_CS_BT_2020:
+      primaries = ColorSpace::PrimaryID::kBT2020;
+      switch (img->bit_depth) {
+        case 8:
+          transfer = ColorSpace::TransferID::kBT709;
+          break;
+        case 10:
+          transfer = ColorSpace::TransferID::kBT2020_10;
+          break;
+        default:
+          RTC_NOTREACHED();
+          break;
+      }
+      matrix = ColorSpace::MatrixID::kBT2020_NCL;
+      break;
+    case VPX_CS_SRGB:
+      primaries = ColorSpace::PrimaryID::kBT709;
+      transfer = ColorSpace::TransferID::kIEC61966_2_1;
+      matrix = ColorSpace::MatrixID::kBT709;
+      break;
+    default:
+      break;
+  }
+
+  ColorSpace::RangeID range = ColorSpace::RangeID::kInvalid;
+  switch (img->range) {
+    case VPX_CR_STUDIO_RANGE:
+      range = ColorSpace::RangeID::kLimited;
+      break;
+    case VPX_CR_FULL_RANGE:
+      range = ColorSpace::RangeID::kFull;
+      break;
+    default:
+      break;
+  }
+
+  VideoFrame decoded_image =
+      VideoFrame::Builder()
+          .set_video_frame_buffer(img_wrapped_buffer)
+          .set_timestamp_ms(0)
+          .set_timestamp_rtp(timestamp)
+          .set_ntp_time_ms(ntp_time_ms)
+          .set_rotation(webrtc::kVideoRotation_0)
+          .set_color_space(ColorSpace(primaries, transfer, matrix, range))
+          .build();
   decode_complete_callback_->Decoded(decoded_image, absl::nullopt, qp);
   return WEBRTC_VIDEO_CODEC_OK;
 }

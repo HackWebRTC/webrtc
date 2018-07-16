@@ -13,6 +13,8 @@
 
 #include <stdint.h>
 
+#include "absl/types/optional.h"
+#include "api/video/color_space.h"
 #include "api/video/video_frame_buffer.h"
 #include "api/video/video_rotation.h"
 
@@ -20,12 +22,35 @@ namespace webrtc {
 
 class VideoFrame {
  public:
-  // Preferred constructor.
+  // Preferred way of building VideoFrame objects.
+  class Builder {
+   public:
+    Builder();
+    ~Builder();
+
+    VideoFrame build();
+    Builder& set_video_frame_buffer(
+        const rtc::scoped_refptr<VideoFrameBuffer>& buffer);
+    Builder& set_timestamp_ms(int64_t timestamp_ms);
+    Builder& set_timestamp_us(int64_t timestamp_us);
+    Builder& set_timestamp_rtp(uint32_t timestamp_rtp);
+    Builder& set_ntp_time_ms(int64_t ntp_time_ms);
+    Builder& set_rotation(VideoRotation rotation);
+    Builder& set_color_space(const ColorSpace& color_space);
+
+   private:
+    rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer_;
+    int64_t timestamp_us_ = 0;
+    uint32_t timestamp_rtp_ = 0;
+    int64_t ntp_time_ms_ = 0;
+    VideoRotation rotation_ = kVideoRotation_0;
+    absl::optional<ColorSpace> color_space_;
+  };
+
+  // To be deprecated. Migrate all use to Builder.
   VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
              webrtc::VideoRotation rotation,
              int64_t timestamp_us);
-
-  // For use by the parts of the pipeline that needs the RTP 90kHz timestamp.
   VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
              uint32_t timestamp_rtp,
              int64_t render_time_ms,
@@ -85,6 +110,9 @@ class VideoFrame {
   VideoRotation rotation() const { return rotation_; }
   void set_rotation(VideoRotation rotation) { rotation_ = rotation; }
 
+  // Set Color space when available.
+  absl::optional<ColorSpace> color_space() const { return color_space_; }
+
   // Get render time in milliseconds.
   // TODO(nisse): Deprecated. Migrate all users to timestamp_us().
   int64_t render_time_ms() const;
@@ -100,12 +128,20 @@ class VideoFrame {
   }
 
  private:
+  VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
+             int64_t timestamp_us,
+             uint32_t timestamp_rtp,
+             int64_t ntp_time_ms,
+             VideoRotation rotation,
+             const absl::optional<ColorSpace>& color_space);
+
   // An opaque reference counted handle that stores the pixel data.
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer_;
   uint32_t timestamp_rtp_;
   int64_t ntp_time_ms_;
   int64_t timestamp_us_;
   VideoRotation rotation_;
+  absl::optional<ColorSpace> color_space_;
 };
 
 }  // namespace webrtc

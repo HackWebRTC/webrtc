@@ -11,6 +11,8 @@ import("../../webrtc.gni")
 rtc_source_set("video_frame") {
   visibility = [ "*" ]
   sources = [
+    "color_space.cc",
+    "color_space.h",
     "video_content_type.cc",
     "video_content_type.h",
     "video_frame.cc",

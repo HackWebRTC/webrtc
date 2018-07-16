@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "api/video/color_space.h"
 #include "api/video/i420_buffer.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "media/base/vp9_profile.h"
@@ -85,6 +86,12 @@ TEST_F(TestVp9Impl, EncodeDecode) {
   ASSERT_TRUE(WaitForDecodedFrame(&decoded_frame, &decoded_qp));
   ASSERT_TRUE(decoded_frame);
   EXPECT_GT(I420PSNR(input_frame, decoded_frame.get()), 36);
+
+  const ColorSpace color_space = decoded_frame->color_space().value();
+  EXPECT_EQ(ColorSpace::PrimaryID::kInvalid, color_space.primaries());
+  EXPECT_EQ(ColorSpace::TransferID::kInvalid, color_space.transfer());
+  EXPECT_EQ(ColorSpace::MatrixID::kInvalid, color_space.matrix());
+  EXPECT_EQ(ColorSpace::RangeID::kLimited, color_space.range());
 }
 
 // We only test the encoder here, since the decoded frame rotation is set based
