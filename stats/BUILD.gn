@@ -51,11 +51,6 @@ if (rtc_include_tests) {
       "rtcstatsreport_unittest.cc",
     ]
 
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
-
     deps = [
       ":rtc_stats",
       ":rtc_stats_test_utils",
