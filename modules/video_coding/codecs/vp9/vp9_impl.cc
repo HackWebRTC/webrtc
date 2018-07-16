@@ -114,10 +114,22 @@ ColorSpace ExtractVP9ColorSpace(vpx_color_space_t space_t,
 }  // namespace
 
 std::vector<SdpVideoFormat> SupportedVP9Codecs() {
-  // TODO(emircan): Add Profile 2 support after fixing browser_tests.
+  // Profile 2 might not be available on some platforms until
+  // https://bugs.chromium.org/p/webm/issues/detail?id=1544 is solved.
+  static bool vpx_supports_high_bit_depth =
+      (vpx_codec_get_caps(vpx_codec_vp9_cx()) & VPX_CODEC_CAP_HIGHBITDEPTH) !=
+          0 &&
+      (vpx_codec_get_caps(vpx_codec_vp9_dx()) & VPX_CODEC_CAP_HIGHBITDEPTH) !=
+          0;
+
   std::vector<SdpVideoFormat> supported_formats{SdpVideoFormat(
       cricket::kVp9CodecName,
       {{kVP9FmtpProfileId, VP9ProfileToString(VP9Profile::kProfile0)}})};
+  if (vpx_supports_high_bit_depth) {
+    supported_formats.push_back(SdpVideoFormat(
+        cricket::kVp9CodecName,
+        {{kVP9FmtpProfileId, VP9ProfileToString(VP9Profile::kProfile2)}}));
+  }
   return supported_formats;
 }
 
