@@ -3525,6 +3525,10 @@ void PeerConnection::OnIceCandidate(
     return;
   }
   NoteUsageEvent(UsageEvent::CANDIDATE_COLLECTED);
+  if (candidate->candidate().type() == LOCAL_PORT_TYPE &&
+      candidate->candidate().address().IsPrivateIP()) {
+    NoteUsageEvent(UsageEvent::PRIVATE_CANDIDATE_COLLECTED);
+  }
   observer_->OnIceCandidate(candidate.get());
 }
 
