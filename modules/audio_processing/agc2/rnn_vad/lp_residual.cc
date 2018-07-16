@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <numeric>
 
 #include "rtc_base/checks.h"
@@ -61,6 +62,13 @@ void ComputeInitialInverseFilterCoefficients(
       reflection_coeff += lpc_coeffs[j] * auto_corr[i - j];
     }
     reflection_coeff += auto_corr[i + 1];
+
+    // Avoid division by numbers close to zero.
+    constexpr float kMinErrorMagnitude = 1e-6f;
+    if (std::fabs(error) < kMinErrorMagnitude) {
+      error = std::copysign(kMinErrorMagnitude, error);
+    }
+
     reflection_coeff /= -error;
     // Update LPC coefficients and total error.
     lpc_coeffs[i] = reflection_coeff;
