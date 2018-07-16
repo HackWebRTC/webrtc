@@ -15,7 +15,6 @@
 #include <vector>
 
 #include "api/video_codecs/video_encoder.h"
-#include "call/rtp_payload_params.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
 #include "rtc_base/constructormagic.h"
@@ -26,6 +25,12 @@ namespace webrtc {
 
 class RTPFragmentationHeader;
 class RtpRtcp;
+
+// Currently only VP8/VP9 specific.
+struct RtpPayloadState {
+  int16_t picture_id = -1;
+  uint8_t tl0_pic_idx = 0;
+};
 
 // PayloadRouter routes outgoing data to the correct sending RTP module, based
 // on the simulcast layer in RTPVideoHeader.
@@ -58,6 +63,8 @@ class PayloadRouter : public EncodedImageCallback {
   void OnBitrateAllocationUpdated(const VideoBitrateAllocation& bitrate);
 
  private:
+  class RtpPayloadParams;
+
   void UpdateModuleSendingState() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   rtc::CriticalSection crit_;
