@@ -360,7 +360,7 @@ std::string RtcEventLogEncoderLegacy::EncodeAlrState(
   rtclog_event.set_timestamp_us(event.timestamp_us_);
   rtclog_event.set_type(rtclog::Event::ALR_STATE_EVENT);
 
-  auto alr_state = rtclog_event.mutable_alr_state();
+  auto* alr_state = rtclog_event.mutable_alr_state();
   alr_state->set_in_alr(event.in_alr_);
   return Serialize(&rtclog_event);
 }
@@ -371,7 +371,7 @@ std::string RtcEventLogEncoderLegacy::EncodeAudioNetworkAdaptation(
   rtclog_event.set_timestamp_us(event.timestamp_us_);
   rtclog_event.set_type(rtclog::Event::AUDIO_NETWORK_ADAPTATION_EVENT);
 
-  auto audio_network_adaptation =
+  auto* audio_network_adaptation =
       rtclog_event.mutable_audio_network_adaptation();
   if (event.config_->bitrate_bps)
     audio_network_adaptation->set_bitrate_bps(*event.config_->bitrate_bps);
@@ -398,7 +398,7 @@ std::string RtcEventLogEncoderLegacy::EncodeAudioPlayout(
   rtclog_event.set_timestamp_us(event.timestamp_us_);
   rtclog_event.set_type(rtclog::Event::AUDIO_PLAYOUT_EVENT);
 
-  auto playout_event = rtclog_event.mutable_audio_playout_event();
+  auto* playout_event = rtclog_event.mutable_audio_playout_event();
   playout_event->set_local_ssrc(event.ssrc_);
 
   return Serialize(&rtclog_event);
@@ -452,7 +452,7 @@ std::string RtcEventLogEncoderLegacy::EncodeBweUpdateDelayBased(
   rtclog_event.set_timestamp_us(event.timestamp_us_);
   rtclog_event.set_type(rtclog::Event::DELAY_BASED_BWE_UPDATE);
 
-  auto bwe_event = rtclog_event.mutable_delay_based_bwe_update();
+  auto* bwe_event = rtclog_event.mutable_delay_based_bwe_update();
   bwe_event->set_bitrate_bps(event.bitrate_bps_);
   bwe_event->set_detector_state(ConvertDetectorState(event.detector_state_));
 
@@ -465,7 +465,7 @@ std::string RtcEventLogEncoderLegacy::EncodeBweUpdateLossBased(
   rtclog_event.set_timestamp_us(event.timestamp_us_);
   rtclog_event.set_type(rtclog::Event::LOSS_BASED_BWE_UPDATE);
 
-  auto bwe_event = rtclog_event.mutable_loss_based_bwe_update();
+  auto* bwe_event = rtclog_event.mutable_loss_based_bwe_update();
   bwe_event->set_bitrate_bps(event.bitrate_bps_);
   bwe_event->set_fraction_loss(event.fraction_loss_);
   bwe_event->set_total_packets(event.total_packets_);
@@ -479,7 +479,7 @@ std::string RtcEventLogEncoderLegacy::EncodeIceCandidatePairConfig(
   encoded_rtc_event.set_timestamp_us(event.timestamp_us_);
   encoded_rtc_event.set_type(rtclog::Event::ICE_CANDIDATE_PAIR_CONFIG);
 
-  auto encoded_ice_event =
+  auto* encoded_ice_event =
       encoded_rtc_event.mutable_ice_candidate_pair_config();
   encoded_ice_event->set_config_type(
       ConvertIceCandidatePairConfigType(event.type_));
@@ -508,7 +508,8 @@ std::string RtcEventLogEncoderLegacy::EncodeIceCandidatePairEvent(
   encoded_rtc_event.set_timestamp_us(event.timestamp_us_);
   encoded_rtc_event.set_type(rtclog::Event::ICE_CANDIDATE_PAIR_EVENT);
 
-  auto encoded_ice_event = encoded_rtc_event.mutable_ice_candidate_pair_event();
+  auto* encoded_ice_event =
+      encoded_rtc_event.mutable_ice_candidate_pair_event();
   encoded_ice_event->set_event_type(
       ConvertIceCandidatePairEventType(event.type_));
   encoded_ice_event->set_candidate_pair_id(event.candidate_pair_id_);
@@ -521,7 +522,7 @@ std::string RtcEventLogEncoderLegacy::EncodeProbeClusterCreated(
   rtclog_event.set_timestamp_us(event.timestamp_us_);
   rtclog_event.set_type(rtclog::Event::BWE_PROBE_CLUSTER_CREATED_EVENT);
 
-  auto probe_cluster = rtclog_event.mutable_probe_cluster();
+  auto* probe_cluster = rtclog_event.mutable_probe_cluster();
   probe_cluster->set_id(event.id_);
   probe_cluster->set_bitrate_bps(event.bitrate_bps_);
   probe_cluster->set_min_packets(event.min_probes_);
@@ -536,7 +537,7 @@ std::string RtcEventLogEncoderLegacy::EncodeProbeResultFailure(
   rtclog_event.set_timestamp_us(event.timestamp_us_);
   rtclog_event.set_type(rtclog::Event::BWE_PROBE_RESULT_EVENT);
 
-  auto probe_result = rtclog_event.mutable_probe_result();
+  auto* probe_result = rtclog_event.mutable_probe_result();
   probe_result->set_id(event.id_);
   probe_result->set_result(ConvertProbeResultType(event.failure_reason_));
 
@@ -549,7 +550,7 @@ std::string RtcEventLogEncoderLegacy::EncodeProbeResultSuccess(
   rtclog_event.set_timestamp_us(event.timestamp_us_);
   rtclog_event.set_type(rtclog::Event::BWE_PROBE_RESULT_EVENT);
 
-  auto probe_result = rtclog_event.mutable_probe_result();
+  auto* probe_result = rtclog_event.mutable_probe_result();
   probe_result->set_id(event.id_);
   probe_result->set_result(rtclog::BweProbeResult::SUCCESS);
   probe_result->set_bitrate_bps(event.bitrate_bps_);

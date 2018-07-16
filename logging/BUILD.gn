@@ -183,12 +183,6 @@ rtc_static_library("rtc_event_log_impl_encoder") {
     defines += [ "ENABLE_RTC_EVENT_LOG" ]
     deps += [ ":rtc_event_log_proto" ]
   }
-
-  # TODO(eladalon): Remove this.
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
 }
 
 rtc_source_set("rtc_event_log_impl_output") {
@@ -203,11 +197,6 @@ rtc_source_set("rtc_event_log_impl_output") {
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
   ]
-
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
 }
 
 rtc_static_library("rtc_event_log_impl_base") {
@@ -236,11 +225,6 @@ rtc_static_library("rtc_event_log_impl_base") {
   if (rtc_enable_protobuf) {
     defines += [ "ENABLE_RTC_EVENT_LOG" ]
     deps += [ ":rtc_event_log_proto" ]
-  }
-
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 }
 
@@ -359,6 +343,7 @@ if (rtc_enable_protobuf) {
         suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
       }
     }
+
     rtc_test("rtc_event_log2rtp_dump") {
       testonly = true
       sources = [
@@ -423,10 +408,6 @@ if (rtc_enable_protobuf) {
         "../rtc_base:checks",
         "../rtc_base:rtc_base_approved",
       ]
-      if (!build_with_chromium && is_clang) {
-        # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-        suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-      }
     }
   }
 }
@@ -447,11 +428,6 @@ rtc_source_set("ice_log") {
     "../rtc_base:rtc_base_approved",
     "//third_party/abseil-cpp/absl/memory",
   ]
-
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
 }
 
 if (rtc_include_tests) {
