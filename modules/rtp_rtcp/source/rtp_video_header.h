@@ -55,6 +55,20 @@ struct RTPVideoHeader {
 
     return absl::get<RTPVideoHeaderVP9>(video_type_header);
   }
+  // TODO(philipel): Remove when downstream projects have been updated.
+  RTPVideoHeaderH264& h264() {
+    if (!absl::holds_alternative<RTPVideoHeaderH264>(video_type_header))
+      video_type_header.emplace<RTPVideoHeaderH264>();
+
+    return absl::get<RTPVideoHeaderH264>(video_type_header);
+  }
+  // TODO(philipel): Remove when downstream projects have been updated.
+  const RTPVideoHeaderH264& h264() const {
+    if (!absl::holds_alternative<RTPVideoHeaderH264>(video_type_header))
+      video_type_header.emplace<RTPVideoHeaderH264>();
+
+    return absl::get<RTPVideoHeaderH264>(video_type_header);
+  }
 
   uint16_t width;
   uint16_t height;

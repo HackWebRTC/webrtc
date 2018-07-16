@@ -98,7 +98,8 @@ TEST_F(TestVideoReceiver, PaddingOnlyFrames) {
       0, receiver_->RegisterPacketRequestCallback(&packet_request_callback_));
   const size_t kPaddingSize = 220;
   const uint8_t payload[kPaddingSize] = {0};
-  WebRtcRTPHeader header = {};
+  WebRtcRTPHeader header;
+  memset(&header, 0, sizeof(header));
   header.frameType = kEmptyFrame;
   header.header.markerBit = false;
   header.header.paddingLength = kPaddingSize;
@@ -121,7 +122,8 @@ TEST_F(TestVideoReceiver, PaddingOnlyFramesWithLosses) {
   const size_t kFrameSize = 1200;
   const size_t kPaddingSize = 220;
   const uint8_t payload[kFrameSize] = {0};
-  WebRtcRTPHeader header = {};
+  WebRtcRTPHeader header;
+  memset(&header, 0, sizeof(header));
   header.frameType = kEmptyFrame;
   header.header.markerBit = false;
   header.header.paddingLength = kPaddingSize;
@@ -171,7 +173,8 @@ TEST_F(TestVideoReceiver, PaddingOnlyAndVideo) {
   const size_t kFrameSize = 1200;
   const size_t kPaddingSize = 220;
   const uint8_t payload[kFrameSize] = {0};
-  WebRtcRTPHeader header = {};
+  WebRtcRTPHeader header;
+  memset(&header, 0, sizeof(header));
   header.frameType = kEmptyFrame;
   header.video_header().is_first_packet_in_frame = false;
   header.header.markerBit = false;

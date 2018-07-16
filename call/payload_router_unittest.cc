@@ -445,10 +445,8 @@ TEST(PayloadRouterTest, InfoMappedToRtpVideoHeader_H264) {
                           Unused, const RTPVideoHeader* header, Unused) {
         EXPECT_EQ(0, header->simulcastIdx);
         EXPECT_EQ(kVideoCodecH264, header->codec);
-        const auto& h264 =
-            absl::get<RTPVideoHeaderH264>(header->video_type_header);
         EXPECT_EQ(H264PacketizationMode::SingleNalUnit,
-                  h264.packetization_mode);
+                  header->h264().packetization_mode);
         return true;
       }));
 

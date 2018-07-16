@@ -303,17 +303,18 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
           break;
 
         if (is_h264 && !is_h264_keyframe) {
-          const auto* h264_header = absl::get_if<RTPVideoHeaderH264>(
-              &data_buffer_[start_index].video_header.video_type_header);
-          if (!h264_header || h264_header->nalus_length >= kMaxNalusPerPacket)
+          const RTPVideoHeaderH264& header =
+              data_buffer_[start_index].video_header.h264();
+
+          if (header.nalus_length >= kMaxNalusPerPacket)
             return found_frames;
 
-          for (size_t j = 0; j < h264_header->nalus_length; ++j) {
-            if (h264_header->nalus[j].type == H264::NaluType::kSps) {
+          for (size_t j = 0; j < header.nalus_length; ++j) {
+            if (header.nalus[j].type == H264::NaluType::kSps) {
               has_h264_sps = true;
-            } else if (h264_header->nalus[j].type == H264::NaluType::kPps) {
+            } else if (header.nalus[j].type == H264::NaluType::kPps) {
               has_h264_pps = true;
-            } else if (h264_header->nalus[j].type == H264::NaluType::kIdr) {
+            } else if (header.nalus[j].type == H264::NaluType::kIdr) {
               has_h264_idr = true;
             }
           }

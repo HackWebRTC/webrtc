@@ -72,13 +72,11 @@ void CopyCodecSpecific(const CodecSpecificInfo* info, RTPVideoHeader* rtp) {
       rtp->vp9().end_of_picture = info->codecSpecific.VP9.end_of_picture;
       return;
     }
-    case kVideoCodecH264: {
-      auto& h264_header = rtp->video_type_header.emplace<RTPVideoHeaderH264>();
-      h264_header.packetization_mode =
+    case kVideoCodecH264:
+      rtp->h264().packetization_mode =
           info->codecSpecific.H264.packetization_mode;
       rtp->simulcastIdx = info->codecSpecific.H264.simulcast_idx;
       return;
-    }
     case kVideoCodecMultiplex:
     case kVideoCodecGeneric:
       rtp->codec = kVideoCodecGeneric;
