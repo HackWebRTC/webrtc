@@ -211,6 +211,11 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
     std::for_each(e_main.begin(), e_main.end(),
                   [](float& a) { a = rtc::SafeClamp(a, -32768.f, 32767.f); });
   }
+
+  data_dumper_->DumpWav("aec3_main_filter_output", kBlockSize, &e_main[0],
+                        16000, 1);
+  data_dumper_->DumpWav("aec3_shadow_filter_output", kBlockSize, &e_shadow[0],
+                        16000, 1);
 }
 
 void Subtractor::FilterMisadjustmentEstimator::Update(
