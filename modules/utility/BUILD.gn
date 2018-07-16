@@ -20,11 +20,6 @@ rtc_static_library("utility") {
     "source/process_thread_impl.h",
   ]
 
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-
   if (is_ios) {
     libs = [ "AVFoundation.framework" ]
   }
