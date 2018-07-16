@@ -36,7 +36,7 @@ class EchoRemover {
   // supplied render signal is assumed to be pre-aligned with the capture
   // signal.
   virtual void ProcessCapture(
-      const EchoPathVariability& echo_path_variability,
+      EchoPathVariability echo_path_variability,
       bool capture_signal_saturation,
       const absl::optional<DelayEstimate>& external_delay,
       RenderBuffer* render_buffer,

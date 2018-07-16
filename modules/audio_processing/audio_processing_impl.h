@@ -390,6 +390,7 @@ class AudioProcessingImpl : public AudioProcessing {
     StreamConfig capture_processing_format;
     int split_rate;
     bool echo_path_gain_change;
+    int prev_analog_mic_level;
   } capture_ RTC_GUARDED_BY(crit_capture_);
 
   struct ApmCaptureNonLockedState {

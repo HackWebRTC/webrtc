@@ -1198,9 +1198,13 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
   }
 
   if (private_submodules_->echo_controller) {
-    // TODO(peah): Reactivate analogue AGC gain detection once the analogue AGC
-    // issues have been addressed.
-    capture_.echo_path_gain_change = false;
+    // Detect and flag any change in the analog gain.
+    int analog_mic_level = gain_control()->stream_analog_level();
+    capture_.echo_path_gain_change =
+        capture_.prev_analog_mic_level != analog_mic_level &&
+        capture_.prev_analog_mic_level != -1;
+    capture_.prev_analog_mic_level = analog_mic_level;
+
     private_submodules_->echo_controller->AnalyzeCapture(capture_buffer);
   }
 
@@ -2049,7 +2053,8 @@ AudioProcessingImpl::ApmCaptureState::ApmCaptureState(
       transient_suppressor_enabled(transient_suppressor_enabled),
       capture_processing_format(kSampleRate16kHz),
       split_rate(kSampleRate16kHz),
-      echo_path_gain_change(false) {}
+      echo_path_gain_change(false),
+      prev_analog_mic_level(-1) {}
 
 AudioProcessingImpl::ApmCaptureState::~ApmCaptureState() = default;
 

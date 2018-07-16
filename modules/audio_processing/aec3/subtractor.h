@@ -106,6 +106,7 @@ class Subtractor {
   const EchoCanceller3Config config_;
   const bool adaptation_during_saturation_;
   const bool enable_misadjustment_estimator_;
+  const bool enable_agc_gain_change_response_;
   AdaptiveFirFilter main_filter_;
   AdaptiveFirFilter shadow_filter_;
   MainFilterUpdateGain G_main_;

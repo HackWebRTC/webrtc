@@ -31,6 +31,7 @@
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/atomicops.h"
 #include "rtc_base/constructormagic.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 
@@ -66,7 +67,7 @@ class EchoRemoverImpl final : public EchoRemover {
   // Removes the echo from a block of samples from the capture signal. The
   // supplied render signal is assumed to be pre-aligned with the capture
   // signal.
-  void ProcessCapture(const EchoPathVariability& echo_path_variability,
+  void ProcessCapture(EchoPathVariability echo_path_variability,
                       bool capture_signal_saturation,
                       const absl::optional<DelayEstimate>& external_delay,
                       RenderBuffer* render_buffer,
@@ -104,6 +105,8 @@ class EchoRemoverImpl final : public EchoRemover {
   std::array<float, kFftLengthBy2> e_old_;
   std::array<float, kFftLengthBy2> x_old_;
   std::array<float, kFftLengthBy2> y_old_;
+  size_t block_counter_ = 0;
+  int gain_change_hangover_ = 0;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(EchoRemoverImpl);
 };
@@ -141,11 +144,12 @@ void EchoRemoverImpl::GetMetrics(EchoControl::Metrics* metrics) const {
 }
 
 void EchoRemoverImpl::ProcessCapture(
-    const EchoPathVariability& echo_path_variability,
+    EchoPathVariability echo_path_variability,
     bool capture_signal_saturation,
     const absl::optional<DelayEstimate>& external_delay,
     RenderBuffer* render_buffer,
     std::vector<std::vector<float>>* capture) {
+  ++block_counter_;
   const std::vector<std::vector<float>>& x = render_buffer->Block(0);
   std::vector<std::vector<float>>* y = capture;
   RTC_DCHECK(render_buffer);
@@ -167,10 +171,29 @@ void EchoRemoverImpl::ProcessCapture(
   aec_state_.UpdateCaptureSaturation(capture_signal_saturation);
 
   if (echo_path_variability.AudioPathChanged()) {
+    // Ensure that the gain change is only acted on once per frame.
+    if (echo_path_variability.gain_change) {
+      if (gain_change_hangover_ == 0) {
+        constexpr int kMaxBlocksPerFrame = 3;
+        gain_change_hangover_ = kMaxBlocksPerFrame;
+        RTC_LOG(LS_WARNING)
+            << "Gain change detected at block " << block_counter_;
+      } else {
+        echo_path_variability.gain_change = false;
+      }
+    }
+
     subtractor_.HandleEchoPathChange(echo_path_variability);
     aec_state_.HandleEchoPathChange(echo_path_variability);
-    suppression_gain_.SetInitialState(true);
-    initial_state_ = true;
+
+    if (echo_path_variability.delay_change !=
+        EchoPathVariability::DelayAdjustment::kNone) {
+      suppression_gain_.SetInitialState(true);
+      initial_state_ = true;
+    }
+  }
+  if (gain_change_hangover_ > 0) {
+    --gain_change_hangover_;
   }
 
   std::array<float, kFftLengthBy2Plus1> Y2;

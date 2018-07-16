@@ -16,12 +16,17 @@
 #include "api/array_view.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_minmax.h"
 #include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 
 namespace {
+
+bool EnableAgcGainChangeResponse() {
+  return !field_trial::IsEnabled("WebRTC-Aec3AgcGainChangeResponseKillSwitch");
+}
 
 bool EnableAdaptationDuringSaturation() {
   return !field_trial::IsEnabled("WebRTC-Aec3RapidAgcGainRecoveryKillSwitch");
@@ -77,6 +82,7 @@ Subtractor::Subtractor(const EchoCanceller3Config& config,
       config_(config),
       adaptation_during_saturation_(EnableAdaptationDuringSaturation()),
       enable_misadjustment_estimator_(EnableMisadjustmentEstimator()),
+      enable_agc_gain_change_response_(EnableAgcGainChangeResponse()),
       main_filter_(config_.filter.main.length_blocks,
                    config_.filter.main_initial.length_blocks,
                    config.filter.config_change_duration_blocks,
@@ -117,18 +123,15 @@ void Subtractor::HandleEchoPathChange(
         config_.filter.shadow_initial.length_blocks, true);
   };
 
-  // TODO(peah): Add delay-change specific reset behavior.
-  if ((echo_path_variability.delay_change ==
-       EchoPathVariability::DelayAdjustment::kBufferFlush) ||
-      (echo_path_variability.delay_change ==
-       EchoPathVariability::DelayAdjustment::kDelayReset)) {
+  if (echo_path_variability.delay_change !=
+      EchoPathVariability::DelayAdjustment::kNone) {
     full_reset();
-  } else if (echo_path_variability.delay_change ==
-             EchoPathVariability::DelayAdjustment::kNewDetectedDelay) {
-    full_reset();
-  } else if (echo_path_variability.delay_change ==
-             EchoPathVariability::DelayAdjustment::kBufferReadjustment) {
-    full_reset();
+  }
+
+  if (echo_path_variability.gain_change && enable_agc_gain_change_response_) {
+    RTC_LOG(LS_WARNING) << "Resetting main filter adaptation speed due to "
+                           "microphone gain change";
+    G_main_.HandleEchoPathChange(echo_path_variability);
   }
 }
 
