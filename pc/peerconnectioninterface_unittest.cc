@@ -3292,15 +3292,7 @@ TEST_P(PeerConnectionInterfaceTest, OnAddTrackCallback) {
 
   // Create and set the updated remote SDP.
   CreateAndSetRemoteOffer(kSdpStringWithStream1PlanB);
-  if (sdp_semantics_ == SdpSemantics::kPlanB) {
-    EXPECT_EQ(observer_.num_added_tracks_, 2);
-  } else {
-    // With Unified Plan, OnAddTrack will fire every time SetRemoteDescription
-    // is called until the offer/answer exchange is complete. So in this case
-    // OnAddTrack is fired twice for the first audio track plus the one time
-    // for the video track.
-    EXPECT_EQ(observer_.num_added_tracks_, 3);
-  }
+  EXPECT_EQ(observer_.num_added_tracks_, 2);
   EXPECT_EQ(observer_.last_added_track_label_, kVideoTracks[0]);
 }
 

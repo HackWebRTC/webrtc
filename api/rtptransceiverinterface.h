@@ -107,6 +107,15 @@ class RtpTransceiverInterface : public rtc::RefCountInterface {
   // https://w3c.github.io/webrtc-pc/#dom-rtcrtptransceiver-currentdirection
   virtual absl::optional<RtpTransceiverDirection> current_direction() const = 0;
 
+  // An internal slot designating for which direction the relevant
+  // PeerConnection events have been fired. This is to ensure that events like
+  // OnAddTrack only get fired once even if the same session description is
+  // applied again.
+  // Exposed in the public interface for use by Chromium.
+  virtual absl::optional<RtpTransceiverDirection> fired_direction() const {
+    return absl::nullopt;
+  }
+
   // The Stop method irreversibly stops the RtpTransceiver. The sender of this
   // transceiver will no longer send, the receiver will no longer receive.
   // https://w3c.github.io/webrtc-pc/#dom-rtcrtptransceiver-stop

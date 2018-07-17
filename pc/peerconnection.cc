@@ -2048,6 +2048,8 @@ RTCError PeerConnection::ApplyLocalDescription(
     if (!error.ok()) {
       return error;
     }
+    std::vector<rtc::scoped_refptr<RtpTransceiverInterface>> remove_list;
+    std::vector<rtc::scoped_refptr<MediaStreamInterface>> removed_streams;
     for (auto transceiver : transceivers_) {
       const ContentInfo* content =
           FindMediaSectionForTransceiver(transceiver, local_description());
@@ -2055,14 +2057,31 @@ RTCError PeerConnection::ApplyLocalDescription(
         continue;
       }
       const MediaContentDescription* media_desc = content->media_description();
+      // 2.2.7.1.6: If description is of type "answer" or "pranswer", then run
+      // the following steps:
       if (type == SdpType::kPrAnswer || type == SdpType::kAnswer) {
+        // 2.2.7.1.6.1: If direction is "sendonly" or "inactive", and
+        // transceiver's [[FiredDirection]] slot is either "sendrecv" or
+        // "recvonly", process the removal of a remote track for the media
+        // description, given transceiver, removeList, and muteTracks.
+        if (!RtpTransceiverDirectionHasRecv(media_desc->direction()) &&
+            (transceiver->internal()->fired_direction() &&
+             RtpTransceiverDirectionHasRecv(
+                 *transceiver->internal()->fired_direction()))) {
+          ProcessRemovalOfRemoteTrack(transceiver, &remove_list,
+                                      &removed_streams);
+        }
+        // 2.2.7.1.6.2: Set transceiver's [[CurrentDirection]] and
+        // [[FiredDirection]] slots to direction.
         transceiver->internal()->set_current_direction(media_desc->direction());
+        transceiver->internal()->set_fired_direction(media_desc->direction());
       }
-      if (content->rejected && !transceiver->stopped()) {
-        RTC_LOG(LS_INFO) << "Stopping transceiver for MID=" << content->name
-                         << " since the media section was rejected.";
-        transceiver->Stop();
-      }
+    }
+    for (auto transceiver : remove_list) {
+      observer_->OnRemoveTrack(transceiver->receiver());
+    }
+    for (auto stream : removed_streams) {
+      observer_->OnRemoveStream(stream);
     }
   } else {
     // Media channels will be created only when offer is set. These may use new
@@ -2380,8 +2399,7 @@ RTCError PeerConnection::ApplyRemoteDescription(
   if (IsUnifiedPlan()) {
     std::vector<rtc::scoped_refptr<RtpTransceiverInterface>>
         now_receiving_transceivers;
-    std::vector<rtc::scoped_refptr<RtpTransceiverInterface>>
-        no_longer_receiving_transceivers;
+    std::vector<rtc::scoped_refptr<RtpTransceiverInterface>> remove_list;
     std::vector<rtc::scoped_refptr<MediaStreamInterface>> added_streams;
     std::vector<rtc::scoped_refptr<MediaStreamInterface>> removed_streams;
     for (auto transceiver : transceivers_) {
@@ -2403,9 +2421,8 @@ RTCError PeerConnection::ApplyRemoteDescription(
         stream_ids = media_desc->streams()[0].stream_ids();
       }
       if (RtpTransceiverDirectionHasRecv(local_direction) &&
-          (!transceiver->current_direction() ||
-           !RtpTransceiverDirectionHasRecv(
-               *transceiver->current_direction()))) {
+          (!transceiver->fired_direction() ||
+           !RtpTransceiverDirectionHasRecv(*transceiver->fired_direction()))) {
         RTC_LOG(LS_INFO) << "Processing the addition of a new track for MID="
                          << content->name << " (added to "
                          << GetStreamIdsString(stream_ids) << ").";
@@ -2428,34 +2445,27 @@ RTCError PeerConnection::ApplyRemoteDescription(
         transceiver->internal()->receiver_internal()->SetStreams(media_streams);
         now_receiving_transceivers.push_back(transceiver);
       }
-      // If direction is sendonly or inactive, and transceiver's current
-      // direction is neither sendonly nor inactive, process the removal of a
-      // remote track for the media description.
+      // 2.2.8.1.7: If direction is "sendonly" or "inactive", and transceiver's
+      // [[FiredDirection]] slot is either "sendrecv" or "recvonly", process the
+      // removal of a remote track for the media description, given transceiver,
+      // removeList, and muteTracks.
       if (!RtpTransceiverDirectionHasRecv(local_direction) &&
-          (transceiver->current_direction() &&
-           RtpTransceiverDirectionHasRecv(*transceiver->current_direction()))) {
-        RTC_LOG(LS_INFO) << "Processing the removal of a track for MID="
-                         << content->name;
-        std::vector<rtc::scoped_refptr<MediaStreamInterface>> media_streams =
-            transceiver->internal()->receiver_internal()->streams();
-        // This will remove the remote track from the streams.
-        transceiver->internal()->receiver_internal()->set_stream_ids({});
-        no_longer_receiving_transceivers.push_back(transceiver);
-        // Remove any streams that no longer have tracks.
-        // TODO(https://crbug.com/webrtc/9480): When we use stream IDs instead
-        // of streams, see if the stream was removed by checking if this was the
-        // last receiver with that stream ID.
-        for (auto stream : media_streams) {
-          if (stream->GetAudioTracks().empty() &&
-              stream->GetVideoTracks().empty()) {
-            remote_streams_->RemoveStream(stream);
-            removed_streams.push_back(stream);
-          }
-        }
+          (transceiver->fired_direction() &&
+           RtpTransceiverDirectionHasRecv(*transceiver->fired_direction()))) {
+        ProcessRemovalOfRemoteTrack(transceiver, &remove_list,
+                                    &removed_streams);
       }
+      // 2.2.8.1.8: Set transceiver's [[FiredDirection]] slot to direction.
+      transceiver->internal()->set_fired_direction(local_direction);
+      // 2.2.8.1.9: If description is of type "answer" or "pranswer", then run
+      // the following steps:
       if (type == SdpType::kPrAnswer || type == SdpType::kAnswer) {
+        // 2.2.8.1.9.1: Set transceiver's [[CurrentDirection]] slot to
+        // direction.
         transceiver->internal()->set_current_direction(local_direction);
       }
+      // 2.2.8.1.10: If the media description is rejected, and transceiver is
+      // not already stopped, stop the RTCRtpTransceiver transceiver.
       if (content->rejected && !transceiver->stopped()) {
         RTC_LOG(LS_INFO) << "Stopping transceiver for MID=" << content->name
                          << " since the media section was rejected.";
@@ -2482,7 +2492,7 @@ RTCError PeerConnection::ApplyRemoteDescription(
     for (auto stream : added_streams) {
       observer_->OnAddStream(stream);
     }
-    for (auto transceiver : no_longer_receiving_transceivers) {
+    for (auto transceiver : remove_list) {
       observer_->OnRemoveTrack(transceiver->receiver());
     }
     for (auto stream : removed_streams) {
@@ -2572,6 +2582,31 @@ RTCError PeerConnection::ApplyRemoteDescription(
   }
 
   return RTCError::OK();
+}
+
+void PeerConnection::ProcessRemovalOfRemoteTrack(
+    rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
+        transceiver,
+    std::vector<rtc::scoped_refptr<RtpTransceiverInterface>>* remove_list,
+    std::vector<rtc::scoped_refptr<MediaStreamInterface>>* removed_streams) {
+  RTC_DCHECK(transceiver->mid());
+  RTC_LOG(LS_INFO) << "Processing the removal of a track for MID="
+                   << *transceiver->mid();
+  std::vector<rtc::scoped_refptr<MediaStreamInterface>> media_streams =
+      transceiver->internal()->receiver_internal()->streams();
+  // This will remove the remote track from the streams.
+  transceiver->internal()->receiver_internal()->set_stream_ids({});
+  remove_list->push_back(transceiver);
+  // Remove any streams that no longer have tracks.
+  // TODO(https://crbug.com/webrtc/9480): When we use stream IDs instead
+  // of streams, see if the stream was removed by checking if this was the
+  // last receiver with that stream ID.
+  for (auto stream : media_streams) {
+    if (stream->GetAudioTracks().empty() && stream->GetVideoTracks().empty()) {
+      remote_streams_->RemoveStream(stream);
+      removed_streams->push_back(stream);
+    }
+  }
 }
 
 RTCError PeerConnection::UpdateTransceiversAndDataChannels(

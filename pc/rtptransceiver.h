@@ -141,6 +141,11 @@ class RtpTransceiver final
   // transceiver has been set.
   void set_current_direction(RtpTransceiverDirection direction);
 
+  // Sets the fired direction for this transceiver. The fired direction is null
+  // until SetRemoteDescription is called or an answer is set (either local or
+  // remote).
+  void set_fired_direction(RtpTransceiverDirection direction);
+
   // According to JSEP rules for SetRemoteDescription, RtpTransceivers can be
   // reused only if they were added by AddTrack.
   void set_created_by_addtrack(bool created_by_addtrack) {
@@ -167,6 +172,7 @@ class RtpTransceiver final
   RtpTransceiverDirection direction() const override;
   void SetDirection(RtpTransceiverDirection new_direction) override;
   absl::optional<RtpTransceiverDirection> current_direction() const override;
+  absl::optional<RtpTransceiverDirection> fired_direction() const override;
   void Stop() override;
   void SetCodecPreferences(rtc::ArrayView<RtpCodecCapability> codecs) override;
 
@@ -184,6 +190,7 @@ class RtpTransceiver final
   bool stopped_ = false;
   RtpTransceiverDirection direction_ = RtpTransceiverDirection::kInactive;
   absl::optional<RtpTransceiverDirection> current_direction_;
+  absl::optional<RtpTransceiverDirection> fired_direction_;
   absl::optional<std::string> mid_;
   absl::optional<size_t> mline_index_;
   bool created_by_addtrack_ = false;
@@ -202,6 +209,7 @@ PROXY_CONSTMETHOD0(bool, stopped);
 PROXY_CONSTMETHOD0(RtpTransceiverDirection, direction);
 PROXY_METHOD1(void, SetDirection, RtpTransceiverDirection);
 PROXY_CONSTMETHOD0(absl::optional<RtpTransceiverDirection>, current_direction);
+PROXY_CONSTMETHOD0(absl::optional<RtpTransceiverDirection>, fired_direction);
 PROXY_METHOD0(void, Stop);
 PROXY_METHOD1(void, SetCodecPreferences, rtc::ArrayView<RtpCodecCapability>);
 END_PROXY_MAP();

@@ -393,12 +393,9 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan, SetDirectionHoldCallsOnTrackTwice) {
 }
 
 // Test that setting a remote offer twice with no answer in the middle results
-// in OnAddTrack being fired twice, once for each SetRemoteDescription. This
-// happens since the RtpTransceiver's current_direction is only updated when
-// setting the answer.
-// TODO(bugs.webrtc.org/9236): This is spec-compliant but strange behavior.
+// in OnAddTrack being fired only once.
 TEST_F(PeerConnectionRtpTestUnifiedPlan,
-       ApplyTwoOffersWithNoAnswerResultsInTwoAddTrackEvents) {
+       ApplyTwoRemoteOffersWithNoAnswerResultsInOneAddTrackEvent) {
   auto caller = CreatePeerConnection();
   auto callee = CreatePeerConnection();
 
@@ -408,17 +405,14 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan,
   ASSERT_EQ(1u, callee->observer()->add_track_events_.size());
 
   ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOffer()));
-  EXPECT_EQ(2u, callee->observer()->add_track_events_.size());
+  EXPECT_EQ(1u, callee->observer()->add_track_events_.size());
 }
 
 // Test that setting a remote offer twice with no answer in the middle and the
 // track being removed between the two offers results in OnAddTrack being called
-// once the first time and OnRemoveTrack never getting called. This happens
-// since the RtpTransceiver's current_direction is only updated when setting the
-// answer.
-// TODO(bugs.webrtc.org/9236): This is spec-compliant but strange behavior.
+// once the first time and OnRemoveTrack being called once the second time.
 TEST_F(PeerConnectionRtpTestUnifiedPlan,
-       ApplyTwoOffersWithNoAnswerAndTrackRemovedResultsInNoRemoveTrackEvents) {
+       ApplyRemoteOfferAddThenRemoteOfferRemoveResultsInOneRemoveTrackEvent) {
   auto caller = CreatePeerConnection();
   auto callee = CreatePeerConnection();
 
@@ -426,12 +420,35 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan,
 
   ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOffer()));
   ASSERT_EQ(1u, callee->observer()->add_track_events_.size());
+  EXPECT_EQ(0u, callee->observer()->remove_track_events_.size());
 
   caller->pc()->RemoveTrack(sender);
 
   ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOffer()));
   EXPECT_EQ(1u, callee->observer()->add_track_events_.size());
+  EXPECT_EQ(1u, callee->observer()->remove_track_events_.size());
+}
+
+// Test that changing the direction from receiving to not receiving between
+// setting the remote offer and creating / setting the local answer results in
+// a remove track event when SetLocalDescription is called.
+TEST_F(PeerConnectionRtpTestUnifiedPlan,
+       ChangeDirectionInAnswerResultsInRemoveTrackEvent) {
+  auto caller = CreatePeerConnection();
+  caller->AddTransceiver(cricket::MEDIA_TYPE_AUDIO);
+  auto callee = CreatePeerConnection();
+  callee->AddAudioTrack("audio_track", {});
+
+  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOffer()));
+  EXPECT_EQ(1u, callee->observer()->add_track_events_.size());
   EXPECT_EQ(0u, callee->observer()->remove_track_events_.size());
+
+  auto callee_transceiver = callee->pc()->GetTransceivers()[0];
+  callee_transceiver->SetDirection(RtpTransceiverDirection::kSendOnly);
+
+  ASSERT_TRUE(callee->SetLocalDescription(callee->CreateAnswer()));
+  EXPECT_EQ(1u, callee->observer()->add_track_events_.size());
+  EXPECT_EQ(1u, callee->observer()->remove_track_events_.size());
 }
 
 // These tests examine the state of the peer connection as a result of
@@ -686,13 +703,16 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan, UnsignaledSsrcCreatesReceiverStreams) {
 // Tests that with Unified Plan if the the stream id changes for a track when
 // when setting a new remote description, that the media stream is updated
 // appropriately for the receiver.
-TEST_F(PeerConnectionRtpTestUnifiedPlan, RemoteStreamIdChangesUpdatesReceiver) {
+// TODO(https://github.com/w3c/webrtc-pc/issues/1937): Resolve spec issue or fix
+// test.
+TEST_F(PeerConnectionRtpTestUnifiedPlan,
+       DISABLED_RemoteStreamIdChangesUpdatesReceiver) {
   auto caller = CreatePeerConnection();
   auto callee = CreatePeerConnection();
 
   const char kStreamId1[] = "stream1";
   const char kStreamId2[] = "stream2";
-  caller->AddTrack(caller->CreateAudioTrack("audio_track1"), {kStreamId1});
+  caller->AddAudioTrack("audio_track1", {kStreamId1});
   ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
   EXPECT_EQ(callee->observer()->add_track_events_.size(), 1u);
 
@@ -704,9 +724,9 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan, RemoteStreamIdChangesUpdatesReceiver) {
   contents[0].media_description()->mutable_streams()[0].set_stream_ids(
       {kStreamId2});
 
-  // Set the remote description and verify that the stream was updated properly.
-  ASSERT_TRUE(
-      callee->SetRemoteDescription(CloneSessionDescription(offer.get())));
+  // Set the remote description and verify that the stream was updated
+  // properly.
+  ASSERT_TRUE(callee->SetRemoteDescription(std::move(offer)));
   auto receivers = callee->pc()->GetReceivers();
   ASSERT_EQ(receivers.size(), 1u);
   ASSERT_EQ(receivers[0]->streams().size(), 1u);
