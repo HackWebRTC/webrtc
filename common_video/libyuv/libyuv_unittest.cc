@@ -35,8 +35,8 @@ void Calc16ByteAlignedStride(int width, int* stride_y, int* stride_uv) {
 class TestLibYuv : public ::testing::Test {
  protected:
   TestLibYuv();
-  virtual void SetUp();
-  virtual void TearDown();
+  void SetUp() override;
+  void TearDown() override;
 
   FILE* source_file_;
   std::unique_ptr<VideoFrame> orig_frame_;

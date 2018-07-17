@@ -140,7 +140,7 @@ void WritePps(const PpsParser::PpsState& pps,
 class PpsParserTest : public ::testing::Test {
  public:
   PpsParserTest() {}
-  virtual ~PpsParserTest() {}
+  ~PpsParserTest() override {}
 
   void RunTest() {
     VerifyParsing(generated_pps_, 0, 1, 0);

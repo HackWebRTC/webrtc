@@ -793,9 +793,10 @@ TEST_F(TestSimulcastEncoderAdapterFake,
 }
 
 // TODO(nisse): Reuse definition in webrtc/test/fake_texture_handle.h.
-class FakeNativeBuffer : public VideoFrameBuffer {
+class FakeNativeBufferNoI420 : public VideoFrameBuffer {
  public:
-  FakeNativeBuffer(int width, int height) : width_(width), height_(height) {}
+  FakeNativeBufferNoI420(int width, int height)
+      : width_(width), height_(height) {}
 
   Type type() const override { return Type::kNative; }
   int width() const override { return width_; }
@@ -827,7 +828,7 @@ TEST_F(TestSimulcastEncoderAdapterFake,
   EXPECT_TRUE(adapter_->SupportsNativeHandle());
 
   rtc::scoped_refptr<VideoFrameBuffer> buffer(
-      new rtc::RefCountedObject<FakeNativeBuffer>(1280, 720));
+      new rtc::RefCountedObject<FakeNativeBufferNoI420>(1280, 720));
   VideoFrame input_frame(buffer, 100, 1000, kVideoRotation_180);
   // Expect calls with the given video frame verbatim, since it's a texture
   // frame and can't otherwise be modified/resized.

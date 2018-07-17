@@ -38,6 +38,8 @@ uint32_t EnsureValidRenderDelay(uint32_t render_delay) {
 VideoRenderFrames::VideoRenderFrames(uint32_t render_delay_ms)
     : render_delay_ms_(EnsureValidRenderDelay(render_delay_ms)) {}
 
+VideoRenderFrames::~VideoRenderFrames() = default;
+
 int32_t VideoRenderFrames::AddFrame(VideoFrame&& new_frame) {
   const int64_t time_now = rtc::TimeMillis();
 

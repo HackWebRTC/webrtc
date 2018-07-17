@@ -25,6 +25,7 @@ class VideoRenderFrames {
  public:
   explicit VideoRenderFrames(uint32_t render_delay_ms);
   VideoRenderFrames(const VideoRenderFrames&) = delete;
+  ~VideoRenderFrames();
 
   // Add a frame to the render queue
   int32_t AddFrame(VideoFrame&& new_frame);

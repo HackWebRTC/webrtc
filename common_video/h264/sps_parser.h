@@ -26,6 +26,8 @@ class SpsParser {
   // Add more as they are actually needed.
   struct SpsState {
     SpsState();
+    SpsState(const SpsState&);
+    ~SpsState();
 
     uint32_t width = 0;
     uint32_t height = 0;
