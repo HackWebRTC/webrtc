@@ -13,8 +13,8 @@ package org.webrtc;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
-import javax.annotation.Nullable;
 import java.util.Arrays;
+import javax.annotation.Nullable;
 
 @SuppressWarnings("deprecation")
 abstract class CameraCapturer implements CameraVideoCapturer {
@@ -177,7 +177,7 @@ abstract class CameraCapturer implements CameraVideoCapturer {
   // -------------------------
   @Nullable private Handler cameraThreadHandler;
   private Context applicationContext;
-  private CapturerObserver capturerObserver;
+  private org.webrtc.CapturerObserver capturerObserver;
   @Nullable private SurfaceTextureHelper surfaceHelper;
 
   private final Object stateLock = new Object();
@@ -231,7 +231,7 @@ abstract class CameraCapturer implements CameraVideoCapturer {
 
   @Override
   public void initialize(@Nullable SurfaceTextureHelper surfaceTextureHelper,
-      Context applicationContext, CapturerObserver capturerObserver) {
+      Context applicationContext, org.webrtc.CapturerObserver capturerObserver) {
     this.applicationContext = applicationContext;
     this.capturerObserver = capturerObserver;
     this.surfaceHelper = surfaceTextureHelper;
