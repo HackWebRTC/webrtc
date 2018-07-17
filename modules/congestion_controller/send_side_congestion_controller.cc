@@ -18,6 +18,7 @@
 
 #include "absl/memory/memory.h"
 #include "modules/bitrate_controller/include/bitrate_controller.h"
+#include "modules/congestion_controller/congestion_window_pushback_controller.h"
 #include "modules/congestion_controller/goog_cc/acknowledged_bitrate_estimator.h"
 #include "modules/congestion_controller/goog_cc/probe_controller.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
@@ -36,6 +37,12 @@ namespace {
 
 const char kCwndExperiment[] = "WebRTC-CwndExperiment";
 const char kPacerPushbackExperiment[] = "WebRTC-PacerPushbackExperiment";
+
+// When CongestionWindowPushback is enabled, the pacer is oblivious to
+// the congestion window. The relation between outstanding data and
+// the congestion window affects encoder allocations directly.
+const char kCongestionPushbackExperiment[] = "WebRTC-CongestionWindowPushback";
+
 const int64_t kDefaultAcceptedQueueMs = 250;
 
 bool CwndExperimentEnabled() {
@@ -57,6 +64,18 @@ bool ReadCwndExperimentParameter(int64_t* accepted_queue_ms) {
     return true;
   }
   return false;
+}
+
+bool IsCongestionWindowPushbackExperimentEnabled() {
+  return webrtc::field_trial::IsEnabled(kCongestionPushbackExperiment) &&
+         webrtc::field_trial::IsEnabled(kCwndExperiment);
+}
+
+std::unique_ptr<CongestionWindowPushbackController>
+MaybeCreateCongestionWindowPushbackController() {
+  return IsCongestionWindowPushbackExperimentEnabled()
+             ? absl::make_unique<CongestionWindowPushbackController>()
+             : nullptr;
 }
 
 static const int64_t kRetransmitWindowSizeMs = 500;
@@ -135,7 +154,9 @@ SendSideCongestionController::SendSideCongestionController(
       send_side_bwe_with_overhead_(
           webrtc::field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")),
       transport_overhead_bytes_per_packet_(0),
-      pacer_pushback_experiment_(IsPacerPushbackExperimentEnabled()) {
+      pacer_pushback_experiment_(IsPacerPushbackExperimentEnabled()),
+      congestion_window_pushback_controller_(
+          MaybeCreateCongestionWindowPushbackController()) {
   delay_based_bwe_->SetMinBitrate(min_bitrate_bps_);
   if (in_cwnd_experiment_ &&
       !ReadCwndExperimentParameter(&accepted_queue_ms_)) {
@@ -418,8 +439,9 @@ void SendSideCongestionController::OnTransportFeedback(
         pacer_->GetApplicationLimitedRegionStartTime());
     probe_controller_->RequestProbe(clock_->TimeInMilliseconds());
   }
-  if (in_cwnd_experiment_)
+  if (in_cwnd_experiment_) {
     LimitOutstandingBytes(transport_feedback_adapter_.GetOutstandingBytes());
+  }
 }
 
 void SendSideCongestionController::LimitOutstandingBytes(
@@ -443,7 +465,14 @@ void SendSideCongestionController::LimitOutstandingBytes(
                    << " max outstanding: " << max_outstanding_bytes;
   RTC_LOG(LS_INFO) << "Feedback rtt: " << *min_rtt_ms
                    << " Bitrate: " << last_reported_bitrate_bps_;
-  pause_pacer_ = num_outstanding_bytes > max_outstanding_bytes;
+  if (congestion_window_pushback_controller_) {
+    congestion_window_pushback_controller_->UpdateOutstandingData(
+        num_outstanding_bytes);
+    congestion_window_pushback_controller_->UpdateMaxOutstandingData(
+        max_outstanding_bytes);
+  } else {
+    pause_pacer_ = num_outstanding_bytes > max_outstanding_bytes;
+  }
 }
 
 std::vector<PacketFeedback>
@@ -478,25 +507,27 @@ void SendSideCongestionController::MaybeTriggerOnNetworkChanged() {
     retransmission_rate_limiter_->SetMaxRate(bitrate_bps);
   }
 
-  if (!pacer_pushback_experiment_) {
-    bitrate_bps = IsNetworkDown() || IsSendQueueFull() ? 0 : bitrate_bps;
+  if (IsNetworkDown()) {
+    bitrate_bps = 0;
+  } else if (congestion_window_pushback_controller_) {
+    rtc::CritScope lock(&network_state_lock_);
+    bitrate_bps = congestion_window_pushback_controller_->UpdateTargetBitrate(
+        bitrate_bps);
+  } else if (!pacer_pushback_experiment_) {
+    bitrate_bps = IsSendQueueFull() ? 0 : bitrate_bps;
   } else {
-    if (IsNetworkDown()) {
-      bitrate_bps = 0;
-    } else {
-      int64_t queue_length_ms = pacer_->ExpectedQueueTimeMs();
+    int64_t queue_length_ms = pacer_->ExpectedQueueTimeMs();
 
-      if (queue_length_ms == 0) {
-        encoding_rate_ = 1.0;
-      } else if (queue_length_ms > 50) {
-        float encoding_rate = 1.0 - queue_length_ms / 1000.0;
-        encoding_rate_ = std::min(encoding_rate_, encoding_rate);
-        encoding_rate_ = std::max(encoding_rate_, 0.0f);
-      }
-
-      bitrate_bps *= encoding_rate_;
-      bitrate_bps = bitrate_bps < 50000 ? 0 : bitrate_bps;
+    if (queue_length_ms == 0) {
+      encoding_rate_ = 1.0;
+    } else if (queue_length_ms > 50) {
+      float encoding_rate = 1.0 - queue_length_ms / 1000.0;
+      encoding_rate_ = std::min(encoding_rate_, encoding_rate);
+      encoding_rate_ = std::max(encoding_rate_, 0.0f);
     }
+
+    bitrate_bps *= encoding_rate_;
+    bitrate_bps = bitrate_bps < 50000 ? 0 : bitrate_bps;
   }
 
   if (HasNetworkParametersToReportChanged(bitrate_bps, fraction_loss, rtt)) {
