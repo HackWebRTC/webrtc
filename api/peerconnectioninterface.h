@@ -960,7 +960,10 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   // this method takes a reference. RegisterUMAObserver(nullptr) will release
   // the reference.
   // TODO(deadbeef): Take argument as scoped_refptr?
-  virtual void RegisterUMAObserver(UMAObserver* observer) = 0;
+  //
+  // This method is soon to be deprecated. This no-op default implementation
+  // allows the implementations of the interface to remove this method.
+  virtual void RegisterUMAObserver(UMAObserver* observer) {}
 
   // 0 <= min <= current <= max should hold for set parameters.
   struct BitrateParameters {
