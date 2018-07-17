@@ -47,8 +47,8 @@ namespace webrtc {
 
 namespace {
 static const int kFullStackTestDurationSecs = 45;
-const char kScreenshareSimulcastExperiment[] =
-    "WebRTC-SimulcastScreenshare/Enabled/";
+const char kNotScreenshareSimulcastExperiment[] =
+    "WebRTC-SimulcastScreenshare/Disabled/";
 const char kRoundRobinPacingQueueExperiment[] =
     "WebRTC-RoundRobinPacing/Enabled/";
 const char kPacerPushBackExperiment[] =
@@ -594,6 +594,7 @@ TEST(FullStackTest, ConferenceMotionHd2000kbps100msLimitedQueueVP9) {
 #endif
 
 TEST(FullStackTest, ScreenshareSlidesVP8_2TL) {
+  test::ScopedFieldTrials field_trial(kNotScreenshareSimulcastExperiment);
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging screenshare;
   screenshare.call.send_side_bwe = true;
@@ -608,7 +609,6 @@ TEST(FullStackTest, ScreenshareSlidesVP8_2TL) {
 
 TEST(FullStackTest, ScreenshareSlidesVP8_3TL_Simulcast) {
   auto fixture = CreateVideoQualityTestFixture();
-  test::ScopedFieldTrials field_trial(kScreenshareSimulcastExperiment);
   ParamsWithLogging screenshare;
   screenshare.call.send_side_bwe = true;
   screenshare.screenshare[0] = {true, false, 10};
@@ -636,6 +636,8 @@ TEST(FullStackTest, ScreenshareSlidesVP8_3TL_Simulcast) {
 }
 
 TEST(FullStackTest, ScreenshareSlidesVP8_2TL_Scroll) {
+  test::ScopedFieldTrials field_trial(kNotScreenshareSimulcastExperiment);
+
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging config;
   config.call.send_side_bwe = true;
@@ -649,6 +651,8 @@ TEST(FullStackTest, ScreenshareSlidesVP8_2TL_Scroll) {
 }
 
 TEST(FullStackTest, ScreenshareSlidesVP8_2TL_LossyNet) {
+  test::ScopedFieldTrials field_trial(kNotScreenshareSimulcastExperiment);
+
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging screenshare;
   screenshare.call.send_side_bwe = true;
@@ -665,6 +669,8 @@ TEST(FullStackTest, ScreenshareSlidesVP8_2TL_LossyNet) {
 }
 
 TEST(FullStackTest, ScreenshareSlidesVP8_2TL_VeryLossyNet) {
+  test::ScopedFieldTrials field_trial(kNotScreenshareSimulcastExperiment);
+
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging screenshare;
   screenshare.call.send_side_bwe = true;
@@ -681,6 +687,8 @@ TEST(FullStackTest, ScreenshareSlidesVP8_2TL_VeryLossyNet) {
 }
 
 TEST(FullStackTest, ScreenshareSlidesVP8_2TL_LossyNetRestrictedQueue) {
+  test::ScopedFieldTrials field_trial(kNotScreenshareSimulcastExperiment);
+
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging screenshare;
   screenshare.call.send_side_bwe = true;
@@ -698,6 +706,8 @@ TEST(FullStackTest, ScreenshareSlidesVP8_2TL_LossyNetRestrictedQueue) {
 }
 
 TEST(FullStackTest, ScreenshareSlidesVP8_2TL_ModeratelyRestricted) {
+  test::ScopedFieldTrials field_trial(kNotScreenshareSimulcastExperiment);
+
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging screenshare;
   screenshare.call.send_side_bwe = true;
@@ -1057,7 +1067,6 @@ class DualStreamsTest : public ::testing::TestWithParam<int> {};
 TEST_P(DualStreamsTest,
        ModeratelyRestricted_SlidesVp8_3TL_Simulcast_Video_Simulcast_High) {
   test::ScopedFieldTrials field_trial(
-      std::string(kScreenshareSimulcastExperiment) +
       std::string(kRoundRobinPacingQueueExperiment) +
       std::string(kPacerPushBackExperiment));
   const int first_stream = GetParam();

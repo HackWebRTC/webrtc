@@ -6415,28 +6415,32 @@ TEST_F(WebRtcVideoChannelSimulcastTest, SetSendCodecsWithOddSizeInSimulcast) {
                           true);
 }
 
+// TODO(ilnik): Remove this test once Simulcast Screenshare is launched.
 TEST_F(WebRtcVideoChannelSimulcastTest, SetSendCodecsForScreenshare) {
+  webrtc::test::ScopedFieldTrials override_field_trials_(
+      "WebRTC-SimulcastScreenshare/Disabled/");
+
   VerifySimulcastSettings(cricket::VideoCodec("VP8"), 1280, 720, 3, 1, true,
                           false);
 }
 
+// TODO(ilnik): Remove this test once Simulcast Screenshare is launched.
 TEST_F(WebRtcVideoChannelSimulcastTest,
        SetSendCodecsForConferenceModeScreenshare) {
+  webrtc::test::ScopedFieldTrials override_field_trials_(
+      "WebRTC-SimulcastScreenshare/Disabled/");
+
   VerifySimulcastSettings(cricket::VideoCodec("VP8"), 1280, 720, 3, 1, true,
                           true);
 }
 
 TEST_F(WebRtcVideoChannelSimulcastTest, SetSendCodecsForSimulcastScreenshare) {
-  webrtc::test::ScopedFieldTrials override_field_trials_(
-      "WebRTC-SimulcastScreenshare/Enabled/");
   VerifySimulcastSettings(cricket::VideoCodec("VP8"), 1280, 720, 3, 2, true,
                           true);
 }
 
 TEST_F(WebRtcVideoChannelSimulcastTest,
        NoSimulcastScreenshareWithoutConference) {
-  webrtc::test::ScopedFieldTrials override_field_trials_(
-      "WebRTC-SimulcastScreenshare/Enabled/");
   VerifySimulcastSettings(cricket::VideoCodec("VP8"), 1280, 720, 3, 1, true,
                           false);
 }
