@@ -51,7 +51,7 @@ void RealFourierOoura::Forward(const float* src, complex<float>* dest) const {
   {
     // This cast is well-defined since C++11. See "Non-static data members" at:
     // http://en.cppreference.com/w/cpp/numeric/complex
-    auto dest_float = reinterpret_cast<float*>(dest);
+    auto* dest_float = reinterpret_cast<float*>(dest);
     std::copy(src, src + length_, dest_float);
     WebRtc_rdft(length_, 1, dest_float, work_ip_.get(), work_w_.get());
   }
@@ -65,7 +65,7 @@ void RealFourierOoura::Forward(const float* src, complex<float>* dest) const {
 
 void RealFourierOoura::Inverse(const complex<float>* src, float* dest) const {
   {
-    auto dest_complex = reinterpret_cast<complex<float>*>(dest);
+    auto* dest_complex = reinterpret_cast<complex<float>*>(dest);
     // The real output array is shorter than the input complex array by one
     // complex element.
     const size_t dest_complex_length = complex_length_ - 1;

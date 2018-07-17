@@ -42,8 +42,8 @@ bool ValidRates(int in_rate, int out_rate) {
 class ResamplerTest : public testing::Test {
  protected:
   ResamplerTest();
-  virtual void SetUp();
-  virtual void TearDown();
+  void SetUp() override;
+  void TearDown() override;
 
   void ResetIfNeededAndPush(int in_rate, int out_rate, int num_channels);
 

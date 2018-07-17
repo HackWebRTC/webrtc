@@ -30,7 +30,7 @@ static const size_t kBytesPerSample = 2;
 class ReadableWavFile : public ReadableWav {
  public:
   explicit ReadableWavFile(FILE* file) : file_(file) {}
-  virtual size_t Read(void* buf, size_t num_bytes) {
+  size_t Read(void* buf, size_t num_bytes) override {
     return fread(buf, 1, num_bytes, file_);
   }
 

@@ -39,8 +39,8 @@ const size_t kFrameLengthsSize = sizeof(kFrameLengths) / sizeof(*kFrameLengths);
 class VadTest : public ::testing::Test {
  protected:
   VadTest();
-  virtual void SetUp();
-  virtual void TearDown();
+  void SetUp() override;
+  void TearDown() override;
 
   // Returns true if the rate and frame length combination is valid.
   bool ValidRatesAndFrameLengths(int rate, size_t frame_length);

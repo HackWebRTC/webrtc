@@ -58,7 +58,7 @@ class PushSincResamplerTest : public ::testing::TestWithParam<
 
 class ZeroSource : public SincResamplerCallback {
  public:
-  void Run(size_t frames, float* destination) {
+  void Run(size_t frames, float* destination) override {
     std::memset(destination, 0, sizeof(float) * frames);
   }
 };

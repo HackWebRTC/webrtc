@@ -32,13 +32,13 @@ class ReadableWavBuffer : public ReadableWav {
         buf_exhausted_(false),
         check_read_size_(check_read_size) {}
 
-  virtual ~ReadableWavBuffer() {
+  ~ReadableWavBuffer() override {
     // Verify the entire buffer has been read.
     if (check_read_size_)
       EXPECT_EQ(size_, pos_);
   }
 
-  virtual size_t Read(void* buf, size_t num_bytes) {
+  size_t Read(void* buf, size_t num_bytes) override {
     // Verify we don't try to read outside of a properly sized header.
     if (size_ >= kWavHeaderSize)
       EXPECT_GE(size_, pos_ + num_bytes);

@@ -24,11 +24,11 @@ class NoopCallback : public webrtc::LappedTransform::Callback {
  public:
   NoopCallback() : block_num_(0) {}
 
-  virtual void ProcessAudioBlock(const complex<float>* const* in_block,
-                                 size_t in_channels,
-                                 size_t frames,
-                                 size_t out_channels,
-                                 complex<float>* const* out_block) {
+  void ProcessAudioBlock(const complex<float>* const* in_block,
+                         size_t in_channels,
+                         size_t frames,
+                         size_t out_channels,
+                         complex<float>* const* out_block) override {
     RTC_CHECK_EQ(in_channels, out_channels);
     for (size_t i = 0; i < out_channels; ++i) {
       memcpy(out_block[i], in_block[i], sizeof(**in_block) * frames);
@@ -46,11 +46,11 @@ class FftCheckerCallback : public webrtc::LappedTransform::Callback {
  public:
   FftCheckerCallback() : block_num_(0) {}
 
-  virtual void ProcessAudioBlock(const complex<float>* const* in_block,
-                                 size_t in_channels,
-                                 size_t frames,
-                                 size_t out_channels,
-                                 complex<float>* const* out_block) {
+  void ProcessAudioBlock(const complex<float>* const* in_block,
+                         size_t in_channels,
+                         size_t frames,
+                         size_t out_channels,
+                         complex<float>* const* out_block) override {
     RTC_CHECK_EQ(in_channels, out_channels);
 
     size_t full_length = (frames - 1) * 2;
