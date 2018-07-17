@@ -136,9 +136,13 @@ if (rtc_include_tests) {
 
     configs += [ "..:apm_debug_dump" ]
     sources = [
+      "mock/mock_block_processor.cc",
       "mock/mock_block_processor.h",
+      "mock/mock_echo_remover.cc",
       "mock/mock_echo_remover.h",
+      "mock/mock_render_delay_buffer.cc",
       "mock/mock_render_delay_buffer.h",
+      "mock/mock_render_delay_controller.cc",
       "mock/mock_render_delay_controller.h",
     ]
 
@@ -198,11 +202,6 @@ if (rtc_include_tests) {
         "suppression_gain_unittest.cc",
         "vector_math_unittest.cc",
       ]
-    }
-
-    if ((!build_with_chromium || is_win) && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
   }
 }

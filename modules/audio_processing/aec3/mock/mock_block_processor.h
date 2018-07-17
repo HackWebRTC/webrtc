@@ -21,7 +21,8 @@ namespace test {
 
 class MockBlockProcessor : public BlockProcessor {
  public:
-  virtual ~MockBlockProcessor() {}
+  MockBlockProcessor();
+  virtual ~MockBlockProcessor();
 
   MOCK_METHOD3(ProcessCapture,
                void(bool level_change,

@@ -24,7 +24,8 @@ namespace test {
 
 class MockEchoRemover : public EchoRemover {
  public:
-  virtual ~MockEchoRemover() = default;
+  MockEchoRemover();
+  virtual ~MockEchoRemover();
 
   MOCK_METHOD5(ProcessCapture,
                void(EchoPathVariability echo_path_variability,

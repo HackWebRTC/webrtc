@@ -73,7 +73,7 @@ TEST(AdaptiveFirFilter, FilterAdaptationNeonOptimizations) {
     }
     render_delay_buffer->PrepareCaptureProcessing();
   }
-  const auto& render_buffer = render_delay_buffer->GetRenderBuffer();
+  auto* const render_buffer = render_delay_buffer->GetRenderBuffer();
 
   for (size_t j = 0; j < G.re.size(); ++j) {
     G.re[j] = j / 10001.f;
@@ -183,7 +183,7 @@ TEST(AdaptiveFirFilter, FilterAdaptationSse2Optimizations) {
         render_delay_buffer->Reset();
       }
       render_delay_buffer->PrepareCaptureProcessing();
-      const auto& render_buffer = render_delay_buffer->GetRenderBuffer();
+      auto* const render_buffer = render_delay_buffer->GetRenderBuffer();
 
       ApplyFilter_SSE2(*render_buffer, H_SSE2, &S_SSE2);
       ApplyFilter(*render_buffer, H_C, &S_C);
@@ -369,7 +369,7 @@ TEST(AdaptiveFirFilter, FilterAndAdapt) {
         render_delay_buffer->Reset();
       }
       render_delay_buffer->PrepareCaptureProcessing();
-      const auto& render_buffer = render_delay_buffer->GetRenderBuffer();
+      auto* const render_buffer = render_delay_buffer->GetRenderBuffer();
 
       render_signal_analyzer.Update(*render_buffer,
                                     aec_state.FilterDelayBlocks());
