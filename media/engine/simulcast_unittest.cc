@@ -135,8 +135,6 @@ TEST(SimulcastTest, GetConfigWithNormalizedResolution) {
 }
 
 TEST(SimulcastTest, GetConfigForScreenshare) {
-  test::ScopedFieldTrials field_trials("WebRTC-SimulcastScreenshare/Disabled/");
-
   const size_t kMaxLayers = 3;
   std::vector<VideoStream> streams = cricket::GetSimulcastConfig(
       kMaxLayers, 1400, 800, kMaxBitrateBps, kBitratePriority, kQpMax, kMaxFps,
@@ -156,6 +154,8 @@ TEST(SimulcastTest, GetConfigForScreenshare) {
 }
 
 TEST(SimulcastTest, GetConfigForScreenshareSimulcast) {
+  test::ScopedFieldTrials field_trials("WebRTC-SimulcastScreenshare/Enabled/");
+
   const size_t kMaxLayers = 3;
   std::vector<VideoStream> streams = cricket::GetSimulcastConfig(
       kMaxLayers, 1400, 800, kMaxBitrateBps, kBitratePriority, kQpMax, kMaxFps,

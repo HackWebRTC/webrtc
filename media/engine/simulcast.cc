@@ -345,7 +345,7 @@ std::vector<webrtc::VideoStream> GetScreenshareLayers(
 }
 
 bool ScreenshareSimulcastFieldTrialEnabled() {
-  return !webrtc::field_trial::IsDisabled(kSimulcastScreenshareFieldTrialName);
+  return webrtc::field_trial::IsEnabled(kSimulcastScreenshareFieldTrialName);
 }
 
 }  // namespace cricket

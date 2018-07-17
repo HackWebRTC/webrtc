@@ -179,7 +179,7 @@ bool VideoCapturer::AdaptFrame(int width,
   }
 
   bool simulcast_screenshare_enabled =
-      !webrtc::field_trial::IsDisabled(kSimulcastScreenshareFieldTrialName);
+      webrtc::field_trial::IsEnabled(kSimulcastScreenshareFieldTrialName);
   if (enable_video_adapter_ &&
       (!IsScreencast() || simulcast_screenshare_enabled)) {
     if (!video_adapter_.AdaptFrameResolution(
