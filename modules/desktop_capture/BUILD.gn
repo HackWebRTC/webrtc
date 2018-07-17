@@ -119,7 +119,7 @@ if (rtc_include_tests) {
     }
   }
 
-  source_set("screen_drawer") {
+  rtc_source_set("screen_drawer") {
     testonly = true
 
     public_deps = [
@@ -150,7 +150,7 @@ if (rtc_include_tests) {
     }
   }
 
-  source_set("desktop_capture_mock") {
+  rtc_source_set("desktop_capture_mock") {
     testonly = true
 
     public_deps = [

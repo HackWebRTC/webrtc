@@ -14,7 +14,7 @@ group("rnn_vad") {
   ]
 }
 
-source_set("lib") {
+rtc_source_set("lib") {
   sources = [
     "common.h",
     "features_extraction.cc",
@@ -50,7 +50,7 @@ source_set("lib") {
 }
 
 if (rtc_include_tests) {
-  source_set("lib_test") {
+  rtc_source_set("lib_test") {
     testonly = true
     sources = [
       "test_utils.cc",

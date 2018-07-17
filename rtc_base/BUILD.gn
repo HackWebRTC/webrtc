@@ -60,7 +60,7 @@ if (!rtc_build_ssl) {
   }
 }
 
-source_set("protobuf_utils") {
+rtc_source_set("protobuf_utils") {
   visibility = [ "*" ]
   sources = [
     "protobuf_utils.h",
@@ -72,7 +72,7 @@ source_set("protobuf_utils") {
   }
 }
 
-source_set("compile_assert_c") {
+rtc_source_set("compile_assert_c") {
   sources = [
     "compile_assert_c.h",
   ]
