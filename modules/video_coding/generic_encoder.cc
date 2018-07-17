@@ -31,6 +31,9 @@ const int kMessagesThrottlingThreshold = 2;
 const int kThrottleRatio = 100000;
 }  // namespace
 
+VCMEncodedFrameCallback::TimingFramesLayerInfo::TimingFramesLayerInfo() {}
+VCMEncodedFrameCallback::TimingFramesLayerInfo::~TimingFramesLayerInfo() {}
+
 VCMGenericEncoder::VCMGenericEncoder(
     VideoEncoder* encoder,
     VCMEncodedFrameCallback* encoded_frame_callback,

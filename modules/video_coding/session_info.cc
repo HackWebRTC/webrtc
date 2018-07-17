@@ -33,6 +33,8 @@ VCMSessionInfo::VCMSessionInfo()
       first_packet_seq_num_(-1),
       last_packet_seq_num_(-1) {}
 
+VCMSessionInfo::~VCMSessionInfo() {}
+
 void VCMSessionInfo::UpdateDataPointers(const uint8_t* old_base_ptr,
                                         const uint8_t* new_base_ptr) {
   for (PacketIterator it = packets_.begin(); it != packets_.end(); ++it)

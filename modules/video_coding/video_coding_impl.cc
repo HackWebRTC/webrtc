@@ -27,6 +27,10 @@
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {
+EventWrapper* EventFactoryImpl::CreateEvent() {
+  return EventWrapper::Create();
+}
+
 namespace vcm {
 
 int64_t VCMProcessTimer::Period() const {

@@ -23,6 +23,7 @@ struct VCMDecoderMapItem {
   VCMDecoderMapItem(VideoCodec* settings,
                     int number_of_cores,
                     bool require_key_frame);
+  ~VCMDecoderMapItem();
 
   std::unique_ptr<VideoCodec> settings;
   int number_of_cores;

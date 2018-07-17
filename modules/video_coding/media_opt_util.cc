@@ -29,6 +29,20 @@ static const int kPacketLossMax = 129;
 
 namespace media_optimization {
 
+VCMProtectionParameters::VCMProtectionParameters()
+    : rtt(0),
+      lossPr(0.0f),
+      bitRate(0.0f),
+      packetsPerFrame(0.0f),
+      packetsPerFrameKey(0.0f),
+      frameRate(0.0f),
+      keyFrameSize(0.0f),
+      fecRateDelta(0),
+      fecRateKey(0),
+      codecWidth(0),
+      codecHeight(0),
+      numLayers(1) {}
+
 VCMProtectionMethod::VCMProtectionMethod()
     : _effectivePacketLoss(0),
       _protectionFactorK(0),
@@ -39,6 +53,34 @@ VCMProtectionMethod::VCMProtectionMethod()
       _type(kNone) {}
 
 VCMProtectionMethod::~VCMProtectionMethod() {}
+
+enum VCMProtectionMethodEnum VCMProtectionMethod::Type() const {
+  return _type;
+}
+
+uint8_t VCMProtectionMethod::RequiredPacketLossER() {
+  return _effectivePacketLoss;
+}
+
+uint8_t VCMProtectionMethod::RequiredProtectionFactorK() {
+  return _protectionFactorK;
+}
+
+uint8_t VCMProtectionMethod::RequiredProtectionFactorD() {
+  return _protectionFactorD;
+}
+
+bool VCMProtectionMethod::RequiredUepProtectionK() {
+  return _useUepProtectionK;
+}
+
+bool VCMProtectionMethod::RequiredUepProtectionD() {
+  return _useUepProtectionD;
+}
+
+int VCMProtectionMethod::MaxFramesFec() const {
+  return 1;
+}
 
 VCMNackFecMethod::VCMNackFecMethod(int64_t lowRttNackThresholdMs,
                                    int64_t highRttNackThresholdMs)

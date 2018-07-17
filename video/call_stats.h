@@ -32,7 +32,7 @@ class CallStats : public Module, public RtcpRttStats {
   static constexpr int64_t kUpdateIntervalMs = 1000;
 
   CallStats(Clock* clock, ProcessThread* process_thread);
-  ~CallStats();
+  ~CallStats() override;
 
   // Registers/deregisters a new observer to receive statistics updates.
   // Must be called from the construction thread.

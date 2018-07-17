@@ -29,6 +29,8 @@ VCMExtDecoderMapItem::VCMExtDecoderMapItem(
     : payload_type(payload_type),
       external_decoder_instance(external_decoder_instance) {}
 
+VCMDecoderMapItem::~VCMDecoderMapItem() {}
+
 VCMDecoderDataBase::VCMDecoderDataBase()
     : receive_codec_(), dec_map_(), dec_external_map_() {}
 

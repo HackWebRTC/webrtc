@@ -30,6 +30,7 @@ struct FrameData {
 class VCMSessionInfo {
  public:
   VCMSessionInfo();
+  ~VCMSessionInfo();
 
   void UpdateDataPointers(const uint8_t* old_base_ptr,
                           const uint8_t* new_base_ptr);

@@ -27,6 +27,8 @@ int FractionLost(uint32_t num_lost_sequence_numbers,
 ReportBlockStats::ReportBlockStats()
     : num_sequence_numbers_(0), num_lost_sequence_numbers_(0) {}
 
+ReportBlockStats::~ReportBlockStats() {}
+
 void ReportBlockStats::Store(const RtcpStatistics& rtcp_stats,
                              uint32_t remote_ssrc,
                              uint32_t source_ssrc) {

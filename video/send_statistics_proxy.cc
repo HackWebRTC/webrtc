@@ -262,7 +262,7 @@ bool SendStatisticsProxy::UmaSamplesContainer::InsertEncodedFrame(
 }
 
 void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
-    const VideoSendStream::Config::Rtp& rtp_config,
+    const RtpConfig& rtp_config,
     const VideoSendStream::Stats& current_stats) {
   RTC_DCHECK(uma_prefix_ == kRealtimePrefix || uma_prefix_ == kScreenPrefix);
   const int kIndex = uma_prefix_ == kScreenPrefix ? 1 : 0;

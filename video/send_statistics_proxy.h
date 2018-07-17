@@ -48,12 +48,12 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   SendStatisticsProxy(Clock* clock,
                       const VideoSendStream::Config& config,
                       VideoEncoderConfig::ContentType content_type);
-  virtual ~SendStatisticsProxy();
+  ~SendStatisticsProxy() override;
 
   virtual VideoSendStream::Stats GetStats();
 
-  virtual void OnSendEncodedImage(const EncodedImage& encoded_image,
-                                  const CodecSpecificInfo* codec_info);
+  void OnSendEncodedImage(const EncodedImage& encoded_image,
+                          const CodecSpecificInfo* codec_info);
   // Used to update incoming frame rate.
   void OnIncomingFrame(int width, int height);
 
@@ -158,6 +158,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
     int64_t last_ms;
   };
   struct FallbackEncoderInfo {
+    FallbackEncoderInfo() = default;
     bool is_possible = true;
     bool is_active = false;
     int on_off_events = 0;
@@ -234,7 +235,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
 
   Clock* const clock_;
   const std::string payload_name_;
-  const VideoSendStream::Config::Rtp rtp_config_;
+  const RtpConfig rtp_config_;
   const absl::optional<int> fallback_max_pixels_;
   const absl::optional<int> fallback_max_pixels_disabled_;
   rtc::CriticalSection crit_;
@@ -259,7 +260,7 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
                         Clock* clock);
     ~UmaSamplesContainer();
 
-    void UpdateHistograms(const VideoSendStream::Config::Rtp& rtp_config,
+    void UpdateHistograms(const RtpConfig& rtp_config,
                           const VideoSendStream::Stats& current_stats);
 
     void InitializeBitrateCounters(const VideoSendStream::Stats& stats);

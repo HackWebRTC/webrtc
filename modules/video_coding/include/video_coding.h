@@ -46,9 +46,9 @@ class EventFactory {
 
 class EventFactoryImpl : public EventFactory {
  public:
-  virtual ~EventFactoryImpl() {}
+  ~EventFactoryImpl() override {}
 
-  virtual EventWrapper* CreateEvent() { return EventWrapper::Create(); }
+  EventWrapper* CreateEvent() override;
 };
 
 // Used to indicate which decode with errors mode should be used.

@@ -38,7 +38,7 @@ class VCMEncodedFrameCallback : public EncodedImageCallback {
  public:
   VCMEncodedFrameCallback(EncodedImageCallback* post_encode_callback,
                           media_optimization::MediaOptimization* media_opt);
-  virtual ~VCMEncodedFrameCallback();
+  ~VCMEncodedFrameCallback() override;
 
   // Implements EncodedImageCallback.
   EncodedImageCallback::Result OnEncodedImage(
@@ -102,6 +102,8 @@ class VCMEncodedFrameCallback : public EncodedImageCallback {
     int64_t encode_start_time_ms;
   };
   struct TimingFramesLayerInfo {
+    TimingFramesLayerInfo();
+    ~TimingFramesLayerInfo();
     size_t target_bitrate_bytes_per_sec = 0;
     std::list<EncodeStartTimeRecord> encode_start_list;
   };

@@ -51,7 +51,6 @@
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_minmax.h"
-#include "rtc_base/rate_limiter.h"
 #include "rtc_base/sequenced_task_checker.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/synchronization/rw_lock_wrapper.h"
@@ -70,8 +69,6 @@
 namespace webrtc {
 
 namespace {
-static const int64_t kRetransmitWindowSizeMs = 500;
-
 // TODO(nisse): This really begs for a shared context struct.
 bool UseSendSideBwe(const std::vector<RtpExtension>& extensions,
                     bool transport_cc) {
@@ -361,7 +358,6 @@ class Call final : public webrtc::Call,
       RTC_GUARDED_BY(&bitrate_crit_);
   AvgCounter pacer_bitrate_kbps_counter_ RTC_GUARDED_BY(&bitrate_crit_);
 
-  RateLimiter retransmission_rate_limiter_;
   ReceiveSideCongestionController receive_side_cc_;
 
   const std::unique_ptr<ReceiveTimeCalculator> receive_time_calculator_;
@@ -442,7 +438,6 @@ Call::Call(const Call::Config& config,
       configured_max_padding_bitrate_bps_(0),
       estimated_send_bitrate_kbps_counter_(clock_, nullptr, true),
       pacer_bitrate_kbps_counter_(clock_, nullptr, true),
-      retransmission_rate_limiter_(clock_, kRetransmitWindowSizeMs),
       receive_side_cc_(clock_, transport_send->packet_router()),
       receive_time_calculator_(ReceiveTimeCalculator::CreateFromFieldTrial()),
       video_send_delay_stats_(new SendDelayStats(clock_)),
@@ -732,8 +727,7 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
       transport_send_ptr_, bitrate_allocator_.get(),
       video_send_delay_stats_.get(), event_log_, std::move(config),
       std::move(encoder_config), suspended_video_send_ssrcs_,
-      suspended_video_payload_states_, std::move(fec_controller),
-      &retransmission_rate_limiter_);
+      suspended_video_payload_states_, std::move(fec_controller));
 
   {
     WriteLockScoped write_lock(*send_crit_);
@@ -743,7 +737,6 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
     }
     video_send_streams_.insert(send_stream);
   }
-  send_stream->SignalNetworkState(video_network_state_);
   UpdateAggregateNetworkState();
 
   return send_stream;
@@ -991,9 +984,6 @@ void Call::SignalChannelNetworkState(MediaType media, NetworkState state) {
     for (auto& kv : audio_send_ssrcs_) {
       kv.second->SignalNetworkState(audio_network_state_);
     }
-    for (auto& kv : video_send_ssrcs_) {
-      kv.second->SignalNetworkState(video_network_state_);
-    }
   }
   {
     ReadLockScoped read_lock(*receive_crit_);
@@ -1081,7 +1071,6 @@ void Call::OnTargetTransferRate(TargetTransferRate msg) {
     rtc::CritScope cs(&last_bandwidth_bps_crit_);
     last_bandwidth_bps_ = bandwidth_bps;
   }
-  retransmission_rate_limiter_.SetMaxRate(bandwidth_bps);
   // For controlling the rate of feedback messages.
   receive_side_cc_.OnBitrateChanged(target_bitrate_bps);
   bitrate_allocator_->OnNetworkChanged(target_bitrate_bps, fraction_loss,

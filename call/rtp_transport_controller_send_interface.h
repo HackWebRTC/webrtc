@@ -13,11 +13,16 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <map>
 #include <string>
+#include <vector>
 
 #include "absl/types/optional.h"
 #include "api/bitrate_constraints.h"
 #include "api/transport/bitrate_settings.h"
+#include "call/rtp_config.h"
+#include "logging/rtc_event_log/rtc_event_log.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
 namespace rtc {
 struct SentPacket;
@@ -26,17 +31,35 @@ class TaskQueue;
 }  // namespace rtc
 namespace webrtc {
 
+class CallStats;
 class CallStatsObserver;
 class TargetTransferRateObserver;
+class Transport;
 class Module;
 class PacedSender;
 class PacketFeedbackObserver;
 class PacketRouter;
+class VideoRtpSenderInterface;
 class RateLimiter;
 class RtcpBandwidthObserver;
 class RtpPacketSender;
 struct RtpKeepAliveConfig;
+class SendDelayStats;
+class SendStatisticsProxy;
 class TransportFeedbackObserver;
+
+struct RtpSenderObservers {
+  RtcpRttStats* rtcp_rtt_stats;
+  RtcpIntraFrameObserver* intra_frame_callback;
+  RtcpStatisticsCallback* rtcp_stats;
+  StreamDataCountersCallback* rtp_stats;
+  BitrateStatisticsObserver* bitrate_observer;
+  FrameCountObserver* frame_count_observer;
+  RtcpPacketTypeCounterObserver* rtcp_type_observer;
+  SendSideDelayObserver* send_delay_observer;
+  SendPacketObserver* send_packet_observer;
+  OverheadObserver* overhead_observer;
+};
 
 // An RtpTransportController should own everything related to the RTP
 // transport to/from a remote endpoint. We should have separate
@@ -66,6 +89,18 @@ class RtpTransportControllerSendInterface {
   virtual ~RtpTransportControllerSendInterface() {}
   virtual rtc::TaskQueue* GetWorkerQueue() = 0;
   virtual PacketRouter* packet_router() = 0;
+
+  virtual VideoRtpSenderInterface* CreateVideoRtpSender(
+      const std::vector<uint32_t>& ssrcs,
+      std::map<uint32_t, RtpState> suspended_ssrcs,
+      // TODO(holmer): Move states into RtpTransportControllerSend.
+      const std::map<uint32_t, RtpPayloadState>& states,
+      const RtpConfig& rtp_config,
+      const RtcpConfig& rtcp_config,
+      Transport* send_transport,
+      const RtpSenderObservers& observers,
+      RtcEventLog* event_log) = 0;
+
   virtual TransportFeedbackObserver* transport_feedback_observer() = 0;
 
   virtual RtpPacketSender* packet_sender() = 0;

@@ -12,12 +12,16 @@
 #include <string>
 
 #include "call/payload_router.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp.h"
-#include "modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
+#include "call/rtp_transport_controller_send.h"
 #include "modules/video_coding/include/video_codec_interface.h"
+#include "rtc_base/rate_limiter.h"
 #include "test/field_trial.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
+#include "test/mock_transport.h"
+#include "video/call_stats.h"
+#include "video/send_delay_stats.h"
+#include "video/send_statistics_proxy.h"
 
 using ::testing::_;
 using ::testing::AnyNumber;
@@ -35,12 +39,105 @@ const int16_t kInitialPictureId1 = 222;
 const int16_t kInitialPictureId2 = 44;
 const int16_t kInitialTl0PicIdx1 = 99;
 const int16_t kInitialTl0PicIdx2 = 199;
+const int64_t kRetransmitWindowSizeMs = 500;
+
+class MockRtcpIntraFrameObserver : public RtcpIntraFrameObserver {
+ public:
+  MOCK_METHOD1(OnReceivedIntraFrameRequest, void(uint32_t));
+};
+
+class MockOverheadObserver : public OverheadObserver {
+ public:
+  MOCK_METHOD1(OnOverheadChanged, void(size_t overhead_bytes_per_packet));
+};
+
+class MockCongestionObserver : public NetworkChangedObserver {
+ public:
+  MOCK_METHOD4(OnNetworkChanged,
+               void(uint32_t bitrate_bps,
+                    uint8_t fraction_loss,
+                    int64_t rtt_ms,
+                    int64_t probing_interval_ms));
+};
+
+RtpSenderObservers CreateObservers(
+    RtcpRttStats* rtcp_rtt_stats,
+    RtcpIntraFrameObserver* intra_frame_callback,
+    RtcpStatisticsCallback* rtcp_stats,
+    StreamDataCountersCallback* rtp_stats,
+    BitrateStatisticsObserver* bitrate_observer,
+    FrameCountObserver* frame_count_observer,
+    RtcpPacketTypeCounterObserver* rtcp_type_observer,
+    SendSideDelayObserver* send_delay_observer,
+    SendPacketObserver* send_packet_observer,
+    OverheadObserver* overhead_observer) {
+  RtpSenderObservers observers;
+  observers.rtcp_rtt_stats = rtcp_rtt_stats;
+  observers.intra_frame_callback = intra_frame_callback;
+  observers.rtcp_stats = rtcp_stats;
+  observers.rtp_stats = rtp_stats;
+  observers.bitrate_observer = bitrate_observer;
+  observers.frame_count_observer = frame_count_observer;
+  observers.rtcp_type_observer = rtcp_type_observer;
+  observers.send_delay_observer = send_delay_observer;
+  observers.send_packet_observer = send_packet_observer;
+  observers.overhead_observer = overhead_observer;
+  return observers;
+}
+
+class PayloadRouterTestFixture {
+ public:
+  PayloadRouterTestFixture(
+      const std::vector<uint32_t>& ssrcs,
+      int payload_type,
+      const std::map<uint32_t, RtpPayloadState>& suspended_payload_states)
+      : clock_(0),
+        config_(&transport_),
+        send_delay_stats_(&clock_),
+        transport_controller_(&clock_, &event_log_, nullptr, bitrate_config_),
+        process_thread_(ProcessThread::Create("test_thread")),
+        call_stats_(&clock_, process_thread_.get()),
+        stats_proxy_(&clock_,
+                     config_,
+                     VideoEncoderConfig::ContentType::kRealtimeVideo),
+        retransmission_rate_limiter_(&clock_, kRetransmitWindowSizeMs) {
+    for (uint32_t ssrc : ssrcs) {
+      config_.rtp.ssrcs.push_back(ssrc);
+    }
+    config_.rtp.payload_type = payload_type;
+    std::map<uint32_t, RtpState> suspended_ssrcs;
+    router_ = absl::make_unique<PayloadRouter>(
+        config_.rtp.ssrcs, suspended_ssrcs, suspended_payload_states,
+        config_.rtp, config_.rtcp, &transport_,
+        CreateObservers(&call_stats_, &encoder_feedback_, &stats_proxy_,
+                        &stats_proxy_, &stats_proxy_, &stats_proxy_,
+                        &stats_proxy_, &stats_proxy_, &send_delay_stats_,
+                        &overhead_observer_),
+        &transport_controller_, &event_log_, &retransmission_rate_limiter_);
+  }
+
+  PayloadRouter* router() { return router_.get(); }
+
+ private:
+  NiceMock<MockTransport> transport_;
+  NiceMock<MockCongestionObserver> congestion_observer_;
+  NiceMock<MockOverheadObserver> overhead_observer_;
+  NiceMock<MockRtcpIntraFrameObserver> encoder_feedback_;
+  SimulatedClock clock_;
+  RtcEventLogNullImpl event_log_;
+  VideoSendStream::Config config_;
+  SendDelayStats send_delay_stats_;
+  BitrateConstraints bitrate_config_;
+  RtpTransportControllerSend transport_controller_;
+  std::unique_ptr<ProcessThread> process_thread_;
+  CallStats call_stats_;
+  SendStatisticsProxy stats_proxy_;
+  RateLimiter retransmission_rate_limiter_;
+  std::unique_ptr<PayloadRouter> router_;
+};
 }  // namespace
 
 TEST(PayloadRouterTest, SendOnOneModule) {
-  NiceMock<MockRtpRtcp> rtp;
-  std::vector<RtpRtcp*> modules(1, &rtp);
-
   uint8_t payload = 'a';
   EncodedImage encoded_image;
   encoded_image._timeStamp = 1;
@@ -49,57 +146,28 @@ TEST(PayloadRouterTest, SendOnOneModule) {
   encoded_image._buffer = &payload;
   encoded_image._length = 1;
 
-  PayloadRouter payload_router(modules, {kSsrc1}, kPayloadType, {});
-
-  EXPECT_CALL(rtp, SendOutgoingData(encoded_image._frameType, kPayloadType,
-                                    encoded_image._timeStamp,
-                                    encoded_image.capture_time_ms_, &payload,
-                                    encoded_image._length, nullptr, _, _))
-      .Times(0);
+  PayloadRouterTestFixture test({kSsrc1}, kPayloadType, {});
   EXPECT_NE(
       EncodedImageCallback::Result::OK,
-      payload_router.OnEncodedImage(encoded_image, nullptr, nullptr).error);
+      test.router()->OnEncodedImage(encoded_image, nullptr, nullptr).error);
 
-  payload_router.SetActive(true);
-  EXPECT_CALL(rtp, SendOutgoingData(encoded_image._frameType, kPayloadType,
-                                    encoded_image._timeStamp,
-                                    encoded_image.capture_time_ms_, &payload,
-                                    encoded_image._length, nullptr, _, _))
-      .Times(1)
-      .WillOnce(Return(true));
-  EXPECT_CALL(rtp, Sending()).WillOnce(Return(true));
+  test.router()->SetActive(true);
   EXPECT_EQ(
       EncodedImageCallback::Result::OK,
-      payload_router.OnEncodedImage(encoded_image, nullptr, nullptr).error);
+      test.router()->OnEncodedImage(encoded_image, nullptr, nullptr).error);
 
-  payload_router.SetActive(false);
-  EXPECT_CALL(rtp, SendOutgoingData(encoded_image._frameType, kPayloadType,
-                                    encoded_image._timeStamp,
-                                    encoded_image.capture_time_ms_, &payload,
-                                    encoded_image._length, nullptr, _, _))
-      .Times(0);
+  test.router()->SetActive(false);
   EXPECT_NE(
       EncodedImageCallback::Result::OK,
-      payload_router.OnEncodedImage(encoded_image, nullptr, nullptr).error);
+      test.router()->OnEncodedImage(encoded_image, nullptr, nullptr).error);
 
-  payload_router.SetActive(true);
-  EXPECT_CALL(rtp, SendOutgoingData(encoded_image._frameType, kPayloadType,
-                                    encoded_image._timeStamp,
-                                    encoded_image.capture_time_ms_, &payload,
-                                    encoded_image._length, nullptr, _, _))
-      .Times(1)
-      .WillOnce(Return(true));
-  EXPECT_CALL(rtp, Sending()).WillOnce(Return(true));
+  test.router()->SetActive(true);
   EXPECT_EQ(
       EncodedImageCallback::Result::OK,
-      payload_router.OnEncodedImage(encoded_image, nullptr, nullptr).error);
+      test.router()->OnEncodedImage(encoded_image, nullptr, nullptr).error);
 }
 
 TEST(PayloadRouterTest, SendSimulcastSetActive) {
-  NiceMock<MockRtpRtcp> rtp_1;
-  NiceMock<MockRtpRtcp> rtp_2;
-  std::vector<RtpRtcp*> modules = {&rtp_1, &rtp_2};
-
   uint8_t payload = 'a';
   EncodedImage encoded_image;
   encoded_image._timeStamp = 1;
@@ -108,64 +176,45 @@ TEST(PayloadRouterTest, SendSimulcastSetActive) {
   encoded_image._buffer = &payload;
   encoded_image._length = 1;
 
-  PayloadRouter payload_router(modules, {kSsrc1, kSsrc2}, kPayloadType, {});
+  PayloadRouterTestFixture test({kSsrc1, kSsrc2}, kPayloadType, {});
 
   CodecSpecificInfo codec_info_1;
   memset(&codec_info_1, 0, sizeof(CodecSpecificInfo));
   codec_info_1.codecType = kVideoCodecVP8;
   codec_info_1.codecSpecific.VP8.simulcastIdx = 0;
 
-  payload_router.SetActive(true);
-  EXPECT_CALL(rtp_1, Sending()).WillOnce(Return(true));
-  EXPECT_CALL(rtp_1, SendOutgoingData(encoded_image._frameType, kPayloadType,
-                                      encoded_image._timeStamp,
-                                      encoded_image.capture_time_ms_, &payload,
-                                      encoded_image._length, nullptr, _, _))
-      .Times(1)
-      .WillOnce(Return(true));
-  EXPECT_CALL(rtp_2, SendOutgoingData(_, _, _, _, _, _, _, _, _)).Times(0);
+  test.router()->SetActive(true);
   EXPECT_EQ(EncodedImageCallback::Result::OK,
-            payload_router.OnEncodedImage(encoded_image, &codec_info_1, nullptr)
+            test.router()
+                ->OnEncodedImage(encoded_image, &codec_info_1, nullptr)
                 .error);
 
   CodecSpecificInfo codec_info_2;
   memset(&codec_info_2, 0, sizeof(CodecSpecificInfo));
   codec_info_2.codecType = kVideoCodecVP8;
   codec_info_2.codecSpecific.VP8.simulcastIdx = 1;
-
-  EXPECT_CALL(rtp_2, Sending()).WillOnce(Return(true));
-  EXPECT_CALL(rtp_2, SendOutgoingData(encoded_image._frameType, kPayloadType,
-                                      encoded_image._timeStamp,
-                                      encoded_image.capture_time_ms_, &payload,
-                                      encoded_image._length, nullptr, _, _))
-      .Times(1)
-      .WillOnce(Return(true));
-  EXPECT_CALL(rtp_1, SendOutgoingData(_, _, _, _, _, _, _, _, _)).Times(0);
   EXPECT_EQ(EncodedImageCallback::Result::OK,
-            payload_router.OnEncodedImage(encoded_image, &codec_info_2, nullptr)
+            test.router()
+                ->OnEncodedImage(encoded_image, &codec_info_2, nullptr)
                 .error);
 
   // Inactive.
-  payload_router.SetActive(false);
-  EXPECT_CALL(rtp_1, SendOutgoingData(_, _, _, _, _, _, _, _, _)).Times(0);
-  EXPECT_CALL(rtp_2, SendOutgoingData(_, _, _, _, _, _, _, _, _)).Times(0);
+  test.router()->SetActive(false);
   EXPECT_NE(EncodedImageCallback::Result::OK,
-            payload_router.OnEncodedImage(encoded_image, &codec_info_1, nullptr)
+            test.router()
+                ->OnEncodedImage(encoded_image, &codec_info_1, nullptr)
                 .error);
   EXPECT_NE(EncodedImageCallback::Result::OK,
-            payload_router.OnEncodedImage(encoded_image, &codec_info_2, nullptr)
+            test.router()
+                ->OnEncodedImage(encoded_image, &codec_info_2, nullptr)
                 .error);
 }
 
 // Tests how setting individual rtp modules to active affects the overall
 // behavior of the payload router. First sets one module to active and checks
-// that outgoing data can be sent on this module, and checks that no data can be
-// sent if both modules are inactive.
+// that outgoing data can be sent on this module, and checks that no data can
+// be sent if both modules are inactive.
 TEST(PayloadRouterTest, SendSimulcastSetActiveModules) {
-  NiceMock<MockRtpRtcp> rtp_1;
-  NiceMock<MockRtpRtcp> rtp_2;
-  std::vector<RtpRtcp*> modules = {&rtp_1, &rtp_2};
-
   uint8_t payload = 'a';
   EncodedImage encoded_image;
   encoded_image._timeStamp = 1;
@@ -173,7 +222,8 @@ TEST(PayloadRouterTest, SendSimulcastSetActiveModules) {
   encoded_image._frameType = kVideoFrameKey;
   encoded_image._buffer = &payload;
   encoded_image._length = 1;
-  PayloadRouter payload_router(modules, {kSsrc1, kSsrc2}, kPayloadType, {});
+
+  PayloadRouterTestFixture test({kSsrc1, kSsrc2}, kPayloadType, {});
   CodecSpecificInfo codec_info_1;
   memset(&codec_info_1, 0, sizeof(CodecSpecificInfo));
   codec_info_1.codecType = kVideoCodecVP8;
@@ -186,45 +236,34 @@ TEST(PayloadRouterTest, SendSimulcastSetActiveModules) {
   // Only setting one stream to active will still set the payload router to
   // active and allow sending data on the active stream.
   std::vector<bool> active_modules({true, false});
-  payload_router.SetActiveModules(active_modules);
-
-  EXPECT_CALL(rtp_1, Sending()).WillOnce(Return(true));
-  EXPECT_CALL(rtp_1, SendOutgoingData(encoded_image._frameType, kPayloadType,
-                                      encoded_image._timeStamp,
-                                      encoded_image.capture_time_ms_, &payload,
-                                      encoded_image._length, nullptr, _, _))
-      .Times(1)
-      .WillOnce(Return(true));
+  test.router()->SetActiveModules(active_modules);
   EXPECT_EQ(EncodedImageCallback::Result::OK,
-            payload_router.OnEncodedImage(encoded_image, &codec_info_1, nullptr)
+            test.router()
+                ->OnEncodedImage(encoded_image, &codec_info_1, nullptr)
                 .error);
 
-  // Setting both streams to inactive will turn the payload router to inactive.
+  // Setting both streams to inactive will turn the payload router to
+  // inactive.
   active_modules = {false, false};
-  payload_router.SetActiveModules(active_modules);
+  test.router()->SetActiveModules(active_modules);
   // An incoming encoded image will not ask the module to send outgoing data
   // because the payload router is inactive.
-  EXPECT_CALL(rtp_1, SendOutgoingData(_, _, _, _, _, _, _, _, _)).Times(0);
-  EXPECT_CALL(rtp_1, Sending()).Times(0);
-  EXPECT_CALL(rtp_2, SendOutgoingData(_, _, _, _, _, _, _, _, _)).Times(0);
-  EXPECT_CALL(rtp_2, Sending()).Times(0);
   EXPECT_NE(EncodedImageCallback::Result::OK,
-            payload_router.OnEncodedImage(encoded_image, &codec_info_1, nullptr)
+            test.router()
+                ->OnEncodedImage(encoded_image, &codec_info_1, nullptr)
                 .error);
   EXPECT_NE(EncodedImageCallback::Result::OK,
-            payload_router.OnEncodedImage(encoded_image, &codec_info_2, nullptr)
+            test.router()
+                ->OnEncodedImage(encoded_image, &codec_info_2, nullptr)
                 .error);
 }
 
 TEST(PayloadRouterTest, CreateWithNoPreviousStates) {
-  NiceMock<MockRtpRtcp> rtp1;
-  NiceMock<MockRtpRtcp> rtp2;
-  std::vector<RtpRtcp*> modules = {&rtp1, &rtp2};
-  PayloadRouter payload_router(modules, {kSsrc1, kSsrc2}, kPayloadType, {});
-  payload_router.SetActive(true);
+  PayloadRouterTestFixture test({kSsrc1, kSsrc2}, kPayloadType, {});
+  test.router()->SetActive(true);
 
   std::map<uint32_t, RtpPayloadState> initial_states =
-      payload_router.GetRtpPayloadStates();
+      test.router()->GetRtpPayloadStates();
   EXPECT_EQ(2u, initial_states.size());
   EXPECT_NE(initial_states.find(kSsrc1), initial_states.end());
   EXPECT_NE(initial_states.find(kSsrc2), initial_states.end());
@@ -240,14 +279,11 @@ TEST(PayloadRouterTest, CreateWithPreviousStates) {
   std::map<uint32_t, RtpPayloadState> states = {{kSsrc1, state1},
                                                 {kSsrc2, state2}};
 
-  NiceMock<MockRtpRtcp> rtp1;
-  NiceMock<MockRtpRtcp> rtp2;
-  std::vector<RtpRtcp*> modules = {&rtp1, &rtp2};
-  PayloadRouter payload_router(modules, {kSsrc1, kSsrc2}, kPayloadType, states);
-  payload_router.SetActive(true);
+  PayloadRouterTestFixture test({kSsrc1, kSsrc2}, kPayloadType, states);
+  test.router()->SetActive(true);
 
   std::map<uint32_t, RtpPayloadState> initial_states =
-      payload_router.GetRtpPayloadStates();
+      test.router()->GetRtpPayloadStates();
   EXPECT_EQ(2u, initial_states.size());
   EXPECT_EQ(kInitialPictureId1, initial_states[kSsrc1].picture_id);
   EXPECT_EQ(kInitialTl0PicIdx1, initial_states[kSsrc1].tl0_pic_idx);

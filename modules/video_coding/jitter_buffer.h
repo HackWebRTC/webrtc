@@ -75,6 +75,9 @@ class FrameList
 class Vp9SsMap {
  public:
   typedef std::map<uint32_t, GofInfoVP9, TimestampLessThan> SsMap;
+  Vp9SsMap();
+  ~Vp9SsMap();
+
   bool Insert(const VCMPacket& packet);
   void Reset();
 

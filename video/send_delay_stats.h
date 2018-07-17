@@ -28,7 +28,7 @@ namespace webrtc {
 class SendDelayStats : public SendPacketObserver {
  public:
   explicit SendDelayStats(Clock* clock);
-  virtual ~SendDelayStats();
+  ~SendDelayStats() override;
 
   // Adds the configured ssrcs for the rtp streams.
   // Stats will be calculated for these streams.

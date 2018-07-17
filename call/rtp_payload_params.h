@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "api/video_codecs/video_encoder.h"
+#include "call/rtp_config.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
 
@@ -22,12 +23,6 @@ namespace webrtc {
 
 class RTPFragmentationHeader;
 class RtpRtcp;
-
-// Currently only VP8/VP9 specific.
-struct RtpPayloadState {
-  int16_t picture_id = -1;
-  uint8_t tl0_pic_idx = 0;
-};
 
 // State for setting picture id and tl0 pic idx, for VP8 and VP9
 // TODO(nisse): Make these properties not codec specific.

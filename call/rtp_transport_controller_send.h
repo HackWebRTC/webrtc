@@ -14,8 +14,10 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "api/transport/network_control.h"
+#include "call/payload_router.h"
 #include "call/rtp_bitrate_configurator.h"
 #include "call/rtp_transport_controller_send_interface.h"
 #include "common_types.h"  // NOLINT(build/include)
@@ -43,6 +45,17 @@ class RtpTransportControllerSend final
       NetworkControllerFactoryInterface* controller_factory,
       const BitrateConstraints& bitrate_config);
   ~RtpTransportControllerSend() override;
+
+  PayloadRouter* CreateVideoRtpSender(
+      const std::vector<uint32_t>& ssrcs,
+      std::map<uint32_t, RtpState> suspended_ssrcs,
+      const std::map<uint32_t, RtpPayloadState>&
+          states,  // move states into RtpTransportControllerSend
+      const RtpConfig& rtp_config,
+      const RtcpConfig& rtcp_config,
+      Transport* send_transport,
+      const RtpSenderObservers& observers,
+      RtcEventLog* event_log) override;
 
   // Implements NetworkChangedObserver interface.
   void OnNetworkChanged(uint32_t bitrate_bps,
@@ -90,6 +103,7 @@ class RtpTransportControllerSend final
  private:
   const Clock* const clock_;
   PacketRouter packet_router_;
+  std::vector<std::unique_ptr<PayloadRouter>> video_rtp_senders_;
   PacedSender pacer_;
   RtpKeepAliveConfig keepalive_;
   RtpBitrateConfigurator bitrate_configurator_;
@@ -98,6 +112,8 @@ class RtpTransportControllerSend final
   rtc::CriticalSection observer_crit_;
   TargetTransferRateObserver* observer_ RTC_GUARDED_BY(observer_crit_);
   std::unique_ptr<SendSideCongestionControllerInterface> send_side_cc_;
+  RateLimiter retransmission_rate_limiter_;
+
   // TODO(perkj): |task_queue_| is supposed to replace |process_thread_|.
   // |task_queue_| is defined last to ensure all pending tasks are cancelled
   // and deleted before any other members.

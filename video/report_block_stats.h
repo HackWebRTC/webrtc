@@ -25,7 +25,7 @@ class ReportBlockStats {
   typedef std::map<uint32_t, RTCPReportBlock> ReportBlockMap;
   typedef std::vector<RTCPReportBlock> ReportBlockVector;
   ReportBlockStats();
-  ~ReportBlockStats() {}
+  ~ReportBlockStats();
 
   // Updates stats and stores report blocks.
   // Returns an aggregate of the |report_blocks|.

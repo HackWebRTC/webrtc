@@ -21,7 +21,6 @@
 #include "api/video/video_sink_interface.h"
 #include "api/video/video_stream_encoder_interface.h"
 #include "api/video_codecs/video_encoder.h"
-#include "call/call.h"
 #include "call/video_send_stream.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "common_video/include/video_bitrate_allocator.h"
@@ -63,7 +62,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
                      const VideoSendStream::Config::EncoderSettings& settings,
                      rtc::VideoSinkInterface<VideoFrame>* pre_encode_callback,
                      std::unique_ptr<OveruseFrameDetector> overuse_detector);
-  ~VideoStreamEncoder();
+  ~VideoStreamEncoder() override;
 
   void SetSource(rtc::VideoSourceInterface<VideoFrame>* source,
                  const DegradationPreference& degradation_preference) override;

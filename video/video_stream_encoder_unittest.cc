@@ -19,6 +19,7 @@
 #include "modules/video_coding/utility/default_video_bitrate_allocator.h"
 #include "rtc_base/fakeclock.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/refcountedobject.h"
 #include "system_wrappers/include/metrics_default.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/encoder_proxy_factory.h"

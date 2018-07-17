@@ -12,13 +12,14 @@
 #include <utility>
 
 #include "modules/rtp_rtcp/source/rtp_sender.h"
+#include "rtc_base/logging.h"
 #include "video/video_send_stream_impl.h"
 
 namespace webrtc {
 
 namespace {
 
-size_t CalculateMaxHeaderSize(const VideoSendStream::Config::Rtp& config) {
+size_t CalculateMaxHeaderSize(const RtpConfig& config) {
   size_t header_size = kRtpHeaderSize;
   size_t extensions_size = 0;
   size_t fec_extensions_size = 0;
@@ -66,8 +67,7 @@ VideoSendStream::VideoSendStream(
     VideoEncoderConfig encoder_config,
     const std::map<uint32_t, RtpState>& suspended_ssrcs,
     const std::map<uint32_t, RtpPayloadState>& suspended_payload_states,
-    std::unique_ptr<FecController> fec_controller,
-    RateLimiter* retransmission_limiter)
+    std::unique_ptr<FecController> fec_controller)
     : worker_queue_(worker_queue),
       thread_sync_event_(false /* manual_reset */, false),
       stats_proxy_(Clock::GetRealTimeClock(),
@@ -87,14 +87,14 @@ VideoSendStream::VideoSendStream(
   worker_queue_->PostTask(rtc::NewClosure(
       [this, call_stats, transport, bitrate_allocator, send_delay_stats,
        event_log, &suspended_ssrcs, &encoder_config, &suspended_payload_states,
-       &fec_controller, retransmission_limiter]() {
+       &fec_controller]() {
         send_stream_.reset(new VideoSendStreamImpl(
             &stats_proxy_, worker_queue_, call_stats, transport,
             bitrate_allocator, send_delay_stats, video_stream_encoder_.get(),
             event_log, &config_, encoder_config.max_bitrate_bps,
             encoder_config.bitrate_priority, suspended_ssrcs,
             suspended_payload_states, encoder_config.content_type,
-            std::move(fec_controller), retransmission_limiter));
+            std::move(fec_controller)));
       },
       [this]() { thread_sync_event_.Set(); }));
 
@@ -178,13 +178,6 @@ VideoSendStream::Stats VideoSendStream::GetStats() {
 
 absl::optional<float> VideoSendStream::GetPacingFactorOverride() const {
   return send_stream_->configured_pacing_factor_;
-}
-
-void VideoSendStream::SignalNetworkState(NetworkState state) {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
-  VideoSendStreamImpl* send_stream = send_stream_.get();
-  worker_queue_->PostTask(
-      [send_stream, state] { send_stream->SignalNetworkState(state); });
 }
 
 void VideoSendStream::StopPermanentlyAndGetRtpStates(

@@ -123,6 +123,9 @@ void FrameList::Reset(UnorderedFrameList* free_frames) {
   }
 }
 
+Vp9SsMap::Vp9SsMap() {}
+Vp9SsMap::~Vp9SsMap() {}
+
 bool Vp9SsMap::Insert(const VCMPacket& packet) {
   if (!packet.video_header.vp9().ss_data_available)
     return false;
