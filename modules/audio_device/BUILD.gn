@@ -13,14 +13,6 @@ if (is_android) {
   import("//build/config/android/rules.gni")
 }
 
-config("audio_device_config") {
-  include_dirs = [
-    "../include",
-    "include",
-    "dummy",  # Contains dummy audio device implementations.
-  ]
-}
-
 config("audio_device_warnings_config") {
   if (is_win && is_clang) {
     cflags = [
@@ -211,8 +203,6 @@ rtc_source_set("audio_device_module_from_input_and_output") {
 # Linux, Mac, iOS and Android.
 rtc_source_set("audio_device_impl") {
   visibility = [ "*" ]
-  public_configs = [ ":audio_device_config" ]
-
   deps = [
     ":audio_device_api",
     ":audio_device_buffer",
@@ -252,22 +242,6 @@ rtc_source_set("audio_device_impl") {
     ]
   }
 
-  include_dirs = []
-  if (is_linux) {
-    include_dirs += [ "linux" ]
-  }
-  if (is_ios) {
-    include_dirs += [ "ios" ]
-  }
-  if (is_mac) {
-    include_dirs += [ "mac" ]
-  }
-  if (is_win) {
-    include_dirs += [ "win" ]
-  }
-  if (is_android) {
-    include_dirs += [ "android" ]
-  }
   defines = []
   cflags = []
   if (rtc_audio_device_plays_sinus_tone) {
