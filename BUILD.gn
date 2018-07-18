@@ -350,6 +350,17 @@ if (!build_with_chromium) {
       "video",
     ]
 
+    # Additional factory functions to be exposed.
+    # Rational: These factories are small enough (89 KiB / 32+ MiB)
+    #           to be unconditionaly included for user convenience.
+    # That begin said:
+    # TODO(yvesg) Consider making all non-core APIs optional, so that users
+    #             can build a customized library tailored to their needs.
+    deps += [
+      "api/audio_codecs:builtin_audio_decoder_factory",
+      "api/audio_codecs:builtin_audio_encoder_factory",
+    ]
+
     if (build_with_mozilla) {
       deps += [
         "api/video:video_frame",
