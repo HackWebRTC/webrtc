@@ -22,6 +22,9 @@ CopyOnWriteBuffer::CopyOnWriteBuffer(const CopyOnWriteBuffer& buf)
 CopyOnWriteBuffer::CopyOnWriteBuffer(CopyOnWriteBuffer&& buf)
     : buffer_(std::move(buf.buffer_)) {}
 
+CopyOnWriteBuffer::CopyOnWriteBuffer(const std::string& s)
+    : CopyOnWriteBuffer(s.data(), s.length()) {}
+
 CopyOnWriteBuffer::CopyOnWriteBuffer(size_t size)
     : buffer_(size > 0 ? new RefCountedObject<Buffer>(size) : nullptr) {
   RTC_DCHECK(IsConsistent());

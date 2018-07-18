@@ -47,7 +47,7 @@ using webrtc::SdpSemantics;
 
 namespace {
 
-const int kMaxWait = 10000;
+const int kMaxWait = 25000;
 
 }  // namespace
 
@@ -139,23 +139,40 @@ class PeerConnectionEndToEndBaseTest : public sigslot::has_slots<>,
 
   // Tests that |dc1| and |dc2| can send to and receive from each other.
   void TestDataChannelSendAndReceive(DataChannelInterface* dc1,
-                                     DataChannelInterface* dc2) {
+                                     DataChannelInterface* dc2,
+                                     size_t size = 6) {
     std::unique_ptr<webrtc::MockDataChannelObserver> dc1_observer(
         new webrtc::MockDataChannelObserver(dc1));
 
     std::unique_ptr<webrtc::MockDataChannelObserver> dc2_observer(
         new webrtc::MockDataChannelObserver(dc2));
 
-    static const std::string kDummyData = "abcdefg";
-    webrtc::DataBuffer buffer(kDummyData);
+    static const std::string kDummyData =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    webrtc::DataBuffer buffer("");
+
+    size_t sizeLeft = size;
+    while (sizeLeft > 0) {
+      size_t chunkSize =
+          sizeLeft > kDummyData.length() ? kDummyData.length() : sizeLeft;
+      buffer.data.AppendData(kDummyData.data(), chunkSize);
+      sizeLeft -= chunkSize;
+    }
+
     EXPECT_TRUE(dc1->Send(buffer));
-    EXPECT_EQ_WAIT(kDummyData, dc2_observer->last_message(), kMaxWait);
+    EXPECT_EQ_WAIT(buffer.data,
+                   rtc::CopyOnWriteBuffer(dc2_observer->last_message()),
+                   kMaxWait);
 
     EXPECT_TRUE(dc2->Send(buffer));
-    EXPECT_EQ_WAIT(kDummyData, dc1_observer->last_message(), kMaxWait);
+    EXPECT_EQ_WAIT(buffer.data,
+                   rtc::CopyOnWriteBuffer(dc1_observer->last_message()),
+                   kMaxWait);
 
     EXPECT_EQ(1U, dc1_observer->received_message_count());
+    EXPECT_EQ(size, dc1_observer->last_message().length());
     EXPECT_EQ(1U, dc2_observer->received_message_count());
+    EXPECT_EQ(size, dc2_observer->last_message().length());
   }
 
   void WaitForDataChannelsToOpen(DataChannelInterface* local_dc,
@@ -519,6 +536,40 @@ TEST_P(PeerConnectionEndToEndTest, CreateDataChannelAfterNegotiate) {
 
   TestDataChannelSendAndReceive(caller_dc, callee_signaled_data_channels_[1]);
   TestDataChannelSendAndReceive(callee_dc, caller_signaled_data_channels_[0]);
+
+  CloseDataChannels(caller_dc, callee_signaled_data_channels_, 1);
+  CloseDataChannels(callee_dc, caller_signaled_data_channels_, 0);
+}
+
+// Verifies that a DataChannel created can transfer large messages.
+TEST_P(PeerConnectionEndToEndTest, CreateDataChannelLargeTransfer) {
+  CreatePcs(nullptr, webrtc::CreateBuiltinAudioEncoderFactory(),
+            webrtc::MockAudioDecoderFactory::CreateEmptyFactory());
+
+  webrtc::DataChannelInit init;
+
+  // This DataChannel is for creating the data content in the negotiation.
+  rtc::scoped_refptr<DataChannelInterface> dummy(
+      caller_->CreateDataChannel("data", init));
+  Negotiate();
+  WaitForConnection();
+
+  // Wait for the data channel created pre-negotiation to be opened.
+  WaitForDataChannelsToOpen(dummy, callee_signaled_data_channels_, 0);
+
+  // Create new DataChannels after the negotiation and verify their states.
+  rtc::scoped_refptr<DataChannelInterface> caller_dc(
+      caller_->CreateDataChannel("hello", init));
+  rtc::scoped_refptr<DataChannelInterface> callee_dc(
+      callee_->CreateDataChannel("hello", init));
+
+  WaitForDataChannelsToOpen(caller_dc, callee_signaled_data_channels_, 1);
+  WaitForDataChannelsToOpen(callee_dc, caller_signaled_data_channels_, 0);
+
+  TestDataChannelSendAndReceive(caller_dc, callee_signaled_data_channels_[1],
+                                256 * 1024);
+  TestDataChannelSendAndReceive(callee_dc, caller_signaled_data_channels_[0],
+                                256 * 1024);
 
   CloseDataChannels(caller_dc, callee_signaled_data_channels_, 1);
   CloseDataChannels(callee_dc, caller_signaled_data_channels_, 0);

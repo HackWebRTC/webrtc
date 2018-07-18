@@ -291,22 +291,44 @@ class SctpTransport::UsrSctpWrapper {
       // It's neither a notification nor a recognized data packet.  Drop it.
       RTC_LOG(LS_ERROR) << "Received an unknown PPID " << ppid
                         << " on an SCTP packet.  Dropping.";
+      free(data);
     } else {
-      rtc::CopyOnWriteBuffer buffer;
       ReceiveDataParams params;
-      buffer.SetData(reinterpret_cast<uint8_t*>(data), length);
+
+      // Expect only continuation messages belonging to the same sid, usrsctp
+      // ensures this.
+      RTC_CHECK(transport->partial_message_.size() == 0 ||
+                rcv.rcv_sid == transport->partial_message_sid_);
+
+      transport->partial_message_.AppendData(reinterpret_cast<uint8_t*>(data),
+                                             length);
+      transport->partial_message_sid_ = rcv.rcv_sid;
+
+      free(data);
+
+      // Merge partial messages until they exceed the maximum send buffer size.
+      // This enables messages from a single send to be delivered in a single
+      // callback. Larger messages (originating from other implementations) will
+      // still be delivered in chunks.
+      if (!(flags & MSG_EOR) &&
+          (transport->partial_message_.size() < kSendBufferSize)) {
+        return 1;
+      }
+
       params.sid = rcv.rcv_sid;
       params.seq_num = rcv.rcv_ssn;
       params.timestamp = rcv.rcv_tsn;
       params.type = type;
+
       // The ownership of the packet transfers to |invoker_|. Using
       // CopyOnWriteBuffer is the most convenient way to do this.
       transport->invoker_.AsyncInvoke<void>(
           RTC_FROM_HERE, transport->network_thread_,
           rtc::Bind(&SctpTransport::OnInboundPacketFromSctpToTransport,
-                    transport, buffer, params, flags));
+                    transport, transport->partial_message_, params, flags));
+
+      transport->partial_message_.Clear();
     }
-    free(data);
     return 1;
   }
 
@@ -489,6 +511,7 @@ bool SctpTransport::SendData(const SendDataParams& params,
   spa.sendv_flags |= SCTP_SEND_SNDINFO_VALID;
   spa.sendv_sndinfo.snd_sid = params.sid;
   spa.sendv_sndinfo.snd_ppid = rtc::HostToNetwork32(GetPpid(params.type));
+  spa.sendv_sndinfo.snd_flags |= SCTP_EOR;
 
   // Ordered implies reliable.
   if (!params.ordered) {
@@ -691,6 +714,15 @@ bool SctpTransport::ConfigureSctpSocket() {
                          sizeof(nodelay))) {
     RTC_LOG_ERRNO(LS_ERROR) << debug_name_ << "->ConfigureSctpSocket(): "
                             << "Failed to set SCTP_NODELAY.";
+    return false;
+  }
+
+  // Explicit EOR.
+  uint32_t eor = 1;
+  if (usrsctp_setsockopt(sock_, IPPROTO_SCTP, SCTP_EXPLICIT_EOR, &eor,
+                         sizeof(eor))) {
+    RTC_LOG_ERRNO(LS_ERROR) << debug_name_ << "->ConfigureSctpSocket(): "
+                            << "Failed to set SCTP_EXPLICIT_EOR.";
     return false;
   }
 
