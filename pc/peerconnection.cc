@@ -411,6 +411,11 @@ void NoteKeyProtocolAndMedia(KeyExchangeProtocolType protocol_type,
   }
 }
 
+void NoteAddIceCandidateResult(int result) {
+  RTC_HISTOGRAM_ENUMERATION("WebRTC.PeerConnection.AddIceCandidate", result,
+                            kAddIceCandidateMax);
+}
+
 // Checks that each non-rejected content has SDES crypto keys or a DTLS
 // fingerprint, unless it's in a BUNDLE group, in which case only the
 // BUNDLE-tag section (first media section/description in the BUNDLE group)
@@ -3004,37 +3009,49 @@ bool PeerConnection::AddIceCandidate(
   TRACE_EVENT0("webrtc", "PeerConnection::AddIceCandidate");
   if (IsClosed()) {
     RTC_LOG(LS_ERROR) << "AddIceCandidate: PeerConnection is closed.";
+    NoteAddIceCandidateResult(kAddIceCandidateFailClosed);
     return false;
   }
 
   if (!remote_description()) {
     RTC_LOG(LS_ERROR) << "AddIceCandidate: ICE candidates can't be added "
                          "without any remote session description.";
+    NoteAddIceCandidateResult(kAddIceCandidateFailNoRemoteDescription);
     return false;
   }
 
   if (!ice_candidate) {
     RTC_LOG(LS_ERROR) << "AddIceCandidate: Candidate is null.";
+    NoteAddIceCandidateResult(kAddIceCandidateFailNullCandidate);
     return false;
   }
 
   bool valid = false;
   bool ready = ReadyToUseRemoteCandidate(ice_candidate, nullptr, &valid);
   if (!valid) {
+    NoteAddIceCandidateResult(kAddIceCandidateFailNotValid);
     return false;
   }
 
   // Add this candidate to the remote session description.
   if (!mutable_remote_description()->AddCandidate(ice_candidate)) {
     RTC_LOG(LS_ERROR) << "AddIceCandidate: Candidate cannot be used.";
+    NoteAddIceCandidateResult(kAddIceCandidateFailInAddition);
     return false;
   }
-  NoteUsageEvent(UsageEvent::REMOTE_CANDIDATE_ADDED);
 
   if (ready) {
-    return UseCandidate(ice_candidate);
+    bool result = UseCandidate(ice_candidate);
+    if (result) {
+      NoteUsageEvent(UsageEvent::REMOTE_CANDIDATE_ADDED);
+      NoteAddIceCandidateResult(kAddIceCandidateSuccess);
+    } else {
+      NoteAddIceCandidateResult(kAddIceCandidateFailNotUsable);
+    }
+    return result;
   } else {
     RTC_LOG(LS_INFO) << "AddIceCandidate: Not ready to use candidate.";
+    NoteAddIceCandidateResult(kAddIceCandidateFailNotReady);
     return true;
   }
 }

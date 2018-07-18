@@ -169,6 +169,19 @@ enum SdpFormatReceived {
   kSdpFormatReceivedMax
 };
 
+// Metric for counting the outcome of adding an ICE candidate
+enum AddIceCandidateResult {
+  kAddIceCandidateSuccess,
+  kAddIceCandidateFailClosed,
+  kAddIceCandidateFailNoRemoteDescription,
+  kAddIceCandidateFailNullCandidate,
+  kAddIceCandidateFailNotValid,
+  kAddIceCandidateFailNotReady,
+  kAddIceCandidateFailInAddition,
+  kAddIceCandidateFailNotUsable,
+  kAddIceCandidateMax
+};
+
 class MetricsObserverInterface : public rtc::RefCountInterface {
  public:
   // |type| is the type of the enum counter to be incremented. |counter|

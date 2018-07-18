@@ -28,6 +28,7 @@
 #include "rtc_base/fakenetwork.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/virtualsocketserver.h"
+#include "system_wrappers/include/metrics_default.h"
 
 namespace webrtc {
 
@@ -246,7 +247,9 @@ class PeerConnectionIceTest
     : public PeerConnectionIceBaseTest,
       public ::testing::WithParamInterface<SdpSemantics> {
  protected:
-  PeerConnectionIceTest() : PeerConnectionIceBaseTest(GetParam()) {}
+  PeerConnectionIceTest() : PeerConnectionIceBaseTest(GetParam()) {
+    webrtc::metrics::Reset();
+  }
 };
 
 ::testing::AssertionResult AssertCandidatesEqual(const char* a_expr,
@@ -415,6 +418,11 @@ TEST_P(PeerConnectionIceTest, CannotAddCandidateWhenRemoteDescriptionNotSet) {
   caller->CreateOfferAndSetAsLocal();
 
   EXPECT_FALSE(caller->pc()->AddIceCandidate(&jsep_candidate));
+  EXPECT_EQ(
+      2, webrtc::metrics::NumSamples("WebRTC.PeerConnection.AddIceCandidate"));
+  EXPECT_EQ(
+      2, webrtc::metrics::NumEvents("WebRTC.PeerConnection.AddIceCandidate",
+                                    kAddIceCandidateFailNoRemoteDescription));
 }
 
 TEST_P(PeerConnectionIceTest, CannotAddCandidateWhenPeerConnectionClosed) {
