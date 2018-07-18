@@ -84,13 +84,6 @@ rtc_static_library("rent_a_codec") {
   defines = audio_codec_defines
 }
 
-config("audio_coding_config") {
-  include_dirs = [
-    "include",
-    "../include",
-  ]
-}
-
 rtc_source_set("audio_coding_module_typedefs") {
   sources = [
     "include/audio_coding_module_typedefs.h",
@@ -118,8 +111,6 @@ rtc_static_library("audio_coding") {
   ]
 
   defines = []
-
-  public_configs = [ ":audio_coding_config" ]
 
   if (rtc_include_opus) {
     public_deps = [
@@ -160,10 +151,6 @@ rtc_static_library("legacy_encoded_audio_frame") {
   ]
 }
 
-config("cng_config") {
-  include_dirs = [ "codecs/cng/include" ]
-}
-
 rtc_static_library("cng") {
   visibility += [ "*" ]
   sources = [
@@ -172,8 +159,6 @@ rtc_static_library("cng") {
     "codecs/cng/webrtc_cng.cc",
     "codecs/cng/webrtc_cng.h",
   ]
-
-  public_configs = [ ":cng_config" ]
 
   deps = [
     "../..:typedefs",
@@ -186,10 +171,6 @@ rtc_static_library("cng") {
   ]
 }
 
-config("red_config") {
-  include_dirs = [ "codecs/red" ]
-}
-
 rtc_static_library("red") {
   visibility += [ "*" ]
   sources = [
@@ -197,18 +178,12 @@ rtc_static_library("red") {
     "codecs/red/audio_encoder_copy_red.h",
   ]
 
-  public_configs = [ ":red_config" ]
-
   deps = [
     "../../api/audio_codecs:audio_codecs_api",
     "../../common_audio",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
   ]
-}
-
-config("g711_config") {
-  include_dirs = [ "codecs/g711/include" ]
 }
 
 rtc_static_library("g711") {
@@ -220,8 +195,6 @@ rtc_static_library("g711") {
     "codecs/g711/audio_encoder_pcm.cc",
     "codecs/g711/audio_encoder_pcm.h",
   ]
-
-  public_configs = [ ":g711_config" ]
 
   deps = [
     ":legacy_encoded_audio_frame",
@@ -256,10 +229,6 @@ rtc_source_set("g711_3p") {
   ]
 }
 
-config("g722_config") {
-  include_dirs = [ "codecs/g722/include" ]
-}
-
 rtc_static_library("g722") {
   visibility += [ "*" ]
   poisonous = [ "audio_codecs" ]
@@ -269,8 +238,6 @@ rtc_static_library("g722") {
     "codecs/g722/audio_encoder_g722.cc",
     "codecs/g722/audio_encoder_g722.h",
   ]
-
-  public_configs = [ ":g722_config" ]
 
   deps = [
     ":legacy_encoded_audio_frame",
@@ -307,10 +274,6 @@ rtc_source_set("g722_3p") {
   ]
 }
 
-config("ilbc_config") {
-  include_dirs = [ "codecs/ilbc/include" ]
-}
-
 rtc_static_library("ilbc") {
   visibility += webrtc_default_visibility
   poisonous = [ "audio_codecs" ]
@@ -320,8 +283,6 @@ rtc_static_library("ilbc") {
     "codecs/ilbc/audio_encoder_ilbc.cc",
     "codecs/ilbc/audio_encoder_ilbc.h",
   ]
-
-  public_configs = [ ":ilbc_config" ]
 
   deps = [
     ":legacy_encoded_audio_frame",
@@ -481,8 +442,6 @@ rtc_source_set("ilbc_c") {
     "codecs/ilbc/xcorr_coef.h",
   ]
 
-  public_configs = [ ":ilbc_config" ]
-
   deps = [
     "../..:typedefs",
     "../..:webrtc_common",
@@ -514,10 +473,6 @@ rtc_static_library("isac_common") {
     "../../rtc_base:rtc_base_approved",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
-}
-
-config("isac_config") {
-  include_dirs = [ "codecs/isac/main/include" ]
 }
 
 rtc_static_library("isac") {
@@ -619,8 +574,6 @@ rtc_static_library("isac_c") {
     libs = [ "m" ]
   }
 
-  public_configs = [ ":isac_config" ]
-
   deps = [
     ":fft",
     ":isac_bwinfo",
@@ -646,10 +599,6 @@ rtc_source_set("fft") {
   ]
 }
 
-config("isac_fix_config") {
-  include_dirs = [ "codecs/isac/fix/include" ]
-}
-
 rtc_static_library("isac_fix") {
   visibility += [ "*" ]
   poisonous = [ "audio_codecs" ]
@@ -657,8 +606,6 @@ rtc_static_library("isac_fix") {
     "codecs/isac/fix/source/audio_decoder_isacfix.cc",
     "codecs/isac/fix/source/audio_encoder_isacfix.cc",
   ]
-
-  public_configs = [ ":isac_fix_config" ]
 
   deps = [
     ":isac_common",
@@ -687,7 +634,6 @@ rtc_source_set("isac_fix_common") {
     "codecs/isac/fix/source/structs.h",
     "codecs/isac/fix/source/transform_tables.c",
   ]
-  public_configs = [ ":isac_fix_config" ]
   deps = [
     ":isac_bwinfo",
     "../..:typedefs",
@@ -754,8 +700,6 @@ rtc_source_set("isac_fix_c") {
     "codecs/isac/fix/source/spectrum_ar_model_tables.h",
     "codecs/isac/fix/source/transform.c",
   ]
-
-  public_configs = [ ":isac_fix_config" ]
 
   deps = [
     ":isac_bwinfo",
@@ -851,10 +795,6 @@ if (rtc_build_with_neon) {
   }
 }
 
-config("pcm16b_config") {
-  include_dirs = [ "codecs/pcm16b/include" ]
-}
-
 rtc_static_library("pcm16b") {
   visibility += [ "*" ]
   poisonous = [ "audio_codecs" ]
@@ -878,7 +818,6 @@ rtc_static_library("pcm16b") {
   public_deps = [
     ":pcm16b_c",
   ]
-  public_configs = [ ":pcm16b_config" ]
 }
 
 rtc_source_set("pcm16b_c") {
@@ -888,7 +827,6 @@ rtc_source_set("pcm16b_c") {
     "codecs/pcm16b/pcm16b.h",
   ]
 
-  public_configs = [ ":pcm16b_config" ]
   deps = [
     "../..:typedefs",
     "../..:webrtc_common",
@@ -1220,8 +1158,6 @@ rtc_source_set("neteq_test_tools") {
     "neteq/tools/rtp_generator.h",
   ]
 
-  public_configs = [ ":neteq_tools_config" ]
-
   if (!build_with_chromium && is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
     suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
@@ -1257,10 +1193,6 @@ rtc_source_set("neteq_test_tools") {
   }
 }
 
-config("neteq_tools_config") {
-  include_dirs = [ "tools" ]
-}
-
 rtc_source_set("neteq_tools") {
   visibility += webrtc_default_visibility
   sources = [
@@ -1273,8 +1205,6 @@ rtc_source_set("neteq_tools") {
     "neteq/tools/neteq_stats_getter.cc",
     "neteq/tools/neteq_stats_getter.h",
   ]
-
-  public_configs = [ ":neteq_tools_config" ]
 
   if (!build_with_chromium && is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -2001,12 +1931,6 @@ if (rtc_include_tests) {
       "codecs/isac/main/test/simpleKenny.c",
     ]
 
-    include_dirs = [
-      "codecs/isac/main/include",
-      "codecs/isac/main/test",
-      "codecs/isac/main/util",
-    ]
-
     deps = [
       ":isac",
       ":isac_test_util",
@@ -2052,12 +1976,6 @@ if (rtc_include_tests) {
       ":isac_test_util",
       "../../rtc_base:rtc_base_approved",
     ]
-
-    include_dirs = [
-      "codecs/isac/main/include",
-      "codecs/isac/main/test",
-      "codecs/isac/main/util",
-    ]
   }
 
   rtc_executable("isac_switch_samprate_test") {
@@ -2072,13 +1990,6 @@ if (rtc_include_tests) {
       ":isac_test_util",
       "../../common_audio",
       "../../common_audio:common_audio_c",
-    ]
-
-    include_dirs = [
-      "codecs/isac/main/include",
-      "codecs/isac/main/test",
-      "codecs/isac/main/util",
-      "../../common_audio/signal_processing/include",
     ]
   }
 
