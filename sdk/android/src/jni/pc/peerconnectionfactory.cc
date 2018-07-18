@@ -54,6 +54,8 @@ JavaToNativePeerConnectionFactoryOptions(JNIEnv* jni,
       Java_Options_getDisableNetworkMonitor(jni, options);
   bool enable_aes128_sha1_32_crypto_cipher =
       Java_Options_getEnableAes128Sha1_32CryptoCipher(jni, options);
+  bool enable_gcm_crypto_suites =
+      Java_Options_getEnableGcmCryptoSuites(jni, options);
 
   PeerConnectionFactoryInterface::Options native_options;
 
@@ -65,6 +67,8 @@ JavaToNativePeerConnectionFactoryOptions(JNIEnv* jni,
 
   native_options.crypto_options.enable_aes128_sha1_32_crypto_cipher =
       enable_aes128_sha1_32_crypto_cipher;
+  native_options.crypto_options.enable_gcm_crypto_suites =
+      enable_gcm_crypto_suites;
   return native_options;
 }
 }  // namespace
