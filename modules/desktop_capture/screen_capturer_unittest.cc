@@ -74,7 +74,7 @@ class FakeSharedMemory : public SharedMemory {
  public:
   FakeSharedMemory(char* buffer, size_t size)
       : SharedMemory(buffer, size, 0, kTestSharedMemoryId), buffer_(buffer) {}
-  virtual ~FakeSharedMemory() { delete[] buffer_; }
+  ~FakeSharedMemory() override { delete[] buffer_; }
 
  private:
   char* buffer_;
