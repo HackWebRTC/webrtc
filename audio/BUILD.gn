@@ -54,6 +54,7 @@ rtc_static_library("audio") {
     "../api/audio:audio_frame_api",
     "../api/audio:audio_mixer_api",
     "../api/audio_codecs:audio_codecs_api",
+    "../api/audio_codecs:builtin_audio_encoder_factory",
     "../call:bitrate_allocator",
     "../call:call_interfaces",
     "../call:rtp_interfaces",
