@@ -39,6 +39,7 @@ class MockRtpTransportControllerSend
                                Transport*,
                                const RtpSenderObservers&,
                                RtcEventLog*));
+  MOCK_METHOD1(DestroyVideoRtpSender, void(VideoRtpSenderInterface*));
   MOCK_METHOD0(GetWorkerQueue, rtc::TaskQueue*());
   MOCK_METHOD0(packet_router, PacketRouter*());
   MOCK_METHOD0(transport_feedback_observer, TransportFeedbackObserver*());

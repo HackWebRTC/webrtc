@@ -84,7 +84,7 @@ RtpTransportControllerSend::~RtpTransportControllerSend() {
   process_thread_->DeRegisterModule(&pacer_);
 }
 
-PayloadRouter* RtpTransportControllerSend::CreateVideoRtpSender(
+VideoRtpSenderInterface* RtpTransportControllerSend::CreateVideoRtpSender(
     const std::vector<uint32_t>& ssrcs,
     std::map<uint32_t, RtpState> suspended_ssrcs,
     const std::map<uint32_t, RtpPayloadState>& states,
@@ -100,6 +100,19 @@ PayloadRouter* RtpTransportControllerSend::CreateVideoRtpSender(
       // the parts of RtpTransportControllerSendInterface that are really used.
       this, event_log, &retransmission_rate_limiter_));
   return video_rtp_senders_.back().get();
+}
+
+void RtpTransportControllerSend::DestroyVideoRtpSender(
+    VideoRtpSenderInterface* rtp_video_sender) {
+  std::vector<std::unique_ptr<VideoRtpSenderInterface>>::iterator it =
+      video_rtp_senders_.end();
+  for (it = video_rtp_senders_.begin(); it != video_rtp_senders_.end(); ++it) {
+    if (it->get() == rtp_video_sender) {
+      break;
+    }
+  }
+  RTC_DCHECK(it != video_rtp_senders_.end());
+  video_rtp_senders_.erase(it);
 }
 
 void RtpTransportControllerSend::OnNetworkChanged(uint32_t bitrate_bps,

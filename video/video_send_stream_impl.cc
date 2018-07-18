@@ -341,6 +341,7 @@ VideoSendStreamImpl::~VideoSendStreamImpl() {
   if (fec_controller_->UseLossVectorMask()) {
     transport_->DeRegisterPacketFeedbackObserver(this);
   }
+  transport_->DestroyVideoRtpSender(payload_router_);
 }
 
 void VideoSendStreamImpl::RegisterProcessThread(
