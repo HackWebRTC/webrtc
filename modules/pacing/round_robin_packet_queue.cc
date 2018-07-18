@@ -18,6 +18,7 @@
 namespace webrtc {
 
 RoundRobinPacketQueue::Stream::Stream() : bytes(0) {}
+RoundRobinPacketQueue::Stream::Stream(const Stream& stream) = default;
 RoundRobinPacketQueue::Stream::~Stream() {}
 
 RoundRobinPacketQueue::RoundRobinPacketQueue(const Clock* clock)

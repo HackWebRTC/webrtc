@@ -59,6 +59,7 @@ class RoundRobinPacketQueue : public PacketQueueInterface {
 
   struct Stream {
     Stream();
+    Stream(const Stream&);
 
     virtual ~Stream();
 

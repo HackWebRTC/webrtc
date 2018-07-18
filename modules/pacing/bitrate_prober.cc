@@ -47,6 +47,8 @@ constexpr int64_t kProbeClusterTimeoutMs = 5000;
 
 BitrateProber::BitrateProber() : BitrateProber(nullptr) {}
 
+BitrateProber::~BitrateProber() = default;
+
 BitrateProber::BitrateProber(RtcEventLog* event_log)
     : probing_state_(ProbingState::kDisabled),
       next_probe_time_ms_(-1),

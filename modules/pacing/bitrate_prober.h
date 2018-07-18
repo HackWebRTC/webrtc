@@ -25,6 +25,7 @@ class BitrateProber {
  public:
   BitrateProber();
   explicit BitrateProber(RtcEventLog* event_log);
+  ~BitrateProber();
 
   void SetEnabled(bool enable);
 
