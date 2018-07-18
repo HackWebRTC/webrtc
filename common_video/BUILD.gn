@@ -8,10 +8,6 @@
 
 import("../webrtc.gni")
 
-config("common_video_config") {
-  include_dirs = [ "include" ]
-}
-
 rtc_static_library("common_video") {
   visibility = [ "*" ]
 
@@ -44,10 +40,6 @@ rtc_static_library("common_video") {
     "video_render_frames.cc",
     "video_render_frames.h",
   ]
-
-  include_dirs = [ "../modules/interface" ]
-
-  public_configs = [ ":common_video_config" ]
 
   deps = [
     "..:webrtc_common",
