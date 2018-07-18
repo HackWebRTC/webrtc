@@ -33,12 +33,16 @@ class AimdRateControl {
   void SetStartBitrate(int start_bitrate_bps);
   void SetMinBitrate(int min_bitrate_bps);
   int64_t GetFeedbackInterval() const;
+
   // Returns true if the bitrate estimate hasn't been changed for more than
   // an RTT, or if the estimated_throughput is less than half of the current
   // estimate. Should be used to decide if we should reduce the rate further
   // when over-using.
-  bool TimeToReduceFurther(int64_t time_now,
+  bool TimeToReduceFurther(int64_t now_ms,
                            uint32_t estimated_throughput_bps) const;
+  // As above. To be used if overusing before we have measured a throughput.
+  bool InitialTimeToReduceFurther(int64_t now_ms) const;
+
   uint32_t LatestEstimate() const;
   void SetRtt(int64_t rtt);
   uint32_t Update(const RateControlInput* input, int64_t now_ms);
@@ -83,12 +87,15 @@ class AimdRateControl {
   RateControlState rate_control_state_;
   RateControlRegion rate_control_region_;
   int64_t time_last_bitrate_change_;
+  int64_t time_last_bitrate_decrease_;
   int64_t time_first_throughput_estimate_;
   bool bitrate_is_initialized_;
   float beta_;
   int64_t rtt_;
-  bool in_experiment_;
-  bool smoothing_experiment_;
+  const bool in_experiment_;
+  const bool smoothing_experiment_;
+  const bool in_initial_backoff_interval_experiment_;
+  int64_t initial_backoff_interval_ms_;
   absl::optional<int> last_decrease_;
 };
 }  // namespace webrtc

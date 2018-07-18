@@ -14,6 +14,7 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -22,6 +23,7 @@
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "rtc_base/constructormagic.h"
 #include "system_wrappers/include/clock.h"
+#include "test/field_trial.h"
 #include "test/gtest.h"
 
 namespace webrtc {
@@ -114,6 +116,7 @@ class StreamGenerator {
 class DelayBasedBweTest : public ::testing::Test {
  public:
   DelayBasedBweTest();
+  explicit DelayBasedBweTest(const std::string& field_trial_string);
   virtual ~DelayBasedBweTest();
 
  protected:
@@ -163,6 +166,8 @@ class DelayBasedBweTest : public ::testing::Test {
 
   static const uint32_t kDefaultSsrc;
 
+  std::unique_ptr<test::ScopedFieldTrials>
+      field_trial;        // Must be initialized first.
   SimulatedClock clock_;  // Time at the receiver.
   test::TestBitrateObserver bitrate_observer_;
   std::unique_ptr<AcknowledgedBitrateEstimator> acknowledged_bitrate_estimator_;

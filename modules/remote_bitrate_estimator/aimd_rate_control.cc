@@ -10,20 +10,21 @@
 
 #include "modules/remote_bitrate_estimator/aimd_rate_control.h"
 
+#include <inttypes.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <cstdio>
 #include <string>
 
-#include "rtc_base/checks.h"
-#include "rtc_base/numerics/safe_minmax.h"
-
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "modules/remote_bitrate_estimator/overuse_detector.h"
 #include "modules/remote_bitrate_estimator/test/bwe_test_logging.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/numerics/safe_minmax.h"
 #include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
@@ -31,8 +32,11 @@ namespace webrtc {
 static const int64_t kDefaultRttMs = 200;
 static const int64_t kMaxFeedbackIntervalMs = 1000;
 static const float kDefaultBackoffFactor = 0.85f;
+static const int64_t kDefaultInitialBackOffIntervalMs = 200;
 
 const char kBweBackOffFactorExperiment[] = "WebRTC-BweBackOffFactor";
+const char kBweInitialBackOffIntervalExperiment[] =
+    "WebRTC-BweInitialBackOffInterval";
 
 float ReadBackoffFactor() {
   std::string experiment_string =
@@ -54,6 +58,25 @@ float ReadBackoffFactor() {
   return kDefaultBackoffFactor;
 }
 
+int64_t ReadInitialBackoffIntervalMs() {
+  std::string experiment_string =
+      webrtc::field_trial::FindFullName(kBweInitialBackOffIntervalExperiment);
+  int64_t backoff_interval;
+  int parsed_values =
+      sscanf(experiment_string.c_str(), "Enabled-%" SCNd64, &backoff_interval);
+  if (parsed_values == 1) {
+    if (10 <= backoff_interval && backoff_interval <= 200) {
+      return backoff_interval;
+    }
+    RTC_LOG(WARNING)
+        << "Initial back-off interval must be between 10 and 200 ms.";
+  }
+  RTC_LOG(LS_WARNING) << "Failed to parse parameters for "
+                      << kBweInitialBackOffIntervalExperiment
+                      << " experiment. Using default.";
+  return kDefaultInitialBackOffIntervalMs;
+}
+
 AimdRateControl::AimdRateControl()
     : min_configured_bitrate_bps_(congestion_controller::GetMinBitrateBps()),
       max_configured_bitrate_bps_(30000000),
@@ -64,6 +87,7 @@ AimdRateControl::AimdRateControl()
       rate_control_state_(kRcHold),
       rate_control_region_(kRcMaxUnknown),
       time_last_bitrate_change_(-1),
+      time_last_bitrate_decrease_(-1),
       time_first_throughput_estimate_(-1),
       bitrate_is_initialized_(false),
       beta_(webrtc::field_trial::IsEnabled(kBweBackOffFactorExperiment)
@@ -72,7 +96,15 @@ AimdRateControl::AimdRateControl()
       rtt_(kDefaultRttMs),
       in_experiment_(!AdaptiveThresholdExperimentIsDisabled()),
       smoothing_experiment_(
-          webrtc::field_trial::IsEnabled("WebRTC-Audio-BandwidthSmoothing")) {
+          webrtc::field_trial::IsEnabled("WebRTC-Audio-BandwidthSmoothing")),
+      in_initial_backoff_interval_experiment_(
+          webrtc::field_trial::IsEnabled(kBweInitialBackOffIntervalExperiment)),
+      initial_backoff_interval_ms_(kDefaultInitialBackOffIntervalMs) {
+  if (in_initial_backoff_interval_experiment_) {
+    initial_backoff_interval_ms_ = ReadInitialBackoffIntervalMs();
+    RTC_LOG(LS_INFO) << "Using aimd rate control with initial back-off interval"
+                     << " " << initial_backoff_interval_ms_ << " ms.";
+  }
   RTC_LOG(LS_INFO) << "Using aimd rate control with back off factor " << beta_;
 }
 
@@ -105,11 +137,11 @@ int64_t AimdRateControl::GetFeedbackInterval() const {
 }
 
 bool AimdRateControl::TimeToReduceFurther(
-    int64_t time_now,
+    int64_t now_ms,
     uint32_t estimated_throughput_bps) const {
   const int64_t bitrate_reduction_interval =
       std::max<int64_t>(std::min<int64_t>(rtt_, 200), 10);
-  if (time_now - time_last_bitrate_change_ >= bitrate_reduction_interval) {
+  if (now_ms - time_last_bitrate_change_ >= bitrate_reduction_interval) {
     return true;
   }
   if (ValidEstimate()) {
@@ -117,6 +149,20 @@ bool AimdRateControl::TimeToReduceFurther(
     // the threshold to 0.95 * LatestEstimate().
     const uint32_t threshold = static_cast<uint32_t>(0.5 * LatestEstimate());
     return estimated_throughput_bps < threshold;
+  }
+  return false;
+}
+
+bool AimdRateControl::InitialTimeToReduceFurther(int64_t now_ms) const {
+  if (!in_initial_backoff_interval_experiment_) {
+    return ValidEstimate() &&
+           TimeToReduceFurther(now_ms, LatestEstimate() / 2 - 1);
+  }
+  // TODO(terelius): We could use the RTT (clamped to suitable limits) instead
+  // of a fixed bitrate_reduction_interval.
+  if (time_last_bitrate_decrease_ == -1 ||
+      now_ms - time_last_bitrate_decrease_ >= initial_backoff_interval_ms_) {
+    return true;
   }
   return false;
 }
@@ -156,8 +202,12 @@ uint32_t AimdRateControl::Update(const RateControlInput* input,
 
 void AimdRateControl::SetEstimate(int bitrate_bps, int64_t now_ms) {
   bitrate_is_initialized_ = true;
+  uint32_t prev_bitrate_bps = current_bitrate_bps_;
   current_bitrate_bps_ = ClampBitrate(bitrate_bps, bitrate_bps);
   time_last_bitrate_change_ = now_ms;
+  if (current_bitrate_bps_ < prev_bitrate_bps) {
+    time_last_bitrate_decrease_ = now_ms;
+  }
 }
 
 int AimdRateControl::GetNearMaxIncreaseRateBps() const {
@@ -273,6 +323,7 @@ uint32_t AimdRateControl::ChangeBitrate(uint32_t new_bitrate_bps,
       // Stay on hold until the pipes are cleared.
       rate_control_state_ = kRcHold;
       time_last_bitrate_change_ = now_ms;
+      time_last_bitrate_decrease_ = now_ms;
       break;
 
     default:

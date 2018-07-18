@@ -212,6 +212,7 @@ if (rtc_include_tests) {
       "../../pacing",
       "../../remote_bitrate_estimator",
       "../../rtp_rtcp:rtp_rtcp_format",
+      "//system_wrappers:field_trial_api",
       "//testing/gmock",
       "//third_party/abseil-cpp/absl/memory",
     ]
