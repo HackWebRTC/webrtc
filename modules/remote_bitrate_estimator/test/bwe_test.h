@@ -33,6 +33,7 @@ class PacketSender;
 class PacketProcessorRunner {
  public:
   explicit PacketProcessorRunner(PacketProcessor* processor);
+  PacketProcessorRunner(const PacketProcessorRunner&);
   ~PacketProcessorRunner();
 
   bool RunsProcessor(const PacketProcessor* processor) const;
@@ -48,11 +49,12 @@ class PacketProcessorRunner {
 
 class Link : public PacketProcessorListener {
  public:
-  virtual ~Link() {}
+  Link();
+  ~Link() override;
 
-  virtual void AddPacketProcessor(PacketProcessor* processor,
-                                  ProcessorType type);
-  virtual void RemovePacketProcessor(PacketProcessor* processor);
+  void AddPacketProcessor(PacketProcessor* processor,
+                          ProcessorType type) override;
+  void RemovePacketProcessor(PacketProcessor* processor) override;
 
   void Run(int64_t run_for_ms, int64_t now_ms, Packets* packets);
 

@@ -31,7 +31,7 @@ class CongestionWindow;
 class BbrBweSender : public BweSender {
  public:
   explicit BbrBweSender(BitrateObserver* observer, Clock* clock);
-  virtual ~BbrBweSender();
+  ~BbrBweSender() override;
   enum Mode {
     // Startup phase.
     STARTUP,
@@ -48,7 +48,7 @@ class BbrBweSender : public BweSender {
   };
 
   struct PacketStats {
-    PacketStats() {}
+    PacketStats();
     PacketStats(uint16_t sequence_number_,
                 int64_t last_sent_packet_send_time_ms_,
                 int64_t send_time_ms_,
@@ -58,19 +58,9 @@ class BbrBweSender : public BweSender {
                 size_t data_sent_bytes_,
                 size_t data_sent_before_last_sent_packet_bytes_,
                 size_t data_acked_bytes_,
-                size_t data_acked_before_last_acked_packet_bytes_)
-        : sequence_number(sequence_number_),
-          last_sent_packet_send_time_ms(last_sent_packet_send_time_ms_),
-          send_time_ms(send_time_ms_),
-          ack_time_ms(ack_time_ms_),
-          last_acked_packet_ack_time_ms(last_acked_packet_ack_time_ms_),
-          payload_size_bytes(payload_size_bytes_),
-          data_sent_bytes(data_sent_bytes_),
-          data_sent_before_last_sent_packet_bytes(
-              data_sent_before_last_sent_packet_bytes_),
-          data_acked_bytes(data_acked_bytes_),
-          data_acked_before_last_acked_packet_bytes(
-              data_acked_before_last_acked_packet_bytes_) {}
+                size_t data_acked_before_last_acked_packet_bytes_);
+    PacketStats(const PacketStats&);
+
     // Sequence number of this packet.
     uint16_t sequence_number;
     // Send time of the last sent packet at ack time of this packet.
@@ -226,7 +216,7 @@ class BbrBweSender : public BweSender {
 class BbrBweReceiver : public BweReceiver {
  public:
   explicit BbrBweReceiver(int flow_id);
-  virtual ~BbrBweReceiver();
+  ~BbrBweReceiver() override;
   void ReceivePacket(int64_t arrival_time_ms,
                      const MediaPacket& media_packet) override;
   FeedbackPacket* GetFeedback(int64_t now_ms) override;

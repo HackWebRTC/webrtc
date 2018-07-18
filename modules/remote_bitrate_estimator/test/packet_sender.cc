@@ -28,6 +28,10 @@ namespace {
 const float kPaceMultiplier = 2.5f;
 }
 
+uint32_t PacketSender::TargetBitrateKbps() {
+  return 0;
+}
+
 void PacketSender::Pause() {
   running_ = false;
   if (metric_recorder_ != nullptr) {
@@ -102,6 +106,10 @@ void VideoSender::RunFor(int64_t time_ms, Packets* in_out) {
   std::list<FeedbackPacket*> feedbacks = GetFeedbackPackets(
       in_out, clock_.TimeInMilliseconds() + time_ms, source_->flow_id());
   ProcessFeedbackAndGeneratePackets(time_ms, &feedbacks, in_out);
+}
+
+VideoSource* VideoSender::source() const {
+  return source_;
 }
 
 void VideoSender::ProcessFeedbackAndGeneratePackets(
@@ -327,6 +335,10 @@ void PacedVideoSender::OnNetworkChanged(uint32_t bitrate_for_encoder_bps,
       bitrate_for_pacer_bps, in_probe_rtt, congestion_window);
 }
 
+size_t PacedVideoSender::pacer_queue_size_in_bytes() {
+  return pacer_queue_size_in_bytes_;
+}
+
 void PacedVideoSender::OnBytesAcked(size_t bytes) {
   pacer_->OnBytesAcked(bytes);
 }
@@ -357,6 +369,8 @@ TcpSender::TcpSender(PacketProcessorListener* listener,
       last_generated_packets_ms_(0),
       num_recent_sent_packets_(0),
       bitrate_kbps_(0) {}
+
+TcpSender::~TcpSender() = default;
 
 void TcpSender::RunFor(int64_t time_ms, Packets* in_out) {
   if (clock_.TimeInMilliseconds() + time_ms < offset_ms_) {
@@ -396,6 +410,10 @@ void TcpSender::RunFor(int64_t time_ms, Packets* in_out) {
   clock_.AdvanceTimeMilliseconds(time_ms -
                                  (clock_.TimeInMilliseconds() - start_time_ms));
   SendPackets(in_out);
+}
+
+int TcpSender::GetFeedbackIntervalMs() const {
+  return 10;
 }
 
 void TcpSender::SendPackets(Packets* in_out) {

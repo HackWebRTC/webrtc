@@ -58,7 +58,7 @@ class SendSideBweSender : public BweSender, public RemoteBitrateObserver {
 class SendSideBweReceiver : public BweReceiver {
  public:
   explicit SendSideBweReceiver(int flow_id);
-  virtual ~SendSideBweReceiver();
+  ~SendSideBweReceiver() override;
 
   void ReceivePacket(int64_t arrival_time_ms,
                      const MediaPacket& media_packet) override;

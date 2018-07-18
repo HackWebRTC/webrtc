@@ -58,6 +58,9 @@ uint32_t ConvertMsTo24Bits(int64_t time_ms) {
   return time_24_bits;
 }
 
+RemoteBitrateEstimatorAbsSendTime::~RemoteBitrateEstimatorAbsSendTime() =
+    default;
+
 bool RemoteBitrateEstimatorAbsSendTime::IsWithinClusterBounds(
     int send_delta_ms,
     const Cluster& cluster_aggregate) {

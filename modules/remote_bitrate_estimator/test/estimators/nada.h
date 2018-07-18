@@ -35,7 +35,7 @@ namespace bwe {
 class NadaBweReceiver : public BweReceiver {
  public:
   explicit NadaBweReceiver(int flow_id);
-  virtual ~NadaBweReceiver();
+  ~NadaBweReceiver() override;
 
   void ReceivePacket(int64_t arrival_time_ms,
                      const MediaPacket& media_packet) override;
@@ -67,7 +67,7 @@ class NadaBweSender : public BweSender {
 
   NadaBweSender(int kbps, BitrateObserver* observer, Clock* clock);
   NadaBweSender(BitrateObserver* observer, Clock* clock);
-  virtual ~NadaBweSender();
+  ~NadaBweSender() override;
 
   int GetFeedbackIntervalMs() const override;
   // Updates the min_feedback_delay_ms_ and the min_round_trip_time_ms_.

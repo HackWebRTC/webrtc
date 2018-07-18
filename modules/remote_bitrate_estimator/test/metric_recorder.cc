@@ -34,6 +34,8 @@ const double kP = 1.0;  // Used for Norm Lp.
 LinkShare::LinkShare(ChokeFilter* choke_filter)
     : choke_filter_(choke_filter), running_flows_(choke_filter->flow_ids()) {}
 
+LinkShare::~LinkShare() = default;
+
 void LinkShare::PauseFlow(int flow_id) {
   running_flows_.erase(flow_id);
 }
@@ -77,6 +79,8 @@ MetricRecorder::MetricRecorder(const std::string algorithm_name,
   if (packet_sender != nullptr)
     packet_sender->set_metric_recorder(this);
 }
+
+MetricRecorder::~MetricRecorder() = default;
 
 void MetricRecorder::SetPlotInformation(
     const std::vector<std::string>& prefixes,

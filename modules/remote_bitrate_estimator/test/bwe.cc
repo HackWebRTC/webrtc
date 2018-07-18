@@ -56,10 +56,14 @@ void BweReceiver::ReceivePacket(int64_t arrival_time_ms,
                             static_cast<uint32_t>(media_packet.payload_size()));
 }
 
+FeedbackPacket* BweReceiver::GetFeedback(int64_t now_ms) {
+  return nullptr;
+}
+
 class NullBweSender : public BweSender {
  public:
   NullBweSender() {}
-  virtual ~NullBweSender() {}
+  ~NullBweSender() override {}
 
   int GetFeedbackIntervalMs() const override { return 1000; }
   void GiveFeedback(const FeedbackPacket& feedback) override {}
@@ -214,6 +218,8 @@ float BweReceiver::RecentPacketLossRatio() {
 
   return static_cast<float>(gap - number_packets_received) / gap;
 }
+
+LinkedSet::LinkedSet(int capacity) : capacity_(capacity) {}
 
 LinkedSet::~LinkedSet() {
   while (!empty())

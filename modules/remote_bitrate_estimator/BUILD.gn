@@ -38,11 +38,6 @@ rtc_static_library("remote_bitrate_estimator") {
     defines = [ "BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0" ]
   }
 
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-
   deps = [
     "../..:webrtc_common",
     "../../:typedefs",
@@ -71,10 +66,6 @@ if (!build_with_chromium) {
       "../../test:rtp_test_utils",
       "../rtp_rtcp",
     ]
-    if (is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
   }
 }
 
@@ -101,6 +92,7 @@ if (rtc_include_tests) {
       "test/estimators/congestion_window.h",
       "test/estimators/max_bandwidth_filter.cc",
       "test/estimators/max_bandwidth_filter.h",
+      "test/estimators/min_rtt_filter.cc",
       "test/estimators/min_rtt_filter.h",
       "test/estimators/nada.cc",
       "test/estimators/nada.h",
@@ -112,6 +104,7 @@ if (rtc_include_tests) {
       "test/estimators/tcp.h",
       "test/metric_recorder.cc",
       "test/metric_recorder.h",
+      "test/packet.cc",
       "test/packet.h",
       "test/packet_receiver.cc",
       "test/packet_receiver.h",
@@ -123,11 +116,6 @@ if (rtc_include_tests) {
       defines = [ "BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=1" ]
     } else {
       defines = [ "BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0" ]
-    }
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
 
     deps = [

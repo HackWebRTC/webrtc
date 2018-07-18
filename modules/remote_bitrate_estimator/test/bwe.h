@@ -71,7 +71,7 @@ typedef std::list<PacketIdentifierNode*>::iterator PacketNodeIt;
 // Allows efficient insertion, deletion and search.
 class LinkedSet {
  public:
-  explicit LinkedSet(int capacity) : capacity_(capacity) {}
+  explicit LinkedSet(int capacity);
   ~LinkedSet();
 
   // If the arriving packet (identified by its sequence number) is already
@@ -116,7 +116,7 @@ class BweSender : public Module {
  public:
   BweSender() {}
   explicit BweSender(int bitrate_kbps) : bitrate_kbps_(bitrate_kbps) {}
-  virtual ~BweSender() {}
+  ~BweSender() override {}
 
   virtual int GetFeedbackIntervalMs() const = 0;
   virtual void GiveFeedback(const FeedbackPacket& feedback) = 0;
@@ -138,7 +138,7 @@ class BweReceiver {
 
   virtual void ReceivePacket(int64_t arrival_time_ms,
                              const MediaPacket& media_packet);
-  virtual FeedbackPacket* GetFeedback(int64_t now_ms) { return NULL; }
+  virtual FeedbackPacket* GetFeedback(int64_t now_ms);
 
   size_t GetSetCapacity() { return received_packets_.capacity(); }
   double BitrateWindowS() const { return rate_counter_.BitrateWindowS(); }

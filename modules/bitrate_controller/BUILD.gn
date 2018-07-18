@@ -11,6 +11,7 @@ import("../../webrtc.gni")
 rtc_static_library("bitrate_controller") {
   visibility = [ "*" ]
   sources = [
+    "bitrate_controller.cc",
     "bitrate_controller_impl.cc",
     "bitrate_controller_impl.h",
     "include/bitrate_controller.h",

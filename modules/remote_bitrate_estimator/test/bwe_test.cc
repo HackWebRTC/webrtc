@@ -36,6 +36,9 @@ namespace bwe {
 PacketProcessorRunner::PacketProcessorRunner(PacketProcessor* processor)
     : processor_(processor) {}
 
+PacketProcessorRunner::PacketProcessorRunner(
+    const PacketProcessorRunner& runner) = default;
+
 PacketProcessorRunner::~PacketProcessorRunner() {
   for (Packet* packet : queue_)
     delete packet;
@@ -120,6 +123,9 @@ void BweTest::SetUp() {
   BWE_TEST_LOGGING_GLOBAL_CONTEXT(test_name);
   BWE_TEST_LOGGING_GLOBAL_ENABLE(false);
 }
+
+Link::Link() = default;
+Link::~Link() = default;
 
 void Link::AddPacketProcessor(PacketProcessor* processor,
                               ProcessorType processor_type) {

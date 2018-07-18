@@ -33,8 +33,8 @@ class MinRttFilter {
   // This class implements a simple filter to ensure that PROBE_RTT is only
   // entered when RTTs start to increase, instead of fixed 10 second window as
   // in orginal BBR design doc, to avoid unnecessary freezes in stream.
-  MinRttFilter() {}
-  ~MinRttFilter() {}
+  MinRttFilter();
+  ~MinRttFilter();
 
   absl::optional<int64_t> min_rtt_ms() { return min_rtt_ms_; }
   void AddRttSample(int64_t rtt_ms, int64_t now_ms) {
