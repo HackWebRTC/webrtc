@@ -6035,6 +6035,30 @@ TEST_F(WebRtcVideoChannelTest, DetectRtpSendParameterHeaderExtensionsChange) {
   EXPECT_EQ(webrtc::RTCErrorType::INVALID_MODIFICATION, result.type());
 }
 
+TEST_F(WebRtcVideoChannelTest, GetRtpSendParametersDegradationPreference) {
+  AddSendStream();
+
+  FakeVideoCapturerWithTaskQueue capturer;
+  EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, nullptr, &capturer));
+
+  webrtc::RtpParameters rtp_parameters =
+      channel_->GetRtpSendParameters(last_ssrc_);
+  EXPECT_EQ(rtp_parameters.degradation_preference,
+            webrtc::DegradationPreference::BALANCED);
+  rtp_parameters.degradation_preference =
+      webrtc::DegradationPreference::MAINTAIN_FRAMERATE;
+
+  EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, rtp_parameters).ok());
+
+  webrtc::RtpParameters updated_rtp_parameters =
+      channel_->GetRtpSendParameters(last_ssrc_);
+  EXPECT_EQ(updated_rtp_parameters.degradation_preference,
+            webrtc::DegradationPreference::MAINTAIN_FRAMERATE);
+
+  // Remove the source since it will be destroyed before the channel
+  EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, nullptr, nullptr));
+}
+
 // Test that if we set/get parameters multiple times, we get the same results.
 TEST_F(WebRtcVideoChannelTest, SetAndGetRtpSendParameters) {
   AddSendStream();

@@ -602,7 +602,9 @@ struct RtpParameters {
   // abstraction on which RTCP parameters are set.
   RtcpParameters rtcp;
 
-  // TODO(deadbeef): Not implemented.
+  // When bandwidth is constrained and the RtpSender needs to choose between
+  // degrading resolution or degrading framerate, degradationPreference
+  // indicates which is preferred. Only for video tracks.
   DegradationPreference degradation_preference =
       DegradationPreference::BALANCED;
 

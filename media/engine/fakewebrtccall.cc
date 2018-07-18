@@ -288,7 +288,6 @@ void FakeVideoSendStream::Stop() {
 void FakeVideoSendStream::SetSource(
     rtc::VideoSourceInterface<webrtc::VideoFrame>* source,
     const webrtc::DegradationPreference& degradation_preference) {
-  RTC_DCHECK(source != source_);
   if (source_)
     source_->RemoveSink(this);
   source_ = source;

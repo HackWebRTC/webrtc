@@ -1693,19 +1693,23 @@ WebRtcVideoChannel::WebRtcVideoSendStream::GetDegradationPreference() const {
   // |this| acts like a VideoSource to make sure SinkWants are handled on the
   // correct thread.
   webrtc::DegradationPreference degradation_preference;
-  if (!enable_cpu_overuse_detection_) {
+  if (rtp_parameters_.degradation_preference !=
+      webrtc::DegradationPreference::BALANCED) {
+    // If the degradationPreference is different from the default value, assume
+    // it is what we want, regardless of trials or other internal settings.
+    degradation_preference = rtp_parameters_.degradation_preference;
+  } else if (!enable_cpu_overuse_detection_) {
     degradation_preference = webrtc::DegradationPreference::DISABLED;
+  } else if (parameters_.options.is_screencast.value_or(false)) {
+    degradation_preference = webrtc::DegradationPreference::MAINTAIN_RESOLUTION;
+  } else if (webrtc::field_trial::IsEnabled(
+                 "WebRTC-Video-BalancedDegradation")) {
+    degradation_preference = webrtc::DegradationPreference::BALANCED;
   } else {
-    if (parameters_.options.is_screencast.value_or(false)) {
-      degradation_preference =
-          webrtc::DegradationPreference::MAINTAIN_RESOLUTION;
-    } else if (webrtc::field_trial::IsEnabled(
-                   "WebRTC-Video-BalancedDegradation")) {
-      degradation_preference = webrtc::DegradationPreference::BALANCED;
-    } else {
-      degradation_preference =
-          webrtc::DegradationPreference::MAINTAIN_FRAMERATE;
-    }
+    // TODO(orphis): The default should be BALANCED as the standard mandates.
+    // Right now, there is no way to set it to BALANCED as it would change
+    // the behavior for any project expecting MAINTAIN_FRAMERATE by default.
+    degradation_preference = webrtc::DegradationPreference::MAINTAIN_FRAMERATE;
   }
   return degradation_preference;
 }
@@ -1812,6 +1816,12 @@ webrtc::RTCError WebRtcVideoChannel::WebRtcVideoSendStream::SetRtpParameters(
     }
   }
 
+  bool new_degradation_preference = false;
+  if (new_parameters.degradation_preference !=
+      rtp_parameters_.degradation_preference) {
+    new_degradation_preference = true;
+  }
+
   // TODO(bugs.webrtc.org/8807): The bitrate priority really doesn't require an
   // entire encoder reconfiguration, it just needs to update the bitrate
   // allocator.
@@ -1837,6 +1847,9 @@ webrtc::RTCError WebRtcVideoChannel::WebRtcVideoSendStream::SetRtpParameters(
   }
   if (new_send_state) {
     UpdateSendState();
+  }
+  if (new_degradation_preference) {
+    stream_->SetSource(this, GetDegradationPreference());
   }
   return webrtc::RTCError::OK();
 }
