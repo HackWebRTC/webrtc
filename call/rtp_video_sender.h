@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef CALL_PAYLOAD_ROUTER_H_
-#define CALL_PAYLOAD_ROUTER_H_
+#ifndef CALL_RTP_VIDEO_SENDER_H_
+#define CALL_RTP_VIDEO_SENDER_H_
 
 #include <map>
 #include <memory>
@@ -20,7 +20,7 @@
 #include "call/rtp_config.h"
 #include "call/rtp_payload_params.h"
 #include "call/rtp_transport_controller_send_interface.h"
-#include "call/video_rtp_sender_interface.h"
+#include "call/rtp_video_sender_interface.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/rtp_rtcp/include/flexfec_sender.h"
@@ -38,12 +38,12 @@ class RTPFragmentationHeader;
 class RtpRtcp;
 class RtpTransportControllerSendInterface;
 
-// PayloadRouter routes outgoing data to the correct sending RTP module, based
+// RtpVideoSender routes outgoing data to the correct sending RTP module, based
 // on the simulcast layer in RTPVideoHeader.
-class PayloadRouter : public VideoRtpSenderInterface {
+class RtpVideoSender : public RtpVideoSenderInterface {
  public:
   // Rtp modules are assumed to be sorted in simulcast index order.
-  PayloadRouter(
+  RtpVideoSender(
       const std::vector<uint32_t>& ssrcs,
       std::map<uint32_t, RtpState> suspended_ssrcs,
       const std::map<uint32_t, RtpPayloadState>& states,
@@ -54,7 +54,7 @@ class PayloadRouter : public VideoRtpSenderInterface {
       RtpTransportControllerSendInterface* transport,
       RtcEventLog* event_log,
       RateLimiter* retransmission_limiter);  // move inside RtpTransport
-  ~PayloadRouter() override;
+  ~RtpVideoSender() override;
 
   // RegisterProcessThread register |module_process_thread| with those objects
   // that use it. Registration has to happen on the thread were
@@ -64,7 +64,7 @@ class PayloadRouter : public VideoRtpSenderInterface {
   void RegisterProcessThread(ProcessThread* module_process_thread) override;
   void DeRegisterProcessThread() override;
 
-  // PayloadRouter will only route packets if being active, all packets will be
+  // RtpVideoSender will only route packets if being active, all packets will be
   // dropped otherwise.
   void SetActive(bool active) override;
   // Sets the sending status of the rtp modules and appropriately sets the
@@ -120,9 +120,9 @@ class PayloadRouter : public VideoRtpSenderInterface {
 
   std::vector<RtpPayloadParams> params_ RTC_GUARDED_BY(crit_);
 
-  RTC_DISALLOW_COPY_AND_ASSIGN(PayloadRouter);
+  RTC_DISALLOW_COPY_AND_ASSIGN(RtpVideoSender);
 };
 
 }  // namespace webrtc
 
-#endif  // CALL_PAYLOAD_ROUTER_H_
+#endif  // CALL_RTP_VIDEO_SENDER_H_

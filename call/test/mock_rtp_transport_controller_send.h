@@ -30,8 +30,8 @@ class MockRtpTransportControllerSend
     : public RtpTransportControllerSendInterface {
  public:
   MOCK_METHOD8(
-      CreateVideoRtpSender,
-      VideoRtpSenderInterface*(const std::vector<uint32_t>&,
+      CreateRtpVideoSender,
+      RtpVideoSenderInterface*(const std::vector<uint32_t>&,
                                std::map<uint32_t, RtpState>,
                                const std::map<uint32_t, RtpPayloadState>&,
                                const RtpConfig&,
@@ -39,7 +39,7 @@ class MockRtpTransportControllerSend
                                Transport*,
                                const RtpSenderObservers&,
                                RtcEventLog*));
-  MOCK_METHOD1(DestroyVideoRtpSender, void(VideoRtpSenderInterface*));
+  MOCK_METHOD1(DestroyRtpVideoSender, void(RtpVideoSenderInterface*));
   MOCK_METHOD0(GetWorkerQueue, rtc::TaskQueue*());
   MOCK_METHOD0(packet_router, PacketRouter*());
   MOCK_METHOD0(transport_feedback_observer, TransportFeedbackObserver*());

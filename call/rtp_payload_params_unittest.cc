@@ -10,7 +10,7 @@
 
 #include <memory>
 
-#include "call/payload_router.h"
+#include "call/rtp_payload_params.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "test/gtest.h"
 

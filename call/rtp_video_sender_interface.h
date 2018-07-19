@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef CALL_VIDEO_RTP_SENDER_INTERFACE_H_
-#define CALL_VIDEO_RTP_SENDER_INTERFACE_H_
+#ifndef CALL_RTP_VIDEO_SENDER_INTERFACE_H_
+#define CALL_RTP_VIDEO_SENDER_INTERFACE_H_
 
 #include <map>
 #include <vector>
@@ -23,16 +23,16 @@ namespace webrtc {
 class VideoBitrateAllocation;
 struct FecProtectionParams;
 
-class VideoRtpSenderInterface : public EncodedImageCallback {
+class RtpVideoSenderInterface : public EncodedImageCallback {
  public:
   virtual void RegisterProcessThread(ProcessThread* module_process_thread) = 0;
   virtual void DeRegisterProcessThread() = 0;
 
-  // PayloadRouter will only route packets if being active, all packets will be
-  // dropped otherwise.
+  // RtpVideoSender will only route packets if being active, all
+  // packets will be dropped otherwise.
   virtual void SetActive(bool active) = 0;
   // Sets the sending status of the rtp modules and appropriately sets the
-  // payload router to active if any rtp modules are active.
+  // RtpVideoSender to active if any rtp modules are active.
   virtual void SetActiveModules(const std::vector<bool> active_modules) = 0;
   virtual bool IsActive() = 0;
 
@@ -57,4 +57,4 @@ class VideoRtpSenderInterface : public EncodedImageCallback {
       const VideoBitrateAllocation& bitrate) = 0;
 };
 }  // namespace webrtc
-#endif  // CALL_VIDEO_RTP_SENDER_INTERFACE_H_
+#endif  // CALL_RTP_VIDEO_SENDER_INTERFACE_H_

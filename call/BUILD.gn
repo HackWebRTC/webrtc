@@ -100,13 +100,13 @@ rtc_source_set("rtp_receiver") {
 
 rtc_source_set("rtp_sender") {
   sources = [
-    "payload_router.cc",
-    "payload_router.h",
     "rtp_payload_params.cc",
     "rtp_payload_params.h",
     "rtp_transport_controller_send.cc",
     "rtp_transport_controller_send.h",
-    "video_rtp_sender_interface.h",
+    "rtp_video_sender.cc",
+    "rtp_video_sender.h",
+    "rtp_video_sender_interface.h",
   ]
   deps = [
     ":bitrate_configurator",
@@ -284,13 +284,13 @@ if (rtc_include_tests) {
       "bitrate_estimator_tests.cc",
       "call_unittest.cc",
       "flexfec_receive_stream_unittest.cc",
-      "payload_router_unittest.cc",
       "receive_time_calculator_unittest.cc",
       "rtcp_demuxer_unittest.cc",
       "rtp_bitrate_configurator_unittest.cc",
       "rtp_demuxer_unittest.cc",
       "rtp_payload_params_unittest.cc",
       "rtp_rtcp_demuxer_helper_unittest.cc",
+      "rtp_video_sender_unittest.cc",
       "rtx_receive_stream_unittest.cc",
     ]
     deps = [

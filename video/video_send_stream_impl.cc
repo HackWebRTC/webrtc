@@ -111,16 +111,7 @@ int CalculatePacketRate(uint32_t bitrate_bps, size_t packet_size_bytes) {
   return static_cast<int>((bitrate_bps + packet_size_bits - 1) /
                           packet_size_bits);
 }
-// call_stats,
-//  &encoder_feedback_,
-//  stats_proxy_,
-//  stats_proxy_,
-//  stats_proxy_,
-//  stats_proxy_,
-//  stats_proxy_,
-//  stats_proxy_,
-//  send_delay_stats,
-//  this
+
 RtpSenderObservers CreateObservers(CallStats* call_stats,
                                    EncoderRtcpFeedback* encoder_feedback,
                                    SendStatisticsProxy* stats_proxy,
@@ -229,8 +220,8 @@ VideoSendStreamImpl::VideoSendStreamImpl(
                         config_->rtp.ssrcs,
                         video_stream_encoder),
       bandwidth_observer_(transport->GetBandwidthObserver()),
-      payload_router_(
-          transport_->CreateVideoRtpSender(config_->rtp.ssrcs,
+      rtp_video_sender_(
+          transport_->CreateRtpVideoSender(config_->rtp.ssrcs,
                                            suspended_ssrcs,
                                            suspended_payload_states,
                                            config_->rtp,
@@ -304,8 +295,8 @@ VideoSendStreamImpl::VideoSendStreamImpl(
 
   // Currently, both ULPFEC and FlexFEC use the same FEC rate calculation logic,
   // so enable that logic if either of those FEC schemes are enabled.
-  fec_controller_->SetProtectionMethod(payload_router_->FecEnabled(),
-                                       payload_router_->NackEnabled());
+  fec_controller_->SetProtectionMethod(rtp_video_sender_->FecEnabled(),
+                                       rtp_video_sender_->NackEnabled());
 
   fec_controller_->SetProtectionCallback(this);
   // Signal congestion controller this object is ready for OnPacket* callbacks.
@@ -335,28 +326,28 @@ VideoSendStreamImpl::VideoSendStreamImpl(
 
 VideoSendStreamImpl::~VideoSendStreamImpl() {
   RTC_DCHECK_RUN_ON(worker_queue_);
-  RTC_DCHECK(!payload_router_->IsActive())
+  RTC_DCHECK(!rtp_video_sender_->IsActive())
       << "VideoSendStreamImpl::Stop not called";
   RTC_LOG(LS_INFO) << "~VideoSendStreamInternal: " << config_->ToString();
   if (fec_controller_->UseLossVectorMask()) {
     transport_->DeRegisterPacketFeedbackObserver(this);
   }
-  transport_->DestroyVideoRtpSender(payload_router_);
+  transport_->DestroyRtpVideoSender(rtp_video_sender_);
 }
 
 void VideoSendStreamImpl::RegisterProcessThread(
     ProcessThread* module_process_thread) {
-  payload_router_->RegisterProcessThread(module_process_thread);
+  rtp_video_sender_->RegisterProcessThread(module_process_thread);
 }
 
 void VideoSendStreamImpl::DeRegisterProcessThread() {
-  payload_router_->DeRegisterProcessThread();
+  rtp_video_sender_->DeRegisterProcessThread();
 }
 
 bool VideoSendStreamImpl::DeliverRtcp(const uint8_t* packet, size_t length) {
   // Runs on a network thread.
   RTC_DCHECK(!worker_queue_->IsCurrent());
-  payload_router_->DeliverRtcp(packet, length);
+  rtp_video_sender_->DeliverRtcp(packet, length);
   return true;
 }
 
@@ -364,12 +355,12 @@ void VideoSendStreamImpl::UpdateActiveSimulcastLayers(
     const std::vector<bool> active_layers) {
   RTC_DCHECK_RUN_ON(worker_queue_);
   RTC_LOG(LS_INFO) << "VideoSendStream::UpdateActiveSimulcastLayers";
-  bool previously_active = payload_router_->IsActive();
-  payload_router_->SetActiveModules(active_layers);
-  if (!payload_router_->IsActive() && previously_active) {
+  bool previously_active = rtp_video_sender_->IsActive();
+  rtp_video_sender_->SetActiveModules(active_layers);
+  if (!rtp_video_sender_->IsActive() && previously_active) {
     // Payload router switched from active to inactive.
     StopVideoSendStream();
-  } else if (payload_router_->IsActive() && !previously_active) {
+  } else if (rtp_video_sender_->IsActive() && !previously_active) {
     // Payload router switched from inactive to active.
     StartupVideoSendStream();
   }
@@ -378,10 +369,10 @@ void VideoSendStreamImpl::UpdateActiveSimulcastLayers(
 void VideoSendStreamImpl::Start() {
   RTC_DCHECK_RUN_ON(worker_queue_);
   RTC_LOG(LS_INFO) << "VideoSendStream::Start";
-  if (payload_router_->IsActive())
+  if (rtp_video_sender_->IsActive())
     return;
   TRACE_EVENT_INSTANT0("webrtc", "VideoSendStream::Start");
-  payload_router_->SetActive(true);
+  rtp_video_sender_->SetActive(true);
   StartupVideoSendStream();
 }
 
@@ -410,10 +401,10 @@ void VideoSendStreamImpl::StartupVideoSendStream() {
 void VideoSendStreamImpl::Stop() {
   RTC_DCHECK_RUN_ON(worker_queue_);
   RTC_LOG(LS_INFO) << "VideoSendStream::Stop";
-  if (!payload_router_->IsActive())
+  if (!rtp_video_sender_->IsActive())
     return;
   TRACE_EVENT_INSTANT0("webrtc", "VideoSendStream::Stop");
-  payload_router_->SetActive(false);
+  rtp_video_sender_->SetActive(false);
   StopVideoSendStream();
 }
 
@@ -441,7 +432,7 @@ void VideoSendStreamImpl::SignalEncoderTimedOut() {
 
 void VideoSendStreamImpl::OnBitrateAllocationUpdated(
     const VideoBitrateAllocation& allocation) {
-  payload_router_->OnBitrateAllocationUpdated(allocation);
+  rtp_video_sender_->OnBitrateAllocationUpdated(allocation);
 }
 
 void VideoSendStreamImpl::SignalEncoderActive() {
@@ -511,7 +502,7 @@ void VideoSendStreamImpl::OnEncoderConfigurationChanged(
                                    num_temporal_layers,
                                    config_->rtp.max_packet_size);
 
-  if (payload_router_->IsActive()) {
+  if (rtp_video_sender_->IsActive()) {
     // The send stream is started already. Update the allocator with new bitrate
     // limits.
     bitrate_allocator_->AddObserver(
@@ -548,7 +539,7 @@ EncodedImageCallback::Result VideoSendStreamImpl::OnEncodedImage(
 
   fec_controller_->UpdateWithEncodedData(encoded_image._length,
                                          encoded_image._frameType);
-  EncodedImageCallback::Result result = payload_router_->OnEncodedImage(
+  EncodedImageCallback::Result result = rtp_video_sender_->OnEncodedImage(
       encoded_image, codec_specific_info, fragmentation);
 
   RTC_DCHECK(codec_specific_info);
@@ -569,12 +560,12 @@ EncodedImageCallback::Result VideoSendStreamImpl::OnEncodedImage(
 }
 
 std::map<uint32_t, RtpState> VideoSendStreamImpl::GetRtpStates() const {
-  return payload_router_->GetRtpStates();
+  return rtp_video_sender_->GetRtpStates();
 }
 
 std::map<uint32_t, RtpPayloadState> VideoSendStreamImpl::GetRtpPayloadStates()
     const {
-  return payload_router_->GetRtpPayloadStates();
+  return rtp_video_sender_->GetRtpPayloadStates();
 }
 
 uint32_t VideoSendStreamImpl::OnBitrateUpdated(uint32_t bitrate_bps,
@@ -582,7 +573,7 @@ uint32_t VideoSendStreamImpl::OnBitrateUpdated(uint32_t bitrate_bps,
                                                int64_t rtt,
                                                int64_t probing_interval_ms) {
   RTC_DCHECK_RUN_ON(worker_queue_);
-  RTC_DCHECK(payload_router_->IsActive())
+  RTC_DCHECK(rtp_video_sender_->IsActive())
       << "VideoSendStream::Start has not been called.";
 
   // Substract overhead from bitrate.
@@ -657,9 +648,9 @@ int VideoSendStreamImpl::ProtectionRequest(
     uint32_t* sent_nack_rate_bps,
     uint32_t* sent_fec_rate_bps) {
   RTC_DCHECK_RUN_ON(worker_queue_);
-  payload_router_->ProtectionRequest(delta_params, key_params,
-                                     sent_video_rate_bps, sent_nack_rate_bps,
-                                     sent_fec_rate_bps);
+  rtp_video_sender_->ProtectionRequest(delta_params, key_params,
+                                       sent_video_rate_bps, sent_nack_rate_bps,
+                                       sent_fec_rate_bps);
   return 0;
 }
 
@@ -681,7 +672,7 @@ void VideoSendStreamImpl::SetTransportOverhead(
       std::min(config_->rtp.max_packet_size,
                kPathMTU - transport_overhead_bytes_per_packet_);
 
-  payload_router_->SetMaxRtpPacketSize(rtp_packet_size);
+  rtp_video_sender_->SetMaxRtpPacketSize(rtp_packet_size);
 }
 
 void VideoSendStreamImpl::OnPacketAdded(uint32_t ssrc, uint16_t seq_num) {

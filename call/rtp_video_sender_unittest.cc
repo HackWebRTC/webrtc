@@ -11,8 +11,8 @@
 #include <memory>
 #include <string>
 
-#include "call/payload_router.h"
 #include "call/rtp_transport_controller_send.h"
+#include "call/rtp_video_sender.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "rtc_base/rate_limiter.h"
 #include "test/field_trial.h"
@@ -85,9 +85,9 @@ RtpSenderObservers CreateObservers(
   return observers;
 }
 
-class PayloadRouterTestFixture {
+class RtpVideoSenderTestFixture {
  public:
-  PayloadRouterTestFixture(
+  RtpVideoSenderTestFixture(
       const std::vector<uint32_t>& ssrcs,
       int payload_type,
       const std::map<uint32_t, RtpPayloadState>& suspended_payload_states)
@@ -106,7 +106,7 @@ class PayloadRouterTestFixture {
     }
     config_.rtp.payload_type = payload_type;
     std::map<uint32_t, RtpState> suspended_ssrcs;
-    router_ = absl::make_unique<PayloadRouter>(
+    router_ = absl::make_unique<RtpVideoSender>(
         config_.rtp.ssrcs, suspended_ssrcs, suspended_payload_states,
         config_.rtp, config_.rtcp, &transport_,
         CreateObservers(&call_stats_, &encoder_feedback_, &stats_proxy_,
@@ -116,7 +116,7 @@ class PayloadRouterTestFixture {
         &transport_controller_, &event_log_, &retransmission_rate_limiter_);
   }
 
-  PayloadRouter* router() { return router_.get(); }
+  RtpVideoSender* router() { return router_.get(); }
 
  private:
   NiceMock<MockTransport> transport_;
@@ -133,11 +133,11 @@ class PayloadRouterTestFixture {
   CallStats call_stats_;
   SendStatisticsProxy stats_proxy_;
   RateLimiter retransmission_rate_limiter_;
-  std::unique_ptr<PayloadRouter> router_;
+  std::unique_ptr<RtpVideoSender> router_;
 };
 }  // namespace
 
-TEST(PayloadRouterTest, SendOnOneModule) {
+TEST(RtpVideoSenderTest, SendOnOneModule) {
   uint8_t payload = 'a';
   EncodedImage encoded_image;
   encoded_image._timeStamp = 1;
@@ -146,7 +146,7 @@ TEST(PayloadRouterTest, SendOnOneModule) {
   encoded_image._buffer = &payload;
   encoded_image._length = 1;
 
-  PayloadRouterTestFixture test({kSsrc1}, kPayloadType, {});
+  RtpVideoSenderTestFixture test({kSsrc1}, kPayloadType, {});
   EXPECT_NE(
       EncodedImageCallback::Result::OK,
       test.router()->OnEncodedImage(encoded_image, nullptr, nullptr).error);
@@ -167,7 +167,7 @@ TEST(PayloadRouterTest, SendOnOneModule) {
       test.router()->OnEncodedImage(encoded_image, nullptr, nullptr).error);
 }
 
-TEST(PayloadRouterTest, SendSimulcastSetActive) {
+TEST(RtpVideoSenderTest, SendSimulcastSetActive) {
   uint8_t payload = 'a';
   EncodedImage encoded_image;
   encoded_image._timeStamp = 1;
@@ -176,7 +176,7 @@ TEST(PayloadRouterTest, SendSimulcastSetActive) {
   encoded_image._buffer = &payload;
   encoded_image._length = 1;
 
-  PayloadRouterTestFixture test({kSsrc1, kSsrc2}, kPayloadType, {});
+  RtpVideoSenderTestFixture test({kSsrc1, kSsrc2}, kPayloadType, {});
 
   CodecSpecificInfo codec_info_1;
   memset(&codec_info_1, 0, sizeof(CodecSpecificInfo));
@@ -214,7 +214,7 @@ TEST(PayloadRouterTest, SendSimulcastSetActive) {
 // behavior of the payload router. First sets one module to active and checks
 // that outgoing data can be sent on this module, and checks that no data can
 // be sent if both modules are inactive.
-TEST(PayloadRouterTest, SendSimulcastSetActiveModules) {
+TEST(RtpVideoSenderTest, SendSimulcastSetActiveModules) {
   uint8_t payload = 'a';
   EncodedImage encoded_image;
   encoded_image._timeStamp = 1;
@@ -223,7 +223,7 @@ TEST(PayloadRouterTest, SendSimulcastSetActiveModules) {
   encoded_image._buffer = &payload;
   encoded_image._length = 1;
 
-  PayloadRouterTestFixture test({kSsrc1, kSsrc2}, kPayloadType, {});
+  RtpVideoSenderTestFixture test({kSsrc1, kSsrc2}, kPayloadType, {});
   CodecSpecificInfo codec_info_1;
   memset(&codec_info_1, 0, sizeof(CodecSpecificInfo));
   codec_info_1.codecType = kVideoCodecVP8;
@@ -258,8 +258,8 @@ TEST(PayloadRouterTest, SendSimulcastSetActiveModules) {
                 .error);
 }
 
-TEST(PayloadRouterTest, CreateWithNoPreviousStates) {
-  PayloadRouterTestFixture test({kSsrc1, kSsrc2}, kPayloadType, {});
+TEST(RtpVideoSenderTest, CreateWithNoPreviousStates) {
+  RtpVideoSenderTestFixture test({kSsrc1, kSsrc2}, kPayloadType, {});
   test.router()->SetActive(true);
 
   std::map<uint32_t, RtpPayloadState> initial_states =
@@ -269,7 +269,7 @@ TEST(PayloadRouterTest, CreateWithNoPreviousStates) {
   EXPECT_NE(initial_states.find(kSsrc2), initial_states.end());
 }
 
-TEST(PayloadRouterTest, CreateWithPreviousStates) {
+TEST(RtpVideoSenderTest, CreateWithPreviousStates) {
   RtpPayloadState state1;
   state1.picture_id = kInitialPictureId1;
   state1.tl0_pic_idx = kInitialTl0PicIdx1;
@@ -279,7 +279,7 @@ TEST(PayloadRouterTest, CreateWithPreviousStates) {
   std::map<uint32_t, RtpPayloadState> states = {{kSsrc1, state1},
                                                 {kSsrc2, state2}};
 
-  PayloadRouterTestFixture test({kSsrc1, kSsrc2}, kPayloadType, states);
+  RtpVideoSenderTestFixture test({kSsrc1, kSsrc2}, kPayloadType, states);
   test.router()->SetActive(true);
 
   std::map<uint32_t, RtpPayloadState> initial_states =

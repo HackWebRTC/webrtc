@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "call/payload_router.h"
+#include "call/rtp_video_sender.h"
 
 #include <memory>
 #include <string>
@@ -161,16 +161,17 @@ std::unique_ptr<FlexfecSender> MaybeCreateFlexfecSender(
 }
 }  // namespace
 
-PayloadRouter::PayloadRouter(const std::vector<uint32_t>& ssrcs,
-                             std::map<uint32_t, RtpState> suspended_ssrcs,
-                             const std::map<uint32_t, RtpPayloadState>& states,
-                             const RtpConfig& rtp_config,
-                             const RtcpConfig& rtcp_config,
-                             Transport* send_transport,
-                             const RtpSenderObservers& observers,
-                             RtpTransportControllerSendInterface* transport,
-                             RtcEventLog* event_log,
-                             RateLimiter* retransmission_limiter)
+RtpVideoSender::RtpVideoSender(
+    const std::vector<uint32_t>& ssrcs,
+    std::map<uint32_t, RtpState> suspended_ssrcs,
+    const std::map<uint32_t, RtpPayloadState>& states,
+    const RtpConfig& rtp_config,
+    const RtcpConfig& rtcp_config,
+    Transport* send_transport,
+    const RtpSenderObservers& observers,
+    RtpTransportControllerSendInterface* transport,
+    RtcEventLog* event_log,
+    RateLimiter* retransmission_limiter)
     : active_(false),
       module_process_thread_(nullptr),
       suspended_ssrcs_(std::move(suspended_ssrcs)),
@@ -254,13 +255,13 @@ PayloadRouter::PayloadRouter(const std::vector<uint32_t>& ssrcs,
   }
 }
 
-PayloadRouter::~PayloadRouter() {
+RtpVideoSender::~RtpVideoSender() {
   for (auto& rtp_rtcp : rtp_modules_) {
     transport_->packet_router()->RemoveSendRtpModule(rtp_rtcp.get());
   }
 }
 
-void PayloadRouter::RegisterProcessThread(
+void RtpVideoSender::RegisterProcessThread(
     ProcessThread* module_process_thread) {
   RTC_DCHECK_RUN_ON(&module_process_thread_checker_);
   RTC_DCHECK(!module_process_thread_);
@@ -270,13 +271,13 @@ void PayloadRouter::RegisterProcessThread(
     module_process_thread_->RegisterModule(rtp_rtcp.get(), RTC_FROM_HERE);
 }
 
-void PayloadRouter::DeRegisterProcessThread() {
+void RtpVideoSender::DeRegisterProcessThread() {
   RTC_DCHECK_RUN_ON(&module_process_thread_checker_);
   for (auto& rtp_rtcp : rtp_modules_)
     module_process_thread_->DeRegisterModule(rtp_rtcp.get());
 }
 
-void PayloadRouter::SetActive(bool active) {
+void RtpVideoSender::SetActive(bool active) {
   rtc::CritScope lock(&crit_);
   if (active_ == active)
     return;
@@ -284,7 +285,7 @@ void PayloadRouter::SetActive(bool active) {
   SetActiveModules(active_modules);
 }
 
-void PayloadRouter::SetActiveModules(const std::vector<bool> active_modules) {
+void RtpVideoSender::SetActiveModules(const std::vector<bool> active_modules) {
   rtc::CritScope lock(&crit_);
   RTC_DCHECK_EQ(rtp_modules_.size(), active_modules.size());
   active_ = false;
@@ -299,12 +300,12 @@ void PayloadRouter::SetActiveModules(const std::vector<bool> active_modules) {
   }
 }
 
-bool PayloadRouter::IsActive() {
+bool RtpVideoSender::IsActive() {
   rtc::CritScope lock(&crit_);
   return active_ && !rtp_modules_.empty();
 }
 
-EncodedImageCallback::Result PayloadRouter::OnEncodedImage(
+EncodedImageCallback::Result RtpVideoSender::OnEncodedImage(
     const EncodedImage& encoded_image,
     const CodecSpecificInfo* codec_specific_info,
     const RTPFragmentationHeader* fragmentation) {
@@ -334,7 +335,7 @@ EncodedImageCallback::Result PayloadRouter::OnEncodedImage(
   return Result(Result::OK, frame_id);
 }
 
-void PayloadRouter::OnBitrateAllocationUpdated(
+void RtpVideoSender::OnBitrateAllocationUpdated(
     const VideoBitrateAllocation& bitrate) {
   rtc::CritScope lock(&crit_);
   if (IsActive()) {
@@ -357,7 +358,7 @@ void PayloadRouter::OnBitrateAllocationUpdated(
   }
 }
 
-void PayloadRouter::ConfigureProtection(const RtpConfig& rtp_config) {
+void RtpVideoSender::ConfigureProtection(const RtpConfig& rtp_config) {
   // Consistency of FlexFEC parameters is checked in MaybeCreateFlexfecSender.
   const bool flexfec_enabled = (flexfec_sender_ != nullptr);
 
@@ -416,28 +417,28 @@ void PayloadRouter::ConfigureProtection(const RtpConfig& rtp_config) {
   }
 }
 
-bool PayloadRouter::FecEnabled() const {
+bool RtpVideoSender::FecEnabled() const {
   const bool flexfec_enabled = (flexfec_sender_ != nullptr);
   int ulpfec_payload_type = rtp_config_.ulpfec.ulpfec_payload_type;
   return flexfec_enabled || ulpfec_payload_type >= 0;
 }
 
-bool PayloadRouter::NackEnabled() const {
+bool RtpVideoSender::NackEnabled() const {
   const bool nack_enabled = rtp_config_.nack.rtp_history_ms > 0;
   return nack_enabled;
 }
 
-void PayloadRouter::DeliverRtcp(const uint8_t* packet, size_t length) {
+void RtpVideoSender::DeliverRtcp(const uint8_t* packet, size_t length) {
   // Runs on a network thread.
   for (auto& rtp_rtcp : rtp_modules_)
     rtp_rtcp->IncomingRtcpPacket(packet, length);
 }
 
-void PayloadRouter::ProtectionRequest(const FecProtectionParams* delta_params,
-                                      const FecProtectionParams* key_params,
-                                      uint32_t* sent_video_rate_bps,
-                                      uint32_t* sent_nack_rate_bps,
-                                      uint32_t* sent_fec_rate_bps) {
+void RtpVideoSender::ProtectionRequest(const FecProtectionParams* delta_params,
+                                       const FecProtectionParams* key_params,
+                                       uint32_t* sent_video_rate_bps,
+                                       uint32_t* sent_nack_rate_bps,
+                                       uint32_t* sent_fec_rate_bps) {
   *sent_video_rate_bps = 0;
   *sent_nack_rate_bps = 0;
   *sent_fec_rate_bps = 0;
@@ -455,13 +456,13 @@ void PayloadRouter::ProtectionRequest(const FecProtectionParams* delta_params,
   }
 }
 
-void PayloadRouter::SetMaxRtpPacketSize(size_t max_rtp_packet_size) {
+void RtpVideoSender::SetMaxRtpPacketSize(size_t max_rtp_packet_size) {
   for (auto& rtp_rtcp : rtp_modules_) {
     rtp_rtcp->SetMaxRtpPacketSize(max_rtp_packet_size);
   }
 }
 
-void PayloadRouter::ConfigureSsrcs(const RtpConfig& rtp_config) {
+void RtpVideoSender::ConfigureSsrcs(const RtpConfig& rtp_config) {
   // Configure regular SSRCs.
   for (size_t i = 0; i < rtp_config.ssrcs.size(); ++i) {
     uint32_t ssrc = rtp_config.ssrcs[i];
@@ -505,14 +506,14 @@ void PayloadRouter::ConfigureSsrcs(const RtpConfig& rtp_config) {
   }
 }
 
-void PayloadRouter::OnNetworkAvailability(bool network_available) {
+void RtpVideoSender::OnNetworkAvailability(bool network_available) {
   for (auto& rtp_rtcp : rtp_modules_) {
     rtp_rtcp->SetRTCPStatus(network_available ? rtp_config_.rtcp_mode
                                               : RtcpMode::kOff);
   }
 }
 
-std::map<uint32_t, RtpState> PayloadRouter::GetRtpStates() const {
+std::map<uint32_t, RtpState> RtpVideoSender::GetRtpStates() const {
   std::map<uint32_t, RtpState> rtp_states;
 
   for (size_t i = 0; i < rtp_config_.ssrcs.size(); ++i) {
@@ -534,7 +535,8 @@ std::map<uint32_t, RtpState> PayloadRouter::GetRtpStates() const {
   return rtp_states;
 }
 
-std::map<uint32_t, RtpPayloadState> PayloadRouter::GetRtpPayloadStates() const {
+std::map<uint32_t, RtpPayloadState> RtpVideoSender::GetRtpPayloadStates()
+    const {
   rtc::CritScope lock(&crit_);
   std::map<uint32_t, RtpPayloadState> payload_states;
   for (const auto& param : params_) {

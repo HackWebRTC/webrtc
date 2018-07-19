@@ -17,9 +17,9 @@
 #include <vector>
 
 #include "api/transport/network_control.h"
-#include "call/payload_router.h"
 #include "call/rtp_bitrate_configurator.h"
 #include "call/rtp_transport_controller_send_interface.h"
+#include "call/rtp_video_sender.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/congestion_controller/include/send_side_congestion_controller_interface.h"
 #include "modules/pacing/packet_router.h"
@@ -46,7 +46,7 @@ class RtpTransportControllerSend final
       const BitrateConstraints& bitrate_config);
   ~RtpTransportControllerSend() override;
 
-  VideoRtpSenderInterface* CreateVideoRtpSender(
+  RtpVideoSenderInterface* CreateRtpVideoSender(
       const std::vector<uint32_t>& ssrcs,
       std::map<uint32_t, RtpState> suspended_ssrcs,
       const std::map<uint32_t, RtpPayloadState>&
@@ -56,8 +56,8 @@ class RtpTransportControllerSend final
       Transport* send_transport,
       const RtpSenderObservers& observers,
       RtcEventLog* event_log) override;
-  void DestroyVideoRtpSender(
-      VideoRtpSenderInterface* rtp_video_sender) override;
+  void DestroyRtpVideoSender(
+      RtpVideoSenderInterface* rtp_video_sender) override;
 
   // Implements NetworkChangedObserver interface.
   void OnNetworkChanged(uint32_t bitrate_bps,
@@ -105,7 +105,7 @@ class RtpTransportControllerSend final
  private:
   const Clock* const clock_;
   PacketRouter packet_router_;
-  std::vector<std::unique_ptr<VideoRtpSenderInterface>> video_rtp_senders_;
+  std::vector<std::unique_ptr<RtpVideoSenderInterface>> video_rtp_senders_;
   PacedSender pacer_;
   RtpKeepAliveConfig keepalive_;
   RtpBitrateConfigurator bitrate_configurator_;

@@ -17,7 +17,6 @@
 
 #include "api/fec_controller.h"
 #include "call/bitrate_allocator.h"
-#include "call/payload_router.h"
 #include "call/video_receive_stream.h"
 #include "call/video_send_stream.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"

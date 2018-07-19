@@ -10,7 +10,7 @@
 
 #include <string>
 
-#include "call/payload_router.h"
+#include "call/rtp_video_sender.h"
 #include "call/test/mock_bitrate_allocator.h"
 #include "call/test/mock_rtp_transport_controller_send.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
@@ -44,7 +44,7 @@ std::string GetAlrProbingExperimentString() {
              AlrExperimentSettings::kScreenshareProbingBweExperimentName) +
          "/1.0,2875,80,40,-60,3/";
 }
-class MockPayloadRouter : public VideoRtpSenderInterface {
+class MockPayloadRouter : public RtpVideoSenderInterface {
  public:
   MOCK_METHOD1(RegisterProcessThread, void(ProcessThread*));
   MOCK_METHOD0(DeRegisterProcessThread, void());
@@ -93,7 +93,7 @@ class VideoSendStreamImplTest : public ::testing::Test {
     EXPECT_CALL(transport_controller_, packet_router())
         .WillRepeatedly(Return(&packet_router_));
     EXPECT_CALL(transport_controller_,
-                CreateVideoRtpSender(_, _, _, _, _, _, _, _))
+                CreateRtpVideoSender(_, _, _, _, _, _, _, _))
         .WillRepeatedly(Return(&payload_router_));
     EXPECT_CALL(payload_router_, SetActive(_))
         .WillRepeatedly(testing::Invoke(

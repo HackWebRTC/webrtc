@@ -16,7 +16,7 @@
 #include <vector>
 
 #include "call/bitrate_allocator.h"
-#include "call/payload_router.h"
+#include "call/rtp_video_sender_interface.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "common_video/include/video_bitrate_allocator.h"
 #include "modules/utility/include/process_thread.h"
@@ -170,7 +170,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   EncoderRtcpFeedback encoder_feedback_;
 
   RtcpBandwidthObserver* const bandwidth_observer_;
-  VideoRtpSenderInterface* const payload_router_;
+  RtpVideoSenderInterface* const rtp_video_sender_;
 
   // |weak_ptr_| to our self. This is used since we can not call
   // |weak_ptr_factory_.GetWeakPtr| from multiple sequences but it is ok to copy
