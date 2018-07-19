@@ -120,11 +120,6 @@ if (rtc_include_tests) {
     if (is_ios) {
       deps += [ ":modules_tests_bundle_data" ]
     }
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
   }
 
   modules_unittests_resources = [
@@ -244,11 +239,6 @@ if (rtc_include_tests) {
     sources = [
       "module_common_types_unittest.cc",
     ]
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
 
     deps = [
       ":module_api",
