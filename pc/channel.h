@@ -180,9 +180,6 @@ class BaseChannel : public rtc::MessageHandler,
     transport_name_ = transport_name;
   }
 
-  void SetMetricsObserver(
-      rtc::scoped_refptr<webrtc::MetricsObserverInterface> metrics_observer);
-
  protected:
   virtual MediaChannel* media_channel() const { return media_channel_.get(); }
 
@@ -307,8 +304,6 @@ class BaseChannel : public rtc::MessageHandler,
 
   // Won't be set when using raw packet transports. SDP-specific thing.
   std::string transport_name_;
-
-  rtc::scoped_refptr<webrtc::MetricsObserverInterface> metrics_observer_;
 
   webrtc::RtpTransportInternal* rtp_transport_ = nullptr;
 

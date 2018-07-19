@@ -141,12 +141,6 @@ bool BaseChannel::ConnectToRtpTransport() {
                                               &BaseChannel::OnWritableState);
   rtp_transport_->SignalSentPacket.connect(this,
                                            &BaseChannel::SignalSentPacket_n);
-  // TODO(bugs.webrtc.org/8587): Set the metrics observer through
-  // JsepTransportController once it takes responsibility for creating
-  // RtpTransports.
-  if (metrics_observer_) {
-    rtp_transport_->SetMetricsObserver(metrics_observer_);
-  }
   return true;
 }
 
@@ -158,7 +152,6 @@ void BaseChannel::DisconnectFromRtpTransport() {
   rtp_transport_->SignalNetworkRouteChanged.disconnect(this);
   rtp_transport_->SignalWritableState.disconnect(this);
   rtp_transport_->SignalSentPacket.disconnect(this);
-  rtp_transport_->SetMetricsObserver(nullptr);
 }
 
 void BaseChannel::Init_w(webrtc::RtpTransportInternal* rtp_transport) {
@@ -229,14 +222,6 @@ bool BaseChannel::SetRtpTransport(webrtc::RtpTransportInternal* rtp_transport) {
     }
   }
   return true;
-}
-
-void BaseChannel::SetMetricsObserver(
-    rtc::scoped_refptr<webrtc::MetricsObserverInterface> metrics_observer) {
-  metrics_observer_ = metrics_observer;
-  if (rtp_transport_) {
-    rtp_transport_->SetMetricsObserver(metrics_observer);
-  }
 }
 
 bool BaseChannel::Enable(bool enable) {

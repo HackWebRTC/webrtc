@@ -108,7 +108,6 @@ class P2PTransportChannel : public IceTransportInternal {
   void SetIceConfig(const IceConfig& config) override;
   const IceConfig& config() const;
   static webrtc::RTCError ValidateIceConfig(const IceConfig& config);
-  void SetMetricsObserver(webrtc::MetricsObserverInterface* observer) override;
 
   // From TransportChannel:
   int SendPacket(const char* data,
@@ -409,7 +408,6 @@ class P2PTransportChannel : public IceTransportInternal {
   bool writable_ = false;
 
   rtc::AsyncInvoker invoker_;
-  webrtc::MetricsObserverInterface* metrics_observer_ = nullptr;
   absl::optional<rtc::NetworkRoute> network_route_;
   webrtc::IceEventLog ice_event_log_;
 

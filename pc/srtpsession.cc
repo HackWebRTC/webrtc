@@ -354,11 +354,6 @@ bool SrtpSession::UpdateKey(int type,
   return DoSetKey(type, cs, key, len, extension_ids);
 }
 
-void SrtpSession::SetMetricsObserver(
-    rtc::scoped_refptr<webrtc::MetricsObserverInterface> metrics_observer) {
-  metrics_observer_ = metrics_observer;
-}
-
 int g_libsrtp_usage_count = 0;
 rtc::GlobalLockPod g_libsrtp_lock;
 

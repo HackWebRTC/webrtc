@@ -365,20 +365,6 @@ bool JsepTransportController::GetStats(const std::string& transport_name,
   return transport->GetStats(stats);
 }
 
-void JsepTransportController::SetMetricsObserver(
-    webrtc::MetricsObserverInterface* metrics_observer) {
-  if (!network_thread_->IsCurrent()) {
-    network_thread_->Invoke<void>(
-        RTC_FROM_HERE, [=] { SetMetricsObserver(metrics_observer); });
-    return;
-  }
-
-  metrics_observer_ = metrics_observer;
-  for (auto& dtls : GetDtlsTransports()) {
-    dtls->ice_transport()->SetMetricsObserver(metrics_observer);
-  }
-}
-
 void JsepTransportController::SetActiveResetSrtpParams(
     bool active_reset_srtp_params) {
   if (!network_thread_->IsCurrent()) {
@@ -419,7 +405,6 @@ JsepTransportController::CreateDtlsTransport(const std::string& transport_name,
 
   RTC_DCHECK(dtls);
   dtls->SetSslMaxProtocolVersion(config_.ssl_max_version);
-  dtls->ice_transport()->SetMetricsObserver(metrics_observer_);
   dtls->ice_transport()->SetIceRole(ice_role_);
   dtls->ice_transport()->SetIceTiebreaker(ice_tiebreaker_);
   dtls->ice_transport()->SetIceConfig(ice_config_);

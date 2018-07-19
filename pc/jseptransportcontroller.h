@@ -152,7 +152,6 @@ class JsepTransportController : public sigslot::has_slots<>,
   // OpenSSLStreamAdapter, GetSslCipherSuite and GetDtlsSrtpCryptoSuite are not
   // const. Fix this.
   bool GetStats(const std::string& mid, cricket::TransportStats* stats);
-  void SetMetricsObserver(webrtc::MetricsObserverInterface* metrics_observer);
 
   bool initial_offerer() const { return initial_offerer_ && *initial_offerer_; }
 
@@ -321,8 +320,6 @@ class JsepTransportController : public sigslot::has_slots<>,
   uint64_t ice_tiebreaker_ = rtc::CreateRandomId64();
   rtc::scoped_refptr<rtc::RTCCertificate> certificate_;
   rtc::AsyncInvoker invoker_;
-
-  MetricsObserverInterface* metrics_observer_ = nullptr;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(JsepTransportController);
 };

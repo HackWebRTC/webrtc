@@ -14,7 +14,6 @@
 #include <string>
 
 #include "api/ortc/srtptransportinterface.h"
-#include "api/umametrics.h"
 #include "call/rtp_demuxer.h"
 #include "p2p/base/icetransportinternal.h"
 #include "pc/sessiondescription.h"
@@ -99,9 +98,6 @@ class RtpTransportInternal : public SrtpTransportInterface,
       const cricket::RtpHeaderExtensions& header_extensions) = 0;
 
   virtual bool IsSrtpActive() const = 0;
-
-  virtual void SetMetricsObserver(
-      rtc::scoped_refptr<MetricsObserverInterface> metrics_observer) = 0;
 
   virtual bool RegisterRtpDemuxerSink(const RtpDemuxerCriteria& criteria,
                                       RtpPacketSinkInterface* sink) = 0;

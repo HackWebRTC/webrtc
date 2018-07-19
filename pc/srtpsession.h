@@ -13,7 +13,6 @@
 
 #include <vector>
 
-#include "api/umametrics.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/thread_checker.h"
 
@@ -84,9 +83,6 @@ class SrtpSession {
   // been set.
   bool IsExternalAuthActive() const;
 
-  void SetMetricsObserver(
-      rtc::scoped_refptr<webrtc::MetricsObserverInterface> metrics_observer);
-
  private:
   bool DoSetKey(int type,
                 int cs,
@@ -126,7 +122,6 @@ class SrtpSession {
   int last_send_seq_num_ = -1;
   bool external_auth_active_ = false;
   bool external_auth_enabled_ = false;
-  rtc::scoped_refptr<webrtc::MetricsObserverInterface> metrics_observer_;
   RTC_DISALLOW_COPY_AND_ASSIGN(SrtpSession);
 };
 

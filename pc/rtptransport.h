@@ -83,9 +83,6 @@ class RtpTransport : public RtpTransportInternal {
 
   bool UnregisterRtpDemuxerSink(RtpPacketSinkInterface* sink) override;
 
-  void SetMetricsObserver(
-      rtc::scoped_refptr<MetricsObserverInterface> metrics_observer) override {}
-
  protected:
   // TODO(zstein): Remove this when we remove RtpTransportAdapter.
   RtpTransportAdapter* GetInternal() override;

@@ -21,10 +21,6 @@
 #include "p2p/base/transportdescription.h"
 #include "rtc_base/stringencode.h"
 
-namespace webrtc {
-class MetricsObserverInterface;
-}
-
 namespace cricket {
 
 typedef std::vector<Candidate> Candidates;
@@ -225,9 +221,6 @@ class IceTransportInternal : public rtc::PacketTransportInternal {
   // Start gathering candidates if not already started, or if an ICE restart
   // occurred.
   virtual void MaybeStartGathering() = 0;
-
-  virtual void SetMetricsObserver(
-      webrtc::MetricsObserverInterface* observer) = 0;
 
   virtual void AddRemoteCandidate(const Candidate& candidate) = 0;
 

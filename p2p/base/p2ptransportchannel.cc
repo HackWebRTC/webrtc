@@ -16,7 +16,6 @@
 #include <utility>
 
 #include "api/candidate.h"
-#include "api/umametrics.h"
 #include "logging/rtc_event_log/icelogger.h"
 #include "p2p/base/candidatepairinterface.h"
 #include "p2p/base/relayport.h"  // For RELAY_PORT_TYPE.
@@ -651,11 +650,6 @@ RTCError P2PTransportChannel::ValidateIceConfig(const IceConfig& config) {
 int P2PTransportChannel::check_receiving_interval() const {
   return std::max(MIN_CHECK_RECEIVING_INTERVAL,
                   config_.receiving_timeout_or_default() / 10);
-}
-
-void P2PTransportChannel::SetMetricsObserver(
-    webrtc::MetricsObserverInterface* observer) {
-  metrics_observer_ = observer;
 }
 
 void P2PTransportChannel::MaybeStartGathering() {

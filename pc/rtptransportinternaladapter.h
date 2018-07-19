@@ -104,11 +104,6 @@ class RtpTransportInternalAdapter : public RtpTransportInternal {
 
   RtpTransportAdapter* GetInternal() override { return nullptr; }
 
-  void SetMetricsObserver(
-      rtc::scoped_refptr<MetricsObserverInterface> metrics_observer) override {
-    transport_->SetMetricsObserver(metrics_observer);
-  }
-
  protected:
   // Owned by the subclasses.
   RtpTransportInternal* transport_ = nullptr;

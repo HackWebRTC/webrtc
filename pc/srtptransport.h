@@ -141,9 +141,6 @@ class SrtpTransport : public RtpTransport {
   bool MaybeSetKeyParams();
   bool ParseKeyParams(const std::string& key_params, uint8_t* key, size_t len);
 
-  void SetMetricsObserver(
-      rtc::scoped_refptr<MetricsObserverInterface> metrics_observer) override;
-
   const std::string content_name_;
 
   std::unique_ptr<cricket::SrtpSession> send_session_;
@@ -163,8 +160,6 @@ class SrtpTransport : public RtpTransport {
   bool external_auth_enabled_ = false;
 
   int rtp_abs_sendtime_extn_id_ = -1;
-
-  rtc::scoped_refptr<MetricsObserverInterface> metrics_observer_;
 };
 
 }  // namespace webrtc

@@ -183,8 +183,6 @@ class FakePeerConnectionBase : public PeerConnectionInternal {
     return false;
   }
 
-  void RegisterUMAObserver(UMAObserver* observer) override {}
-
   RTCError SetBitrate(const BitrateSettings& bitrate) override {
     return RTCError(RTCErrorType::UNSUPPORTED_OPERATION, "Not implemented");
   }

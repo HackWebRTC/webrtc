@@ -170,9 +170,6 @@ class FakeIceTransport : public IceTransportInternal {
 
   absl::optional<int> GetRttEstimate() override { return absl::nullopt; }
 
-  void SetMetricsObserver(webrtc::MetricsObserverInterface* observer) override {
-  }
-
   // Fake PacketTransportInternal implementation.
   bool writable() const override { return writable_; }
   bool receiving() const override { return receiving_; }

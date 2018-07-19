@@ -3094,32 +3094,6 @@ bool PeerConnection::RemoveIceCandidates(
   return true;
 }
 
-void PeerConnection::RegisterUMAObserver(UMAObserver* observer) {
-  TRACE_EVENT0("webrtc", "PeerConnection::RegisterUmaObserver");
-  network_thread()->Invoke<void>(
-      RTC_FROM_HERE,
-      rtc::Bind(&PeerConnection::SetMetricObserver_n, this, observer));
-}
-
-void PeerConnection::SetMetricObserver_n(UMAObserver* observer) {
-  RTC_DCHECK(network_thread()->IsCurrent());
-  uma_observer_ = observer;
-  if (transport_controller_) {
-    transport_controller_->SetMetricsObserver(uma_observer_);
-  }
-
-  for (auto transceiver : transceivers_) {
-    auto* channel = transceiver->internal()->channel();
-    if (channel) {
-      channel->SetMetricsObserver(uma_observer_);
-    }
-  }
-
-  if (uma_observer_) {
-    port_allocator_->SetMetricsObserver(uma_observer_);
-  }
-}
-
 RTCError PeerConnection::SetBitrate(const BitrateSettings& bitrate) {
   if (!worker_thread()->IsCurrent()) {
     return worker_thread()->Invoke<RTCError>(
@@ -4812,10 +4786,6 @@ cricket::ChannelManager* PeerConnection::channel_manager() const {
   return factory_->channel_manager();
 }
 
-MetricsObserverInterface* PeerConnection::metrics_observer() const {
-  return uma_observer_;
-}
-
 bool PeerConnection::StartRtcEventLog_w(
     std::unique_ptr<RtcEventLogOutput> output,
     int64_t output_period_ms) {
@@ -5576,9 +5546,6 @@ cricket::VoiceChannel* PeerConnection::CreateVoiceChannel(
   voice_channel->SignalSentPacket.connect(this,
                                           &PeerConnection::OnSentPacket_w);
   voice_channel->SetRtpTransport(rtp_transport);
-  if (uma_observer_) {
-    voice_channel->SetMetricsObserver(uma_observer_);
-  }
 
   return voice_channel;
 }
@@ -5601,9 +5568,6 @@ cricket::VideoChannel* PeerConnection::CreateVideoChannel(
   video_channel->SignalSentPacket.connect(this,
                                           &PeerConnection::OnSentPacket_w);
   video_channel->SetRtpTransport(rtp_transport);
-  if (uma_observer_) {
-    video_channel->SetMetricsObserver(uma_observer_);
-  }
 
   return video_channel;
 }
@@ -5640,9 +5604,6 @@ bool PeerConnection::CreateDataChannel(const std::string& mid) {
     rtp_data_channel_->SignalSentPacket.connect(
         this, &PeerConnection::OnSentPacket_w);
     rtp_data_channel_->SetRtpTransport(rtp_transport);
-    if (uma_observer_) {
-      rtp_data_channel_->SetMetricsObserver(uma_observer_);
-    }
   }
 
   return true;
