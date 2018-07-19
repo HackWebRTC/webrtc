@@ -115,13 +115,15 @@ AgcManagerDirect::AgcManagerDirect(GainControl* gctrl,
                                    int clipped_level_min,
                                    bool use_agc2_level_estimation,
                                    bool use_agc2_digital_adaptive)
-    : AgcManagerDirect(new Agc(),
+    : AgcManagerDirect(use_agc2_level_estimation ? nullptr : new Agc(),
                        gctrl,
                        volume_callbacks,
                        startup_min_level,
                        clipped_level_min,
                        use_agc2_level_estimation,
-                       use_agc2_digital_adaptive) {}
+                       use_agc2_digital_adaptive) {
+  RTC_DCHECK(agc_);
+}
 
 AgcManagerDirect::AgcManagerDirect(Agc* agc,
                                    GainControl* gctrl,
@@ -134,7 +136,9 @@ AgcManagerDirect::AgcManagerDirect(Agc* agc,
                        startup_min_level,
                        clipped_level_min,
                        false,
-                       false) {}
+                       false) {
+  RTC_DCHECK(agc_);
+}
 
 AgcManagerDirect::AgcManagerDirect(Agc* agc,
                                    GainControl* gctrl,
@@ -437,6 +441,8 @@ void AgcManagerDirect::UpdateGain() {
     // level_ was updated by SetLevel; log the new value.
     RTC_HISTOGRAM_COUNTS_LINEAR("WebRTC.Audio.AgcSetLevel", level_, 1,
                                 kMaxMicLevel, 50);
+    // Reset the AGC since the level has changed.
+    agc_->Reset();
   }
 }
 
