@@ -583,6 +583,7 @@ int16_t WebRtcAgc_ProcessVad(AgcVad* state,      // (i) VAD state
   int16_t buf2[4];
   int16_t HPstate;
   int16_t zeros, dB;
+  int64_t tmp64;
 
   // process in 10 sub frames of 1 ms (to save on memory)
   nrg = 0;
@@ -688,17 +689,17 @@ int16_t WebRtcAgc_ProcessVad(AgcVad* state,      // (i) VAD state
   tmp32 = WebRtcSpl_DivW32W16(tmp32, state->stdLongTerm);
   tmpU16 = (13 << 12);
   tmp32b = WEBRTC_SPL_MUL_16_U16(state->logRatio, tmpU16);
-  tmp32 += tmp32b >> 10;
-
-  state->logRatio = (int16_t)(tmp32 >> 6);
+  tmp64 = tmp32;
+  tmp64 += tmp32b >> 10;
+  tmp64 >>= 6;
 
   // limit
-  if (state->logRatio > 2048) {
-    state->logRatio = 2048;
+  if (tmp64 > 2048) {
+    tmp64 = 2048;
+  } else if (tmp64 < -2048) {
+    tmp64 = -2048;
   }
-  if (state->logRatio < -2048) {
-    state->logRatio = -2048;
-  }
+  state->logRatio = (int16_t)tmp64;
 
   return state->logRatio;  // Q10
 }
