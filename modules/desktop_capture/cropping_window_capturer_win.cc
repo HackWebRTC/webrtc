@@ -20,6 +20,8 @@ namespace webrtc {
 
 namespace {
 
+const size_t kTitleLength = 256;
+
 // Used to pass input/output data during the EnumWindow call for verifying if
 // the selected window is on top.
 struct TopWindowVerifierContext {
@@ -33,12 +35,17 @@ struct TopWindowVerifierContext {
         window_capture_helper(window_capture_helper),
         is_top_window(false) {
     RTC_DCHECK_NE(selected_window, excluded_window);
+
+    GetWindowText(selected_window, selected_window_title, kTitleLength);
+    GetWindowThreadProcessId(selected_window, &selected_window_process_id);
   }
 
   const HWND selected_window;
   const HWND excluded_window;
   const DesktopRect selected_window_rect;
   WindowCaptureHelperWin* window_capture_helper;
+  WCHAR selected_window_title[kTitleLength];
+  DWORD selected_window_process_id;
   bool is_top_window;
 };
 
@@ -90,21 +97,20 @@ BOOL CALLBACK TopWindowVerifier(HWND hwnd, LPARAM param) {
     return TRUE;
   }
 
-  // If |hwnd| has no title and belongs to the same process, assume it's a
-  // tooltip or context menu from the selected window and ignore it.
+  // If |hwnd| has no title or has same title as the selected window (i.e.
+  // Window Media Player consisting of several sibling windows) and belongs to
+  // the same process, assume it's a tooltip or context menu or sibling window
+  // from the selected window and ignore it.
   // TODO(zijiehe): This check cannot cover the case where tooltip or context
   // menu of the child-window is covering the main window. See
   // https://bugs.chromium.org/p/webrtc/issues/detail?id=8062 for details.
-  const size_t kTitleLength = 32;
   WCHAR window_title[kTitleLength];
   GetWindowText(hwnd, window_title, kTitleLength);
-  if (wcsnlen_s(window_title, kTitleLength) == 0) {
+  if (wcsnlen_s(window_title, kTitleLength) == 0 ||
+      wcscmp(window_title, context->selected_window_title) == 0) {
     DWORD enumerated_window_process_id;
-    DWORD selected_window_process_id;
     GetWindowThreadProcessId(hwnd, &enumerated_window_process_id);
-    GetWindowThreadProcessId(context->selected_window,
-                             &selected_window_process_id);
-    if (selected_window_process_id == enumerated_window_process_id) {
+    if (context->selected_window_process_id == enumerated_window_process_id) {
       return TRUE;
     }
   }
