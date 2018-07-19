@@ -22,6 +22,7 @@
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/sslstreamadapter.h"
 #include "rtc_base/stream.h"
+#include "rtc_base/thread_checker.h"
 
 namespace rtc {
 class PacketTransportInternal;
@@ -83,6 +84,9 @@ class StreamInterfaceChannel : public rtc::StreamInterface {
 //
 //   - The SSLStreamAdapter writes to downward_->Write() which translates it
 //     into packet writes on ice_transport_.
+//
+// This class is not thread safe; all methods must be called on the same thread
+// as the constructor.
 class DtlsTransport : public DtlsTransportInternal {
  public:
   // |ice_transport| is the ICE transport this DTLS transport is wrapping.
@@ -210,10 +214,11 @@ class DtlsTransport : public DtlsTransportInternal {
   // Sets the DTLS state, signaling if necessary.
   void set_dtls_state(DtlsTransportState state);
 
+  rtc::ThreadChecker thread_checker_;
+
   std::string transport_name_;
   int component_;
   DtlsTransportState dtls_state_ = DTLS_TRANSPORT_NEW;
-  rtc::Thread* network_thread_;  // Everything should occur on this thread.
   // Underlying ice_transport, not owned by this class.
   IceTransportInternal* const ice_transport_;
   std::unique_ptr<IceTransportInternal> owned_ice_transport_;

@@ -117,7 +117,6 @@ DtlsTransport::DtlsTransport(IceTransportInternal* ice_transport,
                              const rtc::CryptoOptions& crypto_options)
     : transport_name_(ice_transport->transport_name()),
       component_(ice_transport->component()),
-      network_thread_(rtc::Thread::Current()),
       ice_transport_(ice_transport),
       downward_(NULL),
       srtp_ciphers_(GetSupportedDtlsSrtpCryptoSuites(crypto_options)),
@@ -132,7 +131,6 @@ DtlsTransport::DtlsTransport(
     const rtc::CryptoOptions& crypto_options)
     : transport_name_(ice_transport->transport_name()),
       component_(ice_transport->component()),
-      network_thread_(rtc::Thread::Current()),
       ice_transport_(ice_transport.get()),
       owned_ice_transport_(std::move(ice_transport)),
       downward_(NULL),
@@ -489,7 +487,7 @@ void DtlsTransport::ConnectToIceTransport() {
 //     - Once the DTLS handshake completes, the state is that of the
 //       impl again
 void DtlsTransport::OnWritableState(rtc::PacketTransportInternal* transport) {
-  RTC_DCHECK(rtc::Thread::Current() == network_thread_);
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   RTC_DCHECK(transport == ice_transport_);
   RTC_LOG(LS_VERBOSE) << ToString()
                       << ": ice_transport writable state changed to "
@@ -521,7 +519,7 @@ void DtlsTransport::OnWritableState(rtc::PacketTransportInternal* transport) {
 }
 
 void DtlsTransport::OnReceivingState(rtc::PacketTransportInternal* transport) {
-  RTC_DCHECK(rtc::Thread::Current() == network_thread_);
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   RTC_DCHECK(transport == ice_transport_);
   RTC_LOG(LS_VERBOSE) << ToString()
                       << ": ice_transport "
@@ -538,7 +536,7 @@ void DtlsTransport::OnReadPacket(rtc::PacketTransportInternal* transport,
                                  size_t size,
                                  const rtc::PacketTime& packet_time,
                                  int flags) {
-  RTC_DCHECK(rtc::Thread::Current() == network_thread_);
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   RTC_DCHECK(transport == ice_transport_);
   RTC_DCHECK(flags == 0);
 
@@ -619,19 +617,19 @@ void DtlsTransport::OnReadPacket(rtc::PacketTransportInternal* transport,
 
 void DtlsTransport::OnSentPacket(rtc::PacketTransportInternal* transport,
                                  const rtc::SentPacket& sent_packet) {
-  RTC_DCHECK(rtc::Thread::Current() == network_thread_);
-
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   SignalSentPacket(this, sent_packet);
 }
 
 void DtlsTransport::OnReadyToSend(rtc::PacketTransportInternal* transport) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   if (writable()) {
     SignalReadyToSend(this);
   }
 }
 
 void DtlsTransport::OnDtlsEvent(rtc::StreamInterface* dtls, int sig, int err) {
-  RTC_DCHECK(rtc::Thread::Current() == network_thread_);
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   RTC_DCHECK(dtls == dtls_.get());
   if (sig & rtc::SE_OPEN) {
     // This is the first time.
@@ -683,6 +681,7 @@ void DtlsTransport::OnDtlsEvent(rtc::StreamInterface* dtls, int sig, int err) {
 
 void DtlsTransport::OnNetworkRouteChanged(
     absl::optional<rtc::NetworkRoute> network_route) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   SignalNetworkRouteChanged(network_route);
 }
 
