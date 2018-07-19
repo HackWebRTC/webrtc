@@ -64,7 +64,7 @@ class RtpSenderInterface : public rtc::RefCountInterface {
   virtual rtc::scoped_refptr<DtmfSenderInterface> GetDtmfSender() const = 0;
 
  protected:
-  virtual ~RtpSenderInterface() {}
+  ~RtpSenderInterface() override = default;
 };
 
 // Define proxy for RtpSenderInterface.

@@ -88,7 +88,7 @@ class DataChannelObserver {
   virtual void OnBufferedAmountChange(uint64_t previous_amount) {}
 
  protected:
-  virtual ~DataChannelObserver() {}
+  virtual ~DataChannelObserver() = default;
 };
 
 class DataChannelInterface : public rtc::RefCountInterface {
@@ -134,11 +134,11 @@ class DataChannelInterface : public rtc::RefCountInterface {
   // TODO(deadbeef): Remove these dummy implementations when all classes have
   // implemented these APIs. They should all just return the values the
   // DataChannel was created with.
-  virtual bool ordered() const { return false; }
-  virtual uint16_t maxRetransmitTime() const { return 0; }
-  virtual uint16_t maxRetransmits() const { return 0; }
-  virtual std::string protocol() const { return std::string(); }
-  virtual bool negotiated() const { return false; }
+  virtual bool ordered() const;
+  virtual uint16_t maxRetransmitTime() const;
+  virtual uint16_t maxRetransmits() const;
+  virtual std::string protocol() const;
+  virtual bool negotiated() const;
 
   // Returns the ID from the DataChannelInit, if it was negotiated out-of-band.
   // If negotiated in-band, this ID will be populated once the DTLS role is
@@ -170,7 +170,7 @@ class DataChannelInterface : public rtc::RefCountInterface {
   virtual bool Send(const DataBuffer& buffer) = 0;
 
  protected:
-  virtual ~DataChannelInterface() {}
+  ~DataChannelInterface() override = default;
 };
 
 }  // namespace webrtc

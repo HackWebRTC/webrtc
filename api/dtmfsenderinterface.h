@@ -29,7 +29,7 @@ class DtmfSenderObserverInterface {
   virtual void OnToneChange(const std::string& tone) = 0;
 
  protected:
-  virtual ~DtmfSenderObserverInterface() {}
+  virtual ~DtmfSenderObserverInterface() = default;
 };
 
 // The interface of native implementation of the RTCDTMFSender defined by the
@@ -85,7 +85,7 @@ class DtmfSenderInterface : public rtc::RefCountInterface {
   virtual int inter_tone_gap() const = 0;
 
  protected:
-  virtual ~DtmfSenderInterface() {}
+  ~DtmfSenderInterface() override = default;
 };
 
 }  // namespace webrtc

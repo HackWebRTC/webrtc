@@ -40,6 +40,8 @@ VideoCapturer::VideoCapturer() : apply_rotation_(false) {
   Construct();
 }
 
+VideoCapturer::~VideoCapturer() {}
+
 void VideoCapturer::Construct() {
   enable_camera_list_ = false;
   capture_state_ = CS_STOPPED;
@@ -63,6 +65,10 @@ bool VideoCapturer::StartCapturing(const VideoFormat& capture_format) {
     SetCaptureState(result);
   }
   return true;
+}
+
+bool VideoCapturer::apply_rotation() {
+  return apply_rotation_;
 }
 
 void VideoCapturer::SetSupportedFormats(

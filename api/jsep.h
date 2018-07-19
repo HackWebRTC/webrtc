@@ -205,10 +205,8 @@ class CreateSessionDescriptionObserver : public rtc::RefCountInterface {
   // is deprecated; in order to let clients remove the old version, it has a
   // default implementation. If both versions are unimplemented, the
   // result will be a runtime error (stack overflow). This is intentional.
-  virtual void OnFailure(RTCError error) { OnFailure(error.message()); }
-  virtual void OnFailure(const std::string& error) {
-    OnFailure(RTCError(RTCErrorType::INTERNAL_ERROR, std::string(error)));
-  }
+  virtual void OnFailure(RTCError error);
+  virtual void OnFailure(const std::string& error);
 
  protected:
   ~CreateSessionDescriptionObserver() override = default;
@@ -219,13 +217,9 @@ class SetSessionDescriptionObserver : public rtc::RefCountInterface {
  public:
   virtual void OnSuccess() = 0;
   // See description in CreateSessionDescriptionObserver for OnFailure.
-  virtual void OnFailure(RTCError error) {
-    std::string message(error.message());
-    OnFailure(message);
-  }
-  virtual void OnFailure(const std::string& error) {
-    OnFailure(RTCError(RTCErrorType::INTERNAL_ERROR, std::string(error)));
-  }
+  virtual void OnFailure(RTCError error);
+
+  virtual void OnFailure(const std::string& error);
 
  protected:
   ~SetSessionDescriptionObserver() override = default;
