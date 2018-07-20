@@ -145,11 +145,6 @@ if (!build_with_chromium) {
       "frame_editing/frame_editing_lib.h",
     ]
 
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
-
     deps = [
       "..:webrtc_common",
       "../:typedefs",
@@ -175,11 +170,6 @@ if (!build_with_chromium) {
       sources = [
         "force_mic_volume_max/force_mic_volume_max.cc",
       ]
-
-      if (!build_with_chromium && is_clang) {
-        # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-        suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-      }
 
       deps = [
         "../modules/audio_device",
@@ -282,11 +272,6 @@ if (rtc_include_tests) {
     sources = [
       "agc/activity_metric.cc",
     ]
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
 
     deps = [
       "../api/audio:audio_frame_api",
