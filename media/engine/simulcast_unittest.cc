@@ -93,7 +93,7 @@ TEST(SimulcastTest, GetConfig) {
   EXPECT_EQ(720u, streams[2].height);
 
   for (size_t i = 0; i < streams.size(); ++i) {
-    EXPECT_EQ(kDefaultTemporalLayers, streams[i].num_temporal_layers);
+    EXPECT_EQ(size_t{kDefaultTemporalLayers}, streams[i].num_temporal_layers);
     EXPECT_EQ(kMaxFps, streams[i].max_framerate);
     EXPECT_EQ(kQpMax, streams[i].max_qp);
     EXPECT_EQ(kExpected[i].min_bitrate_bps, streams[i].min_bitrate_bps);
@@ -148,7 +148,7 @@ TEST(SimulcastTest, GetConfigForScreenshare) {
   EXPECT_EQ(kQpMax, streams[0].max_qp);
   EXPECT_EQ(kBitratePriority, streams[0].bitrate_priority);
   EXPECT_TRUE(streams[0].active);
-  EXPECT_GT(streams[0].num_temporal_layers, 1);
+  EXPECT_GT(streams[0].num_temporal_layers, size_t{1});
   EXPECT_GT(streams[0].max_framerate, 0);
   EXPECT_EQ(cricket::kMinVideoBitrateBps, streams[0].min_bitrate_bps);
   EXPECT_GT(streams[0].target_bitrate_bps, streams[0].min_bitrate_bps);
@@ -167,7 +167,7 @@ TEST(SimulcastTest, GetConfigForScreenshareSimulcast) {
     EXPECT_EQ(800u, streams[i].height) << "Screen content never scaled.";
     EXPECT_EQ(kQpMax, streams[i].max_qp);
     EXPECT_TRUE(streams[i].active);
-    EXPECT_GT(streams[i].num_temporal_layers, 1);
+    EXPECT_GT(streams[i].num_temporal_layers, size_t{1});
     EXPECT_GT(streams[i].max_framerate, 0);
     EXPECT_GT(streams[i].min_bitrate_bps, 0);
     EXPECT_GT(streams[i].target_bitrate_bps, streams[i].min_bitrate_bps);
