@@ -12,8 +12,8 @@
 
 #include "api/array_view.h"
 #include "api/video/video_bitrate_allocation.h"
+#include "api/video/video_bitrate_allocator.h"
 #include "common_types.h"  // NOLINT(build/include)
-#include "common_video/include/video_bitrate_allocator.h"
 #include "modules/rtp_rtcp/mocks/mock_rtcp_bandwidth_observer.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "modules/rtp_rtcp/source/rtcp_packet.h"

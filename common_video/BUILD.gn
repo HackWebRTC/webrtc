@@ -45,6 +45,7 @@ rtc_static_library("common_video") {
     "..:webrtc_common",
     "../:typedefs",
     "../api/video:video_bitrate_allocation",
+    "../api/video:video_bitrate_allocator",
     "../api/video:video_frame",
     "../api/video:video_frame_i420",
     "../media:rtc_h264_profile_id",

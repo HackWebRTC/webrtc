@@ -18,8 +18,8 @@
 
 #include "api/test/videocodec_test_fixture.h"
 #include "api/test/videocodec_test_stats.h"
+#include "api/video/video_bitrate_allocator.h"
 #include "api/video/video_frame.h"
-#include "common_video/include/video_bitrate_allocator.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/utility/ivf_file_writer.h"
 #include "rtc_base/buffer.h"

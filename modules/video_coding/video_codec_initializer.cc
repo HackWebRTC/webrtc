@@ -10,9 +10,9 @@
 
 #include "modules/video_coding/include/video_codec_initializer.h"
 
+#include "api/video/video_bitrate_allocator.h"
 #include "api/video_codecs/video_encoder.h"
 #include "common_types.h"  // NOLINT(build/include)
-#include "common_video/include/video_bitrate_allocator.h"
 #include "modules/video_coding/codecs/vp9/svc_config.h"
 #include "modules/video_coding/codecs/vp9/svc_rate_allocator.h"
 #include "modules/video_coding/include/video_coding_defines.h"

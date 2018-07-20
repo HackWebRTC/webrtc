@@ -11,8 +11,8 @@
 
 #include <algorithm>  // std::max
 
+#include "api/video/video_bitrate_allocator.h"
 #include "common_types.h"  // NOLINT(build/include)
-#include "common_video/include/video_bitrate_allocator.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/video_coding/encoded_frame.h"
 #include "modules/video_coding/include/video_codec_interface.h"

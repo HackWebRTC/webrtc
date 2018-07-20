@@ -15,10 +15,10 @@
 #include <unordered_set>
 #include <vector>
 
+#include "api/video/video_bitrate_allocator.h"
 #include "call/bitrate_allocator.h"
 #include "call/rtp_video_sender_interface.h"
 #include "common_types.h"  // NOLINT(build/include)
-#include "common_video/include/video_bitrate_allocator.h"
 #include "modules/utility/include/process_thread.h"
 #include "modules/video_coding/utility/ivf_file_writer.h"
 #include "rtc_base/weak_ptr.h"

@@ -17,13 +17,13 @@
 #include <string>
 #include <vector>
 
+#include "api/video/video_bitrate_allocator.h"
 #include "api/video/video_rotation.h"
 #include "api/video/video_sink_interface.h"
 #include "api/video/video_stream_encoder_interface.h"
 #include "api/video_codecs/video_encoder.h"
 #include "call/video_send_stream.h"
 #include "common_types.h"  // NOLINT(build/include)
-#include "common_video/include/video_bitrate_allocator.h"
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "modules/video_coding/utility/quality_scaler.h"
 #include "modules/video_coding/video_coding_impl.h"
