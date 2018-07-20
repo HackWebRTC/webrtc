@@ -34,6 +34,7 @@
 #include "sdk/android/src/jni/pc/media.h"
 #include "sdk/android/src/jni/pc/ownedfactoryandthreads.h"
 #include "sdk/android/src/jni/pc/peerconnection.h"
+#include "sdk/android/src/jni/pc/sslcertificateverifierwrapper.h"
 #include "sdk/android/src/jni/pc/video.h"
 #include "system_wrappers/include/field_trial.h"
 // Adding 'nogncheck' to disable the gn include headers check.
@@ -374,7 +375,8 @@ static jlong JNI_PeerConnectionFactory_CreatePeerConnection(
     jlong factory,
     const JavaParamRef<jobject>& j_rtc_config,
     const JavaParamRef<jobject>& j_constraints,
-    jlong observer_p) {
+    jlong observer_p,
+    const JavaParamRef<jobject>& j_sslCertificateVerifier) {
   rtc::scoped_refptr<PeerConnectionFactoryInterface> f(
       reinterpret_cast<PeerConnectionFactoryInterface*>(
           factoryFromJava(factory)));
@@ -404,8 +406,17 @@ static jlong JNI_PeerConnectionFactory_CreatePeerConnection(
     constraints = JavaToNativeMediaConstraints(jni, j_constraints);
     CopyConstraintsIntoRtcConfiguration(constraints.get(), &rtc_config);
   }
-  rtc::scoped_refptr<PeerConnectionInterface> pc(
-      f->CreatePeerConnection(rtc_config, nullptr, nullptr, observer.get()));
+
+  PeerConnectionDependencies peer_connection_dependencies(observer.get());
+  if (!j_sslCertificateVerifier.is_null()) {
+    peer_connection_dependencies.tls_cert_verifier =
+        absl::make_unique<SSLCertificateVerifierWrapper>(
+            jni, j_sslCertificateVerifier);
+  }
+
+  rtc::scoped_refptr<PeerConnectionInterface> pc(f->CreatePeerConnection(
+      rtc_config, std::move(peer_connection_dependencies)));
+
   return jlongFromPointer(
       new OwnedPeerConnection(pc, std::move(observer), std::move(constraints)));
 }

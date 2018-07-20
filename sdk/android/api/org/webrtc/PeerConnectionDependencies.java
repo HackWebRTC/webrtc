@@ -20,18 +20,27 @@ import javax.annotation.Nullable;
  */
 public final class PeerConnectionDependencies {
   // Mandatory dependencies.
-  private PeerConnection.Observer observer;
+  private final PeerConnection.Observer observer;
+
+  // Optional fields.
+  private final SSLCertificateVerifier sslCertificateVerifier;
 
   public static class Builder {
     private PeerConnection.Observer observer;
+    private SSLCertificateVerifier sslCertificateVerifier;
 
     private Builder(PeerConnection.Observer observer) {
       this.observer = observer;
     }
 
+    public Builder setSSLCertificateVerifier(SSLCertificateVerifier sslCertificateVerifier) {
+      this.sslCertificateVerifier = sslCertificateVerifier;
+      return this;
+    }
+
     // Observer is a required dependency and so is forced in the construction of the object.
     public PeerConnectionDependencies createPeerConnectionDependencies() {
-      return new PeerConnectionDependencies(observer);
+      return new PeerConnectionDependencies(observer, sslCertificateVerifier);
     }
   }
 
@@ -43,7 +52,14 @@ public final class PeerConnectionDependencies {
     return observer;
   }
 
-  private PeerConnectionDependencies(PeerConnection.Observer observer) {
+  @Nullable
+  SSLCertificateVerifier getSSLCertificateVerifier() {
+    return sslCertificateVerifier;
+  }
+
+  private PeerConnectionDependencies(
+      PeerConnection.Observer observer, SSLCertificateVerifier sslCertificateVerifier) {
     this.observer = observer;
+    this.sslCertificateVerifier = sslCertificateVerifier;
   }
 }
