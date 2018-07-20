@@ -27,6 +27,8 @@ CreateSdpObserverJni::CreateSdpObserverJni(
     : j_observer_global_(env, j_observer),
       constraints_(std::move(constraints)) {}
 
+CreateSdpObserverJni::~CreateSdpObserverJni() = default;
+
 void CreateSdpObserverJni::OnSuccess(SessionDescriptionInterface* desc) {
   JNIEnv* env = AttachCurrentThreadIfNeeded();
   Java_SdpObserver_onCreateSuccess(env, j_observer_global_,
@@ -48,6 +50,8 @@ SetSdpObserverJni::SetSdpObserverJni(
     std::unique_ptr<MediaConstraintsInterface> constraints)
     : j_observer_global_(env, j_observer),
       constraints_(std::move(constraints)) {}
+
+SetSdpObserverJni::~SetSdpObserverJni() = default;
 
 void SetSdpObserverJni::OnSuccess() {
   JNIEnv* env = AttachCurrentThreadIfNeeded();

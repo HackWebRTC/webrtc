@@ -26,6 +26,7 @@ class RTCStatsCollectorCallbackWrapper : public RTCStatsCollectorCallback {
  public:
   RTCStatsCollectorCallbackWrapper(JNIEnv* jni,
                                    const JavaRef<jobject>& j_callback);
+  ~RTCStatsCollectorCallbackWrapper() override;
 
   void OnStatsDelivered(
       const rtc::scoped_refptr<const RTCStatsReport>& report) override;

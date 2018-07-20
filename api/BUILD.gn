@@ -57,6 +57,7 @@ rtc_static_library("libjingle_peerconnection_api") {
     "dtmfsenderinterface.h",
     "jsep.cc",
     "jsep.h",
+    "jsepicecandidate.cc",
     "jsepicecandidate.h",
     "jsepsessiondescription.h",
     "mediaconstraintsinterface.cc",

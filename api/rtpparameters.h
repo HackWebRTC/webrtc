@@ -100,6 +100,7 @@ struct RtcpFeedback {
   RtcpFeedback();
   explicit RtcpFeedback(RtcpFeedbackType type);
   RtcpFeedback(RtcpFeedbackType type, RtcpFeedbackMessageType message_type);
+  RtcpFeedback(const RtcpFeedback&);
   ~RtcpFeedback();
 
   bool operator==(const RtcpFeedback& o) const {
@@ -321,6 +322,7 @@ struct RtpFecParameters {
   RtpFecParameters();
   explicit RtpFecParameters(FecMechanism mechanism);
   RtpFecParameters(FecMechanism mechanism, uint32_t ssrc);
+  RtpFecParameters(const RtpFecParameters&);
   ~RtpFecParameters();
 
   bool operator==(const RtpFecParameters& o) const {
@@ -337,6 +339,7 @@ struct RtpRtxParameters {
   // Constructors for convenience.
   RtpRtxParameters();
   explicit RtpRtxParameters(uint32_t ssrc);
+  RtpRtxParameters(const RtpRtxParameters&);
   ~RtpRtxParameters();
 
   bool operator==(const RtpRtxParameters& o) const { return ssrc == o.ssrc; }
@@ -345,6 +348,7 @@ struct RtpRtxParameters {
 
 struct RtpEncodingParameters {
   RtpEncodingParameters();
+  RtpEncodingParameters(const RtpEncodingParameters&);
   ~RtpEncodingParameters();
 
   // If unset, a value is chosen by the implementation.
@@ -460,6 +464,7 @@ struct RtpEncodingParameters {
 
 struct RtpCodecParameters {
   RtpCodecParameters();
+  RtpCodecParameters(const RtpCodecParameters&);
   ~RtpCodecParameters();
 
   // Build MIME "type/subtype" string from |name| and |kind|.
@@ -545,6 +550,7 @@ struct RtpCapabilities {
 
 struct RtcpParameters final {
   RtcpParameters();
+  RtcpParameters(const RtcpParameters&);
   ~RtcpParameters();
 
   // The SSRC to be used in the "SSRC of packet sender" field. If not set, one
@@ -579,6 +585,7 @@ struct RtcpParameters final {
 
 struct RtpParameters {
   RtpParameters();
+  RtpParameters(const RtpParameters&);
   ~RtpParameters();
 
   // Used when calling getParameters/setParameters with a PeerConnection

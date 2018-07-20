@@ -14,6 +14,8 @@ namespace webrtc {
 
 RtpTransceiverInit::RtpTransceiverInit() = default;
 
+RtpTransceiverInit::RtpTransceiverInit(const RtpTransceiverInit& rhs) = default;
+
 RtpTransceiverInit::~RtpTransceiverInit() = default;
 
 absl::optional<RtpTransceiverDirection>

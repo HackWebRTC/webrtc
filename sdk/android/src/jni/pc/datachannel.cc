@@ -29,7 +29,7 @@ namespace {
 class DataChannelObserverJni : public DataChannelObserver {
  public:
   DataChannelObserverJni(JNIEnv* jni, const JavaRef<jobject>& j_observer);
-  virtual ~DataChannelObserverJni() {}
+  ~DataChannelObserverJni() override {}
 
   void OnBufferedAmountChange(uint64_t previous_amount) override;
   void OnStateChange() override;

@@ -22,6 +22,7 @@ namespace jni {
 class StatsObserverJni : public StatsObserver {
  public:
   StatsObserverJni(JNIEnv* jni, const JavaRef<jobject>& j_observer);
+  ~StatsObserverJni() override;
 
   void OnComplete(const StatsReports& reports) override;
 

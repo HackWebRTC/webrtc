@@ -375,6 +375,13 @@ PeerConnectionObserverJni::NativeToJavaMediaStreamArray(
 
 OwnedPeerConnection::OwnedPeerConnection(
     rtc::scoped_refptr<PeerConnectionInterface> peer_connection,
+    std::unique_ptr<PeerConnectionObserver> observer)
+    : OwnedPeerConnection(peer_connection,
+                          std::move(observer),
+                          nullptr /* constraints */) {}
+
+OwnedPeerConnection::OwnedPeerConnection(
+    rtc::scoped_refptr<PeerConnectionInterface> peer_connection,
     std::unique_ptr<PeerConnectionObserver> observer,
     std::unique_ptr<MediaConstraintsInterface> constraints)
     : peer_connection_(peer_connection),

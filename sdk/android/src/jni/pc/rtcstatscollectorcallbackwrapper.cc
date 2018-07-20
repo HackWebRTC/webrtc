@@ -102,7 +102,7 @@ ScopedJavaLocalRef<jobject> MemberToJava(
 ScopedJavaLocalRef<jobject> NativeToJavaRtcStats(JNIEnv* env,
                                                  const RTCStats& stats) {
   JavaMapBuilder builder(env);
-  for (const auto& member : stats.Members()) {
+  for (auto* const member : stats.Members()) {
     if (!member->is_defined())
       continue;
     builder.put(NativeToJavaString(env, member->name()),
@@ -130,6 +130,8 @@ RTCStatsCollectorCallbackWrapper::RTCStatsCollectorCallbackWrapper(
     JNIEnv* jni,
     const JavaRef<jobject>& j_callback)
     : j_callback_global_(jni, j_callback) {}
+
+RTCStatsCollectorCallbackWrapper::~RTCStatsCollectorCallbackWrapper() = default;
 
 void RTCStatsCollectorCallbackWrapper::OnStatsDelivered(
     const rtc::scoped_refptr<const RTCStatsReport>& report) {

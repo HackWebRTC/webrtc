@@ -58,6 +58,8 @@ StatsObserverJni::StatsObserverJni(JNIEnv* jni,
                                    const JavaRef<jobject>& j_observer)
     : j_observer_global_(jni, j_observer) {}
 
+StatsObserverJni::~StatsObserverJni() = default;
+
 void StatsObserverJni::OnComplete(const StatsReports& reports) {
   JNIEnv* env = AttachCurrentThreadIfNeeded();
   ScopedJavaLocalRef<jobjectArray> j_reports =

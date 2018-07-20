@@ -35,6 +35,7 @@ enum class RtpTransceiverDirection {
 // https://w3c.github.io/webrtc-pc/#dom-rtcrtptransceiverinit
 struct RtpTransceiverInit final {
   RtpTransceiverInit();
+  RtpTransceiverInit(const RtpTransceiverInit&);
   ~RtpTransceiverInit();
   // Direction of the RtpTransceiver. See RtpTransceiverInterface::direction().
   RtpTransceiverDirection direction = RtpTransceiverDirection::kSendRecv;

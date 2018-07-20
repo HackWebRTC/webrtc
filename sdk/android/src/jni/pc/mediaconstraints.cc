@@ -44,7 +44,7 @@ class MediaConstraintsJni : public MediaConstraintsInterface {
         optional_(PopulateConstraintsFromJavaPairList(
             env,
             Java_MediaConstraints_getOptional(env, j_constraints))) {}
-  virtual ~MediaConstraintsJni() = default;
+  ~MediaConstraintsJni() override = default;
 
   // MediaConstraintsInterface.
   const Constraints& GetMandatory() const override { return mandatory_; }

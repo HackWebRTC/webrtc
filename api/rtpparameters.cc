@@ -19,17 +19,18 @@ namespace webrtc {
 
 const double kDefaultBitratePriority = 1.0;
 
-RtcpFeedback::RtcpFeedback() {}
+RtcpFeedback::RtcpFeedback() = default;
 RtcpFeedback::RtcpFeedback(RtcpFeedbackType type) : type(type) {}
 RtcpFeedback::RtcpFeedback(RtcpFeedbackType type,
                            RtcpFeedbackMessageType message_type)
     : type(type), message_type(message_type) {}
-RtcpFeedback::~RtcpFeedback() {}
+RtcpFeedback::RtcpFeedback(const RtcpFeedback& rhs) = default;
+RtcpFeedback::~RtcpFeedback() = default;
 
-RtpCodecCapability::RtpCodecCapability() {}
-RtpCodecCapability::~RtpCodecCapability() {}
+RtpCodecCapability::RtpCodecCapability() = default;
+RtpCodecCapability::~RtpCodecCapability() = default;
 
-RtpHeaderExtensionCapability::RtpHeaderExtensionCapability() {}
+RtpHeaderExtensionCapability::RtpHeaderExtensionCapability() = default;
 RtpHeaderExtensionCapability::RtpHeaderExtensionCapability(
     const std::string& uri)
     : uri(uri) {}
@@ -37,39 +38,46 @@ RtpHeaderExtensionCapability::RtpHeaderExtensionCapability(
     const std::string& uri,
     int preferred_id)
     : uri(uri), preferred_id(preferred_id) {}
-RtpHeaderExtensionCapability::~RtpHeaderExtensionCapability() {}
+RtpHeaderExtensionCapability::~RtpHeaderExtensionCapability() = default;
 
-RtpExtension::RtpExtension() {}
+RtpExtension::RtpExtension() = default;
 RtpExtension::RtpExtension(const std::string& uri, int id) : uri(uri), id(id) {}
 RtpExtension::RtpExtension(const std::string& uri, int id, bool encrypt)
     : uri(uri), id(id), encrypt(encrypt) {}
-RtpExtension::~RtpExtension() {}
+RtpExtension::~RtpExtension() = default;
 
-RtpFecParameters::RtpFecParameters() {}
+RtpFecParameters::RtpFecParameters() = default;
 RtpFecParameters::RtpFecParameters(FecMechanism mechanism)
     : mechanism(mechanism) {}
 RtpFecParameters::RtpFecParameters(FecMechanism mechanism, uint32_t ssrc)
     : ssrc(ssrc), mechanism(mechanism) {}
-RtpFecParameters::~RtpFecParameters() {}
+RtpFecParameters::RtpFecParameters(const RtpFecParameters& rhs) = default;
+RtpFecParameters::~RtpFecParameters() = default;
 
-RtpRtxParameters::RtpRtxParameters() {}
+RtpRtxParameters::RtpRtxParameters() = default;
 RtpRtxParameters::RtpRtxParameters(uint32_t ssrc) : ssrc(ssrc) {}
-RtpRtxParameters::~RtpRtxParameters() {}
+RtpRtxParameters::RtpRtxParameters(const RtpRtxParameters& rhs) = default;
+RtpRtxParameters::~RtpRtxParameters() = default;
 
-RtpEncodingParameters::RtpEncodingParameters() {}
-RtpEncodingParameters::~RtpEncodingParameters() {}
+RtpEncodingParameters::RtpEncodingParameters() = default;
+RtpEncodingParameters::RtpEncodingParameters(const RtpEncodingParameters& rhs) =
+    default;
+RtpEncodingParameters::~RtpEncodingParameters() = default;
 
-RtpCodecParameters::RtpCodecParameters() {}
-RtpCodecParameters::~RtpCodecParameters() {}
+RtpCodecParameters::RtpCodecParameters() = default;
+RtpCodecParameters::RtpCodecParameters(const RtpCodecParameters& rhs) = default;
+RtpCodecParameters::~RtpCodecParameters() = default;
 
-RtpCapabilities::RtpCapabilities() {}
-RtpCapabilities::~RtpCapabilities() {}
+RtpCapabilities::RtpCapabilities() = default;
+RtpCapabilities::~RtpCapabilities() = default;
 
-RtcpParameters::RtcpParameters() {}
-RtcpParameters::~RtcpParameters() {}
+RtcpParameters::RtcpParameters() = default;
+RtcpParameters::RtcpParameters(const RtcpParameters& rhs) = default;
+RtcpParameters::~RtcpParameters() = default;
 
-RtpParameters::RtpParameters() {}
-RtpParameters::~RtpParameters() {}
+RtpParameters::RtpParameters() = default;
+RtpParameters::RtpParameters(const RtpParameters& rhs) = default;
+RtpParameters::~RtpParameters() = default;
 
 std::string RtpExtension::ToString() const {
   char buf[256];

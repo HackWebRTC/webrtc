@@ -26,6 +26,7 @@ class CreateSdpObserverJni : public CreateSessionDescriptionObserver {
   CreateSdpObserverJni(JNIEnv* env,
                        const JavaRef<jobject>& j_observer,
                        std::unique_ptr<MediaConstraintsInterface> constraints);
+  ~CreateSdpObserverJni() override;
 
   MediaConstraintsInterface* constraints() { return constraints_.get(); }
 
@@ -42,6 +43,7 @@ class SetSdpObserverJni : public SetSessionDescriptionObserver {
   SetSdpObserverJni(JNIEnv* env,
                     const JavaRef<jobject>& j_observer,
                     std::unique_ptr<MediaConstraintsInterface> constraints);
+  ~SetSdpObserverJni() override;
 
   MediaConstraintsInterface* constraints() { return constraints_.get(); }
 

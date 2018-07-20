@@ -37,12 +37,7 @@ class OwnedFactoryAndThreads {
                          std::unique_ptr<Thread> worker_thread,
                          std::unique_ptr<Thread> signaling_thread,
                          rtc::NetworkMonitorFactory* network_monitor_factory,
-                         PeerConnectionFactoryInterface* factory)
-      : network_thread_(std::move(network_thread)),
-        worker_thread_(std::move(worker_thread)),
-        signaling_thread_(std::move(signaling_thread)),
-        network_monitor_factory_(network_monitor_factory),
-        factory_(factory) {}
+                         PeerConnectionFactoryInterface* factory);
 
   ~OwnedFactoryAndThreads();
 
