@@ -28,6 +28,7 @@ namespace webrtc_examples {
 class AndroidCallClient {
  public:
   AndroidCallClient();
+  ~AndroidCallClient();
 
   void Call(JNIEnv* env,
             const webrtc::JavaRef<jobject>& cls,

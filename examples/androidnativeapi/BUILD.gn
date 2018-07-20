@@ -43,11 +43,6 @@ rtc_shared_library("examples_androidnativeapi_jni") {
   suppressed_configs += [ "//build/config/android:hide_all_but_jni_onload" ]
   configs += [ "//build/config/android:hide_all_but_jni" ]
 
-  if (is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-
   deps = [
     ":generated_jni",
     "//api:libjingle_peerconnection_api",

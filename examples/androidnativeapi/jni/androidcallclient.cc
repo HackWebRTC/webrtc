@@ -80,6 +80,8 @@ AndroidCallClient::AndroidCallClient()
   CreatePeerConnectionFactory();
 }
 
+AndroidCallClient::~AndroidCallClient() = default;
+
 void AndroidCallClient::Call(JNIEnv* env,
                              const webrtc::JavaRef<jobject>& cls,
                              const webrtc::JavaRef<jobject>& local_sink,
