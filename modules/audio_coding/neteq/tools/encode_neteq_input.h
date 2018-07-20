@@ -35,6 +35,7 @@ class EncodeNetEqInput : public NetEqInput {
   EncodeNetEqInput(std::unique_ptr<Generator> generator,
                    std::unique_ptr<AudioEncoder> encoder,
                    int64_t input_duration_ms);
+  ~EncodeNetEqInput() override;
 
   absl::optional<int64_t> NextPacketTime() const override;
 
@@ -44,9 +45,7 @@ class EncodeNetEqInput : public NetEqInput {
 
   void AdvanceOutputEvent() override;
 
-  bool ended() const override {
-    return next_output_event_ms_ <= input_duration_ms_;
-  }
+  bool ended() const override;
 
   absl::optional<RTPHeader> NextHeader() const override;
 

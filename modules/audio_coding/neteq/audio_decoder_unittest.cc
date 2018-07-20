@@ -100,16 +100,16 @@ class AudioDecoderTest : public ::testing::Test {
         payload_type_(17),
         decoder_(NULL) {}
 
-  virtual ~AudioDecoderTest() {}
+  ~AudioDecoderTest() override {}
 
-  virtual void SetUp() {
+  void SetUp() override {
     if (audio_encoder_)
       codec_input_rate_hz_ = audio_encoder_->SampleRateHz();
     // Create arrays.
     ASSERT_GT(data_length_, 0u) << "The test must set data_length_ > 0";
   }
 
-  virtual void TearDown() {
+  void TearDown() override {
     delete decoder_;
     decoder_ = NULL;
   }

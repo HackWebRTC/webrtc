@@ -1119,11 +1119,6 @@ rtc_source_set("neteq_tools_minimal") {
     "neteq/tools/packet_source.h",
   ]
 
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-
   deps = [
     ":neteq",
     "../..:typedefs",
@@ -1510,31 +1505,22 @@ if (rtc_include_tests) {
       "neteq/audio_decoder_unittest.cc",
     ]
 
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
-
-    deps = [
-      "../../test:fileutils",
-    ]
-
     defines = neteq_defines
 
-    deps += audio_coding_deps
-    deps += [
-      ":ilbc",
-      ":isac",
-      ":isac_fix",
-      ":neteq",
-      ":neteq_tools",
-      "../../api/audio_codecs:audio_codecs_api",
-      "../../api/audio_codecs/opus:audio_encoder_opus",
-      "../../common_audio",
-      "../../rtc_base:protobuf_utils",
-      "../../test:test_main",
-      "//testing/gtest",
-    ]
+    deps = [
+             ":ilbc",
+             ":isac",
+             ":isac_fix",
+             ":neteq",
+             ":neteq_tools",
+             "../../test:fileutils",
+             "../../api/audio_codecs:audio_codecs_api",
+             "../../api/audio_codecs/opus:audio_encoder_opus",
+             "../../common_audio",
+             "../../rtc_base:protobuf_utils",
+             "../../test:test_main",
+             "//testing/gtest",
+           ] + audio_coding_deps
 
     data = audio_decoder_unittests_resources
 
@@ -1545,7 +1531,7 @@ if (rtc_include_tests) {
     if (is_ios) {
       deps += [ ":audio_decoder_unittests_bundle_data" ]
     }
-  }  # audio_decoder_unittests
+  }
 
   if (rtc_enable_protobuf) {
     proto_library("neteq_unittest_proto") {
@@ -1777,11 +1763,6 @@ if (rtc_include_tests) {
       "../../system_wrappers:system_wrappers_default",
       "//testing/gtest",
     ]
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
   }
 
   rtc_executable("neteq_opus_quality_test") {
@@ -2020,11 +2001,6 @@ if (rtc_include_tests) {
       "../../test:test_main",
       "//testing/gtest",
     ]
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
   }
 
   rtc_source_set("audio_coding_unittests") {

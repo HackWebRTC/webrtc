@@ -82,7 +82,7 @@ class NetEqTest {
             std::unique_ptr<AudioSink> output,
             Callbacks callbacks);
 
-  ~NetEqTest() = default;
+  ~NetEqTest();
 
   // Runs the test. Returns the duration of the produced audio in ms.
   int64_t Run();

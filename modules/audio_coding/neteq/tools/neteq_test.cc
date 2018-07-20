@@ -46,6 +46,8 @@ NetEqTest::NetEqTest(const NetEq::Config& config,
   RegisterExternalDecoders(ext_codecs);
 }
 
+NetEqTest::~NetEqTest() = default;
+
 int64_t NetEqTest::Run() {
   const int64_t start_time_ms = *input_->NextEventTime();
   int64_t time_now_ms = start_time_ms;

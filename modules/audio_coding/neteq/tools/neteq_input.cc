@@ -15,6 +15,9 @@
 namespace webrtc {
 namespace test {
 
+NetEqInput::PacketData::PacketData() = default;
+NetEqInput::PacketData::~PacketData() = default;
+
 std::string NetEqInput::PacketData::ToString() const {
   std::stringstream ss;
   ss << "{"
@@ -33,6 +36,8 @@ TimeLimitedNetEqInput::TimeLimitedNetEqInput(std::unique_ptr<NetEqInput> input,
     : input_(std::move(input)),
       start_time_ms_(input_->NextEventTime()),
       duration_ms_(duration_ms) {}
+
+TimeLimitedNetEqInput::~TimeLimitedNetEqInput() = default;
 
 absl::optional<int64_t> TimeLimitedNetEqInput::NextPacketTime() const {
   return ended_ ? absl::nullopt : input_->NextPacketTime();

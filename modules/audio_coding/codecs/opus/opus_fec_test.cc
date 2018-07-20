@@ -38,8 +38,8 @@ class OpusFecTest : public TestWithParam<coding_param> {
  protected:
   OpusFecTest();
 
-  virtual void SetUp();
-  virtual void TearDown();
+  void SetUp() override;
+  void TearDown() override;
 
   virtual void EncodeABlock();
 
