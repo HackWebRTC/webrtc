@@ -113,7 +113,7 @@ EchoControlMobileImpl::EchoControlMobileImpl(rtc::CriticalSection* crit_render,
     : crit_render_(crit_render),
       crit_capture_(crit_capture),
       routing_mode_(kSpeakerphone),
-      comfort_noise_enabled_(true),
+      comfort_noise_enabled_(false),
       external_echo_path_(NULL) {
   RTC_DCHECK(crit_render);
   RTC_DCHECK(crit_capture);

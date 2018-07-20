@@ -185,7 +185,7 @@ TEST(ApmHelpersTest, AecmMode_DefaultMode) {
   TestHelper helper;
   EchoControlMobile* ecm = helper.apm()->echo_control_mobile();
   EXPECT_EQ(EchoControlMobile::kSpeakerphone, ecm->routing_mode());
-  EXPECT_TRUE(ecm->is_comfort_noise_enabled());
+  EXPECT_FALSE(ecm->is_comfort_noise_enabled());
 }
 
 TEST(ApmHelpersTest, AecmMode_EnableDisableCng) {
