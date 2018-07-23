@@ -61,8 +61,9 @@ class PeerConnectionWrapperForBundleTest : public PeerConnectionWrapper {
       const auto& content = desc->contents()[i];
       if (content.media_description()->type() == media_type) {
         candidate->set_transport_name(content.name);
-        JsepIceCandidate jsep_candidate(content.name, i, *candidate);
-        return pc()->AddIceCandidate(&jsep_candidate);
+        std::unique_ptr<IceCandidateInterface> jsep_candidate =
+            CreateIceCandidate(content.name, i, *candidate);
+        return pc()->AddIceCandidate(jsep_candidate.get());
       }
     }
     RTC_NOTREACHED();

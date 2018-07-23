@@ -78,6 +78,12 @@ IceCandidateInterface* CreateIceCandidate(const std::string& sdp_mid,
                                           const std::string& sdp,
                                           SdpParseError* error);
 
+// Creates an IceCandidateInterface based on a parsed candidate structure.
+std::unique_ptr<IceCandidateInterface> CreateIceCandidate(
+    const std::string& sdp_mid,
+    int sdp_mline_index,
+    const cricket::Candidate& candidate);
+
 // This class represents a collection of candidates for a specific m= section.
 // Used in SessionDescriptionInterface.
 class IceCandidateCollection {
