@@ -253,6 +253,13 @@ class AudioProcessing : public rtc::RefCountInterface {
   // by changing the default values in the AudioProcessing::Config struct.
   // The config is applied by passing the struct to the ApplyConfig method.
   struct Config {
+    // Configures whether acoustic echo cancellation is performed.
+    // Has a specific tuning for mobile devices.
+    struct EchoCancellation {
+      bool enabled = false;
+      bool mobile_mode = false;
+    } echo_cancellation;
+
     struct ResidualEchoDetector {
       bool enabled = true;
     } residual_echo_detector;
@@ -796,7 +803,7 @@ class ProcessingConfig {
 class EchoCancellation {
  public:
   // EchoCancellation and EchoControlMobile may not be enabled simultaneously.
-  // Enabling one will disable the other.
+  // If both are enabled, one (unspecified) will automatically be disabled.
   virtual int Enable(bool enable) = 0;
   virtual bool is_enabled() const = 0;
 
@@ -900,7 +907,7 @@ class EchoCancellation {
 class EchoControlMobile {
  public:
   // EchoCancellation and EchoControlMobile may not be enabled simultaneously.
-  // Enabling one will disable the other.
+  // If both are enabled, one (unspecified) will automatically be disabled.
   virtual int Enable(bool enable) = 0;
   virtual bool is_enabled() const = 0;
 
