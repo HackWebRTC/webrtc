@@ -161,9 +161,9 @@ def Build(build_dir, arch, use_goma, extra_gn_args, extra_gn_switches,
   gn_args_str = '--args=' + ' '.join([
       k + '=' + _EncodeForGN(v) for k, v in gn_args.items()] + extra_gn_args)
 
-  gn_args = ['gen', output_directory, gn_args_str]
-  gn_args.extend(extra_gn_switches)
-  _RunGN(gn_args)
+  gn_args_list = ['gen', output_directory, gn_args_str]
+  gn_args_list.extend(extra_gn_switches)
+  _RunGN(gn_args_list)
 
   ninja_args = TARGETS[:]
   if use_goma:

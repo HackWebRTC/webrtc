@@ -237,7 +237,7 @@ class CheckNoMixingSourcesTest(unittest.TestCase):
     self.assertTrue('bar.c' in str(errors[0]))
 
   def _AssertNumberOfErrorsWithSources(self, number_of_errors, sources):
-    assert 3 == len(sources), 'This function accepts a list of 3 source files'
+    assert len(sources) == 3, 'This function accepts a list of 3 source files'
     self._GenerateBuildFile(textwrap.dedent("""
       rtc_static_library("bar_foo") {
         sources = [
