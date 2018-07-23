@@ -323,8 +323,12 @@
   const uint8_t* src = static_cast<uint8_t*>(CVPixelBufferGetBaseAddress(_pixelBuffer));
   const int srcStride = CVPixelBufferGetBytesPerRow(_pixelBuffer);
 
-  // Crop just by modifying pointers.
-  src += srcStride * _cropY + _cropX;
+  // Crop just by modifying pointers. Need to ensure that src pointer points to a byte corresponding
+  // to the start of a new pixel (byte with B for BGRA) so that libyuv scales correctly.
+  const int bytesPerPixel = 4;
+  src += srcStride * _cropY + (_cropX * bytesPerPixel);
+
+  // kCVPixelFormatType_32BGRA corresponds to libyuv::FOURCC_ARGB
   libyuv::ARGBScale(src,
                     srcStride,
                     _cropWidth,

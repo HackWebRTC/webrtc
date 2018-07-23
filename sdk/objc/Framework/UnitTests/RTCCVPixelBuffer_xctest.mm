@@ -153,6 +153,14 @@
   [self cropAndScaleTestWithRGBPixelFormat:kCVPixelFormatType_32ARGB];
 }
 
+- (void)testCropAndScaleWithSmallCropInfo_32ARGB {
+  [self cropAndScaleTestWithRGBPixelFormat:kCVPixelFormatType_32ARGB cropX:2 cropY:3];
+}
+
+- (void)testCropAndScaleWithLargeCropInfo_32ARGB {
+  [self cropAndScaleTestWithRGBPixelFormat:kCVPixelFormatType_32ARGB cropX:200 cropY:300];
+}
+
 - (void)testToI420_NV12 {
   [self toI420WithPixelFormat:kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange];
 }
@@ -224,12 +232,24 @@
 }
 
 - (void)cropAndScaleTestWithRGBPixelFormat:(OSType)pixelFormat {
+  [self cropAndScaleTestWithRGBPixelFormat:pixelFormat cropX:0 cropY:0];
+}
+
+- (void)cropAndScaleTestWithRGBPixelFormat:(OSType)pixelFormat cropX:(int)cropX cropY:(int)cropY {
   CVPixelBufferRef pixelBufferRef = NULL;
   CVPixelBufferCreate(NULL, 720, 1280, pixelFormat, NULL, &pixelBufferRef);
 
   DrawGradientInRGBPixelBuffer(pixelBufferRef);
 
-  RTCCVPixelBuffer *buffer = [[RTCCVPixelBuffer alloc] initWithPixelBuffer:pixelBufferRef];
+  RTCCVPixelBuffer *buffer =
+      [[RTCCVPixelBuffer alloc] initWithPixelBuffer:pixelBufferRef
+                                       adaptedWidth:CVPixelBufferGetWidth(pixelBufferRef)
+                                      adaptedHeight:CVPixelBufferGetHeight(pixelBufferRef)
+                                          cropWidth:CVPixelBufferGetWidth(pixelBufferRef) - cropX
+                                         cropHeight:CVPixelBufferGetHeight(pixelBufferRef) - cropY
+                                              cropX:cropX
+                                              cropY:cropY];
+
   XCTAssertEqual(buffer.width, 720);
   XCTAssertEqual(buffer.height, 1280);
 
