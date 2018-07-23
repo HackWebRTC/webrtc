@@ -46,6 +46,16 @@ PeerConnectionInterface::AddTrack(
   return RTCError(RTCErrorType::UNSUPPORTED_OPERATION, "Not implemented");
 }
 
+bool PeerConnectionInterface::RemoveTrack(RtpSenderInterface* sender) {
+  return RemoveTrackNew(sender).ok();
+}
+
+RTCError PeerConnectionInterface::RemoveTrackNew(
+    rtc::scoped_refptr<RtpSenderInterface> sender) {
+  return RTCError(RemoveTrack(sender) ? RTCErrorType::NONE
+                                      : RTCErrorType::INTERNAL_ERROR);
+}
+
 RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>>
 PeerConnectionInterface::AddTransceiver(
     rtc::scoped_refptr<MediaStreamTrackInterface> track) {

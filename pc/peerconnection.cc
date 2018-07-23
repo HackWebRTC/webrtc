@@ -1294,10 +1294,10 @@ PeerConnection::FindFirstTransceiverForAddedTrack(
 
 bool PeerConnection::RemoveTrack(RtpSenderInterface* sender) {
   TRACE_EVENT0("webrtc", "PeerConnection::RemoveTrack");
-  return RemoveTrackInternal(sender).ok();
+  return RemoveTrackNew(sender).ok();
 }
 
-RTCError PeerConnection::RemoveTrackInternal(
+RTCError PeerConnection::RemoveTrackNew(
     rtc::scoped_refptr<RtpSenderInterface> sender) {
   if (!sender) {
     LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER, "Sender is null.");

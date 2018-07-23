@@ -664,7 +664,21 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
 
   // Remove an RtpSender from this PeerConnection.
   // Returns true on success.
-  virtual bool RemoveTrack(RtpSenderInterface* sender) = 0;
+  // TODO(steveanton): Replace with signature that returns RTCError.
+  virtual bool RemoveTrack(RtpSenderInterface* sender);
+
+  // Plan B semantics: Removes the RtpSender from this PeerConnection.
+  // Unified Plan semantics: Stop sending on the RtpSender and mark the
+  // corresponding RtpTransceiver direction as no longer sending.
+  //
+  // Errors:
+  // - INVALID_PARAMETER: |sender| is null or (Plan B only) the sender is not
+  //       associated with this PeerConnection.
+  // - INVALID_STATE: PeerConnection is closed.
+  // TODO(bugs.webrtc.org/9534): Rename to RemoveTrack once the other signature
+  // is removed.
+  virtual RTCError RemoveTrackNew(
+      rtc::scoped_refptr<RtpSenderInterface> sender);
 
   // AddTransceiver creates a new RtpTransceiver and adds it to the set of
   // transceivers. Adding a transceiver will cause future calls to CreateOffer
