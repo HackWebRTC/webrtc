@@ -485,7 +485,7 @@ if (rtc_include_tests) {
         "android/ensure_initialized.h",
       ]
       deps += [
-        "../../../base",
+        "../../base",
         "../../sdk/android:libjingle_peerconnection_java",
       ]
     }

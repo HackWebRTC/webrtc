@@ -856,8 +856,6 @@ if (is_ios || is_mac) {
             ":videoframebuffer_objc",
             ":videosource_objc",
             ":videotoolbox_objc",
-            "../../system_wrappers:system_wrappers",
-            "../../system_wrappers:system_wrappers_default",
             "../api/video:video_frame_i420",
             "../common_video:common_video",
             "../media:rtc_media_base",
@@ -865,6 +863,8 @@ if (is_ios || is_mac) {
             "../modules:module_api",
             "../rtc_base:rtc_base",
             "../rtc_base:rtc_base_tests_utils",
+            "../system_wrappers:system_wrappers",
+            "../system_wrappers:system_wrappers_default",
             "//third_party/libyuv",
           ]
 
@@ -966,7 +966,6 @@ if (is_ios || is_mac) {
           ":videoframebuffer_objc",
           ":videosource_objc",
           ":videotoolbox_objc",
-          "../../system_wrappers:system_wrappers_default",
           "../api/audio_codecs:audio_codecs_api",
           "../api/audio_codecs:builtin_audio_decoder_factory",
           "../api/audio_codecs:builtin_audio_encoder_factory",
@@ -977,6 +976,7 @@ if (is_ios || is_mac) {
           "../modules/audio_processing:audio_processing",
           "../modules/video_coding:video_codec_interface",
           "../rtc_base:rtc_base_tests_utils",
+          "../system_wrappers:system_wrappers_default",
           "//test:test_support",
           "//third_party/ocmock",
         ]
