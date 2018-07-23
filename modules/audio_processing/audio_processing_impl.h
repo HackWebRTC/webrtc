@@ -393,8 +393,6 @@ class AudioProcessingImpl : public AudioProcessing {
     int prev_analog_mic_level;
   } capture_ RTC_GUARDED_BY(crit_capture_);
 
-  // This struct requires EITHER crit_capture_ OR crit_render_ to read, and
-  // requires both locks to write.
   struct ApmCaptureNonLockedState {
     ApmCaptureNonLockedState(bool intelligibility_enabled)
         : capture_processing_format(kSampleRate16kHz),

@@ -128,7 +128,7 @@ std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
   apm->AttachAecDump(
       absl::make_unique<testing::NiceMock<webrtc::test::MockAecDump>>());
 
-  webrtc::AudioProcessing::Config apm_config = apm->GetConfig();
+  webrtc::AudioProcessing::Config apm_config;
   apm_config.residual_echo_detector.enabled = red;
   apm_config.high_pass_filter.enabled = hpf;
   apm_config.gain_controller2.enabled = use_agc2_limiter;

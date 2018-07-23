@@ -368,9 +368,8 @@ TEST_F(DebugDumpTest, ToggleDelayAgnosticAec) {
   generator.StartRecording();
   generator.Process(100);
 
-  AudioProcessing::Config new_config;
-  new_config.echo_cancellation.enabled = true;
-  generator.apm()->ApplyConfig(new_config);
+  EchoCancellation* aec = generator.apm()->echo_cancellation();
+  EXPECT_EQ(AudioProcessing::kNoError, aec->Enable(!aec->is_enabled()));
 
   generator.Process(100);
   generator.StopRecording();
@@ -408,7 +407,6 @@ TEST_F(DebugDumpTest, VerifyCombinedExperimentalStringInclusive) {
   // Arbitrarily set clipping gain to 17, which will never be the default.
   config.Set<ExperimentalAgc>(new ExperimentalAgc(true, 0, 17));
   bool enable_aec3 = true;
-  apm_config.echo_cancellation.enabled = true;
   DebugDumpGenerator generator(config, apm_config, enable_aec3);
   generator.StartRecording();
   generator.Process(100);
@@ -465,8 +463,7 @@ TEST_F(DebugDumpTest, VerifyCombinedExperimentalStringExclusive) {
 TEST_F(DebugDumpTest, VerifyAec3ExperimentalString) {
   Config config;
   AudioProcessing::Config apm_config;
-  apm_config.echo_cancellation.enabled = true;
-  DebugDumpGenerator generator(config, apm_config, true /* enable_aec3 */);
+  DebugDumpGenerator generator(config, apm_config, true);
   generator.StartRecording();
   generator.Process(100);
   generator.StopRecording();

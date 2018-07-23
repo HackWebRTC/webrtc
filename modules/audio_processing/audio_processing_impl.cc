@@ -385,10 +385,8 @@ AudioProcessingImpl::AudioProcessingImpl(
     rtc::CritScope cs_capture(&crit_capture_);
 
     // Mark Echo Controller enabled if a factory is injected.
-    if (echo_control_factory_) {
-      config_.echo_cancellation.enabled = true;
-      capture_nonlocked_.echo_controller_enabled = true;
-    }
+    capture_nonlocked_.echo_controller_enabled =
+        static_cast<bool>(echo_control_factory_);
 
     public_submodules_->echo_cancellation.reset(
         new EchoCancellationImpl(&crit_render_, &crit_capture_));
@@ -493,15 +491,6 @@ int AudioProcessingImpl::MaybeInitialize(
 }
 
 int AudioProcessingImpl::InitializeLocked() {
-  // Ensure at most one built-in AEC is active, by arbitrarily preferring AEC2.
-  if (public_submodules_->echo_cancellation->is_enabled()) {
-    echo_control_mobile()->Enable(false);
-    config_.echo_cancellation.enabled = true;
-    config_.echo_cancellation.mobile_mode = false;
-  } else if (public_submodules_->echo_control_mobile->is_enabled()) {
-    config_.echo_cancellation.enabled = true;
-    config_.echo_cancellation.mobile_mode = true;
-  }
   UpdateActiveSubmoduleStates();
 
   const int render_audiobuffer_num_output_frames =
@@ -676,13 +665,6 @@ void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
   // Run in a single-threaded manner when applying the settings.
   rtc::CritScope cs_render(&crit_render_);
   rtc::CritScope cs_capture(&crit_capture_);
-
-  capture_nonlocked_.echo_controller_enabled =
-      config_.echo_cancellation.enabled && private_submodules_->echo_controller;
-  echo_cancellation()->Enable(config_.echo_cancellation.enabled &&
-                              !config_.echo_cancellation.mobile_mode);
-  echo_control_mobile()->Enable(config_.echo_cancellation.enabled &&
-                                config_.echo_cancellation.mobile_mode);
 
   InitializeLowCutFilter();
 
@@ -1187,8 +1169,8 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
   HandleCaptureRuntimeSettings();
 
   // Ensure that not both the AEC and AECM are active at the same time.
-  // TODO(bugs.webrtc.org/9535): Simplify once the public API Enable functions
-  // for these are moved to APM.
+  // TODO(peah): Simplify once the public API Enable functions for these
+  // are moved to APM.
   RTC_DCHECK(!(public_submodules_->echo_cancellation->is_enabled() &&
                public_submodules_->echo_control_mobile->is_enabled()));
 
@@ -1215,7 +1197,7 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
                                 levels.peak, 1, RmsLevel::kMinLevelDb, 64);
   }
 
-  if (capture_nonlocked_.echo_controller_enabled) {
+  if (private_submodules_->echo_controller) {
     // Detect and flag any change in the analog gain.
     int analog_mic_level = gain_control()->stream_analog_level();
     capture_.echo_path_gain_change =
@@ -1239,7 +1221,7 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
     capture_buffer->SplitIntoFrequencyBands();
   }
 
-  if (capture_nonlocked_.echo_controller_enabled) {
+  if (private_submodules_->echo_controller) {
     // Force down-mixing of the number of channels after the detection of
     // capture signal saturation.
     // TODO(peah): Look into ensuring that this kind of tampering with the
@@ -1249,7 +1231,7 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
 
   // TODO(peah): Move the AEC3 low-cut filter to this place.
   if (private_submodules_->low_cut_filter &&
-      !capture_nonlocked_.echo_controller_enabled) {
+      !private_submodules_->echo_controller) {
     private_submodules_->low_cut_filter->Process(capture_buffer);
   }
   RETURN_ON_ERR(
@@ -1259,11 +1241,11 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
   // Ensure that the stream delay was set before the call to the
   // AEC ProcessCaptureAudio function.
   if (public_submodules_->echo_cancellation->is_enabled() &&
-      !was_stream_delay_set()) {
+      !private_submodules_->echo_controller && !was_stream_delay_set()) {
     return AudioProcessing::kStreamParameterNotSetError;
   }
 
-  if (capture_nonlocked_.echo_controller_enabled) {
+  if (private_submodules_->echo_controller) {
     data_dumper_->DumpRaw("stream_delay", stream_delay_ms());
 
     if (was_stream_delay_set()) {
@@ -1303,7 +1285,8 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
     return AudioProcessing::kStreamParameterNotSetError;
   }
 
-  if (public_submodules_->echo_control_mobile->is_enabled()) {
+  if (!(private_submodules_->echo_controller ||
+        public_submodules_->echo_cancellation->is_enabled())) {
     RETURN_ON_ERR(public_submodules_->echo_control_mobile->ProcessCaptureAudio(
         capture_buffer, stream_delay_ms()));
   }
@@ -1521,7 +1504,7 @@ int AudioProcessingImpl::ProcessRenderStreamLocked() {
   }
 
   // TODO(peah): Perform the queueing ínside QueueRenderAudiuo().
-  if (capture_nonlocked_.echo_controller_enabled) {
+  if (private_submodules_->echo_controller) {
     private_submodules_->echo_controller->AnalyzeRender(render_buffer);
   }
 
@@ -1644,7 +1627,7 @@ AudioProcessing::AudioProcessingStatistics AudioProcessingImpl::GetStatistics()
     const {
   AudioProcessingStatistics stats;
   EchoCancellation::Metrics metrics;
-  if (capture_nonlocked_.echo_controller_enabled) {
+  if (private_submodules_->echo_controller) {
     rtc::CritScope cs_capture(&crit_capture_);
     auto ec_metrics = private_submodules_->echo_controller->GetMetrics();
     float erl = static_cast<float>(ec_metrics.echo_return_loss);
@@ -1680,7 +1663,7 @@ AudioProcessingStats AudioProcessingImpl::GetStatistics(
   AudioProcessingStats stats;
   if (has_remote_tracks) {
     EchoCancellation::Metrics metrics;
-    if (capture_nonlocked_.echo_controller_enabled) {
+    if (private_submodules_->echo_controller) {
       rtc::CritScope cs_capture(&crit_capture_);
       auto ec_metrics = private_submodules_->echo_controller->GetMetrics();
       stats.echo_return_loss = ec_metrics.echo_return_loss;
@@ -1870,8 +1853,8 @@ void AudioProcessingImpl::MaybeUpdateHistograms() {
   static const int kMinDiffDelayMs = 60;
 
   if (echo_cancellation()->is_enabled()) {
-    // Activate delay_jumps_ counters if we know AEC2 is running.
-    // If a stream has echo we know that echo cancellation is in process.
+    // Activate delay_jumps_ counters if we know echo_cancellation is running.
+    // If a stream has echo we know that the echo_cancellation is in process.
     if (capture_.stream_delay_jumps == -1 &&
         echo_cancellation()->stream_has_echo()) {
       capture_.stream_delay_jumps = 0;
