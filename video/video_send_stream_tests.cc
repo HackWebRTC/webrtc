@@ -1632,7 +1632,10 @@ TEST_F(VideoSendStreamTest, ChangingNetworkRoute) {
     }
 
     void PerformTest() override {
-      rtc::NetworkRoute new_route(true, 10, 20, -1);
+      rtc::NetworkRoute new_route;
+      new_route.connected = true;
+      new_route.local_network_id = 10;
+      new_route.remote_network_id = 20;
       BitrateConstraints bitrate_config;
 
       task_queue_->SendTask([this, &new_route, &bitrate_config]() {
