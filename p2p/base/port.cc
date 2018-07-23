@@ -18,7 +18,6 @@
 
 #include "absl/memory/memory.h"
 #include "p2p/base/portallocator.h"
-#include "rtc_base/base64.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/crc32.h"
 #include "rtc_base/helpers.h"
@@ -28,6 +27,7 @@
 #include "rtc_base/numerics/safe_minmax.h"
 #include "rtc_base/stringencode.h"
 #include "rtc_base/stringutils.h"
+#include "rtc_base/third_party/base64/base64.h"
 
 namespace {
 

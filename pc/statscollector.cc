@@ -17,8 +17,8 @@
 
 #include "pc/channel.h"
 #include "pc/peerconnection.h"
-#include "rtc_base/base64.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/third_party/base64/base64.h"
 
 namespace webrtc {
 namespace {

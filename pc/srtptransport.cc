@@ -18,9 +18,9 @@
 #include "pc/rtptransport.h"
 #include "pc/srtpsession.h"
 #include "rtc_base/asyncpacketsocket.h"
-#include "rtc_base/base64.h"
 #include "rtc_base/copyonwritebuffer.h"
 #include "rtc_base/numerics/safe_conversions.h"
+#include "rtc_base/third_party/base64/base64.h"
 #include "rtc_base/trace_event.h"
 #include "rtc_base/zero_memory.h"
 

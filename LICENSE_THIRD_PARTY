@@ -2,8 +2,6 @@ This source tree contains third party source code which is governed by third
 party licenses. Paths to the files and associated licenses are collected here.
 
 Files governed by third party licenses:
-rtc_base/base64.cc
-rtc_base/base64.h
 rtc_base/sigslot.cc
 rtc_base/sigslot.h
 common_audio/fft4g.c
@@ -20,26 +18,6 @@ modules/audio_device/mac/portaudio/pa_ringbuffer.c
 modules/audio_device/mac/portaudio/pa_ringbuffer.h
 
 Individual licenses for each file:
--------------------------------------------------------------------------------
-Files:
-rtc_base/base64.cc
-rtc_base/base64.h
-
-License:
-//*********************************************************************
-//* Base64 - a simple base64 encoder and decoder.
-//*
-//*     Copyright (c) 1999, Bob Withers - bwit@pobox.com
-//*
-//* This code may be freely used for any purpose, either personal
-//* or commercial, provided the authors copyright notice remains
-//* intact.
-//*
-//* Enhancements by Stanley Yamane:
-//*     o reverse lookup table for the decode function
-//*     o reserve string buffer space in advance
-//*
-//*********************************************************************
 -------------------------------------------------------------------------------
 Files:
 rtc_base/sigslot.cc

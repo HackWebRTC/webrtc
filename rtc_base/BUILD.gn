@@ -371,7 +371,6 @@ rtc_source_set("rtc_base_approved_generic") {
   data_deps = []
   deps = [
     ":atomicops",
-    ":base64",
     ":checks",
     ":criticalsection",
     ":logging",
@@ -390,6 +389,7 @@ rtc_source_set("rtc_base_approved_generic") {
     ":type_traits",
     "../:typedefs",
     "system:arch",
+    "third_party/base64",
   ]
 
   sources = [
@@ -495,8 +495,10 @@ if (is_mac && !build_with_chromium) {
 rtc_source_set("base64") {
   visibility = [ "*" ]
   sources = [
-    "base64.cc",
     "base64.h",
+  ]
+  deps = [
+    "third_party/base64",
   ]
 }
 
@@ -723,11 +725,11 @@ rtc_static_library("rtc_base_generic") {
   libs = []
   defines = []
   deps = [
-    ":base64",
     ":checks",
     ":stringutils",
     "..:webrtc_common",
     "../api:array_view",
+    "third_party/base64",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
@@ -1160,7 +1162,6 @@ if (rtc_include_tests) {
       sources += [ "win/windows_version_unittest.cc" ]
     }
     deps = [
-      ":base64",
       ":checks",
       ":rate_limiter",
       ":rtc_base",
@@ -1177,6 +1178,7 @@ if (rtc_include_tests) {
       "../test:fileutils",
       "../test:test_support",
       "memory:unittests",
+      "third_party/base64",
       "//third_party/abseil-cpp/absl/memory",
     ]
   }

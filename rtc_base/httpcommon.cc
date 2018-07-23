@@ -21,13 +21,13 @@
 #include <algorithm>
 
 #include "rtc_base/arraysize.h"
-#include "rtc_base/base64.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/cryptstring.h"
 #include "rtc_base/httpcommon-inl.h"
 #include "rtc_base/httpcommon.h"
 #include "rtc_base/messagedigest.h"
 #include "rtc_base/socketaddress.h"
+#include "rtc_base/third_party/base64/base64.h"
 #include "rtc_base/zero_memory.h"
 
 namespace rtc {
