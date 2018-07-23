@@ -22,47 +22,6 @@
 namespace webrtc {
 namespace jni {
 
-// TODO(sakal): Remove once clients have migrated.
-using ::webrtc::JavaParamRef;
-
-// Open gl texture matrix, in column-major order. Operations are
-// in-place.
-class Matrix {
- public:
-  Matrix(JNIEnv* jni, const JavaRef<jfloatArray>& a);
-
-  static Matrix fromAndroidGraphicsMatrix(JNIEnv* jni,
-                                          const JavaRef<jobject>& j_matrix);
-
-  ScopedJavaLocalRef<jfloatArray> ToJava(JNIEnv* jni) const;
-
-  // Crop arguments are relative to original size.
-  void Crop(float cropped_width,
-            float cropped_height,
-            float crop_x,
-            float crop_y);
-
-  void Rotate(VideoRotation rotation);
-
- private:
-  Matrix() {}
-
-  static void Multiply(const float a[16], const float b[16], float result[16]);
-  float elem_[16];
-};
-
-// Wrapper for texture object.
-struct NativeHandleImpl {
-  NativeHandleImpl(JNIEnv* jni,
-                   jint j_oes_texture_id,
-                   const JavaRef<jfloatArray>& j_transform_matrix);
-
-  NativeHandleImpl(int id, const Matrix& matrix);
-
-  const int oes_texture_id;
-  Matrix sampling_matrix;
-};
-
 class AndroidVideoBuffer : public VideoFrameBuffer {
  public:
   // Creates a native VideoFrameBuffer from a Java VideoFrame.Buffer.

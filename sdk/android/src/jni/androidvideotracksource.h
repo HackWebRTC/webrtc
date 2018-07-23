@@ -46,19 +46,6 @@ class AndroidVideoTrackSource : public rtc::AdaptedVideoTrackSource {
 
   bool remote() const override;
 
-  void OnByteBufferFrameCaptured(const void* frame_data,
-                                 int length,
-                                 int width,
-                                 int height,
-                                 VideoRotation rotation,
-                                 int64_t timestamp_ns);
-
-  void OnTextureFrameCaptured(int width,
-                              int height,
-                              VideoRotation rotation,
-                              int64_t timestamp_ns,
-                              const NativeHandleImpl& handle);
-
   void OnFrameCaptured(JNIEnv* jni,
                        int width,
                        int height,
