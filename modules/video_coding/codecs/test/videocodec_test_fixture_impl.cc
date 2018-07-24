@@ -16,7 +16,6 @@
 
 #include "absl/memory/memory.h"
 #include "api/video_codecs/sdp_video_format.h"
-#include "call/video_config.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "media/base/h264_profile_level_id.h"
 #include "media/base/mediaconstants.h"
