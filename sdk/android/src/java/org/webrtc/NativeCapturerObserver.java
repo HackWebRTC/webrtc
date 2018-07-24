@@ -19,19 +19,10 @@ import javax.annotation.Nullable;
 class NativeCapturerObserver implements CapturerObserver {
   // Pointer to webrtc::jni::AndroidVideoTrackSource.
   private final long nativeSource;
-  // TODO(bugs.webrtc.org/9181): Remove.
-  @Nullable private final SurfaceTextureHelper surfaceTextureHelper;
 
   @CalledByNative
   public NativeCapturerObserver(long nativeSource) {
     this.nativeSource = nativeSource;
-    this.surfaceTextureHelper = null;
-  }
-
-  // TODO(bugs.webrtc.org/9181): Remove.
-  public NativeCapturerObserver(long nativeSource, SurfaceTextureHelper surfaceTextureHelper) {
-    this.nativeSource = nativeSource;
-    this.surfaceTextureHelper = surfaceTextureHelper;
   }
 
   @Override
@@ -48,12 +39,6 @@ class NativeCapturerObserver implements CapturerObserver {
   public void onFrameCaptured(VideoFrame frame) {
     nativeOnFrameCaptured(nativeSource, frame.getBuffer().getWidth(), frame.getBuffer().getHeight(),
         frame.getRotation(), frame.getTimestampNs(), frame.getBuffer());
-  }
-
-  public void dispose() {
-    if (surfaceTextureHelper != null) {
-      surfaceTextureHelper.dispose();
-    }
   }
 
   private static native void nativeCapturerStarted(long source, boolean success);

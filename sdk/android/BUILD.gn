@@ -755,7 +755,6 @@ if (is_android) {
   rtc_android_library("video_api_java") {
     java_files = [
       "api/org/webrtc/EncodedImage.java",
-      "api/org/webrtc/VideoCapturer.java",
       "api/org/webrtc/VideoCodecInfo.java",
       "api/org/webrtc/CapturerObserver.java",
       "api/org/webrtc/VideoCodecStatus.java",
@@ -768,22 +767,7 @@ if (is_android) {
     ]
 
     # TODO(sakal): These should be moved to video_java but cannot because of dependencies.
-    java_files += [
-      "api/org/webrtc/EglBase.java",
-      "api/org/webrtc/GlShader.java",
-      "api/org/webrtc/GlTextureFrameBuffer.java",
-      "api/org/webrtc/GlUtil.java",
-      "api/org/webrtc/JavaI420Buffer.java",
-      "api/org/webrtc/RendererCommon.java",
-      "api/org/webrtc/SurfaceTextureHelper.java",
-      "api/org/webrtc/TextureBufferImpl.java",
-      "api/org/webrtc/YuvConverter.java",
-      "api/org/webrtc/VideoFrameDrawer.java",
-      "src/java/org/webrtc/GlGenericDrawer.java",
-      "api/org/webrtc/YuvHelper.java",
-      "src/java/org/webrtc/EglBase10.java",
-      "src/java/org/webrtc/EglBase14.java",
-    ]
+    java_files += [ "api/org/webrtc/JavaI420Buffer.java" ]
 
     deps = [
       ":base_java",
@@ -842,12 +826,26 @@ if (is_android) {
 
   rtc_android_library("video_java") {
     java_files = [
+      "api/org/webrtc/EglBase.java",
       "api/org/webrtc/EglRenderer.java",
       "api/org/webrtc/GlRectDrawer.java",
+      "api/org/webrtc/GlShader.java",
+      "api/org/webrtc/GlTextureFrameBuffer.java",
+      "api/org/webrtc/GlUtil.java",
+      "api/org/webrtc/RendererCommon.java",
+      "api/org/webrtc/SurfaceTextureHelper.java",
+      "api/org/webrtc/TextureBufferImpl.java",
+      "api/org/webrtc/VideoCapturer.java",
       "api/org/webrtc/VideoDecoderFallback.java",
       "api/org/webrtc/VideoEncoderFallback.java",
-      "src/java/org/webrtc/NV21Buffer.java",
+      "api/org/webrtc/VideoFrameDrawer.java",
+      "api/org/webrtc/YuvConverter.java",
+      "api/org/webrtc/YuvHelper.java",
+      "src/java/org/webrtc/EglBase10.java",
+      "src/java/org/webrtc/EglBase14.java",
+      "src/java/org/webrtc/GlGenericDrawer.java",
       "src/java/org/webrtc/H264Utils.java",
+      "src/java/org/webrtc/NV21Buffer.java",
       "src/java/org/webrtc/VideoDecoderWrapper.java",
       "src/java/org/webrtc/VideoEncoderWrapper.java",
       "src/java/org/webrtc/WrappedNativeI420Buffer.java",
@@ -1106,6 +1104,7 @@ if (is_android) {
         ":libjingle_peerconnection_java",
         ":libjingle_peerconnection_metrics_default_java",
         ":video_api_java",
+        ":video_java",
         "//base:base_java",
         "//base:base_java_test_support",
         "//rtc_base:base_java",
