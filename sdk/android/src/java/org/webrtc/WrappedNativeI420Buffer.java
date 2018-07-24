@@ -104,7 +104,7 @@ class WrappedNativeI420Buffer implements VideoFrame.I420Buffer {
   @Override
   public VideoFrame.Buffer cropAndScale(
       int cropX, int cropY, int cropWidth, int cropHeight, int scaleWidth, int scaleHeight) {
-    return VideoFrame.cropAndScaleI420(
+    return JavaI420Buffer.cropAndScaleI420(
         this, cropX, cropY, cropWidth, cropHeight, scaleWidth, scaleHeight);
   }
 }

@@ -163,7 +163,37 @@ public class JavaI420Buffer implements VideoFrame.I420Buffer {
   @Override
   public VideoFrame.Buffer cropAndScale(
       int cropX, int cropY, int cropWidth, int cropHeight, int scaleWidth, int scaleHeight) {
-    return VideoFrame.cropAndScaleI420(
-        this, cropX, cropY, cropWidth, cropHeight, scaleWidth, scaleHeight);
+    return cropAndScaleI420(this, cropX, cropY, cropWidth, cropHeight, scaleWidth, scaleHeight);
   }
+
+  public static VideoFrame.Buffer cropAndScaleI420(final I420Buffer buffer, int cropX, int cropY,
+      int cropWidth, int cropHeight, int scaleWidth, int scaleHeight) {
+    if (cropWidth == scaleWidth && cropHeight == scaleHeight) {
+      // No scaling.
+      ByteBuffer dataY = buffer.getDataY();
+      ByteBuffer dataU = buffer.getDataU();
+      ByteBuffer dataV = buffer.getDataV();
+
+      dataY.position(cropX + cropY * buffer.getStrideY());
+      dataU.position(cropX / 2 + cropY / 2 * buffer.getStrideU());
+      dataV.position(cropX / 2 + cropY / 2 * buffer.getStrideV());
+
+      buffer.retain();
+      return JavaI420Buffer.wrap(scaleWidth, scaleHeight, dataY.slice(), buffer.getStrideY(),
+          dataU.slice(), buffer.getStrideU(), dataV.slice(), buffer.getStrideV(), buffer::release);
+    }
+
+    JavaI420Buffer newBuffer = JavaI420Buffer.allocate(scaleWidth, scaleHeight);
+    nativeCropAndScaleI420(buffer.getDataY(), buffer.getStrideY(), buffer.getDataU(),
+        buffer.getStrideU(), buffer.getDataV(), buffer.getStrideV(), cropX, cropY, cropWidth,
+        cropHeight, newBuffer.getDataY(), newBuffer.getStrideY(), newBuffer.getDataU(),
+        newBuffer.getStrideU(), newBuffer.getDataV(), newBuffer.getStrideV(), scaleWidth,
+        scaleHeight);
+    return newBuffer;
+  }
+
+  private static native void nativeCropAndScaleI420(ByteBuffer srcY, int srcStrideY,
+      ByteBuffer srcU, int srcStrideU, ByteBuffer srcV, int srcStrideV, int cropX, int cropY,
+      int cropWidth, int cropHeight, ByteBuffer dstY, int dstStrideY, ByteBuffer dstU,
+      int dstStrideU, ByteBuffer dstV, int dstStrideV, int scaleWidth, int scaleHeight);
 }
