@@ -48,6 +48,7 @@ LIB_TO_LICENSES_DICT = {
     'webrtc': ['LICENSE', 'LICENSE_THIRD_PARTY'],
     'zlib': ['third_party/zlib/LICENSE'],
     'base64': ['rtc_base/third_party/base64/LICENSE'],
+    'portaudio': ['modules/third_party/portaudio/LICENSE'],
 
     # Compile time dependencies, no license needed:
     'yasm': [],

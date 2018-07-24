@@ -56,8 +56,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "modules/audio_device/mac/portaudio/pa_memorybarrier.h"
-#include "modules/audio_device/mac/portaudio/pa_ringbuffer.h"
+#include "modules/third_party/portaudio/pa_memorybarrier.h"
+#include "modules/third_party/portaudio/pa_ringbuffer.h"
 
 /***************************************************************************
  * Initialize FIFO.

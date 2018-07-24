@@ -341,7 +341,7 @@ rtc_source_set("audio_device_impl") {
           "mac/audio_mixer_manager_mac.cc",
           "mac/audio_mixer_manager_mac.h",
         ]
-        deps += [ ":mac_portaudio" ]
+        deps += [ "../third_party/portaudio:mac_portaudio" ]
         libs = [
           # Needed for CoreGraphics:
           "ApplicationServices.framework",
@@ -384,15 +384,6 @@ rtc_source_set("audio_device_impl") {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
     suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
-}
-
-rtc_source_set("mac_portaudio") {
-  visibility = [ ":*" ]  # Only targets in this file can depend on this.
-  sources = [
-    "mac/portaudio/pa_memorybarrier.h",
-    "mac/portaudio/pa_ringbuffer.c",
-    "mac/portaudio/pa_ringbuffer.h",
-  ]
 }
 
 rtc_source_set("mock_audio_device") {
