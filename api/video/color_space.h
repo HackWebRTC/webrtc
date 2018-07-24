@@ -30,27 +30,50 @@ class ColorSpace {
   enum class PrimaryID {
     kInvalid,
     kBT709,
+    kBT470M,
+    kBT470BG,
     kSMPTE170M,  // Identical to BT601
     kSMPTE240M,
+    kFILM,
     kBT2020,
+    kSMPTEST428,
+    kSMPTEST431,
+    kSMPTEST432,
+    kJEDECP22,
   };
 
   enum class TransferID {
     kInvalid,
     kBT709,
+    kGAMMA22,
+    kGAMMA28,
     kSMPTE170M,
     kSMPTE240M,
-    kBT2020,
-    kBT2020_10,
+    kLINEAR,
+    kLOG,
+    kLOG_SQRT,
+    kIEC61966_2_4,
+    kBT1361_ECG,
     kIEC61966_2_1,
+    kBT2020_10,
+    kBT2020_12,
+    kSMPTEST2084,
+    kSMPTEST428,
+    kARIB_STD_B67,
   };
 
   enum class MatrixID {
     kInvalid,
+    kRGB,
     kBT709,
+    kFCC,
+    kBT470BG,
     kSMPTE170M,
     kSMPTE240M,
+    kYCOCG,
     kBT2020_NCL,
+    kBT2020_CL,
+    kSMPTE2085,
   };
 
   enum class RangeID {

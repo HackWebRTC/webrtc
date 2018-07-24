@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "api/video/color_space.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/video_coding/codecs/h264/include/h264.h"
 #include "modules/video_coding/codecs/test/video_codec_unittest.h"
@@ -54,6 +55,12 @@ TEST_F(TestH264Impl, MAYBE_EncodeDecode) {
   ASSERT_TRUE(WaitForDecodedFrame(&decoded_frame, &decoded_qp));
   ASSERT_TRUE(decoded_frame);
   EXPECT_GT(I420PSNR(input_frame, decoded_frame.get()), 36);
+
+  const ColorSpace color_space = decoded_frame->color_space().value();
+  EXPECT_EQ(ColorSpace::PrimaryID::kInvalid, color_space.primaries());
+  EXPECT_EQ(ColorSpace::TransferID::kInvalid, color_space.transfer());
+  EXPECT_EQ(ColorSpace::MatrixID::kInvalid, color_space.matrix());
+  EXPECT_EQ(ColorSpace::RangeID::kLimited, color_space.range());
 }
 
 TEST_F(TestH264Impl, MAYBE_DecodedQpEqualsEncodedQp) {

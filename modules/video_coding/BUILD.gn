@@ -296,6 +296,7 @@ rtc_static_library("webrtc_h264") {
   deps = [
     ":video_codec_interface",
     ":video_coding_utility",
+    "../../api/video:video_frame",
     "../../api/video:video_frame_i420",
     "../../api/video_codecs:video_codecs_api",
     "../../media:rtc_h264_profile_id",
@@ -310,6 +311,8 @@ rtc_static_library("webrtc_h264") {
   if (rtc_use_h264) {
     defines += [ "WEBRTC_USE_H264" ]
     sources += [
+      "codecs/h264/h264_color_space.cc",
+      "codecs/h264/h264_color_space.h",
       "codecs/h264/h264_decoder_impl.cc",
       "codecs/h264/h264_decoder_impl.h",
       "codecs/h264/h264_encoder_impl.cc",
