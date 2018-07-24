@@ -37,7 +37,6 @@ namespace webrtc {
 
 namespace {
 const float kMaxScreenSharingFramerateFps = 5.0f;
-}
 
 // Only positive speeds, range for real-time coding currently is: 5 - 8.
 // Lower means slower/better quality, higher means fastest/lower quality.
@@ -53,6 +52,68 @@ int GetCpuSpeed(int width, int height) {
     return 7;
 #endif
 }
+// Helper class for extracting VP9 colorspace.
+ColorSpace ExtractVP9ColorSpace(vpx_color_space_t space_t,
+                                vpx_color_range_t range_t,
+                                unsigned int bit_depth) {
+  ColorSpace::PrimaryID primaries = ColorSpace::PrimaryID::kInvalid;
+  ColorSpace::TransferID transfer = ColorSpace::TransferID::kInvalid;
+  ColorSpace::MatrixID matrix = ColorSpace::MatrixID::kInvalid;
+  switch (space_t) {
+    case VPX_CS_BT_601:
+    case VPX_CS_SMPTE_170:
+      primaries = ColorSpace::PrimaryID::kSMPTE170M;
+      transfer = ColorSpace::TransferID::kSMPTE170M;
+      matrix = ColorSpace::MatrixID::kSMPTE170M;
+      break;
+    case VPX_CS_SMPTE_240:
+      primaries = ColorSpace::PrimaryID::kSMPTE240M;
+      transfer = ColorSpace::TransferID::kSMPTE240M;
+      matrix = ColorSpace::MatrixID::kSMPTE240M;
+      break;
+    case VPX_CS_BT_709:
+      primaries = ColorSpace::PrimaryID::kBT709;
+      transfer = ColorSpace::TransferID::kBT709;
+      matrix = ColorSpace::MatrixID::kBT709;
+      break;
+    case VPX_CS_BT_2020:
+      primaries = ColorSpace::PrimaryID::kBT2020;
+      switch (bit_depth) {
+        case 8:
+          transfer = ColorSpace::TransferID::kBT709;
+          break;
+        case 10:
+          transfer = ColorSpace::TransferID::kBT2020_10;
+          break;
+        default:
+          RTC_NOTREACHED();
+          break;
+      }
+      matrix = ColorSpace::MatrixID::kBT2020_NCL;
+      break;
+    case VPX_CS_SRGB:
+      primaries = ColorSpace::PrimaryID::kBT709;
+      transfer = ColorSpace::TransferID::kIEC61966_2_1;
+      matrix = ColorSpace::MatrixID::kBT709;
+      break;
+    default:
+      break;
+  }
+
+  ColorSpace::RangeID range = ColorSpace::RangeID::kInvalid;
+  switch (range_t) {
+    case VPX_CR_STUDIO_RANGE:
+      range = ColorSpace::RangeID::kLimited;
+      break;
+    case VPX_CR_FULL_RANGE:
+      range = ColorSpace::RangeID::kFull;
+      break;
+    default:
+      break;
+  }
+  return ColorSpace(primaries, transfer, matrix, range);
+}
+}  // namespace
 
 std::vector<SdpVideoFormat> SupportedVP9Codecs() {
   // TODO(emircan): Add Profile 2 support after fixing browser_tests.
@@ -1180,71 +1241,15 @@ int VP9DecoderImpl::ReturnFrame(const vpx_image_t* img,
       return WEBRTC_VIDEO_CODEC_NO_OUTPUT;
   }
 
-  ColorSpace::PrimaryID primaries = ColorSpace::PrimaryID::kInvalid;
-  ColorSpace::TransferID transfer = ColorSpace::TransferID::kInvalid;
-  ColorSpace::MatrixID matrix = ColorSpace::MatrixID::kInvalid;
-  switch (img->cs) {
-    case VPX_CS_BT_601:
-    case VPX_CS_SMPTE_170:
-      primaries = ColorSpace::PrimaryID::kSMPTE170M;
-      transfer = ColorSpace::TransferID::kSMPTE170M;
-      matrix = ColorSpace::MatrixID::kSMPTE170M;
-      break;
-    case VPX_CS_SMPTE_240:
-      primaries = ColorSpace::PrimaryID::kSMPTE240M;
-      transfer = ColorSpace::TransferID::kSMPTE240M;
-      matrix = ColorSpace::MatrixID::kSMPTE240M;
-      break;
-    case VPX_CS_BT_709:
-      primaries = ColorSpace::PrimaryID::kBT709;
-      transfer = ColorSpace::TransferID::kBT709;
-      matrix = ColorSpace::MatrixID::kBT709;
-      break;
-    case VPX_CS_BT_2020:
-      primaries = ColorSpace::PrimaryID::kBT2020;
-      switch (img->bit_depth) {
-        case 8:
-          transfer = ColorSpace::TransferID::kBT709;
-          break;
-        case 10:
-          transfer = ColorSpace::TransferID::kBT2020_10;
-          break;
-        default:
-          RTC_NOTREACHED();
-          break;
-      }
-      matrix = ColorSpace::MatrixID::kBT2020_NCL;
-      break;
-    case VPX_CS_SRGB:
-      primaries = ColorSpace::PrimaryID::kBT709;
-      transfer = ColorSpace::TransferID::kIEC61966_2_1;
-      matrix = ColorSpace::MatrixID::kBT709;
-      break;
-    default:
-      break;
-  }
-
-  ColorSpace::RangeID range = ColorSpace::RangeID::kInvalid;
-  switch (img->range) {
-    case VPX_CR_STUDIO_RANGE:
-      range = ColorSpace::RangeID::kLimited;
-      break;
-    case VPX_CR_FULL_RANGE:
-      range = ColorSpace::RangeID::kFull;
-      break;
-    default:
-      break;
-  }
-
-  VideoFrame decoded_image =
-      VideoFrame::Builder()
-          .set_video_frame_buffer(img_wrapped_buffer)
-          .set_timestamp_ms(0)
-          .set_timestamp_rtp(timestamp)
-          .set_ntp_time_ms(ntp_time_ms)
-          .set_rotation(webrtc::kVideoRotation_0)
-          .set_color_space(ColorSpace(primaries, transfer, matrix, range))
-          .build();
+  VideoFrame decoded_image = VideoFrame::Builder()
+                                 .set_video_frame_buffer(img_wrapped_buffer)
+                                 .set_timestamp_ms(0)
+                                 .set_timestamp_rtp(timestamp)
+                                 .set_ntp_time_ms(ntp_time_ms)
+                                 .set_rotation(webrtc::kVideoRotation_0)
+                                 .set_color_space(ExtractVP9ColorSpace(
+                                     img->cs, img->range, img->bit_depth))
+                                 .build();
   decode_complete_callback_->Decoded(decoded_image, absl::nullopt, qp);
   return WEBRTC_VIDEO_CODEC_OK;
 }
