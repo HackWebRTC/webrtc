@@ -489,6 +489,7 @@ webrtc_fuzzer_test("audio_processing_fuzzer") {
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:safe_minmax",
     "../../system_wrappers:field_trial_default",
+    "//third_party/abseil-cpp/absl/memory",
   ]
   seed_corpus = "corpora/audio_processing-corpus"
 }
@@ -502,6 +503,7 @@ webrtc_fuzzer_test("agc_fuzzer") {
     "../../modules/audio_processing",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:safe_minmax",
+    "//third_party/abseil-cpp/absl/memory",
   ]
 
   seed_corpus = "corpora/agc-corpus"
@@ -529,6 +531,7 @@ webrtc_fuzzer_test("rtp_frame_reference_finder_fuzzer") {
     "../../modules/video_coding/",
     "../../rtc_base:ptr_util",
     "../../system_wrappers",
+    "//third_party/abseil-cpp/absl/memory",
   ]
   libfuzzer_options = [ "max_len=20000" ]
 }

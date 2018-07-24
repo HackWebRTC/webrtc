@@ -203,6 +203,7 @@ if (is_mac) {
       "../../rtc_base:rtc_base_approved",
       "../../rtc_base/synchronization:rw_lock_wrapper",
       "../../sdk:common_objc",
+      "//third_party/abseil-cpp/absl/memory",
     ]
     libs = [
       "AppKit.framework",
