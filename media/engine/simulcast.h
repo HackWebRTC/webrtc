@@ -56,11 +56,7 @@ std::vector<webrtc::VideoStream> GetScreenshareLayers(
     double bitrate_priority,
     int max_qp,
     int max_framerate,
-    bool screenshare_simulcast_enabled,
     bool temporal_layers_supported = true);
-
-bool ScreenshareSimulcastFieldTrialEnabled();
-
 }  // namespace cricket
 
 #endif  // MEDIA_ENGINE_SIMULCAST_H_

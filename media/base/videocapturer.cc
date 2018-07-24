@@ -27,8 +27,6 @@ static const int64_t kMaxDistance = ~(static_cast<int64_t>(1) << 63);
 #ifdef WEBRTC_LINUX
 static const int kYU12Penalty = 16;  // Needs to be higher than MJPG index.
 #endif
-static const char* kSimulcastScreenshareFieldTrialName =
-    "WebRTC-SimulcastScreenshare";
 
 }  // namespace
 
@@ -184,10 +182,7 @@ bool VideoCapturer::AdaptFrame(int width,
     return false;
   }
 
-  bool simulcast_screenshare_enabled =
-      !webrtc::field_trial::IsDisabled(kSimulcastScreenshareFieldTrialName);
-  if (enable_video_adapter_ &&
-      (!IsScreencast() || simulcast_screenshare_enabled)) {
+  if (enable_video_adapter_) {
     if (!video_adapter_.AdaptFrameResolution(
             width, height, camera_time_us * rtc::kNumNanosecsPerMicrosec,
             crop_width, crop_height, out_width, out_height)) {
