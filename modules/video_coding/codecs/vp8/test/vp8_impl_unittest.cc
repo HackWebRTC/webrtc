@@ -256,6 +256,12 @@ TEST_F(TestVp8Impl, MAYBE_AlignedStrideEncodeDecode) {
   EXPECT_GT(I420PSNR(input_frame, decoded_frame.get()), 36);
   EXPECT_EQ(kInitialTimestampRtp, decoded_frame->timestamp());
   EXPECT_EQ(kTestNtpTimeMs, decoded_frame->ntp_time_ms());
+
+  const ColorSpace color_space = decoded_frame->color_space().value();
+  EXPECT_EQ(ColorSpace::PrimaryID::kSMPTE170M, color_space.primaries());
+  EXPECT_EQ(ColorSpace::TransferID::kSMPTE170M, color_space.transfer());
+  EXPECT_EQ(ColorSpace::MatrixID::kSMPTE170M, color_space.matrix());
+  EXPECT_EQ(ColorSpace::RangeID::kLimited, color_space.range());
 }
 
 #if defined(WEBRTC_ANDROID)

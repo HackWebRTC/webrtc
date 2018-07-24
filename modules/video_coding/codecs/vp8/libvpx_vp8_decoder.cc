@@ -12,6 +12,7 @@
 #include <string>
 
 #include "absl/memory/memory.h"
+#include "api/video/color_space.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/video_coding/codecs/vp8/libvpx_vp8_decoder.h"
 #include "rtc_base/checks.h"
@@ -305,8 +306,29 @@ int LibvpxVp8Decoder::ReturnFrame(const vpx_image_t* img,
                    buffer->MutableDataV(), buffer->StrideV(), img->d_w,
                    img->d_h);
 
-  VideoFrame decoded_image(buffer, timestamp, 0, kVideoRotation_0);
-  decoded_image.set_ntp_time_ms(ntp_time_ms);
+  ColorSpace::RangeID range = ColorSpace::RangeID::kInvalid;
+  switch (img->range) {
+    case VPX_CR_STUDIO_RANGE:
+      range = ColorSpace::RangeID::kLimited;
+      break;
+    case VPX_CR_FULL_RANGE:
+      range = ColorSpace::RangeID::kFull;
+      break;
+    default:
+      break;
+  }
+
+  VideoFrame decoded_image =
+      VideoFrame::Builder()
+          .set_video_frame_buffer(buffer)
+          .set_timestamp_ms(0)
+          .set_timestamp_rtp(timestamp)
+          .set_ntp_time_ms(ntp_time_ms)
+          .set_rotation(webrtc::kVideoRotation_0)
+          .set_color_space(ColorSpace(ColorSpace::PrimaryID::kSMPTE170M,
+                                      ColorSpace::TransferID::kSMPTE170M,
+                                      ColorSpace::MatrixID::kSMPTE170M, range))
+          .build();
   decode_complete_callback_->Decoded(decoded_image, absl::nullopt, qp);
 
   return WEBRTC_VIDEO_CODEC_OK;
