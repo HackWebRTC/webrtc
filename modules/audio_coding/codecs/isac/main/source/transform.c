@@ -11,9 +11,9 @@
 #include <math.h>
 
 #include "modules/audio_coding/codecs/isac/main/source/settings.h"
-#include "modules/audio_coding/codecs/isac/main/source/fft.h"
 #include "modules/audio_coding/codecs/isac/main/source/codec.h"
 #include "modules/audio_coding/codecs/isac/main/source/os_specific_inline.h"
+#include "modules/third_party/fft/fft.h"
 
 void WebRtcIsac_InitTransform(TransformTables* tables) {
   int k;
