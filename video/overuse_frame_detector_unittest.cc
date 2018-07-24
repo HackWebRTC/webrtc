@@ -77,8 +77,8 @@ class OveruseFrameDetectorTest : public ::testing::Test,
   }
 
   void OnEncodedFrameTimeMeasured(int encode_time_ms,
-                                  const CpuOveruseMetrics& metrics) override {
-    metrics_ = metrics;
+                                  int encode_usage_percent) override {
+    encode_usage_percent_ = encode_usage_percent;
   }
 
   int InitialUsage() {
@@ -165,7 +165,7 @@ class OveruseFrameDetectorTest : public ::testing::Test,
     overuse_detector_->CheckForOveruse(observer_);
   }
 
-  int UsagePercent() { return metrics_.encode_usage_percent; }
+  int UsagePercent() { return encode_usage_percent_; }
 
   int64_t OveruseProcessingTimeLimitForFramerate(int fps) const {
     int64_t frame_interval = rtc::kNumMicrosecsPerSec / fps;
@@ -186,7 +186,7 @@ class OveruseFrameDetectorTest : public ::testing::Test,
   MockCpuOveruseObserver mock_observer_;
   AdaptationObserverInterface* observer_;
   std::unique_ptr<OveruseFrameDetectorUnderTest> overuse_detector_;
-  CpuOveruseMetrics metrics_;
+  int encode_usage_percent_ = -1;
 
   static const auto reason_ = AdaptationObserverInterface::AdaptReason::kCpu;
 };

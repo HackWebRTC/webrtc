@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#include "api/video/video_stream_encoder_observer.h"
 #include "call/video_send_stream.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/include/video_codec_interface.h"
@@ -25,14 +26,12 @@
 #include "rtc_base/ratetracker.h"
 #include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/clock.h"
-#include "video/overuse_frame_detector.h"
 #include "video/report_block_stats.h"
 #include "video/stats_counter.h"
-#include "video/video_stream_encoder.h"
 
 namespace webrtc {
 
-class SendStatisticsProxy : public CpuOveruseMetricsObserver,
+class SendStatisticsProxy : public VideoStreamEncoderObserver,
                             public RtcpStatisticsCallback,
                             public RtcpPacketTypeCounterObserver,
                             public StreamDataCountersCallback,
@@ -53,44 +52,37 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   virtual VideoSendStream::Stats GetStats();
 
   void OnSendEncodedImage(const EncodedImage& encoded_image,
-                          const CodecSpecificInfo* codec_info);
+                          const CodecSpecificInfo* codec_info) override;
   // Used to update incoming frame rate.
-  void OnIncomingFrame(int width, int height);
+  void OnIncomingFrame(int width, int height) override;
 
   // Dropped frame stats.
-  void OnFrameDroppedBySource();
-  void OnFrameDroppedInEncoderQueue();
-  void OnFrameDroppedByEncoder();
-  void OnFrameDroppedByMediaOptimizations();
+  void OnFrameDropped(DropReason) override;
 
   // Adaptation stats.
-  void SetAdaptationStats(
-      const VideoStreamEncoder::AdaptCounts& cpu_counts,
-      const VideoStreamEncoder::AdaptCounts& quality_counts);
-  void OnCpuAdaptationChanged(
-      const VideoStreamEncoder::AdaptCounts& cpu_counts,
-      const VideoStreamEncoder::AdaptCounts& quality_counts);
-  void OnQualityAdaptationChanged(
-      const VideoStreamEncoder::AdaptCounts& cpu_counts,
-      const VideoStreamEncoder::AdaptCounts& quality_counts);
-  void OnMinPixelLimitReached();
-  void OnInitialQualityResolutionAdaptDown();
+  void OnAdaptationChanged(AdaptationReason reason,
+                           const AdaptationSteps& cpu_counts,
+                           const AdaptationSteps& quality_counts) override;
 
-  void OnSuspendChange(bool is_suspended);
+  void OnMinPixelLimitReached() override;
+  void OnInitialQualityResolutionAdaptDown() override;
+
+  void OnSuspendChange(bool is_suspended) override;
   void OnInactiveSsrc(uint32_t ssrc);
 
   // Used to indicate change in content type, which may require a change in
   // how stats are collected.
   void OnEncoderReconfigured(const VideoEncoderConfig& encoder_config,
-                             const std::vector<VideoStream>& streams);
+                             const std::vector<VideoStream>& streams) override;
 
   // Used to update the encoder target rate.
   void OnSetEncoderTargetRate(uint32_t bitrate_bps);
 
   // Implements CpuOveruseMetricsObserver.
   void OnEncodedFrameTimeMeasured(int encode_time_ms,
-                                  const CpuOveruseMetrics& metrics) override;
+                                  int encode_usage_percent) override;
 
+  int GetInputFrameRate() const override;
   int GetSendFrameRate() const;
 
  protected:
@@ -216,14 +208,13 @@ class SendStatisticsProxy : public CpuOveruseMetricsObserver,
   VideoSendStream::StreamStats* GetStatsEntry(uint32_t ssrc)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
-  void SetAdaptTimer(const VideoStreamEncoder::AdaptCounts& counts,
-                     StatsTimer* timer) RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
-  void UpdateAdaptationStats(
-      const VideoStreamEncoder::AdaptCounts& cpu_counts,
-      const VideoStreamEncoder::AdaptCounts& quality_counts)
+  void SetAdaptTimer(const AdaptationSteps& counts, StatsTimer* timer)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  void UpdateAdaptationStats(const AdaptationSteps& cpu_counts,
+                             const AdaptationSteps& quality_counts)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
   void TryUpdateInitialQualityResolutionAdaptUp(
-      const VideoStreamEncoder::AdaptCounts& quality_counts)
+      const AdaptationSteps& quality_counts)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   void UpdateEncoderFallbackStats(const CodecSpecificInfo* codec_info,

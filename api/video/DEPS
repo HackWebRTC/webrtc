@@ -8,4 +8,7 @@ specific_include_rules = {
   "video_stream_decoder_create.cc": [
     "+video/video_stream_decoder_impl.h",
   ],
+  "video_stream_encoder_create.cc": [
+    "+video/video_stream_encoder.h",
+  ],
 }

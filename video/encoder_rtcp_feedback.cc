@@ -10,8 +10,8 @@
 
 #include "video/encoder_rtcp_feedback.h"
 
+#include "api/video/video_stream_encoder_interface.h"
 #include "rtc_base/checks.h"
-#include "video/video_stream_encoder.h"
 
 static const int kMinKeyFrameRequestIntervalMs = 300;
 

@@ -11,6 +11,7 @@
 
 #include <utility>
 
+#include "api/video/video_stream_encoder_create.h"
 #include "modules/rtp_rtcp/source/rtp_sender.h"
 #include "rtc_base/logging.h"
 #include "video/video_send_stream_impl.h"
@@ -77,10 +78,9 @@ VideoSendStream::VideoSendStream(
       content_type_(encoder_config.content_type) {
   RTC_DCHECK(config_.encoder_settings.encoder_factory);
 
-  video_stream_encoder_ = absl::make_unique<VideoStreamEncoder>(
-      num_cpu_cores, &stats_proxy_, config_.encoder_settings,
-      config_.pre_encode_callback,
-      absl::make_unique<OveruseFrameDetector>(&stats_proxy_));
+  video_stream_encoder_ = CreateVideoStreamEncoder(num_cpu_cores, &stats_proxy_,
+                                                   config_.encoder_settings,
+                                                   config_.pre_encode_callback);
   // TODO(srte): Initialization should not be done posted on a task queue.
   // Note that the posted task must not outlive this scope since the closure
   // references local variables.

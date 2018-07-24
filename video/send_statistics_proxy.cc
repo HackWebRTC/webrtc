@@ -653,14 +653,13 @@ void SendStatisticsProxy::OnEncoderReconfigured(
       streams.empty() ? 0 : (streams.back().width * streams.back().height);
 }
 
-void SendStatisticsProxy::OnEncodedFrameTimeMeasured(
-    int encode_time_ms,
-    const CpuOveruseMetrics& metrics) {
+void SendStatisticsProxy::OnEncodedFrameTimeMeasured(int encode_time_ms,
+                                                     int encode_usage_percent) {
   rtc::CritScope lock(&crit_);
   uma_container_->encode_time_counter_.Add(encode_time_ms);
   encode_time_.Apply(1.0f, encode_time_ms);
   stats_.avg_encode_time_ms = round(encode_time_.filtered());
-  stats_.encode_usage_percent = metrics.encode_usage_percent;
+  stats_.encode_usage_percent = encode_usage_percent;
 }
 
 void SendStatisticsProxy::OnSuspendChange(bool is_suspended) {
@@ -960,6 +959,11 @@ void SendStatisticsProxy::OnSendEncodedImage(
   }
 }
 
+int SendStatisticsProxy::GetInputFrameRate() const {
+  rtc::CritScope lock(&crit_);
+  return round(uma_container_->input_frame_rate_tracker_.ComputeRate());
+}
+
 int SendStatisticsProxy::GetSendFrameRate() const {
   rtc::CritScope lock(&crit_);
   return round(encoded_frame_rate_tracker_.ComputeRate());
@@ -982,62 +986,55 @@ void SendStatisticsProxy::OnIncomingFrame(int width, int height) {
   }
 }
 
-void SendStatisticsProxy::OnFrameDroppedBySource() {
+void SendStatisticsProxy::OnFrameDropped(DropReason reason) {
   rtc::CritScope lock(&crit_);
-  ++stats_.frames_dropped_by_capturer;
+  switch (reason) {
+    case DropReason::kSource:
+      ++stats_.frames_dropped_by_capturer;
+      break;
+    case DropReason::kEncoderQueue:
+      ++stats_.frames_dropped_by_encoder_queue;
+      break;
+    case DropReason::kEncoder:
+      ++stats_.frames_dropped_by_encoder;
+      break;
+    case DropReason::kMediaOptimization:
+      ++stats_.frames_dropped_by_rate_limiter;
+      break;
+  }
 }
 
-void SendStatisticsProxy::OnFrameDroppedInEncoderQueue() {
+void SendStatisticsProxy::OnAdaptationChanged(
+    AdaptationReason reason,
+    const AdaptationSteps& cpu_counts,
+    const AdaptationSteps& quality_counts) {
   rtc::CritScope lock(&crit_);
-  ++stats_.frames_dropped_by_encoder_queue;
-}
-
-void SendStatisticsProxy::OnFrameDroppedByEncoder() {
-  rtc::CritScope lock(&crit_);
-  ++stats_.frames_dropped_by_encoder;
-}
-
-void SendStatisticsProxy::OnFrameDroppedByMediaOptimizations() {
-  rtc::CritScope lock(&crit_);
-  ++stats_.frames_dropped_by_rate_limiter;
-}
-
-void SendStatisticsProxy::SetAdaptationStats(
-    const VideoStreamEncoder::AdaptCounts& cpu_counts,
-    const VideoStreamEncoder::AdaptCounts& quality_counts) {
-  rtc::CritScope lock(&crit_);
-  SetAdaptTimer(cpu_counts, &uma_container_->cpu_adapt_timer_);
-  SetAdaptTimer(quality_counts, &uma_container_->quality_adapt_timer_);
-  UpdateAdaptationStats(cpu_counts, quality_counts);
-}
-
-void SendStatisticsProxy::OnCpuAdaptationChanged(
-    const VideoStreamEncoder::AdaptCounts& cpu_counts,
-    const VideoStreamEncoder::AdaptCounts& quality_counts) {
-  rtc::CritScope lock(&crit_);
-  ++stats_.number_of_cpu_adapt_changes;
-  UpdateAdaptationStats(cpu_counts, quality_counts);
-}
-
-void SendStatisticsProxy::OnQualityAdaptationChanged(
-    const VideoStreamEncoder::AdaptCounts& cpu_counts,
-    const VideoStreamEncoder::AdaptCounts& quality_counts) {
-  rtc::CritScope lock(&crit_);
-  TryUpdateInitialQualityResolutionAdaptUp(quality_counts);
-  ++stats_.number_of_quality_adapt_changes;
+  switch (reason) {
+    case AdaptationReason::kNone:
+      SetAdaptTimer(cpu_counts, &uma_container_->cpu_adapt_timer_);
+      SetAdaptTimer(quality_counts, &uma_container_->quality_adapt_timer_);
+      break;
+    case AdaptationReason::kCpu:
+      ++stats_.number_of_cpu_adapt_changes;
+      break;
+    case AdaptationReason::kQuality:
+      TryUpdateInitialQualityResolutionAdaptUp(quality_counts);
+      ++stats_.number_of_quality_adapt_changes;
+      break;
+  }
   UpdateAdaptationStats(cpu_counts, quality_counts);
 }
 
 void SendStatisticsProxy::UpdateAdaptationStats(
-    const VideoStreamEncoder::AdaptCounts& cpu_counts,
-    const VideoStreamEncoder::AdaptCounts& quality_counts) {
-  cpu_downscales_ = cpu_counts.resolution;
-  quality_downscales_ = quality_counts.resolution;
+    const AdaptationSteps& cpu_counts,
+    const AdaptationSteps& quality_counts) {
+  cpu_downscales_ = cpu_counts.num_resolution_reductions.value_or(-1);
+  quality_downscales_ = quality_counts.num_resolution_reductions.value_or(-1);
 
-  stats_.cpu_limited_resolution = cpu_counts.resolution > 0;
-  stats_.cpu_limited_framerate = cpu_counts.fps > 0;
-  stats_.bw_limited_resolution = quality_counts.resolution > 0;
-  stats_.bw_limited_framerate = quality_counts.fps > 0;
+  stats_.cpu_limited_resolution = cpu_counts.num_resolution_reductions > 0;
+  stats_.cpu_limited_framerate = cpu_counts.num_framerate_reductions > 0;
+  stats_.bw_limited_resolution = quality_counts.num_resolution_reductions > 0;
+  stats_.bw_limited_framerate = quality_counts.num_framerate_reductions > 0;
 }
 
 // TODO(asapersson): Include fps changes.
@@ -1047,12 +1044,13 @@ void SendStatisticsProxy::OnInitialQualityResolutionAdaptDown() {
 }
 
 void SendStatisticsProxy::TryUpdateInitialQualityResolutionAdaptUp(
-    const VideoStreamEncoder::AdaptCounts& quality_counts) {
+    const AdaptationSteps& quality_counts) {
   if (uma_container_->initial_quality_changes_.down == 0)
     return;
 
   if (quality_downscales_ > 0 &&
-      quality_counts.resolution < quality_downscales_) {
+      quality_counts.num_resolution_reductions.value_or(-1) <
+          quality_downscales_) {
     // Adapting up in quality.
     if (uma_container_->initial_quality_changes_.down >
         uma_container_->initial_quality_changes_.up) {
@@ -1061,10 +1059,9 @@ void SendStatisticsProxy::TryUpdateInitialQualityResolutionAdaptUp(
   }
 }
 
-void SendStatisticsProxy::SetAdaptTimer(
-    const VideoStreamEncoder::AdaptCounts& counts,
-    StatsTimer* timer) {
-  if (counts.resolution >= 0 || counts.fps >= 0) {
+void SendStatisticsProxy::SetAdaptTimer(const AdaptationSteps& counts,
+                                        StatsTimer* timer) {
+  if (counts.num_resolution_reductions || counts.num_framerate_reductions) {
     // Adaptation enabled.
     if (!stats_.suspended)
       timer->Start(clock_->TimeInMilliseconds());

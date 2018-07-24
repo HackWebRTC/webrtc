@@ -10,8 +10,8 @@
 #ifndef VIDEO_TEST_MOCK_VIDEO_STREAM_ENCODER_H_
 #define VIDEO_TEST_MOCK_VIDEO_STREAM_ENCODER_H_
 
+#include "api/video/video_stream_encoder_interface.h"
 #include "test/gmock.h"
-#include "video/video_stream_encoder.h"
 
 namespace webrtc {
 

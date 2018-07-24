@@ -242,6 +242,7 @@ rtc_source_set("video_stream_api") {
     "../api:libjingle_peerconnection_api",
     "../api:transport_api",
     "../api/video:video_frame",
+    "../api/video:video_stream_encoder",
     "../api/video_codecs:video_codecs_api",
     "../common_video:common_video",
     "../modules/rtp_rtcp:rtp_rtcp_format",

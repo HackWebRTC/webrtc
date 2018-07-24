@@ -135,6 +135,8 @@ rtc_source_set("video_stream_encoder") {
   visibility = [ "*" ]
   sources = [
     "video_stream_encoder_interface.h",
+    "video_stream_encoder_observer.h",
+    "video_stream_encoder_settings.h",
   ]
 
   deps = [
@@ -142,6 +144,28 @@ rtc_source_set("video_stream_encoder") {
 
     # For rtpparameters.h
     "..:libjingle_peerconnection_api",
+    "../video_codecs:video_codecs_api",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
+}
+
+rtc_source_set("video_stream_encoder_create") {
+  visibility = [ "*" ]
+  allow_poison = [ "software_video_codecs" ]  # TODO(bugs.webrtc.org/7925): Remove.
+  sources = [
+    "video_stream_encoder_create.cc",
+    "video_stream_encoder_create.h",
+  ]
+
+  if (!build_with_chromium && is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+  }
+
+  deps = [
+    ":video_stream_encoder",
+    "../../rtc_base:ptr_util",
+    "../../video:video_stream_encoder_impl",
     "../video_codecs:video_codecs_api",
   ]
 }

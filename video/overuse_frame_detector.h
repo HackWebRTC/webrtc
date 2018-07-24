@@ -15,6 +15,7 @@
 #include <memory>
 
 #include "absl/types/optional.h"
+#include "api/video/video_stream_encoder_observer.h"
 #include "modules/video_coding/utility/quality_scaler.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/numerics/exp_filter.h"
@@ -42,20 +43,6 @@ struct CpuOveruseOptions {
                                          // triggering an overuse.
   // New estimator enabled if this is set non-zero.
   int filter_time_ms;  // Time constant for averaging
-};
-
-struct CpuOveruseMetrics {
-  CpuOveruseMetrics() : encode_usage_percent(-1) {}
-
-  int encode_usage_percent;  // Average encode time divided by the average time
-                             // difference between incoming captured frames.
-};
-
-class CpuOveruseMetricsObserver {
- public:
-  virtual ~CpuOveruseMetricsObserver() {}
-  virtual void OnEncodedFrameTimeMeasured(int encode_duration_ms,
-                                          const CpuOveruseMetrics& metrics) = 0;
 };
 
 // Use to detect system overuse based on the send-side processing time of
@@ -124,8 +111,8 @@ class OveruseFrameDetector {
   class CheckOveruseTask;
 
   void EncodedFrameTimeMeasured(int encode_duration_ms);
-  bool IsOverusing(const CpuOveruseMetrics& metrics);
-  bool IsUnderusing(const CpuOveruseMetrics& metrics, int64_t time_now);
+  bool IsOverusing(int encode_usage_percent);
+  bool IsUnderusing(int encode_usage_percent, int64_t time_now);
 
   bool FrameTimeoutDetected(int64_t now) const;
   bool FrameSizeChanged(int num_pixels) const;
@@ -141,7 +128,7 @@ class OveruseFrameDetector {
 
   // Stats metrics.
   CpuOveruseMetricsObserver* const metrics_observer_;
-  absl::optional<CpuOveruseMetrics> metrics_ RTC_GUARDED_BY(task_checker_);
+  absl::optional<int> encode_usage_percent_ RTC_GUARDED_BY(task_checker_);
 
   int64_t num_process_times_ RTC_GUARDED_BY(task_checker_);
 

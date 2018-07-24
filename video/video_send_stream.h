@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "api/fec_controller.h"
+#include "api/video/video_stream_encoder_interface.h"
 #include "call/bitrate_allocator.h"
 #include "call/video_receive_stream.h"
 #include "call/video_send_stream.h"
@@ -25,7 +26,6 @@
 #include "rtc_base/task_queue.h"
 #include "video/send_delay_stats.h"
 #include "video/send_statistics_proxy.h"
-#include "video/video_stream_encoder.h"
 
 namespace webrtc {
 namespace test {
@@ -36,6 +36,7 @@ class CallStats;
 class SendSideCongestionController;
 class IvfFileWriter;
 class ProcessThread;
+class RateLimiter;
 class RtpRtcp;
 class RtpTransportControllerSendInterface;
 class RtcEventLog;
@@ -113,7 +114,7 @@ class VideoSendStream : public webrtc::VideoSendStream {
   const VideoSendStream::Config config_;
   const VideoEncoderConfig::ContentType content_type_;
   std::unique_ptr<VideoSendStreamImpl> send_stream_;
-  std::unique_ptr<VideoStreamEncoder> video_stream_encoder_;
+  std::unique_ptr<VideoStreamEncoderInterface> video_stream_encoder_;
 };
 
 }  // namespace internal
