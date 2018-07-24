@@ -64,6 +64,12 @@ class EventLogAnalyzer {
   void CreatePacerDelayGraph(Plot* plot);
 
   void CreateTimestampGraph(PacketDirection direction, Plot* plot);
+  void CreateSenderAndReceiverReportPlot(
+      PacketDirection direction,
+      rtc::FunctionView<float(const rtcp::ReportBlock&)> fy,
+      std::string title,
+      std::string yaxis_label,
+      Plot* plot);
 
   void CreateAudioEncoderTargetBitrateGraph(Plot* plot);
   void CreateAudioEncoderFrameLengthGraph(Plot* plot);

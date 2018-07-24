@@ -1458,6 +1458,61 @@ void EventLogAnalyzer::CreateTimestampGraph(PacketDirection direction,
   plot->SetTitle(GetDirectionAsString(direction) + " timestamps");
 }
 
+void EventLogAnalyzer::CreateSenderAndReceiverReportPlot(
+    PacketDirection direction,
+    rtc::FunctionView<float(const rtcp::ReportBlock&)> fy,
+    std::string title,
+    std::string yaxis_label,
+    Plot* plot) {
+  std::map<uint32_t, TimeSeries> sr_reports_by_ssrc;
+  const auto& sender_reports = parsed_log_.sender_reports(direction);
+  for (const auto& rtcp : sender_reports) {
+    float x = ToCallTimeSec(rtcp.log_time_us());
+    uint32_t ssrc = rtcp.sr.sender_ssrc();
+    for (const auto& block : rtcp.sr.report_blocks()) {
+      float y = fy(block);
+      auto sr_report_it = sr_reports_by_ssrc.find(ssrc);
+      bool inserted;
+      if (sr_report_it == sr_reports_by_ssrc.end()) {
+        std::tie(sr_report_it, inserted) = sr_reports_by_ssrc.emplace(
+            ssrc, TimeSeries(GetStreamName(direction, ssrc) + " Sender Reports",
+                             LineStyle::kLine, PointStyle::kHighlight));
+      }
+      sr_report_it->second.points.emplace_back(x, y);
+    }
+  }
+  for (auto& kv : sr_reports_by_ssrc) {
+    plot->AppendTimeSeries(std::move(kv.second));
+  }
+
+  std::map<uint32_t, TimeSeries> rr_reports_by_ssrc;
+  const auto& receiver_reports = parsed_log_.receiver_reports(direction);
+  for (const auto& rtcp : receiver_reports) {
+    float x = ToCallTimeSec(rtcp.log_time_us());
+    uint32_t ssrc = rtcp.rr.sender_ssrc();
+    for (const auto& block : rtcp.rr.report_blocks()) {
+      float y = fy(block);
+      auto rr_report_it = rr_reports_by_ssrc.find(ssrc);
+      bool inserted;
+      if (rr_report_it == rr_reports_by_ssrc.end()) {
+        std::tie(rr_report_it, inserted) = rr_reports_by_ssrc.emplace(
+            ssrc,
+            TimeSeries(GetStreamName(direction, ssrc) + " Receiver Reports",
+                       LineStyle::kLine, PointStyle::kHighlight));
+      }
+      rr_report_it->second.points.emplace_back(x, y);
+    }
+  }
+  for (auto& kv : rr_reports_by_ssrc) {
+    plot->AppendTimeSeries(std::move(kv.second));
+  }
+
+  plot->SetXAxis(ToCallTimeSec(begin_time_), call_duration_s_, "Time (s)",
+                 kLeftMargin, kRightMargin);
+  plot->SetSuggestedYAxis(0, 1, yaxis_label, kBottomMargin, kTopMargin);
+  plot->SetTitle(title);
+}
+
 void EventLogAnalyzer::CreateAudioEncoderTargetBitrateGraph(Plot* plot) {
   TimeSeries time_series("Audio encoder target bitrate", LineStyle::kLine,
                          PointStyle::kHighlight);

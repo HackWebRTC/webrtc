@@ -97,6 +97,12 @@ DEFINE_bool(plot_pacer_delay,
 DEFINE_bool(plot_timestamps,
             false,
             "Plot the rtp timestamps of all rtp and rtcp packets over time.");
+DEFINE_bool(plot_rtcp_details,
+            false,
+            "Plot the contents of all report blocks in all sender and receiver "
+            "reports. This includes fraction lost, cumulative number of lost "
+            "packets, extended highest sequence number and time since last "
+            "received SR.");
 DEFINE_bool(plot_audio_encoder_bitrate_bps,
             false,
             "Plot the audio encoder target bitrate.");
@@ -305,6 +311,59 @@ int main(int argc, char* argv[]) {
     analyzer.CreateTimestampGraph(webrtc::kOutgoingPacket,
                                   collection->AppendNewPlot());
   }
+  if (FLAG_plot_rtcp_details) {
+    auto GetFractionLost = [](const webrtc::rtcp::ReportBlock& block) -> float {
+      return static_cast<double>(block.fraction_lost()) / 256 * 100;
+    };
+    analyzer.CreateSenderAndReceiverReportPlot(
+        webrtc::kIncomingPacket, GetFractionLost,
+        "Fraction lost (incoming RTCP)", "Loss rate (percent)",
+        collection->AppendNewPlot());
+    analyzer.CreateSenderAndReceiverReportPlot(
+        webrtc::kOutgoingPacket, GetFractionLost,
+        "Fraction lost (outgoing RTCP)", "Loss rate (percent)",
+        collection->AppendNewPlot());
+
+    auto GetCumulativeLost =
+        [](const webrtc::rtcp::ReportBlock& block) -> float {
+      return block.cumulative_lost_signed();
+    };
+    analyzer.CreateSenderAndReceiverReportPlot(
+        webrtc::kIncomingPacket, GetCumulativeLost,
+        "Cumulative lost packets (incoming RTCP)", "Packets",
+        collection->AppendNewPlot());
+    analyzer.CreateSenderAndReceiverReportPlot(
+        webrtc::kOutgoingPacket, GetCumulativeLost,
+        "Cumulative lost packets (outgoing RTCP)", "Packets",
+        collection->AppendNewPlot());
+
+    auto GetHighestSeqNumber =
+        [](const webrtc::rtcp::ReportBlock& block) -> float {
+      return block.extended_high_seq_num();
+    };
+    analyzer.CreateSenderAndReceiverReportPlot(
+        webrtc::kIncomingPacket, GetHighestSeqNumber,
+        "Highest sequence number (incoming RTCP)", "Seqence number",
+        collection->AppendNewPlot());
+    analyzer.CreateSenderAndReceiverReportPlot(
+        webrtc::kOutgoingPacket, GetHighestSeqNumber,
+        "Highest sequence number (outgoing RTCP)", "Seqence number",
+        collection->AppendNewPlot());
+
+    auto DelaySinceLastSr =
+        [](const webrtc::rtcp::ReportBlock& block) -> float {
+      return static_cast<double>(block.delay_since_last_sr()) / 65536;
+    };
+    analyzer.CreateSenderAndReceiverReportPlot(
+        webrtc::kIncomingPacket, DelaySinceLastSr,
+        "Delay since last received sender report (incoming RTCP)", "Time (s)",
+        collection->AppendNewPlot());
+    analyzer.CreateSenderAndReceiverReportPlot(
+        webrtc::kOutgoingPacket, DelaySinceLastSr,
+        "Delay since last received sender report (outgoing RTCP)", "Time (s)",
+        collection->AppendNewPlot());
+  }
+
   if (FLAG_plot_pacer_delay) {
     analyzer.CreatePacerDelayGraph(collection->AppendNewPlot());
   }
@@ -410,6 +469,7 @@ void SetAllPlotFlags(bool setting) {
   FLAG_plot_network_delay_feedback = setting;
   FLAG_plot_fraction_loss_feedback = setting;
   FLAG_plot_timestamps = setting;
+  FLAG_plot_rtcp_details = setting;
   FLAG_plot_audio_encoder_bitrate_bps = setting;
   FLAG_plot_audio_encoder_frame_length_ms = setting;
   FLAG_plot_audio_encoder_packet_loss = setting;
