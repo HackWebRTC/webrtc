@@ -478,16 +478,6 @@ if (is_mac && !build_with_chromium) {
   }
 }
 
-rtc_source_set("base64") {
-  visibility = [ "*" ]
-  sources = [
-    "base64.h",
-  ]
-  deps = [
-    "third_party/base64",
-  ]
-}
-
 rtc_source_set("rtc_task_queue") {
   visibility = [ "*" ]
   deps = []
