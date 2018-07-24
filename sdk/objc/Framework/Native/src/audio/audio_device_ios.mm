@@ -122,10 +122,10 @@ AudioDeviceIOS::AudioDeviceIOS()
 }
 
 AudioDeviceIOS::~AudioDeviceIOS() {
-  LOGI() << "~dtor" << ios::GetCurrentThreadDescription();
-  audio_session_observer_ = nil;
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  LOGI() << "~dtor" << ios::GetCurrentThreadDescription();
   Terminate();
+  audio_session_observer_ = nil;
 }
 
 void AudioDeviceIOS::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
@@ -835,6 +835,7 @@ void AudioDeviceIOS::UnconfigureAudioSession() {
   RTCAudioSession* session = [RTCAudioSession sharedInstance];
   [session lockForConfiguration];
   [session unconfigureWebRTCSession:nil];
+  [session endWebRTCSession:nil];
   [session unlockForConfiguration];
   has_configured_session_ = false;
   RTCLog(@"Unconfigured audio session.");
@@ -902,10 +903,7 @@ void AudioDeviceIOS::ShutdownPlayOrRecord() {
 
   // All I/O should be stopped or paused prior to deactivating the audio
   // session, hence we deactivate as last action.
-  [session lockForConfiguration];
   UnconfigureAudioSession();
-  [session endWebRTCSession:nil];
-  [session unlockForConfiguration];
 }
 
 void AudioDeviceIOS::PrepareForNewStart() {
