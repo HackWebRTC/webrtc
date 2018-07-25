@@ -12,9 +12,9 @@
 #define MODULES_AUDIO_CODING_CODECS_OPUS_OPUS_INTERFACE_H_
 
 #include <stddef.h>
+#include <stdint.h>
 
 #include "modules/audio_coding/codecs/opus/opus_inst.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 #ifdef __cplusplus
 extern "C" {

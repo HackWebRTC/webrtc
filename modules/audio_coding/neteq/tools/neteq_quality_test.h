@@ -21,7 +21,6 @@
 #include "modules/audio_coding/neteq/tools/rtp_generator.h"
 #include "rtc_base/flags.h"
 #include "test/gtest.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 namespace test {

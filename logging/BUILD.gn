@@ -66,7 +66,6 @@ rtc_source_set("rtc_event_pacing") {
 
   deps = [
     ":rtc_event_log_api",
-    "../:typedefs",
     "../rtc_base:ptr_util",
     "//third_party/abseil-cpp/absl/memory",
   ]

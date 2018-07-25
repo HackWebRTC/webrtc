@@ -19,6 +19,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
+#include "rtc_base/system/arch.h"
 
 namespace webrtc {
 

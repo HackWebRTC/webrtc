@@ -16,6 +16,7 @@
 
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/numerics/safe_minmax.h"
+#include "rtc_base/system/unused.h"
 
 namespace webrtc {
 namespace testing {

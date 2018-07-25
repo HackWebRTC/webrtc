@@ -26,8 +26,8 @@
 #include <math.h>
 
 #include "modules/audio_processing/utility/ooura_fft_tables_common.h"
+#include "rtc_base/system/arch.h"
 #include "system_wrappers/include/cpu_features_wrapper.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

@@ -18,7 +18,6 @@
 #include "modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "modules/audio_coding/test/utility.h"
 #include "test/testsupport/fileutils.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

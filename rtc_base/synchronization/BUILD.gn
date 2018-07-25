@@ -21,7 +21,6 @@ rtc_source_set("rw_lock_wrapper") {
   ]
   deps = [
     "..:macromagic",
-    "../..:typedefs",
   ]
   if (is_win) {
     sources += [

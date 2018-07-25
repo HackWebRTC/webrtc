@@ -30,7 +30,6 @@ rtc_source_set("call_interfaces") {
     ":rtp_interfaces",
     ":video_stream_api",
     "..:webrtc_common",
-    "../:typedefs",
     "../api:fec_controller_api",
     "../api:libjingle_peerconnection_api",
     "../api:transport_api",
@@ -236,7 +235,6 @@ rtc_source_set("video_stream_api") {
   ]
   deps = [
     ":rtp_interfaces",
-    "../:typedefs",
     "../:webrtc_common",
     "../api:libjingle_peerconnection_api",
     "../api:transport_api",
@@ -258,7 +256,6 @@ rtc_source_set("fake_network") {
   ]
   deps = [
     ":call_interfaces",
-    "..:typedefs",
     "..:webrtc_common",
     "../api:simulated_network_api",
     "../api:transport_api",

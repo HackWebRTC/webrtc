@@ -15,8 +15,7 @@
  */
 
 #include <stddef.h>
-
-#include "typedefs.h"  // NOLINT(build/include)
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {

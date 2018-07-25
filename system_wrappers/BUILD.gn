@@ -39,10 +39,10 @@ rtc_static_library("system_wrappers") {
     ":metrics_api",
     ":runtime_enabled_features_api",
     "..:webrtc_common",
-    "../:typedefs",
     "../modules:module_api_public",
     "../rtc_base:checks",
     "../rtc_base/synchronization:rw_lock_wrapper",
+    "../rtc_base/system:arch",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 
@@ -103,7 +103,6 @@ rtc_source_set("cpu_features_api") {
   ]
   deps = [
     "..:webrtc_common",
-    "../:typedefs",
   ]
 }
 
@@ -194,6 +193,7 @@ if (is_linux) {
     ]
     deps = [
       ":cpu_features_api",
+      "../rtc_base/system:arch",
     ]
   }
 }
@@ -218,7 +218,6 @@ if (rtc_include_tests) {
       ":metrics_default",
       ":system_wrappers",
       "..:webrtc_common",
-      "../:typedefs",
       "../rtc_base:rtc_base_approved",
       "../test:test_main",
       "//testing/gtest",

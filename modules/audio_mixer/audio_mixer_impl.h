@@ -20,7 +20,6 @@
 #include "rtc_base/race_checker.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/thread_annotations.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

@@ -12,7 +12,6 @@
 
 #include "modules/audio_coding/neteq/audio_multi_vector.h"
 #include "test/gtest.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

@@ -84,7 +84,6 @@ rtc_source_set("video_bitrate_allocation") {
     "video_bitrate_allocation.h",
   ]
   deps = [
-    "../..:typedefs",
     "../../rtc_base:checks",
     "../../rtc_base:safe_conversions",
     "../../rtc_base:stringutils",

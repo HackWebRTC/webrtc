@@ -21,6 +21,7 @@
 
 #include "common_audio/include/audio_util.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/system/arch.h"
 
 namespace webrtc {
 namespace {

@@ -19,12 +19,7 @@
 #define MODULES_AUDIO_CODING_CODECS_ILBC_ILBC_H_
 
 #include <stddef.h>
-
-/*
- * Define the fixpoint numeric formats
- */
-
-#include "typedefs.h"  // NOLINT(build/include)
+#include <stdint.h>
 
 /*
  * Solution to support multiple instances

@@ -19,8 +19,6 @@
 #include <stdint.h>
 #endif
 
-#include "typedefs.h"  // NOLINT(build/include)
-
 // Reference on memory alignment:
 // http://stackoverflow.com/questions/227897/solve-the-memory-alignment-in-c-interview-question-that-stumped-me
 namespace webrtc {

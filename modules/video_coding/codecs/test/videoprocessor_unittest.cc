@@ -24,7 +24,6 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/testsupport/mock/mock_frame_reader.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 using ::testing::_;
 using ::testing::Property;

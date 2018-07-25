@@ -61,7 +61,6 @@ rtc_source_set("video_test_common") {
 
   deps = [
     "..:webrtc_common",
-    "../:typedefs",
     "../api:libjingle_peerconnection_api",
     "../api/video:video_frame",
     "../api/video:video_frame_i010",
@@ -102,6 +101,7 @@ rtc_source_set("rtp_test_utils") {
     "../modules/rtp_rtcp:rtp_rtcp_format",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
+    "../rtc_base/system:arch",
     "//testing/gtest",
   ]
 }
@@ -240,7 +240,6 @@ if (rtc_include_tests) {
       ":test_support",
       ":video_test_common",
       "..:webrtc_common",
-      "../:typedefs",
       "../api/video:video_frame",
       "../api/video:video_frame_i420",
       "../common_video",
@@ -369,7 +368,6 @@ if (is_ios) {
       "testsupport/iosfileutils.mm",
     ]
     deps = [
-      "..:typedefs",
       "..:webrtc_common",
       "../rtc_base:checks",
       "../rtc_base:rtc_base_approved",
@@ -387,9 +385,9 @@ rtc_source_set("fileutils") {
   ]
   deps = [
     "..:webrtc_common",
-    "../:typedefs",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
+    "../rtc_base/system:arch",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
   if (is_ios) {
@@ -472,7 +470,6 @@ rtc_source_set("direct_transport") {
   }
   deps = [
     "..:webrtc_common",
-    "../:typedefs",
     "../api:transport_api",
     "../call:call_interfaces",
     "../modules/rtp_rtcp",
@@ -551,7 +548,6 @@ rtc_source_set("test_common") {
     ":test_support",
     ":video_test_common",
     "..:webrtc_common",
-    "../:typedefs",
     "../api:libjingle_peerconnection_api",
     "../api:transport_api",
     "../api/audio_codecs:builtin_audio_decoder_factory",
@@ -649,7 +645,6 @@ rtc_source_set("test_renderer_generic") {
   deps = [
     ":test_support",
     "..:webrtc_common",
-    "../:typedefs",
     "../api/video:video_frame",
     "../common_video",
     "../media:rtc_media_base",

@@ -23,7 +23,6 @@
 #include "rtc_base/logging.h"
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 // Description of the test:
 // In this test we set up a one-way communication channel from a participant

@@ -22,7 +22,6 @@
 #include "modules/include/module_common_types.h"
 // TODO(tlegrand): Consider removing usage of gtest.
 #include "test/gtest.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

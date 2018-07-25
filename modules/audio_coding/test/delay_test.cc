@@ -27,7 +27,6 @@
 #include "system_wrappers/include/event_wrapper.h"
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 DEFINE_string(codec, "isac", "Codec Name");
 DEFINE_int(sample_rate_hz, 16000, "Sampling rate in Hertz.");

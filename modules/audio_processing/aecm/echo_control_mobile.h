@@ -11,9 +11,8 @@
 #ifndef MODULES_AUDIO_PROCESSING_AECM_ECHO_CONTROL_MOBILE_H_
 #define MODULES_AUDIO_PROCESSING_AECM_ECHO_CONTROL_MOBILE_H_
 
-#include <stdlib.h>
-
-#include "typedefs.h"  // NOLINT(build/include)
+#include <stddef.h>
+#include <stdint.h>
 
 enum { AecmFalse = 0, AecmTrue };
 

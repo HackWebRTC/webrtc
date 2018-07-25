@@ -37,6 +37,8 @@
 
 #include <inttypes.h>
 
+#include "rtc_base/system/arch.h"
+
 #if !defined(PRIuS)
 #define PRIuS "zu"
 #endif

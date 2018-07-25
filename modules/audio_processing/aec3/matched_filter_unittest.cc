@@ -10,7 +10,9 @@
 
 #include "modules/audio_processing/aec3/matched_filter.h"
 
-#include "typedefs.h"  // NOLINT(build/include)
+// Defines WEBRTC_ARCH_X86_FAMILY, used below.
+#include "rtc_base/system/arch.h"
+
 #if defined(WEBRTC_ARCH_X86_FAMILY)
 #include <emmintrin.h>
 #endif

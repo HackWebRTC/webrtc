@@ -15,7 +15,6 @@
 #include <vector>
 
 #include "modules/desktop_capture/desktop_geometry.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

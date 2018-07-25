@@ -35,6 +35,7 @@
 #include "rtc_base/protobuf_utils.h"
 #include "rtc_base/refcountedobject.h"
 #include "rtc_base/swap_queue.h"
+#include "rtc_base/system/arch.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread.h"
 #include "system_wrappers/include/event_wrapper.h"

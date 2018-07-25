@@ -19,7 +19,7 @@
 #ifndef MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_SOURCE_PITCH_GAIN_TABLES_H_
 #define MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_SOURCE_PITCH_GAIN_TABLES_H_
 
-#include "typedefs.h"  // NOLINT(build/include)
+#include <stdint.h>
 
 /* header file for coding tables for the pitch filter side-info in the entropy
  * coder */

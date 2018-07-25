@@ -12,6 +12,7 @@
 
 #include "modules/audio_processing/test/test_utils.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/system/arch.h"
 
 namespace webrtc {
 

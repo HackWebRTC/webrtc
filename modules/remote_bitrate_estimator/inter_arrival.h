@@ -11,10 +11,10 @@
 #ifndef MODULES_REMOTE_BITRATE_ESTIMATOR_INTER_ARRIVAL_H_
 #define MODULES_REMOTE_BITRATE_ESTIMATOR_INTER_ARRIVAL_H_
 
-#include <cstddef>
+#include <stddef.h>
+#include <stdint.h>
 
 #include "rtc_base/constructormagic.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

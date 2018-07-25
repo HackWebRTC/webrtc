@@ -22,7 +22,6 @@
 #include "test/constants.h"
 #include "test/direct_transport.h"
 #include "test/gtest.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace {
 const int kShortTimeoutMs = 500;

@@ -16,6 +16,9 @@
 
 ******************************************************************/
 
+// Defines WEBRTC_ARCH_BIG_ENDIAN, used below.
+#include "rtc_base/system/arch.h"
+
 #include "modules/audio_coding/codecs/ilbc/defines.h"
 #include "modules/audio_coding/codecs/ilbc/simple_lsf_dequant.h"
 #include "modules/audio_coding/codecs/ilbc/decoder_interpolate_lsf.h"

@@ -31,7 +31,6 @@ rtc_source_set("audio_codecs_api") {
   deps = [
     "..:array_view",
     "../..:webrtc_common",
-    "../../:typedefs",
     "../../rtc_base:checks",
     "../../rtc_base:deprecation",
     "../../rtc_base:rtc_base_approved",

@@ -13,7 +13,6 @@
 #include "rtc_base/arraysize.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 namespace {

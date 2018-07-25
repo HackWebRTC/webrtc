@@ -11,10 +11,10 @@
 #ifndef MODULES_AUDIO_CODING_NETEQ_RANDOM_VECTOR_H_
 #define MODULES_AUDIO_CODING_NETEQ_RANDOM_VECTOR_H_
 
-#include <string.h>  // size_t
+#include <stddef.h>
+#include <stdint.h>
 
 #include "rtc_base/constructormagic.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

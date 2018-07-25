@@ -17,7 +17,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/deprecation.h"
 #include "rtc_base/strings/string_builder.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

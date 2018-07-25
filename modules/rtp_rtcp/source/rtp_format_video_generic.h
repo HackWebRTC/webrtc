@@ -15,7 +15,6 @@
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/rtp_rtcp/source/rtp_format.h"
 #include "rtc_base/constructormagic.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 namespace RtpFormatVideoGeneric {

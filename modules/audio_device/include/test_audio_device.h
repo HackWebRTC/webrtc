@@ -18,7 +18,6 @@
 #include "rtc_base/buffer.h"
 #include "rtc_base/event.h"
 #include "rtc_base/platform_file.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

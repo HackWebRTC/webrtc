@@ -13,7 +13,6 @@
 
 #include "absl/types/optional.h"
 #include "api/array_view.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

@@ -109,6 +109,9 @@ rtc_source_set("macromagic") {
     "stringize_macros.h",
     "thread_annotations.h",
   ]
+  deps = [
+    "system:arch",
+  ]
 }
 
 rtc_source_set("platform_thread_types") {
@@ -150,7 +153,7 @@ rtc_source_set("criticalsection") {
     ":checks",
     ":macromagic",
     ":platform_thread_types",
-    "..:typedefs",
+    "system:unused",
   ]
 }
 
@@ -174,7 +177,6 @@ rtc_source_set("platform_thread") {
     ":rtc_event",
     ":thread_checker",
     ":timeutils",
-    "..:typedefs",
   ]
 }
 
@@ -239,7 +241,6 @@ rtc_source_set("thread_checker") {
     ":criticalsection",
     ":macromagic",
     ":platform_thread_types",
-    "..:typedefs",
   ]
 }
 
@@ -256,7 +257,6 @@ rtc_source_set("checks") {
   ]
   deps = [
     ":safe_compare",
-    "..:typedefs",
     "system:inline",
   ]
 }
@@ -387,8 +387,8 @@ rtc_source_set("rtc_base_approved_generic") {
     ":thread_checker",
     ":timeutils",
     ":type_traits",
-    "../:typedefs",
     "system:arch",
+    "system:unused",
     "third_party/base64",
   ]
 
@@ -557,6 +557,7 @@ if (rtc_enable_libevent) {
       ":rtc_task_queue_api",
       ":safe_conversions",
       ":timeutils",
+      "system:unused",
     ]
     if (rtc_build_libevent) {
       deps += [ "//base/third_party/libevent" ]

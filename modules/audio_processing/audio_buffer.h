@@ -18,7 +18,6 @@
 #include "common_audio/channel_buffer.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "modules/audio_processing/splitting_filter.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

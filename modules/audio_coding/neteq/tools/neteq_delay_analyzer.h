@@ -19,7 +19,6 @@
 #include "absl/types/optional.h"
 #include "modules/audio_coding/neteq/tools/neteq_input.h"
 #include "modules/audio_coding/neteq/tools/neteq_test.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 namespace test {

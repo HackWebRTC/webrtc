@@ -28,7 +28,6 @@ rtc_source_set("legacy_delay_estimator") {
     "delay_estimator_wrapper.h",
   ]
   deps = [
-    "../../..:typedefs",
     "../../../rtc_base:checks",
   ]
 }
@@ -40,7 +39,7 @@ rtc_source_set("ooura_fft") {
     "ooura_fft_tables_common.h",
   ]
   deps = [
-    "../../..:typedefs",
+    "../../../rtc_base/system:arch",
     "../../../system_wrappers:cpu_features_api",
   ]
   cflags = []
@@ -109,7 +108,6 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":legacy_delay_estimator",
-      "../../..:typedefs",
       "../../../rtc_base:rtc_base_approved",
       "../../../test:test_support",
       "//testing/gtest",

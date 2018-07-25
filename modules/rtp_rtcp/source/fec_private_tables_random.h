@@ -15,9 +15,7 @@
 // this table are specifically designed to favor recovery to random loss.
 // These packet masks are defined to protect up to maximum of 48 media packets.
 
-#include <cstddef>
-
-#include "typedefs.h"  // NOLINT(build/include)
+#include <stdint.h>
 
 namespace webrtc {
 namespace fec_private_tables {

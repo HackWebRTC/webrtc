@@ -29,7 +29,6 @@ rtc_source_set("level_estimation_agc") {
     ":rnn_vad_with_level",
     "..:apm_logging",
     "..:audio_frame_view",
-    "../../..:typedefs",
     "../../../api:array_view",
     "../../../common_audio",
     "../../../rtc_base:checks",

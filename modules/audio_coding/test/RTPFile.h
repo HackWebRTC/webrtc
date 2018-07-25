@@ -16,7 +16,6 @@
 
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "rtc_base/synchronization/rw_lock_wrapper.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

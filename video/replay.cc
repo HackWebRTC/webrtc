@@ -36,7 +36,6 @@
 #include "test/testsupport/frame_writer.h"
 #include "test/video_capturer.h"
 #include "test/video_renderer.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace {
 

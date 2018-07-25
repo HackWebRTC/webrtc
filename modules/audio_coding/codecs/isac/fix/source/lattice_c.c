@@ -16,7 +16,6 @@
 
 #include "common_audio/signal_processing/include/signal_processing_library.h"
 #include "modules/audio_coding/codecs/isac/fix/source/settings.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 /* Filter ar_g_Q0[] and ar_f_Q0[] through an AR filter with coefficients
  * cth_Q15[] and sth_Q15[].

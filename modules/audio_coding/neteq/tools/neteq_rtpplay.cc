@@ -32,7 +32,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/flags.h"
 #include "test/testsupport/fileutils.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 namespace test {

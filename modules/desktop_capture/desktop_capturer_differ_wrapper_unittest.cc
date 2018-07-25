@@ -24,7 +24,6 @@
 #include "rtc_base/timeutils.h"
 #include "system_wrappers/include/cpu_features_wrapper.h"
 #include "test/gtest.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

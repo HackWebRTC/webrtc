@@ -15,6 +15,7 @@
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/platform_thread.h"
+#include "rtc_base/system/arch.h"
 #include "system_wrappers/include/event_wrapper.h"
 
 #include <ApplicationServices/ApplicationServices.h>

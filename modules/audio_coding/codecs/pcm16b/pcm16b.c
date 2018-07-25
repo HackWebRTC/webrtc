@@ -10,8 +10,6 @@
 
 #include "modules/audio_coding/codecs/pcm16b/pcm16b.h"
 
-#include "typedefs.h"  // NOLINT(build/include)
-
 size_t WebRtcPcm16b_Encode(const int16_t* speech,
                            size_t len,
                            uint8_t* encoded) {

@@ -111,7 +111,6 @@ rtc_static_library("libjingle_peerconnection_api") {
     # Basically, don't add stuff here. You might break sensitive downstream
     # targets like pnacl. API should not depend on anything outside of this
     # file, really. All these should arguably go away in time.
-    "..:typedefs",
     "..:webrtc_common",
     "../logging:rtc_event_log_api",
     "../media:rtc_media_config",

@@ -21,7 +21,6 @@
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/thread_checker.h"
 #include "system_wrappers/include/event_wrapper.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

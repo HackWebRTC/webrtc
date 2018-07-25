@@ -38,7 +38,6 @@ rtc_source_set("file_wrapper") {
   deps = [
     "..:checks",
     "..:criticalsection",
-    "../..:typedefs",
     "../..:webrtc_common",
   ]
 }

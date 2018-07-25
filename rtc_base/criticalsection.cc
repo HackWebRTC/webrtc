@@ -13,6 +13,7 @@
 #include "rtc_base/atomicops.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/platform_thread_types.h"
+#include "rtc_base/system/unused.h"
 
 // TODO(tommi): Split this file up to per-platform implementation files.
 

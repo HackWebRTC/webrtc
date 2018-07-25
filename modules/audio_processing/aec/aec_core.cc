@@ -30,9 +30,9 @@ extern "C" {
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "modules/audio_processing/utility/delay_estimator_wrapper.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/system/arch.h"
 #include "system_wrappers/include/cpu_features_wrapper.h"
 #include "system_wrappers/include/metrics.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 namespace {

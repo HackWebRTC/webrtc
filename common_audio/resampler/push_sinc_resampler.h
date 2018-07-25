@@ -15,7 +15,6 @@
 
 #include "common_audio/resampler/sinc_resampler.h"
 #include "rtc_base/constructormagic.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

@@ -34,7 +34,6 @@
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/random.h"
 #include "system_wrappers/include/clock.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

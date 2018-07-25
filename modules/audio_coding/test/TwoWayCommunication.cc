@@ -27,7 +27,6 @@
 #include "modules/audio_coding/test/utility.h"
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

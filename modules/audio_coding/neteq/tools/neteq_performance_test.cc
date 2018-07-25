@@ -20,7 +20,6 @@
 #include "rtc_base/checks.h"
 #include "system_wrappers/include/clock.h"
 #include "test/testsupport/fileutils.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 using webrtc::NetEq;
 using webrtc::test::AudioLoop;

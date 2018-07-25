@@ -11,7 +11,7 @@
 #ifndef COMMON_AUDIO_SIGNAL_PROCESSING_INCLUDE_REAL_FFT_H_
 #define COMMON_AUDIO_SIGNAL_PROCESSING_INCLUDE_REAL_FFT_H_
 
-#include "typedefs.h"  // NOLINT(build/include)
+#include <stdint.h>
 
 // For ComplexFFT(), the maximum fft order is 10;
 // WebRTC APM uses orders of only 7 and 8.

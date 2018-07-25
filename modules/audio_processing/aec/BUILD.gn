@@ -19,7 +19,6 @@ rtc_source_set("aec") {
   deps = [
     ":aec_core",
     "..:apm_logging",
-    "../../..:typedefs",
     "../../../common_audio:common_audio_c",
     "../../../rtc_base:checks",
     "../../../rtc_base:rtc_base_approved",
@@ -36,10 +35,10 @@ rtc_source_set("aec_core") {
   ]
   deps = [
     "..:apm_logging",
-    "../../..:typedefs",
     "../../../common_audio:common_audio_c",
     "../../../rtc_base:checks",
     "../../../rtc_base:rtc_base_approved",
+    "../../../rtc_base/system:arch",
     "../../../system_wrappers:cpu_features_api",
     "../../../system_wrappers:metrics_api",
     "../utility:block_mean_calculator",
@@ -94,7 +93,6 @@ if (rtc_include_tests) {
     deps = [
       ":aec",
       ":aec_core",
-      "../../..:typedefs",
       "../../../rtc_base:checks",
       "../../../rtc_base:rtc_base_approved",
       "../../../test:test_support",

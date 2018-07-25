@@ -14,7 +14,6 @@
 
 #include "audio/utility/audio_frame_operations.h"
 #include "rtc_base/checks.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

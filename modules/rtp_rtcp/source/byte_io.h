@@ -34,9 +34,8 @@
 // These classes are implemented as recursive templetizations, inteded to make
 // it easy for the compiler to completely inline the reading/writing.
 
+#include <stdint.h>
 #include <limits>
-
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

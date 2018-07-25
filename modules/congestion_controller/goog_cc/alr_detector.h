@@ -15,7 +15,6 @@
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/pacing/interval_budget.h"
 #include "rtc_base/rate_statistics.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

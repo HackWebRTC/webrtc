@@ -27,9 +27,7 @@ rtc_source_set("aligned_malloc") {
     "aligned_malloc.cc",
     "aligned_malloc.h",
   ]
-  deps = [
-    "../..:typedefs",
-  ]
+  deps = []
 }
 
 rtc_source_set("unittests") {
@@ -41,7 +39,6 @@ rtc_source_set("unittests") {
   deps = [
     ":aligned_array",
     ":aligned_malloc",
-    "../..:typedefs",
     "../../test:test_support",
   ]
 }

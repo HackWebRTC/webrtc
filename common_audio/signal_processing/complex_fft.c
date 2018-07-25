@@ -17,6 +17,7 @@
 
 #include "common_audio/signal_processing/complex_fft_tables.h"
 #include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "rtc_base/system/arch.h"
 
 #define CFFTSFT 14
 #define CFFTRND 1

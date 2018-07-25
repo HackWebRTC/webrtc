@@ -16,7 +16,6 @@
 
 #include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/criticalsection.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 // Implementation that can read (exclusive) or write from/to a file.
 

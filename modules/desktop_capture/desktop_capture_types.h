@@ -13,8 +13,6 @@
 
 #include <stdint.h>
 
-#include "typedefs.h"  // NOLINT(build/include)
-
 namespace webrtc {
 
 // Type used to identify windows on the desktop. Values are platform-specific:

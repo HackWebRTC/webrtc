@@ -21,7 +21,6 @@
 
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/thread_checker.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

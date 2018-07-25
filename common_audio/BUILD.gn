@@ -55,12 +55,12 @@ rtc_static_library("common_audio") {
     ":fft4g",
     ":sinc_resampler",
     "..:webrtc_common",
-    "../:typedefs",
     "../rtc_base:checks",
     "../rtc_base:gtest_prod",
     "../rtc_base:rtc_base_approved",
     "../rtc_base/memory:aligned_array",
     "../rtc_base/memory:aligned_malloc",
+    "../rtc_base/system:arch",
     "../system_wrappers",
     "../system_wrappers:cpu_features_api",
     "//third_party/abseil-cpp/absl/types:optional",
@@ -192,11 +192,11 @@ rtc_source_set("common_audio_c") {
     ":common_audio_cc",
     ":fft4g",
     "..:webrtc_common",
-    "../:typedefs",
     "../rtc_base:checks",
     "../rtc_base:compile_assert_c",
     "../rtc_base:rtc_base_approved",
     "../rtc_base:sanitizer",
+    "../rtc_base/system:arch",
     "../system_wrappers",
     "../system_wrappers:cpu_features_api",
   ]
@@ -218,7 +218,6 @@ rtc_source_set("common_audio_cc") {
 
   deps = [
     "..:webrtc_common",
-    "../:typedefs",
     "../rtc_base:rtc_base_approved",
     "../system_wrappers",
   ]
@@ -230,10 +229,10 @@ rtc_source_set("sinc_resampler") {
   ]
   deps = [
     "..:webrtc_common",
-    "../:typedefs",
     "../rtc_base:gtest_prod",
     "../rtc_base:rtc_base_approved",
     "../rtc_base/memory:aligned_malloc",
+    "../rtc_base/system:arch",
     "../system_wrappers",
   ]
 }
@@ -257,6 +256,7 @@ rtc_source_set("fir_filter_factory") {
     ":fir_filter",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
+    "../rtc_base/system:arch",
     "../system_wrappers:cpu_features_api",
   ]
   if (current_cpu == "x86" || current_cpu == "x64") {
@@ -353,6 +353,7 @@ if (rtc_build_with_neon) {
       ":common_audio_c",
       "../rtc_base:checks",
       "../rtc_base:rtc_base_approved",
+      "../rtc_base/system:arch",
     ]
   }
 }
@@ -404,10 +405,10 @@ if (rtc_include_tests) {
       ":fir_filter_factory",
       ":sinc_resampler",
       "..:webrtc_common",
-      "../:typedefs",
       "../rtc_base:checks",
       "../rtc_base:rtc_base_approved",
       "../rtc_base:rtc_base_tests_utils",
+      "../rtc_base/system:arch",
       "../system_wrappers:cpu_features_api",
       "../test:fileutils",
       "../test:test_main",

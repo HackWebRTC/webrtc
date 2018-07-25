@@ -11,11 +11,11 @@
 #ifndef SYSTEM_WRAPPERS_SOURCE_EVENT_WIN_H_
 #define SYSTEM_WRAPPERS_SOURCE_EVENT_WIN_H_
 
+#include <stdint.h>
+
 #include <windows.h>
 
 #include "system_wrappers/include/event_wrapper.h"
-
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

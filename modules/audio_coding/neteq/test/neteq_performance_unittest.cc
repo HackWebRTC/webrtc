@@ -12,7 +12,6 @@
 #include "system_wrappers/include/field_trial.h"
 #include "test/gtest.h"
 #include "test/testsupport/perf_test.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 // Runs a test with 10% packet losses and 10% clock drift, to exercise
 // both loss concealment and time-stretching code.

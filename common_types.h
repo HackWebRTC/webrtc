@@ -21,7 +21,6 @@
 #include "api/video/video_bitrate_allocation.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/deprecation.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 #if defined(_MSC_VER)
 // Disable "new behavior: elements of array will be default initialized"

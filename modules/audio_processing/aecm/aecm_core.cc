@@ -25,7 +25,6 @@ extern "C" {
 
 #include "rtc_base/checks.h"
 #include "rtc_base/numerics/safe_conversions.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 #ifdef AEC_DEBUG
 FILE* dfile;

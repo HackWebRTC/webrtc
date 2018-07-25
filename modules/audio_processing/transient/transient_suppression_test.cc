@@ -22,7 +22,6 @@
 #include "rtc_base/flags.h"
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 DEFINE_string(in_file_name, "", "PCM file that contains the signal.");
 DEFINE_string(detection_file_name,

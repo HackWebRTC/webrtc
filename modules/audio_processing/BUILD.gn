@@ -101,7 +101,6 @@ rtc_static_library("audio_processing") {
     ":audio_processing_c",
     ":audio_processing_statistics",
     ":gain_control_interface",
-    "../..:typedefs",
     "../..:webrtc_common",
     "../../api:array_view",
     "../../api/audio:aec3_config",
@@ -115,6 +114,7 @@ rtc_static_library("audio_processing") {
     "../../rtc_base:gtest_prod",
     "../../rtc_base:safe_minmax",
     "../../rtc_base:sanitizer",
+    "../../rtc_base/system:arch",
     "../../system_wrappers:cpu_features_api",
     "../../system_wrappers:field_trial_api",
     "../../system_wrappers:metrics_api",
@@ -257,7 +257,6 @@ rtc_source_set("audio_processing_c") {
   }
 
   deps = [
-    "../..:typedefs",
     "../..:webrtc_common",
     "../../common_audio",
     "../../common_audio:common_audio_c",
@@ -382,7 +381,6 @@ if (rtc_include_tests) {
       ":audioproc_test_utils",
       ":file_audio_generator_unittests",
       ":mocks",
-      "../..:typedefs",
       "../..:webrtc_common",
       "../../api:array_view",
       "../../api/audio:aec3_config",
@@ -395,6 +393,7 @@ if (rtc_include_tests) {
       "../../rtc_base:rtc_base",
       "../../rtc_base:rtc_base_approved",
       "../../rtc_base:safe_minmax",
+      "../../rtc_base/system:arch",
       "../../rtc_base/system:file_wrapper",
       "../../system_wrappers",
       "../../system_wrappers:cpu_features_api",
@@ -616,6 +615,7 @@ if (rtc_include_tests) {
       "../../common_audio",
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
+      "../../rtc_base/system:arch",
       "../../system_wrappers",
       "../../test:fileutils",
       "../../test:test_support",
@@ -634,7 +634,6 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":audio_processing",
-      "../..:typedefs",
       "../..:webrtc_common",
       "../../common_audio:common_audio",
       "../../rtc_base:rtc_base_approved",
@@ -657,7 +656,6 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":audio_processing",
-      "../..:typedefs",
       "../..:webrtc_common",
       "../../rtc_base/system:file_wrapper",
       "../../system_wrappers",
@@ -699,10 +697,10 @@ if (rtc_include_tests) {
 
       deps = [
         ":audioproc_debug_proto",
-        "../..:typedefs",
         "../..:webrtc_common",
         "../../rtc_base:protobuf_utils",
         "../../rtc_base:rtc_base_approved",
+        "../../rtc_base/system:arch",
       ]
     }
   }

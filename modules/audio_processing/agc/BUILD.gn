@@ -19,7 +19,6 @@ rtc_source_set("agc") {
     ":level_estimation",
     "..:apm_logging",
     "..:gain_control_interface",
-    "../../..:typedefs",
     "../../..:webrtc_common",
     "../../../rtc_base:checks",
     "../../../rtc_base:logging",
@@ -41,7 +40,6 @@ rtc_source_set("level_estimation") {
     "utility.h",
   ]
   deps = [
-    "../../..:typedefs",
     "../../..:webrtc_common",
     "../../../rtc_base:checks",
     "../../../rtc_base:macromagic",
@@ -66,7 +64,6 @@ rtc_source_set("agc_legacy_c") {
   ]
 
   deps = [
-    "../../..:typedefs",
     "../../..:webrtc_common",
     "../../../common_audio",
     "../../../common_audio:common_audio_c",

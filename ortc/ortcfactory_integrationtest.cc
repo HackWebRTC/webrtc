@@ -23,6 +23,7 @@
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/fakenetwork.h"
 #include "rtc_base/gunit.h"
+#include "rtc_base/system/arch.h"
 #include "rtc_base/virtualsocketserver.h"
 
 namespace {

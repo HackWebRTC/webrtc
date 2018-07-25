@@ -18,7 +18,6 @@
 #include "rtc_base/task_queue.h"
 #include "test/frame_generator.h"
 #include "test/video_capturer.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

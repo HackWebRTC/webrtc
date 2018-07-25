@@ -13,8 +13,6 @@
 
 #include <memory>
 
-#include "typedefs.h"  // NOLINT(build/include)
-
 #if defined(WEBRTC_WIN)
 // Due to a bug in the std::unique_ptr implementation that ships with MSVS,
 // we need the full definition of QueuedTask, on Windows.

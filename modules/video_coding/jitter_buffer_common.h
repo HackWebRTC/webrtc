@@ -11,8 +11,6 @@
 #ifndef MODULES_VIDEO_CODING_JITTER_BUFFER_COMMON_H_
 #define MODULES_VIDEO_CODING_JITTER_BUFFER_COMMON_H_
 
-#include "typedefs.h"  // NOLINT(build/include)
-
 namespace webrtc {
 
 // Used to estimate rolling average of packets per frame.

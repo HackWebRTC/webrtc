@@ -203,7 +203,6 @@ rtc_static_library("libstunprober") {
   deps = [
     ":rtc_p2p",
     "..:webrtc_common",
-    "../:typedefs",
     "../rtc_base:checks",
     "../rtc_base:rtc_base",
   ]

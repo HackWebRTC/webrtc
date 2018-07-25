@@ -87,7 +87,6 @@ rtc_source_set("audio_device_api") {
     "include/audio_device_defines.h",
   ]
   deps = [
-    "../../:typedefs",
     "../../rtc_base:checks",
     "../../rtc_base:deprecation",
     "../../rtc_base:rtc_base_approved",
@@ -109,7 +108,6 @@ rtc_source_set("audio_device_buffer") {
   ]
   deps = [
     ":audio_device_api",
-    "../../:typedefs",
     "../../api:array_view",
     "../../common_audio:common_audio_c",
     "../../rtc_base:checks",
@@ -208,7 +206,6 @@ rtc_source_set("audio_device_impl") {
     ":audio_device_buffer",
     ":audio_device_generic",
     "../..:webrtc_common",
-    "../../:typedefs",
     "../../api:array_view",
     "../../common_audio",
     "../../common_audio:common_audio_c",

@@ -34,7 +34,6 @@
 #include "modules/audio_coding/neteq/tools/input_audio_file.h"
 #include "rtc_base/flags.h"
 #include "rtc_base/numerics/safe_conversions.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 namespace test {

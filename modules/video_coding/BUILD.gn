@@ -69,7 +69,6 @@ rtc_static_library("packet") {
   ]
   deps = [
     "..:module_api",
-    "../../:typedefs",
   ]
 }
 
@@ -156,7 +155,6 @@ rtc_static_library("video_coding") {
     "..:module_api",
     "..:module_api_public",
     "../..:webrtc_common",
-    "../../:typedefs",
     "../../api:fec_controller_api",
     "../../api/video:encoded_frame",
     "../../api/video:video_bitrate_allocator",
@@ -194,7 +192,6 @@ rtc_source_set("video_codec_interface") {
   ]
   deps = [
     "..:module_api",
-    "../..:typedefs",
     "../..:webrtc_common",
     "../../api/video:video_frame",
     "../../api/video_codecs:video_codecs_api",
@@ -211,7 +208,6 @@ rtc_source_set("mock_headers") {
     ":video_codec_interface",
     ":video_coding_utility",
     "../..:webrtc_common",
-    "../../:typedefs",
     "../../test:test_support",
   ]
 }
@@ -261,7 +257,6 @@ rtc_source_set("video_coding_utility") {
     ":video_codec_interface",
     "..:module_api",
     "../..:webrtc_common",
-    "../../:typedefs",
     "../../api/video:video_bitrate_allocator",
     "../../api/video_codecs:video_codecs_api",
     "../../common_video",
@@ -272,6 +267,7 @@ rtc_source_set("video_coding_utility") {
     "../../rtc_base:rtc_task_queue",
     "../../rtc_base:sequenced_task_checker",
     "../../rtc_base/experiments:quality_scaling_experiment",
+    "../../rtc_base/system:arch",
     "../../system_wrappers",
     "../../system_wrappers:field_trial_api",
     "../../system_wrappers:metrics_api",
@@ -346,7 +342,6 @@ rtc_static_library("webrtc_i420") {
     ":video_codec_interface",
     ":video_coding_utility",
     "../..:webrtc_common",
-    "../../:typedefs",
     "../../api/video:video_frame_i420",
     "../../common_video:common_video",
     "../../rtc_base:checks",
@@ -414,7 +409,6 @@ rtc_static_library("webrtc_vp8") {
     ":video_coding_utility",
     "..:module_api",
     "../..:webrtc_common",
-    "../../:typedefs",
     "../../api/video:video_frame",
     "../../api/video_codecs:video_codecs_api",
     "../../common_video",
@@ -600,7 +594,6 @@ if (rtc_include_tests) {
       ":video_coding_utility",
       ":webrtc_vp9_helpers",
       "../..:webrtc_common",
-      "../../:typedefs",
       "../../api:videocodec_test_fixture_api",
       "../../api/video:video_bitrate_allocator",
       "../../api/video:video_frame",
@@ -837,7 +830,6 @@ if (rtc_include_tests) {
       ":webrtc_vp9_helpers",
       "..:module_api",
       "../..:webrtc_common",
-      "../../:typedefs",
       "../../api:create_simulcast_test_fixture_api",
       "../../api:simulcast_test_fixture_api",
       "../../api:videocodec_test_fixture_api",

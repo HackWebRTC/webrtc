@@ -34,7 +34,6 @@
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/numerics/sequence_number_util.h"
 #include "rtc_base/sequenced_task_checker.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

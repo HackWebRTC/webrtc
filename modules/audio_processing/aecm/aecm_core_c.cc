@@ -26,7 +26,6 @@ extern "C" {
 #include "rtc_base/checks.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/sanitizer.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 // Square root of Hanning window in Q14.
 static const ALIGN8_BEG int16_t WebRtcAecm_kSqrtHanning[] ALIGN8_END = {

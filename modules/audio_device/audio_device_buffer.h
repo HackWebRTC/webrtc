@@ -17,7 +17,6 @@
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/thread_checker.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

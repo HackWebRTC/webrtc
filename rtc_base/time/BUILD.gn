@@ -18,7 +18,6 @@ rtc_source_set("timestamp_extrapolator") {
     "timestamp_extrapolator.h",
   ]
   deps = [
-    "../..:typedefs",
     "../synchronization:rw_lock_wrapper",
   ]
 }

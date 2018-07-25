@@ -10,11 +10,13 @@
 
 #include "modules/audio_processing/aec3/adaptive_fir_filter.h"
 
+// Defines WEBRTC_ARCH_X86_FAMILY, used below.
+#include "rtc_base/system/arch.h"
+
 #include <math.h>
 #include <algorithm>
 #include <numeric>
 #include <string>
-#include "typedefs.h"  // NOLINT(build/include)
 #if defined(WEBRTC_ARCH_X86_FAMILY)
 #include <emmintrin.h>
 #endif

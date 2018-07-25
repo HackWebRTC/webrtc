@@ -24,6 +24,7 @@
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/refcount.h"
 #include "rtc_base/refcountedobject.h"
+#include "rtc_base/system/unused.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/task_queue_posix.h"
 #include "rtc_base/timeutils.h"

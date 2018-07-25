@@ -20,6 +20,7 @@
 #include "modules/audio_processing/aec3/aec3_common.h"
 #include "modules/audio_processing/aec3/downsampled_render_buffer.h"
 #include "rtc_base/constructormagic.h"
+#include "rtc_base/system/arch.h"
 
 namespace webrtc {
 namespace aec3 {

@@ -28,6 +28,7 @@ extern "C" {
 #include "modules/audio_processing/include/audio_processing.h"
 
 #include "rtc_base/gunit.h"
+#include "rtc_base/system/unused.h"
 
 @interface RTCPeerConnectionFactoryBuilderTest : NSObject
 - (void)testBuilder;

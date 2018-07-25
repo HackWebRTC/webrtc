@@ -35,7 +35,6 @@ rtc_static_library("vad") {
     "voice_gmm_tables.h",
   ]
   deps = [
-    "../../..:typedefs",
     "../../../audio/utility:audio_frame_operations",
     "../../../common_audio",
     "../../../common_audio:common_audio_c",

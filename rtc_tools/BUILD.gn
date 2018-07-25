@@ -147,7 +147,6 @@ if (!build_with_chromium) {
 
     deps = [
       "..:webrtc_common",
-      "../:typedefs",
       "../common_video",
     ]
   }
@@ -371,7 +370,6 @@ if (rtc_include_tests) {
 
       deps = [
         "..:webrtc_common",
-        "../:typedefs",
         "../common_audio",
         "../modules/audio_processing",
         "../modules/audio_processing:audioproc_debug_proto",

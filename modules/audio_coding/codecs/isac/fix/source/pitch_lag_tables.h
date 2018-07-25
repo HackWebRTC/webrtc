@@ -19,7 +19,7 @@
 #ifndef MODULES_AUDIO_CODING_CODECS_ISAC_FIX_SOURCE_PITCH_LAG_TABLES_H_
 #define MODULES_AUDIO_CODING_CODECS_ISAC_FIX_SOURCE_PITCH_LAG_TABLES_H_
 
-#include "typedefs.h"  // NOLINT(build/include)
+#include <stdint.h>
 
 /********************* Pitch Filter Lag Coefficient Tables
  * ************************/

@@ -29,7 +29,6 @@
 #include "rtc_base/deprecation.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/timeutils.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

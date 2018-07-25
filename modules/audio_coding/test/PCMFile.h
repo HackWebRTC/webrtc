@@ -18,7 +18,6 @@
 
 #include "absl/types/optional.h"
 #include "api/audio/audio_frame.h"
-#include "typedefs.h"  // NOLINT(build/include)
 
 namespace webrtc {
 
