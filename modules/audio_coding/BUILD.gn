@@ -251,18 +251,9 @@ rtc_source_set("g722_c") {
     "codecs/g722/g722_interface.h",
   ]
   deps = [
-    ":g722_3p",
     "../..:typedefs",
     "../..:webrtc_common",
-  ]
-}
-
-rtc_source_set("g722_3p") {
-  poisonous = [ "audio_codecs" ]
-  sources = [
-    "codecs/g722/g722_decode.c",
-    "codecs/g722/g722_enc_dec.h",
-    "codecs/g722/g722_encode.c",
+    "../third_party/g722:g722_3p",
   ]
 }
 

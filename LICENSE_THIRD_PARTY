@@ -7,12 +7,6 @@ rtc_base/sigslot.h
 common_audio/fft4g.c
 common_audio/signal_processing/spl_sqrt_floor.c
 common_audio/signal_processing/spl_sqrt_floor_arm.S
-modules/audio_coding/codecs/g711/main/source/g711.c
-modules/audio_coding/codecs/g711/main/source/g711.h
-modules/audio_coding/codecs/g722/main/source/g722_decode.c
-modules/audio_coding/codecs/g722/main/source/g722_enc_dec.h
-modules/audio_coding/codecs/g722/main/source/g722_encode.c
-modules/audio_coding/codecs/isac/main/source/fft.c
 
 Individual licenses for each file:
 -------------------------------------------------------------------------------
@@ -60,33 +54,6 @@ License:
  * approximation routines, or if I can freely use it for any purpose.
  * Thanks.
  * Kevin
- */
--------------------------------------------------------------------------------
-Files:
-modules/audio_coding/codecs/g722/main/source/g722_decode.c
-modules/audio_coding/codecs/g722/main/source/g722_enc_dec.h
-modules/audio_coding/codecs/g722/main/source/g722_encode.c
-
-License:
-/*
- * SpanDSP - a series of DSP components for telephony
- *
- * g722_decode.c - The ITU G.722 codec, decode part.
- *
- * Written by Steve Underwood <steveu@coppice.org>
- *
- * Copyright (C) 2005 Steve Underwood
- *
- *  Despite my general liking of the GPL, I place my own contributions
- *  to this code in the public domain for the benefit of all mankind -
- *  even the slimy ones who might try to proprietize my work and use it
- *  to my detriment.
- *
- * Based in part on a single channel G.722 codec which is:
- *
- * Copyright (c) CMU 1993
- * Computer Science, Speech Group
- * Chengxiang Lu and Alex Hauptmann
  */
 -------------------------------------------------------------------------------
 Files:
