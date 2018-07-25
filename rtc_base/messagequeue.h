@@ -25,8 +25,8 @@
 #include "rtc_base/location.h"
 #include "rtc_base/messagehandler.h"
 #include "rtc_base/scoped_ref_ptr.h"
-#include "rtc_base/sigslot.h"
 #include "rtc_base/socketserver.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/timeutils.h"
 

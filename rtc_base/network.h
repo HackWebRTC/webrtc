@@ -22,7 +22,7 @@
 #include "rtc_base/ipaddress.h"
 #include "rtc_base/messagehandler.h"
 #include "rtc_base/networkmonitor.h"
-#include "rtc_base/sigslot.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
 
 #if defined(WEBRTC_POSIX)
 struct ifaddrs;

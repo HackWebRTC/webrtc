@@ -14,7 +14,7 @@
 #include <map>
 #include <string>
 #include "p2p/base/stun.h"
-#include "rtc_base/sigslot.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
 
 namespace cricket {

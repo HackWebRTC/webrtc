@@ -18,7 +18,7 @@
 #include "media/base/videocommon.h"
 #include "pc/videotracksource.h"
 #include "rtc_base/asyncinvoker.h"
-#include "rtc_base/sigslot.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
 
 // VideoCapturerTrackSource implements VideoTrackSourceInterface. It owns a
 // cricket::VideoCapturer and make sure the camera is started at a resolution

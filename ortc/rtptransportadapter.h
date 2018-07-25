@@ -21,7 +21,7 @@
 #include "pc/rtptransportinternaladapter.h"
 #include "pc/srtptransport.h"
 #include "rtc_base/constructormagic.h"
-#include "rtc_base/sigslot.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace webrtc {
 // This class is a wrapper over an RtpTransport or an SrtpTransport. The base

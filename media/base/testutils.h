@@ -18,7 +18,7 @@
 #include "media/base/videocapturer.h"
 #include "media/base/videocommon.h"
 #include "rtc_base/arraysize.h"
-#include "rtc_base/sigslot.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace rtc {
 class ByteBufferReader;

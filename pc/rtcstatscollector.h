@@ -29,8 +29,8 @@
 #include "rtc_base/asyncinvoker.h"
 #include "rtc_base/refcount.h"
 #include "rtc_base/scoped_ref_ptr.h"
-#include "rtc_base/sigslot.h"
 #include "rtc_base/sslidentity.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/timeutils.h"
 
 namespace webrtc {

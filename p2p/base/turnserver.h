@@ -23,8 +23,8 @@
 #include "rtc_base/asyncinvoker.h"
 #include "rtc_base/asyncpacketsocket.h"
 #include "rtc_base/messagequeue.h"
-#include "rtc_base/sigslot.h"
 #include "rtc_base/socketaddress.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread_checker.h"
 
 namespace rtc {

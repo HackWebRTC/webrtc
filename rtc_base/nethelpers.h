@@ -22,8 +22,8 @@
 
 #include "rtc_base/asyncresolverinterface.h"
 #include "rtc_base/signalthread.h"
-#include "rtc_base/sigslot.h"
 #include "rtc_base/socketaddress.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace rtc {
 

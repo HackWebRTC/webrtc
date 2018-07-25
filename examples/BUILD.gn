@@ -692,6 +692,7 @@ if (is_linux || is_win) {
       "../api/video:video_frame_i420",
       "../rtc_base:checks",
       "../rtc_base:stringutils",
+      "../rtc_base/third_party/sigslot",
     ]
     if (is_win) {
       sources += [

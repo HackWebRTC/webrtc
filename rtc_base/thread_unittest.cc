@@ -16,8 +16,8 @@
 #include "rtc_base/gunit.h"
 #include "rtc_base/nullsocketserver.h"
 #include "rtc_base/physicalsocketserver.h"
-#include "rtc_base/sigslot.h"
 #include "rtc_base/socketaddress.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
 
 #if defined(WEBRTC_WIN)

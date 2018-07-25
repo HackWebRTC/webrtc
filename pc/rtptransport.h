@@ -16,7 +16,7 @@
 #include "call/rtp_demuxer.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "pc/rtptransportinternal.h"
-#include "rtc_base/sigslot.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace rtc {
 

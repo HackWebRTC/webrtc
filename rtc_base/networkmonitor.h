@@ -13,7 +13,7 @@
 
 #include "rtc_base/logging.h"
 #include "rtc_base/network_constants.h"
-#include "rtc_base/sigslot.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
 
 namespace rtc {

@@ -6,7 +6,7 @@
 // the proviso that the author takes on no responsibility or liability for any
 // use.
 
-#include "rtc_base/sigslot.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace sigslot {
 

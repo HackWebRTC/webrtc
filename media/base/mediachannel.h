@@ -39,9 +39,9 @@
 #include "rtc_base/dscp.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/networkroute.h"
-#include "rtc_base/sigslot.h"
 #include "rtc_base/socket.h"
 #include "rtc_base/stringencode.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace rtc {
 class Timing;

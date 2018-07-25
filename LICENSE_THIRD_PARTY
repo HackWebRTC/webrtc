@@ -2,26 +2,11 @@ This source tree contains third party source code which is governed by third
 party licenses. Paths to the files and associated licenses are collected here.
 
 Files governed by third party licenses:
-rtc_base/sigslot.cc
-rtc_base/sigslot.h
 common_audio/fft4g.c
 common_audio/signal_processing/spl_sqrt_floor.c
 common_audio/signal_processing/spl_sqrt_floor_arm.S
 
 Individual licenses for each file:
--------------------------------------------------------------------------------
-Files:
-rtc_base/sigslot.cc
-rtc_base/sigslot.h
-
-License:
-// sigslot.h: Signal/Slot classes
-//
-// Written by Sarah Thompson (sarah@telergy.com) 2002.
-//
-// License: Public domain. You are free to use this code however you like, with
-// the proviso that the author takes on no responsibility or liability for any
-// use.
 -------------------------------------------------------------------------------
 Files:
 common_audio/signal_processing/spl_sqrt_floor.c

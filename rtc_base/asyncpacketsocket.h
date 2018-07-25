@@ -13,8 +13,8 @@
 
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/dscp.h"
-#include "rtc_base/sigslot.h"
 #include "rtc_base/socket.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/timeutils.h"
 
 namespace rtc {

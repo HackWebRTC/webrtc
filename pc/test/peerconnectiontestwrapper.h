@@ -19,7 +19,7 @@
 #include "api/test/fakeconstraints.h"
 #include "pc/test/fakeaudiocapturemodule.h"
 #include "pc/test/fakevideotrackrenderer.h"
-#include "rtc_base/sigslot.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
 
 class PeerConnectionTestWrapper
     : public webrtc::PeerConnectionObserver,

@@ -38,7 +38,7 @@
 #include "rtc_base/asyncudpsocket.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/network.h"
-#include "rtc_base/sigslot.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace webrtc {
 class AudioSinkInterface;

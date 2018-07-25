@@ -36,8 +36,8 @@
 #include "rtc_base/network.h"
 #include "rtc_base/proxyinfo.h"
 #include "rtc_base/ratetracker.h"
-#include "rtc_base/sigslot.h"
 #include "rtc_base/socketaddress.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
 
 namespace cricket {

@@ -730,6 +730,7 @@ rtc_static_library("rtc_base_generic") {
     "..:webrtc_common",
     "../api:array_view",
     "third_party/base64",
+    "third_party/sigslot",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
@@ -817,7 +818,6 @@ rtc_static_library("rtc_base_generic") {
     "rtccertificategenerator.h",
     "signalthread.cc",
     "signalthread.h",
-    "sigslot.cc",
     "sigslot.h",
     "sigslotrepeater.h",
     "socket.cc",
@@ -1034,6 +1034,7 @@ rtc_source_set("rtc_base_tests_utils") {
     "../test:field_trial",
     "../test:test_support",
     "system:fallthrough",
+    "third_party/sigslot",
     "//third_party/abseil-cpp/absl/memory",
   ]
   public_deps = [
@@ -1057,6 +1058,18 @@ rtc_source_set("rtc_task_queue_for_test") {
 }
 
 if (rtc_include_tests) {
+  rtc_source_set("sigslot_unittest") {
+    testonly = true
+    sources = [
+      "sigslot_unittest.cc",
+    ]
+    deps = [
+      ":rtc_base",
+      ":rtc_base_tests_utils",
+      "third_party/sigslot",
+    ]
+  }
+
   rtc_source_set("rtc_base_tests_main") {
     testonly = true
     sources = [
@@ -1275,7 +1288,6 @@ if (rtc_include_tests) {
       "rtccertificate_unittest.cc",
       "rtccertificategenerator_unittest.cc",
       "signalthread_unittest.cc",
-      "sigslot_unittest.cc",
       "sigslottester_unittest.cc",
       "stream_unittest.cc",
       "testclient_unittest.cc",
@@ -1305,6 +1317,7 @@ if (rtc_include_tests) {
       "../api:array_view",
       "../test:fileutils",
       "../test:test_support",
+      "third_party/sigslot",
       "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
     ]

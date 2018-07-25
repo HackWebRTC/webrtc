@@ -18,8 +18,8 @@
 #include "p2p/base/icetransportinternal.h"
 #include "pc/sessiondescription.h"
 #include "rtc_base/networkroute.h"
-#include "rtc_base/sigslot.h"
 #include "rtc_base/sslstreamadapter.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace rtc {
 class CopyOnWriteBuffer;

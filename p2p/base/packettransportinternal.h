@@ -20,8 +20,8 @@
 #include "p2p/base/port.h"
 #include "rtc_base/asyncpacketsocket.h"
 #include "rtc_base/networkroute.h"
-#include "rtc_base/sigslot.h"
 #include "rtc_base/socket.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace rtc {
 struct PacketOptions;
