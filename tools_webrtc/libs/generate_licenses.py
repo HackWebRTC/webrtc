@@ -53,6 +53,7 @@ LIB_TO_LICENSES_DICT = {
     'fft': ['modules/third_party/fft/LICENSE'],
     'g711': ['modules/third_party/g711/LICENSE'],
     'g722': ['modules/third_party/g722/LICENSE'],
+    'fft4g': ['common_audio/third_party/fft4g/LICENSE'],
 
     # Compile time dependencies, no license needed:
     'yasm': [],

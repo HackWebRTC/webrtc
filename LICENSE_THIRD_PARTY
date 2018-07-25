@@ -2,7 +2,6 @@ This source tree contains third party source code which is governed by third
 party licenses. Paths to the files and associated licenses are collected here.
 
 Files governed by third party licenses:
-common_audio/fft4g.c
 common_audio/signal_processing/spl_sqrt_floor.c
 common_audio/signal_processing/spl_sqrt_floor_arm.S
 
@@ -41,15 +40,3 @@ License:
  * Kevin
  */
 -------------------------------------------------------------------------------
-Files:
-common_audio/fft4g.c
-
-License:
-/*
- * http://www.kurims.kyoto-u.ac.jp/~ooura/fft.html
- * Copyright Takuya OOURA, 1996-2001
- *
- * You may use, copy, modify and distribute this code for any purpose (include
- * commercial use) and without fee. Please refer to this package when you modify
- * this code.
- */

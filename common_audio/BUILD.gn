@@ -52,7 +52,6 @@ rtc_static_library("common_audio") {
 
   deps = [
     ":common_audio_c",
-    ":fft4g",
     ":sinc_resampler",
     "..:webrtc_common",
     "../rtc_base:checks",
@@ -63,6 +62,7 @@ rtc_static_library("common_audio") {
     "../rtc_base/system:arch",
     "../system_wrappers",
     "../system_wrappers:cpu_features_api",
+    "third_party/fft4g:fft4g",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 
@@ -190,7 +190,6 @@ rtc_source_set("common_audio_c") {
   deps = [
     ":common_audio_c_arm_asm",
     ":common_audio_cc",
-    ":fft4g",
     "..:webrtc_common",
     "../rtc_base:checks",
     "../rtc_base:compile_assert_c",
@@ -199,14 +198,7 @@ rtc_source_set("common_audio_c") {
     "../rtc_base/system:arch",
     "../system_wrappers",
     "../system_wrappers:cpu_features_api",
-  ]
-}
-
-rtc_source_set("fft4g") {
-  visibility += webrtc_default_visibility
-  sources = [
-    "fft4g.c",
-    "fft4g.h",
+    "third_party/fft4g:fft4g",
   ]
 }
 

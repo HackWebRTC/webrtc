@@ -17,9 +17,9 @@
 #include <deque>
 #include <set>
 
-#include "common_audio/fft4g.h"
 #include "common_audio/include/audio_util.h"
 #include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "common_audio/third_party/fft4g/fft4g.h"
 #include "modules/audio_processing/ns/windows_private.h"
 #include "modules/audio_processing/transient/common.h"
 #include "modules/audio_processing/transient/transient_detector.h"

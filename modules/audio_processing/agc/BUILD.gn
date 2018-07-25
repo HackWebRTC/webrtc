@@ -67,7 +67,7 @@ rtc_source_set("agc_legacy_c") {
     "../../..:webrtc_common",
     "../../../common_audio",
     "../../../common_audio:common_audio_c",
-    "../../../common_audio:fft4g",
+    "../../../common_audio/third_party/fft4g",
     "../../../rtc_base:checks",
     "../../../rtc_base:rtc_base_approved",
     "../../../system_wrappers:cpu_features_api",
