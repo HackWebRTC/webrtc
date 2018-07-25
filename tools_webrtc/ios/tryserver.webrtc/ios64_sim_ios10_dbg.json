@@ -23,7 +23,8 @@
       "dimensions": [
         {
           "os": "Mac-10.12",
-          "pool": "Chrome"
+          "pool": "Chrome",
+          "xcode_version": "9.0"
         },
         {
           "os": "Mac-10.13.3",
