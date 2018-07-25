@@ -167,6 +167,18 @@ std::unique_ptr<SessionDescriptionInterface> CreateSessionDescription(
   return std::move(jsep_desc);
 }
 
+std::unique_ptr<SessionDescriptionInterface> CreateSessionDescription(
+    SdpType type,
+    const std::string& session_id,
+    const std::string& session_version,
+    std::unique_ptr<cricket::SessionDescription> description) {
+  auto jsep_description = absl::make_unique<JsepSessionDescription>(type);
+  bool initialize_success = jsep_description->Initialize(
+      description.release(), session_id, session_version);
+  RTC_DCHECK(initialize_success);
+  return std::move(jsep_description);
+}
+
 JsepSessionDescription::JsepSessionDescription(SdpType type) : type_(type) {}
 
 JsepSessionDescription::JsepSessionDescription(const std::string& type) {

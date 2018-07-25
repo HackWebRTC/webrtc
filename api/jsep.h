@@ -197,6 +197,14 @@ std::unique_ptr<SessionDescriptionInterface> CreateSessionDescription(
     const std::string& sdp,
     SdpParseError* error_out);
 
+// Creates a SessionDescriptionInterface based on a parsed SDP structure and the
+// given type, ID and version.
+std::unique_ptr<SessionDescriptionInterface> CreateSessionDescription(
+    SdpType type,
+    const std::string& session_id,
+    const std::string& session_version,
+    std::unique_ptr<cricket::SessionDescription> description);
+
 // CreateOffer and CreateAnswer callback interface.
 class CreateSessionDescriptionObserver : public rtc::RefCountInterface {
  public:

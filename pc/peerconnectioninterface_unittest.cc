@@ -3200,10 +3200,11 @@ TEST_P(PeerConnectionInterfaceTest,
   std::unique_ptr<SessionDescriptionInterface> offer;
   ASSERT_TRUE(DoCreateOffer(&offer, nullptr));
   // Grab a copy of the offer before it gets passed into the PC.
-  auto modified_offer = absl::make_unique<webrtc::JsepSessionDescription>(
-      webrtc::SdpType::kOffer);
-  modified_offer->Initialize(offer->description()->Copy(), offer->session_id(),
-                             offer->session_version());
+  std::unique_ptr<SessionDescriptionInterface> modified_offer =
+      webrtc::CreateSessionDescription(
+          webrtc::SdpType::kOffer, offer->session_id(),
+          offer->session_version(),
+          absl::WrapUnique(offer->description()->Copy()));
   EXPECT_TRUE(DoSetLocalDescription(std::move(offer)));
 
   auto senders = pc_->GetSenders();
