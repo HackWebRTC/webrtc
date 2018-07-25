@@ -50,6 +50,7 @@ LIB_TO_LICENSES_DICT = {
     'base64': ['rtc_base/third_party/base64/LICENSE'],
     'portaudio': ['modules/third_party/portaudio/LICENSE'],
     'fft': ['modules/third_party/fft/LICENSE'],
+    'g711': ['modules/third_party/g711/LICENSE'],
 
     # Compile time dependencies, no license needed:
     'yasm': [],

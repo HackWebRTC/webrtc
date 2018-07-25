@@ -10,7 +10,7 @@
 
 #include <string.h>
 
-#include "modules/audio_coding/codecs/g711/g711.h"
+#include "modules/third_party/g711/g711.h"
 #include "modules/audio_coding/codecs/g711/g711_interface.h"
 #include "typedefs.h"  // NOLINT(build/include)
 

@@ -215,17 +215,9 @@ rtc_source_set("g711_c") {
     "codecs/g711/g711_interface.h",
   ]
   deps = [
-    ":g711_3p",
     "../..:typedefs",
     "../..:webrtc_common",
-  ]
-}
-
-rtc_source_set("g711_3p") {
-  poisonous = [ "audio_codecs" ]
-  sources = [
-    "codecs/g711/g711.c",
-    "codecs/g711/g711.h",
+    "../third_party/g711:g711_3p",
   ]
 }
 
