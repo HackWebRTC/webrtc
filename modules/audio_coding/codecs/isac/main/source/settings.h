@@ -24,9 +24,6 @@
 /* number of samples per frame (either 320 (20ms), 480 (30ms) or 960 (60ms)) */
 #define INITIAL_FRAMESAMPLES 960
 
-#define MAXFFTSIZE 2048
-#define NFACTOR 11
-
 /* do not modify the following; this will have to be modified if we
  * have a 20ms framesize option */
 /**********************************************************************/

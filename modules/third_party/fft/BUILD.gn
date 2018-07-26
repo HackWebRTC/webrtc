@@ -9,12 +9,8 @@
 import("../../../webrtc.gni")
 
 rtc_source_set("fft") {
-  poisonous = [ "audio_codecs" ]
   sources = [
     "fft.c",
     "fft.h",
-  ]
-  deps = [
-    "../../audio_coding:isac_vad",
   ]
 }

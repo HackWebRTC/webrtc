@@ -498,6 +498,7 @@ rtc_source_set("isac_vad") {
     "../../rtc_base:compile_assert_c",
     "../../rtc_base/system:arch",
     "../../rtc_base/system:ignore_warnings",
+    "../third_party/fft",
   ]
 }
 
@@ -559,7 +560,7 @@ rtc_static_library("isac_c") {
     "../../rtc_base:compile_assert_c",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base/system:arch",
-    "../third_party/fft:fft",
+    "../third_party/fft",
   ]
 }
 
@@ -676,6 +677,7 @@ rtc_source_set("isac_fix_c") {
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:sanitizer",
     "../../system_wrappers:cpu_features_api",
+    "../third_party/fft",
   ]
 
   public_deps = [

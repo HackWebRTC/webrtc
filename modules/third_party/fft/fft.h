@@ -27,10 +27,23 @@
  * See the comments in the code for correct usage!
  */
 
-#ifndef MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_SOURCE_FFT_H_
-#define MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_SOURCE_FFT_H_
+#ifndef MODULES_THIRD_PARTY_FFT_FFT_H_
+#define MODULES_THIRD_PARTY_FFT_FFT_H_
 
-#include "modules/audio_coding/codecs/isac/main/source/structs.h"
+#define FFT_MAXFFTSIZE 2048
+#define FFT_NFACTOR 11
+
+typedef struct {
+  unsigned int SpaceAlloced;
+  unsigned int MaxPermAlloced;
+  double Tmp0[FFT_MAXFFTSIZE];
+  double Tmp1[FFT_MAXFFTSIZE];
+  double Tmp2[FFT_MAXFFTSIZE];
+  double Tmp3[FFT_MAXFFTSIZE];
+  int Perm[FFT_MAXFFTSIZE];
+  int factor[FFT_NFACTOR];
+
+} FFTstr;
 
 /* double precision routine */
 
@@ -42,4 +55,4 @@ int WebRtcIsac_Fftns(unsigned int ndim,
                      double scaling,
                      FFTstr* fftstate);
 
-#endif /* MODULES_AUDIO_CODING_CODECS_ISAC_MAIN_SOURCE_FFT_H_ */
+#endif /* MODULES_THIRD_PARTY_FFT_FFT_H_ */

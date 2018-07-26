@@ -20,6 +20,7 @@
 
 #include "modules/audio_coding/codecs/isac/bandwidth_info.h"
 #include "modules/audio_coding/codecs/isac/main/source/settings.h"
+#include "modules/third_party/fft/fft.h"
 
 typedef struct Bitstreamstruct {
   uint8_t stream[STREAM_SIZE_MAX];
@@ -227,18 +228,6 @@ typedef struct {
   double StillBuffered;
 
 } RateModel;
-
-typedef struct {
-  unsigned int SpaceAlloced;
-  unsigned int MaxPermAlloced;
-  double Tmp0[MAXFFTSIZE];
-  double Tmp1[MAXFFTSIZE];
-  double Tmp2[MAXFFTSIZE];
-  double Tmp3[MAXFFTSIZE];
-  int Perm[MAXFFTSIZE];
-  int factor[NFACTOR];
-
-} FFTstr;
 
 /* The following strutc is used to store data from encoding, to make it
    fast and easy to construct a new bitstream with a different Bandwidth

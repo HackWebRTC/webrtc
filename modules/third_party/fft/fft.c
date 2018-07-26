@@ -415,7 +415,7 @@ static int   FFTRADIX (REAL Re[],
   }
 
   /* test that mfactors is in range */
-  if (mfactor > NFACTOR)
+  if (mfactor > FFT_NFACTOR)
   {
     return -1;
   }
