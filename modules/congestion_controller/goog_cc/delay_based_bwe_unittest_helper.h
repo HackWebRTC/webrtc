@@ -32,7 +32,7 @@ namespace test {
 class TestBitrateObserver : public RemoteBitrateObserver {
  public:
   TestBitrateObserver() : updated_(false), latest_bitrate_(0) {}
-  virtual ~TestBitrateObserver() {}
+  ~TestBitrateObserver() override {}
 
   void OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
                                uint32_t bitrate) override;
@@ -82,6 +82,7 @@ class RtpStream {
 class StreamGenerator {
  public:
   StreamGenerator(int capacity, int64_t time_now);
+  ~StreamGenerator();
 
   // Add a new stream.
   void AddStream(RtpStream* stream);
@@ -117,7 +118,7 @@ class DelayBasedBweTest : public ::testing::Test {
  public:
   DelayBasedBweTest();
   explicit DelayBasedBweTest(const std::string& field_trial_string);
-  virtual ~DelayBasedBweTest();
+  ~DelayBasedBweTest() override;
 
  protected:
   void AddDefaultStream();

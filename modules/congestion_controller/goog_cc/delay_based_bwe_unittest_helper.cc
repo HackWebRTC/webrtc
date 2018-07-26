@@ -88,6 +88,8 @@ bool RtpStream::Compare(const std::unique_ptr<RtpStream>& lhs,
 StreamGenerator::StreamGenerator(int capacity, int64_t time_now)
     : capacity_(capacity), prev_arrival_time_us_(time_now) {}
 
+StreamGenerator::~StreamGenerator() = default;
+
 // Add a new stream.
 void StreamGenerator::AddStream(RtpStream* stream) {
   streams_.push_back(std::unique_ptr<RtpStream>(stream));
