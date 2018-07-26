@@ -1,5 +1,5 @@
-#ifndef AUDIO_DEVICE_PA_RINGBUFFER_H_
-#define AUDIO_DEVICE_PA_RINGBUFFER_H_
+#ifndef MODULES_THIRD_PARTY_PORTAUDIO_PA_RINGBUFFER_H_
+#define MODULES_THIRD_PARTY_PORTAUDIO_PA_RINGBUFFER_H_
 /*
  * $Id: pa_ringbuffer.h 1421 2009-11-18 16:09:05Z bjornroche $
  * Portable Audio I/O Library
@@ -248,4 +248,4 @@ PaRingBufferSize PaUtil_AdvanceRingBufferReadIndex(
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
-#endif /* MODULES_AUDIO_DEVICE_MAIN_SOURCE_MAC_PORTAUDIO_PA_RINGBUFFER_H_ */
+#endif /* MODULES_THIRD_PARTY_PORTAUDIO_PA_RINGBUFFER_H_ */

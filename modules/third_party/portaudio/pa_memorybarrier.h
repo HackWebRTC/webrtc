@@ -60,6 +60,9 @@
  *
  ****************/
 
+#ifndef MODULES_THIRD_PARTY_PORTAUDIO_PA_MEMORYBARRIER_H_
+#define MODULES_THIRD_PARTY_PORTAUDIO_PA_MEMORYBARRIER_H_
+
 #if defined(__APPLE__)
 #include <libkern/OSAtomic.h>
 /* Here are the memory barrier functions. Mac OS X only provides
@@ -125,3 +128,5 @@
 #      error Memory barriers are not defined on this system. You can still compile by defining ALLOW_SMP_DANGERS, but SMP safety will not be guaranteed.
 #endif
 #endif
+
+#endif /* MODULES_THIRD_PARTY_PORTAUDIO_PA_MEMORYBARRIER_H_ */

@@ -9,8 +9,8 @@
 //* intact.
 //*********************************************************************
 
-#ifndef RTC_BASE_BASE64_H_
-#define RTC_BASE_BASE64_H_
+#ifndef RTC_BASE_THIRD_PARTY_BASE64_BASE64_H_
+#define RTC_BASE_THIRD_PARTY_BASE64_BASE64_H_
 
 #include <string>
 #include <vector>
@@ -120,4 +120,4 @@ class Base64 {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_BASE64_H_
+#endif  /* RTC_BASE_THIRD_PARTY_BASE64_BASE64_H_ */

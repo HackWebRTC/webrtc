@@ -93,8 +93,8 @@
 // If signalx is single threaded the user must ensure that disconnect, connect
 // or signal is not happening concurrently or data race may occur.
 
-#ifndef RTC_BASE_SIGSLOT_H_
-#define RTC_BASE_SIGSLOT_H_
+#ifndef RTC_BASE_THIRD_PARTY_SIGSLOT_SIGSLOT_H_
+#define RTC_BASE_THIRD_PARTY_SIGSLOT_SIGSLOT_H_
 
 #include <stdlib.h>
 #include <cstring>
@@ -641,4 +641,4 @@ using signal8 =
 
 }  // namespace sigslot
 
-#endif  // RTC_BASE_SIGSLOT_H_
+#endif  /* RTC_BASE_THIRD_PARTY_SIGSLOT_SIGSLOT_H_ */

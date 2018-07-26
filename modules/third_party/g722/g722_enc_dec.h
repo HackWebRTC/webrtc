@@ -27,8 +27,8 @@
 
 /*! \file */
 
-#if !defined(_G722_ENC_DEC_H_)
-#define _G722_ENC_DEC_H_
+#ifndef MODULES_THIRD_PARTY_G722_G722_H_
+#define MODULES_THIRD_PARTY_G722_G722_H_
 
 #include <stdint.h>
 
@@ -150,4 +150,4 @@ size_t WebRtc_g722_decode(G722DecoderState* s,
 }
 #endif
 
-#endif
+#endif /* MODULES_THIRD_PARTY_G722_G722_H_ */
