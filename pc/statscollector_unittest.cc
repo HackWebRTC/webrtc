@@ -1741,7 +1741,8 @@ TEST_P(StatsCollectorTrackTest, VerifyVideoReceiveSsrcStatsNew) {
   VideoReceiverInfo video_receiver_info;
   video_receiver_info.add_ssrc(1234);
   video_receiver_info.frames_decoded = 10;
-  video_receiver_info.qp_sum = 11;
+  video_receiver_info.frames_rendered = 11;
+  video_receiver_info.qp_sum = 12;
   VideoMediaInfo video_info;
   video_info.receivers.push_back(video_receiver_info);
 
@@ -1755,6 +1756,9 @@ TEST_P(StatsCollectorTrackTest, VerifyVideoReceiveSsrcStatsNew) {
   EXPECT_EQ(rtc::ToString(video_receiver_info.frames_decoded),
             ExtractSsrcStatsValue(reports,
                                   StatsReport::kStatsValueNameFramesDecoded));
+  EXPECT_EQ(rtc::ToString(video_receiver_info.frames_rendered),
+            ExtractSsrcStatsValue(reports,
+                                  StatsReport::kStatsValueNameFramesRendered));
   EXPECT_EQ(rtc::ToString(*video_receiver_info.qp_sum),
             ExtractSsrcStatsValue(reports, StatsReport::kStatsValueNameQpSum));
 }

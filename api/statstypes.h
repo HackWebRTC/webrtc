@@ -107,6 +107,7 @@ class StatsReport {
     kStatsValueNameConcealmentEvents,
     kStatsValueNameDataChannelId,
     kStatsValueNameFramesDecoded,
+    kStatsValueNameFramesRendered,
     kStatsValueNameFramesEncoded,
     kStatsValueNameJitterBufferDelay,
     kStatsValueNameMediaType,
