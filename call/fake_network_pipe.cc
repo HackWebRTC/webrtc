@@ -53,6 +53,8 @@ NetworkPacket::NetworkPacket(NetworkPacket&& o)
       media_type_(o.media_type_),
       packet_time_(o.packet_time_) {}
 
+NetworkPacket::~NetworkPacket() = default;
+
 NetworkPacket& NetworkPacket::operator=(NetworkPacket&& o) {
   packet_ = std::move(o.packet_);
   send_time_ = o.send_time_;
@@ -146,6 +148,8 @@ SimulatedNetwork::SimulatedNetwork(SimulatedNetwork::Config config,
     : random_(random_seed), bursting_(false) {
   SetConfig(config);
 }
+
+SimulatedNetwork::~SimulatedNetwork() = default;
 
 void FakeNetworkPipe::SetConfig(const FakeNetworkPipe::Config& config) {
   network_simulation_->SetConfig(config);

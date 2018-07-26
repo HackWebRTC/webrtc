@@ -14,6 +14,8 @@ namespace webrtc {
 
 PacketOptions::PacketOptions() = default;
 
+PacketOptions::PacketOptions(const PacketOptions&) = default;
+
 PacketOptions::~PacketOptions() = default;
 
 }  // namespace webrtc

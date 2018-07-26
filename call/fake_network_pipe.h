@@ -46,6 +46,7 @@ class NetworkPacket {
                 absl::optional<PacketTime> packet_time_);
   // Disallow copy constructor and copy assignment (no deep copies of |data_|).
   NetworkPacket(const NetworkPacket&) = delete;
+  ~NetworkPacket();
   NetworkPacket& operator=(const NetworkPacket&) = delete;
   // Allow move constructor/assignment, so that we can use in stl containers.
   NetworkPacket(NetworkPacket&&);
@@ -91,6 +92,7 @@ class SimulatedNetwork : public NetworkSimulationInterface {
  public:
   using Config = NetworkSimulationInterface::SimulatedNetworkConfig;
   explicit SimulatedNetwork(Config config, uint64_t random_seed = 1);
+  ~SimulatedNetwork() override;
 
   // Sets a new configuration. This won't affect packets already in the pipe.
   void SetConfig(const Config& config);
@@ -153,7 +155,7 @@ class FakeNetworkPipe : public Transport, public PacketReceiver, public Module {
                   const FakeNetworkPipe::Config& config,
                   Transport* transport);
 
-  virtual ~FakeNetworkPipe();
+  ~FakeNetworkPipe() override;
 
   void SetClockOffset(int64_t offset_ms);
 
