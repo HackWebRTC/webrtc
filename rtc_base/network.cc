@@ -95,6 +95,7 @@ bool SortNetworks(const Network* a, const Network* b) {
 std::string AdapterTypeToString(AdapterType type) {
   switch (type) {
     case ADAPTER_TYPE_ANY:
+      return "Wildcard";
     case ADAPTER_TYPE_UNKNOWN:
       return "Unknown";
     case ADAPTER_TYPE_ETHERNET:

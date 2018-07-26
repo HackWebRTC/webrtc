@@ -39,6 +39,7 @@ const char* STATSREPORT_ADAPTER_TYPE_WIFI = "wlan";
 const char* STATSREPORT_ADAPTER_TYPE_WWAN = "wwan";
 const char* STATSREPORT_ADAPTER_TYPE_VPN = "vpn";
 const char* STATSREPORT_ADAPTER_TYPE_LOOPBACK = "loopback";
+const char* STATSREPORT_ADAPTER_TYPE_WILDCARD = "wildcard";
 
 template <typename ValueType>
 struct TypeForAdd {
@@ -414,7 +415,6 @@ const char* IceCandidateTypeToStatsType(const std::string& candidate_type) {
 
 const char* AdapterTypeToStatsType(rtc::AdapterType type) {
   switch (type) {
-    case rtc::ADAPTER_TYPE_ANY:
     case rtc::ADAPTER_TYPE_UNKNOWN:
       return "unknown";
     case rtc::ADAPTER_TYPE_ETHERNET:
@@ -427,6 +427,8 @@ const char* AdapterTypeToStatsType(rtc::AdapterType type) {
       return STATSREPORT_ADAPTER_TYPE_VPN;
     case rtc::ADAPTER_TYPE_LOOPBACK:
       return STATSREPORT_ADAPTER_TYPE_LOOPBACK;
+    case rtc::ADAPTER_TYPE_ANY:
+      return STATSREPORT_ADAPTER_TYPE_WILDCARD;
     default:
       RTC_NOTREACHED();
       return "";
