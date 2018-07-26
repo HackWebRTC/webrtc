@@ -9,6 +9,7 @@
  */
 
 #include <stddef.h>
+#include <stdint.h>
 
 #include "modules/audio_coding/codecs/isac/fix/source/settings.h"
 
