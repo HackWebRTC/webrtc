@@ -5948,6 +5948,17 @@ void PeerConnection::ReportUsagePattern() const {
   RTC_HISTOGRAM_ENUMERATION_SPARSE("WebRTC.PeerConnection.UsagePattern",
                                    usage_event_accumulator_,
                                    static_cast<int>(UsageEvent::MAX_VALUE));
+  const int bad_bits =
+      static_cast<int>(UsageEvent::SET_LOCAL_DESCRIPTION_CALLED) |
+      static_cast<int>(UsageEvent::CANDIDATE_COLLECTED);
+  const int good_bits =
+      static_cast<int>(UsageEvent::SET_REMOTE_DESCRIPTION_CALLED) |
+      static_cast<int>(UsageEvent::REMOTE_CANDIDATE_ADDED) |
+      static_cast<int>(UsageEvent::ICE_STATE_CONNECTED);
+  if ((usage_event_accumulator_ & bad_bits) == bad_bits &&
+      (usage_event_accumulator_ & good_bits) == 0) {
+    observer_->OnInterestingUsage(usage_event_accumulator_);
+  }
 }
 
 void PeerConnection::ReportNegotiatedSdpSemantics(

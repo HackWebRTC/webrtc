@@ -1098,6 +1098,14 @@ class PeerConnectionObserver {
   // TODO(hbos,deadbeef): Make pure virtual when all subclasses implement it.
   virtual void OnRemoveTrack(
       rtc::scoped_refptr<RtpReceiverInterface> receiver) {}
+
+  // Called when an interesting usage is detected by WebRTC.
+  // An appropriate action is to add information about the context of the
+  // PeerConnection and write the event to some kind of "interesting events"
+  // log function.
+  // The heuristics for defining what constitutes "interesting" are
+  // implementation-defined.
+  virtual void OnInterestingUsage(int usage_pattern) {}
 };
 
 // PeerConnectionDependencies holds all of PeerConnections dependencies.
