@@ -32,9 +32,6 @@ class RTPReceiverAudio : public RTPReceiverStrategy,
   // Forward DTMFs to decoder for playout.
   void SetTelephoneEventForwardToDecoder(bool forward_to_decoder) override;
 
-  // Is forwarding of outband telephone events turned on/off?
-  bool TelephoneEventForwardToDecoder() const override;
-
   // Is TelephoneEvent configured with |payload_type|.
   bool TelephoneEventPayloadType(const int8_t payload_type) const override;
 

@@ -39,6 +39,26 @@ const CngCodecSpec kCngCodecs[] = {{13, 8000},
                                    {104, 32000},
                                    {105, 48000}};
 
+// Rough sanity check of DTMF payload.
+void VerifyDtmf(const uint8_t* payloadData,
+                size_t payloadSize) {
+  EXPECT_EQ(payloadSize, 4u);
+  uint8_t p0 = (payloadSize > 0) ? payloadData[0] : 0xff;
+  uint8_t p1 = (payloadSize > 1) ? payloadData[1] : 0xff;
+  uint8_t p2 = (payloadSize > 2) ? payloadData[2] : 0xff;
+  uint8_t p3 = (payloadSize > 3) ? payloadData[3] : 0xff;
+  uint8_t event = p0;
+  bool reserved = (p1 >> 6) & 1;
+  uint8_t volume = p1 & 63;
+  uint16_t duration = (p2 << 8) | p3;
+
+  // 0-15 are digits, #, *, A-D, 32 is answer tone (see rfc 4734)
+  EXPECT_LE(event, 32u);
+  EXPECT_TRUE(event < 16u || event == 32u);
+  EXPECT_FALSE(reserved);
+  EXPECT_EQ(volume, 10u);
+  EXPECT_LE(duration, 6560u);
+}
 
 class VerifyingAudioReceiver : public RtpData {
  public:
@@ -47,11 +67,13 @@ class VerifyingAudioReceiver : public RtpData {
       size_t payloadSize,
       const webrtc::WebRtcRTPHeader* rtpHeader) override {
     const uint8_t payload_type = rtpHeader->header.payloadType;
-    if (payload_type == kPcmuPayloadType || payload_type == kDtmfPayloadType) {
+    if (payload_type == kPcmuPayloadType) {
       EXPECT_EQ(sizeof(kTestPayload), payloadSize);
-      // All our test vectors for PCMU and DTMF are equal to |kTestPayload|.
+      // All our test vectors for PCMU are equal to |kTestPayload|.
       const size_t min_size = std::min(sizeof(kTestPayload), payloadSize);
       EXPECT_EQ(0, memcmp(payloadData, kTestPayload, min_size));
+    } else if (payload_type == kDtmfPayloadType) {
+      VerifyDtmf(payloadData, payloadSize);
     }
 
     return 0;
