@@ -285,6 +285,7 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
   int32_t _width;
   int32_t _height;
   VTCompressionSessionRef _compressionSession;
+  CVPixelBufferPoolRef _pixelBufferPool;
   RTCVideoCodecMode _mode;
 
   webrtc::H264BitstreamParser _h264BitstreamParser;
@@ -355,10 +356,7 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
   BOOL isKeyframeRequired = NO;
 
   // Get a pixel buffer from the pool and copy frame data over.
-  CVPixelBufferPoolRef pixelBufferPool =
-      VTCompressionSessionGetPixelBufferPool(_compressionSession);
-  if ([self resetCompressionSessionIfNeededForPool:pixelBufferPool withFrame:frame]) {
-    pixelBufferPool = VTCompressionSessionGetPixelBufferPool(_compressionSession);
+  if ([self resetCompressionSessionIfNeededWithFrame:frame]) {
     isKeyframeRequired = YES;
   }
 
@@ -375,7 +373,7 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
       CVBufferRetain(pixelBuffer);
     } else {
       // Cropping required, we need to crop and scale to a new pixel buffer.
-      pixelBuffer = CreatePixelBuffer(pixelBufferPool);
+      pixelBuffer = CreatePixelBuffer(_pixelBufferPool);
       if (!pixelBuffer) {
         return WEBRTC_VIDEO_CODEC_ERROR;
       }
@@ -398,7 +396,7 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
 
   if (!pixelBuffer) {
     // We did not have a native frame buffer
-    pixelBuffer = CreatePixelBuffer(pixelBufferPool);
+    pixelBuffer = CreatePixelBuffer(_pixelBufferPool);
     if (!pixelBuffer) {
       return WEBRTC_VIDEO_CODEC_ERROR;
     }
@@ -454,7 +452,14 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
   if (pixelBuffer) {
     CVBufferRelease(pixelBuffer);
   }
-  if (status != noErr) {
+
+  if (status == kVTInvalidSessionErr) {
+    // This error occurs when entering foreground after backgrounding the app.
+    RTC_LOG(LS_ERROR) << "Invalid compression session, resetting.";
+    [self resetCompressionSessionWithPixelFormat:[self pixelFormatOfFrame:frame]];
+
+    return WEBRTC_VIDEO_CODEC_NO_OUTPUT;
+  } else if (status != noErr) {
     RTC_LOG(LS_ERROR) << "Failed to encode frame with code: " << status;
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
@@ -483,43 +488,34 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-- (BOOL)resetCompressionSessionIfNeededForPool:(CVPixelBufferPoolRef)pixelBufferPool
-                                     withFrame:(RTCVideoFrame *)frame {
+- (OSType)pixelFormatOfFrame:(RTCVideoFrame *)frame {
+  // Use NV12 for non-native frames.
+  if ([frame.buffer isKindOfClass:[RTCCVPixelBuffer class]]) {
+    RTCCVPixelBuffer *rtcPixelBuffer = (RTCCVPixelBuffer *)frame.buffer;
+    return CVPixelBufferGetPixelFormatType(rtcPixelBuffer.pixelBuffer);
+  }
+
+  return kNV12PixelFormat;
+}
+
+- (BOOL)resetCompressionSessionIfNeededWithFrame:(RTCVideoFrame *)frame {
   BOOL resetCompressionSession = NO;
 
   // If we're capturing native frames in another pixel format than the compression session is
   // configured with, make sure the compression session is reset using the correct pixel format.
-  // If we're capturing non-native frames and the compression session is configured with a non-NV12
-  // format, reset it to NV12.
-  OSType framePixelFormat = kNV12PixelFormat;
-  if ([frame.buffer isKindOfClass:[RTCCVPixelBuffer class]]) {
-    RTCCVPixelBuffer *rtcPixelBuffer = (RTCCVPixelBuffer *)frame.buffer;
-    framePixelFormat = CVPixelBufferGetPixelFormatType(rtcPixelBuffer.pixelBuffer);
-  }
+  OSType framePixelFormat = [self pixelFormatOfFrame:frame];
 
-#if defined(WEBRTC_IOS)
-  if (!pixelBufferPool) {
-    // Kind of a hack. On backgrounding, the compression session seems to get
-    // invalidated, which causes this pool call to fail when the application
-    // is foregrounded and frames are being sent for encoding again.
-    // Resetting the session when this happens fixes the issue.
-    // In addition we request a keyframe so video can recover quickly.
-    resetCompressionSession = YES;
-    RTC_LOG(LS_INFO) << "Resetting compression session due to invalid pool.";
-  }
-#endif
-
-  if (pixelBufferPool) {
+  if (_compressionSession) {
     // The pool attribute `kCVPixelBufferPixelFormatTypeKey` can contain either an array of pixel
     // formats or a single pixel format.
     NSDictionary *poolAttributes =
-        (__bridge NSDictionary *)CVPixelBufferPoolGetPixelBufferAttributes(pixelBufferPool);
+        (__bridge NSDictionary *)CVPixelBufferPoolGetPixelBufferAttributes(_pixelBufferPool);
     id pixelFormats =
         [poolAttributes objectForKey:(__bridge NSString *)kCVPixelBufferPixelFormatTypeKey];
     NSArray<NSNumber *> *compressionSessionPixelFormats = nil;
     if ([pixelFormats isKindOfClass:[NSArray class]]) {
       compressionSessionPixelFormats = (NSArray *)pixelFormats;
-    } else {
+    } else if ([pixelFormats isKindOfClass:[NSNumber class]]) {
       compressionSessionPixelFormats = @[ (NSNumber *)pixelFormats ];
     }
 
@@ -528,6 +524,8 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
       resetCompressionSession = YES;
       RTC_LOG(LS_INFO) << "Resetting compression session due to non-matching pixel format.";
     }
+  } else {
+    resetCompressionSession = YES;
   }
 
   if (resetCompressionSession) {
@@ -610,6 +608,11 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
   }
 #endif
   [self configureCompressionSession];
+
+  // The pixel buffer pool is dependent on the compression session so if the session is reset, the
+  // pool should be reset as well.
+  _pixelBufferPool = VTCompressionSessionGetPixelBufferPool(_compressionSession);
+
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
@@ -638,6 +641,7 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
     VTCompressionSessionInvalidate(_compressionSession);
     CFRelease(_compressionSession);
     _compressionSession = nullptr;
+    _pixelBufferPool = nullptr;
   }
 }
 
