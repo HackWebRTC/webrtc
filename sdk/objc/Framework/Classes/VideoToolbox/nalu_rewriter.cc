@@ -286,6 +286,8 @@ AnnexBBufferReader::AnnexBBufferReader(const uint8_t* annexb_buffer,
   offset_ = offsets_.begin();
 }
 
+AnnexBBufferReader::~AnnexBBufferReader() = default;
+
 bool AnnexBBufferReader::ReadNalu(const uint8_t** out_nalu,
                                   size_t* out_length) {
   RTC_DCHECK(out_nalu);

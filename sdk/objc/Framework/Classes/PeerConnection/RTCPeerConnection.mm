@@ -46,9 +46,7 @@ class CreateSessionDescriptionObserverAdapter
     completion_handler_ = completionHandler;
   }
 
-  ~CreateSessionDescriptionObserverAdapter() {
-    completion_handler_ = nil;
-  }
+  ~CreateSessionDescriptionObserverAdapter() override { completion_handler_ = nil; }
 
   void OnSuccess(SessionDescriptionInterface *desc) override {
     RTC_DCHECK(completion_handler_);
@@ -86,9 +84,7 @@ class SetSessionDescriptionObserverAdapter :
     completion_handler_ = completionHandler;
   }
 
-  ~SetSessionDescriptionObserverAdapter() {
-    completion_handler_ = nil;
-  }
+  ~SetSessionDescriptionObserverAdapter() override { completion_handler_ = nil; }
 
   void OnSuccess() override {
     RTC_DCHECK(completion_handler_);

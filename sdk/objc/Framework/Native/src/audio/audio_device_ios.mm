@@ -271,6 +271,10 @@ int32_t AudioDeviceIOS::StopPlayout() {
   return 0;
 }
 
+bool AudioDeviceIOS::Playing() const {
+  return playing_;
+}
+
 int32_t AudioDeviceIOS::StartRecording() {
   LOGI() << "StartRecording";
   RTC_DCHECK_RUN_ON(&thread_checker_);
@@ -303,6 +307,10 @@ int32_t AudioDeviceIOS::StopRecording() {
   }
   rtc::AtomicOps::ReleaseStore(&recording_, 0);
   return 0;
+}
+
+bool AudioDeviceIOS::Recording() const {
+  return recording_;
 }
 
 int32_t AudioDeviceIOS::PlayoutDelay(uint16_t& delayMS) const {

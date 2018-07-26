@@ -31,16 +31,16 @@ class ObjCVideoTrackSource : public rtc::AdaptedVideoTrackSource {
 
   // This class can not be used for implementing screen casting. Hopefully, this
   // function will be removed before we add that to iOS/Mac.
-  bool is_screencast() const override { return false; }
+  bool is_screencast() const override;
 
   // Indicates that the encoder should denoise video before encoding it.
   // If it is not set, the default configuration is used which is different
   // depending on video codec.
-  absl::optional<bool> needs_denoising() const override { return false; }
+  absl::optional<bool> needs_denoising() const override;
 
-  SourceState state() const override { return SourceState::kLive; }
+  SourceState state() const override;
 
-  bool remote() const override { return false; }
+  bool remote() const override;
 
   void OnCapturedFrame(RTCVideoFrame* frame);
 

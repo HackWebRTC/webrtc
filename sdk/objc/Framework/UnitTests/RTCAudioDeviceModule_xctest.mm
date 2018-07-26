@@ -43,7 +43,7 @@ typedef int32_t(^RecordedDataIsAvailableBlock)(const void* audioSamples,
 class MockAudioTransport : public webrtc::AudioTransport {
 public:
   MockAudioTransport() {}
-  ~MockAudioTransport() {}
+  ~MockAudioTransport() override {}
 
   void expectNeedMorePlayData(NeedMorePlayDataBlock block) {
     needMorePlayDataBlock = block;
@@ -60,7 +60,7 @@ public:
                            void* audioSamples,
                            size_t& nSamplesOut,
                            int64_t* elapsed_time_ms,
-                           int64_t* ntp_time_ms) {
+                           int64_t* ntp_time_ms) override {
     return needMorePlayDataBlock(nSamples,
                                  nBytesPerSample,
                                  nChannels,
@@ -80,7 +80,7 @@ public:
                                   const int32_t clockDrift,
                                   const uint32_t currentMicLevel,
                                   const bool keyPressed,
-                                  uint32_t& newMicLevel) {
+                                  uint32_t& newMicLevel) override {
     return recordedDataIsAvailableBlock(audioSamples,
                                         nSamples,
                                         nBytesPerSample,
@@ -99,11 +99,9 @@ public:
                       size_t number_of_frames,
                       void* audio_data,
                       int64_t* elapsed_time_ms,
-                      int64_t* ntp_time_ms) {
+                      int64_t* ntp_time_ms) override {}
 
-  }
-
-private:
+ private:
   NeedMorePlayDataBlock needMorePlayDataBlock;
   RecordedDataIsAvailableBlock recordedDataIsAvailableBlock;
 };

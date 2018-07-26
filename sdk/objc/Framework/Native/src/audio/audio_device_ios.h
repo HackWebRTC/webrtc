@@ -49,7 +49,7 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
                        public rtc::MessageHandler {
  public:
   AudioDeviceIOS();
-  ~AudioDeviceIOS();
+  ~AudioDeviceIOS() override;
 
   void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) override;
 
@@ -65,11 +65,11 @@ class AudioDeviceIOS : public AudioDeviceGeneric,
 
   int32_t StartPlayout() override;
   int32_t StopPlayout() override;
-  bool Playing() const override { return playing_; }
+  bool Playing() const override;
 
   int32_t StartRecording() override;
   int32_t StopRecording() override;
-  bool Recording() const override { return recording_; }
+  bool Recording() const override;
 
   // These methods returns hard-coded delay values and not dynamic delay
   // estimates. The reason is that iOS supports a built-in AEC and the WebRTC

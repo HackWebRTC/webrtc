@@ -23,7 +23,7 @@ namespace webrtc {
 class PeerConnectionDelegateAdapter : public PeerConnectionObserver {
  public:
   PeerConnectionDelegateAdapter(RTCPeerConnection *peerConnection);
-  virtual ~PeerConnectionDelegateAdapter();
+  ~PeerConnectionDelegateAdapter() override;
 
   void OnSignalingChange(PeerConnectionInterface::SignalingState new_state) override;
 

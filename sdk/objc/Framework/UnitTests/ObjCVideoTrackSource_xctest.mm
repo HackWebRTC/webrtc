@@ -31,7 +31,7 @@ class ObjCCallbackVideoSink : public rtc::VideoSinkInterface<webrtc::VideoFrame>
  public:
   ObjCCallbackVideoSink(VideoSinkCallback callback) : callback_(callback) {}
 
-  virtual void OnFrame(const webrtc::VideoFrame &frame) {
+  void OnFrame(const webrtc::VideoFrame &frame) override {
     callback_(NativeToObjCVideoFrame(frame));
   }
 

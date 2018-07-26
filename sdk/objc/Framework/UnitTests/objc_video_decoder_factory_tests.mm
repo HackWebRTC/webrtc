@@ -56,14 +56,14 @@ std::unique_ptr<webrtc::VideoDecoder> GetObjCDecoder(id<RTCVideoDecoderFactory> 
 TEST(ObjCVideoDecoderFactoryTest, InitDecodeReturnsOKOnSuccess) {
   std::unique_ptr<webrtc::VideoDecoder> decoder = GetObjCDecoder(CreateOKDecoderFactory());
 
-  auto settings = new webrtc::VideoCodec();
+  auto* settings = new webrtc::VideoCodec();
   EXPECT_EQ(decoder->InitDecode(settings, 1), WEBRTC_VIDEO_CODEC_OK);
 }
 
 TEST(ObjCVideoDecoderFactoryTest, InitDecodeReturnsErrorOnFail) {
   std::unique_ptr<webrtc::VideoDecoder> decoder = GetObjCDecoder(CreateErrorDecoderFactory());
 
-  auto settings = new webrtc::VideoCodec();
+  auto* settings = new webrtc::VideoCodec();
   EXPECT_EQ(decoder->InitDecode(settings, 1), WEBRTC_VIDEO_CODEC_ERROR);
 }
 

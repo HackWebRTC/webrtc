@@ -18,12 +18,12 @@ namespace webrtc {
 
 class MediaConstraints : public MediaConstraintsInterface {
  public:
-  virtual ~MediaConstraints();
+  ~MediaConstraints() override;
   MediaConstraints();
   MediaConstraints(const MediaConstraintsInterface::Constraints& mandatory,
                    const MediaConstraintsInterface::Constraints& optional);
-  virtual const Constraints& GetMandatory() const;
-  virtual const Constraints& GetOptional() const;
+  const Constraints& GetMandatory() const override;
+  const Constraints& GetOptional() const override;
 
  private:
   MediaConstraintsInterface::Constraints mandatory_;

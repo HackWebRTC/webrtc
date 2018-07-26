@@ -39,6 +39,22 @@ ObjCVideoTrackSource::ObjCVideoTrackSource(RTCObjCVideoSourceAdapter *adapter) :
   adapter_.objCVideoTrackSource = this;
 }
 
+bool ObjCVideoTrackSource::is_screencast() const {
+  return false;
+}
+
+absl::optional<bool> ObjCVideoTrackSource::needs_denoising() const {
+  return false;
+}
+
+MediaSourceInterface::SourceState ObjCVideoTrackSource::state() const {
+  return SourceState::kLive;
+}
+
+bool ObjCVideoTrackSource::remote() const {
+  return false;
+}
+
 void ObjCVideoTrackSource::OnOutputFormatRequest(int width, int height, int fps) {
   cricket::VideoFormat format(width, height, cricket::VideoFormat::FpsToInterval(fps), 0);
   video_adapter()->OnOutputFormatRequest(format);

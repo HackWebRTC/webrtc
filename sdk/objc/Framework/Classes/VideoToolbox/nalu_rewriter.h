@@ -57,7 +57,7 @@ CMVideoFormatDescriptionRef CreateVideoFormatDescription(
 class AnnexBBufferReader final {
  public:
   AnnexBBufferReader(const uint8_t* annexb_buffer, size_t length);
-  ~AnnexBBufferReader() {}
+  ~AnnexBBufferReader();
   AnnexBBufferReader(const AnnexBBufferReader& other) = delete;
   void operator=(const AnnexBBufferReader& other) = delete;
 

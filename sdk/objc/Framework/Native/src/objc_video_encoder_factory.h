@@ -22,7 +22,7 @@ namespace webrtc {
 class ObjCVideoEncoderFactory : public VideoEncoderFactory {
  public:
   explicit ObjCVideoEncoderFactory(id<RTCVideoEncoderFactory>);
-  ~ObjCVideoEncoderFactory();
+  ~ObjCVideoEncoderFactory() override;
 
   id<RTCVideoEncoderFactory> wrapped_encoder_factory() const;
 
