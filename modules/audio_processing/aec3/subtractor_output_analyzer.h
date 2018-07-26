@@ -23,8 +23,7 @@ class SubtractorOutputAnalyzer {
   ~SubtractorOutputAnalyzer() = default;
 
   // Analyses the subtractor output.
-  void Update(rtc::ArrayView<const float> y,
-              const SubtractorOutput& subtractor_output);
+  void Update(const SubtractorOutput& subtractor_output);
 
   bool ConvergedFilter() const {
     return main_filter_converged_ || shadow_filter_converged_;

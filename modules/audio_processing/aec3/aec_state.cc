@@ -123,7 +123,7 @@ void AecState::Update(
     const SubtractorOutput& subtractor_output,
     rtc::ArrayView<const float> y) {
   // Analyze the filter output.
-  subtractor_output_analyzer_.Update(y, subtractor_output);
+  subtractor_output_analyzer_.Update(subtractor_output);
 
   const bool converged_filter = subtractor_output_analyzer_.ConvergedFilter();
   const bool diverged_filter = subtractor_output_analyzer_.DivergedFilter();

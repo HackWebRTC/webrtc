@@ -96,6 +96,7 @@ rtc_static_library("aec3") {
     "stationarity_estimator.h",
     "subtractor.cc",
     "subtractor.h",
+    "subtractor_output.cc",
     "subtractor_output.h",
     "subtractor_output_analyzer.cc",
     "subtractor_output_analyzer.h",

@@ -36,6 +36,10 @@ bool EnableMisadjustmentEstimator() {
   return !field_trial::IsEnabled("WebRTC-Aec3MisadjustmentEstimatorKillSwitch");
 }
 
+bool EnableShadowFilterJumpstart() {
+  return !field_trial::IsEnabled("WebRTC-Aec3ShadowFilterJumpstartKillSwitch");
+}
+
 void PredictionError(const Aec3Fft& fft,
                      const FftData& S,
                      rtc::ArrayView<const float> y,
@@ -95,6 +99,7 @@ Subtractor::Subtractor(const EchoCanceller3Config& config,
       adaptation_during_saturation_(EnableAdaptationDuringSaturation()),
       enable_misadjustment_estimator_(EnableMisadjustmentEstimator()),
       enable_agc_gain_change_response_(EnableAgcGainChangeResponse()),
+      enable_shadow_filter_jumpstart_(EnableShadowFilterJumpstart()),
       main_filter_(config_.filter.main.length_blocks,
                    config_.filter.main_initial.length_blocks,
                    config.filter.config_change_duration_blocks,
@@ -180,10 +185,13 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
   PredictionError(fft_, S, y, &e_shadow, nullptr, adaptation_during_saturation_,
                   &shadow_saturation);
 
+  // Compute the signal powers in the subtractor output.
+  output->UpdatePowers(y);
+
   // Adjust the filter if needed.
   bool main_filter_adjusted = false;
   if (enable_misadjustment_estimator_) {
-    filter_misadjustment_estimator_.Update(e_main, y);
+    filter_misadjustment_estimator_.Update(*output);
     if (filter_misadjustment_estimator_.IsAdjustmentNeeded()) {
       float scale = filter_misadjustment_estimator_.GetMisadjustment();
       main_filter_.ScaleFilter(scale);
@@ -216,13 +224,22 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
   data_dumper_->DumpRaw("aec3_subtractor_G_main", G.im);
 
   // Update the shadow filter.
-  if (shadow_filter_.SizePartitions() != main_filter_.SizePartitions()) {
-    render_buffer.SpectralSum(shadow_filter_.SizePartitions(), &X2);
+  poor_shadow_filter_counter_ =
+      output->e2_main < output->e2_shadow ? poor_shadow_filter_counter_ + 1 : 0;
+  if (poor_shadow_filter_counter_ < 10 || !enable_shadow_filter_jumpstart_) {
+    if (shadow_filter_.SizePartitions() != main_filter_.SizePartitions()) {
+      render_buffer.SpectralSum(shadow_filter_.SizePartitions(), &X2);
+    }
+    G_shadow_.Compute(X2, render_signal_analyzer, E_shadow,
+                      shadow_filter_.SizePartitions(),
+                      aec_state.SaturatedCapture() || shadow_saturation, &G);
+    shadow_filter_.Adapt(render_buffer, G);
+  } else {
+    G.re.fill(0.f);
+    G.im.fill(0.f);
+    poor_shadow_filter_counter_ = 0;
+    shadow_filter_.SetFilter(main_filter_.GetFilter());
   }
-  G_shadow_.Compute(X2, render_signal_analyzer, E_shadow,
-                    shadow_filter_.SizePartitions(),
-                    aec_state.SaturatedCapture() || shadow_saturation, &G);
-  shadow_filter_.Adapt(render_buffer, G);
 
   data_dumper_->DumpRaw("aec3_subtractor_G_shadow", G.re);
   data_dumper_->DumpRaw("aec3_subtractor_G_shadow", G.im);
@@ -241,19 +258,15 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
 }
 
 void Subtractor::FilterMisadjustmentEstimator::Update(
-    rtc::ArrayView<const float> e,
-    rtc::ArrayView<const float> y) {
-  const auto sum_of_squares = [](float a, float b) { return a + b * b; };
-  const float y2 = std::accumulate(y.begin(), y.end(), 0.f, sum_of_squares);
-  const float e2 = std::accumulate(e.begin(), e.end(), 0.f, sum_of_squares);
-
-  e2_acum_ += e2;
-  y2_acum_ += y2;
+    const SubtractorOutput& output) {
+  e2_acum_ += output.e2_main;
+  y2_acum_ += output.y2;
   if (++n_blocks_acum_ == n_blocks_) {
     if (y2_acum_ > n_blocks_ * 200.f * 200.f * kBlockSize) {
       float update = (e2_acum_ / y2_acum_);
       if (e2_acum_ > n_blocks_ * 7500.f * 7500.f * kBlockSize) {
-        overhang_ = 4;  // Duration equal to blockSizeMs * n_blocks_ * 4
+        // Duration equal to blockSizeMs * n_blocks_ * 4.
+        overhang_ = 4;
       } else {
         overhang_ = std::max(overhang_ - 1, 0);
       }

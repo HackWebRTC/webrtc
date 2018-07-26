@@ -50,6 +50,10 @@ bool EnableSlowFilterAdaptation() {
   return !field_trial::IsEnabled("WebRTC-Aec3SlowFilterAdaptationKillSwitch");
 }
 
+bool EnableShadowFilterJumpstart() {
+  return !field_trial::IsEnabled("WebRTC-Aec3ShadowFilterJumpstartKillSwitch");
+}
+
 // Method for adjusting config parameter dependencies..
 EchoCanceller3Config AdjustConfig(const EchoCanceller3Config& config) {
   EchoCanceller3Config adjusted_cfg = config;
@@ -103,10 +107,23 @@ EchoCanceller3Config AdjustConfig(const EchoCanceller3Config& config) {
   }
 
   if (!EnableSlowFilterAdaptation()) {
-    adjusted_cfg.filter.main.leakage_converged = 0.005f;
-    adjusted_cfg.filter.main.leakage_diverged = 0.1f;
+    if (!EnableShadowFilterJumpstart()) {
+      adjusted_cfg.filter.main.leakage_converged = 0.005f;
+      adjusted_cfg.filter.main.leakage_diverged = 0.1f;
+    }
     adjusted_cfg.filter.main_initial.leakage_converged = 0.05f;
     adjusted_cfg.filter.main_initial.leakage_diverged = 5.f;
+  }
+
+  if (!EnableShadowFilterJumpstart()) {
+    if (EnableSlowFilterAdaptation()) {
+      adjusted_cfg.filter.main.leakage_converged = 0.0005f;
+      adjusted_cfg.filter.main.leakage_diverged = 0.01f;
+    } else {
+      adjusted_cfg.filter.main.leakage_converged = 0.005f;
+      adjusted_cfg.filter.main.leakage_diverged = 0.1f;
+    }
+    adjusted_cfg.filter.main.error_floor = 0.001f;
   }
 
   return adjusted_cfg;

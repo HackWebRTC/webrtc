@@ -16,17 +16,10 @@
 namespace webrtc {
 
 void SubtractorOutputAnalyzer::Update(
-    rtc::ArrayView<const float> y,
     const SubtractorOutput& subtractor_output) {
-  const auto& e_main = subtractor_output.e_main;
-  const auto& e_shadow = subtractor_output.e_shadow;
-
-  const auto sum_of_squares = [](float a, float b) { return a + b * b; };
-  const float y2 = std::accumulate(y.begin(), y.end(), 0.f, sum_of_squares);
-  const float e2_main =
-      std::accumulate(e_main.begin(), e_main.end(), 0.f, sum_of_squares);
-  const float e2_shadow =
-      std::accumulate(e_shadow.begin(), e_shadow.end(), 0.f, sum_of_squares);
+  const float y2 = subtractor_output.y2;
+  const float e2_main = subtractor_output.e2_main;
+  const float e2_shadow = subtractor_output.e2_shadow;
 
   constexpr float kConvergenceThreshold = 50 * 50 * kBlockSize;
   main_filter_converged_ = e2_main < 0.5f * y2 && y2 > kConvergenceThreshold;

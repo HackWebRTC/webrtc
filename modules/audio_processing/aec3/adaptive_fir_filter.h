@@ -147,6 +147,12 @@ class AdaptiveFirFilter {
   // Scale the filter impulse response and spectrum by a factor.
   void ScaleFilter(float factor);
 
+  // Set the filter coefficients.
+  void SetFilter(const std::vector<FftData>& H);
+
+  // Gets the filter coefficients.
+  const std::vector<FftData>& GetFilter() const { return H_; }
+
  private:
   // Constrain the filter partitions in a cyclic manner.
   void Constrain();

@@ -52,6 +52,7 @@ TEST(AecState, NormalUsage) {
       GetTimeDomainLength(config.filter.main.length_blocks), 0.f);
 
   // Verify that linear AEC usability is false when the filter is diverged.
+  output.UpdatePowers(y);
   state.Update(delay_estimate, diverged_filter_frequency_response,
                impulse_response, *render_delay_buffer->GetRenderBuffer(),
                E2_main, Y2, output, y);
@@ -61,6 +62,7 @@ TEST(AecState, NormalUsage) {
   std::fill(x[0].begin(), x[0].end(), 101.f);
   for (int k = 0; k < 3000; ++k) {
     render_delay_buffer->Insert(x);
+    output.UpdatePowers(y);
     state.Update(delay_estimate, converged_filter_frequency_response,
                  impulse_response, *render_delay_buffer->GetRenderBuffer(),
                  E2_main, Y2, output, y);
@@ -69,6 +71,7 @@ TEST(AecState, NormalUsage) {
 
   // Verify that linear AEC usability becomes false after an echo path change is
   // reported
+  output.UpdatePowers(y);
   state.HandleEchoPathChange(EchoPathVariability(
       false, EchoPathVariability::DelayAdjustment::kBufferReadjustment, false));
   state.Update(delay_estimate, converged_filter_frequency_response,
@@ -79,6 +82,7 @@ TEST(AecState, NormalUsage) {
   // Verify that the active render detection works as intended.
   std::fill(x[0].begin(), x[0].end(), 101.f);
   render_delay_buffer->Insert(x);
+  output.UpdatePowers(y);
   state.HandleEchoPathChange(EchoPathVariability(
       true, EchoPathVariability::DelayAdjustment::kNewDetectedDelay, false));
   state.Update(delay_estimate, converged_filter_frequency_response,
@@ -88,6 +92,7 @@ TEST(AecState, NormalUsage) {
 
   for (int k = 0; k < 1000; ++k) {
     render_delay_buffer->Insert(x);
+    output.UpdatePowers(y);
     state.Update(delay_estimate, converged_filter_frequency_response,
                  impulse_response, *render_delay_buffer->GetRenderBuffer(),
                  E2_main, Y2, output, y);
@@ -111,6 +116,7 @@ TEST(AecState, NormalUsage) {
 
   Y2.fill(10.f * 10000.f * 10000.f);
   for (size_t k = 0; k < 1000; ++k) {
+    output.UpdatePowers(y);
     state.Update(delay_estimate, converged_filter_frequency_response,
                  impulse_response, *render_delay_buffer->GetRenderBuffer(),
                  E2_main, Y2, output, y);
@@ -128,6 +134,7 @@ TEST(AecState, NormalUsage) {
   E2_main.fill(1.f * 10000.f * 10000.f);
   Y2.fill(10.f * E2_main[0]);
   for (size_t k = 0; k < 1000; ++k) {
+    output.UpdatePowers(y);
     state.Update(delay_estimate, converged_filter_frequency_response,
                  impulse_response, *render_delay_buffer->GetRenderBuffer(),
                  E2_main, Y2, output, y);
@@ -149,6 +156,7 @@ TEST(AecState, NormalUsage) {
   E2_main.fill(1.f * 10000.f * 10000.f);
   Y2.fill(5.f * E2_main[0]);
   for (size_t k = 0; k < 1000; ++k) {
+    output.UpdatePowers(y);
     state.Update(delay_estimate, converged_filter_frequency_response,
                  impulse_response, *render_delay_buffer->GetRenderBuffer(),
                  E2_main, Y2, output, y);
@@ -203,6 +211,7 @@ TEST(AecState, ConvergedFilterDelay) {
     impulse_response[k * kBlockSize + 1] = 1.f;
 
     state.HandleEchoPathChange(echo_path_variability);
+    output.UpdatePowers(y);
     state.Update(delay_estimate, frequency_response, impulse_response,
                  *render_delay_buffer->GetRenderBuffer(), E2_main, Y2, output,
                  y);
