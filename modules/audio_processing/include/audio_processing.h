@@ -56,9 +56,6 @@ class NoiseSuppression;
 class CustomProcessing;
 class VoiceDetection;
 
-// webrtc:8665, addedd temporarily to avoid breaking dependencies.
-typedef CustomProcessing PostProcessing;
-
 // Use to enable the extended filter mode in the AEC, along with robustness
 // measures around the reported system delays. It comes with a significant
 // increase in AEC complexity, but is much more robust to unreliable reported
