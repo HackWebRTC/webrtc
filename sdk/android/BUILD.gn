@@ -1366,7 +1366,6 @@ if (is_android) {
       ":native_api_jni",
       ":native_api_peerconnection",
       ":native_api_video",
-      ":native_unittests_java",
       ":opensles_audio_device_module",
       ":video_jni",
       "../../system_wrappers:system_wrappers",
