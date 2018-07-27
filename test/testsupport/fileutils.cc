@@ -44,7 +44,6 @@
 
 #include "rtc_base/checks.h"
 #include "rtc_base/stringutils.h"
-#include "rtc_base/system/arch.h"
 
 namespace webrtc {
 namespace test {
@@ -326,31 +325,14 @@ std::string ResourcePath(const std::string& name,
   platform = "android";
 #endif  // WEBRTC_ANDROID
 
-#ifdef WEBRTC_ARCH_64_BITS
-  std::string architecture = "64";
-#else
-  std::string architecture = "32";
-#endif  // WEBRTC_ARCH_64_BITS
-
   std::string resources_path =
       ProjectRootPath() + kResourcesDirName + kPathDelimiter;
-  std::string resource_file = resources_path + name + "_" + platform + "_" +
-                              architecture + "." + extension;
+  std::string resource_file =
+      resources_path + name + "_" + platform + "." + extension;
   if (FileExists(resource_file)) {
     return resource_file;
   }
-  // Try without architecture.
-  resource_file = resources_path + name + "_" + platform + "." + extension;
-  if (FileExists(resource_file)) {
-    return resource_file;
-  }
-  // Try without platform.
-  resource_file = resources_path + name + "_" + architecture + "." + extension;
-  if (FileExists(resource_file)) {
-    return resource_file;
-  }
-
-  // Fall back on name without architecture or platform.
+  // Fall back on name without platform.
   return resources_path + name + "." + extension;
 #endif  // defined (WEBRTC_IOS)
 }
