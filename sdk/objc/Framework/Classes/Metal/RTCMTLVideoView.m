@@ -92,6 +92,10 @@
 #endif
 }
 
++ (MTKView *)createMetalView:(CGRect)frame {
+  return [[MTKViewClass alloc] initWithFrame:frame];
+}
+
 + (RTCMTLNV12Renderer *)createNV12Renderer {
   return [[RTCMTLNV12RendererClass alloc] init];
 }
@@ -107,7 +111,7 @@
 - (void)configure {
   NSAssert([RTCMTLVideoView isMetalAvailable], @"Metal not availiable on this device");
 
-  self.metalView = [[MTKViewClass alloc] initWithFrame:self.bounds];
+  self.metalView = [RTCMTLVideoView createMetalView:self.bounds];
   self.metalView.delegate = self;
   self.metalView.contentMode = UIViewContentModeScaleAspectFill;
   [self addSubview:self.metalView];
@@ -194,12 +198,9 @@
 - (RTCVideoRotation)frameRotation {
   if (self.rotationOverride) {
     RTCVideoRotation rotation;
-#if defined(__IPHONE_11_0) && (__IPHONE_OS_VERSION_MAX_ALLOWED >= __IPHONE_11_0)
     if (@available(iOS 11, *)) {
       [self.rotationOverride getValue:&rotation size:sizeof(rotation)];
-    } else
-#endif
-    {
+    } else {
       [self.rotationOverride getValue:&rotation];
     }
     return rotation;

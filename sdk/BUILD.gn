@@ -862,7 +862,7 @@ if (is_ios || is_mac) {
       }
 
       # TODO(denicija): once all tests are migrated to xctest remove this source set.
-      rtc_source_set("sdk_unittests_objc") {
+      rtc_source_set("rtc_unittests_objc") {
         testonly = true
 
         sources = [

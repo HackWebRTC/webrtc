@@ -74,10 +74,9 @@
   return frameMock;
 }
 
-- (id)rendererMockWithSuccessfulSetup:(BOOL)sucess {
-  id rendererMock = OCMProtocolMock(@protocol(RTCMTLRenderer));
-  OCMStub([rendererMock addRenderingDestination:[OCMArg any]]).andReturn(sucess);
-
+- (id)rendererMockWithSuccessfulSetup:(BOOL)success {
+  id rendererMock = OCMClassMock([RTCMTLRenderer class]);
+  OCMStub([rendererMock addRenderingDestination:[OCMArg any]]).andReturn(success);
   return rendererMock;
 }
 

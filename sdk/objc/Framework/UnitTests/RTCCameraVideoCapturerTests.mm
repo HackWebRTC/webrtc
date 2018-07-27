@@ -194,13 +194,7 @@ CMSampleBufferRef createTestSampleBufferRef() {
 
 - (void)testDelegateCallbackWithValidBufferAndOrientationUpdate {
 #if TARGET_OS_IPHONE
-  // given
-  UIDevice *currentDeviceMock = OCMClassMock([UIDevice class]);
-  // UpsideDown -> RTCVideoRotation_270.
-  OCMStub(currentDeviceMock.orientation).andReturn(UIDeviceOrientationPortraitUpsideDown);
-  id classMock = OCMClassMock([UIDevice class]);
-  OCMStub([classMock currentDevice]).andReturn(currentDeviceMock);
-
+  [UIDevice.currentDevice setValue:@(UIDeviceOrientationPortraitUpsideDown) forKey:@"orientation"];
   CMSampleBufferRef sampleBuffer = createTestSampleBufferRef();
 
   // then
@@ -222,11 +216,6 @@ CMSampleBufferRef createTestSampleBufferRef() {
                 fromConnection:self.captureConnectionMock];
 
   [self.delegateMock verify];
-
-  [(id)currentDeviceMock stopMocking];
-  currentDeviceMock = nil;
-  [classMock stopMocking];
-  classMock = nil;
   CFRelease(sampleBuffer);
 #endif
 }
@@ -246,11 +235,7 @@ CMSampleBufferRef createTestSampleBufferRef() {
   OCMStub(inputPortMock.device).andReturn(captureDeviceMock);
   OCMStub(captureDeviceMock.position).andReturn(camera);
 
-  // UpsideDown -> RTCVideoRotation_0.
-  UIDevice *currentDeviceMock = OCMClassMock([UIDevice class]);
-  OCMStub(currentDeviceMock.orientation).andReturn(deviceOrientation);
-  id classMock = OCMClassMock([UIDevice class]);
-  OCMStub([classMock currentDevice]).andReturn(currentDeviceMock);
+  [UIDevice.currentDevice setValue:@(deviceOrientation) forKey:@"orientation"];
 
   CMSampleBufferRef sampleBuffer = createTestSampleBufferRef();
 
@@ -284,10 +269,6 @@ CMSampleBufferRef createTestSampleBufferRef() {
 
   [self.delegateMock verify];
 
-  [(id)currentDeviceMock stopMocking];
-  currentDeviceMock = nil;
-  [classMock stopMocking];
-  classMock = nil;
   CFRelease(sampleBuffer);
 #endif
 }
@@ -312,11 +293,7 @@ CMSampleBufferRef createTestSampleBufferRef() {
   OCMStub(inputPortMock.device).andReturn(captureDeviceMock);
   OCMStub(captureDeviceMock.position).andReturn(AVCaptureDevicePositionFront);
 
-  // UpsideDown -> RTCVideoRotation_0.
-  UIDevice *currentDeviceMock = OCMClassMock([UIDevice class]);
-  OCMStub(currentDeviceMock.orientation).andReturn(UIDeviceOrientationLandscapeLeft);
-  id classMock = OCMClassMock([UIDevice class]);
-  OCMStub([classMock currentDevice]).andReturn(currentDeviceMock);
+  [UIDevice.currentDevice setValue:@(UIDeviceOrientationLandscapeLeft) forKey:@"orientation"];
 
   CMSampleBufferRef sampleBuffer = createTestSampleBufferRef();
 
@@ -341,11 +318,6 @@ CMSampleBufferRef createTestSampleBufferRef() {
                 fromConnection:self.captureConnectionMock];
 
   [self.delegateMock verify];
-
-  [(id)currentDeviceMock stopMocking];
-  currentDeviceMock = nil;
-  [classMock stopMocking];
-  classMock = nil;
   CFRelease(sampleBuffer);
 #endif
 }
