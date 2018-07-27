@@ -26,11 +26,7 @@
       "os": "10.3.3",
       "dimensions": [
         {
-          "os": "Mac-10.12",
-          "pool": "Chrome"
-        },
-        {
-          "os": "Mac-10.13.3",
+          "os": "Mac",
           "pool": "Chrome"
         }
       ]
