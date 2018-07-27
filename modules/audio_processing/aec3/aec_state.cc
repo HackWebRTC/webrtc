@@ -45,6 +45,14 @@ bool EnableLinearModeWithDivergedFilter() {
       "WebRTC-Aec3LinearModeWithDivergedFilterKillSwitch");
 }
 
+bool EnableEarlyFilterUsage() {
+  return !field_trial::IsEnabled("WebRTC-Aec3EarlyLinearFilterUsageKillSwitch");
+}
+
+bool EnableShortInitialState() {
+  return !field_trial::IsEnabled("WebRTC-Aec3ShortInitialStateKillSwitch");
+}
+
 float ComputeGainRampupIncrease(const EchoCanceller3Config& config) {
   const auto& c = config.echo_removal_control.gain_rampup;
   return powf(1.f / c.first_non_zero_gain, 1.f / c.non_zero_gain_blocks);
@@ -68,6 +76,8 @@ AecState::AecState(const EchoCanceller3Config& config)
       enforce_delay_after_realignment_(EnableEnforcingDelayAfterRealignment()),
       allow_linear_mode_with_diverged_filter_(
           EnableLinearModeWithDivergedFilter()),
+      early_filter_usage_activated_(EnableEarlyFilterUsage()),
+      use_short_initial_state_(EnableShortInitialState()),
       erle_estimator_(config.erle.min, config.erle.max_l, config.erle.max_h),
       max_render_(config_.filter.main.length_blocks, 0.f),
       gain_rampup_increase_(ComputeGainRampupIncrease(config_)),
@@ -190,8 +200,14 @@ void AecState::Update(
     echo_saturation_ = DetectEchoSaturation(x, EchoPathGain());
   }
 
-  bool filter_has_had_time_to_converge =
-      blocks_with_proper_filter_adaptation_ >= 1.5f * kNumBlocksPerSecond;
+  bool filter_has_had_time_to_converge;
+  if (early_filter_usage_activated_) {
+    filter_has_had_time_to_converge =
+        blocks_with_proper_filter_adaptation_ >= 0.8f * kNumBlocksPerSecond;
+  } else {
+    filter_has_had_time_to_converge =
+        blocks_with_proper_filter_adaptation_ >= 1.5f * kNumBlocksPerSecond;
+  }
 
   if (!filter_should_have_converged_) {
     filter_should_have_converged_ =
@@ -199,8 +215,13 @@ void AecState::Update(
   }
 
   // Flag whether the initial state is still active.
-  initial_state_ =
-      blocks_with_proper_filter_adaptation_ < 5 * kNumBlocksPerSecond;
+  if (use_short_initial_state_) {
+    initial_state_ =
+        blocks_with_proper_filter_adaptation_ < 2.5f * kNumBlocksPerSecond;
+  } else {
+    initial_state_ =
+        blocks_with_proper_filter_adaptation_ < 5 * kNumBlocksPerSecond;
+  }
 
   // Update counters for the filter divergence and convergence.
   diverged_blocks_ = diverged_filter ? diverged_blocks_ + 1 : 0;

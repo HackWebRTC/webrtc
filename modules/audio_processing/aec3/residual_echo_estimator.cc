@@ -30,6 +30,11 @@ bool OverrideEstimatedEchoPathGain() {
   return !field_trial::IsEnabled("WebRTC-Aec3OverrideEchoPathGainKillSwitch");
 }
 
+bool UseFixedNonLinearReverbModel() {
+  return field_trial::IsEnabled(
+      "WebRTC-Aec3StandardNonlinearReverbModelKillSwitch");
+}
+
 // Computes the indexes that will be used for computing spectral power over
 // the blocks surrounding the delay.
 void GetRenderIndexesToAnalyze(
@@ -74,7 +79,8 @@ void GetRenderIndexesToAnalyze(
 ResidualEchoEstimator::ResidualEchoEstimator(const EchoCanceller3Config& config)
     : config_(config),
       soft_transparent_mode_(EnableSoftTransparentMode()),
-      override_estimated_echo_path_gain_(OverrideEstimatedEchoPathGain()) {
+      override_estimated_echo_path_gain_(OverrideEstimatedEchoPathGain()),
+      use_fixed_nonlinear_reverb_model_(UseFixedNonLinearReverbModel()) {
   if (config_.ep_strength.reverb_based_on_render) {
     echo_reverb_.reset(new ReverbModel());
   } else {
@@ -230,18 +236,20 @@ void ResidualEchoEstimator::NonLinearEstimate(
     return a * echo_path_gain * echo_path_gain;
   });
 
-  for (size_t k = 0; k < R2->size(); ++k) {
-    // Update hold counter.
-    R2_hold_counter_[k] = R2_old_[k] < (*R2)[k] ? 0 : R2_hold_counter_[k] + 1;
+  if (use_fixed_nonlinear_reverb_model_) {
+    for (size_t k = 0; k < R2->size(); ++k) {
+      // Update hold counter.
+      R2_hold_counter_[k] = R2_old_[k] < (*R2)[k] ? 0 : R2_hold_counter_[k] + 1;
 
-    // Compute the residual echo by holding a maximum echo powers and an echo
-    // fading corresponding to a room with an RT60 value of about 50 ms.
-    (*R2)[k] =
-        R2_hold_counter_[k] < config_.echo_model.nonlinear_hold
-            ? std::max((*R2)[k], R2_old_[k])
-            : std::min(
-                  (*R2)[k] + R2_old_[k] * config_.echo_model.nonlinear_release,
-                  Y2[k]);
+      // Compute the residual echo by holding a maximum echo powers and an echo
+      // fading corresponding to a room with an RT60 value of about 50 ms.
+      (*R2)[k] =
+          R2_hold_counter_[k] < config_.echo_model.nonlinear_hold
+              ? std::max((*R2)[k], R2_old_[k])
+              : std::min((*R2)[k] +
+                             R2_old_[k] * config_.echo_model.nonlinear_release,
+                         Y2[k]);
+    }
   }
 }
 
