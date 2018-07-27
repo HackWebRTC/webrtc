@@ -98,7 +98,7 @@ PeerConnectionInterface::GetReceivers() const {
 
 std::vector<rtc::scoped_refptr<RtpTransceiverInterface>>
 PeerConnectionInterface::GetTransceivers() const {
-  return {};
+  return std::vector<rtc::scoped_refptr<RtpTransceiverInterface>>();
 }
 
 const SessionDescriptionInterface*
