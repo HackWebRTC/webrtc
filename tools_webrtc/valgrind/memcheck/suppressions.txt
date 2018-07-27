@@ -326,55 +326,6 @@
    fun:_ZN23SSLStreamAdapterTestTLS12TestTransferEi
    ...
 }
-# For tests that create XMPPClient which can only be deleted by task runner.
-{
-   HangoutPubSubClientTest
-   Memcheck:Leak
-   fun:_Znw*
-   fun:_ZN*HangoutPubSubClientTest*Ev
-}
-{
-   MucRoomConfigTaskTest
-   Memcheck:Leak
-   fun:_Znw*
-   fun:_ZN21MucRoomConfigTaskTest5SetUpEv
-}
-{
-   MucRoomDiscoveryTaskTest
-   Memcheck:Leak
-   fun:_Znw*
-   fun:_ZN24MucRoomDiscoveryTaskTest5SetUpEv
-}
-{
-   MucRoomLookupTaskTest
-   Memcheck:Leak
-   fun:_Znw*
-   fun:_ZN21MucRoomLookupTaskTest5SetUpEv
-}
-{
-   MucRoomUniqueHangoutIdTaskTest
-   Memcheck:Leak
-   fun:_Znw*
-   fun:_ZN30MucRoomUniqueHangoutIdTaskTest5SetUpEv
-}
-{
-   PingTaskTest
-   Memcheck:Leak
-   fun:_Znw*
-   fun:_ZN12PingTaskTest5SetUpEv
-}
-{
-   PubSubClientTest
-   Memcheck:Leak
-   fun:_Znw*
-   fun:_ZN*PubSubClientTest*Ev
-}
-{
-   PubSubTasksTest
-   Memcheck:Leak
-   fun:_Znw*
-   fun:_ZN*PubSubTasksTest*Ev
-}
 # failures which can't be reproduced locally
 {
    bug_2153_1

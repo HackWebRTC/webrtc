@@ -58,16 +58,6 @@ char kLSanDefaultSuppressions[] =
     "leak:rtc::HttpData::changeHeader\n"
     // https://code.google.com/p/webrtc/issues/detail?id=4149 for details.
     "leak:StartDNSLookup\n"
-    // https://code.google.com/p/webrtc/issues/detail?id=2527
-    "leak:HangoutPubSubClientTest::HangoutPubSubClientTest\n"
-    "leak:MucRoomConfigTaskTest::SetUp\n"
-    "leak:MucRoomDiscoveryTaskTest::SetUp\n"
-    "leak:MucRoomLookupTaskTest::SetUp\n"
-    "leak:MucRoomUniqueHangoutIdTaskTest::SetUp\n"
-    "leak:PingTaskTest::SetUp\n"
-    "leak:PingXmppClient::SendStanza\n"
-    "leak:PubSubClientTest::PubSubClientTest\n"
-    "leak:PubSubTasksTest::PubSubTasksTest\n"
 
     // rtc_media_unittests
     "leak:cricket::FakeNetworkInterface::SetOption\n"
