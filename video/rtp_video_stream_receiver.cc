@@ -175,14 +175,6 @@ bool RtpVideoStreamReceiver::AddReceiveCodec(
   return rtp_payload_registry_.RegisterReceivePayload(video_codec) == 0;
 }
 
-uint32_t RtpVideoStreamReceiver::GetRemoteSsrc() const {
-  return config_.rtp.remote_ssrc;
-}
-
-int RtpVideoStreamReceiver::GetCsrcs(uint32_t* csrcs) const {
-  return rtp_receiver_->CSRCs(csrcs);
-}
-
 RtpReceiver* RtpVideoStreamReceiver::GetRtpReceiver() const {
   return rtp_receiver_.get();
 }

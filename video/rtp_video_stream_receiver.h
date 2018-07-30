@@ -75,9 +75,6 @@ class RtpVideoStreamReceiver : public RtpData,
 
   bool AddReceiveCodec(const VideoCodec& video_codec,
                        const std::map<std::string, std::string>& codec_params);
-  uint32_t GetRemoteSsrc() const;
-  int GetCsrcs(uint32_t* csrcs) const;
-
   RtpReceiver* GetRtpReceiver() const;
   RtpRtcp* rtp_rtcp() const { return rtp_rtcp_.get(); }
 
