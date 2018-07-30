@@ -95,10 +95,9 @@ void FilterAnalyzer::Update(
     const RenderBuffer& render_buffer) {
   // Preprocess the filter to avoid issues with low-frequency components in the
   // filter.
-  if (use_preprocessed_filter_) {
-    PreProcessFilter(filter_time_domain);
-    data_dumper_->DumpRaw("aec3_linear_filter_processed_td", h_highpass_);
-  }
+  PreProcessFilter(filter_time_domain);
+  data_dumper_->DumpRaw("aec3_linear_filter_processed_td", h_highpass_);
+
   const auto& filter_to_analyze =
       use_preprocessed_filter_ ? h_highpass_ : filter_time_domain;
   RTC_DCHECK_EQ(filter_to_analyze.size(), filter_time_domain.size());

@@ -36,6 +36,7 @@ constexpr size_t kFftLengthBy2 = 64;
 constexpr size_t kFftLengthBy2Plus1 = kFftLengthBy2 + 1;
 constexpr size_t kFftLengthBy2Minus1 = kFftLengthBy2 - 1;
 constexpr size_t kFftLength = 2 * kFftLengthBy2;
+constexpr size_t kFftLengthBy2Log2 = 6;
 
 constexpr int kMaxAdaptiveFilterLength = 50;
 constexpr int kRenderTransferQueueSizeFrames = 100;
@@ -44,7 +45,7 @@ constexpr size_t kMaxNumBands = 3;
 constexpr size_t kSubFrameLength = 80;
 
 constexpr size_t kBlockSize = kFftLengthBy2;
-constexpr size_t kBlockSizeLog2 = 6;
+constexpr size_t kBlockSizeLog2 = kFftLengthBy2Log2;
 
 constexpr size_t kExtendedBlockSize = 2 * kFftLengthBy2;
 constexpr size_t kMatchedFilterWindowSizeSubBlocks = 32;
@@ -95,6 +96,9 @@ float Log2TodB(const float in_log2);
 
 static_assert(1 << kBlockSizeLog2 == kBlockSize,
               "Proper number of shifts for blocksize");
+
+static_assert(1 << kFftLengthBy2Log2 == kFftLengthBy2,
+              "Proper number of shifts for the fft length");
 
 static_assert(1 == NumBandsForRate(8000), "Number of bands for 8 kHz");
 static_assert(1 == NumBandsForRate(16000), "Number of bands for 16 kHz");

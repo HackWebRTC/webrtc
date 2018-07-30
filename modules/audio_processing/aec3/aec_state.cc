@@ -301,14 +301,16 @@ void AecState::Update(
   use_linear_filter_output_ = usable_linear_estimate_ && !TransparentMode();
   diverged_linear_filter_ = diverged_filter;
 
+  const bool stationary_block =
+      use_stationary_properties_ && echo_audibility_.IsBlockStationary();
+
   reverb_model_estimator_.Update(
-      adaptive_filter_impulse_response, adaptive_filter_frequency_response,
+      filter_analyzer_.GetAdjustedFilter(), adaptive_filter_frequency_response,
       erle_estimator_.GetInstLinearQualityEstimate(), filter_delay_blocks_,
-      usable_linear_estimate_, config_.ep_strength.default_len,
-      IsBlockStationary());
+      usable_linear_estimate_, stationary_block);
 
   erle_estimator_.Dump(data_dumper_);
-  reverb_model_estimator_.Dump(data_dumper_);
+  reverb_model_estimator_.Dump(data_dumper_.get());
   data_dumper_->DumpRaw("aec3_erl", Erl());
   data_dumper_->DumpRaw("aec3_erl_time_domain", ErlTimeDomain());
   data_dumper_->DumpRaw("aec3_usable_linear_estimate", UsableLinearEstimate());
@@ -338,8 +340,8 @@ void AecState::Update(
                         recently_converged_filter);
   data_dumper_->DumpRaw("aec3_suppresion_gain_limiter_running",
                         IsSuppressionGainLimitActive());
-  data_dumper_->DumpRaw("aec3_filter_tail_freq_resp_est", GetFreqRespTail());
-
+  data_dumper_->DumpRaw("aec3_filter_tail_freq_resp_est",
+                        GetReverbFrequencyResponse());
 }
 
 bool AecState::DetectActiveRender(rtc::ArrayView<const float> x) const {

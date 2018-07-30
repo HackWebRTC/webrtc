@@ -67,17 +67,6 @@ class AecState {
   // aec.
   bool UseStationaryProperties() const { return use_stationary_properties_; }
 
-  // Returns true if the current render block is estimated as stationary.
-  bool IsBlockStationary() const {
-    if (UseStationaryProperties()) {
-      return echo_audibility_.IsBlockStationary();
-    } else {
-      // Assume that a non stationary block when the use of
-      // stationary properties are not enabled.
-      return false;
-    }
-  }
-
   // Returns the ERLE.
   const std::array<float, kFftLengthBy2Plus1>& Erle() const {
     return erle_estimator_.Erle();
@@ -130,6 +119,11 @@ class AecState {
   // Returns the decay factor for the echo reverberation.
   float ReverbDecay() const { return reverb_model_estimator_.ReverbDecay(); }
 
+  // Return the frequency response of the reverberant echo.
+  rtc::ArrayView<const float> GetReverbFrequencyResponse() const {
+    return reverb_model_estimator_.GetReverbFrequencyResponse();
+  }
+
   // Returns the upper limit for the echo suppression gain.
   float SuppressionGainLimit() const {
     return suppression_gain_limiter_.Limit();
@@ -158,11 +152,6 @@ class AecState {
               const std::array<float, kFftLengthBy2Plus1>& Y2,
               const SubtractorOutput& subtractor_output,
               rtc::ArrayView<const float> y);
-
-  // Returns the tail freq. response of the linear filter.
-  rtc::ArrayView<const float> GetFreqRespTail() const {
-    return reverb_model_estimator_.GetFreqRespTail();
-  }
 
   // Returns filter length in blocks.
   int FilterLengthBlocks() const {

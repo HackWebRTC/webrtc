@@ -29,16 +29,16 @@ namespace webrtc {
 class ReverbModelEstimatorTest {
  public:
   explicit ReverbModelEstimatorTest(float default_decay)
-      : default_decay_(default_decay),
-        estimated_decay_(default_decay),
-        h_(aec3_config_.filter.main.length_blocks * kBlockSize, 0.f),
-        H2_(aec3_config_.filter.main.length_blocks) {
+      : default_decay_(default_decay), estimated_decay_(default_decay) {
     aec3_config_.ep_strength.default_len = default_decay_;
+    aec3_config_.filter.main.length_blocks = 40;
+    h_.resize(aec3_config_.filter.main.length_blocks * kBlockSize);
+    H2_.resize(aec3_config_.filter.main.length_blocks);
     CreateImpulseResponseWithDecay();
   }
   void RunEstimator();
   float GetDecay() { return estimated_decay_; }
-  float GetTrueDecay() { return true_power_decay_; }
+  float GetTrueDecay() { return kTruePowerDecay; }
   float GetPowerTailDb() { return 10.f * log10(estimated_power_tail_); }
   float GetTruePowerTailDb() { return 10.f * log10(true_power_tail_); }
 
@@ -46,10 +46,10 @@ class ReverbModelEstimatorTest {
   void CreateImpulseResponseWithDecay();
 
   absl::optional<float> quality_linear_ = 1.0f;
-  static constexpr int filter_delay_blocks_ = 2;
-  static constexpr bool usable_linear_estimate_ = true;
-  static constexpr bool stationary_block_ = false;
-  static constexpr float true_power_decay_ = 0.5f;
+  static constexpr int kFilterDelayBlocks = 2;
+  static constexpr bool kUsableLinearEstimate = true;
+  static constexpr bool kStationaryBlock = false;
+  static constexpr float kTruePowerDecay = 0.5f;
   EchoCanceller3Config aec3_config_;
   float default_decay_;
   float estimated_decay_;
@@ -63,43 +63,35 @@ void ReverbModelEstimatorTest::CreateImpulseResponseWithDecay() {
   const Aec3Fft fft;
   RTC_DCHECK_EQ(h_.size(), aec3_config_.filter.main.length_blocks * kBlockSize);
   RTC_DCHECK_EQ(H2_.size(), aec3_config_.filter.main.length_blocks);
-  RTC_DCHECK_EQ(filter_delay_blocks_, 2);
-  const float peak = 1.0f;
-  float decay_power_sample = std::sqrt(true_power_decay_);
-  for (size_t k = 1; k < kBlockSizeLog2; k++) {
-    decay_power_sample = std::sqrt(decay_power_sample);
-  }
-  h_[filter_delay_blocks_ * kBlockSize] = peak;
-  for (size_t k = filter_delay_blocks_ * kBlockSize + 1; k < h_.size(); ++k) {
-    h_[k] = h_[k - 1] * std::sqrt(decay_power_sample);
+  RTC_DCHECK_EQ(kFilterDelayBlocks, 2);
+
+  float decay_sample = std::sqrt(powf(kTruePowerDecay, 1.f / kBlockSize));
+  const size_t filter_delay_coefficients = kFilterDelayBlocks * kBlockSize;
+  std::fill(h_.begin(), h_.end(), 0.f);
+  h_[filter_delay_coefficients] = 1.f;
+  for (size_t k = filter_delay_coefficients + 1; k < h_.size(); ++k) {
+    h_[k] = h_[k - 1] * decay_sample;
   }
 
-  for (size_t block = 0; block < H2_.size(); ++block) {
-    std::array<float, kFftLength> h_block;
-    h_block.fill(0.f);
-    FftData H_block;
-    rtc::ArrayView<float> H2_block(H2_[block]);
-    std::copy(h_.begin() + block * kBlockSize,
-              h_.begin() + block * (kBlockSize + 1), h_block.begin());
-
-    fft.Fft(&h_block, &H_block);
-    for (size_t k = 0; k < H2_block.size(); ++k) {
-      H2_block[k] =
-          H_block.re[k] * H_block.re[k] + H_block.im[k] * H_block.im[k];
-    }
+  std::array<float, kFftLength> fft_data;
+  FftData H_j;
+  for (size_t j = 0, k = 0; j < H2_.size(); ++j, k += kBlockSize) {
+    fft_data.fill(0.f);
+    std::copy(h_.begin() + k, h_.begin() + k + kBlockSize, fft_data.begin());
+    fft.Fft(&fft_data, &H_j);
+    H_j.Spectrum(Aec3Optimization::kNone, H2_[j]);
   }
   rtc::ArrayView<float> H2_tail(H2_[H2_.size() - 1]);
   true_power_tail_ = std::accumulate(H2_tail.begin(), H2_tail.end(), 0.f);
 }
 void ReverbModelEstimatorTest::RunEstimator() {
   ReverbModelEstimator estimator(aec3_config_);
-  for (size_t k = 0; k < 1000; ++k) {
-    estimator.Update(h_, H2_, quality_linear_, filter_delay_blocks_,
-                     usable_linear_estimate_, default_decay_,
-                     stationary_block_);
+  for (size_t k = 0; k < 3000; ++k) {
+    estimator.Update(h_, H2_, quality_linear_, kFilterDelayBlocks,
+                     kUsableLinearEstimate, kStationaryBlock);
   }
   estimated_decay_ = estimator.ReverbDecay();
-  rtc::ArrayView<const float> freq_resp_tail = estimator.GetFreqRespTail();
+  auto freq_resp_tail = estimator.GetReverbFrequencyResponse();
   estimated_power_tail_ =
       std::accumulate(freq_resp_tail.begin(), freq_resp_tail.end(), 0.f);
 }

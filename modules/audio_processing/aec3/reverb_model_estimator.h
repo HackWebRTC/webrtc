@@ -11,72 +11,49 @@
 #ifndef MODULES_AUDIO_PROCESSING_AEC3_REVERB_MODEL_ESTIMATOR_H_
 #define MODULES_AUDIO_PROCESSING_AEC3_REVERB_MODEL_ESTIMATOR_H_
 
-#include <memory>
 #include <vector>
 
 #include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/audio/echo_canceller3_config.h"
-#include "modules/audio_processing/aec3/aec3_common.h"
-#include "modules/audio_processing/logging/apm_data_dumper.h"
+#include "modules/audio_processing/aec3/reverb_decay_estimator.h"
+#include "modules/audio_processing/aec3/reverb_frequency_response.h"
 
 namespace webrtc {
 
-// The ReverbModelEstimator class describes an estimator of the parameters
-// that are used for the reverberant model.
+class ApmDataDumper;
+
+// Class for estimating the model parameters for the reverberant echo.
 class ReverbModelEstimator {
  public:
   explicit ReverbModelEstimator(const EchoCanceller3Config& config);
   ~ReverbModelEstimator();
-  // Updates the model.
-  void Update(const std::vector<float>& impulse_response,
+
+  // Updates the estimates based on new data.
+  void Update(rtc::ArrayView<const float> impulse_response,
               const std::vector<std::array<float, kFftLengthBy2Plus1>>&
-                  filter_freq_response,
-              const absl::optional<float>& quality_linear,
+                  frequency_response,
+              const absl::optional<float>& linear_filter_quality,
               int filter_delay_blocks,
               bool usable_linear_estimate,
-              float default_decay,
               bool stationary_block);
-  // Returns the decay for the exponential model.
-  float ReverbDecay() const { return reverb_decay_; }
 
-  void Dump(const std::unique_ptr<ApmDataDumper>& data_dumper);
+  // Returns the exponential decay of the reverberant echo.
+  float ReverbDecay() const { return reverb_decay_estimator_.Decay(); }
 
-  // Return the estimated freq. response of the tail of the filter.
-  rtc::ArrayView<const float> GetFreqRespTail() const {
-    return freq_resp_tail_;
+  // Return the frequency response of the reverberant echo.
+  rtc::ArrayView<const float> GetReverbFrequencyResponse() const {
+    return reverb_frequency_response_.FrequencyResponse();
+  }
+
+  // Dumps debug data.
+  void Dump(ApmDataDumper* data_dumper) const {
+    reverb_decay_estimator_.Dump(data_dumper);
   }
 
  private:
-  bool IsAGoodFilterForDecayEstimation(int filter_delay_blocks,
-                                       bool usable_linear_estimate,
-                                       size_t length_filter);
-  void UpdateReverbDecay(const std::vector<float>& impulse_response);
-
-  void UpdateFreqRespTail(
-      const std::vector<std::array<float, kFftLengthBy2Plus1>>&
-          filter_freq_response,
-      int filter_delay_blocks,
-      float alpha);
-
-  void ResetDecayEstimation();
-
-  const size_t filter_main_length_blocks_;
-
-  float accumulated_nz_ = 0.f;
-  float accumulated_nn_ = 0.f;
-  float accumulated_count_ = 0.f;
-  size_t current_reverb_decay_section_ = 0;
-  size_t num_reverb_decay_sections_ = 0;
-  size_t num_reverb_decay_sections_next_ = 0;
-  bool found_end_of_reverb_decay_ = false;
-  std::array<float, kMaxAdaptiveFilterLength> block_energies_;
-  float reverb_decay_;
-  float tail_energy_ = 0.f;
-  float alpha_ = 0.f;
-  std::array<float, kFftLengthBy2Plus1> freq_resp_tail_;
-  float ratio_tail_to_direct_path_ = 0.f;
-  bool enable_smooth_freq_resp_tail_updates_;
+  ReverbDecayEstimator reverb_decay_estimator_;
+  ReverbFrequencyResponse reverb_frequency_response_;
 };
 
 }  // namespace webrtc

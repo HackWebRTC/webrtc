@@ -113,7 +113,7 @@ void ResidualEchoEstimator::Estimate(
     if (echo_reverb_) {
       echo_reverb_->AddReverb(
           render_buffer.Spectrum(aec_state.FilterLengthBlocks() + 1),
-          aec_state.GetFreqRespTail(), aec_state.ReverbDecay(), *R2);
+          aec_state.GetReverbFrequencyResponse(), aec_state.ReverbDecay(), *R2);
 
     } else {
       RTC_DCHECK(echo_reverb_fallback);

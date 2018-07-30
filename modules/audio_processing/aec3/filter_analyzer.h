@@ -54,15 +54,13 @@ class FilterAnalyzer {
   // Returns the number of blocks for the current used filter.
   float FilterLengthBlocks() const { return filter_length_blocks_; }
 
+  // Returns the preprocessed filter.
+  rtc::ArrayView<const float> GetAdjustedFilter() const { return h_highpass_; }
+
  private:
   void UpdateFilterGain(rtc::ArrayView<const float> filter_time_domain,
                         size_t max_index);
   void PreProcessFilter(rtc::ArrayView<const float> filter_time_domain);
-
-  // Updates the estimation of the frequency response at the filter tails.
-  void UpdateFreqRespTail(
-      const std::vector<std::array<float, kFftLengthBy2Plus1>>&
-          filter_freq_response);
 
   static int instance_count_;
   std::unique_ptr<ApmDataDumper> data_dumper_;
