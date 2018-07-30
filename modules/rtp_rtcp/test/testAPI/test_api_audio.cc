@@ -57,7 +57,8 @@ void VerifyDtmf(const uint8_t* payloadData,
   EXPECT_TRUE(event < 16u || event == 32u);
   EXPECT_FALSE(reserved);
   EXPECT_EQ(volume, 10u);
-  EXPECT_LE(duration, 6560u);
+  // Long duration for answer tone events only
+  EXPECT_TRUE(duration <= 1280 || event == 32u);
 }
 
 class VerifyingAudioReceiver : public RtpData {

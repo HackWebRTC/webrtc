@@ -28,10 +28,6 @@ class RTPReceiverAudio : public RTPReceiverStrategy,
   explicit RTPReceiverAudio(RtpData* data_callback);
   ~RTPReceiverAudio() override;
 
-  // The following three methods implement the TelephoneEventHandler interface.
-  // Forward DTMFs to decoder for playout.
-  void SetTelephoneEventForwardToDecoder(bool forward_to_decoder) override;
-
   // Is TelephoneEvent configured with |payload_type|.
   bool TelephoneEventPayloadType(const int8_t payload_type) const override;
 
@@ -63,9 +59,7 @@ class RTPReceiverAudio : public RTPReceiverStrategy,
                                   size_t payload_length,
                                   const AudioPayload& audio_specific);
 
-  bool telephone_event_forward_to_decoder_;
   int8_t telephone_event_payload_type_;
-  std::set<uint8_t> telephone_event_reported_;
 
   int8_t cng_nb_payload_type_;
   int8_t cng_wb_payload_type_;

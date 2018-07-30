@@ -529,7 +529,6 @@ Channel::Channel(ProcessThread* module_process_thread,
           RtpReceiver::CreateAudioReceiver(Clock::GetRealTimeClock(),
                                            this,
                                            rtp_payload_registry_.get())),
-      telephone_event_handler_(rtp_receiver_->GetTelephoneEventHandler()),
       _outputAudioLevel(),
       _timeStamp(0),  // This is just an offset, RTP module will add it's own
                       // random offset
@@ -616,7 +615,6 @@ void Channel::Init() {
   // disabled by the user.
   // After StopListen (when no sockets exists), RTCP packets will no longer
   // be transmitted since the Transport object will then be invalid.
-  telephone_event_handler_->SetTelephoneEventForwardToDecoder(true);
   // RTCP is enabled by default.
   _rtpRtcpModule->SetRTCPStatus(RtcpMode::kCompound);
 

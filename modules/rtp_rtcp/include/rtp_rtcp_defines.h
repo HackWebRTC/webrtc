@@ -24,7 +24,6 @@
 
 #define RTCP_CNAME_SIZE 256  // RFC 3550 page 44, including null termination
 #define IP_PACKET_SIZE 1500  // we assume ethernet
-#define MAX_NUMBER_OF_PARALLEL_TELEPHONE_EVENTS 10
 
 namespace webrtc {
 namespace rtcp {

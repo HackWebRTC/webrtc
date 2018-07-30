@@ -25,10 +25,6 @@ class TelephoneEventHandler {
  public:
   virtual ~TelephoneEventHandler() {}
 
-  // The following three methods implement the TelephoneEventHandler interface.
-  // Forward DTMFs to decoder for playout.
-  virtual void SetTelephoneEventForwardToDecoder(bool forward_to_decoder) = 0;
-
   // Is TelephoneEvent configured with payload type payload_type
   virtual bool TelephoneEventPayloadType(const int8_t payload_type) const = 0;
 };
