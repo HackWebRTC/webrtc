@@ -371,24 +371,13 @@ int VideoReceiveStream::id() const {
 
 absl::optional<Syncable::Info> VideoReceiveStream::GetInfo() const {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&module_process_sequence_checker_);
-  Syncable::Info info;
+  absl::optional<Syncable::Info> info =
+      rtp_video_stream_receiver_.GetSyncInfo();
 
-  RtpReceiver* rtp_receiver = rtp_video_stream_receiver_.GetRtpReceiver();
-  RTC_DCHECK(rtp_receiver);
-  if (!rtp_receiver->GetLatestTimestamps(
-          &info.latest_received_capture_timestamp,
-          &info.latest_receive_time_ms))
+  if (!info)
     return absl::nullopt;
 
-  RtpRtcp* rtp_rtcp = rtp_video_stream_receiver_.rtp_rtcp();
-  RTC_DCHECK(rtp_rtcp);
-  if (rtp_rtcp->RemoteNTP(&info.capture_time_ntp_secs,
-                          &info.capture_time_ntp_frac, nullptr, nullptr,
-                          &info.capture_time_source_clock) != 0) {
-    return absl::nullopt;
-  }
-
-  info.current_delay_ms = video_receiver_.Delay();
+  info->current_delay_ms = video_receiver_.Delay();
   return info;
 }
 
