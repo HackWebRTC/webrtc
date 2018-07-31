@@ -92,7 +92,6 @@ class VideoQualityTestFixtureInterface {
       bool infer_streams;
     } ss[2];
     struct Logging {
-      bool logs;
       std::string rtc_event_log_name;
       std::string rtp_dump_name;
       std::string encoded_frame_base_path;

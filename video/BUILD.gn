@@ -270,6 +270,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":video_quality_test",
+      "../rtc_base:logging",
       "../rtc_base:rtc_base_approved",
       "../system_wrappers:field_trial_default",
       "../system_wrappers:metrics_default",
@@ -296,6 +297,7 @@ if (rtc_include_tests) {
 
     deps = [
       ":video_quality_test",
+      "../rtc_base:logging",
       "../rtc_base:rtc_base_approved",
       "../system_wrappers:field_trial_default",
       "../system_wrappers:metrics_default",
@@ -321,6 +323,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":video_quality_test",
+      "../rtc_base:logging",
       "../rtc_base:rtc_base_approved",
       "../system_wrappers:field_trial_default",
       "../system_wrappers:metrics_default",

@@ -56,8 +56,8 @@ struct ParamsWithLogging : public VideoQualityTest::Params {
  public:
   ParamsWithLogging() {
     // Use these logging flags by default, for everything.
-    logging = {flags::FLAG_logs, flags::RtcEventLogName(),
-               flags::RtpDumpName(), flags::EncodedFramePath()};
+    logging = {flags::RtcEventLogName(), flags::RtpDumpName(),
+               flags::EncodedFramePath()};
   }
 };
 
