@@ -10,8 +10,7 @@
 
 #include "modules/audio_processing/transient/moving_moments.h"
 
-#include <math.h>
-#include <string.h>
+#include <cmath>
 
 #include "rtc_base/checks.h"
 
@@ -44,7 +43,7 @@ void MovingMoments::CalculateMoments(const float* in,
     sum_ += in[i] - old_value;
     sum_of_squares_ += in[i] * in[i] - old_value * old_value;
     first[i] = sum_ / length_;
-    second[i] = sum_of_squares_ / length_;
+    second[i] = std::max(0.f, sum_of_squares_ / length_);
   }
 }
 
