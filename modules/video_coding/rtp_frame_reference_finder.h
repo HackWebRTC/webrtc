@@ -60,7 +60,7 @@ class RtpFrameReferenceFinder {
   static const uint16_t kPicIdLength = 1 << 15;
   static const uint8_t kMaxTemporalLayers = 5;
   static const int kMaxLayerInfo = 50;
-  static const int kMaxStashedFrames = 50;
+  static const int kMaxStashedFrames = 100;
   static const int kMaxNotYetReceivedFrames = 100;
   static const int kMaxGofSaved = 50;
   static const int kMaxPaddingAge = 100;
