@@ -10,6 +10,7 @@
 #ifndef MODULES_RTP_RTCP_SOURCE_RTP_VIDEO_HEADER_H_
 #define MODULES_RTP_RTCP_SOURCE_RTP_VIDEO_HEADER_H_
 
+#include "absl/container/inlined_vector.h"
 #include "absl/types/variant.h"
 #include "api/video/video_content_type.h"
 #include "api/video/video_rotation.h"
@@ -26,6 +27,8 @@ using RTPVideoTypeHeader =
 struct RTPVideoHeader {
   RTPVideoHeader();
   RTPVideoHeader(const RTPVideoHeader& other);
+
+  ~RTPVideoHeader();
 
   // TODO(philipel): Remove when downstream projects have been updated.
   RTPVideoHeaderVP8& vp8() {
@@ -70,15 +73,23 @@ struct RTPVideoHeader {
     return absl::get<RTPVideoHeaderH264>(video_type_header);
   }
 
-  uint16_t width;
-  uint16_t height;
-  VideoRotation rotation;
+  // Information for generic codec descriptor.
+  int64_t frame_id = 0;
+  int spatial_index = 0;
+  int temporal_index = 0;
+  absl::InlinedVector<int64_t, 5> dependencies;
+  absl::InlinedVector<int, 5> higher_spatial_layers;
+
+  uint16_t width = 0;
+  uint16_t height = 0;
+  VideoRotation rotation = VideoRotation::kVideoRotation_0;
+  VideoContentType content_type = VideoContentType::UNSPECIFIED;
+  bool is_first_packet_in_frame = false;
+  uint8_t simulcastIdx = 0;
+  VideoCodecType codec = VideoCodecType::kVideoCodecUnknown;
+
   PlayoutDelay playout_delay;
-  VideoContentType content_type;
   VideoSendTiming video_timing;
-  bool is_first_packet_in_frame;
-  uint8_t simulcastIdx;
-  VideoCodecType codec;
   // TODO(philipel): remove mutable when downstream projects have been updated.
   mutable RTPVideoTypeHeader video_type_header;
 };

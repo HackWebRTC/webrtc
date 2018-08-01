@@ -12,16 +12,8 @@
 
 namespace webrtc {
 
-RTPVideoHeader::RTPVideoHeader()
-    : width(),
-      height(),
-      rotation(),
-      playout_delay(),
-      content_type(),
-      video_timing(),
-      is_first_packet_in_frame(),
-      simulcastIdx(),
-      codec() {}
+RTPVideoHeader::RTPVideoHeader() : playout_delay(), video_timing() {}
 RTPVideoHeader::RTPVideoHeader(const RTPVideoHeader& other) = default;
+RTPVideoHeader::~RTPVideoHeader() = default;
 
 }  // namespace webrtc

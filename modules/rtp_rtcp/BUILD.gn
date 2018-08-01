@@ -267,6 +267,7 @@ rtc_source_set("rtp_video_header") {
     "../../:webrtc_common",
     "../../api/video:video_frame",
     "../../modules/video_coding:codec_globals_headers",
+    "//third_party/abseil-cpp/absl/container:inlined_vector",
     "//third_party/abseil-cpp/absl/types:variant",
   ]
 }
