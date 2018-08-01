@@ -686,6 +686,13 @@ rtc_source_set("isac_fix_c") {
 
   if (rtc_build_with_neon) {
     deps += [ ":isac_neon" ]
+
+    # TODO(bugs.webrtc.org/9579): Consider moving the usage of NEON from
+    # pitch_estimator_c.c into the "isac_neon" target and delete this flag:
+    if (current_cpu != "arm64") {
+      suppressed_configs += [ "//build/config/compiler:compiler_arm_fpu" ]
+      cflags = [ "-mfpu=neon" ]
+    }
   }
 
   if (current_cpu == "arm" && arm_version >= 7) {
@@ -733,9 +740,7 @@ if (rtc_build_with_neon) {
     ]
 
     if (current_cpu != "arm64") {
-      # Enable compilation for the NEON instruction set. This is needed
-      # since //build/config/arm.gni only enables NEON for iOS, not Android.
-      # This provides the same functionality as webrtc/build/arm_neon.gypi.
+      # Enable compilation for the NEON instruction set.
       suppressed_configs += [ "//build/config/compiler:compiler_arm_fpu" ]
       cflags = [ "-mfpu=neon" ]
     }
