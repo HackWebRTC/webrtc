@@ -267,6 +267,7 @@ class PeerConnection : public PeerConnectionInternal,
   void ReturnHistogramVeryQuicklyForTesting() {
     return_histogram_very_quickly_ = true;
   }
+  void RequestUsagePatternReportForTesting();
 
  protected:
   ~PeerConnection() override;
@@ -914,6 +915,9 @@ class PeerConnection : public PeerConnectionInternal,
       const std::string& mid,
       RtpTransportInternal* rtp_transport,
       cricket::DtlsTransportInternal* dtls_transport) override;
+
+  // Returns the observer. Will crash on CHECK if the observer is removed.
+  PeerConnectionObserver* Observer() const;
 
   sigslot::signal1<DataChannel*> SignalDataChannelCreated_;
 

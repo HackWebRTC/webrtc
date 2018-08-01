@@ -1130,7 +1130,7 @@ bool PeerConnection::AddStream(MediaStreamInterface* local_stream) {
   }
 
   stats_->AddStream(local_stream);
-  observer_->OnRenegotiationNeeded();
+  Observer()->OnRenegotiationNeeded();
   return true;
 }
 
@@ -1159,7 +1159,7 @@ void PeerConnection::RemoveStream(MediaStreamInterface* local_stream) {
   if (IsClosed()) {
     return;
   }
-  observer_->OnRenegotiationNeeded();
+  Observer()->OnRenegotiationNeeded();
 }
 
 RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>> PeerConnection::AddTrack(
@@ -1187,7 +1187,7 @@ RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>> PeerConnection::AddTrack(
       (IsUnifiedPlan() ? AddTrackUnifiedPlan(track, stream_ids)
                        : AddTrackPlanB(track, stream_ids));
   if (sender_or_error.ok()) {
-    observer_->OnRenegotiationNeeded();
+    Observer()->OnRenegotiationNeeded();
     stats_->AddTrack(track);
   }
   return sender_or_error;
@@ -1333,7 +1333,7 @@ RTCError PeerConnection::RemoveTrackNew(
           "Couldn't find sender " + sender->id() + " to remove.");
     }
   }
-  observer_->OnRenegotiationNeeded();
+  Observer()->OnRenegotiationNeeded();
   return RTCError::OK();
 }
 
@@ -1423,7 +1423,7 @@ PeerConnection::AddTransceiver(
   transceiver->internal()->set_direction(init.direction);
 
   if (fire_callback) {
-    observer_->OnRenegotiationNeeded();
+    Observer()->OnRenegotiationNeeded();
   }
 
   return rtc::scoped_refptr<RtpTransceiverInterface>(transceiver);
@@ -1498,7 +1498,7 @@ PeerConnection::CreateAndAddTransceiver(
 void PeerConnection::OnNegotiationNeeded() {
   RTC_DCHECK_RUN_ON(signaling_thread());
   RTC_DCHECK(!IsClosed());
-  observer_->OnRenegotiationNeeded();
+  Observer()->OnRenegotiationNeeded();
 }
 
 rtc::scoped_refptr<RtpSenderInterface> PeerConnection::CreateSender(
@@ -1723,7 +1723,7 @@ rtc::scoped_refptr<DataChannelInterface> PeerConnection::CreateDataChannel(
   // Trigger the onRenegotiationNeeded event for every new RTP DataChannel, or
   // the first SCTP DataChannel.
   if (data_channel_type() == cricket::DCT_RTP || first_datachannel) {
-    observer_->OnRenegotiationNeeded();
+    Observer()->OnRenegotiationNeeded();
   }
   NoteUsageEvent(UsageEvent::DATA_ADDED);
   return DataChannelProxy::Create(signaling_thread(), channel.get());
@@ -2082,11 +2082,12 @@ RTCError PeerConnection::ApplyLocalDescription(
         transceiver->internal()->set_fired_direction(media_desc->direction());
       }
     }
+    auto observer = Observer();
     for (auto transceiver : remove_list) {
-      observer_->OnRemoveTrack(transceiver->receiver());
+      observer->OnRemoveTrack(transceiver->receiver());
     }
     for (auto stream : removed_streams) {
-      observer_->OnRemoveStream(stream);
+      observer->OnRemoveStream(stream);
     }
   } else {
     // Media channels will be created only when offer is set. These may use new
@@ -2488,20 +2489,21 @@ RTCError PeerConnection::ApplyRemoteDescription(
       }
     }
     // Once all processing has finished, fire off callbacks.
+    auto observer = Observer();
     for (auto transceiver : now_receiving_transceivers) {
       stats_->AddTrack(transceiver->receiver()->track());
-      observer_->OnTrack(transceiver);
-      observer_->OnAddTrack(transceiver->receiver(),
-                            transceiver->receiver()->streams());
+      observer->OnTrack(transceiver);
+      observer->OnAddTrack(transceiver->receiver(),
+                           transceiver->receiver()->streams());
     }
     for (auto stream : added_streams) {
-      observer_->OnAddStream(stream);
+      observer->OnAddStream(stream);
     }
     for (auto transceiver : remove_list) {
-      observer_->OnRemoveTrack(transceiver->receiver());
+      observer->OnRemoveTrack(transceiver->receiver());
     }
     for (auto stream : removed_streams) {
-      observer_->OnRemoveStream(stream);
+      observer->OnRemoveStream(stream);
     }
   }
 
@@ -2576,10 +2578,11 @@ RTCError PeerConnection::ApplyRemoteDescription(
     }
 
     // Iterate new_streams and notify the observer about new MediaStreams.
+    auto observer = Observer();
     for (size_t i = 0; i < new_streams->count(); ++i) {
       MediaStreamInterface* new_stream = new_streams->at(i);
       stats_->AddStream(new_stream);
-      observer_->OnAddStream(
+      observer->OnAddStream(
           rtc::scoped_refptr<MediaStreamInterface>(new_stream));
     }
 
@@ -3308,6 +3311,9 @@ void PeerConnection::Close() {
     event_log_.reset();
   });
   ReportUsagePattern();
+  // The .h file says that observer can be discarded after close() returns.
+  // Make sure this is true.
+  observer_ = nullptr;
 }
 
 void PeerConnection::OnMessage(rtc::Message* msg) {
@@ -3391,7 +3397,7 @@ void PeerConnection::CreateAudioReceiver(
   auto receiver = RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
       signaling_thread(), audio_receiver);
   GetAudioTransceiver()->internal()->AddReceiver(receiver);
-  observer_->OnAddTrack(receiver, std::move(streams));
+  Observer()->OnAddTrack(receiver, std::move(streams));
   NoteUsageEvent(UsageEvent::AUDIO_ADDED);
 }
 
@@ -3409,7 +3415,7 @@ void PeerConnection::CreateVideoReceiver(
   auto receiver = RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
       signaling_thread(), video_receiver);
   GetVideoTransceiver()->internal()->AddReceiver(receiver);
-  observer_->OnAddTrack(receiver, std::move(streams));
+  Observer()->OnAddTrack(receiver, std::move(streams));
   NoteUsageEvent(UsageEvent::VIDEO_ADDED);
 }
 
@@ -3531,7 +3537,7 @@ void PeerConnection::SetIceConnectionState(IceConnectionState new_state) {
              PeerConnectionInterface::kIceConnectionClosed);
 
   ice_connection_state_ = new_state;
-  observer_->OnIceConnectionChange(ice_connection_state_);
+  Observer()->OnIceConnectionChange(ice_connection_state_);
 }
 
 void PeerConnection::OnIceGatheringChange(
@@ -3541,7 +3547,7 @@ void PeerConnection::OnIceGatheringChange(
     return;
   }
   ice_gathering_state_ = new_state;
-  observer_->OnIceGatheringChange(ice_gathering_state_);
+  Observer()->OnIceGatheringChange(ice_gathering_state_);
 }
 
 void PeerConnection::OnIceCandidate(
@@ -3555,7 +3561,7 @@ void PeerConnection::OnIceCandidate(
       candidate->candidate().address().IsPrivateIP()) {
     NoteUsageEvent(UsageEvent::PRIVATE_CANDIDATE_COLLECTED);
   }
-  observer_->OnIceCandidate(candidate.get());
+  Observer()->OnIceCandidate(candidate.get());
 }
 
 void PeerConnection::OnIceCandidatesRemoved(
@@ -3564,7 +3570,7 @@ void PeerConnection::OnIceCandidatesRemoved(
   if (IsClosed()) {
     return;
   }
-  observer_->OnIceCandidatesRemoved(candidates);
+  Observer()->OnIceCandidatesRemoved(candidates);
 }
 
 void PeerConnection::ChangeSignalingState(
@@ -3580,13 +3586,13 @@ void PeerConnection::ChangeSignalingState(
   signaling_state_ = signaling_state;
   if (signaling_state == kClosed) {
     ice_connection_state_ = kIceConnectionClosed;
-    observer_->OnIceConnectionChange(ice_connection_state_);
+    Observer()->OnIceConnectionChange(ice_connection_state_);
     if (ice_gathering_state_ != kIceGatheringComplete) {
       ice_gathering_state_ = kIceGatheringComplete;
-      observer_->OnIceGatheringChange(ice_gathering_state_);
+      Observer()->OnIceGatheringChange(ice_gathering_state_);
     }
   }
-  observer_->OnSignalingChange(signaling_state_);
+  Observer()->OnSignalingChange(signaling_state_);
 }
 
 void PeerConnection::OnAudioTrackAdded(AudioTrackInterface* track,
@@ -3595,7 +3601,7 @@ void PeerConnection::OnAudioTrackAdded(AudioTrackInterface* track,
     return;
   }
   AddAudioTrack(track, stream);
-  observer_->OnRenegotiationNeeded();
+  Observer()->OnRenegotiationNeeded();
 }
 
 void PeerConnection::OnAudioTrackRemoved(AudioTrackInterface* track,
@@ -3604,7 +3610,7 @@ void PeerConnection::OnAudioTrackRemoved(AudioTrackInterface* track,
     return;
   }
   RemoveAudioTrack(track, stream);
-  observer_->OnRenegotiationNeeded();
+  Observer()->OnRenegotiationNeeded();
 }
 
 void PeerConnection::OnVideoTrackAdded(VideoTrackInterface* track,
@@ -3613,7 +3619,7 @@ void PeerConnection::OnVideoTrackAdded(VideoTrackInterface* track,
     return;
   }
   AddVideoTrack(track, stream);
-  observer_->OnRenegotiationNeeded();
+  Observer()->OnRenegotiationNeeded();
 }
 
 void PeerConnection::OnVideoTrackRemoved(VideoTrackInterface* track,
@@ -3622,7 +3628,7 @@ void PeerConnection::OnVideoTrackRemoved(VideoTrackInterface* track,
     return;
   }
   RemoveVideoTrack(track, stream);
-  observer_->OnRenegotiationNeeded();
+  Observer()->OnRenegotiationNeeded();
 }
 
 void PeerConnection::PostSetSessionDescriptionSuccess(
@@ -4264,7 +4270,7 @@ void PeerConnection::OnRemoteSenderRemoved(const RtpSenderInfo& sender_info,
     RTC_NOTREACHED() << "Invalid media type";
   }
   if (receiver) {
-    observer_->OnRemoveTrack(receiver);
+    Observer()->OnRemoveTrack(receiver);
   }
 }
 
@@ -4279,7 +4285,7 @@ void PeerConnection::UpdateEndedRemoteMediaStreams() {
 
   for (auto& stream : streams_to_remove) {
     remote_streams_->RemoveStream(stream);
-    observer_->OnRemoveStream(std::move(stream));
+    Observer()->OnRemoveStream(std::move(stream));
   }
 }
 
@@ -4451,7 +4457,7 @@ void PeerConnection::CreateRemoteRtpDataChannel(const std::string& label,
   channel->SetReceiveSsrc(remote_ssrc);
   rtc::scoped_refptr<DataChannelInterface> proxy_channel =
       DataChannelProxy::Create(signaling_thread(), channel);
-  observer_->OnDataChannel(std::move(proxy_channel));
+  Observer()->OnDataChannel(std::move(proxy_channel));
 }
 
 rtc::scoped_refptr<DataChannel> PeerConnection::InternalCreateDataChannel(
@@ -4574,7 +4580,7 @@ void PeerConnection::OnDataChannelOpenMessage(
 
   rtc::scoped_refptr<DataChannelInterface> proxy_channel =
       DataChannelProxy::Create(signaling_thread(), channel);
-  observer_->OnDataChannel(std::move(proxy_channel));
+  Observer()->OnDataChannel(std::move(proxy_channel));
   NoteUsageEvent(UsageEvent::DATA_ADDED);
 }
 
@@ -5957,7 +5963,15 @@ void PeerConnection::ReportUsagePattern() const {
       static_cast<int>(UsageEvent::ICE_STATE_CONNECTED);
   if ((usage_event_accumulator_ & bad_bits) == bad_bits &&
       (usage_event_accumulator_ & good_bits) == 0) {
-    observer_->OnInterestingUsage(usage_event_accumulator_);
+    // If called after close(), we can't report, because observer may have
+    // been deallocated, and therefore pointer is null. Write to log instead.
+    if (observer_) {
+      Observer()->OnInterestingUsage(usage_event_accumulator_);
+    } else {
+      RTC_LOG(LS_INFO) << "Interesting usage signature "
+                       << usage_event_accumulator_
+                       << " observed after observer shutdown";
+    }
   }
 }
 
@@ -6275,10 +6289,25 @@ bool PeerConnection::OnTransportChanged(
   return ret;
 }
 
+PeerConnectionObserver* PeerConnection::Observer() const {
+  // In earlier production code, the pointer was not cleared on close,
+  // which might have led to undefined behavior if the observer was not
+  // deallocated, or strange crashes if it was.
+  // We use CHECK in order to catch such behavior if it exists.
+  // TODO(hta): Remove or replace with DCHECK if nothing is found.
+  RTC_CHECK(observer_);
+  return observer_;
+}
+
 void PeerConnection::ClearStatsCache() {
   if (stats_collector_) {
     stats_collector_->ClearCachedStatsReport();
   }
+}
+
+void PeerConnection::RequestUsagePatternReportForTesting() {
+  signaling_thread()->Post(RTC_FROM_HERE, this, MSG_REPORT_USAGE_PATTERN,
+                           nullptr);
 }
 
 }  // namespace webrtc

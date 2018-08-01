@@ -91,6 +91,10 @@ class ObserverForUsageHistogramTest : public MockPeerConnectionObserver {
     return interesting_usage_detected_;
   }
 
+  void ClearInterestingUsageDetector() {
+    interesting_usage_detected_ = absl::optional<int>();
+  }
+
  private:
   absl::optional<int> interesting_usage_detected_;
   RawWrapperPtr candidate_target_;  // Note: Not thread-safe against deletions.
@@ -453,6 +457,53 @@ TEST_F(PeerConnectionUsageHistogramTest, NotableUsageNoted) {
                   ObservedFingerprint());
   EXPECT_EQ(absl::make_optional(ObservedFingerprint()),
             caller->observer()->interesting_usage_detected());
+}
+
+TEST_F(PeerConnectionUsageHistogramTest, NotableUsageOnEventFiring) {
+  auto caller = CreatePeerConnection();
+  caller->CreateDataChannel("foo");
+  caller->GenerateOfferAndCollectCandidates();
+  int expected_fingerprint = MakeUsageFingerprint(
+      {PeerConnection::UsageEvent::DATA_ADDED,
+       PeerConnection::UsageEvent::SET_LOCAL_DESCRIPTION_CALLED,
+       PeerConnection::UsageEvent::CANDIDATE_COLLECTED});
+  EXPECT_EQ(0, webrtc::metrics::NumSamples(kUsagePatternMetric));
+  caller->GetInternalPeerConnection()->RequestUsagePatternReportForTesting();
+  EXPECT_EQ_WAIT(1, webrtc::metrics::NumSamples(kUsagePatternMetric),
+                 kDefaultTimeout);
+  EXPECT_TRUE(expected_fingerprint == ObservedFingerprint() ||
+              (expected_fingerprint |
+               static_cast<int>(
+                   PeerConnection::UsageEvent::PRIVATE_CANDIDATE_COLLECTED)) ==
+                  ObservedFingerprint());
+  EXPECT_EQ(absl::make_optional(ObservedFingerprint()),
+            caller->observer()->interesting_usage_detected());
+}
+
+TEST_F(PeerConnectionUsageHistogramTest,
+       NoNotableUsageOnEventFiringAfterClose) {
+  auto caller = CreatePeerConnection();
+  caller->CreateDataChannel("foo");
+  caller->GenerateOfferAndCollectCandidates();
+  int expected_fingerprint = MakeUsageFingerprint(
+      {PeerConnection::UsageEvent::DATA_ADDED,
+       PeerConnection::UsageEvent::SET_LOCAL_DESCRIPTION_CALLED,
+       PeerConnection::UsageEvent::CANDIDATE_COLLECTED,
+       PeerConnection::UsageEvent::CLOSE_CALLED});
+  EXPECT_EQ(0, webrtc::metrics::NumSamples(kUsagePatternMetric));
+  caller->pc()->Close();
+  EXPECT_EQ(1, webrtc::metrics::NumSamples(kUsagePatternMetric));
+  caller->GetInternalPeerConnection()->RequestUsagePatternReportForTesting();
+  caller->observer()->ClearInterestingUsageDetector();
+  EXPECT_EQ_WAIT(2, webrtc::metrics::NumSamples(kUsagePatternMetric),
+                 kDefaultTimeout);
+  EXPECT_TRUE(expected_fingerprint == ObservedFingerprint() ||
+              (expected_fingerprint |
+               static_cast<int>(
+                   PeerConnection::UsageEvent::PRIVATE_CANDIDATE_COLLECTED)) ==
+                  ObservedFingerprint());
+  // After close, the usage-detection callback should NOT have been called.
+  EXPECT_FALSE(caller->observer()->interesting_usage_detected());
 }
 #endif
 #endif
