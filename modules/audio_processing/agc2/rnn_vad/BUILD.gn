@@ -8,13 +8,7 @@
 
 import("../../../../webrtc.gni")
 
-group("rnn_vad") {
-  deps = [
-    ":lib",
-  ]
-}
-
-rtc_source_set("lib") {
+rtc_source_set("rnn_vad") {
   sources = [
     "common.h",
     "features_extraction.cc",
@@ -50,7 +44,7 @@ rtc_source_set("lib") {
 }
 
 if (rtc_include_tests) {
-  rtc_source_set("lib_test") {
+  rtc_source_set("test_utils") {
     testonly = true
     sources = [
       "test_utils.cc",
@@ -104,8 +98,8 @@ if (rtc_include_tests) {
       "symmetric_matrix_buffer_unittest.cc",
     ]
     deps = [
-      ":lib",
-      ":lib_test",
+      ":rnn_vad",
+      ":test_utils",
       "../..:audioproc_test_utils",
       "../../../../api:array_view",
       "../../../../common_audio/",
@@ -126,7 +120,7 @@ if (rtc_include_tests) {
       "rnn_vad_tool.cc",
     ]
     deps = [
-      ":lib",
+      ":rnn_vad",
       "../../../../api:array_view",
       "../../../../common_audio:common_audio",
       "../../../../rtc_base:rtc_base_approved",

@@ -164,7 +164,7 @@ rtc_source_set("rnn_vad_with_level") {
     "../../../api:array_view",
     "../../../common_audio",
     "../../../rtc_base:checks",
-    "rnn_vad:lib",
+    "rnn_vad",
   ]
 }
 
