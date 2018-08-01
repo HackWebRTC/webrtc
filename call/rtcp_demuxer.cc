@@ -35,7 +35,7 @@ void RtcpDemuxer::AddSink(uint32_t sender_ssrc, RtcpPacketSinkInterface* sink) {
 
 void RtcpDemuxer::AddSink(const std::string& rsid,
                           RtcpPacketSinkInterface* sink) {
-  RTC_DCHECK(StreamId::IsLegalName(rsid));
+  RTC_DCHECK(StreamId::IsLegalRsidName(rsid));
   RTC_DCHECK(sink);
   RTC_DCHECK(!ContainerHasKey(broadcast_sinks_, sink));
   RTC_DCHECK(!MultimapAssociationExists(rsid_sinks_, rsid, sink));

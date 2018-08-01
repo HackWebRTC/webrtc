@@ -38,8 +38,8 @@ bool RtpDemuxer::AddSink(const RtpDemuxerCriteria& criteria,
                          RtpPacketSinkInterface* sink) {
   RTC_DCHECK(!criteria.payload_types.empty() || !criteria.ssrcs.empty() ||
              !criteria.mid.empty() || !criteria.rsid.empty());
-  RTC_DCHECK(criteria.mid.empty() || Mid::IsLegalName(criteria.mid));
-  RTC_DCHECK(criteria.rsid.empty() || StreamId::IsLegalName(criteria.rsid));
+  RTC_DCHECK(criteria.mid.empty() || Mid::IsLegalMidName(criteria.mid));
+  RTC_DCHECK(criteria.rsid.empty() || StreamId::IsLegalRsidName(criteria.rsid));
   RTC_DCHECK(sink);
 
   // We return false instead of DCHECKing for logical conflicts with the new

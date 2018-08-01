@@ -1491,9 +1491,9 @@ TEST_F(RtpDemuxerTest, RsidMustBeAlphaNumeric) {
   EXPECT_DEATH(AddSinkOnlyRsid("a_3", &sink), "");
 }
 
-TEST_F(RtpDemuxerTest, MidMustBeAlphaNumeric) {
+TEST_F(RtpDemuxerTest, MidMustBeToken) {
   MockRtpPacketSink sink;
-  EXPECT_DEATH(AddSinkOnlyMid("a_3", &sink), "");
+  EXPECT_DEATH(AddSinkOnlyMid("a(3)", &sink), "");
 }
 
 TEST_F(RtpDemuxerTest, RsidMustNotExceedMaximumLength) {

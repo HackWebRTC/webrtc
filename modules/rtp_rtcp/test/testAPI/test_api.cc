@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "rtc_base/checks.h"
@@ -158,6 +159,56 @@ TEST_F(RtpRtcpAPITest, RtxSender) {
 
   module_->SetRtxSendStatus(kRtxRetransmitted);
   EXPECT_EQ(kRtxRetransmitted, module_->RtxSendStatus());
+}
+
+TEST_F(RtpRtcpAPITest, LegalMidName) {
+  static const std::string kLegalMidNames[] = {
+      // clang-format off
+      "audio",
+      "audio0",
+      "audio_0",
+      // clang-format on
+  };
+  for (const auto& name : kLegalMidNames) {
+    EXPECT_TRUE(StreamId::IsLegalMidName(name))
+        << "Mid should be legal: " << name;
+  }
+
+  static const std::string kNonLegalMidNames[] = {
+      // clang-format off
+      "",
+      "(audio0)",
+      // clang-format on
+  };
+  for (const auto& name : kNonLegalMidNames) {
+    EXPECT_FALSE(StreamId::IsLegalMidName(name))
+        << "Mid should not be legal: " << name;
+  }
+}
+
+TEST_F(RtpRtcpAPITest, LegalRsidName) {
+  static const std::string kLegalRsidNames[] = {
+      // clang-format off
+      "audio",
+      "audio0",
+      // clang-format on
+  };
+  for (const auto& name : kLegalRsidNames) {
+    EXPECT_TRUE(StreamId::IsLegalRsidName(name))
+        << "Rsid should be legal: " << name;
+  }
+
+  static const std::string kNonLegalRsidNames[] = {
+      // clang-format off
+      "",
+      "audio_0",
+      "(audio0)",
+      // clang-format on
+  };
+  for (const auto& name : kNonLegalRsidNames) {
+    EXPECT_FALSE(StreamId::IsLegalRsidName(name))
+        << "Rsid should not be legal: " << name;
+  }
 }
 
 }  // namespace webrtc
