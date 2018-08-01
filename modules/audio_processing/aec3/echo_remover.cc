@@ -32,10 +32,16 @@
 #include "rtc_base/atomicops.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/logging.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 
 namespace {
+
+bool UseShadowFilterOutput() {
+  return !field_trial::IsEnabled(
+      "WebRTC-Aec3UtilizeShadowFilterOutputKillSwitch");
+}
 
 void LinearEchoPower(const FftData& E,
                      const FftData& Y,
@@ -86,12 +92,41 @@ class EchoRemoverImpl final : public EchoRemover {
   }
 
  private:
+  // Selects which of the shadow and main linear filter outputs that is most
+  // appropriate to pass to the suppressor.
+  const std::array<float, kBlockSize>& ChooseLinearFilterOutput(
+      const SubtractorOutput& subtractor_output) {
+    if (!use_shadow_filter_output_) {
+      return subtractor_output.e_main;
+    }
+
+    // As the output of the main adaptive filter generally should be better than
+    // the shadow filter output, add a margin and threshold for when choosing
+    // the shadow filter output.
+    if (subtractor_output.e2_shadow < 0.9f * subtractor_output.e2_main &&
+        subtractor_output.y2 > 30.f * 30.f * kBlockSize &&
+        (subtractor_output.s2_main > 60.f * 60.f * kBlockSize ||
+         subtractor_output.s2_shadow > 60.f * 60.f * kBlockSize)) {
+      return subtractor_output.e_shadow;
+    }
+
+    // If the main filter is diverged, choose the filter output that has the
+    // lowest power.
+    if (subtractor_output.e2_shadow < subtractor_output.e2_main &&
+        subtractor_output.y2 < subtractor_output.e2_main) {
+      return subtractor_output.e_shadow;
+    }
+
+    return subtractor_output.e_main;
+  }
+
   static int instance_count_;
   const EchoCanceller3Config config_;
   const Aec3Fft fft_;
   std::unique_ptr<ApmDataDumper> data_dumper_;
   const Aec3Optimization optimization_;
   const int sample_rate_hz_;
+  const bool use_shadow_filter_output_;
   Subtractor subtractor_;
   SuppressionGain suppression_gain_;
   ComfortNoiseGenerator cng_;
@@ -121,6 +156,7 @@ EchoRemoverImpl::EchoRemoverImpl(const EchoCanceller3Config& config,
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
       optimization_(DetectOptimization()),
       sample_rate_hz_(sample_rate_hz),
+      use_shadow_filter_output_(UseShadowFilterOutput()),
       subtractor_(config, data_dumper_.get(), optimization_),
       suppression_gain_(config_, optimization_, sample_rate_hz),
       cng_(optimization_),
@@ -222,7 +258,7 @@ void EchoRemoverImpl::ProcessCapture(
   // If the delay is known, use the echo subtractor.
   subtractor_.Process(*render_buffer, y0, render_signal_analyzer_, aec_state_,
                       &subtractor_output);
-  const auto& e = subtractor_output.e_main;
+  const auto& e = ChooseLinearFilterOutput(subtractor_output);
 
   // Compute spectra.
   WindowedPaddedFft(fft_, y0, y_old_, &Y);

@@ -182,8 +182,8 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
 
   shadow_filter_.Filter(render_buffer, &S);
   bool shadow_saturation = false;
-  PredictionError(fft_, S, y, &e_shadow, nullptr, adaptation_during_saturation_,
-                  &shadow_saturation);
+  PredictionError(fft_, S, y, &e_shadow, &output->s_shadow,
+                  adaptation_during_saturation_, &shadow_saturation);
 
   // Compute the signal powers in the subtractor output.
   output->UpdatePowers(y);
