@@ -15,18 +15,6 @@ if (is_android) {
   import("//build/config/android/rules.gni")
 }
 
-group("base") {
-  public_deps = [
-    ":rtc_base",
-    ":rtc_base_approved",
-    ":rtc_task_queue",
-    ":weak_ptr",
-  ]
-  if (is_android) {
-    public_deps += [ ":base_java" ]
-  }
-}
-
 config("rtc_base_chromium_config") {
   defines = [ "NO_MAIN_THREAD_WRAPPING" ]
 }
