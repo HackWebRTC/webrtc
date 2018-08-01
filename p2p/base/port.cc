@@ -1043,7 +1043,8 @@ class ConnectionRequest : public StunRequest {
 Connection::Connection(Port* port,
                        size_t index,
                        const Candidate& remote_candidate)
-    : port_(port),
+    : id_(rtc::CreateRandomId()),
+      port_(port),
       local_candidate_index_(index),
       remote_candidate_(remote_candidate),
       recv_rate_tracker_(100, 10u),
@@ -1068,7 +1069,6 @@ Connection::Connection(Port* port,
   // TODO(mallinath) - Start connections from STATE_FROZEN.
   // Wire up to send stun packets
   requests_.SignalSendPacket.connect(this, &Connection::OnSendStunPacket);
-  hash_ = static_cast<uint32_t>(std::hash<std::string>{}(ToString()));
   RTC_LOG(LS_INFO) << ToString() << ": Connection created";
 }
 
@@ -1619,14 +1619,14 @@ void Connection::LogCandidatePairConfig(
   if (ice_event_log_ == nullptr) {
     return;
   }
-  ice_event_log_->LogCandidatePairConfig(type, hash(), ToLogDescription());
+  ice_event_log_->LogCandidatePairConfig(type, id(), ToLogDescription());
 }
 
 void Connection::LogCandidatePairEvent(webrtc::IceCandidatePairEventType type) {
   if (ice_event_log_ == nullptr) {
     return;
   }
-  ice_event_log_->LogCandidatePairEvent(type, hash());
+  ice_event_log_->LogCandidatePairEvent(type, id());
 }
 
 void Connection::OnConnectionRequestResponse(ConnectionRequest* request,

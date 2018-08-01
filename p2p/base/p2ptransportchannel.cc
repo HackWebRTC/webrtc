@@ -2349,8 +2349,7 @@ void P2PTransportChannel::LogCandidatePairConfig(
   if (conn == nullptr) {
     return;
   }
-  auto candidate_pair_id = conn->hash();
-  ice_event_log_.LogCandidatePairConfig(type, candidate_pair_id,
+  ice_event_log_.LogCandidatePairConfig(type, conn->id(),
                                         conn->ToLogDescription());
 }
 
