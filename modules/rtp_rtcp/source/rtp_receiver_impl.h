@@ -53,8 +53,6 @@ class RtpReceiverImpl : public RtpReceiver {
 
   int32_t CSRCs(uint32_t array_of_csrc[kRtpCsrcSize]) const override;
 
-  TelephoneEventHandler* GetTelephoneEventHandler() override;
-
   std::vector<RtpSource> GetSources() const override;
 
   const std::vector<RtpSource>& ssrc_sources_for_testing() const {

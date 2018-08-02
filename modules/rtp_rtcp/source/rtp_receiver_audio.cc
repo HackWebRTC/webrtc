@@ -26,7 +26,6 @@ RTPReceiverStrategy* RTPReceiverStrategy::CreateAudioStrategy(
 
 RTPReceiverAudio::RTPReceiverAudio(RtpData* data_callback)
     : RTPReceiverStrategy(data_callback),
-      TelephoneEventHandler(),
       telephone_event_payload_type_(-1),
       cng_nb_payload_type_(-1),
       cng_wb_payload_type_(-1),
@@ -38,10 +37,6 @@ RTPReceiverAudio::~RTPReceiverAudio() = default;
 bool RTPReceiverAudio::TelephoneEventPayloadType(int8_t payload_type) const {
   rtc::CritScope lock(&crit_sect_);
   return telephone_event_payload_type_ == payload_type;
-}
-
-TelephoneEventHandler* RTPReceiverAudio::GetTelephoneEventHandler() {
-  return this;
 }
 
 bool RTPReceiverAudio::CNGPayloadType(int8_t payload_type) {

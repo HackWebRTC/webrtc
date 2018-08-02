@@ -20,8 +20,6 @@ namespace webrtc {
 
 struct CodecInst;
 
-class TelephoneEventHandler;
-
 // This strategy deals with media-specific RTP packet processing.
 // This class is not thread-safe and must be protected by its caller.
 class RTPReceiverStrategy {
@@ -41,8 +39,6 @@ class RTPReceiverStrategy {
                                  const uint8_t* payload,
                                  size_t payload_length,
                                  int64_t timestamp_ms) = 0;
-
-  virtual TelephoneEventHandler* GetTelephoneEventHandler() = 0;
 
   // Computes the current dead-or-alive state.
   virtual RTPAliveType ProcessDeadOrAlive(

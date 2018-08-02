@@ -195,10 +195,6 @@ bool RtpReceiverImpl::IncomingRtpPacket(const RTPHeader& rtp_header,
   return true;
 }
 
-TelephoneEventHandler* RtpReceiverImpl::GetTelephoneEventHandler() {
-  return rtp_media_receiver_->GetTelephoneEventHandler();
-}
-
 std::vector<RtpSource> RtpReceiverImpl::GetSources() const {
   rtc::CritScope lock(&critical_section_rtp_receiver_);
 

@@ -30,8 +30,6 @@ class RTPReceiverVideo : public RTPReceiverStrategy {
                          size_t packet_length,
                          int64_t timestamp) override;
 
-  TelephoneEventHandler* GetTelephoneEventHandler() override;
-
   RTPAliveType ProcessDeadOrAlive(uint16_t last_payload_length) const override;
 
   int32_t OnNewPayloadTypeCreated(int payload_type,
