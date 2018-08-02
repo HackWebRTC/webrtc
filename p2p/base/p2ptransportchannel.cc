@@ -112,11 +112,19 @@ bool IceCredentialsChanged(const std::string& old_ufrag,
 
 P2PTransportChannel::P2PTransportChannel(const std::string& transport_name,
                                          int component,
-                                         PortAllocator* allocator,
-                                         webrtc::RtcEventLog* event_log)
+                                         PortAllocator* allocator)
+    : P2PTransportChannel(transport_name, component, allocator, nullptr) {}
+
+P2PTransportChannel::P2PTransportChannel(
+    const std::string& transport_name,
+    int component,
+    PortAllocator* allocator,
+    webrtc::AsyncResolverFactory* async_resolver_factory,
+    webrtc::RtcEventLog* event_log)
     : transport_name_(transport_name),
       component_(component),
       allocator_(allocator),
+      async_resolver_factory_(async_resolver_factory),
       network_thread_(rtc::Thread::Current()),
       incoming_only_(false),
       error_(0),

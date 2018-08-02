@@ -87,6 +87,7 @@ class JsepTransportController : public sigslot::has_slots<>,
   JsepTransportController(rtc::Thread* signaling_thread,
                           rtc::Thread* network_thread,
                           cricket::PortAllocator* port_allocator,
+                          AsyncResolverFactory* async_resolver_factory,
                           Config config);
   virtual ~JsepTransportController();
 
@@ -296,6 +297,7 @@ class JsepTransportController : public sigslot::has_slots<>,
   rtc::Thread* const signaling_thread_ = nullptr;
   rtc::Thread* const network_thread_ = nullptr;
   cricket::PortAllocator* const port_allocator_ = nullptr;
+  AsyncResolverFactory* const async_resolver_factory_ = nullptr;
 
   std::map<std::string, std::unique_ptr<cricket::JsepTransport>>
       jsep_transports_by_name_;

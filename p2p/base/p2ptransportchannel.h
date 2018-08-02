@@ -27,6 +27,7 @@
 #include <string>
 #include <vector>
 
+#include "api/asyncresolverfactory.h"
 #include "api/candidate.h"
 #include "api/rtcerror.h"
 #include "logging/rtc_event_log/events/rtc_event_ice_candidate_pair_config.h"
@@ -75,9 +76,15 @@ class RemoteCandidate : public Candidate {
 // two P2P clients connected to each other.
 class P2PTransportChannel : public IceTransportInternal {
  public:
+  // For testing only.
+  // TODO(zstein): Remove once AsyncResolverFactory is required.
+  P2PTransportChannel(const std::string& transport_name,
+                      int component,
+                      PortAllocator* allocator);
   P2PTransportChannel(const std::string& transport_name,
                       int component,
                       PortAllocator* allocator,
+                      webrtc::AsyncResolverFactory* async_resolver_factory,
                       webrtc::RtcEventLog* event_log = nullptr);
   ~P2PTransportChannel() override;
 
@@ -359,6 +366,7 @@ class P2PTransportChannel : public IceTransportInternal {
   std::string transport_name_;
   int component_;
   PortAllocator* allocator_;
+  webrtc::AsyncResolverFactory* async_resolver_factory_;
   rtc::Thread* network_thread_;
   bool incoming_only_;
   int error_;

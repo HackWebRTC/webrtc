@@ -75,8 +75,9 @@ class JsepTransportControllerTest : public JsepTransportController::Observer,
     config.transport_observer = this;
     // The tests only works with |fake_transport_factory|;
     config.external_transport_factory = fake_transport_factory_.get();
+    // TODO(zstein): Provide an AsyncResolverFactory once it is required.
     transport_controller_ = absl::make_unique<JsepTransportController>(
-        signaling_thread, network_thread, port_allocator, config);
+        signaling_thread, network_thread, port_allocator, nullptr, config);
     ConnectTransportControllerSignals();
   }
 

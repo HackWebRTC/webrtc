@@ -48,6 +48,7 @@ rtc_static_library("libjingle_peerconnection_api") {
   visibility = [ "*" ]
   cflags = []
   sources = [
+    "asyncresolverfactory.h",
     "bitrate_constraints.h",
     "candidate.cc",
     "candidate.h",

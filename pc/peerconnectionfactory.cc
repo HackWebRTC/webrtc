@@ -378,6 +378,10 @@ PeerConnectionFactory::CreatePeerConnection(
         configuration.turn_customizer));
   }
 
+  // TODO(zstein): Once chromium injects its own AsyncResolverFactory, set
+  // |dependencies.async_resolver_factory| to a new
+  // |rtc::BasicAsyncResolverFactory| if no factory is provided.
+
   network_thread_->Invoke<void>(
       RTC_FROM_HERE,
       rtc::Bind(&cricket::PortAllocator::SetNetworkIgnoreMask,

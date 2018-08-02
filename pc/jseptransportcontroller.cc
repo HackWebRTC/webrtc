@@ -90,10 +90,12 @@ JsepTransportController::JsepTransportController(
     rtc::Thread* signaling_thread,
     rtc::Thread* network_thread,
     cricket::PortAllocator* port_allocator,
+    AsyncResolverFactory* async_resolver_factory,
     Config config)
     : signaling_thread_(signaling_thread),
       network_thread_(network_thread),
       port_allocator_(port_allocator),
+      async_resolver_factory_(async_resolver_factory),
       config_(config) {
   // The |transport_observer| is assumed to be non-null.
   RTC_DCHECK(config_.transport_observer);
@@ -398,7 +400,8 @@ JsepTransportController::CreateDtlsTransport(const std::string& transport_name,
         std::move(ice), config_.crypto_options);
   } else {
     auto ice = absl::make_unique<cricket::P2PTransportChannel>(
-        transport_name, component, port_allocator_, config_.event_log);
+        transport_name, component, port_allocator_, async_resolver_factory_,
+        config_.event_log);
     dtls = absl::make_unique<cricket::DtlsTransport>(std::move(ice),
                                                      config_.crypto_options);
   }

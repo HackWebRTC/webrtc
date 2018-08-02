@@ -72,6 +72,7 @@
 #include <utility>
 #include <vector>
 
+#include "api/asyncresolverfactory.h"
 #include "api/audio/audio_mixer.h"
 #include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/audio_codecs/audio_encoder_factory.h"
@@ -1129,6 +1130,7 @@ struct PeerConnectionDependencies final {
   PeerConnectionObserver* observer = nullptr;
   // Optional dependencies
   std::unique_ptr<cricket::PortAllocator> allocator;
+  std::unique_ptr<webrtc::AsyncResolverFactory> async_resolver_factory;
   std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator;
   std::unique_ptr<rtc::SSLCertificateVerifier> tls_cert_verifier;
 };

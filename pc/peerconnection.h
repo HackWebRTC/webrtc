@@ -938,6 +938,9 @@ class PeerConnection : public PeerConnectionInternal,
   IceGatheringState ice_gathering_state_ = kIceGatheringNew;
   PeerConnectionInterface::RTCConfiguration configuration_;
 
+  // TODO(zstein): |async_resolver_factory_| can currently be nullptr if it
+  // is not injected. It should be required once chromium supplies it.
+  std::unique_ptr<AsyncResolverFactory> async_resolver_factory_;
   std::unique_ptr<cricket::PortAllocator> port_allocator_;
   std::unique_ptr<rtc::SSLCertificateVerifier> tls_cert_verifier_;
   int port_allocator_flags_ = 0;
