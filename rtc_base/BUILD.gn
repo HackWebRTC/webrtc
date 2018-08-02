@@ -963,10 +963,6 @@ rtc_source_set("gtest_prod") {
   ]
 }
 
-config("rtc_base_tests_utils_exported_config") {
-  defines = [ "GTEST_RELATIVE_PATH" ]
-}
-
 rtc_source_set("rtc_base_tests_utils") {
   testonly = true
   sources = [
@@ -1010,7 +1006,6 @@ rtc_source_set("rtc_base_tests_utils") {
     "virtualsocketserver.cc",
     "virtualsocketserver.h",
   ]
-  public_configs = [ ":rtc_base_tests_utils_exported_config" ]
   deps = [
     ":checks",
     ":rtc_base",
@@ -1060,7 +1055,6 @@ if (rtc_include_tests) {
     sources = [
       "unittest_main.cc",
     ]
-    public_configs = [ ":rtc_base_tests_utils_exported_config" ]
     deps = [
       ":rtc_base",
       ":rtc_base_approved",

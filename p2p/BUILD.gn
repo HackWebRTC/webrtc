@@ -186,7 +186,6 @@ if (rtc_include_tests) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
-    defines = [ "GTEST_RELATIVE_PATH" ]
   }
 }
 
@@ -221,6 +220,5 @@ if (rtc_include_tests) {
       "../rtc_base:rtc_base_tests_utils",
       "//testing/gtest",
     ]
-    defines = [ "GTEST_RELATIVE_PATH" ]
   }
 }

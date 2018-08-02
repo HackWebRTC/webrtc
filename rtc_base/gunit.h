@@ -14,11 +14,7 @@
 #include "rtc_base/fakeclock.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/thread.h"
-#if defined(GTEST_RELATIVE_PATH)
 #include "test/gtest.h"
-#else
-#include "testing/base/public/gunit.h"
-#endif
 
 // Wait until "ex" is true, or "timeout" expires.
 #define WAIT(ex, timeout)                                       \
