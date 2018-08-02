@@ -122,16 +122,18 @@ GoogCcNetworkController::GoogCcNetworkController(RtcEventLog* event_log,
       delay_based_bwe_(new DelayBasedBwe(event_log_)),
       acknowledged_bitrate_estimator_(
           absl::make_unique<AcknowledgedBitrateEstimator>()),
+      initial_config_(config),
       last_bandwidth_(config.starting_bandwidth),
-      pacing_factor_(kDefaultPaceMultiplier),
-      min_pacing_rate_(DataRate::Zero()),
-      max_padding_rate_(DataRate::Zero()),
+      pacing_factor_(config.stream_based_config.pacing_factor.value_or(
+          kDefaultPaceMultiplier)),
+      min_pacing_rate_(config.stream_based_config.min_pacing_rate.value_or(
+          DataRate::Zero())),
+      max_padding_rate_(config.stream_based_config.max_padding_rate.value_or(
+          DataRate::Zero())),
       max_total_allocated_bitrate_(DataRate::Zero()),
       in_cwnd_experiment_(CwndExperimentEnabled()),
       accepted_queue_ms_(kDefaultAcceptedQueueMs) {
   delay_based_bwe_->SetMinBitrate(congestion_controller::GetMinBitrateBps());
-  UpdateBitrateConstraints(config.constraints, config.starting_bandwidth);
-  OnStreamsConfig(config.stream_based_config);
   if (in_cwnd_experiment_ &&
       !ReadCwndExperimentParameter(&accepted_queue_ms_)) {
     RTC_LOG(LS_WARNING) << "Failed to parse parameters for CwndExperiment "
@@ -144,8 +146,9 @@ GoogCcNetworkController::~GoogCcNetworkController() {}
 
 NetworkControlUpdate GoogCcNetworkController::OnNetworkAvailability(
     NetworkAvailability msg) {
-  probe_controller_->OnNetworkAvailability(msg);
-  return NetworkControlUpdate();
+  NetworkControlUpdate update;
+  update.probe_cluster_configs = probe_controller_->OnNetworkAvailability(msg);
+  return update;
 }
 
 NetworkControlUpdate GoogCcNetworkController::OnNetworkRouteChange(
@@ -166,24 +169,46 @@ NetworkControlUpdate GoogCcNetworkController::OnNetworkRouteChange(
   delay_based_bwe_->SetMinBitrate(min_bitrate_bps);
 
   probe_controller_->Reset(msg.at_time.ms());
-  probe_controller_->SetBitrates(min_bitrate_bps, start_bitrate_bps,
-                                 max_bitrate_bps, msg.at_time.ms());
-
-  return MaybeTriggerOnNetworkChanged(msg.at_time);
+  NetworkControlUpdate update;
+  update.probe_cluster_configs = probe_controller_->SetBitrates(
+      min_bitrate_bps, start_bitrate_bps, max_bitrate_bps, msg.at_time.ms());
+  MaybeTriggerOnNetworkChanged(&update, msg.at_time);
+  return update;
 }
 
 NetworkControlUpdate GoogCcNetworkController::OnProcessInterval(
     ProcessInterval msg) {
+  NetworkControlUpdate update;
+  if (initial_config_) {
+    update.probe_cluster_configs = UpdateBitrateConstraints(
+        initial_config_->constraints, initial_config_->starting_bandwidth);
+    update.pacer_config = GetPacingRates(msg.at_time);
+
+    probe_controller_->EnablePeriodicAlrProbing(
+        initial_config_->stream_based_config.requests_alr_probing);
+    absl::optional<DataRate> total_bitrate =
+        initial_config_->stream_based_config.max_total_allocated_bitrate;
+    if (total_bitrate) {
+      auto probes = probe_controller_->OnMaxTotalAllocatedBitrate(
+          total_bitrate->bps(), msg.at_time.ms());
+      update.probe_cluster_configs.insert(update.probe_cluster_configs.end(),
+                                          probes.begin(), probes.end());
+
+      max_total_allocated_bitrate_ = *total_bitrate;
+    }
+    initial_config_.reset();
+  }
+
   bandwidth_estimation_->UpdateEstimate(msg.at_time.ms());
   absl::optional<int64_t> start_time_ms =
       alr_detector_->GetApplicationLimitedRegionStartTime();
   probe_controller_->SetAlrStartTimeMs(start_time_ms);
-  probe_controller_->Process(msg.at_time.ms());
-  NetworkControlUpdate update = MaybeTriggerOnNetworkChanged(msg.at_time);
-  for (const ProbeClusterConfig& config :
-       probe_controller_->GetAndResetPendingProbes()) {
-    update.probe_cluster_configs.push_back(config);
-  }
+
+  auto probes = probe_controller_->Process(msg.at_time.ms());
+  update.probe_cluster_configs.insert(update.probe_cluster_configs.end(),
+                                      probes.begin(), probes.end());
+
+  MaybeTriggerOnNetworkChanged(&update, msg.at_time);
   return update;
 }
 
@@ -216,11 +241,13 @@ NetworkControlUpdate GoogCcNetworkController::OnSentPacket(
 
 NetworkControlUpdate GoogCcNetworkController::OnStreamsConfig(
     StreamsConfig msg) {
+  NetworkControlUpdate update;
   probe_controller_->EnablePeriodicAlrProbing(msg.requests_alr_probing);
   if (msg.max_total_allocated_bitrate &&
       *msg.max_total_allocated_bitrate != max_total_allocated_bitrate_) {
-    probe_controller_->OnMaxTotalAllocatedBitrate(
-        msg.max_total_allocated_bitrate->bps(), msg.at_time.ms());
+    update.probe_cluster_configs =
+        probe_controller_->OnMaxTotalAllocatedBitrate(
+            msg.max_total_allocated_bitrate->bps(), msg.at_time.ms());
     max_total_allocated_bitrate_ = *msg.max_total_allocated_bitrate;
   }
   bool pacing_changed = false;
@@ -236,19 +263,22 @@ NetworkControlUpdate GoogCcNetworkController::OnStreamsConfig(
     max_padding_rate_ = *msg.max_padding_rate;
     pacing_changed = true;
   }
-  NetworkControlUpdate update;
   if (pacing_changed)
-    update.pacer_config = UpdatePacingRates(msg.at_time);
+    update.pacer_config = GetPacingRates(msg.at_time);
   return update;
 }
 
 NetworkControlUpdate GoogCcNetworkController::OnTargetRateConstraints(
     TargetRateConstraints constraints) {
-  UpdateBitrateConstraints(constraints, absl::nullopt);
-  return MaybeTriggerOnNetworkChanged(constraints.at_time);
+  NetworkControlUpdate update;
+  update.probe_cluster_configs =
+      UpdateBitrateConstraints(constraints, absl::nullopt);
+  MaybeTriggerOnNetworkChanged(&update, constraints.at_time);
+  return update;
 }
 
-void GoogCcNetworkController::UpdateBitrateConstraints(
+std::vector<ProbeClusterConfig>
+GoogCcNetworkController::UpdateBitrateConstraints(
     TargetRateConstraints constraints,
     absl::optional<DataRate> starting_rate) {
   int64_t min_bitrate_bps = GetBpsOrDefault(constraints.min_data_rate, 0);
@@ -257,14 +287,16 @@ void GoogCcNetworkController::UpdateBitrateConstraints(
 
   ClampBitrates(&start_bitrate_bps, &min_bitrate_bps, &max_bitrate_bps);
 
-  probe_controller_->SetBitrates(min_bitrate_bps, start_bitrate_bps,
-                                 max_bitrate_bps, constraints.at_time.ms());
+  std::vector<ProbeClusterConfig> probes(probe_controller_->SetBitrates(
+      min_bitrate_bps, start_bitrate_bps, max_bitrate_bps,
+      constraints.at_time.ms()));
 
   bandwidth_estimation_->SetBitrates(start_bitrate_bps, min_bitrate_bps,
                                      max_bitrate_bps);
   if (start_bitrate_bps > 0)
     delay_based_bwe_->SetStartBitrate(start_bitrate_bps);
   delay_based_bwe_->SetMinBitrate(min_bitrate_bps);
+  return probes;
 }
 
 NetworkControlUpdate GoogCcNetworkController::OnTransportLossReport(
@@ -326,11 +358,13 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
     bandwidth_estimation_->UpdateDelayBasedEstimate(report.feedback_time.ms(),
                                                     result.target_bitrate_bps);
     // Update the estimate in the ProbeController, in case we want to probe.
-    update = MaybeTriggerOnNetworkChanged(report.feedback_time);
+    MaybeTriggerOnNetworkChanged(&update, report.feedback_time);
   }
   if (result.recovered_from_overuse) {
     probe_controller_->SetAlrStartTimeMs(alr_start_time);
-    probe_controller_->RequestProbe(report.feedback_time.ms());
+    auto probes = probe_controller_->RequestProbe(report.feedback_time.ms());
+    update.probe_cluster_configs.insert(update.probe_cluster_configs.end(),
+                                        probes.begin(), probes.end());
   }
   update.congestion_window = MaybeUpdateCongestionWindow();
   return update;
@@ -351,7 +385,7 @@ NetworkControlUpdate GoogCcNetworkController::GetNetworkState(
       TimeDelta::ms(delay_based_bwe_->GetExpectedBwePeriodMs());
   update.target_rate->at_time = at_time;
   update.target_rate->target_rate = bandwidth;
-  update.pacer_config = UpdatePacingRates(at_time);
+  update.pacer_config = GetPacingRates(at_time);
   update.congestion_window = current_data_window_;
   return update;
 }
@@ -381,7 +415,8 @@ GoogCcNetworkController::MaybeUpdateCongestionWindow() {
   return data_window;
 }
 
-NetworkControlUpdate GoogCcNetworkController::MaybeTriggerOnNetworkChanged(
+void GoogCcNetworkController::MaybeTriggerOnNetworkChanged(
+    NetworkControlUpdate* update,
     Timestamp at_time) {
   int32_t estimated_bitrate_bps;
   uint8_t fraction_loss;
@@ -390,19 +425,33 @@ NetworkControlUpdate GoogCcNetworkController::MaybeTriggerOnNetworkChanged(
   bool estimate_changed = GetNetworkParameters(
       &estimated_bitrate_bps, &fraction_loss, &rtt_ms, at_time);
   if (estimate_changed) {
+    alr_detector_->SetEstimatedBitrate(estimated_bitrate_bps);
+
+    DataRate bandwidth = DataRate::bps(estimated_bitrate_bps);
+    last_bandwidth_ = bandwidth;
+
     TimeDelta bwe_period =
         TimeDelta::ms(delay_based_bwe_->GetExpectedBwePeriodMs());
 
-    NetworkEstimate new_estimate;
-    new_estimate.at_time = at_time;
-    new_estimate.round_trip_time = TimeDelta::ms(rtt_ms);
-    new_estimate.bandwidth = DataRate::bps(estimated_bitrate_bps);
-    new_estimate.loss_rate_ratio = fraction_loss / 255.0f;
-    new_estimate.bwe_period = bwe_period;
-    last_bandwidth_ = new_estimate.bandwidth;
-    return OnNetworkEstimate(new_estimate);
+    TargetTransferRate target_rate;
+    target_rate.at_time = at_time;
+    // Set the target rate to the full estimated bandwidth since the estimation
+    // for legacy reasons includes target rate constraints.
+    target_rate.target_rate = bandwidth;
+
+    target_rate.network_estimate.at_time = at_time;
+    target_rate.network_estimate.round_trip_time = TimeDelta::ms(rtt_ms);
+    target_rate.network_estimate.bandwidth = bandwidth;
+    target_rate.network_estimate.loss_rate_ratio = fraction_loss / 255.0f;
+    target_rate.network_estimate.bwe_period = bwe_period;
+    update->target_rate = target_rate;
+
+    auto probes =
+        probe_controller_->SetEstimatedBitrate(bandwidth.bps(), at_time.ms());
+    update->probe_cluster_configs.insert(update->probe_cluster_configs.end(),
+                                         probes.begin(), probes.end());
+    update->pacer_config = GetPacingRates(at_time);
   }
-  return NetworkControlUpdate();
 }
 
 bool GoogCcNetworkController::GetNetworkParameters(
@@ -434,26 +483,7 @@ bool GoogCcNetworkController::GetNetworkParameters(
   return estimate_changed;
 }
 
-NetworkControlUpdate GoogCcNetworkController::OnNetworkEstimate(
-    NetworkEstimate estimate) {
-  NetworkControlUpdate update;
-  update.pacer_config = UpdatePacingRates(estimate.at_time);
-  alr_detector_->SetEstimatedBitrate(estimate.bandwidth.bps());
-  probe_controller_->SetEstimatedBitrate(estimate.bandwidth.bps(),
-                                         estimate.at_time.ms());
-
-  TargetTransferRate target_rate;
-  target_rate.at_time = estimate.at_time;
-  // Set the target rate to the full estimated bandwidth since the estimation
-  // for legacy reasons includes target rate constraints.
-  target_rate.target_rate = estimate.bandwidth;
-  target_rate.network_estimate = estimate;
-  update.target_rate = target_rate;
-  return update;
-}
-
-PacerConfig GoogCcNetworkController::UpdatePacingRates(
-    Timestamp at_time) const {
+PacerConfig GoogCcNetworkController::GetPacingRates(Timestamp at_time) const {
   DataRate pacing_rate =
       std::max(min_pacing_rate_, last_bandwidth_) * pacing_factor_;
   DataRate padding_rate = std::min(max_padding_rate_, last_bandwidth_);

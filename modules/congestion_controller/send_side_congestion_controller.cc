@@ -200,10 +200,9 @@ void SendSideCongestionController::SetBweBitrates(int min_bitrate_bps,
 
   {
     rtc::CritScope cs(&probe_lock_);
-    probe_controller_->SetBitrates(min_bitrate_bps, start_bitrate_bps,
-                                   max_bitrate_bps,
-                                   clock_->TimeInMilliseconds());
-    SendPendingProbes();
+    SendProbes(probe_controller_->SetBitrates(
+        min_bitrate_bps, start_bitrate_bps, max_bitrate_bps,
+        clock_->TimeInMilliseconds()));
   }
 
   {
@@ -223,9 +222,8 @@ void SendSideCongestionController::SetAllocatedSendBitrateLimits(
   pacer_->SetSendBitrateLimits(min_send_bitrate_bps, max_padding_bitrate_bps);
 
   rtc::CritScope cs(&probe_lock_);
-  probe_controller_->OnMaxTotalAllocatedBitrate(max_total_bitrate_bps,
-                                                clock_->TimeInMilliseconds());
-  SendPendingProbes();
+  SendProbes(probe_controller_->OnMaxTotalAllocatedBitrate(
+      max_total_bitrate_bps, clock_->TimeInMilliseconds()));
 }
 
 // TODO(holmer): Split this up and use SetBweBitrates in combination with
@@ -255,10 +253,9 @@ void SendSideCongestionController::OnNetworkRouteChanged(
   {
     rtc::CritScope cs(&probe_lock_);
     probe_controller_->Reset(clock_->TimeInMilliseconds());
-    probe_controller_->SetBitrates(min_bitrate_bps, bitrate_bps,
-                                   max_bitrate_bps,
-                                   clock_->TimeInMilliseconds());
-    SendPendingProbes();
+    SendProbes(probe_controller_->SetBitrates(min_bitrate_bps, bitrate_bps,
+                                              max_bitrate_bps,
+                                              clock_->TimeInMilliseconds()));
   }
 
   MaybeTriggerOnNetworkChanged();
@@ -321,8 +318,7 @@ void SendSideCongestionController::SignalNetworkState(NetworkState state) {
     NetworkAvailability msg;
     msg.at_time = Timestamp::ms(clock_->TimeInMilliseconds());
     msg.network_available = state == kNetworkUp;
-    probe_controller_->OnNetworkAvailability(msg);
-    SendPendingProbes();
+    SendProbes(probe_controller_->OnNetworkAvailability(msg));
   }
   MaybeTriggerOnNetworkChanged();
 }
@@ -355,8 +351,9 @@ int64_t SendSideCongestionController::TimeUntilNextProcess() {
   return bitrate_controller_->TimeUntilNextProcess();
 }
 
-void SendSideCongestionController::SendPendingProbes() {
-  for (auto probe_config : probe_controller_->GetAndResetPendingProbes()) {
+void SendSideCongestionController::SendProbes(
+    std::vector<ProbeClusterConfig> probe_configs) {
+  for (auto probe_config : probe_configs) {
     pacer_->CreateProbeCluster(probe_config.target_data_rate.bps());
   }
 }
@@ -382,8 +379,7 @@ void SendSideCongestionController::Process() {
     rtc::CritScope cs(&probe_lock_);
     probe_controller_->SetAlrStartTimeMs(
         pacer_->GetApplicationLimitedRegionStartTime());
-    probe_controller_->Process(clock_->TimeInMilliseconds());
-    SendPendingProbes();
+    SendProbes(probe_controller_->Process(clock_->TimeInMilliseconds()));
   }
   MaybeTriggerOnNetworkChanged();
 }
@@ -437,7 +433,7 @@ void SendSideCongestionController::OnTransportFeedback(
     rtc::CritScope cs(&probe_lock_);
     probe_controller_->SetAlrStartTimeMs(
         pacer_->GetApplicationLimitedRegionStartTime());
-    probe_controller_->RequestProbe(clock_->TimeInMilliseconds());
+    SendProbes(probe_controller_->RequestProbe(clock_->TimeInMilliseconds()));
   }
   if (in_cwnd_experiment_) {
     LimitOutstandingBytes(transport_feedback_adapter_.GetOutstandingBytes());
@@ -501,8 +497,8 @@ void SendSideCongestionController::MaybeTriggerOnNetworkChanged() {
     pacer_->SetEstimatedBitrate(bitrate_bps);
     {
       rtc::CritScope cs(&probe_lock_);
-      probe_controller_->SetEstimatedBitrate(bitrate_bps,
-                                             clock_->TimeInMilliseconds());
+      SendProbes(probe_controller_->SetEstimatedBitrate(
+          bitrate_bps, clock_->TimeInMilliseconds()));
     }
     retransmission_rate_limiter_->SetMaxRate(bitrate_bps);
   }

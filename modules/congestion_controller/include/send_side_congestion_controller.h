@@ -132,7 +132,8 @@ class SendSideCongestionController
                                            uint8_t fraction_loss,
                                            int64_t rtt);
   void LimitOutstandingBytes(size_t num_outstanding_bytes);
-  void SendPendingProbes() RTC_EXCLUSIVE_LOCKS_REQUIRED(&probe_lock_);
+  void SendProbes(std::vector<ProbeClusterConfig> probe_configs)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(&probe_lock_);
   const Clock* const clock_;
   rtc::CriticalSection observer_lock_;
   Observer* observer_ RTC_GUARDED_BY(observer_lock_);

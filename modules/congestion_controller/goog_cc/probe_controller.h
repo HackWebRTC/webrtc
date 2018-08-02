@@ -19,6 +19,7 @@
 #include "absl/types/optional.h"
 #include "api/transport/network_control.h"
 #include "rtc_base/constructormagic.h"
+#include "rtc_base/system/unused.h"
 
 namespace webrtc {
 
@@ -32,34 +33,39 @@ class ProbeController {
   ProbeController();
   ~ProbeController();
 
-  void SetBitrates(int64_t min_bitrate_bps,
-                   int64_t start_bitrate_bps,
-                   int64_t max_bitrate_bps,
-                   int64_t at_time_ms);
+  RTC_WARN_UNUSED_RESULT std::vector<ProbeClusterConfig> SetBitrates(
+      int64_t min_bitrate_bps,
+      int64_t start_bitrate_bps,
+      int64_t max_bitrate_bps,
+      int64_t at_time_ms);
 
   // The total bitrate, as opposed to the max bitrate, is the sum of the
   // configured bitrates for all active streams.
-  void OnMaxTotalAllocatedBitrate(int64_t max_total_allocated_bitrate,
-                                  int64_t at_time_ms);
+  RTC_WARN_UNUSED_RESULT std::vector<ProbeClusterConfig>
+  OnMaxTotalAllocatedBitrate(int64_t max_total_allocated_bitrate,
+                             int64_t at_time_ms);
 
-  void OnNetworkAvailability(NetworkAvailability msg);
+  RTC_WARN_UNUSED_RESULT std::vector<ProbeClusterConfig> OnNetworkAvailability(
+      NetworkAvailability msg);
 
-  void SetEstimatedBitrate(int64_t bitrate_bps, int64_t at_time_ms);
+  RTC_WARN_UNUSED_RESULT std::vector<ProbeClusterConfig> SetEstimatedBitrate(
+      int64_t bitrate_bps,
+      int64_t at_time_ms);
 
   void EnablePeriodicAlrProbing(bool enable);
 
   void SetAlrStartTimeMs(absl::optional<int64_t> alr_start_time);
   void SetAlrEndedTimeMs(int64_t alr_end_time);
 
-  void RequestProbe(int64_t at_time_ms);
+  RTC_WARN_UNUSED_RESULT std::vector<ProbeClusterConfig> RequestProbe(
+      int64_t at_time_ms);
 
   // Resets the ProbeController to a state equivalent to as if it was just
   // created EXCEPT for |enable_periodic_alr_probing_|.
   void Reset(int64_t at_time_ms);
 
-  void Process(int64_t at_time_ms);
-
-  std::vector<ProbeClusterConfig> GetAndResetPendingProbes();
+  RTC_WARN_UNUSED_RESULT std::vector<ProbeClusterConfig> Process(
+      int64_t at_time_ms);
 
  private:
   enum class State {
@@ -71,10 +77,12 @@ class ProbeController {
     kProbingComplete,
   };
 
-  void InitiateExponentialProbing(int64_t at_time_ms);
-  void InitiateProbing(int64_t now_ms,
-                       std::initializer_list<int64_t> bitrates_to_probe,
-                       bool probe_further);
+  RTC_WARN_UNUSED_RESULT std::vector<ProbeClusterConfig>
+  InitiateExponentialProbing(int64_t at_time_ms);
+  RTC_WARN_UNUSED_RESULT std::vector<ProbeClusterConfig> InitiateProbing(
+      int64_t now_ms,
+      std::initializer_list<int64_t> bitrates_to_probe,
+      bool probe_further);
 
   bool network_available_;
   State state_;
@@ -96,8 +104,6 @@ class ProbeController {
   bool mid_call_probing_waiting_for_result_;
   int64_t mid_call_probing_bitrate_bps_;
   int64_t mid_call_probing_succcess_threshold_;
-
-  std::vector<ProbeClusterConfig> pending_probes_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(ProbeController);
 };
