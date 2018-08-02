@@ -178,8 +178,10 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   rtc::Event shutdown_event_;
 
   const uint32_t number_of_cores_;
-  // Counts how many frames we've dropped in the initial rampup phase.
-  int initial_rampup_;
+  // Counts how many frames we've dropped in the initial framedrop phase.
+  int initial_framedrop_;
+  const bool initial_framedrop_on_bwe_enabled_;
+  bool has_seen_first_significant_bwe_change_ = false;
 
   const bool quality_scaling_experiment_enabled_;
 
