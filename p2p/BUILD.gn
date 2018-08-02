@@ -81,8 +81,6 @@ rtc_static_library("rtc_p2p") {
     "client/turnportfactory.h",
   ]
 
-  defines = []
-
   deps = [
     "../api:libjingle_peerconnection_api",
     "../api:ortc_api",
@@ -111,10 +109,6 @@ rtc_static_library("rtc_p2p") {
       "base/stunserver.h",
       "base/turnserver.cc",
       "base/turnserver.h",
-    ]
-    defines += [
-      "FEATURE_ENABLE_VOICEMAIL",
-      "FEATURE_ENABLE_PSTN",
     ]
   }
 }
