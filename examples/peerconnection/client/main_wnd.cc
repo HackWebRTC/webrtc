@@ -258,7 +258,7 @@ void MainWnd::OnPaint() {
 
       // Set the map mode so that the ratio will be maintained for us.
       HDC all_dc[] = {ps.hdc, dc_mem};
-      for (int i = 0; i < arraysize(all_dc); ++i) {
+      for (size_t i = 0; i < arraysize(all_dc); ++i) {
         SetMapMode(all_dc[i], MM_ISOTROPIC);
         SetWindowExtEx(all_dc[i], width, height, NULL);
         SetViewportExtEx(all_dc[i], rc.right, rc.bottom, NULL);
