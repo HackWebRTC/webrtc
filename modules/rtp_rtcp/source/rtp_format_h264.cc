@@ -429,7 +429,8 @@ bool RtpDepacketizerH264::Parse(ParsedPayload* parsed_payload,
   modified_buffer_.reset();
 
   uint8_t nal_type = payload_data[0] & kTypeMask;
-  parsed_payload->video_header().h264().nalus_length = 0;
+  parsed_payload->video_header()
+      .video_type_header.emplace<RTPVideoHeaderH264>();
   if (nal_type == H264::NaluType::kFuA) {
     // Fragmented NAL units (FU-A).
     if (!ParseFuaNalu(parsed_payload, payload_data))
@@ -458,7 +459,8 @@ bool RtpDepacketizerH264::ProcessStapAOrSingleNalu(
   parsed_payload->video_header().codec = kVideoCodecH264;
   parsed_payload->video_header().simulcastIdx = 0;
   parsed_payload->video_header().is_first_packet_in_frame = true;
-  RTPVideoHeaderH264* h264_header = &parsed_payload->video_header().h264();
+  auto& h264_header = absl::get<RTPVideoHeaderH264>(
+      parsed_payload->video_header().video_type_header);
 
   const uint8_t* nalu_start = payload_data + kNalHeaderSize;
   const size_t nalu_length = length_ - kNalHeaderSize;
@@ -476,13 +478,13 @@ bool RtpDepacketizerH264::ProcessStapAOrSingleNalu(
       return false;
     }
 
-    h264_header->packetization_type = kH264StapA;
+    h264_header.packetization_type = kH264StapA;
     nal_type = payload_data[kStapAHeaderSize] & kTypeMask;
   } else {
-    h264_header->packetization_type = kH264SingleNalu;
+    h264_header.packetization_type = kH264SingleNalu;
     nalu_start_offsets.push_back(0);
   }
-  h264_header->nalu_type = nal_type;
+  h264_header.nalu_type = nal_type;
   parsed_payload->frame_type = kVideoFrameDelta;
 
   nalu_start_offsets.push_back(length_ + kLengthFieldSize);  // End offset.
@@ -528,7 +530,7 @@ bool RtpDepacketizerH264::ProcessStapAOrSingleNalu(
             }
 
             // Rewrite length field to new SPS size.
-            if (h264_header->packetization_type == kH264StapA) {
+            if (h264_header.packetization_type == kH264StapA) {
               size_t length_field_offset =
                   start_offset - (H264::kNaluTypeSize + kLengthFieldSize);
               // Stap-A Length includes payload data and type header.
@@ -617,13 +619,13 @@ bool RtpDepacketizerH264::ProcessStapAOrSingleNalu(
         RTC_LOG(LS_WARNING) << "Unexpected STAP-A or FU-A received.";
         return false;
     }
-    RTPVideoHeaderH264* h264 = &parsed_payload->video_header().h264();
-    if (h264->nalus_length == kMaxNalusPerPacket) {
+
+    if (h264_header.nalus_length == kMaxNalusPerPacket) {
       RTC_LOG(LS_WARNING)
           << "Received packet containing more than " << kMaxNalusPerPacket
           << " NAL units. Will not keep track sps and pps ids for all of them.";
     } else {
-      h264->nalus[h264->nalus_length++] = nalu;
+      h264_header.nalus[h264_header.nalus_length++] = nalu;
     }
   }
 
@@ -676,12 +678,13 @@ bool RtpDepacketizerH264::ParseFuaNalu(
   parsed_payload->video_header().codec = kVideoCodecH264;
   parsed_payload->video_header().simulcastIdx = 0;
   parsed_payload->video_header().is_first_packet_in_frame = first_fragment;
-  RTPVideoHeaderH264* h264 = &parsed_payload->video_header().h264();
-  h264->packetization_type = kH264FuA;
-  h264->nalu_type = original_nal_type;
+  auto& h264_header = absl::get<RTPVideoHeaderH264>(
+      parsed_payload->video_header().video_type_header);
+  h264_header.packetization_type = kH264FuA;
+  h264_header.nalu_type = original_nal_type;
   if (first_fragment) {
-    h264->nalus[h264->nalus_length] = nalu;
-    h264->nalus_length = 1;
+    h264_header.nalus[h264_header.nalus_length] = nalu;
+    h264_header.nalus_length = 1;
   }
   return true;
 }
