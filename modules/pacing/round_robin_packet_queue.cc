@@ -88,7 +88,6 @@ void RoundRobinPacketQueue::CancelPop(const Packet& packet) {
 }
 
 void RoundRobinPacketQueue::FinalizePop(const Packet& packet) {
-  RTC_CHECK(!paused_);
   if (!Empty()) {
     RTC_CHECK(pop_packet_ && pop_stream_);
     Stream* stream = *pop_stream_;
