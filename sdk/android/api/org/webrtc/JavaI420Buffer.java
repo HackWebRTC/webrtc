@@ -50,7 +50,8 @@ public class JavaI420Buffer implements VideoFrame.I420Buffer {
 
   /** Wraps existing ByteBuffers into JavaI420Buffer object without copying the contents. */
   public static JavaI420Buffer wrap(int width, int height, ByteBuffer dataY, int strideY,
-      ByteBuffer dataU, int strideU, ByteBuffer dataV, int strideV, Runnable releaseCallback) {
+      ByteBuffer dataU, int strideU, ByteBuffer dataV, int strideV,
+      @Nullable Runnable releaseCallback) {
     if (dataY == null || dataU == null || dataV == null) {
       throw new IllegalArgumentException("Data buffers cannot be null.");
     }
