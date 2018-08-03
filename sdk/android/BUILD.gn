@@ -1286,7 +1286,6 @@ if (is_android) {
         ":libjingle_peerconnection_metrics_default_java",
         ":video_api_java",
         ":video_java",
-        "//base:base_java",
         "//base:base_java_test_support",
         "//rtc_base:base_java",
         "//third_party/android_support_test_runner:rules_java",
