@@ -83,11 +83,15 @@ class Unwrapper {
 using SequenceNumberUnwrapper = Unwrapper<uint16_t>;
 using TimestampUnwrapper = Unwrapper<uint32_t>;
 
+// NB: Doesn't fulfill strict weak ordering requirements.
+//     Mustn't be used as std::map Compare function.
 inline bool IsNewerSequenceNumber(uint16_t sequence_number,
                                   uint16_t prev_sequence_number) {
   return IsNewer(sequence_number, prev_sequence_number);
 }
 
+// NB: Doesn't fulfill strict weak ordering requirements.
+//     Mustn't be used as std::map Compare function.
 inline bool IsNewerTimestamp(uint32_t timestamp, uint32_t prev_timestamp) {
   return IsNewer(timestamp, prev_timestamp);
 }

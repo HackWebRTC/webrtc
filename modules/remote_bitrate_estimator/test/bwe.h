@@ -21,18 +21,11 @@
 #include "modules/remote_bitrate_estimator/test/packet.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/gtest_prod_util.h"
+#include "rtc_base/numerics/sequence_number_util.h"
 
 namespace webrtc {
 namespace testing {
 namespace bwe {
-
-// Overload map comparator.
-class SequenceNumberOlderThan {
- public:
-  bool operator()(uint16_t seq_num_1, uint16_t seq_num_2) const {
-    return IsNewerSequenceNumber(seq_num_2, seq_num_1);
-  }
-};
 
 // Holds information for computing global packet loss.
 struct LossAccount {
@@ -49,16 +42,16 @@ struct LossAccount {
 // Holds only essential information about packets to be saved for
 // further use, e.g. for calculating packet loss and receiving rate.
 struct PacketIdentifierNode {
-  PacketIdentifierNode(uint16_t sequence_number,
+  PacketIdentifierNode(int64_t unwrapped_sequence_number,
                        int64_t send_time_ms,
                        int64_t arrival_time_ms,
                        size_t payload_size)
-      : sequence_number(sequence_number),
+      : unwrapped_sequence_number(unwrapped_sequence_number),
         send_time_ms(send_time_ms),
         arrival_time_ms(arrival_time_ms),
         payload_size(payload_size) {}
 
-  uint16_t sequence_number;
+  int64_t unwrapped_sequence_number;
   int64_t send_time_ms;
   int64_t arrival_time_ms;
   size_t payload_size;
@@ -92,9 +85,10 @@ class LinkedSet {
   size_t size() const { return list_.size(); }
   size_t capacity() const { return capacity_; }
 
-  uint16_t OldestSeqNumber() const { return empty() ? 0 : map_.begin()->first; }
-  uint16_t NewestSeqNumber() const {
-    return empty() ? 0 : map_.rbegin()->first;
+  // Return size of interval covering current set, i.e.:
+  // unwrapped newest seq number - unwrapped oldest seq number + 1
+  int64_t Range() const {
+    return empty() ? 0 : map_.rbegin()->first - map_.begin()->first + 1;
   }
 
   void Erase(PacketNodeIt node_it);
@@ -105,7 +99,10 @@ class LinkedSet {
   // Add new element to the front of the list and insert it in the map.
   void UpdateHead(PacketIdentifierNode* new_head);
   size_t capacity_;
-  std::map<uint16_t, PacketNodeIt, SequenceNumberOlderThan> map_;
+  // We want to keep track of the current oldest and newest sequence_numbers.
+  // To get strict weak ordering, we unwrap uint16_t into an int64_t.
+  SeqNumUnwrapper<uint16_t> unwrapper_;
+  std::map<int64_t, PacketNodeIt> map_;
   std::list<PacketIdentifierNode*> list_;
 };
 
