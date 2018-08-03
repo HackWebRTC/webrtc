@@ -15,6 +15,7 @@
 #define SDK_ANDROID_SRC_JNI_JNI_GENERATOR_HELPER_H_
 
 #include <jni.h>
+#include <atomic>
 
 #include "rtc_base/checks.h"
 #include "sdk/android/native_api/jni/jni_int_wrapper.h"
@@ -38,18 +39,7 @@ inline void CheckException(JNIEnv* env) {
 }
 }  // namespace jni_generator
 
-namespace base {
-
-namespace subtle {
-// This needs to be a type that is big enough to store a jobject/jclass.
-typedef void* AtomicWord;
-}  // namespace subtle
-
-namespace android {
-
-using webrtc::JavaRef;
-using webrtc::ScopedJavaLocalRef;
-using webrtc::JavaParamRef;
+namespace webrtc {
 
 // This function will initialize |atomic_class_id| to contain a global ref to
 // the given class, and will return that ref on subsequent calls. The caller is
@@ -58,7 +48,7 @@ using webrtc::JavaParamRef;
 // |atomic_method_id|.
 jclass LazyGetClass(JNIEnv* env,
                     const char* class_name,
-                    base::subtle::AtomicWord* atomic_class_id);
+                    std::atomic<jclass>* atomic_class_id);
 
 // This class is a wrapper for JNIEnv Get(Static)MethodID.
 class MethodID {
@@ -78,8 +68,20 @@ class MethodID {
                            jclass clazz,
                            const char* method_name,
                            const char* jni_signature,
-                           base::subtle::AtomicWord* atomic_method_id);
+                           std::atomic<jmethodID>* atomic_method_id);
 };
+
+}  // namespace webrtc
+
+// Re-export relevant classes into the namespaces the script expects.
+namespace base {
+namespace android {
+
+using webrtc::JavaParamRef;
+using webrtc::JavaRef;
+using webrtc::ScopedJavaLocalRef;
+using webrtc::LazyGetClass;
+using webrtc::MethodID;
 
 }  // namespace android
 }  // namespace base

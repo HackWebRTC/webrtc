@@ -42,7 +42,7 @@ deps = {
   # TODO(kjellander): Move this to be Android-only once the libevent dependency
   # in base/third_party/libevent is solved.
   'src/base':
-    Var('chromium_git') + '/chromium/src/base' + '@' + 'e15177f81ad60f5bf6a00d1244a701e2844796d8',
+    Var('chromium_git') + '/chromium/src/base' + '@' + 'f9ce552913fd38f5b1f21d1e4eed67a815c94791',
   'src/build':
     Var('chromium_git') + '/chromium/src/build' + '@' + 'fbf92119338eb0d6b4c364cd98a2017b6f7a30c9',
   'src/buildtools':
