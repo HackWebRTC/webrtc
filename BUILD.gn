@@ -67,7 +67,7 @@ if (!build_with_chromium) {
       if (is_android) {
         deps += [
           ":android_junit_tests",
-          "sdk/android:libjingle_peerconnection_android_unittest",
+          "sdk/android:android_instrumentation_test_apk",
         ]
       } else {
         deps += [ "modules/video_capture:video_capture_tests" ]

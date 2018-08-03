@@ -25,8 +25,8 @@ group("examples") {
   if (is_android) {
     deps += [
       ":AppRTCMobile",
-      ":AppRTCMobileTest",
-      ":AppRTCMobileTestStubbedVideoIO",
+      ":AppRTCMobile_stubbed_video_io_test_apk",
+      ":AppRTCMobile_test_apk",
       ":libwebrtc_unity",
     ]
 
@@ -136,7 +136,7 @@ if (is_android) {
     custom_package = "org.appspot.apprtc"
   }
 
-  rtc_instrumentation_test_apk("AppRTCMobileTest") {
+  rtc_instrumentation_test_apk("AppRTCMobile_test_apk") {
     apk_name = "AppRTCMobileTest"
     android_manifest = "androidtests/AndroidManifest.xml"
 
@@ -155,7 +155,7 @@ if (is_android) {
     ]
   }
 
-  rtc_instrumentation_test_apk("AppRTCMobileTestStubbedVideoIO") {
+  rtc_instrumentation_test_apk("AppRTCMobile_stubbed_video_io_test_apk") {
     apk_name = "AppRTCMobileTestStubbedVideoIO"
     android_manifest = "androidtests/AndroidManifest.xml"
 

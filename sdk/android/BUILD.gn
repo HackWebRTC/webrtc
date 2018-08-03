@@ -1245,8 +1245,8 @@ if (is_android) {
   ################
 
   if (rtc_include_tests) {
-    rtc_instrumentation_test_apk("libjingle_peerconnection_android_unittest") {
-      apk_name = "libjingle_peerconnection_android_unittest"
+    rtc_instrumentation_test_apk("android_instrumentation_test_apk") {
+      apk_name = "android_instrumentation_test_apk"
       android_manifest = "instrumentationtests/AndroidManifest.xml"
 
       java_files = [

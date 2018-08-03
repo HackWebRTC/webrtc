@@ -170,7 +170,7 @@ def RunTest(android_device, adb_path, build_dir, temp_dir, num_retries,
 
   # Start loopback call and record video.
   test_script = os.path.join(
-      build_dir, 'bin', 'run_AppRTCMobileTestStubbedVideoIO')
+      build_dir, 'bin', 'run_AppRTCMobile_stubbed_video_io_test_apk')
   _RunCommand([test_script, '--device', android_device,
                '--num-retries', num_retries])
 

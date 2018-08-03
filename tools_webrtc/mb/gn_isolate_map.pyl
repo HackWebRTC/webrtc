@@ -19,12 +19,12 @@
     "label": "//:All",
     "type": "additional_compile_target",
   },
-  "AppRTCMobileTest": {
-    "label": "//examples:AppRTCMobileTest",
+  "AppRTCMobile_test_apk": {
+    "label": "//examples:AppRTCMobile_test_apk",
     "type": "additional_compile_target",
   },
-  "AppRTCMobileTestStubbedVideoIO": {
-    "label": "//examples:AppRTCMobileTestStubbedVideoIO",
+  "AppRTCMobile_stubbed_video_io_test_apk": {
+    "label": "//examples:AppRTCMobile_stubbed_video_io_test_apk",
     "type": "additional_compile_target",
   },
   "android_junit_tests": {
@@ -55,8 +55,8 @@
       "isac_speech_and_misc_wb.pcm",
     ]
   },
-  "libjingle_peerconnection_android_unittest": {
-    "label": "//sdk/android:libjingle_peerconnection_android_unittest",
+  "android_instrumentation_test_apk": {
+    "label": "//sdk/android:android_instrumentation_test_apk",
     "type": "additional_compile_target",
   },
   "low_bandwidth_audio_test": {
