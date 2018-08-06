@@ -102,21 +102,6 @@ class RtpPacket {
   template <typename Extension>
   bool ReserveExtension();
 
-  // Following 4 helpers identify rtp header extension by |id| negotiated with
-  // remote peer and written in an rtp packet.
-  bool HasRawExtension(int id) const;
-
-  // Returns place where extension with |id| is stored.
-  // Returns empty arrayview if extension is not present.
-  rtc::ArrayView<const uint8_t> GetRawExtension(int id) const;
-
-  // Allocates and store header extension. Returns true on success.
-  bool SetRawExtension(int id, rtc::ArrayView<const uint8_t> data);
-
-  // Allocates and returns place to store rtp header extension.
-  // Returns empty arrayview on failure.
-  rtc::ArrayView<uint8_t> AllocateRawExtension(int id, size_t length);
-
   // Reserve size_bytes for payload. Returns nullptr on failure.
   uint8_t* SetPayloadSize(size_t size_bytes);
   // Same as SetPayloadSize but doesn't guarantee to keep current payload.
@@ -137,6 +122,10 @@ class RtpPacket {
   // Find an extension |type|.
   // Returns view of the raw extension or empty view on failure.
   rtc::ArrayView<const uint8_t> FindExtension(ExtensionType type) const;
+
+  // Allocates and returns place to store rtp header extension.
+  // Returns empty arrayview on failure.
+  rtc::ArrayView<uint8_t> AllocateRawExtension(int id, size_t length);
 
   // Find or allocate an extension |type|. Returns view of size |length|
   // to write raw extension to or an empty view on failure.
