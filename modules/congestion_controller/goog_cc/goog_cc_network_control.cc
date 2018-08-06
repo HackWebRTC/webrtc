@@ -33,7 +33,6 @@
 #include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
-namespace webrtc_cc {
 namespace {
 
 const char kCwndExperiment[] = "WebRTC-CwndExperiment";
@@ -543,5 +542,4 @@ PacerConfig GoogCcNetworkController::GetPacingRates(Timestamp at_time) const {
   msg.pad_window = padding_rate * msg.time_window;
   return msg;
 }
-}  // namespace webrtc_cc
 }  // namespace webrtc

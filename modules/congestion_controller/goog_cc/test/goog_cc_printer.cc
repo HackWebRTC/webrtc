@@ -13,8 +13,7 @@ namespace webrtc {
 GoogCcStatePrinter::GoogCcStatePrinter() = default;
 GoogCcStatePrinter::~GoogCcStatePrinter() = default;
 
-void GoogCcStatePrinter::Attach(
-    webrtc_cc::GoogCcNetworkController* controller) {
+void GoogCcStatePrinter::Attach(GoogCcNetworkController* controller) {
   controller_ = controller;
 }
 
@@ -41,8 +40,7 @@ std::unique_ptr<NetworkControllerInterface> GoogCcDebugFactory::Create(
     NetworkControllerConfig config) {
   RTC_CHECK(controller_ == nullptr);
   auto controller = GoogCcNetworkControllerFactory::Create(config);
-  controller_ =
-      static_cast<webrtc_cc::GoogCcNetworkController*>(controller.get());
+  controller_ = static_cast<GoogCcNetworkController*>(controller.get());
   printer_->Attach(controller_);
   return controller;
 }

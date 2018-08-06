@@ -20,8 +20,6 @@
 namespace webrtc {
 class Clock;
 
-namespace webrtc_cc {
-
 // Wrapper class to control pacer using task queues. Note that this class is
 // only designed to be used from a single task queue and has no built in
 // concurrency safety.
@@ -48,6 +46,5 @@ class PacerController {
   rtc::SequencedTaskChecker sequenced_checker_;
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(PacerController);
 };
-}  // namespace webrtc_cc
 }  // namespace webrtc
 #endif  // MODULES_CONGESTION_CONTROLLER_RTP_PACER_CONTROLLER_H_

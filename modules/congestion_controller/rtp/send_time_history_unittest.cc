@@ -19,7 +19,6 @@
 #include "test/gtest.h"
 
 namespace webrtc {
-namespace webrtc_cc {
 namespace test {
 
 static const int kDefaultHistoryLengthMs = 1000;
@@ -254,5 +253,4 @@ TEST_F(SendTimeHistoryTest, InterlievedGetAndRemove) {
   EXPECT_EQ(packets[2], packet3);
 }
 }  // namespace test
-}  // namespace webrtc_cc
 }  // namespace webrtc

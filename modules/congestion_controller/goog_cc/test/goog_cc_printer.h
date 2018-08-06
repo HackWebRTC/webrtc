@@ -21,7 +21,7 @@ class GoogCcStatePrinter : public DebugStatePrinter {
  public:
   GoogCcStatePrinter();
   ~GoogCcStatePrinter() override;
-  void Attach(webrtc_cc::GoogCcNetworkController*);
+  void Attach(GoogCcNetworkController*);
   bool Attached() const override;
 
   void PrintHeaders(FILE* out) override;
@@ -30,7 +30,7 @@ class GoogCcStatePrinter : public DebugStatePrinter {
   NetworkControlUpdate GetState(Timestamp at_time) const override;
 
  private:
-  webrtc_cc::GoogCcNetworkController* controller_ = nullptr;
+  GoogCcNetworkController* controller_ = nullptr;
 };
 
 class GoogCcDebugFactory : public GoogCcNetworkControllerFactory {
@@ -41,7 +41,7 @@ class GoogCcDebugFactory : public GoogCcNetworkControllerFactory {
 
  private:
   GoogCcStatePrinter* printer_;
-  webrtc_cc::GoogCcNetworkController* controller_ = nullptr;
+  GoogCcNetworkController* controller_ = nullptr;
 };
 }  // namespace webrtc
 
