@@ -160,7 +160,8 @@ NetworkControlUpdate GoogCcNetworkController::OnNetworkRouteChange(
     NetworkRouteChange msg) {
   int64_t min_bitrate_bps = GetBpsOrDefault(msg.constraints.min_data_rate, -1);
   int64_t max_bitrate_bps = GetBpsOrDefault(msg.constraints.max_data_rate, -1);
-  int64_t start_bitrate_bps = GetBpsOrDefault(msg.starting_rate, -1);
+  int64_t start_bitrate_bps =
+      GetBpsOrDefault(msg.constraints.starting_rate, -1);
 
   ClampBitrates(&start_bitrate_bps, &min_bitrate_bps, &max_bitrate_bps);
 
@@ -283,7 +284,7 @@ NetworkControlUpdate GoogCcNetworkController::OnTargetRateConstraints(
     TargetRateConstraints constraints) {
   NetworkControlUpdate update;
   update.probe_cluster_configs =
-      UpdateBitrateConstraints(constraints, absl::nullopt);
+      UpdateBitrateConstraints(constraints, constraints.starting_rate);
   MaybeTriggerOnNetworkChanged(&update, constraints.at_time);
   return update;
 }

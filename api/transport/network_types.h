@@ -45,6 +45,7 @@ struct TargetRateConstraints {
   Timestamp at_time = Timestamp::Infinity();
   absl::optional<DataRate> min_data_rate;
   absl::optional<DataRate> max_data_rate;
+  absl::optional<DataRate> starting_rate;
 };
 
 // Send side information
@@ -62,7 +63,6 @@ struct NetworkRouteChange {
   // The TargetRateConstraints are set here so they can be changed synchronously
   // when network route changes.
   TargetRateConstraints constraints;
-  absl::optional<DataRate> starting_rate;
 };
 
 struct PacedPacketInfo {

@@ -311,8 +311,8 @@ NetworkControlUpdate BbrNetworkController::OnNetworkRouteChange(
     NetworkRouteChange msg) {
   constraints_ = msg.constraints;
   Reset();
-  if (msg.starting_rate)
-    default_bandwidth_ = *msg.starting_rate;
+  if (msg.constraints.starting_rate)
+    default_bandwidth_ = *msg.constraints.starting_rate;
 
   rtt_stats_.OnConnectionMigration();
   return CreateRateUpdate(msg.at_time);
