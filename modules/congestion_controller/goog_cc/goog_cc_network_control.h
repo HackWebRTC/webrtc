@@ -32,7 +32,8 @@ namespace webrtc_cc {
 class GoogCcNetworkController : public NetworkControllerInterface {
  public:
   GoogCcNetworkController(RtcEventLog* event_log,
-                          NetworkControllerConfig config);
+                          NetworkControllerConfig config,
+                          bool feedback_only);
   ~GoogCcNetworkController() override;
 
   // NetworkControllerInterface
@@ -65,6 +66,7 @@ class GoogCcNetworkController : public NetworkControllerInterface {
   PacerConfig GetPacingRates(Timestamp at_time) const;
 
   RtcEventLog* const event_log_;
+  const bool packet_feedback_only_;
 
   const std::unique_ptr<ProbeController> probe_controller_;
 
@@ -75,8 +77,12 @@ class GoogCcNetworkController : public NetworkControllerInterface {
 
   absl::optional<NetworkControllerConfig> initial_config_;
 
-  std::deque<int64_t> feedback_rtts_;
-  absl::optional<int64_t> min_feedback_rtt_ms_;
+  Timestamp next_loss_update_ = Timestamp::ms(0);
+  int lost_packets_since_last_loss_update_ = 0;
+  int expected_packets_since_last_loss_update_ = 0;
+
+  std::deque<int64_t> feedback_max_rtts_;
+  absl::optional<int64_t> min_feedback_max_rtt_ms_;
 
   DataRate last_bandwidth_;
   absl::optional<TargetTransferRate> last_target_rate_;

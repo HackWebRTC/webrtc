@@ -29,6 +29,20 @@ class GoogCcNetworkControllerFactory
  private:
   RtcEventLog* const event_log_;
 };
+
+// Factory to create packet feedback only GoogCC, this can be used for
+// connections providing packet receive time feedback but no other reports.
+class GoogCcFeedbackNetworkControllerFactory
+    : public NetworkControllerFactoryInterface {
+ public:
+  explicit GoogCcFeedbackNetworkControllerFactory(RtcEventLog*);
+  std::unique_ptr<NetworkControllerInterface> Create(
+      NetworkControllerConfig config) override;
+  TimeDelta GetProcessInterval() const override;
+
+ private:
+  RtcEventLog* const event_log_;
+};
 }  // namespace webrtc
 
 #endif  // MODULES_CONGESTION_CONTROLLER_GOOG_CC_INCLUDE_GOOG_CC_FACTORY_H_
