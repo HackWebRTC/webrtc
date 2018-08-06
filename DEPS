@@ -688,6 +688,16 @@ deps = {
       'condition': 'checkout_android',
       'dep_type': 'cipd',
   },
+  'src/third_party/google-truth': {
+      'packages': [
+          {
+              'package': 'chromium/third_party/google-truth',
+              'version': 'version:0.40',
+          },
+      ],
+      'condition': 'checkout_android',
+      'dep_type': 'cipd',
+  },
   # === ANDROID_DEPS End ===
 }
 
