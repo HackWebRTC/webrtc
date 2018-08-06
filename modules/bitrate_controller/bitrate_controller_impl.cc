@@ -63,11 +63,9 @@ BitrateControllerImpl::BitrateControllerImpl(const Clock* clock,
       last_bitrate_update_ms_(clock_->TimeInMilliseconds()),
       event_log_(event_log),
       bandwidth_estimation_(event_log),
-      reserved_bitrate_bps_(0),
       last_bitrate_bps_(0),
       last_fraction_loss_(0),
-      last_rtt_ms_(0),
-      last_reserved_bitrate_bps_(0) {
+      last_rtt_ms_(0) {
   // This calls the observer_ if set, which means that the observer provided by
   // the user must be ready to accept a bitrate update when it constructs the
   // controller. We do this to avoid having to keep synchronized initial values
@@ -115,14 +113,6 @@ void BitrateControllerImpl::ResetBitrates(int bitrate_bps,
     bandwidth_estimation_ = SendSideBandwidthEstimation(event_log_);
     bandwidth_estimation_.SetBitrates(bitrate_bps, min_bitrate_bps,
                                       max_bitrate_bps);
-  }
-  MaybeTriggerOnNetworkChanged();
-}
-
-void BitrateControllerImpl::SetReservedBitrate(uint32_t reserved_bitrate_bps) {
-  {
-    rtc::CritScope cs(&critsect_);
-    reserved_bitrate_bps_ = reserved_bitrate_bps;
   }
   MaybeTriggerOnNetworkChanged();
 }
@@ -248,18 +238,15 @@ bool BitrateControllerImpl::GetNetworkParameters(uint32_t* bitrate,
   int current_bitrate;
   bandwidth_estimation_.CurrentEstimate(&current_bitrate, fraction_loss, rtt);
   *bitrate = current_bitrate;
-  *bitrate -= std::min(*bitrate, reserved_bitrate_bps_);
   *bitrate =
       std::max<uint32_t>(*bitrate, bandwidth_estimation_.GetMinBitrate());
 
   bool new_bitrate = false;
   if (*bitrate != last_bitrate_bps_ || *fraction_loss != last_fraction_loss_ ||
-      *rtt != last_rtt_ms_ ||
-      last_reserved_bitrate_bps_ != reserved_bitrate_bps_) {
+      *rtt != last_rtt_ms_) {
     last_bitrate_bps_ = *bitrate;
     last_fraction_loss_ = *fraction_loss;
     last_rtt_ms_ = *rtt;
-    last_reserved_bitrate_bps_ = reserved_bitrate_bps_;
     new_bitrate = true;
   }
 
@@ -280,7 +267,6 @@ bool BitrateControllerImpl::AvailableBandwidth(uint32_t* bandwidth) const {
   int64_t rtt;
   bandwidth_estimation_.CurrentEstimate(&bitrate, &fraction_loss, &rtt);
   if (bitrate > 0) {
-    bitrate = bitrate - std::min<int>(bitrate, reserved_bitrate_bps_);
     bitrate = std::max(bitrate, bandwidth_estimation_.GetMinBitrate());
     *bandwidth = bitrate;
     return true;
