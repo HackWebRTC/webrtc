@@ -130,13 +130,6 @@ RTPAliveType RTPReceiverAudio::ProcessDeadOrAlive(
   }
 }
 
-void RTPReceiverAudio::CheckPayloadChanged(int8_t payload_type,
-                                           PayloadUnion* /* specific_payload */,
-                                           bool* should_discard_changes) {
-  *should_discard_changes =
-      TelephoneEventPayloadType(payload_type) || CNGPayloadType(payload_type);
-}
-
 // We are not allowed to have any critsects when calling data_callback.
 int32_t RTPReceiverAudio::ParseAudioCodecSpecific(
     WebRtcRTPHeader* rtp_header,

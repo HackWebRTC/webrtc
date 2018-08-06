@@ -50,12 +50,6 @@ class RTPReceiverStrategy {
       int payload_type,
       const SdpAudioFormat& audio_format) = 0;
 
-  // Checks if the payload type has changed, and returns whether we should
-  // reset statistics and/or discard this packet.
-  virtual void CheckPayloadChanged(int8_t payload_type,
-                                   PayloadUnion* specific_payload,
-                                   bool* should_discard_changes);
-
  protected:
   // The data callback is where we should send received payload data.
   // See ParseRtpPacket. This class does not claim ownership of the callback.

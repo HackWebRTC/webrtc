@@ -66,8 +66,6 @@ class RtpReceiverImpl : public RtpReceiver {
  private:
   void CheckSSRCChanged(const RTPHeader& rtp_header);
   void CheckCSRC(const WebRtcRTPHeader& rtp_header);
-  int32_t CheckPayloadChanged(const RTPHeader& rtp_header,
-                              PayloadUnion* payload);
 
   void UpdateSources(const absl::optional<uint8_t>& ssrc_audio_level);
   void RemoveOutdatedSources(int64_t now_ms);

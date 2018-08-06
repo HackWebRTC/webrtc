@@ -91,7 +91,7 @@ bool IsPayloadTypeValid(int8_t payload_type) {
 
 }  // namespace
 
-RTPPayloadRegistry::RTPPayloadRegistry() : last_received_payload_type_(-1) {}
+RTPPayloadRegistry::RTPPayloadRegistry() = default;
 
 RTPPayloadRegistry::~RTPPayloadRegistry() = default;
 
@@ -112,10 +112,6 @@ void RTPPayloadRegistry::SetAudioReceivePayloads(
     payload_type_map_.emplace(rtp_payload_type,
                               CreatePayloadType(audio_format));
   }
-
-  // Clear the value of last received payload type since it might mean
-  // something else now.
-  last_received_payload_type_ = -1;
 }
 
 int32_t RTPPayloadRegistry::RegisterReceivePayload(
@@ -153,9 +149,7 @@ int32_t RTPPayloadRegistry::RegisterReceivePayload(
   RTC_DCHECK(insert_status.second);  // Insertion succeeded.
   *created_new_payload = true;
 
-  // Successful set of payload type, clear the value of last received payload
-  // type since it might mean something else.
-  last_received_payload_type_ = -1;
+  // Successful set of payload type.
   return 0;
 }
 
@@ -186,9 +180,7 @@ int32_t RTPPayloadRegistry::RegisterReceivePayload(
       video_codec.plType, CreatePayloadType(video_codec));
   RTC_DCHECK(insert_status.second);  // Insertion succeeded.
 
-  // Successful set of payload type, clear the value of last received payload
-  // type since it might mean something else.
-  last_received_payload_type_ = -1;
+  // Successful set of payload type.
   return 0;
 }
 

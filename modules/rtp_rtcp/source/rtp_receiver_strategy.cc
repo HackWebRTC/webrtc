@@ -19,11 +19,4 @@ RTPReceiverStrategy::RTPReceiverStrategy(RtpData* data_callback)
 
 RTPReceiverStrategy::~RTPReceiverStrategy() = default;
 
-void RTPReceiverStrategy::CheckPayloadChanged(int8_t payload_type,
-                                              PayloadUnion* specific_payload,
-                                              bool* should_discard_changes) {
-  // Default: Keep changes.
-  *should_discard_changes = false;
-}
-
 }  // namespace webrtc

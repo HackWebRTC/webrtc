@@ -149,21 +149,6 @@ TEST(RtpPayloadRegistryTest,
       << "Not compatible; both payloads should be kept.";
 }
 
-TEST(RtpPayloadRegistryTest,
-     LastReceivedCodecTypesAreResetWhenRegisteringNewPayloadTypes) {
-  RTPPayloadRegistry rtp_payload_registry;
-  rtp_payload_registry.set_last_received_payload_type(17);
-  EXPECT_EQ(17, rtp_payload_registry.last_received_payload_type());
-
-  bool ignored;
-  constexpr int payload_type = 34;
-  const SdpAudioFormat audio_format("name", 44000, 1);
-  EXPECT_EQ(0, rtp_payload_registry.RegisterReceivePayload(
-                   payload_type, audio_format, &ignored));
-
-  EXPECT_EQ(-1, rtp_payload_registry.last_received_payload_type());
-}
-
 class ParameterizedRtpPayloadRegistryTest
     : public ::testing::TestWithParam<int> {};
 

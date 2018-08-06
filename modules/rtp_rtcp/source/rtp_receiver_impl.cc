@@ -150,15 +150,10 @@ bool RtpReceiverImpl::IncomingRtpPacket(const RTPHeader& rtp_header,
   // Trigger our callbacks.
   CheckSSRCChanged(rtp_header);
 
-  if (CheckPayloadChanged(rtp_header, &payload_specific) == -1) {
-    if (payload_length == 0) {
-      // OK, keep-alive packet.
-      return true;
-    }
-    RTC_LOG(LS_WARNING) << "Receiving invalid payload type.";
-    return false;
+  if (payload_length == 0) {
+    // OK, keep-alive packet.
+    return true;
   }
-
   WebRtcRTPHeader webrtc_rtp_header{};
   webrtc_rtp_header.header = rtp_header;
   CheckCSRC(webrtc_rtp_header);
@@ -246,47 +241,6 @@ bool RtpReceiverImpl::GetLatestTimestamps(uint32_t* timestamp,
 void RtpReceiverImpl::CheckSSRCChanged(const RTPHeader& rtp_header) {
   rtc::CritScope lock(&critical_section_rtp_receiver_);
   ssrc_ = rtp_header.ssrc;
-}
-
-// Implementation note: must not hold critsect when called.
-// TODO(phoglund): Move as much as possible of this code path into the media
-// specific receivers. Basically this method goes through a lot of trouble to
-// compute something which is only used by the media specific parts later. If
-// this code path moves we can get rid of some of the rtp_receiver ->
-// media_specific interface (such as CheckPayloadChange, possibly get/set
-// last known payload).
-int32_t RtpReceiverImpl::CheckPayloadChanged(const RTPHeader& rtp_header,
-                                             PayloadUnion* specific_payload) {
-  int8_t payload_type = rtp_header.payloadType;
-
-  {
-    rtc::CritScope lock(&critical_section_rtp_receiver_);
-
-    int8_t last_received_payload_type =
-        rtp_payload_registry_->last_received_payload_type();
-    // TODO(holmer): Remove this code when RED parsing has been broken out from
-    // RtpReceiverAudio.
-    if (payload_type != last_received_payload_type) {
-      bool should_discard_changes = false;
-
-      rtp_media_receiver_->CheckPayloadChanged(payload_type, specific_payload,
-                                               &should_discard_changes);
-
-      if (should_discard_changes) {
-        return 0;
-      }
-
-      const auto payload =
-          rtp_payload_registry_->PayloadTypeToPayload(payload_type);
-      if (!payload) {
-        // Not a registered payload type.
-        return -1;
-      }
-      rtp_payload_registry_->set_last_received_payload_type(payload_type);
-    }
-  }  // End critsect.
-
-  return 0;
 }
 
 // Implementation note: must not hold critsect when called.

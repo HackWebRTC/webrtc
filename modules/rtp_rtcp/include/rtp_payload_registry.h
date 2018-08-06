@@ -45,20 +45,6 @@ class RTPPayloadRegistry {
   absl::optional<RtpUtility::Payload> PayloadTypeToPayload(
       uint8_t payload_type) const;
 
-  void ResetLastReceivedPayloadTypes() {
-    rtc::CritScope cs(&crit_sect_);
-    last_received_payload_type_ = -1;
-  }
-
-  int8_t last_received_payload_type() const {
-    rtc::CritScope cs(&crit_sect_);
-    return last_received_payload_type_;
-  }
-  void set_last_received_payload_type(int8_t last_received_payload_type) {
-    rtc::CritScope cs(&crit_sect_);
-    last_received_payload_type_ = last_received_payload_type;
-  }
-
  private:
   // Prunes the payload type map of the specific payload type, if it exists.
   void DeregisterAudioCodecOrRedTypeRegardlessOfPayloadType(
@@ -66,7 +52,6 @@ class RTPPayloadRegistry {
 
   rtc::CriticalSection crit_sect_;
   std::map<int, RtpUtility::Payload> payload_type_map_;
-  int8_t last_received_payload_type_;
 
 // As a first step in splitting this class up in separate cases for audio and
 // video, DCHECK that no instance is used for both audio and video.

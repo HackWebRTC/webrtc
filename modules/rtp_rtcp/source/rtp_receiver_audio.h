@@ -41,12 +41,6 @@ class RTPReceiverAudio : public RTPReceiverStrategy {
   int32_t OnNewPayloadTypeCreated(int payload_type,
                                   const SdpAudioFormat& audio_format) override;
 
-  // We need to look out for special payload types here and sometimes reset
-  // statistics. In addition we sometimes need to tweak the frequency.
-  void CheckPayloadChanged(int8_t payload_type,
-                           PayloadUnion* specific_payload,
-                           bool* should_discard_changes) override;
-
  private:
   int32_t ParseAudioCodecSpecific(WebRtcRTPHeader* rtp_header,
                                   const uint8_t* payload_data,
