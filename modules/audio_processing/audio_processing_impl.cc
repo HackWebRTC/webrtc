@@ -1334,6 +1334,8 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
   }
 
   if (config_.gain_controller2.enabled) {
+    private_submodules_->gain_controller2->NotifyAnalogLevel(
+        gain_control()->stream_analog_level());
     private_submodules_->gain_controller2->Process(capture_buffer);
   }
 

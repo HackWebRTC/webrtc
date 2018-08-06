@@ -379,11 +379,6 @@ void PerformBasicParameterSanityChecks(const SimulationSettings& settings) {
       "Error: --agc_compression_gain must be specified between 0 and 90.\n");
 
   ReportConditionalErrorAndExit(
-      settings.use_agc && *settings.use_agc && settings.use_agc2 &&
-          *settings.use_agc2,
-      "Error: --agc and --agc2 cannot be both active.\n");
-
-  ReportConditionalErrorAndExit(
       settings.use_agc2 && *settings.use_agc2 &&
           ((settings.agc2_fixed_gain_db) < 0 ||
            (settings.agc2_fixed_gain_db) > 90),

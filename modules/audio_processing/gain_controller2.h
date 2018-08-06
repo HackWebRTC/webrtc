@@ -33,6 +33,7 @@ class GainController2 {
 
   void Initialize(int sample_rate_hz);
   void Process(AudioBuffer* audio);
+  void NotifyAnalogLevel(int level);
 
   void ApplyConfig(const AudioProcessing::Config::GainController2& config);
   static bool Validate(const AudioProcessing::Config::GainController2& config);
@@ -45,6 +46,7 @@ class GainController2 {
   FixedGainController fixed_gain_controller_;
   AudioProcessing::Config::GainController2 config_;
   AdaptiveAgc adaptive_agc_;
+  int analog_level_ = -1;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(GainController2);
 };
