@@ -105,14 +105,6 @@ int32_t RtpReceiverImpl::RegisterReceivePayload(
   bool created_new_payload = false;
   int32_t result = rtp_payload_registry_->RegisterReceivePayload(
       payload_type, audio_format, &created_new_payload);
-  if (created_new_payload) {
-    if (rtp_media_receiver_->OnNewPayloadTypeCreated(payload_type,
-                                                     audio_format) != 0) {
-      RTC_LOG(LS_ERROR) << "Failed to register payload: " << audio_format.name
-                        << "/" << payload_type;
-      return -1;
-    }
-  }
   return result;
 }
 

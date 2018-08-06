@@ -36,13 +36,6 @@ RTPReceiverVideo::RTPReceiverVideo(RtpData* data_callback)
 
 RTPReceiverVideo::~RTPReceiverVideo() {}
 
-int32_t RTPReceiverVideo::OnNewPayloadTypeCreated(
-    int payload_type,
-    const SdpAudioFormat& audio_format) {
-  RTC_NOTREACHED();
-  return 0;
-}
-
 int32_t RTPReceiverVideo::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
                                          const PayloadUnion& specific_payload,
                                          const uint8_t* payload,
@@ -106,11 +99,6 @@ int32_t RTPReceiverVideo::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
                                                rtp_header) == 0
              ? 0
              : -1;
-}
-
-RTPAliveType RTPReceiverVideo::ProcessDeadOrAlive(
-    uint16_t last_payload_length) const {
-  return kRtpDead;
 }
 
 }  // namespace webrtc

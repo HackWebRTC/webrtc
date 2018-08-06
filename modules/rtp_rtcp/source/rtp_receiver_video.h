@@ -30,11 +30,6 @@ class RTPReceiverVideo : public RTPReceiverStrategy {
                          size_t packet_length,
                          int64_t timestamp) override;
 
-  RTPAliveType ProcessDeadOrAlive(uint16_t last_payload_length) const override;
-
-  int32_t OnNewPayloadTypeCreated(int payload_type,
-                                  const SdpAudioFormat& audio_format) override;
-
   void SetPacketOverHead(uint16_t packet_over_head);
 
  private:

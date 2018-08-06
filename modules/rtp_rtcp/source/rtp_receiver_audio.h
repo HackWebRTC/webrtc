@@ -27,35 +27,17 @@ class RTPReceiverAudio : public RTPReceiverStrategy {
   explicit RTPReceiverAudio(RtpData* data_callback);
   ~RTPReceiverAudio() override;
 
-  // Returns true if CNG is configured with |payload_type|.
-  bool CNGPayloadType(const int8_t payload_type);
-
   int32_t ParseRtpPacket(WebRtcRTPHeader* rtp_header,
                          const PayloadUnion& specific_payload,
                          const uint8_t* packet,
                          size_t payload_length,
                          int64_t timestamp_ms) override;
 
-  RTPAliveType ProcessDeadOrAlive(uint16_t last_payload_length) const override;
-
-  int32_t OnNewPayloadTypeCreated(int payload_type,
-                                  const SdpAudioFormat& audio_format) override;
-
  private:
   int32_t ParseAudioCodecSpecific(WebRtcRTPHeader* rtp_header,
                                   const uint8_t* payload_data,
                                   size_t payload_length,
                                   const AudioPayload& audio_specific);
-
-  // Is TelephoneEvent configured with |payload_type|.
-  bool TelephoneEventPayloadType(const int8_t payload_type) const;
-
-  int8_t telephone_event_payload_type_;
-
-  int8_t cng_nb_payload_type_;
-  int8_t cng_wb_payload_type_;
-  int8_t cng_swb_payload_type_;
-  int8_t cng_fb_payload_type_;
 
   ThreadUnsafeOneTimeEvent first_packet_received_;
 };

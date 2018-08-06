@@ -25,27 +25,9 @@ RTPReceiverStrategy* RTPReceiverStrategy::CreateAudioStrategy(
 }
 
 RTPReceiverAudio::RTPReceiverAudio(RtpData* data_callback)
-    : RTPReceiverStrategy(data_callback),
-      telephone_event_payload_type_(-1),
-      cng_nb_payload_type_(-1),
-      cng_wb_payload_type_(-1),
-      cng_swb_payload_type_(-1),
-      cng_fb_payload_type_(-1) {}
+    : RTPReceiverStrategy(data_callback) {}
 
 RTPReceiverAudio::~RTPReceiverAudio() = default;
-
-bool RTPReceiverAudio::TelephoneEventPayloadType(int8_t payload_type) const {
-  rtc::CritScope lock(&crit_sect_);
-  return telephone_event_payload_type_ == payload_type;
-}
-
-bool RTPReceiverAudio::CNGPayloadType(int8_t payload_type) {
-  rtc::CritScope lock(&crit_sect_);
-  return payload_type == cng_nb_payload_type_ ||
-         payload_type == cng_wb_payload_type_ ||
-         payload_type == cng_swb_payload_type_ ||
-         payload_type == cng_fb_payload_type_;
-}
 
 // -   Sample based or frame based codecs based on RFC 3551
 // -
@@ -79,32 +61,6 @@ bool RTPReceiverAudio::CNGPayloadType(int8_t payload_type) {
 // -   MPA       frame         N/A              var.      var.
 // -
 // -   G7221     frame         N/A
-int32_t RTPReceiverAudio::OnNewPayloadTypeCreated(
-    int payload_type,
-    const SdpAudioFormat& audio_format) {
-  rtc::CritScope lock(&crit_sect_);
-
-  if (RtpUtility::StringCompare(audio_format.name.c_str(), "telephone-event",
-                                15)) {
-    telephone_event_payload_type_ = payload_type;
-  }
-  if (RtpUtility::StringCompare(audio_format.name.c_str(), "cn", 2)) {
-    // We support comfort noise at four different frequencies.
-    if (audio_format.clockrate_hz == 8000) {
-      cng_nb_payload_type_ = payload_type;
-    } else if (audio_format.clockrate_hz == 16000) {
-      cng_wb_payload_type_ = payload_type;
-    } else if (audio_format.clockrate_hz == 32000) {
-      cng_swb_payload_type_ = payload_type;
-    } else if (audio_format.clockrate_hz == 48000) {
-      cng_fb_payload_type_ = payload_type;
-    } else {
-      assert(false);
-      return -1;
-    }
-  }
-  return 0;
-}
 
 int32_t RTPReceiverAudio::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
                                          const PayloadUnion& specific_payload,
@@ -117,17 +73,6 @@ int32_t RTPReceiverAudio::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
 
   return ParseAudioCodecSpecific(rtp_header, payload, payload_length,
                                  specific_payload.audio_payload());
-}
-
-RTPAliveType RTPReceiverAudio::ProcessDeadOrAlive(
-    uint16_t last_payload_length) const {
-  // Our CNG is 9 bytes; if it's a likely CNG the receiver needs to check
-  // kRtpNoRtp against NetEq speech_type kOutputPLCtoCNG.
-  if (last_payload_length < 10) {  // our CNG is 9 bytes
-    return kRtpNoRtp;
-  } else {
-    return kRtpDead;
-  }
 }
 
 // We are not allowed to have any critsects when calling data_callback.

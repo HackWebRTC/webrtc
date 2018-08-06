@@ -89,8 +89,6 @@ class PayloadUnion {
   absl::variant<AudioPayload, VideoPayload> payload_;
 };
 
-enum RTPAliveType { kRtpDead = 0, kRtpNoRtp = 1, kRtpAlive = 2 };
-
 enum ProtectionType { kUnprotectedPacket, kProtectedPacket };
 
 enum StorageType { kDontRetransmit, kAllowRetransmission };
