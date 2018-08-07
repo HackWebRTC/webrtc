@@ -194,6 +194,11 @@ void SimulatedNetwork::SetConfig(const SimulatedNetwork::Config& config) {
   }
 }
 
+void SimulatedNetwork::PauseTransmissionUntil(int64_t until_us) {
+  rtc::CritScope crit(&config_lock_);
+  pause_transmission_until_us_ = until_us;
+}
+
 bool SimulatedNetwork::EnqueuePacket(PacketInFlightInfo packet) {
   Config config;
   {
@@ -222,6 +227,14 @@ bool SimulatedNetwork::EnqueuePacket(PacketInFlightInfo packet) {
   }
   int64_t network_start_time_us = packet.send_time_us;
 
+  {
+    rtc::CritScope crit(&config_lock_);
+    if (pause_transmission_until_us_) {
+      network_start_time_us =
+          std::max(network_start_time_us, *pause_transmission_until_us_);
+      pause_transmission_until_us_.reset();
+    }
+  }
   // Check if there already are packets on the link and change network start
   // time forward if there is.
   if (!capacity_link_.empty() &&

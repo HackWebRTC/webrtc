@@ -109,6 +109,7 @@ class SimulatedNetwork : public NetworkSimulationInterface {
 
   // Sets a new configuration. This won't affect packets already in the pipe.
   void SetConfig(const Config& config);
+  void PauseTransmissionUntil(int64_t until_us);
 
   // NetworkSimulationInterface
   bool EnqueuePacket(PacketInFlightInfo packet) override;
@@ -134,6 +135,8 @@ class SimulatedNetwork : public NetworkSimulationInterface {
 
   // Link configuration.
   Config config_ RTC_GUARDED_BY(config_lock_);
+  absl::optional<int64_t> pause_transmission_until_us_
+      RTC_GUARDED_BY(config_lock_);
 
   // Are we currently dropping a burst of packets?
   bool bursting_;
