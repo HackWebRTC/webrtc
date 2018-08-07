@@ -50,6 +50,8 @@ class VideoAnalyzer : public PacketReceiver,
   void SetCall(Call* call);
   void SetSendStream(VideoSendStream* stream);
   void SetReceiveStream(VideoReceiveStream* stream);
+  void SetAudioReceiveStream(AudioReceiveStream* recv_stream);
+
   rtc::VideoSinkInterface<VideoFrame>* InputInterface();
   rtc::VideoSourceInterface<VideoFrame>* OutputInterface();
 
@@ -208,6 +210,7 @@ class VideoAnalyzer : public PacketReceiver,
   Call* call_;
   VideoSendStream* send_stream_;
   VideoReceiveStream* receive_stream_;
+  AudioReceiveStream* audio_receive_stream_;
   CapturedFrameForwarder captured_frame_forwarder_;
   const std::string test_label_;
   FILE* const graph_data_output_file_;
@@ -239,6 +242,9 @@ class VideoAnalyzer : public PacketReceiver,
   test::Statistics send_bandwidth_bps_ RTC_GUARDED_BY(comparison_lock_);
   test::Statistics memory_usage_ RTC_GUARDED_BY(comparison_lock_);
   test::Statistics time_between_freezes_ RTC_GUARDED_BY(comparison_lock_);
+  test::Statistics audio_expand_rate_ RTC_GUARDED_BY(comparison_lock_);
+  test::Statistics audio_accelerate_rate_ RTC_GUARDED_BY(comparison_lock_);
+  test::Statistics audio_jitter_buffer_ms_ RTC_GUARDED_BY(comparison_lock_);
   // Rendered frame with worst PSNR is saved for further analysis.
   absl::optional<FrameWithPsnr> worst_frame_ RTC_GUARDED_BY(comparison_lock_);
 

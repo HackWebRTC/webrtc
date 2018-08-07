@@ -73,7 +73,11 @@ class VideoQualityTest :
       const SdpVideoFormat& format);
   void SetupVideo(Transport* send_transport, Transport* recv_transport);
   void SetupThumbnails(Transport* send_transport, Transport* recv_transport);
+  void StartThumbnails();
+  void StopThumbnails();
   void DestroyThumbnailStreams();
+  void InitializeAudioDevice(Call::Config* send_call_config,
+                             Call::Config* recv_call_config);
   void SetupAudio(Transport* transport);
 
   void StartEncodedFrameLogs(VideoSendStream* stream);

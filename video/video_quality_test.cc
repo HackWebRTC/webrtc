@@ -757,6 +757,24 @@ void VideoQualityTest::CreateCapturers() {
   }
 }
 
+void VideoQualityTest::StartThumbnails() {
+  for (VideoSendStream* send_stream : thumbnail_send_streams_)
+    send_stream->Start();
+  for (VideoReceiveStream* receive_stream : thumbnail_receive_streams_)
+    receive_stream->Start();
+  for (std::unique_ptr<test::VideoCapturer>& capturer : thumbnail_capturers_)
+    capturer->Start();
+}
+
+void VideoQualityTest::StopThumbnails() {
+  for (std::unique_ptr<test::VideoCapturer>& capturer : thumbnail_capturers_)
+    capturer->Stop();
+  for (VideoReceiveStream* receive_stream : thumbnail_receive_streams_)
+    receive_stream->Stop();
+  for (VideoSendStream* send_stream : thumbnail_send_streams_)
+    send_stream->Stop();
+}
+
 std::unique_ptr<test::LayerFilteringTransport>
 VideoQualityTest::CreateSendTransport() {
   return absl::make_unique<test::LayerFilteringTransport>(
@@ -781,8 +799,6 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   std::unique_ptr<VideoAnalyzer> analyzer;
 
   params_ = params;
-
-  RTC_CHECK(!params_.audio.enabled);
   // TODO(ivica): Merge with RunWithRenderer and use a flag / argument to
   // differentiate between the analyzer and the renderer case.
   CheckParams();
@@ -824,6 +840,10 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
 
   task_queue_.SendTask([this, &send_call_config, &recv_call_config,
                         &send_transport, &recv_transport]() {
+    if (params_.audio.enabled) {
+      InitializeAudioDevice(&send_call_config, &recv_call_config);
+    }
+
     CreateCalls(send_call_config, recv_call_config);
     send_transport = CreateSendTransport();
     recv_transport = CreateReceiveTransport();
@@ -886,39 +906,24 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
     StartEncodedFrameLogs(GetVideoSendStream());
     StartEncodedFrameLogs(
         video_receive_streams_[params_.ss[0].selected_stream]);
-    StartVideoStreams();
-    for (VideoSendStream* thumbnail_send_stream : thumbnail_send_streams_)
-      thumbnail_send_stream->Start();
-    for (VideoReceiveStream* thumbnail_receive_stream :
-         thumbnail_receive_streams_)
-      thumbnail_receive_stream->Start();
 
-    analyzer->StartMeasuringCpuProcessTime();
-    StartVideoCapture();
-    for (std::unique_ptr<test::VideoCapturer>& video_caputurer :
-         thumbnail_capturers_) {
-      video_caputurer->Start();
+    if (params_.audio.enabled) {
+      SetupAudio(send_transport.get());
     }
+    StartThumbnails();
+    Start();
+
+    if (params_.audio.enabled) {
+      analyzer->SetAudioReceiveStream(audio_receive_streams_[0]);
+    }
+    analyzer->StartMeasuringCpuProcessTime();
   });
 
   analyzer->Wait();
 
   task_queue_.SendTask([&]() {
-    for (std::unique_ptr<test::VideoCapturer>& video_caputurer :
-         thumbnail_capturers_)
-      video_caputurer->Stop();
-    for (size_t video_idx = 0; video_idx < num_video_streams_; ++video_idx) {
-      video_capturers_[video_idx]->Stop();
-    }
-    for (VideoReceiveStream* thumbnail_receive_stream :
-         thumbnail_receive_streams_)
-      thumbnail_receive_stream->Stop();
-    for (VideoReceiveStream* receive_stream : video_receive_streams_)
-      receive_stream->Stop();
-    for (VideoSendStream* thumbnail_send_stream : thumbnail_send_streams_)
-      thumbnail_send_stream->Stop();
-    for (VideoSendStream* video_send_stream : video_send_streams_)
-      video_send_stream->Stop();
+    StopThumbnails();
+    Stop();
 
     DestroyStreams();
     DestroyThumbnailStreams();
@@ -932,6 +937,24 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
 
     DestroyCalls();
   });
+}
+
+void VideoQualityTest::InitializeAudioDevice(Call::Config* send_call_config,
+                                             Call::Config* recv_call_config) {
+  rtc::scoped_refptr<TestAudioDeviceModule> fake_audio_device =
+      TestAudioDeviceModule::CreateTestAudioDeviceModule(
+          TestAudioDeviceModule::CreatePulsedNoiseCapturer(32000, 48000),
+          TestAudioDeviceModule::CreateDiscardRenderer(48000), 1.f);
+
+  AudioState::Config audio_state_config;
+  audio_state_config.audio_mixer = AudioMixerImpl::Create();
+  audio_state_config.audio_processing = AudioProcessingBuilder().Create();
+  audio_state_config.audio_device_module = fake_audio_device;
+  send_call_config->audio_state = AudioState::Create(audio_state_config);
+  RTC_CHECK(fake_audio_device->RegisterAudioCallback(
+                send_call_config->audio_state->audio_transport()) == 0);
+  recv_call_config->audio_state = AudioState::Create(audio_state_config);
+  fake_audio_device->Init();
 }
 
 void VideoQualityTest::SetupAudio(Transport* transport) {
@@ -959,7 +982,7 @@ void VideoQualityTest::SetupAudio(Transport* transport) {
   audio_send_config.encoder_factory = audio_encoder_factory_;
   SetAudioConfig(audio_send_config);
 
-  const char* sync_group = nullptr;
+  std::string sync_group;
   if (params_.video[0].enabled && params_.audio.sync_video)
     sync_group = kSyncGroup;
 
@@ -984,22 +1007,13 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
     Call::Config call_config(&null_event_log);
     call_config.bitrate_config = params_.call.call_bitrate_config;
 
-    rtc::scoped_refptr<TestAudioDeviceModule> fake_audio_device =
-        TestAudioDeviceModule::CreateTestAudioDeviceModule(
-            TestAudioDeviceModule::CreatePulsedNoiseCapturer(32000, 48000),
-            TestAudioDeviceModule::CreateDiscardRenderer(48000), 1.f);
+    Call::Config recv_call_config(&null_event_log);
 
     if (params_.audio.enabled) {
-      AudioState::Config audio_state_config;
-      audio_state_config.audio_mixer = AudioMixerImpl::Create();
-      audio_state_config.audio_processing = AudioProcessingBuilder().Create();
-      audio_state_config.audio_device_module = fake_audio_device;
-      call_config.audio_state = AudioState::Create(audio_state_config);
-      fake_audio_device->RegisterAudioCallback(
-          call_config.audio_state->audio_transport());
+      InitializeAudioDevice(&call_config, &recv_call_config);
     }
 
-    CreateCalls(call_config, call_config);
+    CreateCalls(call_config, recv_call_config);
 
     // TODO(minyue): consider if this is a good transport even for audio only
     // calls.
