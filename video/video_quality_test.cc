@@ -757,18 +757,30 @@ void VideoQualityTest::CreateCapturers() {
   }
 }
 
+void VideoQualityTest::StartAudioStreams() {
+  audio_send_stream_->Start();
+  for (AudioReceiveStream* audio_recv_stream : audio_receive_streams_)
+    audio_recv_stream->Start();
+}
+
+void VideoQualityTest::StartThumbnailCapture() {
+  for (std::unique_ptr<test::VideoCapturer>& capturer : thumbnail_capturers_)
+    capturer->Start();
+}
+
+void VideoQualityTest::StopThumbnailCapture() {
+  for (std::unique_ptr<test::VideoCapturer>& capturer : thumbnail_capturers_)
+    capturer->Stop();
+}
+
 void VideoQualityTest::StartThumbnails() {
   for (VideoSendStream* send_stream : thumbnail_send_streams_)
     send_stream->Start();
   for (VideoReceiveStream* receive_stream : thumbnail_receive_streams_)
     receive_stream->Start();
-  for (std::unique_ptr<test::VideoCapturer>& capturer : thumbnail_capturers_)
-    capturer->Start();
 }
 
 void VideoQualityTest::StopThumbnails() {
-  for (std::unique_ptr<test::VideoCapturer>& capturer : thumbnail_capturers_)
-    capturer->Stop();
   for (VideoReceiveStream* receive_stream : thumbnail_receive_streams_)
     receive_stream->Stop();
   for (VideoSendStream* send_stream : thumbnail_send_streams_)
@@ -840,9 +852,8 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
 
   task_queue_.SendTask([this, &send_call_config, &recv_call_config,
                         &send_transport, &recv_transport]() {
-    if (params_.audio.enabled) {
+    if (params_.audio.enabled)
       InitializeAudioDevice(&send_call_config, &recv_call_config);
-    }
 
     CreateCalls(send_call_config, recv_call_config);
     send_transport = CreateSendTransport();
@@ -909,19 +920,20 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
 
     if (params_.audio.enabled) {
       SetupAudio(send_transport.get());
-    }
-    StartThumbnails();
-    Start();
-
-    if (params_.audio.enabled) {
+      StartAudioStreams();
       analyzer->SetAudioReceiveStream(audio_receive_streams_[0]);
     }
+    StartVideoStreams();
+    StartThumbnails();
     analyzer->StartMeasuringCpuProcessTime();
+    StartVideoCapture();
+    StartThumbnailCapture();
   });
 
   analyzer->Wait();
 
   task_queue_.SendTask([&]() {
+    StopThumbnailCapture();
     StopThumbnails();
     Stop();
 
@@ -1004,16 +1016,14 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
 
     // TODO(ivica): Remove bitrate_config and use the default Call::Config(), to
     // match the full stack tests.
-    Call::Config call_config(&null_event_log);
-    call_config.bitrate_config = params_.call.call_bitrate_config;
-
+    Call::Config send_call_config(&null_event_log);
+    send_call_config.bitrate_config = params_.call.call_bitrate_config;
     Call::Config recv_call_config(&null_event_log);
 
-    if (params_.audio.enabled) {
-      InitializeAudioDevice(&call_config, &recv_call_config);
-    }
+    if (params_.audio.enabled)
+      InitializeAudioDevice(&send_call_config, &recv_call_config);
 
-    CreateCalls(call_config, recv_call_config);
+    CreateCalls(send_call_config, recv_call_config);
 
     // TODO(minyue): consider if this is a good transport even for audio only
     // calls.

@@ -73,6 +73,9 @@ class VideoQualityTest :
       const SdpVideoFormat& format);
   void SetupVideo(Transport* send_transport, Transport* recv_transport);
   void SetupThumbnails(Transport* send_transport, Transport* recv_transport);
+  void StartAudioStreams();
+  void StartThumbnailCapture();
+  void StopThumbnailCapture();
   void StartThumbnails();
   void StopThumbnails();
   void DestroyThumbnailStreams();
