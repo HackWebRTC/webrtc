@@ -846,22 +846,12 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   // Create a new offer.
   // The CreateSessionDescriptionObserver callback will be called when done.
   virtual void CreateOffer(CreateSessionDescriptionObserver* observer,
-                           const MediaConstraintsInterface* constraints) {}
-
-  // TODO(jiayl): remove the default impl and the old interface when chromium
-  // code is updated.
-  virtual void CreateOffer(CreateSessionDescriptionObserver* observer,
-                           const RTCOfferAnswerOptions& options) {}
+                           const RTCOfferAnswerOptions& options) = 0;
 
   // Create an answer to an offer.
   // The CreateSessionDescriptionObserver callback will be called when done.
   virtual void CreateAnswer(CreateSessionDescriptionObserver* observer,
-                            const RTCOfferAnswerOptions& options) {}
-  // Deprecated - use version above.
-  // TODO(hta): Remove and remove default implementations when all callers
-  // are updated.
-  virtual void CreateAnswer(CreateSessionDescriptionObserver* observer,
-                            const MediaConstraintsInterface* constraints) {}
+                            const RTCOfferAnswerOptions& options) = 0;
 
   // Sets the local session description.
   // The PeerConnection takes the ownership of |desc| even if it fails.
@@ -1293,10 +1283,6 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
   // TODO(deadbeef): Remove these once safe to do so.
   virtual rtc::scoped_refptr<VideoTrackSourceInterface> CreateVideoSource(
       cricket::VideoCapturer* capturer);
-  virtual rtc::scoped_refptr<VideoTrackSourceInterface> CreateVideoSource(
-      cricket::VideoCapturer* capturer,
-      const MediaConstraintsInterface* constraints);
-
   // Creates a new local VideoTrack. The same |source| can be used in several
   // tracks.
   virtual rtc::scoped_refptr<VideoTrackInterface> CreateVideoTrack(

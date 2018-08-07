@@ -13,9 +13,10 @@
 // http://www.w3.org/TR/mediacapture-streams/#mediastreamconstraints and also
 // used in WebRTC: http://dev.w3.org/2011/webrtc/editor/webrtc.html#constraints.
 
-// This interface is being deprecated in Chrome, and may be removed
-// from WebRTC too.
-// https://bugs.chromium.org/p/webrtc/issues/detail?id=5617
+// Implementation of the w3c constraints spec is the responsibility of the
+// browser. Chrome no longer uses the constraints api declared here, and it will
+// be removed from WebRTC.
+// https://bugs.chromium.org/p/webrtc/issues/detail?id=9239
 
 #ifndef API_MEDIACONSTRAINTSINTERFACE_H_
 #define API_MEDIACONSTRAINTSINTERFACE_H_
@@ -143,6 +144,10 @@ void CopyConstraintsIntoRtcConfiguration(
 void CopyConstraintsIntoAudioOptions(
     const MediaConstraintsInterface* constraints,
     cricket::AudioOptions* options);
+
+bool CopyConstraintsIntoOfferAnswerOptions(
+    const MediaConstraintsInterface* constraints,
+    PeerConnectionInterface::RTCOfferAnswerOptions* offer_answer_options);
 
 }  // namespace webrtc
 

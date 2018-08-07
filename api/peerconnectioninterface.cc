@@ -247,12 +247,4 @@ PeerConnectionFactoryInterface::CreateVideoSource(
   return CreateVideoSource(std::unique_ptr<cricket::VideoCapturer>(capturer));
 }
 
-rtc::scoped_refptr<VideoTrackSourceInterface>
-PeerConnectionFactoryInterface::CreateVideoSource(
-    cricket::VideoCapturer* capturer,
-    const MediaConstraintsInterface* constraints) {
-  return CreateVideoSource(std::unique_ptr<cricket::VideoCapturer>(capturer),
-                           constraints);
-}
-
 }  // namespace webrtc

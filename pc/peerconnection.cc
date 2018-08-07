@@ -773,50 +773,6 @@ void ExtractSharedMediaSessionOptions(
   session_options->bundle_enabled = rtc_options.use_rtp_mux;
 }
 
-bool ConvertConstraintsToOfferAnswerOptions(
-    const MediaConstraintsInterface* constraints,
-    PeerConnectionInterface::RTCOfferAnswerOptions* offer_answer_options) {
-  if (!constraints) {
-    return true;
-  }
-
-  bool value = false;
-  size_t mandatory_constraints_satisfied = 0;
-
-  if (FindConstraint(constraints,
-                     MediaConstraintsInterface::kOfferToReceiveAudio, &value,
-                     &mandatory_constraints_satisfied)) {
-    offer_answer_options->offer_to_receive_audio =
-        value ? PeerConnectionInterface::RTCOfferAnswerOptions::
-                    kOfferToReceiveMediaTrue
-              : 0;
-  }
-
-  if (FindConstraint(constraints,
-                     MediaConstraintsInterface::kOfferToReceiveVideo, &value,
-                     &mandatory_constraints_satisfied)) {
-    offer_answer_options->offer_to_receive_video =
-        value ? PeerConnectionInterface::RTCOfferAnswerOptions::
-                    kOfferToReceiveMediaTrue
-              : 0;
-  }
-  if (FindConstraint(constraints,
-                     MediaConstraintsInterface::kVoiceActivityDetection, &value,
-                     &mandatory_constraints_satisfied)) {
-    offer_answer_options->voice_activity_detection = value;
-  }
-  if (FindConstraint(constraints, MediaConstraintsInterface::kUseRtpMux, &value,
-                     &mandatory_constraints_satisfied)) {
-    offer_answer_options->use_rtp_mux = value;
-  }
-  if (FindConstraint(constraints, MediaConstraintsInterface::kIceRestart,
-                     &value, &mandatory_constraints_satisfied)) {
-    offer_answer_options->ice_restart = value;
-  }
-
-  return mandatory_constraints_satisfied == constraints->GetMandatory().size();
-}
-
 PeerConnection::PeerConnection(PeerConnectionFactory* factory,
                                std::unique_ptr<RtcEventLog> event_log,
                                std::unique_ptr<Call> call)
@@ -1733,23 +1689,6 @@ rtc::scoped_refptr<DataChannelInterface> PeerConnection::CreateDataChannel(
 }
 
 void PeerConnection::CreateOffer(CreateSessionDescriptionObserver* observer,
-                                 const MediaConstraintsInterface* constraints) {
-  TRACE_EVENT0("webrtc", "PeerConnection::CreateOffer");
-
-  PeerConnectionInterface::RTCOfferAnswerOptions offer_answer_options;
-  // Always create an offer even if |ConvertConstraintsToOfferAnswerOptions|
-  // returns false for now. Because |ConvertConstraintsToOfferAnswerOptions|
-  // compares the mandatory fields parsed with the mandatory fields added in the
-  // |constraints| and some downstream applications might create offers with
-  // mandatory fields which would not be parsed in the helper method. For
-  // example, in Chromium/remoting, |kEnableDtlsSrtp| is added to the
-  // |constraints| as a mandatory field but it is not parsed.
-  ConvertConstraintsToOfferAnswerOptions(constraints, &offer_answer_options);
-
-  CreateOffer(observer, offer_answer_options);
-}
-
-void PeerConnection::CreateOffer(CreateSessionDescriptionObserver* observer,
                                  const RTCOfferAnswerOptions& options) {
   TRACE_EVENT0("webrtc", "PeerConnection::CreateOffer");
 
@@ -1859,29 +1798,6 @@ PeerConnection::GetReceivingTransceiversOfType(cricket::MediaType media_type) {
     }
   }
   return receiving_transceivers;
-}
-
-void PeerConnection::CreateAnswer(
-    CreateSessionDescriptionObserver* observer,
-    const MediaConstraintsInterface* constraints) {
-  TRACE_EVENT0("webrtc", "PeerConnection::CreateAnswer");
-
-  if (!observer) {
-    RTC_LOG(LS_ERROR) << "CreateAnswer - observer is NULL.";
-    return;
-  }
-
-  PeerConnectionInterface::RTCOfferAnswerOptions offer_answer_options;
-  if (!ConvertConstraintsToOfferAnswerOptions(constraints,
-                                              &offer_answer_options)) {
-    std::string error = "CreateAnswer called with invalid constraints.";
-    RTC_LOG(LS_ERROR) << error;
-    PostCreateSessionDescriptionFailure(
-        observer, RTCError(RTCErrorType::INVALID_PARAMETER, std::move(error)));
-    return;
-  }
-
-  CreateAnswer(observer, offer_answer_options);
 }
 
 void PeerConnection::CreateAnswer(CreateSessionDescriptionObserver* observer,

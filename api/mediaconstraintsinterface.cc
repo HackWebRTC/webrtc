@@ -260,4 +260,48 @@ void CopyConstraintsIntoAudioOptions(
   }
 }
 
+bool CopyConstraintsIntoOfferAnswerOptions(
+    const MediaConstraintsInterface* constraints,
+    PeerConnectionInterface::RTCOfferAnswerOptions* offer_answer_options) {
+  if (!constraints) {
+    return true;
+  }
+
+  bool value = false;
+  size_t mandatory_constraints_satisfied = 0;
+
+  if (FindConstraint(constraints,
+                     MediaConstraintsInterface::kOfferToReceiveAudio, &value,
+                     &mandatory_constraints_satisfied)) {
+    offer_answer_options->offer_to_receive_audio =
+        value ? PeerConnectionInterface::RTCOfferAnswerOptions::
+                    kOfferToReceiveMediaTrue
+              : 0;
+  }
+
+  if (FindConstraint(constraints,
+                     MediaConstraintsInterface::kOfferToReceiveVideo, &value,
+                     &mandatory_constraints_satisfied)) {
+    offer_answer_options->offer_to_receive_video =
+        value ? PeerConnectionInterface::RTCOfferAnswerOptions::
+                    kOfferToReceiveMediaTrue
+              : 0;
+  }
+  if (FindConstraint(constraints,
+                     MediaConstraintsInterface::kVoiceActivityDetection, &value,
+                     &mandatory_constraints_satisfied)) {
+    offer_answer_options->voice_activity_detection = value;
+  }
+  if (FindConstraint(constraints, MediaConstraintsInterface::kUseRtpMux, &value,
+                     &mandatory_constraints_satisfied)) {
+    offer_answer_options->use_rtp_mux = value;
+  }
+  if (FindConstraint(constraints, MediaConstraintsInterface::kIceRestart,
+                     &value, &mandatory_constraints_satisfied)) {
+    offer_answer_options->ice_restart = value;
+  }
+
+  return mandatory_constraints_satisfied == constraints->GetMandatory().size();
+}
+
 }  // namespace webrtc

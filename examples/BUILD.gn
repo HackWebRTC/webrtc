@@ -721,7 +721,6 @@ if (is_linux || is_win) {
 
     deps += [
       "../api:libjingle_peerconnection_api",
-      "../api:libjingle_peerconnection_test_api",
       "../api/audio_codecs:builtin_audio_decoder_factory",
       "../api/audio_codecs:builtin_audio_encoder_factory",
       "../api/video:video_frame",
@@ -853,7 +852,6 @@ if (is_win || is_android) {
     }
     deps = [
       "../api:libjingle_peerconnection_api",
-      "../api:libjingle_peerconnection_test_api",
       "../api/audio_codecs:builtin_audio_decoder_factory",
       "../api/audio_codecs:builtin_audio_encoder_factory",
       "../api/video:video_frame",
