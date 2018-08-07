@@ -94,10 +94,7 @@ rtc_source_set("common_audio_c_arm_asm") {
   sources = []
   deps = []
   if (current_cpu == "arm") {
-    sources += [
-      "signal_processing/complex_bit_reverse_arm.S",
-      "signal_processing/spl_sqrt_floor_arm.S",
-    ]
+    sources += [ "signal_processing/complex_bit_reverse_arm.S" ]
 
     if (arm_version >= 7) {
       sources += [ "signal_processing/filter_ar_fast_q12_armv7.S" ]
@@ -170,7 +167,6 @@ rtc_source_set("common_audio_c") {
       "signal_processing/include/spl_inl_mips.h",
       "signal_processing/min_max_operations_mips.c",
       "signal_processing/resample_by_2_mips.c",
-      "signal_processing/spl_sqrt_floor_mips.c",
     ]
     if (mips_dsp_rev > 0) {
       sources += [ "signal_processing/vector_scaling_operations_mips.c" ]
@@ -183,7 +179,6 @@ rtc_source_set("common_audio_c") {
     sources += [
       "signal_processing/complex_bit_reverse.c",
       "signal_processing/filter_ar_fast_q12.c",
-      "signal_processing/spl_sqrt_floor.c",
     ]
   }
 
@@ -199,6 +194,7 @@ rtc_source_set("common_audio_c") {
     "../system_wrappers",
     "../system_wrappers:cpu_features_api",
     "third_party/fft4g:fft4g",
+    "third_party/spl_sqrt_floor",
   ]
 }
 

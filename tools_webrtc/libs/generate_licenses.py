@@ -45,7 +45,7 @@ LIB_TO_LICENSES_DICT = {
     'protobuf': ['third_party/protobuf/LICENSE'],
     'rnnoise': ['third_party/rnnoise/COPYING'],
     'usrsctp': ['third_party/usrsctp/LICENSE'],
-    'webrtc': ['LICENSE', 'LICENSE_THIRD_PARTY'],
+    'webrtc': ['LICENSE'],
     'zlib': ['third_party/zlib/LICENSE'],
     'base64': ['rtc_base/third_party/base64/LICENSE'],
     'sigslot': ['rtc_base/third_party/sigslot/LICENSE'],
@@ -54,6 +54,7 @@ LIB_TO_LICENSES_DICT = {
     'g711': ['modules/third_party/g711/LICENSE'],
     'g722': ['modules/third_party/g722/LICENSE'],
     'fft4g': ['common_audio/third_party/fft4g/LICENSE'],
+    'spl_sqrt_floor': ['common_audio/third_party/spl_sqrt_floor/LICENSE'],
 
     # Compile time dependencies, no license needed:
     'yasm': [],

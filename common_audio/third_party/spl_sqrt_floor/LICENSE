@@ -1,17 +1,3 @@
-This source tree contains third party source code which is governed by third
-party licenses. Paths to the files and associated licenses are collected here.
-
-Files governed by third party licenses:
-common_audio/signal_processing/spl_sqrt_floor.c
-common_audio/signal_processing/spl_sqrt_floor_arm.S
-
-Individual licenses for each file:
--------------------------------------------------------------------------------
-Files:
-common_audio/signal_processing/spl_sqrt_floor.c
-common_audio/signal_processing/spl_sqrt_floor_arm.S
-
-License:
 /*
  * Written by Wilco Dijkstra, 1996. The following email exchange establishes the
  * license.
@@ -39,4 +25,3 @@ License:
  * Thanks.
  * Kevin
  */
--------------------------------------------------------------------------------

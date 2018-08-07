@@ -28,7 +28,7 @@
 
 // Minor modifications in code style for WebRTC, 2012.
 
-#include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "common_audio/third_party/spl_sqrt_floor/spl_sqrt_floor.h"
 
 /*
  * Algorithm:
