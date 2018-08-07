@@ -890,4 +890,19 @@ TEST_F(OveruseFrameDetectorTest2, NoOveruseForRandomFrameIntervalWithReset) {
   EXPECT_LE(UsagePercent(), InitialUsage() + 5);
 }
 
+TEST_F(OveruseFrameDetectorTest2, ToleratesOutOfOrderFrames) {
+  overuse_detector_->SetOptions(options_);
+  // Represents a cpu utilization close to 100%. First input frame results in
+  // three encoded frames, and the last of those isn't finished until after the
+  // first encoded frame corresponding to the next input frame.
+  const int kEncodeTimeUs = 30 * rtc::kNumMicrosecsPerMillisec;
+  const int kCaptureTimesMs[] = { 33, 33, 66, 33 };
+
+  for (int capture_time_ms : kCaptureTimesMs) {
+    overuse_detector_->FrameSent(
+        0, 0, capture_time_ms * rtc::kNumMicrosecsPerMillisec, kEncodeTimeUs);
+  }
+  EXPECT_GE(UsagePercent(), InitialUsage());
+}
+
 }  // namespace webrtc

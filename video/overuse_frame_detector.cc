@@ -249,6 +249,14 @@ class SendProcessingUsage2 : public OveruseFrameDetector::ProcessingUsage {
       absl::optional<int> encode_duration_us) override {
     if (encode_duration_us) {
       if (prev_time_us_ != -1) {
+        if (capture_time_us < prev_time_us_) {
+          // The weighting in AddSample assumes that samples are processed with
+          // non-decreasing measurement timestamps. We could implement
+          // appropriate weights for samples arriving late, but since it is a
+          // rare case, keep things simple, by just pushing those measurements a
+          // bit forward in time.
+          capture_time_us = prev_time_us_;
+        }
         AddSample(1e-6 * (*encode_duration_us),
                   1e-6 * (capture_time_us - prev_time_us_));
       }
