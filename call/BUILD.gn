@@ -247,6 +247,19 @@ rtc_source_set("video_stream_api") {
   ]
 }
 
+rtc_source_set("simulated_network") {
+  sources = [
+    "simulated_network.cc",
+    "simulated_network.h",
+  ]
+  deps = [
+    "../api:simulated_network_api",
+    "../rtc_base:rtc_base_approved",
+    "//third_party/abseil-cpp/absl/memory",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
+}
+
 rtc_source_set("fake_network") {
   sources = [
     "fake_network_pipe.cc",
@@ -254,6 +267,7 @@ rtc_source_set("fake_network") {
   ]
   deps = [
     ":call_interfaces",
+    ":simulated_network",
     "..:webrtc_common",
     "../api:simulated_network_api",
     "../api:transport_api",
