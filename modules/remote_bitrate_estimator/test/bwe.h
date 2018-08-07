@@ -57,7 +57,7 @@ struct PacketIdentifierNode {
   size_t payload_size;
 };
 
-typedef std::list<PacketIdentifierNode*>::iterator PacketNodeIt;
+typedef std::list<PacketIdentifierNode>::iterator PacketNodeIt;
 
 // FIFO implementation for a limited capacity set.
 // Used for keeping the latest arrived packets while avoiding duplicates.
@@ -68,15 +68,13 @@ class LinkedSet {
   ~LinkedSet();
 
   // If the arriving packet (identified by its sequence number) is already
-  // in the LinkedSet, move its Node to the head of the list. Else, create
-  // a PacketIdentifierNode n_ and then UpdateHead(n_), calling RemoveTail()
-  // if the LinkedSet reached its maximum capacity.
+  // in the LinkedSet, move its Node to the head of the list.
+  // Else, add a PacketIdentifierNode n_ at the head of the list,
+  // calling RemoveTail() if the LinkedSet reached its maximum capacity.
   void Insert(uint16_t sequence_number,
               int64_t send_time_ms,
               int64_t arrival_time_ms,
               size_t payload_size);
-
-  void Insert(PacketIdentifierNode packet_identifier);
 
   PacketNodeIt begin() { return list_.begin(); }
   PacketNodeIt end() { return list_.end(); }
@@ -96,14 +94,12 @@ class LinkedSet {
  private:
   // Pop oldest element from the back of the list and remove it from the map.
   void RemoveTail();
-  // Add new element to the front of the list and insert it in the map.
-  void UpdateHead(PacketIdentifierNode* new_head);
   size_t capacity_;
   // We want to keep track of the current oldest and newest sequence_numbers.
   // To get strict weak ordering, we unwrap uint16_t into an int64_t.
   SeqNumUnwrapper<uint16_t> unwrapper_;
   std::map<int64_t, PacketNodeIt> map_;
-  std::list<PacketIdentifierNode*> list_;
+  std::list<PacketIdentifierNode> list_;
 };
 
 const int kMinBitrateKbps = 10;

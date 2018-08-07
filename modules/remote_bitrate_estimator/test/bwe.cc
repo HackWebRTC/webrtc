@@ -186,16 +186,16 @@ float BweReceiver::RecentPacketLossRatio() {
   PacketNodeIt node_it = received_packets_.begin();  // Latest.
 
   // Lowest timestamp limit, oldest one that should be checked.
-  int64_t time_limit_ms = (*node_it)->arrival_time_ms - kPacketLossTimeWindowMs;
+  int64_t time_limit_ms = node_it->arrival_time_ms - kPacketLossTimeWindowMs;
   // Oldest and newest values found within the given time window.
-  int64_t oldest_seq_num = (*node_it)->unwrapped_sequence_number;
+  int64_t oldest_seq_num = node_it->unwrapped_sequence_number;
   int64_t newest_seq_num = oldest_seq_num;
 
   while (node_it != received_packets_.end()) {
-    if ((*node_it)->arrival_time_ms < time_limit_ms) {
+    if (node_it->arrival_time_ms < time_limit_ms) {
       break;
     }
-    int64_t seq_num = (*node_it)->unwrapped_sequence_number;
+    int64_t seq_num = node_it->unwrapped_sequence_number;
     newest_seq_num = std::max(newest_seq_num, seq_num);
     oldest_seq_num = std::min(oldest_seq_num, seq_num);
     ++node_it;
@@ -210,8 +210,6 @@ float BweReceiver::RecentPacketLossRatio() {
 LinkedSet::LinkedSet(int capacity) : capacity_(capacity) {}
 
 LinkedSet::~LinkedSet() {
-  while (!empty())
-    RemoveTail();
 }
 
 void LinkedSet::Insert(uint16_t sequence_number,
@@ -223,42 +221,28 @@ void LinkedSet::Insert(uint16_t sequence_number,
   // Handle duplicate unwrapped sequence number.
   if (it != map_.end()) {
     PacketNodeIt node_it = it->second;
-    PacketIdentifierNode* node = *node_it;
-    node->arrival_time_ms = arrival_time_ms;
-    if (node_it != list_.begin()) {
-      list_.erase(node_it);
-      list_.push_front(node);
-      map_[unwrapped_sequence_number] = list_.begin();
-    }
+    PacketIdentifierNode& node = *node_it;
+    node.arrival_time_ms = arrival_time_ms;
+    // Move to front, without invalidating iterators.
+    list_.splice(list_.begin(), list_, node_it);
   } else {
     if (size() == capacity_) {
       RemoveTail();
     }
-    UpdateHead(new PacketIdentifierNode(unwrapped_sequence_number, send_time_ms,
-                                        arrival_time_ms, payload_size));
+    // Push new element to the front of the list and insert it in the map.
+    PacketIdentifierNode new_head(unwrapped_sequence_number, send_time_ms,
+                                  arrival_time_ms, payload_size);
+    list_.push_front(new_head);
+    map_[unwrapped_sequence_number] = list_.begin();
   }
 }
 
-void LinkedSet::Insert(PacketIdentifierNode packet_identifier) {
-  Insert(packet_identifier.unwrapped_sequence_number,
-         packet_identifier.send_time_ms, packet_identifier.arrival_time_ms,
-         packet_identifier.payload_size);
-}
-
 void LinkedSet::RemoveTail() {
-  map_.erase(list_.back()->unwrapped_sequence_number);
-  delete list_.back();
-  list_.pop_back();
-}
-
-void LinkedSet::UpdateHead(PacketIdentifierNode* new_head) {
-  list_.push_front(new_head);
-  map_[new_head->unwrapped_sequence_number] = list_.begin();
+  Erase(--list_.end());
 }
 
 void LinkedSet::Erase(PacketNodeIt node_it) {
-  map_.erase((*node_it)->unwrapped_sequence_number);
-  delete (*node_it);
+  map_.erase(node_it->unwrapped_sequence_number);
   list_.erase(node_it);
 }
 

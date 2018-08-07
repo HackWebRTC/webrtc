@@ -567,9 +567,9 @@ FeedbackPacket* BbrBweReceiver::GetFeedback(int64_t now_ms) {
   last_feedback_ms_ = now_ms;
   int64_t corrected_send_time_ms = 0L;
   if (!received_packets_.empty()) {
-    PacketIdentifierNode* latest = *(received_packets_.begin());
+    PacketIdentifierNode& latest = *(received_packets_.begin());
     corrected_send_time_ms =
-        latest->send_time_ms + now_ms - latest->arrival_time_ms;
+        latest.send_time_ms + now_ms - latest.arrival_time_ms;
   }
   FeedbackPacket* fb = new BbrBweFeedback(
       flow_id_, now_ms * 1000, corrected_send_time_ms, packet_feedbacks_);

@@ -117,9 +117,9 @@ FeedbackPacket* NadaBweReceiver::GetFeedback(int64_t now_ms) {
   int64_t corrected_send_time_ms = 0L;
 
   if (!received_packets_.empty()) {
-    PacketIdentifierNode* latest = *(received_packets_.begin());
+    PacketIdentifierNode& latest = *(received_packets_.begin());
     corrected_send_time_ms =
-        latest->send_time_ms + now_ms - latest->arrival_time_ms;
+        latest.send_time_ms + now_ms - latest.arrival_time_ms;
   }
 
   // Sends a tuple containing latest values of <d_hat_n, d_tilde_n, x_n, x'_n,
