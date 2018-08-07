@@ -15,10 +15,18 @@ namespace webrtc {
 namespace test {
 
 TEST(DataSizeTest, ConstExpr) {
+  constexpr int64_t kValue = 12345;
   constexpr DataSize kDataSizeZero = DataSize::Zero();
   constexpr DataSize kDataSizeInf = DataSize::Infinity();
   static_assert(kDataSizeZero.IsZero(), "");
   static_assert(kDataSizeInf.IsInfinite(), "");
+  static_assert(kDataSizeInf.bytes_or(-1) == -1, "");
+  static_assert(kDataSizeInf > kDataSizeZero, "");
+
+  constexpr DataSize kDataSize = DataSize::Bytes<kValue>();
+  static_assert(kDataSize.bytes_or(-1) == kValue, "");
+
+  EXPECT_EQ(kDataSize.bytes(), kValue);
 }
 
 TEST(DataSizeTest, GetBackSameValues) {

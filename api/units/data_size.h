@@ -33,6 +33,12 @@ class DataSize {
   static constexpr DataSize Infinity() {
     return DataSize(data_size_impl::kPlusInfinityVal);
   }
+  template <int64_t bytes>
+  static constexpr DataSize Bytes() {
+    static_assert(bytes >= 0, "");
+    static_assert(bytes < data_size_impl::kPlusInfinityVal, "");
+    return DataSize(bytes);
+  }
 
   template <
       typename T,
@@ -64,13 +70,13 @@ class DataSize {
   }
 
   template <typename T>
-  typename std::enable_if<std::is_floating_point<T>::value, T>::type bytes()
-      const {
-    if (IsInfinite()) {
-      return std::numeric_limits<T>::infinity();
-    } else {
-      return bytes_;
-    }
+  constexpr typename std::enable_if<std::is_floating_point<T>::value, T>::type
+  bytes() const {
+    return IsInfinite() ? std::numeric_limits<T>::infinity() : bytes_;
+  }
+
+  constexpr int64_t bytes_or(int64_t fallback_value) const {
+    return IsFinite() ? bytes_ : fallback_value;
   }
 
   constexpr bool IsZero() const { return bytes_ == 0; }
@@ -92,23 +98,27 @@ class DataSize {
     bytes_ += other.bytes();
     return *this;
   }
-  double operator/(const DataSize& other) const {
+  constexpr double operator/(const DataSize& other) const {
     return bytes<double>() / other.bytes<double>();
   }
-  bool operator==(const DataSize& other) const {
+  constexpr bool operator==(const DataSize& other) const {
     return bytes_ == other.bytes_;
   }
-  bool operator!=(const DataSize& other) const {
+  constexpr bool operator!=(const DataSize& other) const {
     return bytes_ != other.bytes_;
   }
-  bool operator<=(const DataSize& other) const {
+  constexpr bool operator<=(const DataSize& other) const {
     return bytes_ <= other.bytes_;
   }
-  bool operator>=(const DataSize& other) const {
+  constexpr bool operator>=(const DataSize& other) const {
     return bytes_ >= other.bytes_;
   }
-  bool operator>(const DataSize& other) const { return bytes_ > other.bytes_; }
-  bool operator<(const DataSize& other) const { return bytes_ < other.bytes_; }
+  constexpr bool operator>(const DataSize& other) const {
+    return bytes_ > other.bytes_;
+  }
+  constexpr bool operator<(const DataSize& other) const {
+    return bytes_ < other.bytes_;
+  }
 
  private:
   explicit constexpr DataSize(int64_t bytes) : bytes_(bytes) {}

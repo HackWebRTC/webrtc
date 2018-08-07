@@ -42,6 +42,24 @@ class TimeDelta {
   static constexpr TimeDelta MinusInfinity() {
     return TimeDelta(timedelta_impl::kMinusInfinityVal);
   }
+  template <int64_t seconds>
+  static constexpr TimeDelta Seconds() {
+    static_assert(seconds > timedelta_impl::kMinusInfinityVal / 1000000, "");
+    static_assert(seconds < timedelta_impl::kPlusInfinityVal / 1000000, "");
+    return TimeDelta(seconds * 1000000);
+  }
+  template <int64_t ms>
+  static constexpr TimeDelta Millis() {
+    static_assert(ms > timedelta_impl::kMinusInfinityVal / 1000, "");
+    static_assert(ms < timedelta_impl::kPlusInfinityVal / 1000, "");
+    return TimeDelta(ms * 1000);
+  }
+  template <int64_t us>
+  static constexpr TimeDelta Micros() {
+    static_assert(us > timedelta_impl::kMinusInfinityVal, "");
+    static_assert(us < timedelta_impl::kPlusInfinityVal, "");
+    return TimeDelta(us);
+  }
 
   template <
       typename T,
@@ -98,12 +116,13 @@ class TimeDelta {
 
   template <typename T = int64_t>
   typename std::enable_if<std::is_integral<T>::value, T>::type seconds() const {
-    return rtc::dchecked_cast<T>((us() + (us() >= 0 ? 500000 : -500000)) /
-                                 1000000);
+    RTC_DCHECK(IsFinite());
+    return rtc::dchecked_cast<T>(UnsafeSeconds());
   }
   template <typename T = int64_t>
   typename std::enable_if<std::is_integral<T>::value, T>::type ms() const {
-    return rtc::dchecked_cast<T>((us() + (us() >= 0 ? 500 : -500)) / 1000);
+    RTC_DCHECK(IsFinite());
+    return rtc::dchecked_cast<T>(UnsafeMillis());
   }
   template <typename T = int64_t>
   typename std::enable_if<std::is_integral<T>::value, T>::type us() const {
@@ -118,30 +137,37 @@ class TimeDelta {
   }
 
   template <typename T>
-  typename std::enable_if<std::is_floating_point<T>::value, T>::type seconds()
-      const {
+  constexpr typename std::enable_if<std::is_floating_point<T>::value, T>::type
+  seconds() const {
     return us<T>() * 1e-6;
   }
   template <typename T>
-  typename std::enable_if<std::is_floating_point<T>::value, T>::type ms()
-      const {
+  constexpr typename std::enable_if<std::is_floating_point<T>::value, T>::type
+  ms() const {
     return us<T>() * 1e-3;
   }
   template <typename T>
-  typename std::enable_if<std::is_floating_point<T>::value, T>::type us()
-      const {
-    if (IsPlusInfinity()) {
-      return std::numeric_limits<T>::infinity();
-    } else if (IsMinusInfinity()) {
-      return -std::numeric_limits<T>::infinity();
-    } else {
-      return microseconds_;
-    }
+  constexpr typename std::enable_if<std::is_floating_point<T>::value, T>::type
+  us() const {
+    return IsPlusInfinity()
+               ? std::numeric_limits<T>::infinity()
+               : IsMinusInfinity() ? -std::numeric_limits<T>::infinity()
+                                   : microseconds_;
   }
   template <typename T>
-  typename std::enable_if<std::is_floating_point<T>::value, T>::type ns()
-      const {
+  constexpr typename std::enable_if<std::is_floating_point<T>::value, T>::type
+  ns() const {
     return us<T>() * 1e3;
+  }
+
+  constexpr int64_t seconds_or(int64_t fallback_value) const {
+    return IsFinite() ? UnsafeSeconds() : fallback_value;
+  }
+  constexpr int64_t ms_or(int64_t fallback_value) const {
+    return IsFinite() ? UnsafeMillis() : fallback_value;
+  }
+  constexpr int64_t us_or(int64_t fallback_value) const {
+    return IsFinite() ? microseconds_ : fallback_value;
   }
 
   TimeDelta Abs() const { return TimeDelta::us(std::abs(us())); }
@@ -171,30 +197,36 @@ class TimeDelta {
     microseconds_ += other.us();
     return *this;
   }
-  double operator/(const TimeDelta& other) const {
+  constexpr double operator/(const TimeDelta& other) const {
     return us<double>() / other.us<double>();
   }
-  bool operator==(const TimeDelta& other) const {
+  constexpr bool operator==(const TimeDelta& other) const {
     return microseconds_ == other.microseconds_;
   }
-  bool operator!=(const TimeDelta& other) const {
+  constexpr bool operator!=(const TimeDelta& other) const {
     return microseconds_ != other.microseconds_;
   }
-  bool operator<=(const TimeDelta& other) const {
+  constexpr bool operator<=(const TimeDelta& other) const {
     return microseconds_ <= other.microseconds_;
   }
-  bool operator>=(const TimeDelta& other) const {
+  constexpr bool operator>=(const TimeDelta& other) const {
     return microseconds_ >= other.microseconds_;
   }
-  bool operator>(const TimeDelta& other) const {
+  constexpr bool operator>(const TimeDelta& other) const {
     return microseconds_ > other.microseconds_;
   }
-  bool operator<(const TimeDelta& other) const {
+  constexpr bool operator<(const TimeDelta& other) const {
     return microseconds_ < other.microseconds_;
   }
 
  private:
   explicit constexpr TimeDelta(int64_t us) : microseconds_(us) {}
+  constexpr int64_t UnsafeSeconds() const {
+    return (microseconds_ + (microseconds_ >= 0 ? 500000 : -500000)) / 1000000;
+  }
+  constexpr int64_t UnsafeMillis() const {
+    return (microseconds_ + (microseconds_ >= 0 ? 500 : -500)) / 1000;
+  }
   int64_t microseconds_;
 };
 
@@ -220,7 +252,6 @@ inline TimeDelta operator*(const int32_t& scalar, const TimeDelta& delta) {
 inline TimeDelta operator/(const TimeDelta& delta, const int64_t& scalar) {
   return TimeDelta::us(delta.us() / scalar);
 }
-
 std::string ToString(const TimeDelta& value);
 }  // namespace webrtc
 

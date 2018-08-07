@@ -44,6 +44,18 @@ class DataRate {
   static constexpr DataRate Infinity() {
     return DataRate(data_rate_impl::kPlusInfinityVal);
   }
+  template <int64_t bps>
+  static constexpr DataRate BitsPerSec() {
+    static_assert(bps >= 0, "");
+    static_assert(bps < data_rate_impl::kPlusInfinityVal, "");
+    return DataRate(bps);
+  }
+  template <int64_t kbps>
+  static constexpr DataRate KilobitsPerSec() {
+    static_assert(kbps >= 0, "");
+    static_assert(kbps < data_rate_impl::kPlusInfinityVal / 1000, "");
+    return DataRate(kbps * 1000);
+  }
 
   template <
       typename T,
@@ -89,22 +101,26 @@ class DataRate {
   }
   template <typename T = int64_t>
   typename std::enable_if<std::is_integral<T>::value, T>::type kbps() const {
-    return rtc::dchecked_cast<T>((bps() + 500) / 1000);
+    RTC_DCHECK(IsFinite());
+    return rtc::dchecked_cast<T>(UnsafeKilobitsPerSec());
   }
 
   template <typename T>
-  typename std::enable_if<std::is_floating_point<T>::value, T>::type bps()
-      const {
-    if (IsInfinite()) {
-      return std::numeric_limits<T>::infinity();
-    } else {
-      return bits_per_sec_;
-    }
+  typename std::enable_if<std::is_floating_point<T>::value,
+                          T>::type constexpr bps() const {
+    return IsInfinite() ? std::numeric_limits<T>::infinity() : bits_per_sec_;
   }
   template <typename T>
-  typename std::enable_if<std::is_floating_point<T>::value, T>::type kbps()
-      const {
+  typename std::enable_if<std::is_floating_point<T>::value,
+                          T>::type constexpr kbps() const {
     return bps<T>() * 1e-3;
+  }
+
+  constexpr int64_t bps_or(int64_t fallback_value) const {
+    return IsFinite() ? bits_per_sec_ : fallback_value;
+  }
+  constexpr int64_t kbps_or(int64_t fallback_value) const {
+    return IsFinite() ? UnsafeKilobitsPerSec() : fallback_value;
   }
 
   constexpr bool IsZero() const { return bits_per_sec_ == 0; }
@@ -113,25 +129,25 @@ class DataRate {
   }
   constexpr bool IsFinite() const { return !IsInfinite(); }
 
-  double operator/(const DataRate& other) const {
+  constexpr double operator/(const DataRate& other) const {
     return bps<double>() / other.bps<double>();
   }
-  bool operator==(const DataRate& other) const {
+  constexpr bool operator==(const DataRate& other) const {
     return bits_per_sec_ == other.bits_per_sec_;
   }
-  bool operator!=(const DataRate& other) const {
+  constexpr bool operator!=(const DataRate& other) const {
     return bits_per_sec_ != other.bits_per_sec_;
   }
-  bool operator<=(const DataRate& other) const {
+  constexpr bool operator<=(const DataRate& other) const {
     return bits_per_sec_ <= other.bits_per_sec_;
   }
-  bool operator>=(const DataRate& other) const {
+  constexpr bool operator>=(const DataRate& other) const {
     return bits_per_sec_ >= other.bits_per_sec_;
   }
-  bool operator>(const DataRate& other) const {
+  constexpr bool operator>(const DataRate& other) const {
     return bits_per_sec_ > other.bits_per_sec_;
   }
-  bool operator<(const DataRate& other) const {
+  constexpr bool operator<(const DataRate& other) const {
     return bits_per_sec_ < other.bits_per_sec_;
   }
 
@@ -140,6 +156,9 @@ class DataRate {
   // more recognizable.
   explicit constexpr DataRate(int64_t bits_per_second)
       : bits_per_sec_(bits_per_second) {}
+  constexpr int64_t UnsafeKilobitsPerSec() const {
+    return (bits_per_sec_ + 500) / 1000;
+  }
   int64_t bits_per_sec_;
 };
 

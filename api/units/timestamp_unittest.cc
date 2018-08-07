@@ -14,8 +14,24 @@
 namespace webrtc {
 namespace test {
 TEST(TimestampTest, ConstExpr) {
+  constexpr int64_t kValue = 12345;
   constexpr Timestamp kTimestampInf = Timestamp::Infinity();
   static_assert(kTimestampInf.IsInfinite(), "");
+  static_assert(kTimestampInf.ms_or(-1) == -1, "");
+
+  constexpr Timestamp kTimestampSeconds = Timestamp::Seconds<kValue>();
+  constexpr Timestamp kTimestampMs = Timestamp::Millis<kValue>();
+  constexpr Timestamp kTimestampUs = Timestamp::Micros<kValue>();
+
+  static_assert(kTimestampSeconds.seconds_or(0) == kValue, "");
+  static_assert(kTimestampMs.ms_or(0) == kValue, "");
+  static_assert(kTimestampUs.us_or(0) == kValue, "");
+
+  static_assert(kTimestampMs > kTimestampUs, "");
+
+  EXPECT_EQ(kTimestampSeconds.seconds(), kValue);
+  EXPECT_EQ(kTimestampMs.ms(), kValue);
+  EXPECT_EQ(kTimestampUs.us(), kValue);
 }
 
 TEST(TimestampTest, GetBackSameValues) {

@@ -15,10 +15,19 @@ namespace webrtc {
 namespace test {
 
 TEST(DataRateTest, ConstExpr) {
+  constexpr int64_t kValue = 12345;
   constexpr DataRate kDataRateZero = DataRate::Zero();
   constexpr DataRate kDataRateInf = DataRate::Infinity();
   static_assert(kDataRateZero.IsZero(), "");
   static_assert(kDataRateInf.IsInfinite(), "");
+  static_assert(kDataRateInf.bps_or(-1) == -1, "");
+  static_assert(kDataRateInf > kDataRateZero, "");
+
+  constexpr DataRate kDataRateBps = DataRate::BitsPerSec<kValue>();
+  constexpr DataRate kDataRateKbps = DataRate::KilobitsPerSec<kValue>();
+  static_assert(kDataRateBps.bps<double>() == kValue, "");
+  static_assert(kDataRateBps.bps_or(0) == kValue, "");
+  static_assert(kDataRateKbps.kbps_or(0) == kValue, "");
 }
 
 TEST(DataRateTest, GetBackSameValues) {
