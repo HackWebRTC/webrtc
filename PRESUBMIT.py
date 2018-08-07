@@ -792,7 +792,6 @@ def CommonChecks(input_api, output_api):
                   r'^tools[\\\/].*\.py$',
                   # TODO(phoglund): should arguably be checked.
                   r'^tools_webrtc[\\\/]mb[\\\/].*\.py$',
-                  r'^tools_webrtc[\\\/]valgrind[\\\/].*\.py$',
                   r'^xcodebuild.*[\\\/].*\.py$',),
       pylintrc='pylintrc'))
 

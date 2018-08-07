@@ -117,7 +117,6 @@ TEST_CONFIG = """\
       'fake_builder': 'rel_bot',
       'fake_debug_builder': 'debug_goma',
       'fake_args_bot': '//build/args/bots/fake_master/fake_args_bot.gn',
-      'fake_memcheck_bot': 'memcheck_bot',
       'fake_multi_phase': { 'phase_1': 'phase_1', 'phase_2': 'phase_2'},
       'fake_android_bot': 'android_bot',
     },
@@ -127,7 +126,6 @@ TEST_CONFIG = """\
     'debug_goma': ['debug', 'goma'],
     'phase_1': ['phase_1'],
     'phase_2': ['phase_2'],
-    'memcheck_bot': ['memcheck'],
     'android_bot': ['android'],
   },
   'mixins': {
@@ -148,9 +146,6 @@ TEST_CONFIG = """\
     },
     'debug': {
       'gn_args': 'is_debug=true',
-    },
-    'memcheck': {
-      'gn_args': 'rtc_use_memcheck=true',
     },
     'android': {
       'gn_args': 'target_os="android"',
@@ -654,57 +649,6 @@ class UnitTest(unittest.TestCase):
         '--gtest_color=no',
         '--timeout=900',
         '--retry_failed=3',
-        './base_unittests',
-        '--asan=0',
-        '--lsan=0',
-        '--msan=0',
-        '--tsan=0',
-    ])
-
-  def test_isolate_console_test_launcher_memcheck(self):
-    test_files = {
-      '/tmp/swarming_targets': 'base_unittests\n',
-      '/fake_src/testing/buildbot/gn_isolate_map.pyl': (
-          "{'base_unittests': {"
-          "  'label': '//base:base_unittests',"
-          "  'type': 'console_test_launcher',"
-          "}}\n"
-      ),
-      '/fake_src/out/Release/base_unittests.runtime_deps': (
-          "base_unittests\n"
-          "lots_of_memcheck_dependencies\n"
-          "../../tools_webrtc/valgrind/webrtc_tests.sh\n"
-      ),
-    }
-    mbw = self.check(['gen', '-c', 'memcheck_bot', '//out/Release',
-                      '--swarming-targets-file', '/tmp/swarming_targets',
-                      '--isolate-map-file',
-                      '/fake_src/testing/buildbot/gn_isolate_map.pyl'],
-                     files=test_files, ret=0)
-
-    isolate_file = mbw.files['/fake_src/out/Release/base_unittests.isolate']
-    isolate_file_contents = ast.literal_eval(isolate_file)
-    files = isolate_file_contents['variables']['files']
-    command = isolate_file_contents['variables']['command']
-
-    self.assertEqual(files, [
-        '../../.vpython',
-        '../../testing/test_env.py',
-        '../../tools_webrtc/valgrind/webrtc_tests.sh',
-        'base_unittests',
-        'lots_of_memcheck_dependencies',
-    ])
-    self.assertEqual(command, [
-        '../../testing/test_env.py',
-        'bash',
-        '../../tools_webrtc/valgrind/webrtc_tests.sh',
-        '--tool',
-        'memcheck',
-        '--target',
-        'Release',
-        '--build-dir',
-        '..',
-        '--test',
         './base_unittests',
         '--asan=0',
         '--lsan=0',

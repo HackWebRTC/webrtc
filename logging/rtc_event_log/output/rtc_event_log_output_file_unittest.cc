@@ -143,7 +143,6 @@ TEST_F(RtcEventLogOutputFileTest, AllowReasonableFileSizeLimits) {
 }
 
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
-#if !defined(WEBRTC_USE_MEMCHECK)  // Crashing expected to leak memory.
 TEST_F(RtcEventLogOutputFileTest, WritingToInactiveFileForbidden) {
   RtcEventLogOutputFile output_file(output_file_name_, 2);
   ASSERT_FALSE(output_file.Write("abc"));
@@ -163,7 +162,6 @@ TEST_F(RtcEventLogOutputFileTest, DisallowUnreasonableFileSizeLimits) {
   };
   EXPECT_DEATH(create_output_file(), "");
 }
-#endif  // !WEBRTC_USE_MEMCHECK
 #endif
 
 }  // namespace webrtc

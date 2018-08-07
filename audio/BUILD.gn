@@ -120,6 +120,7 @@ if (rtc_include_tests) {
       "audio_state_unittest.cc",
       "mock_voe_channel_proxy.h",
       "remix_resample_unittest.cc",
+      "test/audio_stats_test.cc",
       "time_interval_unittest.cc",
       "transport_feedback_packet_loss_tracker_unittest.cc",
     ]
@@ -157,11 +158,6 @@ if (rtc_include_tests) {
       "//testing/gtest",
       "//third_party/abseil-cpp/absl/memory",
     ]
-
-    if (!rtc_use_memcheck) {
-      # This test is timing dependent, which rules out running on memcheck bots.
-      sources += [ "test/audio_stats_test.cc" ]
-    }
 
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).

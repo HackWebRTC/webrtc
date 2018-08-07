@@ -44,7 +44,6 @@
       'Linux64 Release (ARM)': 'release_bot_arm64',
       'Linux64 Release (GCC)': 'gcc_release_bot_x64',
       'Linux Asan': 'asan_lsan_clang_release_bot_x64',
-      'Linux Memcheck': 'memcheck_release_bot_x64',
       'Linux MSan': 'msan_clang_release_bot_x64',
       'Linux Tsan v2': 'tsan_clang_release_bot_x64',
       'Linux UBSan': 'ubsan_clang_release_bot_x64',
@@ -198,7 +197,6 @@
       'linux32_arm_rel': 'release_bot_arm',
       'linux_asan': 'asan_lsan_clang_release_bot_x64',
       'linux_gcc_rel': 'gcc_release_bot_x64',
-      'linux_memcheck': 'memcheck_release_bot_x64',
       'linux_msan': 'msan_clang_release_bot_x64',
       'linux_tsan2': 'tsan_clang_release_bot_x64',
       'linux_ubsan': 'ubsan_clang_release_bot_x64',
@@ -333,10 +331,6 @@
     'libfuzzer_asan_release_bot_x64': [
       'libfuzzer', 'asan', 'optimize_for_fuzzing', 'openh264_release_bot',
       'x64', 'no_rtc_tests'
-    ],
-    'memcheck_release_bot_x64': [
-      'memcheck', 'gn', 'openh264_release_bot', 'x64', 'use_default_libcxx',
-      'no_lld'
     ],
 
     # iOS
@@ -533,10 +527,6 @@
       'gn_args': 'is_lsan=true',
     },
 
-    'memcheck': {
-      'gn_args': 'rtc_use_memcheck=true',
-    },
-
     'minimal_symbols': {
       'gn_args': 'symbol_level=1 strip_absolute_paths_from_debug_symbols=true',
     },
@@ -604,10 +594,6 @@
 
     'x86': {
       'gn_args': 'target_cpu="x86"',
-    },
-
-    'use_default_libcxx': {
-      'gn_args': 'use_custom_libcxx=false',
     },
 
     'intelligibility_enhancer': {

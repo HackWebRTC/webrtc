@@ -137,10 +137,6 @@ declare_args() {
   # real audio samples.
   rtc_audio_device_plays_sinus_tone = false
 
-  # When set to true, test targets will declare the files needed to run memcheck
-  # as data dependencies. This is to enable memcheck execution on swarming bots.
-  rtc_use_memcheck = false
-
   # Disable this to build without support for built-in software codecs.
   rtc_use_builtin_sw_codecs = true
 

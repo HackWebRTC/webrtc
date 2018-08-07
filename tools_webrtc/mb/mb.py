@@ -857,20 +857,7 @@ class MetaBuildWrapper(object):
       else:
         cmdline.append('../../testing/test_env.py')
 
-      # Memcheck is only supported for linux. Ignore in other platforms.
-      if is_linux and 'rtc_use_memcheck=true' in vals['gn_args']:
-        cmdline += [
-            'bash',
-            '../../tools_webrtc/valgrind/webrtc_tests.sh',
-            '--tool',
-            'memcheck',
-            '--target',
-            'Release',
-            '--build-dir',
-            '..',
-            '--test',
-        ]
-      elif test_type != 'raw':
+      if test_type != 'raw':
         extra_files += [
             '../../third_party/gtest-parallel/gtest-parallel',
             '../../third_party/gtest-parallel/gtest_parallel.py',

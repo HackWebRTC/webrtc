@@ -11,9 +11,6 @@ import("//build/config/ui.gni")
 if (is_android) {
   import("//build/config/android/rules.gni")
 }
-if (rtc_use_memcheck) {
-  import("//tools_webrtc/valgrind/valgrind-webrtc.gni")
-}
 
 group("test") {
   testonly = true
@@ -194,10 +191,6 @@ rtc_source_set("test_support") {
   if (is_ios && !build_with_chromium) {
     deps += [ "../sdk:common_objc" ]
   }
-
-  if (rtc_use_memcheck) {
-    data = valgrind_webrtc_dependencies
-  }
 }
 
 if (rtc_include_tests) {
@@ -268,10 +261,6 @@ if (rtc_include_tests) {
 
     if (is_ios) {
       deps += [ "../sdk:common_objc" ]
-    }
-
-    if (rtc_use_memcheck) {
-      data = valgrind_webrtc_dependencies
     }
   }
 
