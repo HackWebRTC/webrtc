@@ -35,11 +35,11 @@ constexpr int64_t kMinusInfinityVal = std::numeric_limits<int64_t>::min();
 class TimeDelta {
  public:
   TimeDelta() = delete;
-  static TimeDelta Zero() { return TimeDelta(0); }
-  static TimeDelta PlusInfinity() {
+  static constexpr TimeDelta Zero() { return TimeDelta(0); }
+  static constexpr TimeDelta PlusInfinity() {
     return TimeDelta(timedelta_impl::kPlusInfinityVal);
   }
-  static TimeDelta MinusInfinity() {
+  static constexpr TimeDelta MinusInfinity() {
     return TimeDelta(timedelta_impl::kMinusInfinityVal);
   }
 
@@ -145,16 +145,16 @@ class TimeDelta {
   }
 
   TimeDelta Abs() const { return TimeDelta::us(std::abs(us())); }
-  bool IsZero() const { return microseconds_ == 0; }
-  bool IsFinite() const { return !IsInfinite(); }
-  bool IsInfinite() const {
+  constexpr bool IsZero() const { return microseconds_ == 0; }
+  constexpr bool IsFinite() const { return !IsInfinite(); }
+  constexpr bool IsInfinite() const {
     return microseconds_ == timedelta_impl::kPlusInfinityVal ||
            microseconds_ == timedelta_impl::kMinusInfinityVal;
   }
-  bool IsPlusInfinity() const {
+  constexpr bool IsPlusInfinity() const {
     return microseconds_ == timedelta_impl::kPlusInfinityVal;
   }
-  bool IsMinusInfinity() const {
+  constexpr bool IsMinusInfinity() const {
     return microseconds_ == timedelta_impl::kMinusInfinityVal;
   }
   TimeDelta operator+(const TimeDelta& other) const {
@@ -194,7 +194,7 @@ class TimeDelta {
   }
 
  private:
-  explicit TimeDelta(int64_t us) : microseconds_(us) {}
+  explicit constexpr TimeDelta(int64_t us) : microseconds_(us) {}
   int64_t microseconds_;
 };
 

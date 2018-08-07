@@ -13,6 +13,14 @@
 
 namespace webrtc {
 namespace test {
+
+TEST(DataRateTest, ConstExpr) {
+  constexpr DataRate kDataRateZero = DataRate::Zero();
+  constexpr DataRate kDataRateInf = DataRate::Infinity();
+  static_assert(kDataRateZero.IsZero(), "");
+  static_assert(kDataRateInf.IsInfinite(), "");
+}
+
 TEST(DataRateTest, GetBackSameValues) {
   const int64_t kValue = 123 * 8;
   EXPECT_EQ(DataRate::bps(kValue).bps(), kValue);

@@ -13,6 +13,11 @@
 
 namespace webrtc {
 namespace test {
+TEST(TimestampTest, ConstExpr) {
+  constexpr Timestamp kTimestampInf = Timestamp::Infinity();
+  static_assert(kTimestampInf.IsInfinite(), "");
+}
+
 TEST(TimestampTest, GetBackSameValues) {
   const int64_t kValue = 499;
   EXPECT_EQ(Timestamp::ms(kValue).ms(), kValue);

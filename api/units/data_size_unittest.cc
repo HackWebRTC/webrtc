@@ -14,6 +14,13 @@
 namespace webrtc {
 namespace test {
 
+TEST(DataSizeTest, ConstExpr) {
+  constexpr DataSize kDataSizeZero = DataSize::Zero();
+  constexpr DataSize kDataSizeInf = DataSize::Infinity();
+  static_assert(kDataSizeZero.IsZero(), "");
+  static_assert(kDataSizeInf.IsInfinite(), "");
+}
+
 TEST(DataSizeTest, GetBackSameValues) {
   const int64_t kValue = 123 * 8;
   EXPECT_EQ(DataSize::bytes(kValue).bytes(), kValue);

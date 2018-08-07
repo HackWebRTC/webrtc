@@ -40,8 +40,8 @@ inline int64_t Microbits(const DataSize& size) {
 class DataRate {
  public:
   DataRate() = delete;
-  static DataRate Zero() { return DataRate(0); }
-  static DataRate Infinity() {
+  static constexpr DataRate Zero() { return DataRate(0); }
+  static constexpr DataRate Infinity() {
     return DataRate(data_rate_impl::kPlusInfinityVal);
   }
 
@@ -107,11 +107,11 @@ class DataRate {
     return bps<T>() * 1e-3;
   }
 
-  bool IsZero() const { return bits_per_sec_ == 0; }
-  bool IsInfinite() const {
+  constexpr bool IsZero() const { return bits_per_sec_ == 0; }
+  constexpr bool IsInfinite() const {
     return bits_per_sec_ == data_rate_impl::kPlusInfinityVal;
   }
-  bool IsFinite() const { return !IsInfinite(); }
+  constexpr bool IsFinite() const { return !IsInfinite(); }
 
   double operator/(const DataRate& other) const {
     return bps<double>() / other.bps<double>();
@@ -138,7 +138,8 @@ class DataRate {
  private:
   // Bits per second used internally to simplify debugging by making the value
   // more recognizable.
-  explicit DataRate(int64_t bits_per_second) : bits_per_sec_(bits_per_second) {}
+  explicit constexpr DataRate(int64_t bits_per_second)
+      : bits_per_sec_(bits_per_second) {}
   int64_t bits_per_sec_;
 };
 

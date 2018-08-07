@@ -32,7 +32,7 @@ constexpr int64_t kMinusInfinityVal = std::numeric_limits<int64_t>::min();
 class Timestamp {
  public:
   Timestamp() = delete;
-  static Timestamp Infinity() {
+  static constexpr Timestamp Infinity() {
     return Timestamp(timestamp_impl::kPlusInfinityVal);
   }
 
@@ -124,10 +124,10 @@ class Timestamp {
     }
   }
 
-  bool IsInfinite() const {
+  constexpr bool IsInfinite() const {
     return microseconds_ == timestamp_impl::kPlusInfinityVal;
   }
-  bool IsFinite() const { return !IsInfinite(); }
+  constexpr bool IsFinite() const { return !IsInfinite(); }
   TimeDelta operator-(const Timestamp& other) const {
     return TimeDelta::us(us() - other.us());
   }
@@ -165,7 +165,7 @@ class Timestamp {
   }
 
  private:
-  explicit Timestamp(int64_t us) : microseconds_(us) {}
+  explicit constexpr Timestamp(int64_t us) : microseconds_(us) {}
   int64_t microseconds_;
 };
 
