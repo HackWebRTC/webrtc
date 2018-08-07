@@ -20,6 +20,7 @@
 #include "call/audio_send_stream.h"
 #include "call/call_config.h"
 #include "call/flexfec_receive_stream.h"
+#include "call/packet_receiver.h"
 #include "call/rtp_transport_controller_send_interface.h"
 #include "call/video_receive_stream.h"
 #include "call/video_send_stream.h"
@@ -30,22 +31,6 @@
 #include "rtc_base/socket.h"
 
 namespace webrtc {
-
-class PacketReceiver {
- public:
-  enum DeliveryStatus {
-    DELIVERY_OK,
-    DELIVERY_UNKNOWN_SSRC,
-    DELIVERY_PACKET_ERROR,
-  };
-
-  virtual DeliveryStatus DeliverPacket(MediaType media_type,
-                                       rtc::CopyOnWriteBuffer packet,
-                                       const PacketTime& packet_time) = 0;
-
- protected:
-  virtual ~PacketReceiver() {}
-};
 
 // A Call instance can contain several send and/or receive streams. All streams
 // are assumed to have the same remote endpoint and will share bitrate estimates

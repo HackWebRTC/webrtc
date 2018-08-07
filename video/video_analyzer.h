@@ -55,7 +55,7 @@ class VideoAnalyzer : public PacketReceiver,
 
   DeliveryStatus DeliverPacket(MediaType media_type,
                                rtc::CopyOnWriteBuffer packet,
-                               const PacketTime& packet_time) override;
+                               int64_t packet_time_us) override;
 
   void PreEncodeOnFrame(const VideoFrame& video_frame);
 

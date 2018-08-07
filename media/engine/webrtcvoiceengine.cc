@@ -2008,11 +2008,9 @@ void WebRtcVoiceMediaChannel::OnPacketReceived(
     const rtc::PacketTime& packet_time) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
 
-  const webrtc::PacketTime webrtc_packet_time(packet_time.timestamp,
-                                              packet_time.not_before);
   webrtc::PacketReceiver::DeliveryStatus delivery_result =
       call_->Receiver()->DeliverPacket(webrtc::MediaType::AUDIO, *packet,
-                                       webrtc_packet_time);
+                                       packet_time.timestamp);
   if (delivery_result != webrtc::PacketReceiver::DELIVERY_UNKNOWN_SSRC) {
     return;
   }
@@ -2065,7 +2063,7 @@ void WebRtcVoiceMediaChannel::OnPacketReceived(
   }
 
   delivery_result = call_->Receiver()->DeliverPacket(
-      webrtc::MediaType::AUDIO, *packet, webrtc_packet_time);
+      webrtc::MediaType::AUDIO, *packet, packet_time.timestamp);
   RTC_DCHECK_NE(webrtc::PacketReceiver::DELIVERY_UNKNOWN_SSRC, delivery_result);
 }
 
@@ -2075,10 +2073,8 @@ void WebRtcVoiceMediaChannel::OnRtcpReceived(
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
 
   // Forward packet to Call as well.
-  const webrtc::PacketTime webrtc_packet_time(packet_time.timestamp,
-                                              packet_time.not_before);
   call_->Receiver()->DeliverPacket(webrtc::MediaType::AUDIO, *packet,
-                                   webrtc_packet_time);
+                                   packet_time.timestamp);
 }
 
 void WebRtcVoiceMediaChannel::OnNetworkRouteChanged(

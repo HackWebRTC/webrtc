@@ -52,13 +52,13 @@ TEST_F(SsrcEndToEndTest, UnknownRtpPacketGivesUnknownSsrcReturnCode) {
    private:
     DeliveryStatus DeliverPacket(MediaType media_type,
                                  rtc::CopyOnWriteBuffer packet,
-                                 const PacketTime& packet_time) override {
+                                 int64_t packet_time_us) override {
       if (RtpHeaderParser::IsRtcp(packet.cdata(), packet.size())) {
         return receiver_->DeliverPacket(media_type, std::move(packet),
-                                        packet_time);
+                                        packet_time_us);
       } else {
         DeliveryStatus delivery_status = receiver_->DeliverPacket(
-            media_type, std::move(packet), packet_time);
+            media_type, std::move(packet), packet_time_us);
         EXPECT_EQ(DELIVERY_UNKNOWN_SSRC, delivery_status);
         delivered_packet_.Set();
         return delivery_status;

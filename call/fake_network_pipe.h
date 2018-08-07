@@ -42,8 +42,17 @@ class NetworkPacket {
                 int64_t arrival_time,
                 absl::optional<PacketOptions> packet_options,
                 bool is_rtcp,
-                MediaType media_type_,
-                absl::optional<PacketTime> packet_time_);
+                MediaType media_type,
+                absl::optional<int64_t> packet_time_us);
+  // TODO(nisse): Deprecated.
+  NetworkPacket(rtc::CopyOnWriteBuffer packet,
+                int64_t send_time,
+                int64_t arrival_time,
+                absl::optional<PacketOptions> packet_options,
+                bool is_rtcp,
+                MediaType media_type,
+                absl::optional<PacketTime> packet_time);
+
   // Disallow copy constructor and copy assignment (no deep copies of |data_|).
   NetworkPacket(const NetworkPacket&) = delete;
   ~NetworkPacket();
@@ -65,7 +74,11 @@ class NetworkPacket {
   }
   bool is_rtcp() const { return is_rtcp_; }
   MediaType media_type() const { return media_type_; }
-  PacketTime packet_time() const { return packet_time_.value_or(PacketTime()); }
+  absl::optional<int64_t> packet_time_us() const { return packet_time_us_; }
+  // TODO(nisse): Deprecated.
+  PacketTime packet_time() const {
+    return PacketTime(packet_time_us_.value_or(-1), -1);
+  }
 
  private:
   rtc::CopyOnWriteBuffer packet_;
@@ -82,7 +95,7 @@ class NetworkPacket {
   // forwarded. The PacketTime might be altered to reflect time spent in fake
   // network pipe.
   MediaType media_type_;
-  absl::optional<PacketTime> packet_time_;
+  absl::optional<int64_t> packet_time_us_;
 };
 
 // Class simulating a network link. This is a simple and naive solution just
@@ -179,10 +192,13 @@ class FakeNetworkPipe : public Transport, public PacketReceiver, public Module {
   // SetReceiver(), without passing through a Demuxer. The receive time in
   // PacketTime will be increased by the amount of time the packet spent in the
   // fake network pipe.
-  PacketReceiver::DeliveryStatus DeliverPacket(
-      MediaType media_type,
-      rtc::CopyOnWriteBuffer packet,
-      const PacketTime& packet_time) override;
+  PacketReceiver::DeliveryStatus DeliverPacket(MediaType media_type,
+                                               rtc::CopyOnWriteBuffer packet,
+                                               int64_t packet_time_us) override;
+
+  // TODO(bugs.webrtc.org/9584): Needed to inherit the alternative signature for
+  // this method.
+  using PacketReceiver::DeliverPacket;
 
   // Processes the network queues and trigger PacketReceiver::IncomingPacket for
   // packets ready to be delivered.
@@ -221,8 +237,23 @@ class FakeNetworkPipe : public Transport, public PacketReceiver, public Module {
                              absl::optional<PacketOptions> options,
                              bool is_rtcp,
                              MediaType media_type,
+                             absl::optional<int64_t> packet_time_us);
+
+  // TODO(nisse): Deprecated. Delete as soon as overrides in downstream code are
+  // updated.
+  virtual bool EnqueuePacket(rtc::CopyOnWriteBuffer packet,
+                             absl::optional<PacketOptions> options,
+                             bool is_rtcp,
+                             MediaType media_type,
                              absl::optional<PacketTime> packet_time);
-  void DeliverPacket(NetworkPacket* packet)
+  bool EnqueuePacket(rtc::CopyOnWriteBuffer packet,
+                     absl::optional<PacketOptions> options,
+                     bool is_rtcp,
+                     MediaType media_type) {
+    return EnqueuePacket(packet, options, is_rtcp, media_type,
+                         absl::optional<PacketTime>());
+  }
+  void DeliverNetworkPacket(NetworkPacket* packet)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(config_lock_);
   bool HasTransport() const;
   bool HasReceiver() const;

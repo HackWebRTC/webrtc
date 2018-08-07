@@ -210,7 +210,7 @@ class Call final : public webrtc::Call,
   // Implements PacketReceiver.
   DeliveryStatus DeliverPacket(MediaType media_type,
                                rtc::CopyOnWriteBuffer packet,
-                               const PacketTime& packet_time) override;
+                               int64_t packet_time_us) override;
 
   // Implements RecoveredPacketReceiver.
   void OnRecoveredPacket(const uint8_t* packet, size_t length) override;
@@ -241,7 +241,7 @@ class Call final : public webrtc::Call,
                              size_t length);
   DeliveryStatus DeliverRtp(MediaType media_type,
                             rtc::CopyOnWriteBuffer packet,
-                            const PacketTime& packet_time);
+                            int64_t packet_time_us);
   void ConfigureSync(const std::string& sync_group)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(receive_crit_);
 
@@ -1218,20 +1218,19 @@ PacketReceiver::DeliveryStatus Call::DeliverRtcp(MediaType media_type,
 
 PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
                                                 rtc::CopyOnWriteBuffer packet,
-                                                const PacketTime& packet_time) {
+                                                int64_t packet_time_us) {
   TRACE_EVENT0("webrtc", "Call::DeliverRtp");
 
   RtpPacketReceived parsed_packet;
   if (!parsed_packet.Parse(std::move(packet)))
     return DELIVERY_PACKET_ERROR;
 
-  if (packet_time.timestamp != -1) {
-    int64_t timestamp_us = packet_time.timestamp;
+  if (packet_time_us != -1) {
     if (receive_time_calculator_) {
-      timestamp_us = receive_time_calculator_->ReconcileReceiveTimes(
-          packet_time.timestamp, clock_->TimeInMicroseconds());
+      packet_time_us = receive_time_calculator_->ReconcileReceiveTimes(
+          packet_time_us, clock_->TimeInMicroseconds());
     }
-    parsed_packet.set_arrival_time_ms((timestamp_us + 500) / 1000);
+    parsed_packet.set_arrival_time_ms((packet_time_us + 500) / 1000);
   } else {
     parsed_packet.set_arrival_time_ms(clock_->TimeInMilliseconds());
   }
@@ -1297,12 +1296,12 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
 PacketReceiver::DeliveryStatus Call::DeliverPacket(
     MediaType media_type,
     rtc::CopyOnWriteBuffer packet,
-    const PacketTime& packet_time) {
+    int64_t packet_time_us) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&configuration_sequence_checker_);
   if (RtpHeaderParser::IsRtcp(packet.cdata(), packet.size()))
     return DeliverRtcp(media_type, packet.cdata(), packet.size());
 
-  return DeliverRtp(media_type, std::move(packet), packet_time);
+  return DeliverRtp(media_type, std::move(packet), packet_time_us);
 }
 
 void Call::OnRecoveredPacket(const uint8_t* packet, size_t length) {

@@ -175,11 +175,12 @@ rtc::VideoSourceInterface<VideoFrame>* VideoAnalyzer::OutputInterface() {
 PacketReceiver::DeliveryStatus VideoAnalyzer::DeliverPacket(
     MediaType media_type,
     rtc::CopyOnWriteBuffer packet,
-    const PacketTime& packet_time) {
+    int64_t packet_time_us) {
   // Ignore timestamps of RTCP packets. They're not synchronized with
   // RTP packet timestamps and so they would confuse wrap_handler_.
   if (RtpHeaderParser::IsRtcp(packet.cdata(), packet.size())) {
-    return receiver_->DeliverPacket(media_type, std::move(packet), packet_time);
+    return receiver_->DeliverPacket(media_type, std::move(packet),
+                                    packet_time_us);
   }
 
   if (rtp_file_writer_) {
@@ -207,7 +208,8 @@ PacketReceiver::DeliveryStatus VideoAnalyzer::DeliverPacket(
         Clock::GetRealTimeClock()->CurrentNtpInMilliseconds();
   }
 
-  return receiver_->DeliverPacket(media_type, std::move(packet), packet_time);
+  return receiver_->DeliverPacket(media_type, std::move(packet),
+                                  packet_time_us);
 }
 
 void VideoAnalyzer::PreEncodeOnFrame(const VideoFrame& video_frame) {

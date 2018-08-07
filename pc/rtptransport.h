@@ -22,7 +22,6 @@ namespace rtc {
 
 class CopyOnWriteBuffer;
 struct PacketOptions;
-struct PacketTime;
 class PacketTransportInternal;
 
 }  // namespace rtc

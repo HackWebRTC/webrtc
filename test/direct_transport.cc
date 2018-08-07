@@ -116,7 +116,7 @@ void DirectTransport::SendPacket(const uint8_t* data, size_t length) {
   MediaType media_type = demuxer_.GetMediaType(data, length);
   int64_t send_time = clock_->TimeInMicroseconds();
   fake_network_->DeliverPacket(media_type, rtc::CopyOnWriteBuffer(data, length),
-                               PacketTime(send_time, -1));
+                               send_time);
 }
 
 int DirectTransport::GetAverageDelayMs() {

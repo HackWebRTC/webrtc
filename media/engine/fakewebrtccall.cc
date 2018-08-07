@@ -90,7 +90,7 @@ bool FakeAudioReceiveStream::VerifyLastPacket(const uint8_t* data,
 
 bool FakeAudioReceiveStream::DeliverRtp(const uint8_t* packet,
                                         size_t length,
-                                        const webrtc::PacketTime& packet_time) {
+                                        int64_t /* packet_time_us */) {
   ++received_packets_;
   last_packet_.SetData(packet, length);
   return true;
@@ -582,10 +582,9 @@ webrtc::PacketReceiver* FakeCall::Receiver() {
   return this;
 }
 
-FakeCall::DeliveryStatus FakeCall::DeliverPacket(
-    webrtc::MediaType media_type,
-    rtc::CopyOnWriteBuffer packet,
-    const webrtc::PacketTime& packet_time) {
+FakeCall::DeliveryStatus FakeCall::DeliverPacket(webrtc::MediaType media_type,
+                                                 rtc::CopyOnWriteBuffer packet,
+                                                 int64_t packet_time_us) {
   EXPECT_GE(packet.size(), 12u);
   RTC_DCHECK(media_type == webrtc::MediaType::AUDIO ||
              media_type == webrtc::MediaType::VIDEO);
@@ -603,7 +602,7 @@ FakeCall::DeliveryStatus FakeCall::DeliverPacket(
   if (media_type == webrtc::MediaType::AUDIO) {
     for (auto receiver : audio_receive_streams_) {
       if (receiver->GetConfig().rtp.remote_ssrc == ssrc) {
-        receiver->DeliverRtp(packet.cdata(), packet.size(), packet_time);
+        receiver->DeliverRtp(packet.cdata(), packet.size(), packet_time_us);
         return DELIVERY_OK;
       }
     }

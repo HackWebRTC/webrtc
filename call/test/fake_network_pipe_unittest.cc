@@ -28,9 +28,7 @@ namespace webrtc {
 class MockReceiver : public PacketReceiver {
  public:
   MOCK_METHOD3(DeliverPacket,
-               DeliveryStatus(MediaType,
-                              rtc::CopyOnWriteBuffer,
-                              const PacketTime&));
+               DeliveryStatus(MediaType, rtc::CopyOnWriteBuffer, int64_t));
   virtual ~MockReceiver() = default;
 };
 
@@ -38,7 +36,7 @@ class ReorderTestReceiver : public MockReceiver {
  public:
   DeliveryStatus DeliverPacket(MediaType media_type,
                                rtc::CopyOnWriteBuffer packet,
-                               const PacketTime& packet_time) override {
+                               int64_t /* packet_time_us */) override {
     RTC_DCHECK_GE(packet.size(), sizeof(int));
     int seq_num;
     memcpy(&seq_num, packet.data<uint8_t>(), sizeof(int));
@@ -61,7 +59,7 @@ class FakeNetworkPipeTest : public ::testing::Test {
       // using the first bytes in the packet.
       memcpy(packet.get(), &i, sizeof(int));
       rtc::CopyOnWriteBuffer buffer(packet.get(), packet_size);
-      pipe->DeliverPacket(MediaType::ANY, buffer, PacketTime());
+      pipe->DeliverPacket(MediaType::ANY, buffer, /* packet_time_us */ -1);
     }
   }
 

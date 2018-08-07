@@ -409,6 +409,9 @@ struct OverUseDetectorOptions {
   double initial_var_noise;
 };
 
+// TODO(nisse): This struct is phased out, delete as soon as down stream code is
+// updated.
+
 // This structure will have the information about when packet is actually
 // received by socket.
 struct PacketTime {

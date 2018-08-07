@@ -191,9 +191,9 @@ bool DegradedCall::SendRtcp(const uint8_t* packet, size_t length) {
 PacketReceiver::DeliveryStatus DegradedCall::DeliverPacket(
     MediaType media_type,
     rtc::CopyOnWriteBuffer packet,
-    const PacketTime& packet_time) {
-  PacketReceiver::DeliveryStatus status =
-      receive_pipe_->DeliverPacket(media_type, std::move(packet), packet_time);
+    int64_t packet_time_us) {
+  PacketReceiver::DeliveryStatus status = receive_pipe_->DeliverPacket(
+      media_type, std::move(packet), packet_time_us);
   // This is not optimal, but there are many places where there are thread
   // checks that fail if we're not using the worker thread call into this
   // method. If we want to fix this we probably need a task queue to do handover
