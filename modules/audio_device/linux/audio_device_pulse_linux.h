@@ -19,7 +19,10 @@
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/thread_checker.h"
 
+#if defined(WEBRTC_USE_X11)
 #include <X11/Xlib.h>
+#endif
+
 #include <pulse/pulseaudio.h>
 
 // We define this flag if it's missing from our headers, because we want to be
@@ -328,7 +331,9 @@ class AudioDeviceLinuxPulse : public AudioDeviceGeneric {
   pa_buffer_attr _recBufferAttr;
 
   char _oldKeyState[32];
+#if defined(WEBRTC_USE_X11)
   Display* _XDisplay;
+#endif
 };
 
 }  // namespace webrtc
