@@ -423,6 +423,7 @@ class HardwareVideoDecoder implements VideoDecoder, VideoSink {
 
     synchronized (renderedTextureMetadataLock) {
       if (renderedTextureMetadata != null) {
+        codec.releaseOutputBuffer(index, false);
         return; // We are still waiting for texture for the previous frame, drop this one.
       }
       surfaceTextureHelper.setTextureSize(width, height);

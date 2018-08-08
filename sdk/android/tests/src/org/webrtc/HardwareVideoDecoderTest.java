@@ -324,7 +324,6 @@ public class HardwareVideoDecoderTest {
   }
 
   @Test
-  @Ignore("TODO(webrtc:9128): Fix")
   public void testSurfaceTextureStall_FramesDropped() throws InterruptedException {
     final int numFrames = 10;
     // Maximum number of frame the decoder can keep queued on the output side.
