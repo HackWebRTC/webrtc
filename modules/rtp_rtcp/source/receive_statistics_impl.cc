@@ -240,7 +240,10 @@ RtcpStatistics StreamStatisticianImpl::CalculateRtcpStatistics(
   // Since cumulative loss is carried in a signed 24-bit field in RTCP, we may
   // need to clamp it.
   statistics.packets_lost = std::min(statistics.packets_lost, 0x7fffff);
-  statistics.packets_lost = std::max(statistics.packets_lost, -0x800000);
+  // TODO(bugs.webrtc.org/9598): This packets_lost should be signed according to
+  // RFC3550. However, old WebRTC implementations reads it as unsigned.
+  // Therefore we limit this to 0.
+  statistics.packets_lost = std::max(statistics.packets_lost, 0);
   statistics.extended_highest_sequence_number = extended_seq_max;
   // Note: internal jitter value is in Q4 and needs to be scaled by 1/16.
   statistics.jitter = jitter_q4_ >> 4;

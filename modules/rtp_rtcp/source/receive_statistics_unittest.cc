@@ -479,7 +479,9 @@ TEST_F(ReceiveStatisticsTest, NegativeLoss) {
   receive_statistics_->GetStatistician(kSsrc1)->GetStatistics(
       &statistics, /*update_fraction_lost=*/true);
   EXPECT_EQ(0u, statistics.fraction_lost);
-  EXPECT_EQ(-1, statistics.packets_lost);
+  // TODO(bugs.webrtc.org/9598): Since old WebRTC implementations reads this
+  // value as unsigned we currently limit it to 0.
+  EXPECT_EQ(0, statistics.packets_lost);
 
   // Lose 2 packets; now cumulative loss should become positive again.
   header1_.sequenceNumber = 7;
@@ -521,7 +523,9 @@ TEST_F(ReceiveStatisticsTest, NegativeCumulativeLossClamped) {
   RtcpStatistics statistics;
   receive_statistics_->GetStatistician(kSsrc1)->GetStatistics(
       &statistics, /*update_fraction_lost=*/false);
-  EXPECT_EQ(-0x800000, statistics.packets_lost);
+  // TODO(bugs.webrtc.org/9598): Since old WebRTC implementations reads this
+  // value as unsigned we currently limit it to 0.
+  EXPECT_EQ(0, statistics.packets_lost);
 }
 
 // Test that the extended highest sequence number is computed correctly when
