@@ -141,8 +141,7 @@ AudioSendStream::AudioSendStream(
 
   channel_proxy_->SetRtcEventLog(event_log_);
   channel_proxy_->SetRTCPStatus(true);
-  RtpReceiver* rtpReceiver = nullptr;  // Unused, but required for call.
-  channel_proxy_->GetRtpRtcp(&rtp_rtcp_module_, &rtpReceiver);
+  rtp_rtcp_module_ = channel_proxy_->GetRtpRtcp();
   RTC_DCHECK(rtp_rtcp_module_);
 
   ConfigureStream(this, config, true);

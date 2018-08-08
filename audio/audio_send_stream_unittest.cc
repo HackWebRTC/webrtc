@@ -189,12 +189,9 @@ struct ConfigHelper {
   void SetupDefaultChannelProxy(bool audio_bwe_enabled) {
     EXPECT_TRUE(channel_proxy_ == nullptr);
     channel_proxy_ = new testing::StrictMock<MockVoEChannelProxy>();
-    EXPECT_CALL(*channel_proxy_, GetRtpRtcp(_, _))
-        .WillRepeatedly(Invoke(
-            [this](RtpRtcp** rtp_rtcp_module, RtpReceiver** rtp_receiver) {
-              *rtp_rtcp_module = &this->rtp_rtcp_;
-              *rtp_receiver = nullptr;  // Not deemed necessary for tests yet.
-            }));
+    EXPECT_CALL(*channel_proxy_, GetRtpRtcp()).WillRepeatedly(Invoke([this]() {
+      return &this->rtp_rtcp_;
+    }));
     EXPECT_CALL(*channel_proxy_, SetRTCPStatus(true)).Times(1);
     EXPECT_CALL(*channel_proxy_, SetLocalSSRC(kSsrc)).Times(1);
     EXPECT_CALL(*channel_proxy_, SetRTCP_CNAME(StrEq(kCName))).Times(1);

@@ -265,13 +265,14 @@ void ChannelProxy::DisassociateSendChannel() {
   channel_->SetAssociatedSendChannel(nullptr);
 }
 
-void ChannelProxy::GetRtpRtcp(RtpRtcp** rtp_rtcp,
-                              RtpReceiver** rtp_receiver) const {
+RtpRtcp* ChannelProxy::GetRtpRtcp() const {
   RTC_DCHECK(module_process_thread_checker_.CalledOnValidThread());
-  RTC_DCHECK(rtp_rtcp);
-  RTC_DCHECK(rtp_receiver);
-  int error = channel_->GetRtpRtcp(rtp_rtcp, rtp_receiver);
-  RTC_DCHECK_EQ(0, error);
+  return channel_->GetRtpRtcp();
+}
+
+absl::optional<Syncable::Info> ChannelProxy::GetSyncInfo() const {
+  RTC_DCHECK(module_process_thread_checker_.CalledOnValidThread());
+  return channel_->GetSyncInfo();
 }
 
 uint32_t ChannelProxy::GetPlayoutTimestamp() const {

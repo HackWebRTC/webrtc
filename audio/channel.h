@@ -22,6 +22,7 @@
 #include "api/call/audio_sink.h"
 #include "api/call/transport.h"
 #include "audio/audio_level.h"
+#include "call/syncable.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/audio_processing/rms_level.h"
@@ -209,8 +210,12 @@ class Channel
   uint32_t GetDelayEstimate() const;
   int SetMinimumPlayoutDelay(int delayMs);
   int GetPlayoutTimestamp(unsigned int& timestamp);  // NOLINT
-  int GetRtpRtcp(RtpRtcp** rtpRtcpModule, RtpReceiver** rtp_receiver) const;
 
+  // Used by AudioSendStream.
+  RtpRtcp* GetRtpRtcp() const;
+
+  // Produces the transport-related timestamps; current_delay_ms is left unset.
+  absl::optional<Syncable::Info> GetSyncInfo() const;
   // DTMF.
   int SendTelephoneEventOutband(int event, int duration_ms);
   int SetSendTelephoneEventPayloadType(int payload_type, int payload_frequency);

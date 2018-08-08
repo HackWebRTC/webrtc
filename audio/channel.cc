@@ -1342,11 +1342,24 @@ int Channel::GetPlayoutTimestamp(unsigned int& timestamp) {
   return 0;
 }
 
-int Channel::GetRtpRtcp(RtpRtcp** rtpRtcpModule,
-                        RtpReceiver** rtp_receiver) const {
-  *rtpRtcpModule = _rtpRtcpModule.get();
-  *rtp_receiver = rtp_receiver_.get();
-  return 0;
+RtpRtcp* Channel::GetRtpRtcp() const {
+  return _rtpRtcpModule.get();
+}
+
+absl::optional<Syncable::Info> Channel::GetSyncInfo() const {
+  Syncable::Info info;
+  if (!rtp_receiver_->GetLatestTimestamps(
+          &info.latest_received_capture_timestamp,
+          &info.latest_receive_time_ms)) {
+    return absl::nullopt;
+  }
+  if (_rtpRtcpModule->RemoteNTP(&info.capture_time_ntp_secs,
+                                &info.capture_time_ntp_frac, nullptr, nullptr,
+                                &info.capture_time_source_clock) != 0) {
+    return absl::nullopt;
+  }
+
+  return info;
 }
 
 void Channel::UpdatePlayoutTimestamp(bool rtcp) {

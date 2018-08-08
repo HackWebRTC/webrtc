@@ -257,26 +257,12 @@ int AudioReceiveStream::id() const {
 
 absl::optional<Syncable::Info> AudioReceiveStream::GetInfo() const {
   RTC_DCHECK_RUN_ON(&module_process_thread_checker_);
-  Syncable::Info info;
+  absl::optional<Syncable::Info> info = channel_proxy_->GetSyncInfo();
 
-  RtpRtcp* rtp_rtcp = nullptr;
-  RtpReceiver* rtp_receiver = nullptr;
-  channel_proxy_->GetRtpRtcp(&rtp_rtcp, &rtp_receiver);
-  RTC_DCHECK(rtp_rtcp);
-  RTC_DCHECK(rtp_receiver);
-
-  if (!rtp_receiver->GetLatestTimestamps(
-          &info.latest_received_capture_timestamp,
-          &info.latest_receive_time_ms)) {
+  if (!info)
     return absl::nullopt;
-  }
-  if (rtp_rtcp->RemoteNTP(&info.capture_time_ntp_secs,
-                          &info.capture_time_ntp_frac, nullptr, nullptr,
-                          &info.capture_time_source_clock) != 0) {
-    return absl::nullopt;
-  }
 
-  info.current_delay_ms = channel_proxy_->GetDelayEstimate();
+  info->current_delay_ms = channel_proxy_->GetDelayEstimate();
   return info;
 }
 
