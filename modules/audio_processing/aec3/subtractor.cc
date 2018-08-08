@@ -238,6 +238,7 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
     G.re.fill(0.f);
     G.im.fill(0.f);
     poor_shadow_filter_counter_ = 0;
+    shadow_filter_.Adapt(render_buffer, G);
     shadow_filter_.SetFilter(main_filter_.GetFilter());
   }
 
