@@ -111,11 +111,7 @@ rtc_source_set("platform_thread_types") {
 
 rtc_source_set("ptr_util") {
   sources = [
-    "ptr_util.h",
     "scoped_ref_ptr.h",
-  ]
-  deps = [
-    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 
@@ -1272,7 +1268,6 @@ if (rtc_include_tests) {
       "network_unittest.cc",
       "optionsfile_unittest.cc",
       "proxy_unittest.cc",
-      "ptr_util_unittest.cc",
       "rollingaccumulator_unittest.cc",
       "rtccertificate_unittest.cc",
       "rtccertificategenerator_unittest.cc",

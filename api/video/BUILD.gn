@@ -166,5 +166,6 @@ rtc_source_set("video_stream_encoder_create") {
     "../../rtc_base:ptr_util",
     "../../video:video_stream_encoder_impl",
     "../video_codecs:video_codecs_api",
+    "//third_party/abseil-cpp/absl/memory",
   ]
 }

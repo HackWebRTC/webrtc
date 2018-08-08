@@ -10,7 +10,7 @@
 
 #include "api/video/video_stream_encoder_create.h"
 
-#include "rtc_base/ptr_util.h"
+#include "absl/memory/memory.h"
 #include "video/video_stream_encoder.h"
 
 namespace webrtc {
@@ -20,8 +20,8 @@ std::unique_ptr<VideoStreamEncoderInterface> CreateVideoStreamEncoder(
     const VideoStreamEncoderSettings& settings,
     // Deprecated, used for tests only.
     rtc::VideoSinkInterface<VideoFrame>* pre_encode_callback) {
-  return rtc::MakeUnique<VideoStreamEncoder>(
+  return absl::make_unique<VideoStreamEncoder>(
       number_of_cores, encoder_stats_observer, settings, pre_encode_callback,
-      rtc::MakeUnique<OveruseFrameDetector>(encoder_stats_observer));
+      absl::make_unique<OveruseFrameDetector>(encoder_stats_observer));
 }
 }  // namespace webrtc
