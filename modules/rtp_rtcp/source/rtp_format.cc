@@ -41,7 +41,9 @@ RtpPacketizer* RtpPacketizer::Create(VideoCodecType type,
                                   last_packet_reduction_len);
     }
     case kVideoCodecGeneric:
-      return new RtpPacketizerGeneric(frame_type, max_payload_len,
+      RTC_CHECK(rtp_video_header);
+      return new RtpPacketizerGeneric(*rtp_video_header, frame_type,
+                                      max_payload_len,
                                       last_packet_reduction_len);
     default:
       RTC_NOTREACHED();

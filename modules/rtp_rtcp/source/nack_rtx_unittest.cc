@@ -202,9 +202,10 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
     uint32_t timestamp = 3000;
     uint16_t nack_list[kVideoNackListSize];
     for (int frame = 0; frame < kNumFrames; ++frame) {
+      RTPVideoHeader video_header;
       EXPECT_TRUE(rtp_rtcp_module_->SendOutgoingData(
           webrtc::kVideoFrameDelta, kPayloadType, timestamp, timestamp / 90,
-          payload_data, payload_data_length, nullptr, nullptr, nullptr));
+          payload_data, payload_data_length, nullptr, &video_header, nullptr));
       // Min required delay until retransmit = 5 + RTT ms (RTT = 0).
       fake_clock.AdvanceTimeMilliseconds(5);
       int length = BuildNackList(nack_list);
@@ -250,9 +251,10 @@ TEST_F(RtpRtcpRtxNackTest, LongNackList) {
   // Send 30 frames which at the default size is roughly what we need to get
   // enough packets.
   for (int frame = 0; frame < kNumFrames; ++frame) {
+    RTPVideoHeader video_header;
     EXPECT_TRUE(rtp_rtcp_module_->SendOutgoingData(
         webrtc::kVideoFrameDelta, kPayloadType, timestamp, timestamp / 90,
-        payload_data, payload_data_length, nullptr, nullptr, nullptr));
+        payload_data, payload_data_length, nullptr, &video_header, nullptr));
     // Prepare next frame.
     timestamp += 3000;
     fake_clock.AdvanceTimeMilliseconds(33);

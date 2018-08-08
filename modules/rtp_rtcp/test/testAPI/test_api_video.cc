@@ -140,9 +140,10 @@ class RtpRtcpVideoTest : public ::testing::Test {
 
 TEST_F(RtpRtcpVideoTest, BasicVideo) {
   uint32_t timestamp = 3000;
+  RTPVideoHeader video_header;
   EXPECT_TRUE(video_module_->SendOutgoingData(
       kVideoFrameDelta, 123, timestamp, timestamp / 90, video_frame_,
-      payload_data_length_, nullptr, nullptr, nullptr));
+      payload_data_length_, nullptr, &video_header, nullptr));
 }
 
 TEST_F(RtpRtcpVideoTest, PaddingOnlyFrames) {

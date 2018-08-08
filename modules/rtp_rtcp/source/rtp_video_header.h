@@ -46,7 +46,7 @@ struct RTPVideoHeader {
   }
 
   // Information for generic codec descriptor.
-  int64_t frame_id = 0;
+  int64_t frame_id = kNoPictureId;
   int spatial_index = 0;
   int temporal_index = 0;
   absl::InlinedVector<int64_t, 5> dependencies;
