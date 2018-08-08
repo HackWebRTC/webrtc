@@ -270,12 +270,16 @@ TEST(RtpVideoSenderTest, CreateWithNoPreviousStates) {
 }
 
 TEST(RtpVideoSenderTest, CreateWithPreviousStates) {
+  const int64_t kState1SharedFrameId = 123;
+  const int64_t kState2SharedFrameId = 234;
   RtpPayloadState state1;
   state1.picture_id = kInitialPictureId1;
   state1.tl0_pic_idx = kInitialTl0PicIdx1;
+  state1.shared_frame_id = kState1SharedFrameId;
   RtpPayloadState state2;
   state2.picture_id = kInitialPictureId2;
   state2.tl0_pic_idx = kInitialTl0PicIdx2;
+  state2.shared_frame_id = kState2SharedFrameId;
   std::map<uint32_t, RtpPayloadState> states = {{kSsrc1, state1},
                                                 {kSsrc2, state2}};
 
@@ -289,5 +293,7 @@ TEST(RtpVideoSenderTest, CreateWithPreviousStates) {
   EXPECT_EQ(kInitialTl0PicIdx1, initial_states[kSsrc1].tl0_pic_idx);
   EXPECT_EQ(kInitialPictureId2, initial_states[kSsrc2].picture_id);
   EXPECT_EQ(kInitialTl0PicIdx2, initial_states[kSsrc2].tl0_pic_idx);
+  EXPECT_EQ(kState2SharedFrameId, initial_states[kSsrc1].shared_frame_id);
+  EXPECT_EQ(kState2SharedFrameId, initial_states[kSsrc2].shared_frame_id);
 }
 }  // namespace webrtc

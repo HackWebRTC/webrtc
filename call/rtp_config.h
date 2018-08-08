@@ -22,6 +22,7 @@ namespace webrtc {
 struct RtpPayloadState {
   int16_t picture_id = -1;
   uint8_t tl0_pic_idx = 0;
+  int64_t shared_frame_id = 0;
 };
 // Settings for NACK, see RFC 4585 for details.
 struct NackConfig {
