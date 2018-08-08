@@ -3176,17 +3176,19 @@ class Vp9HeaderObserver : public test::SendTest {
       EXPECT_TRUE(depacketizer.Parse(&parsed, payload, payload_length));
       EXPECT_EQ(VideoCodecType::kVideoCodecVP9, parsed.video_header().codec);
       // Verify common fields for all configurations.
-      VerifyCommonHeader(parsed.video_header().vp9());
+      const auto& vp9_header =
+          absl::get<RTPVideoHeaderVP9>(parsed.video_header().video_type_header);
+      VerifyCommonHeader(vp9_header);
       CompareConsecutiveFrames(header, parsed.video_header());
       // Verify configuration specific settings.
-      InspectHeader(parsed.video_header().vp9());
+      InspectHeader(vp9_header);
 
       ++packets_sent_;
       if (header.markerBit) {
         ++frames_sent_;
       }
       last_header_ = header;
-      last_vp9_ = parsed.video_header().vp9();
+      last_vp9_ = vp9_header;
     }
     return SEND_PACKET;
   }
@@ -3371,7 +3373,8 @@ class Vp9HeaderObserver : public test::SendTest {
 
   void CompareConsecutiveFrames(const RTPHeader& header,
                                 const RTPVideoHeader& video) const {
-    const RTPVideoHeaderVP9& vp9 = video.vp9();
+    const auto& vp9_header =
+        absl::get<RTPVideoHeaderVP9>(video.video_type_header);
 
     bool new_frame = packets_sent_ == 0 ||
                      IsNewerTimestamp(header.timestamp, last_header_.timestamp);
@@ -3379,22 +3382,22 @@ class Vp9HeaderObserver : public test::SendTest {
     if (!new_frame) {
       EXPECT_FALSE(last_header_.markerBit);
       EXPECT_EQ(last_header_.timestamp, header.timestamp);
-      EXPECT_EQ(last_vp9_.picture_id, vp9.picture_id);
-      EXPECT_EQ(last_vp9_.temporal_idx, vp9.temporal_idx);
-      EXPECT_EQ(last_vp9_.tl0_pic_idx, vp9.tl0_pic_idx);
-      VerifySpatialIdxWithinFrame(vp9);
+      EXPECT_EQ(last_vp9_.picture_id, vp9_header.picture_id);
+      EXPECT_EQ(last_vp9_.temporal_idx, vp9_header.temporal_idx);
+      EXPECT_EQ(last_vp9_.tl0_pic_idx, vp9_header.tl0_pic_idx);
+      VerifySpatialIdxWithinFrame(vp9_header);
       return;
     }
     // New frame.
-    EXPECT_TRUE(vp9.beginning_of_frame);
+    EXPECT_TRUE(vp9_header.beginning_of_frame);
 
     // Compare with last packet in previous frame.
     if (frames_sent_ == 0)
       return;
     EXPECT_TRUE(last_vp9_.end_of_frame);
     EXPECT_TRUE(last_header_.markerBit);
-    EXPECT_TRUE(ContinuousPictureId(vp9));
-    VerifyTl0Idx(vp9);
+    EXPECT_TRUE(ContinuousPictureId(vp9_header));
+    VerifyTl0Idx(vp9_header);
   }
 
   test::FunctionVideoEncoderFactory encoder_factory_;

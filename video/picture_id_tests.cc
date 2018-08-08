@@ -101,11 +101,14 @@ class PictureIdObserver : public test::RtpRtcpObserver {
         parsed->tl0_pic_idx = parsed_payload.video_header().vp8().tl0PicIdx;
         parsed->temporal_idx = parsed_payload.video_header().vp8().temporalIdx;
         break;
-      case kVideoCodecVP9:
-        parsed->picture_id = parsed_payload.video_header().vp9().picture_id;
-        parsed->tl0_pic_idx = parsed_payload.video_header().vp9().tl0_pic_idx;
-        parsed->temporal_idx = parsed_payload.video_header().vp9().temporal_idx;
+      case kVideoCodecVP9: {
+        const auto& vp9_header = absl::get<RTPVideoHeaderVP9>(
+            parsed_payload.video_header().video_type_header);
+        parsed->picture_id = vp9_header.picture_id;
+        parsed->tl0_pic_idx = vp9_header.tl0_pic_idx;
+        parsed->temporal_idx = vp9_header.temporal_idx;
         break;
+      }
       default:
         RTC_NOTREACHED();
         break;

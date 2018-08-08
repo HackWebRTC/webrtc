@@ -458,7 +458,8 @@ TEST(TestDecodingState, FrameContinuityFlexibleModeKeyFrame) {
   packet.dataPtr = data;
   packet.video_header.codec = kVideoCodecVP9;
 
-  RTPVideoHeaderVP9& vp9_hdr = packet.video_header.vp9();
+  auto& vp9_hdr =
+      packet.video_header.video_type_header.emplace<RTPVideoHeaderVP9>();
   vp9_hdr.picture_id = 10;
   vp9_hdr.flexible_mode = true;
 
@@ -501,7 +502,8 @@ TEST(TestDecodingState, FrameContinuityFlexibleModeOutOfOrderFrames) {
   packet.dataPtr = data;
   packet.video_header.codec = kVideoCodecVP9;
 
-  RTPVideoHeaderVP9& vp9_hdr = packet.video_header.vp9();
+  auto& vp9_hdr =
+      packet.video_header.video_type_header.emplace<RTPVideoHeaderVP9>();
   vp9_hdr.picture_id = 10;
   vp9_hdr.flexible_mode = true;
 
@@ -556,7 +558,8 @@ TEST(TestDecodingState, FrameContinuityFlexibleModeGeneral) {
   packet.dataPtr = data;
   packet.video_header.codec = kVideoCodecVP9;
 
-  RTPVideoHeaderVP9& vp9_hdr = packet.video_header.vp9();
+  auto& vp9_hdr =
+      packet.video_header.video_type_header.emplace<RTPVideoHeaderVP9>();
   vp9_hdr.picture_id = 10;
   vp9_hdr.flexible_mode = true;
 

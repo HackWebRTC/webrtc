@@ -416,12 +416,19 @@ bool VideoAnalyzer::IsInSelectedSpatialAndTemporalLayer(
     bool result =
         depacketizer->Parse(&parsed_payload, payload, payload_data_length);
     RTC_DCHECK(result);
-    const int temporal_idx = static_cast<int>(
-        is_vp8 ? parsed_payload.video_header().vp8().temporalIdx
-               : parsed_payload.video_header().vp9().temporal_idx);
-    const int spatial_idx = static_cast<int>(
-        is_vp8 ? kNoSpatialIdx
-               : parsed_payload.video_header().vp9().spatial_idx);
+
+    int temporal_idx;
+    int spatial_idx;
+    if (is_vp8) {
+      temporal_idx = parsed_payload.video_header().vp8().temporalIdx;
+      spatial_idx = kNoTemporalIdx;
+    } else {
+      const auto& vp9_header = absl::get<RTPVideoHeaderVP9>(
+          parsed_payload.video_header().video_type_header);
+      temporal_idx = vp9_header.temporal_idx;
+      spatial_idx = vp9_header.spatial_idx;
+    }
+
     return (selected_tl_ < 0 || temporal_idx == kNoTemporalIdx ||
             temporal_idx <= selected_tl_) &&
            (selected_sl_ < 0 || spatial_idx == kNoSpatialIdx ||

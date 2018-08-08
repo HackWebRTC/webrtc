@@ -33,39 +33,40 @@ void PopulateRtpWithCodecSpecifics(const CodecSpecificInfo& info,
       return;
     }
     case kVideoCodecVP9: {
-      rtp->vp9().InitRTPVideoHeaderVP9();
-      rtp->vp9().inter_pic_predicted =
+      auto& vp9_header = rtp->video_type_header.emplace<RTPVideoHeaderVP9>();
+      vp9_header.InitRTPVideoHeaderVP9();
+      vp9_header.inter_pic_predicted =
           info.codecSpecific.VP9.inter_pic_predicted;
-      rtp->vp9().flexible_mode = info.codecSpecific.VP9.flexible_mode;
-      rtp->vp9().ss_data_available = info.codecSpecific.VP9.ss_data_available;
-      rtp->vp9().non_ref_for_inter_layer_pred =
+      vp9_header.flexible_mode = info.codecSpecific.VP9.flexible_mode;
+      vp9_header.ss_data_available = info.codecSpecific.VP9.ss_data_available;
+      vp9_header.non_ref_for_inter_layer_pred =
           info.codecSpecific.VP9.non_ref_for_inter_layer_pred;
-      rtp->vp9().temporal_idx = info.codecSpecific.VP9.temporal_idx;
-      rtp->vp9().spatial_idx = info.codecSpecific.VP9.spatial_idx;
-      rtp->vp9().temporal_up_switch = info.codecSpecific.VP9.temporal_up_switch;
-      rtp->vp9().inter_layer_predicted =
+      vp9_header.temporal_idx = info.codecSpecific.VP9.temporal_idx;
+      vp9_header.spatial_idx = info.codecSpecific.VP9.spatial_idx;
+      vp9_header.temporal_up_switch = info.codecSpecific.VP9.temporal_up_switch;
+      vp9_header.inter_layer_predicted =
           info.codecSpecific.VP9.inter_layer_predicted;
-      rtp->vp9().gof_idx = info.codecSpecific.VP9.gof_idx;
-      rtp->vp9().num_spatial_layers = info.codecSpecific.VP9.num_spatial_layers;
+      vp9_header.gof_idx = info.codecSpecific.VP9.gof_idx;
+      vp9_header.num_spatial_layers = info.codecSpecific.VP9.num_spatial_layers;
 
       if (info.codecSpecific.VP9.ss_data_available) {
-        rtp->vp9().spatial_layer_resolution_present =
+        vp9_header.spatial_layer_resolution_present =
             info.codecSpecific.VP9.spatial_layer_resolution_present;
         if (info.codecSpecific.VP9.spatial_layer_resolution_present) {
           for (size_t i = 0; i < info.codecSpecific.VP9.num_spatial_layers;
                ++i) {
-            rtp->vp9().width[i] = info.codecSpecific.VP9.width[i];
-            rtp->vp9().height[i] = info.codecSpecific.VP9.height[i];
+            vp9_header.width[i] = info.codecSpecific.VP9.width[i];
+            vp9_header.height[i] = info.codecSpecific.VP9.height[i];
           }
         }
-        rtp->vp9().gof.CopyGofInfoVP9(info.codecSpecific.VP9.gof);
+        vp9_header.gof.CopyGofInfoVP9(info.codecSpecific.VP9.gof);
       }
 
-      rtp->vp9().num_ref_pics = info.codecSpecific.VP9.num_ref_pics;
+      vp9_header.num_ref_pics = info.codecSpecific.VP9.num_ref_pics;
       for (int i = 0; i < info.codecSpecific.VP9.num_ref_pics; ++i) {
-        rtp->vp9().pid_diff[i] = info.codecSpecific.VP9.p_diff[i];
+        vp9_header.pid_diff[i] = info.codecSpecific.VP9.p_diff[i];
       }
-      rtp->vp9().end_of_picture = info.codecSpecific.VP9.end_of_picture;
+      vp9_header.end_of_picture = info.codecSpecific.VP9.end_of_picture;
       return;
     }
     case kVideoCodecH264: {
@@ -161,19 +162,21 @@ void RtpPayloadParams::Set(RTPVideoHeader* rtp_video_header,
     }
   }
   if (rtp_video_header->codec == kVideoCodecVP9) {
-    rtp_video_header->vp9().picture_id = state_.picture_id;
+    auto& vp9_header =
+        absl::get<RTPVideoHeaderVP9>(rtp_video_header->video_type_header);
+    vp9_header.picture_id = state_.picture_id;
 
     // Note that in the case that we have no temporal layers but we do have
     // spatial layers, packets will carry layering info with a temporal_idx of
     // zero, and we then have to set and increment tl0_pic_idx.
-    if (rtp_video_header->vp9().temporal_idx != kNoTemporalIdx ||
-        rtp_video_header->vp9().spatial_idx != kNoSpatialIdx) {
+    if (vp9_header.temporal_idx != kNoTemporalIdx ||
+        vp9_header.spatial_idx != kNoSpatialIdx) {
       if (first_frame_in_picture &&
-          (rtp_video_header->vp9().temporal_idx == 0 ||
-           rtp_video_header->vp9().temporal_idx == kNoTemporalIdx)) {
+          (vp9_header.temporal_idx == 0 ||
+           vp9_header.temporal_idx == kNoTemporalIdx)) {
         ++state_.tl0_pic_idx;
       }
-      rtp_video_header->vp9().tl0_pic_idx = state_.tl0_pic_idx;
+      vp9_header.tl0_pic_idx = state_.tl0_pic_idx;
     }
   }
 }

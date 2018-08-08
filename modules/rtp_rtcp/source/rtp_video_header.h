@@ -44,20 +44,6 @@ struct RTPVideoHeader {
 
     return absl::get<RTPVideoHeaderVP8>(video_type_header);
   }
-  // TODO(philipel): Remove when downstream projects have been updated.
-  RTPVideoHeaderVP9& vp9() {
-    if (!absl::holds_alternative<RTPVideoHeaderVP9>(video_type_header))
-      video_type_header.emplace<RTPVideoHeaderVP9>();
-
-    return absl::get<RTPVideoHeaderVP9>(video_type_header);
-  }
-  // TODO(philipel): Remove when downstream projects have been updated.
-  const RTPVideoHeaderVP9& vp9() const {
-    if (!absl::holds_alternative<RTPVideoHeaderVP9>(video_type_header))
-      video_type_header.emplace<RTPVideoHeaderVP9>();
-
-    return absl::get<RTPVideoHeaderVP9>(video_type_header);
-  }
 
   // Information for generic codec descriptor.
   int64_t frame_id = 0;

@@ -1891,8 +1891,9 @@ TEST_P(RtpSenderVideoTest, RetransmissionTypesVP9) {
   RTPVideoHeader header;
   header.codec = kVideoCodecVP9;
 
+  auto& vp9_header = header.video_type_header.emplace<RTPVideoHeaderVP9>();
   for (int tid = 1; tid <= kMaxTemporalStreams; ++tid) {
-    header.vp9().temporal_idx = tid;
+    vp9_header.temporal_idx = tid;
 
     EXPECT_EQ(kDontRetransmit, rtp_sender_video_->GetStorageType(
                                    header, kRetransmitOff,

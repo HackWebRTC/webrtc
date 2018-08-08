@@ -471,7 +471,8 @@ uint8_t RTPSenderVideo::GetTemporalId(const RTPVideoHeader& header) {
     case kVideoCodecVP8:
       return header.vp8().temporalIdx;
     case kVideoCodecVP9:
-      return header.vp9().temporal_idx;
+      return absl::get<RTPVideoHeaderVP9>(header.video_type_header)
+          .temporal_idx;
     default:
       return kNoTemporalIdx;
   }

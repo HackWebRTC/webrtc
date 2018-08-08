@@ -83,14 +83,15 @@ TEST(RtpPayloadParamsTest, InfoMappedToRtpVideoHeader_Vp9) {
   EXPECT_EQ(kVideoRotation_90, header.rotation);
   EXPECT_EQ(VideoContentType::SCREENSHARE, header.content_type);
   EXPECT_EQ(kVideoCodecVP9, header.codec);
-  EXPECT_EQ(kPictureId + 1, header.vp9().picture_id);
-  EXPECT_EQ(kTl0PicIdx, header.vp9().tl0_pic_idx);
-  EXPECT_EQ(header.vp9().temporal_idx,
-            codec_info.codecSpecific.VP9.temporal_idx);
-  EXPECT_EQ(header.vp9().spatial_idx, codec_info.codecSpecific.VP9.spatial_idx);
-  EXPECT_EQ(header.vp9().num_spatial_layers,
+  const auto& vp9_header =
+      absl::get<RTPVideoHeaderVP9>(header.video_type_header);
+  EXPECT_EQ(kPictureId + 1, vp9_header.picture_id);
+  EXPECT_EQ(kTl0PicIdx, vp9_header.tl0_pic_idx);
+  EXPECT_EQ(vp9_header.temporal_idx, codec_info.codecSpecific.VP9.temporal_idx);
+  EXPECT_EQ(vp9_header.spatial_idx, codec_info.codecSpecific.VP9.spatial_idx);
+  EXPECT_EQ(vp9_header.num_spatial_layers,
             codec_info.codecSpecific.VP9.num_spatial_layers);
-  EXPECT_EQ(header.vp9().end_of_picture,
+  EXPECT_EQ(vp9_header.end_of_picture,
             codec_info.codecSpecific.VP9.end_of_picture);
 
   // Next spatial layer.
@@ -103,14 +104,13 @@ TEST(RtpPayloadParamsTest, InfoMappedToRtpVideoHeader_Vp9) {
   EXPECT_EQ(kVideoRotation_90, header.rotation);
   EXPECT_EQ(VideoContentType::SCREENSHARE, header.content_type);
   EXPECT_EQ(kVideoCodecVP9, header.codec);
-  EXPECT_EQ(kPictureId + 1, header.vp9().picture_id);
-  EXPECT_EQ(kTl0PicIdx, header.vp9().tl0_pic_idx);
-  EXPECT_EQ(header.vp9().temporal_idx,
-            codec_info.codecSpecific.VP9.temporal_idx);
-  EXPECT_EQ(header.vp9().spatial_idx, codec_info.codecSpecific.VP9.spatial_idx);
-  EXPECT_EQ(header.vp9().num_spatial_layers,
+  EXPECT_EQ(kPictureId + 1, vp9_header.picture_id);
+  EXPECT_EQ(kTl0PicIdx, vp9_header.tl0_pic_idx);
+  EXPECT_EQ(vp9_header.temporal_idx, codec_info.codecSpecific.VP9.temporal_idx);
+  EXPECT_EQ(vp9_header.spatial_idx, codec_info.codecSpecific.VP9.spatial_idx);
+  EXPECT_EQ(vp9_header.num_spatial_layers,
             codec_info.codecSpecific.VP9.num_spatial_layers);
-  EXPECT_EQ(header.vp9().end_of_picture,
+  EXPECT_EQ(vp9_header.end_of_picture,
             codec_info.codecSpecific.VP9.end_of_picture);
 }
 
@@ -226,8 +226,10 @@ TEST(RtpPayloadParamsTest, Tl0PicIdxUpdatedForVp9) {
   RTPVideoHeader header = params.GetRtpVideoHeader(encoded_image, &codec_info);
 
   EXPECT_EQ(kVideoCodecVP9, header.codec);
-  EXPECT_EQ(kInitialPictureId1 + 1, header.vp9().picture_id);
-  EXPECT_EQ(kInitialTl0PicIdx1, header.vp9().tl0_pic_idx);
+  const auto& vp9_header =
+      absl::get<RTPVideoHeaderVP9>(header.video_type_header);
+  EXPECT_EQ(kInitialPictureId1 + 1, vp9_header.picture_id);
+  EXPECT_EQ(kInitialTl0PicIdx1, vp9_header.tl0_pic_idx);
 
   // OnEncodedImage, temporalIdx: 0.
   codec_info.codecSpecific.VP9.temporal_idx = 0;
@@ -235,8 +237,8 @@ TEST(RtpPayloadParamsTest, Tl0PicIdxUpdatedForVp9) {
   header = params.GetRtpVideoHeader(encoded_image, &codec_info);
 
   EXPECT_EQ(kVideoCodecVP9, header.codec);
-  EXPECT_EQ(kInitialPictureId1 + 2, header.vp9().picture_id);
-  EXPECT_EQ(kInitialTl0PicIdx1 + 1, header.vp9().tl0_pic_idx);
+  EXPECT_EQ(kInitialPictureId1 + 2, vp9_header.picture_id);
+  EXPECT_EQ(kInitialTl0PicIdx1 + 1, vp9_header.tl0_pic_idx);
 
   // OnEncodedImage, first_frame_in_picture = false
   codec_info.codecSpecific.VP9.first_frame_in_picture = false;
@@ -244,8 +246,8 @@ TEST(RtpPayloadParamsTest, Tl0PicIdxUpdatedForVp9) {
   header = params.GetRtpVideoHeader(encoded_image, &codec_info);
 
   EXPECT_EQ(kVideoCodecVP9, header.codec);
-  EXPECT_EQ(kInitialPictureId1 + 2, header.vp9().picture_id);
-  EXPECT_EQ(kInitialTl0PicIdx1 + 1, header.vp9().tl0_pic_idx);
+  EXPECT_EQ(kInitialPictureId1 + 2, vp9_header.picture_id);
+  EXPECT_EQ(kInitialTl0PicIdx1 + 1, vp9_header.tl0_pic_idx);
 
   // State should hold latest used picture id and tl0_pic_idx.
   EXPECT_EQ(kInitialPictureId1 + 2, params.state().picture_id);

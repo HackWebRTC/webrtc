@@ -77,6 +77,8 @@ void VCMEncodedFrame::CopyCodecSpecific(const RTPVideoHeader* header) {
         break;
       }
       case kVideoCodecVP9: {
+        const auto& vp9_header =
+            absl::get<RTPVideoHeaderVP9>(header->video_type_header);
         if (_codecSpecificInfo.codecType != kVideoCodecVP9) {
           // This is the first packet for this frame.
           _codecSpecificInfo.codecSpecific.VP9.temporal_idx = 0;
@@ -86,48 +88,48 @@ void VCMEncodedFrame::CopyCodecSpecific(const RTPVideoHeader* header) {
           _codecSpecificInfo.codecType = kVideoCodecVP9;
         }
         _codecSpecificInfo.codecSpecific.VP9.inter_pic_predicted =
-            header->vp9().inter_pic_predicted;
+            vp9_header.inter_pic_predicted;
         _codecSpecificInfo.codecSpecific.VP9.flexible_mode =
-            header->vp9().flexible_mode;
+            vp9_header.flexible_mode;
         _codecSpecificInfo.codecSpecific.VP9.num_ref_pics =
-            header->vp9().num_ref_pics;
-        for (uint8_t r = 0; r < header->vp9().num_ref_pics; ++r) {
+            vp9_header.num_ref_pics;
+        for (uint8_t r = 0; r < vp9_header.num_ref_pics; ++r) {
           _codecSpecificInfo.codecSpecific.VP9.p_diff[r] =
-              header->vp9().pid_diff[r];
+              vp9_header.pid_diff[r];
         }
         _codecSpecificInfo.codecSpecific.VP9.ss_data_available =
-            header->vp9().ss_data_available;
-        if (header->vp9().temporal_idx != kNoTemporalIdx) {
+            vp9_header.ss_data_available;
+        if (vp9_header.temporal_idx != kNoTemporalIdx) {
           _codecSpecificInfo.codecSpecific.VP9.temporal_idx =
-              header->vp9().temporal_idx;
+              vp9_header.temporal_idx;
           _codecSpecificInfo.codecSpecific.VP9.temporal_up_switch =
-              header->vp9().temporal_up_switch;
+              vp9_header.temporal_up_switch;
         }
-        if (header->vp9().spatial_idx != kNoSpatialIdx) {
+        if (vp9_header.spatial_idx != kNoSpatialIdx) {
           _codecSpecificInfo.codecSpecific.VP9.spatial_idx =
-              header->vp9().spatial_idx;
+              vp9_header.spatial_idx;
           _codecSpecificInfo.codecSpecific.VP9.inter_layer_predicted =
-              header->vp9().inter_layer_predicted;
+              vp9_header.inter_layer_predicted;
         }
-        if (header->vp9().gof_idx != kNoGofIdx) {
-          _codecSpecificInfo.codecSpecific.VP9.gof_idx = header->vp9().gof_idx;
+        if (vp9_header.gof_idx != kNoGofIdx) {
+          _codecSpecificInfo.codecSpecific.VP9.gof_idx = vp9_header.gof_idx;
         }
-        if (header->vp9().ss_data_available) {
+        if (vp9_header.ss_data_available) {
           _codecSpecificInfo.codecSpecific.VP9.num_spatial_layers =
-              header->vp9().num_spatial_layers;
+              vp9_header.num_spatial_layers;
           _codecSpecificInfo.codecSpecific.VP9
               .spatial_layer_resolution_present =
-              header->vp9().spatial_layer_resolution_present;
-          if (header->vp9().spatial_layer_resolution_present) {
-            for (size_t i = 0; i < header->vp9().num_spatial_layers; ++i) {
+              vp9_header.spatial_layer_resolution_present;
+          if (vp9_header.spatial_layer_resolution_present) {
+            for (size_t i = 0; i < vp9_header.num_spatial_layers; ++i) {
               _codecSpecificInfo.codecSpecific.VP9.width[i] =
-                  header->vp9().width[i];
+                  vp9_header.width[i];
               _codecSpecificInfo.codecSpecific.VP9.height[i] =
-                  header->vp9().height[i];
+                  vp9_header.height[i];
             }
           }
           _codecSpecificInfo.codecSpecific.VP9.gof.CopyGofInfoVP9(
-              header->vp9().gof);
+              vp9_header.gof);
         }
         break;
       }

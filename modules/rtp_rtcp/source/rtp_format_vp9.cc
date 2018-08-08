@@ -719,41 +719,42 @@ bool RtpDepacketizerVp9::Parse(ParsedPayload* parsed_payload,
 
   parsed_payload->frame_type = p_bit ? kVideoFrameDelta : kVideoFrameKey;
 
-  RTPVideoHeaderVP9* vp9 = &parsed_payload->video_header().vp9();
-  vp9->InitRTPVideoHeaderVP9();
-  vp9->inter_pic_predicted = p_bit ? true : false;
-  vp9->flexible_mode = f_bit ? true : false;
-  vp9->beginning_of_frame = b_bit ? true : false;
-  vp9->end_of_frame = e_bit ? true : false;
-  vp9->ss_data_available = v_bit ? true : false;
-  vp9->non_ref_for_inter_layer_pred = z_bit ? true : false;
+  auto& vp9_header = parsed_payload->video_header()
+                         .video_type_header.emplace<RTPVideoHeaderVP9>();
+  vp9_header.InitRTPVideoHeaderVP9();
+  vp9_header.inter_pic_predicted = p_bit ? true : false;
+  vp9_header.flexible_mode = f_bit ? true : false;
+  vp9_header.beginning_of_frame = b_bit ? true : false;
+  vp9_header.end_of_frame = e_bit ? true : false;
+  vp9_header.ss_data_available = v_bit ? true : false;
+  vp9_header.non_ref_for_inter_layer_pred = z_bit ? true : false;
 
   // Parse fields that are present.
-  if (i_bit && !ParsePictureId(&parser, vp9)) {
+  if (i_bit && !ParsePictureId(&parser, &vp9_header)) {
     RTC_LOG(LS_ERROR) << "Failed parsing VP9 picture id.";
     return false;
   }
-  if (l_bit && !ParseLayerInfo(&parser, vp9)) {
+  if (l_bit && !ParseLayerInfo(&parser, &vp9_header)) {
     RTC_LOG(LS_ERROR) << "Failed parsing VP9 layer info.";
     return false;
   }
-  if (p_bit && f_bit && !ParseRefIndices(&parser, vp9)) {
+  if (p_bit && f_bit && !ParseRefIndices(&parser, &vp9_header)) {
     RTC_LOG(LS_ERROR) << "Failed parsing VP9 ref indices.";
     return false;
   }
   if (v_bit) {
-    if (!ParseSsData(&parser, vp9)) {
+    if (!ParseSsData(&parser, &vp9_header)) {
       RTC_LOG(LS_ERROR) << "Failed parsing VP9 SS data.";
       return false;
     }
-    if (vp9->spatial_layer_resolution_present) {
+    if (vp9_header.spatial_layer_resolution_present) {
       // TODO(asapersson): Add support for spatial layers.
-      parsed_payload->video_header().width = vp9->width[0];
-      parsed_payload->video_header().height = vp9->height[0];
+      parsed_payload->video_header().width = vp9_header.width[0];
+      parsed_payload->video_header().height = vp9_header.height[0];
     }
   }
   parsed_payload->video_header().is_first_packet_in_frame =
-      b_bit && (!l_bit || !vp9->inter_layer_predicted);
+      b_bit && (!l_bit || !vp9_header.inter_layer_predicted);
 
   uint64_t rem_bits = parser.RemainingBitCount();
   assert(rem_bits % 8 == 0);
