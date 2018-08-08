@@ -55,7 +55,7 @@ public class HardwareVideoDecoderFactory implements VideoDecoderFactory {
     }
 
     CodecCapabilities capabilities = info.getCapabilitiesForType(type.mimeType());
-    return new HardwareVideoDecoder(info.getName(), type,
+    return new HardwareVideoDecoder(new MediaCodecWrapperFactoryImpl(), info.getName(), type,
         MediaCodecUtils.selectColorFormat(MediaCodecUtils.DECODER_COLOR_FORMATS, capabilities),
         sharedContext);
   }
