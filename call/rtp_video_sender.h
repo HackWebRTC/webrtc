@@ -113,7 +113,7 @@ class RtpVideoSender : public RtpVideoSenderInterface {
   std::map<uint32_t, RtpState> suspended_ssrcs_;
 
   std::unique_ptr<FlexfecSender> flexfec_sender_;
-  // Rtp modules are assumed to be sorted in simulcast index order. Not owned.
+  // Rtp modules are assumed to be sorted in simulcast index order.
   const std::vector<std::unique_ptr<RtpRtcp>> rtp_modules_;
   const RtpConfig rtp_config_;
   RtpTransportControllerSendInterface* const transport_;
