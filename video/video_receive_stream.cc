@@ -24,7 +24,6 @@
 #include "common_video/h264/profile_level_id.h"
 #include "common_video/include/incoming_video_stream.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
-#include "modules/rtp_rtcp/include/rtp_receiver.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/utility/include/process_thread.h"
 #include "modules/video_coding/frame_object.h"
@@ -203,8 +202,7 @@ void VideoReceiveStream::Start() {
     video_receiver_.RegisterExternalDecoder(decoder.decoder,
                                             decoder.payload_type);
     VideoCodec codec = CreateDecoderVideoCodec(decoder);
-    RTC_CHECK(rtp_video_stream_receiver_.AddReceiveCodec(codec,
-                                                         decoder.codec_params));
+    rtp_video_stream_receiver_.AddReceiveCodec(codec, decoder.codec_params);
     RTC_CHECK_EQ(VCM_OK, video_receiver_.RegisterReceiveCodec(
                              &codec, num_cpu_cores_, false));
   }

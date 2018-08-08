@@ -54,11 +54,8 @@ RtpDepacketizer* RtpDepacketizer::Create(VideoCodecType type) {
       return new RtpDepacketizerVp8();
     case kVideoCodecVP9:
       return new RtpDepacketizerVp9();
-    case kVideoCodecGeneric:
-      return new RtpDepacketizerGeneric();
     default:
-      RTC_NOTREACHED();
+      return new RtpDepacketizerGeneric();
   }
-  return nullptr;
 }
 }  // namespace webrtc
