@@ -168,9 +168,12 @@ bool RtcEventLogImpl::StartLogging(std::unique_ptr<RtcEventLogOutput> output,
     return false;
   }
 
-  RTC_LOG(LS_INFO) << "Starting WebRTC event log.";
-
+  // TODO(terelius): The mapping between log timestamps and UTC should be stored
+  // in the event_log START event.
   const int64_t timestamp_us = rtc::TimeMicros();
+  const int64_t utc_time_us = rtc::TimeUTCMicros();
+  RTC_LOG(LS_INFO) << "Starting WebRTC event log. (Timestamp, UTC) = "
+                   << "(" << timestamp_us << ", " << utc_time_us << ").";
 
   // Binding to |this| is safe because |this| outlives the |task_queue_|.
   auto start = [this, timestamp_us](std::unique_ptr<RtcEventLogOutput> output) {
