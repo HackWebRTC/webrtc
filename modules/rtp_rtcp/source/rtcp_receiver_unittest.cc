@@ -441,7 +441,7 @@ TEST_F(RtcpReceiverTest, InjectRrPacketWithTwoReportBlocks) {
 TEST_F(RtcpReceiverTest, InjectRrPacketsFromTwoRemoteSsrcs) {
   const uint32_t kSenderSsrc2 = 0x20304;
   const uint16_t kSequenceNumbers[] = {10, 12423};
-  const uint32_t kCumLost[] = {13, 555};
+  const int32_t kCumLost[] = {13, 555};
   const uint8_t kFracLost[] = {20, 11};
 
   rtcp::ReportBlock rb1;

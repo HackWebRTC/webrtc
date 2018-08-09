@@ -80,7 +80,7 @@ struct ReportBlock {
   uint32_t sender_SSRC;  // SSRC of sender
   uint32_t source_SSRC;
   uint8_t fraction_lost;
-  uint32_t cumulative_num_packets_lost;
+  int32_t cumulative_num_packets_lost;
   uint32_t extended_highest_sequence_number;
   uint32_t interarrival_jitter;
   uint32_t last_SR_timestamp;

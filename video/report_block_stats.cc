@@ -35,8 +35,7 @@ void ReportBlockStats::Store(const RtcpStatistics& rtcp_stats,
                              uint32_t remote_ssrc,
                              uint32_t source_ssrc) {
   RTCPReportBlock block;
-  // TODO(srte): Remove this clamp when packets_lost is made signed.
-  block.packets_lost = std::max(0, rtcp_stats.packets_lost);
+  block.packets_lost = rtcp_stats.packets_lost;
   block.fraction_lost = rtcp_stats.fraction_lost;
   block.extended_highest_sequence_number =
       rtcp_stats.extended_highest_sequence_number;
