@@ -447,7 +447,6 @@ struct VideoSenderInfo : public MediaSenderInfo {
   std::vector<SsrcGroup> ssrc_groups;
   // TODO(hbos): Move this to |VideoMediaInfo::send_codecs|?
   std::string encoder_implementation_name;
-  int packets_cached = 0;
   int firs_rcvd = 0;
   int plis_rcvd = 0;
   int nacks_rcvd = 0;
