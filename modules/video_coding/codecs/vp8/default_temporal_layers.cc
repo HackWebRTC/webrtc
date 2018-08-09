@@ -93,7 +93,7 @@ std::vector<bool> GetTemporalLayerSync(size_t num_layers) {
     case 1:
       return {false};
     case 2:
-      if (field_trial::IsEnabled("WebRTC-UseShortVP8TL2Pattern")) {
+      if (!field_trial::IsDisabled("WebRTC-UseShortVP8TL2Pattern")) {
         return {false, true, false, false};
       } else {
         return {false, true, false, false, false, false, false, false};
@@ -139,7 +139,7 @@ std::vector<TemporalLayers::FrameConfig> GetTemporalPattern(size_t num_layers) {
       // that the 'alt' buffer reference is effectively the last keyframe.
       // TL0 also references and updates the 'last' buffer.
       // TL1 also references 'last' and references and updates 'golden'.
-      if (field_trial::IsEnabled("WebRTC-UseShortVP8TL2Pattern")) {
+      if (!field_trial::IsDisabled("WebRTC-UseShortVP8TL2Pattern")) {
         // Shortened 4-frame pattern:
         //   1---1   1---1 ...
         //  /   /   /   /

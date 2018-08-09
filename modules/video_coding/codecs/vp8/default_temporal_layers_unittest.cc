@@ -81,26 +81,26 @@ TEST(TemporalLayersTest, 2Layers) {
       kTemporalUpdateLastRefAltRef,
       kTemporalUpdateGoldenWithoutDependencyRefAltRef,
       kTemporalUpdateLastRefAltRef,
-      kTemporalUpdateGoldenRefAltRef,
+      kTemporalUpdateNone,
       kTemporalUpdateLastRefAltRef,
-      kTemporalUpdateGoldenRefAltRef,
+      kTemporalUpdateGoldenWithoutDependencyRefAltRef,
       kTemporalUpdateLastRefAltRef,
       kTemporalUpdateNone,
       kTemporalUpdateLastRefAltRef,
       kTemporalUpdateGoldenWithoutDependencyRefAltRef,
       kTemporalUpdateLastRefAltRef,
-      kTemporalUpdateGoldenRefAltRef,
+      kTemporalUpdateNone,
       kTemporalUpdateLastRefAltRef,
-      kTemporalUpdateGoldenRefAltRef,
+      kTemporalUpdateGoldenWithoutDependencyRefAltRef,
       kTemporalUpdateLastRefAltRef,
       kTemporalUpdateNone,
   };
   int expected_temporal_idx[16] = {0, 1, 0, 1, 0, 1, 0, 1,
                                    0, 1, 0, 1, 0, 1, 0, 1};
 
-  bool expected_layer_sync[16] = {false, true,  false, false, false, false,
+  bool expected_layer_sync[16] = {false, true,  false, false, false, true,
                                   false, false, false, true,  false, false,
-                                  false, false, false, false};
+                                  false, true,  false, false};
 
   uint32_t timestamp = 0;
   for (int i = 0; i < 16; ++i) {

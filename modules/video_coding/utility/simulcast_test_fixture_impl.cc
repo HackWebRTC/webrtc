@@ -778,7 +778,7 @@ void SimulcastTestFixtureImpl::TestSpatioTemporalLayers321PatternEncoder() {
   input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
   EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, NULL));
   SetExpectedValues3<int>(2, 1, 255, expected_temporal_idx);
-  SetExpectedValues3<bool>(false, false, false, expected_layer_sync);
+  SetExpectedValues3<bool>(false, true, false, expected_layer_sync);
   VerifyTemporalIdxAndSyncForAllSpatialLayers(
       &encoder_callback, expected_temporal_idx, expected_layer_sync, 3);
 }

@@ -249,6 +249,7 @@ if (rtc_include_tests) {
       "../modules/video_coding:webrtc_vp9",
       "../rtc_base:rtc_base_approved",
       "../rtc_base/experiments:alr_experiment",
+      "../system_wrappers:field_trial_default",
       "../test:field_trial",
       "../test:test_common",
       "../test:test_support",

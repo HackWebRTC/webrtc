@@ -24,8 +24,14 @@ namespace cricket {
 
 namespace {
 
+// Limits for legacy conference screensharing mode. Currently used for the
+// lower of the two simulcast streams.
 constexpr int kScreenshareDefaultTl0BitrateKbps = 200;
 constexpr int kScreenshareDefaultTl1BitrateKbps = 1000;
+
+// Max bitrate for the higher one of the two simulcast stream used for screen
+// content.
+constexpr int kScreenshareHighStreamMaxBitrateBps = 1600000;
 
 }  // namespace
 
@@ -311,21 +317,38 @@ std::vector<webrtc::VideoStream> GetScreenshareLayers(
   // restrictions. The base simulcast layer will still use legacy setup.
   if (num_simulcast_layers == kMaxScreenshareSimulcastLayers) {
     // Add optional upper simulcast layer.
-    // Lowest temporal layers of a 3 layer setup will have 40% of the total
-    // bitrate allocation for that simulcast layer. Make sure the gap between
-    // the target of the lower simulcast layer and first temporal layer of the
-    // higher one is at most 2x the bitrate, so that upswitching is not hampered
-    // by stalled bitrate estimates.
-    int max_bitrate_bps = 2 * ((layers[0].target_bitrate_bps * 10) / 4);
+    const int num_temporal_layers = DefaultNumberOfTemporalLayers(1);
+    int max_bitrate_bps;
+    if (!temporal_layers_supported) {
+      // Set the max bitrate to where the base layer would have been if temporal
+      // layer were enabled.
+      max_bitrate_bps = static_cast<int>(
+          kScreenshareHighStreamMaxBitrateBps *
+          webrtc::SimulcastRateAllocator::GetTemporalRateAllocation(
+              num_temporal_layers, 0));
+    } else if (DefaultNumberOfTemporalLayers(1) != 3 ||
+               webrtc::field_trial::IsEnabled("WebRTC-UseShortVP8TL3Pattern")) {
+      // Experimental temporal layer mode used, use increased max bitrate.
+      max_bitrate_bps = kScreenshareHighStreamMaxBitrateBps;
+    } else {
+      // Keep current bitrates with default 3tl/8 frame settings.
+      // Lowest temporal layers of a 3 layer setup will have 40% of the total
+      // bitrate allocation for that simulcast layer. Make sure the gap between
+      // the target of the lower simulcast layer and first temporal layer of the
+      // higher one is at most 2x the bitrate, so that upswitching is not
+      // hampered by stalled bitrate estimates.
+      max_bitrate_bps = 2 * ((layers[0].target_bitrate_bps * 10) / 4);
+    }
+
     // Cap max bitrate so it isn't overly high for the given resolution.
     max_bitrate_bps = std::min<int>(max_bitrate_bps,
                                     FindSimulcastMaxBitrateBps(width, height));
-
     layers[1].width = width;
     layers[1].height = height;
     layers[1].max_qp = max_qp;
     layers[1].max_framerate = max_framerate;
-    layers[1].num_temporal_layers = 3;
+    layers[1].num_temporal_layers =
+        temporal_layers_supported ? DefaultNumberOfTemporalLayers(1) : 0;
     layers[1].min_bitrate_bps = layers[0].target_bitrate_bps * 2;
     layers[1].target_bitrate_bps = max_bitrate_bps;
     layers[1].max_bitrate_bps = max_bitrate_bps;

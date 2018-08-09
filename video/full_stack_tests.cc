@@ -13,6 +13,7 @@
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
 #include "rtc_base/experiments/alr_experiment.h"
 #include "rtc_base/flags.h"
+#include "system_wrappers/include/field_trial_default.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
 #include "video/video_quality_test.h"
@@ -66,6 +67,10 @@ CreateVideoQualityTestFixture() {
   return absl::make_unique<VideoQualityTest>(nullptr);
 }
 
+// Takes the current active field trials set, and appends some new trials.
+std::string AppendFieldTrials(std::string new_trial_string) {
+  return std::string(field_trial::GetFieldTrialString()) + new_trial_string;
+}
 }  // namespace
 
 // VideoQualityTest::Params params = {
@@ -333,7 +338,7 @@ TEST(FullStackTest, ForemanCifPlr5H264) {
 TEST(FullStackTest, ForemanCifPlr5H264SpsPpsIdrIsKeyframe) {
   auto fixture = CreateVideoQualityTestFixture();
   test::ScopedFieldTrials override_field_trials(
-      "WebRTC-SpsPpsIdrIsH264Keyframe/Enabled/");
+      AppendFieldTrials("WebRTC-SpsPpsIdrIsH264Keyframe/Enabled/"));
 
   ParamsWithLogging foreman_cif;
   foreman_cif.call.send_side_bwe = true;
@@ -556,7 +561,8 @@ TEST(FullStackTest, ConferenceMotionHd4TLModerateLimits) {
 
 TEST(FullStackTest, ConferenceMotionHd3TLModerateLimitsAltTLPattern) {
   auto fixture = CreateVideoQualityTestFixture();
-  test::ScopedFieldTrials field_trial("WebRTC-UseShortVP8TL3Pattern/Enabled/");
+  test::ScopedFieldTrials field_trial(
+      AppendFieldTrials("WebRTC-UseShortVP8TL3Pattern/Enabled/"));
   ParamsWithLogging conf_motion_hd;
   conf_motion_hd.call.send_side_bwe = true;
   conf_motion_hd.video[0] = {
@@ -873,8 +879,8 @@ TEST(FullStackTest, MAYBE_SimulcastFullHdOveruse) {
   simulcast.ss[0] = {
       streams, 2, 1, 0, InterLayerPredMode::kOn, std::vector<SpatialLayer>(),
       true};
-  webrtc::test::ScopedFieldTrials override_trials(
-      "WebRTC-ForceSimulatedOveruseIntervalMs/1000-50000-300/");
+  webrtc::test::ScopedFieldTrials override_trials(AppendFieldTrials(
+      "WebRTC-ForceSimulatedOveruseIntervalMs/1000-50000-300/"));
   fixture->RunWithAnalyzer(simulcast);
 }
 
@@ -1054,8 +1060,8 @@ class DualStreamsTest : public ::testing::TestWithParam<int> {};
 TEST_P(DualStreamsTest,
        ModeratelyRestricted_SlidesVp8_3TL_Simulcast_Video_Simulcast_High) {
   test::ScopedFieldTrials field_trial(
-      std::string(kRoundRobinPacingQueueExperiment) +
-      std::string(kPacerPushBackExperiment));
+      AppendFieldTrials(std::string(kRoundRobinPacingQueueExperiment) +
+                        std::string(kPacerPushBackExperiment)));
   const int first_stream = GetParam();
   ParamsWithLogging dual_streams;
 
@@ -1118,8 +1124,8 @@ TEST_P(DualStreamsTest,
 
 TEST_P(DualStreamsTest, Conference_Restricted) {
   test::ScopedFieldTrials field_trial(
-      std::string(kRoundRobinPacingQueueExperiment) +
-      std::string(kPacerPushBackExperiment));
+      AppendFieldTrials(std::string(kRoundRobinPacingQueueExperiment) +
+                        std::string(kPacerPushBackExperiment)));
   const int first_stream = GetParam();
   ParamsWithLogging dual_streams;
 
