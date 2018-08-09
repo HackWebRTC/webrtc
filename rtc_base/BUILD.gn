@@ -110,12 +110,14 @@ rtc_source_set("platform_thread_types") {
 }
 
 rtc_source_set("ptr_util") {
+  visibility = [ "*" ]
   sources = [
     "scoped_ref_ptr.h",
   ]
 }
 
 rtc_source_set("refcount") {
+  visibility = [ "*" ]
   sources = [
     "refcount.h",
     "refcountedobject.h",
