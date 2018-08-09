@@ -708,6 +708,9 @@ static const char kSdpOneCandidateWithUfragPwd[] =
     "a=candidate:a0+B/1 1 udp 2130706432 192.168.1.5 1234 typ host network_name"
     " eth0 ufrag user_rtp pwd password_rtp generation 2\r\n";
 
+static const char kRawHostnameCandidate[] =
+    "candidate:a0+B/1 1 udp 2130706432 a.test 1234 typ host generation 2";
+
 // Session id and version
 static const char kSessionId[] = "18446744069414584320";
 static const char kSessionVersion[] = "18446462598732840960";
@@ -2139,6 +2142,16 @@ TEST_F(WebRtcSdpTest, SerializeCandidates) {
             message);
 }
 
+TEST_F(WebRtcSdpTest, SerializeHostnameCandidate) {
+  rtc::SocketAddress address("a.test", 1234);
+  cricket::Candidate candidate(
+      cricket::ICE_CANDIDATE_COMPONENT_RTP, "udp", address, kCandidatePriority,
+      "", "", LOCAL_PORT_TYPE, kCandidateGeneration, kCandidateFoundation1);
+  JsepIceCandidate jcandidate(std::string("audio_content_name"), 0, candidate);
+  std::string message = webrtc::SdpSerializeCandidate(jcandidate);
+  EXPECT_EQ(std::string(kRawHostnameCandidate), message);
+}
+
 // TODO(mallinath) : Enable this test once WebRTCSdp capable of parsing
 // RFC 6544.
 TEST_F(WebRtcSdpTest, SerializeTcpCandidates) {
@@ -2502,6 +2515,9 @@ TEST_F(WebRtcSdpTest, DeserializeRawCandidateAttribute) {
 
   // Candidate line with IPV6 address.
   EXPECT_TRUE(SdpDeserializeCandidate(kRawIPV6Candidate, &jcandidate));
+
+  // Candidate line with hostname address.
+  EXPECT_TRUE(SdpDeserializeCandidate(kRawHostnameCandidate, &jcandidate));
 }
 
 // This test verifies that the deserialization of an invalid candidate string
