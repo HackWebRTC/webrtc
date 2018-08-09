@@ -17,9 +17,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/types/optional.h"
-
-#include "api/video_codecs/video_codec.h"
 #include "call/rtp_packet_sink_interface.h"
 #include "call/syncable.h"
 #include "call/video_receive_stream.h"
@@ -27,6 +24,7 @@
 #include "modules/rtp_rtcp/include/receive_statistics.h"
 #include "modules/rtp_rtcp/include/remote_ntp_time_estimator.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
+#include "modules/rtp_rtcp/include/rtp_payload_registry.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/video_coding/h264_sps_pps_tracker.h"
@@ -76,7 +74,7 @@ class RtpVideoStreamReceiver : public RtpData,
       video_coding::OnCompleteFrameCallback* complete_frame_callback);
   ~RtpVideoStreamReceiver();
 
-  void AddReceiveCodec(const VideoCodec& video_codec,
+  bool AddReceiveCodec(const VideoCodec& video_codec,
                        const std::map<std::string, std::string>& codec_params);
 
   void StartReceive();
@@ -140,10 +138,10 @@ class RtpVideoStreamReceiver : public RtpData,
   void RemoveSecondarySink(const RtpPacketSinkInterface* sink);
 
  private:
-  // Entry point doing non-stats work for a received packet. Called
-  // for the same packet both before and after RED decapsulation.
-  void ReceivePacket(const RtpPacketReceived& packet);
-  // Parses and handles RED headers.
+  void ReceivePacket(const uint8_t* packet,
+                     size_t packet_length,
+                     const RTPHeader& header);
+  // Parses and handles for instance RTX and RED headers.
   // This function assumes that it's being called from only one thread.
   void ParseAndHandleEncapsulatingHeader(const uint8_t* packet,
                                          size_t packet_length,
@@ -162,8 +160,10 @@ class RtpVideoStreamReceiver : public RtpData,
   ProcessThread* const process_thread_;
 
   RemoteNtpTimeEstimator ntp_estimator_;
+  RTPPayloadRegistry rtp_payload_registry_;
 
   RtpHeaderExtensionMap rtp_header_extensions_;
+  const std::unique_ptr<RtpReceiver> rtp_receiver_;
   ReceiveStatistics* const rtp_receive_statistics_;
   std::unique_ptr<UlpfecReceiver> ulpfec_receiver_;
 
@@ -183,10 +183,6 @@ class RtpVideoStreamReceiver : public RtpData,
   std::map<int64_t, uint16_t> last_seq_num_for_pic_id_
       RTC_GUARDED_BY(last_seq_num_cs_);
   video_coding::H264SpsPpsTracker tracker_;
-
-  absl::optional<uint32_t> last_received_rtp_timestamp_;
-  absl::optional<int64_t> last_received_rtp_system_time_ms_;
-  std::map<uint8_t, VideoCodecType> pt_codec_type_;
   // TODO(johan): Remove pt_codec_params_ once
   // https://bugs.chromium.org/p/webrtc/issues/detail?id=6883 is resolved.
   // Maps a payload type to a map of out-of-band supplied codec parameters.
