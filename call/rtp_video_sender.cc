@@ -217,6 +217,9 @@ RtpVideoSender::RtpVideoSender(
   // We add the highest spatial layer first to ensure it'll be prioritized
   // when sending padding, with the hope that the packet rate will be smaller,
   // and that it's more important to protect than the lower layers.
+
+  // TODO(nisse): Consider moving registration with PacketRouter last, after the
+  // modules are fully configured.
   for (auto& rtp_rtcp : rtp_modules_) {
     constexpr bool remb_candidate = true;
     transport->packet_router()->AddSendRtpModule(rtp_rtcp.get(),
