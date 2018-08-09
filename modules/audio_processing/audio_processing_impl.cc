@@ -1099,10 +1099,10 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
   TRACE_EVENT0("webrtc", "AudioProcessing::ProcessStream_AudioFrame");
   {
     // Acquire the capture lock in order to safely call the function
-    // that retrieves the render side data. This function accesses apm
+    // that retrieves the render side data. This function accesses APM
     // getters that need the capture lock held when being called.
     // The lock needs to be released as
-    // public_submodules_->echo_control_mobile->is_enabled() aquires this lock
+    // public_submodules_->echo_control_mobile->is_enabled() acquires this lock
     // as well.
     rtc::CritScope cs_capture(&crit_capture_);
     EmptyQueuedRenderAudio();
@@ -1481,13 +1481,13 @@ int AudioProcessingImpl::ProcessReverseStream(AudioFrame* frame) {
 int AudioProcessingImpl::ProcessRenderStreamLocked() {
   AudioBuffer* render_buffer = render_.render_audio.get();  // For brevity.
 
-  QueueNonbandedRenderAudio(render_buffer);
-
   HandleRenderRuntimeSettings();
 
   if (private_submodules_->render_pre_processor) {
     private_submodules_->render_pre_processor->Process(render_buffer);
   }
+
+  QueueNonbandedRenderAudio(render_buffer);
 
   if (submodule_states_.RenderMultiBandSubModulesActive() &&
       SampleRateSupportsMultiBand(
@@ -1506,7 +1506,7 @@ int AudioProcessingImpl::ProcessRenderStreamLocked() {
     QueueBandedRenderAudio(render_buffer);
   }
 
-  // TODO(peah): Perform the queueing ínside QueueRenderAudiuo().
+  // TODO(peah): Perform the queuing inside QueueRenderAudiuo().
   if (private_submodules_->echo_controller) {
     private_submodules_->echo_controller->AnalyzeRender(render_buffer);
   }
