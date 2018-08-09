@@ -373,7 +373,7 @@ AudioProcessingImpl::AudioProcessingImpl(
 #else
                  config.Get<ExperimentalAgc>().enabled,
                  config.Get<ExperimentalAgc>().enabled_agc2_level_estimator,
-                 config.Get<ExperimentalAgc>().enabled_agc2_digital_adaptive),
+                 config.Get<ExperimentalAgc>().digital_adaptive_disabled),
 #endif
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
       capture_(false),

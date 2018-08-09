@@ -683,4 +683,22 @@ TEST_F(AgcManagerDirectTest, TakesNoActionOnZeroMicVolume) {
   EXPECT_EQ(0, volume_.GetMicVolume());
 }
 
+TEST(AgcManagerDirectStandaloneTest, DisableDigitalDisablesDigital) {
+  auto agc = std::unique_ptr<Agc>(new testing::NiceMock<MockAgc>());
+  test::MockGainControl gctrl;
+  TestVolumeCallbacks volume;
+
+  AgcManagerDirect manager(agc.release(), &gctrl, &volume, kInitialVolume,
+                           kClippedMin,
+                           /* use agc2 level estimation */ false,
+                           /* disable digital adaptive */ true);
+
+  EXPECT_CALL(gctrl, set_mode(GainControl::kFixedDigital));
+  EXPECT_CALL(gctrl, set_target_level_dbfs(0));
+  EXPECT_CALL(gctrl, set_compression_gain_db(0));
+  EXPECT_CALL(gctrl, enable_limiter(false));
+
+  manager.Initialize();
+}
+
 }  // namespace webrtc
