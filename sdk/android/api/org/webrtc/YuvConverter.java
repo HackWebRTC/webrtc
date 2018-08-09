@@ -93,7 +93,6 @@ public class YuvConverter {
   private final ThreadUtils.ThreadChecker threadChecker = new ThreadUtils.ThreadChecker();
   private final GlTextureFrameBuffer i420TextureFrameBuffer =
       new GlTextureFrameBuffer(GLES20.GL_RGBA);
-  private boolean released = false;
   private final ShaderCallbacks shaderCallbacks = new ShaderCallbacks();
   private final GlGenericDrawer drawer = new GlGenericDrawer(FRAGMENT_SHADER, shaderCallbacks);
 
@@ -107,9 +106,6 @@ public class YuvConverter {
   /** Converts the texture buffer to I420. */
   public I420Buffer convert(TextureBuffer inputTextureBuffer) {
     threadChecker.checkIsOnValidThread();
-    if (released) {
-      throw new IllegalStateException("YuvConverter.convert called on released object");
-    }
     // We draw into a buffer laid out like
     //
     //    +---------+
@@ -213,8 +209,9 @@ public class YuvConverter {
 
   public void release() {
     threadChecker.checkIsOnValidThread();
-    released = true;
     drawer.release();
     i420TextureFrameBuffer.release();
+    // Allow this class to be reused.
+    threadChecker.detachThread();
   }
 }
