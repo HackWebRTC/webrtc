@@ -55,6 +55,7 @@ if (is_ios || is_mac) {
   }
 
   rtc_static_library("common_objc") {
+    visibility = [ "*" ]
     sources = [
       "objc/Framework/Classes/Common/NSString+StdString.h",
       "objc/Framework/Classes/Common/NSString+StdString.mm",
@@ -231,6 +232,7 @@ if (is_ios || is_mac) {
     }
 
     rtc_static_library("videoframebuffer_objc") {
+      visibility = [ "*" ]
       sources = [
         "objc/Framework/Classes/PeerConnection/RTCVideoFrame.mm",
         "objc/Framework/Classes/Video/RTCCVPixelBuffer.mm",

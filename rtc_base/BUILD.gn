@@ -90,6 +90,8 @@ rtc_source_set("rtc_base_approved") {
 }
 
 rtc_source_set("macromagic") {
+  # TODO(bugs.webrtc.org/9606): This should not be public.
+  visibility = [ "*" ]
   sources = [
     "arraysize.h",
     "constructormagic.h",
@@ -188,6 +190,7 @@ rtc_source_set("rtc_event") {
 }
 
 rtc_source_set("logging") {
+  visibility = [ "*" ]
   deps = [
     ":criticalsection",
     ":macromagic",
@@ -237,6 +240,8 @@ rtc_source_set("atomicops") {
 }
 
 rtc_source_set("checks") {
+  # TODO(bugs.webrtc.org/9607): This should not be public.
+  visibility = [ "*" ]
   sources = [
     "checks.cc",
     "checks.h",
@@ -295,6 +300,7 @@ rtc_source_set("safe_conversions") {
 }
 
 rtc_source_set("timeutils") {
+  visibility = [ "*" ]
   sources = [
     "timeutils.cc",
     "timeutils.h",
