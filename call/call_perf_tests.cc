@@ -296,6 +296,12 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
   }
 }
 
+TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSyncWithoutClockDrift) {
+  TestAudioVideoSync(FecMode::kOff, CreateOrder::kAudioFirst,
+                     DriftingClock::kNoDrift, DriftingClock::kNoDrift,
+                     DriftingClock::kNoDrift, "_video_no_drift");
+}
+
 TEST_F(CallPerfTest, PlaysOutAudioAndVideoInSyncWithVideoNtpDrift) {
   TestAudioVideoSync(FecMode::kOff, CreateOrder::kAudioFirst,
                      DriftingClock::PercentsFaster(10.0f),
