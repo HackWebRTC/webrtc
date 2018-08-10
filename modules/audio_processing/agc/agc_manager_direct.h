@@ -126,6 +126,7 @@ class AgcManagerDirect final {
   const bool disable_digital_adaptive_;
   int startup_min_level_;
   const int clipped_level_min_;
+  int calls_since_last_gain_log_ = 0;
 
   std::unique_ptr<DebugFile> file_preproc_;
   std::unique_ptr<DebugFile> file_postproc_;

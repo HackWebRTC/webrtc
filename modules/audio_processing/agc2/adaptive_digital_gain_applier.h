@@ -32,6 +32,7 @@ class AdaptiveDigitalGainApplier {
  private:
   float last_gain_db_ = kInitialAdaptiveDigitalGainDb;
   GainApplier gain_applier_;
+  int calls_since_last_gain_log_ = 0;
 
   // For some combinations of noise and speech probability, increasing
   // the level is not allowed. Since we may get VAD results in bursts,

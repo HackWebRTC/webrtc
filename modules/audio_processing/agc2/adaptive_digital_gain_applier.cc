@@ -16,6 +16,7 @@
 #include "modules/audio_processing/agc2/agc2_common.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/numerics/safe_minmax.h"
+#include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
 namespace {
@@ -76,6 +77,15 @@ void AdaptiveDigitalGainApplier::Process(
     float input_noise_level_dbfs,
     const VadWithLevel::LevelAndProbability vad_result,
     AudioFrameView<float> float_frame) {
+  calls_since_last_gain_log_++;
+  if (calls_since_last_gain_log_ == 100) {
+    calls_since_last_gain_log_ = 0;
+    RTC_HISTOGRAM_COUNTS_LINEAR("WebRTC.Audio.Agc2.DigitalGainApplied",
+                                last_gain_db_, 0, kMaxGainDb, kMaxGainDb + 1);
+    RTC_HISTOGRAM_COUNTS_LINEAR("WebRTC.Audio.Agc2.EstimatedNoiseLevel",
+                                input_noise_level_dbfs, 0, 100, 101);
+  }
+
   input_level_dbfs = std::min(input_level_dbfs, 0.f);
 
   RTC_DCHECK_GE(input_level_dbfs, -150.f);
