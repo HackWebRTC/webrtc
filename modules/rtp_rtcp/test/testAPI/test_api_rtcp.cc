@@ -161,11 +161,6 @@ class RtpRtcpRtcpTest : public ::testing::Test {
 };
 
 TEST_F(RtpRtcpRtcpTest, RTCP_CNAME) {
-  uint32_t testOfCSRC[webrtc::kRtpCsrcSize];
-  EXPECT_EQ(2, rtp_receiver2_->CSRCs(testOfCSRC));
-  EXPECT_EQ(test_csrcs[0], testOfCSRC[0]);
-  EXPECT_EQ(test_csrcs[1], testOfCSRC[1]);
-
   // Set cname of mixed.
   EXPECT_EQ(0, module1->AddMixedCNAME(test_csrcs[0], "john@192.168.0.1"));
   EXPECT_EQ(0, module1->AddMixedCNAME(test_csrcs[1], "jane@192.168.0.2"));

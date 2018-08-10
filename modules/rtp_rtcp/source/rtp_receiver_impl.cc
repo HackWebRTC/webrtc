@@ -123,18 +123,6 @@ uint32_t RtpReceiverImpl::SSRC() const {
   return ssrc_;
 }
 
-// Get remote CSRC.
-int32_t RtpReceiverImpl::CSRCs(uint32_t array_of_csrcs[kRtpCsrcSize]) const {
-  rtc::CritScope lock(&critical_section_rtp_receiver_);
-
-  assert(num_csrcs_ <= kRtpCsrcSize);
-
-  if (num_csrcs_ > 0) {
-    memcpy(array_of_csrcs, current_remote_csrc_, sizeof(uint32_t) * num_csrcs_);
-  }
-  return num_csrcs_;
-}
-
 bool RtpReceiverImpl::IncomingRtpPacket(const RTPHeader& rtp_header,
                                         const uint8_t* payload,
                                         size_t payload_length,

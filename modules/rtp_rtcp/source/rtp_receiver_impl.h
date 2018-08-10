@@ -51,8 +51,6 @@ class RtpReceiverImpl : public RtpReceiver {
 
   uint32_t SSRC() const override;
 
-  int32_t CSRCs(uint32_t array_of_csrc[kRtpCsrcSize]) const override;
-
   std::vector<RtpSource> GetSources() const override;
 
   const std::vector<RtpSource>& ssrc_sources_for_testing() const {

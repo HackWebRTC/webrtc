@@ -79,9 +79,6 @@ class RtpReceiver {
   // Returns the remote SSRC of the currently received RTP stream.
   virtual uint32_t SSRC() const = 0;
 
-  // Returns the current remote CSRCs.
-  virtual int32_t CSRCs(uint32_t array_of_csrc[kRtpCsrcSize]) const = 0;
-
   virtual std::vector<RtpSource> GetSources() const = 0;
 };
 }  // namespace webrtc
