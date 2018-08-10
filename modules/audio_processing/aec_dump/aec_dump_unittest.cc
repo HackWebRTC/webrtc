@@ -40,7 +40,8 @@ TEST(AecDumper, APICallsDoNotCrash) {
     aec_dump->WriteConfig(apm_config);
 
     webrtc::ProcessingConfig api_format;
-    aec_dump->WriteInitMessage(api_format);
+    constexpr int64_t kTimeNowMs = 123456789ll;
+    aec_dump->WriteInitMessage(api_format, kTimeNowMs);
   }
   // Remove file after the AecDump d-tor has finished.
   ASSERT_EQ(0, remove(filename.c_str()));

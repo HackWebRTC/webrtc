@@ -74,7 +74,8 @@ AecDumpImpl::~AecDumpImpl() {
   thread_sync_event.Wait(rtc::Event::kForever);
 }
 
-void AecDumpImpl::WriteInitMessage(const ProcessingConfig& api_format) {
+void AecDumpImpl::WriteInitMessage(const ProcessingConfig& api_format,
+                                   int64_t time_now_ms) {
   auto task = CreateWriteToFileTask();
   auto* event = task->GetEvent();
   event->set_type(audioproc::Event::INIT);
@@ -95,6 +96,7 @@ void AecDumpImpl::WriteInitMessage(const ProcessingConfig& api_format) {
       static_cast<int32_t>(api_format.reverse_input_stream().num_channels()));
   msg->set_num_reverse_output_channels(
       api_format.reverse_output_stream().num_channels());
+  msg->set_timestamp_ms(time_now_ms);
 
   worker_queue_->PostTask(std::unique_ptr<rtc::QueuedTask>(std::move(task)));
 }

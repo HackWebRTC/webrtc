@@ -28,6 +28,7 @@
 #include "modules/audio_processing/test/test_utils.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/fakeclock.h"
 #include "rtc_base/gtest_prod_util.h"
 #include "rtc_base/ignore_wundef.h"
 #include "rtc_base/numerics/safe_conversions.h"
@@ -1730,6 +1731,7 @@ void ApmTest::ProcessDebugDump(const std::string& in_filename,
 }
 
 void ApmTest::VerifyDebugDumpTest(Format format) {
+  rtc::ScopedFakeClock fake_clock;
   const std::string in_filename = test::ResourcePath("ref03", "aecdump");
   std::string format_string;
   switch (format) {

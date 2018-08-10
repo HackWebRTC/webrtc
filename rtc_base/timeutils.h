@@ -126,6 +126,10 @@ int64_t TmToSeconds(const std::tm& tm);
 // measuring time intervals and timeouts.
 int64_t TimeUTCMicros();
 
+// Return the number of milliseconds since January 1, 1970, UTC.
+// See above.
+int64_t TimeUTCMillis();
+
 // Interval of time from the range [min, max] inclusive.
 class IntervalRange {
  public:

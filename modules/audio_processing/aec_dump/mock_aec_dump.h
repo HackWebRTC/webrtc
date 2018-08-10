@@ -25,7 +25,8 @@ class MockAecDump : public AecDump {
   MockAecDump();
   virtual ~MockAecDump();
 
-  MOCK_METHOD1(WriteInitMessage, void(const ProcessingConfig& api_format));
+  MOCK_METHOD2(WriteInitMessage,
+               void(const ProcessingConfig& api_format, int64_t time_now_ms));
 
   MOCK_METHOD1(AddCaptureStreamInput,
                void(const AudioFrameView<const float>& src));

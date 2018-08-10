@@ -442,6 +442,7 @@ if (rtc_include_tests) {
         ":audioproc_test_utils",
         ":audioproc_unittest_proto",
         "../../api/audio:audio_frame_api",
+        "../../rtc_base:rtc_base_tests_utils",
         "../../rtc_base:rtc_task_queue",
         "aec_dump",
         "aec_dump:aec_dump_unittests",

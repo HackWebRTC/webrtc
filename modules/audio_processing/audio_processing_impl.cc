@@ -34,6 +34,7 @@
 #include "rtc_base/platform_file.h"
 #include "rtc_base/refcountedobject.h"
 #include "rtc_base/system/arch.h"
+#include "rtc_base/timeutils.h"
 #include "rtc_base/trace_event.h"
 #if WEBRTC_INTELLIGIBILITY_ENHANCER
 #include "modules/audio_processing/intelligibility/intelligibility_enhancer.h"
@@ -572,7 +573,7 @@ int AudioProcessingImpl::InitializeLocked() {
   InitializePreProcessor();
 
   if (aec_dump_) {
-    aec_dump_->WriteInitMessage(formats_.api_format);
+    aec_dump_->WriteInitMessage(formats_.api_format, rtc::TimeUTCMillis());
   }
   return kNoError;
 }
@@ -1575,7 +1576,7 @@ void AudioProcessingImpl::AttachAecDump(std::unique_ptr<AecDump> aec_dump) {
   // 'aec_dump' parameter, which is after locks are released.
   aec_dump_.swap(aec_dump);
   WriteAecDumpConfigMessage(true);
-  aec_dump_->WriteInitMessage(formats_.api_format);
+  aec_dump_->WriteInitMessage(formats_.api_format, rtc::TimeUTCMillis());
 }
 
 void AudioProcessingImpl::DetachAecDump() {

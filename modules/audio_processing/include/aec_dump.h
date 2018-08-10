@@ -76,7 +76,11 @@ class AecDump {
   virtual ~AecDump() = default;
 
   // Logs Event::Type INIT message.
-  virtual void WriteInitMessage(const ProcessingConfig& api_format) = 0;
+  virtual void WriteInitMessage(const ProcessingConfig& api_format,
+                                int64_t time_now_ms) = 0;
+  RTC_DEPRECATED void WriteInitMessage(const ProcessingConfig& api_format) {
+    WriteInitMessage(api_format, 0);
+  }
 
   // Logs Event::Type STREAM message. To log an input/output pair,
   // call the AddCapture* and AddAudioProcessingState methods followed

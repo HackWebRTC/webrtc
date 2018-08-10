@@ -201,6 +201,9 @@ int64_t TmToSeconds(const std::tm& tm) {
 }
 
 int64_t TimeUTCMicros() {
+  if (g_clock) {
+    return g_clock->TimeNanos() / kNumNanosecsPerMicrosec;
+  }
 #if defined(WEBRTC_POSIX)
   struct timeval time;
   gettimeofday(&time, nullptr);
@@ -215,6 +218,10 @@ int64_t TimeUTCMicros() {
   return (static_cast<int64_t>(time.time) * rtc::kNumMicrosecsPerSec +
           static_cast<int64_t>(time.millitm) * rtc::kNumMicrosecsPerMillisec);
 #endif
+}
+
+int64_t TimeUTCMillis() {
+  return TimeUTCMicros() / kNumMicrosecsPerMillisec;
 }
 
 }  // namespace rtc

@@ -446,8 +446,7 @@ StatsCollector::~StatsCollector() {
 
 // Wallclock time in ms.
 double StatsCollector::GetTimeNow() {
-  return rtc::TimeUTCMicros() /
-         static_cast<double>(rtc::kNumMicrosecsPerMillisec);
+  return static_cast<double>(rtc::TimeUTCMillis());
 }
 
 // Adds a MediaStream with tracks that can be used as a |selector| in a call

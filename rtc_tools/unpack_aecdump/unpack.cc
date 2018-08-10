@@ -322,6 +322,11 @@ int do_main(int argc, char* argv[]) {
       num_reverse_channels = msg.num_reverse_channels();
       fprintf(settings_file, "  Reverse channels: %" PRIuS "\n",
               num_reverse_channels);
+      if (msg.has_timestamp_ms()) {
+        const int64_t timestamp = msg.timestamp_ms();
+        fprintf(settings_file, "  Timestamp in millisecond: %" PRId64 "\n",
+                timestamp);
+      }
 
       fprintf(settings_file, "\n");
 

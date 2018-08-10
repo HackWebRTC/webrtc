@@ -33,7 +33,7 @@ std::unique_ptr<webrtc::test::MockAecDump> CreateMockAecDump() {
   auto mock_aec_dump =
       absl::make_unique<testing::StrictMock<webrtc::test::MockAecDump>>();
   EXPECT_CALL(*mock_aec_dump.get(), WriteConfig(_)).Times(AtLeast(1));
-  EXPECT_CALL(*mock_aec_dump.get(), WriteInitMessage(_)).Times(AtLeast(1));
+  EXPECT_CALL(*mock_aec_dump.get(), WriteInitMessage(_, _)).Times(AtLeast(1));
   return std::unique_ptr<webrtc::test::MockAecDump>(std::move(mock_aec_dump));
 }
 
