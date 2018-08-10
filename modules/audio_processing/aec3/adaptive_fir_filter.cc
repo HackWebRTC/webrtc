@@ -634,7 +634,6 @@ void AdaptiveFirFilter::ScaleFilter(float factor) {
 
 // Set the filter coefficients.
 void AdaptiveFirFilter::SetFilter(const std::vector<FftData>& H) {
-  RTC_DCHECK_EQ(H_.size(), H.size());
   const size_t num_partitions = std::min(H_.size(), H.size());
   for (size_t k = 0; k < num_partitions; ++k) {
     std::copy(H[k].re.begin(), H[k].re.end(), H_[k].re.begin());

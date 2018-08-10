@@ -19,7 +19,7 @@ namespace webrtc {
 // Class for analyzing the properties subtractor output
 class SubtractorOutputAnalyzer {
  public:
-  SubtractorOutputAnalyzer() = default;
+  SubtractorOutputAnalyzer();
   ~SubtractorOutputAnalyzer() = default;
 
   // Analyses the subtractor output.
@@ -29,15 +29,16 @@ class SubtractorOutputAnalyzer {
     return main_filter_converged_ || shadow_filter_converged_;
   }
 
-  bool DivergedFilter() const { return main_filter_diverged_; }
+  bool DivergedFilter() const { return filter_diverged_; }
 
   // Handle echo path change.
   void HandleEchoPathChange();
 
  private:
+  const bool strict_divergence_check_;
   bool shadow_filter_converged_ = false;
   bool main_filter_converged_ = false;
-  bool main_filter_diverged_ = false;
+  bool filter_diverged_ = false;
 };
 
 }  // namespace webrtc

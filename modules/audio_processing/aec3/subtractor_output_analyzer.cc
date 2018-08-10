@@ -13,7 +13,19 @@
 #include <array>
 #include <numeric>
 
+#include "system_wrappers/include/field_trial.h"
+
 namespace webrtc {
+namespace {
+
+bool EnableStrictDivergenceCheck() {
+  return !field_trial::IsEnabled("WebRTC-Aec3StrictDivergenceCheckKillSwitch");
+}
+
+}  // namespace
+
+SubtractorOutputAnalyzer::SubtractorOutputAnalyzer()
+    : strict_divergence_check_(EnableStrictDivergenceCheck()) {}
 
 void SubtractorOutputAnalyzer::Update(
     const SubtractorOutput& subtractor_output) {
@@ -25,13 +37,15 @@ void SubtractorOutputAnalyzer::Update(
   main_filter_converged_ = e2_main < 0.5f * y2 && y2 > kConvergenceThreshold;
   shadow_filter_converged_ =
       e2_shadow < 0.05 * y2 && y2 > kConvergenceThreshold;
-  main_filter_diverged_ = e2_main > 1.5f * y2 && y2 > 30.f * 30.f * kBlockSize;
+  float min_e2 =
+      strict_divergence_check_ ? std::min(e2_main, e2_shadow) : e2_main;
+  filter_diverged_ = min_e2 > 1.5f * y2 && y2 > 30.f * 30.f * kBlockSize;
 }
 
 void SubtractorOutputAnalyzer::HandleEchoPathChange() {
   shadow_filter_converged_ = false;
   main_filter_converged_ = false;
-  main_filter_diverged_ = false;
+  filter_diverged_ = false;
 }
 
 }  // namespace webrtc

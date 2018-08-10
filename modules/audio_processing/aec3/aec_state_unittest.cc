@@ -32,6 +32,7 @@ TEST(AecState, NormalUsage) {
   EchoPathVariability echo_path_variability(
       false, EchoPathVariability::DelayAdjustment::kNone, false);
   SubtractorOutput output;
+  output.Reset();
   std::array<float, kBlockSize> y;
   Aec3Fft fft;
   output.s_main.fill(100.f);
@@ -50,13 +51,6 @@ TEST(AecState, NormalUsage) {
 
   std::vector<float> impulse_response(
       GetTimeDomainLength(config.filter.main.length_blocks), 0.f);
-
-  // Verify that linear AEC usability is false when the filter is diverged.
-  output.UpdatePowers(y);
-  state.Update(delay_estimate, diverged_filter_frequency_response,
-               impulse_response, *render_delay_buffer->GetRenderBuffer(),
-               E2_main, Y2, output, y);
-  EXPECT_FALSE(state.UsableLinearEstimate());
 
   // Verify that linear AEC usability is true when the filter is converged
   std::fill(x[0].begin(), x[0].end(), 101.f);
@@ -191,6 +185,7 @@ TEST(AecState, ConvergedFilterDelay) {
   EchoPathVariability echo_path_variability(
       false, EchoPathVariability::DelayAdjustment::kNone, false);
   SubtractorOutput output;
+  output.Reset();
   std::array<float, kBlockSize> y;
   output.s_main.fill(100.f);
   x.fill(0.f);

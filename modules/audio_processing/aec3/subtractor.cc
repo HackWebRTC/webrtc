@@ -40,6 +40,16 @@ bool EnableShadowFilterJumpstart() {
   return !field_trial::IsEnabled("WebRTC-Aec3ShadowFilterJumpstartKillSwitch");
 }
 
+bool EnableShadowFilterBoostedJumpstart() {
+  return !field_trial::IsEnabled(
+      "WebRTC-Aec3ShadowFilterBoostedJumpstartKillSwitch");
+}
+
+bool EnableEarlyShadowFilterJumpstart() {
+  return !field_trial::IsEnabled(
+      "WebRTC-Aec3EarlyShadowFilterJumpstartKillSwitch");
+}
+
 void PredictionError(const Aec3Fft& fft,
                      const FftData& S,
                      rtc::ArrayView<const float> y,
@@ -100,6 +110,9 @@ Subtractor::Subtractor(const EchoCanceller3Config& config,
       enable_misadjustment_estimator_(EnableMisadjustmentEstimator()),
       enable_agc_gain_change_response_(EnableAgcGainChangeResponse()),
       enable_shadow_filter_jumpstart_(EnableShadowFilterJumpstart()),
+      enable_shadow_filter_boosted_jumpstart_(
+          EnableShadowFilterBoostedJumpstart()),
+      enable_early_shadow_filter_jumpstart_(EnableEarlyShadowFilterJumpstart()),
       main_filter_(config_.filter.main.length_blocks,
                    config_.filter.main_initial.length_blocks,
                    config.filter.config_change_duration_blocks,
@@ -226,7 +239,11 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
   // Update the shadow filter.
   poor_shadow_filter_counter_ =
       output->e2_main < output->e2_shadow ? poor_shadow_filter_counter_ + 1 : 0;
-  if (poor_shadow_filter_counter_ < 10 || !enable_shadow_filter_jumpstart_) {
+  if (((poor_shadow_filter_counter_ < 5 &&
+        enable_early_shadow_filter_jumpstart_) ||
+       (poor_shadow_filter_counter_ < 10 &&
+        !enable_early_shadow_filter_jumpstart_)) ||
+      !enable_shadow_filter_jumpstart_) {
     if (shadow_filter_.SizePartitions() != main_filter_.SizePartitions()) {
       render_buffer.SpectralSum(shadow_filter_.SizePartitions(), &X2);
     }
@@ -235,11 +252,20 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
                       aec_state.SaturatedCapture() || shadow_saturation, &G);
     shadow_filter_.Adapt(render_buffer, G);
   } else {
-    G.re.fill(0.f);
-    G.im.fill(0.f);
     poor_shadow_filter_counter_ = 0;
-    shadow_filter_.Adapt(render_buffer, G);
-    shadow_filter_.SetFilter(main_filter_.GetFilter());
+
+    if (enable_shadow_filter_boosted_jumpstart_) {
+      shadow_filter_.SetFilter(main_filter_.GetFilter());
+      G_shadow_.Compute(X2, render_signal_analyzer, E_main,
+                        shadow_filter_.SizePartitions(),
+                        aec_state.SaturatedCapture() || main_saturation, &G);
+      shadow_filter_.Adapt(render_buffer, G);
+    } else {
+      G.re.fill(0.f);
+      G.im.fill(0.f);
+      shadow_filter_.Adapt(render_buffer, G);
+      shadow_filter_.SetFilter(main_filter_.GetFilter());
+    }
   }
 
   data_dumper_->DumpRaw("aec3_subtractor_G_shadow", G.re);

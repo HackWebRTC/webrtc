@@ -43,6 +43,11 @@ bool UseShadowFilterOutput() {
       "WebRTC-Aec3UtilizeShadowFilterOutputKillSwitch");
 }
 
+bool UseSmoothSignalTransitions() {
+  return !field_trial::IsEnabled(
+      "WebRTC-Aec3SmoothSignalTransitionsKillSwitch");
+}
+
 void LinearEchoPower(const FftData& E,
                      const FftData& Y,
                      std::array<float, kFftLengthBy2Plus1>* S2) {
@@ -50,6 +55,26 @@ void LinearEchoPower(const FftData& E,
     (*S2)[k] = (Y.re[k] - E.re[k]) * (Y.re[k] - E.re[k]) +
                (Y.im[k] - E.im[k]) * (Y.im[k] - E.im[k]);
   }
+}
+
+// Fades between two input signals using a fix-sized transition.
+void SignalTransition(rtc::ArrayView<const float> from,
+                      rtc::ArrayView<const float> to,
+                      rtc::ArrayView<float> out) {
+  constexpr size_t kTransitionSize = 30;
+  constexpr float kOneByTransitionSize = 1.f / kTransitionSize;
+
+  RTC_DCHECK_EQ(from.size(), to.size());
+  RTC_DCHECK_EQ(from.size(), out.size());
+  RTC_DCHECK_LE(kTransitionSize, out.size());
+
+  for (size_t k = 0; k < kTransitionSize; ++k) {
+    out[k] = k * kOneByTransitionSize * to[k];
+    out[k] += (kTransitionSize - k) * kOneByTransitionSize * to[k];
+  }
+
+  std::copy(to.begin() + kTransitionSize, to.end(),
+            out.begin() + kTransitionSize);
 }
 
 // Computes a windowed (square root Hanning) padded FFT and updates the related
@@ -93,32 +118,11 @@ class EchoRemoverImpl final : public EchoRemover {
 
  private:
   // Selects which of the shadow and main linear filter outputs that is most
-  // appropriate to pass to the suppressor.
-  const std::array<float, kBlockSize>& ChooseLinearFilterOutput(
-      const SubtractorOutput& subtractor_output) {
-    if (!use_shadow_filter_output_) {
-      return subtractor_output.e_main;
-    }
-
-    // As the output of the main adaptive filter generally should be better than
-    // the shadow filter output, add a margin and threshold for when choosing
-    // the shadow filter output.
-    if (subtractor_output.e2_shadow < 0.9f * subtractor_output.e2_main &&
-        subtractor_output.y2 > 30.f * 30.f * kBlockSize &&
-        (subtractor_output.s2_main > 60.f * 60.f * kBlockSize ||
-         subtractor_output.s2_shadow > 60.f * 60.f * kBlockSize)) {
-      return subtractor_output.e_shadow;
-    }
-
-    // If the main filter is diverged, choose the filter output that has the
-    // lowest power.
-    if (subtractor_output.e2_shadow < subtractor_output.e2_main &&
-        subtractor_output.y2 < subtractor_output.e2_main) {
-      return subtractor_output.e_shadow;
-    }
-
-    return subtractor_output.e_main;
-  }
+  // appropriate to pass to the suppressor and forms the linear filter output by
+  // smoothly transition between those.
+  void FormLinearFilterOutput(bool smooth_transition,
+                              const SubtractorOutput& subtractor_output,
+                              rtc::ArrayView<float> output);
 
   static int instance_count_;
   const EchoCanceller3Config config_;
@@ -127,6 +131,7 @@ class EchoRemoverImpl final : public EchoRemover {
   const Aec3Optimization optimization_;
   const int sample_rate_hz_;
   const bool use_shadow_filter_output_;
+  const bool use_smooth_signal_transitions_;
   Subtractor subtractor_;
   SuppressionGain suppression_gain_;
   ComfortNoiseGenerator cng_;
@@ -142,6 +147,8 @@ class EchoRemoverImpl final : public EchoRemover {
   std::array<float, kFftLengthBy2> y_old_;
   size_t block_counter_ = 0;
   int gain_change_hangover_ = 0;
+  bool main_filter_output_last_selected_ = true;
+  bool linear_filter_output_last_selected_ = true;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(EchoRemoverImpl);
 };
@@ -157,6 +164,7 @@ EchoRemoverImpl::EchoRemoverImpl(const EchoCanceller3Config& config,
       optimization_(DetectOptimization()),
       sample_rate_hz_(sample_rate_hz),
       use_shadow_filter_output_(UseShadowFilterOutput()),
+      use_smooth_signal_transitions_(UseSmoothSignalTransitions()),
       subtractor_(config, data_dumper_.get(), optimization_),
       suppression_gain_(config_, optimization_, sample_rate_hz),
       cng_(optimization_),
@@ -258,7 +266,8 @@ void EchoRemoverImpl::ProcessCapture(
   // If the delay is known, use the echo subtractor.
   subtractor_.Process(*render_buffer, y0, render_signal_analyzer_, aec_state_,
                       &subtractor_output);
-  const auto& e = ChooseLinearFilterOutput(subtractor_output);
+  std::array<float, kBlockSize> e;
+  FormLinearFilterOutput(use_smooth_signal_transitions_, subtractor_output, e);
 
   // Compute spectra.
   WindowedPaddedFft(fft_, y0, y_old_, &Y);
@@ -287,8 +296,18 @@ void EchoRemoverImpl::ProcessCapture(
   data_dumper_->DumpWav("aec3_output_linear2", kBlockSize, &e[0],
                         LowestBandRate(sample_rate_hz_), 1);
   if (aec_state_.UseLinearFilterOutput()) {
-    std::copy(e.begin(), e.end(), y0.begin());
+    if (!linear_filter_output_last_selected_ &&
+        use_smooth_signal_transitions_) {
+      SignalTransition(y0, e, y0);
+    } else {
+      std::copy(e.begin(), e.end(), y0.begin());
+    }
+  } else {
+    if (linear_filter_output_last_selected_ && use_smooth_signal_transitions_) {
+      SignalTransition(e, y0, y0);
+    }
   }
+  linear_filter_output_last_selected_ = aec_state_.UseLinearFilterOutput();
   const auto& Y_fft = aec_state_.UseLinearFilterOutput() ? E : Y;
 
   data_dumper_->DumpWav("aec3_output_linear", kBlockSize, &y0[0],
@@ -337,6 +356,52 @@ void EchoRemoverImpl::ProcessCapture(
   data_dumper_->DumpRaw("aec3_filter_delay", aec_state_.FilterDelayBlocks());
   data_dumper_->DumpRaw("aec3_capture_saturation",
                         aec_state_.SaturatedCapture() ? 1 : 0);
+}
+
+void EchoRemoverImpl::FormLinearFilterOutput(
+    bool smooth_transition,
+    const SubtractorOutput& subtractor_output,
+    rtc::ArrayView<float> output) {
+  RTC_DCHECK_EQ(subtractor_output.e_main.size(), output.size());
+  RTC_DCHECK_EQ(subtractor_output.e_shadow.size(), output.size());
+  bool use_main_output = true;
+  if (use_shadow_filter_output_) {
+    // As the output of the main adaptive filter generally should be better than
+    // the shadow filter output, add a margin and threshold for when choosing
+    // the shadow filter output.
+    if (subtractor_output.e2_shadow < 0.9f * subtractor_output.e2_main &&
+        subtractor_output.y2 > 30.f * 30.f * kBlockSize &&
+        (subtractor_output.s2_main > 60.f * 60.f * kBlockSize ||
+         subtractor_output.s2_shadow > 60.f * 60.f * kBlockSize)) {
+      use_main_output = false;
+    } else {
+      // If the main filter is diverged, choose the filter output that has the
+      // lowest power.
+      if (subtractor_output.e2_shadow < subtractor_output.e2_main &&
+          subtractor_output.y2 < subtractor_output.e2_main) {
+        use_main_output = false;
+      }
+    }
+  }
+
+  if (use_main_output) {
+    if (!main_filter_output_last_selected_ && smooth_transition) {
+      SignalTransition(subtractor_output.e_shadow, subtractor_output.e_main,
+                       output);
+    } else {
+      std::copy(subtractor_output.e_main.begin(),
+                subtractor_output.e_main.end(), output.begin());
+    }
+  } else {
+    if (main_filter_output_last_selected_ && smooth_transition) {
+      SignalTransition(subtractor_output.e_main, subtractor_output.e_shadow,
+                       output);
+    } else {
+      std::copy(subtractor_output.e_shadow.begin(),
+                subtractor_output.e_shadow.end(), output.begin());
+    }
+  }
+  main_filter_output_last_selected_ = use_main_output;
 }
 
 }  // namespace

@@ -53,6 +53,20 @@ bool EnableShortInitialState() {
   return !field_trial::IsEnabled("WebRTC-Aec3ShortInitialStateKillSwitch");
 }
 
+bool EnableNoWaitForAlignment() {
+  return !field_trial::IsEnabled("WebRTC-Aec3NoAlignmentWaitKillSwitch");
+}
+
+bool EnableConvergenceTriggeredLinearMode() {
+  return !field_trial::IsEnabled(
+      "WebRTC-Aec3ConvergenceTriggingLinearKillSwitch");
+}
+
+bool EnableUncertaintyUntilSufficientAdapted() {
+  return !field_trial::IsEnabled(
+      "WebRTC-Aec3ErleUncertaintyUntilSufficientlyAdaptedKillSwitch");
+}
+
 float ComputeGainRampupIncrease(const EchoCanceller3Config& config) {
   const auto& c = config.echo_removal_control.gain_rampup;
   return powf(1.f / c.first_non_zero_gain, 1.f / c.non_zero_gain_blocks);
@@ -78,6 +92,10 @@ AecState::AecState(const EchoCanceller3Config& config)
           EnableLinearModeWithDivergedFilter()),
       early_filter_usage_activated_(EnableEarlyFilterUsage()),
       use_short_initial_state_(EnableShortInitialState()),
+      convergence_trigger_linear_mode_(EnableConvergenceTriggeredLinearMode()),
+      no_alignment_required_for_linear_mode_(EnableNoWaitForAlignment()),
+      use_uncertainty_until_sufficiently_adapted_(
+          EnableUncertaintyUntilSufficientAdapted()),
       erle_estimator_(config.erle.min, config.erle.max_l, config.erle.max_h),
       max_render_(config_.filter.main.length_blocks, 0.f),
       gain_rampup_increase_(ComputeGainRampupIncrease(config_)),
@@ -194,18 +212,15 @@ void AecState::Update(
   }
 
   // Detect and flag echo saturation.
-  // TODO(peah): Add the delay in this computation to ensure that the render and
-  // capture signals are properly aligned.
   if (config_.ep_strength.echo_can_saturate) {
     echo_saturation_ = DetectEchoSaturation(x, EchoPathGain());
   }
 
-  bool filter_has_had_time_to_converge;
   if (early_filter_usage_activated_) {
-    filter_has_had_time_to_converge =
+    filter_has_had_time_to_converge_ =
         blocks_with_proper_filter_adaptation_ >= 0.8f * kNumBlocksPerSecond;
   } else {
-    filter_has_had_time_to_converge =
+    filter_has_had_time_to_converge_ =
         blocks_with_proper_filter_adaptation_ >= 1.5f * kNumBlocksPerSecond;
   }
 
@@ -286,10 +301,21 @@ void AecState::Update(
   transparent_mode_ = transparent_mode_ && allow_transparent_mode_;
 
   usable_linear_estimate_ = !echo_saturation_;
-  usable_linear_estimate_ =
-      usable_linear_estimate_ && filter_has_had_time_to_converge;
 
-  usable_linear_estimate_ = usable_linear_estimate_ && external_delay;
+  if (convergence_trigger_linear_mode_) {
+    usable_linear_estimate_ =
+        usable_linear_estimate_ &&
+        ((filter_has_had_time_to_converge_ && external_delay) ||
+         converged_filter_seen_);
+  } else {
+    usable_linear_estimate_ =
+        usable_linear_estimate_ && filter_has_had_time_to_converge_;
+  }
+
+  if (!no_alignment_required_for_linear_mode_) {
+    usable_linear_estimate_ = usable_linear_estimate_ && external_delay;
+  }
+
   if (!config_.echo_removal_control.linear_and_stable_echo_path) {
     usable_linear_estimate_ =
         usable_linear_estimate_ && recently_converged_filter;
@@ -335,7 +361,7 @@ void AecState::Update(
   data_dumper_->DumpRaw("aec3_filter_should_have_converged",
                         filter_should_have_converged_);
   data_dumper_->DumpRaw("aec3_filter_has_had_time_to_converge",
-                        filter_has_had_time_to_converge);
+                        filter_has_had_time_to_converge_);
   data_dumper_->DumpRaw("aec3_recently_converged_filter",
                         recently_converged_filter);
   data_dumper_->DumpRaw("aec3_suppresion_gain_limiter_running",
