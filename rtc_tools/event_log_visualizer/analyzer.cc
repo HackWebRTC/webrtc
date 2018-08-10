@@ -1826,9 +1826,8 @@ EventLogAnalyzer::NetEqStatsGetterMap EventLogAnalyzer::SimulateNetEq(
   return neteq_stats;
 }
 
-// Plots the jitter buffer delay profile. This will plot only for the first
-// incoming audio SSRC. If the stream contains more than one incoming audio
-// SSRC, all but the first will be ignored.
+// Given a NetEqStatsGetter and the SSRC that the NetEqStatsGetter was created
+// for, this method generates a plot for the jitter buffer delay profile.
 void EventLogAnalyzer::CreateAudioJitterBufferGraph(
     uint32_t ssrc,
     const test::NetEqStatsGetter* stats_getter,
@@ -1842,55 +1841,40 @@ void EventLogAnalyzer::CreateAudioJitterBufferGraph(
       &arrival_delay_ms, &corrected_arrival_delay_ms, &playout_delay_ms,
       &target_delay_ms);
 
-  std::map<uint32_t, TimeSeries> time_series_packet_arrival;
-  std::map<uint32_t, TimeSeries> time_series_relative_packet_arrival;
-  std::map<uint32_t, TimeSeries> time_series_play_time;
-  std::map<uint32_t, TimeSeries> time_series_target_time;
+  TimeSeries time_series_packet_arrival("packet arrival delay",
+                                        LineStyle::kLine);
+  TimeSeries time_series_relative_packet_arrival(
+      "Relative packet arrival delay", LineStyle::kLine);
+  TimeSeries time_series_play_time("Playout delay", LineStyle::kLine);
+  TimeSeries time_series_target_time("Target delay", LineStyle::kLine,
+                                     PointStyle::kHighlight);
 
   for (const auto& data : arrival_delay_ms) {
     const float x = ToCallTimeSec(data.first * 1000);  // ms to us.
     const float y = data.second;
-    time_series_packet_arrival[ssrc].points.emplace_back(TimeSeriesPoint(x, y));
+    time_series_packet_arrival.points.emplace_back(TimeSeriesPoint(x, y));
   }
   for (const auto& data : corrected_arrival_delay_ms) {
     const float x = ToCallTimeSec(data.first * 1000);  // ms to us.
     const float y = data.second;
-    time_series_relative_packet_arrival[ssrc].points.emplace_back(
+    time_series_relative_packet_arrival.points.emplace_back(
         TimeSeriesPoint(x, y));
   }
   for (const auto& data : playout_delay_ms) {
     const float x = ToCallTimeSec(data.first * 1000);  // ms to us.
     const float y = data.second;
-    time_series_play_time[ssrc].points.emplace_back(TimeSeriesPoint(x, y));
+    time_series_play_time.points.emplace_back(TimeSeriesPoint(x, y));
   }
   for (const auto& data : target_delay_ms) {
     const float x = ToCallTimeSec(data.first * 1000);  // ms to us.
     const float y = data.second;
-    time_series_target_time[ssrc].points.emplace_back(TimeSeriesPoint(x, y));
+    time_series_target_time.points.emplace_back(TimeSeriesPoint(x, y));
   }
 
-  // This code is adapted for a single stream. The creation of the streams above
-  // guarantee that no more than one steam is included. If multiple streams are
-  // to be plotted, they should likely be given distinct labels below.
-  RTC_DCHECK_EQ(time_series_relative_packet_arrival.size(), 1);
-  for (auto& series : time_series_relative_packet_arrival) {
-    series.second.label = "Relative packet arrival delay";
-    series.second.line_style = LineStyle::kLine;
-    plot->AppendTimeSeries(std::move(series.second));
-  }
-  RTC_DCHECK_EQ(time_series_play_time.size(), 1);
-  for (auto& series : time_series_play_time) {
-    series.second.label = "Playout delay";
-    series.second.line_style = LineStyle::kLine;
-    plot->AppendTimeSeries(std::move(series.second));
-  }
-  RTC_DCHECK_EQ(time_series_target_time.size(), 1);
-  for (auto& series : time_series_target_time) {
-    series.second.label = "Target delay";
-    series.second.line_style = LineStyle::kLine;
-    series.second.point_style = PointStyle::kHighlight;
-    plot->AppendTimeSeries(std::move(series.second));
-  }
+  plot->AppendTimeSeries(std::move(time_series_packet_arrival));
+  plot->AppendTimeSeries(std::move(time_series_relative_packet_arrival));
+  plot->AppendTimeSeries(std::move(time_series_play_time));
+  plot->AppendTimeSeries(std::move(time_series_target_time));
 
   plot->SetXAxis(ToCallTimeSec(begin_time_), call_duration_s_, "Time (s)",
                  kLeftMargin, kRightMargin);

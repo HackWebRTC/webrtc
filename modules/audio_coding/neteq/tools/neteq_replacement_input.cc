@@ -28,7 +28,6 @@ NetEqReplacementInput::NetEqReplacementInput(
   RTC_CHECK(source_);
   packet_ = source_->PopPacket();
   ReplacePacket();
-  RTC_CHECK(packet_);
 }
 
 absl::optional<int64_t> NetEqReplacementInput::NextPacketTime() const {
