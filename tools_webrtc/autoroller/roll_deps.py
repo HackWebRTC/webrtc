@@ -27,7 +27,9 @@ DONT_AUTOROLL_THESE = [
 
 # Run these CQ trybots in addition to the default ones in infra/config/cq.cfg.
 EXTRA_TRYBOTS = (
-  'master.internal.tryserver.corp.webrtc:linux_internal'
+  # TODO(bugs.webrtc.org/9615): Temporarily switched to compile_lite, switch
+  # back to linux_internal when it has been fixed.
+  'master.internal.tryserver.corp.webrtc:linux_internal_compile_lite'
 )
 
 WEBRTC_URL = 'https://webrtc.googlesource.com/src'
