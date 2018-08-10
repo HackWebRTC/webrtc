@@ -61,6 +61,12 @@ class RenderBuffer {
   void SpectralSum(size_t num_spectra,
                    std::array<float, kFftLengthBy2Plus1>* X2) const;
 
+  // Returns the sums of the spectrums for two numbers of FFTs.
+  void SpectralSums(size_t num_spectra_shorter,
+                    size_t num_spectra_longer,
+                    std::array<float, kFftLengthBy2Plus1>* X2_shorter,
+                    std::array<float, kFftLengthBy2Plus1>* X2_longer) const;
+
   // Gets the recent activity seen in the render signal.
   bool GetRenderActivity() const { return render_activity_; }
 

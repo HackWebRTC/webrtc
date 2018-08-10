@@ -25,13 +25,15 @@ namespace {
 
 float RunSubtractorTest(int num_blocks_to_process,
                         int delay_samples,
-                        int filter_length_blocks,
+                        int main_filter_length_blocks,
+                        int shadow_filter_length_blocks,
                         bool uncorrelated_inputs,
                         const std::vector<int>& blocks_with_echo_path_changes) {
   ApmDataDumper data_dumper(42);
   EchoCanceller3Config config;
-  config.filter.main.length_blocks = config.filter.shadow.length_blocks =
-      filter_length_blocks;
+  config.filter.main.length_blocks = main_filter_length_blocks;
+  config.filter.shadow.length_blocks = shadow_filter_length_blocks;
+
   Subtractor subtractor(config, &data_dumper, DetectOptimization());
   absl::optional<DelayEstimate> delay_estimate;
   std::vector<std::vector<float>> x(3, std::vector<float>(kBlockSize, 0.f));
@@ -160,9 +162,9 @@ TEST(Subtractor, Convergence) {
     for (size_t delay_samples : {0, 64, 150, 200, 301}) {
       SCOPED_TRACE(ProduceDebugText(delay_samples, filter_length_blocks));
 
-      float echo_to_nearend_power =
-          RunSubtractorTest(400, delay_samples, filter_length_blocks, false,
-                            blocks_with_echo_path_changes);
+      float echo_to_nearend_power = RunSubtractorTest(
+          400, delay_samples, filter_length_blocks, filter_length_blocks, false,
+          blocks_with_echo_path_changes);
 
       // Use different criteria to take overmodelling into account.
       if (filter_length_blocks == 12) {
@@ -174,6 +176,24 @@ TEST(Subtractor, Convergence) {
   }
 }
 
+// Verifies that the subtractor is able to handle the case when the main filter
+// is longer than the shadow filter.
+TEST(Subtractor, MainFilterLongerThanShadowFilter) {
+  std::vector<int> blocks_with_echo_path_changes;
+  float echo_to_nearend_power =
+      RunSubtractorTest(400, 64, 20, 15, false, blocks_with_echo_path_changes);
+  EXPECT_GT(0.5f, echo_to_nearend_power);
+}
+
+// Verifies that the subtractor is able to handle the case when the shadow
+// filter is longer than the main filter.
+TEST(Subtractor, ShadowFilterLongerThanMainFilter) {
+  std::vector<int> blocks_with_echo_path_changes;
+  float echo_to_nearend_power =
+      RunSubtractorTest(400, 64, 15, 20, false, blocks_with_echo_path_changes);
+  EXPECT_GT(0.5f, echo_to_nearend_power);
+}
+
 // Verifies that the subtractor does not converge on uncorrelated signals.
 TEST(Subtractor, NonConvergenceOnUncorrelatedSignals) {
   std::vector<int> blocks_with_echo_path_changes;
@@ -181,9 +201,9 @@ TEST(Subtractor, NonConvergenceOnUncorrelatedSignals) {
     for (size_t delay_samples : {0, 64, 150, 200, 301}) {
       SCOPED_TRACE(ProduceDebugText(delay_samples, filter_length_blocks));
 
-      float echo_to_nearend_power =
-          RunSubtractorTest(300, delay_samples, filter_length_blocks, true,
-                            blocks_with_echo_path_changes);
+      float echo_to_nearend_power = RunSubtractorTest(
+          300, delay_samples, filter_length_blocks, filter_length_blocks, true,
+          blocks_with_echo_path_changes);
       EXPECT_NEAR(1.f, echo_to_nearend_power, 0.1);
     }
   }
@@ -198,9 +218,9 @@ TEST(Subtractor, EchoPathChangeReset) {
     for (size_t delay_samples : {0, 64, 150, 200, 301}) {
       SCOPED_TRACE(ProduceDebugText(delay_samples, filter_length_blocks));
 
-      float echo_to_nearend_power =
-          RunSubtractorTest(100, delay_samples, filter_length_blocks, false,
-                            blocks_with_echo_path_changes);
+      float echo_to_nearend_power = RunSubtractorTest(
+          100, delay_samples, filter_length_blocks, filter_length_blocks, false,
+          blocks_with_echo_path_changes);
       EXPECT_NEAR(1.f, echo_to_nearend_power, 0.0000001f);
     }
   }
