@@ -290,7 +290,6 @@ void VideoQualityTest::FillScalabilitySettings(
     encoder_config.video_stream_factory =
         new rtc::RefCountedObject<cricket::EncoderStreamFactory>(
             params->video[video_idx].codec, kDefaultMaxQp,
-            params->video[video_idx].fps,
             params->screenshare[video_idx].enabled, true);
     params->ss[video_idx].streams =
         encoder_config.video_stream_factory->CreateEncoderStreams(
@@ -446,7 +445,6 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
           new rtc::RefCountedObject<cricket::EncoderStreamFactory>(
               params_.video[video_idx].codec,
               params_.ss[video_idx].streams[0].max_qp,
-              params_.video[video_idx].fps,
               params_.screenshare[video_idx].enabled, true);
     } else {
       video_encoder_configs_[video_idx].video_stream_factory =
@@ -600,7 +598,7 @@ void VideoQualityTest::SetupThumbnails(Transport* send_transport,
       thumbnail_encoder_config.video_stream_factory =
           new rtc::RefCountedObject<cricket::EncoderStreamFactory>(
               params_.video[0].codec, params_.ss[0].streams[0].max_qp,
-              params_.video[0].fps, params_.screenshare[0].enabled, true);
+              params_.screenshare[0].enabled, true);
     }
     thumbnail_encoder_config.spatial_layers = params_.ss[0].spatial_layers;
 

@@ -505,7 +505,6 @@ class EncoderStreamFactory
  public:
   EncoderStreamFactory(std::string codec_name,
                        int max_qp,
-                       int max_framerate,
                        bool is_screenshare,
                        bool screenshare_config_explicitly_enabled);
 
@@ -517,7 +516,6 @@ class EncoderStreamFactory
 
   const std::string codec_name_;
   const int max_qp_;
-  const int max_framerate_;
   const bool is_screenshare_;
   // Allows a screenshare specific configuration, which enables temporal
   // layering and allows simulcast.
