@@ -31,6 +31,7 @@
 #include "modules/audio_coding/neteq/tools/rtp_file_source.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/flags.h"
+#include "test/field_trial.h"
 #include "test/testsupport/fileutils.h"
 
 namespace webrtc {
@@ -132,6 +133,12 @@ DEFINE_bool(pythonplot,
             "Generates a python script for plotting the delay profile");
 DEFINE_bool(help, false, "Prints this message");
 DEFINE_bool(concealment_events, false, "Prints concealment events");
+DEFINE_string(
+    force_fieldtrials,
+    "",
+    "Field trials control experimental feature code which can be forced. "
+    "E.g. running with --force_fieldtrials=WebRTC-FooFeature/Enable/"
+    " will assign the group Enable to field trial WebRTC-FooFeature.");
 
 // Maps a codec type to a printable name string.
 std::string CodecName(NetEqDecoder codec) {
@@ -292,6 +299,10 @@ int RunTest(int argc, char* argv[]) {
     std::cout << usage;
     return 0;
   }
+
+  ValidateFieldTrialsStringOrDie(FLAG_force_fieldtrials);
+  ScopedFieldTrials field_trials(FLAG_force_fieldtrials);
+
   RTC_CHECK(ValidatePayloadType(FLAG_pcmu));
   RTC_CHECK(ValidatePayloadType(FLAG_pcma));
   RTC_CHECK(ValidatePayloadType(FLAG_ilbc));
@@ -397,32 +408,38 @@ int RunTest(int argc, char* argv[]) {
   std::cout << "Output file: " << output_file_name << std::endl;
 
   NetEqTest::DecoderMap codecs = {
-      {FLAG_pcmu, std::make_pair(NetEqDecoder::kDecoderPCMu, "pcmu")},
-      {FLAG_pcma, std::make_pair(NetEqDecoder::kDecoderPCMa, "pcma")},
-      {FLAG_ilbc, std::make_pair(NetEqDecoder::kDecoderILBC, "ilbc")},
-      {FLAG_isac, std::make_pair(NetEqDecoder::kDecoderISAC, "isac")},
-      {FLAG_isac_swb,
-       std::make_pair(NetEqDecoder::kDecoderISACswb, "isac-swb")},
-      {FLAG_opus, std::make_pair(NetEqDecoder::kDecoderOpus, "opus")},
-      {FLAG_pcm16b, std::make_pair(NetEqDecoder::kDecoderPCM16B, "pcm16-nb")},
-      {FLAG_pcm16b_wb,
-       std::make_pair(NetEqDecoder::kDecoderPCM16Bwb, "pcm16-wb")},
-      {FLAG_pcm16b_swb32,
-       std::make_pair(NetEqDecoder::kDecoderPCM16Bswb32kHz, "pcm16-swb32")},
-      {FLAG_pcm16b_swb48,
-       std::make_pair(NetEqDecoder::kDecoderPCM16Bswb48kHz, "pcm16-swb48")},
-      {FLAG_g722, std::make_pair(NetEqDecoder::kDecoderG722, "g722")},
-      {FLAG_avt, std::make_pair(NetEqDecoder::kDecoderAVT, "avt")},
-      {FLAG_avt_16, std::make_pair(NetEqDecoder::kDecoderAVT16kHz, "avt-16")},
-      {FLAG_avt_32, std::make_pair(NetEqDecoder::kDecoderAVT32kHz, "avt-32")},
-      {FLAG_avt_48, std::make_pair(NetEqDecoder::kDecoderAVT48kHz, "avt-48")},
-      {FLAG_red, std::make_pair(NetEqDecoder::kDecoderRED, "red")},
-      {FLAG_cn_nb, std::make_pair(NetEqDecoder::kDecoderCNGnb, "cng-nb")},
-      {FLAG_cn_wb, std::make_pair(NetEqDecoder::kDecoderCNGwb, "cng-wb")},
-      {FLAG_cn_swb32,
-       std::make_pair(NetEqDecoder::kDecoderCNGswb32kHz, "cng-swb32")},
-      {FLAG_cn_swb48,
-       std::make_pair(NetEqDecoder::kDecoderCNGswb48kHz, "cng-swb48")}};
+    {FLAG_pcmu, std::make_pair(NetEqDecoder::kDecoderPCMu, "pcmu")},
+    {FLAG_pcma, std::make_pair(NetEqDecoder::kDecoderPCMa, "pcma")},
+#ifdef WEBRTC_CODEC_ILBC
+    {FLAG_ilbc, std::make_pair(NetEqDecoder::kDecoderILBC, "ilbc")},
+#endif
+    {FLAG_isac, std::make_pair(NetEqDecoder::kDecoderISAC, "isac")},
+#if !defined(WEBRTC_ANDROID)
+    {FLAG_isac_swb, std::make_pair(NetEqDecoder::kDecoderISACswb, "isac-swb")},
+#endif
+#ifdef WEBRTC_CODEC_OPUS
+    {FLAG_opus, std::make_pair(NetEqDecoder::kDecoderOpus, "opus")},
+#endif
+    {FLAG_pcm16b, std::make_pair(NetEqDecoder::kDecoderPCM16B, "pcm16-nb")},
+    {FLAG_pcm16b_wb,
+     std::make_pair(NetEqDecoder::kDecoderPCM16Bwb, "pcm16-wb")},
+    {FLAG_pcm16b_swb32,
+     std::make_pair(NetEqDecoder::kDecoderPCM16Bswb32kHz, "pcm16-swb32")},
+    {FLAG_pcm16b_swb48,
+     std::make_pair(NetEqDecoder::kDecoderPCM16Bswb48kHz, "pcm16-swb48")},
+    {FLAG_g722, std::make_pair(NetEqDecoder::kDecoderG722, "g722")},
+    {FLAG_avt, std::make_pair(NetEqDecoder::kDecoderAVT, "avt")},
+    {FLAG_avt_16, std::make_pair(NetEqDecoder::kDecoderAVT16kHz, "avt-16")},
+    {FLAG_avt_32, std::make_pair(NetEqDecoder::kDecoderAVT32kHz, "avt-32")},
+    {FLAG_avt_48, std::make_pair(NetEqDecoder::kDecoderAVT48kHz, "avt-48")},
+    {FLAG_red, std::make_pair(NetEqDecoder::kDecoderRED, "red")},
+    {FLAG_cn_nb, std::make_pair(NetEqDecoder::kDecoderCNGnb, "cng-nb")},
+    {FLAG_cn_wb, std::make_pair(NetEqDecoder::kDecoderCNGwb, "cng-wb")},
+    {FLAG_cn_swb32,
+     std::make_pair(NetEqDecoder::kDecoderCNGswb32kHz, "cng-swb32")},
+    {FLAG_cn_swb48,
+     std::make_pair(NetEqDecoder::kDecoderCNGswb48kHz, "cng-swb48")}
+  };
 
   // Check if a replacement audio file was provided.
   std::unique_ptr<AudioDecoder> replacement_decoder;
