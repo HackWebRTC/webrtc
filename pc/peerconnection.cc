@@ -237,10 +237,11 @@ bool SafeSetError(webrtc::RTCErrorType type, webrtc::RTCError* error) {
 }
 
 bool SafeSetError(webrtc::RTCError error, webrtc::RTCError* error_out) {
+  bool ok = error.ok();
   if (error_out) {
     *error_out = std::move(error);
   }
-  return error.ok();
+  return ok;
 }
 
 std::string GetSignalingStateString(
