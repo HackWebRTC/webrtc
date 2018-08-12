@@ -181,6 +181,7 @@ class AecState {
   const bool convergence_trigger_linear_mode_;
   const bool no_alignment_required_for_linear_mode_;
   const bool use_uncertainty_until_sufficiently_adapted_;
+  const bool transparent_mode_enforces_nonlinear_mode_;
   ErlEstimator erl_estimator_;
   ErleEstimator erle_estimator_;
   size_t capture_block_counter_ = 0;

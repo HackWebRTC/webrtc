@@ -67,6 +67,11 @@ bool EnableUncertaintyUntilSufficientAdapted() {
       "WebRTC-Aec3ErleUncertaintyUntilSufficientlyAdaptedKillSwitch");
 }
 
+bool TreatTransparentModeAsNonlinear() {
+  return !field_trial::IsEnabled(
+      "WebRTC-Aec3TreatTransparentModeAsNonlinearKillSwitch");
+}
+
 float ComputeGainRampupIncrease(const EchoCanceller3Config& config) {
   const auto& c = config.echo_removal_control.gain_rampup;
   return powf(1.f / c.first_non_zero_gain, 1.f / c.non_zero_gain_blocks);
@@ -96,6 +101,8 @@ AecState::AecState(const EchoCanceller3Config& config)
       no_alignment_required_for_linear_mode_(EnableNoWaitForAlignment()),
       use_uncertainty_until_sufficiently_adapted_(
           EnableUncertaintyUntilSufficientAdapted()),
+      transparent_mode_enforces_nonlinear_mode_(
+          TreatTransparentModeAsNonlinear()),
       erle_estimator_(config.erle.min, config.erle.max_l, config.erle.max_h),
       max_render_(config_.filter.main.length_blocks, 0.f),
       gain_rampup_increase_(ComputeGainRampupIncrease(config_)),
@@ -322,6 +329,9 @@ void AecState::Update(
     if (!allow_linear_mode_with_diverged_filter_) {
       usable_linear_estimate_ = usable_linear_estimate_ && !diverged_filter;
     }
+  }
+  if (transparent_mode_enforces_nonlinear_mode_) {
+    usable_linear_estimate_ = usable_linear_estimate_ && !TransparentMode();
   }
 
   use_linear_filter_output_ = usable_linear_estimate_ && !TransparentMode();
