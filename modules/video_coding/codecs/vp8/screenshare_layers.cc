@@ -42,7 +42,6 @@ ScreenshareLayers::ScreenshareLayers(int num_temporal_layers,
     : clock_(clock),
       number_of_temporal_layers_(
           std::min(kMaxNumTemporalLayers, num_temporal_layers)),
-      last_base_layer_sync_(false),
       active_layer_(-1),
       last_timestamp_(-1),
       last_sync_timestamp_(-1),
@@ -147,7 +146,8 @@ TemporalLayers::FrameConfig ScreenshareLayers::UpdateLayerConfig(
       break;
     case 1:
       if (layers_[1].state != TemporalLayer::State::kDropped) {
-        if (TimeToSync(unwrapped_timestamp)) {
+        if (TimeToSync(unwrapped_timestamp) ||
+            layers_[1].state == TemporalLayer::State::kKeyFrame) {
           last_sync_timestamp_ = unwrapped_timestamp;
           layer_state = TemporalLayerState::kTl1Sync;
         } else {
@@ -239,7 +239,7 @@ void ScreenshareLayers::OnRatesUpdated(
   layers_[1].target_rate_kbps_ = tl1_kbps;
 }
 
-void ScreenshareLayers::FrameEncoded(unsigned int size, int qp) {
+void ScreenshareLayers::FrameEncoded(uint32_t timestamp, size_t size, int qp) {
   if (size > 0)
     encode_framerate_.Update(1, clock_->TimeInMilliseconds());
 
@@ -290,13 +290,9 @@ void ScreenshareLayers::PopulateCodecSpecific(
       vp8_info->temporalIdx = 0;
       last_sync_timestamp_ = unwrapped_timestamp;
       vp8_info->layerSync = true;
-    } else if (last_base_layer_sync_ && vp8_info->temporalIdx != 0) {
-      // Regardless of pattern the frame after a base layer sync will always
-      // be a layer sync.
-      last_sync_timestamp_ = unwrapped_timestamp;
-      vp8_info->layerSync = true;
+      layers_[0].state = TemporalLayer::State::kKeyFrame;
+      layers_[1].state = TemporalLayer::State::kKeyFrame;
     }
-    last_base_layer_sync_ = frame_is_keyframe;
   }
 }
 

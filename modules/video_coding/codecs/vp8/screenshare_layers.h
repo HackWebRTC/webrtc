@@ -33,7 +33,8 @@ class ScreenshareLayers : public TemporalLayers {
 
   // Returns the recommended VP8 encode flags needed. May refresh the decoder
   // and/or update the reference buffers.
-  TemporalLayers::FrameConfig UpdateLayerConfig(uint32_t timestamp) override;
+  TemporalLayers::FrameConfig UpdateLayerConfig(
+      uint32_t rtp_timestamp) override;
 
   // New target bitrate, per temporal layer.
   void OnRatesUpdated(const std::vector<uint32_t>& bitrates_bps,
@@ -46,9 +47,9 @@ class ScreenshareLayers : public TemporalLayers {
   void PopulateCodecSpecific(bool base_layer_sync,
                              const TemporalLayers::FrameConfig& tl_config,
                              CodecSpecificInfoVP8* vp8_info,
-                             uint32_t timestamp) override;
+                             uint32_t rtp_timestamp) override;
 
-  void FrameEncoded(unsigned int size, int qp) override;
+  void FrameEncoded(uint32_t rtp_timestamp, size_t size, int qp) override;
 
  private:
   enum class TemporalLayerState : int { kDrop, kTl0, kTl1, kTl1Sync };
@@ -59,7 +60,6 @@ class ScreenshareLayers : public TemporalLayers {
   Clock* const clock_;
 
   int number_of_temporal_layers_;
-  bool last_base_layer_sync_;
   int active_layer_;
   int64_t last_timestamp_;
   int64_t last_sync_timestamp_;
@@ -92,6 +92,7 @@ class ScreenshareLayers : public TemporalLayers {
       kDropped,
       kReencoded,
       kQualityBoost,
+      kKeyFrame
     } state;
 
     int enhanced_max_qp;

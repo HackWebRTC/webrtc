@@ -40,7 +40,7 @@ class MockTemporalLayers : public TemporalLayers {
                     const TemporalLayers::FrameConfig&,
                     CodecSpecificInfoVP8*,
                     uint32_t));
-  MOCK_METHOD2(FrameEncoded, void(unsigned int, int));
+  MOCK_METHOD3(FrameEncoded, void(uint32_t, size_t, int));
   MOCK_CONST_METHOD0(Tl0PicIdx, uint8_t());
   MOCK_CONST_METHOD1(GetTemporalLayerId,
                      int(const TemporalLayers::FrameConfig&));

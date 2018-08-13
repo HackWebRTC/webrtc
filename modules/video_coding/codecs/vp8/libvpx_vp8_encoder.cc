@@ -721,8 +721,6 @@ int LibvpxVp8Encoder::Encode(const VideoFrame& frame,
   TemporalLayers::FrameConfig tl_configs[kMaxSimulcastStreams];
   for (size_t i = 0; i < encoders_.size(); ++i) {
     tl_configs[i] = temporal_layers_[i]->UpdateLayerConfig(frame.timestamp());
-    RTC_DCHECK(temporal_layers_checkers_[i]->CheckTemporalConfig(
-        send_key_frame, tl_configs[i]));
     if (tl_configs[i].drop_frame) {
       // Drop this frame.
       return WEBRTC_VIDEO_CODEC_OK;
@@ -836,6 +834,7 @@ int LibvpxVp8Encoder::GetEncodedPartitions(
     // kTokenPartitions is number of bits used.
     frag_info.VerifyAndAllocateFragmentationHeader((1 << kTokenPartitions) + 1);
     CodecSpecificInfo codec_specific;
+    bool is_keyframe = false;
     const vpx_codec_cx_pkt_t* pkt = NULL;
     while ((pkt = vpx_codec_get_cx_data(&encoders_[encoder_idx], &iter)) !=
            NULL) {
@@ -869,6 +868,7 @@ int LibvpxVp8Encoder::GetEncodedPartitions(
         // check if encoded frame is a key frame
         if (pkt->data.frame.flags & VPX_FRAME_IS_KEY) {
           encoded_images_[encoder_idx]._frameType = kVideoFrameKey;
+          is_keyframe = true;
         }
         PopulateCodecSpecific(&codec_specific, tl_configs[stream_idx], *pkt,
                               stream_idx, input_image.timestamp());
@@ -888,7 +888,7 @@ int LibvpxVp8Encoder::GetEncodedPartitions(
     int qp = -1;
     vpx_codec_control(&encoders_[encoder_idx], VP8E_GET_LAST_QUANTIZER_64, &qp);
     temporal_layers_[stream_idx]->FrameEncoded(
-        encoded_images_[encoder_idx]._length, qp);
+        input_image.timestamp(), encoded_images_[encoder_idx]._length, qp);
     if (send_stream_[stream_idx]) {
       if (encoded_images_[encoder_idx]._length > 0) {
         TRACE_COUNTER_ID1("webrtc", "EncodedFrameSize", encoder_idx,
@@ -906,6 +906,12 @@ int LibvpxVp8Encoder::GetEncodedPartitions(
       } else if (codec_.mode == VideoCodecMode::kScreensharing) {
         result = WEBRTC_VIDEO_CODEC_TARGET_BITRATE_OVERSHOOT;
       }
+    }
+    if (result != WEBRTC_VIDEO_CODEC_TARGET_BITRATE_OVERSHOOT) {
+      // Don't run checker on drop before reencode as that will incorrectly
+      // increase the pattern index twice.
+      RTC_DCHECK(temporal_layers_checkers_[stream_idx]->CheckTemporalConfig(
+          is_keyframe, tl_configs[stream_idx]));
     }
   }
   return result;
