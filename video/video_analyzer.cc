@@ -139,7 +139,7 @@ void VideoAnalyzer::SetReceiver(PacketReceiver* receiver) {
   receiver_ = receiver;
 }
 
-void VideoAnalyzer::SetSource(test::VideoCapturer* video_capturer,
+void VideoAnalyzer::SetSource(test::TestVideoCapturer* video_capturer,
                               bool respect_sink_wants) {
   if (respect_sink_wants)
     captured_frame_forwarder_.SetSource(video_capturer);
@@ -855,7 +855,7 @@ VideoAnalyzer::CapturedFrameForwarder::CapturedFrameForwarder(
       clock_(clock) {}
 
 void VideoAnalyzer::CapturedFrameForwarder::SetSource(
-    test::VideoCapturer* video_capturer) {
+    test::TestVideoCapturer* video_capturer) {
   video_capturer_ = video_capturer;
 }
 

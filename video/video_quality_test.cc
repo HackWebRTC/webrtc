@@ -635,7 +635,7 @@ void VideoQualityTest::DestroyThumbnailStreams() {
   }
   thumbnail_send_streams_.clear();
   thumbnail_receive_streams_.clear();
-  for (std::unique_ptr<test::VideoCapturer>& video_caputurer :
+  for (std::unique_ptr<test::TestVideoCapturer>& video_caputurer :
        thumbnail_capturers_) {
     video_caputurer.reset();
   }
@@ -766,12 +766,14 @@ void VideoQualityTest::StartAudioStreams() {
 }
 
 void VideoQualityTest::StartThumbnailCapture() {
-  for (std::unique_ptr<test::VideoCapturer>& capturer : thumbnail_capturers_)
+  for (std::unique_ptr<test::TestVideoCapturer>& capturer :
+       thumbnail_capturers_)
     capturer->Start();
 }
 
 void VideoQualityTest::StopThumbnailCapture() {
-  for (std::unique_ptr<test::VideoCapturer>& capturer : thumbnail_capturers_)
+  for (std::unique_ptr<test::TestVideoCapturer>& capturer :
+       thumbnail_capturers_)
     capturer->Stop();
 }
 

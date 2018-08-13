@@ -17,7 +17,7 @@
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/task_queue.h"
 #include "test/frame_generator.h"
-#include "test/video_capturer.h"
+#include "test/test_video_capturer.h"
 
 namespace webrtc {
 
@@ -25,7 +25,7 @@ namespace test {
 
 class FrameGenerator;
 
-class FrameGeneratorCapturer : public VideoCapturer {
+class FrameGeneratorCapturer : public TestVideoCapturer {
  public:
   class SinkWantsObserver {
    public:

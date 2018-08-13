@@ -33,8 +33,8 @@
 #include "test/rtp_file_reader.h"
 #include "test/run_loop.h"
 #include "test/run_test.h"
+#include "test/test_video_capturer.h"
 #include "test/testsupport/frame_writer.h"
-#include "test/video_capturer.h"
 #include "test/video_renderer.h"
 
 namespace {

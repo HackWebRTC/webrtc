@@ -7,8 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef TEST_VIDEO_CAPTURER_H_
-#define TEST_VIDEO_CAPTURER_H_
+#ifndef TEST_TEST_VIDEO_CAPTURER_H_
+#define TEST_TEST_VIDEO_CAPTURER_H_
 
 #include <stddef.h>
 
@@ -29,10 +29,10 @@ namespace webrtc {
 class Clock;
 namespace test {
 
-class VideoCapturer : public rtc::VideoSourceInterface<VideoFrame> {
+class TestVideoCapturer : public rtc::VideoSourceInterface<VideoFrame> {
  public:
-  VideoCapturer();
-  virtual ~VideoCapturer();
+  TestVideoCapturer();
+  virtual ~TestVideoCapturer();
 
   virtual void Start() = 0;
   virtual void Stop() = 0;
@@ -50,4 +50,4 @@ class VideoCapturer : public rtc::VideoSourceInterface<VideoFrame> {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // TEST_VIDEO_CAPTURER_H_
+#endif  // TEST_TEST_VIDEO_CAPTURER_H_

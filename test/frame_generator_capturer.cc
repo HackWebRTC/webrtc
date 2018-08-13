@@ -227,7 +227,7 @@ void FrameGeneratorCapturer::AddOrUpdateSink(
   // adaptation.
   rtc::VideoSinkWants resolution_wants = wants;
   resolution_wants.max_framerate_fps = std::numeric_limits<int>::max();
-  VideoCapturer::AddOrUpdateSink(sink, resolution_wants);
+  TestVideoCapturer::AddOrUpdateSink(sink, resolution_wants);
 
   // Ignore any requests for framerate higher than initially configured.
   if (wants.max_framerate_fps < target_fps_) {

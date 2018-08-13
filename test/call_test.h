@@ -190,7 +190,7 @@ class CallTest : public ::testing::Test {
 
   test::FrameGeneratorCapturer* frame_generator_capturer_;
   std::vector<rtc::VideoSourceInterface<VideoFrame>*> video_sources_;
-  std::vector<std::unique_ptr<VideoCapturer>> video_capturers_;
+  std::vector<std::unique_ptr<TestVideoCapturer>> video_capturers_;
   DegradationPreference degradation_preference_ =
       DegradationPreference::MAINTAIN_FRAMERATE;
 

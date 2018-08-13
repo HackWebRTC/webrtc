@@ -8,16 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "test/video_capturer.h"
+#include "test/test_video_capturer.h"
 
 #include "rtc_base/constructormagic.h"
 
 namespace webrtc {
 namespace test {
-VideoCapturer::VideoCapturer() : video_adapter_(new cricket::VideoAdapter()) {}
-VideoCapturer::~VideoCapturer() {}
+TestVideoCapturer::TestVideoCapturer()
+    : video_adapter_(new cricket::VideoAdapter()) {}
+TestVideoCapturer::~TestVideoCapturer() {}
 
-absl::optional<VideoFrame> VideoCapturer::AdaptFrame(const VideoFrame& frame) {
+absl::optional<VideoFrame> TestVideoCapturer::AdaptFrame(
+    const VideoFrame& frame) {
   int cropped_width = 0;
   int cropped_height = 0;
   int out_width = 0;
@@ -47,8 +49,9 @@ absl::optional<VideoFrame> VideoCapturer::AdaptFrame(const VideoFrame& frame) {
   return out_frame;
 }
 
-void VideoCapturer::AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
-                                    const rtc::VideoSinkWants& wants) {
+void TestVideoCapturer::AddOrUpdateSink(
+    rtc::VideoSinkInterface<VideoFrame>* sink,
+    const rtc::VideoSinkWants& wants) {
   video_adapter_->OnResolutionFramerateRequest(
       wants.target_pixel_count, wants.max_pixel_count, wants.max_framerate_fps);
 }

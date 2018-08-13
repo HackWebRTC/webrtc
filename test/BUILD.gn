@@ -44,10 +44,10 @@ rtc_source_set("video_test_common") {
     "frame_generator_capturer.h",
     "frame_utils.cc",
     "frame_utils.h",
+    "test_video_capturer.cc",
+    "test_video_capturer.h",
     "vcm_capturer.cc",
     "vcm_capturer.h",
-    "video_capturer.cc",
-    "video_capturer.h",
     "video_codec_settings.h",
   ]
 
