@@ -85,12 +85,8 @@ RtpReceiverImpl::RtpReceiverImpl(Clock* clock,
       rtp_payload_registry_(rtp_payload_registry),
       rtp_media_receiver_(rtp_media_receiver),
       ssrc_(0),
-      num_csrcs_(0),
-      current_remote_csrc_(),
       last_received_timestamp_(0),
-      last_received_frame_time_ms_(-1) {
-  memset(current_remote_csrc_, 0, sizeof(current_remote_csrc_));
-}
+      last_received_frame_time_ms_(-1) {}
 
 RtpReceiverImpl::~RtpReceiverImpl() {}
 
@@ -134,9 +130,17 @@ bool RtpReceiverImpl::IncomingRtpPacket(const RTPHeader& rtp_header,
     // OK, keep-alive packet.
     return true;
   }
+  int64_t now_ms = clock_->TimeInMilliseconds();
+
+  {
+    rtc::CritScope lock(&critical_section_rtp_receiver_);
+
+    csrcs_.Update(
+        now_ms, rtc::MakeArrayView(rtp_header.arrOfCSRCs, rtp_header.numCSRCs));
+  }
+
   WebRtcRTPHeader webrtc_rtp_header{};
   webrtc_rtp_header.header = rtp_header;
-  CheckCSRC(webrtc_rtp_header);
 
   auto audio_level =
       rtp_header.extension.hasAudioLevel
@@ -145,8 +149,7 @@ bool RtpReceiverImpl::IncomingRtpPacket(const RTPHeader& rtp_header,
   UpdateSources(audio_level);
 
   int32_t ret_val = rtp_media_receiver_->ParseRtpPacket(
-      &webrtc_rtp_header, payload_specific, payload, payload_length,
-      clock_->TimeInMilliseconds());
+      &webrtc_rtp_header, payload_specific, payload, payload_length, now_ms);
 
   if (ret_val < 0) {
     return false;
@@ -174,16 +177,11 @@ std::vector<RtpSource> RtpReceiverImpl::GetSources() const {
   rtc::CritScope lock(&critical_section_rtp_receiver_);
 
   int64_t now_ms = clock_->TimeInMilliseconds();
-  std::vector<RtpSource> sources;
-
   RTC_DCHECK(std::is_sorted(ssrc_sources_.begin(), ssrc_sources_.end(),
                             [](const RtpSource& lhs, const RtpSource& rhs) {
                               return lhs.timestamp_ms() < rhs.timestamp_ms();
                             }));
-  RTC_DCHECK(std::is_sorted(csrc_sources_.begin(), csrc_sources_.end(),
-                            [](const RtpSource& lhs, const RtpSource& rhs) {
-                              return lhs.timestamp_ms() < rhs.timestamp_ms();
-                            }));
+  std::vector<RtpSource> sources = csrcs_.GetSources(now_ms);
 
   std::set<uint32_t> selected_ssrcs;
   for (auto rit = ssrc_sources_.rbegin(); rit != ssrc_sources_.rend(); ++rit) {
@@ -193,13 +191,6 @@ std::vector<RtpSource> RtpReceiverImpl::GetSources() const {
     if (selected_ssrcs.insert(rit->source_id()).second) {
       sources.push_back(*rit);
     }
-  }
-
-  for (auto rit = csrc_sources_.rbegin(); rit != csrc_sources_.rend(); ++rit) {
-    if ((now_ms - rit->timestamp_ms()) > kGetSourcesTimeoutMs) {
-      break;
-    }
-    sources.push_back(*rit);
   }
   return sources;
 }
@@ -223,43 +214,10 @@ void RtpReceiverImpl::CheckSSRCChanged(const RTPHeader& rtp_header) {
   ssrc_ = rtp_header.ssrc;
 }
 
-// Implementation note: must not hold critsect when called.
-void RtpReceiverImpl::CheckCSRC(const WebRtcRTPHeader& rtp_header) {
-  const uint8_t num_csrcs = rtp_header.header.numCSRCs;
-  if (num_csrcs > kRtpCsrcSize) {
-    // Ignore.
-    return;
-  }
-  {
-    rtc::CritScope lock(&critical_section_rtp_receiver_);
-
-    // Copy new.
-    memcpy(current_remote_csrc_, rtp_header.header.arrOfCSRCs,
-           num_csrcs * sizeof(uint32_t));
-
-    num_csrcs_ = num_csrcs;
-  }  // End critsect.
-}
-
 void RtpReceiverImpl::UpdateSources(
     const absl::optional<uint8_t>& ssrc_audio_level) {
   rtc::CritScope lock(&critical_section_rtp_receiver_);
   int64_t now_ms = clock_->TimeInMilliseconds();
-
-  for (size_t i = 0; i < num_csrcs_; ++i) {
-    auto map_it = iterator_by_csrc_.find(current_remote_csrc_[i]);
-    if (map_it == iterator_by_csrc_.end()) {
-      // If it is a new CSRC, append a new object to the end of the list.
-      csrc_sources_.emplace_back(now_ms, current_remote_csrc_[i],
-                                 RtpSourceType::CSRC);
-    } else {
-      // If it is an existing CSRC, move the object to the end of the list.
-      map_it->second->update_timestamp_ms(now_ms);
-      csrc_sources_.splice(csrc_sources_.end(), csrc_sources_, map_it->second);
-    }
-    // Update the unordered_map.
-    iterator_by_csrc_[current_remote_csrc_[i]] = std::prev(csrc_sources_.end());
-  }
 
   // If this is the first packet or the SSRC is changed, insert a new
   // contributing source that uses the SSRC.
@@ -275,15 +233,6 @@ void RtpReceiverImpl::UpdateSources(
 }
 
 void RtpReceiverImpl::RemoveOutdatedSources(int64_t now_ms) {
-  std::list<RtpSource>::iterator it;
-  for (it = csrc_sources_.begin(); it != csrc_sources_.end(); ++it) {
-    if ((now_ms - it->timestamp_ms()) <= kGetSourcesTimeoutMs) {
-      break;
-    }
-    iterator_by_csrc_.erase(it->source_id());
-  }
-  csrc_sources_.erase(csrc_sources_.begin(), it);
-
   std::vector<RtpSource>::iterator vec_it;
   for (vec_it = ssrc_sources_.begin(); vec_it != ssrc_sources_.end();
        ++vec_it) {
