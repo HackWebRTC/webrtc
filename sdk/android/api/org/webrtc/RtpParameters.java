@@ -34,17 +34,21 @@ public class RtpParameters {
     // Specific maximum bandwidth defined in RFC3890. If null, there is no
     // maximum bitrate.
     @Nullable public Integer maxBitrateBps;
-    // Not implemented.
+    // The minimum bitrate in bps for video.
     @Nullable public Integer minBitrateBps;
+    // The max framerate in fps for video.
+    @Nullable public Integer maxFramerate;
     // SSRC to be used by this encoding.
     // Can't be changed between getParameters/setParameters.
     public Long ssrc;
 
     @CalledByNative("Encoding")
-    Encoding(boolean active, Integer maxBitrateBps, Integer minBitrateBps, Long ssrc) {
+    Encoding(boolean active, Integer maxBitrateBps, Integer minBitrateBps, Integer maxFramerate,
+        Long ssrc) {
       this.active = active;
       this.maxBitrateBps = maxBitrateBps;
       this.minBitrateBps = minBitrateBps;
+      this.maxFramerate = maxFramerate;
       this.ssrc = ssrc;
     }
 
@@ -63,6 +67,12 @@ public class RtpParameters {
     @CalledByNative("Encoding")
     Integer getMinBitrateBps() {
       return minBitrateBps;
+    }
+
+    @Nullable
+    @CalledByNative("Encoding")
+    Integer getMaxFramerate() {
+      return maxFramerate;
     }
 
     @CalledByNative("Encoding")
