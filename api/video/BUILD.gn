@@ -101,6 +101,17 @@ rtc_source_set("video_bitrate_allocator") {
   ]
 }
 
+rtc_source_set("video_bitrate_allocator_factory") {
+  visibility = [ "*" ]
+  sources = [
+    "video_bitrate_allocator_factory.h",
+  ]
+  deps = [
+    ":video_bitrate_allocator",
+    "../../media:rtc_media_base",
+  ]
+}
+
 rtc_source_set("video_stream_decoder") {
   visibility = [ "*" ]
   sources = [
