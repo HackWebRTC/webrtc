@@ -34,8 +34,17 @@ bool CloseToOne(float gain_factor) {
 }  // namespace
 
 FixedGainController::FixedGainController(ApmDataDumper* apm_data_dumper)
+    : FixedGainController(apm_data_dumper, "Agc2") {}
+
+FixedGainController::FixedGainController(ApmDataDumper* apm_data_dumper,
+                                         std::string histogram_name_prefix)
     : apm_data_dumper_(apm_data_dumper),
-      gain_curve_applier_(48000, apm_data_dumper_) {}
+      gain_curve_applier_(48000, apm_data_dumper_, histogram_name_prefix) {
+  // Do update histograms.xml when adding name prefixes.
+  RTC_DCHECK(histogram_name_prefix == "" || histogram_name_prefix == "Test" ||
+             histogram_name_prefix == "AudioMixer" ||
+             histogram_name_prefix == "Agc2");
+}
 
 void FixedGainController::SetGain(float gain_to_apply_db) {
   // Changes in gain_to_apply_ cause discontinuities. We assume

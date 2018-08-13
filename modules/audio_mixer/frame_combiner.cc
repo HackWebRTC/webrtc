@@ -116,7 +116,7 @@ void InterleaveToAudioFrame(AudioFrameView<const float> mixing_buffer_view,
 
 FrameCombiner::FrameCombiner(bool use_limiter)
     : data_dumper_(new ApmDataDumper(0)),
-      limiter_(data_dumper_.get()),
+      limiter_(data_dumper_.get(), "AudioMixer"),
       use_limiter_(use_limiter) {
   limiter_.SetGain(0.f);
 }

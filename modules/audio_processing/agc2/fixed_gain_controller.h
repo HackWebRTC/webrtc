@@ -20,6 +20,8 @@ class ApmDataDumper;
 class FixedGainController {
  public:
   explicit FixedGainController(ApmDataDumper* apm_data_dumper);
+  FixedGainController(ApmDataDumper* apm_data_dumper,
+                      std::string histogram_name_prefix);
 
   void Process(AudioFrameView<float> signal);
 

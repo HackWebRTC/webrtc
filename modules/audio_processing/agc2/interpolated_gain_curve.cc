@@ -14,41 +14,8 @@
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
-namespace {
-void LogRegionStats(const InterpolatedGainCurve::Stats& stats) {
-  using Region = InterpolatedGainCurve::GainCurveRegion;
-  const int duration_s =
-      stats.region_duration_frames / (1000 / kFrameDurationMs);
-
-  switch (stats.region) {
-    case Region::kIdentity: {
-      RTC_HISTOGRAM_COUNTS_10000(
-          "WebRTC.Audio.Agc2.FixedDigitalGainCurveRegion.Identity", duration_s);
-      break;
-    }
-    case Region::kKnee: {
-      RTC_HISTOGRAM_COUNTS_10000(
-          "WebRTC.Audio.Agc2.FixedDigitalGainCurveRegion.Knee", duration_s);
-      break;
-    }
-    case Region::kLimiter: {
-      RTC_HISTOGRAM_COUNTS_10000(
-          "WebRTC.Audio.Agc2.FixedDigitalGainCurveRegion.Limiter", duration_s);
-      break;
-    }
-    case Region::kSaturation: {
-      RTC_HISTOGRAM_COUNTS_10000(
-          "WebRTC.Audio.Agc2.FixedDigitalGainCurveRegion.Saturation",
-          duration_s);
-      break;
-    }
-    default: { RTC_NOTREACHED(); }
-  }
-}
-}  // namespace
 
 constexpr std::array<float, kInterpolatedGainCurveTotalPoints>
     InterpolatedGainCurve::approximation_params_x_;
@@ -59,8 +26,17 @@ constexpr std::array<float, kInterpolatedGainCurveTotalPoints>
 constexpr std::array<float, kInterpolatedGainCurveTotalPoints>
     InterpolatedGainCurve::approximation_params_q_;
 
-InterpolatedGainCurve::InterpolatedGainCurve(ApmDataDumper* apm_data_dumper)
-    : apm_data_dumper_(apm_data_dumper) {}
+InterpolatedGainCurve::InterpolatedGainCurve(ApmDataDumper* apm_data_dumper,
+                                             std::string histogram_name_prefix)
+    : region_logger_("WebRTC.Audio." + histogram_name_prefix +
+                         ".FixedDigitalGainCurveRegion.Identity",
+                     "WebRTC.Audio." + histogram_name_prefix +
+                         ".FixedDigitalGainCurveRegion.Knee",
+                     "WebRTC.Audio." + histogram_name_prefix +
+                         ".FixedDigitalGainCurveRegion.Limiter",
+                     "WebRTC.Audio." + histogram_name_prefix +
+                         ".FixedDigitalGainCurveRegion.Saturation"),
+      apm_data_dumper_(apm_data_dumper) {}
 
 InterpolatedGainCurve::~InterpolatedGainCurve() {
   if (stats_.available) {
@@ -73,7 +49,69 @@ InterpolatedGainCurve::~InterpolatedGainCurve() {
                               stats_.look_ups_limiter_region);
     apm_data_dumper_->DumpRaw("agc2_interp_gain_curve_lookups_saturation",
                               stats_.look_ups_saturation_region);
-    LogRegionStats(stats_);
+    region_logger_.LogRegionStats(stats_);
+  }
+}
+
+InterpolatedGainCurve::RegionLogger::RegionLogger(
+    std::string identity_histogram_name,
+    std::string knee_histogram_name,
+    std::string limiter_histogram_name,
+    std::string saturation_histogram_name)
+    : identity_histogram(
+          metrics::HistogramFactoryGetCounts(identity_histogram_name,
+                                             1,
+                                             10000,
+                                             50)),
+      knee_histogram(metrics::HistogramFactoryGetCounts(knee_histogram_name,
+                                                        1,
+                                                        10000,
+                                                        50)),
+      limiter_histogram(
+          metrics::HistogramFactoryGetCounts(limiter_histogram_name,
+                                             1,
+                                             10000,
+                                             50)),
+      saturation_histogram(
+          metrics::HistogramFactoryGetCounts(saturation_histogram_name,
+                                             1,
+                                             10000,
+                                             50)) {}
+
+InterpolatedGainCurve::RegionLogger::~RegionLogger() = default;
+
+void InterpolatedGainCurve::RegionLogger::LogRegionStats(
+    const InterpolatedGainCurve::Stats& stats) const {
+  using Region = InterpolatedGainCurve::GainCurveRegion;
+  const int duration_s =
+      stats.region_duration_frames / (1000 / kFrameDurationMs);
+
+  switch (stats.region) {
+    case Region::kIdentity: {
+      if (identity_histogram) {
+        metrics::HistogramAdd(identity_histogram, duration_s);
+      }
+      break;
+    }
+    case Region::kKnee: {
+      if (knee_histogram) {
+        metrics::HistogramAdd(knee_histogram, duration_s);
+      }
+      break;
+    }
+    case Region::kLimiter: {
+      if (limiter_histogram) {
+        metrics::HistogramAdd(limiter_histogram, duration_s);
+      }
+      break;
+    }
+    case Region::kSaturation: {
+      if (saturation_histogram) {
+        metrics::HistogramAdd(saturation_histogram, duration_s);
+      }
+      break;
+    }
+    default: { RTC_NOTREACHED(); }
   }
 }
 
@@ -100,7 +138,7 @@ void InterpolatedGainCurve::UpdateStats(float input_level) const {
   if (region == stats_.region) {
     ++stats_.region_duration_frames;
   } else {
-    LogRegionStats(stats_);
+    region_logger_.LogRegionStats(stats_);
 
     stats_.region_duration_frames = 0;
     stats_.region = region;

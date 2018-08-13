@@ -23,7 +23,7 @@ TEST(GainCurveApplier, GainCurveApplierShouldConstructAndRun) {
   const int sample_rate_hz = 48000;
   ApmDataDumper apm_data_dumper(0);
 
-  GainCurveApplier gain_curve_applier(sample_rate_hz, &apm_data_dumper);
+  GainCurveApplier gain_curve_applier(sample_rate_hz, &apm_data_dumper, "");
 
   VectorFloatFrame vectors_with_float_frame(1, sample_rate_hz / 100,
                                             kMaxAbsFloatS16Value);
@@ -37,7 +37,7 @@ TEST(GainCurveApplier, OutputVolumeAboveThreshold) {
       2.f;
   ApmDataDumper apm_data_dumper(0);
 
-  GainCurveApplier gain_curve_applier(sample_rate_hz, &apm_data_dumper);
+  GainCurveApplier gain_curve_applier(sample_rate_hz, &apm_data_dumper, "");
 
   // Give the level estimator time to adapt.
   for (int i = 0; i < 5; ++i) {

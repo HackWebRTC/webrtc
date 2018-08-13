@@ -16,6 +16,7 @@
 #include "modules/audio_processing/agc2/vector_float_frame.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/gunit.h"
+#include "system_wrappers/include/metrics_default.h"
 
 namespace webrtc {
 namespace {
@@ -49,12 +50,20 @@ ApmDataDumper test_data_dumper(0);
 
 std::unique_ptr<FixedGainController> CreateFixedGainController(
     float gain_to_apply,
-    size_t rate) {
+    size_t rate,
+    std::string histogram_name_prefix) {
   std::unique_ptr<FixedGainController> fgc =
-      absl::make_unique<FixedGainController>(&test_data_dumper);
+      absl::make_unique<FixedGainController>(&test_data_dumper,
+                                             histogram_name_prefix);
   fgc->SetGain(gain_to_apply);
   fgc->SetSampleRate(rate);
   return fgc;
+}
+
+std::unique_ptr<FixedGainController> CreateFixedGainController(
+    float gain_to_apply,
+    size_t rate) {
+  return CreateFixedGainController(gain_to_apply, rate, "");
 }
 
 }  // namespace
@@ -171,6 +180,34 @@ TEST(AutomaticGainController2FixedDigital, GainShouldChangeOnSetGain) {
       RunFixedGainControllerWithConstantInput(
           fixed_gc_no_saturation.get(), kInputLevel, kNumFrames, kSampleRate),
       kInputLevel * 10);
+}
+
+TEST(AutomaticGainController2FixedDigital, RegionHistogramIsUpdated) {
+  constexpr size_t kSampleRate = 8000;
+  constexpr float kGainDb = 0.f;
+  constexpr float kInputLevel = 1000.f;
+  constexpr size_t kNumFrames = 5;
+
+  metrics::Reset();
+
+  std::unique_ptr<FixedGainController> fixed_gc_no_saturation =
+      CreateFixedGainController(kGainDb, kSampleRate, "Test");
+
+  static_cast<void>(RunFixedGainControllerWithConstantInput(
+      fixed_gc_no_saturation.get(), kInputLevel, kNumFrames, kSampleRate));
+
+  // Destroying FixedGainController should cause the last limiter region to be
+  // logged.
+  fixed_gc_no_saturation.reset();
+
+  EXPECT_EQ(1, metrics::NumSamples(
+                   "WebRTC.Audio.Test.FixedDigitalGainCurveRegion.Identity"));
+  EXPECT_EQ(0, metrics::NumSamples(
+                   "WebRTC.Audio.Test.FixedDigitalGainCurveRegion.Knee"));
+  EXPECT_EQ(0, metrics::NumSamples(
+                   "WebRTC.Audio.Test.FixedDigitalGainCurveRegion.Limiter"));
+  EXPECT_EQ(0, metrics::NumSamples(
+                   "WebRTC.Audio.Test.FixedDigitalGainCurveRegion.Saturation"));
 }
 
 }  // namespace webrtc

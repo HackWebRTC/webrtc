@@ -23,7 +23,9 @@ class ApmDataDumper;
 
 class GainCurveApplier {
  public:
-  GainCurveApplier(size_t sample_rate_hz, ApmDataDumper* apm_data_dumper);
+  GainCurveApplier(size_t sample_rate_hz,
+                   ApmDataDumper* apm_data_dumper,
+                   std::string histogram_name_prefix);
 
   ~GainCurveApplier();
 

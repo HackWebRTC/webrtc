@@ -12,11 +12,13 @@
 #define MODULES_AUDIO_PROCESSING_AGC2_INTERPOLATED_GAIN_CURVE_H_
 
 #include <array>
+#include <string>
 
 #include "modules/audio_processing/agc2/agc2_common.h"
 
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/gtest_prod_util.h"
+#include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
 
@@ -59,8 +61,8 @@ class InterpolatedGainCurve {
     int64_t region_duration_frames = 0;
   };
 
-  // InterpolatedGainCurve(InterpolatedGainCurve&&);
-  explicit InterpolatedGainCurve(ApmDataDumper* apm_data_dumper);
+  InterpolatedGainCurve(ApmDataDumper* apm_data_dumper,
+                        std::string histogram_name_prefix);
   ~InterpolatedGainCurve();
 
   Stats get_stats() const { return stats_; }
@@ -76,6 +78,23 @@ class InterpolatedGainCurve {
   // ComputeInterpolatedGainCurve.
   FRIEND_TEST_ALL_PREFIXES(AutomaticGainController2InterpolatedGainCurve,
                            CheckApproximationParams);
+
+  struct RegionLogger {
+    metrics::Histogram* identity_histogram;
+    metrics::Histogram* knee_histogram;
+    metrics::Histogram* limiter_histogram;
+    metrics::Histogram* saturation_histogram;
+
+    RegionLogger(std::string identity_histogram_name,
+                 std::string knee_histogram_name,
+                 std::string limiter_histogram_name,
+                 std::string saturation_histogram_name);
+
+    ~RegionLogger();
+
+    void LogRegionStats(const InterpolatedGainCurve::Stats& stats) const;
+  } region_logger_;
+
   void UpdateStats(float input_level) const;
 
   ApmDataDumper* const apm_data_dumper_;

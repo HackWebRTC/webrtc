@@ -32,7 +32,7 @@ const Limiter limiter;
 }  // namespace
 
 TEST(AutomaticGainController2InterpolatedGainCurve, CreateUse) {
-  InterpolatedGainCurve igc(&apm_data_dumper);
+  InterpolatedGainCurve igc(&apm_data_dumper, "");
 
   const auto levels = test::LinSpace(
       kLevelEpsilon, DbfsToFloatS16(limiter.max_input_level_db() + 1), 500);
@@ -42,7 +42,7 @@ TEST(AutomaticGainController2InterpolatedGainCurve, CreateUse) {
 }
 
 TEST(AutomaticGainController2InterpolatedGainCurve, CheckValidOutput) {
-  InterpolatedGainCurve igc(&apm_data_dumper);
+  InterpolatedGainCurve igc(&apm_data_dumper, "");
 
   const auto levels = test::LinSpace(
       kLevelEpsilon, limiter.max_input_level_linear() * 2.0, 500);
@@ -55,7 +55,7 @@ TEST(AutomaticGainController2InterpolatedGainCurve, CheckValidOutput) {
 }
 
 TEST(AutomaticGainController2InterpolatedGainCurve, CheckMonotonicity) {
-  InterpolatedGainCurve igc(&apm_data_dumper);
+  InterpolatedGainCurve igc(&apm_data_dumper, "");
 
   const auto levels = test::LinSpace(
       kLevelEpsilon, limiter.max_input_level_linear() + kLevelEpsilon + 0.5,
@@ -69,7 +69,7 @@ TEST(AutomaticGainController2InterpolatedGainCurve, CheckMonotonicity) {
 }
 
 TEST(AutomaticGainController2InterpolatedGainCurve, CheckApproximation) {
-  InterpolatedGainCurve igc(&apm_data_dumper);
+  InterpolatedGainCurve igc(&apm_data_dumper, "");
 
   const auto levels = test::LinSpace(
       kLevelEpsilon, limiter.max_input_level_linear() - kLevelEpsilon, 500);
@@ -82,7 +82,7 @@ TEST(AutomaticGainController2InterpolatedGainCurve, CheckApproximation) {
 }
 
 TEST(AutomaticGainController2InterpolatedGainCurve, CheckRegionBoundaries) {
-  InterpolatedGainCurve igc(&apm_data_dumper);
+  InterpolatedGainCurve igc(&apm_data_dumper, "");
 
   const std::vector<double> levels{
       {kLevelEpsilon, limiter.knee_start_linear() + kLevelEpsilon,
@@ -101,7 +101,7 @@ TEST(AutomaticGainController2InterpolatedGainCurve, CheckRegionBoundaries) {
 
 TEST(AutomaticGainController2InterpolatedGainCurve, CheckIdentityRegion) {
   constexpr size_t kNumSteps = 10;
-  InterpolatedGainCurve igc(&apm_data_dumper);
+  InterpolatedGainCurve igc(&apm_data_dumper, "");
 
   const auto levels =
       test::LinSpace(kLevelEpsilon, limiter.knee_start_linear(), kNumSteps);
@@ -120,7 +120,7 @@ TEST(AutomaticGainController2InterpolatedGainCurve, CheckIdentityRegion) {
 TEST(AutomaticGainController2InterpolatedGainCurve,
      CheckNoOverApproximationKnee) {
   constexpr size_t kNumSteps = 10;
-  InterpolatedGainCurve igc(&apm_data_dumper);
+  InterpolatedGainCurve igc(&apm_data_dumper, "");
 
   const auto levels =
       test::LinSpace(limiter.knee_start_linear() + kLevelEpsilon,
@@ -142,7 +142,7 @@ TEST(AutomaticGainController2InterpolatedGainCurve,
 TEST(AutomaticGainController2InterpolatedGainCurve,
      CheckNoOverApproximationBeyondKnee) {
   constexpr size_t kNumSteps = 10;
-  InterpolatedGainCurve igc(&apm_data_dumper);
+  InterpolatedGainCurve igc(&apm_data_dumper, "");
 
   const auto levels = test::LinSpace(
       limiter.limiter_start_linear() + kLevelEpsilon,
@@ -164,7 +164,7 @@ TEST(AutomaticGainController2InterpolatedGainCurve,
 TEST(AutomaticGainController2InterpolatedGainCurve,
      CheckNoOverApproximationWithSaturation) {
   constexpr size_t kNumSteps = 3;
-  InterpolatedGainCurve igc(&apm_data_dumper);
+  InterpolatedGainCurve igc(&apm_data_dumper, "");
 
   const auto levels = test::LinSpace(
       limiter.max_input_level_linear() + kLevelEpsilon,
@@ -185,7 +185,7 @@ TEST(AutomaticGainController2InterpolatedGainCurve, CheckApproximationParams) {
   test::InterpolatedParameters parameters =
       test::ComputeInterpolatedGainCurveApproximationParams();
 
-  InterpolatedGainCurve igc(&apm_data_dumper);
+  InterpolatedGainCurve igc(&apm_data_dumper, "");
 
   for (size_t i = 0; i < kInterpolatedGainCurveTotalPoints; ++i) {
     // The tolerance levels are chosen to account for deviations due
