@@ -51,27 +51,31 @@ class RtpPacket {
   void IdentifyExtensions(const ExtensionManager& extensions);
 
   // Header.
-  bool Marker() const;
-  uint8_t PayloadType() const;
-  uint16_t SequenceNumber() const;
-  uint32_t Timestamp() const;
-  uint32_t Ssrc() const;
+  bool Marker() const { return marker_; }
+  uint8_t PayloadType() const { return payload_type_; }
+  uint16_t SequenceNumber() const { return sequence_number_; }
+  uint32_t Timestamp() const { return timestamp_; }
+  uint32_t Ssrc() const { return ssrc_; }
   std::vector<uint32_t> Csrcs() const;
 
-  size_t headers_size() const;
+  size_t headers_size() const { return payload_offset_; }
 
   // Payload.
-  size_t payload_size() const;
-  size_t padding_size() const;
-  rtc::ArrayView<const uint8_t> payload() const;
+  size_t payload_size() const { return payload_size_; }
+  size_t padding_size() const { return padding_size_; }
+  rtc::ArrayView<const uint8_t> payload() const {
+    return rtc::MakeArrayView(data() + payload_offset_, payload_size_);
+  }
 
   // Buffer.
-  rtc::CopyOnWriteBuffer Buffer() const;
-  size_t capacity() const;
-  size_t size() const;
-  const uint8_t* data() const;
-  size_t FreeCapacity() const;
-  size_t MaxPayloadSize() const;
+  rtc::CopyOnWriteBuffer Buffer() const { return buffer_; }
+  size_t capacity() const { return buffer_.capacity(); }
+  size_t size() const {
+    return payload_offset_ + payload_size_ + padding_size_;
+  }
+  const uint8_t* data() const { return buffer_.cdata(); }
+  size_t FreeCapacity() const { return capacity() - size(); }
+  size_t MaxPayloadSize() const { return capacity() - headers_size(); }
 
   // Reset fields and buffer.
   void Clear();
@@ -87,7 +91,7 @@ class RtpPacket {
   // Writes csrc list. Assumes:
   // a) There is enough room left in buffer.
   // b) Extension headers, payload or padding data has not already been added.
-  void SetCsrcs(const std::vector<uint32_t>& csrcs);
+  void SetCsrcs(rtc::ArrayView<const uint32_t> csrcs);
 
   // Header extensions.
   template <typename Extension>
@@ -131,8 +135,8 @@ class RtpPacket {
   // to write raw extension to or an empty view on failure.
   rtc::ArrayView<uint8_t> AllocateExtension(ExtensionType type, size_t length);
 
-  uint8_t* WriteAt(size_t offset);
-  void WriteAt(size_t offset, uint8_t byte);
+  uint8_t* WriteAt(size_t offset) { return buffer_.data() + offset; }
+  void WriteAt(size_t offset, uint8_t byte) { buffer_.data()[offset] = byte; }
 
   // Header.
   bool marker_;

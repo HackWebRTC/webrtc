@@ -107,32 +107,6 @@ bool RtpPacket::Parse(rtc::CopyOnWriteBuffer buffer) {
   return true;
 }
 
-bool RtpPacket::Marker() const {
-  RTC_DCHECK_EQ(marker_, (data()[1] & 0x80) != 0);
-  return marker_;
-}
-
-uint8_t RtpPacket::PayloadType() const {
-  RTC_DCHECK_EQ(payload_type_, data()[1] & 0x7f);
-  return payload_type_;
-}
-
-uint16_t RtpPacket::SequenceNumber() const {
-  RTC_DCHECK_EQ(sequence_number_,
-                ByteReader<uint16_t>::ReadBigEndian(data() + 2));
-  return sequence_number_;
-}
-
-uint32_t RtpPacket::Timestamp() const {
-  RTC_DCHECK_EQ(timestamp_, ByteReader<uint32_t>::ReadBigEndian(data() + 4));
-  return timestamp_;
-}
-
-uint32_t RtpPacket::Ssrc() const {
-  RTC_DCHECK_EQ(ssrc_, ByteReader<uint32_t>::ReadBigEndian(data() + 8));
-  return ssrc_;
-}
-
 std::vector<uint32_t> RtpPacket::Csrcs() const {
   size_t num_csrc = data()[0] & 0x0F;
   RTC_DCHECK_GE(capacity(), kFixedHeaderSize + num_csrc * 4);
@@ -142,48 +116,6 @@ std::vector<uint32_t> RtpPacket::Csrcs() const {
         ByteReader<uint32_t>::ReadBigEndian(&data()[kFixedHeaderSize + i * 4]);
   }
   return csrcs;
-}
-
-size_t RtpPacket::headers_size() const {
-  return payload_offset_;
-}
-
-size_t RtpPacket::payload_size() const {
-  return payload_size_;
-}
-
-size_t RtpPacket::padding_size() const {
-  return padding_size_;
-}
-
-rtc::ArrayView<const uint8_t> RtpPacket::payload() const {
-  return rtc::MakeArrayView(data() + payload_offset_, payload_size_);
-}
-
-rtc::CopyOnWriteBuffer RtpPacket::Buffer() const {
-  return buffer_;
-}
-
-size_t RtpPacket::capacity() const {
-  return buffer_.capacity();
-}
-
-size_t RtpPacket::size() const {
-  size_t ret = payload_offset_ + payload_size_ + padding_size_;
-  RTC_DCHECK_EQ(buffer_.size(), ret);
-  return ret;
-}
-
-const uint8_t* RtpPacket::data() const {
-  return buffer_.cdata();
-}
-
-size_t RtpPacket::FreeCapacity() const {
-  return capacity() - size();
-}
-
-size_t RtpPacket::MaxPayloadSize() const {
-  return capacity() - payload_offset_;
 }
 
 void RtpPacket::CopyHeaderFrom(const RtpPacket& packet) {
@@ -235,7 +167,7 @@ void RtpPacket::SetSsrc(uint32_t ssrc) {
   ByteWriter<uint32_t>::WriteBigEndian(WriteAt(8), ssrc);
 }
 
-void RtpPacket::SetCsrcs(const std::vector<uint32_t>& csrcs) {
+void RtpPacket::SetCsrcs(rtc::ArrayView<const uint32_t> csrcs) {
   RTC_DCHECK_EQ(extensions_size_, 0);
   RTC_DCHECK_EQ(payload_size_, 0);
   RTC_DCHECK_EQ(padding_size_, 0);
@@ -515,14 +447,6 @@ rtc::ArrayView<uint8_t> RtpPacket::AllocateExtension(ExtensionType type,
   }
   // Extension not registered.
   return nullptr;
-}
-
-uint8_t* RtpPacket::WriteAt(size_t offset) {
-  return buffer_.data() + offset;
-}
-
-void RtpPacket::WriteAt(size_t offset, uint8_t byte) {
-  buffer_.data()[offset] = byte;
 }
 
 }  // namespace webrtc
