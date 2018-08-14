@@ -243,11 +243,13 @@ class SendProcessingUsage2 : public OveruseFrameDetector::ProcessingUsage {
                      int64_t last_capture_time_us) override {}
 
   absl::optional<int> FrameSent(
-      uint32_t timestamp,
-      int64_t time_sent_in_us,
+      uint32_t /* timestamp */,
+      int64_t /* time_sent_in_us */,
       int64_t capture_time_us,
       absl::optional<int> encode_duration_us) override {
     if (encode_duration_us) {
+      int duration_per_frame_us =
+          DurationPerInputFrame(capture_time_us, *encode_duration_us);
       if (prev_time_us_ != -1) {
         if (capture_time_us < prev_time_us_) {
           // The weighting in AddSample assumes that samples are processed with
@@ -257,7 +259,7 @@ class SendProcessingUsage2 : public OveruseFrameDetector::ProcessingUsage {
           // bit forward in time.
           capture_time_us = prev_time_us_;
         }
-        AddSample(1e-6 * (*encode_duration_us),
+        AddSample(1e-6 * duration_per_frame_us,
                   1e-6 * (capture_time_us - prev_time_us_));
       }
     }
@@ -287,12 +289,43 @@ class SendProcessingUsage2 : public OveruseFrameDetector::ProcessingUsage {
     load_estimate_ = c * encode_time + exp(-e) * load_estimate_;
   }
 
+  int64_t DurationPerInputFrame(int64_t capture_time_us,
+                                int64_t encode_time_us) {
+    // Discard data on old frames; limit 2 seconds.
+    static constexpr int64_t kMaxAge = 2 * rtc::kNumMicrosecsPerSec;
+    for (auto it = max_encode_time_per_input_frame_.begin();
+         it != max_encode_time_per_input_frame_.end() &&
+         it->first < capture_time_us - kMaxAge;) {
+      it = max_encode_time_per_input_frame_.erase(it);
+    }
+
+    std::map<int64_t, int>::iterator it;
+    bool inserted;
+    std::tie(it, inserted) = max_encode_time_per_input_frame_.emplace(
+        capture_time_us, encode_time_us);
+    if (inserted) {
+      // First encoded frame for this input frame.
+      return encode_time_us;
+    }
+    if (encode_time_us <= it->second) {
+      // Shorter encode time than previous frame (unlikely). Count it as being
+      // done in parallel.
+      return 0;
+    }
+    // Record new maximum encode time, and return increase from previous max.
+    int increase = encode_time_us - it->second;
+    it->second = encode_time_us;
+    return increase;
+  }
+
   int Value() override {
     return static_cast<int>(100.0 * load_estimate_ + 0.5);
   }
 
- private:
   const CpuOveruseOptions options_;
+  // Indexed by the capture timestamp, used as frame id.
+  std::map<int64_t, int> max_encode_time_per_input_frame_;
+
   int64_t prev_time_us_ = -1;
   double load_estimate_;
 };

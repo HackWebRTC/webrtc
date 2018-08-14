@@ -108,6 +108,36 @@ class OveruseFrameDetectorTest : public ::testing::Test,
     }
   }
 
+  virtual void InsertAndSendSimulcastFramesWithInterval(
+      int num_frames,
+      int interval_us,
+      int width,
+      int height,
+      // One element per layer
+      rtc::ArrayView<const int> delays_us) {
+    VideoFrame frame(I420Buffer::Create(width, height),
+                     webrtc::kVideoRotation_0, 0);
+    uint32_t timestamp = 0;
+    while (num_frames-- > 0) {
+      frame.set_timestamp(timestamp);
+      int64_t capture_time_us = rtc::TimeMicros();
+      overuse_detector_->FrameCaptured(frame, capture_time_us);
+      int max_delay_us = 0;
+      for (int delay_us : delays_us) {
+        if (delay_us > max_delay_us) {
+          clock_.AdvanceTimeMicros(delay_us - max_delay_us);
+          max_delay_us = delay_us;
+        }
+
+        overuse_detector_->FrameSent(timestamp, rtc::TimeMicros(),
+                                     capture_time_us, delay_us);
+      }
+      overuse_detector_->CheckForOveruse(observer_);
+      clock_.AdvanceTimeMicros(interval_us - max_delay_us);
+      timestamp += interval_us * 90 / 1000;
+    }
+  }
+
   virtual void InsertAndSendFramesWithRandomInterval(int num_frames,
                                                      int min_interval_us,
                                                      int max_interval_us,
@@ -578,6 +608,27 @@ TEST_F(OveruseFrameDetectorTest, NoOveruseForRandomFrameIntervalWithReset) {
   EXPECT_LE(UsagePercent(), InitialUsage() + 5);
 }
 
+// Models simulcast, with multiple encoded frames for each input frame.
+// Load estimate should be based on the maximum encode time per input frame.
+TEST_F(OveruseFrameDetectorTest, NoOveruseForSimulcast) {
+  overuse_detector_->SetOptions(options_);
+  EXPECT_CALL(mock_observer_, AdaptDown(_)).Times(0);
+
+  constexpr int kNumFrames = 500;
+  constexpr int kEncodeTimesUs[] = {
+      10 * rtc::kNumMicrosecsPerMillisec, 8 * rtc::kNumMicrosecsPerMillisec,
+      12 * rtc::kNumMicrosecsPerMillisec,
+  };
+  constexpr int kIntervalUs = 30 * rtc::kNumMicrosecsPerMillisec;
+
+  InsertAndSendSimulcastFramesWithInterval(kNumFrames, kIntervalUs, kWidth,
+                                           kHeight, kEncodeTimesUs);
+
+  // Average usage 40%. 12 ms / 30 ms.
+  EXPECT_GE(UsagePercent(), 35);
+  EXPECT_LE(UsagePercent(), 45);
+}
+
 // Tests using new cpu load estimator
 class OveruseFrameDetectorTest2 : public OveruseFrameDetectorTest {
  protected:
@@ -903,6 +954,27 @@ TEST_F(OveruseFrameDetectorTest2, ToleratesOutOfOrderFrames) {
         0, 0, capture_time_ms * rtc::kNumMicrosecsPerMillisec, kEncodeTimeUs);
   }
   EXPECT_GE(UsagePercent(), InitialUsage());
+}
+
+// Models simulcast, with multiple encoded frames for each input frame.
+// Load estimate should be based on the maximum encode time per input frame.
+TEST_F(OveruseFrameDetectorTest2, NoOveruseForSimulcast) {
+  overuse_detector_->SetOptions(options_);
+  EXPECT_CALL(mock_observer_, AdaptDown(_)).Times(0);
+
+  constexpr int kNumFrames = 500;
+  constexpr int kEncodeTimesUs[] = {
+      10 * rtc::kNumMicrosecsPerMillisec, 8 * rtc::kNumMicrosecsPerMillisec,
+      12 * rtc::kNumMicrosecsPerMillisec,
+  };
+  constexpr int kIntervalUs = 30 * rtc::kNumMicrosecsPerMillisec;
+
+  InsertAndSendSimulcastFramesWithInterval(kNumFrames, kIntervalUs, kWidth,
+                                           kHeight, kEncodeTimesUs);
+
+  // Average usage 40%. 12 ms / 30 ms.
+  EXPECT_GE(UsagePercent(), 35);
+  EXPECT_LE(UsagePercent(), 45);
 }
 
 }  // namespace webrtc
