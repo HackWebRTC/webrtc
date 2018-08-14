@@ -169,7 +169,6 @@ class VideoReceiver : public Module {
                        int max_incomplete_time_ms);
 
   void SetDecodeErrorMode(VCMDecodeErrorMode decode_error_mode);
-  int SetMinReceiverDelay(int desired_delay_ms);
 
   int32_t SetReceiveChannelParameters(int64_t rtt);
   int32_t SetVideoProtection(VCMVideoProtection videoProtection, bool enable);

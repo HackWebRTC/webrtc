@@ -208,13 +208,6 @@ TEST_F(TestVideoReceiver, PaddingOnlyAndVideo) {
   }
 }
 
-TEST_F(TestVideoReceiver, ReceiverDelay) {
-  EXPECT_EQ(0, receiver_->SetMinReceiverDelay(0));
-  EXPECT_EQ(0, receiver_->SetMinReceiverDelay(5000));
-  EXPECT_EQ(-1, receiver_->SetMinReceiverDelay(-100));
-  EXPECT_EQ(-1, receiver_->SetMinReceiverDelay(10010));
-}
-
 }  // namespace
 }  // namespace vcm
 }  // namespace webrtc

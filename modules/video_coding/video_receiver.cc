@@ -485,16 +485,6 @@ void VideoReceiver::SetNackSettings(size_t max_nack_list_size,
                             max_incomplete_time_ms);
 }
 
-int VideoReceiver::SetMinReceiverDelay(int desired_delay_ms) {
-  RTC_DCHECK_RUN_ON(&construction_thread_checker_);
-  RTC_DCHECK(!IsDecoderThreadRunning());
-  // TODO(tommi): Is the method only used by tests? Maybe could be offered
-  // via a test only subclass?
-  // Info from Stefan: If it is indeed only used by tests I think it's just that
-  // it hasn't been cleaned up when the calling code was cleaned up.
-  return _receiver.SetMinReceiverDelay(desired_delay_ms);
-}
-
 bool VideoReceiver::IsDecoderThreadRunning() {
 #if RTC_DCHECK_IS_ON
   return decoder_thread_is_running_;

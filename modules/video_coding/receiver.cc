@@ -272,17 +272,6 @@ VCMDecodeErrorMode VCMReceiver::DecodeErrorMode() const {
   return jitter_buffer_.decode_error_mode();
 }
 
-int VCMReceiver::SetMinReceiverDelay(int desired_delay_ms) {
-  rtc::CritScope cs(&crit_sect_);
-  if (desired_delay_ms < 0 || desired_delay_ms > kMaxReceiverDelayMs) {
-    return -1;
-  }
-  max_video_delay_ms_ = desired_delay_ms + kMaxVideoDelayMs;
-  // Initializing timing to the desired delay.
-  timing_->set_min_playout_delay(desired_delay_ms);
-  return 0;
-}
-
 void VCMReceiver::RegisterStatsCallback(
     VCMReceiveStatisticsCallback* callback) {
   jitter_buffer_.RegisterStatsCallback(callback);
