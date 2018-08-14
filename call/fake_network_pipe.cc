@@ -18,6 +18,7 @@
 #include "absl/memory/memory.h"
 #include "call/call.h"
 #include "call/fake_network_pipe.h"
+#include "call/simulated_network.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/clock.h"
 

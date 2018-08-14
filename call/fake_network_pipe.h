@@ -22,7 +22,6 @@
 #include "api/call/transport.h"
 #include "api/test/simulated_network.h"
 #include "call/call.h"
-#include "call/simulated_network.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/include/module.h"
 #include "rtc_base/constructormagic.h"
@@ -102,7 +101,7 @@ class NetworkPacket {
 // SimulatedNetworkInterface to simulate network behavior.
 class FakeNetworkPipe : public Transport, public PacketReceiver, public Module {
  public:
-  using Config = SimulatedNetwork::Config;
+  using Config = NetworkSimulationInterface::SimulatedNetworkConfig;
 
   // Use these constructors if you plan to insert packets using DeliverPacket().
   FakeNetworkPipe(Clock* clock, const FakeNetworkPipe::Config& config);
@@ -212,7 +211,7 @@ class FakeNetworkPipe : public Transport, public PacketReceiver, public Module {
   Clock* const clock_;
   // |config_lock| guards the mostly constant things like the callbacks.
   rtc::CriticalSection config_lock_;
-  const std::unique_ptr<SimulatedNetwork> network_simulation_;
+  const std::unique_ptr<NetworkSimulationInterface> network_simulation_;
   PacketReceiver* receiver_ RTC_GUARDED_BY(config_lock_);
   Transport* const transport_ RTC_GUARDED_BY(config_lock_);
 

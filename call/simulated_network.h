@@ -33,7 +33,7 @@ class SimulatedNetwork : public NetworkSimulationInterface {
   ~SimulatedNetwork() override;
 
   // Sets a new configuration. This won't affect packets already in the pipe.
-  void SetConfig(const Config& config);
+  void SetConfig(const Config& config) override;
   void PauseTransmissionUntil(int64_t until_us);
 
   // NetworkSimulationInterface

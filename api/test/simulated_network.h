@@ -64,6 +64,11 @@ class NetworkSimulationInterface {
     int avg_burst_loss_length = -1;
   };
 
+  // DO NOT USE. Method added temporary for further refactoring and will be
+  // removed soon.
+  // Sets a new configuration. This won't affect packets already in the pipe.
+  virtual void SetConfig(const SimulatedNetworkConfig& config) = 0;
+
   virtual bool EnqueuePacket(PacketInFlightInfo packet_info) = 0;
   // Retrieves all packets that should be delivered by the given receive time.
   virtual std::vector<PacketDeliveryInfo> DequeueDeliverablePackets(
