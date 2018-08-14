@@ -25,10 +25,6 @@ namespace webrtc {
 
 class Syncable;
 
-namespace vcm {
-class VideoReceiver;
-}  // namespace vcm
-
 class RtpStreamsSynchronizer : public Module {
  public:
   explicit RtpStreamsSynchronizer(Syncable* syncable_video);

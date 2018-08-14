@@ -51,10 +51,6 @@ class RtpReceiver;
 class Transport;
 class UlpfecReceiver;
 
-namespace vcm {
-class VideoReceiver;
-}  // namespace vcm
-
 class RtpVideoStreamReceiver : public RtpData,
                                public RecoveredPacketReceiver,
                                public RtpPacketSinkInterface,
