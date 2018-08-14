@@ -12,7 +12,6 @@
 #include <algorithm>
 #include <string>
 
-#include "media/base/mediaconstants.h"
 #include "media/base/streamparams.h"
 #include "media/engine/constants.h"
 #include "media/engine/simulcast.h"
@@ -190,15 +189,17 @@ std::vector<webrtc::VideoStream> GetSimulcastConfig(
     int /*max_bitrate_bps*/,
     double bitrate_priority,
     int max_qp,
-    int /*max_framerate*/,
+    int max_framerate,
     bool is_screenshare,
     bool temporal_layers_supported) {
   if (is_screenshare) {
     return GetScreenshareLayers(max_layers, width, height, bitrate_priority,
-                                max_qp, temporal_layers_supported);
+                                max_qp, max_framerate,
+                                temporal_layers_supported);
   } else {
     return GetNormalSimulcastLayers(max_layers, width, height, bitrate_priority,
-                                    max_qp, temporal_layers_supported);
+                                    max_qp, max_framerate,
+                                    temporal_layers_supported);
   }
 }
 
@@ -208,6 +209,7 @@ std::vector<webrtc::VideoStream> GetNormalSimulcastLayers(
     int height,
     double bitrate_priority,
     int max_qp,
+    int max_framerate,
     bool temporal_layers_supported) {
   // TODO(bugs.webrtc.org/8785): Currently if the resolution isn't large enough
   // (defined in kSimulcastFormats) we scale down the number of simulcast
@@ -268,7 +270,7 @@ std::vector<webrtc::VideoStream> GetNormalSimulcastLayers(
           static_cast<int>(layers[s].target_bitrate_bps * rate_factor);
     }
     layers[s].min_bitrate_bps = FindSimulcastMinBitrateBps(width, height);
-    layers[s].max_framerate = kDefaultVideoMaxFramerate;
+    layers[s].max_framerate = max_framerate;
 
     width /= 2;
     height /= 2;
@@ -292,6 +294,7 @@ std::vector<webrtc::VideoStream> GetScreenshareLayers(
     int height,
     double bitrate_priority,
     int max_qp,
+    int max_framerate,
     bool temporal_layers_supported) {
   size_t num_simulcast_layers =
       std::min<int>(max_layers, kMaxScreenshareSimulcastLayers);
@@ -343,7 +346,7 @@ std::vector<webrtc::VideoStream> GetScreenshareLayers(
     layers[1].width = width;
     layers[1].height = height;
     layers[1].max_qp = max_qp;
-    layers[1].max_framerate = kDefaultVideoMaxFramerate;
+    layers[1].max_framerate = max_framerate;
     layers[1].num_temporal_layers =
         temporal_layers_supported ? DefaultNumberOfTemporalLayers(1) : 0;
     layers[1].min_bitrate_bps = layers[0].target_bitrate_bps * 2;

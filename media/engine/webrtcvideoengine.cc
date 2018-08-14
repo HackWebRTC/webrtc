@@ -250,18 +250,6 @@ std::vector<VideoCodec> AssignPayloadTypesAndDefaultCodecs(
                          : std::vector<VideoCodec>();
 }
 
-int GetMaxFramerate(const webrtc::VideoEncoderConfig& encoder_config,
-                    size_t num_layers) {
-  int max_fps = -1;
-  for (size_t i = 0; i < num_layers; ++i) {
-    int fps = (encoder_config.simulcast_layers[i].max_framerate > 0)
-                  ? encoder_config.simulcast_layers[i].max_framerate
-                  : kDefaultVideoMaxFramerate;
-    max_fps = std::max(fps, max_fps);
-  }
-  return max_fps;
-}
-
 static std::string CodecVectorToString(const std::vector<VideoCodec>& codecs) {
   std::stringstream out;
   out << '{';
@@ -1814,16 +1802,13 @@ webrtc::RTCError WebRtcVideoChannel::WebRtcVideoSendStream::SetRtpParameters(
     return error;
   }
 
-  bool new_param = false;
+  bool new_bitrate = false;
   for (size_t i = 0; i < rtp_parameters_.encodings.size(); ++i) {
     if ((new_parameters.encodings[i].min_bitrate_bps !=
          rtp_parameters_.encodings[i].min_bitrate_bps) ||
         (new_parameters.encodings[i].max_bitrate_bps !=
-         rtp_parameters_.encodings[i].max_bitrate_bps) ||
-        (new_parameters.encodings[i].max_framerate !=
-         rtp_parameters_.encodings[i].max_framerate)) {
-      new_param = true;
-      break;
+         rtp_parameters_.encodings[i].max_bitrate_bps)) {
+      new_bitrate = true;
     }
   }
 
@@ -1837,8 +1822,8 @@ webrtc::RTCError WebRtcVideoChannel::WebRtcVideoSendStream::SetRtpParameters(
   // entire encoder reconfiguration, it just needs to update the bitrate
   // allocator.
   bool reconfigure_encoder =
-      new_param || (new_parameters.encodings[0].bitrate_priority !=
-                    rtp_parameters_.encodings[0].bitrate_priority);
+      new_bitrate || (new_parameters.encodings[0].bitrate_priority !=
+                      rtp_parameters_.encodings[0].bitrate_priority);
 
   // TODO(bugs.webrtc.org/8807): The active field as well should not require
   // a full encoder reconfiguration, but it needs to update both the bitrate
@@ -2000,7 +1985,7 @@ WebRtcVideoChannel::WebRtcVideoSendStream::CreateVideoEncoderConfig(
 
   // Application-controlled state is held in the encoder_config's
   // simulcast_layers. Currently this is used to control which simulcast layers
-  // are active and for configuring the min/max bitrate and max framerate.
+  // are active and for configuring the min/max bitrate.
   // The encoder_config's simulcast_layers is also used for non-simulcast (when
   // there is a single layer).
   RTC_DCHECK_GE(rtp_parameters_.encodings.size(),
@@ -2018,17 +2003,14 @@ WebRtcVideoChannel::WebRtcVideoSendStream::CreateVideoEncoderConfig(
       encoder_config.simulcast_layers[i].max_bitrate_bps =
           *rtp_parameters_.encodings[i].max_bitrate_bps;
     }
-    if (rtp_parameters_.encodings[i].max_framerate) {
-      encoder_config.simulcast_layers[i].max_framerate =
-          *rtp_parameters_.encodings[i].max_framerate;
-    }
   }
 
   int max_qp = kDefaultQpMax;
   codec.GetParam(kCodecParamMaxQuantization, &max_qp);
   encoder_config.video_stream_factory =
       new rtc::RefCountedObject<EncoderStreamFactory>(
-          codec.name, max_qp, is_screencast, parameters_.conference_mode);
+          codec.name, max_qp, kDefaultVideoMaxFramerate, is_screencast,
+          parameters_.conference_mode);
   return encoder_config;
 }
 
@@ -2720,17 +2702,19 @@ WebRtcVideoChannel::MapCodecs(const std::vector<VideoCodec>& codecs) {
   return video_codecs;
 }
 
-// TODO(bugs.webrtc.org/8785): Consider removing max_qp as member of
-// EncoderStreamFactory and instead set this value individually for each stream
-// in the VideoEncoderConfig.simulcast_layers.
+// TODO(bugs.webrtc.org/8785): Consider removing max_qp and max_framerate
+// as members of EncoderStreamFactory and instead set these values individually
+// for each stream in the VideoEncoderConfig.simulcast_layers.
 EncoderStreamFactory::EncoderStreamFactory(
     std::string codec_name,
     int max_qp,
+    int max_framerate,
     bool is_screenshare,
     bool screenshare_config_explicitly_enabled)
 
     : codec_name_(codec_name),
       max_qp_(max_qp),
+      max_framerate_(max_framerate),
       is_screenshare_(is_screenshare),
       screenshare_config_explicitly_enabled_(
           screenshare_config_explicitly_enabled) {}
@@ -2754,18 +2738,12 @@ std::vector<webrtc::VideoStream> EncoderStreamFactory::CreateEncoderStreams(
     bool temporal_layers_supported = CodecNamesEq(codec_name_, kVp8CodecName);
     layers = GetSimulcastConfig(encoder_config.number_of_streams, width, height,
                                 0 /*not used*/, encoder_config.bitrate_priority,
-                                max_qp_, 0 /*not_used*/, is_screenshare_,
+                                max_qp_, max_framerate_, is_screenshare_,
                                 temporal_layers_supported);
-    // The maximum |max_framerate| is currently used for video.
-    int max_framerate = GetMaxFramerate(encoder_config, layers.size());
     // Update the active simulcast layers and configured bitrates.
     bool is_highest_layer_max_bitrate_configured = false;
     for (size_t i = 0; i < layers.size(); ++i) {
       layers[i].active = encoder_config.simulcast_layers[i].active;
-      if (!is_screenshare_) {
-        // Update simulcast framerates with max configured max framerate.
-        layers[i].max_framerate = max_framerate;
-      }
       // Update simulcast bitrates with configured min and max bitrate.
       if (encoder_config.simulcast_layers[i].min_bitrate_bps > 0) {
         layers[i].min_bitrate_bps =
@@ -2822,14 +2800,11 @@ std::vector<webrtc::VideoStream> EncoderStreamFactory::CreateEncoderStreams(
     if (encoder_config.max_bitrate_bps <= 0)
       max_bitrate_bps = std::max(min_bitrate_bps, max_bitrate_bps);
   }
-  int max_framerate = (encoder_config.simulcast_layers[0].max_framerate > 0)
-                          ? encoder_config.simulcast_layers[0].max_framerate
-                          : kDefaultVideoMaxFramerate;
 
   webrtc::VideoStream layer;
   layer.width = width;
   layer.height = height;
-  layer.max_framerate = max_framerate;
+  layer.max_framerate = max_framerate_;
 
   // In the case that the application sets a max bitrate that's lower than the
   // min bitrate, we adjust it down (see bugs.webrtc.org/9141).

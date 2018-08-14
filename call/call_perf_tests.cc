@@ -493,7 +493,7 @@ TEST_F(CallPerfTest, ReceivesCpuOveruseAndUnderuse) {
   class LoadObserver : public test::SendTest,
                        public test::FrameGeneratorCapturer::SinkWantsObserver {
    public:
-    LoadObserver() : SendTest(kLongTimeoutMs), test_phase_(TestPhase::kInit) {}
+    LoadObserver() : SendTest(kLongTimeoutMs), test_phase_(TestPhase::kStart) {}
 
     void OnFrameGeneratorCapturerCreated(
         test::FrameGeneratorCapturer* frame_generator_capturer) override {
@@ -507,21 +507,9 @@ TEST_F(CallPerfTest, ReceivesCpuOveruseAndUnderuse) {
     // TODO(sprang): Add integration test for maintain-framerate mode?
     void OnSinkWantsChanged(rtc::VideoSinkInterface<VideoFrame>* sink,
                             const rtc::VideoSinkWants& wants) override {
-      // At kStart expect CPU overuse. Then expect CPU underuse when the encoder
+      // First expect CPU overuse. Then expect CPU underuse when the encoder
       // delay has been decreased.
       switch (test_phase_) {
-        case TestPhase::kInit:
-          // Max framerate should be set initially.
-          if (wants.max_framerate_fps != std::numeric_limits<int>::max() &&
-              wants.max_pixel_count == std::numeric_limits<int>::max()) {
-            test_phase_ = TestPhase::kStart;
-          } else {
-            ADD_FAILURE() << "Got unexpected adaptation request, max res = "
-                          << wants.max_pixel_count << ", target res = "
-                          << wants.target_pixel_count.value_or(-1)
-                          << ", max fps = " << wants.max_framerate_fps;
-          }
-          break;
         case TestPhase::kStart:
           if (wants.max_pixel_count < std::numeric_limits<int>::max()) {
             // On adapting down, VideoStreamEncoder::VideoSourceProxy will set
@@ -565,12 +553,7 @@ TEST_F(CallPerfTest, ReceivesCpuOveruseAndUnderuse) {
       EXPECT_TRUE(Wait()) << "Timed out before receiving an overuse callback.";
     }
 
-    enum class TestPhase {
-      kInit,
-      kStart,
-      kAdaptedDown,
-      kAdaptedUp
-    } test_phase_;
+    enum class TestPhase { kStart, kAdaptedDown, kAdaptedUp } test_phase_;
   } test;
 
   RunBaseTest(&test);

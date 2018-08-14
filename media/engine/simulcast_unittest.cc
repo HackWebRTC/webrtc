@@ -10,7 +10,6 @@
 
 #include "media/engine/simulcast.h"
 
-#include "media/base/mediaconstants.h"
 #include "media/engine/constants.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
@@ -95,7 +94,7 @@ TEST(SimulcastTest, GetConfig) {
 
   for (size_t i = 0; i < streams.size(); ++i) {
     EXPECT_EQ(size_t{kDefaultTemporalLayers}, streams[i].num_temporal_layers);
-    EXPECT_EQ(cricket::kDefaultVideoMaxFramerate, streams[i].max_framerate);
+    EXPECT_EQ(kMaxFps, streams[i].max_framerate);
     EXPECT_EQ(kQpMax, streams[i].max_qp);
     EXPECT_EQ(kExpected[i].min_bitrate_bps, streams[i].min_bitrate_bps);
     EXPECT_EQ(kExpected[i].target_bitrate_bps, streams[i].target_bitrate_bps);
