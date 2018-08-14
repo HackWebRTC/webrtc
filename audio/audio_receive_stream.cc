@@ -66,16 +66,16 @@ namespace {
 std::unique_ptr<voe::ChannelProxy> CreateChannelAndProxy(
     webrtc::AudioState* audio_state,
     ProcessThread* module_process_thread,
-    const webrtc::AudioReceiveStream::Config& config) {
+    const webrtc::AudioReceiveStream::Config& config,
+    RtcEventLog* event_log) {
   RTC_DCHECK(audio_state);
   internal::AudioState* internal_audio_state =
       static_cast<internal::AudioState*>(audio_state);
-  return std::unique_ptr<voe::ChannelProxy>(
-      new voe::ChannelProxy(std::unique_ptr<voe::Channel>(new voe::Channel(
-          module_process_thread, internal_audio_state->audio_device_module(),
-          nullptr /* RtcpRttStats */, config.jitter_buffer_max_packets,
-          config.jitter_buffer_fast_accelerate, config.decoder_factory,
-          config.codec_pair_id))));
+  return absl::make_unique<voe::ChannelProxy>(absl::make_unique<voe::Channel>(
+      module_process_thread, internal_audio_state->audio_device_module(),
+      nullptr /* RtcpRttStats */, event_log, config.jitter_buffer_max_packets,
+      config.jitter_buffer_fast_accelerate, config.decoder_factory,
+      config.codec_pair_id));
 }
 }  // namespace
 
@@ -93,7 +93,8 @@ AudioReceiveStream::AudioReceiveStream(
                          event_log,
                          CreateChannelAndProxy(audio_state.get(),
                                                module_process_thread,
-                                               config)) {}
+                                               config,
+                                               event_log)) {}
 
 AudioReceiveStream::AudioReceiveStream(
     RtpStreamReceiverControllerInterface* receiver_controller,
@@ -112,7 +113,6 @@ AudioReceiveStream::AudioReceiveStream(
 
   module_process_thread_checker_.DetachFromThread();
 
-  channel_proxy_->SetRtcEventLog(event_log);
   channel_proxy_->RegisterTransport(config.rtcp_send_transport);
 
   // Configure bandwidth estimation.
@@ -132,7 +132,6 @@ AudioReceiveStream::~AudioReceiveStream() {
   channel_proxy_->DisassociateSendChannel();
   channel_proxy_->RegisterTransport(nullptr);
   channel_proxy_->ResetReceiverCongestionControlObjects();
-  channel_proxy_->SetRtcEventLog(nullptr);
 }
 
 void AudioReceiveStream::Reconfigure(

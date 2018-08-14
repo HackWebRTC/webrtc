@@ -63,36 +63,6 @@ constexpr int kVoiceEngineMaxMinPlayoutDelayMs = 10000;
 
 const int kTelephoneEventAttenuationdB = 10;
 
-class RtcEventLogProxy final : public webrtc::RtcEventLog {
- public:
-  RtcEventLogProxy() : event_log_(nullptr) {}
-
-  bool StartLogging(std::unique_ptr<RtcEventLogOutput> output,
-                    int64_t output_period_ms) override {
-    RTC_NOTREACHED();
-    return false;
-  }
-
-  void StopLogging() override { RTC_NOTREACHED(); }
-
-  void Log(std::unique_ptr<RtcEvent> event) override {
-    rtc::CritScope lock(&crit_);
-    if (event_log_) {
-      event_log_->Log(std::move(event));
-    }
-  }
-
-  void SetEventLog(RtcEventLog* event_log) {
-    rtc::CritScope lock(&crit_);
-    event_log_ = event_log;
-  }
-
- private:
-  rtc::CriticalSection crit_;
-  RtcEventLog* event_log_ RTC_GUARDED_BY(crit_);
-  RTC_DISALLOW_COPY_AND_ASSIGN(RtcEventLogProxy);
-};
-
 class TransportFeedbackProxy : public TransportFeedbackObserver {
  public:
   TransportFeedbackProxy() : feedback_observer_(nullptr) {
@@ -393,7 +363,7 @@ AudioMixer::Source::AudioFrameInfo Channel::GetAudioFrameWithInfo(
 
   unsigned int ssrc;
   RTC_CHECK_EQ(GetRemoteSSRC(ssrc), 0);
-  event_log_proxy_->Log(absl::make_unique<RtcEventAudioPlayout>(ssrc));
+  event_log_->Log(absl::make_unique<RtcEventAudioPlayout>(ssrc));
   // Get 10ms raw PCM data from the ACM (mixer limits output frequency)
   bool muted;
   if (audio_coding_->PlayoutData10Ms(audio_frame->sample_rate_hz_, audio_frame,
@@ -502,10 +472,12 @@ int Channel::PreferredSampleRate() const {
 Channel::Channel(rtc::TaskQueue* encoder_queue,
                  ProcessThread* module_process_thread,
                  AudioDeviceModule* audio_device_module,
-                 RtcpRttStats* rtcp_rtt_stats)
+                 RtcpRttStats* rtcp_rtt_stats,
+                 RtcEventLog* rtc_event_log)
     : Channel(module_process_thread,
               audio_device_module,
               rtcp_rtt_stats,
+              rtc_event_log,
               0,
               false,
               rtc::scoped_refptr<AudioDecoderFactory>(),
@@ -517,11 +489,12 @@ Channel::Channel(rtc::TaskQueue* encoder_queue,
 Channel::Channel(ProcessThread* module_process_thread,
                  AudioDeviceModule* audio_device_module,
                  RtcpRttStats* rtcp_rtt_stats,
+                 RtcEventLog* rtc_event_log,
                  size_t jitter_buffer_max_packets,
                  bool jitter_buffer_fast_playout,
                  rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
                  absl::optional<AudioCodecPairId> codec_pair_id)
-    : event_log_proxy_(new RtcEventLogProxy()),
+    : event_log_(rtc_event_log),
       rtp_payload_registry_(new RTPPayloadRegistry()),
       rtp_receive_statistics_(
           ReceiveStatistics::Create(Clock::GetRealTimeClock())),
@@ -581,7 +554,7 @@ Channel::Channel(ProcessThread* module_process_thread,
         seq_num_allocator_proxy_.get();
     configuration.transport_feedback_callback = feedback_observer_proxy_.get();
   }
-  configuration.event_log = &(*event_log_proxy_);
+  configuration.event_log = event_log_;
   configuration.rtt_stats = rtcp_rtt_stats;
   configuration.retransmission_rate_limiter =
       retransmission_rate_limiter_.get();
@@ -831,8 +804,8 @@ bool Channel::EnableAudioNetworkAdaptor(const std::string& config_string) {
   bool success = false;
   audio_coding_->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
     if (*encoder) {
-      success = (*encoder)->EnableAudioNetworkAdaptor(config_string,
-                                                      event_log_proxy_.get());
+      success =
+          (*encoder)->EnableAudioNetworkAdaptor(config_string, event_log_);
     }
   });
   return success;
@@ -1268,10 +1241,6 @@ void Channel::SetAssociatedSendChannel(Channel* channel) {
   RTC_DCHECK_NE(this, channel);
   rtc::CritScope lock(&assoc_send_channel_lock_);
   associated_send_channel_ = channel;
-}
-
-void Channel::SetRtcEventLog(RtcEventLog* event_log) {
-  event_log_proxy_->SetEventLog(event_log);
 }
 
 void Channel::UpdateOverheadForEncoder() {

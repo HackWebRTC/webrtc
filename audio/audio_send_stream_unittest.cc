@@ -221,9 +221,6 @@ struct ConfigHelper {
       EXPECT_CALL(*channel_proxy_, RegisterTransport(_)).Times(1);
       EXPECT_CALL(*channel_proxy_, RegisterTransport(nullptr)).Times(1);
     }
-    EXPECT_CALL(*channel_proxy_, SetRtcEventLog(testing::NotNull())).Times(1);
-    EXPECT_CALL(*channel_proxy_, SetRtcEventLog(testing::IsNull()))
-        .Times(1);  // Destructor resets the event log
   }
 
   void SetupMockForSetupSendCodec(bool expect_set_encoder_call) {

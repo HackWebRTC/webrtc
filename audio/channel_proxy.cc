@@ -226,11 +226,6 @@ void ChannelProxy::SetChannelOutputVolumeScaling(float scaling) {
   channel_->SetChannelOutputVolumeScaling(scaling);
 }
 
-void ChannelProxy::SetRtcEventLog(RtcEventLog* event_log) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  channel_->SetRtcEventLog(event_log);
-}
-
 AudioMixer::Source::AudioFrameInfo ChannelProxy::GetAudioFrameWithInfo(
     int sample_rate_hz,
     AudioFrame* audio_frame) {

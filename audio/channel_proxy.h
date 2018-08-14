@@ -99,7 +99,6 @@ class ChannelProxy : public RtpPacketSinkInterface {
   void OnRtpPacket(const RtpPacketReceived& packet) override;
   virtual bool ReceivedRTCPPacket(const uint8_t* packet, size_t length);
   virtual void SetChannelOutputVolumeScaling(float scaling);
-  virtual void SetRtcEventLog(RtcEventLog* event_log);
   virtual AudioMixer::Source::AudioFrameInfo GetAudioFrameWithInfo(
       int sample_rate_hz,
       AudioFrame* audio_frame);

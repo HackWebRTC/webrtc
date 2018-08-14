@@ -14,6 +14,8 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
+
 #include "audio/audio_state.h"
 #include "audio/channel_proxy.h"
 #include "audio/conversion.h"
@@ -48,14 +50,14 @@ std::unique_ptr<voe::ChannelProxy> CreateChannelAndProxy(
     webrtc::AudioState* audio_state,
     rtc::TaskQueue* worker_queue,
     ProcessThread* module_process_thread,
-    RtcpRttStats* rtcp_rtt_stats) {
+    RtcpRttStats* rtcp_rtt_stats,
+    RtcEventLog* event_log) {
   RTC_DCHECK(audio_state);
   internal::AudioState* internal_audio_state =
       static_cast<internal::AudioState*>(audio_state);
-  return std::unique_ptr<voe::ChannelProxy>(
-      new voe::ChannelProxy(std::unique_ptr<voe::Channel>(new voe::Channel(
-          worker_queue, module_process_thread,
-          internal_audio_state->audio_device_module(), rtcp_rtt_stats))));
+  return absl::make_unique<voe::ChannelProxy>(absl::make_unique<voe::Channel>(
+      worker_queue, module_process_thread,
+      internal_audio_state->audio_device_module(), rtcp_rtt_stats, event_log));
 }
 }  // namespace
 
@@ -105,7 +107,8 @@ AudioSendStream::AudioSendStream(
                       CreateChannelAndProxy(audio_state.get(),
                                             worker_queue,
                                             module_process_thread,
-                                            rtcp_rtt_stats)) {}
+                                            rtcp_rtt_stats,
+                                            event_log)) {}
 
 AudioSendStream::AudioSendStream(
     const webrtc::AudioSendStream::Config& config,
@@ -139,7 +142,6 @@ AudioSendStream::AudioSendStream(
   RTC_DCHECK(transport);
   RTC_DCHECK(overall_call_lifetime_);
 
-  channel_proxy_->SetRtcEventLog(event_log_);
   channel_proxy_->SetRTCPStatus(true);
   rtp_rtcp_module_ = channel_proxy_->GetRtpRtcp();
   RTC_DCHECK(rtp_rtcp_module_);
@@ -158,7 +160,6 @@ AudioSendStream::~AudioSendStream() {
   transport_->DeRegisterPacketFeedbackObserver(this);
   channel_proxy_->RegisterTransport(nullptr);
   channel_proxy_->ResetSenderCongestionControlObjects();
-  channel_proxy_->SetRtcEventLog(nullptr);
   // Lifetime can only be updated after deregistering
   // |timed_send_transport_adapter_| in the underlying channel object to avoid
   // data races in |active_lifetime_|.

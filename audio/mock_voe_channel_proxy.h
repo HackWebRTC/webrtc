@@ -68,7 +68,6 @@ class MockVoEChannelProxy : public voe::ChannelProxy {
   MOCK_METHOD1(OnRtpPacket, void(const RtpPacketReceived& packet));
   MOCK_METHOD2(ReceivedRTCPPacket, bool(const uint8_t* packet, size_t length));
   MOCK_METHOD1(SetChannelOutputVolumeScaling, void(float scaling));
-  MOCK_METHOD1(SetRtcEventLog, void(RtcEventLog* event_log));
   MOCK_METHOD2(GetAudioFrameWithInfo,
                AudioMixer::Source::AudioFrameInfo(int sample_rate_hz,
                                                   AudioFrame* audio_frame));
