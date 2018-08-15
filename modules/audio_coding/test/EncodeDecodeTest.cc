@@ -16,6 +16,7 @@
 #include <sstream>  // no-presubmit-check TODO(webrtc:8982)
 
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/audio_format_conversion.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
@@ -74,7 +75,8 @@ void Sender::Setup(AudioCodingModule *acm, RTPStream *rtpStream,
 
   sendCodec.channels = channels;
 
-  EXPECT_EQ(0, acm->RegisterSendCodec(sendCodec));
+  acm->SetEncoder(CreateBuiltinAudioEncoderFactory()->MakeAudioEncoder(
+      sendCodec.pltype, CodecInstToSdp(sendCodec), absl::nullopt));
   _packetization = new TestPacketization(rtpStream, sendCodec.plfreq);
   EXPECT_EQ(0, acm->RegisterTransportCallback(_packetization));
 

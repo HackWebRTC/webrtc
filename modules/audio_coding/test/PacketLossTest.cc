@@ -97,10 +97,13 @@ void SenderWithFEC::Setup(AudioCodingModule* acm,
 }
 
 bool SenderWithFEC::SetFEC(bool enable_fec) {
-  if (_acm->SetCodecFEC(enable_fec) == 0) {
-    return true;
-  }
-  return false;
+  bool success = false;
+  _acm->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* enc) {
+    if (*enc && (*enc)->SetFec(enable_fec)) {
+      success = true;
+    }
+  });
+  return success;
 }
 
 bool SenderWithFEC::SetPacketLossRate(int expected_loss_rate) {
