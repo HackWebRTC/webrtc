@@ -1046,6 +1046,7 @@ include_rules = [
   # Abseil whitelist.
   "+absl/container/inlined_vector.h",
   "+absl/memory/memory.h",
+  "+absl/strings/string_view.h",
   "+absl/types/optional.h",
   "+absl/types/variant.h",
 ]
