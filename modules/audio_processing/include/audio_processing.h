@@ -253,6 +253,9 @@ class AudioProcessing : public rtc::RefCountInterface {
     struct EchoCanceller {
       bool enabled = false;
       bool mobile_mode = false;
+      // Recommended not to use. Will be removed in the future.
+      // APM components are not fine-tuned for legacy suppression levels.
+      bool legacy_moderate_suppression_level = false;
     } echo_canceller;
 
     struct ResidualEchoDetector {
