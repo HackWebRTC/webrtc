@@ -136,6 +136,9 @@ RTPSender::RTPSender(
       packet_history_(clock),
       flexfec_packet_history_(clock),
       // Statistics
+      send_delays_(),
+      max_delay_it_(send_delays_.end()),
+      sum_delays_ms_(0),
       rtp_stats_callback_(nullptr),
       total_bitrate_sent_(kBitrateStatisticsWindowMs,
                           RateStatistics::kBpsScale),
@@ -970,12 +973,21 @@ bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
   return sent;
 }
 
+void RTPSender::RecomputeMaxSendDelay() {
+  max_delay_it_ = send_delays_.begin();
+  for (auto it = send_delays_.begin(); it != send_delays_.end(); ++it) {
+    if (it->second >= max_delay_it_->second) {
+      max_delay_it_ = it;
+    }
+  }
+}
+
 void RTPSender::UpdateDelayStatistics(int64_t capture_time_ms, int64_t now_ms) {
   if (!send_side_delay_observer_ || capture_time_ms <= 0)
     return;
 
   uint32_t ssrc;
-  int64_t avg_delay_ms = 0;
+  int avg_delay_ms = 0;
   int max_delay_ms = 0;
   {
     rtc::CritScope lock(&send_critsect_);
@@ -985,24 +997,55 @@ void RTPSender::UpdateDelayStatistics(int64_t capture_time_ms, int64_t now_ms) {
   }
   {
     rtc::CritScope cs(&statistics_crit_);
-    // TODO(holmer): Compute this iteratively instead.
-    send_delays_[now_ms] = now_ms - capture_time_ms;
-    send_delays_.erase(
-        send_delays_.begin(),
-        send_delays_.lower_bound(now_ms - kSendSideDelayWindowMs));
-    int num_delays = 0;
-    for (auto it = send_delays_.upper_bound(now_ms - kSendSideDelayWindowMs);
-         it != send_delays_.end(); ++it) {
-      max_delay_ms = std::max(max_delay_ms, it->second);
-      avg_delay_ms += it->second;
-      ++num_delays;
+    // Compute the max and average of the recent capture-to-send delays.
+    // The time complexity of the current approach depends on the distribution
+    // of the delay values. This could be done more efficiently.
+
+    // Remove elements older than kSendSideDelayWindowMs.
+    auto lower_bound =
+        send_delays_.lower_bound(now_ms - kSendSideDelayWindowMs);
+    for (auto it = send_delays_.begin(); it != lower_bound; ++it) {
+      if (max_delay_it_ == it) {
+        max_delay_it_ = send_delays_.end();
+      }
+      sum_delays_ms_ -= it->second;
     }
-    if (num_delays == 0)
-      return;
-    avg_delay_ms = (avg_delay_ms + num_delays / 2) / num_delays;
+    send_delays_.erase(send_delays_.begin(), lower_bound);
+    if (max_delay_it_ == send_delays_.end()) {
+      // Removed the previous max. Need to recompute.
+      RecomputeMaxSendDelay();
+    }
+
+    // Add the new element.
+    int new_send_delay = rtc::dchecked_cast<int>(now_ms - capture_time_ms);
+    SendDelayMap::iterator it;
+    bool inserted;
+    std::tie(it, inserted) =
+        send_delays_.insert(std::make_pair(now_ms, new_send_delay));
+    if (!inserted) {
+      // TODO(terelius): If we have multiple delay measurements during the same
+      // millisecond then we keep the most recent one. It is not clear that this
+      // is the right decision, but it preserves an earlier behavior.
+      int previous_send_delay = it->second;
+      sum_delays_ms_ -= previous_send_delay;
+      it->second = new_send_delay;
+      if (max_delay_it_ == it && new_send_delay < previous_send_delay) {
+        RecomputeMaxSendDelay();
+      }
+    }
+    if (max_delay_it_ == send_delays_.end() ||
+        it->second >= max_delay_it_->second) {
+      max_delay_it_ = it;
+    }
+    sum_delays_ms_ += new_send_delay;
+
+    size_t num_delays = send_delays_.size();
+    max_delay_ms = rtc::dchecked_cast<int>(max_delay_it_->second);
+    avg_delay_ms =
+        rtc::dchecked_cast<int>((sum_delays_ms_ + num_delays / 2) / num_delays);
   }
-  send_side_delay_observer_->SendSideDelayUpdated(
-      rtc::dchecked_cast<int>(avg_delay_ms), max_delay_ms, ssrc);
+  send_side_delay_observer_->SendSideDelayUpdated(avg_delay_ms, max_delay_ms,
+                                                  ssrc);
 }
 
 void RTPSender::UpdateOnSendPacket(int packet_id,
