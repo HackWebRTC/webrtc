@@ -12,12 +12,14 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <utility>
 
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/numerics/mod_ops.h"
 #include "rtc_base/strings/string_builder.h"
 #include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/metrics.h"
@@ -27,6 +29,7 @@ namespace {
 const float kEncodeTimeWeigthFactor = 0.5f;
 const size_t kMaxEncodedFrameMapSize = 150;
 const int64_t kMaxEncodedFrameWindowMs = 800;
+const uint32_t kMaxEncodedFrameTimestampDiff = 900000;  // 10 sec.
 const int64_t kBucketSizeMs = 100;
 const size_t kBucketCount = 10;
 
@@ -173,6 +176,9 @@ SendStatisticsProxy::UmaSamplesContainer::UmaSamplesContainer(
       num_streams_(0),
       num_pixels_highest_stream_(0) {
   InitializeBitrateCounters(stats);
+  static_assert(
+      kMaxEncodedFrameTimestampDiff < std::numeric_limits<uint32_t>::max() / 2,
+      "has to be smaller than half range");
 }
 
 SendStatisticsProxy::UmaSamplesContainer::~UmaSamplesContainer() {}
@@ -239,6 +245,17 @@ bool SendStatisticsProxy::UmaSamplesContainer::InsertEncodedFrame(
   RemoveOld(now_ms, is_limited_in_resolution);
   if (encoded_frames_.size() > kMaxEncodedFrameMapSize) {
     encoded_frames_.clear();
+  }
+
+  // Check for jump in timestamp.
+  if (!encoded_frames_.empty()) {
+    uint32_t oldest_timestamp = encoded_frames_.begin()->first;
+    if (ForwardDiff(oldest_timestamp, encoded_frame._timeStamp) >
+        kMaxEncodedFrameTimestampDiff) {
+      // Gap detected, clear frames to have a sequence where newest timestamp
+      // is not too far away from oldest in order to distinguish old and new.
+      encoded_frames_.clear();
+    }
   }
 
   auto it = encoded_frames_.find(encoded_frame._timeStamp);

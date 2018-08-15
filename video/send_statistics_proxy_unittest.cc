@@ -1027,7 +1027,7 @@ TEST_F(SendStatisticsProxyTest, InputResolutionHistogramsAreUpdated) {
 
 TEST_F(SendStatisticsProxyTest, SentResolutionHistogramsAreUpdated) {
   const int64_t kMaxEncodedFrameWindowMs = 800;
-  const int kFps = 20;
+  const int kFps = 5;
   const int kNumFramesPerWindow = kFps * kMaxEncodedFrameWindowMs / 1000;
   const int kMinSamples =  // Sample added when removed from EncodedFrameMap.
       SendStatisticsProxy::kMinRequiredMetricsSamples + kNumFramesPerWindow;
@@ -1036,7 +1036,7 @@ TEST_F(SendStatisticsProxyTest, SentResolutionHistogramsAreUpdated) {
   // Not enough samples, stats should not be updated.
   for (int i = 0; i < kMinSamples - 1; ++i) {
     fake_clock_.AdvanceTimeMilliseconds(1000 / kFps);
-    ++encoded_image._timeStamp;
+    encoded_image._timeStamp += 90 * 1000 / kFps;
     statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
   }
   SetUp();  // Reset stats proxy also causes histograms to be reported.
@@ -1044,10 +1044,10 @@ TEST_F(SendStatisticsProxyTest, SentResolutionHistogramsAreUpdated) {
   EXPECT_EQ(0, metrics::NumSamples("WebRTC.Video.SentHeightInPixels"));
 
   // Enough samples, max resolution per frame should be reported.
-  encoded_image._timeStamp = 0xfffffff0;  // Will wrap.
+  encoded_image._timeStamp = 0xffff0000;  // Will wrap.
   for (int i = 0; i < kMinSamples; ++i) {
     fake_clock_.AdvanceTimeMilliseconds(1000 / kFps);
-    ++encoded_image._timeStamp;
+    encoded_image._timeStamp += 90 * 1000 / kFps;
     encoded_image._encodedWidth = kWidth;
     encoded_image._encodedHeight = kHeight;
     statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
