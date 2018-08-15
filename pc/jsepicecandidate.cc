@@ -12,6 +12,7 @@
 
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "pc/webrtcsdp.h"
 #include "rtc_base/stringencode.h"
 
