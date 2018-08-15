@@ -14,14 +14,12 @@ namespace webrtc {
 
 namespace {
 
-// Set by the spec, see
-// https://www.w3.org/TR/webrtc/#dom-rtcrtpreceiver-getcontributingsources
-constexpr int64_t kHistoryMs = 10 * rtc::kNumMillisecsPerSec;
-
 // Allow some stale records to accumulate before cleaning.
 constexpr int64_t kPruningIntervalMs = 15 * rtc::kNumMillisecsPerSec;
 
 }  // namespace
+
+constexpr int64_t ContributingSources::kHistoryMs;
 
 ContributingSources::ContributingSources() = default;
 ContributingSources::~ContributingSources() = default;

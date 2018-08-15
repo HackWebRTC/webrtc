@@ -24,6 +24,10 @@ namespace webrtc {
 
 class ContributingSources {
  public:
+  // Set by the spec, see
+  // https://www.w3.org/TR/webrtc/#dom-rtcrtpreceiver-getcontributingsources
+  static constexpr int64_t kHistoryMs = 10 * rtc::kNumMillisecsPerSec;
+
   ContributingSources();
   ~ContributingSources();
 

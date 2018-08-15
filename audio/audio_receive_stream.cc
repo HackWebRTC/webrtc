@@ -20,7 +20,6 @@
 #include "audio/conversion.h"
 #include "call/rtp_stream_receiver_controller_interface.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
-#include "modules/rtp_rtcp/include/rtp_receiver.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -73,9 +72,9 @@ std::unique_ptr<voe::ChannelProxy> CreateChannelAndProxy(
       static_cast<internal::AudioState*>(audio_state);
   return absl::make_unique<voe::ChannelProxy>(absl::make_unique<voe::Channel>(
       module_process_thread, internal_audio_state->audio_device_module(),
-      nullptr /* RtcpRttStats */, event_log, config.jitter_buffer_max_packets,
-      config.jitter_buffer_fast_accelerate, config.decoder_factory,
-      config.codec_pair_id));
+      nullptr /* RtcpRttStats */, event_log, config.rtp.remote_ssrc,
+      config.jitter_buffer_max_packets, config.jitter_buffer_fast_accelerate,
+      config.decoder_factory, config.codec_pair_id));
 }
 }  // namespace
 
@@ -345,9 +344,7 @@ void AudioReceiveStream::ConfigureStream(AudioReceiveStream* stream,
     channel_proxy->SetLocalSSRC(new_config.rtp.local_ssrc);
   }
 
-  if (first_time) {
-    channel_proxy->SetRemoteSSRC(new_config.rtp.remote_ssrc);
-  } else {
+  if (!first_time) {
     // Remote ssrc can't be changed mid-stream.
     RTC_DCHECK_EQ(old_config.rtp.remote_ssrc, new_config.rtp.remote_ssrc);
   }
