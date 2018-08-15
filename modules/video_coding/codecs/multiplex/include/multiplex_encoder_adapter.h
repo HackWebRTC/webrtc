@@ -34,7 +34,8 @@ class MultiplexEncoderAdapter : public VideoEncoder {
  public:
   // |factory| is not owned and expected to outlive this class' lifetime.
   MultiplexEncoderAdapter(VideoEncoderFactory* factory,
-                          const SdpVideoFormat& associated_format);
+                          const SdpVideoFormat& associated_format,
+                          bool supports_augmenting_data = false);
   virtual ~MultiplexEncoderAdapter();
 
   // Implements VideoEncoder
@@ -77,6 +78,9 @@ class MultiplexEncoderAdapter : public VideoEncoder {
   EncodedImage combined_image_;
 
   rtc::CriticalSection crit_;
+
+  const bool supports_augmented_data_;
+  int augmenting_data_size_ = 0;
 };
 
 }  // namespace webrtc

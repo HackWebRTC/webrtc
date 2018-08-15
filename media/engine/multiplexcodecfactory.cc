@@ -33,8 +33,10 @@ namespace webrtc {
 constexpr const char* kMultiplexAssociatedCodecName = cricket::kVp9CodecName;
 
 MultiplexEncoderFactory::MultiplexEncoderFactory(
-    std::unique_ptr<VideoEncoderFactory> factory)
-    : factory_(std::move(factory)) {}
+    std::unique_ptr<VideoEncoderFactory> factory,
+    bool supports_augmenting_data)
+    : factory_(std::move(factory)),
+      supports_augmenting_data_(supports_augmenting_data) {}
 
 std::vector<SdpVideoFormat> MultiplexEncoderFactory::GetSupportedFormats()
     const {
@@ -72,13 +74,15 @@ std::unique_ptr<VideoEncoder> MultiplexEncoderFactory::CreateVideoEncoder(
   }
   SdpVideoFormat associated_format = format;
   associated_format.name = it->second;
-  return std::unique_ptr<VideoEncoder>(
-      new MultiplexEncoderAdapter(factory_.get(), associated_format));
+  return std::unique_ptr<VideoEncoder>(new MultiplexEncoderAdapter(
+      factory_.get(), associated_format, supports_augmenting_data_));
 }
 
 MultiplexDecoderFactory::MultiplexDecoderFactory(
-    std::unique_ptr<VideoDecoderFactory> factory)
-    : factory_(std::move(factory)) {}
+    std::unique_ptr<VideoDecoderFactory> factory,
+    bool supports_augmenting_data)
+    : factory_(std::move(factory)),
+      supports_augmenting_data_(supports_augmenting_data) {}
 
 std::vector<SdpVideoFormat> MultiplexDecoderFactory::GetSupportedFormats()
     const {
@@ -107,8 +111,8 @@ std::unique_ptr<VideoDecoder> MultiplexDecoderFactory::CreateVideoDecoder(
   }
   SdpVideoFormat associated_format = format;
   associated_format.name = it->second;
-  return std::unique_ptr<VideoDecoder>(
-      new MultiplexDecoderAdapter(factory_.get(), associated_format));
+  return std::unique_ptr<VideoDecoder>(new MultiplexDecoderAdapter(
+      factory_.get(), associated_format, supports_augmenting_data_));
 }
 
 }  // namespace webrtc

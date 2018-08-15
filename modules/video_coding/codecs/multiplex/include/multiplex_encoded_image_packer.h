@@ -11,6 +11,7 @@
 #ifndef MODULES_VIDEO_CODING_CODECS_MULTIPLEX_INCLUDE_MULTIPLEX_ENCODED_IMAGE_PACKER_H_
 #define MODULES_VIDEO_CODING_CODECS_MULTIPLEX_INCLUDE_MULTIPLEX_ENCODED_IMAGE_PACKER_H_
 
+#include <memory>
 #include <vector>
 
 #include "common_types.h"  // NOLINT(build/include)
@@ -33,9 +34,16 @@ struct MultiplexImageHeader {
   // The location of the first MultiplexImageComponentHeader in the bitstream,
   // in terms of byte from the beginning of the bitstream.
   uint32_t first_component_header_offset;
+
+  // The location of the augmenting data in the bitstream, in terms of bytes
+  // from the beginning of the bitstream
+  uint32_t augmenting_data_offset;
+
+  // The size of the augmenting data in the bitstream it terms of byte
+  uint16_t augmenting_data_size;
 };
 const int kMultiplexImageHeaderSize =
-    sizeof(uint8_t) + sizeof(uint16_t) + sizeof(uint32_t);
+    sizeof(uint8_t) + 2 * sizeof(uint16_t) + 2 * sizeof(uint32_t);
 
 // Struct describing the individual image component's content.
 struct MultiplexImageComponentHeader {
@@ -81,9 +89,14 @@ struct MultiplexImageComponent {
 struct MultiplexImage {
   uint16_t image_index;
   uint8_t component_count;
+  uint16_t augmenting_data_size;
+  std::unique_ptr<uint8_t[]> augmenting_data;
   std::vector<MultiplexImageComponent> image_components;
 
-  MultiplexImage(uint16_t picture_index, uint8_t component_count);
+  MultiplexImage(uint16_t picture_index,
+                 uint8_t component_count,
+                 std::unique_ptr<uint8_t[]> augmenting_data,
+                 uint16_t augmenting_data_size);
 };
 
 // A utility class providing conversion between two representations of a

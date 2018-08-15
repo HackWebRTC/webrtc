@@ -21,8 +21,12 @@ namespace webrtc {
 
 class MultiplexEncoderFactory : public VideoEncoderFactory {
  public:
-  explicit MultiplexEncoderFactory(
-      std::unique_ptr<VideoEncoderFactory> factory);
+  // supports_augmenting_data defines if the encoder would support augmenting
+  // data in that case the encoder expects video frame buffer of type
+  // AugmentedVideoFrameBuffer the encoder would encode the attached buffer and
+  // data together if the flag is not set any frame buffer can be passed in
+  MultiplexEncoderFactory(std::unique_ptr<VideoEncoderFactory> factory,
+                          bool supports_augmenting_data = false);
 
   std::vector<SdpVideoFormat> GetSupportedFormats() const override;
   CodecInfo QueryVideoEncoder(const SdpVideoFormat& format) const override;
@@ -31,12 +35,17 @@ class MultiplexEncoderFactory : public VideoEncoderFactory {
 
  private:
   std::unique_ptr<VideoEncoderFactory> factory_;
+  const bool supports_augmenting_data_;
 };
 
 class MultiplexDecoderFactory : public VideoDecoderFactory {
  public:
-  explicit MultiplexDecoderFactory(
-      std::unique_ptr<VideoDecoderFactory> factory);
+  // supports_augmenting_data defines if the decoder would support augmenting
+  // data in that case the decoder expects the encoded video frame to contain
+  // augmenting_data it is expected that the sender is using MultiplexEncoder
+  // with supports_augmenting_data set
+  MultiplexDecoderFactory(std::unique_ptr<VideoDecoderFactory> factory,
+                          bool supports_augmenting_data = false);
 
   std::vector<SdpVideoFormat> GetSupportedFormats() const override;
   std::unique_ptr<VideoDecoder> CreateVideoDecoder(
@@ -44,6 +53,7 @@ class MultiplexDecoderFactory : public VideoDecoderFactory {
 
  private:
   std::unique_ptr<VideoDecoderFactory> factory_;
+  const bool supports_augmenting_data_;
 };
 
 }  // namespace webrtc

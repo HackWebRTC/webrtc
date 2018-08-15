@@ -26,7 +26,8 @@ class MultiplexDecoderAdapter : public VideoDecoder {
  public:
   // |factory| is not owned and expected to outlive this class' lifetime.
   MultiplexDecoderAdapter(VideoDecoderFactory* factory,
-                          const SdpVideoFormat& associated_format);
+                          const SdpVideoFormat& associated_format,
+                          bool supports_augmenting_data = false);
   virtual ~MultiplexDecoderAdapter();
 
   // Implements VideoDecoder
@@ -52,12 +53,17 @@ class MultiplexDecoderAdapter : public VideoDecoder {
   // Holds the decoded image output of a frame.
   struct DecodedImageData;
 
+  // Holds the augmenting data of an image
+  struct AugmentingData;
+
   void MergeAlphaImages(VideoFrame* decoded_image,
                         const absl::optional<int32_t>& decode_time_ms,
                         const absl::optional<uint8_t>& qp,
                         VideoFrame* multiplex_decoded_image,
                         const absl::optional<int32_t>& multiplex_decode_time_ms,
-                        const absl::optional<uint8_t>& multiplex_qp);
+                        const absl::optional<uint8_t>& multiplex_qp,
+                        std::unique_ptr<uint8_t[]> augmenting_data,
+                        uint16_t augmenting_data_length);
 
   VideoDecoderFactory* const factory_;
   const SdpVideoFormat associated_format_;
@@ -67,6 +73,8 @@ class MultiplexDecoderAdapter : public VideoDecoder {
 
   // Holds YUV or AXX decode output of a frame that is identified by timestamp.
   std::map<uint32_t /* timestamp */, DecodedImageData> decoded_data_;
+  std::map<uint32_t /* timestamp */, AugmentingData> decoded_augmenting_data_;
+  const bool supports_augmenting_data_;
 };
 
 }  // namespace webrtc
