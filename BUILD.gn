@@ -92,6 +92,10 @@ config("common_inherited_config") {
     defines += [ "WEBRTC_MOZILLA_BUILD" ]
   }
 
+  if (!rtc_builtin_ssl_root_certificates) {
+    defines += [ "WEBRTC_EXCLUDE_BUILT_IN_SSL_ROOT_CERTS" ]
+  }
+
   # Some tests need to declare their own trace event handlers. If this define is
   # not set, the first time TRACE_EVENT_* is called it will store the return
   # value for the current handler in an static variable, so that subsequent

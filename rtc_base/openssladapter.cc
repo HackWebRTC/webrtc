@@ -907,14 +907,14 @@ SSL_CTX* OpenSSLAdapter::CreateContext(SSLMode mode, bool enable_cache) {
     return nullptr;
   }
 
-#ifdef WEBRTC_BUILT_IN_SSL_ROOT_CERTIFICATES
+#ifndef WEBRTC_EXCLUDE_BUILT_IN_SSL_ROOT_CERTS
   if (!openssl::LoadBuiltinSSLRootCertificates(ctx)) {
     RTC_LOG(LS_ERROR) << "SSL_CTX creation failed: Failed to load any trusted "
                          "ssl root certificates.";
     SSL_CTX_free(ctx);
     return nullptr;
   }
-#endif  // WEBRTC_BUILT_IN_SSL_ROOT_CERTIFICATES
+#endif  // WEBRTC_EXCLUDE_BUILT_IN_SSL_ROOT_CERTS
 
 #if !defined(NDEBUG)
   SSL_CTX_set_info_callback(ctx, SSLInfoCallback);

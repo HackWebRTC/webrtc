@@ -871,10 +871,6 @@ rtc_static_library("rtc_base_generic") {
     configs += [ ":external_ssl_library" ]
   }
 
-  if (rtc_builtin_ssl_root_certificates) {
-    defines += [ "WEBRTC_BUILT_IN_SSL_ROOT_CERTIFICATES" ]
-  }
-
   if (is_android) {
     sources += [
       "ifaddrs-android.cc",
@@ -1308,9 +1304,6 @@ if (rtc_include_tests) {
       deps += [ "//third_party/boringssl" ]
     } else {
       configs += [ ":external_ssl_library" ]
-    }
-    if (rtc_builtin_ssl_root_certificates) {
-      defines += [ "WEBRTC_BUILT_IN_SSL_ROOT_CERTIFICATES" ]
     }
   }
 }

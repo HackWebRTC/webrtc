@@ -36,9 +36,9 @@
 #include "rtc_base/openssldigest.h"
 #include "rtc_base/opensslidentity.h"
 #include "rtc_base/opensslutility.h"
-#ifdef WEBRTC_BUILT_IN_SSL_ROOT_CERTIFICATES
+#ifndef WEBRTC_EXCLUDE_BUILT_IN_SSL_ROOT_CERTS
 #include "rtc_base/sslroots.h"
-#endif
+#endif  // WEBRTC_EXCLUDE_BUILT_IN_SSL_ROOT_CERTS
 
 namespace rtc {
 
