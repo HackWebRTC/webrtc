@@ -59,14 +59,8 @@ struct RtcpStatistics {
         jitter(0) {}
 
   uint8_t fraction_lost;
-  union {
-    int32_t packets_lost;  // Defined as a 24 bit signed integer in RTCP
-    RTC_DEPRECATED uint32_t cumulative_lost;
-  };
-  union {
-    uint32_t extended_highest_sequence_number;
-    RTC_DEPRECATED uint32_t extended_max_sequence_number;
-  };
+  int32_t packets_lost;  // Defined as a 24 bit signed integer in RTCP
+  uint32_t extended_highest_sequence_number;
   uint32_t jitter;
 };
 
