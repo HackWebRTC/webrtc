@@ -126,6 +126,8 @@ class FakeNetworkPipe : public Transport, public PacketReceiver, public Module {
 
   void SetClockOffset(int64_t offset_ms);
 
+  // DO NOT USE. Hold direct reference on NetworkSimulationInterface instead
+  // and call SetConfig on that object directly. Will be removed soon.
   // Sets a new configuration. This won't affect packets already in the pipe.
   void SetConfig(const FakeNetworkPipe::Config& config);
 

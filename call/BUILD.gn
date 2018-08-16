@@ -435,6 +435,7 @@ if (rtc_include_tests) {
     deps = [
       ":call_interfaces",
       ":fake_network",
+      ":simulated_network",
       "../modules/rtp_rtcp",
       "../rtc_base:rtc_base_approved",
       "../system_wrappers",
