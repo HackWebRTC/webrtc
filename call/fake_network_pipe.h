@@ -105,6 +105,10 @@ class FakeNetworkPipe : public Transport, public PacketReceiver, public Module {
 
   // Use these constructors if you plan to insert packets using DeliverPacket().
   FakeNetworkPipe(Clock* clock, const FakeNetworkPipe::Config& config);
+  // Will keep |network_simulation| alive while pipe is alive itself.
+  FakeNetworkPipe(
+      Clock* clock,
+      std::unique_ptr<NetworkSimulationInterface> network_simulation);
   FakeNetworkPipe(Clock* clock,
                   const FakeNetworkPipe::Config& config,
                   PacketReceiver* receiver);

@@ -43,6 +43,7 @@ NetworkPacket::NetworkPacket(rtc::CopyOnWriteBuffer packet,
       is_rtcp_(is_rtcp),
       media_type_(media_type),
       packet_time_us_(packet_time_us) {}
+
 NetworkPacket::NetworkPacket(rtc::CopyOnWriteBuffer packet,
                              int64_t send_time,
                              int64_t arrival_time,
@@ -86,6 +87,20 @@ NetworkPacket& NetworkPacket::operator=(NetworkPacket&& o) {
 FakeNetworkPipe::FakeNetworkPipe(Clock* clock,
                                  const FakeNetworkPipe::Config& config)
     : FakeNetworkPipe(clock, config, nullptr, 1) {}
+
+FakeNetworkPipe::FakeNetworkPipe(
+    Clock* clock,
+    std::unique_ptr<NetworkSimulationInterface> network_simulation)
+    : clock_(clock),
+      network_simulation_(std::move(network_simulation)),
+      receiver_(nullptr),
+      transport_(nullptr),
+      clock_offset_ms_(0),
+      dropped_packets_(0),
+      sent_packets_(0),
+      total_packet_delay_us_(0),
+      next_process_time_us_(clock_->TimeInMicroseconds()),
+      last_log_time_us_(clock_->TimeInMicroseconds()) {}
 
 FakeNetworkPipe::FakeNetworkPipe(Clock* clock,
                                  const FakeNetworkPipe::Config& config,
