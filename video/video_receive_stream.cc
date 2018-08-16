@@ -332,7 +332,7 @@ EncodedImageCallback::Result VideoReceiveStream::OnEncodedImage(
     }
   }
 
-  return Result(Result::OK, encoded_image._timeStamp);
+  return Result(Result::OK, encoded_image.Timestamp());
 }
 
 void VideoReceiveStream::SendNack(

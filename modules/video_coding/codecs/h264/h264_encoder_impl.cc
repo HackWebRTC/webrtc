@@ -496,7 +496,7 @@ int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
 
     encoded_images_[i]._encodedWidth = configurations_[i].width;
     encoded_images_[i]._encodedHeight = configurations_[i].height;
-    encoded_images_[i]._timeStamp = input_frame.timestamp();
+    encoded_images_[i].SetTimestamp(input_frame.timestamp());
     encoded_images_[i].ntp_time_ms_ = input_frame.ntp_time_ms();
     encoded_images_[i].capture_time_ms_ = input_frame.render_time_ms();
     encoded_images_[i].rotation_ = input_frame.rotation();

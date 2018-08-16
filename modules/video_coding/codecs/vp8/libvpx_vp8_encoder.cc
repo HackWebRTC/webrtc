@@ -881,7 +881,7 @@ int LibvpxVp8Encoder::GetEncodedPartitions(
         break;
       }
     }
-    encoded_images_[encoder_idx]._timeStamp = input_image.timestamp();
+    encoded_images_[encoder_idx].SetTimestamp(input_image.timestamp());
     encoded_images_[encoder_idx].capture_time_ms_ =
         input_image.render_time_ms();
     encoded_images_[encoder_idx].rotation_ = input_image.rotation();

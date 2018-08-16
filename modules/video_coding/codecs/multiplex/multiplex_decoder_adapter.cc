@@ -139,10 +139,10 @@ int32_t MultiplexDecoderAdapter::Decode(
   }
 
   if (image.component_count == 1) {
-    RTC_DCHECK(decoded_data_.find(input_image._timeStamp) ==
+    RTC_DCHECK(decoded_data_.find(input_image.Timestamp()) ==
                decoded_data_.end());
     decoded_data_.emplace(std::piecewise_construct,
-                          std::forward_as_tuple(input_image._timeStamp),
+                          std::forward_as_tuple(input_image.Timestamp()),
                           std::forward_as_tuple(kAXXStream));
   }
   int32_t rv = 0;

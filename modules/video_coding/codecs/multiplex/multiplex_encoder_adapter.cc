@@ -258,7 +258,8 @@ EncodedImageCallback::Result MultiplexEncoderAdapter::OnEncodedImage(
               encodedImage._length);
 
   rtc::CritScope cs(&crit_);
-  const auto& stashed_image_itr = stashed_images_.find(encodedImage._timeStamp);
+  const auto& stashed_image_itr =
+      stashed_images_.find(encodedImage.Timestamp());
   const auto& stashed_image_next_itr = std::next(stashed_image_itr, 1);
   RTC_DCHECK(stashed_image_itr != stashed_images_.end());
   MultiplexImage& stashed_image = stashed_image_itr->second;

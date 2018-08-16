@@ -109,7 +109,7 @@ class SimulcastTestFixtureImpl::TestEncodedImageCallback
       temporal_layer_[codec_specific_info->codecSpecific.VP8.simulcastIdx] =
           codec_specific_info->codecSpecific.VP8.temporalIdx;
     }
-    return Result(Result::OK, encoded_image._timeStamp);
+    return Result(Result::OK, encoded_image.Timestamp());
   }
   // This method only makes sense for VP8.
   void GetLastEncodedFrameInfo(int* temporal_layer,

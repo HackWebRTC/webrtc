@@ -656,7 +656,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
         const RTPFragmentationHeader* fragmentation) override {
       rtc::CritScope lock(&crit_);
       EXPECT_TRUE(expect_frames_);
-      last_timestamp_ = encoded_image._timeStamp;
+      last_timestamp_ = encoded_image.Timestamp();
       last_width_ = encoded_image._encodedWidth;
       last_height_ = encoded_image._encodedHeight;
       encoded_frame_event_.Set();

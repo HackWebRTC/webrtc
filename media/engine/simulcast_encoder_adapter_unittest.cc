@@ -343,7 +343,7 @@ class TestSimulcastEncoderAdapterFake : public ::testing::Test,
       last_encoded_image_simulcast_index_ =
           codec_specific_info->codecSpecific.VP8.simulcastIdx;
     }
-    return Result(Result::OK, encoded_image._timeStamp);
+    return Result(Result::OK, encoded_image.Timestamp());
   }
 
   bool GetLastEncodedImageInfo(int* out_width,

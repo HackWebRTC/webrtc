@@ -3037,7 +3037,7 @@ TEST_F(VideoSendStreamTest, ReportsSentResolution) {
 
       uint8_t buffer[16] = {0};
       EncodedImage encoded(buffer, sizeof(buffer), sizeof(buffer));
-      encoded._timeStamp = input_image.timestamp();
+      encoded.SetTimestamp(input_image.timestamp());
       encoded.capture_time_ms_ = input_image.render_time_ms();
 
       for (size_t i = 0; i < kNumStreams; ++i) {

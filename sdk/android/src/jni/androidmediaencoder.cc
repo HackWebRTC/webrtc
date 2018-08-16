@@ -987,7 +987,7 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
           new EncodedImage(payload, payload_size, payload_size));
       image->_encodedWidth = width_;
       image->_encodedHeight = height_;
-      image->_timeStamp = output_timestamp_;
+      image->SetTimestamp(output_timestamp_);
       image->capture_time_ms_ = output_render_time_ms_;
       image->rotation_ = output_rotation_;
       image->content_type_ = (codec_mode_ == VideoCodecMode::kScreensharing)

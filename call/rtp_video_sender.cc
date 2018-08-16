@@ -331,7 +331,7 @@ EncodedImageCallback::Result RtpVideoSender::OnEncodedImage(
   }
   bool send_result = rtp_modules_[stream_index]->SendOutgoingData(
       encoded_image._frameType, rtp_config_.payload_type,
-      encoded_image._timeStamp, encoded_image.capture_time_ms_,
+      encoded_image.Timestamp(), encoded_image.capture_time_ms_,
       encoded_image._buffer, encoded_image._length, fragmentation,
       &rtp_video_header, &frame_id);
   if (!send_result)

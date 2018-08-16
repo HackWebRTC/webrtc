@@ -258,7 +258,7 @@ MultiplexImage MultiplexEncodedImagePacker::Unpack(
     image_component.codec_type = frame_headers[i].codec_type;
 
     EncodedImage encoded_image = combined_image;
-    encoded_image._timeStamp = combined_image._timeStamp;
+    encoded_image.SetTimestamp(combined_image.Timestamp());
     encoded_image._frameType = frame_headers[i].frame_type;
     encoded_image._size =
         static_cast<size_t>(frame_headers[i].bitstream_length);

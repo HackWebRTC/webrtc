@@ -98,12 +98,12 @@ int32_t VideoDecoderWrapper::Decode(
   EncodedImage input_image(image_param);
   // We use RTP timestamp for capture time because capture_time_ms_ is always 0.
   input_image.capture_time_ms_ =
-      input_image._timeStamp / kNumRtpTicksPerMillisec;
+      input_image.Timestamp() / kNumRtpTicksPerMillisec;
 
   FrameExtraInfo frame_extra_info;
   frame_extra_info.timestamp_ns =
       input_image.capture_time_ms_ * rtc::kNumNanosecsPerMillisec;
-  frame_extra_info.timestamp_rtp = input_image._timeStamp;
+  frame_extra_info.timestamp_rtp = input_image.Timestamp();
   frame_extra_info.timestamp_ntp = input_image.ntp_time_ms_;
   frame_extra_info.qp =
       qp_parsing_enabled_ ? ParseQP(input_image) : absl::nullopt;

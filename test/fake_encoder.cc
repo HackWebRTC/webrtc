@@ -144,7 +144,7 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
     std::unique_ptr<uint8_t[]> encoded_buffer(new uint8_t[num_encoded_bytes]);
     memcpy(encoded_buffer.get(), encoded_buffer_, num_encoded_bytes);
     EncodedImage encoded(encoded_buffer.get(), stream_bytes, num_encoded_bytes);
-    encoded._timeStamp = input_image.timestamp();
+    encoded.SetTimestamp(input_image.timestamp());
     encoded.capture_time_ms_ = input_image.render_time_ms();
     encoded._frameType = (*frame_types)[i];
     encoded._encodedWidth = simulcast_streams[i].width;

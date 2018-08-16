@@ -265,13 +265,14 @@ absl::optional<int64_t> VCMEncodedFrameCallback::ExtractEncodeStartTime(
     // Because some hardware encoders don't preserve capture timestamp we
     // use RTP timestamps here.
     while (!encode_start_list->empty() &&
-           IsNewerTimestamp(encoded_image->_timeStamp,
+           IsNewerTimestamp(encoded_image->Timestamp(),
                             encode_start_list->front().rtp_timestamp)) {
       post_encode_callback_->OnDroppedFrame(DropReason::kDroppedByEncoder);
       encode_start_list->pop_front();
     }
     if (encode_start_list->size() > 0 &&
-        encode_start_list->front().rtp_timestamp == encoded_image->_timeStamp) {
+        encode_start_list->front().rtp_timestamp ==
+            encoded_image->Timestamp()) {
       result.emplace(encode_start_list->front().encode_start_time_ms);
       if (encoded_image->capture_time_ms_ !=
           encode_start_list->front().capture_time_ms) {
@@ -365,8 +366,8 @@ void VCMEncodedFrameCallback::FillTimingInfo(size_t simulcast_svc_idx,
     int64_t clock_offset_ms = now_ms - encoded_image->timing_.encode_finish_ms;
     // Translate capture timestamp to local WebRTC clock.
     encoded_image->capture_time_ms_ += clock_offset_ms;
-    encoded_image->_timeStamp =
-        static_cast<uint32_t>(encoded_image->capture_time_ms_ * 90);
+    encoded_image->SetTimestamp(
+        static_cast<uint32_t>(encoded_image->capture_time_ms_ * 90));
     encode_start_ms.emplace(encoded_image->timing_.encode_start_ms +
                             clock_offset_ms);
   }
@@ -389,7 +390,7 @@ EncodedImageCallback::Result VCMEncodedFrameCallback::OnEncodedImage(
     const CodecSpecificInfo* codec_specific,
     const RTPFragmentationHeader* fragmentation_header) {
   TRACE_EVENT_INSTANT1("webrtc", "VCMEncodedFrameCallback::Encoded",
-                       "timestamp", encoded_image._timeStamp);
+                       "timestamp", encoded_image.Timestamp());
   size_t simulcast_svc_idx = 0;
   if (codec_specific->codecType == kVideoCodecVP9) {
     if (codec_specific->codecSpecific.VP9.num_spatial_layers > 1)

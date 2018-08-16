@@ -100,7 +100,7 @@ class EncodedImageCallbackImpl : public EncodedImageCallback {
     assert(codec_specific_info);
     frame_data_.push_back(
         FrameData(encoded_image._length, *codec_specific_info));
-    return Result(Result::OK, encoded_image._timeStamp);
+    return Result(Result::OK, encoded_image.Timestamp());
   }
 
   void Reset() {

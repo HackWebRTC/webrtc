@@ -140,7 +140,7 @@ class RtpVideoSenderTestFixture {
 TEST(RtpVideoSenderTest, SendOnOneModule) {
   uint8_t payload = 'a';
   EncodedImage encoded_image;
-  encoded_image._timeStamp = 1;
+  encoded_image.SetTimestamp(1);
   encoded_image.capture_time_ms_ = 2;
   encoded_image._frameType = kVideoFrameKey;
   encoded_image._buffer = &payload;
@@ -170,7 +170,7 @@ TEST(RtpVideoSenderTest, SendOnOneModule) {
 TEST(RtpVideoSenderTest, SendSimulcastSetActive) {
   uint8_t payload = 'a';
   EncodedImage encoded_image;
-  encoded_image._timeStamp = 1;
+  encoded_image.SetTimestamp(1);
   encoded_image.capture_time_ms_ = 2;
   encoded_image._frameType = kVideoFrameKey;
   encoded_image._buffer = &payload;
@@ -217,7 +217,7 @@ TEST(RtpVideoSenderTest, SendSimulcastSetActive) {
 TEST(RtpVideoSenderTest, SendSimulcastSetActiveModules) {
   uint8_t payload = 'a';
   EncodedImage encoded_image;
-  encoded_image._timeStamp = 1;
+  encoded_image.SetTimestamp(1);
   encoded_image.capture_time_ms_ = 2;
   encoded_image._frameType = kVideoFrameKey;
   encoded_image._buffer = &payload;

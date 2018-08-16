@@ -37,6 +37,14 @@ class EncodedImage {
   EncodedImage(const EncodedImage&);
   EncodedImage(uint8_t* buffer, size_t length, size_t size);
 
+  // TODO(nisse): Change style to timestamp(), set_timestamp(), for consistency
+  // with the VideoFrame class.
+  // Set frame timestamp (90kHz).
+  void SetTimestamp(uint32_t timestamp) { _timeStamp = timestamp; }
+
+  // Get frame timestamp (90kHz).
+  uint32_t Timestamp() const { return _timeStamp; }
+
   void SetEncodeTime(int64_t encode_start_ms, int64_t encode_finish_ms);
 
   absl::optional<int> SpatialIndex() const {
@@ -52,6 +60,8 @@ class EncodedImage {
 
   uint32_t _encodedWidth = 0;
   uint32_t _encodedHeight = 0;
+  // TODO(nisse): Make private, once users have been updated
+  // to use accessor methods.
   uint32_t _timeStamp = 0;
   // NTP time of the capture time in local timebase in milliseconds.
   int64_t ntp_time_ms_ = 0;

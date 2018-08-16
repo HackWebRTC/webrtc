@@ -274,7 +274,7 @@ void VideoEncoderWrapper::OnEncodedFrame(JNIEnv* jni,
                          task_buffer.size(), task_buffer.size());
       frame._encodedWidth = encoded_width;
       frame._encodedHeight = encoded_height;
-      frame._timeStamp = frame_extra_info.timestamp_rtp;
+      frame.SetTimestamp(frame_extra_info.timestamp_rtp);
       frame.capture_time_ms_ = capture_time_ns / rtc::kNumNanosecsPerMillisec;
       frame._frameType = (FrameType)frame_type;
       frame.rotation_ = (VideoRotation)rotation;

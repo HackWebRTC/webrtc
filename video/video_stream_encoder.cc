@@ -887,7 +887,7 @@ EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
       sink_->OnEncodedImage(encoded_image, codec_specific_info, fragmentation);
 
   int64_t time_sent_us = rtc::TimeMicros();
-  uint32_t timestamp = encoded_image._timeStamp;
+  uint32_t timestamp = encoded_image.Timestamp();
   const int qp = encoded_image.qp_;
   int64_t capture_time_us =
       encoded_image.capture_time_ms_ * rtc::kNumMicrosecsPerMillisec;

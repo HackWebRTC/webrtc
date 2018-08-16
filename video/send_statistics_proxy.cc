@@ -250,7 +250,7 @@ bool SendStatisticsProxy::UmaSamplesContainer::InsertEncodedFrame(
   // Check for jump in timestamp.
   if (!encoded_frames_.empty()) {
     uint32_t oldest_timestamp = encoded_frames_.begin()->first;
-    if (ForwardDiff(oldest_timestamp, encoded_frame._timeStamp) >
+    if (ForwardDiff(oldest_timestamp, encoded_frame.Timestamp()) >
         kMaxEncodedFrameTimestampDiff) {
       // Gap detected, clear frames to have a sequence where newest timestamp
       // is not too far away from oldest in order to distinguish old and new.
@@ -262,7 +262,7 @@ bool SendStatisticsProxy::UmaSamplesContainer::InsertEncodedFrame(
   if (it == encoded_frames_.end()) {
     // First frame with this timestamp.
     encoded_frames_.insert(
-        std::make_pair(encoded_frame._timeStamp,
+        std::make_pair(encoded_frame.Timestamp(),
                        Frame(now_ms, encoded_frame._encodedWidth,
                              encoded_frame._encodedHeight, simulcast_idx)));
     sent_fps_counter_.Add(1);

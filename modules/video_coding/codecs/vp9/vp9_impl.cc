@@ -1009,7 +1009,7 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
   }
 
   TRACE_COUNTER1("webrtc", "EncodedFrameSize", encoded_image_._length);
-  encoded_image_._timeStamp = input_image_->timestamp();
+  encoded_image_.SetTimestamp(input_image_->timestamp());
   encoded_image_.capture_time_ms_ = input_image_->render_time_ms();
   encoded_image_.rotation_ = input_image_->rotation();
   encoded_image_.content_type_ = (codec_.mode == VideoCodecMode::kScreensharing)
@@ -1046,9 +1046,9 @@ void VP9EncoderImpl::DeliverBufferedFrame(bool end_of_picture) {
 
     if (end_of_picture) {
       const uint32_t timestamp_ms =
-          1000 * encoded_image_._timeStamp / kVideoPayloadTypeFrequency;
+          1000 * encoded_image_.Timestamp() / kVideoPayloadTypeFrequency;
       output_framerate_.Update(1, timestamp_ms);
-      last_encoded_frame_rtp_timestamp_ = encoded_image_._timeStamp;
+      last_encoded_frame_rtp_timestamp_ = encoded_image_.Timestamp();
     }
   }
 }
@@ -1190,7 +1190,7 @@ int VP9DecoderImpl::Decode(const EncodedImage& input_image,
       vpx_codec_control(decoder_, VPXD_GET_LAST_QUANTIZER, &qp);
   RTC_DCHECK_EQ(vpx_ret, VPX_CODEC_OK);
   int ret =
-      ReturnFrame(img, input_image._timeStamp, input_image.ntp_time_ms_, qp);
+      ReturnFrame(img, input_image.Timestamp(), input_image.ntp_time_ms_, qp);
   if (ret != 0) {
     return ret;
   }

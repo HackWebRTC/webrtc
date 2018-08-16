@@ -35,8 +35,8 @@ void VCMEncodedFrame::Free() {
 }
 
 void VCMEncodedFrame::Reset() {
+  SetTimestamp(0);
   _renderTimeMs = -1;
-  _timeStamp = 0;
   _payloadType = 0;
   _frameType = kVideoFrameDelta;
   _encodedWidth = 0;

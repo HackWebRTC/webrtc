@@ -39,7 +39,7 @@
                              freeWhenDone:NO];
     _encodedWidth = rtc::dchecked_cast<int32_t>(encodedImage._encodedWidth);
     _encodedHeight = rtc::dchecked_cast<int32_t>(encodedImage._encodedHeight);
-    _timeStamp = encodedImage._timeStamp;
+    _timeStamp = encodedImage.Timestamp();
     _captureTimeMs = encodedImage.capture_time_ms_;
     _ntpTimeMs = encodedImage.ntp_time_ms_;
     _flags = encodedImage.timing_.flags;
@@ -63,7 +63,7 @@
       (uint8_t *)_buffer.bytes, (size_t)_buffer.length, (size_t)_buffer.length);
   encodedImage._encodedWidth = rtc::dchecked_cast<uint32_t>(_encodedWidth);
   encodedImage._encodedHeight = rtc::dchecked_cast<uint32_t>(_encodedHeight);
-  encodedImage._timeStamp = _timeStamp;
+  encodedImage.SetTimestamp(_timeStamp);
   encodedImage.capture_time_ms_ = _captureTimeMs;
   encodedImage.ntp_time_ms_ = _ntpTimeMs;
   encodedImage.timing_.flags = _flags;

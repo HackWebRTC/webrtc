@@ -136,7 +136,7 @@ TEST_F(TestVp8Impl, OnEncodedImageReportsInfo) {
   CodecSpecificInfo codec_specific_info;
   EncodeAndWaitForFrame(*input_frame, &encoded_frame, &codec_specific_info);
 
-  EXPECT_EQ(kInitialTimestampRtp, encoded_frame._timeStamp);
+  EXPECT_EQ(kInitialTimestampRtp, encoded_frame.Timestamp());
   EXPECT_EQ(kInitialTimestampMs, encoded_frame.capture_time_ms_);
   EXPECT_EQ(kWidth, static_cast<int>(encoded_frame._encodedWidth));
   EXPECT_EQ(kHeight, static_cast<int>(encoded_frame._encodedHeight));
