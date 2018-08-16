@@ -187,6 +187,8 @@ void EnableAllAPComponents(AudioProcessing* ap) {
   EXPECT_NOERR(ap->echo_cancellation()->enable_drift_compensation(true));
   EXPECT_NOERR(ap->echo_cancellation()->enable_metrics(true));
   EXPECT_NOERR(ap->echo_cancellation()->enable_delay_logging(true));
+  EXPECT_NOERR(ap->echo_cancellation()->set_suppression_level(
+      EchoCancellation::SuppressionLevel::kModerateSuppression));
   EXPECT_NOERR(ap->echo_cancellation()->Enable(true));
 
   EXPECT_NOERR(ap->gain_control()->set_mode(GainControl::kAdaptiveAnalog));
