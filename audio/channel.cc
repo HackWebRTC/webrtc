@@ -29,7 +29,6 @@
 #include "modules/audio_processing/include/audio_processing.h"
 #include "modules/pacing/packet_router.h"
 #include "modules/rtp_rtcp/include/receive_statistics.h"
-#include "modules/rtp_rtcp/include/rtp_payload_registry.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "modules/rtp_rtcp/source/rtp_receiver_strategy.h"
 #include "modules/utility/include/process_thread.h"
@@ -495,7 +494,6 @@ Channel::Channel(ProcessThread* module_process_thread,
                  rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
                  absl::optional<AudioCodecPairId> codec_pair_id)
     : event_log_(rtc_event_log),
-      rtp_payload_registry_(new RTPPayloadRegistry()),
       rtp_receive_statistics_(
           ReceiveStatistics::Create(Clock::GetRealTimeClock())),
       remote_ssrc_(remote_ssrc),
@@ -809,7 +807,10 @@ void Channel::OnUplinkPacketLossRate(float packet_loss_rate) {
 }
 
 void Channel::SetReceiveCodecs(const std::map<int, SdpAudioFormat>& codecs) {
-  rtp_payload_registry_->SetAudioReceivePayloads(codecs);
+  for (const auto& kv : codecs) {
+    RTC_DCHECK_GE(kv.second.clockrate_hz, 1000);
+    payload_type_frequencies_[kv.first] = kv.second.clockrate_hz;
+  }
   audio_coding_->SetReceiveCodecs(codecs);
 }
 
@@ -870,14 +871,15 @@ void Channel::OnRtpPacket(const RtpPacketReceived& packet) {
   // Store playout timestamp for the received RTP packet
   UpdatePlayoutTimestamp(false);
 
-  header.payload_type_frequency =
-      rtp_payload_registry_->GetPayloadTypeFrequency(header.payloadType);
-  if (header.payload_type_frequency >= 0) {
-    rtp_receive_statistics_->IncomingPacket(header, packet.size(),
-                                            IsPacketRetransmitted(header));
+  const auto& it = payload_type_frequencies_.find(header.payloadType);
+  if (it == payload_type_frequencies_.end())
+    return;
+  header.payload_type_frequency = it->second;
 
-    ReceivePacket(packet.data(), packet.size(), header);
-  }
+  rtp_receive_statistics_->IncomingPacket(header, packet.size(),
+                                          IsPacketRetransmitted(header));
+
+  ReceivePacket(packet.data(), packet.size(), header);
 }
 
 bool Channel::ReceivePacket(const uint8_t* packet,
@@ -886,11 +888,6 @@ bool Channel::ReceivePacket(const uint8_t* packet,
   const uint8_t* payload = packet + header.headerLength;
   assert(packet_length >= header.headerLength);
   size_t payload_length = packet_length - header.headerLength;
-  const auto pl =
-      rtp_payload_registry_->PayloadTypeToPayload(header.payloadType);
-  if (!pl) {
-    return false;
-  }
   WebRtcRTPHeader webrtc_rtp_header = {};
   webrtc_rtp_header.header = header;
 

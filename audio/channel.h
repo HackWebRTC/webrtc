@@ -53,8 +53,6 @@ class RateLimiter;
 class ReceiveStatistics;
 class RemoteNtpTimeEstimator;
 class RtcEventLog;
-class RTPPayloadRegistry;
-class RTPReceiverAudio;
 class RtpPacketReceived;
 class RtpRtcp;
 class RtpTransportControllerSendInterface;
@@ -340,7 +338,9 @@ class Channel
 
   RtcEventLog* const event_log_;
 
-  std::unique_ptr<RTPPayloadRegistry> rtp_payload_registry_;
+  // Indexed by payload type.
+  std::map<uint8_t, int> payload_type_frequencies_;
+
   std::unique_ptr<ReceiveStatistics> rtp_receive_statistics_;
   std::unique_ptr<RtpRtcp> _rtpRtcpModule;
   const uint32_t remote_ssrc_;
