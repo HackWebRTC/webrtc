@@ -944,6 +944,7 @@ if (is_ios || is_mac) {
           "objc/Framework/Headers/WebRTC/RTCAudioTrack.h",
           "objc/Framework/Headers/WebRTC/RTCCameraVideoCapturer.h",
           "objc/Framework/Headers/WebRTC/RTCCameraPreviewView.h",
+          "objc/Framework/Headers/WebRTC/RTCCertificate.h",
           "objc/Framework/Headers/WebRTC/RTCConfiguration.h",
           "objc/Framework/Headers/WebRTC/RTCDataChannel.h",
           "objc/Framework/Headers/WebRTC/RTCDataChannelConfiguration.h",
