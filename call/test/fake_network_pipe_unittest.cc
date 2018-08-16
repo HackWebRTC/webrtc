@@ -208,8 +208,7 @@ TEST_F(FakeNetworkPipeTest, ChangingCapacityWithEmptyPipeTest) {
   std::unique_ptr<SimulatedNetwork> network(new SimulatedNetwork(config));
   SimulatedNetwork* simulated_network = network.get();
   std::unique_ptr<FakeNetworkPipe> pipe(
-      new FakeNetworkPipe(&fake_clock_, std::move(network)));
-  pipe->SetReceiver(&receiver);
+      new FakeNetworkPipe(&fake_clock_, std::move(network), &receiver));
 
   // Add 10 packets of 1000 bytes, = 80 kb, and verify it takes one second to
   // get through the pipe.
@@ -270,8 +269,7 @@ TEST_F(FakeNetworkPipeTest, ChangingCapacityWithPacketsInPipeTest) {
   std::unique_ptr<SimulatedNetwork> network(new SimulatedNetwork(config));
   SimulatedNetwork* simulated_network = network.get();
   std::unique_ptr<FakeNetworkPipe> pipe(
-      new FakeNetworkPipe(&fake_clock_, std::move(network)));
-  pipe->SetReceiver(&receiver);
+      new FakeNetworkPipe(&fake_clock_, std::move(network), &receiver));
 
   // Add 10 packets of 1000 bytes, = 80 kb.
   const int kNumPackets = 10;
@@ -328,8 +326,7 @@ TEST_F(FakeNetworkPipeTest, DisallowReorderingThenAllowReordering) {
   std::unique_ptr<SimulatedNetwork> network(new SimulatedNetwork(config));
   SimulatedNetwork* simulated_network = network.get();
   std::unique_ptr<FakeNetworkPipe> pipe(
-      new FakeNetworkPipe(&fake_clock_, std::move(network)));
-  pipe->SetReceiver(&receiver);
+      new FakeNetworkPipe(&fake_clock_, std::move(network), &receiver));
 
   const uint32_t kNumPackets = 100;
   const int kPacketSize = 10;

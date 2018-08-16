@@ -103,31 +103,54 @@ class FakeNetworkPipe : public Transport, public PacketReceiver, public Module {
  public:
   using Config = NetworkSimulationInterface::SimulatedNetworkConfig;
 
+  // Deprecated. DO NOT USE. To be removed. Use corresponding version with
+  // NetworkSimulationInterface instance instead.
   // Use these constructors if you plan to insert packets using DeliverPacket().
   FakeNetworkPipe(Clock* clock, const FakeNetworkPipe::Config& config);
   // Will keep |network_simulation| alive while pipe is alive itself.
+  // Use these constructors if you plan to insert packets using DeliverPacket().
   FakeNetworkPipe(
       Clock* clock,
       std::unique_ptr<NetworkSimulationInterface> network_simulation);
+  // Deprecated. DO NOT USE. To be removed. Use corresponding version with
+  // NetworkSimulationInterface instance instead.
   FakeNetworkPipe(Clock* clock,
                   const FakeNetworkPipe::Config& config,
                   PacketReceiver* receiver);
+  FakeNetworkPipe(
+      Clock* clock,
+      std::unique_ptr<NetworkSimulationInterface> network_simulation,
+      PacketReceiver* receiver);
+  // Deprecated. DO NOT USE. To be removed. Use corresponding version with
+  // NetworkSimulationInterface instance instead.
   FakeNetworkPipe(Clock* clock,
                   const FakeNetworkPipe::Config& config,
                   PacketReceiver* receiver,
                   uint64_t seed);
+  FakeNetworkPipe(
+      Clock* clock,
+      std::unique_ptr<NetworkSimulationInterface> network_simulation,
+      PacketReceiver* receiver,
+      uint64_t seed);
 
+  // Deprecated. DO NOT USE. To be removed. Use corresponding version with
+  // NetworkSimulationInterface instance instead.
   // Use this constructor if you plan to insert packets using SendRt[c?]p().
   FakeNetworkPipe(Clock* clock,
                   const FakeNetworkPipe::Config& config,
                   Transport* transport);
+  // Use this constructor if you plan to insert packets using SendRt[c?]p().
+  FakeNetworkPipe(
+      Clock* clock,
+      std::unique_ptr<NetworkSimulationInterface> network_simulation,
+      Transport* transport);
 
   ~FakeNetworkPipe() override;
 
   void SetClockOffset(int64_t offset_ms);
 
-  // DO NOT USE. Hold direct reference on NetworkSimulationInterface instead
-  // and call SetConfig on that object directly. Will be removed soon.
+  // Deprecated. DO NOT USE. Hold direct reference on NetworkSimulationInterface
+  // instead and call SetConfig on that object directly. Will be removed soon.
   // Sets a new configuration. This won't affect packets already in the pipe.
   void SetConfig(const FakeNetworkPipe::Config& config);
 

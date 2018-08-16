@@ -88,20 +88,6 @@ FakeNetworkPipe::FakeNetworkPipe(Clock* clock,
                                  const FakeNetworkPipe::Config& config)
     : FakeNetworkPipe(clock, config, nullptr, 1) {}
 
-FakeNetworkPipe::FakeNetworkPipe(
-    Clock* clock,
-    std::unique_ptr<NetworkSimulationInterface> network_simulation)
-    : clock_(clock),
-      network_simulation_(std::move(network_simulation)),
-      receiver_(nullptr),
-      transport_(nullptr),
-      clock_offset_ms_(0),
-      dropped_packets_(0),
-      sent_packets_(0),
-      total_packet_delay_us_(0),
-      next_process_time_us_(clock_->TimeInMicroseconds()),
-      last_log_time_us_(clock_->TimeInMicroseconds()) {}
-
 FakeNetworkPipe::FakeNetworkPipe(Clock* clock,
                                  const FakeNetworkPipe::Config& config,
                                  PacketReceiver* receiver)
@@ -127,6 +113,48 @@ FakeNetworkPipe::FakeNetworkPipe(Clock* clock,
                                  Transport* transport)
     : clock_(clock),
       network_simulation_(absl::make_unique<SimulatedNetwork>(config, 1)),
+      receiver_(nullptr),
+      transport_(transport),
+      clock_offset_ms_(0),
+      dropped_packets_(0),
+      sent_packets_(0),
+      total_packet_delay_us_(0),
+      next_process_time_us_(clock_->TimeInMicroseconds()),
+      last_log_time_us_(clock_->TimeInMicroseconds()) {}
+
+FakeNetworkPipe::FakeNetworkPipe(
+    Clock* clock,
+    std::unique_ptr<NetworkSimulationInterface> network_simulation)
+    : FakeNetworkPipe(clock, std::move(network_simulation), nullptr, 1) {}
+
+FakeNetworkPipe::FakeNetworkPipe(
+    Clock* clock,
+    std::unique_ptr<NetworkSimulationInterface> network_simulation,
+    PacketReceiver* receiver)
+    : FakeNetworkPipe(clock, std::move(network_simulation), receiver, 1) {}
+
+FakeNetworkPipe::FakeNetworkPipe(
+    Clock* clock,
+    std::unique_ptr<NetworkSimulationInterface> network_simulation,
+    PacketReceiver* receiver,
+    uint64_t seed)
+    : clock_(clock),
+      network_simulation_(std::move(network_simulation)),
+      receiver_(receiver),
+      transport_(nullptr),
+      clock_offset_ms_(0),
+      dropped_packets_(0),
+      sent_packets_(0),
+      total_packet_delay_us_(0),
+      next_process_time_us_(clock_->TimeInMicroseconds()),
+      last_log_time_us_(clock_->TimeInMicroseconds()) {}
+
+FakeNetworkPipe::FakeNetworkPipe(
+    Clock* clock,
+    std::unique_ptr<NetworkSimulationInterface> network_simulation,
+    Transport* transport)
+    : clock_(clock),
+      network_simulation_(std::move(network_simulation)),
       receiver_(nullptr),
       transport_(transport),
       clock_offset_ms_(0),
