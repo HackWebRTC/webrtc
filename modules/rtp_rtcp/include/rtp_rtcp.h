@@ -33,7 +33,6 @@ class RateLimiter;
 class ReceiveStatisticsProvider;
 class RemoteBitrateEstimator;
 class RtcEventLog;
-class RtpReceiver;
 class Transport;
 class VideoBitrateAllocationObserver;
 

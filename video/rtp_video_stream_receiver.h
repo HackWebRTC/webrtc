@@ -47,7 +47,6 @@ class ReceiveStatistics;
 class ReceiveStatisticsProxy;
 class RtcpRttStats;
 class RtpPacketReceived;
-class RtpReceiver;
 class Transport;
 class UlpfecReceiver;
 
