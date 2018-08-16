@@ -79,7 +79,7 @@ class VideoQualityTestFixtureInterface {
       std::string graph_data_output_filename;
       std::string graph_title;
     } analyzer;
-    NetworkSimulationInterface::SimulatedNetworkConfig pipe;
+    DefaultNetworkSimulationConfig pipe;
     struct SS {                          // Spatial scalability.
       std::vector<VideoStream> streams;  // If empty, one stream is assumed.
       size_t selected_stream;
