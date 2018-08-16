@@ -284,8 +284,8 @@ void AecState::Update(
 
   // Flag whether the initial state is still active.
   if (use_short_initial_state_) {
-    initial_state_ =
-        blocks_with_proper_filter_adaptation_ < 2.5f * kNumBlocksPerSecond;
+    initial_state_ = blocks_with_proper_filter_adaptation_ <
+                     config_.filter.initial_state_seconds * kNumBlocksPerSecond;
   } else {
     initial_state_ =
         blocks_with_proper_filter_adaptation_ < 5 * kNumBlocksPerSecond;

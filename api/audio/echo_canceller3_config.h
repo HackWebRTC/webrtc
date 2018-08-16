@@ -53,6 +53,7 @@ struct EchoCanceller3Config {
     ShadowConfiguration shadow_initial = {12, 0.9f, 20075344.f};
 
     size_t config_change_duration_blocks = 250;
+    float initial_state_seconds = 2.5f;
   } filter;
 
   struct Erle {
