@@ -141,6 +141,28 @@ void ReadParam(const Json::Value& root,
   }
 }
 
+void ReadParam(const Json::Value& root,
+               std::string param_name,
+               EchoCanceller3Config::Suppressor::MaskingThresholds* param) {
+  RTC_CHECK(param);
+  Json::Value json_array;
+  if (rtc::GetValueFromJsonObject(root, param_name, &json_array)) {
+    std::vector<double> v;
+    rtc::JsonArrayToDoubleVector(json_array, &v);
+    if (v.size() != 3) {
+      std::cout << "Incorrect array size for " << param_name << std::endl;
+      RTC_CHECK(false);
+    }
+    param->enr_transparent = static_cast<float>(v[0]);
+    param->enr_suppress = static_cast<float>(v[1]);
+    param->emr_transparent = static_cast<float>(v[2]);
+
+    std::cout << param_name << ":"
+              << "[" << param->enr_transparent << "," << param->enr_suppress
+              << "," << param->emr_transparent << "]" << std::endl;
+  }
+}
+
 EchoCanceller3Config ParseAec3Parameters(const std::string& filename) {
   EchoCanceller3Config cfg;
   Json::Value root;
@@ -250,6 +272,9 @@ EchoCanceller3Config ParseAec3Parameters(const std::string& filename) {
     ReadParam(section, "normal", &cfg.gain_updates.normal);
     ReadParam(section, "saturation", &cfg.gain_updates.saturation);
     ReadParam(section, "nonlinear", &cfg.gain_updates.nonlinear);
+    ReadParam(section, "max_inc_factor", &cfg.gain_updates.max_inc_factor);
+    ReadParam(section, "max_dec_factor_lf",
+              &cfg.gain_updates.max_dec_factor_lf);
     ReadParam(section, "floor_first_increase",
               &cfg.gain_updates.floor_first_increase);
   }
@@ -291,6 +316,15 @@ EchoCanceller3Config ParseAec3Parameters(const std::string& filename) {
               &cfg.echo_model.render_post_window_size_init);
     ReadParam(section, "nonlinear_hold", &cfg.echo_model.nonlinear_hold);
     ReadParam(section, "nonlinear_release", &cfg.echo_model.nonlinear_release);
+  }
+
+  if (rtc::GetValueFromJsonObject(root, "suppressor", &section)) {
+    ReadParam(section, "bands_with_reliable_coherence",
+              &cfg.suppressor.bands_with_reliable_coherence);
+    ReadParam(section, "nearend_average_blocks",
+              &cfg.suppressor.nearend_average_blocks);
+    ReadParam(section, "mask_lf", &cfg.suppressor.mask_lf);
+    ReadParam(section, "mask_hf", &cfg.suppressor.mask_hf);
   }
 
   std::cout << std::endl;
