@@ -44,7 +44,6 @@ bool VCMEncoderDataBase::SetSendCodec(const VideoCodec* send_codec,
   RTC_DCHECK_GE(number_of_cores, 1);
   // Make sure the start bit rate is sane...
   RTC_DCHECK_LE(send_codec->startBitrate, 1000000);
-  RTC_DCHECK(send_codec->codecType != kVideoCodecUnknown);
   bool reset_required = pending_encoder_reset_;
   if (number_of_cores_ != number_of_cores) {
     number_of_cores_ = number_of_cores;
@@ -155,15 +154,8 @@ bool VCMEncoderDataBase::RequiresEncoderReset(
       }
       break;
 
-    case kVideoCodecGeneric:
+    default:
       break;
-    // Known codecs without payload-specifics
-    case kVideoCodecI420:
-    case kVideoCodecMultiplex:
-      break;
-    // Unknown codec type, reset just to be sure.
-    case kVideoCodecUnknown:
-      return true;
   }
 
   for (unsigned char i = 0; i < new_send_codec.numberOfSimulcastStreams; ++i) {

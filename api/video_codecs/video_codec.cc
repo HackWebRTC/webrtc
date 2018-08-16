@@ -62,7 +62,7 @@ bool SpatialLayer::operator==(const SpatialLayer& other) const {
 }
 
 VideoCodec::VideoCodec()
-    : codecType(kVideoCodecUnknown),
+    : codecType(kVideoCodecGeneric),
       plType(0),
       width(0),
       height(0),
@@ -133,12 +133,9 @@ const char* CodecTypeToPayloadString(VideoCodecType type) {
     case kVideoCodecI420:
       return kPayloadNameI420;
     // Other codecs default to generic.
-    case kVideoCodecMultiplex:
-    case kVideoCodecGeneric:
-    case kVideoCodecUnknown:
+    default:
       return kPayloadNameGeneric;
   }
-  return kPayloadNameGeneric;
 }
 
 VideoCodecType PayloadStringToCodecType(const std::string& name) {

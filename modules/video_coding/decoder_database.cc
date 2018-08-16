@@ -81,9 +81,6 @@ bool VCMDecoderDataBase::RegisterReceiveCodec(const VideoCodec* receive_codec,
   }
   // If payload value already exists, erase old and insert new.
   DeregisterReceiveCodec(receive_codec->plType);
-  if (receive_codec->codecType == kVideoCodecUnknown) {
-    return false;
-  }
   VideoCodec* new_receive_codec = new VideoCodec(*receive_codec);
   dec_map_[receive_codec->plType] = new VCMDecoderMapItem(
       new_receive_codec, number_of_cores, require_key_frame);

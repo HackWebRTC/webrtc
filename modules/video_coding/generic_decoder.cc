@@ -188,7 +188,7 @@ VCMGenericDecoder::VCMGenericDecoder(VideoDecoder* decoder, bool isExternal)
       _frameInfos(),
       _nextFrameInfoIdx(0),
       decoder_(decoder),
-      _codecType(kVideoCodecUnknown),
+      _codecType(kVideoCodecGeneric),
       _isExternal(isExternal),
       _last_keyframe_content_type(VideoContentType::UNSPECIFIED) {
   RTC_DCHECK(decoder_);

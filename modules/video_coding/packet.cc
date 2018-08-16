@@ -26,7 +26,7 @@ VCMPacket::VCMPacket()
       markerBit(false),
       timesNacked(-1),
       frameType(kEmptyFrame),
-      codec(kVideoCodecUnknown),
+      codec(kVideoCodecGeneric),
       is_first_packet_in_frame(false),
       completeNALU(kNaluUnset),
       insertStartCode(false),

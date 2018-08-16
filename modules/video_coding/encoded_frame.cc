@@ -17,9 +17,9 @@ VCMEncodedFrame::VCMEncodedFrame()
       _renderTimeMs(-1),
       _payloadType(0),
       _missingFrame(false),
-      _codec(kVideoCodecUnknown),
+      _codec(kVideoCodecGeneric),
       _rotation_set(false) {
-  _codecSpecificInfo.codecType = kVideoCodecUnknown;
+  _codecSpecificInfo.codecType = kVideoCodecGeneric;
 }
 
 VCMEncodedFrame::~VCMEncodedFrame() {
@@ -44,8 +44,8 @@ void VCMEncodedFrame::Reset() {
   _completeFrame = false;
   _missingFrame = false;
   _length = 0;
-  _codecSpecificInfo.codecType = kVideoCodecUnknown;
-  _codec = kVideoCodecUnknown;
+  _codecSpecificInfo.codecType = kVideoCodecGeneric;
+  _codec = kVideoCodecGeneric;
   rotation_ = kVideoRotation_0;
   content_type_ = VideoContentType::UNSPECIFIED;
   timing_.flags = VideoSendTiming::kInvalid;
@@ -138,7 +138,7 @@ void VCMEncodedFrame::CopyCodecSpecific(const RTPVideoHeader* header) {
         break;
       }
       default: {
-        _codecSpecificInfo.codecType = kVideoCodecUnknown;
+        _codecSpecificInfo.codecType = kVideoCodecGeneric;
         break;
       }
     }

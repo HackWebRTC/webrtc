@@ -43,7 +43,7 @@ VCMGenericEncoder::VCMGenericEncoder(
       internal_source_(internal_source),
       encoder_params_({VideoBitrateAllocation(), 0, 0, 0}),
       streams_or_svc_num_(0),
-      codec_type_(VideoCodecType::kVideoCodecUnknown) {}
+      codec_type_(VideoCodecType::kVideoCodecGeneric) {}
 
 VCMGenericEncoder::~VCMGenericEncoder() {}
 

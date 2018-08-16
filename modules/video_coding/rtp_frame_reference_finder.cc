@@ -88,21 +88,9 @@ RtpFrameReferenceFinder::ManageFrameInternal(RtpFrameObject* frame) {
       return ManageFrameVp8(frame);
     case kVideoCodecVP9:
       return ManageFrameVp9(frame);
-    // Since the EndToEndTests use kVicdeoCodecUnknow we treat it the same as
-    // kVideoCodecGeneric.
-    // TODO(philipel): Take a look at the EndToEndTests and see if maybe they
-    //                 should be changed to use kVideoCodecGeneric instead.
-    case kVideoCodecUnknown:
-    case kVideoCodecH264:
-    case kVideoCodecI420:
-    case kVideoCodecMultiplex:
-    case kVideoCodecGeneric:
+    default:
       return ManageFrameGeneric(frame, kNoPictureId);
   }
-
-  // If not all code paths return a value it makes the win compiler sad.
-  RTC_NOTREACHED();
-  return kDrop;
 }
 
 void RtpFrameReferenceFinder::PaddingReceived(uint16_t seq_num) {

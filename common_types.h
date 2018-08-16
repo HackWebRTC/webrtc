@@ -333,17 +333,18 @@ enum Profile {
 // Video codec types
 enum VideoCodecType {
   // There are various memset(..., 0, ...) calls in the code that rely on
-  // kVideoCodecUnknown being zero.
-  kVideoCodecUnknown = 0,
+  // kVideoCodecGeneric being zero.
+  kVideoCodecGeneric = 0,
   kVideoCodecVP8,
   kVideoCodecVP9,
   kVideoCodecH264,
   kVideoCodecI420,
-  kVideoCodecGeneric,
   kVideoCodecMultiplex,
+  // DEPRECATED. Do not use.
+  kVideoCodecUnknown,
 
   // TODO(nisse): Deprecated aliases, for code expecting RtpVideoCodecTypes.
-  kRtpVideoNone = kVideoCodecUnknown,
+  kRtpVideoNone = kVideoCodecGeneric,
   kRtpVideoGeneric = kVideoCodecGeneric,
   kRtpVideoVp8 = kVideoCodecVP8,
   kRtpVideoVp9 = kVideoCodecVP9,

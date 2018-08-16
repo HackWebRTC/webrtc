@@ -25,7 +25,7 @@ namespace webrtc {
 const size_t kIvfHeaderSize = 32;
 
 IvfFileWriter::IvfFileWriter(rtc::File file, size_t byte_limit)
-    : codec_type_(kVideoCodecUnknown),
+    : codec_type_(kVideoCodecGeneric),
       bytes_written_(0),
       byte_limit_(byte_limit),
       num_frames_(0),
