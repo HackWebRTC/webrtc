@@ -24,7 +24,9 @@
 #include "modules/audio_processing/audio_buffer.h"
 #include "modules/audio_processing/common.h"
 #include "modules/audio_processing/echo_cancellation_impl.h"
+#include "modules/audio_processing/echo_cancellation_proxy.h"
 #include "modules/audio_processing/echo_control_mobile_impl.h"
+#include "modules/audio_processing/echo_control_mobile_proxy.h"
 #include "modules/audio_processing/gain_control_for_experimental_agc.h"
 #include "modules/audio_processing/gain_control_impl.h"
 #include "modules/audio_processing/gain_controller2.h"
@@ -264,6 +266,8 @@ struct AudioProcessingImpl::ApmPublicSubmodules {
   // Accessed externally of APM without any lock acquired.
   std::unique_ptr<EchoCancellationImpl> echo_cancellation;
   std::unique_ptr<EchoControlMobileImpl> echo_control_mobile;
+  std::unique_ptr<EchoCancellationProxy> echo_cancellation_proxy;
+  std::unique_ptr<EchoControlMobileProxy> echo_control_mobile_proxy;
   std::unique_ptr<GainControlImpl> gain_control;
   std::unique_ptr<LevelEstimatorImpl> level_estimator;
   std::unique_ptr<NoiseSuppressionImpl> noise_suppression;
@@ -394,6 +398,11 @@ AudioProcessingImpl::AudioProcessingImpl(
         new EchoCancellationImpl(&crit_render_, &crit_capture_));
     public_submodules_->echo_control_mobile.reset(
         new EchoControlMobileImpl(&crit_render_, &crit_capture_));
+    public_submodules_->echo_cancellation_proxy.reset(new EchoCancellationProxy(
+        this, public_submodules_->echo_cancellation.get()));
+    public_submodules_->echo_control_mobile_proxy.reset(
+        new EchoControlMobileProxy(
+            this, public_submodules_->echo_control_mobile.get()));
     public_submodules_->gain_control.reset(
         new GainControlImpl(&crit_render_, &crit_capture_));
     public_submodules_->level_estimator.reset(
@@ -1714,11 +1723,11 @@ AudioProcessingStats AudioProcessingImpl::GetStatistics(
 }
 
 EchoCancellation* AudioProcessingImpl::echo_cancellation() const {
-  return public_submodules_->echo_cancellation.get();
+  return public_submodules_->echo_cancellation_proxy.get();
 }
 
 EchoControlMobile* AudioProcessingImpl::echo_control_mobile() const {
-  return public_submodules_->echo_control_mobile.get();
+  return public_submodules_->echo_control_mobile_proxy.get();
 }
 
 GainControl* AudioProcessingImpl::gain_control() const {
