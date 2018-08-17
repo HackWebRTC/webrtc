@@ -325,6 +325,10 @@ EchoCanceller3Config ParseAec3Parameters(const std::string& filename) {
               &cfg.suppressor.nearend_average_blocks);
     ReadParam(section, "mask_lf", &cfg.suppressor.mask_lf);
     ReadParam(section, "mask_hf", &cfg.suppressor.mask_hf);
+    ReadParam(section, "enforce_transparent",
+              &cfg.suppressor.enforce_transparent);
+    ReadParam(section, "enforce_empty_higher_bands",
+              &cfg.suppressor.enforce_empty_higher_bands);
   }
 
   std::cout << std::endl;

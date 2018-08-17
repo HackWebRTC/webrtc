@@ -470,6 +470,13 @@ void SuppressionGain::GetGain(
     std::array<float, kFftLengthBy2Plus1>* low_band_gain) {
   RTC_DCHECK(high_bands_gain);
   RTC_DCHECK(low_band_gain);
+  const auto& cfg = config_.suppressor;
+
+  if (cfg.enforce_transparent) {
+    low_band_gain->fill(1.f);
+    *high_bands_gain = cfg.enforce_empty_higher_bands ? 0.f : 1.f;
+    return;
+  }
 
   std::array<float, kFftLengthBy2Plus1> nearend_average;
   moving_average_.Average(nearend_spectrum, nearend_average);
@@ -482,13 +489,12 @@ void SuppressionGain::GetGain(
                 comfort_noise_spectrum, low_band_gain);
 
   // Adjust the gain for bands where the coherence indicates not echo.
-  if (config_.suppressor.bands_with_reliable_coherence > 0 &&
+  if (cfg.bands_with_reliable_coherence > 0 &&
       !enable_transparency_improvements_) {
     std::array<float, kFftLengthBy2Plus1> G_coherence;
     coherence_gain_.ComputeGain(linear_aec_fft, render_fft, capture_fft,
                                 G_coherence);
-    for (size_t k = 0; k < config_.suppressor.bands_with_reliable_coherence;
-         ++k) {
+    for (size_t k = 0; k < cfg.bands_with_reliable_coherence; ++k) {
       (*low_band_gain)[k] = std::max((*low_band_gain)[k], G_coherence[k]);
     }
   }
@@ -504,6 +510,9 @@ void SuppressionGain::GetGain(
   // Compute the gain for the upper bands.
   *high_bands_gain = UpperBandsGain(narrow_peak_band, aec_state.SaturatedEcho(),
                                     render, *low_band_gain);
+  if (cfg.enforce_empty_higher_bands) {
+    *high_bands_gain = 0.f;
+  }
 }
 
 void SuppressionGain::SetInitialState(bool state) {
