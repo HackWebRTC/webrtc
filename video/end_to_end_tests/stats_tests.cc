@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "api/test/simulated_network.h"
 #include "modules/rtp_rtcp/source/rtp_utility.h"
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "system_wrappers/include/metrics.h"
@@ -228,7 +229,7 @@ TEST_F(StatsEndToEndTest, GetStats) {
     test::PacketTransport* CreateSendTransport(
         test::SingleThreadedTaskQueueForTesting* task_queue,
         Call* sender_call) override {
-      FakeNetworkPipe::Config network_config;
+      DefaultNetworkSimulationConfig network_config;
       network_config.loss_percent = 5;
       return new test::PacketTransport(task_queue, sender_call, this,
                                        test::PacketTransport::kSender,
@@ -707,7 +708,7 @@ TEST_F(StatsEndToEndTest, CallReportsRttForSender) {
   std::unique_ptr<test::DirectTransport> receiver_transport;
 
   task_queue_.SendTask([this, &sender_transport, &receiver_transport]() {
-    FakeNetworkPipe::Config config;
+    DefaultNetworkSimulationConfig config;
     config.queue_delay_ms = kSendDelayMs;
     CreateCalls();
     sender_transport = absl::make_unique<test::DirectTransport>(

@@ -459,8 +459,10 @@ rtc_source_set("direct_transport") {
   }
   deps = [
     "..:webrtc_common",
+    "../api:simulated_network_api",
     "../api:transport_api",
     "../call:call_interfaces",
+    "../call:simulated_packet_receiver",
     "../modules/rtp_rtcp",
     "../rtc_base:rtc_base_approved",
     "../rtc_base:sequenced_task_checker",
@@ -538,6 +540,7 @@ rtc_source_set("test_common") {
     ":video_test_common",
     "..:webrtc_common",
     "../api:libjingle_peerconnection_api",
+    "../api:simulated_network_api",
     "../api:transport_api",
     "../api/audio_codecs:builtin_audio_decoder_factory",
     "../api/audio_codecs:builtin_audio_encoder_factory",
@@ -548,6 +551,7 @@ rtc_source_set("test_common") {
     "../call",
     "../call:call_interfaces",
     "../call:rtp_sender",
+    "../call:simulated_packet_receiver",
     "../call:video_stream_api",
     "../common_video",
     "../logging:rtc_event_log_api",

@@ -99,6 +99,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":audio",
+      "../api:simulated_network_api",
       "../system_wrappers:system_wrappers",
       "../test:test_common",
       "../test:test_support",
@@ -175,6 +176,7 @@ if (rtc_include_tests) {
 
       deps = [
         ":audio_end_to_end_test",
+        "../api:simulated_network_api",
         "../common_audio",
         "../rtc_base:rtc_base_approved",
         "../system_wrappers",
@@ -246,6 +248,7 @@ if (rtc_include_tests) {
       "test/audio_bwe_integration_test.h",
     ]
     deps = [
+      "../api:simulated_network_api",
       "../common_audio",
       "../rtc_base:rtc_base_approved",
       "../system_wrappers",

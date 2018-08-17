@@ -261,6 +261,17 @@ rtc_source_set("simulated_network") {
   ]
 }
 
+rtc_source_set("simulated_packet_receiver") {
+  sources = [
+    "simulated_packet_receiver.h",
+  ]
+  deps = [
+    ":call_interfaces",
+    "../api:simulated_network_api",
+    "../modules:module_api",
+  ]
+}
+
 rtc_source_set("fake_network") {
   sources = [
     "fake_network_pipe.cc",
@@ -269,6 +280,7 @@ rtc_source_set("fake_network") {
   deps = [
     ":call_interfaces",
     ":simulated_network",
+    ":simulated_packet_receiver",
     "..:webrtc_common",
     "../api:simulated_network_api",
     "../api:transport_api",
@@ -360,6 +372,7 @@ if (rtc_include_tests) {
       ":call_interfaces",
       ":video_stream_api",
       "..:webrtc_common",
+      "../api:simulated_network_api",
       "../api/audio_codecs:builtin_audio_encoder_factory",
       "../api/video:video_bitrate_allocation",
       "../api/video_codecs:video_codecs_api",

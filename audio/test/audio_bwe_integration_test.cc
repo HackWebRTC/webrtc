@@ -115,8 +115,8 @@ class NoBandwidthDropAfterDtx : public AudioBweTest {
     return test::ResourcePath("voice_engine/audio_dtx16", "wav");
   }
 
-  FakeNetworkPipe::Config GetNetworkPipeConfig() override {
-    FakeNetworkPipe::Config pipe_config;
+  DefaultNetworkSimulationConfig GetNetworkPipeConfig() override {
+    DefaultNetworkSimulationConfig pipe_config;
     pipe_config.link_capacity_kbps = 50;
     pipe_config.queue_length_packets = 1500;
     pipe_config.queue_delay_ms = 300;

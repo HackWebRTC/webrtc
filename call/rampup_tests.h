@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "api/test/simulated_network.h"
 #include "call/call.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "rtc_base/event.h"
@@ -64,7 +65,7 @@ class RampUpTester : public test::EndToEndTest {
 
   rtc::Event stop_event_;
   Clock* const clock_;
-  FakeNetworkPipe::Config forward_transport_config_;
+  DefaultNetworkSimulationConfig forward_transport_config_;
   const size_t num_video_streams_;
   const size_t num_audio_streams_;
   const size_t num_flexfec_streams_;

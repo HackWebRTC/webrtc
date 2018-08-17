@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "api/test/simulated_network.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "test/call_test.h"
 #include "test/gtest.h"
@@ -277,10 +278,10 @@ void RtpRtcpEndToEndTest::TestRtpStatePreservation(
     send_transport = absl::make_unique<test::PacketTransport>(
         &task_queue_, sender_call_.get(), &observer,
         test::PacketTransport::kSender, payload_type_map_,
-        FakeNetworkPipe::Config());
+        DefaultNetworkSimulationConfig());
     receive_transport = absl::make_unique<test::PacketTransport>(
         &task_queue_, nullptr, &observer, test::PacketTransport::kReceiver,
-        payload_type_map_, FakeNetworkPipe::Config());
+        payload_type_map_, DefaultNetworkSimulationConfig());
     send_transport->SetReceiver(receiver_call_->Receiver());
     receive_transport->SetReceiver(sender_call_->Receiver());
 
@@ -465,7 +466,7 @@ TEST_F(RtpRtcpEndToEndTest, TestFlexfecRtpStatePreservation) {
   task_queue_.SendTask([&]() {
     CreateCalls();
 
-    FakeNetworkPipe::Config lossy_delayed_link;
+    DefaultNetworkSimulationConfig lossy_delayed_link;
     lossy_delayed_link.loss_percent = 2;
     lossy_delayed_link.queue_delay_ms = 50;
 
@@ -474,7 +475,7 @@ TEST_F(RtpRtcpEndToEndTest, TestFlexfecRtpStatePreservation) {
         test::PacketTransport::kSender, payload_type_map_, lossy_delayed_link);
     send_transport->SetReceiver(receiver_call_->Receiver());
 
-    FakeNetworkPipe::Config flawless_link;
+    DefaultNetworkSimulationConfig flawless_link;
     receive_transport = absl::make_unique<test::PacketTransport>(
         &task_queue_, nullptr, &observer, test::PacketTransport::kReceiver,
         payload_type_map_, flawless_link);

@@ -22,7 +22,7 @@ namespace test {
 
 LayerFilteringTransport::LayerFilteringTransport(
     SingleThreadedTaskQueueForTesting* task_queue,
-    const FakeNetworkPipe::Config& config,
+    const DefaultNetworkSimulationConfig& config,
     Call* send_call,
     uint8_t vp8_video_payload_type,
     uint8_t vp9_video_payload_type,
@@ -42,7 +42,7 @@ LayerFilteringTransport::LayerFilteringTransport(
 
 LayerFilteringTransport::LayerFilteringTransport(
     SingleThreadedTaskQueueForTesting* task_queue,
-    std::unique_ptr<FakeNetworkPipe> pipe,
+    std::unique_ptr<SimulatedPacketReceiverInterface> pipe,
     Call* send_call,
     uint8_t vp8_video_payload_type,
     uint8_t vp9_video_payload_type,
@@ -62,7 +62,7 @@ LayerFilteringTransport::LayerFilteringTransport(
 
 LayerFilteringTransport::LayerFilteringTransport(
     SingleThreadedTaskQueueForTesting* task_queue,
-    const FakeNetworkPipe::Config& config,
+    const DefaultNetworkSimulationConfig& config,
     Call* send_call,
     uint8_t vp8_video_payload_type,
     uint8_t vp9_video_payload_type,
@@ -80,7 +80,7 @@ LayerFilteringTransport::LayerFilteringTransport(
 
 LayerFilteringTransport::LayerFilteringTransport(
     SingleThreadedTaskQueueForTesting* task_queue,
-    std::unique_ptr<FakeNetworkPipe> pipe,
+    std::unique_ptr<SimulatedPacketReceiverInterface> pipe,
     Call* send_call,
     uint8_t vp8_video_payload_type,
     uint8_t vp9_video_payload_type,

@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "api/test/simulated_network.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "test/call_test.h"
@@ -239,7 +240,7 @@ class FlexfecRenderObserver : public test::EndToEndTest,
       Call* sender_call) override {
     // At low RTT (< kLowRttNackMs) -> NACK only, no FEC.
     const int kNetworkDelayMs = 100;
-    FakeNetworkPipe::Config config;
+    DefaultNetworkSimulationConfig config;
     config.queue_delay_ms = kNetworkDelayMs;
     return new test::PacketTransport(task_queue, sender_call, this,
                                      test::PacketTransport::kSender,
@@ -424,7 +425,7 @@ TEST_P(FecEndToEndTest, ReceivedUlpfecPacketsNotNacked) {
       // At low RTT (< kLowRttNackMs) -> NACK only, no FEC.
       // Configure some network delay.
       const int kNetworkDelayMs = 50;
-      FakeNetworkPipe::Config config;
+      DefaultNetworkSimulationConfig config;
       config.queue_delay_ms = kNetworkDelayMs;
       return new test::PacketTransport(task_queue, sender_call, this,
                                        test::PacketTransport::kSender,

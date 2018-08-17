@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "api/test/simulated_network.h"
 #include "modules/video_coding/codecs/h264/include/h264.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
@@ -149,13 +150,13 @@ class MultiCodecReceiveTest : public test::CallTest {
       send_transport_.reset(new test::PacketTransport(
           &task_queue_, sender_call_.get(), &observer_,
           test::PacketTransport::kSender, kPayloadTypeMap,
-          FakeNetworkPipe::Config()));
+          DefaultNetworkSimulationConfig()));
       send_transport_->SetReceiver(receiver_call_->Receiver());
 
       receive_transport_.reset(new test::PacketTransport(
           &task_queue_, receiver_call_.get(), &observer_,
           test::PacketTransport::kReceiver, kPayloadTypeMap,
-          FakeNetworkPipe::Config()));
+          DefaultNetworkSimulationConfig()));
       receive_transport_->SetReceiver(sender_call_->Receiver());
     });
   }

@@ -424,6 +424,7 @@ if (rtc_include_tests) {
       ":video",
       ":video_mocks",
       ":video_stream_encoder_impl",
+      "../api:simulated_network_api",
       "../api/video:video_frame",
       "../api/video:video_frame_i420",
       "../api/video_codecs:video_codecs_api",

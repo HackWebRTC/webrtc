@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "api/test/simulated_network.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/timeutils.h"
 #include "test/call_test.h"
@@ -93,7 +94,8 @@ class ReportedReceiveTimeTester : public test::EndToEndTest {
       Call* sender_call) override {
     return send_transport_ = new test::PacketTransport(
                task_queue, sender_call, this, test::PacketTransport::kSender,
-               test::CallTest::payload_type_map_, FakeNetworkPipe::Config());
+               test::CallTest::payload_type_map_,
+               DefaultNetworkSimulationConfig());
   }
   void PerformTest() override {
     observation_complete_.Wait(test::CallTest::kDefaultTimeoutMs);

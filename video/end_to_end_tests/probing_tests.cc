@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "api/test/simulated_network.h"
 #include "test/call_test.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
@@ -220,7 +221,7 @@ TEST_P(ProbingEndToEndTest, ProbeOnVideoEncoderReconfiguration) {
         Call* sender_call) override {
       send_transport_ = new test::PacketTransport(
           task_queue, sender_call, this, test::PacketTransport::kSender,
-          CallTest::payload_type_map_, FakeNetworkPipe::Config());
+          CallTest::payload_type_map_, DefaultNetworkSimulationConfig());
       return send_transport_;
     }
 
@@ -239,7 +240,7 @@ TEST_P(ProbingEndToEndTest, ProbeOnVideoEncoderReconfiguration) {
             // bitrate).
             if (stats.send_bandwidth_bps >= 250000 &&
                 stats.send_bandwidth_bps <= 350000) {
-              FakeNetworkPipe::Config config;
+              DefaultNetworkSimulationConfig config;
               config.link_capacity_kbps = 200;
               send_transport_->SetConfig(config);
 
@@ -254,7 +255,7 @@ TEST_P(ProbingEndToEndTest, ProbeOnVideoEncoderReconfiguration) {
             break;
           case 1:
             if (stats.send_bandwidth_bps <= 210000) {
-              FakeNetworkPipe::Config config;
+              DefaultNetworkSimulationConfig config;
               config.link_capacity_kbps = 5000;
               send_transport_->SetConfig(config);
 

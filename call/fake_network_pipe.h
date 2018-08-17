@@ -22,8 +22,8 @@
 #include "api/call/transport.h"
 #include "api/test/simulated_network.h"
 #include "call/call.h"
+#include "call/simulated_packet_receiver.h"
 #include "common_types.h"  // NOLINT(build/include)
-#include "modules/include/module.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/thread_annotations.h"
@@ -87,7 +87,8 @@ class NetworkPacket {
 
 // Class faking a network link, internally is uses an implementation of a
 // SimulatedNetworkInterface to simulate network behavior.
-class FakeNetworkPipe : public Transport, public PacketReceiver, public Module {
+class FakeNetworkPipe : public webrtc::SimulatedPacketReceiverInterface,
+                        public Transport {
  public:
   using Config = NetworkSimulationInterface::SimulatedNetworkConfig;
 
@@ -135,15 +136,16 @@ class FakeNetworkPipe : public Transport, public PacketReceiver, public Module {
 
   ~FakeNetworkPipe() override;
 
-  void SetClockOffset(int64_t offset_ms);
+  // Deprecated. DO NOT USE. Will be removed soon.
+  void SetClockOffset(int64_t offset_ms) override;
 
   // Deprecated. DO NOT USE. Hold direct reference on NetworkSimulationInterface
   // instead and call SetConfig on that object directly. Will be removed soon.
   // Sets a new configuration. This won't affect packets already in the pipe.
-  void SetConfig(const FakeNetworkPipe::Config& config);
+  void SetConfig(const DefaultNetworkSimulationConfig& config) override;
 
   // Must not be called in parallel with DeliverPacket or Process.
-  void SetReceiver(PacketReceiver* receiver);
+  void SetReceiver(PacketReceiver* receiver) override;
 
   // Implements Transport interface. When/if packets are delivered, they will
   // be passed to the transport instance given in SetReceiverTransport(). These
@@ -174,7 +176,7 @@ class FakeNetworkPipe : public Transport, public PacketReceiver, public Module {
 
   // Get statistics.
   float PercentageLoss();
-  int AverageDelay();
+  int AverageDelay() override;
   size_t DroppedPackets();
   size_t SentPackets();
   void ResetStats();

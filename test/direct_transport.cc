@@ -11,6 +11,7 @@
 
 #include "absl/memory/memory.h"
 #include "call/call.h"
+#include "call/fake_network_pipe.h"
 #include "modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "system_wrappers/include/clock.h"
 #include "test/single_threaded_task_queue.h"
@@ -40,13 +41,13 @@ DirectTransport::DirectTransport(
     Call* send_call,
     const std::map<uint8_t, MediaType>& payload_type_map)
     : DirectTransport(task_queue,
-                      FakeNetworkPipe::Config(),
+                      DefaultNetworkSimulationConfig(),
                       send_call,
                       payload_type_map) {}
 
 DirectTransport::DirectTransport(
     SingleThreadedTaskQueueForTesting* task_queue,
-    const FakeNetworkPipe::Config& config,
+    const DefaultNetworkSimulationConfig& config,
     Call* send_call,
     const std::map<uint8_t, MediaType>& payload_type_map)
     : send_call_(send_call),
@@ -59,7 +60,7 @@ DirectTransport::DirectTransport(
 
 DirectTransport::DirectTransport(
     SingleThreadedTaskQueueForTesting* task_queue,
-    std::unique_ptr<FakeNetworkPipe> pipe,
+    std::unique_ptr<SimulatedPacketReceiverInterface> pipe,
     Call* send_call,
     const std::map<uint8_t, MediaType>& payload_type_map)
     : send_call_(send_call),
@@ -81,7 +82,7 @@ void DirectTransport::SetClockOffset(int64_t offset_ms) {
   fake_network_->SetClockOffset(offset_ms);
 }
 
-void DirectTransport::SetConfig(const FakeNetworkPipe::Config& config) {
+void DirectTransport::SetConfig(const DefaultNetworkSimulationConfig& config) {
   fake_network_->SetConfig(config);
 }
 
