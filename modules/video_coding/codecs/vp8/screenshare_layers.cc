@@ -292,6 +292,7 @@ void ScreenshareLayers::PopulateCodecSpecific(
       vp8_info->layerSync = true;
       layers_[0].state = TemporalLayer::State::kKeyFrame;
       layers_[1].state = TemporalLayer::State::kKeyFrame;
+      active_layer_ = 1;
     }
   }
 }

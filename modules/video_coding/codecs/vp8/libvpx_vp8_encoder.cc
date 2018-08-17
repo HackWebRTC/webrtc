@@ -27,6 +27,7 @@
 namespace webrtc {
 namespace {
 const char kVp8GfBoostFieldTrial[] = "WebRTC-VP8-GfBoost";
+const char kVp8DontDropKeyframeFieldTrial[] = "WebRTC-Vp8DontDropKeyFrames";
 
 // QP is obtained from VP8-bitstream for HW, so the QP corresponds to the
 // bitstream range of [0, 127] and not the user-level range of [0,63].
@@ -152,6 +153,8 @@ vpx_enc_frame_flags_t LibvpxVp8Encoder::EncodeFlags(
 
 LibvpxVp8Encoder::LibvpxVp8Encoder()
     : use_gf_boost_(webrtc::field_trial::IsEnabled(kVp8GfBoostFieldTrial)),
+      prevent_kf_drop_(
+          !webrtc::field_trial::IsDisabled(kVp8DontDropKeyframeFieldTrial)),
       encoded_complete_callback_(nullptr),
       inited_(false),
       timestamp_(0),
@@ -722,6 +725,9 @@ int LibvpxVp8Encoder::Encode(const VideoFrame& frame,
   for (size_t i = 0; i < encoders_.size(); ++i) {
     tl_configs[i] = temporal_layers_[i]->UpdateLayerConfig(frame.timestamp());
     if (tl_configs[i].drop_frame) {
+      if (send_key_frame && prevent_kf_drop_) {
+        continue;
+      }
       // Drop this frame.
       return WEBRTC_VIDEO_CODEC_OK;
     }
