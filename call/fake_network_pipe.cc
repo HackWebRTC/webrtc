@@ -44,23 +44,6 @@ NetworkPacket::NetworkPacket(rtc::CopyOnWriteBuffer packet,
       media_type_(media_type),
       packet_time_us_(packet_time_us) {}
 
-NetworkPacket::NetworkPacket(rtc::CopyOnWriteBuffer packet,
-                             int64_t send_time,
-                             int64_t arrival_time,
-                             absl::optional<PacketOptions> packet_options,
-                             bool is_rtcp,
-                             MediaType media_type,
-                             absl::optional<PacketTime> packet_time)
-    : NetworkPacket(packet,
-                    send_time,
-                    arrival_time,
-                    packet_options,
-                    is_rtcp,
-                    media_type,
-                    packet_time
-                        ? absl::optional<int64_t>(packet_time->timestamp)
-                        : absl::nullopt) {}
-
 NetworkPacket::NetworkPacket(NetworkPacket&& o)
     : packet_(std::move(o.packet_)),
       send_time_(o.send_time_),
@@ -215,25 +198,11 @@ bool FakeNetworkPipe::EnqueuePacket(rtc::CopyOnWriteBuffer packet,
                                     bool is_rtcp,
                                     MediaType media_type,
                                     absl::optional<int64_t> packet_time_us) {
-  absl::optional<PacketTime> packet_time;
-  if (packet_time_us) {
-    packet_time = PacketTime(*packet_time_us, -1);
-  }
-  return EnqueuePacket(packet, options, is_rtcp, media_type, packet_time);
-}
-
-bool FakeNetworkPipe::EnqueuePacket(rtc::CopyOnWriteBuffer packet,
-                                    absl::optional<PacketOptions> options,
-                                    bool is_rtcp,
-                                    MediaType media_type,
-                                    absl::optional<PacketTime> packet_time) {
   int64_t time_now_us = clock_->TimeInMicroseconds();
   rtc::CritScope crit(&process_lock_);
   size_t packet_size = packet.size();
-  NetworkPacket net_packet(
-      std::move(packet), time_now_us, time_now_us, options, is_rtcp, media_type,
-      packet_time ? absl::optional<int64_t>(packet_time->timestamp)
-                  : absl::nullopt);
+  NetworkPacket net_packet(std::move(packet), time_now_us, time_now_us, options,
+                           is_rtcp, media_type, packet_time_us);
 
   packets_in_flight_.emplace_back(StoredPacket(std::move(net_packet)));
   int64_t packet_id = reinterpret_cast<uint64_t>(&packets_in_flight_.back());

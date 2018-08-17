@@ -404,24 +404,6 @@ struct OverUseDetectorOptions {
   double initial_var_noise;
 };
 
-// TODO(nisse): This struct is phased out, delete as soon as down stream code is
-// updated.
-
-// This structure will have the information about when packet is actually
-// received by socket.
-struct PacketTime {
-  PacketTime() : timestamp(-1), not_before(-1) {}
-  PacketTime(int64_t timestamp, int64_t not_before)
-      : timestamp(timestamp), not_before(not_before) {}
-
-  int64_t timestamp;   // Receive time after socket delivers the data.
-  int64_t not_before;  // Earliest possible time the data could have arrived,
-                       // indicating the potential error in the |timestamp|
-                       // value,in case the system is busy.
-                       // For example, the time of the last select() call.
-                       // If unknown, this value will be set to zero.
-};
-
 // Minimum and maximum playout delay values from capture to render.
 // These are best effort values.
 //

@@ -43,14 +43,6 @@ class NetworkPacket {
                 bool is_rtcp,
                 MediaType media_type,
                 absl::optional<int64_t> packet_time_us);
-  // TODO(nisse): Deprecated.
-  NetworkPacket(rtc::CopyOnWriteBuffer packet,
-                int64_t send_time,
-                int64_t arrival_time,
-                absl::optional<PacketOptions> packet_options,
-                bool is_rtcp,
-                MediaType media_type,
-                absl::optional<PacketTime> packet_time);
 
   // Disallow copy constructor and copy assignment (no deep copies of |data_|).
   NetworkPacket(const NetworkPacket&) = delete;
@@ -74,10 +66,6 @@ class NetworkPacket {
   bool is_rtcp() const { return is_rtcp_; }
   MediaType media_type() const { return media_type_; }
   absl::optional<int64_t> packet_time_us() const { return packet_time_us_; }
-  // TODO(nisse): Deprecated.
-  PacketTime packet_time() const {
-    return PacketTime(packet_time_us_.value_or(-1), -1);
-  }
 
  private:
   rtc::CopyOnWriteBuffer packet_;
@@ -218,19 +206,11 @@ class FakeNetworkPipe : public Transport, public PacketReceiver, public Module {
                              MediaType media_type,
                              absl::optional<int64_t> packet_time_us);
 
-  // TODO(nisse): Deprecated. Delete as soon as overrides in downstream code are
-  // updated.
-  virtual bool EnqueuePacket(rtc::CopyOnWriteBuffer packet,
-                             absl::optional<PacketOptions> options,
-                             bool is_rtcp,
-                             MediaType media_type,
-                             absl::optional<PacketTime> packet_time);
   bool EnqueuePacket(rtc::CopyOnWriteBuffer packet,
                      absl::optional<PacketOptions> options,
                      bool is_rtcp,
                      MediaType media_type) {
-    return EnqueuePacket(packet, options, is_rtcp, media_type,
-                         absl::optional<PacketTime>());
+    return EnqueuePacket(packet, options, is_rtcp, media_type, absl::nullopt);
   }
   void DeliverNetworkPacket(NetworkPacket* packet)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(config_lock_);

@@ -20,7 +20,6 @@ rtc_source_set("call_interfaces") {
     "call_config.h",
     "flexfec_receive_stream.cc",
     "flexfec_receive_stream.h",
-    "packet_receiver.cc",
     "packet_receiver.h",
     "syncable.cc",
     "syncable.h",
