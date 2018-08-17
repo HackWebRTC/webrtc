@@ -277,7 +277,7 @@ void AecDumpBasedSimulator::HandleMessage(
       std::cout << "Setting used in config:" << std::endl;
     }
     Config config;
-    AudioProcessing::Config apm_config;
+    AudioProcessing::Config apm_config = ap_->GetConfig();
 
     if (msg.has_aec_enabled() || settings_.use_aec) {
       bool enable = settings_.use_aec ? *settings_.use_aec : msg.aec_enabled();
