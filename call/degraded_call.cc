@@ -17,8 +17,8 @@
 namespace webrtc {
 DegradedCall::DegradedCall(
     std::unique_ptr<Call> call,
-    absl::optional<FakeNetworkPipe::Config> send_config,
-    absl::optional<FakeNetworkPipe::Config> receive_config)
+    absl::optional<DefaultNetworkSimulationConfig> send_config,
+    absl::optional<DefaultNetworkSimulationConfig> receive_config)
     : clock_(Clock::GetRealTimeClock()),
       call_(std::move(call)),
       send_config_(send_config),
@@ -27,8 +27,10 @@ DegradedCall::DegradedCall(
       num_send_streams_(0),
       receive_config_(receive_config) {
   if (receive_config_) {
+    auto network = absl::make_unique<SimulatedNetwork>(*receive_config_);
+    receive_simulated_network_ = network.get();
     receive_pipe_ =
-        absl::make_unique<webrtc::FakeNetworkPipe>(clock_, *receive_config_);
+        absl::make_unique<webrtc::FakeNetworkPipe>(clock_, std::move(network));
     receive_pipe_->SetReceiver(call_->Receiver());
   }
   if (send_process_thread_) {
@@ -68,7 +70,9 @@ VideoSendStream* DegradedCall::CreateVideoSendStream(
     VideoSendStream::Config config,
     VideoEncoderConfig encoder_config) {
   if (send_config_ && !send_pipe_) {
-    send_pipe_ = absl::make_unique<FakeNetworkPipe>(clock_, *send_config_,
+    auto network = absl::make_unique<SimulatedNetwork>(*send_config_);
+    send_simulated_network_ = network.get();
+    send_pipe_ = absl::make_unique<FakeNetworkPipe>(clock_, std::move(network),
                                                     config.send_transport);
     config.send_transport = this;
     send_process_thread_->RegisterModule(send_pipe_.get(), RTC_FROM_HERE);
@@ -83,7 +87,9 @@ VideoSendStream* DegradedCall::CreateVideoSendStream(
     VideoEncoderConfig encoder_config,
     std::unique_ptr<FecController> fec_controller) {
   if (send_config_ && !send_pipe_) {
-    send_pipe_ = absl::make_unique<FakeNetworkPipe>(clock_, *send_config_,
+    auto network = absl::make_unique<SimulatedNetwork>(*send_config_);
+    send_simulated_network_ = network.get();
+    send_pipe_ = absl::make_unique<FakeNetworkPipe>(clock_, std::move(network),
                                                     config.send_transport);
     config.send_transport = this;
     send_process_thread_->RegisterModule(send_pipe_.get(), RTC_FROM_HERE);

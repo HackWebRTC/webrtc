@@ -28,7 +28,7 @@ namespace webrtc {
 // capacity introduced delay.
 class SimulatedNetwork : public NetworkSimulationInterface {
  public:
-  using Config = NetworkSimulationInterface::SimulatedNetworkConfig;
+  using Config = DefaultNetworkSimulationConfig;
   explicit SimulatedNetwork(Config config, uint64_t random_seed = 1);
   ~SimulatedNetwork() override;
 
