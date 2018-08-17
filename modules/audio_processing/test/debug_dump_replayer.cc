@@ -200,10 +200,11 @@ void DebugDumpReplayer::MaybeRecreateApm(const audioproc::Config& msg) {
 void DebugDumpReplayer::ConfigureApm(const audioproc::Config& msg) {
   AudioProcessing::Config apm_config;
 
-  // AEC configs.
+  // AEC2/AECM configs.
   RTC_CHECK(msg.has_aec_enabled());
-  RTC_CHECK_EQ(AudioProcessing::kNoError,
-               apm_->echo_cancellation()->Enable(msg.aec_enabled()));
+  RTC_CHECK(msg.has_aecm_enabled());
+  apm_config.echo_canceller.enabled = msg.aec_enabled() || msg.aecm_enabled();
+  apm_config.echo_canceller.mobile_mode = msg.aecm_enabled();
 
   RTC_CHECK(msg.has_aec_drift_compensation_enabled());
   RTC_CHECK_EQ(AudioProcessing::kNoError,
@@ -215,11 +216,6 @@ void DebugDumpReplayer::ConfigureApm(const audioproc::Config& msg) {
                apm_->echo_cancellation()->set_suppression_level(
                    static_cast<EchoCancellation::SuppressionLevel>(
                        msg.aec_suppression_level())));
-
-  // AECM configs.
-  RTC_CHECK(msg.has_aecm_enabled());
-  RTC_CHECK_EQ(AudioProcessing::kNoError,
-               apm_->echo_control_mobile()->Enable(msg.aecm_enabled()));
 
   RTC_CHECK(msg.has_aecm_comfort_noise_enabled());
   RTC_CHECK_EQ(AudioProcessing::kNoError,

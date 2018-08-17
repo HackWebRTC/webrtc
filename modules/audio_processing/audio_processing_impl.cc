@@ -677,6 +677,13 @@ void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
   rtc::CritScope cs_render(&crit_render_);
   rtc::CritScope cs_capture(&crit_capture_);
 
+  static_cast<EchoCancellation*>(public_submodules_->echo_cancellation.get())
+      ->Enable(config_.echo_canceller.enabled &&
+               !config_.echo_canceller.mobile_mode);
+  static_cast<EchoControlMobile*>(public_submodules_->echo_control_mobile.get())
+      ->Enable(config_.echo_canceller.enabled &&
+               config_.echo_canceller.mobile_mode);
+
   InitializeLowCutFilter();
 
   RTC_LOG(LS_INFO) << "Highpass filter activated: "

@@ -403,6 +403,7 @@ TEST_F(DebugDumpTest, VerifyRefinedAdaptiveFilterExperimentalString) {
 TEST_F(DebugDumpTest, VerifyCombinedExperimentalStringInclusive) {
   Config config;
   AudioProcessing::Config apm_config;
+  apm_config.echo_canceller.enabled = true;
   config.Set<RefinedAdaptiveFilter>(new RefinedAdaptiveFilter(true));
   // Arbitrarily set clipping gain to 17, which will never be the default.
   config.Set<ExperimentalAgc>(new ExperimentalAgc(true, 0, 17));
@@ -463,6 +464,7 @@ TEST_F(DebugDumpTest, VerifyCombinedExperimentalStringExclusive) {
 TEST_F(DebugDumpTest, VerifyAec3ExperimentalString) {
   Config config;
   AudioProcessing::Config apm_config;
+  apm_config.echo_canceller.enabled = true;
   DebugDumpGenerator generator(config, apm_config, true);
   generator.StartRecording();
   generator.Process(100);
@@ -533,9 +535,11 @@ TEST_F(DebugDumpTest, VerifyEmptyExperimentalString) {
 
 TEST_F(DebugDumpTest, ToggleAecLevel) {
   Config config;
-  DebugDumpGenerator generator(config, AudioProcessing::Config());
+  AudioProcessing::Config apm_config;
+  apm_config.echo_canceller.enabled = true;
+  apm_config.echo_canceller.mobile_mode = false;
+  DebugDumpGenerator generator(config, apm_config);
   EchoCancellation* aec = generator.apm()->echo_cancellation();
-  EXPECT_EQ(AudioProcessing::kNoError, aec->Enable(true));
   EXPECT_EQ(AudioProcessing::kNoError,
             aec->set_suppression_level(EchoCancellation::kLowSuppression));
   generator.StartRecording();
