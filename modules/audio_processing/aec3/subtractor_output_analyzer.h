@@ -30,6 +30,7 @@ class SubtractorOutputAnalyzer {
   }
 
   bool DivergedFilter() const { return filter_diverged_; }
+  bool SeverelyDivergedFilter() const { return filter_severely_diverged_; }
 
   // Handle echo path change.
   void HandleEchoPathChange();
@@ -39,6 +40,7 @@ class SubtractorOutputAnalyzer {
   bool shadow_filter_converged_ = false;
   bool main_filter_converged_ = false;
   bool filter_diverged_ = false;
+  bool filter_severely_diverged_ = false;
 };
 
 }  // namespace webrtc

@@ -72,6 +72,41 @@ bool TreatTransparentModeAsNonlinear() {
       "WebRTC-Aec3TreatTransparentModeAsNonlinearKillSwitch");
 }
 
+bool LowUncertaintyBeforeConvergence() {
+  return !field_trial::IsEnabled(
+      "WebRTC-Aec3LowUncertaintyBeforeConvergenceKillSwitch");
+}
+
+bool MediumUncertaintyBeforeConvergence() {
+  return !field_trial::IsEnabled(
+      "WebRTC-Aec3MediumUncertaintyBeforeConvergenceKillSwitch");
+}
+
+bool EarlyEntryToConvergedMode() {
+  return !field_trial::IsEnabled(
+      "WebRTC-Aec3EarlyEntryToConvergedModeKillSwitch");
+}
+
+bool ConservativeFilterDivergence() {
+  return !field_trial::IsEnabled(
+      "WebRTC-Aec3ConservativeFilterDivergenceKillSwitch");
+}
+
+bool UseEarlyLimiterDeactivation() {
+  return !field_trial::IsEnabled(
+      "WebRTC-Aec3EarlyLimiterDeactivationKillSwitch");
+}
+
+float UncertaintyBeforeConvergence() {
+  if (LowUncertaintyBeforeConvergence()) {
+    return 1.f;
+  } else if (MediumUncertaintyBeforeConvergence()) {
+    return 4.f;
+  } else {
+    return 10.f;
+  }
+}
+
 float ComputeGainRampupIncrease(const EchoCanceller3Config& config) {
   const auto& c = config.echo_removal_control.gain_rampup;
   return powf(1.f / c.first_non_zero_gain, 1.f / c.non_zero_gain_blocks);
@@ -103,6 +138,10 @@ AecState::AecState(const EchoCanceller3Config& config)
           EnableUncertaintyUntilSufficientAdapted()),
       transparent_mode_enforces_nonlinear_mode_(
           TreatTransparentModeAsNonlinear()),
+      uncertainty_before_convergence_(UncertaintyBeforeConvergence()),
+      early_entry_to_converged_mode_(EarlyEntryToConvergedMode()),
+      conservative_filter_divergence_(ConservativeFilterDivergence()),
+      early_limiter_deactivation_(UseEarlyLimiterDeactivation()),
       erle_estimator_(config.erle.min, config.erle.max_l, config.erle.max_h),
       max_render_(config_.filter.main.length_blocks, 0.f),
       gain_rampup_increase_(ComputeGainRampupIncrease(config_)),
@@ -201,6 +240,9 @@ void AecState::Update(
   // an initial echo burst.
   suppression_gain_limiter_.Update(render_buffer.GetRenderActivity(),
                                    transparent_mode_);
+  if (converged_filter && early_limiter_deactivation_) {
+    suppression_gain_limiter_.Deactivate();
+  }
 
   if (UseStationaryProperties()) {
     // Update the echo audibility evaluator.
@@ -229,6 +271,10 @@ void AecState::Update(
   } else {
     filter_has_had_time_to_converge_ =
         blocks_with_proper_filter_adaptation_ >= 1.5f * kNumBlocksPerSecond;
+  }
+
+  if (converged_filter && early_entry_to_converged_mode_) {
+    filter_has_had_time_to_converge_ = true;
   }
 
   if (!filter_should_have_converged_) {
@@ -335,7 +381,14 @@ void AecState::Update(
   }
 
   use_linear_filter_output_ = usable_linear_estimate_ && !TransparentMode();
-  diverged_linear_filter_ = diverged_filter;
+
+  if (conservative_filter_divergence_) {
+    diverged_linear_filter_ =
+        subtractor_output_analyzer_.SeverelyDivergedFilter() &&
+        active_render_block;
+  } else {
+    diverged_linear_filter_ = diverged_filter;
+  }
 
   const bool stationary_block =
       use_stationary_properties_ && echo_audibility_.IsBlockStationary();

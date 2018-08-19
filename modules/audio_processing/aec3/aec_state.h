@@ -80,7 +80,7 @@ class AecState {
 
     if (!filter_has_had_time_to_converge_ &&
         use_uncertainty_until_sufficiently_adapted_) {
-      return 10.f;
+      return uncertainty_before_convergence_;
     }
     return absl::nullopt;
   }
@@ -182,6 +182,10 @@ class AecState {
   const bool no_alignment_required_for_linear_mode_;
   const bool use_uncertainty_until_sufficiently_adapted_;
   const bool transparent_mode_enforces_nonlinear_mode_;
+  const float uncertainty_before_convergence_;
+  const bool early_entry_to_converged_mode_;
+  const bool conservative_filter_divergence_;
+  const bool early_limiter_deactivation_;
   ErlEstimator erl_estimator_;
   ErleEstimator erle_estimator_;
   size_t capture_block_counter_ = 0;

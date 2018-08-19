@@ -40,12 +40,15 @@ void SubtractorOutputAnalyzer::Update(
   float min_e2 =
       strict_divergence_check_ ? std::min(e2_main, e2_shadow) : e2_main;
   filter_diverged_ = min_e2 > 1.5f * y2 && y2 > 30.f * 30.f * kBlockSize;
+  filter_severely_diverged_ =
+      min_e2 > 1.5f * y2 && y2 > 200.f * 200.f * kBlockSize;
 }
 
 void SubtractorOutputAnalyzer::HandleEchoPathChange() {
   shadow_filter_converged_ = false;
   main_filter_converged_ = false;
   filter_diverged_ = false;
+  filter_severely_diverged_ = false;
 }
 
 }  // namespace webrtc
