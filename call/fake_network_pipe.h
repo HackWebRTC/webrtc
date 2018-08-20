@@ -136,8 +136,7 @@ class FakeNetworkPipe : public webrtc::SimulatedPacketReceiverInterface,
 
   ~FakeNetworkPipe() override;
 
-  // Deprecated. DO NOT USE. Will be removed soon.
-  void SetClockOffset(int64_t offset_ms) override;
+  void SetClockOffset(int64_t offset_ms);
 
   // Deprecated. DO NOT USE. Hold direct reference on NetworkSimulationInterface
   // instead and call SetConfig on that object directly. Will be removed soon.

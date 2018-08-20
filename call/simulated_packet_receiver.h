@@ -31,11 +31,6 @@ class SimulatedPacketReceiverInterface : public PacketReceiver, public Module {
   // Deprecated. DO NOT USE. Temporary added to be able to introduce
   // SimulatedPacketReceiverInterface into DirectTransport instead of
   // FakeNetworkPipe, will be removed soon.
-  virtual void SetClockOffset(int64_t offset_ms) = 0;
-
-  // Deprecated. DO NOT USE. Temporary added to be able to introduce
-  // SimulatedPacketReceiverInterface into DirectTransport instead of
-  // FakeNetworkPipe, will be removed soon.
   virtual void SetConfig(const DefaultNetworkSimulationConfig& config) = 0;
 };
 
