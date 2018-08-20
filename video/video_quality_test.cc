@@ -17,6 +17,8 @@
 #include <string>
 #include <vector>
 
+#include "call/fake_network_pipe.h"
+#include "call/simulated_network.h"
 #include "logging/rtc_event_log/output/rtc_event_log_output_file.h"
 #include "media/engine/internalencoderfactory.h"
 #include "media/engine/vp8_encoder_simulcast_proxy.h"
@@ -800,7 +802,11 @@ VideoQualityTest::CreateSendTransport() {
 std::unique_ptr<test::DirectTransport>
 VideoQualityTest::CreateReceiveTransport() {
   return absl::make_unique<test::DirectTransport>(
-      &task_queue_, params_.pipe, receiver_call_.get(), payload_type_map_);
+      &task_queue_,
+      absl::make_unique<FakeNetworkPipe>(
+          Clock::GetRealTimeClock(),
+          absl::make_unique<SimulatedNetwork>(params_.pipe)),
+      receiver_call_.get(), payload_type_map_);
 }
 
 void VideoQualityTest::RunWithAnalyzer(const Params& params) {

@@ -14,6 +14,9 @@
 #include <utility>
 #include <vector>
 
+#include "api/test/simulated_network.h"
+#include "call/fake_network_pipe.h"
+#include "call/simulated_network.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "test/call_test.h"
@@ -138,13 +141,22 @@ void MultiStreamTester::UpdateReceiveConfig(
 test::DirectTransport* MultiStreamTester::CreateSendTransport(
     test::SingleThreadedTaskQueueForTesting* task_queue,
     Call* sender_call) {
-  return new test::DirectTransport(task_queue, sender_call, payload_type_map_);
+  return new test::DirectTransport(
+      task_queue,
+      absl::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
+                                         absl::make_unique<SimulatedNetwork>(
+                                             DefaultNetworkSimulationConfig())),
+      sender_call, payload_type_map_);
 }
 
 test::DirectTransport* MultiStreamTester::CreateReceiveTransport(
     test::SingleThreadedTaskQueueForTesting* task_queue,
     Call* receiver_call) {
-  return new test::DirectTransport(task_queue, receiver_call,
-                                   payload_type_map_);
+  return new test::DirectTransport(
+      task_queue,
+      absl::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
+                                         absl::make_unique<SimulatedNetwork>(
+                                             DefaultNetworkSimulationConfig())),
+      receiver_call, payload_type_map_);
 }
 }  // namespace webrtc

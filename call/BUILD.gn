@@ -319,6 +319,7 @@ if (rtc_include_tests) {
       ":rtp_interfaces",
       ":rtp_receiver",
       ":rtp_sender",
+      ":simulated_network",
       "..:webrtc_common",
       "../api:array_view",
       "../api:libjingle_peerconnection_api",
