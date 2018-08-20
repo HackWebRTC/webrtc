@@ -1436,6 +1436,59 @@ TEST_F(WebRtcVideoChannelBaseTest, SetSendSetsTransportBufferSizes) {
   EXPECT_EQ(64 * 1024, network_interface_.recvbuf_size());
 }
 
+// Test that we properly set the send and recv buffer sizes when overriding
+// via field trials.
+TEST_F(WebRtcVideoChannelBaseTest, OverridesRecvBufferSize) {
+  // Set field trial to override the default recv buffer size, and then re-run
+  // setup where the interface is created and configured.
+  const int kCustomRecvBufferSize = 123456;
+  webrtc::test::ScopedFieldTrials field_trial(
+      "WebRTC-IncreasedReceivebuffers/123456/");
+  SetUp();
+
+  EXPECT_TRUE(SetOneCodec(DefaultCodec()));
+  EXPECT_TRUE(SetSend(true));
+  EXPECT_EQ(64 * 1024, network_interface_.sendbuf_size());
+  EXPECT_EQ(kCustomRecvBufferSize, network_interface_.recvbuf_size());
+}
+
+// Test that we properly set the send and recv buffer sizes when overriding
+// via field trials with suffix.
+TEST_F(WebRtcVideoChannelBaseTest, OverridesRecvBufferSizeWithSuffix) {
+  // Set field trial to override the default recv buffer size, and then re-run
+  // setup where the interface is created and configured.
+  const int kCustomRecvBufferSize = 123456;
+  webrtc::test::ScopedFieldTrials field_trial(
+      "WebRTC-IncreasedReceivebuffers/123456_Dogfood/");
+  SetUp();
+
+  EXPECT_TRUE(SetOneCodec(DefaultCodec()));
+  EXPECT_TRUE(SetSend(true));
+  EXPECT_EQ(64 * 1024, network_interface_.sendbuf_size());
+  EXPECT_EQ(kCustomRecvBufferSize, network_interface_.recvbuf_size());
+}
+
+// Test that we properly set the send and recv buffer sizes when overriding
+// via field trials that don't make any sense.
+TEST_F(WebRtcVideoChannelBaseTest, InvalidRecvBufferSize) {
+  // Set bogus field trial values to override the default recv buffer size, and
+  // then re-run setup where the interface is created and configured. The
+  // default value should still be used.
+
+  for (std::string group : {" ", "NotANumber", "-1", "0"}) {
+    std::string field_trial_string = "WebRTC-IncreasedReceivebuffers/";
+    field_trial_string += group;
+    field_trial_string += "/";
+    webrtc::test::ScopedFieldTrials field_trial(field_trial_string);
+    SetUp();
+
+    EXPECT_TRUE(SetOneCodec(DefaultCodec()));
+    EXPECT_TRUE(SetSend(true));
+    EXPECT_EQ(64 * 1024, network_interface_.sendbuf_size());
+    EXPECT_EQ(64 * 1024, network_interface_.recvbuf_size());
+  }
+}
+
 // Test that stats work properly for a 1-1 call.
 TEST_F(WebRtcVideoChannelBaseTest, GetStats) {
   const int kDurationSec = 3;
