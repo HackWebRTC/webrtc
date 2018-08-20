@@ -9,6 +9,8 @@
  */
 
 #include "api/test/simulated_network.h"
+#include "call/fake_network_pipe.h"
+#include "call/simulated_network.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "rtc_base/rate_limiter.h"
 #include "system_wrappers/include/sleep.h"
@@ -165,7 +167,11 @@ TEST_P(BandwidthEndToEndTest, RembWithSendSideBwe) {
         test::SingleThreadedTaskQueueForTesting* task_queue) override {
       receive_transport_ = new test::PacketTransport(
           task_queue, nullptr, this, test::PacketTransport::kReceiver,
-          payload_type_map_, DefaultNetworkSimulationConfig());
+          payload_type_map_,
+          absl::make_unique<FakeNetworkPipe>(
+              Clock::GetRealTimeClock(),
+              absl::make_unique<SimulatedNetwork>(
+                  DefaultNetworkSimulationConfig())));
       return receive_transport_;
     }
 

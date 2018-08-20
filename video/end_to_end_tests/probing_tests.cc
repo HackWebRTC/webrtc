@@ -9,6 +9,8 @@
  */
 
 #include "api/test/simulated_network.h"
+#include "call/fake_network_pipe.h"
+#include "call/simulated_network.h"
 #include "test/call_test.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
@@ -221,7 +223,11 @@ TEST_P(ProbingEndToEndTest, ProbeOnVideoEncoderReconfiguration) {
         Call* sender_call) override {
       send_transport_ = new test::PacketTransport(
           task_queue, sender_call, this, test::PacketTransport::kSender,
-          CallTest::payload_type_map_, DefaultNetworkSimulationConfig());
+          CallTest::payload_type_map_,
+          absl::make_unique<FakeNetworkPipe>(
+              Clock::GetRealTimeClock(),
+              absl::make_unique<SimulatedNetwork>(
+                  DefaultNetworkSimulationConfig())));
       return send_transport_;
     }
 

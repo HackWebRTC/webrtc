@@ -13,7 +13,9 @@
 
 #include "api/test/simulated_network.h"
 #include "call/call.h"
+#include "call/fake_network_pipe.h"
 #include "call/rtp_transport_controller_send.h"
+#include "call/simulated_network.h"
 #include "common_video/include/frame_callback.h"
 #include "common_video/include/video_frame.h"
 #include "modules/rtp_rtcp/include/rtp_header_parser.h"
@@ -530,7 +532,10 @@ class UlpfecObserver : public test::EndToEndTest {
     config.queue_delay_ms = kNetworkDelayMs;
     return new test::PacketTransport(
         task_queue, sender_call, this, test::PacketTransport::kSender,
-        VideoSendStreamTest::payload_type_map_, config);
+        VideoSendStreamTest::payload_type_map_,
+        absl::make_unique<FakeNetworkPipe>(
+            Clock::GetRealTimeClock(),
+            absl::make_unique<SimulatedNetwork>(config)));
   }
 
   void ModifyVideoConfigs(
@@ -717,7 +722,10 @@ class FlexfecObserver : public test::EndToEndTest {
     config.queue_delay_ms = kNetworkDelayMs;
     return new test::PacketTransport(
         task_queue, sender_call, this, test::PacketTransport::kSender,
-        VideoSendStreamTest::payload_type_map_, config);
+        VideoSendStreamTest::payload_type_map_,
+        absl::make_unique<FakeNetworkPipe>(
+            Clock::GetRealTimeClock(),
+            absl::make_unique<SimulatedNetwork>(config)));
   }
 
   void ModifyVideoConfigs(
@@ -1460,9 +1468,12 @@ TEST_F(VideoSendStreamTest, PaddingIsPrimarilyRetransmissions) {
       config.loss_percent = 10;
       config.link_capacity_kbps = kCapacityKbps;
       config.queue_delay_ms = kNetworkDelayMs;
-      return new test::PacketTransport(task_queue, sender_call, this,
-                                       test::PacketTransport::kSender,
-                                       payload_type_map_, config);
+      return new test::PacketTransport(
+          task_queue, sender_call, this, test::PacketTransport::kSender,
+          payload_type_map_,
+          absl::make_unique<FakeNetworkPipe>(
+              Clock::GetRealTimeClock(),
+              absl::make_unique<SimulatedNetwork>(config)));
     }
 
     void ModifyVideoConfigs(

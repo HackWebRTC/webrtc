@@ -93,6 +93,10 @@ class PacketTransport : public test::DirectTransport {
  public:
   enum TransportType { kReceiver, kSender };
 
+  // Deprecated. DO NOT USE. Use the constructor that takes an
+  // explicit pipe instead.Because there can be different ways to simulated
+  // underlying network passing implementation specific config to the transport
+  // constructor makes no sense.
   PacketTransport(SingleThreadedTaskQueueForTesting* task_queue,
                   Call* send_call,
                   RtpRtcpObserver* observer,

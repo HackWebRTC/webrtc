@@ -16,7 +16,9 @@
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/video_codecs/video_encoder_config.h"
+#include "call/fake_network_pipe.h"
 #include "call/rtp_transport_controller_send.h"
+#include "call/simulated_network.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"
 #include "modules/congestion_controller/bbr/bbr_factory.h"
 #include "rtc_base/checks.h"
@@ -730,14 +732,20 @@ test::PacketTransport* BaseTest::CreateSendTransport(
     Call* sender_call) {
   return new PacketTransport(
       task_queue, sender_call, this, test::PacketTransport::kSender,
-      CallTest::payload_type_map_, DefaultNetworkSimulationConfig());
+      CallTest::payload_type_map_,
+      absl::make_unique<FakeNetworkPipe>(
+          Clock::GetRealTimeClock(), absl::make_unique<SimulatedNetwork>(
+                                         DefaultNetworkSimulationConfig())));
 }
 
 test::PacketTransport* BaseTest::CreateReceiveTransport(
     SingleThreadedTaskQueueForTesting* task_queue) {
   return new PacketTransport(
       task_queue, nullptr, this, test::PacketTransport::kReceiver,
-      CallTest::payload_type_map_, DefaultNetworkSimulationConfig());
+      CallTest::payload_type_map_,
+      absl::make_unique<FakeNetworkPipe>(
+          Clock::GetRealTimeClock(), absl::make_unique<SimulatedNetwork>(
+                                         DefaultNetworkSimulationConfig())));
 }
 
 size_t BaseTest::GetNumVideoStreams() const {

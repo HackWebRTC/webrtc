@@ -371,6 +371,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":call_interfaces",
+      ":simulated_network",
       ":video_stream_api",
       "..:webrtc_common",
       "../api:simulated_network_api",

@@ -9,6 +9,8 @@
  */
 
 #include "api/test/simulated_network.h"
+#include "call/fake_network_pipe.h"
+#include "call/simulated_network.h"
 #include "modules/video_coding/codecs/h264/include/h264.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
@@ -150,13 +152,19 @@ class MultiCodecReceiveTest : public test::CallTest {
       send_transport_.reset(new test::PacketTransport(
           &task_queue_, sender_call_.get(), &observer_,
           test::PacketTransport::kSender, kPayloadTypeMap,
-          DefaultNetworkSimulationConfig()));
+          absl::make_unique<FakeNetworkPipe>(
+              Clock::GetRealTimeClock(),
+              absl::make_unique<SimulatedNetwork>(
+                  DefaultNetworkSimulationConfig()))));
       send_transport_->SetReceiver(receiver_call_->Receiver());
 
       receive_transport_.reset(new test::PacketTransport(
           &task_queue_, receiver_call_.get(), &observer_,
           test::PacketTransport::kReceiver, kPayloadTypeMap,
-          DefaultNetworkSimulationConfig()));
+          absl::make_unique<FakeNetworkPipe>(
+              Clock::GetRealTimeClock(),
+              absl::make_unique<SimulatedNetwork>(
+                  DefaultNetworkSimulationConfig()))));
       receive_transport_->SetReceiver(sender_call_->Receiver());
     });
   }

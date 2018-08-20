@@ -10,6 +10,7 @@
 
 #include "api/test/simulated_network.h"
 #include "call/fake_network_pipe.h"
+#include "call/simulated_network.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/timeutils.h"
 #include "test/call_test.h"
@@ -94,7 +95,8 @@ class ReportedReceiveTimeTester : public test::EndToEndTest {
       test::SingleThreadedTaskQueueForTesting* task_queue,
       Call* sender_call) override {
     auto pipe = absl::make_unique<FakeNetworkPipe>(
-        Clock::GetRealTimeClock(), DefaultNetworkSimulationConfig());
+        Clock::GetRealTimeClock(),
+        absl::make_unique<SimulatedNetwork>(DefaultNetworkSimulationConfig()));
     send_pipe_ = pipe.get();
     return send_transport_ = new test::PacketTransport(
                task_queue, sender_call, this, test::PacketTransport::kSender,

@@ -19,6 +19,8 @@
 #include "api/video/video_bitrate_allocation.h"
 #include "api/video_codecs/video_encoder_config.h"
 #include "call/call.h"
+#include "call/fake_network_pipe.h"
+#include "call/simulated_network.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/audio_device/include/test_audio_device.h"
@@ -202,19 +204,26 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
 
     audio_send_transport = absl::make_unique<test::PacketTransport>(
         &task_queue_, sender_call_.get(), &observer,
-        test::PacketTransport::kSender, audio_pt_map, audio_net_config);
+        test::PacketTransport::kSender, audio_pt_map,
+        absl::make_unique<FakeNetworkPipe>(
+            Clock::GetRealTimeClock(),
+            absl::make_unique<SimulatedNetwork>(audio_net_config)));
     audio_send_transport->SetReceiver(receiver_call_->Receiver());
 
     video_send_transport = absl::make_unique<test::PacketTransport>(
         &task_queue_, sender_call_.get(), &observer,
         test::PacketTransport::kSender, video_pt_map,
-        DefaultNetworkSimulationConfig());
+        absl::make_unique<FakeNetworkPipe>(
+            Clock::GetRealTimeClock(), absl::make_unique<SimulatedNetwork>(
+                                           DefaultNetworkSimulationConfig())));
     video_send_transport->SetReceiver(receiver_call_->Receiver());
 
     receive_transport = absl::make_unique<test::PacketTransport>(
         &task_queue_, receiver_call_.get(), &observer,
         test::PacketTransport::kReceiver, payload_type_map_,
-        DefaultNetworkSimulationConfig());
+        absl::make_unique<FakeNetworkPipe>(
+            Clock::GetRealTimeClock(), absl::make_unique<SimulatedNetwork>(
+                                           DefaultNetworkSimulationConfig())));
     receive_transport->SetReceiver(sender_call_->Receiver());
 
     CreateSendConfig(1, 0, 0, video_send_transport.get());
@@ -351,16 +360,22 @@ void CallPerfTest::TestCaptureNtpTime(
     test::PacketTransport* CreateSendTransport(
         test::SingleThreadedTaskQueueForTesting* task_queue,
         Call* sender_call) override {
-      return new test::PacketTransport(task_queue, sender_call, this,
-                                       test::PacketTransport::kSender,
-                                       payload_type_map_, net_config_);
+      return new test::PacketTransport(
+          task_queue, sender_call, this, test::PacketTransport::kSender,
+          payload_type_map_,
+          absl::make_unique<FakeNetworkPipe>(
+              Clock::GetRealTimeClock(),
+              absl::make_unique<SimulatedNetwork>(net_config_)));
     }
 
     test::PacketTransport* CreateReceiveTransport(
         test::SingleThreadedTaskQueueForTesting* task_queue) override {
-      return new test::PacketTransport(task_queue, nullptr, this,
-                                       test::PacketTransport::kReceiver,
-                                       payload_type_map_, net_config_);
+      return new test::PacketTransport(
+          task_queue, nullptr, this, test::PacketTransport::kReceiver,
+          payload_type_map_,
+          absl::make_unique<FakeNetworkPipe>(
+              Clock::GetRealTimeClock(),
+              absl::make_unique<SimulatedNetwork>(net_config_)));
     }
 
     void OnFrame(const VideoFrame& video_frame) override {
@@ -841,14 +856,22 @@ void CallPerfTest::TestMinAudioVideoBitrate(
         Call* sender_call) override {
       return send_transport_ = new test::PacketTransport(
                  task_queue, sender_call, this, test::PacketTransport::kSender,
-                 test::CallTest::payload_type_map_, GetFakeNetworkPipeConfig());
+                 test::CallTest::payload_type_map_,
+                 absl::make_unique<FakeNetworkPipe>(
+                     Clock::GetRealTimeClock(),
+                     absl::make_unique<SimulatedNetwork>(
+                         GetFakeNetworkPipeConfig())));
     }
 
     test::PacketTransport* CreateReceiveTransport(
         test::SingleThreadedTaskQueueForTesting* task_queue) override {
       return receive_transport_ = new test::PacketTransport(
                  task_queue, nullptr, this, test::PacketTransport::kReceiver,
-                 test::CallTest::payload_type_map_, GetFakeNetworkPipeConfig());
+                 test::CallTest::payload_type_map_,
+                 absl::make_unique<FakeNetworkPipe>(
+                     Clock::GetRealTimeClock(),
+                     absl::make_unique<SimulatedNetwork>(
+                         GetFakeNetworkPipeConfig())));
     }
 
     void PerformTest() override {

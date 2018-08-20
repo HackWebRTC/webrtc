@@ -9,6 +9,8 @@
  */
 
 #include "api/test/simulated_network.h"
+#include "call/fake_network_pipe.h"
+#include "call/simulated_network.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "test/call_test.h"
@@ -242,9 +244,12 @@ class FlexfecRenderObserver : public test::EndToEndTest,
     const int kNetworkDelayMs = 100;
     DefaultNetworkSimulationConfig config;
     config.queue_delay_ms = kNetworkDelayMs;
-    return new test::PacketTransport(task_queue, sender_call, this,
-                                     test::PacketTransport::kSender,
-                                     test::CallTest::payload_type_map_, config);
+    return new test::PacketTransport(
+        task_queue, sender_call, this, test::PacketTransport::kSender,
+        test::CallTest::payload_type_map_,
+        absl::make_unique<FakeNetworkPipe>(
+            Clock::GetRealTimeClock(),
+            absl::make_unique<SimulatedNetwork>(config)));
   }
 
   void OnFrame(const VideoFrame& video_frame) override {
@@ -427,9 +432,12 @@ TEST_P(FecEndToEndTest, ReceivedUlpfecPacketsNotNacked) {
       const int kNetworkDelayMs = 50;
       DefaultNetworkSimulationConfig config;
       config.queue_delay_ms = kNetworkDelayMs;
-      return new test::PacketTransport(task_queue, sender_call, this,
-                                       test::PacketTransport::kSender,
-                                       payload_type_map_, config);
+      return new test::PacketTransport(
+          task_queue, sender_call, this, test::PacketTransport::kSender,
+          payload_type_map_,
+          absl::make_unique<FakeNetworkPipe>(
+              Clock::GetRealTimeClock(),
+              absl::make_unique<SimulatedNetwork>(config)));
     }
 
     // TODO(holmer): Investigate why we don't send FEC packets when the bitrate

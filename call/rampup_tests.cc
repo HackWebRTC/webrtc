@@ -10,6 +10,8 @@
 
 #include "call/rampup_tests.h"
 
+#include "call/fake_network_pipe.h"
+#include "call/simulated_network.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
@@ -95,7 +97,10 @@ test::PacketTransport* RampUpTester::CreateSendTransport(
     Call* sender_call) {
   send_transport_ = new test::PacketTransport(
       task_queue, sender_call, this, test::PacketTransport::kSender,
-      test::CallTest::payload_type_map_, forward_transport_config_);
+      test::CallTest::payload_type_map_,
+      absl::make_unique<FakeNetworkPipe>(
+          Clock::GetRealTimeClock(),
+          absl::make_unique<SimulatedNetwork>(forward_transport_config_)));
   return send_transport_;
 }
 

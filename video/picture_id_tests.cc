@@ -9,6 +9,8 @@
  */
 
 #include "api/test/simulated_network.h"
+#include "call/fake_network_pipe.h"
+#include "call/simulated_network.h"
 #include "media/engine/internalencoderfactory.h"
 #include "media/engine/simulcast_encoder_adapter.h"
 #include "modules/rtp_rtcp/source/rtp_format.h"
@@ -292,7 +294,9 @@ void PictureIdTest::SetupEncoder(VideoEncoderFactory* encoder_factory,
     send_transport_.reset(new test::PacketTransport(
         &task_queue_, sender_call_.get(), observer_.get(),
         test::PacketTransport::kSender, payload_type_map_,
-        DefaultNetworkSimulationConfig()));
+        absl::make_unique<FakeNetworkPipe>(
+            Clock::GetRealTimeClock(), absl::make_unique<SimulatedNetwork>(
+                                           DefaultNetworkSimulationConfig()))));
 
     CreateSendConfig(kNumSimulcastStreams, 0, 0, send_transport_.get());
     GetVideoSendConfig()->encoder_settings.encoder_factory = encoder_factory;
