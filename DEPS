@@ -7,7 +7,7 @@ vars = {
   'checkout_configuration': 'default',
   'checkout_instrumented_libraries': 'checkout_linux and checkout_configuration == "default"',
   'webrtc_git': 'https://webrtc.googlesource.com',
-  'chromium_revision': 'c092e144b56732092d6963711959f21069eab6a9',
+  'chromium_revision': 'e247d79575b98eb62b63373ebacab1ba0f298236',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
@@ -24,7 +24,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling catapult
   # and whatever else without interference from each other.
-  'catapult_revision': 'f62079a0f9e5b7c9e95af4e12adf86675cf57e74',
+  'catapult_revision': 'e8964a2cd3755b66acf9b7e3fe9e8aa9dd15ef2e',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling libFuzzer
   # and whatever else without interference from each other.
@@ -42,7 +42,7 @@ deps = {
   # TODO(kjellander): Move this to be Android-only once the libevent dependency
   # in base/third_party/libevent is solved.
   'src/base':
-    Var('chromium_git') + '/chromium/src/base' + '@' + '32d57313c78377db55ea4779ba9bb34ca6a3d85f',
+    Var('chromium_git') + '/chromium/src/base' + '@' + 'f0547ccf1ab1b0571dd66c90dc109f82b34955d3',
   'src/build':
     Var('chromium_git') + '/chromium/src/build' + '@' + '246c5791b89f5fcaffb3a105cbf6c029b54fbe06',
   'src/buildtools':
@@ -54,13 +54,13 @@ deps = {
     'condition': 'checkout_android',
   },
   'src/ios': {
-    'url': Var('chromium_git') + '/chromium/src/ios' + '@' + 'f41ceba9a5039c94094021df71095320cfe85c36',
+    'url': Var('chromium_git') + '/chromium/src/ios' + '@' + '10140842ef6bf7a5a8740c3bbc83e29c7b7c8ba1',
     'condition': 'checkout_ios',
   },
   'src/testing':
-    Var('chromium_git') + '/chromium/src/testing' + '@' + '3ed19f4788f97cee29c5ecf48d5f54269ad31230',
+    Var('chromium_git') + '/chromium/src/testing' + '@' + '0ffa776c67aa1377158876af76a28a343fd3587f',
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + 'e10938513c58655b7017147114109037c0359d87',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + '42cc7af495b3de758b46f241dc9e434d90642b33',
   'src/third_party/android_ndk': {
       'url': Var('chromium_git') + '/android_ndk.git' + '@' + '4e2cea441bfd43f0863d14f57b1e1844260b9884',
       'condition': 'checkout_android',
@@ -175,7 +175,7 @@ deps = {
   'src/third_party/yasm/source/patched-yasm':
     Var('chromium_git') + '/chromium/deps/yasm/patched-yasm.git' + '@' + '720b70524a4424b15fc57e82263568c8ba0496ad',
   'src/tools':
-    Var('chromium_git') + '/chromium/src/tools' + '@' + '8aaa45e5d3d55663bdb2388f688c9e7330c9ea65',
+    Var('chromium_git') + '/chromium/src/tools' + '@' + '44aee9142bf78c4e6c4ac45c65eeda3b4849cac9',
   'src/tools/swarming_client':
     Var('chromium_git') + '/infra/luci/client-py.git' + '@' +  Var('swarming_revision'),
 
@@ -652,7 +652,7 @@ deps = {
       'packages': [
           {
               'package': 'chromium/third_party/android_deps/libs/com_google_android_gms_play_services_auth_base',
-              'version': 'version:12.0.1-cr0',
+              'version': 'version:15.0.1-cr0',
           },
       ],
       'condition': 'checkout_android',
@@ -662,7 +662,7 @@ deps = {
       'packages': [
           {
               'package': 'chromium/third_party/android_deps/libs/com_google_android_gms_play_services_base',
-              'version': 'version:12.0.1-cr0',
+              'version': 'version:15.0.1-cr0',
           },
       ],
       'condition': 'checkout_android',
@@ -672,7 +672,7 @@ deps = {
       'packages': [
           {
               'package': 'chromium/third_party/android_deps/libs/com_google_android_gms_play_services_basement',
-              'version': 'version:12.0.1-cr0',
+              'version': 'version:15.0.1-cr0',
           },
       ],
       'condition': 'checkout_android',
@@ -682,7 +682,7 @@ deps = {
       'packages': [
           {
               'package': 'chromium/third_party/android_deps/libs/com_google_android_gms_play_services_tasks',
-              'version': 'version:12.0.1-cr0',
+              'version': 'version:15.0.1-cr0',
           },
       ],
       'condition': 'checkout_android',
