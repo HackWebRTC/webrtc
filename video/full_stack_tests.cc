@@ -21,8 +21,6 @@
 namespace webrtc {
 namespace flags {
 
-DEFINE_bool(logs, false, "print logs to stderr");
-
 DEFINE_string(rtc_event_log_name,
               "",
               "Filename for rtc event log. Two files "
