@@ -392,8 +392,7 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp9(
       absl::get<RTPVideoHeaderVP9>(*rtp_codec_header);
 
   if (codec_header.picture_id == kNoPictureId ||
-      codec_header.temporal_idx == kNoTemporalIdx ||
-      codec_header.tl0_pic_idx == kNoTl0PicIdx) {
+      codec_header.temporal_idx == kNoTemporalIdx) {
     return ManageFrameGeneric(std::move(frame), codec_header.picture_id);
   }
 
@@ -416,6 +415,12 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp9(
 
     UnwrapPictureIds(frame);
     return kHandOff;
+  }
+
+  if (codec_header.tl0_pic_idx == kNoTl0PicIdx) {
+    RTC_LOG(LS_WARNING) << "TL0PICIDX is expected to be present in "
+                           "non-flexible mode.";
+    return kDrop;
   }
 
   GofInfo* info;
