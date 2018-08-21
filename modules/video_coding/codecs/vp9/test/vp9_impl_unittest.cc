@@ -50,6 +50,32 @@ class TestVp9Impl : public VideoCodecUnitTest {
     EXPECT_EQ(temporal_idx, codec_specific_info.codecSpecific.VP9.temporal_idx);
   }
 
+  void ExpectFrameWith(size_t num_spatial_layers,
+                       uint8_t temporal_idx,
+                       bool temporal_up_switch,
+                       uint8_t num_ref_pics,
+                       const std::vector<uint8_t>& p_diff) {
+    std::vector<EncodedImage> encoded_frame;
+    std::vector<CodecSpecificInfo> codec_specific;
+    ASSERT_TRUE(WaitForEncodedFrames(&encoded_frame, &codec_specific));
+    for (size_t frame_num = 0; frame_num < num_spatial_layers; ++frame_num) {
+      const CodecSpecificInfoVP9& vp9 =
+          codec_specific[frame_num].codecSpecific.VP9;
+      if (vp9.temporal_idx == kNoTemporalIdx) {
+        EXPECT_EQ(temporal_idx, 0);
+      } else {
+        EXPECT_EQ(vp9.temporal_idx, temporal_idx);
+      }
+      EXPECT_EQ(vp9.temporal_up_switch, temporal_up_switch);
+      EXPECT_EQ(vp9.num_ref_pics, num_ref_pics);
+      for (size_t ref_pic_num = 0; ref_pic_num < num_ref_pics; ++ref_pic_num) {
+        EXPECT_NE(
+            std::find(p_diff.begin(), p_diff.end(), vp9.p_diff[ref_pic_num]),
+            p_diff.end());
+      }
+    }
+  }
+
   void ConfigureSvc(size_t num_spatial_layers) {
     codec_settings_.VP9()->numberOfSpatialLayers =
         static_cast<unsigned char>(num_spatial_layers);
@@ -438,6 +464,64 @@ TEST_F(TestVp9Impl,
     }
   }
 }
+
+class TestVp9ImplWithLayering
+    : public TestVp9Impl,
+      public ::testing::WithParamInterface<::testing::tuple<uint8_t, uint8_t>> {
+ protected:
+  TestVp9ImplWithLayering()
+      : num_spatial_layers_(::testing::get<0>(GetParam())),
+        num_temporal_layers_(::testing::get<1>(GetParam())) {}
+
+  const uint8_t num_spatial_layers_;
+  const uint8_t num_temporal_layers_;
+};
+
+TEST_P(TestVp9ImplWithLayering, FlexibleMode) {
+  // In flexible mode encoder wrapper obtains actual list of references from
+  // encoder and writes it into RTP payload descriptor. Check that reference
+  // list in payload descriptor matches the predefined one, which is used
+  // in non-flexible mode.
+  codec_settings_.VP9()->flexibleMode = true;
+  codec_settings_.VP9()->frameDroppingOn = false;
+  codec_settings_.VP9()->numberOfSpatialLayers = num_spatial_layers_;
+  codec_settings_.VP9()->numberOfTemporalLayers = num_temporal_layers_;
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->InitEncode(&codec_settings_, 1 /* number of cores */,
+                                 0 /* max payload size (unused) */));
+
+  GofInfoVP9 gof;
+  if (num_temporal_layers_ == 1) {
+    gof.SetGofInfoVP9(kTemporalStructureMode1);
+  } else if (num_temporal_layers_ == 2) {
+    gof.SetGofInfoVP9(kTemporalStructureMode2);
+  } else if (num_temporal_layers_ == 3) {
+    gof.SetGofInfoVP9(kTemporalStructureMode3);
+  }
+
+  // Encode at least (num_frames_in_gof + 1) frames to verify references
+  // of non-key frame with gof_idx = 0.
+  for (size_t frame_num = 0; frame_num < gof.num_frames_in_gof + 1;
+       ++frame_num) {
+    SetWaitForEncodedFramesThreshold(num_spatial_layers_);
+    EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+              encoder_->Encode(*NextInputFrame(), nullptr, nullptr));
+
+    const bool is_key_frame = frame_num == 0;
+    const size_t gof_idx = frame_num % gof.num_frames_in_gof;
+    const std::vector<uint8_t> p_diff(std::begin(gof.pid_diff[gof_idx]),
+                                      std::end(gof.pid_diff[gof_idx]));
+
+    ExpectFrameWith(num_spatial_layers_, gof.temporal_idx[gof_idx],
+                    gof.temporal_up_switch[gof_idx],
+                    is_key_frame ? 0 : gof.num_ref_pics[gof_idx], p_diff);
+  }
+}
+
+INSTANTIATE_TEST_CASE_P(,
+                        TestVp9ImplWithLayering,
+                        ::testing::Combine(::testing::Values(1, 2, 3),
+                                           ::testing::Values(1, 2, 3)));
 
 class TestVp9ImplFrameDropping : public TestVp9Impl {
  protected:

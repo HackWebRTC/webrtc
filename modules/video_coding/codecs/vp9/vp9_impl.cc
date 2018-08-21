@@ -366,9 +366,6 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   }
 
   is_svc_ = (num_spatial_layers_ > 1 || num_temporal_layers_ > 1);
-  // Flexible mode requires SVC to be enabled since libvpx API only allows
-  // to get reference list in SVC mode.
-  RTC_DCHECK(!inst->VP9().flexibleMode || is_svc_);
 
   // Allocate memory for encoded image
   if (encoded_image_._buffer != nullptr) {
@@ -447,12 +444,7 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
 
   cpu_speed_ = GetCpuSpeed(config_->g_w, config_->g_h);
 
-  // TODO(asapersson): Check configuration of temporal switch up and increase
-  // pattern length.
   is_flexible_mode_ = inst->VP9().flexibleMode;
-
-  // TODO(ssilkin): Only non-flexible mode is supported for now.
-  RTC_DCHECK(!is_flexible_mode_);
 
   if (num_temporal_layers_ == 1) {
     gof_.SetGofInfoVP9(kTemporalStructureMode1);
@@ -830,8 +822,6 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
   // bit.
   vp9_info->num_spatial_layers = num_active_spatial_layers_;
 
-  RTC_DCHECK(!vp9_info->flexible_mode);
-
   vp9_info->num_ref_pics = 0;
   if (vp9_info->flexible_mode) {
     vp9_info->gof_idx = kNoGofIdx;
@@ -867,26 +857,41 @@ void VP9EncoderImpl::FillReferenceIndices(const vpx_codec_cx_pkt& pkt,
   vpx_svc_layer_id_t layer_id = {0};
   vpx_codec_control(encoder_, VP9E_GET_SVC_LAYER_ID, &layer_id);
 
-  vpx_svc_ref_frame_config_t enc_layer_conf = {{0}};
-  vpx_codec_control(encoder_, VP9E_GET_SVC_REF_FRAME_CONFIG, &enc_layer_conf);
+  const bool is_key_frame =
+      (pkt.data.frame.flags & VPX_FRAME_IS_KEY) ? true : false;
 
   std::vector<RefFrameBuffer> ref_buf_list;
-  if (enc_layer_conf.reference_last[layer_id.spatial_layer_id]) {
-    const size_t fb_idx = enc_layer_conf.lst_fb_idx[layer_id.spatial_layer_id];
-    RTC_DCHECK(ref_buf_.find(fb_idx) != ref_buf_.end());
-    ref_buf_list.push_back(ref_buf_.at(fb_idx));
-  }
 
-  if (enc_layer_conf.reference_alt_ref[layer_id.spatial_layer_id]) {
-    const size_t fb_idx = enc_layer_conf.alt_fb_idx[layer_id.spatial_layer_id];
-    RTC_DCHECK(ref_buf_.find(fb_idx) != ref_buf_.end());
-    ref_buf_list.push_back(ref_buf_.at(fb_idx));
-  }
+  if (is_svc_) {
+    vpx_svc_ref_frame_config_t enc_layer_conf = {{0}};
+    vpx_codec_control(encoder_, VP9E_GET_SVC_REF_FRAME_CONFIG, &enc_layer_conf);
 
-  if (enc_layer_conf.reference_golden[layer_id.spatial_layer_id]) {
-    const size_t fb_idx = enc_layer_conf.gld_fb_idx[layer_id.spatial_layer_id];
-    RTC_DCHECK(ref_buf_.find(fb_idx) != ref_buf_.end());
-    ref_buf_list.push_back(ref_buf_.at(fb_idx));
+    if (enc_layer_conf.reference_last[layer_id.spatial_layer_id]) {
+      const size_t fb_idx =
+          enc_layer_conf.lst_fb_idx[layer_id.spatial_layer_id];
+      RTC_DCHECK(ref_buf_.find(fb_idx) != ref_buf_.end());
+      ref_buf_list.push_back(ref_buf_.at(fb_idx));
+    }
+
+    if (enc_layer_conf.reference_alt_ref[layer_id.spatial_layer_id]) {
+      const size_t fb_idx =
+          enc_layer_conf.alt_fb_idx[layer_id.spatial_layer_id];
+      RTC_DCHECK(ref_buf_.find(fb_idx) != ref_buf_.end());
+      ref_buf_list.push_back(ref_buf_.at(fb_idx));
+    }
+
+    if (enc_layer_conf.reference_golden[layer_id.spatial_layer_id]) {
+      const size_t fb_idx =
+          enc_layer_conf.gld_fb_idx[layer_id.spatial_layer_id];
+      RTC_DCHECK(ref_buf_.find(fb_idx) != ref_buf_.end());
+      ref_buf_list.push_back(ref_buf_.at(fb_idx));
+    }
+  } else if (!is_key_frame) {
+    RTC_DCHECK_EQ(num_spatial_layers_, 1);
+    RTC_DCHECK_EQ(num_temporal_layers_, 1);
+    // In non-SVC mode encoder doesn't provide reference list. Assume each frame
+    // refers previous one, which is stored in buffer 0.
+    ref_buf_list.push_back(ref_buf_.at(0));
   }
 
   size_t max_ref_temporal_layer_id = 0;
@@ -929,9 +934,6 @@ void VP9EncoderImpl::UpdateReferenceBuffers(const vpx_codec_cx_pkt& pkt,
   vpx_svc_layer_id_t layer_id = {0};
   vpx_codec_control(encoder_, VP9E_GET_SVC_LAYER_ID, &layer_id);
 
-  vpx_svc_ref_frame_config_t enc_layer_conf = {{0}};
-  vpx_codec_control(encoder_, VP9E_GET_SVC_REF_FRAME_CONFIG, &enc_layer_conf);
-
   const bool is_key_frame =
       (pkt.data.frame.flags & VPX_FRAME_IS_KEY) ? true : false;
 
@@ -943,7 +945,10 @@ void VP9EncoderImpl::UpdateReferenceBuffers(const vpx_codec_cx_pkt& pkt,
     for (size_t i = 0; i < kNumVp9Buffers; ++i) {
       ref_buf_[i] = frame_buf;
     }
-  } else {
+  } else if (is_svc_) {
+    vpx_svc_ref_frame_config_t enc_layer_conf = {{0}};
+    vpx_codec_control(encoder_, VP9E_GET_SVC_REF_FRAME_CONFIG, &enc_layer_conf);
+
     if (enc_layer_conf.update_last[layer_id.spatial_layer_id]) {
       ref_buf_[enc_layer_conf.lst_fb_idx[layer_id.spatial_layer_id]] =
           frame_buf;
@@ -958,6 +963,12 @@ void VP9EncoderImpl::UpdateReferenceBuffers(const vpx_codec_cx_pkt& pkt,
       ref_buf_[enc_layer_conf.gld_fb_idx[layer_id.spatial_layer_id]] =
           frame_buf;
     }
+  } else {
+    RTC_DCHECK_EQ(num_spatial_layers_, 1);
+    RTC_DCHECK_EQ(num_temporal_layers_, 1);
+    // In non-svc mode encoder doesn't provide reference list. Assume each frame
+    // is reference and stored in buffer 0.
+    ref_buf_[0] = frame_buf;
   }
 }
 
