@@ -138,11 +138,6 @@ class FakeNetworkPipe : public webrtc::SimulatedPacketReceiverInterface,
 
   void SetClockOffset(int64_t offset_ms);
 
-  // Deprecated. DO NOT USE. Hold direct reference on NetworkSimulationInterface
-  // instead and call SetConfig on that object directly. Will be removed soon.
-  // Sets a new configuration. This won't affect packets already in the pipe.
-  void SetConfig(const DefaultNetworkSimulationConfig& config) override;
-
   // Must not be called in parallel with DeliverPacket or Process.
   void SetReceiver(PacketReceiver* receiver) override;
 

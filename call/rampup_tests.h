@@ -13,10 +13,12 @@
 
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "api/test/simulated_network.h"
 #include "call/call.h"
+#include "call/simulated_network.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "rtc_base/event.h"
 #include "test/call_test.h"
@@ -75,6 +77,7 @@ class RampUpTester : public test::EndToEndTest {
   Call* sender_call_;
   VideoSendStream* send_stream_;
   test::PacketTransport* send_transport_;
+  SimulatedNetwork* send_simulated_network_;
 
  private:
   typedef std::map<uint32_t, uint32_t> SsrcMap;

@@ -78,10 +78,6 @@ DirectTransport::~DirectTransport() {
   task_queue_->CancelTask(next_scheduled_task_);
 }
 
-void DirectTransport::SetConfig(const DefaultNetworkSimulationConfig& config) {
-  fake_network_->SetConfig(config);
-}
-
 void DirectTransport::StopSending() {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
   task_queue_->CancelTask(next_scheduled_task_);

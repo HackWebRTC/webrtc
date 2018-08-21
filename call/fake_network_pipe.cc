@@ -185,11 +185,6 @@ void FakeNetworkPipe::SetClockOffset(int64_t offset_ms) {
   clock_offset_ms_ = offset_ms;
 }
 
-void FakeNetworkPipe::SetConfig(const FakeNetworkPipe::Config& config) {
-  network_simulation_->SetConfig(config);
-}
-
-
 FakeNetworkPipe::StoredPacket::StoredPacket(NetworkPacket&& packet)
     : packet(std::move(packet)) {}
 

@@ -66,8 +66,6 @@ class DirectTransport : public Transport {
 
   ~DirectTransport() override;
 
-  void SetConfig(const DefaultNetworkSimulationConfig& config);
-
   RTC_DEPRECATED void StopSending();
 
   // TODO(holmer): Look into moving this to the constructor.

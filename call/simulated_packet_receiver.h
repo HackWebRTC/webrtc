@@ -27,11 +27,6 @@ class SimulatedPacketReceiverInterface : public PacketReceiver, public Module {
 
   // Reports average packet delay.
   virtual int AverageDelay() = 0;
-
-  // Deprecated. DO NOT USE. Temporary added to be able to introduce
-  // SimulatedPacketReceiverInterface into DirectTransport instead of
-  // FakeNetworkPipe, will be removed soon.
-  virtual void SetConfig(const DefaultNetworkSimulationConfig& config) = 0;
 };
 
 }  // namespace webrtc

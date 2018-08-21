@@ -11,7 +11,6 @@
 #include "call/rampup_tests.h"
 
 #include "call/fake_network_pipe.h"
-#include "call/simulated_network.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
@@ -60,6 +59,7 @@ RampUpTester::RampUpTester(size_t num_video_streams,
       sender_call_(nullptr),
       send_stream_(nullptr),
       send_transport_(nullptr),
+      send_simulated_network_(nullptr),
       start_bitrate_bps_(start_bitrate_bps),
       min_run_time_ms_(min_run_time_ms),
       expected_bitrate_bps_(0),
@@ -95,12 +95,13 @@ void RampUpTester::OnVideoStreamsCreated(
 test::PacketTransport* RampUpTester::CreateSendTransport(
     test::SingleThreadedTaskQueueForTesting* task_queue,
     Call* sender_call) {
+  auto network = absl::make_unique<SimulatedNetwork>(forward_transport_config_);
+  send_simulated_network_ = network.get();
   send_transport_ = new test::PacketTransport(
       task_queue, sender_call, this, test::PacketTransport::kSender,
       test::CallTest::payload_type_map_,
-      absl::make_unique<FakeNetworkPipe>(
-          Clock::GetRealTimeClock(),
-          absl::make_unique<SimulatedNetwork>(forward_transport_config_)));
+      absl::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
+                                         std::move(network)));
   return send_transport_;
 }
 
@@ -551,7 +552,7 @@ void RampUpDownUpTester::EvolveTestState(int bitrate_bps, bool suspended) {
         state_start_ms_ = now;
         interval_start_ms_ = now;
         sent_bytes_ = 0;
-        send_transport_->SetConfig(forward_transport_config_);
+        send_simulated_network_->SetConfig(forward_transport_config_);
       }
       break;
   }

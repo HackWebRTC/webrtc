@@ -854,24 +854,26 @@ void CallPerfTest::TestMinAudioVideoBitrate(
     test::PacketTransport* CreateSendTransport(
         test::SingleThreadedTaskQueueForTesting* task_queue,
         Call* sender_call) override {
-      return send_transport_ = new test::PacketTransport(
-                 task_queue, sender_call, this, test::PacketTransport::kSender,
-                 test::CallTest::payload_type_map_,
-                 absl::make_unique<FakeNetworkPipe>(
-                     Clock::GetRealTimeClock(),
-                     absl::make_unique<SimulatedNetwork>(
-                         GetFakeNetworkPipeConfig())));
+      auto network =
+          absl::make_unique<SimulatedNetwork>(GetFakeNetworkPipeConfig());
+      send_simulated_network_ = network.get();
+      return new test::PacketTransport(
+          task_queue, sender_call, this, test::PacketTransport::kSender,
+          test::CallTest::payload_type_map_,
+          absl::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
+                                             std::move(network)));
     }
 
     test::PacketTransport* CreateReceiveTransport(
         test::SingleThreadedTaskQueueForTesting* task_queue) override {
-      return receive_transport_ = new test::PacketTransport(
-                 task_queue, nullptr, this, test::PacketTransport::kReceiver,
-                 test::CallTest::payload_type_map_,
-                 absl::make_unique<FakeNetworkPipe>(
-                     Clock::GetRealTimeClock(),
-                     absl::make_unique<SimulatedNetwork>(
-                         GetFakeNetworkPipeConfig())));
+      auto network =
+          absl::make_unique<SimulatedNetwork>(GetFakeNetworkPipeConfig());
+      receive_simulated_network_ = network.get();
+      return new test::PacketTransport(
+          task_queue, nullptr, this, test::PacketTransport::kReceiver,
+          test::CallTest::payload_type_map_,
+          absl::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
+                                             std::move(network)));
     }
 
     void PerformTest() override {
@@ -883,8 +885,8 @@ void CallPerfTest::TestMinAudioVideoBitrate(
            test_bitrate += test_bitrate_step_) {
         DefaultNetworkSimulationConfig pipe_config;
         pipe_config.link_capacity_kbps = test_bitrate;
-        send_transport_->SetConfig(pipe_config);
-        receive_transport_->SetConfig(pipe_config);
+        send_simulated_network_->SetConfig(pipe_config);
+        receive_simulated_network_->SetConfig(pipe_config);
 
         rtc::ThreadManager::Instance()->CurrentThread()->SleepMs(
             kBitrateStabilizationMs);
@@ -952,8 +954,8 @@ void CallPerfTest::TestMinAudioVideoBitrate(
     const int min_bwe_;
     const int start_bwe_;
     const int max_bwe_;
-    test::PacketTransport* send_transport_;
-    test::PacketTransport* receive_transport_;
+    SimulatedNetwork* send_simulated_network_;
+    SimulatedNetwork* receive_simulated_network_;
     Call* sender_call_;
   } test(use_bitrate_allocation_strategy, test_bitrate_from, test_bitrate_to,
          test_bitrate_step, min_bwe, start_bwe, max_bwe);
