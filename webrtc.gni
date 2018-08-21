@@ -31,6 +31,14 @@ if (is_ios) {
 }
 
 declare_args() {
+  # WARNING: This argument doesn't have any effect on the WebRTC build until
+  # https://webrtc-review.googlesource.com/c/src/+/94766 will land.
+  # Setting this to false will define WEBRTC_EXCLUDE_FIELD_TRIAL_DEFAULT which
+  # will tell the pre-processor to remove the default definition of symbols
+  # needed to use field_trial. In that case a new implementation needs to be
+  # provided.
+  rtc_exclude_field_trial_default = true
+
   # Setting this to false will require the API user to pass in their own
   # SSLCertificateVerifier to verify the certificates presented from a
   # TLS-TURN server. In return disabling this saves around 100kb in the binary.
