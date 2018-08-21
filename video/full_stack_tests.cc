@@ -209,7 +209,7 @@ TEST(FullStackTest, ForemanCif30kbpsWithoutPacketLoss) {
 // Link capacity below default start rate. Automatic down scaling enabled.
 TEST(FullStackTest, ForemanCifLink150kbpsWithoutPacketLoss) {
   auto fixture = CreateVideoQualityTestFixture();
-  VideoQualityTest::Params foreman_cif;
+  ParamsWithLogging foreman_cif;
   foreman_cif.call.send_side_bwe = true;
   foreman_cif.video[0] = {true,   352,     288,   30,    30000,
                           500000, 2000000, false, "VP8", 1,
@@ -835,7 +835,7 @@ TEST(FullStackTest, VP9KSVC_3SL_Low) {
 
 TEST(FullStackTest, VP9KSVC_3SL_Medium_Network_Restricted) {
   auto fixture = CreateVideoQualityTestFixture();
-  VideoQualityTest::Params simulcast;
+  ParamsWithLogging simulcast;
   simulcast.call.send_side_bwe = true;
   simulcast.video[0] = kSvcVp9Video;
   simulcast.analyzer = {"vp9ksvc_3sl_medium_network_restricted", 0.0, 0.0,
