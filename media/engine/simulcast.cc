@@ -31,7 +31,7 @@ constexpr int kScreenshareDefaultTl1BitrateKbps = 1000;
 
 // Max bitrate for the higher one of the two simulcast stream used for screen
 // content.
-constexpr int kScreenshareHighStreamMaxBitrateBps = 1600000;
+constexpr int kScreenshareHighStreamMaxBitrateBps = 1250000;
 
 }  // namespace
 
@@ -70,14 +70,17 @@ const SimulcastFormat kSimulcastFormats[] = {
 const int kMaxScreenshareSimulcastLayers = 2;
 
 // Multiway: Number of temporal layers for each simulcast stream.
-int DefaultNumberOfTemporalLayers(int simulcast_id) {
+int DefaultNumberOfTemporalLayers(int simulcast_id, bool screenshare) {
   RTC_CHECK_GE(simulcast_id, 0);
   RTC_CHECK_LT(simulcast_id, webrtc::kMaxSimulcastStreams);
 
   const int kDefaultNumTemporalLayers = 3;
 
   const std::string group_name =
-      webrtc::field_trial::FindFullName("WebRTC-VP8ConferenceTemporalLayers");
+      screenshare ? webrtc::field_trial::FindFullName(
+                        "WebRTC-VP8ScreenshareTemporalLayers")
+                  : webrtc::field_trial::FindFullName(
+                        "WebRTC-VP8ConferenceTemporalLayers");
   if (group_name.empty())
     return kDefaultNumTemporalLayers;
 
@@ -240,11 +243,10 @@ std::vector<webrtc::VideoStream> GetNormalSimulcastLayers(
     // TODO(pbos): Fill actual temporal-layer bitrate thresholds.
     layers[s].max_qp = max_qp;
     layers[s].num_temporal_layers =
-        temporal_layers_supported ? DefaultNumberOfTemporalLayers(s)
-                                  : 0;
+        temporal_layers_supported ? DefaultNumberOfTemporalLayers(s, false) : 0;
     layers[s].max_bitrate_bps = FindSimulcastMaxBitrateBps(width, height);
     layers[s].target_bitrate_bps = FindSimulcastTargetBitrateBps(width, height);
-    int num_temporal_layers = DefaultNumberOfTemporalLayers(s);
+    int num_temporal_layers = DefaultNumberOfTemporalLayers(s, false);
     if (s == 0) {
       // If alternative number temporal layers is selected, adjust the
       // bitrate of the lowest simulcast stream so that absolute bitrate for
@@ -317,16 +319,16 @@ std::vector<webrtc::VideoStream> GetScreenshareLayers(
   // restrictions. The base simulcast layer will still use legacy setup.
   if (num_simulcast_layers == kMaxScreenshareSimulcastLayers) {
     // Add optional upper simulcast layer.
-    const int num_temporal_layers = DefaultNumberOfTemporalLayers(1);
+    const int num_temporal_layers = DefaultNumberOfTemporalLayers(1, true);
     int max_bitrate_bps;
     if (!temporal_layers_supported) {
       // Set the max bitrate to where the base layer would have been if temporal
-      // layer were enabled.
+      // layers were enabled.
       max_bitrate_bps = static_cast<int>(
           kScreenshareHighStreamMaxBitrateBps *
           webrtc::SimulcastRateAllocator::GetTemporalRateAllocation(
               num_temporal_layers, 0));
-    } else if (DefaultNumberOfTemporalLayers(1) != 3 ||
+    } else if (DefaultNumberOfTemporalLayers(1, true) != 3 ||
                webrtc::field_trial::IsEnabled("WebRTC-UseShortVP8TL3Pattern")) {
       // Experimental temporal layer mode used, use increased max bitrate.
       max_bitrate_bps = kScreenshareHighStreamMaxBitrateBps;
@@ -348,7 +350,7 @@ std::vector<webrtc::VideoStream> GetScreenshareLayers(
     layers[1].max_qp = max_qp;
     layers[1].max_framerate = max_framerate;
     layers[1].num_temporal_layers =
-        temporal_layers_supported ? DefaultNumberOfTemporalLayers(1) : 0;
+        temporal_layers_supported ? DefaultNumberOfTemporalLayers(1, true) : 0;
     layers[1].min_bitrate_bps = layers[0].target_bitrate_bps * 2;
     layers[1].target_bitrate_bps = max_bitrate_bps;
     layers[1].max_bitrate_bps = max_bitrate_bps;
