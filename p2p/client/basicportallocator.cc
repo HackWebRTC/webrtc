@@ -1191,11 +1191,6 @@ void BasicPortAllocatorSession::
         // socket to this address, so ignore it.
         if (c.address().port() != DISCARD_PORT) {
           ips_from_non_any_address_ports.insert(c.address().ipaddr());
-          if (port_data.port()->Type() == RELAY_PORT_TYPE) {
-            // The related address of a relay candidate is the server reflexive
-            // address obtained from the TURN allocation response.
-            ips_from_non_any_address_ports.insert(c.related_address().ipaddr());
-          }
         }
       }
     }
@@ -1209,8 +1204,7 @@ void BasicPortAllocatorSession::
     bool port_signalable = false;
     for (const Candidate& c : port_data->port()->Candidates()) {
       if (!CandidatePairable(c, port_data->port()) ||
-          ips_from_non_any_address_ports.count(c.address().ipaddr()) ||
-          ips_from_non_any_address_ports.count(c.related_address().ipaddr())) {
+          ips_from_non_any_address_ports.count(c.address().ipaddr())) {
         continue;
       }
       // Even when a port is bound to the "any" address, it should normally
