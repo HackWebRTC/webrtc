@@ -30,16 +30,30 @@ rtc_static_library("rtt_tracker") {
   ]
 }
 
+rtc_static_library("utility_function") {
+  sources = [
+    "utility_function.cc",
+    "utility_function.h",
+  ]
+  deps = [
+    ":monitor_interval",
+    "../../../api/transport:network_control",
+    "../../../rtc_base:rtc_base_approved",
+  ]
+}
+
 if (rtc_include_tests) {
   rtc_source_set("pcc_unittests") {
     testonly = true
     sources = [
       "monitor_interval_unittest.cc",
       "rtt_tracker_unittest.cc",
+      "utility_function_unittest.cc",
     ]
     deps = [
       ":monitor_interval",
       ":rtt_tracker",
+      ":utility_function",
       "../../../api/transport:network_control_test",
       "../../../api/units:data_rate",
       "../../../api/units:time_delta",
