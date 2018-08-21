@@ -357,9 +357,6 @@ void RtpVideoSender::OnBitrateAllocationUpdated(
         // inactive.
         if (layer_bitrates[i]) {
           rtp_modules_[i]->SetVideoBitrateAllocation(*layer_bitrates[i]);
-        } else {
-          // Signal a 0 bitrate on a simulcast stream.
-          rtp_modules_[i]->SetVideoBitrateAllocation(VideoBitrateAllocation());
         }
       }
     }

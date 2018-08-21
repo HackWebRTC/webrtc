@@ -299,32 +299,23 @@ if (rtc_include_tests) {
   rtc_test("test_support_unittests") {
     deps = [
       ":direct_transport",
-      ":fake_video_codecs",
       ":fileutils",
-      ":fileutils_unittests",
       ":perf_test",
       ":rtp_test_utils",
-      ":test_common",
       ":test_main",
       ":test_support",
       ":test_support_test_artifacts",
       ":video_test_common",
       ":video_test_support",
-      "../api:create_simulcast_test_fixture_api",
-      "../api:simulcast_test_fixture_api",
       "../api/video:video_frame_i420",
       "../modules/rtp_rtcp:rtp_rtcp",
-      "../modules/video_capture",
-      "../modules/video_coding:simulcast_test_fixture_impl",
       "../rtc_base:rtc_base_approved",
       "../test:single_threaded_task_queue",
-      "//testing/gmock",
       "//testing/gtest",
       "//third_party/abseil-cpp/absl/memory",
     ]
     sources = [
       "direct_transport_unittest.cc",
-      "fake_vp8_encoder_unittest.cc",
       "frame_generator_unittest.cc",
       "rtp_file_reader_unittest.cc",
       "rtp_file_writer_unittest.cc",
@@ -351,7 +342,6 @@ if (rtc_include_tests) {
     if (is_ios) {
       deps += [ ":test_support_unittests_bundle_data" ]
     }
-
     if (!is_android && !build_with_chromium) {
       # This is needed in order to avoid:
       # undefined symbol: webrtc::videocapturemodule::VideoCaptureImpl::Create
@@ -498,46 +488,13 @@ rtc_source_set("single_threaded_task_queue") {
   ]
 }
 
-rtc_source_set("fake_video_codecs") {
-  testonly = true
-  visibility = [ "*" ]
-  sources = [
-    "configurable_frame_size_encoder.cc",
-    "configurable_frame_size_encoder.h",
-    "fake_decoder.cc",
-    "fake_decoder.h",
-    "fake_encoder.cc",
-    "fake_encoder.h",
-    "fake_vp8_encoder.cc",
-    "fake_vp8_encoder.h",
-  ]
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-  deps = [
-    "..:webrtc_common",
-    "../api/video:video_frame_i420",
-    "../api/video_codecs:video_codecs_api",
-    "../common_video:common_video",
-    "../modules/video_coding:video_codec_interface",
-    "../modules/video_coding:video_coding_utility",
-    "../modules/video_coding:webrtc_h264",
-    "../modules/video_coding:webrtc_vp8",
-    "../modules/video_coding:webrtc_vp9",
-    "../rtc_base:checks",
-    "../rtc_base:rtc_base_approved",
-    "../rtc_base:rtc_task_queue",
-    "../rtc_base:sequenced_task_checker",
-    "../system_wrappers",
-  ]
-}
-
 rtc_source_set("test_common") {
   testonly = true
   sources = [
     "call_test.cc",
     "call_test.h",
+    "configurable_frame_size_encoder.cc",
+    "configurable_frame_size_encoder.h",
     "constants.cc",
     "constants.h",
     "drifting_clock.cc",
@@ -545,6 +502,10 @@ rtc_source_set("test_common") {
     "encoder_proxy_factory.h",
     "encoder_settings.cc",
     "encoder_settings.h",
+    "fake_decoder.cc",
+    "fake_decoder.h",
+    "fake_encoder.cc",
+    "fake_encoder.h",
     "fake_videorenderer.h",
     "function_video_decoder_factory.h",
     "function_video_encoder_factory.h",
@@ -573,17 +534,18 @@ rtc_source_set("test_common") {
 
   deps = [
     ":direct_transport",
-    ":fake_video_codecs",
     ":fileutils",
     ":rtp_test_utils",
     ":test_support",
     ":video_test_common",
+    "..:webrtc_common",
     "../api:libjingle_peerconnection_api",
     "../api:simulated_network_api",
     "../api:transport_api",
     "../api/audio_codecs:builtin_audio_decoder_factory",
     "../api/audio_codecs:builtin_audio_encoder_factory",
     "../api/video:video_frame",
+    "../api/video:video_frame_i420",
     "../api/video_codecs:video_codecs_api",
     "../audio",
     "../call",
@@ -593,6 +555,7 @@ rtc_source_set("test_common") {
     "../call:simulated_network",
     "../call:simulated_packet_receiver",
     "../call:video_stream_api",
+    "../common_video",
     "../logging:rtc_event_log_api",
     "../logging:rtc_event_log_impl_base",
     "../media:rtc_internal_video_codecs",
@@ -606,6 +569,7 @@ rtc_source_set("test_common") {
     "../modules/rtp_rtcp",
     "../modules/rtp_rtcp:mock_rtp_rtcp",
     "../modules/rtp_rtcp:rtp_rtcp_format",
+    "../modules/video_coding:video_codec_interface",
     "../modules/video_coding:video_coding_utility",
     "../modules/video_coding:webrtc_h264",
     "../modules/video_coding:webrtc_multiplex",
@@ -613,6 +577,8 @@ rtc_source_set("test_common") {
     "../modules/video_coding:webrtc_vp9",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
+    "../rtc_base:rtc_task_queue",
+    "../rtc_base:sequenced_task_checker",
     "../rtc_base/experiments:congestion_controller_experiment",
     "../system_wrappers",
     "../system_wrappers:field_trial_api",
