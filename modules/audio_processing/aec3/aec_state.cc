@@ -130,10 +130,16 @@ AecState::AecState(const EchoCanceller3Config& config)
       enforce_delay_after_realignment_(EnableEnforcingDelayAfterRealignment()),
       allow_linear_mode_with_diverged_filter_(
           EnableLinearModeWithDivergedFilter()),
-      early_filter_usage_activated_(EnableEarlyFilterUsage()),
-      use_short_initial_state_(EnableShortInitialState()),
-      convergence_trigger_linear_mode_(EnableConvergenceTriggeredLinearMode()),
-      no_alignment_required_for_linear_mode_(EnableNoWaitForAlignment()),
+      early_filter_usage_activated_(EnableEarlyFilterUsage() &&
+                                    !config.filter.conservative_initial_phase),
+      use_short_initial_state_(EnableShortInitialState() &&
+                               !config.filter.conservative_initial_phase),
+      convergence_trigger_linear_mode_(
+          EnableConvergenceTriggeredLinearMode() &&
+          !config.filter.conservative_initial_phase),
+      no_alignment_required_for_linear_mode_(
+          EnableNoWaitForAlignment() &&
+          !config.filter.conservative_initial_phase),
       use_uncertainty_until_sufficiently_adapted_(
           EnableUncertaintyUntilSufficientAdapted()),
       transparent_mode_enforces_nonlinear_mode_(

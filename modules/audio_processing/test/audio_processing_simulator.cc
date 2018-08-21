@@ -214,6 +214,8 @@ EchoCanceller3Config ParseAec3Parameters(const std::string& filename) {
               &cfg.filter.config_change_duration_blocks);
     ReadParam(section, "initial_state_seconds",
               &cfg.filter.initial_state_seconds);
+    ReadParam(section, "conservative_initial_phase",
+              &cfg.filter.conservative_initial_phase);
   }
 
   if (rtc::GetValueFromJsonObject(root, "erle", &section)) {
