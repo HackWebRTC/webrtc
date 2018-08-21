@@ -125,6 +125,7 @@ if (rtc_include_tests) {
       "bbr:bbr_unittests",
       "goog_cc:estimators",
       "goog_cc:goog_cc_unittests",
+      "pcc:pcc_unittests",
       "rtp:congestion_controller_unittests",
     ]
     if (!build_with_chromium && is_clang) {
