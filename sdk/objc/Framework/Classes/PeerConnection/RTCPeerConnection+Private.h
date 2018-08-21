@@ -48,6 +48,8 @@ class PeerConnectionDelegateAdapter : public PeerConnectionObserver {
   void OnAddTrack(rtc::scoped_refptr<RtpReceiverInterface> receiver,
                   const std::vector<rtc::scoped_refptr<MediaStreamInterface>> &streams) override;
 
+  void OnRemoveTrack(rtc::scoped_refptr<RtpReceiverInterface> receiver) override;
+
  private:
   __weak RTCPeerConnection *peer_connection_;
 };

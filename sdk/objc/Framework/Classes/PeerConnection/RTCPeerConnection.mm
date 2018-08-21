@@ -236,6 +236,16 @@ void PeerConnectionDelegateAdapter::OnAddTrack(
   }
 }
 
+void PeerConnectionDelegateAdapter::OnRemoveTrack(
+    rtc::scoped_refptr<RtpReceiverInterface> receiver) {
+  RTCPeerConnection *peer_connection = peer_connection_;
+  if ([peer_connection.delegate respondsToSelector:@selector(peerConnection:didRemoveReceiver:)]) {
+    RTCRtpReceiver *rtpReceiver =
+        [[RTCRtpReceiver alloc] initWithFactory:peer_connection.factory nativeRtpReceiver:receiver];
+    [peer_connection.delegate peerConnection:peer_connection didRemoveReceiver:rtpReceiver];
+  }
+}
+
 }  // namespace webrtc
 
 
