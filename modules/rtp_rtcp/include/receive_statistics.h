@@ -36,17 +36,7 @@ class StreamStatistician {
  public:
   virtual ~StreamStatistician();
 
-  // If |update_fraction_lost| is true, |fraction_lost| will be recomputed
-  // between now and the last time |update_fraction_lost| was true. Otherwise
-  // the last-computed value of |fraction_lost| will be returned.
-  //
-  // |update_fraction_lost| should be true any time an RTCP SR or RR is being
-  // generated, since RFC3550 defines it as the fraction of packets lost since
-  // the previous SR or RR packet was sent.
-  //
-  // Aside from |fraction_lost|, every other value will be freshly computed.
-  virtual bool GetStatistics(RtcpStatistics* statistics,
-                             bool update_fraction_lost) = 0;
+  virtual bool GetStatistics(RtcpStatistics* statistics, bool reset) = 0;
   virtual void GetDataCounters(size_t* bytes_received,
                                uint32_t* packets_received) const = 0;
 

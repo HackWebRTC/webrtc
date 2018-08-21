@@ -1146,16 +1146,14 @@ int Channel::GetRemoteRTCPReportBlocks(
 int Channel::GetRTPStatistics(CallStatistics& stats) {
   // --- RtcpStatistics
 
-  // Jitter, cumulative loss, and extended max sequence number is updated for
-  // each received RTP packet.
+  // The jitter statistics is updated for each received RTP packet and is
+  // based on received packets.
   RtcpStatistics statistics;
   StreamStatistician* statistician =
       rtp_receive_statistics_->GetStatistician(remote_ssrc_);
   if (statistician) {
-    // Recompute |fraction_lost| only if RTCP is off. If it's on, then
-    // |fraction_lost| should only be recomputed when an RTCP SR or RR is sent.
-    bool update_fraction_lost = _rtpRtcpModule->RTCP() == RtcpMode::kOff;
-    statistician->GetStatistics(&statistics, update_fraction_lost);
+    statistician->GetStatistics(&statistics,
+                                _rtpRtcpModule->RTCP() == RtcpMode::kOff);
   }
 
   stats.fractionLost = statistics.fraction_lost;
