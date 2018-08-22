@@ -281,8 +281,7 @@ void AecDumpBasedSimulator::HandleMessage(
 
     if (msg.has_aec_enabled() || settings_.use_aec) {
       bool enable = settings_.use_aec ? *settings_.use_aec : msg.aec_enabled();
-      RTC_CHECK_EQ(AudioProcessing::kNoError,
-                   ap_->echo_cancellation()->Enable(enable));
+      apm_config.echo_canceller.enabled = enable;
       if (settings_.use_verbose_logging) {
         std::cout << " aec_enabled: " << (enable ? "true" : "false")
                   << std::endl;
@@ -341,8 +340,8 @@ void AecDumpBasedSimulator::HandleMessage(
     if (msg.has_aecm_enabled() || settings_.use_aecm) {
       bool enable =
           settings_.use_aecm ? *settings_.use_aecm : msg.aecm_enabled();
-      RTC_CHECK_EQ(AudioProcessing::kNoError,
-                   ap_->echo_control_mobile()->Enable(enable));
+      apm_config.echo_canceller.enabled = enable;
+      apm_config.echo_canceller.mobile_mode = enable;
       if (settings_.use_verbose_logging) {
         std::cout << " aecm_enabled: " << (enable ? "true" : "false")
                   << std::endl;
