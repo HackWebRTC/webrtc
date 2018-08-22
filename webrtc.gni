@@ -33,11 +33,18 @@ if (is_ios) {
 declare_args() {
   # WARNING: This argument doesn't have any effect on the WebRTC build until
   # https://webrtc-review.googlesource.com/c/src/+/94766 will land.
-  # Setting this to false will define WEBRTC_EXCLUDE_FIELD_TRIAL_DEFAULT which
+  # Setting this to true will define WEBRTC_EXCLUDE_FIELD_TRIAL_DEFAULT which
   # will tell the pre-processor to remove the default definition of symbols
   # needed to use field_trial. In that case a new implementation needs to be
   # provided.
-  rtc_exclude_field_trial_default = true
+  if (build_with_chromium) {
+    # When WebRTC is built as part of Chromium it should exclude the default
+    # implementation of field_trial unless it is building for NACL or
+    # Chromecast.
+    rtc_exclude_field_trial_default = !is_nacl && !is_chromecast
+  } else {
+    rtc_exclude_field_trial_default = false
+  }
 
   # Setting this to false will require the API user to pass in their own
   # SSLCertificateVerifier to verify the certificates presented from a
