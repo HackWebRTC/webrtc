@@ -151,20 +151,6 @@ class AudioCodingModule {
                    size_t channels);
 
   ///////////////////////////////////////////////////////////////////////////
-  // bool IsCodecValid()
-  // Checks the validity of the parameters of the given codec.
-  //
-  // Input:
-  //   -codec              : the structure which keeps the parameters of the
-  //                         codec.
-  //
-  // Return value:
-  //   true if the parameters are valid,
-  //   false if any parameter is not valid.
-  //
-  static bool IsCodecValid(const CodecInst& codec);
-
-  ///////////////////////////////////////////////////////////////////////////
   //   Sender
   //
 
@@ -210,11 +196,6 @@ class AudioCodingModule {
   virtual void ModifyEncoder(
       rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier) = 0;
 
-  // |modifier| is called exactly once with one argument: a const pointer to the
-  // current encoder (which is null if there is no current encoder).
-  virtual void QueryEncoder(
-      rtc::FunctionView<void(AudioEncoder const*)> query) = 0;
-
   // Utility method for simply replacing the existing encoder with a new one.
   void SetEncoder(std::unique_ptr<AudioEncoder> new_encoder) {
     ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
@@ -230,16 +211,6 @@ class AudioCodingModule {
   //   The send codec, or nothing if we don't have one
   //
   virtual absl::optional<CodecInst> SendCodec() const = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
-  // int32_t SendFrequency()
-  // Get the sampling frequency of the current encoder in Hertz.
-  //
-  // Return value:
-  //   positive; sampling frequency [Hz] of the current encoder.
-  //   -1 if an error has happened.
-  //
-  virtual int32_t SendFrequency() const = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // Sets the bitrate to the specified value in bits/sec. If the value is not

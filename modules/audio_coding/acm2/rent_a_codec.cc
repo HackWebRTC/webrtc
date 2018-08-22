@@ -80,10 +80,6 @@ absl::optional<CodecInst> RentACodec::CodecInstByParams(
   return ci;
 }
 
-bool RentACodec::IsCodecValid(const CodecInst& codec_inst) {
-  return ACMCodecDB::CodecNumber(codec_inst) >= 0;
-}
-
 absl::optional<bool> RentACodec::IsSupportedNumChannels(CodecId codec_id,
                                                         size_t num_channels) {
   auto i = CodecIndexFromId(codec_id);
