@@ -15,7 +15,6 @@
 #include "common_video/include/video_frame.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "rtc_base/checks.h"
-#include "test/gtest.h"
 
 namespace webrtc {
 namespace test {

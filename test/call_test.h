@@ -20,6 +20,7 @@
 #include "test/encoder_settings.h"
 #include "test/fake_decoder.h"
 #include "test/fake_videorenderer.h"
+#include "test/fake_vp8_encoder.h"
 #include "test/frame_generator_capturer.h"
 #include "test/function_video_encoder_factory.h"
 #include "test/rtp_rtcp_observer.h"
