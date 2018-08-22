@@ -199,9 +199,18 @@ int32_t RtpVideoStreamReceiver::OnReceivedPayloadData(
   WebRtcRTPHeader rtp_header_with_ntp = *rtp_header;
   rtp_header_with_ntp.ntp_time_ms =
       ntp_estimator_.Estimate(rtp_header->header.timestamp);
+
   VCMPacket packet(payload_data, payload_size, rtp_header_with_ntp);
-  packet.timesNacked =
-      nack_module_ ? nack_module_->OnReceivedPacket(packet) : -1;
+  if (nack_module_) {
+    const bool is_keyframe =
+        rtp_header->video_header().is_first_packet_in_frame &&
+        rtp_header->frameType == kVideoFrameKey;
+
+    packet.timesNacked = nack_module_->OnReceivedPacket(
+        rtp_header->header.sequenceNumber, is_keyframe);
+  } else {
+    packet.timesNacked = -1;
+  }
   packet.receive_time_ms = clock_->TimeInMilliseconds();
 
   if (packet.sizeBytes == 0) {
