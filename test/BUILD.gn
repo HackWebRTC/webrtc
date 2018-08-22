@@ -301,6 +301,7 @@ if (rtc_include_tests) {
       ":direct_transport",
       ":fake_video_codecs",
       ":fileutils",
+      ":fileutils_unittests",
       ":perf_test",
       ":rtp_test_utils",
       ":test_common",
