@@ -1957,7 +1957,8 @@ WebRtcVideoChannel::WebRtcVideoSendStream::CreateVideoEncoderConfig(
   // configure a single stream.
   encoder_config.number_of_streams = parameters_.config.rtp.ssrcs.size();
   if (IsCodecBlacklistedForSimulcast(codec.name) ||
-      (is_screencast && !parameters_.conference_mode)) {
+      (is_screencast && (!ScreenshareSimulcastFieldTrialEnabled() ||
+                         !parameters_.conference_mode))) {
     encoder_config.number_of_streams = 1;
   }
 
@@ -2736,7 +2737,10 @@ std::vector<webrtc::VideoStream> EncoderStreamFactory::CreateEncoderStreams(
     int width,
     int height,
     const webrtc::VideoEncoderConfig& encoder_config) {
-  if (is_screenshare_ && !screenshare_config_explicitly_enabled_) {
+  bool screenshare_simulcast_enabled =
+      screenshare_config_explicitly_enabled_ &&
+      cricket::ScreenshareSimulcastFieldTrialEnabled();
+  if (is_screenshare_ && !screenshare_simulcast_enabled) {
     RTC_DCHECK_EQ(1, encoder_config.number_of_streams);
   }
   RTC_DCHECK_GT(encoder_config.number_of_streams, 0);
