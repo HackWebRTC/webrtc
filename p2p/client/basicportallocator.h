@@ -168,6 +168,10 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
     bool error() const { return state_ == STATE_ERROR; }
     bool pruned() const { return state_ == STATE_PRUNED; }
     bool inprogress() const { return state_ == STATE_INPROGRESS; }
+    // True if this port has been fired in SignalPortReady. This may be false
+    // even if ready() is true if the port was bound to the "any" address; see
+    // comment above SignalAnyAddressPortsAndCandidatesReadyIfNotRedundant.
+    bool signaled() const { return signaled_; }
     // Returns true if this port is ready to be used.
     bool ready() const {
       return has_pairable_candidate_ && state_ != STATE_ERROR &&
@@ -191,6 +195,7 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
       RTC_DCHECK(state_ == STATE_INPROGRESS);
       state_ = STATE_ERROR;
     }
+    void set_signaled() { signaled_ = true; }
 
    private:
     enum State {
@@ -203,6 +208,7 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
     Port* port_ = nullptr;
     AllocationSequence* sequence_ = nullptr;
     bool has_pairable_candidate_ = false;
+    bool signaled_ = false;
     State state_ = STATE_INPROGRESS;
   };
 
@@ -224,7 +230,6 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
   void OnPortError(Port* port);
   void OnProtocolEnabled(AllocationSequence* seq, ProtocolType proto);
   void OnPortDestroyed(PortInterface* port);
-  void MaybeSignalCandidatesAllocationDone();
   void OnPortAllocationComplete(AllocationSequence* seq);
   PortData* FindPort(Port* port);
   std::vector<rtc::Network*> GetNetworks();
@@ -241,9 +246,13 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
 
   std::vector<PortData*> GetUnprunedPorts(
       const std::vector<rtc::Network*>& networks);
+  // Prunes ports and removes candidates gathered from these ports locally. The
+  // list of the removed candidates are returned.
+  std::vector<Candidate> PrunePorts(
+      const std::vector<PortData*>& port_data_list);
   // Prunes ports and signal the remote side to remove the candidates that
   // were previously signaled from these ports.
-  void PrunePortsAndRemoveCandidates(
+  void PrunePortsAndSignalCandidatesRemoval(
       const std::vector<PortData*>& port_data_list);
   // Gets filtered and sanitized candidates generated from a port and
   // append to |candidates|.
@@ -252,6 +261,12 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
   Port* GetBestTurnPortForNetwork(const std::string& network_name) const;
   // Returns true if at least one TURN port is pruned.
   bool PruneTurnPorts(Port* newly_pairable_turn_port);
+  // Fires signals related to aggregate status update in the allocation,
+  // including candidates allocation done, and any address ports and their
+  // candidates ready.
+  void FireAllocationStatusSignalsIfNeeded();
+  // TODO(qingsi): Rename "any address" to "wildcard address" in p2p/.
+  void SignalAnyAddressPortsAndCandidatesReadyIfNotRedundant();
 
   BasicPortAllocator* allocator_;
   rtc::Thread* network_thread_;
