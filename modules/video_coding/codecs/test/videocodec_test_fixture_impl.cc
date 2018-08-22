@@ -70,11 +70,11 @@ void ConfigureSimulcast(VideoCodec* codec_settings) {
 void ConfigureSvc(VideoCodec* codec_settings) {
   RTC_CHECK_EQ(kVideoCodecVP9, codec_settings->codecType);
 
-  const std::vector<SpatialLayer> layers =
-      GetSvcConfig(codec_settings->width, codec_settings->height,
-                   codec_settings->VP9()->numberOfSpatialLayers,
-                   codec_settings->VP9()->numberOfTemporalLayers,
-                   /* is_screen_sharing = */ false);
+  const std::vector<SpatialLayer> layers = GetSvcConfig(
+      codec_settings->width, codec_settings->height, kMaxFramerateFps,
+      codec_settings->VP9()->numberOfSpatialLayers,
+      codec_settings->VP9()->numberOfTemporalLayers,
+      /* is_screen_sharing = */ false);
   ASSERT_EQ(codec_settings->VP9()->numberOfSpatialLayers, layers.size())
       << "GetSvcConfig returned fewer spatial layers than configured.";
 

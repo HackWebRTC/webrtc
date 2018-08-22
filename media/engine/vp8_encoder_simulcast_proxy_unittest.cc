@@ -63,12 +63,30 @@ TEST(VP8EncoderSimulcastProxy, ChoosesCorrectImplementation) {
       "SimulcastEncoderAdapter (Fake, Fake, Fake)";
   VideoCodec codec_settings;
   webrtc::test::CodecSettings(kVideoCodecVP8, &codec_settings);
-  codec_settings.simulcastStream[0] = {
-      test::kTestWidth, test::kTestHeight, 2, 2000, 1000, 1000, 56};
-  codec_settings.simulcastStream[1] = {
-      test::kTestWidth, test::kTestHeight, 2, 3000, 1000, 1000, 56};
-  codec_settings.simulcastStream[2] = {
-      test::kTestWidth, test::kTestHeight, 2, 5000, 1000, 1000, 56};
+  codec_settings.simulcastStream[0] = {test::kTestWidth,
+                                       test::kTestHeight,
+                                       test::kTestFrameRate,
+                                       2,
+                                       2000,
+                                       1000,
+                                       1000,
+                                       56};
+  codec_settings.simulcastStream[1] = {test::kTestWidth,
+                                       test::kTestHeight,
+                                       test::kTestFrameRate,
+                                       2,
+                                       3000,
+                                       1000,
+                                       1000,
+                                       56};
+  codec_settings.simulcastStream[2] = {test::kTestWidth,
+                                       test::kTestHeight,
+                                       test::kTestFrameRate,
+                                       2,
+                                       5000,
+                                       1000,
+                                       1000,
+                                       56};
   codec_settings.numberOfSimulcastStreams = 3;
 
   NiceMock<MockEncoder>* mock_encoder = new NiceMock<MockEncoder>();

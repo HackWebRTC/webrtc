@@ -361,6 +361,7 @@ struct SpatialLayer {
 
   unsigned short width;
   unsigned short height;
+  float maxFramerate;  // fps.
   unsigned char numberOfTemporalLayers;
   unsigned int maxBitrate;     // kilobits/sec.
   unsigned int targetBitrate;  // kilobits/sec.
