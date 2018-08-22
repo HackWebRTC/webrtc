@@ -21,7 +21,6 @@
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "modules/audio_coding/neteq/include/neteq.h"
-#include "rtc_base/deprecation.h"
 #include "rtc_base/function_view.h"
 #include "system_wrappers/include/clock.h"
 
@@ -612,20 +611,6 @@ class AudioCodingModule {
   //
   virtual int LeastRequiredDelayMs() const = 0;
 
-  // int32_t PlayoutTimestamp()
-  // The send timestamp of an RTP packet is associated with the decoded
-  // audio of the packet in question. This function returns the timestamp of
-  // the latest audio obtained by calling PlayoutData10ms().
-  //
-  // Input:
-  //   -timestamp          : a reference to a uint32_t to receive the
-  //                         timestamp.
-  // Return value:
-  //    0 if the output is a correct timestamp.
-  //   -1 if failed to output the correct timestamp.
-  //
-  RTC_DEPRECATED virtual int32_t PlayoutTimestamp(uint32_t* timestamp) = 0;
-
   ///////////////////////////////////////////////////////////////////////////
   // int32_t PlayoutTimestamp()
   // The send timestamp of an RTP packet is associated with the decoded
@@ -673,14 +658,6 @@ class AudioCodingModule {
   virtual int32_t PlayoutData10Ms(int32_t desired_freq_hz,
                                   AudioFrame* audio_frame,
                                   bool* muted) = 0;
-
-  /////////////////////////////////////////////////////////////////////////////
-  // Same as above, but without the muted parameter. This methods should not be
-  // used if enable_fast_accelerate was set to true in NetEq::Config.
-  // TODO(henrik.lundin) Remove this method when downstream dependencies are
-  // ready.
-  virtual int32_t PlayoutData10Ms(int32_t desired_freq_hz,
-                                  AudioFrame* audio_frame) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   //   Codec specific

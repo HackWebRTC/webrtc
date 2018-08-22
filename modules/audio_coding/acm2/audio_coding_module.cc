@@ -158,8 +158,6 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   // Smallest latency NetEq will maintain.
   int LeastRequiredDelayMs() const override;
 
-  RTC_DEPRECATED int32_t PlayoutTimestamp(uint32_t* timestamp) override;
-
   absl::optional<uint32_t> PlayoutTimestamp() override;
 
   int FilteredCurrentDelayMs() const override;
@@ -171,7 +169,6 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   int PlayoutData10Ms(int desired_freq_hz,
                       AudioFrame* audio_frame,
                       bool* muted) override;
-  int PlayoutData10Ms(int desired_freq_hz, AudioFrame* audio_frame) override;
 
   /////////////////////////////////////////
   //   Statistics
@@ -1109,14 +1106,6 @@ int AudioCodingModuleImpl::PlayoutData10Ms(int desired_freq_hz,
   return 0;
 }
 
-int AudioCodingModuleImpl::PlayoutData10Ms(int desired_freq_hz,
-                                           AudioFrame* audio_frame) {
-  bool muted;
-  int ret = PlayoutData10Ms(desired_freq_hz, audio_frame, &muted);
-  RTC_DCHECK(!muted);
-  return ret;
-}
-
 /////////////////////////////////////////
 //   Statistics
 //
@@ -1179,14 +1168,6 @@ int AudioCodingModuleImpl::DisableOpusDtx() {
     return -1;
   }
   return encoder_stack_->SetDtx(false) ? 0 : -1;
-}
-
-int32_t AudioCodingModuleImpl::PlayoutTimestamp(uint32_t* timestamp) {
-  absl::optional<uint32_t> ts = PlayoutTimestamp();
-  if (!ts)
-    return -1;
-  *timestamp = *ts;
-  return 0;
 }
 
 absl::optional<uint32_t> AudioCodingModuleImpl::PlayoutTimestamp() {
