@@ -393,7 +393,6 @@ if (rtc_include_tests) {
       "test/fakevideotracksource.h",
       "test/framegeneratorcapturervideotracksource.h",
       "test/mock_datachannel.h",
-      "test/mock_peerconnection.h",
       "test/mock_rtpreceiverinternal.h",
       "test/mock_rtpsenderinternal.h",
       "test/mockpeerconnectionobservers.h",
