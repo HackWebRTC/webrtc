@@ -465,6 +465,20 @@ TEST_F(TestVp9Impl,
   }
 }
 
+TEST_F(TestVp9Impl, ScalabilityStructureIsAvailableInFlexibleMode) {
+  codec_settings_.VP9()->flexibleMode = true;
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->InitEncode(&codec_settings_, 1 /* number of cores */,
+                                 0 /* max payload size (unused) */));
+
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->Encode(*NextInputFrame(), nullptr, nullptr));
+  EncodedImage encoded_frame;
+  CodecSpecificInfo codec_specific_info;
+  ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
+  EXPECT_TRUE(codec_specific_info.codecSpecific.VP9.ss_data_available);
+}
+
 class TestVp9ImplWithLayering
     : public TestVp9Impl,
       public ::testing::WithParamInterface<::testing::tuple<uint8_t, uint8_t>> {

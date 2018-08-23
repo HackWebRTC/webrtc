@@ -763,11 +763,9 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
   CodecSpecificInfoVP9* vp9_info = &(codec_specific->codecSpecific.VP9);
 
   vp9_info->first_frame_in_picture = first_frame_in_picture;
-  vp9_info->flexible_mode = codec_.VP9()->flexibleMode;
+  vp9_info->flexible_mode = is_flexible_mode_;
   vp9_info->ss_data_available =
-      ((pkt.data.frame.flags & VPX_FRAME_IS_KEY) && !codec_.VP9()->flexibleMode)
-          ? true
-          : false;
+      (pkt.data.frame.flags & VPX_FRAME_IS_KEY) ? true : false;
 
   vpx_svc_layer_id_t layer_id = {0};
   vpx_codec_control(encoder_, VP9E_GET_SVC_LAYER_ID, &layer_id);
@@ -844,7 +842,9 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
       vp9_info->height[i] = codec_.height * svc_params_.scaling_factor_num[i] /
                             svc_params_.scaling_factor_den[i];
     }
-    if (!vp9_info->flexible_mode) {
+    if (vp9_info->flexible_mode) {
+      vp9_info->gof.num_frames_in_gof = 0;
+    } else {
       vp9_info->gof.CopyGofInfoVP9(gof_);
     }
   }
