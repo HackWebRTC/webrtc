@@ -200,7 +200,7 @@ TEST_F(DelayManagerTest, TargetDelay) {
   EXPECT_EQ(lower + (20 << 8) / kFrameSizeMs, higher);
 }
 
-TEST_F(DelayManagerTest, MaxAndRequiredDelay) {
+TEST_F(DelayManagerTest, MaxDelay) {
   const int kExpectedTarget = 5;
   const int kTimeIncrement = kExpectedTarget * kFrameSizeMs;
   SetPacketAudioLength(kFrameSizeMs);
@@ -224,14 +224,13 @@ TEST_F(DelayManagerTest, MaxAndRequiredDelay) {
   EXPECT_TRUE(dm_->SetMaximumDelay(kMaxDelayMs));
   IncreaseTime(kTimeIncrement);
   InsertNextPacket();
-  EXPECT_EQ(kExpectedTarget * kFrameSizeMs, dm_->least_required_delay_ms());
   EXPECT_EQ(kMaxDelayPackets << 8, dm_->TargetLevel());
 
   // Target level at least should be one packet.
   EXPECT_FALSE(dm_->SetMaximumDelay(kFrameSizeMs - 1));
 }
 
-TEST_F(DelayManagerTest, MinAndRequiredDelay) {
+TEST_F(DelayManagerTest, MinDelay) {
   const int kExpectedTarget = 5;
   const int kTimeIncrement = kExpectedTarget * kFrameSizeMs;
   SetPacketAudioLength(kFrameSizeMs);
@@ -255,7 +254,6 @@ TEST_F(DelayManagerTest, MinAndRequiredDelay) {
   dm_->SetMinimumDelay(kMinDelayMs);
   IncreaseTime(kTimeIncrement);
   InsertNextPacket();
-  EXPECT_EQ(kExpectedTarget * kFrameSizeMs, dm_->least_required_delay_ms());
   EXPECT_EQ(kMinDelayPackets << 8, dm_->TargetLevel());
 }
 

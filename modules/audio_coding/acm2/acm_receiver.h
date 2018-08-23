@@ -143,13 +143,6 @@ class AcmReceiver {
   int SetMaximumDelay(int delay_ms);
 
   //
-  // Get least required delay computed based on channel conditions. Note that
-  // this is before applying any user-defined limits (specified by calling
-  // (SetMinimumDelay() and/or SetMaximumDelay()).
-  //
-  int LeastRequiredDelayMs() const;
-
-  //
   // Resets the initial delay to zero.
   //
   void ResetInitialDelay();

@@ -157,8 +157,6 @@ class NetEqImpl : public webrtc::NetEq {
 
   bool SetMaximumDelay(int delay_ms) override;
 
-  int LeastRequiredDelayMs() const override;
-
   int SetTargetDelay() override;
 
   int TargetDelayMs() const override;

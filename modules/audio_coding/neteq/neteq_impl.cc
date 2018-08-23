@@ -307,12 +307,6 @@ bool NetEqImpl::SetMaximumDelay(int delay_ms) {
   return false;
 }
 
-int NetEqImpl::LeastRequiredDelayMs() const {
-  rtc::CritScope lock(&crit_sect_);
-  assert(delay_manager_.get());
-  return delay_manager_->least_required_delay_ms();
-}
-
 int NetEqImpl::SetTargetDelay() {
   return kNotImplemented;
 }

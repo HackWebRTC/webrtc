@@ -155,9 +155,6 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   // Maximum playout delay.
   int SetMaximumPlayoutDelay(int time_ms) override;
 
-  // Smallest latency NetEq will maintain.
-  int LeastRequiredDelayMs() const override;
-
   absl::optional<uint32_t> PlayoutTimestamp() override;
 
   int FilteredCurrentDelayMs() const override;
@@ -1205,10 +1202,6 @@ void AudioCodingModuleImpl::DisableNack() {
 std::vector<uint16_t> AudioCodingModuleImpl::GetNackList(
     int64_t round_trip_time_ms) const {
   return receiver_.GetNackList(round_trip_time_ms);
-}
-
-int AudioCodingModuleImpl::LeastRequiredDelayMs() const {
-  return receiver_.LeastRequiredDelayMs();
 }
 
 void AudioCodingModuleImpl::GetDecodingCallStatistics(

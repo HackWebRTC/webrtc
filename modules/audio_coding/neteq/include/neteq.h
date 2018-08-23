@@ -180,12 +180,6 @@ class NetEq {
   // the |max_delay_ms| value in the NetEq::Config struct.
   virtual bool SetMaximumDelay(int delay_ms) = 0;
 
-  // The smallest latency required. This is computed bases on inter-arrival
-  // time and internal NetEq logic. Note that in computing this latency none of
-  // the user defined limits (applied by calling setMinimumDelay() and/or
-  // SetMaximumDelay()) are applied.
-  virtual int LeastRequiredDelayMs() const = 0;
-
   // Not implemented.
   virtual int SetTargetDelay() = 0;
 

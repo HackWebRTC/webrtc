@@ -60,10 +60,6 @@ int AcmReceiver::SetMaximumDelay(int delay_ms) {
   return -1;
 }
 
-int AcmReceiver::LeastRequiredDelayMs() const {
-  return neteq_->LeastRequiredDelayMs();
-}
-
 absl::optional<int> AcmReceiver::last_packet_sample_rate_hz() const {
   rtc::CritScope lock(&crit_sect_);
   return last_packet_sample_rate_hz_;

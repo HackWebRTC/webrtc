@@ -40,7 +40,6 @@ DelayManager::DelayManager(size_t max_packets_in_buffer,
       last_seq_no_(0),
       last_timestamp_(0),
       minimum_delay_ms_(0),
-      least_required_delay_ms_(target_level_),
       maximum_delay_ms_(target_level_),
       iat_cumulative_sum_(0),
       max_iat_cumulative_sum_(0),
@@ -234,8 +233,6 @@ void DelayManager::UpdateHistogram(size_t iat_packets) {
 // |least_required_level_| while the above limits are applied.
 // TODO(hlundin): Move this check to the buffer logistics class.
 void DelayManager::LimitTargetLevel() {
-  least_required_delay_ms_ = (target_level_ * packet_len_ms_) >> 8;
-
   if (packet_len_ms_ > 0 && minimum_delay_ms_ > 0) {
     int minimum_delay_packet_q8 = (minimum_delay_ms_ << 8) / packet_len_ms_;
     target_level_ = std::max(target_level_, minimum_delay_packet_q8);
@@ -465,10 +462,6 @@ bool DelayManager::SetMaximumDelay(int delay_ms) {
   }
   maximum_delay_ms_ = delay_ms;
   return true;
-}
-
-int DelayManager::least_required_delay_ms() const {
-  return least_required_delay_ms_;
 }
 
 int DelayManager::base_target_level() const {
