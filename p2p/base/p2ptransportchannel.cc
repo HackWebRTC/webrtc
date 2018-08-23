@@ -24,6 +24,7 @@
 #include "rtc_base/crc32.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/nethelper.h"
+#include "rtc_base/nethelpers.h"
 #include "rtc_base/stringencode.h"
 #include "rtc_base/timeutils.h"
 #include "system_wrappers/include/field_trial.h"
@@ -154,6 +155,10 @@ P2PTransportChannel::P2PTransportChannel(
 }
 
 P2PTransportChannel::~P2PTransportChannel() {
+  for (auto& p : resolvers_) {
+    p.resolver_->Destroy(false);
+  }
+  resolvers_.clear();
   RTC_DCHECK(network_thread_ == rtc::Thread::Current());
 }
 
@@ -959,6 +964,21 @@ void P2PTransportChannel::OnNominated(Connection* conn) {
   }
 }
 
+void P2PTransportChannel::ResolveHostnameCandidate(const Candidate& candidate) {
+  if (!async_resolver_factory_) {
+    RTC_LOG(LS_WARNING) << "Dropping ICE candidate with hostname address "
+                        << "(no AsyncResolverFactory)";
+    return;
+  }
+
+  rtc::AsyncResolverInterface* resolver = async_resolver_factory_->Create();
+  resolvers_.emplace_back(candidate, resolver);
+  resolver->SignalDone.connect(this, &P2PTransportChannel::OnCandidateResolved);
+  resolver->Start(candidate.address());
+  RTC_LOG(LS_INFO) << "Asynchronously resolving ICE candidate hostname "
+                   << candidate.address().HostAsSensitiveURIString();
+}
+
 void P2PTransportChannel::AddRemoteCandidate(const Candidate& candidate) {
   RTC_DCHECK(network_thread_ == rtc::Thread::Current());
 
@@ -994,6 +1014,71 @@ void P2PTransportChannel::AddRemoteCandidate(const Candidate& candidate) {
     }
   }
 
+  if (new_remote_candidate.address().IsUnresolvedIP()) {
+    ResolveHostnameCandidate(new_remote_candidate);
+    return;
+  }
+
+  FinishAddingRemoteCandidate(new_remote_candidate);
+}
+
+P2PTransportChannel::CandidateAndResolver::CandidateAndResolver(
+    const Candidate& candidate,
+    rtc::AsyncResolverInterface* resolver)
+    : candidate_(candidate), resolver_(resolver) {}
+
+P2PTransportChannel::CandidateAndResolver::~CandidateAndResolver() {}
+
+void P2PTransportChannel::OnCandidateResolved(
+    rtc::AsyncResolverInterface* resolver) {
+  auto p = std::find_if(resolvers_.begin(), resolvers_.end(),
+                        [resolver](const CandidateAndResolver& cr) {
+                          return cr.resolver_ == resolver;
+                        });
+  if (p == resolvers_.end()) {
+    RTC_LOG(LS_ERROR) << "Unexpected AsyncResolver signal";
+    RTC_NOTREACHED();
+    return;
+  }
+  Candidate candidate = p->candidate_;
+  resolvers_.erase(p);
+  AddRemoteCandidateWithResolver(candidate, resolver);
+  resolver->Destroy(false);
+}
+
+void P2PTransportChannel::AddRemoteCandidateWithResolver(
+    Candidate candidate,
+    rtc::AsyncResolverInterface* resolver) {
+  if (resolver->GetError()) {
+    RTC_LOG(LS_WARNING) << "Failed to resolve ICE candidate hostname "
+                        << candidate.address().HostAsSensitiveURIString()
+                        << " with error " << resolver->GetError();
+    return;
+  }
+
+  rtc::SocketAddress resolved_address;
+  // Prefer IPv6 to IPv4 if we have it (see RFC 5245 Section 15.1).
+  // TODO(zstein): This won't work if we only have IPv4 locally but receive an
+  // AAAA DNS record.
+  bool have_address =
+      resolver->GetResolvedAddress(AF_INET6, &resolved_address) ||
+      resolver->GetResolvedAddress(AF_INET, &resolved_address);
+  if (!have_address) {
+    RTC_LOG(LS_INFO) << "ICE candidate hostname "
+                     << candidate.address().HostAsSensitiveURIString()
+                     << " could not be resolved";
+    return;
+  }
+
+  RTC_LOG(LS_INFO) << "Resolved ICE candidate hostname "
+                   << candidate.address().HostAsSensitiveURIString() << " to "
+                   << resolved_address.ipaddr().ToSensitiveString();
+  candidate.set_address(resolved_address);
+  FinishAddingRemoteCandidate(candidate);
+}
+
+void P2PTransportChannel::FinishAddingRemoteCandidate(
+    const Candidate& new_remote_candidate) {
   // If this candidate matches what was thought to be a peer reflexive
   // candidate, we need to update the candidate priority/etc.
   for (Connection* conn : connections_) {
