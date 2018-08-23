@@ -13,7 +13,6 @@
 #include <algorithm>
 #include <memory>
 #include <string>
-#include <vector>
 
 #include "rtc_base/checks.h"
 #include "rtc_base/rate_limiter.h"
@@ -96,10 +95,10 @@ class RtpRtcpAPITest : public ::testing::Test {
     module_->SetSSRC(kInitialSsrc);
   }
 
-  std::unique_ptr<RtpRtcp> module_;
   SimulatedClock fake_clock_;
   test::NullTransport null_transport_;
   RateLimiter retransmission_rate_limiter_;
+  std::unique_ptr<RtpRtcp> module_;
 };
 
 TEST_F(RtpRtcpAPITest, Basic) {

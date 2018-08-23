@@ -20,7 +20,6 @@
 #include "modules/rtp_rtcp/source/rtp_receiver_audio.h"
 #include "modules/rtp_rtcp/test/testAPI/test_api.h"
 #include "rtc_base/rate_limiter.h"
-#include "test/gmock.h"
 #include "test/gtest.h"
 
 namespace webrtc {
@@ -37,57 +36,53 @@ class RtcpCallback : public RtcpIntraFrameObserver {
 class RtpRtcpRtcpTest : public ::testing::Test {
  protected:
   RtpRtcpRtcpTest()
-      : fake_clock_(123456), retransmission_rate_limiter_(&fake_clock_, 1000) {}
+      : fake_clock_(123456),
+        retransmission_rate_limiter_(&fake_clock_, 1000),
+        receive_statistics1_(ReceiveStatistics::Create(&fake_clock_)),
+        receive_statistics2_(ReceiveStatistics::Create(&fake_clock_)),
+        rtp_receiver1_(
+            RtpReceiver::CreateAudioReceiver(&fake_clock_,
+                                             &receiver_,
+                                             &rtp_payload_registry1_)),
+        rtp_receiver2_(
+            RtpReceiver::CreateAudioReceiver(&fake_clock_,
+                                             &receiver_,
+                                             &rtp_payload_registry2_)) {}
   ~RtpRtcpRtcpTest() override = default;
 
   void SetUp() override {
-    receiver = new TestRtpReceiver();
-    transport1 = new LoopBackTransport();
-    transport2 = new LoopBackTransport();
-
-    receive_statistics1_.reset(ReceiveStatistics::Create(&fake_clock_));
-    receive_statistics2_.reset(ReceiveStatistics::Create(&fake_clock_));
-
     RtpRtcp::Configuration configuration;
     configuration.audio = true;
     configuration.clock = &fake_clock_;
     configuration.receive_statistics = receive_statistics1_.get();
-    configuration.outgoing_transport = transport1;
+    configuration.outgoing_transport = &transport1_;
     configuration.intra_frame_callback = &rtcp_callback1_;
     configuration.retransmission_rate_limiter = &retransmission_rate_limiter_;
-
-    module1 = RtpRtcp::CreateRtpRtcp(configuration);
-
-    rtp_receiver1_.reset(RtpReceiver::CreateAudioReceiver(
-        &fake_clock_, receiver, &rtp_payload_registry1_));
+    module1_.reset(RtpRtcp::CreateRtpRtcp(configuration));
 
     configuration.receive_statistics = receive_statistics2_.get();
-    configuration.outgoing_transport = transport2;
+    configuration.outgoing_transport = &transport2_;
     configuration.intra_frame_callback = &rtcp_callback2_;
+    module2_.reset(RtpRtcp::CreateRtpRtcp(configuration));
 
-    module2 = RtpRtcp::CreateRtpRtcp(configuration);
-
-    rtp_receiver2_.reset(RtpReceiver::CreateAudioReceiver(
-        &fake_clock_, receiver, &rtp_payload_registry2_));
-
-    transport1->SetSendModule(module2, &rtp_payload_registry2_,
+    transport1_.SetSendModule(module2_.get(), &rtp_payload_registry2_,
                               rtp_receiver2_.get(), receive_statistics2_.get());
-    transport2->SetSendModule(module1, &rtp_payload_registry1_,
+    transport2_.SetSendModule(module1_.get(), &rtp_payload_registry1_,
                               rtp_receiver1_.get(), receive_statistics1_.get());
 
-    module1->SetRTCPStatus(RtcpMode::kCompound);
-    module2->SetRTCPStatus(RtcpMode::kCompound);
+    module1_->SetRTCPStatus(RtcpMode::kCompound);
+    module2_->SetRTCPStatus(RtcpMode::kCompound);
 
-    module2->SetSSRC(kSsrc + 1);
-    module2->SetRemoteSSRC(kSsrc);
-    module1->SetSSRC(kSsrc);
-    module1->SetSequenceNumber(kSequenceNumber);
-    module1->SetStartTimestamp(kTimestamp);
+    module2_->SetSSRC(kSsrc + 1);
+    module2_->SetRemoteSSRC(kSsrc);
+    module1_->SetSSRC(kSsrc);
+    module1_->SetSequenceNumber(kSequenceNumber);
+    module1_->SetStartTimestamp(kTimestamp);
 
-    module1->SetCsrcs(kCsrcs);
-    EXPECT_EQ(0, module1->SetCNAME("john.doe@test.test"));
+    module1_->SetCsrcs(kCsrcs);
+    EXPECT_EQ(0, module1_->SetCNAME("john.doe@test.test"));
 
-    EXPECT_EQ(0, module1->SetSendingStatus(true));
+    EXPECT_EQ(0, module1_->SetSendingStatus(true));
 
     CodecInst voice_codec;
     voice_codec.pltype = 96;
@@ -95,10 +90,10 @@ class RtpRtcpRtcpTest : public ::testing::Test {
     voice_codec.rate = 64000;
     memcpy(voice_codec.plname, "PCMU", 5);
 
-    EXPECT_EQ(0, module1->RegisterSendPayload(voice_codec));
+    EXPECT_EQ(0, module1_->RegisterSendPayload(voice_codec));
     EXPECT_EQ(0, rtp_receiver1_->RegisterReceivePayload(
                      voice_codec.pltype, CodecInstToSdp(voice_codec)));
-    EXPECT_EQ(0, module2->RegisterSendPayload(voice_codec));
+    EXPECT_EQ(0, module2_->RegisterSendPayload(voice_codec));
     EXPECT_EQ(0, rtp_receiver2_->RegisterReceivePayload(
                      voice_codec.pltype, CodecInstToSdp(voice_codec)));
 
@@ -107,84 +102,74 @@ class RtpRtcpRtcpTest : public ::testing::Test {
     // Send RTP packet with the data "testtest".
     const uint8_t test[9] = "testtest";
     EXPECT_EQ(true,
-              module1->SendOutgoingData(webrtc::kAudioFrameSpeech, 96, 0, -1,
-                                        test, 8, nullptr, nullptr, nullptr));
+              module1_->SendOutgoingData(webrtc::kAudioFrameSpeech, 96, 0, -1,
+                                         test, 8, nullptr, nullptr, nullptr));
   }
-
-  void TearDown() override {
-    delete module1;
-    delete module2;
-    delete transport1;
-    delete transport2;
-    delete receiver;
-  }
-
-  RtcpCallback rtcp_callback1_;
-  RtcpCallback rtcp_callback2_;
-  RTPPayloadRegistry rtp_payload_registry1_;
-  RTPPayloadRegistry rtp_payload_registry2_;
-  std::unique_ptr<ReceiveStatistics> receive_statistics1_;
-  std::unique_ptr<ReceiveStatistics> receive_statistics2_;
-  std::unique_ptr<RtpReceiver> rtp_receiver1_;
-  std::unique_ptr<RtpReceiver> rtp_receiver2_;
-  RtpRtcp* module1;
-  RtpRtcp* module2;
-  TestRtpReceiver* receiver;
-  LoopBackTransport* transport1;
-  LoopBackTransport* transport2;
 
   const std::vector<uint32_t> kCsrcs = {1234, 2345};
   SimulatedClock fake_clock_;
   RateLimiter retransmission_rate_limiter_;
+  RtcpCallback rtcp_callback1_;
+  RtcpCallback rtcp_callback2_;
+  RTPPayloadRegistry rtp_payload_registry1_;
+  RTPPayloadRegistry rtp_payload_registry2_;
+  TestRtpReceiver receiver_;
+  std::unique_ptr<ReceiveStatistics> receive_statistics1_;
+  std::unique_ptr<ReceiveStatistics> receive_statistics2_;
+  std::unique_ptr<RtpReceiver> rtp_receiver1_;
+  std::unique_ptr<RtpReceiver> rtp_receiver2_;
+  std::unique_ptr<RtpRtcp> module1_;
+  std::unique_ptr<RtpRtcp> module2_;
+  LoopBackTransport transport1_;
+  LoopBackTransport transport2_;
 };
 
 TEST_F(RtpRtcpRtcpTest, RTCP_CNAME) {
   // Set cname of mixed.
-  EXPECT_EQ(0, module1->AddMixedCNAME(kCsrcs[0], "john@192.168.0.1"));
-  EXPECT_EQ(0, module1->AddMixedCNAME(kCsrcs[1], "jane@192.168.0.2"));
+  EXPECT_EQ(0, module1_->AddMixedCNAME(kCsrcs[0], "john@192.168.0.1"));
+  EXPECT_EQ(0, module1_->AddMixedCNAME(kCsrcs[1], "jane@192.168.0.2"));
 
-  EXPECT_EQ(-1, module1->RemoveMixedCNAME(kCsrcs[0] + 1));
-  EXPECT_EQ(0, module1->RemoveMixedCNAME(kCsrcs[1]));
-  EXPECT_EQ(0, module1->AddMixedCNAME(kCsrcs[1], "jane@192.168.0.2"));
+  EXPECT_EQ(-1, module1_->RemoveMixedCNAME(kCsrcs[0] + 1));
+  EXPECT_EQ(0, module1_->RemoveMixedCNAME(kCsrcs[1]));
+  EXPECT_EQ(0, module1_->AddMixedCNAME(kCsrcs[1], "jane@192.168.0.2"));
 
   // Send RTCP packet, triggered by timer.
   fake_clock_.AdvanceTimeMilliseconds(7500);
-  module1->Process();
+  module1_->Process();
   fake_clock_.AdvanceTimeMilliseconds(100);
-  module2->Process();
+  module2_->Process();
 
   char cName[RTCP_CNAME_SIZE];
-  EXPECT_EQ(-1, module2->RemoteCNAME(rtp_receiver2_->SSRC() + 1, cName));
+  EXPECT_EQ(-1, module2_->RemoteCNAME(rtp_receiver2_->SSRC() + 1, cName));
 
   // Check multiple CNAME.
-  EXPECT_EQ(0, module2->RemoteCNAME(rtp_receiver2_->SSRC(), cName));
+  EXPECT_EQ(0, module2_->RemoteCNAME(rtp_receiver2_->SSRC(), cName));
   EXPECT_EQ(0, strncmp(cName, "john.doe@test.test", RTCP_CNAME_SIZE));
 
-  EXPECT_EQ(0, module2->RemoteCNAME(kCsrcs[0], cName));
+  EXPECT_EQ(0, module2_->RemoteCNAME(kCsrcs[0], cName));
   EXPECT_EQ(0, strncmp(cName, "john@192.168.0.1", RTCP_CNAME_SIZE));
 
-  EXPECT_EQ(0, module2->RemoteCNAME(kCsrcs[1], cName));
+  EXPECT_EQ(0, module2_->RemoteCNAME(kCsrcs[1], cName));
   EXPECT_EQ(0, strncmp(cName, "jane@192.168.0.2", RTCP_CNAME_SIZE));
 
-  EXPECT_EQ(0, module1->SetSendingStatus(false));
+  EXPECT_EQ(0, module1_->SetSendingStatus(false));
 
   // Test that BYE clears the CNAME.
-  EXPECT_EQ(-1, module2->RemoteCNAME(rtp_receiver2_->SSRC(), cName));
+  EXPECT_EQ(-1, module2_->RemoteCNAME(rtp_receiver2_->SSRC(), cName));
 }
 
 TEST_F(RtpRtcpRtcpTest, RemoteRTCPStatRemote) {
   std::vector<RTCPReportBlock> report_blocks;
-
-  EXPECT_EQ(0, module1->RemoteRTCPStat(&report_blocks));
+  EXPECT_EQ(0, module1_->RemoteRTCPStat(&report_blocks));
   EXPECT_EQ(0u, report_blocks.size());
 
   // Send RTCP packet, triggered by timer.
   fake_clock_.AdvanceTimeMilliseconds(7500);
-  module1->Process();
+  module1_->Process();
   fake_clock_.AdvanceTimeMilliseconds(100);
-  module2->Process();
+  module2_->Process();
 
-  EXPECT_EQ(0, module1->RemoteRTCPStat(&report_blocks));
+  EXPECT_EQ(0, module1_->RemoteRTCPStat(&report_blocks));
   ASSERT_EQ(1u, report_blocks.size());
 
   // |kSsrc+1| is the SSRC of module2 that send the report.

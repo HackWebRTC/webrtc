@@ -33,30 +33,30 @@ namespace webrtc {
 class RtpRtcpVideoTest : public ::testing::Test {
  protected:
   RtpRtcpVideoTest()
-      : fake_clock_(123456), retransmission_rate_limiter_(&fake_clock_, 1000) {}
+      : fake_clock_(123456),
+        retransmission_rate_limiter_(&fake_clock_, 1000),
+        receive_statistics_(ReceiveStatistics::Create(&fake_clock_)),
+        rtp_receiver_(
+            RtpReceiver::CreateVideoReceiver(&fake_clock_,
+                                             &receiver_,
+                                             &rtp_payload_registry_)) {}
   ~RtpRtcpVideoTest() override = default;
 
   void SetUp() override {
-    transport_ = new LoopBackTransport();
-    receiver_ = new TestRtpReceiver();
-    receive_statistics_.reset(ReceiveStatistics::Create(&fake_clock_));
     RtpRtcp::Configuration configuration;
     configuration.audio = false;
     configuration.clock = &fake_clock_;
-    configuration.outgoing_transport = transport_;
+    configuration.outgoing_transport = &transport_;
     configuration.retransmission_rate_limiter = &retransmission_rate_limiter_;
-
-    video_module_ = RtpRtcp::CreateRtpRtcp(configuration);
-    rtp_receiver_.reset(RtpReceiver::CreateVideoReceiver(
-        &fake_clock_, receiver_, &rtp_payload_registry_));
+    video_module_.reset(RtpRtcp::CreateRtpRtcp(configuration));
 
     video_module_->SetRTCPStatus(RtcpMode::kCompound);
     video_module_->SetSSRC(kSsrc);
     video_module_->SetStorePacketsStatus(true, 600);
     EXPECT_EQ(0, video_module_->SetSendingStatus(true));
 
-    transport_->SetSendModule(video_module_, &rtp_payload_registry_,
-                              rtp_receiver_.get(), receive_statistics_.get());
+    transport_.SetSendModule(video_module_.get(), &rtp_payload_registry_,
+                             rtp_receiver_.get(), receive_statistics_.get());
 
     VideoCodec video_codec;
     memset(&video_codec, 0, sizeof(video_codec));
@@ -111,22 +111,16 @@ class RtpRtcpVideoTest : public ::testing::Test {
     return padding_bytes_in_packet + header_length;
   }
 
-  void TearDown() override {
-    delete video_module_;
-    delete transport_;
-    delete receiver_;
-  }
-
-  std::unique_ptr<ReceiveStatistics> receive_statistics_;
-  RTPPayloadRegistry rtp_payload_registry_;
-  std::unique_ptr<RtpReceiver> rtp_receiver_;
-  RtpRtcp* video_module_;
-  LoopBackTransport* transport_;
-  TestRtpReceiver* receiver_;
   uint8_t video_frame_[65000];
   size_t payload_data_length_;
   SimulatedClock fake_clock_;
   RateLimiter retransmission_rate_limiter_;
+  std::unique_ptr<ReceiveStatistics> receive_statistics_;
+  RTPPayloadRegistry rtp_payload_registry_;
+  TestRtpReceiver receiver_;
+  std::unique_ptr<RtpReceiver> rtp_receiver_;
+  std::unique_ptr<RtpRtcp> video_module_;
+  LoopBackTransport transport_;
 };
 
 TEST_F(RtpRtcpVideoTest, BasicVideo) {
@@ -161,8 +155,8 @@ TEST_F(RtpRtcpVideoTest, PaddingOnlyFrames) {
       const size_t payload_length = packet_size - header.headerLength;
       EXPECT_TRUE(rtp_receiver_->IncomingRtpPacket(
           header, payload, payload_length, pl->typeSpecific));
-      EXPECT_EQ(0u, receiver_->payload_size());
-      EXPECT_EQ(payload_length, receiver_->rtp_header().header.paddingLength);
+      EXPECT_EQ(0u, receiver_.payload_size());
+      EXPECT_EQ(payload_length, receiver_.rtp_header().header.paddingLength);
     }
     timestamp += 3000;
     fake_clock_.AdvanceTimeMilliseconds(33);
