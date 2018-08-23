@@ -417,7 +417,6 @@ using webrtc::AudioTrackInterface;
 using webrtc::DataBuffer;
 using webrtc::DataChannelInterface;
 using webrtc::IceCandidateInterface;
-using webrtc::MediaConstraintsInterface;
 using webrtc::MediaStream;
 using webrtc::MediaStreamInterface;
 using webrtc::MediaStreamTrackInterface;

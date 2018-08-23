@@ -40,7 +40,6 @@ using testing::_;
 
 using webrtc::DataChannelInterface;
 using webrtc::FakeConstraints;
-using webrtc::MediaConstraintsInterface;
 using webrtc::MediaStreamInterface;
 using webrtc::PeerConnectionInterface;
 using webrtc::SdpSemantics;

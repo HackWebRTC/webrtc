@@ -120,16 +120,10 @@ class MockPeerConnection
                      const SessionDescriptionInterface*());
   MOCK_METHOD2(CreateOffer,
                void(CreateSessionDescriptionObserver*,
-                    const MediaConstraintsInterface*));
-  MOCK_METHOD2(CreateOffer,
-               void(CreateSessionDescriptionObserver*,
                     const RTCOfferAnswerOptions&));
   MOCK_METHOD2(CreateAnswer,
                void(CreateSessionDescriptionObserver*,
                     const RTCOfferAnswerOptions&));
-  MOCK_METHOD2(CreateAnswer,
-               void(CreateSessionDescriptionObserver*,
-                    const MediaConstraintsInterface*));
   MOCK_METHOD2(SetLocalDescription,
                void(SetSessionDescriptionObserver*,
                     SessionDescriptionInterface*));
