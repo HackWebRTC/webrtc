@@ -29,7 +29,6 @@ public class PeerConnectionFactory {
   private static final String VIDEO_CAPTURER_THREAD_NAME = "VideoCapturerThread";
 
   private final long nativeFactory;
-  private static boolean enableVideoHwAcceleration;
   private static volatile boolean internalTracerInitialized = false;
   @Nullable private static Thread networkThread;
   @Nullable private static Thread workerThread;
@@ -39,20 +38,18 @@ public class PeerConnectionFactory {
     final Context applicationContext;
     final String fieldTrials;
     final boolean enableInternalTracer;
-    final boolean enableVideoHwAcceleration;
     final NativeLibraryLoader nativeLibraryLoader;
     final String nativeLibraryName;
     @Nullable Loggable loggable;
     @Nullable Severity loggableSeverity;
 
     private InitializationOptions(Context applicationContext, String fieldTrials,
-        boolean enableInternalTracer, boolean enableVideoHwAcceleration,
-        NativeLibraryLoader nativeLibraryLoader, String nativeLibraryName,
-        @Nullable Loggable loggable, @Nullable Severity loggableSeverity) {
+        boolean enableInternalTracer, NativeLibraryLoader nativeLibraryLoader,
+        String nativeLibraryName, @Nullable Loggable loggable,
+        @Nullable Severity loggableSeverity) {
       this.applicationContext = applicationContext;
       this.fieldTrials = fieldTrials;
       this.enableInternalTracer = enableInternalTracer;
-      this.enableVideoHwAcceleration = enableVideoHwAcceleration;
       this.nativeLibraryLoader = nativeLibraryLoader;
       this.nativeLibraryName = nativeLibraryName;
       this.loggable = loggable;
@@ -67,7 +64,6 @@ public class PeerConnectionFactory {
       private final Context applicationContext;
       private String fieldTrials = "";
       private boolean enableInternalTracer = false;
-      private boolean enableVideoHwAcceleration = true;
       private NativeLibraryLoader nativeLibraryLoader = new NativeLibrary.DefaultLoader();
       private String nativeLibraryName = "jingle_peerconnection_so";
       @Nullable private Loggable loggable = null;
@@ -84,13 +80,6 @@ public class PeerConnectionFactory {
 
       public Builder setEnableInternalTracer(boolean enableInternalTracer) {
         this.enableInternalTracer = enableInternalTracer;
-        return this;
-      }
-
-      // Deprecated, this method only affects the deprecated HW codecs and not the new ones.
-      @Deprecated
-      public Builder setEnableVideoHwAcceleration(boolean enableVideoHwAcceleration) {
-        this.enableVideoHwAcceleration = enableVideoHwAcceleration;
         return this;
       }
 
@@ -112,8 +101,8 @@ public class PeerConnectionFactory {
 
       public PeerConnectionFactory.InitializationOptions createInitializationOptions() {
         return new PeerConnectionFactory.InitializationOptions(applicationContext, fieldTrials,
-            enableInternalTracer, enableVideoHwAcceleration, nativeLibraryLoader, nativeLibraryName,
-            loggable, loggableSeverity);
+            enableInternalTracer, nativeLibraryLoader, nativeLibraryName, loggable,
+            loggableSeverity);
       }
     }
   }
@@ -208,22 +197,6 @@ public class PeerConnectionFactory {
     }
 
     public PeerConnectionFactory createPeerConnectionFactory() {
-      VideoEncoderFactory encoderFactory = this.encoderFactory;
-      VideoDecoderFactory decoderFactory = this.decoderFactory;
-      // For legacy reasons, we provide implicit built-in codec factories.
-      // TODO(bugs.webrtc.org/9181): Remove code below. All codec factories should be injected
-      // explicitly.
-      if (encoderFactory == null && decoderFactory == null && !enableVideoHwAcceleration) {
-        encoderFactory = new SoftwareVideoEncoderFactory();
-        decoderFactory = new SoftwareVideoDecoderFactory();
-      } else {
-        if (encoderFactory == null) {
-          encoderFactory = MediaCodecVideoEncoder.createFactory();
-        }
-        if (decoderFactory == null) {
-          decoderFactory = MediaCodecVideoDecoder.createFactory();
-        }
-      }
       return new PeerConnectionFactory(options, audioDeviceModule, encoderFactory, decoderFactory,
           audioProcessingFactory, fecControllerFactoryFactory);
     }
@@ -241,7 +214,6 @@ public class PeerConnectionFactory {
   public static void initialize(InitializationOptions options) {
     ContextUtils.initialize(options.applicationContext);
     NativeLibrary.initialize(options.nativeLibraryLoader, options.nativeLibraryName);
-    enableVideoHwAcceleration = options.enableVideoHwAcceleration;
     nativeInitializeAndroidGlobals();
     nativeInitializeFieldTrials(options.fieldTrials);
     if (options.enableInternalTracer && !internalTracerInitialized) {
@@ -422,22 +394,6 @@ public class PeerConnectionFactory {
   // this call will have no effect.
   public void stopAecDump() {
     nativeStopAecDump(nativeFactory);
-  }
-
-  /**
-   * Set the EGL context used by HW Video encoding and decoding.
-   *
-   * @param localEglContext   Must be the same as used by VideoCapturerAndroid and any local video
-   *                          renderer.
-   * @param remoteEglContext  Must be the same as used by any remote video renderer.
-   * @deprecated Use new HW video encoded/decoder instead, and use createVideoSource(boolean
-   * isScreencast) instead of createVideoSource(VideoCapturer).
-   */
-  @Deprecated
-  public void setVideoHwAccelerationOptions(
-      EglBase.Context localEglContext, EglBase.Context remoteEglContext) {
-    MediaCodecVideoEncoder.setEglContext(localEglContext);
-    MediaCodecVideoDecoder.setEglContext(remoteEglContext);
   }
 
   public void dispose() {
