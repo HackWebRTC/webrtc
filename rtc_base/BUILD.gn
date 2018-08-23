@@ -804,7 +804,6 @@ rtc_static_library("rtc_base_generic") {
     "rtccertificategenerator.h",
     "signalthread.cc",
     "signalthread.h",
-    "sigslot.h",
     "sigslotrepeater.h",
     "socket.cc",
     "socket.h",
