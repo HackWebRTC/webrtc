@@ -32,11 +32,6 @@
 namespace webrtc {
 namespace {
 
-bool EnableTransparencyImprovements() {
-  return !field_trial::IsEnabled(
-      "WebRTC-Aec3TransparencyImprovementsKillSwitch");
-}
-
 bool EnableNewSuppression() {
   return !field_trial::IsEnabled("WebRTC-Aec3NewSuppressionKillSwitch");
 }
@@ -161,7 +156,6 @@ void GainToNoAudibleEchoFallback(
     bool low_noise_render,
     bool saturated_echo,
     bool linear_echo_estimate,
-    bool enable_transparency_improvements,
     const std::array<float, kFftLengthBy2Plus1>& nearend,
     const std::array<float, kFftLengthBy2Plus1>& weighted_echo,
     const std::array<float, kFftLengthBy2Plus1>& masker,
@@ -183,10 +177,7 @@ void GainToNoAudibleEchoFallback(
   RTC_DCHECK_GT(1.f, nearend_masking_margin);
 
   const float masker_margin =
-      linear_echo_estimate
-          ? (enable_transparency_improvements ? config.gain_mask.m0
-                                              : config.gain_mask.m1)
-          : config.gain_mask.m8;
+      linear_echo_estimate ? config.gain_mask.m0 : config.gain_mask.m8;
 
   for (size_t k = 0; k < gain->size(); ++k) {
     // TODO(devicentepena): Experiment by removing the reverberation estimation
@@ -212,54 +203,6 @@ void GainToNoAudibleEchoFallback(
 
 // TODO(peah): Make adaptive to take the actual filter error into account.
 constexpr size_t kUpperAccurateBandPlus1 = 29;
-
-// Computes the signal output power that masks the echo signal.
-void MaskingPower(const EchoCanceller3Config& config,
-                  bool enable_transparency_improvements,
-                  const std::array<float, kFftLengthBy2Plus1>& nearend,
-                  const std::array<float, kFftLengthBy2Plus1>& comfort_noise,
-                  const std::array<float, kFftLengthBy2Plus1>& last_masker,
-                  const std::array<float, kFftLengthBy2Plus1>& gain,
-                  std::array<float, kFftLengthBy2Plus1>* masker) {
-  if (enable_transparency_improvements) {
-    std::copy(comfort_noise.begin(), comfort_noise.end(), masker->begin());
-    return;
-  }
-
-  // Apply masking over time.
-  float masking_factor = config.gain_mask.temporal_masking_lf;
-  auto limit = config.gain_mask.temporal_masking_lf_bands;
-  std::transform(
-      comfort_noise.begin(), comfort_noise.begin() + limit, last_masker.begin(),
-      masker->begin(),
-      [masking_factor](float a, float b) { return a + masking_factor * b; });
-  masking_factor = config.gain_mask.temporal_masking_hf;
-  std::transform(
-      comfort_noise.begin() + limit, comfort_noise.end(),
-      last_masker.begin() + limit, masker->begin() + limit,
-      [masking_factor](float a, float b) { return a + masking_factor * b; });
-
-  // Apply masking only between lower frequency bands.
-  std::array<float, kFftLengthBy2Plus1> side_band_masker;
-  float max_nearend_after_gain = 0.f;
-  for (size_t k = 0; k < gain.size(); ++k) {
-    const float nearend_after_gain = nearend[k] * gain[k];
-    max_nearend_after_gain =
-        std::max(max_nearend_after_gain, nearend_after_gain);
-    side_band_masker[k] = nearend_after_gain + comfort_noise[k];
-  }
-
-  RTC_DCHECK_LT(kUpperAccurateBandPlus1, gain.size());
-  for (size_t k = 1; k < kUpperAccurateBandPlus1; ++k) {
-    (*masker)[k] += config.gain_mask.m5 *
-                    (side_band_masker[k - 1] + side_band_masker[k + 1]);
-  }
-
-  // Add full-band masking as a minimum value for the masker.
-  const float min_masker = max_nearend_after_gain * config.gain_mask.m6;
-  std::for_each(masker->begin(), masker->end(),
-                [min_masker](float& a) { a = std::max(a, min_masker); });
-}
 
 // Limits the gain in the frequencies for which the adaptive filter has not
 // converged. Currently, these frequencies are not hardcoded to the frequencies
@@ -331,16 +274,14 @@ void SuppressionGain::LowerBandGain(
       min_gain[k] = denom > 0.f ? min_echo_power / denom : 1.f;
       min_gain[k] = std::min(min_gain[k], 1.f);
     }
-    if (enable_transparency_improvements_) {
-      for (size_t k = 0; k < 6; ++k) {
-        // Make sure the gains of the low frequencies do not decrease too
-        // quickly after strong nearend.
-        if (last_nearend_[k] > last_echo_[k]) {
-          min_gain[k] =
-              std::max(min_gain[k],
-                       last_gain_[k] * config_.gain_updates.max_dec_factor_lf);
-          min_gain[k] = std::min(min_gain[k], 1.f);
-        }
+    for (size_t k = 0; k < 6; ++k) {
+      // Make sure the gains of the low frequencies do not decrease too
+      // quickly after strong nearend.
+      if (last_nearend_[k] > last_echo_[k]) {
+        min_gain[k] =
+            std::max(min_gain[k],
+                     last_gain_[k] * config_.gain_updates.max_dec_factor_lf);
+        min_gain[k] = std::min(min_gain[k], 1.f);
       }
     }
   } else {
@@ -350,20 +291,11 @@ void SuppressionGain::LowerBandGain(
   // Compute the maximum gain by limiting the gain increase from the previous
   // gain.
   std::array<float, kFftLengthBy2Plus1> max_gain;
-  if (enable_transparency_improvements_) {
-    for (size_t k = 0; k < gain->size(); ++k) {
-      max_gain[k] =
-          std::min(std::max(last_gain_[k] * config_.gain_updates.max_inc_factor,
-                            config_.gain_updates.floor_first_increase),
-                   1.f);
-    }
-  } else {
-    for (size_t k = 0; k < gain->size(); ++k) {
-      max_gain[k] =
-          std::min(std::max(last_gain_[k] * gain_increase_[k],
-                            config_.gain_updates.floor_first_increase),
-                   1.f);
-    }
+  for (size_t k = 0; k < gain->size(); ++k) {
+    max_gain[k] =
+        std::min(std::max(last_gain_[k] * config_.gain_updates.max_inc_factor,
+                          config_.gain_updates.floor_first_increase),
+                 1.f);
   }
 
   // Iteratively compute the gain required to attenuate the echo to a non
@@ -376,12 +308,11 @@ void SuppressionGain::LowerBandGain(
   } else {
     gain->fill(0.f);
     for (int k = 0; k < 2; ++k) {
-      MaskingPower(config_, enable_transparency_improvements_, nearend,
-                   comfort_noise, last_masker_, *gain, &masker);
-      GainToNoAudibleEchoFallback(
-          config_, low_noise_render, saturated_echo, linear_echo_estimate,
-          enable_transparency_improvements_, nearend, weighted_echo, masker,
-          min_gain, max_gain, one_by_weighted_echo, gain);
+      std::copy(comfort_noise.begin(), comfort_noise.end(), masker.begin());
+      GainToNoAudibleEchoFallback(config_, low_noise_render, saturated_echo,
+                                  linear_echo_estimate, nearend, weighted_echo,
+                                  masker, min_gain, max_gain,
+                                  one_by_weighted_echo, gain);
       AdjustForExternalFilters(gain);
     }
   }
@@ -397,15 +328,12 @@ void SuppressionGain::LowerBandGain(
   std::copy(nearend.begin(), nearend.end(), last_nearend_.begin());
   std::copy(weighted_echo.begin(), weighted_echo.end(), last_echo_.begin());
   std::copy(gain->begin(), gain->end(), last_gain_.begin());
-  MaskingPower(config_, enable_transparency_improvements_, nearend,
-               comfort_noise, last_masker_, *gain, &last_masker_);
   aec3::VectorMath(optimization_).Sqrt(*gain);
 
   // Debug outputs for the purpose of development and analysis.
   data_dumper_->DumpRaw("aec3_suppressor_min_gain", min_gain);
   data_dumper_->DumpRaw("aec3_suppressor_max_gain", max_gain);
   data_dumper_->DumpRaw("aec3_suppressor_masker", masker);
-  data_dumper_->DumpRaw("aec3_suppressor_last_masker", last_masker_);
 }
 
 SuppressionGain::SuppressionGain(const EchoCanceller3Config& config,
@@ -417,14 +345,12 @@ SuppressionGain::SuppressionGain(const EchoCanceller3Config& config,
       config_(config),
       state_change_duration_blocks_(
           static_cast<int>(config_.filter.config_change_duration_blocks)),
-      enable_transparency_improvements_(EnableTransparencyImprovements()),
       enable_new_suppression_(EnableNewSuppression()),
       moving_average_(kFftLengthBy2Plus1,
                       config.suppressor.nearend_average_blocks) {
   RTC_DCHECK_LT(0, state_change_duration_blocks_);
   one_by_state_change_duration_blocks_ = 1.f / state_change_duration_blocks_;
   last_gain_.fill(1.f);
-  last_masker_.fill(0.f);
   gain_increase_.fill(1.f);
   last_nearend_.fill(0.f);
   last_echo_.fill(0.f);

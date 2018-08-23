@@ -83,7 +83,6 @@ class SuppressionGain {
   const int state_change_duration_blocks_;
   float one_by_state_change_duration_blocks_;
   std::array<float, kFftLengthBy2Plus1> last_gain_;
-  std::array<float, kFftLengthBy2Plus1> last_masker_;
   std::array<float, kFftLengthBy2Plus1> gain_increase_;
   std::array<float, kFftLengthBy2Plus1> last_nearend_;
   std::array<float, kFftLengthBy2Plus1> last_echo_;
@@ -93,7 +92,6 @@ class SuppressionGain {
   LowNoiseRenderDetector low_render_detector_;
   bool initial_state_ = true;
   int initial_state_change_counter_ = 0;
-  const bool enable_transparency_improvements_;
   const bool enable_new_suppression_;
   aec3::MovingAverage moving_average_;
 
