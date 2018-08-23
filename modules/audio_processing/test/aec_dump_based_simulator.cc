@@ -340,7 +340,7 @@ void AecDumpBasedSimulator::HandleMessage(
     if (msg.has_aecm_enabled() || settings_.use_aecm) {
       bool enable =
           settings_.use_aecm ? *settings_.use_aecm : msg.aecm_enabled();
-      apm_config.echo_canceller.enabled = enable;
+      apm_config.echo_canceller.enabled |= enable;
       apm_config.echo_canceller.mobile_mode = enable;
       if (settings_.use_verbose_logging) {
         std::cout << " aecm_enabled: " << (enable ? "true" : "false")
