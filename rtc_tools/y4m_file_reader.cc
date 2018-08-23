@@ -20,7 +20,6 @@
 #include "api/video/i420_buffer.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/refcountedobject.h"
-#include "rtc_base/sequenced_task_checker.h"
 #include "rtc_base/string_to_number.h"
 #include "rtc_base/stringencode.h"
 #include "rtc_base/stringutils.h"
@@ -184,7 +183,6 @@ size_t Y4mFile::number_of_frames() const {
 
 rtc::scoped_refptr<I420BufferInterface> Y4mFile::GetFrame(
     size_t frame_index) const {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&thread_checker_);
   RTC_CHECK_LT(frame_index, frame_positions_.size());
 
   fsetpos(file_, &frame_positions_[frame_index]);

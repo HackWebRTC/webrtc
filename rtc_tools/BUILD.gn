@@ -69,7 +69,6 @@ rtc_static_library("y4m_file_reader") {
     "../api/video:video_frame",
     "../api/video:video_frame_i420",
     "../rtc_base:rtc_base_approved",
-    "../rtc_base:sequenced_task_checker",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }

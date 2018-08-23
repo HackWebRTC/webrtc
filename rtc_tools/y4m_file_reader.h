@@ -17,7 +17,6 @@
 
 #include "api/video/video_frame.h"
 #include "rtc_base/refcount.h"
-#include "rtc_base/sequenced_task_checker.h"
 
 namespace webrtc {
 namespace test {
@@ -89,7 +88,6 @@ class Y4mFile : public Video {
   const int height_;
   const float fps_;
   const std::vector<fpos_t> frame_positions_;
-  const rtc::SequencedTaskChecker thread_checker_;
   FILE* const file_;
 };
 
