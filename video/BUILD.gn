@@ -358,6 +358,7 @@ if (rtc_include_tests) {
       "../modules/rtp_rtcp",
       "../rtc_base:checks",
       "../rtc_base:rtc_base_approved",
+      "../rtc_base:rtc_json",
       "../system_wrappers",
       "../system_wrappers:metrics_default",
       "../system_wrappers:runtime_enabled_features_default",
