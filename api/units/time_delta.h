@@ -11,6 +11,10 @@
 #ifndef API_UNITS_TIME_DELTA_H_
 #define API_UNITS_TIME_DELTA_H_
 
+#ifdef UNIT_TEST
+#include <ostream>  // no-presubmit-check TODO(webrtc:8982)
+#endif              // UNIT_TEST
+
 #include <stdint.h>
 #include <cmath>
 #include <limits>
@@ -253,6 +257,15 @@ inline TimeDelta operator/(const TimeDelta& delta, const int64_t& scalar) {
   return TimeDelta::us(delta.us() / scalar);
 }
 std::string ToString(const TimeDelta& value);
+
+#ifdef UNIT_TEST
+inline std::ostream& operator<<(  // no-presubmit-check TODO(webrtc:8982)
+    std::ostream& stream,         // no-presubmit-check TODO(webrtc:8982)
+    TimeDelta value) {
+  return stream << ToString(value);
+}
+#endif  // UNIT_TEST
+
 }  // namespace webrtc
 
 #endif  // API_UNITS_TIME_DELTA_H_

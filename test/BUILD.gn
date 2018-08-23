@@ -157,6 +157,10 @@ config("suppress_warning_4373") {
   }
 }
 
+config("test_main_direct_config") {
+  visibility = [ ":*" ]
+  defines = [ "UNIT_TEST" ]
+}
 rtc_source_set("test_support") {
   visibility = [ "*" ]
   testonly = true
@@ -177,6 +181,7 @@ rtc_source_set("test_support") {
     public_deps += [ ":test_support_objc" ]
   }
 
+  public_configs = [ ":test_main_direct_config" ]
   deps = [
     "../rtc_base:rtc_base_approved",
     "//testing/gmock",

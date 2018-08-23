@@ -11,6 +11,10 @@
 #ifndef API_UNITS_DATA_SIZE_H_
 #define API_UNITS_DATA_SIZE_H_
 
+#ifdef UNIT_TEST
+#include <ostream>  // no-presubmit-check TODO(webrtc:8982)
+#endif              // UNIT_TEST
+
 #include <stdint.h>
 #include <cmath>
 #include <limits>
@@ -148,6 +152,14 @@ inline DataSize operator/(const DataSize& size, const int64_t& scalar) {
 }
 
 std::string ToString(const DataSize& value);
+
+#ifdef UNIT_TEST
+inline std::ostream& operator<<(  // no-presubmit-check TODO(webrtc:8982)
+    std::ostream& stream,         // no-presubmit-check TODO(webrtc:8982)
+    DataSize value) {
+  return stream << ToString(value);
+}
+#endif  // UNIT_TEST
 
 }  // namespace webrtc
 
