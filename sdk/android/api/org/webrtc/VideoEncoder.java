@@ -26,17 +26,25 @@ public interface VideoEncoder {
     public final int height;
     public final int startBitrate; // Kilobits per second.
     public final int maxFramerate;
+    public final int numberOfSimulcastStreams;
     public final boolean automaticResizeOn;
 
     @CalledByNative("Settings")
     public Settings(int numberOfCores, int width, int height, int startBitrate, int maxFramerate,
-        boolean automaticResizeOn) {
+        int numberOfSimulcastStreams, boolean automaticResizeOn) {
       this.numberOfCores = numberOfCores;
       this.width = width;
       this.height = height;
       this.startBitrate = startBitrate;
       this.maxFramerate = maxFramerate;
+      this.numberOfSimulcastStreams = numberOfSimulcastStreams;
       this.automaticResizeOn = automaticResizeOn;
+    }
+
+    // TODO(http://bugs.webrtc.org/9646): Remove when downstream clients have been updated.
+    public Settings(int numberOfCores, int width, int height, int startBitrate, int maxFramerate,
+        boolean automaticResizeOn) {
+      this(numberOfCores, width, height, startBitrate, maxFramerate, 1, automaticResizeOn);
     }
   }
 
