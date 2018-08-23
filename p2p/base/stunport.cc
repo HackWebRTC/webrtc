@@ -27,6 +27,10 @@ namespace cricket {
 // TODO(?): Move these to a common place (used in relayport too)
 const int RETRY_TIMEOUT = 50 * 1000;  // 50 seconds
 
+// Stop logging errors in UDPPort::SendTo after we have logged
+// |kSendErrorLogLimit| messages. Start again after a successful send.
+const int kSendErrorLogLimit = 5;
+
 // Handles a binding request sent to the STUN server.
 class StunBindingRequest : public StunRequest {
  public:
@@ -270,8 +274,15 @@ int UDPPort::SendTo(const void* data,
   int sent = socket_->SendTo(data, size, addr, modified_options);
   if (sent < 0) {
     error_ = socket_->GetError();
-    RTC_LOG(LS_ERROR) << ToString() << ": UDP send of " << size
-                      << " bytes failed with error " << error_;
+    // Rate limiting added for crbug.com/856088.
+    // TODO(webrtc:9622): Use general rate limiting mechanism once it exists.
+    if (send_error_count_ < kSendErrorLogLimit) {
+      ++send_error_count_;
+      RTC_LOG(LS_ERROR) << ToString() << ": UDP send of " << size
+                        << " bytes failed with error " << error_;
+    }
+  } else {
+    send_error_count_ = 0;
   }
   return sent;
 }

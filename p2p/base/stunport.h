@@ -242,6 +242,7 @@ class UDPPort : public Port {
   StunRequestManager requests_;
   rtc::AsyncPacketSocket* socket_;
   int error_;
+  int send_error_count_ = 0;
   std::unique_ptr<AddressResolver> resolver_;
   bool ready_;
   int stun_keepalive_delay_;
