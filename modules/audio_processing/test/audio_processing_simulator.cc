@@ -327,8 +327,6 @@ EchoCanceller3Config ParseAec3Parameters(const std::string& filename) {
   }
 
   if (rtc::GetValueFromJsonObject(root, "suppressor", &section)) {
-    ReadParam(section, "bands_with_reliable_coherence",
-              &cfg.suppressor.bands_with_reliable_coherence);
     ReadParam(section, "nearend_average_blocks",
               &cfg.suppressor.nearend_average_blocks);
     ReadParam(section, "mask_lf", &cfg.suppressor.mask_lf);

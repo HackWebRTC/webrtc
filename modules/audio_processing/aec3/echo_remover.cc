@@ -281,17 +281,6 @@ void EchoRemoverImpl::ProcessCapture(
                     subtractor_.FilterImpulseResponse(), *render_buffer, E2, Y2,
                     subtractor_output, y0);
 
-  // Compute spectra.
-  const bool suppression_gain_uses_ffts =
-      config_.suppressor.bands_with_reliable_coherence > 0;
-  FftData X;
-  if (suppression_gain_uses_ffts) {
-    auto& x_aligned = render_buffer->Block(-aec_state_.FilterDelayBlocks())[0];
-    WindowedPaddedFft(fft_, x_aligned, x_old_, &X);
-  } else {
-    X.Clear();
-  }
-
   // Choose the linear output.
   data_dumper_->DumpWav("aec3_output_linear2", kBlockSize, &e[0],
                         LowestBandRate(sample_rate_hz_), 1);
@@ -321,7 +310,7 @@ void EchoRemoverImpl::ProcessCapture(
   cng_.Compute(aec_state_, Y2, &comfort_noise, &high_band_comfort_noise);
 
   // Compute and apply the suppression gain.
-  suppression_gain_.GetGain(E2, R2, cng_.NoiseSpectrum(), E, X, Y,
+  suppression_gain_.GetGain(E2, R2, cng_.NoiseSpectrum(), E, Y,
                             render_signal_analyzer_, aec_state_, x,
                             &high_bands_gain, &G);
 

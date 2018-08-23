@@ -30,8 +30,6 @@ rtc_static_library("aec3") {
     "block_processor_metrics.h",
     "cascaded_biquad_filter.cc",
     "cascaded_biquad_filter.h",
-    "coherence_gain.cc",
-    "coherence_gain.h",
     "comfort_noise_generator.cc",
     "comfort_noise_generator.h",
     "decimator.cc",

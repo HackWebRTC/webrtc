@@ -417,8 +417,6 @@ SuppressionGain::SuppressionGain(const EchoCanceller3Config& config,
       config_(config),
       state_change_duration_blocks_(
           static_cast<int>(config_.filter.config_change_duration_blocks)),
-      coherence_gain_(sample_rate_hz,
-                      config_.suppressor.bands_with_reliable_coherence),
       enable_transparency_improvements_(EnableTransparencyImprovements()),
       enable_new_suppression_(EnableNewSuppression()),
       moving_average_(kFftLengthBy2Plus1,
@@ -461,7 +459,6 @@ void SuppressionGain::GetGain(
     const std::array<float, kFftLengthBy2Plus1>& echo_spectrum,
     const std::array<float, kFftLengthBy2Plus1>& comfort_noise_spectrum,
     const FftData& linear_aec_fft,
-    const FftData& render_fft,
     const FftData& capture_fft,
     const RenderSignalAnalyzer& render_signal_analyzer,
     const AecState& aec_state,
@@ -487,17 +484,6 @@ void SuppressionGain::GetGain(
       render_signal_analyzer.NarrowPeakBand();
   LowerBandGain(low_noise_render, aec_state, nearend_average, echo_spectrum,
                 comfort_noise_spectrum, low_band_gain);
-
-  // Adjust the gain for bands where the coherence indicates not echo.
-  if (cfg.bands_with_reliable_coherence > 0 &&
-      !enable_transparency_improvements_) {
-    std::array<float, kFftLengthBy2Plus1> G_coherence;
-    coherence_gain_.ComputeGain(linear_aec_fft, render_fft, capture_fft,
-                                G_coherence);
-    for (size_t k = 0; k < cfg.bands_with_reliable_coherence; ++k) {
-      (*low_band_gain)[k] = std::max((*low_band_gain)[k], G_coherence[k]);
-    }
-  }
 
   // Limit the gain of the lower bands during start up and after resets.
   const float gain_upper_bound = aec_state.SuppressionGainLimit();
