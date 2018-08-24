@@ -444,7 +444,7 @@ void VideoProcessor::FrameEncoded(
                                config_.codec_settings.codecType));
   }
 
-  if (!config_.IsAsyncCodec()) {
+  if (!config_.encode_in_real_time) {
     // To get pure encode time for next layers, measure time spent in encode
     // callback and subtract it from encode time of next layers.
     post_encode_time_ns_ += rtc::TimeNanos() - encode_stop_ns;

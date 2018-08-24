@@ -121,15 +121,10 @@ std::string CodecSpecificToString(const VideoCodec& codec) {
 }
 
 bool RunEncodeInRealTime(const VideoCodecTestFixtureImpl::Config& config) {
-  if (config.measure_cpu) {
+  if (config.measure_cpu || config.encode_in_real_time) {
     return true;
   }
-#if defined(WEBRTC_ANDROID)
-  // In order to not overwhelm the OpenMAX buffers in the Android MediaCodec.
-  return (config.hw_encoder || config.hw_decoder);
-#else
   return false;
-#endif
 }
 
 std::string FilenameWithParams(
@@ -303,10 +298,6 @@ std::string VideoCodecTestFixtureImpl::Config::CodecName() const {
   return name;
 }
 
-bool VideoCodecTestFixtureImpl::Config::IsAsyncCodec() const {
-  return hw_encoder || hw_decoder;
-}
-
 // TODO(kthelgason): Move this out of the test fixture impl and
 // make available as a shared utility class.
 void VideoCodecTestFixtureImpl::H264KeyframeChecker::CheckEncodedFrame(
@@ -460,10 +451,7 @@ void VideoCodecTestFixtureImpl::ProcessAllFrames(
 
   // Give the VideoProcessor pipeline some time to process the last frame,
   // and then release the codecs.
-  if (config_.IsAsyncCodec()) {
-    SleepMs(1 * rtc::kNumMillisecsPerSec);
-  }
-
+  SleepMs(1 * rtc::kNumMillisecsPerSec);
   cpu_process_time_->Stop();
 }
 
