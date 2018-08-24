@@ -112,12 +112,6 @@ struct EchoCanceller3Config {
     float poor_excitation_render_limit_ds8 = 20.f;
   } render_levels;
 
-  struct GainUpdates {
-    float max_inc_factor = 2.0f;
-    float max_dec_factor_lf = 0.25f;
-    float floor_first_increase = 0.00001f;
-  } gain_updates;
-
   struct EchoRemovalControl {
     struct GainRampup {
       float initial_gain = 0.0f;
@@ -146,15 +140,50 @@ struct EchoCanceller3Config {
   } echo_model;
 
   struct Suppressor {
+    Suppressor();
+    Suppressor(const Suppressor& e);
+
     size_t nearend_average_blocks = 4;
 
     struct MaskingThresholds {
+      MaskingThresholds(float enr_transparent,
+                        float enr_suppress,
+                        float emr_transparent);
+      MaskingThresholds(const MaskingThresholds& e);
       float enr_transparent;
       float enr_suppress;
       float emr_transparent;
     };
-    MaskingThresholds mask_lf = {.2f, .3f, .3f};
-    MaskingThresholds mask_hf = {.07f, .1f, .3f};
+
+    struct Tuning {
+      Tuning(MaskingThresholds mask_lf,
+             MaskingThresholds mask_hf,
+             float max_inc_factor,
+             float max_dec_factor_lf);
+      Tuning(const Tuning& e);
+      MaskingThresholds mask_lf;
+      MaskingThresholds mask_hf;
+      float max_inc_factor;
+      float max_dec_factor_lf;
+    };
+
+    Tuning normal_tuning = Tuning(MaskingThresholds(.2f, .3f, .3f),
+                                  MaskingThresholds(.07f, .1f, .3f),
+                                  2.0f,
+                                  0.25f);
+    Tuning nearend_tuning = Tuning(MaskingThresholds(.2f, .3f, .3f),
+                                   MaskingThresholds(.07f, .1f, .3f),
+                                   2.0f,
+                                   0.25f);
+
+    struct DominantNearendDetection {
+      float enr_threshold = 10.f;
+      float snr_threshold = 10.f;
+      int hold_duration = 25;
+      int trigger_threshold = 15;
+    } dominant_nearend_detection;
+
+    float floor_first_increase = 0.00001f;
     bool enforce_transparent = false;
     bool enforce_empty_higher_bands = false;
   } suppressor;

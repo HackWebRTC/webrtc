@@ -290,14 +290,6 @@ class Aec3ParametersParser {
                 &cfg.echo_audibility.use_stationary_properties);
     }
 
-    if (rtc::GetValueFromJsonObject(root, "gain_updates", &section)) {
-      ReadParam(section, "max_inc_factor", &cfg.gain_updates.max_inc_factor);
-      ReadParam(section, "max_dec_factor_lf",
-                &cfg.gain_updates.max_dec_factor_lf);
-      ReadParam(section, "floor_first_increase",
-                &cfg.gain_updates.floor_first_increase);
-    }
-
     if (rtc::GetValueFromJsonObject(root, "echo_removal_control", &section)) {
       Json::Value subsection;
       if (rtc::GetValueFromJsonObject(section, "gain_rampup", &subsection)) {
@@ -338,11 +330,45 @@ class Aec3ParametersParser {
                 &cfg.echo_model.nonlinear_release);
     }
 
+    Json::Value subsection;
     if (rtc::GetValueFromJsonObject(root, "suppressor", &section)) {
       ReadParam(section, "nearend_average_blocks",
                 &cfg.suppressor.nearend_average_blocks);
-      ReadParam(section, "mask_lf", &cfg.suppressor.mask_lf);
-      ReadParam(section, "mask_hf", &cfg.suppressor.mask_hf);
+
+      if (rtc::GetValueFromJsonObject(section, "normal_tuning", &subsection)) {
+        ReadParam(subsection, "mask_lf", &cfg.suppressor.normal_tuning.mask_lf);
+        ReadParam(subsection, "mask_hf", &cfg.suppressor.normal_tuning.mask_hf);
+        ReadParam(subsection, "max_inc_factor",
+                  &cfg.suppressor.normal_tuning.max_inc_factor);
+        ReadParam(subsection, "max_dec_factor_lf",
+                  &cfg.suppressor.normal_tuning.max_dec_factor_lf);
+      }
+
+      if (rtc::GetValueFromJsonObject(section, "nearend_tuning", &subsection)) {
+        ReadParam(subsection, "mask_lf",
+                  &cfg.suppressor.nearend_tuning.mask_lf);
+        ReadParam(subsection, "mask_hf",
+                  &cfg.suppressor.nearend_tuning.mask_hf);
+        ReadParam(subsection, "max_inc_factor",
+                  &cfg.suppressor.nearend_tuning.max_inc_factor);
+        ReadParam(subsection, "max_dec_factor_lf",
+                  &cfg.suppressor.nearend_tuning.max_dec_factor_lf);
+      }
+
+      if (rtc::GetValueFromJsonObject(section, "dominant_nearend_detection",
+                                      &subsection)) {
+        ReadParam(subsection, "enr_threshold",
+                  &cfg.suppressor.dominant_nearend_detection.enr_threshold);
+        ReadParam(subsection, "snr_threshold",
+                  &cfg.suppressor.dominant_nearend_detection.snr_threshold);
+        ReadParam(subsection, "hold_duration",
+                  &cfg.suppressor.dominant_nearend_detection.hold_duration);
+        ReadParam(subsection, "trigger_threshold",
+                  &cfg.suppressor.dominant_nearend_detection.trigger_threshold);
+      }
+
+      ReadParam(section, "floor_first_increase",
+                &cfg.suppressor.floor_first_increase);
       ReadParam(section, "enforce_transparent",
                 &cfg.suppressor.enforce_transparent);
       ReadParam(section, "enforce_empty_higher_bands",
