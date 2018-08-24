@@ -85,6 +85,7 @@ struct SimulationSettings {
   bool report_performance = false;
   bool report_bitexactness = false;
   bool use_verbose_logging = false;
+  bool use_quiet_output = false;
   bool discard_all_settings_in_aecdump = true;
   absl::optional<std::string> aec_dump_input_filename;
   absl::optional<std::string> aec_dump_output_filename;

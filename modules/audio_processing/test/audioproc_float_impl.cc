@@ -168,6 +168,7 @@ DEFINE_int(simulated_mic_kind,
            "Specify which microphone kind to use for microphone simulation");
 DEFINE_bool(performance_report, false, "Report the APM performance ");
 DEFINE_bool(verbose, false, "Produce verbose output");
+DEFINE_bool(quiet, false, "Avoid producing information about the progress.");
 DEFINE_bool(bitexactness_report,
             false,
             "Report bitexactness for aec dump result reproduction");
@@ -287,6 +288,7 @@ SimulationSettings CreateSettings() {
   SetSettingIfSpecified(FLAG_simulated_mic_kind, &settings.simulated_mic_kind);
   settings.report_performance = FLAG_performance_report;
   settings.use_verbose_logging = FLAG_verbose;
+  settings.use_quiet_output = FLAG_quiet;
   settings.report_bitexactness = FLAG_bitexactness_report;
   settings.discard_all_settings_in_aecdump = FLAG_discard_settings_in_aecdump;
   settings.fixed_interface = FLAG_fixed_interface;
