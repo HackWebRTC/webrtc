@@ -152,35 +152,6 @@ class Aec3ParametersParser {
     }
   }
 
-  void ReadParam(const Json::Value& root,
-                 std::string param_name,
-                 EchoCanceller3Config::GainUpdates::GainChanges* param) const {
-    RTC_CHECK(param);
-    Json::Value json_array;
-    if (rtc::GetValueFromJsonObject(root, param_name, &json_array)) {
-      std::vector<double> v;
-      rtc::JsonArrayToDoubleVector(json_array, &v);
-      if (v.size() != 6) {
-        std::cout << "Incorrect array size for " << param_name << std::endl;
-        RTC_CHECK(false);
-      }
-      param->max_inc = static_cast<float>(v[0]);
-      param->max_dec = static_cast<float>(v[1]);
-      param->rate_inc = static_cast<float>(v[2]);
-      param->rate_dec = static_cast<float>(v[3]);
-      param->min_inc = static_cast<float>(v[4]);
-      param->min_dec = static_cast<float>(v[5]);
-
-      if (verbose_output_) {
-        std::cout << param_name << ":"
-                  << "[" << param->max_inc << "," << param->max_dec << ","
-                  << param->rate_inc << "," << param->rate_dec << ","
-                  << param->min_inc << "," << param->min_dec << "]"
-                  << std::endl;
-      }
-    }
-  }
-
   void ReadParam(
       const Json::Value& root,
       std::string param_name,
@@ -320,11 +291,6 @@ class Aec3ParametersParser {
     }
 
     if (rtc::GetValueFromJsonObject(root, "gain_updates", &section)) {
-      ReadParam(section, "low_noise", &cfg.gain_updates.low_noise);
-      ReadParam(section, "initial", &cfg.gain_updates.initial);
-      ReadParam(section, "normal", &cfg.gain_updates.normal);
-      ReadParam(section, "saturation", &cfg.gain_updates.saturation);
-      ReadParam(section, "nonlinear", &cfg.gain_updates.nonlinear);
       ReadParam(section, "max_inc_factor", &cfg.gain_updates.max_inc_factor);
       ReadParam(section, "max_dec_factor_lf",
                 &cfg.gain_updates.max_dec_factor_lf);

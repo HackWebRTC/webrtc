@@ -113,21 +113,6 @@ struct EchoCanceller3Config {
   } render_levels;
 
   struct GainUpdates {
-    struct GainChanges {
-      float max_inc;
-      float max_dec;
-      float rate_inc;
-      float rate_dec;
-      float min_inc;
-      float min_dec;
-    };
-
-    GainChanges low_noise = {2.f, 2.f, 1.4f, 1.4f, 1.1f, 1.1f};
-    GainChanges initial = {2.f, 2.f, 1.5f, 1.5f, 1.2f, 1.2f};
-    GainChanges normal = {2.f, 2.f, 1.5f, 1.5f, 1.2f, 1.2f};
-    GainChanges saturation = {1.2f, 1.2f, 1.5f, 1.5f, 1.f, 1.f};
-    GainChanges nonlinear = {1.5f, 1.5f, 1.2f, 1.2f, 1.1f, 1.1f};
-
     float max_inc_factor = 2.0f;
     float max_dec_factor_lf = 0.25f;
     float floor_first_increase = 0.00001f;

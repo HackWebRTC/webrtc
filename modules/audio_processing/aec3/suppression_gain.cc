@@ -11,12 +11,6 @@
 
 #include "modules/audio_processing/aec3/suppression_gain.h"
 
-// Defines WEBRTC_ARCH_X86_FAMILY, used below.
-#include "rtc_base/system/arch.h"
-
-#if defined(WEBRTC_ARCH_X86_FAMILY)
-#include <emmintrin.h>
-#endif
 #include <math.h>
 #include <algorithm>
 #include <functional>
@@ -320,10 +314,6 @@ void SuppressionGain::LowerBandGain(
   // Adjust the gain for frequencies which have not yet converged.
   AdjustNonConvergedFrequencies(gain);
 
-  // Update the allowed maximum gain increase.
-  UpdateGainIncrease(low_noise_render, linear_echo_estimate, saturated_echo,
-                     weighted_echo, *gain);
-
   // Store data required for the gain computation of the next block.
   std::copy(nearend.begin(), nearend.end(), last_nearend_.begin());
   std::copy(weighted_echo.begin(), weighted_echo.end(), last_echo_.begin());
@@ -351,7 +341,6 @@ SuppressionGain::SuppressionGain(const EchoCanceller3Config& config,
   RTC_DCHECK_LT(0, state_change_duration_blocks_);
   one_by_state_change_duration_blocks_ = 1.f / state_change_duration_blocks_;
   last_gain_.fill(1.f);
-  gain_increase_.fill(1.f);
   last_nearend_.fill(0.f);
   last_echo_.fill(0.f);
 
@@ -433,102 +422,6 @@ void SuppressionGain::SetInitialState(bool state) {
     initial_state_change_counter_ = state_change_duration_blocks_;
   } else {
     initial_state_change_counter_ = 0;
-  }
-}
-
-void SuppressionGain::UpdateGainIncrease(
-    bool low_noise_render,
-    bool linear_echo_estimate,
-    bool saturated_echo,
-    const std::array<float, kFftLengthBy2Plus1>& echo,
-    const std::array<float, kFftLengthBy2Plus1>& new_gain) {
-  float max_inc;
-  float max_dec;
-  float rate_inc;
-  float rate_dec;
-  float min_inc;
-  float min_dec;
-
-  RTC_DCHECK_GE(state_change_duration_blocks_, initial_state_change_counter_);
-  if (initial_state_change_counter_ > 0) {
-    if (--initial_state_change_counter_ == 0) {
-      initial_state_ = false;
-    }
-  }
-  RTC_DCHECK_LE(0, initial_state_change_counter_);
-
-  // EchoCanceller3Config::GainUpdates
-  auto& p = config_.gain_updates;
-  if (!linear_echo_estimate) {
-    max_inc = p.nonlinear.max_inc;
-    max_dec = p.nonlinear.max_dec;
-    rate_inc = p.nonlinear.rate_inc;
-    rate_dec = p.nonlinear.rate_dec;
-    min_inc = p.nonlinear.min_inc;
-    min_dec = p.nonlinear.min_dec;
-  } else if (initial_state_ && !saturated_echo) {
-    if (initial_state_change_counter_ > 0) {
-      float change_factor =
-          initial_state_change_counter_ * one_by_state_change_duration_blocks_;
-
-      auto average = [](float from, float to, float from_weight) {
-        return from * from_weight + to * (1.f - from_weight);
-      };
-
-      max_inc = average(p.initial.max_inc, p.normal.max_inc, change_factor);
-      max_dec = average(p.initial.max_dec, p.normal.max_dec, change_factor);
-      rate_inc = average(p.initial.rate_inc, p.normal.rate_inc, change_factor);
-      rate_dec = average(p.initial.rate_dec, p.normal.rate_dec, change_factor);
-      min_inc = average(p.initial.min_inc, p.normal.min_inc, change_factor);
-      min_dec = average(p.initial.min_dec, p.normal.min_dec, change_factor);
-    } else {
-      max_inc = p.initial.max_inc;
-      max_dec = p.initial.max_dec;
-      rate_inc = p.initial.rate_inc;
-      rate_dec = p.initial.rate_dec;
-      min_inc = p.initial.min_inc;
-      min_dec = p.initial.min_dec;
-    }
-  } else if (low_noise_render) {
-    max_inc = p.low_noise.max_inc;
-    max_dec = p.low_noise.max_dec;
-    rate_inc = p.low_noise.rate_inc;
-    rate_dec = p.low_noise.rate_dec;
-    min_inc = p.low_noise.min_inc;
-    min_dec = p.low_noise.min_dec;
-  } else if (!saturated_echo) {
-    max_inc = p.normal.max_inc;
-    max_dec = p.normal.max_dec;
-    rate_inc = p.normal.rate_inc;
-    rate_dec = p.normal.rate_dec;
-    min_inc = p.normal.min_inc;
-    min_dec = p.normal.min_dec;
-  } else {
-    max_inc = p.saturation.max_inc;
-    max_dec = p.saturation.max_dec;
-    rate_inc = p.saturation.rate_inc;
-    rate_dec = p.saturation.rate_dec;
-    min_inc = p.saturation.min_inc;
-    min_dec = p.saturation.min_dec;
-  }
-
-  for (size_t k = 0; k < new_gain.size(); ++k) {
-    auto increase_update = [](float new_gain, float last_gain,
-                              float current_inc, float max_inc, float min_inc,
-                              float change_rate) {
-      return new_gain > last_gain ? std::min(max_inc, current_inc * change_rate)
-                                  : min_inc;
-    };
-
-    if (echo[k] > last_echo_[k]) {
-      gain_increase_[k] =
-          increase_update(new_gain[k], last_gain_[k], gain_increase_[k],
-                          max_inc, min_inc, rate_inc);
-    } else {
-      gain_increase_[k] =
-          increase_update(new_gain[k], last_gain_[k], gain_increase_[k],
-                          max_dec, min_dec, rate_dec);
-    }
   }
 }
 

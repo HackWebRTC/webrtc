@@ -60,14 +60,6 @@ class SuppressionGain {
                      const std::array<float, kFftLengthBy2Plus1>& comfort_noise,
                      std::array<float, kFftLengthBy2Plus1>* gain);
 
-  // Limits the gain increase.
-  void UpdateGainIncrease(
-      bool low_noise_render,
-      bool linear_echo_estimate,
-      bool saturated_echo,
-      const std::array<float, kFftLengthBy2Plus1>& echo,
-      const std::array<float, kFftLengthBy2Plus1>& new_gain);
-
   class LowNoiseRenderDetector {
    public:
     bool Detect(const std::vector<std::vector<float>>& render);
@@ -83,7 +75,6 @@ class SuppressionGain {
   const int state_change_duration_blocks_;
   float one_by_state_change_duration_blocks_;
   std::array<float, kFftLengthBy2Plus1> last_gain_;
-  std::array<float, kFftLengthBy2Plus1> gain_increase_;
   std::array<float, kFftLengthBy2Plus1> last_nearend_;
   std::array<float, kFftLengthBy2Plus1> last_echo_;
   std::array<float, kFftLengthBy2Plus1> enr_transparent_;
