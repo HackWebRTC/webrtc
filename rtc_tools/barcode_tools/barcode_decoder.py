@@ -44,9 +44,13 @@ def ConvertYuvToPngFiles(yuv_file_name, yuv_frame_width, yuv_frame_height,
   output_files_pattern = os.path.join(output_directory, 'frame_%04d.png')
   if not ffmpeg_path:
     ffmpeg_path = 'ffmpeg.exe' if sys.platform == 'win32' else 'ffmpeg'
-  command = [ffmpeg_path, '-s', '%s' % size_string, '-i', '%s'
-             % yuv_file_name, '-f', 'image2', '-vcodec', 'png',
-             '%s' % output_files_pattern]
+  if yuv_file_name.endswith('.yuv'):
+    command = [ffmpeg_path, '-s', '%s' % size_string, '-i', '%s'
+               % yuv_file_name, '-f', 'image2', '-vcodec', 'png',
+               '%s' % output_files_pattern]
+  else:
+    command = [ffmpeg_path, '-i', '%s' % yuv_file_name, '-f', 'image2',
+               '-vcodec', 'png', '%s' % output_files_pattern]
   try:
     print 'Converting YUV file to PNG images (may take a while)...'
     print ' '.join(command)
