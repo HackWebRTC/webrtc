@@ -9,10 +9,8 @@
 
 import optparse
 import os
-import shutil
 import subprocess
 import sys
-import tempfile
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -37,39 +35,24 @@ def _ParseArgs():
   parser.add_option('--frame_analyzer', type='string',
                     help='Path to the frame analyzer executable.')
   parser.add_option('--barcode_decoder', type='string',
-                    help=('Path to the barcode decoder script. By default, we '
-                          'will assume we can find it in barcode_tools/'
-                          'relative to this directory.'))
+                    help=('DEPRECATED'))
   parser.add_option('--ffmpeg_path', type='string',
-                    help=('The path to where the ffmpeg executable is located. '
-                          'If omitted, it will be assumed to be present in the '
-                          'PATH with the name ffmpeg[.exe].'))
+                    help=('DEPRECATED'))
   parser.add_option('--zxing_path', type='string',
-                    help=('The path to where the zxing executable is located. '
-                          'If omitted, it will be assumed to be present in the '
-                          'PATH with the name zxing[.exe].'))
+                    help=('DEPRECATED'))
   parser.add_option('--stats_file_ref', type='string', default='stats_ref.txt',
-                    help=('Path to the temporary stats file to be created and '
-                          'used for the reference video file. '
-                          'Default: %default'))
+                    help=('DEPRECATED'))
   parser.add_option('--stats_file_test', type='string',
-                    default='stats_test.txt',
-                    help=('Path to the temporary stats file to be created and '
-                          'used for the test video file. Default: %default'))
+                    help=('DEPRECATED'))
   parser.add_option('--stats_file', type='string',
                     help=('DEPRECATED'))
   parser.add_option('--yuv_frame_width', type='int', default=640,
-                    help='Width of the YUV file\'s frames. Default: %default')
+                    help=('DEPRECATED'))
   parser.add_option('--yuv_frame_height', type='int', default=480,
-                    help='Height of the YUV file\'s frames. Default: %default')
+                    help=('DEPRECATED'))
   parser.add_option('--chartjson_result_file', type='str', default=None,
                     help='Where to store perf results in chartjson format.')
   options, _ = parser.parse_args()
-
-  if options.stats_file:
-    options.stats_file_test = options.stats_file
-    print ('WARNING: Using deprecated switch --stats_file. '
-           'The new flag is --stats_file_test.')
 
   if not options.ref_video:
     parser.error('You must provide a path to the reference video!')
@@ -95,62 +78,16 @@ def _DevNull():
   """
   return open(os.devnull, 'r')
 
-def DecodeBarcodesInVideo(options, path_to_decoder, video, stat_file):
-  # Run barcode decoder on the test video to identify frame numbers.
-  png_working_directory = tempfile.mkdtemp()
-  cmd = [
-    sys.executable,
-    path_to_decoder,
-    '--yuv_file=%s' % video,
-    '--yuv_frame_width=%d' % options.yuv_frame_width,
-    '--yuv_frame_height=%d' % options.yuv_frame_height,
-    '--stats_file=%s' % stat_file,
-    '--png_working_dir=%s' % png_working_directory,
-  ]
-  if options.zxing_path:
-    cmd.append('--zxing_path=%s' % options.zxing_path)
-  if options.ffmpeg_path:
-    cmd.append('--ffmpeg_path=%s' % options.ffmpeg_path)
-
-
-  barcode_decoder = subprocess.Popen(cmd, stdin=_DevNull(),
-                                     stdout=sys.stdout, stderr=sys.stderr)
-  barcode_decoder.wait()
-
-  shutil.rmtree(png_working_directory)
-  if barcode_decoder.returncode != 0:
-    print 'Failed to run barcode decoder script.'
-    return 1
-  return 0
-
 def main():
   """The main function.
 
   A simple invocation is:
-  ./webrtc/rtc_tools/barcode_tools/compare_videos.py
+  ./webrtc/rtc_tools/compare_videos.py
   --ref_video=<path_and_name_of_reference_video>
   --test_video=<path_and_name_of_test_video>
   --frame_analyzer=<path_and_name_of_the_frame_analyzer_executable>
-
-  Notice that the prerequisites for barcode_decoder.py also applies to this
-  script. The means the following executables have to be available in the PATH:
-  * zxing
-  * ffmpeg
   """
   options = _ParseArgs()
-
-  if options.barcode_decoder:
-    path_to_decoder = options.barcode_decoder
-  else:
-    path_to_decoder = os.path.join(SCRIPT_DIR, 'barcode_tools',
-                                   'barcode_decoder.py')
-
-  if DecodeBarcodesInVideo(options, path_to_decoder,
-                           options.ref_video, options.stats_file_ref) != 0:
-    return 1
-  if DecodeBarcodesInVideo(options, path_to_decoder,
-                           options.test_video, options.stats_file_test) != 0:
-    return 1
 
   # Run frame analyzer to compare the videos and print output.
   cmd = [
@@ -158,10 +95,6 @@ def main():
     '--label=%s' % options.label,
     '--reference_file=%s' % options.ref_video,
     '--test_file=%s' % options.test_video,
-    '--stats_file_ref=%s' % options.stats_file_ref,
-    '--stats_file_test=%s' % options.stats_file_test,
-    '--width=%d' % options.yuv_frame_width,
-    '--height=%d' % options.yuv_frame_height,
   ]
   if options.chartjson_result_file:
     cmd.append('--chartjson_result_file=%s' % options.chartjson_result_file)
