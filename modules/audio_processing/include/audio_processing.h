@@ -273,12 +273,15 @@ class AudioProcessing : public rtc::RefCountInterface {
       float fixed_gain_factor = 1.f;
     } pre_amplifier;
 
-    // Enables the next generation AGC functionality. This feature
-    // replaces the standard methods of gain control in the previous
-    // AGC. This functionality is currently only partially
-    // implemented.
+    // Enables the next generation AGC functionality. This feature replaces the
+    // standard methods of gain control in the previous AGC. Enabling this
+    // submodule enables an adaptive digital AGC followed by a limiter. By
+    // setting |fixed_gain_db|, the limiter can be turned into a compressor that
+    // first applies a fixed gain. The adaptive digital AGC can be turned off by
+    // setting |adaptive_digital_mode=false|.
     struct GainController2 {
       bool enabled = false;
+      bool adaptive_digital_mode = true;
       float fixed_gain_db = 0.f;
     } gain_controller2;
 

@@ -41,12 +41,14 @@ void GainController2::Initialize(int sample_rate_hz) {
 void GainController2::Process(AudioBuffer* audio) {
   AudioFrameView<float> float_frame(audio->channels_f(), audio->num_channels(),
                                     audio->num_frames());
-  adaptive_agc_.Process(float_frame);
+  if (adaptive_digital_mode_) {
+    adaptive_agc_.Process(float_frame);
+  }
   fixed_gain_controller_.Process(float_frame);
 }
 
 void GainController2::NotifyAnalogLevel(int level) {
-  if (analog_level_ != level) {
+  if (analog_level_ != level && adaptive_digital_mode_) {
     adaptive_agc_.Reset();
   }
   analog_level_ = level;
@@ -57,6 +59,7 @@ void GainController2::ApplyConfig(
   RTC_DCHECK(Validate(config));
   config_ = config;
   fixed_gain_controller_.SetGain(config_.fixed_gain_db);
+  adaptive_digital_mode_ = config_.adaptive_digital_mode;
 }
 
 bool GainController2::Validate(
