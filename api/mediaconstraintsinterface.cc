@@ -146,6 +146,9 @@ const char MediaConstraintsInterface::kCpuOveruseDetection[] =
     "googCpuOveruseDetection";
 const char MediaConstraintsInterface::kPayloadPadding[] = "googPayloadPadding";
 
+const char MediaConstraintsInterface::kNumSimulcastLayers[] =
+    "googNumSimulcastLayers";
+
 // Set |value| to the value associated with the first appearance of |key|, or
 // return false if |key| is not found.
 bool MediaConstraintsInterface::Constraints::FindFirst(
@@ -299,6 +302,13 @@ bool CopyConstraintsIntoOfferAnswerOptions(
   if (FindConstraint(constraints, MediaConstraintsInterface::kIceRestart,
                      &value, &mandatory_constraints_satisfied)) {
     offer_answer_options->ice_restart = value;
+  }
+
+  int layers;
+  if (FindConstraint(constraints,
+                     MediaConstraintsInterface::kNumSimulcastLayers,
+                     &layers, &mandatory_constraints_satisfied)) {
+    offer_answer_options->num_simulcast_layers = layers;
   }
 
   return mandatory_constraints_satisfied == constraints->GetMandatory().size();

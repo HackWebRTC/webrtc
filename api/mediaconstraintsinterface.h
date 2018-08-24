@@ -119,6 +119,11 @@ class MediaConstraintsInterface {
   // stripped by Chrome before passed down to Libjingle.
   static const char kInternalConstraintPrefix[];
 
+  // Specifies number of simulcast layers for all video tracks
+  // with a Plan B offer/answer
+  // (see RTCOfferAnswerOptions::num_simulcast_layers).
+  static const char kNumSimulcastLayers[];
+
   virtual ~MediaConstraintsInterface() = default;
 
   virtual const Constraints& GetMandatory() const = 0;

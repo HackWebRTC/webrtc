@@ -596,6 +596,9 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     // confused with RTCP mux (multiplexing RTP and RTCP together).
     bool use_rtp_mux = true;
 
+    // This will apply to all video tracks with a Plan B SDP offer/answer.
+    int num_simulcast_layers = 1;
+
     RTCOfferAnswerOptions() = default;
 
     RTCOfferAnswerOptions(int offer_to_receive_video,

@@ -173,7 +173,8 @@ void AddRtpSenderOptions(
     const std::vector<rtc::scoped_refptr<
         RtpSenderProxyWithInternal<RtpSenderInternal>>>& senders,
     cricket::MediaDescriptionOptions* audio_media_description_options,
-    cricket::MediaDescriptionOptions* video_media_description_options) {
+    cricket::MediaDescriptionOptions* video_media_description_options,
+    int num_sim_layers) {
   for (const auto& sender : senders) {
     if (sender->media_type() == cricket::MEDIA_TYPE_AUDIO) {
       if (audio_media_description_options) {
@@ -184,7 +185,8 @@ void AddRtpSenderOptions(
       RTC_DCHECK(sender->media_type() == cricket::MEDIA_TYPE_VIDEO);
       if (video_media_description_options) {
         video_media_description_options->AddVideoSender(
-            sender->id(), sender->internal()->stream_ids(), 1);
+            sender->id(), sender->internal()->stream_ids(),
+            num_sim_layers);
       }
     }
   }
@@ -3686,7 +3688,8 @@ void PeerConnection::GetOptionsForPlanBOffer(
                    : &session_options->media_description_options[*video_index];
 
   AddRtpSenderOptions(GetSendersInternal(), audio_media_description_options,
-                      video_media_description_options);
+                      video_media_description_options,
+                      offer_answer_options.num_simulcast_layers);
 }
 
 // Find a new MID that is not already in |used_mids|, then add it to |used_mids|
@@ -3910,7 +3913,8 @@ void PeerConnection::GetOptionsForPlanBAnswer(
                    : &session_options->media_description_options[*video_index];
 
   AddRtpSenderOptions(GetSendersInternal(), audio_media_description_options,
-                      video_media_description_options);
+                      video_media_description_options,
+                      offer_answer_options.num_simulcast_layers);
 }
 
 void PeerConnection::GetOptionsForUnifiedPlanAnswer(
