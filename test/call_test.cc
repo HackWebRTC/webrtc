@@ -43,14 +43,9 @@ CallTest::CallTest()
       audio_send_stream_(nullptr),
       bbr_network_controller_factory_(new BbrNetworkControllerFactory()),
       fake_encoder_factory_([this]() {
-        std::unique_ptr<FakeEncoder> fake_encoder;
-        if (video_encoder_configs_[0].codec_type == kVideoCodecVP8) {
-          fake_encoder = absl::make_unique<FakeVP8Encoder>(clock_);
-        } else {
-          fake_encoder = absl::make_unique<FakeEncoder>(clock_);
-        }
-        fake_encoder->SetMaxBitrate(fake_encoder_max_bitrate_);
-        return fake_encoder;
+        auto encoder = absl::make_unique<test::FakeEncoder>(clock_);
+        encoder->SetMaxBitrate(fake_encoder_max_bitrate_);
+        return encoder;
       }),
       num_video_streams_(1),
       num_audio_streams_(0),
