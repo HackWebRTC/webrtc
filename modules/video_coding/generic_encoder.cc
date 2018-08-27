@@ -391,21 +391,10 @@ EncodedImageCallback::Result VCMEncodedFrameCallback::OnEncodedImage(
     const RTPFragmentationHeader* fragmentation_header) {
   TRACE_EVENT_INSTANT1("webrtc", "VCMEncodedFrameCallback::Encoded",
                        "timestamp", encoded_image.Timestamp());
-  size_t simulcast_svc_idx = 0;
-  if (codec_specific->codecType == kVideoCodecVP9) {
-    if (codec_specific->codecSpecific.VP9.num_spatial_layers > 1)
-      simulcast_svc_idx = codec_specific->codecSpecific.VP9.spatial_idx;
-  } else if (codec_specific->codecType == kVideoCodecVP8) {
-    simulcast_svc_idx = codec_specific->codecSpecific.VP8.simulcastIdx;
-  } else if (codec_specific->codecType == kVideoCodecGeneric) {
-    simulcast_svc_idx = codec_specific->codecSpecific.generic.simulcast_idx;
-  } else if (codec_specific->codecType == kVideoCodecH264) {
-    // TODO(ilnik): When h264 simulcast is landed, extract simulcast idx here.
-  }
-
+  const size_t spatial_idx = encoded_image.SpatialIndex().value_or(0);
   EncodedImage image_copy(encoded_image);
 
-  FillTimingInfo(simulcast_svc_idx, &image_copy);
+  FillTimingInfo(spatial_idx, &image_copy);
 
   // Piggyback ALR experiment group id and simulcast id into the content type.
   uint8_t experiment_id =
@@ -421,7 +410,7 @@ EncodedImageCallback::Result VCMEncodedFrameCallback::OnEncodedImage(
   // id in content type to +1 of that is actual simulcast index. This is because
   // value 0 on the wire is reserved for 'no simulcast stream specified'.
   RTC_CHECK(videocontenttypehelpers::SetSimulcastId(
-      &image_copy.content_type_, static_cast<uint8_t>(simulcast_svc_idx + 1)));
+      &image_copy.content_type_, static_cast<uint8_t>(spatial_idx + 1)));
 
   Result result = post_encode_callback_->OnEncodedImage(
       image_copy, codec_specific, fragmentation_header);

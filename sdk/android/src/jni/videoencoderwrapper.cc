@@ -390,7 +390,6 @@ CodecSpecificInfo VideoEncoderWrapper::ParseCodecSpecificInfo(
   switch (codec_settings_.codecType) {
     case kVideoCodecVP8:
       info.codecSpecific.VP8.nonReference = false;
-      info.codecSpecific.VP8.simulcastIdx = 0;
       info.codecSpecific.VP8.temporalIdx = kNoTemporalIdx;
       info.codecSpecific.VP8.layerSync = false;
       info.codecSpecific.VP8.keyIdx = kNoKeyIdx;
@@ -403,7 +402,6 @@ CodecSpecificInfo VideoEncoderWrapper::ParseCodecSpecificInfo(
       info.codecSpecific.VP9.flexible_mode = false;
       info.codecSpecific.VP9.ss_data_available = key_frame ? true : false;
       info.codecSpecific.VP9.temporal_idx = kNoTemporalIdx;
-      info.codecSpecific.VP9.spatial_idx = kNoSpatialIdx;
       info.codecSpecific.VP9.temporal_up_switch = true;
       info.codecSpecific.VP9.inter_layer_predicted = false;
       info.codecSpecific.VP9.gof_idx =

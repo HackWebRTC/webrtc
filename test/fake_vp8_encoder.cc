@@ -88,7 +88,6 @@ void FakeVP8Encoder::PopulateCodecSpecific(
   codec_specific->codecType = kVideoCodecVP8;
   codec_specific->codec_name = ImplementationName();
   CodecSpecificInfoVP8* vp8Info = &(codec_specific->codecSpecific.VP8);
-  vp8Info->simulcastIdx = stream_idx;
   vp8Info->keyIdx = kNoKeyIdx;
   vp8Info->nonReference = false;
   temporal_layers_[stream_idx]->PopulateCodecSpecific(
@@ -100,7 +99,7 @@ EncodedImageCallback::Result FakeVP8Encoder::OnEncodedImage(
     const CodecSpecificInfo* codec_specific_info,
     const RTPFragmentationHeader* fragments) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
-  uint8_t stream_idx = codec_specific_info->codecSpecific.generic.simulcast_idx;
+  uint8_t stream_idx = encoded_image.SpatialIndex().value_or(0);
   CodecSpecificInfo overrided_specific_info;
   TemporalLayers::FrameConfig tl_config =
       temporal_layers_[stream_idx]->UpdateLayerConfig(encoded_image._timeStamp);

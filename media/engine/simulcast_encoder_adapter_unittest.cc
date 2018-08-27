@@ -339,11 +339,10 @@ class TestSimulcastEncoderAdapterFake : public ::testing::Test,
                         const RTPFragmentationHeader* fragmentation) override {
     last_encoded_image_width_ = encoded_image._encodedWidth;
     last_encoded_image_height_ = encoded_image._encodedHeight;
-    if (codec_specific_info) {
-      last_encoded_image_simulcast_index_ =
-          codec_specific_info->codecSpecific.VP8.simulcastIdx;
-    }
-    return Result(Result::OK, encoded_image.Timestamp());
+    last_encoded_image_simulcast_index_ =
+        encoded_image.SpatialIndex().value_or(-1);
+
+    return Result(Result::OK, encoded_image._timeStamp);
   }
 
   bool GetLastEncodedImageInfo(int* out_width,

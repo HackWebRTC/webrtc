@@ -70,7 +70,7 @@ class TestVp8Impl : public VideoCodecUnitTest {
     VerifyQpParser(*encoded_frame);
     EXPECT_STREQ("libvpx", codec_specific_info->codec_name);
     EXPECT_EQ(kVideoCodecVP8, codec_specific_info->codecType);
-    EXPECT_EQ(0u, codec_specific_info->codecSpecific.VP8.simulcastIdx);
+    EXPECT_EQ(0, encoded_frame->SpatialIndex());
   }
 
   void EncodeAndExpectFrameWith(const VideoFrame& input_frame,

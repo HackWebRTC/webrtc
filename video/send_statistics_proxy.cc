@@ -81,9 +81,9 @@ void UpdateCodecTypeHistogram(const std::string& payload_name) {
                             kVideoMax);
 }
 
-bool IsForcedFallbackPossible(const CodecSpecificInfo* codec_info) {
-  return codec_info->codecType == kVideoCodecVP8 &&
-         codec_info->codecSpecific.VP8.simulcastIdx == 0 &&
+bool IsForcedFallbackPossible(const CodecSpecificInfo* codec_info,
+                              int simulcast_index) {
+  return codec_info->codecType == kVideoCodecVP8 && simulcast_index == 0 &&
          (codec_info->codecSpecific.VP8.temporalIdx == 0 ||
           codec_info->codecSpecific.VP8.temporalIdx == kNoTemporalIdx);
 }
@@ -219,7 +219,7 @@ void SendStatisticsProxy::UmaSamplesContainer::RemoveOld(
     sent_height_counter_.Add(it->second.max_height);
 
     // Check number of encoded streams per timestamp.
-    if (num_streams_ > it->second.max_simulcast_idx) {
+    if (num_streams_ > static_cast<size_t>(it->second.max_simulcast_idx)) {
       *is_limited_in_resolution = false;
       if (num_streams_ > 1) {
         int disabled_streams =
@@ -241,7 +241,7 @@ void SendStatisticsProxy::UmaSamplesContainer::RemoveOld(
 
 bool SendStatisticsProxy::UmaSamplesContainer::InsertEncodedFrame(
     const EncodedImage& encoded_frame,
-    size_t simulcast_idx,
+    int simulcast_idx,
     bool* is_limited_in_resolution) {
   int64_t now_ms = clock_->TimeInMilliseconds();
   RemoveOld(now_ms, is_limited_in_resolution);
@@ -806,14 +806,15 @@ void SendStatisticsProxy::OnSetEncoderTargetRate(uint32_t bitrate_bps) {
 
 void SendStatisticsProxy::UpdateEncoderFallbackStats(
     const CodecSpecificInfo* codec_info,
-    int pixels) {
-  UpdateFallbackDisabledStats(codec_info, pixels);
+    int pixels,
+    int simulcast_index) {
+  UpdateFallbackDisabledStats(codec_info, pixels, simulcast_index);
 
   if (!fallback_max_pixels_ || !uma_container_->fallback_info_.is_possible) {
     return;
   }
 
-  if (!IsForcedFallbackPossible(codec_info)) {
+  if (!IsForcedFallbackPossible(codec_info, simulcast_index)) {
     uma_container_->fallback_info_.is_possible = false;
     return;
   }
@@ -855,14 +856,15 @@ void SendStatisticsProxy::UpdateEncoderFallbackStats(
 
 void SendStatisticsProxy::UpdateFallbackDisabledStats(
     const CodecSpecificInfo* codec_info,
-    int pixels) {
+    int pixels,
+    int simulcast_index) {
   if (!fallback_max_pixels_disabled_ ||
       !uma_container_->fallback_info_disabled_.is_possible ||
       stats_.has_entered_low_resolution) {
     return;
   }
 
-  if (!IsForcedFallbackPossible(codec_info) ||
+  if (!IsForcedFallbackPossible(codec_info, simulcast_index) ||
       strcmp(codec_info->codec_name, kVp8SwCodecName) == 0) {
     uma_container_->fallback_info_disabled_.is_possible = false;
     return;
@@ -882,26 +884,27 @@ void SendStatisticsProxy::OnMinPixelLimitReached() {
 void SendStatisticsProxy::OnSendEncodedImage(
     const EncodedImage& encoded_image,
     const CodecSpecificInfo* codec_info) {
-  size_t simulcast_idx = 0;
+  // Simulcast is used for VP8, H264 and Generic.
+  int simulcast_idx =
+      (codec_info && (codec_info->codecType == kVideoCodecVP8 ||
+                      codec_info->codecType == kVideoCodecH264 ||
+                      codec_info->codecType == kVideoCodecGeneric))
+          ? encoded_image.SpatialIndex().value_or(0)
+          : 0;
 
   rtc::CritScope lock(&crit_);
   ++stats_.frames_encoded;
   if (codec_info) {
-    if (codec_info->codecType == kVideoCodecVP8) {
-      simulcast_idx = codec_info->codecSpecific.VP8.simulcastIdx;
-    } else if (codec_info->codecType == kVideoCodecH264) {
-      simulcast_idx = codec_info->codecSpecific.H264.simulcast_idx;
-    } else if (codec_info->codecType == kVideoCodecGeneric) {
-      simulcast_idx = codec_info->codecSpecific.generic.simulcast_idx;
-    }
     if (codec_info->codec_name) {
-      UpdateEncoderFallbackStats(codec_info, encoded_image._encodedWidth *
-                                                 encoded_image._encodedHeight);
+      UpdateEncoderFallbackStats(
+          codec_info,
+          encoded_image._encodedWidth * encoded_image._encodedHeight,
+          simulcast_idx);
       stats_.encoder_implementation_name = codec_info->codec_name;
     }
   }
 
-  if (simulcast_idx >= rtp_config_.ssrcs.size()) {
+  if (static_cast<size_t>(simulcast_idx) >= rtp_config_.ssrcs.size()) {
     RTC_LOG(LS_ERROR) << "Encoded image outside simulcast range ("
                       << simulcast_idx << " >= " << rtp_config_.ssrcs.size()
                       << ").";
@@ -928,20 +931,13 @@ void SendStatisticsProxy::OnSendEncodedImage(
 
     if (codec_info) {
       if (codec_info->codecType == kVideoCodecVP8) {
-        int spatial_idx = (rtp_config_.ssrcs.size() == 1)
-                              ? -1
-                              : static_cast<int>(simulcast_idx);
+        int spatial_idx = (rtp_config_.ssrcs.size() == 1) ? -1 : simulcast_idx;
         uma_container_->qp_counters_[spatial_idx].vp8.Add(encoded_image.qp_);
       } else if (codec_info->codecType == kVideoCodecVP9) {
-        int spatial_idx =
-            (codec_info->codecSpecific.VP9.num_spatial_layers == 1)
-                ? -1
-                : codec_info->codecSpecific.VP9.spatial_idx;
+        int spatial_idx = encoded_image.SpatialIndex().value_or(-1);
         uma_container_->qp_counters_[spatial_idx].vp9.Add(encoded_image.qp_);
       } else if (codec_info->codecType == kVideoCodecH264) {
-        int spatial_idx = (rtp_config_.ssrcs.size() == 1)
-                              ? -1
-                              : static_cast<int>(simulcast_idx);
+        int spatial_idx = (rtp_config_.ssrcs.size() == 1) ? -1 : simulcast_idx;
         uma_container_->qp_counters_[spatial_idx].h264.Add(encoded_image.qp_);
       }
     }

@@ -169,44 +169,41 @@ TEST(RtpVideoSenderTest, SendOnOneModule) {
 
 TEST(RtpVideoSenderTest, SendSimulcastSetActive) {
   uint8_t payload = 'a';
-  EncodedImage encoded_image;
-  encoded_image.SetTimestamp(1);
-  encoded_image.capture_time_ms_ = 2;
-  encoded_image._frameType = kVideoFrameKey;
-  encoded_image._buffer = &payload;
-  encoded_image._length = 1;
+  EncodedImage encoded_image_1;
+  encoded_image_1.SetTimestamp(1);
+  encoded_image_1.capture_time_ms_ = 2;
+  encoded_image_1._frameType = kVideoFrameKey;
+  encoded_image_1._buffer = &payload;
+  encoded_image_1._length = 1;
 
   RtpVideoSenderTestFixture test({kSsrc1, kSsrc2}, kPayloadType, {});
 
-  CodecSpecificInfo codec_info_1;
-  memset(&codec_info_1, 0, sizeof(CodecSpecificInfo));
-  codec_info_1.codecType = kVideoCodecVP8;
-  codec_info_1.codecSpecific.VP8.simulcastIdx = 0;
+  CodecSpecificInfo codec_info;
+  memset(&codec_info, 0, sizeof(CodecSpecificInfo));
+  codec_info.codecType = kVideoCodecVP8;
 
   test.router()->SetActive(true);
   EXPECT_EQ(EncodedImageCallback::Result::OK,
             test.router()
-                ->OnEncodedImage(encoded_image, &codec_info_1, nullptr)
+                ->OnEncodedImage(encoded_image_1, &codec_info, nullptr)
                 .error);
 
-  CodecSpecificInfo codec_info_2;
-  memset(&codec_info_2, 0, sizeof(CodecSpecificInfo));
-  codec_info_2.codecType = kVideoCodecVP8;
-  codec_info_2.codecSpecific.VP8.simulcastIdx = 1;
+  EncodedImage encoded_image_2(encoded_image_1);
+  encoded_image_2.SetSpatialIndex(1);
   EXPECT_EQ(EncodedImageCallback::Result::OK,
             test.router()
-                ->OnEncodedImage(encoded_image, &codec_info_2, nullptr)
+                ->OnEncodedImage(encoded_image_2, &codec_info, nullptr)
                 .error);
 
   // Inactive.
   test.router()->SetActive(false);
   EXPECT_NE(EncodedImageCallback::Result::OK,
             test.router()
-                ->OnEncodedImage(encoded_image, &codec_info_1, nullptr)
+                ->OnEncodedImage(encoded_image_1, &codec_info, nullptr)
                 .error);
   EXPECT_NE(EncodedImageCallback::Result::OK,
             test.router()
-                ->OnEncodedImage(encoded_image, &codec_info_2, nullptr)
+                ->OnEncodedImage(encoded_image_2, &codec_info, nullptr)
                 .error);
 }
 
@@ -216,22 +213,19 @@ TEST(RtpVideoSenderTest, SendSimulcastSetActive) {
 // be sent if both modules are inactive.
 TEST(RtpVideoSenderTest, SendSimulcastSetActiveModules) {
   uint8_t payload = 'a';
-  EncodedImage encoded_image;
-  encoded_image.SetTimestamp(1);
-  encoded_image.capture_time_ms_ = 2;
-  encoded_image._frameType = kVideoFrameKey;
-  encoded_image._buffer = &payload;
-  encoded_image._length = 1;
+  EncodedImage encoded_image_1;
+  encoded_image_1.SetTimestamp(1);
+  encoded_image_1.capture_time_ms_ = 2;
+  encoded_image_1._frameType = kVideoFrameKey;
+  encoded_image_1._buffer = &payload;
+  encoded_image_1._length = 1;
+  EncodedImage encoded_image_2(encoded_image_1);
+  encoded_image_2.SetSpatialIndex(1);
 
   RtpVideoSenderTestFixture test({kSsrc1, kSsrc2}, kPayloadType, {});
-  CodecSpecificInfo codec_info_1;
-  memset(&codec_info_1, 0, sizeof(CodecSpecificInfo));
-  codec_info_1.codecType = kVideoCodecVP8;
-  codec_info_1.codecSpecific.VP8.simulcastIdx = 0;
-  CodecSpecificInfo codec_info_2;
-  memset(&codec_info_2, 0, sizeof(CodecSpecificInfo));
-  codec_info_2.codecType = kVideoCodecVP8;
-  codec_info_2.codecSpecific.VP8.simulcastIdx = 1;
+  CodecSpecificInfo codec_info;
+  memset(&codec_info, 0, sizeof(CodecSpecificInfo));
+  codec_info.codecType = kVideoCodecVP8;
 
   // Only setting one stream to active will still set the payload router to
   // active and allow sending data on the active stream.
@@ -239,7 +233,7 @@ TEST(RtpVideoSenderTest, SendSimulcastSetActiveModules) {
   test.router()->SetActiveModules(active_modules);
   EXPECT_EQ(EncodedImageCallback::Result::OK,
             test.router()
-                ->OnEncodedImage(encoded_image, &codec_info_1, nullptr)
+                ->OnEncodedImage(encoded_image_1, &codec_info, nullptr)
                 .error);
 
   // Setting both streams to inactive will turn the payload router to
@@ -250,11 +244,11 @@ TEST(RtpVideoSenderTest, SendSimulcastSetActiveModules) {
   // because the payload router is inactive.
   EXPECT_NE(EncodedImageCallback::Result::OK,
             test.router()
-                ->OnEncodedImage(encoded_image, &codec_info_1, nullptr)
+                ->OnEncodedImage(encoded_image_1, &codec_info, nullptr)
                 .error);
   EXPECT_NE(EncodedImageCallback::Result::OK,
             test.router()
-                ->OnEncodedImage(encoded_image, &codec_info_2, nullptr)
+                ->OnEncodedImage(encoded_image_1, &codec_info, nullptr)
                 .error);
 }
 

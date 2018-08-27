@@ -95,21 +95,6 @@ std::vector<std::unique_ptr<RtpRtcp>> CreateRtpRtcpModules(
   return modules;
 }
 
-absl::optional<size_t> GetSimulcastIdx(const CodecSpecificInfo* info) {
-  if (!info)
-    return absl::nullopt;
-  switch (info->codecType) {
-    case kVideoCodecVP8:
-      return absl::optional<size_t>(info->codecSpecific.VP8.simulcastIdx);
-    case kVideoCodecH264:
-      return absl::optional<size_t>(info->codecSpecific.H264.simulcast_idx);
-    case kVideoCodecMultiplex:
-    case kVideoCodecGeneric:
-      return absl::optional<size_t>(info->codecSpecific.generic.simulcast_idx);
-    default:
-      return absl::nullopt;
-  }
-}
 bool PayloadTypeSupportsSkippingFecPackets(const std::string& payload_name) {
   const VideoCodecType codecType = PayloadStringToCodecType(payload_name);
   if (codecType == kVideoCodecVP8 || codecType == kVideoCodecVP9) {
@@ -320,7 +305,14 @@ EncodedImageCallback::Result RtpVideoSender::OnEncodedImage(
     return Result(Result::ERROR_SEND_FAILED);
 
   shared_frame_id_++;
-  size_t stream_index = GetSimulcastIdx(codec_specific_info).value_or(0);
+  size_t stream_index = 0;
+  if (codec_specific_info &&
+      (codec_specific_info->codecType == kVideoCodecVP8 ||
+       codec_specific_info->codecType == kVideoCodecH264 ||
+       codec_specific_info->codecType == kVideoCodecGeneric)) {
+    // Map spatial index to simulcast.
+    stream_index = encoded_image.SpatialIndex().value_or(0);
+  }
   RTC_DCHECK_LT(stream_index, rtp_modules_.size());
   RTPVideoHeader rtp_video_header = params_[stream_index].GetRtpVideoHeader(
       encoded_image, codec_specific_info, shared_frame_id_);
