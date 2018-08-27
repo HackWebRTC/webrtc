@@ -57,7 +57,12 @@ StreamStatisticianImpl::~StreamStatisticianImpl() = default;
 void StreamStatisticianImpl::IncomingPacket(const RTPHeader& header,
                                             size_t packet_length,
                                             bool retransmitted) {
-  auto counters = UpdateCounters(header, packet_length, retransmitted);
+  StreamDataCounters counters;
+  {
+    rtc::CritScope cs(&stream_lock_);
+
+    counters = UpdateCounters(header, packet_length, retransmitted);
+  }
   rtp_callback_->DataCountersUpdated(counters, ssrc_);
 }
 
@@ -65,7 +70,6 @@ StreamDataCounters StreamStatisticianImpl::UpdateCounters(
     const RTPHeader& header,
     size_t packet_length,
     bool retransmitted) {
-  rtc::CritScope cs(&stream_lock_);
   bool in_order = InOrderPacketInternal(header.sequenceNumber);
   RTC_DCHECK_EQ(ssrc_, header.ssrc);
   incoming_bitrate_.Update(packet_length, clock_->TimeInMilliseconds());
