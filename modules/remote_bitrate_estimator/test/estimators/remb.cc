@@ -84,7 +84,7 @@ RembReceiver::~RembReceiver() {}
 void RembReceiver::ReceivePacket(int64_t arrival_time_ms,
                                  const MediaPacket& media_packet) {
   recv_stats_->IncomingPacket(media_packet.header(),
-                              media_packet.payload_size(), false);
+                              media_packet.payload_size());
 
   latest_estimate_bps_ = -1;
 

@@ -56,7 +56,7 @@ bool LoopBackTransport::SendRtp(const uint8_t* data,
   const uint8_t* payload = data + header.headerLength;
   RTC_CHECK_GE(len, header.headerLength);
   const size_t payload_length = len - header.headerLength;
-  receive_statistics_->IncomingPacket(header, len, false);
+  receive_statistics_->IncomingPacket(header, len);
   return rtp_receiver_->IncomingRtpPacket(header, payload, payload_length,
                                           pl->typeSpecific);
 }

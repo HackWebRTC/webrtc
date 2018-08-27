@@ -537,6 +537,7 @@ Channel::Channel(ProcessThread* module_process_thread,
 
   _outputAudioLevel.Clear();
 
+  rtp_receive_statistics_->EnableRetransmitDetection(remote_ssrc_, true);
   RtpRtcp::Configuration configuration;
   configuration.audio = true;
   configuration.outgoing_transport = this;
@@ -876,8 +877,7 @@ void Channel::OnRtpPacket(const RtpPacketReceived& packet) {
     return;
   header.payload_type_frequency = it->second;
 
-  rtp_receive_statistics_->IncomingPacket(header, packet.size(),
-                                          IsPacketRetransmitted(header));
+  rtp_receive_statistics_->IncomingPacket(header, packet.size());
 
   ReceivePacket(packet.data(), packet.size(), header);
 }
@@ -898,15 +898,6 @@ bool Channel::ReceivePacket(const uint8_t* packet,
   }
   return OnReceivedPayloadData(payload, payload_data_length,
                                &webrtc_rtp_header);
-}
-
-bool Channel::IsPacketRetransmitted(const RTPHeader& header) const {
-  StreamStatistician* statistician =
-      rtp_receive_statistics_->GetStatistician(header.ssrc);
-  if (!statistician)
-    return false;
-  // Check if this is a retransmission.
-  return statistician->IsRetransmitOfOldPacket(header);
 }
 
 int32_t Channel::ReceivedRTCPPacket(const uint8_t* data, size_t length) {

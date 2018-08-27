@@ -327,7 +327,7 @@ TEST_F(RtpRtcpImplTest, Rtt) {
   header.sequenceNumber = 123;
   header.ssrc = kSenderSsrc;
   header.headerLength = 12;
-  receiver_.receive_statistics_->IncomingPacket(header, 100, false);
+  receiver_.receive_statistics_->IncomingPacket(header, 100);
 
   // Send Frame before sending an SR.
   SendFrame(&sender_, kBaseLayerTid);

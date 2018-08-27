@@ -145,6 +145,9 @@ VideoReceiveStream::VideoReceiveStream(
         config_.rtp.remote_ssrc, rtp_receive_statistics_.get());
     rtx_receiver_ = receiver_controller->CreateReceiver(
         config_.rtp.rtx_ssrc, rtx_receive_stream_.get());
+  } else {
+    rtp_receive_statistics_->EnableRetransmitDetection(config.rtp.remote_ssrc,
+                                                       true);
   }
 }
 

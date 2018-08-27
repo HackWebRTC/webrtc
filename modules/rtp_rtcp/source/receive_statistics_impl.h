@@ -27,6 +27,7 @@ class StreamStatisticianImpl : public StreamStatistician {
  public:
   StreamStatisticianImpl(uint32_t ssrc,
                          Clock* clock,
+                         bool enable_retransmit_detection,
                          RtcpStatisticsCallback* rtcp_callback,
                          StreamDataCountersCallback* rtp_callback);
   ~StreamStatisticianImpl() override;
@@ -39,15 +40,15 @@ class StreamStatisticianImpl : public StreamStatistician {
   void GetReceiveStreamDataCounters(
       StreamDataCounters* data_counters) const override;
   uint32_t BitrateReceived() const override;
-  bool IsRetransmitOfOldPacket(const RTPHeader& header) const override;
 
-  void IncomingPacket(const RTPHeader& rtp_header,
-                      size_t packet_length,
-                      bool retransmitted);
+  void IncomingPacket(const RTPHeader& rtp_header, size_t packet_length);
   void FecPacketReceived(const RTPHeader& header, size_t packet_length);
   void SetMaxReorderingThreshold(int max_reordering_threshold);
+  void EnableRetransmitDetection(bool enable);
 
  private:
+  bool IsRetransmitOfOldPacket(const RTPHeader& header) const
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(stream_lock_);
   bool InOrderPacketInternal(uint16_t sequence_number) const
       RTC_EXCLUSIVE_LOCKS_REQUIRED(stream_lock_);
   RtcpStatistics CalculateRtcpStatistics()
@@ -65,6 +66,7 @@ class StreamStatisticianImpl : public StreamStatistician {
   RateStatistics incoming_bitrate_ RTC_GUARDED_BY(&stream_lock_);
   // In number of packets or sequence numbers.
   int max_reordering_threshold_ RTC_GUARDED_BY(&stream_lock_);
+  bool enable_retransmit_detection_ RTC_GUARDED_BY(&stream_lock_);
 
   // Stats on received RTP packets.
   uint32_t jitter_q4_ RTC_GUARDED_BY(&stream_lock_);
@@ -104,13 +106,12 @@ class ReceiveStatisticsImpl : public ReceiveStatistics,
   std::vector<rtcp::ReportBlock> RtcpReportBlocks(size_t max_blocks) override;
 
   // Implement ReceiveStatistics.
-  void IncomingPacket(const RTPHeader& header,
-                      size_t packet_length,
-                      bool retransmitted) override;
+  void IncomingPacket(const RTPHeader& header, size_t packet_length) override;
   void FecPacketReceived(const RTPHeader& header,
                          size_t packet_length) override;
   StreamStatistician* GetStatistician(uint32_t ssrc) const override;
   void SetMaxReorderingThreshold(int max_reordering_threshold) override;
+  void EnableRetransmitDetection(uint32_t ssrc, bool enable) override;
 
   void RegisterRtcpStatisticsCallback(
       RtcpStatisticsCallback* callback) override;

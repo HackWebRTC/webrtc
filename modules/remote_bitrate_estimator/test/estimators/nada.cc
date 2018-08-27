@@ -58,7 +58,7 @@ void NadaBweReceiver::ReceivePacket(int64_t arrival_time_ms,
 
   clock_.AdvanceTimeMilliseconds(arrival_time_ms - clock_.TimeInMilliseconds());
   recv_stats_->IncomingPacket(media_packet.header(),
-                              media_packet.payload_size(), false);
+                              media_packet.payload_size());
   // Refered as x_n.
   int64_t delay_ms = arrival_time_ms - media_packet.sender_timestamp_ms();
 

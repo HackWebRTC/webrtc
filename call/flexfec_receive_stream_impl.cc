@@ -179,10 +179,7 @@ void FlexfecReceiveStreamImpl::OnRtpPacket(const RtpPacketReceived& packet) {
   if (packet.Ssrc() == config_.remote_ssrc) {
     RTPHeader header;
     packet.GetHeader(&header);
-    // FlexFEC packets are never retransmitted.
-    const bool kNotRetransmitted = false;
-    rtp_receive_statistics_->IncomingPacket(header, packet.size(),
-                                            kNotRetransmitted);
+    rtp_receive_statistics_->IncomingPacket(header, packet.size());
   }
 }
 

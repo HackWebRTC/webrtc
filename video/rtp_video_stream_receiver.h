@@ -144,7 +144,6 @@ class RtpVideoStreamReceiver : public RtpData,
                                          size_t packet_length,
                                          const RTPHeader& header);
   void NotifyReceiverOfEmptyPacket(uint16_t seq_num);
-  bool IsPacketRetransmitted(const RTPHeader& header) const;
   void UpdateHistograms();
   bool IsRedEnabled() const;
   void InsertSpsPpsIntoTracker(uint8_t payload_type);

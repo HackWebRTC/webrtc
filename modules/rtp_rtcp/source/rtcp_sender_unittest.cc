@@ -99,7 +99,7 @@ class RtcpSenderTest : public ::testing::Test {
     header.timestamp = 12345;
     header.headerLength = 12;
     size_t kPacketLength = 100;
-    receive_statistics_->IncomingPacket(header, kPacketLength, false);
+    receive_statistics_->IncomingPacket(header, kPacketLength);
   }
 
   test::RtcpPacketParser* parser() { return &test_transport_.parser_; }
