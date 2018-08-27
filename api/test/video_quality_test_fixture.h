@@ -63,6 +63,7 @@ class VideoQualityTestFixtureInterface {
       bool enabled;
       bool sync_video;
       bool dtx;
+      bool use_real_adm;
     } audio;
     struct Screenshare {
       bool enabled;

@@ -22,6 +22,9 @@
 #include "test/call_test.h"
 #include "test/frame_generator.h"
 #include "test/layer_filtering_transport.h"
+#ifdef WEBRTC_WIN
+#include "modules/audio_device/win/core_audio_utility_win.h"
+#endif
 
 namespace webrtc {
 
@@ -79,8 +82,11 @@ class VideoQualityTest :
   void StartThumbnails();
   void StopThumbnails();
   void DestroyThumbnailStreams();
+  // Helper method for creating a real ADM (using hardware) for all platforms.
+  rtc::scoped_refptr<AudioDeviceModule> CreateAudioDevice();
   void InitializeAudioDevice(Call::Config* send_call_config,
-                             Call::Config* recv_call_config);
+                             Call::Config* recv_call_config,
+                             bool use_real_adm);
   void SetupAudio(Transport* transport);
 
   void StartEncodedFrameLogs(VideoSendStream* stream);
@@ -109,6 +115,12 @@ class VideoQualityTest :
   // separate send streams, the one in CallTest is the number of substreams for
   // a single send stream.
   size_t num_video_streams_;
+
+#ifdef WEBRTC_WIN
+  // Windows Core Audio based ADM needs to run on a COM initialized thread.
+  // Only referenced in combination with --audio --use_real_adm flags.
+  std::unique_ptr<webrtc_win::ScopedCOMInitializer> com_initializer_;
+#endif
 };
 
 }  // namespace webrtc

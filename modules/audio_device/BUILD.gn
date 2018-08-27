@@ -167,8 +167,6 @@ rtc_source_set("windows_core_audio_utility") {
 # gradually phase out the old design.
 # TODO(henrika): currently only supported on Windows.
 rtc_source_set("audio_device_module_from_input_and_output") {
-  visibility = [ ":*" ]
-
   if (is_win && !build_with_chromium) {
     sources = [
       "include/audio_device_factory.cc",

@@ -243,6 +243,10 @@ DEFINE_bool(use_flexfec, false, "Use FlexFEC forward error correction.");
 
 DEFINE_bool(audio, false, "Add audio stream");
 
+DEFINE_bool(use_real_adm,
+            false,
+            "Use real ADM instead of fake (no effect if audio is false)");
+
 DEFINE_bool(audio_video_sync,
             false,
             "Sync audio and video stream (no effect if"
@@ -307,7 +311,7 @@ void Loopback() {
                      flags::Clip(),
                      flags::GetCaptureDevice()};
   params.audio = {flags::FLAG_audio, flags::FLAG_audio_video_sync,
-                  flags::FLAG_audio_dtx};
+                  flags::FLAG_audio_dtx, flags::FLAG_use_real_adm};
   params.logging = {flags::FLAG_rtc_event_log_name, flags::FLAG_rtp_dump_name,
                     flags::FLAG_encoded_frame_path};
   params.screenshare[0].enabled = false;
