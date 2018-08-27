@@ -219,6 +219,7 @@ rtc_static_library("rtc_internal_video_codecs") {
     "../system_wrappers",
     "../system_wrappers:field_trial_api",
     "../system_wrappers:metrics_api",
+    "//third_party/abseil-cpp/absl/types:optional",
     "//third_party/libyuv",
   ]
 }
