@@ -70,8 +70,7 @@ class GtestParallelWrapperTest(unittest.TestCase):
                             '--test_artifacts_dir=' + exp_artifacts_dir])
       self.assertEqual(result.gtest_parallel_args, exp)
       self.assertEqual(result.output_dir, output_dir)
-      self.assertRegexpMatches(result.test_artifacts_dir,
-                               output_dir + '.test_artifacts')
+      self.assertEqual(result.test_artifacts_dir, exp_artifacts_dir)
 
   def testNoDirsSpecified(self):
     result = script.ParseArgs(['exec'])
