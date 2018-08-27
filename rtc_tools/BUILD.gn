@@ -17,7 +17,6 @@ group("rtc_tools") {
     ":command_line_parser",
     ":frame_analyzer",
     ":video_quality_analysis",
-    ":y4m_file_reader",
   ]
   if (!build_with_chromium) {
     deps += [
@@ -60,34 +59,14 @@ rtc_static_library("command_line_parser") {
   ]
 }
 
-rtc_static_library("y4m_file_reader") {
-  sources = [
-    "y4m_file_reader.cc",
-    "y4m_file_reader.h",
-  ]
-  deps = [
-    "../api/video:video_frame",
-    "../api/video:video_frame_i420",
-    "../rtc_base:rtc_base_approved",
-    "//third_party/abseil-cpp/absl/types:optional",
-  ]
-}
-
 rtc_static_library("video_quality_analysis") {
   sources = [
     "frame_analyzer/video_quality_analysis.cc",
     "frame_analyzer/video_quality_analysis.h",
-    "frame_analyzer/video_temporal_aligner.cc",
-    "frame_analyzer/video_temporal_aligner.h",
   ]
   deps = [
-    ":y4m_file_reader",
-    "../api/video:video_frame_i420",
     "../common_video",
-    "../rtc_base:checks",
-    "../rtc_base:rtc_base_approved",
     "../test:perf_test",
-    "//third_party/abseil-cpp/absl/types:optional",
     "//third_party/libyuv",
   ]
 }
@@ -101,7 +80,6 @@ rtc_executable("frame_analyzer") {
   deps = [
     ":command_line_parser",
     ":video_quality_analysis",
-    ":y4m_file_reader",
     "../test:perf_test",
     "//build/win:default_exe_manifest",
   ]
@@ -118,7 +96,6 @@ if (!build_with_chromium) {
     deps = [
       ":command_line_parser",
       ":video_quality_analysis",
-      ":y4m_file_reader",
       "//build/win:default_exe_manifest",
     ]
   }
@@ -131,7 +108,6 @@ if (!build_with_chromium) {
 
     deps = [
       ":video_quality_analysis",
-      ":y4m_file_reader",
     ]
   }
 
@@ -312,7 +288,7 @@ if (rtc_include_tests) {
   tools_unittests_resources = [
     "../resources/foreman_cif.yuv",
     "../resources/reference_less_video_test_file.y4m",
-    "../resources/reference_video_640x360_30fps.y4m",
+    "../resources/video_quality_analysis_frame.txt",
   ]
 
   if (is_ios) {
@@ -331,11 +307,9 @@ if (rtc_include_tests) {
     sources = [
       "frame_analyzer/reference_less_video_analysis_unittest.cc",
       "frame_analyzer/video_quality_analysis_unittest.cc",
-      "frame_analyzer/video_temporal_aligner_unittest.cc",
       "frame_editing/frame_editing_unittest.cc",
       "sanitizers_unittest.cc",
       "simple_command_line_parser_unittest.cc",
-      "y4m_file_reader_unittest.cc",
     ]
 
     if (!build_with_chromium && is_clang) {
@@ -348,7 +322,6 @@ if (rtc_include_tests) {
       ":frame_editing_lib",
       ":reference_less_video_analysis_lib",
       ":video_quality_analysis",
-      ":y4m_file_reader",
       "../common_video:common_video",
       "../rtc_base",
       "../rtc_base:checks",

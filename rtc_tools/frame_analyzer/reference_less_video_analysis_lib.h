@@ -14,7 +14,12 @@
 #include <string>
 #include <vector>
 
-#include "rtc_tools/y4m_file_reader.h"
+// Parse the file header to extract height, width and fps
+// for a given video file.
+void get_height_width_fps(int* height,
+                          int* width,
+                          int* fps,
+                          const std::string& video_file);
 
 // Returns true if the frame is frozen based on psnr and ssim freezing
 // threshold values.
@@ -34,9 +39,12 @@ void print_freezing_metrics(const std::vector<double>& psnr_per_frame,
 
 // Compute the metrics like freezing score based on PSNR and SSIM values for a
 // given video file.
-void compute_metrics(const rtc::scoped_refptr<webrtc::test::Y4mFile>& video,
+void compute_metrics(const std::string& video_file_name,
                      std::vector<double>* psnr_per_frame,
                      std::vector<double>* ssim_per_frame);
+
+// Checks the file extension and return true if it is y4m.
+bool check_file_extension(const std::string& video_file_name);
 
 // Compute freezing score metrics and prints the metrics
 // for a list of video files.

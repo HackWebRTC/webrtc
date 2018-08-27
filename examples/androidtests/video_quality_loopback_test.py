@@ -165,6 +165,8 @@ def SetUpTools(android_device, temp_dir, processes):
 def RunTest(android_device, adb_path, build_dir, temp_dir, num_retries,
             chartjson_result_file):
   ffmpeg_path = os.path.join(TOOLCHAIN_DIR, 'ffmpeg')
+  def ConvertVideo(input_video, output_video):
+    _RunCommand([ffmpeg_path, '-y', '-i', input_video, output_video])
 
   # Start loopback call and record video.
   test_script = os.path.join(
@@ -181,6 +183,13 @@ def RunTest(android_device, adb_path, build_dir, temp_dir, num_retries,
   reference_video = os.path.join(SRC_DIR,
       'resources', 'reference_video_640x360_30fps.y4m')
 
+  test_video_yuv = os.path.join(temp_dir, 'test_video.yuv')
+  reference_video_yuv = os.path.join(
+      temp_dir, 'reference_video_640x360_30fps.yuv')
+
+  ConvertVideo(test_video, test_video_yuv)
+  ConvertVideo(reference_video, reference_video_yuv)
+
   # Run comparison script.
   compare_script = os.path.join(SRC_DIR, 'rtc_tools', 'compare_videos.py')
   frame_analyzer = os.path.join(TOOLCHAIN_DIR, 'frame_analyzer')
@@ -189,8 +198,8 @@ def RunTest(android_device, adb_path, build_dir, temp_dir, num_retries,
   stats_file_test = os.path.join(temp_dir, 'stats_test.txt')
 
   args = [
-      '--ref_video', reference_video,
-      '--test_video', test_video,
+      '--ref_video', reference_video_yuv,
+      '--test_video', test_video_yuv,
       '--yuv_frame_width', '640',
       '--yuv_frame_height', '360',
       '--stats_file_ref', stats_file_ref,
