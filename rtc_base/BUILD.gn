@@ -444,6 +444,7 @@ rtc_source_set("rtc_base_approved_generic") {
   deps += [
     "..:webrtc_common",
     "../api:array_view",
+    "//third_party/abseil-cpp/absl/memory:memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 
