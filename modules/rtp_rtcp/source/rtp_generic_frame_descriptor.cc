@@ -14,7 +14,9 @@
 
 namespace webrtc {
 
-constexpr size_t RtpGenericFrameDescriptor::kMaxNumFrameDependencies;
+constexpr int RtpGenericFrameDescriptor::kMaxNumFrameDependencies;
+constexpr int RtpGenericFrameDescriptor::kMaxTemporalLayers;
+constexpr int RtpGenericFrameDescriptor::kMaxSpatialLayers;
 
 RtpGenericFrameDescriptor::RtpGenericFrameDescriptor() = default;
 
@@ -25,7 +27,7 @@ int RtpGenericFrameDescriptor::TemporalLayer() const {
 
 void RtpGenericFrameDescriptor::SetTemporalLayer(int temporal_layer) {
   RTC_DCHECK_GE(temporal_layer, 0);
-  RTC_DCHECK_LE(temporal_layer, 7);
+  RTC_DCHECK_LT(temporal_layer, kMaxTemporalLayers);
   temporal_layer_ = temporal_layer;
 }
 

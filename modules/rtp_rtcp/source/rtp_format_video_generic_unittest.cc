@@ -195,7 +195,7 @@ TEST(RtpPacketizerVideoGeneric, HasFrameIdWritesExtendedHeader) {
   const size_t kPayloadSize = 13;
 
   RTPVideoHeader rtp_video_header;
-  rtp_video_header.frame_id = 37;
+  rtp_video_header.generic.emplace().frame_id = 37;
   RtpPacketizerGeneric packetizer(rtp_video_header, kVideoFrameKey,
                                   kMaxPayloadLen, kLastPacketReductionLen);
   packetizer.SetPayloadData(kTestPayload, kPayloadSize, nullptr);
@@ -216,7 +216,7 @@ TEST(RtpPacketizerVideoGeneric, FrameIdOver15bitsWrapsAround) {
   const size_t kPayloadSize = 13;
 
   RTPVideoHeader rtp_video_header;
-  rtp_video_header.frame_id = 0x8137;
+  rtp_video_header.generic.emplace().frame_id = 0x8137;
   RtpPacketizerGeneric packetizer(rtp_video_header, kVideoFrameKey,
                                   kMaxPayloadLen, kLastPacketReductionLen);
   packetizer.SetPayloadData(kTestPayload, kPayloadSize, nullptr);
@@ -255,7 +255,7 @@ TEST(RtpDepacketizerVideoGeneric, NonExtendedHeaderNoFrameId) {
   RtpDepacketizer::ParsedPayload parsed_payload;
   depacketizer.Parse(&parsed_payload, payload, kPayloadLen);
 
-  EXPECT_EQ(kNoPictureId, parsed_payload.video_header().frame_id);
+  EXPECT_FALSE(parsed_payload.video_header().generic);
 }
 
 TEST(RtpDepacketizerVideoGeneric, ExtendedHeaderParsesFrameId) {
@@ -266,7 +266,8 @@ TEST(RtpDepacketizerVideoGeneric, ExtendedHeaderParsesFrameId) {
   RtpDepacketizer::ParsedPayload parsed_payload;
   depacketizer.Parse(&parsed_payload, payload, kPayloadLen);
 
-  EXPECT_EQ(0x1337, parsed_payload.video_header().frame_id);
+  ASSERT_TRUE(parsed_payload.video_header().generic);
+  EXPECT_EQ(0x1337, parsed_payload.video_header().generic->frame_id);
 }
 
 }  // namespace webrtc

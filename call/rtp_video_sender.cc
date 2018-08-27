@@ -319,10 +319,11 @@ EncodedImageCallback::Result RtpVideoSender::OnEncodedImage(
   if (!active_)
     return Result(Result::ERROR_SEND_FAILED);
 
+  shared_frame_id_++;
   size_t stream_index = GetSimulcastIdx(codec_specific_info).value_or(0);
   RTC_DCHECK_LT(stream_index, rtp_modules_.size());
   RTPVideoHeader rtp_video_header = params_[stream_index].GetRtpVideoHeader(
-      encoded_image, codec_specific_info);
+      encoded_image, codec_specific_info, shared_frame_id_);
 
   uint32_t frame_id;
   if (!rtp_modules_[stream_index]->Sending()) {

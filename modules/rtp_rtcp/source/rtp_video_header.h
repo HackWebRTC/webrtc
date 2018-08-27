@@ -25,6 +25,18 @@ using RTPVideoTypeHeader =
     absl::variant<RTPVideoHeaderVP8, RTPVideoHeaderVP9, RTPVideoHeaderH264>;
 
 struct RTPVideoHeader {
+  struct GenericDescriptorInfo {
+    GenericDescriptorInfo();
+    GenericDescriptorInfo(const GenericDescriptorInfo& other);
+    ~GenericDescriptorInfo();
+
+    int64_t frame_id = 0;
+    int spatial_index = 0;
+    int temporal_index = 0;
+    absl::InlinedVector<int64_t, 5> dependencies;
+    absl::InlinedVector<int, 5> higher_spatial_layers;
+  };
+
   RTPVideoHeader();
   RTPVideoHeader(const RTPVideoHeader& other);
 
@@ -45,12 +57,7 @@ struct RTPVideoHeader {
     return absl::get<RTPVideoHeaderVP8>(video_type_header);
   }
 
-  // Information for generic codec descriptor.
-  int64_t frame_id = kNoPictureId;
-  int spatial_index = 0;
-  int temporal_index = 0;
-  absl::InlinedVector<int64_t, 5> dependencies;
-  absl::InlinedVector<int, 5> higher_spatial_layers;
+  absl::optional<GenericDescriptorInfo> generic;
 
   uint16_t width = 0;
   uint16_t height = 0;

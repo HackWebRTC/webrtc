@@ -25,10 +25,10 @@ RtpPacketizerGeneric::RtpPacketizerGeneric(
     FrameType frame_type,
     size_t max_payload_len,
     size_t last_packet_reduction_len)
-    : picture_id_(
-          rtp_video_header.frame_id != kNoPictureId
-              ? absl::optional<uint16_t>(rtp_video_header.frame_id & 0x7FFF)
-              : absl::nullopt),
+    : picture_id_(rtp_video_header.generic
+                      ? absl::optional<uint16_t>(
+                            rtp_video_header.generic->frame_id & 0x7FFF)
+                      : absl::nullopt),
       payload_data_(nullptr),
       payload_size_(0),
       max_payload_len_(max_payload_len - kGenericHeaderLength -
@@ -167,7 +167,8 @@ bool RtpDepacketizerGeneric::Parse(ParsedPayload* parsed_payload,
       RTC_LOG(LS_WARNING) << "Too short payload for generic header.";
       return false;
     }
-    parsed_payload->video_header().frame_id =
+    parsed_payload->video_header().generic.emplace();
+    parsed_payload->video_header().generic->frame_id =
         ((payload_data[0] & 0x7F) << 8) | payload_data[1];
     payload_data += kExtendedHeaderLength;
     payload_data_length -= kExtendedHeaderLength;

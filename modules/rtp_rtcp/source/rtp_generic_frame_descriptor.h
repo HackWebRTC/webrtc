@@ -20,6 +20,10 @@ namespace webrtc {
 // Data to put on the wire for FrameDescriptor rtp header extension.
 class RtpGenericFrameDescriptor {
  public:
+  static constexpr int kMaxNumFrameDependencies = 8;
+  static constexpr int kMaxTemporalLayers = 8;
+  static constexpr int kMaxSpatialLayers = 8;
+
   RtpGenericFrameDescriptor();
 
   bool FirstPacketInSubFrame() const { return beginning_of_subframe_; }
@@ -51,8 +55,6 @@ class RtpGenericFrameDescriptor {
   bool AddFrameDependencyDiff(uint16_t fdiff);
 
  private:
-  static constexpr size_t kMaxNumFrameDependencies = 8;
-
   bool beginning_of_subframe_ = false;
   bool end_of_subframe_ = false;
   bool beginning_of_frame_ = false;
