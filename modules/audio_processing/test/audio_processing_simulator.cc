@@ -220,6 +220,8 @@ class Aec3ParametersParser {
                 &cfg.delay.hysteresis_limit_2_blocks);
       ReadParam(section, "skew_hysteresis_blocks",
                 &cfg.delay.skew_hysteresis_blocks);
+      ReadParam(section, "fixed_capture_delay_samples",
+                &cfg.delay.fixed_capture_delay_samples);
     }
 
     if (rtc::GetValueFromJsonObject(root, "filter", &section)) {
