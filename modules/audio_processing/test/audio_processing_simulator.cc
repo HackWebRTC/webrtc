@@ -367,6 +367,14 @@ class Aec3ParametersParser {
                   &cfg.suppressor.dominant_nearend_detection.trigger_threshold);
       }
 
+      if (rtc::GetValueFromJsonObject(section, "high_bands_suppression",
+                                      &subsection)) {
+        ReadParam(subsection, "enr_threshold",
+                  &cfg.suppressor.high_bands_suppression.enr_threshold);
+        ReadParam(subsection, "max_gain_during_echo",
+                  &cfg.suppressor.high_bands_suppression.max_gain_during_echo);
+      }
+
       ReadParam(section, "floor_first_increase",
                 &cfg.suppressor.floor_first_increase);
       ReadParam(section, "enforce_transparent",

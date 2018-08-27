@@ -32,6 +32,7 @@ class SuppressionGain {
   void GetGain(
       const std::array<float, kFftLengthBy2Plus1>& nearend_spectrum,
       const std::array<float, kFftLengthBy2Plus1>& echo_spectrum,
+      const std::array<float, kFftLengthBy2Plus1>& residual_echo_spectrum,
       const std::array<float, kFftLengthBy2Plus1>& comfort_noise_spectrum,
       const FftData& linear_aec_fft,
       const FftData& capture_fft,
@@ -45,6 +46,15 @@ class SuppressionGain {
   void SetInitialState(bool state);
 
  private:
+  // Computes the gain to apply for the bands beyond the first band.
+  float UpperBandsGain(
+      const std::array<float, kFftLengthBy2Plus1>& echo_spectrum,
+      const std::array<float, kFftLengthBy2Plus1>& comfort_noise_spectrum,
+      const absl::optional<int>& narrow_peak_band,
+      bool saturated_echo,
+      const std::vector<std::vector<float>>& render,
+      const std::array<float, kFftLengthBy2Plus1>& low_band_gain) const;
+
   void GainToNoAudibleEcho(
       const std::array<float, kFftLengthBy2Plus1>& nearend,
       const std::array<float, kFftLengthBy2Plus1>& echo,
@@ -80,7 +90,7 @@ class SuppressionGain {
 
     // Updates the state selection based on latest spectral estimates.
     void Update(rtc::ArrayView<const float> nearend_spectrum,
-                rtc::ArrayView<const float> echo_spectrum,
+                rtc::ArrayView<const float> residual_echo_spectrum,
                 rtc::ArrayView<const float> comfort_noise_spectrum);
 
    private:

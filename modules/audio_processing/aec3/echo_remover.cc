@@ -310,7 +310,9 @@ void EchoRemoverImpl::ProcessCapture(
   cng_.Compute(aec_state_, Y2, &comfort_noise, &high_band_comfort_noise);
 
   // Compute and apply the suppression gain.
-  suppression_gain_.GetGain(E2, R2, cng_.NoiseSpectrum(), E, Y,
+  const auto& echo_spectrum =
+      aec_state_.UsableLinearEstimate() ? S2_linear : R2;
+  suppression_gain_.GetGain(E2, echo_spectrum, R2, cng_.NoiseSpectrum(), E, Y,
                             render_signal_analyzer_, aec_state_, x,
                             &high_bands_gain, &G);
 

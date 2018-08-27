@@ -183,6 +183,11 @@ struct EchoCanceller3Config {
       int trigger_threshold = 15;
     } dominant_nearend_detection;
 
+    struct HighBandsSuppression {
+      float enr_threshold = 1.f;
+      float max_gain_during_echo = 1.f;
+    } high_bands_suppression;
+
     float floor_first_increase = 0.00001f;
     bool enforce_transparent = false;
     bool enforce_empty_higher_bands = false;
