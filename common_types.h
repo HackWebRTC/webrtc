@@ -340,8 +340,6 @@ enum VideoCodecType {
   kVideoCodecH264,
   kVideoCodecI420,
   kVideoCodecMultiplex,
-  // DEPRECATED. Do not use.
-  kVideoCodecUnknown,
 };
 
 // Translates from name of codec to codec type and vice versa.
