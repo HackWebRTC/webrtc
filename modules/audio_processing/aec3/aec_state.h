@@ -171,16 +171,13 @@ class AecState {
   const bool allow_transparent_mode_;
   const bool use_stationary_properties_;
   const bool enforce_delay_after_realignment_;
-  const bool allow_linear_mode_with_diverged_filter_;
   const bool early_filter_usage_activated_;
   const bool use_short_initial_state_;
   const bool convergence_trigger_linear_mode_;
   const bool no_alignment_required_for_linear_mode_;
   const bool use_uncertainty_until_sufficiently_adapted_;
-  const bool transparent_mode_enforces_nonlinear_mode_;
   const float uncertainty_before_convergence_;
   const bool early_entry_to_converged_mode_;
-  const bool conservative_filter_divergence_;
   const bool early_limiter_deactivation_;
   ErlEstimator erl_estimator_;
   ErleEstimator erle_estimator_;
@@ -189,7 +186,6 @@ class AecState {
   size_t blocks_with_proper_filter_adaptation_ = 0;
   size_t blocks_with_active_render_ = 0;
   bool usable_linear_estimate_ = false;
-  bool diverged_linear_filter_ = false;
   bool capture_signal_saturation_ = false;
   bool echo_saturation_ = false;
   bool transparent_mode_ = false;

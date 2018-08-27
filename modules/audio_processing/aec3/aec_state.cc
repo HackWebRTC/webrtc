@@ -40,11 +40,6 @@ bool EnableEnforcingDelayAfterRealignment() {
       "WebRTC-Aec3EnforceDelayAfterRealignmentKillSwitch");
 }
 
-bool EnableLinearModeWithDivergedFilter() {
-  return !field_trial::IsEnabled(
-      "WebRTC-Aec3LinearModeWithDivergedFilterKillSwitch");
-}
-
 bool EnableEarlyFilterUsage() {
   return !field_trial::IsEnabled("WebRTC-Aec3EarlyLinearFilterUsageKillSwitch");
 }
@@ -53,23 +48,9 @@ bool EnableShortInitialState() {
   return !field_trial::IsEnabled("WebRTC-Aec3ShortInitialStateKillSwitch");
 }
 
-bool EnableNoWaitForAlignment() {
-  return !field_trial::IsEnabled("WebRTC-Aec3NoAlignmentWaitKillSwitch");
-}
-
-bool EnableConvergenceTriggeredLinearMode() {
-  return !field_trial::IsEnabled(
-      "WebRTC-Aec3ConvergenceTriggingLinearKillSwitch");
-}
-
 bool EnableUncertaintyUntilSufficientAdapted() {
   return !field_trial::IsEnabled(
       "WebRTC-Aec3ErleUncertaintyUntilSufficientlyAdaptedKillSwitch");
-}
-
-bool TreatTransparentModeAsNonlinear() {
-  return !field_trial::IsEnabled(
-      "WebRTC-Aec3TreatTransparentModeAsNonlinearKillSwitch");
 }
 
 bool LowUncertaintyBeforeConvergence() {
@@ -85,11 +66,6 @@ bool MediumUncertaintyBeforeConvergence() {
 bool EarlyEntryToConvergedMode() {
   return !field_trial::IsEnabled(
       "WebRTC-Aec3EarlyEntryToConvergedModeKillSwitch");
-}
-
-bool ConservativeFilterDivergence() {
-  return !field_trial::IsEnabled(
-      "WebRTC-Aec3ConservativeFilterDivergenceKillSwitch");
 }
 
 bool UseEarlyLimiterDeactivation() {
@@ -128,25 +104,18 @@ AecState::AecState(const EchoCanceller3Config& config)
           EnableStationaryRenderImprovements() &&
           config_.echo_audibility.use_stationary_properties),
       enforce_delay_after_realignment_(EnableEnforcingDelayAfterRealignment()),
-      allow_linear_mode_with_diverged_filter_(
-          EnableLinearModeWithDivergedFilter()),
       early_filter_usage_activated_(EnableEarlyFilterUsage() &&
                                     !config.filter.conservative_initial_phase),
       use_short_initial_state_(EnableShortInitialState() &&
                                !config.filter.conservative_initial_phase),
       convergence_trigger_linear_mode_(
-          EnableConvergenceTriggeredLinearMode() &&
           !config.filter.conservative_initial_phase),
       no_alignment_required_for_linear_mode_(
-          EnableNoWaitForAlignment() &&
           !config.filter.conservative_initial_phase),
       use_uncertainty_until_sufficiently_adapted_(
           EnableUncertaintyUntilSufficientAdapted()),
-      transparent_mode_enforces_nonlinear_mode_(
-          TreatTransparentModeAsNonlinear()),
       uncertainty_before_convergence_(UncertaintyBeforeConvergence()),
       early_entry_to_converged_mode_(EarlyEntryToConvergedMode()),
-      conservative_filter_divergence_(ConservativeFilterDivergence()),
       early_limiter_deactivation_(UseEarlyLimiterDeactivation()),
       erle_estimator_(config.erle.min, config.erle.max_l, config.erle.max_h),
       max_render_(config_.filter.main.length_blocks, 0.f),
@@ -166,7 +135,6 @@ void AecState::HandleEchoPathChange(
     filter_analyzer_.Reset();
     blocks_since_last_saturation_ = 0;
     usable_linear_estimate_ = false;
-    diverged_linear_filter_ = false;
     capture_signal_saturation_ = false;
     echo_saturation_ = false;
     std::fill(max_render_.begin(), max_render_.end(), 0.f);
@@ -378,23 +346,10 @@ void AecState::Update(
   if (!config_.echo_removal_control.linear_and_stable_echo_path) {
     usable_linear_estimate_ =
         usable_linear_estimate_ && recently_converged_filter;
-    if (!allow_linear_mode_with_diverged_filter_) {
-      usable_linear_estimate_ = usable_linear_estimate_ && !diverged_filter;
-    }
   }
-  if (transparent_mode_enforces_nonlinear_mode_) {
-    usable_linear_estimate_ = usable_linear_estimate_ && !TransparentMode();
-  }
+  usable_linear_estimate_ = usable_linear_estimate_ && !TransparentMode();
 
   use_linear_filter_output_ = usable_linear_estimate_ && !TransparentMode();
-
-  if (conservative_filter_divergence_) {
-    diverged_linear_filter_ =
-        subtractor_output_analyzer_.SeverelyDivergedFilter() &&
-        active_render_block;
-  } else {
-    diverged_linear_filter_ = diverged_filter;
-  }
 
   const bool stationary_block =
       use_stationary_properties_ && echo_audibility_.IsBlockStationary();
