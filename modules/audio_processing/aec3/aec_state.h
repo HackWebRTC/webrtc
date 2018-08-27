@@ -74,10 +74,6 @@ class AecState {
 
   // Returns any uncertainty in the ERLE estimate.
   absl::optional<float> ErleUncertainty() const {
-    if (allow_linear_mode_with_diverged_filter_ && diverged_linear_filter_) {
-      return 10.f;
-    }
-
     if (!filter_has_had_time_to_converge_ &&
         use_uncertainty_until_sufficiently_adapted_) {
       return uncertainty_before_convergence_;
