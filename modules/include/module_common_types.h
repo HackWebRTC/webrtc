@@ -32,9 +32,6 @@
 
 namespace webrtc {
 
-// TODO(nisse): Deprecated, use webrtc::VideoCodecType instead.
-using RtpVideoCodecTypes = VideoCodecType;
-
 struct WebRtcRTPHeader {
   RTPVideoHeader& video_header() { return video; }
   const RTPVideoHeader& video_header() const { return video; }

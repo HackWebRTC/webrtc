@@ -47,20 +47,9 @@ RtpUtility::Payload CreatePayloadType(const SdpAudioFormat& audio_format) {
           PayloadUnion(AudioPayload{audio_format, 0})};
 }
 
-RtpVideoCodecTypes ConvertToRtpVideoCodecType(VideoCodecType type) {
-  switch (type) {
-    case kVideoCodecVP8:
-    case kVideoCodecVP9:
-    case kVideoCodecH264:
-      return type;
-    default:
-      return kVideoCodecGeneric;
-  }
-}
-
 RtpUtility::Payload CreatePayloadType(const VideoCodec& video_codec) {
   VideoPayload p;
-  p.videoCodecType = ConvertToRtpVideoCodecType(video_codec.codecType);
+  p.videoCodecType = video_codec.codecType;
   if (video_codec.codecType == kVideoCodecH264)
     p.h264_profile = video_codec.H264().profile;
   return {CodecTypeToPayloadString(video_codec.codecType), PayloadUnion(p)};

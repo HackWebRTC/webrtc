@@ -23,7 +23,7 @@ RtpPacketizer* RtpPacketizer::Create(VideoCodecType type,
                                      size_t last_packet_reduction_len,
                                      const RTPVideoHeader* rtp_video_header,
                                      FrameType frame_type) {
-  RTC_CHECK(type == kVideoCodecGeneric || rtp_video_header);
+  RTC_CHECK(rtp_video_header);
   switch (type) {
     case kVideoCodecH264: {
       const auto& h264 =
@@ -40,13 +40,10 @@ RtpPacketizer* RtpPacketizer::Create(VideoCodecType type,
       return new RtpPacketizerVp9(vp9, max_payload_len,
                                   last_packet_reduction_len);
     }
-    case kVideoCodecGeneric:
-      RTC_CHECK(rtp_video_header);
+    default:
       return new RtpPacketizerGeneric(*rtp_video_header, frame_type,
                                       max_payload_len,
                                       last_packet_reduction_len);
-    default:
-      RTC_NOTREACHED();
   }
   return nullptr;
 }
