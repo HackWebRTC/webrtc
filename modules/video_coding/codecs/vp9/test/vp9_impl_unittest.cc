@@ -67,7 +67,14 @@ class TestVp9Impl : public VideoCodecUnitTest {
         EXPECT_EQ(vp9.temporal_idx, temporal_idx);
       }
       EXPECT_EQ(vp9.temporal_up_switch, temporal_up_switch);
-      EXPECT_EQ(vp9.num_ref_pics, num_ref_pics);
+
+      // Ensure there are no duplicates in reference list.
+      std::vector<uint8_t> vp9_p_diff(vp9.p_diff,
+                                      vp9.p_diff + vp9.num_ref_pics);
+      std::sort(vp9_p_diff.begin(), vp9_p_diff.end());
+      EXPECT_EQ(std::unique(vp9_p_diff.begin(), vp9_p_diff.end()),
+                vp9_p_diff.end());
+
       for (size_t ref_pic_num = 0; ref_pic_num < num_ref_pics; ++ref_pic_num) {
         EXPECT_NE(
             std::find(p_diff.begin(), p_diff.end(), vp9.p_diff[ref_pic_num]),

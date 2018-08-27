@@ -870,21 +870,30 @@ void VP9EncoderImpl::FillReferenceIndices(const vpx_codec_cx_pkt& pkt,
       const size_t fb_idx =
           enc_layer_conf.lst_fb_idx[layer_id.spatial_layer_id];
       RTC_DCHECK(ref_buf_.find(fb_idx) != ref_buf_.end());
-      ref_buf_list.push_back(ref_buf_.at(fb_idx));
+      if (std::find(ref_buf_list.begin(), ref_buf_list.end(),
+                    ref_buf_.at(fb_idx)) == ref_buf_list.end()) {
+        ref_buf_list.push_back(ref_buf_.at(fb_idx));
+      }
     }
 
     if (enc_layer_conf.reference_alt_ref[layer_id.spatial_layer_id]) {
       const size_t fb_idx =
           enc_layer_conf.alt_fb_idx[layer_id.spatial_layer_id];
       RTC_DCHECK(ref_buf_.find(fb_idx) != ref_buf_.end());
-      ref_buf_list.push_back(ref_buf_.at(fb_idx));
+      if (std::find(ref_buf_list.begin(), ref_buf_list.end(),
+                    ref_buf_.at(fb_idx)) == ref_buf_list.end()) {
+        ref_buf_list.push_back(ref_buf_.at(fb_idx));
+      }
     }
 
     if (enc_layer_conf.reference_golden[layer_id.spatial_layer_id]) {
       const size_t fb_idx =
           enc_layer_conf.gld_fb_idx[layer_id.spatial_layer_id];
       RTC_DCHECK(ref_buf_.find(fb_idx) != ref_buf_.end());
-      ref_buf_list.push_back(ref_buf_.at(fb_idx));
+      if (std::find(ref_buf_list.begin(), ref_buf_list.end(),
+                    ref_buf_.at(fb_idx)) == ref_buf_list.end()) {
+        ref_buf_list.push_back(ref_buf_.at(fb_idx));
+      }
     }
   } else if (!is_key_frame) {
     RTC_DCHECK_EQ(num_spatial_layers_, 1);

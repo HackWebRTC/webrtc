@@ -131,6 +131,12 @@ class VP9EncoderImpl : public VP9Encoder {
           spatial_layer_id(spatial_layer_id),
           temporal_layer_id(temporal_layer_id) {}
     RefFrameBuffer() {}
+
+    bool operator==(const RefFrameBuffer& o) {
+      return pic_num == o.pic_num && spatial_layer_id == o.spatial_layer_id &&
+             temporal_layer_id == o.temporal_layer_id;
+    }
+
     size_t pic_num = 0;
     size_t spatial_layer_id = 0;
     size_t temporal_layer_id = 0;
