@@ -12,16 +12,17 @@
 
 #include "api/video/i420_buffer.h"
 #include "rtc_base/timeutils.h"
-#include "test/call_test.h"
-#include "test/gtest.h"
 
 namespace webrtc {
 namespace test {
 
+namespace {
+const int kDefaultWidth = 320;
+const int kDefaultHeight = 180;
+}  // namespace
+
 FakeDecoder::FakeDecoder()
-    : callback_(NULL),
-      width_(CallTest::kDefaultWidth),
-      height_(CallTest::kDefaultHeight) {}
+    : callback_(NULL), width_(kDefaultWidth), height_(kDefaultHeight) {}
 
 int32_t FakeDecoder::InitDecode(const VideoCodec* config,
                                 int32_t number_of_cores) {
@@ -75,7 +76,7 @@ int32_t FakeH264Decoder::Decode(const EncodedImage& input,
       i += sizeof(kStartCode) + 1;  // Skip start code and NAL header.
     }
     if (input._buffer[i] != value) {
-      EXPECT_EQ(value, input._buffer[i])
+      RTC_CHECK_EQ(value, input._buffer[i])
           << "Bitstream mismatch between sender and receiver.";
       return -1;
     }

@@ -22,7 +22,7 @@ namespace test {
 class ConfigurableFrameSizeEncoder : public VideoEncoder {
  public:
   explicit ConfigurableFrameSizeEncoder(size_t max_frame_size);
-  virtual ~ConfigurableFrameSizeEncoder();
+  ~ConfigurableFrameSizeEncoder() override;
 
   int32_t InitEncode(const VideoCodec* codec_settings,
                      int32_t number_of_cores,

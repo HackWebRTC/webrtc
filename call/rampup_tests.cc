@@ -149,12 +149,15 @@ void RampUpTester::ModifyVideoConfigs(
     // For single stream rampup until 1mbps
     expected_bitrate_bps_ = kSingleStreamTargetBps;
   } else {
-    // For multi stream rampup until all streams are being sent. That means
-    // enough bitrate to send all the target streams plus the min bitrate of
-    // the last one.
+    // To ensure simulcast rate allocation.
+    send_config->rtp.payload_name = "VP8";
+    encoder_config->codec_type = kVideoCodecVP8;
     std::vector<VideoStream> streams = test::CreateVideoStreams(
         test::CallTest::kDefaultWidth, test::CallTest::kDefaultHeight,
         *encoder_config);
+    // For multi stream rampup until all streams are being sent. That means
+    // enough bitrate to send all the target streams plus the min bitrate of
+    // the last one.
     expected_bitrate_bps_ = streams.back().min_bitrate_bps;
     for (size_t i = 0; i < streams.size() - 1; ++i) {
       expected_bitrate_bps_ += streams[i].target_bitrate_bps;
@@ -203,6 +206,9 @@ void RampUpTester::ModifyVideoConfigs(
     recv_config.rtp.remb = remb;
     recv_config.rtp.transport_cc = transport_cc;
     recv_config.rtp.extensions = send_config->rtp.extensions;
+    recv_config.decoders.reserve(1);
+    recv_config.decoders[0].payload_type = send_config->rtp.payload_type;
+    recv_config.decoders[0].payload_name = send_config->rtp.payload_name;
 
     recv_config.rtp.remote_ssrc = video_ssrcs_[i];
     recv_config.rtp.nack.rtp_history_ms = send_config->rtp.nack.rtp_history_ms;
