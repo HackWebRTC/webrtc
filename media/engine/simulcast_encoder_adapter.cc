@@ -449,16 +449,14 @@ EncodedImageCallback::Result SimulcastEncoderAdapter::OnEncodedImage(
     const EncodedImage& encodedImage,
     const CodecSpecificInfo* codecSpecificInfo,
     const RTPFragmentationHeader* fragmentation) {
+  EncodedImage stream_image(encodedImage);
   CodecSpecificInfo stream_codec_specific = *codecSpecificInfo;
   stream_codec_specific.codec_name = implementation_name_.c_str();
-  if (stream_codec_specific.codecType == webrtc::kVideoCodecVP8) {
-    stream_codec_specific.codecSpecific.VP8.simulcastIdx = stream_idx;
-  } else if (stream_codec_specific.codecType == webrtc::kVideoCodecH264) {
-    stream_codec_specific.codecSpecific.H264.simulcast_idx = stream_idx;
-  }
+
+  stream_image.SetSpatialIndex(stream_idx);
 
   return encoded_complete_callback_->OnEncodedImage(
-      encodedImage, &stream_codec_specific, fragmentation);
+      stream_image, &stream_codec_specific, fragmentation);
 }
 
 void SimulcastEncoderAdapter::PopulateStreamCodec(

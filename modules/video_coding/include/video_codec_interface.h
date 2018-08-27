@@ -28,6 +28,8 @@ class RTPFragmentationHeader;  // forward declaration
 // with a copy-constructor. See below.
 struct CodecSpecificInfoVP8 {
   bool nonReference;
+  // TODO(bugs.webrtc.org/9378): Delete simulcastIdx, replaced by spatial index
+  // member in EncodedImage. Unused, but assigned in downstream code.
   uint8_t simulcastIdx;
   uint8_t temporalIdx;
   bool layerSync;
@@ -43,6 +45,8 @@ struct CodecSpecificInfoVP9 {
   bool non_ref_for_inter_layer_pred;
 
   uint8_t temporal_idx;
+  // TODO(bugs.webrtc.org/9378): Delete spatial_idx, replaced by spatial index
+  // member in EncodedImage. Unused, but assigned in downstream code.
   uint8_t spatial_idx;
   bool temporal_up_switch;
   bool inter_layer_predicted;  // Frame is dependent on directly lower spatial
@@ -63,13 +67,14 @@ struct CodecSpecificInfoVP9 {
   bool end_of_picture;
 };
 
+// TODO(bugs.webrtc.org/9378): Delete this struct. Unused, except that
+// simulcast_idx is assigned in downstream code.
 struct CodecSpecificInfoGeneric {
   uint8_t simulcast_idx;
 };
 
 struct CodecSpecificInfoH264 {
   H264PacketizationMode packetization_mode;
-  uint8_t simulcast_idx;
 };
 
 union CodecSpecificInfoUnion {

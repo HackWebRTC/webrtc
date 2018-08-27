@@ -522,11 +522,13 @@ EncodedImageCallback::Result VideoSendStreamImpl::OnEncodedImage(
   // Encoded is called on whatever thread the real encoder implementation run
   // on. In the case of hardware encoders, there might be several encoders
   // running in parallel on different threads.
-  size_t simulcast_idx = 0;
-  if (codec_specific_info->codecType == kVideoCodecVP8) {
-    simulcast_idx = codec_specific_info->codecSpecific.VP8.simulcastIdx;
-  }
+  const size_t simulcast_idx =
+      (codec_specific_info->codecType != kVideoCodecVP9)
+          ? encoded_image.SpatialIndex().value_or(0)
+          : 0;
   if (config_->post_encode_callback) {
+    // TODO(nisse): Delete webrtc::EncodedFrame class, pass EncodedImage
+    // instead.
     config_->post_encode_callback->EncodedFrameCallback(EncodedFrame(
         encoded_image._buffer, encoded_image._length, encoded_image._frameType,
         simulcast_idx, encoded_image.Timestamp()));
@@ -542,15 +544,10 @@ EncodedImageCallback::Result VideoSendStreamImpl::OnEncodedImage(
   EncodedImageCallback::Result result = rtp_video_sender_->OnEncodedImage(
       encoded_image, codec_specific_info, fragmentation);
 
-  RTC_DCHECK(codec_specific_info);
-
-  int layer = codec_specific_info->codecType == kVideoCodecVP8
-                  ? codec_specific_info->codecSpecific.VP8.simulcastIdx
-                  : 0;
   {
     rtc::CritScope lock(&ivf_writers_crit_);
-    if (file_writers_[layer].get()) {
-      bool ok = file_writers_[layer]->WriteFrame(
+    if (file_writers_[simulcast_idx].get()) {
+      bool ok = file_writers_[simulcast_idx]->WriteFrame(
           encoded_image, codec_specific_info->codecType);
       RTC_DCHECK(ok);
     }

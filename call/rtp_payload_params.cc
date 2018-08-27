@@ -22,6 +22,7 @@ namespace webrtc {
 
 namespace {
 void PopulateRtpWithCodecSpecifics(const CodecSpecificInfo& info,
+                                   absl::optional<int> spatial_index,
                                    RTPVideoHeader* rtp) {
   rtp->codec = info.codecType;
   switch (info.codecType) {
@@ -31,7 +32,7 @@ void PopulateRtpWithCodecSpecifics(const CodecSpecificInfo& info,
       rtp->vp8().temporalIdx = info.codecSpecific.VP8.temporalIdx;
       rtp->vp8().layerSync = info.codecSpecific.VP8.layerSync;
       rtp->vp8().keyIdx = info.codecSpecific.VP8.keyIdx;
-      rtp->simulcastIdx = info.codecSpecific.VP8.simulcastIdx;
+      rtp->simulcastIdx = spatial_index.value_or(0);
       return;
     }
     case kVideoCodecVP9: {
@@ -44,13 +45,16 @@ void PopulateRtpWithCodecSpecifics(const CodecSpecificInfo& info,
       vp9_header.non_ref_for_inter_layer_pred =
           info.codecSpecific.VP9.non_ref_for_inter_layer_pred;
       vp9_header.temporal_idx = info.codecSpecific.VP9.temporal_idx;
-      vp9_header.spatial_idx = info.codecSpecific.VP9.spatial_idx;
       vp9_header.temporal_up_switch = info.codecSpecific.VP9.temporal_up_switch;
       vp9_header.inter_layer_predicted =
           info.codecSpecific.VP9.inter_layer_predicted;
       vp9_header.gof_idx = info.codecSpecific.VP9.gof_idx;
       vp9_header.num_spatial_layers = info.codecSpecific.VP9.num_spatial_layers;
-
+      if (vp9_header.num_spatial_layers > 1) {
+        vp9_header.spatial_idx = spatial_index.value_or(kNoSpatialIdx);
+      } else {
+        vp9_header.spatial_idx = kNoSpatialIdx;
+      }
       if (info.codecSpecific.VP9.ss_data_available) {
         vp9_header.spatial_layer_resolution_present =
             info.codecSpecific.VP9.spatial_layer_resolution_present;
@@ -75,13 +79,13 @@ void PopulateRtpWithCodecSpecifics(const CodecSpecificInfo& info,
       auto& h264_header = rtp->video_type_header.emplace<RTPVideoHeaderH264>();
       h264_header.packetization_mode =
           info.codecSpecific.H264.packetization_mode;
-      rtp->simulcastIdx = info.codecSpecific.H264.simulcast_idx;
+      rtp->simulcastIdx = spatial_index.value_or(0);
       return;
     }
     case kVideoCodecMultiplex:
     case kVideoCodecGeneric:
       rtp->codec = kVideoCodecGeneric;
-      rtp->simulcastIdx = info.codecSpecific.generic.simulcast_idx;
+      rtp->simulcastIdx = spatial_index.value_or(0);
       return;
     default:
       return;
@@ -131,7 +135,8 @@ RTPVideoHeader RtpPayloadParams::GetRtpVideoHeader(
     int64_t shared_frame_id) {
   RTPVideoHeader rtp_video_header;
   if (codec_specific_info) {
-    PopulateRtpWithCodecSpecifics(*codec_specific_info, &rtp_video_header);
+    PopulateRtpWithCodecSpecifics(*codec_specific_info, image.SpatialIndex(),
+                                  &rtp_video_header);
   }
   rtp_video_header.rotation = image.rotation_;
   rtp_video_header.content_type = image.content_type_;

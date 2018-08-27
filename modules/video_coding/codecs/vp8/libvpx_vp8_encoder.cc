@@ -817,7 +817,6 @@ void LibvpxVp8Encoder::PopulateCodecSpecific(
   codec_specific->codecType = kVideoCodecVP8;
   codec_specific->codec_name = ImplementationName();
   CodecSpecificInfoVP8* vp8Info = &(codec_specific->codecSpecific.VP8);
-  vp8Info->simulcastIdx = stream_idx;
   vp8Info->keyIdx = kNoKeyIdx;  // TODO(hlundin) populate this
   vp8Info->nonReference = (pkt.data.frame.flags & VPX_FRAME_IS_DROPPABLE) != 0;
   temporal_layers_[stream_idx]->PopulateCodecSpecific(
@@ -876,6 +875,7 @@ int LibvpxVp8Encoder::GetEncodedPartitions(
           encoded_images_[encoder_idx]._frameType = kVideoFrameKey;
           is_keyframe = true;
         }
+        encoded_images_[encoder_idx].SetSpatialIndex(stream_idx);
         PopulateCodecSpecific(&codec_specific, tl_configs[stream_idx], *pkt,
                               stream_idx, input_image.timestamp());
         break;

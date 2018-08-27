@@ -102,7 +102,6 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
     CodecSpecificInfo specifics;
     memset(&specifics, 0, sizeof(specifics));
     specifics.codecType = kVideoCodecGeneric;
-    specifics.codecSpecific.generic.simulcast_idx = i;
     std::unique_ptr<uint8_t[]> encoded_buffer(
         new uint8_t[frame_info.layers[i].size]);
     memcpy(encoded_buffer.get(), encoded_buffer_, frame_info.layers[i].size);
@@ -118,6 +117,7 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
     encoded.content_type_ = (mode == VideoCodecMode::kScreensharing)
                                 ? VideoContentType::SCREENSHARE
                                 : VideoContentType::UNSPECIFIED;
+    encoded.SetSpatialIndex(i);
     specifics.codec_name = ImplementationName();
     if (callback->OnEncodedImage(encoded, &specifics, nullptr).error !=
         EncodedImageCallback::Result::OK) {

@@ -318,10 +318,6 @@ EncodedImageCallback::Result VideoReceiveStream::OnEncodedImage(
     const CodecSpecificInfo* codec_specific_info,
     const RTPFragmentationHeader* fragmentation) {
   stats_proxy_.OnPreDecode(encoded_image, codec_specific_info);
-  size_t simulcast_idx = 0;
-  if (codec_specific_info->codecType == kVideoCodecVP8) {
-    simulcast_idx = codec_specific_info->codecSpecific.VP8.simulcastIdx;
-  }
   {
     rtc::CritScope lock(&ivf_writer_lock_);
     if (ivf_writer_.get()) {
