@@ -73,6 +73,8 @@ class NetworkSimulationInterface {
   // Retrieves all packets that should be delivered by the given receive time.
   virtual std::vector<PacketDeliveryInfo> DequeueDeliverablePackets(
       int64_t receive_time_us) = 0;
+  // Returns time in microseconds when caller should call
+  // DequeueDeliverablePackets to get next set of packets to deliver.
   virtual absl::optional<int64_t> NextDeliveryTimeUs() const = 0;
   virtual ~NetworkSimulationInterface() = default;
 };
