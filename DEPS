@@ -1043,7 +1043,7 @@ include_rules = [
   "+test",
   "+rtc_tools",
 
-  # Abseil whitelist.
+  # Abseil whitelist. Keep this in sync with abseil-in-webrtc-md.
   "+absl/container/inlined_vector.h",
   "+absl/memory/memory.h",
   "+absl/strings/string_view.h",
