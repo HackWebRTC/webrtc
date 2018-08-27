@@ -130,4 +130,8 @@ void GainCurveApplier::SetSampleRate(size_t sample_rate_hz) {
                 kMaximalNumberOfSamplesPerChannel * 1000 / kFrameDurationMs);
 }
 
+void GainCurveApplier::Reset() {
+  level_estimator_.Reset();
+}
+
 }  // namespace webrtc
