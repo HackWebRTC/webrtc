@@ -15,6 +15,7 @@
 #include <string>
 #include <utility>  // For std::move.
 
+#include "api/mediaconstraintsinterface.h"
 #include "api/mediastreaminterface.h"
 #include "api/mediatypes.h"
 #include "api/ortc/ortcrtpreceiverinterface.h"
@@ -24,7 +25,6 @@
 #include "api/ortc/rtptransportinterface.h"
 #include "api/ortc/srtptransportinterface.h"
 #include "api/ortc/udptransportinterface.h"
-#include "api/peerconnectioninterface.h"
 #include "api/rtcerror.h"
 #include "api/rtpparameters.h"
 #include "rtc_base/network.h"

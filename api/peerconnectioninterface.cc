@@ -195,6 +195,16 @@ PeerConnectionFactoryDependencies::~PeerConnectionFactoryDependencies() =
 rtc::scoped_refptr<PeerConnectionInterface>
 PeerConnectionFactoryInterface::CreatePeerConnection(
     const PeerConnectionInterface::RTCConfiguration& configuration,
+    const MediaConstraintsInterface* constraints,
+    std::unique_ptr<cricket::PortAllocator> allocator,
+    std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
+    PeerConnectionObserver* observer) {
+  return nullptr;
+}
+
+rtc::scoped_refptr<PeerConnectionInterface>
+PeerConnectionFactoryInterface::CreatePeerConnection(
+    const PeerConnectionInterface::RTCConfiguration& configuration,
     std::unique_ptr<cricket::PortAllocator> allocator,
     std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
     PeerConnectionObserver* observer) {

@@ -20,6 +20,7 @@
 #include "absl/memory/memory.h"
 #include "api/jsepicecandidate.h"
 #include "api/jsepsessiondescription.h"
+#include "api/mediaconstraintsinterface.h"
 #include "api/mediastreamproxy.h"
 #include "api/mediastreamtrackproxy.h"
 #include "call/call.h"
