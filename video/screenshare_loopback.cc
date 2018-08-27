@@ -274,7 +274,7 @@ DEFINE_bool(help, false, "prints this message");
 }  // namespace flags
 
 void Loopback() {
-  FakeNetworkPipe::Config pipe_config;
+  DefaultNetworkSimulationConfig pipe_config;
   pipe_config.loss_percent = flags::LossPercent();
   pipe_config.link_capacity_kbps = flags::LinkCapacityKbps();
   pipe_config.queue_length_packets = flags::QueueSize();
@@ -314,7 +314,7 @@ void Loopback() {
                      flags::DurationSecs(),
                      flags::OutputFilename(),
                      flags::GraphTitle()};
-  params.pipe = pipe_config;
+  params.config = pipe_config;
   params.logging = {flags::RtcEventLogName(), flags::RtpDumpName(),
                     flags::EncodedFramePath()};
 

@@ -113,6 +113,7 @@ VideoQualityTest::Params::Params()
       screenshare{{false, false, 10, 0}, {false, false, 10, 0}},
       analyzer({"", 0.0, 0.0, 0, "", ""}),
       pipe(),
+      config(absl::nullopt),
       ss{{std::vector<VideoStream>(), 0, 0, -1, InterLayerPredMode::kOn,
           std::vector<SpatialLayer>()},
          {std::vector<VideoStream>(), 0, 0, -1, InterLayerPredMode::kOn,
@@ -139,6 +140,11 @@ std::string VideoQualityTest::GenerateGraphTitle() const {
 }
 
 void VideoQualityTest::CheckParams() {
+  if (!params_.config) {
+    // TODO(titovartem) replace with default config creation when removing
+    // pipe.
+    params_.config = params_.pipe;
+  }
   for (size_t video_idx = 0; video_idx < num_video_streams_; ++video_idx) {
     // Iterate over primary and secondary video streams.
     if (!params_.video[video_idx].enabled)
@@ -150,8 +156,8 @@ void VideoQualityTest::CheckParams() {
     if (params_.ss[video_idx].num_spatial_layers == 0)
       params_.ss[video_idx].num_spatial_layers = 1;
 
-    if (params_.pipe.loss_percent != 0 ||
-        params_.pipe.queue_length_packets != 0) {
+    if (params_.config->loss_percent != 0 ||
+        params_.config->queue_length_packets != 0) {
       // Since LayerFilteringTransport changes the sequence numbers, we can't
       // use that feature with pack loss, since the NACK request would end up
       // retransmitting the wrong packets.
