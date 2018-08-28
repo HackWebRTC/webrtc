@@ -176,17 +176,20 @@ void RtpVideoStreamReceiver::AddReceiveCodec(
 }
 
 absl::optional<Syncable::Info> RtpVideoStreamReceiver::GetSyncInfo() const {
-  if (!last_received_rtp_timestamp_ || !last_received_rtp_system_time_ms_) {
-    return absl::nullopt;
-  }
   Syncable::Info info;
   if (rtp_rtcp_->RemoteNTP(&info.capture_time_ntp_secs,
                            &info.capture_time_ntp_frac, nullptr, nullptr,
                            &info.capture_time_source_clock) != 0) {
     return absl::nullopt;
   }
-  info.latest_received_capture_timestamp = *last_received_rtp_timestamp_;
-  info.latest_receive_time_ms = *last_received_rtp_system_time_ms_;
+  {
+    rtc::CritScope lock(&last_seq_num_cs_);
+    if (!last_received_rtp_timestamp_ || !last_received_rtp_system_time_ms_) {
+      return absl::nullopt;
+    }
+    info.latest_received_capture_timestamp = *last_received_rtp_timestamp_;
+    info.latest_receive_time_ms = *last_received_rtp_system_time_ms_;
+  }
 
   // Leaves info.current_delay_ms uninitialized.
   return info;
@@ -279,10 +282,13 @@ void RtpVideoStreamReceiver::OnRtpPacket(const RtpPacketReceived& packet) {
 
   if (!packet.recovered()) {
     int64_t now_ms = clock_->TimeInMilliseconds();
-    // TODO(nisse): Exclude out-of-order packets?
-    last_received_rtp_timestamp_ = packet.Timestamp();
-    last_received_rtp_system_time_ms_ = now_ms;
+    {
+      rtc::CritScope lock(&last_seq_num_cs_);
 
+      // TODO(nisse): Exclude out-of-order packets?
+      last_received_rtp_timestamp_ = packet.Timestamp();
+      last_received_rtp_system_time_ms_ = now_ms;
+    }
     // Periodically log the RTP header of incoming packets.
     if (now_ms - last_packet_log_ms_ > kPacketLogIntervalMs) {
       std::stringstream ss;

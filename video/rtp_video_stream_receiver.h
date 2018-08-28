@@ -177,8 +177,10 @@ class RtpVideoStreamReceiver : public RtpData,
       RTC_GUARDED_BY(last_seq_num_cs_);
   video_coding::H264SpsPpsTracker tracker_;
 
-  absl::optional<uint32_t> last_received_rtp_timestamp_;
-  absl::optional<int64_t> last_received_rtp_system_time_ms_;
+  absl::optional<uint32_t> last_received_rtp_timestamp_
+      RTC_GUARDED_BY(last_seq_num_cs_);
+  absl::optional<int64_t> last_received_rtp_system_time_ms_
+      RTC_GUARDED_BY(last_seq_num_cs_);
   std::map<uint8_t, VideoCodecType> pt_codec_type_;
   // TODO(johan): Remove pt_codec_params_ once
   // https://bugs.chromium.org/p/webrtc/issues/detail?id=6883 is resolved.
