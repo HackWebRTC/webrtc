@@ -85,7 +85,6 @@ using webrtc::DtmfSender;
 using webrtc::DtmfSenderInterface;
 using webrtc::DtmfSenderObserverInterface;
 using webrtc::FakeVideoTrackRenderer;
-using webrtc::MediaConstraintsInterface;
 using webrtc::MediaStreamInterface;
 using webrtc::MediaStreamTrackInterface;
 using webrtc::MockCreateSessionDescriptionObserver;

@@ -26,7 +26,6 @@
 using webrtc::FakeConstraints;
 using webrtc::FakeVideoTrackRenderer;
 using webrtc::IceCandidateInterface;
-using webrtc::MediaConstraintsInterface;
 using webrtc::MediaStreamInterface;
 using webrtc::MediaStreamTrackInterface;
 using webrtc::MockSetSessionDescriptionObserver;
