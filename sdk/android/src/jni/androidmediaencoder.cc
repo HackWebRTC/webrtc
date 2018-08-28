@@ -341,6 +341,13 @@ int32_t MediaCodecVideoEncoder::InitEncode(const VideoCodec* codec_settings,
   ALOGD << "InitEncode request: " << init_width << " x " << init_height;
   ALOGD << "Encoder automatic resize " << (scale_ ? "enabled" : "disabled");
 
+  if (codec_settings->numberOfSimulcastStreams > 1) {
+    ALOGD << "Number of simulcast layers requested: "
+          << codec_settings->numberOfSimulcastStreams
+          << ". Requesting software fallback.";
+    return WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE;
+  }
+
   // Check allowed H.264 profile
   profile_ = H264::Profile::kProfileBaseline;
   if (codec_type == kVideoCodecH264) {
