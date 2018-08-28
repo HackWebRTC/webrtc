@@ -81,7 +81,6 @@ rtc_executable("frame_analyzer") {
     ":command_line_parser",
     ":video_quality_analysis",
     "../test:perf_test",
-    "//build/win:default_exe_manifest",
   ]
 }
 
@@ -96,7 +95,6 @@ if (!build_with_chromium) {
     deps = [
       ":command_line_parser",
       ":video_quality_analysis",
-      "//build/win:default_exe_manifest",
     ]
   }
 
@@ -119,7 +117,6 @@ if (!build_with_chromium) {
     deps = [
       ":command_line_parser",
       ":reference_less_video_analysis_lib",
-      "//build/win:default_exe_manifest",
     ]
   }
 
@@ -134,7 +131,6 @@ if (!build_with_chromium) {
     deps = [
       ":command_line_parser",
       "../common_video",
-      "//build/win:default_exe_manifest",
       "//third_party/libyuv",
     ]
   }
@@ -159,7 +155,6 @@ if (!build_with_chromium) {
     deps = [
       ":command_line_parser",
       ":frame_editing_lib",
-      "//build/win:default_exe_manifest",
     ]
   }
 
@@ -174,7 +169,6 @@ if (!build_with_chromium) {
         "../modules/audio_device",
         "../modules/audio_device:audio_device_impl",
         "../system_wrappers:system_wrappers_default",
-        "//build/win:default_exe_manifest",
       ]
     }
   }
@@ -280,7 +274,6 @@ if (rtc_include_tests) {
       "../rtc_base:safe_minmax",
       "../system_wrappers:metrics_default",
       "../test:test_support",
-      "//build/win:default_exe_manifest",
       "//testing/gtest",
     ]
   }

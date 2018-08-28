@@ -453,6 +453,12 @@ template("rtc_executable") {
     if (defined(invoker.public_configs)) {
       public_configs += invoker.public_configs
     }
+    if (is_win) {
+      deps += [
+        # Give executables the default manifest on Windows (a no-op elsewhere).
+        "//build/win:default_exe_manifest",
+      ]
+    }
   }
 }
 
