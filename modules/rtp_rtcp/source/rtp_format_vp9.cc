@@ -471,10 +471,6 @@ RtpPacketizerVp9::RtpPacketizerVp9(const RTPVideoHeaderVP9& hdr,
 
 RtpPacketizerVp9::~RtpPacketizerVp9() {}
 
-std::string RtpPacketizerVp9::ToString() {
-  return "RtpPacketizerVp9";
-}
-
 size_t RtpPacketizerVp9::SetPayloadData(
     const uint8_t* payload,
     size_t payload_size,
@@ -482,6 +478,10 @@ size_t RtpPacketizerVp9::SetPayloadData(
   payload_ = payload;
   payload_size_ = payload_size;
   GeneratePackets();
+  return packets_.size();
+}
+
+size_t RtpPacketizerVp9::NumPackets() const {
   return packets_.size();
 }
 

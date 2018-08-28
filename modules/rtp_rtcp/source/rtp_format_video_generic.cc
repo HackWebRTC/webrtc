@@ -77,6 +77,10 @@ size_t RtpPacketizerGeneric::SetPayloadData(
   return num_packets_left_;
 }
 
+size_t RtpPacketizerGeneric::NumPackets() const {
+  return num_packets_left_;
+}
+
 bool RtpPacketizerGeneric::NextPacket(RtpPacketToSend* packet) {
   RTC_DCHECK(packet);
   if (num_packets_left_ == 0)
@@ -125,10 +129,6 @@ bool RtpPacketizerGeneric::NextPacket(RtpPacketToSend* packet) {
   packet->SetMarker(payload_size_ == 0);
 
   return true;
-}
-
-std::string RtpPacketizerGeneric::ToString() {
-  return "RtpPacketizerGeneric";
 }
 
 void RtpPacketizerGeneric::WriteExtendedHeader(uint8_t* out_ptr) {

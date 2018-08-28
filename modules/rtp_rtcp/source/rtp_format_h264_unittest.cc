@@ -16,7 +16,7 @@
 #include "modules/include/module_common_types.h"
 #include "modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
-#include "modules/rtp_rtcp/source/rtp_format.h"
+#include "modules/rtp_rtcp/source/rtp_format_h264.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -68,14 +68,12 @@ void CreateThreeFragments(RTPFragmentationHeader* fragmentation,
       kNalHeaderSize + frameSize - payloadOffset;
 }
 
-RtpPacketizer* CreateH264Packetizer(H264PacketizationMode mode,
-                                    size_t max_payload_size,
-                                    size_t last_packet_reduction) {
-  RTPVideoHeader header;
-  header.video_type_header.emplace<RTPVideoHeaderH264>().packetization_mode =
-      mode;
-  return RtpPacketizer::Create(kVideoCodecH264, max_payload_size,
-                               last_packet_reduction, &header, kEmptyFrame);
+std::unique_ptr<RtpPacketizerH264> CreateH264Packetizer(
+    H264PacketizationMode mode,
+    size_t max_payload_size,
+    size_t last_packet_reduction) {
+  return absl::make_unique<RtpPacketizerH264>(max_payload_size,
+                                              last_packet_reduction, mode);
 }
 
 void VerifyFua(size_t fua_index,
@@ -118,7 +116,7 @@ void TestFua(size_t frame_size,
   fragmentation.VerifyAndAllocateFragmentationHeader(1);
   fragmentation.fragmentationOffset[0] = 0;
   fragmentation.fragmentationLength[0] = frame_size;
-  std::unique_ptr<RtpPacketizer> packetizer(
+  std::unique_ptr<RtpPacketizerH264> packetizer(
       CreateH264Packetizer(H264PacketizationMode::NonInterleaved,
                            max_payload_size, last_packet_reduction));
   EXPECT_EQ(
@@ -191,7 +189,7 @@ TEST_P(RtpPacketizerH264ModeTest, TestSingleNalu) {
   fragmentation.VerifyAndAllocateFragmentationHeader(1);
   fragmentation.fragmentationOffset[0] = 0;
   fragmentation.fragmentationLength[0] = sizeof(frame);
-  std::unique_ptr<RtpPacketizer> packetizer(
+  std::unique_ptr<RtpPacketizerH264> packetizer(
       CreateH264Packetizer(GetParam(), kMaxPayloadSize, 0));
   ASSERT_EQ(1u,
             packetizer->SetPayloadData(frame, sizeof(frame), &fragmentation));
@@ -218,7 +216,7 @@ TEST_P(RtpPacketizerH264ModeTest, TestSingleNaluTwoPackets) {
   frame[fragmentation.fragmentationOffset[0]] = 0x01;
   frame[fragmentation.fragmentationOffset[1]] = 0x01;
 
-  std::unique_ptr<RtpPacketizer> packetizer(
+  std::unique_ptr<RtpPacketizerH264> packetizer(
       CreateH264Packetizer(GetParam(), kMaxPayloadSize, 0));
   ASSERT_EQ(2u, packetizer->SetPayloadData(frame, kFrameSize, &fragmentation));
 
@@ -251,7 +249,7 @@ TEST(RtpPacketizerH264Test, TestStapA) {
     frame[i + kPayloadOffset] = i;
   RTPFragmentationHeader fragmentation;
   CreateThreeFragments(&fragmentation, kFrameSize, kPayloadOffset);
-  std::unique_ptr<RtpPacketizer> packetizer(CreateH264Packetizer(
+  std::unique_ptr<RtpPacketizerH264> packetizer(CreateH264Packetizer(
       H264PacketizationMode::NonInterleaved, kMaxPayloadSize, 0));
   ASSERT_EQ(1u, packetizer->SetPayloadData(frame, kFrameSize, &fragmentation));
 
@@ -286,7 +284,7 @@ TEST(RtpPacketizerH264Test, TestStapARespectsPacketReduction) {
   fragmentation.fragmentationOffset[2] = 4;
   fragmentation.fragmentationLength[2] =
       kNalHeaderSize + kFrameSize - kPayloadOffset;
-  std::unique_ptr<RtpPacketizer> packetizer(
+  std::unique_ptr<RtpPacketizerH264> packetizer(
       CreateH264Packetizer(H264PacketizationMode::NonInterleaved,
                            kMaxPayloadSize, kLastPacketReduction));
   ASSERT_EQ(2u, packetizer->SetPayloadData(frame, kFrameSize, &fragmentation));
@@ -323,7 +321,7 @@ TEST(RtpPacketizerH264Test, TestSingleNalUnitModeHasNoStapA) {
     frame[i + kPayloadOffset] = i;
   RTPFragmentationHeader fragmentation;
   CreateThreeFragments(&fragmentation, kFrameSize, kPayloadOffset);
-  std::unique_ptr<RtpPacketizer> packetizer(CreateH264Packetizer(
+  std::unique_ptr<RtpPacketizerH264> packetizer(CreateH264Packetizer(
       H264PacketizationMode::SingleNalUnit, kMaxPayloadSize, 0));
   packetizer->SetPayloadData(frame, kFrameSize, &fragmentation);
 
@@ -352,7 +350,7 @@ TEST(RtpPacketizerH264Test, TestTooSmallForStapAHeaders) {
   fragmentation.fragmentationOffset[2] = 4;
   fragmentation.fragmentationLength[2] =
       kNalHeaderSize + kFrameSize - kPayloadOffset;
-  std::unique_ptr<RtpPacketizer> packetizer(CreateH264Packetizer(
+  std::unique_ptr<RtpPacketizerH264> packetizer(CreateH264Packetizer(
       H264PacketizationMode::NonInterleaved, kMaxPayloadSize, 0));
   ASSERT_EQ(2u, packetizer->SetPayloadData(frame, kFrameSize, &fragmentation));
 
@@ -397,7 +395,7 @@ TEST(RtpPacketizerH264Test, TestMixedStapA_FUA) {
       frame[nalu_offset + j] = i + j;
     }
   }
-  std::unique_ptr<RtpPacketizer> packetizer(CreateH264Packetizer(
+  std::unique_ptr<RtpPacketizerH264> packetizer(CreateH264Packetizer(
       H264PacketizationMode::NonInterleaved, kMaxPayloadSize, 0));
   ASSERT_EQ(3u, packetizer->SetPayloadData(frame, kFrameSize, &fragmentation));
 
@@ -486,7 +484,7 @@ TEST(RtpPacketizerH264Test, SendOverlongDataInPacketizationMode0) {
   // Set NAL headers.
   frame[fragmentation.fragmentationOffset[0]] = 0x01;
 
-  std::unique_ptr<RtpPacketizer> packetizer(CreateH264Packetizer(
+  std::unique_ptr<RtpPacketizerH264> packetizer(CreateH264Packetizer(
       H264PacketizationMode::SingleNalUnit, kMaxPayloadSize, 0));
   EXPECT_EQ(0u, packetizer->SetPayloadData(frame, kFrameSize, &fragmentation));
 }
@@ -524,16 +522,16 @@ class RtpPacketizerH264TestSpsRewriting : public ::testing::Test {
  protected:
   rtc::Buffer in_buffer_;
   RTPFragmentationHeader fragmentation_header_;
-  std::unique_ptr<RtpPacketizer> packetizer_;
+  std::unique_ptr<RtpPacketizerH264> packetizer_;
 };
 
 TEST_F(RtpPacketizerH264TestSpsRewriting, FuASps) {
   const size_t kHeaderOverhead = kFuAHeaderSize + 1;
 
   // Set size to fragment SPS into two FU-A packets.
-  packetizer_.reset(
+  packetizer_ =
       CreateH264Packetizer(H264PacketizationMode::NonInterleaved,
-                           sizeof(kOriginalSps) - 2 + kHeaderOverhead, 0));
+                           sizeof(kOriginalSps) - 2 + kHeaderOverhead, 0);
 
   packetizer_->SetPayloadData(in_buffer_.data(), in_buffer_.size(),
                               &fragmentation_header_);
@@ -564,9 +562,8 @@ TEST_F(RtpPacketizerH264TestSpsRewriting, StapASps) {
                                     sizeof(kIdrTwo) + (kLengthFieldLength * 3);
 
   // Set size to include SPS and the rest of the packets in a Stap-A package.
-  packetizer_.reset(CreateH264Packetizer(H264PacketizationMode::NonInterleaved,
-                                         kExpectedTotalSize + kHeaderOverhead,
-                                         0));
+  packetizer_ = CreateH264Packetizer(H264PacketizationMode::NonInterleaved,
+                                     kExpectedTotalSize + kHeaderOverhead, 0);
 
   packetizer_->SetPayloadData(in_buffer_.data(), in_buffer_.size(),
                               &fragmentation_header_);

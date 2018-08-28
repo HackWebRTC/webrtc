@@ -39,14 +39,14 @@ class RtpPacketizerGeneric : public RtpPacketizer {
   // Returns total number of packets to be generated.
   size_t SetPayloadData(const uint8_t* payload_data,
                         size_t payload_size,
-                        const RTPFragmentationHeader* fragmentation) override;
+                        const RTPFragmentationHeader* fragmentation);
+
+  size_t NumPackets() const override;
 
   // Get the next payload with generic payload header.
   // Write payload and set marker bit of the |packet|.
   // Returns true on success, false otherwise.
   bool NextPacket(RtpPacketToSend* packet) override;
-
-  std::string ToString() override;
 
  private:
   const absl::optional<uint16_t> picture_id_;

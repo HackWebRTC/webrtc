@@ -182,6 +182,10 @@ size_t RtpPacketizerH264::SetPayloadData(
   return num_packets_left_;
 }
 
+size_t RtpPacketizerH264::NumPackets() const {
+  return num_packets_left_;
+}
+
 bool RtpPacketizerH264::GeneratePackets() {
   for (size_t i = 0; i < input_fragments_.size();) {
     switch (packetization_mode_) {
@@ -406,10 +410,6 @@ void RtpPacketizerH264::NextFragmentPacket(RtpPacketToSend* rtp_packet) {
   if (packet->last_fragment)
     input_fragments_.pop_front();
   packets_.pop();
-}
-
-std::string RtpPacketizerH264::ToString() {
-  return "RtpPacketizerH264";
 }
 
 RtpDepacketizerH264::RtpDepacketizerH264() : offset_(0), length_(0) {}

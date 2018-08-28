@@ -184,6 +184,10 @@ size_t RtpPacketizerVp8::SetPayloadData(
   return packets_.size();
 }
 
+size_t RtpPacketizerVp8::NumPackets() const {
+  return packets_.size();
+}
+
 bool RtpPacketizerVp8::NextPacket(RtpPacketToSend* packet) {
   RTC_DCHECK(packet);
   if (packets_.empty()) {
@@ -202,10 +206,6 @@ bool RtpPacketizerVp8::NextPacket(RtpPacketToSend* packet) {
   packet->SetPayloadSize(bytes);
   packet->SetMarker(packets_.empty());
   return true;
-}
-
-std::string RtpPacketizerVp8::ToString() {
-  return "RtpPacketizerVp8";
 }
 
 int RtpPacketizerVp8::GeneratePackets() {

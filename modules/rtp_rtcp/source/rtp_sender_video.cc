@@ -280,6 +280,7 @@ bool RTPSenderVideo::SendVideo(enum VideoCodecType video_type,
                                int64_t expected_retransmission_time_ms) {
   if (payload_size == 0)
     return false;
+  RTC_CHECK(video_header);
 
   // Create header that will be reused in all packets.
   std::unique_ptr<RtpPacketToSend> rtp_header = rtp_sender_->AllocatePacket();
@@ -303,24 +304,22 @@ bool RTPSenderVideo::SendVideo(enum VideoCodecType video_type,
     // packet in each group of packets which make up another type of frame
     // (e.g. a P-Frame) only if the current value is different from the previous
     // value sent.
-    if (video_header) {
-      // Set rotation when key frame or when changed (to follow standard).
-      // Or when different from 0 (to follow current receiver implementation).
-      VideoRotation current_rotation = video_header->rotation;
-      if (frame_type == kVideoFrameKey || current_rotation != last_rotation_ ||
-          current_rotation != kVideoRotation_0)
-        last_packet->SetExtension<VideoOrientation>(current_rotation);
-      last_rotation_ = current_rotation;
-      // Report content type only for key frames.
-      if (frame_type == kVideoFrameKey &&
-          video_header->content_type != VideoContentType::UNSPECIFIED) {
-        last_packet->SetExtension<VideoContentTypeExtension>(
-            video_header->content_type);
-      }
-      if (video_header->video_timing.flags != VideoSendTiming::kInvalid) {
-        last_packet->SetExtension<VideoTimingExtension>(
-            video_header->video_timing);
-      }
+    // Set rotation when key frame or when changed (to follow standard).
+    // Or when different from 0 (to follow current receiver implementation).
+    VideoRotation current_rotation = video_header->rotation;
+    if (frame_type == kVideoFrameKey || current_rotation != last_rotation_ ||
+        current_rotation != kVideoRotation_0)
+      last_packet->SetExtension<VideoOrientation>(current_rotation);
+    last_rotation_ = current_rotation;
+    // Report content type only for key frames.
+    if (frame_type == kVideoFrameKey &&
+        video_header->content_type != VideoContentType::UNSPECIFIED) {
+      last_packet->SetExtension<VideoContentTypeExtension>(
+          video_header->content_type);
+    }
+    if (video_header->video_timing.flags != VideoSendTiming::kInvalid) {
+      last_packet->SetExtension<VideoTimingExtension>(
+          video_header->video_timing);
     }
 
     // FEC settings.
@@ -347,16 +346,17 @@ bool RTPSenderVideo::SendVideo(enum VideoCodecType video_type,
   size_t last_packet_reduction_len =
       last_packet->headers_size() - rtp_header->headers_size();
 
-  std::unique_ptr<RtpPacketizer> packetizer(RtpPacketizer::Create(
-      video_type, max_data_payload_length, last_packet_reduction_len,
-      video_header, frame_type));
+  RtpPacketizer::PayloadSizeLimits limits;
+  limits.max_payload_len = max_data_payload_length;
+  limits.last_packet_reduction_len = last_packet_reduction_len;
+  std::unique_ptr<RtpPacketizer> packetizer = RtpPacketizer::Create(
+      video_type, rtc::MakeArrayView(payload_data, payload_size), limits,
+      *video_header, frame_type, fragmentation);
 
-  const uint8_t temporal_id =
-      video_header ? GetTemporalId(*video_header) : kNoTemporalIdx;
+  const uint8_t temporal_id = GetTemporalId(*video_header);
   StorageType storage = GetStorageType(temporal_id, retransmission_settings,
                                        expected_retransmission_time_ms);
-  size_t num_packets =
-      packetizer->SetPayloadData(payload_data, payload_size, fragmentation);
+  size_t num_packets = packetizer->NumPackets();
 
   if (num_packets == 0)
     return false;

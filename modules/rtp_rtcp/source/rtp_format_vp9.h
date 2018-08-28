@@ -38,12 +38,12 @@ class RtpPacketizerVp9 : public RtpPacketizer {
 
   ~RtpPacketizerVp9() override;
 
-  std::string ToString() override;
-
   // The payload data must be one encoded VP9 layer frame.
   size_t SetPayloadData(const uint8_t* payload,
                         size_t payload_size,
-                        const RTPFragmentationHeader* fragmentation) override;
+                        const RTPFragmentationHeader* fragmentation);
+
+  size_t NumPackets() const override;
 
   // Gets the next payload with VP9 payload header.
   // Write payload and set marker bit of the |packet|.

@@ -34,14 +34,14 @@ class RtpPacketizerH264 : public RtpPacketizer {
 
   size_t SetPayloadData(const uint8_t* payload_data,
                         size_t payload_size,
-                        const RTPFragmentationHeader* fragmentation) override;
+                        const RTPFragmentationHeader* fragmentation);
+
+  size_t NumPackets() const override;
 
   // Get the next payload with H264 payload header.
   // Write payload and set marker bit of the |packet|.
   // Returns true on success, false otherwise.
   bool NextPacket(RtpPacketToSend* rtp_packet) override;
-
-  std::string ToString() override;
 
  private:
   // Input fragments (NAL units), with an optionally owned temporary buffer,
