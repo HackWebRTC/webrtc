@@ -31,6 +31,8 @@ RtpFrameReferenceFinder::RtpFrameReferenceFinder(
       cleared_to_seq_num_(-1),
       frame_callback_(frame_callback) {}
 
+RtpFrameReferenceFinder::~RtpFrameReferenceFinder() = default;
+
 void RtpFrameReferenceFinder::ManageFrame(
     std::unique_ptr<RtpFrameObject> frame) {
   rtc::CritScope lock(&crit_);

@@ -69,7 +69,7 @@ class RtpVideoStreamReceiver : public RtpData,
       NackSender* nack_sender,
       KeyFrameRequestSender* keyframe_request_sender,
       video_coding::OnCompleteFrameCallback* complete_frame_callback);
-  ~RtpVideoStreamReceiver();
+  ~RtpVideoStreamReceiver() override;
 
   void AddReceiveCodec(const VideoCodec& video_codec,
                        const std::map<std::string, std::string>& codec_params);

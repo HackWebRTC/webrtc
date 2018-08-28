@@ -881,6 +881,8 @@ void ReceiveStatisticsProxy::DecoderThreadStopped() {
 ReceiveStatisticsProxy::ContentSpecificStats::ContentSpecificStats()
     : interframe_delay_percentiles(kMaxCommonInterframeDelayMs) {}
 
+ReceiveStatisticsProxy::ContentSpecificStats::~ContentSpecificStats() = default;
+
 void ReceiveStatisticsProxy::ContentSpecificStats::Add(
     const ContentSpecificStats& other) {
   e2e_delay_counter.Add(other.e2e_delay_counter);

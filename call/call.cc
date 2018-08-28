@@ -170,7 +170,7 @@ class Call final : public webrtc::Call,
  public:
   Call(const Call::Config& config,
        std::unique_ptr<RtpTransportControllerSendInterface> transport_send);
-  virtual ~Call();
+  ~Call() override;
 
   // Implements webrtc::Call.
   PacketReceiver* Receiver() override;

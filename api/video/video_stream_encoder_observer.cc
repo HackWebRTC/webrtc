@@ -8,17 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "call/flexfec_receive_stream.h"
+#include "api/video/video_stream_encoder_observer.h"
 
 namespace webrtc {
 
-FlexfecReceiveStream::Config::Config(Transport* rtcp_send_transport)
-    : rtcp_send_transport(rtcp_send_transport) {
-  RTC_DCHECK(rtcp_send_transport);
-}
-
-FlexfecReceiveStream::Config::Config(const Config& config) = default;
-
-FlexfecReceiveStream::Config::~Config() = default;
+VideoStreamEncoderObserver::AdaptationSteps::AdaptationSteps() = default;
 
 }  // namespace webrtc

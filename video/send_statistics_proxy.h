@@ -150,7 +150,7 @@ class SendStatisticsProxy : public VideoStreamEncoderObserver,
     int64_t last_ms;
   };
   struct FallbackEncoderInfo {
-    FallbackEncoderInfo() = default;
+    FallbackEncoderInfo();
     bool is_possible = true;
     bool is_active = false;
     int on_off_events = 0;

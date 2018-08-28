@@ -40,6 +40,7 @@ class OnCompleteFrameCallback {
 class RtpFrameReferenceFinder {
  public:
   explicit RtpFrameReferenceFinder(OnCompleteFrameCallback* frame_callback);
+  ~RtpFrameReferenceFinder();
 
   // Manage this frame until:
   //  - We have all information needed to determine its references, after

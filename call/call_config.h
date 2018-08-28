@@ -24,6 +24,7 @@ class RtcEventLog;
 
 struct CallConfig {
   explicit CallConfig(RtcEventLog* event_log);
+  CallConfig(const CallConfig&);
   ~CallConfig();
 
   RTC_DEPRECATED static constexpr int kDefaultStartBitrateBps = 300000;

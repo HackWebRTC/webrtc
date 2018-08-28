@@ -48,7 +48,7 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
  public:
   ReceiveStatisticsProxy(const VideoReceiveStream::Config* config,
                          Clock* clock);
-  virtual ~ReceiveStatisticsProxy();
+  ~ReceiveStatisticsProxy() override;
 
   VideoReceiveStream::Stats GetStats() const;
 
@@ -115,6 +115,7 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
 
   struct ContentSpecificStats {
     ContentSpecificStats();
+    ~ContentSpecificStats();
 
     void Add(const ContentSpecificStats& other);
 

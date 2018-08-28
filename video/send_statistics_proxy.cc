@@ -155,6 +155,8 @@ SendStatisticsProxy::~SendStatisticsProxy() {
     UpdateCodecTypeHistogram(payload_name_);
 }
 
+SendStatisticsProxy::FallbackEncoderInfo::FallbackEncoderInfo() = default;
+
 SendStatisticsProxy::UmaSamplesContainer::UmaSamplesContainer(
     const char* prefix,
     const VideoSendStream::Stats& stats,
