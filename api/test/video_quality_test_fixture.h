@@ -80,7 +80,13 @@ class VideoQualityTestFixtureInterface {
       std::string graph_data_output_filename;
       std::string graph_title;
     } analyzer;
+    // Deprecated. DO NOT USE. Use config instead. This is not pipe actually,
+    // it is just configuration, that will be passed to default implementation
+    // of simulation layer.
     DefaultNetworkSimulationConfig pipe;
+    // Config for default simulation implementation. May be nullopt in that
+    // case, a default config will be used.
+    absl::optional<DefaultNetworkSimulationConfig> config;
     struct SS {                          // Spatial scalability.
       std::vector<VideoStream> streams;  // If empty, one stream is assumed.
       size_t selected_stream;
