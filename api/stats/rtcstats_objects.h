@@ -337,7 +337,8 @@ class RTCRTPStreamStats : public RTCStats {
   // TODO(hbos): Remote case not supported by |RTCStatsCollector|.
   // crbug.com/657855, 657856
   RTCStatsMember<bool> is_remote;  // = false
-  RTCStatsMember<std::string> media_type;
+  RTCStatsMember<std::string> media_type;  // renamed to kind.
+  RTCStatsMember<std::string> kind;
   RTCStatsMember<std::string> track_id;
   RTCStatsMember<std::string> transport_id;
   RTCStatsMember<std::string> codec_id;
