@@ -277,7 +277,7 @@ DEFINE_bool(help, false, "prints this message");
 }  // namespace flags
 
 void Loopback() {
-  DefaultNetworkSimulationConfig pipe_config;
+  FakeNetworkPipe::Config pipe_config;
   pipe_config.loss_percent = flags::LossPercent();
   pipe_config.avg_burst_loss_length = flags::AvgBurstLossLength();
   pipe_config.link_capacity_kbps = flags::LinkCapacityKbps();
@@ -321,7 +321,7 @@ void Loopback() {
                      flags::DurationSecs(),
                      flags::OutputFilename(),
                      flags::GraphTitle()};
-  params.config = pipe_config;
+  params.pipe = pipe_config;
 
   if (flags::NumStreams() > 1 && flags::Stream0().empty() &&
       flags::Stream1().empty()) {
