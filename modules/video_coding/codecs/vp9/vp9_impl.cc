@@ -157,8 +157,7 @@ VP9EncoderImpl::VP9EncoderImpl(const cricket::VideoCodec& codec)
       num_spatial_layers_(0),
       is_svc_(false),
       inter_layer_pred_(InterLayerPredMode::kOn),
-      output_framerate_(1000.0, 1000.0),
-      last_encoded_frame_rtp_timestamp_(0),
+      framerate_controller_(kMaxScreenSharingFramerateFps),
       is_flexible_mode_(false) {
   memset(&codec_, 0, sizeof(codec_));
   memset(&svc_params_, 0, sizeof(vpx_svc_extra_cfg_t));
@@ -358,11 +357,9 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
     num_temporal_layers_ = 1;
 
   // Init framerate controller.
-  output_framerate_.Reset();
   if (codec_.mode == VideoCodecMode::kScreensharing) {
-    target_framerate_fps_ = kMaxScreenSharingFramerateFps;
-  } else {
-    target_framerate_fps_.reset();
+    framerate_controller_.Reset();
+    framerate_controller_.SetTargetRate(kMaxScreenSharingFramerateFps);
   }
 
   is_svc_ = (num_spatial_layers_ > 1 || num_temporal_layers_ > 1);
@@ -672,7 +669,8 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
   }
 
   if (VideoCodecMode::kScreensharing == codec_.mode && !force_key_frame_) {
-    if (DropFrame(input_image.timestamp())) {
+    if (framerate_controller_.DropFrame(1000 * input_image.timestamp() /
+                                        kVideoPayloadTypeFrequency)) {
       return WEBRTC_VIDEO_CODEC_OK;
     }
   }
@@ -734,8 +732,10 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
   }
 
   RTC_CHECK_GT(codec_.maxFramerate, 0);
-  uint32_t duration =
-      90000 / target_framerate_fps_.value_or(codec_.maxFramerate);
+  uint32_t target_framerate_fps = codec_.mode == VideoCodecMode::kScreensharing
+                                      ? kMaxScreenSharingFramerateFps
+                                      : codec_.maxFramerate;
+  uint32_t duration = 90000 / target_framerate_fps;
   const vpx_codec_err_t rv = vpx_codec_encode(encoder_, raw_, timestamp_,
                                               duration, flags, VPX_DL_REALTIME);
   if (rv != VPX_CODEC_OK) {
@@ -1064,43 +1064,12 @@ void VP9EncoderImpl::DeliverBufferedFrame(bool end_of_picture) {
                                                &frag_info);
     encoded_image_._length = 0;
 
-    if (end_of_picture) {
+    if (end_of_picture && codec_.mode == VideoCodecMode::kScreensharing) {
       const uint32_t timestamp_ms =
           1000 * encoded_image_.Timestamp() / kVideoPayloadTypeFrequency;
-      output_framerate_.Update(1, timestamp_ms);
-      last_encoded_frame_rtp_timestamp_ = encoded_image_.Timestamp();
+      framerate_controller_.AddFrame(timestamp_ms);
     }
   }
-}
-
-bool VP9EncoderImpl::DropFrame(uint32_t rtp_timestamp) {
-  if (target_framerate_fps_) {
-    if (rtp_timestamp < last_encoded_frame_rtp_timestamp_) {
-      // Timestamp has wrapped around. Reset framerate statistic.
-      output_framerate_.Reset();
-      return false;
-    }
-
-    const uint32_t timestamp_ms =
-        1000 * rtp_timestamp / kVideoPayloadTypeFrequency;
-    const uint32_t framerate_fps =
-        output_framerate_.Rate(timestamp_ms).value_or(0);
-    if (framerate_fps > *target_framerate_fps_) {
-      return true;
-    }
-
-    // Primarily check if frame interval is too short using frame timestamps,
-    // as if they are correct they won't be affected by queuing in webrtc.
-    const uint32_t expected_frame_interval =
-        kVideoPayloadTypeFrequency / *target_framerate_fps_;
-
-    const uint32_t ts_diff = rtp_timestamp - last_encoded_frame_rtp_timestamp_;
-    if (ts_diff < 85 * expected_frame_interval / 100) {
-      return true;
-    }
-  }
-
-  return false;
 }
 
 int VP9EncoderImpl::SetChannelParameters(uint32_t packet_loss, int64_t rtt) {
