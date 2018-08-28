@@ -76,7 +76,7 @@ public final class HardwareVideoDecoderTest {
   private static final boolean ENABLE_H264_HIGH_PROFILE = true;
   private static final VideoEncoder.Settings ENCODER_SETTINGS =
       new VideoEncoder.Settings(1 /* core */, TEST_FRAME_WIDTH, TEST_FRAME_HEIGHT, 300 /* kbps */,
-          30 /* fps */, true /* automaticResizeOn */);
+          30 /* fps */, 1 /* numberOfSimulcastStreams */, true /* automaticResizeOn */);
 
   private static final int DECODE_TIMEOUT_MS = 1000;
   private static final VideoDecoder.Settings SETTINGS =

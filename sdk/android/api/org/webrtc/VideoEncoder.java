@@ -40,12 +40,6 @@ public interface VideoEncoder {
       this.numberOfSimulcastStreams = numberOfSimulcastStreams;
       this.automaticResizeOn = automaticResizeOn;
     }
-
-    // TODO(http://bugs.webrtc.org/9646): Remove when downstream clients have been updated.
-    public Settings(int numberOfCores, int width, int height, int startBitrate, int maxFramerate,
-        boolean automaticResizeOn) {
-      this(numberOfCores, width, height, startBitrate, maxFramerate, 1, automaticResizeOn);
-    }
   }
 
   /** Additional info for encoding. */
