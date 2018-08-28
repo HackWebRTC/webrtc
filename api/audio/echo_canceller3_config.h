@@ -64,6 +64,7 @@ struct EchoCanceller3Config {
     float min = 1.f;
     float max_l = 4.f;
     float max_h = 1.5f;
+    bool onset_detection = true;
   } erle;
 
   struct EpStrength {

@@ -241,6 +241,7 @@ class Aec3ParametersParser {
       ReadParam(section, "min", &cfg.erle.min);
       ReadParam(section, "max_l", &cfg.erle.max_l);
       ReadParam(section, "max_h", &cfg.erle.max_h);
+      ReadParam(section, "onset_detection", &cfg.erle.onset_detection);
     }
 
     if (rtc::GetValueFromJsonObject(root, "ep_strength", &section)) {

@@ -167,7 +167,8 @@ void ErleEstimator::ErleFreqInstantaneous::Reset() {
 void ErleEstimator::Update(rtc::ArrayView<const float> render_spectrum,
                            rtc::ArrayView<const float> capture_spectrum,
                            rtc::ArrayView<const float> subtractor_spectrum,
-                           bool converged_filter) {
+                           bool converged_filter,
+                           bool onset_detection) {
   RTC_DCHECK_EQ(kFftLengthBy2Plus1, render_spectrum.size());
   RTC_DCHECK_EQ(kFftLengthBy2Plus1, capture_spectrum.size());
   RTC_DCHECK_EQ(kFftLengthBy2Plus1, subtractor_spectrum.size());
@@ -191,19 +192,22 @@ void ErleEstimator::Update(rtc::ArrayView<const float> render_spectrum,
   };
 
   // Update the estimates in a clamped minimum statistics manner.
-  auto erle_update = [&](size_t start, size_t stop, float max_erle) {
+  auto erle_update = [&](size_t start, size_t stop, float max_erle,
+                         bool onset_detection) {
     for (size_t k = start; k < stop; ++k) {
       if (X2[k] > kX2Min) {
         absl::optional<float> new_erle =
             erle_freq_inst_.Update(Y2[k], E2[k], k);
         if (new_erle) {
-          if (coming_onset_[k]) {
-            coming_onset_[k] = false;
-            erle_onsets_[k] =
-                erle_band_update(erle_onsets_[k], new_erle.value(), 0.15f, 0.3f,
-                                 min_erle_, max_erle);
+          if (onset_detection) {
+            if (coming_onset_[k]) {
+              coming_onset_[k] = false;
+              erle_onsets_[k] =
+                  erle_band_update(erle_onsets_[k], new_erle.value(), 0.15f,
+                                   0.3f, min_erle_, max_erle);
+            }
+            hold_counters_[k] = kBlocksForOnsetDetection;
           }
-          hold_counters_[k] = kBlocksForOnsetDetection;
           erle_[k] = erle_band_update(erle_[k], new_erle.value(), 0.05f, 0.1f,
                                       min_erle_, max_erle);
         }
@@ -216,20 +220,22 @@ void ErleEstimator::Update(rtc::ArrayView<const float> render_spectrum,
     // a minimum of the erle that can be estimated as that flag would
     // be false if the filter is performing poorly.
     constexpr size_t kFftLengthBy4 = kFftLengthBy2 / 2;
-    erle_update(1, kFftLengthBy4, max_erle_lf_);
-    erle_update(kFftLengthBy4, kFftLengthBy2, max_erle_hf_);
+    erle_update(1, kFftLengthBy4, max_erle_lf_, onset_detection);
+    erle_update(kFftLengthBy4, kFftLengthBy2, max_erle_hf_, onset_detection);
   }
 
-  for (size_t k = 1; k < kFftLengthBy2; ++k) {
-    hold_counters_[k]--;
-    if (hold_counters_[k] <= (kBlocksForOnsetDetection - kErleHold)) {
-      if (erle_[k] > erle_onsets_[k]) {
-        erle_[k] = std::max(erle_onsets_[k], 0.97f * erle_[k]);
-        RTC_DCHECK_LE(min_erle_, erle_[k]);
-      }
-      if (hold_counters_[k] <= 0) {
-        coming_onset_[k] = true;
-        hold_counters_[k] = 0;
+  if (onset_detection) {
+    for (size_t k = 1; k < kFftLengthBy2; ++k) {
+      hold_counters_[k]--;
+      if (hold_counters_[k] <= (kBlocksForOnsetDetection - kErleHold)) {
+        if (erle_[k] > erle_onsets_[k]) {
+          erle_[k] = std::max(erle_onsets_[k], 0.97f * erle_[k]);
+          RTC_DCHECK_LE(min_erle_, erle_[k]);
+        }
+        if (hold_counters_[k] <= 0) {
+          coming_onset_[k] = true;
+          hold_counters_[k] = 0;
+        }
       }
     }
   }
