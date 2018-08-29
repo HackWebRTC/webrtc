@@ -133,6 +133,11 @@ class MockTransportSequenceNumberAllocator
   MOCK_METHOD0(AllocateSequenceNumber, uint16_t());
 };
 
+class MockSendSideDelayObserver : public SendSideDelayObserver {
+ public:
+  MOCK_METHOD3(SendSideDelayUpdated, void(int, int, uint32_t));
+};
+
 class MockSendPacketObserver : public SendPacketObserver {
  public:
   MOCK_METHOD3(OnSendPacket, void(uint16_t, int64_t, uint32_t));
@@ -483,6 +488,71 @@ TEST_P(RtpSenderTestWithoutPacer, PacketOptionsNoRetransmission) {
 
 TEST_P(RtpSenderTestWithoutPacer, NoAllocationIfNotRegistered) {
   SendGenericPayload();
+}
+
+TEST_P(RtpSenderTestWithoutPacer, OnSendSideDelayUpdated) {
+  testing::StrictMock<MockSendSideDelayObserver> send_side_delay_observer_;
+  rtp_sender_.reset(
+      new RTPSender(false, &fake_clock_, &transport_, nullptr, nullptr, nullptr,
+                    nullptr, nullptr, nullptr, &send_side_delay_observer_,
+                    &mock_rtc_event_log_, nullptr, nullptr, nullptr, false));
+  rtp_sender_->SetSSRC(kSsrc);
+
+  const uint8_t kPayloadType = 127;
+  const uint32_t kCaptureTimeMsToRtpTimestamp = 90;  // 90 kHz clock
+  char payload_name[RTP_PAYLOAD_NAME_SIZE] = "GENERIC";
+  RTPVideoHeader video_header;
+  EXPECT_EQ(0, rtp_sender_->RegisterPayload(payload_name, kPayloadType,
+                                            1000 * kCaptureTimeMsToRtpTimestamp,
+                                            0, 1500));
+
+  // Send packet with 10 ms send-side delay. The average and max should be 10
+  // ms.
+  EXPECT_CALL(send_side_delay_observer_, SendSideDelayUpdated(10, 10, kSsrc))
+      .Times(1);
+  int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
+  fake_clock_.AdvanceTimeMilliseconds(10);
+  EXPECT_TRUE(rtp_sender_->SendOutgoingData(
+      kVideoFrameKey, kPayloadType,
+      capture_time_ms * kCaptureTimeMsToRtpTimestamp, capture_time_ms,
+      kPayloadData, sizeof(kPayloadData), nullptr, &video_header, nullptr,
+      kDefaultExpectedRetransmissionTimeMs));
+
+  // Send another packet with 20 ms delay. The average
+  // and max should be 15 and 20 ms respectively.
+  EXPECT_CALL(send_side_delay_observer_, SendSideDelayUpdated(15, 20, kSsrc))
+      .Times(1);
+  fake_clock_.AdvanceTimeMilliseconds(10);
+  EXPECT_TRUE(rtp_sender_->SendOutgoingData(
+      kVideoFrameKey, kPayloadType,
+      capture_time_ms * kCaptureTimeMsToRtpTimestamp, capture_time_ms,
+      kPayloadData, sizeof(kPayloadData), nullptr, &video_header, nullptr,
+      kDefaultExpectedRetransmissionTimeMs));
+
+  // Send another packet at the same time, which replaces the last packet.
+  // Since this packet has 0 ms delay, the average is now 5 ms and max is 10 ms.
+  // TODO(terelius): Is is not clear that this is the right behavior.
+  EXPECT_CALL(send_side_delay_observer_, SendSideDelayUpdated(5, 10, kSsrc))
+      .Times(1);
+  capture_time_ms = fake_clock_.TimeInMilliseconds();
+  EXPECT_TRUE(rtp_sender_->SendOutgoingData(
+      kVideoFrameKey, kPayloadType,
+      capture_time_ms * kCaptureTimeMsToRtpTimestamp, capture_time_ms,
+      kPayloadData, sizeof(kPayloadData), nullptr, &video_header, nullptr,
+      kDefaultExpectedRetransmissionTimeMs));
+
+  // Send a packet 1 second later. The earlier packets should have timed
+  // out, so both max and average should be the delay of this packet.
+  fake_clock_.AdvanceTimeMilliseconds(1000);
+  capture_time_ms = fake_clock_.TimeInMilliseconds();
+  fake_clock_.AdvanceTimeMilliseconds(1);
+  EXPECT_CALL(send_side_delay_observer_, SendSideDelayUpdated(1, 1, kSsrc))
+      .Times(1);
+  EXPECT_TRUE(rtp_sender_->SendOutgoingData(
+      kVideoFrameKey, kPayloadType,
+      capture_time_ms * kCaptureTimeMsToRtpTimestamp, capture_time_ms,
+      kPayloadData, sizeof(kPayloadData), nullptr, &video_header, nullptr,
+      kDefaultExpectedRetransmissionTimeMs));
 }
 
 TEST_P(RtpSenderTestWithoutPacer, OnSendPacketUpdated) {
