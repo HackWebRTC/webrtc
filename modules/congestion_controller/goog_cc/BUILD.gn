@@ -83,9 +83,6 @@ rtc_source_set("estimators") {
     "trendline_estimator.h",
   ]
 
-  # TODO(jschuh): Bug 1348: fix this warning.
-  configs += [ "//build/config/compiler:no_size_t_to_int_warning" ]
-
   deps = [
     "../../../logging:rtc_event_bwe",
     "../../../logging:rtc_event_log_api",

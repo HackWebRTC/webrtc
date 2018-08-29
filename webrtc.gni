@@ -238,7 +238,10 @@ webrtc_root = get_path_info(".", "abspath")
 # It sets defines, include paths and compilation warnings accordingly,
 # both for WebRTC stand-alone builds and for the scenario when WebRTC
 # native code is built as part of Chromium.
-rtc_common_configs = [ webrtc_root + ":common_config" ]
+rtc_common_configs = [
+  webrtc_root + ":common_config",
+  "//build/config/compiler:no_size_t_to_int_warning",
+]
 
 if (is_mac || is_ios) {
   rtc_common_configs += [ "//build/config/compiler:enable_arc" ]
