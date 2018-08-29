@@ -192,6 +192,15 @@ int32_t DeviceInfoLinux::CreateCapabilityMap(const char* deviceUniqueIdUTF8) {
   return size;
 }
 
+int32_t DeviceInfoLinux::DisplayCaptureSettingsDialogBox(
+    const char* /*deviceUniqueIdUTF8*/,
+    const char* /*dialogTitleUTF8*/,
+    void* /*parentWindow*/,
+    uint32_t /*positionX*/,
+    uint32_t /*positionY*/) {
+  return -1;
+}
+
 bool DeviceInfoLinux::IsDeviceNameMatches(const char* name,
                                           const char* deviceUniqueIdUTF8) {
   if (strncmp(deviceUniqueIdUTF8, name, strlen(name)) == 0)
