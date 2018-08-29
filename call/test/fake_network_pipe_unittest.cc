@@ -380,8 +380,8 @@ TEST_F(FakeNetworkPipeTest, BurstLoss) {
   config.avg_burst_loss_length = kAvgBurstLength;
   ReorderTestReceiver receiver;
   auto simulated_network = absl::make_unique<SimulatedNetwork>(config);
-  std::unique_ptr<FakeNetworkPipe> pipe(
-      new FakeNetworkPipe(&fake_clock_, std::move(config), &receiver));
+  std::unique_ptr<FakeNetworkPipe> pipe(new FakeNetworkPipe(
+      &fake_clock_, std::move(simulated_network), &receiver));
 
   SendPackets(pipe.get(), kNumPackets, kPacketSize);
   fake_clock_.AdvanceTimeMilliseconds(1000);

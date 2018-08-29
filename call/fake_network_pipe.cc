@@ -67,44 +67,6 @@ NetworkPacket& NetworkPacket::operator=(NetworkPacket&& o) {
   return *this;
 }
 
-FakeNetworkPipe::FakeNetworkPipe(Clock* clock,
-                                 const FakeNetworkPipe::Config& config)
-    : FakeNetworkPipe(clock, config, nullptr, 1) {}
-
-FakeNetworkPipe::FakeNetworkPipe(Clock* clock,
-                                 const FakeNetworkPipe::Config& config,
-                                 PacketReceiver* receiver)
-    : FakeNetworkPipe(clock, config, receiver, 1) {}
-
-FakeNetworkPipe::FakeNetworkPipe(Clock* clock,
-                                 const FakeNetworkPipe::Config& config,
-                                 PacketReceiver* receiver,
-                                 uint64_t seed)
-    : clock_(clock),
-      network_simulation_(absl::make_unique<SimulatedNetwork>(config, seed)),
-      receiver_(receiver),
-      transport_(nullptr),
-      clock_offset_ms_(0),
-      dropped_packets_(0),
-      sent_packets_(0),
-      total_packet_delay_us_(0),
-      next_process_time_us_(clock_->TimeInMicroseconds()),
-      last_log_time_us_(clock_->TimeInMicroseconds()) {}
-
-FakeNetworkPipe::FakeNetworkPipe(Clock* clock,
-                                 const FakeNetworkPipe::Config& config,
-                                 Transport* transport)
-    : clock_(clock),
-      network_simulation_(absl::make_unique<SimulatedNetwork>(config, 1)),
-      receiver_(nullptr),
-      transport_(transport),
-      clock_offset_ms_(0),
-      dropped_packets_(0),
-      sent_packets_(0),
-      total_packet_delay_us_(0),
-      next_process_time_us_(clock_->TimeInMicroseconds()),
-      last_log_time_us_(clock_->TimeInMicroseconds()) {}
-
 FakeNetworkPipe::FakeNetworkPipe(
     Clock* clock,
     std::unique_ptr<NetworkSimulationInterface> network_simulation)

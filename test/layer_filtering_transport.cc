@@ -22,26 +22,6 @@ namespace test {
 
 LayerFilteringTransport::LayerFilteringTransport(
     SingleThreadedTaskQueueForTesting* task_queue,
-    const DefaultNetworkSimulationConfig& config,
-    Call* send_call,
-    uint8_t vp8_video_payload_type,
-    uint8_t vp9_video_payload_type,
-    int selected_tl,
-    int selected_sl,
-    const std::map<uint8_t, MediaType>& payload_type_map,
-    uint32_t ssrc_to_filter_min,
-    uint32_t ssrc_to_filter_max)
-    : DirectTransport(task_queue, config, send_call, payload_type_map),
-      vp8_video_payload_type_(vp8_video_payload_type),
-      vp9_video_payload_type_(vp9_video_payload_type),
-      selected_tl_(selected_tl),
-      selected_sl_(selected_sl),
-      discarded_last_packet_(false),
-      ssrc_to_filter_min_(ssrc_to_filter_min),
-      ssrc_to_filter_max_(ssrc_to_filter_max) {}
-
-LayerFilteringTransport::LayerFilteringTransport(
-    SingleThreadedTaskQueueForTesting* task_queue,
     std::unique_ptr<SimulatedPacketReceiverInterface> pipe,
     Call* send_call,
     uint8_t vp8_video_payload_type,
@@ -59,24 +39,6 @@ LayerFilteringTransport::LayerFilteringTransport(
       discarded_last_packet_(false),
       ssrc_to_filter_min_(ssrc_to_filter_min),
       ssrc_to_filter_max_(ssrc_to_filter_max) {}
-
-LayerFilteringTransport::LayerFilteringTransport(
-    SingleThreadedTaskQueueForTesting* task_queue,
-    const DefaultNetworkSimulationConfig& config,
-    Call* send_call,
-    uint8_t vp8_video_payload_type,
-    uint8_t vp9_video_payload_type,
-    int selected_tl,
-    int selected_sl,
-    const std::map<uint8_t, MediaType>& payload_type_map)
-    : DirectTransport(task_queue, config, send_call, payload_type_map),
-      vp8_video_payload_type_(vp8_video_payload_type),
-      vp9_video_payload_type_(vp9_video_payload_type),
-      selected_tl_(selected_tl),
-      selected_sl_(selected_sl),
-      discarded_last_packet_(false),
-      ssrc_to_filter_min_(0),
-      ssrc_to_filter_max_(0xFFFFFFFF) {}
 
 LayerFilteringTransport::LayerFilteringTransport(
     SingleThreadedTaskQueueForTesting* task_queue,

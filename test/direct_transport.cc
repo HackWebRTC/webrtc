@@ -38,28 +38,6 @@ MediaType Demuxer::GetMediaType(const uint8_t* packet_data,
 
 DirectTransport::DirectTransport(
     SingleThreadedTaskQueueForTesting* task_queue,
-    Call* send_call,
-    const std::map<uint8_t, MediaType>& payload_type_map)
-    : DirectTransport(task_queue,
-                      DefaultNetworkSimulationConfig(),
-                      send_call,
-                      payload_type_map) {}
-
-DirectTransport::DirectTransport(
-    SingleThreadedTaskQueueForTesting* task_queue,
-    const DefaultNetworkSimulationConfig& config,
-    Call* send_call,
-    const std::map<uint8_t, MediaType>& payload_type_map)
-    : send_call_(send_call),
-      clock_(Clock::GetRealTimeClock()),
-      task_queue_(task_queue),
-      demuxer_(payload_type_map),
-      fake_network_(absl::make_unique<FakeNetworkPipe>(clock_, config)) {
-  Start();
-}
-
-DirectTransport::DirectTransport(
-    SingleThreadedTaskQueueForTesting* task_queue,
     std::unique_ptr<SimulatedPacketReceiverInterface> pipe,
     Call* send_call,
     const std::map<uint8_t, MediaType>& payload_type_map)
