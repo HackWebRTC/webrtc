@@ -32,7 +32,7 @@ class VideoQualityTest :
     public test::CallTest, public VideoQualityTestFixtureInterface {
  public:
   explicit VideoQualityTest(
-      std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory);
+      std::unique_ptr<InjectionComponents> injection_components);
 
   void RunWithAnalyzer(const Params& params) override;
   void RunWithRenderers(const Params& params) override;
@@ -66,7 +66,7 @@ class VideoQualityTest :
 
   // Helper methods accessing only params_.
   std::string GenerateGraphTitle() const;
-  void CheckParams();
+  void CheckParamsAndInjectionComponents();
 
   // Helper methods for setting up the call.
   void CreateCapturers();
@@ -110,6 +110,7 @@ class VideoQualityTest :
   int send_logs_;
 
   Params params_;
+  std::unique_ptr<InjectionComponents> injection_components_;
 
   // Note: not same as similarly named member in CallTest. This is the number of
   // separate send streams, the one in CallTest is the number of substreams for

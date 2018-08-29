@@ -87,13 +87,18 @@ std::unique_ptr<VideoEncoder> VideoQualityTest::CreateVideoEncoder(
 }
 
 VideoQualityTest::VideoQualityTest(
-    std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory)
+    std::unique_ptr<InjectionComponents> injection_components)
     : clock_(Clock::GetRealTimeClock()),
       video_encoder_factory_([this](const SdpVideoFormat& format) {
         return this->CreateVideoEncoder(format);
       }),
       receive_logs_(0),
-      send_logs_(0) {
+      send_logs_(0),
+      injection_components_(std::move(injection_components)) {
+  if (injection_components_ == nullptr) {
+    injection_components_ = absl::make_unique<InjectionComponents>();
+  }
+
   payload_type_map_ = test::CallTest::payload_type_map_;
   RTC_DCHECK(payload_type_map_.find(kPayloadTypeH264) ==
              payload_type_map_.end());
@@ -105,7 +110,8 @@ VideoQualityTest::VideoQualityTest(
   payload_type_map_[kPayloadTypeVP8] = webrtc::MediaType::VIDEO;
   payload_type_map_[kPayloadTypeVP9] = webrtc::MediaType::VIDEO;
 
-  fec_controller_factory_ = std::move(fec_controller_factory);
+  fec_controller_factory_ =
+      std::move(injection_components_->fec_controller_factory);
 }
 
 VideoQualityTest::Params::Params()
@@ -127,6 +133,10 @@ VideoQualityTest::Params::Params()
 
 VideoQualityTest::Params::~Params() = default;
 
+VideoQualityTest::InjectionComponents::InjectionComponents() = default;
+
+VideoQualityTest::InjectionComponents::~InjectionComponents() = default;
+
 void VideoQualityTest::TestBody() {}
 
 std::string VideoQualityTest::GenerateGraphTitle() const {
@@ -144,12 +154,21 @@ std::string VideoQualityTest::GenerateGraphTitle() const {
   return ss.str();
 }
 
-void VideoQualityTest::CheckParams() {
-  if (!params_.config) {
+void VideoQualityTest::CheckParamsAndInjectionComponents() {
+  if (injection_components_ == nullptr) {
+    injection_components_ = absl::make_unique<InjectionComponents>();
+  }
+  if (!params_.config && injection_components_->sender_network == nullptr &&
+      injection_components_->receiver_network == nullptr) {
     // TODO(titovartem) replace with default config creation when removing
     // pipe.
     params_.config = params_.pipe;
   }
+  RTC_CHECK(
+      (params_.config && injection_components_->sender_network == nullptr &&
+       injection_components_->receiver_network == nullptr) ||
+      (!params_.config && injection_components_->sender_network != nullptr &&
+       injection_components_->receiver_network != nullptr));
   for (size_t video_idx = 0; video_idx < num_video_streams_; ++video_idx) {
     // Iterate over primary and secondary video streams.
     if (!params_.video[video_idx].enabled)
@@ -161,17 +180,19 @@ void VideoQualityTest::CheckParams() {
     if (params_.ss[video_idx].num_spatial_layers == 0)
       params_.ss[video_idx].num_spatial_layers = 1;
 
-    if (params_.config->loss_percent != 0 ||
-        params_.config->queue_length_packets != 0) {
-      // Since LayerFilteringTransport changes the sequence numbers, we can't
-      // use that feature with pack loss, since the NACK request would end up
-      // retransmitting the wrong packets.
-      RTC_CHECK(params_.ss[video_idx].selected_sl == -1 ||
-                params_.ss[video_idx].selected_sl ==
-                    params_.ss[video_idx].num_spatial_layers - 1);
-      RTC_CHECK(params_.video[video_idx].selected_tl == -1 ||
-                params_.video[video_idx].selected_tl ==
-                    params_.video[video_idx].num_temporal_layers - 1);
+    if (params_.config) {
+      if (params_.config->loss_percent != 0 ||
+          params_.config->queue_length_packets != 0) {
+        // Since LayerFilteringTransport changes the sequence numbers, we can't
+        // use that feature with pack loss, since the NACK request would end up
+        // retransmitting the wrong packets.
+        RTC_CHECK(params_.ss[video_idx].selected_sl == -1 ||
+                  params_.ss[video_idx].selected_sl ==
+                      params_.ss[video_idx].num_spatial_layers - 1);
+        RTC_CHECK(params_.video[video_idx].selected_tl == -1 ||
+                  params_.video[video_idx].selected_tl ==
+                      params_.video[video_idx].num_temporal_layers - 1);
+      }
     }
 
     // TODO(ivica): Should max_bitrate_bps == -1 represent inf max bitrate, as
@@ -312,7 +333,7 @@ void VideoQualityTest::FillScalabilitySettings(
   } else {
     // Read VideoStream and SpatialLayer elements from a list of comma separated
     // lists. To use a default value for an element, use -1 or leave empty.
-    // Validity checks performed in CheckParams.
+    // Validity checks performed in CheckParamsAndInjectionComponents.
     RTC_CHECK(params->ss[video_idx].streams.empty());
     for (auto descriptor : stream_descriptors) {
       if (descriptor.empty())
@@ -804,11 +825,16 @@ void VideoQualityTest::StopThumbnails() {
 
 std::unique_ptr<test::LayerFilteringTransport>
 VideoQualityTest::CreateSendTransport() {
+  std::unique_ptr<NetworkSimulationInterface> simulated_network = nullptr;
+  if (injection_components_->sender_network == nullptr) {
+    simulated_network = absl::make_unique<SimulatedNetwork>(*params_.config);
+  } else {
+    simulated_network = std::move(injection_components_->sender_network);
+  }
   return absl::make_unique<test::LayerFilteringTransport>(
       &task_queue_,
-      absl::make_unique<FakeNetworkPipe>(
-          Clock::GetRealTimeClock(),
-          absl::make_unique<SimulatedNetwork>(*params_.config)),
+      absl::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
+                                         std::move(simulated_network)),
       sender_call_.get(), kPayloadTypeVP8, kPayloadTypeVP9,
       params_.video[0].selected_tl, params_.ss[0].selected_sl,
       payload_type_map_, kVideoSendSsrcs[0],
@@ -818,11 +844,16 @@ VideoQualityTest::CreateSendTransport() {
 
 std::unique_ptr<test::DirectTransport>
 VideoQualityTest::CreateReceiveTransport() {
+  std::unique_ptr<NetworkSimulationInterface> simulated_network = nullptr;
+  if (injection_components_->receiver_network == nullptr) {
+    simulated_network = absl::make_unique<SimulatedNetwork>(*params_.config);
+  } else {
+    simulated_network = std::move(injection_components_->receiver_network);
+  }
   return absl::make_unique<test::DirectTransport>(
       &task_queue_,
-      absl::make_unique<FakeNetworkPipe>(
-          Clock::GetRealTimeClock(),
-          absl::make_unique<SimulatedNetwork>(*params_.config)),
+      absl::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
+                                         std::move(simulated_network)),
       receiver_call_.get(), payload_type_map_);
 }
 
@@ -836,7 +867,7 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   params_ = params;
   // TODO(ivica): Merge with RunWithRenderer and use a flag / argument to
   // differentiate between the analyzer and the renderer case.
-  CheckParams();
+  CheckParamsAndInjectionComponents();
 
   if (!params_.analyzer.graph_data_output_filename.empty()) {
     graph_data_output_file =
@@ -1074,7 +1105,7 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
 
   task_queue_.SendTask([&]() {
     params_ = params;
-    CheckParams();
+    CheckParamsAndInjectionComponents();
 
     // TODO(ivica): Remove bitrate_config and use the default Call::Config(), to
     // match the full stack tests.
