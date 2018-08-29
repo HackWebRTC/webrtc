@@ -232,7 +232,7 @@ TEST_P(TestMultiplexAdapter, CheckSingleFrameEncodedBitstream) {
   CodecSpecificInfo codec_specific_info;
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
   EXPECT_EQ(kVideoCodecMultiplex, codec_specific_info.codecType);
-  EXPECT_FALSE(encoded_frame.SpatialIndex());
+  EXPECT_EQ(0, codec_specific_info.codecSpecific.generic.simulcast_idx);
 
   const MultiplexImage& unpacked_frame =
       MultiplexEncodedImagePacker::Unpack(encoded_frame);
@@ -252,7 +252,7 @@ TEST_P(TestMultiplexAdapter, CheckDoubleFramesEncodedBitstream) {
   CodecSpecificInfo codec_specific_info;
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
   EXPECT_EQ(kVideoCodecMultiplex, codec_specific_info.codecType);
-  EXPECT_FALSE(encoded_frame.SpatialIndex());
+  EXPECT_EQ(0, codec_specific_info.codecSpecific.generic.simulcast_idx);
 
   const MultiplexImage& unpacked_frame =
       MultiplexEncodedImagePacker::Unpack(encoded_frame);

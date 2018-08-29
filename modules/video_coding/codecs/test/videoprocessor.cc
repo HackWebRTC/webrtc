@@ -56,17 +56,22 @@ size_t GetMaxNaluSizeBytes(const EncodedImage& encoded_frame,
   return max_size;
 }
 
-size_t GetTemporalLayerIndex(const CodecSpecificInfo& codec_specific) {
-  size_t temporal_idx = 0;
+void GetLayerIndices(const CodecSpecificInfo& codec_specific,
+                     size_t* spatial_idx,
+                     size_t* temporal_idx) {
   if (codec_specific.codecType == kVideoCodecVP8) {
-    temporal_idx = codec_specific.codecSpecific.VP8.temporalIdx;
+    *spatial_idx = codec_specific.codecSpecific.VP8.simulcastIdx;
+    *temporal_idx = codec_specific.codecSpecific.VP8.temporalIdx;
   } else if (codec_specific.codecType == kVideoCodecVP9) {
-    temporal_idx = codec_specific.codecSpecific.VP9.temporal_idx;
+    *spatial_idx = codec_specific.codecSpecific.VP9.spatial_idx;
+    *temporal_idx = codec_specific.codecSpecific.VP9.temporal_idx;
   }
-  if (temporal_idx == kNoTemporalIdx) {
-    temporal_idx = 0;
+  if (*spatial_idx == kNoSpatialIdx) {
+    *spatial_idx = 0;
   }
-  return temporal_idx;
+  if (*temporal_idx == kNoTemporalIdx) {
+    *temporal_idx = 0;
+  }
 }
 
 int GetElapsedTimeMicroseconds(int64_t start_ns, int64_t stop_ns) {
@@ -342,8 +347,9 @@ void VideoProcessor::FrameEncoded(
   }
 
   // Layer metadata.
-  size_t spatial_idx = encoded_image.SpatialIndex().value_or(0);
-  size_t temporal_idx = GetTemporalLayerIndex(codec_specific);
+  size_t spatial_idx = 0;
+  size_t temporal_idx = 0;
+  GetLayerIndices(codec_specific, &spatial_idx, &temporal_idx);
 
   FrameStatistics* frame_stat =
       stats_->GetFrameWithTimestamp(encoded_image.Timestamp(), spatial_idx);

@@ -95,8 +95,8 @@ std::vector<std::vector<FrameType>> GetTimingFrames(
       image._length = FrameSize(min_frame_size, max_frame_size, s, i);
       image.capture_time_ms_ = current_timestamp;
       image.SetTimestamp(static_cast<uint32_t>(current_timestamp * 90));
-      image.SetSpatialIndex(s);
       codec_specific.codecType = kVideoCodecGeneric;
+      codec_specific.codecSpecific.generic.simulcast_idx = s;
       callback.OnEncodeStarted(static_cast<uint32_t>(current_timestamp * 90),
                                current_timestamp, s);
       if (dropped) {
@@ -189,6 +189,7 @@ TEST(TestVCMEncodedFrameCallback, NoTimingFrameIfNoEncodeStartTime) {
   image.capture_time_ms_ = timestamp;
   image.SetTimestamp(static_cast<uint32_t>(timestamp * 90));
   codec_specific.codecType = kVideoCodecGeneric;
+  codec_specific.codecSpecific.generic.simulcast_idx = 0;
   FakeEncodedImageCallback sink;
   VCMEncodedFrameCallback callback(&sink, nullptr);
   VideoCodec::TimingFrameTriggerThresholds thresholds;
@@ -220,6 +221,7 @@ TEST(TestVCMEncodedFrameCallback, AdjustsCaptureTimeForInternalSourceEncoder) {
   image.capture_time_ms_ = timestamp;
   image.SetTimestamp(static_cast<uint32_t>(timestamp * 90));
   codec_specific.codecType = kVideoCodecGeneric;
+  codec_specific.codecSpecific.generic.simulcast_idx = 0;
   FakeEncodedImageCallback sink;
   VCMEncodedFrameCallback callback(&sink, nullptr);
   callback.SetInternalSource(true);
@@ -255,6 +257,7 @@ TEST(TestVCMEncodedFrameCallback, NotifiesAboutDroppedFrames) {
   const int64_t kTimestampMs3 = 47721860;
   const int64_t kTimestampMs4 = 47721870;
   codec_specific.codecType = kVideoCodecGeneric;
+  codec_specific.codecSpecific.generic.simulcast_idx = 0;
   FakeEncodedImageCallback sink;
   VCMEncodedFrameCallback callback(&sink, nullptr);
   // Any non-zero bitrate needed to be set before the first frame.
@@ -290,6 +293,7 @@ TEST(TestVCMEncodedFrameCallback, RestoresCaptureTimestamps) {
   CodecSpecificInfo codec_specific;
   const int64_t kTimestampMs = 123456;
   codec_specific.codecType = kVideoCodecGeneric;
+  codec_specific.codecSpecific.generic.simulcast_idx = 0;
   FakeEncodedImageCallback sink;
   VCMEncodedFrameCallback callback(&sink, nullptr);
   // Any non-zero bitrate needed to be set before the first frame.

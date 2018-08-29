@@ -61,7 +61,6 @@ class VP9EncoderImpl : public VP9Encoder {
   int InitAndSetControlSettings(const VideoCodec* inst);
 
   void PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
-                             absl::optional<int>* spatial_idx,
                              const vpx_codec_cx_pkt& pkt,
                              uint32_t timestamp,
                              bool first_frame_in_picture);
