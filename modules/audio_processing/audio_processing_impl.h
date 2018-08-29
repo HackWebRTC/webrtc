@@ -42,7 +42,8 @@ class AudioProcessingImpl : public AudioProcessing {
                       std::unique_ptr<CustomProcessing> capture_post_processor,
                       std::unique_ptr<CustomProcessing> render_pre_processor,
                       std::unique_ptr<EchoControlFactory> echo_control_factory,
-                      rtc::scoped_refptr<EchoDetector> echo_detector);
+                      rtc::scoped_refptr<EchoDetector> echo_detector,
+                      std::unique_ptr<CustomAudioAnalyzer> capture_analyzer);
   ~AudioProcessingImpl() override;
   int Initialize() override;
   int Initialize(int capture_input_sample_rate_hz,
@@ -174,7 +175,8 @@ class AudioProcessingImpl : public AudioProcessing {
   class ApmSubmoduleStates {
    public:
     ApmSubmoduleStates(bool capture_post_processor_enabled,
-                       bool render_pre_processor_enabled);
+                       bool render_pre_processor_enabled,
+                       bool capture_analyzer_enabled);
     // Updates the submodule state and returns true if it has changed.
     bool Update(bool low_cut_filter_enabled,
                 bool echo_canceller_enabled,
@@ -192,6 +194,7 @@ class AudioProcessingImpl : public AudioProcessing {
     bool CaptureMultiBandSubModulesActive() const;
     bool CaptureMultiBandProcessingActive() const;
     bool CaptureFullBandProcessingActive() const;
+    bool CaptureAnalyzerActive() const;
     bool RenderMultiBandSubModulesActive() const;
     bool RenderFullBandProcessingActive() const;
     bool RenderMultiBandProcessingActive() const;
@@ -199,6 +202,7 @@ class AudioProcessingImpl : public AudioProcessing {
    private:
     const bool capture_post_processor_enabled_ = false;
     const bool render_pre_processor_enabled_ = false;
+    const bool capture_analyzer_enabled_ = false;
     bool low_cut_filter_enabled_ = false;
     bool echo_canceller_enabled_ = false;
     bool mobile_echo_controller_enabled_ = false;
@@ -252,6 +256,7 @@ class AudioProcessingImpl : public AudioProcessing {
   void InitializeGainController2() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   void InitializePreAmplifier() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   void InitializePostProcessor() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+  void InitializeAnalyzer() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   void InitializePreProcessor() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
 
   // Empties and handles the respective RuntimeSetting queues.

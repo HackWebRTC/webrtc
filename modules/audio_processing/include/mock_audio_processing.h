@@ -115,6 +115,14 @@ class MockCustomProcessing : public CustomProcessing {
   MOCK_CONST_METHOD0(ToString, std::string());
 };
 
+class MockCustomAudioAnalyzer : public CustomAudioAnalyzer {
+ public:
+  virtual ~MockCustomAudioAnalyzer() {}
+  MOCK_METHOD2(Initialize, void(int sample_rate_hz, int num_channels));
+  MOCK_METHOD1(Analyze, void(const AudioBuffer* audio));
+  MOCK_CONST_METHOD0(ToString, std::string());
+};
+
 class MockEchoControl : public EchoControl {
  public:
   virtual ~MockEchoControl() {}

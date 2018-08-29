@@ -53,6 +53,7 @@ class GainControl;
 class HighPassFilter;
 class LevelEstimator;
 class NoiseSuppression;
+class CustomAudioAnalyzer;
 class CustomProcessing;
 class VoiceDetection;
 
@@ -675,6 +676,9 @@ class AudioProcessingBuilder {
   // The AudioProcessingBuilder takes ownership of the echo_detector.
   AudioProcessingBuilder& SetEchoDetector(
       rtc::scoped_refptr<EchoDetector> echo_detector);
+  // The AudioProcessingBuilder takes ownership of the capture_analyzer.
+  AudioProcessingBuilder& SetCaptureAnalyzer(
+      std::unique_ptr<CustomAudioAnalyzer> capture_analyzer);
   // This creates an APM instance using the previously set components. Calling
   // the Create function resets the AudioProcessingBuilder to its initial state.
   AudioProcessing* Create();
@@ -685,6 +689,7 @@ class AudioProcessingBuilder {
   std::unique_ptr<CustomProcessing> capture_post_processing_;
   std::unique_ptr<CustomProcessing> render_pre_processing_;
   rtc::scoped_refptr<EchoDetector> echo_detector_;
+  std::unique_ptr<CustomAudioAnalyzer> capture_analyzer_;
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioProcessingBuilder);
 };
 
@@ -1016,6 +1021,19 @@ class NoiseSuppression {
 
  protected:
   virtual ~NoiseSuppression() {}
+};
+
+// Experimental interface for a custom analysis submodule.
+class CustomAudioAnalyzer {
+ public:
+  // (Re-) Initializes the submodule.
+  virtual void Initialize(int sample_rate_hz, int num_channels) = 0;
+  // Analyzes the given capture or render signal.
+  virtual void Analyze(const AudioBuffer* audio) = 0;
+  // Returns a string representation of the module state.
+  virtual std::string ToString() const = 0;
+
+  virtual ~CustomAudioAnalyzer() {}
 };
 
 // Interface for a custom processing submodule.

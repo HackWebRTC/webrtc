@@ -2802,6 +2802,25 @@ TEST(ApmConfiguration, EnablePreProcessing) {
   apm->ProcessReverseStream(&audio);
 }
 
+TEST(ApmConfiguration, EnableCaptureAnalyzer) {
+  // Verify that apm uses a capture analyzer if one is provided.
+  auto mock_capture_analyzer_ptr =
+      new testing::NiceMock<test::MockCustomAudioAnalyzer>();
+  auto mock_capture_analyzer =
+      std::unique_ptr<CustomAudioAnalyzer>(mock_capture_analyzer_ptr);
+  rtc::scoped_refptr<AudioProcessing> apm =
+      AudioProcessingBuilder()
+          .SetCaptureAnalyzer(std::move(mock_capture_analyzer))
+          .Create();
+
+  AudioFrame audio;
+  audio.num_channels_ = 1;
+  SetFrameSampleRate(&audio, AudioProcessing::NativeRate::kSampleRate16kHz);
+
+  EXPECT_CALL(*mock_capture_analyzer_ptr, Analyze(testing::_)).Times(1);
+  apm->ProcessStream(&audio);
+}
+
 TEST(ApmConfiguration, PreProcessingReceivesRuntimeSettings) {
   auto mock_pre_processor_ptr =
       new testing::NiceMock<test::MockCustomProcessing>();

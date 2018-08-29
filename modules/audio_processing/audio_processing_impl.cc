@@ -158,9 +158,11 @@ static_assert(AudioProcessing::kNoError == 0, "kNoError must be zero");
 
 AudioProcessingImpl::ApmSubmoduleStates::ApmSubmoduleStates(
     bool capture_post_processor_enabled,
-    bool render_pre_processor_enabled)
+    bool render_pre_processor_enabled,
+    bool capture_analyzer_enabled)
     : capture_post_processor_enabled_(capture_post_processor_enabled),
-      render_pre_processor_enabled_(render_pre_processor_enabled) {}
+      render_pre_processor_enabled_(render_pre_processor_enabled),
+      capture_analyzer_enabled_(capture_analyzer_enabled) {}
 
 bool AudioProcessingImpl::ApmSubmoduleStates::Update(
     bool low_cut_filter_enabled,
@@ -240,6 +242,10 @@ bool AudioProcessingImpl::ApmSubmoduleStates::CaptureFullBandProcessingActive()
          pre_amplifier_enabled_;
 }
 
+bool AudioProcessingImpl::ApmSubmoduleStates::CaptureAnalyzerActive() const {
+  return capture_analyzer_enabled_;
+}
+
 bool AudioProcessingImpl::ApmSubmoduleStates::RenderMultiBandSubModulesActive()
     const {
   return RenderMultiBandProcessingActive() || echo_canceller_enabled_ ||
@@ -285,10 +291,12 @@ struct AudioProcessingImpl::ApmPublicSubmodules {
 struct AudioProcessingImpl::ApmPrivateSubmodules {
   ApmPrivateSubmodules(std::unique_ptr<CustomProcessing> capture_post_processor,
                        std::unique_ptr<CustomProcessing> render_pre_processor,
-                       rtc::scoped_refptr<EchoDetector> echo_detector)
+                       rtc::scoped_refptr<EchoDetector> echo_detector,
+                       std::unique_ptr<CustomAudioAnalyzer> capture_analyzer)
       : echo_detector(std::move(echo_detector)),
         capture_post_processor(std::move(capture_post_processor)),
-        render_pre_processor(std::move(render_pre_processor)) {}
+        render_pre_processor(std::move(render_pre_processor)),
+        capture_analyzer(std::move(capture_analyzer)) {}
   // Accessed internally from capture or during initialization
   std::unique_ptr<AgcManagerDirect> agc_manager;
   std::unique_ptr<GainController2> gain_controller2;
@@ -298,6 +306,7 @@ struct AudioProcessingImpl::ApmPrivateSubmodules {
   std::unique_ptr<CustomProcessing> capture_post_processor;
   std::unique_ptr<CustomProcessing> render_pre_processor;
   std::unique_ptr<GainApplier> pre_amplifier;
+  std::unique_ptr<CustomAudioAnalyzer> capture_analyzer;
 };
 
 AudioProcessingBuilder::AudioProcessingBuilder() = default;
@@ -312,6 +321,12 @@ AudioProcessingBuilder& AudioProcessingBuilder::SetCapturePostProcessing(
 AudioProcessingBuilder& AudioProcessingBuilder::SetRenderPreProcessing(
     std::unique_ptr<CustomProcessing> render_pre_processing) {
   render_pre_processing_ = std::move(render_pre_processing);
+  return *this;
+}
+
+AudioProcessingBuilder& AudioProcessingBuilder::SetCaptureAnalyzer(
+    std::unique_ptr<CustomAudioAnalyzer> capture_analyzer) {
+  capture_analyzer_ = std::move(capture_analyzer);
   return *this;
 }
 
@@ -336,7 +351,7 @@ AudioProcessing* AudioProcessingBuilder::Create(const webrtc::Config& config) {
   AudioProcessingImpl* apm = new rtc::RefCountedObject<AudioProcessingImpl>(
       config, std::move(capture_post_processing_),
       std::move(render_pre_processing_), std::move(echo_control_factory_),
-      std::move(echo_detector_));
+      std::move(echo_detector_), std::move(capture_analyzer_));
   if (apm->Initialize() != AudioProcessing::kNoError) {
     delete apm;
     apm = nullptr;
@@ -345,7 +360,8 @@ AudioProcessing* AudioProcessingBuilder::Create(const webrtc::Config& config) {
 }
 
 AudioProcessingImpl::AudioProcessingImpl(const webrtc::Config& config)
-    : AudioProcessingImpl(config, nullptr, nullptr, nullptr, nullptr) {}
+    : AudioProcessingImpl(config, nullptr, nullptr, nullptr, nullptr, nullptr) {
+}
 
 int AudioProcessingImpl::instance_count_ = 0;
 
@@ -354,7 +370,8 @@ AudioProcessingImpl::AudioProcessingImpl(
     std::unique_ptr<CustomProcessing> capture_post_processor,
     std::unique_ptr<CustomProcessing> render_pre_processor,
     std::unique_ptr<EchoControlFactory> echo_control_factory,
-    rtc::scoped_refptr<EchoDetector> echo_detector)
+    rtc::scoped_refptr<EchoDetector> echo_detector,
+    std::unique_ptr<CustomAudioAnalyzer> capture_analyzer)
     : data_dumper_(
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
       capture_runtime_settings_(kRuntimeSettingQueueSize),
@@ -363,12 +380,15 @@ AudioProcessingImpl::AudioProcessingImpl(
       render_runtime_settings_enqueuer_(&render_runtime_settings_),
       high_pass_filter_impl_(new HighPassFilterImpl(this)),
       echo_control_factory_(std::move(echo_control_factory)),
-      submodule_states_(!!capture_post_processor, !!render_pre_processor),
+      submodule_states_(!!capture_post_processor,
+                        !!render_pre_processor,
+                        !!capture_analyzer),
       public_submodules_(new ApmPublicSubmodules()),
       private_submodules_(
           new ApmPrivateSubmodules(std::move(capture_post_processor),
                                    std::move(render_pre_processor),
-                                   std::move(echo_detector))),
+                                   std::move(echo_detector),
+                                   std::move(capture_analyzer))),
       constants_(config.Get<ExperimentalAgc>().startup_min_volume,
                  config.Get<ExperimentalAgc>().clipped_level_min,
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
@@ -425,7 +445,9 @@ AudioProcessingImpl::AudioProcessingImpl(
     // implemented.
     private_submodules_->gain_controller2.reset(new GainController2());
 
-    RTC_LOG(LS_INFO) << "Capture post processor activated: "
+    RTC_LOG(LS_INFO) << "Capture analyzer activated: "
+                     << !!private_submodules_->capture_analyzer
+                     << "\nCapture post processor activated: "
                      << !!private_submodules_->capture_post_processor
                      << "\nRender pre processor activated: "
                      << !!private_submodules_->render_pre_processor;
@@ -578,6 +600,7 @@ int AudioProcessingImpl::InitializeLocked() {
   InitializeResidualEchoDetector();
   InitializeEchoController();
   InitializeGainController2();
+  InitializeAnalyzer();
   InitializePostProcessor();
   InitializePreProcessor();
 
@@ -1350,6 +1373,11 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
         capture_.key_pressed);
   }
 
+  // Experimental APM sub-module that analyzes |capture_buffer|.
+  if (private_submodules_->capture_analyzer) {
+    private_submodules_->capture_analyzer->Analyze(capture_buffer);
+  }
+
   if (config_.gain_controller2.enabled) {
     private_submodules_->gain_controller2->NotifyAnalogLevel(
         gain_control()->stream_analog_level());
@@ -1852,6 +1880,13 @@ void AudioProcessingImpl::InitializeResidualEchoDetector() {
   private_submodules_->echo_detector->Initialize(
       proc_sample_rate_hz(), 1,
       formats_.render_processing_format.sample_rate_hz(), 1);
+}
+
+void AudioProcessingImpl::InitializeAnalyzer() {
+  if (private_submodules_->capture_analyzer) {
+    private_submodules_->capture_analyzer->Initialize(proc_sample_rate_hz(),
+                                                      num_proc_channels());
+  }
 }
 
 void AudioProcessingImpl::InitializePostProcessor() {
