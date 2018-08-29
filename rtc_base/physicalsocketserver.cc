@@ -1390,21 +1390,15 @@ bool PhysicalSocketServer::WaitSelect(int cmsWait, bool process_io) {
 
   struct timeval* ptvWait = nullptr;
   struct timeval tvWait;
-  struct timeval tvStop;
+  int64_t stop_us;
   if (cmsWait != kForever) {
     // Calculate wait timeval
     tvWait.tv_sec = cmsWait / 1000;
     tvWait.tv_usec = (cmsWait % 1000) * 1000;
     ptvWait = &tvWait;
 
-    // Calculate when to return in a timeval
-    gettimeofday(&tvStop, nullptr);
-    tvStop.tv_sec += tvWait.tv_sec;
-    tvStop.tv_usec += tvWait.tv_usec;
-    if (tvStop.tv_usec >= 1000000) {
-      tvStop.tv_usec -= 1000000;
-      tvStop.tv_sec += 1;
-    }
+    // Calculate when to return
+    stop_us = rtc::TimeMicros() + cmsWait * 1000;
   }
 
   // Zero all fd_sets. Don't need to do this inside the loop since
@@ -1501,17 +1495,10 @@ bool PhysicalSocketServer::WaitSelect(int cmsWait, bool process_io) {
     if (ptvWait) {
       ptvWait->tv_sec = 0;
       ptvWait->tv_usec = 0;
-      struct timeval tvT;
-      gettimeofday(&tvT, nullptr);
-      if ((tvStop.tv_sec > tvT.tv_sec) ||
-          ((tvStop.tv_sec == tvT.tv_sec) && (tvStop.tv_usec > tvT.tv_usec))) {
-        ptvWait->tv_sec = tvStop.tv_sec - tvT.tv_sec;
-        ptvWait->tv_usec = tvStop.tv_usec - tvT.tv_usec;
-        if (ptvWait->tv_usec < 0) {
-          RTC_DCHECK(ptvWait->tv_sec > 0);
-          ptvWait->tv_usec += 1000000;
-          ptvWait->tv_sec -= 1;
-        }
+      int64_t time_left_us = stop_us - rtc::TimeMicros();
+      if (time_left_us > 0) {
+        ptvWait->tv_sec = time_left_us / rtc::kNumMicrosecsPerSec;
+        ptvWait->tv_usec = time_left_us % rtc::kNumMicrosecsPerSec;
       }
     }
   }
