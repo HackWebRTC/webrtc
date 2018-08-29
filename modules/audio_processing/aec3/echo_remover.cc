@@ -141,7 +141,6 @@ class EchoRemoverImpl final : public EchoRemover {
   bool echo_leakage_detected_ = false;
   AecState aec_state_;
   EchoRemoverMetrics metrics_;
-  bool initial_state_ = true;
   std::array<float, kFftLengthBy2> e_old_;
   std::array<float, kFftLengthBy2> x_old_;
   std::array<float, kFftLengthBy2> y_old_;
@@ -233,7 +232,6 @@ void EchoRemoverImpl::ProcessCapture(
     if (echo_path_variability.delay_change !=
         EchoPathVariability::DelayAdjustment::kNone) {
       suppression_gain_.SetInitialState(true);
-      initial_state_ = true;
     }
   }
   if (gain_change_hangover_ > 0) {
@@ -257,10 +255,9 @@ void EchoRemoverImpl::ProcessCapture(
                                  aec_state_.FilterDelayBlocks());
 
   // Perform linear echo cancellation.
-  if (initial_state_ && !aec_state_.InitialState()) {
+  if (aec_state_.TransitionTriggered()) {
     subtractor_.ExitInitialState();
     suppression_gain_.SetInitialState(false);
-    initial_state_ = false;
   }
 
   // If the delay is known, use the echo subtractor.
@@ -357,9 +354,9 @@ void EchoRemoverImpl::FormLinearFilterOutput(
   RTC_DCHECK_EQ(subtractor_output.e_shadow.size(), output.size());
   bool use_main_output = true;
   if (use_shadow_filter_output_) {
-    // As the output of the main adaptive filter generally should be better than
-    // the shadow filter output, add a margin and threshold for when choosing
-    // the shadow filter output.
+    // As the output of the main adaptive filter generally should be better
+    // than the shadow filter output, add a margin and threshold for when
+    // choosing the shadow filter output.
     if (subtractor_output.e2_shadow < 0.9f * subtractor_output.e2_main &&
         subtractor_output.y2 > 30.f * 30.f * kBlockSize &&
         (subtractor_output.s2_main > 60.f * 60.f * kBlockSize ||

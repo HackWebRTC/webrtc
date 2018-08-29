@@ -235,6 +235,9 @@ void AecState::Update(
   }
 
   // Update the ERL and ERLE measures.
+  if (reset_erle_after_echo_path_changes_ && transition_triggered_) {
+    erle_estimator_.Reset();
+  }
   if (blocks_since_reset_ >= 2 * kNumBlocksPerSecond) {
     const auto& X2 = render_buffer.Spectrum(filter_delay_blocks_);
     erle_estimator_.Update(X2, Y2, E2_main, converged_filter,
@@ -267,6 +270,7 @@ void AecState::Update(
   }
 
   // Flag whether the initial state is still active.
+  bool prev_initial_state = initial_state_;
   if (use_short_initial_state_) {
     initial_state_ = blocks_with_proper_filter_adaptation_ <
                      config_.filter.initial_state_seconds * kNumBlocksPerSecond;
@@ -274,6 +278,7 @@ void AecState::Update(
     initial_state_ =
         blocks_with_proper_filter_adaptation_ < 5 * kNumBlocksPerSecond;
   }
+  transition_triggered_ = !initial_state_ && prev_initial_state;
 
   // Update counters for the filter divergence and convergence.
   diverged_blocks_ = diverged_filter ? diverged_blocks_ + 1 : 0;
@@ -382,7 +387,7 @@ void AecState::Update(
   data_dumper_->DumpRaw("aec3_consistent_filter",
                         filter_analyzer_.Consistent());
   data_dumper_->DumpRaw("aec3_suppression_gain_limit", SuppressionGainLimit());
-  data_dumper_->DumpRaw("aec3_initial_state", InitialState());
+  data_dumper_->DumpRaw("aec3_initial_state", initial_state_);
   data_dumper_->DumpRaw("aec3_capture_saturation", SaturatedCapture());
   data_dumper_->DumpRaw("aec3_echo_saturation", echo_saturation_);
   data_dumper_->DumpRaw("aec3_converged_filter", converged_filter);

@@ -140,8 +140,9 @@ class AecState {
     return filter_has_had_time_to_converge_;
   }
 
-  // Returns whether the filter adaptation is still in the initial state.
-  bool InitialState() const { return initial_state_; }
+  // Returns whether the transition for going out of the initial stated has
+  // been triggered.
+  bool TransitionTriggered() const { return transition_triggered_; }
 
   // Updates the aec state.
   void Update(const absl::optional<DelayEstimate>& external_delay,
@@ -197,6 +198,7 @@ class AecState {
   std::vector<float> max_render_;
   bool filter_has_had_time_to_converge_ = false;
   bool initial_state_ = true;
+  bool transition_triggered_ = false;
   const float gain_rampup_increase_;
   SuppressionGainUpperLimiter suppression_gain_limiter_;
   FilterAnalyzer filter_analyzer_;
