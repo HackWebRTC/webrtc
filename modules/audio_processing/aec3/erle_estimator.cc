@@ -35,6 +35,13 @@ ErleEstimator::ErleEstimator(float min_erle,
       max_erle_hf_(max_erle_hf),
       erle_freq_inst_(kPointsToAccumulate),
       erle_time_inst_(kPointsToAccumulate) {
+  Reset();
+}
+
+ErleEstimator::~ErleEstimator() = default;
+
+void ErleEstimator::Reset() {
+  erle_time_inst_.Reset();
   erle_.fill(min_erle_);
   erle_onsets_.fill(min_erle_);
   hold_counters_.fill(0);
@@ -42,8 +49,6 @@ ErleEstimator::ErleEstimator(float min_erle,
   erle_time_domain_log2_ = min_erle_log2_;
   hold_counter_time_domain_ = 0;
 }
-
-ErleEstimator::~ErleEstimator() = default;
 
 ErleEstimator::ErleTimeInstantaneous::ErleTimeInstantaneous(
     int points_to_accumulate)

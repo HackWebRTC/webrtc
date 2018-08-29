@@ -73,6 +73,11 @@ bool UseEarlyLimiterDeactivation() {
       "WebRTC-Aec3EarlyLimiterDeactivationKillSwitch");
 }
 
+bool ResetErleAfterEchoPathChanges() {
+  return !field_trial::IsEnabled(
+      "WebRTC-Aec3ResetErleAfterEchoPathChangesKillSwitch");
+}
+
 float UncertaintyBeforeConvergence() {
   if (LowUncertaintyBeforeConvergence()) {
     return 1.f;
@@ -117,6 +122,7 @@ AecState::AecState(const EchoCanceller3Config& config)
       uncertainty_before_convergence_(UncertaintyBeforeConvergence()),
       early_entry_to_converged_mode_(EarlyEntryToConvergedMode()),
       early_limiter_deactivation_(UseEarlyLimiterDeactivation()),
+      reset_erle_after_echo_path_changes_(ResetErleAfterEchoPathChanges()),
       erle_estimator_(config.erle.min, config.erle.max_l, config.erle.max_h),
       max_render_(config_.filter.main.length_blocks, 0.f),
       gain_rampup_increase_(ComputeGainRampupIncrease(config_)),
@@ -147,6 +153,9 @@ void AecState::HandleEchoPathChange(
     suppression_gain_limiter_.Reset();
     blocks_since_converged_filter_ = kBlocksSinceConvergencedFilterInit;
     diverged_blocks_ = 0;
+    if (reset_erle_after_echo_path_changes_) {
+      erle_estimator_.Reset();
+    }
   };
 
   // TODO(peah): Refine the reset scheme according to the type of gain and

@@ -27,6 +27,9 @@ class ErleEstimator {
   ErleEstimator(float min_erle, float max_erle_lf, float max_erle_hf);
   ~ErleEstimator();
 
+  // Reset the ERLE estimator.
+  void Reset();
+
   // Updates the ERLE estimate.
   void Update(rtc::ArrayView<const float> render_spectrum,
               rtc::ArrayView<const float> capture_spectrum,

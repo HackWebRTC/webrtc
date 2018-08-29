@@ -179,6 +179,7 @@ class AecState {
   const float uncertainty_before_convergence_;
   const bool early_entry_to_converged_mode_;
   const bool early_limiter_deactivation_;
+  const bool reset_erle_after_echo_path_changes_;
   ErlEstimator erl_estimator_;
   ErleEstimator erle_estimator_;
   size_t capture_block_counter_ = 0;
