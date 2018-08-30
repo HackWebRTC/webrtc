@@ -32,6 +32,9 @@ specific_include_rules = {
     "+modules/pacing/packet_router.h",
     "+modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h",
   ],
+  ".*mdns_parser_fuzzer\.cc": [
+    "+p2p/base/mdns_message.h",
+  ],
   ".*pseudotcp_parser_fuzzer\.cc": [
     "+p2p/base/pseudotcp.h",
   ],

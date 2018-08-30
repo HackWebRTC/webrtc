@@ -413,6 +413,7 @@ rtc_source_set("rtc_base_approved_generic") {
     "ignore_wundef.h",
     "location.cc",
     "location.h",
+    "message_buffer_reader.h",
     "numerics/histogram_percentile_counter.cc",
     "numerics/histogram_percentile_counter.h",
     "numerics/mod_ops.h",
