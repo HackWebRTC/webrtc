@@ -64,6 +64,7 @@ class FrameGeneratorCapturer : public TestVideoCapturer {
   void Start() override;
   void Stop() override;
   void ChangeResolution(size_t width, size_t height);
+  void ChangeFramerate(int target_framerate);
 
   void SetSinkWantsObserver(SinkWantsObserver* observer);
 
@@ -96,7 +97,8 @@ class FrameGeneratorCapturer : public TestVideoCapturer {
   rtc::CriticalSection lock_;
   std::unique_ptr<FrameGenerator> frame_generator_;
 
-  int target_fps_ RTC_GUARDED_BY(&lock_);
+  int source_fps_ RTC_GUARDED_BY(&lock_);
+  int target_capture_fps_ RTC_GUARDED_BY(&lock_);
   absl::optional<int> wanted_fps_ RTC_GUARDED_BY(&lock_);
   VideoRotation fake_rotation_ = kVideoRotation_0;
 
