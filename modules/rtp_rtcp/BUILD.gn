@@ -447,6 +447,7 @@ if (rtc_include_tests) {
       "../../test:test_common",
       "../../test:test_support",
       "../audio_coding:audio_format_conversion",
+      "../video_coding:codec_globals_headers",
       "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
