@@ -151,17 +151,6 @@ struct ExperimentalNs {
   bool enabled;
 };
 
-// Use to enable intelligibility enhancer in audio processing.
-//
-// Note: If enabled and the reverse stream has more than one output channel,
-// the reverse stream will become an upmixed mono signal.
-struct Intelligibility {
-  Intelligibility() : enabled(false) {}
-  explicit Intelligibility(bool enabled) : enabled(enabled) {}
-  static const ConfigOptionID identifier = ConfigOptionID::kIntelligibility;
-  bool enabled;
-};
-
 // The Audio Processing Module (APM) provides a collection of voice processing
 // components designed for real-time communications software.
 //

@@ -427,16 +427,6 @@ void AecDumpBasedSimulator::HandleMessage(
       }
     }
 
-    if (msg.has_intelligibility_enhancer_enabled() || settings_.use_ie) {
-      bool enable = settings_.use_ie ? *settings_.use_ie
-                                     : msg.intelligibility_enhancer_enabled();
-      config.Set<Intelligibility>(new Intelligibility(enable));
-      if (settings_.use_verbose_logging) {
-        std::cout << " intelligibility_enhancer_enabled: "
-                  << (enable ? "true" : "false") << std::endl;
-      }
-    }
-
     if (msg.has_hpf_enabled() || settings_.use_hpf) {
       bool enable = settings_.use_hpf ? *settings_.use_hpf : msg.hpf_enabled();
       apm_config.high_pass_filter.enabled = enable;

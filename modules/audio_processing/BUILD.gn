@@ -138,18 +138,6 @@ rtc_static_library("audio_processing") {
     defines += [ "WEBRTC_UNTRUSTED_DELAY" ]
   }
 
-  if (rtc_enable_intelligibility_enhancer) {
-    defines += [ "WEBRTC_INTELLIGIBILITY_ENHANCER=1" ]
-    sources += [
-      "intelligibility/intelligibility_enhancer.cc",
-      "intelligibility/intelligibility_enhancer.h",
-      "intelligibility/intelligibility_utils.cc",
-      "intelligibility/intelligibility_utils.h",
-    ]
-  } else {
-    defines += [ "WEBRTC_INTELLIGIBILITY_ENHANCER=0" ]
-  }
-
   if (rtc_prefer_fixed_point) {
     defines += [ "WEBRTC_NS_FIXED" ]
   } else {
@@ -337,10 +325,6 @@ if (rtc_include_tests) {
       ":transient_suppression_test",
     ]
 
-    if (rtc_enable_intelligibility_enhancer) {
-      deps += [ ":intelligibility_proc" ]
-    }
-
     if (rtc_enable_protobuf) {
       deps += [
         ":audioproc_f",
@@ -422,16 +406,6 @@ if (rtc_include_tests) {
 
     defines = []
 
-    if (rtc_enable_intelligibility_enhancer) {
-      defines += [ "WEBRTC_INTELLIGIBILITY_ENHANCER=1" ]
-      sources += [
-        "intelligibility/intelligibility_enhancer_unittest.cc",
-        "intelligibility/intelligibility_utils_unittest.cc",
-      ]
-    } else {
-      defines += [ "WEBRTC_INTELLIGIBILITY_ENHANCER=0" ]
-    }
-
     if (rtc_prefer_fixed_point) {
       defines += [ "WEBRTC_AUDIOPROC_FIXED_PROFILE" ]
     } else {
@@ -500,12 +474,6 @@ if (rtc_include_tests) {
       "../../test:perf_test",
       "../../test:test_support",
     ]
-
-    if (rtc_enable_intelligibility_enhancer) {
-      defines = [ "WEBRTC_INTELLIGIBILITY_ENHANCER=1" ]
-    } else {
-      defines = [ "WEBRTC_INTELLIGIBILITY_ENHANCER=0" ]
-    }
   }
 
   rtc_source_set("file_audio_generator_unittests") {
@@ -664,24 +632,6 @@ if (rtc_include_tests) {
       "../../system_wrappers",
       "../../system_wrappers:metrics_default",
     ]
-  }
-
-  if (rtc_enable_intelligibility_enhancer) {
-    rtc_executable("intelligibility_proc") {
-      testonly = true
-      sources = [
-        "intelligibility/test/intelligibility_proc.cc",
-      ]
-      deps = [
-        ":audio_processing",
-        ":audioproc_test_utils",
-        "../../common_audio",
-        "../../rtc_base:rtc_base_approved",
-        "../../system_wrappers:metrics_default",
-        "../../test:test_support",
-        "//testing/gtest",
-      ]
-    }
   }
 
   if (rtc_enable_protobuf) {

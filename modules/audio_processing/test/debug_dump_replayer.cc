@@ -186,10 +186,6 @@ void DebugDumpReplayer::MaybeRecreateApm(const audioproc::Config& msg) {
   config.Set<ExtendedFilter>(
       new ExtendedFilter(msg.aec_extended_filter_enabled()));
 
-  RTC_CHECK(msg.has_intelligibility_enhancer_enabled());
-  config.Set<Intelligibility>(
-      new Intelligibility(msg.intelligibility_enhancer_enabled()));
-
   // We only create APM once, since changes on these fields should not
   // happen in current implementation.
   if (!apm_.get()) {

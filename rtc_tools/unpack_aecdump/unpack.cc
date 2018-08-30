@@ -289,7 +289,6 @@ int do_main(int argc, char* argv[]) {
       PRINT_CONFIG(ns_enabled);
       PRINT_CONFIG(ns_level);
       PRINT_CONFIG(transient_suppression_enabled);
-      PRINT_CONFIG(intelligibility_enhancer_enabled);
       PRINT_CONFIG(pre_amplifier_enabled);
       PRINT_CONFIG_FLOAT(pre_amplifier_fixed_gain_factor);
 

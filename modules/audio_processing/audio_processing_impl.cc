@@ -38,9 +38,6 @@
 #include "rtc_base/system/arch.h"
 #include "rtc_base/timeutils.h"
 #include "rtc_base/trace_event.h"
-#if WEBRTC_INTELLIGIBILITY_ENHANCER
-#include "modules/audio_processing/intelligibility/intelligibility_enhancer.h"
-#endif
 #include "modules/audio_processing/level_estimator_impl.h"
 #include "modules/audio_processing/low_cut_filter.h"
 #include "modules/audio_processing/noise_suppression_impl.h"
@@ -49,14 +46,6 @@
 #include "modules/audio_processing/voice_detection_impl.h"
 #include "rtc_base/atomicops.h"
 #include "system_wrappers/include/metrics.h"
-
-// Check to verify that the define for the intelligibility enhancer is properly
-// set.
-#if !defined(WEBRTC_INTELLIGIBILITY_ENHANCER) || \
-    (WEBRTC_INTELLIGIBILITY_ENHANCER != 0 &&     \
-     WEBRTC_INTELLIGIBILITY_ENHANCER != 1)
-#error "Set WEBRTC_INTELLIGIBILITY_ENHANCER to either 0 or 1"
-#endif
 
 #define RETURN_ON_ERR(expr) \
   do {                      \
@@ -170,7 +159,6 @@ bool AudioProcessingImpl::ApmSubmoduleStates::Update(
     bool mobile_echo_controller_enabled,
     bool residual_echo_detector_enabled,
     bool noise_suppressor_enabled,
-    bool intelligibility_enhancer_enabled,
     bool adaptive_gain_controller_enabled,
     bool gain_controller2_enabled,
     bool pre_amplifier_enabled,
@@ -187,8 +175,6 @@ bool AudioProcessingImpl::ApmSubmoduleStates::Update(
       (residual_echo_detector_enabled != residual_echo_detector_enabled_);
   changed |= (noise_suppressor_enabled != noise_suppressor_enabled_);
   changed |=
-      (intelligibility_enhancer_enabled != intelligibility_enhancer_enabled_);
-  changed |=
       (adaptive_gain_controller_enabled != adaptive_gain_controller_enabled_);
   changed |=
       (gain_controller2_enabled != gain_controller2_enabled_);
@@ -204,7 +190,6 @@ bool AudioProcessingImpl::ApmSubmoduleStates::Update(
     mobile_echo_controller_enabled_ = mobile_echo_controller_enabled;
     residual_echo_detector_enabled_ = residual_echo_detector_enabled;
     noise_suppressor_enabled_ = noise_suppressor_enabled;
-    intelligibility_enhancer_enabled_ = intelligibility_enhancer_enabled;
     adaptive_gain_controller_enabled_ = adaptive_gain_controller_enabled;
     gain_controller2_enabled_ = gain_controller2_enabled;
     pre_amplifier_enabled_ = pre_amplifier_enabled;
@@ -221,12 +206,7 @@ bool AudioProcessingImpl::ApmSubmoduleStates::Update(
 
 bool AudioProcessingImpl::ApmSubmoduleStates::CaptureMultiBandSubModulesActive()
     const {
-#if WEBRTC_INTELLIGIBILITY_ENHANCER
-  return CaptureMultiBandProcessingActive() ||
-         intelligibility_enhancer_enabled_ || voice_activity_detector_enabled_;
-#else
   return CaptureMultiBandProcessingActive() || voice_activity_detector_enabled_;
-#endif
 }
 
 bool AudioProcessingImpl::ApmSubmoduleStates::CaptureMultiBandProcessingActive()
@@ -260,11 +240,7 @@ bool AudioProcessingImpl::ApmSubmoduleStates::RenderFullBandProcessingActive()
 
 bool AudioProcessingImpl::ApmSubmoduleStates::RenderMultiBandProcessingActive()
     const {
-#if WEBRTC_INTELLIGIBILITY_ENHANCER
-  return intelligibility_enhancer_enabled_;
-#else
   return false;
-#endif
 }
 
 struct AudioProcessingImpl::ApmPublicSubmodules {
@@ -283,9 +259,6 @@ struct AudioProcessingImpl::ApmPublicSubmodules {
 
   // Accessed internally from both render and capture.
   std::unique_ptr<TransientSuppressor> transient_suppressor;
-#if WEBRTC_INTELLIGIBILITY_ENHANCER
-  std::unique_ptr<IntelligibilityEnhancer> intelligibility_enhancer;
-#endif
 };
 
 struct AudioProcessingImpl::ApmPrivateSubmodules {
@@ -405,7 +378,7 @@ AudioProcessingImpl::AudioProcessingImpl(
 #else
       capture_(config.Get<ExperimentalNs>().enabled),
 #endif
-      capture_nonlocked_(config.Get<Intelligibility>().enabled) {
+      capture_nonlocked_() {
   {
     rtc::CritScope cs_render(&crit_render_);
     rtc::CritScope cs_capture(&crit_capture_);
@@ -589,9 +562,6 @@ int AudioProcessingImpl::InitializeLocked() {
     public_submodules_->gain_control_for_experimental_agc->Initialize();
   }
   InitializeTransient();
-#if WEBRTC_INTELLIGIBILITY_ENHANCER
-  InitializeIntelligibility();
-#endif
   InitializeLowCutFilter();
   public_submodules_->noise_suppression->Initialize(num_proc_channels(),
                                                     proc_sample_rate_hz());
@@ -742,15 +712,6 @@ void AudioProcessingImpl::SetExtraOptions(const webrtc::Config& config) {
         config.Get<ExperimentalNs>().enabled;
     InitializeTransient();
   }
-
-#if WEBRTC_INTELLIGIBILITY_ENHANCER
-  if (capture_nonlocked_.intelligibility_enabled !=
-     config.Get<Intelligibility>().enabled) {
-    capture_nonlocked_.intelligibility_enabled =
-        config.Get<Intelligibility>().enabled;
-    InitializeIntelligibility();
-  }
-#endif
 }
 
 int AudioProcessingImpl::proc_sample_rate_hz() const {
@@ -1306,18 +1267,6 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
     capture_buffer->CopyLowPassToReference();
   }
   public_submodules_->noise_suppression->ProcessCaptureAudio(capture_buffer);
-#if WEBRTC_INTELLIGIBILITY_ENHANCER
-  if (capture_nonlocked_.intelligibility_enabled) {
-    RTC_DCHECK(public_submodules_->noise_suppression->is_enabled());
-    const int gain_db =
-        public_submodules_->gain_control->is_enabled()
-            ? public_submodules_->gain_control->compression_gain_db()
-            : 0;
-    const float gain = DbToRatio(gain_db);
-    public_submodules_->intelligibility_enhancer->SetCaptureNoiseEstimate(
-        public_submodules_->noise_suppression->NoiseEstimate(), gain);
-  }
-#endif
 
   // Ensure that the stream delay was set before the call to the
   // AECM ProcessCaptureAudio function.
@@ -1539,13 +1488,6 @@ int AudioProcessingImpl::ProcessRenderStreamLocked() {
           formats_.render_processing_format.sample_rate_hz())) {
     render_buffer->SplitIntoFrequencyBands();
   }
-
-#if WEBRTC_INTELLIGIBILITY_ENHANCER
-  if (capture_nonlocked_.intelligibility_enabled) {
-    public_submodules_->intelligibility_enhancer->ProcessRenderAudio(
-        render_buffer);
-  }
-#endif
 
   if (submodule_states_.RenderMultiBandSubModulesActive()) {
     QueueBandedRenderAudio(render_buffer);
@@ -1809,7 +1751,6 @@ bool AudioProcessingImpl::UpdateActiveSubmoduleStates() {
       public_submodules_->echo_control_mobile->is_enabled(),
       config_.residual_echo_detector.enabled,
       public_submodules_->noise_suppression->is_enabled(),
-      capture_nonlocked_.intelligibility_enabled,
       public_submodules_->gain_control->is_enabled(),
       config_.gain_controller2.enabled, config_.pre_amplifier.enabled,
       capture_nonlocked_.echo_controller_enabled,
@@ -1828,18 +1769,6 @@ void AudioProcessingImpl::InitializeTransient() {
         capture_nonlocked_.capture_processing_format.sample_rate_hz(),
         capture_nonlocked_.split_rate, num_proc_channels());
   }
-}
-
-void AudioProcessingImpl::InitializeIntelligibility() {
-#if WEBRTC_INTELLIGIBILITY_ENHANCER
-  if (capture_nonlocked_.intelligibility_enabled) {
-    public_submodules_->intelligibility_enhancer.reset(
-        new IntelligibilityEnhancer(capture_nonlocked_.split_rate,
-                                    render_.render_audio->num_channels(),
-                                    render_.render_audio->num_bands(),
-                                    NoiseSuppressionImpl::num_noise_bins()));
-  }
-#endif
 }
 
 void AudioProcessingImpl::InitializeLowCutFilter() {
@@ -2029,8 +1958,6 @@ void AudioProcessingImpl::WriteAecDumpConfigMessage(bool forced) {
 
   apm_config.transient_suppression_enabled =
       capture_.transient_suppressor_enabled;
-  apm_config.intelligibility_enhancer_enabled =
-      capture_nonlocked_.intelligibility_enabled;
   apm_config.experiments_description = experiments_description;
   apm_config.pre_amplifier_enabled = config_.pre_amplifier.enabled;
   apm_config.pre_amplifier_fixed_gain_factor =

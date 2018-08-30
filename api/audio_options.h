@@ -44,7 +44,6 @@ struct AudioOptions {
     SetFrom(&extended_filter_aec, change.extended_filter_aec);
     SetFrom(&delay_agnostic_aec, change.delay_agnostic_aec);
     SetFrom(&experimental_ns, change.experimental_ns);
-    SetFrom(&intelligibility_enhancer, change.intelligibility_enhancer);
     SetFrom(&residual_echo_detector, change.residual_echo_detector);
     SetFrom(&tx_agc_target_dbov, change.tx_agc_target_dbov);
     SetFrom(&tx_agc_digital_compression_gain,
@@ -74,7 +73,6 @@ struct AudioOptions {
            extended_filter_aec == o.extended_filter_aec &&
            delay_agnostic_aec == o.delay_agnostic_aec &&
            experimental_ns == o.experimental_ns &&
-           intelligibility_enhancer == o.intelligibility_enhancer &&
            residual_echo_detector == o.residual_echo_detector &&
            tx_agc_target_dbov == o.tx_agc_target_dbov &&
            tx_agc_digital_compression_gain ==
@@ -108,7 +106,6 @@ struct AudioOptions {
     ost << ToStringIfSet("extended_filter_aec", extended_filter_aec);
     ost << ToStringIfSet("delay_agnostic_aec", delay_agnostic_aec);
     ost << ToStringIfSet("experimental_ns", experimental_ns);
-    ost << ToStringIfSet("intelligibility_enhancer", intelligibility_enhancer);
     ost << ToStringIfSet("residual_echo_detector", residual_echo_detector);
     ost << ToStringIfSet("tx_agc_target_dbov", tx_agc_target_dbov);
     ost << ToStringIfSet("tx_agc_digital_compression_gain",
@@ -153,7 +150,6 @@ struct AudioOptions {
   absl::optional<bool> extended_filter_aec;
   absl::optional<bool> delay_agnostic_aec;
   absl::optional<bool> experimental_ns;
-  absl::optional<bool> intelligibility_enhancer;
   // Note that tx_agc_* only applies to non-experimental AGC.
   absl::optional<bool> residual_echo_detector;
   absl::optional<uint16_t> tx_agc_target_dbov;

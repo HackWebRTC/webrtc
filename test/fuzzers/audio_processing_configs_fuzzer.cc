@@ -63,7 +63,7 @@ std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
   bool ef = fuzz_data->ReadOrDefaultValue(true);
   bool raf = fuzz_data->ReadOrDefaultValue(true);
   static_cast<void>(fuzz_data->ReadOrDefaultValue(true));
-  bool ie = fuzz_data->ReadOrDefaultValue(true);
+  static_cast<void>(fuzz_data->ReadOrDefaultValue(true));
   bool red = fuzz_data->ReadOrDefaultValue(true);
   bool hpf = fuzz_data->ReadOrDefaultValue(true);
   bool aec3 = fuzz_data->ReadOrDefaultValue(true);
@@ -123,7 +123,6 @@ std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
   config.Set<ExtendedFilter>(new ExtendedFilter(ef));
   config.Set<RefinedAdaptiveFilter>(new RefinedAdaptiveFilter(raf));
   config.Set<DelayAgnostic>(new DelayAgnostic(true));
-  config.Set<Intelligibility>(new Intelligibility(ie));
 
   std::unique_ptr<AudioProcessing> apm(
       AudioProcessingBuilder()

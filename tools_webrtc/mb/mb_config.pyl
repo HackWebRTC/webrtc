@@ -53,8 +53,6 @@
       # "More configs" bots will build all the following configs in sequence.
       # This is using MB's "phases" feature.
       'Linux (more configs)': {
-        'intelligibility_enhancer_no_include_tests':
-          'intelligibility_enhancer_no_include_tests_x64',
         'bwe_test_logging':
           'bwe_test_logging_x64',
         'dummy_audio_file_devices_no_protobuf':
@@ -74,8 +72,6 @@
       'Android32 Builder x86 (dbg)': 'android_debug_static_bot_x86',
       'Android64 Builder x64 (dbg)': 'android_debug_static_bot_x64',
       'Android32 (more configs)': {
-        'intelligibility_enhancer_no_include_tests':
-          'intelligibility_enhancer_no_include_tests_android_arm',
         'bwe_test_logging':
           'bwe_test_logging_android_arm',
         'dummy_audio_file_devices_no_protobuf':
@@ -95,8 +91,6 @@
       'Win64 Release (Clang)': 'win_clang_release_bot_x64',
       'Win32 ASan': 'win_asan_clang_release_bot_x86',
       'Win (more configs)': {
-        'intelligibility_enhancer_no_include_tests':
-          'intelligibility_enhancer_no_include_tests_x86',
         'bwe_test_logging':
           'bwe_test_logging_x86',
         'dummy_audio_file_devices_no_protobuf':
@@ -186,8 +180,6 @@
       'linux_experimental': 'release_bot_x64',
       'linux_libfuzzer_rel': 'libfuzzer_asan_release_bot_x64',
       'linux_more_configs': {
-        'intelligibility_enhancer_no_include_tests':
-          'intelligibility_enhancer_no_include_tests_x64',
         'bwe_test_logging':
           'bwe_test_logging_x64',
         'dummy_audio_file_devices_no_protobuf':
@@ -209,8 +201,6 @@
       'android_arm64_rel': 'android_release_bot_arm64',
       'android_experimental': 'android_release_bot_arm',
       'android_more_configs': {
-        'intelligibility_enhancer_no_include_tests':
-          'intelligibility_enhancer_no_include_tests_android_arm',
         'bwe_test_logging':
           'bwe_test_logging_android_arm',
         'dummy_audio_file_devices_no_protobuf':
@@ -237,8 +227,6 @@
       'win_x64_win8': 'debug_bot_x64',
       'win_x64_win10': 'debug_bot_x64',
       'win_more_configs': {
-        'intelligibility_enhancer_no_include_tests':
-          'intelligibility_enhancer_no_include_tests_x86',
         'bwe_test_logging':
           'bwe_test_logging_x86',
         'dummy_audio_file_devices_no_protobuf':
@@ -402,9 +390,6 @@
     ],
 
     # More configs
-    'intelligibility_enhancer_no_include_tests_x64': [
-      'debug_bot', 'x64', 'intelligibility_enhancer', 'no_include_tests'
-    ],
     'bwe_test_logging_x64': [
       'debug_bot', 'x64', 'bwe_test_logging'
     ],
@@ -415,9 +400,6 @@
       'debug_bot', 'x64', 'rtti', 'no_sctp'
     ],
 
-    'intelligibility_enhancer_no_include_tests_x86': [
-      'debug_bot', 'x86', 'intelligibility_enhancer', 'no_include_tests'
-    ],
     'bwe_test_logging_x86': [
       'debug_bot', 'x86', 'bwe_test_logging'
     ],
@@ -428,10 +410,6 @@
       'debug_bot', 'x86', 'rtti', 'no_sctp'
     ],
 
-    'intelligibility_enhancer_no_include_tests_android_arm': [
-      'android', 'debug_static_bot', 'arm',
-      'intelligibility_enhancer', 'no_include_tests'
-    ],
     'bwe_test_logging_android_arm': [
       'android', 'debug_static_bot', 'arm', 'bwe_test_logging'
     ],
@@ -584,14 +562,6 @@
 
     'x86': {
       'gn_args': 'target_cpu="x86"',
-    },
-
-    'intelligibility_enhancer': {
-      'gn_args': 'rtc_enable_intelligibility_enhancer=true',
-    },
-
-    'no_include_tests': {
-      'gn_args': 'rtc_include_tests=false',
     },
 
     'bwe_test_logging': {

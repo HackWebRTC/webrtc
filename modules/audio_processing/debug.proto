@@ -47,7 +47,6 @@ message Stream {
 // Contains the configurations of various APM component. A Config message is
 // added when any of the fields are changed.
 message Config {
-  // Next field number 19.
   // Acoustic echo canceler.
   optional bool aec_enabled = 1;
   optional bool aec_delay_agnostic_enabled = 2;
@@ -73,11 +72,12 @@ message Config {
   // Semicolon-separated string containing experimental feature
   // descriptions.
   optional string experiments_description = 17;
-  // Intelligibility Enhancer.
-  optional bool intelligibility_enhancer_enabled = 18;
+  reserved 18;  // Intelligibility enhancer enabled (deprecated).
   // Pre amplifier.
   optional bool pre_amplifier_enabled = 19;
   optional float pre_amplifier_fixed_gain_factor = 20;
+
+  // Next field number 21.
 }
 
 message Event {

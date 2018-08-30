@@ -87,9 +87,6 @@ DEFINE_int(ns,
 DEFINE_int(ts,
            kParameterNotSpecifiedValue,
            "Activate (1) or deactivate(0) the transient suppressor");
-DEFINE_int(ie,
-           kParameterNotSpecifiedValue,
-           "Activate (1) or deactivate(0) the intelligibility enhancer");
 DEFINE_int(vad,
            kParameterNotSpecifiedValue,
            "Activate (1) or deactivate(0) the voice activity detector");
@@ -247,7 +244,6 @@ SimulationSettings CreateSettings() {
   SetSettingIfFlagSet(FLAG_hpf, &settings.use_hpf);
   SetSettingIfFlagSet(FLAG_ns, &settings.use_ns);
   SetSettingIfFlagSet(FLAG_ts, &settings.use_ts);
-  SetSettingIfFlagSet(FLAG_ie, &settings.use_ie);
   SetSettingIfFlagSet(FLAG_vad, &settings.use_vad);
   SetSettingIfFlagSet(FLAG_le, &settings.use_le);
   SetSettingIfSpecified(FLAG_aec_suppression_level,

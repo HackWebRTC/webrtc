@@ -678,9 +678,6 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
   if (settings_.use_ts) {
     config.Set<ExperimentalNs>(new ExperimentalNs(*settings_.use_ts));
   }
-  if (settings_.use_ie) {
-    config.Set<Intelligibility>(new Intelligibility(*settings_.use_ie));
-  }
   if (settings_.use_agc2) {
     apm_config.gain_controller2.enabled = *settings_.use_agc2;
     apm_config.gain_controller2.fixed_gain_db = settings_.agc2_fixed_gain_db;
