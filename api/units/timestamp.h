@@ -162,17 +162,23 @@ class Timestamp {
     return TimeDelta::us(us() - other.us());
   }
   Timestamp operator-(const TimeDelta& delta) const {
+    RTC_DCHECK(!delta.IsPlusInfinity());
+    if (IsInfinite() || delta.IsMinusInfinity())
+      return Infinity();
     return Timestamp::us(us() - delta.us());
   }
   Timestamp operator+(const TimeDelta& delta) const {
+    RTC_DCHECK(!delta.IsMinusInfinity());
+    if (IsInfinite() || delta.IsPlusInfinity())
+      return Infinity();
     return Timestamp::us(us() + delta.us());
   }
   Timestamp& operator-=(const TimeDelta& other) {
-    microseconds_ -= other.us();
+    *this = *this - other;
     return *this;
   }
   Timestamp& operator+=(const TimeDelta& other) {
-    microseconds_ += other.us();
+    *this = *this + other;
     return *this;
   }
   constexpr bool operator==(const Timestamp& other) const {

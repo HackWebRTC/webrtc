@@ -164,6 +164,26 @@ TEST(TimeDeltaTest, MathOperations) {
 
   EXPECT_EQ(TimeDelta::us(-kValueA).Abs().us(), kValueA);
   EXPECT_EQ(TimeDelta::us(kValueA).Abs().us(), kValueA);
+
+  TimeDelta mutable_delta = TimeDelta::ms(kValueA);
+  mutable_delta += TimeDelta::ms(kValueB);
+  EXPECT_EQ(mutable_delta, TimeDelta::ms(kValueA + kValueB));
+  mutable_delta -= TimeDelta::ms(kValueB);
+  EXPECT_EQ(mutable_delta, TimeDelta::ms(kValueA));
+}
+
+TEST(TimeDeltaTest, InfinityOperations) {
+  const int64_t kValue = 267;
+  const TimeDelta finite = TimeDelta::ms(kValue);
+  EXPECT_TRUE((TimeDelta::PlusInfinity() + finite).IsPlusInfinity());
+  EXPECT_TRUE((TimeDelta::PlusInfinity() - finite).IsPlusInfinity());
+  EXPECT_TRUE((finite + TimeDelta::PlusInfinity()).IsPlusInfinity());
+  EXPECT_TRUE((finite - TimeDelta::MinusInfinity()).IsPlusInfinity());
+
+  EXPECT_TRUE((TimeDelta::MinusInfinity() + finite).IsMinusInfinity());
+  EXPECT_TRUE((TimeDelta::MinusInfinity() - finite).IsMinusInfinity());
+  EXPECT_TRUE((finite + TimeDelta::MinusInfinity()).IsMinusInfinity());
+  EXPECT_TRUE((finite - TimeDelta::PlusInfinity()).IsMinusInfinity());
 }
 }  // namespace test
 }  // namespace webrtc

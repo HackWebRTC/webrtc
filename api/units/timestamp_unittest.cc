@@ -118,10 +118,27 @@ TEST(UnitConversionTest, TimestampAndTimeDeltaMath) {
   const Timestamp time_a = Timestamp::ms(kValueA);
   const Timestamp time_b = Timestamp::ms(kValueB);
   const TimeDelta delta_a = TimeDelta::ms(kValueA);
+  const TimeDelta delta_b = TimeDelta::ms(kValueB);
 
   EXPECT_EQ((time_a - time_b), TimeDelta::ms(kValueA - kValueB));
   EXPECT_EQ((time_b - delta_a), Timestamp::ms(kValueB - kValueA));
   EXPECT_EQ((time_b + delta_a), Timestamp::ms(kValueB + kValueA));
+
+  Timestamp mutable_time = time_a;
+  mutable_time += delta_b;
+  EXPECT_EQ(mutable_time, time_a + delta_b);
+  mutable_time -= delta_b;
+  EXPECT_EQ(mutable_time, time_a);
+}
+
+TEST(UnitConversionTest, InfinityOperations) {
+  const int64_t kValue = 267;
+  const Timestamp finite_time = Timestamp::ms(kValue);
+  const TimeDelta finite_delta = TimeDelta::ms(kValue);
+  EXPECT_TRUE((Timestamp::Infinity() + finite_delta).IsInfinite());
+  EXPECT_TRUE((Timestamp::Infinity() - finite_delta).IsInfinite());
+  EXPECT_TRUE((finite_time + TimeDelta::PlusInfinity()).IsInfinite());
+  EXPECT_TRUE((finite_time - TimeDelta::MinusInfinity()).IsInfinite());
 }
 }  // namespace test
 }  // namespace webrtc
