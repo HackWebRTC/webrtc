@@ -372,7 +372,6 @@ SendSideCongestionController::SendSideCongestionController(
   initial_config_.constraints = ConvertConstraints(
       min_bitrate_bps, max_bitrate_bps, start_bitrate_bps, clock_);
   RTC_DCHECK(start_bitrate_bps > 0);
-  initial_config_.starting_bandwidth = DataRate::bps(start_bitrate_bps);
 }
 
 // There is no point in having a network controller for a network that is not
@@ -447,15 +446,13 @@ void SendSideCongestionController::SetBweBitrates(int min_bitrate_bps,
                                                   int max_bitrate_bps) {
   TargetRateConstraints constraints = ConvertConstraints(
       min_bitrate_bps, max_bitrate_bps, start_bitrate_bps, clock_);
-  task_queue_->PostTask([this, constraints, start_bitrate_bps]() {
+  task_queue_->PostTask([this, constraints]() {
     RTC_DCHECK_RUN_ON(task_queue_);
     if (controller_) {
       control_handler_->PostUpdates(
           controller_->OnTargetRateConstraints(constraints));
     } else {
       initial_config_.constraints = constraints;
-      if (start_bitrate_bps > 0)
-        initial_config_.starting_bandwidth = DataRate::bps(start_bitrate_bps);
     }
   });
 }
@@ -493,8 +490,6 @@ void SendSideCongestionController::OnNetworkRouteChanged(
     if (controller_) {
       control_handler_->PostUpdates(controller_->OnNetworkRouteChange(msg));
     } else {
-      if (msg.constraints.starting_rate)
-        initial_config_.starting_bandwidth = *msg.constraints.starting_rate;
       initial_config_.constraints = msg.constraints;
     }
     pacer_controller_->OnNetworkRouteChange(msg);

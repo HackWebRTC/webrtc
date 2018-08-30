@@ -217,8 +217,8 @@ BbrNetworkController::BbrNetworkController(NetworkControllerConfig config)
       app_limited_since_last_probe_rtt_(false),
       min_rtt_since_last_probe_rtt_(TimeDelta::PlusInfinity()) {
   RTC_LOG(LS_INFO) << "Creating BBR controller";
-  if (config.starting_bandwidth.IsFinite())
-    default_bandwidth_ = config.starting_bandwidth;
+  if (config.constraints.starting_rate)
+    default_bandwidth_ = *config.constraints.starting_rate;
   constraints_ = config.constraints;
   Reset();
 }

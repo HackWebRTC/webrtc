@@ -64,7 +64,7 @@ class GoogCcNetworkControllerTest : public ::testing::Test {
     config.constraints.at_time = current_time_;
     config.constraints.min_data_rate = DataRate::kbps(min_data_rate_kbps);
     config.constraints.max_data_rate = DataRate::kbps(max_data_rate_kbps);
-    config.starting_bandwidth = DataRate::kbps(starting_bandwidth_kbps);
+    config.constraints.starting_rate = DataRate::kbps(starting_bandwidth_kbps);
     return config;
   }
   ProcessInterval DefaultInterval() {

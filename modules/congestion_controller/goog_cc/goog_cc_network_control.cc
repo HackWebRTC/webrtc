@@ -128,7 +128,7 @@ GoogCcNetworkController::GoogCcNetworkController(RtcEventLog* event_log,
       acknowledged_bitrate_estimator_(
           absl::make_unique<AcknowledgedBitrateEstimator>()),
       initial_config_(config),
-      last_bandwidth_(config.starting_bandwidth),
+      last_bandwidth_(*config.constraints.starting_rate),
       pacing_factor_(config.stream_based_config.pacing_factor.value_or(
           kDefaultPaceMultiplier)),
       min_pacing_rate_(config.stream_based_config.min_pacing_rate.value_or(
@@ -186,8 +186,9 @@ NetworkControlUpdate GoogCcNetworkController::OnProcessInterval(
     ProcessInterval msg) {
   NetworkControlUpdate update;
   if (initial_config_) {
-    update.probe_cluster_configs = UpdateBitrateConstraints(
-        initial_config_->constraints, initial_config_->starting_bandwidth);
+    update.probe_cluster_configs =
+        UpdateBitrateConstraints(initial_config_->constraints,
+                                 initial_config_->constraints.starting_rate);
     update.pacer_config = GetPacingRates(msg.at_time);
 
     probe_controller_->EnablePeriodicAlrProbing(

@@ -45,6 +45,8 @@ struct TargetRateConstraints {
   Timestamp at_time = Timestamp::Infinity();
   absl::optional<DataRate> min_data_rate;
   absl::optional<DataRate> max_data_rate;
+  // The initial bandwidth estimate to base target rate on. This should be used
+  // as the basis for initial OnTargetTransferRate and OnPacerConfig callbacks.
   absl::optional<DataRate> starting_rate;
 };
 

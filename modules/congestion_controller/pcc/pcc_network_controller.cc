@@ -74,8 +74,8 @@ PccNetworkController::PccNetworkController(NetworkControllerConfig config)
       monitor_intervals_duration_(TimeDelta::Zero()),
       complete_feedback_monitor_interval_number_(0),
       random_generator_(kRandomSeed) {
-  if (config.starting_bandwidth.IsFinite()) {
-    default_bandwidth_ = config.starting_bandwidth;
+  if (config.constraints.starting_rate) {
+    default_bandwidth_ = *config.constraints.starting_rate;
     bandwidth_estimate_ = default_bandwidth_;
   }
 }
