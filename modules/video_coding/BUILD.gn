@@ -536,7 +536,6 @@ if (rtc_include_tests) {
         "../../media:rtc_media_base",
         "../../modules:module_api",
         "../../rtc_base:rtc_base_approved",
-        "../../sdk:common_objc",
         "../../sdk:native_api",
         "../../sdk:peerconnectionfactory_base_objc",
         "../../sdk:videocodec_objc",

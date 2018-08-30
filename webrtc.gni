@@ -160,6 +160,9 @@ declare_args() {
     # binary only running on iOS 11+, which is why it is disabled by default.
     rtc_apprtcmobile_broadcast_extension = false
   }
+
+  # Determines whether Metal is available on iOS/macOS.
+  rtc_use_metal_rendering = is_mac || (is_ios && current_cpu == "arm64")
 }
 
 if (!build_with_mozilla) {
@@ -649,7 +652,7 @@ if (is_ios) {
                "--out",
                rebase_path(umbrella_header_path, root_build_dir),
                "--sources",
-             ] + rebase_path(public_headers, "objc/Framework/Headers/")
+             ] + public_headers
     }
 
     copy("copy_umbrella_header_$target_name") {

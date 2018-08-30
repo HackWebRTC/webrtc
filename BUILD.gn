@@ -320,6 +320,10 @@ config("common_config") {
 
 config("common_objc") {
   libs = [ "Foundation.framework" ]
+
+  if (rtc_use_metal_rendering) {
+    defines = [ "RTC_SUPPORTS_METAL" ]
+  }
 }
 
 if (!build_with_chromium) {

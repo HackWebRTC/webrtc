@@ -69,8 +69,9 @@ if (rtc_include_internal_audio_device && is_ios) {
       "../../rtc_base:gtest_prod",
       "../../rtc_base:rtc_base",
       "../../rtc_base/system:fallthrough",
+      "../../sdk:audio_device",
       "../../sdk:audio_objc",
-      "../../sdk:common_objc",
+      "../../sdk:base_objc",
       "../../system_wrappers:metrics_api",
     ]
     if (!build_with_chromium && is_clang) {

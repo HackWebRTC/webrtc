@@ -8,18 +8,4 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#if defined(WEBRTC_IOS)
-
-#import <Foundation/Foundation.h>
-
-NS_EXTENSION_UNAVAILABLE_IOS("Application status not available in app extensions.")
-@interface RTCUIApplicationStatusObserver : NSObject
-
-+ (instancetype)sharedInstance;
-+ (void)prepareForUse;
-
-- (BOOL)isApplicationActive;
-
-@end
-
-#endif  // WEBRTC_IOS
+#import "helpers/RTCUIApplicationStatusObserver.h"

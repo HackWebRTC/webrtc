@@ -18,7 +18,7 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/timeutils.h"
 #include "rtc_base/trace_event.h"
-#include "sdk/objc/Framework/Classes/Common/scoped_cftyperef.h"
+#include "sdk/objc/helpers/scoped_cftyperef.h"
 
 namespace webrtc {
 

@@ -9,7 +9,8 @@
  */
 
 #import "RTCVideoCodecInfo+HumanReadable.h"
-#import "WebRTC/RTCVideoCodecH264.h"
+
+#import <WebRTC/RTCH264ProfileLevelId.h>
 
 @implementation RTCVideoCodecInfo (HumanReadable)
 
