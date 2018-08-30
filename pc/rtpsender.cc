@@ -10,6 +10,7 @@
 
 #include "pc/rtpsender.h"
 
+#include <utility>
 #include <vector>
 
 #include "api/mediastreaminterface.h"
@@ -273,6 +274,16 @@ rtc::scoped_refptr<DtmfSenderInterface> AudioRtpSender::GetDtmfSender() const {
   return dtmf_sender_proxy_;
 }
 
+void AudioRtpSender::SetFrameEncryptor(
+    rtc::scoped_refptr<FrameEncryptorInterface> frame_encryptor) {
+  frame_encryptor_ = std::move(frame_encryptor);
+}
+
+rtc::scoped_refptr<FrameEncryptorInterface> AudioRtpSender::GetFrameEncryptor()
+    const {
+  return frame_encryptor_;
+}
+
 void AudioRtpSender::SetSsrc(uint32_t ssrc) {
   TRACE_EVENT0("webrtc", "AudioRtpSender::SetSsrc");
   if (stopped_ || ssrc == ssrc_) {
@@ -467,6 +478,16 @@ RTCError VideoRtpSender::SetParameters(const RtpParameters& parameters) {
 rtc::scoped_refptr<DtmfSenderInterface> VideoRtpSender::GetDtmfSender() const {
   RTC_LOG(LS_ERROR) << "Tried to get DTMF sender from video sender.";
   return nullptr;
+}
+
+void VideoRtpSender::SetFrameEncryptor(
+    rtc::scoped_refptr<FrameEncryptorInterface> frame_encryptor) {
+  frame_encryptor_ = std::move(frame_encryptor);
+}
+
+rtc::scoped_refptr<FrameEncryptorInterface> VideoRtpSender::GetFrameEncryptor()
+    const {
+  return frame_encryptor_;
 }
 
 void VideoRtpSender::SetSsrc(uint32_t ssrc) {

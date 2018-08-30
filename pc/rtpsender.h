@@ -127,6 +127,12 @@ class AudioRtpSender : public DtmfProviderInterface,
 
   rtc::scoped_refptr<DtmfSenderInterface> GetDtmfSender() const override;
 
+  void SetFrameEncryptor(
+      rtc::scoped_refptr<FrameEncryptorInterface> frame_encryptor) override;
+
+  rtc::scoped_refptr<FrameEncryptorInterface> GetFrameEncryptor()
+      const override;
+
   // RtpSenderInternal implementation.
   void SetSsrc(uint32_t ssrc) override;
 
@@ -175,6 +181,7 @@ class AudioRtpSender : public DtmfProviderInterface,
   // cricket::AudioSource.
   std::unique_ptr<LocalAudioSinkAdapter> sink_adapter_;
   int attachment_id_ = 0;
+  rtc::scoped_refptr<FrameEncryptorInterface> frame_encryptor_;
 };
 
 class VideoRtpSender : public ObserverInterface,
@@ -209,6 +216,12 @@ class VideoRtpSender : public ObserverInterface,
   RTCError SetParameters(const RtpParameters& parameters) override;
 
   rtc::scoped_refptr<DtmfSenderInterface> GetDtmfSender() const override;
+
+  void SetFrameEncryptor(
+      rtc::scoped_refptr<FrameEncryptorInterface> frame_encryptor) override;
+
+  rtc::scoped_refptr<FrameEncryptorInterface> GetFrameEncryptor()
+      const override;
 
   // RtpSenderInternal implementation.
   void SetSsrc(uint32_t ssrc) override;
@@ -248,6 +261,7 @@ class VideoRtpSender : public ObserverInterface,
       VideoTrackInterface::ContentHint::kNone;
   bool stopped_ = false;
   int attachment_id_ = 0;
+  rtc::scoped_refptr<FrameEncryptorInterface> frame_encryptor_;
 };
 
 }  // namespace webrtc

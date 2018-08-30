@@ -27,7 +27,7 @@ namespace webrtc {
 // This interface is not ready for production use.
 class FrameEncryptorInterface : public rtc::RefCountInterface {
  public:
-  virtual ~FrameEncryptorInterface() {}
+  ~FrameEncryptorInterface() override {}
 
   // Attempts to encrypt the provided frame. You may assume the encrypted_frame
   // will match the size returned by GetOutputSize for a give frame. You may

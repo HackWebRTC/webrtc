@@ -138,6 +138,16 @@ bool AudioRtpReceiver::SetParameters(const RtpParameters& parameters) {
   });
 }
 
+void AudioRtpReceiver::SetFrameDecryptor(
+    rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor) {
+  frame_decryptor_ = std::move(frame_decryptor);
+}
+
+rtc::scoped_refptr<FrameDecryptorInterface>
+AudioRtpReceiver::GetFrameDecryptor() const {
+  return frame_decryptor_;
+}
+
 void AudioRtpReceiver::Stop() {
   // TODO(deadbeef): Need to do more here to fully stop receiving packets.
   if (stopped_) {
@@ -306,6 +316,16 @@ bool VideoRtpReceiver::SetParameters(const RtpParameters& parameters) {
   return worker_thread_->Invoke<bool>(RTC_FROM_HERE, [&] {
     return media_channel_->SetRtpReceiveParameters(*ssrc_, parameters);
   });
+}
+
+void VideoRtpReceiver::SetFrameDecryptor(
+    rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor) {
+  frame_decryptor_ = std::move(frame_decryptor);
+}
+
+rtc::scoped_refptr<FrameDecryptorInterface>
+VideoRtpReceiver::GetFrameDecryptor() const {
+  return frame_decryptor_;
 }
 
 void VideoRtpReceiver::Stop() {

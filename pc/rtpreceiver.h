@@ -115,6 +115,12 @@ class AudioRtpReceiver : public ObserverInterface,
   RtpParameters GetParameters() const override;
   bool SetParameters(const RtpParameters& parameters) override;
 
+  void SetFrameDecryptor(
+      rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor) override;
+
+  rtc::scoped_refptr<FrameDecryptorInterface> GetFrameDecryptor()
+      const override;
+
   // RtpReceiverInternal implementation.
   void Stop() override;
   void SetupMediaChannel(uint32_t ssrc) override;
@@ -155,6 +161,7 @@ class AudioRtpReceiver : public ObserverInterface,
   RtpReceiverObserverInterface* observer_ = nullptr;
   bool received_first_packet_ = false;
   int attachment_id_ = 0;
+  rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor_;
 };
 
 class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInternal> {
@@ -195,6 +202,12 @@ class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInternal> {
 
   RtpParameters GetParameters() const override;
   bool SetParameters(const RtpParameters& parameters) override;
+
+  void SetFrameDecryptor(
+      rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor) override;
+
+  rtc::scoped_refptr<FrameDecryptorInterface> GetFrameDecryptor()
+      const override;
 
   // RtpReceiverInternal implementation.
   void Stop() override;
@@ -250,6 +263,7 @@ class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInternal> {
   RtpReceiverObserverInterface* observer_ = nullptr;
   bool received_first_packet_ = false;
   int attachment_id_ = 0;
+  rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor_;
 };
 
 }  // namespace webrtc
