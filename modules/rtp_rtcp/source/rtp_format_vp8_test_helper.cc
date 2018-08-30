@@ -22,7 +22,6 @@ RtpFormatVp8TestHelper::RtpFormatVp8TestHelper(const RTPVideoHeaderVP8* hdr)
     : packet_(kNoExtensions),
       payload_data_(NULL),
       data_ptr_(NULL),
-      fragmentation_(NULL),
       hdr_info_(hdr),
       payload_start_(0),
       payload_size_(0),
@@ -30,7 +29,6 @@ RtpFormatVp8TestHelper::RtpFormatVp8TestHelper(const RTPVideoHeaderVP8* hdr)
       inited_(false) {}
 
 RtpFormatVp8TestHelper::~RtpFormatVp8TestHelper() {
-  delete fragmentation_;
   delete[] payload_data_;
 }
 
@@ -38,8 +36,6 @@ bool RtpFormatVp8TestHelper::Init(const size_t* partition_sizes,
                                   size_t num_partitions) {
   if (inited_)
     return false;
-  fragmentation_ = new RTPFragmentationHeader;
-  fragmentation_->VerifyAndAllocateFragmentationHeader(num_partitions);
   payload_size_ = 0;
   // Calculate sum payload size.
   for (size_t p = 0; p < num_partitions; ++p) {
@@ -49,8 +45,6 @@ bool RtpFormatVp8TestHelper::Init(const size_t* partition_sizes,
   size_t j = 0;
   // Loop through the partitions again.
   for (size_t p = 0; p < num_partitions; ++p) {
-    fragmentation_->fragmentationLength[p] = partition_sizes[p];
-    fragmentation_->fragmentationOffset[p] = j;
     for (size_t i = 0; i < partition_sizes[p]; ++i) {
       assert(j < payload_size_);
       payload_data_[j++] = p;  // Set the payload value to the partition index.
@@ -124,6 +118,7 @@ void RtpFormatVp8TestHelper::CheckHeader(bool frag_start) {
   payload_start_ = 1;
   rtc::ArrayView<const uint8_t> buffer = packet_.payload();
   EXPECT_BIT_EQ(buffer[0], 6, 0);  // Check reserved bit.
+  EXPECT_PART_ID_EQ(buffer[0], 0);  // In equal size mode, PartID is always 0.
 
   if (hdr_info_->pictureId != kNoPictureId ||
       hdr_info_->temporalIdx != kNoTemporalIdx ||

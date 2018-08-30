@@ -106,10 +106,10 @@ TEST_F(RtpPacketizerVp8Test, TestEqualSizeModeFallback) {
   ASSERT_TRUE(Init(kSizeVector, kNumPartitions));
 
   hdr_info_.pictureId = 200;          // > 0x7F should produce 2-byte PictureID
-  const size_t kMaxPayloadSize = 12;  // Small enough to produce 4 packets.
-  RtpPacketizerVp8 packetizer(hdr_info_, kMaxPayloadSize, 0);
-  size_t num_packets = packetizer.SetPayloadData(
-      helper_->payload_data(), helper_->payload_size(), nullptr);
+  RtpPacketizer::PayloadSizeLimits limits;
+  limits.max_payload_len = 12;  // Small enough to produce 4 packets.
+  RtpPacketizerVp8 packetizer(helper_->payload(), limits, hdr_info_);
+  size_t num_packets = packetizer.NumPackets();
 
   // Expecting three full packets, and one with the remainder.
   const size_t kExpectedSizes[] = {11, 11, 12, 12};
@@ -132,11 +132,11 @@ TEST_F(RtpPacketizerVp8Test, TestEqualSizeWithLastPacketReduction) {
   ASSERT_TRUE(Init(kSizeVector, kNumPartitions));
 
   hdr_info_.pictureId = 200;
-  const size_t kMaxPayloadSize = 15;  // Small enough to produce 5 packets.
-  const size_t kLastPacketReduction = 5;
-  RtpPacketizerVp8 packetizer(hdr_info_, kMaxPayloadSize, kLastPacketReduction);
-  size_t num_packets = packetizer.SetPayloadData(
-      helper_->payload_data(), helper_->payload_size(), nullptr);
+  RtpPacketizer::PayloadSizeLimits limits;
+  limits.max_payload_len = 15;  // Small enough to produce 5 packets.
+  limits.last_packet_reduction_len = 5;
+  RtpPacketizerVp8 packetizer(helper_->payload(), limits, hdr_info_);
+  size_t num_packets = packetizer.NumPackets();
 
   // Calculated by hand. VP8 payload descriptors are 4 byte each. 5 packets is
   // minimum possible to fit 43 payload bytes into packets with capacity of
@@ -164,10 +164,10 @@ TEST_F(RtpPacketizerVp8Test, TestNonReferenceBit) {
   ASSERT_TRUE(Init(kSizeVector, kNumPartitions));
 
   hdr_info_.nonReference = true;
-  const size_t kMaxPayloadSize = 25;  // Small enough to produce two packets.
-  RtpPacketizerVp8 packetizer(hdr_info_, kMaxPayloadSize, 0);
-  size_t num_packets = packetizer.SetPayloadData(
-      helper_->payload_data(), helper_->payload_size(), nullptr);
+  RtpPacketizer::PayloadSizeLimits limits;
+  limits.max_payload_len = 25;  // Small enough to produce two packets.
+  RtpPacketizerVp8 packetizer(helper_->payload(), limits, hdr_info_);
+  size_t num_packets = packetizer.NumPackets();
 
   // EqualSize mode => First packet full; other not.
   const size_t kExpectedSizes[] = {16, 16};
@@ -193,12 +193,11 @@ TEST_F(RtpPacketizerVp8Test, TestTl0PicIdxAndTID) {
   hdr_info_.tl0PicIdx = 117;
   hdr_info_.temporalIdx = 2;
   hdr_info_.layerSync = true;
-  // kMaxPayloadSize is only limited by allocated buffer size.
-  const size_t kMaxPayloadSize = helper_->buffer_size();
-  RtpPacketizerVp8 packetizer(hdr_info_, kMaxPayloadSize, 0);
-  size_t num_packets = packetizer.SetPayloadData(helper_->payload_data(),
-                                                 helper_->payload_size(),
-                                                 helper_->fragmentation());
+  RtpPacketizer::PayloadSizeLimits limits;
+  // max_payload_len is only limited by allocated buffer size.
+  limits.max_payload_len = helper_->buffer_size();
+  RtpPacketizerVp8 packetizer(helper_->payload(), limits, hdr_info_);
+  size_t num_packets = packetizer.NumPackets();
 
   // Expect one single packet of payload_size() + 4 bytes header.
   const size_t kExpectedSizes[1] = {helper_->payload_size() + 4};
@@ -220,12 +219,11 @@ TEST_F(RtpPacketizerVp8Test, TestKeyIdx) {
   ASSERT_TRUE(Init(kSizeVector, kNumPartitions));
 
   hdr_info_.keyIdx = 17;
-  // kMaxPayloadSize is only limited by allocated buffer size.
-  const size_t kMaxPayloadSize = helper_->buffer_size();
-  RtpPacketizerVp8 packetizer(hdr_info_, kMaxPayloadSize, 0);
-  size_t num_packets = packetizer.SetPayloadData(helper_->payload_data(),
-                                                 helper_->payload_size(),
-                                                 helper_->fragmentation());
+  RtpPacketizer::PayloadSizeLimits limits;
+  // max payload len is only limited by allocated buffer size.
+  limits.max_payload_len = helper_->buffer_size();
+  RtpPacketizerVp8 packetizer(helper_->payload(), limits, hdr_info_);
+  size_t num_packets = packetizer.NumPackets();
 
   // Expect one single packet of payload_size() + 3 bytes header.
   const size_t kExpectedSizes[1] = {helper_->payload_size() + 3};
@@ -248,12 +246,11 @@ TEST_F(RtpPacketizerVp8Test, TestTIDAndKeyIdx) {
 
   hdr_info_.temporalIdx = 1;
   hdr_info_.keyIdx = 5;
-  // kMaxPayloadSize is only limited by allocated buffer size.
-  const size_t kMaxPayloadSize = helper_->buffer_size();
-  RtpPacketizerVp8 packetizer(hdr_info_, kMaxPayloadSize, 0);
-  size_t num_packets = packetizer.SetPayloadData(helper_->payload_data(),
-                                                 helper_->payload_size(),
-                                                 helper_->fragmentation());
+  RtpPacketizer::PayloadSizeLimits limits;
+  // max_payload_len is only limited by allocated buffer size.
+  limits.max_payload_len = helper_->buffer_size();
+  RtpPacketizerVp8 packetizer(helper_->payload(), limits, hdr_info_);
+  size_t num_packets = packetizer.NumPackets();
 
   // Expect one single packet of payload_size() + 3 bytes header.
   const size_t kExpectedSizes[1] = {helper_->payload_size() + 3};
@@ -435,8 +432,10 @@ TEST_F(RtpDepacketizerVp8Test, TestWithPacketizer) {
   input_header.layerSync = false;
   input_header.tl0PicIdx = kNoTl0PicIdx;  // Disable.
   input_header.keyIdx = 31;
-  RtpPacketizerVp8 packetizer(input_header, 20, 0);
-  EXPECT_EQ(packetizer.SetPayloadData(data, 10, NULL), 1u);
+  RtpPacketizer::PayloadSizeLimits limits;
+  limits.max_payload_len = 20;
+  RtpPacketizerVp8 packetizer(data, limits, input_header);
+  EXPECT_EQ(packetizer.NumPackets(), 1u);
   ASSERT_TRUE(packetizer.NextPacket(&packet));
   EXPECT_TRUE(packet.Marker());
 
