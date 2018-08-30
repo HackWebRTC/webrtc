@@ -366,14 +366,14 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
     expected_packets_since_last_loss_update_ +=
         report.PacketsWithFeedback().size();
     for (const auto& packet_feedback : report.PacketsWithFeedback()) {
-      lost_packets_since_last_loss_update_ +=
-          packet_feedback.receive_time.IsFinite() ? 0 : 1;
+      if (packet_feedback.receive_time.IsInfinite())
+        lost_packets_since_last_loss_update_ += 1;
     }
     if (report.feedback_time > next_loss_update_) {
-      next_loss_update_ += kLossUpdateInterval;
+      next_loss_update_ = report.feedback_time + kLossUpdateInterval;
       bandwidth_estimation_->UpdatePacketsLost(
-          expected_packets_since_last_loss_update_,
-          lost_packets_since_last_loss_update_, report.feedback_time.ms());
+          lost_packets_since_last_loss_update_,
+          expected_packets_since_last_loss_update_, report.feedback_time.ms());
       expected_packets_since_last_loss_update_ = 0;
       lost_packets_since_last_loss_update_ = 0;
     }
