@@ -306,7 +306,6 @@ void RampUpTester::PollStats() {
     if (sender_call_) {
       Call::Stats stats = sender_call_->GetStats();
 
-      EXPECT_GE(stats.send_bandwidth_bps, start_bitrate_bps_);
       EXPECT_GE(expected_bitrate_bps_, 0);
       if (stats.send_bandwidth_bps >= expected_bitrate_bps_ &&
           (min_run_time_ms_ == -1 ||
