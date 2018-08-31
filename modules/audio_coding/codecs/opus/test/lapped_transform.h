@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef COMMON_AUDIO_LAPPED_TRANSFORM_H_
-#define COMMON_AUDIO_LAPPED_TRANSFORM_H_
+#ifndef MODULES_AUDIO_CODING_CODECS_OPUS_TEST_LAPPED_TRANSFORM_H_
+#define MODULES_AUDIO_CODING_CODECS_OPUS_TEST_LAPPED_TRANSFORM_H_
 
 #include <complex>
 #include <memory>
 
-#include "common_audio/blocker.h"
 #include "common_audio/real_fourier.h"
+#include "modules/audio_coding/codecs/opus/test/blocker.h"
 #include "rtc_base/memory/aligned_array.h"
 
 namespace webrtc {
@@ -119,6 +119,7 @@ class LappedTransform {
   Callback* const block_processor_;
   Blocker blocker_;
 
+  // TODO(alessiob): Replace RealFourier with a different FFT library.
   std::unique_ptr<RealFourier> fft_;
   const size_t cplx_length_;
   AlignedArray<float> real_buf_;
@@ -128,4 +129,4 @@ class LappedTransform {
 
 }  // namespace webrtc
 
-#endif  // COMMON_AUDIO_LAPPED_TRANSFORM_H_
+#endif  // MODULES_AUDIO_CODING_CODECS_OPUS_TEST_LAPPED_TRANSFORM_H_

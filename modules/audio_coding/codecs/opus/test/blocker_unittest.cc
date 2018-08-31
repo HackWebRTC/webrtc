@@ -10,7 +10,7 @@
 
 #include <memory>
 
-#include "common_audio/blocker.h"
+#include "modules/audio_coding/codecs/opus/test/blocker.h"
 
 #include "rtc_base/arraysize.h"
 #include "test/gtest.h"

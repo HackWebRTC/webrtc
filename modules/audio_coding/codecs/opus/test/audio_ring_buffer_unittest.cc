@@ -10,7 +10,7 @@
 
 #include <memory>
 
-#include "common_audio/audio_ring_buffer.h"
+#include "modules/audio_coding/codecs/opus/test/audio_ring_buffer.h"
 
 #include "common_audio/channel_buffer.h"
 #include "test/gtest.h"

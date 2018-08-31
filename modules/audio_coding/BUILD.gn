@@ -2093,6 +2093,8 @@ if (rtc_include_tests) {
       "../../test:rtp_test_utils",
       "../../test:test_common",
       "../../test:test_support",
+      "codecs/opus/test",
+      "codecs/opus/test:test_unittest",
       "//testing/gtest",
       "//third_party/abseil-cpp/absl/memory",
     ]

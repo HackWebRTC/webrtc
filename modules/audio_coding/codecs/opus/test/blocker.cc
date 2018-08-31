@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "common_audio/blocker.h"
+#include "modules/audio_coding/codecs/opus/test/blocker.h"
 
 #include <string.h>
 

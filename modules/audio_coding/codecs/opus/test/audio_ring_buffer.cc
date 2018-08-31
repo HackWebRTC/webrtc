@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "common_audio/audio_ring_buffer.h"
+#include "modules/audio_coding/codecs/opus/test/audio_ring_buffer.h"
 
 #include "common_audio/ring_buffer.h"
 #include "rtc_base/checks.h"

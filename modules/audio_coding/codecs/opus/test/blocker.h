@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef COMMON_AUDIO_BLOCKER_H_
-#define COMMON_AUDIO_BLOCKER_H_
+#ifndef MODULES_AUDIO_CODING_CODECS_OPUS_TEST_BLOCKER_H_
+#define MODULES_AUDIO_CODING_CODECS_OPUS_TEST_BLOCKER_H_
 
 #include <memory>
 
-#include "common_audio/audio_ring_buffer.h"
 #include "common_audio/channel_buffer.h"
+#include "modules/audio_coding/codecs/opus/test/audio_ring_buffer.h"
 
 namespace webrtc {
 
@@ -124,4 +124,4 @@ class Blocker {
 
 }  // namespace webrtc
 
-#endif  // COMMON_AUDIO_BLOCKER_H_
+#endif  // MODULES_AUDIO_CODING_CODECS_OPUS_TEST_BLOCKER_H_
