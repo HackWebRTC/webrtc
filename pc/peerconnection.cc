@@ -101,42 +101,7 @@ static const char kDefaultVideoSenderId[] = "defaultv0";
 // The length of RTCP CNAMEs.
 static const int kRtcpCnameLength = 16;
 
-enum {
-  MSG_SET_SESSIONDESCRIPTION_SUCCESS = 0,
-  MSG_SET_SESSIONDESCRIPTION_FAILED,
-  MSG_CREATE_SESSIONDESCRIPTION_FAILED,
-  MSG_GETSTATS,
-  MSG_FREE_DATACHANNELS,
-  MSG_REPORT_USAGE_PATTERN,
-};
-
 static const int REPORT_USAGE_PATTERN_DELAY_MS = 60000;
-
-struct SetSessionDescriptionMsg : public rtc::MessageData {
-  explicit SetSessionDescriptionMsg(
-      webrtc::SetSessionDescriptionObserver* observer)
-      : observer(observer) {}
-
-  rtc::scoped_refptr<webrtc::SetSessionDescriptionObserver> observer;
-  RTCError error;
-};
-
-struct CreateSessionDescriptionMsg : public rtc::MessageData {
-  explicit CreateSessionDescriptionMsg(
-      webrtc::CreateSessionDescriptionObserver* observer)
-      : observer(observer) {}
-
-  rtc::scoped_refptr<webrtc::CreateSessionDescriptionObserver> observer;
-  RTCError error;
-};
-
-struct GetStatsMsg : public rtc::MessageData {
-  GetStatsMsg(webrtc::StatsObserver* observer,
-              webrtc::MediaStreamTrackInterface* track)
-      : observer(observer), track(track) {}
-  rtc::scoped_refptr<webrtc::StatsObserver> observer;
-  rtc::scoped_refptr<webrtc::MediaStreamTrackInterface> track;
-};
 
 // Check if we can send |new_stream| on a PeerConnection.
 bool CanAddLocalMediaStream(webrtc::StreamCollectionInterface* current_streams,
@@ -1028,8 +993,9 @@ bool PeerConnection::Initialize(
   }
   int delay_ms =
       return_histogram_very_quickly_ ? 0 : REPORT_USAGE_PATTERN_DELAY_MS;
-  signaling_thread()->PostDelayed(RTC_FROM_HERE, delay_ms, this,
-                                  MSG_REPORT_USAGE_PATTERN, nullptr);
+  async_invoker_.AsyncInvokeDelayed<void>(RTC_FROM_HERE, signaling_thread(),
+                                          [this] { ReportUsagePattern(); },
+                                          delay_ms);
   return true;
 }
 
@@ -1582,8 +1548,16 @@ bool PeerConnection::GetStats(StatsObserver* observer,
                         << track->id();
     return false;
   }
-  signaling_thread()->Post(RTC_FROM_HERE, this, MSG_GETSTATS,
-                           new GetStatsMsg(observer, track));
+  // Need to capture |observer| and |track| in scoped_refptrs to ensure they
+  // live long enough.
+  rtc::scoped_refptr<StatsObserver> observer_refptr(observer);
+  rtc::scoped_refptr<MediaStreamTrackInterface> track_refptr(track);
+  async_invoker_.AsyncInvoke<void>(RTC_FROM_HERE, signaling_thread(),
+                                   [this, observer_refptr, track_refptr] {
+                                     StatsReports reports;
+                                     stats_->GetStats(track_refptr, &reports);
+                                     observer_refptr->OnComplete(reports);
+                                   });
   return true;
 }
 
@@ -1912,9 +1886,9 @@ void PeerConnection::SetLocalDescription(
 
   PostSetSessionDescriptionSuccess(observer);
 
-  // MaybeStartGathering needs to be called after posting
-  // MSG_SET_SESSIONDESCRIPTION_SUCCESS, so that we don't signal any candidates
-  // before signaling that SetLocalDescription completed.
+  // MaybeStartGathering needs to be called after posting OnSuccess to the
+  // SetSessionDescriptionObserver so that we don't signal any candidates before
+  // signaling that SetLocalDescription completed.
   transport_controller_->MaybeStartGathering();
 
   if (local_description()->GetType() == SdpType::kAnswer) {
@@ -3237,51 +3211,6 @@ void PeerConnection::Close() {
   observer_ = nullptr;
 }
 
-void PeerConnection::OnMessage(rtc::Message* msg) {
-  switch (msg->message_id) {
-    case MSG_SET_SESSIONDESCRIPTION_SUCCESS: {
-      SetSessionDescriptionMsg* param =
-          static_cast<SetSessionDescriptionMsg*>(msg->pdata);
-      param->observer->OnSuccess();
-      delete param;
-      break;
-    }
-    case MSG_SET_SESSIONDESCRIPTION_FAILED: {
-      SetSessionDescriptionMsg* param =
-          static_cast<SetSessionDescriptionMsg*>(msg->pdata);
-      param->observer->OnFailure(std::move(param->error));
-      delete param;
-      break;
-    }
-    case MSG_CREATE_SESSIONDESCRIPTION_FAILED: {
-      CreateSessionDescriptionMsg* param =
-          static_cast<CreateSessionDescriptionMsg*>(msg->pdata);
-      param->observer->OnFailure(std::move(param->error));
-      delete param;
-      break;
-    }
-    case MSG_GETSTATS: {
-      GetStatsMsg* param = static_cast<GetStatsMsg*>(msg->pdata);
-      StatsReports reports;
-      stats_->GetStats(param->track, &reports);
-      param->observer->OnComplete(reports);
-      delete param;
-      break;
-    }
-    case MSG_FREE_DATACHANNELS: {
-      sctp_data_channels_to_free_.clear();
-      break;
-    }
-    case MSG_REPORT_USAGE_PATTERN: {
-      ReportUsagePattern();
-      break;
-    }
-    default:
-      RTC_NOTREACHED() << "Not implemented";
-      break;
-  }
-}
-
 cricket::VoiceMediaChannel* PeerConnection::voice_media_channel() const {
   RTC_DCHECK(!IsUnifiedPlan());
   auto* voice_channel = static_cast<cricket::VoiceChannel*>(
@@ -3554,29 +3483,37 @@ void PeerConnection::OnVideoTrackRemoved(VideoTrackInterface* track,
 
 void PeerConnection::PostSetSessionDescriptionSuccess(
     SetSessionDescriptionObserver* observer) {
-  SetSessionDescriptionMsg* msg = new SetSessionDescriptionMsg(observer);
-  signaling_thread()->Post(RTC_FROM_HERE, this,
-                           MSG_SET_SESSIONDESCRIPTION_SUCCESS, msg);
+  async_invoker_.AsyncInvoke<void>(
+      RTC_FROM_HERE, signaling_thread(),
+      rtc::Bind(&SetSessionDescriptionObserver::OnSuccess, observer));
 }
 
 void PeerConnection::PostSetSessionDescriptionFailure(
     SetSessionDescriptionObserver* observer,
-    RTCError&& error) {
+    RTCError error) {
   RTC_DCHECK(!error.ok());
-  SetSessionDescriptionMsg* msg = new SetSessionDescriptionMsg(observer);
-  msg->error = std::move(error);
-  signaling_thread()->Post(RTC_FROM_HERE, this,
-                           MSG_SET_SESSIONDESCRIPTION_FAILED, msg);
+  // TODO(steveanton): In C++14 this can be done with a lambda.
+  struct Functor {
+    void operator()() { observer->OnFailure(std::move(error)); }
+    rtc::scoped_refptr<SetSessionDescriptionObserver> observer;
+    RTCError error;
+  };
+  async_invoker_.AsyncInvoke<void>(RTC_FROM_HERE, signaling_thread(),
+                                   Functor{observer, std::move(error)});
 }
 
 void PeerConnection::PostCreateSessionDescriptionFailure(
     CreateSessionDescriptionObserver* observer,
     RTCError error) {
   RTC_DCHECK(!error.ok());
-  CreateSessionDescriptionMsg* msg = new CreateSessionDescriptionMsg(observer);
-  msg->error = std::move(error);
-  signaling_thread()->Post(RTC_FROM_HERE, this,
-                           MSG_CREATE_SESSIONDESCRIPTION_FAILED, msg);
+  // TODO(steveanton): In C++14 this can be done with a lambda.
+  struct Functor {
+    void operator()() { observer->OnFailure(std::move(error)); }
+    rtc::scoped_refptr<CreateSessionDescriptionObserver> observer;
+    RTCError error;
+  };
+  async_invoker_.AsyncInvoke<void>(RTC_FROM_HERE, signaling_thread(),
+                                   Functor{observer, std::move(error)});
 }
 
 void PeerConnection::GetOptionsForOffer(
@@ -4468,8 +4405,9 @@ void PeerConnection::OnSctpDataChannelClosed(DataChannel* channel) {
       // we can't free it directly here; we need to free it asynchronously.
       sctp_data_channels_to_free_.push_back(*it);
       sctp_data_channels_.erase(it);
-      signaling_thread()->Post(RTC_FROM_HERE, this, MSG_FREE_DATACHANNELS,
-                               nullptr);
+      async_invoker_.AsyncInvoke<void>(
+          RTC_FROM_HERE, signaling_thread(),
+          [this] { sctp_data_channels_to_free_.clear(); });
       return;
     }
   }
@@ -6233,8 +6171,8 @@ void PeerConnection::ClearStatsCache() {
 }
 
 void PeerConnection::RequestUsagePatternReportForTesting() {
-  signaling_thread()->Post(RTC_FROM_HERE, this, MSG_REPORT_USAGE_PATTERN,
-                           nullptr);
+  async_invoker_.AsyncInvoke<void>(RTC_FROM_HERE, signaling_thread(),
+                                   [this] { ReportUsagePattern(); });
 }
 
 }  // namespace webrtc
