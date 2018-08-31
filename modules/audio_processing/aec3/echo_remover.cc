@@ -162,7 +162,9 @@ EchoRemoverImpl::EchoRemoverImpl(const EchoCanceller3Config& config,
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
       optimization_(DetectOptimization()),
       sample_rate_hz_(sample_rate_hz),
-      use_shadow_filter_output_(UseShadowFilterOutput()),
+      use_shadow_filter_output_(
+          UseShadowFilterOutput() &&
+          config_.filter.enable_shadow_filter_output_usage),
       use_smooth_signal_transitions_(UseSmoothSignalTransitions()),
       subtractor_(config, data_dumper_.get(), optimization_),
       suppression_gain_(config_, optimization_, sample_rate_hz),

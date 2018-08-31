@@ -235,6 +235,8 @@ class Aec3ParametersParser {
                 &cfg.filter.initial_state_seconds);
       ReadParam(section, "conservative_initial_phase",
                 &cfg.filter.conservative_initial_phase);
+      ReadParam(section, "enable_shadow_filter_output_usage",
+                &cfg.filter.enable_shadow_filter_output_usage);
     }
 
     if (rtc::GetValueFromJsonObject(root, "erle", &section)) {

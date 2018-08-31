@@ -58,6 +58,7 @@ struct EchoCanceller3Config {
     size_t config_change_duration_blocks = 250;
     float initial_state_seconds = 2.5f;
     bool conservative_initial_phase = false;
+    bool enable_shadow_filter_output_usage = true;
   } filter;
 
   struct Erle {
