@@ -293,6 +293,8 @@ class Aec3ParametersParser {
                 &cfg.echo_audibility.audibility_threshold_hf);
       ReadParam(section, "use_stationary_properties",
                 &cfg.echo_audibility.use_stationary_properties);
+      ReadParam(section, "use_stationary_properties_at_init",
+                &cfg.echo_audibility.use_stationarity_properties_at_init);
     }
 
     if (rtc::GetValueFromJsonObject(root, "echo_removal_control", &section)) {

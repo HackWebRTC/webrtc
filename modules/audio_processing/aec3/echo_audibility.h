@@ -31,7 +31,7 @@ class ApmDataDumper;
 
 class EchoAudibility {
  public:
-  EchoAudibility();
+  explicit EchoAudibility(bool use_render_stationarity_at_init);
   ~EchoAudibility();
 
   // Feed new render data to the echo audibility estimator.
@@ -78,6 +78,7 @@ class EchoAudibility {
   absl::optional<int> render_spectrum_write_prev_;
   int render_block_write_prev_;
   bool non_zero_render_seen_;
+  const bool use_render_stationarity_at_init_;
   StationarityEstimator render_stationarity_;
   RTC_DISALLOW_COPY_AND_ASSIGN(EchoAudibility);
 };

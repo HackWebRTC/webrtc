@@ -131,6 +131,8 @@ AecState::AecState(const EchoCanceller3Config& config)
       blocks_since_converged_filter_(kBlocksSinceConvergencedFilterInit),
       active_blocks_since_consistent_filter_estimate_(
           kBlocksSinceConsistentEstimateInit),
+      echo_audibility_(
+          config.echo_audibility.use_stationarity_properties_at_init),
       reverb_model_estimator_(config) {}
 
 AecState::~AecState() = default;
