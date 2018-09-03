@@ -89,7 +89,6 @@ class VideoQualityTest :
                              bool use_real_adm);
   void SetupAudio(Transport* transport);
 
-  void StartEncodedFrameLogs(VideoSendStream* stream);
   void StartEncodedFrameLogs(VideoReceiveStream* stream);
 
   virtual std::unique_ptr<test::LayerFilteringTransport> CreateSendTransport();

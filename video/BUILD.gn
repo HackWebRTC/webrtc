@@ -95,6 +95,9 @@ rtc_static_library("video") {
     "../modules/rtp_rtcp",
     "../modules/utility",
     "../modules/video_coding",
+
+    # TODO(nisse): Drop this dep, when EnableEncodedFrameRecording is
+    # deleted also from VideoReceiveStream.
     "../modules/video_coding:video_coding_utility",
     "../modules/video_processing",
     "../rtc_base:rtc_base_approved",
@@ -217,6 +220,7 @@ if (rtc_include_tests) {
       "../modules/audio_mixer:audio_mixer_impl",
       "../modules/rtp_rtcp",
       "../modules/video_coding:video_coding",
+      "../modules/video_coding:video_coding_utility",
       "../modules/video_coding:webrtc_h264",
       "../modules/video_coding:webrtc_multiplex",
       "../modules/video_coding:webrtc_vp8",

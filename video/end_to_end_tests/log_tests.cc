@@ -34,14 +34,6 @@ class LogEndToEndTest : public test::CallTest {
     return rtc::OpenPlatformFile(paths_[idx]);
   }
 
-  void LogSend(bool open) {
-    if (open) {
-      GetVideoSendStream()->EnableEncodedFrameRecording(
-          std::vector<rtc::PlatformFile>(1, OpenFile(AddFile())), 0);
-    } else {
-      GetVideoSendStream()->DisableEncodedFrameRecording();
-    }
-  }
   void LogReceive(bool open) {
     if (open) {
       video_receive_streams_[0]->EnableEncodedFrameRecording(
@@ -66,7 +58,6 @@ TEST_F(LogEndToEndTest, LogsEncodedFramesWhenRequested) {
           recorded_frames_(0) {}
 
     void PerformTest() override {
-      fixture_->LogSend(true);
       fixture_->LogReceive(true);
       ASSERT_TRUE(Wait()) << "Timed out while waiting for frame logging.";
     }
@@ -93,14 +84,11 @@ TEST_F(LogEndToEndTest, LogsEncodedFramesWhenRequested) {
     void EncodedFrameCallback(const EncodedFrame& encoded_frame) override {
       rtc::CritScope lock(&crit_);
       if (recorded_frames_++ > kNumFramesToRecord) {
-        fixture_->LogSend(false);
         fixture_->LogReceive(false);
-        rtc::File send_file(fixture_->OpenFile(0));
-        rtc::File receive_file(fixture_->OpenFile(1));
+        rtc::File receive_file(fixture_->OpenFile(0));
         uint8_t out[100];
-        // If logging has worked correctly neither file should be empty, i.e.
+        // If logging has worked correctly file shouldn't be empty, i.e.
         // we should be able to read something from them.
-        EXPECT_LT(0u, send_file.Read(out, 100));
         EXPECT_LT(0u, receive_file.Read(out, 100));
         observation_complete_.Set();
       }

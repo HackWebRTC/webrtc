@@ -30,6 +30,8 @@
 #include "modules/video_coding/codecs/multiplex/include/multiplex_encoder_adapter.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
+#include "modules/video_coding/utility/ivf_file_writer.h"
+#include "rtc_base/strings/string_builder.h"
 #include "test/run_loop.h"
 #include "test/testsupport/fileutils.h"
 #include "test/video_renderer.h"
@@ -37,6 +39,8 @@
 #ifdef WEBRTC_WIN
 #include "modules/audio_device/include/audio_device_factory.h"
 #endif
+
+namespace webrtc {
 
 namespace {
 constexpr char kSyncGroup[] = "av_sync";
@@ -49,18 +53,18 @@ constexpr uint32_t kThumbnailRtxSsrcStart = 0xF0000;
 constexpr int kDefaultMaxQp = cricket::WebRtcVideoChannel::kDefaultQpMax;
 
 class VideoStreamFactory
-    : public webrtc::VideoEncoderConfig::VideoStreamFactoryInterface {
+    : public VideoEncoderConfig::VideoStreamFactoryInterface {
  public:
-  explicit VideoStreamFactory(const std::vector<webrtc::VideoStream>& streams)
+  explicit VideoStreamFactory(const std::vector<VideoStream>& streams)
       : streams_(streams) {}
 
  private:
-  std::vector<webrtc::VideoStream> CreateEncoderStreams(
+  std::vector<VideoStream> CreateEncoderStreams(
       int width,
       int height,
-      const webrtc::VideoEncoderConfig& encoder_config) override {
+      const VideoEncoderConfig& encoder_config) override {
     // The highest layer must match the incoming resolution.
-    std::vector<webrtc::VideoStream> streams = streams_;
+    std::vector<VideoStream> streams = streams_;
     streams[streams_.size() - 1].height = height;
     streams[streams_.size() - 1].width = width;
 
@@ -68,22 +72,118 @@ class VideoStreamFactory
     return streams;
   }
 
-  std::vector<webrtc::VideoStream> streams_;
+  std::vector<VideoStream> streams_;
 };
-}  // namespace
 
-namespace webrtc {
+// An encoder wrapper that writes the encoded frames to file, one per simulcast
+// layer.
+class FrameDumpingEncoder : public VideoEncoder, private EncodedImageCallback {
+ public:
+  FrameDumpingEncoder(std::unique_ptr<VideoEncoder> encoder,
+                      std::vector<rtc::PlatformFile> files)
+      : encoder_(std::move(encoder)) {
+    for (rtc::PlatformFile file : files) {
+      writers_.push_back(
+          IvfFileWriter::Wrap(rtc::File(file), 100000000 /* byte_limit */));
+    }
+  }
+  // Implement VideoEncoder
+  int32_t InitEncode(const VideoCodec* codec_settings,
+                     int32_t number_of_cores,
+                     size_t max_payload_size) override {
+    return encoder_->InitEncode(codec_settings, number_of_cores,
+                                max_payload_size);
+  }
+  int32_t RegisterEncodeCompleteCallback(
+      EncodedImageCallback* callback) override {
+    callback_ = callback;
+    return encoder_->RegisterEncodeCompleteCallback(this);
+  }
+  int32_t Release() override { return encoder_->Release(); }
+  int32_t Encode(const VideoFrame& frame,
+                 const CodecSpecificInfo* codec_specific_info,
+                 const std::vector<FrameType>* frame_types) {
+    return encoder_->Encode(frame, codec_specific_info, frame_types);
+  }
+  int32_t SetChannelParameters(uint32_t packet_loss, int64_t rtt) override {
+    return encoder_->SetChannelParameters(packet_loss, rtt);
+  }
+  int32_t SetRates(uint32_t bitrate, uint32_t framerate) override {
+    return encoder_->SetRates(bitrate, framerate);
+  }
+  int32_t SetRateAllocation(const VideoBitrateAllocation& allocation,
+                            uint32_t framerate) override {
+    return encoder_->SetRateAllocation(allocation, framerate);
+  }
+  ScalingSettings GetScalingSettings() const override {
+    return encoder_->GetScalingSettings();
+  }
+  bool SupportsNativeHandle() const override {
+    return encoder_->SupportsNativeHandle();
+  }
+  const char* ImplementationName() const override {
+    return encoder_->ImplementationName();
+  }
+
+ private:
+  // Implement EncodedImageCallback
+  Result OnEncodedImage(const EncodedImage& encoded_image,
+                        const CodecSpecificInfo* codec_specific_info,
+                        const RTPFragmentationHeader* fragmentation) override {
+    if (codec_specific_info) {
+      int simulcast_index;
+      if (codec_specific_info->codecType == kVideoCodecVP9) {
+        simulcast_index = 0;
+      } else {
+        simulcast_index = encoded_image.SpatialIndex().value_or(0);
+      }
+      RTC_DCHECK_GE(simulcast_index, 0);
+      if (static_cast<size_t>(simulcast_index) < writers_.size()) {
+        writers_[simulcast_index]->WriteFrame(encoded_image,
+                                              codec_specific_info->codecType);
+      }
+    }
+
+    return callback_->OnEncodedImage(encoded_image, codec_specific_info,
+                                     fragmentation);
+  }
+
+  void OnDroppedFrame(DropReason reason) override {
+    callback_->OnDroppedFrame(reason);
+  }
+
+  std::unique_ptr<VideoEncoder> encoder_;
+  EncodedImageCallback* callback_ = nullptr;
+  std::vector<std::unique_ptr<IvfFileWriter>> writers_;
+};
+
+}  // namespace
 
 std::unique_ptr<VideoEncoder> VideoQualityTest::CreateVideoEncoder(
     const SdpVideoFormat& format) {
+  std::unique_ptr<VideoEncoder> encoder;
   if (format.name == "VP8") {
-    return absl::make_unique<VP8EncoderSimulcastProxy>(
+    encoder = absl::make_unique<VP8EncoderSimulcastProxy>(
         &internal_encoder_factory_, format);
   } else if (format.name == "multiplex") {
-    return absl::make_unique<MultiplexEncoderAdapter>(
+    encoder = absl::make_unique<MultiplexEncoderAdapter>(
         &internal_encoder_factory_, SdpVideoFormat(cricket::kVp9CodecName));
+  } else {
+    encoder = internal_encoder_factory_.CreateVideoEncoder(format);
   }
-  return internal_encoder_factory_.CreateVideoEncoder(format);
+  if (!params_.logging.encoded_frame_base_path.empty()) {
+    char ss_buf[100];
+    rtc::SimpleStringBuilder sb(ss_buf);
+    sb << send_logs_++;
+    std::string prefix =
+        params_.logging.encoded_frame_base_path + "." + sb.str() + ".send.";
+    encoder = absl::make_unique<FrameDumpingEncoder>(
+        std::move(encoder), std::vector<rtc::PlatformFile>(
+                                {rtc::CreatePlatformFile(prefix + "1.ivf"),
+                                 rtc::CreatePlatformFile(prefix + "2.ivf"),
+                                 rtc::CreatePlatformFile(prefix + "3.ivf")}));
+  }
+  return encoder;
 }
 
 VideoQualityTest::VideoQualityTest(
@@ -969,7 +1069,6 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
           video_capturers_[video_idx].get(), degradation_preference_);
     }
 
-    StartEncodedFrameLogs(GetVideoSendStream());
     StartEncodedFrameLogs(
         video_receive_streams_[params_.ss[0].selected_stream]);
 
@@ -1186,7 +1285,6 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
 
     for (VideoReceiveStream* receive_stream : video_receive_streams_)
       StartEncodedFrameLogs(receive_stream);
-    StartEncodedFrameLogs(GetVideoSendStream());
     Start();
   });
 
@@ -1205,21 +1303,6 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
 
     DestroyCalls();
   });
-}
-
-void VideoQualityTest::StartEncodedFrameLogs(VideoSendStream* stream) {
-  if (!params_.logging.encoded_frame_base_path.empty()) {
-    std::ostringstream str;
-    str << send_logs_++;
-    std::string prefix =
-        params_.logging.encoded_frame_base_path + "." + str.str() + ".send.";
-    stream->EnableEncodedFrameRecording(
-        std::vector<rtc::PlatformFile>(
-            {rtc::CreatePlatformFile(prefix + "1.ivf"),
-             rtc::CreatePlatformFile(prefix + "2.ivf"),
-             rtc::CreatePlatformFile(prefix + "3.ivf")}),
-        100000000);
-  }
 }
 
 void VideoQualityTest::StartEncodedFrameLogs(VideoReceiveStream* stream) {

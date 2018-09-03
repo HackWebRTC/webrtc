@@ -143,9 +143,6 @@ class FakeVideoSendStream final
     return num_encoder_reconfigurations_;
   }
 
-  void EnableEncodedFrameRecording(const std::vector<rtc::PlatformFile>& files,
-                                   size_t byte_limit) override;
-
   bool resolution_scaling_enabled() const {
     return resolution_scaling_enabled_;
   }

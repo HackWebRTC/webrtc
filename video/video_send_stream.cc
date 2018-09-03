@@ -210,11 +210,5 @@ bool VideoSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
   return send_stream_->DeliverRtcp(packet, length);
 }
 
-void VideoSendStream::EnableEncodedFrameRecording(
-    const std::vector<rtc::PlatformFile>& files,
-    size_t byte_limit) {
-  send_stream_->EnableEncodedFrameRecording(files, byte_limit);
-}
-
 }  // namespace internal
 }  // namespace webrtc
