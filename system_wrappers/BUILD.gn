@@ -25,8 +25,6 @@ rtc_static_library("system_wrappers") {
     "source/cpu_features.cc",
     "source/cpu_info.cc",
     "source/event.cc",
-    "source/event_timer_win.cc",
-    "source/event_timer_win.h",
     "source/rtp_to_ntp_estimator.cc",
     "source/sleep.cc",
   ]
@@ -45,13 +43,6 @@ rtc_static_library("system_wrappers") {
     "../rtc_base/system:arch",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
-
-  if (is_posix || is_fuchsia) {
-    sources += [
-      "source/event_timer_posix.cc",
-      "source/event_timer_posix.h",
-    ]
-  }
 
   if (is_android) {
     defines += [ "WEBRTC_THREAD_RR" ]
@@ -208,10 +199,6 @@ if (rtc_include_tests) {
       "source/ntp_time_unittest.cc",
       "source/rtp_to_ntp_estimator_unittest.cc",
     ]
-
-    if (is_posix || is_fuchsia) {
-      sources += [ "source/event_timer_posix_unittest.cc" ]
-    }
 
     deps = [
       ":metrics_api",
