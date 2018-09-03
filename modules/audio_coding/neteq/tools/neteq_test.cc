@@ -16,6 +16,26 @@
 
 namespace webrtc {
 namespace test {
+namespace {
+
+absl::optional<Operations> ActionToOperations(
+    absl::optional<NetEqSimulator::Action> a) {
+  if (!a) {
+    return absl::nullopt;
+  }
+  switch (*a) {
+    case NetEqSimulator::Action::kAccelerate:
+      return absl::make_optional(kAccelerate);
+    case NetEqSimulator::Action::kExpand:
+      return absl::make_optional(kExpand);
+    case NetEqSimulator::Action::kNormal:
+      return absl::make_optional(kNormal);
+    case NetEqSimulator::Action::kPreemptiveExpand:
+      return absl::make_optional(kPreemptiveExpand);
+  }
+}
+
+}  // namespace
 
 void DefaultNetEqTestErrorCallback::OnInsertPacketError(
     const NetEqInput::PacketData& packet) {
@@ -49,6 +69,20 @@ NetEqTest::NetEqTest(const NetEq::Config& config,
 NetEqTest::~NetEqTest() = default;
 
 int64_t NetEqTest::Run() {
+  int64_t simulation_time = 0;
+  SimulationStepResult step_result;
+  do {
+    step_result = RunToNextGetAudio();
+    simulation_time += step_result.simulation_step_ms;
+  } while (!step_result.is_simulation_finished);
+  if (callbacks_.simulation_ended_callback) {
+    callbacks_.simulation_ended_callback->SimulationEnded(simulation_time);
+  }
+  return simulation_time;
+}
+
+NetEqTest::SimulationStepResult NetEqTest::RunToNextGetAudio() {
+  SimulationStepResult result;
   const int64_t start_time_ms = *input_->NextEventTime();
   int64_t time_now_ms = start_time_ms;
 
@@ -81,7 +115,9 @@ int64_t NetEqTest::Run() {
       }
       AudioFrame out_frame;
       bool muted;
-      int error = neteq_->GetAudio(&out_frame, &muted);
+      int error = neteq_->GetAudio(&out_frame, &muted,
+                                   ActionToOperations(next_action_));
+      next_action_ = absl::nullopt;
       RTC_CHECK(!muted) << "The code does not handle enable_muted_state";
       if (error != NetEq::kOK) {
         if (callbacks_.error_callback) {
@@ -102,9 +138,26 @@ int64_t NetEqTest::Run() {
       }
 
       input_->AdvanceOutputEvent();
+      result.simulation_step_ms = time_now_ms - start_time_ms;
+      // TODO(ivoc): Set the result.<action>_ms values correctly.
+      result.is_simulation_finished = input_->ended();
+      return result;
     }
   }
-  return time_now_ms - start_time_ms;
+  result.simulation_step_ms = time_now_ms - start_time_ms;
+  result.is_simulation_finished = true;
+  return result;
+}
+
+void NetEqTest::SetNextAction(NetEqTest::Action next_operation) {
+  next_action_ = absl::optional<Action>(next_operation);
+}
+
+NetEqTest::NetEqState NetEqTest::GetNetEqState() {
+  NetEqState state;
+  const auto network_stats = SimulationStats();
+  state.current_delay_ms = network_stats.current_buffer_size_ms;
+  return state;
 }
 
 NetEqNetworkStatistics NetEqTest::SimulationStats() {

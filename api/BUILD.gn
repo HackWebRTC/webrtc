@@ -309,6 +309,14 @@ rtc_source_set("libjingle_peerconnection_test_api") {
   ]
 }
 
+rtc_source_set("neteq_simulator_api") {
+  visibility = [ "*" ]
+  sources = [
+    "test/neteq_simulator.cc",
+    "test/neteq_simulator.h",
+  ]
+}
+
 if (rtc_include_tests) {
   if (rtc_enable_protobuf) {
     rtc_source_set("audioproc_f_api") {
@@ -322,6 +330,20 @@ if (rtc_include_tests) {
       deps = [
         "../modules/audio_processing:audio_processing",
         "../modules/audio_processing:audioproc_f_impl",
+      ]
+    }
+
+    rtc_source_set("neteq_simulator_factory") {
+      visibility = [ "*" ]
+      testonly = true
+      sources = [
+        "test/neteq_simulator_factory.cc",
+        "test/neteq_simulator_factory.h",
+      ]
+      deps = [
+        ":neteq_simulator_api",
+        "../modules/audio_coding:neteq_test_factory",
+        "//third_party/abseil-cpp/absl/memory",
       ]
     }
   }

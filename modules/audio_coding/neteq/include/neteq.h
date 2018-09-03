@@ -21,6 +21,7 @@
 #include "api/audio_codecs/audio_decoder.h"
 #include "api/rtp_headers.h"
 #include "common_types.h"  // NOLINT(build/include)
+#include "modules/audio_coding/neteq/defines.h"
 #include "modules/audio_coding/neteq/neteq_decoder_enum.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/scoped_ref_ptr.h"
@@ -129,9 +130,14 @@ class NetEq {
   // If muted state is enabled (through Config::enable_muted_state), |muted|
   // may be set to true after a prolonged expand period. When this happens, the
   // |data_| in |audio_frame| is not written, but should be interpreted as being
-  // all zeros.
+  // all zeros. For testing purposes, an override can be supplied in the
+  // |action_override| argument, which will cause NetEq to take this action
+  // next, instead of the action it would normally choose.
   // Returns kOK on success, or kFail in case of an error.
-  virtual int GetAudio(AudioFrame* audio_frame, bool* muted) = 0;
+  virtual int GetAudio(
+      AudioFrame* audio_frame,
+      bool* muted,
+      absl::optional<Operations> action_override = absl::nullopt) = 0;
 
   // Replaces the current set of decoders with the given one.
   virtual void SetCodecs(const std::map<int, SdpAudioFormat>& codecs) = 0;

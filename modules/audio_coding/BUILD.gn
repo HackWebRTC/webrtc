@@ -1089,6 +1089,7 @@ rtc_source_set("neteq_tools_minimal") {
     ":neteq",
     "../..:webrtc_common",
     "../../api:libjingle_peerconnection_api",
+    "../../api:neteq_simulator_api",
     "../../api/audio:audio_frame_api",
     "../../api/audio_codecs:audio_codecs_api",
     "../../api/audio_codecs:builtin_audio_decoder_factory",
@@ -1164,6 +1165,8 @@ rtc_source_set("neteq_tools") {
     "neteq/tools/neteq_replacement_input.h",
     "neteq/tools/neteq_stats_getter.cc",
     "neteq/tools/neteq_stats_getter.h",
+    "neteq/tools/neteq_stats_plotter.cc",
+    "neteq/tools/neteq_stats_plotter.h",
   ]
 
   if (!build_with_chromium && is_clang) {
@@ -1505,8 +1508,9 @@ if (rtc_include_tests) {
       proto_out_dir = "modules/audio_coding/neteq"
     }
 
-    rtc_test("neteq_rtpplay") {
+    rtc_source_set("neteq_test_factory") {
       testonly = true
+      visibility += webrtc_default_visibility
       defines = []
       deps = [
         "../../rtc_base:checks",
@@ -1514,7 +1518,8 @@ if (rtc_include_tests) {
         "../../test:fileutils",
       ]
       sources = [
-        "neteq/tools/neteq_rtpplay.cc",
+        "neteq/tools/neteq_test_factory.cc",
+        "neteq/tools/neteq_test_factory.h",
       ]
 
       if (!build_with_chromium && is_clang) {
@@ -1529,6 +1534,19 @@ if (rtc_include_tests) {
         "../../rtc_base:rtc_base_approved",
         "../../system_wrappers:system_wrappers_default",
         "../../test:test_support",
+        "//third_party/abseil-cpp/absl/memory",
+      ]
+    }
+
+    rtc_test("neteq_rtpplay") {
+      testonly = true
+      defines = []
+      deps = [
+        ":neteq_test_factory",
+        ":neteq_test_tools",
+      ]
+      sources = [
+        "neteq/tools/neteq_rtpplay.cc",
       ]
     }
   }

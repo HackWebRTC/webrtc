@@ -199,10 +199,12 @@ void SetAudioFrameActivityAndType(bool vad_enabled,
 }
 }  // namespace
 
-int NetEqImpl::GetAudio(AudioFrame* audio_frame, bool* muted) {
+int NetEqImpl::GetAudio(AudioFrame* audio_frame,
+                        bool* muted,
+                        absl::optional<Operations> action_override) {
   TRACE_EVENT0("webrtc", "NetEqImpl::GetAudio");
   rtc::CritScope lock(&crit_sect_);
-  if (GetAudioInternal(audio_frame, muted) != 0) {
+  if (GetAudioInternal(audio_frame, muted, action_override) != 0) {
     return kFail;
   }
   RTC_DCHECK_EQ(
@@ -798,7 +800,9 @@ int NetEqImpl::InsertPacketInternal(const RTPHeader& rtp_header,
   return 0;
 }
 
-int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame, bool* muted) {
+int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame,
+                                bool* muted,
+                                absl::optional<Operations> action_override) {
   PacketList packet_list;
   DtmfEvent dtmf_event;
   Operations operation;
@@ -831,9 +835,8 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame, bool* muted) {
     *muted = true;
     return 0;
   }
-
-  int return_value =
-      GetDecision(&operation, &packet_list, &dtmf_event, &play_dtmf);
+  int return_value = GetDecision(&operation, &packet_list, &dtmf_event,
+                                 &play_dtmf, action_override);
   if (return_value != 0) {
     last_mode_ = kModeError;
     return return_value;
@@ -1021,7 +1024,8 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame, bool* muted) {
 int NetEqImpl::GetDecision(Operations* operation,
                            PacketList* packet_list,
                            DtmfEvent* dtmf_event,
-                           bool* play_dtmf) {
+                           bool* play_dtmf,
+                           absl::optional<Operations> action_override) {
   // Initialize output variables.
   *play_dtmf = false;
   *operation = kUndefined;
@@ -1093,6 +1097,10 @@ int NetEqImpl::GetDecision(Operations* operation,
       *sync_buffer_, *expand_, decoder_frame_length_, packet, last_mode_,
       *play_dtmf, generated_noise_samples, &reset_decoder_);
 
+  if (action_override) {
+    // Use the provided action instead of the decision NetEq decided on.
+    *operation = *action_override;
+  }
   // Check if we already have enough samples in the |sync_buffer_|. If so,
   // change decision to normal, unless the decision was merge, accelerate, or
   // preemptive expand.
