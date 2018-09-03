@@ -22,9 +22,16 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/clock.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 namespace vcm {
+
+namespace {
+
+constexpr char kFrameDropperFieldTrial[] = "WebRTC-FrameDropper";
+
+}  // namespace
 
 VideoSender::VideoSender(Clock* clock,
                          EncodedImageCallback* post_encode_callback)
@@ -91,8 +98,9 @@ int32_t VideoSender::RegisterSendCodec(const VideoCodec* sendCodec,
   }
 
   // If we have screensharing and we have layers, we disable frame dropper.
-  bool disable_frame_dropper =
-      numLayers > 1 && sendCodec->mode == VideoCodecMode::kScreensharing;
+  const bool disable_frame_dropper =
+      field_trial::IsDisabled(kFrameDropperFieldTrial) ||
+      (numLayers > 1 && sendCodec->mode == VideoCodecMode::kScreensharing);
   if (disable_frame_dropper) {
     _mediaOpt.EnableFrameDropper(false);
   } else if (frame_dropper_enabled_) {
