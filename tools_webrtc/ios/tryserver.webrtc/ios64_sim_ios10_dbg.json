@@ -2,7 +2,7 @@
   "comments": [
     "Tests for 64-bit iOS simulators."
   ],
-  "xcode build version": "9C40b",
+  "xcode build version": "10l232m",
   "gn_args": [
     "goma_dir=\"$(goma_dir)\"",
     "is_component_build=false",
@@ -20,16 +20,10 @@
       "include": "common_tests.json",
       "device type": "iPhone 6s",
       "os": "10.3",
-      "xcode build version": "8E3004b",
       "dimensions": [
-        {
-          "os": "Mac-10.12",
-          "pool": "Chrome"
-        },
-        {
-          "os": "Mac-10.13.3",
-          "pool": "Chrome"
-        }
+        { "os": "Mac-10.13.4", "pool": "Chrome" },
+        { "os": "Mac-10.13.5", "pool": "Chrome" },
+        { "os": "Mac-10.13.6", "pool": "Chrome" }
       ]
     }
   ]
