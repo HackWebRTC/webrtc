@@ -45,7 +45,6 @@ VideoSender::VideoSender(Clock* clock,
       encoder_params_({VideoBitrateAllocation(), 0, 0, 0}),
       encoder_has_internal_source_(false),
       next_frame_types_(1, kVideoFrameDelta) {
-  _mediaOpt.Reset();
   // Allow VideoSender to be created on one thread but used on another, post
   // construction. This is currently how this class is being used by at least
   // one external project (diffractor).
