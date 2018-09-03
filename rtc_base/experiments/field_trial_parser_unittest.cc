@@ -76,6 +76,15 @@ TEST(FieldTrialParserTest, CanHandleMixedInput) {
   EXPECT_EQ(exp.ping.Get(), true);
   EXPECT_EQ(exp.hash.Get(), "");
 }
+TEST(FieldTrialParserTest, ParsesDoubleParameter) {
+  FieldTrialParameter<double> double_param("f", 0.0);
+  ParseFieldTrial({&double_param}, "f:45%");
+  EXPECT_EQ(double_param.Get(), 0.45);
+  ParseFieldTrial({&double_param}, "f:34 %");
+  EXPECT_EQ(double_param.Get(), 0.34);
+  ParseFieldTrial({&double_param}, "f:0.67");
+  EXPECT_EQ(double_param.Get(), 0.67);
+}
 TEST(FieldTrialParserTest, IgnoresNewKey) {
   DummyExperiment exp("Disabled,r:-11,foo");
   EXPECT_FALSE(exp.enabled.Get());

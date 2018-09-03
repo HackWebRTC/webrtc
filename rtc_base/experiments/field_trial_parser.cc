@@ -82,7 +82,10 @@ absl::optional<bool> ParseTypedParameter<bool>(std::string str) {
 template <>
 absl::optional<double> ParseTypedParameter<double>(std::string str) {
   double value;
-  if (sscanf(str.c_str(), "%lf", &value) == 1) {
+  char unit[2]{0, 0};
+  if (sscanf(str.c_str(), "%lf%1s", &value, unit) >= 1) {
+    if (unit[0] == '%')
+      return value / 100;
     return value;
   } else {
     return absl::nullopt;
