@@ -100,6 +100,10 @@ bool PayloadTypeSupportsSkippingFecPackets(const std::string& payload_name) {
   if (codecType == kVideoCodecVP8 || codecType == kVideoCodecVP9) {
     return true;
   }
+  if (codecType == kVideoCodecGeneric &&
+      field_trial::IsEnabled("WebRTC-GenericPictureId")) {
+    return true;
+  }
   return false;
 }
 
