@@ -178,8 +178,9 @@ struct LoggedRtpPacketOutgoing {
 struct LoggedRtcpPacket {
   LoggedRtcpPacket(uint64_t timestamp_us,
                    const uint8_t* packet,
-                   size_t total_length)
-      : timestamp_us(timestamp_us), raw_data(packet, packet + total_length) {}
+                   size_t total_length);
+  LoggedRtcpPacket(const LoggedRtcpPacket&);
+  ~LoggedRtcpPacket();
   int64_t timestamp_us;
   std::vector<uint8_t> raw_data;
   int64_t log_time_us() const { return timestamp_us; }
@@ -286,8 +287,9 @@ struct LoggedVideoRecvConfig {
 
 struct LoggedVideoSendConfig {
   LoggedVideoSendConfig(int64_t timestamp_us,
-                        const std::vector<rtclog::StreamConfig> configs)
-      : timestamp_us(timestamp_us), configs(configs) {}
+                        const std::vector<rtclog::StreamConfig>& configs);
+  LoggedVideoSendConfig(const LoggedVideoSendConfig&);
+  ~LoggedVideoSendConfig();
   int64_t timestamp_us;
   std::vector<rtclog::StreamConfig> configs;
   int64_t log_time_us() const { return timestamp_us; }
@@ -470,6 +472,8 @@ class ParsedRtcEventLogNew {
   friend class RtcEventLogTestHelper;
 
  public:
+  ~ParsedRtcEventLogNew();
+
   enum class EventType {
     UNKNOWN_EVENT = 0,
     LOG_START = 1,
@@ -499,11 +503,17 @@ class ParsedRtcEventLogNew {
   };
 
   struct LoggedRtpStreamIncoming {
+    LoggedRtpStreamIncoming();
+    LoggedRtpStreamIncoming(const LoggedRtpStreamIncoming&);
+    ~LoggedRtpStreamIncoming();
     uint32_t ssrc;
     std::vector<LoggedRtpPacketIncoming> incoming_packets;
   };
 
   struct LoggedRtpStreamOutgoing {
+    LoggedRtpStreamOutgoing();
+    LoggedRtpStreamOutgoing(const LoggedRtpStreamOutgoing&);
+    ~LoggedRtpStreamOutgoing();
     uint32_t ssrc;
     std::vector<LoggedRtpPacketOutgoing> outgoing_packets;
   };
@@ -511,20 +521,11 @@ class ParsedRtcEventLogNew {
   struct LoggedRtpStreamView {
     LoggedRtpStreamView(uint32_t ssrc,
                         const LoggedRtpPacketIncoming* ptr,
-                        size_t num_elements)
-        : ssrc(ssrc),
-          packet_view(PacketView<const LoggedRtpPacket>::Create(
-              ptr,
-              num_elements,
-              offsetof(LoggedRtpPacketIncoming, rtp))) {}
+                        size_t num_elements);
     LoggedRtpStreamView(uint32_t ssrc,
                         const LoggedRtpPacketOutgoing* ptr,
-                        size_t num_elements)
-        : ssrc(ssrc),
-          packet_view(PacketView<const LoggedRtpPacket>::Create(
-              ptr,
-              num_elements,
-              offsetof(LoggedRtpPacketOutgoing, rtp))) {}
+                        size_t num_elements);
+    LoggedRtpStreamView(const LoggedRtpStreamView&);
     uint32_t ssrc;
     PacketView<const LoggedRtpPacket> packet_view;
   };

@@ -272,6 +272,60 @@ void GetHeaderExtensions(std::vector<RtpExtension>* header_extensions,
 
 }  // namespace
 
+LoggedRtcpPacket::LoggedRtcpPacket(uint64_t timestamp_us,
+                                   const uint8_t* packet,
+                                   size_t total_length)
+    : timestamp_us(timestamp_us), raw_data(packet, packet + total_length) {}
+LoggedRtcpPacket::LoggedRtcpPacket(const LoggedRtcpPacket& rhs) = default;
+LoggedRtcpPacket::~LoggedRtcpPacket() = default;
+
+LoggedVideoSendConfig::LoggedVideoSendConfig(
+    int64_t timestamp_us,
+    const std::vector<rtclog::StreamConfig>& configs)
+    : timestamp_us(timestamp_us), configs(configs) {}
+LoggedVideoSendConfig::LoggedVideoSendConfig(const LoggedVideoSendConfig& rhs) =
+    default;
+LoggedVideoSendConfig::~LoggedVideoSendConfig() = default;
+
+ParsedRtcEventLogNew::~ParsedRtcEventLogNew() = default;
+
+ParsedRtcEventLogNew::LoggedRtpStreamIncoming::LoggedRtpStreamIncoming() =
+    default;
+ParsedRtcEventLogNew::LoggedRtpStreamIncoming::LoggedRtpStreamIncoming(
+    const LoggedRtpStreamIncoming& rhs) = default;
+ParsedRtcEventLogNew::LoggedRtpStreamIncoming::~LoggedRtpStreamIncoming() =
+    default;
+
+ParsedRtcEventLogNew::LoggedRtpStreamOutgoing::LoggedRtpStreamOutgoing() =
+    default;
+ParsedRtcEventLogNew::LoggedRtpStreamOutgoing::LoggedRtpStreamOutgoing(
+    const LoggedRtpStreamOutgoing& rhs) = default;
+ParsedRtcEventLogNew::LoggedRtpStreamOutgoing::~LoggedRtpStreamOutgoing() =
+    default;
+
+ParsedRtcEventLogNew::LoggedRtpStreamView::LoggedRtpStreamView(
+    uint32_t ssrc,
+    const LoggedRtpPacketIncoming* ptr,
+    size_t num_elements)
+    : ssrc(ssrc),
+      packet_view(PacketView<const LoggedRtpPacket>::Create(
+          ptr,
+          num_elements,
+          offsetof(LoggedRtpPacketIncoming, rtp))) {}
+
+ParsedRtcEventLogNew::LoggedRtpStreamView::LoggedRtpStreamView(
+    uint32_t ssrc,
+    const LoggedRtpPacketOutgoing* ptr,
+    size_t num_elements)
+    : ssrc(ssrc),
+      packet_view(PacketView<const LoggedRtpPacket>::Create(
+          ptr,
+          num_elements,
+          offsetof(LoggedRtpPacketOutgoing, rtp))) {}
+
+ParsedRtcEventLogNew::LoggedRtpStreamView::LoggedRtpStreamView(
+    const LoggedRtpStreamView&) = default;
+
 ParsedRtcEventLogNew::ParsedRtcEventLogNew(
     UnconfiguredHeaderExtensions parse_unconfigured_header_extensions)
     : parse_unconfigured_header_extensions_(

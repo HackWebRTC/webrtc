@@ -46,6 +46,9 @@ class ParsedRtcEventLog {
   friend class RtcEventLogTestHelper;
 
  public:
+  ParsedRtcEventLog();
+  ~ParsedRtcEventLog();
+
   struct BweProbeClusterCreatedEvent {
     uint64_t timestamp;
     uint32_t id;
@@ -55,6 +58,9 @@ class ParsedRtcEventLog {
   };
 
   struct BweProbeResultEvent {
+    BweProbeResultEvent();
+    BweProbeResultEvent(const BweProbeResultEvent&);
+
     uint64_t timestamp;
     uint32_t id;
     absl::optional<uint64_t> bitrate_bps;
