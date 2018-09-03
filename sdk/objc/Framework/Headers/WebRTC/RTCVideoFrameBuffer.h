@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#import "api/video_frame_buffer/RTCI420Buffer.h"
-#import "api/video_frame_buffer/RTCMutableI420Buffer.h"
+#import "api/video_frame_buffer/RTCNativeI420Buffer.h"
+#import "api/video_frame_buffer/RTCNativeMutableI420Buffer.h"
 #import "base/RTCI420Buffer.h"
 #import "base/RTCMutableI420Buffer.h"
 #import "base/RTCMutableYUVPlanarBuffer.h"

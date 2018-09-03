@@ -16,7 +16,7 @@
 
 #import "components/renderer/metal/RTCMTLVideoView.h"
 
-#import "api/video_frame_buffer/RTCI420Buffer.h"
+#import "api/video_frame_buffer/RTCNativeI420Buffer.h"
 #import "base/RTCVideoFrameBuffer.h"
 #import "components/renderer/metal/RTCMTLNV12Renderer.h"
 #import "components/video_frame_buffer/RTCCVPixelBuffer.h"

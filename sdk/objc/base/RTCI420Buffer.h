@@ -15,6 +15,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /** Protocol for RTCYUVPlanarBuffers containing I420 data */
+RTC_EXPORT
 @protocol RTCI420Buffer <RTCYUVPlanarBuffer>
 @end
 

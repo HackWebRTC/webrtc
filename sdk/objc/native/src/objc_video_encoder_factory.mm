@@ -21,7 +21,6 @@
 #import "sdk/objc/api/peerconnection/RTCVideoEncoderSettings+Private.h"
 #import "sdk/objc/api/video_codec/RTCVideoCodecConstants.h"
 #import "sdk/objc/api/video_codec/RTCWrappedNativeVideoEncoder.h"
-#import "sdk/objc/api/video_frame_buffer/RTCI420Buffer+Private.h"
 #import "sdk/objc/helpers/NSString+StdString.h"
 
 #include "api/video/video_frame.h"

@@ -10,7 +10,7 @@
 
 #import "RTCCVPixelBuffer.h"
 
-#import "api/video_frame_buffer/RTCMutableI420Buffer.h"
+#import "api/video_frame_buffer/RTCNativeMutableI420Buffer.h"
 
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "rtc_base/checks.h"

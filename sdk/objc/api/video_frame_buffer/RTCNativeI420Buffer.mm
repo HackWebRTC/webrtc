@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#import "RTCI420Buffer+Private.h"
+#import "RTCNativeI420Buffer+Private.h"
 
 #include "api/video/i420_buffer.h"
 

@@ -328,11 +328,11 @@ if (is_ios || is_mac) {
     rtc_static_library("videoframebuffer_objc") {
       visibility = [ "*" ]
       sources = [
-        "objc/api/video_frame_buffer/RTCI420Buffer+Private.h",
-        "objc/api/video_frame_buffer/RTCI420Buffer.h",
-        "objc/api/video_frame_buffer/RTCI420Buffer.mm",
-        "objc/api/video_frame_buffer/RTCMutableI420Buffer.h",
-        "objc/api/video_frame_buffer/RTCMutableI420Buffer.mm",
+        "objc/api/video_frame_buffer/RTCNativeI420Buffer+Private.h",
+        "objc/api/video_frame_buffer/RTCNativeI420Buffer.h",
+        "objc/api/video_frame_buffer/RTCNativeI420Buffer.mm",
+        "objc/api/video_frame_buffer/RTCNativeMutableI420Buffer.h",
+        "objc/api/video_frame_buffer/RTCNativeMutableI420Buffer.mm",
         "objc/components/video_frame_buffer/RTCCVPixelBuffer.h",
         "objc/components/video_frame_buffer/RTCCVPixelBuffer.mm",
       ]
@@ -1194,8 +1194,11 @@ if (is_ios || is_mac) {
         common_objc_headers = [
           "objc/base/RTCCodecSpecificInfo.h",
           "objc/base/RTCEncodedImage.h",
+          "objc/base/RTCI420Buffer.h",
           "objc/base/RTCLogging.h",
           "objc/base/RTCMacros.h",
+          "objc/base/RTCMutableI420Buffer.h",
+          "objc/base/RTCMutableYUVPlanarBuffer.h",
           "objc/base/RTCRtpFragmentationHeader.h",
           "objc/base/RTCVideoCapturer.h",
           "objc/base/RTCVideoCodecInfo.h",
@@ -1208,6 +1211,7 @@ if (is_ios || is_mac) {
           "objc/base/RTCVideoFrame.h",
           "objc/base/RTCVideoFrameBuffer.h",
           "objc/base/RTCVideoRenderer.h",
+          "objc/base/RTCYUVPlanarBuffer.h",
           "objc/components/audio/RTCAudioSession.h",
           "objc/components/audio/RTCAudioSessionConfiguration.h",
           "objc/components/capturer/RTCCameraVideoCapturer.h",
@@ -1261,10 +1265,13 @@ if (is_ios || is_mac) {
           "objc/api/peerconnection/RTCCertificate.h",
           "objc/api/peerconnection/RTCVideoSource.h",
           "objc/api/peerconnection/RTCVideoTrack.h",
+          "objc/api/video_codec/RTCVideoCodecConstants.h",
           "objc/api/video_codec/RTCVideoDecoderVP8.h",
           "objc/api/video_codec/RTCVideoDecoderVP9.h",
           "objc/api/video_codec/RTCVideoEncoderVP8.h",
           "objc/api/video_codec/RTCVideoEncoderVP9.h",
+          "objc/api/video_frame_buffer/RTCNativeI420Buffer.h",
+          "objc/api/video_frame_buffer/RTCNativeMutableI420Buffer.h",
         ]
 
         if (!build_with_chromium) {
@@ -1341,8 +1348,11 @@ if (is_ios || is_mac) {
       mac_framework_header_files = [
         "objc/base/RTCCodecSpecificInfo.h",
         "objc/base/RTCEncodedImage.h",
+        "objc/base/RTCI420Buffer.h",
         "objc/base/RTCLogging.h",
         "objc/base/RTCMacros.h",
+        "objc/base/RTCMutableI420Buffer.h",
+        "objc/base/RTCMutableYUVPlanarBuffer.h",
         "objc/base/RTCRtpFragmentationHeader.h",
         "objc/base/RTCVideoCapturer.h",
         "objc/base/RTCVideoCodecInfo.h",
@@ -1355,6 +1365,7 @@ if (is_ios || is_mac) {
         "objc/base/RTCVideoFrame.h",
         "objc/base/RTCVideoFrameBuffer.h",
         "objc/base/RTCVideoRenderer.h",
+        "objc/base/RTCYUVPlanarBuffer.h",
         "objc/components/capturer/RTCCameraVideoCapturer.h",
         "objc/components/capturer/RTCFileVideoCapturer.h",
         "objc/components/renderer/metal/RTCMTLNSVideoView.h",
@@ -1408,6 +1419,8 @@ if (is_ios || is_mac) {
         "objc/api/video_codec/RTCVideoDecoderVP9.h",
         "objc/api/video_codec/RTCVideoEncoderVP8.h",
         "objc/api/video_codec/RTCVideoEncoderVP9.h",
+        "objc/api/video_frame_buffer/RTCNativeI420Buffer.h",
+        "objc/api/video_frame_buffer/RTCNativeMutableI420Buffer.h",
       ]
       if (!build_with_chromium) {
         mac_framework_header_files += [

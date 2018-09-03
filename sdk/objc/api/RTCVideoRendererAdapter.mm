@@ -9,9 +9,7 @@
  */
 
 #import "RTCVideoRendererAdapter+Private.h"
-#import "api/video_frame_buffer/RTCI420Buffer+Private.h"
 #import "base/RTCVideoFrame.h"
-#import "base/RTCVideoFrameBuffer.h"
 
 #include <memory>
 

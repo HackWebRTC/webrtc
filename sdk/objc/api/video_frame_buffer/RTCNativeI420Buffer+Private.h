@@ -8,24 +8,21 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#import "RTCMutableI420Buffer.h"
-
-#import "RTCI420Buffer+Private.h"
+#import "RTCNativeI420Buffer.h"
 
 #include "api/video/i420_buffer.h"
 
-@implementation RTCMutableI420Buffer
+NS_ASSUME_NONNULL_BEGIN
 
-- (uint8_t *)mutableDataY {
-  return static_cast<webrtc::I420Buffer *>(_i420Buffer.get())->MutableDataY();
+@interface RTCI420Buffer () {
+ @protected
+  rtc::scoped_refptr<webrtc::I420BufferInterface> _i420Buffer;
 }
 
-- (uint8_t *)mutableDataU {
-  return static_cast<webrtc::I420Buffer *>(_i420Buffer.get())->MutableDataU();
-}
-
-- (uint8_t *)mutableDataV {
-  return static_cast<webrtc::I420Buffer *>(_i420Buffer.get())->MutableDataV();
-}
+/** Initialize an RTCI420Buffer with its backing I420BufferInterface. */
+- (instancetype)initWithFrameBuffer:(rtc::scoped_refptr<webrtc::I420BufferInterface>)i420Buffer;
+- (rtc::scoped_refptr<webrtc::I420BufferInterface>)nativeI420Buffer;
 
 @end
+
+NS_ASSUME_NONNULL_END

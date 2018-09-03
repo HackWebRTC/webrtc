@@ -11,7 +11,7 @@
 #include "sdk/objc/native/src/objc_frame_buffer.h"
 
 #import "base/RTCVideoFrameBuffer.h"
-#import "sdk/objc/api/video_frame_buffer/RTCI420Buffer+Private.h"
+#import "sdk/objc/api/video_frame_buffer/RTCNativeI420Buffer+Private.h"
 
 namespace webrtc {
 

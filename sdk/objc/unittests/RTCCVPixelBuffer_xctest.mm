@@ -13,7 +13,7 @@
 
 #import "components/video_frame_buffer/RTCCVPixelBuffer.h"
 
-#import "api/video_frame_buffer/RTCI420Buffer+Private.h"
+#import "api/video_frame_buffer/RTCNativeI420Buffer+Private.h"
 #import "base/RTCVideoFrame.h"
 #import "base/RTCVideoFrameBuffer.h"
 #import "frame_buffer_helpers.h"

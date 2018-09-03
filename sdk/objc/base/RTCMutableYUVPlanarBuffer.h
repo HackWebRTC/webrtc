@@ -15,6 +15,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /** Extension of the YUV planar data buffer with mutable data access */
+RTC_EXPORT
 @protocol RTCMutableYUVPlanarBuffer <RTCYUVPlanarBuffer>
 
 @property(nonatomic, readonly) uint8_t *mutableDataY;
