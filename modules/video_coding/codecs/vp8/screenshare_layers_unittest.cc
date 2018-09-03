@@ -14,10 +14,10 @@
 #include "modules/video_coding/codecs/vp8/libvpx_vp8_encoder.h"
 #include "modules/video_coding/codecs/vp8/screenshare_layers.h"
 #include "modules/video_coding/include/video_codec_interface.h"
-#include "modules/video_coding/utility/mock/mock_frame_dropper.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/metrics.h"
 #include "system_wrappers/include/metrics_default.h"
+#include "test/gmock.h"
 #include "test/gtest.h"
 
 using ::testing::_;

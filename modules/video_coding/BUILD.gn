@@ -802,7 +802,6 @@ if (rtc_include_tests) {
       "utility/frame_dropper_unittest.cc",
       "utility/framerate_controller_unittest.cc",
       "utility/ivf_file_writer_unittest.cc",
-      "utility/mock/mock_frame_dropper.h",
       "utility/moving_average_unittest.cc",
       "utility/quality_scaler_unittest.cc",
       "utility/simulcast_rate_allocator_unittest.cc",
