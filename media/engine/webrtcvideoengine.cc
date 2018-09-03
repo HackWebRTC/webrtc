@@ -2429,13 +2429,10 @@ void WebRtcVideoChannel::WebRtcVideoReceiveStream::OnFrame(
     const webrtc::VideoFrame& frame) {
   rtc::CritScope crit(&sink_lock_);
 
+  int64_t time_now_ms = rtc::TimeMillis();
   if (first_frame_timestamp_ < 0)
-    first_frame_timestamp_ = frame.timestamp();
-  int64_t rtp_time_elapsed_since_first_frame =
-      (timestamp_wraparound_handler_.Unwrap(frame.timestamp()) -
-       first_frame_timestamp_);
-  int64_t elapsed_time_ms = rtp_time_elapsed_since_first_frame /
-                            (cricket::kVideoCodecClockrate / 1000);
+    first_frame_timestamp_ = time_now_ms;
+  int64_t elapsed_time_ms = time_now_ms - first_frame_timestamp_;
   if (frame.ntp_time_ms() > 0)
     estimated_remote_start_ntp_time_ms_ = frame.ntp_time_ms() - elapsed_time_ms;
 
