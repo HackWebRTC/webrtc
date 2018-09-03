@@ -32,6 +32,7 @@ rtc_static_library("field_trial_parser") {
     "../../api/units:data_rate",
     "../../api/units:data_size",
     "../../api/units:time_delta",
+    "../../rtc_base:checks",
     "../../system_wrappers:field_trial_api",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
