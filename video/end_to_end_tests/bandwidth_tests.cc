@@ -24,21 +24,12 @@
 
 namespace webrtc {
 
-class BandwidthEndToEndTest : public test::CallTest,
-                              public testing::WithParamInterface<std::string> {
+class BandwidthEndToEndTest : public test::CallTest {
  public:
-  BandwidthEndToEndTest() : field_trial_(GetParam()) {}
-
- private:
-  test::ScopedFieldTrials field_trial_;
+  BandwidthEndToEndTest() = default;
 };
 
-INSTANTIATE_TEST_CASE_P(RoundRobin,
-                        BandwidthEndToEndTest,
-                        ::testing::Values("WebRTC-RoundRobinPacing/Disabled/",
-                                          "WebRTC-RoundRobinPacing/Enabled/"));
-
-TEST_P(BandwidthEndToEndTest, ReceiveStreamSendsRemb) {
+TEST_F(BandwidthEndToEndTest, ReceiveStreamSendsRemb) {
   class RembObserver : public test::EndToEndTest {
    public:
     RembObserver() : EndToEndTest(kDefaultTimeoutMs) {}
@@ -129,12 +120,12 @@ class BandwidthStatsTest : public test::EndToEndTest {
   const bool send_side_bwe_;
 };
 
-TEST_P(BandwidthEndToEndTest, VerifySendSideBweStats) {
+TEST_F(BandwidthEndToEndTest, VerifySendSideBweStats) {
   BandwidthStatsTest test(true);
   RunBaseTest(&test);
 }
 
-TEST_P(BandwidthEndToEndTest, VerifyRecvSideBweStats) {
+TEST_F(BandwidthEndToEndTest, VerifyRecvSideBweStats) {
   BandwidthStatsTest test(false);
   RunBaseTest(&test);
 }
@@ -144,7 +135,7 @@ TEST_P(BandwidthEndToEndTest, VerifyRecvSideBweStats) {
 // then have the test generate a REMB of 500 kbps and verify that the send BWE
 // is reduced to exactly 500 kbps. Then a REMB of 1000 kbps is generated and the
 // test verifies that the send BWE ramps back up to exactly 1000 kbps.
-TEST_P(BandwidthEndToEndTest, RembWithSendSideBwe) {
+TEST_F(BandwidthEndToEndTest, RembWithSendSideBwe) {
   class BweObserver : public test::EndToEndTest {
    public:
     BweObserver()
@@ -272,7 +263,7 @@ TEST_P(BandwidthEndToEndTest, RembWithSendSideBwe) {
   RunBaseTest(&test);
 }
 
-TEST_P(BandwidthEndToEndTest, ReportsSetEncoderRates) {
+TEST_F(BandwidthEndToEndTest, ReportsSetEncoderRates) {
   class EncoderRateStatsTest : public test::EndToEndTest,
                                public test::FakeEncoder {
    public:

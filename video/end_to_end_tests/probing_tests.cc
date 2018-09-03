@@ -30,9 +30,8 @@ class ProbingEndToEndTest : public test::CallTest,
 INSTANTIATE_TEST_CASE_P(
     FieldTrials,
     ProbingEndToEndTest,
-    ::testing::Values("WebRTC-RoundRobinPacing/Disabled/",
-                      "WebRTC-RoundRobinPacing/Enabled/",
-                      "WebRTC-TaskQueueCongestionControl/Enabled/"));
+    ::testing::Values("WebRTC-TaskQueueCongestionControl/Enabled/",
+                      "WebRTC-TaskQueueCongestionControl/Disabled/"));
 
 class ProbingTest : public test::EndToEndTest {
  public:
