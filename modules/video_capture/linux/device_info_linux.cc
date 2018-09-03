@@ -226,7 +226,6 @@ int32_t DeviceInfoLinux::FillCapabilities(int fd) {
                             {960, 720},  {1280, 720}, {1024, 768}, {1440, 1080},
                             {1920, 1080}};
 
-  int index = 0;
   for (int fmts = 0; fmts < totalFmts; fmts++) {
     for (int i = 0; i < sizes; i++) {
       video_fmt.fmt.pix.pixelformat = videoFormats[fmts];
@@ -258,7 +257,6 @@ int32_t DeviceInfoLinux::FillCapabilities(int fd) {
           }
 
           _captureCapabilities.push_back(cap);
-          index++;
           RTC_LOG(LS_VERBOSE) << "Camera capability, width:" << cap.width
                               << " height:" << cap.height
                               << " type:" << static_cast<int32_t>(cap.videoType)
