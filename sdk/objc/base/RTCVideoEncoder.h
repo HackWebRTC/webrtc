@@ -42,7 +42,7 @@ RTC_EXPORT
 /** Returns QP scaling settings for encoder. The quality scaler adjusts the resolution in order to
  *  keep the QP from the encoded images within the given range. Returning nil from this function
  *  disables quality scaling. */
-- (RTCVideoEncoderQpThresholds *)scalingSettings;
+- (nullable RTCVideoEncoderQpThresholds *)scalingSettings;
 
 @end
 

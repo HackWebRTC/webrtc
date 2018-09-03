@@ -753,7 +753,7 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
   _bitrateAdjuster->Update(frame.buffer.length);
 }
 
-- (RTCVideoEncoderQpThresholds *)scalingSettings {
+- (nullable RTCVideoEncoderQpThresholds *)scalingSettings {
   return [[RTCVideoEncoderQpThresholds alloc] initWithThresholdsLow:kLowH264QpThreshold
                                                                high:kHighH264QpThreshold];
 }

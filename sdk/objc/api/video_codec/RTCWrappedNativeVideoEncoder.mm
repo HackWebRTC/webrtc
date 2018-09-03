@@ -63,7 +63,7 @@
   return nil;
 }
 
-- (RTCVideoEncoderQpThresholds *)scalingSettings {
+- (nullable RTCVideoEncoderQpThresholds *)scalingSettings {
   RTC_NOTREACHED();
   return nil;
 }
