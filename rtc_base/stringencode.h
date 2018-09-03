@@ -164,6 +164,7 @@ std::string ToString(long long int s);
 std::string ToString(unsigned long long int s);
 
 std::string ToString(double t);
+std::string ToString(long double t);
 
 std::string ToString(const void* p);
 

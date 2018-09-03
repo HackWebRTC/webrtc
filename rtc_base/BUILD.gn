@@ -328,6 +328,7 @@ rtc_source_set("stringutils") {
     ":macromagic",
     ":safe_minmax",
     "../api:array_view",
+    "//third_party/abseil-cpp/absl/strings:strings",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
