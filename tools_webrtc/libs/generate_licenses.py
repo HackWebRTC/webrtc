@@ -21,6 +21,14 @@ import re
 import subprocess
 
 
+def FindSrcDirPath():
+  """Returns the abs path to the src/ dir of the project."""
+  src_dir = os.path.dirname(os.path.abspath(__file__))
+  while os.path.basename(src_dir) != 'src':
+    src_dir = os.path.normpath(os.path.join(src_dir, os.pardir))
+  return src_dir
+
+
 LIB_TO_LICENSES_DICT = {
     'abseil-cpp': ['third_party/abseil-cpp/LICENSE'],
     'android_tools': ['third_party/android_tools/LICENSE'],
@@ -62,8 +70,9 @@ LIB_TO_LICENSES_DICT = {
 }
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(sys.argv[0]))
-CHECKOUT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir, os.pardir))
-sys.path.append(os.path.join(CHECKOUT_ROOT, 'build'))
+WEBRTC_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir, os.pardir))
+SRC_DIR = FindSrcDirPath()
+sys.path.append(os.path.join(SRC_DIR, 'build'))
 import find_depot_tools
 
 THIRD_PARTY_LIB_REGEX = r'^.*/third_party/([\w\-+]+).*$'
@@ -101,7 +110,7 @@ class LicenseBuilder(object):
       target,
     ]
     logging.debug("Running: %r", cmd)
-    output_json = subprocess.check_output(cmd, cwd=CHECKOUT_ROOT)
+    output_json = subprocess.check_output(cmd, cwd=WEBRTC_ROOT)
     logging.debug("Output: %s", output_json)
     return output_json
 
@@ -147,7 +156,7 @@ class LicenseBuilder(object):
       output_license_file.write('# %s\n' % license_lib)
       output_license_file.write('```\n')
       for path in LIB_TO_LICENSES_DICT[license_lib]:
-        license_path = os.path.join(CHECKOUT_ROOT, path)
+        license_path = os.path.join(WEBRTC_ROOT, path)
         with open(license_path, 'r') as license_file:
           license_text = cgi.escape(license_file.read(), quote=True)
           output_license_file.write(license_text)
