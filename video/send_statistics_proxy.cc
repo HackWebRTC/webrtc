@@ -916,10 +916,17 @@ void SendStatisticsProxy::OnSendEncodedImage(
   if (!stats)
     return;
 
-  // TODO(ssilkin): Fix stats reporting for spatial layers in SVC.
-  stats->width = encoded_image._encodedWidth;
-  stats->height = encoded_image._encodedHeight;
-  update_times_[ssrc].resolution_update_ms = clock_->TimeInMilliseconds();
+  // Report resolution of top spatial layer in case of VP9 SVC.
+  bool is_svc_low_spatial_layer =
+      (codec_info && codec_info->codecType == kVideoCodecVP9)
+          ? !codec_info->codecSpecific.VP9.end_of_picture
+          : false;
+
+  if (!stats->width || !stats->height || !is_svc_low_spatial_layer) {
+    stats->width = encoded_image._encodedWidth;
+    stats->height = encoded_image._encodedHeight;
+    update_times_[ssrc].resolution_update_ms = clock_->TimeInMilliseconds();
+  }
 
   uma_container_->key_frame_counter_.Add(encoded_image._frameType ==
                                          kVideoFrameKey);

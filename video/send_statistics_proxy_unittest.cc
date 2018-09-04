@@ -2177,6 +2177,43 @@ TEST_F(SendStatisticsProxyTest, GetStatsReportsEncoderImplementationName) {
       kName, statistics_proxy_->GetStats().encoder_implementation_name.c_str());
 }
 
+TEST_F(SendStatisticsProxyTest, Vp9SvcLowSpatialLayerDoesNotUpdateResolution) {
+  static const int kEncodedWidth = 123;
+  static const int kEncodedHeight = 81;
+  EncodedImage encoded_image;
+  encoded_image._encodedWidth = kEncodedWidth;
+  encoded_image._encodedHeight = kEncodedHeight;
+  encoded_image.SetSpatialIndex(0);
+
+  CodecSpecificInfo codec_info;
+  codec_info.codecType = kVideoCodecVP9;
+
+  // For first picture, it is expected that low layer updates resolution.
+  codec_info.codecSpecific.VP9.end_of_picture = false;
+  statistics_proxy_->OnSendEncodedImage(encoded_image, &codec_info);
+  VideoSendStream::Stats stats = statistics_proxy_->GetStats();
+  EXPECT_EQ(kEncodedWidth, stats.substreams[config_.rtp.ssrcs[0]].width);
+  EXPECT_EQ(kEncodedHeight, stats.substreams[config_.rtp.ssrcs[0]].height);
+
+  // Top layer updates resolution.
+  encoded_image._encodedWidth = kEncodedWidth * 2;
+  encoded_image._encodedHeight = kEncodedHeight * 2;
+  codec_info.codecSpecific.VP9.end_of_picture = true;
+  statistics_proxy_->OnSendEncodedImage(encoded_image, &codec_info);
+  stats = statistics_proxy_->GetStats();
+  EXPECT_EQ(kEncodedWidth * 2, stats.substreams[config_.rtp.ssrcs[0]].width);
+  EXPECT_EQ(kEncodedHeight * 2, stats.substreams[config_.rtp.ssrcs[0]].height);
+
+  // Low layer of next frame doesn't update resolution.
+  encoded_image._encodedWidth = kEncodedWidth;
+  encoded_image._encodedHeight = kEncodedHeight;
+  codec_info.codecSpecific.VP9.end_of_picture = false;
+  statistics_proxy_->OnSendEncodedImage(encoded_image, &codec_info);
+  stats = statistics_proxy_->GetStats();
+  EXPECT_EQ(kEncodedWidth * 2, stats.substreams[config_.rtp.ssrcs[0]].width);
+  EXPECT_EQ(kEncodedHeight * 2, stats.substreams[config_.rtp.ssrcs[0]].height);
+}
+
 class ForcedFallbackTest : public SendStatisticsProxyTest {
  public:
   explicit ForcedFallbackTest(const std::string& field_trials)
