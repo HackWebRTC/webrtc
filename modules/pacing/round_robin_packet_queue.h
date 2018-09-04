@@ -82,7 +82,6 @@ class RoundRobinPacketQueue : public PacketQueueInterface {
   // Just used to verify correctness.
   bool IsSsrcScheduled(uint32_t ssrc) const;
 
-  const Clock* const clock_;
   int64_t time_last_updated_;
   absl::optional<Packet> pop_packet_;
   absl::optional<Stream*> pop_stream_;

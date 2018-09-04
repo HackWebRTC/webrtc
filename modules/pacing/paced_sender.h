@@ -157,6 +157,7 @@ class PacedSender : public Pacer {
 
   void OnBytesSent(size_t bytes_sent) RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
   bool Congested() const RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
+  int64_t TimeMilliseconds() const RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
   const Clock* const clock_;
   PacketSender* const packet_sender_;
@@ -165,7 +166,11 @@ class PacedSender : public Pacer {
   const bool drain_large_queues_;
   const bool send_padding_if_silent_;
   const bool video_blocks_audio_;
+
   rtc::CriticalSection critsect_;
+  // TODO(webrtc:9716): Remove this when we are certain clocks are monotonic.
+  // The last millisecond timestamp returned by |clock_|.
+  mutable int64_t last_timestamp_ms_ RTC_GUARDED_BY(critsect_);
   bool paused_ RTC_GUARDED_BY(critsect_);
   // This is the media budget, keeping track of how many bits of media
   // we can pace out during the current interval.
