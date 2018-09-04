@@ -209,7 +209,7 @@ if (rtc_include_tests) {
       ":field_trial",
       ":fileutils",
       ":perf_test",
-      "../rtc_base:rtc_base_approved",
+      "../rtc_base:rtc_base",
       "../system_wrappers:field_trial_default",
       "../system_wrappers:metrics_default",
       "../system_wrappers:runtime_enabled_features_default",

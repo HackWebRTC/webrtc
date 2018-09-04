@@ -10,6 +10,7 @@
 
 #include "rtc_base/flags.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/thread.h"
 #include "system_wrappers/include/field_trial_default.h"
 #include "system_wrappers/include/metrics_default.h"
 #include "test/field_trial.h"
@@ -86,6 +87,10 @@ int main(int argc, char* argv[]) {
   webrtc::metrics::Enable();
 
   rtc::LogMessage::SetLogToStderr(FLAG_logs);
+
+  // Ensure that main thread gets wrapped as an rtc::Thread.
+  rtc::ThreadManager::Instance()->WrapCurrentThread();
+  RTC_CHECK(rtc::Thread::Current());
 
 #if defined(WEBRTC_IOS)
 
