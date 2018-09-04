@@ -11,11 +11,7 @@
 #import <Foundation/Foundation.h>
 
 #import "RTCMacros.h"
-
-typedef NS_ENUM(NSUInteger, RTCTlsCertPolicy) {
-  RTCTlsCertPolicySecure,
-  RTCTlsCertPolicyInsecureNoCheck
-};
+#import "RTCSSLConfig.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -32,7 +28,8 @@ RTC_EXPORT
 @property(nonatomic, readonly, nullable) NSString *credential;
 
 /**
- * TLS certificate policy to use if this RTCIceServer object is a TURN server.
+  Deprecated. TODO(diogor, webrtc:9673): Remove from API.
+  TLS certificate policy to use if this RTCIceServer object is a TURN server.
  */
 @property(nonatomic, readonly) RTCTlsCertPolicy tlsCertPolicy;
 
@@ -43,14 +40,23 @@ RTC_EXPORT
  */
 @property(nonatomic, readonly, nullable) NSString *hostname;
 
-/** List of protocols to be used in the TLS ALPN extension. */
+/**
+  Deprecated. TODO(diogor, webrtc:9673): Remove from API.
+  List of protocols to be used in the TLS ALPN extension.
+  This field will be ignored if also set in RTCSSLConfig.
+ */
 @property(nonatomic, readonly) NSArray<NSString *> *tlsAlpnProtocols;
 
 /**
+  Deprecated. TODO(diogor, webrtc:9673): Remove from API.
   List elliptic curves to be used in the TLS elliptic curves extension.
   Only curve names supported by OpenSSL should be used (eg. "P-256","X25519").
+  This field will be ignored if also set in RTCSSLConfig.
   */
 @property(nonatomic, readonly) NSArray<NSString *> *tlsEllipticCurves;
+
+/** SSL configuration options for any SSL/TLS connections to this IceServer. */
+@property(nonatomic, readonly) RTCSSLConfig *sslConfig;
 
 - (nonnull instancetype)init NS_UNAVAILABLE;
 
@@ -106,8 +112,17 @@ RTC_EXPORT
                      tlsCertPolicy:(RTCTlsCertPolicy)tlsCertPolicy
                           hostname:(nullable NSString *)hostname
                   tlsAlpnProtocols:(nullable NSArray<NSString *> *)tlsAlpnProtocols
-                 tlsEllipticCurves:(nullable NSArray<NSString *> *)tlsEllipticCurves
-    NS_DESIGNATED_INITIALIZER;
+                 tlsEllipticCurves:(nullable NSArray<NSString *> *)tlsEllipticCurves;
+
+/**
+ * Initialize an RTCIceServer with its associated URLs, optional
+ * username, optional credential, hostname and SSL config.
+ */
+- (instancetype)initWithURLStrings:(NSArray<NSString *> *)urlStrings
+                          username:(nullable NSString *)username
+                        credential:(nullable NSString *)credential
+                          hostname:(nullable NSString *)hostname
+                         sslConfig:(RTCSSLConfig *)sslConfig NS_DESIGNATED_INITIALIZER;
 
 @end
 

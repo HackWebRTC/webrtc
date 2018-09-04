@@ -209,7 +209,6 @@ OpenSSLAdapter::OpenSSLAdapter(AsyncSocket* socket,
       ssl_(nullptr),
       ssl_ctx_(nullptr),
       ssl_mode_(SSL_MODE_TLS),
-      ignore_bad_cert_(false),
       custom_cert_verifier_status_(false) {
   // If a factory is used, take a reference on the factory's SSL_CTX.
   // Otherwise, we'll create our own later.
@@ -226,16 +225,8 @@ OpenSSLAdapter::~OpenSSLAdapter() {
   Cleanup();
 }
 
-void OpenSSLAdapter::SetIgnoreBadCert(bool ignore) {
-  ignore_bad_cert_ = ignore;
-}
-
-void OpenSSLAdapter::SetAlpnProtocols(const std::vector<std::string>& protos) {
-  alpn_protocols_ = protos;
-}
-
-void OpenSSLAdapter::SetEllipticCurves(const std::vector<std::string>& curves) {
-  elliptic_curves_ = curves;
+void OpenSSLAdapter::SetSSLConfig(const SSLConfig& ssl_config) {
+  ssl_config_ = ssl_config;
 }
 
 void OpenSSLAdapter::SetMode(SSLMode mode) {
@@ -269,7 +260,7 @@ AsyncSocket* OpenSSLAdapter::Accept(SocketAddress* paddr) {
   SSLAdapter* adapter = SSLAdapter::Create(socket);
   adapter->SetIdentity(identity_->GetReference());
   adapter->SetRole(rtc::SSL_SERVER);
-  adapter->SetIgnoreBadCert(ignore_bad_cert_);
+  adapter->SetSSLConfig(ssl_config_);
   adapter->StartSSL("", false);
   return adapter;
 }
@@ -367,13 +358,28 @@ int OpenSSLAdapter::BeginSSL() {
   }
 
 #ifdef OPENSSL_IS_BORINGSSL
-  // Set a couple common TLS extensions; even though we don't use them yet.
-  SSL_enable_ocsp_stapling(ssl_);
-  SSL_enable_signed_cert_timestamps(ssl_);
+  // Potentially set a couple common TLS extensions; even though we don't use
+  // them yet.
+  if (ssl_config_.enable_ocsp_stapling) {
+    SSL_enable_ocsp_stapling(ssl_);
+  }
+  if (ssl_config_.enable_signed_cert_timestamp) {
+    SSL_enable_signed_cert_timestamps(ssl_);
+  }
+  SSL_CTX_set_grease_enabled(ssl_ctx_, ssl_config_.enable_grease);
 #endif
 
-  if (!alpn_protocols_.empty()) {
-    std::string tls_alpn_string = TransformAlpnProtocols(alpn_protocols_);
+  if (ssl_config_.max_ssl_version.has_value()) {
+    SSL_set_max_proto_version(ssl_, ssl_config_.max_ssl_version.value());
+  }
+
+  if (ssl_config_.enable_tls_channel_id) {
+    SSL_enable_tls_channel_id(ssl_);
+  }
+
+  if (ssl_config_.tls_alpn_protocols.has_value()) {
+    std::string tls_alpn_string =
+        TransformAlpnProtocols(ssl_config_.tls_alpn_protocols.value());
     if (!tls_alpn_string.empty()) {
       SSL_set_alpn_protos(
           ssl_, reinterpret_cast<const unsigned char*>(tls_alpn_string.data()),
@@ -381,8 +387,9 @@ int OpenSSLAdapter::BeginSSL() {
     }
   }
 
-  if (!elliptic_curves_.empty()) {
-    SSL_set1_curves_list(ssl_, rtc::join(elliptic_curves_, ':').c_str());
+  if (ssl_config_.tls_elliptic_curves.has_value()) {
+    SSL_set1_curves_list(
+        ssl_, rtc::join(ssl_config_.tls_elliptic_curves.value(), ':').c_str());
   }
 
   // Now that the initial config is done, transfer ownership of |bio| to the
@@ -794,10 +801,10 @@ bool OpenSSLAdapter::SSLPostConnectionCheck(SSL* ssl, const std::string& host) {
       openssl::VerifyPeerCertMatchesHost(ssl, host) &&
       (SSL_get_verify_result(ssl) == X509_V_OK || custom_cert_verifier_status_);
 
-  if (!is_valid_cert_name && ignore_bad_cert_) {
+  if (!is_valid_cert_name && ShouldIgnoreBadCert()) {
     RTC_DLOG(LS_WARNING) << "Other TLS post connection checks failed. "
-                            "ignore_bad_cert_ set to true. Overriding name "
-                            "verification failure!";
+                            "TLS cert policy set to ignore bad certs. "
+                            "Overriding name verification failure!";
     is_valid_cert_name = true;
   }
   return is_valid_cert_name;
@@ -870,7 +877,7 @@ int OpenSSLAdapter::SSLVerifyCallback(int ok, X509_STORE_CTX* store) {
   }
 
   // Should only be used for debugging and development.
-  if (!ok && stream->ignore_bad_cert_) {
+  if (!ok && stream->ShouldIgnoreBadCert()) {
     RTC_DLOG(LS_WARNING) << "Ignoring cert error while verifying cert chain";
     ok = 1;
   }
@@ -939,6 +946,11 @@ SSL_CTX* OpenSSLAdapter::CreateContext(SSLMode mode, bool enable_cache) {
   }
 
   return ctx;
+}
+
+bool OpenSSLAdapter::ShouldIgnoreBadCert() {
+  return ssl_config_.tls_cert_policy ==
+         TlsCertPolicy::TLS_CERT_POLICY_INSECURE_NO_CHECK;
 }
 
 std::string TransformAlpnProtocols(

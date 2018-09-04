@@ -18,6 +18,7 @@
 #include "api/jsepicecandidate.h"
 #include "api/peerconnectioninterface.h"
 #include "api/rtpparameters.h"
+#include "rtc_base/ssladapter.h"
 #include "rtc_base/sslidentity.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 
@@ -74,6 +75,10 @@ JavaToNativeContinualGatheringPolicy(
 PeerConnectionInterface::TlsCertPolicy JavaToNativeTlsCertPolicy(
     JNIEnv* jni,
     const JavaRef<jobject>& j_ice_server_tls_cert_policy);
+
+rtc::TlsCertPolicy JavaToNativeRtcTlsCertPolicy(
+    JNIEnv* jni,
+    const JavaRef<jobject>& j_ssl_config_tls_cert_policy);
 
 absl::optional<rtc::AdapterType> JavaToNativeNetworkPreference(
     JNIEnv* jni,

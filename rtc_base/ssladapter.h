@@ -22,6 +22,57 @@ namespace rtc {
 
 class SSLAdapter;
 
+// TLS certificate policy.
+enum class TlsCertPolicy {
+  // For TLS based protocols, ensure the connection is secure by not
+  // circumventing certificate validation.
+  TLS_CERT_POLICY_SECURE,
+  // For TLS based protocols, disregard security completely by skipping
+  // certificate validation. This is insecure and should never be used unless
+  // security is irrelevant in that particular context.
+  // Do not set to this value in production code.
+  // TODO(juberti): Remove the opportunistic encryption mechanism in
+  // BasicPacketSocketFactory that uses this value.
+  TLS_CERT_POLICY_INSECURE_NO_CHECK,
+};
+
+// SSL configuration options.
+struct SSLConfig final {
+  SSLConfig();
+  SSLConfig(const SSLConfig&);
+  ~SSLConfig();
+
+  bool operator==(const SSLConfig& o) const {
+    return enable_ocsp_stapling == o.enable_ocsp_stapling &&
+           enable_signed_cert_timestamp == o.enable_signed_cert_timestamp &&
+           enable_tls_channel_id == o.enable_tls_channel_id &&
+           enable_grease == o.enable_grease &&
+           max_ssl_version == o.max_ssl_version &&
+           tls_alpn_protocols == o.tls_alpn_protocols &&
+           tls_elliptic_curves == o.tls_elliptic_curves;
+  }
+  bool operator!=(const SSLConfig& o) const { return !(*this == o); }
+
+  // If true, enables the (unused) OCSP stapling TLS extension.
+  bool enable_ocsp_stapling = true;
+  // If true, enables the (unused) signed certificate timestamp TLS extension.
+  bool enable_signed_cert_timestamp = true;
+  // If true, enables the (unused) channel ID TLS extension.
+  bool enable_tls_channel_id = false;
+  // If true, enables the (unused) GREASE TLS extension.
+  bool enable_grease = false;
+  // Indicates how to process incoming certificates.
+  TlsCertPolicy tls_cert_policy = TlsCertPolicy::TLS_CERT_POLICY_SECURE;
+  // If set, indicates the highest supported SSL version.
+  absl::optional<int> max_ssl_version;
+  // If set, indicates the list of protocols to be used in the TLS ALPN
+  // extension.
+  absl::optional<std::vector<std::string>> tls_alpn_protocols;
+  // If set, indicates the list of curves to be used in the TLS elliptic curves
+  // extension.
+  absl::optional<std::vector<std::string>> tls_elliptic_curves;
+};
+
 // Class for creating SSL adapters with shared state, e.g., a session cache,
 // which allows clients to resume SSL sessions to previously-contacted hosts.
 // Clients should create the factory using Create(), set up the factory as
@@ -52,14 +103,8 @@ class SSLAdapter : public AsyncSocketAdapter {
  public:
   explicit SSLAdapter(AsyncSocket* socket) : AsyncSocketAdapter(socket) {}
 
-  // Methods that control server certificate verification, used in unit tests.
-  // Do not call these methods in production code.
-  // TODO(juberti): Remove the opportunistic encryption mechanism in
-  // BasicPacketSocketFactory that uses this function.
-  virtual void SetIgnoreBadCert(bool ignore) = 0;
-
-  virtual void SetAlpnProtocols(const std::vector<std::string>& protos) = 0;
-  virtual void SetEllipticCurves(const std::vector<std::string>& curves) = 0;
+  // Sets the SSL configuration for this session.
+  virtual void SetSSLConfig(const SSLConfig& ssl_config) = 0;
 
   // Do DTLS or TLS (default is TLS, if unspecified)
   virtual void SetMode(SSLMode mode) = 0;

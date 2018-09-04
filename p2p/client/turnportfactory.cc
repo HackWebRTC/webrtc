@@ -26,20 +26,29 @@ std::unique_ptr<Port> TurnPortFactory::Create(
       args.username, args.password, *args.server_address,
       args.config->credentials, args.config->priority, args.origin,
       args.turn_customizer);
-  port->SetTlsCertPolicy(args.config->tls_cert_policy);
   return std::unique_ptr<Port>(port);
 }
 
 std::unique_ptr<Port> TurnPortFactory::Create(const CreateRelayPortArgs& args,
                                               int min_port,
                                               int max_port) {
+  rtc::SSLConfig ssl_config = args.config->ssl_config;
+  if (!args.config->tls_alpn_protocols.empty()) {
+    ssl_config.tls_alpn_protocols = args.config->tls_alpn_protocols;
+  }
+  if (!args.config->tls_elliptic_curves.empty()) {
+    ssl_config.tls_elliptic_curves = args.config->tls_elliptic_curves;
+  }
+  if (args.config->tls_cert_policy ==
+      TlsCertPolicy::TLS_CERT_POLICY_INSECURE_NO_CHECK) {
+    ssl_config.tls_cert_policy =
+        rtc::TlsCertPolicy::TLS_CERT_POLICY_INSECURE_NO_CHECK;
+  }
   TurnPort* port = TurnPort::Create(
       args.network_thread, args.socket_factory, args.network, min_port,
       max_port, args.username, args.password, *args.server_address,
       args.config->credentials, args.config->priority, args.origin,
-      args.config->tls_alpn_protocols, args.config->tls_elliptic_curves,
-      args.turn_customizer, args.config->tls_cert_verifier);
-  port->SetTlsCertPolicy(args.config->tls_cert_policy);
+      args.turn_customizer, ssl_config, args.config->tls_cert_verifier);
   return std::unique_ptr<Port>(port);
 }
 

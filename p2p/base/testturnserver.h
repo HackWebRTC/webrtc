@@ -110,7 +110,12 @@ class TestTurnServer : public TurnAuthInterface {
         adapter->SetRole(rtc::SSL_SERVER);
         adapter->SetIdentity(
             rtc::SSLIdentity::Generate(common_name, rtc::KeyParams()));
-        adapter->SetIgnoreBadCert(ignore_bad_cert);
+        rtc::SSLConfig ssl_config;
+        if (ignore_bad_cert) {
+          ssl_config.tls_cert_policy =
+              rtc::TlsCertPolicy::TLS_CERT_POLICY_INSECURE_NO_CHECK;
+        }
+        adapter->SetSSLConfig(ssl_config);
         socket = adapter;
       }
       socket->Bind(int_addr);

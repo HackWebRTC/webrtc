@@ -71,6 +71,180 @@ public class PeerConnection {
     }
   }
 
+  /**
+   * Java version of PeerConnectionInterface::SSLConfig.
+   *
+   * Contains the configuration of any SSL/TLS connections that are initiated by
+   * our client.
+   */
+  public static class SslConfig {
+    /** Indicates whether to enable OCSP stapling in TLS. */
+    public final boolean enableOcspStapling;
+    /** Indicates whether to enable the signed certificate timestamp extension in TLS. */
+    public final boolean enableSignedCertTimestamp;
+    /** Indicates whether to enable the TLS Channel ID extension. */
+    public final boolean enableTlsChannelId;
+    /** Indicates whether to enable the TLS GREASE extension. */
+    public final boolean enableGrease;
+
+    /** Indicates how to process TURN server certificates */
+    public final TlsCertPolicy tlsCertPolicy;
+
+    /**
+     * Highest supported SSL version, as defined in the supported_versions TLS extension.
+     * If null, the default OpenSSL/BoringSSL max version will be used.
+     */
+    @Nullable public final Integer maxSslVersion;
+
+    /**
+     * List of protocols to be used in the TLS ALPN extension.
+     * If null, the default list of OpenSSL/BoringSSL ALPN protocols will be used.
+     */
+    @Nullable public final List<String> tlsAlpnProtocols;
+
+    /**
+     * List of elliptic curves to be used in the TLS elliptic curves extension.
+     * Only curve names supported by OpenSSL should be used (eg. "P-256","X25519").
+     * If null, the default list of OpenSSL/BoringSSL curves will be used.
+     */
+    @Nullable public final List<String> tlsEllipticCurves;
+
+    private SslConfig(boolean enableOcspStapling, boolean enableSignedCertTimestamp,
+        boolean enableTlsChannelId, boolean enableGrease, TlsCertPolicy tlsCertPolicy,
+        Integer maxSslVersion, List<String> tlsAlpnProtocols, List<String> tlsEllipticCurves) {
+      this.enableOcspStapling = enableOcspStapling;
+      this.enableSignedCertTimestamp = enableSignedCertTimestamp;
+      this.enableTlsChannelId = enableTlsChannelId;
+      this.enableGrease = enableGrease;
+      this.tlsCertPolicy = tlsCertPolicy;
+      this.maxSslVersion = maxSslVersion;
+      if (tlsAlpnProtocols != null) {
+        this.tlsAlpnProtocols = Collections.unmodifiableList(tlsAlpnProtocols);
+      } else {
+        this.tlsAlpnProtocols = null;
+      }
+      if (tlsEllipticCurves != null) {
+        this.tlsEllipticCurves = Collections.unmodifiableList(tlsEllipticCurves);
+      } else {
+        this.tlsEllipticCurves = null;
+      }
+    }
+
+    @Override
+    public String toString() {
+      return "[enableOcspStapling=" + enableOcspStapling + "] [enableSignedCertTimestamp="
+          + enableSignedCertTimestamp + "] [enableTlsChannelId=" + enableTlsChannelId
+          + "] [enableGrease=" + enableGrease + "] [tlsCertPolicy=" + tlsCertPolicy
+          + "] [maxSslVersion=" + maxSslVersion + "] [tlsAlpnProtocols=" + tlsAlpnProtocols
+          + "] [tlsEllipticCurves=" + tlsEllipticCurves + "]";
+    }
+
+    public static Builder builder() {
+      return new Builder();
+    }
+
+    public static class Builder {
+      private boolean enableOcspStapling = true;
+      private boolean enableSignedCertTimestamp = true;
+      private boolean enableTlsChannelId = false;
+      private boolean enableGrease = false;
+      private TlsCertPolicy tlsCertPolicy = TlsCertPolicy.TLS_CERT_POLICY_SECURE;
+      @Nullable private Integer maxSslVersion = null;
+      @Nullable private List<String> tlsAlpnProtocols = null;
+      @Nullable private List<String> tlsEllipticCurves = null;
+
+      private Builder() {}
+
+      public Builder setEnableOcspStapling(boolean enableOcspStapling) {
+        this.enableOcspStapling = enableOcspStapling;
+        return this;
+      }
+
+      public Builder setEnableSignedCertTimestamp(boolean enableSignedCertTimestamp) {
+        this.enableSignedCertTimestamp = enableSignedCertTimestamp;
+        return this;
+      }
+
+      public Builder setEnableTlsChannelId(boolean enableTlsChannelId) {
+        this.enableTlsChannelId = enableTlsChannelId;
+        return this;
+      }
+
+      public Builder setEnableGrease(boolean enableGrease) {
+        this.enableGrease = enableGrease;
+        return this;
+      }
+
+      public Builder setTlsCertPolicy(TlsCertPolicy tlsCertPolicy) {
+        this.tlsCertPolicy = tlsCertPolicy;
+        return this;
+      }
+
+      public Builder setMaxSslVersion(int maxSslVersion) {
+        this.maxSslVersion = maxSslVersion;
+        return this;
+      }
+
+      public Builder setTlsAlpnProtocols(List<String> tlsAlpnProtocols) {
+        this.tlsAlpnProtocols = tlsAlpnProtocols;
+        return this;
+      }
+
+      public Builder setTlsEllipticCurves(List<String> tlsEllipticCurves) {
+        this.tlsEllipticCurves = tlsEllipticCurves;
+        return this;
+      }
+
+      public SslConfig createSslConfig() {
+        return new SslConfig(enableOcspStapling, enableSignedCertTimestamp, enableTlsChannelId,
+            enableGrease, tlsCertPolicy, maxSslVersion, tlsAlpnProtocols, tlsEllipticCurves);
+      }
+    }
+
+    @CalledByNative("SslConfig")
+    boolean getEnableOcspStapling() {
+      return enableOcspStapling;
+    }
+
+    @CalledByNative("SslConfig")
+    boolean getEnableSignedCertTimestamp() {
+      return enableSignedCertTimestamp;
+    }
+
+    @CalledByNative("SslConfig")
+    boolean getEnableTlsChannelId() {
+      return enableTlsChannelId;
+    }
+
+    @CalledByNative("SslConfig")
+    boolean getEnableGrease() {
+      return enableGrease;
+    }
+
+    @CalledByNative("SslConfig")
+    TlsCertPolicy getTlsCertPolicy() {
+      return tlsCertPolicy;
+    }
+
+    @Nullable
+    @CalledByNative("SslConfig")
+    Integer getMaxSslVersion() {
+      return maxSslVersion;
+    }
+
+    @Nullable
+    @CalledByNative("SslConfig")
+    List<String> getTlsAlpnProtocols() {
+      return tlsAlpnProtocols;
+    }
+
+    @Nullable
+    @CalledByNative("SslConfig")
+    List<String> getTlsEllipticCurves() {
+      return tlsEllipticCurves;
+    }
+  }
+
   /** Java version of PeerConnectionObserver. */
   public static interface Observer {
     /** Triggered when the SignalingState changes. */
@@ -126,7 +300,9 @@ public class PeerConnection {
     public final List<String> urls;
     public final String username;
     public final String password;
-    public final TlsCertPolicy tlsCertPolicy;
+    // TODO(diogor, webrtc:9673): Remove tlsCertPolicy from this API.
+    // This field will be ignored if tlsCertPolicy is also set in SslConfig.
+    @Deprecated public final TlsCertPolicy tlsCertPolicy;
 
     // If the URIs in |urls| only contain IP addresses, this field can be used
     // to indicate the hostname, which may be necessary for TLS (using the SNI
@@ -134,12 +310,18 @@ public class PeerConnection {
     // necessary.
     public final String hostname;
 
+    // TODO(diogor, webrtc:9673): Remove tlsAlpnProtocols from this API.
     // List of protocols to be used in the TLS ALPN extension.
-    public final List<String> tlsAlpnProtocols;
+    @Deprecated public final List<String> tlsAlpnProtocols;
 
+    // TODO(diogor, webrtc:9673): Remove tlsEllipticCurves from this API.
     // List of elliptic curves to be used in the TLS elliptic curves extension.
     // Only curve names supported by OpenSSL should be used (eg. "P-256","X25519").
-    public final List<String> tlsEllipticCurves;
+    // This field will be ignored if tlsEllipticCurves is also set in SslConfig.
+    @Deprecated public final List<String> tlsEllipticCurves;
+
+    // SSL configuration options for any SSL/TLS connections to this IceServer.
+    public final SslConfig sslConfig;
 
     /** Convenience constructor for STUN servers. */
     @Deprecated
@@ -161,12 +343,12 @@ public class PeerConnection {
     public IceServer(String uri, String username, String password, TlsCertPolicy tlsCertPolicy,
         String hostname) {
       this(uri, Collections.singletonList(uri), username, password, tlsCertPolicy, hostname, null,
-          null);
+          null, SslConfig.builder().createSslConfig());
     }
 
     private IceServer(String uri, List<String> urls, String username, String password,
         TlsCertPolicy tlsCertPolicy, String hostname, List<String> tlsAlpnProtocols,
-        List<String> tlsEllipticCurves) {
+        List<String> tlsEllipticCurves, SslConfig sslConfig) {
       if (uri == null || urls == null || urls.isEmpty()) {
         throw new IllegalArgumentException("uri == null || urls == null || urls.isEmpty()");
       }
@@ -192,12 +374,13 @@ public class PeerConnection {
       this.hostname = hostname;
       this.tlsAlpnProtocols = tlsAlpnProtocols;
       this.tlsEllipticCurves = tlsEllipticCurves;
+      this.sslConfig = sslConfig;
     }
 
     @Override
     public String toString() {
       return urls + " [" + username + ":" + password + "] [" + tlsCertPolicy + "] [" + hostname
-          + "] [" + tlsAlpnProtocols + "] [" + tlsEllipticCurves + "]";
+          + "] [" + tlsAlpnProtocols + "] [" + tlsEllipticCurves + "] [" + sslConfig + "]";
     }
 
     public static Builder builder(String uri) {
@@ -216,6 +399,7 @@ public class PeerConnection {
       private String hostname = "";
       private List<String> tlsAlpnProtocols;
       private List<String> tlsEllipticCurves;
+      private SslConfig sslConfig = SslConfig.builder().createSslConfig();
 
       private Builder(List<String> urls) {
         if (urls == null || urls.isEmpty()) {
@@ -234,6 +418,7 @@ public class PeerConnection {
         return this;
       }
 
+      @Deprecated
       public Builder setTlsCertPolicy(TlsCertPolicy tlsCertPolicy) {
         this.tlsCertPolicy = tlsCertPolicy;
         return this;
@@ -244,19 +429,26 @@ public class PeerConnection {
         return this;
       }
 
+      @Deprecated
       public Builder setTlsAlpnProtocols(List<String> tlsAlpnProtocols) {
         this.tlsAlpnProtocols = tlsAlpnProtocols;
         return this;
       }
 
+      @Deprecated
       public Builder setTlsEllipticCurves(List<String> tlsEllipticCurves) {
         this.tlsEllipticCurves = tlsEllipticCurves;
         return this;
       }
 
+      public Builder setSslConfig(SslConfig sslConfig) {
+        this.sslConfig = sslConfig;
+        return this;
+      }
+
       public IceServer createIceServer() {
         return new IceServer(urls.get(0), urls, username, password, tlsCertPolicy, hostname,
-            tlsAlpnProtocols, tlsEllipticCurves);
+            tlsAlpnProtocols, tlsEllipticCurves, sslConfig);
       }
     }
 
@@ -297,6 +489,11 @@ public class PeerConnection {
     @CalledByNative("IceServer")
     List<String> getTlsEllipticCurves() {
       return tlsEllipticCurves;
+    }
+
+    @CalledByNative("IceServer")
+    SslConfig getSslConfig() {
+      return sslConfig;
     }
   }
 

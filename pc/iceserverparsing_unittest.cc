@@ -86,16 +86,16 @@ TEST_F(IceServerParsingTest, ParseStunPrefixes) {
   EXPECT_EQ(0U, stun_servers_.size());
   EXPECT_EQ(1U, turn_servers_.size());
   EXPECT_EQ(cricket::PROTO_TLS, turn_servers_[0].ports[0].proto);
-  EXPECT_TRUE(turn_servers_[0].tls_cert_policy ==
-              cricket::TlsCertPolicy::TLS_CERT_POLICY_SECURE);
+  EXPECT_TRUE(turn_servers_[0].ssl_config.tls_cert_policy ==
+              rtc::TlsCertPolicy::TLS_CERT_POLICY_SECURE);
 
   EXPECT_TRUE(ParseUrl(
       "turns:hostname", "username", "password",
       PeerConnectionInterface::TlsCertPolicy::kTlsCertPolicyInsecureNoCheck));
   EXPECT_EQ(0U, stun_servers_.size());
   EXPECT_EQ(1U, turn_servers_.size());
-  EXPECT_TRUE(turn_servers_[0].tls_cert_policy ==
-              cricket::TlsCertPolicy::TLS_CERT_POLICY_INSECURE_NO_CHECK);
+  EXPECT_TRUE(turn_servers_[0].ssl_config.tls_cert_policy ==
+              rtc::TlsCertPolicy::TLS_CERT_POLICY_INSECURE_NO_CHECK);
   EXPECT_EQ(cricket::PROTO_TLS, turn_servers_[0].ports[0].proto);
 
   // invalid prefixes
