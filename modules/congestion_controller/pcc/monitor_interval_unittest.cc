@@ -80,7 +80,7 @@ TEST(PccMonitorIntervalTest, LossRateIsOneThirdIfLostOnePacketOutOfThree) {
       kStartTime + 2 * kIntervalDuration};
   std::vector<Timestamp> end_times = {
       kStartTime + 2 * kIntervalDuration, kStartTime + 2 * kIntervalDuration,
-      Timestamp::Infinity(), kStartTime + 2 * kIntervalDuration,
+      Timestamp::PlusInfinity(), kStartTime + 2 * kIntervalDuration,
       kStartTime + 4 * kIntervalDuration};
   std::vector<DataSize> packet_sizes = {
       kDefaultPacketSize, 2 * kDefaultPacketSize, 3 * kDefaultPacketSize,
@@ -99,8 +99,9 @@ TEST(PccMonitorIntervalTest, DelayGradientIsZeroIfNoChangeInPacketDelay) {
   monitor_interval.OnPacketsFeedback(CreatePacketResults(
       {kStartTime + kPacketsDelta, kStartTime + 2 * kPacketsDelta,
        kStartTime + 3 * kPacketsDelta, kStartTime + 2 * kIntervalDuration},
-      {kStartTime + kDefaultDelay, Timestamp::Infinity(),
-       kStartTime + kDefaultDelay + 2 * kPacketsDelta, Timestamp::Infinity()},
+      {kStartTime + kDefaultDelay, Timestamp::PlusInfinity(),
+       kStartTime + kDefaultDelay + 2 * kPacketsDelta,
+       Timestamp::PlusInfinity()},
       {}));
   // Delay gradient should be zero, because both received packets have the
   // same one way delay.
@@ -127,7 +128,7 @@ TEST(PccMonitorIntervalTest, DelayGradientIsOne) {
   monitor_interval.OnPacketsFeedback(CreatePacketResults(
       {kStartTime + kPacketsDelta, kStartTime + 2 * kPacketsDelta,
        kStartTime + 3 * kPacketsDelta, kStartTime + 3 * kIntervalDuration},
-      {kStartTime + kDefaultDelay, Timestamp::Infinity(),
+      {kStartTime + kDefaultDelay, Timestamp::PlusInfinity(),
        kStartTime + 4 * kPacketsDelta + kDefaultDelay,
        kStartTime + 3 * kIntervalDuration},
       {}));
@@ -141,7 +142,7 @@ TEST(PccMonitorIntervalTest, DelayGradientIsMinusOne) {
   monitor_interval.OnPacketsFeedback(CreatePacketResults(
       {kStartTime + kPacketsDelta, kStartTime + 2 * kPacketsDelta,
        kStartTime + 5 * kPacketsDelta, kStartTime + 2 * kIntervalDuration},
-      {kStartTime + kDefaultDelay, Timestamp::Infinity(),
+      {kStartTime + kDefaultDelay, Timestamp::PlusInfinity(),
        kStartTime + kDefaultDelay, kStartTime + 3 * kIntervalDuration},
       {}));
   EXPECT_DOUBLE_EQ(
@@ -155,7 +156,7 @@ TEST(PccMonitorIntervalTest,
   monitor_interval.OnPacketsFeedback(CreatePacketResults(
       {kStartTime + kPacketsDelta, kStartTime + kPacketsDelta,
        kStartTime + 102 * kPacketsDelta, kStartTime + 2 * kIntervalDuration},
-      {kStartTime + kDefaultDelay, Timestamp::Infinity(),
+      {kStartTime + kDefaultDelay, Timestamp::PlusInfinity(),
        kStartTime + kDefaultDelay + kPacketsDelta,
        kStartTime + 3 * kIntervalDuration},
       {}));
@@ -171,7 +172,7 @@ TEST(PccMonitorIntervalTest,
   monitor_interval.OnPacketsFeedback(CreatePacketResults(
       {kStartTime + kPacketsDelta, kStartTime + kPacketsDelta,
        kStartTime + kPacketsDelta, kStartTime + 2 * kIntervalDuration},
-      {kStartTime + kDefaultDelay, Timestamp::Infinity(),
+      {kStartTime + kDefaultDelay, Timestamp::PlusInfinity(),
        kStartTime + kDefaultDelay + kPacketsDelta,
        kStartTime + 3 * kIntervalDuration},
       {}));

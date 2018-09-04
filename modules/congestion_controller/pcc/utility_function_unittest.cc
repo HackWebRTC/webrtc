@@ -67,8 +67,9 @@ TEST(PccVivaceUtilityFunctionTest,
   monitor_interval.OnPacketsFeedback(CreatePacketResults(
       {kStartTime + kPacketsDelta, kStartTime + 2 * kPacketsDelta,
        kStartTime + 3 * kPacketsDelta, kStartTime + 2 * kIntervalDuration},
-      {kStartTime + kPacketsDelta + kDefaultDelay, Timestamp::Infinity(),
-       kStartTime + kDefaultDelay + 3 * kPacketsDelta, Timestamp::Infinity()},
+      {kStartTime + kPacketsDelta + kDefaultDelay, Timestamp::PlusInfinity(),
+       kStartTime + kDefaultDelay + 3 * kPacketsDelta,
+       Timestamp::PlusInfinity()},
       {kDefaultDataSize, kDefaultDataSize, kDefaultDataSize,
        kDefaultDataSize}));
   EXPECT_DOUBLE_EQ(utility_function.Compute(monitor_interval),
@@ -86,7 +87,7 @@ TEST(PccVivaceUtilityFunctionTest,
   monitor_interval.OnPacketsFeedback(CreatePacketResults(
       {kStartTime + kPacketsDelta, kStartTime + 2 * kPacketsDelta,
        kStartTime + 5 * kPacketsDelta, kStartTime + 2 * kIntervalDuration},
-      {kStartTime + kDefaultDelay, Timestamp::Infinity(),
+      {kStartTime + kDefaultDelay, Timestamp::PlusInfinity(),
        kStartTime + kDefaultDelay, kStartTime + 3 * kIntervalDuration},
       {}));
   // The second packet was lost.

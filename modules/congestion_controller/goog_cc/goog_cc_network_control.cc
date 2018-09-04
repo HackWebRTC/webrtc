@@ -326,7 +326,7 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportLossReport(
 NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
     TransportPacketsFeedback report) {
   TimeDelta feedback_max_rtt = TimeDelta::MinusInfinity();
-  Timestamp max_recv_time = Timestamp::ms(0);
+  Timestamp max_recv_time = Timestamp::MinusInfinity();
   for (const auto& packet_feedback : report.ReceivedWithSendInfo()) {
     TimeDelta rtt =
         report.feedback_time - packet_feedback.sent_packet->send_time;

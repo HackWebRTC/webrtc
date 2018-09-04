@@ -76,7 +76,7 @@ class GoogCcNetworkController : public NetworkControllerInterface {
 
   absl::optional<NetworkControllerConfig> initial_config_;
 
-  Timestamp next_loss_update_ = Timestamp::ms(0);
+  Timestamp next_loss_update_ = Timestamp::MinusInfinity();
   int lost_packets_since_last_loss_update_ = 0;
   int expected_packets_since_last_loss_update_ = 0;
 

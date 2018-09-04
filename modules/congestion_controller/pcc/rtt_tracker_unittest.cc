@@ -27,7 +27,7 @@ PacketResult GetPacketWithRtt(TimeDelta rtt) {
   if (rtt.IsFinite()) {
     packet_result.receive_time = kStartTime + rtt;
   } else {
-    packet_result.receive_time = Timestamp::Infinity();
+    packet_result.receive_time = Timestamp::PlusInfinity();
   }
   return packet_result;
 }

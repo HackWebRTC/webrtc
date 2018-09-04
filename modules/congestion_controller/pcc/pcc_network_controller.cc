@@ -49,8 +49,8 @@ const uint64_t kRandomSeed = 100;
 }  // namespace
 
 PccNetworkController::PccNetworkController(NetworkControllerConfig config)
-    : start_time_(Timestamp::Infinity()),
-      last_sent_packet_time_(Timestamp::Infinity()),
+    : start_time_(Timestamp::PlusInfinity()),
+      last_sent_packet_time_(Timestamp::PlusInfinity()),
       smoothed_packets_sending_interval_(TimeDelta::Zero()),
       mode_(Mode::kStartup),
       default_bandwidth_(DataRate::kbps(kInitialBandwidthKbps)),

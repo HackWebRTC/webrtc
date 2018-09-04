@@ -155,7 +155,6 @@ BbrNetworkController::BbrControllerConfig::FromTrial() {
       webrtc::field_trial::FindFullName(kBbrConfigTrial));
 }
 
-
 BbrNetworkController::DebugState::DebugState(const BbrNetworkController& sender)
     : mode(sender.mode_),
       max_bandwidth(sender.max_bandwidth_.GetBest()),
@@ -193,7 +192,7 @@ BbrNetworkController::BbrNetworkController(NetworkControllerConfig config)
       max_aggregation_bytes_multiplier_(0),
       min_rtt_(TimeDelta::Zero()),
       last_rtt_(TimeDelta::Zero()),
-      min_rtt_timestamp_(Timestamp::ms(0)),
+      min_rtt_timestamp_(Timestamp::MinusInfinity()),
       congestion_window_(config_.initial_congestion_window),
       initial_congestion_window_(config_.initial_congestion_window),
       min_congestion_window_(config_.min_congestion_window),
@@ -203,7 +202,7 @@ BbrNetworkController::BbrNetworkController(NetworkControllerConfig config)
       congestion_window_gain_constant_(kProbeBWCongestionWindowGain),
       rtt_variance_weight_(kBbrRttVariationWeight),
       cycle_current_offset_(0),
-      last_cycle_start_(Timestamp::ms(0)),
+      last_cycle_start_(Timestamp::MinusInfinity()),
       is_at_full_bandwidth_(false),
       rounds_without_bandwidth_gain_(0),
       bandwidth_at_last_round_(DataRate::Zero()),

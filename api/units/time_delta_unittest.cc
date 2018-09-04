@@ -74,6 +74,12 @@ TEST(TimeDeltaTest, IdentityChecks) {
   EXPECT_TRUE(TimeDelta::ms(-kValue).IsFinite());
   EXPECT_TRUE(TimeDelta::ms(kValue).IsFinite());
   EXPECT_TRUE(TimeDelta::Zero().IsFinite());
+
+  EXPECT_TRUE(TimeDelta::PlusInfinity().IsPlusInfinity());
+  EXPECT_FALSE(TimeDelta::MinusInfinity().IsPlusInfinity());
+
+  EXPECT_TRUE(TimeDelta::MinusInfinity().IsMinusInfinity());
+  EXPECT_FALSE(TimeDelta::PlusInfinity().IsMinusInfinity());
 }
 
 TEST(TimeDeltaTest, ComparisonOperators) {

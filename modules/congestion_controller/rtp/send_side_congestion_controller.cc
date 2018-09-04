@@ -78,7 +78,7 @@ PacketResult NetworkPacketFeedbackFromRtpPacketFeedback(
     const webrtc::PacketFeedback& pf) {
   PacketResult feedback;
   if (pf.arrival_time_ms == webrtc::PacketFeedback::kNotReceived)
-    feedback.receive_time = Timestamp::Infinity();
+    feedback.receive_time = Timestamp::PlusInfinity();
   else
     feedback.receive_time = Timestamp::ms(pf.arrival_time_ms);
   if (pf.send_time_ms != webrtc::PacketFeedback::kNoSendTime) {
