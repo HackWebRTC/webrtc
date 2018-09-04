@@ -17,14 +17,24 @@
 #include "video/end_to_end_tests/multi_stream_tester.h"
 
 namespace webrtc {
-class MultiStreamEndToEndTest : public test::CallTest {
+class MultiStreamEndToEndTest
+    : public test::CallTest,
+      public testing::WithParamInterface<std::string> {
  public:
-  MultiStreamEndToEndTest() = default;
+  MultiStreamEndToEndTest() : field_trial_(GetParam()) {}
+
+ private:
+  test::ScopedFieldTrials field_trial_;
 };
+
+INSTANTIATE_TEST_CASE_P(RoundRobin,
+                        MultiStreamEndToEndTest,
+                        ::testing::Values("WebRTC-RoundRobinPacing/Disabled/",
+                                          "WebRTC-RoundRobinPacing/Enabled/"));
 
 // Each renderer verifies that it receives the expected resolution, and as soon
 // as every renderer has received a frame, the test finishes.
-TEST_F(MultiStreamEndToEndTest, SendsAndReceivesMultipleStreams) {
+TEST_P(MultiStreamEndToEndTest, SendsAndReceivesMultipleStreams) {
   class VideoOutputObserver : public rtc::VideoSinkInterface<VideoFrame> {
    public:
     VideoOutputObserver(const MultiStreamTester::CodecSettings& settings,

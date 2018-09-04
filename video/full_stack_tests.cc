@@ -48,6 +48,8 @@ namespace {
 static const int kFullStackTestDurationSecs = 45;
 const char kNotScreenshareSimulcastExperiment[] =
     "WebRTC-SimulcastScreenshare/Disabled/";
+const char kRoundRobinPacingQueueExperiment[] =
+    "WebRTC-RoundRobinPacing/Enabled/";
 const char kPacerPushBackExperiment[] =
     "WebRTC-PacerPushbackExperiment/Enabled/";
 
@@ -1070,7 +1072,8 @@ class DualStreamsTest : public ::testing::TestWithParam<int> {};
 TEST_P(DualStreamsTest,
        ModeratelyRestricted_SlidesVp8_3TL_Simulcast_Video_Simulcast_High) {
   test::ScopedFieldTrials field_trial(
-      AppendFieldTrials(std::string(kPacerPushBackExperiment)));
+      AppendFieldTrials(std::string(kRoundRobinPacingQueueExperiment) +
+                        std::string(kPacerPushBackExperiment)));
   const int first_stream = GetParam();
   ParamsWithLogging dual_streams;
 
@@ -1133,7 +1136,8 @@ TEST_P(DualStreamsTest,
 
 TEST_P(DualStreamsTest, Conference_Restricted) {
   test::ScopedFieldTrials field_trial(
-      AppendFieldTrials(std::string(kPacerPushBackExperiment)));
+      AppendFieldTrials(std::string(kRoundRobinPacingQueueExperiment) +
+                        std::string(kPacerPushBackExperiment)));
   const int first_stream = GetParam();
   ParamsWithLogging dual_streams;
 

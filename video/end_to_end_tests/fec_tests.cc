@@ -21,12 +21,21 @@
 
 namespace webrtc {
 
-class FecEndToEndTest : public test::CallTest {
+class FecEndToEndTest : public test::CallTest,
+                        public testing::WithParamInterface<std::string> {
  public:
-  FecEndToEndTest() = default;
+  FecEndToEndTest() : field_trial_(GetParam()) {}
+
+ private:
+  test::ScopedFieldTrials field_trial_;
 };
 
-TEST_F(FecEndToEndTest, ReceivesUlpfec) {
+INSTANTIATE_TEST_CASE_P(RoundRobin,
+                        FecEndToEndTest,
+                        ::testing::Values("WebRTC-RoundRobinPacing/Disabled/",
+                                          "WebRTC-RoundRobinPacing/Enabled/"));
+
+TEST_P(FecEndToEndTest, ReceivesUlpfec) {
   class UlpfecRenderObserver : public test::EndToEndTest,
                                public rtc::VideoSinkInterface<VideoFrame> {
    public:
@@ -305,22 +314,22 @@ class FlexfecRenderObserver : public test::EndToEndTest,
   int num_packets_sent_;
 };
 
-TEST_F(FecEndToEndTest, RecoversWithFlexfec) {
+TEST_P(FecEndToEndTest, RecoversWithFlexfec) {
   FlexfecRenderObserver test(false, false);
   RunBaseTest(&test);
 }
 
-TEST_F(FecEndToEndTest, RecoversWithFlexfecAndNack) {
+TEST_P(FecEndToEndTest, RecoversWithFlexfecAndNack) {
   FlexfecRenderObserver test(true, false);
   RunBaseTest(&test);
 }
 
-TEST_F(FecEndToEndTest, RecoversWithFlexfecAndSendsCorrespondingRtcp) {
+TEST_P(FecEndToEndTest, RecoversWithFlexfecAndSendsCorrespondingRtcp) {
   FlexfecRenderObserver test(false, true);
   RunBaseTest(&test);
 }
 
-TEST_F(FecEndToEndTest, ReceivedUlpfecPacketsNotNacked) {
+TEST_P(FecEndToEndTest, ReceivedUlpfecPacketsNotNacked) {
   class UlpfecNackObserver : public test::EndToEndTest {
    public:
     UlpfecNackObserver()

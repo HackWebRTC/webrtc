@@ -20,16 +20,27 @@
 #include "test/rtcp_packet_parser.h"
 
 namespace webrtc {
-class RetransmissionEndToEndTest : public test::CallTest {
+class RetransmissionEndToEndTest
+    : public test::CallTest,
+      public testing::WithParamInterface<std::string> {
  public:
-  RetransmissionEndToEndTest() = default;
+  RetransmissionEndToEndTest() : field_trial_(GetParam()) {}
 
  protected:
   void DecodesRetransmittedFrame(bool enable_rtx, bool enable_red);
   void ReceivesPliAndRecovers(int rtp_history_ms);
+
+ private:
+ private:
+  test::ScopedFieldTrials field_trial_;
 };
 
-TEST_F(RetransmissionEndToEndTest, ReceivesAndRetransmitsNack) {
+INSTANTIATE_TEST_CASE_P(RoundRobin,
+                        RetransmissionEndToEndTest,
+                        ::testing::Values("WebRTC-RoundRobinPacing/Disabled/",
+                                          "WebRTC-RoundRobinPacing/Enabled/"));
+
+TEST_P(RetransmissionEndToEndTest, ReceivesAndRetransmitsNack) {
   static const int kNumberOfNacksToObserve = 2;
   static const int kLossBurstSize = 2;
   static const int kPacketsBetweenLossBursts = 9;
@@ -112,7 +123,7 @@ TEST_F(RetransmissionEndToEndTest, ReceivesAndRetransmitsNack) {
   RunBaseTest(&test);
 }
 
-TEST_F(RetransmissionEndToEndTest, ReceivesNackAndRetransmitsAudio) {
+TEST_P(RetransmissionEndToEndTest, ReceivesNackAndRetransmitsAudio) {
   class NackObserver : public test::EndToEndTest {
    public:
     NackObserver()
@@ -187,7 +198,7 @@ TEST_F(RetransmissionEndToEndTest, ReceivesNackAndRetransmitsAudio) {
   RunBaseTest(&test);
 }
 
-TEST_F(RetransmissionEndToEndTest,
+TEST_P(RetransmissionEndToEndTest,
        StopSendingKeyframeRequestsForInactiveStream) {
   class KeyframeRequestObserver : public test::EndToEndTest {
    public:
@@ -310,11 +321,11 @@ void RetransmissionEndToEndTest::ReceivesPliAndRecovers(int rtp_history_ms) {
   RunBaseTest(&test);
 }
 
-TEST_F(RetransmissionEndToEndTest, ReceivesPliAndRecoversWithNack) {
+TEST_P(RetransmissionEndToEndTest, ReceivesPliAndRecoversWithNack) {
   ReceivesPliAndRecovers(1000);
 }
 
-TEST_F(RetransmissionEndToEndTest, ReceivesPliAndRecoversWithoutNack) {
+TEST_P(RetransmissionEndToEndTest, ReceivesPliAndRecoversWithoutNack) {
   ReceivesPliAndRecovers(0);
 }
 // This test drops second RTP packet with a marker bit set, makes sure it's
@@ -471,19 +482,19 @@ void RetransmissionEndToEndTest::DecodesRetransmittedFrame(bool enable_rtx,
   RunBaseTest(&test);
 }
 
-TEST_F(RetransmissionEndToEndTest, DecodesRetransmittedFrame) {
+TEST_P(RetransmissionEndToEndTest, DecodesRetransmittedFrame) {
   DecodesRetransmittedFrame(false, false);
 }
 
-TEST_F(RetransmissionEndToEndTest, DecodesRetransmittedFrameOverRtx) {
+TEST_P(RetransmissionEndToEndTest, DecodesRetransmittedFrameOverRtx) {
   DecodesRetransmittedFrame(true, false);
 }
 
-TEST_F(RetransmissionEndToEndTest, DecodesRetransmittedFrameByRed) {
+TEST_P(RetransmissionEndToEndTest, DecodesRetransmittedFrameByRed) {
   DecodesRetransmittedFrame(false, true);
 }
 
-TEST_F(RetransmissionEndToEndTest, DecodesRetransmittedFrameByRedOverRtx) {
+TEST_P(RetransmissionEndToEndTest, DecodesRetransmittedFrameByRedOverRtx) {
   DecodesRetransmittedFrame(true, true);
 }
 
