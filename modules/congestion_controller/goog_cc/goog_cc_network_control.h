@@ -56,13 +56,8 @@ class GoogCcNetworkController : public NetworkControllerInterface {
   std::vector<ProbeClusterConfig> UpdateBitrateConstraints(
       TargetRateConstraints constraints,
       absl::optional<DataRate> starting_rate);
-  absl::optional<DataSize> MaybeUpdateCongestionWindow();
   void MaybeTriggerOnNetworkChanged(NetworkControlUpdate* update,
                                     Timestamp at_time);
-  bool GetNetworkParameters(int32_t* estimated_bitrate_bps,
-                            uint8_t* fraction_loss,
-                            int64_t* rtt_ms,
-                            Timestamp at_time);
   PacerConfig GetPacingRates(Timestamp at_time) const;
 
   RtcEventLog* const event_log_;
@@ -82,7 +77,6 @@ class GoogCcNetworkController : public NetworkControllerInterface {
   int expected_packets_since_last_loss_update_ = 0;
 
   std::deque<int64_t> feedback_max_rtts_;
-  absl::optional<int64_t> min_feedback_max_rtt_ms_;
 
   DataRate last_bandwidth_;
   absl::optional<TargetTransferRate> last_target_rate_;
