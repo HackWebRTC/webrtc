@@ -210,12 +210,15 @@ rtc_source_set("audio_device_impl") {
     "../../common_audio:common_audio_c",
     "../../rtc_base:checks",
     "../../rtc_base:deprecation",
+    "../../rtc_base:rtc_base",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:rtc_task_queue",
+    "../../rtc_base/system:arch",
     "../../rtc_base/system:file_wrapper",
     "../../system_wrappers",
     "../../system_wrappers:metrics_api",
     "../utility",
+    "//third_party/abseil-cpp/absl/memory",
   ]
   if (rtc_include_internal_audio_device && is_ios) {
     deps += [ ":audio_device_ios_objc" ]
@@ -247,8 +250,6 @@ rtc_source_set("audio_device_impl") {
     defines += [ "AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO" ]
   }
   if (rtc_include_internal_audio_device) {
-    # TODO(bugs.webrtc.org/8850): remove this when the circular dependency will be fixed.
-    check_includes = false
     sources += [
       "audio_device_data_observer.cc",
       "audio_device_impl.cc",
