@@ -13,6 +13,7 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "api/array_view.h"
 #include "common_types.h"  // NOLINT(build/include)
@@ -47,6 +48,10 @@ class RtpPacketizer {
   // Write payload and set marker bit of the |packet|.
   // Returns true on success, false otherwise.
   virtual bool NextPacket(RtpPacketToSend* packet) = 0;
+
+  // Split payload_len into sum of integers with respect to |limits|.
+  static std::vector<size_t> SplitAboutEqually(size_t payload_len,
+                                               const PayloadSizeLimits& limits);
 };
 
 // TODO(sprang): Update the depacketizer to return a std::unqie_ptr with a copy

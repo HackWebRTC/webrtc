@@ -225,6 +225,7 @@ rtc_static_library("rtp_rtcp") {
     "../../system_wrappers:metrics_api",
     "../audio_coding:audio_format_conversion",
     "../remote_bitrate_estimator",
+    "//third_party/abseil-cpp/absl/container:inlined_vector",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
@@ -393,6 +394,7 @@ if (rtc_include_tests) {
       "source/rtcp_transceiver_unittest.cc",
       "source/rtp_fec_unittest.cc",
       "source/rtp_format_h264_unittest.cc",
+      "source/rtp_format_unittest.cc",
       "source/rtp_format_video_generic_unittest.cc",
       "source/rtp_format_vp8_test_helper.cc",
       "source/rtp_format_vp8_test_helper.h",
