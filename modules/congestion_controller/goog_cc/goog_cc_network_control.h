@@ -52,6 +52,7 @@ class GoogCcNetworkController : public NetworkControllerInterface {
   NetworkControlUpdate GetNetworkState(Timestamp at_time) const;
 
  private:
+  friend class GoogCcStatePrinter;
   std::vector<ProbeClusterConfig> UpdateBitrateConstraints(
       TargetRateConstraints constraints,
       absl::optional<DataRate> starting_rate);

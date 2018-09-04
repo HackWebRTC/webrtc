@@ -53,6 +53,7 @@ class TrendlineEstimator : public DelayIncreaseDetectorInterface {
   unsigned int num_of_deltas() const { return num_of_deltas_; }
 
  private:
+  friend class GoogCcStatePrinter;
   void Detect(double offset,
               double ts_delta,
               int num_of_deltas,
@@ -79,6 +80,7 @@ class TrendlineEstimator : public DelayIncreaseDetectorInterface {
   const double k_down_;
   double overusing_time_threshold_;
   double threshold_;
+  double prev_modified_offset_;
   int64_t last_update_ms_;
   double prev_offset_;
   double time_over_using_;

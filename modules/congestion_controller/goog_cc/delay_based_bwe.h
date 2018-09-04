@@ -56,6 +56,7 @@ class DelayBasedBwe {
   int64_t GetExpectedBwePeriodMs() const;
 
  private:
+  friend class GoogCcStatePrinter;
   void IncomingPacketFeedback(const PacketFeedback& packet_feedback,
                               int64_t at_time_ms);
   Result OnLongFeedbackDelay(int64_t arrival_time_ms);

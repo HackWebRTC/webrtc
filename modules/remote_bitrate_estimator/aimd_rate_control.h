@@ -54,6 +54,7 @@ class AimdRateControl {
   int GetExpectedBandwidthPeriodMs() const;
 
  private:
+  friend class GoogCcStatePrinter;
   // Update the target bitrate based on, among other things, the current rate
   // control state, the current target bitrate and the estimated throughput.
   // When in the "increase" state the bitrate will be increased either

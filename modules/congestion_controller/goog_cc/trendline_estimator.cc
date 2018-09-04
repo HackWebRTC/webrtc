@@ -70,6 +70,7 @@ TrendlineEstimator::TrendlineEstimator(size_t window_size,
       k_down_(0.039),
       overusing_time_threshold_(kOverUsingTimeThreshold),
       threshold_(12.5),
+      prev_modified_offset_(NAN),
       last_update_ms_(-1),
       prev_offset_(0.0),
       time_over_using_(-1),
@@ -162,6 +163,7 @@ void TrendlineEstimator::Detect(double offset,
 
 void TrendlineEstimator::UpdateThreshold(double modified_offset,
                                          int64_t now_ms) {
+  prev_modified_offset_ = modified_offset;
   if (last_update_ms_ == -1)
     last_update_ms_ = now_ms;
 

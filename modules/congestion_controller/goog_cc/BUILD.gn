@@ -147,6 +147,7 @@ if (rtc_include_tests) {
       "test/goog_cc_printer.h",
     ]
     deps = [
+      ":estimators",
       ":goog_cc",
       "..:test_controller_printer",
     ]

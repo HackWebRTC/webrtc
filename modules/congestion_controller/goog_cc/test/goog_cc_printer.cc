@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 #include "modules/congestion_controller/goog_cc/test/goog_cc_printer.h"
+#include "modules/congestion_controller/goog_cc/trendline_estimator.h"
+
 namespace webrtc {
 
 GoogCcStatePrinter::GoogCcStatePrinter() = default;
@@ -21,10 +23,23 @@ bool GoogCcStatePrinter::Attached() const {
   return controller_ != nullptr;
 }
 
-void GoogCcStatePrinter::PrintHeaders(FILE* out) {}
+void GoogCcStatePrinter::PrintHeaders(FILE* out) {
+  fprintf(out,
+          "rate_control_state rate_control_region alr_state"
+          " trendline trendline_modified_offset trendline_offset_threshold");
+}
 
 void GoogCcStatePrinter::PrintValues(FILE* out) {
   RTC_CHECK(controller_);
+  auto* detector = controller_->delay_based_bwe_->delay_detector_.get();
+  auto* trendline_estimator = reinterpret_cast<TrendlineEstimator*>(detector);
+  fprintf(out, "%i %i %i %.6lf %.6lf %.6lf",
+          controller_->delay_based_bwe_->rate_control_.rate_control_state_,
+          controller_->delay_based_bwe_->rate_control_.rate_control_region_,
+          controller_->alr_detector_->alr_started_time_ms_.has_value(),
+          trendline_estimator->trendline_,
+          trendline_estimator->prev_modified_offset_,
+          trendline_estimator->threshold_);
 }
 
 NetworkControlUpdate GoogCcStatePrinter::GetState(Timestamp at_time) const {
