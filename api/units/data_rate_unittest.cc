@@ -100,11 +100,21 @@ TEST(DataRateTest, MathOperations) {
   const DataRate rate_b = DataRate::bps(kValueB);
   const int32_t kInt32Value = 123;
   const double kFloatValue = 123.0;
+
+  EXPECT_EQ((rate_a + rate_b).bps(), kValueA + kValueB);
+  EXPECT_EQ((rate_a - rate_b).bps(), kValueA - kValueB);
+
   EXPECT_EQ((rate_a * kValueB).bps(), kValueA * kValueB);
   EXPECT_EQ((rate_a * kInt32Value).bps(), kValueA * kInt32Value);
   EXPECT_EQ((rate_a * kFloatValue).bps(), kValueA * kFloatValue);
 
   EXPECT_EQ(rate_a / rate_b, static_cast<double>(kValueA) / kValueB);
+
+  DataRate mutable_rate = DataRate::bps(kValueA);
+  mutable_rate += rate_b;
+  EXPECT_EQ(mutable_rate.bps(), kValueA + kValueB);
+  mutable_rate -= rate_a;
+  EXPECT_EQ(mutable_rate.bps(), kValueB);
 }
 
 TEST(UnitConversionTest, DataRateAndDataSizeAndTimeDelta) {

@@ -133,7 +133,20 @@ class DataRate {
     return bits_per_sec_ == data_rate_impl::kPlusInfinityVal;
   }
   constexpr bool IsFinite() const { return !IsInfinite(); }
-
+  DataRate operator-(const DataRate& other) const {
+    return DataRate::bps(bps() - other.bps());
+  }
+  DataRate operator+(const DataRate& other) const {
+    return DataRate::bps(bps() + other.bps());
+  }
+  DataRate& operator-=(const DataRate& other) {
+    *this = *this - other;
+    return *this;
+  }
+  DataRate& operator+=(const DataRate& other) {
+    *this = *this + other;
+    return *this;
+  }
   constexpr double operator/(const DataRate& other) const {
     return bps<double>() / other.bps<double>();
   }
