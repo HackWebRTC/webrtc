@@ -64,6 +64,16 @@ const char* FilenameFromPath(const char* file) {
     return (end1 > end2) ? end1 + 1 : end2 + 1;
 }
 
+std::ostream& GetNoopStream() {
+  class NoopStreamBuf : public std::streambuf {
+   public:
+    int overflow(int c) override { return c; }
+  };
+  static NoopStreamBuf noop_buffer;
+  static std::ostream noop_stream(&noop_buffer);
+  return noop_stream;
+}
+
 // Global lock for log subsystem, only needed to serialize access to streams_.
 CriticalSection g_log_crit;
 }  // namespace
@@ -98,7 +108,11 @@ LogMessage::LogMessage(const char* file,
                        LoggingSeverity sev,
                        LogErrorContext err_ctx,
                        int err)
-    : severity_(sev) {
+    : severity_(sev), is_noop_(IsNoop(sev)) {
+  // If there's no need to do any work, let's not :)
+  if (is_noop_)
+    return;
+
   if (timestamp_) {
     // Use SystemTimeMillis so that even if tests use fake clocks, the timestamp
     // in log messages represents the real system time.
@@ -106,14 +120,14 @@ LogMessage::LogMessage(const char* file,
     // Also ensure WallClockStartTime is initialized, so that it matches
     // LogStartTime.
     WallClockStartTime();
-    print_stream_ << "[" << rtc::LeftPad('0', 3, rtc::ToString(time / 1000))
-                  << ":" << rtc::LeftPad('0', 3, rtc::ToString(time % 1000))
+    print_stream_ << "[" << std::setfill('0') << std::setw(3) << (time / 1000)
+                  << ":" << std::setw(3) << (time % 1000) << std::setfill(' ')
                   << "] ";
   }
 
   if (thread_) {
     PlatformThreadId id = CurrentThreadId();
-    print_stream_ << "[" << id << "] ";
+    print_stream_ << "[" << std::dec << id << "] ";
   }
 
   if (file != nullptr) {
@@ -170,8 +184,10 @@ LogMessage::LogMessage(const char* file,
                        LoggingSeverity sev,
                        const char* tag)
     : LogMessage(file, line, sev, ERRCTX_NONE, 0 /* err */) {
-  tag_ = tag;
-  print_stream_ << tag << ": ";
+  if (!is_noop_) {
+    tag_ = tag;
+    print_stream_ << tag << ": ";
+  }
 }
 #endif
 
@@ -183,13 +199,21 @@ LogMessage::LogMessage(const char* file,
                        LoggingSeverity sev,
                        const std::string& tag)
     : LogMessage(file, line, sev) {
-  print_stream_ << tag << ": ";
+  if (!is_noop_)
+    print_stream_ << tag << ": ";
 }
 
 LogMessage::~LogMessage() {
+  if (is_noop_)
+    return;
+
   FinishPrintStream();
 
-  const std::string str = print_stream_.Release();
+  // TODO(tommi): Unfortunately |ostringstream::str()| always returns a copy
+  // of the constructed string. This means that we always end up creating
+  // two copies here (one owned by the stream, one by the return value of
+  // |str()|). It would be nice to switch to something else.
+  const std::string str = print_stream_.str();
 
   if (severity_ >= g_dbg_sev) {
 #if defined(WEBRTC_ANDROID)
@@ -213,12 +237,18 @@ LogMessage::~LogMessage() {
 
 void LogMessage::AddTag(const char* tag) {
 #ifdef WEBRTC_ANDROID
-  tag_ = tag;
+  if (!is_noop_) {
+    tag_ = tag;
+  }
 #endif
 }
 
-rtc::StringBuilder& LogMessage::stream() {
-  return print_stream_;
+std::ostream& LogMessage::stream() {
+  return is_noop_ ? GetNoopStream() : print_stream_;
+}
+
+bool LogMessage::Loggable(LoggingSeverity sev) {
+  return sev >= g_min_sev;
 }
 
 int LogMessage::GetMinLogSeverity() {
@@ -446,23 +476,22 @@ void LogMessage::OutputToDebug(const std::string& str,
 
 // static
 bool LogMessage::IsNoop(LoggingSeverity severity) {
-  if (severity >= g_dbg_sev || severity >= g_min_sev)
+  if (severity >= g_dbg_sev)
     return false;
 
   // TODO(tommi): We're grabbing this lock for every LogMessage instance that
   // is going to be logged. This introduces unnecessary synchronization for
   // a feature that's mostly used for testing.
   CritScope cs(&g_log_crit);
-  if (streams_.size() > 0)
-    return false;
-
-  return true;
+  return streams_.size() == 0;
 }
 
 void LogMessage::FinishPrintStream() {
+  if (is_noop_)
+    return;
   if (!extra_.empty())
     print_stream_ << " : " << extra_;
-  print_stream_ << "\n";
+  print_stream_ << std::endl;
 }
 
 namespace webrtc_logging_impl {
@@ -496,12 +525,6 @@ void Log(const LogArgType* fmt, ...) {
       return;
     }
   }
-
-  if (LogMessage::IsNoop(meta.meta.Severity())) {
-    va_end(args);
-    return;
-  }
-
   LogMessage log_message(meta.meta.File(), meta.meta.Line(),
                          meta.meta.Severity(), meta.err_ctx, meta.err);
   if (tag) {
@@ -541,8 +564,7 @@ void Log(const LogArgType* fmt, ...) {
         log_message.stream() << *va_arg(args, const std::string*);
         break;
       case LogArgType::kVoidP:
-        log_message.stream() << rtc::ToHex(
-            reinterpret_cast<uintptr_t>(va_arg(args, const void*)));
+        log_message.stream() << va_arg(args, const void*);
         break;
       default:
         RTC_NOTREACHED();
