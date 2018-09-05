@@ -1345,116 +1345,97 @@ if (is_ios || is_mac) {
     }
 
     if (is_mac) {
-      mac_framework_header_files = [
-        "objc/base/RTCCodecSpecificInfo.h",
-        "objc/base/RTCEncodedImage.h",
-        "objc/base/RTCI420Buffer.h",
-        "objc/base/RTCLogging.h",
-        "objc/base/RTCMacros.h",
-        "objc/base/RTCMutableI420Buffer.h",
-        "objc/base/RTCMutableYUVPlanarBuffer.h",
-        "objc/base/RTCRtpFragmentationHeader.h",
-        "objc/base/RTCVideoCapturer.h",
-        "objc/base/RTCVideoCodecInfo.h",
-        "objc/base/RTCVideoDecoder.h",
-        "objc/base/RTCVideoDecoderFactory.h",
-        "objc/base/RTCVideoEncoder.h",
-        "objc/base/RTCVideoEncoderFactory.h",
-        "objc/base/RTCVideoEncoderQpThresholds.h",
-        "objc/base/RTCVideoEncoderSettings.h",
-        "objc/base/RTCVideoFrame.h",
-        "objc/base/RTCVideoFrameBuffer.h",
-        "objc/base/RTCVideoRenderer.h",
-        "objc/base/RTCYUVPlanarBuffer.h",
-        "objc/components/capturer/RTCCameraVideoCapturer.h",
-        "objc/components/capturer/RTCFileVideoCapturer.h",
-        "objc/components/renderer/metal/RTCMTLNSVideoView.h",
-        "objc/components/renderer/opengl/RTCNSGLVideoView.h",
-        "objc/components/renderer/opengl/RTCVideoViewShading.h",
-        "objc/components/video_codec/RTCCodecSpecificInfoH264.h",
-        "objc/components/video_codec/RTCDefaultVideoDecoderFactory.h",
-        "objc/components/video_codec/RTCDefaultVideoEncoderFactory.h",
-        "objc/components/video_codec/RTCH264ProfileLevelId.h",
-        "objc/components/video_codec/RTCVideoDecoderFactoryH264.h",
-        "objc/components/video_codec/RTCVideoDecoderH264.h",
-        "objc/components/video_codec/RTCVideoEncoderFactoryH264.h",
-        "objc/components/video_codec/RTCVideoEncoderH264.h",
-        "objc/components/video_frame_buffer/RTCCVPixelBuffer.h",
-        "objc/helpers/RTCDispatcher.h",
-        "objc/api/peerconnection/RTCAudioSource.h",
-        "objc/api/peerconnection/RTCAudioTrack.h",
-        "objc/api/peerconnection/RTCConfiguration.h",
-        "objc/api/peerconnection/RTCDataChannel.h",
-        "objc/api/peerconnection/RTCDataChannelConfiguration.h",
-        "objc/api/peerconnection/RTCFieldTrials.h",
-        "objc/api/peerconnection/RTCIceCandidate.h",
-        "objc/api/peerconnection/RTCIceServer.h",
-        "objc/api/peerconnection/RTCIntervalRange.h",
-        "objc/api/peerconnection/RTCLegacyStatsReport.h",
-        "objc/api/peerconnection/RTCMediaConstraints.h",
-        "objc/api/peerconnection/RTCMediaSource.h",
-        "objc/api/peerconnection/RTCMediaStream.h",
-        "objc/api/peerconnection/RTCMediaStreamTrack.h",
-        "objc/api/peerconnection/RTCMetrics.h",
-        "objc/api/peerconnection/RTCMetricsSampleInfo.h",
-        "objc/api/peerconnection/RTCPeerConnection.h",
-        "objc/api/peerconnection/RTCPeerConnectionFactory.h",
-        "objc/api/peerconnection/RTCPeerConnectionFactoryOptions.h",
-        "objc/api/peerconnection/RTCRtcpParameters.h",
-        "objc/api/peerconnection/RTCRtpCodecParameters.h",
-        "objc/api/peerconnection/RTCRtpEncodingParameters.h",
-        "objc/api/peerconnection/RTCRtpHeaderExtension.h",
-        "objc/api/peerconnection/RTCRtpParameters.h",
-        "objc/api/peerconnection/RTCRtpReceiver.h",
-        "objc/api/peerconnection/RTCRtpSender.h",
-        "objc/api/peerconnection/RTCRtpTransceiver.h",
-        "objc/api/peerconnection/RTCDtmfSender.h",
-        "objc/api/peerconnection/RTCSSLAdapter.h",
-        "objc/api/peerconnection/RTCSessionDescription.h",
-        "objc/api/peerconnection/RTCTracing.h",
-        "objc/api/peerconnection/RTCCertificate.h",
-        "objc/api/peerconnection/RTCVideoSource.h",
-        "objc/api/peerconnection/RTCVideoTrack.h",
-        "objc/api/video_codec/RTCVideoDecoderVP8.h",
-        "objc/api/video_codec/RTCVideoDecoderVP9.h",
-        "objc/api/video_codec/RTCVideoEncoderVP8.h",
-        "objc/api/video_codec/RTCVideoEncoderVP9.h",
-        "objc/api/video_frame_buffer/RTCNativeI420Buffer.h",
-        "objc/api/video_frame_buffer/RTCNativeMutableI420Buffer.h",
-      ]
-      if (!build_with_chromium) {
-        mac_framework_header_files += [
-          "objc/api/logging/RTCCallbackLogger.h",
-          "objc/api/peerconnection/RTCFileLogger.h",
-        ]
-      }
-
-      bundle_data("framework_headers") {
-        # TODO(andersc): Generate umbrella header
-        sources = mac_framework_header_files
-        outputs = [
-          "{{bundle_contents_dir}}/Headers/{{source_file_part}}",
-        ]
-      }
-
-      mac_framework_bundle("mac_framework_objc") {
+      mac_framework_bundle_with_umbrella_header("mac_framework_objc") {
         info_plist = "objc/Info.plist"
         output_name = "WebRTC"
-        framework_version = "A"
-        framework_contents = [ "Headers" ]
 
-        sources = mac_framework_header_files
-
-        ldflags = [
-          "-all_load",
-          "-install_name",
-          "@rpath/$output_name.framework/$output_name",
+        sources = [
+          "objc/api/peerconnection/RTCAudioSource.h",
+          "objc/api/peerconnection/RTCAudioTrack.h",
+          "objc/api/peerconnection/RTCCertificate.h",
+          "objc/api/peerconnection/RTCConfiguration.h",
+          "objc/api/peerconnection/RTCDataChannel.h",
+          "objc/api/peerconnection/RTCDataChannelConfiguration.h",
+          "objc/api/peerconnection/RTCDtmfSender.h",
+          "objc/api/peerconnection/RTCFieldTrials.h",
+          "objc/api/peerconnection/RTCIceCandidate.h",
+          "objc/api/peerconnection/RTCIceServer.h",
+          "objc/api/peerconnection/RTCIntervalRange.h",
+          "objc/api/peerconnection/RTCLegacyStatsReport.h",
+          "objc/api/peerconnection/RTCMediaConstraints.h",
+          "objc/api/peerconnection/RTCMediaSource.h",
+          "objc/api/peerconnection/RTCMediaStream.h",
+          "objc/api/peerconnection/RTCMediaStreamTrack.h",
+          "objc/api/peerconnection/RTCMetrics.h",
+          "objc/api/peerconnection/RTCMetricsSampleInfo.h",
+          "objc/api/peerconnection/RTCPeerConnection.h",
+          "objc/api/peerconnection/RTCPeerConnectionFactory.h",
+          "objc/api/peerconnection/RTCPeerConnectionFactoryOptions.h",
+          "objc/api/peerconnection/RTCRtcpParameters.h",
+          "objc/api/peerconnection/RTCRtpCodecParameters.h",
+          "objc/api/peerconnection/RTCRtpEncodingParameters.h",
+          "objc/api/peerconnection/RTCRtpHeaderExtension.h",
+          "objc/api/peerconnection/RTCRtpParameters.h",
+          "objc/api/peerconnection/RTCRtpReceiver.h",
+          "objc/api/peerconnection/RTCRtpSender.h",
+          "objc/api/peerconnection/RTCRtpTransceiver.h",
+          "objc/api/peerconnection/RTCSSLAdapter.h",
+          "objc/api/peerconnection/RTCSessionDescription.h",
+          "objc/api/peerconnection/RTCTracing.h",
+          "objc/api/peerconnection/RTCVideoSource.h",
+          "objc/api/peerconnection/RTCVideoTrack.h",
+          "objc/api/video_codec/RTCVideoDecoderVP8.h",
+          "objc/api/video_codec/RTCVideoDecoderVP9.h",
+          "objc/api/video_codec/RTCVideoEncoderVP8.h",
+          "objc/api/video_codec/RTCVideoEncoderVP9.h",
+          "objc/api/video_frame_buffer/RTCNativeI420Buffer.h",
+          "objc/api/video_frame_buffer/RTCNativeMutableI420Buffer.h",
+          "objc/base/RTCCodecSpecificInfo.h",
+          "objc/base/RTCEncodedImage.h",
+          "objc/base/RTCI420Buffer.h",
+          "objc/base/RTCLogging.h",
+          "objc/base/RTCMacros.h",
+          "objc/base/RTCMutableI420Buffer.h",
+          "objc/base/RTCMutableYUVPlanarBuffer.h",
+          "objc/base/RTCRtpFragmentationHeader.h",
+          "objc/base/RTCVideoCapturer.h",
+          "objc/base/RTCVideoCodecInfo.h",
+          "objc/base/RTCVideoDecoder.h",
+          "objc/base/RTCVideoDecoderFactory.h",
+          "objc/base/RTCVideoEncoder.h",
+          "objc/base/RTCVideoEncoderFactory.h",
+          "objc/base/RTCVideoEncoderQpThresholds.h",
+          "objc/base/RTCVideoEncoderSettings.h",
+          "objc/base/RTCVideoFrame.h",
+          "objc/base/RTCVideoFrameBuffer.h",
+          "objc/base/RTCVideoRenderer.h",
+          "objc/base/RTCYUVPlanarBuffer.h",
+          "objc/components/capturer/RTCCameraVideoCapturer.h",
+          "objc/components/capturer/RTCFileVideoCapturer.h",
+          "objc/components/renderer/metal/RTCMTLNSVideoView.h",
+          "objc/components/renderer/opengl/RTCNSGLVideoView.h",
+          "objc/components/renderer/opengl/RTCVideoViewShading.h",
+          "objc/components/video_codec/RTCCodecSpecificInfoH264.h",
+          "objc/components/video_codec/RTCDefaultVideoDecoderFactory.h",
+          "objc/components/video_codec/RTCDefaultVideoEncoderFactory.h",
+          "objc/components/video_codec/RTCH264ProfileLevelId.h",
+          "objc/components/video_codec/RTCVideoDecoderFactoryH264.h",
+          "objc/components/video_codec/RTCVideoDecoderH264.h",
+          "objc/components/video_codec/RTCVideoEncoderFactoryH264.h",
+          "objc/components/video_codec/RTCVideoEncoderH264.h",
+          "objc/components/video_frame_buffer/RTCCVPixelBuffer.h",
+          "objc/helpers/RTCDispatcher.h",
         ]
+        if (!build_with_chromium) {
+          sources += [
+            "objc/api/logging/RTCCallbackLogger.h",
+            "objc/api/peerconnection/RTCFileLogger.h",
+          ]
+        }
 
         deps = [
           ":base_objc",
           ":default_codec_factory_objc",
-          ":framework_headers",
           ":native_api",
           ":native_video",
           ":peerconnectionfactory_base_objc",
@@ -1484,7 +1465,7 @@ if (is_ios || is_mac) {
           "OpenGL.framework",
         ]
 
-        configs += [ "..:common_objc" ]
+        configs = [ "..:common_objc" ]
 
         public_configs = [ ":common_config_objc" ]
       }

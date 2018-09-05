@@ -14,8 +14,8 @@
 
 #import <AppKit/NSOpenGLView.h>
 
+#import "RTCVideoRenderer.h"
 #import "RTCVideoViewShading.h"
-#import "base/RTCVideoRenderer.h"
 
 NS_ASSUME_NONNULL_BEGIN
 

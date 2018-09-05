@@ -10,7 +10,7 @@
 
 #import <Cocoa/Cocoa.h>
 
-#import "base/RTCVideoRenderer.h"
+#import "RTCVideoRenderer.h"
 
 NS_AVAILABLE_MAC(10.11)
 

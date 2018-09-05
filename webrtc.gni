@@ -30,6 +30,10 @@ if (is_ios) {
   import("//build/config/ios/rules.gni")
 }
 
+if (is_mac) {
+  import("//build/config/mac/rules.gni")
+}
+
 declare_args() {
   # WARNING: This argument doesn't have any effect on the WebRTC build until
   # https://webrtc-review.googlesource.com/c/src/+/94766 will land.
@@ -679,6 +683,68 @@ if (is_ios) {
 
   set_defaults("ios_framework_bundle_with_umbrella_header") {
     configs = default_shared_library_configs
+  }
+}
+
+if (is_mac) {
+  template("mac_framework_bundle_with_umbrella_header") {
+    forward_variables_from(invoker, [ "output_name" ])
+    umbrella_header_path =
+        "$target_gen_dir/$output_name.framework/Headers/$output_name.h"
+
+    mac_framework_bundle(target_name) {
+      forward_variables_from(invoker, "*", [])
+
+      framework_version = "A"
+      framework_contents = [ "Headers" ]
+
+      ldflags = [
+        "-all_load",
+        "-install_name",
+        "@rpath/$output_name.framework/$output_name",
+      ]
+
+      deps += [
+        ":copy_framework_headers_$target_name",
+        ":copy_umbrella_header_$target_name",
+      ]
+    }
+
+    copy("copy_framework_headers_$target_name") {
+      forward_variables_from(invoker, [ "sources" ])
+
+      outputs = [
+        "$root_out_dir/$output_name.framework/Headers/{{source_file_part}}",
+      ]
+    }
+
+    action("umbrella_header_$target_name") {
+      forward_variables_from(invoker, [ "sources" ])
+
+      script = "//tools_webrtc/ios/generate_umbrella_header.py"
+
+      outputs = [
+        umbrella_header_path,
+      ]
+      args = [
+               "--out",
+               rebase_path(umbrella_header_path, root_build_dir),
+               "--sources",
+             ] + sources
+    }
+
+    copy("copy_umbrella_header_$target_name") {
+      sources = [
+        umbrella_header_path,
+      ]
+      outputs = [
+        "$root_out_dir/$output_name.framework/Headers/$output_name.h",
+      ]
+
+      deps = [
+        ":umbrella_header_$target_name",
+      ]
+    }
   }
 }
 
