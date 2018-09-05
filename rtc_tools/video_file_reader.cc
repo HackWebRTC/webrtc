@@ -273,12 +273,8 @@ rtc::scoped_refptr<Video> OpenYuvOrY4mFile(const std::string& file_name,
                                            int height) {
   if (rtc::ends_with(file_name.c_str(), ".yuv"))
     return OpenYuvFile(file_name, width, height);
-  if (rtc::ends_with(file_name.c_str(), ".y4m")) {
-    rtc::scoped_refptr<Video> video = OpenY4mFile(file_name);
-    RTC_DCHECK_EQ(width, video->width());
-    RTC_DCHECK_EQ(height, video->height());
-    return video;
-  }
+  if (rtc::ends_with(file_name.c_str(), ".y4m"))
+    return OpenY4mFile(file_name);
 
   RTC_LOG(LS_ERROR) << "Video file does not end in either .yuv or .y4m: "
                     << file_name;

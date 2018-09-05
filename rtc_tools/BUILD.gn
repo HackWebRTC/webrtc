@@ -102,6 +102,7 @@ rtc_executable("frame_analyzer") {
     ":command_line_parser",
     ":video_file_reader",
     ":video_quality_analysis",
+    "../rtc_base:stringutils",
     "../test:perf_test",
   ]
 }
