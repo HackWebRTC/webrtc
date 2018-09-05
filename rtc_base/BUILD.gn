@@ -864,6 +864,7 @@ rtc_static_library("rtc_base_generic") {
   if (build_with_chromium) {
     if (is_win) {
       sources += [ "../../webrtc_overrides/rtc_base/win32socketinit.cc" ]
+      deps += [ "//net" ]
     }
     include_dirs = [ "../../boringssl/src/include" ]
     public_configs += [ ":rtc_base_chromium_config" ]
