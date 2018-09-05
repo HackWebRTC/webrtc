@@ -46,6 +46,14 @@ declare_args() {
     rtc_exclude_field_trial_default = false
   }
 
+  # WARNING: This argument doesn't have any effect on the WebRTC build until
+  # https://webrtc-review.googlesource.com/c/src/+/95480 will land.
+  # Setting this to true will define WEBRTC_EXCLUDE_METRICS_DEFAULT which
+  # will tell the pre-processor to remove the default definition of symbols
+  # needed to use metrics. In that case a new implementation needs to be
+  # provided.
+  rtc_exclude_metrics_default = build_with_chromium
+
   # Setting this to false will require the API user to pass in their own
   # SSLCertificateVerifier to verify the certificates presented from a
   # TLS-TURN server. In return disabling this saves around 100kb in the binary.
