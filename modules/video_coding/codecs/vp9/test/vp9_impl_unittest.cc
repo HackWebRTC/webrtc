@@ -58,13 +58,20 @@ class TestVp9Impl : public VideoCodecUnitTest {
     std::vector<EncodedImage> encoded_frame;
     std::vector<CodecSpecificInfo> codec_specific;
     ASSERT_TRUE(WaitForEncodedFrames(&encoded_frame, &codec_specific));
-    for (size_t frame_num = 0; frame_num < num_spatial_layers; ++frame_num) {
+    for (size_t spatial_idx = 0; spatial_idx < num_spatial_layers;
+         ++spatial_idx) {
       const CodecSpecificInfoVP9& vp9 =
-          codec_specific[frame_num].codecSpecific.VP9;
+          codec_specific[spatial_idx].codecSpecific.VP9;
       if (vp9.temporal_idx == kNoTemporalIdx) {
         EXPECT_EQ(temporal_idx, 0);
       } else {
         EXPECT_EQ(vp9.temporal_idx, temporal_idx);
+      }
+      if (num_spatial_layers == 1) {
+        EXPECT_FALSE(encoded_frame[spatial_idx].SpatialIndex());
+      } else {
+        EXPECT_EQ(encoded_frame[spatial_idx].SpatialIndex(),
+                  static_cast<int>(spatial_idx));
       }
       EXPECT_EQ(vp9.temporal_up_switch, temporal_up_switch);
 
@@ -209,6 +216,22 @@ TEST_F(TestVp9Impl, EncoderWith2TemporalLayers) {
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             encoder_->Encode(*NextInputFrame(), nullptr, nullptr));
   ExpectFrameWith(1);
+}
+
+TEST_F(TestVp9Impl, EncoderWith2SpatialLayers) {
+  codec_settings_.VP9()->numberOfSpatialLayers = 2;
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->InitEncode(&codec_settings_, 1 /* number of cores */,
+                                 0 /* max payload size (unused) */));
+
+  SetWaitForEncodedFramesThreshold(2);
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->Encode(*NextInputFrame(), nullptr, nullptr));
+  std::vector<EncodedImage> encoded_frame;
+  std::vector<CodecSpecificInfo> codec_info;
+  ASSERT_TRUE(WaitForEncodedFrames(&encoded_frame, &codec_info));
+  EXPECT_EQ(encoded_frame[0].SpatialIndex(), 0);
+  EXPECT_EQ(encoded_frame[1].SpatialIndex(), 1);
 }
 
 TEST_F(TestVp9Impl, EncoderExplicitLayering) {
