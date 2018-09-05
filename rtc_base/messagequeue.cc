@@ -163,15 +163,11 @@ void MessageQueueManager::ProcessAllMessageQueuesInternal() {
                          new ScopedIncrement(&queues_not_done));
     }
   }
-
-  rtc::Thread* current = rtc::Thread::Current();
-  if (current) {
-    // Note: One of the message queues may have been on this thread, which is
-    // why we can't synchronously wait for queues_not_done to go to 0; we need
-    // to process messages as well.
-    while (AtomicOps::AcquireLoad(&queues_not_done) > 0) {
-      current->ProcessMessages(0);
-    }
+  // Note: One of the message queues may have been on this thread, which is why
+  // we can't synchronously wait for queues_not_done to go to 0; we need to
+  // process messages as well.
+  while (AtomicOps::AcquireLoad(&queues_not_done) > 0) {
+    rtc::Thread::Current()->ProcessMessages(0);
   }
 }
 
