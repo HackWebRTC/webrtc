@@ -16,6 +16,7 @@ group("rtc_tools") {
   deps = [
     ":command_line_parser",
     ":frame_analyzer",
+    ":video_file_reader",
     ":video_quality_analysis",
   ]
   if (!build_with_chromium) {
@@ -59,12 +60,27 @@ rtc_static_library("command_line_parser") {
   ]
 }
 
+rtc_static_library("video_file_reader") {
+  sources = [
+    "video_file_reader.cc",
+    "video_file_reader.h",
+  ]
+  deps = [
+    "../api/video:video_frame",
+    "../api/video:video_frame_i420",
+    "../rtc_base:rtc_base_approved",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
+}
+
 rtc_static_library("video_quality_analysis") {
   sources = [
     "frame_analyzer/video_quality_analysis.cc",
     "frame_analyzer/video_quality_analysis.h",
   ]
   deps = [
+    ":video_file_reader",
+    "../api/video:video_frame_i420",
     "../common_video",
     "../test:perf_test",
     "//third_party/libyuv",
@@ -79,6 +95,7 @@ rtc_executable("frame_analyzer") {
 
   deps = [
     ":command_line_parser",
+    ":video_file_reader",
     ":video_quality_analysis",
     "../test:perf_test",
   ]
@@ -94,6 +111,7 @@ if (!build_with_chromium) {
 
     deps = [
       ":command_line_parser",
+      ":video_file_reader",
       ":video_quality_analysis",
     ]
   }
@@ -105,6 +123,7 @@ if (!build_with_chromium) {
     ]
 
     deps = [
+      ":video_file_reader",
       ":video_quality_analysis",
     ]
   }
@@ -281,7 +300,6 @@ if (rtc_include_tests) {
   tools_unittests_resources = [
     "../resources/foreman_cif.yuv",
     "../resources/reference_less_video_test_file.y4m",
-    "../resources/video_quality_analysis_frame.txt",
   ]
 
   if (is_ios) {
@@ -303,6 +321,7 @@ if (rtc_include_tests) {
       "frame_editing/frame_editing_unittest.cc",
       "sanitizers_unittest.cc",
       "simple_command_line_parser_unittest.cc",
+      "video_file_reader_unittest.cc",
     ]
 
     if (!build_with_chromium && is_clang) {
@@ -314,6 +333,7 @@ if (rtc_include_tests) {
       ":command_line_parser",
       ":frame_editing_lib",
       ":reference_less_video_analysis_lib",
+      ":video_file_reader",
       ":video_quality_analysis",
       "../common_video:common_video",
       "../rtc_base",

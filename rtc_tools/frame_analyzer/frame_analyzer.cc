@@ -17,6 +17,7 @@
 
 #include "rtc_tools/frame_analyzer/video_quality_analysis.h"
 #include "rtc_tools/simple_command_line_parser.h"
+#include "rtc_tools/video_file_reader.h"
 #include "test/testsupport/perf_test.h"
 
 /*
@@ -101,11 +102,21 @@ int main(int argc, char* argv[]) {
 
   webrtc::test::ResultsContainer results;
 
-  webrtc::test::RunAnalysis(parser.GetFlag("reference_file").c_str(),
-                            parser.GetFlag("test_file").c_str(),
-                            parser.GetFlag("stats_file_ref").c_str(),
-                            parser.GetFlag("stats_file_test").c_str(), width,
-                            height, &results);
+  rtc::scoped_refptr<webrtc::test::Video> reference_video =
+      webrtc::test::OpenYuvOrY4mFile(parser.GetFlag("reference_file"), width,
+                                     height);
+  rtc::scoped_refptr<webrtc::test::Video> test_video =
+      webrtc::test::OpenYuvOrY4mFile(parser.GetFlag("test_file"), width,
+                                     height);
+
+  if (!reference_video || !test_video) {
+    fprintf(stderr, "Error opening video files\n");
+    return 0;
+  }
+
+  webrtc::test::RunAnalysis(
+      reference_video, test_video, parser.GetFlag("stats_file_ref").c_str(),
+      parser.GetFlag("stats_file_test").c_str(), width, height, &results);
   webrtc::test::GetMaxRepeatedAndSkippedFrames(
       parser.GetFlag("stats_file_ref"), parser.GetFlag("stats_file_test"),
       &results);
