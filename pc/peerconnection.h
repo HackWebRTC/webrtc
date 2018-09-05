@@ -52,6 +52,7 @@ class RtcEventLog;
 class PeerConnection : public PeerConnectionInternal,
                        public DataChannelProviderInterface,
                        public JsepTransportController::Observer,
+                       public rtc::MessageHandler,
                        public sigslot::has_slots<> {
  public:
   enum class UsageEvent : int {
@@ -287,6 +288,9 @@ class PeerConnection : public PeerConnectionInternal,
     uint32_t first_ssrc;
   };
 
+  // Implements MessageHandler.
+  void OnMessage(rtc::Message* msg) override;
+
   // Plan B helpers for getting the voice/video media channels for the single
   // audio/video transceiver, if it exists.
   cricket::VoiceMediaChannel* voice_media_channel() const;
@@ -391,7 +395,7 @@ class PeerConnection : public PeerConnectionInternal,
   void PostSetSessionDescriptionSuccess(
       SetSessionDescriptionObserver* observer);
   void PostSetSessionDescriptionFailure(SetSessionDescriptionObserver* observer,
-                                        RTCError error);
+                                        RTCError&& error);
   void PostCreateSessionDescriptionFailure(
       CreateSessionDescriptionObserver* observer,
       RTCError error);
@@ -1029,7 +1033,6 @@ class PeerConnection : public PeerConnectionInternal,
 
   int usage_event_accumulator_ = 0;
   bool return_histogram_very_quickly_ = false;
-  rtc::AsyncInvoker async_invoker_;
 };
 
 }  // namespace webrtc
