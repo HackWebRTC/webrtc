@@ -65,11 +65,15 @@ std::unique_ptr<RtpPacketizer> RtpPacketizer::Create(
 std::vector<size_t> RtpPacketizer::SplitAboutEqually(
     size_t payload_len,
     const PayloadSizeLimits& limits) {
+  RTC_CHECK_GT(limits.max_payload_len, limits.first_packet_reduction_len);
   RTC_CHECK_GT(limits.max_payload_len, limits.last_packet_reduction_len);
 
-  // Last packet can be smaller. Pretend that it's the same size, but we must
-  // write more payload to it.
-  size_t total_bytes = payload_len + limits.last_packet_reduction_len;
+  // First and last packet of the frame can be smaller. Pretend that it's
+  // the same size, but we must write more payload to it.
+  // Assume frame fits in single packet if packet has extra space for sum
+  // of first and last packets reductions.
+  size_t total_bytes = payload_len + limits.first_packet_reduction_len +
+                       limits.last_packet_reduction_len;
   // Integer divisions with rounding up.
   size_t num_packets_left =
       (total_bytes + limits.max_payload_len - 1) / limits.max_payload_len;
@@ -79,12 +83,19 @@ std::vector<size_t> RtpPacketizer::SplitAboutEqually(
 
   std::vector<size_t> result;
   result.reserve(num_packets_left);
+  bool first_packet = true;
   while (remaining_data > 0) {
     // Last num_larger_packets are 1 byte wider than the rest. Increase
     // per-packet payload size when needed.
     if (num_packets_left == num_larger_packets)
       ++bytes_per_packet;
     size_t current_packet_bytes = bytes_per_packet;
+    if (first_packet) {
+      if (current_packet_bytes > limits.first_packet_reduction_len + 1)
+        current_packet_bytes -= limits.first_packet_reduction_len;
+      else
+        current_packet_bytes = 1;
+    }
     if (current_packet_bytes > remaining_data) {
       current_packet_bytes = remaining_data;
     }
@@ -93,11 +104,11 @@ std::vector<size_t> RtpPacketizer::SplitAboutEqually(
     if (num_packets_left == 2 && current_packet_bytes == remaining_data) {
       --current_packet_bytes;
     }
-
     result.push_back(current_packet_bytes);
 
     remaining_data -= current_packet_bytes;
     --num_packets_left;
+    first_packet = false;
   }
 
   return result;

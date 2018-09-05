@@ -28,6 +28,7 @@ class RtpPacketizer {
  public:
   struct PayloadSizeLimits {
     size_t max_payload_len = 1200;
+    size_t first_packet_reduction_len = 0;
     size_t last_packet_reduction_len = 0;
   };
   static std::unique_ptr<RtpPacketizer> Create(

@@ -21,6 +21,7 @@ namespace {
 
 using ::testing::ElementsAre;
 using ::testing::Le;
+using ::testing::Gt;
 using ::testing::Each;
 using ::testing::IsEmpty;
 using ::testing::Not;
@@ -64,6 +65,20 @@ TEST(RtpPacketizerSplitAboutEqually, AllPacketsAreEqualRespectsMaxPayloadSize) {
       RtpPacketizer::SplitAboutEqually(13, limits);
 
   EXPECT_THAT(payload_sizes, Each(Le(limits.max_payload_len)));
+}
+
+TEST(RtpPacketizerSplitAboutEqually,
+     AllPacketsAreEqualRespectsFirstPacketReduction) {
+  RtpPacketizer::PayloadSizeLimits limits;
+  limits.max_payload_len = 5;
+  limits.first_packet_reduction_len = 2;
+
+  std::vector<size_t> payload_sizes =
+      RtpPacketizer::SplitAboutEqually(13, limits);
+
+  ASSERT_THAT(payload_sizes, Not(IsEmpty()));
+  EXPECT_EQ(payload_sizes.front() + limits.first_packet_reduction_len,
+            limits.max_payload_len);
 }
 
 TEST(RtpPacketizerSplitAboutEqually,
@@ -115,7 +130,8 @@ TEST(RtpPacketizerSplitAboutEqually, SomePacketsAreSmallerSumToPayloadLen) {
   EXPECT_THAT(Sum(payload_sizes), 28);
 }
 
-TEST(RtpPacketizerVideoGeneric, SomePacketsAreSmallerRespectsMaxPayloadSize) {
+TEST(RtpPacketizerSplitAboutEqually,
+     SomePacketsAreSmallerRespectsMaxPayloadSize) {
   RtpPacketizer::PayloadSizeLimits limits;
   limits.max_payload_len = 7;
   limits.last_packet_reduction_len = 5;
@@ -126,7 +142,20 @@ TEST(RtpPacketizerVideoGeneric, SomePacketsAreSmallerRespectsMaxPayloadSize) {
   EXPECT_THAT(payload_sizes, Each(Le(limits.max_payload_len)));
 }
 
-TEST(RtpPacketizerVideoGeneric,
+TEST(RtpPacketizerSplitAboutEqually,
+     SomePacketsAreSmallerRespectsFirstPacketReduction) {
+  RtpPacketizer::PayloadSizeLimits limits;
+  limits.max_payload_len = 7;
+  limits.first_packet_reduction_len = 5;
+
+  std::vector<size_t> payload_sizes =
+      RtpPacketizer::SplitAboutEqually(28, limits);
+
+  EXPECT_LE(payload_sizes.front() + limits.first_packet_reduction_len,
+            limits.max_payload_len);
+}
+
+TEST(RtpPacketizerSplitAboutEqually,
      SomePacketsAreSmallerRespectsLastPacketReductionLength) {
   RtpPacketizer::PayloadSizeLimits limits;
   limits.max_payload_len = 7;
@@ -139,7 +168,8 @@ TEST(RtpPacketizerVideoGeneric,
             limits.max_payload_len - limits.last_packet_reduction_len);
 }
 
-TEST(RtpPacketizerVideoGeneric, SomePacketsAreSmallerPacketsAlmostEqualInSize) {
+TEST(RtpPacketizerSplitAboutEqually,
+     SomePacketsAreSmallerPacketsAlmostEqualInSize) {
   RtpPacketizer::PayloadSizeLimits limits;
   limits.max_payload_len = 7;
   limits.last_packet_reduction_len = 5;
@@ -150,7 +180,7 @@ TEST(RtpPacketizerVideoGeneric, SomePacketsAreSmallerPacketsAlmostEqualInSize) {
   EXPECT_LE(EffectivePacketsSizeDifference(payload_sizes, limits), 1);
 }
 
-TEST(RtpPacketizerVideoGeneric,
+TEST(RtpPacketizerSplitAboutEqually,
      SomePacketsAreSmallerGeneratesMinimumNumberOfPackets) {
   RtpPacketizer::PayloadSizeLimits limits;
   limits.max_payload_len = 7;
@@ -162,6 +192,44 @@ TEST(RtpPacketizerVideoGeneric,
   // for each packet minus last packet reduction).
   // 5 packets is enough for kPayloadSize.
   EXPECT_THAT(payload_sizes, SizeIs(5));
+}
+
+TEST(RtpPacketizerSplitAboutEqually, GivesNonZeroPayloadLengthEachPacket) {
+  RtpPacketizer::PayloadSizeLimits limits;
+  limits.max_payload_len = 600;
+  limits.first_packet_reduction_len = 500;
+  limits.last_packet_reduction_len = 550;
+
+  // Naive implementation would split 1450 payload + 1050 reduction bytes into 5
+  // packets 500 bytes each, thus leaving first packet zero bytes and even less
+  // to last packet.
+  std::vector<size_t> payload_sizes =
+      RtpPacketizer::SplitAboutEqually(1450, limits);
+
+  EXPECT_EQ(Sum(payload_sizes), 1450u);
+  EXPECT_THAT(payload_sizes, Each(Gt(0u)));
+}
+
+TEST(RtpPacketizerSplitAboutEqually,
+     OnePacketWhenExtraSpaceIsEnoughForSumOfFirstAndLastPacketReductions) {
+  RtpPacketizer::PayloadSizeLimits limits;
+  limits.max_payload_len = 30;
+  limits.first_packet_reduction_len = 6;
+  limits.last_packet_reduction_len = 4;
+
+  EXPECT_THAT(RtpPacketizer::SplitAboutEqually(20, limits), ElementsAre(20));
+}
+
+TEST(RtpPacketizerSplitAboutEqually,
+     TwoPacketsWhenExtraSpaceIsTooSmallForSumOfFirstAndLastPacketReductions) {
+  RtpPacketizer::PayloadSizeLimits limits;
+  limits.max_payload_len = 29;
+  limits.first_packet_reduction_len = 6;
+  limits.last_packet_reduction_len = 4;
+
+  // First packet needs two more extra bytes compared to last one,
+  // so should have two less payload bytes.
+  EXPECT_THAT(RtpPacketizer::SplitAboutEqually(20, limits), ElementsAre(9, 11));
 }
 
 }  // namespace
