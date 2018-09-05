@@ -24,8 +24,8 @@
 #include "modules/rtp_rtcp/source/rtcp_packet/report_block.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/target_bitrate.h"
 #include "modules/rtp_rtcp/source/rtcp_transceiver_config.h"
+#include "rtc_base/cancelable_task_handle.h"
 #include "rtc_base/constructormagic.h"
-#include "rtc_base/weak_ptr.h"
 #include "system_wrappers/include/ntp_time.h"
 
 namespace webrtc {
@@ -95,7 +95,7 @@ class RtcpTransceiverImpl {
   // TODO(danilchap): Remove entries from remote_senders_ that are no longer
   // needed.
   std::map<uint32_t, RemoteSenderState> remote_senders_;
-  rtc::WeakPtrFactory<RtcpTransceiverImpl> ptr_factory_;
+  rtc::CancelableTaskHandle periodic_task_handle_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RtcpTransceiverImpl);
 };
