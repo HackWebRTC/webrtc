@@ -28,6 +28,7 @@
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/thread_checker.h"
 #include "rtc_base/timeutils.h"
+#include "system_wrappers/include/sleep.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 #ifdef WEBRTC_WIN
@@ -41,6 +42,7 @@ using ::testing::Ge;
 using ::testing::Invoke;
 using ::testing::NiceMock;
 using ::testing::NotNull;
+using ::testing::Mock;
 
 namespace webrtc {
 namespace {
@@ -330,6 +332,14 @@ class MockAudioTransport : public test::MockAudioTransport {
     }
   }
 
+  // Special constructor used in manual tests where the user wants to run audio
+  // until e.g. a keyboard key is pressed. The event flag is set to nullptr by
+  // default since it is up to the user to stop the test. See e.g.
+  // DISABLED_RunPlayoutAndRecordingInFullDuplexAndWaitForEnterKey().
+  void HandleCallbacks(AudioStream* audio_stream) {
+    HandleCallbacks(nullptr, audio_stream, 0);
+  }
+
   int32_t RealRecordedDataIsAvailable(const void* audio_buffer,
                                       const size_t samples_per_channel,
                                       const size_t bytes_per_frame,
@@ -341,7 +351,6 @@ class MockAudioTransport : public test::MockAudioTransport {
                                       const bool typing_status,
                                       uint32_t& new_mic_level) {
     EXPECT_TRUE(rec_mode()) << "No test is expecting these callbacks.";
-    RTC_LOG(INFO) << "+";
     // Store audio parameters once in the first callback. For all other
     // callbacks, verify that the provided audio parameters are maintained and
     // that each callback corresponds to 10ms for any given sample rate.
@@ -364,7 +373,7 @@ class MockAudioTransport : public test::MockAudioTransport {
                              samples_per_channel * channels));
     }
     // Signal the event after given amount of callbacks.
-    if (ReceivedEnoughCallbacks()) {
+    if (event_ && ReceivedEnoughCallbacks()) {
       event_->Set();
     }
     return 0;
@@ -379,7 +388,6 @@ class MockAudioTransport : public test::MockAudioTransport {
                                int64_t* elapsed_time_ms,
                                int64_t* ntp_time_ms) {
     EXPECT_TRUE(play_mode()) << "No test is expecting these callbacks.";
-    RTC_LOG(INFO) << "-";
     // Store audio parameters once in the first callback. For all other
     // callbacks, verify that the provided audio parameters are maintained and
     // that each callback corresponds to 10ms for any given sample rate.
@@ -406,7 +414,7 @@ class MockAudioTransport : public test::MockAudioTransport {
       std::memset(audio_buffer, 0, num_bytes);
     }
     // Signal the event after given amount of callbacks.
-    if (ReceivedEnoughCallbacks()) {
+    if (event_ && ReceivedEnoughCallbacks()) {
       event_->Set();
     }
     return 0;
@@ -436,6 +444,15 @@ class MockAudioTransport : public test::MockAudioTransport {
   bool rec_mode() const {
     return type_ == TransportType::kRecord ||
            type_ == TransportType::kPlayAndRecord;
+  }
+
+  void ResetCallbackCounters() {
+    if (play_mode()) {
+      play_count_ = 0;
+    }
+    if (rec_mode()) {
+      rec_count_ = 0;
+    }
   }
 
  private:
@@ -506,18 +523,22 @@ class AudioDeviceTest
 
   bool requirements_satisfied() const { return requirements_satisfied_; }
   rtc::Event* event() { return &event_; }
+  AudioDeviceModule::AudioLayer audio_layer() const { return audio_layer_; }
 
-  const rtc::scoped_refptr<AudioDeviceModule>& audio_device() const {
+  // AudioDeviceModuleForTest extends the default ADM interface with some extra
+  // test methods. Intended for usage in tests only and requires a unique
+  // factory method. See CreateAudioDevice() for details.
+  const rtc::scoped_refptr<AudioDeviceModuleForTest>& audio_device() const {
     return audio_device_;
   }
 
-  rtc::scoped_refptr<AudioDeviceModule> CreateAudioDevice() {
+  rtc::scoped_refptr<AudioDeviceModuleForTest> CreateAudioDevice() {
     // Use the default factory for kPlatformDefaultAudio and a special factory
-    // CreateWindowsCoreAudioAudioDeviceModule() for kWindowsCoreAudio2.
+    // CreateWindowsCoreAudioAudioDeviceModuleForTest() for kWindowsCoreAudio2.
     // The value of |audio_layer_| is set at construction by GetParam() and two
     // different layers are tested on Windows only.
     if (audio_layer_ == AudioDeviceModule::kPlatformDefaultAudio) {
-      return AudioDeviceModule::Create(audio_layer_);
+      return AudioDeviceModule::CreateForTest(audio_layer_);
     } else if (audio_layer_ == AudioDeviceModule::kWindowsCoreAudio2) {
 #ifdef WEBRTC_WIN
       // We must initialize the COM library on a thread before we calling any of
@@ -528,7 +549,7 @@ class AudioDeviceTest
       EXPECT_TRUE(com_initializer_->Succeeded());
       EXPECT_TRUE(webrtc_win::core_audio_utility::IsSupported());
       EXPECT_TRUE(webrtc_win::core_audio_utility::IsMMCSSSupported());
-      return CreateWindowsCoreAudioAudioDeviceModule();
+      return CreateWindowsCoreAudioAudioDeviceModuleForTest();
 #else
       return nullptr;
 #endif
@@ -587,7 +608,7 @@ class AudioDeviceTest
   AudioDeviceModule::AudioLayer audio_layer_;
   bool requirements_satisfied_ = true;
   rtc::Event event_;
-  rtc::scoped_refptr<AudioDeviceModule> audio_device_;
+  rtc::scoped_refptr<AudioDeviceModuleForTest> audio_device_;
   bool stereo_playout_ = false;
 };
 
@@ -777,6 +798,124 @@ TEST_P(AudioDeviceTest, InitStopInitPlayoutWhileRecording) {
   StopRecording();
 }
 
+// TODO(henrika): restart without intermediate destruction is currently only
+// supported on Windows.
+#ifdef WEBRTC_WIN
+// Tests Start/Stop playout followed by a second session (emulates a restart
+// triggered by a user using public APIs).
+TEST_P(AudioDeviceTest, StartStopPlayoutWithExternalRestart) {
+  SKIP_TEST_IF_NOT(requirements_satisfied());
+  StartPlayout();
+  StopPlayout();
+  // Restart playout without destroying the ADM in between. Ensures that we
+  // support: Init(), Start(), Stop(), Init(), Start(), Stop().
+  StartPlayout();
+  StopPlayout();
+}
+
+// Tests Start/Stop recording followed by a second session (emulates a restart
+// triggered by a user using public APIs).
+TEST_P(AudioDeviceTest, StartStopRecordingWithExternalRestart) {
+  SKIP_TEST_IF_NOT(requirements_satisfied());
+  StartRecording();
+  StopRecording();
+  // Restart recording without destroying the ADM in between.  Ensures that we
+  // support: Init(), Start(), Stop(), Init(), Start(), Stop().
+  StartRecording();
+  StopRecording();
+}
+
+// Tests Start/Stop playout followed by a second session (emulates a restart
+// triggered by an internal callback e.g. corresponding to a device switch).
+// Note that, internal restart is only supported in combination with the latest
+// Windows ADM.
+TEST_P(AudioDeviceTest, StartStopPlayoutWithInternalRestart) {
+  SKIP_TEST_IF_NOT(requirements_satisfied());
+  if (audio_layer() != AudioDeviceModule::kWindowsCoreAudio2) {
+    return;
+  }
+  MockAudioTransport mock(TransportType::kPlay);
+  mock.HandleCallbacks(event(), nullptr, kNumCallbacks);
+  EXPECT_CALL(mock, NeedMorePlayData(_, _, _, _, NotNull(), _, _, _))
+      .Times(AtLeast(kNumCallbacks));
+  EXPECT_EQ(0, audio_device()->RegisterAudioCallback(&mock));
+  StartPlayout();
+  event()->Wait(kTestTimeOutInMilliseconds);
+  EXPECT_TRUE(audio_device()->Playing());
+  // Restart playout but without stopping the internal audio thread.
+  // This procedure uses a non-public test API and it emulates what happens
+  // inside the ADM when e.g. a device is removed.
+  EXPECT_EQ(0, audio_device()->RestartPlayoutInternally());
+
+  // Run basic tests of public APIs while a restart attempt is active.
+  // These calls should now be very thin and not trigger any new actions.
+  EXPECT_EQ(-1, audio_device()->StopPlayout());
+  EXPECT_TRUE(audio_device()->Playing());
+  EXPECT_TRUE(audio_device()->PlayoutIsInitialized());
+  EXPECT_EQ(0, audio_device()->InitPlayout());
+  EXPECT_EQ(0, audio_device()->StartPlayout());
+
+  // Wait until audio has restarted and a new sequence of audio callbacks
+  // becomes active.
+  // TODO(henrika): is it possible to verify that the internal state transition
+  // is Stop->Init->Start?
+  ASSERT_TRUE(Mock::VerifyAndClearExpectations(&mock));
+  mock.ResetCallbackCounters();
+  EXPECT_CALL(mock, NeedMorePlayData(_, _, _, _, NotNull(), _, _, _))
+      .Times(AtLeast(kNumCallbacks));
+  event()->Wait(kTestTimeOutInMilliseconds);
+  EXPECT_TRUE(audio_device()->Playing());
+  // Stop playout and the audio thread after successful internal restart.
+  StopPlayout();
+}
+
+// Tests Start/Stop recording followed by a second session (emulates a restart
+// triggered by an internal callback e.g. corresponding to a device switch).
+// Note that, internal restart is only supported in combination with the latest
+// Windows ADM.
+TEST_P(AudioDeviceTest, StartStopRecordingWithInternalRestart) {
+  SKIP_TEST_IF_NOT(requirements_satisfied());
+  if (audio_layer() != AudioDeviceModule::kWindowsCoreAudio2) {
+    return;
+  }
+  MockAudioTransport mock(TransportType::kRecord);
+  mock.HandleCallbacks(event(), nullptr, kNumCallbacks);
+  EXPECT_CALL(mock, RecordedDataIsAvailable(NotNull(), _, _, _, _, Ge(0u), 0, _,
+                                            false, _))
+      .Times(AtLeast(kNumCallbacks));
+  EXPECT_EQ(0, audio_device()->RegisterAudioCallback(&mock));
+  StartRecording();
+  event()->Wait(kTestTimeOutInMilliseconds);
+  EXPECT_TRUE(audio_device()->Recording());
+  // Restart recording but without stopping the internal audio thread.
+  // This procedure uses a non-public test API and it emulates what happens
+  // inside the ADM when e.g. a device is removed.
+  EXPECT_EQ(0, audio_device()->RestartRecordingInternally());
+
+  // Run basic tests of public APIs while a restart attempt is active.
+  // These calls should now be very thin and not trigger any new actions.
+  EXPECT_EQ(-1, audio_device()->StopRecording());
+  EXPECT_TRUE(audio_device()->Recording());
+  EXPECT_TRUE(audio_device()->RecordingIsInitialized());
+  EXPECT_EQ(0, audio_device()->InitRecording());
+  EXPECT_EQ(0, audio_device()->StartRecording());
+
+  // Wait until audio has restarted and a new sequence of audio callbacks
+  // becomes active.
+  // TODO(henrika): is it possible to verify that the internal state transition
+  // is Stop->Init->Start?
+  ASSERT_TRUE(Mock::VerifyAndClearExpectations(&mock));
+  mock.ResetCallbackCounters();
+  EXPECT_CALL(mock, RecordedDataIsAvailable(NotNull(), _, _, _, _, Ge(0u), 0, _,
+                                            false, _))
+      .Times(AtLeast(kNumCallbacks));
+  event()->Wait(kTestTimeOutInMilliseconds);
+  EXPECT_TRUE(audio_device()->Recording());
+  // Stop recording and the audio thread after successful internal restart.
+  StopRecording();
+}
+#endif  // #ifdef WEBRTC_WIN
+
 // Start playout and verify that the native audio layer starts asking for real
 // audio samples to play out using the NeedMorePlayData() callback.
 // Note that we can't add expectations on audio parameters in EXPECT_CALL
@@ -864,6 +1003,35 @@ TEST_P(AudioDeviceTest, RunPlayoutAndRecordingInFullDuplex) {
   // bots where relatively large average latencies can happen.
   EXPECT_LE(audio_stream.average_size(), 25u);
   PRINT("\n");
+}
+
+// Runs audio in full duplex until user hits Enter. Intended as a manual test
+// to ensure that the audio quality is good and that real device switches works
+// as intended.
+TEST_P(AudioDeviceTest,
+       DISABLED_RunPlayoutAndRecordingInFullDuplexAndWaitForEnterKey) {
+  SKIP_TEST_IF_NOT(requirements_satisfied());
+  if (audio_layer() != AudioDeviceModule::kWindowsCoreAudio2) {
+    return;
+  }
+  NiceMock<MockAudioTransport> mock(TransportType::kPlayAndRecord);
+  FifoAudioStream audio_stream;
+  mock.HandleCallbacks(&audio_stream);
+  EXPECT_EQ(0, audio_device()->RegisterAudioCallback(&mock));
+  EXPECT_EQ(0, audio_device()->SetStereoPlayout(true));
+  EXPECT_EQ(0, audio_device()->SetStereoRecording(true));
+  // Ensure that the sample rate for both directions are identical so that we
+  // always can listen to our own voice. Will lead to rate conversion (and
+  // higher latency) if the native sample rate is not 48kHz.
+  EXPECT_EQ(0, audio_device()->SetPlayoutSampleRate(48000));
+  EXPECT_EQ(0, audio_device()->SetRecordingSampleRate(48000));
+  StartPlayout();
+  StartRecording();
+  do {
+    PRINT("Loopback audio is active at 48kHz. Press Enter to stop.\n");
+  } while (getchar() != '\n');
+  StopRecording();
+  StopPlayout();
 }
 
 // Measures loopback latency and reports the min, max and average values for
