@@ -181,50 +181,42 @@ void AudioDeviceBuffer::StopRecording() {
 }
 
 int32_t AudioDeviceBuffer::SetRecordingSampleRate(uint32_t fsHz) {
-  RTC_DCHECK(main_thread_checker_.CalledOnValidThread());
   RTC_LOG(INFO) << "SetRecordingSampleRate(" << fsHz << ")";
   rec_sample_rate_ = fsHz;
   return 0;
 }
 
 int32_t AudioDeviceBuffer::SetPlayoutSampleRate(uint32_t fsHz) {
-  RTC_DCHECK(main_thread_checker_.CalledOnValidThread());
   RTC_LOG(INFO) << "SetPlayoutSampleRate(" << fsHz << ")";
   play_sample_rate_ = fsHz;
   return 0;
 }
 
-int32_t AudioDeviceBuffer::RecordingSampleRate() const {
-  RTC_DCHECK(main_thread_checker_.CalledOnValidThread());
+uint32_t AudioDeviceBuffer::RecordingSampleRate() const {
   return rec_sample_rate_;
 }
 
-int32_t AudioDeviceBuffer::PlayoutSampleRate() const {
-  RTC_DCHECK(main_thread_checker_.CalledOnValidThread());
+uint32_t AudioDeviceBuffer::PlayoutSampleRate() const {
   return play_sample_rate_;
 }
 
 int32_t AudioDeviceBuffer::SetRecordingChannels(size_t channels) {
-  RTC_DCHECK(main_thread_checker_.CalledOnValidThread());
   RTC_LOG(INFO) << "SetRecordingChannels(" << channels << ")";
   rec_channels_ = channels;
   return 0;
 }
 
 int32_t AudioDeviceBuffer::SetPlayoutChannels(size_t channels) {
-  RTC_DCHECK(main_thread_checker_.CalledOnValidThread());
   RTC_LOG(INFO) << "SetPlayoutChannels(" << channels << ")";
   play_channels_ = channels;
   return 0;
 }
 
 size_t AudioDeviceBuffer::RecordingChannels() const {
-  RTC_DCHECK(main_thread_checker_.CalledOnValidThread());
   return rec_channels_;
 }
 
 size_t AudioDeviceBuffer::PlayoutChannels() const {
-  RTC_DCHECK(main_thread_checker_.CalledOnValidThread());
   return play_channels_;
 }
 
@@ -419,28 +411,52 @@ void AudioDeviceBuffer::LogStats(LogState state) {
     stats_.max_play_level = 0;
   }
 
-  // Log the latest statistics but skip the first round just after state was
-  // set to LOG_START. Hence, first printed log will be after ~10 seconds.
-  if (++num_stat_reports_ > 1 && time_since_last > 0) {
+  // Cache current sample rate from atomic members.
+  const uint32_t rec_sample_rate = rec_sample_rate_;
+  const uint32_t play_sample_rate = play_sample_rate_;
+
+  // Log the latest statistics but skip the first two rounds just after state
+  // was set to LOG_START to ensure that we have at least one full stable
+  // 10-second interval for sample-rate estimation. Hence, first printed log
+  // will be after ~20 seconds.
+  if (++num_stat_reports_ > 2 && time_since_last > 0) {
     uint32_t diff_samples = stats.rec_samples - last_stats_.rec_samples;
     float rate = diff_samples / (static_cast<float>(time_since_last) / 1000.0);
+    uint32_t abs_diff_rate_in_percent = 0;
+    if (rec_sample_rate > 0) {
+      abs_diff_rate_in_percent = static_cast<uint32_t>(
+          0.5f +
+          ((100.0f * std::abs(rate - rec_sample_rate)) / rec_sample_rate));
+      RTC_HISTOGRAM_PERCENTAGE("WebRTC.Audio.RecordSampleRateOffsetInPercent",
+                               abs_diff_rate_in_percent);
+    }
     RTC_LOG(INFO) << "[REC : " << time_since_last << "msec, "
-                  << rec_sample_rate_ / 1000 << "kHz] callbacks: "
+                  << rec_sample_rate / 1000 << "kHz] callbacks: "
                   << stats.rec_callbacks - last_stats_.rec_callbacks << ", "
                   << "samples: " << diff_samples << ", "
                   << "rate: " << static_cast<int>(rate + 0.5) << ", "
+                  << "rate diff: " << abs_diff_rate_in_percent << "%, "
                   << "level: " << stats.max_rec_level;
 
     diff_samples = stats.play_samples - last_stats_.play_samples;
     rate = diff_samples / (static_cast<float>(time_since_last) / 1000.0);
+    abs_diff_rate_in_percent = 0;
+    if (play_sample_rate > 0) {
+      abs_diff_rate_in_percent = static_cast<uint32_t>(
+          0.5f +
+          ((100.0f * std::abs(rate - play_sample_rate)) / play_sample_rate));
+      RTC_HISTOGRAM_PERCENTAGE("WebRTC.Audio.PlayoutSampleRateOffsetInPercent",
+                               abs_diff_rate_in_percent);
+    }
     RTC_LOG(INFO) << "[PLAY: " << time_since_last << "msec, "
-                  << play_sample_rate_ / 1000 << "kHz] callbacks: "
+                  << play_sample_rate / 1000 << "kHz] callbacks: "
                   << stats.play_callbacks - last_stats_.play_callbacks << ", "
                   << "samples: " << diff_samples << ", "
                   << "rate: " << static_cast<int>(rate + 0.5) << ", "
+                  << "rate diff: " << abs_diff_rate_in_percent << "%, "
                   << "level: " << stats.max_play_level;
-    last_stats_ = stats;
   }
+  last_stats_ = stats;
 
   int64_t time_to_wait_ms = next_callback_time - rtc::TimeMillis();
   RTC_DCHECK_GT(time_to_wait_ms, 0) << "Invalid timer interval";
