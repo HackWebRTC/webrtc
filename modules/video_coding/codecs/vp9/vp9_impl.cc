@@ -36,8 +36,6 @@
 namespace webrtc {
 
 namespace {
-const float kMaxScreenSharingFramerateFps = 5.0f;
-
 // Only positive speeds, range for real-time coding currently is: 5 - 8.
 // Lower means slower/better quality, higher means fastest/lower quality.
 int GetCpuSpeed(int width, int height) {
@@ -157,7 +155,6 @@ VP9EncoderImpl::VP9EncoderImpl(const cricket::VideoCodec& codec)
       num_spatial_layers_(0),
       is_svc_(false),
       inter_layer_pred_(InterLayerPredMode::kOn),
-      framerate_controller_(kMaxScreenSharingFramerateFps),
       is_flexible_mode_(false) {
   memset(&codec_, 0, sizeof(codec_));
   memset(&svc_params_, 0, sizeof(vpx_svc_extra_cfg_t));
@@ -224,6 +221,14 @@ bool VP9EncoderImpl::SetSvcRates(
           force_key_frame_ = true;
         }
       }
+
+      if (!was_layer_enabled) {
+        // Reset frame rate controller if layer is resumed after pause.
+        framerate_controller_[sl_idx].Reset();
+      }
+
+      framerate_controller_[sl_idx].SetTargetRate(
+          codec_.spatialLayers[sl_idx].maxFramerate);
     }
   } else {
     float rate_ratio[VPX_MAX_LAYERS] = {0};
@@ -263,6 +268,8 @@ bool VP9EncoderImpl::SetSvcRates(
                           << num_temporal_layers_;
         return false;
       }
+
+      framerate_controller_[i].SetTargetRate(codec_.maxFramerate);
     }
   }
 
@@ -353,14 +360,12 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   num_spatial_layers_ = inst->VP9().numberOfSpatialLayers;
   RTC_DCHECK_GT(num_spatial_layers_, 0);
   num_temporal_layers_ = inst->VP9().numberOfTemporalLayers;
-  if (num_temporal_layers_ == 0)
+  if (num_temporal_layers_ == 0) {
     num_temporal_layers_ = 1;
-
-  // Init framerate controller.
-  if (codec_.mode == VideoCodecMode::kScreensharing) {
-    framerate_controller_.Reset();
-    framerate_controller_.SetTargetRate(kMaxScreenSharingFramerateFps);
   }
+
+  framerate_controller_ = std::vector<FramerateController>(
+      num_spatial_layers_, FramerateController(codec_.maxFramerate));
 
   is_svc_ = (num_spatial_layers_ > 1 || num_temporal_layers_ > 1);
 
@@ -537,6 +542,15 @@ int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
 
       svc_params_.scaling_factor_num[i] = 1;
       svc_params_.scaling_factor_den[i] = scale_factor;
+
+      RTC_DCHECK_GT(codec_.spatialLayers[i].maxFramerate, 0);
+      RTC_DCHECK_LE(codec_.spatialLayers[i].maxFramerate, codec_.maxFramerate);
+      if (i > 0) {
+        // Frame rate of high spatial layer is supposed to be equal or higher
+        // than frame rate of low spatial layer.
+        RTC_DCHECK_GE(codec_.spatialLayers[i].maxFramerate,
+                      codec_.spatialLayers[i - 1].maxFramerate);
+      }
     }
   } else {
     int scaling_factor_num = 256;
@@ -669,10 +683,30 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
   }
 
   if (VideoCodecMode::kScreensharing == codec_.mode && !force_key_frame_) {
-    if (framerate_controller_.DropFrame(1000 * input_image.timestamp() /
-                                        kVideoPayloadTypeFrequency)) {
+    // Skip encoding spatial layer frames if their target frame rate is lower
+    // than actual input frame rate.
+    vpx_svc_layer_id_t layer_id = {0};
+    const size_t gof_idx = (pics_since_key_ + 1) % gof_.num_frames_in_gof;
+    layer_id.temporal_layer_id = gof_.temporal_idx[gof_idx];
+
+    const uint32_t frame_timestamp_ms =
+        1000 * input_image.timestamp() / kVideoPayloadTypeFrequency;
+
+    for (uint8_t sl_idx = 0; sl_idx < num_active_spatial_layers_; ++sl_idx) {
+      if (framerate_controller_[sl_idx].DropFrame(frame_timestamp_ms)) {
+        ++layer_id.spatial_layer_id;
+      } else {
+        break;
+      }
+    }
+
+    RTC_DCHECK_LE(layer_id.spatial_layer_id, num_active_spatial_layers_);
+    if (layer_id.spatial_layer_id >= num_active_spatial_layers_) {
+      // Drop entire picture.
       return WEBRTC_VIDEO_CODEC_OK;
     }
+
+    vpx_codec_control(encoder_, VP9E_SET_SVC_LAYER_ID, &layer_id);
   }
 
   RTC_DCHECK_EQ(input_image.width(), raw_->d_w);
@@ -731,11 +765,17 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
     flags = VPX_EFLAG_FORCE_KF;
   }
 
-  RTC_CHECK_GT(codec_.maxFramerate, 0);
-  uint32_t target_framerate_fps = codec_.mode == VideoCodecMode::kScreensharing
-                                      ? kMaxScreenSharingFramerateFps
-                                      : codec_.maxFramerate;
-  uint32_t duration = 90000 / target_framerate_fps;
+  // TODO(ssilkin): Frame duration should be specified per spatial layer
+  // since their frame rate can be different. For now calculate frame duration
+  // based on target frame rate of the highest spatial layer, which frame rate
+  // is supposed to be equal or higher than frame rate of low spatial layers.
+  // Also, timestamp should represent actual time passed since previous frame
+  // (not 'expected' time). Then rate controller can drain buffer more
+  // accurately.
+  RTC_DCHECK_GE(framerate_controller_.size(), num_active_spatial_layers_);
+  uint32_t duration = static_cast<uint32_t>(
+      90000 /
+      framerate_controller_[num_active_spatial_layers_ - 1].GetTargetRate());
   const vpx_codec_err_t rv = vpx_codec_encode(encoder_, raw_, timestamp_,
                                               duration, flags, VPX_DL_REALTIME);
   if (rv != VPX_CODEC_OK) {
@@ -1067,10 +1107,11 @@ void VP9EncoderImpl::DeliverBufferedFrame(bool end_of_picture) {
                                                &frag_info);
     encoded_image_._length = 0;
 
-    if (end_of_picture && codec_.mode == VideoCodecMode::kScreensharing) {
-      const uint32_t timestamp_ms =
+    if (codec_.mode == VideoCodecMode::kScreensharing) {
+      const uint8_t spatial_idx = encoded_image_.SpatialIndex().value_or(0);
+      const uint32_t frame_timestamp_ms =
           1000 * encoded_image_.Timestamp() / kVideoPayloadTypeFrequency;
-      framerate_controller_.AddFrame(timestamp_ms);
+      framerate_controller_[spatial_idx].AddFrame(frame_timestamp_ms);
     }
   }
 }
