@@ -32,10 +32,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-/** Unit tests for {@link HardwareVideoDecoder}. */
+/** Unit tests for {@link AndroidVideoDecoder}. */
 @RunWith(ParameterizedRunner.class)
 @UseRunnerDelegate(BaseJUnit4RunnerDelegate.class)
-public final class HardwareVideoDecoderTest {
+public final class AndroidVideoDecoderInstrumentationTest {
   @ClassParameter private static List<ParameterSet> CLASS_PARAMS = new ArrayList<>();
 
   static {
@@ -56,7 +56,7 @@ public final class HardwareVideoDecoderTest {
   private final VideoCodecInfo codecType;
   private final boolean useEglContext;
 
-  public HardwareVideoDecoderTest(String codecName, boolean useEglContext) {
+  public AndroidVideoDecoderInstrumentationTest(String codecName, boolean useEglContext) {
     if (codecName.equals("H264")) {
       this.codecType = H264Utils.DEFAULT_H264_BASELINE_PROFILE_CODEC;
     } else {
@@ -65,7 +65,7 @@ public final class HardwareVideoDecoderTest {
     this.useEglContext = useEglContext;
   }
 
-  private static final String TAG = "HardwareVideoDecoderTest";
+  private static final String TAG = "AndroidVideoDecoderInstrumentationTest";
 
   private static final int TEST_FRAME_COUNT = 10;
   private static final int TEST_FRAME_WIDTH = 640;

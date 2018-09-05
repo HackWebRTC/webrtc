@@ -79,7 +79,7 @@ public class HardwareVideoEncoderTest {
   // # Mock classes
   /**
    * Mock encoder callback that allows easy verification of the general properties of the encoded
-   * frame such as width and height. Also used from HardwareVideoDecoderTest.
+   * frame such as width and height. Also used from AndroidVideoDecoderInstrumentationTest.
    */
   static class MockEncoderCallback implements VideoEncoder.Callback {
     private BlockingQueue<EncodedImage> frameQueue = new LinkedBlockingQueue<>();

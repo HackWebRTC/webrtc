@@ -23,16 +23,12 @@ import static org.mockito.Mockito.verify;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.graphics.Matrix;
-import android.media.MediaCodec.BufferInfo;
 import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaFormat;
 import android.os.Handler;
 import java.nio.ByteBuffer;
-import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
 import org.chromium.testing.local.LocalRobolectricTestRunner;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -40,25 +36,15 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.robolectric.annotation.Config;
-import org.robolectric.shadows.ShadowSystemClock;
-import org.webrtc.EglBase;
-import org.webrtc.EncodedImage;
 import org.webrtc.EncodedImage.FrameType;
 import org.webrtc.FakeMediaCodecWrapper.State;
-import org.webrtc.SurfaceTextureHelper;
-import org.webrtc.TextureBufferImpl;
-import org.webrtc.VideoCodecStatus;
-import org.webrtc.VideoDecoder;
 import org.webrtc.VideoDecoder.DecodeInfo;
-import org.webrtc.VideoFrame;
 import org.webrtc.VideoFrame.I420Buffer;
 import org.webrtc.VideoFrame.TextureBuffer.Type;
-import org.webrtc.VideoSink;
-import org.webrtc.YuvConverter;
 
 @RunWith(LocalRobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
-public class HardwareVideoDecoderTest {
+public class AndroidVideoDecoderTest {
   private static final VideoDecoder.Settings TEST_DECODER_SETTINGS =
       new VideoDecoder.Settings(/* numberOfCores= */ 1, /* width= */ 640, /* height= */ 480);
   private static final int COLOR_FORMAT = CodecCapabilities.COLOR_FormatYUV420Planar;
@@ -67,7 +53,7 @@ public class HardwareVideoDecoderTest {
 
   private static final byte[] ENCODED_TEST_DATA = new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
 
-  private class TestDecoder extends HardwareVideoDecoder {
+  private class TestDecoder extends AndroidVideoDecoder {
     private final Object deliverDecodedFrameLock = new Object();
     private boolean deliverDecodedFrameDone = true;
 
@@ -198,8 +184,7 @@ public class HardwareVideoDecoderTest {
   @Test
   public void testInit() {
     // Set-up.
-    HardwareVideoDecoder decoder =
-        new TestDecoderBuilder().setCodecType(VideoCodecType.VP8).build();
+    AndroidVideoDecoder decoder = new TestDecoderBuilder().setCodecType(VideoCodecType.VP8).build();
 
     // Test.
     assertThat(decoder.initDecode(TEST_DECODER_SETTINGS, mockDecoderCallback))
@@ -221,7 +206,7 @@ public class HardwareVideoDecoderTest {
   @Test
   public void testRelease() {
     // Set-up.
-    HardwareVideoDecoder decoder = new TestDecoderBuilder().build();
+    AndroidVideoDecoder decoder = new TestDecoderBuilder().build();
     decoder.initDecode(TEST_DECODER_SETTINGS, mockDecoderCallback);
 
     // Test.
@@ -234,7 +219,7 @@ public class HardwareVideoDecoderTest {
   @Test
   public void testReleaseMultipleTimes() {
     // Set-up.
-    HardwareVideoDecoder decoder = new TestDecoderBuilder().build();
+    AndroidVideoDecoder decoder = new TestDecoderBuilder().build();
     decoder.initDecode(TEST_DECODER_SETTINGS, mockDecoderCallback);
 
     // Test.
@@ -248,7 +233,7 @@ public class HardwareVideoDecoderTest {
   @Test
   public void testDecodeQueuesData() {
     // Set-up.
-    HardwareVideoDecoder decoder = new TestDecoderBuilder().build();
+    AndroidVideoDecoder decoder = new TestDecoderBuilder().build();
     decoder.initDecode(TEST_DECODER_SETTINGS, mockDecoderCallback);
 
     // Test.
@@ -401,7 +386,7 @@ public class HardwareVideoDecoderTest {
         .when(fakeMediaCodecWrapper)
         .configure(any(), any(), any(), anyInt());
 
-    HardwareVideoDecoder decoder = new TestDecoderBuilder().build();
+    AndroidVideoDecoder decoder = new TestDecoderBuilder().build();
 
     // Test.
     assertThat(decoder.initDecode(TEST_DECODER_SETTINGS, mockDecoderCallback))
@@ -413,7 +398,7 @@ public class HardwareVideoDecoderTest {
     // Set-up.
     doThrow(new IllegalStateException("Fake error")).when(fakeMediaCodecWrapper).start();
 
-    HardwareVideoDecoder decoder = new TestDecoderBuilder().build();
+    AndroidVideoDecoder decoder = new TestDecoderBuilder().build();
 
     // Test.
     assertThat(decoder.initDecode(TEST_DECODER_SETTINGS, mockDecoderCallback))
