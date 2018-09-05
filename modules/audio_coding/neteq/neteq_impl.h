@@ -290,6 +290,8 @@ class NetEqImpl : public webrtc::NetEq {
                AudioDecoder::SpeechType speech_type,
                bool play_dtmf) RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
+  bool DoCodecPlc() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
+
   // Sub-method which calls the Expand class to perform the expand operation.
   int DoExpand(bool play_dtmf) RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
@@ -425,6 +427,7 @@ class NetEqImpl : public webrtc::NetEq {
   ExpandUmaLogger expand_uma_logger_ RTC_GUARDED_BY(crit_sect_);
   ExpandUmaLogger speech_expand_uma_logger_ RTC_GUARDED_BY(crit_sect_);
   bool no_time_stretching_ RTC_GUARDED_BY(crit_sect_);  // Only used for test.
+  rtc::BufferT<int16_t> concealment_audio_ RTC_GUARDED_BY(crit_sect_);
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(NetEqImpl);

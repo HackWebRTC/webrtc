@@ -164,7 +164,8 @@ Operations DecisionLogic::GetDecision(const SyncBuffer& sync_buffer,
   // if the mute factor is low enough (otherwise the expansion was short enough
   // to not be noticable).
   // Note that the MuteFactor is in Q14, so a value of 16384 corresponds to 1.
-  if (postpone_decoding_after_expand_ && prev_mode == kModeExpand &&
+  if (postpone_decoding_after_expand_ &&
+      (prev_mode == kModeExpand || prev_mode == kModeCodecPlc) &&
       !packet_buffer_.ContainsDtxOrCngPacket(decoder_database_) &&
       cur_size_samples<static_cast<size_t>(delay_manager_->TargetLevel() *
                                            packet_length_samples_)>> 8 &&
@@ -302,9 +303,9 @@ Operations DecisionLogic::FuturePacketAvailable(
   // Check if we should continue with an ongoing expand because the new packet
   // is too far into the future.
   uint32_t timestamp_leap = available_timestamp - target_timestamp;
-  if ((prev_mode == kModeExpand) && !ReinitAfterExpands(timestamp_leap) &&
-      !MaxWaitForPacket() && PacketTooEarly(timestamp_leap) &&
-      UnderTargetLevel()) {
+  if ((prev_mode == kModeExpand || prev_mode == kModeCodecPlc) &&
+      !ReinitAfterExpands(timestamp_leap) && !MaxWaitForPacket() &&
+      PacketTooEarly(timestamp_leap) && UnderTargetLevel()) {
     if (play_dtmf) {
       // Still have DTMF to play, so do not do expand.
       return kDtmf;
@@ -312,6 +313,10 @@ Operations DecisionLogic::FuturePacketAvailable(
       // Nothing to play.
       return kExpand;
     }
+  }
+
+  if (prev_mode == kModeCodecPlc) {
+    return kNormal;
   }
 
   const size_t samples_left =
