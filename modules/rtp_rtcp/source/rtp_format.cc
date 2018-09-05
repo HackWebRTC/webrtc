@@ -53,11 +53,8 @@ std::unique_ptr<RtpPacketizer> RtpPacketizer::Create(
       return std::move(packetizer);
     }
     default: {
-      auto packetizer = absl::make_unique<RtpPacketizerGeneric>(
-          rtp_video_header, frame_type, limits.max_payload_len,
-          limits.last_packet_reduction_len);
-      packetizer->SetPayloadData(payload.data(), payload.size(), nullptr);
-      return std::move(packetizer);
+      return absl::make_unique<RtpPacketizerGeneric>(
+          payload, limits, rtp_video_header, frame_type);
     }
   }
 }
