@@ -20,7 +20,6 @@
 #include "p2p/base/portinterface.h"
 #include "rtc_base/helpers.h"
 #include "rtc_base/proxyinfo.h"
-#include "rtc_base/ssladapter.h"
 #include "rtc_base/sslcertificate.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
@@ -119,6 +118,17 @@ enum : uint32_t {
   CF_ALL = 0x7,
 };
 
+// TLS certificate policy.
+enum class TlsCertPolicy {
+  // For TLS based protocols, ensure the connection is secure by not
+  // circumventing certificate validation.
+  TLS_CERT_POLICY_SECURE,
+  // For TLS based protocols, disregard security completely by skipping
+  // certificate validation. This is insecure and should never be used unless
+  // security is irrelevant in that particular context.
+  TLS_CERT_POLICY_INSECURE_NO_CHECK,
+};
+
 // TODO(deadbeef): Rename to TurnCredentials (and username to ufrag).
 struct RelayCredentials {
   RelayCredentials() {}
@@ -132,17 +142,6 @@ struct RelayCredentials {
 
   std::string username;
   std::string password;
-};
-
-// TLS certificate policy.
-enum class TlsCertPolicy {
-  // For TLS based protocols, ensure the connection is secure by not
-  // circumventing certificate validation.
-  TLS_CERT_POLICY_SECURE,
-  // For TLS based protocols, disregard security completely by skipping
-  // certificate validation. This is insecure and should never be used unless
-  // security is irrelevant in that particular context.
-  TLS_CERT_POLICY_INSECURE_NO_CHECK,
 };
 
 typedef std::vector<ProtocolAddress> PortList;
@@ -181,7 +180,6 @@ struct RelayServerConfig {
   TlsCertPolicy tls_cert_policy = TlsCertPolicy::TLS_CERT_POLICY_SECURE;
   std::vector<std::string> tls_alpn_protocols;
   std::vector<std::string> tls_elliptic_curves;
-  rtc::SSLConfig ssl_config;
   rtc::SSLCertificateVerifier* tls_cert_verifier = nullptr;
 };
 

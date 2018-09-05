@@ -270,16 +270,21 @@ class TurnPortTest : public testing::Test,
                                    const ProtocolAddress& server_address,
                                    const std::string& origin) {
     RelayCredentials credentials(username, password);
-    rtc::SSLConfig ssl_config;
-    ssl_config.tls_cert_policy =
-        rtc::TlsCertPolicy::TLS_CERT_POLICY_INSECURE_NO_CHECK;
-    turn_port_.reset(TurnPort::Create(&main_, &socket_factory_, network, 0, 0,
-                                      kIceUfrag1, kIcePwd1, server_address,
-                                      credentials, 0, origin,
-                                      turn_customizer_.get(), ssl_config));
+    turn_port_.reset(TurnPort::Create(
+        &main_, &socket_factory_, network, 0, 0, kIceUfrag1, kIcePwd1,
+        server_address, credentials, 0, origin, std::vector<std::string>(),
+        std::vector<std::string>(), turn_customizer_.get()));
     // This TURN port will be the controlling.
     turn_port_->SetIceRole(ICEROLE_CONTROLLING);
     ConnectSignals();
+
+    if (server_address.proto == cricket::PROTO_TLS) {
+      // The test TURN server has a self-signed certificate so will not pass
+      // the normal client validation. Instruct the client to ignore certificate
+      // errors for testing only.
+      turn_port_->SetTlsCertPolicy(
+          TlsCertPolicy::TLS_CERT_POLICY_INSECURE_NO_CHECK);
+    }
   }
 
   void CreateSharedTurnPort(const std::string& username,

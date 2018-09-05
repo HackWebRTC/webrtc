@@ -537,7 +537,8 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
     return TurnPort::Create(
         &main_, socket_factory, MakeNetwork(addr), 0, 0, username_, password_,
         ProtocolAddress(server_addr, int_proto), kRelayCredentials, 0,
-        std::string(), nullptr, rtc::SSLConfig(), nullptr);
+        std::string(), std::vector<std::string>(), std::vector<std::string>(),
+        nullptr, nullptr);
   }
   RelayPort* CreateGturnPort(const SocketAddress& addr,
                              ProtocolType int_proto,

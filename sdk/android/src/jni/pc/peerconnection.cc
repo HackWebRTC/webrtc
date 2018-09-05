@@ -40,7 +40,6 @@
 #include "api/rtptransceiverinterface.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ssladapter.h"
 #include "sdk/android/generated_peerconnection_jni/jni/PeerConnection_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/src/jni/jni_helpers.h"
@@ -67,44 +66,6 @@ PeerConnectionInterface* ExtractNativePC(JNIEnv* jni,
       ->pc();
 }
 
-rtc::SSLConfig JavaToNativeSslConfig(JNIEnv* jni,
-                                     const JavaRef<jobject>& j_ssl_config) {
-  rtc::SSLConfig ssl_config;
-  ssl_config.enable_ocsp_stapling =
-      Java_SslConfig_getEnableOcspStapling(jni, j_ssl_config);
-  ssl_config.enable_signed_cert_timestamp =
-      Java_SslConfig_getEnableSignedCertTimestamp(jni, j_ssl_config);
-  ssl_config.enable_tls_channel_id =
-      Java_SslConfig_getEnableTlsChannelId(jni, j_ssl_config);
-  ssl_config.enable_grease = Java_SslConfig_getEnableGrease(jni, j_ssl_config);
-
-  ScopedJavaLocalRef<jobject> j_ssl_config_max_ssl_version =
-      Java_SslConfig_getMaxSslVersion(jni, j_ssl_config);
-  ssl_config.max_ssl_version =
-      JavaToNativeOptionalInt(jni, j_ssl_config_max_ssl_version);
-
-  ScopedJavaLocalRef<jobject> j_ssl_config_tls_cert_policy =
-      Java_SslConfig_getTlsCertPolicy(jni, j_ssl_config);
-  ssl_config.tls_cert_policy =
-      JavaToNativeRtcTlsCertPolicy(jni, j_ssl_config_tls_cert_policy);
-
-  ScopedJavaLocalRef<jobject> j_ssl_config_tls_alpn_protocols =
-      Java_SslConfig_getTlsAlpnProtocols(jni, j_ssl_config);
-  if (!IsNull(jni, j_ssl_config_tls_alpn_protocols)) {
-    ssl_config.tls_alpn_protocols =
-        JavaListToNativeVector<std::string, jstring>(
-            jni, j_ssl_config_tls_alpn_protocols, &JavaToNativeString);
-  }
-  ScopedJavaLocalRef<jobject> j_ssl_config_tls_elliptic_curves =
-      Java_SslConfig_getTlsEllipticCurves(jni, j_ssl_config);
-  if (!IsNull(jni, j_ssl_config_tls_elliptic_curves)) {
-    ssl_config.tls_elliptic_curves =
-        JavaListToNativeVector<std::string, jstring>(
-            jni, j_ssl_config_tls_elliptic_curves, &JavaToNativeString);
-  }
-  return ssl_config;
-}
-
 PeerConnectionInterface::IceServers JavaToNativeIceServers(
     JNIEnv* jni,
     const JavaRef<jobject>& j_ice_servers) {
@@ -126,8 +87,6 @@ PeerConnectionInterface::IceServers JavaToNativeIceServers(
         Java_IceServer_getTlsAlpnProtocols(jni, j_ice_server);
     ScopedJavaLocalRef<jobject> tls_elliptic_curves =
         Java_IceServer_getTlsEllipticCurves(jni, j_ice_server);
-    ScopedJavaLocalRef<jobject> ssl_config =
-        Java_IceServer_getSslConfig(jni, j_ice_server);
     PeerConnectionInterface::IceServer server;
     server.urls = JavaListToNativeVector<std::string, jstring>(
         jni, urls, &JavaToNativeString);
@@ -139,7 +98,6 @@ PeerConnectionInterface::IceServers JavaToNativeIceServers(
         jni, tls_alpn_protocols, &JavaToNativeString);
     server.tls_elliptic_curves = JavaListToNativeVector<std::string, jstring>(
         jni, tls_elliptic_curves, &JavaToNativeString);
-    server.ssl_config = JavaToNativeSslConfig(jni, ssl_config);
     ice_servers.push_back(server);
   }
   return ice_servers;

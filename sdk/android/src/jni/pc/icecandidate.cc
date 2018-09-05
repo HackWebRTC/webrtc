@@ -207,21 +207,6 @@ PeerConnectionInterface::TlsCertPolicy JavaToNativeTlsCertPolicy(
   return PeerConnectionInterface::kTlsCertPolicySecure;
 }
 
-rtc::TlsCertPolicy JavaToNativeRtcTlsCertPolicy(
-    JNIEnv* jni,
-    const JavaRef<jobject>& j_ssl_config_tls_cert_policy) {
-  std::string enum_name = GetJavaEnumName(jni, j_ssl_config_tls_cert_policy);
-
-  if (enum_name == "TLS_CERT_POLICY_SECURE")
-    return rtc::TlsCertPolicy::TLS_CERT_POLICY_SECURE;
-
-  if (enum_name == "TLS_CERT_POLICY_INSECURE_NO_CHECK")
-    return rtc::TlsCertPolicy::TLS_CERT_POLICY_INSECURE_NO_CHECK;
-
-  RTC_CHECK(false) << "Unexpected TlsCertPolicy enum_name " << enum_name;
-  return rtc::TlsCertPolicy::TLS_CERT_POLICY_SECURE;
-}
-
 absl::optional<rtc::AdapterType> JavaToNativeNetworkPreference(
     JNIEnv* jni,
     const JavaRef<jobject>& j_network_preference) {

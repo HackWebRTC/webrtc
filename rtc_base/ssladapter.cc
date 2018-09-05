@@ -16,12 +16,6 @@
 
 namespace rtc {
 
-SSLConfig::SSLConfig() = default;
-SSLConfig::SSLConfig(const SSLConfig&) = default;
-SSLConfig::~SSLConfig() = default;
-
-///////////////////////////////////////////////////////////////////////////////
-
 SSLAdapterFactory* SSLAdapterFactory::Create() {
   return new OpenSSLAdapterFactory();
 }

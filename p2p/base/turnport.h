@@ -22,7 +22,6 @@
 #include "p2p/client/basicportallocator.h"
 #include "rtc_base/asyncinvoker.h"
 #include "rtc_base/asyncpacketsocket.h"
-#include "rtc_base/ssladapter.h"
 #include "rtc_base/sslcertificate.h"
 
 namespace rtc {
@@ -67,7 +66,6 @@ class TurnPort : public Port {
                         customizer);
   }
 
-  // Deprecated. TODO(diogor, webrtc:9673): Remove this constructor.
   // Create a TURN port that will use a new socket, bound to |network| and
   // using a port in the range between |min_port| and |max_port|.
   static TurnPort* Create(
@@ -86,34 +84,10 @@ class TurnPort : public Port {
       const std::vector<std::string>& tls_elliptic_curves,
       webrtc::TurnCustomizer* customizer,
       rtc::SSLCertificateVerifier* tls_cert_verifier = nullptr) {
-    rtc::SSLConfig ssl_config;
-    ssl_config.tls_alpn_protocols = tls_alpn_protocols;
-    ssl_config.tls_elliptic_curves = tls_elliptic_curves;
     return new TurnPort(thread, factory, network, min_port, max_port, username,
                         password, server_address, credentials, server_priority,
-                        origin, customizer, ssl_config, tls_cert_verifier);
-  }
-
-  // Create a TURN port that will use a new socket, bound to |network| and
-  // using a port in the range between |min_port| and |max_port|.
-  static TurnPort* Create(
-      rtc::Thread* thread,
-      rtc::PacketSocketFactory* factory,
-      rtc::Network* network,
-      uint16_t min_port,
-      uint16_t max_port,
-      const std::string& username,  // ice username.
-      const std::string& password,  // ice password.
-      const ProtocolAddress& server_address,
-      const RelayCredentials& credentials,
-      int server_priority,
-      const std::string& origin,
-      webrtc::TurnCustomizer* customizer,
-      const rtc::SSLConfig& ssl_config,
-      rtc::SSLCertificateVerifier* tls_cert_verifier = nullptr) {
-    return new TurnPort(thread, factory, network, min_port, max_port, username,
-                        password, server_address, credentials, server_priority,
-                        origin, customizer, ssl_config, tls_cert_verifier);
+                        origin, tls_alpn_protocols, tls_elliptic_curves,
+                        customizer, tls_cert_verifier);
   }
 
   ~TurnPort() override;
@@ -130,11 +104,11 @@ class TurnPort : public Port {
 
   ProtocolType GetProtocol() const override;
 
-  // Deprecated. SSLConfig should be used instead.
-  // TODO(diogor, webrtc:9673): Remove this.
+  virtual TlsCertPolicy GetTlsCertPolicy() const;
   virtual void SetTlsCertPolicy(TlsCertPolicy tls_cert_policy);
 
-  virtual const rtc::SSLConfig& GetSslConfig() const;
+  virtual std::vector<std::string> GetTlsAlpnProtocols() const;
+  virtual std::vector<std::string> GetTlsEllipticCurves() const;
 
   // Release a TURN allocation by sending a refresh with lifetime 0.
   // Sets state to STATE_RECEIVEONLY.
@@ -246,21 +220,6 @@ class TurnPort : public Port {
            webrtc::TurnCustomizer* customizer,
            rtc::SSLCertificateVerifier* tls_cert_verifier = nullptr);
 
-  TurnPort(rtc::Thread* thread,
-           rtc::PacketSocketFactory* factory,
-           rtc::Network* network,
-           uint16_t min_port,
-           uint16_t max_port,
-           const std::string& username,
-           const std::string& password,
-           const ProtocolAddress& server_address,
-           const RelayCredentials& credentials,
-           int server_priority,
-           const std::string& origin,
-           webrtc::TurnCustomizer* customizer,
-           const rtc::SSLConfig& ssl_config,
-           rtc::SSLCertificateVerifier* tls_cert_verifier = nullptr);
-
   // NOTE: This method needs to be accessible for StacPort
   // return true if entry was created (i.e channel_number consumed).
   bool CreateOrRefreshEntry(const rtc::SocketAddress& addr,
@@ -345,7 +304,9 @@ class TurnPort : public Port {
                                       size_t size, bool payload);
 
   ProtocolAddress server_address_;
-  rtc::SSLConfig ssl_config_;
+  TlsCertPolicy tls_cert_policy_ = TlsCertPolicy::TLS_CERT_POLICY_SECURE;
+  std::vector<std::string> tls_alpn_protocols_;
+  std::vector<std::string> tls_elliptic_curves_;
   rtc::SSLCertificateVerifier* tls_cert_verifier_;
   RelayCredentials credentials_;
   AttemptedServerSet attempted_server_addresses_;

@@ -9,7 +9,6 @@
  */
 
 #import "RTCIceServer+Private.h"
-#import "RTCSSLConfig+Native.h"
 
 #import "helpers/NSString+StdString.h"
 
@@ -22,7 +21,6 @@
 @synthesize hostname = _hostname;
 @synthesize tlsAlpnProtocols = _tlsAlpnProtocols;
 @synthesize tlsEllipticCurves = _tlsEllipticCurves;
-@synthesize sslConfig = _sslConfig;
 
 - (instancetype)initWithURLStrings:(NSArray<NSString *> *)urlStrings {
   return [self initWithURLStrings:urlStrings
@@ -85,40 +83,28 @@
                           hostname:(NSString *)hostname
                   tlsAlpnProtocols:(NSArray<NSString *> *)tlsAlpnProtocols
                  tlsEllipticCurves:(NSArray<NSString *> *)tlsEllipticCurves {
-  RTCSSLConfig *sslConfig = [[RTCSSLConfig alloc] init];
-  sslConfig.tlsCertPolicy = tlsCertPolicy;
-  sslConfig.tlsALPNProtocols = [[NSArray alloc] initWithArray:tlsAlpnProtocols copyItems:YES];
-  sslConfig.tlsEllipticCurves = [[NSArray alloc] initWithArray:tlsEllipticCurves copyItems:YES];
-  return [self initWithURLStrings:urlStrings
-                         username:username
-                       credential:credential
-                         hostname:hostname
-                        sslConfig:sslConfig];
-}
-
-- (instancetype)initWithURLStrings:(NSArray<NSString *> *)urlStrings
-                          username:(NSString *)username
-                        credential:(NSString *)credential
-                          hostname:(NSString *)hostname
-                         sslConfig:(RTCSSLConfig *)sslConfig {
   NSParameterAssert(urlStrings.count);
   if (self = [super init]) {
     _urlStrings = [[NSArray alloc] initWithArray:urlStrings copyItems:YES];
     _username = [username copy];
     _credential = [credential copy];
+    _tlsCertPolicy = tlsCertPolicy;
     _hostname = [hostname copy];
-    _sslConfig = sslConfig;
+    _tlsAlpnProtocols = [[NSArray alloc] initWithArray:tlsAlpnProtocols copyItems:YES];
+    _tlsEllipticCurves = [[NSArray alloc] initWithArray:tlsEllipticCurves copyItems:YES];
   }
   return self;
 }
 
 - (NSString *)description {
-  return [NSString stringWithFormat:@"RTCIceServer:\n%@\n%@\n%@\n%@\n%@",
+  return [NSString stringWithFormat:@"RTCIceServer:\n%@\n%@\n%@\n%@\n%@\n%@\n%@",
                                     _urlStrings,
                                     _username,
                                     _credential,
+                                    [self stringForTlsCertPolicy:_tlsCertPolicy],
                                     _hostname,
-                                    _sslConfig];
+                                    _tlsAlpnProtocols,
+                                    _tlsEllipticCurves];
 }
 
 #pragma mark - Private
@@ -163,8 +149,6 @@
           webrtc::PeerConnectionInterface::kTlsCertPolicyInsecureNoCheck;
       break;
   }
-
-  iceServer.ssl_config = [_sslConfig nativeConfig];
   return iceServer;
 }
 
@@ -178,38 +162,34 @@
   NSString *username = [NSString stringForStdString:nativeServer.username];
   NSString *credential = [NSString stringForStdString:nativeServer.password];
   NSString *hostname = [NSString stringForStdString:nativeServer.hostname];
-  RTCSSLConfig *sslConfig = [[RTCSSLConfig alloc] initWithNativeConfig:nativeServer.ssl_config];
-
-  if (!nativeServer.ssl_config.tls_alpn_protocols.has_value() &&
-      !nativeServer.tls_alpn_protocols.empty()) {
-    NSMutableArray *tlsALPNProtocols =
-        [NSMutableArray arrayWithCapacity:nativeServer.tls_alpn_protocols.size()];
-    for (auto const &proto : nativeServer.tls_alpn_protocols) {
-      [tlsALPNProtocols addObject:[NSString stringForStdString:proto]];
-    }
-    sslConfig.tlsALPNProtocols = tlsALPNProtocols;
+  NSMutableArray *tlsAlpnProtocols =
+      [NSMutableArray arrayWithCapacity:nativeServer.tls_alpn_protocols.size()];
+  for (auto const &proto : nativeServer.tls_alpn_protocols) {
+    [tlsAlpnProtocols addObject:[NSString stringForStdString:proto]];
   }
-
-  if (!nativeServer.ssl_config.tls_elliptic_curves.has_value() &&
-      !nativeServer.tls_elliptic_curves.empty()) {
-    NSMutableArray *tlsEllipticCurves =
-        [NSMutableArray arrayWithCapacity:nativeServer.tls_elliptic_curves.size()];
-    for (auto const &curve : nativeServer.tls_elliptic_curves) {
-      [tlsEllipticCurves addObject:[NSString stringForStdString:curve]];
-    }
-    sslConfig.tlsEllipticCurves = tlsEllipticCurves;
+  NSMutableArray *tlsEllipticCurves =
+      [NSMutableArray arrayWithCapacity:nativeServer.tls_elliptic_curves.size()];
+  for (auto const &curve : nativeServer.tls_elliptic_curves) {
+    [tlsEllipticCurves addObject:[NSString stringForStdString:curve]];
   }
+  RTCTlsCertPolicy tlsCertPolicy;
 
-  if (nativeServer.tls_cert_policy ==
-      webrtc::PeerConnectionInterface::kTlsCertPolicyInsecureNoCheck) {
-    sslConfig.tlsCertPolicy = RTCTlsCertPolicyInsecureNoCheck;
+  switch (nativeServer.tls_cert_policy) {
+    case webrtc::PeerConnectionInterface::kTlsCertPolicySecure:
+      tlsCertPolicy = RTCTlsCertPolicySecure;
+      break;
+    case webrtc::PeerConnectionInterface::kTlsCertPolicyInsecureNoCheck:
+      tlsCertPolicy = RTCTlsCertPolicyInsecureNoCheck;
+      break;
   }
 
   self = [self initWithURLStrings:urls
                          username:username
                        credential:credential
+                    tlsCertPolicy:tlsCertPolicy
                          hostname:hostname
-                        sslConfig:sslConfig];
+                 tlsAlpnProtocols:tlsAlpnProtocols
+                tlsEllipticCurves:tlsEllipticCurves];
   return self;
 }
 
