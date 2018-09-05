@@ -83,16 +83,37 @@ TEST(RtcpTransceiverTest, SendsRtcpOnTaskQueueWhenCreatedOnTaskQueue) {
   WaitPostedTasks(&queue);
 }
 
-TEST(RtcpTransceiverTest, CanBeDestoryedOnTaskQueue) {
+TEST(RtcpTransceiverTest, CanBeDestroyedOnTaskQueueAfterStop) {
   rtc::TaskQueue queue("rtcp");
   NiceMock<MockTransport> outgoing_transport;
   RtcpTransceiverConfig config;
   config.outgoing_transport = &outgoing_transport;
   config.task_queue = &queue;
   auto rtcp_transceiver = absl::make_unique<RtcpTransceiver>(config);
+  rtcp_transceiver->Stop(rtc::NewClosure([] {}));
 
   queue.PostTask([&] { rtcp_transceiver.reset(); });
   WaitPostedTasks(&queue);
+}
+
+TEST(RtcpTransceiverTest, CanBeDestroyedWithoutBlockingAfterStop) {
+  rtc::TaskQueue queue("rtcp");
+  NiceMock<MockTransport> outgoing_transport;
+  RtcpTransceiverConfig config;
+  config.outgoing_transport = &outgoing_transport;
+  config.task_queue = &queue;
+  auto rtcp_transceiver = absl::make_unique<RtcpTransceiver>(config);
+  rtcp_transceiver->SendCompoundPacket();
+
+  rtc::Event heavy_task(false, false);
+  queue.PostTask(
+      rtc::NewClosure([&] { EXPECT_TRUE(heavy_task.Wait(kTimeoutMs)); }));
+  rtc::Event done(false, false);
+  rtcp_transceiver->Stop(rtc::NewClosure([&done] { done.Set(); }));
+  rtcp_transceiver = nullptr;
+
+  heavy_task.Set();
+  EXPECT_TRUE(done.Wait(kTimeoutMs));
 }
 
 // Use rtp timestamp to distinguish different incoming sender reports.
@@ -189,26 +210,23 @@ TEST(RtcpTransceiverTest, CanCallSendCompoundPacketFromAnyThread) {
   WaitPostedTasks(&queue);
 }
 
-TEST(RtcpTransceiverTest, DoesntSendPacketsAfterDestruction) {
-  MockTransport outgoing_transport;
+TEST(RtcpTransceiverTest, DoesntSendPacketsAfterStopCallback) {
+  NiceMock<MockTransport> outgoing_transport;
   rtc::TaskQueue queue("rtcp");
   RtcpTransceiverConfig config;
   config.outgoing_transport = &outgoing_transport;
   config.task_queue = &queue;
-  config.schedule_periodic_compound_packets = false;
-
-  EXPECT_CALL(outgoing_transport, SendRtcp(_, _)).Times(0);
+  config.schedule_periodic_compound_packets = true;
 
   auto rtcp_transceiver = absl::make_unique<RtcpTransceiver>(config);
-  rtc::Event pause(false, false);
-  queue.PostTask([&] {
-    pause.Wait(rtc::Event::kForever);
-    rtcp_transceiver.reset();
-  });
+  rtc::Event done(false, false);
   rtcp_transceiver->SendCompoundPacket();
-  pause.Set();
-  WaitPostedTasks(&queue);
-  EXPECT_FALSE(rtcp_transceiver);
+  rtcp_transceiver->Stop(rtc::NewClosure([&] {
+    EXPECT_CALL(outgoing_transport, SendRtcp).Times(0);
+    done.Set();
+  }));
+  rtcp_transceiver = nullptr;
+  EXPECT_TRUE(done.Wait(kTimeoutMs));
 }
 
 TEST(RtcpTransceiverTest, SendsTransportFeedbackOnTaskQueue) {
