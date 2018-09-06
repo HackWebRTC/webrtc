@@ -282,6 +282,8 @@ if (is_android) {
       "api/org/webrtc/DataChannel.java",
       "api/org/webrtc/DtmfSender.java",
       "api/org/webrtc/FecControllerFactoryFactoryInterface.java",
+      "api/org/webrtc/FrameDecryptor.java",
+      "api/org/webrtc/FrameEncryptor.java",
       "api/org/webrtc/IceCandidate.java",
       "api/org/webrtc/MediaCodecVideoDecoder.java",
       "api/org/webrtc/MediaCodecVideoEncoder.java",
