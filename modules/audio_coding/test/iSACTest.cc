@@ -27,7 +27,7 @@
 #include "modules/audio_coding/codecs/audio_format_conversion.h"
 #include "modules/audio_coding/test/utility.h"
 #include "rtc_base/strings/string_builder.h"
-#include "system_wrappers/include/event_wrapper.h"
+#include "system_wrappers/include/sleep.h"
 #include "test/testsupport/fileutils.h"
 
 namespace webrtc {
@@ -252,15 +252,19 @@ void ISACTest::EncodeDecode(int testNr,
   _channel_B2A->ResetStats();
 
   char currentTime[500];
-  EventTimerWrapper* myEvent = EventTimerWrapper::Create();
-  EXPECT_TRUE(myEvent->StartTimer(true, 10));
+  int64_t time_ms = rtc::TimeMillis();
   while (!(_inFileA.EndOfFile() || _inFileA.Rewinded())) {
     Run10ms();
     _myTimer.Tick10ms();
     _myTimer.CurrentTimeHMS(currentTime);
 
     if ((adaptiveMode) && (_testMode != 0)) {
-      myEvent->Wait(5000);
+      time_ms += 10;
+      int64_t time_left_ms = time_ms - rtc::TimeMillis();
+      if (time_left_ms > 0) {
+        SleepMs(time_left_ms);
+      }
+
       EXPECT_TRUE(_acmA->SendCodec());
       EXPECT_TRUE(_acmB->SendCodec());
     }
