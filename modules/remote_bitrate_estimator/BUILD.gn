@@ -33,6 +33,10 @@ rtc_static_library("remote_bitrate_estimator") {
 
   if (rtc_enable_bwe_test_logging) {
     defines = [ "BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=1" ]
+    configs += [
+      "../..:no_exit_time_destructors",
+      "../..:no_global_constructors",
+    ]
     sources += [ "test/bwe_test_logging.cc" ]
   } else {
     defines = [ "BWE_TEST_LOGGING_COMPILE_TIME_ENABLE=0" ]

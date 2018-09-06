@@ -26,6 +26,7 @@ rtc_static_library("pcc_controller") {
     "pcc_network_controller.cc",
     "pcc_network_controller.h",
   ]
+  configs += [ "../../..:no_global_constructors" ]
   deps = [
     ":bitrate_controller",
     ":monitor_interval",

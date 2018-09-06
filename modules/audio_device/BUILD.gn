@@ -147,6 +147,7 @@ rtc_source_set("audio_device_name") {
 }
 
 rtc_source_set("windows_core_audio_utility") {
+  public_configs = [ "../..:no_global_constructors" ]
   if (is_win && !build_with_chromium) {
     sources = [
       "win/core_audio_utility_win.cc",
@@ -303,6 +304,7 @@ rtc_source_set("audio_device_impl") {
       defines += [ "WEBRTC_DUMMY_FILE_DEVICES" ]
     } else {
       if (is_linux) {
+        configs += [ "../../..:no_global_constructors" ]
         sources += [
           "linux/alsasymboltable_linux.cc",
           "linux/alsasymboltable_linux.h",
@@ -320,6 +322,7 @@ rtc_source_set("audio_device_impl") {
           defines += [ "WEBRTC_USE_X11" ]
         }
         if (rtc_include_pulse_audio) {
+          configs += [ "../..:no_exit_time_destructors" ]
           sources += [
             "linux/audio_device_pulse_linux.cc",
             "linux/audio_device_pulse_linux.h",

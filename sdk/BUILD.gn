@@ -531,6 +531,7 @@ if (is_ios || is_mac) {
 
     rtc_static_library("videocodec_objc") {
       visibility = [ "*" ]
+      configs += [ "..:no_global_constructors" ]
       sources = [
         "objc/components/video_codec/RTCCodecSpecificInfoH264+Private.h",
         "objc/components/video_codec/RTCCodecSpecificInfoH264.h",
@@ -585,6 +586,7 @@ if (is_ios || is_mac) {
     }
 
     rtc_static_library("vpx_codec_constants") {
+      configs += [ "..:no_global_constructors" ]
       sources = [
         "objc/api/video_codec/RTCVideoCodecConstants.h",
         "objc/api/video_codec/RTCVideoCodecConstants.mm",
@@ -664,6 +666,7 @@ if (is_ios || is_mac) {
     }
 
     rtc_static_library("mediaconstraints_objc") {
+      configs += [ "..:no_global_constructors" ]
       sources = [
         "objc/api/peerconnection/RTCMediaConstraints+Private.h",
         "objc/api/peerconnection/RTCMediaConstraints.h",
@@ -774,6 +777,10 @@ if (is_ios || is_mac) {
       allow_poison = [
         "audio_codecs",  # TODO(bugs.webrtc.org/8396): Remove.
         "software_video_codecs",  # TODO(bugs.webrtc.org/7925): Remove.
+      ]
+      configs += [
+        "..:no_exit_time_destructors",
+        "..:no_global_constructors",
       ]
       sources = [
         "objc/api/peerconnection/RTCAudioSource+Private.h",

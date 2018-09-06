@@ -71,6 +71,8 @@ if (!build_with_chromium) {
     rtc_source_set("video_capture_internal_impl_objc") {
       visibility = [ ":video_capture_internal_impl" ]
 
+      configs += [ "../..:no_global_constructors" ]
+
       deps = [
         ":video_capture_module",
         "../../rtc_base:rtc_base_approved",

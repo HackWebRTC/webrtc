@@ -14,6 +14,7 @@ import("../webrtc.gni")
 
 rtc_static_library("system_wrappers") {
   visibility = [ "*" ]
+  configs += [ "..:no_exit_time_destructors" ]
   sources = [
     "include/clock.h",
     "include/cpu_info.h",
@@ -144,6 +145,7 @@ rtc_source_set("field_trial_default") {
 
 rtc_source_set("runtime_enabled_features_default") {
   visibility = [ "*" ]
+  configs += [ "..:no_global_constructors" ]
   sources = [
     "source/runtime_enabled_features_default.cc",
   ]
