@@ -39,7 +39,7 @@ const char kCwndExperiment[] = "WebRTC-CwndExperiment";
 const int64_t kDefaultAcceptedQueueMs = 250;
 
 // From RTCPSender video report interval.
-const TimeDelta kLossUpdateInterval = TimeDelta::ms(1000);
+constexpr TimeDelta kLossUpdateInterval = TimeDelta::Millis<1000>();
 
 // Pacing-rate relative to our target send rate.
 // Multiplicative factor that is applied to the target bitrate to calculate

@@ -17,10 +17,7 @@ config("bwe_test_logging") {
 }
 
 rtc_static_library("goog_cc") {
-  configs += [
-    ":bwe_test_logging",
-    "../../..:no_global_constructors",
-  ]
+  configs += [ ":bwe_test_logging" ]
   sources = [
     "goog_cc_factory.cc",
     "goog_cc_network_control.cc",
