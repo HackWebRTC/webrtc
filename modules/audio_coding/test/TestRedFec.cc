@@ -17,6 +17,7 @@
 #include "modules/audio_coding/codecs/audio_format_conversion.h"
 #include "modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "modules/audio_coding/test/utility.h"
+#include "rtc_base/strings/string_builder.h"
 #include "test/testsupport/fileutils.h"
 
 namespace webrtc {
@@ -327,7 +328,7 @@ void TestRedFec::Run() {
 
 void TestRedFec::OpenOutFile(int16_t test_number) {
   std::string file_name;
-  std::stringstream file_stream;
+  rtc::StringBuilder file_stream;
   file_stream << webrtc::test::OutputPath();
   file_stream << "TestRedFec_outFile_";
   file_stream << test_number << ".pcm";

@@ -16,11 +16,11 @@
 #include <stdio.h>
 
 #include <algorithm>
-#include <sstream>
 
 #include "rtc_base/checks.h"
 #include "rtc_base/format_macros.h"
 #include "rtc_base/platform_thread.h"
+#include "rtc_base/strings/string_builder.h"
 
 namespace webrtc {
 namespace testing {
@@ -29,7 +29,7 @@ namespace bwe {
 Logging Logging::g_Logging;
 
 static std::string ToString(uint32_t v) {
-  std::stringstream ss;
+  rtc::StringBuilder ss;
   ss << v;
   return ss.str();
 }

@@ -313,6 +313,7 @@ rtc_source_set("timeutils") {
   deps = [
     ":checks",
     ":safe_conversions",
+    ":stringutils",
   ]
 }
 

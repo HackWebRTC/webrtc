@@ -239,7 +239,7 @@ size_t VideoCodecTestFixtureImpl::Config::NumberOfSimulcastStreams() const {
 
 std::string VideoCodecTestFixtureImpl::Config::ToString() const {
   std::string codec_type = CodecTypeToPayloadString(codec_settings.codecType);
-  std::stringstream ss;
+  rtc::StringBuilder ss;
   ss << "filename: " << filename;
   ss << "\nnum_frames: " << num_frames;
   ss << "\nmax_payload_size_bytes: " << max_payload_size_bytes;

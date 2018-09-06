@@ -16,6 +16,7 @@
 #include "modules/audio_coding/codecs/audio_format_conversion.h"
 #include "modules/audio_coding/test/PCMFile.h"
 #include "modules/audio_coding/test/utility.h"
+#include "rtc_base/strings/string_builder.h"
 #include "test/testsupport/fileutils.h"
 
 namespace webrtc {
@@ -204,7 +205,7 @@ void TestWebRtcVadDtx::Test(bool new_outfile) {
   if (new_outfile) {
     output_file_num_++;
   }
-  std::stringstream out_filename;
+  rtc::StringBuilder out_filename;
   out_filename << webrtc::test::OutputPath() << "testWebRtcVadDtx_outFile_"
                << output_file_num_ << ".pcm";
   Run(webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm"), 32000, 1,

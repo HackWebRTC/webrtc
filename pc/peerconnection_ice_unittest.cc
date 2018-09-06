@@ -27,6 +27,7 @@
 #include "pc/test/fakeaudiocapturemodule.h"
 #include "rtc_base/fakenetwork.h"
 #include "rtc_base/gunit.h"
+#include "rtc_base/strings/string_builder.h"
 #include "rtc_base/virtualsocketserver.h"
 #include "system_wrappers/include/metrics_default.h"
 
@@ -258,7 +259,7 @@ class PeerConnectionIceTest
                                                  const char* b_expr,
                                                  const cricket::Candidate& a,
                                                  const cricket::Candidate& b) {
-  std::stringstream failure_info;
+  rtc::StringBuilder failure_info;
   if (a.component() != b.component()) {
     failure_info << "\ncomponent: " << a.component() << " != " << b.component();
   }
@@ -593,7 +594,7 @@ TEST_P(PeerConnectionIceTest, VerifyUfragPwdLength) {
     const char* candidates_expr,
     const SocketAddress& address,
     const std::vector<IceCandidateInterface*> candidates) {
-  std::stringstream candidate_hosts;
+  rtc::StringBuilder candidate_hosts;
   for (const auto* candidate : candidates) {
     const auto& candidate_ip = candidate->candidate().address().ipaddr();
     if (candidate_ip == address.ipaddr()) {

@@ -40,6 +40,7 @@
 #include "rtc_base/race_checker.h"
 #include "rtc_base/stringencode.h"
 #include "rtc_base/strings/audio_format_to_string.h"
+#include "rtc_base/strings/string_builder.h"
 #include "rtc_base/stringutils.h"
 #include "rtc_base/third_party/base64/base64.h"
 #include "rtc_base/trace_event.h"
@@ -95,7 +96,7 @@ bool ValidateStreamParams(const StreamParams& sp) {
 
 // Dumps an AudioCodec in RFC 2327-ish format.
 std::string ToString(const AudioCodec& codec) {
-  std::stringstream ss;
+  rtc::StringBuilder ss;
   ss << codec.name << "/" << codec.clockrate << "/" << codec.channels;
   if (!codec.params.empty()) {
     ss << " {";

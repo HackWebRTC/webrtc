@@ -24,6 +24,7 @@
 #include "modules/audio_coding/test/PCMFile.h"
 #include "modules/audio_coding/test/utility.h"
 #include "rtc_base/flags.h"
+#include "rtc_base/strings/string_builder.h"
 #include "system_wrappers/include/event_wrapper.h"
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
@@ -171,7 +172,7 @@ class DelayTest {
   }
 
   void OpenOutFile(const char* output_id) {
-    std::stringstream file_stream;
+    rtc::StringBuilder file_stream;
     file_stream << "delay_test_" << FLAG_codec << "_" << FLAG_sample_rate_hz
                 << "Hz"
                 << "_" << FLAG_delay << "ms.pcm";

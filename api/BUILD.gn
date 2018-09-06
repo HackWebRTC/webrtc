@@ -387,6 +387,7 @@ if (rtc_include_tests) {
     deps = [
       "..:webrtc_common",
       "../modules/video_coding:video_codec_interface",
+      "../rtc_base:stringutils",
       "video_codecs:video_codecs_api",
     ]
   }

@@ -21,6 +21,7 @@
 #include "rtc_base/ipaddress.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/nethelpers.h"
+#include "rtc_base/strings/string_builder.h"
 
 namespace cricket {
 
@@ -485,7 +486,7 @@ void UDPPort::OnStunBindingRequestSucceeded(
           rtc::EmptySocketAddressWithFamily(related_address.family());
     }
 
-    std::ostringstream url;
+    rtc::StringBuilder url;
     url << "stun:" << stun_server_addr.ipaddr().ToString() << ":"
         << stun_server_addr.port();
     AddAddress(stun_reflected_addr, socket_->GetLocalAddress(), related_address,

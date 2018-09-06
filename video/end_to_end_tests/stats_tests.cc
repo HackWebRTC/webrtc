@@ -13,6 +13,7 @@
 #include "call/simulated_network.h"
 #include "modules/rtp_rtcp/source/rtp_utility.h"
 #include "modules/video_coding/include/video_coding_defines.h"
+#include "rtc_base/strings/string_builder.h"
 #include "system_wrappers/include/metrics.h"
 #include "system_wrappers/include/metrics_default.h"
 #include "system_wrappers/include/sleep.h"
@@ -215,7 +216,7 @@ TEST_F(StatsEndToEndTest, GetStats) {
     }
 
     std::string CompoundKey(const char* name, uint32_t ssrc) {
-      std::ostringstream oss;
+      rtc::StringBuilder oss;
       oss << name << "_" << ssrc;
       return oss.str();
     }

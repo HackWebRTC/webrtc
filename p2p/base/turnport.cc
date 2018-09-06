@@ -25,6 +25,7 @@
 #include "rtc_base/nethelpers.h"
 #include "rtc_base/socketaddress.h"
 #include "rtc_base/stringencode.h"
+#include "rtc_base/strings/string_builder.h"
 
 namespace cricket {
 
@@ -1236,7 +1237,7 @@ std::string TurnPort::ReconstructedServerUrl() {
     case PROTO_TCP:
       break;
   }
-  std::ostringstream url;
+  rtc::StringBuilder url;
   url << scheme << ":" << server_address_.address.ipaddr().ToString() << ":"
       << server_address_.address.port() << "?transport=" << transport;
   return url.str();

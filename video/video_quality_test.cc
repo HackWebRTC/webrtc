@@ -13,7 +13,6 @@
 #include <algorithm>
 #include <deque>
 #include <map>
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -240,7 +239,7 @@ VideoQualityTest::InjectionComponents::~InjectionComponents() = default;
 void VideoQualityTest::TestBody() {}
 
 std::string VideoQualityTest::GenerateGraphTitle() const {
-  std::stringstream ss;
+  rtc::StringBuilder ss;
   ss << params_.video[0].codec;
   ss << " (" << params_.video[0].target_bitrate_bps / 1000 << "kbps";
   ss << ", " << params_.video[0].fps << " FPS";
@@ -1244,7 +1243,7 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
         const size_t num_streams = params_.ss[video_idx].streams.size();
         if (selected_stream_id == num_streams) {
           for (size_t stream_id = 0; stream_id < num_streams; ++stream_id) {
-            std::ostringstream oss;
+            rtc::StringBuilder oss;
             oss << "Loopback Video #" << video_idx << " - Stream #"
                 << static_cast<int>(stream_id);
             loopback_renderers.emplace_back(test::VideoRenderer::Create(
@@ -1258,7 +1257,7 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
                   .sync_group = kSyncGroup;
           }
         } else {
-          std::ostringstream oss;
+          rtc::StringBuilder oss;
           oss << "Loopback Video #" << video_idx;
           loopback_renderers.emplace_back(test::VideoRenderer::Create(
               oss.str().c_str(),
@@ -1307,7 +1306,7 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
 
 void VideoQualityTest::StartEncodedFrameLogs(VideoReceiveStream* stream) {
   if (!params_.logging.encoded_frame_base_path.empty()) {
-    std::ostringstream str;
+    rtc::StringBuilder str;
     str << receive_logs_++;
     std::string path =
         params_.logging.encoded_frame_base_path + "." + str.str() + ".recv.ivf";

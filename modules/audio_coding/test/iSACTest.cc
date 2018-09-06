@@ -26,6 +26,7 @@
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "modules/audio_coding/codecs/audio_format_conversion.h"
 #include "modules/audio_coding/test/utility.h"
+#include "rtc_base/strings/string_builder.h"
 #include "system_wrappers/include/event_wrapper.h"
 #include "test/testsupport/fileutils.h"
 
@@ -221,8 +222,8 @@ void ISACTest::EncodeDecode(int testNr,
   _inFileB.Open(file_name_swb_, 32000, "rb", true);
 
   std::string file_name_out;
-  std::stringstream file_stream_a;
-  std::stringstream file_stream_b;
+  rtc::StringBuilder file_stream_a;
+  rtc::StringBuilder file_stream_b;
   file_stream_a << webrtc::test::OutputPath();
   file_stream_b << webrtc::test::OutputPath();
   file_stream_a << "out_iSACTest_A_" << testNr << ".pcm";
@@ -288,8 +289,8 @@ void ISACTest::SwitchingSamplingRate(int testNr, int maxSampRateChange) {
   _inFileB.Open(file_name_swb_, 32000, "rb");
 
   std::string file_name_out;
-  std::stringstream file_stream_a;
-  std::stringstream file_stream_b;
+  rtc::StringBuilder file_stream_a;
+  rtc::StringBuilder file_stream_b;
   file_stream_a << webrtc::test::OutputPath();
   file_stream_b << webrtc::test::OutputPath();
   file_stream_a << "out_iSACTest_A_" << testNr << ".pcm";

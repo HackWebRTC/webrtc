@@ -25,6 +25,7 @@
 #include "rtc_base/gunit.h"
 #include "rtc_base/messagedigest.h"
 #include "rtc_base/ssladapter.h"
+#include "rtc_base/strings/string_builder.h"
 
 #define ASSERT_CRYPTO(cd, s, cs)      \
   ASSERT_EQ(s, cd->cryptos().size()); \
@@ -3703,7 +3704,7 @@ void TestAudioCodecsAnswer(RtpTransceiverDirection offer_direction,
     }
 
     auto format_codecs = [](const std::vector<AudioCodec>& codecs) {
-      std::stringstream os;
+      rtc::StringBuilder os;
       bool first = true;
       os << "{";
       for (const auto& c : codecs) {

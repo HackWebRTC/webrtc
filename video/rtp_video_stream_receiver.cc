@@ -37,6 +37,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/strings/string_builder.h"
 #include "rtc_base/system/fallthrough.h"
 #include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/metrics.h"
@@ -291,7 +292,7 @@ void RtpVideoStreamReceiver::OnRtpPacket(const RtpPacketReceived& packet) {
     }
     // Periodically log the RTP header of incoming packets.
     if (now_ms - last_packet_log_ms_ > kPacketLogIntervalMs) {
-      std::stringstream ss;
+      rtc::StringBuilder ss;
       ss << "Packet received on SSRC: " << packet.Ssrc()
          << " with payload type: " << static_cast<int>(packet.PayloadType())
          << ", timestamp: " << packet.Timestamp()

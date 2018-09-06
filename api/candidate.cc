@@ -10,6 +10,8 @@
 
 #include "api/candidate.h"
 
+#include "rtc_base/strings/string_builder.h"
+
 namespace cricket {
 
 Candidate::Candidate()
@@ -68,7 +70,7 @@ bool Candidate::MatchesForRemoval(const Candidate& c) const {
 }
 
 std::string Candidate::ToStringInternal(bool sensitive) const {
-  std::ostringstream ost;
+  rtc::StringBuilder ost;
   std::string address =
       sensitive ? address_.ToSensitiveString() : address_.ToString();
   ost << "Cand[" << transport_name_ << ":" << foundation_ << ":" << component_
