@@ -9,7 +9,6 @@
 import("../../../../webrtc.gni")
 
 rtc_source_set("rnn_vad") {
-  configs += [ "../../../..:no_global_constructors" ]
   sources = [
     "common.h",
     "features_extraction.cc",

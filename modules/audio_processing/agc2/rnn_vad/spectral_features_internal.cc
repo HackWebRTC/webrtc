@@ -17,12 +17,6 @@
 
 namespace webrtc {
 namespace rnn_vad {
-namespace {
-
-// DCT scaling factor.
-const float kDctScalingFactor = std::sqrt(2.f / kNumBands);
-
-}  // namespace
 
 std::array<size_t, kNumBands> ComputeBandBoundaryIndexes(
     size_t sample_rate_hz,
@@ -116,6 +110,8 @@ void ComputeDct(rtc::ArrayView<const float, kNumBands> in,
   RTC_DCHECK_LE(1, out.size());
   RTC_DCHECK_LE(out.size(), in.size());
   std::fill(out.begin(), out.end(), 0.f);
+  // DCT scaling factor.
+  const float kDctScalingFactor = std::sqrt(2.f / kNumBands);
   for (size_t i = 0; i < out.size(); ++i) {
     for (size_t j = 0; j < in.size(); ++j) {
       out[i] += in[j] * dct_table[j * in.size() + i];
