@@ -698,8 +698,8 @@ if (is_ios) {
 if (is_mac) {
   template("mac_framework_bundle_with_umbrella_header") {
     forward_variables_from(invoker, [ "output_name" ])
-    umbrella_header_path =
-        "$target_gen_dir/$output_name.framework/Headers/$output_name.h"
+    this_target_name = target_name
+    umbrella_header_path = "$target_gen_dir/umbrella_header/$output_name.h"
 
     mac_framework_bundle(target_name) {
       forward_variables_from(invoker, "*", [])
@@ -714,20 +714,21 @@ if (is_mac) {
       ]
 
       deps += [
-        ":copy_framework_headers_$target_name",
-        ":copy_umbrella_header_$target_name",
+        ":copy_framework_headers_$this_target_name",
+        ":copy_umbrella_header_$this_target_name",
+        ":umbrella_header_$this_target_name",
       ]
     }
 
-    copy("copy_framework_headers_$target_name") {
+    bundle_data("copy_framework_headers_$this_target_name") {
       forward_variables_from(invoker, [ "sources" ])
 
       outputs = [
-        "$root_out_dir/$output_name.framework/Headers/{{source_file_part}}",
+        "{{bundle_contents_dir}}/Headers/{{source_file_part}}",
       ]
     }
 
-    action("umbrella_header_$target_name") {
+    action("umbrella_header_$this_target_name") {
       forward_variables_from(invoker, [ "sources" ])
 
       script = "//tools_webrtc/ios/generate_umbrella_header.py"
@@ -742,16 +743,16 @@ if (is_mac) {
              ] + sources
     }
 
-    copy("copy_umbrella_header_$target_name") {
+    bundle_data("copy_umbrella_header_$this_target_name") {
       sources = [
         umbrella_header_path,
       ]
       outputs = [
-        "$root_out_dir/$output_name.framework/Headers/$output_name.h",
+        "{{bundle_contents_dir}}/Headers/$output_name.h",
       ]
 
       deps = [
-        ":umbrella_header_$target_name",
+        ":umbrella_header_$this_target_name",
       ]
     }
   }
