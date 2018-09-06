@@ -531,13 +531,13 @@ class LogMessage {
       ? static_cast<void>(0)               \
       : rtc::webrtc_logging_impl::LogMessageVoidify()&
 
-#define RTC_LOG(sev)                                                   \
-  for (bool do_log = rtc::LogMessage::Loggable<rtc::sev>(); do_log;    \
-       do_log = false)                                                 \
-  rtc::webrtc_logging_impl::LogCall() &                                \
-      rtc::webrtc_logging_impl::LogStreamer<>()                        \
-          << rtc::webrtc_logging_impl::LogMetadata(__FILE__, __LINE__, \
-                                                   rtc::sev)
+#define RTC_LOG_FILE_LINE(sev, file, line)                                     \
+  for (bool do_log = rtc::LogMessage::Loggable<sev>(); do_log; do_log = false) \
+  rtc::webrtc_logging_impl::LogCall() &                                        \
+      rtc::webrtc_logging_impl::LogStreamer<>()                                \
+          << rtc::webrtc_logging_impl::LogMetadata(__FILE__, __LINE__, sev)
+
+#define RTC_LOG(sev) RTC_LOG_FILE_LINE(rtc::sev, __FILE__, __LINE__)
 
 // The _V version is for when a variable is passed in.
 #define RTC_LOG_V(sev)                                                       \
