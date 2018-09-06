@@ -23,7 +23,6 @@ rtc_static_library("bbr") {
 
 rtc_source_set("bbr_controller") {
   visibility = [ ":*" ]
-  configs += [ "../../..:no_global_constructors" ]
   sources = [
     "bbr_network_controller.cc",
     "bbr_network_controller.h",
