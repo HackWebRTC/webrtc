@@ -7,13 +7,12 @@
 // be found in the AUTHORS file in the root of the source tree.
 //
 
-#include "system_wrappers/include/metrics_default.h"
+#include "system_wrappers/include/metrics.h"
 
 #include <algorithm>
 
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/thread_annotations.h"
-#include "system_wrappers/include/metrics.h"
 
 // Default implementation of histogram methods for WebRTC clients that do not
 // want to provide their own implementation.
@@ -203,6 +202,7 @@ RtcHistogramMap* GetMap() {
 }
 }  // namespace
 
+#ifndef WEBRTC_EXCLUDE_METRICS_DEFAULT
 // Implementation of histogram methods in
 // webrtc/system_wrappers/interface/metrics.h.
 
@@ -258,6 +258,8 @@ void HistogramAdd(Histogram* histogram_pointer, int sample) {
   RtcHistogram* ptr = reinterpret_cast<RtcHistogram*>(histogram_pointer);
   ptr->Add(sample);
 }
+
+#endif  // WEBRTC_EXCLUDE_METRICS_DEFAULT
 
 SampleInfo::SampleInfo(const std::string& name,
                        int min,
