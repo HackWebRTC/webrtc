@@ -34,9 +34,6 @@ using testing::Invoke;
 
 constexpr int kDefaultTimeOutMs = 50;
 
-const char kNewJitterBufferFieldTrialEnabled[] =
-    "WebRTC-NewVideoJitterBuffer/Enabled/";
-
 class MockTransport : public Transport {
  public:
   MOCK_METHOD3(SendRtp,
@@ -67,7 +64,6 @@ class VideoReceiveStreamTest : public testing::Test {
  public:
   VideoReceiveStreamTest()
       : process_thread_(ProcessThread::Create("TestThread")),
-        override_field_trials_(kNewJitterBufferFieldTrialEnabled),
         config_(&mock_transport_),
         call_stats_(Clock::GetRealTimeClock(), process_thread_.get()) {}
 
@@ -96,7 +92,6 @@ class VideoReceiveStreamTest : public testing::Test {
 
  protected:
   std::unique_ptr<ProcessThread> process_thread_;
-  webrtc::test::ScopedFieldTrials override_field_trials_;
   VideoReceiveStream::Config config_;
   CallStats call_stats_;
   MockVideoDecoder mock_h264_video_decoder_;
