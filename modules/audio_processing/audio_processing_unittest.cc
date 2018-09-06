@@ -2187,7 +2187,7 @@ TEST_F(ApmTest, Process) {
       // TODO(bjornv): If we start getting more of these offsets on Android we
       // should consider a different approach. Either using one slack for all,
       // or generate a separate android reference.
-#if defined(WEBRTC_ANDROID)
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
       const int kHasVoiceCountOffset = 3;
       const int kHasVoiceCountNear = 8;
       const int kMaxOutputAverageOffset = 9;
