@@ -222,6 +222,19 @@ class Aec3ParametersParser {
                 &cfg.delay.skew_hysteresis_blocks);
       ReadParam(section, "fixed_capture_delay_samples",
                 &cfg.delay.fixed_capture_delay_samples);
+      ReadParam(section, "delay_estimate_smoothing",
+                &cfg.delay.delay_estimate_smoothing);
+      ReadParam(section, "delay_candidate_detection_threshold",
+                &cfg.delay.delay_candidate_detection_threshold);
+
+      Json::Value subsection;
+      if (rtc::GetValueFromJsonObject(section, "delay_selection_thresholds",
+                                      &subsection)) {
+        ReadParam(subsection, "initial",
+                  &cfg.delay.delay_selection_thresholds.initial);
+        ReadParam(subsection, "converged",
+                  &cfg.delay.delay_selection_thresholds.converged);
+      }
     }
 
     if (rtc::GetValueFromJsonObject(root, "filter", &section)) {
