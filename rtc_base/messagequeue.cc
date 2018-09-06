@@ -124,7 +124,7 @@ void MessageQueueManager::ClearInternal(MessageHandler* handler) {
   }
 }
 
-void MessageQueueManager::ProcessAllMessageQueues() {
+void MessageQueueManager::ProcessAllMessageQueuesForTesting() {
   if (!instance_) {
     return;
   }
@@ -153,7 +153,7 @@ void MessageQueueManager::ProcessAllMessageQueuesInternal() {
   {
     MarkProcessingCritScope cs(&crit_, &processing_);
     for (MessageQueue* queue : message_queues_) {
-      if (!queue->IsProcessingMessages()) {
+      if (!queue->IsProcessingMessagesForTesting()) {
         // If the queue is not processing messages, it can
         // be ignored. If we tried to post a message to it, it would be dropped
         // or ignored.
@@ -163,11 +163,15 @@ void MessageQueueManager::ProcessAllMessageQueuesInternal() {
                          new ScopedIncrement(&queues_not_done));
     }
   }
-  // Note: One of the message queues may have been on this thread, which is why
-  // we can't synchronously wait for queues_not_done to go to 0; we need to
-  // process messages as well.
+
+  rtc::Thread* current = rtc::Thread::Current();
+  // Note: One of the message queues may have been on this thread, which is
+  // why we can't synchronously wait for queues_not_done to go to 0; we need
+  // to process messages as well.
   while (AtomicOps::AcquireLoad(&queues_not_done) > 0) {
-    rtc::Thread::Current()->ProcessMessages(0);
+    if (current) {
+      current->ProcessMessages(0);
+    }
   }
 }
 
@@ -245,7 +249,7 @@ bool MessageQueue::IsQuitting() {
   return AtomicOps::AcquireLoad(&stop_) != 0;
 }
 
-bool MessageQueue::IsProcessingMessages() {
+bool MessageQueue::IsProcessingMessagesForTesting() {
   return !IsQuitting();
 }
 

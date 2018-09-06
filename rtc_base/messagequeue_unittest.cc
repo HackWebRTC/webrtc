@@ -182,7 +182,7 @@ TEST(MessageQueueManager, ProcessAllMessageQueues) {
   b->PostDelayed(RTC_FROM_HERE, 0, &incrementer);
   rtc::Thread::Current()->Post(RTC_FROM_HERE, &event_signaler);
 
-  MessageQueueManager::ProcessAllMessageQueues();
+  MessageQueueManager::ProcessAllMessageQueuesForTesting();
   EXPECT_EQ(4, AtomicOps::AcquireLoad(&messages_processed));
 }
 
@@ -191,7 +191,7 @@ TEST(MessageQueueManager, ProcessAllMessageQueuesWithQuittingThread) {
   auto t = Thread::CreateWithSocketServer();
   t->Start();
   t->Quit();
-  MessageQueueManager::ProcessAllMessageQueues();
+  MessageQueueManager::ProcessAllMessageQueuesForTesting();
 }
 
 // Test that ProcessAllMessageQueues doesn't hang if a queue clears its
@@ -218,7 +218,7 @@ TEST(MessageQueueManager, ProcessAllMessageQueuesWithClearedQueue) {
   // Post messages (both delayed and non delayed) to both threads.
   t->Post(RTC_FROM_HERE, &clearer);
   rtc::Thread::Current()->Post(RTC_FROM_HERE, &event_signaler);
-  MessageQueueManager::ProcessAllMessageQueues();
+  MessageQueueManager::ProcessAllMessageQueuesForTesting();
 }
 
 class RefCountedHandler : public MessageHandler, public rtc::RefCountInterface {

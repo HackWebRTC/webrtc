@@ -93,7 +93,7 @@
   [self.audioSession notifyDidBeginInterruption];
 
   // Wait for notification to propagate.
-  rtc::MessageQueueManager::ProcessAllMessageQueues();
+  rtc::MessageQueueManager::ProcessAllMessageQueuesForTesting();
   XCTAssertTrue(_audio_device->IsInterrupted());
 
   // Force it for testing.
@@ -101,7 +101,7 @@
 
   [self.audioSession notifyDidEndInterruptionWithShouldResumeSession:YES];
   // Wait for notification to propagate.
-  rtc::MessageQueueManager::ProcessAllMessageQueues();
+  rtc::MessageQueueManager::ProcessAllMessageQueuesForTesting();
   XCTAssertTrue(_audio_device->IsInterrupted());
 
   _audio_device->Init();

@@ -49,10 +49,13 @@ class MessageQueueManager {
   // MessageQueueManager instance when necessary.
   static bool IsInitialized();
 
-  // Mainly for testing purposes, for use with a simulated clock.
+  // TODO(nisse): Delete alias, as soon as downstream code is updated.
+  static void ProcessAllMessageQueues() { ProcessAllMessageQueuesForTesting(); }
+
+  // For testing purposes, for use with a simulated clock.
   // Ensures that all message queues have processed delayed messages
   // up until the current point in time.
-  static void ProcessAllMessageQueues();
+  static void ProcessAllMessageQueuesForTesting();
 
  private:
   static MessageQueueManager* Instance();
@@ -226,7 +229,7 @@ class MessageQueue {
   // Not all message queues actually process messages (such as SignalThread).
   // In those cases, it's important to know, before posting, that it won't be
   // Processed.  Normally, this would be true until IsQuitting() is true.
-  virtual bool IsProcessingMessages();
+  virtual bool IsProcessingMessagesForTesting();
 
   // Get() will process I/O until:
   //  1) A message is available (returns true)

@@ -858,7 +858,7 @@ TEST_F(AudioDeviceTest, testInterruptedAudioSession) {
   [session notifyDidBeginInterruption];
 
   // Wait for notification to propagate.
-  rtc::MessageQueueManager::ProcessAllMessageQueues();
+  rtc::MessageQueueManager::ProcessAllMessageQueuesForTesting();
   EXPECT_TRUE(audio_device->is_interrupted_);
 
   // Force it for testing.
@@ -869,7 +869,7 @@ TEST_F(AudioDeviceTest, testInterruptedAudioSession) {
 
   [session notifyDidEndInterruptionWithShouldResumeSession:YES];
   // Wait for notification to propagate.
-  rtc::MessageQueueManager::ProcessAllMessageQueues();
+  rtc::MessageQueueManager::ProcessAllMessageQueuesForTesting();
   EXPECT_TRUE(audio_device->is_interrupted_);
 
   audio_device->Init();

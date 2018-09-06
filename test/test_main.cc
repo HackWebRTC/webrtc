@@ -10,6 +10,7 @@
 
 #include "rtc_base/flags.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/thread.h"
 #include "system_wrappers/include/field_trial_default.h"
 #include "system_wrappers/include/metrics_default.h"
 #include "test/field_trial.h"
@@ -86,6 +87,15 @@ int main(int argc, char* argv[]) {
   webrtc::metrics::Enable();
 
   rtc::LogMessage::SetLogToStderr(FLAG_logs);
+
+  // Ensure that main thread gets wrapped as an rtc::Thread.
+  // TODO(bugs.webrt.org/9714): It might be better to avoid wrapping the main
+  // thread, or leave it to individual tests that need it. But as long as we
+  // have automatic thread wrapping, we need this to avoid that some other
+  // random thread (which one depending on which tests are run) gets
+  // automatically wrapped.
+  rtc::ThreadManager::Instance()->WrapCurrentThread();
+  RTC_CHECK(rtc::Thread::Current());
 
 #if defined(WEBRTC_IOS)
 
