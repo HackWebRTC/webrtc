@@ -416,6 +416,9 @@ static jlong JNI_PeerConnectionFactory_CreatePeerConnection(
 
   rtc::scoped_refptr<PeerConnectionInterface> pc(f->CreatePeerConnection(
       rtc_config, std::move(peer_connection_dependencies)));
+  if (pc == nullptr) {
+    return 0;
+  }
 
   return jlongFromPointer(
       new OwnedPeerConnection(pc, std::move(observer), std::move(constraints)));
