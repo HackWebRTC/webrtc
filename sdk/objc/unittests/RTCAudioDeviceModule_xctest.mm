@@ -203,8 +203,7 @@ static const NSUInteger kNumIgnoreFirstCallbacks = 50;
 
 // Tests that playout can be initiated, started and stopped. No audio callback
 // is registered in this test.
-// Failing when running on real iOS devices: bugs.webrtc.org/6889.
-- (void)DISABLED_testStartStopPlayout {
+- (void)testStartStopPlayout {
   [self startPlayout];
   [self stopPlayout];
   [self startPlayout];
@@ -213,8 +212,7 @@ static const NSUInteger kNumIgnoreFirstCallbacks = 50;
 
 // Tests that recording can be initiated, started and stopped. No audio callback
 // is registered in this test.
-// Can sometimes fail when running on real devices: bugs.webrtc.org/7888.
-- (void)DISABLED_testStartStopRecording {
+- (void)testStartStopRecording {
   [self startRecording];
   [self stopRecording];
   [self startRecording];
@@ -236,8 +234,7 @@ static const NSUInteger kNumIgnoreFirstCallbacks = 50;
 // last active instance shall deactivate the audio session. The test does not
 // explicitly verify correct audio session calls but instead focuses on
 // ensuring that audio starts for both ADMs.
-// Failing when running on real iOS devices: bugs.webrtc.org/6889.
-- (void)DISABLED_testStartPlayoutOnTwoInstances {
+- (void)testStartPlayoutOnTwoInstances {
   // Create and initialize a second/extra ADM instance. The default ADM is
   // created by the test harness.
   rtc::scoped_refptr<webrtc::AudioDeviceModule> secondAudioDeviceModule =
@@ -282,7 +279,7 @@ static const NSUInteger kNumIgnoreFirstCallbacks = 50;
   // has been done successfully and that there is no conflict with the already
   // playing first ADM.
   XCTestExpectation *playoutExpectation = [self expectationWithDescription:@"NeedMorePlayoutData"];
-  playoutExpectation.expectedFulfillmentCount = kNumCallbacks;
+  __block int num_callbacks = 0;
 
   MockAudioTransport mock2;
   mock2.expectNeedMorePlayData(^int32_t(const size_t nSamples,
@@ -299,7 +296,9 @@ static const NSUInteger kNumIgnoreFirstCallbacks = 50;
     XCTAssertEqual(nChannels, playoutParameters.channels());
     XCTAssertEqual((int) samplesPerSec, playoutParameters.sample_rate());
     XCTAssertNotEqual((void*)NULL, audioSamples);
-    [playoutExpectation fulfill];
+    if (++num_callbacks == kNumCallbacks) {
+      [playoutExpectation fulfill];
+    }
 
     return 0;
   });
@@ -308,6 +307,7 @@ static const NSUInteger kNumIgnoreFirstCallbacks = 50;
   XCTAssertEqual(0, secondAudioDeviceModule->StartPlayout());
   XCTAssertTrue(secondAudioDeviceModule->Playing());
   [self waitForExpectationsWithTimeout:kTestTimeOutInSec handler:nil];
+  [self stopPlayout];
   XCTAssertEqual(0, secondAudioDeviceModule->StopPlayout());
   XCTAssertFalse(secondAudioDeviceModule->Playing());
   XCTAssertFalse(secondAudioDeviceModule->PlayoutIsInitialized());
@@ -320,8 +320,7 @@ static const NSUInteger kNumIgnoreFirstCallbacks = 50;
 - (void)testStartPlayoutVerifyCallbacks {
 
   XCTestExpectation *playoutExpectation = [self expectationWithDescription:@"NeedMorePlayoutData"];
-  playoutExpectation.expectedFulfillmentCount = kNumCallbacks;
-
+  __block int num_callbacks = 0;
   mock.expectNeedMorePlayData(^int32_t(const size_t nSamples,
                                        const size_t nBytesPerSample,
                                        const size_t nChannels,
@@ -336,8 +335,9 @@ static const NSUInteger kNumIgnoreFirstCallbacks = 50;
     XCTAssertEqual(nChannels, playoutParameters.channels());
     XCTAssertEqual((int) samplesPerSec, playoutParameters.sample_rate());
     XCTAssertNotEqual((void*)NULL, audioSamples);
-    [playoutExpectation fulfill];
-
+    if (++num_callbacks == kNumCallbacks) {
+      [playoutExpectation fulfill];
+    }
     return 0;
   });
 
@@ -353,7 +353,7 @@ static const NSUInteger kNumIgnoreFirstCallbacks = 50;
 - (void)testStartRecordingVerifyCallbacks {
   XCTestExpectation *recordExpectation =
   [self expectationWithDescription:@"RecordedDataIsAvailable"];
-  recordExpectation.expectedFulfillmentCount = kNumCallbacks;
+  __block int num_callbacks = 0;
 
   mock.expectRecordedDataIsAvailable(^(const void* audioSamples,
                                        const size_t nSamples,
@@ -373,7 +373,9 @@ static const NSUInteger kNumIgnoreFirstCallbacks = 50;
     XCTAssertEqual(0, clockDrift);
     XCTAssertEqual(0u, currentMicLevel);
     XCTAssertFalse(keyPressed);
-    [recordExpectation fulfill];
+    if (++num_callbacks == kNumCallbacks) {
+      [recordExpectation fulfill];
+    }
 
     return 0;
   });
