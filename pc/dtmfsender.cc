@@ -166,6 +166,7 @@ void DtmfSender::DoInsertDtmf() {
     tones_.clear();
     // Fire a “OnToneChange” event with an empty string and stop.
     if (observer_) {
+      observer_->OnToneChange(std::string(), tones_);
       observer_->OnToneChange(std::string());
     }
     return;
@@ -200,6 +201,8 @@ void DtmfSender::DoInsertDtmf() {
 
   // Fire a “OnToneChange” event with the tone that's just processed.
   if (observer_) {
+    observer_->OnToneChange(tones_.substr(first_tone_pos, 1),
+                            tones_.substr(first_tone_pos + 1));
     observer_->OnToneChange(tones_.substr(first_tone_pos, 1));
   }
 
