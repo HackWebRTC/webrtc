@@ -8,9 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/video_coding/codecs/multiplex/include/multiplex_encoded_image_packer.h"
+#include "modules/video_coding/codecs/multiplex/multiplex_encoded_image_packer.h"
 
 #include <cstring>
+#include <utility>
 
 #include "modules/rtp_rtcp/source/byte_io.h"
 
