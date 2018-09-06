@@ -100,11 +100,14 @@ class PictureIdObserver : public test::RtpRtcpObserver {
         &parsed_payload, &packet[header.headerLength], payload_length));
 
     switch (codec_type_) {
-      case kVideoCodecVP8:
-        parsed->picture_id = parsed_payload.video_header().vp8().pictureId;
-        parsed->tl0_pic_idx = parsed_payload.video_header().vp8().tl0PicIdx;
-        parsed->temporal_idx = parsed_payload.video_header().vp8().temporalIdx;
+      case kVideoCodecVP8: {
+        const auto& vp8_header = absl::get<RTPVideoHeaderVP8>(
+            parsed_payload.video_header().video_type_header);
+        parsed->picture_id = vp8_header.pictureId;
+        parsed->tl0_pic_idx = vp8_header.tl0PicIdx;
+        parsed->temporal_idx = vp8_header.temporalIdx;
         break;
+      }
       case kVideoCodecVP9: {
         const auto& vp9_header = absl::get<RTPVideoHeaderVP9>(
             parsed_payload.video_header().video_type_header);
