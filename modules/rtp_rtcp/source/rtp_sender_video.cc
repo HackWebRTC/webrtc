@@ -47,6 +47,26 @@ void BuildRedPayload(const RtpPacketToSend& media_packet,
   memcpy(&red_payload[kRedForFecHeaderLength], media_payload.data(),
          media_payload.size());
 }
+
+void AddRtpHeaderExtensions(const RTPVideoHeader& video_header,
+                            FrameType frame_type,
+                            bool set_video_rotation,
+                            bool first_packet,
+                            bool last_packet,
+                            RtpPacketToSend* packet) {
+  if (last_packet && set_video_rotation)
+    packet->SetExtension<VideoOrientation>(video_header.rotation);
+
+  // Report content type only for key frames.
+  if (last_packet && frame_type == kVideoFrameKey &&
+      video_header.content_type != VideoContentType::UNSPECIFIED)
+    packet->SetExtension<VideoContentTypeExtension>(video_header.content_type);
+
+  if (last_packet &&
+      video_header.video_timing.flags != VideoSendTiming::kInvalid)
+    packet->SetExtension<VideoTimingExtension>(video_header.video_timing);
+}
+
 }  // namespace
 
 RTPSenderVideo::RTPSenderVideo(Clock* clock,
@@ -282,16 +302,10 @@ bool RTPSenderVideo::SendVideo(enum VideoCodecType video_type,
     return false;
   RTC_CHECK(video_header);
 
-  // Create header that will be reused in all packets.
-  std::unique_ptr<RtpPacketToSend> rtp_header = rtp_sender_->AllocatePacket();
-  rtp_header->SetPayloadType(payload_type);
-  rtp_header->SetTimestamp(rtp_timestamp);
-  rtp_header->set_capture_time_ms(capture_time_ms);
-  auto last_packet = absl::make_unique<RtpPacketToSend>(*rtp_header);
-
   size_t fec_packet_overhead;
   bool red_enabled;
   int32_t retransmission_settings;
+  bool set_video_rotation;
   {
     rtc::CritScope cs(&crit_);
     // According to
@@ -306,21 +320,10 @@ bool RTPSenderVideo::SendVideo(enum VideoCodecType video_type,
     // value sent.
     // Set rotation when key frame or when changed (to follow standard).
     // Or when different from 0 (to follow current receiver implementation).
-    VideoRotation current_rotation = video_header->rotation;
-    if (frame_type == kVideoFrameKey || current_rotation != last_rotation_ ||
-        current_rotation != kVideoRotation_0)
-      last_packet->SetExtension<VideoOrientation>(current_rotation);
-    last_rotation_ = current_rotation;
-    // Report content type only for key frames.
-    if (frame_type == kVideoFrameKey &&
-        video_header->content_type != VideoContentType::UNSPECIFIED) {
-      last_packet->SetExtension<VideoContentTypeExtension>(
-          video_header->content_type);
-    }
-    if (video_header->video_timing.flags != VideoSendTiming::kInvalid) {
-      last_packet->SetExtension<VideoTimingExtension>(
-          video_header->video_timing);
-    }
+    set_video_rotation = frame_type == kVideoFrameKey ||
+                         video_header->rotation != last_rotation_ ||
+                         video_header->rotation != kVideoRotation_0;
+    last_rotation_ = video_header->rotation;
 
     // FEC settings.
     const FecProtectionParams& fec_params =
@@ -335,17 +338,45 @@ bool RTPSenderVideo::SendVideo(enum VideoCodecType video_type,
     retransmission_settings = retransmission_settings_;
   }
 
+  // Maximum size of packet including rtp headers.
+  // Extra space left in case packet will be resent using fec or rtx.
   int packet_capacity = rtp_sender_->MaxRtpPacketSize() - fec_packet_overhead -
                         (rtp_sender_->RtxStatus() ? kRtxHeaderSize : 0);
-  RTC_DCHECK_LE(packet_capacity, rtp_header->capacity());
-  RTC_DCHECK_GT(packet_capacity, rtp_header->headers_size());
+
+  auto create_packet = [&] {
+    std::unique_ptr<RtpPacketToSend> rtp_packet = rtp_sender_->AllocatePacket();
+    RTC_DCHECK_LE(packet_capacity, rtp_packet->capacity());
+
+    rtp_packet->SetPayloadType(payload_type);
+    rtp_packet->SetTimestamp(rtp_timestamp);
+    rtp_packet->set_capture_time_ms(capture_time_ms);
+    return rtp_packet;
+  };
+
+  auto first_packet = create_packet();
+  auto middle_packet = absl::make_unique<RtpPacketToSend>(*first_packet);
+  auto last_packet = absl::make_unique<RtpPacketToSend>(*first_packet);
+  // Simplest way to estimate how much extensions would occupy is to set them.
+  AddRtpHeaderExtensions(*video_header, frame_type, set_video_rotation,
+                         /*first=*/true, /*last=*/false, first_packet.get());
+  AddRtpHeaderExtensions(*video_header, frame_type, set_video_rotation,
+                         /*first=*/false, /*last=*/false, middle_packet.get());
+  AddRtpHeaderExtensions(*video_header, frame_type, set_video_rotation,
+                         /*first=*/false, /*last=*/true, last_packet.get());
+
+  RTC_DCHECK_GT(packet_capacity, first_packet->headers_size());
+  RTC_DCHECK_GT(packet_capacity, middle_packet->headers_size());
   RTC_DCHECK_GT(packet_capacity, last_packet->headers_size());
   RtpPacketizer::PayloadSizeLimits limits;
-  limits.max_payload_len = packet_capacity - rtp_header->headers_size();
+  limits.max_payload_len = packet_capacity - middle_packet->headers_size();
 
-  RTC_DCHECK_GE(last_packet->headers_size(), rtp_header->headers_size());
+  RTC_DCHECK_GE(first_packet->headers_size(), middle_packet->headers_size());
+  limits.first_packet_reduction_len =
+      first_packet->headers_size() - middle_packet->headers_size();
+
+  RTC_DCHECK_GE(last_packet->headers_size(), middle_packet->headers_size());
   limits.last_packet_reduction_len =
-      last_packet->headers_size() - rtp_header->headers_size();
+      last_packet->headers_size() - middle_packet->headers_size();
 
   std::unique_ptr<RtpPacketizer> packetizer = RtpPacketizer::Create(
       video_type, rtc::MakeArrayView(payload_data, payload_size), limits,
@@ -361,15 +392,36 @@ bool RTPSenderVideo::SendVideo(enum VideoCodecType video_type,
 
   bool first_frame = first_frame_sent_();
   for (size_t i = 0; i < num_packets; ++i) {
-    bool last = (i + 1) == num_packets;
-    auto packet = last ? std::move(last_packet)
-                       : absl::make_unique<RtpPacketToSend>(*rtp_header);
+    std::unique_ptr<RtpPacketToSend> packet;
+    int expected_payload_capacity;
+    // Choose right packet template:
+    if (num_packets == 1) {
+      // No prepared template, create a new packet.
+      packet = create_packet();
+      AddRtpHeaderExtensions(*video_header, frame_type, set_video_rotation,
+                             /*first=*/true, /*last=*/true, packet.get());
+      // TODO(bugs.webrtc.org/7990): Revisit this case when two byte header
+      // extension are implemented because then single packet might need more
+      // space for extensions than sum of first and last packet reductions.
+      expected_payload_capacity = limits.max_payload_len -
+                                  limits.first_packet_reduction_len -
+                                  limits.last_packet_reduction_len;
+    } else if (i == 0) {
+      packet = std::move(first_packet);
+      expected_payload_capacity =
+          limits.max_payload_len - limits.first_packet_reduction_len;
+    } else if (i == num_packets - 1) {
+      packet = std::move(last_packet);
+      expected_payload_capacity =
+          limits.max_payload_len - limits.last_packet_reduction_len;
+    } else {
+      packet = absl::make_unique<RtpPacketToSend>(*middle_packet);
+      expected_payload_capacity = limits.max_payload_len;
+    }
+
     if (!packetizer->NextPacket(packet.get()))
       return false;
-    RTC_DCHECK_LE(
-        packet->payload_size(),
-        last ? limits.max_payload_len - limits.last_packet_reduction_len
-             : limits.max_payload_len);
+    RTC_DCHECK_LE(packet->payload_size(), expected_payload_capacity);
     if (!rtp_sender_->AssignSequenceNumber(packet.get()))
       return false;
 
@@ -404,7 +456,7 @@ bool RTPSenderVideo::SendVideo(enum VideoCodecType video_type,
         RTC_LOG(LS_INFO)
             << "Sent first RTP packet of the first video frame (pre-pacer)";
       }
-      if (last) {
+      if (i == num_packets - 1) {
         RTC_LOG(LS_INFO)
             << "Sent last RTP packet of the first video frame (pre-pacer)";
       }
