@@ -420,7 +420,9 @@ bool VideoAnalyzer::IsInSelectedSpatialAndTemporalLayer(
     int temporal_idx;
     int spatial_idx;
     if (is_vp8) {
-      temporal_idx = parsed_payload.video_header().vp8().temporalIdx;
+      temporal_idx = absl::get<RTPVideoHeaderVP8>(
+                         parsed_payload.video_header().video_type_header)
+                         .temporalIdx;
       spatial_idx = kNoTemporalIdx;
     } else {
       const auto& vp9_header = absl::get<RTPVideoHeaderVP9>(

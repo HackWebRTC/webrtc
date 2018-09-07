@@ -44,11 +44,14 @@ class ConfigurableFrameSizeEncoder : public VideoEncoder {
 
   int32_t SetFrameSize(size_t size);
 
+  void SetCodecType(VideoCodecType codec_type_);
+
  private:
   EncodedImageCallback* callback_;
   const size_t max_frame_size_;
   size_t current_frame_size_;
   std::unique_ptr<uint8_t[]> buffer_;
+  VideoCodecType codec_type_;
 };
 
 }  // namespace test

@@ -103,7 +103,9 @@ bool LayerFilteringTransport::SendRtp(const uint8_t* packet,
       bool end_of_frame;
 
       if (is_vp8) {
-        temporal_idx = parsed_payload.video_header().vp8().temporalIdx;
+        temporal_idx = absl::get<RTPVideoHeaderVP8>(
+                           parsed_payload.video_header().video_type_header)
+                           .temporalIdx;
         spatial_idx = kNoSpatialIdx;
         num_active_spatial_layers_ = 1;
         non_ref_for_inter_layer_pred = false;

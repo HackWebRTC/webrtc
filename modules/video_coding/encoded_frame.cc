@@ -56,6 +56,8 @@ void VCMEncodedFrame::CopyCodecSpecific(const RTPVideoHeader* header) {
   if (header) {
     switch (header->codec) {
       case kVideoCodecVP8: {
+        const auto& vp8_header =
+            absl::get<RTPVideoHeaderVP8>(header->video_type_header);
         if (_codecSpecificInfo.codecType != kVideoCodecVP8) {
           // This is the first packet for this frame.
           _codecSpecificInfo.codecSpecific.VP8.temporalIdx = 0;
@@ -64,15 +66,14 @@ void VCMEncodedFrame::CopyCodecSpecific(const RTPVideoHeader* header) {
           _codecSpecificInfo.codecType = kVideoCodecVP8;
         }
         _codecSpecificInfo.codecSpecific.VP8.nonReference =
-            header->vp8().nonReference;
-        if (header->vp8().temporalIdx != kNoTemporalIdx) {
+            vp8_header.nonReference;
+        if (vp8_header.temporalIdx != kNoTemporalIdx) {
           _codecSpecificInfo.codecSpecific.VP8.temporalIdx =
-              header->vp8().temporalIdx;
-          _codecSpecificInfo.codecSpecific.VP8.layerSync =
-              header->vp8().layerSync;
+              vp8_header.temporalIdx;
+          _codecSpecificInfo.codecSpecific.VP8.layerSync = vp8_header.layerSync;
         }
-        if (header->vp8().keyIdx != kNoKeyIdx) {
-          _codecSpecificInfo.codecSpecific.VP8.keyIdx = header->vp8().keyIdx;
+        if (vp8_header.keyIdx != kNoKeyIdx) {
+          _codecSpecificInfo.codecSpecific.VP8.keyIdx = vp8_header.keyIdx;
         }
         break;
       }
