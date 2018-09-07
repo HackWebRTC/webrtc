@@ -21,10 +21,8 @@
 #include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
 
 namespace webrtc {
-using RTPVideoTypeHeader = absl::variant<absl::monostate,
-                                         RTPVideoHeaderVP8,
-                                         RTPVideoHeaderVP9,
-                                         RTPVideoHeaderH264>;
+using RTPVideoTypeHeader =
+    absl::variant<RTPVideoHeaderVP8, RTPVideoHeaderVP9, RTPVideoHeaderH264>;
 
 struct RTPVideoHeader {
   struct GenericDescriptorInfo {
@@ -44,6 +42,21 @@ struct RTPVideoHeader {
 
   ~RTPVideoHeader();
 
+  // TODO(philipel): Remove when downstream projects have been updated.
+  RTPVideoHeaderVP8& vp8() {
+    if (!absl::holds_alternative<RTPVideoHeaderVP8>(video_type_header))
+      video_type_header.emplace<RTPVideoHeaderVP8>();
+
+    return absl::get<RTPVideoHeaderVP8>(video_type_header);
+  }
+  // TODO(philipel): Remove when downstream projects have been updated.
+  const RTPVideoHeaderVP8& vp8() const {
+    if (!absl::holds_alternative<RTPVideoHeaderVP8>(video_type_header))
+      video_type_header.emplace<RTPVideoHeaderVP8>();
+
+    return absl::get<RTPVideoHeaderVP8>(video_type_header);
+  }
+
   absl::optional<GenericDescriptorInfo> generic;
 
   uint16_t width = 0;
@@ -56,7 +69,8 @@ struct RTPVideoHeader {
 
   PlayoutDelay playout_delay;
   VideoSendTiming video_timing;
-  RTPVideoTypeHeader video_type_header;
+  // TODO(philipel): remove mutable when downstream projects have been updated.
+  mutable RTPVideoTypeHeader video_type_header;
 };
 
 }  // namespace webrtc

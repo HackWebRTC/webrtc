@@ -466,15 +466,15 @@ StorageType RTPSenderVideo::GetStorageType(
 }
 
 uint8_t RTPSenderVideo::GetTemporalId(const RTPVideoHeader& header) {
-  struct TemporalIdGetter {
-    uint8_t operator()(const RTPVideoHeaderVP8& vp8) { return vp8.temporalIdx; }
-    uint8_t operator()(const RTPVideoHeaderVP9& vp9) {
-      return vp9.temporal_idx;
-    }
-    uint8_t operator()(const RTPVideoHeaderH264&) { return kNoTemporalIdx; }
-    uint8_t operator()(const absl::monostate&) { return kNoTemporalIdx; }
-  };
-  return absl::visit(TemporalIdGetter(), header.video_type_header);
+  switch (header.codec) {
+    case kVideoCodecVP8:
+      return header.vp8().temporalIdx;
+    case kVideoCodecVP9:
+      return absl::get<RTPVideoHeaderVP9>(header.video_type_header)
+          .temporal_idx;
+    default:
+      return kNoTemporalIdx;
+  }
 }
 
 bool RTPSenderVideo::UpdateConditionalRetransmit(

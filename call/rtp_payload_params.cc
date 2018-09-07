@@ -27,12 +27,11 @@ void PopulateRtpWithCodecSpecifics(const CodecSpecificInfo& info,
   rtp->codec = info.codecType;
   switch (info.codecType) {
     case kVideoCodecVP8: {
-      auto& vp8_header = rtp->video_type_header.emplace<RTPVideoHeaderVP8>();
-      vp8_header.InitRTPVideoHeaderVP8();
-      vp8_header.nonReference = info.codecSpecific.VP8.nonReference;
-      vp8_header.temporalIdx = info.codecSpecific.VP8.temporalIdx;
-      vp8_header.layerSync = info.codecSpecific.VP8.layerSync;
-      vp8_header.keyIdx = info.codecSpecific.VP8.keyIdx;
+      rtp->vp8().InitRTPVideoHeaderVP8();
+      rtp->vp8().nonReference = info.codecSpecific.VP8.nonReference;
+      rtp->vp8().temporalIdx = info.codecSpecific.VP8.temporalIdx;
+      rtp->vp8().layerSync = info.codecSpecific.VP8.layerSync;
+      rtp->vp8().keyIdx = info.codecSpecific.VP8.keyIdx;
       rtp->simulcastIdx = spatial_index.value_or(0);
       return;
     }
@@ -172,15 +171,13 @@ void RtpPayloadParams::SetCodecSpecific(RTPVideoHeader* rtp_video_header,
     state_.picture_id = (static_cast<uint16_t>(state_.picture_id) + 1) & 0x7FFF;
   }
   if (rtp_video_header->codec == kVideoCodecVP8) {
-    auto& vp8_header =
-        absl::get<RTPVideoHeaderVP8>(rtp_video_header->video_type_header);
-    vp8_header.pictureId = state_.picture_id;
+    rtp_video_header->vp8().pictureId = state_.picture_id;
 
-    if (vp8_header.temporalIdx != kNoTemporalIdx) {
-      if (vp8_header.temporalIdx == 0) {
+    if (rtp_video_header->vp8().temporalIdx != kNoTemporalIdx) {
+      if (rtp_video_header->vp8().temporalIdx == 0) {
         ++state_.tl0_pic_idx;
       }
-      vp8_header.tl0PicIdx = state_.tl0_pic_idx;
+      rtp_video_header->vp8().tl0PicIdx = state_.tl0_pic_idx;
     }
   }
   if (rtp_video_header->codec == kVideoCodecVP9) {

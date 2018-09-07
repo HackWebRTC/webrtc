@@ -991,8 +991,6 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
       // Fragmentation required, this test doesn't make sense without it.
       encoder_.SetFrameSize(start_size);
       RTC_DCHECK_GT(stop_size, max_packet_size);
-      if (!test_generic_packetization_)
-        encoder_.SetCodecType(kVideoCodecVP8);
     }
 
    private:
@@ -1129,7 +1127,6 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
 
       if (!test_generic_packetization_)
         send_config->rtp.payload_name = "VP8";
-
       send_config->encoder_settings.encoder_factory = &encoder_factory_;
       send_config->rtp.max_packet_size = kMaxPacketSize;
       send_config->post_encode_callback = this;
@@ -2178,6 +2175,8 @@ TEST_P(VideoSendStreamTest, VideoSendStreamUpdateActiveSimulcastLayers) {
 
     sender_call_->SignalChannelNetworkState(MediaType::VIDEO, kNetworkUp);
     GetVideoSendConfig()->encoder_settings.encoder_factory = &encoder_factory;
+
+    GetVideoSendConfig()->rtp.payload_name = "VP8";
 
     CreateVideoStreams();
 

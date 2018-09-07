@@ -108,12 +108,10 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
     packet.seqNum = seq_num_start;
     packet.markerBit = (seq_num_start == seq_num_end);
     packet.frameType = keyframe ? kVideoFrameKey : kVideoFrameDelta;
-    auto& vp8_header =
-        packet.video_header.video_type_header.emplace<RTPVideoHeaderVP8>();
-    vp8_header.pictureId = pid % (1 << 15);
-    vp8_header.temporalIdx = tid;
-    vp8_header.tl0PicIdx = tl0;
-    vp8_header.layerSync = sync;
+    packet.video_header.vp8().pictureId = pid % (1 << 15);
+    packet.video_header.vp8().temporalIdx = tid;
+    packet.video_header.vp8().tl0PicIdx = tl0;
+    packet.video_header.vp8().layerSync = sync;
     ref_packet_buffer_->InsertPacket(&packet);
 
     if (seq_num_start != seq_num_end) {

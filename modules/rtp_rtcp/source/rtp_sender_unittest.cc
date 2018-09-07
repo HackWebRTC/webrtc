@@ -1842,8 +1842,7 @@ TEST_P(RtpSenderVideoTest, RetransmissionTypesH264) {
 TEST_P(RtpSenderVideoTest, RetransmissionTypesVP8BaseLayer) {
   RTPVideoHeader header;
   header.codec = kVideoCodecVP8;
-  auto& vp8_header = header.video_type_header.emplace<RTPVideoHeaderVP8>();
-  vp8_header.temporalIdx = 0;
+  header.vp8().temporalIdx = 0;
 
   EXPECT_EQ(kDontRetransmit,
             rtp_sender_video_->GetStorageType(
@@ -1875,9 +1874,8 @@ TEST_P(RtpSenderVideoTest, RetransmissionTypesVP8HigherLayers) {
   RTPVideoHeader header;
   header.codec = kVideoCodecVP8;
 
-  auto& vp8_header = header.video_type_header.emplace<RTPVideoHeaderVP8>();
   for (int tid = 1; tid <= kMaxTemporalStreams; ++tid) {
-    vp8_header.temporalIdx = tid;
+    header.vp8().temporalIdx = tid;
 
     EXPECT_EQ(kDontRetransmit, rtp_sender_video_->GetStorageType(
                                    header, kRetransmitOff,
@@ -1940,9 +1938,8 @@ TEST_P(RtpSenderVideoTest, ConditionalRetransmit) {
       (RTPSenderVideo::kTLRateWindowSizeMs + (kFrameIntervalMs / 2)) /
       kFrameIntervalMs;
   constexpr int kPattern[] = {0, 2, 1, 2};
-  auto& vp8_header = header.video_type_header.emplace<RTPVideoHeaderVP8>();
   for (size_t i = 0; i < arraysize(kPattern) * kNumRepetitions; ++i) {
-    vp8_header.temporalIdx = kPattern[i % arraysize(kPattern)];
+    header.vp8().temporalIdx = kPattern[i % arraysize(kPattern)];
     rtp_sender_video_->GetStorageType(header, kSettings, kRttMs);
     fake_clock_.AdvanceTimeMilliseconds(kFrameIntervalMs);
   }
@@ -1951,7 +1948,7 @@ TEST_P(RtpSenderVideoTest, ConditionalRetransmit) {
   // right now. We will wait at most one expected retransmission time before
   // acknowledging that it did not arrive, which means this frame and the next
   // will not be retransmitted.
-  vp8_header.temporalIdx = 1;
+  header.vp8().temporalIdx = 1;
   EXPECT_EQ(StorageType::kDontRetransmit,
             rtp_sender_video_->GetStorageType(header, kSettings, kRttMs));
   fake_clock_.AdvanceTimeMilliseconds(kFrameIntervalMs);
@@ -1967,7 +1964,7 @@ TEST_P(RtpSenderVideoTest, ConditionalRetransmit) {
   // Insert a frame for TL2. We just had frame in TL1, so the next one there is
   // in three frames away. TL0 is still too far in the past. So, allow
   // retransmission.
-  vp8_header.temporalIdx = 2;
+  header.vp8().temporalIdx = 2;
   EXPECT_EQ(StorageType::kAllowRetransmission,
             rtp_sender_video_->GetStorageType(header, kSettings, kRttMs));
   fake_clock_.AdvanceTimeMilliseconds(kFrameIntervalMs);
@@ -1998,9 +1995,8 @@ TEST_P(RtpSenderVideoTest, ConditionalRetransmitLimit) {
       (RTPSenderVideo::kTLRateWindowSizeMs + (kFrameIntervalMs / 2)) /
       kFrameIntervalMs;
   constexpr int kPattern[] = {0, 2, 2, 2};
-  auto& vp8_header = header.video_type_header.emplace<RTPVideoHeaderVP8>();
   for (size_t i = 0; i < arraysize(kPattern) * kNumRepetitions; ++i) {
-    vp8_header.temporalIdx = kPattern[i % arraysize(kPattern)];
+    header.vp8().temporalIdx = kPattern[i % arraysize(kPattern)];
 
     rtp_sender_video_->GetStorageType(header, kSettings, kRttMs);
     fake_clock_.AdvanceTimeMilliseconds(kFrameIntervalMs);
@@ -2011,7 +2007,7 @@ TEST_P(RtpSenderVideoTest, ConditionalRetransmitLimit) {
   // we don't store for retransmission because we expect a frame in a lower
   // layer, but that last frame in TL1 was a long time ago in absolute terms,
   // so allow retransmission anyway.
-  vp8_header.temporalIdx = 1;
+  header.vp8().temporalIdx = 1;
   EXPECT_EQ(StorageType::kAllowRetransmission,
             rtp_sender_video_->GetStorageType(header, kSettings, kRttMs));
 }
