@@ -149,10 +149,6 @@ class RtpFrameReferenceFinder {
   std::set<uint16_t, DescendingSeqNumComp<uint16_t>> stashed_padding_
       RTC_GUARDED_BY(crit_);
 
-  // The last unwrapped picture id. Used to unwrap the picture id from a length
-  // of |kPicIdLength| to 16 bits.
-  int last_unwrap_ RTC_GUARDED_BY(crit_);
-
   // Frames earlier than the last received frame that have not yet been
   // fully received.
   std::set<uint16_t, DescendingSeqNumComp<uint16_t, kPicIdLength>>

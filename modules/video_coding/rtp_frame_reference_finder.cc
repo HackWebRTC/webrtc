@@ -26,7 +26,6 @@ namespace video_coding {
 RtpFrameReferenceFinder::RtpFrameReferenceFinder(
     OnCompleteFrameCallback* frame_callback)
     : last_picture_id_(-1),
-      last_unwrap_(-1),
       current_ss_idx_(0),
       cleared_to_seq_num_(-1),
       frame_callback_(frame_callback) {}
@@ -167,9 +166,6 @@ RtpFrameReferenceFinder::ManageFrameGeneric(RtpFrameObject* frame,
   // If |picture_id| is specified then we use that to set the frame references,
   // otherwise we use sequence number.
   if (picture_id != kNoPictureId) {
-    if (last_unwrap_ == -1)
-      last_unwrap_ = picture_id;
-
     frame->id.picture_id = unwrapper_.Unwrap(picture_id);
     frame->num_references = frame->frame_type() == kVideoFrameKey ? 0 : 1;
     frame->references[0] = frame->id.picture_id - 1;
@@ -255,9 +251,6 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp8(
   }
 
   frame->id.picture_id = codec_header.pictureId % kPicIdLength;
-
-  if (last_unwrap_ == -1)
-    last_unwrap_ = codec_header.pictureId;
 
   if (last_picture_id_ == -1)
     last_picture_id_ = frame->id.picture_id;
@@ -409,9 +402,6 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp9(
   frame->id.spatial_layer = codec_header.spatial_idx;
   frame->inter_layer_predicted = codec_header.inter_layer_predicted;
   frame->id.picture_id = codec_header.picture_id % kPicIdLength;
-
-  if (last_unwrap_ == -1)
-    last_unwrap_ = codec_header.picture_id;
 
   if (last_picture_id_ == -1)
     last_picture_id_ = frame->id.picture_id;
