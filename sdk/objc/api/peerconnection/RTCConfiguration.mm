@@ -51,8 +51,7 @@
 
 - (instancetype)init {
   // Copy defaults.
-  webrtc::PeerConnectionInterface::RTCConfiguration config(
-    webrtc::PeerConnectionInterface::RTCConfigurationType::kAggressive);
+  webrtc::PeerConnectionInterface::RTCConfiguration config;
   return [self initWithNativeConfiguration:config];
 }
 
