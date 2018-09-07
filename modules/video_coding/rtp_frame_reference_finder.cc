@@ -440,13 +440,19 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp9(
       RTC_LOG(LS_WARNING) << "Received scalability structure on a non base "
                              "layer frame. Scalability structure ignored.";
     } else {
-      current_ss_idx_ = Add<kMaxGofSaved>(current_ss_idx_, 1);
-      if (codec_header.gof.num_frames_in_gof == 0 ||
-          codec_header.gof.num_frames_in_gof > kMaxVp9FramesInGof) {
+      if (codec_header.gof.num_frames_in_gof > kMaxVp9FramesInGof) {
         return kDrop;
       }
 
-      scalability_structures_[current_ss_idx_] = codec_header.gof;
+      GofInfoVP9 gof = codec_header.gof;
+      if (gof.num_frames_in_gof == 0) {
+        RTC_LOG(LS_WARNING) << "Number of frames in GOF is zero. Assume "
+                               "that stream has only one temporal layer.";
+        gof.SetGofInfoVP9(kTemporalStructureMode1);
+      }
+
+      current_ss_idx_ = Add<kMaxGofSaved>(current_ss_idx_, 1);
+      scalability_structures_[current_ss_idx_] = gof;
       scalability_structures_[current_ss_idx_].pid_start = frame->id.picture_id;
       gof_info_.emplace(unwrapped_tl0,
                         GofInfo(&scalability_structures_[current_ss_idx_],

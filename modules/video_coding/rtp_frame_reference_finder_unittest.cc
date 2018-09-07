@@ -1360,5 +1360,19 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9GofTidTooHigh) {
   CheckReferencesVp9(0, 0);
 }
 
+TEST_F(TestRtpFrameReferenceFinder, Vp9GofZeroFrames) {
+  uint16_t pid = Rand();
+  uint16_t sn = Rand();
+  GofInfoVP9 ss;
+  ss.num_frames_in_gof = 0;
+
+  InsertVp9Gof(sn, sn, true, pid, 0, 0, 0, false, &ss);
+  InsertVp9Gof(sn + 1, sn + 1, false, pid + 1, 0, 0, 1);
+
+  ASSERT_EQ(2UL, frames_from_callback_.size());
+  CheckReferencesVp9(0, 0);
+  CheckReferencesVp9(1, 0, 0);
+}
+
 }  // namespace video_coding
 }  // namespace webrtc
