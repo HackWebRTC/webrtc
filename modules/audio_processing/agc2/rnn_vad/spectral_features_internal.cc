@@ -20,7 +20,10 @@ namespace rnn_vad {
 namespace {
 
 // DCT scaling factor.
-const float kDctScalingFactor = std::sqrt(2.f / kNumBands);
+static_assert(
+    kNumBands == 22,
+    "kNumBands changed! Please update the value of kDctScalingFactor");
+constexpr float kDctScalingFactor = 0.301511345f;  // sqrt(2 / kNumBands)
 
 }  // namespace
 
