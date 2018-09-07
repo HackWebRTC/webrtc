@@ -47,8 +47,8 @@ void WaitPostedTasks(rtc::TaskQueue* queue) {
 }
 
 TEST(RtcpTransceiverTest, SendsRtcpOnTaskQueueWhenCreatedOffTaskQueue) {
-  rtc::TaskQueue queue("rtcp");
   MockTransport outgoing_transport;
+  rtc::TaskQueue queue("rtcp");
   RtcpTransceiverConfig config;
   config.outgoing_transport = &outgoing_transport;
   config.task_queue = &queue;
@@ -64,8 +64,8 @@ TEST(RtcpTransceiverTest, SendsRtcpOnTaskQueueWhenCreatedOffTaskQueue) {
 }
 
 TEST(RtcpTransceiverTest, SendsRtcpOnTaskQueueWhenCreatedOnTaskQueue) {
-  rtc::TaskQueue queue("rtcp");
   MockTransport outgoing_transport;
+  rtc::TaskQueue queue("rtcp");
   RtcpTransceiverConfig config;
   config.outgoing_transport = &outgoing_transport;
   config.task_queue = &queue;
@@ -83,37 +83,60 @@ TEST(RtcpTransceiverTest, SendsRtcpOnTaskQueueWhenCreatedOnTaskQueue) {
   WaitPostedTasks(&queue);
 }
 
-TEST(RtcpTransceiverTest, CanBeDestroyedOnTaskQueueAfterStop) {
-  rtc::TaskQueue queue("rtcp");
+TEST(RtcpTransceiverTest, CanBeDestroyedOnTaskQueue) {
   NiceMock<MockTransport> outgoing_transport;
+  rtc::TaskQueue queue("rtcp");
   RtcpTransceiverConfig config;
   config.outgoing_transport = &outgoing_transport;
   config.task_queue = &queue;
   auto rtcp_transceiver = absl::make_unique<RtcpTransceiver>(config);
-  rtcp_transceiver->Stop(rtc::NewClosure([] {}));
 
-  queue.PostTask([&] { rtcp_transceiver.reset(); });
+  queue.PostTask([&] {
+    // Insert a packet just before destruction to test for races.
+    rtcp_transceiver->SendCompoundPacket();
+    rtcp_transceiver.reset();
+  });
   WaitPostedTasks(&queue);
 }
 
-TEST(RtcpTransceiverTest, CanBeDestroyedWithoutBlockingAfterStop) {
+TEST(RtcpTransceiverTest, CanBeDestroyedWithoutBlocking) {
   rtc::TaskQueue queue("rtcp");
   NiceMock<MockTransport> outgoing_transport;
   RtcpTransceiverConfig config;
   config.outgoing_transport = &outgoing_transport;
   config.task_queue = &queue;
-  auto rtcp_transceiver = absl::make_unique<RtcpTransceiver>(config);
+  auto* rtcp_transceiver = new RtcpTransceiver(config);
   rtcp_transceiver->SendCompoundPacket();
 
-  rtc::Event heavy_task(false, false);
-  queue.PostTask(
-      rtc::NewClosure([&] { EXPECT_TRUE(heavy_task.Wait(kTimeoutMs)); }));
   rtc::Event done(false, false);
-  rtcp_transceiver->Stop(rtc::NewClosure([&done] { done.Set(); }));
-  rtcp_transceiver = nullptr;
+  rtc::Event heavy_task(false, false);
+  queue.PostTask([&] {
+    EXPECT_TRUE(heavy_task.Wait(kTimeoutMs));
+    done.Set();
+  });
+  delete rtcp_transceiver;
 
   heavy_task.Set();
   EXPECT_TRUE(done.Wait(kTimeoutMs));
+}
+
+TEST(RtcpTransceiverTest, MaySendPacketsAfterDestructor) {  // i.e. Be careful!
+  NiceMock<MockTransport> outgoing_transport;  // Must outlive queue below.
+  rtc::TaskQueue queue("rtcp");
+  RtcpTransceiverConfig config;
+  config.outgoing_transport = &outgoing_transport;
+  config.task_queue = &queue;
+  auto* rtcp_transceiver = new RtcpTransceiver(config);
+
+  rtc::Event heavy_task(false, false);
+  queue.PostTask([&] { EXPECT_TRUE(heavy_task.Wait(kTimeoutMs)); });
+  rtcp_transceiver->SendCompoundPacket();
+  delete rtcp_transceiver;
+
+  EXPECT_CALL(outgoing_transport, SendRtcp);
+  heavy_task.Set();
+
+  WaitPostedTasks(&queue);
 }
 
 // Use rtp timestamp to distinguish different incoming sender reports.

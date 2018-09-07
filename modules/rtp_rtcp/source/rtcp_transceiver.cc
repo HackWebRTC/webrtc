@@ -19,6 +19,12 @@
 #include "rtc_base/timeutils.h"
 
 namespace webrtc {
+namespace {
+struct Destructor {
+  void operator()() { rtcp_transceiver = nullptr; }
+  std::unique_ptr<RtcpTransceiverImpl> rtcp_transceiver;
+};
+}  // namespace
 
 RtcpTransceiver::RtcpTransceiver(const RtcpTransceiverConfig& config)
     : task_queue_(config.task_queue),
@@ -29,29 +35,12 @@ RtcpTransceiver::RtcpTransceiver(const RtcpTransceiverConfig& config)
 RtcpTransceiver::~RtcpTransceiver() {
   if (!rtcp_transceiver_)
     return;
-  RTC_CHECK(!task_queue_->IsCurrent());
-
-  rtc::Event done(false, false);
-  // TODO(danilchap): Merge cleanup into main closure when task queue does not
-  // silently drop tasks.
-  task_queue_->PostTask(rtc::NewClosure(
-      [this] {
-        // Destructor steps that better run on the task_queue_.
-        rtcp_transceiver_.reset();
-      },
-      /*cleanup=*/[&done] { done.Set(); }));
-  // Wait until destruction is complete to guarantee callbacks are not used
-  // after destructor returns.
-  done.Wait(rtc::Event::kForever);
-  RTC_CHECK(!rtcp_transceiver_) << "Task queue is too busy to handle rtcp";
+  task_queue_->PostTask(Destructor{std::move(rtcp_transceiver_)});
+  RTC_DCHECK(!rtcp_transceiver_);
 }
 
 void RtcpTransceiver::Stop(std::unique_ptr<rtc::QueuedTask> on_destroyed) {
   RTC_DCHECK(rtcp_transceiver_);
-  struct Destructor {
-    void operator()() { rtcp_transceiver = nullptr; }
-    std::unique_ptr<RtcpTransceiverImpl> rtcp_transceiver;
-  };
   task_queue_->PostTaskAndReply(Destructor{std::move(rtcp_transceiver_)},
                                 std::move(on_destroyed));
   RTC_DCHECK(!rtcp_transceiver_);
