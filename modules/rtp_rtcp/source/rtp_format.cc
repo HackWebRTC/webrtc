@@ -47,10 +47,7 @@ std::unique_ptr<RtpPacketizer> RtpPacketizer::Create(
     case kVideoCodecVP9: {
       const auto& vp9 =
           absl::get<RTPVideoHeaderVP9>(rtp_video_header.video_type_header);
-      auto packetizer = absl::make_unique<RtpPacketizerVp9>(
-          vp9, limits.max_payload_len, limits.last_packet_reduction_len);
-      packetizer->SetPayloadData(payload.data(), payload.size(), nullptr);
-      return std::move(packetizer);
+      return absl::make_unique<RtpPacketizerVp9>(payload, limits, vp9);
     }
     default: {
       return absl::make_unique<RtpPacketizerGeneric>(
