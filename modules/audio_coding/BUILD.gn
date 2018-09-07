@@ -1156,10 +1156,6 @@ rtc_source_set("neteq_test_tools") {
 
 rtc_source_set("neteq_tools") {
   visibility += webrtc_default_visibility
-  configs += [
-    "../..:no_exit_time_destructors",
-    "../..:no_global_constructors",
-  ]
   sources = [
     "neteq/tools/fake_decode_from_file.cc",
     "neteq/tools/fake_decode_from_file.h",
@@ -1187,6 +1183,7 @@ rtc_source_set("neteq_tools") {
     "../../rtc_base:rtc_base_approved",
     "../rtp_rtcp",
     "../rtp_rtcp:rtp_rtcp_format",
+    "//third_party/abseil-cpp/absl/strings:strings",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 
