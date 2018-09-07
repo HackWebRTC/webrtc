@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 #include <map>
+#include <vector>
 
 namespace webrtc {
 namespace test {
@@ -39,9 +40,17 @@ class NetEqSimulator {
   };
 
   struct NetEqState {
+    NetEqState();
+    NetEqState(const NetEqState& other);
+    NetEqState(NetEqState&& other);
+    ~NetEqState();
     // The sum of the packet buffer and sync buffer delay.
     int current_delay_ms = 0;
-    // TODO(ivoc): Expand this struct with more useful metrics.
+    // An indicator that packet loss occurred since the last GetAudio event.
+    bool packet_loss_occurred = false;
+    // The inter-arrival times in ms of the packets that have arrived since the
+    // last GetAudio event.
+    std::vector<int> packet_iat_ms;
   };
 
   // Runs the simulation until we hit the next GetAudio event. If the simulation

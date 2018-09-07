@@ -85,6 +85,7 @@ NetEqTest::SimulationStepResult NetEqTest::RunToNextGetAudio() {
   SimulationStepResult result;
   const int64_t start_time_ms = *input_->NextEventTime();
   int64_t time_now_ms = start_time_ms;
+  current_state_.packet_iat_ms.clear();
 
   while (!input_->ended()) {
     // Advance time to next event.
@@ -105,6 +106,11 @@ NetEqTest::SimulationStepResult NetEqTest::RunToNextGetAudio() {
         callbacks_.post_insert_packet->AfterInsertPacket(*packet_data,
                                                          neteq_.get());
       }
+      if (last_packet_time_ms_) {
+        current_state_.packet_iat_ms.push_back(time_now_ms -
+                                               *last_packet_time_ms_);
+      }
+      last_packet_time_ms_ = absl::make_optional<int>(time_now_ms);
     }
 
     // Check if it is time to get output audio.
@@ -139,7 +145,24 @@ NetEqTest::SimulationStepResult NetEqTest::RunToNextGetAudio() {
 
       input_->AdvanceOutputEvent();
       result.simulation_step_ms = time_now_ms - start_time_ms;
-      // TODO(ivoc): Set the result.<action>_ms values correctly.
+      const auto network_stats = SimulationStats();
+      current_state_.current_delay_ms = network_stats.current_buffer_size_ms;
+      current_state_.packet_loss_occurred = network_stats.packet_loss_rate > 0;
+      int scaling_factor = std::max(1 << 14, network_stats.accelerate_rate +
+                                                 network_stats.expand_rate +
+                                                 network_stats.preemptive_rate);
+      // TODO(ivoc): Improve the accuracy of these numbers by adding a new API
+      // to NetEq.
+      result.action_times_ms[Action::kAccelerate] =
+          (10 * network_stats.accelerate_rate) / scaling_factor;
+      result.action_times_ms[Action::kExpand] =
+          (10 * network_stats.expand_rate) / scaling_factor;
+      result.action_times_ms[Action::kPreemptiveExpand] =
+          (10 * network_stats.preemptive_rate) / scaling_factor;
+      result.action_times_ms[Action::kNormal] =
+          10 - result.action_times_ms[Action::kAccelerate] -
+          result.action_times_ms[Action::kExpand] -
+          result.action_times_ms[Action::kPreemptiveExpand];
       result.is_simulation_finished = input_->ended();
       return result;
     }
@@ -154,10 +177,7 @@ void NetEqTest::SetNextAction(NetEqTest::Action next_operation) {
 }
 
 NetEqTest::NetEqState NetEqTest::GetNetEqState() {
-  NetEqState state;
-  const auto network_stats = SimulationStats();
-  state.current_delay_ms = network_stats.current_buffer_size_ms;
-  return state;
+  return current_state_;
 }
 
 NetEqNetworkStatistics NetEqTest::SimulationStats() {

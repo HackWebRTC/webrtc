@@ -113,11 +113,13 @@ class NetEqTest : public NetEqSimulator {
   void RegisterDecoders(const DecoderMap& codecs);
   void RegisterExternalDecoders(const ExtDecoderMap& codecs);
   absl::optional<Action> next_action_;
+  absl::optional<int> last_packet_time_ms_;
   std::unique_ptr<NetEq> neteq_;
   std::unique_ptr<NetEqInput> input_;
   std::unique_ptr<AudioSink> output_;
   Callbacks callbacks_;
   int sample_rate_hz_;
+  NetEqState current_state_;
 };
 
 }  // namespace test

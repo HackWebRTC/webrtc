@@ -18,5 +18,10 @@ NetEqSimulator::SimulationStepResult::SimulationStepResult(
     const NetEqSimulator::SimulationStepResult& other) = default;
 NetEqSimulator::SimulationStepResult::~SimulationStepResult() = default;
 
+NetEqSimulator::NetEqState::NetEqState() = default;
+NetEqSimulator::NetEqState::NetEqState(const NetEqState& other) = default;
+NetEqSimulator::NetEqState::NetEqState(NetEqState&& other) = default;
+NetEqSimulator::NetEqState::~NetEqState() = default;
+
 }  // namespace test
 }  // namespace webrtc
