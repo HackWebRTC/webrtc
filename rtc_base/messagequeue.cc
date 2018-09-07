@@ -48,18 +48,9 @@ class RTC_SCOPED_LOCKABLE MarkProcessingCritScope {
 //------------------------------------------------------------------
 // MessageQueueManager
 
-MessageQueueManager* MessageQueueManager::instance_ = nullptr;
-
 MessageQueueManager* MessageQueueManager::Instance() {
-  // Note: This is not thread safe, but it is first called before threads are
-  // spawned.
-  if (!instance_)
-    instance_ = new MessageQueueManager;
-  return instance_;
-}
-
-bool MessageQueueManager::IsInitialized() {
-  return instance_ != nullptr;
+  static MessageQueueManager* const instance = new MessageQueueManager;
+  return instance;
 }
 
 MessageQueueManager::MessageQueueManager() : processing_(0) {}
@@ -77,18 +68,9 @@ void MessageQueueManager::AddInternal(MessageQueue* message_queue) {
 }
 
 void MessageQueueManager::Remove(MessageQueue* message_queue) {
-  // If there isn't a message queue manager instance, then there isn't a queue
-  // to remove.
-  if (!instance_)
-    return;
   return Instance()->RemoveInternal(message_queue);
 }
 void MessageQueueManager::RemoveInternal(MessageQueue* message_queue) {
-  // If this is the last MessageQueue, destroy the manager as well so that
-  // we don't leak this object at program shutdown. As mentioned above, this is
-  // not thread-safe, but this should only happen at program termination (when
-  // the ThreadManager is destroyed, and threads are no longer active).
-  bool destroy = false;
   {
     CritScope cs(&crit_);
     // Prevent changes while the list of message queues is processed.
@@ -99,19 +81,10 @@ void MessageQueueManager::RemoveInternal(MessageQueue* message_queue) {
     if (iter != message_queues_.end()) {
       message_queues_.erase(iter);
     }
-    destroy = message_queues_.empty();
-  }
-  if (destroy) {
-    instance_ = nullptr;
-    delete this;
   }
 }
 
 void MessageQueueManager::Clear(MessageHandler* handler) {
-  // If there isn't a message queue manager instance, then there aren't any
-  // queues to remove this handler from.
-  if (!instance_)
-    return;
   return Instance()->ClearInternal(handler);
 }
 void MessageQueueManager::ClearInternal(MessageHandler* handler) {
@@ -125,9 +98,6 @@ void MessageQueueManager::ClearInternal(MessageHandler* handler) {
 }
 
 void MessageQueueManager::ProcessAllMessageQueuesForTesting() {
-  if (!instance_) {
-    return;
-  }
   return Instance()->ProcessAllMessageQueuesInternal();
 }
 
@@ -225,7 +195,7 @@ void MessageQueue::DoDestroy() {
   // is going away.
   SignalQueueDestroyed();
   MessageQueueManager::Remove(this);
-  Clear(nullptr);
+  ClearInternal(nullptr, MQID_ANY, nullptr);
 
   if (ss_) {
     ss_->SetMessageQueue(nullptr);
@@ -480,7 +450,12 @@ void MessageQueue::Clear(MessageHandler* phandler,
                          uint32_t id,
                          MessageList* removed) {
   CritScope cs(&crit_);
+  ClearInternal(phandler, id, removed);
+}
 
+void MessageQueue::ClearInternal(MessageHandler* phandler,
+                                 uint32_t id,
+                                 MessageList* removed) {
   // Remove messages with phandler
 
   if (fPeekKeep_ && msgPeek_.Match(phandler, id)) {

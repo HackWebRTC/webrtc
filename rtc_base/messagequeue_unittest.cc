@@ -134,22 +134,6 @@ struct UnwrapMainThreadScope {
   bool rewrap_;
 };
 
-TEST(MessageQueueManager, Clear) {
-  UnwrapMainThreadScope s;
-  if (MessageQueueManager::IsInitialized()) {
-    RTC_LOG(LS_INFO)
-        << "Unable to run MessageQueueManager::Clear test, since the "
-        << "MessageQueueManager was already initialized by some "
-        << "other test in this run.";
-    return;
-  }
-  bool deleted = false;
-  DeletedMessageHandler* handler = new DeletedMessageHandler(&deleted);
-  delete handler;
-  EXPECT_TRUE(deleted);
-  EXPECT_FALSE(MessageQueueManager::IsInitialized());
-}
-
 // Ensure that ProcessAllMessageQueues does its essential function; process
 // all messages (both delayed and non delayed) up until the current time, on
 // all registered message queues.

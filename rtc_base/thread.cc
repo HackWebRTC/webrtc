@@ -482,7 +482,7 @@ void Thread::Clear(MessageHandler* phandler,
     ++iter;
   }
 
-  MessageQueue::Clear(phandler, id, removed);
+  ClearInternal(phandler, id, removed);
 }
 
 #if !defined(WEBRTC_MAC)
