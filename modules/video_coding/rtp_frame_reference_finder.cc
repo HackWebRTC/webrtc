@@ -92,7 +92,7 @@ RtpFrameReferenceFinder::ManageFrameInternal(RtpFrameObject* frame) {
       return ManageFrameVp9(frame);
     default: {
       // Use 15 first bits of frame ID as picture ID if available.
-      absl::optional<RTPVideoHeader> video_header = frame->GetCodecHeader();
+      absl::optional<RTPVideoHeader> video_header = frame->GetRtpVideoHeader();
       absl::optional<RTPVideoHeader::GenericDescriptorInfo> generic_info =
           video_header ? video_header->generic : absl::nullopt;
       return ManageFrameGeneric(
@@ -237,7 +237,7 @@ RtpFrameReferenceFinder::ManageFrameGeneric(RtpFrameObject* frame,
 
 RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp8(
     RtpFrameObject* frame) {
-  absl::optional<RTPVideoHeader> video_header = frame->GetCodecHeader();
+  absl::optional<RTPVideoHeader> video_header = frame->GetRtpVideoHeader();
   if (!video_header) {
     RTC_LOG(LS_WARNING)
         << "Failed to get codec header from frame, dropping frame.";
@@ -390,7 +390,7 @@ void RtpFrameReferenceFinder::UpdateLayerInfoVp8(RtpFrameObject* frame,
 
 RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp9(
     RtpFrameObject* frame) {
-  absl::optional<RTPVideoHeader> video_header = frame->GetCodecHeader();
+  absl::optional<RTPVideoHeader> video_header = frame->GetRtpVideoHeader();
   if (!video_header) {
     RTC_LOG(LS_WARNING)
         << "Failed to get codec header from frame, dropping frame.";

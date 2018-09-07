@@ -151,7 +151,7 @@ bool RtpFrameObject::delayed_by_retransmission() const {
   return times_nacked() > 0;
 }
 
-absl::optional<RTPVideoHeader> RtpFrameObject::GetCodecHeader() const {
+absl::optional<RTPVideoHeader> RtpFrameObject::GetRtpVideoHeader() const {
   rtc::CritScope lock(&packet_buffer_->crit_);
   VCMPacket* packet = packet_buffer_->GetPacket(first_seq_num_);
   if (!packet)
