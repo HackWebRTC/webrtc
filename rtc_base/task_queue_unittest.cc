@@ -371,6 +371,32 @@ TEST(TaskQueueTest, PostAndReplyDeadlock) {
   EXPECT_TRUE(event.Wait(1000));
 }
 
+// http://bugs.webrtc.org/9728
+#if defined(WEBRTC_WIN)
+#define MAYBE_DeleteTaskQueueAfterPostAndReply \
+  DISABLED_DeleteTaskQueueAfterPostAndReply
+#else
+#define MAYBE_DeleteTaskQueueAfterPostAndReply DeleteTaskQueueAfterPostAndReply
+#endif
+TEST(TaskQueueTest, MAYBE_DeleteTaskQueueAfterPostAndReply) {
+  Event task_deleted(false, false);
+  Event reply_deleted(false, false);
+  auto* task_queue = new TaskQueue("Queue");
+
+  task_queue->PostTaskAndReply(
+      /*task=*/rtc::NewClosure(
+          /*closure=*/[] {},
+          /*cleanup=*/[&task_deleted] { task_deleted.Set(); }),
+      /*reply=*/rtc::NewClosure(
+          /*closure=*/[] {},
+          /*cleanup=*/[&reply_deleted] { reply_deleted.Set(); }));
+
+  delete task_queue;
+
+  EXPECT_TRUE(task_deleted.Wait(1000));
+  EXPECT_TRUE(reply_deleted.Wait(1000));
+}
+
 void TestPostTaskAndReply(TaskQueue* work_queue, Event* event) {
   ASSERT_FALSE(work_queue->IsCurrent());
   work_queue->PostTaskAndReply(Bind(&CheckCurrent, nullptr, work_queue),
