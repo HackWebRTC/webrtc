@@ -173,13 +173,6 @@ RtpPacketizerVp8::RtpPacketizerVp8(rtc::ArrayView<const uint8_t> payload,
                                    PayloadSizeLimits limits,
                                    const RTPVideoHeaderVP8& hdr_info)
     : hdr_(BuildHeader(hdr_info)), remaining_payload_(payload) {
-  if (limits.max_payload_len - limits.last_packet_reduction_len <
-      hdr_.size() + 1) {
-    // The provided payload length is not long enough for the payload
-    // descriptor and one payload byte in the last packet.
-    current_packet_ = payload_sizes_.begin();
-    return;
-  }
   limits.max_payload_len -= hdr_.size();
   payload_sizes_ = SplitAboutEqually(payload.size(), limits);
   current_packet_ = payload_sizes_.begin();

@@ -59,26 +59,42 @@ std::unique_ptr<RtpPacketizer> RtpPacketizer::Create(
   }
 }
 
-std::vector<size_t> RtpPacketizer::SplitAboutEqually(
-    size_t payload_len,
+std::vector<int> RtpPacketizer::SplitAboutEqually(
+    int payload_len,
     const PayloadSizeLimits& limits) {
-  RTC_CHECK_GT(limits.max_payload_len, limits.first_packet_reduction_len);
-  RTC_CHECK_GT(limits.max_payload_len, limits.last_packet_reduction_len);
+  RTC_DCHECK_GT(payload_len, 0);
+  // First or last packet larger than normal are unsupported.
+  RTC_DCHECK_GE(limits.first_packet_reduction_len, 0);
+  RTC_DCHECK_GE(limits.last_packet_reduction_len, 0);
 
+  std::vector<int> result;
+  if (limits.max_payload_len - limits.first_packet_reduction_len < 1 ||
+      limits.max_payload_len - limits.last_packet_reduction_len < 1) {
+    // Capacity is not enough to put a single byte into one of the packets.
+    return result;
+  }
   // First and last packet of the frame can be smaller. Pretend that it's
   // the same size, but we must write more payload to it.
   // Assume frame fits in single packet if packet has extra space for sum
   // of first and last packets reductions.
-  size_t total_bytes = payload_len + limits.first_packet_reduction_len +
-                       limits.last_packet_reduction_len;
+  int total_bytes = payload_len + limits.first_packet_reduction_len +
+                    limits.last_packet_reduction_len;
   // Integer divisions with rounding up.
-  size_t num_packets_left =
+  int num_packets_left =
       (total_bytes + limits.max_payload_len - 1) / limits.max_payload_len;
-  size_t bytes_per_packet = total_bytes / num_packets_left;
-  size_t num_larger_packets = total_bytes % num_packets_left;
-  size_t remaining_data = payload_len;
 
-  std::vector<size_t> result;
+  if (payload_len < num_packets_left) {
+    // Edge case where limits force to have more packets than there are payload
+    // bytes. This may happen when there is single byte of payload that can't be
+    // put into single packet if
+    // first_packet_reduction + last_packet_reduction >= max_payload_len.
+    return result;
+  }
+
+  int bytes_per_packet = total_bytes / num_packets_left;
+  int num_larger_packets = total_bytes % num_packets_left;
+  int remaining_data = payload_len;
+
   result.reserve(num_packets_left);
   bool first_packet = true;
   while (remaining_data > 0) {
@@ -86,7 +102,7 @@ std::vector<size_t> RtpPacketizer::SplitAboutEqually(
     // per-packet payload size when needed.
     if (num_packets_left == num_larger_packets)
       ++bytes_per_packet;
-    size_t current_packet_bytes = bytes_per_packet;
+    int current_packet_bytes = bytes_per_packet;
     if (first_packet) {
       if (current_packet_bytes > limits.first_packet_reduction_len + 1)
         current_packet_bytes -= limits.first_packet_reduction_len;

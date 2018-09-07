@@ -52,8 +52,8 @@ class RtpPacketizerGeneric : public RtpPacketizer {
   uint8_t header_[3];
   size_t header_size_;
   rtc::ArrayView<const uint8_t> remaining_payload_;
-  std::vector<size_t> payload_sizes_;
-  std::vector<size_t>::const_iterator current_packet_;
+  std::vector<int> payload_sizes_;
+  std::vector<int>::const_iterator current_packet_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(RtpPacketizerGeneric);
 };

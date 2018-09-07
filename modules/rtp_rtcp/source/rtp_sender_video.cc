@@ -335,20 +335,18 @@ bool RTPSenderVideo::SendVideo(enum VideoCodecType video_type,
     retransmission_settings = retransmission_settings_;
   }
 
-  size_t packet_capacity = rtp_sender_->MaxRtpPacketSize() -
-                           fec_packet_overhead -
-                           (rtp_sender_->RtxStatus() ? kRtxHeaderSize : 0);
+  int packet_capacity = rtp_sender_->MaxRtpPacketSize() - fec_packet_overhead -
+                        (rtp_sender_->RtxStatus() ? kRtxHeaderSize : 0);
   RTC_DCHECK_LE(packet_capacity, rtp_header->capacity());
   RTC_DCHECK_GT(packet_capacity, rtp_header->headers_size());
   RTC_DCHECK_GT(packet_capacity, last_packet->headers_size());
-  size_t max_data_payload_length = packet_capacity - rtp_header->headers_size();
+  RtpPacketizer::PayloadSizeLimits limits;
+  limits.max_payload_len = packet_capacity - rtp_header->headers_size();
+
   RTC_DCHECK_GE(last_packet->headers_size(), rtp_header->headers_size());
-  size_t last_packet_reduction_len =
+  limits.last_packet_reduction_len =
       last_packet->headers_size() - rtp_header->headers_size();
 
-  RtpPacketizer::PayloadSizeLimits limits;
-  limits.max_payload_len = max_data_payload_length;
-  limits.last_packet_reduction_len = last_packet_reduction_len;
   std::unique_ptr<RtpPacketizer> packetizer = RtpPacketizer::Create(
       video_type, rtc::MakeArrayView(payload_data, payload_size), limits,
       *video_header, frame_type, fragmentation);
@@ -368,9 +366,10 @@ bool RTPSenderVideo::SendVideo(enum VideoCodecType video_type,
                        : absl::make_unique<RtpPacketToSend>(*rtp_header);
     if (!packetizer->NextPacket(packet.get()))
       return false;
-    RTC_DCHECK_LE(packet->payload_size(),
-                  last ? max_data_payload_length - last_packet_reduction_len
-                       : max_data_payload_length);
+    RTC_DCHECK_LE(
+        packet->payload_size(),
+        last ? limits.max_payload_len - limits.last_packet_reduction_len
+             : limits.max_payload_len);
     if (!rtp_sender_->AssignSequenceNumber(packet.get()))
       return false;
 

@@ -27,9 +27,9 @@ class RtpPacketToSend;
 class RtpPacketizer {
  public:
   struct PayloadSizeLimits {
-    size_t max_payload_len = 1200;
-    size_t first_packet_reduction_len = 0;
-    size_t last_packet_reduction_len = 0;
+    int max_payload_len = 1200;
+    int first_packet_reduction_len = 0;
+    int last_packet_reduction_len = 0;
   };
   static std::unique_ptr<RtpPacketizer> Create(
       VideoCodecType type,
@@ -51,8 +51,9 @@ class RtpPacketizer {
   virtual bool NextPacket(RtpPacketToSend* packet) = 0;
 
   // Split payload_len into sum of integers with respect to |limits|.
-  static std::vector<size_t> SplitAboutEqually(size_t payload_len,
-                                               const PayloadSizeLimits& limits);
+  // Returns empty vector on failure.
+  static std::vector<int> SplitAboutEqually(int payload_len,
+                                            const PayloadSizeLimits& limits);
 };
 
 // TODO(sprang): Update the depacketizer to return a std::unqie_ptr with a copy

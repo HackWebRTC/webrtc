@@ -33,10 +33,9 @@ using ::testing::Contains;
 
 constexpr RtpPacketizer::PayloadSizeLimits kNoSizeLimits;
 
-std::vector<size_t> NextPacketFillPayloadSizes(
-    RtpPacketizerGeneric* packetizer) {
+std::vector<int> NextPacketFillPayloadSizes(RtpPacketizerGeneric* packetizer) {
   RtpPacketToSend packet(nullptr);
-  std::vector<size_t> result;
+  std::vector<int> result;
   while (packetizer->NextPacket(&packet)) {
     result.push_back(packet.payload_size());
   }
@@ -52,7 +51,7 @@ TEST(RtpPacketizerVideoGeneric, RespectsMaxPayloadSize) {
   RtpPacketizerGeneric packetizer(kPayload, limits, RTPVideoHeader(),
                                   kVideoFrameKey);
 
-  std::vector<size_t> payload_sizes = NextPacketFillPayloadSizes(&packetizer);
+  std::vector<int> payload_sizes = NextPacketFillPayloadSizes(&packetizer);
 
   EXPECT_THAT(payload_sizes, Each(Le(limits.max_payload_len)));
 }
@@ -66,7 +65,7 @@ TEST(RtpPacketizerVideoGeneric, UsesMaxPayloadSize) {
   RtpPacketizerGeneric packetizer(kPayload, limits, RTPVideoHeader(),
                                   kVideoFrameKey);
 
-  std::vector<size_t> payload_sizes = NextPacketFillPayloadSizes(&packetizer);
+  std::vector<int> payload_sizes = NextPacketFillPayloadSizes(&packetizer);
 
   // With kPayloadSize > max_payload_len^2, there should be packets that use
   // all the payload, otherwise it is possible to use less packets.
@@ -94,7 +93,7 @@ TEST(RtpPacketizerVideoGeneric, WritesExtendedHeaderWhenPictureIdIsSet) {
 }
 
 TEST(RtpPacketizerVideoGeneric, RespectsMaxPayloadSizeWithExtendedHeader) {
-  const size_t kPayloadSize = 50;
+  const int kPayloadSize = 50;
   const uint8_t kPayload[kPayloadSize] = {};
 
   RtpPacketizer::PayloadSizeLimits limits;
@@ -104,13 +103,13 @@ TEST(RtpPacketizerVideoGeneric, RespectsMaxPayloadSizeWithExtendedHeader) {
   RtpPacketizerGeneric packetizer(kPayload, limits, rtp_video_header,
                                   kVideoFrameKey);
 
-  std::vector<size_t> payload_sizes = NextPacketFillPayloadSizes(&packetizer);
+  std::vector<int> payload_sizes = NextPacketFillPayloadSizes(&packetizer);
 
   EXPECT_THAT(payload_sizes, Each(Le(limits.max_payload_len)));
 }
 
 TEST(RtpPacketizerVideoGeneric, UsesMaxPayloadSizeWithExtendedHeader) {
-  const size_t kPayloadSize = 50;
+  const int kPayloadSize = 50;
   const uint8_t kPayload[kPayloadSize] = {};
 
   RtpPacketizer::PayloadSizeLimits limits;
@@ -119,7 +118,7 @@ TEST(RtpPacketizerVideoGeneric, UsesMaxPayloadSizeWithExtendedHeader) {
   rtp_video_header.generic.emplace().frame_id = 37;
   RtpPacketizerGeneric packetizer(kPayload, limits, rtp_video_header,
                                   kVideoFrameKey);
-  std::vector<size_t> payload_sizes = NextPacketFillPayloadSizes(&packetizer);
+  std::vector<int> payload_sizes = NextPacketFillPayloadSizes(&packetizer);
 
   // With kPayloadSize > max_payload_len^2, there should be packets that use
   // all the payload, otherwise it is possible to use less packets.
@@ -127,7 +126,7 @@ TEST(RtpPacketizerVideoGeneric, UsesMaxPayloadSizeWithExtendedHeader) {
 }
 
 TEST(RtpPacketizerVideoGeneric, FrameIdOver15bitsWrapsAround) {
-  const size_t kPayloadSize = 13;
+  const int kPayloadSize = 13;
   const uint8_t kPayload[kPayloadSize] = {};
 
   RTPVideoHeader rtp_video_header;
@@ -146,7 +145,7 @@ TEST(RtpPacketizerVideoGeneric, FrameIdOver15bitsWrapsAround) {
 }
 
 TEST(RtpPacketizerVideoGeneric, NoFrameIdDoesNotWriteExtendedHeader) {
-  const size_t kPayloadSize = 13;
+  const int kPayloadSize = 13;
   const uint8_t kPayload[kPayloadSize] = {};
 
   RtpPacketizerGeneric packetizer(kPayload, kNoSizeLimits, RTPVideoHeader(),
