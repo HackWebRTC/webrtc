@@ -14,7 +14,6 @@ if (is_android) {
 
 rtc_static_library("ortc") {
   defines = []
-  configs += [ "..:no_exit_time_destructors" ]
   sources = [
     "ortcfactory.cc",
     "ortcfactory.h",
