@@ -48,7 +48,8 @@ class DebugDumpGenerator {
                      int reverse_channels,
                      const Config& config,
                      const std::string& dump_file_name,
-                     bool enable_aec3);
+                     bool enable_aec3,
+                     bool enable_pre_amplifier);
 
   // Constructor that uses default input files.
   explicit DebugDumpGenerator(const Config& config,
@@ -112,6 +113,8 @@ class DebugDumpGenerator {
   std::unique_ptr<ChannelBuffer<float>> reverse_;
   std::unique_ptr<ChannelBuffer<float>> output_;
 
+  bool enable_pre_amplifier_;
+
   rtc::TaskQueue worker_queue_;
   std::unique_ptr<AudioProcessing> apm_;
 
@@ -126,7 +129,8 @@ DebugDumpGenerator::DebugDumpGenerator(const std::string& input_file_name,
                                        int reverse_channels,
                                        const Config& config,
                                        const std::string& dump_file_name,
-                                       bool enable_aec3)
+                                       bool enable_aec3,
+                                       bool enable_pre_amplifier)
     : input_config_(input_rate_hz, input_channels),
       reverse_config_(reverse_rate_hz, reverse_channels),
       output_config_(input_rate_hz, input_channels),
@@ -140,6 +144,7 @@ DebugDumpGenerator::DebugDumpGenerator(const std::string& input_file_name,
                                         reverse_config_.num_channels())),
       output_(new ChannelBuffer<float>(output_config_.num_frames(),
                                        output_config_.num_channels())),
+      enable_pre_amplifier_(enable_pre_amplifier),
       worker_queue_("debug_dump_generator_worker_queue"),
       dump_file_name_(dump_file_name) {
   AudioProcessingBuilder apm_builder;
@@ -162,7 +167,8 @@ DebugDumpGenerator::DebugDumpGenerator(
                          2,
                          config,
                          TempFilename(OutputPath(), "debug_aec"),
-                         enable_aec3) {
+                         enable_aec3,
+                         apm_config.pre_amplifier.enabled) {
   apm_->ApplyConfig(apm_config);
 }
 
@@ -223,6 +229,10 @@ void DebugDumpGenerator::Process(size_t num_blocks) {
     ReadAndDeinterleave(&input_audio_, input_file_channels_, input_config_,
                         input_->channels());
     RTC_CHECK_EQ(AudioProcessing::kNoError, apm_->set_stream_delay_ms(100));
+    if (enable_pre_amplifier_) {
+      apm_->SetRuntimeSetting(
+          AudioProcessing::RuntimeSetting::CreateCapturePreGain(1 + i % 10));
+    }
     apm_->set_stream_key_pressed(i % 10 == 9);
     RTC_CHECK_EQ(AudioProcessing::kNoError,
                  apm_->ProcessStream(input_->channels(), input_config_,
@@ -590,6 +600,17 @@ TEST_F(DebugDumpTest, TransientSuppressionOn) {
   Config config;
   config.Set<ExperimentalNs>(new ExperimentalNs(true));
   DebugDumpGenerator generator(config, AudioProcessing::Config());
+  generator.StartRecording();
+  generator.Process(100);
+  generator.StopRecording();
+  VerifyDebugDump(generator.dump_file_name());
+}
+
+TEST_F(DebugDumpTest, PreAmplifierIsOn) {
+  Config config;
+  AudioProcessing::Config apm_config;
+  apm_config.pre_amplifier.enabled = true;
+  DebugDumpGenerator generator(config, apm_config);
   generator.StartRecording();
   generator.Process(100);
   generator.StopRecording();

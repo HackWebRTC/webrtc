@@ -98,6 +98,9 @@ class AecDump {
   virtual void WriteRenderStreamMessage(
       const AudioFrameView<const float>& src) = 0;
 
+  virtual void WriteRuntimeSetting(
+      const AudioProcessing::RuntimeSetting& runtime_setting) = 0;
+
   // Logs Event::Type CONFIG message.
   virtual void WriteConfig(const InternalAPMConfig& config) = 0;
 };

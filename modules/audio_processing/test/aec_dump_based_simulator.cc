@@ -11,6 +11,7 @@
 #include <iostream>
 
 #include "modules/audio_processing/test/aec_dump_based_simulator.h"
+#include "modules/audio_processing/test/runtime_setting_util.h"
 
 #include "modules/audio_processing/test/protobuf_utils.h"
 #include "rtc_base/checks.h"
@@ -253,8 +254,12 @@ void AecDumpBasedSimulator::Process() {
         RTC_CHECK(event_msg.has_config());
         HandleMessage(event_msg.config());
         break;
-      default:
+      case webrtc::audioproc::Event::RUNTIME_SETTING:
+        HandleMessage(event_msg.runtime_setting());
+        break;
+      case webrtc::audioproc::Event::UNKNOWN_EVENT:
         RTC_CHECK(false);
+        break;
     }
   }
 
@@ -550,6 +555,12 @@ void AecDumpBasedSimulator::HandleMessage(
     const webrtc::audioproc::ReverseStream& msg) {
   PrepareReverseProcessStreamCall(msg);
   ProcessReverseStream(interface_used_ == InterfaceType::kFixedInterface);
+}
+
+void AecDumpBasedSimulator::HandleMessage(
+    const webrtc::audioproc::RuntimeSetting& msg) {
+  RTC_CHECK(ap_.get());
+  ReplayRuntimeSetting(ap_.get(), msg);
 }
 
 }  // namespace test

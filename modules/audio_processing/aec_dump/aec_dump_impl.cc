@@ -167,6 +167,34 @@ void AecDumpImpl::WriteConfig(const InternalAPMConfig& config) {
   worker_queue_->PostTask(std::unique_ptr<rtc::QueuedTask>(std::move(task)));
 }
 
+void AecDumpImpl::WriteRuntimeSetting(
+    const AudioProcessing::RuntimeSetting& runtime_setting) {
+  RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
+  auto task = CreateWriteToFileTask();
+  auto* event = task->GetEvent();
+  event->set_type(audioproc::Event::RUNTIME_SETTING);
+  audioproc::RuntimeSetting* setting = event->mutable_runtime_setting();
+  switch (runtime_setting.type()) {
+    case AudioProcessing::RuntimeSetting::Type::kCapturePreGain: {
+      float x;
+      runtime_setting.GetFloat(&x);
+      setting->set_capture_pre_gain(x);
+      break;
+    }
+    case AudioProcessing::RuntimeSetting::Type::
+        kCustomRenderProcessingRuntimeSetting: {
+      float x;
+      runtime_setting.GetFloat(&x);
+      setting->set_custom_render_processing_setting(x);
+      break;
+    }
+    case AudioProcessing::RuntimeSetting::Type::kNotSpecified:
+      RTC_NOTREACHED();
+      break;
+  }
+  worker_queue_->PostTask(std::unique_ptr<rtc::QueuedTask>(std::move(task)));
+}
+
 std::unique_ptr<WriteToFileTask> AecDumpImpl::CreateWriteToFileTask() {
   return absl::make_unique<WriteToFileTask>(debug_file_.get(),
                                             &num_bytes_left_for_log_);

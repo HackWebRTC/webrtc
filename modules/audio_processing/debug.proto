@@ -80,6 +80,11 @@ message Config {
   // Next field number 21.
 }
 
+message RuntimeSetting {
+  optional float capture_pre_gain = 1;
+  optional float custom_render_processing_setting = 2;
+}
+
 message Event {
   enum Type {
     INIT = 0;
@@ -87,6 +92,7 @@ message Event {
     STREAM = 2;
     CONFIG = 3;
     UNKNOWN_EVENT = 4;
+    RUNTIME_SETTING = 5;
   }
 
   required Type type = 1;
@@ -95,4 +101,5 @@ message Event {
   optional ReverseStream reverse_stream = 3;
   optional Stream stream = 4;
   optional Config config = 5;
+  optional RuntimeSetting runtime_setting = 6;
 }

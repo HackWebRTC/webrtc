@@ -876,6 +876,9 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
 void AudioProcessingImpl::HandleCaptureRuntimeSettings() {
   RuntimeSetting setting;
   while (capture_runtime_settings_.Remove(&setting)) {
+    if (aec_dump_) {
+      aec_dump_->WriteRuntimeSetting(setting);
+    }
     switch (setting.type()) {
       case RuntimeSetting::Type::kCapturePreGain:
         if (config_.pre_amplifier.enabled) {
@@ -898,6 +901,9 @@ void AudioProcessingImpl::HandleCaptureRuntimeSettings() {
 void AudioProcessingImpl::HandleRenderRuntimeSettings() {
   RuntimeSetting setting;
   while (render_runtime_settings_.Remove(&setting)) {
+    if (aec_dump_) {
+      aec_dump_->WriteRuntimeSetting(setting);
+    }
     switch (setting.type()) {
       case RuntimeSetting::Type::kCustomRenderProcessingRuntimeSetting:
         if (private_submodules_->render_pre_processor) {

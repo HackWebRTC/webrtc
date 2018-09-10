@@ -11,6 +11,7 @@
 #include "modules/audio_processing/test/debug_dump_replayer.h"
 
 #include "modules/audio_processing/test/protobuf_utils.h"
+#include "modules/audio_processing/test/runtime_setting_util.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {
@@ -73,8 +74,12 @@ bool DebugDumpReplayer::RunNextEvent() {
     case audioproc::Event::CONFIG:
       OnConfigEvent(next_event_.config());
       break;
+    case audioproc::Event::RUNTIME_SETTING:
+      OnRuntimeSettingEvent(next_event_.runtime_setting());
+      break;
     case audioproc::Event::UNKNOWN_EVENT:
       // We do not expect to receive UNKNOWN event.
+      RTC_CHECK(false);
       return false;
   }
   LoadNextMessage();
@@ -167,6 +172,12 @@ void DebugDumpReplayer::OnConfigEvent(const audioproc::Config& msg) {
   ConfigureApm(msg);
 }
 
+void DebugDumpReplayer::OnRuntimeSettingEvent(
+    const audioproc::RuntimeSetting& msg) {
+  RTC_CHECK(apm_.get());
+  ReplayRuntimeSetting(apm_.get(), msg);
+}
+
 void DebugDumpReplayer::MaybeRecreateApm(const audioproc::Config& msg) {
   // These configurations cannot be changed on the fly.
   Config config;
@@ -251,6 +262,11 @@ void DebugDumpReplayer::ConfigureApm(const audioproc::Config& msg) {
   RTC_CHECK_EQ(AudioProcessing::kNoError,
                apm_->noise_suppression()->set_level(
                    static_cast<NoiseSuppression::Level>(msg.ns_level())));
+
+  RTC_CHECK(msg.has_pre_amplifier_enabled());
+  apm_config.pre_amplifier.enabled = msg.pre_amplifier_enabled();
+  apm_config.pre_amplifier.fixed_gain_factor =
+      msg.pre_amplifier_fixed_gain_factor();
 
   apm_->ApplyConfig(apm_config);
 }
