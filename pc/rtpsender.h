@@ -145,9 +145,8 @@ class AudioRtpSender : public DtmfProviderInterface,
   int AttachmentId() const override { return attachment_id_; }
 
   void SetVoiceMediaChannel(
-      cricket::VoiceMediaChannel* voice_media_channel) override {
-    media_channel_ = voice_media_channel;
-  }
+      cricket::VoiceMediaChannel* voice_media_channel) override;
+
   void SetVideoMediaChannel(
       cricket::VideoMediaChannel* video_media_channel) override {
     RTC_NOTREACHED();
@@ -237,10 +236,9 @@ class VideoRtpSender : public ObserverInterface,
       cricket::VoiceMediaChannel* voice_media_channel) override {
     RTC_NOTREACHED();
   }
+
   void SetVideoMediaChannel(
-      cricket::VideoMediaChannel* video_media_channel) override {
-    media_channel_ = video_media_channel;
-  }
+      cricket::VideoMediaChannel* video_media_channel) override;
 
  private:
   bool can_send_track() const { return track_ && ssrc_; }

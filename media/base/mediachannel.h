@@ -20,6 +20,8 @@
 #include "absl/types/optional.h"
 #include "api/audio_codecs/audio_encoder.h"
 #include "api/audio_options.h"
+#include "api/crypto/framedecryptorinterface.h"
+#include "api/crypto/frameencryptorinterface.h"
 #include "api/rtcerror.h"
 #include "api/rtpparameters.h"
 #include "api/rtpreceiverinterface.h"
@@ -213,9 +215,18 @@ class MediaChannel : public sigslot::has_slots<> {
   // ssrc must be the first SSRC of the media stream if the stream uses
   // multiple SSRCs.
   virtual bool RemoveRecvStream(uint32_t ssrc) = 0;
-
   // Returns the absoulte sendtime extension id value from media channel.
   virtual int GetRtpSendTimeExtnId() const;
+  // Set the frame encryptor to use on all outgoing frames. This is optional.
+  // This pointers lifetime is managed by the set of RtpSender it is attached
+  // to.
+  virtual void SetFrameEncryptor(
+      webrtc::FrameEncryptorInterface* frame_encryptor);
+  // Set the frame decryptor to use on all incoming frames. This is optional.
+  // This pointers lifetimes is managed by the set of RtpReceivers it is
+  // attached to.
+  virtual void SetFrameDecryptor(
+      webrtc::FrameDecryptorInterface* frame_decryptor);
 
   // Base method to send packet using NetworkInterface.
   bool SendPacket(rtc::CopyOnWriteBuffer* packet,
@@ -266,6 +277,10 @@ class MediaChannel : public sigslot::has_slots<> {
   // of network_interface_ object.
   rtc::CriticalSection network_interface_crit_;
   NetworkInterface* network_interface_;
+
+ protected:
+  webrtc::FrameEncryptorInterface* frame_encryptor_ = nullptr;
+  webrtc::FrameDecryptorInterface* frame_decryptor_ = nullptr;
 };
 
 // The stats information is structured as follows:

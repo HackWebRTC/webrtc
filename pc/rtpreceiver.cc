@@ -43,6 +43,17 @@ std::vector<rtc::scoped_refptr<MediaStreamInterface>> CreateStreamsFromIds(
   return streams;
 }
 
+void AttachFrameDecryptorToMediaChannel(
+    rtc::Thread* worker_thread,
+    webrtc::FrameDecryptorInterface* frame_decryptor,
+    cricket::MediaChannel* media_channel) {
+  if (media_channel) {
+    return worker_thread->Invoke<void>(RTC_FROM_HERE, [&] {
+      media_channel->SetFrameDecryptor(frame_decryptor);
+    });
+  }
+}
+
 }  // namespace
 
 AudioRtpReceiver::AudioRtpReceiver(rtc::Thread* worker_thread,
@@ -141,6 +152,8 @@ bool AudioRtpReceiver::SetParameters(const RtpParameters& parameters) {
 void AudioRtpReceiver::SetFrameDecryptor(
     rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor) {
   frame_decryptor_ = std::move(frame_decryptor);
+  AttachFrameDecryptorToMediaChannel(worker_thread_, frame_decryptor_.get(),
+                                     media_channel_);
 }
 
 rtc::scoped_refptr<FrameDecryptorInterface>
@@ -243,6 +256,13 @@ void AudioRtpReceiver::SetObserver(RtpReceiverObserverInterface* observer) {
   }
 }
 
+void AudioRtpReceiver::SetVoiceMediaChannel(
+    cricket::VoiceMediaChannel* voice_media_channel) {
+  media_channel_ = voice_media_channel;
+  AttachFrameDecryptorToMediaChannel(worker_thread_, frame_decryptor_.get(),
+                                     media_channel_);
+}
+
 void AudioRtpReceiver::NotifyFirstPacketReceived() {
   if (observer_) {
     observer_->OnFirstPacketReceived(media_type());
@@ -321,6 +341,8 @@ bool VideoRtpReceiver::SetParameters(const RtpParameters& parameters) {
 void VideoRtpReceiver::SetFrameDecryptor(
     rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor) {
   frame_decryptor_ = std::move(frame_decryptor);
+  AttachFrameDecryptorToMediaChannel(worker_thread_, frame_decryptor_.get(),
+                                     media_channel_);
 }
 
 rtc::scoped_refptr<FrameDecryptorInterface>
@@ -402,6 +424,13 @@ void VideoRtpReceiver::SetObserver(RtpReceiverObserverInterface* observer) {
   if (received_first_packet_ && observer_) {
     observer_->OnFirstPacketReceived(media_type());
   }
+}
+
+void VideoRtpReceiver::SetVideoMediaChannel(
+    cricket::VideoMediaChannel* video_media_channel) {
+  media_channel_ = video_media_channel;
+  AttachFrameDecryptorToMediaChannel(worker_thread_, frame_decryptor_.get(),
+                                     media_channel_);
 }
 
 void VideoRtpReceiver::NotifyFirstPacketReceived() {

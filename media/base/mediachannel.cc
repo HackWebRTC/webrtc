@@ -29,6 +29,16 @@ int MediaChannel::GetRtpSendTimeExtnId() const {
   return -1;
 }
 
+void MediaChannel::SetFrameEncryptor(
+    webrtc::FrameEncryptorInterface* frame_encryptor) {
+  frame_encryptor_ = frame_encryptor;
+}
+
+void MediaChannel::SetFrameDecryptor(
+    webrtc::FrameDecryptorInterface* frame_decryptor) {
+  frame_decryptor_ = frame_decryptor;
+}
+
 MediaSenderInfo::MediaSenderInfo() = default;
 MediaSenderInfo::~MediaSenderInfo() = default;
 
