@@ -77,6 +77,10 @@ int DefaultNumberOfTemporalLayers(int simulcast_id, bool screenshare) {
   RTC_CHECK_LT(simulcast_id, webrtc::kMaxSimulcastStreams);
 
   const int kDefaultNumTemporalLayers = 3;
+  const int kDefaultNumScreenshareTemporalLayers = 2;
+  int default_num_temporal_layers = screenshare
+                                        ? kDefaultNumScreenshareTemporalLayers
+                                        : kDefaultNumTemporalLayers;
 
   const std::string group_name =
       screenshare ? webrtc::field_trial::FindFullName(
@@ -84,9 +88,9 @@ int DefaultNumberOfTemporalLayers(int simulcast_id, bool screenshare) {
                   : webrtc::field_trial::FindFullName(
                         "WebRTC-VP8ConferenceTemporalLayers");
   if (group_name.empty())
-    return kDefaultNumTemporalLayers;
+    return default_num_temporal_layers;
 
-  int num_temporal_layers = kDefaultNumTemporalLayers;
+  int num_temporal_layers = default_num_temporal_layers;
   if (sscanf(group_name.c_str(), "%d", &num_temporal_layers) == 1 &&
       num_temporal_layers > 0 &&
       num_temporal_layers <= webrtc::kMaxTemporalStreams) {
@@ -97,7 +101,7 @@ int DefaultNumberOfTemporalLayers(int simulcast_id, bool screenshare) {
                          "incorrect value: "
                       << group_name;
 
-  return kDefaultNumTemporalLayers;
+  return default_num_temporal_layers;
 }
 
 int FindSimulcastFormatIndex(int width, int height) {
