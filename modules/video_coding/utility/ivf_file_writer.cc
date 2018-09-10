@@ -13,6 +13,7 @@
 #include <string>
 #include <utility>
 
+#include "api/video_codecs/video_codec.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"

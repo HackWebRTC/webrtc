@@ -342,10 +342,6 @@ enum VideoCodecType {
   kVideoCodecMultiplex,
 };
 
-// Translates from name of codec to codec type and vice versa.
-const char* CodecTypeToPayloadString(VideoCodecType type);
-VideoCodecType PayloadStringToCodecType(const std::string& name);
-
 struct SpatialLayer {
   bool operator==(const SpatialLayer& other) const;
   bool operator!=(const SpatialLayer& other) const { return !(*this == other); }
