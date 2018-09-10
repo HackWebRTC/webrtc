@@ -266,6 +266,11 @@ DefaultTemporalLayers::DefaultTemporalLayers(int number_of_temporal_layers)
   }
 }
 
+bool DefaultTemporalLayers::SupportsEncoderFrameDropping() const {
+  // This class allows the encoder drop frames as it sees fit.
+  return true;
+}
+
 void DefaultTemporalLayers::OnRatesUpdated(
     const std::vector<uint32_t>& bitrates_bps,
     int framerate_fps) {

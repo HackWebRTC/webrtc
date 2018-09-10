@@ -60,6 +60,11 @@ ScreenshareLayers::~ScreenshareLayers() {
   UpdateHistograms();
 }
 
+bool ScreenshareLayers::SupportsEncoderFrameDropping() const {
+  // Frame dropping is handled internally by this class.
+  return false;
+}
+
 TemporalLayers::FrameConfig ScreenshareLayers::UpdateLayerConfig(
     uint32_t timestamp) {
   if (number_of_temporal_layers_ <= 1) {

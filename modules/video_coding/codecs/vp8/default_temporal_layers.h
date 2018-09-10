@@ -28,6 +28,8 @@ class DefaultTemporalLayers : public TemporalLayers {
   explicit DefaultTemporalLayers(int number_of_temporal_layers);
   virtual ~DefaultTemporalLayers() {}
 
+  bool SupportsEncoderFrameDropping() const override;
+
   // Returns the recommended VP8 encode flags needed. May refresh the decoder
   // and/or update the reference buffers.
   TemporalLayers::FrameConfig UpdateLayerConfig(uint32_t timestamp) override;

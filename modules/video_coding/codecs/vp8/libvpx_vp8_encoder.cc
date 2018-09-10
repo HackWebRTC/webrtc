@@ -399,7 +399,7 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
       (num_temporal_layers > 1) ? VPX_ERROR_RESILIENT_DEFAULT : 0;
 
   // rate control settings
-  configurations_[0].rc_dropframe_thresh = inst->VP8().frameDroppingOn ? 30 : 0;
+  configurations_[0].rc_dropframe_thresh = FrameDropThreshold(0);
   configurations_[0].rc_end_usage = VPX_CBR;
   configurations_[0].g_pass = VPX_RC_ONE_PASS;
   // Handle resizing outside of libvpx.
@@ -481,6 +481,7 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
   }
   UpdateVpxConfiguration(temporal_layers_[stream_idx].get(),
                          &configurations_[0]);
+  configurations_[0].rc_dropframe_thresh = FrameDropThreshold(stream_idx);
 
   --stream_idx;
   for (size_t i = 1; i < encoders_.size(); ++i, --stream_idx) {
@@ -492,6 +493,8 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
 
     // Use 1 thread for lower resolutions.
     configurations_[i].g_threads = 1;
+
+    configurations_[i].rc_dropframe_thresh = FrameDropThreshold(stream_idx);
 
     // Setting alignment to 32 - as that ensures at least 16 for all
     // planes (32 for Y, 16 for U,V). Libvpx sets the requested stride for
@@ -652,6 +655,19 @@ uint32_t LibvpxVp8Encoder::MaxIntraTarget(uint32_t optimalBuffersize) {
   // Don't go below 3 times the per frame bandwidth.
   const uint32_t minIntraTh = 300;
   return (targetPct < minIntraTh) ? minIntraTh : targetPct;
+}
+
+uint32_t LibvpxVp8Encoder::FrameDropThreshold(size_t spatial_idx) const {
+  bool enable_frame_dropping = codec_.VP8().frameDroppingOn;
+  // If temporal layers are used, they get to override the frame dropping
+  // setting, as eg. ScreenshareLayers does not work as intended with frame
+  // dropping on and DefaultTemporalLayers will have performance issues with
+  // frame dropping off.
+  if (temporal_layers_.size() <= spatial_idx) {
+    enable_frame_dropping =
+        temporal_layers_[spatial_idx]->SupportsEncoderFrameDropping();
+  }
+  return enable_frame_dropping ? 30 : 0;
 }
 
 int LibvpxVp8Encoder::Encode(const VideoFrame& frame,

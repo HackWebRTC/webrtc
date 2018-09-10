@@ -147,6 +147,8 @@ class TemporalLayers {
 
   virtual ~TemporalLayers() = default;
 
+  virtual bool SupportsEncoderFrameDropping() const = 0;
+
   // New target bitrate, per temporal layer.
   virtual void OnRatesUpdated(const std::vector<uint32_t>& bitrates_bps,
                               int framerate_fps) = 0;

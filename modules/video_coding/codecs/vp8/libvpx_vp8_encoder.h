@@ -84,6 +84,8 @@ class LibvpxVp8Encoder : public VP8Encoder {
 
   uint32_t MaxIntraTarget(uint32_t optimal_buffer_size);
 
+  uint32_t FrameDropThreshold(size_t spatial_idx) const;
+
   const bool use_gf_boost_;
 
   EncodedImageCallback* encoded_complete_callback_;
