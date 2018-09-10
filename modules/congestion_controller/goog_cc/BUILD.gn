@@ -38,6 +38,7 @@ rtc_static_library("goog_cc") {
     "../../../rtc_base:checks",
     "../../../rtc_base:rtc_base_approved",
     "../../../rtc_base/experiments:alr_experiment",
+    "../../../rtc_base/experiments:field_trial_parser",
     "../../../system_wrappers",
     "../../../system_wrappers:field_trial_api",
     "../../../system_wrappers:metrics_api",
