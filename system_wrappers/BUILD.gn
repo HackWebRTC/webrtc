@@ -14,7 +14,6 @@ import("../webrtc.gni")
 
 rtc_static_library("system_wrappers") {
   visibility = [ "*" ]
-  configs += [ "..:no_exit_time_destructors" ]
   sources = [
     "include/clock.h",
     "include/cpu_info.h",
