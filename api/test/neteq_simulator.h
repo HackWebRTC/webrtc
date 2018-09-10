@@ -42,7 +42,6 @@ class NetEqSimulator {
   struct NetEqState {
     NetEqState();
     NetEqState(const NetEqState& other);
-    NetEqState(NetEqState&& other);
     ~NetEqState();
     // The sum of the packet buffer and sync buffer delay.
     int current_delay_ms = 0;
