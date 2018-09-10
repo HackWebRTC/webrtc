@@ -155,6 +155,9 @@ void AecState::HandleEchoPathChange(
     suppression_gain_limiter_.Reset();
     blocks_since_converged_filter_ = kBlocksSinceConvergencedFilterInit;
     diverged_blocks_ = 0;
+    if (config_.echo_removal_control.linear_and_stable_echo_path) {
+      converged_filter_seen_ = false;
+    }
     if (reset_erle_after_echo_path_changes_) {
       erle_estimator_.Reset();
     }
@@ -260,10 +263,6 @@ void AecState::Update(
   } else {
     filter_has_had_time_to_converge_ =
         blocks_with_proper_filter_adaptation_ >= 1.5f * kNumBlocksPerSecond;
-  }
-
-  if (converged_filter && early_entry_to_converged_mode_) {
-    filter_has_had_time_to_converge_ = true;
   }
 
   if (!filter_should_have_converged_) {

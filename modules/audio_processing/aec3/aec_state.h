@@ -60,7 +60,8 @@ class AecState {
   // Returns the appropriate scaling of the residual echo to match the
   // audibility.
   void GetResidualEchoScaling(rtc::ArrayView<float> residual_scaling) const {
-    echo_audibility_.GetResidualEchoScaling(residual_scaling);
+    echo_audibility_.GetResidualEchoScaling(filter_has_had_time_to_converge_,
+                                            residual_scaling);
   }
 
   // Returns whether the stationary properties of the signals are used in the

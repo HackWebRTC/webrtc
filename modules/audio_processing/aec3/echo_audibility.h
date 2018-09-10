@@ -39,11 +39,12 @@ class EchoAudibility {
               int delay_blocks,
               bool external_delay_seen,
               float reverb_decay);
-
   // Get the residual echo scaling.
-  void GetResidualEchoScaling(rtc::ArrayView<float> residual_scaling) const {
+  void GetResidualEchoScaling(bool filter_has_had_time_to_converge,
+                              rtc::ArrayView<float> residual_scaling) const {
     for (size_t band = 0; band < residual_scaling.size(); ++band) {
-      if (render_stationarity_.IsBandStationary(band)) {
+      if (render_stationarity_.IsBandStationary(band) &&
+          filter_has_had_time_to_converge) {
         residual_scaling[band] = 0.f;
       } else {
         residual_scaling[band] = 1.0f;
