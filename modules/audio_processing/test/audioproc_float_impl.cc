@@ -119,6 +119,15 @@ DEFINE_int(experimental_agc_disable_digital_adaptive,
            kParameterNotSpecifiedValue,
            "Force-deactivate (1) digital adaptation in "
            "experimental AGC. Digital adaptation is active by default (0).");
+DEFINE_int(experimental_agc_analyze_before_aec,
+           kParameterNotSpecifiedValue,
+           "Make level estimation happen before AEC"
+           " in the experimental AGC. After AEC is the default (0)");
+DEFINE_int(
+    experimental_agc_agc2_level_estimator,
+    kParameterNotSpecifiedValue,
+    "AGC2 level estimation"
+    " in the experimental AGC. AGC1 level estimation is the default (0)");
 DEFINE_int(
     refined_adaptive_filter,
     kParameterNotSpecifiedValue,
@@ -259,7 +268,10 @@ SimulationSettings CreateSettings() {
   SetSettingIfFlagSet(FLAG_experimental_agc, &settings.use_experimental_agc);
   SetSettingIfFlagSet(FLAG_experimental_agc_disable_digital_adaptive,
                       &settings.experimental_agc_disable_digital_adaptive);
-
+  SetSettingIfFlagSet(FLAG_experimental_agc_analyze_before_aec,
+                      &settings.experimental_agc_analyze_before_aec);
+  SetSettingIfFlagSet(FLAG_experimental_agc_agc2_level_estimator,
+                      &settings.use_experimental_agc_agc2_level_estimator);
   SetSettingIfSpecified(FLAG_aecm_routing_mode, &settings.aecm_routing_mode);
   SetSettingIfFlagSet(FLAG_aecm_comfort_noise,
                       &settings.use_aecm_comfort_noise);

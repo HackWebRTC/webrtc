@@ -355,7 +355,8 @@ class AudioProcessingImpl : public AudioProcessing {
                  int agc_clipped_level_min,
                  bool use_experimental_agc,
                  bool use_experimental_agc_agc2_level_estimation,
-                 bool use_experimental_agc_agc2_digital_adaptive)
+                 bool use_experimental_agc_agc2_digital_adaptive,
+                 bool use_experimental_agc_process_before_aec)
         :  // Format of processing streams at input/output call sites.
           agc_startup_min_volume(agc_startup_min_volume),
           agc_clipped_level_min(agc_clipped_level_min),
@@ -363,12 +364,15 @@ class AudioProcessingImpl : public AudioProcessing {
           use_experimental_agc_agc2_level_estimation(
               use_experimental_agc_agc2_level_estimation),
           use_experimental_agc_agc2_digital_adaptive(
-              use_experimental_agc_agc2_digital_adaptive) {}
+              use_experimental_agc_agc2_digital_adaptive),
+          use_experimental_agc_process_before_aec(
+              use_experimental_agc_process_before_aec) {}
     int agc_startup_min_volume;
     int agc_clipped_level_min;
     bool use_experimental_agc;
     bool use_experimental_agc_agc2_level_estimation;
     bool use_experimental_agc_agc2_digital_adaptive;
+    bool use_experimental_agc_process_before_aec;
 
   } constants_;
 

@@ -68,6 +68,7 @@ struct SimulationSettings {
   absl::optional<bool> use_experimental_agc;
   absl::optional<bool> use_experimental_agc_agc2_level_estimator;
   absl::optional<bool> experimental_agc_disable_digital_adaptive;
+  absl::optional<bool> experimental_agc_analyze_before_aec;
   absl::optional<int> aecm_routing_mode;
   absl::optional<bool> use_aecm_comfort_noise;
   absl::optional<int> agc_mode;

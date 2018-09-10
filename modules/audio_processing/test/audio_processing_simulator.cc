@@ -730,7 +730,9 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
       !!settings_.use_experimental_agc_agc2_level_estimator &&
           *settings_.use_experimental_agc_agc2_level_estimator,
       !!settings_.experimental_agc_disable_digital_adaptive &&
-          *settings_.experimental_agc_disable_digital_adaptive));
+          *settings_.experimental_agc_disable_digital_adaptive,
+      !!settings_.experimental_agc_analyze_before_aec &&
+          *settings_.experimental_agc_analyze_before_aec));
   if (settings_.use_ed) {
     apm_config.residual_echo_detector.enabled = *settings_.use_ed;
   }

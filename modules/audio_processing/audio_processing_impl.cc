@@ -365,13 +365,15 @@ AudioProcessingImpl::AudioProcessingImpl(
       constants_(config.Get<ExperimentalAgc>().startup_min_volume,
                  config.Get<ExperimentalAgc>().clipped_level_min,
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
-                 false,
-                 false,
-                 false),
+                 /* enabled= */ false,
+                 /* enabled_agc2_level_estimator= */ false,
+                 /* digital_adaptive_disabled= */ false,
+                 /* analyze_before_aec= */ false),
 #else
                  config.Get<ExperimentalAgc>().enabled,
                  config.Get<ExperimentalAgc>().enabled_agc2_level_estimator,
-                 config.Get<ExperimentalAgc>().digital_adaptive_disabled),
+                 config.Get<ExperimentalAgc>().digital_adaptive_disabled,
+                 config.Get<ExperimentalAgc>().analyze_before_aec),
 #endif
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
       capture_(false),
@@ -1221,6 +1223,13 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
     private_submodules_->agc_manager->AnalyzePreProcess(
         capture_buffer->channels()[0], capture_buffer->num_channels(),
         capture_nonlocked_.capture_processing_format.num_frames());
+
+    if (constants_.use_experimental_agc_process_before_aec) {
+      private_submodules_->agc_manager->Process(
+          capture_buffer->channels()[0],
+          capture_nonlocked_.capture_processing_format.num_frames(),
+          capture_nonlocked_.capture_processing_format.sample_rate_hz());
+    }
   }
 
   if (submodule_states_.CaptureMultiBandSubModulesActive() &&
@@ -1290,7 +1299,8 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
   public_submodules_->voice_detection->ProcessCaptureAudio(capture_buffer);
 
   if (constants_.use_experimental_agc &&
-      public_submodules_->gain_control->is_enabled()) {
+      public_submodules_->gain_control->is_enabled() &&
+      !constants_.use_experimental_agc_process_before_aec) {
     private_submodules_->agc_manager->Process(
         capture_buffer->split_bands_const(0)[kBand0To8kHz],
         capture_buffer->num_frames_per_band(), capture_nonlocked_.split_rate);
