@@ -144,7 +144,8 @@ NetEqTest::SimulationStepResult NetEqTest::RunToNextGetAudio() {
       }
 
       input_->AdvanceOutputEvent();
-      result.simulation_step_ms = time_now_ms - start_time_ms;
+      result.simulation_step_ms =
+          input_->NextEventTime().value_or(time_now_ms) - start_time_ms;
       const auto network_stats = SimulationStats();
       current_state_.current_delay_ms = network_stats.current_buffer_size_ms;
       current_state_.packet_loss_occurred = network_stats.packet_loss_rate > 0;
@@ -167,7 +168,8 @@ NetEqTest::SimulationStepResult NetEqTest::RunToNextGetAudio() {
       return result;
     }
   }
-  result.simulation_step_ms = time_now_ms - start_time_ms;
+  result.simulation_step_ms =
+      input_->NextEventTime().value_or(time_now_ms) - start_time_ms;
   result.is_simulation_finished = true;
   return result;
 }
