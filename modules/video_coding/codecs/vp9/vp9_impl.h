@@ -117,7 +117,8 @@ class VP9EncoderImpl : public VP9Encoder {
   bool is_svc_;
   InterLayerPredMode inter_layer_pred_;
 
-  std::vector<FramerateController> framerate_controller_;
+  // Framerate controller.
+  FramerateController framerate_controller_;
 
   // Used for flexible mode.
   bool is_flexible_mode_;
