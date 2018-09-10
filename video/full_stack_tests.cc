@@ -863,7 +863,8 @@ TEST(FullStackTest, VP9KSVC_3SL_Medium_Network_Restricted) {
 #endif  // !defined(RTC_DISABLE_VP9)
 
 // Android bots can't handle FullHD, so disable the test.
-#if defined(WEBRTC_ANDROID)
+// TODO(bugs.webrtc.org/9220): Investigate source of flakiness on Mac.
+#if defined(WEBRTC_ANDROID) || defined(WEBRTC_MAC)
 #define MAYBE_SimulcastFullHdOveruse DISABLED_SimulcastFullHdOveruse
 #else
 #define MAYBE_SimulcastFullHdOveruse SimulcastFullHdOveruse
