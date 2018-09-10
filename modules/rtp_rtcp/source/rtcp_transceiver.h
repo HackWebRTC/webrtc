@@ -17,7 +17,6 @@
 
 #include "modules/rtp_rtcp/source/rtcp_transceiver_config.h"
 #include "modules/rtp_rtcp/source/rtcp_transceiver_impl.h"
-#include "rtc_base/constructormagic.h"
 #include "rtc_base/copyonwritebuffer.h"
 #include "rtc_base/task_queue.h"
 
@@ -29,6 +28,8 @@ namespace webrtc {
 class RtcpTransceiver : public RtcpFeedbackSenderInterface {
  public:
   explicit RtcpTransceiver(const RtcpTransceiverConfig& config);
+  RtcpTransceiver(const RtcpTransceiver&) = delete;
+  RtcpTransceiver& operator=(const RtcpTransceiver&) = delete;
   // Note that interfaces provided in constructor still might be used after the
   // destructor. However they can only be used on the confic.task_queue.
   // Use Stop function to get notified when they are no longer used or
@@ -91,8 +92,6 @@ class RtcpTransceiver : public RtcpFeedbackSenderInterface {
  private:
   rtc::TaskQueue* const task_queue_;
   std::unique_ptr<RtcpTransceiverImpl> rtcp_transceiver_;
-
-  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RtcpTransceiver);
 };
 
 }  // namespace webrtc
