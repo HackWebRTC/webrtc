@@ -13,10 +13,10 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "call/video_send_stream.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/platform_thread.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/timeutils.h"
 #include "system_wrappers/include/clock.h"
@@ -26,62 +26,47 @@ namespace test {
 
 class FrameGeneratorCapturer::InsertFrameTask : public rtc::QueuedTask {
  public:
-  // Repeats in |repeat_interval_ms|. One-time if |repeat_interval_ms| == 0.
-  InsertFrameTask(
-      webrtc::test::FrameGeneratorCapturer* frame_generator_capturer,
-      uint32_t repeat_interval_ms)
+  explicit InsertFrameTask(FrameGeneratorCapturer* frame_generator_capturer)
       : frame_generator_capturer_(frame_generator_capturer),
-        repeat_interval_ms_(repeat_interval_ms),
-        intended_run_time_ms_(-1) {}
+        repeat_interval_ms_(-1),
+        next_run_time_ms_(-1) {}
 
  private:
   bool Run() override {
-    bool task_completed = true;
-    if (repeat_interval_ms_ > 0) {
-      // This is not a one-off frame. Check if the frame interval for this
-      // task queue is the same same as the current configured frame rate.
-      uint32_t current_interval_ms =
-          1000 / frame_generator_capturer_->GetCurrentConfiguredFramerate();
-      if (repeat_interval_ms_ != current_interval_ms) {
-        // Frame rate has changed since task was started, create a new instance.
-        rtc::TaskQueue::Current()->PostDelayedTask(
-            std::unique_ptr<rtc::QueuedTask>(new InsertFrameTask(
-                frame_generator_capturer_, current_interval_ms)),
-            current_interval_ms);
-      } else {
-        // Schedule the next frame capture event to happen at approximately the
-        // correct absolute time point.
-        int64_t delay_ms;
-        int64_t time_now_ms = rtc::TimeMillis();
-        if (intended_run_time_ms_ > 0) {
-          delay_ms = time_now_ms - intended_run_time_ms_;
-        } else {
-          delay_ms = 0;
-          intended_run_time_ms_ = time_now_ms;
-        }
-        intended_run_time_ms_ += repeat_interval_ms_;
-        if (delay_ms < repeat_interval_ms_) {
-          rtc::TaskQueue::Current()->PostDelayedTask(
-              std::unique_ptr<rtc::QueuedTask>(this),
-              repeat_interval_ms_ - delay_ms);
-        } else {
-          rtc::TaskQueue::Current()->PostDelayedTask(
-              std::unique_ptr<rtc::QueuedTask>(this), 0);
-          RTC_LOG(LS_ERROR)
-              << "Frame Generator Capturer can't keep up with requested fps";
-        }
-        // Repost of this instance, make sure it is not deleted.
-        task_completed = false;
-      }
+    // Check if the frame interval for this
+    // task queue is the same same as the current configured frame rate.
+    int interval_ms =
+        1000 / frame_generator_capturer_->GetCurrentConfiguredFramerate();
+    if (repeat_interval_ms_ != interval_ms) {
+      // Restart the timer if frame rate has changed since task was started.
+      next_run_time_ms_ = rtc::TimeMillis();
+      repeat_interval_ms_ = interval_ms;
     }
+    // Schedule the next frame capture event to happen at approximately the
+    // correct absolute time point.
+    next_run_time_ms_ += interval_ms;
+
     frame_generator_capturer_->InsertFrame();
-    // Task should be deleted only if it's not repeating.
-    return task_completed;
+
+    int64_t now_ms = rtc::TimeMillis();
+    if (next_run_time_ms_ < now_ms) {
+      int skipped_frames = 1 + (now_ms - next_run_time_ms_) / interval_ms;
+      next_run_time_ms_ += skipped_frames * interval_ms;
+      RTC_LOG(LS_ERROR) << "Frame Generator Capturer can't keep up with "
+                           "requested fps, skipped "
+                        << skipped_frames << " frame(s).";
+    }
+    int64_t delay_ms = next_run_time_ms_ - now_ms;
+    RTC_DCHECK_GE(delay_ms, 0);
+    RTC_DCHECK_LE(delay_ms, interval_ms);
+    rtc::TaskQueue::Current()->PostDelayedTask(absl::WrapUnique(this),
+                                               delay_ms);
+    return false;
   }
 
   webrtc::test::FrameGeneratorCapturer* const frame_generator_capturer_;
-  const uint32_t repeat_interval_ms_;
-  int64_t intended_run_time_ms_;
+  int repeat_interval_ms_;
+  int64_t next_run_time_ms_;
 };
 
 FrameGeneratorCapturer* FrameGeneratorCapturer::Create(
@@ -91,10 +76,10 @@ FrameGeneratorCapturer* FrameGeneratorCapturer::Create(
     absl::optional<int> num_squares,
     int target_fps,
     Clock* clock) {
-  std::unique_ptr<FrameGeneratorCapturer> capturer(new FrameGeneratorCapturer(
+  auto capturer = absl::make_unique<FrameGeneratorCapturer>(
       clock,
       FrameGenerator::CreateSquareGenerator(width, height, type, num_squares),
-      target_fps));
+      target_fps);
   if (!capturer->Init())
     return nullptr;
 
@@ -107,11 +92,11 @@ FrameGeneratorCapturer* FrameGeneratorCapturer::CreateFromYuvFile(
     size_t height,
     int target_fps,
     Clock* clock) {
-  std::unique_ptr<FrameGeneratorCapturer> capturer(new FrameGeneratorCapturer(
+  auto capturer = absl::make_unique<FrameGeneratorCapturer>(
       clock,
       FrameGenerator::CreateFromYuvFile(std::vector<std::string>(1, file_name),
                                         width, height, 1),
-      target_fps));
+      target_fps);
   if (!capturer->Init())
     return nullptr;
 
@@ -124,10 +109,10 @@ FrameGeneratorCapturer* FrameGeneratorCapturer::CreateSlideGenerator(
     int frame_repeat_count,
     int target_fps,
     Clock* clock) {
-  std::unique_ptr<FrameGeneratorCapturer> capturer(new FrameGeneratorCapturer(
+  auto capturer = absl::make_unique<FrameGeneratorCapturer>(
       clock,
       FrameGenerator::CreateSlideGenerator(width, height, frame_repeat_count),
-      target_fps));
+      target_fps);
   if (!capturer->Init())
     return nullptr;
 
@@ -167,10 +152,8 @@ bool FrameGeneratorCapturer::Init() {
     return false;
 
   int framerate_fps = GetCurrentConfiguredFramerate();
-  task_queue_.PostDelayedTask(
-      std::unique_ptr<rtc::QueuedTask>(
-          new InsertFrameTask(this, 1000 / framerate_fps)),
-      1000 / framerate_fps);
+  task_queue_.PostDelayedTask(absl::make_unique<InsertFrameTask>(this),
+                              1000 / framerate_fps);
 
   return true;
 }
@@ -271,9 +254,7 @@ void FrameGeneratorCapturer::RemoveSink(
 
 void FrameGeneratorCapturer::ForceFrame() {
   // One-time non-repeating task,
-  // therefore repeat_interval_ms is 0 in InsertFrameTask()
-  task_queue_.PostTask(
-      std::unique_ptr<rtc::QueuedTask>(new InsertFrameTask(this, 0)));
+  task_queue_.PostTask([this] { InsertFrame(); });
 }
 
 int FrameGeneratorCapturer::GetCurrentConfiguredFramerate() {
