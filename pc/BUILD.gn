@@ -117,7 +117,6 @@ rtc_source_set("rtc_pc") {
 rtc_static_library("peerconnection") {
   visibility = [ "*" ]
   cflags = []
-  configs += [ "..:no_exit_time_destructors" ]
   sources = [
     "audiotrack.cc",
     "audiotrack.h",
