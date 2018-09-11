@@ -62,15 +62,15 @@ void SignalTransition(rtc::ArrayView<const float> from,
                       rtc::ArrayView<const float> to,
                       rtc::ArrayView<float> out) {
   constexpr size_t kTransitionSize = 30;
-  constexpr float kOneByTransitionSize = 1.f / kTransitionSize;
+  constexpr float kOneByTransitionSizePlusOne = 1.f / (kTransitionSize + 1);
 
   RTC_DCHECK_EQ(from.size(), to.size());
   RTC_DCHECK_EQ(from.size(), out.size());
   RTC_DCHECK_LE(kTransitionSize, out.size());
 
   for (size_t k = 0; k < kTransitionSize; ++k) {
-    out[k] = k * kOneByTransitionSize * to[k];
-    out[k] += (kTransitionSize - k) * kOneByTransitionSize * from[k];
+    float a = (k + 1) * kOneByTransitionSizePlusOne;
+    out[k] = a * to[k] + (1.f - a) * from[k];
   }
 
   std::copy(to.begin() + kTransitionSize, to.end(),
