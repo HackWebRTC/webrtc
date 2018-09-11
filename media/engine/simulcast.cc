@@ -29,8 +29,9 @@ namespace {
 constexpr int kScreenshareDefaultTl0BitrateKbps = 200;
 constexpr int kScreenshareDefaultTl1BitrateKbps = 1000;
 
-// Max bitrate for the higher one of the two simulcast stream used for screen
-// content.
+// Min/max bitrate for the higher one of the two simulcast stream used for
+// screen content.
+constexpr int kScreenshareHighStreamMinBitrateBps = 600000;
 constexpr int kScreenshareHighStreamMaxBitrateBps = 1250000;
 static const char* kSimulcastScreenshareFieldTrialName =
     "WebRTC-SimulcastScreenshare";
@@ -360,7 +361,10 @@ std::vector<webrtc::VideoStream> GetScreenshareLayers(
     layers[1].max_framerate = max_framerate;
     layers[1].num_temporal_layers =
         temporal_layers_supported ? DefaultNumberOfTemporalLayers(1, true) : 0;
-    layers[1].min_bitrate_bps = layers[0].target_bitrate_bps * 2;
+    layers[1].min_bitrate_bps =
+        max_bitrate_bps == kScreenshareHighStreamMaxBitrateBps
+            ? kScreenshareHighStreamMinBitrateBps
+            : layers[0].target_bitrate_bps * 2;
     layers[1].target_bitrate_bps = max_bitrate_bps;
     layers[1].max_bitrate_bps = max_bitrate_bps;
   }
