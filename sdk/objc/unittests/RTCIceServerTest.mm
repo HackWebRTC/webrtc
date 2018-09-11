@@ -89,7 +89,7 @@
   EXPECT_EQ("username", iceStruct.username);
   EXPECT_EQ("credential", iceStruct.password);
   EXPECT_EQ("hostname", iceStruct.hostname);
-  EXPECT_EQ(2u, iceStruct.tls_alpn_protocols.size());
+  EXPECT_EQ(2u, iceStruct.ssl_config.tls_alpn_protocols.value().size());
 }
 
 - (void)testTlsEllipticCurves {
@@ -106,8 +106,8 @@
   EXPECT_EQ("username", iceStruct.username);
   EXPECT_EQ("credential", iceStruct.password);
   EXPECT_EQ("hostname", iceStruct.hostname);
-  EXPECT_EQ(2u, iceStruct.tls_alpn_protocols.size());
-  EXPECT_EQ(2u, iceStruct.tls_elliptic_curves.size());
+  EXPECT_EQ(2u, iceStruct.ssl_config.tls_alpn_protocols.value().size());
+  EXPECT_EQ(2u, iceStruct.ssl_config.tls_elliptic_curves.value().size());
 }
 
 - (void)testInitFromNativeServer {
@@ -129,8 +129,8 @@
   EXPECT_EQ("username", [NSString stdStringForString:iceServer.username]);
   EXPECT_EQ("password", [NSString stdStringForString:iceServer.credential]);
   EXPECT_EQ("hostname", [NSString stdStringForString:iceServer.hostname]);
-  EXPECT_EQ(2u, iceServer.tlsAlpnProtocols.count);
-  EXPECT_EQ(2u, iceServer.tlsEllipticCurves.count);
+  EXPECT_EQ(2u, iceServer.sslConfig.tlsALPNProtocols.count);
+  EXPECT_EQ(2u, iceServer.sslConfig.tlsEllipticCurves.count);
 }
 
 @end

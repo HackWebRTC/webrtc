@@ -51,6 +51,7 @@
 #include "sdk/android/src/jni/pc/rtpsender.h"
 #include "sdk/android/src/jni/pc/sdpobserver.h"
 #include "sdk/android/src/jni/pc/sessiondescription.h"
+#include "sdk/android/src/jni/pc/sslconfig.h"
 #include "sdk/android/src/jni/pc/statsobserver.h"
 #include "sdk/android/src/jni/pc/turncustomizer.h"
 
@@ -87,6 +88,8 @@ PeerConnectionInterface::IceServers JavaToNativeIceServers(
         Java_IceServer_getTlsAlpnProtocols(jni, j_ice_server);
     ScopedJavaLocalRef<jobject> tls_elliptic_curves =
         Java_IceServer_getTlsEllipticCurves(jni, j_ice_server);
+    ScopedJavaLocalRef<jobject> ssl_config =
+        Java_IceServer_getSslConfig(jni, j_ice_server);
     PeerConnectionInterface::IceServer server;
     server.urls = JavaListToNativeVector<std::string, jstring>(
         jni, urls, &JavaToNativeString);
@@ -98,6 +101,7 @@ PeerConnectionInterface::IceServers JavaToNativeIceServers(
         jni, tls_alpn_protocols, &JavaToNativeString);
     server.tls_elliptic_curves = JavaListToNativeVector<std::string, jstring>(
         jni, tls_elliptic_curves, &JavaToNativeString);
+    server.ssl_config = JavaToNativeSslConfig(jni, ssl_config);
     ice_servers.push_back(server);
   }
   return ice_servers;

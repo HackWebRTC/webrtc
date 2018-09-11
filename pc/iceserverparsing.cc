@@ -14,6 +14,7 @@
 #include <string>
 
 #include "rtc_base/arraysize.h"
+#include "rtc_base/ssladapter.h"
 
 namespace webrtc {
 
@@ -254,13 +255,22 @@ static RTCErrorType ParseIceServerUrl(
       }
       cricket::RelayServerConfig config = cricket::RelayServerConfig(
           socket_address, username, server.password, turn_transport_type);
+
+      config.ssl_config = server.ssl_config;
+
       if (server.tls_cert_policy ==
           PeerConnectionInterface::kTlsCertPolicyInsecureNoCheck) {
-        config.tls_cert_policy =
-            cricket::TlsCertPolicy::TLS_CERT_POLICY_INSECURE_NO_CHECK;
+        config.ssl_config.tls_cert_policy =
+            rtc::TlsCertPolicy::TLS_CERT_POLICY_INSECURE_NO_CHECK;
       }
-      config.tls_alpn_protocols = server.tls_alpn_protocols;
-      config.tls_elliptic_curves = server.tls_elliptic_curves;
+      if (!server.ssl_config.tls_alpn_protocols.has_value() &&
+          !server.tls_alpn_protocols.empty()) {
+        config.ssl_config.tls_alpn_protocols = server.tls_alpn_protocols;
+      }
+      if (!server.ssl_config.tls_elliptic_curves.has_value() &&
+          !server.tls_elliptic_curves.empty()) {
+        config.ssl_config.tls_elliptic_curves = server.tls_elliptic_curves;
+      }
 
       turn_servers->push_back(config);
       break;
