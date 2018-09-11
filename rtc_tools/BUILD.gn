@@ -86,6 +86,10 @@ rtc_static_library("video_file_writer") {
 
 rtc_static_library("video_quality_analysis") {
   sources = [
+    "frame_analyzer/linear_least_squares.cc",
+    "frame_analyzer/linear_least_squares.h",
+    "frame_analyzer/video_color_aligner.cc",
+    "frame_analyzer/video_color_aligner.h",
     "frame_analyzer/video_quality_analysis.cc",
     "frame_analyzer/video_quality_analysis.h",
     "frame_analyzer/video_temporal_aligner.cc",
@@ -93,6 +97,7 @@ rtc_static_library("video_quality_analysis") {
   ]
   deps = [
     ":video_file_reader",
+    "../api:array_view",
     "../api/video:video_frame_i420",
     "../common_video",
     "../rtc_base:checks",
@@ -333,7 +338,9 @@ if (rtc_include_tests) {
     testonly = true
 
     sources = [
+      "frame_analyzer/linear_least_squares_unittest.cc",
       "frame_analyzer/reference_less_video_analysis_unittest.cc",
+      "frame_analyzer/video_color_aligner_unittest.cc",
       "frame_analyzer/video_quality_analysis_unittest.cc",
       "frame_analyzer/video_temporal_aligner_unittest.cc",
       "frame_editing/frame_editing_unittest.cc",
@@ -363,6 +370,7 @@ if (rtc_include_tests) {
       "//test:test_support",
       "//testing/gtest",
       "//third_party/abseil-cpp/absl/memory",
+      "//third_party/libyuv",
     ]
 
     if (rtc_enable_protobuf) {
