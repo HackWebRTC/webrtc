@@ -432,7 +432,10 @@ void VideoSendStreamImpl::SignalEncoderTimedOut() {
 
 void VideoSendStreamImpl::OnBitrateAllocationUpdated(
     const VideoBitrateAllocation& allocation) {
-  rtp_video_sender_->OnBitrateAllocationUpdated(allocation);
+  if (encoder_target_rate_bps_ != 0) {
+    // Send bitrate allocation metadata only if encoder is not paused.
+    rtp_video_sender_->OnBitrateAllocationUpdated(allocation);
+  }
 }
 
 void VideoSendStreamImpl::SignalEncoderActive() {
