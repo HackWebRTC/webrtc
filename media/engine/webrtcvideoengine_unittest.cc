@@ -4330,7 +4330,7 @@ TEST_F(WebRtcVideoChannelTest, SetRecvCodecsAcceptDefaultCodecs) {
 
   FakeVideoReceiveStream* stream = AddRecvStream();
   const webrtc::VideoReceiveStream::Config& config = stream->GetConfig();
-  EXPECT_EQ(engine_.codecs()[0].name, config.decoders[0].payload_name);
+  EXPECT_EQ(engine_.codecs()[0].name, config.decoders[0].video_format.name);
   EXPECT_EQ(engine_.codecs()[0].id, config.decoders[0].payload_type);
 }
 
@@ -6198,17 +6198,17 @@ TEST_F(WebRtcVideoChannelTest, DISABLED_GetRtpReceiveFmtpSprop) {
   EXPECT_EQ(kH264sprop1.ToCodecParameters(), rtp_parameters.codecs[0]);
   ASSERT_EQ(2u, cfg.decoders.size());
   EXPECT_EQ(101, cfg.decoders[0].payload_type);
-  EXPECT_EQ("H264", cfg.decoders[0].payload_name);
+  EXPECT_EQ("H264", cfg.decoders[0].video_format.name);
   const auto it0 =
-      cfg.decoders[0].codec_params.find(kH264FmtpSpropParameterSets);
-  ASSERT_TRUE(it0 != cfg.decoders[0].codec_params.end());
+      cfg.decoders[0].video_format.parameters.find(kH264FmtpSpropParameterSets);
+  ASSERT_TRUE(it0 != cfg.decoders[0].video_format.parameters.end());
   EXPECT_EQ("uvw", it0->second);
 
   EXPECT_EQ(102, cfg.decoders[1].payload_type);
-  EXPECT_EQ("H264", cfg.decoders[1].payload_name);
+  EXPECT_EQ("H264", cfg.decoders[1].video_format.name);
   const auto it1 =
-      cfg.decoders[1].codec_params.find(kH264FmtpSpropParameterSets);
-  ASSERT_TRUE(it1 != cfg.decoders[1].codec_params.end());
+      cfg.decoders[1].video_format.parameters.find(kH264FmtpSpropParameterSets);
+  ASSERT_TRUE(it1 != cfg.decoders[1].video_format.parameters.end());
   EXPECT_EQ("xyz", it1->second);
 }
 

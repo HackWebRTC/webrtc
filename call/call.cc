@@ -114,7 +114,7 @@ std::unique_ptr<rtclog::StreamConfig> CreateRtcLogStreamConfig(
   for (const auto& d : config.decoders) {
     const int* search =
         FindKeyByValue(config.rtp.rtx_associated_payload_types, d.payload_type);
-    rtclog_config->codecs.emplace_back(d.payload_name, d.payload_type,
+    rtclog_config->codecs.emplace_back(d.video_format.name, d.payload_type,
                                        search ? *search : 0);
   }
   return rtclog_config;

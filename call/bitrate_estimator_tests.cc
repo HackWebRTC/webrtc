@@ -187,7 +187,8 @@ class BitrateEstimatorTest : public test::CallTest {
       VideoReceiveStream::Decoder decoder;
       decoder.decoder = &fake_decoder_;
       decoder.payload_type = test_->GetVideoSendConfig()->rtp.payload_type;
-      decoder.payload_name = test_->GetVideoSendConfig()->rtp.payload_name;
+      decoder.video_format =
+          SdpVideoFormat(test_->GetVideoSendConfig()->rtp.payload_name);
       test_->receive_config_.decoders.clear();
       test_->receive_config_.decoders.push_back(decoder);
       test_->receive_config_.rtp.remote_ssrc =

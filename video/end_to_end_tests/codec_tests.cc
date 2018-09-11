@@ -64,8 +64,8 @@ class CodecObserver : public test::EndToEndTest,
     (*receive_configs)[0].decoders.resize(1);
     (*receive_configs)[0].decoders[0].payload_type =
         send_config->rtp.payload_type;
-    (*receive_configs)[0].decoders[0].payload_name =
-        send_config->rtp.payload_name;
+    (*receive_configs)[0].decoders[0].video_format =
+        SdpVideoFormat(send_config->rtp.payload_name);
     (*receive_configs)[0].decoders[0].decoder = decoder_.get();
   }
 

@@ -366,7 +366,7 @@ void CallTest::AddMatchingVideoReceiveConfigs(
     } else {
       decoder.decoder = new test::FakeDecoder();
       decoder.payload_type = video_send_config.rtp.payload_type;
-      decoder.payload_name = video_send_config.rtp.payload_name;
+      decoder.video_format = SdpVideoFormat(video_send_config.rtp.payload_name);
     }
     allocated_decoders_.emplace_back(decoder.decoder);
     video_recv_config.decoders.push_back(decoder);

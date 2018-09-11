@@ -74,14 +74,14 @@ class VideoReceiveStreamTest : public testing::Test {
     config_.renderer = &fake_renderer_;
     VideoReceiveStream::Decoder h264_decoder;
     h264_decoder.payload_type = 99;
-    h264_decoder.payload_name = "H264";
-    h264_decoder.codec_params.insert(
+    h264_decoder.video_format = SdpVideoFormat("H264");
+    h264_decoder.video_format.parameters.insert(
         {"sprop-parameter-sets", "Z0IACpZTBYmI,aMljiA=="});
     h264_decoder.decoder = &mock_h264_video_decoder_;
     config_.decoders.push_back(h264_decoder);
     VideoReceiveStream::Decoder null_decoder;
     null_decoder.payload_type = 98;
-    null_decoder.payload_name = "null";
+    null_decoder.video_format = SdpVideoFormat("null");
     null_decoder.decoder = &mock_null_video_decoder_;
     config_.decoders.push_back(null_decoder);
 

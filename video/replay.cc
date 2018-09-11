@@ -241,12 +241,14 @@ class VideoReceiveStreamConfigDeserializer final {
     auto receive_config = VideoReceiveStream::Config(transport);
     for (const auto decoder_json : json["decoders"]) {
       VideoReceiveStream::Decoder decoder;
-      decoder.payload_name = decoder_json["payload_name"].asString();
+      decoder.video_format =
+          SdpVideoFormat(decoder_json["payload_name"].asString());
       decoder.payload_type = decoder_json["payload_type"].asInt64();
       for (const auto& params_json : decoder_json["codec_params"]) {
         std::vector<std::string> members = params_json.getMemberNames();
         RTC_CHECK_EQ(members.size(), 1);
-        decoder.codec_params[members[0]] = params_json[members[0]].asString();
+        decoder.video_format.parameters[members[0]] =
+            params_json[members[0]].asString();
       }
       receive_config.decoders.push_back(decoder);
     }
@@ -356,7 +358,7 @@ class RtpReplayer final {
       // Instantiate the underlying decoder.
       for (auto& decoder : receive_config.decoders) {
         decoder.decoder = test::CreateMatchingDecoder(decoder.payload_type,
-                                                      decoder.payload_name)
+                                                      decoder.video_format.name)
                               .decoder;
       }
       // Create a window for this config.

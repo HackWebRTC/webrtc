@@ -22,6 +22,7 @@
 #include "api/video/video_content_type.h"
 #include "api/video/video_sink_interface.h"
 #include "api/video/video_timing.h"
+#include "api/video_codecs/sdp_video_format.h"
 #include "call/rtp_config.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "common_video/include/frame_callback.h"
@@ -45,19 +46,11 @@ class VideoReceiveStream {
 
     // The actual decoder instance.
     VideoDecoder* decoder = nullptr;
+    SdpVideoFormat video_format;
 
     // Received RTP packets with this payload type will be sent to this decoder
     // instance.
     int payload_type = 0;
-
-    // Name of the decoded payload (such as VP8). Maps back to the depacketizer
-    // used to unpack incoming packets.
-    std::string payload_name;
-
-    // This map contains the codec specific parameters from SDP, i.e. the "fmtp"
-    // parameters. It is the same as cricket::CodecParameterMap used in
-    // cricket::VideoCodec.
-    std::map<std::string, std::string> codec_params;
   };
 
   struct Stats {

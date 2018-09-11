@@ -2246,8 +2246,8 @@ void WebRtcVideoChannel::WebRtcVideoReceiveStream::ConfigureCodecs(
     webrtc::VideoReceiveStream::Decoder decoder;
     decoder.decoder = new_decoder.get();
     decoder.payload_type = recv_codec.codec.id;
-    decoder.payload_name = recv_codec.codec.name;
-    decoder.codec_params = recv_codec.codec.params;
+    decoder.video_format =
+        webrtc::SdpVideoFormat(recv_codec.codec.name, recv_codec.codec.params);
     config_.decoders.push_back(decoder);
     config_.rtp.rtx_associated_payload_types[recv_codec.rtx_payload_type] =
         recv_codec.codec.id;
@@ -2440,7 +2440,7 @@ WebRtcVideoChannel::WebRtcVideoReceiveStream::GetCodecNameFromPayloadType(
     int payload_type) {
   for (const webrtc::VideoReceiveStream::Decoder& decoder : config_.decoders) {
     if (decoder.payload_type == payload_type) {
-      return decoder.payload_name;
+      return decoder.video_format.name;
     }
   }
   return "";

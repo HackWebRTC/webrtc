@@ -127,7 +127,7 @@ VideoReceiveStream::Decoder CreateMatchingDecoder(
     const std::string& payload_name) {
   VideoReceiveStream::Decoder decoder;
   decoder.payload_type = payload_type;
-  decoder.payload_name = payload_name;
+  decoder.video_format = SdpVideoFormat(payload_name);
   if (payload_name == "H264") {
     decoder.decoder = H264Decoder::Create().release();
   } else if (payload_name == "VP8") {

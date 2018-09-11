@@ -208,7 +208,8 @@ void RampUpTester::ModifyVideoConfigs(
     recv_config.rtp.extensions = send_config->rtp.extensions;
     recv_config.decoders.reserve(1);
     recv_config.decoders[0].payload_type = send_config->rtp.payload_type;
-    recv_config.decoders[0].payload_name = send_config->rtp.payload_name;
+    recv_config.decoders[0].video_format =
+        SdpVideoFormat(send_config->rtp.payload_name);
 
     recv_config.rtp.remote_ssrc = video_ssrcs_[i];
     recv_config.rtp.nack.rtp_history_ms = send_config->rtp.nack.rtp_history_ms;
