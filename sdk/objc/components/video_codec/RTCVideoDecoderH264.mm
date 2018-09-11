@@ -76,13 +76,6 @@ void decompressionOutputCallback(void *decoderRef,
   OSStatus _error;
 }
 
-- (instancetype)init {
-  if (self = [super init]) {
-  }
-
-  return self;
-}
-
 - (void)dealloc {
   [self destroyDecompressionSession];
   [self setVideoFormat:nullptr];

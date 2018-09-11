@@ -122,8 +122,6 @@ if (is_ios || is_mac) {
       "objc/helpers/RTCDispatcher+Private.h",
       "objc/helpers/RTCDispatcher.h",
       "objc/helpers/RTCDispatcher.m",
-      "objc/helpers/RTCUIApplicationStatusObserver.h",
-      "objc/helpers/RTCUIApplicationStatusObserver.m",
       "objc/helpers/scoped_cftyperef.h",
     ]
 
@@ -931,7 +929,6 @@ if (is_ios || is_mac) {
     rtc_source_set("legacy_header_paths") {
       sources = [
         "objc/Framework/Classes/Common/NSString+StdString.h",
-        "objc/Framework/Classes/Common/RTCUIApplicationStatusObserver.h",
         "objc/Framework/Classes/Common/scoped_cftyperef.h",
         "objc/Framework/Classes/PeerConnection/RTCConfiguration+Native.h",
         "objc/Framework/Classes/PeerConnection/RTCPeerConnection+Native.h",
