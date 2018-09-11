@@ -526,7 +526,7 @@ public class NetworkMonitorAutoDetect extends BroadcastReceiver {
     private final Observer observer;
     // Network information about a WifiP2p (aka WiFi-Direct) network, or null if no such network is
     // connected.
-    @Nullable private NetworkInformation wifiP2pNetworkInfo = null;
+    @Nullable private NetworkInformation wifiP2pNetworkInfo;
 
     WifiDirectManagerDelegate(Observer observer, Context context) {
       this.context = context;

@@ -41,18 +41,18 @@ class WebRtcAudioEffects {
   // Contains the available effect descriptors returned from the
   // AudioEffect.getEffects() call. This result is cached to avoid doing the
   // slow OS call multiple times.
-  private static @Nullable Descriptor[] cachedEffects = null;
+  private static @Nullable Descriptor[] cachedEffects;
 
   // Contains the audio effect objects. Created in enable() and destroyed
   // in release().
-  private @Nullable AcousticEchoCanceler aec = null;
-  private @Nullable NoiseSuppressor ns = null;
+  private @Nullable AcousticEchoCanceler aec;
+  private @Nullable NoiseSuppressor ns;
 
   // Affects the final state given to the setEnabled() method on each effect.
   // The default state is set to "disabled" but each effect can also be enabled
   // by calling setAEC() and setNS().
-  private boolean shouldEnableAec = false;
-  private boolean shouldEnableNs = false;
+  private boolean shouldEnableAec;
+  private boolean shouldEnableNs;
 
   // Returns true if all conditions for supporting HW Acoustic Echo Cancellation (AEC) are
   // fulfilled.

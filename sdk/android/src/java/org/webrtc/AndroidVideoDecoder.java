@@ -85,8 +85,8 @@ class AndroidVideoDecoder implements VideoDecoder, VideoSink {
   // caller and must be used to call initDecode, decode, and release.
   private ThreadChecker decoderThreadChecker;
 
-  private volatile boolean running = false;
-  @Nullable private volatile Exception shutdownException = null;
+  private volatile boolean running;
+  @Nullable private volatile Exception shutdownException;
 
   // Dimensions (width, height, stride, and sliceHeight) may be accessed by either the decode thread
   // or the output thread.  Accesses should be protected with this lock.
@@ -107,7 +107,7 @@ class AndroidVideoDecoder implements VideoDecoder, VideoSink {
   private final @Nullable EglBase.Context sharedContext;
   // Valid and immutable while the decoder is running.
   @Nullable private SurfaceTextureHelper surfaceTextureHelper;
-  @Nullable private Surface surface = null;
+  @Nullable private Surface surface;
 
   private static class DecodedTextureMetadata {
     final long presentationTimestampUs;
@@ -128,7 +128,7 @@ class AndroidVideoDecoder implements VideoDecoder, VideoSink {
   @Nullable private Callback callback;
 
   // Valid and immutable while the decoder is running.
-  @Nullable private MediaCodecWrapper codec = null;
+  @Nullable private MediaCodecWrapper codec;
 
   AndroidVideoDecoder(MediaCodecWrapperFactory mediaCodecWrapperFactory, String codecName,
       VideoCodecType codecType, int colorFormat, @Nullable EglBase.Context sharedContext) {

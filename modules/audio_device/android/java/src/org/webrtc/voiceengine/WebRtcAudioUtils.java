@@ -64,12 +64,12 @@ public final class WebRtcAudioUtils {
   private static final int DEFAULT_SAMPLE_RATE_HZ = 16000;
   private static int defaultSampleRateHz = DEFAULT_SAMPLE_RATE_HZ;
   // Set to true if setDefaultSampleRateHz() has been called.
-  private static boolean isDefaultSampleRateOverridden = false;
+  private static boolean isDefaultSampleRateOverridden;
 
   // By default, utilize hardware based audio effects for AEC and NS when
   // available.
-  private static boolean useWebRtcBasedAcousticEchoCanceler = false;
-  private static boolean useWebRtcBasedNoiseSuppressor = false;
+  private static boolean useWebRtcBasedAcousticEchoCanceler;
+  private static boolean useWebRtcBasedNoiseSuppressor;
 
   // Call these methods if any hardware based effect shall be replaced by a
   // software based version provided by the WebRTC stack instead.

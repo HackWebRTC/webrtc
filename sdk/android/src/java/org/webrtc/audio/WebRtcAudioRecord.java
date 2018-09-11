@@ -63,10 +63,10 @@ class WebRtcAudioRecord {
 
   private @Nullable ByteBuffer byteBuffer;
 
-  private @Nullable AudioRecord audioRecord = null;
-  private @Nullable AudioRecordThread audioThread = null;
+  private @Nullable AudioRecord audioRecord;
+  private @Nullable AudioRecordThread audioThread;
 
-  private volatile boolean microphoneMute = false;
+  private volatile boolean microphoneMute;
   private byte[] emptyBytes;
 
   private final @Nullable AudioRecordErrorCallback errorCallback;

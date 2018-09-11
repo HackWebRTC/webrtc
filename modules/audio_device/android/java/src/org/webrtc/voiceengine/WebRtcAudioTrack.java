@@ -80,12 +80,12 @@ public class WebRtcAudioTrack {
 
   private ByteBuffer byteBuffer;
 
-  private @Nullable AudioTrack audioTrack = null;
-  private @Nullable AudioTrackThread audioThread = null;
+  private @Nullable AudioTrack audioTrack;
+  private @Nullable AudioTrackThread audioThread;
 
   // Samples to be played are replaced by zeros if |speakerMute| is set to true.
   // Can be used to ensure that the speaker is fully muted.
-  private static volatile boolean speakerMute = false;
+  private static volatile boolean speakerMute;
   private byte[] emptyBytes;
 
   // Audio playout/track error handler functions.
@@ -108,8 +108,8 @@ public class WebRtcAudioTrack {
     void onWebRtcAudioTrackError(String errorMessage);
   }
 
-  private static @Nullable WebRtcAudioTrackErrorCallback errorCallbackOld = null;
-  private static @Nullable ErrorCallback errorCallback = null;
+  private static @Nullable WebRtcAudioTrackErrorCallback errorCallbackOld;
+  private static @Nullable ErrorCallback errorCallback;
 
   @Deprecated
   public static void setErrorCallback(WebRtcAudioTrackErrorCallback errorCallback) {

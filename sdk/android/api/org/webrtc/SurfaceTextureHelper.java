@@ -71,9 +71,9 @@ public class SurfaceTextureHelper {
   // These variables are only accessed from the |handler| thread.
   @Nullable private VideoSink listener;
   // The possible states of this class.
-  private boolean hasPendingTexture = false;
-  private volatile boolean isTextureInUse = false;
-  private boolean isQuitting = false;
+  private boolean hasPendingTexture;
+  private volatile boolean isTextureInUse;
+  private boolean isQuitting;
   private int frameRotation;
   private int textureWidth;
   private int textureHeight;

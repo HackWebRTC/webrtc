@@ -29,7 +29,7 @@ public class PeerConnectionFactory {
   private static final String VIDEO_CAPTURER_THREAD_NAME = "VideoCapturerThread";
 
   private final long nativeFactory;
-  private static volatile boolean internalTracerInitialized = false;
+  private static volatile boolean internalTracerInitialized;
   @Nullable private static Thread networkThread;
   @Nullable private static Thread workerThread;
   @Nullable private static Thread signalingThread;
@@ -63,11 +63,11 @@ public class PeerConnectionFactory {
     public static class Builder {
       private final Context applicationContext;
       private String fieldTrials = "";
-      private boolean enableInternalTracer = false;
+      private boolean enableInternalTracer;
       private NativeLibraryLoader nativeLibraryLoader = new NativeLibrary.DefaultLoader();
       private String nativeLibraryName = "jingle_peerconnection_so";
-      @Nullable private Loggable loggable = null;
-      @Nullable private Severity loggableSeverity = null;
+      @Nullable private Loggable loggable;
+      @Nullable private Severity loggableSeverity;
 
       Builder(Context applicationContext) {
         this.applicationContext = applicationContext;

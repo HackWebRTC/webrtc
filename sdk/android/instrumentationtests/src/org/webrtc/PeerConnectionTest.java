@@ -50,7 +50,7 @@ import org.webrtc.PeerConnection.SignalingState;
 @RunWith(BaseJUnit4ClassRunner.class)
 public class PeerConnectionTest {
   private static final int TIMEOUT_SECONDS = 20;
-  private @Nullable TreeSet<String> threadsBeforeTest = null;
+  private @Nullable TreeSet<String> threadsBeforeTest;
 
   @Before
   public void setUp() {
@@ -64,13 +64,13 @@ public class PeerConnectionTest {
       implements PeerConnection.Observer, VideoSink, DataChannel.Observer, StatsObserver,
                  RTCStatsCollectorCallback, RtpReceiver.Observer {
     private final String name;
-    private int expectedIceCandidates = 0;
-    private int expectedErrors = 0;
-    private int expectedRenegotiations = 0;
-    private int expectedWidth = 0;
-    private int expectedHeight = 0;
-    private int expectedFramesDelivered = 0;
-    private int expectedTracksAdded = 0;
+    private int expectedIceCandidates;
+    private int expectedErrors;
+    private int expectedRenegotiations;
+    private int expectedWidth;
+    private int expectedHeight;
+    private int expectedFramesDelivered;
+    private int expectedTracksAdded;
     private Queue<SignalingState> expectedSignalingChanges = new ArrayDeque<>();
     private Queue<IceConnectionState> expectedIceConnectionChanges = new ArrayDeque<>();
     private Queue<IceGatheringState> expectedIceGatheringChanges = new ArrayDeque<>();
@@ -82,12 +82,12 @@ public class PeerConnectionTest {
     private Queue<DataChannel.Buffer> expectedBuffers = new ArrayDeque<>();
     private Queue<DataChannel.State> expectedStateChanges = new ArrayDeque<>();
     private Queue<String> expectedRemoteDataChannelLabels = new ArrayDeque<>();
-    private int expectedOldStatsCallbacks = 0;
-    private int expectedNewStatsCallbacks = 0;
+    private int expectedOldStatsCallbacks;
+    private int expectedNewStatsCallbacks;
     private List<StatsReport[]> gotStatsReports = new ArrayList<>();
     private final HashSet<MediaStream> gotRemoteStreams = new HashSet<>();
-    private int expectedFirstAudioPacket = 0;
-    private int expectedFirstVideoPacket = 0;
+    private int expectedFirstAudioPacket;
+    private int expectedFirstVideoPacket;
 
     public ObserverExpectations(String name) {
       this.name = name;
@@ -532,9 +532,9 @@ public class PeerConnectionTest {
   }
 
   private static class SdpObserverLatch implements SdpObserver {
-    private boolean success = false;
-    private @Nullable SessionDescription sdp = null;
-    private @Nullable String error = null;
+    private boolean success;
+    private @Nullable SessionDescription sdp;
+    private @Nullable String error;
     private CountDownLatch latch = new CountDownLatch(1);
 
     public SdpObserverLatch() {}
@@ -1444,7 +1444,7 @@ public class PeerConnectionTest {
     final VideoTrack videoTrack = factory.createVideoTrack("video", videoSource);
 
     class FrameCounter implements VideoSink {
-      private int count = 0;
+      private int count;
 
       public int getCount() {
         return count;

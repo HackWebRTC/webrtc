@@ -47,9 +47,9 @@ public class ScreenCapturerAndroid implements VideoCapturer, VideoSink {
   @Nullable private VirtualDisplay virtualDisplay;
   @Nullable private SurfaceTextureHelper surfaceTextureHelper;
   @Nullable private CapturerObserver capturerObserver;
-  private long numCapturedFrames = 0;
+  private long numCapturedFrames;
   @Nullable private MediaProjection mediaProjection;
-  private boolean isDisposed = false;
+  private boolean isDisposed;
   @Nullable private MediaProjectionManager mediaProjectionManager;
 
   /**
