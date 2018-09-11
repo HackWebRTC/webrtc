@@ -41,6 +41,7 @@ class RtpFrameObject : public EncodedFrame {
   int64_t RenderTime() const override;
   bool delayed_by_retransmission() const override;
   absl::optional<RTPVideoHeader> GetRtpVideoHeader() const;
+  absl::optional<FrameMarking> GetFrameMarking() const;
 
  private:
   rtc::scoped_refptr<PacketBuffer> packet_buffer_;

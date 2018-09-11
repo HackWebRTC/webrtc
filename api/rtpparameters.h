@@ -282,6 +282,10 @@ struct RtpExtension {
   static const char kVideoTimingUri[];
   static const int kVideoTimingDefaultId;
 
+  // Header extension for video frame marking.
+  static const char kFrameMarkingUri[];
+  static const int kFrameMarkingDefaultId;
+
   // Header extension for transport sequence number, see url for details:
   // http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions
   static const char kTransportSequenceNumberUri[];

@@ -129,6 +129,10 @@ const int RtpExtension::kVideoTimingDefaultId = 8;
 const char RtpExtension::kMidUri[] = "urn:ietf:params:rtp-hdrext:sdes:mid";
 const int RtpExtension::kMidDefaultId = 9;
 
+const char RtpExtension::kFrameMarkingUri[] =
+    "http://tools.ietf.org/html/draft-ietf-avtext-framemarking-07";
+const int RtpExtension::kFrameMarkingDefaultId = 10;
+
 const char RtpExtension::kEncryptHeaderExtensionsUri[] =
     "urn:ietf:params:rtp-hdrext:encrypt";
 
@@ -149,7 +153,8 @@ bool RtpExtension::IsSupportedForVideo(const std::string& uri) {
          uri == webrtc::RtpExtension::kPlayoutDelayUri ||
          uri == webrtc::RtpExtension::kVideoContentTypeUri ||
          uri == webrtc::RtpExtension::kVideoTimingUri ||
-         uri == webrtc::RtpExtension::kMidUri;
+         uri == webrtc::RtpExtension::kMidUri ||
+         uri == webrtc::RtpExtension::kFrameMarkingUri;
 }
 
 bool RtpExtension::IsEncryptionSupported(const std::string& uri) {

@@ -13,6 +13,7 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/types/variant.h"
 #include "api/video/video_content_type.h"
+#include "api/video/video_frame_marking.h"
 #include "api/video/video_rotation.h"
 #include "api/video/video_timing.h"
 #include "common_types.h"  // NOLINT(build/include)
@@ -56,6 +57,7 @@ struct RTPVideoHeader {
 
   PlayoutDelay playout_delay;
   VideoSendTiming video_timing;
+  FrameMarking frame_marking;
   RTPVideoTypeHeader video_type_header;
 };
 

@@ -228,6 +228,8 @@ webrtc::RtpHeaderExtensionMap GetDefaultHeaderExtensionMap() {
       webrtc::RtpExtension::kVideoContentTypeDefaultId);
   default_map.Register<VideoTimingExtension>(
       webrtc::RtpExtension::kVideoTimingDefaultId);
+  default_map.Register<FrameMarkingExtension>(
+      webrtc::RtpExtension::kFrameMarkingDefaultId);
   default_map.Register<TransportSequenceNumber>(
       webrtc::RtpExtension::kTransportSequenceNumberDefaultId);
   default_map.Register<PlayoutDelayLimits>(

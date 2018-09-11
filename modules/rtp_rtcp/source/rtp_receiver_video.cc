@@ -74,6 +74,7 @@ int32_t RTPReceiverVideo::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
   rtp_header->video_header().rotation = kVideoRotation_0;
   rtp_header->video_header().content_type = VideoContentType::UNSPECIFIED;
   rtp_header->video_header().video_timing.flags = VideoSendTiming::kInvalid;
+  rtp_header->video_header().frame_marking.temporal_id = kNoTemporalIdx;
 
   // Retrieve the video rotation information.
   if (rtp_header->header.extension.hasVideoRotation) {
@@ -93,6 +94,11 @@ int32_t RTPReceiverVideo::ParseRtpPacket(WebRtcRTPHeader* rtp_header,
 
   rtp_header->video_header().playout_delay =
       rtp_header->header.extension.playout_delay;
+
+  if (rtp_header->header.extension.has_frame_marking) {
+    rtp_header->video_header().frame_marking =
+        rtp_header->header.extension.frame_marking;
+  }
 
   return data_callback_->OnReceivedPayloadData(parsed_payload.payload,
                                                parsed_payload.payload_length,
