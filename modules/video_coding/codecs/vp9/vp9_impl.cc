@@ -195,7 +195,7 @@ int VP9EncoderImpl::Release() {
 bool VP9EncoderImpl::ExplicitlyConfiguredSpatialLayers() const {
   // We check target_bitrate_bps of the 0th layer to see if the spatial layers
   // (i.e. bitrates) were explicitly configured.
-  return num_spatial_layers_ > 1 && codec_.spatialLayers[0].targetBitrate > 0;
+  return codec_.spatialLayers[0].targetBitrate > 0;
 }
 
 bool VP9EncoderImpl::SetSvcRates(
@@ -228,7 +228,8 @@ bool VP9EncoderImpl::SetSvcRates(
       }
 
       framerate_controller_[sl_idx].SetTargetRate(
-          codec_.spatialLayers[sl_idx].maxFramerate);
+          std::min(static_cast<float>(codec_.maxFramerate),
+                   codec_.spatialLayers[sl_idx].maxFramerate));
     }
   } else {
     float rate_ratio[VPX_MAX_LAYERS] = {0};

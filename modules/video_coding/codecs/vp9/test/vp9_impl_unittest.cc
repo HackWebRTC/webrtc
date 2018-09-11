@@ -677,6 +677,48 @@ TEST_F(TestVp9ImplFrameDropping, DifferentFrameratePerSpatialLayer) {
   }
 }
 
+TEST_F(TestVp9ImplFrameDropping, LayerMaxFramerateIsCappedByCodecMaxFramerate) {
+  const float input_framerate_fps = 30.0;
+  const float layer_max_framerate_fps = 30.0;
+  const uint32_t codec_max_framerate_fps = layer_max_framerate_fps / 3;
+  const size_t video_duration_secs = 3;
+  const size_t num_input_frames = video_duration_secs * input_framerate_fps;
+
+  VideoBitrateAllocation bitrate_allocation;
+  codec_settings_.spatialLayers[0].width = codec_settings_.width;
+  codec_settings_.spatialLayers[0].height = codec_settings_.height;
+  codec_settings_.spatialLayers[0].maxFramerate = layer_max_framerate_fps;
+  codec_settings_.spatialLayers[0].minBitrate = codec_settings_.startBitrate;
+  codec_settings_.spatialLayers[0].maxBitrate = codec_settings_.startBitrate;
+  codec_settings_.spatialLayers[0].targetBitrate = codec_settings_.startBitrate;
+
+  bitrate_allocation.SetBitrate(
+      0, 0, codec_settings_.spatialLayers[0].targetBitrate * 1000);
+
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->InitEncode(&codec_settings_, 1 /* number of cores */,
+                                 0 /* max payload size (unused) */));
+
+  EXPECT_EQ(
+      WEBRTC_VIDEO_CODEC_OK,
+      encoder_->SetRateAllocation(bitrate_allocation, codec_max_framerate_fps));
+
+  VideoFrame* input_frame = NextInputFrame();
+  for (size_t frame_num = 0; frame_num < num_input_frames; ++frame_num) {
+    EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+              encoder_->Encode(*input_frame, nullptr, nullptr));
+    const size_t timestamp = input_frame->timestamp() +
+                             kVideoPayloadTypeFrequency / input_framerate_fps;
+    input_frame->set_timestamp(static_cast<uint32_t>(timestamp));
+  }
+
+  const size_t num_encoded_frames = GetNumEncodedFrames();
+  const float encoded_framerate_fps = num_encoded_frames / video_duration_secs;
+  const float max_framerate_error_fps = codec_max_framerate_fps * 0.1f;
+  EXPECT_NEAR(encoded_framerate_fps, codec_max_framerate_fps,
+              max_framerate_error_fps);
+}
+
 class TestVp9ImplProfile2 : public TestVp9Impl {
  protected:
   void SetUp() override {
