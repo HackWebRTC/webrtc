@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_CODING_NETEQ_TOOLS_NETEQ_TEST_FACTORY_H_
 
 #include <memory>
+#include <string>
 
 #include "modules/audio_coding/neteq/tools/neteq_test.h"
 
@@ -28,7 +29,9 @@ class NetEqTestFactory {
  public:
   NetEqTestFactory();
   ~NetEqTestFactory();
-  std::unique_ptr<NetEqTest> InitializeTest(int argc, char* argv[]);
+  void PrintCodecMap();
+  std::unique_ptr<NetEqTest> InitializeTest(std::string input_filename,
+                                            std::string output_filename);
 
  private:
   std::unique_ptr<AudioDecoder> replacement_decoder_;

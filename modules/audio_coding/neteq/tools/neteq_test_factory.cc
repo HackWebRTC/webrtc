@@ -36,7 +36,6 @@
 #include "modules/audio_coding/neteq/tools/rtp_file_source.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/flags.h"
-#include "test/field_trial.h"
 #include "test/testsupport/fileutils.h"
 
 namespace webrtc {
@@ -112,10 +111,6 @@ DEFINE_int(cn_nb, 13, "RTP payload type for comfort noise (8 kHz)");
 DEFINE_int(cn_wb, 98, "RTP payload type for comfort noise (16 kHz)");
 DEFINE_int(cn_swb32, 99, "RTP payload type for comfort noise (32 kHz)");
 DEFINE_int(cn_swb48, 100, "RTP payload type for comfort noise (48 kHz)");
-DEFINE_bool(codec_map,
-            false,
-            "Prints the mapping between RTP payload type and "
-            "codec");
 DEFINE_string(replacement_audio_file,
               "",
               "A PCM file that will be used to populate "
@@ -136,14 +131,7 @@ DEFINE_bool(matlabplot,
 DEFINE_bool(pythonplot,
             false,
             "Generates a python script for plotting the delay profile");
-DEFINE_bool(help, false, "Prints this message");
 DEFINE_bool(concealment_events, false, "Prints concealment events");
-DEFINE_string(
-    force_fieldtrials,
-    "",
-    "Field trials control experimental feature code which can be forced. "
-    "E.g. running with --force_fieldtrials=WebRTC-FooFeature/Enable/"
-    " will assign the group Enable to field trial WebRTC-FooFeature.");
 
 // Maps a codec type to a printable name string.
 std::string CodecName(NetEqDecoder codec) {
@@ -279,42 +267,13 @@ NetEqTestFactory::NetEqTestFactory() = default;
 
 NetEqTestFactory::~NetEqTestFactory() = default;
 
-std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(int argc,
-                                                            char* argv[]) {
-  std::string program_name = argv[0];
-  std::string usage =
-      "Tool for decoding an RTP dump file using NetEq.\n"
-      "Run " +
-      program_name +
-      " --help for usage.\n"
-      "Example usage:\n" +
-      program_name + " input.rtp output.{pcm, wav}\n";
-  if (rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true)) {
-    exit(1);
-  }
-  if (FLAG_help) {
-    std::cout << usage;
-    rtc::FlagList::Print(nullptr, false);
-    exit(0);
-  }
+void NetEqTestFactory::PrintCodecMap() {
+  PrintCodecMapping();
+}
 
-  if (FLAG_codec_map) {
-    PrintCodecMapping();
-  }
-
-  if (argc != 3) {
-    if (FLAG_codec_map) {
-      // We have already printed the codec map. Just end the program.
-      exit(0);
-    }
-    // Print usage information.
-    std::cout << usage;
-    exit(0);
-  }
-
-  ValidateFieldTrialsStringOrDie(FLAG_force_fieldtrials);
-  ScopedFieldTrials field_trials(FLAG_force_fieldtrials);
-
+std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
+    std::string input_file_name,
+    std::string output_file_name) {
   RTC_CHECK(ValidatePayloadType(FLAG_pcmu));
   RTC_CHECK(ValidatePayloadType(FLAG_pcma));
   RTC_CHECK(ValidatePayloadType(FLAG_ilbc));
@@ -350,7 +309,6 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(int argc,
       {FLAG_video_content_type, kRtpExtensionVideoContentType},
       {FLAG_video_timing, kRtpExtensionVideoTiming}};
 
-  const std::string input_file_name = argv[1];
   std::unique_ptr<NetEqInput> input;
   if (RtpFileSource::ValidRtpDump(input_file_name) ||
       RtpFileSource::ValidPcap(input_file_name)) {
@@ -406,7 +364,6 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(int argc,
 
   // Open the output file now that we know the sample rate. (Rate is only needed
   // for wav files.)
-  const std::string output_file_name = argv[2];
   std::unique_ptr<AudioSink> output;
   if (output_file_name.size() >= 4 &&
       output_file_name.substr(output_file_name.size() - 4) == ".wav") {

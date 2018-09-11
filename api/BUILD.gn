@@ -344,6 +344,8 @@ if (rtc_include_tests) {
       deps = [
         ":neteq_simulator_api",
         "../modules/audio_coding:neteq_test_factory",
+        "../rtc_base:checks",
+        "../rtc_base:rtc_base_approved",
         "//third_party/abseil-cpp/absl/memory",
       ]
     }
