@@ -401,7 +401,6 @@ class Channel
   rtc::CriticalSection assoc_send_channel_lock_;
   Channel* associated_send_channel_ RTC_GUARDED_BY(assoc_send_channel_lock_);
 
-  bool pacing_enabled_ = true;
   PacketRouter* packet_router_ = nullptr;
   std::unique_ptr<TransportFeedbackProxy> feedback_observer_proxy_;
   std::unique_ptr<TransportSequenceNumberProxy> seq_num_allocator_proxy_;

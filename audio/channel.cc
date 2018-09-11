@@ -544,12 +544,12 @@ Channel::Channel(ProcessThread* module_process_thread,
   configuration.overhead_observer = this;
   configuration.receive_statistics = rtp_receive_statistics_.get();
   configuration.bandwidth_callback = rtcp_observer_.get();
-  if (pacing_enabled_) {
-    configuration.paced_sender = rtp_packet_sender_proxy_.get();
-    configuration.transport_sequence_number_allocator =
-        seq_num_allocator_proxy_.get();
-    configuration.transport_feedback_callback = feedback_observer_proxy_.get();
-  }
+
+  configuration.paced_sender = rtp_packet_sender_proxy_.get();
+  configuration.transport_sequence_number_allocator =
+      seq_num_allocator_proxy_.get();
+  configuration.transport_feedback_callback = feedback_observer_proxy_.get();
+
   configuration.event_log = event_log_;
   configuration.rtt_stats = rtcp_rtt_stats;
   configuration.retransmission_rate_limiter =
@@ -1187,9 +1187,6 @@ int Channel::GetRTPStatistics(CallStatistics& stats) {
 
 void Channel::SetNACKStatus(bool enable, int maxNumberOfPackets) {
   // None of these functions can fail.
-  // If pacing is enabled we always store packets.
-  if (!pacing_enabled_)
-    _rtpRtcpModule->SetStorePacketsStatus(enable, maxNumberOfPackets);
   rtp_receive_statistics_->SetMaxReorderingThreshold(maxNumberOfPackets);
   if (enable)
     audio_coding_->EnableNack(maxNumberOfPackets);
