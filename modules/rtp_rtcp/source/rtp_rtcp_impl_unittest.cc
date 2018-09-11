@@ -37,7 +37,6 @@ const int64_t kOneWayNetworkDelayMs = 100;
 const uint8_t kBaseLayerTid = 0;
 const uint8_t kHigherLayerTid = 1;
 const uint16_t kSequenceNumber = 100;
-const int64_t kMaxRttMs = 1000;
 
 class RtcpRttStatsTestImpl : public RtcpRttStats {
  public:
@@ -116,7 +115,6 @@ class RtpRtcpModule : public RtcpPacketTypeCounterObserver {
   explicit RtpRtcpModule(SimulatedClock* clock)
       : receive_statistics_(ReceiveStatistics::Create(clock)),
         remote_ssrc_(0),
-        retransmission_rate_limiter_(clock, kMaxRttMs),
         clock_(clock) {
     CreateModuleImpl();
     transport_.SimulateNetworkDelay(kOneWayNetworkDelayMs, clock);
@@ -129,7 +127,6 @@ class RtpRtcpModule : public RtcpPacketTypeCounterObserver {
   RtcpRttStatsTestImpl rtt_stats_;
   std::unique_ptr<ModuleRtpRtcpImpl> impl_;
   uint32_t remote_ssrc_;
-  RateLimiter retransmission_rate_limiter_;
   RtpKeepAliveConfig keepalive_config_;
   RtcpIntervalConfig rtcp_interval_config_;
 
@@ -180,7 +177,6 @@ class RtpRtcpModule : public RtcpPacketTypeCounterObserver {
     config.receive_statistics = receive_statistics_.get();
     config.rtcp_packet_type_counter_observer = this;
     config.rtt_stats = &rtt_stats_;
-    config.retransmission_rate_limiter = &retransmission_rate_limiter_;
     config.keepalive_config = keepalive_config_;
     config.rtcp_interval_config = rtcp_interval_config_;
 

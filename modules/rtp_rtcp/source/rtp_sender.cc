@@ -650,22 +650,24 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id) {
 
   const int32_t packet_size = static_cast<int32_t>(stored_packet->payload_size);
 
-  // Skip retransmission rate check if sending screenshare and the experiment
-  // is on.
-  bool skip_retransmission_rate_limit;
-  {
-    rtc::CritScope lock(&send_critsect_);
-    skip_retransmission_rate_limit =
-        unlimited_retransmission_experiment_ && video_content_type_ &&
-        videocontenttypehelpers::IsScreenshare(*video_content_type_);
-  }
+  // Skip retransmission rate check if not configured.
+  if (retransmission_rate_limiter_) {
+    // Skip retransmission rate check if sending screenshare and the experiment
+    // is on.
+    bool skip_retransmission_rate_limit = false;
+    if (unlimited_retransmission_experiment_) {
+      rtc::CritScope lock(&send_critsect_);
+      skip_retransmission_rate_limit =
+          video_content_type_ &&
+          videocontenttypehelpers::IsScreenshare(*video_content_type_);
+    }
 
-  RTC_DCHECK(retransmission_rate_limiter_);
-  // Check if we're overusing retransmission bitrate.
-  // TODO(sprang): Add histograms for nack success or failure reasons.
-  if (!skip_retransmission_rate_limit &&
-      !retransmission_rate_limiter_->TryUseRate(packet_size)) {
-    return -1;
+    // Check if we're overusing retransmission bitrate.
+    // TODO(sprang): Add histograms for nack success or failure reasons.
+    if (!skip_retransmission_rate_limit &&
+        !retransmission_rate_limiter_->TryUseRate(packet_size)) {
+      return -1;
+    }
   }
 
   if (paced_sender_) {
