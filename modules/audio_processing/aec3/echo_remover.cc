@@ -70,7 +70,7 @@ void SignalTransition(rtc::ArrayView<const float> from,
 
   for (size_t k = 0; k < kTransitionSize; ++k) {
     out[k] = k * kOneByTransitionSize * to[k];
-    out[k] += (kTransitionSize - k) * kOneByTransitionSize * to[k];
+    out[k] += (kTransitionSize - k) * kOneByTransitionSize * from[k];
   }
 
   std::copy(to.begin() + kTransitionSize, to.end(),
