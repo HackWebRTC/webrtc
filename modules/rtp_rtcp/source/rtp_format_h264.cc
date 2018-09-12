@@ -79,39 +79,24 @@ bool ParseStapAStartOffsets(const uint8_t* nalu_ptr,
 
 }  // namespace
 
-RtpPacketizerH264::RtpPacketizerH264(size_t max_payload_len,
-                                     size_t last_packet_reduction_len,
-                                     H264PacketizationMode packetization_mode)
-    : max_payload_len_(max_payload_len),
-      last_packet_reduction_len_(last_packet_reduction_len),
-      num_packets_left_(0),
-      packetization_mode_(packetization_mode) {
+RtpPacketizerH264::RtpPacketizerH264(
+    rtc::ArrayView<const uint8_t> payload,
+    PayloadSizeLimits limits,
+    H264PacketizationMode packetization_mode,
+    const RTPFragmentationHeader& fragmentation)
+    : max_payload_len_(limits.max_payload_len),
+      // TODO(bugs.webrtc.org/9680): Do not ignore first_packet_reduction_len.
+      last_packet_reduction_len_(limits.last_packet_reduction_len),
+      num_packets_left_(0) {
   // Guard against uninitialized memory in packetization_mode.
   RTC_CHECK(packetization_mode == H264PacketizationMode::NonInterleaved ||
             packetization_mode == H264PacketizationMode::SingleNalUnit);
-  RTC_CHECK_GT(max_payload_len, last_packet_reduction_len);
-}
+  RTC_CHECK_GT(limits.max_payload_len, limits.last_packet_reduction_len);
 
-RtpPacketizerH264::~RtpPacketizerH264() {}
-
-RtpPacketizerH264::Fragment::~Fragment() = default;
-
-RtpPacketizerH264::Fragment::Fragment(const uint8_t* buffer, size_t length)
-    : buffer(buffer), length(length) {}
-RtpPacketizerH264::Fragment::Fragment(const Fragment& fragment)
-    : buffer(fragment.buffer), length(fragment.length) {}
-
-size_t RtpPacketizerH264::SetPayloadData(
-    const uint8_t* payload_data,
-    size_t payload_size,
-    const RTPFragmentationHeader* fragmentation) {
-  RTC_DCHECK(packets_.empty());
-  RTC_DCHECK(input_fragments_.empty());
-  RTC_DCHECK(fragmentation);
-  for (int i = 0; i < fragmentation->fragmentationVectorSize; ++i) {
+  for (int i = 0; i < fragmentation.fragmentationVectorSize; ++i) {
     const uint8_t* buffer =
-        &payload_data[fragmentation->fragmentationOffset[i]];
-    size_t length = fragmentation->fragmentationLength[i];
+        payload.data() + fragmentation.fragmentationOffset[i];
+    size_t length = fragmentation.fragmentationLength[i];
 
     bool updated_sps = false;
     H264::NaluType nalu_type = H264::ParseNaluType(buffer[0]);
@@ -169,7 +154,7 @@ size_t RtpPacketizerH264::SetPayloadData(
     if (!updated_sps)
       input_fragments_.push_back(Fragment(buffer, length));
   }
-  if (!GeneratePackets()) {
+  if (!GeneratePackets(packetization_mode)) {
     // If failed to generate all the packets, discard already generated
     // packets in case the caller would ignore return value and still try to
     // call NextPacket().
@@ -177,18 +162,26 @@ size_t RtpPacketizerH264::SetPayloadData(
     while (!packets_.empty()) {
       packets_.pop();
     }
-    return 0;
   }
-  return num_packets_left_;
 }
+
+RtpPacketizerH264::~RtpPacketizerH264() = default;
+
+RtpPacketizerH264::Fragment::~Fragment() = default;
+
+RtpPacketizerH264::Fragment::Fragment(const uint8_t* buffer, size_t length)
+    : buffer(buffer), length(length) {}
+RtpPacketizerH264::Fragment::Fragment(const Fragment& fragment)
+    : buffer(fragment.buffer), length(fragment.length) {}
 
 size_t RtpPacketizerH264::NumPackets() const {
   return num_packets_left_;
 }
 
-bool RtpPacketizerH264::GeneratePackets() {
+bool RtpPacketizerH264::GeneratePackets(
+    H264PacketizationMode packetization_mode) {
   for (size_t i = 0; i < input_fragments_.size();) {
-    switch (packetization_mode_) {
+    switch (packetization_mode) {
       case H264PacketizationMode::SingleNalUnit:
         if (!PacketizeSingleNalu(i))
           return false;
@@ -340,11 +333,9 @@ bool RtpPacketizerH264::NextPacket(RtpPacketToSend* rtp_packet) {
     packets_.pop();
     input_fragments_.pop_front();
   } else if (packet.aggregated) {
-    RTC_CHECK(H264PacketizationMode::NonInterleaved == packetization_mode_);
     bool is_last_packet = num_packets_left_ == 1;
     NextAggregatePacket(rtp_packet, is_last_packet);
   } else {
-    RTC_CHECK(H264PacketizationMode::NonInterleaved == packetization_mode_);
     NextFragmentPacket(rtp_packet);
   }
   RTC_DCHECK_LE(rtp_packet->payload_size(), max_payload_len_);

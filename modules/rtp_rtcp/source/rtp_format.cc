@@ -31,13 +31,11 @@ std::unique_ptr<RtpPacketizer> RtpPacketizer::Create(
     const RTPFragmentationHeader* fragmentation) {
   switch (type) {
     case kVideoCodecH264: {
+      RTC_CHECK(fragmentation);
       const auto& h264 =
           absl::get<RTPVideoHeaderH264>(rtp_video_header.video_type_header);
-      auto packetizer = absl::make_unique<RtpPacketizerH264>(
-          limits.max_payload_len, limits.last_packet_reduction_len,
-          h264.packetization_mode);
-      packetizer->SetPayloadData(payload.data(), payload.size(), fragmentation);
-      return std::move(packetizer);
+      return absl::make_unique<RtpPacketizerH264>(
+          payload, limits, h264.packetization_mode, *fragmentation);
     }
     case kVideoCodecVP8: {
       const auto& vp8 =
