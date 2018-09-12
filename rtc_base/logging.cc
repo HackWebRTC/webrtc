@@ -540,6 +540,9 @@ void Log(const LogArgType* fmt, ...) {
       case LogArgType::kStdString:
         log_message.stream() << *va_arg(args, const std::string*);
         break;
+      case LogArgType::kStringView:
+        log_message.stream() << *va_arg(args, const absl::string_view*);
+        break;
       case LogArgType::kVoidP:
         log_message.stream() << rtc::ToHex(
             reinterpret_cast<uintptr_t>(va_arg(args, const void*)));

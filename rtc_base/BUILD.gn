@@ -198,6 +198,7 @@ rtc_source_set("logging") {
     ":platform_thread_types",
     ":stringutils",
     ":timeutils",
+    "//third_party/abseil-cpp/absl/strings",
   ]
 
   if (build_with_chromium) {

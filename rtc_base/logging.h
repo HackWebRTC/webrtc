@@ -55,6 +55,7 @@
 #include <CoreServices/CoreServices.h>
 #endif
 
+#include "absl/strings/string_view.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/deprecation.h"
 #include "rtc_base/strings/string_builder.h"
@@ -174,7 +175,7 @@ enum class LogArgType : int8_t {
   kLongDouble,
   kCharP,
   kStdString,
-  // TODO(kwiberg): Add absl::StringView.
+  kStringView,
   kVoidP,
   kLogMetadata,
   kLogMetadataErr,
@@ -236,7 +237,10 @@ inline Val<LogArgType::kStdString, const std::string*> MakeVal(
     const std::string& x) {
   return {&x};
 }
-// TODO(kwiberg): Add absl::string_view
+inline Val<LogArgType::kStringView, const absl::string_view*> MakeVal(
+    const absl::string_view& x) {
+  return {&x};
+}
 
 inline Val<LogArgType::kVoidP, const void*> MakeVal(const void* x) {
   return {x};
