@@ -584,6 +584,7 @@ void ParsedRtcEventLogNew::StoreParsedEvent(const rtclog::Event& event) {
           event, &direction, header, &header_length, &total_length, nullptr);
       RtpUtility::RtpHeaderParser rtp_parser(header, header_length);
       RTPHeader parsed_header;
+
       if (extension_map != nullptr) {
         rtp_parser.Parse(&parsed_header, extension_map);
       } else {
@@ -595,6 +596,15 @@ void ParsedRtcEventLogNew::StoreParsedEvent(const rtclog::Event& event) {
         //             Tracking bug: webrtc:6399
         rtp_parser.Parse(&parsed_header, &default_extension_map_);
       }
+
+      // Since we give the parser only a header, there is no way for it to know
+      // the padding length. The best solution would be to log the padding
+      // length in RTC event log. In absence of it, we assume the RTP packet to
+      // contain only padding, if the padding bit is set.
+      // TODO(webrtc:9730): Use a generic way to obtain padding length.
+      if ((header[0] & 0x20) != 0)
+        parsed_header.paddingLength = total_length - header_length;
+
       RTC_CHECK(event.has_timestamp_us());
       uint64_t timestamp_us = event.timestamp_us();
       if (direction == kIncomingPacket) {

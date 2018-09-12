@@ -95,16 +95,23 @@ NetEqTest::SimulationStepResult NetEqTest::RunToNextGetAudio() {
     if (input_->NextPacketTime() && time_now_ms >= *input_->NextPacketTime()) {
       std::unique_ptr<NetEqInput::PacketData> packet_data = input_->PopPacket();
       RTC_CHECK(packet_data);
-      int error = neteq_->InsertPacket(
-          packet_data->header,
-          rtc::ArrayView<const uint8_t>(packet_data->payload),
-          static_cast<uint32_t>(packet_data->time_ms * sample_rate_hz_ / 1000));
-      if (error != NetEq::kOK && callbacks_.error_callback) {
-        callbacks_.error_callback->OnInsertPacketError(*packet_data);
-      }
-      if (callbacks_.post_insert_packet) {
-        callbacks_.post_insert_packet->AfterInsertPacket(*packet_data,
-                                                         neteq_.get());
+      const size_t payload_data_length =
+          packet_data->payload.size() - packet_data->header.paddingLength;
+      if (payload_data_length != 0) {
+        int error = neteq_->InsertPacket(
+            packet_data->header,
+            rtc::ArrayView<const uint8_t>(packet_data->payload),
+            static_cast<uint32_t>(packet_data->time_ms * sample_rate_hz_ /
+                                  1000));
+        if (error != NetEq::kOK && callbacks_.error_callback) {
+          callbacks_.error_callback->OnInsertPacketError(*packet_data);
+        }
+        if (callbacks_.post_insert_packet) {
+          callbacks_.post_insert_packet->AfterInsertPacket(*packet_data,
+                                                           neteq_.get());
+        }
+      } else {
+        neteq_->InsertEmptyPacket(packet_data->header);
       }
       if (last_packet_time_ms_) {
         current_state_.packet_iat_ms.push_back(time_now_ms -

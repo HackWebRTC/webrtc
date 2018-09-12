@@ -197,7 +197,9 @@ bool RtpHeaderParser::Parse(
   header->timestamp = RTPTimestamp;
   header->ssrc = SSRC;
   header->numCSRCs = CC;
-  header->paddingLength = P ? *(_ptrRTPDataEnd - 1) : 0;
+  if (!P) {
+    header->paddingLength = 0;
+  }
 
   for (uint8_t i = 0; i < CC; ++i) {
     uint32_t CSRC = ByteReader<uint32_t>::ReadBigEndian(ptr);
@@ -276,6 +278,21 @@ bool RtpHeaderParser::Parse(
     }
     header->headerLength += XLen;
   }
+  if (header->headerLength > static_cast<size_t>(length))
+    return false;
+
+  if (P) {
+    // Packet has padding.
+    if (header->headerLength != static_cast<size_t>(length)) {
+      // Packet is not header only. We can parse padding length now.
+      header->paddingLength = *(_ptrRTPDataEnd - 1);
+    } else {
+      RTC_LOG(LS_WARNING) << "Cannot parse padding length.";
+      // Packet is header only. We have no clue of the padding length.
+      return false;
+    }
+  }
+
   if (header->headerLength + header->paddingLength >
       static_cast<size_t>(length))
     return false;
