@@ -50,17 +50,16 @@ class FrameGeneratorCapturer::InsertFrameTask : public rtc::QueuedTask {
 
     int64_t now_ms = rtc::TimeMillis();
     if (next_run_time_ms_ < now_ms) {
-      int skipped_frames = 1 + (now_ms - next_run_time_ms_) / interval_ms;
-      next_run_time_ms_ += skipped_frames * interval_ms;
       RTC_LOG(LS_ERROR) << "Frame Generator Capturer can't keep up with "
-                           "requested fps, skipped "
-                        << skipped_frames << " frame(s).";
+                           "requested fps.";
+      rtc::TaskQueue::Current()->PostTask(absl::WrapUnique(this));
+    } else {
+      int64_t delay_ms = next_run_time_ms_ - now_ms;
+      RTC_DCHECK_GE(delay_ms, 0);
+      RTC_DCHECK_LE(delay_ms, interval_ms);
+      rtc::TaskQueue::Current()->PostDelayedTask(absl::WrapUnique(this),
+                                                 delay_ms);
     }
-    int64_t delay_ms = next_run_time_ms_ - now_ms;
-    RTC_DCHECK_GE(delay_ms, 0);
-    RTC_DCHECK_LE(delay_ms, interval_ms);
-    rtc::TaskQueue::Current()->PostDelayedTask(absl::WrapUnique(this),
-                                               delay_ms);
     return false;
   }
 
