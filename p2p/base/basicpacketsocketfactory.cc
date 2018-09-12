@@ -157,7 +157,12 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateClientTcpSocket(
       return NULL;
     }
 
-    ssl_adapter->SetSSLConfig(tcp_options.ssl_config);
+    if (tlsOpts & PacketSocketFactory::OPT_TLS_INSECURE) {
+      ssl_adapter->SetIgnoreBadCert(true);
+    }
+
+    ssl_adapter->SetAlpnProtocols(tcp_options.tls_alpn_protocols);
+    ssl_adapter->SetEllipticCurves(tcp_options.tls_elliptic_curves);
     ssl_adapter->SetCertVerifier(tcp_options.tls_cert_verifier);
 
     socket = ssl_adapter;

@@ -244,47 +244,8 @@ TurnPort::TurnPort(rtc::Thread* thread,
            username,
            password),
       server_address_(server_address),
-      tls_cert_verifier_(tls_cert_verifier),
-      credentials_(credentials),
-      socket_(NULL),
-      resolver_(NULL),
-      error_(0),
-      request_manager_(thread),
-      next_channel_number_(TURN_CHANNEL_NUMBER_START),
-      state_(STATE_CONNECTING),
-      server_priority_(server_priority),
-      allocate_mismatch_retries_(0),
-      turn_customizer_(customizer) {
-  ssl_config_.tls_alpn_protocols = tls_alpn_protocols;
-  ssl_config_.tls_elliptic_curves = tls_elliptic_curves;
-  request_manager_.SignalSendPacket.connect(this, &TurnPort::OnSendStunPacket);
-  request_manager_.set_origin(origin);
-}
-
-TurnPort::TurnPort(rtc::Thread* thread,
-                   rtc::PacketSocketFactory* factory,
-                   rtc::Network* network,
-                   uint16_t min_port,
-                   uint16_t max_port,
-                   const std::string& username,
-                   const std::string& password,
-                   const ProtocolAddress& server_address,
-                   const RelayCredentials& credentials,
-                   int server_priority,
-                   const std::string& origin,
-                   webrtc::TurnCustomizer* customizer,
-                   const rtc::SSLConfig& ssl_config,
-                   rtc::SSLCertificateVerifier* tls_cert_verifier)
-    : Port(thread,
-           RELAY_PORT_TYPE,
-           factory,
-           network,
-           min_port,
-           max_port,
-           username,
-           password),
-      server_address_(server_address),
-      ssl_config_(ssl_config),
+      tls_alpn_protocols_(tls_alpn_protocols),
+      tls_elliptic_curves_(tls_elliptic_curves),
       tls_cert_verifier_(tls_cert_verifier),
       credentials_(credentials),
       socket_(NULL),
@@ -328,20 +289,20 @@ ProtocolType TurnPort::GetProtocol() const {
   return server_address_.proto;
 }
 
-void TurnPort::SetTlsCertPolicy(TlsCertPolicy tls_cert_policy) {
-  switch (tls_cert_policy) {
-    case TlsCertPolicy::TLS_CERT_POLICY_SECURE:
-      ssl_config_.tls_cert_policy = rtc::TlsCertPolicy::TLS_CERT_POLICY_SECURE;
-      break;
-    case TlsCertPolicy::TLS_CERT_POLICY_INSECURE_NO_CHECK:
-      ssl_config_.tls_cert_policy =
-          rtc::TlsCertPolicy::TLS_CERT_POLICY_INSECURE_NO_CHECK;
-      break;
-  }
+TlsCertPolicy TurnPort::GetTlsCertPolicy() const {
+  return tls_cert_policy_;
 }
 
-const rtc::SSLConfig& TurnPort::GetSslConfig() const {
-  return ssl_config_;
+void TurnPort::SetTlsCertPolicy(TlsCertPolicy tls_cert_policy) {
+  tls_cert_policy_ = tls_cert_policy;
+}
+
+std::vector<std::string> TurnPort::GetTlsAlpnProtocols() const {
+  return tls_alpn_protocols_;
+}
+
+std::vector<std::string> TurnPort::GetTlsEllipticCurves() const {
+  return tls_elliptic_curves_;
 }
 
 void TurnPort::PrepareAddress() {
@@ -401,8 +362,8 @@ bool TurnPort::CreateTurnClientSocket() {
 
     // Apply server address TLS and insecure bits to options.
     if (server_address_.proto == PROTO_TLS) {
-      if (ssl_config_.tls_cert_policy ==
-          rtc::TlsCertPolicy::TLS_CERT_POLICY_INSECURE_NO_CHECK) {
+      if (tls_cert_policy_ ==
+          TlsCertPolicy::TLS_CERT_POLICY_INSECURE_NO_CHECK) {
         opts |= rtc::PacketSocketFactory::OPT_TLS_INSECURE;
       } else {
         opts |= rtc::PacketSocketFactory::OPT_TLS;
@@ -411,8 +372,9 @@ bool TurnPort::CreateTurnClientSocket() {
 
     rtc::PacketSocketTcpOptions tcp_options;
     tcp_options.opts = opts;
+    tcp_options.tls_alpn_protocols = tls_alpn_protocols_;
+    tcp_options.tls_elliptic_curves = tls_elliptic_curves_;
     tcp_options.tls_cert_verifier = tls_cert_verifier_;
-    tcp_options.ssl_config = ssl_config_;
     socket_ = socket_factory()->CreateClientTcpSocket(
         rtc::SocketAddress(Network()->GetBestIP(), 0), server_address_.address,
         proxy(), user_agent(), tcp_options);

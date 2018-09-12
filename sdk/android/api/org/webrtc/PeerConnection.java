@@ -50,7 +50,6 @@ public class PeerConnection {
     }
   }
 
-  // TODO(diogor, webrtc:9673): Remove TlsCertPolicy. It's deprecated, in favor of SslConfig.
   /** Tracks PeerConnectionInterface::TlsCertPolicy */
   public enum TlsCertPolicy {
     TLS_CERT_POLICY_SECURE,
@@ -127,9 +126,7 @@ public class PeerConnection {
     public final List<String> urls;
     public final String username;
     public final String password;
-    // TODO(diogor, webrtc:9673): Remove tlsCertPolicy from this API.
-    // This field will be ignored if tlsCertPolicy is also set in SslConfig.
-    @Deprecated public final TlsCertPolicy tlsCertPolicy;
+    public final TlsCertPolicy tlsCertPolicy;
 
     // If the URIs in |urls| only contain IP addresses, this field can be used
     // to indicate the hostname, which may be necessary for TLS (using the SNI
@@ -137,18 +134,12 @@ public class PeerConnection {
     // necessary.
     public final String hostname;
 
-    // TODO(diogor, webrtc:9673): Remove tlsAlpnProtocols from this API.
     // List of protocols to be used in the TLS ALPN extension.
-    @Deprecated public final List<String> tlsAlpnProtocols;
+    public final List<String> tlsAlpnProtocols;
 
-    // TODO(diogor, webrtc:9673): Remove tlsEllipticCurves from this API.
     // List of elliptic curves to be used in the TLS elliptic curves extension.
     // Only curve names supported by OpenSSL should be used (eg. "P-256","X25519").
-    // This field will be ignored if tlsEllipticCurves is also set in SslConfig.
-    @Deprecated public final List<String> tlsEllipticCurves;
-
-    // SSL configuration options for any SSL/TLS connections to this IceServer.
-    public final SslConfig sslConfig;
+    public final List<String> tlsEllipticCurves;
 
     /** Convenience constructor for STUN servers. */
     @Deprecated
@@ -170,12 +161,12 @@ public class PeerConnection {
     public IceServer(String uri, String username, String password, TlsCertPolicy tlsCertPolicy,
         String hostname) {
       this(uri, Collections.singletonList(uri), username, password, tlsCertPolicy, hostname, null,
-          null, SslConfig.builder().createSslConfig());
+          null);
     }
 
     private IceServer(String uri, List<String> urls, String username, String password,
         TlsCertPolicy tlsCertPolicy, String hostname, List<String> tlsAlpnProtocols,
-        List<String> tlsEllipticCurves, SslConfig sslConfig) {
+        List<String> tlsEllipticCurves) {
       if (uri == null || urls == null || urls.isEmpty()) {
         throw new IllegalArgumentException("uri == null || urls == null || urls.isEmpty()");
       }
@@ -201,13 +192,12 @@ public class PeerConnection {
       this.hostname = hostname;
       this.tlsAlpnProtocols = tlsAlpnProtocols;
       this.tlsEllipticCurves = tlsEllipticCurves;
-      this.sslConfig = sslConfig;
     }
 
     @Override
     public String toString() {
       return urls + " [" + username + ":" + password + "] [" + tlsCertPolicy + "] [" + hostname
-          + "] [" + tlsAlpnProtocols + "] [" + tlsEllipticCurves + "] [" + sslConfig + "]";
+          + "] [" + tlsAlpnProtocols + "] [" + tlsEllipticCurves + "]";
     }
 
     public static Builder builder(String uri) {
@@ -226,7 +216,6 @@ public class PeerConnection {
       private String hostname = "";
       private List<String> tlsAlpnProtocols;
       private List<String> tlsEllipticCurves;
-      private SslConfig sslConfig = SslConfig.builder().createSslConfig();
 
       private Builder(List<String> urls) {
         if (urls == null || urls.isEmpty()) {
@@ -245,7 +234,6 @@ public class PeerConnection {
         return this;
       }
 
-      @Deprecated
       public Builder setTlsCertPolicy(TlsCertPolicy tlsCertPolicy) {
         this.tlsCertPolicy = tlsCertPolicy;
         return this;
@@ -256,26 +244,19 @@ public class PeerConnection {
         return this;
       }
 
-      @Deprecated
       public Builder setTlsAlpnProtocols(List<String> tlsAlpnProtocols) {
         this.tlsAlpnProtocols = tlsAlpnProtocols;
         return this;
       }
 
-      @Deprecated
       public Builder setTlsEllipticCurves(List<String> tlsEllipticCurves) {
         this.tlsEllipticCurves = tlsEllipticCurves;
         return this;
       }
 
-      public Builder setSslConfig(SslConfig sslConfig) {
-        this.sslConfig = sslConfig;
-        return this;
-      }
-
       public IceServer createIceServer() {
         return new IceServer(urls.get(0), urls, username, password, tlsCertPolicy, hostname,
-            tlsAlpnProtocols, tlsEllipticCurves, sslConfig);
+            tlsAlpnProtocols, tlsEllipticCurves);
       }
     }
 
@@ -316,11 +297,6 @@ public class PeerConnection {
     @CalledByNative("IceServer")
     List<String> getTlsEllipticCurves() {
       return tlsEllipticCurves;
-    }
-
-    @CalledByNative("IceServer")
-    SslConfig getSslConfig() {
-      return sslConfig;
     }
   }
 

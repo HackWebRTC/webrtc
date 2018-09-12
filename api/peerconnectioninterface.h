@@ -112,7 +112,6 @@
 #include "rtc_base/rtccertificate.h"
 #include "rtc_base/rtccertificategenerator.h"
 #include "rtc_base/socketaddress.h"
-#include "rtc_base/ssladapter.h"
 #include "rtc_base/sslcertificate.h"
 #include "rtc_base/sslstreamadapter.h"
 
@@ -188,7 +187,6 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     kIceConnectionMax,
   };
 
-  // Deprecated. TODO(diogor, webrtc:9673): Remove from API.
   // TLS certificate policy.
   enum TlsCertPolicy {
     // For TLS based protocols, ensure the connection is secure by not
@@ -213,29 +211,23 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     std::vector<std::string> urls;
     std::string username;
     std::string password;
-    // Deprecated. rtc::SSLConfig should be used instead.
     TlsCertPolicy tls_cert_policy = kTlsCertPolicySecure;
     // If the URIs in |urls| only contain IP addresses, this field can be used
     // to indicate the hostname, which may be necessary for TLS (using the SNI
     // extension). If |urls| itself contains the hostname, this isn't
     // necessary.
     std::string hostname;
-    // Deprecated. rtc::SSLConfig should be used instead.
     // List of protocols to be used in the TLS ALPN extension.
     std::vector<std::string> tls_alpn_protocols;
-    // Deprecated. rtc::SSLConfig should be used instead.
     // List of elliptic curves to be used in the TLS elliptic curves extension.
     std::vector<std::string> tls_elliptic_curves;
-    // SSL configuration options for any SSL/TLS connections to this IceServer.
-    rtc::SSLConfig ssl_config;
 
     bool operator==(const IceServer& o) const {
       return uri == o.uri && urls == o.urls && username == o.username &&
              password == o.password && tls_cert_policy == o.tls_cert_policy &&
              hostname == o.hostname &&
              tls_alpn_protocols == o.tls_alpn_protocols &&
-             tls_elliptic_curves == o.tls_elliptic_curves &&
-             ssl_config == o.ssl_config;
+             tls_elliptic_curves == o.tls_elliptic_curves;
     }
     bool operator!=(const IceServer& o) const { return !(*this == o); }
   };
