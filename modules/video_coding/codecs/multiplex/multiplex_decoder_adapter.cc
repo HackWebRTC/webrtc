@@ -131,10 +131,11 @@ int32_t MultiplexDecoderAdapter::Decode(
   MultiplexImage image = MultiplexEncodedImagePacker::Unpack(input_image);
 
   if (supports_augmenting_data_) {
-    RTC_DCHECK(decoded_augmenting_data_.find(input_image._timeStamp) ==
+    RTC_DCHECK(decoded_augmenting_data_.find(input_image.Timestamp()) ==
                decoded_augmenting_data_.end());
     decoded_augmenting_data_.emplace(
-        std::piecewise_construct, std::forward_as_tuple(input_image._timeStamp),
+        std::piecewise_construct,
+        std::forward_as_tuple(input_image.Timestamp()),
         std::forward_as_tuple(std::move(image.augmenting_data),
                               image.augmenting_data_size));
   }

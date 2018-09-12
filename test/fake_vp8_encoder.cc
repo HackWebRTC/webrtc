@@ -102,11 +102,12 @@ EncodedImageCallback::Result FakeVP8Encoder::OnEncodedImage(
   uint8_t stream_idx = encoded_image.SpatialIndex().value_or(0);
   CodecSpecificInfo overrided_specific_info;
   TemporalLayers::FrameConfig tl_config =
-      temporal_layers_[stream_idx]->UpdateLayerConfig(encoded_image._timeStamp);
+      temporal_layers_[stream_idx]->UpdateLayerConfig(
+          encoded_image.Timestamp());
   PopulateCodecSpecific(&overrided_specific_info, tl_config,
                         encoded_image._frameType, stream_idx,
-                        encoded_image._timeStamp);
-  temporal_layers_[stream_idx]->FrameEncoded(encoded_image._timeStamp,
+                        encoded_image.Timestamp());
+  temporal_layers_[stream_idx]->FrameEncoded(encoded_image.Timestamp(),
                                              encoded_image._length, -1);
 
   return callback_->OnEncodedImage(encoded_image, &overrided_specific_info,

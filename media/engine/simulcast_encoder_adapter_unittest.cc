@@ -342,7 +342,7 @@ class TestSimulcastEncoderAdapterFake : public ::testing::Test,
     last_encoded_image_simulcast_index_ =
         encoded_image.SpatialIndex().value_or(-1);
 
-    return Result(Result::OK, encoded_image._timeStamp);
+    return Result(Result::OK, encoded_image.Timestamp());
   }
 
   bool GetLastEncodedImageInfo(int* out_width,

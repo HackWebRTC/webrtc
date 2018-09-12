@@ -107,7 +107,7 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
     memcpy(encoded_buffer.get(), encoded_buffer_, frame_info.layers[i].size);
     EncodedImage encoded(encoded_buffer.get(), frame_info.layers[i].size,
                          sizeof(encoded_buffer_));
-    encoded._timeStamp = input_image.timestamp();
+    encoded.SetTimestamp(input_image.timestamp());
     encoded.capture_time_ms_ = input_image.render_time_ms();
     encoded._frameType =
         frame_info.keyframe ? kVideoFrameKey : kVideoFrameDelta;

@@ -260,7 +260,7 @@ bool SendStatisticsProxy::UmaSamplesContainer::InsertEncodedFrame(
     }
   }
 
-  auto it = encoded_frames_.find(encoded_frame._timeStamp);
+  auto it = encoded_frames_.find(encoded_frame.Timestamp());
   if (it == encoded_frames_.end()) {
     // First frame with this timestamp.
     encoded_frames_.insert(
