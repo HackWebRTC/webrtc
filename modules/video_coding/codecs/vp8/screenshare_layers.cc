@@ -344,6 +344,13 @@ uint32_t ScreenshareLayers::GetCodecTargetBitrateKbps() const {
 }
 
 bool ScreenshareLayers::UpdateConfiguration(Vp8EncoderConfig* cfg) {
+  if (min_qp_ == -1 || max_qp_ == -1) {
+    // Store the valid qp range. This must not change during the lifetime of
+    // this class.
+    min_qp_ = cfg->rc_min_quantizer;
+    max_qp_ = cfg->rc_max_quantizer;
+  }
+
   bool cfg_updated = false;
   uint32_t target_bitrate_kbps = GetCodecTargetBitrateKbps();
 
@@ -364,8 +371,6 @@ bool ScreenshareLayers::UpdateConfiguration(Vp8EncoderConfig* cfg) {
     // Don't reconfigure qp limits during quality boost frames.
     if (active_layer_ == -1 ||
         layers_[active_layer_].state != TemporalLayer::State::kQualityBoost) {
-      min_qp_ = cfg->rc_min_quantizer;
-      max_qp_ = cfg->rc_max_quantizer;
       // After a dropped frame, a frame with max qp will be encoded and the
       // quality will then ramp up from there. To boost the speed of recovery,
       // encode the next frame with lower max qp, if there is sufficient
@@ -408,13 +413,14 @@ bool ScreenshareLayers::UpdateConfiguration(Vp8EncoderConfig* cfg) {
   // If layer is in the quality boost state (following a dropped frame), update
   // the configuration with the adjusted (lower) qp and set the state back to
   // normal.
-  unsigned int adjusted_max_qp;
-  if (layers_[active_layer_].state == TemporalLayer::State::kQualityBoost &&
-      layers_[active_layer_].enhanced_max_qp != -1) {
-    adjusted_max_qp = layers_[active_layer_].enhanced_max_qp;
+  unsigned int adjusted_max_qp = max_qp_;  // Set the normal max qp.
+  if (layers_[active_layer_].state == TemporalLayer::State::kQualityBoost) {
+    if (layers_[active_layer_].enhanced_max_qp != -1) {
+      // Bitrate is high enough for quality boost, update max qp.
+      adjusted_max_qp = layers_[active_layer_].enhanced_max_qp;
+    }
+    // Regardless of qp, reset the boost state for the next frame.
     layers_[active_layer_].state = TemporalLayer::State::kNormal;
-  } else {
-    adjusted_max_qp = max_qp_;  // Set the normal max qp.
   }
 
   if (adjusted_max_qp == cfg->rc_max_quantizer)

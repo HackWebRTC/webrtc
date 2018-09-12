@@ -162,7 +162,7 @@ class ScreenshareLayerTest : public ::testing::Test {
   }
 
   int min_qp_;
-  int max_qp_;
+  uint32_t max_qp_;
   int frame_size_;
   SimulatedClock clock_;
   std::unique_ptr<ScreenshareLayers> layers_;
@@ -659,6 +659,56 @@ TEST_F(ScreenshareLayerTest, UpdatesConfigurationAfterRateChange) {
   layers_->OnRatesUpdated(bitrates, 5);
   layers_->OnRatesUpdated(bitrates, 5);
   EXPECT_TRUE(layers_->UpdateConfiguration(&cfg_));
+}
+
+TEST_F(ScreenshareLayerTest, MaxQpRestoredAfterDoubleDrop) {
+  // Run grace period so we have existing frames in both TL0 and Tl1.
+  EXPECT_TRUE(RunGracePeriod());
+
+  // Move ahead until we have a sync frame in TL1.
+  EXPECT_EQ(kTl1SyncFlags, SkipUntilTlAndSync(1, true));
+  ASSERT_TRUE(vp8_info_.layerSync);
+
+  // Simulate overshoot of this frame.
+  layers_->FrameEncoded(timestamp_, 0, -1);
+
+  // Simulate re-encoded frame.
+  layers_->PopulateCodecSpecific(false, tl_config_, &vp8_info_, timestamp_);
+  layers_->FrameEncoded(timestamp_, 1, max_qp_);
+
+  // Next frame, expect boosted quality.
+  // Slightly alter bitrate between each frame.
+  std::vector<uint32_t> kDefault2TlBitratesBpsAlt = kDefault2TlBitratesBps;
+  kDefault2TlBitratesBpsAlt[1] += 4000;
+  layers_->OnRatesUpdated(kDefault2TlBitratesBpsAlt, kFrameRate);
+  EXPECT_EQ(kTl1Flags, SkipUntilTlAndSync(1, false));
+  EXPECT_TRUE(config_updated_);
+  EXPECT_LT(cfg_.rc_max_quantizer, max_qp_);
+  uint32_t adjusted_qp = cfg_.rc_max_quantizer;
+
+  // Simulate overshoot of this frame.
+  layers_->FrameEncoded(timestamp_, 0, -1);
+
+  // Simulate re-encoded frame.
+  layers_->PopulateCodecSpecific(false, tl_config_, &vp8_info_, timestamp_);
+  layers_->FrameEncoded(timestamp_, frame_size_, max_qp_);
+
+  // A third frame, expect boosted quality.
+  layers_->OnRatesUpdated(kDefault2TlBitratesBps, kFrameRate);
+  EXPECT_EQ(kTl1Flags, SkipUntilTlAndSync(1, false));
+  EXPECT_TRUE(config_updated_);
+  EXPECT_LT(cfg_.rc_max_quantizer, max_qp_);
+  EXPECT_EQ(adjusted_qp, cfg_.rc_max_quantizer);
+
+  // Frame encoded.
+  layers_->PopulateCodecSpecific(false, tl_config_, &vp8_info_, timestamp_);
+  layers_->FrameEncoded(timestamp_, frame_size_, max_qp_);
+
+  // A fourth frame, max qp should be restored.
+  layers_->OnRatesUpdated(kDefault2TlBitratesBpsAlt, kFrameRate);
+  EXPECT_EQ(kTl1Flags, SkipUntilTlAndSync(1, false));
+  EXPECT_TRUE(config_updated_);
+  EXPECT_EQ(cfg_.rc_max_quantizer, max_qp_);
 }
 
 }  // namespace webrtc
