@@ -208,12 +208,13 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
   for (int i = 0; i < number_of_streams; ++i) {
     VideoCodec stream_codec;
     uint32_t start_bitrate_kbps = start_bitrates[i];
+    const bool send_stream = start_bitrate_kbps > 0;
     if (!doing_simulcast) {
       stream_codec = codec_;
       stream_codec.numberOfSimulcastStreams = 1;
     } else {
       // Cap start bitrate to the min bitrate in order to avoid strange codec
-      // behavior. Since sending sending will be false, this should not matter.
+      // behavior. Since sending will be false, this should not matter.
       start_bitrate_kbps =
           std::max(codec_.simulcastStream[i].minBitrate, start_bitrate_kbps);
       bool highest_resolution_stream = (i == (number_of_streams - 1));
@@ -251,7 +252,7 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
     encoder->RegisterEncodeCompleteCallback(callback.get());
     streaminfos_.emplace_back(std::move(encoder), std::move(callback),
                               stream_codec.width, stream_codec.height,
-                              start_bitrate_kbps > 0);
+                              send_stream);
 
     if (i != 0) {
       implementation_name += ", ";
