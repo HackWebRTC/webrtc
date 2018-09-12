@@ -46,6 +46,7 @@ namespace webrtc {
 namespace jni {
 
 namespace {
+
 PeerConnectionFactoryInterface::Options
 JavaToNativePeerConnectionFactoryOptions(JNIEnv* jni,
                                          const JavaRef<jobject>& options) {
@@ -72,6 +73,21 @@ JavaToNativePeerConnectionFactoryOptions(JNIEnv* jni,
       enable_gcm_crypto_suites;
   return native_options;
 }
+
+// Place static objects into a container that gets leaked so we avoid
+// non-trivial destructor.
+struct StaticObjectContainer {
+  // Field trials initialization string
+  std::unique_ptr<std::string> field_trials_init_string;
+  // Set in PeerConnectionFactory_InjectLoggable().
+  std::unique_ptr<JNILogSink> jni_log_sink;
+};
+
+StaticObjectContainer& GetStaticObjects() {
+  static StaticObjectContainer* static_objects = new StaticObjectContainer();
+  return *static_objects;
+}
+
 }  // namespace
 
 // Note: Some of the video-specific PeerConnectionFactory methods are
@@ -80,14 +96,8 @@ JavaToNativePeerConnectionFactoryOptions(JNIEnv* jni,
 // instead of "video.cc", which doesn't bring in the video-specific
 // dependencies.
 
-// Field trials initialization string
-static std::unique_ptr<std::string> field_trials_init_string;
-
 // Set in PeerConnectionFactory_initializeAndroidGlobals().
 static bool factory_static_initialized = false;
-
-// Set in PeerConnectionFactory_InjectLoggable().
-static std::unique_ptr<JNILogSink> jni_log_sink;
 
 void PeerConnectionFactoryNetworkThreadReady() {
   RTC_LOG(LS_INFO) << "Network thread JavaCallback";
@@ -137,6 +147,9 @@ static void JNI_PeerConnectionFactory_InitializeFieldTrials(
     JNIEnv* jni,
     const JavaParamRef<jclass>&,
     const JavaParamRef<jstring>& j_trials_init_string) {
+  std::unique_ptr<std::string>& field_trials_init_string =
+      GetStaticObjects().field_trials_init_string;
+
   if (j_trials_init_string.is_null()) {
     field_trials_init_string = nullptr;
     field_trial::InitFieldTrialsFromString(nullptr);
@@ -296,7 +309,7 @@ static void JNI_PeerConnectionFactory_FreeFactory(JNIEnv*,
                                                   jlong j_p) {
   delete reinterpret_cast<OwnedFactoryAndThreads*>(j_p);
   field_trial::InitFieldTrialsFromString(nullptr);
-  field_trials_init_string = nullptr;
+  GetStaticObjects().field_trials_init_string = nullptr;
 }
 
 static void JNI_PeerConnectionFactory_InvokeThreadsCallbacks(
@@ -462,6 +475,8 @@ static void JNI_PeerConnectionFactory_InjectLoggable(
     const JavaParamRef<jclass>&,
     const JavaParamRef<jobject>& j_logging,
     jint nativeSeverity) {
+  std::unique_ptr<JNILogSink>& jni_log_sink = GetStaticObjects().jni_log_sink;
+
   // If there is already a LogSink, remove it from LogMessage.
   if (jni_log_sink) {
     rtc::LogMessage::RemoveLogToStream(jni_log_sink.get());
@@ -475,6 +490,8 @@ static void JNI_PeerConnectionFactory_InjectLoggable(
 static void JNI_PeerConnectionFactory_DeleteLoggable(
     JNIEnv* jni,
     const JavaParamRef<jclass>&) {
+  std::unique_ptr<JNILogSink>& jni_log_sink = GetStaticObjects().jni_log_sink;
+
   if (jni_log_sink) {
     rtc::LogMessage::RemoveLogToStream(jni_log_sink.get());
     jni_log_sink.reset();
