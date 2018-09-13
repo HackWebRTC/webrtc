@@ -21,6 +21,8 @@
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "modules/rtp_rtcp/source/rtp_format_video_generic.h"
+#include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor.h"
+#include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor_extension.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
@@ -59,8 +61,10 @@ const int kVideoRotationExtensionId = 5;
 const size_t kGenericHeaderLength = 1;
 const uint8_t kPayloadData[] = {47, 11, 32, 93, 89};
 const int64_t kDefaultExpectedRetransmissionTimeMs = 125;
+const int kGenericDescriptorId = 10;
 
 using ::testing::_;
+using ::testing::ElementsAre;
 using ::testing::ElementsAreArray;
 using ::testing::Invoke;
 
@@ -84,6 +88,8 @@ class LoopbackTransportTest : public webrtc::Transport {
     receivers_extensions_.Register(kRtpExtensionVideoTiming,
                                    kVideoTimingExtensionId);
     receivers_extensions_.Register(kRtpExtensionMid, kMidExtensionId);
+    receivers_extensions_.Register(kRtpExtensionGenericFrameDescriptor,
+                                   kGenericDescriptorId);
   }
 
   bool SendRtp(const uint8_t* data,
@@ -2014,6 +2020,36 @@ TEST_P(RtpSenderVideoTest, ConditionalRetransmitLimit) {
   vp8_header.temporalIdx = 1;
   EXPECT_EQ(StorageType::kAllowRetransmission,
             rtp_sender_video_->GetStorageType(header, kSettings, kRttMs));
+}
+
+TEST_P(RtpSenderVideoTest, PopulateGenericFrameDescriptor) {
+  const int64_t kFrameId = 100000;
+  uint8_t kFrame[100];
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+                   kRtpExtensionGenericFrameDescriptor, kGenericDescriptorId));
+
+  RTPVideoHeader hdr;
+  RTPVideoHeader::GenericDescriptorInfo& generic = hdr.generic.emplace();
+  generic.frame_id = kFrameId;
+  generic.temporal_index = 3;
+  generic.spatial_index = 2;
+  generic.higher_spatial_layers.push_back(4);
+  generic.dependencies.push_back(kFrameId - 1);
+  generic.dependencies.push_back(kFrameId - 500);
+  rtp_sender_video_->SendVideo(kVideoCodecGeneric, kVideoFrameDelta, kPayload,
+                               kTimestamp, 0, kFrame, sizeof(kFrame), nullptr,
+                               &hdr, kDefaultExpectedRetransmissionTimeMs);
+
+  RtpGenericFrameDescriptor descriptor_wire;
+  EXPECT_EQ(1U, transport_.sent_packets_.size());
+  EXPECT_TRUE(
+      transport_.last_sent_packet()
+          .GetExtension<RtpGenericFrameDescriptorExtension>(&descriptor_wire));
+  EXPECT_EQ(static_cast<uint16_t>(generic.frame_id), descriptor_wire.FrameId());
+  EXPECT_EQ(generic.temporal_index, descriptor_wire.TemporalLayer());
+  EXPECT_THAT(descriptor_wire.FrameDependenciesDiffs(), ElementsAre(1, 500));
+  uint8_t spatial_bitmask = 0x14;
+  EXPECT_EQ(spatial_bitmask, descriptor_wire.SpatialLayersBitmask());
 }
 
 TEST_P(RtpSenderTest, OnOverheadChanged) {
