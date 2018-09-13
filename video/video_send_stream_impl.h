@@ -136,6 +136,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   void SignalEncoderActive();
 
   const bool send_side_bwe_with_overhead_;
+  const bool has_alr_probing_;
 
   SendStatisticsProxy* const stats_proxy_;
   const VideoSendStream::Config* const config_;

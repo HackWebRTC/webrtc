@@ -76,19 +76,35 @@ int GetEncoderMinBitrateBps() {
       kDefaultEncoderMinBitrateBps);
 }
 
-int CalculateMaxPadBitrateBps(std::vector<VideoStream> streams,
+// Calculate max padding bitrate for a multi layer codec.
+int CalculateMaxPadBitrateBps(const std::vector<VideoStream>& streams,
                               int min_transmit_bitrate_bps,
-                              bool pad_to_min_bitrate) {
+                              bool pad_to_min_bitrate,
+                              bool alr_probing) {
   int pad_up_to_bitrate_bps = 0;
-  // Calculate max padding bitrate for a multi layer codec.
-  if (streams.size() > 1) {
-    // Pad to min bitrate of the highest layer.
-    pad_up_to_bitrate_bps = streams[streams.size() - 1].min_bitrate_bps;
-    // Add target_bitrate_bps of the lower layers.
-    for (size_t i = 0; i < streams.size() - 1; ++i)
-      pad_up_to_bitrate_bps += streams[i].target_bitrate_bps;
-  } else if (pad_to_min_bitrate) {
-    pad_up_to_bitrate_bps = streams[0].min_bitrate_bps;
+
+  // Filter out only the active streams;
+  std::vector<VideoStream> active_streams;
+  for (const VideoStream& stream : streams) {
+    if (stream.active)
+      active_streams.emplace_back(stream);
+  }
+
+  if (active_streams.size() > 1) {
+    if (alr_probing) {
+      // With alr probing, just pad to the min bitrate of the lowest stream,
+      // probing will handle the rest of the rampup.
+      pad_up_to_bitrate_bps = active_streams[0].min_bitrate_bps;
+    } else {
+      // Pad to min bitrate of the highest layer.
+      pad_up_to_bitrate_bps =
+          active_streams[active_streams.size() - 1].min_bitrate_bps;
+      // Add target_bitrate_bps of the lower layers.
+      for (size_t i = 0; i < active_streams.size() - 1; ++i)
+        pad_up_to_bitrate_bps += active_streams[i].target_bitrate_bps;
+    }
+  } else if (!active_streams.empty() && pad_to_min_bitrate) {
+    pad_up_to_bitrate_bps = active_streams[0].min_bitrate_bps;
   }
 
   pad_up_to_bitrate_bps =
@@ -129,6 +145,16 @@ RtpSenderObservers CreateObservers(CallStats* call_stats,
   observers.send_packet_observer = send_delay_stats;
   observers.overhead_observer = overhead_observer;
   return observers;
+}
+
+absl::optional<AlrExperimentSettings> GetAlrSettings(
+    VideoEncoderConfig::ContentType content_type) {
+  if (content_type == VideoEncoderConfig::ContentType::kScreen) {
+    return AlrExperimentSettings::CreateFromFieldTrial(
+        AlrExperimentSettings::kScreenshareProbingBweExperimentName);
+  }
+  return AlrExperimentSettings::CreateFromFieldTrial(
+      AlrExperimentSettings::kStrictPacingAndProbingExperimentName);
 }
 }  // namespace
 
@@ -202,6 +228,8 @@ VideoSendStreamImpl::VideoSendStreamImpl(
     std::unique_ptr<FecController> fec_controller)
     : send_side_bwe_with_overhead_(
           webrtc::field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")),
+      has_alr_probing_(config->periodic_alr_bandwidth_probing ||
+                       GetAlrSettings(content_type)),
       stats_proxy_(stats_proxy),
       config_(config),
       fec_controller_(std::move(fec_controller)),
@@ -268,14 +296,8 @@ VideoSendStreamImpl::VideoSendStreamImpl(
   if (TransportSeqNumExtensionConfigured(*config_)) {
     has_packet_feedback_ = true;
 
-    absl::optional<AlrExperimentSettings> alr_settings;
-    if (content_type == VideoEncoderConfig::ContentType::kScreen) {
-      alr_settings = AlrExperimentSettings::CreateFromFieldTrial(
-          AlrExperimentSettings::kScreenshareProbingBweExperimentName);
-    } else {
-      alr_settings = AlrExperimentSettings::CreateFromFieldTrial(
-          AlrExperimentSettings::kStrictPacingAndProbingExperimentName);
-    }
+    absl::optional<AlrExperimentSettings> alr_settings =
+        GetAlrSettings(content_type);
     if (alr_settings) {
       transport->EnablePeriodicAlrProbing(true);
       transport->SetPacingFactor(alr_settings->pacing_factor);
@@ -491,7 +513,8 @@ void VideoSendStreamImpl::OnEncoderConfigurationChanged(
     max_padding_bitrate_ = streams[0].target_bitrate_bps;
   } else {
     max_padding_bitrate_ = CalculateMaxPadBitrateBps(
-        streams, min_transmit_bitrate_bps, config_->suspend_below_min_bitrate);
+        streams, min_transmit_bitrate_bps, config_->suspend_below_min_bitrate,
+        has_alr_probing_);
   }
 
   // Clear stats for disabled layers.
