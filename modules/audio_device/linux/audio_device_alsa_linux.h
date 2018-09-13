@@ -25,6 +25,16 @@
 #include <sys/ioctl.h>
 #include <sys/soundcard.h>
 
+typedef webrtc::adm_linux_alsa::AlsaSymbolTable WebRTCAlsaSymbolTable;
+WebRTCAlsaSymbolTable* GetAlsaSymbolTable();
+
+// Accesses ALSA functions through our late-binding symbol table instead of
+// directly. This way we don't have to link to libasound, which means our binary
+// will work on systems that don't have it.
+#define LATE(sym)                                                            \
+  LATESYM_GET(webrtc::adm_linux_alsa::AlsaSymbolTable, GetAlsaSymbolTable(), \
+              sym)
+
 namespace webrtc {
 class EventWrapper;
 
