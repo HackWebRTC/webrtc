@@ -11,35 +11,59 @@
 #ifndef MODULES_PACING_ROUND_ROBIN_PACKET_QUEUE_H_
 #define MODULES_PACING_ROUND_ROBIN_PACKET_QUEUE_H_
 
+#include <list>
 #include <map>
 #include <queue>
 #include <set>
 
-#include "modules/pacing/packet_queue_interface.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
 namespace webrtc {
 
-class RoundRobinPacketQueue : public PacketQueueInterface {
+class RoundRobinPacketQueue {
  public:
   explicit RoundRobinPacketQueue(const Clock* clock);
-  ~RoundRobinPacketQueue() override;
+  ~RoundRobinPacketQueue();
 
-  using Packet = PacketQueueInterface::Packet;
+  struct Packet {
+    Packet(RtpPacketSender::Priority priority,
+           uint32_t ssrc,
+           uint16_t seq_number,
+           int64_t capture_time_ms,
+           int64_t enqueue_time_ms,
+           size_t length_in_bytes,
+           bool retransmission,
+           uint64_t enqueue_order);
+    Packet(const Packet& other);
+    virtual ~Packet();
+    bool operator<(const Packet& other) const;
 
-  void Push(const Packet& packet) override;
-  const Packet& BeginPop() override;
-  void CancelPop(const Packet& packet) override;
-  void FinalizePop(const Packet& packet) override;
+    RtpPacketSender::Priority priority;
+    uint32_t ssrc;
+    uint16_t sequence_number;
+    int64_t capture_time_ms;  // Absolute time of frame capture.
+    int64_t enqueue_time_ms;  // Absolute time of pacer queue entry.
+    int64_t sum_paused_ms;
+    size_t bytes;
+    bool retransmission;
+    uint64_t enqueue_order;
+    std::list<Packet>::iterator this_it;
+    std::multiset<int64_t>::iterator enqueue_time_it;
+  };
 
-  bool Empty() const override;
-  size_t SizeInPackets() const override;
-  uint64_t SizeInBytes() const override;
+  void Push(const Packet& packet);
+  const Packet& BeginPop();
+  void CancelPop(const Packet& packet);
+  void FinalizePop(const Packet& packet);
 
-  int64_t OldestEnqueueTimeMs() const override;
-  int64_t AverageQueueTimeMs() const override;
-  void UpdateQueueTime(int64_t timestamp_ms) override;
-  void SetPauseState(bool paused, int64_t timestamp_ms) override;
+  bool Empty() const;
+  size_t SizeInPackets() const;
+  uint64_t SizeInBytes() const;
+
+  int64_t OldestEnqueueTimeMs() const;
+  int64_t AverageQueueTimeMs() const;
+  void UpdateQueueTime(int64_t timestamp_ms);
+  void SetPauseState(bool paused, int64_t timestamp_ms);
 
  private:
   struct StreamPrioKey {
