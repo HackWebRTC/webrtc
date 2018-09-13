@@ -164,7 +164,6 @@ if (is_android) {
 
     deps = [
       ":AppRTCMobile_javalib",
-      "../rtc_tools:frame_analyzer",
       "../sdk/android:libjingle_peerconnection_java",
       "//third_party/android_support_test_runner:rules_java",
       "//third_party/android_support_test_runner:runner_java",
@@ -185,8 +184,8 @@ if (is_android) {
       "../rtc_tools/testing/build_apprtc.py",
       "../rtc_tools/testing/utils.py",
       "../tools_webrtc/video_quality_toolchain/linux/ffmpeg",
+      "../tools_webrtc/video_quality_toolchain/linux/frame_analyzer",
       "../tools_webrtc/video_quality_toolchain/linux/zxing",
-      "${root_out_dir}/frame_analyzer",
     ]
   }
 }

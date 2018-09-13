@@ -192,7 +192,7 @@ def RunTest(android_device, adb_path, build_dir, temp_dir, num_retries,
 
   # Run comparison script.
   compare_script = os.path.join(SRC_DIR, 'rtc_tools', 'compare_videos.py')
-  frame_analyzer = os.path.join(build_dir, 'frame_analyzer')
+  frame_analyzer = os.path.join(TOOLCHAIN_DIR, 'frame_analyzer')
   zxing_path = os.path.join(TOOLCHAIN_DIR, 'zxing')
   stats_file_ref = os.path.join(temp_dir, 'stats_ref.txt')
   stats_file_test = os.path.join(temp_dir, 'stats_test.txt')
@@ -241,3 +241,4 @@ def main():
 
 if __name__ == '__main__':
   sys.exit(main())
+
