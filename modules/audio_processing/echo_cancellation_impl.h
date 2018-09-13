@@ -22,7 +22,7 @@ namespace webrtc {
 
 class AudioBuffer;
 
-class EchoCancellationImpl : public EchoCancellation {
+class EchoCancellationImpl : EchoCancellation {
  public:
   EchoCancellationImpl(rtc::CriticalSection* crit_render,
                        rtc::CriticalSection* crit_capture);
@@ -32,10 +32,29 @@ class EchoCancellationImpl : public EchoCancellation {
   int ProcessCaptureAudio(AudioBuffer* audio, int stream_delay_ms);
 
   // EchoCancellation implementation.
+  int Enable(bool enable) override;
   bool is_enabled() const override;
-  int stream_drift_samples() const override;
-  SuppressionLevel suppression_level() const override;
+  int enable_drift_compensation(bool enable) override;
   bool is_drift_compensation_enabled() const override;
+  void set_stream_drift_samples(int drift) override;
+  int stream_drift_samples() const override;
+  int set_suppression_level(SuppressionLevel level) override;
+  SuppressionLevel suppression_level() const override;
+  bool stream_has_echo() const override;
+  // Enable logging of various AEC statistics.
+  int enable_metrics(bool enable) override;
+  bool are_metrics_enabled() const override;
+  // Provides various statistics about the AEC.
+  int GetMetrics(Metrics* metrics) override;
+  // Enable logging of delay metrics.
+  int enable_delay_logging(bool enable) override;
+  bool is_delay_logging_enabled() const override;
+  // Provides delay metrics.
+  int GetDelayMetrics(int* median, int* std) override;
+  int GetDelayMetrics(int* median,
+                      int* std,
+                      float* fraction_poor_delays) override;
+  struct AecCore* aec_core() const override;
 
   void Initialize(int sample_rate_hz,
                   size_t num_reverse_channels_,
@@ -57,35 +76,9 @@ class EchoCancellationImpl : public EchoCancellation {
   static size_t NumCancellersRequired(size_t num_output_channels,
                                       size_t num_reverse_channels);
 
-  // Enable logging of various AEC statistics.
-  int enable_metrics(bool enable) override;
-
-  // Provides various statistics about the AEC.
-  int GetMetrics(Metrics* metrics) override;
-
-  // Enable logging of delay metrics.
-  int enable_delay_logging(bool enable) override;
-
-  // Provides delay metrics.
-  int GetDelayMetrics(int* median,
-                      int* std,
-                      float* fraction_poor_delays) override;
-
  private:
   class Canceller;
   struct StreamProperties;
-
-  // EchoCancellation implementation.
-  int Enable(bool enable) override;
-  int enable_drift_compensation(bool enable) override;
-  void set_stream_drift_samples(int drift) override;
-  int set_suppression_level(SuppressionLevel level) override;
-  bool are_metrics_enabled() const override;
-  bool stream_has_echo() const override;
-  bool is_delay_logging_enabled() const override;
-  int GetDelayMetrics(int* median, int* std) override;
-
-  struct AecCore* aec_core() const override;
 
   void AllocateRenderQueue();
   int Configure();

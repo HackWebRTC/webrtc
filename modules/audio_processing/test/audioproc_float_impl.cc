@@ -106,9 +106,6 @@ DEFINE_int(delay_agnostic,
 DEFINE_int(extended_filter,
            kParameterNotSpecifiedValue,
            "Activate (1) or deactivate(0) the AEC extended filter mode");
-DEFINE_int(drift_compensation,
-           kParameterNotSpecifiedValue,
-           "Activate (1) or deactivate(0) the drift compensation");
 DEFINE_int(aec3,
            kParameterNotSpecifiedValue,
            "Activate (1) or deactivate(0) the experimental AEC mode AEC3");
@@ -259,8 +256,6 @@ SimulationSettings CreateSettings() {
                         &settings.aec_suppression_level);
   SetSettingIfFlagSet(FLAG_delay_agnostic, &settings.use_delay_agnostic);
   SetSettingIfFlagSet(FLAG_extended_filter, &settings.use_extended_filter);
-  SetSettingIfFlagSet(FLAG_drift_compensation,
-                      &settings.use_drift_compensation);
   SetSettingIfFlagSet(FLAG_refined_adaptive_filter,
                       &settings.use_refined_adaptive_filter);
 
@@ -361,11 +356,12 @@ void PerformBasicParameterSanityChecks(const SimulationSettings& settings) {
           *settings.reverse_output_num_channels <= 0,
       "Error: --reverse_output_num_channels must be positive!\n");
 
-  ReportConditionalErrorAndExit(
-      settings.aec_suppression_level &&
-          ((*settings.aec_suppression_level) < 0 ||
-           (*settings.aec_suppression_level) > 2),
-      "Error: --aec_suppression_level must be specified between 0 and 2.\n");
+  ReportConditionalErrorAndExit(settings.aec_suppression_level &&
+                                    ((*settings.aec_suppression_level) < 1 ||
+                                     (*settings.aec_suppression_level) > 2),
+                                "Error: --aec_suppression_level must be "
+                                "specified between 1 and 2. 0 is "
+                                "deprecated.\n");
 
   ReportConditionalErrorAndExit(
       settings.aecm_routing_mode && ((*settings.aecm_routing_mode) < 0 ||
