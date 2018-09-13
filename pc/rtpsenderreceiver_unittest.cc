@@ -691,8 +691,7 @@ TEST_F(RtpSenderReceiverTest,
   EXPECT_EQ(1u, params.encodings.size());
 
   // Unimplemented RtpParameters: codec_payload_type, fec, rtx, dtx, ptime,
-  // max_framerate, scale_resolution_down_by, scale_framerate_down_by, rid,
-  // dependency_rids.
+  // scale_resolution_down_by, scale_framerate_down_by, rid, dependency_rids.
   params.encodings[0].codec_payload_type = 1;
   EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
             audio_rtp_sender_->SetParameters(params).type());
@@ -714,11 +713,6 @@ TEST_F(RtpSenderReceiverTest,
   params = audio_rtp_sender_->GetParameters();
 
   params.encodings[0].ptime = 1;
-  EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
-            audio_rtp_sender_->SetParameters(params).type());
-  params = audio_rtp_sender_->GetParameters();
-
-  params.encodings[0].max_framerate = 1;
   EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
             audio_rtp_sender_->SetParameters(params).type());
   params = audio_rtp_sender_->GetParameters();
@@ -878,8 +872,7 @@ TEST_F(RtpSenderReceiverTest,
   EXPECT_EQ(1u, params.encodings.size());
 
   // Unimplemented RtpParameters: codec_payload_type, fec, rtx, dtx, ptime,
-  // max_framerate, scale_resolution_down_by, scale_framerate_down_by, rid,
-  // dependency_rids.
+  // scale_resolution_down_by, scale_framerate_down_by, rid, dependency_rids.
   params.encodings[0].codec_payload_type = 1;
   EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
             video_rtp_sender_->SetParameters(params).type());
@@ -901,11 +894,6 @@ TEST_F(RtpSenderReceiverTest,
   params = video_rtp_sender_->GetParameters();
 
   params.encodings[0].ptime = 1;
-  EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
-            video_rtp_sender_->SetParameters(params).type());
-  params = video_rtp_sender_->GetParameters();
-
-  params.encodings[0].max_framerate = 1;
   EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
             video_rtp_sender_->SetParameters(params).type());
   params = video_rtp_sender_->GetParameters();
