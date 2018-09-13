@@ -17,13 +17,19 @@
 
 namespace rtc {
 
+using ::testing::_;
+using ::testing::InvokeWithoutArgs;
+
 class MockAsyncResolver : public AsyncResolverInterface {
  public:
-  MockAsyncResolver() = default;
+  MockAsyncResolver() {
+    ON_CALL(*this, Start(_)).WillByDefault(InvokeWithoutArgs([this] {
+      SignalDone(this);
+    }));
+  }
   ~MockAsyncResolver() = default;
 
-  void Start(const rtc::SocketAddress& addr) { SignalDone(this); }
-
+  MOCK_METHOD1(Start, void(const rtc::SocketAddress&));
   MOCK_CONST_METHOD2(GetResolvedAddress, bool(int family, SocketAddress* addr));
   MOCK_CONST_METHOD0(GetError, int());
 

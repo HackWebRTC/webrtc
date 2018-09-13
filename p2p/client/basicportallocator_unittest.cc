@@ -2246,4 +2246,53 @@ TEST_F(BasicPortAllocatorTest, IceRegatheringMetricsLoggedWhenNetworkChanges) {
                    static_cast<int>(IceRegatheringReason::NETWORK_CHANGE)));
 }
 
+// Test that when an mDNS responder is present, the local address of a host
+// candidate is masked by an mDNS hostname and the related address of any other
+// type of candidates is set to 0.0.0.0 or ::0.
+TEST_F(BasicPortAllocatorTest, HostCandidateAddressIsReplacedByHostname) {
+  // Default config uses GTURN and no NAT, so replace that with the
+  // desired setup (NAT, STUN server, TURN server, UDP/TCP).
+  ResetWithStunServerAndNat(kStunAddr);
+  turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
+  AddTurnServers(kTurnUdpIntAddr, kTurnTcpIntAddr);
+  AddTurnServers(kTurnUdpIntIPv6Addr, kTurnTcpIntIPv6Addr);
+
+  ASSERT_EQ(&network_manager_, allocator().network_manager());
+  network_manager_.CreateMDnsResponder();
+  AddInterface(kClientAddr);
+  ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
+  session_->StartGettingPorts();
+  ASSERT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
+                             kDefaultAllocationTimeout, fake_clock);
+  EXPECT_EQ(5u, candidates_.size());
+  int num_host_udp_candidates = 0;
+  int num_host_tcp_candidates = 0;
+  int num_srflx_candidates = 0;
+  int num_relay_candidates = 0;
+  for (const auto& candidate : candidates_) {
+    if (candidate.type() == LOCAL_PORT_TYPE) {
+      EXPECT_TRUE(candidate.address().IsUnresolvedIP());
+      if (candidate.protocol() == UDP_PROTOCOL_NAME) {
+        ++num_host_udp_candidates;
+      } else {
+        ++num_host_tcp_candidates;
+      }
+    } else {
+      EXPECT_NE(PRFLX_PORT_TYPE, candidate.type());
+      // The related address should be set to 0.0.0.0 or ::0 for srflx and
+      // relay candidates.
+      EXPECT_EQ(rtc::SocketAddress(), candidate.related_address());
+      if (candidate.type() == STUN_PORT_TYPE) {
+        ++num_srflx_candidates;
+      } else {
+        ++num_relay_candidates;
+      }
+    }
+  }
+  EXPECT_EQ(1, num_host_udp_candidates);
+  EXPECT_EQ(1, num_host_tcp_candidates);
+  EXPECT_EQ(1, num_srflx_candidates);
+  EXPECT_EQ(2, num_relay_candidates);
+}
+
 }  // namespace cricket

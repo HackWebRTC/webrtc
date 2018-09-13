@@ -790,6 +790,7 @@ rtc_static_library("rtc_base_generic") {
     "ipaddress.cc",
     "ipaddress.h",
     "keep_ref_until_done.h",
+    "mdns_responder_interface.h",
     "messagedigest.cc",
     "messagedigest.h",
     "messagehandler.cc",
@@ -1000,6 +1001,7 @@ rtc_source_set("rtc_base_tests_utils") {
     # included by multiple targets below.
     "cpu_time.cc",
     "cpu_time.h",
+    "fake_mdns_responder.h",
     "fakeclock.cc",
     "fakeclock.h",
     "fakenetwork.h",

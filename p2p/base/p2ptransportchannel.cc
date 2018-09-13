@@ -807,7 +807,24 @@ void P2PTransportChannel::OnUnknownAddress(
   // Port has received a valid stun packet from an address that no Connection
   // is currently available for. See if we already have a candidate with the
   // address. If it isn't we need to create new candidate for it.
-
+  //
+  // TODO(qingsi): There is a caveat of the logic below if we have remote
+  // candidates with hostnames. We could create a prflx candidate that is
+  // identical to a host candidate that are currently in the process of name
+  // resolution. We would not have a duplicate candidate since when adding the
+  // resolved host candidate, FinishingAddingRemoteCandidate does
+  // MaybeUpdatePeerReflexiveCandidate, and the prflx candidate would be updated
+  // to a host candidate. As a result, for a brief moment we would have a prflx
+  // candidate showing a private IP address, though we do not signal prflx
+  // candidates to applications and we could obfuscate the IP addresses of prflx
+  // candidates in P2PTransportChannel::GetStats. The difficulty of preventing
+  // creating the prflx from the beginning is that we do not have a reliable way
+  // to claim two candidates are identical without the address information. If
+  // we always pause the addition of a prflx candidate when there is ongoing
+  // name resolution and dedup after we have a resolved address, we run into the
+  // risk of losing/delaying the addition of a non-identical candidate that
+  // could be the only way to have a connection, if the resolution never
+  // completes or is significantly delayed.
   const Candidate* candidate = nullptr;
   for (const Candidate& c : remote_candidates_) {
     if (c.username() == remote_username && c.address() == address &&

@@ -39,6 +39,7 @@
 #include "rtc_base/socketaddress.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
+#include "rtc_base/weak_ptr.h"
 
 namespace cricket {
 
@@ -403,7 +404,9 @@ class Port : public PortInterface,
                   uint32_t type_preference,
                   uint32_t relay_preference,
                   const std::string& url,
-                  bool final);
+                  bool is_final);
+
+  void FinishAddingAddress(const Candidate& c, bool is_final);
 
   // Adds the given connection to the map keyed by the remote candidate address.
   // If an existing connection has the same address, the existing one will be
@@ -487,6 +490,8 @@ class Port : public PortInterface,
   int16_t network_cost_;
   State state_ = State::INIT;
   int64_t last_time_all_connections_removed_ = 0;
+
+  rtc::WeakPtrFactory<Port> weak_factory_;
 
   friend class Connection;
 };
