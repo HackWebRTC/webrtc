@@ -400,7 +400,8 @@ void AudioDeviceBuffer::LogStats(LogState state) {
   // was set to LOG_START to ensure that we have at least one full stable
   // 10-second interval for sample-rate estimation. Hence, first printed log
   // will be after ~20 seconds.
-  if (++num_stat_reports_ > 2 && time_since_last > 0) {
+  if (++num_stat_reports_ > 2 &&
+      static_cast<size_t>(time_since_last) > kTimerIntervalInMilliseconds / 2) {
     uint32_t diff_samples = stats.rec_samples - last_stats_.rec_samples;
     float rate = diff_samples / (static_cast<float>(time_since_last) / 1000.0);
     uint32_t abs_diff_rate_in_percent = 0;
@@ -410,14 +411,14 @@ void AudioDeviceBuffer::LogStats(LogState state) {
           ((100.0f * std::abs(rate - rec_sample_rate)) / rec_sample_rate));
       RTC_HISTOGRAM_PERCENTAGE("WebRTC.Audio.RecordSampleRateOffsetInPercent",
                                abs_diff_rate_in_percent);
+      RTC_LOG(INFO) << "[REC : " << time_since_last << "msec, "
+                    << rec_sample_rate / 1000 << "kHz] callbacks: "
+                    << stats.rec_callbacks - last_stats_.rec_callbacks << ", "
+                    << "samples: " << diff_samples << ", "
+                    << "rate: " << static_cast<int>(rate + 0.5) << ", "
+                    << "rate diff: " << abs_diff_rate_in_percent << "%, "
+                    << "level: " << stats.max_rec_level;
     }
-    RTC_LOG(INFO) << "[REC : " << time_since_last << "msec, "
-                  << rec_sample_rate / 1000 << "kHz] callbacks: "
-                  << stats.rec_callbacks - last_stats_.rec_callbacks << ", "
-                  << "samples: " << diff_samples << ", "
-                  << "rate: " << static_cast<int>(rate + 0.5) << ", "
-                  << "rate diff: " << abs_diff_rate_in_percent << "%, "
-                  << "level: " << stats.max_rec_level;
 
     diff_samples = stats.play_samples - last_stats_.play_samples;
     rate = diff_samples / (static_cast<float>(time_since_last) / 1000.0);
@@ -428,14 +429,14 @@ void AudioDeviceBuffer::LogStats(LogState state) {
           ((100.0f * std::abs(rate - play_sample_rate)) / play_sample_rate));
       RTC_HISTOGRAM_PERCENTAGE("WebRTC.Audio.PlayoutSampleRateOffsetInPercent",
                                abs_diff_rate_in_percent);
+      RTC_LOG(INFO) << "[PLAY: " << time_since_last << "msec, "
+                    << play_sample_rate / 1000 << "kHz] callbacks: "
+                    << stats.play_callbacks - last_stats_.play_callbacks << ", "
+                    << "samples: " << diff_samples << ", "
+                    << "rate: " << static_cast<int>(rate + 0.5) << ", "
+                    << "rate diff: " << abs_diff_rate_in_percent << "%, "
+                    << "level: " << stats.max_play_level;
     }
-    RTC_LOG(INFO) << "[PLAY: " << time_since_last << "msec, "
-                  << play_sample_rate / 1000 << "kHz] callbacks: "
-                  << stats.play_callbacks - last_stats_.play_callbacks << ", "
-                  << "samples: " << diff_samples << ", "
-                  << "rate: " << static_cast<int>(rate + 0.5) << ", "
-                  << "rate diff: " << abs_diff_rate_in_percent << "%, "
-                  << "level: " << stats.max_play_level;
   }
   last_stats_ = stats;
 
