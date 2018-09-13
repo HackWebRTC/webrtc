@@ -120,6 +120,7 @@ class NetEqTest : public NetEqSimulator {
   Callbacks callbacks_;
   int sample_rate_hz_;
   NetEqState current_state_;
+  NetEqOperationsAndState prev_ops_state_;
 };
 
 }  // namespace test

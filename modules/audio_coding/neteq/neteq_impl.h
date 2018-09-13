@@ -176,6 +176,8 @@ class NetEqImpl : public webrtc::NetEq {
 
   NetEqLifetimeStatistics GetLifetimeStatistics() const override;
 
+  NetEqOperationsAndState GetOperationsAndState() const override;
+
   // Same as RtcpStatistics(), but does not reset anything.
   void GetRtcpStatisticsNoReset(RtcpStatistics* stats) override;
 

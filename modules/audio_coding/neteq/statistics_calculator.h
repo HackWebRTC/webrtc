@@ -111,6 +111,8 @@ class StatisticsCalculator {
   // never reset.
   NetEqLifetimeStatistics GetLifetimeStatistics() const;
 
+  NetEqOperationsAndState GetOperationsAndState() const;
+
  private:
   static const int kMaxReportPeriod = 60;  // Seconds before auto-reset.
   static const size_t kLenWaitingTimes = 100;
@@ -178,6 +180,7 @@ class StatisticsCalculator {
   static uint16_t CalculateQ14Ratio(size_t numerator, uint32_t denominator);
 
   NetEqLifetimeStatistics lifetime_stats_;
+  NetEqOperationsAndState operations_and_state_;
   size_t concealed_samples_correction_ = 0;
   size_t voice_concealed_samples_correction_ = 0;
   size_t preemptive_samples_;

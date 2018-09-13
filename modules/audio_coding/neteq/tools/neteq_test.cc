@@ -153,25 +153,35 @@ NetEqTest::SimulationStepResult NetEqTest::RunToNextGetAudio() {
       input_->AdvanceOutputEvent();
       result.simulation_step_ms =
           input_->NextEventTime().value_or(time_now_ms) - start_time_ms;
-      const auto network_stats = SimulationStats();
-      current_state_.current_delay_ms = network_stats.current_buffer_size_ms;
-      current_state_.packet_loss_occurred = network_stats.packet_loss_rate > 0;
-      int scaling_factor = std::max(1 << 14, network_stats.accelerate_rate +
-                                                 network_stats.expand_rate +
-                                                 network_stats.preemptive_rate);
-      // TODO(ivoc): Improve the accuracy of these numbers by adding a new API
-      // to NetEq.
-      result.action_times_ms[Action::kAccelerate] =
-          (10 * network_stats.accelerate_rate) / scaling_factor;
-      result.action_times_ms[Action::kExpand] =
-          (10 * network_stats.expand_rate) / scaling_factor;
-      result.action_times_ms[Action::kPreemptiveExpand] =
-          (10 * network_stats.preemptive_rate) / scaling_factor;
-      result.action_times_ms[Action::kNormal] =
-          10 - result.action_times_ms[Action::kAccelerate] -
-          result.action_times_ms[Action::kExpand] -
-          result.action_times_ms[Action::kPreemptiveExpand];
+      const auto operations_state = neteq_->GetOperationsAndState();
+      current_state_.current_delay_ms = operations_state.current_buffer_size_ms;
+      // TODO(ivoc): Add more accurate reporting by tracking the origin of
+      // samples in the sync buffer.
+      result.action_times_ms[Action::kExpand] = 0;
+      result.action_times_ms[Action::kAccelerate] = 0;
+      result.action_times_ms[Action::kPreemptiveExpand] = 0;
+      result.action_times_ms[Action::kNormal] = 0;
+
+      if (out_frame.speech_type_ == AudioFrame::SpeechType::kPLC ||
+          out_frame.speech_type_ == AudioFrame::SpeechType::kPLCCNG) {
+        // Consider the whole frame to be the result of expansion.
+        result.action_times_ms[Action::kExpand] = 10;
+      } else if (operations_state.accelerate_samples -
+                     prev_ops_state_.accelerate_samples >
+                 0) {
+        // Consider the whole frame to be the result of acceleration.
+        result.action_times_ms[Action::kAccelerate] = 10;
+      } else if (operations_state.preemptive_samples -
+                     prev_ops_state_.preemptive_samples >
+                 0) {
+        // Consider the whole frame to be the result of preemptive expansion.
+        result.action_times_ms[Action::kPreemptiveExpand] = 10;
+      } else {
+        // Consider the whole frame to be the result of normal playout.
+        result.action_times_ms[Action::kNormal] = 10;
+      }
       result.is_simulation_finished = input_->ended();
+      prev_ops_state_ = operations_state;
       return result;
     }
   }
