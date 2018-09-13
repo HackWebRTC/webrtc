@@ -22,6 +22,7 @@
 #include "pc/test/mockpeerconnectionobservers.h"
 #include "pc/test/peerconnectiontestwrapper.h"
 #include "rtc_base/gunit.h"
+#include "rtc_base/timeutils.h"
 
 using webrtc::FakeConstraints;
 using webrtc::FakeVideoTrackRenderer;
@@ -287,6 +288,7 @@ PeerConnectionTestWrapper::GetUserMedia(
     // Set max frame rate to 10fps to reduce the risk of the tests to be flaky.
     webrtc::FakePeriodicVideoSource::Config config;
     config.frame_interval_ms = 100;
+    config.timestamp_offset_ms = rtc::TimeMillis();
 
     rtc::scoped_refptr<webrtc::VideoTrackSourceInterface> source =
         new rtc::RefCountedObject<webrtc::FakePeriodicVideoTrackSource>(

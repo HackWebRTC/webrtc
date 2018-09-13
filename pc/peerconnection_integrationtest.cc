@@ -61,6 +61,7 @@
 #include "rtc_base/gunit.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/testcertificateverifier.h"
+#include "rtc_base/timeutils.h"
 #include "rtc_base/virtualsocketserver.h"
 #include "system_wrappers/include/metrics_default.h"
 #include "test/gmock.h"
@@ -348,8 +349,9 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
   }
 
   rtc::scoped_refptr<webrtc::VideoTrackInterface> CreateLocalVideoTrack() {
-    return CreateLocalVideoTrackInternal(
-        webrtc::FakePeriodicVideoSource::Config());
+    webrtc::FakePeriodicVideoSource::Config config;
+    config.timestamp_offset_ms = rtc::TimeMillis();
+    return CreateLocalVideoTrackInternal(config);
   }
 
   rtc::scoped_refptr<webrtc::VideoTrackInterface>
@@ -362,6 +364,7 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
   CreateLocalVideoTrackWithRotation(webrtc::VideoRotation rotation) {
     webrtc::FakePeriodicVideoSource::Config config;
     config.rotation = rotation;
+    config.timestamp_offset_ms = rtc::TimeMillis();
     return CreateLocalVideoTrackInternal(config);
   }
 
@@ -1836,6 +1839,7 @@ TEST_P(PeerConnectionIntegrationTest,
   webrtc::FakePeriodicVideoSource::Config config;
   config.width = 1280;
   config.height = 720;
+  config.timestamp_offset_ms = rtc::TimeMillis();
   caller()->AddTrack(caller()->CreateLocalVideoTrackWithConfig(config));
   callee()->AddTrack(callee()->CreateLocalVideoTrackWithConfig(config));
 

@@ -11,6 +11,7 @@
 #include "modules/rtp_rtcp/source/rtp_sender.h"
 
 #include <algorithm>
+#include <limits>
 #include <string>
 #include <utility>
 
@@ -1011,7 +1012,15 @@ void RTPSender::UpdateDelayStatistics(int64_t capture_time_ms, int64_t now_ms) {
   {
     rtc::CritScope cs(&statistics_crit_);
     // TODO(holmer): Compute this iteratively instead.
-    send_delays_[now_ms] = now_ms - capture_time_ms;
+    RTC_DCHECK_GE(now_ms, static_cast<int64_t>(0));
+    RTC_DCHECK_LE(now_ms, std::numeric_limits<int64_t>::max() / 2);
+    RTC_DCHECK_GE(capture_time_ms, static_cast<int64_t>(0));
+    RTC_DCHECK_LE(capture_time_ms, std::numeric_limits<int64_t>::max() / 2);
+    int64_t diff_ms = now_ms - capture_time_ms;
+    RTC_DCHECK_GE(diff_ms, static_cast<int64_t>(0));
+    RTC_DCHECK_LE(diff_ms,
+                  static_cast<int64_t>(std::numeric_limits<int>::max()));
+    send_delays_[now_ms] = diff_ms;
     send_delays_.erase(
         send_delays_.begin(),
         send_delays_.lower_bound(now_ms - kSendSideDelayWindowMs));
