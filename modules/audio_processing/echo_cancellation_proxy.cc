@@ -10,13 +10,11 @@
 
 #include "modules/audio_processing/echo_cancellation_proxy.h"
 
-#include "rtc_base/logging.h"
-
 namespace webrtc {
 
 EchoCancellationProxy::EchoCancellationProxy(
     AudioProcessing* audio_processing,
-    EchoCancellationImpl* echo_cancellation)
+    EchoCancellation* echo_cancellation)
     : audio_processing_(audio_processing),
       echo_cancellation_(echo_cancellation) {}
 
@@ -24,6 +22,8 @@ EchoCancellationProxy::~EchoCancellationProxy() = default;
 
 int EchoCancellationProxy::Enable(bool enable) {
   // Change the config in APM to mirror the applied settings.
+  // TODO(bugs.webrtc.org/9535): Remove the call to EchoCancellation::Enable
+  // when APM starts taking the config into account.
   AudioProcessing::Config apm_config = audio_processing_->GetConfig();
   bool aec2_enabled = apm_config.echo_canceller.enabled &&
                       !apm_config.echo_canceller.mobile_mode;
@@ -32,6 +32,7 @@ int EchoCancellationProxy::Enable(bool enable) {
     apm_config.echo_canceller.mobile_mode = false;
     audio_processing_->ApplyConfig(apm_config);
   }
+  echo_cancellation_->Enable(enable);
   return AudioProcessing::kNoError;
 }
 
@@ -57,15 +58,7 @@ int EchoCancellationProxy::stream_drift_samples() const {
 
 int EchoCancellationProxy::set_suppression_level(
     EchoCancellation::SuppressionLevel level) {
-  if (level == EchoCancellation::SuppressionLevel::kLowSuppression) {
-    RTC_LOG(LS_ERROR) << "Ignoring deprecated setting: AEC2 low suppression";
-    return AudioProcessing::kBadParameterError;
-  }
-  AudioProcessing::Config apm_config = audio_processing_->GetConfig();
-  apm_config.echo_canceller.legacy_moderate_suppression_level =
-      (level == EchoCancellation::SuppressionLevel::kModerateSuppression);
-  audio_processing_->ApplyConfig(apm_config);
-  return AudioProcessing::kNoError;
+  return echo_cancellation_->set_suppression_level(level);
 }
 
 EchoCancellation::SuppressionLevel EchoCancellationProxy::suppression_level()

@@ -672,16 +672,12 @@ void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
   rtc::CritScope cs_render(&crit_render_);
   rtc::CritScope cs_capture(&crit_capture_);
 
-  public_submodules_->echo_cancellation->Enable(
-      config_.echo_canceller.enabled && !config_.echo_canceller.mobile_mode);
+  static_cast<EchoCancellation*>(public_submodules_->echo_cancellation.get())
+      ->Enable(config_.echo_canceller.enabled &&
+               !config_.echo_canceller.mobile_mode);
   static_cast<EchoControlMobile*>(public_submodules_->echo_control_mobile.get())
       ->Enable(config_.echo_canceller.enabled &&
                config_.echo_canceller.mobile_mode);
-
-  public_submodules_->echo_cancellation->set_suppression_level(
-      config.echo_canceller.legacy_moderate_suppression_level
-          ? EchoCancellation::SuppressionLevel::kModerateSuppression
-          : EchoCancellation::SuppressionLevel::kHighSuppression);
 
   InitializeLowCutFilter();
 
@@ -1310,8 +1306,7 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
         capture_buffer->num_frames_per_band(), capture_nonlocked_.split_rate);
   }
   RETURN_ON_ERR(public_submodules_->gain_control->ProcessCaptureAudio(
-      capture_buffer,
-      public_submodules_->echo_cancellation->stream_has_echo()));
+      capture_buffer, echo_cancellation()->stream_has_echo()));
 
   if (submodule_states_.CaptureMultiBandProcessingActive() &&
       SampleRateSupportsMultiBand(
@@ -1857,15 +1852,15 @@ void AudioProcessingImpl::InitializePreProcessor() {
 void AudioProcessingImpl::MaybeUpdateHistograms() {
   static const int kMinDiffDelayMs = 60;
 
-  if (public_submodules_->echo_cancellation->is_enabled()) {
+  if (echo_cancellation()->is_enabled()) {
     // Activate delay_jumps_ counters if we know echo_cancellation is running.
     // If a stream has echo we know that the echo_cancellation is in process.
     if (capture_.stream_delay_jumps == -1 &&
-        public_submodules_->echo_cancellation->stream_has_echo()) {
+        echo_cancellation()->stream_has_echo()) {
       capture_.stream_delay_jumps = 0;
     }
     if (capture_.aec_system_delay_jumps == -1 &&
-        public_submodules_->echo_cancellation->stream_has_echo()) {
+        echo_cancellation()->stream_has_echo()) {
       capture_.aec_system_delay_jumps = 0;
     }
 

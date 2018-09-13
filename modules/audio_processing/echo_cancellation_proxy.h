@@ -11,7 +11,6 @@
 #ifndef MODULES_AUDIO_PROCESSING_ECHO_CANCELLATION_PROXY_H_
 #define MODULES_AUDIO_PROCESSING_ECHO_CANCELLATION_PROXY_H_
 
-#include "modules/audio_processing/echo_cancellation_impl.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/scoped_ref_ptr.h"
@@ -22,7 +21,7 @@ namespace webrtc {
 class EchoCancellationProxy : public EchoCancellation {
  public:
   EchoCancellationProxy(AudioProcessing* audio_processing,
-                        EchoCancellationImpl* echo_cancellation);
+                        EchoCancellation* echo_cancellation);
   ~EchoCancellationProxy() override;
 
   int Enable(bool enable) override;
@@ -47,7 +46,7 @@ class EchoCancellationProxy : public EchoCancellation {
 
  private:
   AudioProcessing* audio_processing_;
-  EchoCancellationImpl* echo_cancellation_;
+  EchoCancellation* echo_cancellation_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(EchoCancellationProxy);
 };

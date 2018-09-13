@@ -123,6 +123,7 @@ void DebugDumpReplayer::OnStreamEvent(const audioproc::Stream& msg) {
   RTC_CHECK_EQ(AudioProcessing::kNoError,
                apm_->set_stream_delay_ms(msg.delay()));
 
+  apm_->echo_cancellation()->set_stream_drift_samples(msg.drift());
   if (msg.has_keypress()) {
     apm_->set_stream_key_pressed(msg.keypress());
   } else {
@@ -212,11 +213,16 @@ void DebugDumpReplayer::ConfigureApm(const audioproc::Config& msg) {
   apm_config.echo_canceller.enabled = msg.aec_enabled() || msg.aecm_enabled();
   apm_config.echo_canceller.mobile_mode = msg.aecm_enabled();
 
+  RTC_CHECK(msg.has_aec_drift_compensation_enabled());
+  RTC_CHECK_EQ(AudioProcessing::kNoError,
+               apm_->echo_cancellation()->enable_drift_compensation(
+                   msg.aec_drift_compensation_enabled()));
+
   RTC_CHECK(msg.has_aec_suppression_level());
-  apm_config.echo_canceller.legacy_moderate_suppression_level =
-      static_cast<EchoCancellation::SuppressionLevel>(
-          msg.aec_suppression_level()) ==
-      EchoCancellation::SuppressionLevel::kModerateSuppression;
+  RTC_CHECK_EQ(AudioProcessing::kNoError,
+               apm_->echo_cancellation()->set_suppression_level(
+                   static_cast<EchoCancellation::SuppressionLevel>(
+                       msg.aec_suppression_level())));
 
   RTC_CHECK(msg.has_aecm_comfort_noise_enabled());
   RTC_CHECK_EQ(AudioProcessing::kNoError,

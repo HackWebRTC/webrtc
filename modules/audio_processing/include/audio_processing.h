@@ -193,11 +193,12 @@ struct ExperimentalNs {
 // AudioProcessing* apm = AudioProcessingBuilder().Create();
 //
 // AudioProcessing::Config config;
-// config.echo_canceller.enabled = true;
-// config.echo_canceller.mobile_mode = false;
 // config.high_pass_filter.enabled = true;
 // config.gain_controller2.enabled = true;
 // apm->ApplyConfig(config)
+//
+// apm->echo_cancellation()->enable_drift_compensation(false);
+// apm->echo_cancellation()->Enable(true);
 //
 // apm->noise_reduction()->set_level(kHighSuppression);
 // apm->noise_reduction()->Enable(true);
