@@ -36,6 +36,7 @@ class VCMPacket {
   VideoCodecType codec;
 
   bool is_first_packet_in_frame;
+  bool is_last_packet_in_frame;
   VCMNaluCompleteness completeNALU;  // Default is kNaluIncomplete.
   bool insertStartCode;  // True if a start code should be inserted before this
                          // packet.

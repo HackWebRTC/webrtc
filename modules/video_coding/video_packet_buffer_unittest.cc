@@ -68,7 +68,7 @@ class TestPacketBuffer : public ::testing::Test,
     packet.frameType =
         keyframe == kKeyFrame ? kVideoFrameKey : kVideoFrameDelta;
     packet.is_first_packet_in_frame = first == kFirst;
-    packet.markerBit = last == kLast;
+    packet.is_last_packet_in_frame = last == kLast;
     packet.sizeBytes = data_size;
     packet.dataPtr = data;
 
@@ -157,7 +157,7 @@ TEST_F(TestPacketBuffer, NackCount) {
   packet.seqNum = seq_num;
   packet.frameType = kVideoFrameKey;
   packet.is_first_packet_in_frame = true;
-  packet.markerBit = false;
+  packet.is_last_packet_in_frame = false;
   packet.timesNacked = 0;
 
   packet_buffer_->InsertPacket(&packet);
@@ -172,7 +172,7 @@ TEST_F(TestPacketBuffer, NackCount) {
   packet_buffer_->InsertPacket(&packet);
 
   packet.seqNum++;
-  packet.markerBit = true;
+  packet.is_last_packet_in_frame = true;
   packet.timesNacked = 1;
   packet_buffer_->InsertPacket(&packet);
 
@@ -524,7 +524,7 @@ class TestPacketBufferH264 : public TestPacketBuffer {
       }
     }
     packet.is_first_packet_in_frame = first == kFirst;
-    packet.markerBit = last == kLast;
+    packet.is_last_packet_in_frame = last == kLast;
     packet.sizeBytes = data_size;
     packet.dataPtr = data;
 
@@ -605,7 +605,7 @@ TEST_P(TestPacketBufferH264Parameterized, GetBitstreamBufferPadding) {
   packet.dataPtr = data;
   packet.sizeBytes = sizeof(data_data);
   packet.is_first_packet_in_frame = true;
-  packet.markerBit = true;
+  packet.is_last_packet_in_frame = true;
   packet_buffer_->InsertPacket(&packet);
 
   ASSERT_EQ(1UL, frames_from_callback_.size());
@@ -748,7 +748,7 @@ TEST_F(TestPacketBuffer, PacketTimestamps) {
 TEST_F(TestPacketBuffer, IncomingCodecChange) {
   VCMPacket packet;
   packet.is_first_packet_in_frame = true;
-  packet.markerBit = true;
+  packet.is_last_packet_in_frame = true;
   packet.sizeBytes = 0;
   packet.dataPtr = nullptr;
 
@@ -783,7 +783,7 @@ TEST_F(TestPacketBuffer, TooManyNalusInPacket) {
   packet.seqNum = 1;
   packet.frameType = kVideoFrameKey;
   packet.is_first_packet_in_frame = true;
-  packet.markerBit = true;
+  packet.is_last_packet_in_frame = true;
   auto& h264_header =
       packet.video_header.video_type_header.emplace<RTPVideoHeaderH264>();
   h264_header.nalus_length = kMaxNalusPerPacket;
@@ -867,7 +867,7 @@ class TestPacketBufferH264XIsKeyframe : public TestPacketBufferH264 {
     packet_.seqNum = kSeqNum;
 
     packet_.is_first_packet_in_frame = true;
-    packet_.markerBit = true;
+    packet_.is_last_packet_in_frame = true;
   }
 
   VCMPacket packet_;

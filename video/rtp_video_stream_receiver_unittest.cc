@@ -205,8 +205,8 @@ TEST_F(RtpVideoStreamReceiverTest, GenericKeyFrame) {
   WebRtcRTPHeader rtp_header = {};
   const std::vector<uint8_t> data({1, 2, 3, 4});
   rtp_header.header.sequenceNumber = 1;
-  rtp_header.header.markerBit = 1;
   rtp_header.video_header().is_first_packet_in_frame = true;
+  rtp_header.video_header().is_last_packet_in_frame = true;
   rtp_header.frameType = kVideoFrameKey;
   rtp_header.video_header().codec = kVideoCodecGeneric;
   mock_on_complete_frame_callback_.AppendExpectedBitstream(data.data(),
@@ -262,8 +262,8 @@ TEST_F(RtpVideoStreamReceiverTest, GenericKeyFrameBitstreamError) {
   WebRtcRTPHeader rtp_header = {};
   const std::vector<uint8_t> data({1, 2, 3, 4});
   rtp_header.header.sequenceNumber = 1;
-  rtp_header.header.markerBit = 1;
   rtp_header.video_header().is_first_packet_in_frame = true;
+  rtp_header.video_header().is_last_packet_in_frame = true;
   rtp_header.frameType = kVideoFrameKey;
   rtp_header.video_header().codec = kVideoCodecGeneric;
   constexpr uint8_t expected_bitsteam[] = {1, 2, 3, 0xff};
@@ -315,9 +315,9 @@ TEST_P(RtpVideoStreamReceiverTestH264, InBandSpsPps) {
   std::vector<uint8_t> idr_data;
   WebRtcRTPHeader idr_packet = GetDefaultPacket();
   AddIdr(&idr_packet, 1);
-  idr_packet.video_header().is_first_packet_in_frame = true;
   idr_packet.header.sequenceNumber = 2;
-  idr_packet.header.markerBit = 1;
+  idr_packet.video_header().is_first_packet_in_frame = true;
+  idr_packet.video_header().is_last_packet_in_frame = true;
   idr_packet.frameType = kVideoFrameKey;
   idr_data.insert(idr_data.end(), {0x65, 1, 2, 3});
   mock_on_complete_frame_callback_.AppendExpectedBitstream(
@@ -357,8 +357,8 @@ TEST_P(RtpVideoStreamReceiverTestH264, OutOfBandFmtpSpsPps) {
   idr_packet.header.payloadType = kPayloadType;
   idr_packet.video_header().is_first_packet_in_frame = true;
   idr_packet.header.sequenceNumber = 2;
-  idr_packet.header.markerBit = 1;
   idr_packet.video_header().is_first_packet_in_frame = true;
+  idr_packet.video_header().is_last_packet_in_frame = true;
   idr_packet.frameType = kVideoFrameKey;
   idr_packet.video_header().codec = kVideoCodecH264;
   data.insert(data.end(), {1, 2, 3});
@@ -377,8 +377,8 @@ TEST_F(RtpVideoStreamReceiverTest, PaddingInMediaStream) {
   data.insert(data.end(), {1, 2, 3});
   header.header.payloadType = 99;
   header.video_header().is_first_packet_in_frame = true;
+  header.video_header().is_last_packet_in_frame = true;
   header.header.sequenceNumber = 2;
-  header.header.markerBit = true;
   header.frameType = kVideoFrameKey;
   header.video_header().codec = kVideoCodecGeneric;
   mock_on_complete_frame_callback_.AppendExpectedBitstream(data.data(),
@@ -410,8 +410,8 @@ TEST_F(RtpVideoStreamReceiverTest, RequestKeyframeIfFirstFrameIsDelta) {
   WebRtcRTPHeader rtp_header = {};
   const std::vector<uint8_t> data({1, 2, 3, 4});
   rtp_header.header.sequenceNumber = 1;
-  rtp_header.header.markerBit = 1;
   rtp_header.video_header().is_first_packet_in_frame = true;
+  rtp_header.video_header().is_last_packet_in_frame = true;
   rtp_header.frameType = kVideoFrameDelta;
   rtp_header.video_header().codec = kVideoCodecGeneric;
 

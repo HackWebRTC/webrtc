@@ -88,7 +88,7 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
     ref_packet_buffer_->InsertPacket(&packet);
 
     packet.seqNum = seq_num_end;
-    packet.markerBit = true;
+    packet.is_last_packet_in_frame = true;
     ref_packet_buffer_->InsertPacket(&packet);
 
     std::unique_ptr<RtpFrameObject> frame(new RtpFrameObject(
@@ -106,7 +106,7 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
     VCMPacket packet;
     packet.codec = kVideoCodecVP8;
     packet.seqNum = seq_num_start;
-    packet.markerBit = (seq_num_start == seq_num_end);
+    packet.is_last_packet_in_frame = (seq_num_start == seq_num_end);
     packet.frameType = keyframe ? kVideoFrameKey : kVideoFrameDelta;
     auto& vp8_header =
         packet.video_header.video_type_header.emplace<RTPVideoHeaderVP8>();
@@ -118,7 +118,7 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
 
     if (seq_num_start != seq_num_end) {
       packet.seqNum = seq_num_end;
-      packet.markerBit = true;
+      packet.is_last_packet_in_frame = true;
       ref_packet_buffer_->InsertPacket(&packet);
     }
 
@@ -142,7 +142,7 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
     packet.timestamp = pid;
     packet.codec = kVideoCodecVP9;
     packet.seqNum = seq_num_start;
-    packet.markerBit = (seq_num_start == seq_num_end);
+    packet.is_last_packet_in_frame = (seq_num_start == seq_num_end);
     packet.frameType = keyframe ? kVideoFrameKey : kVideoFrameDelta;
     vp9_header.flexible_mode = false;
     vp9_header.picture_id = pid % (1 << 15);
@@ -157,7 +157,7 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
     ref_packet_buffer_->InsertPacket(&packet);
 
     if (seq_num_start != seq_num_end) {
-      packet.markerBit = true;
+      packet.is_last_packet_in_frame = true;
       vp9_header.ss_data_available = false;
       packet.seqNum = seq_num_end;
       ref_packet_buffer_->InsertPacket(&packet);
@@ -182,7 +182,7 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
     packet.timestamp = pid;
     packet.codec = kVideoCodecVP9;
     packet.seqNum = seq_num_start;
-    packet.markerBit = (seq_num_start == seq_num_end);
+    packet.is_last_packet_in_frame = (seq_num_start == seq_num_end);
     packet.frameType = keyframe ? kVideoFrameKey : kVideoFrameDelta;
     vp9_header.inter_layer_predicted = inter;
     vp9_header.flexible_mode = true;
@@ -197,7 +197,7 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
 
     if (seq_num_start != seq_num_end) {
       packet.seqNum = seq_num_end;
-      packet.markerBit = true;
+      packet.is_last_packet_in_frame = true;
       ref_packet_buffer_->InsertPacket(&packet);
     }
 

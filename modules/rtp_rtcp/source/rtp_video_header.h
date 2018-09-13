@@ -52,6 +52,7 @@ struct RTPVideoHeader {
   VideoRotation rotation = VideoRotation::kVideoRotation_0;
   VideoContentType content_type = VideoContentType::UNSPECIFIED;
   bool is_first_packet_in_frame = false;
+  bool is_last_packet_in_frame = false;
   uint8_t simulcastIdx = 0;
   VideoCodecType codec = VideoCodecType::kVideoCodecGeneric;
 

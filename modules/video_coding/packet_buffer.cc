@@ -107,7 +107,7 @@ bool PacketBuffer::InsertPacket(VCMPacket* packet) {
     }
 
     sequence_buffer_[index].frame_begin = packet->is_first_packet_in_frame;
-    sequence_buffer_[index].frame_end = packet->markerBit;
+    sequence_buffer_[index].frame_end = packet->is_last_packet_in_frame;
     sequence_buffer_[index].seq_num = packet->seqNum;
     sequence_buffer_[index].continuous = false;
     sequence_buffer_[index].frame_created = false;
