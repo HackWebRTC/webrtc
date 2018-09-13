@@ -5393,7 +5393,7 @@ bool PeerConnection::UseCandidate(const IceCandidateInterface* candidate) {
       SetIceConnectionState(PeerConnectionInterface::kIceConnectionChecking);
     }
     // TODO(bemasc): If state is Completed, go back to Connected.
-  } else if (error.message()) {
+  } else {
     RTC_LOG(LS_WARNING) << error.message();
   }
   return true;

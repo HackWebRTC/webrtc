@@ -207,9 +207,9 @@ static std::string ComputeFoundation(const std::string& type,
                                      const std::string& protocol,
                                      const std::string& relay_protocol,
                                      const rtc::SocketAddress& base_address) {
-  std::ostringstream ost;
-  ost << type << base_address.ipaddr().ToString() << protocol << relay_protocol;
-  return rtc::ToString(rtc::ComputeCrc32(ost.str()));
+  rtc::StringBuilder sb;
+  sb << type << base_address.ipaddr().ToString() << protocol << relay_protocol;
+  return rtc::ToString(rtc::ComputeCrc32(sb.Release()));
 }
 
 CandidateStats::CandidateStats() = default;
@@ -905,10 +905,10 @@ void Port::OnNetworkTypeChanged(const rtc::Network* network) {
 }
 
 std::string Port::ToString() const {
-  std::stringstream ss;
-  ss << "Port[" << std::hex << this << std::dec << ":" << content_name_ << ":"
-     << component_ << ":" << generation_ << ":" << type_ << ":"
-     << network_->ToString() << "]";
+  rtc::StringBuilder ss;
+  ss << "Port[" << rtc::ToHex(reinterpret_cast<uintptr_t>(this)) << ":"
+     << content_name_ << ":" << component_ << ":" << generation_ << ":" << type_
+     << ":" << network_->ToString() << "]";
   return ss.str();
 }
 
@@ -1398,8 +1398,7 @@ void Connection::FailAndPrune() {
 }
 
 void Connection::PrintPingsSinceLastResponse(std::string* s, size_t max) {
-  std::ostringstream oss;
-  oss << std::boolalpha;
+  rtc::StringBuilder oss;
   if (pings_since_last_response_.size() > max) {
     for (size_t i = 0; i < max; i++) {
       const SentPing& ping = pings_since_last_response_[i];
@@ -1561,9 +1560,7 @@ bool Connection::stable(int64_t now) const {
 }
 
 std::string Connection::ToDebugId() const {
-  std::stringstream ss;
-  ss << std::hex << this;
-  return ss.str();
+  return rtc::ToHex(reinterpret_cast<uintptr_t>(this));
 }
 
 uint32_t Connection::ComputeNetworkCost() const {
@@ -1572,33 +1569,33 @@ uint32_t Connection::ComputeNetworkCost() const {
 }
 
 std::string Connection::ToString() const {
-  const char CONNECT_STATE_ABBREV[2] = {
-      '-',  // not connected (false)
-      'C',  // connected (true)
+  const absl::string_view CONNECT_STATE_ABBREV[2] = {
+      "-",  // not connected (false)
+      "C",  // connected (true)
   };
-  const char RECEIVE_STATE_ABBREV[2] = {
-      '-',  // not receiving (false)
-      'R',  // receiving (true)
+  const absl::string_view RECEIVE_STATE_ABBREV[2] = {
+      "-",  // not receiving (false)
+      "R",  // receiving (true)
   };
-  const char WRITE_STATE_ABBREV[4] = {
-      'W',  // STATE_WRITABLE
-      'w',  // STATE_WRITE_UNRELIABLE
-      '-',  // STATE_WRITE_INIT
-      'x',  // STATE_WRITE_TIMEOUT
+  const absl::string_view WRITE_STATE_ABBREV[4] = {
+      "W",  // STATE_WRITABLE
+      "w",  // STATE_WRITE_UNRELIABLE
+      "-",  // STATE_WRITE_INIT
+      "x",  // STATE_WRITE_TIMEOUT
   };
-  const std::string ICESTATE[4] = {
+  const absl::string_view ICESTATE[4] = {
       "W",  // STATE_WAITING
       "I",  // STATE_INPROGRESS
       "S",  // STATE_SUCCEEDED
       "F"   // STATE_FAILED
   };
-  const std::string SELECTED_STATE_ABBREV[2] = {
+  const absl::string_view SELECTED_STATE_ABBREV[2] = {
       "-",  // candidate pair not selected (false)
       "S",  // selected (true)
   };
   const Candidate& local = local_candidate();
   const Candidate& remote = remote_candidate();
-  std::stringstream ss;
+  rtc::StringBuilder ss;
   ss << "Conn[" << ToDebugId() << ":" << port_->content_name() << ":"
      << port_->Network()->ToString() << ":" << local.id() << ":"
      << local.component() << ":" << local.generation() << ":" << local.type()

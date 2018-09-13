@@ -11,7 +11,6 @@
 #ifndef RTC_BASE_STRINGENCODE_H_
 #define RTC_BASE_STRINGENCODE_H_
 
-#include <sstream>
 #include <string>
 #include <vector>
 

@@ -13,6 +13,7 @@
 #include <iterator>
 #include <map>
 #include <set>
+#include <sstream>  // no-presubmit-check TODO(webrtc:8982)
 #include <string>
 #include <utility>  // pair
 #include <vector>

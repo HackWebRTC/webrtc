@@ -31,8 +31,6 @@ static const int kMaxLogLineSize = 1024 - 60;
 
 #include <algorithm>
 #include <cstdarg>
-#include <iomanip>
-#include <ostream>
 #include <vector>
 
 #include "rtc_base/criticalsection.h"

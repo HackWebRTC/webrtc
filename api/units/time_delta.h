@@ -17,6 +17,7 @@
 
 #include <stdint.h>
 #include <cmath>
+#include <cstdlib>
 #include <limits>
 #include <string>
 

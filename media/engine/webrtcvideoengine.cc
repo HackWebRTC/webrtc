@@ -34,6 +34,7 @@
 #include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/copyonwritebuffer.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/strings/string_builder.h"
 #include "rtc_base/stringutils.h"
 #include "rtc_base/timeutils.h"
 #include "rtc_base/trace_event.h"
@@ -168,15 +169,15 @@ std::vector<VideoCodec> AssignPayloadTypesAndDefaultCodecs(
 }
 
 static std::string CodecVectorToString(const std::vector<VideoCodec>& codecs) {
-  std::stringstream out;
-  out << '{';
+  rtc::StringBuilder out;
+  out << "{";
   for (size_t i = 0; i < codecs.size(); ++i) {
     out << codecs[i].ToString();
     if (i != codecs.size() - 1) {
       out << ", ";
     }
   }
-  out << '}';
+  out << "}";
   return out.str();
 }
 
@@ -940,15 +941,15 @@ bool WebRtcVideoChannel::SetRecvParameters(const VideoRecvParameters& params) {
 
 std::string WebRtcVideoChannel::CodecSettingsVectorToString(
     const std::vector<VideoCodecSettings>& codecs) {
-  std::stringstream out;
-  out << '{';
+  rtc::StringBuilder out;
+  out << "{";
   for (size_t i = 0; i < codecs.size(); ++i) {
     out << codecs[i].codec.ToString();
     if (i != codecs.size() - 1) {
       out << ", ";
     }
   }
-  out << '}';
+  out << "}";
   return out.str();
 }
 

@@ -47,7 +47,7 @@
 #include <errno.h>
 
 #include <list>
-#include <sstream>
+#include <sstream>  // no-presubmit-check TODO(webrtc:8982)
 #include <string>
 #include <utility>
 

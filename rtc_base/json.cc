@@ -14,25 +14,23 @@
 #include <limits.h>
 #include <stdlib.h>
 
-#include <sstream>
+#include "rtc_base/stringencode.h"
 
 namespace rtc {
 
 bool GetStringFromJson(const Json::Value& in, std::string* out) {
   if (!in.isString()) {
-    std::ostringstream s;
     if (in.isBool()) {
-      s << std::boolalpha << in.asBool();
+      *out = rtc::ToString(in.asBool());
     } else if (in.isInt()) {
-      s << in.asInt();
+      *out = rtc::ToString(in.asInt());
     } else if (in.isUInt()) {
-      s << in.asUInt();
+      *out = rtc::ToString(in.asUInt());
     } else if (in.isDouble()) {
-      s << in.asDouble();
+      *out = rtc::ToString(in.asDouble());
     } else {
       return false;
     }
-    *out = s.str();
   } else {
     *out = in.asString();
   }
