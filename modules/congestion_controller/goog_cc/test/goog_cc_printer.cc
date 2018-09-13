@@ -37,8 +37,8 @@ void GoogCcStatePrinter::PrintValues(FILE* out) {
           controller_->delay_based_bwe_->rate_control_.rate_control_state_,
           controller_->delay_based_bwe_->rate_control_.rate_control_region_,
           controller_->alr_detector_->alr_started_time_ms_.has_value(),
-          trendline_estimator->trendline_,
-          trendline_estimator->prev_modified_offset_,
+          trendline_estimator->prev_trend_,
+          trendline_estimator->prev_modified_trend_,
           trendline_estimator->threshold_);
 }
 

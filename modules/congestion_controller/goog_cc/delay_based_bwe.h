@@ -29,8 +29,6 @@ class RtcEventLog;
 
 class DelayBasedBwe {
  public:
-  static const int64_t kStreamTimeOutMs = 2000;
-
   struct Result {
     Result();
     Result(bool probe, uint32_t target_bitrate_bps);
