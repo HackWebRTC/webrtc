@@ -104,13 +104,6 @@ class AudioDeviceBuffer {
 
   int32_t SetTypingStatus(bool typing_status);
 
-  // Called on iOS and Android where the native audio layer can be interrupted
-  // by other audio applications. These methods can then be used to reset
-  // internal states and detach thread checkers to allow for new audio sessions
-  // where native callbacks may come from a new set of I/O threads.
-  void NativeAudioPlayoutInterrupted();
-  void NativeAudioRecordingInterrupted();
-
  private:
   // Starts/stops periodic logging of audio stats.
   void StartPeriodicLogging();
@@ -145,12 +138,6 @@ class AudioDeviceBuffer {
   // Main thread on which this object is created.
   rtc::ThreadChecker main_thread_checker_;
 
-  // Native (platform specific) audio thread driving the playout side.
-  rtc::ThreadChecker playout_thread_checker_;
-
-  // Native (platform specific) audio thread driving the recording side.
-  rtc::ThreadChecker recording_thread_checker_;
-
   rtc::CriticalSection lock_;
 
   // Task queue used to invoke LogStats() periodically. Tasks are executed on a
@@ -183,18 +170,18 @@ class AudioDeviceBuffer {
   // Buffer used for audio samples to be played out. Size can be changed
   // dynamically. The 16-bit samples are interleaved, hence the size is
   // proportional to the number of channels.
-  rtc::BufferT<int16_t> play_buffer_ RTC_GUARDED_BY(playout_thread_checker_);
+  rtc::BufferT<int16_t> play_buffer_;
 
   // Byte buffer used for recorded audio samples. Size can be changed
   // dynamically.
-  rtc::BufferT<int16_t> rec_buffer_ RTC_GUARDED_BY(recording_thread_checker_);
+  rtc::BufferT<int16_t> rec_buffer_;
 
   // Contains true of a key-press has been detected.
-  bool typing_status_ RTC_GUARDED_BY(recording_thread_checker_);
+  bool typing_status_;
 
   // Delay values used by the AEC.
-  int play_delay_ms_ RTC_GUARDED_BY(recording_thread_checker_);
-  int rec_delay_ms_ RTC_GUARDED_BY(recording_thread_checker_);
+  int play_delay_ms_;
+  int rec_delay_ms_;
 
   // Counts number of times LogStats() has been called.
   size_t num_stat_reports_ RTC_GUARDED_BY(task_queue_);
@@ -204,8 +191,8 @@ class AudioDeviceBuffer {
 
   // Counts number of audio callbacks modulo 50 to create a signal when
   // a new storage of audio stats shall be done.
-  int16_t rec_stat_count_ RTC_GUARDED_BY(recording_thread_checker_);
-  int16_t play_stat_count_ RTC_GUARDED_BY(playout_thread_checker_);
+  int16_t rec_stat_count_;
+  int16_t play_stat_count_;
 
   // Time stamps of when playout and recording starts.
   int64_t play_start_time_ RTC_GUARDED_BY(main_thread_checker_);
@@ -231,7 +218,7 @@ class AudioDeviceBuffer {
 // Should *never* be defined in production builds. Only used for testing.
 // When defined, the output signal will be replaced by a sinus tone at 440Hz.
 #ifdef AUDIO_DEVICE_PLAYS_SINUS_TONE
-  double phase_ RTC_GUARDED_BY(playout_thread_checker_);
+  double phase_;
 #endif
 };
 

@@ -67,8 +67,6 @@ AudioDeviceBuffer::AudioDeviceBuffer()
   RTC_LOG(WARNING) << "AUDIO_DEVICE_PLAYS_SINUS_TONE is defined!";
 #endif
   WebRtcSpl_Init();
-  playout_thread_checker_.DetachFromThread();
-  recording_thread_checker_.DetachFromThread();
 }
 
 AudioDeviceBuffer::~AudioDeviceBuffer() {
@@ -99,7 +97,6 @@ void AudioDeviceBuffer::StartPlayout() {
     return;
   }
   RTC_LOG(INFO) << __FUNCTION__;
-  playout_thread_checker_.DetachFromThread();
   // Clear members tracking playout stats and do it on the task queue.
   task_queue_.PostTask([this] { ResetPlayStats(); });
   // Start a periodic timer based on task queue if not already done by the
@@ -119,7 +116,6 @@ void AudioDeviceBuffer::StartRecording() {
     return;
   }
   RTC_LOG(INFO) << __FUNCTION__;
-  recording_thread_checker_.DetachFromThread();
   // Clear members tracking recording stats and do it on the task queue.
   task_queue_.PostTask([this] { ResetRecStats(); });
   // Start a periodic timer based on task queue if not already done by the
@@ -222,30 +218,17 @@ size_t AudioDeviceBuffer::PlayoutChannels() const {
 }
 
 int32_t AudioDeviceBuffer::SetTypingStatus(bool typing_status) {
-  RTC_DCHECK_RUN_ON(&recording_thread_checker_);
   typing_status_ = typing_status;
   return 0;
 }
 
-void AudioDeviceBuffer::NativeAudioPlayoutInterrupted() {
-  RTC_DCHECK(main_thread_checker_.CalledOnValidThread());
-  playout_thread_checker_.DetachFromThread();
-}
-
-void AudioDeviceBuffer::NativeAudioRecordingInterrupted() {
-  RTC_DCHECK(main_thread_checker_.CalledOnValidThread());
-  recording_thread_checker_.DetachFromThread();
-}
-
 void AudioDeviceBuffer::SetVQEData(int play_delay_ms, int rec_delay_ms) {
-  RTC_DCHECK_RUN_ON(&recording_thread_checker_);
   play_delay_ms_ = play_delay_ms;
   rec_delay_ms_ = rec_delay_ms;
 }
 
 int32_t AudioDeviceBuffer::SetRecordedBuffer(const void* audio_buffer,
                                              size_t samples_per_channel) {
-  RTC_DCHECK_RUN_ON(&recording_thread_checker_);
   // Copy the complete input buffer to the local buffer.
   const size_t old_size = rec_buffer_.size();
   rec_buffer_.SetData(static_cast<const int16_t*>(audio_buffer),
@@ -277,7 +260,6 @@ int32_t AudioDeviceBuffer::SetRecordedBuffer(const void* audio_buffer,
 }
 
 int32_t AudioDeviceBuffer::DeliverRecordedData() {
-  RTC_DCHECK_RUN_ON(&recording_thread_checker_);
   if (!audio_transport_cb_) {
     RTC_LOG(LS_WARNING) << "Invalid audio transport";
     return 0;
@@ -297,7 +279,6 @@ int32_t AudioDeviceBuffer::DeliverRecordedData() {
 }
 
 int32_t AudioDeviceBuffer::RequestPlayoutData(size_t samples_per_channel) {
-  RTC_DCHECK_RUN_ON(&playout_thread_checker_);
   // The consumer can change the requested size on the fly and we therefore
   // resize the buffer accordingly. Also takes place at the first call to this
   // method.
@@ -342,7 +323,6 @@ int32_t AudioDeviceBuffer::RequestPlayoutData(size_t samples_per_channel) {
 }
 
 int32_t AudioDeviceBuffer::GetPlayoutData(void* audio_buffer) {
-  RTC_DCHECK_RUN_ON(&playout_thread_checker_);
   RTC_DCHECK_GT(play_buffer_.size(), 0);
 #ifdef AUDIO_DEVICE_PLAYS_SINUS_TONE
   const double phase_increment =
@@ -484,7 +464,6 @@ void AudioDeviceBuffer::ResetPlayStats() {
 
 void AudioDeviceBuffer::UpdateRecStats(int16_t max_abs,
                                        size_t samples_per_channel) {
-  RTC_DCHECK_RUN_ON(&recording_thread_checker_);
   rtc::CritScope cs(&lock_);
   ++stats_.rec_callbacks;
   stats_.rec_samples += samples_per_channel;
@@ -495,7 +474,6 @@ void AudioDeviceBuffer::UpdateRecStats(int16_t max_abs,
 
 void AudioDeviceBuffer::UpdatePlayStats(int16_t max_abs,
                                         size_t samples_per_channel) {
-  RTC_DCHECK_RUN_ON(&playout_thread_checker_);
   rtc::CritScope cs(&lock_);
   ++stats_.play_callbacks;
   stats_.play_samples += samples_per_channel;

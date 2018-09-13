@@ -903,12 +903,6 @@ void AudioDeviceIOS::PrepareForNewStart() {
   // which means that we must detach thread checkers here to be prepared for an
   // upcoming new audio stream.
   io_thread_checker_.DetachFromThread();
-  // The audio device buffer must also be informed about the interrupted
-  // state so it can detach its thread checkers as well.
-  if (audio_device_buffer_) {
-    audio_device_buffer_->NativeAudioPlayoutInterrupted();
-    audio_device_buffer_->NativeAudioRecordingInterrupted();
-  }
 }
 
 }  // namespace webrtc

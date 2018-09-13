@@ -582,8 +582,6 @@ bool CoreAudioBase::Stop() {
   // error callbacks.
   if (!IsRestarting()) {
     thread_checker_audio_.DetachFromThread();
-    IsOutput() ? audio_device_buffer_->NativeAudioPlayoutInterrupted()
-               : audio_device_buffer_->NativeAudioRecordingInterrupted();
   }
 
   // Release all allocated COM interfaces to allow for a restart without
