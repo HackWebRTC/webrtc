@@ -225,6 +225,9 @@ std::vector<webrtc::VideoStream> GetNormalSimulcastLayers(
   // layers. Consider changing this so that the application can have more
   // control over exactly how many simulcast layers are used.
   size_t num_simulcast_layers = FindSimulcastMaxLayers(width, height);
+  if (webrtc::field_trial::IsEnabled("WebRTC-SimulcastMaxLayers")) {
+    num_simulcast_layers = max_layers;
+  }
   if (num_simulcast_layers > max_layers) {
     // TODO(bugs.webrtc.org/8486): This scales down the resolution if the
     // number of simulcast layers created by the application isn't sufficient
