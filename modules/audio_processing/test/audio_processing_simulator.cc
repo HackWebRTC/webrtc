@@ -33,18 +33,275 @@ namespace webrtc {
 namespace test {
 namespace {
 
+// Prints out the currently used AEC3 parameter values in JSON format.
+void PrintAec3ParameterValues(const EchoCanceller3Config& cfg) {
+  std::cout << "{";
+  std::cout << "\"delay\": {";
+  std::cout << "\"default_delay\": " << cfg.delay.default_delay << ",";
+  std::cout << "\"down_sampling_factor\": " << cfg.delay.down_sampling_factor
+            << ",";
+  std::cout << "\"num_filters\": " << cfg.delay.num_filters << ",";
+  std::cout << "\"api_call_jitter_blocks\": "
+            << cfg.delay.api_call_jitter_blocks << ",";
+  std::cout << "\"min_echo_path_delay_blocks\": "
+            << cfg.delay.min_echo_path_delay_blocks << ",";
+  std::cout << "\"delay_headroom_blocks\": " << cfg.delay.delay_headroom_blocks
+            << ",";
+  std::cout << "\"hysteresis_limit_1_blocks\": "
+            << cfg.delay.hysteresis_limit_1_blocks << ",";
+  std::cout << "\"hysteresis_limit_2_blocks\": "
+            << cfg.delay.hysteresis_limit_2_blocks << ",";
+  std::cout << "\"skew_hysteresis_blocks\": "
+            << cfg.delay.skew_hysteresis_blocks << ",";
+  std::cout << "\"fixed_capture_delay_samples\": "
+            << cfg.delay.fixed_capture_delay_samples << ",";
+  std::cout << "\"delay_estimate_smoothing\": "
+            << cfg.delay.delay_estimate_smoothing << ",";
+  std::cout << "\"delay_candidate_detection_threshold\": "
+            << cfg.delay.delay_candidate_detection_threshold << ",";
+
+  std::cout << "\"delay_selection_thresholds\": {";
+  std::cout << "\"initial\": " << cfg.delay.delay_selection_thresholds.initial
+            << ",";
+  std::cout << "\"converged\": "
+            << cfg.delay.delay_selection_thresholds.converged;
+  std::cout << "}";
+
+  std::cout << "},";
+
+  std::cout << "\"filter\": {";
+  std::cout << "\"main\": [";
+  std::cout << cfg.filter.main.length_blocks << ",";
+  std::cout << cfg.filter.main.leakage_converged << ",";
+  std::cout << cfg.filter.main.leakage_diverged << ",";
+  std::cout << cfg.filter.main.error_floor << ",";
+  std::cout << cfg.filter.main.noise_gate;
+  std::cout << "],";
+
+  std::cout << "\"shadow\": [";
+  std::cout << cfg.filter.shadow.length_blocks << ",";
+  std::cout << cfg.filter.shadow.rate << ",";
+  std::cout << cfg.filter.shadow.noise_gate;
+  std::cout << "],";
+
+  std::cout << "\"main_initial\": [";
+  std::cout << cfg.filter.main_initial.length_blocks << ",";
+  std::cout << cfg.filter.main_initial.leakage_converged << ",";
+  std::cout << cfg.filter.main_initial.leakage_diverged << ",";
+  std::cout << cfg.filter.main_initial.error_floor << ",";
+  std::cout << cfg.filter.main_initial.noise_gate;
+  std::cout << "],";
+
+  std::cout << "\"shadow_initial\": [";
+  std::cout << cfg.filter.shadow_initial.length_blocks << ",";
+  std::cout << cfg.filter.shadow_initial.rate << ",";
+  std::cout << cfg.filter.shadow_initial.noise_gate;
+  std::cout << "],";
+
+  std::cout << "\"config_change_duration_blocks\": "
+            << cfg.filter.config_change_duration_blocks << ",";
+  std::cout << "\"initial_state_seconds\": " << cfg.filter.initial_state_seconds
+            << ",";
+  std::cout << "\"conservative_initial_phase\": "
+            << (cfg.filter.conservative_initial_phase ? "true" : "false")
+            << ",";
+  std::cout << "\"enable_shadow_filter_output_usage\": "
+            << (cfg.filter.enable_shadow_filter_output_usage ? "true"
+                                                             : "false");
+
+  std::cout << "},";
+
+  std::cout << "\"erle\": {";
+  std::cout << "\"min\": " << cfg.erle.min << ",";
+  std::cout << "\"max_l\": " << cfg.erle.max_l << ",";
+  std::cout << "\"max_h\": " << cfg.erle.max_h << ",";
+  std::cout << "\"onset_detection\": "
+            << (cfg.erle.onset_detection ? "true" : "false");
+  std::cout << "},";
+
+  std::cout << "\"ep_strength\": {";
+  std::cout << "\"lf\": " << cfg.ep_strength.lf << ",";
+  std::cout << "\"mf\": " << cfg.ep_strength.mf << ",";
+  std::cout << "\"hf\": " << cfg.ep_strength.hf << ",";
+  std::cout << "\"default_len\": " << cfg.ep_strength.default_len << ",";
+  std::cout << "\"reverb_based_on_render\": "
+            << (cfg.ep_strength.reverb_based_on_render ? "true" : "false")
+            << ",";
+  std::cout << "\"echo_can_saturate\": "
+            << (cfg.ep_strength.echo_can_saturate ? "true" : "false") << ",";
+  std::cout << "\"bounded_erl\": "
+            << (cfg.ep_strength.bounded_erl ? "true" : "false");
+
+  std::cout << "},";
+
+  std::cout << "\"gain_mask\": {";
+  std::cout << "\"m0\": " << cfg.gain_mask.m0 << ",";
+  std::cout << "\"m1\": " << cfg.gain_mask.m1 << ",";
+  std::cout << "\"m2\": " << cfg.gain_mask.m2 << ",";
+  std::cout << "\"m3\": " << cfg.gain_mask.m3 << ",";
+  std::cout << "\"m5\": " << cfg.gain_mask.m5 << ",";
+  std::cout << "\"m6\": " << cfg.gain_mask.m6 << ",";
+  std::cout << "\"m7\": " << cfg.gain_mask.m7 << ",";
+  std::cout << "\"m8\": " << cfg.gain_mask.m8 << ",";
+  std::cout << "\"m9\": " << cfg.gain_mask.m9 << ",";
+  std::cout << "\"gain_curve_offset\": " << cfg.gain_mask.gain_curve_offset
+            << ",";
+  std::cout << "\"gain_curve_slope\": " << cfg.gain_mask.gain_curve_slope
+            << ",";
+  std::cout << "\"temporal_masking_lf\": " << cfg.gain_mask.temporal_masking_lf
+            << ",";
+  std::cout << "\"temporal_masking_hf\": " << cfg.gain_mask.temporal_masking_hf
+            << ",";
+  std::cout << "\"temporal_masking_lf_bands\": "
+            << cfg.gain_mask.temporal_masking_lf_bands;
+  std::cout << "},";
+
+  std::cout << "\"echo_audibility\": {";
+  std::cout << "\"low_render_limit\": " << cfg.echo_audibility.low_render_limit
+            << ",";
+  std::cout << "\"normal_render_limit\": "
+            << cfg.echo_audibility.normal_render_limit << ",";
+  std::cout << "\"floor_power\": " << cfg.echo_audibility.floor_power << ",";
+  std::cout << "\"audibility_threshold_lf\": "
+            << cfg.echo_audibility.audibility_threshold_lf << ",";
+  std::cout << "\"audibility_threshold_mf\": "
+            << cfg.echo_audibility.audibility_threshold_mf << ",";
+  std::cout << "\"audibility_threshold_hf\": "
+            << cfg.echo_audibility.audibility_threshold_hf << ",";
+  std::cout << "\"use_stationary_properties\": "
+            << (cfg.echo_audibility.use_stationary_properties ? "true"
+                                                              : "false")
+            << ",";
+  std::cout << "\"use_stationarity_properties_at_init\": "
+            << (cfg.echo_audibility.use_stationarity_properties_at_init
+                    ? "true"
+                    : "false");
+  std::cout << "},";
+
+  std::cout << "\"render_levels\": {";
+  std::cout << "\"active_render_limit\": "
+            << cfg.render_levels.active_render_limit << ",";
+  std::cout << "\"poor_excitation_render_limit\": "
+            << cfg.render_levels.poor_excitation_render_limit << ",";
+  std::cout << "\"poor_excitation_render_limit_ds8\": "
+            << cfg.render_levels.poor_excitation_render_limit_ds8;
+  std::cout << "},";
+
+  std::cout << "\"echo_removal_control\": {";
+  std::cout << "\"gain_rampup\": {";
+  std::cout << "\"initial_gain\": "
+            << cfg.echo_removal_control.gain_rampup.initial_gain << ",";
+  std::cout << "\"first_non_zero_gain\": "
+            << cfg.echo_removal_control.gain_rampup.first_non_zero_gain << ",";
+  std::cout << "\"non_zero_gain_blocks\": "
+            << cfg.echo_removal_control.gain_rampup.non_zero_gain_blocks << ",";
+  std::cout << "\"full_gain_blocks\": "
+            << cfg.echo_removal_control.gain_rampup.full_gain_blocks;
+  std::cout << "},";
+  std::cout << "\"has_clock_drift\": "
+            << (cfg.echo_removal_control.has_clock_drift ? "true" : "false")
+            << ",";
+  std::cout << "\"linear_and_stable_echo_path\": "
+            << (cfg.echo_removal_control.linear_and_stable_echo_path ? "true"
+                                                                     : "false");
+
+  std::cout << "},";
+
+  std::cout << "\"echo_model\": {";
+  std::cout << "\"noise_floor_hold\": " << cfg.echo_model.noise_floor_hold
+            << ",";
+  std::cout << "\"min_noise_floor_power\": "
+            << cfg.echo_model.min_noise_floor_power << ",";
+  std::cout << "\"stationary_gate_slope\": "
+            << cfg.echo_model.stationary_gate_slope << ",";
+  std::cout << "\"noise_gate_power\": " << cfg.echo_model.noise_gate_power
+            << ",";
+  std::cout << "\"noise_gate_slope\": " << cfg.echo_model.noise_gate_slope
+            << ",";
+  std::cout << "\"render_pre_window_size\": "
+            << cfg.echo_model.render_pre_window_size << ",";
+  std::cout << "\"render_post_window_size\": "
+            << cfg.echo_model.render_post_window_size << ",";
+  std::cout << "\"render_pre_window_size_init\": "
+            << cfg.echo_model.render_pre_window_size_init << ",";
+  std::cout << "\"render_post_window_size_init\": "
+            << cfg.echo_model.render_post_window_size_init << ",";
+  std::cout << "\"nonlinear_hold\": " << cfg.echo_model.nonlinear_hold << ",";
+  std::cout << "\"nonlinear_release\": " << cfg.echo_model.nonlinear_release;
+  std::cout << "},";
+
+  std::cout << "\"suppressor\": {";
+  std::cout << "\"nearend_average_blocks\": "
+            << cfg.suppressor.nearend_average_blocks << ",";
+  std::cout << "\"normal_tuning\": {";
+  std::cout << "\"mask_lf\": [";
+  std::cout << cfg.suppressor.normal_tuning.mask_lf.enr_transparent << ",";
+  std::cout << cfg.suppressor.normal_tuning.mask_lf.enr_suppress << ",";
+  std::cout << cfg.suppressor.normal_tuning.mask_lf.emr_transparent;
+  std::cout << "],";
+  std::cout << "\"mask_hf\": [";
+  std::cout << cfg.suppressor.normal_tuning.mask_hf.enr_transparent << ",";
+  std::cout << cfg.suppressor.normal_tuning.mask_hf.enr_suppress << ",";
+  std::cout << cfg.suppressor.normal_tuning.mask_hf.emr_transparent;
+  std::cout << "],";
+  std::cout << "\"max_inc_factor\": "
+            << cfg.suppressor.normal_tuning.max_inc_factor << ",";
+  std::cout << "\"max_dec_factor_lf\": "
+            << cfg.suppressor.normal_tuning.max_dec_factor_lf;
+  std::cout << "},";
+  std::cout << "\"nearend_tuning\": {";
+  std::cout << "\"mask_lf\": [";
+  std::cout << cfg.suppressor.nearend_tuning.mask_lf.enr_transparent << ",";
+  std::cout << cfg.suppressor.nearend_tuning.mask_lf.enr_suppress << ",";
+  std::cout << cfg.suppressor.nearend_tuning.mask_lf.emr_transparent;
+  std::cout << "],";
+  std::cout << "\"mask_hf\": [";
+  std::cout << cfg.suppressor.nearend_tuning.mask_hf.enr_transparent << ",";
+  std::cout << cfg.suppressor.nearend_tuning.mask_hf.enr_suppress << ",";
+  std::cout << cfg.suppressor.nearend_tuning.mask_hf.emr_transparent;
+  std::cout << "],";
+  std::cout << "\"max_inc_factor\": "
+            << cfg.suppressor.nearend_tuning.max_inc_factor << ",";
+  std::cout << "\"max_dec_factor_lf\": "
+            << cfg.suppressor.nearend_tuning.max_dec_factor_lf;
+  std::cout << "},";
+  std::cout << "\"dominant_nearend_detection\": {";
+  std::cout << "\"enr_threshold\": "
+            << cfg.suppressor.dominant_nearend_detection.enr_threshold << ",";
+  std::cout << "\"snr_threshold\": "
+            << cfg.suppressor.dominant_nearend_detection.snr_threshold << ",";
+  std::cout << "\"hold_duration\": "
+            << cfg.suppressor.dominant_nearend_detection.hold_duration << ",";
+  std::cout << "\"trigger_threshold\": "
+            << cfg.suppressor.dominant_nearend_detection.trigger_threshold;
+  std::cout << "},";
+  std::cout << "\"high_bands_suppression\": {";
+  std::cout << "\"enr_threshold\": "
+            << cfg.suppressor.high_bands_suppression.enr_threshold << ",";
+  std::cout << "\"max_gain_during_echo\": "
+            << cfg.suppressor.high_bands_suppression.max_gain_during_echo;
+  std::cout << "},";
+  std::cout << "\"floor_first_increase\": "
+            << cfg.suppressor.floor_first_increase << ",";
+  std::cout << "\"enforce_transparent\": "
+            << (cfg.suppressor.enforce_transparent ? "true" : "false") << ",";
+  std::cout << "\"enforce_empty_higher_bands\": "
+            << (cfg.suppressor.enforce_empty_higher_bands ? "true" : "false");
+  std::cout << "}";
+  std::cout << "}";
+  std::cout << std::endl;
+}
+
 // Class for parsing the AEC3 parameters from a JSON file and producing a config
 // struct.
 class Aec3ParametersParser {
  public:
-  static EchoCanceller3Config Parse(bool verbose_output,
-                                    const std::string& filename) {
-    return Aec3ParametersParser(verbose_output).Parse(filename);
+  static EchoCanceller3Config Parse(const std::string& filename) {
+    return Aec3ParametersParser().ParseFile(filename);
   }
 
  private:
-  explicit Aec3ParametersParser(bool verbose_output)
-      : verbose_output_(verbose_output) {}
+  Aec3ParametersParser() = default;
 
   void ReadParam(const Json::Value& root,
                  std::string param_name,
@@ -53,10 +310,6 @@ class Aec3ParametersParser {
     bool v;
     if (rtc::GetBoolFromJsonObject(root, param_name, &v)) {
       *param = v;
-      if (verbose_output_) {
-        std::cout << param_name << ":" << (*param ? "true" : "false")
-                  << std::endl;
-      }
     }
   }
 
@@ -67,9 +320,6 @@ class Aec3ParametersParser {
     int v;
     if (rtc::GetIntFromJsonObject(root, param_name, &v)) {
       *param = v;
-      if (verbose_output_) {
-        std::cout << param_name << ":" << *param << std::endl;
-      }
     }
   }
 
@@ -80,9 +330,6 @@ class Aec3ParametersParser {
     int v;
     if (rtc::GetIntFromJsonObject(root, param_name, &v)) {
       *param = v;
-      if (verbose_output_) {
-        std::cout << param_name << ":" << *param << std::endl;
-      }
     }
   }
 
@@ -93,9 +340,6 @@ class Aec3ParametersParser {
     double v;
     if (rtc::GetDoubleFromJsonObject(root, param_name, &v)) {
       *param = static_cast<float>(v);
-      if (verbose_output_) {
-        std::cout << param_name << ":" << *param << std::endl;
-      }
     }
   }
 
@@ -116,14 +360,6 @@ class Aec3ParametersParser {
       param->leakage_diverged = static_cast<float>(v[2]);
       param->error_floor = static_cast<float>(v[3]);
       param->noise_gate = static_cast<float>(v[4]);
-
-      if (verbose_output_) {
-        std::cout << param_name << ":"
-                  << "[" << param->length_blocks << ","
-                  << param->leakage_converged << "," << param->leakage_diverged
-                  << "," << param->error_floor << "," << param->noise_gate
-                  << "]" << std::endl;
-      }
     }
   }
 
@@ -143,12 +379,6 @@ class Aec3ParametersParser {
       param->length_blocks = static_cast<size_t>(v[0]);
       param->rate = static_cast<float>(v[1]);
       param->noise_gate = static_cast<float>(v[2]);
-
-      if (verbose_output_) {
-        std::cout << param_name << ":"
-                  << "[" << param->length_blocks << "," << param->rate << ","
-                  << param->noise_gate << "]" << std::endl;
-      }
     }
   }
 
@@ -168,16 +398,10 @@ class Aec3ParametersParser {
       param->enr_transparent = static_cast<float>(v[0]);
       param->enr_suppress = static_cast<float>(v[1]);
       param->emr_transparent = static_cast<float>(v[2]);
-
-      if (verbose_output_) {
-        std::cout << param_name << ":"
-                  << "[" << param->enr_transparent << "," << param->enr_suppress
-                  << "," << param->emr_transparent << "]" << std::endl;
-      }
     }
   }
 
-  EchoCanceller3Config Parse(const std::string& filename) const {
+  EchoCanceller3Config ParseFile(const std::string& filename) const {
     EchoCanceller3Config cfg;
     Json::Value root;
     std::string s;
@@ -199,9 +423,6 @@ class Aec3ParametersParser {
       RTC_CHECK(false);
     }
 
-    if (verbose_output_) {
-      std::cout << "AEC3 Parameters from JSON input:" << std::endl;
-    }
     Json::Value section;
     if (rtc::GetValueFromJsonObject(root, "delay", &section)) {
       ReadParam(section, "default_delay", &cfg.delay.default_delay);
@@ -406,8 +627,6 @@ class Aec3ParametersParser {
     std::cout << std::endl;
     return cfg;
   }
-
-  const bool verbose_output_;
 };
 
 void CopyFromAudioFrame(const AudioFrame& src, ChannelBuffer<float>* dest) {
@@ -708,11 +927,21 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
   if (settings_.use_aec3 && *settings_.use_aec3) {
     EchoCanceller3Config cfg;
     if (settings_.aec3_settings_filename) {
-      cfg = Aec3ParametersParser::Parse(!settings_.use_quiet_output,
-                                        *settings_.aec3_settings_filename);
+      if (settings_.use_verbose_logging) {
+        std::cout << "Reading AEC3 Parameters from JSON input." << std::endl;
+      }
+      cfg = Aec3ParametersParser::Parse(*settings_.aec3_settings_filename);
     }
     echo_control_factory.reset(new EchoCanceller3Factory(cfg));
+
+    if (settings_.print_aec3_parameter_values) {
+      if (!settings_.use_quiet_output) {
+        std::cout << "AEC3 settings:" << std::endl;
+      }
+      PrintAec3ParameterValues(cfg);
+    }
   }
+
   if (settings_.use_hpf) {
     apm_config.high_pass_filter.enabled = *settings_.use_hpf;
   }

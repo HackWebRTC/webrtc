@@ -185,6 +185,9 @@ DEFINE_bool(store_intermediate_output,
             false,
             "Creates new output files after each init");
 DEFINE_string(custom_call_order_file, "", "Custom process API call order file");
+DEFINE_bool(print_aec3_parameter_values,
+            false,
+            "Print parameter values used in AEC3 in JSON-format");
 DEFINE_string(aec3_settings,
               "",
               "File in JSON-format with custom AEC3 settings");
@@ -301,6 +304,7 @@ SimulationSettings CreateSettings() {
   settings.discard_all_settings_in_aecdump = FLAG_discard_settings_in_aecdump;
   settings.fixed_interface = FLAG_fixed_interface;
   settings.store_intermediate_output = FLAG_store_intermediate_output;
+  settings.print_aec3_parameter_values = FLAG_print_aec3_parameter_values;
 
   return settings;
 }

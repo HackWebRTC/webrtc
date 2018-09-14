@@ -92,6 +92,7 @@ struct SimulationSettings {
   absl::optional<std::string> aec_dump_output_filename;
   bool fixed_interface = false;
   bool store_intermediate_output = false;
+  bool print_aec3_parameter_values = false;
   absl::optional<std::string> custom_call_order_filename;
   absl::optional<std::string> aec3_settings_filename;
 };
