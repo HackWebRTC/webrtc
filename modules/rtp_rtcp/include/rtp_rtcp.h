@@ -36,8 +36,6 @@ class RtcEventLog;
 class Transport;
 class VideoBitrateAllocationObserver;
 
-RTPExtensionType StringToRtpExtensionType(const std::string& extension);
-
 namespace rtcp {
 class TransportFeedback;
 }
@@ -142,6 +140,8 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
   // Returns -1 on failure else 0.
   virtual int32_t RegisterSendRtpHeaderExtension(RTPExtensionType type,
                                                  uint8_t id) = 0;
+  // Register extension by uri, returns false on failure.
+  virtual bool RegisterRtpHeaderExtension(const std::string& uri, int id) = 0;
 
   virtual int32_t DeregisterSendRtpHeaderExtension(RTPExtensionType type) = 0;
 

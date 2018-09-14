@@ -223,8 +223,7 @@ RtpVideoSender::RtpVideoSender(
     RTC_DCHECK_LE(id, 14);
     RTC_DCHECK(RtpExtension::IsSupportedForVideo(extension));
     for (auto& rtp_rtcp : rtp_modules_) {
-      RTC_CHECK_EQ(0, rtp_rtcp->RegisterSendRtpHeaderExtension(
-                          StringToRtpExtensionType(extension), id));
+      RTC_CHECK(rtp_rtcp->RegisterRtpHeaderExtension(extension, id));
     }
   }
 

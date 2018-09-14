@@ -33,31 +33,6 @@ const int64_t kRtpRtcpBitrateProcessTimeMs = 10;
 const int64_t kDefaultExpectedRetransmissionTimeMs = 125;
 }  // namespace
 
-RTPExtensionType StringToRtpExtensionType(const std::string& extension) {
-  if (extension == RtpExtension::kTimestampOffsetUri)
-    return kRtpExtensionTransmissionTimeOffset;
-  if (extension == RtpExtension::kAudioLevelUri)
-    return kRtpExtensionAudioLevel;
-  if (extension == RtpExtension::kAbsSendTimeUri)
-    return kRtpExtensionAbsoluteSendTime;
-  if (extension == RtpExtension::kVideoRotationUri)
-    return kRtpExtensionVideoRotation;
-  if (extension == RtpExtension::kTransportSequenceNumberUri)
-    return kRtpExtensionTransportSequenceNumber;
-  if (extension == RtpExtension::kPlayoutDelayUri)
-    return kRtpExtensionPlayoutDelay;
-  if (extension == RtpExtension::kVideoContentTypeUri)
-    return kRtpExtensionVideoContentType;
-  if (extension == RtpExtension::kVideoTimingUri)
-    return kRtpExtensionVideoTiming;
-  if (extension == RtpExtension::kFrameMarkingUri)
-    return kRtpExtensionFrameMarking;
-  if (extension == RtpExtension::kMidUri)
-    return kRtpExtensionMid;
-  RTC_NOTREACHED() << "Looking up unsupported RTP extension.";
-  return kRtpExtensionNone;
-}
-
 RtpRtcp::Configuration::Configuration() = default;
 
 RtpRtcp* RtpRtcp::CreateRtpRtcp(const RtpRtcp::Configuration& configuration) {
@@ -640,6 +615,11 @@ int32_t ModuleRtpRtcpImpl::RegisterSendRtpHeaderExtension(
     const RTPExtensionType type,
     const uint8_t id) {
   return rtp_sender_->RegisterRtpHeaderExtension(type, id);
+}
+
+bool ModuleRtpRtcpImpl::RegisterRtpHeaderExtension(const std::string& uri,
+                                                   int id) {
+  return rtp_sender_->RegisterRtpHeaderExtension(uri, id);
 }
 
 int32_t ModuleRtpRtcpImpl::DeregisterSendRtpHeaderExtension(

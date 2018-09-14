@@ -238,6 +238,11 @@ int32_t RTPSender::RegisterRtpHeaderExtension(RTPExtensionType type,
   return rtp_header_extension_map_.RegisterByType(id, type) ? 0 : -1;
 }
 
+bool RTPSender::RegisterRtpHeaderExtension(const std::string& uri, int id) {
+  rtc::CritScope lock(&send_critsect_);
+  return rtp_header_extension_map_.RegisterByUri(id, uri);
+}
+
 bool RTPSender::IsRtpHeaderExtensionRegistered(RTPExtensionType type) const {
   rtc::CritScope lock(&send_critsect_);
   return rtp_header_extension_map_.IsRegistered(type);

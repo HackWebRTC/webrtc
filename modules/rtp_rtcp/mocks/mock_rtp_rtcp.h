@@ -54,6 +54,8 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD1(DeRegisterSendPayload, int32_t(int8_t payload_type));
   MOCK_METHOD2(RegisterSendRtpHeaderExtension,
                int32_t(RTPExtensionType type, uint8_t id));
+  MOCK_METHOD2(RegisterRtpHeaderExtension,
+               bool(const std::string& uri, int id));
   MOCK_METHOD1(DeregisterSendRtpHeaderExtension,
                int32_t(RTPExtensionType type));
   MOCK_CONST_METHOD0(HasBweExtensions, bool());

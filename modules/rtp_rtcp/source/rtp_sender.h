@@ -116,6 +116,7 @@ class RTPSender {
 
   // RTP header extension
   int32_t RegisterRtpHeaderExtension(RTPExtensionType type, uint8_t id);
+  bool RegisterRtpHeaderExtension(const std::string& uri, int id);
   bool IsRtpHeaderExtensionRegistered(RTPExtensionType type) const;
   int32_t DeregisterRtpHeaderExtension(RTPExtensionType type);
 
