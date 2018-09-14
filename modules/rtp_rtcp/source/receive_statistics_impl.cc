@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "modules/remote_bitrate_estimator/test/bwe_test_logging.h"
+#include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_config.h"
 #include "modules/rtp_rtcp/source/time_util.h"
 #include "rtc_base/logging.h"
@@ -372,6 +373,12 @@ ReceiveStatisticsImpl::~ReceiveStatisticsImpl() {
   }
 }
 
+void ReceiveStatisticsImpl::OnRtpPacket(const RtpPacketReceived& packet) {
+  RTPHeader header;
+  packet.GetHeader(&header);
+  IncomingPacket(header, packet.size());
+}
+
 void ReceiveStatisticsImpl::IncomingPacket(const RTPHeader& header,
                                            size_t packet_length) {
   StreamStatisticianImpl* impl;
@@ -394,18 +401,19 @@ void ReceiveStatisticsImpl::IncomingPacket(const RTPHeader& header,
   impl->IncomingPacket(header, packet_length);
 }
 
-void ReceiveStatisticsImpl::FecPacketReceived(const RTPHeader& header,
-                                              size_t packet_length) {
+void ReceiveStatisticsImpl::FecPacketReceived(const RtpPacketReceived& packet) {
   StreamStatisticianImpl* impl;
   {
     rtc::CritScope cs(&receive_statistics_lock_);
-    auto it = statisticians_.find(header.ssrc);
+    auto it = statisticians_.find(packet.Ssrc());
     // Ignore FEC if it is the first packet.
     if (it == statisticians_.end())
       return;
     impl = it->second;
   }
-  impl->FecPacketReceived(header, packet_length);
+  RTPHeader header;
+  packet.GetHeader(&header);
+  impl->FecPacketReceived(header, packet.size());
 }
 
 StreamStatistician* ReceiveStatisticsImpl::GetStatistician(

@@ -17,6 +17,7 @@
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtcp_packet.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/nack.h"
+#include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_impl.h"
 #include "rtc_base/rate_limiter.h"
 #include "test/gmock.h"
@@ -318,12 +319,12 @@ TEST_F(RtpRtcpImplTest, SetSelectiveRetransmissions_HigherLayers) {
 }
 
 TEST_F(RtpRtcpImplTest, Rtt) {
-  RTPHeader header;
-  header.timestamp = 1;
-  header.sequenceNumber = 123;
-  header.ssrc = kSenderSsrc;
-  header.headerLength = 12;
-  receiver_.receive_statistics_->IncomingPacket(header, 100);
+  RtpPacketReceived packet;
+  packet.SetTimestamp(1);
+  packet.SetSequenceNumber(123);
+  packet.SetSsrc(kSenderSsrc);
+  packet.AllocatePayload(100 - 12);
+  receiver_.receive_statistics_->OnRtpPacket(packet);
 
   // Send Frame before sending an SR.
   SendFrame(&sender_, kBaseLayerTid);

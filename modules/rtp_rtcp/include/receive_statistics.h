@@ -14,6 +14,7 @@
 #include <map>
 #include <vector>
 
+#include "call/rtp_packet_sink_interface.h"
 #include "modules/include/module.h"
 #include "modules/include/module_common_types.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -48,28 +49,22 @@ class StreamStatistician {
   virtual uint32_t BitrateReceived() const = 0;
 };
 
-class ReceiveStatistics : public ReceiveStatisticsProvider {
+class ReceiveStatistics : public ReceiveStatisticsProvider,
+                          public RtpPacketSinkInterface {
  public:
   ~ReceiveStatistics() override = default;
 
   static ReceiveStatistics* Create(Clock* clock);
 
   // Updates the receive statistics with this packet.
+  // TODO(bugs.webrtc.org/8016): Deprecated. Delete as soon as
+  // downstream code is updated to use OnRtpPacket.
+  RTC_DEPRECATED
   virtual void IncomingPacket(const RTPHeader& rtp_header,
                               size_t packet_length) = 0;
 
-  // TODO(nisse): Wrapper for backwards compatibility. Delete as soon as
-  // downstream callers are updated.
-  RTC_DEPRECATED
-  void IncomingPacket(const RTPHeader& rtp_header,
-                      size_t packet_length,
-                      bool retransmitted) {
-    IncomingPacket(rtp_header, packet_length);
-  }
-
   // Increment counter for number of FEC packets received.
-  virtual void FecPacketReceived(const RTPHeader& header,
-                                 size_t packet_length) = 0;
+  virtual void FecPacketReceived(const RtpPacketReceived& packet) = 0;
 
   // Returns a pointer to the statistician of an ssrc.
   virtual StreamStatistician* GetStatistician(uint32_t ssrc) const = 0;

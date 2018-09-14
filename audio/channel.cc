@@ -866,20 +866,22 @@ void Channel::OnRtpPacket(const RtpPacketReceived& packet) {
     contributing_sources_.Update(now_ms, csrcs);
   }
 
-  RTPHeader header;
-  packet.GetHeader(&header);
-
   // Store playout timestamp for the received RTP packet
   UpdatePlayoutTimestamp(false);
 
-  const auto& it = payload_type_frequencies_.find(header.payloadType);
+  const auto& it = payload_type_frequencies_.find(packet.PayloadType());
   if (it == payload_type_frequencies_.end())
     return;
-  header.payload_type_frequency = it->second;
+  // TODO(nisse): Set payload_type_frequency earlier, when packet is parsed.
+  RtpPacketReceived packet_copy(packet);
+  packet_copy.set_payload_type_frequency(it->second);
 
-  rtp_receive_statistics_->IncomingPacket(header, packet.size());
+  rtp_receive_statistics_->OnRtpPacket(packet_copy);
 
-  ReceivePacket(packet.data(), packet.size(), header);
+  RTPHeader header;
+  packet_copy.GetHeader(&header);
+
+  ReceivePacket(packet_copy.data(), packet_copy.size(), header);
 }
 
 bool Channel::ReceivePacket(const uint8_t* packet,

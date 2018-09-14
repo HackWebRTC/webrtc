@@ -14,6 +14,7 @@
 #include "modules/rtp_rtcp/source/rtcp_packet/bye.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/common_header.h"
 #include "modules/rtp_rtcp/source/rtcp_sender.h"
+#include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_impl.h"
 #include "rtc_base/rate_limiter.h"
 #include "test/gmock.h"
@@ -93,13 +94,12 @@ class RtcpSenderTest : public ::testing::Test {
   }
 
   void InsertIncomingPacket(uint32_t remote_ssrc, uint16_t seq_num) {
-    RTPHeader header;
-    header.ssrc = remote_ssrc;
-    header.sequenceNumber = seq_num;
-    header.timestamp = 12345;
-    header.headerLength = 12;
-    size_t kPacketLength = 100;
-    receive_statistics_->IncomingPacket(header, kPacketLength);
+    RtpPacketReceived packet;
+    packet.SetSsrc(remote_ssrc);
+    packet.SetSequenceNumber(seq_num);
+    packet.SetTimestamp(12345);
+    packet.SetPayloadSize(100 - 12);
+    receive_statistics_->OnRtpPacket(packet);
   }
 
   test::RtcpPacketParser* parser() { return &test_transport_.parser_; }

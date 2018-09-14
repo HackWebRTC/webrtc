@@ -143,9 +143,7 @@ class RtpVideoStreamReceiver : public RtpData,
   void ReceivePacket(const RtpPacketReceived& packet);
   // Parses and handles RED headers.
   // This function assumes that it's being called from only one thread.
-  void ParseAndHandleEncapsulatingHeader(const uint8_t* packet,
-                                         size_t packet_length,
-                                         const RTPHeader& header);
+  void ParseAndHandleEncapsulatingHeader(const RtpPacketReceived& packet);
   void NotifyReceiverOfEmptyPacket(uint16_t seq_num);
   void UpdateHistograms();
   bool IsRedEnabled() const;

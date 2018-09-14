@@ -105,10 +105,12 @@ class ReceiveStatisticsImpl : public ReceiveStatistics,
   // Implement ReceiveStatisticsProvider.
   std::vector<rtcp::ReportBlock> RtcpReportBlocks(size_t max_blocks) override;
 
+  // Implement RtpPacketSinkInterface
+  void OnRtpPacket(const RtpPacketReceived& packet) override;
+
   // Implement ReceiveStatistics.
   void IncomingPacket(const RTPHeader& header, size_t packet_length) override;
-  void FecPacketReceived(const RTPHeader& header,
-                         size_t packet_length) override;
+  void FecPacketReceived(const RtpPacketReceived& packet) override;
   StreamStatistician* GetStatistician(uint32_t ssrc) const override;
   void SetMaxReorderingThreshold(int max_reordering_threshold) override;
   void EnableRetransmitDetection(uint32_t ssrc, bool enable) override;

@@ -320,11 +320,7 @@ void RtpVideoStreamReceiver::OnRtpPacket(const RtpPacketReceived& packet) {
   // Receive statistics will be reset if the payload type changes (make sure
   // that the first packet is included in the stats).
   if (!packet.recovered()) {
-    RTPHeader header;
-    packet.GetHeader(&header);
-    // TODO(nisse): We should pass a recovered flag to stats, to aid
-    // fixing bug bugs.webrtc.org/6339.
-    rtp_receive_statistics_->IncomingPacket(header, packet.size());
+    rtp_receive_statistics_->OnRtpPacket(packet);
   }
 
   for (RtpPacketSinkInterface* secondary_sink : secondary_sinks_) {
@@ -421,9 +417,7 @@ void RtpVideoStreamReceiver::ReceivePacket(const RtpPacketReceived& packet) {
     return;
   }
   if (packet.PayloadType() == config_.rtp.red_payload_type) {
-    RTPHeader header;
-    packet.GetHeader(&header);
-    ParseAndHandleEncapsulatingHeader(packet.data(), packet.size(), header);
+    ParseAndHandleEncapsulatingHeader(packet);
     return;
   }
 
@@ -509,21 +503,21 @@ void RtpVideoStreamReceiver::ReceivePacket(const RtpPacketReceived& packet) {
 }
 
 void RtpVideoStreamReceiver::ParseAndHandleEncapsulatingHeader(
-    const uint8_t* packet,
-    size_t packet_length,
-    const RTPHeader& header) {
+    const RtpPacketReceived& packet) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_task_checker_);
-  if (header.payloadType == config_.rtp.red_payload_type &&
-      packet_length > header.headerLength + header.paddingLength) {
-    if (packet[header.headerLength] == config_.rtp.ulpfec_payload_type) {
-      rtp_receive_statistics_->FecPacketReceived(header, packet_length);
+  if (packet.PayloadType() == config_.rtp.red_payload_type &&
+      packet.payload_size() > 0) {
+    if (packet.payload()[0] == config_.rtp.ulpfec_payload_type) {
+      rtp_receive_statistics_->FecPacketReceived(packet);
       // Notify video_receiver about received FEC packets to avoid NACKing these
       // packets.
-      NotifyReceiverOfEmptyPacket(header.sequenceNumber);
+      NotifyReceiverOfEmptyPacket(packet.SequenceNumber());
     }
+    RTPHeader header;
+    packet.GetHeader(&header);
     if (ulpfec_receiver_->AddReceivedRedPacket(
-            header, packet, packet_length, config_.rtp.ulpfec_payload_type) !=
-        0) {
+            header, packet.data(), packet.size(),
+            config_.rtp.ulpfec_payload_type) != 0) {
       return;
     }
     ulpfec_receiver_->ProcessReceivedFec();
