@@ -55,7 +55,7 @@ struct EchoCanceller3Config {
       float noise_gate;
     };
 
-    MainConfiguration main = {13, 0.00005f, 0.01f, 0.001f, 20075344.f};
+    MainConfiguration main = {13, 0.00005f, 0.01f, 0.1f, 20075344.f};
     ShadowConfiguration shadow = {13, 0.7f, 20075344.f};
 
     MainConfiguration main_initial = {12, 0.005f, 0.5f, 0.001f, 20075344.f};
