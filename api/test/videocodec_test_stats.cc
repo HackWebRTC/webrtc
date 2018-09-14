@@ -36,7 +36,7 @@ std::string VideoCodecTestStats::FrameStatistics::ToString() const {
   ss << " decode_time_us " << decode_time_us;
   ss << " rtp_timestamp " << rtp_timestamp;
   ss << " target_bitrate_kbps " << target_bitrate_kbps;
-  return ss.str();
+  return ss.Release();
 }
 
 VideoCodecTestStats::VideoStatistics::VideoStatistics() = default;
@@ -83,7 +83,7 @@ std::string VideoCodecTestStats::VideoStatistics::ToString(
   ss << "\n" << prefix << "num_key_frames: " << num_key_frames;
   ss << "\n" << prefix << "num_spatial_resizes: " << num_spatial_resizes;
   ss << "\n" << prefix << "max_nalu_size_bytes: " << max_nalu_size_bytes;
-  return ss.str();
+  return ss.Release();
 }
 
 VideoCodecTestStats::FrameStatistics::FrameStatistics(size_t frame_number,

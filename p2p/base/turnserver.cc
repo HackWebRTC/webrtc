@@ -600,7 +600,7 @@ std::string TurnServerConnection::ToString() const {
   };
   rtc::StringBuilder ost;
   ost << src_.ToString() << "-" << dst_.ToString() << ":"<< kProtos[proto_];
-  return ost.str();
+  return ost.Release();
 }
 
 TurnServerAllocation::TurnServerAllocation(TurnServer* server,
@@ -633,7 +633,7 @@ TurnServerAllocation::~TurnServerAllocation() {
 std::string TurnServerAllocation::ToString() const {
   rtc::StringBuilder ost;
   ost << "Alloc[" << conn_.ToString() << "]";
-  return ost.str();
+  return ost.Release();
 }
 
 void TurnServerAllocation::HandleTurnMessage(const TurnMessage* msg) {

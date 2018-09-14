@@ -1267,7 +1267,7 @@ std::string VideoStreamEncoder::AdaptCounter::ToString() const {
   rtc::StringBuilder ss;
   ss << "Downgrade counts: fps: {" << ToString(fps_counters_);
   ss << "}, resolution: {" << ToString(resolution_counters_) << "}";
-  return ss.str();
+  return ss.Release();
 }
 
 VideoStreamEncoderObserver::AdaptationSteps
@@ -1361,7 +1361,7 @@ std::string VideoStreamEncoder::AdaptCounter::ToString(
   for (size_t reason = 0; reason < kScaleReasonSize; ++reason) {
     ss << (reason ? " cpu" : "quality") << ":" << counters[reason];
   }
-  return ss.str();
+  return ss.Release();
 }
 
 }  // namespace webrtc

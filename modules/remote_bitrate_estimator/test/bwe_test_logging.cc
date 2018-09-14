@@ -29,7 +29,7 @@ namespace bwe {
 static std::string ToString(uint32_t v) {
   rtc::StringBuilder ss;
   ss << v;
-  return ss.str();
+  return ss.Release();
 }
 
 Logging::ThreadState::ThreadState() = default;

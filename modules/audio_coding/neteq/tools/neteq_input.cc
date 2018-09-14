@@ -28,7 +28,7 @@ std::string NetEqInput::PacketData::ToString() const {
      << "ts: " << header.timestamp << ", "
      << "ssrc: " << header.ssrc << "}, "
      << "payload bytes: " << payload.size() << "}";
-  return ss.str();
+  return ss.Release();
 }
 
 TimeLimitedNetEqInput::TimeLimitedNetEqInput(std::unique_ptr<NetEqInput> input,

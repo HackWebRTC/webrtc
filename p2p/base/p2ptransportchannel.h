@@ -177,7 +177,7 @@ class P2PTransportChannel : public IceTransportInternal {
     rtc::StringBuilder ss;
     ss << "Channel[" << transport_name_ << "|" << component_ << "|"
        << RECEIVING_ABBREV[receiving_] << WRITABLE_ABBREV[writable_] << "]";
-    return ss.str();
+    return ss.Release();
   }
 
  private:

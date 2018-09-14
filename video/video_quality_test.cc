@@ -250,7 +250,7 @@ std::string VideoQualityTest::GenerateGraphTitle() const {
   if (params_.ss[0].num_spatial_layers > 1)
     ss << ", Layer #" << params_.ss[0].selected_sl;
   ss << ")";
-  return ss.str();
+  return ss.Release();
 }
 
 void VideoQualityTest::CheckParamsAndInjectionComponents() {

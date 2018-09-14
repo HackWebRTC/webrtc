@@ -54,7 +54,7 @@ std::string ProduceDebugText(int sample_rate_hz,
   ss << "Sample rate: " << sample_rate_hz << " ";
   ss << "Number of channels: " << number_of_channels << " ";
   ss << "Number of sources: " << number_of_sources;
-  return ss.str();
+  return ss.Release();
 }
 
 AudioFrame frame_for_mixing;

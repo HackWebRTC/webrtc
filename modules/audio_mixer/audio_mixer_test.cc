@@ -78,7 +78,7 @@ class FilePlayingSource : public AudioMixer::Source {
     rtc::StringBuilder ss;
     ss << "{rate: " << sample_rate_hz_ << ", channels: " << number_of_channels_
        << ", samples_tot: " << wav_reader_->num_samples() << "}";
-    return ss.str();
+    return ss.Release();
   }
 
  private:

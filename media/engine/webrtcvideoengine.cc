@@ -190,7 +190,7 @@ static std::string CodecVectorToString(const std::vector<VideoCodec>& codecs) {
     }
   }
   out << "}";
-  return out.str();
+  return out.Release();
 }
 
 static bool ValidateCodecFormats(const std::vector<VideoCodec>& codecs) {
@@ -962,7 +962,7 @@ std::string WebRtcVideoChannel::CodecSettingsVectorToString(
     }
   }
   out << "}";
-  return out.str();
+  return out.Release();
 }
 
 bool WebRtcVideoChannel::GetSendCodec(VideoCodec* codec) {

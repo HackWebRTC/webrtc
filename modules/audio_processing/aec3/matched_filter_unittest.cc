@@ -37,7 +37,7 @@ std::string ProduceDebugText(size_t delay, size_t down_sampling_factor) {
   rtc::StringBuilder ss;
   ss << "Delay: " << delay;
   ss << ", Down sampling factor: " << down_sampling_factor;
-  return ss.str();
+  return ss.Release();
 }
 
 constexpr size_t kNumMatchedFilters = 10;

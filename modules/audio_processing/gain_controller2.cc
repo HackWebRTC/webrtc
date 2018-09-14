@@ -73,7 +73,7 @@ std::string GainController2::ToString(
   rtc::StringBuilder ss;
   ss << "{enabled: " << (config.enabled ? "true" : "false") << ", "
      << "fixed_gain_dB: " << config.fixed_gain_db << "}";
-  return ss.str();
+  return ss.Release();
 }
 
 }  // namespace webrtc

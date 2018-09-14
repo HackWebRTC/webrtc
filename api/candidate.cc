@@ -78,7 +78,7 @@ std::string Candidate::ToStringInternal(bool sensitive) const {
       << ":" << related_address_.ToString() << ":" << username_ << ":"
       << password_ << ":" << network_id_ << ":" << network_cost_ << ":"
       << generation_ << "]";
-  return ost.str();
+  return ost.Release();
 }
 
 uint32_t Candidate::GetPriority(uint32_t type_preference,

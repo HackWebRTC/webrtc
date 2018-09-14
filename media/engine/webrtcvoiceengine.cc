@@ -106,7 +106,7 @@ std::string ToString(const AudioCodec& codec) {
     ss << " }";
   }
   ss << " (" << codec.id << ")";
-  return ss.str();
+  return ss.Release();
 }
 
 bool IsCodec(const AudioCodec& codec, const char* ref_name) {

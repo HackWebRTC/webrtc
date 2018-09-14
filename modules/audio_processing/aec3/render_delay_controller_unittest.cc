@@ -31,13 +31,13 @@ namespace {
 std::string ProduceDebugText(int sample_rate_hz) {
   rtc::StringBuilder ss;
   ss << "Sample rate: " << sample_rate_hz;
-  return ss.str();
+  return ss.Release();
 }
 
 std::string ProduceDebugText(int sample_rate_hz, size_t delay) {
   rtc::StringBuilder ss;
   ss << ProduceDebugText(sample_rate_hz) << ", Delay: " << delay;
-  return ss.str();
+  return ss.Release();
 }
 
 constexpr size_t kDownSamplingFactors[] = {2, 4, 8};

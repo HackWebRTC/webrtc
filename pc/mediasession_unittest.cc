@@ -3711,7 +3711,7 @@ void TestAudioCodecsAnswer(RtpTransceiverDirection offer_direction,
         first = false;
       }
       os << " }";
-      return os.str();
+      return os.Release();
     };
 
     EXPECT_TRUE(acd->codecs() == target_codecs)

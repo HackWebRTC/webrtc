@@ -909,7 +909,7 @@ std::string Port::ToString() const {
   ss << "Port[" << rtc::ToHex(reinterpret_cast<uintptr_t>(this)) << ":"
      << content_name_ << ":" << component_ << ":" << generation_ << ":" << type_
      << ":" << network_->ToString() << "]";
-  return ss.str();
+  return ss.Release();
 }
 
 // TODO(honghaiz): Make the network cost configurable from user setting.
@@ -1612,7 +1612,7 @@ std::string Connection::ToString() const {
   } else {
     ss << "-]";
   }
-  return ss.str();
+  return ss.Release();
 }
 
 std::string Connection::ToSensitiveString() const {

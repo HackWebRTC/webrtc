@@ -164,7 +164,7 @@ std::string NetworkInformation::ToString() const {
     ss << " " << address.ToString();
   }
   ss << "]";
-  return ss.str();
+  return ss.Release();
 }
 
 AndroidNetworkMonitor::AndroidNetworkMonitor(

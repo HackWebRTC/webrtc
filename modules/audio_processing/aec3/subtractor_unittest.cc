@@ -106,7 +106,7 @@ std::string ProduceDebugText(size_t delay, int filter_length_blocks) {
   rtc::StringBuilder ss;
   ss << "Delay: " << delay << ", ";
   ss << "Length: " << filter_length_blocks;
-  return ss.str();
+  return ss.Release();
 }
 
 }  // namespace

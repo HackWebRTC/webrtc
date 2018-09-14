@@ -186,7 +186,7 @@ class DtlsTransport : public DtlsTransportInternal {
     rtc::StringBuilder sb;
     sb << "DtlsTransport[" << transport_name_ << "|" << component_ << "|"
        << RECEIVING_ABBREV[receiving()] << WRITABLE_ABBREV[writable()] << "]";
-    return sb.str();
+    return sb.Release();
   }
 
  private:

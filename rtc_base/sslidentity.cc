@@ -136,7 +136,7 @@ std::string SSLIdentity::DerToPem(const std::string& pem_type,
 
   result << "-----END " << pem_type << "-----\n";
 
-  return result.str();
+  return result.Release();
 }
 
 // static

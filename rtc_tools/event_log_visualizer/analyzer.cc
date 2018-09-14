@@ -78,7 +78,7 @@ void SortPacketFeedbackVector(std::vector<PacketFeedback>* vec) {
 std::string SsrcToString(uint32_t ssrc) {
   rtc::StringBuilder ss;
   ss << "SSRC " << ssrc;
-  return ss.str();
+  return ss.Release();
 }
 
 // Checks whether an SSRC is contained in the list of desired SSRCs.
@@ -424,7 +424,7 @@ std::string GetCandidatePairLogDescriptionAsString(
      << remote_candidate_type << ":"
      << GetAddressFamilyAsString(config.remote_address_family) << "@"
      << GetProtocolAsString(config.candidate_pair_protocol);
-  return ss.str();
+  return ss.Release();
 }
 
 std::string GetDirectionAsString(PacketDirection direction) {

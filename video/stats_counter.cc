@@ -36,7 +36,7 @@ std::string AggregatedStats::ToStringWithMultiplier(int multiplier) const {
   ss << "min:" << (min * multiplier) << ", ";
   ss << "avg:" << (average * multiplier) << ", ";
   ss << "max:" << (max * multiplier) << "}";
-  return ss.str();
+  return ss.Release();
 }
 
 // Class holding periodically computed metrics.

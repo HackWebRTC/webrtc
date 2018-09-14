@@ -100,13 +100,13 @@ void CheckSameSign(const ChannelBuffer<float>* src,
 std::string FakeRecordingDeviceKindToString(int fake_rec_device_kind) {
   rtc::StringBuilder ss;
   ss << "fake recording device: " << fake_rec_device_kind;
-  return ss.str();
+  return ss.Release();
 }
 
 std::string AnalogLevelToString(int level) {
   rtc::StringBuilder ss;
   ss << "analog level: " << level;
-  return ss.str();
+  return ss.Release();
 }
 
 }  // namespace

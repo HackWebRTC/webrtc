@@ -1240,7 +1240,7 @@ std::string TurnPort::ReconstructedServerUrl() {
   rtc::StringBuilder url;
   url << scheme << ":" << server_address_.address.ipaddr().ToString() << ":"
       << server_address_.address.port() << "?transport=" << transport;
-  return url.str();
+  return url.Release();
 }
 
 void TurnPort::TurnCustomizerMaybeModifyOutgoingStunMessage(

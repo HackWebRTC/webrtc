@@ -218,7 +218,7 @@ TEST_F(StatsEndToEndTest, GetStats) {
     std::string CompoundKey(const char* name, uint32_t ssrc) {
       rtc::StringBuilder oss;
       oss << name << "_" << ssrc;
-      return oss.str();
+      return oss.Release();
     }
 
     bool AllStatsFilled(const std::map<std::string, bool>& stats_map) {

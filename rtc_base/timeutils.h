@@ -145,7 +145,7 @@ class IntervalRange {
   std::string ToString() const {
     rtc::StringBuilder ss;
     ss << "[" << min_ << "," << max_ << "]";
-    return ss.str();
+    return ss.Release();
   }
 
   bool operator==(const IntervalRange& o) const {

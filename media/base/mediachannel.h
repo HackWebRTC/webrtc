@@ -88,7 +88,7 @@ static std::string VectorToString(const std::vector<T>& vals) {
     ost << vals[i].ToString();
   }
   ost << "]";
-  return ost.str();
+  return ost.Release();
 }
 
 // Options that can be applied to a VideoMediaChannel or a VideoMediaEngine.
@@ -120,7 +120,7 @@ struct VideoOptions {
                          screencast_min_bitrate_kbps);
     ost << ToStringIfSet("is_screencast ", is_screencast);
     ost << "}";
-    return ost.str();
+    return ost.Release();
   }
 
   // Enable denoising? This flag comes from the getUserMedia
@@ -157,7 +157,7 @@ struct RtpHeaderExtension {
     ost << "uri: " << uri;
     ost << ", id: " << id;
     ost << "}";
-    return ost.str();
+    return ost.Release();
   }
 
   std::string uri;
@@ -626,7 +626,7 @@ struct RtpParameters {
       separator = ", ";
     }
     ost << "}";
-    return ost.str();
+    return ost.Release();
   }
 
  protected:

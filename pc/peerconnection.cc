@@ -607,7 +607,7 @@ std::string GetSetDescriptionErrorMessage(cricket::ContentSource source,
   rtc::StringBuilder oss;
   oss << "Failed to set " << (source == cricket::CS_LOCAL ? "local" : "remote")
       << " " << SdpTypeToString(type) << " sdp: " << error.message();
-  return oss.str();
+  return oss.Release();
 }
 
 std::string GetStreamIdsString(rtc::ArrayView<const std::string> stream_ids) {
@@ -5847,7 +5847,7 @@ std::string PeerConnection::GetSessionErrorMsg() {
   rtc::StringBuilder desc;
   desc << kSessionError << SessionErrorToString(session_error()) << ". ";
   desc << kSessionErrorDesc << session_error_desc() << ".";
-  return desc.str();
+  return desc.Release();
 }
 
 void PeerConnection::ReportSdpFormatReceived(

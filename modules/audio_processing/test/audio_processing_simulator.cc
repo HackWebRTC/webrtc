@@ -644,7 +644,7 @@ std::string GetIndexedOutputWavFilename(const std::string& wav_name,
   rtc::StringBuilder ss;
   ss << wav_name.substr(0, wav_name.size() - 4) << "_" << counter
      << wav_name.substr(wav_name.size() - 4);
-  return ss.str();
+  return ss.Release();
 }
 
 void WriteEchoLikelihoodGraphFileHeader(std::ofstream* output_file) {

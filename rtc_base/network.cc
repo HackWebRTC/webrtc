@@ -184,7 +184,7 @@ std::string MakeNetworkKey(const std::string& name,
                            int prefix_length) {
   rtc::StringBuilder ost;
   ost << name << "%" << prefix.ToString() << "/" << prefix_length;
-  return ost.str();
+  return ost.Release();
 }
 // Test if the network name matches the type<number> pattern, e.g. eth0. The
 // matching is case-sensitive.
@@ -1075,7 +1075,7 @@ std::string Network::ToString() const {
     ss << "/" << AdapterTypeToString(underlying_type_for_vpn_);
   }
   ss << ":id=" << id_ << "]";
-  return ss.str();
+  return ss.Release();
 }
 
 }  // namespace rtc

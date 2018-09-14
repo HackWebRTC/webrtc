@@ -43,7 +43,7 @@ namespace {
 std::string ProduceDebugText(size_t delay) {
   rtc::StringBuilder ss;
   ss << ", Delay: " << delay;
-  return ss.str();
+  return ss.Release();
 }
 
 }  // namespace

@@ -230,7 +230,7 @@ void RunWrongExtractOrderTest(int sample_rate_hz,
 std::string ProduceDebugText(int sample_rate_hz) {
   rtc::StringBuilder ss;
   ss << "Sample rate: " << sample_rate_hz;
-  return ss.str();
+  return ss.Release();
 }
 
 }  // namespace

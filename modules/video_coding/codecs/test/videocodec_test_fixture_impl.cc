@@ -279,7 +279,7 @@ std::string VideoCodecTestFixtureImpl::Config::ToString() const {
     }
   }
   ss << "\n";
-  return ss.str();
+  return ss.Release();
 }
 
 std::string VideoCodecTestFixtureImpl::Config::CodecName() const {

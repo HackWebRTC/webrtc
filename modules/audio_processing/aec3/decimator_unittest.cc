@@ -28,7 +28,7 @@ namespace {
 std::string ProduceDebugText(int sample_rate_hz) {
   rtc::StringBuilder ss;
   ss << "Sample rate: " << sample_rate_hz;
-  return ss.str();
+  return ss.Release();
 }
 
 constexpr size_t kDownSamplingFactors[] = {2, 4, 8};
