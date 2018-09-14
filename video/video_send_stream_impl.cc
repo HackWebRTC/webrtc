@@ -33,6 +33,11 @@ namespace {
 // packet sequence number for at least last 60 seconds.
 static const int kSendSideSeqNumSetMaxSize = 5500;
 
+// Max positive size difference to treat allocations as "similar".
+static constexpr int kMaxVbaSizeDifferencePercent = 10;
+// Max time we will throttle similar video bitrate allocations.
+static constexpr int64_t kMaxVbaThrottleTimeMs = 500;
+
 // We don't do MTU discovery, so assume that we have the standard ethernet MTU.
 const size_t kPathMTU = 1500;
 
@@ -155,6 +160,18 @@ absl::optional<AlrExperimentSettings> GetAlrSettings(
   }
   return AlrExperimentSettings::CreateFromFieldTrial(
       AlrExperimentSettings::kStrictPacingAndProbingExperimentName);
+}
+
+bool SameStreamsEnabled(const VideoBitrateAllocation& lhs,
+                        const VideoBitrateAllocation& rhs) {
+  for (size_t si = 0; si < kMaxSpatialLayers; ++si) {
+    for (size_t ti = 0; ti < kMaxTemporalStreams; ++ti) {
+      if (lhs.HasBitrate(si, ti) != rhs.HasBitrate(si, ti)) {
+        return false;
+      }
+    }
+  }
+  return true;
 }
 }  // namespace
 
@@ -454,7 +471,48 @@ void VideoSendStreamImpl::SignalEncoderTimedOut() {
 
 void VideoSendStreamImpl::OnBitrateAllocationUpdated(
     const VideoBitrateAllocation& allocation) {
+  if (!worker_queue_->IsCurrent()) {
+    auto ptr = weak_ptr_;
+    worker_queue_->PostTask([=] {
+      if (!ptr.get())
+        return;
+      ptr->OnBitrateAllocationUpdated(allocation);
+    });
+    return;
+  }
+
+  RTC_DCHECK_RUN_ON(worker_queue_);
+
+  int64_t now_ms = rtc::TimeMillis();
   if (encoder_target_rate_bps_ != 0) {
+    if (video_bitrate_allocation_context_) {
+      // If new allocation is within kMaxVbaSizeDifferencePercent larger than
+      // the previously sent allocation and the same streams are still enabled,
+      // it is considered "similar". We do not want send similar allocations
+      // more once per kMaxVbaThrottleTimeMs.
+      const VideoBitrateAllocation& last =
+          video_bitrate_allocation_context_->last_sent_allocation;
+      const bool is_similar =
+          allocation.get_sum_bps() >= last.get_sum_bps() &&
+          allocation.get_sum_bps() <
+              (last.get_sum_bps() * (100 + kMaxVbaSizeDifferencePercent)) /
+                  100 &&
+          SameStreamsEnabled(allocation, last);
+      if (is_similar &&
+          (now_ms - video_bitrate_allocation_context_->last_send_time_ms) <
+              kMaxVbaThrottleTimeMs) {
+        // This allocation is too similar, cache it and return.
+        video_bitrate_allocation_context_->throttled_allocation = allocation;
+        return;
+      }
+    } else {
+      video_bitrate_allocation_context_.emplace();
+    }
+
+    video_bitrate_allocation_context_->last_sent_allocation = allocation;
+    video_bitrate_allocation_context_->throttled_allocation.reset();
+    video_bitrate_allocation_context_->last_send_time_ms = now_ms;
+
     // Send bitrate allocation metadata only if encoder is not paused.
     rtp_video_sender_->OnBitrateAllocationUpdated(allocation);
   }
@@ -567,8 +625,28 @@ EncodedImageCallback::Result VideoSendStreamImpl::OnEncodedImage(
 
   fec_controller_->UpdateWithEncodedData(encoded_image._length,
                                          encoded_image._frameType);
-  return rtp_video_sender_->OnEncodedImage(encoded_image, codec_specific_info,
-                                           fragmentation);
+  EncodedImageCallback::Result result = rtp_video_sender_->OnEncodedImage(
+      encoded_image, codec_specific_info, fragmentation);
+
+  // Check if there's a throttled VideoBitrateAllocation that we should try
+  // sending.
+  rtc::WeakPtr<VideoSendStreamImpl> send_stream = weak_ptr_;
+  auto update_task = [send_stream]() {
+    if (send_stream) {
+      RTC_DCHECK_RUN_ON(send_stream->worker_queue_);
+      auto& context = send_stream->video_bitrate_allocation_context_;
+      if (context && context->throttled_allocation) {
+        send_stream->OnBitrateAllocationUpdated(*context->throttled_allocation);
+      }
+    }
+  };
+  if (!worker_queue_->IsCurrent()) {
+    worker_queue_->PostTask(update_task);
+  } else {
+    update_task();
+  }
+
+  return result;
 }
 
 std::map<uint32_t, RtpState> VideoSendStreamImpl::GetRtpStates() const {

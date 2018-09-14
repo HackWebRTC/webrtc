@@ -182,6 +182,16 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
 
   std::unordered_set<uint16_t> feedback_packet_seq_num_set_;
   std::vector<bool> loss_mask_vector_;
+
+  // Context for the most recent and last sent video bitrate allocation. Used to
+  // throttle sending of similar bitrate allocations.
+  struct VbaSendContext {
+    VideoBitrateAllocation last_sent_allocation;
+    absl::optional<VideoBitrateAllocation> throttled_allocation;
+    int64_t last_send_time_ms;
+  };
+  absl::optional<VbaSendContext> video_bitrate_allocation_context_
+      RTC_GUARDED_BY(worker_queue_);
 };
 }  // namespace internal
 }  // namespace webrtc
