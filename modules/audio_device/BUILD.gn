@@ -321,10 +321,6 @@ rtc_source_set("audio_device_impl") {
           defines += [ "WEBRTC_USE_X11" ]
         }
         if (rtc_include_pulse_audio) {
-          configs += [
-            "../..:no_exit_time_destructors",
-            "../..:no_global_constructors",
-          ]
           sources += [
             "linux/audio_device_pulse_linux.cc",
             "linux/audio_device_pulse_linux.h",

@@ -14,6 +14,13 @@
 #include "modules/audio_device/linux/audio_mixer_manager_alsa_linux.h"
 #include "rtc_base/logging.h"
 
+// Accesses ALSA functions through our late-binding symbol table instead of
+// directly. This way we don't have to link to libasound, which means our binary
+// will work on systems that don't have it.
+#define LATE(sym)                                                            \
+  LATESYM_GET(webrtc::adm_linux_alsa::AlsaSymbolTable, GetAlsaSymbolTable(), \
+              sym)
+
 namespace webrtc {
 
 AudioMixerManagerLinuxALSA::AudioMixerManagerLinuxALSA()
