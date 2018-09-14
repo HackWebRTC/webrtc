@@ -81,8 +81,6 @@ def _ParseArgs():
   parser = argparse.ArgumentParser(description='Start loopback video analysis.')
   parser.add_argument('build_dir_android',
       help='The path to the build directory for Android.')
-  parser.add_argument('--build_dir_x86',
-      help='The path to the build directory for building locally.')
   parser.add_argument('--temp_dir',
       help='A temporary directory to put the output.')
   parser.add_argument('--adb-path', help='Path to adb binary.', default='adb')
@@ -192,7 +190,7 @@ def RunTest(android_device, adb_path, build_dir, temp_dir, num_retries,
 
   # Run comparison script.
   compare_script = os.path.join(SRC_DIR, 'rtc_tools', 'compare_videos.py')
-  frame_analyzer = os.path.join(TOOLCHAIN_DIR, 'frame_analyzer')
+  frame_analyzer = os.path.join(build_dir, 'frame_analyzer_host')
   zxing_path = os.path.join(TOOLCHAIN_DIR, 'zxing')
   stats_file_ref = os.path.join(temp_dir, 'stats_ref.txt')
   stats_file_test = os.path.join(temp_dir, 'stats_test.txt')
@@ -241,4 +239,3 @@ def main():
 
 if __name__ == '__main__':
   sys.exit(main())
-
