@@ -221,8 +221,14 @@ rtc::scoped_refptr<Video> ReorderVideo(const rtc::scoped_refptr<Video>& video,
 rtc::scoped_refptr<Video> GenerateAlignedReferenceVideo(
     const rtc::scoped_refptr<Video>& reference_video,
     const rtc::scoped_refptr<Video>& test_video) {
-  return ReorderVideo(new LoopingVideo(reference_video),
-                      FindMatchingFrameIndices(reference_video, test_video));
+  return GenerateAlignedReferenceVideo(
+      reference_video, FindMatchingFrameIndices(reference_video, test_video));
+}
+
+rtc::scoped_refptr<Video> GenerateAlignedReferenceVideo(
+    const rtc::scoped_refptr<Video>& reference_video,
+    const std::vector<size_t>& indices) {
+  return ReorderVideo(new LoopingVideo(reference_video), indices);
 }
 
 }  // namespace test

@@ -47,6 +47,11 @@ rtc::scoped_refptr<Video> GenerateAlignedReferenceVideo(
     const rtc::scoped_refptr<Video>& reference_video,
     const rtc::scoped_refptr<Video>& test_video);
 
+// As above, but using precalculated indices.
+rtc::scoped_refptr<Video> GenerateAlignedReferenceVideo(
+    const rtc::scoped_refptr<Video>& reference_video,
+    const std::vector<size_t>& indices);
+
 }  // namespace test
 }  // namespace webrtc
 

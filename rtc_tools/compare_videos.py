@@ -36,6 +36,8 @@ def _ParseArgs():
                           'video (YUV).'))
   parser.add_option('--frame_analyzer', type='string',
                     help='Path to the frame analyzer executable.')
+  parser.add_option('--aligned_output_file', type='string',
+                    help='Path for output aligned YUV or Y4M file.')
   parser.add_option('--barcode_decoder', type='string',
                     help=('Path to the barcode decoder script. By default, we '
                           'will assume we can find it in barcode_tools/'
@@ -127,7 +129,7 @@ def main():
   """The main function.
 
   A simple invocation is:
-  ./webrtc/rtc_tools/barcode_tools/compare_videos.py
+  ./webrtc/rtc_tools/compare_videos.py
   --ref_video=<path_and_name_of_reference_video>
   --test_video=<path_and_name_of_test_video>
   --frame_analyzer=<path_and_name_of_the_frame_analyzer_executable>
@@ -165,6 +167,8 @@ def main():
   ]
   if options.chartjson_result_file:
     cmd.append('--chartjson_result_file=%s' % options.chartjson_result_file)
+  if options.aligned_output_file:
+    cmd.append('--aligned_output_file=%s' % options.aligned_output_file)
   frame_analyzer = subprocess.Popen(cmd, stdin=_DevNull(),
                                     stdout=sys.stdout, stderr=sys.stderr)
   frame_analyzer.wait()
