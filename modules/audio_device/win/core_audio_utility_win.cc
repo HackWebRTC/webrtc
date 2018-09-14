@@ -37,6 +37,149 @@ namespace {
 
 using core_audio_utility::ErrorToString;
 
+// Converts from channel mask to list of included channels.
+// Each audio data format contains channels for one or more of the positions
+// listed below. The number of channels simply equals the number of nonzero
+// flag bits in the |channel_mask|. The relative positions of the channels
+// within each block of audio data always follow the same relative ordering
+// as the flag bits in the table below. For example, if |channel_mask| contains
+// the value 0x00000033, the format defines four audio channels that are
+// assigned for playback to the front-left, front-right, back-left,
+// and back-right speakers, respectively. The channel data should be interleaved
+// in that order within each block.
+std::string ChannelMaskToString(DWORD channel_mask) {
+  std::string ss;
+  int n = 0;
+  if (channel_mask & SPEAKER_FRONT_LEFT) {
+    ss += "FRONT_LEFT | ";
+    ++n;
+  }
+  if (channel_mask & SPEAKER_FRONT_RIGHT) {
+    ss += "FRONT_RIGHT | ";
+    ++n;
+  }
+  if (channel_mask & SPEAKER_FRONT_CENTER) {
+    ss += "FRONT_CENTER | ";
+    ++n;
+  }
+  if (channel_mask & SPEAKER_LOW_FREQUENCY) {
+    ss += "LOW_FREQUENCY | ";
+    ++n;
+  }
+  if (channel_mask & SPEAKER_BACK_LEFT) {
+    ss += "BACK_LEFT | ";
+    ++n;
+  }
+  if (channel_mask & SPEAKER_BACK_RIGHT) {
+    ss += "BACK_RIGHT | ";
+    ++n;
+  }
+  if (channel_mask & SPEAKER_FRONT_LEFT_OF_CENTER) {
+    ss += "FRONT_LEFT_OF_CENTER | ";
+    ++n;
+  }
+  if (channel_mask & SPEAKER_FRONT_RIGHT_OF_CENTER) {
+    ss += "RIGHT_OF_CENTER | ";
+    ++n;
+  }
+  if (channel_mask & SPEAKER_BACK_CENTER) {
+    ss += "BACK_CENTER | ";
+    ++n;
+  }
+  if (channel_mask & SPEAKER_SIDE_LEFT) {
+    ss += "SIDE_LEFT | ";
+    ++n;
+  }
+  if (channel_mask & SPEAKER_SIDE_RIGHT) {
+    ss += "SIDE_RIGHT | ";
+    ++n;
+  }
+  if (channel_mask & SPEAKER_TOP_CENTER) {
+    ss += "TOP_CENTER | ";
+    ++n;
+  }
+  if (channel_mask & SPEAKER_TOP_FRONT_LEFT) {
+    ss += "TOP_FRONT_LEFT | ";
+    ++n;
+  }
+  if (channel_mask & SPEAKER_TOP_FRONT_CENTER) {
+    ss += "TOP_FRONT_CENTER | ";
+    ++n;
+  }
+  if (channel_mask & SPEAKER_TOP_FRONT_RIGHT) {
+    ss += "TOP_FRONT_RIGHT | ";
+    ++n;
+  }
+  if (channel_mask & SPEAKER_TOP_BACK_LEFT) {
+    ss += "TOP_BACK_LEFT | ";
+    ++n;
+  }
+  if (channel_mask & SPEAKER_TOP_BACK_CENTER) {
+    ss += "TOP_BACK_CENTER | ";
+    ++n;
+  }
+  if (channel_mask & SPEAKER_TOP_BACK_RIGHT) {
+    ss += "TOP_BACK_RIGHT | ";
+    ++n;
+  }
+
+  if (!ss.empty()) {
+    // Delete last appended " | " substring.
+    ss.erase(ss.end() - 3, ss.end());
+  }
+  ss += " (";
+  ss += std::to_string(n);
+  ss += ")";
+  return ss;
+}
+
+// Converts from channel mask to DirectSound speaker configuration.
+// The values below are copied from ksmedia.h.
+// Example: KSAUDIO_SPEAKER_STEREO = (SPEAKER_FRONT_LEFT | SPEAKER_FRONT_RIGHT).
+const char* DirectSoundConfigToString(DWORD channel_mask) {
+  switch (channel_mask) {
+    case KSAUDIO_SPEAKER_DIRECTOUT:
+      return "KSAUDIO_DIRECTOUT";
+    case KSAUDIO_SPEAKER_MONO:
+      // Front center (C)
+      return "KSAUDIO_MONO";
+    case KSAUDIO_SPEAKER_1POINT1:
+      return "KSAUDIO_1POINT1";
+    case KSAUDIO_SPEAKER_STEREO:
+      // Front left (L), front right (R).
+      return "KSAUDIO_STEREO";
+    case KSAUDIO_SPEAKER_2POINT1:
+      return "KSAUDIO_2POINT1";
+    case KSAUDIO_SPEAKER_3POINT0:
+      return "KSAUDIO_3POINT0";
+    case KSAUDIO_SPEAKER_3POINT1:
+      return "KSAUDIO_3POINT1";
+    case KSAUDIO_SPEAKER_QUAD:
+      // L, R, back left (Lb), back right (Rb).
+      return "KSAUDIO_QUAD";
+    case KSAUDIO_SPEAKER_SURROUND:
+      // L, R, front center (C), back center (Cb).
+      return "KSAUDIO_SURROUND";
+    case KSAUDIO_SPEAKER_5POINT0:
+      return "KSAUDIO_5POINT0";
+    case KSAUDIO_SPEAKER_5POINT1:
+      return "KSAUDIO_5POINT1";
+    case KSAUDIO_SPEAKER_7POINT0:
+      return "KSAUDIO_7POINT0";
+    case KSAUDIO_SPEAKER_7POINT1:
+      // L, R, C, Lb, Rb, front left-of-center, front right-of-center, LFE.
+      return "KSAUDIO_7POINT1";
+    case KSAUDIO_SPEAKER_5POINT1_SURROUND:
+      // L, R, C, side left (Ls), side right (Rs), LFE.
+      return "KSAUDIO_5POINT1_SURROUND";
+    case KSAUDIO_SPEAKER_7POINT1_SURROUND:
+      // L, R, C, Lb, Rb, Ls, Rs, LFE.
+      return "KSAUDIO_7POINT1_SURROUND";
+    default:
+      return "KSAUDIO_INVALID";
+  }
+}
+
 bool LoadAudiosesDll() {
   static const wchar_t* const kAudiosesDLL =
       L"%WINDIR%\\system32\\audioses.dll";
@@ -394,7 +537,6 @@ HRESULT GetPreferredAudioParametersInternal(IAudioClient* client,
   // const size_t bits_per_sample = AudioParameters::kBitsPerSample;
   // TODO(henrika): improve channel layout support.
   const size_t channels = mix_format.Format.nChannels;
-  RTC_DCHECK_LE(channels, 2);
 
   // Use the native device period to derive the smallest possible buffer size
   // in shared mode.
@@ -669,8 +811,17 @@ HRESULT SetClientProperties(IAudioClient2* client) {
   // TODO(henrika): pros and cons compared with AUDCLNT_STREAMOPTIONS_NONE?
   props.Options |= AUDCLNT_STREAMOPTIONS_NONE;
   // Requires System.Devices.AudioDevice.RawProcessingSupported.
+  // The application can choose to *always ignore* the OEM AEC/AGC by setting
+  // the AUDCLNT_STREAMOPTIONS_RAW flag in the call to SetClientProperties.
+  // This flag will preserve the user experience aspect of Communications
+  // streams, but will not insert any OEM provided communications specific
+  // processing in the audio signal path.
   // props.Options |= AUDCLNT_STREAMOPTIONS_RAW;
+
   // If it is important to avoid resampling in the audio engine, set this flag.
+  // AUDCLNT_STREAMOPTIONS_MATCH_FORMAT (or anything in IAudioClient3) is not
+  // an appropriate interface to use for communications scenarios.
+  // This interface is mainly meant for pro audio scenarios.
   // props.Options |= AUDCLNT_STREAMOPTIONS_MATCH_FORMAT;
   RTC_DLOG(INFO) << "options: 0x" << rtc::ToHex(props.Options);
   error = client->SetClientProperties(&props);
@@ -1001,7 +1152,7 @@ HRESULT SharedModeInitializeLowLatency(IAudioClient3* client,
   }
 
   // Define stream flags.
-  DWORD stream_flags = 0;
+  DWORD stream_flags = AUDCLNT_STREAMFLAGS_NOPERSIST;
   bool use_event =
       (event_handle != nullptr && event_handle != INVALID_HANDLE_VALUE);
   if (use_event) {
@@ -1215,6 +1366,10 @@ std::string WaveFormatExToString(const WAVEFORMATEXTENSIBLE* format) {
   } else {
     ss << ", SubFormat: NOT_SUPPORTED";
   }
+  ss.AppendFormat("\nChannel configuration: %s",
+                  ChannelMaskToString(format->dwChannelMask).c_str());
+  ss.AppendFormat("\nDirectSound configuration : %s",
+                  DirectSoundConfigToString(format->dwChannelMask));
   return ss.str();
 }
 

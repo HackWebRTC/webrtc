@@ -126,7 +126,7 @@ int IndexToMilliseconds(size_t index, size_t frames_per_10ms_buffer) {
 // The container is a std::list container and access is protected with a lock
 // since both sides (playout and recording) are driven by its own thread.
 // Note that, we know by design that the size of the audio buffer will not
-// change over time and that both sides will use the same size.
+// change over time and that both sides will in most cases use the same size.
 class FifoAudioStream : public AudioStream {
  public:
   void Write(rtc::ArrayView<const int16_t> source) override {
@@ -152,8 +152,27 @@ class FifoAudioStream : public AudioStream {
       std::fill(destination.begin(), destination.end(), 0);
     } else {
       const Buffer16& buffer = fifo_.front();
-      RTC_CHECK_EQ(buffer.size(), destination.size());
-      std::copy(buffer.begin(), buffer.end(), destination.begin());
+      if (buffer.size() == destination.size()) {
+        // Default case where input and output uses same sample rate and
+        // channel configuration. No conversion is needed.
+        std::copy(buffer.begin(), buffer.end(), destination.begin());
+      } else if (destination.size() == 2 * buffer.size()) {
+        // Recorded input signal in |buffer| is in mono. Do channel upmix to
+        // match stereo output (1 -> 2).
+        for (size_t i = 0; i < buffer.size(); ++i) {
+          destination[2 * i] = buffer[i];
+          destination[2 * i + 1] = buffer[i];
+        }
+      } else if (buffer.size() == 2 * destination.size()) {
+        // Recorded input signal in |buffer| is in stereo. Do channel downmix
+        // to match mono output (2 -> 1).
+        for (size_t i = 0; i < destination.size(); ++i) {
+          destination[i] =
+              (static_cast<int32_t>(buffer[2 * i]) + buffer[2 * i + 1]) / 2;
+        }
+      } else {
+        RTC_NOTREACHED() << "Required conversion is not support";
+      }
       fifo_.pop_front();
     }
   }
@@ -1060,10 +1079,10 @@ TEST_P(AudioDeviceTest, DISABLED_MeasureLoopbackLatency) {
       std::max(kTestTimeOutInMilliseconds, 1000 * kMeasureLatencyTimeInSec)));
   StopRecording();
   StopPlayout();
-  // Verify that the correct number of transmitted impulses are detected.
-  EXPECT_EQ(audio_stream.num_latency_values(),
+  // Verify that a sufficient number of transmitted impulses are detected.
+  EXPECT_GE(audio_stream.num_latency_values(),
             static_cast<size_t>(
-                kImpulseFrequencyInHz * kMeasureLatencyTimeInSec - 1));
+                kImpulseFrequencyInHz * kMeasureLatencyTimeInSec - 2));
   // Print out min, max and average delay values for debugging purposes.
   audio_stream.PrintResults();
 }
