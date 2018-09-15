@@ -11,18 +11,8 @@
 #ifndef SYSTEM_WRAPPERS_INCLUDE_FIELD_TRIAL_DEFAULT_H_
 #define SYSTEM_WRAPPERS_INCLUDE_FIELD_TRIAL_DEFAULT_H_
 
-namespace webrtc {
-namespace field_trial {
+// TODO(bugs.webrtc.org/9631): Remove this forward header.
 
-// Optionally initialize field trial from a string.
-// This method can be called at most once before any other call into webrtc.
-// E.g. before the peer connection factory is constructed.
-// Note: trials_string must never be destroyed.
-void InitFieldTrialsFromString(const char* trials_string);
-
-const char* GetFieldTrialString();
-
-}  // namespace field_trial
-}  // namespace webrtc
+#include "system_wrappers/include/field_trial.h"
 
 #endif  // SYSTEM_WRAPPERS_INCLUDE_FIELD_TRIAL_DEFAULT_H_
