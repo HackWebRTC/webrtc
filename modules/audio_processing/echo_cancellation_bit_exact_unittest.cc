@@ -26,10 +26,9 @@ void SetupComponent(int sample_rate_hz,
                     bool drift_compensation_enabled,
                     EchoCancellationImpl* echo_canceller) {
   echo_canceller->Initialize(sample_rate_hz, 1, 1, 1);
-  EchoCancellation* ec = static_cast<EchoCancellation*>(echo_canceller);
-  ec->Enable(true);
-  ec->set_suppression_level(suppression_level);
-  ec->enable_drift_compensation(drift_compensation_enabled);
+  echo_canceller->Enable(true);
+  echo_canceller->set_suppression_level(suppression_level);
+  echo_canceller->enable_drift_compensation(drift_compensation_enabled);
 
   Config config;
   config.Set<DelayAgnostic>(new DelayAgnostic(true));
@@ -56,8 +55,7 @@ void ProcessOneFrame(int sample_rate_hz,
   echo_canceller->ProcessRenderAudio(render_audio);
 
   if (drift_compensation_enabled) {
-    static_cast<EchoCancellation*>(echo_canceller)
-        ->set_stream_drift_samples(stream_drift_samples);
+    echo_canceller->set_stream_drift_samples(stream_drift_samples);
   }
 
   echo_canceller->ProcessCaptureAudio(capture_audio_buffer, stream_delay_ms);
@@ -118,8 +116,7 @@ void RunBitexactnessTest(int sample_rate_hz,
   test::ExtractVectorFromAudioBuffer(capture_config, &capture_buffer,
                                      &capture_output);
 
-  EXPECT_EQ(stream_has_echo_reference,
-            static_cast<EchoCancellation*>(&echo_canceller)->stream_has_echo());
+  EXPECT_EQ(stream_has_echo_reference, echo_canceller.stream_has_echo());
 
   // Compare the output with the reference. Only the first values of the output
   // from last frame processed are compared in order not having to specify all

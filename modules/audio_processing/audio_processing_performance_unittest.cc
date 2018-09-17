@@ -452,11 +452,10 @@ class CallSimulator : public ::testing::TestWithParam<SimulationConfig> {
       ASSERT_EQ(apm->kNoError, apm->gain_control()->Enable(true));
       ASSERT_EQ(apm->kNoError, apm->noise_suppression()->Enable(true));
       ASSERT_EQ(apm->kNoError, apm->voice_detection()->Enable(true));
-      ASSERT_EQ(apm->kNoError, apm->echo_control_mobile()->Enable(false));
-      ASSERT_EQ(apm->kNoError, apm->echo_cancellation()->Enable(true));
-      ASSERT_EQ(apm->kNoError, apm->echo_cancellation()->enable_metrics(true));
-      ASSERT_EQ(apm->kNoError,
-                apm->echo_cancellation()->enable_delay_logging(true));
+      AudioProcessing::Config apm_config = apm->GetConfig();
+      apm_config.echo_canceller.enabled = true;
+      apm_config.echo_canceller.mobile_mode = false;
+      apm->ApplyConfig(apm_config);
     };
 
     // Lambda function for setting the default APM runtime settings for mobile.
@@ -468,8 +467,10 @@ class CallSimulator : public ::testing::TestWithParam<SimulationConfig> {
       ASSERT_EQ(apm->kNoError, apm->gain_control()->Enable(true));
       ASSERT_EQ(apm->kNoError, apm->noise_suppression()->Enable(true));
       ASSERT_EQ(apm->kNoError, apm->voice_detection()->Enable(true));
-      ASSERT_EQ(apm->kNoError, apm->echo_control_mobile()->Enable(true));
-      ASSERT_EQ(apm->kNoError, apm->echo_cancellation()->Enable(false));
+      AudioProcessing::Config apm_config = apm->GetConfig();
+      apm_config.echo_canceller.enabled = true;
+      apm_config.echo_canceller.mobile_mode = true;
+      apm->ApplyConfig(apm_config);
     };
 
     // Lambda function for turning off all of the APM runtime settings
@@ -482,11 +483,9 @@ class CallSimulator : public ::testing::TestWithParam<SimulationConfig> {
       ASSERT_EQ(apm->kNoError, apm->gain_control()->Enable(false));
       ASSERT_EQ(apm->kNoError, apm->noise_suppression()->Enable(false));
       ASSERT_EQ(apm->kNoError, apm->voice_detection()->Enable(false));
-      ASSERT_EQ(apm->kNoError, apm->echo_control_mobile()->Enable(false));
-      ASSERT_EQ(apm->kNoError, apm->echo_cancellation()->Enable(false));
-      ASSERT_EQ(apm->kNoError, apm->echo_cancellation()->enable_metrics(false));
-      ASSERT_EQ(apm->kNoError,
-                apm->echo_cancellation()->enable_delay_logging(false));
+      AudioProcessing::Config apm_config = apm->GetConfig();
+      apm_config.echo_canceller.enabled = false;
+      apm->ApplyConfig(apm_config);
     };
 
     // Lambda function for adding default desktop APM settings to a config.

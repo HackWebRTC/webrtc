@@ -924,6 +924,14 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
         settings_.pre_amplifier_gain_factor;
   }
 
+  bool use_aec2 = settings_.use_aec && *settings_.use_aec;
+  bool use_aec3 = settings_.use_aec3 && *settings_.use_aec3;
+  bool use_aecm = settings_.use_aecm && *settings_.use_aecm;
+  if (use_aec2 || use_aec3 || use_aecm) {
+    apm_config.echo_canceller.enabled = true;
+    apm_config.echo_canceller.mobile_mode = use_aecm;
+  }
+
   if (settings_.use_aec3 && *settings_.use_aec3) {
     EchoCanceller3Config cfg;
     if (settings_.aec3_settings_filename) {
@@ -939,6 +947,21 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
         std::cout << "AEC3 settings:" << std::endl;
       }
       PrintAec3ParameterValues(cfg);
+    }
+  }
+
+  if (settings_.use_drift_compensation && *settings_.use_drift_compensation) {
+    RTC_LOG(LS_ERROR) << "Ignoring deprecated setting: AEC2 drift compensation";
+  }
+  if (settings_.aec_suppression_level) {
+    auto level = static_cast<webrtc::EchoCancellation::SuppressionLevel>(
+        *settings_.aec_suppression_level);
+    if (level == webrtc::EchoCancellation::SuppressionLevel::kLowSuppression) {
+      RTC_LOG(LS_ERROR) << "Ignoring deprecated setting: AEC2 low suppression";
+    } else {
+      apm_config.echo_canceller.legacy_moderate_suppression_level =
+          (level ==
+           webrtc::EchoCancellation::SuppressionLevel::kModerateSuppression);
     }
   }
 
@@ -974,14 +997,6 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
 
   ap_->ApplyConfig(apm_config);
 
-  if (settings_.use_aec) {
-    RTC_CHECK_EQ(AudioProcessing::kNoError,
-                 ap_->echo_cancellation()->Enable(*settings_.use_aec));
-  }
-  if (settings_.use_aecm) {
-    RTC_CHECK_EQ(AudioProcessing::kNoError,
-                 ap_->echo_control_mobile()->Enable(*settings_.use_aecm));
-  }
   if (settings_.use_agc) {
     RTC_CHECK_EQ(AudioProcessing::kNoError,
                  ap_->gain_control()->Enable(*settings_.use_agc));
@@ -1017,19 +1032,6 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
         AudioProcessing::kNoError,
         ap_->gain_control()->set_mode(
             static_cast<webrtc::GainControl::Mode>(*settings_.agc_mode)));
-  }
-
-  if (settings_.use_drift_compensation) {
-    RTC_CHECK_EQ(AudioProcessing::kNoError,
-                 ap_->echo_cancellation()->enable_drift_compensation(
-                     *settings_.use_drift_compensation));
-  }
-
-  if (settings_.aec_suppression_level) {
-    RTC_CHECK_EQ(AudioProcessing::kNoError,
-                 ap_->echo_cancellation()->set_suppression_level(
-                     static_cast<webrtc::EchoCancellation::SuppressionLevel>(
-                         *settings_.aec_suppression_level)));
   }
 
   if (settings_.aecm_routing_mode) {
