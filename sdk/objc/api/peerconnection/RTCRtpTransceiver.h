@@ -56,7 +56,7 @@ typedef NS_ENUM(NSInteger, RTCRtpTransceiverDirection) {
  *  WebRTC specification for RTCRtpTransceiver, the JavaScript analog:
  *  https://w3c.github.io/webrtc-pc/#dom-rtcrtptransceiver
  */
-RTC_EXPORT
+RTC_OBJC_EXPORT
 @protocol RTCRtpTransceiver <NSObject>
 
 /** Media type of the transceiver. The sender and receiver will also have this
@@ -118,7 +118,7 @@ RTC_EXPORT
 
 @end
 
-RTC_EXPORT
+RTC_OBJC_EXPORT
 @interface RTCRtpTransceiver : NSObject <RTCRtpTransceiver>
 
 - (instancetype)init NS_UNAVAILABLE;

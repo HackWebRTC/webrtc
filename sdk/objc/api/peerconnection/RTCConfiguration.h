@@ -69,7 +69,7 @@ typedef NS_ENUM(NSInteger, RTCSdpSemantics) {
 
 NS_ASSUME_NONNULL_BEGIN
 
-RTC_EXPORT
+RTC_OBJC_EXPORT
 @interface RTCConfiguration : NSObject
 
 /** An array of Ice Servers available to be used by ICE. */

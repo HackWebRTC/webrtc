@@ -19,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class RTCEAGLVideoView;
 
-RTC_EXPORT
+RTC_OBJC_EXPORT
 @protocol RTCEAGLVideoViewDelegate <RTCVideoViewDelegate>
 @end
 
@@ -27,7 +27,7 @@ RTC_EXPORT
  * RTCEAGLVideoView is an RTCVideoRenderer which renders video frames in its
  * bounds using OpenGLES 2.0 or OpenGLES 3.0.
  */
-RTC_EXPORT
+RTC_OBJC_EXPORT
 NS_EXTENSION_UNAVAILABLE_IOS("Rendering not available in app extensions.")
 @interface RTCEAGLVideoView : UIView <RTCVideoRenderer>
 

@@ -21,11 +21,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class RTCNSGLVideoView;
 
-RTC_EXPORT
+RTC_OBJC_EXPORT
 @protocol RTCNSGLVideoViewDelegate <RTCVideoViewDelegate>
 @end
 
-RTC_EXPORT
+RTC_OBJC_EXPORT
 @interface RTCNSGLVideoView : NSOpenGLView <RTCVideoRenderer>
 
 @property(nonatomic, weak) id<RTCVideoViewDelegate> delegate;

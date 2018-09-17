@@ -14,7 +14,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-RTC_EXPORT
+RTC_OBJC_EXPORT
 @interface RTCPeerConnectionFactoryOptions : NSObject
 
 @property(nonatomic, assign) BOOL disableEncryption;

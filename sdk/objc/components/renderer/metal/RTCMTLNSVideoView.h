@@ -14,7 +14,7 @@
 
 NS_AVAILABLE_MAC(10.11)
 
-RTC_EXPORT
+RTC_OBJC_EXPORT
 @interface RTCMTLNSVideoView : NSView <RTCVideoRenderer>
 
 @property(nonatomic, weak) id<RTCVideoViewDelegate> delegate;
