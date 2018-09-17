@@ -774,9 +774,12 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
   // (not 'expected' time). Then rate controller can drain buffer more
   // accurately.
   RTC_DCHECK_GE(framerate_controller_.size(), num_active_spatial_layers_);
-  uint32_t duration = static_cast<uint32_t>(
-      90000 /
-      framerate_controller_[num_active_spatial_layers_ - 1].GetTargetRate());
+  float target_framerate_fps =
+      (codec_.mode == VideoCodecMode::kScreensharing)
+          ? framerate_controller_[num_active_spatial_layers_ - 1]
+                .GetTargetRate()
+          : codec_.maxFramerate;
+  uint32_t duration = static_cast<uint32_t>(90000 / target_framerate_fps);
   const vpx_codec_err_t rv = vpx_codec_encode(encoder_, raw_, timestamp_,
                                               duration, flags, VPX_DL_REALTIME);
   if (rv != VPX_CODEC_OK) {
