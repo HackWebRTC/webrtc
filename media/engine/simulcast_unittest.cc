@@ -187,4 +187,41 @@ TEST(SimulcastTest, GetConfigForScreenshareSimulcastWithLimitedMaxLayers) {
   EXPECT_EQ(kMaxLayers, streams.size());
 }
 
+TEST(SimulcastTest, SimulcastScreenshareMaxBitrateAdjustedForResolution) {
+  test::ScopedFieldTrials field_trials("WebRTC-SimulcastScreenshare/Enabled/");
+
+  constexpr int kScreenshareHighStreamMinBitrateBps = 600000;
+  constexpr int kScreenshareHighStreamMaxBitrateBps = 1250000;
+  constexpr int kMaxBirate960_540 = 900000;
+
+  // Normal case, max bitrate not limited by resolution.
+  const size_t kMaxLayers = 2;
+  std::vector<VideoStream> streams = cricket::GetSimulcastConfig(
+      kMaxLayers, 1920, 1080, kMaxBitrateBps, kBitratePriority, kQpMax, kMaxFps,
+      kScreenshare);
+  EXPECT_EQ(kMaxLayers, streams.size());
+  EXPECT_EQ(streams[1].max_bitrate_bps, kScreenshareHighStreamMaxBitrateBps);
+  EXPECT_EQ(streams[1].min_bitrate_bps, kScreenshareHighStreamMinBitrateBps);
+  EXPECT_GE(streams[1].max_bitrate_bps, streams[1].min_bitrate_bps);
+
+  // At 960x540, the max bitrate is limited to 900kbps.
+  streams = cricket::GetSimulcastConfig(kMaxLayers, 960, 540, kMaxBitrateBps,
+                                        kBitratePriority, kQpMax, kMaxFps,
+                                        kScreenshare);
+  EXPECT_EQ(kMaxLayers, streams.size());
+  EXPECT_EQ(streams[1].max_bitrate_bps, kMaxBirate960_540);
+  EXPECT_EQ(streams[1].min_bitrate_bps, kScreenshareHighStreamMinBitrateBps);
+  EXPECT_GE(streams[1].max_bitrate_bps, streams[1].min_bitrate_bps);
+
+  // At 480x270, the max bitrate is limited to 450kbps. This is lower than
+  // the min bitrate, so use that as a lower bound.
+  streams = cricket::GetSimulcastConfig(kMaxLayers, 480, 270, kMaxBitrateBps,
+                                        kBitratePriority, kQpMax, kMaxFps,
+                                        kScreenshare);
+  EXPECT_EQ(kMaxLayers, streams.size());
+  EXPECT_EQ(streams[1].max_bitrate_bps, kScreenshareHighStreamMinBitrateBps);
+  EXPECT_EQ(streams[1].min_bitrate_bps, kScreenshareHighStreamMinBitrateBps);
+  EXPECT_GE(streams[1].max_bitrate_bps, streams[1].min_bitrate_bps);
+}
+
 }  // namespace webrtc
