@@ -496,13 +496,21 @@ void BasicPortAllocatorSession::GetCandidatesFromPort(
     if (!CheckCandidateFilter(candidate)) {
       continue;
     }
-    candidates->push_back(SanitizeRelatedAddress(candidate));
+    auto sanitized_candidate = SanitizeCandidate(candidate);
+    candidates->push_back(sanitized_candidate);
   }
 }
 
-Candidate BasicPortAllocatorSession::SanitizeRelatedAddress(
+Candidate BasicPortAllocatorSession::SanitizeCandidate(
     const Candidate& c) const {
   Candidate copy = c;
+  // If the candidate has a generated hostname, we need to obfuscate its IP
+  // address when signaling this candidate.
+  if (!c.address().hostname().empty() && !c.address().IsUnresolvedIP()) {
+    rtc::SocketAddress hostname_only_addr(c.address().hostname(),
+                                          c.address().port());
+    copy.set_address(hostname_only_addr);
+  }
   // If adapter enumeration is disabled or host candidates are disabled,
   // clear the raddr of STUN candidates to avoid local address leakage.
   bool filter_stun_related_address =
@@ -916,7 +924,7 @@ void BasicPortAllocatorSession::OnCandidateReady(Port* port,
 
   if (data->ready() && CheckCandidateFilter(c)) {
     std::vector<Candidate> candidates;
-    candidates.push_back(SanitizeRelatedAddress(c));
+    candidates.push_back(SanitizeCandidate(c));
     SignalCandidatesReady(this, candidates);
   } else {
     RTC_LOG(LS_INFO) << "Discarding candidate because it doesn't match filter.";

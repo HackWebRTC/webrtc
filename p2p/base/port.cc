@@ -440,6 +440,11 @@ void Port::AddAddress(const rtc::SocketAddress& address,
                                               const std::string& name) mutable {
         RTC_DCHECK(c.address().ipaddr() == addr);
         rtc::SocketAddress hostname_address(name, c.address().port());
+        // In Port and Connection, we need the IP address information to
+        // correctly handle the update of candidate type to prflx. The removal
+        // of IP address when signaling this candidate will take place in
+        // BasicPortAllocatorSession::OnCandidateReady, via SanitizeCandidate.
+        hostname_address.SetResolvedIP(addr);
         c.set_address(hostname_address);
         RTC_DCHECK(c.related_address() == rtc::SocketAddress());
         if (weak_ptr != nullptr) {

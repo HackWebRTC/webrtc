@@ -235,9 +235,10 @@ class BasicPortAllocatorSession : public PortAllocatorSession,
 
   bool CheckCandidateFilter(const Candidate& c) const;
   bool CandidatePairable(const Candidate& c, const Port* port) const;
-  // Clear the related address according to the flags and candidate filter
-  // in order to avoid leaking any information.
-  Candidate SanitizeRelatedAddress(const Candidate& c) const;
+  // Clears 1) the address if the candidate is supposedly a hostname candidate;
+  // 2) the related address according to the flags and candidate filter in order
+  // to avoid leaking any information.
+  Candidate SanitizeCandidate(const Candidate& c) const;
 
   std::vector<PortData*> GetUnprunedPorts(
       const std::vector<rtc::Network*>& networks);

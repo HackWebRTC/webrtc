@@ -4761,6 +4761,8 @@ TEST_F(P2PTransportChannelTest, CanConnectWithHostCandidateWithMDnsName) {
   // with a peer reflexive candidate from ep2.
   ASSERT_TRUE_WAIT((ep1_ch1()->selected_connection()) != nullptr,
                    kMediumTimeout);
+  EXPECT_EQ(LOCAL_PORT_TYPE,
+            ep1_ch1()->selected_connection()->local_candidate().type());
   EXPECT_EQ(PRFLX_PORT_TYPE,
             ep1_ch1()->selected_connection()->remote_candidate().type());
 
