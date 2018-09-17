@@ -50,7 +50,6 @@
 #include "rtc_base/networkmonitor.h"
 #include "rtc_base/nullsocketserver.h"
 #include "rtc_base/timeutils.h"
-#include "rtc_base/win32socketinit.h"
 
 #if defined(WEBRTC_WIN)
 #define LAST_SYSTEM_ERROR (::GetLastError())
@@ -117,14 +116,6 @@ PhysicalSocket::PhysicalSocket(PhysicalSocketServer* ss, SOCKET s)
       error_(0),
       state_((s == INVALID_SOCKET) ? CS_CLOSED : CS_CONNECTED),
       resolver_(nullptr) {
-#if defined(WEBRTC_WIN)
-  // EnsureWinsockInit() ensures that winsock is initialized. The default
-  // version of this function doesn't do anything because winsock is
-  // initialized by constructor of a static object. If neccessary libjingle
-  // users can link it with a different version of this function by replacing
-  // win32socketinit.cc. See win32socketinit.cc for more details.
-  EnsureWinsockInit();
-#endif
   if (s_ != INVALID_SOCKET) {
     SetEnabledEvents(DE_READ | DE_WRITE);
 

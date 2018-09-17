@@ -871,10 +871,6 @@ rtc_static_library("rtc_base_generic") {
   ]
 
   if (build_with_chromium) {
-    if (is_win) {
-      sources += [ "../../webrtc_overrides/rtc_base/win32socketinit.cc" ]
-      deps += [ "//net" ]
-    }
     include_dirs = [ "../../boringssl/src/include" ]
     public_configs += [ ":rtc_base_chromium_config" ]
   } else {
@@ -890,12 +886,7 @@ rtc_static_library("rtc_base_generic") {
     ]
 
     if (is_win) {
-      configs += [
-        "..:no_exit_time_destructors",
-        "..:no_global_constructors",
-      ]
       sources += [
-        "win32socketinit.cc",
         "win32socketinit.h",
         "win32socketserver.cc",
         "win32socketserver.h",
