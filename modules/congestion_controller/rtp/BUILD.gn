@@ -70,6 +70,7 @@ rtc_static_library("transport_feedback") {
 
   deps = [
     "../..:module_api",
+    "../../../api/transport:network_control",
     "../../../rtc_base:checks",
     "../../../rtc_base:rtc_base_approved",
     "../../../system_wrappers",

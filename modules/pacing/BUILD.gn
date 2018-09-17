@@ -25,6 +25,7 @@ rtc_static_library("pacing") {
     ":interval_budget",
     "..:module_api",
     "../../:webrtc_common",
+    "../../api/transport:network_control",
     "../../logging:rtc_event_bwe",
     "../../logging:rtc_event_log_api",
     "../../logging:rtc_event_pacing",

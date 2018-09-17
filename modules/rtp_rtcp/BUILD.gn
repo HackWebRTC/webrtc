@@ -90,6 +90,7 @@ rtc_source_set("rtp_rtcp_format") {
     "../../api:array_view",
     "../../api:libjingle_peerconnection_api",
     "../../api/audio_codecs:audio_codecs_api",
+    "../../api/transport:network_control",
     "../../api/video:video_frame",
     "../../common_video",
     "../../rtc_base:checks",

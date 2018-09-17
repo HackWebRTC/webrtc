@@ -11,6 +11,7 @@
 #include "modules/video_coding/codecs/test/videocodec_test_fixture_impl.h"
 
 #include <algorithm>
+#include <cmath>
 #include <memory>
 #include <utility>
 

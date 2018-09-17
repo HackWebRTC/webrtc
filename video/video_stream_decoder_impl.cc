@@ -13,6 +13,7 @@
 #include "absl/memory/memory.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/mod_ops.h"
+#include "rtc_base/timeutils.h"
 
 namespace webrtc {
 

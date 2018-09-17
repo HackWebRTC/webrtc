@@ -27,6 +27,7 @@
 #include "modules/audio_coding/codecs/audio_format_conversion.h"
 #include "modules/audio_coding/test/utility.h"
 #include "rtc_base/strings/string_builder.h"
+#include "rtc_base/timeutils.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/testsupport/fileutils.h"
 
