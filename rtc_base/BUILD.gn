@@ -787,7 +787,6 @@ rtc_static_library("rtc_base_generic") {
     "gunit_prod.h",
     "helpers.cc",
     "helpers.h",
-    "httpcommon-inl.h",
     "httpcommon.cc",
     "httpcommon.h",
     "ipaddress.cc",

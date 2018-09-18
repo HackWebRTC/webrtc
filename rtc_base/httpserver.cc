@@ -10,8 +10,6 @@
 
 #include <algorithm>
 
-#include "rtc_base/httpcommon-inl.h"
-
 #include "rtc_base/asyncsocket.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/httpserver.h"

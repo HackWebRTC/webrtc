@@ -23,7 +23,6 @@
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/cryptstring.h"
-#include "rtc_base/httpcommon-inl.h"
 #include "rtc_base/httpcommon.h"
 #include "rtc_base/messagedigest.h"
 #include "rtc_base/socketaddress.h"
@@ -550,35 +549,6 @@ HttpError HttpRequestData::parseLeader(const char* line, size_t len) {
   }
   path.assign(line + dstart, line + dend);
   return HE_NONE;
-}
-
-bool HttpRequestData::getAbsoluteUri(std::string* uri) const {
-  Url<char> url(path);
-  if (url.valid()) {
-    uri->assign(path);
-    return true;
-  }
-  std::string host;
-  if (!hasHeader(HH_HOST, &host))
-    return false;
-  url.set_address(host);
-  url.set_full_path(path);
-  uri->assign(url.url());
-  return url.valid();
-}
-
-bool HttpRequestData::getRelativeUri(std::string* host,
-                                     std::string* path) const {
-  Url<char> url(this->path);
-  if (url.valid()) {
-    host->assign(url.address());
-    path->assign(url.full_path());
-    return true;
-  }
-  if (!hasHeader(HH_HOST, host))
-    return false;
-  path->assign(this->path);
-  return true;
 }
 
 //
