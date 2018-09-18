@@ -3016,7 +3016,7 @@ TEST_F(WebRtcVoiceEngineTestFake, TestSetDscpOptions) {
   EXPECT_TRUE(SetupSendStream());
   cricket::FakeNetworkInterface network_interface;
   cricket::MediaConfig config;
-  std::unique_ptr<cricket::VoiceMediaChannel> channel;
+  std::unique_ptr<cricket::WebRtcVoiceMediaChannel> channel;
 
   webrtc::AudioProcessing::Config apm_config;
   EXPECT_CALL(*apm_, GetConfig())
@@ -3025,23 +3025,28 @@ TEST_F(WebRtcVoiceEngineTestFake, TestSetDscpOptions) {
       .WillRepeatedly(SaveArg<0>(&apm_config));
   EXPECT_CALL(*apm_, SetExtraOptions(testing::_)).Times(3);
 
-  channel.reset(
-      engine_->CreateChannel(&call_, config, cricket::AudioOptions()));
+  channel.reset(static_cast<cricket::WebRtcVoiceMediaChannel*>(
+      engine_->CreateChannel(&call_, config, cricket::AudioOptions())));
   channel->SetInterface(&network_interface);
   // Default value when DSCP is disabled should be DSCP_DEFAULT.
   EXPECT_EQ(rtc::DSCP_DEFAULT, network_interface.dscp());
 
   config.enable_dscp = true;
-  channel.reset(
-      engine_->CreateChannel(&call_, config, cricket::AudioOptions()));
+  channel.reset(static_cast<cricket::WebRtcVoiceMediaChannel*>(
+      engine_->CreateChannel(&call_, config, cricket::AudioOptions())));
   channel->SetInterface(&network_interface);
   EXPECT_EQ(rtc::DSCP_EF, network_interface.dscp());
+
+  // Packets should also self-identify their dscp in PacketOptions.
+  const uint8_t kData[10] = {0};
+  EXPECT_TRUE(channel->SendRtcp(kData, sizeof(kData)));
+  EXPECT_EQ(rtc::DSCP_EF, network_interface.options().dscp);
 
   // Verify that setting the option to false resets the
   // DiffServCodePoint.
   config.enable_dscp = false;
-  channel.reset(
-      engine_->CreateChannel(&call_, config, cricket::AudioOptions()));
+  channel.reset(static_cast<cricket::WebRtcVoiceMediaChannel*>(
+      engine_->CreateChannel(&call_, config, cricket::AudioOptions())));
   channel->SetInterface(&network_interface);
   // Default value when DSCP is disabled should be DSCP_DEFAULT.
   EXPECT_EQ(rtc::DSCP_DEFAULT, network_interface.dscp());

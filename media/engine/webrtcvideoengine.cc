@@ -1471,12 +1471,19 @@ bool WebRtcVideoChannel::SendRtp(const uint8_t* data,
   rtc::CopyOnWriteBuffer packet(data, len, kMaxRtpPacketLen);
   rtc::PacketOptions rtc_options;
   rtc_options.packet_id = options.packet_id;
+  if (DscpEnabled()) {
+    rtc_options.dscp = PreferredDscp();
+  }
   return MediaChannel::SendPacket(&packet, rtc_options);
 }
 
 bool WebRtcVideoChannel::SendRtcp(const uint8_t* data, size_t len) {
   rtc::CopyOnWriteBuffer packet(data, len, kMaxRtpPacketLen);
-  return MediaChannel::SendRtcp(&packet, rtc::PacketOptions());
+  rtc::PacketOptions rtc_options;
+  if (DscpEnabled()) {
+    rtc_options.dscp = PreferredDscp();
+  }
+  return MediaChannel::SendRtcp(&packet, rtc_options);
 }
 
 WebRtcVideoChannel::WebRtcVideoSendStream::VideoSendStreamParameters::

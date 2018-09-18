@@ -210,6 +210,7 @@ TurnPort::TurnPort(rtc::Thread* thread,
       socket_(socket),
       resolver_(NULL),
       error_(0),
+      stun_dscp_value_(rtc::DSCP_NO_CHANGE),
       request_manager_(thread),
       next_channel_number_(TURN_CHANNEL_NUMBER_START),
       state_(STATE_CONNECTING),
@@ -251,6 +252,7 @@ TurnPort::TurnPort(rtc::Thread* thread,
       socket_(NULL),
       resolver_(NULL),
       error_(0),
+      stun_dscp_value_(rtc::DSCP_NO_CHANGE),
       request_manager_(thread),
       next_channel_number_(TURN_CHANNEL_NUMBER_START),
       state_(STATE_CONNECTING),
@@ -551,6 +553,10 @@ bool TurnPort::FailAndPruneConnection(const rtc::SocketAddress& address) {
 }
 
 int TurnPort::SetOption(rtc::Socket::Option opt, int value) {
+  // Remember the last requested DSCP value, for STUN traffic.
+  if (opt == rtc::Socket::OPT_DSCP)
+    stun_dscp_value_ = static_cast<rtc::DiffServCodePoint>(value);
+
   if (!socket_) {
     // If socket is not created yet, these options will be applied during socket
     // creation.
@@ -795,7 +801,7 @@ void TurnPort::OnSendStunPacket(const void* data,
                                 size_t size,
                                 StunRequest* request) {
   RTC_DCHECK(connected());
-  rtc::PacketOptions options(DefaultDscpValue());
+  rtc::PacketOptions options(StunDscpValue());
   options.info_signaled_after_sent.packet_type = rtc::PacketType::kTurnMessage;
   CopyPortInformationToPacketInfo(&options.info_signaled_after_sent);
   if (Send(data, size, options) < 0) {
@@ -879,6 +885,10 @@ void TurnPort::Close() {
   }
 
   SignalTurnPortClosed(this);
+}
+
+rtc::DiffServCodePoint TurnPort::StunDscpValue() const {
+  return stun_dscp_value_;
 }
 
 void TurnPort::OnMessage(rtc::Message* message) {

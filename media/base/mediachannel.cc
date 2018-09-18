@@ -21,12 +21,12 @@ void MediaChannel::SetInterface(NetworkInterface* iface) {
   SetDscp(enable_dscp_ ? PreferredDscp() : rtc::DSCP_DEFAULT);
 }
 
-rtc::DiffServCodePoint MediaChannel::PreferredDscp() const {
-  return rtc::DSCP_DEFAULT;
-}
-
 int MediaChannel::GetRtpSendTimeExtnId() const {
   return -1;
+}
+
+rtc::DiffServCodePoint MediaChannel::PreferredDscp() const {
+  return rtc::DSCP_DEFAULT;
 }
 
 void MediaChannel::SetFrameEncryptor(

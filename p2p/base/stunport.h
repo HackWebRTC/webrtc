@@ -152,6 +152,8 @@ class UDPPort : public Port {
 
   void UpdateNetworkCost() override;
 
+  rtc::DiffServCodePoint StunDscpValue() const override;
+
   void OnLocalAddressReady(rtc::AsyncPacketSocket* socket,
                            const rtc::SocketAddress& address);
   void OnReadPacket(rtc::AsyncPacketSocket* socket,
@@ -247,6 +249,7 @@ class UDPPort : public Port {
   bool ready_;
   int stun_keepalive_delay_;
   int stun_keepalive_lifetime_ = INFINITE_LIFETIME;
+  rtc::DiffServCodePoint dscp_;
 
   StunStats stats_;
 

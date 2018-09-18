@@ -186,7 +186,6 @@ class MediaChannel : public sigslot::has_slots<> {
 
   // Sets the abstract interface class for sending RTP/RTCP data.
   virtual void SetInterface(NetworkInterface* iface);
-  virtual rtc::DiffServCodePoint PreferredDscp() const;
   // Called when a RTP packet is received.
   virtual void OnPacketReceived(rtc::CopyOnWriteBuffer* packet,
                                 const rtc::PacketTime& packet_time) = 0;
@@ -248,6 +247,11 @@ class MediaChannel : public sigslot::has_slots<> {
 
     return network_interface_->SetOption(type, opt, option);
   }
+
+ protected:
+  virtual rtc::DiffServCodePoint PreferredDscp() const;
+
+  bool DscpEnabled() const { return enable_dscp_; }
 
  private:
   // This method sets DSCP |value| on both RTP and RTCP channels.
