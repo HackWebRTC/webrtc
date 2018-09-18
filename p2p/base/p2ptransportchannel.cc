@@ -18,8 +18,7 @@
 #include "api/candidate.h"
 #include "logging/rtc_event_log/icelogger.h"
 #include "p2p/base/candidatepairinterface.h"
-#include "p2p/base/relayport.h"  // For RELAY_PORT_TYPE.
-#include "p2p/base/stunport.h"   // For STUN_PORT_TYPE.
+#include "p2p/base/port.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/crc32.h"
 #include "rtc_base/logging.h"
