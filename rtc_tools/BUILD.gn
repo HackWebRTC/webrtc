@@ -107,15 +107,17 @@ rtc_executable("frame_analyzer") {
   ]
 }
 
-action("frame_analyzer_host") {
-  script = "//tools_webrtc/executable_host_build.py"
-  outputs = [
-    "${root_out_dir}/frame_analyzer_host",
-  ]
-  args = [
-    "--executable_name",
-    "frame_analyzer",
-  ]
+if (!build_with_chromium && !build_with_mozilla) {
+  action("frame_analyzer_host") {
+    script = "//tools_webrtc/executable_host_build.py"
+    outputs = [
+      "${root_out_dir}/frame_analyzer_host",
+    ]
+    args = [
+      "--executable_name",
+      "frame_analyzer",
+    ]
+  }
 }
 
 # Only expose the targets needed by Chromium (e.g. frame_analyzer) to avoid
