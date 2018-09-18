@@ -279,7 +279,6 @@ rtc_common_inherited_config = webrtc_root + ":common_inherited_config"
 rtc_remove_configs = []
 rtc_add_configs = rtc_common_configs
 rtc_prod_configs = [ webrtc_root + ":rtc_prod_config" ]
-rtc_library_impl_config = [ webrtc_root + ":library_impl_config" ]
 
 set_defaults("rtc_test") {
   configs = rtc_add_configs
@@ -445,7 +444,6 @@ template("rtc_source_set") {
     }
 
     configs += invoker.configs
-    configs += rtc_library_impl_config
     configs -= rtc_remove_configs
     configs -= invoker.suppressed_configs
     public_configs = [
@@ -554,7 +552,6 @@ template("rtc_static_library") {
     }
 
     configs += invoker.configs
-    configs += rtc_library_impl_config
     configs -= rtc_remove_configs
     configs -= invoker.suppressed_configs
     public_configs = [
