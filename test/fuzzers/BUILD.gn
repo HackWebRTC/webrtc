@@ -21,6 +21,12 @@ rtc_static_library("webrtc_fuzzer_main") {
     "../../system_wrappers:runtime_enabled_features_default",
     "//testing/libfuzzer:libfuzzer_main",
   ]
+
+  # When WebRTC fuzzer tests are built on Chromium bots they need to link
+  # with Chromium's implementation of metrics.
+  if (build_with_chromium) {
+    deps += [ "../../../webrtc_overrides:metrics" ]
+  }
 }
 
 rtc_static_library("fuzz_data_helper") {
