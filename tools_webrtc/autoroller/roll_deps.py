@@ -39,7 +39,7 @@ DONT_AUTOROLL_THESE = [
 WEBRTC_ONLY_DEPS = [
   'src/base',
   'src/build',
-  'src/ios'
+  'src/ios',
   'src/testing',
   'src/third_party',
   'src/third_party/findbugs',
