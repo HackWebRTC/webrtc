@@ -32,6 +32,24 @@ DONT_AUTOROLL_THESE = [
   'src/third_party/ffmpeg',
 ]
 
+# These dependencies are missing in chromium/src/DEPS, either unused or already
+# in-tree. For instance, src/base is a part of the Chromium source git repo,
+# but we pull it through a subtree mirror, so therefore it isn't listed in
+# Chromium's deps but it is in ours.
+WEBRTC_ONLY_DEPS = [
+  'src/base',
+  'src/build',
+  'src/ios'
+  'src/testing',
+  'src/third_party',
+  'src/third_party/findbugs',
+  'src/third_party/gtest-parallel',
+  'src/third_party/winsdk_samples',
+  'src/third_party/yasm/binaries',
+  'src/tools',
+]
+
+
 # Run these CQ trybots in addition to the default ones in infra/config/cq.cfg.
 EXTRA_TRYBOTS = (
   'master.internal.tryserver.corp.webrtc:linux_internal'
@@ -321,11 +339,10 @@ def FindRemovedDeps(webrtc_deps, new_cr_deps):
   all_removed_deps = _FindNewDeps(new_cr_deps, webrtc_deps)
   generated_android_deps = [path for path in all_removed_deps
                             if path.startswith(ANDROID_DEPS_PATH)]
-  # DepsEntry are assumed to be webrtc-only dependencies,
-  # and are handled in CalculatedChangedDeds.
+  # Webrtc-only dependencies are handled in CalculateChangedDeps.
   other_deps = [path for path in all_removed_deps
                 if path not in generated_android_deps and
-                not isinstance(webrtc_deps['deps'][path], DepsEntry)]
+                   path not in WEBRTC_ONLY_DEPS]
   return generated_android_deps, other_deps
 
 
@@ -365,7 +382,7 @@ def CalculateChangedDeps(webrtc_deps, new_cr_deps):
           'WebRTC DEPS entry %s has a different URL (%s) than Chromium (%s).' %
           (path, webrtc_deps_entry.url, cr_deps_entry.url))
     else:
-      if isinstance(webrtc_deps_entry, DepsEntry):
+      if path in WEBRTC_ONLY_DEPS:
         # Use the HEAD of the deps repo.
         stdout, _ = _RunCommand(['git', 'ls-remote', webrtc_deps_entry.url,
                                 'HEAD'])

@@ -72,7 +72,7 @@ class FakeCmd(object):
 
 
 class NullCmd(object):
-  """ No-op mock when calls mustn't be checked. """
+  """No-op mock when calls mustn't be checked. """
 
   def __call__(self, *args, **kwargs):
     # Empty stdout and stderr.
@@ -218,7 +218,7 @@ class TestRollChromiumRevision(unittest.TestCase):
     self.assertEquals(changed_deps[2].new_version, 'version:1.10.0-cr0')
 
   def testWithDistinctDeps(self):
-    """ Check CalculateChangedDeps still works when deps are added/removed. """
+    """Check CalculateChangedDeps still works when deps are added/removed. """
     webrtc_deps = ParseLocalDepsFile(self._webrtc_depsfile_android)
     new_cr_deps = ParseLocalDepsFile(self._new_cr_depsfile_android)
     changed_deps = CalculateChangedDeps(webrtc_deps, new_cr_deps)
@@ -251,16 +251,24 @@ class TestRollChromiumRevision(unittest.TestCase):
     self.assertEquals(other_paths, [])
 
   def testMissingDepsIsDetected(self):
-    """ Check an error is reported when deps cannot be automatically removed."""
+    """Check an error is reported when deps cannot be automatically removed."""
     # The situation at test is the following:
     #   * A WebRTC DEPS entry is missing from Chromium.
     #   * The dependency isn't an android_deps (those are supported).
     webrtc_deps = ParseLocalDepsFile(self._webrtc_depsfile)
     new_cr_deps = ParseLocalDepsFile(self._new_cr_depsfile_android)
     _, other_paths = FindRemovedDeps(webrtc_deps, new_cr_deps)
-    self.assertEquals(other_paths, ['src/build',
-                                    'src/third_party/xstream',
+    self.assertEquals(other_paths, ['src/third_party/xstream',
                                     'src/buildtools'])
+
+  def testExpectedDepsIsNot(self):
+    """Some deps musn't be seen as missing, even if absent from Chromium."""
+    webrtc_deps = ParseLocalDepsFile(self._webrtc_depsfile)
+    new_cr_deps = ParseLocalDepsFile(self._new_cr_depsfile_android)
+    removed_android_paths, other_paths = FindRemovedDeps(webrtc_deps,
+                                                         new_cr_deps)
+    self.assertTrue('src/build' not in removed_android_paths)
+    self.assertTrue('src/build' not in other_paths)
 
   def _CommitMessageSetup(self):
     webrtc_deps = ParseLocalDepsFile(self._webrtc_depsfile_android)
