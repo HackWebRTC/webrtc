@@ -419,9 +419,11 @@ def CalculateChangedClang(new_cr_rev):
 
 
 def GenerateCommitMessage(rev_update, current_commit_pos, new_commit_pos,
-                          changed_deps_list, clang_change=None,
+                          changed_deps_list,
                           added_deps_paths=None,
-                          removed_deps_paths=None):
+                          removed_deps_paths=None,
+                          clang_change=None,
+                          ):
   current_cr_rev = rev_update.current_chromium_rev[0:10]
   new_cr_rev = rev_update.new_chromium_rev[0:10]
   rev_interval = '%s..%s' % (current_cr_rev, new_cr_rev)
@@ -683,12 +685,11 @@ def main():
     raise RollError('WebRTC DEPS entries are missing from Chromium: %s. '
           'Remove them or add them to DONT_AUTOROLL_THESE.' % other_deps)
   clang_change = CalculateChangedClang(rev_update.new_chromium_rev)
-  commit_msg = GenerateCommitMessage(rev_update,
-                                     current_commit_pos, new_commit_pos,
-                                     changed_deps,
-                                     new_generated_android_deps,
-                                     removed_generated_android_deps,
-                                     clang_change)
+  commit_msg = GenerateCommitMessage(
+      rev_update, current_commit_pos, new_commit_pos, changed_deps,
+      added_deps_paths=new_generated_android_deps,
+      removed_deps_paths=removed_generated_android_deps,
+      clang_change=clang_change)
   logging.debug('Commit message:\n%s', commit_msg)
 
   _CreateRollBranch(opts.dry_run)

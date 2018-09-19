@@ -287,8 +287,7 @@ class TestRollChromiumRevision(unittest.TestCase):
     new_commit_pos = 'f00d'
     commit_msg = GenerateCommitMessage(NO_CHROMIUM_REVISION_UPDATE,
                                        current_commit_pos, new_commit_pos,
-                                       changed_deps, None,
-                                       added_paths, removed_paths)
+                                       changed_deps, added_paths, removed_paths)
 
     return [l.strip() for l in commit_msg.split('\n')]
 
