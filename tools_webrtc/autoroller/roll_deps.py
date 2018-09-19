@@ -382,7 +382,7 @@ def CalculateChangedDeps(webrtc_deps, new_cr_deps):
           'WebRTC DEPS entry %s has a different URL (%s) than Chromium (%s).' %
           (path, webrtc_deps_entry.url, cr_deps_entry.url))
     else:
-      if path in WEBRTC_ONLY_DEPS:
+      if isinstance(webrtc_deps_entry, DepsEntry):
         # Use the HEAD of the deps repo.
         stdout, _ = _RunCommand(['git', 'ls-remote', webrtc_deps_entry.url,
                                 'HEAD'])
