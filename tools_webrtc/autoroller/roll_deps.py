@@ -605,7 +605,13 @@ def _UploadCL(commit_queue_mode):
   elif commit_queue_mode >= 1:
     logging.info('Starting CQ dry run...')
     cmd.extend(['--cq-dry-run'])
-  _RunCommand(cmd, extra_env={'EDITOR': 'true', 'SKIP_GCE_AUTH_FOR_GIT': '1'})
+  extra_env = {
+      'EDITOR': 'true',
+      'SKIP_GCE_AUTH_FOR_GIT': '1',
+  }
+  stdout, stderr = _RunCommand(cmd, extra_env=extra_env)
+  logging.debug('Output from "git cl upload":\nstdout:\n%s\n\nstderr:\n%s',
+      stdout, stderr)
 
 
 def GetRollRevisionRanges(opts, webrtc_deps):
