@@ -318,9 +318,6 @@ struct HttpData {
     return headers_.upper_bound(ToString(header));
   }
 
-  void setContent(const std::string& content_type, StreamInterface* document);
-  void setDocumentAndLength(StreamInterface* document);
-
   virtual size_t formatLeader(char* buffer, size_t size) const = 0;
   virtual HttpError parseLeader(const char* line, size_t len) = 0;
 

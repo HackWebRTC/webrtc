@@ -511,28 +511,6 @@ bool HttpData::hasHeader(const std::string& name, std::string* value) const {
   return true;
 }
 
-void HttpData::setContent(const std::string& content_type,
-                          StreamInterface* document) {
-  setHeader(HH_CONTENT_TYPE, content_type);
-  setDocumentAndLength(document);
-}
-
-void HttpData::setDocumentAndLength(StreamInterface* document) {
-  // TODO: Consider calling Rewind() here?
-  RTC_DCHECK(!hasHeader(HH_CONTENT_LENGTH, nullptr));
-  RTC_DCHECK(!hasHeader(HH_TRANSFER_ENCODING, nullptr));
-  RTC_DCHECK(document != nullptr);
-  this->document.reset(document);
-  size_t content_length = 0;
-  if (this->document->GetAvailable(&content_length)) {
-    char buffer[32];
-    sprintfn(buffer, sizeof(buffer), "%d", content_length);
-    setHeader(HH_CONTENT_LENGTH, buffer);
-  } else {
-    setHeader(HH_TRANSFER_ENCODING, "chunked");
-  }
-}
-
 //
 // HttpRequestData
 //
