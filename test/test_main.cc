@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <fstream>
+
 #include "rtc_base/flags.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/thread.h"
@@ -38,9 +40,10 @@ DEFINE_bool(
 
 #else
 
-DEFINE_string(isolated_script_test_output,
-              "",
-              "Intentionally ignored flag intended for Chromium.");
+DEFINE_string(
+    isolated_script_test_output,
+    "",
+    "Path to output an empty JSON file which Chromium infra requires.");
 
 DEFINE_string(
     isolated_script_test_perf_output,
@@ -110,6 +113,13 @@ int main(int argc, char* argv[]) {
   std::string chartjson_result_file = FLAG_isolated_script_test_perf_output;
   if (!chartjson_result_file.empty()) {
     webrtc::test::WritePerfResults(chartjson_result_file);
+  }
+
+  std::string result_filename = FLAG_isolated_script_test_output;
+  if (!result_filename.empty()) {
+    std::ofstream result_file(result_filename);
+    result_file << "{\"version\": 3}";
+    result_file.close();
   }
 
   return exit_code;
