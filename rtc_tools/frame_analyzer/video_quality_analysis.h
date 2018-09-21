@@ -37,11 +37,11 @@ struct ResultsContainer {
   ~ResultsContainer();
 
   std::vector<AnalysisResult> frames;
-  int max_repeated_frames;
-  int max_skipped_frames;
-  int total_skipped_frames;
-  int decode_errors_ref;
-  int decode_errors_test;
+  int max_repeated_frames = 0;
+  int max_skipped_frames = 0;
+  int total_skipped_frames = 0;
+  int decode_errors_ref = 0;
+  int decode_errors_test = 0;
 };
 
 // A function to run the PSNR and SSIM analysis on the test file. The test file
