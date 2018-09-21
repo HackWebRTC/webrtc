@@ -88,13 +88,12 @@ def _ParseArgs():
                       help='Number of times to retry the test on Android.')
   parser.add_argument('--isolated-script-test-perf-output',
       help='Where to store perf results in chartjson format.', default=None)
-
+  parser.add_argument('--isolated-script-test-output', default=None,
+      help='Path to output an empty JSON file which Chromium infra requires.')
   args, unknown_args = parser.parse_known_args()
 
   # Ignore Chromium-specific flags
   parser = argparse.ArgumentParser()
-  parser.add_argument('--isolated-script-test-output',
-                      type=str, default=None)
   parser.add_argument('--test-launcher-summary-output',
                       type=str, default=None)
 
@@ -235,6 +234,10 @@ def main():
         process.wait()
 
     utils.RemoveDirectory(temp_dir)
+
+  if args.isolated_script_test_output:
+    with open(args.isolated_script_test_output, 'w') as f:
+      f.write('{"version": 3}')
 
 
 if __name__ == '__main__':
