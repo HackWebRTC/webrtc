@@ -83,7 +83,7 @@ void AdaptiveDigitalGainApplier::Process(
     RTC_HISTOGRAM_COUNTS_LINEAR("WebRTC.Audio.Agc2.DigitalGainApplied",
                                 last_gain_db_, 0, kMaxGainDb, kMaxGainDb + 1);
     RTC_HISTOGRAM_COUNTS_LINEAR("WebRTC.Audio.Agc2.EstimatedNoiseLevel",
-                                input_noise_level_dbfs, 0, 100, 101);
+                                input_noise_level_dbfs, -100, 0, 101);
   }
 
   input_level_dbfs = std::min(input_level_dbfs, 0.f);
