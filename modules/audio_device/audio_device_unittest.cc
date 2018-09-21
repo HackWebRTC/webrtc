@@ -47,6 +47,14 @@ using ::testing::Mock;
 namespace webrtc {
 namespace {
 
+// Using a #define for AUDIO_DEVICE since we will call *different* versions of
+// the ADM functions, depending on the ID type.
+#if defined(WEBRTC_WIN)
+#define AUDIO_DEVICE_ID (AudioDeviceModule::WindowsDeviceType::kDefaultDevice)
+#else
+#define AUDIO_DEVICE_ID (0u)
+#endif  // defined(WEBRTC_WIN)
+
 // #define ENABLE_DEBUG_PRINTF
 #ifdef ENABLE_DEBUG_PRINTF
 #define PRINTD(...) fprintf(stderr, __VA_ARGS__);
@@ -520,12 +528,12 @@ class AudioDeviceTest
     requirements_satisfied_ = false;
 #endif
     if (requirements_satisfied_) {
-      EXPECT_EQ(0, audio_device_->SetPlayoutDevice(0));
+      EXPECT_EQ(0, audio_device_->SetPlayoutDevice(AUDIO_DEVICE_ID));
       EXPECT_EQ(0, audio_device_->InitSpeaker());
-      EXPECT_EQ(0, audio_device_->SetRecordingDevice(0));
-      EXPECT_EQ(0, audio_device_->InitMicrophone());
       EXPECT_EQ(0, audio_device_->StereoPlayoutIsAvailable(&stereo_playout_));
       EXPECT_EQ(0, audio_device_->SetStereoPlayout(stereo_playout_));
+      EXPECT_EQ(0, audio_device_->SetRecordingDevice(AUDIO_DEVICE_ID));
+      EXPECT_EQ(0, audio_device_->InitMicrophone());
       // Avoid asking for input stereo support and always record in mono
       // since asking can cause issues in combination with remote desktop.
       // See https://bugs.chromium.org/p/webrtc/issues/detail?id=7397 for
