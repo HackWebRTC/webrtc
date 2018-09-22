@@ -423,8 +423,10 @@ void RtpVideoSender::ConfigureProtection(const RtpConfig& rtp_config) {
 
 bool RtpVideoSender::FecEnabled() const {
   const bool flexfec_enabled = (flexfec_sender_ != nullptr);
-  int ulpfec_payload_type = rtp_config_.ulpfec.ulpfec_payload_type;
-  return flexfec_enabled || ulpfec_payload_type >= 0;
+  const bool ulpfec_enabled =
+      !webrtc::field_trial::IsEnabled("WebRTC-DisableUlpFecExperiment") &&
+      (rtp_config_.ulpfec.ulpfec_payload_type >= 0);
+  return flexfec_enabled || ulpfec_enabled;
 }
 
 bool RtpVideoSender::NackEnabled() const {
