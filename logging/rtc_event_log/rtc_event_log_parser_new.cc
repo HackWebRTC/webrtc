@@ -210,33 +210,6 @@ IceCandidatePairEventType GetRuntimeIceCandidatePairEventType(
   return IceCandidatePairEventType::kCheckSent;
 }
 
-// Return default values for header extensions, to use on streams without stored
-// mapping data. Currently this only applies to audio streams, since the mapping
-// is not stored in the event log.
-// TODO(ivoc): Remove this once this mapping is stored in the event log for
-//             audio streams. Tracking bug: webrtc:6399
-webrtc::RtpHeaderExtensionMap GetDefaultHeaderExtensionMap() {
-  webrtc::RtpHeaderExtensionMap default_map;
-  default_map.Register<AudioLevel>(webrtc::RtpExtension::kAudioLevelDefaultId);
-  default_map.Register<TransmissionOffset>(
-      webrtc::RtpExtension::kTimestampOffsetDefaultId);
-  default_map.Register<AbsoluteSendTime>(
-      webrtc::RtpExtension::kAbsSendTimeDefaultId);
-  default_map.Register<VideoOrientation>(
-      webrtc::RtpExtension::kVideoRotationDefaultId);
-  default_map.Register<VideoContentTypeExtension>(
-      webrtc::RtpExtension::kVideoContentTypeDefaultId);
-  default_map.Register<VideoTimingExtension>(
-      webrtc::RtpExtension::kVideoTimingDefaultId);
-  default_map.Register<FrameMarkingExtension>(
-      webrtc::RtpExtension::kFrameMarkingDefaultId);
-  default_map.Register<TransportSequenceNumber>(
-      webrtc::RtpExtension::kTransportSequenceNumberDefaultId);
-  default_map.Register<PlayoutDelayLimits>(
-      webrtc::RtpExtension::kPlayoutDelayDefaultId);
-  return default_map;
-}
-
 std::pair<uint64_t, bool> ParseVarInt(
     std::istream& stream) {  // no-presubmit-check TODO(webrtc:8982)
   uint64_t varint = 0;
@@ -327,6 +300,32 @@ ParsedRtcEventLogNew::LoggedRtpStreamView::LoggedRtpStreamView(
 
 ParsedRtcEventLogNew::LoggedRtpStreamView::LoggedRtpStreamView(
     const LoggedRtpStreamView&) = default;
+
+// Return default values for header extensions, to use on streams without stored
+// mapping data. Currently this only applies to audio streams, since the mapping
+// is not stored in the event log.
+// TODO(ivoc): Remove this once this mapping is stored in the event log for
+//             audio streams. Tracking bug: webrtc:6399
+webrtc::RtpHeaderExtensionMap
+ParsedRtcEventLogNew::GetDefaultHeaderExtensionMap() {
+  webrtc::RtpHeaderExtensionMap default_map;
+  default_map.Register<AudioLevel>(webrtc::RtpExtension::kAudioLevelDefaultId);
+  default_map.Register<TransmissionOffset>(
+      webrtc::RtpExtension::kTimestampOffsetDefaultId);
+  default_map.Register<AbsoluteSendTime>(
+      webrtc::RtpExtension::kAbsSendTimeDefaultId);
+  default_map.Register<VideoOrientation>(
+      webrtc::RtpExtension::kVideoRotationDefaultId);
+  default_map.Register<VideoContentTypeExtension>(
+      webrtc::RtpExtension::kVideoContentTypeDefaultId);
+  default_map.Register<VideoTimingExtension>(
+      webrtc::RtpExtension::kVideoTimingDefaultId);
+  default_map.Register<TransportSequenceNumber>(
+      webrtc::RtpExtension::kTransportSequenceNumberDefaultId);
+  default_map.Register<PlayoutDelayLimits>(
+      webrtc::RtpExtension::kPlayoutDelayDefaultId);
+  return default_map;
+}
 
 ParsedRtcEventLogNew::ParsedRtcEventLogNew(
     UnconfiguredHeaderExtensions parse_unconfigured_header_extensions)

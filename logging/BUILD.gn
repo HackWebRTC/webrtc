@@ -266,6 +266,7 @@ if (rtc_enable_protobuf) {
       "rtc_event_log/rtc_event_log_parser.h",
       "rtc_event_log/rtc_event_log_parser_new.cc",
       "rtc_event_log/rtc_event_log_parser_new.h",
+      "rtc_event_log/rtc_event_processor.h",
     ]
 
     deps = [
@@ -300,6 +301,7 @@ if (rtc_enable_protobuf) {
         "rtc_event_log/rtc_event_log_unittest.cc",
         "rtc_event_log/rtc_event_log_unittest_helper.cc",
         "rtc_event_log/rtc_event_log_unittest_helper.h",
+        "rtc_event_log/rtc_event_processor_unittest.cc",
       ]
       deps = [
         ":ice_log",
@@ -351,6 +353,8 @@ if (rtc_enable_protobuf) {
         "../system_wrappers:field_trial_default",
         "../system_wrappers:metrics_default",
         "../test:rtp_test_utils",
+        "//third_party/abseil-cpp/absl/memory:memory",
+        "//third_party/abseil-cpp/absl/types:optional",
       ]
       if (!build_with_chromium && is_clang) {
         # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
