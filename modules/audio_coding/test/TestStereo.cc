@@ -15,6 +15,7 @@
 #include <string>
 
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/audio_format_conversion.h"
 #include "modules/audio_coding/include/audio_coding_module_typedefs.h"
@@ -124,9 +125,6 @@ void TestStereo::Perform() {
   uint16_t frequency_hz;
   int audio_channels;
   int codec_channels;
-  bool dtx;
-  bool vad;
-  ACMVADMode vad_mode;
 
   // Open both mono and stereo test files in 32 kHz.
   const std::string file_name_stereo =
@@ -173,18 +171,8 @@ void TestStereo::Perform() {
   EXPECT_EQ(0, acm_a_->RegisterTransportCallback(channel_a2b_));
   channel_a2b_->RegisterReceiverACM(acm_b_.get());
 
-  // Start with setting VAD/DTX, before we know we will send stereo.
-  // Continue with setting a stereo codec as send codec and verify that
-  // VAD/DTX gets turned off.
-  EXPECT_EQ(0, acm_a_->SetVAD(true, true, VADNormal));
-  EXPECT_EQ(0, acm_a_->VAD(&dtx, &vad, &vad_mode));
-  EXPECT_TRUE(dtx);
-  EXPECT_TRUE(vad);
   char codec_pcma_temp[] = "PCMA";
   RegisterSendCodec('A', codec_pcma_temp, 8000, 64000, 80, 2);
-  EXPECT_EQ(0, acm_a_->VAD(&dtx, &vad, &vad_mode));
-  EXPECT_FALSE(dtx);
-  EXPECT_FALSE(vad);
   if (test_mode_ != 0) {
     printf("\n");
   }
@@ -292,16 +280,6 @@ void TestStereo::Perform() {
   Run(channel_a2b_, audio_channels, codec_channels);
   RegisterSendCodec('A', codec_pcma, 8000, 64000, 480, codec_channels);
   Run(channel_a2b_, audio_channels, codec_channels);
-
-  // Test that VAD/DTX cannot be turned on while sending stereo.
-  EXPECT_EQ(-1, acm_a_->SetVAD(true, true, VADNormal));
-  EXPECT_EQ(0, acm_a_->VAD(&dtx, &vad, &vad_mode));
-  EXPECT_FALSE(dtx);
-  EXPECT_FALSE(vad);
-  EXPECT_EQ(0, acm_a_->SetVAD(false, false, VADNormal));
-  EXPECT_EQ(0, acm_a_->VAD(&dtx, &vad, &vad_mode));
-  EXPECT_FALSE(dtx);
-  EXPECT_FALSE(vad);
 
   out_file_.Close();
   if (test_mode_ != 0) {
@@ -459,13 +437,6 @@ void TestStereo::Perform() {
   OpenOutFile(test_cntr_);
   RegisterSendCodec('A', codec_g722, 16000, 64000, 160, codec_channels);
 
-  // Make sure it is possible to set VAD/CNG, now that we are sending mono
-  // again.
-  EXPECT_EQ(0, acm_a_->SetVAD(true, true, VADNormal));
-  EXPECT_EQ(0, acm_a_->VAD(&dtx, &vad, &vad_mode));
-  EXPECT_TRUE(dtx);
-  EXPECT_TRUE(vad);
-  EXPECT_EQ(0, acm_a_->SetVAD(false, false, VADNormal));
   Run(channel_a2b_, audio_channels, codec_channels);
   out_file_.Close();
 
@@ -656,14 +627,27 @@ void TestStereo::RegisterSendCodec(char side,
   }
   ASSERT_TRUE(my_acm != NULL);
 
-  CodecInst my_codec_param;
-  // Get all codec parameters before registering
-  EXPECT_GT(AudioCodingModule::Codec(codec_name, &my_codec_param,
-                                     sampling_freq_hz, channels),
-            -1);
-  my_codec_param.rate = rate;
-  my_codec_param.pacsize = pack_size;
-  EXPECT_EQ(0, my_acm->RegisterSendCodec(my_codec_param));
+  auto encoder_factory = CreateBuiltinAudioEncoderFactory();
+  const int clockrate_hz = STR_CASE_CMP(codec_name, "g722") == 0
+                               ? sampling_freq_hz / 2
+                               : sampling_freq_hz;
+  const std::string ptime = rtc::ToString(rtc::CheckedDivExact(
+      pack_size, rtc::CheckedDivExact(sampling_freq_hz, 1000)));
+  SdpAudioFormat::Parameters params = {{"ptime", ptime}};
+  RTC_CHECK(channels == 1 || channels == 2);
+  if (STR_CASE_CMP(codec_name, "opus") == 0) {
+    if (channels == 2) {
+      params["stereo"] = "1";
+    }
+    channels = 2;
+    params["maxaveragebitrate"] = rtc::ToString(rate);
+  }
+  constexpr int payload_type = 17;
+  auto encoder = encoder_factory->MakeAudioEncoder(
+      payload_type, SdpAudioFormat(codec_name, clockrate_hz, channels, params),
+      absl::nullopt);
+  EXPECT_NE(nullptr, encoder);
+  my_acm->SetEncoder(std::move(encoder));
 
   send_codec_name_ = codec_name;
 }
