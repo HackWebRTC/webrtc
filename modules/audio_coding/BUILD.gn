@@ -1263,7 +1263,6 @@ if (rtc_include_tests) {
       ":audio_codec_speed_tests",
       ":audio_decoder_unittests",
       ":audio_decoder_unittests",
-      ":delay_test",
       ":g711_test",
       ":g722_test",
       ":ilbc_test",
@@ -1421,38 +1420,6 @@ if (rtc_include_tests) {
              "//testing/gtest",
            ]
   }
-
-  rtc_executable("delay_test") {
-    testonly = true
-    sources = [
-      "test/Channel.cc",
-      "test/Channel.h",
-      "test/PCMFile.cc",
-      "test/PCMFile.h",
-      "test/delay_test.cc",
-      "test/utility.cc",
-      "test/utility.h",
-    ]
-
-    deps = [
-      ":audio_coding",
-      ":audio_coding_module_typedefs",
-      ":audio_format_conversion",
-      "..:module_api",
-      "../../:webrtc_common",
-      "../../api/audio:audio_frame_api",
-      "../../api/audio_codecs:builtin_audio_decoder_factory",
-      "../../rtc_base:checks",
-      "../../rtc_base:rtc_base_approved",
-      "../../system_wrappers",
-      "../../system_wrappers:system_wrappers_default",
-      "../../test:fileutils",
-      "../../test:test_support",
-      "../rtp_rtcp",
-      "//testing/gtest",
-      "//third_party/abseil-cpp/absl/types:optional",
-    ]
-  }  # delay_test
 
   audio_decoder_unittests_resources =
       [ "../../resources/audio_coding/testfile32kHz.pcm" ]
