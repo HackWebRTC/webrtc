@@ -16,6 +16,7 @@
 #include "api/video/i420_buffer.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/refcountedobject.h"
+#include "rtc_base/stringutils.h"
 
 namespace webrtc {
 namespace test {
