@@ -361,6 +361,12 @@ int AcmReceiver::DecoderByPayloadType(uint8_t payload_type,
   }
 }
 
+absl::optional<SdpAudioFormat> AcmReceiver::DecoderByPayloadType(
+    int payload_type) const {
+  rtc::CritScope lock(&crit_sect_);
+  return neteq_->GetDecoderFormat(payload_type);
+}
+
 int AcmReceiver::EnableNack(size_t max_nack_list_size) {
   neteq_->EnableNack(max_nack_list_size);
   return 0;
