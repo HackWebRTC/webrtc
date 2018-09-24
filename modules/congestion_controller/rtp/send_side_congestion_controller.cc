@@ -419,6 +419,14 @@ void SendSideCongestionController::MaybeRecreateControllers() {
   RTC_DCHECK(controller_);
 }
 
+void SendSideCongestionController::UpdateInitialConstraints(
+    TargetRateConstraints new_contraints) {
+  if (!new_contraints.starting_rate)
+    new_contraints.starting_rate = initial_config_.constraints.starting_rate;
+  RTC_DCHECK(new_contraints.starting_rate);
+  initial_config_.constraints = new_contraints;
+}
+
 SendSideCongestionController::~SendSideCongestionController() = default;
 
 void SendSideCongestionController::RegisterPacketFeedbackObserver(
@@ -452,7 +460,7 @@ void SendSideCongestionController::SetBweBitrates(int min_bitrate_bps,
       control_handler_->PostUpdates(
           controller_->OnTargetRateConstraints(constraints));
     } else {
-      initial_config_.constraints = constraints;
+      UpdateInitialConstraints(constraints);
     }
   });
 }
@@ -490,7 +498,7 @@ void SendSideCongestionController::OnNetworkRouteChanged(
     if (controller_) {
       control_handler_->PostUpdates(controller_->OnNetworkRouteChange(msg));
     } else {
-      initial_config_.constraints = msg.constraints;
+      UpdateInitialConstraints(msg.constraints);
     }
     pacer_controller_->OnNetworkRouteChange(msg);
   });
