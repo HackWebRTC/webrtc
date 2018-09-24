@@ -365,6 +365,22 @@ TEST(RtpPacketTest, ParseWith2Extensions) {
   EXPECT_EQ(kAudioLevel, audio_level);
 }
 
+TEST(RtpPacketTest, ParseSecondPacketWithFewerExtensions) {
+  RtpPacketToSend::ExtensionManager extensions;
+  extensions.Register(kRtpExtensionTransmissionTimeOffset,
+                      kTransmissionOffsetExtensionId);
+  extensions.Register(kRtpExtensionAudioLevel, kAudioLevelExtensionId);
+  RtpPacketReceived packet(&extensions);
+  EXPECT_TRUE(packet.Parse(kPacketWithTOAndAL, sizeof(kPacketWithTOAndAL)));
+  EXPECT_TRUE(packet.HasExtension<TransmissionOffset>());
+  EXPECT_TRUE(packet.HasExtension<AudioLevel>());
+
+  // Second packet without audio level.
+  EXPECT_TRUE(packet.Parse(kPacketWithTO, sizeof(kPacketWithTO)));
+  EXPECT_TRUE(packet.HasExtension<TransmissionOffset>());
+  EXPECT_FALSE(packet.HasExtension<AudioLevel>());
+}
+
 TEST(RtpPacketTest, ParseWithAllFeatures) {
   RtpPacketToSend::ExtensionManager extensions;
   extensions.Register(kRtpExtensionTransmissionTimeOffset,

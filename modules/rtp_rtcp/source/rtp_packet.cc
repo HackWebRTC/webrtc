@@ -343,10 +343,7 @@ bool RtpPacket::ParseBuffer(const uint8_t* buffer, size_t size) {
   }
 
   extensions_size_ = 0;
-  for (ExtensionInfo& location : extension_entries_) {
-    location.offset = 0;
-    location.length = 0;
-  }
+  extension_entries_.clear();
   if (has_extension) {
     /* RTP header extension, RFC 3550.
      0                   1                   2                   3
