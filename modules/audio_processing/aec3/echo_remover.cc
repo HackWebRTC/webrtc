@@ -48,6 +48,10 @@ bool UseSmoothSignalTransitions() {
       "WebRTC-Aec3SmoothSignalTransitionsKillSwitch");
 }
 
+bool EnableBoundedNearend() {
+  return !field_trial::IsEnabled("WebRTC-Aec3BoundedNearendKillSwitch");
+}
+
 void LinearEchoPower(const FftData& E,
                      const FftData& Y,
                      std::array<float, kFftLengthBy2Plus1>* S2) {
@@ -132,6 +136,7 @@ class EchoRemoverImpl final : public EchoRemover {
   const int sample_rate_hz_;
   const bool use_shadow_filter_output_;
   const bool use_smooth_signal_transitions_;
+  const bool enable_bounded_nearend_;
   Subtractor subtractor_;
   SuppressionGain suppression_gain_;
   ComfortNoiseGenerator cng_;
@@ -166,6 +171,7 @@ EchoRemoverImpl::EchoRemoverImpl(const EchoCanceller3Config& config,
           UseShadowFilterOutput() &&
           config_.filter.enable_shadow_filter_output_usage),
       use_smooth_signal_transitions_(UseSmoothSignalTransitions()),
+      enable_bounded_nearend_(EnableBoundedNearend()),
       subtractor_(config, data_dumper_.get(), optimization_),
       suppression_gain_(config_, optimization_, sample_rate_hz),
       cng_(optimization_),
@@ -311,9 +317,18 @@ void EchoRemoverImpl::ProcessCapture(
   // Compute and apply the suppression gain.
   const auto& echo_spectrum =
       aec_state_.UsableLinearEstimate() ? S2_linear : R2;
-  suppression_gain_.GetGain(E2, echo_spectrum, R2, cng_.NoiseSpectrum(), E, Y,
-                            render_signal_analyzer_, aec_state_, x,
-                            &high_bands_gain, &G);
+
+  std::array<float, kFftLengthBy2Plus1> E2_bounded;
+  if (enable_bounded_nearend_) {
+    std::transform(E2.begin(), E2.end(), Y2.begin(), E2_bounded.begin(),
+                   [](float a, float b) { return std::min(a, b); });
+  } else {
+    std::copy(E2.begin(), E2.end(), E2_bounded.begin());
+  }
+
+  suppression_gain_.GetGain(E2, E2_bounded, echo_spectrum, R2,
+                            cng_.NoiseSpectrum(), E, Y, render_signal_analyzer_,
+                            aec_state_, x, &high_bands_gain, &G);
 
   suppression_filter_.ApplyGain(comfort_noise, high_band_comfort_noise, G,
                                 high_bands_gain, Y_fft, y);
