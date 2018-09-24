@@ -73,8 +73,7 @@ class TestStereo : public ACMTest {
                          int32_t samp_freq_hz,
                          int rate,
                          int pack_size,
-                         int channels,
-                         int payload_type);
+                         int channels);
 
   void Run(TestPackStereo* channel,
            int in_channels,
@@ -98,19 +97,6 @@ class TestStereo : public ACMTest {
   uint16_t pack_size_bytes_;
   int counter_;
   char* send_codec_name_;
-
-  // Payload types for stereo codecs and CNG
-  int g722_pltype_;
-  int l16_8khz_pltype_;
-  int l16_16khz_pltype_;
-  int l16_32khz_pltype_;
-#ifdef PCMA_AND_PCMU
-  int pcma_pltype_;
-  int pcmu_pltype_;
-#endif
-#ifdef WEBRTC_CODEC_OPUS
-  int opus_pltype_;
-#endif
 };
 
 }  // namespace webrtc
