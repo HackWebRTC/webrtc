@@ -24,6 +24,9 @@ from roll_deps import CalculateChangedDeps, FindAddedDeps, \
   GetMatchingDepsEntries, ParseDepsDict, ParseLocalDepsFile, UpdateDepsFile, \
   ChromiumRevisionUpdate
 
+SRC_DIR = os.path.join(PARENT_DIR, os.pardir, os.pardir)
+sys.path.append(os.path.join(SRC_DIR, 'third_party', 'pymock'))
+import mock
 
 TEST_DATA_VARS = {
   'chromium_git': 'https://chromium.googlesource.com',
@@ -79,10 +82,6 @@ class NullCmd(object):
     return None, None
 
 
-def MuteCommandMock():
-  setattr(roll_deps, '_RunCommand', NullCmd())
-
-
 class TestRollChromiumRevision(unittest.TestCase):
   def setUp(self):
     self._output_dir = tempfile.mkdtemp()
@@ -94,16 +93,11 @@ class TestRollChromiumRevision(unittest.TestCase):
     self._new_cr_depsfile = join('DEPS.chromium.new')
     self._webrtc_depsfile_android = join('DEPS.with_android_deps')
     self._new_cr_depsfile_android = join('DEPS.chromium.with_android_deps')
-
     self.fake = FakeCmd()
-    self.old_run_command = getattr(roll_deps, '_RunCommand')
-    setattr(roll_deps, '_RunCommand', self.fake)
 
   def tearDown(self):
     shutil.rmtree(self._output_dir, ignore_errors=True)
     self.assertEqual(self.fake.expectations, [])
-    setattr(roll_deps, '_RunCommand', self.old_run_command)
-
 
   def testVarLookup(self):
     local_scope = {'foo': 'wrong', 'vars': {'foo': 'bar'}}
@@ -135,10 +129,11 @@ class TestRollChromiumRevision(unittest.TestCase):
     new_cr_deps = ParseDepsDict(new_cr_contents)
 
     changed_deps = CalculateChangedDeps(webrtc_deps, new_cr_deps)
-    UpdateDepsFile(self._webrtc_depsfile_android,
-                   NO_CHROMIUM_REVISION_UPDATE,
-                   changed_deps,
-                   new_cr_contents)
+    with mock.patch('roll_deps._RunCommand', NullCmd()):
+      UpdateDepsFile(self._webrtc_depsfile_android,
+                     NO_CHROMIUM_REVISION_UPDATE,
+                     changed_deps,
+                     new_cr_contents)
 
     with open(self._webrtc_depsfile_android) as deps_file:
       updated_contents = deps_file.read()
@@ -146,7 +141,6 @@ class TestRollChromiumRevision(unittest.TestCase):
     return webrtc_contents, updated_contents
 
   def testUpdateAndroidGeneratedDeps(self):
-    MuteCommandMock()
     _, updated_contents = self._UpdateDepsSetup()
 
     changed = 'third_party/android_deps/libs/android_arch_core_common'
@@ -155,7 +149,6 @@ class TestRollChromiumRevision(unittest.TestCase):
     self.assertTrue(changed_version in updated_contents)
 
   def testAddAndroidGeneratedDeps(self):
-    MuteCommandMock()
     webrtc_contents, updated_contents = self._UpdateDepsSetup()
 
     added = 'third_party/android_deps/libs/android_arch_lifecycle_common'
@@ -163,7 +156,6 @@ class TestRollChromiumRevision(unittest.TestCase):
     self.assertTrue(added in updated_contents)
 
   def testRemoveAndroidGeneratedDeps(self):
-    MuteCommandMock()
     webrtc_contents, updated_contents = self._UpdateDepsSetup()
 
     removed = 'third_party/android_deps/libs/android_arch_lifecycle_runtime'
@@ -198,11 +190,14 @@ class TestRollChromiumRevision(unittest.TestCase):
 
 
   def testCalculateChangedDeps(self):
-    _SetupGitLsRemoteCall(self.fake,
-        'https://chromium.googlesource.com/chromium/src/build', BUILD_NEW_REV)
     webrtc_deps = ParseLocalDepsFile(self._webrtc_depsfile)
     new_cr_deps = ParseLocalDepsFile(self._new_cr_depsfile)
-    changed_deps = CalculateChangedDeps(webrtc_deps, new_cr_deps)
+    with mock.patch('roll_deps._RunCommand', self.fake):
+      _SetupGitLsRemoteCall(
+          self.fake, 'https://chromium.googlesource.com/chromium/src/build',
+          BUILD_NEW_REV)
+      changed_deps = CalculateChangedDeps(webrtc_deps, new_cr_deps)
+
     self.assertEquals(len(changed_deps), 3)
     self.assertEquals(changed_deps[0].path, 'src/build')
     self.assertEquals(changed_deps[0].current_rev, BUILD_OLD_REV)
@@ -261,7 +256,7 @@ class TestRollChromiumRevision(unittest.TestCase):
     self.assertEquals(other_paths, ['src/third_party/xstream',
                                     'src/buildtools'])
 
-  def testExpectedDepsIsNot(self):
+  def testExpectedDepsIsNotReportedMissing(self):
     """Some deps musn't be seen as missing, even if absent from Chromium."""
     webrtc_deps = ParseLocalDepsFile(self._webrtc_depsfile)
     new_cr_deps = ParseLocalDepsFile(self._new_cr_depsfile_android)
@@ -278,16 +273,18 @@ class TestRollChromiumRevision(unittest.TestCase):
     added_paths, _ = FindAddedDeps(webrtc_deps, new_cr_deps)
     removed_paths, _ = FindRemovedDeps(webrtc_deps, new_cr_deps)
 
-    # We don't really care, but it's needed to construct the message.
-    self.fake.AddExpectation(['git', 'config', 'user.email'],
-                             _returns=('nobody@nowhere.no', None),
-                             _ignores=['working_dir'])
-
     current_commit_pos = 'cafe'
     new_commit_pos = 'f00d'
-    commit_msg = GenerateCommitMessage(NO_CHROMIUM_REVISION_UPDATE,
-                                       current_commit_pos, new_commit_pos,
-                                       changed_deps, added_paths, removed_paths)
+
+    with mock.patch('roll_deps._RunCommand', self.fake):
+      # We don't really care, but it's needed to construct the message.
+      self.fake.AddExpectation(['git', 'config', 'user.email'],
+                               _returns=('nobody@nowhere.no', None),
+                               _ignores=['working_dir'])
+
+      commit_msg = GenerateCommitMessage(
+          NO_CHROMIUM_REVISION_UPDATE, current_commit_pos, new_commit_pos,
+          changed_deps, added_paths, removed_paths)
 
     return [l.strip() for l in commit_msg.split('\n')]
 
