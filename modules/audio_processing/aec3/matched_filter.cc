@@ -93,11 +93,7 @@ void MatchedFilterCore_NEON(size_t x_start_index,
 
     // Compute the matched filter error.
     float e = y[i] - s;
-    const bool saturation = y[i] >= 32000.f || y[i] <= -32000.f ||
-                            s >= 32000.f || s <= -32000.f || e >= 32000.f ||
-                            e <= -32000.f;
-
-    e = std::min(32767.f, std::max(-32768.f, e));
+    const bool saturation = y[i] >= 32000.f || y[i] <= -32000.f;
     (*error_sum) += e * e;
 
     // Update the matched filter estimate in an NLMS manner.
@@ -209,11 +205,7 @@ void MatchedFilterCore_SSE2(size_t x_start_index,
 
     // Compute the matched filter error.
     float e = y[i] - s;
-    const bool saturation = y[i] >= 32000.f || y[i] <= -32000.f ||
-                            s >= 32000.f || s <= -32000.f || e >= 32000.f ||
-                            e <= -32000.f;
-
-    e = std::min(32767.f, std::max(-32768.f, e));
+    const bool saturation = y[i] >= 32000.f || y[i] <= -32000.f;
     (*error_sum) += e * e;
 
     // Update the matched filter estimate in an NLMS manner.
@@ -281,11 +273,7 @@ void MatchedFilterCore(size_t x_start_index,
 
     // Compute the matched filter error.
     float e = y[i] - s;
-    const bool saturation = y[i] >= 32000.f || y[i] <= -32000.f ||
-                            s >= 32000.f || s <= -32000.f || e >= 32000.f ||
-                            e <= -32000.f;
-
-    e = std::min(32767.f, std::max(-32768.f, e));
+    const bool saturation = y[i] >= 32000.f || y[i] <= -32000.f;
     (*error_sum) += e * e;
 
     // Update the matched filter estimate in an NLMS manner.
