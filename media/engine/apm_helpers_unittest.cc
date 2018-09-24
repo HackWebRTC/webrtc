@@ -34,25 +34,6 @@ struct TestHelper {
 
   const AudioProcessing* apm() const { return apm_.get(); }
 
-  bool GetEcMetricsStatus() const {
-    EchoCancellation* ec = apm()->echo_cancellation();
-    bool metrics_enabled = ec->are_metrics_enabled();
-    EXPECT_EQ(metrics_enabled, ec->is_delay_logging_enabled());
-    return metrics_enabled;
-  }
-
-  bool CanGetEcMetrics() const {
-    EchoCancellation* ec = apm()->echo_cancellation();
-    EchoCancellation::Metrics metrics;
-    int metrics_result = ec->GetMetrics(&metrics);
-    int median = 0;
-    int std = 0;
-    float fraction = 0;
-    int delay_metrics_result = ec->GetDelayMetrics(&median, &std, &fraction);
-    return metrics_result == AudioProcessing::kNoError &&
-           delay_metrics_result == AudioProcessing::kNoError;
-  }
-
  private:
   rtc::scoped_refptr<AudioProcessing> apm_;
 };
@@ -149,52 +130,6 @@ TEST(ApmHelpersTest, EcStatus_EnableDisable) {
   apm_helpers::SetEcStatus(helper.apm(), true, kEcAecm);
   EXPECT_FALSE(ec->is_enabled());
   EXPECT_TRUE(ecm->is_enabled());
-}
-
-TEST(ApmHelpersTest, EcMetrics_DefaultMode) {
-  TestHelper helper;
-  apm_helpers::SetEcStatus(helper.apm(), true, kEcConference);
-  EXPECT_TRUE(helper.GetEcMetricsStatus());
-}
-
-TEST(ApmHelpersTest, EcMetrics_CanEnableDisable) {
-  TestHelper helper;
-  apm_helpers::SetEcStatus(helper.apm(), true, kEcConference);
-
-  apm_helpers::SetEcMetricsStatus(helper.apm(), true);
-  EXPECT_TRUE(helper.GetEcMetricsStatus());
-  apm_helpers::SetEcMetricsStatus(helper.apm(), false);
-  EXPECT_FALSE(helper.GetEcMetricsStatus());
-}
-
-TEST(ApmHelpersTest, EcMetrics_NoStatsUnlessEcMetricsAndEcEnabled) {
-  TestHelper helper;
-  EXPECT_FALSE(helper.CanGetEcMetrics());
-
-  apm_helpers::SetEcMetricsStatus(helper.apm(), true);
-  EXPECT_FALSE(helper.CanGetEcMetrics());
-
-  apm_helpers::SetEcStatus(helper.apm(), true, kEcConference);
-  EXPECT_TRUE(helper.CanGetEcMetrics());
-
-  apm_helpers::SetEcMetricsStatus(helper.apm(), false);
-  EXPECT_FALSE(helper.CanGetEcMetrics());
-}
-
-TEST(ApmHelpersTest, AecmMode_DefaultMode) {
-  TestHelper helper;
-  EchoControlMobile* ecm = helper.apm()->echo_control_mobile();
-  EXPECT_EQ(EchoControlMobile::kSpeakerphone, ecm->routing_mode());
-  EXPECT_FALSE(ecm->is_comfort_noise_enabled());
-}
-
-TEST(ApmHelpersTest, AecmMode_EnableDisableCng) {
-  TestHelper helper;
-  EchoControlMobile* ecm = helper.apm()->echo_control_mobile();
-  apm_helpers::SetAecmMode(helper.apm(), false);
-  EXPECT_FALSE(ecm->is_comfort_noise_enabled());
-  apm_helpers::SetAecmMode(helper.apm(), true);
-  EXPECT_TRUE(ecm->is_comfort_noise_enabled());
 }
 
 TEST(ApmHelpersTest, NsStatus_DefaultMode) {

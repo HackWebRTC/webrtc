@@ -320,10 +320,10 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   // Set and adjust echo canceller options.
   // kEcConference is AEC with high suppression.
   webrtc::EcModes ec_mode = webrtc::kEcConference;
-  if (options.aecm_generate_comfort_noise) {
-    RTC_LOG(LS_VERBOSE) << "Comfort noise explicitly set to "
-                        << *options.aecm_generate_comfort_noise
-                        << " (default is false).";
+  if (options.aecm_generate_comfort_noise &&
+      *options.aecm_generate_comfort_noise) {
+    RTC_LOG(LS_WARNING)
+        << "Ignoring deprecated mobile AEC setting: comfort noise";
   }
 
 #if defined(WEBRTC_IOS)
@@ -425,13 +425,6 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     }
     webrtc::apm_helpers::SetEcStatus(apm(), *options.echo_cancellation,
                                      ec_mode);
-#if !defined(WEBRTC_ANDROID)
-    webrtc::apm_helpers::SetEcMetricsStatus(apm(), *options.echo_cancellation);
-#endif
-    if (ec_mode == webrtc::kEcAecm) {
-      bool cn = options.aecm_generate_comfort_noise.value_or(false);
-      webrtc::apm_helpers::SetAecmMode(apm(), cn);
-    }
   }
 
   if (options.auto_gain_control) {
