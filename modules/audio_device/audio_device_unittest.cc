@@ -500,8 +500,9 @@ class AudioDeviceTest
     : public ::testing::TestWithParam<webrtc::AudioDeviceModule::AudioLayer> {
  protected:
   AudioDeviceTest() : audio_layer_(GetParam()), event_(false, false) {
+// TODO(webrtc:9778): Re-enable on THREAD_SANITIZER?
 #if !defined(ADDRESS_SANITIZER) && !defined(MEMORY_SANITIZER) && \
-    !defined(WEBRTC_DUMMY_AUDIO_BUILD)
+    !defined(WEBRTC_DUMMY_AUDIO_BUILD) && !defined(THREAD_SANITIZER)
     rtc::LogMessage::LogToDebug(rtc::LS_INFO);
     // Add extra logging fields here if needed for debugging.
     rtc::LogMessage::LogTimestamps();
