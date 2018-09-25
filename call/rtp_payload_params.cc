@@ -116,7 +116,9 @@ RtpPayloadParams::RtpPayloadParams(const uint32_t ssrc,
                                    const RtpPayloadState* state)
     : ssrc_(ssrc),
       generic_picture_id_experiment_(
-          field_trial::IsEnabled("WebRTC-GenericPictureId")) {
+          field_trial::IsEnabled("WebRTC-GenericPictureId")),
+      generic_descriptor_experiment_(
+          field_trial::IsEnabled("WebRTC-GenericDescriptor")) {
   for (auto& spatial_layer : last_shared_frame_id_)
     spatial_layer.fill(-1);
 
@@ -152,7 +154,9 @@ RTPVideoHeader RtpPayloadParams::GetRtpVideoHeader(
           : true;
 
   SetCodecSpecific(&rtp_video_header, first_frame_in_picture);
-  SetGeneric(shared_frame_id, is_keyframe, &rtp_video_header);
+
+  if (generic_descriptor_experiment_)
+    SetGeneric(shared_frame_id, is_keyframe, &rtp_video_header);
 
   return rtp_video_header;
 }

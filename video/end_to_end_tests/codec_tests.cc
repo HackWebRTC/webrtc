@@ -23,9 +23,13 @@
 
 namespace webrtc {
 
-class CodecEndToEndTest : public test::CallTest {
+class CodecEndToEndTest : public test::CallTest,
+                          public testing::WithParamInterface<std::string> {
  public:
-  CodecEndToEndTest() = default;
+  CodecEndToEndTest() : field_trial_(GetParam()) {}
+
+ private:
+  test::ScopedFieldTrials field_trial_;
 };
 
 class CodecObserver : public test::EndToEndTest,
@@ -89,7 +93,12 @@ class CodecObserver : public test::EndToEndTest,
   int frame_counter_;
 };
 
-TEST_F(CodecEndToEndTest, SendsAndReceivesVP8) {
+INSTANTIATE_TEST_CASE_P(GenericDescriptor,
+                        CodecEndToEndTest,
+                        ::testing::Values("WebRTC-GenericDescriptor/Disabled/",
+                                          "WebRTC-GenericDescriptor/Enabled/"));
+
+TEST_P(CodecEndToEndTest, SendsAndReceivesVP8) {
   test::FunctionVideoEncoderFactory encoder_factory(
       []() { return VP8Encoder::Create(); });
   CodecObserver test(5, kVideoRotation_0, "VP8", &encoder_factory,
@@ -97,7 +106,7 @@ TEST_F(CodecEndToEndTest, SendsAndReceivesVP8) {
   RunBaseTest(&test);
 }
 
-TEST_F(CodecEndToEndTest, SendsAndReceivesVP8Rotation90) {
+TEST_P(CodecEndToEndTest, SendsAndReceivesVP8Rotation90) {
   test::FunctionVideoEncoderFactory encoder_factory(
       []() { return VP8Encoder::Create(); });
   CodecObserver test(5, kVideoRotation_90, "VP8", &encoder_factory,
@@ -106,7 +115,7 @@ TEST_F(CodecEndToEndTest, SendsAndReceivesVP8Rotation90) {
 }
 
 #if !defined(RTC_DISABLE_VP9)
-TEST_F(CodecEndToEndTest, SendsAndReceivesVP9) {
+TEST_P(CodecEndToEndTest, SendsAndReceivesVP9) {
   test::FunctionVideoEncoderFactory encoder_factory(
       []() { return VP9Encoder::Create(); });
   CodecObserver test(500, kVideoRotation_0, "VP9", &encoder_factory,
@@ -114,7 +123,7 @@ TEST_F(CodecEndToEndTest, SendsAndReceivesVP9) {
   RunBaseTest(&test);
 }
 
-TEST_F(CodecEndToEndTest, SendsAndReceivesVP9VideoRotation90) {
+TEST_P(CodecEndToEndTest, SendsAndReceivesVP9VideoRotation90) {
   test::FunctionVideoEncoderFactory encoder_factory(
       []() { return VP9Encoder::Create(); });
   CodecObserver test(5, kVideoRotation_90, "VP9", &encoder_factory,
@@ -123,7 +132,7 @@ TEST_F(CodecEndToEndTest, SendsAndReceivesVP9VideoRotation90) {
 }
 
 // Mutiplex tests are using VP9 as the underlying implementation.
-TEST_F(CodecEndToEndTest, SendsAndReceivesMultiplex) {
+TEST_P(CodecEndToEndTest, SendsAndReceivesMultiplex) {
   InternalEncoderFactory internal_encoder_factory;
   InternalDecoderFactory decoder_factory;
   test::FunctionVideoEncoderFactory encoder_factory(
@@ -138,7 +147,7 @@ TEST_F(CodecEndToEndTest, SendsAndReceivesMultiplex) {
   RunBaseTest(&test);
 }
 
-TEST_F(CodecEndToEndTest, SendsAndReceivesMultiplexVideoRotation90) {
+TEST_P(CodecEndToEndTest, SendsAndReceivesMultiplexVideoRotation90) {
   InternalEncoderFactory internal_encoder_factory;
   InternalDecoderFactory decoder_factory;
   test::FunctionVideoEncoderFactory encoder_factory(

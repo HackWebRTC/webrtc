@@ -25,6 +25,7 @@ class RtpGenericFrameDescriptorExtension {
   static constexpr char kUri[] =
       "http://www.webrtc.org/experiments/rtp-hdrext/"
       "generic-frame-descriptor-00";
+  static constexpr int kMaxSizeBytes = 16;
 
   static bool Parse(rtc::ArrayView<const uint8_t> data,
                     RtpGenericFrameDescriptor* descriptor);
