@@ -78,14 +78,14 @@ class RtpPacketizerH264 : public RtpPacketizer {
   };
 
   bool GeneratePackets(H264PacketizationMode packetization_mode);
-  void PacketizeFuA(size_t fragment_index);
+  bool PacketizeFuA(size_t fragment_index);
   size_t PacketizeStapA(size_t fragment_index);
   bool PacketizeSingleNalu(size_t fragment_index);
-  void NextAggregatePacket(RtpPacketToSend* rtp_packet, bool last);
+
+  void NextAggregatePacket(RtpPacketToSend* rtp_packet);
   void NextFragmentPacket(RtpPacketToSend* rtp_packet);
 
-  const size_t max_payload_len_;
-  const size_t last_packet_reduction_len_;
+  const PayloadSizeLimits limits_;
   size_t num_packets_left_;
   std::deque<Fragment> input_fragments_;
   std::queue<PacketUnit> packets_;
