@@ -65,10 +65,6 @@ struct DefaultNetworkSimulationConfig {
 
 class NetworkSimulationInterface {
  public:
-  // DO NOT USE. Use DefaultNetworkSimulationConfig directly. This reference
-  // should be removed when all users will be switched on direct usage.
-  using SimulatedNetworkConfig = DefaultNetworkSimulationConfig;
-
   virtual bool EnqueuePacket(PacketInFlightInfo packet_info) = 0;
   // Retrieves all packets that should be delivered by the given receive time.
   virtual std::vector<PacketDeliveryInfo> DequeueDeliverablePackets(

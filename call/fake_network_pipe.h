@@ -90,8 +90,6 @@ class NetworkPacket {
 class FakeNetworkPipe : public webrtc::SimulatedPacketReceiverInterface,
                         public Transport {
  public:
-  using Config = NetworkSimulationInterface::SimulatedNetworkConfig;
-
   // Will keep |network_simulation| alive while pipe is alive itself.
   // Use these constructors if you plan to insert packets using DeliverPacket().
   FakeNetworkPipe(
@@ -107,12 +105,6 @@ class FakeNetworkPipe : public webrtc::SimulatedPacketReceiverInterface,
       PacketReceiver* receiver,
       uint64_t seed);
 
-  // Deprecated. DO NOT USE. To be removed. Use corresponding version with
-  // NetworkSimulationInterface instance instead.
-  // Use this constructor if you plan to insert packets using SendRt[c?]p().
-  FakeNetworkPipe(Clock* clock,
-                  const FakeNetworkPipe::Config& config,
-                  Transport* transport);
   // Use this constructor if you plan to insert packets using SendRt[c?]p().
   FakeNetworkPipe(
       Clock* clock,
