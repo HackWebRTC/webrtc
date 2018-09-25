@@ -51,7 +51,6 @@ TEST(AudioCodingModuleTest, TestRedFec) {
 }
 #endif
 
-#if defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)
 #if defined(WEBRTC_ANDROID)
 TEST(AudioCodingModuleTest, DISABLED_TestIsac) {
 #else
@@ -59,7 +58,6 @@ TEST(AudioCodingModuleTest, TestIsac) {
 #endif
   webrtc::ISACTest(ACM_TEST_MODE).Perform();
 }
-#endif
 
 #if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)) && \
     defined(WEBRTC_CODEC_ILBC)
