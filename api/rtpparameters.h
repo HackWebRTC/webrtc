@@ -286,6 +286,10 @@ struct RtpExtension {
   static const char kFrameMarkingUri[];
   static const int kFrameMarkingDefaultId;
 
+  // Experimental codec agnostic frame descriptor.
+  static const char kGenericFrameDescriptorUri[];
+  static const int kGenericFrameDescriptorDefaultId;
+
   // Header extension for transport sequence number, see url for details:
   // http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions
   static const char kTransportSequenceNumberUri[];
