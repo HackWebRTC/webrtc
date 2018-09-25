@@ -88,10 +88,15 @@ class RtpFrameReferenceFinder {
   FrameDecision ManageFrameInternal(RtpFrameObject* frame)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
-  // Find references for generic frames. If |picture_id| is unspecified
-  // then packet sequence numbers will be used to determine the references
-  // of the frames.
-  FrameDecision ManageFrameGeneric(RtpFrameObject* frame, int picture_id)
+  FrameDecision ManageFrameGeneric(
+      RtpFrameObject* frame,
+      const RTPVideoHeader::GenericDescriptorInfo& descriptor)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
+
+  // Find references for frames with no or very limited information in the
+  // descriptor. If |picture_id| is unspecified then packet sequence numbers
+  // will be used to determine the references of the frames.
+  FrameDecision ManageFramePidOrSeqNum(RtpFrameObject* frame, int picture_id)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Find references for Vp8 frames
@@ -192,9 +197,11 @@ class RtpFrameReferenceFinder {
 
   OnCompleteFrameCallback* frame_callback_;
 
+  SeqNumUnwrapper<uint16_t> generic_frame_id_unwrapper_ RTC_GUARDED_BY(crit_);
+
   // Unwrapper used to unwrap generic RTP streams. In a generic stream we derive
   // a picture id from the packet sequence number.
-  SeqNumUnwrapper<uint16_t> generic_unwrapper_ RTC_GUARDED_BY(crit_);
+  SeqNumUnwrapper<uint16_t> rtp_seq_num_unwrapper_ RTC_GUARDED_BY(crit_);
 
   // Unwrapper used to unwrap VP8/VP9 streams which have their picture id
   // specified.

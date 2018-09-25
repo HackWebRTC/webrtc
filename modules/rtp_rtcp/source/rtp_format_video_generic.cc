@@ -119,6 +119,14 @@ bool RtpDepacketizerGeneric::Parse(ParsedPayload* parsed_payload,
     parsed_payload->video_header().generic.emplace();
     parsed_payload->video_header().generic->frame_id =
         ((payload_data[0] & 0x7F) << 8) | payload_data[1];
+
+    // The old generic format (this format) does not include spatial and
+    // temporal layer information. To distinguish which format that was actually
+    // used we set the spatial and themporal layer to -1;
+    // TODO(bugs.webrtc.org/9772): Remove the old format.
+    parsed_payload->video_header().generic->spatial_index = -1;
+    parsed_payload->video_header().generic->temporal_index = -1;
+
     payload_data += kExtendedHeaderLength;
     payload_data_length -= kExtendedHeaderLength;
   }
