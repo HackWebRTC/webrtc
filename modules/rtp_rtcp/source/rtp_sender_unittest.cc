@@ -67,6 +67,7 @@ using ::testing::_;
 using ::testing::ElementsAre;
 using ::testing::ElementsAreArray;
 using ::testing::Invoke;
+using ::testing::SizeIs;
 
 uint64_t ConvertMsToAbsSendTime(int64_t time_ms) {
   return (((time_ms << 18) + 500) / 1000) & 0x00ffffff;
@@ -2050,6 +2051,32 @@ TEST_P(RtpSenderVideoTest, PopulateGenericFrameDescriptor) {
   EXPECT_THAT(descriptor_wire.FrameDependenciesDiffs(), ElementsAre(1, 500));
   uint8_t spatial_bitmask = 0x14;
   EXPECT_EQ(spatial_bitmask, descriptor_wire.SpatialLayersBitmask());
+}
+
+TEST_P(RtpSenderVideoTest,
+       UsesMinimalVp8DescriptorWhenGenericFrameDescriptorExtensionIsUsed) {
+  const int64_t kFrameId = 100000;
+  const size_t kFrameSize = 100;
+  uint8_t kFrame[kFrameSize];
+  ASSERT_TRUE(rtp_sender_->RegisterRtpHeaderExtension(
+      RtpGenericFrameDescriptorExtension::kUri, kGenericDescriptorId));
+
+  RTPVideoHeader hdr;
+  hdr.codec = kVideoCodecVP8;
+  RTPVideoHeaderVP8& vp8 = hdr.video_type_header.emplace<RTPVideoHeaderVP8>();
+  vp8.pictureId = kFrameId % 0X7FFF;
+  vp8.tl0PicIdx = 13;
+  vp8.temporalIdx = 1;
+  vp8.keyIdx = 2;
+  RTPVideoHeader::GenericDescriptorInfo& generic = hdr.generic.emplace();
+  generic.frame_id = kFrameId;
+  rtp_sender_video_->SendVideo(kVideoCodecVP8, kVideoFrameDelta, kPayload,
+                               kTimestamp, 0, kFrame, sizeof(kFrame), nullptr,
+                               &hdr, kDefaultExpectedRetransmissionTimeMs);
+
+  ASSERT_THAT(transport_.sent_packets_, SizeIs(1));
+  // Expect only minimal 1-byte vp8 descriptor was generated.
+  EXPECT_THAT(transport_.sent_packets_[0].payload_size(), 1 + kFrameSize);
 }
 
 TEST_P(RtpSenderTest, OnOverheadChanged) {

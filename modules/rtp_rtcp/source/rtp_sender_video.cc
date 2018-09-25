@@ -97,6 +97,20 @@ void AddRtpHeaderExtensions(const RTPVideoHeader& video_header,
   }
 }
 
+bool MinimizeDescriptor(const RTPVideoHeader& full, RTPVideoHeader* minimized) {
+  if (full.codec == VideoCodecType::kVideoCodecVP8) {
+    minimized->codec = VideoCodecType::kVideoCodecVP8;
+    const auto& vp8 = absl::get<RTPVideoHeaderVP8>(full.video_type_header);
+    // Set minimum fields the RtpPacketizer is using to create vp8 packets.
+    auto& min_vp8 = minimized->video_type_header.emplace<RTPVideoHeaderVP8>();
+    min_vp8.InitRTPVideoHeaderVP8();
+    min_vp8.nonReference = vp8.nonReference;
+    return true;
+  }
+  // TODO(danilchap): Reduce vp9 codec specific descriptor too.
+  return false;
+}
+
 }  // namespace
 
 RTPSenderVideo::RTPSenderVideo(Clock* clock,
@@ -408,9 +422,16 @@ bool RTPSenderVideo::SendVideo(enum VideoCodecType video_type,
   limits.last_packet_reduction_len =
       last_packet->headers_size() - middle_packet->headers_size();
 
+  RTPVideoHeader minimized_video_header;
+  const RTPVideoHeader* packetize_video_header = video_header;
+  if (first_packet->HasExtension<RtpGenericFrameDescriptorExtension>() &&
+      MinimizeDescriptor(*video_header, &minimized_video_header)) {
+    packetize_video_header = &minimized_video_header;
+  }
+
   std::unique_ptr<RtpPacketizer> packetizer = RtpPacketizer::Create(
       video_type, rtc::MakeArrayView(payload_data, payload_size), limits,
-      *video_header, frame_type, fragmentation);
+      *packetize_video_header, frame_type, fragmentation);
 
   const uint8_t temporal_id = GetTemporalId(*video_header);
   StorageType storage = GetStorageType(temporal_id, retransmission_settings,
