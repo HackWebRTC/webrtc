@@ -64,7 +64,9 @@ namespace {
 #define PRINT(...) fprintf(stderr, __VA_ARGS__);
 
 // Don't run these tests in combination with sanitizers.
-#if !defined(ADDRESS_SANITIZER) && !defined(MEMORY_SANITIZER)
+// TODO(webrtc:9778): Re-enable on THREAD_SANITIZER?
+#if !defined(ADDRESS_SANITIZER) && !defined(MEMORY_SANITIZER) && \
+    !defined(THREAD_SANITIZER)
 #define SKIP_TEST_IF_NOT(requirements_satisfied) \
   do {                                           \
     if (!requirements_satisfied) {               \
