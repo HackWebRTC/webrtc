@@ -60,7 +60,6 @@ class RtpPayloadParams final {
   RtpPayloadState state_;
 
   const bool generic_picture_id_experiment_;
-  const bool generic_descriptor_experiment_;
 };
 }  // namespace webrtc
 #endif  // CALL_RTP_PAYLOAD_PARAMS_H_

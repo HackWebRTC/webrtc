@@ -300,10 +300,7 @@ class RtpPayloadParamsVp8ToGenericTest : public ::testing::Test {
  public:
   enum LayerSync { kNoSync, kSync };
 
-  RtpPayloadParamsVp8ToGenericTest()
-      : generic_descriptor_field_trial_("WebRTC-GenericDescriptor/Enabled/"),
-        state_(),
-        params_(123, &state_) {}
+  RtpPayloadParamsVp8ToGenericTest() : state_(), params_(123, &state_) {}
 
   void ConvertAndCheck(int temporal_index,
                        int64_t shared_frame_id,
@@ -333,7 +330,6 @@ class RtpPayloadParamsVp8ToGenericTest : public ::testing::Test {
   }
 
  protected:
-  test::ScopedFieldTrials generic_descriptor_field_trial_;
   RtpPayloadState state_;
   RtpPayloadParams params_;
 };

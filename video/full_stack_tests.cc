@@ -50,7 +50,6 @@ const char kScreenshareSimulcastExperiment[] =
     "WebRTC-SimulcastScreenshare/Enabled/";
 const char kPacerPushBackExperiment[] =
     "WebRTC-PacerPushbackExperiment/Enabled/";
-const char kGenericDescriptorExperiment[] = "WebRTC-GenericDescriptor";
 
 struct ParamsWithLogging : public VideoQualityTest::Params {
  public:
@@ -83,8 +82,6 @@ std::string AppendFieldTrials(std::string new_trial_string) {
 //   logs          // bool
 // };
 
-class GenericDescriptorTest : public ::testing::TestWithParam<std::string> {};
-
 #if !defined(RTC_DISABLE_VP9)
 TEST(FullStackTest, ForemanCifWithoutPacketLossVp9) {
   auto fixture = CreateVideoQualityTestFixture();
@@ -98,19 +95,15 @@ TEST(FullStackTest, ForemanCifWithoutPacketLossVp9) {
   fixture->RunWithAnalyzer(foreman_cif);
 }
 
-TEST_P(GenericDescriptorTest, ForemanCifPlr5Vp9) {
-  test::ScopedFieldTrials field_trial(GetParam());
-  std::string test_name = "foreman_cif_delay_50_0_plr_5_VP9";
-  if (field_trial::IsEnabled(kGenericDescriptorExperiment))
-    test_name += "_generic_descriptor";
-
+TEST(FullStackTest, ForemanCifPlr5Vp9) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging foreman_cif;
   foreman_cif.call.send_side_bwe = true;
   foreman_cif.video[0] = {true,   352,     288,   30,    30000,
                           500000, 2000000, false, "VP9", 1,
                           0,      0,       false, false, false, "foreman_cif"};
-  foreman_cif.analyzer = {test_name, 0.0, 0.0, kFullStackTestDurationSecs};
+  foreman_cif.analyzer = {"foreman_cif_delay_50_0_plr_5_VP9", 0.0, 0.0,
+                          kFullStackTestDurationSecs};
   foreman_cif.config->loss_percent = 5;
   foreman_cif.config->queue_delay_ms = 50;
   fixture->RunWithAnalyzer(foreman_cif);
@@ -189,12 +182,7 @@ TEST(FullStackTest, MAYBE_ParisQcifWithoutPacketLoss) {
   fixture->RunWithAnalyzer(paris_qcif);
 }
 
-TEST_P(GenericDescriptorTest, ForemanCifWithoutPacketLoss) {
-  test::ScopedFieldTrials field_trial(GetParam());
-  std::string test_name = "foreman_cif_net_delay_0_0_plr_0";
-  if (field_trial::IsEnabled(kGenericDescriptorExperiment))
-    test_name += "_generic_descriptor";
-
+TEST(FullStackTest, ForemanCifWithoutPacketLoss) {
   auto fixture = CreateVideoQualityTestFixture();
   // TODO(pbos): Decide on psnr/ssim thresholds for foreman_cif.
   ParamsWithLogging foreman_cif;
@@ -202,23 +190,20 @@ TEST_P(GenericDescriptorTest, ForemanCifWithoutPacketLoss) {
   foreman_cif.video[0] = {true,   352,    288,   30,    700000,
                           700000, 700000, false, "VP8", 1,
                           0,      0,      false, false, false, "foreman_cif"};
-  foreman_cif.analyzer = {test_name, 0.0, 0.0, kFullStackTestDurationSecs};
+  foreman_cif.analyzer = {"foreman_cif_net_delay_0_0_plr_0", 0.0, 0.0,
+                          kFullStackTestDurationSecs};
   fixture->RunWithAnalyzer(foreman_cif);
 }
 
-TEST_P(GenericDescriptorTest, ForemanCif30kbpsWithoutPacketLoss) {
-  test::ScopedFieldTrials field_trial(GetParam());
-  std::string test_name = "foreman_cif_30kbps_net_delay_0_0_plr_0";
-  if (field_trial::IsEnabled(kGenericDescriptorExperiment))
-    test_name += "_generic_descriptor";
-
+TEST(FullStackTest, ForemanCif30kbpsWithoutPacketLoss) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging foreman_cif;
   foreman_cif.call.send_side_bwe = true;
   foreman_cif.video[0] = {true,  352,   288,   10,    30000,
                           30000, 30000, false, "VP8", 1,
                           0,     0,     false, false, false, "foreman_cif"};
-  foreman_cif.analyzer = {test_name, 0.0, 0.0, kFullStackTestDurationSecs};
+  foreman_cif.analyzer = {"foreman_cif_30kbps_net_delay_0_0_plr_0", 0.0, 0.0,
+                          kFullStackTestDurationSecs};
   fixture->RunWithAnalyzer(foreman_cif);
 }
 
@@ -237,37 +222,29 @@ TEST(FullStackTest, ForemanCifLink150kbpsWithoutPacketLoss) {
   fixture->RunWithAnalyzer(foreman_cif);
 }
 
-TEST_P(GenericDescriptorTest, ForemanCifPlr5) {
-  test::ScopedFieldTrials field_trial(GetParam());
-  std::string test_name = "foreman_cif_delay_50_0_plr_5";
-  if (field_trial::IsEnabled(kGenericDescriptorExperiment))
-    test_name += "_generic_descriptor";
-
+TEST(FullStackTest, ForemanCifPlr5) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging foreman_cif;
   foreman_cif.call.send_side_bwe = true;
   foreman_cif.video[0] = {true,   352,     288,   30,    30000,
                           500000, 2000000, false, "VP8", 1,
                           0,      0,       false, false, false, "foreman_cif"};
-  foreman_cif.analyzer = {test_name, 0.0, 0.0, kFullStackTestDurationSecs};
+  foreman_cif.analyzer = {"foreman_cif_delay_50_0_plr_5", 0.0, 0.0,
+                          kFullStackTestDurationSecs};
   foreman_cif.config->loss_percent = 5;
   foreman_cif.config->queue_delay_ms = 50;
   fixture->RunWithAnalyzer(foreman_cif);
 }
 
-TEST_P(GenericDescriptorTest, ForemanCifPlr5Ulpfec) {
-  test::ScopedFieldTrials field_trial(GetParam());
-  std::string test_name = "foreman_cif_delay_50_0_plr_5_ulpfec";
-  if (field_trial::IsEnabled(kGenericDescriptorExperiment))
-    test_name += "_generic_descriptor";
-
+TEST(FullStackTest, ForemanCifPlr5Ulpfec) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging foreman_cif;
   foreman_cif.call.send_side_bwe = true;
   foreman_cif.video[0] = {true,   352,     288,   30,    30000,
                           500000, 2000000, false, "VP8", 1,
                           0,      0,       true,  false, false, "foreman_cif"};
-  foreman_cif.analyzer = {test_name, 0.0, 0.0, kFullStackTestDurationSecs};
+  foreman_cif.analyzer = {"foreman_cif_delay_50_0_plr_5_ulpfec", 0.0, 0.0,
+                          kFullStackTestDurationSecs};
   foreman_cif.config->loss_percent = 5;
   foreman_cif.config->queue_delay_ms = 50;
   fixture->RunWithAnalyzer(foreman_cif);
@@ -343,19 +320,15 @@ TEST(FullStackTest, ForemanCif30kbpsWithoutPacketlossH264) {
   fixture->RunWithAnalyzer(foreman_cif);
 }
 
-TEST_P(GenericDescriptorTest, ForemanCifPlr5H264) {
-  test::ScopedFieldTrials field_trial(GetParam());
-  std::string test_name = "foreman_cif_delay_50_0_plr_5_H264";
-  if (field_trial::IsEnabled(kGenericDescriptorExperiment))
-    test_name += "_generic_descriptor";
-
+TEST(FullStackTest, ForemanCifPlr5H264) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging foreman_cif;
   foreman_cif.call.send_side_bwe = true;
   foreman_cif.video[0] = {true,   352,     288,   30,     30000,
                           500000, 2000000, false, "H264", 1,
                           0,      0,       false, false,  false, "foreman_cif"};
-  foreman_cif.analyzer = {test_name, 0.0, 0.0, kFullStackTestDurationSecs};
+  foreman_cif.analyzer = {"foreman_cif_delay_50_0_plr_5_H264", 0.0, 0.0,
+                          kFullStackTestDurationSecs};
   foreman_cif.config->loss_percent = 5;
   foreman_cif.config->queue_delay_ms = 50;
   fixture->RunWithAnalyzer(foreman_cif);
@@ -455,19 +428,15 @@ TEST(FullStackTest, ForemanCif500kbps100ms) {
   fixture->RunWithAnalyzer(foreman_cif);
 }
 
-TEST_P(GenericDescriptorTest, ForemanCif500kbps100msLimitedQueue) {
-  test::ScopedFieldTrials field_trial(GetParam());
-  std::string test_name = "foreman_cif_500kbps_100ms_32pkts_queue";
-  if (field_trial::IsEnabled(kGenericDescriptorExperiment))
-    test_name += "_generic_descriptor";
-
+TEST(FullStackTest, ForemanCif500kbps100msLimitedQueue) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging foreman_cif;
   foreman_cif.call.send_side_bwe = true;
   foreman_cif.video[0] = {true,   352,     288,   30,    30000,
                           500000, 2000000, false, "VP8", 1,
                           0,      0,       false, false, false, "foreman_cif"};
-  foreman_cif.analyzer = {test_name, 0.0, 0.0, kFullStackTestDurationSecs};
+  foreman_cif.analyzer = {"foreman_cif_500kbps_100ms_32pkts_queue", 0.0, 0.0,
+                          kFullStackTestDurationSecs};
   foreman_cif.config->queue_length_packets = 32;
   foreman_cif.config->queue_delay_ms = 100;
   foreman_cif.config->link_capacity_kbps = 500;
@@ -538,12 +507,7 @@ TEST(FullStackTest, ConferenceMotionHd1TLModerateLimits) {
   fixture->RunWithAnalyzer(conf_motion_hd);
 }
 
-TEST_P(GenericDescriptorTest, ConferenceMotionHd2TLModerateLimits) {
-  test::ScopedFieldTrials field_trial(GetParam());
-  std::string test_name = "conference_motion_hd_2tl_moderate_limits";
-  if (field_trial::IsEnabled(kGenericDescriptorExperiment))
-    test_name += "_generic_descriptor";
-
+TEST(FullStackTest, ConferenceMotionHd2TLModerateLimits) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging conf_motion_hd;
   conf_motion_hd.call.send_side_bwe = true;
@@ -551,7 +515,8 @@ TEST_P(GenericDescriptorTest, ConferenceMotionHd2TLModerateLimits) {
       true,    1280,    720,   50,    30000,
       3000000, 3000000, false, "VP8", 2,
       -1,      0,       false, false, false, "ConferenceMotion_1280_720_50"};
-  conf_motion_hd.analyzer = {test_name, 0.0, 0.0, kFullStackTestDurationSecs};
+  conf_motion_hd.analyzer = {"conference_motion_hd_2tl_moderate_limits", 0.0,
+                             0.0, kFullStackTestDurationSecs};
   conf_motion_hd.config->queue_length_packets = 50;
   conf_motion_hd.config->loss_percent = 3;
   conf_motion_hd.config->queue_delay_ms = 100;
@@ -686,12 +651,7 @@ TEST(FullStackTest, ScreenshareSlidesVP8_2TL_Scroll) {
   fixture->RunWithAnalyzer(config);
 }
 
-TEST_P(GenericDescriptorTest, ScreenshareSlidesVP8_2TL_LossyNet) {
-  test::ScopedFieldTrials field_trial(GetParam());
-  std::string test_name = "screenshare_slides_lossy_net";
-  if (field_trial::IsEnabled(kGenericDescriptorExperiment))
-    test_name += "_generic_descriptor";
-
+TEST(FullStackTest, ScreenshareSlidesVP8_2TL_LossyNet) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging screenshare;
   screenshare.call.send_side_bwe = true;
@@ -699,7 +659,8 @@ TEST_P(GenericDescriptorTest, ScreenshareSlidesVP8_2TL_LossyNet) {
                           1000000, false, "VP8", 2, 1,     400000,
                           false,   false, false, ""};
   screenshare.screenshare[0] = {true, false, 10};
-  screenshare.analyzer = {test_name, 0.0, 0.0, kFullStackTestDurationSecs};
+  screenshare.analyzer = {"screenshare_slides_lossy_net", 0.0, 0.0,
+                          kFullStackTestDurationSecs};
   screenshare.config->loss_percent = 5;
   screenshare.config->queue_delay_ms = 200;
   screenshare.config->link_capacity_kbps = 500;
@@ -1091,11 +1052,6 @@ TEST(FullStackTest, MAYBE_LargeRoomVP8_50thumb) {
       false};
   fixture->RunWithAnalyzer(large_room);
 }
-
-INSTANTIATE_TEST_CASE_P(FullStackTest,
-                        GenericDescriptorTest,
-                        ::testing::Values("WebRTC-GenericDescriptor/Disabled/",
-                                          "WebRTC-GenericDescriptor/Enabled/"));
 
 class DualStreamsTest : public ::testing::TestWithParam<int> {};
 

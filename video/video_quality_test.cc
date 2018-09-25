@@ -214,7 +214,7 @@ VideoQualityTest::VideoQualityTest(
 }
 
 VideoQualityTest::Params::Params()
-    : call({false, false, BitrateConstraints(), 0}),
+    : call({false, BitrateConstraints(), 0}),
       video{{false, 640, 480, 30, 50, 800, 800, false, "VP8", 1, -1, 0, false,
              false, false, ""},
             {false, 640, 480, 30, 50, 800, 800, false, "VP8", 1, -1, 0, false,
@@ -536,29 +536,18 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
     }
     video_send_configs_[video_idx].rtp.extensions.clear();
     if (params_.call.send_side_bwe) {
-      video_send_configs_[video_idx].rtp.extensions.emplace_back(
-          RtpExtension::kTransportSequenceNumberUri,
-          test::kTransportSequenceNumberExtensionId);
+      video_send_configs_[video_idx].rtp.extensions.push_back(
+          RtpExtension(RtpExtension::kTransportSequenceNumberUri,
+                       test::kTransportSequenceNumberExtensionId));
     } else {
-      video_send_configs_[video_idx].rtp.extensions.emplace_back(
-          RtpExtension::kAbsSendTimeUri, test::kAbsSendTimeExtensionId);
+      video_send_configs_[video_idx].rtp.extensions.push_back(RtpExtension(
+          RtpExtension::kAbsSendTimeUri, test::kAbsSendTimeExtensionId));
     }
-
-    if (params_.call.generic_descriptor) {
-      // The generic descriptor is currently behind a field trial, so it needs
-      // to be set for this flag to have any effect.
-      // TODO(philipel): Remove this check when the experiment is removed.
-      RTC_CHECK(field_trial::IsEnabled("WebRTC-GenericDescriptor"));
-
-      video_send_configs_[video_idx].rtp.extensions.emplace_back(
-          RtpExtension::kGenericFrameDescriptorUri,
-          test::kGenericDescriptorExtensionId);
-    }
-
-    video_send_configs_[video_idx].rtp.extensions.emplace_back(
-        RtpExtension::kVideoContentTypeUri, test::kVideoContentTypeExtensionId);
-    video_send_configs_[video_idx].rtp.extensions.emplace_back(
-        RtpExtension::kVideoTimingUri, test::kVideoTimingExtensionId);
+    video_send_configs_[video_idx].rtp.extensions.push_back(
+        RtpExtension(RtpExtension::kVideoContentTypeUri,
+                     test::kVideoContentTypeExtensionId));
+    video_send_configs_[video_idx].rtp.extensions.push_back(RtpExtension(
+        RtpExtension::kVideoTimingUri, test::kVideoTimingExtensionId));
 
     video_encoder_configs_[video_idx].video_format.name =
         params_.video[video_idx].codec;

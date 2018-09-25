@@ -220,8 +220,6 @@ DEFINE_bool(logs, false, "print logs to stderr");
 
 DEFINE_bool(send_side_bwe, true, "Use send-side bandwidth estimation");
 
-DEFINE_bool(generic_descriptor, false, "Use the generic frame descriptor.");
-
 DEFINE_bool(allow_reordering, false, "Allow packet reordering to occur");
 
 DEFINE_string(
@@ -290,8 +288,7 @@ void Loopback() {
   call_bitrate_config.max_bitrate_bps = -1;  // Don't cap bandwidth estimate.
 
   VideoQualityTest::Params params;
-  params.call = {flags::FLAG_send_side_bwe, flags::FLAG_generic_descriptor,
-                 call_bitrate_config};
+  params.call = {flags::FLAG_send_side_bwe, call_bitrate_config};
   params.video[0] = {true,
                      flags::Width(),
                      flags::Height(),

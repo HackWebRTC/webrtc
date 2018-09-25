@@ -22,7 +22,6 @@
 #include "modules/rtp_rtcp/include/rtp_cvo.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "modules/rtp_rtcp/source/playout_delay_oracle.h"
-#include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor_extension.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "modules/rtp_rtcp/source/rtp_sender_audio.h"
@@ -75,8 +74,6 @@ constexpr RtpExtensionSize kVideoExtensionSizes[] = {
     CreateExtensionSize<VideoContentTypeExtension>(),
     CreateExtensionSize<VideoTimingExtension>(),
     {RtpMid::kId, RtpMid::kMaxValueSizeBytes},
-    {RtpGenericFrameDescriptorExtension::kId,
-     RtpGenericFrameDescriptorExtension::kMaxSizeBytes},
 };
 
 const char* FrameTypeToString(FrameType frame_type) {
