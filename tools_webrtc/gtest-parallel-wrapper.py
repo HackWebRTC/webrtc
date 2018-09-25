@@ -15,8 +15,9 @@ gtest-parallel, renaming options and translating environment variables into
 flags. Developers should execute gtest-parallel directly.
 
 In particular, this translates the GTEST_SHARD_INDEX and GTEST_TOTAL_SHARDS
-environment variables to the --shard_index and --shard_count flags, and renames
-the --isolated-script-test-output flag to --dump_json_test_results.
+environment variables to the --shard_index and --shard_count flags, renames
+the --isolated-script-test-output flag to --dump_json_test_results,
+and interprets e.g. --workers=2x as 2 workers per core.
 
 Flags before '--' will be attempted to be understood as arguments to
 gtest-parallel. If gtest-parallel doesn't recognize the flag or the flag is
@@ -63,6 +64,7 @@ Will be converted into:
 
 import argparse
 import collections
+import multiprocessing
 import os
 import shutil
 import subprocess
@@ -80,6 +82,15 @@ def _CatFiles(file_list, output_file):
       with open(filename) as input_file:
         output_file.write(input_file.read())
       os.remove(filename)
+
+def _ParseWorkersOption(workers):
+  """Interpret Nx syntax as N * cpu_count. Int value is left as is."""
+  base = float(workers.rstrip('x'))
+  if workers.endswith('x'):
+    result = int(base * multiprocessing.cpu_count())
+  else:
+    result = int(base)
+  return max(result, 1)  # Sanitize when using e.g. '0.5x'.
 
 
 class ReconstructibleArgumentGroup(object):
@@ -117,12 +128,14 @@ def ParseArgs(argv=None):
   gtest_group.AddArgument('-d', '--output_dir')
   gtest_group.AddArgument('-r', '--repeat')
   gtest_group.AddArgument('--retry_failed')
-  gtest_group.AddArgument('-w', '--workers')
   gtest_group.AddArgument('--gtest_color')
   gtest_group.AddArgument('--gtest_filter')
   gtest_group.AddArgument('--gtest_also_run_disabled_tests',
                           action='store_true', default=None)
   gtest_group.AddArgument('--timeout')
+
+  # Syntax 'Nx' will be interpreted as N * number of cpu cores.
+  gtest_group.AddArgument('-w', '--workers', type=_ParseWorkersOption)
 
   # --isolated-script-test-output is used to upload results to the flakiness
   # dashboard. This translation is made because gtest-parallel expects the flag
