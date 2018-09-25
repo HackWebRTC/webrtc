@@ -405,7 +405,7 @@ void AudioDeviceBuffer::LogStats(LogState state) {
     uint32_t diff_samples = stats.rec_samples - last_stats_.rec_samples;
     float rate = diff_samples / (static_cast<float>(time_since_last) / 1000.0);
     uint32_t abs_diff_rate_in_percent = 0;
-    if (rec_sample_rate > 0) {
+    if (rec_sample_rate > 0 && rate > 0) {
       abs_diff_rate_in_percent = static_cast<uint32_t>(
           0.5f +
           ((100.0f * std::abs(rate - rec_sample_rate)) / rec_sample_rate));
@@ -423,7 +423,7 @@ void AudioDeviceBuffer::LogStats(LogState state) {
     diff_samples = stats.play_samples - last_stats_.play_samples;
     rate = diff_samples / (static_cast<float>(time_since_last) / 1000.0);
     abs_diff_rate_in_percent = 0;
-    if (play_sample_rate > 0) {
+    if (play_sample_rate > 0 && rate > 0) {
       abs_diff_rate_in_percent = static_cast<uint32_t>(
           0.5f +
           ((100.0f * std::abs(rate - play_sample_rate)) / play_sample_rate));
