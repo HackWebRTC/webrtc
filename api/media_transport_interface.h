@@ -101,7 +101,7 @@ class MediaTransportEncodedAudioFrame {
   int samples_per_channel_;
 
   // TODO(sukhanov): Refactor NetEq so we don't need sequence number.
-  // Having sample_index and sample_count should be enough.
+  // Having sample_index and samples_per_channel should be enough.
   int sequence_number_;
 
   FrameType frame_type_;
@@ -124,23 +124,100 @@ class MediaTransportAudioSinkInterface {
                       MediaTransportEncodedAudioFrame frame) = 0;
 };
 
+// Represents encoded video frame, along with the codec information.
+class MediaTransportEncodedVideoFrame {
+ public:
+  MediaTransportEncodedVideoFrame(int64_t frame_id,
+                                  std::vector<int64_t> referenced_frame_ids,
+                                  VideoCodecType codec_type,
+                                  const webrtc::EncodedImage& encoded_image)
+      : codec_type_(codec_type),
+        encoded_image_(encoded_image),
+        frame_id_(frame_id),
+        referenced_frame_ids_(std::move(referenced_frame_ids)) {}
+
+  VideoCodecType codec_type() const { return codec_type_; }
+  const webrtc::EncodedImage& encoded_image() const { return encoded_image_; }
+
+  int64_t frame_id() const { return frame_id_; }
+  const std::vector<int64_t>& referenced_frame_ids() const {
+    return referenced_frame_ids_;
+  }
+
+ private:
+  VideoCodecType codec_type_;
+
+  // The buffer is not owned by the encoded image by default. On the sender it
+  // means that it will need to make a copy of it if it wants to deliver it
+  // asynchronously.
+  webrtc::EncodedImage encoded_image_;
+
+  // Frame id uniquely identifies a frame in a stream. It needs to be unique in
+  // a given time window (i.e. technically unique identifier for the lifetime of
+  // the connection is not needed, but you need to guarantee that remote side
+  // got rid of the previous frame_id if you plan to reuse it).
+  //
+  // It is required by a remote jitter buffer, and is the same as
+  // EncodedFrame::id::picture_id.
+  //
+  // This data must be opaque to the media transport, and media transport should
+  // itself not make any assumptions about what it is and its uniqueness.
+  int64_t frame_id_;
+
+  // A single frame might depend on other frames. This is set of identifiers on
+  // which the current frame depends.
+  std::vector<int64_t> referenced_frame_ids_;
+};
+
+// Interface for receiving encoded video frames from MediaTransportInterface
+// implementations.
+class MediaTransportVideoSinkInterface {
+ public:
+  virtual ~MediaTransportVideoSinkInterface() = default;
+
+  // Called when new encoded video frame is received.
+  virtual void OnData(uint64_t channel_id,
+                      MediaTransportEncodedVideoFrame frame) = 0;
+
+  // Called when the request for keyframe is received.
+  virtual void OnKeyFrameRequested(uint64_t channel_id) = 0;
+};
+
 // Media transport interface for sending / receiving encoded audio/video frames
 // and receiving bandwidth estimate update from congestion control.
 class MediaTransportInterface {
  public:
   virtual ~MediaTransportInterface() = default;
 
-  // Start asynchronous send of audio frame.
+  // Start asynchronous send of audio frame. The status returned by this method
+  // only pertains to the synchronous operations (e.g.
+  // serialization/packetization), not to the asynchronous operation.
+
   virtual RTCError SendAudioFrame(uint64_t channel_id,
                                   MediaTransportEncodedAudioFrame frame) = 0;
 
-  // Sets audio sink. Sink should be unset by calling
-  // SetReceiveAudioSink(nullptr) before the media transport is destroyed or
-  // before new sink is set.
+  // Start asynchronous send of video frame. The status returned by this method
+  // only pertains to the synchronous operations (e.g.
+  // serialization/packetization), not to the asynchronous operation.
+  virtual RTCError SendVideoFrame(
+      uint64_t channel_id,
+      const MediaTransportEncodedVideoFrame& frame) = 0;
+
+  // Requests a keyframe for the particular channel (stream). The caller should
+  // check that the keyframe is not present in a jitter buffer already (i.e.
+  // don't request a keyframe if there is one that you will get from the jitter
+  // buffer in a moment).
+  virtual RTCError RequestKeyFrame(uint64_t channel_id) = 0;
+
+  // Sets audio sink. Sink must be unset by calling SetReceiveAudioSink(nullptr)
+  // before the media transport is destroyed or before new sink is set.
   virtual void SetReceiveAudioSink(MediaTransportAudioSinkInterface* sink) = 0;
 
+  // Registers a video sink. Before destruction of media transport, you must
+  // pass a nullptr.
+  virtual void SetReceiveVideoSink(MediaTransportVideoSinkInterface* sink) = 0;
+
   // TODO(sukhanov): RtcEventLogs.
-  // TODO(sukhanov): Video interfaces.
   // TODO(sukhanov): Bandwidth updates.
 };
 
@@ -166,5 +243,4 @@ class MediaTransportFactory {
 };
 
 }  // namespace webrtc
-
 #endif  // API_MEDIA_TRANSPORT_INTERFACE_H_
