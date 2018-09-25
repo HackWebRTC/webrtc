@@ -87,8 +87,11 @@ std::string VideoCodecTestStats::VideoStatistics::ToString(
 }
 
 VideoCodecTestStats::FrameStatistics::FrameStatistics(size_t frame_number,
-                                                      size_t rtp_timestamp)
-    : frame_number(frame_number), rtp_timestamp(rtp_timestamp) {}
+                                                      size_t rtp_timestamp,
+                                                      size_t spatial_idx)
+    : frame_number(frame_number),
+      rtp_timestamp(rtp_timestamp),
+      spatial_idx(spatial_idx) {}
 
 VideoCodecTestStats::FrameStatistics::FrameStatistics(
     const FrameStatistics& rhs) = default;

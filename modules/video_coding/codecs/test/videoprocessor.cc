@@ -275,7 +275,8 @@ void VideoProcessor::ProcessFrame() {
 
   // Create frame statistics object for all simulcast/spatial layers.
   for (size_t i = 0; i < num_simulcast_or_spatial_layers_; ++i) {
-    stats_->AddFrame(timestamp, i);
+    FrameStatistics frame_stat(frame_number, timestamp, i);
+    stats_->AddFrame(frame_stat);
   }
 
   // For the highest measurement accuracy of the encode time, the start/stop
@@ -377,7 +378,6 @@ void VideoProcessor::FrameEncoded(
   frame_stat->length_bytes = encoded_image._length;
   frame_stat->frame_type = encoded_image._frameType;
   frame_stat->temporal_idx = temporal_idx;
-  frame_stat->spatial_idx = spatial_idx;
   frame_stat->max_nalu_size_bytes = GetMaxNaluSizeBytes(encoded_image, config_);
   frame_stat->qp = encoded_image.qp_;
 
