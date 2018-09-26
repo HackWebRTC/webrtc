@@ -23,14 +23,12 @@ namespace webrtc {
 
 class TwoWayCommunication : public ACMTest {
  public:
-  explicit TwoWayCommunication(int testMode);
+  TwoWayCommunication();
   ~TwoWayCommunication();
 
   void Perform();
 
  private:
-  void ChooseCodec(uint8_t* codecID_A, uint8_t* codecID_B);
-  void SetUp();
   void SetUpAutotest();
 
   std::unique_ptr<AudioCodingModule> _acmA;
@@ -53,8 +51,6 @@ class TwoWayCommunication : public ACMTest {
 
   PCMFile _outFileRefA;
   PCMFile _outFileRefB;
-
-  int _testMode;
 };
 
 }  // namespace webrtc

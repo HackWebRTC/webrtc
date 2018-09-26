@@ -66,7 +66,7 @@ TEST(AudioCodingModuleTest, DISABLED_TwoWayCommunication) {
 #else
 TEST(AudioCodingModuleTest, TwoWayCommunication) {
 #endif
-  webrtc::TwoWayCommunication(ACM_TEST_MODE).Perform();
+  webrtc::TwoWayCommunication().Perform();
 }
 #endif
 

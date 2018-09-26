@@ -32,12 +32,11 @@ namespace webrtc {
 
 #define MAX_FILE_NAME_LENGTH_BYTE 500
 
-TwoWayCommunication::TwoWayCommunication(int testMode)
+TwoWayCommunication::TwoWayCommunication()
     : _acmA(AudioCodingModule::Create(
           AudioCodingModule::Config(CreateBuiltinAudioDecoderFactory()))),
       _acmRefA(AudioCodingModule::Create(
-          AudioCodingModule::Config(CreateBuiltinAudioDecoderFactory()))),
-      _testMode(testMode) {
+          AudioCodingModule::Config(CreateBuiltinAudioDecoderFactory()))) {
   AudioCodingModule::Config config;
   // The clicks will be more obvious if time-stretching is not allowed.
   // TODO(henrik.lundin) Really?
@@ -58,113 +57,6 @@ TwoWayCommunication::~TwoWayCommunication() {
   _outFileB.Close();
   _outFileRefA.Close();
   _outFileRefB.Close();
-}
-
-void TwoWayCommunication::ChooseCodec(uint8_t* codecID_A, uint8_t* codecID_B) {
-  std::unique_ptr<AudioCodingModule> tmpACM(AudioCodingModule::Create(
-      AudioCodingModule::Config(CreateBuiltinAudioDecoderFactory())));
-  uint8_t noCodec = tmpACM->NumberOfCodecs();
-  CodecInst codecInst;
-  printf("List of Supported Codecs\n");
-  printf("========================\n");
-  for (uint8_t codecCntr = 0; codecCntr < noCodec; codecCntr++) {
-    EXPECT_EQ(tmpACM->Codec(codecCntr, &codecInst), 0);
-    printf("%d- %s\n", codecCntr, codecInst.plname);
-  }
-  printf("\nChoose a send codec for side A [0]: ");
-  char myStr[15] = "";
-  EXPECT_TRUE(fgets(myStr, 10, stdin) != NULL);
-  *codecID_A = (uint8_t)atoi(myStr);
-
-  printf("\nChoose a send codec for side B [0]: ");
-  EXPECT_TRUE(fgets(myStr, 10, stdin) != NULL);
-  *codecID_B = (uint8_t)atoi(myStr);
-
-  printf("\n");
-}
-
-void TwoWayCommunication::SetUp() {
-  uint8_t codecID_A;
-  uint8_t codecID_B;
-
-  ChooseCodec(&codecID_A, &codecID_B);
-  CodecInst codecInst_A;
-  CodecInst codecInst_B;
-  CodecInst dummyCodec;
-  EXPECT_EQ(0, _acmA->Codec(codecID_A, &codecInst_A));
-  EXPECT_EQ(0, _acmB->Codec(codecID_B, &codecInst_B));
-  EXPECT_EQ(0, _acmA->Codec(6, &dummyCodec));
-
-  //--- Set A codecs
-  EXPECT_EQ(0, _acmA->RegisterSendCodec(codecInst_A));
-  EXPECT_EQ(true, _acmA->RegisterReceiveCodec(codecInst_B.pltype,
-                                              CodecInstToSdp(codecInst_B)));
-  //--- Set ref-A codecs
-  EXPECT_EQ(0, _acmRefA->RegisterSendCodec(codecInst_A));
-  EXPECT_EQ(true, _acmRefA->RegisterReceiveCodec(codecInst_B.pltype,
-                                                 CodecInstToSdp(codecInst_B)));
-
-  //--- Set B codecs
-  EXPECT_EQ(0, _acmB->RegisterSendCodec(codecInst_B));
-  EXPECT_EQ(true, _acmB->RegisterReceiveCodec(codecInst_A.pltype,
-                                              CodecInstToSdp(codecInst_A)));
-
-  //--- Set ref-B codecs
-  EXPECT_EQ(0, _acmRefB->RegisterSendCodec(codecInst_B));
-  EXPECT_EQ(true, _acmRefB->RegisterReceiveCodec(codecInst_A.pltype,
-                                                 CodecInstToSdp(codecInst_A)));
-
-  uint16_t frequencyHz;
-
-  //--- Input A
-  std::string in_file_name =
-      webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm");
-  frequencyHz = 32000;
-  printf("Enter input file at side A [%s]: ", in_file_name.c_str());
-  PCMFile::ChooseFile(&in_file_name, 499, &frequencyHz);
-  _inFileA.Open(in_file_name, frequencyHz, "rb");
-
-  //--- Output A
-  std::string out_file_a = webrtc::test::OutputPath() + "outA.pcm";
-  printf("Output file at side A: %s\n", out_file_a.c_str());
-  printf("Sampling frequency (in Hz) of the above file: %u\n", frequencyHz);
-  _outFileA.Open(out_file_a, frequencyHz, "wb");
-  std::string ref_file_name = webrtc::test::OutputPath() + "ref_outA.pcm";
-  _outFileRefA.Open(ref_file_name, frequencyHz, "wb");
-
-  //--- Input B
-  in_file_name =
-      webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm");
-  frequencyHz = 32000;
-  printf("\n\nEnter input file at side B [%s]: ", in_file_name.c_str());
-  PCMFile::ChooseFile(&in_file_name, 499, &frequencyHz);
-  _inFileB.Open(in_file_name, frequencyHz, "rb");
-
-  //--- Output B
-  std::string out_file_b = webrtc::test::OutputPath() + "outB.pcm";
-  printf("Output file at side B: %s\n", out_file_b.c_str());
-  printf("Sampling frequency (in Hz) of the above file: %u\n", frequencyHz);
-  _outFileB.Open(out_file_b, frequencyHz, "wb");
-  ref_file_name = webrtc::test::OutputPath() + "ref_outB.pcm";
-  _outFileRefB.Open(ref_file_name, frequencyHz, "wb");
-
-  //--- Set A-to-B channel
-  _channel_A2B = new Channel;
-  _acmA->RegisterTransportCallback(_channel_A2B);
-  _channel_A2B->RegisterReceiverACM(_acmB.get());
-  //--- Do the same for the reference
-  _channelRef_A2B = new Channel;
-  _acmRefA->RegisterTransportCallback(_channelRef_A2B);
-  _channelRef_A2B->RegisterReceiverACM(_acmRefB.get());
-
-  //--- Set B-to-A channel
-  _channel_B2A = new Channel;
-  _acmB->RegisterTransportCallback(_channel_B2A);
-  _channel_B2A->RegisterReceiverACM(_acmA.get());
-  //--- Do the same for reference
-  _channelRef_B2A = new Channel;
-  _acmRefB->RegisterTransportCallback(_channelRef_B2A);
-  _channelRef_B2A->RegisterReceiverACM(_acmRefA.get());
 }
 
 void TwoWayCommunication::SetUpAutotest() {
@@ -241,11 +133,7 @@ void TwoWayCommunication::SetUpAutotest() {
 }
 
 void TwoWayCommunication::Perform() {
-  if (_testMode == 0) {
-    SetUpAutotest();
-  } else {
-    SetUp();
-  }
+  SetUpAutotest();
   unsigned int msecPassed = 0;
   unsigned int secPassed = 0;
 
