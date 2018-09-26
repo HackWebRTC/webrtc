@@ -499,6 +499,31 @@ TEST_F(TestVp9Impl,
   }
 }
 
+TEST_F(TestVp9Impl,
+       LowLayerMarkedAsRefIfHighLayerNotEncodedAndInterLayerPredIsEnabled) {
+  ConfigureSvc(3);
+  codec_settings_.VP9()->frameDroppingOn = false;
+  codec_settings_.VP9()->interLayerPred = InterLayerPredMode::kOn;
+
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->InitEncode(&codec_settings_, 1 /* number of cores */,
+                                 0 /* max payload size (unused) */));
+
+  VideoBitrateAllocation bitrate_allocation;
+  bitrate_allocation.SetBitrate(
+      0, 0, codec_settings_.spatialLayers[0].targetBitrate * 1000);
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->SetRateAllocation(bitrate_allocation,
+                                        codec_settings_.maxFramerate));
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->Encode(*NextInputFrame(), nullptr, nullptr));
+  EncodedImage encoded_frame;
+  CodecSpecificInfo codec_info;
+  ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_info));
+  EXPECT_TRUE(codec_info.codecSpecific.VP9.ss_data_available);
+  EXPECT_FALSE(codec_info.codecSpecific.VP9.non_ref_for_inter_layer_pred);
+}
+
 TEST_F(TestVp9Impl, ScalabilityStructureIsAvailableInFlexibleMode) {
   codec_settings_.VP9()->flexibleMode = true;
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
