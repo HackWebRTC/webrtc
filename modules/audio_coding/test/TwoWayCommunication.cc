@@ -21,8 +21,8 @@
 #endif
 
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "common_types.h"  // NOLINT(build/include)
-#include "modules/audio_coding/codecs/audio_format_conversion.h"
 #include "modules/audio_coding/test/PCMFile.h"
 #include "modules/audio_coding/test/utility.h"
 #include "test/gtest.h"
@@ -59,34 +59,31 @@ TwoWayCommunication::~TwoWayCommunication() {
   _outFileRefB.Close();
 }
 
-void TwoWayCommunication::SetUpAutotest() {
-  CodecInst codecInst_A;
-  CodecInst codecInst_B;
-  CodecInst dummyCodec;
-
-  EXPECT_EQ(0, _acmA->Codec("ISAC", &codecInst_A, 16000, 1));
-  EXPECT_EQ(0, _acmB->Codec("L16", &codecInst_B, 8000, 1));
-  EXPECT_EQ(0, _acmA->Codec(6, &dummyCodec));
-
+void TwoWayCommunication::SetUpAutotest(
+    AudioEncoderFactory* const encoder_factory,
+    const SdpAudioFormat& format1,
+    const int payload_type1,
+    const SdpAudioFormat& format2,
+    const int payload_type2) {
   //--- Set A codecs
-  EXPECT_EQ(0, _acmA->RegisterSendCodec(codecInst_A));
-  EXPECT_EQ(true, _acmA->RegisterReceiveCodec(codecInst_B.pltype,
-                                              CodecInstToSdp(codecInst_B)));
+  _acmA->SetEncoder(
+      encoder_factory->MakeAudioEncoder(payload_type1, format1, absl::nullopt));
+  EXPECT_EQ(true, _acmA->RegisterReceiveCodec(payload_type2, format2));
 
   //--- Set ref-A codecs
-  EXPECT_GT(_acmRefA->RegisterSendCodec(codecInst_A), -1);
-  EXPECT_EQ(true, _acmRefA->RegisterReceiveCodec(codecInst_B.pltype,
-                                                 CodecInstToSdp(codecInst_B)));
+  _acmRefA->SetEncoder(
+      encoder_factory->MakeAudioEncoder(payload_type1, format1, absl::nullopt));
+  EXPECT_EQ(true, _acmRefA->RegisterReceiveCodec(payload_type2, format2));
 
   //--- Set B codecs
-  EXPECT_GT(_acmB->RegisterSendCodec(codecInst_B), -1);
-  EXPECT_EQ(true, _acmB->RegisterReceiveCodec(codecInst_A.pltype,
-                                              CodecInstToSdp(codecInst_A)));
+  _acmB->SetEncoder(
+      encoder_factory->MakeAudioEncoder(payload_type2, format2, absl::nullopt));
+  EXPECT_EQ(true, _acmB->RegisterReceiveCodec(payload_type1, format1));
 
   //--- Set ref-B codecs
-  EXPECT_EQ(0, _acmRefB->RegisterSendCodec(codecInst_B));
-  EXPECT_EQ(true, _acmRefB->RegisterReceiveCodec(codecInst_A.pltype,
-                                                 CodecInstToSdp(codecInst_A)));
+  _acmRefB->SetEncoder(
+      encoder_factory->MakeAudioEncoder(payload_type2, format2, absl::nullopt));
+  EXPECT_EQ(true, _acmRefB->RegisterReceiveCodec(payload_type1, format1));
 
   uint16_t frequencyHz;
 
@@ -133,7 +130,15 @@ void TwoWayCommunication::SetUpAutotest() {
 }
 
 void TwoWayCommunication::Perform() {
-  SetUpAutotest();
+  const SdpAudioFormat format1("ISAC", 16000, 1);
+  const SdpAudioFormat format2("L16", 8000, 1);
+  constexpr int payload_type1 = 17, payload_type2 = 18;
+
+  auto encoder_factory = CreateBuiltinAudioEncoderFactory();
+
+  SetUpAutotest(encoder_factory.get(), format1, payload_type1, format2,
+                payload_type2);
+
   unsigned int msecPassed = 0;
   unsigned int secPassed = 0;
 
@@ -141,9 +146,6 @@ void TwoWayCommunication::Perform() {
   int32_t outFreqHzB = _outFileB.SamplingFrequency();
 
   AudioFrame audioFrame;
-
-  auto codecInst_B = _acmB->SendCodec();
-  ASSERT_TRUE(codecInst_B);
 
   // In the following loop we tests that the code can handle misuse of the APIs.
   // In the middle of a session with data flowing between two sides, called A
@@ -180,7 +182,8 @@ void TwoWayCommunication::Perform() {
     }
     // Re-register send codec on side B.
     if (((secPassed % 5) == 4) && (msecPassed >= 990)) {
-      EXPECT_EQ(0, _acmB->RegisterSendCodec(*codecInst_B));
+      _acmB->SetEncoder(encoder_factory->MakeAudioEncoder(
+          payload_type2, format2, absl::nullopt));
       EXPECT_TRUE(_acmB->SendCodec());
     }
     // Initialize receiver on side A.
@@ -188,8 +191,7 @@ void TwoWayCommunication::Perform() {
       EXPECT_EQ(0, _acmA->InitializeReceiver());
     // Re-register codec on side A.
     if (((secPassed % 7) == 6) && (msecPassed >= 990)) {
-      EXPECT_EQ(true, _acmA->RegisterReceiveCodec(
-                          codecInst_B->pltype, CodecInstToSdp(*codecInst_B)));
+      EXPECT_EQ(true, _acmA->RegisterReceiveCodec(payload_type2, format2));
     }
   }
 }

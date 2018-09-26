@@ -13,6 +13,8 @@
 
 #include <memory>
 
+#include "api/audio_codecs/audio_encoder_factory.h"
+#include "api/audio_codecs/audio_format.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/audio_coding/test/ACMTest.h"
 #include "modules/audio_coding/test/Channel.h"
@@ -29,7 +31,11 @@ class TwoWayCommunication : public ACMTest {
   void Perform();
 
  private:
-  void SetUpAutotest();
+  void SetUpAutotest(AudioEncoderFactory* const encoder_factory,
+                     const SdpAudioFormat& format1,
+                     const int payload_type1,
+                     const SdpAudioFormat& format2,
+                     const int payload_type2);
 
   std::unique_ptr<AudioCodingModule> _acmA;
   std::unique_ptr<AudioCodingModule> _acmB;
