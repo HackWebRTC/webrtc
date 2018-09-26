@@ -626,22 +626,6 @@ class AudioCodingModule {
   //
 
   ///////////////////////////////////////////////////////////////////////////
-  // int SetOpusApplication()
-  // Sets the intended application if current send codec is Opus. Opus uses this
-  // to optimize the encoding for applications like VOIP and music. Currently,
-  // two modes are supported: kVoip and kAudio.
-  //
-  // Input:
-  //   - application            : intended application.
-  //
-  // Return value:
-  //   -1 if current send codec is not Opus or error occurred in setting the
-  //      Opus application mode.
-  //    0 if the Opus application mode is successfully set.
-  //
-  virtual int SetOpusApplication(OpusApplicationMode application) = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
   // int SetOpusMaxPlaybackRate()
   // If current send codec is Opus, informs it about maximum playback rate the
   // receiver will render. Opus can use this information to optimize the bit

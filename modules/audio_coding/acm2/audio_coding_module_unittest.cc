@@ -1475,32 +1475,13 @@ TEST_F(AcmSenderBitExactnessNewApi, MAYBE_OpusFromFormat_stereo_20ms) {
       50, test::AcmReceiveTestOldApi::kStereoOutput);
 }
 
-TEST_F(AcmSenderBitExactnessOldApi, Opus_stereo_20ms_voip) {
-  ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 2, 120, 960, 960));
-  // If not set, default will be kAudio in case of stereo.
-  EXPECT_EQ(0, send_test_->acm()->SetOpusApplication(kVoip));
-  Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
-          "b0325df4e8104f04e03af23c0b75800e",
-          "b0325df4e8104f04e03af23c0b75800e",
-          "1c81121f5d9286a5a865d01dbab22ce8",
-          "11d547f89142e9ef03f37d7ca7f32379",
-          "11d547f89142e9ef03f37d7ca7f32379"),
-      AcmReceiverBitExactnessOldApi::PlatformChecksum(
-          "4eab2259b6fe24c22dd242a113e0b3d9",
-          "4eab2259b6fe24c22dd242a113e0b3d9",
-          "839ea60399447268ee0f0262a50b75fd",
-          "1815fd5589cad0c6f6cf946c76b81aeb",
-          "1815fd5589cad0c6f6cf946c76b81aeb"),
-      50, test::AcmReceiveTestOldApi::kStereoOutput);
-}
-
 TEST_F(AcmSenderBitExactnessNewApi, OpusFromFormat_stereo_20ms_voip) {
-  const auto config = AudioEncoderOpus::SdpToConfig(
+  auto config = AudioEncoderOpus::SdpToConfig(
       SdpAudioFormat("opus", 48000, 2, {{"stereo", "1"}}));
+  // If not set, default will be kAudio in case of stereo.
+  config->application = AudioEncoderOpusConfig::ApplicationMode::kVoip;
   ASSERT_NO_FATAL_FAILURE(SetUpTestExternalEncoder(
       AudioEncoderOpus::MakeAudioEncoder(*config, 120), 120));
-  // If not set, default will be kAudio in case of stereo.
-  EXPECT_EQ(0, send_test_->acm()->SetOpusApplication(kVoip));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
           "b0325df4e8104f04e03af23c0b75800e",
           "b0325df4e8104f04e03af23c0b75800e",

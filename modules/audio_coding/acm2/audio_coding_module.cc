@@ -167,8 +167,6 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
 
   int GetNetworkStatistics(NetworkStatistics* statistics) override;
 
-  int SetOpusApplication(OpusApplicationMode application) override;
-
   // If current send codec is Opus, informs it about the maximum playback rate
   // the receiver will render.
   int SetOpusMaxPlaybackRate(int frequency_hz) override;
@@ -1095,26 +1093,6 @@ int AudioCodingModuleImpl::RegisterVADCallback(ACMVADCallback* vad_callback) {
   rtc::CritScope lock(&callback_crit_sect_);
   vad_callback_ = vad_callback;
   return 0;
-}
-
-int AudioCodingModuleImpl::SetOpusApplication(OpusApplicationMode application) {
-  rtc::CritScope lock(&acm_crit_sect_);
-  if (!HaveValidEncoder("SetOpusApplication")) {
-    return -1;
-  }
-  AudioEncoder::Application app;
-  switch (application) {
-    case kVoip:
-      app = AudioEncoder::Application::kSpeech;
-      break;
-    case kAudio:
-      app = AudioEncoder::Application::kAudio;
-      break;
-    default:
-      FATAL();
-      return 0;
-  }
-  return encoder_stack_->SetApplication(app) ? 0 : -1;
 }
 
 // Informs Opus encoder of the maximum playback rate the receiver will render.
