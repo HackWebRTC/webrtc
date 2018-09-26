@@ -175,6 +175,8 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
 
   static constexpr int kDefaultQpMax = 56;
 
+  std::vector<webrtc::RtpSource> GetSources(uint32_t ssrc) const override;
+
  private:
   class WebRtcVideoReceiveStream;
   struct VideoCodecSettings {
@@ -356,6 +358,8 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
     ~WebRtcVideoReceiveStream();
 
     const std::vector<uint32_t>& GetSsrcs() const;
+
+    std::vector<webrtc::RtpSource> GetSources();
 
     // Does not return codecs, they are filled by the owning WebRtcVideoChannel.
     webrtc::RtpParameters GetRtpParameters() const;

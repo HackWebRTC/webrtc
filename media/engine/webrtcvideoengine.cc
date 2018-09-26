@@ -1480,6 +1480,20 @@ absl::optional<uint32_t> WebRtcVideoChannel::GetDefaultReceiveStreamSsrc() {
   return ssrc;
 }
 
+std::vector<webrtc::RtpSource> WebRtcVideoChannel::GetSources(
+    uint32_t ssrc) const {
+  rtc::CritScope stream_lock(&stream_crit_);
+  auto it = receive_streams_.find(ssrc);
+  if (it == receive_streams_.end()) {
+    // TODO(bugs.webrtc.org/9781): Investigate standard compliance
+    // with sources for streams that has been removed.
+    RTC_LOG(LS_ERROR) << "Attempting to get contributing sources for SSRC:"
+                      << ssrc << " which doesn't exist.";
+    return {};
+  }
+  return it->second->GetSources();
+}
+
 bool WebRtcVideoChannel::SendRtp(const uint8_t* data,
                                  size_t len,
                                  const webrtc::PacketOptions& options) {
@@ -2200,6 +2214,12 @@ WebRtcVideoChannel::WebRtcVideoReceiveStream::~WebRtcVideoReceiveStream() {
 const std::vector<uint32_t>&
 WebRtcVideoChannel::WebRtcVideoReceiveStream::GetSsrcs() const {
   return stream_params_.ssrcs;
+}
+
+std::vector<webrtc::RtpSource>
+WebRtcVideoChannel::WebRtcVideoReceiveStream::GetSources() {
+  RTC_DCHECK(stream_);
+  return stream_->GetSources();
 }
 
 absl::optional<uint32_t>

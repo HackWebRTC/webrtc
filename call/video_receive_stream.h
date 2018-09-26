@@ -19,6 +19,7 @@
 #include "api/call/transport.h"
 #include "api/rtp_headers.h"
 #include "api/rtpparameters.h"
+#include "api/rtpreceiverinterface.h"
 #include "api/video/video_content_type.h"
 #include "api/video/video_sink_interface.h"
 #include "api/video/video_timing.h"
@@ -238,6 +239,8 @@ class VideoReceiveStream {
   // themselves as secondary sinks.
   virtual void AddSecondarySink(RtpPacketSinkInterface* sink) = 0;
   virtual void RemoveSecondarySink(const RtpPacketSinkInterface* sink) = 0;
+
+  virtual std::vector<RtpSource> GetSources() const = 0;
 
  protected:
   virtual ~VideoReceiveStream() {}

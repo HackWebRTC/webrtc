@@ -440,4 +440,12 @@ void VideoRtpReceiver::NotifyFirstPacketReceived() {
   received_first_packet_ = true;
 }
 
+std::vector<RtpSource> VideoRtpReceiver::GetSources() const {
+  if (!media_channel_ || !ssrc_ || stopped_) {
+    return {};
+  }
+  return worker_thread_->Invoke<std::vector<RtpSource>>(
+      RTC_FROM_HERE, [&] { return media_channel_->GetSources(*ssrc_); });
+}
+
 }  // namespace webrtc

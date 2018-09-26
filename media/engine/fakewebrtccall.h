@@ -210,6 +210,10 @@ class FakeVideoReceiveStream final : public webrtc::VideoReceiveStream {
   int GetNumAddedSecondarySinks() const;
   int GetNumRemovedSecondarySinks() const;
 
+  std::vector<webrtc::RtpSource> GetSources() const override {
+    return std::vector<webrtc::RtpSource>();
+  }
+
  private:
   // webrtc::VideoReceiveStream implementation.
   void Start() override;

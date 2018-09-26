@@ -487,6 +487,7 @@ if (rtc_include_tests) {
       ":rtc_audio_video",
       ":rtc_constants",
       ":rtc_data",
+      "../api/units:time_delta",
       "../api/video:video_frame_i420",
       "../modules/audio_processing:mocks",
       "../modules/rtp_rtcp",

@@ -227,6 +227,8 @@ class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInternal> {
 
   int AttachmentId() const override { return attachment_id_; }
 
+  std::vector<RtpSource> GetSources() const override;
+
  private:
   class VideoRtpTrackSource : public VideoTrackSource {
    public:

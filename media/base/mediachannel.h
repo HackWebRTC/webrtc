@@ -784,6 +784,8 @@ class VideoMediaChannel : public MediaChannel {
   virtual void FillBitrateInfo(BandwidthEstimationInfo* bwe_info) = 0;
   // Gets quality stats for the channel.
   virtual bool GetStats(VideoMediaInfo* info) = 0;
+
+  virtual std::vector<webrtc::RtpSource> GetSources(uint32_t ssrc) const = 0;
 };
 
 enum DataMessageType {

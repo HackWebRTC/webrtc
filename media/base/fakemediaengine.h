@@ -601,6 +601,10 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
   void FillBitrateInfo(BandwidthEstimationInfo* bwe_info) override {}
   bool GetStats(VideoMediaInfo* info) override { return false; }
 
+  std::vector<webrtc::RtpSource> GetSources(uint32_t ssrc) const override {
+    return {};
+  }
+
  private:
   bool SetRecvCodecs(const std::vector<VideoCodec>& codecs) {
     if (fail_set_recv_codecs()) {

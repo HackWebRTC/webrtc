@@ -112,6 +112,8 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   uint32_t GetPlayoutTimestamp() const override;
   void SetMinimumPlayoutDelay(int delay_ms) override;
 
+  std::vector<webrtc::RtpSource> GetSources() const override;
+
  private:
   static void DecodeThreadFunction(void* ptr);
   bool Decode();
