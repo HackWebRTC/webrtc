@@ -9,6 +9,7 @@
  */
 #include <stdio.h>
 
+#include "api/test/test_dependency_factory.h"
 #include "media/base/vp9_profile.h"
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
 #include "rtc_base/experiments/alr_experiment.h"
@@ -63,7 +64,10 @@ struct ParamsWithLogging : public VideoQualityTest::Params {
 
 std::unique_ptr<VideoQualityTestFixtureInterface>
 CreateVideoQualityTestFixture() {
-  return absl::make_unique<VideoQualityTest>(nullptr);
+  // The components will normally be nullptr (= use defaults), but it's possible
+  // for external test runners to override the list of injected components.
+  auto components = TestDependencyFactory::GetInstance().CreateComponents();
+  return absl::make_unique<VideoQualityTest>(std::move(components));
 }
 
 // Takes the current active field trials set, and appends some new trials.

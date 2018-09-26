@@ -207,6 +207,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       "../api:fec_controller_api",
+      "../api:test_dependency_factory",
       "../api:video_quality_test_fixture_api",
       "../call:fake_network",
       "../call:simulated_network",
@@ -252,6 +253,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":video_quality_test",
+      "../api:test_dependency_factory",
       "../media:rtc_vp9_profile",
       "../modules/pacing:pacing",
       "../modules/video_coding:webrtc_vp9",

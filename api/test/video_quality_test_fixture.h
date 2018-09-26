@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "api/bitrate_constraints.h"
+#include "api/fec_controller.h"
 #include "api/mediatypes.h"
 #include "api/test/simulated_network.h"
 #include "api/video_codecs/video_encoder_config.h"
