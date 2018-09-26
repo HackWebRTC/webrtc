@@ -57,11 +57,18 @@ TEST(RtpHeaderExtensionTest, RegisterDuringContruction) {
   EXPECT_EQ(3, map.GetId(AbsoluteSendTime::kId));
 }
 
+TEST(RtpHeaderExtensionTest, RegisterTwoByteHeaderExtensions) {
+  RtpHeaderExtensionMap map;
+  // Two-byte header extension needed for id: [15-255].
+  EXPECT_TRUE(map.Register<TransmissionOffset>(18));
+  EXPECT_TRUE(map.Register<AbsoluteSendTime>(255));
+}
+
 TEST(RtpHeaderExtensionTest, RegisterIllegalArg) {
   RtpHeaderExtensionMap map;
-  // Valid range for id: [1-14].
+  // Valid range for id: [1-255].
   EXPECT_FALSE(map.Register<TransmissionOffset>(0));
-  EXPECT_FALSE(map.Register<TransmissionOffset>(15));
+  EXPECT_FALSE(map.Register<TransmissionOffset>(256));
 }
 
 TEST(RtpHeaderExtensionTest, Idempotent) {

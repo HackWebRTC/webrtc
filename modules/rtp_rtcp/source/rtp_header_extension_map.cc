@@ -55,8 +55,6 @@ static_assert(arraysize(kExtensions) ==
 
 constexpr RTPExtensionType RtpHeaderExtensionMap::kInvalidType;
 constexpr int RtpHeaderExtensionMap::kInvalidId;
-constexpr int RtpHeaderExtensionMap::kMinId;
-constexpr int RtpHeaderExtensionMap::kMaxId;
 
 RtpHeaderExtensionMap::RtpHeaderExtensionMap() {
   for (auto& id : ids_)
@@ -88,8 +86,8 @@ bool RtpHeaderExtensionMap::RegisterByUri(int id, const std::string& uri) {
 }
 
 RTPExtensionType RtpHeaderExtensionMap::GetType(int id) const {
-  RTC_DCHECK_GE(id, kMinId);
-  RTC_DCHECK_LE(id, kMaxId);
+  RTC_DCHECK_GE(id, RtpExtension::kMinId);
+  RTC_DCHECK_LE(id, RtpExtension::kMaxId);
   for (int type = kRtpExtensionNone + 1; type < kRtpExtensionNumberOfExtensions;
        ++type) {
     if (ids_[type] == id) {
@@ -101,14 +99,16 @@ RTPExtensionType RtpHeaderExtensionMap::GetType(int id) const {
 
 size_t RtpHeaderExtensionMap::GetTotalLengthInBytes(
     rtc::ArrayView<const RtpExtensionSize> extensions) const {
+  // TODO(webrtc:7990): This function must be updated when we start to send
+  // two-byte header extensions.
   // Header size of the extension block, see RFC3550 Section 5.3.1
   static constexpr size_t kRtpOneByteHeaderLength = 4;
-  // Header size of each individual extension, see RFC5285 Section 4.2
-  static constexpr size_t kExtensionHeaderLength = 1;
+  // Header size of each individual extension, see RFC8285 Section 4.2-4.3.
+  static constexpr size_t kOneByteExtensionHeaderLength = 1;
   size_t values_size = 0;
   for (const RtpExtensionSize& extension : extensions) {
     if (IsRegistered(extension.type))
-      values_size += extension.value_size + kExtensionHeaderLength;
+      values_size += extension.value_size + kOneByteExtensionHeaderLength;
   }
   if (values_size == 0)
     return 0;
@@ -131,7 +131,7 @@ bool RtpHeaderExtensionMap::Register(int id,
   RTC_DCHECK_GT(type, kRtpExtensionNone);
   RTC_DCHECK_LT(type, kRtpExtensionNumberOfExtensions);
 
-  if (id < kMinId || id > kMaxId) {
+  if (id < RtpExtension::kMinId || id > RtpExtension::kMaxId) {
     RTC_LOG(LS_WARNING) << "Failed to register extension uri:'" << uri
                         << "' with invalid id:" << id << ".";
     return false;

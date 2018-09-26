@@ -62,8 +62,6 @@ class RtpHeaderExtensionMap {
   int32_t Deregister(RTPExtensionType type);
 
  private:
-  static constexpr int kMinId = 1;
-  static constexpr int kMaxId = 14;
   bool Register(int id, RTPExtensionType type, const char* uri);
 
   uint8_t ids_[kRtpExtensionNumberOfExtensions];

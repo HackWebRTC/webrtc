@@ -388,12 +388,16 @@ class UsedPayloadTypes : public UsedIds<Codec> {
 };
 
 // Helper class used for finding duplicate RTP Header extension ids among
-// audio and video extensions.
+// audio and video extensions. Only applies to one-byte header extensions at the
+// moment. ids > 14 will always be reported as available.
+// TODO(kron): This class needs to be refactored when we start to send two-byte
+// header extensions.
 class UsedRtpHeaderExtensionIds : public UsedIds<webrtc::RtpExtension> {
  public:
   UsedRtpHeaderExtensionIds()
-      : UsedIds<webrtc::RtpExtension>(webrtc::RtpExtension::kMinId,
-                                      webrtc::RtpExtension::kMaxId) {}
+      : UsedIds<webrtc::RtpExtension>(
+            webrtc::RtpExtension::kMinId,
+            webrtc::RtpExtension::kOneByteHeaderExtensionMaxId) {}
 
  private:
 };

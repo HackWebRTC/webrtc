@@ -19,7 +19,7 @@ namespace webrtc {
 // Absolute send time in RTP streams.
 //
 // The absolute send time is signaled to the receiver in-band using the
-// general mechanism for RTP header extensions [RFC5285]. The payload
+// general mechanism for RTP header extensions [RFC8285]. The payload
 // of this extension (the transmitted value) is a 24-bit unsigned integer
 // containing the sender's current time in seconds as a fixed point number
 // with 18 bits fractional part.
@@ -89,7 +89,7 @@ bool AudioLevel::Write(rtc::ArrayView<uint8_t> data,
 // From RFC 5450: Transmission Time Offsets in RTP Streams.
 //
 // The transmission time is signaled to the receiver in-band using the
-// general mechanism for RTP header extensions [RFC5285]. The payload
+// general mechanism for RTP header extensions [RFC8285]. The payload
 // of this extension (the transmitted value) is a 24-bit signed integer.
 // When added to the RTP timestamp of the packet, it represents the
 // "effective" RTP transmission time of the packet, on the RTP

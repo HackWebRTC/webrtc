@@ -201,7 +201,7 @@ struct RtpCodecCapability {
 // redundant; if you call "RtpReceiver::GetCapabilities(MEDIA_TYPE_AUDIO)",
 // you know you're getting audio capabilities.
 struct RtpHeaderExtensionCapability {
-  // URI of this extension, as defined in RFC5285.
+  // URI of this extension, as defined in RFC8285.
   std::string uri;
 
   // Preferred value of ID that goes in the packet.
@@ -226,7 +226,7 @@ struct RtpHeaderExtensionCapability {
   }
 };
 
-// RTP header extension, see RFC 5285.
+// RTP header extension, see RFC8285.
 struct RtpExtension {
   RtpExtension();
   RtpExtension(const std::string& uri, int id);
@@ -307,9 +307,11 @@ struct RtpExtension {
   // https://tools.ietf.org/html/rfc6904
   static const char kEncryptHeaderExtensionsUri[];
 
-  // Inclusive min and max IDs for one-byte header extensions, per RFC5285.
-  static const int kMinId;
-  static const int kMaxId;
+  // Inclusive min and max IDs for two-byte header extensions and one-byte
+  // header extensions, per RFC8285 Section 4.2-4.3.
+  static constexpr int kMinId = 1;
+  static constexpr int kMaxId = 255;
+  static constexpr int kOneByteHeaderExtensionMaxId = 14;
 
   std::string uri;
   int id = 0;

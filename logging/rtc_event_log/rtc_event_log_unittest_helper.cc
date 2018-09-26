@@ -363,7 +363,8 @@ std::unique_ptr<RtcEventRtpPacketOutgoing> EventGenerator::NewRtpPacketOutgoing(
 
 RtpHeaderExtensionMap EventGenerator::NewRtpHeaderExtensionMap() {
   RtpHeaderExtensionMap extension_map;
-  std::vector<int> id(RtpExtension::kMaxId - RtpExtension::kMinId + 1);
+  std::vector<int> id(RtpExtension::kOneByteHeaderExtensionMaxId -
+                      RtpExtension::kMinId + 1);
   std::iota(id.begin(), id.end(), RtpExtension::kMinId);
   ShuffleInPlace(&prng_, rtc::ArrayView<int>(id));
 
