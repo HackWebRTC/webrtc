@@ -191,7 +191,7 @@ void EchoRemoverImpl::GetMetrics(EchoControl::Metrics* metrics) const {
   // Echo return loss (ERL) is inverted to go from gain to attenuation.
   metrics->echo_return_loss = -10.0 * log10(aec_state_.ErlTimeDomain());
   metrics->echo_return_loss_enhancement =
-      Log2TodB(aec_state_.ErleTimeDomainLog2());
+      Log2TodB(aec_state_.FullBandErleLog2());
 }
 
 void EchoRemoverImpl::ProcessCapture(

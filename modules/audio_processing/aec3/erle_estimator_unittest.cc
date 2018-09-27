@@ -76,7 +76,7 @@ TEST(ErleEstimator, VerifyErleIncreaseAndHold) {
   for (size_t k = 0; k < 200; ++k) {
     estimator.Update(X2, Y2, E2, true, true);
   }
-  VerifyErle(estimator.Erle(), std::pow(2.f, estimator.ErleTimeDomainLog2()),
+  VerifyErle(estimator.Erle(), std::pow(2.f, estimator.FullbandErleLog2()),
              kMaxErleLf, kMaxErleHf);
 
   FormNearendFrame(&X2, &E2, &Y2);
@@ -85,7 +85,7 @@ TEST(ErleEstimator, VerifyErleIncreaseAndHold) {
   for (size_t k = 0; k < 50; ++k) {
     estimator.Update(X2, Y2, E2, true, true);
   }
-  VerifyErle(estimator.Erle(), std::pow(2.f, estimator.ErleTimeDomainLog2()),
+  VerifyErle(estimator.Erle(), std::pow(2.f, estimator.FullbandErleLog2()),
              kMaxErleLf, kMaxErleHf);
 }
 
@@ -116,24 +116,7 @@ TEST(ErleEstimator, VerifyErleTrackingOnOnsets) {
     estimator.Update(X2, Y2, E2, true, true);
   }
   // Verifies that during ne activity, Erle converges to the Erle for onsets.
-  VerifyErle(estimator.Erle(), std::pow(2.f, estimator.ErleTimeDomainLog2()),
-             kMinErle, kMinErle);
-}
-
-TEST(ErleEstimator, VerifyNoErleUpdateDuringLowActivity) {
-  std::array<float, kFftLengthBy2Plus1> X2;
-  std::array<float, kFftLengthBy2Plus1> E2;
-  std::array<float, kFftLengthBy2Plus1> Y2;
-  ErleEstimator estimator(kMinErle, kMaxErleLf, kMaxErleHf);
-
-  // Verifies that the ERLE estimate is is not updated for low-level render
-  // signals.
-  X2.fill(1000.f * 1000.f);
-  Y2.fill(10 * E2[0]);
-  for (size_t k = 0; k < 200; ++k) {
-    estimator.Update(X2, Y2, E2, true, true);
-  }
-  VerifyErle(estimator.Erle(), std::pow(2.f, estimator.ErleTimeDomainLog2()),
+  VerifyErle(estimator.Erle(), std::pow(2.f, estimator.FullbandErleLog2()),
              kMinErle, kMinErle);
 }
 

@@ -82,10 +82,8 @@ class AecState {
     return absl::nullopt;
   }
 
-  // Returns the time-domain ERLE in log2 units.
-  float ErleTimeDomainLog2() const {
-    return erle_estimator_.ErleTimeDomainLog2();
-  }
+  // Returns the fullband ERLE estimate in log2 units.
+  float FullBandErleLog2() const { return erle_estimator_.FullbandErleLog2(); }
 
   // Returns the ERL.
   const std::array<float, kFftLengthBy2Plus1>& Erl() const {
