@@ -60,4 +60,18 @@ std::unique_ptr<NetworkControllerInterface> GoogCcDebugFactory::Create(
   return controller;
 }
 
+GoogCcFeedbackDebugFactory::GoogCcFeedbackDebugFactory(
+    RtcEventLog* event_log,
+    GoogCcStatePrinter* printer)
+    : GoogCcFeedbackNetworkControllerFactory(event_log), printer_(printer) {}
+
+std::unique_ptr<NetworkControllerInterface> GoogCcFeedbackDebugFactory::Create(
+    NetworkControllerConfig config) {
+  RTC_CHECK(controller_ == nullptr);
+  auto controller = GoogCcFeedbackNetworkControllerFactory::Create(config);
+  controller_ = static_cast<GoogCcNetworkController*>(controller.get());
+  printer_->Attach(controller_);
+  return controller;
+}
+
 }  // namespace webrtc

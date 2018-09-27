@@ -28,6 +28,7 @@ group("test") {
     deps += [
       ":test_main",
       ":test_support_unittests",
+      "scenario/scenario_tests",
     ]
   }
 }
@@ -316,6 +317,7 @@ if (rtc_include_tests) {
       "../modules/video_coding:simulcast_test_fixture_impl",
       "../rtc_base:rtc_base_approved",
       "../test:single_threaded_task_queue",
+      "scenario:scenario_unittests",
       "//testing/gmock",
       "//testing/gtest",
       "//third_party/abseil-cpp/absl/memory",
