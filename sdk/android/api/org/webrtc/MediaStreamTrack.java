@@ -73,6 +73,9 @@ public class MediaStreamTrack {
   private long nativeTrack;
 
   public MediaStreamTrack(long nativeTrack) {
+    if (nativeTrack == 0) {
+      throw new IllegalArgumentException("nativeTrack may not be null");
+    }
     this.nativeTrack = nativeTrack;
   }
 
