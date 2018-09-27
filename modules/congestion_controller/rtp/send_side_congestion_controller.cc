@@ -368,6 +368,15 @@ SendSideCongestionController::SendSideCongestionController(
   initial_config_.constraints = ConvertConstraints(
       min_bitrate_bps, max_bitrate_bps, start_bitrate_bps, clock_);
   RTC_DCHECK(start_bitrate_bps > 0);
+  // To be fully compatible with legacy SendSideCongestionController, make sure
+  // pacer is initialized even if there are no registered streams. This should
+  // not happen under normal circumstances, but some tests rely on it and there
+  // are no checks detecting when the legacy SendSideCongestionController is
+  // used. This way of setting the value has the drawback that it might be wrong
+  // compared to what the actual value from the congestion controller will be.
+  // TODO(srte): Remove this when the legacy SendSideCongestionController is
+  // removed.
+  pacer_->SetEstimatedBitrate(start_bitrate_bps);
 }
 
 // There is no point in having a network controller for a network that is not

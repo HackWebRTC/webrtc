@@ -137,7 +137,23 @@ class RtpVideoSenderTestFixture {
 };
 }  // namespace
 
-TEST(RtpVideoSenderTest, SendOnOneModule) {
+class RtpVideoSenderTest : public ::testing::Test,
+                           public ::testing::WithParamInterface<std::string> {
+ public:
+  RtpVideoSenderTest() : field_trial_(GetParam()) {}
+
+ private:
+  test::ScopedFieldTrials field_trial_;
+};
+
+INSTANTIATE_TEST_CASE_P(Default, RtpVideoSenderTest, ::testing::Values(""));
+
+INSTANTIATE_TEST_CASE_P(
+    TaskQueueTrial,
+    RtpVideoSenderTest,
+    ::testing::Values("WebRTC-TaskQueueCongestionControl/Enabled/"));
+
+TEST_P(RtpVideoSenderTest, SendOnOneModule) {
   uint8_t payload = 'a';
   EncodedImage encoded_image;
   encoded_image.SetTimestamp(1);
@@ -167,7 +183,7 @@ TEST(RtpVideoSenderTest, SendOnOneModule) {
       test.router()->OnEncodedImage(encoded_image, nullptr, nullptr).error);
 }
 
-TEST(RtpVideoSenderTest, SendSimulcastSetActive) {
+TEST_P(RtpVideoSenderTest, SendSimulcastSetActive) {
   uint8_t payload = 'a';
   EncodedImage encoded_image_1;
   encoded_image_1.SetTimestamp(1);
@@ -211,7 +227,7 @@ TEST(RtpVideoSenderTest, SendSimulcastSetActive) {
 // behavior of the payload router. First sets one module to active and checks
 // that outgoing data can be sent on this module, and checks that no data can
 // be sent if both modules are inactive.
-TEST(RtpVideoSenderTest, SendSimulcastSetActiveModules) {
+TEST_P(RtpVideoSenderTest, SendSimulcastSetActiveModules) {
   uint8_t payload = 'a';
   EncodedImage encoded_image_1;
   encoded_image_1.SetTimestamp(1);
@@ -252,7 +268,7 @@ TEST(RtpVideoSenderTest, SendSimulcastSetActiveModules) {
                 .error);
 }
 
-TEST(RtpVideoSenderTest, CreateWithNoPreviousStates) {
+TEST_P(RtpVideoSenderTest, CreateWithNoPreviousStates) {
   RtpVideoSenderTestFixture test({kSsrc1, kSsrc2}, kPayloadType, {});
   test.router()->SetActive(true);
 
@@ -263,7 +279,7 @@ TEST(RtpVideoSenderTest, CreateWithNoPreviousStates) {
   EXPECT_NE(initial_states.find(kSsrc2), initial_states.end());
 }
 
-TEST(RtpVideoSenderTest, CreateWithPreviousStates) {
+TEST_P(RtpVideoSenderTest, CreateWithPreviousStates) {
   const int64_t kState1SharedFrameId = 123;
   const int64_t kState2SharedFrameId = 234;
   RtpPayloadState state1;
