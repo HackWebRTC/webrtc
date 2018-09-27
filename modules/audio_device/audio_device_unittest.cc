@@ -394,7 +394,10 @@ class MockAudioTransport : public test::MockAudioTransport {
       EXPECT_EQ(samples_per_channel,
                 record_parameters_.frames_per_10ms_buffer());
     }
-    rec_count_++;
+    {
+      rtc::CritScope lock(&lock_);
+      rec_count_++;
+    }
     // Write audio data to audio stream object if one has been injected.
     if (audio_stream_) {
       audio_stream_->Write(
@@ -431,7 +434,10 @@ class MockAudioTransport : public test::MockAudioTransport {
       EXPECT_EQ(samples_per_channel,
                 playout_parameters_.frames_per_10ms_buffer());
     }
-    play_count_++;
+    {
+      rtc::CritScope lock(&lock_);
+      play_count_++;
+    }
     samples_out = samples_per_channel * channels;
     // Read audio data from audio stream object if one has been injected.
     if (audio_stream_) {
@@ -452,12 +458,14 @@ class MockAudioTransport : public test::MockAudioTransport {
   bool ReceivedEnoughCallbacks() {
     bool recording_done = false;
     if (rec_mode()) {
+      rtc::CritScope lock(&lock_);
       recording_done = rec_count_ >= num_callbacks_;
     } else {
       recording_done = true;
     }
     bool playout_done = false;
     if (play_mode()) {
+      rtc::CritScope lock(&lock_);
       playout_done = play_count_ >= num_callbacks_;
     } else {
       playout_done = true;
@@ -476,6 +484,7 @@ class MockAudioTransport : public test::MockAudioTransport {
   }
 
   void ResetCallbackCounters() {
+    rtc::CritScope lock(&lock_);
     if (play_mode()) {
       play_count_ = 0;
     }
@@ -485,12 +494,13 @@ class MockAudioTransport : public test::MockAudioTransport {
   }
 
  private:
+  rtc::CriticalSection lock_;
   TransportType type_ = TransportType::kInvalid;
   rtc::Event* event_ = nullptr;
   AudioStream* audio_stream_ = nullptr;
   size_t num_callbacks_ = 0;
-  size_t play_count_ = 0;
-  size_t rec_count_ = 0;
+  size_t play_count_ RTC_GUARDED_BY(lock_) = 0;
+  size_t rec_count_ RTC_GUARDED_BY(lock_) = 0;
   AudioParameters playout_parameters_;
   AudioParameters record_parameters_;
 };
