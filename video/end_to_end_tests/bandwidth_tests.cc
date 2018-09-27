@@ -15,12 +15,12 @@
 #include "rtc_base/rate_limiter.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/call_test.h"
+#include "test/encoder_proxy_factory.h"
 #include "test/fake_encoder.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
 #include "test/rtcp_packet_parser.h"
 #include "test/rtp_rtcp_observer.h"
-#include "test/video_encoder_proxy_factory.h"
 
 namespace webrtc {
 
@@ -344,7 +344,7 @@ TEST_F(BandwidthEndToEndTest, ReportsSetEncoderRates) {
     test::SingleThreadedTaskQueueForTesting* const task_queue_;
     rtc::CriticalSection crit_;
     VideoSendStream* send_stream_;
-    test::VideoEncoderProxyFactory encoder_factory_;
+    test::EncoderProxyFactory encoder_factory_;
     uint32_t bitrate_kbps_ RTC_GUARDED_BY(crit_);
   } test(&task_queue_);
 

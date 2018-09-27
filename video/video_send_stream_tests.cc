@@ -36,6 +36,7 @@
 #include "system_wrappers/include/sleep.h"
 #include "test/call_test.h"
 #include "test/configurable_frame_size_encoder.h"
+#include "test/encoder_proxy_factory.h"
 #include "test/fake_encoder.h"
 #include "test/fake_texture_frame.h"
 #include "test/field_trial.h"
@@ -47,7 +48,6 @@
 #include "test/null_transport.h"
 #include "test/rtcp_packet_parser.h"
 #include "test/testsupport/perf_test.h"
-#include "test/video_encoder_proxy_factory.h"
 
 #include "call/video_send_stream.h"
 #include "video/send_statistics_proxy.h"
@@ -1173,7 +1173,7 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
 
     std::unique_ptr<internal::TransportAdapter> transport_adapter_;
     test::ConfigurableFrameSizeEncoder encoder_;
-    test::VideoEncoderProxyFactory encoder_factory_;
+    test::EncoderProxyFactory encoder_factory_;
 
     const size_t max_packet_size_;
     const size_t stop_size_;
@@ -1961,7 +1961,7 @@ TEST_P(VideoSendStreamTest,
 
   test::NullTransport transport;
   EncoderObserver encoder;
-  test::VideoEncoderProxyFactory encoder_factory(&encoder);
+  test::EncoderProxyFactory encoder_factory(&encoder);
 
   task_queue_.SendTask([this, &transport, &encoder_factory]() {
     CreateSenderCall();
@@ -2039,7 +2039,7 @@ TEST_P(VideoSendStreamTest, CanReconfigureToUseStartBitrateAbovePreviousMax) {
       bitrate_config);
 
   StartBitrateObserver encoder;
-  test::VideoEncoderProxyFactory encoder_factory(&encoder);
+  test::EncoderProxyFactory encoder_factory(&encoder);
   // Since this test does not use a capturer, set |internal_source| = true.
   // Encoder configuration is otherwise updated on the next video frame.
   encoder_factory.SetHasInternalSource(true);
@@ -2124,7 +2124,7 @@ class StartStopBitrateObserver : public test::FakeEncoder {
 TEST_P(VideoSendStreamTest, VideoSendStreamStopSetEncoderRateToZero) {
   test::NullTransport transport;
   StartStopBitrateObserver encoder;
-  test::VideoEncoderProxyFactory encoder_factory(&encoder);
+  test::EncoderProxyFactory encoder_factory(&encoder);
   encoder_factory.SetHasInternalSource(true);
   test::FrameForwarder forwarder;
 
@@ -2167,7 +2167,7 @@ TEST_P(VideoSendStreamTest, VideoSendStreamStopSetEncoderRateToZero) {
 TEST_P(VideoSendStreamTest, VideoSendStreamUpdateActiveSimulcastLayers) {
   test::NullTransport transport;
   StartStopBitrateObserver encoder;
-  test::VideoEncoderProxyFactory encoder_factory(&encoder);
+  test::EncoderProxyFactory encoder_factory(&encoder);
   encoder_factory.SetHasInternalSource(true);
   test::FrameForwarder forwarder;
 
@@ -2441,7 +2441,7 @@ TEST_P(VideoSendStreamTest, EncoderIsProperlyInitializedAndDestroyed) {
     bool callback_registered_ RTC_GUARDED_BY(crit_);
     size_t num_releases_ RTC_GUARDED_BY(crit_);
     bool released_ RTC_GUARDED_BY(crit_);
-    test::VideoEncoderProxyFactory encoder_factory_;
+    test::EncoderProxyFactory encoder_factory_;
     VideoEncoderConfig encoder_config_;
   } test_encoder(&task_queue_);
 
@@ -2512,7 +2512,7 @@ TEST_P(VideoSendStreamTest, EncoderSetupPropagatesCommonEncoderConfigValues) {
     rtc::Event init_encode_event_;
     size_t num_initializations_;
     VideoSendStream* stream_;
-    test::VideoEncoderProxyFactory encoder_factory_;
+    test::EncoderProxyFactory encoder_factory_;
     VideoEncoderConfig encoder_config_;
   } test;
 
@@ -2622,7 +2622,7 @@ class VideoCodecConfigObserver : public test::SendTest,
   rtc::Event init_encode_event_;
   size_t num_initializations_;
   VideoSendStream* stream_;
-  test::VideoEncoderProxyFactory encoder_factory_;
+  test::EncoderProxyFactory encoder_factory_;
   VideoEncoderConfig encoder_config_;
 };
 
@@ -2840,7 +2840,7 @@ TEST_P(VideoSendStreamTest, TranslatesTwoLayerScreencastToTargetBitrate) {
       EXPECT_TRUE(Wait())
           << "Timed out while waiting for the encoder to be initialized.";
     }
-    test::VideoEncoderProxyFactory encoder_factory_;
+    test::EncoderProxyFactory encoder_factory_;
   } test;
 
   RunBaseTest(&test);
@@ -3020,7 +3020,7 @@ TEST_P(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
     int num_initializations_;
     webrtc::Call* call_;
     webrtc::VideoSendStream* send_stream_;
-    test::VideoEncoderProxyFactory encoder_factory_;
+    test::EncoderProxyFactory encoder_factory_;
     webrtc::VideoEncoderConfig encoder_config_;
   } test(&task_queue_);
 
@@ -3109,7 +3109,7 @@ TEST_P(VideoSendStreamTest, ReportsSentResolution) {
     }
 
     VideoSendStream* send_stream_;
-    test::VideoEncoderProxyFactory encoder_factory_;
+    test::EncoderProxyFactory encoder_factory_;
   } test;
 
   RunBaseTest(&test);
@@ -3741,7 +3741,7 @@ TEST_P(VideoSendStreamTest, RemoveOverheadFromBandwidth) {
 
    private:
     test::SingleThreadedTaskQueueForTesting* const task_queue_;
-    test::VideoEncoderProxyFactory encoder_factory_;
+    test::EncoderProxyFactory encoder_factory_;
     Call* call_;
     rtc::CriticalSection crit_;
     uint32_t max_bitrate_bps_ RTC_GUARDED_BY(&crit_);

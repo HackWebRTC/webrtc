@@ -18,7 +18,6 @@
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
-#include "media/engine/internaldecoderfactory.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "test/call_test.h"
 #include "test/encoder_settings.h"
@@ -52,9 +51,9 @@ void MultiStreamTester::RunTest() {
   VideoSendStream* send_streams[kNumStreams];
   VideoReceiveStream* receive_streams[kNumStreams];
   test::FrameGeneratorCapturer* frame_generators[kNumStreams];
+  std::vector<std::unique_ptr<VideoDecoder>> allocated_decoders;
   test::FunctionVideoEncoderFactory encoder_factory(
       []() { return VP8Encoder::Create(); });
-  InternalDecoderFactory decoder_factory;
 
   task_queue_->SendTask([&]() {
     sender_call = absl::WrapUnique(Call::Create(config));
@@ -92,7 +91,8 @@ void MultiStreamTester::RunTest() {
       receive_config.rtp.local_ssrc = test::CallTest::kReceiverLocalVideoSsrc;
       VideoReceiveStream::Decoder decoder =
           test::CreateMatchingDecoder(send_config);
-      decoder.decoder_factory = &decoder_factory;
+      allocated_decoders.push_back(
+          std::unique_ptr<VideoDecoder>(decoder.decoder));
       receive_config.decoders.push_back(decoder);
 
       UpdateReceiveConfig(i, &receive_config);

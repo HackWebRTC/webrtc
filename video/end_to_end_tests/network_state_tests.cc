@@ -13,9 +13,9 @@
 #include "call/simulated_network.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/call_test.h"
+#include "test/encoder_proxy_factory.h"
 #include "test/fake_encoder.h"
 #include "test/gtest.h"
-#include "test/video_encoder_proxy_factory.h"
 
 namespace webrtc {
 namespace {
@@ -82,7 +82,7 @@ void NetworkStateEndToEndTest::VerifyNewVideoSendStreamsRespectNetworkState(
     MediaType network_to_bring_up,
     VideoEncoder* encoder,
     Transport* transport) {
-  test::VideoEncoderProxyFactory encoder_factory(encoder);
+  test::EncoderProxyFactory encoder_factory(encoder);
 
   task_queue_.SendTask([this, network_to_bring_up, &encoder_factory,
                         transport]() {
@@ -341,7 +341,7 @@ TEST_F(NetworkStateEndToEndTest, RespectsNetworkState) {
     rtc::Event packet_event_;
     Call* sender_call_;
     Call* receiver_call_;
-    test::VideoEncoderProxyFactory encoder_factory_;
+    test::EncoderProxyFactory encoder_factory_;
     NetworkState sender_state_ RTC_GUARDED_BY(test_crit_);
     int sender_rtp_ RTC_GUARDED_BY(test_crit_);
     int sender_padding_ RTC_GUARDED_BY(test_crit_);

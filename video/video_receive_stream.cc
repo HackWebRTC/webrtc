@@ -18,7 +18,6 @@
 
 #include "absl/memory/memory.h"
 #include "absl/types/optional.h"
-#include "api/video_codecs/video_decoder_factory.h"
 #include "call/rtp_stream_receiver_controller_interface.h"
 #include "call/rtx_receive_stream.h"
 #include "common_types.h"  // NOLINT(build/include)
@@ -76,37 +75,6 @@ VideoCodec CreateDecoderVideoCodec(const VideoReceiveStream::Decoder& decoder) {
 
   return codec;
 }
-
-// Video decoder class to be used for unknown codecs. Doesn't support decoding
-// but logs messages to LS_ERROR.
-class NullVideoDecoder : public webrtc::VideoDecoder {
- public:
-  int32_t InitDecode(const webrtc::VideoCodec* codec_settings,
-                     int32_t number_of_cores) override {
-    RTC_LOG(LS_ERROR) << "Can't initialize NullVideoDecoder.";
-    return WEBRTC_VIDEO_CODEC_OK;
-  }
-
-  int32_t Decode(const webrtc::EncodedImage& input_image,
-                 bool missing_frames,
-                 const webrtc::CodecSpecificInfo* codec_specific_info,
-                 int64_t render_time_ms) override {
-    RTC_LOG(LS_ERROR) << "The NullVideoDecoder doesn't support decoding.";
-    return WEBRTC_VIDEO_CODEC_OK;
-  }
-
-  int32_t RegisterDecodeCompleteCallback(
-      webrtc::DecodedImageCallback* callback) override {
-    RTC_LOG(LS_ERROR)
-        << "Can't register decode complete callback on NullVideoDecoder.";
-    return WEBRTC_VIDEO_CODEC_OK;
-  }
-
-  int32_t Release() override { return WEBRTC_VIDEO_CODEC_OK; }
-
-  const char* ImplementationName() const override { return "NullVideoDecoder"; }
-};
-
 }  // namespace
 
 namespace internal {
@@ -153,7 +121,7 @@ VideoReceiveStream::VideoReceiveStream(
   RTC_DCHECK(!config_.decoders.empty());
   std::set<int> decoder_payload_types;
   for (const Decoder& decoder : config_.decoders) {
-    RTC_CHECK(decoder.decoder_factory);
+    RTC_CHECK(decoder.decoder);
     RTC_CHECK(decoder_payload_types.find(decoder.payload_type) ==
               decoder_payload_types.end())
         << "Duplicate payload type (" << decoder.payload_type
@@ -235,19 +203,7 @@ void VideoReceiveStream::Start() {
   RTC_DCHECK(renderer != nullptr);
 
   for (const Decoder& decoder : config_.decoders) {
-    std::unique_ptr<VideoDecoder> video_decoder =
-        decoder.decoder_factory->LegacyCreateVideoDecoder(decoder.video_format,
-                                                          config_.stream_id);
-    // If we still have no valid decoder, we have to create a "Null" decoder
-    // that ignores all calls. The reason we can get into this state is that the
-    // old decoder factory interface doesn't have a way to query supported
-    // codecs.
-    if (!video_decoder) {
-      video_decoder = absl::make_unique<NullVideoDecoder>();
-    }
-    video_decoders_.push_back(std::move(video_decoder));
-
-    video_receiver_.RegisterExternalDecoder(video_decoders_.back().get(),
+    video_receiver_.RegisterExternalDecoder(decoder.decoder,
                                             decoder.payload_type);
     VideoCodec codec = CreateDecoderVideoCodec(decoder);
     rtp_video_stream_receiver_.AddReceiveCodec(codec,
