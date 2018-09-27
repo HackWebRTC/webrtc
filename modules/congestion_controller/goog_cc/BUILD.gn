@@ -166,6 +166,9 @@ if (rtc_include_tests) {
       "probe_controller_unittest.cc",
       "trendline_estimator_unittest.cc",
     ]
+    if (!build_with_chromium && is_clang) {
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
     deps = [
       ":alr_detector",
       ":delay_based_bwe",
@@ -183,6 +186,7 @@ if (rtc_include_tests) {
       "../../../system_wrappers:field_trial",
       "../../../test:field_trial",
       "../../../test:test_support",
+      "../../../test/scenario",
       "../../pacing",
       "../../remote_bitrate_estimator",
       "../../rtp_rtcp:rtp_rtcp_format",

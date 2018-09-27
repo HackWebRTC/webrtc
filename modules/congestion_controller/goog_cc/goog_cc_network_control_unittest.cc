@@ -11,6 +11,7 @@
 #include "api/transport/test/network_control_tester.h"
 #include "logging/rtc_event_log/mock/mock_rtc_event_log.h"
 #include "modules/congestion_controller/goog_cc/include/goog_cc_factory.h"
+#include "test/scenario/scenario.h"
 
 #include "test/gtest.h"
 
@@ -21,7 +22,6 @@ using testing::Property;
 using testing::_;
 
 namespace webrtc {
-namespace webrtc_cc {
 namespace test {
 namespace {
 
@@ -285,9 +285,8 @@ TEST_F(GoogCcNetworkControllerTest, UpdatesDelayBasedEstimate) {
 TEST_F(GoogCcNetworkControllerTest,
        FeedbackVersionUpdatesTargetSendRateBasedOnFeedback) {
   GoogCcFeedbackNetworkControllerFactory factory(&event_log_);
-  webrtc::test::NetworkControllerTester tester(&factory,
-                                               InitialConfig(60, 0, 600));
-  auto packet_producer = &webrtc::test::SimpleTargetRateProducer::ProduceNext;
+  NetworkControllerTester tester(&factory, InitialConfig(60, 0, 600));
+  auto packet_producer = &SimpleTargetRateProducer::ProduceNext;
 
   tester.RunSimulation(TimeDelta::seconds(10), TimeDelta::ms(10),
                        DataRate::kbps(300), TimeDelta::ms(100),
@@ -308,6 +307,56 @@ TEST_F(GoogCcNetworkControllerTest,
               20);
 }
 
+TEST_F(GoogCcNetworkControllerTest, ScenarioQuickTest) {
+  Scenario s("googcc_unit/scenario_quick", false);
+  SimulatedTimeClientConfig config;
+  config.transport.cc =
+      TransportControllerConfig::CongestionController::kGoogCcFeedback;
+  config.transport.rates.min_rate = DataRate::kbps(10);
+  config.transport.rates.max_rate = DataRate::kbps(1500);
+  config.transport.rates.start_rate = DataRate::kbps(300);
+  NetworkNodeConfig net_conf;
+  auto send_net = s.CreateSimulationNode([](NetworkNodeConfig* c) {
+    c->simulation.bandwidth = DataRate::kbps(500);
+    c->simulation.delay = TimeDelta::ms(100);
+    c->update_frequency = TimeDelta::ms(5);
+  });
+  auto ret_net = s.CreateSimulationNode([](NetworkNodeConfig* c) {
+    c->simulation.delay = TimeDelta::ms(100);
+    c->update_frequency = TimeDelta::ms(5);
+  });
+  StatesPrinter* truth = s.CreatePrinter(
+      "send.truth.txt", TimeDelta::PlusInfinity(), {send_net->ConfigPrinter()});
+  SimulatedTimeClient* client = s.CreateSimulatedTimeClient(
+      "send", config, {PacketStreamConfig()}, {send_net}, {ret_net});
+
+  truth->PrintRow();
+  s.RunFor(TimeDelta::seconds(25));
+  truth->PrintRow();
+  EXPECT_NEAR(client->target_rate_kbps(), 450, 100);
+
+  send_net->UpdateConfig([](NetworkNodeConfig* c) {
+    c->simulation.bandwidth = DataRate::kbps(800);
+    c->simulation.delay = TimeDelta::ms(100);
+  });
+
+  truth->PrintRow();
+  s.RunFor(TimeDelta::seconds(20));
+  truth->PrintRow();
+  EXPECT_NEAR(client->target_rate_kbps(), 750, 150);
+
+  send_net->UpdateConfig([](NetworkNodeConfig* c) {
+    c->simulation.bandwidth = DataRate::kbps(100);
+    c->simulation.delay = TimeDelta::ms(200);
+  });
+  ret_net->UpdateConfig(
+      [](NetworkNodeConfig* c) { c->simulation.delay = TimeDelta::ms(200); });
+
+  truth->PrintRow();
+  s.RunFor(TimeDelta::seconds(30));
+  truth->PrintRow();
+  EXPECT_NEAR(client->target_rate_kbps(), 90, 20);
+}
+
 }  // namespace test
-}  // namespace webrtc_cc
 }  // namespace webrtc

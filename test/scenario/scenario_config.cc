@@ -17,6 +17,10 @@ TransportControllerConfig::Rates::Rates(
     const TransportControllerConfig::Rates&) = default;
 TransportControllerConfig::Rates::~Rates() = default;
 
+PacketStreamConfig::PacketStreamConfig() = default;
+PacketStreamConfig::PacketStreamConfig(const PacketStreamConfig&) = default;
+PacketStreamConfig::~PacketStreamConfig() = default;
+
 VideoStreamConfig::Encoder::Encoder() = default;
 VideoStreamConfig::Encoder::Encoder(const VideoStreamConfig::Encoder&) =
     default;

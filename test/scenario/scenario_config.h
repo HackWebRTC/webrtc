@@ -49,6 +49,25 @@ struct CallClientConfig {
   DataRate priority_target_rate = DataRate::Zero();
 };
 
+struct SimulatedTimeClientConfig {
+  TransportControllerConfig transport;
+  struct Feedback {
+    TimeDelta interval = TimeDelta::ms(100);
+  } feedback;
+};
+
+struct PacketStreamConfig {
+  PacketStreamConfig();
+  PacketStreamConfig(const PacketStreamConfig&);
+  ~PacketStreamConfig();
+  int frame_rate = 30;
+  DataRate max_data_rate = DataRate::Infinity();
+  DataSize max_packet_size = DataSize::bytes(1400);
+  DataSize min_frame_size = DataSize::bytes(100);
+  double keyframe_multiplier = 1;
+  DataSize packet_overhead = DataSize::bytes(PacketOverhead::kDefault);
+};
+
 struct VideoStreamConfig {
   bool autostart = true;
   struct Source {

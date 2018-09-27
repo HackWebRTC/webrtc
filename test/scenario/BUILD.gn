@@ -26,6 +26,8 @@ if (rtc_include_tests) {
       "scenario.h",
       "scenario_config.cc",
       "scenario_config.h",
+      "simulated_time.cc",
+      "simulated_time.h",
       "video_stream.cc",
       "video_stream.h",
     ]

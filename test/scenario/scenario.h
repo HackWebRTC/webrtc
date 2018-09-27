@@ -21,6 +21,7 @@
 #include "test/scenario/column_printer.h"
 #include "test/scenario/network_node.h"
 #include "test/scenario/scenario_config.h"
+#include "test/scenario/simulated_time.h"
 #include "test/scenario/video_stream.h"
 
 namespace webrtc {
@@ -76,6 +77,13 @@ class Scenario {
   CallClient* CreateClient(
       std::string name,
       std::function<void(CallClientConfig*)> config_modifier);
+
+  SimulatedTimeClient* CreateSimulatedTimeClient(
+      std::string name,
+      SimulatedTimeClientConfig config,
+      std::vector<PacketStreamConfig> stream_configs,
+      std::vector<NetworkNode*> send_link,
+      std::vector<NetworkNode*> return_link);
 
   VideoStreamPair* CreateVideoStream(
       CallClient* sender,
@@ -163,6 +171,8 @@ class Scenario {
   std::vector<std::unique_ptr<CrossTrafficSource>> cross_traffic_sources_;
   std::vector<std::unique_ptr<VideoStreamPair>> video_streams_;
   std::vector<std::unique_ptr<AudioStreamPair>> audio_streams_;
+
+  std::vector<std::unique_ptr<SimulatedTimeClient>> simulated_time_clients_;
 
   std::vector<std::unique_ptr<RepeatedActivity>> repeated_activities_;
   std::vector<std::unique_ptr<ActionReceiver>> action_receivers_;
