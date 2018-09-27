@@ -262,4 +262,19 @@ TEST_F(TestNackModule, PacketNackCount) {
   EXPECT_EQ(0, nack_module_.OnReceivedPacket(4, false));
 }
 
+TEST_F(TestNackModule, NackListFullAndNoOverlapWithKeyframes) {
+  const int kMaxNackPackets = 1000;
+  const unsigned int kFirstGap = kMaxNackPackets - 20;
+  const unsigned int kSecondGap = 200;
+  uint16_t seq_num = 0;
+  nack_module_.OnReceivedPacket(seq_num++, true);
+  seq_num += kFirstGap;
+  nack_module_.OnReceivedPacket(seq_num++, true);
+  EXPECT_EQ(kFirstGap, sent_nacks_.size());
+  sent_nacks_.clear();
+  seq_num += kSecondGap;
+  nack_module_.OnReceivedPacket(seq_num, true);
+  EXPECT_EQ(kSecondGap, sent_nacks_.size());
+}
+
 }  // namespace webrtc

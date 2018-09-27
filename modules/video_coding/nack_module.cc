@@ -164,7 +164,6 @@ bool NackModule::RemovePacketsUntilKeyFrame() {
     if (it != nack_list_.begin()) {
       // We have found a keyframe that actually is newer than at least one
       // packet in the nack list.
-      RTC_DCHECK(it != nack_list_.end());
       nack_list_.erase(nack_list_.begin(), it);
       return true;
     }
