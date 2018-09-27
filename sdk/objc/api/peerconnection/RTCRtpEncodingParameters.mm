@@ -15,6 +15,7 @@
 @synthesize isActive = _isActive;
 @synthesize maxBitrateBps = _maxBitrateBps;
 @synthesize minBitrateBps = _minBitrateBps;
+@synthesize maxFramerate = _maxFramerate;
 @synthesize ssrc = _ssrc;
 
 - (instancetype)init {
@@ -33,6 +34,9 @@
       _minBitrateBps =
           [NSNumber numberWithInt:*nativeParameters.min_bitrate_bps];
     }
+    if (nativeParameters.max_framerate) {
+      _maxFramerate = [NSNumber numberWithInt:*nativeParameters.max_framerate];
+    }
     if (nativeParameters.ssrc) {
       _ssrc = [NSNumber numberWithUnsignedLong:*nativeParameters.ssrc];
     }
@@ -48,6 +52,9 @@
   }
   if (_minBitrateBps != nil) {
     parameters.min_bitrate_bps = absl::optional<int>(_minBitrateBps.intValue);
+  }
+  if (_maxFramerate != nil) {
+    parameters.max_framerate = absl::optional<int>(_maxFramerate.intValue);
   }
   if (_ssrc != nil) {
     parameters.ssrc = absl::optional<uint32_t>(_ssrc.unsignedLongValue);
