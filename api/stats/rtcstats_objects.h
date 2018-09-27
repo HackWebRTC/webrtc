@@ -199,6 +199,7 @@ class RTCIceCandidateStats : public RTCStats {
   RTCStatsMember<std::string> ip;
   RTCStatsMember<int32_t> port;
   RTCStatsMember<std::string> protocol;
+  RTCStatsMember<std::string> relay_protocol;
   // TODO(hbos): Support enum types? "RTCStatsMember<RTCIceCandidateType>"?
   RTCStatsMember<std::string> candidate_type;
   RTCStatsMember<int32_t> priority;

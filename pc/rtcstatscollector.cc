@@ -363,6 +363,13 @@ const std::string& ProduceIceCandidateStats(
     if (is_local) {
       candidate_stats->network_type =
           NetworkAdapterTypeToStatsType(candidate.network_type());
+      if (candidate.type() == cricket::RELAY_PORT_TYPE) {
+        std::string relay_protocol = candidate.relay_protocol();
+        RTC_DCHECK(relay_protocol.compare("udp") == 0 ||
+                   relay_protocol.compare("tcp") == 0 ||
+                   relay_protocol.compare("tls") == 0);
+        candidate_stats->relay_protocol = relay_protocol;
+      }
     } else {
       // We don't expect to know the adapter type of remote candidates.
       RTC_DCHECK_EQ(rtc::ADAPTER_TYPE_UNKNOWN, candidate.network_type());

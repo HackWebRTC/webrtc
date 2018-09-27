@@ -993,6 +993,23 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
   expected_a_remote_relay.deleted = false;
   EXPECT_TRUE(*expected_a_remote_relay.is_remote);
 
+  std::unique_ptr<cricket::Candidate> a_local_relay = CreateFakeCandidate(
+      "16.17.18.19", 21, "a_local_relay's protocol", rtc::ADAPTER_TYPE_UNKNOWN,
+      cricket::RELAY_PORT_TYPE, 1);
+  a_local_relay->set_relay_protocol("tcp");
+
+  RTCRemoteIceCandidateStats expected_a_local_relay(
+      "RTCIceCandidate_" + a_local_relay->id(), 0);
+  expected_a_local_relay.transport_id = "RTCTransport_a_0";
+  expected_a_local_relay.ip = "16.17.18.19";
+  expected_a_local_relay.port = 21;
+  expected_a_local_relay.protocol = "a_local_relay's protocol";
+  expected_a_local_relay.relay_protocol = "tcp";
+  expected_a_local_relay.candidate_type = "relay";
+  expected_a_local_relay.priority = 1;
+  expected_a_local_relay.deleted = false;
+  EXPECT_TRUE(*expected_a_local_relay.is_remote);
+
   // Candidates in the second transport stats.
   std::unique_ptr<cricket::Candidate> b_local =
       CreateFakeCandidate("42.42.42.42", 42, "b_local's protocol",
@@ -1023,6 +1040,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
   expected_b_remote.deleted = false;
   EXPECT_TRUE(*expected_b_remote.is_remote);
 
+  // Add candidate pairs to connection.
   cricket::TransportChannelStats a_transport_channel_stats;
   a_transport_channel_stats.connection_infos.push_back(
       cricket::ConnectionInfo());
@@ -1035,6 +1053,12 @@ TEST_F(RTCStatsCollectorTest, CollectRTCIceCandidateStats) {
   a_transport_channel_stats.connection_infos[1].local_candidate =
       *a_local_prflx.get();
   a_transport_channel_stats.connection_infos[1].remote_candidate =
+      *a_remote_relay.get();
+  a_transport_channel_stats.connection_infos.push_back(
+      cricket::ConnectionInfo());
+  a_transport_channel_stats.connection_infos[2].local_candidate =
+      *a_local_relay.get();
+  a_transport_channel_stats.connection_infos[2].remote_candidate =
       *a_remote_relay.get();
 
   pc_->AddVoiceChannel("audio", "a");
