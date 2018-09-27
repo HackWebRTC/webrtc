@@ -50,11 +50,6 @@ WEBRTC_ONLY_DEPS = [
 ]
 
 
-# Run these CQ trybots in addition to the default ones in infra/config/cq.cfg.
-EXTRA_TRYBOTS = (
-  'master.internal.tryserver.corp.webrtc:linux_internal'
-)
-
 WEBRTC_URL = 'https://webrtc.googlesource.com/src'
 CHROMIUM_SRC_URL = 'https://chromium.googlesource.com/chromium/src'
 CHROMIUM_COMMIT_TEMPLATE = CHROMIUM_SRC_URL + '/+/%s'
@@ -484,9 +479,8 @@ def GenerateCommitMessage(rev_update, current_commit_pos, new_commit_pos,
                            working_dir=CHECKOUT_SRC_DIR)[0].splitlines()[0]
   tbr_authors = git_author + ',' + tbr_authors
 
-  commit_msg.append('TBR=%s' % tbr_authors)
-  commit_msg.append('BUG=None')
-  commit_msg.append('CQ_INCLUDE_TRYBOTS=%s' % EXTRA_TRYBOTS)
+  commit_msg.append('TBR: %s' % tbr_authors)
+  commit_msg.append('Bug: None')
   return '\n'.join(commit_msg)
 
 
