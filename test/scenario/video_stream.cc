@@ -13,13 +13,11 @@
 #include <utility>
 
 #include "media/base/mediaconstants.h"
-#include "media/engine/internaldecoderfactory.h"
 #include "media/engine/internalencoderfactory.h"
 #include "media/engine/webrtcvideoengine.h"
 #include "test/call_test.h"
 #include "test/fake_encoder.h"
 #include "test/function_video_encoder_factory.h"
-
 #include "test/scenario/hardware_codecs.h"
 #include "test/testsupport/fileutils.h"
 
@@ -285,9 +283,7 @@ ReceiveVideoStream::ReceiveVideoStream(CallClient* receiver,
                                        SendVideoStream* send_stream,
                                        size_t chosen_stream,
                                        Transport* feedback_transport)
-    : receiver_(receiver),
-      config_(config),
-      decoder_factory_(absl::make_unique<InternalDecoderFactory>()) {
+    : receiver_(receiver), config_(config) {
   renderer_ = absl::make_unique<FakeVideoRenderer>();
   VideoReceiveStream::Config recv_config(feedback_transport);
   recv_config.rtp.remb = !config.stream.packet_feedback;
@@ -309,7 +305,7 @@ ReceiveVideoStream::ReceiveVideoStream(CallClient* receiver,
   VideoReceiveStream::Decoder decoder =
       CreateMatchingDecoder(CodecTypeToPayloadType(config.encoder.codec),
                             CodecTypeToPayloadString(config.encoder.codec));
-  decoder.decoder_factory = decoder_factory_.get();
+  decoder_.reset(decoder.decoder);
   recv_config.decoders.push_back(decoder);
 
   if (config.stream.use_flexfec) {

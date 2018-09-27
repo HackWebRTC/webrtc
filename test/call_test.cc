@@ -52,7 +52,6 @@ CallTest::CallTest()
         fake_encoder->SetMaxBitrate(fake_encoder_max_bitrate_);
         return fake_encoder;
       }),
-      fake_decoder_factory_([]() { return absl::make_unique<FakeDecoder>(); }),
       num_video_streams_(1),
       num_audio_streams_(0),
       num_flexfec_streams_(0),
@@ -367,10 +366,11 @@ void CallTest::AddMatchingVideoReceiveConfigs(
     if (!decode_sub_stream || i == *decode_sub_stream) {
       decoder = test::CreateMatchingDecoder(video_send_config);
     } else {
+      decoder.decoder = new test::FakeDecoder();
       decoder.payload_type = video_send_config.rtp.payload_type;
       decoder.video_format = SdpVideoFormat(video_send_config.rtp.payload_name);
     }
-    decoder.decoder_factory = &fake_decoder_factory_;
+    allocated_decoders_.emplace_back(decoder.decoder);
     video_recv_config.decoders.push_back(decoder);
     receive_configs->emplace_back(std::move(video_recv_config));
   }
@@ -433,6 +433,7 @@ void CallTest::CreateMatchingFecConfig(
 
 void CallTest::CreateMatchingReceiveConfigs(Transport* rtcp_send_transport) {
   video_receive_configs_.clear();
+  allocated_decoders_.clear();
   for (VideoSendStream::Config& video_send_config : video_send_configs_) {
     CreateMatchingVideoReceiveConfigs(video_send_config, rtcp_send_transport);
   }
@@ -634,6 +635,7 @@ void CallTest::DestroyStreams() {
     receiver_call_->DestroyFlexfecReceiveStream(flexfec_recv_stream);
 
   video_receive_streams_.clear();
+  allocated_decoders_.clear();
 }
 
 void CallTest::DestroyVideoSendStreams() {

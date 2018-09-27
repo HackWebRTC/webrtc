@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef TEST_VIDEO_ENCODER_PROXY_FACTORY_H_
-#define TEST_VIDEO_ENCODER_PROXY_FACTORY_H_
+#ifndef TEST_ENCODER_PROXY_FACTORY_H_
+#define TEST_ENCODER_PROXY_FACTORY_H_
 
 #include <memory>
 #include <vector>
@@ -24,9 +24,9 @@ namespace test {
 // An encoder factory with a single underlying VideoEncoder object,
 // intended for test purposes. Each call to CreateVideoEncoder returns
 // a proxy for the same encoder, typically an instance of FakeEncoder.
-class VideoEncoderProxyFactory final : public VideoEncoderFactory {
+class EncoderProxyFactory final : public VideoEncoderFactory {
  public:
-  explicit VideoEncoderProxyFactory(VideoEncoder* encoder) : encoder_(encoder) {
+  explicit EncoderProxyFactory(VideoEncoder* encoder) : encoder_(encoder) {
     codec_info_.is_hardware_accelerated = false;
     codec_info_.has_internal_source = false;
   }
@@ -100,4 +100,4 @@ class VideoEncoderProxyFactory final : public VideoEncoderFactory {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // TEST_VIDEO_ENCODER_PROXY_FACTORY_H_
+#endif  // TEST_ENCODER_PROXY_FACTORY_H_

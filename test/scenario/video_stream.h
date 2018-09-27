@@ -79,7 +79,7 @@ class ReceiveVideoStream : public NetworkReceiverInterface {
   std::unique_ptr<rtc::VideoSinkInterface<webrtc::VideoFrame>> renderer_;
   CallClient* const receiver_;
   const VideoStreamConfig config_;
-  std::unique_ptr<VideoDecoderFactory> decoder_factory_;
+  std::unique_ptr<VideoDecoder> decoder_;
 };
 
 // VideoStreamPair represents a video streaming session. It can be used to
