@@ -378,6 +378,10 @@ NetEqOperationsAndState NetEqImpl::GetOperationsAndState() const {
       (packet_buffer_->NumSamplesInBuffer(decoder_frame_length_) +
        sync_buffer_->FutureLength()) *
       1000 / fs_hz_;
+  result.current_frame_size_ms = decoder_frame_length_ * 1000 / fs_hz_;
+  result.next_packet_available = packet_buffer_->PeekNextPacket() &&
+                                 packet_buffer_->PeekNextPacket()->timestamp ==
+                                     sync_buffer_->end_timestamp();
   return result;
 }
 

@@ -83,6 +83,9 @@ class StatisticsCalculator {
   // Reports that |num_samples| samples were decoded from secondary packets.
   void SecondaryDecodedSamples(int num_samples);
 
+  // Rerport that the packet buffer was flushed.
+  void FlushedPacketBuffer();
+
   // Logs a delayed packet outage event of |outage_duration_ms|. A delayed
   // packet outage event is defined as an expand period caused not by an actual
   // packet loss, but by a delayed packet.

@@ -155,6 +155,12 @@ NetEqTest::SimulationStepResult NetEqTest::RunToNextGetAudio() {
           input_->NextEventTime().value_or(time_now_ms) - start_time_ms;
       const auto operations_state = neteq_->GetOperationsAndState();
       current_state_.current_delay_ms = operations_state.current_buffer_size_ms;
+      current_state_.packet_size_ms = operations_state.current_frame_size_ms;
+      current_state_.next_packet_available =
+          operations_state.next_packet_available;
+      current_state_.packet_buffer_flushed =
+          operations_state.packet_buffer_flushes >
+          prev_ops_state_.packet_buffer_flushes;
       // TODO(ivoc): Add more accurate reporting by tracking the origin of
       // samples in the sync buffer.
       result.action_times_ms[Action::kExpand] = 0;

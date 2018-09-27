@@ -248,6 +248,10 @@ void StatisticsCalculator::SecondaryDecodedSamples(int num_samples) {
   secondary_decoded_samples_ += num_samples;
 }
 
+void StatisticsCalculator::FlushedPacketBuffer() {
+  operations_and_state_.packet_buffer_flushes++;
+}
+
 void StatisticsCalculator::LogDelayedPacketOutageEvent(int outage_duration_ms) {
   RTC_HISTOGRAM_COUNTS("WebRTC.Audio.DelayedPacketOutageEventMs",
                        outage_duration_ms, 1 /* min */, 2000 /* max */,

@@ -47,9 +47,16 @@ class NetEqSimulator {
     int current_delay_ms = 0;
     // An indicator that packet loss occurred since the last GetAudio event.
     bool packet_loss_occurred = false;
+    // An indicator that the packet buffer has been flushed since the last
+    // GetAudio event.
+    bool packet_buffer_flushed = false;
+    // Indicates if the next needed packet is available in the buffer.
+    bool next_packet_available = false;
     // The inter-arrival times in ms of the packets that have arrived since the
     // last GetAudio event.
     std::vector<int> packet_iat_ms;
+    // The current packet size in ms.
+    int packet_size_ms = 0;
   };
 
   // Runs the simulation until we hit the next GetAudio event. If the simulation

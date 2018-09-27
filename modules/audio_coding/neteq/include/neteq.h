@@ -82,11 +82,17 @@ struct NetEqOperationsAndState {
   // NetEqLifetimeStatistics::total_samples_received.
   uint64_t preemptive_samples = 0;
   uint64_t accelerate_samples = 0;
+  // Count of the number of buffer flushes.
+  uint64_t packet_buffer_flushes = 0;
   // The statistics below are not cumulative.
   // The waiting time of the last decoded packet.
   uint64_t last_waiting_time_ms = 0;
   // The sum of the packet and jitter buffer size in ms.
   uint64_t current_buffer_size_ms = 0;
+  // The current frame size in ms.
+  uint64_t current_frame_size_ms = 0;
+  // Flag to indicate that the next packet is available.
+  bool next_packet_available = false;
 };
 
 // This is the interface class for NetEq.
