@@ -542,7 +542,6 @@ rtc_source_set("test_common") {
     "constants.h",
     "drifting_clock.cc",
     "drifting_clock.h",
-    "encoder_proxy_factory.h",
     "encoder_settings.cc",
     "encoder_settings.h",
     "fake_videorenderer.h",
@@ -557,6 +556,8 @@ rtc_source_set("test_common") {
     "rtp_rtcp_observer.h",
     "statistics.cc",
     "statistics.h",
+    "video_decoder_proxy_factory.h",
+    "video_encoder_proxy_factory.h",
     "win/run_loop_win.cc",
   ]
   if (!is_win) {

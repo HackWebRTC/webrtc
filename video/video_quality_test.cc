@@ -495,7 +495,6 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
   video_receive_configs_.clear();
   video_send_configs_.clear();
   video_encoder_configs_.clear();
-  allocated_decoders_.clear();
   bool decode_all_receive_streams = true;
   size_t num_video_substreams = params_.ss[0].streams.size();
   RTC_CHECK(num_video_streams_ > 0);

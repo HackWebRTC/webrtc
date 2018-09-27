@@ -22,6 +22,7 @@
 #include "test/fake_videorenderer.h"
 #include "test/fake_vp8_encoder.h"
 #include "test/frame_generator_capturer.h"
+#include "test/function_video_decoder_factory.h"
 #include "test/function_video_encoder_factory.h"
 #include "test/rtp_rtcp_observer.h"
 #include "test/single_threaded_task_queue.h"
@@ -201,7 +202,7 @@ class CallTest : public ::testing::Test {
 
   test::FunctionVideoEncoderFactory fake_encoder_factory_;
   int fake_encoder_max_bitrate_ = -1;
-  std::vector<std::unique_ptr<VideoDecoder>> allocated_decoders_;
+  test::FunctionVideoDecoderFactory fake_decoder_factory_;
   // Number of simulcast substreams.
   size_t num_video_streams_;
   size_t num_audio_streams_;

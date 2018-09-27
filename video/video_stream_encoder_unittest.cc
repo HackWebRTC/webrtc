@@ -22,13 +22,13 @@
 #include "rtc_base/refcountedobject.h"
 #include "system_wrappers/include/metrics_default.h"
 #include "system_wrappers/include/sleep.h"
-#include "test/encoder_proxy_factory.h"
 #include "test/encoder_settings.h"
 #include "test/fake_encoder.h"
 #include "test/field_trial.h"
 #include "test/frame_generator.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
+#include "test/video_encoder_proxy_factory.h"
 #include "video/send_statistics_proxy.h"
 #include "video/video_stream_encoder.h"
 
@@ -691,7 +691,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
   int codec_height_;
   int max_framerate_;
   TestEncoder fake_encoder_;
-  test::EncoderProxyFactory encoder_factory_;
+  test::VideoEncoderProxyFactory encoder_factory_;
   std::unique_ptr<MockableSendStatisticsProxy> stats_proxy_;
   TestSink sink_;
   AdaptingFrameForwarder video_source_;
