@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "media/engine/internaldecoderfactory.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "rtc_base/file.h"
 #include "test/call_test.h"
@@ -66,8 +67,6 @@ TEST_F(LogEndToEndTest, LogsEncodedFramesWhenRequested) {
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
-      decoder_ = VP8Decoder::Create();
-
       send_config->post_encode_callback = this;
       send_config->rtp.payload_name = "VP8";
       send_config->encoder_settings.encoder_factory = &encoder_factory_;
@@ -78,7 +77,7 @@ TEST_F(LogEndToEndTest, LogsEncodedFramesWhenRequested) {
           send_config->rtp.payload_type;
       (*receive_configs)[0].decoders[0].video_format =
           SdpVideoFormat(send_config->rtp.payload_name);
-      (*receive_configs)[0].decoders[0].decoder = decoder_.get();
+      (*receive_configs)[0].decoders[0].decoder_factory = &decoder_factory_;
     }
 
     void EncodedFrameCallback(const EncodedFrame& encoded_frame) override {
@@ -97,7 +96,7 @@ TEST_F(LogEndToEndTest, LogsEncodedFramesWhenRequested) {
    private:
     LogEndToEndTest* const fixture_;
     test::FunctionVideoEncoderFactory encoder_factory_;
-    std::unique_ptr<VideoDecoder> decoder_;
+    InternalDecoderFactory decoder_factory_;
     rtc::CriticalSection crit_;
     int recorded_frames_ RTC_GUARDED_BY(crit_);
   } test(this);

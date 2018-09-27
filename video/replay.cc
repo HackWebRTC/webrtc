@@ -19,6 +19,7 @@
 #include "call/call.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
+#include "media/engine/internaldecoderfactory.h"
 #include "modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/file.h"
@@ -31,6 +32,7 @@
 #include "test/call_test.h"
 #include "test/encoder_settings.h"
 #include "test/fake_decoder.h"
+#include "test/function_video_decoder_factory.h"
 #include "test/gtest.h"
 #include "test/null_transport.h"
 #include "test/rtp_file_reader.h"
@@ -330,6 +332,7 @@ class RtpReplayer final {
     test::NullTransport transport;
     std::vector<std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>> sinks;
     std::vector<VideoReceiveStream*> receive_streams;
+    std::unique_ptr<VideoDecoderFactory> decoder_factory;
   };
 
   // Loads multiple configurations from the provided configuration file.
@@ -350,6 +353,7 @@ class RtpReplayer final {
       return nullptr;
     }
 
+    stream_state->decoder_factory = absl::make_unique<InternalDecoderFactory>();
     size_t config_count = 0;
     for (const auto& json : json_configs) {
       // Create the configuration and parse the JSON into the config.
@@ -357,9 +361,9 @@ class RtpReplayer final {
           &(stream_state->transport), json);
       // Instantiate the underlying decoder.
       for (auto& decoder : receive_config.decoders) {
-        decoder.decoder = test::CreateMatchingDecoder(decoder.payload_type,
-                                                      decoder.video_format.name)
-                              .decoder;
+        decoder = test::CreateMatchingDecoder(decoder.payload_type,
+                                              decoder.video_format.name);
+        decoder.decoder_factory = stream_state->decoder_factory.get();
       }
       // Create a window for this config.
       std::stringstream window_title;
@@ -417,13 +421,19 @@ class RtpReplayer final {
     VideoReceiveStream::Decoder decoder;
     decoder =
         test::CreateMatchingDecoder(flags::MediaPayloadType(), flags::Codec());
-    if (!flags::DecoderBitstreamFilename().empty()) {
+    if (flags::DecoderBitstreamFilename().empty()) {
+      stream_state->decoder_factory =
+          absl::make_unique<InternalDecoderFactory>();
+    } else {
       // Replace decoder with file writer if we're writing the bitstream to a
       // file instead.
-      delete decoder.decoder;
-      decoder.decoder = new DecoderBitstreamFileWriter(
-          flags::DecoderBitstreamFilename().c_str());
+      stream_state->decoder_factory =
+          absl::make_unique<test::FunctionVideoDecoderFactory>([]() {
+            return absl::make_unique<DecoderBitstreamFileWriter>(
+                flags::DecoderBitstreamFilename().c_str());
+          });
     }
+    decoder.decoder_factory = stream_state->decoder_factory.get();
     receive_config.decoders.push_back(decoder);
 
     stream_state->receive_streams.emplace_back(

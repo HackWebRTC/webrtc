@@ -33,7 +33,6 @@
 #include "test/call_test.h"
 #include "test/direct_transport.h"
 #include "test/drifting_clock.h"
-#include "test/encoder_proxy_factory.h"
 #include "test/encoder_settings.h"
 #include "test/fake_encoder.h"
 #include "test/field_trial.h"
@@ -44,6 +43,7 @@
 #include "test/single_threaded_task_queue.h"
 #include "test/testsupport/fileutils.h"
 #include "test/testsupport/perf_test.h"
+#include "test/video_encoder_proxy_factory.h"
 #include "video/transport_adapter.h"
 
 using webrtc::test::DriftingClock;
@@ -807,7 +807,7 @@ TEST_F(CallPerfTest, MAYBE_KeepsHighBitrateWhenReconfiguringSender) {
     uint32_t last_set_bitrate_kbps_;
     VideoSendStream* send_stream_;
     test::FrameGeneratorCapturer* frame_generator_;
-    test::EncoderProxyFactory encoder_factory_;
+    test::VideoEncoderProxyFactory encoder_factory_;
     VideoEncoderConfig encoder_config_;
   } test;
 

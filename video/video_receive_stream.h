@@ -143,6 +143,10 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   std::unique_ptr<VideoStreamDecoder> video_stream_decoder_;
   RtpStreamsSynchronizer rtp_stream_sync_;
 
+  // TODO(nisse, philipel): Creation and ownership of video encoders should be
+  // moved to the new VideoStreamDecoder.
+  std::vector<std::unique_ptr<VideoDecoder>> video_decoders_;
+
   rtc::CriticalSection ivf_writer_lock_;
   std::unique_ptr<IvfFileWriter> ivf_writer_ RTC_GUARDED_BY(ivf_writer_lock_);
 

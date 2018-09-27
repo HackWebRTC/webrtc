@@ -11,6 +11,7 @@
 #include "api/test/simulated_network.h"
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
+#include "media/engine/internaldecoderfactory.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "test/call_test.h"
@@ -98,7 +99,7 @@ TEST_F(FecEndToEndTest, ReceivesUlpfec) {
       encoder_config->codec_type = kVideoCodecVP8;
       VideoReceiveStream::Decoder decoder =
           test::CreateMatchingDecoder(*send_config);
-      decoder_.reset(decoder.decoder);
+      decoder.decoder_factory = &decoder_factory_;
       (*receive_configs)[0].decoders.clear();
       (*receive_configs)[0].decoders.push_back(decoder);
 
@@ -119,7 +120,7 @@ TEST_F(FecEndToEndTest, ReceivesUlpfec) {
     rtc::CriticalSection crit_;
     std::unique_ptr<VideoEncoder> encoder_;
     test::FunctionVideoEncoderFactory encoder_factory_;
-    std::unique_ptr<VideoDecoder> decoder_;
+    InternalDecoderFactory decoder_factory_;
     std::set<uint32_t> dropped_sequence_numbers_ RTC_GUARDED_BY(crit_);
     // Several packets can have the same timestamp.
     std::multiset<uint32_t> dropped_timestamps_ RTC_GUARDED_BY(crit_);
@@ -329,8 +330,7 @@ TEST_F(FecEndToEndTest, ReceivedUlpfecPacketsNotNacked) {
           ulpfec_sequence_number_(0),
           has_last_sequence_number_(false),
           last_sequence_number_(0),
-          encoder_factory_([]() { return VP8Encoder::Create(); }),
-          decoder_(VP8Decoder::Create()) {}
+          encoder_factory_([]() { return VP8Encoder::Create(); }) {}
 
    private:
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
@@ -461,7 +461,7 @@ TEST_F(FecEndToEndTest, ReceivedUlpfecPacketsNotNacked) {
           send_config->rtp.payload_type;
       (*receive_configs)[0].decoders[0].video_format =
           SdpVideoFormat(send_config->rtp.payload_name);
-      (*receive_configs)[0].decoders[0].decoder = decoder_.get();
+      (*receive_configs)[0].decoders[0].decoder_factory = &decoder_factory_;
     }
 
     void PerformTest() override {
@@ -482,9 +482,8 @@ TEST_F(FecEndToEndTest, ReceivedUlpfecPacketsNotNacked) {
     uint16_t ulpfec_sequence_number_ RTC_GUARDED_BY(&crit_);
     bool has_last_sequence_number_;
     uint16_t last_sequence_number_;
-    std::unique_ptr<webrtc::VideoEncoder> encoder_;
     test::FunctionVideoEncoderFactory encoder_factory_;
-    std::unique_ptr<webrtc::VideoDecoder> decoder_;
+    InternalDecoderFactory decoder_factory_;
   } test;
 
   RunBaseTest(&test);
