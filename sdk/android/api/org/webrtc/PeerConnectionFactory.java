@@ -28,7 +28,7 @@ public class PeerConnectionFactory {
   private static final String TAG = "PeerConnectionFactory";
   private static final String VIDEO_CAPTURER_THREAD_NAME = "VideoCapturerThread";
 
-  private final long nativeFactory;
+  private long nativeFactory;
   private static volatile boolean internalTracerInitialized;
   @Nullable private static Thread networkThread;
   @Nullable private static Thread workerThread;
@@ -307,6 +307,7 @@ public class PeerConnectionFactory {
   PeerConnection createPeerConnectionInternal(PeerConnection.RTCConfiguration rtcConfig,
       MediaConstraints constraints, PeerConnection.Observer observer,
       SSLCertificateVerifier sslCertificateVerifier) {
+    checkPeerConnectionFactoryExists();
     long nativeObserver = PeerConnection.createNativePeerConnectionObserver(observer);
     if (nativeObserver == 0) {
       return null;
@@ -364,59 +365,78 @@ public class PeerConnectionFactory {
   }
 
   public MediaStream createLocalMediaStream(String label) {
+    checkPeerConnectionFactoryExists();
     return new MediaStream(nativeCreateLocalMediaStream(nativeFactory, label));
   }
 
   public VideoSource createVideoSource(boolean isScreencast) {
+    checkPeerConnectionFactoryExists();
     return new VideoSource(nativeCreateVideoSource(nativeFactory, isScreencast));
   }
 
   public VideoTrack createVideoTrack(String id, VideoSource source) {
-    return new VideoTrack(nativeCreateVideoTrack(nativeFactory, id, source.nativeSource));
+    checkPeerConnectionFactoryExists();
+    return new VideoTrack(
+        nativeCreateVideoTrack(nativeFactory, id, source.getNativeVideoTrackSource()));
   }
 
   public AudioSource createAudioSource(MediaConstraints constraints) {
+    checkPeerConnectionFactoryExists();
     return new AudioSource(nativeCreateAudioSource(nativeFactory, constraints));
   }
 
   public AudioTrack createAudioTrack(String id, AudioSource source) {
-    return new AudioTrack(nativeCreateAudioTrack(nativeFactory, id, source.nativeSource));
+    checkPeerConnectionFactoryExists();
+    return new AudioTrack(nativeCreateAudioTrack(nativeFactory, id, source.getNativeAudioSource()));
   }
 
   // Starts recording an AEC dump. Ownership of the file is transfered to the
   // native code. If an AEC dump is already in progress, it will be stopped and
   // a new one will start using the provided file.
   public boolean startAecDump(int file_descriptor, int filesize_limit_bytes) {
+    checkPeerConnectionFactoryExists();
     return nativeStartAecDump(nativeFactory, file_descriptor, filesize_limit_bytes);
   }
 
   // Stops recording an AEC dump. If no AEC dump is currently being recorded,
   // this call will have no effect.
   public void stopAecDump() {
+    checkPeerConnectionFactoryExists();
     nativeStopAecDump(nativeFactory);
   }
 
   public void dispose() {
+    checkPeerConnectionFactoryExists();
     nativeFreeFactory(nativeFactory);
     networkThread = null;
     workerThread = null;
     signalingThread = null;
     MediaCodecVideoEncoder.disposeEglContext();
     MediaCodecVideoDecoder.disposeEglContext();
+    nativeFactory = 0;
   }
 
   public void threadsCallbacks() {
+    checkPeerConnectionFactoryExists();
     nativeInvokeThreadsCallbacks(nativeFactory);
   }
 
   /** Returns a pointer to the native webrtc::PeerConnectionFactoryInterface. */
   public long getNativePeerConnectionFactory() {
+    checkPeerConnectionFactoryExists();
     return nativeGetNativePeerConnectionFactory(nativeFactory);
   }
 
   /** Returns a pointer to the native OwnedFactoryAndThreads object */
   public long getNativeOwnedFactoryAndThreads() {
+    checkPeerConnectionFactoryExists();
     return nativeFactory;
+  }
+
+  private void checkPeerConnectionFactoryExists() {
+    if (nativeFactory == 0) {
+      throw new IllegalStateException("PeerConnectionFactory has been disposed.");
+    }
   }
 
   private static void printStackTrace(@Nullable Thread thread, String threadName) {
