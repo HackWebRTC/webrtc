@@ -60,7 +60,6 @@ if (is_android) {
       "//sdk/android:native_api_base",
       "//sdk/android:native_api_jni",
       "//sdk/android:native_api_video",
-      "//system_wrappers:runtime_enabled_features_default",
       "//third_party/abseil-cpp/absl/memory",
     ]
   }

@@ -212,7 +212,6 @@ if (rtc_include_tests) {
       "../rtc_base:rtc_base",
       "../system_wrappers:field_trial",
       "../system_wrappers:metrics",
-      "../system_wrappers:runtime_enabled_features_default",
       "//testing/gtest",
     ]
   }
@@ -615,7 +614,6 @@ rtc_source_set("test_common") {
     "../rtc_base/experiments:congestion_controller_experiment",
     "../system_wrappers",
     "../system_wrappers:field_trial",
-    "../system_wrappers:runtime_enabled_features_api",
     "../video",
     "//testing/gtest",
     "//third_party/abseil-cpp/absl/memory",

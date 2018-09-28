@@ -54,22 +54,6 @@ declare_args() {
   # provided.
   rtc_exclude_metrics_default = build_with_chromium
 
-  # WARNING: This argument doesn't have any effect on the WebRTC build until
-  # https://webrtc-review.googlesource.com/c/src/+/100640 will land.
-  # Setting this to true will define
-  # WEBRTC_EXCLUDE_RUNTIME_ENABLED_FEATURES_DEFAULT which will tell the
-  # pre-processor to remove the default definition of symbols needed to use
-  # runtime_enabled_features. In that case a new implementation needs to be
-  # provided.
-  if (build_with_chromium) {
-    # When WebRTC is built as part of Chromium it should exclude the default
-    # implementation of runtime_enabled_features unless it is building for NACL or
-    # Chromecast.
-    rtc_exclude_runtime_enabled_features_default = !is_nacl && !is_chromecast
-  } else {
-    rtc_exclude_runtime_enabled_features_default = false
-  }
-
   # Setting this to false will require the API user to pass in their own
   # SSLCertificateVerifier to verify the certificates presented from a
   # TLS-TURN server. In return disabling this saves around 100kb in the binary.

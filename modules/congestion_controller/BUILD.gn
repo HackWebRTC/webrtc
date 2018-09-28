@@ -45,7 +45,6 @@ rtc_static_library("congestion_controller") {
     "../../rtc_base:rate_limiter",
     "../../system_wrappers",
     "../../system_wrappers:field_trial",
-    "../../system_wrappers:runtime_enabled_features_api",
     "../bitrate_controller",
     "../pacing",
     "../remote_bitrate_estimator",

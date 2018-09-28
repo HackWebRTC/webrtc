@@ -385,7 +385,6 @@ if (rtc_include_tests) {
       "../rtc_base:rtc_base_approved",
       "../system_wrappers",
       "../system_wrappers:metrics",
-      "../system_wrappers:runtime_enabled_features_default",
       "../test:direct_transport",
       "../test:fake_video_codecs",
       "../test:field_trial",

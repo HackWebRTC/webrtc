@@ -134,7 +134,6 @@ if (is_android) {
       ":peerconnection_jni",
       "../../pc:peerconnection",
       "../../system_wrappers:metrics",
-      "../../system_wrappers:runtime_enabled_features_default",
     ]
   }
 

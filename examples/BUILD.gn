@@ -220,12 +220,10 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       # iOS must use WebRTC.framework which is dynamically linked.
       deps = [
         "../sdk:framework_objc+link",
-        "../system_wrappers:runtime_enabled_features_default",
       ]
     } else {
       deps = [
         "../sdk:mac_framework_objc+link",
-        "../system_wrappers:runtime_enabled_features_default",
       ]
     }
   }
@@ -494,7 +492,6 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
         "../sdk:ui_objc",
         "../sdk:videocapture_objc",
         "../sdk:videotoolbox_objc",
-        "../system_wrappers:runtime_enabled_features_default",
         "//third_party/abseil-cpp/absl/memory",
       ]
 
@@ -705,7 +702,6 @@ if (is_linux || is_win) {
       "../rtc_base:rtc_base",
       "../rtc_base:rtc_base_approved",
       "../rtc_base:rtc_json",
-      "../system_wrappers:runtime_enabled_features_default",
       "//third_party/libyuv",
     ]
   }
@@ -742,7 +738,6 @@ if (is_linux || is_win) {
       "../pc:rtc_pc",
       "../rtc_base:rtc_base",
       "../rtc_base:rtc_base_approved",
-      "../system_wrappers:runtime_enabled_features_default",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -759,7 +754,6 @@ if (is_linux || is_win) {
       "../pc:rtc_pc",
       "../rtc_base:rtc_base",
       "../rtc_base:rtc_base_approved",
-      "../system_wrappers:runtime_enabled_features_default",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -776,7 +770,6 @@ if (is_linux || is_win) {
       "../pc:rtc_pc",
       "../rtc_base:rtc_base",
       "../rtc_base:rtc_base_approved",
-      "../system_wrappers:runtime_enabled_features_default",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -827,7 +820,6 @@ if (is_win || is_android) {
       "../modules/video_capture:video_capture_module",
       "../pc:libjingle_peerconnection",
       "../rtc_base:rtc_base",
-      "../system_wrappers:runtime_enabled_features_default",
       "//third_party/abseil-cpp/absl/memory",
     ]
     if (is_android) {

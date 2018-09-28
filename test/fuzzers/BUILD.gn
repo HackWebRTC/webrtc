@@ -16,7 +16,6 @@ rtc_static_library("webrtc_fuzzer_main") {
   ]
   deps = [
     "../../rtc_base:rtc_base_approved",
-    "../../system_wrappers:runtime_enabled_features_default",
     "//testing/libfuzzer:libfuzzer_main",
   ]
 
