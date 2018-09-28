@@ -679,9 +679,8 @@ void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
 
   public_submodules_->echo_cancellation->Enable(
       config_.echo_canceller.enabled && !config_.echo_canceller.mobile_mode);
-  static_cast<EchoControlMobile*>(public_submodules_->echo_control_mobile.get())
-      ->Enable(config_.echo_canceller.enabled &&
-               config_.echo_canceller.mobile_mode);
+  public_submodules_->echo_control_mobile->Enable(
+      config_.echo_canceller.enabled && config_.echo_canceller.mobile_mode);
 
   public_submodules_->echo_cancellation->set_suppression_level(
       config.echo_canceller.legacy_moderate_suppression_level

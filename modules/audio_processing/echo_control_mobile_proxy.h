@@ -11,6 +11,7 @@
 #ifndef MODULES_AUDIO_PROCESSING_ECHO_CONTROL_MOBILE_PROXY_H_
 #define MODULES_AUDIO_PROCESSING_ECHO_CONTROL_MOBILE_PROXY_H_
 
+#include "modules/audio_processing/echo_control_mobile_impl.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/scoped_ref_ptr.h"
@@ -21,7 +22,7 @@ namespace webrtc {
 class EchoControlMobileProxy : public EchoControlMobile {
  public:
   EchoControlMobileProxy(AudioProcessing* audio_processing,
-                         EchoControlMobile* echo_control_mobile);
+                         EchoControlMobileImpl* echo_control_mobile);
   ~EchoControlMobileProxy() override;
 
   bool is_enabled() const override;
@@ -35,7 +36,7 @@ class EchoControlMobileProxy : public EchoControlMobile {
 
  private:
   AudioProcessing* audio_processing_;
-  EchoControlMobile* echo_control_mobile_;
+  EchoControlMobileImpl* echo_control_mobile_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(EchoControlMobileProxy);
 };
