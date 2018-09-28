@@ -10,19 +10,20 @@
 
 #include "modules/audio_processing/echo_control_mobile_proxy.h"
 
-#include "rtc_base/logging.h"
-
 namespace webrtc {
 
 EchoControlMobileProxy::EchoControlMobileProxy(
     AudioProcessing* audio_processing,
-    EchoControlMobileImpl* echo_control_mobile)
+    EchoControlMobile* echo_control_mobile)
     : audio_processing_(audio_processing),
       echo_control_mobile_(echo_control_mobile) {}
 
 EchoControlMobileProxy::~EchoControlMobileProxy() = default;
 
 int EchoControlMobileProxy::Enable(bool enable) {
+  // Change the config in APM to mirror the applied settings.
+  // TODO(bugs.webrtc.org/9535): Remove the call to EchoControlMobile::Enable
+  // when APM starts taking the config into account.
   AudioProcessing::Config apm_config = audio_processing_->GetConfig();
   bool aecm_enabled = apm_config.echo_canceller.enabled &&
                       apm_config.echo_canceller.mobile_mode;
@@ -31,6 +32,7 @@ int EchoControlMobileProxy::Enable(bool enable) {
     apm_config.echo_canceller.mobile_mode = true;
     audio_processing_->ApplyConfig(apm_config);
   }
+  echo_control_mobile_->Enable(enable);
   return AudioProcessing::kNoError;
 }
 
@@ -39,31 +41,29 @@ bool EchoControlMobileProxy::is_enabled() const {
 }
 
 int EchoControlMobileProxy::set_routing_mode(RoutingMode mode) {
-  RTC_LOG(LS_ERROR) << "Ignoring deprecated setting: AECM routing mode";
-  return AudioProcessing::kUnsupportedFunctionError;
+  return echo_control_mobile_->set_routing_mode(mode);
 }
 
 EchoControlMobile::RoutingMode EchoControlMobileProxy::routing_mode() const {
-  return EchoControlMobile::kSpeakerphone;
+  return echo_control_mobile_->routing_mode();
 }
 
 int EchoControlMobileProxy::enable_comfort_noise(bool enable) {
-  RTC_LOG(LS_ERROR) << "Ignoring deprecated setting: AECM comfort noise";
-  return AudioProcessing::kUnsupportedFunctionError;
+  return echo_control_mobile_->enable_comfort_noise(enable);
 }
 
 bool EchoControlMobileProxy::is_comfort_noise_enabled() const {
-  return false;
+  return echo_control_mobile_->is_comfort_noise_enabled();
 }
 
 int EchoControlMobileProxy::SetEchoPath(const void* echo_path,
                                         size_t size_bytes) {
-  return AudioProcessing::kUnsupportedFunctionError;
+  return echo_control_mobile_->SetEchoPath(echo_path, size_bytes);
 }
 
 int EchoControlMobileProxy::GetEchoPath(void* echo_path,
                                         size_t size_bytes) const {
-  return AudioProcessing::kUnsupportedFunctionError;
+  return echo_control_mobile_->GetEchoPath(echo_path, size_bytes);
 }
 
 }  // namespace webrtc

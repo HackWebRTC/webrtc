@@ -10,10 +10,10 @@
 
 #include <iostream>
 
-#include "modules/audio_processing/echo_control_mobile_impl.h"
 #include "modules/audio_processing/test/aec_dump_based_simulator.h"
-#include "modules/audio_processing/test/protobuf_utils.h"
 #include "modules/audio_processing/test/runtime_setting_util.h"
+
+#include "modules/audio_processing/test/protobuf_utils.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
@@ -347,16 +347,30 @@ void AecDumpBasedSimulator::HandleMessage(
       }
     }
 
-    if (msg.has_aecm_comfort_noise_enabled() &&
-        msg.aecm_comfort_noise_enabled()) {
-      RTC_LOG(LS_ERROR) << "Ignoring deprecated setting: AECM comfort noise";
+    if (msg.has_aecm_comfort_noise_enabled() ||
+        settings_.use_aecm_comfort_noise) {
+      bool enable = settings_.use_aecm_comfort_noise
+                        ? *settings_.use_aecm_comfort_noise
+                        : msg.aecm_comfort_noise_enabled();
+      RTC_CHECK_EQ(AudioProcessing::kNoError,
+                   ap_->echo_control_mobile()->enable_comfort_noise(enable));
+      if (settings_.use_verbose_logging) {
+        std::cout << " aecm_comfort_noise_enabled: "
+                  << (enable ? "true" : "false") << std::endl;
+      }
     }
 
-    if (msg.has_aecm_routing_mode() &&
-        static_cast<webrtc::EchoControlMobileImpl::RoutingMode>(
-            msg.aecm_routing_mode()) != EchoControlMobileImpl::kSpeakerphone) {
-      RTC_LOG(LS_ERROR) << "Ignoring deprecated setting: AECM routing mode: "
-                        << msg.aecm_routing_mode();
+    if (msg.has_aecm_routing_mode() || settings_.aecm_routing_mode) {
+      int routing_mode = settings_.aecm_routing_mode
+                             ? *settings_.aecm_routing_mode
+                             : msg.aecm_routing_mode();
+      RTC_CHECK_EQ(AudioProcessing::kNoError,
+                   ap_->echo_control_mobile()->set_routing_mode(
+                       static_cast<webrtc::EchoControlMobile::RoutingMode>(
+                           routing_mode)));
+      if (settings_.use_verbose_logging) {
+        std::cout << " aecm_routing_mode: " << routing_mode << std::endl;
+      }
     }
 
     if (msg.has_agc_enabled() || settings_.use_agc) {

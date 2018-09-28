@@ -55,8 +55,8 @@ message Config {
   optional int32 aec_suppression_level = 5;
   // Mobile AEC.
   optional bool aecm_enabled = 6;
-  optional bool aecm_comfort_noise_enabled = 7 [deprecated = true];
-  optional int32 aecm_routing_mode = 8 [deprecated = true];
+  optional bool aecm_comfort_noise_enabled = 7;
+  optional int32 aecm_routing_mode = 8;
   // Automatic gain controller.
   optional bool agc_enabled = 9;
   optional int32 agc_mode = 10;

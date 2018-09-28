@@ -20,17 +20,17 @@
 namespace webrtc {
 
 namespace {
-int16_t MapSetting(EchoControlMobileImpl::RoutingMode mode) {
+int16_t MapSetting(EchoControlMobile::RoutingMode mode) {
   switch (mode) {
-    case EchoControlMobileImpl::kQuietEarpieceOrHeadset:
+    case EchoControlMobile::kQuietEarpieceOrHeadset:
       return 0;
-    case EchoControlMobileImpl::kEarpiece:
+    case EchoControlMobile::kEarpiece:
       return 1;
-    case EchoControlMobileImpl::kLoudEarpiece:
+    case EchoControlMobile::kLoudEarpiece:
       return 2;
-    case EchoControlMobileImpl::kSpeakerphone:
+    case EchoControlMobile::kSpeakerphone:
       return 3;
-    case EchoControlMobileImpl::kLoudSpeakerphone:
+    case EchoControlMobile::kLoudSpeakerphone:
       return 4;
   }
   RTC_NOTREACHED();
@@ -55,7 +55,7 @@ AudioProcessing::Error MapError(int err) {
 }
 }  // namespace
 
-size_t EchoControlMobileImpl::echo_path_size_bytes() {
+size_t EchoControlMobile::echo_path_size_bytes() {
   return WebRtcAecm_echo_path_size_bytes();
 }
 
@@ -268,7 +268,7 @@ int EchoControlMobileImpl::set_routing_mode(RoutingMode mode) {
   return Configure();
 }
 
-EchoControlMobileImpl::RoutingMode EchoControlMobileImpl::routing_mode() const {
+EchoControlMobile::RoutingMode EchoControlMobileImpl::routing_mode() const {
   rtc::CritScope cs(crit_capture_);
   return routing_mode_;
 }
