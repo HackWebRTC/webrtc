@@ -50,7 +50,6 @@ void AudioOptions::SetAll(const AudioOptions& change) {
   SetFrom(&audio_jitter_buffer_fast_accelerate,
           change.audio_jitter_buffer_fast_accelerate);
   SetFrom(&typing_detection, change.typing_detection);
-  SetFrom(&aecm_generate_comfort_noise, change.aecm_generate_comfort_noise);
   SetFrom(&experimental_agc, change.experimental_agc);
   SetFrom(&extended_filter_aec, change.extended_filter_aec);
   SetFrom(&delay_agnostic_aec, change.delay_agnostic_aec);
@@ -78,7 +77,6 @@ bool AudioOptions::operator==(const AudioOptions& o) const {
          audio_jitter_buffer_fast_accelerate ==
              o.audio_jitter_buffer_fast_accelerate &&
          typing_detection == o.typing_detection &&
-         aecm_generate_comfort_noise == o.aecm_generate_comfort_noise &&
          experimental_agc == o.experimental_agc &&
          extended_filter_aec == o.extended_filter_aec &&
          delay_agnostic_aec == o.delay_agnostic_aec &&
@@ -110,7 +108,6 @@ std::string AudioOptions::ToString() const {
   ToStringIfSet(&result, "audio_jitter_buffer_fast_accelerate",
                 audio_jitter_buffer_fast_accelerate);
   ToStringIfSet(&result, "typing", typing_detection);
-  ToStringIfSet(&result, "comfort_noise", aecm_generate_comfort_noise);
   ToStringIfSet(&result, "experimental_agc", experimental_agc);
   ToStringIfSet(&result, "extended_filter_aec", extended_filter_aec);
   ToStringIfSet(&result, "delay_agnostic_aec", delay_agnostic_aec);

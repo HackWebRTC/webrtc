@@ -55,7 +55,6 @@ struct AudioOptions {
   absl::optional<bool> audio_jitter_buffer_fast_accelerate;
   // Audio processing to detect typing.
   absl::optional<bool> typing_detection;
-  absl::optional<bool> aecm_generate_comfort_noise;
   absl::optional<bool> experimental_agc;
   absl::optional<bool> extended_filter_aec;
   absl::optional<bool> delay_agnostic_aec;
