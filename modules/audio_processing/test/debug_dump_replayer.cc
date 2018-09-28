@@ -218,17 +218,6 @@ void DebugDumpReplayer::ConfigureApm(const audioproc::Config& msg) {
           msg.aec_suppression_level()) ==
       EchoCancellation::SuppressionLevel::kModerateSuppression;
 
-  RTC_CHECK(msg.has_aecm_comfort_noise_enabled());
-  RTC_CHECK_EQ(AudioProcessing::kNoError,
-               apm_->echo_control_mobile()->enable_comfort_noise(
-                   msg.aecm_comfort_noise_enabled()));
-
-  RTC_CHECK(msg.has_aecm_routing_mode());
-  RTC_CHECK_EQ(AudioProcessing::kNoError,
-               apm_->echo_control_mobile()->set_routing_mode(
-                   static_cast<EchoControlMobile::RoutingMode>(
-                       msg.aecm_routing_mode())));
-
   // AGC configs.
   RTC_CHECK(msg.has_agc_enabled());
   RTC_CHECK_EQ(AudioProcessing::kNoError,
