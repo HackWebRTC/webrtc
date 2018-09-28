@@ -33,7 +33,7 @@
 namespace webrtc {
 
 class RtpPacketSinkInterface;
-class VideoDecoder;
+class VideoDecoderFactory;
 
 class VideoReceiveStream {
  public:
@@ -45,8 +45,10 @@ class VideoReceiveStream {
     ~Decoder();
     std::string ToString() const;
 
-    // The actual decoder instance.
-    VideoDecoder* decoder = nullptr;
+    // Ownership stays with WebrtcVideoEngine (delegated from PeerConnection).
+    // TODO(nisse): Move one level out, to VideoReceiveStream::Config, and later
+    // to the configuration of VideoStreamDecoder.
+    VideoDecoderFactory* decoder_factory = nullptr;
     SdpVideoFormat video_format;
 
     // Received RTP packets with this payload type will be sent to this decoder
@@ -210,6 +212,10 @@ class VideoReceiveStream {
     // Target delay in milliseconds. A positive value indicates this stream is
     // used for streaming instead of a real-time call.
     int target_delay_ms = 0;
+
+    // TODO(nisse): Used with VideoDecoderFactory::LegacyCreateVideoDecoder.
+    // Delete when that method is retired.
+    std::string stream_id;
   };
 
   // Starts stream activity.

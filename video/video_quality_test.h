@@ -18,6 +18,7 @@
 #include "api/fec_controller.h"
 #include "api/test/video_quality_test_fixture.h"
 #include "call/fake_network_pipe.h"
+#include "media/engine/internaldecoderfactory.h"
 #include "media/engine/internalencoderfactory.h"
 #include "test/call_test.h"
 #include "test/frame_generator.h"
@@ -72,6 +73,8 @@ class VideoQualityTest :
   void CreateCapturers();
   std::unique_ptr<test::FrameGenerator> CreateFrameGenerator(size_t video_idx);
   void SetupThumbnailCapturers(size_t num_thumbnail_streams);
+  std::unique_ptr<VideoDecoder> CreateVideoDecoder(
+      const SdpVideoFormat& format);
   std::unique_ptr<VideoEncoder> CreateVideoEncoder(
       const SdpVideoFormat& format);
   void SetupVideo(Transport* send_transport, Transport* recv_transport);
@@ -97,6 +100,8 @@ class VideoQualityTest :
   std::vector<std::unique_ptr<test::TestVideoCapturer>> thumbnail_capturers_;
   Clock* const clock_;
 
+  test::FunctionVideoDecoderFactory video_decoder_factory_;
+  InternalDecoderFactory internal_decoder_factory_;
   test::FunctionVideoEncoderFactory video_encoder_factory_;
   InternalEncoderFactory internal_encoder_factory_;
   std::vector<VideoSendStream::Config> thumbnail_send_configs_;

@@ -26,6 +26,7 @@
 #include "modules/audio_device/include/audio_device.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"
 #include "modules/video_coding/codecs/h264/include/h264.h"
+#include "modules/video_coding/codecs/multiplex/include/multiplex_decoder_adapter.h"
 #include "modules/video_coding/codecs/multiplex/include/multiplex_encoder_adapter.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
@@ -158,6 +159,18 @@ class FrameDumpingEncoder : public VideoEncoder, private EncodedImageCallback {
 
 }  // namespace
 
+std::unique_ptr<VideoDecoder> VideoQualityTest::CreateVideoDecoder(
+    const SdpVideoFormat& format) {
+  std::unique_ptr<VideoDecoder> decoder;
+  if (format.name == "multiplex") {
+    decoder = absl::make_unique<MultiplexDecoderAdapter>(
+        &internal_decoder_factory_, SdpVideoFormat(cricket::kVp9CodecName));
+  } else {
+    decoder = internal_decoder_factory_.CreateVideoDecoder(format);
+  }
+  return decoder;
+}
+
 std::unique_ptr<VideoEncoder> VideoQualityTest::CreateVideoEncoder(
     const SdpVideoFormat& format) {
   std::unique_ptr<VideoEncoder> encoder;
@@ -188,6 +201,9 @@ std::unique_ptr<VideoEncoder> VideoQualityTest::CreateVideoEncoder(
 VideoQualityTest::VideoQualityTest(
     std::unique_ptr<InjectionComponents> injection_components)
     : clock_(Clock::GetRealTimeClock()),
+      video_decoder_factory_([this](const SdpVideoFormat& format) {
+        return this->CreateVideoDecoder(format);
+      }),
       video_encoder_factory_([this](const SdpVideoFormat& format) {
         return this->CreateVideoEncoder(format);
       }),
@@ -495,7 +511,6 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
   video_receive_configs_.clear();
   video_send_configs_.clear();
   video_encoder_configs_.clear();
-  allocated_decoders_.clear();
   bool decode_all_receive_streams = true;
   size_t num_video_substreams = params_.ss[0].streams.size();
   RTC_CHECK(num_video_streams_ > 0);
@@ -605,7 +620,8 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
       decode_sub_stream = params_.ss[video_idx].selected_stream;
     CreateMatchingVideoReceiveConfigs(
         video_send_configs_[video_idx], recv_transport,
-        params_.call.send_side_bwe, decode_sub_stream, true, kNackRtpHistoryMs);
+        params_.call.send_side_bwe, &video_decoder_factory_, decode_sub_stream,
+        true, kNackRtpHistoryMs);
 
     if (params_.screenshare[video_idx].enabled) {
       // Fill out codec settings.
@@ -751,7 +767,8 @@ void VideoQualityTest::SetupThumbnails(Transport* send_transport,
 
     AddMatchingVideoReceiveConfigs(
         &thumbnail_receive_configs_, thumbnail_send_config, send_transport,
-        params_.call.send_side_bwe, absl::nullopt, false, kNackRtpHistoryMs);
+        params_.call.send_side_bwe, &video_decoder_factory_, absl::nullopt,
+        false, kNackRtpHistoryMs);
   }
   for (size_t i = 0; i < thumbnail_send_configs_.size(); ++i) {
     thumbnail_send_streams_.push_back(receiver_call_->CreateVideoSendStream(
