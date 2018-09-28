@@ -10,6 +10,7 @@
 
 #include "rtc_tools/video_file_writer.h"
 
+#include <cmath>
 #include <string>
 
 #include "api/video/i420_buffer.h"
