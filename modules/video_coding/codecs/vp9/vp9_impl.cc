@@ -358,6 +358,9 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
     codec_ = *inst;
   }
 
+  force_key_frame_ = true;
+  pics_since_key_ = 0;
+
   num_spatial_layers_ = inst->VP9().numberOfSpatialLayers;
   RTC_DCHECK_GT(num_spatial_layers_, 0);
   num_temporal_layers_ = inst->VP9().numberOfTemporalLayers;
