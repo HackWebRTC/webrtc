@@ -479,8 +479,8 @@ def GenerateCommitMessage(rev_update, current_commit_pos, new_commit_pos,
                            working_dir=CHECKOUT_SRC_DIR)[0].splitlines()[0]
   tbr_authors = git_author + ',' + tbr_authors
 
-  commit_msg.append('TBR: %s' % tbr_authors)
-  commit_msg.append('Bug: None')
+  commit_msg.append('TBR=%s' % tbr_authors)
+  commit_msg.append('BUG=None')
   return '\n'.join(commit_msg)
 
 
