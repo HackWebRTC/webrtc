@@ -182,9 +182,15 @@ NetworkNodeTransport::~NetworkNodeTransport() = default;
 bool NetworkNodeTransport::SendRtp(const uint8_t* packet,
                                    size_t length,
                                    const PacketOptions& options) {
-  sender_->call_->OnSentPacket(rtc::SentPacket(
-      options.packet_id, sender_->clock_->TimeInMilliseconds()));
-  Timestamp send_time = Timestamp::ms(sender_->clock_->TimeInMilliseconds());
+  int64_t send_time_ms = sender_->clock_->TimeInMilliseconds();
+  rtc::SentPacket sent_packet;
+  sent_packet.packet_id = options.packet_id;
+  sent_packet.send_time_ms = send_time_ms;
+  sent_packet.info.packet_size_bytes = length;
+  sent_packet.info.packet_type = rtc::PacketType::kData;
+  sender_->call_->OnSentPacket(sent_packet);
+
+  Timestamp send_time = Timestamp::ms(send_time_ms);
   rtc::CopyOnWriteBuffer buffer(packet, length,
                                 length + packet_overhead_.bytes());
   buffer.SetSize(length + packet_overhead_.bytes());
