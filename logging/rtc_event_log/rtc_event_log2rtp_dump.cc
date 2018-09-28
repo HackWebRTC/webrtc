@@ -97,9 +97,10 @@ bool ShouldSkipStream(MediaType media_type,
 // Convert a LoggedRtpPacketIncoming to a test::RtpPacket. Header extension IDs
 // are allocated according to the provided extension map. This might not match
 // the extension map used in the actual call.
-void ConvertRtpPacket(const webrtc::LoggedRtpPacketIncoming& incoming,
-                      const webrtc::RtpHeaderExtensionMap default_extension_map,
-                      webrtc::test::RtpPacket* packet) {
+void ConvertRtpPacket(
+    const webrtc::LoggedRtpPacketIncoming& incoming,
+    const webrtc::RtpHeaderExtensionMap& default_extension_map,
+    webrtc::test::RtpPacket* packet) {
   webrtc::RtpPacket reconstructed_packet(&default_extension_map);
 
   reconstructed_packet.SetMarker(incoming.rtp.header.markerBit);
