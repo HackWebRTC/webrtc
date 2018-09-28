@@ -120,8 +120,8 @@ rtc_static_library("audio_processing") {
     "../../rtc_base:sanitizer",
     "../../rtc_base/system:arch",
     "../../system_wrappers:cpu_features_api",
-    "../../system_wrappers:field_trial_api",
-    "../../system_wrappers:metrics_api",
+    "../../system_wrappers:field_trial",
+    "../../system_wrappers:metrics",
     "aec:aec",
     "aec:aec_core",
     "aecm:aecm_core",
@@ -612,7 +612,6 @@ if (rtc_include_tests) {
       "../../rtc_base:rtc_base_approved",
       "../../rtc_base/system:file_wrapper",
       "../../system_wrappers",
-      "../../system_wrappers:metrics_default",
       "../../test:fileutils",
       "../../test:test_support",
       "agc:level_estimation",
@@ -632,7 +631,6 @@ if (rtc_include_tests) {
       "../..:webrtc_common",
       "../../rtc_base/system:file_wrapper",
       "../../system_wrappers",
-      "../../system_wrappers:metrics_default",
     ]
   }
 

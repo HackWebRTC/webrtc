@@ -17,7 +17,7 @@
 #include "modules/audio_processing/include/audio_processing.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/numerics/safe_minmax.h"
-#include "system_wrappers/include/field_trial_default.h"
+#include "system_wrappers/include/field_trial.h"
 #include "test/fuzzers/audio_processing_fuzzer_helper.h"
 #include "test/fuzzers/fuzz_data_helper.h"
 
@@ -156,7 +156,7 @@ std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
 void FuzzOneInput(const uint8_t* data, size_t size) {
   test::FuzzDataHelper fuzz_data(rtc::ArrayView<const uint8_t>(data, size));
   // This string must be in scope during execution, according to documentation
-  // for field_trial_default.h. Hence it's created here and not in CreateApm.
+  // for field_trial.h. Hence it's created here and not in CreateApm.
   std::string field_trial_string = "";
   auto apm = CreateApm(&fuzz_data, &field_trial_string);
 

@@ -16,8 +16,6 @@ rtc_static_library("webrtc_fuzzer_main") {
   ]
   deps = [
     "../../rtc_base:rtc_base_approved",
-    "../../system_wrappers:field_trial_default",
-    "../../system_wrappers:metrics_default",
     "../../system_wrappers:runtime_enabled_features_default",
     "//testing/libfuzzer:libfuzzer_main",
   ]
@@ -508,7 +506,7 @@ webrtc_fuzzer_test("audio_processing_fuzzer") {
     "../../rtc_base:ptr_util",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:safe_minmax",
-    "../../system_wrappers:field_trial_default",
+    "../../system_wrappers:field_trial",
     "//third_party/abseil-cpp/absl/memory",
   ]
   seed_corpus = "corpora/audio_processing-corpus"

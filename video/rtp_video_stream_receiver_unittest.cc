@@ -26,7 +26,7 @@
 #include "rtc_base/bytebuffer.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/clock.h"
-#include "system_wrappers/include/field_trial_default.h"
+#include "system_wrappers/include/field_trial.h"
 #include "test/field_trial.h"
 #include "video/rtp_video_stream_receiver.h"
 

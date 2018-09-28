@@ -26,7 +26,6 @@ rtc_static_library("encoded_frame") {
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base/experiments:alr_experiment",
     "../../rtc_base/experiments:rtt_mult_experiment",
-    "../../system_wrappers:field_trial_api",
     "../../system_wrappers:system_wrappers",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
@@ -75,7 +74,10 @@ rtc_static_library("packet") {
 
 rtc_static_library("video_coding") {
   visibility = [ "*" ]
-  deps = []
+  deps = [
+    "../../system_wrappers:field_trial",
+    "../../system_wrappers:metrics",
+  ]
 
   sources = [
     "codec_timer.cc",
@@ -175,8 +177,6 @@ rtc_static_library("video_coding") {
     "../../rtc_base/third_party/base64",
     "../../rtc_base/time:timestamp_extrapolator",
     "../../system_wrappers",
-    "../../system_wrappers:field_trial_api",
-    "../../system_wrappers:metrics_api",
     "../rtp_rtcp:rtp_rtcp_format",
     "../utility:utility",
     "//third_party/abseil-cpp/absl/types:optional",
@@ -273,8 +273,7 @@ rtc_source_set("video_coding_utility") {
     "../../rtc_base/experiments:quality_scaling_experiment",
     "../../rtc_base/system:arch",
     "../../system_wrappers",
-    "../../system_wrappers:field_trial_api",
-    "../../system_wrappers:metrics_api",
+    "../../system_wrappers:field_trial",
     "../rtp_rtcp:rtp_rtcp_format",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
@@ -303,7 +302,7 @@ rtc_static_library("webrtc_h264") {
     "../../media:rtc_media_base",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base",
-    "../../system_wrappers:metrics_api",
+    "../../system_wrappers:metrics",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/libyuv",
   ]
@@ -422,8 +421,8 @@ rtc_static_library("webrtc_vp8") {
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:rtc_numerics",
     "../../system_wrappers",
-    "../../system_wrappers:field_trial_api",
-    "../../system_wrappers:metrics_api",
+    "../../system_wrappers:field_trial",
+    "../../system_wrappers:metrics",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
     "//third_party/libyuv",
@@ -852,9 +851,8 @@ if (rtc_include_tests) {
       "../../rtc_base:rtc_task_queue",
       "../../rtc_base:rtc_task_queue_for_test",
       "../../system_wrappers",
-      "../../system_wrappers:field_trial_api",
-      "../../system_wrappers:metrics_api",
-      "../../system_wrappers:metrics_default",
+      "../../system_wrappers:field_trial",
+      "../../system_wrappers:metrics",
       "../../test:field_trial",
       "../../test:fileutils",
       "../../test:test_common",

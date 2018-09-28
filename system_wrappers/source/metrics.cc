@@ -269,7 +269,7 @@ SampleInfo::SampleInfo(const std::string& name,
 
 SampleInfo::~SampleInfo() {}
 
-// Implementation of global functions in metrics_default.h.
+// Implementation of global functions in metrics.h.
 void Enable() {
   RTC_DCHECK(g_rtc_histogram_map == nullptr);
 #if RTC_DCHECK_IS_ON

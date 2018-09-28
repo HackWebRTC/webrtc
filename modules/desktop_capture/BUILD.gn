@@ -378,7 +378,7 @@ rtc_static_library("desktop_capture_generic") {
     "../../rtc_base/system:arch",
     "../../system_wrappers",
     "../../system_wrappers:cpu_features_api",
-    "../../system_wrappers:metrics_api",
+    "../../system_wrappers:metrics",
     "//third_party/abseil-cpp/absl/memory",
   ]
 

@@ -305,7 +305,7 @@ if (rtc_include_tests) {
         "../logging:rtc_event_log_parser",
         "../rtc_base:protobuf_utils",
         "../rtc_base:rtc_base_approved",
-        "../system_wrappers:field_trial_default",
+        "../system_wrappers:field_trial",
         "../test:field_trial",
         "../test:fileutils",
         "../test:test_support",
@@ -325,7 +325,6 @@ if (rtc_include_tests) {
       "../modules/audio_processing/vad",
       "../rtc_base:rtc_base_approved",
       "../rtc_base:safe_minmax",
-      "../system_wrappers:metrics_default",
       "../test:test_support",
       "//testing/gtest",
     ]

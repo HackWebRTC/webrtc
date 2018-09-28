@@ -14,7 +14,7 @@
 #include "modules/audio_coding/neteq/tools/neteq_test.h"
 #include "modules/audio_coding/neteq/tools/neteq_test_factory.h"
 #include "rtc_base/flags.h"
-#include "system_wrappers/include/field_trial_default.h"
+#include "system_wrappers/include/field_trial.h"
 #include "test/field_trial.h"
 
 DEFINE_bool(codec_map,

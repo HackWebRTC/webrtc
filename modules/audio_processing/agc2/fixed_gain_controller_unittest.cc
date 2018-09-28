@@ -16,7 +16,7 @@
 #include "modules/audio_processing/agc2/vector_float_frame.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/gunit.h"
-#include "system_wrappers/include/metrics_default.h"
+#include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
 namespace {

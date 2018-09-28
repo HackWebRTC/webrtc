@@ -350,8 +350,6 @@ if (rtc_enable_protobuf) {
         "../rtc_base:checks",
         "../rtc_base:protobuf_utils",
         "../rtc_base:rtc_base_approved",
-        "../system_wrappers:field_trial_default",
-        "../system_wrappers:metrics_default",
         "../test:rtp_test_utils",
         "//third_party/abseil-cpp/absl/memory:memory",
         "//third_party/abseil-cpp/absl/types:optional",

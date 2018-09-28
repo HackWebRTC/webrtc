@@ -133,9 +133,7 @@ if (is_android) {
       ":native_api_jni",
       ":peerconnection_jni",
       "../../pc:peerconnection",
-      "../../system_wrappers:field_trial_default",
-      "../../system_wrappers:metrics_api",
-      "../../system_wrappers:metrics_default",
+      "../../system_wrappers:metrics",
       "../../system_wrappers:runtime_enabled_features_default",
     ]
   }
@@ -501,7 +499,7 @@ if (is_android) {
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base",
       "../../rtc_base:rtc_base_approved",
-      "../../system_wrappers:metrics_api",
+      "../../system_wrappers:metrics",
       "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
@@ -523,7 +521,9 @@ if (is_android) {
 
   rtc_static_library("video_jni") {
     sources = []
-    deps = []
+    deps = [
+      "../../system_wrappers:field_trial",
+    ]
 
     sources += [
       "src/jni/androidmediacodeccommon.h",
@@ -593,7 +593,6 @@ if (is_android) {
       "../../rtc_base:sequenced_task_checker",
       "../../rtc_base:weak_ptr",
       "../../rtc_base/memory:aligned_malloc",
-      "../../system_wrappers:field_trial_api",
       "//third_party/libyuv",
     ]
   }
@@ -670,7 +669,7 @@ if (is_android) {
       "../../rtc_base:rtc_base_approved",
       "../../rtc_base:rtc_task_queue",
       "../../rtc_base:stringutils",
-      "../../system_wrappers:field_trial_api",
+      "../../system_wrappers:field_trial",
       "//third_party/abseil-cpp/absl/memory",
     ]
   }
@@ -760,7 +759,7 @@ if (is_android) {
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
       "../../system_wrappers",
-      "../../system_wrappers:metrics_api",
+      "../../system_wrappers:metrics",
       "//third_party/abseil-cpp/absl/memory",
     ]
     if (rtc_enable_android_aaudio) {
@@ -987,7 +986,7 @@ if (is_android) {
       "../../modules/audio_device:audio_device_buffer",
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
-      "../../system_wrappers:metrics_api",
+      "../../system_wrappers:metrics",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
   }
@@ -1009,7 +1008,7 @@ if (is_android) {
       "../../modules/audio_device:audio_device_buffer",
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
-      "../../system_wrappers:metrics_api",
+      "../../system_wrappers:metrics",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
   }

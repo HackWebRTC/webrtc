@@ -29,7 +29,7 @@
 #include "rtc_base/bitrateallocationstrategy.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/thread_annotations.h"
-#include "system_wrappers/include/metrics_default.h"
+#include "system_wrappers/include/metrics.h"
 #include "test/call_test.h"
 #include "test/direct_transport.h"
 #include "test/drifting_clock.h"

@@ -14,7 +14,7 @@
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
 #include "rtc_base/experiments/alr_experiment.h"
 #include "rtc_base/flags.h"
-#include "system_wrappers/include/field_trial_default.h"
+#include "system_wrappers/include/field_trial.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
 #include "video/video_quality_test.h"

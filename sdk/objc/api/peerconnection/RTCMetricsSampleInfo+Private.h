@@ -10,10 +10,7 @@
 
 #import "RTCMetricsSampleInfo.h"
 
-// Adding 'nogncheck' to disable the gn include headers check.
-// We don't want to depend on 'system_wrappers:metrics_default' because
-// clients should be able to provide their own implementation.
-#include "system_wrappers/include/metrics_default.h"  // nogncheck
+#include "system_wrappers/include/metrics.h"
 
 NS_ASSUME_NONNULL_BEGIN
 

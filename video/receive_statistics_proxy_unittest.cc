@@ -19,7 +19,6 @@
 #include "api/video/video_rotation.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "system_wrappers/include/metrics.h"
-#include "system_wrappers/include/metrics_default.h"
 #include "test/gtest.h"
 
 namespace webrtc {

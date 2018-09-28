@@ -14,10 +14,7 @@
 
 #import "base/RTCLogging.h"
 
-// Adding 'nogncheck' to disable the gn include headers check.
-// We don't want to depend on 'system_wrappers:field_trial_default' because
-// clients should be able to provide their own implementation.
-#include "system_wrappers/include/field_trial_default.h"  // nogncheck
+#include "system_wrappers/include/field_trial.h"
 
 NSString * const kRTCFieldTrialAudioSendSideBweKey = @"WebRTC-Audio-SendSideBwe";
 NSString * const kRTCFieldTrialAudioSendSideBweForVideoKey = @"WebRTC-Audio-SendSideBwe-For-Video";

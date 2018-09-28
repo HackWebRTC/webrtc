@@ -48,8 +48,8 @@ rtc_static_library("remote_bitrate_estimator") {
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:safe_minmax",
     "../../system_wrappers",
-    "../../system_wrappers:field_trial_api",
-    "../../system_wrappers:metrics_api",
+    "../../system_wrappers:field_trial",
+    "../../system_wrappers:metrics",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
@@ -134,7 +134,7 @@ if (rtc_include_tests) {
       "../../rtc_base/system:fallthrough",
       "../../rtc_base/system:unused",
       "../../system_wrappers",
-      "../../system_wrappers:field_trial_api",
+      "../../system_wrappers:field_trial",
       "../../test:fileutils",
       "../../test:perf_test",
       "../../test:test_support",

@@ -37,10 +37,6 @@
 #include "sdk/android/src/jni/pc/sslcertificateverifierwrapper.h"
 #include "sdk/android/src/jni/pc/video.h"
 #include "system_wrappers/include/field_trial.h"
-// Adding 'nogncheck' to disable the gn include headers check.
-// We don't want to depend on 'system_wrappers:field_trial_default' because
-// clients should be able to provide their own implementation.
-#include "system_wrappers/include/field_trial_default.h"  // nogncheck
 
 namespace webrtc {
 namespace jni {

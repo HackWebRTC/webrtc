@@ -16,7 +16,7 @@
 #include "rtc_tools/event_log_visualizer/plot_base.h"
 #include "rtc_tools/event_log_visualizer/plot_protobuf.h"
 #include "rtc_tools/event_log_visualizer/plot_python.h"
-#include "system_wrappers/include/field_trial_default.h"
+#include "system_wrappers/include/field_trial.h"
 #include "test/field_trial.h"
 #include "test/testsupport/fileutils.h"
 

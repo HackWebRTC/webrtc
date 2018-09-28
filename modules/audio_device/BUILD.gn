@@ -72,7 +72,7 @@ if (rtc_include_internal_audio_device && is_ios) {
       "../../sdk:audio_device",
       "../../sdk:audio_objc",
       "../../sdk:base_objc",
-      "../../system_wrappers:metrics_api",
+      "../../system_wrappers:metrics",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -115,7 +115,7 @@ rtc_source_set("audio_device_buffer") {
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:rtc_task_queue",
     "../../system_wrappers",
-    "../../system_wrappers:metrics_api",
+    "../../system_wrappers:metrics",
   ]
   if (!build_with_chromium && is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -217,7 +217,7 @@ rtc_source_set("audio_device_impl") {
     "../../rtc_base/system:arch",
     "../../rtc_base/system:file_wrapper",
     "../../system_wrappers",
-    "../../system_wrappers:metrics_api",
+    "../../system_wrappers:metrics",
     "../utility",
     "//third_party/abseil-cpp/absl/memory",
   ]

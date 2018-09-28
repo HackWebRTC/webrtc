@@ -83,7 +83,7 @@ if (rtc_include_tests) {
       "../../rtc_base:sequenced_task_checker",
       "../../rtc_base:stringutils",
       "../../system_wrappers",
-      "../../system_wrappers:field_trial_api",
+      "../../system_wrappers:field_trial",
       "../../system_wrappers:runtime_enabled_features_api",
       "../../video",
       "//third_party/abseil-cpp/absl/types:optional",
@@ -114,7 +114,7 @@ if (rtc_include_tests) {
       "../../system_wrappers",
       "../../test:field_trial",
       "../../test:test_support",
-      "//system_wrappers:field_trial_api",
+      "//system_wrappers:field_trial",
       "//testing/gmock",
       "//third_party/abseil-cpp/absl/memory",
     ]

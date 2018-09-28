@@ -16,7 +16,6 @@
 #include <vector>
 
 #include "system_wrappers/include/metrics.h"
-#include "system_wrappers/include/metrics_default.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
 

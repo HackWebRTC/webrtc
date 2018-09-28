@@ -213,7 +213,6 @@ if (is_ios || is_mac) {
           "../rtc_base:checks",
           "../rtc_base:rtc_base_approved",
           "../system_wrappers",
-          "../system_wrappers:metrics_api",
         ]
 
         if (is_clang) {
@@ -260,7 +259,7 @@ if (is_ios || is_mac) {
           "../rtc_base:checks",
           "../rtc_base:rtc_base",
           "../rtc_base/system:fallthrough",
-          "../system_wrappers:metrics_api",
+          "../system_wrappers:metrics",
         ]
 
         if (is_clang) {
@@ -564,7 +563,6 @@ if (is_ios || is_mac) {
         "../modules/video_coding:video_codec_interface",
         "../rtc_base:checks",
         "../rtc_base:rtc_base_approved",
-        "../system_wrappers:field_trial_api",
       ]
     }
 
@@ -614,7 +612,6 @@ if (is_ios || is_mac) {
         ":base_objc",
         ":wrapped_native_codec_objc",
         "../modules/video_coding:webrtc_vp8",
-        "../system_wrappers:metrics_default",
       ]
     }
 
@@ -633,7 +630,6 @@ if (is_ios || is_mac) {
         ":wrapped_native_codec_objc",
         "../media:rtc_media_base",
         "../modules/video_coding:webrtc_vp9",
-        "../system_wrappers:metrics_default",
       ]
     }
 
@@ -921,6 +917,8 @@ if (is_ios || is_mac) {
         "../pc:peerconnection",
         "../rtc_base:checks",
         "../rtc_base:rtc_base",
+        "../system_wrappers:field_trial",
+        "../system_wrappers:metrics",
         "//third_party/abseil-cpp/absl/memory",
       ]
 
@@ -1310,8 +1308,6 @@ if (is_ios || is_mac) {
           ":videocodec_objc",
           ":videotoolbox_objc",
           "../rtc_base:rtc_base_approved",
-          "../system_wrappers:field_trial_default",
-          "../system_wrappers:metrics_default",
           "../system_wrappers:runtime_enabled_features_default",
         ]
         if (rtc_use_metal_rendering) {
@@ -1452,8 +1448,6 @@ if (is_ios || is_mac) {
           ":videocodec_objc",
           ":videotoolbox_objc",
           "../rtc_base:rtc_base_approved",
-          "../system_wrappers:field_trial_default",
-          "../system_wrappers:metrics_default",
           "../system_wrappers:runtime_enabled_features_default",
         ]
         if (rtc_use_metal_rendering) {

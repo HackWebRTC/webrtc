@@ -16,7 +16,6 @@
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/metrics.h"
-#include "system_wrappers/include/metrics_default.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 

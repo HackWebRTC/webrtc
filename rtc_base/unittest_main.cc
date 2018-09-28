@@ -19,8 +19,8 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/ssladapter.h"
 #include "rtc_base/sslstreamadapter.h"
-#include "system_wrappers/include/field_trial_default.h"
-#include "system_wrappers/include/metrics_default.h"
+#include "system_wrappers/include/field_trial.h"
+#include "system_wrappers/include/metrics.h"
 #include "test/field_trial.h"
 #include "test/testsupport/fileutils.h"
 

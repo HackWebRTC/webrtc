@@ -65,7 +65,7 @@ rtc_source_set("adaptive_digital") {
     "../../../rtc_base:checks",
     "../../../rtc_base:rtc_base_approved",
     "../../../rtc_base:safe_minmax",
-    "../../../system_wrappers:metrics_api",
+    "../../../system_wrappers:metrics",
   ]
 }
 
@@ -114,7 +114,7 @@ rtc_source_set("fixed_digital") {
     "../../../rtc_base:gtest_prod",
     "../../../rtc_base:rtc_base_approved",
     "../../../rtc_base:safe_minmax",
-    "../../../system_wrappers:metrics_api",
+    "../../../system_wrappers:metrics",
   ]
 }
 
@@ -232,7 +232,7 @@ rtc_source_set("fixed_digital_unittests") {
     "../../../rtc_base:checks",
     "../../../rtc_base:rtc_base_approved",
     "../../../rtc_base:rtc_base_tests_utils",
-    "../../../system_wrappers:metrics_default",
+    "../../../system_wrappers:metrics",
     "//third_party/abseil-cpp/absl/memory",
   ]
 }

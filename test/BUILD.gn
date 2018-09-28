@@ -16,7 +16,6 @@ group("test") {
   testonly = true
 
   deps = [
-    ":field_trial",
     ":rtp_test_utils",
     ":test_common",
     ":test_renderer",
@@ -115,8 +114,7 @@ rtc_source_set("field_trial") {
 
   deps = [
     "..:webrtc_common",
-    "../system_wrappers:field_trial_api",
-    "../system_wrappers:field_trial_default",
+    "../system_wrappers:field_trial",
   ]
 }
 
@@ -212,8 +210,8 @@ if (rtc_include_tests) {
       ":fileutils",
       ":perf_test",
       "../rtc_base:rtc_base",
-      "../system_wrappers:field_trial_default",
-      "../system_wrappers:metrics_default",
+      "../system_wrappers:field_trial",
+      "../system_wrappers:metrics",
       "../system_wrappers:runtime_enabled_features_default",
       "//testing/gtest",
     ]
@@ -615,7 +613,7 @@ rtc_source_set("test_common") {
     "../rtc_base:rtc_base_approved",
     "../rtc_base/experiments:congestion_controller_experiment",
     "../system_wrappers",
-    "../system_wrappers:field_trial_api",
+    "../system_wrappers:field_trial",
     "../system_wrappers:runtime_enabled_features_api",
     "../video",
     "//testing/gtest",
