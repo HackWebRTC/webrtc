@@ -178,7 +178,7 @@ class AudioProcessingImpl : public AudioProcessing {
                        bool render_pre_processor_enabled,
                        bool capture_analyzer_enabled);
     // Updates the submodule state and returns true if it has changed.
-    bool Update(bool low_cut_filter_enabled,
+    bool Update(bool high_pass_filter_enabled,
                 bool echo_canceller_enabled,
                 bool mobile_echo_controller_enabled,
                 bool residual_echo_detector_enabled,
@@ -197,12 +197,13 @@ class AudioProcessingImpl : public AudioProcessing {
     bool RenderMultiBandSubModulesActive() const;
     bool RenderFullBandProcessingActive() const;
     bool RenderMultiBandProcessingActive() const;
+    bool LowCutFilteringRequired() const;
 
    private:
     const bool capture_post_processor_enabled_ = false;
     const bool render_pre_processor_enabled_ = false;
     const bool capture_analyzer_enabled_ = false;
-    bool low_cut_filter_enabled_ = false;
+    bool high_pass_filter_enabled_ = false;
     bool echo_canceller_enabled_ = false;
     bool mobile_echo_controller_enabled_ = false;
     bool residual_echo_detector_enabled_ = false;

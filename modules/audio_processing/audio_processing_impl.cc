@@ -154,7 +154,7 @@ AudioProcessingImpl::ApmSubmoduleStates::ApmSubmoduleStates(
       capture_analyzer_enabled_(capture_analyzer_enabled) {}
 
 bool AudioProcessingImpl::ApmSubmoduleStates::Update(
-    bool low_cut_filter_enabled,
+    bool high_pass_filter_enabled,
     bool echo_canceller_enabled,
     bool mobile_echo_controller_enabled,
     bool residual_echo_detector_enabled,
@@ -167,7 +167,7 @@ bool AudioProcessingImpl::ApmSubmoduleStates::Update(
     bool level_estimator_enabled,
     bool transient_suppressor_enabled) {
   bool changed = false;
-  changed |= (low_cut_filter_enabled != low_cut_filter_enabled_);
+  changed |= (high_pass_filter_enabled != high_pass_filter_enabled_);
   changed |= (echo_canceller_enabled != echo_canceller_enabled_);
   changed |=
       (mobile_echo_controller_enabled != mobile_echo_controller_enabled_);
@@ -185,7 +185,7 @@ bool AudioProcessingImpl::ApmSubmoduleStates::Update(
       (voice_activity_detector_enabled != voice_activity_detector_enabled_);
   changed |= (transient_suppressor_enabled != transient_suppressor_enabled_);
   if (changed) {
-    low_cut_filter_enabled_ = low_cut_filter_enabled;
+    high_pass_filter_enabled_ = high_pass_filter_enabled;
     echo_canceller_enabled_ = echo_canceller_enabled;
     mobile_echo_controller_enabled_ = mobile_echo_controller_enabled;
     residual_echo_detector_enabled_ = residual_echo_detector_enabled;
@@ -211,7 +211,7 @@ bool AudioProcessingImpl::ApmSubmoduleStates::CaptureMultiBandSubModulesActive()
 
 bool AudioProcessingImpl::ApmSubmoduleStates::CaptureMultiBandProcessingActive()
     const {
-  return low_cut_filter_enabled_ || echo_canceller_enabled_ ||
+  return high_pass_filter_enabled_ || echo_canceller_enabled_ ||
          mobile_echo_controller_enabled_ || noise_suppressor_enabled_ ||
          adaptive_gain_controller_enabled_ || echo_controller_enabled_;
 }
@@ -241,6 +241,11 @@ bool AudioProcessingImpl::ApmSubmoduleStates::RenderFullBandProcessingActive()
 bool AudioProcessingImpl::ApmSubmoduleStates::RenderMultiBandProcessingActive()
     const {
   return false;
+}
+
+bool AudioProcessingImpl::ApmSubmoduleStates::LowCutFilteringRequired() const {
+  return high_pass_filter_enabled_ || echo_canceller_enabled_ ||
+         mobile_echo_controller_enabled_ || noise_suppressor_enabled_;
 }
 
 struct AudioProcessingImpl::ApmPublicSubmodules {
@@ -1792,7 +1797,7 @@ void AudioProcessingImpl::InitializeTransient() {
 }
 
 void AudioProcessingImpl::InitializeLowCutFilter() {
-  if (config_.high_pass_filter.enabled) {
+  if (submodule_states_.LowCutFilteringRequired()) {
     private_submodules_->low_cut_filter.reset(
         new LowCutFilter(num_proc_channels(), proc_sample_rate_hz()));
   } else {

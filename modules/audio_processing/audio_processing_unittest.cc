@@ -1410,33 +1410,12 @@ TEST_F(ApmTest, SplittingFilter) {
   EXPECT_EQ(apm_->kNoError, apm_->level_estimator()->Enable(false));
   EXPECT_EQ(apm_->kNoError, apm_->voice_detection()->Enable(false));
 
-  // 5. Not using super-wb.
-  frame_->samples_per_channel_ = 160;
-  frame_->num_channels_ = 2;
-  frame_->sample_rate_hz_ = 16000;
-  // Enable AEC, which would require the filter in super-wb. We rely on the
-  // first few frames of data being unaffected by the AEC.
-  // TODO(andrew): This test, and the one below, rely rather tenuously on the
-  // behavior of the AEC. Think of something more robust.
+  // Check the test is valid. We should have distortion from the filter
+  // when AEC is enabled (which won't affect the audio).
   AudioProcessing::Config apm_config = apm_->GetConfig();
   apm_config.echo_canceller.enabled = true;
   apm_config.echo_canceller.mobile_mode = false;
   apm_->ApplyConfig(apm_config);
-  // Make sure we have extended filter enabled. This makes sure nothing is
-  // touched until we have a farend frame.
-  Config config;
-  config.Set<ExtendedFilter>(new ExtendedFilter(true));
-  apm_->SetExtraOptions(config);
-  SetFrameTo(frame_, 1000);
-  frame_copy.CopyFrom(*frame_);
-  EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(0));
-  EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
-  EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(0));
-  EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
-  EXPECT_TRUE(FrameDataAreEqual(*frame_, frame_copy));
-
-  // Check the test is valid. We should have distortion from the filter
-  // when AEC is enabled (which won't affect the audio).
   frame_->samples_per_channel_ = 320;
   frame_->num_channels_ = 2;
   frame_->sample_rate_hz_ = 32000;
