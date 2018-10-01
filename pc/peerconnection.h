@@ -357,7 +357,8 @@ class PeerConnection : public PeerConnectionInternal,
   CreateSender(cricket::MediaType media_type,
                const std::string& id,
                rtc::scoped_refptr<MediaStreamTrackInterface> track,
-               const std::vector<std::string>& stream_ids);
+               const std::vector<std::string>& stream_ids,
+               const std::vector<RtpEncodingParameters>& send_encodings);
 
   rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
   CreateReceiver(cricket::MediaType media_type, const std::string& receiver_id);

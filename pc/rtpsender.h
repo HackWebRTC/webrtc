@@ -30,6 +30,8 @@ namespace webrtc {
 
 class StatsCollector;
 
+bool UnimplementedRtpParameterHasValue(const RtpParameters& parameters);
+
 // Internal interface used by PeerConnection.
 class RtpSenderInternal : public RtpSenderInterface {
  public:
@@ -50,6 +52,8 @@ class RtpSenderInternal : public RtpSenderInterface {
   virtual void SetSsrc(uint32_t ssrc) = 0;
 
   virtual void set_stream_ids(const std::vector<std::string>& stream_ids) = 0;
+  virtual void set_init_send_encodings(
+      const std::vector<RtpEncodingParameters>& init_send_encodings) = 0;
 
   virtual void Stop() = 0;
 
@@ -140,6 +144,14 @@ class AudioRtpSender : public DtmfProviderInterface,
     stream_ids_ = stream_ids;
   }
 
+  void set_init_send_encodings(
+      const std::vector<RtpEncodingParameters>& init_send_encodings) override {
+    init_parameters_.encodings = init_send_encodings;
+  }
+  std::vector<RtpEncodingParameters> init_send_encodings() const override {
+    return init_parameters_.encodings;
+  }
+
   void Stop() override;
 
   int AttachmentId() const override { return attachment_id_; }
@@ -167,6 +179,7 @@ class AudioRtpSender : public DtmfProviderInterface,
   rtc::Thread* const worker_thread_;
   const std::string id_;
   std::vector<std::string> stream_ids_;
+  RtpParameters init_parameters_;
   cricket::VoiceMediaChannel* media_channel_ = nullptr;
   StatsCollector* stats_ = nullptr;
   rtc::scoped_refptr<AudioTrackInterface> track_;
@@ -211,6 +224,14 @@ class VideoRtpSender : public ObserverInterface,
 
   std::vector<std::string> stream_ids() const override { return stream_ids_; }
 
+  void set_init_send_encodings(
+      const std::vector<RtpEncodingParameters>& init_send_encodings) override {
+    init_parameters_.encodings = init_send_encodings;
+  }
+  std::vector<RtpEncodingParameters> init_send_encodings() const override {
+    return init_parameters_.encodings;
+  }
+
   RtpParameters GetParameters() override;
   RTCError SetParameters(const RtpParameters& parameters) override;
 
@@ -251,6 +272,7 @@ class VideoRtpSender : public ObserverInterface,
   rtc::Thread* worker_thread_;
   const std::string id_;
   std::vector<std::string> stream_ids_;
+  RtpParameters init_parameters_;
   cricket::VideoMediaChannel* media_channel_ = nullptr;
   rtc::scoped_refptr<VideoTrackInterface> track_;
   absl::optional<std::string> last_transaction_id_;

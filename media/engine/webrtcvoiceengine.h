@@ -221,8 +221,6 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   int CreateVoEChannel();
   bool DeleteVoEChannel(int channel);
   bool SetMaxSendBitrate(int bps);
-  webrtc::RTCError ValidateRtpParameters(
-      const webrtc::RtpParameters& parameters);
   void SetupRecording();
   // Check if 'ssrc' is an unsignaled stream, and if so mark it as not being
   // unsignaled anymore (i.e. it is now removed, or signaled), and return true.

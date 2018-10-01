@@ -1181,7 +1181,7 @@ PeerConnection::AddTrackPlanB(
            ? cricket::MEDIA_TYPE_AUDIO
            : cricket::MEDIA_TYPE_VIDEO);
   auto new_sender =
-      CreateSender(media_type, track->id(), track, adjusted_stream_ids);
+      CreateSender(media_type, track->id(), track, adjusted_stream_ids, {});
   if (track->kind() == MediaStreamTrackInterface::kAudioKind) {
     new_sender->internal()->SetVoiceMediaChannel(voice_media_channel());
     GetAudioTransceiver()->internal()->AddSender(new_sender);
@@ -1237,7 +1237,7 @@ PeerConnection::AddTrackUnifiedPlan(
     if (FindSenderById(sender_id)) {
       sender_id = rtc::CreateRandomUuid();
     }
-    auto sender = CreateSender(media_type, sender_id, track, stream_ids);
+    auto sender = CreateSender(media_type, sender_id, track, stream_ids, {});
     auto receiver = CreateReceiver(media_type, rtc::CreateRandomUuid());
     transceiver = CreateAndAddTransceiver(sender, receiver);
     transceiver->internal()->set_created_by_addtrack(true);
@@ -1379,6 +1379,27 @@ PeerConnection::AddTransceiver(
   }
 
   // TODO(bugs.webrtc.org/7600): Verify init.
+  if (init.send_encodings.size() > 1) {
+    LOG_AND_RETURN_ERROR(
+        RTCErrorType::UNSUPPORTED_PARAMETER,
+        "Attempted to create an encoder with more than 1 encoding parameter.");
+  }
+
+  for (const auto& encoding : init.send_encodings) {
+    if (encoding.ssrc.has_value()) {
+      LOG_AND_RETURN_ERROR(
+          RTCErrorType::UNSUPPORTED_PARAMETER,
+          "Attempted to set an unimplemented parameter of RtpParameters.");
+    }
+  }
+
+  RtpParameters parameters;
+  parameters.encodings = init.send_encodings;
+  if (UnimplementedRtpParameterHasValue(parameters)) {
+    LOG_AND_RETURN_ERROR(
+        RTCErrorType::UNSUPPORTED_PARAMETER,
+        "Attempted to set an unimplemented parameter of RtpParameters.");
+  }
 
   RTC_LOG(LS_INFO) << "Adding " << cricket::MediaTypeToString(media_type)
                    << " transceiver in response to a call to AddTransceiver.";
@@ -1387,7 +1408,8 @@ PeerConnection::AddTransceiver(
   std::string sender_id =
       (track && !FindSenderById(track->id()) ? track->id()
                                              : rtc::CreateRandomUuid());
-  auto sender = CreateSender(media_type, sender_id, track, init.stream_ids);
+  auto sender = CreateSender(media_type, sender_id, track, init.stream_ids,
+                             init.send_encodings);
   auto receiver = CreateReceiver(media_type, rtc::CreateRandomUuid());
   auto transceiver = CreateAndAddTransceiver(sender, receiver);
   transceiver->internal()->set_direction(init.direction);
@@ -1404,7 +1426,8 @@ PeerConnection::CreateSender(
     cricket::MediaType media_type,
     const std::string& id,
     rtc::scoped_refptr<MediaStreamTrackInterface> track,
-    const std::vector<std::string>& stream_ids) {
+    const std::vector<std::string>& stream_ids,
+    const std::vector<RtpEncodingParameters>& send_encodings) {
   rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> sender;
   if (media_type == cricket::MEDIA_TYPE_AUDIO) {
     RTC_DCHECK(!track ||
@@ -1424,6 +1447,7 @@ PeerConnection::CreateSender(
   bool set_track_succeeded = sender->SetTrack(track);
   RTC_DCHECK(set_track_succeeded);
   sender->internal()->set_stream_ids(stream_ids);
+  sender->internal()->set_init_send_encodings(send_encodings);
   return sender;
 }
 
@@ -2733,7 +2757,8 @@ PeerConnection::AssociateTransceiver(cricket::ContentSource source,
                        << " at i=" << mline_index
                        << " in response to the remote description.";
       std::string sender_id = rtc::CreateRandomUuid();
-      auto sender = CreateSender(media_desc->type(), sender_id, nullptr, {});
+      auto sender =
+          CreateSender(media_desc->type(), sender_id, nullptr, {}, {});
       std::string receiver_id;
       if (!media_desc->streams().empty()) {
         receiver_id = media_desc->streams()[0].id;
@@ -3382,7 +3407,7 @@ void PeerConnection::AddAudioTrack(AudioTrackInterface* track,
 
   // Normal case; we've never seen this track before.
   auto new_sender = CreateSender(cricket::MEDIA_TYPE_AUDIO, track->id(), track,
-                                 {stream->id()});
+                                 {stream->id()}, {});
   new_sender->internal()->SetVoiceMediaChannel(voice_media_channel());
   GetAudioTransceiver()->internal()->AddSender(new_sender);
   // If the sender has already been configured in SDP, we call SetSsrc,
@@ -3427,7 +3452,7 @@ void PeerConnection::AddVideoTrack(VideoTrackInterface* track,
 
   // Normal case; we've never seen this track before.
   auto new_sender = CreateSender(cricket::MEDIA_TYPE_VIDEO, track->id(), track,
-                                 {stream->id()});
+                                 {stream->id()}, {});
   new_sender->internal()->SetVideoMediaChannel(video_media_channel());
   GetVideoTransceiver()->internal()->AddSender(new_sender);
   const RtpSenderInfo* sender_info =
@@ -3739,9 +3764,10 @@ GetMediaDescriptionOptionsForTransceiver(
     cricket::SenderOptions sender_options;
     sender_options.track_id = transceiver->sender()->id();
     sender_options.stream_ids = transceiver->sender()->stream_ids();
-    // TODO(bugs.webrtc.org/7600): Set num_sim_layers to the number of encodings
-    // set in the RTP parameters when the transceiver was added.
-    sender_options.num_sim_layers = 1;
+    int num_send_encoding_layers =
+        transceiver->sender()->init_send_encodings().size();
+    sender_options.num_sim_layers =
+        !num_send_encoding_layers ? 1 : num_send_encoding_layers;
     media_description_options.sender_options.push_back(sender_options);
   }
   return media_description_options;

@@ -20,4 +20,9 @@ RtpSenderInterface::GetFrameEncryptor() const {
   return nullptr;
 }
 
+std::vector<RtpEncodingParameters> RtpSenderInterface::init_send_encodings()
+    const {
+  return {};
+}
+
 }  // namespace webrtc

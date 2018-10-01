@@ -29,6 +29,7 @@ class MockRtpSenderInternal : public RtpSenderInternal {
   MOCK_CONST_METHOD0(media_type, cricket::MediaType());
   MOCK_CONST_METHOD0(id, std::string());
   MOCK_CONST_METHOD0(stream_ids, std::vector<std::string>());
+  MOCK_CONST_METHOD0(init_send_encodings, std::vector<RtpEncodingParameters>());
   MOCK_METHOD0(GetParameters, RtpParameters());
   MOCK_METHOD1(SetParameters, RTCError(const RtpParameters&));
   MOCK_CONST_METHOD0(GetDtmfSender, rtc::scoped_refptr<DtmfSenderInterface>());
@@ -42,6 +43,8 @@ class MockRtpSenderInternal : public RtpSenderInternal {
   MOCK_METHOD1(SetVideoMediaChannel, void(cricket::VideoMediaChannel*));
   MOCK_METHOD1(SetSsrc, void(uint32_t));
   MOCK_METHOD1(set_stream_ids, void(const std::vector<std::string>&));
+  MOCK_METHOD1(set_init_send_encodings,
+               void(const std::vector<RtpEncodingParameters>&));
   MOCK_METHOD0(Stop, void());
   MOCK_CONST_METHOD0(AttachmentId, int());
 };

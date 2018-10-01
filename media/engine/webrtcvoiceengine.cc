@@ -900,38 +900,8 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     return rtp_parameters_;
   }
 
-  webrtc::RTCError ValidateRtpParameters(
-      const webrtc::RtpParameters& rtp_parameters) {
-    using webrtc::RTCErrorType;
-    if (rtp_parameters.encodings.size() != rtp_parameters_.encodings.size()) {
-      LOG_AND_RETURN_ERROR(
-          RTCErrorType::INVALID_MODIFICATION,
-          "Attempted to set RtpParameters with different encoding count");
-    }
-    if (rtp_parameters.rtcp != rtp_parameters_.rtcp) {
-      LOG_AND_RETURN_ERROR(
-          RTCErrorType::INVALID_MODIFICATION,
-          "Attempted to set RtpParameters with modified RTCP parameters");
-    }
-    if (rtp_parameters.header_extensions != rtp_parameters_.header_extensions) {
-      LOG_AND_RETURN_ERROR(
-          RTCErrorType::INVALID_MODIFICATION,
-          "Attempted to set RtpParameters with modified header extensions");
-    }
-    if (rtp_parameters.encodings[0].ssrc != rtp_parameters_.encodings[0].ssrc) {
-      LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_MODIFICATION,
-                           "Attempted to set RtpParameters with modified SSRC");
-    }
-    if (rtp_parameters.encodings[0].bitrate_priority <= 0) {
-      LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_RANGE,
-                           "Attempted to set RtpParameters bitrate_priority to "
-                           "an invalid number.");
-    }
-    return webrtc::RTCError::OK();
-  }
-
   webrtc::RTCError SetRtpParameters(const webrtc::RtpParameters& parameters) {
-    webrtc::RTCError error = ValidateRtpParameters(parameters);
+    webrtc::RTCError error = ValidateRtpParameters(rtp_parameters_, parameters);
     if (!error.ok()) {
       return error;
     }

@@ -1722,7 +1722,8 @@ void WebRtcVideoChannel::WebRtcVideoSendStream::SetSendParameters(
 webrtc::RTCError WebRtcVideoChannel::WebRtcVideoSendStream::SetRtpParameters(
     const webrtc::RtpParameters& new_parameters) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
-  webrtc::RTCError error = ValidateRtpParameters(new_parameters);
+  webrtc::RTCError error =
+      ValidateRtpParameters(rtp_parameters_, new_parameters);
   if (!error.ok()) {
     return error;
   }
@@ -1782,49 +1783,6 @@ webrtc::RtpParameters
 WebRtcVideoChannel::WebRtcVideoSendStream::GetRtpParameters() const {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   return rtp_parameters_;
-}
-
-webrtc::RTCError
-WebRtcVideoChannel::WebRtcVideoSendStream::ValidateRtpParameters(
-    const webrtc::RtpParameters& rtp_parameters) {
-  using webrtc::RTCErrorType;
-  RTC_DCHECK_RUN_ON(&thread_checker_);
-  if (rtp_parameters.encodings.size() != rtp_parameters_.encodings.size()) {
-    LOG_AND_RETURN_ERROR(
-        RTCErrorType::INVALID_MODIFICATION,
-        "Attempted to set RtpParameters with different encoding count");
-  }
-  if (rtp_parameters.rtcp != rtp_parameters_.rtcp) {
-    LOG_AND_RETURN_ERROR(
-        RTCErrorType::INVALID_MODIFICATION,
-        "Attempted to set RtpParameters with modified RTCP parameters");
-  }
-  if (rtp_parameters.header_extensions != rtp_parameters_.header_extensions) {
-    LOG_AND_RETURN_ERROR(
-        RTCErrorType::INVALID_MODIFICATION,
-        "Attempted to set RtpParameters with modified header extensions");
-  }
-  if (rtp_parameters.encodings[0].ssrc != rtp_parameters_.encodings[0].ssrc) {
-    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_MODIFICATION,
-                         "Attempted to set RtpParameters with modified SSRC");
-  }
-  if (rtp_parameters.encodings[0].bitrate_priority <= 0) {
-    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_RANGE,
-                         "Attempted to set RtpParameters bitrate_priority to "
-                         "an invalid number. bitrate_priority must be > 0.");
-  }
-  for (size_t i = 0; i < rtp_parameters.encodings.size(); ++i) {
-    if (rtp_parameters.encodings[i].min_bitrate_bps &&
-        rtp_parameters.encodings[i].max_bitrate_bps) {
-      if (*rtp_parameters.encodings[i].max_bitrate_bps <
-          *rtp_parameters.encodings[i].min_bitrate_bps) {
-        LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_RANGE,
-                             "Attempted to set RtpParameters min bitrate "
-                             "larger than max bitrate.");
-      }
-    }
-  }
-  return webrtc::RTCError::OK();
 }
 
 void WebRtcVideoChannel::WebRtcVideoSendStream::UpdateSendState() {

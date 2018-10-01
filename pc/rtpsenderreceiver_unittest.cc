@@ -47,6 +47,8 @@ static const uint32_t kVideoSsrc = 98;
 static const uint32_t kVideoSsrc2 = 100;
 static const uint32_t kAudioSsrc = 99;
 static const uint32_t kAudioSsrc2 = 101;
+static const uint32_t kVideoSsrcSimulcast = 102;
+static const uint32_t kVideoSimulcastLayerCount = 2;
 static const int kDefaultTimeout = 10000;  // 10 seconds.
 }  // namespace
 
@@ -170,6 +172,18 @@ class RtpSenderReceiverTest : public testing::Test,
 
   void CreateVideoRtpSender() { CreateVideoRtpSender(false); }
 
+  void CreateVideoRtpSenderWithSimulcast(
+      int num_layers = kVideoSimulcastLayerCount) {
+    std::vector<uint32_t> ssrcs;
+    for (int i = 0; i < num_layers; ++i)
+      ssrcs.push_back(kVideoSsrcSimulcast + i);
+    cricket::StreamParams stream_params =
+        cricket::CreateSimStreamParams("cname", ssrcs);
+    video_media_channel_->AddSendStream(stream_params);
+    uint32_t primary_ssrc = stream_params.first_ssrc();
+    CreateVideoRtpSender(primary_ssrc);
+  }
+
   void CreateVideoRtpSender(bool is_screencast, uint32_t ssrc = kVideoSsrc) {
     AddVideoTrack(is_screencast);
     video_rtp_sender_ = new VideoRtpSender(worker_thread_, video_track_->id());
@@ -179,7 +193,6 @@ class RtpSenderReceiverTest : public testing::Test,
     video_rtp_sender_->SetSsrc(ssrc);
     VerifyVideoChannelInput(ssrc);
   }
-
   void CreateVideoRtpSenderWithNoTrack() {
     video_rtp_sender_ = new VideoRtpSender(worker_thread_, /*id=*/"");
     video_rtp_sender_->SetVideoMediaChannel(video_media_channel_);
@@ -612,6 +625,63 @@ TEST_F(RtpSenderReceiverTest, AudioSenderCanSetParameters) {
   DestroyAudioRtpSender();
 }
 
+TEST_F(RtpSenderReceiverTest, AudioSenderCanSetParametersBeforeNegotiation) {
+  audio_rtp_sender_ = new AudioRtpSender(worker_thread_, /*id=*/"", nullptr);
+
+  RtpParameters params = audio_rtp_sender_->GetParameters();
+  ASSERT_EQ(1u, params.encodings.size());
+  params.encodings[0].max_bitrate_bps = 90000;
+  EXPECT_TRUE(audio_rtp_sender_->SetParameters(params).ok());
+
+  params = audio_rtp_sender_->GetParameters();
+  EXPECT_TRUE(audio_rtp_sender_->SetParameters(params).ok());
+  EXPECT_EQ(params.encodings[0].max_bitrate_bps, 90000);
+
+  DestroyAudioRtpSender();
+}
+
+TEST_F(RtpSenderReceiverTest, AudioSenderInitParametersMovedAfterNegotiation) {
+  audio_track_ = AudioTrack::Create(kAudioTrackId, nullptr);
+  EXPECT_TRUE(local_stream_->AddTrack(audio_track_));
+
+  audio_rtp_sender_ =
+      new AudioRtpSender(worker_thread_, audio_track_->id(), nullptr);
+  ASSERT_TRUE(audio_rtp_sender_->SetTrack(audio_track_));
+  audio_rtp_sender_->set_stream_ids({local_stream_->id()});
+
+  std::vector<RtpEncodingParameters> init_encodings(1);
+  init_encodings[0].max_bitrate_bps = 60000;
+  audio_rtp_sender_->set_init_send_encodings(init_encodings);
+
+  RtpParameters params = audio_rtp_sender_->GetParameters();
+  ASSERT_EQ(1u, params.encodings.size());
+  EXPECT_EQ(params.encodings[0].max_bitrate_bps, 60000);
+
+  // Simulate the setLocalDescription call
+  std::vector<uint32_t> ssrcs(1, 1);
+  cricket::StreamParams stream_params =
+      cricket::CreateSimStreamParams("cname", ssrcs);
+  voice_media_channel_->AddSendStream(stream_params);
+  audio_rtp_sender_->SetVoiceMediaChannel(voice_media_channel_);
+  audio_rtp_sender_->SetSsrc(1);
+
+  params = audio_rtp_sender_->GetParameters();
+  ASSERT_EQ(1u, params.encodings.size());
+  EXPECT_EQ(params.encodings[0].max_bitrate_bps, 60000);
+
+  DestroyAudioRtpSender();
+}
+
+TEST_F(RtpSenderReceiverTest,
+       AudioSenderMustCallGetParametersBeforeSetParametersBeforeNegotiation) {
+  audio_rtp_sender_ = new AudioRtpSender(worker_thread_, /*id=*/"", nullptr);
+
+  RtpParameters params;
+  RTCError result = audio_rtp_sender_->SetParameters(params);
+  EXPECT_EQ(RTCErrorType::INVALID_STATE, result.type());
+  DestroyAudioRtpSender();
+}
+
 TEST_F(RtpSenderReceiverTest,
        AudioSenderMustCallGetParametersBeforeSetParameters) {
   CreateAudioRtpSender();
@@ -792,6 +862,100 @@ TEST_F(RtpSenderReceiverTest, VideoSenderCanSetParameters) {
   DestroyVideoRtpSender();
 }
 
+TEST_F(RtpSenderReceiverTest, VideoSenderCanSetParametersBeforeNegotiation) {
+  video_rtp_sender_ = new VideoRtpSender(worker_thread_, /*id=*/"");
+
+  RtpParameters params = video_rtp_sender_->GetParameters();
+  ASSERT_EQ(1u, params.encodings.size());
+  params.encodings[0].max_bitrate_bps = 90000;
+  EXPECT_TRUE(video_rtp_sender_->SetParameters(params).ok());
+
+  params = video_rtp_sender_->GetParameters();
+  EXPECT_TRUE(video_rtp_sender_->SetParameters(params).ok());
+  EXPECT_EQ(params.encodings[0].max_bitrate_bps, 90000);
+
+  DestroyVideoRtpSender();
+}
+
+TEST_F(RtpSenderReceiverTest, VideoSenderInitParametersMovedAfterNegotiation) {
+  AddVideoTrack(false);
+
+  video_rtp_sender_ = new VideoRtpSender(worker_thread_, video_track_->id());
+  ASSERT_TRUE(video_rtp_sender_->SetTrack(video_track_));
+  video_rtp_sender_->set_stream_ids({local_stream_->id()});
+
+  std::vector<RtpEncodingParameters> init_encodings(2);
+  init_encodings[0].max_bitrate_bps = 60000;
+  init_encodings[1].max_bitrate_bps = 900000;
+  video_rtp_sender_->set_init_send_encodings(init_encodings);
+
+  RtpParameters params = video_rtp_sender_->GetParameters();
+  ASSERT_EQ(2u, params.encodings.size());
+  EXPECT_EQ(params.encodings[0].max_bitrate_bps, 60000);
+  EXPECT_EQ(params.encodings[1].max_bitrate_bps, 900000);
+
+  // Simulate the setLocalDescription call
+  std::vector<uint32_t> ssrcs;
+  for (int i = 0; i < 2; ++i)
+    ssrcs.push_back(kVideoSsrcSimulcast + i);
+  cricket::StreamParams stream_params =
+      cricket::CreateSimStreamParams("cname", ssrcs);
+  video_media_channel_->AddSendStream(stream_params);
+  video_rtp_sender_->SetVideoMediaChannel(video_media_channel_);
+  video_rtp_sender_->SetSsrc(kVideoSsrcSimulcast);
+
+  params = video_rtp_sender_->GetParameters();
+  ASSERT_EQ(2u, params.encodings.size());
+  EXPECT_EQ(params.encodings[0].max_bitrate_bps, 60000);
+  EXPECT_EQ(params.encodings[1].max_bitrate_bps, 900000);
+
+  DestroyVideoRtpSender();
+}
+
+TEST_F(RtpSenderReceiverTest,
+       VideoSenderInitParametersMovedAfterManualSimulcastAndNegotiation) {
+  AddVideoTrack(false);
+
+  video_rtp_sender_ = new VideoRtpSender(worker_thread_, video_track_->id());
+  ASSERT_TRUE(video_rtp_sender_->SetTrack(video_track_));
+  video_rtp_sender_->set_stream_ids({local_stream_->id()});
+
+  std::vector<RtpEncodingParameters> init_encodings(1);
+  init_encodings[0].max_bitrate_bps = 60000;
+  video_rtp_sender_->set_init_send_encodings(init_encodings);
+
+  RtpParameters params = video_rtp_sender_->GetParameters();
+  ASSERT_EQ(1u, params.encodings.size());
+  EXPECT_EQ(params.encodings[0].max_bitrate_bps, 60000);
+
+  // Simulate the setLocalDescription call as if the user used SDP munging
+  // to enable simulcast
+  std::vector<uint32_t> ssrcs;
+  for (int i = 0; i < 2; ++i)
+    ssrcs.push_back(kVideoSsrcSimulcast + i);
+  cricket::StreamParams stream_params =
+      cricket::CreateSimStreamParams("cname", ssrcs);
+  video_media_channel_->AddSendStream(stream_params);
+  video_rtp_sender_->SetVideoMediaChannel(video_media_channel_);
+  video_rtp_sender_->SetSsrc(kVideoSsrcSimulcast);
+
+  params = video_rtp_sender_->GetParameters();
+  ASSERT_EQ(2u, params.encodings.size());
+  EXPECT_EQ(params.encodings[0].max_bitrate_bps, 60000);
+
+  DestroyVideoRtpSender();
+}
+
+TEST_F(RtpSenderReceiverTest,
+       VideoSenderMustCallGetParametersBeforeSetParametersBeforeNegotiation) {
+  video_rtp_sender_ = new VideoRtpSender(worker_thread_, /*id=*/"");
+
+  RtpParameters params;
+  RTCError result = video_rtp_sender_->SetParameters(params);
+  EXPECT_EQ(RTCErrorType::INVALID_STATE, result.type());
+  DestroyVideoRtpSender();
+}
+
 TEST_F(RtpSenderReceiverTest,
        VideoSenderMustCallGetParametersBeforeSetParameters) {
   CreateVideoRtpSender();
@@ -915,6 +1079,58 @@ TEST_F(RtpSenderReceiverTest,
   DestroyVideoRtpSender();
 }
 
+TEST_F(RtpSenderReceiverTest,
+       VideoSenderCantSetUnimplementedEncodingParametersWithSimulcast) {
+  CreateVideoRtpSenderWithSimulcast();
+  RtpParameters params = video_rtp_sender_->GetParameters();
+  EXPECT_EQ(kVideoSimulcastLayerCount, params.encodings.size());
+
+  // Unimplemented RtpParameters: codec_payload_type, fec, rtx, dtx, ptime,
+  // scale_resolution_down_by, scale_framerate_down_by, rid, dependency_rids.
+  for (size_t i = 0; i < params.encodings.size(); i++) {
+    params.encodings[i].codec_payload_type = 1;
+    EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
+              video_rtp_sender_->SetParameters(params).type());
+    params = video_rtp_sender_->GetParameters();
+
+    params.encodings[i].fec = RtpFecParameters();
+    EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
+              video_rtp_sender_->SetParameters(params).type());
+    params = video_rtp_sender_->GetParameters();
+
+    params.encodings[i].rtx = RtpRtxParameters();
+    EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
+              video_rtp_sender_->SetParameters(params).type());
+    params = video_rtp_sender_->GetParameters();
+
+    params.encodings[i].dtx = DtxStatus::ENABLED;
+    EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
+              video_rtp_sender_->SetParameters(params).type());
+    params = video_rtp_sender_->GetParameters();
+
+    params.encodings[i].ptime = 1;
+    EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
+              video_rtp_sender_->SetParameters(params).type());
+    params = video_rtp_sender_->GetParameters();
+
+    params.encodings[i].scale_resolution_down_by = 2.0;
+    EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
+              video_rtp_sender_->SetParameters(params).type());
+    params = video_rtp_sender_->GetParameters();
+
+    params.encodings[i].rid = "dummy_rid";
+    EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
+              video_rtp_sender_->SetParameters(params).type());
+    params = video_rtp_sender_->GetParameters();
+
+    params.encodings[i].dependency_rids.push_back("dummy_rid");
+    EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
+              video_rtp_sender_->SetParameters(params).type());
+  }
+
+  DestroyVideoRtpSender();
+}
+
 // A video sender can have multiple simulcast layers, in which case it will
 // contain multiple RtpEncodingParameters. This tests that if this is the case
 // (simulcast), then we can't set the bitrate_priority, or max_bitrate_bps
@@ -922,19 +1138,30 @@ TEST_F(RtpSenderReceiverTest,
 // "per-sender."
 TEST_F(RtpSenderReceiverTest, VideoSenderCantSetPerSenderEncodingParameters) {
   // Add a simulcast specific send stream that contains 2 encoding parameters.
-  std::vector<uint32_t> ssrcs({1, 2});
-  cricket::StreamParams stream_params =
-      cricket::CreateSimStreamParams("cname", ssrcs);
-  video_media_channel_->AddSendStream(stream_params);
-  uint32_t primary_ssrc = stream_params.first_ssrc();
-  CreateVideoRtpSender(primary_ssrc);
+  CreateVideoRtpSenderWithSimulcast();
   RtpParameters params = video_rtp_sender_->GetParameters();
-  EXPECT_EQ(ssrcs.size(), params.encodings.size());
+  EXPECT_EQ(kVideoSimulcastLayerCount, params.encodings.size());
 
   params.encodings[1].bitrate_priority = 2.0;
   EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
             video_rtp_sender_->SetParameters(params).type());
   params = video_rtp_sender_->GetParameters();
+
+  DestroyVideoRtpSender();
+}
+
+TEST_F(RtpSenderReceiverTest, VideoSenderCantSetReadOnlyEncodingParameters) {
+  // Add a simulcast specific send stream that contains 2 encoding parameters.
+  CreateVideoRtpSenderWithSimulcast();
+  RtpParameters params = video_rtp_sender_->GetParameters();
+  EXPECT_EQ(kVideoSimulcastLayerCount, params.encodings.size());
+
+  for (size_t i = 0; i < params.encodings.size(); i++) {
+    params.encodings[i].ssrc = 1337;
+    EXPECT_EQ(RTCErrorType::INVALID_MODIFICATION,
+              video_rtp_sender_->SetParameters(params).type());
+    params = video_rtp_sender_->GetParameters();
+  }
 
   DestroyVideoRtpSender();
 }
@@ -971,15 +1198,10 @@ TEST_F(RtpSenderReceiverTest, SetVideoMinMaxSendBitrate) {
 
 TEST_F(RtpSenderReceiverTest, SetVideoMinMaxSendBitrateSimulcast) {
   // Add a simulcast specific send stream that contains 2 encoding parameters.
-  std::vector<uint32_t> ssrcs({1, 2});
-  cricket::StreamParams stream_params =
-      cricket::CreateSimStreamParams("cname", ssrcs);
-  video_media_channel_->AddSendStream(stream_params);
-  uint32_t primary_ssrc = stream_params.first_ssrc();
-  CreateVideoRtpSender(primary_ssrc);
+  CreateVideoRtpSenderWithSimulcast();
 
   RtpParameters params = video_rtp_sender_->GetParameters();
-  EXPECT_EQ(ssrcs.size(), params.encodings.size());
+  EXPECT_EQ(kVideoSimulcastLayerCount, params.encodings.size());
   params.encodings[0].min_bitrate_bps = 100;
   params.encodings[0].max_bitrate_bps = 1000;
   params.encodings[1].min_bitrate_bps = 200;
@@ -987,8 +1209,8 @@ TEST_F(RtpSenderReceiverTest, SetVideoMinMaxSendBitrateSimulcast) {
   EXPECT_TRUE(video_rtp_sender_->SetParameters(params).ok());
 
   // Verify that the video channel received the new parameters.
-  params = video_media_channel_->GetRtpSendParameters(primary_ssrc);
-  EXPECT_EQ(ssrcs.size(), params.encodings.size());
+  params = video_media_channel_->GetRtpSendParameters(kVideoSsrcSimulcast);
+  EXPECT_EQ(kVideoSimulcastLayerCount, params.encodings.size());
   EXPECT_EQ(100, params.encodings[0].min_bitrate_bps);
   EXPECT_EQ(1000, params.encodings[0].max_bitrate_bps);
   EXPECT_EQ(200, params.encodings[1].min_bitrate_bps);

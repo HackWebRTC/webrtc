@@ -151,6 +151,11 @@ class RtpHelper : public Base {
       const webrtc::RtpParameters& parameters) {
     auto parameters_iterator = rtp_send_parameters_.find(ssrc);
     if (parameters_iterator != rtp_send_parameters_.end()) {
+      auto result =
+          ValidateRtpParameters(parameters_iterator->second, parameters);
+      if (!result.ok())
+        return result;
+
       parameters_iterator->second = parameters;
       return webrtc::RTCError::OK();
     }
