@@ -71,6 +71,7 @@ class VP9EncoderImpl : public VP9Encoder {
                             CodecSpecificInfoVP9* vp9_info);
   void UpdateReferenceBuffers(const vpx_codec_cx_pkt& pkt,
                               const size_t pic_num);
+  vpx_svc_ref_frame_config_t SetReferences(bool is_key_pic);
 
   bool ExplicitlyConfiguredSpatialLayers() const;
   bool SetSvcRates(const VideoBitrateAllocation& bitrate_allocation);
@@ -116,6 +117,7 @@ class VP9EncoderImpl : public VP9Encoder {
   uint8_t num_active_spatial_layers_;  // Number of actively encoded SLs
   bool is_svc_;
   InterLayerPredMode inter_layer_pred_;
+  bool external_ref_control_;
 
   std::vector<FramerateController> framerate_controller_;
 

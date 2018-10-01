@@ -32,10 +32,16 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/timeutils.h"
 #include "rtc_base/trace_event.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 
 namespace {
+// Maps from gof_idx to encoder internal reference frame buffer index. These
+// maps work for 1,2 and 3 temporal layers with GOF length of 1,2 and 4 frames.
+uint8_t kRefBufIdx[4] = {0, 0, 0, 1};
+uint8_t kUpdBufIdx[4] = {0, 0, 1, 0};
+
 // Only positive speeds, range for real-time coding currently is: 5 - 8.
 // Lower means slower/better quality, higher means fastest/lower quality.
 int GetCpuSpeed(int width, int height) {
@@ -153,8 +159,11 @@ VP9EncoderImpl::VP9EncoderImpl(const cricket::VideoCodec& codec)
       pics_since_key_(0),
       num_temporal_layers_(0),
       num_spatial_layers_(0),
+      num_active_spatial_layers_(0),
       is_svc_(false),
       inter_layer_pred_(InterLayerPredMode::kOn),
+      external_ref_control_(
+          webrtc::field_trial::IsEnabled("WebRTC-Vp9ExternalRefCtrl")),
       is_flexible_mode_(false) {
   memset(&codec_, 0, sizeof(codec_));
   memset(&svc_params_, 0, sizeof(vpx_svc_extra_cfg_t));
@@ -769,6 +778,11 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
     flags = VPX_EFLAG_FORCE_KF;
   }
 
+  if (external_ref_control_) {
+    vpx_svc_ref_frame_config_t ref_config = SetReferences(force_key_frame_);
+    vpx_codec_control(encoder_, VP9E_SET_SVC_REF_FRAME_CONFIG, &ref_config);
+  }
+
   // TODO(ssilkin): Frame duration should be specified per spatial layer
   // since their frame rate can be different. For now calculate frame duration
   // based on target frame rate of the highest spatial layer, which frame rate
@@ -876,6 +890,8 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
     vp9_info->gof_idx = kNoGofIdx;
     FillReferenceIndices(pkt, pics_since_key_, vp9_info->inter_layer_predicted,
                          vp9_info);
+    // TODO(webrtc:9794): Add fake reference to empty reference list to
+    // workaround the frame buffer issue on receiver.
   } else {
     vp9_info->gof_idx =
         static_cast<uint8_t>(pics_since_key_ % gof_.num_frames_in_gof);
@@ -1030,6 +1046,88 @@ void VP9EncoderImpl::UpdateReferenceBuffers(const vpx_codec_cx_pkt& pkt,
     // is reference and stored in buffer 0.
     ref_buf_[0] = frame_buf;
   }
+}
+
+vpx_svc_ref_frame_config_t VP9EncoderImpl::SetReferences(bool is_key_pic) {
+  // kRefBufIdx, kUpdBufIdx need to be updated to support longer GOFs.
+  RTC_DCHECK_LE(gof_.num_frames_in_gof, 4);
+
+  vpx_svc_ref_frame_config_t ref_config;
+  memset(&ref_config, 0, sizeof(ref_config));
+
+  const size_t num_temporal_refs = std::max(1, num_temporal_layers_ - 1);
+  const bool is_inter_layer_pred_allowed =
+      inter_layer_pred_ == InterLayerPredMode::kOn ||
+      (inter_layer_pred_ == InterLayerPredMode::kOnKeyPic && is_key_pic);
+  absl::optional<int> last_updated_buf_idx;
+
+  // Put temporal reference to LAST and spatial reference to GOLDEN. Update
+  // frame buffer (i.e. store encoded frame) if current frame is a temporal
+  // reference (i.e. it belongs to a low temporal layer) or it is a spatial
+  // reference. In later case, always store spatial reference in the last
+  // reference frame buffer.
+  // For the case of 3 temporal and 3 spatial layers we need 6 frame buffers
+  // for temporal references plus 1 buffer for spatial reference. 7 buffers
+  // in total.
+
+  for (size_t sl_idx = 0; sl_idx < num_active_spatial_layers_; ++sl_idx) {
+    const size_t gof_idx = pics_since_key_ % gof_.num_frames_in_gof;
+
+    if (!is_key_pic) {
+      // Set up temporal reference.
+      const int buf_idx = sl_idx * num_temporal_refs + kRefBufIdx[gof_idx];
+
+      // Last reference frame buffer is reserved for spatial reference. It is
+      // not supposed to be used for temporal prediction.
+      RTC_DCHECK_LT(buf_idx, kNumVp9Buffers - 1);
+
+      // Sanity check that reference picture number is smaller than current
+      // picture number.
+      const size_t curr_pic_num = pics_since_key_ + 1;
+      RTC_DCHECK_LT(ref_buf_[buf_idx].pic_num, curr_pic_num);
+      const size_t pid_diff = curr_pic_num - ref_buf_[buf_idx].pic_num;
+
+      // Below code assumes single temporal referecence.
+      RTC_DCHECK_EQ(gof_.num_ref_pics[gof_idx], 1);
+      if (pid_diff == gof_.pid_diff[gof_idx][0]) {
+        ref_config.lst_fb_idx[sl_idx] = buf_idx;
+        ref_config.reference_last[sl_idx] = 1;
+      } else {
+        // This reference doesn't match with one specified by GOF. This can
+        // only happen if spatial layer is enabled dynamically without key
+        // frame. Spatial prediction is supposed to be enabled in this case.
+        RTC_DCHECK(is_inter_layer_pred_allowed);
+      }
+    }
+
+    if (is_inter_layer_pred_allowed && sl_idx > 0) {
+      // Set up spatial reference.
+      RTC_DCHECK(last_updated_buf_idx);
+      ref_config.gld_fb_idx[sl_idx] = *last_updated_buf_idx;
+      ref_config.reference_golden[sl_idx] = 1;
+    } else {
+      RTC_DCHECK(ref_config.reference_last[sl_idx] != 0 || sl_idx == 0 ||
+                 inter_layer_pred_ == InterLayerPredMode::kOff);
+    }
+
+    last_updated_buf_idx.reset();
+
+    if (gof_.temporal_idx[gof_idx] <= num_temporal_layers_ - 1) {
+      last_updated_buf_idx = sl_idx * num_temporal_refs + kUpdBufIdx[gof_idx];
+
+      // Ensure last frame buffer is not used for temporal prediction (it is
+      // reserved for spatial reference).
+      RTC_DCHECK_LT(*last_updated_buf_idx, kNumVp9Buffers - 1);
+    } else if (is_inter_layer_pred_allowed) {
+      last_updated_buf_idx = kNumVp9Buffers - 1;
+    }
+
+    if (last_updated_buf_idx) {
+      ref_config.update_buffer_slot[sl_idx] = 1 << *last_updated_buf_idx;
+    }
+  }
+
+  return ref_config;
 }
 
 int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {

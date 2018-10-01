@@ -493,6 +493,7 @@ rtc_static_library("webrtc_vp9") {
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base",
     "../../system_wrappers",
+    "../../system_wrappers:field_trial",
     "../rtp_rtcp:rtp_rtcp_format",
     "//third_party/abseil-cpp/absl/memory",
   ]
@@ -733,6 +734,7 @@ if (rtc_include_tests) {
       "../../media:rtc_media_base",
       "../../media:rtc_vp9_profile",
       "../../rtc_base:rtc_base",
+      "../../test:field_trial",
       "../../test:fileutils",
       "../../test:test_common",
       "../../test:test_support",

@@ -16,6 +16,7 @@
 #include "modules/video_coding/codecs/test/video_codec_unittest.h"
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
 #include "modules/video_coding/codecs/vp9/svc_config.h"
+#include "test/field_trial.h"
 #include "test/video_codec_settings.h"
 
 namespace webrtc {
@@ -555,6 +556,45 @@ TEST_P(TestVp9ImplWithLayering, FlexibleMode) {
   // encoder and writes it into RTP payload descriptor. Check that reference
   // list in payload descriptor matches the predefined one, which is used
   // in non-flexible mode.
+  codec_settings_.VP9()->flexibleMode = true;
+  codec_settings_.VP9()->frameDroppingOn = false;
+  codec_settings_.VP9()->numberOfSpatialLayers = num_spatial_layers_;
+  codec_settings_.VP9()->numberOfTemporalLayers = num_temporal_layers_;
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->InitEncode(&codec_settings_, 1 /* number of cores */,
+                                 0 /* max payload size (unused) */));
+
+  GofInfoVP9 gof;
+  if (num_temporal_layers_ == 1) {
+    gof.SetGofInfoVP9(kTemporalStructureMode1);
+  } else if (num_temporal_layers_ == 2) {
+    gof.SetGofInfoVP9(kTemporalStructureMode2);
+  } else if (num_temporal_layers_ == 3) {
+    gof.SetGofInfoVP9(kTemporalStructureMode3);
+  }
+
+  // Encode at least (num_frames_in_gof + 1) frames to verify references
+  // of non-key frame with gof_idx = 0.
+  for (size_t frame_num = 0; frame_num < gof.num_frames_in_gof + 1;
+       ++frame_num) {
+    SetWaitForEncodedFramesThreshold(num_spatial_layers_);
+    EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+              encoder_->Encode(*NextInputFrame(), nullptr, nullptr));
+
+    const bool is_key_frame = frame_num == 0;
+    const size_t gof_idx = frame_num % gof.num_frames_in_gof;
+    const std::vector<uint8_t> p_diff(std::begin(gof.pid_diff[gof_idx]),
+                                      std::end(gof.pid_diff[gof_idx]));
+
+    ExpectFrameWith(num_spatial_layers_, gof.temporal_idx[gof_idx],
+                    gof.temporal_up_switch[gof_idx],
+                    is_key_frame ? 0 : gof.num_ref_pics[gof_idx], p_diff);
+  }
+}
+
+TEST_P(TestVp9ImplWithLayering, ExternalRefControl) {
+  test::ScopedFieldTrials override_field_trials(
+      "WebRTC-Vp9ExternalRefCtrl/Enabled/");
   codec_settings_.VP9()->flexibleMode = true;
   codec_settings_.VP9()->frameDroppingOn = false;
   codec_settings_.VP9()->numberOfSpatialLayers = num_spatial_layers_;
