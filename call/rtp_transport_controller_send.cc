@@ -307,6 +307,12 @@ void RtpTransportControllerSend::SetClientBitratePreferences(
 
 void RtpTransportControllerSend::SetAllocatedBitrateWithoutFeedback(
     uint32_t bitrate_bps) {
-  send_side_cc_->SetAllocatedBitrateWithoutFeedback(bitrate_bps);
+  // Audio transport feedback will not be reported in this mode, instead update
+  // acknowledged bitrate estimator with the bitrate allocated for audio.
+  if (field_trial::IsEnabled("WebRTC-Audio-ABWENoTWCC")) {
+    // TODO(srte): Make sure it's safe to always report this and remove the
+    // field trial check.
+    send_side_cc_->SetAllocatedBitrateWithoutFeedback(bitrate_bps);
+  }
 }
 }  // namespace webrtc

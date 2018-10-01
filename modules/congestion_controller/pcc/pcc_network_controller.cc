@@ -368,7 +368,9 @@ NetworkControlUpdate PccNetworkController::OnTransportLossReport(
   return NetworkControlUpdate();
 }
 
-NetworkControlUpdate PccNetworkController::OnStreamsConfig(StreamsConfig) {
+NetworkControlUpdate PccNetworkController::OnStreamsConfig(StreamsConfig msg) {
+  // TODO(srte): Handle unacknowledged rate allocation.
+  RTC_DCHECK(msg.unacknowledged_rate_allocation.IsZero());
   return NetworkControlUpdate();
 }
 

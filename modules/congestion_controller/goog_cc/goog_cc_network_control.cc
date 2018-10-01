@@ -294,6 +294,9 @@ NetworkControlUpdate GoogCcNetworkController::OnStreamsConfig(
     max_padding_rate_ = *msg.max_padding_rate;
     pacing_changed = true;
   }
+  acknowledged_bitrate_estimator_->SetAllocatedBitrateWithoutFeedback(
+      msg.unacknowledged_rate_allocation.bps());
+
   if (pacing_changed)
     update.pacer_config = GetPacingRates(msg.at_time);
   return update;

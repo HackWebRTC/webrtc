@@ -752,7 +752,13 @@ void SendSideCongestionController::SetPacingFactor(float pacing_factor) {
 }
 
 void SendSideCongestionController::SetAllocatedBitrateWithoutFeedback(
-    uint32_t bitrate_bps) {}
+    uint32_t bitrate_bps) {
+  task_queue_->PostTask([this, bitrate_bps]() {
+    RTC_DCHECK_RUN_ON(task_queue_);
+    streams_config_.unacknowledged_rate_allocation = DataRate::bps(bitrate_bps);
+    UpdateStreamsConfig();
+  });
+}
 
 void SendSideCongestionController::DisablePeriodicTasks() {
   task_queue_->PostTask([this]() {

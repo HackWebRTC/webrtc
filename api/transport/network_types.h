@@ -36,6 +36,8 @@ struct StreamsConfig {
   absl::optional<DataRate> min_pacing_rate;
   absl::optional<DataRate> max_padding_rate;
   absl::optional<DataRate> max_total_allocated_bitrate;
+  // The send rate of traffic for which feedback is not received.
+  DataRate unacknowledged_rate_allocation = DataRate::Zero();
 };
 
 struct TargetRateConstraints {
