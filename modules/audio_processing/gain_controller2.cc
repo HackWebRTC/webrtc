@@ -43,7 +43,7 @@ void GainController2::Process(AudioBuffer* audio) {
   AudioFrameView<float> float_frame(audio->channels_f(), audio->num_channels(),
                                     audio->num_frames());
   if (adaptive_digital_mode_) {
-    adaptive_agc_.Process(float_frame);
+    adaptive_agc_.Process(float_frame, fixed_gain_controller_.LastAudioLevel());
   }
   fixed_gain_controller_.Process(float_frame);
 }

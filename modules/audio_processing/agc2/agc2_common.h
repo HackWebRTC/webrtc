@@ -34,6 +34,8 @@ constexpr float kMaxGainChangePerFrameDb =
 constexpr float kHeadroomDbfs = 1.f;
 constexpr float kMaxGainDb = 30.f;
 constexpr float kInitialAdaptiveDigitalGainDb = 8.f;
+// At what limiter levels should we start decreasing the adaptive digital gain.
+constexpr float kLimiterThresholdForAgcGainDbfs = -kHeadroomDbfs;
 
 // This parameter must be tuned together with the noise estimator.
 constexpr float kMaxNoiseLevelDbfs = -50.f;

@@ -98,4 +98,8 @@ void FixedGainController::Process(AudioFrameView<float> signal) {
     }
   }
 }
+
+float FixedGainController::LastAudioLevel() const {
+  return gain_curve_applier_.LastAudioLevel();
+}
 }  // namespace webrtc

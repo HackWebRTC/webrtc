@@ -48,6 +48,8 @@ class FixedDigitalLevelEstimator {
   // Resets the level estimator internal state.
   void Reset();
 
+  float LastAudioLevel() const { return filter_state_level_; }
+
  private:
   void CheckParameterCombination();
 
