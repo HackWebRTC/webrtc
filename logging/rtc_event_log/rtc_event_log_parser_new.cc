@@ -211,8 +211,13 @@ IceCandidatePairEventType GetRuntimeIceCandidatePairEventType(
   return IceCandidatePairEventType::kCheckSent;
 }
 
-std::pair<uint64_t, bool> ParseVarInt(
-    std::istream& stream) {  // no-presubmit-check TODO(webrtc:8982)
+// Reads a VarInt from |stream| and returns it. Also writes the read bytes to
+// |buffer| starting |bytes_written| bytes into the buffer. |bytes_written| is
+// incremented for each written byte.
+absl::optional<uint64_t> ParseVarInt(
+    std::istream& stream,  // no-presubmit-check TODO(webrtc:8982)
+    char* buffer,
+    size_t* bytes_written) {
   uint64_t varint = 0;
   for (size_t bytes_read = 0; bytes_read < 10; ++bytes_read) {
     // The most significant bit of each byte is 0 if it is the last byte in
@@ -221,16 +226,18 @@ std::pair<uint64_t, bool> ParseVarInt(
     // the (unsigned) integer.
     int byte = stream.get();
     if (stream.eof()) {
-      return std::make_pair(varint, false);
+      return absl::nullopt;
     }
     RTC_DCHECK_GE(byte, 0);
     RTC_DCHECK_LE(byte, 255);
     varint |= static_cast<uint64_t>(byte & 0x7F) << (7 * bytes_read);
+    buffer[*bytes_written] = byte;
+    *bytes_written += 1;
     if ((byte & 0x80) == 0) {
-      return std::make_pair(varint, true);
+      return varint;
     }
   }
-  return std::make_pair(varint, false);
+  return absl::nullopt;
 }
 
 void GetHeaderExtensions(std::vector<RtpExtension>* header_extensions,
@@ -471,10 +478,8 @@ bool ParsedRtcEventLogNew::ParseStream(
 bool ParsedRtcEventLogNew::ParseStreamInternal(
     std::istream& stream) {  // no-presubmit-check TODO(webrtc:8982)
   const size_t kMaxEventSize = (1u << 16) - 1;
-  std::vector<char> tmp_buffer(kMaxEventSize);
-  uint64_t tag;
-  uint64_t message_length;
-  bool success;
+  const size_t kMaxVarintSize = 10;
+  std::vector<char> buffer(kMaxEventSize + 2 * kMaxVarintSize);
 
   RTC_DCHECK(stream.good());
 
@@ -487,46 +492,50 @@ bool ParsedRtcEventLogNew::ParseStreamInternal(
 
     // Read the next message tag. The tag number is defined as
     // (fieldnumber << 3) | wire_type. In our case, the field number is
-    // supposed to be 1 and the wire type for an
-    // length-delimited field is 2.
-    const uint64_t kExpectedTag = (1 << 3) | 2;
-    std::tie(tag, success) = ParseVarInt(stream);
-    if (!success) {
+    // supposed to be 1 and the wire type for a length-delimited field is 2.
+    const uint64_t kExpectedV1Tag = (1 << 3) | 2;
+    size_t bytes_written = 0;
+    absl::optional<uint64_t> tag =
+        ParseVarInt(stream, buffer.data(), &bytes_written);
+    if (!tag) {
       RTC_LOG(LS_WARNING)
           << "Missing field tag from beginning of protobuf event.";
       return false;
-    } else if (tag != kExpectedTag) {
+    } else if (*tag != kExpectedV1Tag) {
       RTC_LOG(LS_WARNING)
           << "Unexpected field tag at beginning of protobuf event.";
       return false;
     }
 
     // Read the length field.
-    std::tie(message_length, success) = ParseVarInt(stream);
-    if (!success) {
+    absl::optional<uint64_t> message_length =
+        ParseVarInt(stream, buffer.data(), &bytes_written);
+    if (!message_length) {
       RTC_LOG(LS_WARNING) << "Missing message length after protobuf field tag.";
       return false;
-    } else if (message_length > kMaxEventSize) {
+    } else if (*message_length > kMaxEventSize) {
       RTC_LOG(LS_WARNING) << "Protobuf message length is too large.";
       return false;
     }
 
     // Read the next protobuf event to a temporary char buffer.
-    stream.read(tmp_buffer.data(), message_length);
-    if (stream.gcount() != static_cast<int>(message_length)) {
+    stream.read(buffer.data() + bytes_written, *message_length);
+    if (stream.gcount() != static_cast<int>(*message_length)) {
       RTC_LOG(LS_WARNING) << "Failed to read protobuf message from file.";
       return false;
     }
+    size_t buffer_size = bytes_written + *message_length;
 
     // Parse the protobuf event from the buffer.
-    rtclog::Event event;
-    if (!event.ParseFromArray(tmp_buffer.data(), message_length)) {
+    rtclog::EventStream event_stream;
+    if (!event_stream.ParseFromArray(buffer.data(), buffer_size)) {
       RTC_LOG(LS_WARNING) << "Failed to parse protobuf message.";
       return false;
     }
 
-    StoreParsedEvent(event);
-    events_.push_back(event);
+    RTC_CHECK_EQ(event_stream.stream_size(), 1);
+    StoreParsedEvent(event_stream.stream(0));
+    events_.push_back(event_stream.stream(0));
   }
   return true;
 }
