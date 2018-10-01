@@ -72,24 +72,24 @@ bool GetGfBoostPercentageFromFieldTrialGroup(int* boost_percentage) {
   return true;
 }
 
-static_assert(
-    VP8_TS_MAX_PERIODICITY == VPX_TS_MAX_PERIODICITY,
-    "VP8_TS_MAX_PERIODICITY must be kept in sync with the constant in libvpx.");
-static_assert(
-    VP8_TS_MAX_LAYERS == VPX_TS_MAX_LAYERS,
-    "VP8_TS_MAX_LAYERS must be kept in sync with the constant in libvpx.");
+static_assert(Vp8EncoderConfig::kMaxPeriodicity == VPX_TS_MAX_PERIODICITY,
+              "Vp8EncoderConfig::kMaxPeriodicity must be kept in sync with the "
+              "constant in libvpx.");
+static_assert(Vp8EncoderConfig::kMaxLayers == VPX_TS_MAX_LAYERS,
+              "Vp8EncoderConfig::kMaxLayers must be kept in sync with the "
+              "constant in libvpx.");
 
 static Vp8EncoderConfig GetEncoderConfig(vpx_codec_enc_cfg* vpx_config) {
   Vp8EncoderConfig config;
 
   config.ts_number_layers = vpx_config->ts_number_layers;
   memcpy(config.ts_target_bitrate, vpx_config->ts_target_bitrate,
-         sizeof(unsigned int) * VP8_TS_MAX_LAYERS);
+         sizeof(unsigned int) * Vp8EncoderConfig::kMaxLayers);
   memcpy(config.ts_rate_decimator, vpx_config->ts_rate_decimator,
-         sizeof(unsigned int) * VP8_TS_MAX_LAYERS);
+         sizeof(unsigned int) * Vp8EncoderConfig::kMaxLayers);
   config.ts_periodicity = vpx_config->ts_periodicity;
   memcpy(config.ts_layer_id, vpx_config->ts_layer_id,
-         sizeof(unsigned int) * VP8_TS_MAX_PERIODICITY);
+         sizeof(unsigned int) * Vp8EncoderConfig::kMaxPeriodicity);
   config.rc_target_bitrate = vpx_config->rc_target_bitrate;
   config.rc_min_quantizer = vpx_config->rc_min_quantizer;
   config.rc_max_quantizer = vpx_config->rc_max_quantizer;
@@ -101,12 +101,12 @@ static void FillInEncoderConfig(vpx_codec_enc_cfg* vpx_config,
                                 const Vp8EncoderConfig& config) {
   vpx_config->ts_number_layers = config.ts_number_layers;
   memcpy(vpx_config->ts_target_bitrate, config.ts_target_bitrate,
-         sizeof(unsigned int) * VP8_TS_MAX_LAYERS);
+         sizeof(unsigned int) * Vp8EncoderConfig::kMaxLayers);
   memcpy(vpx_config->ts_rate_decimator, config.ts_rate_decimator,
-         sizeof(unsigned int) * VP8_TS_MAX_LAYERS);
+         sizeof(unsigned int) * Vp8EncoderConfig::kMaxLayers);
   vpx_config->ts_periodicity = config.ts_periodicity;
   memcpy(vpx_config->ts_layer_id, config.ts_layer_id,
-         sizeof(unsigned int) * VP8_TS_MAX_PERIODICITY);
+         sizeof(unsigned int) * Vp8EncoderConfig::kMaxPeriodicity);
   vpx_config->rc_target_bitrate = config.rc_target_bitrate;
   vpx_config->rc_min_quantizer = config.rc_min_quantizer;
   vpx_config->rc_max_quantizer = config.rc_max_quantizer;
@@ -120,6 +120,7 @@ bool UpdateVpxConfiguration(TemporalLayers* temporal_layers,
     FillInEncoderConfig(cfg, config);
   return res;
 }
+
 }  // namespace
 
 std::unique_ptr<VP8Encoder> VP8Encoder::Create() {
@@ -284,15 +285,25 @@ void LibvpxVp8Encoder::SetStreamState(bool send_stream, int stream_idx) {
   send_stream_[stream_idx] = send_stream;
 }
 
-void LibvpxVp8Encoder::SetupTemporalLayers(int num_streams,
-                                           int num_temporal_layers,
-                                           const VideoCodec& codec) {
+void LibvpxVp8Encoder::SetupTemporalLayers(const VideoCodec& codec) {
   RTC_DCHECK(temporal_layers_.empty());
+  int num_streams = SimulcastUtility::NumberOfSimulcastStreams(codec);
   for (int i = 0; i < num_streams; ++i) {
+    TemporalLayersType type;
+    int num_temporal_layers =
+        SimulcastUtility::NumberOfTemporalLayers(codec, i);
+    if (SimulcastUtility::IsConferenceModeScreenshare(codec) && i == 0) {
+      type = TemporalLayersType::kBitrateDynamic;
+      // Legacy screenshare layers supports max 2 layers.
+      num_temporal_layers = std::max<int>(2, num_temporal_layers);
+    } else {
+      type = TemporalLayersType::kFixedPattern;
+    }
     temporal_layers_.emplace_back(
-        TemporalLayers::CreateTemporalLayers(codec, i));
+        TemporalLayers::CreateTemporalLayers(type, num_temporal_layers));
     temporal_layers_checkers_.emplace_back(
-        TemporalLayers::CreateTemporalLayersChecker(codec, i));
+        TemporalLayersChecker::CreateTemporalLayersChecker(
+            type, num_temporal_layers));
   }
 }
 
@@ -324,21 +335,14 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
   }
 
   int number_of_streams = SimulcastUtility::NumberOfSimulcastStreams(*inst);
-  bool doing_simulcast = (number_of_streams > 1);
-
-  if (doing_simulcast && (!SimulcastUtility::ValidSimulcastResolutions(
-                              *inst, number_of_streams) ||
-                          !SimulcastUtility::ValidSimulcastTemporalLayers(
-                              *inst, number_of_streams))) {
+  if (number_of_streams > 1 &&
+      (!SimulcastUtility::ValidSimulcastResolutions(*inst, number_of_streams) ||
+       !SimulcastUtility::ValidSimulcastTemporalLayers(*inst,
+                                                       number_of_streams))) {
     return WEBRTC_VIDEO_CODEC_ERR_SIMULCAST_PARAMETERS_NOT_SUPPORTED;
   }
 
-  int num_temporal_layers =
-      doing_simulcast ? inst->simulcastStream[0].numberOfTemporalLayers
-                      : inst->VP8().numberOfTemporalLayers;
-  RTC_DCHECK_GT(num_temporal_layers, 0);
-
-  SetupTemporalLayers(number_of_streams, num_temporal_layers, *inst);
+  SetupTemporalLayers(*inst);
 
   number_of_cores_ = number_of_cores;
   timestamp_ = 0;
@@ -396,7 +400,9 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
 
   // Set the error resilience mode for temporal layers (but not simulcast).
   configurations_[0].g_error_resilient =
-      (num_temporal_layers > 1) ? VPX_ERROR_RESILIENT_DEFAULT : 0;
+      (SimulcastUtility::NumberOfTemporalLayers(*inst, 0) > 1)
+          ? VPX_ERROR_RESILIENT_DEFAULT
+          : 0;
 
   // rate control settings
   configurations_[0].rc_dropframe_thresh = FrameDropThreshold(0);

@@ -17,7 +17,8 @@
 #include <set>
 #include <vector>
 
-#include "modules/video_coding/codecs/vp8/temporal_layers.h"
+#include "modules/video_coding/codecs/vp8/include/temporal_layers_checker.h"
+#include "modules/video_coding/codecs/vp8/include/vp8_temporal_layers.h"
 
 #include "absl/types/optional.h"
 

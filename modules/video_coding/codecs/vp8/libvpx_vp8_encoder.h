@@ -18,8 +18,9 @@
 #include "api/video_codecs/video_encoder.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "common_video/include/video_frame.h"
+#include "modules/video_coding/codecs/vp8/include/temporal_layers_checker.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
-#include "modules/video_coding/codecs/vp8/temporal_layers.h"
+#include "modules/video_coding/codecs/vp8/include/vp8_temporal_layers.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 
 #include "vpx/vp8cx.h"
@@ -57,9 +58,7 @@ class LibvpxVp8Encoder : public VP8Encoder {
       const TemporalLayers::FrameConfig& references);
 
  private:
-  void SetupTemporalLayers(int num_streams,
-                           int num_temporal_layers,
-                           const VideoCodec& codec);
+  void SetupTemporalLayers(const VideoCodec& codec);
 
   // Set the cpu_speed setting for encoder based on resolution and/or platform.
   int SetCpuSpeed(int width, int height);

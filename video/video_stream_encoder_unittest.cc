@@ -14,7 +14,7 @@
 
 #include "api/video/i420_buffer.h"
 #include "media/base/videoadapter.h"
-#include "modules/video_coding/codecs/vp8/temporal_layers.h"
+#include "modules/video_coding/codecs/vp8/include/vp8_temporal_layers.h"
 #include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
 #include "modules/video_coding/utility/default_video_bitrate_allocator.h"
 #include "rtc_base/fakeclock.h"
@@ -569,7 +569,9 @@ class VideoStreamEncoderTest : public ::testing::Test {
         int num_streams = std::max<int>(1, config->numberOfSimulcastStreams);
         for (int i = 0; i < num_streams; ++i) {
           allocated_temporal_layers_.emplace_back(
-              TemporalLayers::CreateTemporalLayers(*config, i));
+              TemporalLayers::CreateTemporalLayers(
+                  TemporalLayersType::kFixedPattern,
+                  config->VP8().numberOfTemporalLayers));
         }
       }
       if (force_init_encode_failed_)

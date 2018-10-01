@@ -393,15 +393,18 @@ rtc_static_library("webrtc_vp8") {
   sources = [
     "codecs/vp8/default_temporal_layers.cc",
     "codecs/vp8/default_temporal_layers.h",
+    "codecs/vp8/include/temporal_layers_checker.h",
     "codecs/vp8/include/vp8.h",
+    "codecs/vp8/include/vp8_temporal_layers.h",
     "codecs/vp8/libvpx_vp8_decoder.cc",
     "codecs/vp8/libvpx_vp8_decoder.h",
     "codecs/vp8/libvpx_vp8_encoder.cc",
     "codecs/vp8/libvpx_vp8_encoder.h",
     "codecs/vp8/screenshare_layers.cc",
     "codecs/vp8/screenshare_layers.h",
-    "codecs/vp8/temporal_layers.cc",
     "codecs/vp8/temporal_layers.h",
+    "codecs/vp8/temporal_layers_checker.cc",
+    "codecs/vp8/vp8_temporal_layers.cc",
   ]
 
   if (!build_with_chromium && is_clang) {
@@ -410,6 +413,7 @@ rtc_static_library("webrtc_vp8") {
   }
 
   deps = [
+    ":codec_globals_headers",
     ":video_codec_interface",
     ":video_coding_utility",
     "..:module_api",

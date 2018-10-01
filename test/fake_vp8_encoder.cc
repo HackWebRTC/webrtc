@@ -11,7 +11,7 @@
 #include "test/fake_vp8_encoder.h"
 
 #include "common_types.h"  // NOLINT(build/include)
-#include "modules/video_coding/codecs/vp8/temporal_layers.h"
+#include "modules/video_coding/codecs/vp8/include/vp8_temporal_layers.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "modules/video_coding/utility/simulcast_utility.h"
@@ -47,15 +47,7 @@ int32_t FakeVP8Encoder::InitEncode(const VideoCodec* config,
     return result;
   }
 
-  int number_of_streams = SimulcastUtility::NumberOfSimulcastStreams(*config);
-  bool doing_simulcast = number_of_streams > 1;
-
-  int num_temporal_layers =
-      doing_simulcast ? config->simulcastStream[0].numberOfTemporalLayers
-                      : config->VP8().numberOfTemporalLayers;
-  RTC_DCHECK_GT(num_temporal_layers, 0);
-
-  SetupTemporalLayers(number_of_streams, num_temporal_layers, *config);
+  SetupTemporalLayers(*config);
 
   return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -66,15 +58,23 @@ int32_t FakeVP8Encoder::Release() {
   return result;
 }
 
-void FakeVP8Encoder::SetupTemporalLayers(int num_streams,
-                                         int num_temporal_layers,
-                                         const VideoCodec& codec) {
+void FakeVP8Encoder::SetupTemporalLayers(const VideoCodec& codec) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
 
-  temporal_layers_.clear();
+  int num_streams = SimulcastUtility::NumberOfSimulcastStreams(codec);
   for (int i = 0; i < num_streams; ++i) {
+    TemporalLayersType type;
+    int num_temporal_layers =
+        SimulcastUtility::NumberOfTemporalLayers(codec, i);
+    if (SimulcastUtility::IsConferenceModeScreenshare(codec) && i == 0) {
+      type = TemporalLayersType::kBitrateDynamic;
+      // Legacy screenshare layers supports max 2 layers.
+      num_temporal_layers = std::max<int>(2, num_temporal_layers);
+    } else {
+      type = TemporalLayersType::kFixedPattern;
+    }
     temporal_layers_.emplace_back(
-        TemporalLayers::CreateTemporalLayers(codec, i));
+        TemporalLayers::CreateTemporalLayers(type, num_temporal_layers));
   }
 }
 

@@ -15,7 +15,7 @@
 #include <utility>
 #include <vector>
 
-#include "modules/video_coding/codecs/vp8/temporal_layers.h"
+#include "modules/video_coding/codecs/vp8/include/vp8_temporal_layers.h"
 
 #include "test/gmock.h"
 #include "test/gtest.h"
