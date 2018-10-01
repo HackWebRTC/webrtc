@@ -21,6 +21,7 @@
 #include "rtc_tools/simple_command_line_parser.h"
 #include "rtc_tools/video_file_reader.h"
 #include "rtc_tools/video_file_writer.h"
+#include "test/testsupport/fileutils.h"
 #include "test/testsupport/perf_test.h"
 
 /*
@@ -147,10 +148,12 @@ int main(int argc, char* argv[]) {
   }
   std::string yuv_directory = parser.GetFlag("yuv_directory");
   if (!yuv_directory.empty()) {
-    webrtc::test::WriteVideoToFile(reordered_video, yuv_directory + "ref.yuv",
-                                   /*fps=*/30);
-    webrtc::test::WriteVideoToFile(test_video, yuv_directory + "test.yuv",
-                                   /*fps=*/30);
+    webrtc::test::WriteVideoToFile(
+        reordered_video, webrtc::test::JoinFilename(yuv_directory, "ref.yuv"),
+        /*fps=*/30);
+    webrtc::test::WriteVideoToFile(
+        test_video, webrtc::test::JoinFilename(yuv_directory, "test.yuv"),
+        /*fps=*/30);
   }
 
   return 0;
