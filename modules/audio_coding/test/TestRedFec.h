@@ -14,13 +14,12 @@
 #include <memory>
 #include <string>
 
-#include "modules/audio_coding/test/ACMTest.h"
 #include "modules/audio_coding/test/Channel.h"
 #include "modules/audio_coding/test/PCMFile.h"
 
 namespace webrtc {
 
-class TestRedFec : public ACMTest {
+class TestRedFec {
  public:
   explicit TestRedFec();
   ~TestRedFec();

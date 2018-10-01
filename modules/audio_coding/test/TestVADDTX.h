@@ -16,7 +16,6 @@
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/audio_coding/include/audio_coding_module_typedefs.h"
-#include "modules/audio_coding/test/ACMTest.h"
 #include "modules/audio_coding/test/Channel.h"
 
 namespace webrtc {
@@ -42,13 +41,11 @@ class ActivityMonitor : public ACMVADCallback {
 // an audio file and check if the occurrence of various packet types follows
 // expectation. TestVadDtx needs its derived class to implement the Perform()
 // to put the test together.
-class TestVadDtx : public ACMTest {
+class TestVadDtx {
  public:
   static const int kOutputFreqHz = 16000;
 
   TestVadDtx();
-
-  virtual void Perform() = 0;
 
  protected:
   void RegisterCodec(CodecInst codec_param);
@@ -84,7 +81,7 @@ class TestWebRtcVadDtx final : public TestVadDtx {
  public:
   TestWebRtcVadDtx();
 
-  void Perform() override;
+  void Perform();
 
  private:
   void RunTestCases();
@@ -99,7 +96,7 @@ class TestWebRtcVadDtx final : public TestVadDtx {
 // TestOpusDtx is to verify that the Opus DTX performs as it should.
 class TestOpusDtx final : public TestVadDtx {
  public:
-  void Perform() override;
+  void Perform();
 };
 
 }  // namespace webrtc

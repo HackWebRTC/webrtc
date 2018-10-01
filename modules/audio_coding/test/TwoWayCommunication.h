@@ -16,14 +16,13 @@
 #include "api/audio_codecs/audio_encoder_factory.h"
 #include "api/audio_codecs/audio_format.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
-#include "modules/audio_coding/test/ACMTest.h"
 #include "modules/audio_coding/test/Channel.h"
 #include "modules/audio_coding/test/PCMFile.h"
 #include "modules/audio_coding/test/utility.h"
 
 namespace webrtc {
 
-class TwoWayCommunication : public ACMTest {
+class TwoWayCommunication {
  public:
   TwoWayCommunication();
   ~TwoWayCommunication();

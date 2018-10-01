@@ -15,7 +15,6 @@
 
 #include <memory>
 
-#include "modules/audio_coding/test/ACMTest.h"
 #include "modules/audio_coding/test/Channel.h"
 #include "modules/audio_coding/test/PCMFile.h"
 
@@ -57,12 +56,12 @@ class TestPackStereo : public AudioPacketizationCallback {
   bool lost_packet_;
 };
 
-class TestStereo : public ACMTest {
+class TestStereo {
  public:
   explicit TestStereo(int test_mode);
   ~TestStereo();
 
-  void Perform() override;
+  void Perform();
 
  private:
   // The default value of '-1' indicates that the registration is based only on
