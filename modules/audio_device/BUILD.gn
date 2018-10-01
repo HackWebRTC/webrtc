@@ -147,7 +147,6 @@ rtc_source_set("audio_device_name") {
 }
 
 rtc_source_set("windows_core_audio_utility") {
-  public_configs = [ "../..:no_global_constructors" ]
   if (is_win && !build_with_chromium) {
     sources = [
       "win/core_audio_utility_win.cc",
