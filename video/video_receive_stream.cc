@@ -32,6 +32,7 @@
 #include "modules/video_coding/jitter_estimator.h"
 #include "modules/video_coding/timing.h"
 #include "modules/video_coding/utility/ivf_file_writer.h"
+#include "modules/video_coding/utility/vp8_header_parser.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
@@ -366,7 +367,6 @@ EncodedImageCallback::Result VideoReceiveStream::OnEncodedImage(
     const EncodedImage& encoded_image,
     const CodecSpecificInfo* codec_specific_info,
     const RTPFragmentationHeader* fragmentation) {
-  stats_proxy_.OnPreDecode(encoded_image, codec_specific_info);
   {
     rtc::CritScope lock(&ivf_writer_lock_);
     if (ivf_writer_.get()) {
@@ -458,6 +458,16 @@ bool VideoReceiveStream::Decode() {
   if (frame) {
     int64_t now_ms = clock_->TimeInMilliseconds();
     RTC_DCHECK_EQ(res, video_coding::FrameBuffer::ReturnReason::kFrameFound);
+
+    // Current OnPreDecode only cares about QP for VP8.
+    int qp = -1;
+    if (frame->CodecSpecific()->codecType == kVideoCodecVP8) {
+      if (!vp8::GetQp(frame->Buffer(), frame->Length(), &qp)) {
+        RTC_LOG(LS_WARNING) << "Failed to extract QP from VP8 video frame";
+      }
+    }
+    stats_proxy_.OnPreDecode(frame->CodecSpecific()->codecType, qp);
+
     int decode_result = video_receiver_.Decode(frame.get());
     if (decode_result == WEBRTC_VIDEO_CODEC_OK ||
         decode_result == WEBRTC_VIDEO_CODEC_OK_REQUEST_KEYFRAME) {

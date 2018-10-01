@@ -62,8 +62,7 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   void OnDecoderImplementationName(const char* implementation_name);
   void OnIncomingRate(unsigned int framerate, unsigned int bitrate_bps);
 
-  void OnPreDecode(const EncodedImage& encoded_image,
-                   const CodecSpecificInfo* codec_specific_info);
+  void OnPreDecode(VideoCodecType codec_type, int qp);
 
   void OnUniqueFramesCounted(int num_unique_frames);
 

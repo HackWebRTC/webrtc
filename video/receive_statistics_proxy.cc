@@ -839,18 +839,13 @@ void ReceiveStatisticsProxy::OnDiscardedPacketsUpdated(int discarded_packets) {
   stats_.discarded_packets = discarded_packets;
 }
 
-void ReceiveStatisticsProxy::OnPreDecode(
-    const EncodedImage& encoded_image,
-    const CodecSpecificInfo* codec_specific_info) {
+void ReceiveStatisticsProxy::OnPreDecode(VideoCodecType codec_type, int qp) {
   RTC_DCHECK_RUN_ON(&decode_thread_);
-  if (!codec_specific_info || encoded_image.qp_ == -1) {
-    return;
-  }
   rtc::CritScope lock(&crit_);
-  last_codec_type_ = codec_specific_info->codecType;
-  if (last_codec_type_ == kVideoCodecVP8) {
-    qp_counters_.vp8.Add(encoded_image.qp_);
-    qp_sample_.Add(encoded_image.qp_);
+  last_codec_type_ = codec_type;
+  if (last_codec_type_ == kVideoCodecVP8 && qp != -1) {
+    qp_counters_.vp8.Add(qp);
+    qp_sample_.Add(qp);
   }
 }
 

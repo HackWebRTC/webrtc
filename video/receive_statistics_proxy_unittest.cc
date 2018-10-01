@@ -578,13 +578,9 @@ TEST_F(ReceiveStatisticsProxyTest, RtpToNtpFrequencyOffsetHistogramIsUpdated) {
 
 TEST_F(ReceiveStatisticsProxyTest, Vp8QpHistogramIsUpdated) {
   const int kQp = 22;
-  EncodedImage encoded_image;
-  encoded_image.qp_ = kQp;
-  CodecSpecificInfo codec_info;
-  codec_info.codecType = kVideoCodecVP8;
 
   for (int i = 0; i < kMinRequiredSamples; ++i)
-    statistics_proxy_->OnPreDecode(encoded_image, &codec_info);
+    statistics_proxy_->OnPreDecode(kVideoCodecVP8, kQp);
 
   statistics_proxy_.reset();
   EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.Decoded.Vp8.Qp"));
@@ -592,25 +588,18 @@ TEST_F(ReceiveStatisticsProxyTest, Vp8QpHistogramIsUpdated) {
 }
 
 TEST_F(ReceiveStatisticsProxyTest, Vp8QpHistogramIsNotUpdatedForTooFewSamples) {
-  EncodedImage encoded_image;
-  encoded_image.qp_ = 22;
-  CodecSpecificInfo codec_info;
-  codec_info.codecType = kVideoCodecVP8;
+  const int kQp = 22;
 
   for (int i = 0; i < kMinRequiredSamples - 1; ++i)
-    statistics_proxy_->OnPreDecode(encoded_image, &codec_info);
+    statistics_proxy_->OnPreDecode(kVideoCodecVP8, kQp);
 
   statistics_proxy_.reset();
   EXPECT_EQ(0, metrics::NumSamples("WebRTC.Video.Decoded.Vp8.Qp"));
 }
 
 TEST_F(ReceiveStatisticsProxyTest, Vp8QpHistogramIsNotUpdatedIfNoQpValue) {
-  EncodedImage encoded_image;
-  CodecSpecificInfo codec_info;
-  codec_info.codecType = kVideoCodecVP8;
-
   for (int i = 0; i < kMinRequiredSamples; ++i)
-    statistics_proxy_->OnPreDecode(encoded_image, &codec_info);
+    statistics_proxy_->OnPreDecode(kVideoCodecVP8, -1);
 
   statistics_proxy_.reset();
   EXPECT_EQ(0, metrics::NumSamples("WebRTC.Video.Decoded.Vp8.Qp"));
