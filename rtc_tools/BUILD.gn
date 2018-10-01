@@ -108,7 +108,6 @@ rtc_static_library("video_quality_analysis") {
 
 rtc_executable("frame_analyzer") {
   visibility = [ "*" ]
-  testonly = true
   sources = [
     "frame_analyzer/frame_analyzer.cc",
   ]
@@ -119,7 +118,6 @@ rtc_executable("frame_analyzer") {
     ":video_file_writer",
     ":video_quality_analysis",
     "../rtc_base:stringutils",
-    "../test:fileutils",
     "../test:perf_test",
   ]
 }

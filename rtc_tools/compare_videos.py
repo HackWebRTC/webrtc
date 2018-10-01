@@ -136,7 +136,7 @@ def DecodeBarcodesInVideo(options, path_to_decoder, video, stat_file):
   return 0
 
 
-def _RunFrameAnalyzer(options, yuv_directory=None):
+def _RunFrameAnalyzer(options):
   """Run frame analyzer to compare the videos and print output."""
   cmd = [
     options.frame_analyzer,
@@ -152,17 +152,15 @@ def _RunFrameAnalyzer(options, yuv_directory=None):
     cmd.append('--chartjson_result_file=%s' % options.chartjson_result_file)
   if options.aligned_output_file:
     cmd.append('--aligned_output_file=%s' % options.aligned_output_file)
-  if yuv_directory:
-    cmd.append('--yuv_directory=%s' % yuv_directory)
+  if options.yuv_directory:
+    cmd.append('--yuv_directory=%s' % options.yuv_directory)
   frame_analyzer = subprocess.Popen(cmd, stdin=_DevNull(),
                                     stdout=sys.stdout, stderr=sys.stderr)
   frame_analyzer.wait()
-  if frame_analyzer.returncode != 0:
-    print 'Failed to run frame analyzer.'
   return frame_analyzer.returncode
 
 
-def _RunVmaf(options, yuv_directory):
+def _RunVmaf(options):
   """ Run VMAF to compare videos and print output.
 
   The provided vmaf directory is assumed to contain a c++ wrapper executable
@@ -176,28 +174,22 @@ def _RunVmaf(options, yuv_directory):
     'yuv420p',
     str(options.yuv_frame_width),
     str(options.yuv_frame_height),
-    os.path.join(yuv_directory, "ref.yuv"),
-    os.path.join(yuv_directory, "test.yuv"),
+    os.path.join(options.yuv_directory, "ref.yuv"),
+    os.path.join(options.yuv_directory, "test.yuv"),
     options.vmaf_model,
   ]
   if options.vmaf_phone_model:
     cmd.append('--phone-model')
 
   vmaf = subprocess.Popen(cmd, stdin=_DevNull(),
-                          stdout=subprocess.PIPE, stderr=sys.stderr)
+                                  stdout=subprocess.PIPE, stderr=sys.stderr)
   vmaf.wait()
   if vmaf.returncode != 0:
     print 'Failed to run VMAF.'
     return 1
   output = vmaf.stdout.read()
   # Extract score from VMAF output.
-  try:
-    score = float(output.split('\n')[2].split()[3])
-  except (ValueError, IndexError):
-    print 'Error in VMAF output (expected "VMAF score = [float]" on line 3):'
-    print output
-    return 1
-
+  score = float(output.split('\n')[2].split()[3])
   print 'RESULT Vmaf: %s= %f' % (options.label, score)
   return 0
 
@@ -234,21 +226,25 @@ def main():
                            options.test_video, options.stats_file_test) != 0:
     return 1
 
-  if options.vmaf:
-    try:
-      # Directory to save temporary YUV files for VMAF in frame_analyzer.
-      yuv_directory = tempfile.mkdtemp()
+  try:
+    # Create a directory to save temporary YUV files for VMAF in frame_analyzer.
+    options.yuv_directory = None
+    if options.vmaf:
+      options.yuv_directory = tempfile.mkdtemp() + '/'
 
-      # Run frame analyzer to compare the videos and print output.
-      if _RunFrameAnalyzer(options, yuv_directory=yuv_directory) != 0:
-        return 1
+    # Run frame_analyzer to compare the videos and print output.
+    if _RunFrameAnalyzer(options) != 0:
+      print 'Failed to run frame analyzer.'
+      return 1
 
-      # Run VMAF for further video comparison and print output.
-      return _RunVmaf(options, yuv_directory)
-    finally:
-      shutil.rmtree(yuv_directory)
-  else:
-    return _RunFrameAnalyzer(options)
+    # Run VMAF for further video comparison and print output.
+    if options.vmaf:
+      return _RunVmaf(options)
+
+  finally:
+    if options.yuv_directory:
+      shutil.rmtree(options.yuv_directory)
+
 
   return 0
 
