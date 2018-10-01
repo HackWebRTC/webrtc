@@ -97,6 +97,10 @@ class RtpPacket {
   template <typename Extension, typename... Values>
   bool GetExtension(Values...) const;
 
+  // Returns view of the raw extension or empty view on failure.
+  template <typename Extension>
+  rtc::ArrayView<const uint8_t> GetRawExtension() const;
+
   template <typename Extension, typename... Values>
   bool SetExtension(Values...);
 
@@ -173,6 +177,11 @@ bool RtpPacket::GetExtension(Values... values) const {
   if (raw.empty())
     return false;
   return Extension::Parse(raw, values...);
+}
+
+template <typename Extension>
+rtc::ArrayView<const uint8_t> RtpPacket::GetRawExtension() const {
+  return FindExtension(Extension::kId);
 }
 
 template <typename Extension, typename... Values>

@@ -18,6 +18,8 @@
 
 namespace webrtc {
 namespace {
+
+using ::testing::ElementsAre;
 using ::testing::ElementsAreArray;
 using ::testing::IsEmpty;
 using ::testing::make_tuple;
@@ -355,6 +357,38 @@ TEST(RtpPacketTest, ParseWithExtension) {
   EXPECT_EQ(kTimeOffset, time_offset);
   EXPECT_EQ(0u, packet.payload_size());
   EXPECT_EQ(0u, packet.padding_size());
+}
+
+TEST(RtpPacketTest, GetRawExtensionWhenPresent) {
+  constexpr uint8_t kRawPacket[] = {
+      // comment for clang-format to align kRawPacket nicer.
+      0x90, 100,  0x5e, 0x04,  //
+      0x65, 0x43, 0x12, 0x78,  // Timestamp.
+      0x12, 0x34, 0x56, 0x78,  // Ssrc
+      0xbe, 0xde, 0x00, 0x01,  // Extension header
+      0x12, 'm',  'i',  'd',   // 3-byte extension with id=1.
+      'p',  'a',  'y',  'l',  'o', 'a', 'd'};
+  RtpPacketToSend::ExtensionManager extensions;
+  extensions.Register<RtpMid>(1);
+  RtpPacket packet(&extensions);
+  ASSERT_TRUE(packet.Parse(kRawPacket, sizeof(kRawPacket)));
+  EXPECT_THAT(packet.GetRawExtension<RtpMid>(), ElementsAre('m', 'i', 'd'));
+}
+
+TEST(RtpPacketTest, GetRawExtensionWhenAbsent) {
+  constexpr uint8_t kRawPacket[] = {
+      // comment for clang-format to align kRawPacket nicer.
+      0x90, 100,  0x5e, 0x04,  //
+      0x65, 0x43, 0x12, 0x78,  // Timestamp.
+      0x12, 0x34, 0x56, 0x78,  // Ssrc
+      0xbe, 0xde, 0x00, 0x01,  // Extension header
+      0x12, 'm',  'i',  'd',   // 3-byte extension with id=1.
+      'p',  'a',  'y',  'l',  'o', 'a', 'd'};
+  RtpPacketToSend::ExtensionManager extensions;
+  extensions.Register<RtpMid>(2);
+  RtpPacket packet(&extensions);
+  ASSERT_TRUE(packet.Parse(kRawPacket, sizeof(kRawPacket)));
+  EXPECT_THAT(packet.GetRawExtension<RtpMid>(), IsEmpty());
 }
 
 TEST(RtpPacketTest, ParseWithInvalidSizedExtension) {
