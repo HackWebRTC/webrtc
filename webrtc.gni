@@ -649,6 +649,8 @@ if (is_ios) {
     }
   }
 
+  # TODO: Generate module.modulemap file to enable use in Swift
+  # projects. See "mac_framework_bundle_with_umbrella_header".
   template("ios_framework_bundle_with_umbrella_header") {
     forward_variables_from(invoker, [ "output_name" ])
     umbrella_header_path =
@@ -699,12 +701,17 @@ if (is_mac) {
     forward_variables_from(invoker, [ "output_name" ])
     this_target_name = target_name
     umbrella_header_path = "$target_gen_dir/umbrella_header/$output_name.h"
+    modulemap_path = "$target_gen_dir/Modules/module.modulemap"
 
     mac_framework_bundle(target_name) {
       forward_variables_from(invoker, "*", [])
 
       framework_version = "A"
-      framework_contents = [ "Headers" ]
+      framework_contents = [
+        "Headers",
+        "Modules",
+        "Resources",
+      ]
 
       ldflags = [
         "-all_load",
@@ -714,7 +721,9 @@ if (is_mac) {
 
       deps += [
         ":copy_framework_headers_$this_target_name",
+        ":copy_modulemap_$this_target_name",
         ":copy_umbrella_header_$this_target_name",
+        ":modulemap_$this_target_name",
         ":umbrella_header_$this_target_name",
       ]
     }
@@ -724,6 +733,31 @@ if (is_mac) {
 
       outputs = [
         "{{bundle_contents_dir}}/Headers/{{source_file_part}}",
+      ]
+    }
+
+    action("modulemap_$this_target_name") {
+      script = "//tools_webrtc/ios/generate_modulemap.py"
+      args = [
+        "--out",
+        rebase_path(modulemap_path, root_build_dir),
+        "--name",
+        output_name,
+      ]
+      outputs = [
+        modulemap_path,
+      ]
+    }
+
+    bundle_data("copy_modulemap_$this_target_name") {
+      sources = [
+        modulemap_path,
+      ]
+      outputs = [
+        "{{bundle_contents_dir}}/Modules/module.modulemap",
+      ]
+      deps = [
+        ":modulemap_$this_target_name",
       ]
     }
 
