@@ -17,6 +17,7 @@
 
 #include "modules/video_coding/codecs/vp8/include/vp8_temporal_layers.h"
 
+#include "test/field_trial.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 
@@ -91,32 +92,45 @@ class SimulcastRateAllocatorTest : public ::testing::TestWithParam<bool> {
     allocator_.reset(new SimulcastRateAllocator(codec_));
   }
 
-  void SetupCodecThreeSimulcastStreams(
-      const std::vector<bool>& active_streams) {
-    size_t num_streams = 3;
-    RTC_DCHECK_GE(active_streams.size(), num_streams);
-    SetupCodecTwoSimulcastStreams(active_streams);
-    codec_.numberOfSimulcastStreams = num_streams;
-    codec_.simulcastStream[2].minBitrate = 2000;
-    codec_.simulcastStream[2].targetBitrate = 3000;
+  void SetupCodec3SL3TL(const std::vector<bool>& active_streams) {
+    const size_t num_simulcast_layers = 3;
+    RTC_DCHECK_GE(active_streams.size(), num_simulcast_layers);
+    SetupCodec2SL3TL(active_streams);
+    codec_.numberOfSimulcastStreams = num_simulcast_layers;
+    codec_.simulcastStream[2].numberOfTemporalLayers = 3;
     codec_.simulcastStream[2].maxBitrate = 4000;
+    codec_.simulcastStream[2].targetBitrate = 3000;
+    codec_.simulcastStream[2].minBitrate = 2000;
     codec_.simulcastStream[2].active = active_streams[2];
   }
 
-  void SetupCodecTwoSimulcastStreams(const std::vector<bool>& active_streams) {
-    size_t num_streams = 2;
-    RTC_DCHECK_GE(active_streams.size(), num_streams);
-    codec_.numberOfSimulcastStreams = num_streams;
-    codec_.maxBitrate = 0;
-    codec_.simulcastStream[0].minBitrate = 10;
-    codec_.simulcastStream[0].targetBitrate = 100;
-    codec_.simulcastStream[0].maxBitrate = 500;
-    codec_.simulcastStream[1].minBitrate = 50;
-    codec_.simulcastStream[1].targetBitrate = 500;
+  void SetupCodec2SL3TL(const std::vector<bool>& active_streams) {
+    const size_t num_simulcast_layers = 2;
+    RTC_DCHECK_GE(active_streams.size(), num_simulcast_layers);
+    SetupCodec1SL3TL(active_streams);
+    codec_.numberOfSimulcastStreams = num_simulcast_layers;
+    codec_.simulcastStream[1].numberOfTemporalLayers = 3;
     codec_.simulcastStream[1].maxBitrate = 1000;
-    for (size_t i = 0; i < num_streams; ++i) {
-      codec_.simulcastStream[i].active = active_streams[i];
-    }
+    codec_.simulcastStream[1].targetBitrate = 500;
+    codec_.simulcastStream[1].minBitrate = 50;
+    codec_.simulcastStream[1].active = active_streams[1];
+  }
+
+  void SetupCodec1SL3TL(const std::vector<bool>& active_streams) {
+    const size_t num_simulcast_layers = 2;
+    RTC_DCHECK_GE(active_streams.size(), num_simulcast_layers);
+    SetupCodec3TL();
+    codec_.numberOfSimulcastStreams = num_simulcast_layers;
+    codec_.simulcastStream[0].numberOfTemporalLayers = 3;
+    codec_.simulcastStream[0].maxBitrate = 500;
+    codec_.simulcastStream[0].targetBitrate = 100;
+    codec_.simulcastStream[0].minBitrate = 10;
+    codec_.simulcastStream[0].active = active_streams[0];
+  }
+
+  void SetupCodec3TL() {
+    codec_.maxBitrate = 0;
+    codec_.VP8()->numberOfTemporalLayers = 3;
   }
 
   VideoBitrateAllocation GetAllocation(uint32_t target_bitrate) {
@@ -219,6 +233,37 @@ TEST_F(SimulcastRateAllocatorTest, SingleSimulcastWithinLimits) {
   }
 }
 
+TEST_F(SimulcastRateAllocatorTest, Regular3TLTemporalRateAllocation) {
+  SetupCodec3SL3TL({true, true, true});
+  CreateAllocator();
+
+  const VideoBitrateAllocation alloc = GetAllocation(kMinBitrateKbps);
+  // 40/20/40.
+  EXPECT_EQ(static_cast<uint32_t>(0.4 * kMinBitrateKbps),
+            alloc.GetBitrate(0, 0) / 1000);
+  EXPECT_EQ(static_cast<uint32_t>(0.2 * kMinBitrateKbps),
+            alloc.GetBitrate(0, 1) / 1000);
+  EXPECT_EQ(static_cast<uint32_t>(0.4 * kMinBitrateKbps),
+            alloc.GetBitrate(0, 2) / 1000);
+}
+
+TEST_F(SimulcastRateAllocatorTest, BaseHeavy3TLTemporalRateAllocation) {
+  test::ScopedFieldTrials field_trials(
+      "WebRTC-UseBaseHeavyVP8TL3RateAllocation/Enabled/");
+
+  SetupCodec3SL3TL({true, true, true});
+  CreateAllocator();
+
+  const VideoBitrateAllocation alloc = GetAllocation(kMinBitrateKbps);
+  // 60/20/20.
+  EXPECT_EQ(static_cast<uint32_t>(0.6 * kMinBitrateKbps),
+            alloc.GetBitrate(0, 0) / 1000);
+  EXPECT_EQ(static_cast<uint32_t>(0.2 * kMinBitrateKbps),
+            alloc.GetBitrate(0, 1) / 1000);
+  EXPECT_EQ(static_cast<uint32_t>(0.2 * kMinBitrateKbps),
+            alloc.GetBitrate(0, 2) / 1000);
+}
+
 TEST_F(SimulcastRateAllocatorTest, SingleSimulcastInactive) {
   codec_.numberOfSimulcastStreams = 1;
   codec_.simulcastStream[0].minBitrate = kMinBitrateKbps;
@@ -234,8 +279,7 @@ TEST_F(SimulcastRateAllocatorTest, SingleSimulcastInactive) {
 }
 
 TEST_F(SimulcastRateAllocatorTest, OneToThreeStreams) {
-  const std::vector<bool> active_streams(3, true);
-  SetupCodecThreeSimulcastStreams(active_streams);
+  SetupCodec3SL3TL({true, true, true});
   CreateAllocator();
 
   {
@@ -326,8 +370,7 @@ TEST_F(SimulcastRateAllocatorTest, OneToThreeStreams) {
 // If three simulcast streams that are all inactive, none of them should be
 // allocated bitrate.
 TEST_F(SimulcastRateAllocatorTest, ThreeStreamsInactive) {
-  const std::vector<bool> active_streams(3, false);
-  SetupCodecThreeSimulcastStreams(active_streams);
+  SetupCodec3SL3TL({false, false, false});
   CreateAllocator();
 
   // Just enough to allocate the min.
@@ -352,8 +395,7 @@ TEST_F(SimulcastRateAllocatorTest, ThreeStreamsInactive) {
 // If there are two simulcast streams, we expect the high active stream to be
 // allocated as if it is a single active stream.
 TEST_F(SimulcastRateAllocatorTest, TwoStreamsLowInactive) {
-  const std::vector<bool> active_streams({false, true});
-  SetupCodecTwoSimulcastStreams(active_streams);
+  SetupCodec2SL3TL({false, true});
   CreateAllocator();
 
   const uint32_t kActiveStreamMinBitrate = codec_.simulcastStream[1].minBitrate;
@@ -385,8 +427,7 @@ TEST_F(SimulcastRateAllocatorTest, TwoStreamsLowInactive) {
 // If there are two simulcast streams, we expect the low active stream to be
 // allocated as if it is a single active stream.
 TEST_F(SimulcastRateAllocatorTest, TwoStreamsHighInactive) {
-  const std::vector<bool> active_streams({true, false});
-  SetupCodecTwoSimulcastStreams(active_streams);
+  SetupCodec2SL3TL({true, false});
   CreateAllocator();
 
   const uint32_t kActiveStreamMinBitrate = codec_.simulcastStream[0].minBitrate;
@@ -419,8 +460,7 @@ TEST_F(SimulcastRateAllocatorTest, TwoStreamsHighInactive) {
 // other two streams should be allocated bitrate the same as if they are two
 // active simulcast streams.
 TEST_F(SimulcastRateAllocatorTest, ThreeStreamsMiddleInactive) {
-  const std::vector<bool> active_streams({true, false, true});
-  SetupCodecThreeSimulcastStreams(active_streams);
+  SetupCodec3SL3TL({true, false, true});
   CreateAllocator();
 
   {

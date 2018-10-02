@@ -32,7 +32,7 @@ static const float
         {0.25f, 0.4f, 0.6f, 1.0f}  // 4 layers {25%, 15%, 20%, 40%}
 };
 
-static const float kShort3TlRateAllocation[kMaxTemporalStreams] = {
+static const float kBaseHeavy3TlRateAllocation[kMaxTemporalStreams] = {
     0.6f, 0.8f, 1.0f, 1.0f  // 3 layers {60%, 20%, 20%}
 };
 
@@ -74,8 +74,8 @@ float SimulcastRateAllocator::GetTemporalRateAllocation(int num_layers,
   RTC_CHECK_GE(temporal_id, 0);
   RTC_CHECK_LT(temporal_id, num_layers);
   if (num_layers == 3 &&
-      field_trial::IsEnabled("WebRTC-UseShortVP8TL3Pattern")) {
-    return kShort3TlRateAllocation[temporal_id];
+      field_trial::IsEnabled("WebRTC-UseBaseHeavyVP8TL3RateAllocation")) {
+    return kBaseHeavy3TlRateAllocation[temporal_id];
   }
   return kLayerRateAllocation[num_layers - 1][temporal_id];
 }

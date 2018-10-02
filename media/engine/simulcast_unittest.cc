@@ -108,6 +108,29 @@ TEST(SimulcastTest, GetConfig) {
   EXPECT_FALSE(streams[2].bitrate_priority);
 }
 
+TEST(SimulcastTest, GetConfigWithBaseHeavyVP8TL3RateAllocation) {
+  test::ScopedFieldTrials field_trials(
+      "WebRTC-UseBaseHeavyVP8TL3RateAllocation/Enabled/");
+
+  const std::vector<VideoStream> kExpected = GetSimulcastBitrates720p();
+
+  const size_t kMaxLayers = 3;
+  std::vector<VideoStream> streams = cricket::GetSimulcastConfig(
+      kMaxLayers, 1280, 720, kMaxBitrateBps, kBitratePriority, kQpMax, kMaxFps,
+      !kScreenshare);
+
+  EXPECT_EQ(kExpected[0].min_bitrate_bps, streams[0].min_bitrate_bps);
+  EXPECT_EQ(static_cast<int>(0.4 * kExpected[0].target_bitrate_bps / 0.6),
+            streams[0].target_bitrate_bps);
+  EXPECT_EQ(static_cast<int>(0.4 * kExpected[0].max_bitrate_bps / 0.6),
+            streams[0].max_bitrate_bps);
+  for (size_t i = 1; i < streams.size(); ++i) {
+    EXPECT_EQ(kExpected[i].min_bitrate_bps, streams[i].min_bitrate_bps);
+    EXPECT_EQ(kExpected[i].target_bitrate_bps, streams[i].target_bitrate_bps);
+    EXPECT_EQ(kExpected[i].max_bitrate_bps, streams[i].max_bitrate_bps);
+  }
+}
+
 TEST(SimulcastTest, GetConfigWithLimitedMaxLayers) {
   const size_t kMaxLayers = 2;
   std::vector<VideoStream> streams = cricket::GetSimulcastConfig(
@@ -221,7 +244,7 @@ TEST(SimulcastTest, SimulcastScreenshareMaxBitrateAdjustedForResolution) {
 
   constexpr int kScreenshareHighStreamMinBitrateBps = 600000;
   constexpr int kScreenshareHighStreamMaxBitrateBps = 1250000;
-  constexpr int kMaxBirate960_540 = 900000;
+  constexpr int kMaxBitrate960_540 = 900000;
 
   // Normal case, max bitrate not limited by resolution.
   const size_t kMaxLayers = 2;
@@ -238,7 +261,7 @@ TEST(SimulcastTest, SimulcastScreenshareMaxBitrateAdjustedForResolution) {
                                         kBitratePriority, kQpMax, kMaxFps,
                                         kScreenshare);
   EXPECT_EQ(kMaxLayers, streams.size());
-  EXPECT_EQ(streams[1].max_bitrate_bps, kMaxBirate960_540);
+  EXPECT_EQ(streams[1].max_bitrate_bps, kMaxBitrate960_540);
   EXPECT_EQ(streams[1].min_bitrate_bps, kScreenshareHighStreamMinBitrateBps);
   EXPECT_GE(streams[1].max_bitrate_bps, streams[1].min_bitrate_bps);
 

@@ -25,6 +25,9 @@ namespace cricket {
 
 namespace {
 
+constexpr char kUseBaseHeavyVP8TL3RateAllocationFieldTrial[] =
+    "WebRTC-UseBaseHeavyVP8TL3RateAllocation";
+
 // Limits for legacy conference screensharing mode. Currently used for the
 // lower of the two simulcast streams.
 constexpr int kScreenshareDefaultTl0BitrateKbps = 200;
@@ -257,15 +260,16 @@ std::vector<webrtc::VideoStream> GetNormalSimulcastLayers(
     layers[s].target_bitrate_bps = FindSimulcastTargetBitrateBps(width, height);
     int num_temporal_layers = DefaultNumberOfTemporalLayers(s, false);
     if (s == 0) {
-      // If alternative number temporal layers is selected, adjust the
+      // If alternative temporal rate allocation is selected, adjust the
       // bitrate of the lowest simulcast stream so that absolute bitrate for
       // the base temporal layer matches the bitrate for the base temporal
       // layer with the default 3 simulcast streams. Otherwise we risk a
       // higher threshold for receiving a feed at all.
       float rate_factor = 1.0;
       if (num_temporal_layers == 3) {
-        if (webrtc::field_trial::IsEnabled("WebRTC-UseShortVP8TL3Pattern")) {
-          // Shortened pattern increases TL0 bitrate from 40% to 60%.
+        if (webrtc::field_trial::IsEnabled(
+                kUseBaseHeavyVP8TL3RateAllocationFieldTrial)) {
+          // Base heavy allocation increases TL0 bitrate from 40% to 60%.
           rate_factor = 0.4 / 0.6;
         }
       } else {
@@ -341,7 +345,8 @@ std::vector<webrtc::VideoStream> GetScreenshareLayers(
           webrtc::SimulcastRateAllocator::GetTemporalRateAllocation(
               num_temporal_layers, 0));
     } else if (DefaultNumberOfTemporalLayers(1, true) != 3 ||
-               webrtc::field_trial::IsEnabled("WebRTC-UseShortVP8TL3Pattern")) {
+               webrtc::field_trial::IsEnabled(
+                   kUseBaseHeavyVP8TL3RateAllocationFieldTrial)) {
       // Experimental temporal layer mode used, use increased max bitrate.
       max_bitrate_bps = kScreenshareHighStreamMaxBitrateBps;
       using_boosted_bitrate = true;
