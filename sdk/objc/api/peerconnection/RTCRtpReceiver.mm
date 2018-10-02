@@ -12,6 +12,7 @@
 
 #import "RTCMediaStreamTrack+Private.h"
 #import "RTCRtpParameters+Private.h"
+#import "RTCRtpReceiver+Native.h"
 #import "base/RTCLogging.h"
 #import "helpers/NSString+StdString.h"
 
@@ -95,6 +96,12 @@ void RtpReceiverDelegateAdapter::OnFirstPacketReceived(
 
 - (NSUInteger)hash {
   return (NSUInteger)_nativeRtpReceiver.get();
+}
+
+#pragma mark - Native
+
+- (void)setFrameDecryptor:(rtc::scoped_refptr<webrtc::FrameDecryptorInterface>)frameDecryptor {
+  _nativeRtpReceiver->SetFrameDecryptor(frameDecryptor);
 }
 
 #pragma mark - Private
