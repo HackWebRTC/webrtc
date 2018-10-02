@@ -57,6 +57,10 @@ absl::optional<int> SampleCounter::Max() const {
   return max_;
 }
 
+int64_t SampleCounter::NumSamples() const {
+  return num_samples_;
+}
+
 void SampleCounter::Reset() {
   *this = {};
 }

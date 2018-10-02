@@ -1055,6 +1055,8 @@ TEST_P(ReceiveStatisticsProxyTest, FreezesAreReported) {
   const VideoContentType content_type = GetParam();
   const int kInterFrameDelayMs = 33;
   const int kFreezeDelayMs = 200;
+  const int kCallDurationMs =
+      kMinRequiredSamples * kInterFrameDelayMs + kFreezeDelayMs;
   for (int i = 0; i < kMinRequiredSamples; ++i) {
     statistics_proxy_->OnDecodedFrame(absl::nullopt, kWidth, kHeight,
                                       content_type);
@@ -1068,6 +1070,7 @@ TEST_P(ReceiveStatisticsProxyTest, FreezesAreReported) {
   statistics_proxy_.reset();
   const int kExpectedTimeBetweenFreezes =
       kInterFrameDelayMs * (kMinRequiredSamples - 1);
+  const int kExpectedNumberFreezesPerMinute = 60 * 1000 / kCallDurationMs;
   if (videocontenttypehelpers::IsScreenshare(content_type)) {
     EXPECT_EQ(
         kFreezeDelayMs + kInterFrameDelayMs,
@@ -1075,11 +1078,16 @@ TEST_P(ReceiveStatisticsProxyTest, FreezesAreReported) {
     EXPECT_EQ(kExpectedTimeBetweenFreezes,
               metrics::MinSample(
                   "WebRTC.Video.Screenshare.MeanTimeBetweenFreezesMs"));
+    EXPECT_EQ(
+        kExpectedNumberFreezesPerMinute,
+        metrics::MinSample("WebRTC.Video.Screenshare.NumberFreezesPerMinute"));
   } else {
     EXPECT_EQ(kFreezeDelayMs + kInterFrameDelayMs,
               metrics::MinSample("WebRTC.Video.MeanFreezeDurationMs"));
     EXPECT_EQ(kExpectedTimeBetweenFreezes,
               metrics::MinSample("WebRTC.Video.MeanTimeBetweenFreezesMs"));
+    EXPECT_EQ(kExpectedNumberFreezesPerMinute,
+              metrics::MinSample("WebRTC.Video.NumberFreezesPerMinute"));
   }
 }
 
