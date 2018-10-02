@@ -21,6 +21,7 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
+#include "absl/types/optional.h"
 #include "api/rtp_headers.h"
 #include "api/rtpparameters.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
