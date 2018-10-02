@@ -19,10 +19,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class RTCEAGLVideoView;
 
-RTC_OBJC_EXPORT
-@protocol RTCEAGLVideoViewDelegate <RTCVideoViewDelegate>
-@end
-
 /**
  * RTCEAGLVideoView is an RTCVideoRenderer which renders video frames in its
  * bounds using OpenGLES 2.0 or OpenGLES 3.0.
