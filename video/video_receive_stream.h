@@ -32,7 +32,6 @@
 namespace webrtc {
 
 class CallStats;
-class IvfFileWriter;
 class ProcessThread;
 class RTPFragmentationHeader;
 class RtpStreamReceiverInterface;
@@ -45,7 +44,6 @@ namespace internal {
 
 class VideoReceiveStream : public webrtc::VideoReceiveStream,
                            public rtc::VideoSinkInterface<VideoFrame>,
-                           public EncodedImageCallback,
                            public NackSender,
                            public KeyFrameRequestSender,
                            public video_coding::OnCompleteFrameCallback,
@@ -73,25 +71,11 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
 
   webrtc::VideoReceiveStream::Stats GetStats() const override;
 
-  // Takes ownership of the file, is responsible for closing it later.
-  // Calling this method will close and finalize any current log.
-  // Giving rtc::kInvalidPlatformFileValue disables logging.
-  // If a frame to be written would make the log too large the write fails and
-  // the log is closed and finalized. A |byte_limit| of 0 means no limit.
-  void EnableEncodedFrameRecording(rtc::PlatformFile file,
-                                   size_t byte_limit) override;
-
   void AddSecondarySink(RtpPacketSinkInterface* sink) override;
   void RemoveSecondarySink(const RtpPacketSinkInterface* sink) override;
 
   // Implements rtc::VideoSinkInterface<VideoFrame>.
   void OnFrame(const VideoFrame& video_frame) override;
-
-  // Implements EncodedImageCallback.
-  EncodedImageCallback::Result OnEncodedImage(
-      const EncodedImage& encoded_image,
-      const CodecSpecificInfo* codec_specific_info,
-      const RTPFragmentationHeader* fragmentation) override;
 
   // Implements NackSender.
   void SendNack(const std::vector<uint16_t>& sequence_numbers) override;
@@ -146,9 +130,6 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   // TODO(nisse, philipel): Creation and ownership of video encoders should be
   // moved to the new VideoStreamDecoder.
   std::vector<std::unique_ptr<VideoDecoder>> video_decoders_;
-
-  rtc::CriticalSection ivf_writer_lock_;
-  std::unique_ptr<IvfFileWriter> ivf_writer_ RTC_GUARDED_BY(ivf_writer_lock_);
 
   // Members for the new jitter buffer experiment.
   std::unique_ptr<VCMJitterEstimator> jitter_estimator_;

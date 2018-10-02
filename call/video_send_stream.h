@@ -26,7 +26,6 @@
 #include "common_types.h"  // NOLINT(build/include)
 #include "common_video/include/frame_callback.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "rtc_base/platform_file.h"
 
 namespace webrtc {
 

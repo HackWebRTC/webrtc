@@ -28,7 +28,6 @@
 #include "common_types.h"  // NOLINT(build/include)
 #include "common_video/include/frame_callback.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "rtc_base/platform_file.h"
 
 namespace webrtc {
 
@@ -227,17 +226,6 @@ class VideoReceiveStream {
 
   // TODO(pbos): Add info on currently-received codec to Stats.
   virtual Stats GetStats() const = 0;
-
-  // Takes ownership of the file, is responsible for closing it later.
-  // Calling this method will close and finalize any current log.
-  // Giving rtc::kInvalidPlatformFileValue disables logging.
-  // If a frame to be written would make the log too large the write fails and
-  // the log is closed and finalized. A |byte_limit| of 0 means no limit.
-  virtual void EnableEncodedFrameRecording(rtc::PlatformFile file,
-                                           size_t byte_limit) = 0;
-  inline void DisableEncodedFrameRecording() {
-    EnableEncodedFrameRecording(rtc::kInvalidPlatformFileValue, 0);
-  }
 
   // RtpDemuxer only forwards a given RTP packet to one sink. However, some
   // sinks, such as FlexFEC, might wish to be informed of all of the packets

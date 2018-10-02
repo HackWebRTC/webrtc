@@ -130,6 +130,7 @@ class VideoReceiver : public Module {
  public:
   VideoReceiver(Clock* clock,
                 EventFactory* event_factory,
+                // TODO(nisse): Delete.
                 EncodedImageCallback* pre_decode_image_callback,
                 VCMTiming* timing,
                 NackSender* nack_sender = nullptr,

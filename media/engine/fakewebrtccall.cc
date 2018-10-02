@@ -17,7 +17,6 @@
 #include "media/base/rtputils.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/platform_file.h"
 
 namespace cricket {
 FakeAudioSendStream::FakeAudioSendStream(
@@ -349,11 +348,6 @@ void FakeVideoReceiveStream::Stop() {
 void FakeVideoReceiveStream::SetStats(
     const webrtc::VideoReceiveStream::Stats& stats) {
   stats_ = stats;
-}
-
-void FakeVideoReceiveStream::EnableEncodedFrameRecording(rtc::PlatformFile file,
-                                                         size_t byte_limit) {
-  rtc::ClosePlatformFile(file);
 }
 
 void FakeVideoReceiveStream::AddSecondarySink(

@@ -201,9 +201,6 @@ class FakeVideoReceiveStream final : public webrtc::VideoReceiveStream {
 
   void SetStats(const webrtc::VideoReceiveStream::Stats& stats);
 
-  void EnableEncodedFrameRecording(rtc::PlatformFile file,
-                                   size_t byte_limit) override;
-
   void AddSecondarySink(webrtc::RtpPacketSinkInterface* sink) override;
   void RemoveSecondarySink(const webrtc::RtpPacketSinkInterface* sink) override;
 

@@ -31,7 +31,6 @@
 #include "modules/video_coding/include/video_coding.h"
 #include "modules/video_coding/jitter_estimator.h"
 #include "modules/video_coding/timing.h"
-#include "modules/video_coding/utility/ivf_file_writer.h"
 #include "modules/video_coding/utility/vp8_header_parser.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/location.h"
@@ -131,7 +130,7 @@ VideoReceiveStream::VideoReceiveStream(
       call_stats_(call_stats),
       rtp_receive_statistics_(ReceiveStatistics::Create(clock_)),
       timing_(new VCMTiming(clock_)),
-      video_receiver_(clock_, nullptr, this, timing_.get(), this, this),
+      video_receiver_(clock_, nullptr, nullptr, timing_.get(), this, this),
       stats_proxy_(&config_, clock_),
       rtp_video_stream_receiver_(&transport_adapter_,
                                  call_stats,
@@ -313,24 +312,6 @@ VideoReceiveStream::Stats VideoReceiveStream::GetStats() const {
   return stats_proxy_.GetStats();
 }
 
-void VideoReceiveStream::EnableEncodedFrameRecording(rtc::PlatformFile file,
-                                                     size_t byte_limit) {
-  {
-    rtc::CritScope lock(&ivf_writer_lock_);
-    if (file == rtc::kInvalidPlatformFileValue) {
-      ivf_writer_.reset();
-    } else {
-      ivf_writer_ = IvfFileWriter::Wrap(rtc::File(file), byte_limit);
-    }
-  }
-
-  if (file != rtc::kInvalidPlatformFileValue) {
-    // Make a keyframe appear as early as possible in the logs, to give actually
-    // decodable output.
-    RequestKeyFrame();
-  }
-}
-
 void VideoReceiveStream::AddSecondarySink(RtpPacketSinkInterface* sink) {
   rtp_video_stream_receiver_.AddSecondarySink(sink);
 }
@@ -359,25 +340,6 @@ void VideoReceiveStream::OnFrame(const VideoFrame& video_frame) {
 
   // TODO(tommi): OnRenderFrame grabs a lock too.
   stats_proxy_.OnRenderedFrame(video_frame);
-}
-
-// TODO(asapersson): Consider moving callback from video_encoder.h or
-// creating a different callback.
-EncodedImageCallback::Result VideoReceiveStream::OnEncodedImage(
-    const EncodedImage& encoded_image,
-    const CodecSpecificInfo* codec_specific_info,
-    const RTPFragmentationHeader* fragmentation) {
-  {
-    rtc::CritScope lock(&ivf_writer_lock_);
-    if (ivf_writer_.get()) {
-      RTC_DCHECK(codec_specific_info);
-      bool ok = ivf_writer_->WriteFrame(encoded_image,
-                                        codec_specific_info->codecType);
-      RTC_DCHECK(ok);
-    }
-  }
-
-  return Result(Result::OK, encoded_image.Timestamp());
 }
 
 void VideoReceiveStream::SendNack(

@@ -75,6 +75,53 @@ class VideoStreamFactory
   std::vector<VideoStream> streams_;
 };
 
+// A decoder wrapper that writes the encoded frames to a file.
+class FrameDumpingDecoder : public VideoDecoder {
+ public:
+  FrameDumpingDecoder(std::unique_ptr<VideoDecoder> decoder,
+                      rtc::PlatformFile file)
+      : decoder_(std::move(decoder)),
+        writer_(IvfFileWriter::Wrap(rtc::File(file),
+                                    /* byte_limit= */ 100000000)) {}
+
+  int32_t InitDecode(const VideoCodec* codec_settings,
+                     int32_t number_of_cores) override {
+    return decoder_->InitDecode(codec_settings, number_of_cores);
+  }
+
+  int32_t Decode(const EncodedImage& input_image,
+                 bool missing_frames,
+                 const CodecSpecificInfo* codec_specific_info,
+                 int64_t render_time_ms) override {
+    writer_->WriteFrame(input_image, codec_specific_info->codecType);
+
+    return decoder_->Decode(input_image, missing_frames, codec_specific_info,
+                            render_time_ms);
+  }
+
+  int32_t RegisterDecodeCompleteCallback(
+      DecodedImageCallback* callback) override {
+    return decoder_->RegisterDecodeCompleteCallback(callback);
+  }
+
+  int32_t Release() override { return decoder_->Release(); }
+
+  // Returns true if the decoder prefer to decode frames late.
+  // That is, it can not decode infinite number of frames before the decoded
+  // frame is consumed.
+  bool PrefersLateDecoding() const override {
+    return decoder_->PrefersLateDecoding();
+  }
+
+  const char* ImplementationName() const override {
+    return decoder_->ImplementationName();
+  }
+
+ private:
+  std::unique_ptr<VideoDecoder> decoder_;
+  std::unique_ptr<IvfFileWriter> writer_;
+};
+
 // An encoder wrapper that writes the encoded frames to file, one per simulcast
 // layer.
 class FrameDumpingEncoder : public VideoEncoder, private EncodedImageCallback {
@@ -84,7 +131,7 @@ class FrameDumpingEncoder : public VideoEncoder, private EncodedImageCallback {
       : encoder_(std::move(encoder)) {
     for (rtc::PlatformFile file : files) {
       writers_.push_back(
-          IvfFileWriter::Wrap(rtc::File(file), 100000000 /* byte_limit */));
+          IvfFileWriter::Wrap(rtc::File(file), /* byte_limit= */ 100000000));
     }
   }
   // Implement VideoEncoder
@@ -167,6 +214,14 @@ std::unique_ptr<VideoDecoder> VideoQualityTest::CreateVideoDecoder(
         &internal_decoder_factory_, SdpVideoFormat(cricket::kVp9CodecName));
   } else {
     decoder = internal_decoder_factory_.CreateVideoDecoder(format);
+  }
+  if (!params_.logging.encoded_frame_base_path.empty()) {
+    rtc::StringBuilder str;
+    str << receive_logs_++;
+    std::string path =
+        params_.logging.encoded_frame_base_path + "." + str.str() + ".recv.ivf";
+    decoder = absl::make_unique<FrameDumpingDecoder>(
+        std::move(decoder), rtc::CreatePlatformFile(path));
   }
   return decoder;
 }
@@ -1094,9 +1149,6 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
           video_capturers_[video_idx].get(), degradation_preference_);
     }
 
-    StartEncodedFrameLogs(
-        video_receive_streams_[params_.ss[0].selected_stream]);
-
     if (params_.audio.enabled) {
       SetupAudio(send_transport.get());
       StartAudioStreams();
@@ -1308,8 +1360,6 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
       SetupAudio(send_transport.get());
     }
 
-    for (VideoReceiveStream* receive_stream : video_receive_streams_)
-      StartEncodedFrameLogs(receive_stream);
     Start();
   });
 
@@ -1330,14 +1380,4 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
   });
 }
 
-void VideoQualityTest::StartEncodedFrameLogs(VideoReceiveStream* stream) {
-  if (!params_.logging.encoded_frame_base_path.empty()) {
-    rtc::StringBuilder str;
-    str << receive_logs_++;
-    std::string path =
-        params_.logging.encoded_frame_base_path + "." + str.str() + ".recv.ivf";
-    stream->EnableEncodedFrameRecording(rtc::CreatePlatformFile(path),
-                                        100000000);
-  }
-}
 }  // namespace webrtc
