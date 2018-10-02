@@ -48,20 +48,7 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
   // as of the first packet's.
   SetPlayoutDelay(first_packet->video_header.playout_delay);
 
-  // Since FFmpeg use an optimized bitstream reader that reads in chunks of
-  // 32/64 bits we have to add at least that much padding to the buffer
-  // to make sure the decoder doesn't read out of bounds.
-  // NOTE! EncodedImage::_size is the size of the buffer (think capacity of
-  //       an std::vector) and EncodedImage::_length is the actual size of
-  //       the bitstream (think size of an std::vector).
-  if (codec_type_ == kVideoCodecH264)
-    _size = frame_size + EncodedImage::kBufferPaddingBytesH264;
-  else
-    _size = frame_size;
-
-  _buffer = new uint8_t[_size];
-  _length = frame_size;
-
+  AllocateBitstreamBuffer(frame_size);
   bool bitstream_copied = GetBitstream(_buffer);
   RTC_DCHECK(bitstream_copied);
   _encodedWidth = first_packet->width;
@@ -135,6 +122,11 @@ VideoCodecType RtpFrameObject::codec_type() const {
   return codec_type_;
 }
 
+void RtpFrameObject::SetBitstream(rtc::ArrayView<const uint8_t> bitstream) {
+  AllocateBitstreamBuffer(bitstream.size());
+  memcpy(_buffer, bitstream.data(), _length);
+}
+
 bool RtpFrameObject::GetBitstream(uint8_t* destination) const {
   return packet_buffer_->GetBitstream(*this, destination);
 }
@@ -174,6 +166,25 @@ absl::optional<FrameMarking> RtpFrameObject::GetFrameMarking() const {
   if (!packet)
     return absl::nullopt;
   return packet->video_header.frame_marking;
+}
+
+void RtpFrameObject::AllocateBitstreamBuffer(size_t frame_size) {
+  // Since FFmpeg use an optimized bitstream reader that reads in chunks of
+  // 32/64 bits we have to add at least that much padding to the buffer
+  // to make sure the decoder doesn't read out of bounds.
+  // NOTE! EncodedImage::_size is the size of the buffer (think capacity of
+  //       an std::vector) and EncodedImage::_length is the actual size of
+  //       the bitstream (think size of an std::vector).
+  size_t new_size = frame_size + (codec_type_ == kVideoCodecH264
+                                      ? EncodedImage::kBufferPaddingBytesH264
+                                      : 0);
+  if (_size < new_size) {
+    delete[] _buffer;
+    _buffer = new uint8_t[new_size];
+    _size = new_size;
+  }
+
+  _length = frame_size;
 }
 
 }  // namespace video_coding
