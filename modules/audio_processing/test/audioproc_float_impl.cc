@@ -139,6 +139,9 @@ DEFINE_int(agc_limiter,
 DEFINE_int(agc_compression_gain,
            kParameterNotSpecifiedValue,
            "Specify the AGC compression gain (0-90)");
+DEFINE_float(agc2_enable_adaptive_gain,
+             kParameterNotSpecifiedValue,
+             "Activate (1) or deactivate(0) the AGC2 adaptive gain");
 DEFINE_float(agc2_fixed_gain_db, 0.f, "AGC2 fixed gain (dB) to apply");
 DEFINE_float(pre_amplifier_gain_factor,
              1.f,
@@ -269,6 +272,8 @@ SimulationSettings CreateSettings() {
   SetSettingIfFlagSet(FLAG_agc_limiter, &settings.use_agc_limiter);
   SetSettingIfSpecified(FLAG_agc_compression_gain,
                         &settings.agc_compression_gain);
+  SetSettingIfFlagSet(FLAG_agc2_enable_adaptive_gain,
+                      &settings.agc2_use_adaptive_gain);
   settings.agc2_fixed_gain_db = FLAG_agc2_fixed_gain_db;
   settings.pre_amplifier_gain_factor = FLAG_pre_amplifier_gain_factor;
   SetSettingIfSpecified(FLAG_vad_likelihood, &settings.vad_likelihood);

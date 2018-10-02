@@ -73,6 +73,7 @@ struct SimulationSettings {
   absl::optional<int> agc_target_level;
   absl::optional<bool> use_agc_limiter;
   absl::optional<int> agc_compression_gain;
+  absl::optional<bool> agc2_use_adaptive_gain;
   float agc2_fixed_gain_db;
   float pre_amplifier_gain_factor;
   absl::optional<int> vad_likelihood;
