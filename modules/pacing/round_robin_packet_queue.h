@@ -67,7 +67,6 @@ class RoundRobinPacketQueue {
 
  private:
   struct StreamPrioKey {
-    StreamPrioKey() = default;
     StreamPrioKey(RtpPacketSender::Priority priority, int64_t bytes)
         : priority(priority), bytes(bytes) {}
 
