@@ -1230,7 +1230,7 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
       capture_.echo_path_gain_change =
           capture_.echo_path_gain_change ||
           (capture_.prev_pre_amp_gain != pre_amp_gain &&
-           capture_.prev_pre_amp_gain < 0.f);
+           capture_.prev_pre_amp_gain >= 0.f);
       capture_.prev_pre_amp_gain = pre_amp_gain;
     }
     private_submodules_->echo_controller->AnalyzeCapture(capture_buffer);
