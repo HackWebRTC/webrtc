@@ -15,6 +15,7 @@
 #include "api/video/encoded_frame.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/include/module_common_types.h"
+#include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor.h"
 
 namespace webrtc {
 namespace video_coding {
@@ -41,6 +42,7 @@ class RtpFrameObject : public EncodedFrame {
   int64_t RenderTime() const override;
   bool delayed_by_retransmission() const override;
   absl::optional<RTPVideoHeader> GetRtpVideoHeader() const;
+  absl::optional<RtpGenericFrameDescriptor> GetGenericFrameDescriptor() const;
   absl::optional<FrameMarking> GetFrameMarking() const;
 
  private:

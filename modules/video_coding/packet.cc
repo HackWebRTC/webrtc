@@ -81,4 +81,6 @@ VCMPacket::VCMPacket(const uint8_t* ptr,
   }
 }
 
+VCMPacket::~VCMPacket() = default;
+
 }  // namespace webrtc

@@ -84,12 +84,10 @@ void RtpFrameReferenceFinder::RetryStashedFrames() {
 
 RtpFrameReferenceFinder::FrameDecision
 RtpFrameReferenceFinder::ManageFrameInternal(RtpFrameObject* frame) {
-  absl::optional<RTPVideoHeader> video_header = frame->GetRtpVideoHeader();
-  // TODO(bugs.webrtc.org/9772): Remove the spatial id check when the old
-  //                             generic format has been removed.
-  if (video_header && video_header->generic &&
-      video_header->generic->spatial_index != -1) {
-    return ManageFrameGeneric(frame, *video_header->generic);
+  absl::optional<RtpGenericFrameDescriptor> generic_descriptor =
+      frame->GetGenericFrameDescriptor();
+  if (generic_descriptor) {
+    return ManageFrameGeneric(frame, *generic_descriptor);
   }
 
   switch (frame->codec_type()) {
@@ -99,6 +97,7 @@ RtpFrameReferenceFinder::ManageFrameInternal(RtpFrameObject* frame) {
       return ManageFrameVp9(frame);
     default: {
       // Use 15 first bits of frame ID as picture ID if available.
+      absl::optional<RTPVideoHeader> video_header = frame->GetRtpVideoHeader();
       int picture_id = kNoPictureId;
       if (video_header && video_header->generic)
         picture_id = video_header->generic->frame_id & 0x7fff;
@@ -171,19 +170,20 @@ void RtpFrameReferenceFinder::UpdateLastPictureIdWithPadding(uint16_t seq_num) {
 RtpFrameReferenceFinder::FrameDecision
 RtpFrameReferenceFinder::ManageFrameGeneric(
     RtpFrameObject* frame,
-    const RTPVideoHeader::GenericDescriptorInfo& descriptor) {
-  if (EncodedFrame::kMaxFrameReferences < descriptor.dependencies.size()) {
+    const RtpGenericFrameDescriptor& descriptor) {
+  int64_t frame_id = generic_frame_id_unwrapper_.Unwrap(descriptor.FrameId());
+  frame->id.picture_id = frame_id;
+  frame->id.spatial_layer = descriptor.SpatialLayer();
+
+  rtc::ArrayView<const uint16_t> diffs = descriptor.FrameDependenciesDiffs();
+  if (EncodedFrame::kMaxFrameReferences < diffs.size()) {
     RTC_LOG(LS_WARNING) << "Too many dependencies in generic descriptor.";
     return kDrop;
   }
 
-  int64_t frame_id = generic_frame_id_unwrapper_.Unwrap(descriptor.frame_id);
-  frame->id.picture_id = frame_id;
-  frame->id.spatial_layer = descriptor.spatial_index;
-
-  frame->num_references = descriptor.dependencies.size();
-  for (size_t i = 0; i < descriptor.dependencies.size(); ++i)
-    frame->references[i] = frame_id - descriptor.dependencies[i];
+  frame->num_references = diffs.size();
+  for (size_t i = 0; i < diffs.size(); ++i)
+    frame->references[i] = frame_id - diffs[i];
 
   return kHandOff;
 }

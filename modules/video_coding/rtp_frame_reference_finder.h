@@ -19,6 +19,7 @@
 #include <utility>
 
 #include "modules/include/module_common_types.h"
+#include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/numerics/sequence_number_util.h"
 #include "rtc_base/thread_annotations.h"
@@ -88,9 +89,8 @@ class RtpFrameReferenceFinder {
   FrameDecision ManageFrameInternal(RtpFrameObject* frame)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
-  FrameDecision ManageFrameGeneric(
-      RtpFrameObject* frame,
-      const RTPVideoHeader::GenericDescriptorInfo& descriptor)
+  FrameDecision ManageFrameGeneric(RtpFrameObject* frame,
+                                   const RtpGenericFrameDescriptor& descriptor)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Find references for frames with no or very limited information in the

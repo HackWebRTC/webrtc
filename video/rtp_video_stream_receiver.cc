@@ -201,6 +201,15 @@ int32_t RtpVideoStreamReceiver::OnReceivedPayloadData(
     const uint8_t* payload_data,
     size_t payload_size,
     const WebRtcRTPHeader* rtp_header) {
+  return OnReceivedPayloadData(payload_data, payload_size, rtp_header,
+                               absl::nullopt);
+}
+
+int32_t RtpVideoStreamReceiver::OnReceivedPayloadData(
+    const uint8_t* payload_data,
+    size_t payload_size,
+    const WebRtcRTPHeader* rtp_header,
+    const absl::optional<RtpGenericFrameDescriptor>& generic_descriptor) {
   WebRtcRTPHeader rtp_header_with_ntp = *rtp_header;
   rtp_header_with_ntp.ntp_time_ms =
       ntp_estimator_.Estimate(rtp_header->header.timestamp);
@@ -247,6 +256,8 @@ int32_t RtpVideoStreamReceiver::OnReceivedPayloadData(
     memcpy(data, packet.dataPtr, packet.sizeBytes);
     packet.dataPtr = data;
   }
+
+  packet.generic_descriptor = generic_descriptor;
 
   packet_buffer_->InsertPacket(&packet);
   return 0;
@@ -462,44 +473,25 @@ void RtpVideoStreamReceiver::ReceivePacket(const RtpPacketReceived& packet) {
   packet.GetExtension<PlayoutDelayLimits>(
       &webrtc_rtp_header.video_header().playout_delay);
 
-  RtpGenericFrameDescriptor generic_descriptor_wire;
+  absl::optional<RtpGenericFrameDescriptor> generic_descriptor_wire;
+  generic_descriptor_wire.emplace();
   if (packet.GetExtension<RtpGenericFrameDescriptorExtension>(
-          &generic_descriptor_wire)) {
+          &generic_descriptor_wire.value())) {
+    generic_descriptor_wire->SetByteRepresentation(
+        packet.GetRawExtension<RtpGenericFrameDescriptorExtension>());
     webrtc_rtp_header.video_header().is_first_packet_in_frame =
-        generic_descriptor_wire.FirstSubFrameInFrame() &&
-        generic_descriptor_wire.FirstPacketInSubFrame();
+        generic_descriptor_wire->FirstSubFrameInFrame() &&
+        generic_descriptor_wire->FirstPacketInSubFrame();
     webrtc_rtp_header.video_header().is_last_packet_in_frame =
         webrtc_rtp_header.header.markerBit ||
-        (generic_descriptor_wire.LastSubFrameInFrame() &&
-         generic_descriptor_wire.LastPacketInSubFrame());
-
-    // For now we store the diffs in |generic_descirptor.dependencies|. They
-    // are later recaculated when the frame id is unwrapped.
-    // TODO(philipel): Remove RTPVideoHeader::GenericDescriptorInfo and use
-    //                 RtpGenericFrameDescriptor instead.
-    RTPVideoHeader::GenericDescriptorInfo& generic_descriptor =
-        webrtc_rtp_header.video_header().generic.emplace();
-    if (generic_descriptor_wire.FirstPacketInSubFrame()) {
-      generic_descriptor.frame_id = generic_descriptor_wire.FrameId();
-      for (uint16_t diff : generic_descriptor_wire.FrameDependenciesDiffs()) {
-        generic_descriptor.dependencies.push_back(diff);
-      }
-
-      generic_descriptor.temporal_index =
-          generic_descriptor_wire.TemporalLayer();
-      uint8_t spatial_bitmask = generic_descriptor_wire.SpatialLayersBitmask();
-      while (spatial_bitmask && !(spatial_bitmask & 1)) {
-        spatial_bitmask >>= 1;
-        ++generic_descriptor.spatial_index;
-      }
-
-      // Since the receiver doesn't care knowing about higher spatial layer
-      // frames that depend on this frame we don't parse it.
-    }
+        (generic_descriptor_wire->LastSubFrameInFrame() &&
+         generic_descriptor_wire->LastPacketInSubFrame());
+  } else {
+    generic_descriptor_wire.reset();
   }
 
   OnReceivedPayloadData(parsed_payload.payload, parsed_payload.payload_length,
-                        &webrtc_rtp_header);
+                        &webrtc_rtp_header, generic_descriptor_wire);
 }
 
 void RtpVideoStreamReceiver::ParseAndHandleEncapsulatingHeader(

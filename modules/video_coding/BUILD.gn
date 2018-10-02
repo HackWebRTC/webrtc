@@ -69,6 +69,7 @@ rtc_static_library("packet") {
   ]
   deps = [
     "..:module_api",
+    "../rtp_rtcp:rtp_rtcp_format",
   ]
 }
 

@@ -51,8 +51,7 @@ class RtpPacketReceived;
 class Transport;
 class UlpfecReceiver;
 
-class RtpVideoStreamReceiver : public RtpData,
-                               public RecoveredPacketReceiver,
+class RtpVideoStreamReceiver : public RecoveredPacketReceiver,
                                public RtpPacketSinkInterface,
                                public VCMFrameTypeCallback,
                                public VCMPacketRequestCallback,
@@ -95,10 +94,17 @@ class RtpVideoStreamReceiver : public RtpData,
   // Implements RtpPacketSinkInterface.
   void OnRtpPacket(const RtpPacketReceived& packet) override;
 
-  // Implements RtpData.
+  // TODO(philipel): Stop using VCMPacket in the new jitter buffer and then
+  //                 remove this function.
   int32_t OnReceivedPayloadData(const uint8_t* payload_data,
                                 size_t payload_size,
-                                const WebRtcRTPHeader* rtp_header) override;
+                                const WebRtcRTPHeader* rtp_header);
+  int32_t OnReceivedPayloadData(
+      const uint8_t* payload_data,
+      size_t payload_size,
+      const WebRtcRTPHeader* rtp_header,
+      const absl::optional<RtpGenericFrameDescriptor>& generic_descriptor);
+
   // Implements RecoveredPacketReceiver.
   void OnRecoveredPacket(const uint8_t* packet, size_t packet_length) override;
 
