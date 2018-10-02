@@ -93,10 +93,11 @@ class FrameDumpingDecoder : public VideoDecoder {
                  bool missing_frames,
                  const CodecSpecificInfo* codec_specific_info,
                  int64_t render_time_ms) override {
+    int32_t ret = decoder_->Decode(input_image, missing_frames,
+                                   codec_specific_info, render_time_ms);
     writer_->WriteFrame(input_image, codec_specific_info->codecType);
 
-    return decoder_->Decode(input_image, missing_frames, codec_specific_info,
-                            render_time_ms);
+    return ret;
   }
 
   int32_t RegisterDecodeCompleteCallback(

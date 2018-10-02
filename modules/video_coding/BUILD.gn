@@ -123,8 +123,6 @@ rtc_static_library("video_coding") {
     "nack_fec_tables.h",
     "packet_buffer.cc",
     "packet_buffer.h",
-    "qp_parser.cc",
-    "qp_parser.h",
     "receiver.cc",
     "receiver.h",
     "rtp_frame_reference_finder.cc",
