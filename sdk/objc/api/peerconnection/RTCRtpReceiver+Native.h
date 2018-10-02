@@ -11,6 +11,7 @@
 #import "RTCRtpReceiver.h"
 
 #include "api/crypto/framedecryptorinterface.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
