@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/json.h"
+#include "rtc_base/strings/json.h"
 
 #include <vector>
 
@@ -88,7 +88,7 @@ TEST(JsonTest, GetUInt) {
   EXPECT_TRUE(GetUIntFromJson(big_u, &out));
   EXPECT_EQ(0xFFFFFFFFU, out);
   EXPECT_FALSE(GetUIntFromJson(in_s, &out));
-  // TODO: Fail reading negative strings.
+  // TODO(bugs.webrtc.org/9804): Fail reading negative strings.
   // EXPECT_FALSE(GetUIntFromJson(in_si, &out));
   EXPECT_FALSE(GetUIntFromJson(in_i, &out));
   EXPECT_FALSE(GetUIntFromJson(big_sn, &out));

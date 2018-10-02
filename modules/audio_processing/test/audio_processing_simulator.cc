@@ -24,8 +24,8 @@
 #include "modules/audio_processing/include/audio_processing.h"
 #include "modules/audio_processing/test/fake_recording_device.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/json.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/strings/json.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/stringutils.h"
 
