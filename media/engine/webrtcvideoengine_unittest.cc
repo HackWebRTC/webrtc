@@ -18,6 +18,7 @@
 #include "api/test/mock_video_decoder_factory.h"
 #include "api/test/mock_video_encoder_factory.h"
 #include "api/units/time_delta.h"
+#include "api/video/video_bitrate_allocation.h"
 #include "api/video_codecs/builtin_video_decoder_factory.h"
 #include "api/video_codecs/builtin_video_encoder_factory.h"
 #include "api/video_codecs/sdp_video_format.h"
@@ -5460,6 +5461,30 @@ TEST_F(WebRtcVideoChannelTest, SetMaxFramerateOneStream) {
   EXPECT_EQ(kNewMaxFramerate, stream->GetVideoStreams()[0].max_framerate);
 }
 
+TEST_F(WebRtcVideoChannelTest, SetNumTemporalLayersForSingleStream) {
+  FakeVideoSendStream* stream = AddSendStream();
+
+  webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(last_ssrc_);
+  EXPECT_EQ(1UL, parameters.encodings.size());
+  EXPECT_FALSE(parameters.encodings[0].num_temporal_layers.has_value());
+  EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters).ok());
+
+  // Note that this is testing the behavior of the FakeVideoSendStream, which
+  // also calls to CreateEncoderStreams to get the VideoStreams, so essentially
+  // we are just testing the behavior of
+  // EncoderStreamFactory::CreateEncoderStreams.
+  ASSERT_EQ(1UL, stream->GetVideoStreams().size());
+  EXPECT_FALSE(stream->GetVideoStreams()[0].num_temporal_layers.has_value());
+
+  // Set temporal layers and check that VideoStream.num_temporal_layers is set.
+  parameters = channel_->GetRtpSendParameters(last_ssrc_);
+  parameters.encodings[0].num_temporal_layers = 2;
+  EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters).ok());
+
+  ASSERT_EQ(1UL, stream->GetVideoStreams().size());
+  EXPECT_EQ(2UL, stream->GetVideoStreams()[0].num_temporal_layers);
+}
+
 TEST_F(WebRtcVideoChannelTest,
        CannotSetRtpSendParametersWithIncorrectNumberOfEncodings) {
   AddSendStream();
@@ -5635,6 +5660,158 @@ TEST_F(WebRtcVideoChannelTest, GetAndSetRtpSendParametersMaxFramerate) {
   EXPECT_EQ(10, parameters.encodings[0].max_framerate);
   EXPECT_EQ(20, parameters.encodings[1].max_framerate);
   EXPECT_EQ(25, parameters.encodings[2].max_framerate);
+}
+
+TEST_F(WebRtcVideoChannelTest,
+       SetRtpSendParametersNumTemporalLayersFailsForInvalidRange) {
+  const size_t kNumSimulcastStreams = 3;
+  SetUpSimulcast(true, false);
+
+  // Get and set the rtp encoding parameters.
+  webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(last_ssrc_);
+  EXPECT_EQ(kNumSimulcastStreams, parameters.encodings.size());
+
+  // Num temporal layers should be in the range [1, kMaxTemporalStreams].
+  parameters.encodings[0].num_temporal_layers = 0;
+  EXPECT_EQ(webrtc::RTCErrorType::INVALID_RANGE,
+            channel_->SetRtpSendParameters(last_ssrc_, parameters).type());
+  parameters.encodings[0].num_temporal_layers = webrtc::kMaxTemporalStreams + 1;
+  EXPECT_EQ(webrtc::RTCErrorType::INVALID_RANGE,
+            channel_->SetRtpSendParameters(last_ssrc_, parameters).type());
+}
+
+TEST_F(WebRtcVideoChannelTest,
+       SetRtpSendParametersNumTemporalLayersFailsForInvalidModification) {
+  const size_t kNumSimulcastStreams = 3;
+  SetUpSimulcast(true, false);
+
+  // Get and set the rtp encoding parameters.
+  webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(last_ssrc_);
+  EXPECT_EQ(kNumSimulcastStreams, parameters.encodings.size());
+
+  // No/all layers should be set.
+  parameters.encodings[0].num_temporal_layers = 1;
+  EXPECT_EQ(webrtc::RTCErrorType::INVALID_MODIFICATION,
+            channel_->SetRtpSendParameters(last_ssrc_, parameters).type());
+
+  // Different values not supported.
+  parameters.encodings[0].num_temporal_layers = 1;
+  parameters.encodings[1].num_temporal_layers = 2;
+  parameters.encodings[2].num_temporal_layers = 2;
+  EXPECT_EQ(webrtc::RTCErrorType::INVALID_MODIFICATION,
+            channel_->SetRtpSendParameters(last_ssrc_, parameters).type());
+}
+
+TEST_F(WebRtcVideoChannelTest, GetAndSetRtpSendParametersNumTemporalLayers) {
+  const size_t kNumSimulcastStreams = 3;
+  SetUpSimulcast(true, false);
+
+  // Get and set the rtp encoding parameters.
+  webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(last_ssrc_);
+  EXPECT_EQ(kNumSimulcastStreams, parameters.encodings.size());
+  for (const auto& encoding : parameters.encodings)
+    EXPECT_FALSE(encoding.num_temporal_layers);
+
+  // Change the value and set it on the VideoChannel.
+  parameters.encodings[0].num_temporal_layers = 3;
+  parameters.encodings[1].num_temporal_layers = 3;
+  parameters.encodings[2].num_temporal_layers = 3;
+  EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters).ok());
+
+  // Verify that the number of temporal layers are set on the VideoChannel.
+  parameters = channel_->GetRtpSendParameters(last_ssrc_);
+  EXPECT_EQ(kNumSimulcastStreams, parameters.encodings.size());
+  EXPECT_EQ(3, parameters.encodings[0].num_temporal_layers);
+  EXPECT_EQ(3, parameters.encodings[1].num_temporal_layers);
+  EXPECT_EQ(3, parameters.encodings[2].num_temporal_layers);
+}
+
+TEST_F(WebRtcVideoChannelTest, NumTemporalLayersPropagatedToEncoder) {
+  const size_t kNumSimulcastStreams = 3;
+  FakeVideoSendStream* stream = SetUpSimulcast(true, false);
+
+  // Send a full size frame so all simulcast layers are used when reconfiguring.
+  FakeVideoCapturerWithTaskQueue capturer;
+  VideoOptions options;
+  EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, &options, &capturer));
+  EXPECT_EQ(cricket::CS_RUNNING,
+            capturer.Start(capturer.GetSupportedFormats()->front()));
+  channel_->SetSend(true);
+  EXPECT_TRUE(capturer.CaptureFrame());
+
+  // Get and set the rtp encoding parameters.
+  // Change the value and set it on the VideoChannel.
+  webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(last_ssrc_);
+  EXPECT_EQ(kNumSimulcastStreams, parameters.encodings.size());
+  parameters.encodings[0].num_temporal_layers = 2;
+  parameters.encodings[1].num_temporal_layers = 2;
+  parameters.encodings[2].num_temporal_layers = 2;
+  EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters).ok());
+
+  // Verify that the new value is propagated down to the encoder.
+  // Check that WebRtcVideoSendStream updates VideoEncoderConfig correctly.
+  EXPECT_EQ(2, stream->num_encoder_reconfigurations());
+  webrtc::VideoEncoderConfig encoder_config = stream->GetEncoderConfig().Copy();
+  EXPECT_EQ(kNumSimulcastStreams, encoder_config.number_of_streams);
+  EXPECT_EQ(kNumSimulcastStreams, encoder_config.simulcast_layers.size());
+  EXPECT_EQ(2UL, encoder_config.simulcast_layers[0].num_temporal_layers);
+  EXPECT_EQ(2UL, encoder_config.simulcast_layers[1].num_temporal_layers);
+  EXPECT_EQ(2UL, encoder_config.simulcast_layers[2].num_temporal_layers);
+
+  // FakeVideoSendStream calls CreateEncoderStreams, test that the vector of
+  // VideoStreams are created appropriately for the simulcast case.
+  EXPECT_EQ(kNumSimulcastStreams, stream->GetVideoStreams().size());
+  EXPECT_EQ(2UL, stream->GetVideoStreams()[0].num_temporal_layers);
+  EXPECT_EQ(2UL, stream->GetVideoStreams()[1].num_temporal_layers);
+  EXPECT_EQ(2UL, stream->GetVideoStreams()[2].num_temporal_layers);
+
+  // No parameter changed, encoder should not be reconfigured.
+  EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters).ok());
+  EXPECT_EQ(2, stream->num_encoder_reconfigurations());
+
+  EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, nullptr, nullptr));
+}
+
+TEST_F(WebRtcVideoChannelTest,
+       DefaultValuePropagatedToEncoderForUnsetNumTemporalLayers) {
+  const size_t kDefaultNumTemporalLayers = 3;
+  const size_t kNumSimulcastStreams = 3;
+  FakeVideoSendStream* stream = SetUpSimulcast(true, false);
+
+  // Send a full size frame so all simulcast layers are used when reconfiguring.
+  FakeVideoCapturerWithTaskQueue capturer;
+  VideoOptions options;
+  EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, &options, &capturer));
+  EXPECT_EQ(cricket::CS_RUNNING,
+            capturer.Start(capturer.GetSupportedFormats()->front()));
+  channel_->SetSend(true);
+  EXPECT_TRUE(capturer.CaptureFrame());
+
+  // Change rtp encoding parameters, num_temporal_layers not changed.
+  webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(last_ssrc_);
+  EXPECT_EQ(kNumSimulcastStreams, parameters.encodings.size());
+  parameters.encodings[0].min_bitrate_bps = 33000;
+  EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters).ok());
+
+  // Verify that no value is propagated down to the encoder.
+  webrtc::VideoEncoderConfig encoder_config = stream->GetEncoderConfig().Copy();
+  EXPECT_EQ(kNumSimulcastStreams, encoder_config.number_of_streams);
+  EXPECT_EQ(kNumSimulcastStreams, encoder_config.simulcast_layers.size());
+  EXPECT_FALSE(encoder_config.simulcast_layers[0].num_temporal_layers);
+  EXPECT_FALSE(encoder_config.simulcast_layers[1].num_temporal_layers);
+  EXPECT_FALSE(encoder_config.simulcast_layers[2].num_temporal_layers);
+
+  // FakeVideoSendStream calls CreateEncoderStreams, test that the vector of
+  // VideoStreams are created appropriately for the simulcast case.
+  EXPECT_EQ(kNumSimulcastStreams, stream->GetVideoStreams().size());
+  EXPECT_EQ(kDefaultNumTemporalLayers,
+            stream->GetVideoStreams()[0].num_temporal_layers);
+  EXPECT_EQ(kDefaultNumTemporalLayers,
+            stream->GetVideoStreams()[1].num_temporal_layers);
+  EXPECT_EQ(kDefaultNumTemporalLayers,
+            stream->GetVideoStreams()[2].num_temporal_layers);
+
+  EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, nullptr, nullptr));
 }
 
 TEST_F(WebRtcVideoChannelTest, MaxSimulcastFrameratePropagatedToEncoder) {

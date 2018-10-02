@@ -10,6 +10,9 @@
 
 #include "media/base/mediaengine.h"
 
+#include "api/video/video_bitrate_allocation.h"
+#include "rtc_base/stringencode.h"
+
 namespace cricket {
 
 RtpCapabilities::RtpCapabilities() = default;
@@ -78,6 +81,24 @@ webrtc::RTCError ValidateRtpParameters(
                              "Attempted to set RtpParameters min bitrate "
                              "larger than max bitrate.");
       }
+    }
+    if (rtp_parameters.encodings[i].num_temporal_layers) {
+      if (*rtp_parameters.encodings[i].num_temporal_layers < 1 ||
+          *rtp_parameters.encodings[i].num_temporal_layers >
+              webrtc::kMaxTemporalStreams) {
+        LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_RANGE,
+                             "Attempted to set RtpParameters "
+                             "num_temporal_layers to an invalid number.");
+      }
+    }
+    if (i > 0 && (rtp_parameters.encodings[i].num_temporal_layers !=
+                  rtp_parameters.encodings[i - 1].num_temporal_layers)) {
+      LOG_AND_RETURN_ERROR(
+          RTCErrorType::INVALID_MODIFICATION,
+          "Attempted to set RtpParameters num_temporal_layers "
+          "at encoding layer i: " +
+              rtc::ToString(i) +
+              " to a different value than other encoding layers.");
     }
   }
   return webrtc::RTCError::OK();

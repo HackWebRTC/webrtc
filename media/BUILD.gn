@@ -127,6 +127,7 @@ rtc_static_library("rtc_media_base") {
     "..:webrtc_common",
     "../api:libjingle_peerconnection_api",
     "../api/audio_codecs:audio_codecs_api",
+    "../api/video:video_bitrate_allocation",
     "../api/video:video_frame",
     "../api/video:video_frame_i420",
     "../api/video_codecs:video_codecs_api",

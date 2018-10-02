@@ -855,10 +855,12 @@ public class PeerConnectionTest {
     assertNull(rtpParameters.encodings.get(0).maxBitrateBps);
     assertNull(rtpParameters.encodings.get(0).minBitrateBps);
     assertNull(rtpParameters.encodings.get(0).maxFramerate);
+    assertNull(rtpParameters.encodings.get(0).numTemporalLayers);
 
     rtpParameters.encodings.get(0).maxBitrateBps = 300000;
     rtpParameters.encodings.get(0).minBitrateBps = 100000;
     rtpParameters.encodings.get(0).maxFramerate = 20;
+    rtpParameters.encodings.get(0).numTemporalLayers = 2;
     assertTrue(videoSender.setParameters(rtpParameters));
 
     // Create a DTMF sender.
@@ -872,6 +874,7 @@ public class PeerConnectionTest {
     assertEquals(300000, (int) rtpParameters.encodings.get(0).maxBitrateBps);
     assertEquals(100000, (int) rtpParameters.encodings.get(0).minBitrateBps);
     assertEquals(20, (int) rtpParameters.encodings.get(0).maxFramerate);
+    assertEquals(2, (int) rtpParameters.encodings.get(0).numTemporalLayers);
 
     // Test send & receive UTF-8 text.
     answeringExpectations.expectMessage(

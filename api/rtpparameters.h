@@ -428,10 +428,17 @@ struct RtpEncodingParameters {
   absl::optional<int> min_bitrate_bps;
 
   // Specifies the maximum framerate in fps for video.
-  // TODO(asapersson): Different framerates are not supported per stream.
-  // If set, the maximum |max_framerate| is currently used.
+  // TODO(asapersson): Different framerates are not supported per simulcast
+  // layer. If set, the maximum |max_framerate| is currently used.
   // Not supported for screencast.
   absl::optional<int> max_framerate;
+
+  // Specifies the number of temporal layers for video (if the feature is
+  // supported by the codec implementation).
+  // TODO(asapersson): Different number of temporal layers are not supported
+  // per simulcast layer.
+  // Not supported for screencast.
+  absl::optional<int> num_temporal_layers;
 
   // For video, scale the resolution down by this factor.
   // TODO(deadbeef): Not implemented.
@@ -466,6 +473,7 @@ struct RtpEncodingParameters {
            max_bitrate_bps == o.max_bitrate_bps &&
            min_bitrate_bps == o.min_bitrate_bps &&
            max_framerate == o.max_framerate &&
+           num_temporal_layers == o.num_temporal_layers &&
            scale_resolution_down_by == o.scale_resolution_down_by &&
            scale_framerate_down_by == o.scale_framerate_down_by &&
            active == o.active && rid == o.rid &&
