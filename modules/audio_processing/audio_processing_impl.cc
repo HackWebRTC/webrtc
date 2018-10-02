@@ -30,7 +30,14 @@
 #include "modules/audio_processing/gain_control_for_experimental_agc.h"
 #include "modules/audio_processing/gain_control_impl.h"
 #include "modules/audio_processing/gain_controller2.h"
+#include "modules/audio_processing/level_estimator_impl.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
+#include "modules/audio_processing/low_cut_filter.h"
+#include "modules/audio_processing/noise_suppression_impl.h"
+#include "modules/audio_processing/residual_echo_detector.h"
+#include "modules/audio_processing/transient/transient_suppressor.h"
+#include "modules/audio_processing/voice_detection_impl.h"
+#include "rtc_base/atomicops.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_file.h"
@@ -38,13 +45,6 @@
 #include "rtc_base/system/arch.h"
 #include "rtc_base/timeutils.h"
 #include "rtc_base/trace_event.h"
-#include "modules/audio_processing/level_estimator_impl.h"
-#include "modules/audio_processing/low_cut_filter.h"
-#include "modules/audio_processing/noise_suppression_impl.h"
-#include "modules/audio_processing/residual_echo_detector.h"
-#include "modules/audio_processing/transient/transient_suppressor.h"
-#include "modules/audio_processing/voice_detection_impl.h"
-#include "rtc_base/atomicops.h"
 #include "system_wrappers/include/metrics.h"
 
 #define RETURN_ON_ERR(expr) \
@@ -1224,6 +1224,15 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
         capture_.prev_analog_mic_level != -1;
     capture_.prev_analog_mic_level = analog_mic_level;
 
+    // Detect and flag any change in the pre-amplifier gain.
+    if (private_submodules_->pre_amplifier) {
+      float pre_amp_gain = private_submodules_->pre_amplifier->GetGainFactor();
+      capture_.echo_path_gain_change =
+          capture_.echo_path_gain_change ||
+          (capture_.prev_pre_amp_gain != pre_amp_gain &&
+           capture_.prev_pre_amp_gain < 0.f);
+      capture_.prev_pre_amp_gain = pre_amp_gain;
+    }
     private_submodules_->echo_controller->AnalyzeCapture(capture_buffer);
   }
 
@@ -1785,7 +1794,6 @@ bool AudioProcessingImpl::UpdateActiveSubmoduleStates() {
       capture_.transient_suppressor_enabled);
 }
 
-
 void AudioProcessingImpl::InitializeTransient() {
   if (capture_.transient_suppressor_enabled) {
     if (!public_submodules_->transient_suppressor.get()) {
@@ -2062,7 +2070,8 @@ AudioProcessingImpl::ApmCaptureState::ApmCaptureState(
       capture_processing_format(kSampleRate16kHz),
       split_rate(kSampleRate16kHz),
       echo_path_gain_change(false),
-      prev_analog_mic_level(-1) {}
+      prev_analog_mic_level(-1),
+      prev_pre_amp_gain(-1.f) {}
 
 AudioProcessingImpl::ApmCaptureState::~ApmCaptureState() = default;
 

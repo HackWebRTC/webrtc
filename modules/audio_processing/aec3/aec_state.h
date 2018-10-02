@@ -207,6 +207,7 @@ class AecState {
   EchoAudibility echo_audibility_;
   ReverbModelEstimator reverb_model_estimator_;
   SubtractorOutputAnalyzer subtractor_output_analyzer_;
+  bool enable_erle_resets_at_gain_changes_ = true;
   RTC_DISALLOW_COPY_AND_ASSIGN(AecState);
 };
 

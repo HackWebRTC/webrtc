@@ -26,6 +26,10 @@
 namespace webrtc {
 namespace {
 
+bool EnableErleResetsAtGainChanges() {
+  return !field_trial::IsEnabled("WebRTC-Aec3ResetErleAtGainChangesKillSwitch");
+}
+
 float ComputeGainRampupIncrease(const EchoCanceller3Config& config) {
   const auto& c = config.echo_removal_control.gain_rampup;
   return powf(1.f / c.first_non_zero_gain, 1.f / c.non_zero_gain_blocks);
@@ -52,7 +56,8 @@ AecState::AecState(const EchoCanceller3Config& config)
           kBlocksSinceConsistentEstimateInit),
       echo_audibility_(
           config.echo_audibility.use_stationarity_properties_at_init),
-      reverb_model_estimator_(config) {}
+      reverb_model_estimator_(config),
+      enable_erle_resets_at_gain_changes_(EnableErleResetsAtGainChanges()) {}
 
 AecState::~AecState() = default;
 
@@ -87,7 +92,10 @@ void AecState::HandleEchoPathChange(
       EchoPathVariability::DelayAdjustment::kNone) {
     full_reset();
   }
-
+  if (enable_erle_resets_at_gain_changes_ &&
+      echo_path_variability.gain_change) {
+    erle_estimator_.Reset();
+  }
   subtractor_output_analyzer_.HandleEchoPathChange();
 }
 
