@@ -16,6 +16,7 @@
 @synthesize maxBitrateBps = _maxBitrateBps;
 @synthesize minBitrateBps = _minBitrateBps;
 @synthesize maxFramerate = _maxFramerate;
+@synthesize numTemporalLayers = _numTemporalLayers;
 @synthesize ssrc = _ssrc;
 
 - (instancetype)init {
@@ -37,6 +38,9 @@
     if (nativeParameters.max_framerate) {
       _maxFramerate = [NSNumber numberWithInt:*nativeParameters.max_framerate];
     }
+    if (nativeParameters.num_temporal_layers) {
+      _numTemporalLayers = [NSNumber numberWithInt:*nativeParameters.num_temporal_layers];
+    }
     if (nativeParameters.ssrc) {
       _ssrc = [NSNumber numberWithUnsignedLong:*nativeParameters.ssrc];
     }
@@ -55,6 +59,9 @@
   }
   if (_maxFramerate != nil) {
     parameters.max_framerate = absl::optional<int>(_maxFramerate.intValue);
+  }
+  if (_numTemporalLayers != nil) {
+    parameters.num_temporal_layers = absl::optional<int>(_numTemporalLayers.intValue);
   }
   if (_ssrc != nil) {
     parameters.ssrc = absl::optional<uint32_t>(_ssrc.unsignedLongValue);

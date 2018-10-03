@@ -35,6 +35,11 @@ RTC_OBJC_EXPORT
  */
 @property(nonatomic, copy, nullable) NSNumber *maxFramerate;
 
+/** The requested number of temporal layers to use for the encoding, or nil
+ * if the default should be used.
+ */
+@property(nonatomic, copy, nullable) NSNumber *numTemporalLayers;
+
 /** The SSRC being used by this encoding. */
 @property(nonatomic, readonly, nullable) NSNumber *ssrc;
 
