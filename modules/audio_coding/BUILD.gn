@@ -58,7 +58,13 @@ rtc_static_library("audio_format_conversion") {
 }
 
 rtc_static_library("rent_a_codec") {
-  visibility += webrtc_default_visibility
+  # Client code SHOULD NOT USE THIS TARGET, but for now it needs to be public
+  # because there exists client code that uses it.
+  # TODO(bugs.webrtc.org/9808): Move to private visibility as soon as that
+  # client code gets updated.
+  visibility += [ "*" ]
+  allow_poison = [ "audio_codecs" ]
+
   sources = [
     "acm2/acm_codec_database.cc",
     "acm2/acm_codec_database.h",
