@@ -98,38 +98,36 @@ TEST(ApmHelpersTest, AgcStatus_EnableDisable) {
 
 TEST(ApmHelpersTest, EcStatus_DefaultMode) {
   TestHelper helper;
-  EchoCancellation* ec = helper.apm()->echo_cancellation();
-  EchoControlMobile* ecm = helper.apm()->echo_control_mobile();
-  EXPECT_FALSE(ec->is_enabled());
-  EXPECT_FALSE(ecm->is_enabled());
+  webrtc::AudioProcessing::Config config = helper.apm()->GetConfig();
+  EXPECT_FALSE(config.echo_canceller.enabled);
 }
 
 TEST(ApmHelpersTest, EcStatus_EnableDisable) {
   TestHelper helper;
-  EchoCancellation* ec = helper.apm()->echo_cancellation();
-  EchoControlMobile* ecm = helper.apm()->echo_control_mobile();
+  webrtc::AudioProcessing::Config config;
 
   apm_helpers::SetEcStatus(helper.apm(), true, kEcAecm);
-  EXPECT_FALSE(ec->is_enabled());
-  EXPECT_TRUE(ecm->is_enabled());
+  config = helper.apm()->GetConfig();
+  EXPECT_TRUE(config.echo_canceller.enabled);
+  EXPECT_TRUE(config.echo_canceller.mobile_mode);
 
   apm_helpers::SetEcStatus(helper.apm(), false, kEcAecm);
-  EXPECT_FALSE(ec->is_enabled());
-  EXPECT_FALSE(ecm->is_enabled());
+  config = helper.apm()->GetConfig();
+  EXPECT_FALSE(config.echo_canceller.enabled);
 
   apm_helpers::SetEcStatus(helper.apm(), true, kEcConference);
-  EXPECT_TRUE(ec->is_enabled());
-  EXPECT_FALSE(ecm->is_enabled());
-  EXPECT_EQ(EchoCancellation::kHighSuppression, ec->suppression_level());
+  config = helper.apm()->GetConfig();
+  EXPECT_TRUE(config.echo_canceller.enabled);
+  EXPECT_FALSE(config.echo_canceller.mobile_mode);
 
   apm_helpers::SetEcStatus(helper.apm(), false, kEcConference);
-  EXPECT_FALSE(ec->is_enabled());
-  EXPECT_FALSE(ecm->is_enabled());
-  EXPECT_EQ(EchoCancellation::kHighSuppression, ec->suppression_level());
+  config = helper.apm()->GetConfig();
+  EXPECT_FALSE(config.echo_canceller.enabled);
 
   apm_helpers::SetEcStatus(helper.apm(), true, kEcAecm);
-  EXPECT_FALSE(ec->is_enabled());
-  EXPECT_TRUE(ecm->is_enabled());
+  config = helper.apm()->GetConfig();
+  EXPECT_TRUE(config.echo_canceller.enabled);
+  EXPECT_TRUE(config.echo_canceller.mobile_mode);
 }
 
 TEST(ApmHelpersTest, NsStatus_DefaultMode) {
