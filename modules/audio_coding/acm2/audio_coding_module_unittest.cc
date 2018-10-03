@@ -15,10 +15,12 @@
 
 #include "api/audio_codecs/audio_encoder.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/audio_codecs/opus/audio_encoder_opus.h"
 #include "modules/audio_coding/acm2/acm_receive_test.h"
 #include "modules/audio_coding/acm2/acm_send_test.h"
 #include "modules/audio_coding/codecs/audio_format_conversion.h"
+#include "modules/audio_coding/codecs/cng/audio_encoder_cng.h"
 #include "modules/audio_coding/codecs/g711/audio_decoder_pcm.h"
 #include "modules/audio_coding/codecs/g711/audio_encoder_pcm.h"
 #include "modules/audio_coding/codecs/isac/main/include/audio_encoder_isac.h"
@@ -194,7 +196,8 @@ class AudioCodingModuleTestOldApi : public ::testing::Test {
 
   virtual void RegisterCodec() {
     EXPECT_EQ(true, acm_->RegisterReceiveCodec(kPayloadType, *audio_format_));
-    EXPECT_EQ(0, acm_->RegisterSendCodec(codec_));
+    acm_->SetEncoder(CreateBuiltinAudioEncoderFactory()->MakeAudioEncoder(
+        kPayloadType, *audio_format_, absl::nullopt));
   }
 
   virtual void InsertPacketAndPullAudio() {
@@ -341,6 +344,7 @@ TEST_F(AudioCodingModuleTestOldApi, FailOnZeroDesiredFrequency) {
 TEST_F(AudioCodingModuleTestOldApi, TransportCallbackIsInvokedForEachPacket) {
   const int k10MsBlocksPerPacket = 3;
   codec_.pacsize = k10MsBlocksPerPacket * kSampleRateHz / 100;
+  audio_format_->parameters["ptime"] = "30";
   RegisterCodec();
   const int kLoops = 10;
   for (int i = 0; i < kLoops; ++i) {
@@ -374,6 +378,7 @@ TEST_F(AudioCodingModuleTestOldApi, TimestampSeriesContinuesWhenCodecChanges) {
 
   // Change codec.
   ASSERT_EQ(0, AudioCodingModule::Codec("ISAC", &codec_, kSampleRateHz, 1));
+  audio_format_ = SdpAudioFormat("ISAC", kSampleRateHz, 1);
   RegisterCodec();
   blocks_per_packet = codec_.pacsize / (kSampleRateHz / 100);
   // Encode another 5 packets.
@@ -402,11 +407,14 @@ class AudioCodingModuleTestWithComfortNoiseOldApi
     EXPECT_EQ(true,
               acm_->RegisterReceiveCodec(
                   rtp_payload_type, SdpAudioFormat("cn", kSampleRateHz, 1)));
-
-    CodecInst codec;
-    EXPECT_EQ(0, AudioCodingModule::Codec("CN", &codec, kSampleRateHz, 1));
-    codec.pltype = rtp_payload_type;
-    EXPECT_EQ(0, acm_->RegisterSendCodec(codec));
+    acm_->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* enc) {
+      AudioEncoderCng::Config config;
+      config.speech_encoder = std::move(*enc);
+      config.num_channels = 1;
+      config.payload_type = rtp_payload_type;
+      config.vad_mode = Vad::kVadNormal;
+      *enc = absl::make_unique<AudioEncoderCng>(std::move(config));
+    });
   }
 
   void VerifyEncoding() override {
@@ -450,27 +458,14 @@ class AudioCodingModuleTestWithComfortNoiseOldApi
 // Checks that the transport callback is invoked once per frame period of the
 // underlying speech encoder, even when comfort noise is produced.
 // Also checks that the frame type is kAudioFrameCN or kEmptyFrame.
-// This test and the next check the same thing, but differ in the order of
-// speech codec and CNG registration.
 TEST_F(AudioCodingModuleTestWithComfortNoiseOldApi,
        TransportCallbackTestForComfortNoiseRegisterCngLast) {
   const int k10MsBlocksPerPacket = 3;
   codec_.pacsize = k10MsBlocksPerPacket * kSampleRateHz / 100;
+  audio_format_->parameters["ptime"] = "30";
   RegisterCodec();
   const int kCngPayloadType = 105;
   RegisterCngCodec(kCngPayloadType);
-  ASSERT_EQ(0, acm_->SetVAD(true, true));
-  DoTest(k10MsBlocksPerPacket, kCngPayloadType);
-}
-
-TEST_F(AudioCodingModuleTestWithComfortNoiseOldApi,
-       TransportCallbackTestForComfortNoiseRegisterCngFirst) {
-  const int k10MsBlocksPerPacket = 3;
-  codec_.pacsize = k10MsBlocksPerPacket * kSampleRateHz / 100;
-  const int kCngPayloadType = 105;
-  RegisterCngCodec(kCngPayloadType);
-  RegisterCodec();
-  ASSERT_EQ(0, acm_->SetVAD(true, true));
   DoTest(k10MsBlocksPerPacket, kCngPayloadType);
 }
 
@@ -662,7 +657,8 @@ class AcmIsacMtTestOldApi : public AudioCodingModuleMtTestOldApi {
     // Register iSAC codec in ACM, effectively unregistering the PCM16B codec
     // registered in AudioCodingModuleTestOldApi::SetUp();
     EXPECT_EQ(true, acm_->RegisterReceiveCodec(kPayloadType, *audio_format_));
-    EXPECT_EQ(0, acm_->RegisterSendCodec(codec_));
+    acm_->SetEncoder(CreateBuiltinAudioEncoderFactory()->MakeAudioEncoder(
+        kPayloadType, *audio_format_, absl::nullopt));
   }
 
   void InsertPacket() override {
@@ -855,7 +851,8 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
     if (!codec_registered_ &&
         receive_packet_count_ > kRegisterAfterNumPackets) {
       // Register the iSAC encoder.
-      EXPECT_EQ(0, acm_->RegisterSendCodec(codec_));
+      acm_->SetEncoder(CreateBuiltinAudioEncoderFactory()->MakeAudioEncoder(
+          kPayloadType, *audio_format_, absl::nullopt));
       codec_registered_ = true;
     }
     if (codec_registered_ && receive_packet_count_ > kNumPackets) {
