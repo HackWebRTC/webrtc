@@ -17,7 +17,7 @@
 #include "absl/memory/memory.h"
 
 #include "audio/audio_state.h"
-#include "audio/channel_proxy.h"
+#include "audio/channel_send_proxy.h"
 #include "audio/conversion.h"
 #include "call/rtp_transport_controller_send_interface.h"
 #include "modules/audio_coding/codecs/cng/audio_encoder_cng.h"
@@ -38,7 +38,7 @@ constexpr size_t kPacketLossTrackerMaxWindowSizeMs = 15000;
 constexpr size_t kPacketLossRateMinNumAckedPackets = 50;
 constexpr size_t kRecoverablePacketLossRateMinNumAckedPairs = 40;
 
-void CallEncoder(const std::unique_ptr<voe::ChannelProxy>& channel_proxy,
+void CallEncoder(const std::unique_ptr<voe::ChannelSendProxy>& channel_proxy,
                  rtc::FunctionView<void(AudioEncoder*)> lambda) {
   channel_proxy->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder_ptr) {
     RTC_DCHECK(encoder_ptr);
@@ -46,7 +46,7 @@ void CallEncoder(const std::unique_ptr<voe::ChannelProxy>& channel_proxy,
   });
 }
 
-std::unique_ptr<voe::ChannelProxy> CreateChannelAndProxy(
+std::unique_ptr<voe::ChannelSendProxy> CreateChannelAndProxy(
     webrtc::AudioState* audio_state,
     rtc::TaskQueue* worker_queue,
     ProcessThread* module_process_thread,
@@ -55,9 +55,11 @@ std::unique_ptr<voe::ChannelProxy> CreateChannelAndProxy(
   RTC_DCHECK(audio_state);
   internal::AudioState* internal_audio_state =
       static_cast<internal::AudioState*>(audio_state);
-  return absl::make_unique<voe::ChannelProxy>(absl::make_unique<voe::Channel>(
-      worker_queue, module_process_thread,
-      internal_audio_state->audio_device_module(), rtcp_rtt_stats, event_log));
+  return absl::make_unique<voe::ChannelSendProxy>(
+      absl::make_unique<voe::Channel>(
+          worker_queue, module_process_thread,
+          internal_audio_state->audio_device_module(), rtcp_rtt_stats,
+          event_log));
 }
 }  // namespace
 
@@ -120,7 +122,7 @@ AudioSendStream::AudioSendStream(
     RtcpRttStats* rtcp_rtt_stats,
     const absl::optional<RtpState>& suspended_rtp_state,
     TimeInterval* overall_call_lifetime,
-    std::unique_ptr<voe::ChannelProxy> channel_proxy)
+    std::unique_ptr<voe::ChannelSendProxy> channel_proxy)
     : worker_queue_(worker_queue),
       config_(Config(nullptr)),
       audio_state_(audio_state),
@@ -473,7 +475,7 @@ RtpState AudioSendStream::GetRtpState() const {
   return rtp_rtcp_module_->GetRtpState();
 }
 
-const voe::ChannelProxy& AudioSendStream::GetChannelProxy() const {
+const voe::ChannelSendProxy& AudioSendStream::GetChannelProxy() const {
   RTC_DCHECK(channel_proxy_.get());
   return *channel_proxy_.get();
 }

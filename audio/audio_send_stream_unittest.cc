@@ -169,7 +169,7 @@ struct ConfigHelper {
             stream_config_, audio_state_, &worker_queue_, &rtp_transport_,
             &bitrate_allocator_, &event_log_, &rtcp_rtt_stats_, absl::nullopt,
             &active_lifetime_,
-            std::unique_ptr<voe::ChannelProxy>(channel_proxy_)));
+            std::unique_ptr<voe::ChannelSendProxy>(channel_proxy_)));
   }
 
   AudioSendStream::Config& config() { return stream_config_; }
@@ -177,7 +177,7 @@ struct ConfigHelper {
     return *static_cast<MockAudioEncoderFactory*>(
         stream_config_.encoder_factory.get());
   }
-  MockVoEChannelProxy* channel_proxy() { return channel_proxy_; }
+  MockChannelSendProxy* channel_proxy() { return channel_proxy_; }
   RtpTransportControllerSendInterface* transport() { return &rtp_transport_; }
   TimeInterval* active_lifetime() { return &active_lifetime_; }
 
@@ -189,7 +189,7 @@ struct ConfigHelper {
 
   void SetupDefaultChannelProxy(bool audio_bwe_enabled) {
     EXPECT_TRUE(channel_proxy_ == nullptr);
-    channel_proxy_ = new testing::StrictMock<MockVoEChannelProxy>();
+    channel_proxy_ = new testing::StrictMock<MockChannelSendProxy>();
     EXPECT_CALL(*channel_proxy_, GetRtpRtcp()).WillRepeatedly(Invoke([this]() {
       return &this->rtp_rtcp_;
     }));
@@ -297,7 +297,7 @@ struct ConfigHelper {
  private:
   rtc::scoped_refptr<AudioState> audio_state_;
   AudioSendStream::Config stream_config_;
-  testing::StrictMock<MockVoEChannelProxy>* channel_proxy_ = nullptr;
+  testing::StrictMock<MockChannelSendProxy>* channel_proxy_ = nullptr;
   rtc::scoped_refptr<MockAudioProcessing> audio_processing_;
   AudioProcessingStats audio_processing_stats_;
   TimeInterval active_lifetime_;

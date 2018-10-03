@@ -81,7 +81,7 @@ struct ConfigHelper {
         new rtc::RefCountedObject<testing::NiceMock<MockAudioDeviceModule>>();
     audio_state_ = AudioState::Create(config);
 
-    channel_proxy_ = new testing::StrictMock<MockVoEChannelProxy>();
+    channel_proxy_ = new testing::StrictMock<MockChannelReceiveProxy>();
     EXPECT_CALL(*channel_proxy_, SetLocalSSRC(kLocalSsrc)).Times(1);
     EXPECT_CALL(*channel_proxy_, SetNACKStatus(true, 15)).Times(1);
     EXPECT_CALL(*channel_proxy_,
@@ -112,12 +112,12 @@ struct ConfigHelper {
         new internal::AudioReceiveStream(
             &rtp_stream_receiver_controller_, &packet_router_, stream_config_,
             audio_state_, &event_log_,
-            std::unique_ptr<voe::ChannelProxy>(channel_proxy_)));
+            std::unique_ptr<voe::ChannelReceiveProxy>(channel_proxy_)));
   }
 
   AudioReceiveStream::Config& config() { return stream_config_; }
   rtc::scoped_refptr<MockAudioMixer> audio_mixer() { return audio_mixer_; }
-  MockVoEChannelProxy* channel_proxy() { return channel_proxy_; }
+  MockChannelReceiveProxy* channel_proxy() { return channel_proxy_; }
 
   void SetupMockForGetStats() {
     using testing::DoAll;
@@ -148,7 +148,7 @@ struct ConfigHelper {
   rtc::scoped_refptr<AudioState> audio_state_;
   rtc::scoped_refptr<MockAudioMixer> audio_mixer_;
   AudioReceiveStream::Config stream_config_;
-  testing::StrictMock<MockVoEChannelProxy>* channel_proxy_ = nullptr;
+  testing::StrictMock<MockChannelReceiveProxy>* channel_proxy_ = nullptr;
   RtpStreamReceiverController rtp_stream_receiver_controller_;
 };
 
@@ -364,7 +364,7 @@ TEST(AudioReceiveStreamTest, ReconfigureWithUpdatedConfig) {
                    kTransportSequenceNumberId + 1));
   new_config.decoder_map.emplace(1, SdpAudioFormat("foo", 8000, 1));
 
-  MockVoEChannelProxy& channel_proxy = *helper.channel_proxy();
+  MockChannelReceiveProxy& channel_proxy = *helper.channel_proxy();
   EXPECT_CALL(channel_proxy, SetLocalSSRC(kLocalSsrc + 1)).Times(1);
   EXPECT_CALL(channel_proxy, SetNACKStatus(true, 15 + 1)).Times(1);
   EXPECT_CALL(channel_proxy, SetReceiveCodecs(new_config.decoder_map));

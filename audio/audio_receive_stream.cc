@@ -16,7 +16,7 @@
 #include "api/call/audio_sink.h"
 #include "audio/audio_send_stream.h"
 #include "audio/audio_state.h"
-#include "audio/channel_proxy.h"
+#include "audio/channel_receive_proxy.h"
 #include "audio/conversion.h"
 #include "call/rtp_stream_receiver_controller_interface.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
@@ -62,7 +62,7 @@ std::string AudioReceiveStream::Config::ToString() const {
 
 namespace internal {
 namespace {
-std::unique_ptr<voe::ChannelProxy> CreateChannelAndProxy(
+std::unique_ptr<voe::ChannelReceiveProxy> CreateChannelAndProxy(
     webrtc::AudioState* audio_state,
     ProcessThread* module_process_thread,
     const webrtc::AudioReceiveStream::Config& config,
@@ -70,11 +70,13 @@ std::unique_ptr<voe::ChannelProxy> CreateChannelAndProxy(
   RTC_DCHECK(audio_state);
   internal::AudioState* internal_audio_state =
       static_cast<internal::AudioState*>(audio_state);
-  return absl::make_unique<voe::ChannelProxy>(absl::make_unique<voe::Channel>(
-      module_process_thread, internal_audio_state->audio_device_module(),
-      nullptr /* RtcpRttStats */, event_log, config.rtp.remote_ssrc,
-      config.jitter_buffer_max_packets, config.jitter_buffer_fast_accelerate,
-      config.decoder_factory, config.codec_pair_id));
+  return absl::make_unique<voe::ChannelReceiveProxy>(
+      absl::make_unique<voe::Channel>(
+          module_process_thread, internal_audio_state->audio_device_module(),
+          nullptr /* RtcpRttStats */, event_log, config.rtp.remote_ssrc,
+          config.jitter_buffer_max_packets,
+          config.jitter_buffer_fast_accelerate, config.decoder_factory,
+          config.codec_pair_id));
 }
 }  // namespace
 
@@ -101,7 +103,7 @@ AudioReceiveStream::AudioReceiveStream(
     const webrtc::AudioReceiveStream::Config& config,
     const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
     webrtc::RtcEventLog* event_log,
-    std::unique_ptr<voe::ChannelProxy> channel_proxy)
+    std::unique_ptr<voe::ChannelReceiveProxy> channel_proxy)
     : audio_state_(audio_state), channel_proxy_(std::move(channel_proxy)) {
   RTC_LOG(LS_INFO) << "AudioReceiveStream: " << config.rtp.remote_ssrc;
   RTC_DCHECK(receiver_controller);
