@@ -34,6 +34,7 @@
 #include "rtc_base/platform_file.h"
 #include "rtc_base/refcount.h"
 #include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
@@ -554,7 +555,7 @@ class AudioProcessing : public rtc::RefCountInterface {
     float minimum_ = 0.0f;  // Long-term minimum.
   };
 
-  struct AudioProcessingStatistics {
+  struct RTC_EXPORT AudioProcessingStatistics {
     AudioProcessingStatistics();
     AudioProcessingStatistics(const AudioProcessingStatistics& other);
     ~AudioProcessingStatistics();
@@ -653,7 +654,7 @@ class AudioProcessing : public rtc::RefCountInterface {
   static const int kChunkSizeMs = 10;
 };
 
-class AudioProcessingBuilder {
+class RTC_EXPORT AudioProcessingBuilder {
  public:
   AudioProcessingBuilder();
   ~AudioProcessingBuilder();
