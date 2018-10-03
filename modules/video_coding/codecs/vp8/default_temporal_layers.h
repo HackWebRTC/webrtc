@@ -14,6 +14,7 @@
 
 #include <limits>
 #include <map>
+#include <memory>
 #include <set>
 #include <vector>
 
@@ -41,12 +42,11 @@ class DefaultTemporalLayers : public TemporalLayers {
 
   bool UpdateConfiguration(Vp8EncoderConfig* cfg) override;
 
-  void PopulateCodecSpecific(bool frame_is_keyframe,
-                             const TemporalLayers::FrameConfig& tl_config,
-                             CodecSpecificInfoVP8* vp8_info,
-                             uint32_t timestamp) override;
-
-  void FrameEncoded(uint32_t rtp_timestamp, size_t size, int qp) override;
+  void OnEncodeDone(uint32_t rtp_timestamp,
+                    size_t size_bytes,
+                    bool is_keyframe,
+                    int qp,
+                    CodecSpecificInfoVP8* vp8_info) override;
 
  private:
   static constexpr size_t kKeyframeBuffer = std::numeric_limits<size_t>::max();
@@ -66,14 +66,30 @@ class DefaultTemporalLayers : public TemporalLayers {
   // Updated cumulative bitrates, per temporal layer.
   absl::optional<std::vector<uint32_t>> new_bitrates_bps_;
 
-  // Map from rtp timestamp to a bitmask of Vp8BufferReference indicating which
-  // buffers this frame should update. Reset on pattern loop.
-  std::map<uint32_t, uint8_t> pending_frames_;
+  struct PendingFrame {
+    PendingFrame();
+    PendingFrame(bool expired,
+                 uint8_t updated_buffers_mask,
+                 const FrameConfig& frame_config);
+    // Flag indicating if this frame has expired, ie it belongs to a previous
+    // iteration of the temporal pattern.
+    bool expired = false;
+    // Bitmask of Vp8BufferReference flags, indicating which buffers this frame
+    // updates.
+    uint8_t updated_buffer_mask = 0;
+    // The frame config return by UpdateLayerConfig() for this frame.
+    FrameConfig frame_config;
+  };
+  // Map from rtp timestamp to pending frame status. Reset on pattern loop.
+  std::map<uint32_t, PendingFrame> pending_frames_;
 
   // One counter per Vp8BufferReference, indicating number of frames since last
   // refresh. For non-base-layer frames (ie golden, altref buffers), this is
   // reset when the pattern loops.
   std::map<Vp8BufferReference, size_t> frames_since_buffer_refresh_;
+
+  // Optional utility used to verify reference validity.
+  std::unique_ptr<TemporalLayersChecker> checker_;
 };
 
 class DefaultTemporalLayersChecker : public TemporalLayersChecker {

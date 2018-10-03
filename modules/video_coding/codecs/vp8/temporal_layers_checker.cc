@@ -70,7 +70,8 @@ bool TemporalLayersChecker::CheckAndUpdateBufferState(
 bool TemporalLayersChecker::CheckTemporalConfig(
     bool frame_is_keyframe,
     const TemporalLayers::FrameConfig& frame_config) {
-  if (frame_config.drop_frame) {
+  if (frame_config.drop_frame ||
+      frame_config.packetizer_temporal_idx == kNoTemporalIdx) {
     return true;
   }
   ++sequence_number_;

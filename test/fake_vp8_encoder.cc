@@ -78,20 +78,19 @@ void FakeVP8Encoder::SetupTemporalLayers(const VideoCodec& codec) {
   }
 }
 
-void FakeVP8Encoder::PopulateCodecSpecific(
-    CodecSpecificInfo* codec_specific,
-    const TemporalLayers::FrameConfig& tl_config,
-    FrameType frame_type,
-    int stream_idx,
-    uint32_t timestamp) {
+void FakeVP8Encoder::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
+                                           size_t size_bytes,
+                                           FrameType frame_type,
+                                           int stream_idx,
+                                           uint32_t timestamp) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
   codec_specific->codecType = kVideoCodecVP8;
   codec_specific->codec_name = ImplementationName();
   CodecSpecificInfoVP8* vp8Info = &(codec_specific->codecSpecific.VP8);
   vp8Info->keyIdx = kNoKeyIdx;
   vp8Info->nonReference = false;
-  temporal_layers_[stream_idx]->PopulateCodecSpecific(
-      frame_type == kVideoFrameKey, tl_config, vp8Info, timestamp);
+  temporal_layers_[stream_idx]->OnEncodeDone(
+      timestamp, size_bytes, frame_type == kVideoFrameKey, -1, vp8Info);
 }
 
 EncodedImageCallback::Result FakeVP8Encoder::OnEncodedImage(
@@ -101,14 +100,10 @@ EncodedImageCallback::Result FakeVP8Encoder::OnEncodedImage(
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
   uint8_t stream_idx = encoded_image.SpatialIndex().value_or(0);
   CodecSpecificInfo overrided_specific_info;
-  TemporalLayers::FrameConfig tl_config =
-      temporal_layers_[stream_idx]->UpdateLayerConfig(
-          encoded_image.Timestamp());
-  PopulateCodecSpecific(&overrided_specific_info, tl_config,
+  temporal_layers_[stream_idx]->UpdateLayerConfig(encoded_image.Timestamp());
+  PopulateCodecSpecific(&overrided_specific_info, encoded_image._length,
                         encoded_image._frameType, stream_idx,
                         encoded_image.Timestamp());
-  temporal_layers_[stream_idx]->FrameEncoded(encoded_image.Timestamp(),
-                                             encoded_image._length, -1);
 
   return callback_->OnEncodedImage(encoded_image, &overrided_specific_info,
                                    fragments);

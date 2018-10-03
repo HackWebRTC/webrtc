@@ -821,31 +821,31 @@ int LibvpxVp8Encoder::Encode(const VideoFrame& frame,
       return WEBRTC_VIDEO_CODEC_ERROR;
     timestamp_ += duration;
     // Examines frame timestamps only.
-    error = GetEncodedPartitions(tl_configs, frame);
+    error = GetEncodedPartitions(frame);
   }
   return error;
 }
 
-void LibvpxVp8Encoder::PopulateCodecSpecific(
-    CodecSpecificInfo* codec_specific,
-    const TemporalLayers::FrameConfig& tl_config,
-    const vpx_codec_cx_pkt_t& pkt,
-    int stream_idx,
-    uint32_t timestamp) {
+void LibvpxVp8Encoder::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
+                                             const vpx_codec_cx_pkt_t& pkt,
+                                             int stream_idx,
+                                             int encoder_idx,
+                                             uint32_t timestamp) {
   assert(codec_specific != NULL);
   codec_specific->codecType = kVideoCodecVP8;
   codec_specific->codec_name = ImplementationName();
   CodecSpecificInfoVP8* vp8Info = &(codec_specific->codecSpecific.VP8);
   vp8Info->keyIdx = kNoKeyIdx;  // TODO(hlundin) populate this
   vp8Info->nonReference = (pkt.data.frame.flags & VPX_FRAME_IS_DROPPABLE) != 0;
-  temporal_layers_[stream_idx]->PopulateCodecSpecific(
-      (pkt.data.frame.flags & VPX_FRAME_IS_KEY) != 0, tl_config, vp8Info,
-      timestamp);
+
+  int qp = 0;
+  vpx_codec_control(&encoders_[encoder_idx], VP8E_GET_LAST_QUANTIZER_64, &qp);
+  temporal_layers_[stream_idx]->OnEncodeDone(
+      timestamp, encoded_images_[encoder_idx]._length,
+      (pkt.data.frame.flags & VPX_FRAME_IS_KEY) != 0, qp, vp8Info);
 }
 
-int LibvpxVp8Encoder::GetEncodedPartitions(
-    const TemporalLayers::FrameConfig tl_configs[],
-    const VideoFrame& input_image) {
+int LibvpxVp8Encoder::GetEncodedPartitions(const VideoFrame& input_image) {
   int stream_idx = static_cast<int>(encoders_.size()) - 1;
   int result = WEBRTC_VIDEO_CODEC_OK;
   for (size_t encoder_idx = 0; encoder_idx < encoders_.size();
@@ -895,8 +895,8 @@ int LibvpxVp8Encoder::GetEncodedPartitions(
           is_keyframe = true;
         }
         encoded_images_[encoder_idx].SetSpatialIndex(stream_idx);
-        PopulateCodecSpecific(&codec_specific, tl_configs[stream_idx], *pkt,
-                              stream_idx, input_image.timestamp());
+        PopulateCodecSpecific(&codec_specific, *pkt, stream_idx, encoder_idx,
+                              input_image.timestamp());
         break;
       }
     }
@@ -910,10 +910,6 @@ int LibvpxVp8Encoder::GetEncodedPartitions(
             : VideoContentType::UNSPECIFIED;
     encoded_images_[encoder_idx].timing_.flags = VideoSendTiming::kInvalid;
 
-    int qp = -1;
-    vpx_codec_control(&encoders_[encoder_idx], VP8E_GET_LAST_QUANTIZER_64, &qp);
-    temporal_layers_[stream_idx]->FrameEncoded(
-        input_image.timestamp(), encoded_images_[encoder_idx]._length, qp);
     if (send_stream_[stream_idx]) {
       if (encoded_images_[encoder_idx]._length > 0) {
         TRACE_COUNTER_ID1("webrtc", "EncodedFrameSize", encoder_idx,
@@ -928,15 +924,15 @@ int LibvpxVp8Encoder::GetEncodedPartitions(
         encoded_images_[encoder_idx].qp_ = qp_128;
         encoded_complete_callback_->OnEncodedImage(encoded_images_[encoder_idx],
                                                    &codec_specific, &frag_info);
-      } else if (codec_.mode == VideoCodecMode::kScreensharing) {
+      } else if (!temporal_layers_[stream_idx]
+                      ->SupportsEncoderFrameDropping()) {
         result = WEBRTC_VIDEO_CODEC_TARGET_BITRATE_OVERSHOOT;
+        if (encoded_images_[encoder_idx]._length == 0) {
+          // Dropped frame that will be re-encoded.
+          temporal_layers_[stream_idx]->OnEncodeDone(input_image.timestamp(), 0,
+                                                     false, 0, nullptr);
+        }
       }
-    }
-    if (result != WEBRTC_VIDEO_CODEC_TARGET_BITRATE_OVERSHOOT) {
-      // Don't run checker on drop before reencode as that will incorrectly
-      // increase the pattern index twice.
-      RTC_DCHECK(temporal_layers_checkers_[stream_idx]->CheckTemporalConfig(
-          is_keyframe, tl_configs[stream_idx]));
     }
   }
   return result;
