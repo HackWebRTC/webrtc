@@ -117,8 +117,6 @@ class AudioProcessingImpl : public AudioProcessing {
   // would offer no protection (the submodules are
   // created only once in a single-treaded manner
   // during APM creation).
-  EchoCancellation* echo_cancellation() const override;
-  EchoControlMobile* echo_control_mobile() const override;
   GainControl* gain_control() const override;
   // TODO(peah): Deprecate this API call.
   HighPassFilter* high_pass_filter() const override;

@@ -21,13 +21,13 @@
 namespace webrtc {
 
 namespace {
-int16_t MapSetting(EchoCancellation::SuppressionLevel level) {
+int16_t MapSetting(EchoCancellationImpl::SuppressionLevel level) {
   switch (level) {
-    case EchoCancellation::kLowSuppression:
+    case EchoCancellationImpl::kLowSuppression:
       return kAecNlpConservative;
-    case EchoCancellation::kModerateSuppression:
+    case EchoCancellationImpl::kModerateSuppression:
       return kAecNlpModerate;
-    case EchoCancellation::kHighSuppression:
+    case EchoCancellationImpl::kHighSuppression:
       return kAecNlpAggressive;
   }
   RTC_NOTREACHED();
@@ -242,7 +242,7 @@ int EchoCancellationImpl::set_suppression_level(SuppressionLevel level) {
   return Configure();
 }
 
-EchoCancellation::SuppressionLevel EchoCancellationImpl::suppression_level()
+EchoCancellationImpl::SuppressionLevel EchoCancellationImpl::suppression_level()
     const {
   rtc::CritScope cs(crit_capture_);
   return suppression_level_;

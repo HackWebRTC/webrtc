@@ -22,7 +22,7 @@ namespace {
 const int kNumFramesToProcess = 100;
 
 void SetupComponent(int sample_rate_hz,
-                    EchoCancellation::SuppressionLevel suppression_level,
+                    EchoCancellationImpl::SuppressionLevel suppression_level,
                     bool drift_compensation_enabled,
                     EchoCancellationImpl* echo_canceller) {
   echo_canceller->Initialize(sample_rate_hz, 1, 1, 1);
@@ -65,14 +65,15 @@ void ProcessOneFrame(int sample_rate_hz,
   }
 }
 
-void RunBitexactnessTest(int sample_rate_hz,
-                         size_t num_channels,
-                         int stream_delay_ms,
-                         bool drift_compensation_enabled,
-                         int stream_drift_samples,
-                         EchoCancellation::SuppressionLevel suppression_level,
-                         bool stream_has_echo_reference,
-                         const rtc::ArrayView<const float>& output_reference) {
+void RunBitexactnessTest(
+    int sample_rate_hz,
+    size_t num_channels,
+    int stream_delay_ms,
+    bool drift_compensation_enabled,
+    int stream_drift_samples,
+    EchoCancellationImpl::SuppressionLevel suppression_level,
+    bool stream_has_echo_reference,
+    const rtc::ArrayView<const float>& output_reference) {
   rtc::CriticalSection crit_render;
   rtc::CriticalSection crit_capture;
   EchoCancellationImpl echo_canceller(&crit_render, &crit_capture);
@@ -147,7 +148,7 @@ TEST(EchoCancellationBitExactnessTest,
 #endif
   const float kOutputReference[] = {-0.000646f, -0.001525f, 0.002688f};
   RunBitexactnessTest(8000, 1, 0, false, 0,
-                      EchoCancellation::SuppressionLevel::kHighSuppression,
+                      EchoCancellationImpl::SuppressionLevel::kHighSuppression,
                       kStreamHasEchoReference, kOutputReference);
 }
 
@@ -161,7 +162,7 @@ TEST(EchoCancellationBitExactnessTest,
 #endif
   const float kOutputReference[] = {0.000055f, 0.000421f, 0.001149f};
   RunBitexactnessTest(16000, 1, 0, false, 0,
-                      EchoCancellation::SuppressionLevel::kHighSuppression,
+                      EchoCancellationImpl::SuppressionLevel::kHighSuppression,
                       kStreamHasEchoReference, kOutputReference);
 }
 
@@ -175,7 +176,7 @@ TEST(EchoCancellationBitExactnessTest,
 #endif
   const float kOutputReference[] = {-0.000671f, 0.000061f, -0.000031f};
   RunBitexactnessTest(32000, 1, 0, false, 0,
-                      EchoCancellation::SuppressionLevel::kHighSuppression,
+                      EchoCancellationImpl::SuppressionLevel::kHighSuppression,
                       kStreamHasEchoReference, kOutputReference);
 }
 
@@ -189,7 +190,7 @@ TEST(EchoCancellationBitExactnessTest,
 #endif
   const float kOutputReference[] = {-0.001403f, -0.001411f, -0.000755f};
   RunBitexactnessTest(48000, 1, 0, false, 0,
-                      EchoCancellation::SuppressionLevel::kHighSuppression,
+                      EchoCancellationImpl::SuppressionLevel::kHighSuppression,
                       kStreamHasEchoReference, kOutputReference);
 }
 
@@ -207,7 +208,7 @@ TEST(EchoCancellationBitExactnessTest,
   const float kOutputReference[] = {-0.000009f, 0.000363f, 0.001094f};
 #endif
   RunBitexactnessTest(16000, 1, 0, false, 0,
-                      EchoCancellation::SuppressionLevel::kLowSuppression,
+                      EchoCancellationImpl::SuppressionLevel::kLowSuppression,
                       kStreamHasEchoReference, kOutputReference);
 }
 
@@ -220,9 +221,10 @@ TEST(EchoCancellationBitExactnessTest,
      DISABLED_Mono16kHz_ModerateLevel_NoDrift_StreamDelay0) {
 #endif
   const float kOutputReference[] = {0.000055f, 0.000421f, 0.001149f};
-  RunBitexactnessTest(16000, 1, 0, false, 0,
-                      EchoCancellation::SuppressionLevel::kModerateSuppression,
-                      kStreamHasEchoReference, kOutputReference);
+  RunBitexactnessTest(
+      16000, 1, 0, false, 0,
+      EchoCancellationImpl::SuppressionLevel::kModerateSuppression,
+      kStreamHasEchoReference, kOutputReference);
 }
 
 #if !(defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM) || \
@@ -235,7 +237,7 @@ TEST(EchoCancellationBitExactnessTest,
 #endif
   const float kOutputReference[] = {0.000055f, 0.000421f, 0.001149f};
   RunBitexactnessTest(16000, 1, 10, false, 0,
-                      EchoCancellation::SuppressionLevel::kHighSuppression,
+                      EchoCancellationImpl::SuppressionLevel::kHighSuppression,
                       kStreamHasEchoReference, kOutputReference);
 }
 
@@ -249,7 +251,7 @@ TEST(EchoCancellationBitExactnessTest,
 #endif
   const float kOutputReference[] = {0.000055f, 0.000421f, 0.001149f};
   RunBitexactnessTest(16000, 1, 20, false, 0,
-                      EchoCancellation::SuppressionLevel::kHighSuppression,
+                      EchoCancellationImpl::SuppressionLevel::kHighSuppression,
                       kStreamHasEchoReference, kOutputReference);
 }
 
@@ -263,7 +265,7 @@ TEST(EchoCancellationBitExactnessTest,
 #endif
   const float kOutputReference[] = {0.000055f, 0.000421f, 0.001149f};
   RunBitexactnessTest(16000, 1, 0, true, 0,
-                      EchoCancellation::SuppressionLevel::kHighSuppression,
+                      EchoCancellationImpl::SuppressionLevel::kHighSuppression,
                       kStreamHasEchoReference, kOutputReference);
 }
 
@@ -277,7 +279,7 @@ TEST(EchoCancellationBitExactnessTest,
 #endif
   const float kOutputReference[] = {0.000055f, 0.000421f, 0.001149f};
   RunBitexactnessTest(16000, 1, 0, true, 5,
-                      EchoCancellation::SuppressionLevel::kHighSuppression,
+                      EchoCancellationImpl::SuppressionLevel::kHighSuppression,
                       kStreamHasEchoReference, kOutputReference);
 }
 
@@ -297,7 +299,7 @@ TEST(EchoCancellationBitExactnessTest,
                                     -0.000464f, -0.001525f, 0.002933f};
 #endif
   RunBitexactnessTest(8000, 2, 0, false, 0,
-                      EchoCancellation::SuppressionLevel::kHighSuppression,
+                      EchoCancellationImpl::SuppressionLevel::kHighSuppression,
                       kStreamHasEchoReference, kOutputReference);
 }
 
@@ -312,7 +314,7 @@ TEST(EchoCancellationBitExactnessTest,
   const float kOutputReference[] = {0.000166f, 0.000735f, 0.000841f,
                                     0.000166f, 0.000735f, 0.000841f};
   RunBitexactnessTest(16000, 2, 0, false, 0,
-                      EchoCancellation::SuppressionLevel::kHighSuppression,
+                      EchoCancellationImpl::SuppressionLevel::kHighSuppression,
                       kStreamHasEchoReference, kOutputReference);
 }
 
@@ -332,7 +334,7 @@ TEST(EchoCancellationBitExactnessTest,
                                     -0.000427f, 0.000183f, 0.000183f};
 #endif
   RunBitexactnessTest(32000, 2, 0, false, 0,
-                      EchoCancellation::SuppressionLevel::kHighSuppression,
+                      EchoCancellationImpl::SuppressionLevel::kHighSuppression,
                       kStreamHasEchoReference, kOutputReference);
 }
 
@@ -347,7 +349,7 @@ TEST(EchoCancellationBitExactnessTest,
   const float kOutputReference[] = {-0.001101f, -0.001101f, -0.000449f,
                                     -0.001101f, -0.001101f, -0.000449f};
   RunBitexactnessTest(48000, 2, 0, false, 0,
-                      EchoCancellation::SuppressionLevel::kHighSuppression,
+                      EchoCancellationImpl::SuppressionLevel::kHighSuppression,
                       kStreamHasEchoReference, kOutputReference);
 }
 

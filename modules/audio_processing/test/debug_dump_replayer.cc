@@ -10,6 +10,7 @@
 
 #include "modules/audio_processing/test/debug_dump_replayer.h"
 
+#include "modules/audio_processing/echo_cancellation_impl.h"
 #include "modules/audio_processing/test/protobuf_utils.h"
 #include "modules/audio_processing/test/runtime_setting_util.h"
 #include "rtc_base/checks.h"
@@ -214,9 +215,9 @@ void DebugDumpReplayer::ConfigureApm(const audioproc::Config& msg) {
 
   RTC_CHECK(msg.has_aec_suppression_level());
   apm_config.echo_canceller.legacy_moderate_suppression_level =
-      static_cast<EchoCancellation::SuppressionLevel>(
+      static_cast<EchoCancellationImpl::SuppressionLevel>(
           msg.aec_suppression_level()) ==
-      EchoCancellation::SuppressionLevel::kModerateSuppression;
+      EchoCancellationImpl::SuppressionLevel::kModerateSuppression;
 
   // AGC configs.
   RTC_CHECK(msg.has_agc_enabled());

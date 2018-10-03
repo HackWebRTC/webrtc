@@ -24,6 +24,8 @@ namespace webrtc {
 
 class AudioBuffer;
 
+// The acoustic echo control for mobile (AECM) component is a low complexity
+// robust option intended for use on mobile devices.
 class EchoControlMobileImpl {
  public:
   EchoControlMobileImpl(rtc::CriticalSection* crit_render,

@@ -95,16 +95,17 @@ TEST(EchoCancellationInternalTest, InterfaceConfiguration) {
   EXPECT_EQ(0, echo_canceller.enable_drift_compensation(false));
   EXPECT_FALSE(echo_canceller.is_drift_compensation_enabled());
 
-  EchoCancellation::SuppressionLevel level[] = {
-      EchoCancellation::kLowSuppression, EchoCancellation::kModerateSuppression,
-      EchoCancellation::kHighSuppression,
+  EchoCancellationImpl::SuppressionLevel level[] = {
+      EchoCancellationImpl::kLowSuppression,
+      EchoCancellationImpl::kModerateSuppression,
+      EchoCancellationImpl::kHighSuppression,
   };
   for (size_t i = 0; i < arraysize(level); i++) {
     EXPECT_EQ(0, echo_canceller.set_suppression_level(level[i]));
     EXPECT_EQ(level[i], echo_canceller.suppression_level());
   }
 
-  EchoCancellation::Metrics metrics;
+  EchoCancellationImpl::Metrics metrics;
   EXPECT_EQ(AudioProcessing::kNotEnabledError,
             echo_canceller.GetMetrics(&metrics));
 

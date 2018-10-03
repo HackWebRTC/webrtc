@@ -21,6 +21,7 @@
 #include "api/audio/echo_canceller3_factory.h"
 #include "common_audio/include/audio_util.h"
 #include "modules/audio_processing/aec_dump/aec_dump_factory.h"
+#include "modules/audio_processing/echo_cancellation_impl.h"
 #include "modules/audio_processing/echo_control_mobile_impl.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "modules/audio_processing/test/fake_recording_device.h"
@@ -959,14 +960,15 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
     RTC_LOG(LS_ERROR) << "Ignoring deprecated setting: AEC2 drift compensation";
   }
   if (settings_.aec_suppression_level) {
-    auto level = static_cast<webrtc::EchoCancellation::SuppressionLevel>(
+    auto level = static_cast<webrtc::EchoCancellationImpl::SuppressionLevel>(
         *settings_.aec_suppression_level);
-    if (level == webrtc::EchoCancellation::SuppressionLevel::kLowSuppression) {
+    if (level ==
+        webrtc::EchoCancellationImpl::SuppressionLevel::kLowSuppression) {
       RTC_LOG(LS_ERROR) << "Ignoring deprecated setting: AEC2 low suppression";
     } else {
       apm_config.echo_canceller.legacy_moderate_suppression_level =
-          (level ==
-           webrtc::EchoCancellation::SuppressionLevel::kModerateSuppression);
+          (level == webrtc::EchoCancellationImpl::SuppressionLevel::
+                        kModerateSuppression);
     }
   }
 
