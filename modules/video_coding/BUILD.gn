@@ -214,6 +214,7 @@ rtc_source_set("mock_headers") {
 }
 
 rtc_source_set("codec_globals_headers") {
+  visibility = [ "*" ]
   sources = [
     "codecs/h264/include/h264_globals.h",
     "codecs/interface/common_constants.h",
