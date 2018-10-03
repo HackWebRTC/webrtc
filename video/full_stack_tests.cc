@@ -816,6 +816,8 @@ TEST(FullStackTest, VP9SVC_3SL_Low) {
 #if !defined(WEBRTC_MAC)
 
 TEST(FullStackTest, VP9KSVC_3SL_High) {
+  webrtc::test::ScopedFieldTrials override_trials(
+      AppendFieldTrials("WebRTC-Vp9IssueKeyFrameOnLayerDeactivation/Enabled/"));
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging simulcast;
   simulcast.call.send_side_bwe = true;
@@ -829,6 +831,8 @@ TEST(FullStackTest, VP9KSVC_3SL_High) {
 }
 
 TEST(FullStackTest, VP9KSVC_3SL_Medium) {
+  webrtc::test::ScopedFieldTrials override_trials(
+      AppendFieldTrials("WebRTC-Vp9IssueKeyFrameOnLayerDeactivation/Enabled/"));
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging simulcast;
   simulcast.call.send_side_bwe = true;
@@ -842,6 +846,8 @@ TEST(FullStackTest, VP9KSVC_3SL_Medium) {
 }
 
 TEST(FullStackTest, VP9KSVC_3SL_Low) {
+  webrtc::test::ScopedFieldTrials override_trials(
+      AppendFieldTrials("WebRTC-Vp9IssueKeyFrameOnLayerDeactivation/Enabled/"));
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging simulcast;
   simulcast.call.send_side_bwe = true;
@@ -855,6 +861,8 @@ TEST(FullStackTest, VP9KSVC_3SL_Low) {
 }
 
 TEST(FullStackTest, VP9KSVC_3SL_Medium_Network_Restricted) {
+  webrtc::test::ScopedFieldTrials override_trials(
+      AppendFieldTrials("WebRTC-Vp9IssueKeyFrameOnLayerDeactivation/Enabled/"));
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging simulcast;
   simulcast.call.send_side_bwe = true;
@@ -862,9 +870,10 @@ TEST(FullStackTest, VP9KSVC_3SL_Medium_Network_Restricted) {
   simulcast.analyzer = {"vp9ksvc_3sl_medium_network_restricted", 0.0, 0.0,
                         kFullStackTestDurationSecs};
   simulcast.ss[0] = {
-      std::vector<VideoStream>(),  0,    3, 1, InterLayerPredMode::kOnKeyPic,
+      std::vector<VideoStream>(),  0,    3, -1, InterLayerPredMode::kOnKeyPic,
       std::vector<SpatialLayer>(), false};
   simulcast.config->link_capacity_kbps = 1000;
+  simulcast.config->queue_delay_ms = 100;
   fixture->RunWithAnalyzer(simulcast);
 }
 #endif  // !defined(WEBRTC_MAC)

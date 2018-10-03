@@ -115,6 +115,7 @@ class VP9EncoderImpl : public VP9Encoder {
   uint8_t num_temporal_layers_;
   uint8_t num_spatial_layers_;         // Number of configured SLs
   uint8_t num_active_spatial_layers_;  // Number of actively encoded SLs
+  bool layer_deactivation_requires_key_frame_;
   bool is_svc_;
   InterLayerPredMode inter_layer_pred_;
   bool external_ref_control_;

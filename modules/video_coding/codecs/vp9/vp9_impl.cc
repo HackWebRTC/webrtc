@@ -160,6 +160,8 @@ VP9EncoderImpl::VP9EncoderImpl(const cricket::VideoCodec& codec)
       num_temporal_layers_(0),
       num_spatial_layers_(0),
       num_active_spatial_layers_(0),
+      layer_deactivation_requires_key_frame_(webrtc::field_trial::IsEnabled(
+          "WebRTC-Vp9IssueKeyFrameOnLayerDeactivation")),
       is_svc_(false),
       inter_layer_pred_(InterLayerPredMode::kOn),
       external_ref_control_(
@@ -212,8 +214,12 @@ bool VP9EncoderImpl::SetSvcRates(
   config_->rc_target_bitrate = bitrate_allocation.get_sum_kbps();
 
   if (ExplicitlyConfiguredSpatialLayers()) {
+    const bool layer_activation_requires_key_frame =
+        inter_layer_pred_ == InterLayerPredMode::kOff ||
+        inter_layer_pred_ == InterLayerPredMode::kOnKeyPic;
+
     for (size_t sl_idx = 0; sl_idx < num_spatial_layers_; ++sl_idx) {
-      const bool was_layer_enabled = (config_->ss_target_bitrate[sl_idx] > 0);
+      const bool was_layer_active = (config_->ss_target_bitrate[sl_idx] > 0);
       config_->ss_target_bitrate[sl_idx] =
           bitrate_allocation.GetSpatialLayerSum(sl_idx) / 1000;
 
@@ -222,16 +228,16 @@ bool VP9EncoderImpl::SetSvcRates(
             bitrate_allocation.GetTemporalLayerSum(sl_idx, tl_idx) / 1000;
       }
 
-      const bool is_layer_enabled = (config_->ss_target_bitrate[sl_idx] > 0);
-      if (is_layer_enabled && !was_layer_enabled) {
-        if (inter_layer_pred_ == InterLayerPredMode::kOff ||
-            inter_layer_pred_ == InterLayerPredMode::kOnKeyPic) {
-          // TODO(wemb:1526): remove key frame request when issue is fixed.
-          force_key_frame_ = true;
-        }
+      const bool is_active_layer = (config_->ss_target_bitrate[sl_idx] > 0);
+      if (!was_layer_active && is_active_layer &&
+          layer_activation_requires_key_frame) {
+        force_key_frame_ = true;
+      } else if (was_layer_active && !is_active_layer &&
+                 layer_deactivation_requires_key_frame_) {
+        force_key_frame_ = true;
       }
 
-      if (!was_layer_enabled) {
+      if (!was_layer_active) {
         // Reset frame rate controller if layer is resumed after pause.
         framerate_controller_[sl_idx].Reset();
       }
