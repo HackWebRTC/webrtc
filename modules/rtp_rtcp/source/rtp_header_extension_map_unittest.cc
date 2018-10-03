@@ -89,17 +89,6 @@ TEST(RtpHeaderExtensionTest, NonUniqueId) {
   EXPECT_TRUE(map.Register<AudioLevel>(4));
 }
 
-TEST(RtpHeaderExtensionTest, GetTotalLength) {
-  RtpHeaderExtensionMap map;
-  constexpr RtpExtensionSize kExtensionSizes[] = {
-      {TransmissionOffset::kId, TransmissionOffset::kValueSizeBytes}};
-  EXPECT_EQ(0u, map.GetTotalLengthInBytes(kExtensionSizes));
-  EXPECT_TRUE(map.Register<TransmissionOffset>(3));
-  static constexpr size_t kRtpOneByteHeaderLength = 4;
-  EXPECT_EQ(kRtpOneByteHeaderLength + (TransmissionOffset::kValueSizeBytes + 1),
-            map.GetTotalLengthInBytes(kExtensionSizes));
-}
-
 TEST(RtpHeaderExtensionTest, GetType) {
   RtpHeaderExtensionMap map;
   EXPECT_EQ(RtpHeaderExtensionMap::kInvalidType, map.GetType(3));

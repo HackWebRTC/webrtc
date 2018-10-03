@@ -20,11 +20,6 @@
 
 namespace webrtc {
 
-struct RtpExtensionSize {
-  RTPExtensionType type;
-  uint8_t value_size;
-};
-
 class RtpHeaderExtensionMap {
  public:
   static constexpr RTPExtensionType kInvalidType = kRtpExtensionNone;
@@ -51,9 +46,6 @@ class RtpHeaderExtensionMap {
     RTC_DCHECK_LT(type, kRtpExtensionNumberOfExtensions);
     return ids_[type];
   }
-
-  size_t GetTotalLengthInBytes(
-      rtc::ArrayView<const RtpExtensionSize> extensions) const;
 
   // TODO(danilchap): Remove use of the functions below.
   int32_t Register(RTPExtensionType type, int id) {

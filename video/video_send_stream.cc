@@ -12,6 +12,7 @@
 #include <utility>
 
 #include "api/video/video_stream_encoder_create.h"
+#include "modules/rtp_rtcp/source/rtp_header_extension_size.h"
 #include "modules/rtp_rtcp/source/rtp_sender.h"
 #include "rtc_base/logging.h"
 #include "video/video_send_stream_impl.h"
@@ -26,10 +27,10 @@ size_t CalculateMaxHeaderSize(const RtpConfig& config) {
   size_t fec_extensions_size = 0;
   if (config.extensions.size() > 0) {
     RtpHeaderExtensionMap extensions_map(config.extensions);
-    extensions_size =
-        extensions_map.GetTotalLengthInBytes(RTPSender::VideoExtensionSizes());
+    extensions_size = RtpHeaderExtensionSize(RTPSender::VideoExtensionSizes(),
+                                             extensions_map);
     fec_extensions_size =
-        extensions_map.GetTotalLengthInBytes(RTPSender::FecExtensionSizes());
+        RtpHeaderExtensionSize(RTPSender::FecExtensionSizes(), extensions_map);
   }
   header_size += extensions_size;
   if (config.flexfec.payload_type >= 0) {

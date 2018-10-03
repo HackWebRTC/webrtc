@@ -97,27 +97,6 @@ RTPExtensionType RtpHeaderExtensionMap::GetType(int id) const {
   return kInvalidType;
 }
 
-size_t RtpHeaderExtensionMap::GetTotalLengthInBytes(
-    rtc::ArrayView<const RtpExtensionSize> extensions) const {
-  // TODO(webrtc:7990): This function must be updated when we start to send
-  // two-byte header extensions.
-  // Header size of the extension block, see RFC3550 Section 5.3.1
-  static constexpr size_t kRtpOneByteHeaderLength = 4;
-  // Header size of each individual extension, see RFC8285 Section 4.2-4.3.
-  static constexpr size_t kOneByteExtensionHeaderLength = 1;
-  size_t values_size = 0;
-  for (const RtpExtensionSize& extension : extensions) {
-    if (IsRegistered(extension.type))
-      values_size += extension.value_size + kOneByteExtensionHeaderLength;
-  }
-  if (values_size == 0)
-    return 0;
-  size_t size = kRtpOneByteHeaderLength + values_size;
-  // Round up to the nearest size that is a multiple of 4.
-  // Which is same as round down (size + 3).
-  return size + 3 - (size + 3) % 4;
-}
-
 int32_t RtpHeaderExtensionMap::Deregister(RTPExtensionType type) {
   if (IsRegistered(type)) {
     ids_[type] = kInvalidId;

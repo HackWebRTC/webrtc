@@ -1120,8 +1120,8 @@ size_t RTPSender::RtpHeaderLength() const {
   rtc::CritScope lock(&send_critsect_);
   size_t rtp_header_length = kRtpHeaderLength;
   rtp_header_length += sizeof(uint32_t) * csrcs_.size();
-  rtp_header_length += rtp_header_extension_map_.GetTotalLengthInBytes(
-      kFecOrPaddingExtensionSizes);
+  rtp_header_length += RtpHeaderExtensionSize(kFecOrPaddingExtensionSizes,
+                                              rtp_header_extension_map_);
   return rtp_header_length;
 }
 
