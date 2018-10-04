@@ -21,6 +21,7 @@
 #include "modules/video_coding/codecs/vp8/include/temporal_layers_checker.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/codecs/vp8/include/vp8_temporal_layers.h"
+#include "modules/video_coding/codecs/vp8/libvpx_interface.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 
 #include "vpx/vp8cx.h"
@@ -28,9 +29,10 @@
 
 namespace webrtc {
 
-class LibvpxVp8Encoder : public VP8Encoder {
+class LibvpxVp8Encoder : public VideoEncoder {
  public:
   LibvpxVp8Encoder();
+  explicit LibvpxVp8Encoder(std::unique_ptr<LibvpxInterface> interface);
   ~LibvpxVp8Encoder() override;
 
   int Release() override;
@@ -84,6 +86,7 @@ class LibvpxVp8Encoder : public VP8Encoder {
 
   uint32_t FrameDropThreshold(size_t spatial_idx) const;
 
+  const std::unique_ptr<LibvpxInterface> libvpx_;
   const bool use_gf_boost_;
 
   EncodedImageCallback* encoded_complete_callback_;

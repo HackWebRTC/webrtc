@@ -396,6 +396,8 @@ rtc_static_library("webrtc_vp8") {
     "codecs/vp8/include/temporal_layers_checker.h",
     "codecs/vp8/include/vp8.h",
     "codecs/vp8/include/vp8_temporal_layers.h",
+    "codecs/vp8/libvpx_interface.cc",
+    "codecs/vp8/libvpx_interface.h",
     "codecs/vp8/libvpx_vp8_decoder.cc",
     "codecs/vp8/libvpx_vp8_decoder.h",
     "codecs/vp8/libvpx_vp8_encoder.cc",
@@ -708,6 +710,7 @@ if (rtc_include_tests) {
       "codecs/test/video_encoder_decoder_instantiation_tests.cc",
       "codecs/test/videocodec_test_libvpx.cc",
       "codecs/test/videocodec_test_parameterized.cc",
+      "codecs/vp8/test/mock_libvpx_interface.h",
       "codecs/vp8/test/vp8_impl_unittest.cc",
       "codecs/vp9/test/vp9_impl_unittest.cc",
     ]

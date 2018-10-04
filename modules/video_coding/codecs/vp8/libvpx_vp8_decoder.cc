@@ -55,7 +55,7 @@ void GetPostProcParamsFromFieldTrialGroup(
 
 }  // namespace
 
-std::unique_ptr<VP8Decoder> VP8Decoder::Create() {
+std::unique_ptr<VideoDecoder> VP8Decoder::Create() {
   return absl::make_unique<LibvpxVp8Decoder>();
 }
 
