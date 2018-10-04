@@ -13,6 +13,8 @@
 #include <utility>
 
 #include "api/rtpparameters.h"
+#include "api/test/fake_frame_decryptor.h"
+#include "api/test/fake_frame_encryptor.h"
 #include "media/base/fakemediaengine.h"
 #include "media/base/rtpdataengine.h"
 #include "media/base/testutils.h"
@@ -1409,6 +1411,28 @@ TEST_F(RtpSenderReceiverTest, TestOnDestroyedSignal) {
   EXPECT_FALSE(audio_sender_destroyed_signal_fired_);
   audio_rtp_sender_ = nullptr;
   EXPECT_TRUE(audio_sender_destroyed_signal_fired_);
+}
+
+// Validate that the default FrameEncryptor setting is nullptr.
+TEST_F(RtpSenderReceiverTest, AudioSenderCanSetFrameEncryptor) {
+  CreateAudioRtpSender();
+  rtc::scoped_refptr<FrameEncryptorInterface> fake_frame_encryptor(
+      new FakeFrameEncryptor());
+  EXPECT_EQ(nullptr, audio_rtp_sender_->GetFrameEncryptor());
+  audio_rtp_sender_->SetFrameEncryptor(fake_frame_encryptor);
+  EXPECT_EQ(fake_frame_encryptor.get(),
+            audio_rtp_sender_->GetFrameEncryptor().get());
+}
+
+// Validate that the default FrameEncryptor setting is nullptr.
+TEST_F(RtpSenderReceiverTest, AudioReceiverCanSetFrameDecryptor) {
+  CreateAudioRtpReceiver();
+  rtc::scoped_refptr<FrameDecryptorInterface> fake_frame_decryptor(
+      new FakeFrameDecryptor());
+  EXPECT_EQ(nullptr, audio_rtp_receiver_->GetFrameDecryptor());
+  audio_rtp_receiver_->SetFrameDecryptor(fake_frame_decryptor);
+  EXPECT_EQ(fake_frame_decryptor.get(),
+            audio_rtp_receiver_->GetFrameDecryptor().get());
 }
 
 }  // namespace webrtc

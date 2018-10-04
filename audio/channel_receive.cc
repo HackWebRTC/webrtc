@@ -229,7 +229,8 @@ ChannelReceive::ChannelReceive(
     size_t jitter_buffer_max_packets,
     bool jitter_buffer_fast_playout,
     rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
-    absl::optional<AudioCodecPairId> codec_pair_id)
+    absl::optional<AudioCodecPairId> codec_pair_id,
+    FrameDecryptorInterface* frame_decryptor)
     : event_log_(rtc_event_log),
       rtp_receive_statistics_(
           ReceiveStatistics::Create(Clock::GetRealTimeClock())),
@@ -245,7 +246,8 @@ ChannelReceive::ChannelReceive(
       _audioDeviceModulePtr(audio_device_module),
       _transportPtr(NULL),
       _outputGain(1.0f),
-      associated_send_channel_(nullptr) {
+      associated_send_channel_(nullptr),
+      frame_decryptor_(frame_decryptor) {
   RTC_DCHECK(module_process_thread);
   RTC_DCHECK(audio_device_module);
   AudioCodingModule::Config acm_config;
@@ -425,7 +427,38 @@ bool ChannelReceive::ReceivePacket(const uint8_t* packet,
   WebRtcRTPHeader webrtc_rtp_header = {};
   webrtc_rtp_header.header = header;
 
-  const size_t payload_data_length = payload_length - header.paddingLength;
+  size_t payload_data_length = payload_length - header.paddingLength;
+
+  // E2EE Custom Audio Frame Decryption (This is optional).
+  // Keep this buffer around for the lifetime of the OnReceivedPayloadData call.
+  rtc::Buffer decrypted_audio_payload;
+  if (frame_decryptor_ != nullptr) {
+    size_t max_plaintext_size = frame_decryptor_->GetMaxPlaintextByteSize(
+        cricket::MEDIA_TYPE_AUDIO, payload_length);
+    decrypted_audio_payload.SetSize(max_plaintext_size);
+
+    size_t bytes_written = 0;
+    std::vector<uint32_t> csrcs(header.arrOfCSRCs,
+                                header.arrOfCSRCs + header.numCSRCs);
+    int decrypt_status = frame_decryptor_->Decrypt(
+        cricket::MEDIA_TYPE_AUDIO, csrcs,
+        /*additional_data=*/nullptr,
+        rtc::ArrayView<const uint8_t>(payload, payload_data_length),
+        decrypted_audio_payload, &bytes_written);
+
+    // In this case just interpret the failure as a silent frame.
+    if (decrypt_status != 0) {
+      bytes_written = 0;
+    }
+
+    // Resize the decrypted audio payload to the number of bytes actually
+    // written.
+    decrypted_audio_payload.SetSize(bytes_written);
+    // Update the final payload.
+    payload = decrypted_audio_payload.data();
+    payload_data_length = decrypted_audio_payload.size();
+  }
+
   if (payload_data_length == 0) {
     webrtc_rtp_header.frameType = kEmptyFrame;
     return OnReceivedPayloadData(nullptr, 0, &webrtc_rtp_header);

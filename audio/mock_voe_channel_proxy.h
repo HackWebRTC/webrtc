@@ -105,6 +105,8 @@ class MockChannelSendProxy : public voe::ChannelSendProxy {
                void(float recoverable_packet_loss_rate));
   MOCK_METHOD0(StartSend, void());
   MOCK_METHOD0(StopSend, void());
+  MOCK_METHOD1(SetFrameEncryptor,
+               void(FrameEncryptorInterface* frame_encryptor));
 };
 }  // namespace test
 }  // namespace webrtc

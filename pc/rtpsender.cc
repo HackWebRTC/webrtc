@@ -31,20 +31,6 @@ int GenerateUniqueId() {
   return ++g_unique_id;
 }
 
-// Attaches the frame encryptor to the media channel through an invoke on a
-// worker thread. This set must be done on the corresponding worker thread that
-// the media channel was created on.
-void AttachFrameEncryptorToMediaChannel(
-    rtc::Thread* worker_thread,
-    webrtc::FrameEncryptorInterface* frame_encryptor,
-    cricket::MediaChannel* media_channel) {
-  if (media_channel) {
-    return worker_thread->Invoke<void>(RTC_FROM_HERE, [&] {
-      media_channel->SetFrameEncryptor(frame_encryptor);
-    });
-  }
-}
-
 // Returns an true if any RtpEncodingParameters member that isn't implemented
 // contains a value.
 bool UnimplementedRtpEncodingParameterHasValue(
@@ -76,6 +62,21 @@ bool PerSenderRtpEncodingParameterHasValue(
     return true;
   }
   return false;
+}
+
+// Attempt to attach the frame decryptor to the current media channel on the
+// correct worker thread only if both the media channel exists and a ssrc has
+// been allocated to the stream.
+void MaybeAttachFrameEncryptorToMediaChannel(
+    const absl::optional<uint32_t> ssrc,
+    rtc::Thread* worker_thread,
+    rtc::scoped_refptr<webrtc::FrameEncryptorInterface> frame_encryptor,
+    cricket::MediaChannel* media_channel) {
+  if (media_channel && ssrc.has_value()) {
+    return worker_thread->Invoke<void>(RTC_FROM_HERE, [&] {
+      media_channel->SetFrameEncryptor(*ssrc, frame_encryptor);
+    });
+  }
 }
 
 }  // namespace
@@ -304,8 +305,8 @@ rtc::scoped_refptr<DtmfSenderInterface> AudioRtpSender::GetDtmfSender() const {
 void AudioRtpSender::SetFrameEncryptor(
     rtc::scoped_refptr<FrameEncryptorInterface> frame_encryptor) {
   frame_encryptor_ = std::move(frame_encryptor);
-  AttachFrameEncryptorToMediaChannel(worker_thread_, frame_encryptor_.get(),
-                                     media_channel_);
+  MaybeAttachFrameEncryptorToMediaChannel(ssrc_, worker_thread_,
+                                          frame_encryptor_, media_channel_);
 }
 
 rtc::scoped_refptr<FrameEncryptorInterface> AudioRtpSender::GetFrameEncryptor()
@@ -354,6 +355,9 @@ void AudioRtpSender::SetSsrc(uint32_t ssrc) {
       init_parameters_.encodings.clear();
     });
   }
+  // Each time there is an ssrc update.
+  MaybeAttachFrameEncryptorToMediaChannel(ssrc_, worker_thread_,
+                                          frame_encryptor_, media_channel_);
 }
 
 void AudioRtpSender::Stop() {
@@ -379,8 +383,6 @@ void AudioRtpSender::Stop() {
 void AudioRtpSender::SetVoiceMediaChannel(
     cricket::VoiceMediaChannel* voice_media_channel) {
   media_channel_ = voice_media_channel;
-  AttachFrameEncryptorToMediaChannel(worker_thread_, frame_encryptor_.get(),
-                                     media_channel_);
 }
 
 void AudioRtpSender::SetAudioSend() {
@@ -555,8 +557,8 @@ rtc::scoped_refptr<DtmfSenderInterface> VideoRtpSender::GetDtmfSender() const {
 void VideoRtpSender::SetFrameEncryptor(
     rtc::scoped_refptr<FrameEncryptorInterface> frame_encryptor) {
   frame_encryptor_ = std::move(frame_encryptor);
-  AttachFrameEncryptorToMediaChannel(worker_thread_, frame_encryptor_.get(),
-                                     media_channel_);
+  MaybeAttachFrameEncryptorToMediaChannel(ssrc_, worker_thread_,
+                                          frame_encryptor_, media_channel_);
 }
 
 rtc::scoped_refptr<FrameEncryptorInterface> VideoRtpSender::GetFrameEncryptor()
@@ -599,6 +601,8 @@ void VideoRtpSender::SetSsrc(uint32_t ssrc) {
       init_parameters_.encodings.clear();
     });
   }
+  MaybeAttachFrameEncryptorToMediaChannel(ssrc_, worker_thread_,
+                                          frame_encryptor_, media_channel_);
 }
 
 void VideoRtpSender::Stop() {
@@ -620,8 +624,6 @@ void VideoRtpSender::Stop() {
 void VideoRtpSender::SetVideoMediaChannel(
     cricket::VideoMediaChannel* video_media_channel) {
   media_channel_ = video_media_channel;
-  AttachFrameEncryptorToMediaChannel(worker_thread_, frame_encryptor_.get(),
-                                     media_channel_);
 }
 
 void VideoRtpSender::SetVideoSend() {

@@ -179,10 +179,9 @@ class MediaChannel : public sigslot::has_slots<> {
     virtual ~NetworkInterface() {}
   };
 
-  explicit MediaChannel(const MediaConfig& config)
-      : enable_dscp_(config.enable_dscp), network_interface_(NULL) {}
-  MediaChannel() : enable_dscp_(false), network_interface_(NULL) {}
-  ~MediaChannel() override {}
+  explicit MediaChannel(const MediaConfig& config);
+  MediaChannel();
+  ~MediaChannel() override;
 
   // Sets the abstract interface class for sending RTP/RTCP data.
   virtual void SetInterface(NetworkInterface* iface);
@@ -219,13 +218,17 @@ class MediaChannel : public sigslot::has_slots<> {
   // Set the frame encryptor to use on all outgoing frames. This is optional.
   // This pointers lifetime is managed by the set of RtpSender it is attached
   // to.
+  // TODO(benwright) make pure virtual once internal supports it.
   virtual void SetFrameEncryptor(
-      webrtc::FrameEncryptorInterface* frame_encryptor);
+      uint32_t ssrc,
+      rtc::scoped_refptr<webrtc::FrameEncryptorInterface> frame_encryptor);
   // Set the frame decryptor to use on all incoming frames. This is optional.
   // This pointers lifetimes is managed by the set of RtpReceivers it is
   // attached to.
+  // TODO(benwright) make pure virtual once internal supports it.
   virtual void SetFrameDecryptor(
-      webrtc::FrameDecryptorInterface* frame_decryptor);
+      uint32_t ssrc,
+      rtc::scoped_refptr<webrtc::FrameDecryptorInterface> frame_decryptor);
 
   // Base method to send packet using NetworkInterface.
   bool SendPacket(rtc::CopyOnWriteBuffer* packet,
@@ -281,10 +284,6 @@ class MediaChannel : public sigslot::has_slots<> {
   // of network_interface_ object.
   rtc::CriticalSection network_interface_crit_;
   NetworkInterface* network_interface_;
-
- protected:
-  webrtc::FrameEncryptorInterface* frame_encryptor_ = nullptr;
-  webrtc::FrameDecryptorInterface* frame_decryptor_ = nullptr;
 };
 
 // The stats information is structured as follows:

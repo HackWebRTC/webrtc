@@ -170,6 +170,21 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   bool RemoveSendStream(uint32_t ssrc) override;
   bool AddRecvStream(const StreamParams& sp) override;
   bool RemoveRecvStream(uint32_t ssrc) override;
+
+  // E2EE Frame API
+  // Set a frame decryptor to a particular ssrc that will intercept all
+  // incoming audio payloads and attempt to decrypt them before forwarding the
+  // result.
+  void SetFrameDecryptor(uint32_t ssrc,
+                         rtc::scoped_refptr<webrtc::FrameDecryptorInterface>
+                             frame_decryptor) override;
+  // Set a frame encryptor to a particular ssrc that will intercept all
+  // outgoing audio payloads frames and attempt to encrypt them and forward the
+  // result to the packetizer.
+  void SetFrameEncryptor(uint32_t ssrc,
+                         rtc::scoped_refptr<webrtc::FrameEncryptorInterface>
+                             frame_encryptor) override;
+
   // SSRC=0 will apply the new volume to current and future unsignaled streams.
   bool SetOutputVolume(uint32_t ssrc, double volume) override;
 
@@ -286,6 +301,10 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   // TODO(kwiberg): Per-SSRC codec pair IDs?
   const webrtc::AudioCodecPairId codec_pair_id_ =
       webrtc::AudioCodecPairId::Create();
+
+  // Unsignaled streams have an option to have a frame decryptor set on them.
+  rtc::scoped_refptr<webrtc::FrameDecryptorInterface>
+      unsignaled_frame_decryptor_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(WebRtcVoiceMediaChannel);
 };

@@ -19,6 +19,7 @@
 
 #include "absl/memory/memory.h"
 #include "api/array_view.h"
+#include "api/crypto/frameencryptorinterface.h"
 #include "audio/utility/audio_frame_operations.h"
 #include "call/rtp_transport_controller_send_interface.h"
 #include "logging/rtc_event_log/events/rtc_event_audio_playout.h"
@@ -260,6 +261,35 @@ int32_t ChannelSend::SendData(FrameType frameType,
     _rtpRtcpModule->SetAudioLevel(rms_level_.Average());
   }
 
+  // E2EE Custom Audio Frame Encryption (This is optional).
+  // Keep this buffer around for the lifetime of the send call.
+  rtc::Buffer encrypted_audio_payload;
+  if (frame_encryptor_ != nullptr) {
+    // TODO(benwright@webrtc.org) - Allocate enough to always encrypt inline.
+    // Allocate a buffer to hold the maximum possible encrypted payload.
+    size_t max_ciphertext_size = frame_encryptor_->GetMaxCiphertextByteSize(
+        cricket::MEDIA_TYPE_AUDIO, payloadSize);
+    encrypted_audio_payload.SetSize(max_ciphertext_size);
+
+    // Encrypt the audio payload into the buffer.
+    size_t bytes_written = 0;
+    int encrypt_status = frame_encryptor_->Encrypt(
+        cricket::MEDIA_TYPE_AUDIO, _rtpRtcpModule->SSRC(),
+        /*additional_data=*/nullptr,
+        rtc::ArrayView<const uint8_t>(payloadData, payloadSize),
+        encrypted_audio_payload, &bytes_written);
+    if (encrypt_status != 0) {
+      RTC_DLOG(LS_ERROR) << "Channel::SendData() failed encrypt audio payload: "
+                         << encrypt_status;
+      return -1;
+    }
+    // Resize the buffer to the exact number of bytes actually used.
+    encrypted_audio_payload.SetSize(bytes_written);
+    // Rewrite the payloadData and size to the new encrypted payload.
+    payloadData = encrypted_audio_payload.data();
+    payloadSize = encrypted_audio_payload.size();
+  }
+
   // Push data from ACM to RTP/RTCP-module to deliver audio frame for
   // packetization.
   // This call will trigger Transport::SendPacket() from the RTP/RTCP module.
@@ -322,7 +352,8 @@ int ChannelSend::PreferredSampleRate() const {
 ChannelSend::ChannelSend(rtc::TaskQueue* encoder_queue,
                          ProcessThread* module_process_thread,
                          RtcpRttStats* rtcp_rtt_stats,
-                         RtcEventLog* rtc_event_log)
+                         RtcEventLog* rtc_event_log,
+                         FrameEncryptorInterface* frame_encryptor)
     : event_log_(rtc_event_log),
       _timeStamp(0),  // This is just an offset, RTP module will add it's own
                       // random offset
@@ -342,7 +373,8 @@ ChannelSend::ChannelSend(rtc::TaskQueue* encoder_queue,
                                                    kMaxRetransmissionWindowMs)),
       use_twcc_plr_for_ana_(
           webrtc::field_trial::FindFullName("UseTwccPlrForAna") == "Enabled"),
-      encoder_queue_(encoder_queue) {
+      encoder_queue_(encoder_queue),
+      frame_encryptor_(frame_encryptor) {
   RTC_DCHECK(module_process_thread);
   RTC_DCHECK(encoder_queue);
   audio_coding_.reset(AudioCodingModule::Create(AudioCodingModule::Config()));
@@ -947,6 +979,17 @@ int64_t ChannelSend::GetRTT() const {
     return 0;
   }
   return rtt;
+}
+
+void ChannelSend::SetFrameEncryptor(FrameEncryptorInterface* frame_encryptor) {
+  rtc::CritScope cs(&encoder_queue_lock_);
+  if (encoder_queue_is_active_) {
+    encoder_queue_->PostTask([this, frame_encryptor]() {
+      this->frame_encryptor_ = frame_encryptor;
+    });
+  } else {
+    frame_encryptor_ = frame_encryptor;
+  }
 }
 
 }  // namespace voe

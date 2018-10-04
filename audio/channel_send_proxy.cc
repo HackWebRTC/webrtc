@@ -197,5 +197,11 @@ ChannelSend* ChannelSendProxy::GetChannel() const {
   return channel_.get();
 }
 
+void ChannelSendProxy::SetFrameEncryptor(
+    FrameEncryptorInterface* frame_encryptor) {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  channel_->SetFrameEncryptor(frame_encryptor);
+}
+
 }  // namespace voe
 }  // namespace webrtc

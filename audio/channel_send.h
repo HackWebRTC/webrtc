@@ -37,6 +37,7 @@ class TimestampWrapAroundHandler;
 
 namespace webrtc {
 
+class FrameEncryptorInterface;
 class PacketRouter;
 class ProcessThread;
 class RateLimiter;
@@ -118,7 +119,8 @@ class ChannelSend
   ChannelSend(rtc::TaskQueue* encoder_queue,
               ProcessThread* module_process_thread,
               RtcpRttStats* rtcp_rtt_stats,
-              RtcEventLog* rtc_event_log);
+              RtcEventLog* rtc_event_log,
+              FrameEncryptorInterface* frame_encryptor);
 
   virtual ~ChannelSend();
 
@@ -222,6 +224,9 @@ class ChannelSend
 
   int64_t GetRTT() const;
 
+  // E2EE Custom Audio Frame Encryption
+  void SetFrameEncryptor(FrameEncryptorInterface* frame_encryptor);
+
  private:
   class ProcessAndEncodeAudioTask;
 
@@ -290,6 +295,9 @@ class ChannelSend
   rtc::CriticalSection encoder_queue_lock_;
   bool encoder_queue_is_active_ RTC_GUARDED_BY(encoder_queue_lock_) = false;
   rtc::TaskQueue* encoder_queue_ = nullptr;
+
+  // E2EE Audio Frame Encryption
+  FrameEncryptorInterface* frame_encryptor_ = nullptr;
 };
 
 }  // namespace voe

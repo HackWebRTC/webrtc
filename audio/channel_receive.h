@@ -42,6 +42,7 @@ class TimestampWrapAroundHandler;
 namespace webrtc {
 
 class AudioDeviceModule;
+class FrameDecryptorInterface;
 class PacketRouter;
 class ProcessThread;
 class RateLimiter;
@@ -112,7 +113,8 @@ class ChannelReceive : public RtpData, public Transport {
                  size_t jitter_buffer_max_packets,
                  bool jitter_buffer_fast_playout,
                  rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
-                 absl::optional<AudioCodecPairId> codec_pair_id);
+                 absl::optional<AudioCodecPairId> codec_pair_id,
+                 FrameDecryptorInterface* frame_decryptor);
   virtual ~ChannelReceive();
 
   void SetSink(AudioSinkInterface* sink);
@@ -263,6 +265,9 @@ class ChannelReceive : public RtpData, public Transport {
   PacketRouter* packet_router_ = nullptr;
 
   rtc::ThreadChecker construction_thread_;
+
+  // E2EE Audio Frame Decryption
+  FrameDecryptorInterface* frame_decryptor_ = nullptr;
 };
 
 }  // namespace voe
