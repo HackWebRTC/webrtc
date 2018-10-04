@@ -50,6 +50,11 @@ rtc_source_set("call_interfaces") {
 # TODO(nisse): These RTP targets should be moved elsewhere
 # when interfaces have stabilized. See also TODO for |mock_rtp_interfaces|.
 rtc_source_set("rtp_interfaces") {
+  # Client code SHOULD NOT USE THIS TARGET, but for now it needs to be public
+  # because there exists client code that uses it.
+  # TODO(bugs.webrtc.org/9808): Move to private visibility as soon as that
+  # client code gets updated.
+  visibility = [ "*" ]
   sources = [
     "rtcp_packet_sink_interface.h",
     "rtp_config.cc",

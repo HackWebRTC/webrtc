@@ -9,6 +9,11 @@
 import("../../webrtc.gni")
 
 rtc_static_library("pacing") {
+  # Client code SHOULD NOT USE THIS TARGET, but for now it needs to be public
+  # because there exists client code that uses it.
+  # TODO(bugs.webrtc.org/9808): Move to private visibility as soon as that
+  # client code gets updated.
+  visibility = [ "*" ]
   sources = [
     "bitrate_prober.cc",
     "bitrate_prober.h",
