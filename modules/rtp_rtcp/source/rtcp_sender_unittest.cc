@@ -700,4 +700,39 @@ TEST_F(RtcpSenderTest, SendXrWithTargetBitrate) {
   }
 }
 
+TEST_F(RtcpSenderTest, SendImmediateXrWithTargetBitrate) {
+  // Initialize. Send a first report right away.
+  rtcp_sender_->SetRTCPStatus(RtcpMode::kCompound);
+  EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpReport));
+  clock_.AdvanceTimeMilliseconds(5);
+
+  // Video bitrate allocation generated, save until next time we send a report.
+  VideoBitrateAllocation allocation;
+  allocation.SetBitrate(0, 0, 100000);
+  rtcp_sender_->SetVideoBitrateAllocation(allocation);
+  // First seen instance will be sent immediately.
+  EXPECT_TRUE(rtcp_sender_->TimeToSendRTCPReport(false));
+  EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpReport));
+  clock_.AdvanceTimeMilliseconds(5);
+
+  // Update bitrate of existing layer, does not quality for immediate sending.
+  allocation.SetBitrate(0, 0, 150000);
+  rtcp_sender_->SetVideoBitrateAllocation(allocation);
+  EXPECT_FALSE(rtcp_sender_->TimeToSendRTCPReport(false));
+
+  // A new spatial layer enabled, signal this as soon as possible.
+  allocation.SetBitrate(1, 0, 200000);
+  rtcp_sender_->SetVideoBitrateAllocation(allocation);
+  EXPECT_TRUE(rtcp_sender_->TimeToSendRTCPReport(false));
+  EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpReport));
+  clock_.AdvanceTimeMilliseconds(5);
+
+  // Explicitly disable top layer. The same set of layers now has a bitrate
+  // defined, but the explicit 0 indicates shutdown. Signal immediately.
+  allocation.SetBitrate(1, 0, 0);
+  EXPECT_FALSE(rtcp_sender_->TimeToSendRTCPReport(false));
+  rtcp_sender_->SetVideoBitrateAllocation(allocation);
+  EXPECT_TRUE(rtcp_sender_->TimeToSendRTCPReport(false));
+}
+
 }  // namespace webrtc
