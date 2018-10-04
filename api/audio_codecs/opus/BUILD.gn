@@ -44,7 +44,6 @@ rtc_source_set("audio_encoder_opus") {
     "..:audio_codecs_api",
     "../../../modules/audio_coding:webrtc_opus",
     "../../../rtc_base:rtc_base_approved",
-    "../../../rtc_base/system:rtc_export",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
@@ -61,7 +60,6 @@ rtc_static_library("audio_decoder_opus") {
     "../../..:webrtc_common",
     "../../../modules/audio_coding:webrtc_opus",
     "../../../rtc_base:rtc_base_approved",
-    "../../../rtc_base/system:rtc_export",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]

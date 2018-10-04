@@ -12,7 +12,6 @@
 #define MEDIA_BASE_RTPUTILS_H_
 
 #include "rtc_base/byteorder.h"
-#include "rtc_base/system/rtc_export.h"
 
 namespace rtc {
 struct PacketTimeUpdateParams;
@@ -69,9 +68,9 @@ bool IsValidRtpRtcpPacketSize(bool rtcp, size_t size);
 const char* RtpRtcpStringLiteral(bool rtcp);
 
 // Verifies that a packet has a valid RTP header.
-bool RTC_EXPORT ValidateRtpHeader(const uint8_t* rtp,
-                                  size_t length,
-                                  size_t* header_length);
+bool ValidateRtpHeader(const uint8_t* rtp,
+                       size_t length,
+                       size_t* header_length);
 
 // Helper method which updates the absolute send time extension if present.
 bool UpdateRtpAbsSendTimeExtension(uint8_t* rtp,
@@ -81,11 +80,10 @@ bool UpdateRtpAbsSendTimeExtension(uint8_t* rtp,
 
 // Applies specified |options| to the packet. It updates the absolute send time
 // extension header if it is present present then updates HMAC.
-bool RTC_EXPORT
-ApplyPacketOptions(uint8_t* data,
-                   size_t length,
-                   const rtc::PacketTimeUpdateParams& packet_time_params,
-                   uint64_t time_us);
+bool ApplyPacketOptions(uint8_t* data,
+                        size_t length,
+                        const rtc::PacketTimeUpdateParams& packet_time_params,
+                        uint64_t time_us);
 
 }  // namespace cricket
 

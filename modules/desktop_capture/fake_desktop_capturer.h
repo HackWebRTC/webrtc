@@ -17,7 +17,6 @@
 #include "modules/desktop_capture/desktop_capturer.h"
 #include "modules/desktop_capture/desktop_frame_generator.h"
 #include "modules/desktop_capture/shared_memory.h"
-#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
@@ -32,7 +31,7 @@ namespace webrtc {
 // Double buffering is guaranteed by the FrameGenerator. FrameGenerator
 // implements in desktop_frame_generator.h guarantee double buffering, they
 // creates a new instance of DesktopFrame each time.
-class RTC_EXPORT FakeDesktopCapturer : public DesktopCapturer {
+class FakeDesktopCapturer : public DesktopCapturer {
  public:
   FakeDesktopCapturer();
   ~FakeDesktopCapturer() override;
