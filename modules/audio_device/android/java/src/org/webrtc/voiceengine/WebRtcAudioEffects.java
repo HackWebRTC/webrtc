@@ -10,7 +10,6 @@
 
 package org.webrtc.voiceengine;
 
-import android.annotation.TargetApi;
 import android.media.audiofx.AcousticEchoCanceler;
 import android.media.audiofx.AudioEffect;
 import android.media.audiofx.AudioEffect.Descriptor;
@@ -96,8 +95,9 @@ public class WebRtcAudioEffects {
 
   // Returns true if the platform AEC should be excluded based on its UUID.
   // AudioEffect.queryEffects() can throw IllegalStateException.
-  @TargetApi(18)
   private static boolean isAcousticEchoCancelerExcludedByUUID() {
+    if (Build.VERSION.SDK_INT < 18)
+      return false;
     for (Descriptor d : getAvailableEffects()) {
       if (d.type.equals(AudioEffect.EFFECT_TYPE_AEC)
           && d.uuid.equals(AOSP_ACOUSTIC_ECHO_CANCELER)) {
@@ -109,8 +109,9 @@ public class WebRtcAudioEffects {
 
   // Returns true if the platform NS should be excluded based on its UUID.
   // AudioEffect.queryEffects() can throw IllegalStateException.
-  @TargetApi(18)
   private static boolean isNoiseSuppressorExcludedByUUID() {
+    if (Build.VERSION.SDK_INT < 18)
+      return false;
     for (Descriptor d : getAvailableEffects()) {
       if (d.type.equals(AudioEffect.EFFECT_TYPE_NS) && d.uuid.equals(AOSP_NOISE_SUPPRESSOR)) {
         return true;
@@ -120,14 +121,16 @@ public class WebRtcAudioEffects {
   }
 
   // Returns true if the device supports Acoustic Echo Cancellation (AEC).
-  @TargetApi(18)
   private static boolean isAcousticEchoCancelerEffectAvailable() {
+    if (Build.VERSION.SDK_INT < 18)
+      return false;
     return isEffectTypeAvailable(AudioEffect.EFFECT_TYPE_AEC);
   }
 
   // Returns true if the device supports Noise Suppression (NS).
-  @TargetApi(18)
   private static boolean isNoiseSuppressorEffectAvailable() {
+    if (Build.VERSION.SDK_INT < 18)
+      return false;
     return isEffectTypeAvailable(AudioEffect.EFFECT_TYPE_NS);
   }
 
@@ -274,9 +277,8 @@ public class WebRtcAudioEffects {
   // AudioEffect.Descriptor array that are actually not available on the device.
   // As an example: Samsung Galaxy S6 includes an AGC in the descriptor but
   // AutomaticGainControl.isAvailable() returns false.
-  @TargetApi(18)
   private boolean effectTypeIsVoIP(UUID type) {
-    if (!WebRtcAudioUtils.runningOnJellyBeanMR2OrHigher())
+    if (Build.VERSION.SDK_INT < 18)
       return false;
 
     return (AudioEffect.EFFECT_TYPE_AEC.equals(type) && isAcousticEchoCancelerSupported())
