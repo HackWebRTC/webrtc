@@ -42,9 +42,9 @@ struct PacketDeliveryInfo {
   uint64_t packet_id;
 };
 
-// DefaultNetworkSimulationConfig is a default network simulation configuration
-// for default network simulation that will be used by WebRTC if no custom
-// NetworkSimulationInterface is provided.
+// DefaultNetworkSimulationConfig is a default network behavior configuration
+// for default network behavior that will be used by WebRTC if no custom
+// NetworkBehaviorInterface is provided.
 struct DefaultNetworkSimulationConfig {
   DefaultNetworkSimulationConfig() {}
   // Queue length in number of packets.
@@ -63,7 +63,7 @@ struct DefaultNetworkSimulationConfig {
   int avg_burst_loss_length = -1;
 };
 
-class NetworkSimulationInterface {
+class NetworkBehaviorInterface {
  public:
   virtual bool EnqueuePacket(PacketInFlightInfo packet_info) = 0;
   // Retrieves all packets that should be delivered by the given receive time.
@@ -72,8 +72,11 @@ class NetworkSimulationInterface {
   // Returns time in microseconds when caller should call
   // DequeueDeliverablePackets to get next set of packets to deliver.
   virtual absl::optional<int64_t> NextDeliveryTimeUs() const = 0;
-  virtual ~NetworkSimulationInterface() = default;
+  virtual ~NetworkBehaviorInterface() = default;
 };
+
+// Deprecated. DO NOT USE. Use NetworkBehaviorInterface instead.
+using NetworkSimulationInterface = NetworkBehaviorInterface;
 
 }  // namespace webrtc
 
