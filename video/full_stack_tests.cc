@@ -88,16 +88,22 @@ std::string AppendFieldTrials(std::string new_trial_string) {
 
 class GenericDescriptorTest : public ::testing::TestWithParam<std::string> {
  public:
-  GenericDescriptorTest() : field_trial_(GetParam()) {}
+  GenericDescriptorTest()
+      : field_trial_(GetParam()),
+        generic_descriptor_enabled_(
+            field_trial::IsEnabled("WebRTC-GenericDescriptor")) {}
 
   std::string GetTestName(std::string base) {
-    if (field_trial::IsEnabled("WebRTC-GenericDescriptor"))
+    if (generic_descriptor_enabled_)
       base += "_generic_descriptor";
     return base;
   }
 
+  bool GenericDescriptorEnabled() const { return generic_descriptor_enabled_; }
+
  private:
   test::ScopedFieldTrials field_trial_;
+  bool generic_descriptor_enabled_;
 };
 
 #if !defined(RTC_DISABLE_VP9)
@@ -124,6 +130,7 @@ TEST_P(GenericDescriptorTest, ForemanCifPlr5Vp9) {
                           0.0, kFullStackTestDurationSecs};
   foreman_cif.config->loss_percent = 5;
   foreman_cif.config->queue_delay_ms = 50;
+  foreman_cif.call.generic_descriptor = GenericDescriptorEnabled();
   fixture->RunWithAnalyzer(foreman_cif);
 }
 
@@ -210,6 +217,7 @@ TEST_P(GenericDescriptorTest, ForemanCifWithoutPacketLoss) {
                           0,      0,      false, false, false, "foreman_cif"};
   foreman_cif.analyzer = {GetTestName("foreman_cif_net_delay_0_0_plr_0"), 0.0,
                           0.0, kFullStackTestDurationSecs};
+  foreman_cif.call.generic_descriptor = GenericDescriptorEnabled();
   fixture->RunWithAnalyzer(foreman_cif);
 }
 
@@ -222,6 +230,7 @@ TEST_P(GenericDescriptorTest, ForemanCif30kbpsWithoutPacketLoss) {
                           0,     0,     false, false, false, "foreman_cif"};
   foreman_cif.analyzer = {GetTestName("foreman_cif_30kbps_net_delay_0_0_plr_0"),
                           0.0, 0.0, kFullStackTestDurationSecs};
+  foreman_cif.call.generic_descriptor = GenericDescriptorEnabled();
   fixture->RunWithAnalyzer(foreman_cif);
 }
 
@@ -251,6 +260,7 @@ TEST_P(GenericDescriptorTest, ForemanCifPlr5) {
                           kFullStackTestDurationSecs};
   foreman_cif.config->loss_percent = 5;
   foreman_cif.config->queue_delay_ms = 50;
+  foreman_cif.call.generic_descriptor = GenericDescriptorEnabled();
   fixture->RunWithAnalyzer(foreman_cif);
 }
 
@@ -265,6 +275,7 @@ TEST_P(GenericDescriptorTest, ForemanCifPlr5Ulpfec) {
                           0.0, 0.0, kFullStackTestDurationSecs};
   foreman_cif.config->loss_percent = 5;
   foreman_cif.config->queue_delay_ms = 50;
+  foreman_cif.call.generic_descriptor = GenericDescriptorEnabled();
   fixture->RunWithAnalyzer(foreman_cif);
 }
 
@@ -349,6 +360,7 @@ TEST_P(GenericDescriptorTest, ForemanCifPlr5H264) {
                           0.0, kFullStackTestDurationSecs};
   foreman_cif.config->loss_percent = 5;
   foreman_cif.config->queue_delay_ms = 50;
+  foreman_cif.call.generic_descriptor = GenericDescriptorEnabled();
   fixture->RunWithAnalyzer(foreman_cif);
 }
 
@@ -458,6 +470,7 @@ TEST_P(GenericDescriptorTest, ForemanCif500kbps100msLimitedQueue) {
   foreman_cif.config->queue_length_packets = 32;
   foreman_cif.config->queue_delay_ms = 100;
   foreman_cif.config->link_capacity_kbps = 500;
+  foreman_cif.call.generic_descriptor = GenericDescriptorEnabled();
   fixture->RunWithAnalyzer(foreman_cif);
 }
 
@@ -540,6 +553,7 @@ TEST_P(GenericDescriptorTest, ConferenceMotionHd2TLModerateLimits) {
   conf_motion_hd.config->loss_percent = 3;
   conf_motion_hd.config->queue_delay_ms = 100;
   conf_motion_hd.config->link_capacity_kbps = 2000;
+  conf_motion_hd.call.generic_descriptor = GenericDescriptorEnabled();
   fixture->RunWithAnalyzer(conf_motion_hd);
 }
 
@@ -683,6 +697,7 @@ TEST_P(GenericDescriptorTest, ScreenshareSlidesVP8_2TL_LossyNet) {
   screenshare.config->loss_percent = 5;
   screenshare.config->queue_delay_ms = 200;
   screenshare.config->link_capacity_kbps = 500;
+  screenshare.call.generic_descriptor = GenericDescriptorEnabled();
   fixture->RunWithAnalyzer(screenshare);
 }
 
