@@ -1066,7 +1066,6 @@ if (is_ios || is_mac) {
             "../rtc_base:rtc_base",
             "../rtc_base:rtc_base_tests_utils",
             "../system_wrappers:system_wrappers",
-            "../system_wrappers:system_wrappers_default",
             "//third_party/libyuv",
           ]
 
@@ -1182,7 +1181,6 @@ if (is_ios || is_mac) {
           "../modules/video_coding:video_codec_interface",
           "../rtc_base:rtc_base_tests_utils",
           "../rtc_base/system:unused",
-          "../system_wrappers:system_wrappers_default",
           "//test:test_support",
           "//third_party/ocmock",
         ]

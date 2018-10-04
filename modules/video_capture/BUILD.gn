@@ -190,7 +190,6 @@ if (!build_with_chromium) {
         "../../common_video:common_video",
         "../../rtc_base:rtc_base_approved",
         "../../system_wrappers:system_wrappers",
-        "../../system_wrappers:system_wrappers_default",
         "../../test:video_test_common",
         "../utility",
         "//testing/gtest",

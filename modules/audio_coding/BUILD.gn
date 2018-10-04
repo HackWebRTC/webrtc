@@ -1508,7 +1508,6 @@ if (rtc_include_tests) {
         ":neteq_test_tools",
         "../..:webrtc_common",
         "../../rtc_base:rtc_base_approved",
-        "../../system_wrappers:system_wrappers_default",
         "../../test:test_support",
         "//third_party/abseil-cpp/absl/memory",
       ]
@@ -1581,7 +1580,6 @@ if (rtc_include_tests) {
       "../..:webrtc_common",
       "../../api:libjingle_peerconnection_api",
       "../../rtc_base:rtc_base_approved",
-      "../../system_wrappers:system_wrappers_default",
       "../../test:test_main",
       "../audio_processing",
       "//testing/gtest",
@@ -1656,7 +1654,6 @@ if (rtc_include_tests) {
              "../../api/audio_codecs/L16:audio_encoder_L16",
              "../../api/audio_codecs/g722:audio_encoder_g722",
              "../../api/audio_codecs/ilbc:audio_encoder_ilbc",
-             "../../system_wrappers:system_wrappers_default",
              "../../api/audio_codecs/isac:audio_encoder_isac",
              "../../api/audio_codecs/opus:audio_encoder_opus",
              "../../rtc_base:rtc_base_approved",
@@ -1673,7 +1670,6 @@ if (rtc_include_tests) {
     testonly = true
 
     deps = audio_coding_deps + [
-             "../../system_wrappers:system_wrappers_default",
              "../rtp_rtcp:rtp_rtcp_format",
              "../../api:array_view",
              "../../rtc_base:rtc_base_approved",
@@ -1696,7 +1692,6 @@ if (rtc_include_tests) {
     deps = [
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
-      "../../system_wrappers:system_wrappers_default",
       "../../test:rtp_test_utils",
       "//testing/gtest",
     ]
@@ -1714,7 +1709,6 @@ if (rtc_include_tests) {
       ":neteq_test_tools",
       ":pcm16b",
       "../../rtc_base:rtc_base_approved",
-      "../../system_wrappers:system_wrappers_default",
       "//testing/gtest",
     ]
   }
@@ -1749,7 +1743,6 @@ if (rtc_include_tests) {
       ":neteq_test_support",
       "../..:webrtc_common",
       "../../rtc_base:rtc_base_approved",
-      "../../system_wrappers:system_wrappers_default",
       "../../test:fileutils",
       "../../test:test_support",
     ]
@@ -1770,7 +1763,6 @@ if (rtc_include_tests) {
       "../..:webrtc_common",
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
-      "../../system_wrappers:system_wrappers_default",
       "../../test:fileutils",
       "../../test:test_main",
       "//testing/gtest",

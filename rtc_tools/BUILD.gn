@@ -221,7 +221,6 @@ if (!build_with_chromium) {
       deps = [
         "../modules/audio_device",
         "../modules/audio_device:audio_device_impl",
-        "../system_wrappers:system_wrappers_default",
       ]
     }
   }
@@ -279,7 +278,6 @@ if (!build_with_chromium) {
         "../modules/congestion_controller/goog_cc:estimators",
         "../modules/pacing",
         "../modules/rtp_rtcp",
-        "../system_wrappers:system_wrappers_default",
         "//third_party/abseil-cpp/absl/memory",
       ]
     }
@@ -428,7 +426,6 @@ if (rtc_include_tests) {
         "../modules/audio_processing:audioproc_test_utils",
         "../rtc_base:protobuf_utils",
         "../rtc_base:rtc_base_approved",
-        "../system_wrappers:system_wrappers_default",
       ]
     }  # unpack_aecdump
   }

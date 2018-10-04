@@ -111,7 +111,6 @@ if (rtc_include_tests) {
       "../../api/audio:audio_mixer_api",
       "../../common_audio",
       "../../rtc_base:rtc_base_approved",
-      "../../system_wrappers:system_wrappers_default",
     ]
   }
 }

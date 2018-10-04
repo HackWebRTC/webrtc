@@ -539,7 +539,6 @@ if (rtc_include_tests) {
         "../../rtc_base:rtc_task_queue",
         "../../rtc_base:stringutils",
         "../../system_wrappers",
-        "../../system_wrappers:system_wrappers_default",
         "../../test:test_support",
         "aec_dump",
         "aec_dump:aec_dump_impl",

@@ -385,7 +385,6 @@ if (!build_with_chromium) {
       "ortc",
       "rtc_base",
       "sdk",
-      "system_wrappers:system_wrappers_default",
       "video",
     ]
 

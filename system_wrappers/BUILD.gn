@@ -125,12 +125,6 @@ rtc_source_set("metrics") {
   ]
 }
 
-group("system_wrappers_default") {
-  deps = [
-    ":system_wrappers",
-  ]
-}
-
 if (is_android && !build_with_mozilla) {
   rtc_static_library("cpu_features_android") {
     sources = [
