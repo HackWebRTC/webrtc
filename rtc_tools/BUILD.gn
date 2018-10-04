@@ -261,7 +261,6 @@ if (!build_with_chromium) {
         "../logging:rtc_event_log_impl_base",
         "../logging:rtc_event_log_parser",
         "../logging:rtc_stream_config",
-        "../modules:module_api",
         "../modules/audio_coding:ana_debug_dump_proto",
         "../modules/audio_coding:audio_network_adaptor",
         "../modules/audio_coding:neteq_tools",

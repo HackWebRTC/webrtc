@@ -13,7 +13,6 @@
 #include <utility>
 
 #include "common_video/h264/h264_common.h"
-#include "modules/include/module_common_types.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "modules/video_coding/utility/vp8_header_parser.h"

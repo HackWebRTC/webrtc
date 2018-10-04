@@ -12,7 +12,6 @@
 
 #include <utility>
 
-#include "modules/include/module_common_types.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/timeutils.h"
 
