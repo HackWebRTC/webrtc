@@ -20,6 +20,26 @@
 #include "rtc_base/random.h"
 #include "rtc_base/timeutils.h"
 
+namespace {
+
+// Write width and height to the payload the same way as the real encoder does.
+// It requires that |payload| has a size of at least kMinPayLoadHeaderLength.
+void WriteFakeVp8(unsigned char* payload,
+                  int width,
+                  int height,
+                  bool key_frame) {
+  payload[0] = key_frame ? 0 : 0x01;
+
+  if (key_frame) {
+    payload[9] = (height & 0x3F00) >> 8;
+    payload[8] = (height & 0x00FF);
+
+    payload[7] = (width & 0x3F00) >> 8;
+    payload[6] = (width & 0x00FF);
+  }
+}
+}  // namespace
+
 namespace webrtc {
 
 namespace test {
@@ -105,6 +125,11 @@ EncodedImageCallback::Result FakeVP8Encoder::OnEncodedImage(
                         encoded_image._frameType, stream_idx,
                         encoded_image.Timestamp());
 
+  // Write width and height to the payload the same way as the real encoder
+  // does.
+  WriteFakeVp8(encoded_image._buffer, encoded_image._encodedWidth,
+               encoded_image._encodedHeight,
+               encoded_image._frameType == kVideoFrameKey);
   return callback_->OnEncodedImage(encoded_image, &overrided_specific_info,
                                    fragments);
 }

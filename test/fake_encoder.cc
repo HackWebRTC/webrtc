@@ -94,7 +94,8 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
       NextFrame(frame_types, keyframe, num_simulcast_streams, target_bitrate,
                 simulcast_streams, framerate);
   for (uint8_t i = 0; i < frame_info.layers.size(); ++i) {
-    if (frame_info.layers[i].size == 0) {
+    constexpr int kMinPayLoadLength = 10;
+    if (frame_info.layers[i].size < kMinPayLoadLength) {
       // Drop this temporal layer.
       continue;
     }

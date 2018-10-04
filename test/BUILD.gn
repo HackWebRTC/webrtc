@@ -523,6 +523,8 @@ rtc_source_set("fake_video_codecs") {
     "fake_decoder.h",
     "fake_encoder.cc",
     "fake_encoder.h",
+    "fake_vp8_decoder.cc",
+    "fake_vp8_decoder.h",
     "fake_vp8_encoder.cc",
     "fake_vp8_encoder.h",
   ]

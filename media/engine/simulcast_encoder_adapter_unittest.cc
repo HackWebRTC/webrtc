@@ -144,6 +144,12 @@ TEST(SimulcastEncoderAdapterSimulcastTest,
   fixture->TestSpatioTemporalLayers321PatternEncoder();
 }
 
+TEST(SimulcastEncoderAdapterSimulcastTest, TestDecodeWidthHeightSet) {
+  InternalEncoderFactory internal_encoder_factory;
+  auto fixture = CreateSpecificSimulcastTestFixture(&internal_encoder_factory);
+  fixture->TestDecodeWidthHeightSet();
+}
+
 class MockVideoEncoder;
 
 class MockVideoEncoderFactory : public VideoEncoderFactory {
