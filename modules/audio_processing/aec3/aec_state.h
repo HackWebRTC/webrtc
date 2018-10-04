@@ -32,7 +32,6 @@
 #include "modules/audio_processing/aec3/subtractor_output.h"
 #include "modules/audio_processing/aec3/subtractor_output_analyzer.h"
 #include "modules/audio_processing/aec3/suppression_gain_limiter.h"
-#include "rtc_base/constructormagic.h"
 
 namespace webrtc {
 
@@ -46,10 +45,14 @@ class AecState {
 
   // Returns whether the echo subtractor can be used to determine the residual
   // echo.
-  bool UsableLinearEstimate() const { return usable_linear_estimate_; }
+  bool UsableLinearEstimate() const {
+    return filter_quality_state_.LinearFilterUsable();
+  }
 
   // Returns whether the echo subtractor output should be used as output.
-  bool UseLinearFilterOutput() const { return use_linear_filter_output_; }
+  bool UseLinearFilterOutput() const {
+    return filter_quality_state_.LinearFilterUsable();
+  }
 
   // Returns the estimated echo path gain.
   float EchoPathGain() const { return filter_analyzer_.Gain(); }
@@ -59,10 +62,7 @@ class AecState {
 
   // Returns the appropriate scaling of the residual echo to match the
   // audibility.
-  void GetResidualEchoScaling(rtc::ArrayView<float> residual_scaling) const {
-    echo_audibility_.GetResidualEchoScaling(filter_has_had_time_to_converge_,
-                                            residual_scaling);
-  }
+  void GetResidualEchoScaling(rtc::ArrayView<float> residual_scaling) const;
 
   // Returns whether the stationary properties of the signals are used in the
   // aec.
@@ -75,13 +75,11 @@ class AecState {
     return erle_estimator_.Erle();
   }
 
-  // Returns any uncertainty in the ERLE estimate.
-  absl::optional<float> ErleUncertainty() const {
-    if (!filter_has_had_time_to_converge_) {
-      return 1.f;
-    }
-    return absl::nullopt;
-  }
+  // Returns an offset to apply to the estimation of the residual echo
+  // computation. Returning nullopt means that no offset should be used, while
+  // any other value will be applied as a multiplier to the estimated residual
+  // echo.
+  absl::optional<float> ErleUncertainty() const;
 
   // Returns the fullband ERLE estimate in log2 units.
   float FullBandErleLog2() const { return erle_estimator_.FullbandErleLog2(); }
@@ -95,16 +93,13 @@ class AecState {
   float ErlTimeDomain() const { return erl_estimator_.ErlTimeDomain(); }
 
   // Returns the delay estimate based on the linear filter.
-  int FilterDelayBlocks() const { return filter_delay_blocks_; }
-
-  // Returns the internal delay estimate based on the linear filter.
-  absl::optional<int> InternalDelay() const { return internal_delay_; }
+  int FilterDelayBlocks() const { return delay_state_.DirectPathFilterDelay(); }
 
   // Returns whether the capture signal is saturated.
   bool SaturatedCapture() const { return capture_signal_saturation_; }
 
   // Returns whether the echo signal is saturated.
-  bool SaturatedEcho() const { return echo_saturation_; }
+  bool SaturatedEcho() const { return saturation_detector_.SaturatedEcho(); }
 
   // Updates the capture signal saturation.
   void UpdateCaptureSaturation(bool capture_signal_saturation) {
@@ -112,7 +107,7 @@ class AecState {
   }
 
   // Returns whether the transparent mode is active
-  bool TransparentMode() const { return transparent_mode_; }
+  bool TransparentMode() const { return transparent_state_.Active(); }
 
   // Takes appropriate action at an echo path change.
   void HandleEchoPathChange(const EchoPathVariability& echo_path_variability);
@@ -135,14 +130,11 @@ class AecState {
     return suppression_gain_limiter_.IsActive();
   }
 
-  // Returns whether the linear filter should have been able to properly adapt.
-  bool FilterHasHadTimeToConverge() const {
-    return filter_has_had_time_to_converge_;
-  }
-
   // Returns whether the transition for going out of the initial stated has
   // been triggered.
-  bool TransitionTriggered() const { return transition_triggered_; }
+  bool TransitionTriggered() const {
+    return initial_state_.TransitionTriggered();
+  }
 
   // Updates the aec state.
   void Update(const absl::optional<DelayEstimate>& external_delay,
@@ -161,7 +153,6 @@ class AecState {
   }
 
  private:
-  bool DetectActiveRender(rtc::ArrayView<const float> x) const;
   void UpdateSuppressorGainLimit(bool render_activity);
   bool DetectEchoSaturation(rtc::ArrayView<const float> x,
                             float echo_path_gain);
@@ -169,46 +160,169 @@ class AecState {
   static int instance_count_;
   std::unique_ptr<ApmDataDumper> data_dumper_;
   const EchoCanceller3Config config_;
+
+  // Class for controlling the transition from the intial state, which in turn
+  // controls when the filter parameters for the initial state should be used.
+  class InitialState {
+   public:
+    explicit InitialState(const EchoCanceller3Config& config);
+    // Resets the state to again begin in the initial state.
+    void Reset();
+
+    // Updates the state based on new data.
+    void Update(bool active_render, bool saturated_capture);
+
+    // Returns whether the initial state is active or not.
+    bool InitialStateActive() const { return initial_state_; }
+
+    // Returns that the transition from the initial state has was started.
+    bool TransitionTriggered() const { return transition_triggered_; }
+
+   private:
+    const bool conservative_initial_phase_;
+    const float initial_state_seconds_;
+    bool transition_triggered_ = false;
+    bool initial_state_ = true;
+    size_t strong_not_saturated_render_blocks_ = 0;
+  } initial_state_;
+
+  // Class for choosing the direct-path delay relative to the beginning of the
+  // filter, as well as any other data related to the delay used within
+  // AecState.
+  class FilterDelay {
+   public:
+    explicit FilterDelay(const EchoCanceller3Config& config);
+
+    // Returns whether an external delay has been reported to the AecState (from
+    // the delay estimator).
+    bool ExternalDelayReported() const { return external_delay_reported_; }
+
+    // Returns the delay in blocks relative to the beginning of the filter that
+    // corresponds to the direct path of the echo.
+    int DirectPathFilterDelay() const { return filter_delay_blocks_; }
+
+    // Updates the delay estimates based on new data.
+    void Update(const FilterAnalyzer& filter_analyzer,
+                const absl::optional<DelayEstimate>& external_delay,
+                size_t blocks_with_proper_filter_adaptation);
+
+   private:
+    const int delay_headroom_blocks_;
+    bool external_delay_reported_ = false;
+    int filter_delay_blocks_ = 0;
+    absl::optional<DelayEstimate> external_delay_;
+  } delay_state_;
+
+  // Class for detecting and toggling the transparent mode which causes the
+  // suppressor to apply no suppression.
+  class TransparentMode {
+   public:
+    explicit TransparentMode(const EchoCanceller3Config& config);
+
+    // Returns whether the transparent mode should be active.
+    bool Active() const { return transparency_activated_; }
+
+    // Resets the state of the detector.
+    void Reset();
+
+    // Updates the detection deciscion based on new data.
+    void Update(int filter_delay_blocks,
+                bool consistent_filter,
+                bool converged_filter,
+                bool diverged_filter,
+                bool active_render,
+                bool saturated_capture);
+
+   private:
+    const bool bounded_erl_;
+    const bool linear_and_stable_echo_path_;
+    size_t capture_block_counter_ = 0;
+    bool transparency_activated_ = false;
+    size_t active_blocks_since_sane_filter_;
+    bool sane_filter_observed_ = false;
+    bool finite_erl_recently_detected_ = false;
+    size_t non_converged_sequence_size_;
+    size_t diverged_sequence_size_ = 0;
+    size_t active_non_converged_sequence_size_ = 0;
+    size_t num_converged_blocks_ = 0;
+    bool recent_convergence_during_activity_ = false;
+    size_t strong_not_saturated_render_blocks_ = 0;
+  } transparent_state_;
+
+  // Class for analyzing how well the linear filter is, and can be expected to,
+  // perform on the current signals. The purpose of this is for using to
+  // select the echo suppression functionality as well as the input to the echo
+  // suppressor.
+  class FilteringQualityAnalyzer {
+   public:
+    explicit FilteringQualityAnalyzer(const EchoCanceller3Config& config);
+
+    // Returns whether the the linear filter is can be used for the echo
+    // canceller output.
+    bool LinearFilterUsable() const { return usable_linear_estimate_; }
+
+    // Resets the state of the analyzer.
+    void Reset();
+
+    // Updates the analysis based on new data.
+    void Update(bool saturated_echo,
+                bool active_render,
+                bool saturated_capture,
+                bool transparent_mode,
+                const absl::optional<DelayEstimate>& external_delay,
+                bool converged_filter,
+                bool diverged_filter);
+
+   private:
+    const bool conservative_initial_phase_;
+    const float required_blocks_for_convergence_;
+    const bool linear_and_stable_echo_path_;
+    bool usable_linear_estimate_ = false;
+    size_t strong_not_saturated_render_blocks_ = 0;
+    size_t non_converged_sequence_size_;
+    size_t diverged_sequence_size_ = 0;
+    size_t active_non_converged_sequence_size_ = 0;
+    bool recent_convergence_during_activity_ = false;
+    bool recent_convergence_ = false;
+  } filter_quality_state_;
+
+  // Class for detecting whether the echo is to be considered to be saturated.
+  // The purpose of this is to allow customized behavior in the echo suppressor
+  // for when the echo is saturated.
+  class SaturationDetector {
+   public:
+    explicit SaturationDetector(const EchoCanceller3Config& config);
+
+    // Returns whether the echo is to be considered saturated.
+    bool SaturatedEcho() const { return saturated_echo_; };
+
+    // Resets the state of the detector.
+    void Reset();
+
+    // Updates the detection decision based on new data.
+    void Update(rtc::ArrayView<const float> x,
+                bool saturated_capture,
+                float echo_path_gain);
+
+   private:
+    const bool echo_can_saturate_;
+    size_t not_saturated_sequence_size_;
+    bool saturated_echo_ = false;
+  } saturation_detector_;
+
   ErlEstimator erl_estimator_;
   ErleEstimator erle_estimator_;
-  size_t capture_block_counter_ = 0;
-  size_t blocks_since_reset_ = 0;
-  size_t blocks_with_proper_filter_adaptation_ = 0;
+  size_t strong_not_saturated_render_blocks_ = 0;
   size_t blocks_with_active_render_ = 0;
-  bool usable_linear_estimate_ = false;
   bool capture_signal_saturation_ = false;
-  bool echo_saturation_ = false;
-  bool transparent_mode_ = false;
-  bool render_received_ = false;
-  int filter_delay_blocks_ = 0;
-  size_t blocks_since_last_saturation_ = 1000;
 
-  std::vector<float> max_render_;
-  bool filter_has_had_time_to_converge_ = false;
-  bool initial_state_ = true;
-  bool transition_triggered_ = false;
-  const float gain_rampup_increase_;
   SuppressionGainUpperLimiter suppression_gain_limiter_;
   FilterAnalyzer filter_analyzer_;
-  bool use_linear_filter_output_ = false;
-  absl::optional<int> internal_delay_;
-  size_t diverged_blocks_ = 0;
-  bool filter_should_have_converged_ = false;
-  size_t blocks_since_converged_filter_;
-  size_t active_blocks_since_consistent_filter_estimate_;
-  bool converged_filter_seen_ = false;
-  bool consistent_filter_seen_ = false;
-  bool external_delay_seen_ = false;
   absl::optional<DelayEstimate> external_delay_;
-  size_t frames_since_external_delay_change_ = 0;
-  size_t converged_filter_count_ = 0;
-  bool finite_erl_ = false;
-  size_t active_blocks_since_converged_filter_ = 0;
   EchoAudibility echo_audibility_;
   ReverbModelEstimator reverb_model_estimator_;
   SubtractorOutputAnalyzer subtractor_output_analyzer_;
   bool enable_erle_resets_at_gain_changes_ = true;
-  RTC_DISALLOW_COPY_AND_ASSIGN(AecState);
 };
 
 }  // namespace webrtc

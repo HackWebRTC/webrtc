@@ -16,19 +16,24 @@
 
 namespace webrtc {
 
-ErleEstimator::ErleEstimator(float min_erle,
+ErleEstimator::ErleEstimator(size_t startup_phase_length_blocks_,
+                             float min_erle,
                              float max_erle_lf,
                              float max_erle_hf)
-    : fullband_erle_estimator_(min_erle, max_erle_lf),
+    : startup_phase_length_blocks__(startup_phase_length_blocks_),
+      fullband_erle_estimator_(min_erle, max_erle_lf),
       subband_erle_estimator_(min_erle, max_erle_lf, max_erle_hf) {
-  Reset();
+  Reset(true);
 }
 
 ErleEstimator::~ErleEstimator() = default;
 
-void ErleEstimator::Reset() {
+void ErleEstimator::Reset(bool delay_change) {
   fullband_erle_estimator_.Reset();
   subband_erle_estimator_.Reset();
+  if (delay_change) {
+    blocks_since_reset_ = 0;
+  }
 }
 
 void ErleEstimator::Update(rtc::ArrayView<const float> render_spectrum,
@@ -42,6 +47,10 @@ void ErleEstimator::Update(rtc::ArrayView<const float> render_spectrum,
   const auto& X2 = render_spectrum;
   const auto& Y2 = capture_spectrum;
   const auto& E2 = subtractor_spectrum;
+
+  if (++blocks_since_reset_ < startup_phase_length_blocks__) {
+    return;
+  }
 
   subband_erle_estimator_.Update(X2, Y2, E2, converged_filter, onset_detection);
   fullband_erle_estimator_.Update(X2, Y2, E2, converged_filter);

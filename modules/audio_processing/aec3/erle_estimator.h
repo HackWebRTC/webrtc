@@ -27,11 +27,14 @@ namespace webrtc {
 // and another one is done using the aggreation of energy over all the subbands.
 class ErleEstimator {
  public:
-  ErleEstimator(float min_erle, float max_erle_lf, float max_erle_hf);
+  ErleEstimator(size_t startup_phase_length_blocks_,
+                float min_erle,
+                float max_erle_lf,
+                float max_erle_hf);
   ~ErleEstimator();
 
   // Resets the fullband ERLE estimator and the subbands ERLE estimators.
-  void Reset();
+  void Reset(bool delay_change);
 
   // Updates the ERLE estimates.
   void Update(rtc::ArrayView<const float> render_spectrum,
@@ -66,8 +69,10 @@ class ErleEstimator {
   void Dump(const std::unique_ptr<ApmDataDumper>& data_dumper) const;
 
  private:
+  const size_t startup_phase_length_blocks__;
   FullBandErleEstimator fullband_erle_estimator_;
   SubbandErleEstimator subband_erle_estimator_;
+  size_t blocks_since_reset_ = 0;
 };
 
 }  // namespace webrtc

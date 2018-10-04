@@ -68,7 +68,7 @@ TEST(ErleEstimator, VerifyErleIncreaseAndHold) {
   std::array<float, kFftLengthBy2Plus1> E2;
   std::array<float, kFftLengthBy2Plus1> Y2;
 
-  ErleEstimator estimator(kMinErle, kMaxErleLf, kMaxErleHf);
+  ErleEstimator estimator(0, kMinErle, kMaxErleLf, kMaxErleHf);
 
   // Verifies that the ERLE estimate is properly increased to higher values.
   FormFarendFrame(&X2, &E2, &Y2, kTrueErle);
@@ -94,7 +94,7 @@ TEST(ErleEstimator, VerifyErleTrackingOnOnsets) {
   std::array<float, kFftLengthBy2Plus1> E2;
   std::array<float, kFftLengthBy2Plus1> Y2;
 
-  ErleEstimator estimator(kMinErle, kMaxErleLf, kMaxErleHf);
+  ErleEstimator estimator(0, kMinErle, kMaxErleLf, kMaxErleHf);
 
   for (size_t burst = 0; burst < 20; ++burst) {
     FormFarendFrame(&X2, &E2, &Y2, kTrueErleOnsets);
