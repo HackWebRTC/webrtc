@@ -88,8 +88,6 @@ class VideoSendStream : public webrtc::VideoSendStream {
   void StopPermanentlyAndGetRtpStates(RtpStateMap* rtp_state_map,
                                       RtpPayloadStateMap* payload_state_map);
 
-  void SetTransportOverhead(size_t transport_overhead_per_packet);
-
  private:
   friend class test::VideoSendStreamPeer;
 

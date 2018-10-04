@@ -221,8 +221,8 @@ class Call final : public webrtc::Call,
 
   void SignalChannelNetworkState(MediaType media, NetworkState state) override;
 
-  void OnTransportOverheadChanged(MediaType media,
-                                  int transport_overhead_per_packet) override;
+  void OnAudioTransportOverheadChanged(
+      int transport_overhead_per_packet) override;
 
   void OnSentPacket(const rtc::SentPacket& sent_packet) override;
 
@@ -997,27 +997,10 @@ void Call::SignalChannelNetworkState(MediaType media, NetworkState state) {
   }
 }
 
-void Call::OnTransportOverheadChanged(MediaType media,
-                                      int transport_overhead_per_packet) {
-  switch (media) {
-    case MediaType::AUDIO: {
-      ReadLockScoped read_lock(*send_crit_);
-      for (auto& kv : audio_send_ssrcs_) {
-        kv.second->SetTransportOverhead(transport_overhead_per_packet);
-      }
-      break;
-    }
-    case MediaType::VIDEO: {
-      ReadLockScoped read_lock(*send_crit_);
-      for (auto& kv : video_send_ssrcs_) {
-        kv.second->SetTransportOverhead(transport_overhead_per_packet);
-      }
-      break;
-    }
-    case MediaType::ANY:
-    case MediaType::DATA:
-      RTC_NOTREACHED();
-      break;
+void Call::OnAudioTransportOverheadChanged(int transport_overhead_per_packet) {
+  ReadLockScoped read_lock(*send_crit_);
+  for (auto& kv : audio_send_ssrcs_) {
+    kv.second->SetTransportOverhead(transport_overhead_per_packet);
   }
 }
 

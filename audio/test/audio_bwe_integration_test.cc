@@ -138,7 +138,7 @@ class NoBandwidthDropAfterDtx : public AudioBweTest {
   void PerformTest() override {
     stats_poller_.PostDelayedTask(
         std::unique_ptr<rtc::QueuedTask>(new StatsPollTask(sender_call_)), 100);
-    sender_call_->OnTransportOverheadChanged(webrtc::MediaType::AUDIO, 0);
+    sender_call_->OnAudioTransportOverheadChanged(0);
     AudioBweTest::PerformTest();
   }
 

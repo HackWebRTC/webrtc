@@ -1408,8 +1408,8 @@ void WebRtcVideoChannel::OnNetworkRouteChanged(
     const rtc::NetworkRoute& network_route) {
   call_->GetTransportControllerSend()->OnNetworkRouteChanged(transport_name,
                                                              network_route);
-  call_->OnTransportOverheadChanged(webrtc::MediaType::VIDEO,
-                                    network_route.packet_overhead);
+  call_->GetTransportControllerSend()->OnTransportOverheadChanged(
+      network_route.packet_overhead);
 }
 
 void WebRtcVideoChannel::SetInterface(NetworkInterface* iface) {

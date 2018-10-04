@@ -157,10 +157,9 @@ void DegradedCall::SignalChannelNetworkState(MediaType media,
   call_->SignalChannelNetworkState(media, state);
 }
 
-void DegradedCall::OnTransportOverheadChanged(
-    MediaType media,
+void DegradedCall::OnAudioTransportOverheadChanged(
     int transport_overhead_per_packet) {
-  call_->OnTransportOverheadChanged(media, transport_overhead_per_packet);
+  call_->OnAudioTransportOverheadChanged(transport_overhead_per_packet);
 }
 
 void DegradedCall::OnSentPacket(const rtc::SentPacket& sent_packet) {

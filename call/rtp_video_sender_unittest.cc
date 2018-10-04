@@ -13,6 +13,7 @@
 
 #include "call/rtp_transport_controller_send.h"
 #include "call/rtp_video_sender.h"
+#include "modules/video_coding/fec_controller_default.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "rtc_base/rate_limiter.h"
 #include "test/field_trial.h"
@@ -46,11 +47,6 @@ class MockRtcpIntraFrameObserver : public RtcpIntraFrameObserver {
   MOCK_METHOD1(OnReceivedIntraFrameRequest, void(uint32_t));
 };
 
-class MockOverheadObserver : public OverheadObserver {
- public:
-  MOCK_METHOD1(OnOverheadChanged, void(size_t overhead_bytes_per_packet));
-};
-
 class MockCongestionObserver : public NetworkChangedObserver {
  public:
   MOCK_METHOD4(OnNetworkChanged,
@@ -69,8 +65,7 @@ RtpSenderObservers CreateObservers(
     FrameCountObserver* frame_count_observer,
     RtcpPacketTypeCounterObserver* rtcp_type_observer,
     SendSideDelayObserver* send_delay_observer,
-    SendPacketObserver* send_packet_observer,
-    OverheadObserver* overhead_observer) {
+    SendPacketObserver* send_packet_observer) {
   RtpSenderObservers observers;
   observers.rtcp_rtt_stats = rtcp_rtt_stats;
   observers.intra_frame_callback = intra_frame_callback;
@@ -81,7 +76,6 @@ RtpSenderObservers CreateObservers(
   observers.rtcp_type_observer = rtcp_type_observer;
   observers.send_delay_observer = send_delay_observer;
   observers.send_packet_observer = send_packet_observer;
-  observers.overhead_observer = overhead_observer;
   return observers;
 }
 
@@ -111,9 +105,9 @@ class RtpVideoSenderTestFixture {
         config_.rtp, config_.rtcp, &transport_,
         CreateObservers(&call_stats_, &encoder_feedback_, &stats_proxy_,
                         &stats_proxy_, &stats_proxy_, &stats_proxy_,
-                        &stats_proxy_, &stats_proxy_, &send_delay_stats_,
-                        &overhead_observer_),
-        &transport_controller_, &event_log_, &retransmission_rate_limiter_);
+                        &stats_proxy_, &stats_proxy_, &send_delay_stats_),
+        &transport_controller_, &event_log_, &retransmission_rate_limiter_,
+        absl::make_unique<FecControllerDefault>(&clock_));
   }
 
   RtpVideoSender* router() { return router_.get(); }
@@ -121,7 +115,6 @@ class RtpVideoSenderTestFixture {
  private:
   NiceMock<MockTransport> transport_;
   NiceMock<MockCongestionObserver> congestion_observer_;
-  NiceMock<MockOverheadObserver> overhead_observer_;
   NiceMock<MockRtcpIntraFrameObserver> encoder_feedback_;
   SimulatedClock clock_;
   RtcEventLogNullImpl event_log_;

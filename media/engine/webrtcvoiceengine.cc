@@ -2059,8 +2059,7 @@ void WebRtcVoiceMediaChannel::OnNetworkRouteChanged(
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   call_->GetTransportControllerSend()->OnNetworkRouteChanged(transport_name,
                                                              network_route);
-  call_->OnTransportOverheadChanged(webrtc::MediaType::AUDIO,
-                                    network_route.packet_overhead);
+  call_->OnAudioTransportOverheadChanged(network_route.packet_overhead);
 }
 
 bool WebRtcVoiceMediaChannel::MuteStream(uint32_t ssrc, bool muted) {

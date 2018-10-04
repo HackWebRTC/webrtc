@@ -197,15 +197,6 @@ void VideoSendStream::StopPermanentlyAndGetRtpStates(
   thread_sync_event_.Wait(rtc::Event::kForever);
 }
 
-void VideoSendStream::SetTransportOverhead(
-    size_t transport_overhead_per_packet) {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
-  VideoSendStreamImpl* send_stream = send_stream_.get();
-  worker_queue_->PostTask([send_stream, transport_overhead_per_packet] {
-    send_stream->SetTransportOverhead(transport_overhead_per_packet);
-  });
-}
-
 bool VideoSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
   // Called on a network thread.
   return send_stream_->DeliverRtcp(packet, length);

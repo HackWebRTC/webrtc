@@ -390,9 +390,7 @@ FakeCall::FakeCall()
     : audio_network_state_(webrtc::kNetworkUp),
       video_network_state_(webrtc::kNetworkUp),
       num_created_send_streams_(0),
-      num_created_receive_streams_(0),
-      audio_transport_overhead_(0),
-      video_transport_overhead_(0) {}
+      num_created_receive_streams_(0) {}
 
 FakeCall::~FakeCall() {
   EXPECT_EQ(0u, video_send_streams_.size());
@@ -635,21 +633,8 @@ void FakeCall::SignalChannelNetworkState(webrtc::MediaType media,
   }
 }
 
-void FakeCall::OnTransportOverheadChanged(webrtc::MediaType media,
-                                          int transport_overhead_per_packet) {
-  switch (media) {
-    case webrtc::MediaType::AUDIO:
-      audio_transport_overhead_ = transport_overhead_per_packet;
-      break;
-    case webrtc::MediaType::VIDEO:
-      video_transport_overhead_ = transport_overhead_per_packet;
-      break;
-    case webrtc::MediaType::DATA:
-    case webrtc::MediaType::ANY:
-      ADD_FAILURE()
-          << "SignalChannelNetworkState called with unknown parameter.";
-  }
-}
+void FakeCall::OnAudioTransportOverheadChanged(
+    int transport_overhead_per_packet) {}
 
 void FakeCall::OnSentPacket(const rtc::SentPacket& sent_packet) {
   last_sent_packet_ = sent_packet;

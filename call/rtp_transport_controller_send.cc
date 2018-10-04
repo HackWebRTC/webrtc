@@ -22,6 +22,7 @@
 namespace webrtc {
 namespace {
 static const int64_t kRetransmitWindowSizeMs = 500;
+static const size_t kMaxOverheadBytes = 500;
 const char kTaskQueueExperiment[] = "WebRTC-TaskQueueCongestionControl";
 using TaskQueueController = webrtc::webrtc_cc::SendSideCongestionController;
 
@@ -92,13 +93,15 @@ RtpVideoSenderInterface* RtpTransportControllerSend::CreateRtpVideoSender(
     const RtcpConfig& rtcp_config,
     Transport* send_transport,
     const RtpSenderObservers& observers,
-    RtcEventLog* event_log) {
+    RtcEventLog* event_log,
+    std::unique_ptr<FecController> fec_controller) {
   video_rtp_senders_.push_back(absl::make_unique<RtpVideoSender>(
       ssrcs, suspended_ssrcs, states, rtp_config, rtcp_config, send_transport,
       observers,
       // TODO(holmer): Remove this circular dependency by injecting
       // the parts of RtpTransportControllerSendInterface that are really used.
-      this, event_log, &retransmission_rate_limiter_));
+      this, event_log, &retransmission_rate_limiter_,
+      std::move(fec_controller)));
   return video_rtp_senders_.back().get();
 }
 
@@ -313,6 +316,21 @@ void RtpTransportControllerSend::SetAllocatedBitrateWithoutFeedback(
     // TODO(srte): Make sure it's safe to always report this and remove the
     // field trial check.
     send_side_cc_->SetAllocatedBitrateWithoutFeedback(bitrate_bps);
+  }
+}
+
+void RtpTransportControllerSend::OnTransportOverheadChanged(
+    size_t transport_overhead_bytes_per_packet) {
+  if (transport_overhead_bytes_per_packet >= kMaxOverheadBytes) {
+    RTC_LOG(LS_ERROR) << "Transport overhead exceeds " << kMaxOverheadBytes;
+    return;
+  }
+
+  // TODO(holmer): Call AudioRtpSenders when they have been moved to
+  // RtpTransportControllerSend.
+  for (auto& rtp_video_sender : video_rtp_senders_) {
+    rtp_video_sender->OnTransportOverheadChanged(
+        transport_overhead_bytes_per_packet);
   }
 }
 }  // namespace webrtc

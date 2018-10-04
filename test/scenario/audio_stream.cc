@@ -75,8 +75,8 @@ SendAudioStream::SendAudioStream(
   }
   send_stream_ = sender_->call_->CreateAudioSendStream(send_config);
   if (field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")) {
-    sender->call_->OnTransportOverheadChanged(
-        MediaType::AUDIO, config.stream.packet_overhead.bytes());
+    sender->call_->OnAudioTransportOverheadChanged(
+        config.stream.packet_overhead.bytes());
   }
 }
 

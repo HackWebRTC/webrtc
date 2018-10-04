@@ -12,7 +12,6 @@
 
 #include <map>
 #include <memory>
-#include <unordered_set>
 #include <vector>
 
 #include "api/video/video_bitrate_allocator.h"
@@ -39,11 +38,8 @@ namespace internal {
 // An encoder may deliver frames through the EncodedImageCallback on an
 // arbitrary thread.
 class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
-                            public webrtc::OverheadObserver,
-                            public webrtc::VCMProtectionCallback,
                             public VideoStreamEncoderInterface::EncoderSink,
-                            public VideoBitrateAllocationObserver,
-                            public webrtc::PacketFeedbackObserver {
+                            public VideoBitrateAllocationObserver {
  public:
   VideoSendStreamImpl(
       SendStatisticsProxy* stats_proxy,
@@ -81,14 +77,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
 
   std::map<uint32_t, RtpPayloadState> GetRtpPayloadStates() const;
 
-  void SetTransportOverhead(size_t transport_overhead_per_packet);
-
   absl::optional<float> configured_pacing_factor_;
-
-  // From PacketFeedbackObserver.
-  void OnPacketAdded(uint32_t ssrc, uint16_t seq_num) override;
-  void OnPacketFeedbackVector(
-      const std::vector<PacketFeedback>& packet_feedback_vector) override;
 
  private:
   class CheckEncoderActivityTask;
@@ -98,16 +87,6 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
                             uint8_t fraction_loss,
                             int64_t rtt,
                             int64_t probing_interval_ms) override;
-
-  // Implements webrtc::VCMProtectionCallback.
-  int ProtectionRequest(const FecProtectionParams* delta_params,
-                        const FecProtectionParams* key_params,
-                        uint32_t* sent_video_rate_bps,
-                        uint32_t* sent_nack_rate_bps,
-                        uint32_t* sent_fec_rate_bps) override;
-
-  // Implements OverheadObserver.
-  void OnOverheadChanged(size_t overhead_bytes_per_packet) override;
 
   void OnEncoderConfigurationChanged(std::vector<VideoStream> streams,
                                      int min_transmit_bitrate_bps) override;
@@ -135,13 +114,11 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   void SignalEncoderTimedOut();
   void SignalEncoderActive();
 
-  const bool send_side_bwe_with_overhead_;
   const bool has_alr_probing_;
 
   SendStatisticsProxy* const stats_proxy_;
   const VideoSendStream::Config* const config_;
 
-  std::unique_ptr<FecController> fec_controller_;
   rtc::TaskQueue* const worker_queue_;
 
   rtc::CriticalSection encoder_activity_crit_sect_;
@@ -174,14 +151,6 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   // |weak_ptr_factory_| must be declared last to make sure all WeakPtr's are
   // invalidated before any other members are destroyed.
   rtc::WeakPtrFactory<VideoSendStreamImpl> weak_ptr_factory_;
-
-  rtc::CriticalSection overhead_bytes_per_packet_crit_;
-  size_t overhead_bytes_per_packet_
-      RTC_GUARDED_BY(overhead_bytes_per_packet_crit_);
-  size_t transport_overhead_bytes_per_packet_;
-
-  std::unordered_set<uint16_t> feedback_packet_seq_num_set_;
-  std::vector<bool> loss_mask_vector_;
 
   // Context for the most recent and last sent video bitrate allocation. Used to
   // throttle sending of similar bitrate allocations.
