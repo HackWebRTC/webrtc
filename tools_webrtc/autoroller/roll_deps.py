@@ -592,7 +592,7 @@ def _UploadCL(commit_queue_mode):
     - 1: Run trybots but do not submit to CQ.
     - 0: Skip CQ, upload only.
   """
-  cmd = ['git', 'cl', 'upload', '-f', '--gerrit']
+  cmd = ['git', 'cl', 'upload', '--force', '--bypass-hooks']
   if commit_queue_mode >= 2:
     logging.info('Sending the CL to the CQ...')
     cmd.extend(['--use-commit-queue', '--send-mail'])
@@ -627,10 +627,6 @@ def main():
   p.add_argument('-r', '--revision',
                  help=('Chromium Git revision to roll to. Defaults to the '
                        'Chromium HEAD revision if omitted.'))
-  p.add_argument('-u', '--rietveld-email',
-                 help=('E-mail address to use for creating the CL at Rietveld'
-                       'If omitted a previously cached one will be used or an '
-                       'error will be thrown during upload.'))
   p.add_argument('--dry-run', action='store_true', default=False,
                  help=('Calculate changes and modify DEPS, but don\'t create '
                        'any local branch, commit, upload CL or send any '
