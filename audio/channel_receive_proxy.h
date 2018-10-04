@@ -17,7 +17,7 @@
 
 #include "api/audio/audio_mixer.h"
 #include "api/rtpreceiverinterface.h"
-#include "audio/channel.h"
+#include "audio/channel_receive.h"
 #include "call/rtp_packet_sink_interface.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/race_checker.h"
@@ -43,13 +43,13 @@ class ChannelSendProxy;
 class ChannelReceiveProxy : public RtpPacketSinkInterface {
  public:
   ChannelReceiveProxy();
-  explicit ChannelReceiveProxy(std::unique_ptr<Channel> channel);
+  explicit ChannelReceiveProxy(std::unique_ptr<ChannelReceive> channel);
   virtual ~ChannelReceiveProxy();
 
   // Shared with ChannelSendProxy
   virtual void SetLocalSSRC(uint32_t ssrc);
   virtual void SetNACKStatus(bool enable, int max_packets);
-  virtual CallStatistics GetRTCPStatistics() const;
+  virtual CallReceiveStatistics GetRTCPStatistics() const;
   virtual void RegisterTransport(Transport* transport);
   virtual bool ReceivedRTCPPacket(const uint8_t* packet, size_t length);
 
@@ -100,7 +100,7 @@ class ChannelReceiveProxy : public RtpPacketSinkInterface {
   // audio thread to another, but access is still sequential.
   rtc::RaceChecker audio_thread_race_checker_;
   rtc::RaceChecker video_capture_thread_race_checker_;
-  std::unique_ptr<Channel> channel_;
+  std::unique_ptr<ChannelReceive> channel_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(ChannelReceiveProxy);
 };

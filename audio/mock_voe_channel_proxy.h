@@ -31,7 +31,7 @@ class MockChannelReceiveProxy : public voe::ChannelReceiveProxy {
   MOCK_METHOD1(RegisterReceiverCongestionControlObjects,
                void(PacketRouter* packet_router));
   MOCK_METHOD0(ResetReceiverCongestionControlObjects, void());
-  MOCK_CONST_METHOD0(GetRTCPStatistics, CallStatistics());
+  MOCK_CONST_METHOD0(GetRTCPStatistics, CallReceiveStatistics());
   MOCK_CONST_METHOD0(GetNetworkStatistics, NetworkStatistics());
   MOCK_CONST_METHOD0(GetDecodingCallStatistics, AudioDecodingCallStats());
   MOCK_CONST_METHOD0(GetSpeechOutputLevelFullRange, int());
@@ -82,7 +82,7 @@ class MockChannelSendProxy : public voe::ChannelSendProxy {
                void(RtpTransportControllerSendInterface* transport,
                     RtcpBandwidthObserver* bandwidth_observer));
   MOCK_METHOD0(ResetSenderCongestionControlObjects, void());
-  MOCK_CONST_METHOD0(GetRTCPStatistics, CallStatistics());
+  MOCK_CONST_METHOD0(GetRTCPStatistics, CallSendStatistics());
   MOCK_CONST_METHOD0(GetRemoteRTCPReportBlocks, std::vector<ReportBlock>());
   MOCK_CONST_METHOD0(GetANAStatistics, ANAStats());
   MOCK_METHOD2(SetSendTelephoneEventPayloadType,

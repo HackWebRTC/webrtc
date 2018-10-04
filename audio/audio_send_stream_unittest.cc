@@ -56,8 +56,7 @@ const double kEchoReturnLoss = -65;
 const double kEchoReturnLossEnhancement = 101;
 const double kResidualEchoLikelihood = -1.0f;
 const double kResidualEchoLikelihoodMax = 23.0f;
-const CallStatistics kCallStats = {1345,  1678,  1901, 1234,  112,
-                                   13456, 17890, 1567, -1890, -1123};
+const CallSendStatistics kCallStats = {112, 13456, 17890};
 const ReportBlock kReportBlock = {456, 780, 123, 567, 890, 132, 143, 13354};
 const int kTelephoneEventPayloadType = 123;
 const int kTelephoneEventPayloadFrequency = 65432;

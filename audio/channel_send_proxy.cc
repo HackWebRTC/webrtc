@@ -22,7 +22,7 @@ namespace webrtc {
 namespace voe {
 ChannelSendProxy::ChannelSendProxy() {}
 
-ChannelSendProxy::ChannelSendProxy(std::unique_ptr<Channel> channel)
+ChannelSendProxy::ChannelSendProxy(std::unique_ptr<ChannelSend> channel)
     : channel_(std::move(channel)) {
   RTC_DCHECK(channel_);
   module_process_thread_checker_.DetachFromThread();
@@ -41,9 +41,9 @@ void ChannelSendProxy::SetNACKStatus(bool enable, int max_packets) {
   channel_->SetNACKStatus(enable, max_packets);
 }
 
-CallStatistics ChannelSendProxy::GetRTCPStatistics() const {
+CallSendStatistics ChannelSendProxy::GetRTCPStatistics() const {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  CallStatistics stats = {0};
+  CallSendStatistics stats = {0};
   int error = channel_->GetRTPStatistics(stats);
   RTC_DCHECK_EQ(0, error);
   return stats;
@@ -193,7 +193,7 @@ void ChannelSendProxy::StopSend() {
   channel_->StopSend();
 }
 
-Channel* ChannelSendProxy::GetChannel() const {
+ChannelSend* ChannelSendProxy::GetChannel() const {
   return channel_.get();
 }
 

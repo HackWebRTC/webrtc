@@ -16,7 +16,7 @@
 #include <vector>
 
 #include "api/audio_codecs/audio_encoder.h"
-#include "audio/channel.h"
+#include "audio/channel_send.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/race_checker.h"
 #include "rtc_base/thread_checker.h"
@@ -39,13 +39,13 @@ namespace voe {
 class ChannelSendProxy {
  public:
   ChannelSendProxy();
-  explicit ChannelSendProxy(std::unique_ptr<Channel> channel);
+  explicit ChannelSendProxy(std::unique_ptr<ChannelSend> channel);
   virtual ~ChannelSendProxy();
 
   // Shared with ChannelReceiveProxy
   virtual void SetLocalSSRC(uint32_t ssrc);
   virtual void SetNACKStatus(bool enable, int max_packets);
-  virtual CallStatistics GetRTCPStatistics() const;
+  virtual CallSendStatistics GetRTCPStatistics() const;
   virtual void RegisterTransport(Transport* transport);
   virtual bool ReceivedRTCPPacket(const uint8_t* packet, size_t length);
 
@@ -82,7 +82,7 @@ class ChannelSendProxy {
   virtual void StopSend();
 
   // Needed by ChannelReceiveProxy::AssociateSendChannel.
-  virtual Channel* GetChannel() const;
+  virtual ChannelSend* GetChannel() const;
 
  private:
   // Thread checkers document and lock usage of some methods on voe::Channel to
@@ -97,7 +97,7 @@ class ChannelSendProxy {
   // audio thread to another, but access is still sequential.
   rtc::RaceChecker audio_thread_race_checker_;
   rtc::RaceChecker video_capture_thread_race_checker_;
-  std::unique_ptr<Channel> channel_;
+  std::unique_ptr<ChannelSend> channel_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(ChannelSendProxy);
 };

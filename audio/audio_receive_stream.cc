@@ -71,7 +71,7 @@ std::unique_ptr<voe::ChannelReceiveProxy> CreateChannelAndProxy(
   internal::AudioState* internal_audio_state =
       static_cast<internal::AudioState*>(audio_state);
   return absl::make_unique<voe::ChannelReceiveProxy>(
-      absl::make_unique<voe::Channel>(
+      absl::make_unique<voe::ChannelReceive>(
           module_process_thread, internal_audio_state->audio_device_module(),
           nullptr /* RtcpRttStats */, event_log, config.rtp.remote_ssrc,
           config.jitter_buffer_max_packets,
@@ -166,7 +166,8 @@ webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
   webrtc::AudioReceiveStream::Stats stats;
   stats.remote_ssrc = config_.rtp.remote_ssrc;
 
-  webrtc::CallStatistics call_stats = channel_proxy_->GetRTCPStatistics();
+  webrtc::CallReceiveStatistics call_stats =
+      channel_proxy_->GetRTCPStatistics();
   // TODO(solenberg): Don't return here if we can't get the codec - return the
   //                  stats we *can* get.
   webrtc::CodecInst codec_inst = {0};
