@@ -41,15 +41,9 @@ TEST(AudioCodingModuleTest, TestEncodeDecode) {
   webrtc::EncodeDecodeTest(ACM_TEST_MODE).Perform();
 }
 
-#if defined(WEBRTC_CODEC_RED)
-#if defined(WEBRTC_ANDROID)
-TEST(AudioCodingModuleTest, DISABLED_TestRedFec) {
-#else
 TEST(AudioCodingModuleTest, TestRedFec) {
-#endif
   webrtc::TestRedFec().Perform();
 }
-#endif
 
 #if defined(WEBRTC_ANDROID)
 TEST(AudioCodingModuleTest, DISABLED_TestIsac) {
