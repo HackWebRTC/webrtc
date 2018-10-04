@@ -136,7 +136,6 @@ rtc_static_library("rtc_media_base") {
     "../modules/audio_processing:audio_processing_statistics",
     "../rtc_base:rtc_base",
     "../rtc_base:rtc_base_approved",
-    "../rtc_base/system:rtc_export",
     "../rtc_base/third_party/sigslot",
     "//third_party/abseil-cpp/absl/types:optional",
   ]

@@ -18,14 +18,13 @@
 #include "modules/desktop_capture/desktop_region.h"
 #include "modules/desktop_capture/shared_memory.h"
 #include "rtc_base/constructormagic.h"
-#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
 const int kStandardDPI = 96;
 
 // DesktopFrame represents a video frame captured from the screen.
-class RTC_EXPORT DesktopFrame {
+class DesktopFrame {
  public:
   // DesktopFrame objects always hold RGBA data.
   static const int kBytesPerPixel = 4;
@@ -136,7 +135,7 @@ class RTC_EXPORT DesktopFrame {
 };
 
 // A DesktopFrame that stores data in the heap.
-class RTC_EXPORT BasicDesktopFrame : public DesktopFrame {
+class BasicDesktopFrame : public DesktopFrame {
  public:
   explicit BasicDesktopFrame(DesktopSize size);
 
