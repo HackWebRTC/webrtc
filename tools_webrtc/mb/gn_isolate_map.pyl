@@ -82,10 +82,6 @@
     "label": "//modules:modules_unittests",
     "type": "windowed_test_launcher",
   },
-  "ortc_unittests": {
-    "label": "//ortc:ortc_unittests",
-    "type": "console_test_launcher",
-  },
   "peerconnection_unittests": {
     "label": "//pc:peerconnection_unittests",
     "type": "console_test_launcher",

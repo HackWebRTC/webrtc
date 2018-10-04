@@ -28,7 +28,6 @@ TESTS = [
   'rtc_pc_unittests',
   'rtc_media_unittests',
   'peerconnection_unittests',
-  'ortc_unittests',
   'modules_unittests',
   'modules_tests',
   'low_bandwidth_audio_test',
