@@ -10,8 +10,6 @@
 #ifndef TEST_DIRECT_TRANSPORT_H_
 #define TEST_DIRECT_TRANSPORT_H_
 
-#include <assert.h>
-
 #include <memory>
 
 #include "api/call/transport.h"

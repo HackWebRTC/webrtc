@@ -8,8 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <assert.h>
-
 #include "modules/audio_device/audio_device_config.h"
 #include "modules/audio_device/linux/audio_device_pulse_linux.h"
 #include "rtc_base/checks.h"
