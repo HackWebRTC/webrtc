@@ -23,6 +23,41 @@
 #include "rtc_base/numerics/safe_conversions.h"
 #include "system_wrappers/include/field_trial.h"
 
+namespace {
+
+constexpr int kLimitProbability = 53687091;         // 1/20 in Q30.
+constexpr int kLimitProbabilityStreaming = 536871;  // 1/2000 in Q30.
+constexpr int kMaxStreamingPeakPeriodMs = 600000;   // 10 minutes in ms.
+constexpr int kCumulativeSumDrift = 2;  // Drift term for cumulative sum
+                                        // |iat_cumulative_sum_|.
+// Steady-state forgetting factor for |iat_vector_|, 0.9993 in Q15.
+constexpr int kIatFactor_ = 32745;
+constexpr int kMaxIat = 64;  // Max inter-arrival time to register.
+
+absl::optional<int> GetForcedLimitProbability() {
+  constexpr char kForceTargetDelayPercentileFieldTrial[] =
+      "WebRTC-Audio-NetEqForceTargetDelayPercentile";
+  const bool use_forced_target_delay_percentile =
+      webrtc::field_trial::IsEnabled(kForceTargetDelayPercentileFieldTrial);
+  if (use_forced_target_delay_percentile) {
+    const std::string field_trial_string = webrtc::field_trial::FindFullName(
+        kForceTargetDelayPercentileFieldTrial);
+    double percentile = -1.0;
+    if (sscanf(field_trial_string.c_str(), "Enabled-%lf", &percentile) == 1 &&
+        percentile >= 0.0 && percentile <= 100.0) {
+      return absl::make_optional<int>(static_cast<int>(
+          (1 << 30) * (100.0 - percentile) / 100.0 + 0.5));  // in Q30.
+    } else {
+      RTC_LOG(LS_WARNING) << "Invalid parameter for "
+                          << kForceTargetDelayPercentileFieldTrial
+                          << ", ignored.";
+    }
+  }
+  return absl::nullopt;
+}
+
+}  // namespace
+
 namespace webrtc {
 
 DelayManager::DelayManager(size_t max_packets_in_buffer,
@@ -46,8 +81,10 @@ DelayManager::DelayManager(size_t max_packets_in_buffer,
       peak_detector_(*peak_detector),
       last_pack_cng_or_dtmf_(1),
       frame_length_change_experiment_(
-          field_trial::IsEnabled("WebRTC-Audio-NetEqFramelengthExperiment")) {
+          field_trial::IsEnabled("WebRTC-Audio-NetEqFramelengthExperiment")),
+      forced_limit_probability_(GetForcedLimitProbability()) {
   assert(peak_detector);  // Should never be NULL.
+
   Reset();
 }
 
@@ -253,7 +290,7 @@ void DelayManager::LimitTargetLevel() {
 }
 
 int DelayManager::CalculateTargetLevel(int iat_packets) {
-  int limit_probability = kLimitProbability;
+  int limit_probability = forced_limit_probability_.value_or(kLimitProbability);
   if (streaming_mode_) {
     limit_probability = kLimitProbabilityStreaming;
   }
