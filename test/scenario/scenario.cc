@@ -167,9 +167,9 @@ SimulationNode* Scenario::CreateSimulationNode(NetworkNodeConfig config) {
 
 NetworkNode* Scenario::CreateNetworkNode(
     NetworkNodeConfig config,
-    std::unique_ptr<NetworkSimulationInterface> simulation) {
+    std::unique_ptr<NetworkBehaviorInterface> behavior) {
   RTC_DCHECK(config.mode == NetworkNodeConfig::TrafficMode::kCustom);
-  network_nodes_.emplace_back(new NetworkNode(config, std::move(simulation)));
+  network_nodes_.emplace_back(new NetworkNode(config, std::move(behavior)));
   NetworkNode* network_node = network_nodes_.back().get();
   Every(config.update_frequency,
         [this, network_node] { network_node->Process(Now()); });

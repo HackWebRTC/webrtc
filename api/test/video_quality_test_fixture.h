@@ -118,8 +118,8 @@ class VideoQualityTestFixtureInterface {
     // Simulations of sender and receiver networks. They must either both be
     // null (in which case `config` from Params is used), or both be non-null
     // (in which case `config` from Params must be nullopt).
-    std::unique_ptr<NetworkSimulationInterface> sender_network;
-    std::unique_ptr<NetworkSimulationInterface> receiver_network;
+    std::unique_ptr<NetworkBehaviorInterface> sender_network;
+    std::unique_ptr<NetworkBehaviorInterface> receiver_network;
 
     std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory;
   };

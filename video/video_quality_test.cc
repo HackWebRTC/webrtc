@@ -1006,16 +1006,16 @@ void VideoQualityTest::StopThumbnails() {
 
 std::unique_ptr<test::LayerFilteringTransport>
 VideoQualityTest::CreateSendTransport() {
-  std::unique_ptr<NetworkSimulationInterface> simulated_network = nullptr;
+  std::unique_ptr<NetworkBehaviorInterface> network_behavior = nullptr;
   if (injection_components_->sender_network == nullptr) {
-    simulated_network = absl::make_unique<SimulatedNetwork>(*params_.config);
+    network_behavior = absl::make_unique<SimulatedNetwork>(*params_.config);
   } else {
-    simulated_network = std::move(injection_components_->sender_network);
+    network_behavior = std::move(injection_components_->sender_network);
   }
   return absl::make_unique<test::LayerFilteringTransport>(
       &task_queue_,
       absl::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
-                                         std::move(simulated_network)),
+                                         std::move(network_behavior)),
       sender_call_.get(), kPayloadTypeVP8, kPayloadTypeVP9,
       params_.video[0].selected_tl, params_.ss[0].selected_sl,
       payload_type_map_, kVideoSendSsrcs[0],
@@ -1025,16 +1025,16 @@ VideoQualityTest::CreateSendTransport() {
 
 std::unique_ptr<test::DirectTransport>
 VideoQualityTest::CreateReceiveTransport() {
-  std::unique_ptr<NetworkSimulationInterface> simulated_network = nullptr;
+  std::unique_ptr<NetworkBehaviorInterface> network_behavior = nullptr;
   if (injection_components_->receiver_network == nullptr) {
-    simulated_network = absl::make_unique<SimulatedNetwork>(*params_.config);
+    network_behavior = absl::make_unique<SimulatedNetwork>(*params_.config);
   } else {
-    simulated_network = std::move(injection_components_->receiver_network);
+    network_behavior = std::move(injection_components_->receiver_network);
   }
   return absl::make_unique<test::DirectTransport>(
       &task_queue_,
       absl::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
-                                         std::move(simulated_network)),
+                                         std::move(network_behavior)),
       receiver_call_.get(), payload_type_map_);
 }
 

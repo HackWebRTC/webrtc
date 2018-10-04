@@ -75,7 +75,7 @@ class NetworkNode : public NetworkReceiverInterface {
   friend class VideoStreamPair;
 
   NetworkNode(NetworkNodeConfig config,
-              std::unique_ptr<NetworkSimulationInterface> simulation);
+              std::unique_ptr<NetworkBehaviorInterface> simulation);
   static void ClearRoute(int64_t receiver_id, std::vector<NetworkNode*> nodes);
   void Process(Timestamp at_time);
 
@@ -90,7 +90,7 @@ class NetworkNode : public NetworkReceiverInterface {
   void ClearRoute(uint64_t receiver_id);
   rtc::CriticalSection crit_sect_;
   size_t packet_overhead_ RTC_GUARDED_BY(crit_sect_);
-  const std::unique_ptr<NetworkSimulationInterface> simulation_
+  const std::unique_ptr<NetworkBehaviorInterface> behavior_
       RTC_GUARDED_BY(crit_sect_);
   std::map<uint64_t, NetworkReceiverInterface*> routing_
       RTC_GUARDED_BY(crit_sect_);
@@ -110,7 +110,7 @@ class SimulationNode : public NetworkNode {
   friend class Scenario;
 
   SimulationNode(NetworkNodeConfig config,
-                 std::unique_ptr<NetworkSimulationInterface> behavior,
+                 std::unique_ptr<NetworkBehaviorInterface> behavior,
                  SimulatedNetwork* simulation);
   static std::unique_ptr<SimulationNode> Create(NetworkNodeConfig config);
   SimulatedNetwork* const simulated_network_;

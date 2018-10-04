@@ -44,9 +44,9 @@ bool ActionReceiver::TryDeliverPacket(rtc::CopyOnWriteBuffer packet,
 NetworkNode::~NetworkNode() = default;
 
 NetworkNode::NetworkNode(NetworkNodeConfig config,
-                         std::unique_ptr<NetworkSimulationInterface> simulation)
+                         std::unique_ptr<NetworkBehaviorInterface> behavior)
     : packet_overhead_(config.packet_overhead.bytes()),
-      simulation_(std::move(simulation)) {}
+      behavior_(std::move(behavior)) {}
 
 void NetworkNode::SetRoute(uint64_t receiver, NetworkReceiverInterface* node) {
   rtc::CritScope crit(&crit_sect_);
@@ -66,7 +66,7 @@ bool NetworkNode::TryDeliverPacket(rtc::CopyOnWriteBuffer packet,
   if (routing_.find(receiver) == routing_.end())
     return false;
   uint64_t packet_id = next_packet_id_++;
-  bool sent = simulation_->EnqueuePacket(PacketInFlightInfo(
+  bool sent = behavior_->EnqueuePacket(PacketInFlightInfo(
       packet.size() + packet_overhead_, at_time.us(), packet_id));
   if (sent) {
     packets_.emplace_back(StoredPacket{packet, receiver, packet_id, false});
@@ -78,11 +78,11 @@ void NetworkNode::Process(Timestamp at_time) {
   std::vector<PacketDeliveryInfo> delivery_infos;
   {
     rtc::CritScope crit(&crit_sect_);
-    absl::optional<int64_t> delivery_us = simulation_->NextDeliveryTimeUs();
+    absl::optional<int64_t> delivery_us = behavior_->NextDeliveryTimeUs();
     if (delivery_us && *delivery_us > at_time.us())
       return;
 
-    delivery_infos = simulation_->DequeueDeliverablePackets(at_time.us());
+    delivery_infos = behavior_->DequeueDeliverablePackets(at_time.us());
   }
   for (PacketDeliveryInfo& delivery_info : delivery_infos) {
     StoredPacket* packet = nullptr;
@@ -162,7 +162,7 @@ ColumnPrinter SimulationNode::ConfigPrinter() const {
 
 SimulationNode::SimulationNode(
     NetworkNodeConfig config,
-    std::unique_ptr<NetworkSimulationInterface> behavior,
+    std::unique_ptr<NetworkBehaviorInterface> behavior,
     SimulatedNetwork* simulation)
     : NetworkNode(config, std::move(behavior)),
       simulated_network_(simulation),

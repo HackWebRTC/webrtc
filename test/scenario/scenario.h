@@ -71,7 +71,7 @@ class Scenario {
       std::function<void(NetworkNodeConfig*)> config_modifier);
   NetworkNode* CreateNetworkNode(
       NetworkNodeConfig config,
-      std::unique_ptr<NetworkSimulationInterface> simulation);
+      std::unique_ptr<NetworkBehaviorInterface> behavior);
 
   CallClient* CreateClient(std::string name, CallClientConfig config);
   CallClient* CreateClient(

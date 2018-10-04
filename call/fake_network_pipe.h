@@ -90,26 +90,22 @@ class NetworkPacket {
 class FakeNetworkPipe : public webrtc::SimulatedPacketReceiverInterface,
                         public Transport {
  public:
-  // Will keep |network_simulation| alive while pipe is alive itself.
+  // Will keep |network_behavior| alive while pipe is alive itself.
   // Use these constructors if you plan to insert packets using DeliverPacket().
-  FakeNetworkPipe(
-      Clock* clock,
-      std::unique_ptr<NetworkSimulationInterface> network_simulation);
-  FakeNetworkPipe(
-      Clock* clock,
-      std::unique_ptr<NetworkSimulationInterface> network_simulation,
-      PacketReceiver* receiver);
-  FakeNetworkPipe(
-      Clock* clock,
-      std::unique_ptr<NetworkSimulationInterface> network_simulation,
-      PacketReceiver* receiver,
-      uint64_t seed);
+  FakeNetworkPipe(Clock* clock,
+                  std::unique_ptr<NetworkBehaviorInterface> network_behavior);
+  FakeNetworkPipe(Clock* clock,
+                  std::unique_ptr<NetworkBehaviorInterface> network_behavior,
+                  PacketReceiver* receiver);
+  FakeNetworkPipe(Clock* clock,
+                  std::unique_ptr<NetworkBehaviorInterface> network_behavior,
+                  PacketReceiver* receiver,
+                  uint64_t seed);
 
   // Use this constructor if you plan to insert packets using SendRt[c?]p().
-  FakeNetworkPipe(
-      Clock* clock,
-      std::unique_ptr<NetworkSimulationInterface> network_simulation,
-      Transport* transport);
+  FakeNetworkPipe(Clock* clock,
+                  std::unique_ptr<NetworkBehaviorInterface> network_behavior,
+                  Transport* transport);
 
   ~FakeNetworkPipe() override;
 
@@ -193,7 +189,7 @@ class FakeNetworkPipe : public webrtc::SimulatedPacketReceiverInterface,
   Clock* const clock_;
   // |config_lock| guards the mostly constant things like the callbacks.
   rtc::CriticalSection config_lock_;
-  const std::unique_ptr<NetworkSimulationInterface> network_simulation_;
+  const std::unique_ptr<NetworkBehaviorInterface> network_behavior_;
   PacketReceiver* receiver_ RTC_GUARDED_BY(config_lock_);
   Transport* const transport_ RTC_GUARDED_BY(config_lock_);
 
