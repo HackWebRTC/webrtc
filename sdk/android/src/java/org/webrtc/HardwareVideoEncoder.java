@@ -28,7 +28,11 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import org.webrtc.ThreadUtils.ThreadChecker;
 
-/** Android hardware video encoder. */
+/**
+ * Android hardware video encoder.
+ *
+ * @note This class is only supported on Android Kitkat and above.
+ */
 @TargetApi(19)
 @SuppressWarnings("deprecation") // Cannot support API level 19 without using deprecated methods.
 class HardwareVideoEncoder implements VideoEncoder {

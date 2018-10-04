@@ -27,7 +27,6 @@ import org.webrtc.ThreadUtils.ThreadChecker;
 /**
  * Android hardware video decoder.
  */
-@TargetApi(16)
 @SuppressWarnings("deprecation")
 // Cannot support API 16 without using deprecated methods.
 // TODO(sakal): Rename to MediaCodecVideoDecoder once the deprecated implementation is removed.
