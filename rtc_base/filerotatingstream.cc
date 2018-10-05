@@ -16,6 +16,7 @@
 
 #include "rtc_base/checks.h"
 #include "rtc_base/fileutils.h"
+#include "rtc_base/logging.h"
 #include "rtc_base/pathutils.h"
 #include "rtc_base/strings/string_builder.h"
 

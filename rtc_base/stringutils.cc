@@ -7,11 +7,10 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include <algorithm>
-#include <cstdio>
+
+#include "rtc_base/stringutils.h"
 
 #include "rtc_base/checks.h"
-#include "rtc_base/stringutils.h"
 
 namespace rtc {
 

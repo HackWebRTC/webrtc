@@ -69,7 +69,6 @@
 
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "api/asyncresolverfactory.h"
@@ -79,7 +78,6 @@
 #include "api/audio_options.h"
 #include "api/call/callfactoryinterface.h"
 #include "api/datachannelinterface.h"
-#include "api/dtmfsenderinterface.h"
 #include "api/fec_controller.h"
 #include "api/jsep.h"
 #include "api/mediastreaminterface.h"
@@ -94,7 +92,6 @@
 #include "api/transport/bitrate_settings.h"
 #include "api/transport/network_control.h"
 #include "api/turncustomizer.h"
-#include "api/umametrics.h"
 #include "logging/rtc_event_log/rtc_event_log_factory_interface.h"
 #include "media/base/mediaconfig.h"
 // TODO(bugs.webrtc.org/6353): cricket::VideoCapturer is deprecated and should

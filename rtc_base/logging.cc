@@ -26,7 +26,6 @@
 static const int kMaxLogLineSize = 1024 - 60;
 #endif  // WEBRTC_MAC && !defined(WEBRTC_IOS) || WEBRTC_ANDROID
 
-#include <limits.h>
 #include <time.h>
 
 #include <algorithm>

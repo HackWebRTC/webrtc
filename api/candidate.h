@@ -18,7 +18,6 @@
 #include <string>
 
 #include "rtc_base/checks.h"
-#include "rtc_base/helpers.h"
 #include "rtc_base/network_constants.h"
 #include "rtc_base/socketaddress.h"
 

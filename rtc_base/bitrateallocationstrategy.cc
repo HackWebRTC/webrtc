@@ -10,6 +10,7 @@
 
 #include "rtc_base/bitrateallocationstrategy.h"
 #include <algorithm>
+#include <map>
 #include <utility>
 
 namespace rtc {

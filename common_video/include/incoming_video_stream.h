@@ -15,6 +15,7 @@
 #include "common_video/video_render_frames.h"
 #include "rtc_base/race_checker.h"
 #include "rtc_base/task_queue.h"
+#include "rtc_base/thread_checker.h"
 
 namespace webrtc {
 

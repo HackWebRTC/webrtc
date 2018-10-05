@@ -11,6 +11,7 @@
 #include "audio/null_audio_poller.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/thread.h"
+#include "rtc_base/timeutils.h"  // for TimeMillis
 
 namespace webrtc {
 namespace internal {

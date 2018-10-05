@@ -21,6 +21,7 @@
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/event.h"
 #include "rtc_base/format_macros.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"

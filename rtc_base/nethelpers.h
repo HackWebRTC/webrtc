@@ -18,12 +18,12 @@
 #include <winsock2.h>  // NOLINT
 #endif
 
-#include <list>
+#include <vector>
 
 #include "rtc_base/asyncresolverinterface.h"
+#include "rtc_base/ipaddress.h"  // for IPAddress
 #include "rtc_base/signalthread.h"
 #include "rtc_base/socketaddress.h"
-#include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace rtc {
 

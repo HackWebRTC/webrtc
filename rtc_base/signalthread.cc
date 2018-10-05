@@ -12,6 +12,7 @@
 
 #include "absl/memory/memory.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/nullsocketserver.h"
 
 namespace rtc {
 

@@ -13,10 +13,10 @@
 
 #include <map>
 #include <string>
+// TODO(yvesg) Fix presubmit check and/or remove unused swap function.
 #include <utility>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {

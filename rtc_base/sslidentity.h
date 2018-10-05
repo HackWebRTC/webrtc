@@ -13,16 +13,10 @@
 #ifndef RTC_BASE_SSLIDENTITY_H_
 #define RTC_BASE_SSLIDENTITY_H_
 
-#include <algorithm>
-#include <memory>
+#include <ctime>
 #include <string>
-#include <vector>
 
-#include "rtc_base/buffer.h"
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/messagedigest.h"
 #include "rtc_base/sslcertificate.h"
-#include "rtc_base/timeutils.h"
 
 namespace rtc {
 

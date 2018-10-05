@@ -11,12 +11,9 @@
 #ifndef RTC_BASE_BITRATEALLOCATIONSTRATEGY_H_
 #define RTC_BASE_BITRATEALLOCATIONSTRATEGY_H_
 
-#include <map>
-#include <memory>
 #include <string>
 #include <vector>
 #include "api/array_view.h"
-#include "rtc_base/checks.h"
 
 namespace rtc {
 
