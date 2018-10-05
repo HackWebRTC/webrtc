@@ -502,7 +502,7 @@ void SendStatisticsProxy::UmaSamplesContainer::UpdateHistograms(
         RTC_HISTOGRAMS_PERCENTAGE(
             kIndex, uma_prefix_ + "SentPacketsLostInPercent", fraction_lost);
         log_stream << uma_prefix_ << "SentPacketsLostInPercent "
-                   << fraction_lost;
+                   << fraction_lost << "\n";
       }
 
       // The RTCP packet type counters, delivered via the

@@ -52,6 +52,7 @@ rtc_static_library("common_video") {
     "../rtc_base:rtc_base",
     "../rtc_base:rtc_task_queue",
     "../rtc_base:safe_minmax",
+    "../system_wrappers:metrics",
     "//third_party/abseil-cpp/absl/types:optional",
     "//third_party/libyuv",
   ]
