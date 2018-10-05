@@ -16,6 +16,7 @@ group("audio_mixer") {
 }
 
 rtc_static_library("audio_mixer_impl") {
+  visibility = [ "*" ]
   sources = [
     "audio_mixer_impl.cc",
     "audio_mixer_impl.h",
