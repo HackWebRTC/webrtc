@@ -51,11 +51,6 @@ CallReceiveStatistics ChannelReceiveProxy::GetRTCPStatistics() const {
   return stats;
 }
 
-void ChannelReceiveProxy::RegisterTransport(Transport* transport) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  channel_->RegisterTransport(transport);
-}
-
 bool ChannelReceiveProxy::ReceivedRTCPPacket(const uint8_t* packet,
                                              size_t length) {
   // May be called on either worker thread or network thread.

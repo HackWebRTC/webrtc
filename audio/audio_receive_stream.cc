@@ -73,7 +73,7 @@ std::unique_ptr<voe::ChannelReceiveProxy> CreateChannelAndProxy(
   return absl::make_unique<voe::ChannelReceiveProxy>(
       absl::make_unique<voe::ChannelReceive>(
           module_process_thread, internal_audio_state->audio_device_module(),
-          nullptr /* RtcpRttStats */, event_log, config.rtp.remote_ssrc,
+          config.rtcp_send_transport, event_log, config.rtp.remote_ssrc,
           config.jitter_buffer_max_packets,
           config.jitter_buffer_fast_accelerate, config.decoder_factory,
           config.codec_pair_id, config.frame_decryptor));
@@ -109,12 +109,11 @@ AudioReceiveStream::AudioReceiveStream(
   RTC_DCHECK(receiver_controller);
   RTC_DCHECK(packet_router);
   RTC_DCHECK(config.decoder_factory);
+  RTC_DCHECK(config.rtcp_send_transport);
   RTC_DCHECK(audio_state_);
   RTC_DCHECK(channel_proxy_);
 
   module_process_thread_checker_.DetachFromThread();
-
-  channel_proxy_->RegisterTransport(config.rtcp_send_transport);
 
   // Configure bandwidth estimation.
   channel_proxy_->RegisterReceiverCongestionControlObjects(packet_router);
@@ -131,7 +130,6 @@ AudioReceiveStream::~AudioReceiveStream() {
   RTC_LOG(LS_INFO) << "~AudioReceiveStream: " << config_.rtp.remote_ssrc;
   Stop();
   channel_proxy_->DisassociateSendChannel();
-  channel_proxy_->RegisterTransport(nullptr);
   channel_proxy_->ResetReceiverCongestionControlObjects();
 }
 

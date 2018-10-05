@@ -39,7 +39,6 @@ class MockChannelReceiveProxy : public voe::ChannelReceiveProxy {
   MOCK_CONST_METHOD0(GetTotalOutputDuration, double());
   MOCK_CONST_METHOD0(GetDelayEstimate, uint32_t());
   MOCK_METHOD1(SetSink, void(AudioSinkInterface* sink));
-  MOCK_METHOD1(RegisterTransport, void(Transport* transport));
   MOCK_METHOD1(OnRtpPacket, void(const RtpPacketReceived& packet));
   MOCK_METHOD2(ReceivedRTCPPacket, bool(const uint8_t* packet, size_t length));
   MOCK_METHOD1(SetChannelOutputVolumeScaling, void(float scaling));

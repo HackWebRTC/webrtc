@@ -25,6 +25,7 @@
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "test/gtest.h"
 #include "test/mock_audio_decoder_factory.h"
+#include "test/mock_transport.h"
 
 namespace webrtc {
 namespace test {
@@ -89,7 +90,6 @@ struct ConfigHelper {
         .Times(1);
     EXPECT_CALL(*channel_proxy_, ResetReceiverCongestionControlObjects())
         .Times(1);
-    EXPECT_CALL(*channel_proxy_, RegisterTransport(nullptr)).Times(2);
     EXPECT_CALL(*channel_proxy_, DisassociateSendChannel()).Times(1);
     EXPECT_CALL(*channel_proxy_, SetReceiveCodecs(_))
         .WillRepeatedly(Invoke([](const std::map<int, SdpAudioFormat>& codecs) {
@@ -103,6 +103,7 @@ struct ConfigHelper {
         RtpExtension(RtpExtension::kAudioLevelUri, kAudioLevelId));
     stream_config_.rtp.extensions.push_back(RtpExtension(
         RtpExtension::kTransportSequenceNumberUri, kTransportSequenceNumberId));
+    stream_config_.rtcp_send_transport = &rtcp_send_transport_;
     stream_config_.decoder_factory =
         new rtc::RefCountedObject<MockAudioDecoderFactory>;
   }
@@ -150,6 +151,7 @@ struct ConfigHelper {
   AudioReceiveStream::Config stream_config_;
   testing::StrictMock<MockChannelReceiveProxy>* channel_proxy_ = nullptr;
   RtpStreamReceiverController rtp_stream_receiver_controller_;
+  MockTransport rtcp_send_transport_;
 };
 
 void BuildOneByteExtension(std::vector<uint8_t>::iterator it,

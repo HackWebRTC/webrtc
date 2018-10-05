@@ -50,7 +50,6 @@ class ChannelReceiveProxy : public RtpPacketSinkInterface {
   virtual void SetLocalSSRC(uint32_t ssrc);
   virtual void SetNACKStatus(bool enable, int max_packets);
   virtual CallReceiveStatistics GetRTCPStatistics() const;
-  virtual void RegisterTransport(Transport* transport);
   virtual bool ReceivedRTCPPacket(const uint8_t* packet, size_t length);
 
   virtual void RegisterReceiverCongestionControlObjects(

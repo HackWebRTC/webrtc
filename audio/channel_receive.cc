@@ -52,30 +52,6 @@ constexpr int kVoiceEngineMaxMinPlayoutDelayMs = 10000;
 
 }  // namespace
 
-bool ChannelReceive::SendRtp(const uint8_t* data,
-                             size_t len,
-                             const PacketOptions& options) {
-  RTC_NOTREACHED();
-  return false;
-}
-
-bool ChannelReceive::SendRtcp(const uint8_t* data, size_t len) {
-  rtc::CritScope cs(&_callbackCritSect);
-  if (_transportPtr == NULL) {
-    RTC_DLOG(LS_ERROR)
-        << "ChannelReceive::SendRtcp() failed to send RTCP packet due to"
-        << " invalid transport object";
-    return false;
-  }
-
-  int n = _transportPtr->SendRtcp(data, len);
-  if (n < 0) {
-    RTC_DLOG(LS_ERROR) << "ChannelReceive::SendRtcp() transmission failed";
-    return false;
-  }
-  return true;
-}
-
 int32_t ChannelReceive::OnReceivedPayloadData(
     const uint8_t* payloadData,
     size_t payloadSize,
@@ -223,7 +199,7 @@ int ChannelReceive::PreferredSampleRate() const {
 ChannelReceive::ChannelReceive(
     ProcessThread* module_process_thread,
     AudioDeviceModule* audio_device_module,
-    RtcpRttStats* rtcp_rtt_stats,
+    Transport* rtcp_send_transport,
     RtcEventLog* rtc_event_log,
     uint32_t remote_ssrc,
     size_t jitter_buffer_max_packets,
@@ -244,7 +220,6 @@ ChannelReceive::ChannelReceive(
       capture_start_ntp_time_ms_(-1),
       _moduleProcessThreadPtr(module_process_thread),
       _audioDeviceModulePtr(audio_device_module),
-      _transportPtr(NULL),
       _outputGain(1.0f),
       associated_send_channel_(nullptr),
       frame_decryptor_(frame_decryptor) {
@@ -263,11 +238,13 @@ ChannelReceive::ChannelReceive(
   rtp_receive_statistics_->EnableRetransmitDetection(remote_ssrc_, true);
   RtpRtcp::Configuration configuration;
   configuration.audio = true;
-  configuration.outgoing_transport = this;
+  // TODO(nisse): Also set receiver_only = true, but that seems to break RTT
+  // estimation, resulting in test failures for
+  // PeerConnectionIntegrationTest.GetCaptureStartNtpTimeWithOldStatsApi
+  configuration.outgoing_transport = rtcp_send_transport;
   configuration.receive_statistics = rtp_receive_statistics_.get();
 
   configuration.event_log = event_log_;
-  configuration.rtt_stats = rtcp_rtt_stats;
 
   _rtpRtcpModule.reset(RtpRtcp::CreateRtpRtcp(configuration));
   _rtpRtcpModule->SetSendingMediaStatus(false);
@@ -375,11 +352,6 @@ void ChannelReceive::SetReceiveCodecs(
     payload_type_frequencies_[kv.first] = kv.second.clockrate_hz;
   }
   audio_coding_->SetReceiveCodecs(codecs);
-}
-
-void ChannelReceive::RegisterTransport(Transport* transport) {
-  rtc::CritScope cs(&_callbackCritSect);
-  _transportPtr = transport;
 }
 
 // TODO(nisse): Move receive logic up to AudioReceiveStream.
