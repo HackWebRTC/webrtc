@@ -100,7 +100,7 @@ void AdaptiveDigitalGainApplier::Process(SignalWithLevels signal_with_levels) {
     RTC_HISTOGRAM_COUNTS_LINEAR("WebRTC.Audio.Agc2.DigitalGainApplied",
                                 last_gain_db_, 0, kMaxGainDb, kMaxGainDb + 1);
     RTC_HISTOGRAM_COUNTS_LINEAR("WebRTC.Audio.Agc2.EstimatedNoiseLevel",
-                                signal_with_levels.input_noise_level_dbfs, 0,
+                                -signal_with_levels.input_noise_level_dbfs, 0,
                                 100, 101);
   }
 
