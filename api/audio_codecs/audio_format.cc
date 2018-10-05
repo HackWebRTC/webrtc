@@ -46,14 +46,6 @@ bool operator==(const SdpAudioFormat& a, const SdpAudioFormat& b) {
          a.parameters == b.parameters;
 }
 
-void swap(SdpAudioFormat& a, SdpAudioFormat& b) {
-  using std::swap;
-  swap(a.name, b.name);
-  swap(a.clockrate_hz, b.clockrate_hz);
-  swap(a.num_channels, b.num_channels);
-  swap(a.parameters, b.parameters);
-}
-
 AudioCodecInfo::AudioCodecInfo(int sample_rate_hz,
                                size_t num_channels,
                                int bitrate_bps)

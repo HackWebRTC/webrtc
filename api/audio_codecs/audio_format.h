@@ -13,8 +13,6 @@
 
 #include <map>
 #include <string>
-// TODO(yvesg) Fix presubmit check and/or remove unused swap function.
-#include <utility>
 
 #include "absl/strings/string_view.h"
 #include "rtc_base/checks.h"
@@ -53,8 +51,6 @@ struct SdpAudioFormat {
   size_t num_channels;
   Parameters parameters;
 };
-
-void swap(SdpAudioFormat& a, SdpAudioFormat& b);
 
 // Information about how an audio format is treated by the codec implementation.
 // Contains basic information, such as sample rate and number of channels, which
