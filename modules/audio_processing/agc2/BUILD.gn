@@ -83,10 +83,12 @@ rtc_source_set("biquad_filter") {
 
 rtc_source_set("common") {
   sources = [
+    "agc2_common.cc",
     "agc2_common.h",
   ]
   deps = [
     "../../../rtc_base:rtc_base_approved",
+    "../../../system_wrappers:field_trial",
   ]
 }
 

@@ -52,7 +52,8 @@ constexpr float kFullBufferLeakFactor = 1.f - 1.f / kFullBufferSizeMs;
 constexpr float kInitialSpeechLevelEstimateDbfs = -30.f;
 
 // Saturation Protector settings.
-constexpr float kInitialSaturationMarginDb = 17.f;
+float GetInitialSaturationMarginDb();
+float GetExtraSaturationMarginOffsetDb();
 
 constexpr size_t kPeakEnveloperSuperFrameLengthMs = 400;
 static_assert(kFullBufferSizeMs % kPeakEnveloperSuperFrameLengthMs == 0,
