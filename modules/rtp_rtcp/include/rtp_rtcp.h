@@ -335,10 +335,6 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
                                                  uint32_t name,
                                                  const uint8_t* data,
                                                  uint16_t length) = 0;
-  // (XR) Sets VOIP metric.
-  // Returns -1 on failure else 0.
-  virtual int32_t SetRTCPVoIPMetrics(const RTCPVoIPMetric* VoIPMetric) = 0;
-
   // (XR) Sets Receiver Reference Time Report (RTTR) status.
   virtual void SetRtcpXrRrtrStatus(bool enable) = 0;
 

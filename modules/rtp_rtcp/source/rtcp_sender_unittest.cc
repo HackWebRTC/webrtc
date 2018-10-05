@@ -399,58 +399,6 @@ TEST_F(RtcpSenderTest, RembIncludedInEachCompoundPacketAfterSet) {
   EXPECT_EQ(2, parser()->remb()->num_packets());
 }
 
-TEST_F(RtcpSenderTest, SendXrWithVoipMetric) {
-  rtcp_sender_->SetRTCPStatus(RtcpMode::kReducedSize);
-  RTCPVoIPMetric metric;
-  metric.lossRate = 1;
-  metric.discardRate = 2;
-  metric.burstDensity = 3;
-  metric.gapDensity = 4;
-  metric.burstDuration = 0x1111;
-  metric.gapDuration = 0x2222;
-  metric.roundTripDelay = 0x3333;
-  metric.endSystemDelay = 0x4444;
-  metric.signalLevel = 5;
-  metric.noiseLevel = 6;
-  metric.RERL = 7;
-  metric.Gmin = 8;
-  metric.Rfactor = 9;
-  metric.extRfactor = 10;
-  metric.MOSLQ = 11;
-  metric.MOSCQ = 12;
-  metric.RXconfig = 13;
-  metric.JBnominal = 0x5555;
-  metric.JBmax = 0x6666;
-  metric.JBabsMax = 0x7777;
-  EXPECT_EQ(0, rtcp_sender_->SetRTCPVoIPMetrics(&metric));
-  EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpXrVoipMetric));
-  EXPECT_EQ(1, parser()->xr()->num_packets());
-  EXPECT_EQ(kSenderSsrc, parser()->xr()->sender_ssrc());
-  ASSERT_TRUE(parser()->xr()->voip_metric());
-  EXPECT_EQ(kRemoteSsrc, parser()->xr()->voip_metric()->ssrc());
-  const auto& parsed_metric = parser()->xr()->voip_metric()->voip_metric();
-  EXPECT_EQ(metric.lossRate, parsed_metric.lossRate);
-  EXPECT_EQ(metric.discardRate, parsed_metric.discardRate);
-  EXPECT_EQ(metric.burstDensity, parsed_metric.burstDensity);
-  EXPECT_EQ(metric.gapDensity, parsed_metric.gapDensity);
-  EXPECT_EQ(metric.burstDuration, parsed_metric.burstDuration);
-  EXPECT_EQ(metric.gapDuration, parsed_metric.gapDuration);
-  EXPECT_EQ(metric.roundTripDelay, parsed_metric.roundTripDelay);
-  EXPECT_EQ(metric.endSystemDelay, parsed_metric.endSystemDelay);
-  EXPECT_EQ(metric.signalLevel, parsed_metric.signalLevel);
-  EXPECT_EQ(metric.noiseLevel, parsed_metric.noiseLevel);
-  EXPECT_EQ(metric.RERL, parsed_metric.RERL);
-  EXPECT_EQ(metric.Gmin, parsed_metric.Gmin);
-  EXPECT_EQ(metric.Rfactor, parsed_metric.Rfactor);
-  EXPECT_EQ(metric.extRfactor, parsed_metric.extRfactor);
-  EXPECT_EQ(metric.MOSLQ, parsed_metric.MOSLQ);
-  EXPECT_EQ(metric.MOSCQ, parsed_metric.MOSCQ);
-  EXPECT_EQ(metric.RXconfig, parsed_metric.RXconfig);
-  EXPECT_EQ(metric.JBnominal, parsed_metric.JBnominal);
-  EXPECT_EQ(metric.JBmax, parsed_metric.JBmax);
-  EXPECT_EQ(metric.JBabsMax, parsed_metric.JBabsMax);
-}
-
 TEST_F(RtcpSenderTest, SendXrWithDlrr) {
   rtcp_sender_->SetRTCPStatus(RtcpMode::kCompound);
   RTCPSender::FeedbackState feedback_state = rtp_rtcp_impl_->GetFeedbackState();
@@ -504,7 +452,6 @@ TEST_F(RtcpSenderTest, SendXrWithRrtr) {
   EXPECT_EQ(1, parser()->xr()->num_packets());
   EXPECT_EQ(kSenderSsrc, parser()->xr()->sender_ssrc());
   EXPECT_FALSE(parser()->xr()->dlrr());
-  EXPECT_FALSE(parser()->xr()->voip_metric());
   ASSERT_TRUE(parser()->xr()->rrtr());
   EXPECT_EQ(ntp, parser()->xr()->rrtr()->ntp());
 }
@@ -658,10 +605,9 @@ TEST_F(RtcpSenderTest, ByeMustBeLast) {
   rtcp_sender_->SetTimestampOffset(kStartRtpTimestamp);
   rtcp_sender_->SetLastRtpTime(kRtpTimestamp, clock_.TimeInMilliseconds());
 
-  // Set up XR VoIP metric to be included with BYE
+  // Set up REMB info to be included with BYE.
   rtcp_sender_->SetRTCPStatus(RtcpMode::kCompound);
-  RTCPVoIPMetric metric;
-  EXPECT_EQ(0, rtcp_sender_->SetRTCPVoIPMetrics(&metric));
+  rtcp_sender_->SetRemb(1234, {});
   EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpBye));
 }
 

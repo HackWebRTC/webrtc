@@ -44,9 +44,9 @@
 namespace webrtc {
 
 namespace {
-const uint32_t kRtcpAnyExtendedReports =
-    kRtcpXrVoipMetric | kRtcpXrReceiverReferenceTime | kRtcpXrDlrrReportBlock |
-    kRtcpXrTargetBitrate;
+const uint32_t kRtcpAnyExtendedReports = kRtcpXrReceiverReferenceTime |
+                                         kRtcpXrDlrrReportBlock |
+                                         kRtcpXrTargetBitrate;
 }  // namespace
 
 RTCPSender::FeedbackState::FeedbackState()
@@ -624,15 +624,6 @@ std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildExtendedReports(
     send_video_bitrate_allocation_ = false;
   }
 
-  if (xr_voip_metric_) {
-    rtcp::VoipMetric voip;
-    voip.SetMediaSsrc(remote_ssrc_);
-    voip.SetVoipMetric(*xr_voip_metric_);
-    xr_voip_metric_.reset();
-
-    xr->SetVoipMetric(voip);
-  }
-
   return std::move(xr);
 }
 
@@ -840,15 +831,6 @@ int32_t RTCPSender::SetApplicationSpecificData(uint8_t subType,
   app_data_.reset(new uint8_t[length]);
   app_length_ = length;
   memcpy(app_data_.get(), data, length);
-  return 0;
-}
-
-// TODO(sprang): Remove support for VoIP metrics? (Not used in receiver.)
-int32_t RTCPSender::SetRTCPVoIPMetrics(const RTCPVoIPMetric* VoIPMetric) {
-  rtc::CritScope lock(&critical_section_rtcp_sender_);
-  xr_voip_metric_.emplace(*VoIPMetric);
-
-  SetFlag(kRtcpAnyExtendedReports, true);
   return 0;
 }
 

@@ -124,7 +124,6 @@ class RTCPSender {
                                      uint32_t name,
                                      const uint8_t* data,
                                      uint16_t length);
-  int32_t SetRTCPVoIPMetrics(const RTCPVoIPMetric* VoIPMetric);
 
   void SendRtcpXrReceiverReferenceTime(bool enable);
 
@@ -233,10 +232,6 @@ class RTCPSender {
 
   // True if sending of XR Receiver reference time report is enabled.
   bool xr_send_receiver_reference_time_enabled_
-      RTC_GUARDED_BY(critical_section_rtcp_sender_);
-
-  // XR VoIP metric
-  absl::optional<RTCPVoIPMetric> xr_voip_metric_
       RTC_GUARDED_BY(critical_section_rtcp_sender_);
 
   RtcpPacketTypeCounterObserver* const packet_type_counter_observer_;

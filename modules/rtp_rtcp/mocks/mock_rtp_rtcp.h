@@ -148,7 +148,6 @@ class MockRtpRtcp : public RtpRtcp {
                        uint32_t name,
                        const uint8_t* data,
                        uint16_t length));
-  MOCK_METHOD1(SetRTCPVoIPMetrics, int32_t(const RTCPVoIPMetric* voip_metric));
   MOCK_METHOD1(SetRtcpXrRrtrStatus, void(bool enable));
   MOCK_CONST_METHOD0(RtcpXrRrtrStatus, bool());
   MOCK_METHOD2(SetRemb, void(int64_t bitrate, std::vector<uint32_t> ssrcs));

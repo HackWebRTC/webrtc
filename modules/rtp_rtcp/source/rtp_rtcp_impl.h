@@ -240,9 +240,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
                                          const uint8_t* data,
                                          uint16_t length) override;
 
-  // (XR) VOIP metric.
-  int32_t SetRTCPVoIPMetrics(const RTCPVoIPMetric* VoIPMetric) override;
-
   // (XR) Receiver reference time report.
   void SetRtcpXrRrtrStatus(bool enable) override;
 

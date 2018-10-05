@@ -67,30 +67,6 @@ class RTPFragmentationHeader {
   uint8_t* fragmentationPlType;      // Payload type of each fragmentation
 };
 
-struct RTCPVoIPMetric {
-  // RFC 3611 4.7
-  uint8_t lossRate;
-  uint8_t discardRate;
-  uint8_t burstDensity;
-  uint8_t gapDensity;
-  uint16_t burstDuration;
-  uint16_t gapDuration;
-  uint16_t roundTripDelay;
-  uint16_t endSystemDelay;
-  uint8_t signalLevel;
-  uint8_t noiseLevel;
-  uint8_t RERL;
-  uint8_t Gmin;
-  uint8_t Rfactor;
-  uint8_t extRfactor;
-  uint8_t MOSLQ;
-  uint8_t MOSCQ;
-  uint8_t RXconfig;
-  uint16_t JBnominal;
-  uint16_t JBmax;
-  uint16_t JBabsMax;
-};
-
 // Interface used by the CallStats class to distribute call statistics.
 // Callbacks will be triggered as soon as the class has been registered to a
 // CallStats object using RegisterStatsObserver.

@@ -526,12 +526,6 @@ int32_t ModuleRtpRtcpImpl::SetRTCPApplicationSpecificData(
   return rtcp_sender_.SetApplicationSpecificData(sub_type, name, data, length);
 }
 
-// (XR) VOIP metric.
-int32_t ModuleRtpRtcpImpl::SetRTCPVoIPMetrics(
-    const RTCPVoIPMetric* voip_metric) {
-  return rtcp_sender_.SetRTCPVoIPMetrics(voip_metric);
-}
-
 void ModuleRtpRtcpImpl::SetRtcpXrRrtrStatus(bool enable) {
   rtcp_receiver_.SetRtcpXrRrtrStatus(enable);
   rtcp_sender_.SendRtcpXrReceiverReferenceTime(enable);
