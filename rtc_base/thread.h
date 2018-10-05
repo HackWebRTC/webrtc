@@ -11,9 +11,12 @@
 #ifndef RTC_BASE_THREAD_H_
 #define RTC_BASE_THREAD_H_
 
+#include <algorithm>
 #include <list>
 #include <memory>
 #include <string>
+#include <utility>
+#include <vector>
 
 #if defined(WEBRTC_POSIX)
 #include <pthread.h>

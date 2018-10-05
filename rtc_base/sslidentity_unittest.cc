@@ -14,7 +14,6 @@
 #include "rtc_base/fakesslidentity.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/helpers.h"
-#include "rtc_base/messagedigest.h"
 #include "rtc_base/ssladapter.h"
 #include "rtc_base/sslfingerprint.h"
 #include "rtc_base/sslidentity.h"

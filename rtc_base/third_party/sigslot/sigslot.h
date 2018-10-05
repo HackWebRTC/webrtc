@@ -96,6 +96,7 @@
 #ifndef RTC_BASE_THIRD_PARTY_SIGSLOT_SIGSLOT_H_
 #define RTC_BASE_THIRD_PARTY_SIGSLOT_SIGSLOT_H_
 
+#include <stdlib.h>
 #include <cstring>
 #include <list>
 #include <set>

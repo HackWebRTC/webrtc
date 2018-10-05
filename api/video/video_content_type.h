@@ -13,6 +13,8 @@
 
 #include <stdint.h>
 
+#include <string>
+
 namespace webrtc {
 
 enum class VideoContentType : uint8_t {

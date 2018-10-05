@@ -24,6 +24,7 @@
 #include "api/proxy.h"
 #include "api/rtcerror.h"
 #include "api/rtpparameters.h"
+#include "rtc_base/deprecation.h"
 #include "rtc_base/refcount.h"
 #include "rtc_base/scoped_ref_ptr.h"
 

@@ -18,7 +18,6 @@
 #include "rtc_base/byteorder.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/timeutils.h"  // for TimeMillis
 
 #if defined(WEBRTC_POSIX)
 #include <errno.h>

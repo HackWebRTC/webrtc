@@ -14,7 +14,6 @@
 #include <jni.h>
 
 #include "api/mediastreaminterface.h"
-#include "rtc_base/thread.h"
 #include "sdk/android/native_api/jni/scoped_java_ref.h"
 
 namespace webrtc {

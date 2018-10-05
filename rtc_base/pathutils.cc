@@ -15,9 +15,10 @@
 #include <tchar.h>
 #endif  // WEBRTC_WIN
 
-#include <string.h>  // for strchr
-
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 #include "rtc_base/pathutils.h"
+#include "rtc_base/stringutils.h"
 
 namespace rtc {
 

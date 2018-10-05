@@ -10,12 +10,6 @@
 
 #include "rtc_base/strings/string_builder.h"
 
-#include <stdarg.h>  // for va_end, va_list, va_start
-#include <cstring>   // for strlen
-
-#include "rtc_base/checks.h"                // for FatalLogCall, RTC_DCHECK
-#include "rtc_base/numerics/safe_minmax.h"  // for SafeMin
-
 namespace rtc {
 
 SimpleStringBuilder::SimpleStringBuilder(rtc::ArrayView<char> buffer)

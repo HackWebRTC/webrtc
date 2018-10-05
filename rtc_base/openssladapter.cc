@@ -23,7 +23,6 @@
 #include <openssl/x509v3.h>
 #include "rtc_base/openssl.h"
 
-#include "absl/memory/memory.h"  // for make_unique
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"

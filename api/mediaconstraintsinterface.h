@@ -24,6 +24,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "api/peerconnectioninterface.h"
 
 namespace webrtc {

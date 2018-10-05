@@ -15,6 +15,7 @@
 #include <string.h>
 
 #include "rtc_base/checks.h"
+#include "rtc_base/stringutils.h"
 
 #if defined(WEBRTC_WIN)
 // clang-format off
@@ -22,8 +23,6 @@
 #include <windows.h>
 #include <shellapi.h> // must come after windows.h
 // clang-format on
-
-#include "rtc_base/stringutils.h"  // For ToUtf8
 #endif
 
 namespace {

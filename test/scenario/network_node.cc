@@ -12,8 +12,6 @@
 #include <algorithm>
 #include <vector>
 
-#include "rtc_base/numerics/safe_minmax.h"
-
 namespace webrtc {
 namespace test {
 namespace {

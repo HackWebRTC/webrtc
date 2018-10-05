@@ -18,8 +18,7 @@
 
 #include "absl/types/optional.h"
 #include "api/array_view.h"
-#include "api/rtpreceiverinterface.h"  // For RtpSource
-#include "rtc_base/timeutils.h"        // For kNumMillisecsPerSec
+#include "api/rtpreceiverinterface.h"
 
 namespace webrtc {
 

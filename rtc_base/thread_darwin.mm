@@ -13,7 +13,6 @@
 #import <Foundation/Foundation.h>
 
 #include "rtc_base/platform_thread.h"
-#include "rtc_base/timeutils.h"  // for TimeAfter, TimeUntil
 
 /*
  * This file contains platform-specific implementations for several

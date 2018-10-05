@@ -13,7 +13,6 @@
 #include <algorithm>
 
 #include "rtc_base/checks.h"
-#include "rtc_base/logging.h"
 #include "rtc_base/socketfactory.h"
 
 namespace rtc {

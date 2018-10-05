@@ -13,22 +13,19 @@
 
 #include <openssl/ossl_typ.h>
 
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "rtc_base/asyncsocket.h"          // for AsyncSocket
-#include "rtc_base/buffer.h"               // for Buffer
-#include "rtc_base/messagehandler.h"       // for MessageHandler
-#include "rtc_base/messagequeue.h"         // for Message
-#include "rtc_base/opensslidentity.h"      // for SSL_CTX, OpenSSLIdentity
-#include "rtc_base/opensslsessioncache.h"  // for OpenSSLSessionCache
-#include "rtc_base/socket.h"               // for Socket::ConnState
-#include "rtc_base/socketaddress.h"        // for SocketAddress
-#include "rtc_base/ssladapter.h"           // for SSLAdapter, SSLAdapterFactory
-#include "rtc_base/sslcertificate.h"       // for SSLCertificateVerifier
-#include "rtc_base/sslidentity.h"          // for SSLIdentity
-#include "rtc_base/sslstreamadapter.h"     // for SSLMode, SSLRole, SSL_MODE...
+#include "absl/memory/memory.h"
+#include "rtc_base/buffer.h"
+#include "rtc_base/messagehandler.h"
+#include "rtc_base/messagequeue.h"
+#include "rtc_base/opensslcertificate.h"
+#include "rtc_base/opensslidentity.h"
+#include "rtc_base/opensslsessioncache.h"
+#include "rtc_base/ssladapter.h"
 
 namespace rtc {
 

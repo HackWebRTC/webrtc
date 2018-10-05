@@ -10,15 +10,16 @@
 
 #include "rtc_base/sslcertificate.h"
 
-#include <algorithm>  // for transform
+#include <ctime>
 #include <string>
 #include <utility>
 
-#include "absl/memory/memory.h"                  // for WrapUnique, make_unique
-#include "rtc_base/checks.h"                     // for FatalLogCall, RTC_DC...
-#include "rtc_base/opensslcertificate.h"         // for OpenSSLCertificate
-#include "rtc_base/sslfingerprint.h"             // for SSLFingerprint
-#include "rtc_base/third_party/base64/base64.h"  // for Base64
+#include "absl/memory/memory.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/opensslcertificate.h"
+#include "rtc_base/sslfingerprint.h"
+#include "rtc_base/third_party/base64/base64.h"
 
 namespace rtc {
 

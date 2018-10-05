@@ -24,11 +24,10 @@
 #pragma warning(disable : 4722)
 #endif
 
-#include <utility>  // for move
-
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/nullsocketserver.h"
+#include "rtc_base/platform_thread.h"
 #include "rtc_base/stringutils.h"
 #include "rtc_base/timeutils.h"
 #include "rtc_base/trace_event.h"

@@ -11,6 +11,7 @@
 #ifndef RTC_BASE_MESSAGEHANDLER_H_
 #define RTC_BASE_MESSAGEHANDLER_H_
 
+#include <memory>
 #include <utility>
 
 #include "rtc_base/constructormagic.h"

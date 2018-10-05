@@ -10,9 +10,10 @@
 
 #include "rtc_base/platform_file.h"
 
+#include "rtc_base/stringutils.h"
+
 #if defined(WEBRTC_WIN)
 #include <io.h>
-#include "rtc_base/stringutils.h"  // For ToUtf16
 #else
 #include <fcntl.h>
 #include <sys/stat.h>

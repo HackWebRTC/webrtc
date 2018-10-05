@@ -14,6 +14,7 @@
 #include <string>
 
 #include "rtc_base/constructormagic.h"
+#include "rtc_base/event.h"
 #include "rtc_base/platform_thread_types.h"
 #include "rtc_base/thread_checker.h"
 

@@ -12,11 +12,13 @@
 #define RTC_BASE_STRINGS_STRING_BUILDER_H_
 
 #include <cstdio>
+#include <cstring>
 #include <string>
-#include <utility>
 
 #include "absl/strings/string_view.h"
 #include "api/array_view.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/numerics/safe_minmax.h"
 #include "rtc_base/stringencode.h"
 #include "rtc_base/stringutils.h"
 

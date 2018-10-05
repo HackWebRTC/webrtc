@@ -19,7 +19,6 @@
 #include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/ipaddress.h"
-#include "rtc_base/logging.h"
 #include "rtc_base/strings/string_builder.h"
 #include "sdk/android/generated_base_jni/jni/NetworkMonitorAutoDetect_jni.h"
 #include "sdk/android/generated_base_jni/jni/NetworkMonitor_jni.h"

@@ -17,7 +17,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/helpers.h"
-#include "rtc_base/messagedigest.h"
 #include "rtc_base/ssladapter.h"
 #include "rtc_base/sslidentity.h"
 #include "rtc_base/sslstreamadapter.h"

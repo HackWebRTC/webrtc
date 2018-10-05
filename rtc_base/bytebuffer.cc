@@ -12,6 +12,8 @@
 
 #include <string.h>
 
+#include <algorithm>
+
 namespace rtc {
 
 ByteBufferWriter::ByteBufferWriter() : ByteBufferWriterT() {}

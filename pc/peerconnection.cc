@@ -22,7 +22,6 @@
 #include "api/jsepsessiondescription.h"
 #include "api/mediastreamproxy.h"
 #include "api/mediastreamtrackproxy.h"
-#include "api/umametrics.h"
 #include "call/call.h"
 #include "logging/rtc_event_log/icelogger.h"
 #include "logging/rtc_event_log/output/rtc_event_log_output_file.h"
