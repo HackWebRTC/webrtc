@@ -432,12 +432,6 @@ void SendSideCongestionController::LimitOutstandingBytes(
       std::max<size_t>((*min_rtt_ms + accepted_queue_ms_) *
                            last_reported_bitrate_bps_ / 1000 / 8,
                        kMinCwndBytes);
-  RTC_LOG(LS_INFO) << clock_->TimeInMilliseconds()
-                   << " Outstanding bytes: " << num_outstanding_bytes
-                   << " pacer queue: " << pacer_->QueueInMs()
-                   << " max outstanding: " << max_outstanding_bytes;
-  RTC_LOG(LS_INFO) << "Feedback rtt: " << *min_rtt_ms
-                   << " Bitrate: " << last_reported_bitrate_bps_;
   if (congestion_window_pushback_controller_) {
     congestion_window_pushback_controller_->UpdateOutstandingData(
         num_outstanding_bytes);
