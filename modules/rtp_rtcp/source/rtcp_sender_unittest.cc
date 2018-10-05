@@ -681,4 +681,41 @@ TEST_F(RtcpSenderTest, SendImmediateXrWithTargetBitrate) {
   EXPECT_TRUE(rtcp_sender_->TimeToSendRTCPReport(false));
 }
 
+TEST_F(RtcpSenderTest, SendTargetBitrateExplicitZeroOnStreamRemoval) {
+  // Set up and send a bitrate allocation with two layers.
+
+  rtcp_sender_->SetRTCPStatus(RtcpMode::kCompound);
+  VideoBitrateAllocation allocation;
+  allocation.SetBitrate(0, 0, 100000);
+  allocation.SetBitrate(1, 0, 200000);
+  rtcp_sender_->SetVideoBitrateAllocation(allocation);
+  EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpReport));
+  absl::optional<rtcp::TargetBitrate> target_bitrate =
+      parser()->xr()->target_bitrate();
+  ASSERT_TRUE(target_bitrate);
+  std::vector<rtcp::TargetBitrate::BitrateItem> bitrates =
+      target_bitrate->GetTargetBitrates();
+  ASSERT_EQ(2u, bitrates.size());
+  EXPECT_EQ(bitrates[0].target_bitrate_kbps,
+            allocation.GetBitrate(0, 0) / 1000);
+  EXPECT_EQ(bitrates[1].target_bitrate_kbps,
+            allocation.GetBitrate(1, 0) / 1000);
+
+  // Create a new allocation, where the second stream is no longer available.
+  VideoBitrateAllocation new_allocation;
+  new_allocation.SetBitrate(0, 0, 150000);
+  rtcp_sender_->SetVideoBitrateAllocation(new_allocation);
+  EXPECT_EQ(0, rtcp_sender_->SendRTCP(feedback_state(), kRtcpReport));
+  target_bitrate = parser()->xr()->target_bitrate();
+  ASSERT_TRUE(target_bitrate);
+  bitrates = target_bitrate->GetTargetBitrates();
+
+  // Two bitrates should still be set, with an explicit entry indicating the
+  // removed stream is gone.
+  ASSERT_EQ(2u, bitrates.size());
+  EXPECT_EQ(bitrates[0].target_bitrate_kbps,
+            new_allocation.GetBitrate(0, 0) / 1000);
+  EXPECT_EQ(bitrates[1].target_bitrate_kbps, 0u);
+}
+
 }  // namespace webrtc

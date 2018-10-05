@@ -244,7 +244,8 @@ class RTCPSender {
       RTC_GUARDED_BY(critical_section_rtcp_sender_);
   bool send_video_bitrate_allocation_
       RTC_GUARDED_BY(critical_section_rtcp_sender_);
-  bool HasNewLayerStructure(const VideoBitrateAllocation& bitrate) const
+  absl::optional<VideoBitrateAllocation> CheckAndUpdateLayerStructure(
+      const VideoBitrateAllocation& bitrate) const
       RTC_EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
 
   void SetFlag(uint32_t type, bool is_volatile)

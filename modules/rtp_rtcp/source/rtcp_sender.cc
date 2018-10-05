@@ -891,29 +891,40 @@ void RTCPSender::SetVideoBitrateAllocation(
   // Check if this allocation is first ever, or has a different set of
   // spatial/temporal layers signaled and enabled, if so trigger an rtcp report
   // as soon as possible.
-  if (HasNewLayerStructure(bitrate)) {
+  absl::optional<VideoBitrateAllocation> new_bitrate =
+      CheckAndUpdateLayerStructure(bitrate);
+  if (new_bitrate) {
+    video_bitrate_allocation_ = *new_bitrate;
     next_time_to_send_rtcp_ = clock_->TimeInMilliseconds();
+  } else {
+    video_bitrate_allocation_ = bitrate;
   }
 
-  video_bitrate_allocation_ = bitrate;
   send_video_bitrate_allocation_ = true;
   SetFlag(kRtcpAnyExtendedReports, true);
 }
 
-bool RTCPSender::HasNewLayerStructure(
+absl::optional<VideoBitrateAllocation> RTCPSender::CheckAndUpdateLayerStructure(
     const VideoBitrateAllocation& bitrate) const {
+  absl::optional<VideoBitrateAllocation> updated_bitrate;
   for (size_t si = 0; si < kMaxSpatialLayers; ++si) {
     for (size_t ti = 0; ti < kMaxTemporalStreams; ++ti) {
-      if (bitrate.HasBitrate(si, ti) !=
-              video_bitrate_allocation_.HasBitrate(si, ti) ||
-          (bitrate.GetBitrate(si, ti) == 0) !=
-              (video_bitrate_allocation_.GetBitrate(si, ti) == 0)) {
-        return true;
+      if (!updated_bitrate &&
+          (bitrate.HasBitrate(si, ti) !=
+               video_bitrate_allocation_.HasBitrate(si, ti) ||
+           (bitrate.GetBitrate(si, ti) == 0) !=
+               (video_bitrate_allocation_.GetBitrate(si, ti) == 0))) {
+        updated_bitrate = bitrate;
+      }
+      if (video_bitrate_allocation_.GetBitrate(si, ti) > 0 &&
+          bitrate.GetBitrate(si, ti) == 0) {
+        // Make sure this stream disabling is explicitly signaled.
+        updated_bitrate->SetBitrate(si, ti, 0);
       }
     }
   }
 
-  return false;
+  return updated_bitrate;
 }
 
 bool RTCPSender::SendFeedbackPacket(const rtcp::TransportFeedback& packet) {
