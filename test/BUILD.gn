@@ -359,9 +359,10 @@ if (rtc_include_tests) {
 }
 
 if (is_ios) {
-  rtc_source_set("fileutils_objc") {
+  rtc_source_set("fileutils_ios_objc") {
     visibility = [ ":fileutils" ]
     sources = [
+      "testsupport/iosfileutils.h",
       "testsupport/iosfileutils.mm",
     ]
     deps = [
@@ -369,6 +370,19 @@ if (is_ios) {
       "../rtc_base:checks",
       "../rtc_base:rtc_base_approved",
       "../sdk:helpers_objc",
+    ]
+  }
+}
+
+if (is_mac) {
+  rtc_source_set("fileutils_mac_objc") {
+    visibility = [ ":fileutils" ]
+    sources = [
+      "testsupport/macfileutils.h",
+      "testsupport/macfileutils.mm",
+    ]
+    deps = [
+      "../rtc_base:checks",
     ]
   }
 }
@@ -388,7 +402,10 @@ rtc_source_set("fileutils") {
     "//third_party/abseil-cpp/absl/types:optional",
   ]
   if (is_ios) {
-    deps += [ ":fileutils_objc" ]
+    deps += [ ":fileutils_ios_objc" ]
+  }
+  if (is_mac) {
+    deps += [ ":fileutils_mac_objc" ]
   }
   if (is_win) {
     deps += [ "../rtc_base:rtc_base" ]
