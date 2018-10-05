@@ -37,6 +37,10 @@ class FieldTrialParameterInterface {
   virtual ~FieldTrialParameterInterface();
 
  protected:
+  // Protected to allow implementations to provide assignment and copy.
+  FieldTrialParameterInterface(const FieldTrialParameterInterface&) = default;
+  FieldTrialParameterInterface& operator=(const FieldTrialParameterInterface&) =
+      default;
   explicit FieldTrialParameterInterface(std::string key);
   friend void ParseFieldTrial(
       std::initializer_list<FieldTrialParameterInterface*> fields,
@@ -46,7 +50,7 @@ class FieldTrialParameterInterface {
   std::string Key() const;
 
  private:
-  const std::string key_;
+  std::string key_;
   bool used_ = false;
 };
 
