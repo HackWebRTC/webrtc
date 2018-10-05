@@ -218,6 +218,7 @@ webrtc_fuzzer_test("rtcp_receiver_fuzzer") {
   ]
   deps = [
     "../../modules/rtp_rtcp",
+    "../../modules/rtp_rtcp:rtp_rtcp_format",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
     "../../system_wrappers:system_wrappers",
