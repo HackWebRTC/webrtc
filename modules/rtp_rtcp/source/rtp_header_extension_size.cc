@@ -18,8 +18,6 @@ int RtpHeaderExtensionSize(rtc::ArrayView<const RtpExtensionSize> extensions,
                            const RtpHeaderExtensionMap& registered_extensions) {
   // RFC3550 Section 5.3.1
   static constexpr int kExtensionBlockHeaderSize = 4;
-  // RFC8285 Section 4.2-4.3.
-  static constexpr int kOneByteHeaderExtensionMaxValueSize = 16;
 
   int values_size = 0;
   int num_extensions = 0;
@@ -31,7 +29,8 @@ int RtpHeaderExtensionSize(rtc::ArrayView<const RtpExtensionSize> extensions,
     // All extensions should use same size header. Check if the |extension|
     // forces to switch to two byte header that allows larger id and value size.
     if (id > RtpExtension::kOneByteHeaderExtensionMaxId ||
-        extension.value_size > kOneByteHeaderExtensionMaxValueSize) {
+        extension.value_size >
+            RtpExtension::kOneByteHeaderExtensionMaxValueSize) {
       each_extension_header_size = 2;
     }
     values_size += extension.value_size;

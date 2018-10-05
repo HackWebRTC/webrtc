@@ -53,10 +53,18 @@ class RtpHeaderExtensionMap {
   }
   int32_t Deregister(RTPExtensionType type);
 
+  bool IsMixedOneTwoByteHeaderSupported() const {
+    return mixed_one_two_byte_header_supported_;
+  }
+  void SetMixedOneTwoByteHeaderSupported(bool supported) {
+    mixed_one_two_byte_header_supported_ = supported;
+  }
+
  private:
   bool Register(int id, RTPExtensionType type, const char* uri);
 
   uint8_t ids_[kRtpExtensionNumberOfExtensions];
+  bool mixed_one_two_byte_header_supported_;
 };
 
 }  // namespace webrtc

@@ -311,7 +311,9 @@ struct RtpExtension {
   // header extensions, per RFC8285 Section 4.2-4.3.
   static constexpr int kMinId = 1;
   static constexpr int kMaxId = 255;
+  static constexpr int kMaxValueSize = 255;
   static constexpr int kOneByteHeaderExtensionMaxId = 14;
+  static constexpr int kOneByteHeaderExtensionMaxValueSize = 16;
 
   std::string uri;
   int id = 0;

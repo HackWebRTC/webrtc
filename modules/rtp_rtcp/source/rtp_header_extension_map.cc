@@ -56,7 +56,8 @@ static_assert(arraysize(kExtensions) ==
 constexpr RTPExtensionType RtpHeaderExtensionMap::kInvalidType;
 constexpr int RtpHeaderExtensionMap::kInvalidId;
 
-RtpHeaderExtensionMap::RtpHeaderExtensionMap() {
+RtpHeaderExtensionMap::RtpHeaderExtensionMap()
+    : mixed_one_two_byte_header_supported_(false) {
   for (auto& id : ids_)
     id = kInvalidId;
 }
