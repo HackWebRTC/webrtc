@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "common_video/include/video_frame.h"
+#include "api/video/encoded_image.h"
 
 #include <string.h>
 

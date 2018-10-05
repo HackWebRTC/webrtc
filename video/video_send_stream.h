@@ -20,7 +20,6 @@
 #include "call/bitrate_allocator.h"
 #include "call/video_receive_stream.h"
 #include "call/video_send_stream.h"
-#include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/event.h"
 #include "rtc_base/task_queue.h"

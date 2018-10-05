@@ -14,10 +14,10 @@
 #include <memory>
 #include <vector>
 
+#include "api/video/encoded_image.h"
 #include "api/video/video_frame.h"
 #include "api/video_codecs/video_encoder.h"
 #include "common_types.h"  // NOLINT(build/include)
-#include "common_video/include/video_frame.h"
 #include "modules/video_coding/codecs/vp8/include/temporal_layers_checker.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/codecs/vp8/include/vp8_temporal_layers.h"

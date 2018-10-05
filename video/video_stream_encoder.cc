@@ -15,8 +15,8 @@
 #include <numeric>
 #include <utility>
 
+#include "api/video/encoded_image.h"
 #include "api/video/i420_buffer.h"
-#include "common_video/include/video_frame.h"
 #include "modules/video_coding/include/video_codec_initializer.h"
 #include "modules/video_coding/include/video_coding.h"
 #include "rtc_base/arraysize.h"

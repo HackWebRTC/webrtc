@@ -12,12 +12,12 @@
 #include <vector>
 
 #include "api/test/simulated_network.h"
+#include "api/video/encoded_image.h"
 #include "call/call.h"
 #include "call/fake_network_pipe.h"
 #include "call/rtp_transport_controller_send.h"
 #include "call/simulated_network.h"
 #include "common_video/include/frame_callback.h"
-#include "common_video/include/video_frame.h"
 #include "modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/source/rtcp_sender.h"

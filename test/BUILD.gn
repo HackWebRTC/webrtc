@@ -532,6 +532,7 @@ rtc_source_set("fake_video_codecs") {
   }
   deps = [
     "..:webrtc_common",
+    "../api/video:encoded_image",
     "../api/video:video_frame_i420",
     "../api/video_codecs:video_codecs_api",
     "../common_video:common_video",

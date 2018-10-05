@@ -12,7 +12,7 @@
 
 #include <string.h>
 
-#include "common_video/include/video_frame.h"
+#include "api/video/encoded_image.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "rtc_base/checks.h"
 

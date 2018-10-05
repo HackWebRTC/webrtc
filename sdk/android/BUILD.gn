@@ -570,6 +570,7 @@ if (is_android) {
       ":vp9_jni",  # TODO(bugs.webrtc.org/7925): Remove.
       "../..:webrtc_common",
       "../../api:libjingle_peerconnection_api",
+      "../../api/video:encoded_image",
       "../../api/video:video_frame",
       "../../api/video_codecs:builtin_video_decoder_factory",
       "../../api/video_codecs:builtin_video_encoder_factory",

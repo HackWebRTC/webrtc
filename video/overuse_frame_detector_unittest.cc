@@ -10,8 +10,8 @@
 
 #include <memory>
 
+#include "api/video/encoded_image.h"
 #include "api/video/i420_buffer.h"
-#include "common_video/include/video_frame.h"
 #include "modules/video_coding/utility/quality_scaler.h"
 #include "rtc_base/event.h"
 #include "rtc_base/fakeclock.h"

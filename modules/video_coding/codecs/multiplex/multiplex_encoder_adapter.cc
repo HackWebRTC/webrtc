@@ -12,7 +12,7 @@
 
 #include <cstring>
 
-#include "common_video/include/video_frame.h"
+#include "api/video/encoded_image.h"
 #include "common_video/include/video_frame_buffer.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/include/module_common_types.h"

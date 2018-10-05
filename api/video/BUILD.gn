@@ -66,6 +66,20 @@ rtc_source_set("video_frame_i010") {
   ]
 }
 
+rtc_source_set("encoded_image") {
+  sources = [
+    "encoded_image.cc",
+    "encoded_image.h",
+  ]
+  deps = [
+    ":video_frame",
+    "../..:webrtc_common",
+    "../../rtc_base:checks",
+    "../../rtc_base:rtc_base_approved",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
+}
+
 rtc_source_set("encoded_frame") {
   visibility = [ "*" ]
   sources = [

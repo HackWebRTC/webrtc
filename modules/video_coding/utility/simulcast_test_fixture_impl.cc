@@ -15,8 +15,8 @@
 #include <memory>
 #include <vector>
 
+#include "api/video/encoded_image.h"
 #include "api/video_codecs/sdp_video_format.h"
-#include "common_video/include/video_frame.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "rtc_base/checks.h"
