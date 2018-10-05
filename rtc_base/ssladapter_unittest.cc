@@ -15,6 +15,7 @@
 #include "absl/memory/memory.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/ipaddress.h"
+#include "rtc_base/messagedigest.h"
 #include "rtc_base/socketstream.h"
 #include "rtc_base/ssladapter.h"
 #include "rtc_base/sslidentity.h"

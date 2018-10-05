@@ -20,6 +20,7 @@
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/fileutils.h"
+#include "rtc_base/logging.h"
 #include "rtc_base/pathutils.h"
 #include "rtc_base/stream.h"
 #include "rtc_base/stringutils.h"

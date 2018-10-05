@@ -24,17 +24,11 @@
 
 #include "absl/types/optional.h"
 #include "api/video/video_frame.h"
-// TODO(zhihuang): Remove unrelated headers once downstream applications stop
-// relying on them; they were previously transitively included by
-// mediachannel.h, which is no longer a dependency of this file.
 #include "api/video/video_sink_interface.h"
 #include "api/video/video_source_interface.h"
 #include "modules/audio_processing/include/audio_processing_statistics.h"
-#include "rtc_base/ratetracker.h"
 #include "rtc_base/refcount.h"
 #include "rtc_base/scoped_ref_ptr.h"
-#include "rtc_base/thread.h"
-#include "rtc_base/timeutils.h"
 
 namespace webrtc {
 

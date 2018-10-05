@@ -10,12 +10,11 @@
 
 #include "rtc_base/fileutils.h"
 
-#include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/pathutils.h"
-#include "rtc_base/stringutils.h"
 
 #if defined(WEBRTC_WIN)
+#include "rtc_base/stringutils.h"  // for ToUtf16
 #include "rtc_base/win32filesystem.h"
 #else
 #include "rtc_base/unixfilesystem.h"

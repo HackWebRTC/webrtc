@@ -23,9 +23,7 @@
 #include <unistd.h>
 #endif  // WEBRTC_WIN
 
-#include "rtc_base/checks.h"
 #include "rtc_base/constructormagic.h"
-#include "rtc_base/platform_file.h"
 
 namespace rtc {
 

@@ -23,7 +23,10 @@
 #define RTC_BASE_FLAGS_H_
 
 #include "rtc_base/checks.h"
+
+#if defined(WEBRTC_WIN)
 #include "rtc_base/constructormagic.h"
+#endif
 
 namespace rtc {
 

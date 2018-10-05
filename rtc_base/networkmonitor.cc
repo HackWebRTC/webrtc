@@ -11,6 +11,7 @@
 #include "rtc_base/networkmonitor.h"
 
 #include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 namespace {
 const uint32_t UPDATE_NETWORKS_MESSAGE = 1;
