@@ -16,6 +16,7 @@
 #endif              // UNIT_TEST
 
 #include <stdint.h>
+#include <algorithm>
 #include <cmath>
 #include <limits>
 #include <string>
@@ -133,6 +134,12 @@ class DataRate {
     return bits_per_sec_ == data_rate_impl::kPlusInfinityVal;
   }
   constexpr bool IsFinite() const { return !IsInfinite(); }
+  DataRate Clamped(DataRate min_rate, DataRate max_rate) const {
+    return std::max(min_rate, std::min(*this, max_rate));
+  }
+  void Clamp(DataRate min_rate, DataRate max_rate) {
+    *this = Clamped(min_rate, max_rate);
+  }
   DataRate operator-(const DataRate& other) const {
     return DataRate::bps(bps() - other.bps());
   }
