@@ -170,7 +170,7 @@ class RtcpXrObserver : public test::EndToEndTest {
   bool sent_rtcp_target_bitrate_ RTC_GUARDED_BY(&crit_);
   bool sent_zero_rtcp_target_bitrate_ RTC_GUARDED_BY(&crit_);
   int sent_rtcp_dlrr_;
-  DefaultNetworkSimulationConfig forward_transport_config_;
+  BuiltInNetworkBehaviorConfig forward_transport_config_;
   SimulatedNetwork* send_simulated_network_;
 };
 

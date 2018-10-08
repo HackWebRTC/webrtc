@@ -742,8 +742,8 @@ test::PacketTransport* BaseTest::CreateSendTransport(
       task_queue, sender_call, this, test::PacketTransport::kSender,
       CallTest::payload_type_map_,
       absl::make_unique<FakeNetworkPipe>(
-          Clock::GetRealTimeClock(), absl::make_unique<SimulatedNetwork>(
-                                         DefaultNetworkSimulationConfig())));
+          Clock::GetRealTimeClock(),
+          absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig())));
 }
 
 test::PacketTransport* BaseTest::CreateReceiveTransport(
@@ -752,8 +752,8 @@ test::PacketTransport* BaseTest::CreateReceiveTransport(
       task_queue, nullptr, this, test::PacketTransport::kReceiver,
       CallTest::payload_type_map_,
       absl::make_unique<FakeNetworkPipe>(
-          Clock::GetRealTimeClock(), absl::make_unique<SimulatedNetwork>(
-                                         DefaultNetworkSimulationConfig())));
+          Clock::GetRealTimeClock(),
+          absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig())));
 }
 
 size_t BaseTest::GetNumVideoStreams() const {

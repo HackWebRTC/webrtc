@@ -114,15 +114,15 @@ TEST_P(CallOperationEndToEndTest, RendersSingleDelayedFrame) {
 
     sender_transport = absl::make_unique<test::DirectTransport>(
         &task_queue_,
-        absl::make_unique<FakeNetworkPipe>(
-            Clock::GetRealTimeClock(), absl::make_unique<SimulatedNetwork>(
-                                           DefaultNetworkSimulationConfig())),
+        absl::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
+                                           absl::make_unique<SimulatedNetwork>(
+                                               BuiltInNetworkBehaviorConfig())),
         sender_call_.get(), payload_type_map_);
     receiver_transport = absl::make_unique<test::DirectTransport>(
         &task_queue_,
-        absl::make_unique<FakeNetworkPipe>(
-            Clock::GetRealTimeClock(), absl::make_unique<SimulatedNetwork>(
-                                           DefaultNetworkSimulationConfig())),
+        absl::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
+                                           absl::make_unique<SimulatedNetwork>(
+                                               BuiltInNetworkBehaviorConfig())),
         receiver_call_.get(), payload_type_map_);
     sender_transport->SetReceiver(receiver_call_->Receiver());
     receiver_transport->SetReceiver(sender_call_->Receiver());
@@ -182,15 +182,15 @@ TEST_P(CallOperationEndToEndTest, TransmitsFirstFrame) {
 
     sender_transport = absl::make_unique<test::DirectTransport>(
         &task_queue_,
-        absl::make_unique<FakeNetworkPipe>(
-            Clock::GetRealTimeClock(), absl::make_unique<SimulatedNetwork>(
-                                           DefaultNetworkSimulationConfig())),
+        absl::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
+                                           absl::make_unique<SimulatedNetwork>(
+                                               BuiltInNetworkBehaviorConfig())),
         sender_call_.get(), payload_type_map_);
     receiver_transport = absl::make_unique<test::DirectTransport>(
         &task_queue_,
-        absl::make_unique<FakeNetworkPipe>(
-            Clock::GetRealTimeClock(), absl::make_unique<SimulatedNetwork>(
-                                           DefaultNetworkSimulationConfig())),
+        absl::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
+                                           absl::make_unique<SimulatedNetwork>(
+                                               BuiltInNetworkBehaviorConfig())),
         receiver_call_.get(), payload_type_map_);
     sender_transport->SetReceiver(receiver_call_->Receiver());
     receiver_transport->SetReceiver(sender_call_->Receiver());
@@ -257,15 +257,15 @@ TEST_P(CallOperationEndToEndTest, ObserversEncodedFrames) {
 
     sender_transport = absl::make_unique<test::DirectTransport>(
         &task_queue_,
-        absl::make_unique<FakeNetworkPipe>(
-            Clock::GetRealTimeClock(), absl::make_unique<SimulatedNetwork>(
-                                           DefaultNetworkSimulationConfig())),
+        absl::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
+                                           absl::make_unique<SimulatedNetwork>(
+                                               BuiltInNetworkBehaviorConfig())),
         sender_call_.get(), payload_type_map_);
     receiver_transport = absl::make_unique<test::DirectTransport>(
         &task_queue_,
-        absl::make_unique<FakeNetworkPipe>(
-            Clock::GetRealTimeClock(), absl::make_unique<SimulatedNetwork>(
-                                           DefaultNetworkSimulationConfig())),
+        absl::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
+                                           absl::make_unique<SimulatedNetwork>(
+                                               BuiltInNetworkBehaviorConfig())),
         receiver_call_.get(), payload_type_map_);
     sender_transport->SetReceiver(receiver_call_->Receiver());
     receiver_transport->SetReceiver(sender_call_->Receiver());

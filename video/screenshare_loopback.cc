@@ -276,7 +276,7 @@ DEFINE_bool(help, false, "prints this message");
 }  // namespace flags
 
 void Loopback() {
-  DefaultNetworkSimulationConfig pipe_config;
+  BuiltInNetworkBehaviorConfig pipe_config;
   pipe_config.loss_percent = flags::LossPercent();
   pipe_config.link_capacity_kbps = flags::LinkCapacityKbps();
   pipe_config.queue_length_packets = flags::QueueSize();

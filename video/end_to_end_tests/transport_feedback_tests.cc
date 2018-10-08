@@ -55,7 +55,7 @@ TEST_P(TransportFeedbackEndToEndTest, AssignsTransportSequenceNumbers) {
                           absl::make_unique<FakeNetworkPipe>(
                               Clock::GetRealTimeClock(),
                               absl::make_unique<SimulatedNetwork>(
-                                  DefaultNetworkSimulationConfig())),
+                                  BuiltInNetworkBehaviorConfig())),
                           sender_call,
                           payload_type_map),
           done_(false, false),

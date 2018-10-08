@@ -231,7 +231,7 @@ TEST_F(StatsEndToEndTest, GetStats) {
     test::PacketTransport* CreateSendTransport(
         test::SingleThreadedTaskQueueForTesting* task_queue,
         Call* sender_call) override {
-      DefaultNetworkSimulationConfig network_config;
+      BuiltInNetworkBehaviorConfig network_config;
       network_config.loss_percent = 5;
       return new test::PacketTransport(
           task_queue, sender_call, this, test::PacketTransport::kSender,
@@ -713,7 +713,7 @@ TEST_F(StatsEndToEndTest, CallReportsRttForSender) {
   std::unique_ptr<test::DirectTransport> receiver_transport;
 
   task_queue_.SendTask([this, &sender_transport, &receiver_transport]() {
-    DefaultNetworkSimulationConfig config;
+    BuiltInNetworkBehaviorConfig config;
     config.queue_delay_ms = kSendDelayMs;
     CreateCalls();
     sender_transport = absl::make_unique<test::DirectTransport>(

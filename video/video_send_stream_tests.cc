@@ -541,7 +541,7 @@ class UlpfecObserver : public test::EndToEndTest {
     // At low RTT (< kLowRttNackMs) -> NACK only, no FEC.
     // Configure some network delay.
     const int kNetworkDelayMs = 100;
-    DefaultNetworkSimulationConfig config;
+    BuiltInNetworkBehaviorConfig config;
     config.loss_percent = 5;
     config.queue_delay_ms = kNetworkDelayMs;
     return new test::PacketTransport(
@@ -731,7 +731,7 @@ class FlexfecObserver : public test::EndToEndTest {
     // At low RTT (< kLowRttNackMs) -> NACK only, no FEC.
     // Therefore we need some network delay.
     const int kNetworkDelayMs = 100;
-    DefaultNetworkSimulationConfig config;
+    BuiltInNetworkBehaviorConfig config;
     config.loss_percent = 5;
     config.queue_delay_ms = kNetworkDelayMs;
     return new test::PacketTransport(
@@ -1481,7 +1481,7 @@ TEST_P(VideoSendStreamTest, PaddingIsPrimarilyRetransmissions) {
         test::SingleThreadedTaskQueueForTesting* task_queue,
         Call* sender_call) override {
       const int kNetworkDelayMs = 50;
-      DefaultNetworkSimulationConfig config;
+      BuiltInNetworkBehaviorConfig config;
       config.loss_percent = 10;
       config.link_capacity_kbps = kCapacityKbps;
       config.queue_delay_ms = kNetworkDelayMs;

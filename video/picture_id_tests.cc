@@ -299,7 +299,7 @@ void PictureIdTest::SetupEncoder(VideoEncoderFactory* encoder_factory,
         test::PacketTransport::kSender, payload_type_map_,
         absl::make_unique<FakeNetworkPipe>(
             Clock::GetRealTimeClock(), absl::make_unique<SimulatedNetwork>(
-                                           DefaultNetworkSimulationConfig()))));
+                                           BuiltInNetworkBehaviorConfig()))));
 
     CreateSendConfig(kNumSimulcastStreams, 0, 0, send_transport_.get());
     GetVideoSendConfig()->encoder_settings.encoder_factory = encoder_factory;

@@ -58,7 +58,7 @@ struct ParamsWithLogging : public VideoQualityTest::Params {
     // Use these logging flags by default, for everything.
     logging = {flags::RtcEventLogName(), flags::RtpDumpName(),
                flags::EncodedFramePath()};
-    this->config = DefaultNetworkSimulationConfig();
+    this->config = BuiltInNetworkBehaviorConfig();
   }
 };
 

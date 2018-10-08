@@ -143,9 +143,9 @@ test::DirectTransport* MultiStreamTester::CreateSendTransport(
     Call* sender_call) {
   return new test::DirectTransport(
       task_queue,
-      absl::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
-                                         absl::make_unique<SimulatedNetwork>(
-                                             DefaultNetworkSimulationConfig())),
+      absl::make_unique<FakeNetworkPipe>(
+          Clock::GetRealTimeClock(),
+          absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig())),
       sender_call, payload_type_map_);
 }
 
@@ -154,9 +154,9 @@ test::DirectTransport* MultiStreamTester::CreateReceiveTransport(
     Call* receiver_call) {
   return new test::DirectTransport(
       task_queue,
-      absl::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
-                                         absl::make_unique<SimulatedNetwork>(
-                                             DefaultNetworkSimulationConfig())),
+      absl::make_unique<FakeNetworkPipe>(
+          Clock::GetRealTimeClock(),
+          absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig())),
       receiver_call, payload_type_map_);
 }
 }  // namespace webrtc

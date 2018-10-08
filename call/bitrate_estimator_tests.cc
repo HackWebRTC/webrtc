@@ -111,14 +111,14 @@ class BitrateEstimatorTest : public test::CallTest {
           &task_queue_,
           absl::make_unique<FakeNetworkPipe>(
               Clock::GetRealTimeClock(), absl::make_unique<SimulatedNetwork>(
-                                             DefaultNetworkSimulationConfig())),
+                                             BuiltInNetworkBehaviorConfig())),
           sender_call_.get(), payload_type_map_));
       send_transport_->SetReceiver(receiver_call_->Receiver());
       receive_transport_.reset(new test::DirectTransport(
           &task_queue_,
           absl::make_unique<FakeNetworkPipe>(
               Clock::GetRealTimeClock(), absl::make_unique<SimulatedNetwork>(
-                                             DefaultNetworkSimulationConfig())),
+                                             BuiltInNetworkBehaviorConfig())),
           receiver_call_.get(), payload_type_map_));
       receive_transport_->SetReceiver(sender_call_->Receiver());
 

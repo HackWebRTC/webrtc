@@ -67,7 +67,7 @@ class RampUpTester : public test::EndToEndTest {
 
   rtc::Event stop_event_;
   Clock* const clock_;
-  DefaultNetworkSimulationConfig forward_transport_config_;
+  BuiltInNetworkBehaviorConfig forward_transport_config_;
   const size_t num_video_streams_;
   const size_t num_audio_streams_;
   const size_t num_flexfec_streams_;

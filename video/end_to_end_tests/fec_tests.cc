@@ -234,7 +234,7 @@ class FlexfecRenderObserver : public test::EndToEndTest,
       Call* sender_call) override {
     // At low RTT (< kLowRttNackMs) -> NACK only, no FEC.
     const int kNetworkDelayMs = 100;
-    DefaultNetworkSimulationConfig config;
+    BuiltInNetworkBehaviorConfig config;
     config.queue_delay_ms = kNetworkDelayMs;
     return new test::PacketTransport(
         task_queue, sender_call, this, test::PacketTransport::kSender,
@@ -421,7 +421,7 @@ TEST_F(FecEndToEndTest, ReceivedUlpfecPacketsNotNacked) {
       // At low RTT (< kLowRttNackMs) -> NACK only, no FEC.
       // Configure some network delay.
       const int kNetworkDelayMs = 50;
-      DefaultNetworkSimulationConfig config;
+      BuiltInNetworkBehaviorConfig config;
       config.queue_delay_ms = kNetworkDelayMs;
       return new test::PacketTransport(
           task_queue, sender_call, this, test::PacketTransport::kSender,

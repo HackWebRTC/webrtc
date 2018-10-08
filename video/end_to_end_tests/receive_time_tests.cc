@@ -96,7 +96,7 @@ class ReportedReceiveTimeTester : public test::EndToEndTest {
       Call* sender_call) override {
     auto pipe = absl::make_unique<FakeNetworkPipe>(
         Clock::GetRealTimeClock(),
-        absl::make_unique<SimulatedNetwork>(DefaultNetworkSimulationConfig()));
+        absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));
     send_pipe_ = pipe.get();
     return send_transport_ = new test::PacketTransport(
                task_queue, sender_call, this, test::PacketTransport::kSender,

@@ -131,9 +131,8 @@ TEST_F(RetransmissionEndToEndTest, ReceivesNackAndRetransmitsAudio) {
           task_queue, nullptr, this, test::PacketTransport::kReceiver,
           payload_type_map_,
           absl::make_unique<FakeNetworkPipe>(
-              Clock::GetRealTimeClock(),
-              absl::make_unique<SimulatedNetwork>(
-                  DefaultNetworkSimulationConfig())));
+              Clock::GetRealTimeClock(), absl::make_unique<SimulatedNetwork>(
+                                             BuiltInNetworkBehaviorConfig())));
       receive_transport_ = receive_transport;
       return receive_transport;
     }

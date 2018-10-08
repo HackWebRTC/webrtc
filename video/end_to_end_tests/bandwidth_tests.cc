@@ -160,9 +160,8 @@ TEST_F(BandwidthEndToEndTest, RembWithSendSideBwe) {
           task_queue, nullptr, this, test::PacketTransport::kReceiver,
           payload_type_map_,
           absl::make_unique<FakeNetworkPipe>(
-              Clock::GetRealTimeClock(),
-              absl::make_unique<SimulatedNetwork>(
-                  DefaultNetworkSimulationConfig())));
+              Clock::GetRealTimeClock(), absl::make_unique<SimulatedNetwork>(
+                                             BuiltInNetworkBehaviorConfig())));
       return receive_transport_;
     }
 
