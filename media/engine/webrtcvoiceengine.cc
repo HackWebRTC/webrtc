@@ -1623,17 +1623,17 @@ bool WebRtcVoiceMediaChannel::SetSendCodecs(
     // TODO(solenberg): Break out into a separate function?
     for (const AudioCodec& cn_codec : codecs) {
       if (IsCodec(cn_codec, kCnCodecName) &&
-          cn_codec.clockrate == send_codec_spec->format.clockrate_hz) {
-        switch (cn_codec.clockrate) {
-          case 8000:
-          case 16000:
-          case 32000:
-            send_codec_spec->cng_payload_type = cn_codec.id;
-            break;
-          default:
-            RTC_LOG(LS_WARNING)
-                << "CN frequency " << cn_codec.clockrate << " not supported.";
-            break;
+          cn_codec.clockrate == send_codec_spec->format.clockrate_hz &&
+          cn_codec.channels == voice_codec_info->num_channels) {
+        if (cn_codec.channels != 1) {
+          RTC_LOG(LS_WARNING)
+              << "CN #channels " << cn_codec.channels << " not supported.";
+        } else if (cn_codec.clockrate != 8000 && cn_codec.clockrate != 16000 &&
+                   cn_codec.clockrate != 32000) {
+          RTC_LOG(LS_WARNING)
+              << "CN frequency " << cn_codec.clockrate << " not supported.";
+        } else {
+          send_codec_spec->cng_payload_type = cn_codec.id;
         }
         break;
       }
