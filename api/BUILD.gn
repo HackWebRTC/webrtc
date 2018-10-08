@@ -63,6 +63,7 @@ rtc_static_library("libjingle_peerconnection_api") {
     "jsepicecandidate.cc",
     "jsepicecandidate.h",
     "jsepsessiondescription.h",
+    "media_transport_interface.cc",
     "media_transport_interface.h",
     "mediaconstraintsinterface.cc",
     "mediaconstraintsinterface.h",
@@ -109,6 +110,7 @@ rtc_static_library("libjingle_peerconnection_api") {
     "audio_codecs:audio_codecs_api",
     "transport:bitrate_settings",
     "transport:network_control",
+    "video:encoded_image",
     "video:video_frame",
     "//third_party/abseil-cpp/absl/types:optional",
 
