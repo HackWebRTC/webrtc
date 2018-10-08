@@ -318,6 +318,25 @@ TEST_F(WebRtcVideoEngineTest, SupportsVideoRotationHeaderExtension) {
   FAIL() << "Video Rotation extension not in header-extension list.";
 }
 
+class WebRtcVideoEngineTestWithGenericDescriptor
+    : public WebRtcVideoEngineTest {
+ public:
+  WebRtcVideoEngineTestWithGenericDescriptor()
+      : WebRtcVideoEngineTest("WebRTC-GenericDescriptorAdvertised/Enabled/") {}
+};
+
+TEST_F(WebRtcVideoEngineTestWithGenericDescriptor, AdvertiseGenericDescriptor) {
+  RtpCapabilities capabilities = engine_.GetCapabilities();
+  ASSERT_FALSE(capabilities.header_extensions.empty());
+  for (const RtpExtension& extension : capabilities.header_extensions) {
+    if (extension.uri == RtpExtension::kGenericFrameDescriptorUri) {
+      EXPECT_EQ(RtpExtension::kGenericFrameDescriptorDefaultId, extension.id);
+      return;
+    }
+  }
+  FAIL() << "Generic descriptor extension not in header-extension list.";
+}
+
 TEST_F(WebRtcVideoEngineTest, CVOSetHeaderExtensionBeforeCapturer) {
   // Allocate the source first to prevent early destruction before channel's
   // dtor is called.
