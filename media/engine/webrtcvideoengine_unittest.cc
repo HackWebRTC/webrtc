@@ -6905,15 +6905,19 @@ TEST_F(WebRtcVideoChannelSimulcastTest,
                           false);
 }
 
-// The fake clock needs to be initialize before the call.
-// So defer creating call in base class.
-class WebRtcVideoChannelTestWithClock : public WebRtcVideoChannelBaseTest {
+class WebRtcVideoFakeClock {
  public:
-  WebRtcVideoChannelTestWithClock() {
+  WebRtcVideoFakeClock() {
     fake_clock_.AdvanceTime(webrtc::TimeDelta::ms(1));  // avoid time=0
   }
   rtc::ScopedFakeClock fake_clock_;
 };
+
+// The fake clock needs to be initialized before the call, and not
+// destroyed until after all threads spawned by the test have been stopped.
+// This mixin ensures that.
+class WebRtcVideoChannelTestWithClock : public WebRtcVideoFakeClock,
+                                        public WebRtcVideoChannelBaseTest {};
 
 TEST_F(WebRtcVideoChannelTestWithClock, GetSources) {
   uint8_t data1[] = {0x80, 0x00, 0x00, 0x00, 0x00, 0x00,
