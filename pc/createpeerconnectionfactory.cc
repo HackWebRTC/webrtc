@@ -129,10 +129,14 @@ rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
 
   std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory =
       CreateRtcEventLogFactory();
-
-  return CreateModularPeerConnectionFactory(
-      network_thread, worker_thread, signaling_thread, std::move(media_engine),
-      std::move(call_factory), std::move(event_log_factory));
+  PeerConnectionFactoryDependencies dependencies;
+  dependencies.network_thread = network_thread;
+  dependencies.worker_thread = worker_thread;
+  dependencies.signaling_thread = signaling_thread;
+  dependencies.media_engine = std::move(media_engine);
+  dependencies.call_factory = std::move(call_factory);
+  dependencies.event_log_factory = std::move(event_log_factory);
+  return CreateModularPeerConnectionFactory(std::move(dependencies));
 }
 
 #if defined(USE_BUILTIN_SW_CODECS)

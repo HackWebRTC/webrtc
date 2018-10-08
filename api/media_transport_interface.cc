@@ -19,6 +19,8 @@
 
 namespace webrtc {
 
+MediaTransportEncodedAudioFrame::~MediaTransportEncodedAudioFrame() {}
+
 MediaTransportEncodedAudioFrame::MediaTransportEncodedAudioFrame(
     int sampling_rate_hz,
     int starting_sample_index,
@@ -35,7 +37,19 @@ MediaTransportEncodedAudioFrame::MediaTransportEncodedAudioFrame(
       payload_type_(payload_type),
       encoded_data_(std::move(encoded_data)) {}
 
-MediaTransportEncodedAudioFrame::~MediaTransportEncodedAudioFrame() = default;
+MediaTransportEncodedAudioFrame& MediaTransportEncodedAudioFrame::operator=(
+    const MediaTransportEncodedAudioFrame&) = default;
+
+MediaTransportEncodedAudioFrame& MediaTransportEncodedAudioFrame::operator=(
+    MediaTransportEncodedAudioFrame&&) = default;
+
+MediaTransportEncodedAudioFrame::MediaTransportEncodedAudioFrame(
+    const MediaTransportEncodedAudioFrame&) = default;
+
+MediaTransportEncodedAudioFrame::MediaTransportEncodedAudioFrame(
+    MediaTransportEncodedAudioFrame&&) = default;
+
+MediaTransportEncodedVideoFrame::~MediaTransportEncodedVideoFrame() {}
 
 MediaTransportEncodedVideoFrame::MediaTransportEncodedVideoFrame(
     int64_t frame_id,
@@ -47,6 +61,16 @@ MediaTransportEncodedVideoFrame::MediaTransportEncodedVideoFrame(
       frame_id_(frame_id),
       referenced_frame_ids_(std::move(referenced_frame_ids)) {}
 
-MediaTransportEncodedVideoFrame::~MediaTransportEncodedVideoFrame() = default;
+MediaTransportEncodedVideoFrame& MediaTransportEncodedVideoFrame::operator=(
+    const MediaTransportEncodedVideoFrame&) = default;
+
+MediaTransportEncodedVideoFrame& MediaTransportEncodedVideoFrame::operator=(
+    MediaTransportEncodedVideoFrame&&) = default;
+
+MediaTransportEncodedVideoFrame::MediaTransportEncodedVideoFrame(
+    const MediaTransportEncodedVideoFrame&) = default;
+
+MediaTransportEncodedVideoFrame::MediaTransportEncodedVideoFrame(
+    MediaTransportEncodedVideoFrame&&) = default;
 
 }  // namespace webrtc

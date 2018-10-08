@@ -705,6 +705,7 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
     SdpSemantics sdp_semantics;
     absl::optional<rtc::AdapterType> network_preference;
     bool active_reset_srtp_params;
+    bool use_media_transport;
   };
   static_assert(sizeof(stuff_being_tested_for_equality) == sizeof(*this),
                 "Did you add something to RTCConfiguration and forget to "
@@ -752,7 +753,8 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
          turn_customizer == o.turn_customizer &&
          sdp_semantics == o.sdp_semantics &&
          network_preference == o.network_preference &&
-         active_reset_srtp_params == o.active_reset_srtp_params;
+         active_reset_srtp_params == o.active_reset_srtp_params &&
+         use_media_transport == o.use_media_transport;
 }
 
 bool PeerConnectionInterface::RTCConfiguration::operator!=(

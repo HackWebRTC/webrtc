@@ -1,5 +1,4 @@
-/*
- *  Copyright 2018 The WebRTC project authors. All Rights Reserved.
+/* Copyright 2018 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -35,7 +34,7 @@ namespace webrtc {
 
 // Represents encoded audio frame in any encoding (type of encoding is opaque).
 // To avoid copying of encoded data use move semantics when passing by value.
-class MediaTransportEncodedAudioFrame {
+class MediaTransportEncodedAudioFrame final {
  public:
   enum class FrameType {
     // Normal audio frame (equivalent to webrtc::kAudioFrameSpeech).
@@ -79,6 +78,12 @@ class MediaTransportEncodedAudioFrame {
       std::vector<uint8_t> encoded_data);
 
   ~MediaTransportEncodedAudioFrame();
+  MediaTransportEncodedAudioFrame(const MediaTransportEncodedAudioFrame&);
+  MediaTransportEncodedAudioFrame& operator=(
+      const MediaTransportEncodedAudioFrame& other);
+  MediaTransportEncodedAudioFrame& operator=(
+      MediaTransportEncodedAudioFrame&& other);
+  MediaTransportEncodedAudioFrame(MediaTransportEncodedAudioFrame&&);
 
   // Getters.
   int sampling_rate_hz() const { return sampling_rate_hz_; }
@@ -121,13 +126,19 @@ class MediaTransportAudioSinkInterface {
 };
 
 // Represents encoded video frame, along with the codec information.
-class MediaTransportEncodedVideoFrame {
+class MediaTransportEncodedVideoFrame final {
  public:
   MediaTransportEncodedVideoFrame(int64_t frame_id,
                                   std::vector<int64_t> referenced_frame_ids,
                                   VideoCodecType codec_type,
                                   const webrtc::EncodedImage& encoded_image);
   ~MediaTransportEncodedVideoFrame();
+  MediaTransportEncodedVideoFrame(const MediaTransportEncodedVideoFrame&);
+  MediaTransportEncodedVideoFrame& operator=(
+      const MediaTransportEncodedVideoFrame& other);
+  MediaTransportEncodedVideoFrame& operator=(
+      MediaTransportEncodedVideoFrame&& other);
+  MediaTransportEncodedVideoFrame(MediaTransportEncodedVideoFrame&&);
 
   VideoCodecType codec_type() const { return codec_type_; }
   const webrtc::EncodedImage& encoded_image() const { return encoded_image_; }

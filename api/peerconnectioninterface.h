@@ -80,6 +80,7 @@
 #include "api/datachannelinterface.h"
 #include "api/fec_controller.h"
 #include "api/jsep.h"
+#include "api/media_transport_interface.h"
 #include "api/mediastreaminterface.h"
 #include "api/rtcerror.h"
 #include "api/rtceventlogoutput.h"
@@ -559,6 +560,12 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     // WARNING: This would cause RTP/RTCP packets decryption failure if not used
     // correctly. This flag will be deprecated soon. Do not rely on it.
     bool active_reset_srtp_params = false;
+
+    // If MediaTransportFactory is provided in PeerConnectionFactory, this flag
+    // informs PeerConnection that it should use the MediaTransportInterface.
+    // It's invalid to set it to |true| if the MediaTransportFactory wasn't
+    // provided.
+    bool use_media_transport = false;
 
     //
     // Don't forget to update operator== if adding something.
@@ -1153,6 +1160,7 @@ struct PeerConnectionFactoryDependencies final {
   std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory;
   std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory;
   std::unique_ptr<NetworkControllerFactoryInterface> network_controller_factory;
+  std::unique_ptr<MediaTransportFactory> media_transport_factory;
 };
 
 // PeerConnectionFactoryInterface is the factory interface used for creating

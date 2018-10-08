@@ -168,6 +168,12 @@ RTC_OBJC_EXPORT
  */
 @property(nonatomic, assign) BOOL activeResetSrtpParams;
 
+/**
+ * If MediaTransportFactory is provided in PeerConnectionFactory, this flag informs PeerConnection
+ * that it should use the MediaTransportInterface.
+ */
+@property(nonatomic, assign) BOOL useMediaTransport;
+
 - (instancetype)init;
 
 @end

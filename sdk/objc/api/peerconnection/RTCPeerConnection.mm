@@ -29,6 +29,7 @@
 #include <memory>
 
 #include "api/jsepicecandidate.h"
+#include "api/media_transport_interface.h"
 #include "rtc_base/checks.h"
 
 NSString * const kRTCPeerConnectionErrorDomain =

@@ -1170,6 +1170,7 @@ if (is_ios || is_mac) {
           ":videoframebuffer_objc",
           ":videosource_objc",
           ":videotoolbox_objc",
+          "../api:libjingle_peerconnection_api",
           "../api/audio_codecs:audio_codecs_api",
           "../api/audio_codecs:builtin_audio_decoder_factory",
           "../api/audio_codecs:builtin_audio_encoder_factory",

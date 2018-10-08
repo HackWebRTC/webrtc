@@ -48,6 +48,7 @@
 @synthesize sdpSemantics = _sdpSemantics;
 @synthesize turnCustomizer = _turnCustomizer;
 @synthesize activeResetSrtpParams = _activeResetSrtpParams;
+@synthesize useMediaTransport = _useMediaTransport;
 
 - (instancetype)init {
   // Copy defaults.
@@ -117,7 +118,7 @@
 - (NSString *)description {
   static NSString *formatString =
       @"RTCConfiguration: "
-      @"{\n%@\n%@\n%@\n%@\n%@\n%@\n%@\n%@\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%@\n%@\n%d\n%d\n%d\n}\n";
+      @"{\n%@\n%@\n%@\n%@\n%@\n%@\n%@\n%@\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%@\n%@\n%d\n%d\n%d\n%@\n}\n";
 
   return [NSString
       stringWithFormat:formatString,
@@ -140,7 +141,8 @@
                        _iceRegatherIntervalRange,
                        _disableLinkLocalNetworks,
                        _maxIPv6Networks,
-                       _activeResetSrtpParams];
+                       _activeResetSrtpParams,
+                       _useMediaTransport];
 }
 
 #pragma mark - Private

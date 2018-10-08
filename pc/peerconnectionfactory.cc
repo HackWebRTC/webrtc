@@ -15,6 +15,7 @@
 
 #include "absl/memory/memory.h"
 #include "api/fec_controller.h"
+#include "api/media_transport_interface.h"
 #include "api/mediaconstraintsinterface.h"
 #include "api/mediastreamproxy.h"
 #include "api/mediastreamtrackproxy.h"
@@ -187,7 +188,9 @@ PeerConnectionFactory::PeerConnectionFactory(
           std::move(dependencies.call_factory),
           std::move(dependencies.event_log_factory),
           std::move(dependencies.fec_controller_factory),
-          std::move(dependencies.network_controller_factory)) {}
+          std::move(dependencies.network_controller_factory)) {
+  media_transport_factory_ = std::move(dependencies.media_transport_factory);
+}
 
 PeerConnectionFactory::~PeerConnectionFactory() {
   RTC_DCHECK(signaling_thread_->IsCurrent());
