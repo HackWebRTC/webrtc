@@ -13,10 +13,12 @@
 
 #include <stddef.h>  // size_t
 
+#include "rtc_base/system/rtc_export.h"
+
 namespace webrtc {
 
 // Configuration struct for EchoCanceller3
-struct EchoCanceller3Config {
+struct RTC_EXPORT EchoCanceller3Config {
   EchoCanceller3Config();
   EchoCanceller3Config(const EchoCanceller3Config& e);
   struct Delay {
