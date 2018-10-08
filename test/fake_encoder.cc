@@ -147,6 +147,7 @@ FakeEncoder::FrameInfo FakeEncoder::NextFrame(
     }
   }
 
+  rtc::CritScope cs(&crit_sect_);
   for (uint8_t i = 0; i < num_simulcast_streams; ++i) {
     if (target_bitrate.GetBitrate(i, 0) > 0) {
       int temporal_id = last_frame_info_.layers.size() > i

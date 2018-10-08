@@ -71,7 +71,7 @@ class FakeEncoder : public VideoEncoder {
                       SimulcastStream simulcast_streams[kMaxSimulcastStreams],
                       int framerate);
 
-  FrameInfo last_frame_info_;
+  FrameInfo last_frame_info_ RTC_GUARDED_BY(crit_sect_);
   Clock* const clock_;
 
   VideoCodec config_ RTC_GUARDED_BY(crit_sect_);
