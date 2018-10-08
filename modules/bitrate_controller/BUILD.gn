@@ -44,7 +44,6 @@ rtc_static_library("bitrate_controller") {
     "../rtp_rtcp",
     "../rtp_rtcp:rtp_rtcp_format",
     "//third_party/abseil-cpp/absl/memory",
-    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 

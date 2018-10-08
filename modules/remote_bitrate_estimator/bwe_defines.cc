@@ -26,10 +26,6 @@ int GetMinBitrateBps() {
   return kMinBitrateBps;
 }
 
-DataRate GetMinBitrate() {
-  return DataRate::bps(GetMinBitrateBps());
-}
-
 }  // namespace congestion_controller
 
 RateControlInput::RateControlInput(
