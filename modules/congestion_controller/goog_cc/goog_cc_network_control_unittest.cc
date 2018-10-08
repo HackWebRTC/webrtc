@@ -91,9 +91,10 @@ class GoogCcNetworkControllerTest : public ::testing::Test {
     return packet_result;
   }
 
-  NetworkRouteChange CreateRouteChange(DataRate start_rate = DataRate::Zero(),
-                                       DataRate min_rate = DataRate::Zero(),
-                                       DataRate max_rate = DataRate::Zero()) {
+  NetworkRouteChange CreateRouteChange(
+      absl::optional<DataRate> start_rate = absl::nullopt,
+      absl::optional<DataRate> min_rate = absl::nullopt,
+      absl::optional<DataRate> max_rate = absl::nullopt) {
     NetworkRouteChange route_change;
     route_change.at_time = current_time_;
     route_change.constraints.at_time = current_time_;
