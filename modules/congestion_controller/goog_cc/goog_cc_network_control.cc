@@ -250,6 +250,13 @@ NetworkControlUpdate GoogCcNetworkController::OnSentPacket(
     SentPacket sent_packet) {
   alr_detector_->OnBytesSent(sent_packet.size.bytes(),
                              sent_packet.send_time.ms());
+  if (!first_packet_sent_) {
+    first_packet_sent_ = true;
+    // Initialize feedback time to send time to allow estimation of RTT until
+    // first feedback is received.
+    bandwidth_estimation_->UpdatePropagationRtt(sent_packet.send_time,
+                                                TimeDelta::Zero());
+  }
   return NetworkControlUpdate();
 }
 
@@ -331,24 +338,30 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportLossReport(
 
 NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
     TransportPacketsFeedback report) {
-  TimeDelta feedback_max_rtt = TimeDelta::MinusInfinity();
+  TimeDelta max_feedback_rtt = TimeDelta::MinusInfinity();
+  TimeDelta min_propagation_rtt = TimeDelta::PlusInfinity();
   Timestamp max_recv_time = Timestamp::MinusInfinity();
-  for (const auto& packet_feedback : report.ReceivedWithSendInfo()) {
-    TimeDelta rtt =
-        report.feedback_time - packet_feedback.sent_packet->send_time;
-    // max() is used to account for feedback being delayed by the
-    // receiver.
-    feedback_max_rtt = std::max(feedback_max_rtt, rtt);
-    max_recv_time = std::max(max_recv_time, packet_feedback.receive_time);
+
+  std::vector<PacketResult> feedbacks = report.ReceivedWithSendInfo();
+  for (const auto& feedback : feedbacks)
+    max_recv_time = std::max(max_recv_time, feedback.receive_time);
+
+  for (const auto& feedback : feedbacks) {
+    TimeDelta feedback_rtt =
+        report.feedback_time - feedback.sent_packet->send_time;
+    TimeDelta min_pending_time = feedback.receive_time - max_recv_time;
+    TimeDelta propagation_rtt = feedback_rtt - min_pending_time;
+    max_feedback_rtt = std::max(max_feedback_rtt, feedback_rtt);
+    min_propagation_rtt = std::min(min_propagation_rtt, propagation_rtt);
   }
-  absl::optional<int64_t> min_feedback_max_rtt_ms;
-  if (feedback_max_rtt.IsFinite()) {
-    feedback_max_rtts_.push_back(feedback_max_rtt.ms());
+
+  if (max_feedback_rtt.IsFinite()) {
+    feedback_max_rtts_.push_back(max_feedback_rtt.ms());
     const size_t kMaxFeedbackRttWindow = 32;
     if (feedback_max_rtts_.size() > kMaxFeedbackRttWindow)
       feedback_max_rtts_.pop_front();
-    min_feedback_max_rtt_ms.emplace(*std::min_element(
-        feedback_max_rtts_.begin(), feedback_max_rtts_.end()));
+    bandwidth_estimation_->UpdatePropagationRtt(report.feedback_time,
+                                                min_propagation_rtt);
   }
   if (packet_feedback_only_) {
     if (!feedback_max_rtts_.empty()) {
@@ -359,7 +372,7 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
     }
 
     TimeDelta feedback_min_rtt = TimeDelta::PlusInfinity();
-    for (const auto& packet_feedback : report.ReceivedWithSendInfo()) {
+    for (const auto& packet_feedback : feedbacks) {
       TimeDelta pending_time = packet_feedback.receive_time - max_recv_time;
       TimeDelta rtt = report.feedback_time -
                       packet_feedback.sent_packet->send_time - pending_time;
@@ -428,10 +441,13 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
 
   // No valid RTT could be because send-side BWE isn't used, in which case
   // we don't try to limit the outstanding packets.
-  if (in_cwnd_experiment_ && min_feedback_max_rtt_ms) {
+  if (in_cwnd_experiment_ && max_feedback_rtt.IsFinite()) {
+    int64_t min_feedback_max_rtt_ms =
+        *std::min_element(feedback_max_rtts_.begin(), feedback_max_rtts_.end());
+
     const DataSize kMinCwnd = DataSize::bytes(2 * 1500);
     TimeDelta time_window =
-        TimeDelta::ms(*min_feedback_max_rtt_ms + accepted_queue_ms_);
+        TimeDelta::ms(min_feedback_max_rtt_ms + accepted_queue_ms_);
     DataSize data_window = last_bandwidth_ * time_window;
     if (current_data_window_) {
       data_window =
@@ -440,7 +456,7 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
       data_window = std::max(kMinCwnd, data_window);
     }
     current_data_window_ = data_window;
-    RTC_LOG(LS_INFO) << "Feedback rtt: " << *min_feedback_max_rtt_ms
+    RTC_LOG(LS_INFO) << "Feedback rtt: " << min_feedback_max_rtt_ms
                      << " Bitrate: " << last_bandwidth_.bps();
   }
   update.congestion_window = current_data_window_;

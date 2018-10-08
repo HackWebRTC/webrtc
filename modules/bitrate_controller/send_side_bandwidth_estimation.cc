@@ -104,8 +104,21 @@ bool ReadBweLossExperimentParameters(float* low_loss_threshold,
 }
 }  // namespace
 
+RttBasedBackoffConfig::RttBasedBackoffConfig()
+    : rtt_limit("limit", TimeDelta::PlusInfinity()),
+      drop_fraction("fraction", 0.5),
+      drop_interval("interval", TimeDelta::ms(300)) {
+  std::string trial_string =
+      field_trial::FindFullName("WebRTC-Bwe-MaxRttLimit");
+  ParseFieldTrial({&rtt_limit, &drop_fraction, &drop_interval}, trial_string);
+}
+RttBasedBackoffConfig::RttBasedBackoffConfig(const RttBasedBackoffConfig&) =
+    default;
+RttBasedBackoffConfig::~RttBasedBackoffConfig() = default;
+
 SendSideBandwidthEstimation::SendSideBandwidthEstimation(RtcEventLog* event_log)
-    : lost_packets_since_last_loss_update_(0),
+    : rtt_backoff_config_(RttBasedBackoffConfig()),
+      lost_packets_since_last_loss_update_(0),
       expected_packets_since_last_loss_update_(0),
       current_bitrate_(DataRate::Zero()),
       min_bitrate_configured_(
@@ -119,6 +132,10 @@ SendSideBandwidthEstimation::SendSideBandwidthEstimation(RtcEventLog* event_log)
       last_fraction_loss_(0),
       last_logged_fraction_loss_(0),
       last_round_trip_time_(TimeDelta::Zero()),
+      // By initializing this to plus infinity, we make sure that we never
+      // trigger rtt backoff unless packet feedback is enabled.
+      last_propagation_rtt_update_(Timestamp::PlusInfinity()),
+      last_propagation_rtt_(TimeDelta::Zero()),
       bwe_incoming_(DataRate::Zero()),
       delay_based_bitrate_(DataRate::Zero()),
       time_last_decrease_(Timestamp::MinusInfinity()),
@@ -295,6 +312,16 @@ void SendSideBandwidthEstimation::UpdateRtt(TimeDelta rtt, Timestamp at_time) {
 
 void SendSideBandwidthEstimation::UpdateEstimate(Timestamp at_time) {
   DataRate new_bitrate = current_bitrate_;
+  TimeDelta time_since_rtt = at_time - last_propagation_rtt_update_;
+  if (time_since_rtt + last_propagation_rtt_ > rtt_backoff_config_.rtt_limit) {
+    if (at_time - time_last_decrease_ >= rtt_backoff_config_.drop_interval) {
+      time_last_decrease_ = at_time;
+      new_bitrate = current_bitrate_ * rtt_backoff_config_.drop_fraction;
+    }
+    CapBitrateToThresholds(at_time, new_bitrate);
+    return;
+  }
+
   // We trust the REMB and/or delay-based estimate during the first 2 seconds if
   // we haven't had any packet loss reported, to allow startup bitrate probing.
   if (last_fraction_loss_ == 0 && IsInStartPhase(at_time)) {
@@ -380,6 +407,13 @@ void SendSideBandwidthEstimation::UpdateEstimate(Timestamp at_time) {
   }
 
   CapBitrateToThresholds(at_time, new_bitrate);
+}
+
+void SendSideBandwidthEstimation::UpdatePropagationRtt(
+    Timestamp at_time,
+    TimeDelta propagation_rtt) {
+  last_propagation_rtt_update_ = at_time;
+  last_propagation_rtt_ = propagation_rtt;
 }
 
 bool SendSideBandwidthEstimation::IsInStartPhase(Timestamp at_time) const {

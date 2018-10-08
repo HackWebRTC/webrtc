@@ -19,21 +19,35 @@
 
 #include "absl/types/optional.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "rtc_base/experiments/field_trial_parser.h"
+#include "rtc_base/experiments/field_trial_units.h"
 
 namespace webrtc {
 
 class RtcEventLog;
 
+struct RttBasedBackoffConfig {
+  RttBasedBackoffConfig();
+  RttBasedBackoffConfig(const RttBasedBackoffConfig&);
+  RttBasedBackoffConfig& operator=(const RttBasedBackoffConfig&) = default;
+  ~RttBasedBackoffConfig();
+  FieldTrialParameter<TimeDelta> rtt_limit;
+  FieldTrialParameter<double> drop_fraction;
+  FieldTrialParameter<TimeDelta> drop_interval;
+};
+
 class SendSideBandwidthEstimation {
  public:
   SendSideBandwidthEstimation() = delete;
   explicit SendSideBandwidthEstimation(RtcEventLog* event_log);
-  virtual ~SendSideBandwidthEstimation();
+  ~SendSideBandwidthEstimation();
 
   void CurrentEstimate(int* bitrate, uint8_t* loss, int64_t* rtt) const;
 
   // Call periodically to update estimate.
   void UpdateEstimate(Timestamp at_time);
+  void OnSentPacket(SentPacket sent_packet);
+  void UpdatePropagationRtt(Timestamp at_time, TimeDelta feedback_rtt);
 
   // Call when we receive a RTCP message with TMMBR or REMB.
   void UpdateReceiverEstimate(Timestamp at_time, DataRate bandwidth);
@@ -79,6 +93,8 @@ class SendSideBandwidthEstimation {
   // set |current_bitrate_| to the capped value and updates the event log.
   void CapBitrateToThresholds(Timestamp at_time, DataRate bitrate);
 
+  RttBasedBackoffConfig rtt_backoff_config_;
+
   std::deque<std::pair<Timestamp, DataRate> > min_bitrate_history_;
 
   // incoming filters
@@ -97,6 +113,9 @@ class SendSideBandwidthEstimation {
   uint8_t last_fraction_loss_;
   uint8_t last_logged_fraction_loss_;
   TimeDelta last_round_trip_time_;
+
+  Timestamp last_propagation_rtt_update_;
+  TimeDelta last_propagation_rtt_;
 
   DataRate bwe_incoming_;
   DataRate delay_based_bitrate_;
