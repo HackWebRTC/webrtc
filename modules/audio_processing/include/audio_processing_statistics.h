@@ -12,12 +12,11 @@
 #define MODULES_AUDIO_PROCESSING_INCLUDE_AUDIO_PROCESSING_STATISTICS_H_
 
 #include "absl/types/optional.h"
-#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 // This version of the stats uses Optionals, it will replace the regular
 // AudioProcessingStatistics struct.
-struct RTC_EXPORT AudioProcessingStats {
+struct AudioProcessingStats {
   AudioProcessingStats();
   AudioProcessingStats(const AudioProcessingStats& other);
   ~AudioProcessingStats();

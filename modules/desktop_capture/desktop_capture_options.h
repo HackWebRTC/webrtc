@@ -12,7 +12,6 @@
 
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/scoped_ref_ptr.h"
-#include "rtc_base/system/rtc_export.h"
 
 #if defined(USE_X11)
 #include "modules/desktop_capture/x11/shared_x_display.h"
@@ -27,7 +26,7 @@ namespace webrtc {
 
 // An object that stores initialization parameters for screen and window
 // capturers.
-class RTC_EXPORT DesktopCaptureOptions {
+class DesktopCaptureOptions {
  public:
   // Returns instance of DesktopCaptureOptions with default parameters. On Linux
   // also initializes X window connection. x_display() will be set to null if
