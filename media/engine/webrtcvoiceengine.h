@@ -218,6 +218,10 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
     if (DscpEnabled()) {
       rtc_options.dscp = PreferredDscp();
     }
+    rtc_options.info_signaled_after_sent.included_in_feedback =
+        options.included_in_feedback;
+    rtc_options.info_signaled_after_sent.included_in_allocation =
+        options.included_in_allocation;
     return VoiceMediaChannel::SendPacket(&packet, rtc_options);
   }
 

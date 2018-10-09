@@ -145,6 +145,8 @@ struct PacketInfo {
   PacketInfo(const PacketInfo& info);
   ~PacketInfo();
 
+  bool included_in_feedback;
+  bool included_in_allocation;
   PacketType packet_type = PacketType::kUnknown;
   PacketInfoProtocolType protocol = PacketInfoProtocolType::kUnknown;
   // A unique id assigned by the network manager, and absl::nullopt if not set.

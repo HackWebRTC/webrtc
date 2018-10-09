@@ -183,6 +183,8 @@ bool DegradedCall::SendRtp(const uint8_t* packet,
     rtc::SentPacket sent_packet;
     sent_packet.packet_id = options.packet_id;
     sent_packet.send_time_ms = clock_->TimeInMilliseconds();
+    sent_packet.info.included_in_feedback = options.included_in_feedback;
+    sent_packet.info.included_in_allocation = options.included_in_allocation;
     sent_packet.info.packet_size_bytes = length;
     sent_packet.info.packet_type = rtc::PacketType::kData;
     call_->OnSentPacket(sent_packet);
