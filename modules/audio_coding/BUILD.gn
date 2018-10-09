@@ -1756,7 +1756,6 @@ if (rtc_include_tests) {
       ":neteq_test_support",
       "../..:webrtc_common",
       "../../rtc_base:rtc_base_approved",
-      "../../test:fileutils",
       "../../test:test_support",
     ]
   }

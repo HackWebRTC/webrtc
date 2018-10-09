@@ -22,7 +22,6 @@
 #include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/metrics.h"
 #include "test/field_trial.h"
-#include "test/testsupport/fileutils.h"
 
 #if defined(WEBRTC_WIN)
 #include "rtc_base/win32socketinit.h"
@@ -81,7 +80,6 @@ int main(int argc, char* argv[]) {
     return 0;
   }
 
-  webrtc::test::SetExecutablePath(argv[0]);
   webrtc::test::ValidateFieldTrialsStringOrDie(FLAG_force_fieldtrials);
   // InitFieldTrialsFromString stores the char*, so the char array must outlive
   // the application.

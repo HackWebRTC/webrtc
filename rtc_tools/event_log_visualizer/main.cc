@@ -218,7 +218,6 @@ int main(int argc, char* argv[]) {
     return 0;
   }
 
-  webrtc::test::SetExecutablePath(argv[0]);
   webrtc::test::ValidateFieldTrialsStringOrDie(FLAG_force_fieldtrials);
   // InitFieldTrialsFromString stores the char*, so the char array must outlive
   // the application.

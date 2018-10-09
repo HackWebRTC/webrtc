@@ -81,9 +81,6 @@ const char* kAndroidChromiumTestsRoot = "/sdcard/chromium_tests_root/";
 const char* kResourcesDirName = "resources";
 #endif
 
-char relative_dir_path[FILENAME_MAX];
-bool relative_dir_path_set = false;
-
 }  // namespace
 
 const char* kCannotFindProjectRootDir = "ERROR_CANNOT_FIND_PROJECT_ROOT_DIR";
@@ -99,27 +96,6 @@ std::string DirName(const std::string& path) {
     result.pop_back();  // Remove trailing separator.
 
   return result.substr(0, result.find_last_of(kPathDelimiter));
-}
-
-void SetExecutablePath(const std::string& path) {
-  std::string working_dir = WorkingDir();
-  std::string temp_path = path;
-
-  // Handle absolute paths; convert them to relative paths to the working dir.
-  if (path.find(working_dir) != std::string::npos) {
-    temp_path = path.substr(working_dir.length() + 1);
-  }
-// On Windows, when tests are run under memory tools like DrMemory and TSan,
-// slashes occur in the path as directory separators. Make sure we replace
-// such cases with backslashes in order for the paths to be correct.
-#ifdef WIN32
-  std::replace(temp_path.begin(), temp_path.end(), '/', '\\');
-#endif
-
-  // Trim away the executable name; only store the relative dir path.
-  temp_path = DirName(temp_path);
-  strncpy(relative_dir_path, temp_path.c_str(), FILENAME_MAX);
-  relative_dir_path_set = true;
 }
 
 bool FileExists(const std::string& file_name) {
@@ -325,27 +301,10 @@ std::string ResourcePath(const std::string& name,
 #if defined(WEBRTC_IOS)
   return IOSResourcePath(name, extension);
 #else
-  std::string platform = "win";
-#ifdef WEBRTC_LINUX
-  platform = "linux";
-#endif  // WEBRTC_LINUX
-#ifdef WEBRTC_MAC
-  platform = "mac";
-#endif  // WEBRTC_MAC
-#ifdef WEBRTC_ANDROID
-  platform = "android";
-#endif  // WEBRTC_ANDROID
-
   std::string resources_path =
       ProjectRootPath() + kResourcesDirName + kPathDelimiter;
-  std::string resource_file =
-      resources_path + name + "_" + platform + "." + extension;
-  if (FileExists(resource_file)) {
-    return resource_file;
-  }
-  // Fall back on name without platform.
   return resources_path + name + "." + extension;
-#endif  // defined (WEBRTC_IOS)
+#endif
 }
 
 std::string JoinFilename(const std::string& dir, const std::string& name) {

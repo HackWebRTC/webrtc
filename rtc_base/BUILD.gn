@@ -192,6 +192,7 @@ rtc_source_set("rtc_event") {
 
 rtc_source_set("logging") {
   visibility = [ "*" ]
+  libs = []
   deps = [
     ":criticalsection",
     ":macromagic",
@@ -222,6 +223,10 @@ rtc_source_set("logging") {
     # logging.h needs the deprecation header while downstream projects are
     # removing code that depends on logging implementation details.
     deps += [ ":deprecation" ]
+
+    if (is_android) {
+      libs += [ "log" ]
+    }
   }
 }
 
@@ -248,6 +253,7 @@ rtc_source_set("atomicops") {
 rtc_source_set("checks") {
   # TODO(bugs.webrtc.org/9607): This should not be public.
   visibility = [ "*" ]
+  libs = []
   sources = [
     "checks.cc",
     "checks.h",
@@ -256,6 +262,9 @@ rtc_source_set("checks") {
     ":safe_compare",
     "system:inline",
   ]
+  if (is_android) {
+    libs += [ "log" ]
+  }
 }
 
 rtc_source_set("rate_limiter") {
@@ -1083,7 +1092,6 @@ if (rtc_include_tests) {
       "../system_wrappers:field_trial",
       "../system_wrappers:metrics",
       "../test:field_trial",
-      "../test:fileutils",
       "../test:test_support",
     ]
 

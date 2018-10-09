@@ -86,7 +86,13 @@ int main(int argc, char* argv[]) {
     return 0;
   }
 
-  webrtc::test::SetExecutablePath(argv[0]);
+  // TODO(bugs.webrtc.org/9792): we need to reference something from fileutils.h
+  // so that our downstream hack where we replace fileutils.cc works. Otherwise
+  // the downstream flag implementation will take over and botch the flag
+  // introduced by the hack. Remove this awful thing once the downstream
+  // implementation has been eliminated.
+  (void)webrtc::test::JoinFilename("horrible", "hack");
+
   webrtc::test::ValidateFieldTrialsStringOrDie(FLAG_force_fieldtrials);
   // InitFieldTrialsFromString stores the char*, so the char array must outlive
   // the application.

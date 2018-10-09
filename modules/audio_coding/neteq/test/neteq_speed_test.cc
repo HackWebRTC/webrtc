@@ -14,7 +14,6 @@
 
 #include "modules/audio_coding/neteq/tools/neteq_performance_test.h"
 #include "rtc_base/flags.h"
-#include "test/testsupport/fileutils.h"
 
 // Define command line flags.
 DEFINE_int(runtime_ms, 10000, "Simulated runtime in ms.");
@@ -33,7 +32,6 @@ int main(int argc, char* argv[]) {
       "  --lossrate=N           drop every N packets; default is 10\n"
       "  --drift=F              clockdrift factor between 0.0 and 1.0; "
       "default is 0.1\n";
-  webrtc::test::SetExecutablePath(argv[0]);
   if (rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true) || FLAG_help ||
       argc != 1) {
     printf("%s", usage.c_str());

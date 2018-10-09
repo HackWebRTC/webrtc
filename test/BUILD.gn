@@ -208,12 +208,17 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":field_trial",
-      ":fileutils",
       ":perf_test",
       "../rtc_base:rtc_base",
       "../system_wrappers:field_trial",
       "../system_wrappers:metrics",
       "//testing/gtest",
+
+      # TODO(bugs.webrtc.org/9792): This is needed for downstream projects on
+      # Android, where it's replaced by an internal version of fileutils that
+      # has a certain flag. Remove this once the internal fileutils has been
+      # eliminated.
+      "../test:fileutils",
     ]
   }
 
