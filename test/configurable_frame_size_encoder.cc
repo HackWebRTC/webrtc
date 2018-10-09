@@ -54,7 +54,9 @@ int32_t ConfigurableFrameSizeEncoder::Encode(
   CodecSpecificInfo specific{};
   specific.codecType = codec_type_;
   callback_->OnEncodedImage(encodedImage, &specific, fragmentation);
-
+  if (post_encode_callback_) {
+    (*post_encode_callback_)();
+  }
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
@@ -87,6 +89,11 @@ int32_t ConfigurableFrameSizeEncoder::SetFrameSize(size_t size) {
 
 void ConfigurableFrameSizeEncoder::SetCodecType(VideoCodecType codec_type) {
   codec_type_ = codec_type;
+}
+
+void ConfigurableFrameSizeEncoder::RegisterPostEncodeCallback(
+    std::function<void(void)> post_encode_callback) {
+  post_encode_callback_ = std::move(post_encode_callback);
 }
 
 }  // namespace test

@@ -17,7 +17,6 @@
 #include "call/fake_network_pipe.h"
 #include "call/rtp_transport_controller_send.h"
 #include "call/simulated_network.h"
-#include "common_video/include/frame_callback.h"
 #include "modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/source/rtcp_sender.h"
@@ -964,8 +963,7 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
 
   // Observer that verifies that the expected number of packets and bytes
   // arrive for each frame size, from start_size to stop_size.
-  class FrameFragmentationTest : public test::SendTest,
-                                 public EncodedFrameObserver {
+  class FrameFragmentationTest : public test::SendTest {
    public:
     FrameFragmentationTest(size_t max_packet_size,
                            size_t start_size,
@@ -1101,7 +1099,7 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
       }
     }
 
-    void EncodedFrameCallback(const EncodedFrame& encoded_frame) override {
+    void UpdateConfiguration() {
       rtc::CritScope lock(&mutex_);
       // Increase frame size for next encoded frame, in the context of the
       // encoder thread.
@@ -1132,7 +1130,7 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
 
       send_config->encoder_settings.encoder_factory = &encoder_factory_;
       send_config->rtp.max_packet_size = kMaxPacketSize;
-      send_config->post_encode_callback = this;
+      encoder_.RegisterPostEncodeCallback([this]() { UpdateConfiguration(); });
 
       // Make sure there is at least one extension header, to make the RTP
       // header larger than the base length of 12 bytes.
