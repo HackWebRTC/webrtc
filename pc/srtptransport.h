@@ -160,6 +160,8 @@ class SrtpTransport : public RtpTransport {
   bool external_auth_enabled_ = false;
 
   int rtp_abs_sendtime_extn_id_ = -1;
+
+  int decryption_failure_count_ = 0;
 };
 
 }  // namespace webrtc

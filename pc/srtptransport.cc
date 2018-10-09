@@ -207,8 +207,17 @@ void SrtpTransport::OnRtpPacketReceived(rtc::CopyOnWriteBuffer* packet,
     uint32_t ssrc = 0;
     cricket::GetRtpSeqNum(data, len, &seq_num);
     cricket::GetRtpSsrc(data, len, &ssrc);
-    RTC_LOG(LS_ERROR) << "Failed to unprotect RTP packet: size=" << len
-                      << ", seqnum=" << seq_num << ", SSRC=" << ssrc;
+
+    // Limit the error logging to avoid excessive logs when there are lots of
+    // bad packets.
+    const int kFailureLogThrottleCount = 100;
+    if (decryption_failure_count_ % kFailureLogThrottleCount == 0) {
+      RTC_LOG(LS_ERROR) << "Failed to unprotect RTP packet: size=" << len
+                        << ", seqnum=" << seq_num << ", SSRC=" << ssrc
+                        << ", previous failure count: "
+                        << decryption_failure_count_;
+    }
+    ++decryption_failure_count_;
     return;
   }
   packet->SetSize(len);
