@@ -263,44 +263,20 @@ class RtcpBandwidthObserver {
 };
 
 struct PacketFeedback {
-  PacketFeedback(int64_t arrival_time_ms, uint16_t sequence_number)
-      : PacketFeedback(-1,
-                       arrival_time_ms,
-                       kNoSendTime,
-                       sequence_number,
-                       0,
-                       0,
-                       0,
-                       PacedPacketInfo()) {}
+  PacketFeedback(int64_t arrival_time_ms, uint16_t sequence_number);
 
   PacketFeedback(int64_t arrival_time_ms,
                  int64_t send_time_ms,
                  uint16_t sequence_number,
                  size_t payload_size,
-                 const PacedPacketInfo& pacing_info)
-      : PacketFeedback(-1,
-                       arrival_time_ms,
-                       send_time_ms,
-                       sequence_number,
-                       payload_size,
-                       0,
-                       0,
-                       pacing_info) {}
+                 const PacedPacketInfo& pacing_info);
 
   PacketFeedback(int64_t creation_time_ms,
                  uint16_t sequence_number,
                  size_t payload_size,
                  uint16_t local_net_id,
                  uint16_t remote_net_id,
-                 const PacedPacketInfo& pacing_info)
-      : PacketFeedback(creation_time_ms,
-                       kNotReceived,
-                       kNoSendTime,
-                       sequence_number,
-                       payload_size,
-                       local_net_id,
-                       remote_net_id,
-                       pacing_info) {}
+                 const PacedPacketInfo& pacing_info);
 
   PacketFeedback(int64_t creation_time_ms,
                  int64_t arrival_time_ms,
@@ -309,15 +285,10 @@ struct PacketFeedback {
                  size_t payload_size,
                  uint16_t local_net_id,
                  uint16_t remote_net_id,
-                 const PacedPacketInfo& pacing_info)
-      : creation_time_ms(creation_time_ms),
-        arrival_time_ms(arrival_time_ms),
-        send_time_ms(send_time_ms),
-        sequence_number(sequence_number),
-        payload_size(payload_size),
-        local_net_id(local_net_id),
-        remote_net_id(remote_net_id),
-        pacing_info(pacing_info) {}
+                 const PacedPacketInfo& pacing_info);
+  PacketFeedback(const PacketFeedback&);
+  PacketFeedback& operator=(const PacketFeedback&);
+  ~PacketFeedback();
 
   static constexpr int kNotAProbe = -1;
   static constexpr int64_t kNotReceived = -1;
@@ -328,12 +299,7 @@ struct PacketFeedback {
   //       for book-keeping, and is of no interest outside that class.
   // TODO(philipel): Remove |creation_time_ms| from PacketFeedback when cleaning
   //                 up SendTimeHistory.
-  bool operator==(const PacketFeedback& rhs) const {
-    return arrival_time_ms == rhs.arrival_time_ms &&
-           send_time_ms == rhs.send_time_ms &&
-           sequence_number == rhs.sequence_number &&
-           payload_size == rhs.payload_size && pacing_info == rhs.pacing_info;
-  }
+  bool operator==(const PacketFeedback& rhs) const;
 
   // Time corresponding to when this object was created.
   int64_t creation_time_ms;
@@ -352,6 +318,8 @@ struct PacketFeedback {
   int64_t long_sequence_number;
   // Size of the packet excluding RTP headers.
   size_t payload_size;
+  // Size of preceeding packets that are not part of feedback.
+  size_t unacknowledged_data;
   // The network route ids that this packet is associated with.
   uint16_t local_net_id;
   uint16_t remote_net_id;
