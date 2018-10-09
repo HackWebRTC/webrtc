@@ -182,15 +182,15 @@ struct EchoCanceller3Config {
                                   MaskingThresholds(.07f, .1f, .3f),
                                   2.0f,
                                   0.25f);
-    Tuning nearend_tuning = Tuning(MaskingThresholds(.2f, .3f, .3f),
-                                   MaskingThresholds(.07f, .1f, .3f),
+    Tuning nearend_tuning = Tuning(MaskingThresholds(1.09f, 1.1f, .3f),
+                                   MaskingThresholds(.1f, .3f, .3f),
                                    2.0f,
                                    0.25f);
 
     struct DominantNearendDetection {
-      float enr_threshold = 10.f;
-      float snr_threshold = 10.f;
-      int hold_duration = 25;
+      float enr_threshold = 6.f;
+      float snr_threshold = 6.f;
+      int hold_duration = 5;
       int trigger_threshold = 15;
     } dominant_nearend_detection;
 
