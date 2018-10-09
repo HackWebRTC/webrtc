@@ -86,6 +86,7 @@ rtc_static_library("rtc_p2p") {
   deps = [
     "../api:libjingle_peerconnection_api",
     "../api:ortc_api",
+    "../api/transport:enums",
     "../logging:ice_log",
     "../rtc_base:checks",
     "../rtc_base:rtc_base",

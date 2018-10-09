@@ -19,6 +19,13 @@ rtc_source_set("bitrate_settings") {
   ]
 }
 
+rtc_source_set("enums") {
+  visibility = [ "*" ]
+  sources = [
+    "enums.h",
+  ]
+}
+
 rtc_static_library("network_control") {
   sources = [
     "network_control.h",

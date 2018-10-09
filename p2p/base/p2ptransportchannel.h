@@ -91,6 +91,8 @@ class P2PTransportChannel : public IceTransportInternal {
 
   // From TransportChannelImpl:
   IceTransportState GetState() const override;
+  webrtc::IceTransportState GetIceTransportState() const override;
+
   const std::string& transport_name() const override;
   int component() const override;
   bool writable() const override;
@@ -243,7 +245,13 @@ class P2PTransportChannel : public IceTransportInternal {
   void UpdateState();
   void HandleAllTimedOut();
   void MaybeStopPortAllocatorSessions();
+
+  // ComputeIceTransportState computes the RTCIceTransportState as described in
+  // https://w3c.github.io/webrtc-pc/#dom-rtcicetransportstate. ComputeState
+  // computes the value we currently export as RTCIceTransportState.
+  // TODO(bugs.webrtc.org/9308): Remove ComputeState once it's no longer used.
   IceTransportState ComputeState() const;
+  webrtc::IceTransportState ComputeIceTransportState() const;
 
   Connection* GetBestConnectionOnNetwork(rtc::Network* network) const;
   bool CreateConnections(const Candidate& remote_candidate,
@@ -407,7 +415,11 @@ class P2PTransportChannel : public IceTransportInternal {
   std::unique_ptr<webrtc::BasicRegatheringController> regathering_controller_;
   int64_t last_ping_sent_ms_ = 0;
   int weak_ping_interval_ = WEAK_PING_INTERVAL;
+  // TODO(jonasolsson): Remove state_ and rename standardized_state_ once state_
+  // is no longer used to compute the ICE connection state.
   IceTransportState state_ = IceTransportState::STATE_INIT;
+  webrtc::IceTransportState standardized_state_ =
+      webrtc::IceTransportState::kNew;
   IceConfig config_;
   int last_sent_packet_id_ = -1;  // -1 indicates no packet was sent before.
   bool started_pinging_ = false;

@@ -4137,6 +4137,7 @@ TEST_F(P2PTransportChannelPingTest, TestGetState) {
   clock.AdvanceTime(webrtc::TimeDelta::seconds(1));
   FakePortAllocator pa(rtc::Thread::Current(), nullptr);
   P2PTransportChannel ch("test channel", 1, &pa);
+  EXPECT_EQ(webrtc::IceTransportState::kNew, ch.GetIceTransportState());
   PrepareChannel(&ch);
   ch.MaybeStartGathering();
   EXPECT_EQ(IceTransportState::STATE_INIT, ch.GetState());
@@ -4144,6 +4145,8 @@ TEST_F(P2PTransportChannelPingTest, TestGetState) {
   ch.AddRemoteCandidate(CreateUdpCandidate(LOCAL_PORT_TYPE, "2.2.2.2", 2, 1));
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1, &clock);
   Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2, &clock);
+  // Gathering complete with candidates.
+  EXPECT_EQ(webrtc::IceTransportState::kCompleted, ch.GetIceTransportState());
   ASSERT_TRUE(conn1 != nullptr);
   ASSERT_TRUE(conn2 != nullptr);
   // Now there are two connections, so the transport channel is connecting.
@@ -4156,6 +4159,7 @@ TEST_F(P2PTransportChannelPingTest, TestGetState) {
   // Need to wait until the channel state is updated.
   EXPECT_EQ_SIMULATED_WAIT(IceTransportState::STATE_FAILED, ch.GetState(),
                            kShortTimeout, clock);
+  EXPECT_EQ(webrtc::IceTransportState::kFailed, ch.GetIceTransportState());
 }
 
 // Test that when a low-priority connection is pruned, it is not deleted
