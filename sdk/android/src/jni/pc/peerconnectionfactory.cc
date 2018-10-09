@@ -396,18 +396,20 @@ static jlong JNI_PeerConnectionFactory_CreatePeerConnection(
       PeerConnectionInterface::RTCConfigurationType::kAggressive);
   JavaToNativeRTCConfiguration(jni, j_rtc_config, &rtc_config);
 
-  // Generate non-default certificate.
-  rtc::KeyType key_type = GetRtcConfigKeyType(jni, j_rtc_config);
-  if (key_type != rtc::KT_DEFAULT) {
-    rtc::scoped_refptr<rtc::RTCCertificate> certificate =
-        rtc::RTCCertificateGenerator::GenerateCertificate(
-            rtc::KeyParams(key_type), absl::nullopt);
-    if (!certificate) {
-      RTC_LOG(LS_ERROR) << "Failed to generate certificate. KeyType: "
-                        << key_type;
-      return 0;
+  if (rtc_config.certificates.empty()) {
+    // Generate non-default certificate.
+    rtc::KeyType key_type = GetRtcConfigKeyType(jni, j_rtc_config);
+    if (key_type != rtc::KT_DEFAULT) {
+      rtc::scoped_refptr<rtc::RTCCertificate> certificate =
+          rtc::RTCCertificateGenerator::GenerateCertificate(
+              rtc::KeyParams(key_type), absl::nullopt);
+      if (!certificate) {
+        RTC_LOG(LS_ERROR) << "Failed to generate certificate. KeyType: "
+                          << key_type;
+        return 0;
+      }
+      rtc_config.certificates.push_back(certificate);
     }
-    rtc_config.certificates.push_back(certificate);
   }
 
   std::unique_ptr<MediaConstraintsInterface> constraints;

@@ -11,6 +11,7 @@
 package org.webrtc;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -661,6 +662,24 @@ public class PeerConnectionTest {
     ObserverExpectations offeringExpectations = new ObserverExpectations("PCTest:offerer");
     PeerConnection offeringPC = factory.createPeerConnection(config, offeringExpectations);
     assertNotNull(offeringPC);
+  }
+
+  @Test
+  @SmallTest
+  public void testCreationWithCertificate() throws Exception {
+    PeerConnectionFactory factory = PeerConnectionFactory.builder().createPeerConnectionFactory();
+    PeerConnection.RTCConfiguration config = new PeerConnection.RTCConfiguration(Arrays.asList());
+
+    // Test certificate.
+    RtcCertificatePem originalCert = RtcCertificatePem.generateCertificate();
+    config.certificate = originalCert;
+
+    ObserverExpectations offeringExpectations = new ObserverExpectations("PCTest:offerer");
+    PeerConnection offeringPC = factory.createPeerConnection(config, offeringExpectations);
+
+    RtcCertificatePem restoredCert = offeringPC.getCertificate();
+    assertEquals(originalCert.privateKey, restoredCert.privateKey);
+    assertEquals(originalCert.certificate, restoredCert.certificate);
   }
 
   @Test
