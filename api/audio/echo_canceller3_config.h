@@ -178,7 +178,7 @@ struct EchoCanceller3Config {
       float max_dec_factor_lf;
     };
 
-    Tuning normal_tuning = Tuning(MaskingThresholds(.2f, .3f, .3f),
+    Tuning normal_tuning = Tuning(MaskingThresholds(.3f, .4f, .3f),
                                   MaskingThresholds(.07f, .1f, .3f),
                                   2.0f,
                                   0.25f);

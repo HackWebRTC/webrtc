@@ -74,6 +74,10 @@ bool EnableLegacyDominantNearend() {
   return field_trial::IsEnabled("WebRTC-Aec3EnableLegacyDominantNearend");
 }
 
+bool UseLegacyNormalSuppressorTuning() {
+  return field_trial::IsEnabled("WebRTC-Aec3UseLegacyNormalSuppressorTuning");
+}
+
 // Method for adjusting config parameter dependencies..
 EchoCanceller3Config AdjustConfig(const EchoCanceller3Config& config) {
   EchoCanceller3Config adjusted_cfg = config;
@@ -172,6 +176,14 @@ EchoCanceller3Config AdjustConfig(const EchoCanceller3Config& config) {
 
   if (EnableLegacyDominantNearend()) {
     adjusted_cfg.suppressor.nearend_tuning =
+        EchoCanceller3Config::Suppressor::Tuning(
+            EchoCanceller3Config::Suppressor::MaskingThresholds(.2f, .3f, .3f),
+            EchoCanceller3Config::Suppressor::MaskingThresholds(.07f, .1f, .3f),
+            2.0f, 0.25f);
+  }
+
+  if (UseLegacyNormalSuppressorTuning()) {
+    adjusted_cfg.suppressor.normal_tuning =
         EchoCanceller3Config::Suppressor::Tuning(
             EchoCanceller3Config::Suppressor::MaskingThresholds(.2f, .3f, .3f),
             EchoCanceller3Config::Suppressor::MaskingThresholds(.07f, .1f, .3f),
