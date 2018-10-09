@@ -247,8 +247,8 @@ class RTPSender {
                           int64_t capture_time_ms,
                           uint32_t ssrc);
 
-  bool UpdateTransportSequenceNumber(RtpPacketToSend* packet,
-                                     int* packet_id) const;
+  bool UpdateTransportSequenceNumber(RtpPacketToSend* packet, int* packet_id)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(send_critsect_);
 
   void UpdateRtpStats(const RtpPacketToSend& packet,
                       bool is_rtx,
