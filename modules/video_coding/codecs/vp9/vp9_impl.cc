@@ -42,6 +42,8 @@ namespace {
 uint8_t kRefBufIdx[4] = {0, 0, 0, 1};
 uint8_t kUpdBufIdx[4] = {0, 0, 1, 0};
 
+int kMaxNumTiles4kVideo = 8;
+
 // Only positive speeds, range for real-time coding currently is: 5 - 8.
 // Lower means slower/better quality, higher means fastest/lower quality.
 int GetCpuSpeed(int width, int height) {
@@ -1272,13 +1274,18 @@ int VP9DecoderImpl::InitDecode(const VideoCodec* inst, int number_of_cores) {
   if (ret_val < 0) {
     return ret_val;
   }
+
   if (decoder_ == nullptr) {
     decoder_ = new vpx_codec_ctx_t;
   }
   vpx_codec_dec_cfg_t cfg;
-  // Setting number of threads to a constant value (1)
-  cfg.threads = 1;
-  cfg.h = cfg.w = 0;  // set after decode
+  memset(&cfg, 0, sizeof(cfg));
+
+  // We want to use multithreading when decoding high resolution videos. But,
+  // since we don't know resolution of input stream at this stage, we always
+  // enable it.
+  cfg.threads = std::min(number_of_cores, kMaxNumTiles4kVideo);
+
   vpx_codec_flags_t flags = 0;
   if (vpx_codec_dec_init(decoder_, vpx_codec_vp9_dx(), &cfg, flags)) {
     return WEBRTC_VIDEO_CODEC_MEMORY;
