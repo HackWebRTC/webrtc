@@ -36,6 +36,7 @@ rtc_static_library("congestion_controller") {
     "../:congestion_controller",
     "../..:module_api",
     "../../..:webrtc_common",
+    "../../../api/transport:goog_cc",
     "../../../api/transport:network_control",
     "../../../rtc_base:checks",
     "../../../rtc_base:rate_limiter",
@@ -48,7 +49,6 @@ rtc_static_library("congestion_controller") {
     "../../pacing",
     "../../remote_bitrate_estimator",
     "../../rtp_rtcp:rtp_rtcp_format",
-    "../goog_cc",
     "//third_party/abseil-cpp/absl/memory",
   ]
 

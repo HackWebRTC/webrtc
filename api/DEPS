@@ -24,5 +24,6 @@ specific_include_rules = {
     "+modules/audio_coding",
     "+modules/audio_processing",
     "+modules/video_coding",
+    "+modules/congestion_controller",
   ],
 }

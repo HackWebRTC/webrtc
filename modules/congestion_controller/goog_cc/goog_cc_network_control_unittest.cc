@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "api/transport/goog_cc_factory.h"
 #include "api/transport/test/network_control_tester.h"
 #include "logging/rtc_event_log/mock/mock_rtc_event_log.h"
-#include "modules/congestion_controller/goog_cc/include/goog_cc_factory.h"
 #include "test/scenario/scenario.h"
 
 #include "test/gtest.h"

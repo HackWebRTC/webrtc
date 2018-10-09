@@ -19,10 +19,8 @@ config("bwe_test_logging") {
 rtc_static_library("goog_cc") {
   configs += [ ":bwe_test_logging" ]
   sources = [
-    "goog_cc_factory.cc",
     "goog_cc_network_control.cc",
     "goog_cc_network_control.h",
-    "include/goog_cc_factory.h",
   ]
 
   deps = [
@@ -149,6 +147,7 @@ if (rtc_include_tests) {
       ":estimators",
       ":goog_cc",
       "..:test_controller_printer",
+      "../../../api/transport:goog_cc",
     ]
   }
   rtc_source_set("goog_cc_unittests") {
@@ -175,6 +174,7 @@ if (rtc_include_tests) {
       ":estimators",
       ":goog_cc",
       ":probe_controller",
+      "../../../api/transport:goog_cc",
       "../../../api/transport:network_control",
       "../../../api/transport:network_control_test",
       "../../../logging:mocks",

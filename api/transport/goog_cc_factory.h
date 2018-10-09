@@ -8,14 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_CONGESTION_CONTROLLER_GOOG_CC_INCLUDE_GOOG_CC_FACTORY_H_
-#define MODULES_CONGESTION_CONTROLLER_GOOG_CC_INCLUDE_GOOG_CC_FACTORY_H_
+#ifndef API_TRANSPORT_GOOG_CC_FACTORY_H_
+#define API_TRANSPORT_GOOG_CC_FACTORY_H_
 #include <memory>
 
 #include "api/transport/network_control.h"
 
 namespace webrtc {
-class Clock;
 class RtcEventLog;
 
 class GoogCcNetworkControllerFactory
@@ -45,4 +44,4 @@ class GoogCcFeedbackNetworkControllerFactory
 };
 }  // namespace webrtc
 
-#endif  // MODULES_CONGESTION_CONTROLLER_GOOG_CC_INCLUDE_GOOG_CC_FACTORY_H_
+#endif  // API_TRANSPORT_GOOG_CC_FACTORY_H_

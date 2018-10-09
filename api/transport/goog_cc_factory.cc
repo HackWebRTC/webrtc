@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/congestion_controller/goog_cc/include/goog_cc_factory.h"
+#include "api/transport/goog_cc_factory.h"
 
 #include "absl/memory/memory.h"
 #include "modules/congestion_controller/goog_cc/goog_cc_network_control.h"
