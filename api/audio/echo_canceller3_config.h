@@ -46,6 +46,7 @@ struct EchoCanceller3Config {
       float leakage_converged;
       float leakage_diverged;
       float error_floor;
+      float error_ceil;
       float noise_gate;
     };
 
@@ -55,10 +56,11 @@ struct EchoCanceller3Config {
       float noise_gate;
     };
 
-    MainConfiguration main = {13, 0.00005f, 0.01f, 0.1f, 20075344.f};
+    MainConfiguration main = {13, 0.00005f, 0.05f, 0.001f, 2.f, 20075344.f};
     ShadowConfiguration shadow = {13, 0.7f, 20075344.f};
 
-    MainConfiguration main_initial = {12, 0.005f, 0.5f, 0.001f, 20075344.f};
+    MainConfiguration main_initial = {12,     0.005f, 0.5f,
+                                      0.001f, 2.f,    20075344.f};
     ShadowConfiguration shadow_initial = {12, 0.9f, 20075344.f};
 
     size_t config_change_duration_blocks = 250;

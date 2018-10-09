@@ -77,6 +77,7 @@ void PrintAec3ParameterValues(const EchoCanceller3Config& cfg) {
   std::cout << cfg.filter.main.leakage_converged << ",";
   std::cout << cfg.filter.main.leakage_diverged << ",";
   std::cout << cfg.filter.main.error_floor << ",";
+  std::cout << cfg.filter.main.error_ceil << ",";
   std::cout << cfg.filter.main.noise_gate;
   std::cout << "],";
 
@@ -91,6 +92,7 @@ void PrintAec3ParameterValues(const EchoCanceller3Config& cfg) {
   std::cout << cfg.filter.main_initial.leakage_converged << ",";
   std::cout << cfg.filter.main_initial.leakage_diverged << ",";
   std::cout << cfg.filter.main_initial.error_floor << ",";
+  std::cout << cfg.filter.main_initial.error_ceil << ",";
   std::cout << cfg.filter.main_initial.noise_gate;
   std::cout << "],";
 
@@ -353,7 +355,7 @@ class Aec3ParametersParser {
     if (rtc::GetValueFromJsonObject(root, param_name, &json_array)) {
       std::vector<double> v;
       rtc::JsonArrayToDoubleVector(json_array, &v);
-      if (v.size() != 5) {
+      if (v.size() != 6) {
         std::cout << "Incorrect array size for " << param_name << std::endl;
         RTC_CHECK(false);
       }
@@ -361,7 +363,8 @@ class Aec3ParametersParser {
       param->leakage_converged = static_cast<float>(v[1]);
       param->leakage_diverged = static_cast<float>(v[2]);
       param->error_floor = static_cast<float>(v[3]);
-      param->noise_gate = static_cast<float>(v[4]);
+      param->error_ceil = static_cast<float>(v[4]);
+      param->noise_gate = static_cast<float>(v[5]);
     }
   }
 
