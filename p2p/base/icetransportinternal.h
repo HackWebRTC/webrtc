@@ -20,7 +20,6 @@
 #include "p2p/base/packettransportinternal.h"
 #include "p2p/base/port.h"
 #include "p2p/base/transportdescription.h"
-#include "rtc_base/stringencode.h"
 
 namespace cricket {
 

@@ -17,7 +17,6 @@
 #include "pc/mediasession.h"
 #include "pc/webrtcsdp.h"
 #include "rtc_base/arraysize.h"
-#include "rtc_base/stringencode.h"
 
 using cricket::SessionDescription;
 

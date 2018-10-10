@@ -24,7 +24,6 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/nethelpers.h"
 #include "rtc_base/socketaddress.h"
-#include "rtc_base/stringencode.h"
 #include "rtc_base/strings/string_builder.h"
 
 namespace cricket {

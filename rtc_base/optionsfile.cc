@@ -14,7 +14,6 @@
 
 #include "rtc_base/logging.h"
 #include "rtc_base/stream.h"
-#include "rtc_base/stringencode.h"
 
 namespace rtc {
 

@@ -20,7 +20,6 @@
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/stringencode.h"
 #include "rtc_base/stringutils.h"
 
 #ifdef WEBRTC_ANDROID
