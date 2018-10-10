@@ -270,10 +270,9 @@ class TurnPortTest : public testing::Test,
                                    const ProtocolAddress& server_address,
                                    const std::string& origin) {
     RelayCredentials credentials(username, password);
-    turn_port_.reset(TurnPort::Create(
+    turn_port_ = TurnPort::CreateUnique(
         &main_, &socket_factory_, network, 0, 0, kIceUfrag1, kIcePwd1,
-        server_address, credentials, 0, origin, std::vector<std::string>(),
-        std::vector<std::string>(), turn_customizer_.get()));
+        server_address, credentials, 0, origin, {}, {}, turn_customizer_.get());
     // This TURN port will be the controlling.
     turn_port_->SetIceRole(ICEROLE_CONTROLLING);
     ConnectSignals();
@@ -301,10 +300,10 @@ class TurnPortTest : public testing::Test,
     }
 
     RelayCredentials credentials(username, password);
-    turn_port_.reset(TurnPort::Create(&main_, &socket_factory_,
-                                      MakeNetwork(kLocalAddr1), socket_.get(),
-                                      kIceUfrag1, kIcePwd1, server_address,
-                                      credentials, 0, std::string(), nullptr));
+    turn_port_ = TurnPort::CreateUnique(&main_, &socket_factory_,
+                                        MakeNetwork(kLocalAddr1), socket_.get(),
+                                        kIceUfrag1, kIcePwd1, server_address,
+                                        credentials, 0, std::string(), nullptr);
     // This TURN port will be the controlling.
     turn_port_->SetIceRole(ICEROLE_CONTROLLING);
     ConnectSignals();
@@ -329,9 +328,9 @@ class TurnPortTest : public testing::Test,
   void CreateUdpPort() { CreateUdpPort(kLocalAddr2); }
 
   void CreateUdpPort(const SocketAddress& address) {
-    udp_port_.reset(UDPPort::Create(
-        &main_, &socket_factory_, MakeNetwork(address), 0, 0, kIceUfrag2,
-        kIcePwd2, std::string(), false, absl::nullopt));
+    udp_port_ = UDPPort::Create(&main_, &socket_factory_, MakeNetwork(address),
+                                0, 0, kIceUfrag2, kIcePwd2, std::string(),
+                                false, absl::nullopt);
     // UDP port will be controlled.
     udp_port_->SetIceRole(ICEROLE_CONTROLLED);
     udp_port_->SignalPortComplete.connect(this,

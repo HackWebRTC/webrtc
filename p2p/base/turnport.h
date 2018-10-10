@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <list>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
@@ -50,6 +51,8 @@ class TurnPort : public Port {
                          // packets.
   };
   // Create a TURN port using the shared UDP socket, |socket|.
+  // TODO(steveanton): Change to unique_ptr once downstream clients have
+  // converted.
   static TurnPort* Create(rtc::Thread* thread,
                           rtc::PacketSocketFactory* factory,
                           rtc::Network* network,
@@ -61,13 +64,33 @@ class TurnPort : public Port {
                           int server_priority,
                           const std::string& origin,
                           webrtc::TurnCustomizer* customizer) {
-    return new TurnPort(thread, factory, network, socket, username, password,
+    return CreateUnique(thread, factory, network, socket, username, password,
                         server_address, credentials, server_priority, origin,
-                        customizer);
+                        customizer)
+        .release();
+  }
+  static std::unique_ptr<TurnPort> CreateUnique(
+      rtc::Thread* thread,
+      rtc::PacketSocketFactory* factory,
+      rtc::Network* network,
+      rtc::AsyncPacketSocket* socket,
+      const std::string& username,  // ice username.
+      const std::string& password,  // ice password.
+      const ProtocolAddress& server_address,
+      const RelayCredentials& credentials,
+      int server_priority,
+      const std::string& origin,
+      webrtc::TurnCustomizer* customizer) {
+    // Using `new` to access a non-public constructor.
+    return absl::WrapUnique(new TurnPort(
+        thread, factory, network, socket, username, password, server_address,
+        credentials, server_priority, origin, customizer));
   }
 
   // Create a TURN port that will use a new socket, bound to |network| and
   // using a port in the range between |min_port| and |max_port|.
+  // TODO(steveanton): Change to unique_ptr once downstream clients have
+  // converted.
   static TurnPort* Create(
       rtc::Thread* thread,
       rtc::PacketSocketFactory* factory,
@@ -84,10 +107,35 @@ class TurnPort : public Port {
       const std::vector<std::string>& tls_elliptic_curves,
       webrtc::TurnCustomizer* customizer,
       rtc::SSLCertificateVerifier* tls_cert_verifier = nullptr) {
-    return new TurnPort(thread, factory, network, min_port, max_port, username,
+    // Using `new` to access a non-public constructor.
+    return CreateUnique(thread, factory, network, min_port, max_port, username,
                         password, server_address, credentials, server_priority,
                         origin, tls_alpn_protocols, tls_elliptic_curves,
-                        customizer, tls_cert_verifier);
+                        customizer, tls_cert_verifier)
+        .release();
+  }
+  static std::unique_ptr<TurnPort> CreateUnique(
+      rtc::Thread* thread,
+      rtc::PacketSocketFactory* factory,
+      rtc::Network* network,
+      uint16_t min_port,
+      uint16_t max_port,
+      const std::string& username,  // ice username.
+      const std::string& password,  // ice password.
+      const ProtocolAddress& server_address,
+      const RelayCredentials& credentials,
+      int server_priority,
+      const std::string& origin,
+      const std::vector<std::string>& tls_alpn_protocols,
+      const std::vector<std::string>& tls_elliptic_curves,
+      webrtc::TurnCustomizer* customizer,
+      rtc::SSLCertificateVerifier* tls_cert_verifier = nullptr) {
+    // Using `new` to access a non-public constructor.
+    return absl::WrapUnique(
+        new TurnPort(thread, factory, network, min_port, max_port, username,
+                     password, server_address, credentials, server_priority,
+                     origin, tls_alpn_protocols, tls_elliptic_curves,
+                     customizer, tls_cert_verifier));
   }
 
   ~TurnPort() override;

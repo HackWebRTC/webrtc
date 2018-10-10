@@ -563,22 +563,24 @@ bool UDPPort::HasCandidateWithAddress(const rtc::SocketAddress& addr) const {
   return false;
 }
 
-StunPort* StunPort::Create(rtc::Thread* thread,
-                           rtc::PacketSocketFactory* factory,
-                           rtc::Network* network,
-                           uint16_t min_port,
-                           uint16_t max_port,
-                           const std::string& username,
-                           const std::string& password,
-                           const ServerAddresses& servers,
-                           const std::string& origin,
-                           absl::optional<int> stun_keepalive_interval) {
-  StunPort* port = new StunPort(thread, factory, network, min_port, max_port,
-                                username, password, servers, origin);
+std::unique_ptr<StunPort> StunPort::Create(
+    rtc::Thread* thread,
+    rtc::PacketSocketFactory* factory,
+    rtc::Network* network,
+    uint16_t min_port,
+    uint16_t max_port,
+    const std::string& username,
+    const std::string& password,
+    const ServerAddresses& servers,
+    const std::string& origin,
+    absl::optional<int> stun_keepalive_interval) {
+  // Using `new` to access a non-public constructor.
+  auto port = absl::WrapUnique(new StunPort(thread, factory, network, min_port,
+                                            max_port, username, password,
+                                            servers, origin));
   port->set_stun_keepalive_delay(stun_keepalive_interval);
   if (!port->Init()) {
-    delete port;
-    port = NULL;
+    return nullptr;
   }
   return port;
 }

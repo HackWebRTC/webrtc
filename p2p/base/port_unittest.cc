@@ -485,26 +485,25 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
   }
   std::unique_ptr<UDPPort> CreateUdpPort(const SocketAddress& addr,
                                          PacketSocketFactory* socket_factory) {
-    return absl::WrapUnique(UDPPort::Create(
-        &main_, socket_factory, MakeNetwork(addr), 0, 0, username_, password_,
-        std::string(), true, absl::nullopt));
+    return UDPPort::Create(&main_, socket_factory, MakeNetwork(addr), 0, 0,
+                           username_, password_, std::string(), true,
+                           absl::nullopt);
   }
   std::unique_ptr<TCPPort> CreateTcpPort(const SocketAddress& addr) {
     return CreateTcpPort(addr, &socket_factory_);
   }
   std::unique_ptr<TCPPort> CreateTcpPort(const SocketAddress& addr,
                                          PacketSocketFactory* socket_factory) {
-    return absl::WrapUnique(TCPPort::Create(&main_, socket_factory,
-                                            MakeNetwork(addr), 0, 0, username_,
-                                            password_, true));
+    return TCPPort::Create(&main_, socket_factory, MakeNetwork(addr), 0, 0,
+                           username_, password_, true);
   }
   std::unique_ptr<StunPort> CreateStunPort(const SocketAddress& addr,
                                            rtc::PacketSocketFactory* factory) {
     ServerAddresses stun_servers;
     stun_servers.insert(kStunAddr);
-    return absl::WrapUnique(StunPort::Create(
-        &main_, factory, MakeNetwork(addr), 0, 0, username_, password_,
-        stun_servers, std::string(), absl::nullopt));
+    return StunPort::Create(&main_, factory, MakeNetwork(addr), 0, 0, username_,
+                            password_, stun_servers, std::string(),
+                            absl::nullopt);
   }
   std::unique_ptr<Port> CreateRelayPort(const SocketAddress& addr,
                                         RelayType rtype,
@@ -531,10 +530,10 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
       ProtocolType int_proto,
       ProtocolType ext_proto,
       const rtc::SocketAddress& server_addr) {
-    return absl::WrapUnique(TurnPort::Create(
+    return TurnPort::CreateUnique(
         &main_, socket_factory, MakeNetwork(addr), 0, 0, username_, password_,
         ProtocolAddress(server_addr, int_proto), kRelayCredentials, 0, "", {},
-        {}, nullptr, nullptr));
+        {}, nullptr, nullptr);
   }
   std::unique_ptr<RelayPort> CreateGturnPort(const SocketAddress& addr,
                                              ProtocolType int_proto,
@@ -549,9 +548,8 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
     // TODO(pthatcher):  Remove GTURN.
     // Generate a username with length of 16 for Gturn only.
     std::string username = rtc::CreateRandomString(kGturnUserNameLength);
-    return absl::WrapUnique(RelayPort::Create(&main_, &socket_factory_,
-                                              MakeNetwork(addr), 0, 0, username,
-                                              password_));
+    return RelayPort::Create(&main_, &socket_factory_, MakeNetwork(addr), 0, 0,
+                             username, password_);
     // TODO(?): Add an external address for ext_proto, so that the
     // other side can connect to this port using a non-UDP protocol.
   }
