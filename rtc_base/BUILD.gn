@@ -67,9 +67,102 @@ rtc_source_set("compile_assert_c") {
   ]
 }
 
+# The subset of rtc_base approved for use outside of libjingle.
+# TODO(bugs.webrtc.org/9838): Create small and focues build targets and remove
+# the old concept of rtc_base and rtc_base_approved.
 rtc_source_set("rtc_base_approved") {
   visibility = [ "*" ]
-  public_deps = [
+  deps = [
+    ":checks",
+    ":rtc_task_queue",
+    ":safe_compare",
+    ":type_traits",
+    "..:webrtc_common",
+    "../api:array_view",
+    "system:arch",
+    "system:unused",
+    "third_party/base64",
+    "//third_party/abseil-cpp/absl/memory:memory",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
+
+  sources = [
+    "bind.h",
+    "bitbuffer.cc",
+    "bitbuffer.h",
+    "bitrateallocationstrategy.cc",
+    "bitrateallocationstrategy.h",
+    "buffer.h",
+    "bufferqueue.cc",
+    "bufferqueue.h",
+    "bytebuffer.cc",
+    "bytebuffer.h",
+    "byteorder.h",
+    "copyonwritebuffer.cc",
+    "copyonwritebuffer.h",
+    "event_tracer.cc",
+    "event_tracer.h",
+    "file.cc",
+    "file.h",
+    "flags.cc",
+    "flags.h",
+    "function_view.h",
+    "ignore_wundef.h",
+    "location.cc",
+    "location.h",
+    "message_buffer_reader.h",
+    "numerics/histogram_percentile_counter.cc",
+    "numerics/histogram_percentile_counter.h",
+    "numerics/mod_ops.h",
+    "numerics/moving_max_counter.h",
+    "numerics/sample_counter.cc",
+    "numerics/sample_counter.h",
+    "onetimeevent.h",
+    "pathutils.cc",
+    "pathutils.h",
+    "platform_file.cc",
+    "platform_file.h",
+    "race_checker.cc",
+    "race_checker.h",
+    "random.cc",
+    "random.h",
+    "rate_statistics.cc",
+    "rate_statistics.h",
+    "ratetracker.cc",
+    "ratetracker.h",
+    "swap_queue.h",
+    "template_util.h",
+    "timestampaligner.cc",
+    "timestampaligner.h",
+    "trace_event.h",
+    "zero_memory.cc",
+    "zero_memory.h",
+  ]
+
+  if (is_posix || is_fuchsia) {
+    sources += [ "file_posix.cc" ]
+  }
+
+  if (is_win) {
+    sources += [
+      "file_win.cc",
+      "win/windows_version.cc",
+      "win/windows_version.h",
+    ]
+    data_deps = [
+      "//build/win:runtime_libs",
+    ]
+  }
+
+  if (is_nacl) {
+    deps += [ "//native_client_sdk/src/libraries/nacl_io" ]
+  }
+
+  if (is_android) {
+    libs = [ "log" ]
+  }
+
+  public_deps = [  # no-presubmit-check TODO(webrtc:8603)
     ":atomicops",
     ":criticalsection",
     ":logging",
@@ -78,7 +171,6 @@ rtc_source_set("rtc_base_approved") {
     ":platform_thread_types",
     ":ptr_util",
     ":refcount",
-    ":rtc_base_approved_generic",
     ":rtc_event",
     ":safe_conversions",
     ":stringutils",
@@ -146,7 +238,6 @@ rtc_source_set("criticalsection") {
 rtc_source_set("platform_thread") {
   visibility = [
     ":rtc_base_approved",
-    ":rtc_base_approved_generic",
     ":rtc_task_queue_libevent",
     ":rtc_task_queue_win",
     ":sequenced_task_checker",
@@ -370,122 +461,6 @@ rtc_source_set("deprecation") {
   sources = [
     "deprecation.h",
   ]
-}
-
-# The subset of rtc_base approved for use outside of libjingle.
-rtc_source_set("rtc_base_approved_generic") {
-  visibility = [
-    ":rtc_base_approved",
-    ":weak_ptr_unittests",
-  ]
-
-  cflags = []
-  defines = []
-  libs = []
-  data_deps = []
-  deps = [
-    ":atomicops",
-    ":checks",
-    ":criticalsection",
-    ":logging",
-    ":macromagic",
-    ":platform_thread",
-    ":platform_thread_types",
-    ":ptr_util",
-    ":refcount",
-    ":rtc_event",
-    ":rtc_task_queue",
-    ":safe_compare",
-    ":safe_conversions",
-    ":stringutils",
-    ":thread_checker",
-    ":timeutils",
-    ":type_traits",
-    "system:arch",
-    "system:unused",
-    "third_party/base64",
-  ]
-
-  sources = [
-    "bind.h",
-    "bitbuffer.cc",
-    "bitbuffer.h",
-    "bitrateallocationstrategy.cc",
-    "bitrateallocationstrategy.h",
-    "buffer.h",
-    "bufferqueue.cc",
-    "bufferqueue.h",
-    "bytebuffer.cc",
-    "bytebuffer.h",
-    "byteorder.h",
-    "copyonwritebuffer.cc",
-    "copyonwritebuffer.h",
-    "event_tracer.cc",
-    "event_tracer.h",
-    "file.cc",
-    "file.h",
-    "flags.cc",
-    "flags.h",
-    "function_view.h",
-    "ignore_wundef.h",
-    "location.cc",
-    "location.h",
-    "message_buffer_reader.h",
-    "numerics/histogram_percentile_counter.cc",
-    "numerics/histogram_percentile_counter.h",
-    "numerics/mod_ops.h",
-    "numerics/moving_max_counter.h",
-    "numerics/sample_counter.cc",
-    "numerics/sample_counter.h",
-    "onetimeevent.h",
-    "pathutils.cc",
-    "pathutils.h",
-    "platform_file.cc",
-    "platform_file.h",
-    "race_checker.cc",
-    "race_checker.h",
-    "random.cc",
-    "random.h",
-    "rate_statistics.cc",
-    "rate_statistics.h",
-    "ratetracker.cc",
-    "ratetracker.h",
-    "swap_queue.h",
-    "template_util.h",
-    "timestampaligner.cc",
-    "timestampaligner.h",
-    "trace_event.h",
-    "zero_memory.cc",
-    "zero_memory.h",
-  ]
-
-  deps += [
-    "..:webrtc_common",
-    "../api:array_view",
-    "//third_party/abseil-cpp/absl/memory:memory",
-    "//third_party/abseil-cpp/absl/types:optional",
-  ]
-
-  if (is_android) {
-    libs += [ "log" ]
-  }
-
-  if (is_posix || is_fuchsia) {
-    sources += [ "file_posix.cc" ]
-  }
-
-  if (is_win) {
-    sources += [
-      "file_win.cc",
-      "win/windows_version.cc",
-      "win/windows_version.h",
-    ]
-    data_deps += [ "//build/win:runtime_libs" ]
-  }
-
-  if (is_nacl) {
-    deps += [ "//native_client_sdk/src/libraries/nacl_io" ]
-  }
 }
 
 if (is_mac && !build_with_chromium) {
@@ -1240,7 +1215,7 @@ if (rtc_include_tests) {
       "weak_ptr_unittest.cc",
     ]
     deps = [
-      ":rtc_base_approved_generic",
+      ":rtc_base_approved",
       ":rtc_base_tests_main",
       ":rtc_base_tests_utils",
       ":rtc_event",
