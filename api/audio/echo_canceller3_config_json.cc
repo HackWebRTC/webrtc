@@ -53,14 +53,14 @@ void ReadParam(const Json::Value& root, std::string param_name, float* param) {
 void ReadParam(const Json::Value& root,
                std::string param_name,
                EchoCanceller3Config::Filter::MainConfiguration* param) {
-  RTC_CHECK(param);
+  RTC_DCHECK(param);
   Json::Value json_array;
   if (rtc::GetValueFromJsonObject(root, param_name, &json_array)) {
     std::vector<double> v;
     rtc::JsonArrayToDoubleVector(json_array, &v);
     if (v.size() != 6) {
       RTC_LOG(LS_ERROR) << "Incorrect array size for " << param_name;
-      RTC_CHECK(false);
+      return;
     }
     param->length_blocks = static_cast<size_t>(v[0]);
     param->leakage_converged = static_cast<float>(v[1]);
@@ -74,14 +74,14 @@ void ReadParam(const Json::Value& root,
 void ReadParam(const Json::Value& root,
                std::string param_name,
                EchoCanceller3Config::Filter::ShadowConfiguration* param) {
-  RTC_CHECK(param);
+  RTC_DCHECK(param);
   Json::Value json_array;
   if (rtc::GetValueFromJsonObject(root, param_name, &json_array)) {
     std::vector<double> v;
     rtc::JsonArrayToDoubleVector(json_array, &v);
     if (v.size() != 3) {
       RTC_LOG(LS_ERROR) << "Incorrect array size for " << param_name;
-      RTC_CHECK(false);
+      return;
     }
     param->length_blocks = static_cast<size_t>(v[0]);
     param->rate = static_cast<float>(v[1]);
@@ -92,14 +92,14 @@ void ReadParam(const Json::Value& root,
 void ReadParam(const Json::Value& root,
                std::string param_name,
                EchoCanceller3Config::Suppressor::MaskingThresholds* param) {
-  RTC_CHECK(param);
+  RTC_DCHECK(param);
   Json::Value json_array;
   if (rtc::GetValueFromJsonObject(root, param_name, &json_array)) {
     std::vector<double> v;
     rtc::JsonArrayToDoubleVector(json_array, &v);
     if (v.size() != 3) {
       RTC_LOG(LS_ERROR) << "Incorrect array size for " << param_name;
-      RTC_CHECK(false);
+      return;
     }
     param->enr_transparent = static_cast<float>(v[0]);
     param->enr_suppress = static_cast<float>(v[1]);
