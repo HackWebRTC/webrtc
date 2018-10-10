@@ -14,7 +14,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "p2p/base/port.h"
 #include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
@@ -131,6 +130,15 @@ RtpTransportInternal* JsepTransportController::GetRtpTransport(
     return nullptr;
   }
   return jsep_transport->rtp_transport();
+}
+
+MediaTransportInterface* JsepTransportController::GetMediaTransport(
+    const std::string& mid) const {
+  auto jsep_transport = GetJsepTransportForMid(mid);
+  if (!jsep_transport) {
+    return nullptr;
+  }
+  return jsep_transport->media_transport();
 }
 
 cricket::DtlsTransportInternal* JsepTransportController::GetDtlsTransport(
@@ -523,7 +531,7 @@ RTCError JsepTransportController::ApplyDescription_n(
         (IsBundled(content_info.name) && content_info.name != *bundled_mid())) {
       continue;
     }
-    error = MaybeCreateJsepTransport(content_info);
+    error = MaybeCreateJsepTransport(local, content_info);
     if (!error.ok()) {
       return error;
     }
@@ -889,6 +897,7 @@ cricket::JsepTransport* JsepTransportController::GetJsepTransportByName(
 }
 
 RTCError JsepTransportController::MaybeCreateJsepTransport(
+    bool local,
     const cricket::ContentInfo& content_info) {
   RTC_DCHECK(network_thread_->IsCurrent());
   cricket::JsepTransport* transport = GetJsepTransportByName(content_info.name);
@@ -906,7 +915,13 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
 
   std::unique_ptr<cricket::DtlsTransportInternal> rtp_dtls_transport =
       CreateDtlsTransport(content_info.name, /*rtcp =*/false);
+
   std::unique_ptr<cricket::DtlsTransportInternal> rtcp_dtls_transport;
+  std::unique_ptr<RtpTransport> unencrypted_rtp_transport;
+  std::unique_ptr<SrtpTransport> sdes_transport;
+  std::unique_ptr<DtlsSrtpTransport> dtls_srtp_transport;
+  std::unique_ptr<MediaTransportInterface> media_transport;
+
   if (config_.rtcp_mux_policy !=
           PeerConnectionInterface::kRtcpMuxPolicyRequire &&
       content_info.type == cricket::MediaProtocolType::kRtp) {
@@ -914,9 +929,20 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
         CreateDtlsTransport(content_info.name, /*rtcp =*/true);
   }
 
-  std::unique_ptr<RtpTransport> unencrypted_rtp_transport;
-  std::unique_ptr<SrtpTransport> sdes_transport;
-  std::unique_ptr<DtlsSrtpTransport> dtls_srtp_transport;
+  if (config_.media_transport_factory != nullptr) {
+    auto media_transport_result =
+        config_.media_transport_factory->CreateMediaTransport(
+            rtp_dtls_transport->ice_transport(), network_thread_,
+            /*is_caller=*/local);
+
+    // TODO(sukhanov): Proper error handling.
+    RTC_CHECK(media_transport_result.ok());
+
+    media_transport = std::move(media_transport_result.value());
+  }
+
+  // TODO(sukhanov): Do not create RTP/RTCP transports if media transport is
+  // used.
   if (config_.disable_encryption) {
     unencrypted_rtp_transport = CreateUnencryptedRtpTransport(
         content_info.name, rtp_dtls_transport.get(), rtcp_dtls_transport.get());
@@ -932,7 +958,8 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
       absl::make_unique<cricket::JsepTransport>(
           content_info.name, certificate_, std::move(unencrypted_rtp_transport),
           std::move(sdes_transport), std::move(dtls_srtp_transport),
-          std::move(rtp_dtls_transport), std::move(rtcp_dtls_transport));
+          std::move(rtp_dtls_transport), std::move(rtcp_dtls_transport),
+          std::move(media_transport));
   jsep_transport->SignalRtcpMuxActive.connect(
       this, &JsepTransportController::UpdateAggregateStates_n);
   SetTransportForMid(content_info.name, jsep_transport.get());

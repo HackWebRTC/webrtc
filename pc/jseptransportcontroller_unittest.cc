@@ -11,7 +11,7 @@
 #include <map>
 #include <memory>
 
-#include "absl/memory/memory.h"
+#include "api/test/fake_media_transport.h"
 #include "p2p/base/fakedtlstransport.h"
 #include "p2p/base/fakeicetransport.h"
 #include "p2p/base/transportfactoryinterface.h"
@@ -341,6 +341,55 @@ TEST_F(JsepTransportControllerTest, GetDtlsTransportWithRtcpMux) {
   EXPECT_EQ(nullptr, transport_controller_->GetRtcpDtlsTransport(kAudioMid1));
   EXPECT_NE(nullptr, transport_controller_->GetDtlsTransport(kVideoMid1));
   EXPECT_EQ(nullptr, transport_controller_->GetRtcpDtlsTransport(kVideoMid1));
+  EXPECT_EQ(nullptr, transport_controller_->GetMediaTransport(kAudioMid1));
+}
+
+TEST_F(JsepTransportControllerTest, GetMediaTransportInCaller) {
+  FakeMediaTransportFactory fake_media_transport_factory;
+  JsepTransportController::Config config;
+
+  config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyNegotiate;
+  config.media_transport_factory = &fake_media_transport_factory;
+  CreateJsepTransportController(config);
+  auto description = CreateSessionDescriptionWithoutBundle();
+  EXPECT_TRUE(transport_controller_
+                  ->SetLocalDescription(SdpType::kOffer, description.get())
+                  .ok());
+
+  FakeMediaTransport* media_transport = static_cast<FakeMediaTransport*>(
+      transport_controller_->GetMediaTransport(kAudioMid1));
+
+  ASSERT_NE(nullptr, media_transport);
+
+  // After SetLocalDescription, media transport should be created as caller.
+  EXPECT_TRUE(media_transport->is_caller());
+
+  // Return nullptr for non-existing mids.
+  EXPECT_EQ(nullptr, transport_controller_->GetMediaTransport(kVideoMid2));
+}
+
+TEST_F(JsepTransportControllerTest, GetMediaTransportInCallee) {
+  FakeMediaTransportFactory fake_media_transport_factory;
+  JsepTransportController::Config config;
+
+  config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyNegotiate;
+  config.media_transport_factory = &fake_media_transport_factory;
+  CreateJsepTransportController(config);
+  auto description = CreateSessionDescriptionWithoutBundle();
+  EXPECT_TRUE(transport_controller_
+                  ->SetRemoteDescription(SdpType::kOffer, description.get())
+                  .ok());
+
+  FakeMediaTransport* media_transport = static_cast<FakeMediaTransport*>(
+      transport_controller_->GetMediaTransport(kAudioMid1));
+
+  ASSERT_NE(nullptr, media_transport);
+
+  // After SetRemoteDescription, media transport should be created as callee.
+  EXPECT_FALSE(media_transport->is_caller());
+
+  // Return nullptr for non-existing mids.
+  EXPECT_EQ(nullptr, transport_controller_->GetMediaTransport(kVideoMid2));
 }
 
 TEST_F(JsepTransportControllerTest, SetIceConfig) {

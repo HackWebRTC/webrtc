@@ -316,6 +316,7 @@ if (rtc_include_tests) {
       ":rtc_pc",
       ":rtc_pc_base",
       "../api:array_view",
+      "../api:fake_media_transport",
       "../api:libjingle_peerconnection_api",
       "../call:rtp_interfaces",
       "../logging:rtc_event_log_api",

@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "api/candidate.h"
+#include "api/media_transport_interface.h"
 #include "api/peerconnectioninterface.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "media/sctp/sctptransportinternal.h"
@@ -79,6 +80,13 @@ class JsepTransportController : public sigslot::has_slots<> {
     Observer* transport_observer = nullptr;
     bool active_reset_srtp_params = false;
     RtcEventLog* event_log = nullptr;
+
+    // Optional media transport factory (experimental). If provided it will be
+    // used to create media_transport and will be used to send / receive
+    // audio and video frames instead of RTP. Note that currently
+    // media_transport co-exists with RTP / RTCP transports and uses the same
+    // underlying ICE transport.
+    MediaTransportFactory* media_transport_factory = nullptr;
   };
 
   // The ICE related events are signaled on the |signaling_thread|.
@@ -107,6 +115,8 @@ class JsepTransportController : public sigslot::has_slots<> {
       const std::string& mid) const;
   cricket::DtlsTransportInternal* GetRtcpDtlsTransport(
       const std::string& mid) const;
+
+  MediaTransportInterface* GetMediaTransport(const std::string& mid) const;
 
   /*********************
    * ICE-related methods
@@ -241,7 +251,12 @@ class JsepTransportController : public sigslot::has_slots<> {
   cricket::JsepTransport* GetJsepTransportByName(
       const std::string& transport_name);
 
-  RTCError MaybeCreateJsepTransport(const cricket::ContentInfo& content_info);
+  // Creates jsep transport. Noop if transport is already created.
+  // Transport is created either during SetLocalDescription (|local| == true) or
+  // during SetRemoteDescription (|local| == false). Passing |local| helps to
+  // differentiate initiator (caller) from answerer (callee).
+  RTCError MaybeCreateJsepTransport(bool local,
+                                    const cricket::ContentInfo& content_info);
   void MaybeDestroyJsepTransport(const std::string& mid);
   void DestroyAllJsepTransports_n();
 
