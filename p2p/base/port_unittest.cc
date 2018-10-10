@@ -530,10 +530,10 @@ class PortTest : public testing::Test, public sigslot::has_slots<> {
       ProtocolType int_proto,
       ProtocolType ext_proto,
       const rtc::SocketAddress& server_addr) {
-    return TurnPort::CreateUnique(
-        &main_, socket_factory, MakeNetwork(addr), 0, 0, username_, password_,
-        ProtocolAddress(server_addr, int_proto), kRelayCredentials, 0, "", {},
-        {}, nullptr, nullptr);
+    return TurnPort::Create(&main_, socket_factory, MakeNetwork(addr), 0, 0,
+                            username_, password_,
+                            ProtocolAddress(server_addr, int_proto),
+                            kRelayCredentials, 0, "", {}, {}, nullptr, nullptr);
   }
   std::unique_ptr<RelayPort> CreateGturnPort(const SocketAddress& addr,
                                              ProtocolType int_proto,
