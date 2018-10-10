@@ -434,6 +434,19 @@ TEST(BufferTest, TestStruct) {
   EXPECT_EQ(kObsidian, buf[2].stone);
 }
 
+TEST(BufferTest, DieOnUseAfterMove) {
+  Buffer buf(17);
+  Buffer buf2 = std::move(buf);
+  EXPECT_EQ(buf2.size(), 17u);
+#if RTC_DCHECK_IS_ON
+#if GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
+  EXPECT_DEATH(buf.empty(), "");
+#endif
+#else
+  EXPECT_TRUE(buf.empty());
+#endif
+}
+
 TEST(ZeroOnFreeBufferTest, TestZeroOnSetData) {
   ZeroOnFreeBuffer<uint8_t> buf(kTestData, 7);
   const uint8_t* old_data = buf.data();

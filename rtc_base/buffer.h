@@ -149,7 +149,6 @@ class BufferT {
   }
 
   BufferT& operator=(BufferT&& buf) {
-    RTC_DCHECK(IsConsistent());
     RTC_DCHECK(buf.IsConsistent());
     size_ = buf.size_;
     capacity_ = buf.capacity_;
@@ -389,7 +388,7 @@ class BufferT {
     ExplicitZeroMemory(data_.get() + size_, count * sizeof(T));
   }
 
-  // Precondition for all methods except Clear and the destructor.
+  // Precondition for all methods except Clear, operator= and the destructor.
   // Postcondition for all methods except move construction and move
   // assignment, which leave the moved-from object in a possibly inconsistent
   // state.
@@ -401,13 +400,13 @@ class BufferT {
   // can mutate the state slightly to help subsequent sanity checks catch bugs.
   void OnMovedFrom() {
 #if RTC_DCHECK_IS_ON
+    // Ensure that *this is always inconsistent, to provoke bugs.
+    size_ = 1;
+    capacity_ = 0;
+#else
     // Make *this consistent and empty. Shouldn't be necessary, but better safe
     // than sorry.
     size_ = 0;
-    capacity_ = 0;
-#else
-    // Ensure that *this is always inconsistent, to provoke bugs.
-    size_ = 1;
     capacity_ = 0;
 #endif
   }
