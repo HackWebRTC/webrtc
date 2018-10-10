@@ -150,6 +150,7 @@ class BufferT {
 
   BufferT& operator=(BufferT&& buf) {
     RTC_DCHECK(buf.IsConsistent());
+    MaybeZeroCompleteBuffer();
     size_ = buf.size_;
     capacity_ = buf.capacity_;
     using std::swap;
@@ -375,10 +376,10 @@ class BufferT {
 
   // Zero the complete buffer if template argument "ZeroOnFree" is true.
   void MaybeZeroCompleteBuffer() {
-    if (ZeroOnFree && capacity_) {
+    if (ZeroOnFree && capacity_ > 0) {
       // It would be sufficient to only zero "size_" elements, as all other
       // methods already ensure that the unused capacity contains no sensitive
-      // data - but better safe than sorry.
+      // data---but better safe than sorry.
       ExplicitZeroMemory(data_.get(), capacity_ * sizeof(T));
     }
   }
