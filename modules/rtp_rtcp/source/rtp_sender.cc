@@ -168,9 +168,7 @@ RTPSender::RTPSender(
       overhead_observer_(overhead_observer),
       populate_network2_timestamp_(populate_network2_timestamp),
       send_side_bwe_with_overhead_(
-          webrtc::field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")),
-      unlimited_retransmission_experiment_(
-          field_trial::IsEnabled("WebRTC-UnlimitedScreenshareRetransmission")) {
+          webrtc::field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")) {
   // This random initialization is not intended to be cryptographic strong.
   timestamp_offset_ = random_.Rand<uint32_t>();
   // Random start, 16 bits. Can't be 0.
@@ -427,11 +425,6 @@ bool RTPSender::SendOutgoingData(FrameType frame_type,
       *transport_frame_id_out = rtp_timestamp;
     if (!sending_media_)
       return true;
-
-    // Cache video content type.
-    if (!audio_configured_ && rtp_header) {
-      video_content_type_ = rtp_header->content_type;
-    }
   }
   VideoCodecType video_type = kVideoCodecGeneric;
   if (CheckPayloadType(payload_type, &video_type) != 0) {
@@ -671,20 +664,9 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id) {
 
   // Skip retransmission rate check if not configured.
   if (retransmission_rate_limiter_) {
-    // Skip retransmission rate check if sending screenshare and the experiment
-    // is on.
-    bool skip_retransmission_rate_limit = false;
-    if (unlimited_retransmission_experiment_) {
-      rtc::CritScope lock(&send_critsect_);
-      skip_retransmission_rate_limit =
-          video_content_type_ &&
-          videocontenttypehelpers::IsScreenshare(*video_content_type_);
-    }
-
     // Check if we're overusing retransmission bitrate.
     // TODO(sprang): Add histograms for nack success or failure reasons.
-    if (!skip_retransmission_rate_limit &&
-        !retransmission_rate_limiter_->TryUseRate(packet_size)) {
+    if (!retransmission_rate_limiter_->TryUseRate(packet_size)) {
       return -1;
     }
   }
