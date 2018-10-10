@@ -68,13 +68,13 @@ bool PerSenderRtpEncodingParameterHasValue(
 // correct worker thread only if both the media channel exists and a ssrc has
 // been allocated to the stream.
 void MaybeAttachFrameEncryptorToMediaChannel(
-    const absl::optional<uint32_t> ssrc,
+    const uint32_t ssrc,
     rtc::Thread* worker_thread,
     rtc::scoped_refptr<webrtc::FrameEncryptorInterface> frame_encryptor,
     cricket::MediaChannel* media_channel) {
-  if (media_channel && ssrc.has_value()) {
-    return worker_thread->Invoke<void>(RTC_FROM_HERE, [&] {
-      media_channel->SetFrameEncryptor(*ssrc, frame_encryptor);
+  if (media_channel && frame_encryptor && ssrc) {
+    worker_thread->Invoke<void>(RTC_FROM_HERE, [&] {
+      media_channel->SetFrameEncryptor(ssrc, frame_encryptor);
     });
   }
 }
@@ -305,8 +305,12 @@ rtc::scoped_refptr<DtmfSenderInterface> AudioRtpSender::GetDtmfSender() const {
 void AudioRtpSender::SetFrameEncryptor(
     rtc::scoped_refptr<FrameEncryptorInterface> frame_encryptor) {
   frame_encryptor_ = std::move(frame_encryptor);
-  MaybeAttachFrameEncryptorToMediaChannel(ssrc_, worker_thread_,
-                                          frame_encryptor_, media_channel_);
+  // Special Case: Set the frame encryptor to any value on any existing channel.
+  if (media_channel_ && ssrc_) {
+    worker_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
+      media_channel_->SetFrameEncryptor(ssrc_, frame_encryptor_);
+    });
+  }
 }
 
 rtc::scoped_refptr<FrameEncryptorInterface> AudioRtpSender::GetFrameEncryptor()
@@ -557,8 +561,12 @@ rtc::scoped_refptr<DtmfSenderInterface> VideoRtpSender::GetDtmfSender() const {
 void VideoRtpSender::SetFrameEncryptor(
     rtc::scoped_refptr<FrameEncryptorInterface> frame_encryptor) {
   frame_encryptor_ = std::move(frame_encryptor);
-  MaybeAttachFrameEncryptorToMediaChannel(ssrc_, worker_thread_,
-                                          frame_encryptor_, media_channel_);
+  // Special Case: Set the frame encryptor to any value on any existing channel.
+  if (media_channel_ && ssrc_) {
+    worker_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
+      media_channel_->SetFrameEncryptor(ssrc_, frame_encryptor_);
+    });
+  }
 }
 
 rtc::scoped_refptr<FrameEncryptorInterface> VideoRtpSender::GetFrameEncryptor()

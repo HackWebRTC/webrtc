@@ -51,8 +51,8 @@ void MaybeAttachFrameDecryptorToMediaChannel(
     rtc::Thread* worker_thread,
     rtc::scoped_refptr<webrtc::FrameDecryptorInterface> frame_decryptor,
     cricket::MediaChannel* media_channel) {
-  if (media_channel && ssrc.has_value()) {
-    return worker_thread->Invoke<void>(RTC_FROM_HERE, [&] {
+  if (media_channel && frame_decryptor && ssrc.has_value()) {
+    worker_thread->Invoke<void>(RTC_FROM_HERE, [&] {
       media_channel->SetFrameDecryptor(*ssrc, frame_decryptor);
     });
   }
@@ -156,9 +156,12 @@ bool AudioRtpReceiver::SetParameters(const RtpParameters& parameters) {
 void AudioRtpReceiver::SetFrameDecryptor(
     rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor) {
   frame_decryptor_ = std::move(frame_decryptor);
-  // Attach the frame decryptor to the media channel if it exists.
-  MaybeAttachFrameDecryptorToMediaChannel(ssrc_, worker_thread_,
-                                          frame_decryptor_, media_channel_);
+  // Special Case: Set the frame decryptor to any value on any existing channel.
+  if (media_channel_ && ssrc_.has_value()) {
+    worker_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
+      media_channel_->SetFrameDecryptor(*ssrc_, frame_decryptor_);
+    });
+  }
 }
 
 rtc::scoped_refptr<FrameDecryptorInterface>
@@ -347,9 +350,12 @@ bool VideoRtpReceiver::SetParameters(const RtpParameters& parameters) {
 void VideoRtpReceiver::SetFrameDecryptor(
     rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor) {
   frame_decryptor_ = std::move(frame_decryptor);
-  // Attach the new frame decryptor the media channel if it exists yet.
-  MaybeAttachFrameDecryptorToMediaChannel(ssrc_, worker_thread_,
-                                          frame_decryptor_, media_channel_);
+  // Special Case: Set the frame decryptor to any value on any existing channel.
+  if (media_channel_ && ssrc_.has_value()) {
+    worker_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
+      media_channel_->SetFrameDecryptor(*ssrc_, frame_decryptor_);
+    });
+  }
 }
 
 rtc::scoped_refptr<FrameDecryptorInterface>
