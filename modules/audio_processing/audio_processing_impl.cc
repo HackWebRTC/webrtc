@@ -662,11 +662,11 @@ int AudioProcessingImpl::InitializeLocked(const ProcessingConfig& config) {
 }
 
 void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
-  config_ = config;
-
   // Run in a single-threaded manner when applying the settings.
   rtc::CritScope cs_render(&crit_render_);
   rtc::CritScope cs_capture(&crit_capture_);
+
+  config_ = config;
 
   public_submodules_->echo_cancellation->Enable(
       config_.echo_canceller.enabled && !config_.echo_canceller.mobile_mode);
@@ -1642,8 +1642,8 @@ AudioProcessing::AudioProcessingStatistics AudioProcessingImpl::GetStatistics()
     const {
   AudioProcessingStatistics stats;
   EchoCancellationImpl::Metrics metrics;
+  rtc::CritScope cs_capture(&crit_capture_);
   if (private_submodules_->echo_controller) {
-    rtc::CritScope cs_capture(&crit_capture_);
     auto ec_metrics = private_submodules_->echo_controller->GetMetrics();
     float erl = static_cast<float>(ec_metrics.echo_return_loss);
     float erle = static_cast<float>(ec_metrics.echo_return_loss_enhancement);
@@ -1659,14 +1659,11 @@ AudioProcessing::AudioProcessingStatistics AudioProcessingImpl::GetStatistics()
         metrics.echo_return_loss_enhancement);
     stats.residual_echo_return_loss.Set(metrics.residual_echo_return_loss);
   }
-  {
-    rtc::CritScope cs_capture(&crit_capture_);
-    RTC_DCHECK(private_submodules_->echo_detector);
-    auto ed_metrics = private_submodules_->echo_detector->GetMetrics();
-    stats.residual_echo_likelihood = ed_metrics.echo_likelihood;
-    stats.residual_echo_likelihood_recent_max =
-        ed_metrics.echo_likelihood_recent_max;
-  }
+  RTC_DCHECK(private_submodules_->echo_detector);
+  auto ed_metrics = private_submodules_->echo_detector->GetMetrics();
+  stats.residual_echo_likelihood = ed_metrics.echo_likelihood;
+  stats.residual_echo_likelihood_recent_max =
+      ed_metrics.echo_likelihood_recent_max;
   public_submodules_->echo_cancellation->GetDelayMetrics(
       &stats.delay_median, &stats.delay_standard_deviation,
       &stats.fraction_poor_delays);
@@ -1678,8 +1675,8 @@ AudioProcessingStats AudioProcessingImpl::GetStatistics(
   AudioProcessingStats stats;
   if (has_remote_tracks) {
     EchoCancellationImpl::Metrics metrics;
+    rtc::CritScope cs_capture(&crit_capture_);
     if (private_submodules_->echo_controller) {
-      rtc::CritScope cs_capture(&crit_capture_);
       auto ec_metrics = private_submodules_->echo_controller->GetMetrics();
       stats.echo_return_loss = ec_metrics.echo_return_loss;
       stats.echo_return_loss_enhancement =
@@ -1701,7 +1698,6 @@ AudioProcessingStats AudioProcessingImpl::GetStatistics(
       }
     }
     if (config_.residual_echo_detector.enabled) {
-      rtc::CritScope cs_capture(&crit_capture_);
       RTC_DCHECK(private_submodules_->echo_detector);
       auto ed_metrics = private_submodules_->echo_detector->GetMetrics();
       stats.residual_echo_likelihood = ed_metrics.echo_likelihood;
