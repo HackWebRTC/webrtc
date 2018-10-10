@@ -257,9 +257,6 @@ RtpVideoSender::RtpVideoSender(
   for (size_t i = 0; i < rtp_config_.extensions.size(); ++i) {
     const std::string& extension = rtp_config_.extensions[i].uri;
     int id = rtp_config_.extensions[i].id;
-    // One-byte-extension local identifiers are in the range 1-14 inclusive.
-    RTC_DCHECK_GE(id, 1);
-    RTC_DCHECK_LE(id, 14);
     RTC_DCHECK(RtpExtension::IsSupportedForVideo(extension));
     for (auto& rtp_rtcp : rtp_modules_) {
       RTC_CHECK(rtp_rtcp->RegisterRtpHeaderExtension(extension, id));
