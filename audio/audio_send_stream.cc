@@ -301,9 +301,12 @@ void AudioSendStream::Start() {
        webrtc::field_trial::IsEnabled("WebRTC-Audio-ABWENoTWCC"))) {
     // Audio BWE is enabled.
     transport_->packet_sender()->SetAccountForAudioPackets(true);
+    rtp_rtcp_module_->SetAsPartOfAllocation(true);
     ConfigureBitrateObserver(config_.min_bitrate_bps, config_.max_bitrate_bps,
                              config_.bitrate_priority,
                              has_transport_sequence_number);
+  } else {
+    rtp_rtcp_module_->SetAsPartOfAllocation(false);
   }
   channel_proxy_->StartSend();
   sending_ = true;
@@ -713,8 +716,10 @@ void AudioSendStream::ReconfigureBitrateObserver(
     stream->ConfigureBitrateObserver(
         new_config.min_bitrate_bps, new_config.max_bitrate_bps,
         new_config.bitrate_priority, has_transport_sequence_number);
+    stream->rtp_rtcp_module_->SetAsPartOfAllocation(true);
   } else {
     stream->RemoveBitrateObserver();
+    stream->rtp_rtcp_module_->SetAsPartOfAllocation(false);
   }
 }
 
