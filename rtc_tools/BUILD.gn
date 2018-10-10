@@ -25,9 +25,6 @@ group("rtc_tools") {
       ":psnr_ssim_analyzer",
       ":rgba_to_i420_converter",
     ]
-    if (rtc_include_internal_audio_device) {
-      deps += [ ":force_mic_volume_max" ]
-    }
     if (rtc_enable_protobuf) {
       deps += [ ":chart_proto" ]
     }
@@ -209,20 +206,6 @@ if (!build_with_chromium) {
       ":command_line_parser",
       ":frame_editing_lib",
     ]
-  }
-
-  # It doesn't make sense to build this tool without the ADM enabled.
-  if (rtc_include_internal_audio_device) {
-    rtc_executable("force_mic_volume_max") {
-      sources = [
-        "force_mic_volume_max/force_mic_volume_max.cc",
-      ]
-
-      deps = [
-        "../modules/audio_device",
-        "../modules/audio_device:audio_device_impl",
-      ]
-    }
   }
 
   if (rtc_enable_protobuf) {
