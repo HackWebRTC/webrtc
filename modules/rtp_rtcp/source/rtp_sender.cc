@@ -622,7 +622,7 @@ size_t RTPSender::SendPadData(size_t bytes,
           has_transport_seq_num || force_part_of_allocation_;
       options.included_in_feedback = has_transport_seq_num;
     }
-    padding_packet.SetPadding(padding_bytes_in_packet, &random_);
+    padding_packet.SetPadding(padding_bytes_in_packet);
     if (has_transport_seq_num) {
       AddPacketToTransportFeedback(options.packet_id, padding_packet,
                                    pacing_info);

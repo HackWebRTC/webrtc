@@ -19,6 +19,7 @@
 namespace webrtc {
 namespace {
 
+using ::testing::Each;
 using ::testing::ElementsAre;
 using ::testing::ElementsAreArray;
 using ::testing::IsEmpty;
@@ -367,11 +368,10 @@ TEST(RtpPacketTest, CreatePurePadding) {
   packet.SetSequenceNumber(kSeqNum);
   packet.SetTimestamp(kTimestamp);
   packet.SetSsrc(kSsrc);
-  Random random(0x123456789);
 
   EXPECT_LT(packet.size(), packet.capacity());
-  EXPECT_FALSE(packet.SetPadding(kPaddingSize + 1, &random));
-  EXPECT_TRUE(packet.SetPadding(kPaddingSize, &random));
+  EXPECT_FALSE(packet.SetPadding(kPaddingSize + 1));
+  EXPECT_TRUE(packet.SetPadding(kPaddingSize));
   EXPECT_EQ(packet.size(), packet.capacity());
 }
 
@@ -383,11 +383,46 @@ TEST(RtpPacketTest, CreateUnalignedPadding) {
   packet.SetTimestamp(kTimestamp);
   packet.SetSsrc(kSsrc);
   packet.SetPayloadSize(kPayloadSize);
-  Random r(0x123456789);
 
   EXPECT_LT(packet.size(), packet.capacity());
-  EXPECT_TRUE(packet.SetPadding(kMaxPaddingSize, &r));
+  EXPECT_TRUE(packet.SetPadding(kMaxPaddingSize));
   EXPECT_EQ(packet.size(), packet.capacity());
+}
+
+TEST(RtpPacketTest, WritesPaddingSizeToLastByte) {
+  const size_t kPaddingSize = 5;
+  RtpPacket packet;
+
+  EXPECT_TRUE(packet.SetPadding(kPaddingSize));
+  EXPECT_EQ(packet.data()[packet.size() - 1], kPaddingSize);
+}
+
+TEST(RtpPacketTest, UsesZerosForPadding) {
+  const size_t kPaddingSize = 5;
+  RtpPacket packet;
+
+  EXPECT_TRUE(packet.SetPadding(kPaddingSize));
+  EXPECT_THAT(rtc::MakeArrayView(packet.data() + 12, kPaddingSize - 1),
+              Each(0));
+}
+
+TEST(RtpPacketTest, CreateOneBytePadding) {
+  size_t kPayloadSize = 123;
+  RtpPacket packet(nullptr, 12 + kPayloadSize + 1);
+  packet.SetPayloadSize(kPayloadSize);
+
+  EXPECT_TRUE(packet.SetPadding(1));
+
+  EXPECT_EQ(packet.size(), 12 + kPayloadSize + 1);
+  EXPECT_EQ(packet.padding_size(), 1u);
+}
+
+TEST(RtpPacketTest, FailsToAddPaddingWithoutCapacity) {
+  size_t kPayloadSize = 123;
+  RtpPacket packet(nullptr, 12 + kPayloadSize);
+  packet.SetPayloadSize(kPayloadSize);
+
+  EXPECT_FALSE(packet.SetPadding(1));
 }
 
 TEST(RtpPacketTest, ParseMinimum) {

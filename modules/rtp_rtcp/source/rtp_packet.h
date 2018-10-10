@@ -16,6 +16,7 @@
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/copyonwritebuffer.h"
+#include "rtc_base/deprecation.h"
 
 namespace webrtc {
 class Random;
@@ -111,7 +112,12 @@ class RtpPacket {
   uint8_t* SetPayloadSize(size_t size_bytes);
   // Same as SetPayloadSize but doesn't guarantee to keep current payload.
   uint8_t* AllocatePayload(size_t size_bytes);
-  bool SetPadding(uint8_t size_bytes, Random* random);
+  RTC_DEPRECATED
+  bool SetPadding(uint8_t size_bytes, Random* random) {
+    return SetPadding(size_bytes);
+  }
+
+  bool SetPadding(size_t padding_size);
 
  private:
   struct ExtensionInfo {

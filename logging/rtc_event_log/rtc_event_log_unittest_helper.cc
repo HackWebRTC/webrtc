@@ -299,7 +299,7 @@ void EventGenerator::RandomizeRtpPacket(
   for (size_t i = 0; i < payload_size; i++) {
     payload[i] = prng_.Rand<uint8_t>();
   }
-  RTC_CHECK(rtp_packet->SetPadding(padding_size, &prng_));
+  RTC_CHECK(rtp_packet->SetPadding(padding_size));
 }
 
 std::unique_ptr<RtcEventRtpPacketIncoming> EventGenerator::NewRtpPacketIncoming(
