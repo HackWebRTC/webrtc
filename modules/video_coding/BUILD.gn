@@ -723,6 +723,7 @@ if (rtc_include_tests) {
     }
 
     deps = [
+      ":mock_headers",
       ":video_codecs_test_framework",
       ":video_coding_utility",
       ":videocodec_test_impl",
@@ -777,6 +778,10 @@ if (rtc_include_tests) {
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+
+    if (rtc_build_libvpx) {
+      deps += [ rtc_libvpx_dir ]
     }
   }
 

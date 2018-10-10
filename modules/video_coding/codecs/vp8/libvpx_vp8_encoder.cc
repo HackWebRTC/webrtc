@@ -831,10 +831,11 @@ int LibvpxVp8Encoder::Encode(const VideoFrame& frame,
     }
     if (error)
       return WEBRTC_VIDEO_CODEC_ERROR;
-    timestamp_ += duration;
     // Examines frame timestamps only.
     error = GetEncodedPartitions(frame);
   }
+  // TODO(sprang): Shouldn't we use the frame timestamp instead?
+  timestamp_ += duration;
   return error;
 }
 
