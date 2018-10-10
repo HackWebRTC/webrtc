@@ -10,6 +10,7 @@
 
 #include "sdk/android/src/jni/pc/video.h"
 
+#include "api/video/video_bitrate_allocator_factory.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
 
@@ -32,6 +33,11 @@ void* CreateVideoSource(JNIEnv* env,
                         rtc::Thread* signaling_thread,
                         rtc::Thread* worker_thread,
                         jboolean is_screencast) {
+  return nullptr;
+}
+
+std::unique_ptr<VideoBitrateAllocatorFactory>
+CreateVideoBitrateAllocatorFactory() {
   return nullptr;
 }
 

@@ -25,6 +25,7 @@ class AudioMixer;
 class AudioProcessing;
 class VideoEncoderFactory;
 class VideoDecoderFactory;
+class VideoBitrateAllocatorFactory;
 }  // namespace webrtc
 
 namespace cricket {
@@ -43,6 +44,8 @@ cricket::MediaEngineInterface* CreateMediaEngine(
     rtc::scoped_refptr<AudioDecoderFactory> audio_decoder_factory,
     std::unique_ptr<VideoEncoderFactory> video_encoder_factory,
     std::unique_ptr<VideoDecoderFactory> video_decoder_factory,
+    std::unique_ptr<VideoBitrateAllocatorFactory>
+        video_bitrate_allocator_factory,
     rtc::scoped_refptr<AudioMixer> audio_mixer,
     rtc::scoped_refptr<AudioProcessing> audio_processor);
 

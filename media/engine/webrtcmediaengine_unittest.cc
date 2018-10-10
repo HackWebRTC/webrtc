@@ -12,6 +12,7 @@
 
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
+#include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "api/video_codecs/builtin_video_decoder_factory.h"
 #include "api/video_codecs/builtin_video_encoder_factory.h"
 #include "media/engine/webrtcmediaengine.h"
@@ -244,8 +245,9 @@ TEST(WebRtcMediaEngineFactoryTest, CreateWithBuiltinDecoders) {
       nullptr /* adm */, webrtc::CreateBuiltinAudioEncoderFactory(),
       webrtc::CreateBuiltinAudioDecoderFactory(),
       webrtc::CreateBuiltinVideoEncoderFactory(),
-      webrtc::CreateBuiltinVideoDecoderFactory(), nullptr /* audio_mixer */,
-      webrtc::AudioProcessingBuilder().Create()));
+      webrtc::CreateBuiltinVideoDecoderFactory(),
+      webrtc::CreateBuiltinVideoBitrateAllocatorFactory(),
+      nullptr /* audio_mixer */, webrtc::AudioProcessingBuilder().Create()));
   EXPECT_TRUE(engine);
 }
 

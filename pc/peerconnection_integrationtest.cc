@@ -29,6 +29,7 @@
 #include "api/peerconnectionproxy.h"
 #include "api/rtpreceiverinterface.h"
 #include "api/umametrics.h"
+#include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "api/video_codecs/builtin_video_decoder_factory.h"
 #include "api/video_codecs/builtin_video_encoder_factory.h"
 #include "api/video_codecs/sdp_video_format.h"
@@ -621,7 +622,9 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
             webrtc::CreateBuiltinAudioEncoderFactory(),
             webrtc::CreateBuiltinAudioDecoderFactory(),
             webrtc::CreateBuiltinVideoEncoderFactory(),
-            webrtc::CreateBuiltinVideoDecoderFactory(), nullptr,
+            webrtc::CreateBuiltinVideoDecoderFactory(),
+            webrtc::CreateBuiltinVideoBitrateAllocatorFactory(),
+            nullptr /* audio_mixer */,
             webrtc::AudioProcessingBuilder().Create());
     pc_factory_dependencies.call_factory = webrtc::CreateCallFactory();
     if (event_log_factory) {

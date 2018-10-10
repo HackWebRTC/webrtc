@@ -15,6 +15,7 @@
 
 #include "api/test/video/function_video_decoder_factory.h"
 #include "api/test/video/function_video_encoder_factory.h"
+#include "api/video/video_bitrate_allocator_factory.h"
 #include "call/call.h"
 #include "call/rtp_transport_controller_send.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
@@ -205,6 +206,7 @@ class CallTest : public ::testing::Test {
   test::FunctionVideoEncoderFactory fake_encoder_factory_;
   int fake_encoder_max_bitrate_ = -1;
   test::FunctionVideoDecoderFactory fake_decoder_factory_;
+  std::unique_ptr<VideoBitrateAllocatorFactory> bitrate_allocator_factory_;
   // Number of simulcast substreams.
   size_t num_video_streams_;
   size_t num_audio_streams_;

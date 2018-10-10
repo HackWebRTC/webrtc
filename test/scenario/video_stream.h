@@ -50,6 +50,7 @@ class SendVideoStream {
   CallClient* const sender_;
   const VideoStreamConfig config_;
   std::unique_ptr<VideoEncoderFactory> encoder_factory_;
+  std::unique_ptr<VideoBitrateAllocatorFactory> bitrate_allocator_factory_;
   std::unique_ptr<TestVideoCapturer> video_capturer_;
   FrameGeneratorCapturer* frame_generator_ = nullptr;
   int next_local_network_id_ = 0;
