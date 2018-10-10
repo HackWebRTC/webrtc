@@ -35,6 +35,7 @@ class VideoQualityObserver {
                       int height,
                       int64_t now_ms,
                       VideoCodecType codec);
+  void OnRenderedFrame(int64_t now_ms);
 
   void OnStreamInactive();
 
@@ -48,13 +49,16 @@ class VideoQualityObserver {
   };
 
   int64_t last_frame_decoded_ms_;
+  int64_t last_frame_rendered_ms_;
   int64_t num_frames_decoded_;
+  int64_t num_frames_rendered_;
   int64_t first_frame_decoded_ms_;
   int64_t last_frame_pixels_;
   uint8_t last_frame_qp_;
   // Decoded timestamp of the last delayed frame.
   int64_t last_unfreeze_time_;
-  rtc::SampleCounter interframe_delays_;
+  rtc::SampleCounter render_interframe_delays_;
+  rtc::SampleCounter decode_interframe_delays_;
   // An inter-frame delay is counted as a freeze if it's significantly longer
   // than average inter-frame delay.
   rtc::SampleCounter freezes_durations_;

@@ -759,6 +759,9 @@ void ReceiveStatisticsProxy::OnRenderedFrame(const VideoFrame& frame) {
   RTC_DCHECK_GT(height, 0);
   int64_t now_ms = clock_->TimeInMilliseconds();
   rtc::CritScope lock(&crit_);
+
+  video_quality_observer_->OnRenderedFrame(now_ms);
+
   ContentSpecificStats* content_specific_stats =
       &content_specific_stats_[last_content_type_];
   renders_fps_estimator_.Update(1, now_ms);
