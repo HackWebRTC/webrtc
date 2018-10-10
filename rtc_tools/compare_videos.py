@@ -7,6 +7,7 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+import json
 import optparse
 import os
 import shutil
@@ -162,11 +163,8 @@ def _RunFrameAnalyzer(options, yuv_directory=None):
   return frame_analyzer.returncode
 
 
-def _RunVmaf(options, yuv_directory):
+def _RunVmaf(options, yuv_directory, logfile):
   """ Run VMAF to compare videos and print output.
-
-  The provided vmaf directory is assumed to contain a c++ wrapper executable
-  and a model.
 
   The yuv_directory is assumed to have been populated with a reference and test
   video in .yuv format, with names according to the label.
@@ -179,26 +177,29 @@ def _RunVmaf(options, yuv_directory):
     os.path.join(yuv_directory, "ref.yuv"),
     os.path.join(yuv_directory, "test.yuv"),
     options.vmaf_model,
+    '--log',
+    logfile,
+    '--log-fmt',
+    'json',
   ]
   if options.vmaf_phone_model:
     cmd.append('--phone-model')
 
   vmaf = subprocess.Popen(cmd, stdin=_DevNull(),
-                          stdout=subprocess.PIPE, stderr=sys.stderr)
+                          stdout=sys.stdout, stderr=sys.stderr)
   vmaf.wait()
   if vmaf.returncode != 0:
     print 'Failed to run VMAF.'
     return 1
-  output = vmaf.stdout.read()
-  # Extract score from VMAF output.
-  try:
-    score = float(output.split('\n')[2].split()[3])
-  except (ValueError, IndexError):
-    print 'Error in VMAF output (expected "VMAF score = [float]" on line 3):'
-    print output
-    return 1
 
-  print 'RESULT Vmaf: %s= %f' % (options.label, score)
+  # Read per-frame scores from VMAF output and print.
+  with open(logfile) as f:
+    vmaf_data = json.load(f)
+    vmaf_scores = []
+    for frame in vmaf_data['frames']:
+      vmaf_scores.append(frame['metrics']['vmaf'])
+    print 'RESULT VMAF: %s=' % options.label, vmaf_scores
+
   return 0
 
 
@@ -238,15 +239,17 @@ def main():
     try:
       # Directory to save temporary YUV files for VMAF in frame_analyzer.
       yuv_directory = tempfile.mkdtemp()
+      _, vmaf_logfile = tempfile.mkstemp()
 
       # Run frame analyzer to compare the videos and print output.
       if _RunFrameAnalyzer(options, yuv_directory=yuv_directory) != 0:
         return 1
 
       # Run VMAF for further video comparison and print output.
-      return _RunVmaf(options, yuv_directory)
+      return _RunVmaf(options, yuv_directory, vmaf_logfile)
     finally:
       shutil.rmtree(yuv_directory)
+      os.remove(vmaf_logfile)
   else:
     return _RunFrameAnalyzer(options)
 
