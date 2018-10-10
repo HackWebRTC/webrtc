@@ -119,6 +119,7 @@ static const char kAttributeRtcpMux[] = "rtcp-mux";
 static const char kAttributeRtcpReducedSize[] = "rtcp-rsize";
 static const char kAttributeSsrc[] = "ssrc";
 static const char kSsrcAttributeCname[] = "cname";
+static const char kAttributeExtmapAllowMixed[] = "extmap-allow-mixed";
 static const char kAttributeExtmap[] = "extmap";
 // draft-alvestrand-mmusic-msid-01
 // a=msid-semantic: WMS
@@ -852,6 +853,12 @@ std::string SdpSerialize(const JsepSessionDescription& jdesc) {
     AddLine(group_line, &message);
   }
 
+  // Mixed one- and two-byte header extension.
+  if (desc->mixed_one_two_byte_header_extensions_supported()) {
+    InitAttrLine(kAttributeExtmapAllowMixed, &os);
+    AddLine(os.str(), &message);
+  }
+
   // MediaStream semantics
   InitAttrLine(kAttributeMsidSemantics, &os);
   os << kSdpDelimiterColon << " " << kMediaStreamSemantic;
@@ -1482,7 +1489,17 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
                                int msid_signaling,
                                std::string* message) {
   rtc::StringBuilder os;
-  // RFC 5285
+  // RFC 8285
+  // a=extmap-allow-mixed
+  // The attribute MUST be either on session level or media level. We support
+  // responding on both levels, however, we don't respond on media level if it's
+  // set on session level.
+  if (media_desc->mixed_one_two_byte_header_extensions_supported() ==
+      MediaContentDescription::kMedia) {
+    InitAttrLine(kAttributeExtmapAllowMixed, &os);
+    AddLine(os.str(), message);
+  }
+  // RFC 8285
   // a=extmap:<value>["/"<direction>] <URI> <extensionattributes>
   // The definitions MUST be either all session level or all media level. This
   // implementation uses all media level.
@@ -1996,7 +2013,7 @@ bool ParseSessionDescription(const std::string& message,
   std::string line;
 
   desc->set_msid_supported(false);
-
+  desc->set_mixed_one_two_byte_header_extensions_supported(false);
   // RFC 4566
   // v=  (protocol version)
   if (!GetLineWithType(message, pos, &line, kLineTypeVersion)) {
@@ -2133,6 +2150,8 @@ bool ParseSessionDescription(const std::string& message,
       }
       desc->set_msid_supported(
           CaseInsensitiveFind(semantics, kMediaStreamSemantic));
+    } else if (HasAttribute(line, kAttributeExtmapAllowMixed)) {
+      desc->set_mixed_one_two_byte_header_extensions_supported(true);
     } else if (HasAttribute(line, kAttributeExtmap)) {
       RtpExtension extmap;
       if (!ParseExtmap(line, &extmap, error)) {
@@ -2502,6 +2521,10 @@ bool ParseMediaDescription(const std::string& message,
     }
 
     if (IsRtp(protocol)) {
+      if (desc->mixed_one_two_byte_header_extensions_supported()) {
+        content->set_mixed_one_two_byte_header_extensions_supported(
+            MediaContentDescription::kSession);
+      }
       // Set the extmap.
       if (!session_extmaps.empty() &&
           !content->rtp_header_extensions().empty()) {
@@ -2902,6 +2925,9 @@ bool ParseContent(const std::string& message,
         media_desc->set_direction(RtpTransceiverDirection::kInactive);
       } else if (HasAttribute(line, kAttributeSendRecv)) {
         media_desc->set_direction(RtpTransceiverDirection::kSendRecv);
+      } else if (HasAttribute(line, kAttributeExtmapAllowMixed)) {
+        media_desc->set_mixed_one_two_byte_header_extensions_supported(
+            MediaContentDescription::kMedia);
       } else if (HasAttribute(line, kAttributeExtmap)) {
         RtpExtension extmap;
         if (!ParseExtmap(line, &extmap, error)) {

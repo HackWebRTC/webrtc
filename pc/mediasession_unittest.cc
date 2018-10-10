@@ -1581,6 +1581,72 @@ TEST_F(MediaSessionDescriptionFactoryTest,
   EXPECT_TRUE(dc->rejected);
 }
 
+TEST_F(MediaSessionDescriptionFactoryTest,
+       CreateAnswerSupportsMixedOneAndTwoByteHeaderExtensions) {
+  MediaSessionOptions opts;
+  std::unique_ptr<SessionDescription> offer(f1_.CreateOffer(opts, NULL));
+  // Offer without request of mixed one- and two-byte header extensions.
+  offer->set_mixed_one_two_byte_header_extensions_supported(false);
+  ASSERT_TRUE(offer.get() != NULL);
+  std::unique_ptr<SessionDescription> answer_no_support(
+      f2_.CreateAnswer(offer.get(), opts, NULL));
+  EXPECT_FALSE(
+      answer_no_support->mixed_one_two_byte_header_extensions_supported());
+
+  // Offer with request of mixed one- and two-byte header extensions.
+  offer->set_mixed_one_two_byte_header_extensions_supported(true);
+  ASSERT_TRUE(offer.get() != NULL);
+  std::unique_ptr<SessionDescription> answer_support(
+      f2_.CreateAnswer(offer.get(), opts, NULL));
+  EXPECT_TRUE(answer_support->mixed_one_two_byte_header_extensions_supported());
+}
+
+TEST_F(MediaSessionDescriptionFactoryTest,
+       CreateAnswerSupportsMixedOneAndTwoByteHeaderExtensionsOnMediaLevel) {
+  MediaSessionOptions opts;
+  AddAudioVideoSections(RtpTransceiverDirection::kSendRecv, &opts);
+  std::unique_ptr<SessionDescription> offer(f1_.CreateOffer(opts, NULL));
+  MediaContentDescription* video_offer =
+      offer->GetContentDescriptionByName("video");
+  ASSERT_TRUE(video_offer);
+  MediaContentDescription* audio_offer =
+      offer->GetContentDescriptionByName("audio");
+  ASSERT_TRUE(audio_offer);
+
+  // Explicit disable of mixed one-two byte header support in offer.
+  video_offer->set_mixed_one_two_byte_header_extensions_supported(
+      MediaContentDescription::kNo);
+  audio_offer->set_mixed_one_two_byte_header_extensions_supported(
+      MediaContentDescription::kNo);
+
+  ASSERT_TRUE(offer.get() != NULL);
+  std::unique_ptr<SessionDescription> answer_no_support(
+      f2_.CreateAnswer(offer.get(), opts, NULL));
+  MediaContentDescription* video_answer =
+      answer_no_support->GetContentDescriptionByName("video");
+  MediaContentDescription* audio_answer =
+      answer_no_support->GetContentDescriptionByName("audio");
+  EXPECT_EQ(MediaContentDescription::kNo,
+            video_answer->mixed_one_two_byte_header_extensions_supported());
+  EXPECT_EQ(MediaContentDescription::kNo,
+            audio_answer->mixed_one_two_byte_header_extensions_supported());
+
+  // Enable mixed one-two byte header support in offer.
+  video_offer->set_mixed_one_two_byte_header_extensions_supported(
+      MediaContentDescription::kMedia);
+  audio_offer->set_mixed_one_two_byte_header_extensions_supported(
+      MediaContentDescription::kMedia);
+  ASSERT_TRUE(offer.get() != NULL);
+  std::unique_ptr<SessionDescription> answer_support(
+      f2_.CreateAnswer(offer.get(), opts, NULL));
+  video_answer = answer_support->GetContentDescriptionByName("video");
+  audio_answer = answer_support->GetContentDescriptionByName("audio");
+  EXPECT_EQ(MediaContentDescription::kMedia,
+            video_answer->mixed_one_two_byte_header_extensions_supported());
+  EXPECT_EQ(MediaContentDescription::kMedia,
+            audio_answer->mixed_one_two_byte_header_extensions_supported());
+}
+
 // Create an audio and video offer with:
 // - one video track
 // - two audio tracks

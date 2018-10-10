@@ -90,6 +90,7 @@ static const char kAttributeCryptoVideo[] =
 static const char kFingerprint[] =
     "a=fingerprint:sha-1 "
     "4A:AD:B9:B1:3F:82:18:3B:54:02:12:DF:3E:5D:49:6B:19:E5:7C:AB\r\n";
+static const char kExtmapAllowMixed[] = "a=extmap-allow-mixed\r\n";
 static const int kExtmapId = 1;
 static const char kExtmapUri[] = "http://example.com/082005/ext.htm#ttime";
 static const char kExtmap[] =
@@ -1283,6 +1284,10 @@ class WebRtcSdpTest : public testing::Test {
     // streams
     EXPECT_EQ(cd1->streams(), cd2->streams());
 
+    // extmap-allow-mixed
+    EXPECT_EQ(cd1->mixed_one_two_byte_header_extensions_supported(),
+              cd2->mixed_one_two_byte_header_extensions_supported());
+
     // extmap
     ASSERT_EQ(cd1->rtp_header_extensions().size(),
               cd2->rtp_header_extensions().size());
@@ -1399,6 +1404,8 @@ class WebRtcSdpTest : public testing::Test {
 
     // global attributes
     EXPECT_EQ(desc1.msid_supported(), desc2.msid_supported());
+    EXPECT_EQ(desc1.mixed_one_two_byte_header_extensions_supported(),
+              desc2.mixed_one_two_byte_header_extensions_supported());
   }
 
   bool CompareSessionDescription(const JsepSessionDescription& desc1,
@@ -2095,6 +2102,26 @@ TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithDataChannelAndBandwidth) {
   EXPECT_EQ(expected_sdp, message);
 }
 
+TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithExtmapAllowMixed) {
+  jdesc_.description()->set_mixed_one_two_byte_header_extensions_supported(
+      true);
+  TestSerialize(jdesc_);
+}
+
+TEST_F(WebRtcSdpTest, SerializeMediaContentDescriptionWithExtmapAllowMixed) {
+  cricket::MediaContentDescription* video_desc =
+      jdesc_.description()->GetContentDescriptionByName(kVideoContentName);
+  ASSERT_TRUE(video_desc);
+  cricket::MediaContentDescription* audio_desc =
+      jdesc_.description()->GetContentDescriptionByName(kAudioContentName);
+  ASSERT_TRUE(audio_desc);
+  video_desc->set_mixed_one_two_byte_header_extensions_supported(
+      cricket::MediaContentDescription::kMedia);
+  audio_desc->set_mixed_one_two_byte_header_extensions_supported(
+      cricket::MediaContentDescription::kMedia);
+  TestSerialize(jdesc_);
+}
+
 TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithExtmap) {
   bool encrypted = false;
   AddExtmap(encrypted);
@@ -2430,6 +2457,92 @@ TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithoutMsid) {
   EXPECT_TRUE(SdpDeserialize(sdp_without_msid, &jdesc));
   // Verify
   EXPECT_TRUE(CompareSessionDescription(jdesc_, jdesc));
+}
+
+TEST_F(WebRtcSdpTest, SessionLevelMixedHeaderExtensionsAlsoSetsMediaSetting) {
+  cricket::MediaContentDescription* video_desc =
+      jdesc_.description()->GetContentDescriptionByName(kVideoContentName);
+  ASSERT_TRUE(video_desc);
+  cricket::MediaContentDescription* audio_desc =
+      jdesc_.description()->GetContentDescriptionByName(kAudioContentName);
+  ASSERT_TRUE(audio_desc);
+
+  // Setting true on session level propagates to media level.
+  jdesc_.description()->set_mixed_one_two_byte_header_extensions_supported(
+      true);
+  EXPECT_EQ(cricket::MediaContentDescription::kSession,
+            video_desc->mixed_one_two_byte_header_extensions_supported());
+  EXPECT_EQ(cricket::MediaContentDescription::kSession,
+            audio_desc->mixed_one_two_byte_header_extensions_supported());
+
+  // Don't downgrade from session level to media level
+  video_desc->set_mixed_one_two_byte_header_extensions_supported(
+      cricket::MediaContentDescription::kMedia);
+  EXPECT_EQ(cricket::MediaContentDescription::kSession,
+            video_desc->mixed_one_two_byte_header_extensions_supported());
+
+  // Setting false on session level propagates to media level.
+  jdesc_.description()->set_mixed_one_two_byte_header_extensions_supported(
+      false);
+  EXPECT_EQ(cricket::MediaContentDescription::kNo,
+            video_desc->mixed_one_two_byte_header_extensions_supported());
+  EXPECT_EQ(cricket::MediaContentDescription::kNo,
+            audio_desc->mixed_one_two_byte_header_extensions_supported());
+
+  // Now possible to set at media level.
+  video_desc->set_mixed_one_two_byte_header_extensions_supported(
+      cricket::MediaContentDescription::kMedia);
+  EXPECT_EQ(cricket::MediaContentDescription::kMedia,
+            video_desc->mixed_one_two_byte_header_extensions_supported());
+}
+
+TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithExtmapAllowMixed) {
+  jdesc_.description()->set_mixed_one_two_byte_header_extensions_supported(
+      true);
+  std::string sdp_with_extmap_allow_mixed = kSdpFullString;
+  InjectAfter("t=0 0\r\n", kExtmapAllowMixed, &sdp_with_extmap_allow_mixed);
+  // Deserialize
+  JsepSessionDescription jdesc_deserialized(kDummyType);
+  EXPECT_TRUE(SdpDeserialize(sdp_with_extmap_allow_mixed, &jdesc_deserialized));
+  // Verify
+  EXPECT_TRUE(CompareSessionDescription(jdesc_, jdesc_deserialized));
+}
+
+TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithoutExtmapAllowMixed) {
+  jdesc_.description()->set_mixed_one_two_byte_header_extensions_supported(
+      false);
+  std::string sdp_without_extmap_allow_mixed = kSdpFullString;
+  // Deserialize
+  JsepSessionDescription jdesc_deserialized(kDummyType);
+  EXPECT_TRUE(
+      SdpDeserialize(sdp_without_extmap_allow_mixed, &jdesc_deserialized));
+  // Verify
+  EXPECT_TRUE(CompareSessionDescription(jdesc_, jdesc_deserialized));
+}
+
+TEST_F(WebRtcSdpTest, DeserializeMediaContentDescriptionWithExtmapAllowMixed) {
+  cricket::MediaContentDescription* video_desc =
+      jdesc_.description()->GetContentDescriptionByName(kVideoContentName);
+  ASSERT_TRUE(video_desc);
+  cricket::MediaContentDescription* audio_desc =
+      jdesc_.description()->GetContentDescriptionByName(kAudioContentName);
+  ASSERT_TRUE(audio_desc);
+  video_desc->set_mixed_one_two_byte_header_extensions_supported(
+      cricket::MediaContentDescription::kMedia);
+  audio_desc->set_mixed_one_two_byte_header_extensions_supported(
+      cricket::MediaContentDescription::kMedia);
+
+  std::string sdp_with_extmap_allow_mixed = kSdpFullString;
+  InjectAfter("a=mid:audio_content_name\r\n", kExtmapAllowMixed,
+              &sdp_with_extmap_allow_mixed);
+  InjectAfter("a=mid:video_content_name\r\n", kExtmapAllowMixed,
+              &sdp_with_extmap_allow_mixed);
+
+  // Deserialize
+  JsepSessionDescription jdesc_deserialized(kDummyType);
+  EXPECT_TRUE(SdpDeserialize(sdp_with_extmap_allow_mixed, &jdesc_deserialized));
+  // Verify
+  EXPECT_TRUE(CompareSessionDescription(jdesc_, jdesc_deserialized));
 }
 
 TEST_F(WebRtcSdpTest, DeserializeCandidate) {
