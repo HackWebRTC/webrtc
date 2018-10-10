@@ -214,6 +214,27 @@ int GetBitrateBps(const AudioEncoderOpusConfig& config) {
   return *config.bitrate_bps;
 }
 
+float GetMinPacketLossRate() {
+  constexpr char kPacketLossFieldTrial[] = "WebRTC-Audio-OpusMinPacketLossRate";
+  const bool use_opus_min_packet_loss_rate =
+      webrtc::field_trial::IsEnabled(kPacketLossFieldTrial);
+  if (use_opus_min_packet_loss_rate) {
+    const std::string field_trial_string =
+        webrtc::field_trial::FindFullName(kPacketLossFieldTrial);
+    constexpr int kDefaultMinPacketLossRate = 1;
+    int value = kDefaultMinPacketLossRate;
+    if (sscanf(field_trial_string.c_str(), "Enabled-%d", &value) == 1 &&
+        (value < 0 || value > 100)) {
+      RTC_LOG(LS_WARNING) << "Invalid parameter for " << kPacketLossFieldTrial
+                          << ", using default value: "
+                          << kDefaultMinPacketLossRate;
+      value = kDefaultMinPacketLossRate;
+    }
+    return static_cast<float>(value) / 100;
+  }
+  return 0.0;
+}
+
 }  // namespace
 
 void AudioEncoderOpusImpl::AppendSupportedEncoders(
@@ -402,6 +423,7 @@ AudioEncoderOpusImpl::AudioEncoderOpusImpl(
           webrtc::field_trial::IsEnabled("WebRTC-AdjustOpusBandwidth")),
       bitrate_changed_(true),
       packet_loss_rate_(0.0),
+      min_packet_loss_rate_(GetMinPacketLossRate()),
       inst_(nullptr),
       packet_loss_fraction_smoother_(new PacketLossFractionSmoother()),
       audio_network_adaptor_creator_(audio_network_adaptor_creator),
@@ -414,6 +436,7 @@ AudioEncoderOpusImpl::AudioEncoderOpusImpl(
   RTC_CHECK(config.payload_type == -1 || config.payload_type == payload_type);
 
   RTC_CHECK(RecreateEncoderInstance(config));
+  SetProjectedPacketLossRate(packet_loss_rate_);
 }
 
 AudioEncoderOpusImpl::AudioEncoderOpusImpl(const CodecInst& codec_inst)
@@ -739,6 +762,7 @@ void AudioEncoderOpusImpl::SetNumChannelsToEncode(
 
 void AudioEncoderOpusImpl::SetProjectedPacketLossRate(float fraction) {
   float opt_loss_rate = OptimizePacketLossRate(fraction, packet_loss_rate_);
+  opt_loss_rate = std::max(opt_loss_rate, min_packet_loss_rate_);
   if (packet_loss_rate_ != opt_loss_rate) {
     packet_loss_rate_ = opt_loss_rate;
     RTC_CHECK_EQ(
