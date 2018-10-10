@@ -26,7 +26,6 @@ rtc_static_library("common_video") {
     "h264/sps_vui_rewriter.h",
     "i420_buffer_pool.cc",
     "include/bitrate_adjuster.h",
-    "include/frame_callback.h",
     "include/i420_buffer_pool.h",
     "include/incoming_video_stream.h",
     "include/video_frame.h",

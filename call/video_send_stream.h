@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "api/call/transport.h"
+#include "api/video/video_frame.h"
 #include "api/video/video_sink_interface.h"
 #include "api/video/video_source_interface.h"
 #include "api/video/video_stream_encoder_settings.h"
@@ -24,7 +25,6 @@
 #include "api/video_codecs/video_encoder_factory.h"
 #include "call/rtp_config.h"
 #include "common_types.h"  // NOLINT(build/include)
-#include "common_video/include/frame_callback.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
 namespace webrtc {
@@ -116,12 +116,6 @@ class VideoSendStream {
     // Called for each I420 frame before encoding the frame. Can be used for
     // effects, snapshots etc. 'nullptr' disables the callback.
     rtc::VideoSinkInterface<VideoFrame>* pre_encode_callback = nullptr;
-
-    // Called for each encoded frame, e.g. used for file storage. 'nullptr'
-    // disables the callback. Also measures timing and passes the time
-    // spent on encoding. This timing will not fire if encoding takes longer
-    // than the measuring window, since the sample data will have been dropped.
-    EncodedFrameObserver* post_encode_callback = nullptr;
 
     // Expected delay needed by the renderer, i.e. the frame will be delivered
     // this many milliseconds, if possible, earlier than expected render time.

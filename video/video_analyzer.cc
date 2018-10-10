@@ -70,7 +70,6 @@ VideoAnalyzer::VideoAnalyzer(test::LayerFilteringTransport* transport,
       selected_stream_(selected_stream),
       selected_sl_(selected_sl),
       selected_tl_(selected_tl),
-      pre_encode_proxy_(this),
       last_fec_bytes_(0),
       frames_to_process_(duration_frames),
       frames_recorded_(0),
@@ -231,10 +230,10 @@ void VideoAnalyzer::PreEncodeOnFrame(const VideoFrame& video_frame) {
   }
 }
 
-void VideoAnalyzer::EncodedFrameCallback(const EncodedFrame& encoded_frame) {
+void VideoAnalyzer::PostEncodeOnFrame(size_t stream_id, uint32_t timestamp) {
   rtc::CritScope lock(&crit_);
-  if (!first_sent_timestamp_ && encoded_frame.stream_id_ == selected_stream_) {
-    first_sent_timestamp_ = encoded_frame.timestamp_;
+  if (!first_sent_timestamp_ && stream_id == selected_stream_) {
+    first_sent_timestamp_ = timestamp;
   }
 }
 
@@ -364,10 +363,6 @@ void VideoAnalyzer::Wait() {
     printf("- Farewell, sweet Concorde!\n");
 
   stats_polling_thread_.Stop();
-}
-
-rtc::VideoSinkInterface<VideoFrame>* VideoAnalyzer::pre_encode_proxy() {
-  return &pre_encode_proxy_;
 }
 
 void VideoAnalyzer::StartMeasuringCpuProcessTime() {
@@ -840,13 +835,6 @@ VideoAnalyzer::Sample::Sample(int dropped,
       encoded_frame_size(encoded_frame_size),
       psnr(psnr),
       ssim(ssim) {}
-
-VideoAnalyzer::PreEncodeProxy::PreEncodeProxy(VideoAnalyzer* parent)
-    : parent_(parent) {}
-
-void VideoAnalyzer::PreEncodeProxy::OnFrame(const VideoFrame& video_frame) {
-  parent_->PreEncodeOnFrame(video_frame);
-}
 
 VideoAnalyzer::CapturedFrameForwarder::CapturedFrameForwarder(
     VideoAnalyzer* analyzer,

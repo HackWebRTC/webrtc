@@ -78,8 +78,6 @@ std::string VideoSendStream::Config::ToString() const {
   ss << ", rtcp: " << rtcp.ToString();
   ss << ", pre_encode_callback: "
      << (pre_encode_callback ? "(VideoSinkInterface)" : "nullptr");
-  ss << ", post_encode_callback: "
-     << (post_encode_callback ? "(EncodedFrameObserver)" : "nullptr");
   ss << ", render_delay_ms: " << render_delay_ms;
   ss << ", target_delay_ms: " << target_delay_ms;
   ss << ", suspend_below_min_bitrate: "

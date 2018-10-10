@@ -26,7 +26,6 @@
 #include "api/video_codecs/sdp_video_format.h"
 #include "call/rtp_config.h"
 #include "common_types.h"  // NOLINT(build/include)
-#include "common_video/include/frame_callback.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
 namespace webrtc {
