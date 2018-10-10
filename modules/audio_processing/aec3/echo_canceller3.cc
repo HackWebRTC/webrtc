@@ -78,6 +78,11 @@ bool UseLegacyNormalSuppressorTuning() {
   return field_trial::IsEnabled("WebRTC-Aec3UseLegacyNormalSuppressorTuning");
 }
 
+bool DeactivateStationarityProperties() {
+  return field_trial::IsEnabled(
+      "WebRTC-Aec3UseStationarityPropertiesKillSwitch");
+}
+
 // Method for adjusting config parameter dependencies..
 EchoCanceller3Config AdjustConfig(const EchoCanceller3Config& config) {
   EchoCanceller3Config adjusted_cfg = config;
@@ -192,6 +197,13 @@ EchoCanceller3Config AdjustConfig(const EchoCanceller3Config& config) {
     adjusted_cfg.suppressor.dominant_nearend_detection.enr_threshold = 10.f;
     adjusted_cfg.suppressor.dominant_nearend_detection.snr_threshold = 10.f;
     adjusted_cfg.suppressor.dominant_nearend_detection.hold_duration = 25;
+  }
+
+  // TODO(peah): Clean this up once upstream dependencies that forces this to
+  // zero are resolved.
+  adjusted_cfg.echo_audibility.use_stationary_properties = true;
+  if (DeactivateStationarityProperties()) {
+    adjusted_cfg.echo_audibility.use_stationary_properties = false;
   }
 
   return adjusted_cfg;
