@@ -530,6 +530,7 @@ if (rtc_include_tests) {
         ":audioproc_protobuf_utils",
         ":audioproc_test_utils",
         ":runtime_settings_protobuf_utils",
+        "../../api/audio:aec3_config_json",
         "../../api/audio:aec3_factory",
         "../../common_audio:common_audio",
         "../../rtc_base:checks",
