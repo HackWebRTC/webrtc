@@ -392,6 +392,11 @@ bool ModuleRtpRtcpImpl::SendingMedia() const {
   return rtp_sender_ ? rtp_sender_->SendingMedia() : false;
 }
 
+void ModuleRtpRtcpImpl::SetAsPartOfAllocation(bool part_of_allocation) {
+  RTC_CHECK(rtp_sender_);
+  rtp_sender_->SetAsPartOfAllocation(part_of_allocation);
+}
+
 bool ModuleRtpRtcpImpl::SendOutgoingData(
     FrameType frame_type,
     int8_t payload_type,

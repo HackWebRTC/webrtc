@@ -479,6 +479,7 @@ TEST_P(RtpSenderTestWithoutPacer, SendsPacketsWithTransportSequenceNumber) {
   ASSERT_TRUE(packet.GetExtension<TransportSequenceNumber>(&transport_seq_no));
   EXPECT_EQ(kTransportSequenceNumber, transport_seq_no);
   EXPECT_EQ(transport_.last_options_.packet_id, transport_seq_no);
+  EXPECT_TRUE(transport_.last_options_.included_in_allocation);
 }
 
 TEST_P(RtpSenderTestWithoutPacer, PacketOptionsNoRetransmission) {
@@ -493,8 +494,45 @@ TEST_P(RtpSenderTestWithoutPacer, PacketOptionsNoRetransmission) {
   EXPECT_FALSE(transport_.last_options_.is_retransmit);
 }
 
-TEST_P(RtpSenderTestWithoutPacer, NoAllocationIfNotRegistered) {
+TEST_P(RtpSenderTestWithoutPacer,
+       SetsIncludedInFeedbackWhenTransportSequenceNumberExtensionIsRegistered) {
+  SetUpRtpSender(false, false);
+  rtp_sender_->RegisterRtpHeaderExtension(kRtpExtensionTransportSequenceNumber,
+                                          kTransportSequenceNumberExtensionId);
+  EXPECT_CALL(seq_num_allocator_, AllocateSequenceNumber())
+      .WillOnce(testing::Return(kTransportSequenceNumber));
+  EXPECT_CALL(send_packet_observer_, OnSendPacket).Times(1);
   SendGenericPayload();
+  EXPECT_TRUE(transport_.last_options_.included_in_feedback);
+}
+
+TEST_P(
+    RtpSenderTestWithoutPacer,
+    SetsIncludedInAllocationWhenTransportSequenceNumberExtensionIsRegistered) {
+  SetUpRtpSender(false, false);
+  rtp_sender_->RegisterRtpHeaderExtension(kRtpExtensionTransportSequenceNumber,
+                                          kTransportSequenceNumberExtensionId);
+  EXPECT_CALL(seq_num_allocator_, AllocateSequenceNumber())
+      .WillOnce(testing::Return(kTransportSequenceNumber));
+  EXPECT_CALL(send_packet_observer_, OnSendPacket).Times(1);
+  SendGenericPayload();
+  EXPECT_TRUE(transport_.last_options_.included_in_allocation);
+}
+
+TEST_P(RtpSenderTestWithoutPacer,
+       SetsIncludedInAllocationWhenForcedAsPartOfAllocation) {
+  SetUpRtpSender(false, false);
+  rtp_sender_->SetAsPartOfAllocation(true);
+  SendGenericPayload();
+  EXPECT_FALSE(transport_.last_options_.included_in_feedback);
+  EXPECT_TRUE(transport_.last_options_.included_in_allocation);
+}
+
+TEST_P(RtpSenderTestWithoutPacer, DoesnSetIncludedInAllocationByDefault) {
+  SetUpRtpSender(false, false);
+  SendGenericPayload();
+  EXPECT_FALSE(transport_.last_options_.included_in_feedback);
+  EXPECT_FALSE(transport_.last_options_.included_in_allocation);
 }
 
 TEST_P(RtpSenderTestWithoutPacer, OnSendSideDelayUpdated) {

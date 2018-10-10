@@ -132,7 +132,8 @@ RTPSender::RTPSender(
       transport_feedback_observer_(transport_feedback_observer),
       last_capture_time_ms_sent_(0),
       transport_(transport),
-      sending_media_(true),                   // Default to sending media.
+      sending_media_(true),  // Default to sending media.
+      force_part_of_allocation_(false),
       max_packet_size_(IP_PACKET_SIZE - 28),  // Default is IP-v4/UDP.
       last_payload_type_(-1),
       payload_type_map_(),
@@ -624,6 +625,9 @@ size_t RTPSender::SendPadData(size_t bytes,
       rtc::CritScope lock(&send_critsect_);
       has_transport_seq_num =
           UpdateTransportSequenceNumber(&padding_packet, &options.packet_id);
+      options.included_in_allocation =
+          has_transport_seq_num || force_part_of_allocation_;
+      options.included_in_feedback = has_transport_seq_num;
     }
     padding_packet.SetPadding(padding_bytes_in_packet, &random_);
     if (has_transport_seq_num) {
@@ -846,6 +850,9 @@ bool RTPSender::PrepareAndSendPacket(std::unique_ptr<RtpPacketToSend> packet,
     rtc::CritScope lock(&send_critsect_);
     has_transport_seq_num =
         UpdateTransportSequenceNumber(packet_to_send, &options.packet_id);
+    options.included_in_allocation =
+        has_transport_seq_num || force_part_of_allocation_;
+    options.included_in_feedback = has_transport_seq_num;
   }
   if (has_transport_seq_num) {
     AddPacketToTransportFeedback(options.packet_id, *packet_to_send,
@@ -986,6 +993,9 @@ bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
     rtc::CritScope lock(&send_critsect_);
     has_transport_seq_num =
         UpdateTransportSequenceNumber(packet.get(), &options.packet_id);
+    options.included_in_allocation =
+        has_transport_seq_num || force_part_of_allocation_;
+    options.included_in_feedback = has_transport_seq_num;
   }
   if (has_transport_seq_num) {
     AddPacketToTransportFeedback(options.packet_id, *packet.get(),
@@ -1222,6 +1232,11 @@ void RTPSender::SetSendingMediaStatus(bool enabled) {
 bool RTPSender::SendingMedia() const {
   rtc::CritScope lock(&send_critsect_);
   return sending_media_;
+}
+
+void RTPSender::SetAsPartOfAllocation(bool part_of_allocation) {
+  rtc::CritScope lock(&send_critsect_);
+  force_part_of_allocation_ = part_of_allocation;
 }
 
 void RTPSender::SetTimestampOffset(uint32_t timestamp) {

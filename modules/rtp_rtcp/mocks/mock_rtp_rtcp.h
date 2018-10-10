@@ -83,6 +83,7 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_CONST_METHOD0(Sending, bool());
   MOCK_METHOD1(SetSendingMediaStatus, void(bool sending));
   MOCK_CONST_METHOD0(SendingMedia, bool());
+  MOCK_METHOD1(SetAsPartOfAllocation, void(bool));
   MOCK_CONST_METHOD4(BitrateSent,
                      void(uint32_t* total_rate,
                           uint32_t* video_rate,

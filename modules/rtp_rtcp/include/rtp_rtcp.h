@@ -213,6 +213,10 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
   // Returns current media sending status.
   virtual bool SendingMedia() const = 0;
 
+  // Indicate that the packets sent by this module should be counted towards the
+  // bitrate estimate since the stream participates in the bitrate allocation.
+  virtual void SetAsPartOfAllocation(bool part_of_allocation) = 0;
+
   // Returns current bitrate in Kbit/s.
   virtual void BitrateSent(uint32_t* total_rate,
                            uint32_t* video_rate,
