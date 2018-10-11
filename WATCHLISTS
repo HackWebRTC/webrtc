@@ -79,6 +79,9 @@
     'bitrate_controller': {
       'filepath': 'modules/bitrate_controller/.*'
     },
+    'congestion_controller': {
+      'filepath': 'modules/congestion_controller/.*'
+    },
     'remote_bitrate_estimator': {
       'filepath': 'modules/remote_bitrate_estimator/.*'
     },
@@ -166,11 +169,14 @@
                          'zhengzhonghou@agora.io'],
     'bitrate_controller': ['mflodman@webrtc.org',
                            'stefan@webrtc.org',
+                           'srte@webrtc.org',
                            'zhuangzesen@agora.io'],
+    'congestion_controller': ['srte@webrtc.org'],
     'remote_bitrate_estimator': ['mflodman@webrtc.org',
                                  'stefan@webrtc.org',
                                  'zhuangzesen@agora.io'],
     'pacing': ['mflodman@webrtc.org',
+               'srte@webrtc.org',
                'stefan@webrtc.org',
                'zhuangzesen@agora.io'],
     'rtp_rtcp': ['mflodman@webrtc.org',
