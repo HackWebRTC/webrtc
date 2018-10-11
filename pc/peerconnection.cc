@@ -1027,7 +1027,7 @@ bool PeerConnection::Initialize(
   }
 
   webrtc_session_desc_factory_->set_enable_encrypted_rtp_header_extensions(
-      options.crypto_options.srtp.enable_encrypted_rtp_header_extensions);
+      options.crypto_options.enable_encrypted_rtp_header_extensions);
 
   // Add default audio/video transceivers for Plan B SDP.
   if (!IsUnifiedPlan()) {

@@ -63,9 +63,9 @@ JavaToNativePeerConnectionFactoryOptions(JNIEnv* jni,
   native_options.disable_encryption = disable_encryption;
   native_options.disable_network_monitor = disable_network_monitor;
 
-  native_options.crypto_options.srtp.enable_aes128_sha1_32_crypto_cipher =
+  native_options.crypto_options.enable_aes128_sha1_32_crypto_cipher =
       enable_aes128_sha1_32_crypto_cipher;
-  native_options.crypto_options.srtp.enable_gcm_crypto_suites =
+  native_options.crypto_options.enable_gcm_crypto_suites =
       enable_gcm_crypto_suites;
   return native_options;
 }

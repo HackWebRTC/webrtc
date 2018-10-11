@@ -34,7 +34,7 @@ class TransportFactoryInterface {
 
   virtual std::unique_ptr<DtlsTransportInternal> CreateDtlsTransport(
       std::unique_ptr<IceTransportInternal> ice,
-      const webrtc::CryptoOptions& crypto_options) = 0;
+      const rtc::CryptoOptions& crypto_options) = 0;
 };
 
 }  // namespace cricket

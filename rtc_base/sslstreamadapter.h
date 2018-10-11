@@ -70,6 +70,34 @@ bool IsGcmCryptoSuite(int crypto_suite);
 // Returns true if the given crypto suite name uses a GCM cipher.
 bool IsGcmCryptoSuiteName(const std::string& crypto_suite);
 
+struct CryptoOptions {
+  CryptoOptions() {}
+
+  // Helper method to return an instance of the CryptoOptions with GCM crypto
+  // suites disabled. This method should be used instead of depending on current
+  // default values set by the constructor.
+  static CryptoOptions NoGcm();
+
+  // Enable GCM crypto suites from RFC 7714 for SRTP. GCM will only be used
+  // if both sides enable it.
+  bool enable_gcm_crypto_suites = false;
+
+  // If set to true, the (potentially insecure) crypto cipher
+  // SRTP_AES128_CM_SHA1_32 will be included in the list of supported ciphers
+  // during negotiation. It will only be used if both peers support it and no
+  // other ciphers get preferred.
+  bool enable_aes128_sha1_32_crypto_cipher = false;
+
+  // If set to true, encrypted RTP header extensions as defined in RFC 6904
+  // will be negotiated. They will only be used if both peers support them.
+  bool enable_encrypted_rtp_header_extensions = false;
+};
+
+// Returns supported crypto suites, given |crypto_options|.
+// CS_AES_CM_128_HMAC_SHA1_32 will be preferred by default.
+std::vector<int> GetSupportedDtlsSrtpCryptoSuites(
+    const rtc::CryptoOptions& crypto_options);
+
 // SSLStreamAdapter : A StreamInterfaceAdapter that does SSL/TLS.
 // After SSL has been started, the stream will only open on successful
 // SSL verification of certificates, and the communication is

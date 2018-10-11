@@ -609,11 +609,11 @@ class MediaSessionDescriptionFactoryTest : public testing::Test {
   void TestVideoGcmCipher(bool gcm_offer, bool gcm_answer) {
     MediaSessionOptions offer_opts;
     AddAudioVideoSections(RtpTransceiverDirection::kRecvOnly, &offer_opts);
-    offer_opts.crypto_options.srtp.enable_gcm_crypto_suites = gcm_offer;
+    offer_opts.crypto_options.enable_gcm_crypto_suites = gcm_offer;
 
     MediaSessionOptions answer_opts;
     AddAudioVideoSections(RtpTransceiverDirection::kRecvOnly, &answer_opts);
-    answer_opts.crypto_options.srtp.enable_gcm_crypto_suites = gcm_answer;
+    answer_opts.crypto_options.enable_gcm_crypto_suites = gcm_answer;
 
     f1_.set_secure(SEC_ENABLED);
     f2_.set_secure(SEC_ENABLED);
@@ -953,7 +953,7 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateAudioAnswerGcm) {
   f1_.set_secure(SEC_ENABLED);
   f2_.set_secure(SEC_ENABLED);
   MediaSessionOptions opts = CreatePlanBMediaSessionOptions();
-  opts.crypto_options.srtp.enable_gcm_crypto_suites = true;
+  opts.crypto_options.enable_gcm_crypto_suites = true;
   std::unique_ptr<SessionDescription> offer(f1_.CreateOffer(opts, NULL));
   ASSERT_TRUE(offer.get() != NULL);
   std::unique_ptr<SessionDescription> answer(
@@ -1057,7 +1057,7 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateDataAnswer) {
 TEST_F(MediaSessionDescriptionFactoryTest, TestCreateDataAnswerGcm) {
   MediaSessionOptions opts = CreatePlanBMediaSessionOptions();
   AddDataSection(cricket::DCT_RTP, RtpTransceiverDirection::kRecvOnly, &opts);
-  opts.crypto_options.srtp.enable_gcm_crypto_suites = true;
+  opts.crypto_options.enable_gcm_crypto_suites = true;
   f1_.set_secure(SEC_ENABLED);
   f2_.set_secure(SEC_ENABLED);
   std::unique_ptr<SessionDescription> offer(f1_.CreateOffer(opts, NULL));

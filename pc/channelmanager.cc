@@ -159,7 +159,7 @@ VoiceChannel* ChannelManager::CreateVoiceChannel(
     rtc::Thread* signaling_thread,
     const std::string& content_name,
     bool srtp_required,
-    const webrtc::CryptoOptions& crypto_options,
+    const rtc::CryptoOptions& crypto_options,
     const AudioOptions& options) {
   if (!worker_thread_->IsCurrent()) {
     return worker_thread_->Invoke<VoiceChannel*>(RTC_FROM_HERE, [&] {
@@ -226,7 +226,7 @@ VideoChannel* ChannelManager::CreateVideoChannel(
     rtc::Thread* signaling_thread,
     const std::string& content_name,
     bool srtp_required,
-    const webrtc::CryptoOptions& crypto_options,
+    const rtc::CryptoOptions& crypto_options,
     const VideoOptions& options) {
   if (!worker_thread_->IsCurrent()) {
     return worker_thread_->Invoke<VideoChannel*>(RTC_FROM_HERE, [&] {
@@ -291,7 +291,7 @@ RtpDataChannel* ChannelManager::CreateRtpDataChannel(
     rtc::Thread* signaling_thread,
     const std::string& content_name,
     bool srtp_required,
-    const webrtc::CryptoOptions& crypto_options) {
+    const rtc::CryptoOptions& crypto_options) {
   if (!worker_thread_->IsCurrent()) {
     return worker_thread_->Invoke<RtpDataChannel*>(RTC_FROM_HERE, [&] {
       return CreateRtpDataChannel(media_config, rtp_transport, signaling_thread,

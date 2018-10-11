@@ -126,7 +126,7 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase {
     voice_channel_ = absl::make_unique<cricket::VoiceChannel>(
         worker_thread_, network_thread_, signaling_thread_, nullptr,
         std::move(voice_media_channel), mid, kDefaultSrtpRequired,
-        webrtc::CryptoOptions());
+        rtc::CryptoOptions());
     voice_channel_->set_transport_name_for_testing(transport_name);
     GetOrCreateFirstTransceiverOfType(cricket::MEDIA_TYPE_AUDIO)
         ->internal()
@@ -144,7 +144,7 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase {
     video_channel_ = absl::make_unique<cricket::VideoChannel>(
         worker_thread_, network_thread_, signaling_thread_,
         std::move(video_media_channel), mid, kDefaultSrtpRequired,
-        webrtc::CryptoOptions());
+        rtc::CryptoOptions());
     video_channel_->set_transport_name_for_testing(transport_name);
     GetOrCreateFirstTransceiverOfType(cricket::MEDIA_TYPE_VIDEO)
         ->internal()

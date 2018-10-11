@@ -95,7 +95,7 @@ struct MediaSessionOptions {
   bool bundle_enabled = false;
   bool is_unified_plan = false;
   std::string rtcp_cname = kDefaultRtcpCname;
-  webrtc::CryptoOptions crypto_options;
+  rtc::CryptoOptions crypto_options;
   // List of media description options in the same order that the media
   // descriptions will be generated.
   std::vector<MediaDescriptionOptions> media_description_options;
@@ -337,23 +337,20 @@ DataContentDescription* GetFirstDataContentDescription(
     SessionDescription* sdesc);
 
 // Helper functions to return crypto suites used for SDES.
-void GetSupportedAudioSdesCryptoSuites(
-    const webrtc::CryptoOptions& crypto_options,
-    std::vector<int>* crypto_suites);
-void GetSupportedVideoSdesCryptoSuites(
-    const webrtc::CryptoOptions& crypto_options,
-    std::vector<int>* crypto_suites);
-void GetSupportedDataSdesCryptoSuites(
-    const webrtc::CryptoOptions& crypto_options,
-    std::vector<int>* crypto_suites);
+void GetSupportedAudioSdesCryptoSuites(const rtc::CryptoOptions& crypto_options,
+                                       std::vector<int>* crypto_suites);
+void GetSupportedVideoSdesCryptoSuites(const rtc::CryptoOptions& crypto_options,
+                                       std::vector<int>* crypto_suites);
+void GetSupportedDataSdesCryptoSuites(const rtc::CryptoOptions& crypto_options,
+                                      std::vector<int>* crypto_suites);
 void GetSupportedAudioSdesCryptoSuiteNames(
-    const webrtc::CryptoOptions& crypto_options,
+    const rtc::CryptoOptions& crypto_options,
     std::vector<std::string>* crypto_suite_names);
 void GetSupportedVideoSdesCryptoSuiteNames(
-    const webrtc::CryptoOptions& crypto_options,
+    const rtc::CryptoOptions& crypto_options,
     std::vector<std::string>* crypto_suite_names);
 void GetSupportedDataSdesCryptoSuiteNames(
-    const webrtc::CryptoOptions& crypto_options,
+    const rtc::CryptoOptions& crypto_options,
     std::vector<std::string>* crypto_suite_names);
 
 // Returns true if the given media section protocol indicates use of RTP.

@@ -114,12 +114,12 @@ void StreamInterfaceChannel::Close() {
 }
 
 DtlsTransport::DtlsTransport(IceTransportInternal* ice_transport,
-                             const webrtc::CryptoOptions& crypto_options)
+                             const rtc::CryptoOptions& crypto_options)
     : transport_name_(ice_transport->transport_name()),
       component_(ice_transport->component()),
       ice_transport_(ice_transport),
       downward_(NULL),
-      srtp_ciphers_(crypto_options.GetSupportedDtlsSrtpCryptoSuites()),
+      srtp_ciphers_(GetSupportedDtlsSrtpCryptoSuites(crypto_options)),
       ssl_max_version_(rtc::SSL_PROTOCOL_DTLS_12),
       crypto_options_(crypto_options) {
   RTC_DCHECK(ice_transport_);
@@ -128,13 +128,13 @@ DtlsTransport::DtlsTransport(IceTransportInternal* ice_transport,
 
 DtlsTransport::DtlsTransport(
     std::unique_ptr<IceTransportInternal> ice_transport,
-    const webrtc::CryptoOptions& crypto_options)
+    const rtc::CryptoOptions& crypto_options)
     : transport_name_(ice_transport->transport_name()),
       component_(ice_transport->component()),
       ice_transport_(ice_transport.get()),
       owned_ice_transport_(std::move(ice_transport)),
       downward_(NULL),
-      srtp_ciphers_(crypto_options.GetSupportedDtlsSrtpCryptoSuites()),
+      srtp_ciphers_(GetSupportedDtlsSrtpCryptoSuites(crypto_options)),
       ssl_max_version_(rtc::SSL_PROTOCOL_DTLS_12),
       crypto_options_(crypto_options) {
   RTC_DCHECK(owned_ice_transport_);
@@ -143,7 +143,7 @@ DtlsTransport::DtlsTransport(
 
 DtlsTransport::~DtlsTransport() = default;
 
-const webrtc::CryptoOptions& DtlsTransport::crypto_options() const {
+const rtc::CryptoOptions& DtlsTransport::crypto_options() const {
   return crypto_options_;
 }
 

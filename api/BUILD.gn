@@ -52,8 +52,6 @@ rtc_static_library("libjingle_peerconnection_api") {
     "bitrate_constraints.h",
     "candidate.cc",
     "candidate.h",
-    "crypto/cryptooptions.cc",
-    "crypto/cryptooptions.h",
     "crypto/framedecryptorinterface.h",
     "crypto/frameencryptorinterface.h",
     "cryptoparams.h",
