@@ -15,7 +15,6 @@
 #include "absl/memory/memory.h"
 #include "logging/rtc_event_log/events/rtc_event_probe_cluster_created.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
-#include "modules/pacing/paced_sender.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 

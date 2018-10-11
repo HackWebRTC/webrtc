@@ -58,9 +58,9 @@ PacedSender::PacedSender(const Clock* clock,
       video_blocks_audio_(!field_trial::IsDisabled("WebRTC-Pacer-BlockAudio")),
       last_timestamp_ms_(clock_->TimeInMilliseconds()),
       paused_(false),
-      media_budget_(absl::make_unique<IntervalBudget>(0)),
-      padding_budget_(absl::make_unique<IntervalBudget>(0)),
-      prober_(absl::make_unique<BitrateProber>(event_log)),
+      media_budget_(0),
+      padding_budget_(0),
+      prober_(event_log),
       probing_send_failure_(false),
       estimated_bitrate_bps_(0),
       min_send_bitrate_kbps_(0u),
@@ -84,7 +84,7 @@ PacedSender::~PacedSender() {}
 
 void PacedSender::CreateProbeCluster(int bitrate_bps) {
   rtc::CritScope cs(&critsect_);
-  prober_->CreateProbeCluster(bitrate_bps, TimeMilliseconds());
+  prober_.CreateProbeCluster(bitrate_bps, TimeMilliseconds());
 }
 
 void PacedSender::Pause() {
@@ -149,7 +149,7 @@ int64_t PacedSender::TimeMilliseconds() const {
 void PacedSender::SetProbingEnabled(bool enabled) {
   rtc::CritScope cs(&critsect_);
   RTC_CHECK_EQ(0, packet_counter_);
-  prober_->SetEnabled(enabled);
+  prober_.SetEnabled(enabled);
 }
 
 void PacedSender::SetEstimatedBitrate(uint32_t bitrate_bps) {
@@ -157,7 +157,7 @@ void PacedSender::SetEstimatedBitrate(uint32_t bitrate_bps) {
     RTC_LOG(LS_ERROR) << "PacedSender is not designed to handle 0 bitrate.";
   rtc::CritScope cs(&critsect_);
   estimated_bitrate_bps_ = bitrate_bps;
-  padding_budget_->set_target_rate_kbps(
+  padding_budget_.set_target_rate_kbps(
       std::min(estimated_bitrate_bps_ / 1000, max_padding_bitrate_kbps_));
   pacing_bitrate_kbps_ =
       std::max(min_send_bitrate_kbps_, estimated_bitrate_bps_ / 1000) *
@@ -173,7 +173,7 @@ void PacedSender::SetSendBitrateLimits(int min_send_bitrate_bps,
       std::max(min_send_bitrate_kbps_, estimated_bitrate_bps_ / 1000) *
       pacing_factor_;
   max_padding_bitrate_kbps_ = padding_bitrate / 1000;
-  padding_budget_->set_target_rate_kbps(
+  padding_budget_.set_target_rate_kbps(
       std::min(estimated_bitrate_bps_ / 1000, max_padding_bitrate_kbps_));
 }
 
@@ -182,7 +182,7 @@ void PacedSender::SetPacingRates(uint32_t pacing_rate_bps,
   rtc::CritScope cs(&critsect_);
   RTC_DCHECK(pacing_rate_bps > 0);
   pacing_bitrate_kbps_ = pacing_rate_bps / 1000;
-  padding_budget_->set_target_rate_kbps(padding_rate_bps / 1000);
+  padding_budget_.set_target_rate_kbps(padding_rate_bps / 1000);
 }
 
 void PacedSender::InsertPacket(RtpPacketSender::Priority priority,
@@ -196,7 +196,7 @@ void PacedSender::InsertPacket(RtpPacketSender::Priority priority,
       << "SetPacingRate must be called before InsertPacket.";
 
   int64_t now_ms = TimeMilliseconds();
-  prober_->OnIncomingPacket(bytes);
+  prober_.OnIncomingPacket(bytes);
 
   if (capture_time_ms < 0)
     capture_time_ms = now_ms;
@@ -254,8 +254,8 @@ int64_t PacedSender::TimeUntilNextProcess() {
   if (paused_)
     return std::max<int64_t>(kPausedProcessIntervalMs - elapsed_time_ms, 0);
 
-  if (prober_->IsProbing()) {
-    int64_t ret = prober_->TimeUntilNextProbe(TimeMilliseconds());
+  if (prober_.IsProbing()) {
+    int64_t ret = prober_.TimeUntilNextProbe(TimeMilliseconds());
     if (ret > 0 || (ret == 0 && !probing_send_failure_))
       return ret;
   }
@@ -308,17 +308,17 @@ void PacedSender::Process() {
       }
     }
 
-    media_budget_->set_target_rate_kbps(target_bitrate_kbps);
+    media_budget_.set_target_rate_kbps(target_bitrate_kbps);
     UpdateBudgetWithElapsedTime(elapsed_time_ms);
   }
 
-  bool is_probing = prober_->IsProbing();
+  bool is_probing = prober_.IsProbing();
   PacedPacketInfo pacing_info;
   size_t bytes_sent = 0;
   size_t recommended_probe_size = 0;
   if (is_probing) {
-    pacing_info = prober_->CurrentCluster();
-    recommended_probe_size = prober_->RecommendedMinProbeSize();
+    pacing_info = prober_.CurrentCluster();
+    recommended_probe_size = prober_.RecommendedMinProbeSize();
   }
   // The paused state is checked in the loop since SendPacket leaves the
   // critical section allowing the paused state to be changed from other code.
@@ -347,7 +347,7 @@ void PacedSender::Process() {
     if (packet_counter_ > 0) {
       int padding_needed =
           static_cast<int>(is_probing ? (recommended_probe_size - bytes_sent)
-                                      : padding_budget_->bytes_remaining());
+                                      : padding_budget_.bytes_remaining());
       if (padding_needed > 0) {
         bytes_sent += SendPadding(padding_needed, pacing_info);
       }
@@ -356,7 +356,7 @@ void PacedSender::Process() {
   if (is_probing) {
     probing_send_failure_ = bytes_sent == 0;
     if (!probing_send_failure_)
-      prober_->ProbeSent(TimeMilliseconds(), bytes_sent);
+      prober_.ProbeSent(TimeMilliseconds(), bytes_sent);
   }
   alr_detector_->OnBytesSent(bytes_sent, now_us / 1000);
 }
@@ -373,7 +373,7 @@ bool PacedSender::SendPacket(const RoundRobinPacketQueue::Packet& packet,
   bool audio_packet = packet.priority == kHighPriority;
   bool apply_pacing =
       !audio_packet || account_for_audio_ || video_blocks_audio_;
-  if (apply_pacing && (Congested() || (media_budget_->bytes_remaining() == 0 &&
+  if (apply_pacing && (Congested() || (media_budget_.bytes_remaining() == 0 &&
                                        pacing_info.probe_cluster_id ==
                                            PacedPacketInfo::kNotAProbe))) {
     return false;
@@ -419,14 +419,14 @@ size_t PacedSender::SendPadding(size_t padding_needed,
 
 void PacedSender::UpdateBudgetWithElapsedTime(int64_t delta_time_ms) {
   delta_time_ms = std::min(kMaxIntervalTimeMs, delta_time_ms);
-  media_budget_->IncreaseBudget(delta_time_ms);
-  padding_budget_->IncreaseBudget(delta_time_ms);
+  media_budget_.IncreaseBudget(delta_time_ms);
+  padding_budget_.IncreaseBudget(delta_time_ms);
 }
 
 void PacedSender::UpdateBudgetWithBytesSent(size_t bytes_sent) {
   outstanding_bytes_ += bytes_sent;
-  media_budget_->UseBudget(bytes_sent);
-  padding_budget_->UseBudget(bytes_sent);
+  media_budget_.UseBudget(bytes_sent);
+  padding_budget_.UseBudget(bytes_sent);
 }
 
 void PacedSender::SetPacingFactor(float pacing_factor) {
