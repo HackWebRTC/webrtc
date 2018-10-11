@@ -110,6 +110,7 @@ std::vector<PacketFeedback> ReceivedPacketsFeedbackAsRtp(
         pf.payload_size = fb.sent_packet->size.bytes();
         pf.pacing_info = fb.sent_packet->pacing_info;
         pf.send_time_ms = fb.sent_packet->send_time.ms();
+        pf.unacknowledged_data = fb.sent_packet->prior_unacked_data.bytes();
       } else {
         pf.send_time_ms = PacketFeedback::kNoSendTime;
       }

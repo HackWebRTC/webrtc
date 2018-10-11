@@ -27,6 +27,10 @@ TEST(ScenarioTest, StartsAndStopsWithoutErrors) {
   s.CreateVideoStream(bob, {bob_net}, alice, {alice_net}, video_stream_config);
 
   AudioStreamConfig audio_stream_config;
+  audio_stream_config.encoder.min_rate = DataRate::kbps(6);
+  audio_stream_config.encoder.max_rate = DataRate::kbps(64);
+  audio_stream_config.encoder.allocate_bitrate = true;
+  audio_stream_config.stream.in_bandwidth_estimation = false;
   s.CreateAudioStream(alice, {alice_net}, bob, {bob_net}, audio_stream_config);
   s.CreateAudioStream(bob, {bob_net}, alice, {alice_net}, audio_stream_config);
 
