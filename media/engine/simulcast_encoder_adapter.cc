@@ -128,7 +128,8 @@ SimulcastEncoderAdapter::SimulcastEncoderAdapter(VideoEncoderFactory* factory,
       video_format_(format),
       encoded_complete_callback_(nullptr),
       implementation_name_("SimulcastEncoderAdapter"),
-      experimental_boosted_screenshare_qp_(GetScreenshareBoostedQpValue()) {
+      experimental_boosted_screenshare_qp_(GetScreenshareBoostedQpValue()),
+      trusted_rate_controller_(false) {
   RTC_DCHECK(factory_);
 
   // The adapter is typically created on the worker thread, but operated on
@@ -204,6 +205,7 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
   }
 
   std::string implementation_name;
+  trusted_rate_controller_ = true;
   // Create |number_of_streams| of encoder instances and init them.
   for (int i = 0; i < number_of_streams; ++i) {
     VideoCodec stream_codec;
@@ -250,6 +252,7 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
     std::unique_ptr<EncodedImageCallback> callback(
         new AdapterEncodedImageCallback(this, i));
     encoder->RegisterEncodeCompleteCallback(callback.get());
+    trusted_rate_controller_ &= encoder->HasTrustedRateController();
     streaminfos_.emplace_back(std::move(encoder), std::move(callback),
                               stream_codec.width, stream_codec.height,
                               send_stream);
@@ -543,6 +546,11 @@ VideoEncoder::ScalingSettings SimulcastEncoderAdapter::GetScalingSettings()
 const char* SimulcastEncoderAdapter::ImplementationName() const {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_queue_);
   return implementation_name_.c_str();
+}
+
+bool SimulcastEncoderAdapter::HasTrustedRateController() const {
+  RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_queue_);
+  return trusted_rate_controller_;
 }
 
 }  // namespace webrtc

@@ -12,6 +12,7 @@
 
 #include <utility>
 
+#include "api/test/mock_video_encoder.h"
 #include "api/video/i420_buffer.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
@@ -22,9 +23,12 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/fakeclock.h"
 #include "test/field_trial.h"
+#include "test/gmock.h"
 #include "test/gtest.h"
 
 namespace webrtc {
+using ::testing::Return;
+
 namespace {
 const int kWidth = 320;
 const int kHeight = 240;
@@ -527,6 +531,90 @@ TEST_F(ForcedFallbackTestEnabled, ScalingDisabledIfResizeOff) {
   // Should be disabled for automatic resize off.
   const auto settings = fallback_wrapper_->GetScalingSettings();
   EXPECT_FALSE(settings.thresholds.has_value());
+}
+
+TEST(SoftwareFallbackEncoderTest, BothRateControllersNotTrusted) {
+  auto* sw_encoder = new testing::NiceMock<MockVideoEncoder>();
+  auto* hw_encoder = new testing::NiceMock<MockVideoEncoder>();
+  EXPECT_CALL(*sw_encoder, HasTrustedRateController())
+      .WillRepeatedly(Return(false));
+  EXPECT_CALL(*hw_encoder, HasTrustedRateController())
+      .WillRepeatedly(Return(false));
+
+  std::unique_ptr<VideoEncoder> wrapper =
+      CreateVideoEncoderSoftwareFallbackWrapper(
+          std::unique_ptr<VideoEncoder>(sw_encoder),
+          std::unique_ptr<VideoEncoder>(hw_encoder));
+  EXPECT_FALSE(wrapper->HasTrustedRateController());
+}
+
+TEST(SoftwareFallbackEncoderTest, SwRateControllerTrusted) {
+  auto* sw_encoder = new testing::NiceMock<MockVideoEncoder>();
+  auto* hw_encoder = new testing::NiceMock<MockVideoEncoder>();
+  EXPECT_CALL(*sw_encoder, HasTrustedRateController())
+      .WillRepeatedly(Return(true));
+  EXPECT_CALL(*hw_encoder, HasTrustedRateController())
+      .WillRepeatedly(Return(false));
+
+  std::unique_ptr<VideoEncoder> wrapper =
+      CreateVideoEncoderSoftwareFallbackWrapper(
+          std::unique_ptr<VideoEncoder>(sw_encoder),
+          std::unique_ptr<VideoEncoder>(hw_encoder));
+  EXPECT_FALSE(wrapper->HasTrustedRateController());
+}
+
+TEST(SoftwareFallbackEncoderTest, SwRateControllerTrustedNoHw) {
+  auto* sw_encoder = new testing::NiceMock<MockVideoEncoder>();
+  EXPECT_CALL(*sw_encoder, HasTrustedRateController())
+      .WillRepeatedly(Return(true));
+
+  std::unique_ptr<VideoEncoder> wrapper =
+      CreateVideoEncoderSoftwareFallbackWrapper(
+          std::unique_ptr<VideoEncoder>(sw_encoder),
+          std::unique_ptr<VideoEncoder>());
+  EXPECT_TRUE(wrapper->HasTrustedRateController());
+}
+
+TEST(SoftwareFallbackEncoderTest, HwRateControllerTrusted) {
+  auto* sw_encoder = new testing::NiceMock<MockVideoEncoder>();
+  auto* hw_encoder = new testing::NiceMock<MockVideoEncoder>();
+  EXPECT_CALL(*sw_encoder, HasTrustedRateController())
+      .WillRepeatedly(Return(false));
+  EXPECT_CALL(*hw_encoder, HasTrustedRateController())
+      .WillRepeatedly(Return(true));
+
+  std::unique_ptr<VideoEncoder> wrapper =
+      CreateVideoEncoderSoftwareFallbackWrapper(
+          std::unique_ptr<VideoEncoder>(sw_encoder),
+          std::unique_ptr<VideoEncoder>(hw_encoder));
+  EXPECT_FALSE(wrapper->HasTrustedRateController());
+}
+
+TEST(SoftwareFallbackEncoderTest, HwRateControllerTrustedNoSw) {
+  auto* hw_encoder = new testing::NiceMock<MockVideoEncoder>();
+  EXPECT_CALL(*hw_encoder, HasTrustedRateController())
+      .WillRepeatedly(Return(true));
+
+  std::unique_ptr<VideoEncoder> wrapper =
+      CreateVideoEncoderSoftwareFallbackWrapper(
+          std::unique_ptr<VideoEncoder>(),
+          std::unique_ptr<VideoEncoder>(hw_encoder));
+  EXPECT_TRUE(wrapper->HasTrustedRateController());
+}
+
+TEST(SoftwareFallbackEncoderTest, BothRateControllersTrusted) {
+  auto* sw_encoder = new testing::NiceMock<MockVideoEncoder>();
+  auto* hw_encoder = new testing::NiceMock<MockVideoEncoder>();
+  EXPECT_CALL(*sw_encoder, HasTrustedRateController())
+      .WillRepeatedly(Return(true));
+  EXPECT_CALL(*hw_encoder, HasTrustedRateController())
+      .WillRepeatedly(Return(true));
+
+  std::unique_ptr<VideoEncoder> wrapper =
+      CreateVideoEncoderSoftwareFallbackWrapper(
+          std::unique_ptr<VideoEncoder>(sw_encoder),
+          std::unique_ptr<VideoEncoder>(hw_encoder));
+  EXPECT_TRUE(wrapper->HasTrustedRateController());
 }
 
 }  // namespace webrtc

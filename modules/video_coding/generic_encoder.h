@@ -147,6 +147,7 @@ class VCMGenericEncoder {
   int32_t RequestFrame(const std::vector<FrameType>& frame_types);
   bool InternalSource() const;
   bool SupportsNativeHandle() const;
+  bool HasTrustedRateController() const;
 
  private:
   rtc::RaceChecker race_checker_;

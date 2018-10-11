@@ -101,4 +101,8 @@ bool VideoEncoder::SupportsNativeHandle() const {
 const char* VideoEncoder::ImplementationName() const {
   return "unknown";
 }
+
+bool VideoEncoder::HasTrustedRateController() const {
+  return false;
+}
 }  // namespace webrtc

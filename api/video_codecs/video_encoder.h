@@ -202,6 +202,21 @@ class VideoEncoder {
 
   virtual bool SupportsNativeHandle() const;
   virtual const char* ImplementationName() const;
+
+  // If this method returns true, the encoder rate controller must perform well
+  // even in difficult situations, and produce close to the specified target
+  // bitrate seen over a reasonable time window, drop frames if necessary in
+  // order to keep the rate correct, and react quickly to changing bitrate
+  // targets.
+  // If this method returns true, we disable the frame dropper in the media
+  // optimization module and rely entirely on the encoder to produce media at a
+  // bitrate that closely matches the target. Any overshooting may result in
+  // delay buildup.
+  // If this method returns false (default behavior), the media opt frame
+  // dropper will drop input frames if it suspect encoder misbehavior.
+  // Misbehavior is common, especially in hardware codecs. Disable media opt at
+  // your own risk.
+  virtual bool HasTrustedRateController() const;
 };
 }  // namespace webrtc
 #endif  // API_VIDEO_CODECS_VIDEO_ENCODER_H_

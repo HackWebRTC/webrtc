@@ -40,6 +40,7 @@ class ScopedVideoEncoder : public webrtc::VideoEncoder {
   ScalingSettings GetScalingSettings() const override;
   bool SupportsNativeHandle() const override;
   const char* ImplementationName() const override;
+  bool HasTrustedRateController() const override;
 
   ~ScopedVideoEncoder() override;
 
@@ -101,6 +102,10 @@ bool ScopedVideoEncoder::SupportsNativeHandle() const {
 
 const char* ScopedVideoEncoder::ImplementationName() const {
   return encoder_->ImplementationName();
+}
+
+bool ScopedVideoEncoder::HasTrustedRateController() const {
+  return encoder_->HasTrustedRateController();
 }
 
 ScopedVideoEncoder::~ScopedVideoEncoder() {

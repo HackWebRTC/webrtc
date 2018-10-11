@@ -53,7 +53,8 @@ MultiplexEncoderAdapter::MultiplexEncoderAdapter(
     : factory_(factory),
       associated_format_(associated_format),
       encoded_complete_callback_(nullptr),
-      supports_augmented_data_(supports_augmented_data) {}
+      supports_augmented_data_(supports_augmented_data),
+      has_trusted_rate_controllers_(false) {}
 
 MultiplexEncoderAdapter::~MultiplexEncoderAdapter() {
   Release();
@@ -92,6 +93,7 @@ int MultiplexEncoderAdapter::InitEncode(const VideoCodec* inst,
       break;
   }
 
+  has_trusted_rate_controllers_ = true;
   for (size_t i = 0; i < kAlphaCodecStreams; ++i) {
     std::unique_ptr<VideoEncoder> encoder =
         factory_->CreateVideoEncoder(associated_format_);
@@ -101,6 +103,7 @@ int MultiplexEncoderAdapter::InitEncode(const VideoCodec* inst,
       RTC_LOG(LS_ERROR) << "Failed to create multiplex codec index " << i;
       return rv;
     }
+    has_trusted_rate_controllers_ &= encoder->HasTrustedRateController();
     adapter_callbacks_.emplace_back(new AdapterEncodedImageCallback(
         this, static_cast<AlphaCodecStream>(i)));
     encoder->RegisterEncodeCompleteCallback(adapter_callbacks_.back().get());
@@ -240,6 +243,10 @@ int MultiplexEncoderAdapter::Release() {
 
 const char* MultiplexEncoderAdapter::ImplementationName() const {
   return "MultiplexEncoderAdapter";
+}
+
+bool MultiplexEncoderAdapter::HasTrustedRateController() const {
+  return has_trusted_rate_controllers_;
 }
 
 EncodedImageCallback::Result MultiplexEncoderAdapter::OnEncodedImage(

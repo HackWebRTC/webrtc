@@ -96,10 +96,15 @@ int32_t VideoSender::RegisterSendCodec(const VideoCodec* sendCodec,
     numLayers = 1;
   }
 
-  // If we have screensharing and we have layers, we disable frame dropper.
+  // Disable frame dropper if either:
+  //  * We have screensharing with layers.
+  //  * "WebRTC-FrameDropper" field trial is "Disabled".
+  //  * Encoder has a trusted rate controller.
   const bool disable_frame_dropper =
       field_trial::IsDisabled(kFrameDropperFieldTrial) ||
-      (numLayers > 1 && sendCodec->mode == VideoCodecMode::kScreensharing);
+      (numLayers > 1 && sendCodec->mode == VideoCodecMode::kScreensharing) ||
+      _encoder->HasTrustedRateController();
+
   if (disable_frame_dropper) {
     _mediaOpt.EnableFrameDropper(false);
   } else if (frame_dropper_enabled_) {

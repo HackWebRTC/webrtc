@@ -93,6 +93,7 @@ class VideoEncoderSoftwareFallbackWrapper final : public VideoEncoder {
   bool SupportsNativeHandle() const override;
   ScalingSettings GetScalingSettings() const override;
   const char* ImplementationName() const override;
+  bool HasTrustedRateController() const override;
 
  private:
   bool InitFallbackEncoder();
@@ -142,6 +143,8 @@ class VideoEncoderSoftwareFallbackWrapper final : public VideoEncoder {
 
   bool forced_fallback_possible_;
   ForcedFallbackParams forced_fallback_;
+
+  const bool trust_rate_controller_;
 };
 
 VideoEncoderSoftwareFallbackWrapper::VideoEncoderSoftwareFallbackWrapper(
@@ -158,7 +161,11 @@ VideoEncoderSoftwareFallbackWrapper::VideoEncoderSoftwareFallbackWrapper(
       encoder_(std::move(hw_encoder)),
       fallback_encoder_(std::move(sw_encoder)),
       callback_(nullptr),
-      forced_fallback_possible_(EnableForcedFallback()) {
+      forced_fallback_possible_(EnableForcedFallback()),
+      trust_rate_controller_(
+          (encoder_ ? encoder_->HasTrustedRateController() : true) &&
+          (fallback_encoder_ ? fallback_encoder_->HasTrustedRateController()
+                             : true)) {
   if (forced_fallback_possible_) {
     GetForcedFallbackParamsFromFieldTrialGroup(
         &forced_fallback_.min_pixels_, &forced_fallback_.max_pixels_,
@@ -317,6 +324,10 @@ VideoEncoderSoftwareFallbackWrapper::GetScalingSettings() const {
 const char* VideoEncoderSoftwareFallbackWrapper::ImplementationName() const {
   return use_fallback_encoder_ ? fallback_encoder_->ImplementationName()
                                : encoder_->ImplementationName();
+}
+
+bool VideoEncoderSoftwareFallbackWrapper::HasTrustedRateController() const {
+  return trust_rate_controller_;
 }
 
 bool VideoEncoderSoftwareFallbackWrapper::IsForcedFallbackActive() const {

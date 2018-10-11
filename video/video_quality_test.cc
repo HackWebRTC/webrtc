@@ -177,6 +177,9 @@ class QualityTestVideoEncoder : public VideoEncoder,
   const char* ImplementationName() const override {
     return encoder_->ImplementationName();
   }
+  bool HasTrustedRateController() const override {
+    return encoder_->HasTrustedRateController();
+  }
 
  private:
   // Implement EncodedImageCallback

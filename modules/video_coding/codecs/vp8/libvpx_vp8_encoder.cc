@@ -28,6 +28,8 @@
 namespace webrtc {
 namespace {
 const char kVp8GfBoostFieldTrial[] = "WebRTC-VP8-GfBoost";
+const char kVp8TrustedRateControllerFieldTrial[] =
+    "WebRTC-Vp8TrustedRateController";
 
 // QP is obtained from VP8-bitstream for HW, so the QP corresponds to the
 // bitstream range of [0, 127] and not the user-level range of [0,63].
@@ -158,6 +160,8 @@ LibvpxVp8Encoder::LibvpxVp8Encoder()
 LibvpxVp8Encoder::LibvpxVp8Encoder(std::unique_ptr<LibvpxInterface> interface)
     : libvpx_(std::move(interface)),
       use_gf_boost_(webrtc::field_trial::IsEnabled(kVp8GfBoostFieldTrial)),
+      trusted_rate_controller_(
+          webrtc::field_trial::IsEnabled(kVp8TrustedRateControllerFieldTrial)),
       encoded_complete_callback_(nullptr),
       inited_(false),
       timestamp_(0),
@@ -280,6 +284,10 @@ int LibvpxVp8Encoder::SetRateAllocation(const VideoBitrateAllocation& bitrate,
 
 const char* LibvpxVp8Encoder::ImplementationName() const {
   return "libvpx";
+}
+
+bool LibvpxVp8Encoder::HasTrustedRateController() const {
+  return trusted_rate_controller_;
 }
 
 void LibvpxVp8Encoder::SetStreamState(bool send_stream, int stream_idx) {
