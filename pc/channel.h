@@ -82,7 +82,7 @@ class BaseChannel : public rtc::MessageHandler,
               std::unique_ptr<MediaChannel> media_channel,
               const std::string& content_name,
               bool srtp_required,
-              rtc::CryptoOptions crypto_options);
+              webrtc::CryptoOptions crypto_options);
   virtual ~BaseChannel();
   void Init_w(webrtc::RtpTransportInternal* rtp_transport);
 
@@ -313,7 +313,7 @@ class BaseChannel : public rtc::MessageHandler,
   bool was_ever_writable_ = false;
   bool has_received_packet_ = false;
   const bool srtp_required_ = true;
-  rtc::CryptoOptions crypto_options_;
+  webrtc::CryptoOptions crypto_options_;
 
   // MediaChannel related members that should be accessed from the worker
   // thread.
@@ -343,7 +343,7 @@ class VoiceChannel : public BaseChannel {
                std::unique_ptr<VoiceMediaChannel> channel,
                const std::string& content_name,
                bool srtp_required,
-               rtc::CryptoOptions crypto_options);
+               webrtc::CryptoOptions crypto_options);
   ~VoiceChannel();
 
   // downcasts a MediaChannel
@@ -383,7 +383,7 @@ class VideoChannel : public BaseChannel {
                std::unique_ptr<VideoMediaChannel> media_channel,
                const std::string& content_name,
                bool srtp_required,
-               rtc::CryptoOptions crypto_options);
+               webrtc::CryptoOptions crypto_options);
   ~VideoChannel();
 
   // downcasts a MediaChannel
@@ -422,7 +422,7 @@ class RtpDataChannel : public BaseChannel {
                  std::unique_ptr<DataMediaChannel> channel,
                  const std::string& content_name,
                  bool srtp_required,
-                 rtc::CryptoOptions crypto_options);
+                 webrtc::CryptoOptions crypto_options);
   ~RtpDataChannel();
   // TODO(zhihuang): Remove this once the RtpTransport can be shared between
   // BaseChannels.

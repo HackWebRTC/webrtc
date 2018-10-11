@@ -284,7 +284,7 @@ TEST_P(PeerConnectionCryptoTest, CorrectCryptoInAnswerWhenEncryptionDisabled) {
 // in the answer.
 TEST_P(PeerConnectionCryptoTest, CorrectCryptoInOfferWithSdesAndGcm) {
   PeerConnectionFactoryInterface::Options options;
-  options.crypto_options.enable_gcm_crypto_suites = true;
+  options.crypto_options.srtp.enable_gcm_crypto_suites = true;
   pc_factory_->SetOptions(options);
 
   RTCConfiguration config;
@@ -299,7 +299,7 @@ TEST_P(PeerConnectionCryptoTest, CorrectCryptoInOfferWithSdesAndGcm) {
 }
 TEST_P(PeerConnectionCryptoTest, CorrectCryptoInAnswerWithSdesAndGcm) {
   PeerConnectionFactoryInterface::Options options;
-  options.crypto_options.enable_gcm_crypto_suites = true;
+  options.crypto_options.srtp.enable_gcm_crypto_suites = true;
   pc_factory_->SetOptions(options);
 
   RTCConfiguration config;
@@ -317,7 +317,7 @@ TEST_P(PeerConnectionCryptoTest, CorrectCryptoInAnswerWithSdesAndGcm) {
 
 TEST_P(PeerConnectionCryptoTest, CanSetSdesGcmRemoteOfferAndLocalAnswer) {
   PeerConnectionFactoryInterface::Options options;
-  options.crypto_options.enable_gcm_crypto_suites = true;
+  options.crypto_options.srtp.enable_gcm_crypto_suites = true;
   pc_factory_->SetOptions(options);
 
   RTCConfiguration config;

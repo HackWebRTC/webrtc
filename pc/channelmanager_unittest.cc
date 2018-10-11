@@ -65,16 +65,16 @@ class ChannelManagerTest : public testing::Test {
     cricket::VoiceChannel* voice_channel = cm_->CreateVoiceChannel(
         &fake_call_, cricket::MediaConfig(), rtp_transport,
         rtc::Thread::Current(), cricket::CN_AUDIO, kDefaultSrtpRequired,
-        rtc::CryptoOptions(), AudioOptions());
+        webrtc::CryptoOptions(), AudioOptions());
     EXPECT_TRUE(voice_channel != nullptr);
     cricket::VideoChannel* video_channel = cm_->CreateVideoChannel(
         &fake_call_, cricket::MediaConfig(), rtp_transport,
         rtc::Thread::Current(), cricket::CN_VIDEO, kDefaultSrtpRequired,
-        rtc::CryptoOptions(), VideoOptions());
+        webrtc::CryptoOptions(), VideoOptions());
     EXPECT_TRUE(video_channel != nullptr);
     cricket::RtpDataChannel* rtp_data_channel = cm_->CreateRtpDataChannel(
         cricket::MediaConfig(), rtp_transport, rtc::Thread::Current(),
-        cricket::CN_DATA, kDefaultSrtpRequired, rtc::CryptoOptions());
+        cricket::CN_DATA, kDefaultSrtpRequired, webrtc::CryptoOptions());
     EXPECT_TRUE(rtp_data_channel != nullptr);
     cm_->DestroyVideoChannel(video_channel);
     cm_->DestroyVoiceChannel(voice_channel);

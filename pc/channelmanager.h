@@ -86,7 +86,7 @@ class ChannelManager final {
                                    rtc::Thread* signaling_thread,
                                    const std::string& content_name,
                                    bool srtp_required,
-                                   const rtc::CryptoOptions& crypto_options,
+                                   const webrtc::CryptoOptions& crypto_options,
                                    const AudioOptions& options);
   // Destroys a voice channel created by CreateVoiceChannel.
   void DestroyVoiceChannel(VoiceChannel* voice_channel);
@@ -100,7 +100,7 @@ class ChannelManager final {
                                    rtc::Thread* signaling_thread,
                                    const std::string& content_name,
                                    bool srtp_required,
-                                   const rtc::CryptoOptions& crypto_options,
+                                   const webrtc::CryptoOptions& crypto_options,
                                    const VideoOptions& options);
   // Destroys a video channel created by CreateVideoChannel.
   void DestroyVideoChannel(VideoChannel* video_channel);
@@ -111,7 +111,7 @@ class ChannelManager final {
       rtc::Thread* signaling_thread,
       const std::string& content_name,
       bool srtp_required,
-      const rtc::CryptoOptions& crypto_options);
+      const webrtc::CryptoOptions& crypto_options);
   // Destroys a data channel created by CreateRtpDataChannel.
   void DestroyRtpDataChannel(RtpDataChannel* data_channel);
 
