@@ -1268,6 +1268,8 @@ SessionDescription* MediaSessionDescriptionFactory::CreateOffer(
     const SessionDescription* current_description) const {
   std::unique_ptr<SessionDescription> offer(new SessionDescription());
 
+  IceCredentialsIterator ice_credentials(
+      session_options.pooled_ice_credentials);
   StreamParamsVec current_streams;
   GetCurrentStreamParams(current_description, &current_streams);
 
@@ -1311,18 +1313,18 @@ SessionDescription* MediaSessionDescriptionFactory::CreateOffer(
     }
     switch (media_description_options.type) {
       case MEDIA_TYPE_AUDIO:
-        if (!AddAudioContentForOffer(media_description_options, session_options,
-                                     current_content, current_description,
-                                     audio_rtp_extensions, offer_audio_codecs,
-                                     &current_streams, offer.get())) {
+        if (!AddAudioContentForOffer(
+                media_description_options, session_options, current_content,
+                current_description, audio_rtp_extensions, offer_audio_codecs,
+                &current_streams, offer.get(), &ice_credentials)) {
           return nullptr;
         }
         break;
       case MEDIA_TYPE_VIDEO:
-        if (!AddVideoContentForOffer(media_description_options, session_options,
-                                     current_content, current_description,
-                                     video_rtp_extensions, offer_video_codecs,
-                                     &current_streams, offer.get())) {
+        if (!AddVideoContentForOffer(
+                media_description_options, session_options, current_content,
+                current_description, video_rtp_extensions, offer_video_codecs,
+                &current_streams, offer.get(), &ice_credentials)) {
           return nullptr;
         }
         break;
@@ -1330,7 +1332,7 @@ SessionDescription* MediaSessionDescriptionFactory::CreateOffer(
         if (!AddDataContentForOffer(media_description_options, session_options,
                                     current_content, current_description,
                                     offer_data_codecs, &current_streams,
-                                    offer.get())) {
+                                    offer.get(), &ice_credentials)) {
           return nullptr;
         }
         break;
@@ -1387,6 +1389,10 @@ SessionDescription* MediaSessionDescriptionFactory::CreateAnswer(
   if (!offer) {
     return nullptr;
   }
+
+  IceCredentialsIterator ice_credentials(
+      session_options.pooled_ice_credentials);
+
   // The answer contains the intersection of the codecs in the offer with the
   // codecs we support. As indicated by XEP-0167, we retain the same payload ids
   // from the offer in the answer.
@@ -1449,7 +1455,7 @@ SessionDescription* MediaSessionDescriptionFactory::CreateAnswer(
                 media_description_options, session_options, offer_content,
                 offer, current_content, current_description,
                 bundle_transport.get(), answer_audio_codecs, &current_streams,
-                answer.get())) {
+                answer.get(), &ice_credentials)) {
           return nullptr;
         }
         break;
@@ -1458,16 +1464,16 @@ SessionDescription* MediaSessionDescriptionFactory::CreateAnswer(
                 media_description_options, session_options, offer_content,
                 offer, current_content, current_description,
                 bundle_transport.get(), answer_video_codecs, &current_streams,
-                answer.get())) {
+                answer.get(), &ice_credentials)) {
           return nullptr;
         }
         break;
       case MEDIA_TYPE_DATA:
-        if (!AddDataContentForAnswer(media_description_options, session_options,
-                                     offer_content, offer, current_content,
-                                     current_description,
-                                     bundle_transport.get(), answer_data_codecs,
-                                     &current_streams, answer.get())) {
+        if (!AddDataContentForAnswer(
+                media_description_options, session_options, offer_content,
+                offer, current_content, current_description,
+                bundle_transport.get(), answer_data_codecs, &current_streams,
+                answer.get(), &ice_credentials)) {
           return nullptr;
         }
         break;
@@ -1774,13 +1780,15 @@ bool MediaSessionDescriptionFactory::AddTransportOffer(
     const std::string& content_name,
     const TransportOptions& transport_options,
     const SessionDescription* current_desc,
-    SessionDescription* offer_desc) const {
+    SessionDescription* offer_desc,
+    IceCredentialsIterator* ice_credentials) const {
   if (!transport_desc_factory_)
     return false;
   const TransportDescription* current_tdesc =
       GetTransportDescription(content_name, current_desc);
   std::unique_ptr<TransportDescription> new_tdesc(
-      transport_desc_factory_->CreateOffer(transport_options, current_tdesc));
+      transport_desc_factory_->CreateOffer(transport_options, current_tdesc,
+                                           ice_credentials));
   bool ret =
       (new_tdesc.get() != NULL &&
        offer_desc->AddTransportInfo(TransportInfo(content_name, *new_tdesc)));
@@ -1796,7 +1804,8 @@ TransportDescription* MediaSessionDescriptionFactory::CreateTransportAnswer(
     const SessionDescription* offer_desc,
     const TransportOptions& transport_options,
     const SessionDescription* current_desc,
-    bool require_transport_attributes) const {
+    bool require_transport_attributes,
+    IceCredentialsIterator* ice_credentials) const {
   if (!transport_desc_factory_)
     return NULL;
   const TransportDescription* offer_tdesc =
@@ -1805,7 +1814,7 @@ TransportDescription* MediaSessionDescriptionFactory::CreateTransportAnswer(
       GetTransportDescription(content_name, current_desc);
   return transport_desc_factory_->CreateAnswer(offer_tdesc, transport_options,
                                                require_transport_attributes,
-                                               current_tdesc);
+                                               current_tdesc, ice_credentials);
 }
 
 bool MediaSessionDescriptionFactory::AddTransportAnswer(
@@ -1841,7 +1850,8 @@ bool MediaSessionDescriptionFactory::AddAudioContentForOffer(
     const RtpHeaderExtensions& audio_rtp_extensions,
     const AudioCodecs& audio_codecs,
     StreamParamsVec* current_streams,
-    SessionDescription* desc) const {
+    SessionDescription* desc,
+    IceCredentialsIterator* ice_credentials) const {
   // Filter audio_codecs (which includes all codecs, with correctly remapped
   // payload types) based on transceiver direction.
   const AudioCodecs& supported_audio_codecs =
@@ -1897,7 +1907,7 @@ bool MediaSessionDescriptionFactory::AddAudioContentForOffer(
                    media_description_options.stopped, audio.release());
   if (!AddTransportOffer(media_description_options.mid,
                          media_description_options.transport_options,
-                         current_description, desc)) {
+                         current_description, desc, ice_credentials)) {
     return false;
   }
 
@@ -1912,7 +1922,8 @@ bool MediaSessionDescriptionFactory::AddVideoContentForOffer(
     const RtpHeaderExtensions& video_rtp_extensions,
     const VideoCodecs& video_codecs,
     StreamParamsVec* current_streams,
-    SessionDescription* desc) const {
+    SessionDescription* desc,
+    IceCredentialsIterator* ice_credentials) const {
   cricket::SecurePolicy sdes_policy =
       IsDtlsActive(current_content, current_description) ? cricket::SEC_DISABLED
                                                          : secure();
@@ -1966,7 +1977,7 @@ bool MediaSessionDescriptionFactory::AddVideoContentForOffer(
                    media_description_options.stopped, video.release());
   if (!AddTransportOffer(media_description_options.mid,
                          media_description_options.transport_options,
-                         current_description, desc)) {
+                         current_description, desc, ice_credentials)) {
     return false;
   }
   return true;
@@ -1979,7 +1990,8 @@ bool MediaSessionDescriptionFactory::AddDataContentForOffer(
     const SessionDescription* current_description,
     const DataCodecs& data_codecs,
     StreamParamsVec* current_streams,
-    SessionDescription* desc) const {
+    SessionDescription* desc,
+    IceCredentialsIterator* ice_credentials) const {
   bool secure_transport = (transport_desc_factory_->secure() != SEC_DISABLED);
 
   std::unique_ptr<DataContentDescription> data(new DataContentDescription());
@@ -2033,7 +2045,7 @@ bool MediaSessionDescriptionFactory::AddDataContentForOffer(
   }
   if (!AddTransportOffer(media_description_options.mid,
                          media_description_options.transport_options,
-                         current_description, desc)) {
+                         current_description, desc, ice_credentials)) {
     return false;
   }
   return true;
@@ -2061,15 +2073,16 @@ bool MediaSessionDescriptionFactory::AddAudioContentForAnswer(
     const TransportInfo* bundle_transport,
     const AudioCodecs& audio_codecs,
     StreamParamsVec* current_streams,
-    SessionDescription* answer) const {
+    SessionDescription* answer,
+    IceCredentialsIterator* ice_credentials) const {
   RTC_CHECK(IsMediaContentOfType(offer_content, MEDIA_TYPE_AUDIO));
   const AudioContentDescription* offer_audio_description =
       offer_content->media_description()->as_audio();
 
-  std::unique_ptr<TransportDescription> audio_transport(
-      CreateTransportAnswer(media_description_options.mid, offer_description,
-                            media_description_options.transport_options,
-                            current_description, bundle_transport != nullptr));
+  std::unique_ptr<TransportDescription> audio_transport(CreateTransportAnswer(
+      media_description_options.mid, offer_description,
+      media_description_options.transport_options, current_description,
+      bundle_transport != nullptr, ice_credentials));
   if (!audio_transport) {
     return false;
   }
@@ -2155,15 +2168,16 @@ bool MediaSessionDescriptionFactory::AddVideoContentForAnswer(
     const TransportInfo* bundle_transport,
     const VideoCodecs& video_codecs,
     StreamParamsVec* current_streams,
-    SessionDescription* answer) const {
+    SessionDescription* answer,
+    IceCredentialsIterator* ice_credentials) const {
   RTC_CHECK(IsMediaContentOfType(offer_content, MEDIA_TYPE_VIDEO));
   const VideoContentDescription* offer_video_description =
       offer_content->media_description()->as_video();
 
-  std::unique_ptr<TransportDescription> video_transport(
-      CreateTransportAnswer(media_description_options.mid, offer_description,
-                            media_description_options.transport_options,
-                            current_description, bundle_transport != nullptr));
+  std::unique_ptr<TransportDescription> video_transport(CreateTransportAnswer(
+      media_description_options.mid, offer_description,
+      media_description_options.transport_options, current_description,
+      bundle_transport != nullptr, ice_credentials));
   if (!video_transport) {
     return false;
   }
@@ -2241,11 +2255,12 @@ bool MediaSessionDescriptionFactory::AddDataContentForAnswer(
     const TransportInfo* bundle_transport,
     const DataCodecs& data_codecs,
     StreamParamsVec* current_streams,
-    SessionDescription* answer) const {
-  std::unique_ptr<TransportDescription> data_transport(
-      CreateTransportAnswer(media_description_options.mid, offer_description,
-                            media_description_options.transport_options,
-                            current_description, bundle_transport != nullptr));
+    SessionDescription* answer,
+    IceCredentialsIterator* ice_credentials) const {
+  std::unique_ptr<TransportDescription> data_transport(CreateTransportAnswer(
+      media_description_options.mid, offer_description,
+      media_description_options.transport_options, current_description,
+      bundle_transport != nullptr, ice_credentials));
   if (!data_transport) {
     return false;
   }

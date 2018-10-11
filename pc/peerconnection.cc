@@ -3646,6 +3646,11 @@ void PeerConnection::GetOptionsForOffer(
   session_options->rtcp_cname = rtcp_cname_;
   session_options->crypto_options = factory_->options().crypto_options;
   session_options->is_unified_plan = IsUnifiedPlan();
+  session_options->pooled_ice_credentials =
+      network_thread()->Invoke<std::vector<cricket::IceParameters>>(
+          RTC_FROM_HERE,
+          rtc::Bind(&cricket::PortAllocator::GetPooledIceCredentials,
+                    port_allocator_.get()));
 }
 
 void PeerConnection::GetOptionsForPlanBOffer(
@@ -3906,6 +3911,11 @@ void PeerConnection::GetOptionsForAnswer(
   session_options->rtcp_cname = rtcp_cname_;
   session_options->crypto_options = factory_->options().crypto_options;
   session_options->is_unified_plan = IsUnifiedPlan();
+  session_options->pooled_ice_credentials =
+      network_thread()->Invoke<std::vector<cricket::IceParameters>>(
+          RTC_FROM_HERE,
+          rtc::Bind(&cricket::PortAllocator::GetPooledIceCredentials,
+                    port_allocator_.get()));
 }
 
 void PeerConnection::GetOptionsForPlanBAnswer(
