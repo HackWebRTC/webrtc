@@ -234,6 +234,21 @@ bool PeerConnectionFactory::Initialize() {
 
 void PeerConnectionFactory::SetOptions(const Options& options) {
   options_ = options;
+  // TODO(webrtc:9859) - Remove Chromium Compatibility once fix lands in
+  // Chromium
+  if (options.crypto_options.enable_gcm_crypto_suites.has_value()) {
+    options_.crypto_options.srtp.enable_gcm_crypto_suites =
+        *options.crypto_options.enable_gcm_crypto_suites;
+  }
+  if (options.crypto_options.enable_encrypted_rtp_header_extensions
+          .has_value()) {
+    options_.crypto_options.srtp.enable_encrypted_rtp_header_extensions =
+        *options.crypto_options.enable_encrypted_rtp_header_extensions;
+  }
+  if (options.crypto_options.enable_aes128_sha1_32_crypto_cipher.has_value()) {
+    options_.crypto_options.srtp.enable_aes128_sha1_32_crypto_cipher =
+        *options.crypto_options.enable_aes128_sha1_32_crypto_cipher;
+  }
 }
 
 RtpCapabilities PeerConnectionFactory::GetRtpSenderCapabilities(

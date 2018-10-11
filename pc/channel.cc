@@ -101,7 +101,7 @@ BaseChannel::BaseChannel(rtc::Thread* worker_thread,
                          std::unique_ptr<MediaChannel> media_channel,
                          const std::string& content_name,
                          bool srtp_required,
-                         rtc::CryptoOptions crypto_options)
+                         webrtc::CryptoOptions crypto_options)
     : worker_thread_(worker_thread),
       network_thread_(network_thread),
       signaling_thread_(signaling_thread),
@@ -673,7 +673,7 @@ bool BaseChannel::UpdateRemoteStreams_w(
 RtpHeaderExtensions BaseChannel::GetFilteredRtpHeaderExtensions(
     const RtpHeaderExtensions& extensions) {
   RTC_DCHECK(rtp_transport_);
-  if (crypto_options_.enable_encrypted_rtp_header_extensions) {
+  if (crypto_options_.srtp.enable_encrypted_rtp_header_extensions) {
     RtpHeaderExtensions filtered;
     auto pred = [](const webrtc::RtpExtension& extension) {
       return !extension.encrypt;
@@ -742,7 +742,7 @@ VoiceChannel::VoiceChannel(rtc::Thread* worker_thread,
                            std::unique_ptr<VoiceMediaChannel> media_channel,
                            const std::string& content_name,
                            bool srtp_required,
-                           rtc::CryptoOptions crypto_options)
+                           webrtc::CryptoOptions crypto_options)
     : BaseChannel(worker_thread,
                   network_thread,
                   signaling_thread,
@@ -881,7 +881,7 @@ VideoChannel::VideoChannel(rtc::Thread* worker_thread,
                            std::unique_ptr<VideoMediaChannel> media_channel,
                            const std::string& content_name,
                            bool srtp_required,
-                           rtc::CryptoOptions crypto_options)
+                           webrtc::CryptoOptions crypto_options)
     : BaseChannel(worker_thread,
                   network_thread,
                   signaling_thread,
@@ -1019,7 +1019,7 @@ RtpDataChannel::RtpDataChannel(rtc::Thread* worker_thread,
                                std::unique_ptr<DataMediaChannel> media_channel,
                                const std::string& content_name,
                                bool srtp_required,
-                               rtc::CryptoOptions crypto_options)
+                               webrtc::CryptoOptions crypto_options)
     : BaseChannel(worker_thread,
                   network_thread,
                   signaling_thread,

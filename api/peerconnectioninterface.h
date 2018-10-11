@@ -77,6 +77,7 @@
 #include "api/audio_codecs/audio_encoder_factory.h"
 #include "api/audio_options.h"
 #include "api/call/callfactoryinterface.h"
+#include "api/crypto/cryptooptions.h"
 #include "api/datachannelinterface.h"
 #include "api/fec_controller.h"
 #include "api/jsep.h"
@@ -1180,7 +1181,7 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
  public:
   class Options {
    public:
-    Options() : crypto_options(rtc::CryptoOptions::NoGcm()) {}
+    Options() {}
 
     // If set to true, created PeerConnections won't enforce any SRTP
     // requirement, allowing unsecured media. Should only be used for
@@ -1209,7 +1210,7 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
     rtc::SSLProtocolVersion ssl_max_version = rtc::SSL_PROTOCOL_DTLS_12;
 
     // Sets crypto related options, e.g. enabled cipher suites.
-    rtc::CryptoOptions crypto_options;
+    CryptoOptions crypto_options = CryptoOptions::NoGcm();
   };
 
   // Set the options to be used for subsequently created PeerConnections.

@@ -89,32 +89,6 @@ bool IsGcmCryptoSuiteName(const std::string& crypto_suite) {
           crypto_suite == CS_AEAD_AES_128_GCM);
 }
 
-// static
-CryptoOptions CryptoOptions::NoGcm() {
-  CryptoOptions options;
-  options.enable_gcm_crypto_suites = false;
-  return options;
-}
-
-std::vector<int> GetSupportedDtlsSrtpCryptoSuites(
-    const rtc::CryptoOptions& crypto_options) {
-  std::vector<int> crypto_suites;
-  if (crypto_options.enable_gcm_crypto_suites) {
-    crypto_suites.push_back(rtc::SRTP_AEAD_AES_256_GCM);
-    crypto_suites.push_back(rtc::SRTP_AEAD_AES_128_GCM);
-  }
-  // Note: SRTP_AES128_CM_SHA1_80 is what is required to be supported (by
-  // draft-ietf-rtcweb-security-arch), but SRTP_AES128_CM_SHA1_32 is allowed as
-  // well, and saves a few bytes per packet if it ends up selected.
-  // As the cipher suite is potentially insecure, it will only be used if
-  // enabled by both peers.
-  if (crypto_options.enable_aes128_sha1_32_crypto_cipher) {
-    crypto_suites.push_back(rtc::SRTP_AES128_CM_SHA1_32);
-  }
-  crypto_suites.push_back(rtc::SRTP_AES128_CM_SHA1_80);
-  return crypto_suites;
-}
-
 SSLStreamAdapter* SSLStreamAdapter::Create(StreamInterface* stream) {
   return new OpenSSLStreamAdapter(stream);
 }

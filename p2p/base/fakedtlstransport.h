@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "api/crypto/cryptooptions.h"
 #include "p2p/base/dtlstransportinternal.h"
 #include "p2p/base/fakeicetransport.h"
 #include "rtc_base/fakesslidentity.h"
@@ -149,10 +150,10 @@ class FakeDtlsTransport : public DtlsTransportInternal {
     *role = *dtls_role_;
     return true;
   }
-  const rtc::CryptoOptions& crypto_options() const override {
+  const webrtc::CryptoOptions& crypto_options() const override {
     return crypto_options_;
   }
-  void SetCryptoOptions(const rtc::CryptoOptions& crypto_options) {
+  void SetCryptoOptions(const webrtc::CryptoOptions& crypto_options) {
     crypto_options_ = crypto_options;
   }
   bool SetLocalCertificate(
@@ -272,7 +273,7 @@ class FakeDtlsTransport : public DtlsTransportInternal {
   rtc::SSLFingerprint dtls_fingerprint_;
   absl::optional<rtc::SSLRole> dtls_role_;
   int crypto_suite_ = rtc::SRTP_AES128_CM_SHA1_80;
-  rtc::CryptoOptions crypto_options_;
+  webrtc::CryptoOptions crypto_options_;
 
   DtlsTransportState dtls_state_ = DTLS_TRANSPORT_NEW;
 

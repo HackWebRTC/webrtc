@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "api/crypto/cryptooptions.h"
 #include "p2p/base/dtlstransportinternal.h"
 #include "p2p/base/icetransportinternal.h"
 #include "rtc_base/buffer.h"
@@ -96,13 +97,13 @@ class DtlsTransport : public DtlsTransportInternal {
   // whether GCM crypto suites are negotiated.
   // TODO(zhihuang): Remove this once we switch to JsepTransportController.
   explicit DtlsTransport(IceTransportInternal* ice_transport,
-                         const rtc::CryptoOptions& crypto_options);
+                         const webrtc::CryptoOptions& crypto_options);
   explicit DtlsTransport(std::unique_ptr<IceTransportInternal> ice_transport,
-                         const rtc::CryptoOptions& crypto_options);
+                         const webrtc::CryptoOptions& crypto_options);
 
   ~DtlsTransport() override;
 
-  const rtc::CryptoOptions& crypto_options() const override;
+  const webrtc::CryptoOptions& crypto_options() const override;
   DtlsTransportState dtls_state() const override;
   const std::string& transport_name() const override;
   int component() const override;
@@ -231,7 +232,7 @@ class DtlsTransport : public DtlsTransportInternal {
   rtc::scoped_refptr<rtc::RTCCertificate> local_certificate_;
   absl::optional<rtc::SSLRole> dtls_role_;
   rtc::SSLProtocolVersion ssl_max_version_;
-  rtc::CryptoOptions crypto_options_;
+  webrtc::CryptoOptions crypto_options_;
   rtc::Buffer remote_fingerprint_value_;
   std::string remote_fingerprint_algorithm_;
 
