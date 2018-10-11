@@ -70,6 +70,11 @@ bool DeactivateStationarityProperties() {
       "WebRTC-Aec3UseStationarityPropertiesKillSwitch");
 }
 
+bool DeactivateStationarityPropertiesAtInit() {
+  return field_trial::IsEnabled(
+      "WebRTC-Aec3UseStationarityPropertiesAtInitKillSwitch");
+}
+
 // Method for adjusting config parameter dependencies..
 EchoCanceller3Config AdjustConfig(const EchoCanceller3Config& config) {
   EchoCanceller3Config adjusted_cfg = config;
@@ -136,6 +141,10 @@ EchoCanceller3Config AdjustConfig(const EchoCanceller3Config& config) {
   adjusted_cfg.echo_audibility.use_stationary_properties = true;
   if (DeactivateStationarityProperties()) {
     adjusted_cfg.echo_audibility.use_stationary_properties = false;
+  }
+
+  if (DeactivateStationarityPropertiesAtInit()) {
+    adjusted_cfg.echo_audibility.use_stationarity_properties_at_init = false;
   }
 
   return adjusted_cfg;
