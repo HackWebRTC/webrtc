@@ -9,6 +9,7 @@
  */
 
 #include "rtc_base/asyncpacketsocket.h"
+#include "rtc_base/nethelper.h"
 
 namespace rtc {
 
@@ -33,6 +34,12 @@ void CopySocketInformationToPacketInfo(size_t packet_size_bytes,
                                        bool is_connectionless,
                                        rtc::PacketInfo* info) {
   info->packet_size_bytes = packet_size_bytes;
+  // TODO(srte): Make sure that the family of the local socket is always set
+  // in the VirtualSocket implementation and remove this check.
+  int family = socket_from.GetLocalAddress().family();
+  if (family != 0) {
+    info->ip_overhead_bytes = cricket::GetIpOverhead(family);
+  }
   info->local_socket_address = socket_from.GetLocalAddress();
   if (!is_connectionless) {
     info->remote_socket_address = socket_from.GetRemoteAddress();
