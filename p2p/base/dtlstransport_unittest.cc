@@ -47,8 +47,8 @@ void SetRemoteFingerprintFromCert(
     DtlsTransport* transport,
     const rtc::scoped_refptr<rtc::RTCCertificate>& cert,
     bool modify_digest = false) {
-  rtc::SSLFingerprint* fingerprint =
-      rtc::SSLFingerprint::CreateFromCertificate(cert);
+  std::unique_ptr<rtc::SSLFingerprint> fingerprint =
+      rtc::SSLFingerprint::CreateFromCertificate(*cert);
   if (modify_digest) {
     ++fingerprint->digest[0];
   }
@@ -57,7 +57,6 @@ void SetRemoteFingerprintFromCert(
       fingerprint->algorithm,
       reinterpret_cast<const uint8_t*>(fingerprint->digest.data()),
       fingerprint->digest.size()));
-  delete fingerprint;
 }
 
 class DtlsTestClient : public sigslot::has_slots<> {
