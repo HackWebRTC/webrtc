@@ -485,8 +485,6 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
       data_window = std::max(kMinCwnd, data_window);
     }
     current_data_window_ = data_window;
-    RTC_LOG(LS_INFO) << "Feedback rtt: " << min_feedback_max_rtt_ms
-                     << " Bitrate: " << last_bandwidth_.bps();
   }
   if (congestion_window_pushback_controller_ && current_data_window_) {
     congestion_window_pushback_controller_->SetDataWindow(
