@@ -8,13 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_CONGESTION_CONTROLLER_CONGESTION_WINDOW_PUSHBACK_CONTROLLER_H_
-#define MODULES_CONGESTION_CONTROLLER_CONGESTION_WINDOW_PUSHBACK_CONTROLLER_H_
+#ifndef MODULES_CONGESTION_CONTROLLER_GOOG_CC_CONGESTION_WINDOW_PUSHBACK_CONTROLLER_H_
+#define MODULES_CONGESTION_CONTROLLER_GOOG_CC_CONGESTION_WINDOW_PUSHBACK_CONTROLLER_H_
 
 #include "api/transport/network_types.h"
-#include "common_types.h"  // NOLINT(build/include)
-#include "rtc_base/criticalsection.h"
-#include "rtc_base/format_macros.h"
 
 namespace webrtc {
 
@@ -40,4 +37,4 @@ class CongestionWindowPushbackController {
 
 }  // namespace webrtc
 
-#endif  // MODULES_CONGESTION_CONTROLLER_CONGESTION_WINDOW_PUSHBACK_CONTROLLER_H_
+#endif  // MODULES_CONGESTION_CONTROLLER_GOOG_CC_CONGESTION_WINDOW_PUSHBACK_CONTROLLER_H_

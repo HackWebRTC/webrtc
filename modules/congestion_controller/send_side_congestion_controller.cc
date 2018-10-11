@@ -18,8 +18,8 @@
 
 #include "absl/memory/memory.h"
 #include "modules/bitrate_controller/include/bitrate_controller.h"
-#include "modules/congestion_controller/congestion_window_pushback_controller.h"
 #include "modules/congestion_controller/goog_cc/acknowledged_bitrate_estimator.h"
+#include "modules/congestion_controller/goog_cc/congestion_window_pushback_controller.h"
 #include "modules/congestion_controller/goog_cc/probe_controller.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "rtc_base/checks.h"

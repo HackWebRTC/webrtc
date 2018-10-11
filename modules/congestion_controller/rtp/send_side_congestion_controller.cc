@@ -17,7 +17,6 @@
 #include "absl/memory/memory.h"
 #include "api/transport/goog_cc_factory.h"
 #include "api/transport/network_types.h"
-#include "modules/congestion_controller/congestion_window_pushback_controller.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
@@ -39,13 +38,6 @@ namespace webrtc_cc {
 namespace {
 using send_side_cc_internal::PeriodicTask;
 
-const char kCwndExperiment[] = "WebRTC-CwndExperiment";
-
-// When CongestionWindowPushback is enabled, the pacer is oblivious to
-// the congestion window. The relation between outstanding data and
-// the congestion window affects encoder allocations directly.
-const char kCongestionPushbackExperiment[] = "WebRTC-CongestionWindowPushback";
-
 // When PacerPushbackExperiment is enabled, build-up in the pacer due to
 // the congestion window and/or data spikes reduces encoder allocations.
 const char kPacerPushbackExperiment[] = "WebRTC-PacerPushbackExperiment";
@@ -55,17 +47,6 @@ bool IsPacerPushbackExperimentEnabled() {
   return webrtc::field_trial::IsEnabled(kPacerPushbackExperiment);
 }
 
-bool IsCongestionWindowPushbackExperimentEnabled() {
-  return webrtc::field_trial::IsEnabled(kCongestionPushbackExperiment) &&
-         webrtc::field_trial::IsEnabled(kCwndExperiment);
-}
-
-std::unique_ptr<CongestionWindowPushbackController>
-MaybeInitalizeCongestionWindowPushbackController() {
-  return IsCongestionWindowPushbackExperimentEnabled()
-             ? absl::make_unique<CongestionWindowPushbackController>()
-             : nullptr;
-}
 
 void SortPacketFeedbackVector(std::vector<webrtc::PacketFeedback>* input) {
   std::sort(input->begin(), input->end(), PacketFeedbackComparator());
@@ -203,8 +184,6 @@ class ControlHandler {
   uint32_t min_pushback_target_bitrate_bps_;
   int64_t pacer_expected_queue_ms_ = 0;
   double encoding_rate_ratio_ = 1.0;
-  const std::unique_ptr<CongestionWindowPushbackController>
-      congestion_window_pushback_controller_;
 
   rtc::SequencedTaskChecker sequenced_checker_;
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(ControlHandler);
@@ -215,21 +194,14 @@ ControlHandler::ControlHandler(NetworkChangedObserver* observer,
                                const Clock* clock)
     : observer_(observer),
       pacer_controller_(pacer_controller),
-      pacer_pushback_experiment_(IsPacerPushbackExperimentEnabled()),
-      congestion_window_pushback_controller_(
-          MaybeInitalizeCongestionWindowPushbackController()) {
+      pacer_pushback_experiment_(IsPacerPushbackExperimentEnabled()) {
   sequenced_checker_.Detach();
 }
 
 void ControlHandler::PostUpdates(NetworkControlUpdate update) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
   if (update.congestion_window) {
-    if (congestion_window_pushback_controller_) {
-      congestion_window_pushback_controller_->SetDataWindow(
-          update.congestion_window.value());
-    } else {
-      pacer_controller_->OnCongestionWindow(*update.congestion_window);
-    }
+    pacer_controller_->OnCongestionWindow(*update.congestion_window);
   }
   if (update.pacer_config) {
     pacer_controller_->OnPacerConfig(*update.pacer_config);
@@ -251,10 +223,6 @@ void ControlHandler::OnNetworkAvailability(NetworkAvailability msg) {
 
 void ControlHandler::OnOutstandingData(DataSize in_flight_data) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
-  if (congestion_window_pushback_controller_) {
-    congestion_window_pushback_controller_->UpdateOutstandingData(
-        in_flight_data.bytes());
-  }
   OnNetworkInvalidation();
 }
 
@@ -283,10 +251,6 @@ void ControlHandler::OnNetworkInvalidation() {
 
   if (!network_available_) {
     target_bitrate_bps = 0;
-  } else if (congestion_window_pushback_controller_) {
-    target_bitrate_bps =
-        congestion_window_pushback_controller_->UpdateTargetBitrate(
-            target_bitrate_bps);
   } else if (!pacer_pushback_experiment_) {
     target_bitrate_bps = IsSendQueueFull() ? 0 : target_bitrate_bps;
   } else {
