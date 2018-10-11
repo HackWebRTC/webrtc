@@ -45,9 +45,6 @@ EchoCanceller3Config::Delay::Delay() = default;
 EchoCanceller3Config::Delay::Delay(const EchoCanceller3Config::Delay& e) =
     default;
 
-EchoCanceller3Config::Mask::Mask() = default;
-EchoCanceller3Config::Mask::Mask(const EchoCanceller3Config::Mask& m) = default;
-
 EchoCanceller3Config::EchoModel::EchoModel() = default;
 EchoCanceller3Config::EchoModel::EchoModel(
     const EchoCanceller3Config::EchoModel& e) = default;
@@ -157,22 +154,6 @@ bool EchoCanceller3Config::Validate(EchoCanceller3Config* config) {
   res = res && Limit(&c->ep_strength.mf, 0.f, 1000000.f);
   res = res && Limit(&c->ep_strength.hf, 0.f, 1000000.f);
   res = res && Limit(&c->ep_strength.default_len, 0.f, 1.f);
-
-  res = res && Limit(&c->gain_mask.m0, 0.f, 1.f);
-  res = res && Limit(&c->gain_mask.m1, 0.f, 1.f);
-  res = res && Limit(&c->gain_mask.m2, 0.f, 1.f);
-  res = res && Limit(&c->gain_mask.m3, 0.f, 1.f);
-  res = res && Limit(&c->gain_mask.m5, 0.f, 1.f);
-  res = res && Limit(&c->gain_mask.m6, 0.f, 1.f);
-  res = res && Limit(&c->gain_mask.m7, 0.f, 1.f);
-  res = res && Limit(&c->gain_mask.m8, 0.f, 1.f);
-  res = res && Limit(&c->gain_mask.m9, 0.f, 1.f);
-
-  res = res && Limit(&c->gain_mask.gain_curve_offset, 0.f, 1000.f);
-  res = res && Limit(&c->gain_mask.gain_curve_slope, 0.f, 1000.f);
-  res = res && Limit(&c->gain_mask.temporal_masking_lf, 0.f, 1000.f);
-  res = res && Limit(&c->gain_mask.temporal_masking_hf, 0.f, 1000.f);
-  res = res && Limit(&c->gain_mask.temporal_masking_lf_bands, 0, 65);
 
   res = res &&
         Limit(&c->echo_audibility.low_render_limit, 0.f, 32768.f * 32768.f);

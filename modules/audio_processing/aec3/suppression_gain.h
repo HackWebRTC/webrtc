@@ -137,7 +137,6 @@ class SuppressionGain {
   LowNoiseRenderDetector low_render_detector_;
   bool initial_state_ = true;
   int initial_state_change_counter_ = 0;
-  const bool enable_new_suppression_;
   aec3::MovingAverage moving_average_;
   const GainParameters nearend_params_;
   const GainParameters normal_params_;

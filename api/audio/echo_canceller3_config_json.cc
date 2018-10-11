@@ -192,26 +192,6 @@ EchoCanceller3Config Aec3ConfigFromJsonString(absl::string_view json_string) {
     ReadParam(section, "bounded_erl", &cfg.ep_strength.bounded_erl);
   }
 
-  if (rtc::GetValueFromJsonObject(aec3_root, "gain_mask", &section)) {
-    ReadParam(section, "m1", &cfg.gain_mask.m1);
-    ReadParam(section, "m2", &cfg.gain_mask.m2);
-    ReadParam(section, "m3", &cfg.gain_mask.m3);
-    ReadParam(section, "m5", &cfg.gain_mask.m5);
-    ReadParam(section, "m6", &cfg.gain_mask.m6);
-    ReadParam(section, "m7", &cfg.gain_mask.m7);
-    ReadParam(section, "m8", &cfg.gain_mask.m8);
-    ReadParam(section, "m9", &cfg.gain_mask.m9);
-
-    ReadParam(section, "gain_curve_offset", &cfg.gain_mask.gain_curve_offset);
-    ReadParam(section, "gain_curve_slope", &cfg.gain_mask.gain_curve_slope);
-    ReadParam(section, "temporal_masking_lf",
-              &cfg.gain_mask.temporal_masking_lf);
-    ReadParam(section, "temporal_masking_hf",
-              &cfg.gain_mask.temporal_masking_hf);
-    ReadParam(section, "temporal_masking_lf_bands",
-              &cfg.gain_mask.temporal_masking_lf_bands);
-  }
-
   if (rtc::GetValueFromJsonObject(aec3_root, "echo_audibility", &section)) {
     ReadParam(section, "low_render_limit",
               &cfg.echo_audibility.low_render_limit);
@@ -422,26 +402,6 @@ std::string Aec3ConfigToJsonString(const EchoCanceller3Config& config) {
   ost << "\"bounded_erl\": "
       << (config.ep_strength.bounded_erl ? "true" : "false");
 
-  ost << "},";
-
-  ost << "\"gain_mask\": {";
-  ost << "\"m0\": " << config.gain_mask.m0 << ",";
-  ost << "\"m1\": " << config.gain_mask.m1 << ",";
-  ost << "\"m2\": " << config.gain_mask.m2 << ",";
-  ost << "\"m3\": " << config.gain_mask.m3 << ",";
-  ost << "\"m5\": " << config.gain_mask.m5 << ",";
-  ost << "\"m6\": " << config.gain_mask.m6 << ",";
-  ost << "\"m7\": " << config.gain_mask.m7 << ",";
-  ost << "\"m8\": " << config.gain_mask.m8 << ",";
-  ost << "\"m9\": " << config.gain_mask.m9 << ",";
-  ost << "\"gain_curve_offset\": " << config.gain_mask.gain_curve_offset << ",";
-  ost << "\"gain_curve_slope\": " << config.gain_mask.gain_curve_slope << ",";
-  ost << "\"temporal_masking_lf\": " << config.gain_mask.temporal_masking_lf
-      << ",";
-  ost << "\"temporal_masking_hf\": " << config.gain_mask.temporal_masking_hf
-      << ",";
-  ost << "\"temporal_masking_lf_bands\": "
-      << config.gain_mask.temporal_masking_lf_bands;
   ost << "},";
 
   ost << "\"echo_audibility\": {";

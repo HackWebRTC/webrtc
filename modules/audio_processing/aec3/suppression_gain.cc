@@ -25,10 +25,6 @@
 namespace webrtc {
 namespace {
 
-bool EnableNewSuppression() {
-  return !field_trial::IsEnabled("WebRTC-Aec3NewSuppressionKillSwitch");
-}
-
 // Adjust the gains according to the presence of known external filters.
 void AdjustForExternalFilters(std::array<float, kFftLengthBy2Plus1>* gain) {
   // Limit the low frequency gains to avoid the impact of the high-pass filter
@@ -81,57 +77,6 @@ void WeightEchoForAudibility(const EchoCanceller3Config& config,
               config.echo_audibility.audibility_threshold_hf;
   normalizer = 1.f / (threshold - config.echo_audibility.floor_power);
   weigh(threshold, normalizer, 7, kFftLengthBy2Plus1, echo, weighted_echo);
-}
-
-// Computes the gain to reduce the echo to a non audible level.
-void GainToNoAudibleEchoFallback(
-    const EchoCanceller3Config& config,
-    bool low_noise_render,
-    bool saturated_echo,
-    bool linear_echo_estimate,
-    const std::array<float, kFftLengthBy2Plus1>& nearend,
-    const std::array<float, kFftLengthBy2Plus1>& weighted_echo,
-    const std::array<float, kFftLengthBy2Plus1>& masker,
-    const std::array<float, kFftLengthBy2Plus1>& min_gain,
-    const std::array<float, kFftLengthBy2Plus1>& max_gain,
-    const std::array<float, kFftLengthBy2Plus1>& one_by_weighted_echo,
-    std::array<float, kFftLengthBy2Plus1>* gain) {
-  float nearend_masking_margin = 0.f;
-  if (linear_echo_estimate) {
-    nearend_masking_margin =
-        low_noise_render
-            ? config.gain_mask.m9
-            : (saturated_echo ? config.gain_mask.m2 : config.gain_mask.m3);
-  } else {
-    nearend_masking_margin = config.gain_mask.m7;
-  }
-
-  RTC_DCHECK_LE(0.f, nearend_masking_margin);
-  RTC_DCHECK_GT(1.f, nearend_masking_margin);
-
-  const float masker_margin =
-      linear_echo_estimate ? config.gain_mask.m0 : config.gain_mask.m8;
-
-  for (size_t k = 0; k < gain->size(); ++k) {
-    // TODO(devicentepena): Experiment by removing the reverberation estimation
-    // from the nearend signal before computing the gains.
-    const float unity_gain_masker = std::max(nearend[k], masker[k]);
-    RTC_DCHECK_LE(0.f, nearend_masking_margin * unity_gain_masker);
-    if (weighted_echo[k] <= nearend_masking_margin * unity_gain_masker ||
-        unity_gain_masker <= 0.f) {
-      (*gain)[k] = 1.f;
-    } else {
-      RTC_DCHECK_LT(0.f, unity_gain_masker);
-      (*gain)[k] =
-          std::max(0.f, (1.f - config.gain_mask.gain_curve_slope *
-                                   weighted_echo[k] / unity_gain_masker) *
-                            config.gain_mask.gain_curve_offset);
-      (*gain)[k] = std::max(masker_margin * masker[k] * one_by_weighted_echo[k],
-                            (*gain)[k]);
-    }
-
-    (*gain)[k] = std::min(std::max((*gain)[k], min_gain[k]), max_gain[k]);
-  }
 }
 
 // TODO(peah): Make adaptive to take the actual filter error into account.
@@ -321,30 +266,9 @@ void SuppressionGain::LowerBandGain(
   std::array<float, kFftLengthBy2Plus1> max_gain;
   GetMaxGain(max_gain);
 
-  // Iteratively compute the gain required to attenuate the echo to a non
-  // noticeable level.
-
-  if (enable_new_suppression_) {
     GainToNoAudibleEcho(nearend, weighted_residual_echo, comfort_noise,
                         min_gain, max_gain, gain);
     AdjustForExternalFilters(gain);
-  } else {
-    const bool linear_echo_estimate = aec_state.UsableLinearEstimate();
-    std::array<float, kFftLengthBy2Plus1> masker;
-    std::array<float, kFftLengthBy2Plus1> one_by_weighted_echo;
-    std::transform(weighted_residual_echo.begin(), weighted_residual_echo.end(),
-                   one_by_weighted_echo.begin(),
-                   [](float e) { return e > 0.f ? 1.f / e : 1.f; });
-    gain->fill(0.f);
-    for (int k = 0; k < 2; ++k) {
-      std::copy(comfort_noise.begin(), comfort_noise.end(), masker.begin());
-      GainToNoAudibleEchoFallback(config_, low_noise_render, saturated_echo,
-                                  linear_echo_estimate, nearend,
-                                  weighted_residual_echo, masker, min_gain,
-                                  max_gain, one_by_weighted_echo, gain);
-      AdjustForExternalFilters(gain);
-    }
-  }
 
   // Adjust the gain for frequencies which have not yet converged.
   AdjustNonConvergedFrequencies(gain);
@@ -372,7 +296,6 @@ SuppressionGain::SuppressionGain(const EchoCanceller3Config& config,
       config_(config),
       state_change_duration_blocks_(
           static_cast<int>(config_.filter.config_change_duration_blocks)),
-      enable_new_suppression_(EnableNewSuppression()),
       moving_average_(kFftLengthBy2Plus1,
                       config.suppressor.nearend_average_blocks),
       nearend_params_(config_.suppressor.nearend_tuning),

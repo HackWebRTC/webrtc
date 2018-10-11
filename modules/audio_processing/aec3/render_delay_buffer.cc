@@ -35,14 +35,6 @@ bool EnableZeroExternalDelayHeadroom() {
       "WebRTC-Aec3ZeroExternalDelayHeadroomKillSwitch");
 }
 
-size_t GetDownSamplingFactor(const EchoCanceller3Config& config) {
-  // Do not use down sampling factor 8 if kill switch is triggered.
-  return (config.delay.down_sampling_factor == 8 &&
-          field_trial::IsEnabled("WebRTC-Aec3DownSamplingFactor8KillSwitch"))
-             ? 4
-             : config.delay.down_sampling_factor;
-}
-
 class RenderDelayBufferImpl final : public RenderDelayBuffer {
  public:
   RenderDelayBufferImpl(const EchoCanceller3Config& config, size_t num_bands);
@@ -177,7 +169,7 @@ RenderDelayBufferImpl::RenderDelayBufferImpl(const EchoCanceller3Config& config,
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
       optimization_(DetectOptimization()),
       config_(config),
-      down_sampling_factor_(GetDownSamplingFactor(config)),
+      down_sampling_factor_(config.delay.down_sampling_factor),
       use_zero_external_delay_headroom_(EnableZeroExternalDelayHeadroom()),
       sub_block_size_(static_cast<int>(down_sampling_factor_ > 0
                                            ? kBlockSize / down_sampling_factor_
