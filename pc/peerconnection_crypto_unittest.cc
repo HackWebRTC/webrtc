@@ -703,8 +703,8 @@ TEST_P(PeerConnectionCryptoTest, SessionErrorIfFingerprintInvalid) {
       invalid_answer->description()->GetTransportInfoByName(
           audio_content->name);
   ASSERT_TRUE(audio_transport_info);
-  audio_transport_info->description.identity_fingerprint =
-      rtc::SSLFingerprint::CreateFromCertificate(*other_certificate);
+  audio_transport_info->description.identity_fingerprint.reset(
+      rtc::SSLFingerprint::CreateFromCertificate(other_certificate));
 
   // Set the invalid answer and expect a fingerprint error.
   std::string error;

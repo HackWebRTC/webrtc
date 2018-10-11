@@ -1503,9 +1503,8 @@ class WebRtcSdpTest : public testing::Test {
   void AddFingerprint() {
     desc_.RemoveTransportInfoByName(kAudioContentName);
     desc_.RemoveTransportInfoByName(kVideoContentName);
-    rtc::SSLFingerprint fingerprint(
-        rtc::DIGEST_SHA_1,
-        rtc::MakeArrayView(kIdentityDigest, sizeof(kIdentityDigest)));
+    rtc::SSLFingerprint fingerprint(rtc::DIGEST_SHA_1, kIdentityDigest,
+                                    sizeof(kIdentityDigest));
     EXPECT_TRUE(desc_.AddTransportInfo(TransportInfo(
         kAudioContentName,
         TransportDescription(std::vector<std::string>(), kUfragVoice, kPwdVoice,

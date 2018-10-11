@@ -32,7 +32,7 @@ class FakeDtlsTransport : public DtlsTransportInternal {
       : ice_transport_(ice_transport),
         transport_name_(ice_transport->transport_name()),
         component_(ice_transport->component()),
-        dtls_fingerprint_("", rtc::ArrayView<const uint8_t>()) {
+        dtls_fingerprint_("", nullptr, 0) {
     RTC_DCHECK(ice_transport_);
     ice_transport_->SignalReadPacket.connect(
         this, &FakeDtlsTransport::OnIceTransportReadPacket);
@@ -44,7 +44,7 @@ class FakeDtlsTransport : public DtlsTransportInternal {
       : owned_ice_transport_(std::move(ice)),
         transport_name_(owned_ice_transport_->transport_name()),
         component_(owned_ice_transport_->component()),
-        dtls_fingerprint_("", rtc::ArrayView<const uint8_t>()) {
+        dtls_fingerprint_("", nullptr, 0) {
     ice_transport_ = owned_ice_transport_.get();
     ice_transport_->SignalReadPacket.connect(
         this, &FakeDtlsTransport::OnIceTransportReadPacket);
@@ -132,8 +132,7 @@ class FakeDtlsTransport : public DtlsTransportInternal {
   bool SetRemoteFingerprint(const std::string& alg,
                             const uint8_t* digest,
                             size_t digest_len) override {
-    dtls_fingerprint_ =
-        rtc::SSLFingerprint(alg, rtc::MakeArrayView(digest, digest_len));
+    dtls_fingerprint_ = rtc::SSLFingerprint(alg, digest, digest_len);
     return true;
   }
   bool SetSslMaxProtocolVersion(rtc::SSLProtocolVersion version) override {
