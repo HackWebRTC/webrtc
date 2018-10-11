@@ -40,10 +40,6 @@ void CopySocketInformationToPacketInfo(size_t packet_size_bytes,
   if (family != 0) {
     info->ip_overhead_bytes = cricket::GetIpOverhead(family);
   }
-  info->local_socket_address = socket_from.GetLocalAddress();
-  if (!is_connectionless) {
-    info->remote_socket_address = socket_from.GetRemoteAddress();
-  }
 }
 
 };  // namespace rtc

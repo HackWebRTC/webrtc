@@ -74,7 +74,6 @@ int AsyncUDPSocket::SendTo(const void* pv,
   rtc::SentPacket sent_packet(options.packet_id, rtc::TimeMillis(),
                               options.info_signaled_after_sent);
   CopySocketInformationToPacketInfo(cb, *this, true, &sent_packet.info);
-  sent_packet.info.remote_socket_address = addr;
   int ret = socket_->SendTo(pv, cb, addr);
   SignalSentPacket(this, sent_packet);
   return ret;

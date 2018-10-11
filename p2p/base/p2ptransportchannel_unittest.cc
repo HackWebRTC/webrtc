@@ -699,7 +699,6 @@ class P2PTransportChannelTestBase : public testing::Test,
     EXPECT_NE(info.packet_type, rtc::PacketType::kUnknown);
     EXPECT_NE(info.protocol, rtc::PacketInfoProtocolType::kUnknown);
     EXPECT_TRUE(info.network_id.has_value());
-    EXPECT_FALSE(info.local_socket_address.IsNil());
   }
 
   void OnReadyToSend(rtc::PacketTransportInternal* transport) {

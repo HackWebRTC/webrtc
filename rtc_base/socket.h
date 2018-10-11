@@ -154,8 +154,6 @@ struct PacketInfo {
   size_t packet_size_bytes = 0;
   size_t turn_overhead_bytes = 0;
   size_t ip_overhead_bytes = 0;
-  SocketAddress local_socket_address;
-  SocketAddress remote_socket_address;
 };
 
 struct SentPacket {
