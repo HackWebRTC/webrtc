@@ -20,6 +20,7 @@
 #include <set>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "api/mediatypes.h"
@@ -335,9 +336,10 @@ static bool ParseIceOptions(const std::string& line,
 static bool ParseExtmap(const std::string& line,
                         RtpExtension* extmap,
                         SdpParseError* error);
-static bool ParseFingerprintAttribute(const std::string& line,
-                                      rtc::SSLFingerprint** fingerprint,
-                                      SdpParseError* error);
+static bool ParseFingerprintAttribute(
+    const std::string& line,
+    std::unique_ptr<rtc::SSLFingerprint>* fingerprint,
+    SdpParseError* error);
 static bool ParseDtlsSetup(const std::string& line,
                            cricket::ConnectionRole* role,
                            SdpParseError* error);
@@ -2134,11 +2136,11 @@ bool ParseSessionDescription(const std::string& message,
             "Can't have multiple fingerprint attributes at the same level.",
             error);
       }
-      rtc::SSLFingerprint* fingerprint = NULL;
+      std::unique_ptr<rtc::SSLFingerprint> fingerprint;
       if (!ParseFingerprintAttribute(line, &fingerprint, error)) {
         return false;
       }
-      session_td->identity_fingerprint.reset(fingerprint);
+      session_td->identity_fingerprint = std::move(fingerprint);
     } else if (HasAttribute(line, kAttributeSetup)) {
       if (!ParseDtlsSetup(line, &(session_td->connection_role), error)) {
         return false;
@@ -2185,9 +2187,10 @@ bool ParseGroupAttribute(const std::string& line,
   return true;
 }
 
-static bool ParseFingerprintAttribute(const std::string& line,
-                                      rtc::SSLFingerprint** fingerprint,
-                                      SdpParseError* error) {
+static bool ParseFingerprintAttribute(
+    const std::string& line,
+    std::unique_ptr<rtc::SSLFingerprint>* fingerprint,
+    SdpParseError* error) {
   if (!IsLineType(line, kLineTypeAttributes) ||
       !HasAttribute(line, kAttributeFingerprint)) {
     return ParseFailedExpectLine(line, 0, kLineTypeAttributes,
@@ -2213,7 +2216,8 @@ static bool ParseFingerprintAttribute(const std::string& line,
                  ::tolower);
 
   // The second field is the digest value. De-hexify it.
-  *fingerprint = rtc::SSLFingerprint::CreateFromRfc4572(algorithm, fields[1]);
+  *fingerprint =
+      rtc::SSLFingerprint::CreateUniqueFromRfc4572(algorithm, fields[1]);
   if (!*fingerprint) {
     return ParseFailed(line, "Failed to create fingerprint from the digest.",
                        error);
@@ -2857,12 +2861,11 @@ bool ParseContent(const std::string& message,
         return false;
       }
     } else if (HasAttribute(line, kAttributeFingerprint)) {
-      rtc::SSLFingerprint* fingerprint = NULL;
-
+      std::unique_ptr<rtc::SSLFingerprint> fingerprint;
       if (!ParseFingerprintAttribute(line, &fingerprint, error)) {
         return false;
       }
-      transport->identity_fingerprint.reset(fingerprint);
+      transport->identity_fingerprint = std::move(fingerprint);
     } else if (HasAttribute(line, kAttributeSetup)) {
       if (!ParseDtlsSetup(line, &(transport->connection_role), error)) {
         return false;
