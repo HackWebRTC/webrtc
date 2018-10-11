@@ -363,8 +363,6 @@ VideoStreamEncoder::VideoStreamEncoder(
       max_framerate_(-1),
       pending_encoder_reconfiguration_(false),
       pending_encoder_creation_(false),
-      crop_width_(0),
-      crop_height_(0),
       encoder_start_bitrate_bps_(0),
       max_data_payload_length_(0),
       last_observed_bitrate_bps_(0),
@@ -378,7 +376,6 @@ VideoStreamEncoder::VideoStreamEncoder(
       last_frame_log_ms_(clock_->TimeInMilliseconds()),
       captured_frame_count_(0),
       dropped_frame_count_(0),
-      pending_frame_post_time_us_(0),
       bitrate_observer_(nullptr),
       encoder_queue_("EncoderQueue") {
   RTC_DCHECK(encoder_stats_observer);

@@ -11,7 +11,6 @@
 #include <memory>
 
 #include "absl/memory/memory.h"
-#include "api/test/mock_video_encoder.h"
 #include "api/test/videocodec_test_fixture.h"
 #include "api/video/i420_buffer.h"
 #include "common_types.h"  // NOLINT(build/include)

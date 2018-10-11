@@ -50,7 +50,6 @@ class VP8EncoderSimulcastProxy : public VideoEncoder {
 
   bool SupportsNativeHandle() const override;
   const char* ImplementationName() const override;
-  bool HasTrustedRateController() const override;
 
  private:
   VideoEncoderFactory* const factory_;

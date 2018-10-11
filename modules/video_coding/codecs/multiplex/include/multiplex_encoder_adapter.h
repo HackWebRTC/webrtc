@@ -51,7 +51,6 @@ class MultiplexEncoderAdapter : public VideoEncoder {
                         uint32_t new_framerate) override;
   int Release() override;
   const char* ImplementationName() const override;
-  bool HasTrustedRateController() const override;
 
   EncodedImageCallback::Result OnEncodedImage(
       AlphaCodecStream stream_idx,
@@ -82,8 +81,6 @@ class MultiplexEncoderAdapter : public VideoEncoder {
 
   const bool supports_augmented_data_;
   int augmenting_data_size_ = 0;
-
-  bool has_trusted_rate_controllers_;
 };
 
 }  // namespace webrtc

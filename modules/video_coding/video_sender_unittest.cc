@@ -11,7 +11,6 @@
 #include <memory>
 #include <vector>
 
-#include "api/test/mock_video_encoder.h"
 #include "api/video/i420_buffer.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/codecs/vp8/include/vp8_temporal_layers.h"
@@ -391,17 +390,6 @@ TEST_F(TestVideoSenderWithMockEncoder,
   sender_->SetChannelParameters(new_bitrate_bps, kLossRate, kRtt,
                                 rate_allocator_.get(), nullptr);
   AddFrame();
-}
-
-TEST_F(TestVideoSenderWithMockEncoder, ChecksTrustedRateController) {
-  // Checks that encoder is asked if rate controller is trusted.
-  EXPECT_CALL(encoder_, HasTrustedRateController())
-      .Times(1)
-      .WillOnce(Return(true));
-
-  VideoCodec codec;
-  webrtc::test::CodecSettings(kVideoCodecVP8, &codec);
-  EXPECT_EQ(0, sender_->RegisterSendCodec(&codec, 1, 1200));
 }
 
 class TestVideoSenderWithVp8 : public TestVideoSender {
