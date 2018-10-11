@@ -19,6 +19,7 @@
 #include "api/audio_codecs/audio_encoder.h"
 #include "api/audio_codecs/audio_format.h"
 #include "api/audio_codecs/g722/audio_encoder_g722_config.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
@@ -26,7 +27,7 @@ namespace webrtc {
 // CreateAudioEncoderFactory<...>().
 //
 // NOTE: This struct is still under development and may change without notice.
-struct AudioEncoderG722 {
+struct RTC_EXPORT AudioEncoderG722 {
   using Config = AudioEncoderG722Config;
   static absl::optional<AudioEncoderG722Config> SdpToConfig(
       const SdpAudioFormat& audio_format);

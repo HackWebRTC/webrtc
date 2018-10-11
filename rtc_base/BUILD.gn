@@ -507,6 +507,7 @@ rtc_source_set("rtc_task_queue_api") {
   deps = [
     ":macromagic",
     ":ptr_util",
+    "system:rtc_export",
     "//third_party/abseil-cpp/absl/memory",
   ]
 }

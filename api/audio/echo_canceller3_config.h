@@ -13,10 +13,12 @@
 
 #include <stddef.h>  // size_t
 
+#include "rtc_base/system/rtc_export.h"
+
 namespace webrtc {
 
 // Configuration struct for EchoCanceller3
-struct EchoCanceller3Config {
+struct RTC_EXPORT EchoCanceller3Config {
   // Checks and updates the parameters in a config to lie within reasonable
   // ranges. Returns true if and only of the config did not need to be changed.
   static bool Validate(EchoCanceller3Config* config);
