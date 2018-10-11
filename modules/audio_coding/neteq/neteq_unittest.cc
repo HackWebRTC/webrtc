@@ -1740,7 +1740,7 @@ TEST(NetEqNoTimeStretchingMode, RunTest) {
       {8, kRtpExtensionVideoTiming}};
   std::unique_ptr<NetEqInput> input(new NetEqRtpDumpInput(
       webrtc::test::ResourcePath("audio_coding/neteq_universal_new", "rtp"),
-      rtp_ext_map));
+      rtp_ext_map, absl::nullopt /*No SSRC filter*/));
   std::unique_ptr<TimeLimitedNetEqInput> input_time_limit(
       new TimeLimitedNetEqInput(std::move(input), 20000));
   std::unique_ptr<AudioSink> output(new VoidAudioSink);

@@ -309,24 +309,26 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
       {FLAG_video_content_type, kRtpExtensionVideoContentType},
       {FLAG_video_timing, kRtpExtensionVideoTiming}};
 
+  absl::optional<uint32_t> ssrc_filter;
+  // Check if an SSRC value was provided.
+  if (strlen(FLAG_ssrc) > 0) {
+    uint32_t ssrc;
+    RTC_CHECK(ParseSsrc(FLAG_ssrc, &ssrc)) << "Flag verification has failed.";
+    ssrc_filter = ssrc;
+  }
+
   std::unique_ptr<NetEqInput> input;
   if (RtpFileSource::ValidRtpDump(input_file_name) ||
       RtpFileSource::ValidPcap(input_file_name)) {
-    input.reset(new NetEqRtpDumpInput(input_file_name, rtp_ext_map));
+    input.reset(
+        new NetEqRtpDumpInput(input_file_name, rtp_ext_map, ssrc_filter));
   } else {
-    input.reset(new NetEqEventLogInput(input_file_name, rtp_ext_map));
+    input.reset(new NetEqEventLogInput(input_file_name, ssrc_filter));
   }
 
   std::cout << "Input file: " << input_file_name << std::endl;
   RTC_CHECK(input) << "Cannot open input file";
   RTC_CHECK(!input->ended()) << "Input file is empty";
-
-  // Check if an SSRC value was provided.
-  if (strlen(FLAG_ssrc) > 0) {
-    uint32_t ssrc;
-    RTC_CHECK(ParseSsrc(FLAG_ssrc, &ssrc)) << "Flag verification has failed.";
-    static_cast<NetEqPacketSourceInput*>(input.get())->SelectSsrc(ssrc);
-  }
 
   // Check the sample rate.
   absl::optional<int> sample_rate_hz;
