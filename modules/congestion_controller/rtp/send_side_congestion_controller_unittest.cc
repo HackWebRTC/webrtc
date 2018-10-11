@@ -108,8 +108,11 @@ class SendSideCongestionControllerTest : public ::testing::Test {
     controller_->AddPacket(ssrc, packet_feedback.sequence_number,
                            packet_feedback.payload_size,
                            packet_feedback.pacing_info);
+    rtc::PacketInfo packet_info;
+    packet_info.included_in_feedback = true;
     controller_->OnSentPacket(rtc::SentPacket(packet_feedback.sequence_number,
-                                              packet_feedback.send_time_ms));
+                                              packet_feedback.send_time_ms,
+                                              packet_info));
   }
 
   // Allows us to track the target bitrate, without prescribing the exact

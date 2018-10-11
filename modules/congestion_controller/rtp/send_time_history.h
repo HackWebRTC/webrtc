@@ -29,6 +29,8 @@ class SendTimeHistory {
   // Cleanup old entries, then add new packet info with provided parameters.
   void AddAndRemoveOld(const PacketFeedback& packet);
 
+  void AddUntracked(size_t packet_size, int64_t send_time_ms);
+
   // Updates packet info identified by |sequence_number| with |send_time_ms|.
   // Return false if not found.
   bool OnSentPacket(uint16_t sequence_number, int64_t send_time_ms);
@@ -52,6 +54,9 @@ class SendTimeHistory {
   void UpdateAckedSeqNum(int64_t acked_seq_num);
   const Clock* const clock_;
   const int64_t packet_age_limit_ms_;
+  size_t pending_untracked_size_ = 0;
+  int64_t last_send_time_ms_ = -1;
+  int64_t last_untracked_send_time_ms_ = -1;
   SequenceNumberUnwrapper seq_num_unwrapper_;
   std::map<int64_t, PacketFeedback> history_;
   absl::optional<int64_t> last_ack_seq_num_;

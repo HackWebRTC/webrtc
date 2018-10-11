@@ -547,26 +547,28 @@ void SendSideCongestionController::SignalNetworkState(NetworkState state) {
 
 void SendSideCongestionController::OnSentPacket(
     const rtc::SentPacket& sent_packet) {
-  // We're not interested in packets without an id, which may be stun packets,
-  // etc, sent on the same transport.
-  if (sent_packet.packet_id == -1)
-    return;
-  transport_feedback_adapter_.OnSentPacket(sent_packet.packet_id,
-                                           sent_packet.send_time_ms);
-  MaybeUpdateOutstandingData();
-  auto packet = transport_feedback_adapter_.GetPacket(sent_packet.packet_id);
-  if (packet.has_value()) {
-    SentPacket msg;
-    msg.size = DataSize::bytes(packet->payload_size);
-    msg.send_time = Timestamp::ms(packet->send_time_ms);
-    msg.sequence_number = packet->long_sequence_number;
-    msg.data_in_flight =
-        DataSize::bytes(transport_feedback_adapter_.GetOutstandingBytes());
-    task_queue_->PostTask([this, msg]() {
-      RTC_DCHECK_RUN_ON(task_queue_);
-      if (controller_)
-        control_handler_->PostUpdates(controller_->OnSentPacket(msg));
-    });
+  if (sent_packet.packet_id != -1) {
+    transport_feedback_adapter_.OnSentPacket(sent_packet.packet_id,
+                                             sent_packet.send_time_ms);
+    MaybeUpdateOutstandingData();
+    auto packet = transport_feedback_adapter_.GetPacket(sent_packet.packet_id);
+    if (packet.has_value()) {
+      SentPacket msg;
+      msg.size = DataSize::bytes(packet->payload_size);
+      msg.send_time = Timestamp::ms(packet->send_time_ms);
+      msg.sequence_number = packet->long_sequence_number;
+      msg.prior_unacked_data = DataSize::bytes(packet->unacknowledged_data);
+      msg.data_in_flight =
+          DataSize::bytes(transport_feedback_adapter_.GetOutstandingBytes());
+      task_queue_->PostTask([this, msg]() {
+        RTC_DCHECK_RUN_ON(task_queue_);
+        if (controller_)
+          control_handler_->PostUpdates(controller_->OnSentPacket(msg));
+      });
+    }
+  } else if (sent_packet.info.included_in_allocation) {
+    transport_feedback_adapter_.AddUntracked(sent_packet.info.packet_size_bytes,
+                                             sent_packet.send_time_ms);
   }
 }
 

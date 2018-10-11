@@ -77,6 +77,12 @@ void TransportFeedbackAdapter::AddPacket(uint32_t ssrc,
   }
 }
 
+void TransportFeedbackAdapter::AddUntracked(size_t packet_size,
+                                            int64_t send_time_ms) {
+  rtc::CritScope cs(&lock_);
+  send_time_history_.AddUntracked(packet_size, send_time_ms);
+}
+
 void TransportFeedbackAdapter::OnSentPacket(uint16_t sequence_number,
                                             int64_t send_time_ms) {
   rtc::CritScope cs(&lock_);
