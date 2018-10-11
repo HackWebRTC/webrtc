@@ -22,7 +22,7 @@ namespace webrtc {
 
 class RoundRobinPacketQueue {
  public:
-  explicit RoundRobinPacketQueue(const Clock* clock);
+  explicit RoundRobinPacketQueue(int64_t start_time_us);
   ~RoundRobinPacketQueue();
 
   struct Packet {
@@ -105,7 +105,7 @@ class RoundRobinPacketQueue {
   // Just used to verify correctness.
   bool IsSsrcScheduled(uint32_t ssrc) const;
 
-  int64_t time_last_updated_;
+  int64_t time_last_updated_ms_;
   absl::optional<Packet> pop_packet_;
   absl::optional<Stream*> pop_stream_;
 
