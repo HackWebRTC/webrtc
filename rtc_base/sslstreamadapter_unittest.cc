@@ -588,8 +588,7 @@ class SSLStreamAdapterTestBase : public testing::Test,
       chain = client_ssl_->GetPeerSSLCertChain();
     else
       chain = server_ssl_->GetPeerSSLCertChain();
-    return (chain && chain->GetSize()) ? chain->Get(0).GetUniqueReference()
-                                       : nullptr;
+    return (chain && chain->GetSize()) ? chain->Get(0).Clone() : nullptr;
   }
 
   bool GetSslCipherSuite(bool client, int* retval) {

@@ -1091,7 +1091,7 @@ bool OpenSSLStreamAdapter::VerifyPeerCertificate() {
 
 std::unique_ptr<SSLCertChain> OpenSSLStreamAdapter::GetPeerSSLCertChain()
     const {
-  return peer_cert_chain_ ? peer_cert_chain_->UniqueCopy() : nullptr;
+  return peer_cert_chain_ ? peer_cert_chain_->Clone() : nullptr;
 }
 
 int OpenSSLStreamAdapter::SSLVerifyCallback(X509_STORE_CTX* store, void* arg) {
