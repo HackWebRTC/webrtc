@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_VIDEO_CODING_CODECS_VP8_INCLUDE_VP8_TEMPORAL_LAYERS_H_
-#define MODULES_VIDEO_CODING_CODECS_VP8_INCLUDE_VP8_TEMPORAL_LAYERS_H_
+#ifndef API_VIDEO_CODECS_VP8_TEMPORAL_LAYERS_H_
+#define API_VIDEO_CODECS_VP8_TEMPORAL_LAYERS_H_
 
 #include <memory>
 #include <vector>
@@ -17,8 +17,8 @@
 namespace webrtc {
 
 // Some notes on the prerequisites of the TemporalLayers interface.
-// * Implementations of TemporalLayers may not contain internal synchronization
-//   so caller must make sure doing so thread safe.
+// * Vp8TemporalLayers is not thread safe, synchronization is the caller's
+//   responsibility.
 // * The encoder is assumed to encode all frames in order, and callbacks to
 //   PopulateCodecSpecific() / FrameEncoded() must happen in the same order.
 //
@@ -36,15 +36,13 @@ namespace webrtc {
 // FrameEncoded() for a previous one, but calls themselves must be both
 // synchronized (e.g. run on a task queue) and in order (per type).
 
-enum class TemporalLayersType { kFixedPattern, kBitrateDynamic };
+// Two different flavors of temporal layers are currently available:
+// kFixedPattern uses a fixed repeating pattern of 1-4 layers.
+// kBitrateDynamic can allocate frames dynamically to 1 or 2 layers, based on
+// the bitrate produced.
+enum class Vp8TemporalLayersType { kFixedPattern, kBitrateDynamic };
 
 struct CodecSpecificInfoVP8;
-enum class Vp8BufferReference : uint8_t {
-  kNone = 0,
-  kLast = 1,
-  kGolden = 2,
-  kAltref = 4
-};
 
 struct Vp8EncoderConfig {
   static constexpr size_t kMaxPeriodicity = 16;
@@ -72,9 +70,17 @@ struct Vp8EncoderConfig {
   uint32_t rc_max_quantizer;
 };
 
+// Defined bit-maskable reference to the three buffers available in VP8.
+enum class Vp8BufferReference : uint8_t {
+  kNone = 0,
+  kLast = 1,
+  kGolden = 2,
+  kAltref = 4
+};
+
 // This interface defines a way of getting the encoder settings needed to
-// realize a temporal layer structure of predefined size.
-class TemporalLayers {
+// realize a temporal layer structure.
+class Vp8TemporalLayers {
  public:
   enum BufferFlags : int {
     kNone = 0,
@@ -124,9 +130,6 @@ class TemporalLayers {
     Vp8BufferReference first_reference;
     Vp8BufferReference second_reference;
 
-    bool operator==(const FrameConfig& o) const;
-    bool operator!=(const FrameConfig& o) const { return !(*this == o); }
-
    private:
     FrameConfig(BufferFlags last,
                 BufferFlags golden,
@@ -134,13 +137,7 @@ class TemporalLayers {
                 bool freeze_entropy);
   };
 
-  // Factory for TemporalLayer strategy. Default behavior is a fixed pattern
-  // of temporal layers. See default_temporal_layers.cc
-  static std::unique_ptr<TemporalLayers> CreateTemporalLayers(
-      TemporalLayersType type,
-      int num_temporal_layers);
-
-  virtual ~TemporalLayers() = default;
+  virtual ~Vp8TemporalLayers() = default;
 
   // If this method returns true, the encoder is free to drop frames for
   // instance in an effort to uphold encoding bitrate.
@@ -195,4 +192,4 @@ class TemporalLayers {
 
 }  // namespace webrtc
 
-#endif  // MODULES_VIDEO_CODING_CODECS_VP8_INCLUDE_VP8_TEMPORAL_LAYERS_H_
+#endif  // API_VIDEO_CODECS_VP8_TEMPORAL_LAYERS_H_

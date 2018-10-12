@@ -541,6 +541,7 @@ rtc_source_set("fake_video_codecs") {
     "..:webrtc_common",
     "../api/video:encoded_image",
     "../api/video:video_frame_i420",
+    "../api/video_codecs:create_vp8_temporal_layers",
     "../api/video_codecs:video_codecs_api",
     "../common_video:common_video",
     "../modules/video_coding:video_codec_interface",

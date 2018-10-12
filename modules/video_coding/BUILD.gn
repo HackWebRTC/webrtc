@@ -393,22 +393,13 @@ rtc_static_library("webrtc_vp8") {
   visibility = [ "*" ]
   poisonous = [ "software_video_codecs" ]
   sources = [
-    "codecs/vp8/default_temporal_layers.cc",
-    "codecs/vp8/default_temporal_layers.h",
-    "codecs/vp8/include/temporal_layers_checker.h",
     "codecs/vp8/include/vp8.h",
-    "codecs/vp8/include/vp8_temporal_layers.h",
     "codecs/vp8/libvpx_interface.cc",
     "codecs/vp8/libvpx_interface.h",
     "codecs/vp8/libvpx_vp8_decoder.cc",
     "codecs/vp8/libvpx_vp8_decoder.h",
     "codecs/vp8/libvpx_vp8_encoder.cc",
     "codecs/vp8/libvpx_vp8_encoder.h",
-    "codecs/vp8/screenshare_layers.cc",
-    "codecs/vp8/screenshare_layers.h",
-    "codecs/vp8/temporal_layers.h",
-    "codecs/vp8/temporal_layers_checker.cc",
-    "codecs/vp8/vp8_temporal_layers.cc",
   ]
 
   if (!build_with_chromium && is_clang) {
@@ -420,10 +411,12 @@ rtc_static_library("webrtc_vp8") {
     ":codec_globals_headers",
     ":video_codec_interface",
     ":video_coding_utility",
+    ":webrtc_vp8_temporal_layers",
     "..:module_api",
     "../..:webrtc_common",
     "../../api/video:encoded_image",
     "../../api/video:video_frame",
+    "../../api/video_codecs:create_vp8_temporal_layers",
     "../../api/video_codecs:video_codecs_api",
     "../../common_video",
     "../../rtc_base:checks",
@@ -439,6 +432,41 @@ rtc_static_library("webrtc_vp8") {
   if (rtc_build_libvpx) {
     deps += [ rtc_libvpx_dir ]
   }
+}
+
+rtc_static_library("webrtc_vp8_temporal_layers") {
+  visibility = [ "*" ]
+  sources = [
+    "codecs/vp8/default_temporal_layers.cc",
+    "codecs/vp8/default_temporal_layers.h",
+    "codecs/vp8/include/temporal_layers_checker.h",
+    "codecs/vp8/screenshare_layers.cc",
+    "codecs/vp8/screenshare_layers.h",
+    "codecs/vp8/temporal_layers.h",
+    "codecs/vp8/temporal_layers_checker.cc",
+  ]
+
+  if (!build_with_chromium && is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+  }
+
+  deps = [
+    ":codec_globals_headers",
+    ":video_codec_interface",
+    ":video_coding_utility",
+    "..:module_api",
+    "../..:webrtc_common",
+    "../../api/video_codecs:video_codecs_api",
+    "../../rtc_base:checks",
+    "../../rtc_base:rtc_base_approved",
+    "../../rtc_base:rtc_numerics",
+    "../../system_wrappers",
+    "../../system_wrappers:field_trial",
+    "../../system_wrappers:metrics",
+    "//third_party/abseil-cpp/absl/memory",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
 }
 
 # This target includes VP9 files that may be used for any VP9 codec, internal SW or external HW.
@@ -848,6 +876,7 @@ if (rtc_include_tests) {
       ":videocodec_test_impl",
       ":webrtc_h264",
       ":webrtc_vp8",
+      ":webrtc_vp8_temporal_layers",
       ":webrtc_vp9",
       ":webrtc_vp9_helpers",
       "..:module_api",
@@ -858,6 +887,7 @@ if (rtc_include_tests) {
       "../../api/video:video_bitrate_allocator",
       "../../api/video:video_frame",
       "../../api/video:video_frame_i420",
+      "../../api/video_codecs:create_vp8_temporal_layers",
       "../../api/video_codecs:video_codecs_api",
       "../../common_video:common_video",
       "../../media:rtc_media_base",

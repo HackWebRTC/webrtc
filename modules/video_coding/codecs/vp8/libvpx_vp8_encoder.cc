@@ -14,6 +14,8 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "api/video_codecs/create_vp8_temporal_layers.h"
+#include "api/video_codecs/vp8_temporal_layers.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/video_coding/codecs/vp8/libvpx_vp8_encoder.h"
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"
@@ -113,7 +115,7 @@ static void FillInEncoderConfig(vpx_codec_enc_cfg* vpx_config,
   vpx_config->rc_max_quantizer = config.rc_max_quantizer;
 }
 
-bool UpdateVpxConfiguration(TemporalLayers* temporal_layers,
+bool UpdateVpxConfiguration(Vp8TemporalLayers* temporal_layers,
                             vpx_codec_enc_cfg_t* cfg) {
   Vp8EncoderConfig config = GetEncoderConfig(cfg);
   const bool res = temporal_layers->UpdateConfiguration(&config);
@@ -129,22 +131,22 @@ std::unique_ptr<VideoEncoder> VP8Encoder::Create() {
 }
 
 vpx_enc_frame_flags_t LibvpxVp8Encoder::EncodeFlags(
-    const TemporalLayers::FrameConfig& references) {
+    const Vp8TemporalLayers::FrameConfig& references) {
   RTC_DCHECK(!references.drop_frame);
 
   vpx_enc_frame_flags_t flags = 0;
 
-  if ((references.last_buffer_flags & TemporalLayers::kReference) == 0)
+  if ((references.last_buffer_flags & Vp8TemporalLayers::kReference) == 0)
     flags |= VP8_EFLAG_NO_REF_LAST;
-  if ((references.last_buffer_flags & TemporalLayers::kUpdate) == 0)
+  if ((references.last_buffer_flags & Vp8TemporalLayers::kUpdate) == 0)
     flags |= VP8_EFLAG_NO_UPD_LAST;
-  if ((references.golden_buffer_flags & TemporalLayers::kReference) == 0)
+  if ((references.golden_buffer_flags & Vp8TemporalLayers::kReference) == 0)
     flags |= VP8_EFLAG_NO_REF_GF;
-  if ((references.golden_buffer_flags & TemporalLayers::kUpdate) == 0)
+  if ((references.golden_buffer_flags & Vp8TemporalLayers::kUpdate) == 0)
     flags |= VP8_EFLAG_NO_UPD_GF;
-  if ((references.arf_buffer_flags & TemporalLayers::kReference) == 0)
+  if ((references.arf_buffer_flags & Vp8TemporalLayers::kReference) == 0)
     flags |= VP8_EFLAG_NO_REF_ARF;
-  if ((references.arf_buffer_flags & TemporalLayers::kUpdate) == 0)
+  if ((references.arf_buffer_flags & Vp8TemporalLayers::kUpdate) == 0)
     flags |= VP8_EFLAG_NO_UPD_ARF;
   if (references.freeze_entropy)
     flags |= VP8_EFLAG_NO_UPD_ENTROPY;
@@ -167,7 +169,6 @@ LibvpxVp8Encoder::LibvpxVp8Encoder(std::unique_ptr<LibvpxInterface> interface)
       rc_max_intra_target_(0),
       key_frame_request_(kMaxSimulcastStreams, false) {
   temporal_layers_.reserve(kMaxSimulcastStreams);
-  temporal_layers_checkers_.reserve(kMaxSimulcastStreams);
   raw_images_.reserve(kMaxSimulcastStreams);
   encoded_images_.reserve(kMaxSimulcastStreams);
   send_stream_.reserve(kMaxSimulcastStreams);
@@ -206,7 +207,6 @@ int LibvpxVp8Encoder::Release() {
     raw_images_.pop_back();
   }
   temporal_layers_.clear();
-  temporal_layers_checkers_.clear();
   inited_ = false;
   return ret_val;
 }
@@ -294,21 +294,18 @@ void LibvpxVp8Encoder::SetupTemporalLayers(const VideoCodec& codec) {
   RTC_DCHECK(temporal_layers_.empty());
   int num_streams = SimulcastUtility::NumberOfSimulcastStreams(codec);
   for (int i = 0; i < num_streams; ++i) {
-    TemporalLayersType type;
+    Vp8TemporalLayersType type;
     int num_temporal_layers =
         SimulcastUtility::NumberOfTemporalLayers(codec, i);
     if (SimulcastUtility::IsConferenceModeScreenshare(codec) && i == 0) {
-      type = TemporalLayersType::kBitrateDynamic;
+      type = Vp8TemporalLayersType::kBitrateDynamic;
       // Legacy screenshare layers supports max 2 layers.
       num_temporal_layers = std::max<int>(2, num_temporal_layers);
     } else {
-      type = TemporalLayersType::kFixedPattern;
+      type = Vp8TemporalLayersType::kFixedPattern;
     }
     temporal_layers_.emplace_back(
-        TemporalLayers::CreateTemporalLayers(type, num_temporal_layers));
-    temporal_layers_checkers_.emplace_back(
-        TemporalLayersChecker::CreateTemporalLayersChecker(
-            type, num_temporal_layers));
+        CreateVp8TemporalLayers(type, num_temporal_layers));
   }
 }
 
@@ -750,7 +747,7 @@ int LibvpxVp8Encoder::Encode(const VideoFrame& frame,
     }
   }
   vpx_enc_frame_flags_t flags[kMaxSimulcastStreams];
-  TemporalLayers::FrameConfig tl_configs[kMaxSimulcastStreams];
+  Vp8TemporalLayers::FrameConfig tl_configs[kMaxSimulcastStreams];
   for (size_t i = 0; i < encoders_.size(); ++i) {
     tl_configs[i] = temporal_layers_[i]->UpdateLayerConfig(frame.timestamp());
     if (tl_configs[i].drop_frame) {

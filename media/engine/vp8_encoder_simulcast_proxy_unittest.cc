@@ -10,12 +10,11 @@
  */
 
 #include "media/engine/vp8_encoder_simulcast_proxy.h"
-
 #include <string>
 
 #include "api/test/mock_video_encoder_factory.h"
+#include "api/video_codecs/vp8_temporal_layers.h"
 #include "media/engine/webrtcvideoencoderfactory.h"
-#include "modules/video_coding/codecs/vp8/include/vp8_temporal_layers.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "test/gmock.h"
 #include "test/gtest.h"

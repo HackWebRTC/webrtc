@@ -12,10 +12,10 @@
 
 #include <memory>
 
+#include "api/video_codecs/vp8_temporal_layers.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/video_coding/codecs/test/video_codec_unittest.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
-#include "modules/video_coding/codecs/vp8/include/vp8_temporal_layers.h"
 #include "modules/video_coding/codecs/vp8/libvpx_vp8_encoder.h"
 #include "modules/video_coding/codecs/vp8/test/mock_libvpx_interface.h"
 #include "modules/video_coding/include/mock/mock_video_codec_interface.h"
