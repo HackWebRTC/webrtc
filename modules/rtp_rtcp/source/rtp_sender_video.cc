@@ -422,6 +422,16 @@ bool RTPSenderVideo::SendVideo(enum VideoCodecType video_type,
   limits.last_packet_reduction_len =
       last_packet->headers_size() - middle_packet->headers_size();
 
+  // TODO(bugs.webrtc.org/9868, bugs.webrtc.org/7990): Calculate correctly:
+  // Single packet might need more space for extensions than sum of first and
+  // last packet reductions when two byte header extension is used. It also may
+  // need more even for one-byte header extension because of padding.
+  // e.g. if middle_packet uses 5 bytes for extensions, it is padded to 8.
+  // if first_packet and last_packet use 2 bytes for extensions each, reduction
+  // would be 0 for both of them, but single packet would need 4 extra bytes.
+  limits.single_packet_reduction_len =
+      limits.first_packet_reduction_len + limits.last_packet_reduction_len;
+
   RTPVideoHeader minimized_video_header;
   const RTPVideoHeader* packetize_video_header = video_header;
   if (first_packet->HasExtension<RtpGenericFrameDescriptorExtension>() &&
@@ -451,12 +461,8 @@ bool RTPSenderVideo::SendVideo(enum VideoCodecType video_type,
       packet = create_packet();
       AddRtpHeaderExtensions(*video_header, frame_type, set_video_rotation,
                              /*first=*/true, /*last=*/true, packet.get());
-      // TODO(bugs.webrtc.org/7990): Revisit this case when two byte header
-      // extension are implemented because then single packet might need more
-      // space for extensions than sum of first and last packet reductions.
-      expected_payload_capacity = limits.max_payload_len -
-                                  limits.first_packet_reduction_len -
-                                  limits.last_packet_reduction_len;
+      expected_payload_capacity =
+          limits.max_payload_len - limits.single_packet_reduction_len;
     } else if (i == 0) {
       packet = std::move(first_packet);
       expected_payload_capacity =

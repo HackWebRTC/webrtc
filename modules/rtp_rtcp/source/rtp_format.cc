@@ -63,6 +63,11 @@ std::vector<int> RtpPacketizer::SplitAboutEqually(
   RTC_DCHECK_GE(limits.last_packet_reduction_len, 0);
 
   std::vector<int> result;
+  if (limits.max_payload_len >=
+      limits.single_packet_reduction_len + payload_len) {
+    result.push_back(payload_len);
+    return result;
+  }
   if (limits.max_payload_len - limits.first_packet_reduction_len < 1 ||
       limits.max_payload_len - limits.last_packet_reduction_len < 1) {
     // Capacity is not enough to put a single byte into one of the packets.
@@ -77,6 +82,10 @@ std::vector<int> RtpPacketizer::SplitAboutEqually(
   // Integer divisions with rounding up.
   int num_packets_left =
       (total_bytes + limits.max_payload_len - 1) / limits.max_payload_len;
+  if (num_packets_left == 1) {
+    // Single packet is a special case handled above.
+    num_packets_left = 2;
+  }
 
   if (payload_len < num_packets_left) {
     // Edge case where limits force to have more packets than there are payload

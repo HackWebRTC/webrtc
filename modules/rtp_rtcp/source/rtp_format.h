@@ -30,6 +30,8 @@ class RtpPacketizer {
     int max_payload_len = 1200;
     int first_packet_reduction_len = 0;
     int last_packet_reduction_len = 0;
+    // Reduction len for packet that is first & last at the same time.
+    int single_packet_reduction_len = 0;
   };
   static std::unique_ptr<RtpPacketizer> Create(
       VideoCodecType type,
