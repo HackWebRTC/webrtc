@@ -56,6 +56,7 @@
 #include "rtc_base/synchronization/rw_lock_wrapper.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread_annotations.h"
+#include "rtc_base/timeutils.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/cpu_info.h"
@@ -1215,8 +1216,10 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
 
   if (packet_time_us != -1) {
     if (receive_time_calculator_) {
+      int64_t system_time_us =
+          rtc::SystemTimeNanos() / rtc::kNumNanosecsPerMicrosec;
       packet_time_us = receive_time_calculator_->ReconcileReceiveTimes(
-          packet_time_us, clock_->TimeInMicroseconds());
+          packet_time_us, system_time_us, clock_->TimeInMicroseconds());
     }
     parsed_packet.set_arrival_time_ms((packet_time_us + 500) / 1000);
   } else {
