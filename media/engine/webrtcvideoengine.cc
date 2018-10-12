@@ -1417,8 +1417,13 @@ void WebRtcVideoChannel::OnNetworkRouteChanged(
       network_route.packet_overhead);
 }
 
-void WebRtcVideoChannel::SetInterface(NetworkInterface* iface) {
-  MediaChannel::SetInterface(iface);
+void WebRtcVideoChannel::SetInterface(
+    NetworkInterface* iface,
+    webrtc::MediaTransportInterface* media_transport) {
+  // TODO(sukhanov): Video is not currently supported with media transport.
+  RTC_CHECK(media_transport == nullptr);
+
+  MediaChannel::SetInterface(iface, media_transport);
   // Set the RTP recv/send buffer to a bigger size.
 
   // The group here can be either a positive integer with an explicit size, in

@@ -915,6 +915,22 @@ class PeerConnection : public PeerConnectionInternal,
   // Returns the observer. Will crash on CHECK if the observer is removed.
   PeerConnectionObserver* Observer() const;
 
+  // Returns rtp transport, result can not be nullptr.
+  RtpTransportInternal* GetRtpTransport(const std::string& mid) {
+    auto rtp_transport = transport_controller_->GetRtpTransport(mid);
+    RTC_DCHECK(rtp_transport);
+    return rtp_transport;
+  }
+
+  // Returns media transport, if PeerConnection was created with configuration
+  // to use media transport. Otherwise returns nullptr.
+  MediaTransportInterface* GetMediaTransport(const std::string& mid) {
+    auto media_transport = transport_controller_->GetMediaTransport(mid);
+    RTC_DCHECK(configuration_.use_media_transport ==
+               (media_transport != nullptr));
+    return media_transport;
+  }
+
   sigslot::signal1<DataChannel*> SignalDataChannelCreated_;
 
   // Storing the factory as a scoped reference pointer ensures that the memory
