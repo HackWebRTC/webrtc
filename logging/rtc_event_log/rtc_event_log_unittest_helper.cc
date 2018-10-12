@@ -471,7 +471,7 @@ EventGenerator::NewVideoSendStreamConfig(
 
 bool VerifyLoggedAlrStateEvent(const RtcEventAlrState& original_event,
                                const LoggedAlrStateEvent& logged_event) {
-  if (original_event.timestamp_us_ != logged_event.log_time_us())
+  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
     return false;
   if (original_event.in_alr_ != logged_event.in_alr)
     return false;
@@ -481,7 +481,7 @@ bool VerifyLoggedAlrStateEvent(const RtcEventAlrState& original_event,
 bool VerifyLoggedAudioPlayoutEvent(
     const RtcEventAudioPlayout& original_event,
     const LoggedAudioPlayoutEvent& logged_event) {
-  if (original_event.timestamp_us_ != logged_event.log_time_us())
+  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
     return false;
   if (original_event.ssrc_ != logged_event.ssrc)
     return false;
@@ -491,7 +491,7 @@ bool VerifyLoggedAudioPlayoutEvent(
 bool VerifyLoggedAudioNetworkAdaptationEvent(
     const RtcEventAudioNetworkAdaptation& original_event,
     const LoggedAudioNetworkAdaptationEvent& logged_event) {
-  if (original_event.timestamp_us_ != logged_event.log_time_us())
+  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
     return false;
 
   if (original_event.config_->bitrate_bps != logged_event.config.bitrate_bps)
@@ -515,7 +515,7 @@ bool VerifyLoggedAudioNetworkAdaptationEvent(
 bool VerifyLoggedBweDelayBasedUpdate(
     const RtcEventBweUpdateDelayBased& original_event,
     const LoggedBweDelayBasedUpdate& logged_event) {
-  if (original_event.timestamp_us_ != logged_event.log_time_us())
+  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
     return false;
   if (original_event.bitrate_bps_ != logged_event.bitrate_bps)
     return false;
@@ -527,7 +527,7 @@ bool VerifyLoggedBweDelayBasedUpdate(
 bool VerifyLoggedBweLossBasedUpdate(
     const RtcEventBweUpdateLossBased& original_event,
     const LoggedBweLossBasedUpdate& logged_event) {
-  if (original_event.timestamp_us_ != logged_event.log_time_us())
+  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
     return false;
   if (original_event.bitrate_bps_ != logged_event.bitrate_bps)
     return false;
@@ -541,7 +541,7 @@ bool VerifyLoggedBweLossBasedUpdate(
 bool VerifyLoggedBweProbeClusterCreatedEvent(
     const RtcEventProbeClusterCreated& original_event,
     const LoggedBweProbeClusterCreatedEvent& logged_event) {
-  if (original_event.timestamp_us_ != logged_event.log_time_us())
+  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
     return false;
   if (original_event.id_ != logged_event.id)
     return false;
@@ -558,7 +558,7 @@ bool VerifyLoggedBweProbeClusterCreatedEvent(
 bool VerifyLoggedBweProbeFailureEvent(
     const RtcEventProbeResultFailure& original_event,
     const LoggedBweProbeFailureEvent& logged_event) {
-  if (original_event.timestamp_us_ != logged_event.log_time_us())
+  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
     return false;
   if (original_event.id_ != logged_event.id)
     return false;
@@ -570,7 +570,7 @@ bool VerifyLoggedBweProbeFailureEvent(
 bool VerifyLoggedBweProbeSuccessEvent(
     const RtcEventProbeResultSuccess& original_event,
     const LoggedBweProbeSuccessEvent& logged_event) {
-  if (original_event.timestamp_us_ != logged_event.log_time_us())
+  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
     return false;
   if (original_event.id_ != logged_event.id)
     return false;
@@ -582,7 +582,7 @@ bool VerifyLoggedBweProbeSuccessEvent(
 bool VerifyLoggedIceCandidatePairConfig(
     const RtcEventIceCandidatePairConfig& original_event,
     const LoggedIceCandidatePairConfig& logged_event) {
-  if (original_event.timestamp_us_ != logged_event.log_time_us())
+  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
     return false;
 
   if (original_event.type_ != logged_event.type)
@@ -617,7 +617,7 @@ bool VerifyLoggedIceCandidatePairConfig(
 bool VerifyLoggedIceCandidatePairEvent(
     const RtcEventIceCandidatePair& original_event,
     const LoggedIceCandidatePairEvent& logged_event) {
-  if (original_event.timestamp_us_ != logged_event.log_time_us())
+  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
     return false;
 
   if (original_event.type_ != logged_event.type)
@@ -716,7 +716,7 @@ bool VerifyLoggedRtpHeader(const RtpPacket& original_header,
 bool VerifyLoggedRtpPacketIncoming(
     const RtcEventRtpPacketIncoming& original_event,
     const LoggedRtpPacketIncoming& logged_event) {
-  if (original_event.timestamp_us_ != logged_event.log_time_us())
+  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
     return false;
 
   if (original_event.header_.headers_size() != logged_event.rtp.header_length)
@@ -744,7 +744,7 @@ bool VerifyLoggedRtpPacketIncoming(
 bool VerifyLoggedRtpPacketOutgoing(
     const RtcEventRtpPacketOutgoing& original_event,
     const LoggedRtpPacketOutgoing& logged_event) {
-  if (original_event.timestamp_us_ != logged_event.log_time_us())
+  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
     return false;
 
   if (original_event.header_.headers_size() != logged_event.rtp.header_length)
@@ -775,7 +775,7 @@ bool VerifyLoggedRtpPacketOutgoing(
 bool VerifyLoggedRtcpPacketIncoming(
     const RtcEventRtcpPacketIncoming& original_event,
     const LoggedRtcpPacketIncoming& logged_event) {
-  if (original_event.timestamp_us_ != logged_event.log_time_us())
+  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
     return false;
 
   if (original_event.packet_.size() != logged_event.rtcp.raw_data.size())
@@ -790,7 +790,7 @@ bool VerifyLoggedRtcpPacketIncoming(
 bool VerifyLoggedRtcpPacketOutgoing(
     const RtcEventRtcpPacketOutgoing& original_event,
     const LoggedRtcpPacketOutgoing& logged_event) {
-  if (original_event.timestamp_us_ != logged_event.log_time_us())
+  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
     return false;
 
   if (original_event.packet_.size() != logged_event.rtcp.raw_data.size())
@@ -804,14 +804,14 @@ bool VerifyLoggedRtcpPacketOutgoing(
 
 bool VerifyLoggedStartEvent(int64_t start_time_us,
                             const LoggedStartEvent& logged_event) {
-  if (start_time_us != logged_event.log_time_us())
+  if (start_time_us / 1000 != logged_event.log_time_ms())
     return false;
   return true;
 }
 
 bool VerifyLoggedStopEvent(int64_t stop_time_us,
                            const LoggedStopEvent& logged_event) {
-  if (stop_time_us != logged_event.log_time_us())
+  if (stop_time_us / 1000 != logged_event.log_time_ms())
     return false;
   return true;
 }
@@ -819,7 +819,7 @@ bool VerifyLoggedStopEvent(int64_t stop_time_us,
 bool VerifyLoggedAudioRecvConfig(
     const RtcEventAudioReceiveStreamConfig& original_event,
     const LoggedAudioRecvConfig& logged_event) {
-  if (original_event.timestamp_us_ != logged_event.log_time_us())
+  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
     return false;
   if (*original_event.config_ != logged_event.config)
     return false;
@@ -829,7 +829,7 @@ bool VerifyLoggedAudioRecvConfig(
 bool VerifyLoggedAudioSendConfig(
     const RtcEventAudioSendStreamConfig& original_event,
     const LoggedAudioSendConfig& logged_event) {
-  if (original_event.timestamp_us_ != logged_event.log_time_us())
+  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
     return false;
   if (*original_event.config_ != logged_event.config)
     return false;
@@ -839,7 +839,7 @@ bool VerifyLoggedAudioSendConfig(
 bool VerifyLoggedVideoRecvConfig(
     const RtcEventVideoReceiveStreamConfig& original_event,
     const LoggedVideoRecvConfig& logged_event) {
-  if (original_event.timestamp_us_ != logged_event.log_time_us())
+  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
     return false;
   if (*original_event.config_ != logged_event.config)
     return false;
@@ -849,7 +849,7 @@ bool VerifyLoggedVideoRecvConfig(
 bool VerifyLoggedVideoSendConfig(
     const RtcEventVideoSendStreamConfig& original_event,
     const LoggedVideoSendConfig& logged_event) {
-  if (original_event.timestamp_us_ != logged_event.log_time_us())
+  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
     return false;
   // TODO(terelius): In the past, we allowed storing multiple RtcStreamConfigs
   // in the same RtcEventVideoSendStreamConfig. Look into whether we should drop
