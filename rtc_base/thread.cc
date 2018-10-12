@@ -33,6 +33,32 @@
 #include "rtc_base/timeutils.h"
 #include "rtc_base/trace_event.h"
 
+#if defined(WEBRTC_MAC)
+#include "rtc_base/system/cocoa_threading.h"
+/*
+ * These are forward-declarations for methods that are part of the
+ * ObjC runtime. They are declared in the private header objc-internal.h.
+ * These calls are what clang inserts when using @autoreleasepool in ObjC,
+ * but here they are used directly in order to keep this file C++.
+ * https://clang.llvm.org/docs/AutomaticReferenceCounting.html#runtime-support
+ */
+extern "C" {
+void* objc_autoreleasePoolPush(void);
+void objc_autoreleasePoolPop(void* pool);
+}
+
+namespace {
+class ScopedAutoReleasePool {
+ public:
+  ScopedAutoReleasePool() : pool_(objc_autoreleasePoolPush()) {}
+  ~ScopedAutoReleasePool() { objc_autoreleasePoolPop(pool_); }
+
+ private:
+  void* const pool_;
+};
+}  // namespace
+#endif
+
 namespace rtc {
 
 ThreadManager* ThreadManager::Instance() {
@@ -62,11 +88,12 @@ Thread* Thread::Current() {
 }
 
 #if defined(WEBRTC_POSIX)
-#if !defined(WEBRTC_MAC)
 ThreadManager::ThreadManager() : main_thread_ref_(CurrentThreadRef()) {
+#if defined(WEBRTC_MAC)
+  InitCocoaMultiThreading();
+#endif
   pthread_key_create(&key_, nullptr);
 }
-#endif
 
 Thread* ThreadManager::CurrentThread() {
   return static_cast<Thread*>(pthread_getspecific(key_));
@@ -301,7 +328,6 @@ void Thread::AssertBlockingIsAllowedOnCurrentThread() {
 }
 
 // static
-#if !defined(WEBRTC_MAC)
 #if defined(WEBRTC_WIN)
 DWORD WINAPI Thread::PreRun(LPVOID pv) {
 #else
@@ -310,6 +336,9 @@ void* Thread::PreRun(void* pv) {
   ThreadInit* init = static_cast<ThreadInit*>(pv);
   ThreadManager::Instance()->SetCurrentThread(init->thread);
   rtc::SetCurrentThreadName(init->thread->name_.c_str());
+#if defined(WEBRTC_MAC)
+  ScopedAutoReleasePool pool;
+#endif
   if (init->runnable) {
     init->runnable->Run(init->thread);
   } else {
@@ -323,7 +352,6 @@ void* Thread::PreRun(void* pv) {
   return nullptr;
 #endif
 }
-#endif
 
 void Thread::Run() {
   ProcessMessages(kForever);
@@ -486,9 +514,6 @@ void Thread::Clear(MessageHandler* phandler,
   ClearInternal(phandler, id, removed);
 }
 
-#if !defined(WEBRTC_MAC)
-// Note that these methods have a separate implementation for mac and ios
-// defined in webrtc/rtc_base/thread_darwin.mm.
 bool Thread::ProcessMessages(int cmsLoop) {
   // Using ProcessMessages with a custom clock for testing and a time greater
   // than 0 doesn't work, since it's not guaranteed to advance the custom
@@ -499,6 +524,9 @@ bool Thread::ProcessMessages(int cmsLoop) {
   int cmsNext = cmsLoop;
 
   while (true) {
+#if defined(WEBRTC_MAC)
+    ScopedAutoReleasePool pool;
+#endif
     Message msg;
     if (!Get(&msg, cmsNext))
       return !IsQuitting();
@@ -511,7 +539,6 @@ bool Thread::ProcessMessages(int cmsLoop) {
     }
   }
 }
-#endif
 
 bool Thread::WrapCurrentWithThreadManager(ThreadManager* thread_manager,
                                           bool need_synchronize_access) {
