@@ -1073,8 +1073,7 @@ static bool CreateMediaContentAnswer(
   answer->AddCodecs(negotiated_codecs);
   answer->set_protocol(offer->protocol());
 
-  answer->set_mixed_one_two_byte_header_extensions_supported(
-      offer->mixed_one_two_byte_header_extensions_supported());
+  answer->set_extmap_allow_mixed_headers(offer->extmap_allow_mixed_headers());
   RtpHeaderExtensions negotiated_rtp_extensions;
   NegotiateRtpHeaderExtensions(
       local_rtp_extenstions, offer->rtp_header_extensions(),
@@ -1408,8 +1407,7 @@ SessionDescription* MediaSessionDescriptionFactory::CreateAnswer(
   // Transport info shared by the bundle group.
   std::unique_ptr<TransportInfo> bundle_transport;
 
-  answer->set_mixed_one_two_byte_header_extensions_supported(
-      offer->mixed_one_two_byte_header_extensions_supported());
+  answer->set_extmap_allow_mixed_headers(offer->extmap_allow_mixed_headers());
 
   // Get list of all possible codecs that respects existing payload type
   // mappings and uses a single payload type space.

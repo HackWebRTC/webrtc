@@ -293,6 +293,7 @@ if (rtc_include_tests) {
       "rtcpmuxfilter_unittest.cc",
       "rtptransport_unittest.cc",
       "rtptransporttestutil.h",
+      "sessiondescription_unittest.cc",
       "srtpfilter_unittest.cc",
       "srtpsession_unittest.cc",
       "srtptestutil.h",
