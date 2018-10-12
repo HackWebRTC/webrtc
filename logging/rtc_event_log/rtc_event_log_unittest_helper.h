@@ -110,78 +110,78 @@ class EventGenerator {
   Random prng_;
 };
 
-bool VerifyLoggedAlrStateEvent(const RtcEventAlrState& original_event,
+void VerifyLoggedAlrStateEvent(const RtcEventAlrState& original_event,
                                const LoggedAlrStateEvent& logged_event);
 
-bool VerifyLoggedAudioPlayoutEvent(const RtcEventAudioPlayout& original_event,
+void VerifyLoggedAudioPlayoutEvent(const RtcEventAudioPlayout& original_event,
                                    const LoggedAudioPlayoutEvent& logged_event);
 
-bool VerifyLoggedAudioNetworkAdaptationEvent(
+void VerifyLoggedAudioNetworkAdaptationEvent(
     const RtcEventAudioNetworkAdaptation& original_event,
     const LoggedAudioNetworkAdaptationEvent& logged_event);
 
-bool VerifyLoggedBweDelayBasedUpdate(
+void VerifyLoggedBweDelayBasedUpdate(
     const RtcEventBweUpdateDelayBased& original_event,
     const LoggedBweDelayBasedUpdate& logged_event);
 
-bool VerifyLoggedBweLossBasedUpdate(
+void VerifyLoggedBweLossBasedUpdate(
     const RtcEventBweUpdateLossBased& original_event,
     const LoggedBweLossBasedUpdate& logged_event);
 
-bool VerifyLoggedBweProbeClusterCreatedEvent(
+void VerifyLoggedBweProbeClusterCreatedEvent(
     const RtcEventProbeClusterCreated& original_event,
     const LoggedBweProbeClusterCreatedEvent& logged_event);
 
-bool VerifyLoggedBweProbeFailureEvent(
+void VerifyLoggedBweProbeFailureEvent(
     const RtcEventProbeResultFailure& original_event,
     const LoggedBweProbeFailureEvent& logged_event);
 
-bool VerifyLoggedBweProbeSuccessEvent(
+void VerifyLoggedBweProbeSuccessEvent(
     const RtcEventProbeResultSuccess& original_event,
     const LoggedBweProbeSuccessEvent& logged_event);
 
-bool VerifyLoggedIceCandidatePairConfig(
+void VerifyLoggedIceCandidatePairConfig(
     const RtcEventIceCandidatePairConfig& original_event,
     const LoggedIceCandidatePairConfig& logged_event);
 
-bool VerifyLoggedIceCandidatePairEvent(
+void VerifyLoggedIceCandidatePairEvent(
     const RtcEventIceCandidatePair& original_event,
     const LoggedIceCandidatePairEvent& logged_event);
 
-bool VerifyLoggedRtpPacketIncoming(
+void VerifyLoggedRtpPacketIncoming(
     const RtcEventRtpPacketIncoming& original_event,
     const LoggedRtpPacketIncoming& logged_event);
 
-bool VerifyLoggedRtpPacketOutgoing(
+void VerifyLoggedRtpPacketOutgoing(
     const RtcEventRtpPacketOutgoing& original_event,
     const LoggedRtpPacketOutgoing& logged_event);
 
-bool VerifyLoggedRtcpPacketIncoming(
+void VerifyLoggedRtcpPacketIncoming(
     const RtcEventRtcpPacketIncoming& original_event,
     const LoggedRtcpPacketIncoming& logged_event);
 
-bool VerifyLoggedRtcpPacketOutgoing(
+void VerifyLoggedRtcpPacketOutgoing(
     const RtcEventRtcpPacketOutgoing& original_event,
     const LoggedRtcpPacketOutgoing& logged_event);
 
-bool VerifyLoggedStartEvent(int64_t start_time_us,
+void VerifyLoggedStartEvent(int64_t start_time_us,
                             const LoggedStartEvent& logged_event);
-bool VerifyLoggedStopEvent(int64_t stop_time_us,
+void VerifyLoggedStopEvent(int64_t stop_time_us,
                            const LoggedStopEvent& logged_event);
 
-bool VerifyLoggedAudioRecvConfig(
+void VerifyLoggedAudioRecvConfig(
     const RtcEventAudioReceiveStreamConfig& original_event,
     const LoggedAudioRecvConfig& logged_event);
 
-bool VerifyLoggedAudioSendConfig(
+void VerifyLoggedAudioSendConfig(
     const RtcEventAudioSendStreamConfig& original_event,
     const LoggedAudioSendConfig& logged_event);
 
-bool VerifyLoggedVideoRecvConfig(
+void VerifyLoggedVideoRecvConfig(
     const RtcEventVideoReceiveStreamConfig& original_event,
     const LoggedVideoRecvConfig& logged_event);
 
-bool VerifyLoggedVideoSendConfig(
+void VerifyLoggedVideoSendConfig(
     const RtcEventVideoSendStreamConfig& original_event,
     const LoggedVideoSendConfig& logged_event);
 

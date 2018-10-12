@@ -75,7 +75,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventAlrState) {
   const auto& alr_state_events = parsed_log_.alr_state_events();
 
   ASSERT_EQ(alr_state_events.size(), 1u);
-  EXPECT_TRUE(test::VerifyLoggedAlrStateEvent(*event, alr_state_events[0]));
+  test::VerifyLoggedAlrStateEvent(*event, alr_state_events[0]);
 }
 
 void RtcEventLogEncoderTest::TestRtcEventAudioNetworkAdaptation(
@@ -186,7 +186,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventAudioPlayout) {
   ASSERT_TRUE(playout_stream != playout_events.end());
   ASSERT_EQ(playout_stream->second.size(), 1u);
   LoggedAudioPlayoutEvent playout_event = playout_stream->second[0];
-  EXPECT_TRUE(test::VerifyLoggedAudioPlayoutEvent(*event, playout_event));
+  test::VerifyLoggedAudioPlayoutEvent(*event, playout_event);
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventAudioReceiveStreamConfig) {
@@ -201,7 +201,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventAudioReceiveStreamConfig) {
   const auto& audio_recv_configs = parsed_log_.audio_recv_configs();
 
   ASSERT_EQ(audio_recv_configs.size(), 1u);
-  EXPECT_TRUE(test::VerifyLoggedAudioRecvConfig(*event, audio_recv_configs[0]));
+  test::VerifyLoggedAudioRecvConfig(*event, audio_recv_configs[0]);
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventAudioSendStreamConfig) {
@@ -216,7 +216,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventAudioSendStreamConfig) {
   const auto& audio_send_configs = parsed_log_.audio_send_configs();
 
   ASSERT_EQ(audio_send_configs.size(), 1u);
-  EXPECT_TRUE(test::VerifyLoggedAudioSendConfig(*event, audio_send_configs[0]));
+  test::VerifyLoggedAudioSendConfig(*event, audio_send_configs[0]);
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventBweUpdateDelayBased) {
@@ -229,8 +229,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventBweUpdateDelayBased) {
   const auto& bwe_delay_updates = parsed_log_.bwe_delay_updates();
 
   ASSERT_EQ(bwe_delay_updates.size(), 1u);
-  EXPECT_TRUE(
-      test::VerifyLoggedBweDelayBasedUpdate(*event, bwe_delay_updates[0]));
+  test::VerifyLoggedBweDelayBasedUpdate(*event, bwe_delay_updates[0]);
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventBweUpdateLossBased) {
@@ -243,8 +242,8 @@ TEST_P(RtcEventLogEncoderTest, RtcEventBweUpdateLossBased) {
   const auto& bwe_loss_updates = parsed_log_.bwe_loss_updates();
 
   ASSERT_EQ(bwe_loss_updates.size(), 1u);
-  EXPECT_TRUE(
-      test::VerifyLoggedBweLossBasedUpdate(*event, bwe_loss_updates[0]));
+
+  test::VerifyLoggedBweLossBasedUpdate(*event, bwe_loss_updates[0]);
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventIceCandidatePairConfig) {
@@ -258,8 +257,8 @@ TEST_P(RtcEventLogEncoderTest, RtcEventIceCandidatePairConfig) {
       parsed_log_.ice_candidate_pair_configs();
 
   ASSERT_EQ(ice_candidate_pair_configs.size(), 1u);
-  EXPECT_TRUE(test::VerifyLoggedIceCandidatePairConfig(
-      *event, ice_candidate_pair_configs[0]));
+  test::VerifyLoggedIceCandidatePairConfig(*event,
+                                           ice_candidate_pair_configs[0]);
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventIceCandidatePair) {
@@ -272,8 +271,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventIceCandidatePair) {
       parsed_log_.ice_candidate_pair_events();
 
   ASSERT_EQ(ice_candidate_pair_events.size(), 1u);
-  EXPECT_TRUE(test::VerifyLoggedIceCandidatePairEvent(
-      *event, ice_candidate_pair_events[0]));
+  test::VerifyLoggedIceCandidatePairEvent(*event, ice_candidate_pair_events[0]);
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventLoggingStarted) {
@@ -307,8 +305,8 @@ TEST_P(RtcEventLogEncoderTest, RtcEventProbeClusterCreated) {
       parsed_log_.bwe_probe_cluster_created_events();
 
   ASSERT_EQ(bwe_probe_cluster_created_events.size(), 1u);
-  EXPECT_TRUE(test::VerifyLoggedBweProbeClusterCreatedEvent(
-      *event, bwe_probe_cluster_created_events[0]));
+  test::VerifyLoggedBweProbeClusterCreatedEvent(
+      *event, bwe_probe_cluster_created_events[0]);
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventProbeResultFailure) {
@@ -321,8 +319,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventProbeResultFailure) {
   const auto& bwe_probe_failure_events = parsed_log_.bwe_probe_failure_events();
 
   ASSERT_EQ(bwe_probe_failure_events.size(), 1u);
-  EXPECT_TRUE(test::VerifyLoggedBweProbeFailureEvent(
-      *event, bwe_probe_failure_events[0]));
+  test::VerifyLoggedBweProbeFailureEvent(*event, bwe_probe_failure_events[0]);
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventProbeResultSuccess) {
@@ -335,8 +332,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventProbeResultSuccess) {
   const auto& bwe_probe_success_events = parsed_log_.bwe_probe_success_events();
 
   ASSERT_EQ(bwe_probe_success_events.size(), 1u);
-  EXPECT_TRUE(test::VerifyLoggedBweProbeSuccessEvent(
-      *event, bwe_probe_success_events[0]));
+  test::VerifyLoggedBweProbeSuccessEvent(*event, bwe_probe_success_events[0]);
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventRtcpPacketIncoming) {
@@ -349,8 +345,8 @@ TEST_P(RtcEventLogEncoderTest, RtcEventRtcpPacketIncoming) {
   const auto& incoming_rtcp_packets = parsed_log_.incoming_rtcp_packets();
 
   ASSERT_EQ(incoming_rtcp_packets.size(), 1u);
-  EXPECT_TRUE(
-      test::VerifyLoggedRtcpPacketIncoming(*event, incoming_rtcp_packets[0]));
+
+  test::VerifyLoggedRtcpPacketIncoming(*event, incoming_rtcp_packets[0]);
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventRtcpPacketOutgoing) {
@@ -363,8 +359,8 @@ TEST_P(RtcEventLogEncoderTest, RtcEventRtcpPacketOutgoing) {
   const auto& outgoing_rtcp_packets = parsed_log_.outgoing_rtcp_packets();
 
   ASSERT_EQ(outgoing_rtcp_packets.size(), 1u);
-  EXPECT_TRUE(
-      test::VerifyLoggedRtcpPacketOutgoing(*event, outgoing_rtcp_packets[0]));
+
+  test::VerifyLoggedRtcpPacketOutgoing(*event, outgoing_rtcp_packets[0]);
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventRtpPacketIncoming) {
@@ -383,8 +379,8 @@ TEST_P(RtcEventLogEncoderTest, RtcEventRtpPacketIncoming) {
   const auto& stream = incoming_rtp_packets_by_ssrc[0];
   EXPECT_EQ(stream.ssrc, ssrc);
   ASSERT_EQ(stream.incoming_packets.size(), 1u);
-  EXPECT_TRUE(
-      test::VerifyLoggedRtpPacketIncoming(*event, stream.incoming_packets[0]));
+
+  test::VerifyLoggedRtpPacketIncoming(*event, stream.incoming_packets[0]);
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventRtpPacketOutgoing) {
@@ -403,8 +399,8 @@ TEST_P(RtcEventLogEncoderTest, RtcEventRtpPacketOutgoing) {
   const auto& stream = outgoing_rtp_packets_by_ssrc[0];
   EXPECT_EQ(stream.ssrc, ssrc);
   ASSERT_EQ(stream.outgoing_packets.size(), 1u);
-  EXPECT_TRUE(
-      test::VerifyLoggedRtpPacketOutgoing(*event, stream.outgoing_packets[0]));
+
+  test::VerifyLoggedRtpPacketOutgoing(*event, stream.outgoing_packets[0]);
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventVideoReceiveStreamConfig) {
@@ -419,7 +415,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventVideoReceiveStreamConfig) {
   const auto& video_recv_configs = parsed_log_.video_recv_configs();
 
   ASSERT_EQ(video_recv_configs.size(), 1u);
-  EXPECT_TRUE(test::VerifyLoggedVideoRecvConfig(*event, video_recv_configs[0]));
+  test::VerifyLoggedVideoRecvConfig(*event, video_recv_configs[0]);
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventVideoSendStreamConfig) {
@@ -434,7 +430,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventVideoSendStreamConfig) {
   const auto& video_send_configs = parsed_log_.video_send_configs();
 
   ASSERT_EQ(video_send_configs.size(), 1u);
-  EXPECT_TRUE(test::VerifyLoggedVideoSendConfig(*event, video_send_configs[0]));
+  test::VerifyLoggedVideoSendConfig(*event, video_send_configs[0]);
 }
 
 INSTANTIATE_TEST_CASE_P(RandomSeeds,

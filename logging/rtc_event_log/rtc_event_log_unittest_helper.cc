@@ -25,6 +25,7 @@
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "rtc_base/checks.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 
@@ -469,396 +470,288 @@ EventGenerator::NewVideoSendStreamConfig(
   return absl::make_unique<RtcEventVideoSendStreamConfig>(std::move(config));
 }
 
-bool VerifyLoggedAlrStateEvent(const RtcEventAlrState& original_event,
+void VerifyLoggedAlrStateEvent(const RtcEventAlrState& original_event,
                                const LoggedAlrStateEvent& logged_event) {
-  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
-    return false;
-  if (original_event.in_alr_ != logged_event.in_alr)
-    return false;
-  return true;
+  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.in_alr_, logged_event.in_alr);
 }
 
-bool VerifyLoggedAudioPlayoutEvent(
+void VerifyLoggedAudioPlayoutEvent(
     const RtcEventAudioPlayout& original_event,
     const LoggedAudioPlayoutEvent& logged_event) {
-  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
-    return false;
-  if (original_event.ssrc_ != logged_event.ssrc)
-    return false;
-  return true;
+  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.ssrc_, logged_event.ssrc);
 }
 
-bool VerifyLoggedAudioNetworkAdaptationEvent(
+void VerifyLoggedAudioNetworkAdaptationEvent(
     const RtcEventAudioNetworkAdaptation& original_event,
     const LoggedAudioNetworkAdaptationEvent& logged_event) {
-  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
-    return false;
+  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
 
-  if (original_event.config_->bitrate_bps != logged_event.config.bitrate_bps)
-    return false;
-  if (original_event.config_->enable_dtx != logged_event.config.enable_dtx)
-    return false;
-  if (original_event.config_->enable_fec != logged_event.config.enable_fec)
-    return false;
-  if (original_event.config_->frame_length_ms !=
-      logged_event.config.frame_length_ms)
-    return false;
-  if (original_event.config_->num_channels != logged_event.config.num_channels)
-    return false;
-  if (original_event.config_->uplink_packet_loss_fraction !=
-      logged_event.config.uplink_packet_loss_fraction)
-    return false;
-
-  return true;
+  EXPECT_EQ(original_event.config_->bitrate_bps,
+            logged_event.config.bitrate_bps);
+  EXPECT_EQ(original_event.config_->enable_dtx, logged_event.config.enable_dtx);
+  EXPECT_EQ(original_event.config_->enable_fec, logged_event.config.enable_fec);
+  EXPECT_EQ(original_event.config_->frame_length_ms,
+            logged_event.config.frame_length_ms);
+  EXPECT_EQ(original_event.config_->num_channels,
+            logged_event.config.num_channels);
+  EXPECT_EQ(original_event.config_->uplink_packet_loss_fraction,
+            logged_event.config.uplink_packet_loss_fraction);
 }
 
-bool VerifyLoggedBweDelayBasedUpdate(
+void VerifyLoggedBweDelayBasedUpdate(
     const RtcEventBweUpdateDelayBased& original_event,
     const LoggedBweDelayBasedUpdate& logged_event) {
-  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
-    return false;
-  if (original_event.bitrate_bps_ != logged_event.bitrate_bps)
-    return false;
-  if (original_event.detector_state_ != logged_event.detector_state)
-    return false;
-  return true;
+  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.bitrate_bps_, logged_event.bitrate_bps);
+  EXPECT_EQ(original_event.detector_state_, logged_event.detector_state);
 }
 
-bool VerifyLoggedBweLossBasedUpdate(
+void VerifyLoggedBweLossBasedUpdate(
     const RtcEventBweUpdateLossBased& original_event,
     const LoggedBweLossBasedUpdate& logged_event) {
-  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
-    return false;
-  if (original_event.bitrate_bps_ != logged_event.bitrate_bps)
-    return false;
-  if (original_event.fraction_loss_ != logged_event.fraction_lost)
-    return false;
-  if (original_event.total_packets_ != logged_event.expected_packets)
-    return false;
-  return true;
+  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.bitrate_bps_, logged_event.bitrate_bps);
+  EXPECT_EQ(original_event.fraction_loss_, logged_event.fraction_lost);
+  EXPECT_EQ(original_event.total_packets_, logged_event.expected_packets);
 }
 
-bool VerifyLoggedBweProbeClusterCreatedEvent(
+void VerifyLoggedBweProbeClusterCreatedEvent(
     const RtcEventProbeClusterCreated& original_event,
     const LoggedBweProbeClusterCreatedEvent& logged_event) {
-  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
-    return false;
-  if (original_event.id_ != logged_event.id)
-    return false;
-  if (original_event.bitrate_bps_ != logged_event.bitrate_bps)
-    return false;
-  if (original_event.min_probes_ != logged_event.min_packets)
-    return false;
-  if (original_event.min_bytes_ != logged_event.min_bytes)
-    return false;
-
-  return true;
+  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.id_, logged_event.id);
+  EXPECT_EQ(original_event.bitrate_bps_, logged_event.bitrate_bps);
+  EXPECT_EQ(original_event.min_probes_, logged_event.min_packets);
+  EXPECT_EQ(original_event.min_bytes_, logged_event.min_bytes);
 }
 
-bool VerifyLoggedBweProbeFailureEvent(
+void VerifyLoggedBweProbeFailureEvent(
     const RtcEventProbeResultFailure& original_event,
     const LoggedBweProbeFailureEvent& logged_event) {
-  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
-    return false;
-  if (original_event.id_ != logged_event.id)
-    return false;
-  if (original_event.failure_reason_ != logged_event.failure_reason)
-    return false;
-  return true;
+  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.id_, logged_event.id);
+  EXPECT_EQ(original_event.failure_reason_, logged_event.failure_reason);
 }
 
-bool VerifyLoggedBweProbeSuccessEvent(
+void VerifyLoggedBweProbeSuccessEvent(
     const RtcEventProbeResultSuccess& original_event,
     const LoggedBweProbeSuccessEvent& logged_event) {
-  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
-    return false;
-  if (original_event.id_ != logged_event.id)
-    return false;
-  if (original_event.bitrate_bps_ != logged_event.bitrate_bps)
-    return false;
-  return true;
+  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.id_, logged_event.id);
+  EXPECT_EQ(original_event.bitrate_bps_, logged_event.bitrate_bps);
 }
 
-bool VerifyLoggedIceCandidatePairConfig(
+void VerifyLoggedIceCandidatePairConfig(
     const RtcEventIceCandidatePairConfig& original_event,
     const LoggedIceCandidatePairConfig& logged_event) {
-  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
-    return false;
+  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
 
-  if (original_event.type_ != logged_event.type)
-    return false;
-  if (original_event.candidate_pair_id_ != logged_event.candidate_pair_id)
-    return false;
-  if (original_event.candidate_pair_desc_.local_candidate_type !=
-      logged_event.local_candidate_type)
-    return false;
-  if (original_event.candidate_pair_desc_.local_relay_protocol !=
-      logged_event.local_relay_protocol)
-    return false;
-  if (original_event.candidate_pair_desc_.local_network_type !=
-      logged_event.local_network_type)
-    return false;
-  if (original_event.candidate_pair_desc_.local_address_family !=
-      logged_event.local_address_family)
-    return false;
-  if (original_event.candidate_pair_desc_.remote_candidate_type !=
-      logged_event.remote_candidate_type)
-    return false;
-  if (original_event.candidate_pair_desc_.remote_address_family !=
-      logged_event.remote_address_family)
-    return false;
-  if (original_event.candidate_pair_desc_.candidate_pair_protocol !=
-      logged_event.candidate_pair_protocol)
-    return false;
-
-  return true;
+  EXPECT_EQ(original_event.type_, logged_event.type);
+  EXPECT_EQ(original_event.candidate_pair_id_, logged_event.candidate_pair_id);
+  EXPECT_EQ(original_event.candidate_pair_desc_.local_candidate_type,
+            logged_event.local_candidate_type);
+  EXPECT_EQ(original_event.candidate_pair_desc_.local_relay_protocol,
+            logged_event.local_relay_protocol);
+  EXPECT_EQ(original_event.candidate_pair_desc_.local_network_type,
+            logged_event.local_network_type);
+  EXPECT_EQ(original_event.candidate_pair_desc_.local_address_family,
+            logged_event.local_address_family);
+  EXPECT_EQ(original_event.candidate_pair_desc_.remote_candidate_type,
+            logged_event.remote_candidate_type);
+  EXPECT_EQ(original_event.candidate_pair_desc_.remote_address_family,
+            logged_event.remote_address_family);
+  EXPECT_EQ(original_event.candidate_pair_desc_.candidate_pair_protocol,
+            logged_event.candidate_pair_protocol);
 }
 
-bool VerifyLoggedIceCandidatePairEvent(
+void VerifyLoggedIceCandidatePairEvent(
     const RtcEventIceCandidatePair& original_event,
     const LoggedIceCandidatePairEvent& logged_event) {
-  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
-    return false;
+  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
 
-  if (original_event.type_ != logged_event.type)
-    return false;
-  if (original_event.candidate_pair_id_ != logged_event.candidate_pair_id)
-    return false;
-
-  return true;
+  EXPECT_EQ(original_event.type_, logged_event.type);
+  EXPECT_EQ(original_event.candidate_pair_id_, logged_event.candidate_pair_id);
 }
 
-bool VerifyLoggedRtpHeader(const RtpPacket& original_header,
+void VerifyLoggedRtpHeader(const RtpPacket& original_header,
                            const RTPHeader& logged_header) {
   // Standard RTP header.
-  if (original_header.Marker() != logged_header.markerBit)
-    return false;
-  if (original_header.PayloadType() != logged_header.payloadType)
-    return false;
-  if (original_header.SequenceNumber() != logged_header.sequenceNumber)
-    return false;
-  if (original_header.Timestamp() != logged_header.timestamp)
-    return false;
-  if (original_header.Ssrc() != logged_header.ssrc)
-    return false;
-  if (original_header.Csrcs().size() != logged_header.numCSRCs)
-    return false;
+  EXPECT_EQ(original_header.Marker(), logged_header.markerBit);
+  EXPECT_EQ(original_header.PayloadType(), logged_header.payloadType);
+  EXPECT_EQ(original_header.SequenceNumber(), logged_header.sequenceNumber);
+  EXPECT_EQ(original_header.Timestamp(), logged_header.timestamp);
+  EXPECT_EQ(original_header.Ssrc(), logged_header.ssrc);
+  ASSERT_EQ(original_header.Csrcs().size(), logged_header.numCSRCs);
   for (size_t i = 0; i < logged_header.numCSRCs; i++) {
-    if (original_header.Csrcs()[i] != logged_header.arrOfCSRCs[i])
-      return false;
+    EXPECT_EQ(original_header.Csrcs()[i], logged_header.arrOfCSRCs[i]);
   }
 
-  if (original_header.headers_size() != logged_header.headerLength)
-    return false;
+  EXPECT_EQ(original_header.headers_size(), logged_header.headerLength);
 
   // TransmissionOffset header extension.
-  if (original_header.HasExtension<TransmissionOffset>() !=
-      logged_header.extension.hasTransmissionTimeOffset)
-    return false;
+  ASSERT_EQ(original_header.HasExtension<TransmissionOffset>(),
+            logged_header.extension.hasTransmissionTimeOffset);
   if (logged_header.extension.hasTransmissionTimeOffset) {
     int32_t offset;
     original_header.GetExtension<TransmissionOffset>(&offset);
-    if (offset != logged_header.extension.transmissionTimeOffset)
-      return false;
+    EXPECT_EQ(offset, logged_header.extension.transmissionTimeOffset);
   }
 
   // AbsoluteSendTime header extension.
-  if (original_header.HasExtension<AbsoluteSendTime>() !=
-      logged_header.extension.hasAbsoluteSendTime)
-    return false;
+  ASSERT_EQ(original_header.HasExtension<AbsoluteSendTime>(),
+            logged_header.extension.hasAbsoluteSendTime);
   if (logged_header.extension.hasAbsoluteSendTime) {
     uint32_t sendtime;
     original_header.GetExtension<AbsoluteSendTime>(&sendtime);
-    if (sendtime != logged_header.extension.absoluteSendTime)
-      return false;
+    EXPECT_EQ(sendtime, logged_header.extension.absoluteSendTime);
   }
 
   // TransportSequenceNumber header extension.
-  if (original_header.HasExtension<TransportSequenceNumber>() !=
-      logged_header.extension.hasTransportSequenceNumber)
-    return false;
+  ASSERT_EQ(original_header.HasExtension<TransportSequenceNumber>(),
+            logged_header.extension.hasTransportSequenceNumber);
   if (logged_header.extension.hasTransportSequenceNumber) {
     uint16_t seqnum;
     original_header.GetExtension<TransportSequenceNumber>(&seqnum);
-    if (seqnum != logged_header.extension.transportSequenceNumber)
-      return false;
+    EXPECT_EQ(seqnum, logged_header.extension.transportSequenceNumber);
   }
 
   // AudioLevel header extension.
-  if (original_header.HasExtension<AudioLevel>() !=
-      logged_header.extension.hasAudioLevel)
-    return false;
+  ASSERT_EQ(original_header.HasExtension<AudioLevel>(),
+            logged_header.extension.hasAudioLevel);
   if (logged_header.extension.hasAudioLevel) {
     bool voice_activity;
     uint8_t audio_level;
     original_header.GetExtension<AudioLevel>(&voice_activity, &audio_level);
-    if (voice_activity != logged_header.extension.voiceActivity)
-      return false;
-    if (audio_level != logged_header.extension.audioLevel)
-      return false;
+    EXPECT_EQ(voice_activity, logged_header.extension.voiceActivity);
+    EXPECT_EQ(audio_level, logged_header.extension.audioLevel);
   }
 
   // VideoOrientation header extension.
-  if (original_header.HasExtension<VideoOrientation>() !=
-      logged_header.extension.hasVideoRotation)
-    return false;
+  ASSERT_EQ(original_header.HasExtension<VideoOrientation>(),
+            logged_header.extension.hasVideoRotation);
   if (logged_header.extension.hasVideoRotation) {
     uint8_t rotation;
     original_header.GetExtension<VideoOrientation>(&rotation);
-    if (ConvertCVOByteToVideoRotation(rotation) !=
-        logged_header.extension.videoRotation)
-      return false;
+    EXPECT_EQ(ConvertCVOByteToVideoRotation(rotation),
+              logged_header.extension.videoRotation);
   }
-
-  return true;
 }
 
-bool VerifyLoggedRtpPacketIncoming(
+void VerifyLoggedRtpPacketIncoming(
     const RtcEventRtpPacketIncoming& original_event,
     const LoggedRtpPacketIncoming& logged_event) {
-  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
-    return false;
+  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
 
-  if (original_event.header_.headers_size() != logged_event.rtp.header_length)
-    return false;
+  EXPECT_EQ(original_event.header_.headers_size(),
+            logged_event.rtp.header_length);
 
-  if (original_event.packet_length_ != logged_event.rtp.total_length)
-    return false;
+  EXPECT_EQ(original_event.packet_length_, logged_event.rtp.total_length);
 
-  if ((original_event.header_.data()[0] & 0x20) != 0 &&  // has padding
-      original_event.packet_length_ - original_event.header_.headers_size() !=
-          logged_event.rtp.header.paddingLength) {
+  if ((original_event.header_.data()[0] & 0x20) != 0) {  // has padding
     // Currently, RTC eventlog encoder-parser can only maintain padding length
     // if packet is full padding.
     // TODO(webrtc:9730): Change the condition to something like
     // original_event.padding_length_ != logged_event.rtp.header.paddingLength.
-    return false;
+    EXPECT_EQ(
+        original_event.packet_length_ - original_event.header_.headers_size(),
+        logged_event.rtp.header.paddingLength);
   }
 
-  if (!VerifyLoggedRtpHeader(original_event.header_, logged_event.rtp.header))
-    return false;
-
-  return true;
+  VerifyLoggedRtpHeader(original_event.header_, logged_event.rtp.header);
 }
 
-bool VerifyLoggedRtpPacketOutgoing(
+void VerifyLoggedRtpPacketOutgoing(
     const RtcEventRtpPacketOutgoing& original_event,
     const LoggedRtpPacketOutgoing& logged_event) {
-  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
-    return false;
+  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
 
-  if (original_event.header_.headers_size() != logged_event.rtp.header_length)
-    return false;
+  EXPECT_EQ(original_event.header_.headers_size(),
+            logged_event.rtp.header_length);
 
-  if (original_event.packet_length_ != logged_event.rtp.total_length)
-    return false;
+  EXPECT_EQ(original_event.packet_length_, logged_event.rtp.total_length);
 
-  if ((original_event.header_.data()[0] & 0x20) != 0 &&  // has padding
-      original_event.packet_length_ - original_event.header_.headers_size() !=
-          logged_event.rtp.header.paddingLength) {
+  if ((original_event.header_.data()[0] & 0x20) != 0) {  // has padding
     // Currently, RTC eventlog encoder-parser can only maintain padding length
     // if packet is full padding.
     // TODO(webrtc:9730): Change the condition to something like
     // original_event.padding_length_ != logged_event.rtp.header.paddingLength.
-    return false;
+    EXPECT_EQ(
+        original_event.packet_length_ - original_event.header_.headers_size(),
+        logged_event.rtp.header.paddingLength);
   }
 
   // TODO(terelius): Probe cluster ID isn't parsed, used or tested. Unless
   // someone has a strong reason to keep it, it'll be removed.
 
-  if (!VerifyLoggedRtpHeader(original_event.header_, logged_event.rtp.header))
-    return false;
-
-  return true;
+  VerifyLoggedRtpHeader(original_event.header_, logged_event.rtp.header);
 }
 
-bool VerifyLoggedRtcpPacketIncoming(
+void VerifyLoggedRtcpPacketIncoming(
     const RtcEventRtcpPacketIncoming& original_event,
     const LoggedRtcpPacketIncoming& logged_event) {
-  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
-    return false;
+  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
 
-  if (original_event.packet_.size() != logged_event.rtcp.raw_data.size())
-    return false;
-  if (memcmp(original_event.packet_.data(), logged_event.rtcp.raw_data.data(),
-             original_event.packet_.size()) != 0) {
-    return false;
-  }
-  return true;
+  ASSERT_EQ(original_event.packet_.size(), logged_event.rtcp.raw_data.size());
+  EXPECT_EQ(
+      memcmp(original_event.packet_.data(), logged_event.rtcp.raw_data.data(),
+             original_event.packet_.size()),
+      0);
 }
 
-bool VerifyLoggedRtcpPacketOutgoing(
+void VerifyLoggedRtcpPacketOutgoing(
     const RtcEventRtcpPacketOutgoing& original_event,
     const LoggedRtcpPacketOutgoing& logged_event) {
-  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
-    return false;
+  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
 
-  if (original_event.packet_.size() != logged_event.rtcp.raw_data.size())
-    return false;
-  if (memcmp(original_event.packet_.data(), logged_event.rtcp.raw_data.data(),
-             original_event.packet_.size()) != 0) {
-    return false;
-  }
-  return true;
+  ASSERT_EQ(original_event.packet_.size(), logged_event.rtcp.raw_data.size());
+  EXPECT_EQ(
+      memcmp(original_event.packet_.data(), logged_event.rtcp.raw_data.data(),
+             original_event.packet_.size()),
+      0);
 }
 
-bool VerifyLoggedStartEvent(int64_t start_time_us,
+void VerifyLoggedStartEvent(int64_t start_time_us,
                             const LoggedStartEvent& logged_event) {
-  if (start_time_us / 1000 != logged_event.log_time_ms())
-    return false;
-  return true;
+  EXPECT_EQ(start_time_us / 1000, logged_event.log_time_ms());
 }
 
-bool VerifyLoggedStopEvent(int64_t stop_time_us,
+void VerifyLoggedStopEvent(int64_t stop_time_us,
                            const LoggedStopEvent& logged_event) {
-  if (stop_time_us / 1000 != logged_event.log_time_ms())
-    return false;
-  return true;
+  EXPECT_EQ(stop_time_us / 1000, logged_event.log_time_ms());
 }
 
-bool VerifyLoggedAudioRecvConfig(
+void VerifyLoggedAudioRecvConfig(
     const RtcEventAudioReceiveStreamConfig& original_event,
     const LoggedAudioRecvConfig& logged_event) {
-  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
-    return false;
-  if (*original_event.config_ != logged_event.config)
-    return false;
-  return true;
+  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(*original_event.config_, logged_event.config);
 }
 
-bool VerifyLoggedAudioSendConfig(
+void VerifyLoggedAudioSendConfig(
     const RtcEventAudioSendStreamConfig& original_event,
     const LoggedAudioSendConfig& logged_event) {
-  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
-    return false;
-  if (*original_event.config_ != logged_event.config)
-    return false;
-  return true;
+  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(*original_event.config_, logged_event.config);
 }
 
-bool VerifyLoggedVideoRecvConfig(
+void VerifyLoggedVideoRecvConfig(
     const RtcEventVideoReceiveStreamConfig& original_event,
     const LoggedVideoRecvConfig& logged_event) {
-  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
-    return false;
-  if (*original_event.config_ != logged_event.config)
-    return false;
-  return true;
+  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(*original_event.config_, logged_event.config);
 }
 
-bool VerifyLoggedVideoSendConfig(
+void VerifyLoggedVideoSendConfig(
     const RtcEventVideoSendStreamConfig& original_event,
     const LoggedVideoSendConfig& logged_event) {
-  if (original_event.timestamp_us_ / 1000 != logged_event.log_time_ms())
-    return false;
+  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
   // TODO(terelius): In the past, we allowed storing multiple RtcStreamConfigs
   // in the same RtcEventVideoSendStreamConfig. Look into whether we should drop
   // backwards compatibility in the parser.
-  if (logged_event.configs.size() != 1)
-    return false;
-  if (*original_event.config_ != logged_event.configs[0])
-    return false;
-  return true;
+  EXPECT_EQ(logged_event.configs.size(), 1u);
+  EXPECT_EQ(*original_event.config_, logged_event.configs[0]);
 }
 
 }  // namespace test
