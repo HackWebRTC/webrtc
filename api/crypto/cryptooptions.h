@@ -33,17 +33,6 @@ struct CryptoOptions {
   // of crypto options.
   std::vector<int> GetSupportedDtlsSrtpCryptoSuites() const;
 
-  // TODO(webrtc:9859) - Remove duplicates once chromium is fixed.
-  // Will be removed once srtp.enable_gcm_crypto_suites is updated in Chrome.
-  absl::optional<bool> enable_gcm_crypto_suites;
-  // TODO(webrtc:9859) - Remove duplicates once chromium is fixed.
-  // Will be removed once srtp.enable_encrypted_rtp_header_extensions is
-  // updated in Chrome.
-  absl::optional<bool> enable_encrypted_rtp_header_extensions;
-  // Will be removed once srtp.enable_encrypted_rtp_header_extensions is
-  // updated in Tacl.
-  absl::optional<bool> enable_aes128_sha1_32_crypto_cipher;
-
   // SRTP Related Peer Connection options.
   struct Srtp {
     // Enable GCM crypto suites from RFC 7714 for SRTP. GCM will only be used

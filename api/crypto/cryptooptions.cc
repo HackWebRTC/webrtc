@@ -16,9 +16,6 @@ namespace webrtc {
 CryptoOptions::CryptoOptions() {}
 
 CryptoOptions::CryptoOptions(const CryptoOptions& other) {
-  enable_gcm_crypto_suites = other.enable_gcm_crypto_suites;
-  enable_encrypted_rtp_header_extensions =
-      other.enable_encrypted_rtp_header_extensions;
   srtp = other.srtp;
 }
 
