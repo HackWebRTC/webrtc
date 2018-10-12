@@ -61,6 +61,11 @@ std::vector<VideoStream> CreateVideoStreams(
               ? stream.target_bitrate_bps
               : DefaultVideoStreamFactory::kMaxBitratePerStream[i];
       target_bitrate_bps = std::min(max_bitrate_bps, target_bitrate_bps);
+
+      // Used configured framerate if set.
+      if (stream.max_framerate > 0) {
+        stream_settings[i].max_framerate = stream.max_framerate;
+      }
     } else {
       max_bitrate_bps = std::min(
           bitrate_left_bps, DefaultVideoStreamFactory::kMaxBitratePerStream[i]);

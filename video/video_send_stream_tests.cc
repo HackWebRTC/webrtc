@@ -3672,6 +3672,39 @@ TEST_P(VideoSendStreamTest,
   TestRequestSourceRotateVideo(true);
 }
 
+TEST_P(VideoSendStreamTest, EncoderConfigMaxFramerateReportedToSource) {
+  static const int kMaxFps = 22;
+  class FpsObserver : public test::SendTest,
+                      public test::FrameGeneratorCapturer::SinkWantsObserver {
+   public:
+    FpsObserver() : SendTest(kDefaultTimeoutMs) {}
+
+    void OnFrameGeneratorCapturerCreated(
+        test::FrameGeneratorCapturer* frame_generator_capturer) override {
+      frame_generator_capturer->SetSinkWantsObserver(this);
+    }
+
+    void OnSinkWantsChanged(rtc::VideoSinkInterface<VideoFrame>* sink,
+                            const rtc::VideoSinkWants& wants) override {
+      if (wants.max_framerate_fps == kMaxFps)
+        observation_complete_.Set();
+    }
+
+    void ModifyVideoConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) override {
+      encoder_config->simulcast_layers[0].max_framerate = kMaxFps;
+    }
+
+    void PerformTest() override {
+      EXPECT_TRUE(Wait()) << "Timed out while waiting for fps to be reported.";
+    }
+  } test;
+
+  RunBaseTest(&test);
+}
+
 // This test verifies that overhead is removed from the bandwidth estimate by
 // testing that the maximum possible target payload rate is smaller than the
 // maximum bandwidth estimate by the overhead rate.
