@@ -514,7 +514,6 @@ if (rtc_include_tests) {
       ":pc_test_utils",
       "..:webrtc_common",
       "../api:callfactory_api",
-      "../api:fake_media_transport",
       "../api:libjingle_peerconnection_test_api",
       "../api:rtc_stats_api",
       "../api/audio_codecs:audio_codecs_api",

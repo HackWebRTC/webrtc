@@ -153,8 +153,7 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
   void OnReadyToSend(bool ready) override;
   void OnNetworkRouteChanged(const std::string& transport_name,
                              const rtc::NetworkRoute& network_route) override;
-  void SetInterface(NetworkInterface* iface,
-                    webrtc::MediaTransportInterface* media_transport) override;
+  void SetInterface(NetworkInterface* iface) override;
 
   // Implemented for VideoMediaChannelTest.
   bool sending() const { return sending_; }
