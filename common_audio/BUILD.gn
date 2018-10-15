@@ -389,6 +389,7 @@ if (rtc_include_tests) {
       "../system_wrappers:cpu_features_api",
       "../test:fileutils",
       "../test:test_main",
+      "//test:test_support",
       "//testing/gtest",
     ]
 

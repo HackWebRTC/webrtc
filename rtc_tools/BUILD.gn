@@ -357,6 +357,7 @@ if (rtc_include_tests) {
       "../rtc_base:checks",
       "../test:fileutils",
       "../test:test_main",
+      "//test:test_support",
       "//testing/gtest",
       "//third_party/abseil-cpp/absl/memory",
     ]

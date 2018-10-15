@@ -454,6 +454,9 @@ if (rtc_include_tests) {
   }
 
   rtc_test("fake_network_unittests") {
+    sources = [
+      "test/fake_network_pipe_unittest.cc",
+    ]
     deps = [
       ":call_interfaces",
       ":fake_network",
@@ -463,10 +466,8 @@ if (rtc_include_tests) {
       "../system_wrappers",
       "../test:test_common",
       "../test:test_main",
+      "//test:test_support",
       "//testing/gtest",
-    ]
-    sources = [
-      "test/fake_network_pipe_unittest.cc",
     ]
   }
 }

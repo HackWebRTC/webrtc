@@ -236,6 +236,7 @@ if (rtc_include_tests) {
     deps = [
       ":module_api",
       "../test:test_main",
+      "../test:test_support",
       "audio_coding:audio_coding_unittests",
       "audio_device:audio_device_unittests",
       "audio_mixer:audio_mixer_unittests",

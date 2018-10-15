@@ -192,6 +192,7 @@ if (!build_with_chromium) {
         "../../system_wrappers:system_wrappers",
         "../../test:video_test_common",
         "../utility",
+        "//test:test_support",
         "//testing/gtest",
       ]
       deps += [ "../../test:test_main" ]

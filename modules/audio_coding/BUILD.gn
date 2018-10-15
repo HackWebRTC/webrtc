@@ -1479,6 +1479,7 @@ if (rtc_include_tests) {
              "../../rtc_base/system:arch",
              "../../test:test_main",
              "//testing/gtest",
+             "//test:test_support",
            ] + audio_coding_deps
 
     data = audio_decoder_unittests_resources
@@ -1597,6 +1598,7 @@ if (rtc_include_tests) {
       "../../rtc_base:rtc_base_approved",
       "../../test:test_main",
       "../audio_processing",
+      "//test:test_support",
       "//testing/gtest",
     ]
   }
@@ -1957,6 +1959,7 @@ if (rtc_include_tests) {
       "../../rtc_base:rtc_base_approved",
       "../../test:fileutils",
       "../../test:test_main",
+      "//test:test_support",
       "//testing/gtest",
     ]
   }

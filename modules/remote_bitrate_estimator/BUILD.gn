@@ -227,6 +227,7 @@ if (rtc_include_tests) {
       "../../rtc_base:rtc_base_approved",
       "../../test:fileutils",
       "../../test:test_main",
+      "//test:test_support",
       "//testing/gtest",
     ]
     data = [

@@ -196,19 +196,18 @@ rtc_source_set("test_support") {
 }
 
 if (rtc_include_tests) {
-  rtc_source_set("test_main") {
+  rtc_source_set("test_main_lib") {
     visibility = [ "*" ]
     testonly = true
     sources = [
-      "test_main.cc",
+      "test_main_lib.cc",
+      "test_main_lib.h",
     ]
 
-    public_deps = [
-      ":test_support",
-    ]
     deps = [
       ":field_trial",
       ":perf_test",
+      ":test_support",
       "../rtc_base:rtc_base",
       "../system_wrappers:field_trial",
       "../system_wrappers:metrics",
@@ -219,6 +218,18 @@ if (rtc_include_tests) {
       # has a certain flag. Remove this once the internal fileutils has been
       # eliminated.
       "../test:fileutils",
+    ]
+  }
+
+  rtc_source_set("test_main") {
+    visibility = [ "*" ]
+    testonly = true
+    sources = [
+      "test_main.cc",
+    ]
+
+    deps = [
+      ":test_main_lib",
     ]
   }
 
