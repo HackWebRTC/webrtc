@@ -5189,6 +5189,18 @@ void WebRtcVideoChannelTest::TestReceiveUnsignaledSsrcPacket(
   }
 }
 
+class WebRtcVideoChannelDiscardUnknownSsrcTest : public WebRtcVideoChannelTest {
+ public:
+  WebRtcVideoChannelDiscardUnknownSsrcTest()
+      : WebRtcVideoChannelTest(
+            "WebRTC-Video-DiscardPacketsWithUnknownSsrc/Enabled/") {}
+};
+
+TEST_F(WebRtcVideoChannelDiscardUnknownSsrcTest, NoUnsignalledStreamCreated) {
+  TestReceiveUnsignaledSsrcPacket(GetEngineCodec("VP8").id,
+                                  false /* expect_created_receive_stream */);
+}
+
 TEST_F(WebRtcVideoChannelTest, Vp8PacketCreatesUnsignalledStream) {
   TestReceiveUnsignaledSsrcPacket(GetEngineCodec("VP8").id,
                                   true /* expect_created_receive_stream */);

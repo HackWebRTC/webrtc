@@ -521,7 +521,9 @@ WebRtcVideoChannel::WebRtcVideoChannel(
       encoder_factory_(encoder_factory),
       decoder_factory_(decoder_factory),
       default_send_options_(options),
-      last_stats_log_ms_(-1) {
+      last_stats_log_ms_(-1),
+      discard_unknown_ssrc_packets_(webrtc::field_trial::IsEnabled(
+          "WebRTC-Video-DiscardPacketsWithUnknownSsrc")) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
 
   rtcp_receiver_report_ssrc_ = kDefaultRtcpReceiverReportSsrc;
@@ -1348,6 +1350,10 @@ void WebRtcVideoChannel::OnPacketReceived(rtc::CopyOnWriteBuffer* packet,
       return;
     case webrtc::PacketReceiver::DELIVERY_UNKNOWN_SSRC:
       break;
+  }
+
+  if (discard_unknown_ssrc_packets_) {
+    return;
   }
 
   uint32_t ssrc = 0;

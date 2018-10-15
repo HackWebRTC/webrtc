@@ -478,6 +478,7 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
   VideoOptions default_send_options_;
   VideoRecvParameters recv_params_;
   int64_t last_stats_log_ms_;
+  const bool discard_unknown_ssrc_packets_;
   // This is a stream param that comes from the remote description, but wasn't
   // signaled with any a=ssrc lines. It holds information that was signaled
   // before the unsignaled receive stream is created when the first packet is
