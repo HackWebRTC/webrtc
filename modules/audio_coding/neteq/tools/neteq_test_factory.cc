@@ -132,6 +132,9 @@ DEFINE_bool(pythonplot,
             false,
             "Generates a python script for plotting the delay profile");
 DEFINE_bool(concealment_events, false, "Prints concealment events");
+DEFINE_int(max_nr_packets_in_buffer,
+           50,
+           "Maximum allowed number of packets in the buffer");
 
 // Maps a codec type to a printable name string.
 std::string CodecName(NetEqDecoder codec) {
@@ -459,6 +462,7 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
   callbacks.simulation_ended_callback = stats_plotter_.get();
   NetEq::Config config;
   config.sample_rate_hz = *sample_rate_hz;
+  config.max_packets_in_buffer = FLAG_max_nr_packets_in_buffer;
   return absl::make_unique<NetEqTest>(config, codecs, ext_codecs_,
                                       std::move(input), std::move(output),
                                       callbacks);
