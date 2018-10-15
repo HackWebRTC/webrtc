@@ -1081,7 +1081,7 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
   RtcEventLogNullImpl null_event_log;
   PacketRouter packet_router;
   PacedSender pacer(&clock, &packet_router, &null_event_log);
-  webrtc_cc::TransportFeedbackAdapter transport_feedback(&clock);
+  TransportFeedbackAdapter transport_feedback(&clock);
   auto factory = GoogCcNetworkControllerFactory(&null_event_log);
   TimeDelta process_interval = factory.GetProcessInterval();
   // TODO(holmer): Log the call config and use that here instead.
