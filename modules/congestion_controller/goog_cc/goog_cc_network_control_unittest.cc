@@ -11,9 +11,9 @@
 #include "api/transport/goog_cc_factory.h"
 #include "api/transport/test/network_control_tester.h"
 #include "logging/rtc_event_log/mock/mock_rtc_event_log.h"
-#include "test/scenario/scenario.h"
-
+#include "test/field_trial.h"
 #include "test/gtest.h"
+#include "test/scenario/scenario.h"
 
 using testing::Field;
 using testing::Matcher;
@@ -308,8 +308,51 @@ TEST_F(GoogCcNetworkControllerTest,
               20);
 }
 
-TEST_F(GoogCcNetworkControllerTest, ScenarioQuickTest) {
-  Scenario s("googcc_unit/scenario_quick", false);
+TEST_F(GoogCcNetworkControllerTest, LimitsToMinRateIfRttIsHighInTrial) {
+  // The field trial limits maximum RTT to 2 seconds, higher RTT means that the
+  // controller backs off until it reaches the minimum configured bitrate. This
+  // allows the RTT to recover faster than the regular control mechanism would
+  // achieve.
+  ScopedFieldTrials trial("WebRTC-Bwe-MaxRttLimit/limit:2s/");
+  // In the test case, we limit the capacity and add a cross traffic packet
+  // burst that blocks media from being sent. This causes the RTT to quickly
+  // increase above the threshold in the trial.
+  const DataRate kLinkCapacity = DataRate::kbps(100);
+  const DataRate kMinRate = DataRate::kbps(20);
+  const TimeDelta kBufferBloatDuration = TimeDelta::seconds(10);
+  Scenario s("googcc_unit/limit_trial", false);
+  NetworkNodeConfig net_conf;
+  auto send_net = s.CreateSimulationNode([=](NetworkNodeConfig* c) {
+    c->simulation.bandwidth = kLinkCapacity;
+    c->simulation.delay = TimeDelta::ms(100);
+    c->update_frequency = TimeDelta::ms(5);
+  });
+  auto ret_net = s.CreateSimulationNode([](NetworkNodeConfig* c) {
+    c->simulation.delay = TimeDelta::ms(100);
+    c->update_frequency = TimeDelta::ms(5);
+  });
+  SimulatedTimeClientConfig config;
+  config.transport.cc =
+      TransportControllerConfig::CongestionController::kGoogCc;
+  config.transport.rates.min_rate = kMinRate;
+  config.transport.rates.start_rate = kLinkCapacity;
+  SimulatedTimeClient* client = s.CreateSimulatedTimeClient(
+      "send", config, {PacketStreamConfig()}, {send_net}, {ret_net});
+  // Run for a few seconds to allow the controller to stabilize.
+  s.RunFor(TimeDelta::seconds(10));
+  const DataSize kBloatPacketSize = DataSize::bytes(1000);
+  const int kBloatPacketCount =
+      static_cast<int>(kBufferBloatDuration * kLinkCapacity / kBloatPacketSize);
+  // This will cause the RTT to be large for a while.
+  s.TriggerPacketBurst({send_net}, kBloatPacketCount, kBloatPacketSize.bytes());
+  // Wait to allow the high RTT to be detected and acted upon.
+  s.RunFor(TimeDelta::seconds(4));
+  // By now the target rate should have dropped to the minimum configured rate.
+  EXPECT_NEAR(client->target_rate_kbps(), kMinRate.kbps(), 1);
+}
+
+TEST_F(GoogCcNetworkControllerTest, UpdatesTargetRateBasedOnLinkCapacity) {
+  Scenario s("googcc_unit/target_capacity", false);
   SimulatedTimeClientConfig config;
   config.transport.cc =
       TransportControllerConfig::CongestionController::kGoogCcFeedback;
