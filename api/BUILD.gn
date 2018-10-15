@@ -517,7 +517,24 @@ if (rtc_include_tests) {
     ]
   }
 
+  rtc_source_set("mock_video_decoder") {
+    visibility = [ "*" ]
+
+    testonly = true
+    sources = [
+      "test/mock_video_decoder.cc",
+      "test/mock_video_decoder.h",
+    ]
+
+    deps = [
+      "../api/video_codecs:video_codecs_api",
+      "../test:test_support",
+    ]
+  }
+
   rtc_source_set("mock_video_encoder") {
+    visibility = [ "*" ]
+
     testonly = true
     sources = [
       "test/mock_video_encoder.cc",

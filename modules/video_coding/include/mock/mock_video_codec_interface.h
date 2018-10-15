@@ -19,6 +19,8 @@
 
 namespace webrtc {
 
+// NOTE: Deprecated file, include api/mock_video_(encoder|decoder).h instead.
+
 class MockEncodedImageCallback : public EncodedImageCallback {
  public:
   MOCK_METHOD3(OnEncodedImage,

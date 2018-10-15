@@ -11,11 +11,11 @@
 #include <memory>
 #include <vector>
 
+#include "api/test/mock_video_encoder.h"
 #include "api/video/i420_buffer.h"
 #include "api/video_codecs/vp8_temporal_layers.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/include/mock/mock_vcm_callbacks.h"
-#include "modules/video_coding/include/mock/mock_video_codec_interface.h"
 #include "modules/video_coding/include/video_coding.h"
 #include "modules/video_coding/utility/default_video_bitrate_allocator.h"
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"

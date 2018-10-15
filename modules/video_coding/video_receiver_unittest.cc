@@ -11,8 +11,8 @@
 #include <memory>
 #include <vector>
 
+#include "api/test/mock_video_decoder.h"
 #include "modules/video_coding/include/mock/mock_vcm_callbacks.h"
-#include "modules/video_coding/include/mock/mock_video_codec_interface.h"
 #include "modules/video_coding/include/video_coding.h"
 #include "modules/video_coding/test/test_util.h"
 #include "modules/video_coding/timing.h"

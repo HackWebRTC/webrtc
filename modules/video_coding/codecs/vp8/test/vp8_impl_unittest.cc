@@ -12,13 +12,14 @@
 
 #include <memory>
 
+#include "api/test/mock_video_decoder.h"
+#include "api/test/mock_video_encoder.h"
 #include "api/video_codecs/vp8_temporal_layers.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/video_coding/codecs/test/video_codec_unittest.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/codecs/vp8/libvpx_vp8_encoder.h"
 #include "modules/video_coding/codecs/vp8/test/mock_libvpx_interface.h"
-#include "modules/video_coding/include/mock/mock_video_codec_interface.h"
 #include "modules/video_coding/utility/vp8_header_parser.h"
 #include "rtc_base/timeutils.h"
 #include "test/video_codec_settings.h"
