@@ -136,7 +136,7 @@ class SendSideCongestionController
       RTC_GUARDED_BY(probe_lock_);
 
   const std::unique_ptr<RateLimiter> retransmission_rate_limiter_;
-  LegacyTransportFeedbackAdapter transport_feedback_adapter_;
+  TransportFeedbackAdapter transport_feedback_adapter_;
   rtc::CriticalSection network_state_lock_;
   uint32_t last_reported_bitrate_bps_ RTC_GUARDED_BY(network_state_lock_);
   uint8_t last_reported_fraction_loss_ RTC_GUARDED_BY(network_state_lock_);

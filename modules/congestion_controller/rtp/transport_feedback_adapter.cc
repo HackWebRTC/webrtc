@@ -19,6 +19,7 @@
 #include "rtc_base/numerics/mod_ops.h"
 
 namespace webrtc {
+namespace webrtc_cc {
 namespace {
 void SortPacketFeedbackVector(std::vector<webrtc::PacketFeedback>* input) {
   std::sort(input->begin(), input->end(), PacketFeedbackComparator());
@@ -256,4 +257,5 @@ std::vector<PacketFeedback>
 TransportFeedbackAdapter::GetTransportFeedbackVector() const {
   return last_packet_feedback_vector_;
 }
+}  // namespace webrtc_cc
 }  // namespace webrtc

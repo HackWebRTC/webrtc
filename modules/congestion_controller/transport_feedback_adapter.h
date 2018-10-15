@@ -29,12 +29,10 @@ namespace rtcp {
 class TransportFeedback;
 }  // namespace rtcp
 
-// Deprecated, use version in
-// modules/congeestion_controller/rtp/transport_feedback_adapter.h
-class LegacyTransportFeedbackAdapter {
+class TransportFeedbackAdapter {
  public:
-  explicit LegacyTransportFeedbackAdapter(const Clock* clock);
-  virtual ~LegacyTransportFeedbackAdapter();
+  explicit TransportFeedbackAdapter(const Clock* clock);
+  virtual ~TransportFeedbackAdapter();
 
   void RegisterPacketFeedbackObserver(PacketFeedbackObserver* observer);
   void DeRegisterPacketFeedbackObserver(PacketFeedbackObserver* observer);
