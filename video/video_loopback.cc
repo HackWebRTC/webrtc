@@ -262,7 +262,7 @@ DEFINE_string(
     force_fieldtrials,
     "",
     "Field trials control experimental feature code which can be forced. "
-    "E.g. running with --force_fieldtrials=WebRTC-FooFeature/Enable/"
+    "E.g. running with --force_fieldtrials=WebRTC-FooFeature/Enabled/"
     " will assign the group Enable to field trial WebRTC-FooFeature. Multiple "
     "trials are separated by \"/\"");
 
