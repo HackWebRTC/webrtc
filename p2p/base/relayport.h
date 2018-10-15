@@ -17,6 +17,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "p2p/base/port.h"
 #include "p2p/base/stunrequest.h"
 

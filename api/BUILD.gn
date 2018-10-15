@@ -169,6 +169,7 @@ rtc_source_set("test_dependency_factory") {
   deps = [
     ":video_quality_test_fixture_api",
     "../rtc_base:thread_checker",
+    "//third_party/abseil-cpp/absl/memory",
   ]
   if (!build_with_chromium && is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
