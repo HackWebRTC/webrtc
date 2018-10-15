@@ -22,6 +22,7 @@
 
 #include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/audio_codecs/audio_encoder_factory.h"
+#include "api/crypto/cryptooptions.h"
 #include "api/rtpparameters.h"
 #include "call/audio_state.h"
 #include "media/base/codec.h"
@@ -64,15 +65,18 @@ class MediaEngineInterface {
 
   // MediaChannel creation
   // Creates a voice media channel. Returns NULL on failure.
-  virtual VoiceMediaChannel* CreateChannel(webrtc::Call* call,
-                                           const MediaConfig& config,
-                                           const AudioOptions& options) = 0;
+  virtual VoiceMediaChannel* CreateChannel(
+      webrtc::Call* call,
+      const MediaConfig& config,
+      const AudioOptions& options,
+      const webrtc::CryptoOptions& crypto_options) = 0;
   // Creates a video media channel, paired with the specified voice channel.
   // Returns NULL on failure.
   virtual VideoMediaChannel* CreateVideoChannel(
       webrtc::Call* call,
       const MediaConfig& config,
-      const VideoOptions& options) = 0;
+      const VideoOptions& options,
+      const webrtc::CryptoOptions& crypto_options) = 0;
 
   virtual const std::vector<AudioCodec>& audio_send_codecs() = 0;
   virtual const std::vector<AudioCodec>& audio_recv_codecs() = 0;
@@ -110,15 +114,19 @@ class CompositeMediaEngine : public MediaEngineInterface {
   virtual rtc::scoped_refptr<webrtc::AudioState> GetAudioState() const {
     return voice().GetAudioState();
   }
-  virtual VoiceMediaChannel* CreateChannel(webrtc::Call* call,
-                                           const MediaConfig& config,
-                                           const AudioOptions& options) {
-    return voice().CreateChannel(call, config, options);
+  virtual VoiceMediaChannel* CreateChannel(
+      webrtc::Call* call,
+      const MediaConfig& config,
+      const AudioOptions& options,
+      const webrtc::CryptoOptions& crypto_options) {
+    return voice().CreateChannel(call, config, options, crypto_options);
   }
-  virtual VideoMediaChannel* CreateVideoChannel(webrtc::Call* call,
-                                                const MediaConfig& config,
-                                                const VideoOptions& options) {
-    return video().CreateChannel(call, config, options);
+  virtual VideoMediaChannel* CreateVideoChannel(
+      webrtc::Call* call,
+      const MediaConfig& config,
+      const VideoOptions& options,
+      const webrtc::CryptoOptions& crypto_options) {
+    return video().CreateChannel(call, config, options, crypto_options);
   }
 
   virtual const std::vector<AudioCodec>& audio_send_codecs() {

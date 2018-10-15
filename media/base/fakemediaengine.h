@@ -776,9 +776,11 @@ class FakeVoiceEngine : public FakeBaseEngine {
     return rtc::scoped_refptr<webrtc::AudioState>();
   }
 
-  VoiceMediaChannel* CreateChannel(webrtc::Call* call,
-                                   const MediaConfig& config,
-                                   const AudioOptions& options) {
+  VoiceMediaChannel* CreateChannel(
+      webrtc::Call* call,
+      const MediaConfig& config,
+      const AudioOptions& options,
+      const webrtc::CryptoOptions& crypto_options) {
     if (fail_create_channel_) {
       return nullptr;
     }
@@ -837,7 +839,8 @@ class FakeVideoEngine : public FakeBaseEngine {
 
   VideoMediaChannel* CreateChannel(webrtc::Call* call,
                                    const MediaConfig& config,
-                                   const VideoOptions& options) {
+                                   const VideoOptions& options,
+                                   const webrtc::CryptoOptions crypto_options) {
     if (fail_create_channel_) {
       return nullptr;
     }

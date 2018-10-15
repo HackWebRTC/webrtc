@@ -122,8 +122,26 @@ public class PeerConnectionFactory {
     public int networkIgnoreMask;
     public boolean disableEncryption;
     public boolean disableNetworkMonitor;
+
+    /**
+     * If set to true, the (potentially insecure) crypto cipher SRTP_AES128_CM_SHA1_32
+     * will be included in the list of supported ciphers during negotiation. It will only
+     * be used if both peers support it and no other ciphers get preferred.
+     */
     public boolean enableAes128Sha1_32CryptoCipher;
+
+    /**
+     * Enable GCM crypto suites from RFC 7714 for SRTP. GCM will only be used if both sides enable
+     * it.
+     */
     public boolean enableGcmCryptoSuites;
+
+    /**
+     * If set all RtpSenders must have an FrameEncryptor attached to them before they are allowed to
+     * send packets. All RtpReceivers must have a FrameDecryptor attached to them before they are
+     * able to receive packets.
+     */
+    public boolean requireFrameEncryption;
 
     @CalledByNative("Options")
     int getNetworkIgnoreMask() {
@@ -148,6 +166,11 @@ public class PeerConnectionFactory {
     @CalledByNative("Options")
     boolean getEnableGcmCryptoSuites() {
       return enableGcmCryptoSuites;
+    }
+
+    @CalledByNative("Options")
+    boolean getRequireFrameEncryption() {
+      return requireFrameEncryption;
     }
   }
 

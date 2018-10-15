@@ -460,10 +460,11 @@ WebRtcVideoEngine::~WebRtcVideoEngine() {
 WebRtcVideoChannel* WebRtcVideoEngine::CreateChannel(
     webrtc::Call* call,
     const MediaConfig& config,
-    const VideoOptions& options) {
+    const VideoOptions& options,
+    const webrtc::CryptoOptions& crypto_options) {
   RTC_LOG(LS_INFO) << "CreateChannel. Options: " << options.ToString();
-  return new WebRtcVideoChannel(call, config, options, encoder_factory_.get(),
-                                decoder_factory_.get());
+  return new WebRtcVideoChannel(call, config, options, crypto_options,
+                                encoder_factory_.get(), decoder_factory_.get());
 }
 
 std::vector<VideoCodec> WebRtcVideoEngine::codecs() const {
@@ -512,6 +513,7 @@ WebRtcVideoChannel::WebRtcVideoChannel(
     webrtc::Call* call,
     const MediaConfig& config,
     const VideoOptions& options,
+    const webrtc::CryptoOptions& crypto_options,
     webrtc::VideoEncoderFactory* encoder_factory,
     webrtc::VideoDecoderFactory* decoder_factory)
     : VideoMediaChannel(config),

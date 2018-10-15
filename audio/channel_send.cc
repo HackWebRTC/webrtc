@@ -289,6 +289,10 @@ int32_t ChannelSend::SendData(FrameType frameType,
     // Rewrite the payloadData and size to the new encrypted payload.
     payloadData = encrypted_audio_payload.data();
     payloadSize = encrypted_audio_payload.size();
+  } else if (crypto_options_.sframe.require_frame_encryption) {
+    RTC_DLOG(LS_ERROR) << "Channel::SendData() failed sending audio payload: "
+                       << "A frame encryptor is required but one is not set.";
+    return -1;
   }
 
   // Push data from ACM to RTP/RTCP-module to deliver audio frame for
@@ -354,7 +358,8 @@ ChannelSend::ChannelSend(rtc::TaskQueue* encoder_queue,
                          ProcessThread* module_process_thread,
                          RtcpRttStats* rtcp_rtt_stats,
                          RtcEventLog* rtc_event_log,
-                         FrameEncryptorInterface* frame_encryptor)
+                         FrameEncryptorInterface* frame_encryptor,
+                         const webrtc::CryptoOptions& crypto_options)
     : event_log_(rtc_event_log),
       _timeStamp(0),  // This is just an offset, RTP module will add it's own
                       // random offset
@@ -375,7 +380,8 @@ ChannelSend::ChannelSend(rtc::TaskQueue* encoder_queue,
       use_twcc_plr_for_ana_(
           webrtc::field_trial::FindFullName("UseTwccPlrForAna") == "Enabled"),
       encoder_queue_(encoder_queue),
-      frame_encryptor_(frame_encryptor) {
+      frame_encryptor_(frame_encryptor),
+      crypto_options_(crypto_options) {
   RTC_DCHECK(module_process_thread);
   RTC_DCHECK(encoder_queue);
   audio_coding_.reset(AudioCodingModule::Create(AudioCodingModule::Config()));

@@ -305,9 +305,11 @@ rtc::scoped_refptr<webrtc::AudioState> WebRtcVoiceEngine::GetAudioState()
 VoiceMediaChannel* WebRtcVoiceEngine::CreateChannel(
     webrtc::Call* call,
     const MediaConfig& config,
-    const AudioOptions& options) {
+    const AudioOptions& options,
+    const webrtc::CryptoOptions& crypto_options) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  return new WebRtcVoiceMediaChannel(this, config, options, call);
+  return new WebRtcVoiceMediaChannel(this, config, options, crypto_options,
+                                     call);
 }
 
 bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
@@ -714,7 +716,8 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
       webrtc::Transport* send_transport,
       const rtc::scoped_refptr<webrtc::AudioEncoderFactory>& encoder_factory,
       const absl::optional<webrtc::AudioCodecPairId> codec_pair_id,
-      rtc::scoped_refptr<webrtc::FrameEncryptorInterface> frame_encryptor)
+      rtc::scoped_refptr<webrtc::FrameEncryptorInterface> frame_encryptor,
+      const webrtc::CryptoOptions& crypto_options)
       : call_(call),
         config_(send_transport),
         send_side_bwe_with_overhead_(
@@ -732,6 +735,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     config_.codec_pair_id = codec_pair_id;
     config_.track_id = track_id;
     config_.frame_encryptor = frame_encryptor;
+    config_.crypto_options = crypto_options;
     rtp_parameters_.encodings[0].ssrc = ssrc;
     rtp_parameters_.rtcp.cname = c_name;
     rtp_parameters_.header_extensions = extensions;
@@ -1076,7 +1080,8 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
       absl::optional<webrtc::AudioCodecPairId> codec_pair_id,
       size_t jitter_buffer_max_packets,
       bool jitter_buffer_fast_accelerate,
-      rtc::scoped_refptr<webrtc::FrameDecryptorInterface> frame_decryptor)
+      rtc::scoped_refptr<webrtc::FrameDecryptorInterface> frame_decryptor,
+      const webrtc::CryptoOptions& crypto_options)
       : call_(call), config_() {
     RTC_DCHECK(call);
     config_.rtp.remote_ssrc = remote_ssrc;
@@ -1094,6 +1099,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
     config_.decoder_map = decoder_map;
     config_.codec_pair_id = codec_pair_id;
     config_.frame_decryptor = frame_decryptor;
+    config_.crypto_options = crypto_options;
     RecreateAudioReceiveStream();
   }
 
@@ -1231,11 +1237,16 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(WebRtcAudioReceiveStream);
 };
 
-WebRtcVoiceMediaChannel::WebRtcVoiceMediaChannel(WebRtcVoiceEngine* engine,
-                                                 const MediaConfig& config,
-                                                 const AudioOptions& options,
-                                                 webrtc::Call* call)
-    : VoiceMediaChannel(config), engine_(engine), call_(call) {
+WebRtcVoiceMediaChannel::WebRtcVoiceMediaChannel(
+    WebRtcVoiceEngine* engine,
+    const MediaConfig& config,
+    const AudioOptions& options,
+    const webrtc::CryptoOptions& crypto_options,
+    webrtc::Call* call)
+    : VoiceMediaChannel(config),
+      engine_(engine),
+      call_(call),
+      crypto_options_(crypto_options) {
   RTC_LOG(LS_VERBOSE) << "WebRtcVoiceMediaChannel::WebRtcVoiceMediaChannel";
   RTC_DCHECK(call);
   engine->RegisterChannel(this);
@@ -1757,7 +1768,7 @@ bool WebRtcVoiceMediaChannel::AddSendStream(const StreamParams& sp) {
   WebRtcAudioSendStream* stream = new WebRtcAudioSendStream(
       ssrc, mid_, sp.cname, sp.id, send_codec_spec_, send_rtp_extensions_,
       max_send_bitrate_bps_, audio_network_adaptor_config, call_, this,
-      engine()->encoder_factory_, codec_pair_id_, nullptr);
+      engine()->encoder_factory_, codec_pair_id_, nullptr, crypto_options_);
   send_streams_.insert(std::make_pair(ssrc, stream));
 
   // At this point the stream's local SSRC has been updated. If it is the first
@@ -1844,7 +1855,7 @@ bool WebRtcVoiceMediaChannel::AddRecvStream(const StreamParams& sp) {
                 call_, this, engine()->decoder_factory_, decoder_map_,
                 codec_pair_id_, engine()->audio_jitter_buffer_max_packets_,
                 engine()->audio_jitter_buffer_fast_accelerate_,
-                unsignaled_frame_decryptor_)));
+                unsignaled_frame_decryptor_, crypto_options_)));
   recv_streams_[ssrc]->SetPlayout(playout_);
 
   return true;

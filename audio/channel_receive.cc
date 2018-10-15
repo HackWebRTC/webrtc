@@ -206,7 +206,8 @@ ChannelReceive::ChannelReceive(
     bool jitter_buffer_fast_playout,
     rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
     absl::optional<AudioCodecPairId> codec_pair_id,
-    FrameDecryptorInterface* frame_decryptor)
+    FrameDecryptorInterface* frame_decryptor,
+    const webrtc::CryptoOptions& crypto_options)
     : event_log_(rtc_event_log),
       rtp_receive_statistics_(
           ReceiveStatistics::Create(Clock::GetRealTimeClock())),
@@ -222,7 +223,8 @@ ChannelReceive::ChannelReceive(
       _audioDeviceModulePtr(audio_device_module),
       _outputGain(1.0f),
       associated_send_channel_(nullptr),
-      frame_decryptor_(frame_decryptor) {
+      frame_decryptor_(frame_decryptor),
+      crypto_options_(crypto_options) {
   RTC_DCHECK(module_process_thread);
   RTC_DCHECK(audio_device_module);
   AudioCodingModule::Config acm_config;
@@ -429,6 +431,10 @@ bool ChannelReceive::ReceivePacket(const uint8_t* packet,
     // Update the final payload.
     payload = decrypted_audio_payload.data();
     payload_data_length = decrypted_audio_payload.size();
+  } else if (crypto_options_.sframe.require_frame_encryption) {
+    RTC_DLOG(LS_ERROR)
+        << "FrameDecryptor required but not set, dropping packet";
+    payload_data_length = 0;
   }
 
   if (payload_data_length == 0) {

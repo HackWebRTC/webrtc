@@ -36,9 +36,11 @@ class NullWebRtcVideoEngine {
 
   RtpCapabilities GetCapabilities() const { return RtpCapabilities(); }
 
-  VideoMediaChannel* CreateChannel(webrtc::Call* call,
-                                   const MediaConfig& config,
-                                   const VideoOptions& options) {
+  VideoMediaChannel* CreateChannel(
+      webrtc::Call* call,
+      const MediaConfig& config,
+      const VideoOptions& options,
+      const webrtc::CryptoOptions& crypto_options) {
     return nullptr;
   }
 };

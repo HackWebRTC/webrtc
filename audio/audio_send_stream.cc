@@ -51,11 +51,12 @@ std::unique_ptr<voe::ChannelSendProxy> CreateChannelAndProxy(
     ProcessThread* module_process_thread,
     RtcpRttStats* rtcp_rtt_stats,
     RtcEventLog* event_log,
-    FrameEncryptorInterface* frame_encryptor) {
+    FrameEncryptorInterface* frame_encryptor,
+    const webrtc::CryptoOptions& crypto_options) {
   return absl::make_unique<voe::ChannelSendProxy>(
       absl::make_unique<voe::ChannelSend>(worker_queue, module_process_thread,
                                           rtcp_rtt_stats, event_log,
-                                          frame_encryptor));
+                                          frame_encryptor, crypto_options));
 }
 }  // namespace
 
@@ -106,7 +107,8 @@ AudioSendStream::AudioSendStream(
                                             module_process_thread,
                                             rtcp_rtt_stats,
                                             event_log,
-                                            config.frame_encryptor)) {}
+                                            config.frame_encryptor,
+                                            config.crypto_options)) {}
 
 AudioSendStream::AudioSendStream(
     const webrtc::AudioSendStream::Config& config,

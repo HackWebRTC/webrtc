@@ -452,8 +452,8 @@ TEST_F(WebRtcVideoEngineTest, CVOSetHeaderExtensionAfterCapturer) {
 TEST_F(WebRtcVideoEngineTest, SetSendFailsBeforeSettingCodecs) {
   encoder_factory_->AddSupportedVideoCodecType("VP8");
 
-  std::unique_ptr<VideoMediaChannel> channel(
-      engine_.CreateChannel(call_.get(), GetMediaConfig(), VideoOptions()));
+  std::unique_ptr<VideoMediaChannel> channel(engine_.CreateChannel(
+      call_.get(), GetMediaConfig(), VideoOptions(), webrtc::CryptoOptions()));
 
   EXPECT_TRUE(channel->AddSendStream(StreamParams::CreateLegacy(123)));
 
@@ -466,8 +466,8 @@ TEST_F(WebRtcVideoEngineTest, SetSendFailsBeforeSettingCodecs) {
 TEST_F(WebRtcVideoEngineTest, GetStatsWithoutSendCodecsSetDoesNotCrash) {
   encoder_factory_->AddSupportedVideoCodecType("VP8");
 
-  std::unique_ptr<VideoMediaChannel> channel(
-      engine_.CreateChannel(call_.get(), GetMediaConfig(), VideoOptions()));
+  std::unique_ptr<VideoMediaChannel> channel(engine_.CreateChannel(
+      call_.get(), GetMediaConfig(), VideoOptions(), webrtc::CryptoOptions()));
   EXPECT_TRUE(channel->AddSendStream(StreamParams::CreateLegacy(123)));
   VideoMediaInfo info;
   channel->GetStats(&info);
@@ -676,8 +676,8 @@ cricket::VideoCodec WebRtcVideoEngineTest::GetEngineCodec(
 
 VideoMediaChannel*
 WebRtcVideoEngineTest::SetSendParamsWithAllSupportedCodecs() {
-  VideoMediaChannel* channel =
-      engine_.CreateChannel(call_.get(), GetMediaConfig(), VideoOptions());
+  VideoMediaChannel* channel = engine_.CreateChannel(
+      call_.get(), GetMediaConfig(), VideoOptions(), webrtc::CryptoOptions());
   cricket::VideoSendParameters parameters;
   // We need to look up the codec in the engine to get the correct payload type.
   for (const webrtc::SdpVideoFormat& format :
@@ -696,8 +696,8 @@ WebRtcVideoEngineTest::SetSendParamsWithAllSupportedCodecs() {
 
 VideoMediaChannel* WebRtcVideoEngineTest::SetRecvParamsWithSupportedCodecs(
     const std::vector<VideoCodec>& codecs) {
-  VideoMediaChannel* channel =
-      engine_.CreateChannel(call_.get(), GetMediaConfig(), VideoOptions());
+  VideoMediaChannel* channel = engine_.CreateChannel(
+      call_.get(), GetMediaConfig(), VideoOptions(), webrtc::CryptoOptions());
   cricket::VideoRecvParameters parameters;
   parameters.codecs = codecs;
   EXPECT_TRUE(channel->SetRecvParameters(parameters));
@@ -751,8 +751,8 @@ TEST_F(WebRtcVideoEngineTest, ChannelWithH264CanChangeToVp8) {
   EXPECT_EQ(cricket::CS_RUNNING,
             capturer.Start(capturer.GetSupportedFormats()->front()));
 
-  std::unique_ptr<VideoMediaChannel> channel(
-      engine_.CreateChannel(call_.get(), GetMediaConfig(), VideoOptions()));
+  std::unique_ptr<VideoMediaChannel> channel(engine_.CreateChannel(
+      call_.get(), GetMediaConfig(), VideoOptions(), webrtc::CryptoOptions()));
   cricket::VideoSendParameters parameters;
   parameters.codecs.push_back(GetEngineCodec("H264"));
   EXPECT_TRUE(channel->SetSendParameters(parameters));
@@ -780,8 +780,8 @@ TEST_F(WebRtcVideoEngineTest,
   encoder_factory_->AddSupportedVideoCodecType("VP8");
   encoder_factory_->AddSupportedVideoCodecType("H264");
 
-  std::unique_ptr<VideoMediaChannel> channel(
-      engine_.CreateChannel(call_.get(), GetMediaConfig(), VideoOptions()));
+  std::unique_ptr<VideoMediaChannel> channel(engine_.CreateChannel(
+      call_.get(), GetMediaConfig(), VideoOptions(), webrtc::CryptoOptions()));
   cricket::VideoSendParameters parameters;
   parameters.codecs.push_back(GetEngineCodec("VP8"));
   EXPECT_TRUE(channel->SetSendParameters(parameters));
@@ -815,8 +815,8 @@ TEST_F(WebRtcVideoEngineTest,
   encoder_factory_->AddSupportedVideoCodecType("VP8");
   encoder_factory_->AddSupportedVideoCodecType("H264");
 
-  std::unique_ptr<VideoMediaChannel> channel(
-      engine_.CreateChannel(call_.get(), GetMediaConfig(), VideoOptions()));
+  std::unique_ptr<VideoMediaChannel> channel(engine_.CreateChannel(
+      call_.get(), GetMediaConfig(), VideoOptions(), webrtc::CryptoOptions()));
   cricket::VideoSendParameters parameters;
   parameters.codecs.push_back(GetEngineCodec("H264"));
   EXPECT_TRUE(channel->SetSendParameters(parameters));
@@ -847,8 +847,8 @@ TEST_F(WebRtcVideoEngineTest, SimulcastEnabledForH264BehindFieldTrial) {
       "WebRTC-H264Simulcast/Enabled/");
   encoder_factory_->AddSupportedVideoCodecType("H264");
 
-  std::unique_ptr<VideoMediaChannel> channel(
-      engine_.CreateChannel(call_.get(), GetMediaConfig(), VideoOptions()));
+  std::unique_ptr<VideoMediaChannel> channel(engine_.CreateChannel(
+      call_.get(), GetMediaConfig(), VideoOptions(), webrtc::CryptoOptions()));
   cricket::VideoSendParameters parameters;
   parameters.codecs.push_back(GetEngineCodec("H264"));
   EXPECT_TRUE(channel->SetSendParameters(parameters));
@@ -1104,8 +1104,8 @@ TEST(WebRtcVideoEngineNewVideoCodecFactoryTest, Vp8) {
 
   // Create send channel.
   const int send_ssrc = 123;
-  std::unique_ptr<VideoMediaChannel> send_channel(
-      engine.CreateChannel(call.get(), GetMediaConfig(), VideoOptions()));
+  std::unique_ptr<VideoMediaChannel> send_channel(engine.CreateChannel(
+      call.get(), GetMediaConfig(), VideoOptions(), webrtc::CryptoOptions()));
   cricket::VideoSendParameters send_parameters;
   send_parameters.codecs.push_back(engine_codecs.at(0));
   EXPECT_TRUE(send_channel->SetSendParameters(send_parameters));
@@ -1125,8 +1125,8 @@ TEST(WebRtcVideoEngineNewVideoCodecFactoryTest, Vp8) {
 
   // Create recv channel.
   const int recv_ssrc = 321;
-  std::unique_ptr<VideoMediaChannel> recv_channel(
-      engine.CreateChannel(call.get(), GetMediaConfig(), VideoOptions()));
+  std::unique_ptr<VideoMediaChannel> recv_channel(engine.CreateChannel(
+      call.get(), GetMediaConfig(), VideoOptions(), webrtc::CryptoOptions()));
   cricket::VideoRecvParameters recv_parameters;
   recv_parameters.codecs.push_back(engine_codecs.at(0));
   EXPECT_TRUE(recv_channel->SetRecvParameters(recv_parameters));
@@ -1166,8 +1166,8 @@ TEST(WebRtcVideoEngineNewVideoCodecFactoryTest, NullDecoder) {
 
   // Create recv channel.
   const int recv_ssrc = 321;
-  std::unique_ptr<VideoMediaChannel> recv_channel(
-      engine.CreateChannel(call.get(), GetMediaConfig(), VideoOptions()));
+  std::unique_ptr<VideoMediaChannel> recv_channel(engine.CreateChannel(
+      call.get(), GetMediaConfig(), VideoOptions(), webrtc::CryptoOptions()));
   cricket::VideoRecvParameters recv_parameters;
   recv_parameters.codecs.push_back(engine.codecs().front());
   EXPECT_TRUE(recv_channel->SetRecvParameters(recv_parameters));
@@ -1256,7 +1256,8 @@ class WebRtcVideoChannelBaseTest : public testing::Test {
     // frames become flaky.
     media_config.video.enable_cpu_adaptation = false;
     channel_.reset(engine_.CreateChannel(call_.get(), media_config,
-                                         cricket::VideoOptions()));
+                                         cricket::VideoOptions(),
+                                         webrtc::CryptoOptions()));
     channel_->OnReadyToSend(true);
     EXPECT_TRUE(channel_.get() != NULL);
     network_interface_.SetDestination(channel_.get());
@@ -2066,7 +2067,8 @@ class WebRtcVideoChannelTest : public WebRtcVideoEngineTest {
 
     fake_call_.reset(new FakeCall());
     channel_.reset(engine_.CreateChannel(fake_call_.get(), GetMediaConfig(),
-                                         VideoOptions()));
+                                         VideoOptions(),
+                                         webrtc::CryptoOptions()));
     channel_->OnReadyToSend(true);
     last_ssrc_ = 123;
     send_parameters_.codecs = engine_.codecs();
@@ -2872,8 +2874,8 @@ TEST_F(WebRtcVideoChannelTest, SetMediaConfigSuspendBelowMinBitrate) {
   MediaConfig media_config = GetMediaConfig();
   media_config.video.suspend_below_min_bitrate = true;
 
-  channel_.reset(
-      engine_.CreateChannel(fake_call_.get(), media_config, VideoOptions()));
+  channel_.reset(engine_.CreateChannel(
+      fake_call_.get(), media_config, VideoOptions(), webrtc::CryptoOptions()));
   channel_->OnReadyToSend(true);
 
   channel_->SetSendParameters(send_parameters_);
@@ -2882,8 +2884,8 @@ TEST_F(WebRtcVideoChannelTest, SetMediaConfigSuspendBelowMinBitrate) {
   EXPECT_TRUE(stream->GetConfig().suspend_below_min_bitrate);
 
   media_config.video.suspend_below_min_bitrate = false;
-  channel_.reset(
-      engine_.CreateChannel(fake_call_.get(), media_config, VideoOptions()));
+  channel_.reset(engine_.CreateChannel(
+      fake_call_.get(), media_config, VideoOptions(), webrtc::CryptoOptions()));
   channel_->OnReadyToSend(true);
 
   channel_->SetSendParameters(send_parameters_);
@@ -3223,8 +3225,8 @@ TEST_F(WebRtcVideoChannelTest, AdaptsOnOveruseAndChangeResolution) {
   parameters.codecs.push_back(codec);
 
   MediaConfig media_config = GetMediaConfig();
-  channel_.reset(
-      engine_.CreateChannel(fake_call_.get(), media_config, VideoOptions()));
+  channel_.reset(engine_.CreateChannel(
+      fake_call_.get(), media_config, VideoOptions(), webrtc::CryptoOptions()));
   channel_->OnReadyToSend(true);
   ASSERT_TRUE(channel_->SetSendParameters(parameters));
 
@@ -3304,8 +3306,8 @@ TEST_F(WebRtcVideoChannelTest, PreviousAdaptationDoesNotApplyToScreenshare) {
 
   MediaConfig media_config = GetMediaConfig();
   media_config.video.enable_cpu_adaptation = true;
-  channel_.reset(
-      engine_.CreateChannel(fake_call_.get(), media_config, VideoOptions()));
+  channel_.reset(engine_.CreateChannel(
+      fake_call_.get(), media_config, VideoOptions(), webrtc::CryptoOptions()));
   channel_->OnReadyToSend(true);
   ASSERT_TRUE(channel_->SetSendParameters(parameters));
 
@@ -3378,8 +3380,8 @@ void WebRtcVideoChannelTest::TestDegradationPreference(
 
   MediaConfig media_config = GetMediaConfig();
   media_config.video.enable_cpu_adaptation = true;
-  channel_.reset(
-      engine_.CreateChannel(fake_call_.get(), media_config, VideoOptions()));
+  channel_.reset(engine_.CreateChannel(
+      fake_call_.get(), media_config, VideoOptions(), webrtc::CryptoOptions()));
   channel_->OnReadyToSend(true);
 
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
@@ -3413,8 +3415,8 @@ void WebRtcVideoChannelTest::TestCpuAdaptation(bool enable_overuse,
   if (enable_overuse) {
     media_config.video.enable_cpu_adaptation = true;
   }
-  channel_.reset(
-      engine_.CreateChannel(fake_call_.get(), media_config, VideoOptions()));
+  channel_.reset(engine_.CreateChannel(
+      fake_call_.get(), media_config, VideoOptions(), webrtc::CryptoOptions()));
   channel_->OnReadyToSend(true);
 
   EXPECT_TRUE(channel_->SetSendParameters(parameters));
@@ -4595,15 +4597,15 @@ TEST_F(WebRtcVideoChannelTest, TestSetDscpOptions) {
   MediaConfig config;
   std::unique_ptr<cricket::WebRtcVideoChannel> channel;
 
-  channel.reset(static_cast<cricket::WebRtcVideoChannel*>(
-      engine_.CreateChannel(call_.get(), config, VideoOptions())));
+  channel.reset(static_cast<cricket::WebRtcVideoChannel*>(engine_.CreateChannel(
+      call_.get(), config, VideoOptions(), webrtc::CryptoOptions())));
   channel->SetInterface(network_interface.get());
   // Default value when DSCP is disabled should be DSCP_DEFAULT.
   EXPECT_EQ(rtc::DSCP_DEFAULT, network_interface->dscp());
 
   config.enable_dscp = true;
-  channel.reset(static_cast<cricket::WebRtcVideoChannel*>(
-      engine_.CreateChannel(call_.get(), config, VideoOptions())));
+  channel.reset(static_cast<cricket::WebRtcVideoChannel*>(engine_.CreateChannel(
+      call_.get(), config, VideoOptions(), webrtc::CryptoOptions())));
   channel->SetInterface(network_interface.get());
   EXPECT_EQ(rtc::DSCP_AF41, network_interface->dscp());
 
@@ -4616,8 +4618,8 @@ TEST_F(WebRtcVideoChannelTest, TestSetDscpOptions) {
   // Verify that setting the option to false resets the
   // DiffServCodePoint.
   config.enable_dscp = false;
-  channel.reset(static_cast<cricket::WebRtcVideoChannel*>(
-      engine_.CreateChannel(call_.get(), config, VideoOptions())));
+  channel.reset(static_cast<cricket::WebRtcVideoChannel*>(engine_.CreateChannel(
+      call_.get(), config, VideoOptions(), webrtc::CryptoOptions())));
   channel->SetInterface(network_interface.get());
   EXPECT_EQ(rtc::DSCP_DEFAULT, network_interface->dscp());
 }
@@ -6738,8 +6740,9 @@ class WebRtcVideoChannelSimulcastTest : public testing::Test {
 
   void SetUp() override {
     encoder_factory_->AddSupportedVideoCodecType("VP8");
-    channel_.reset(
-        engine_.CreateChannel(&fake_call_, GetMediaConfig(), VideoOptions()));
+    channel_.reset(engine_.CreateChannel(&fake_call_, GetMediaConfig(),
+                                         VideoOptions(),
+                                         webrtc::CryptoOptions()));
     channel_->OnReadyToSend(true);
     last_ssrc_ = 123;
   }

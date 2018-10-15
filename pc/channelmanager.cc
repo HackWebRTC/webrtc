@@ -177,7 +177,7 @@ VoiceChannel* ChannelManager::CreateVoiceChannel(
   }
 
   VoiceMediaChannel* media_channel =
-      media_engine_->CreateChannel(call, media_config, options);
+      media_engine_->CreateChannel(call, media_config, options, crypto_options);
   if (!media_channel) {
     return nullptr;
   }
@@ -243,8 +243,8 @@ VideoChannel* ChannelManager::CreateVideoChannel(
     return nullptr;
   }
 
-  VideoMediaChannel* media_channel =
-      media_engine_->CreateVideoChannel(call, media_config, options);
+  VideoMediaChannel* media_channel = media_engine_->CreateVideoChannel(
+      call, media_config, options, crypto_options);
   if (!media_channel) {
     return nullptr;
   }

@@ -58,7 +58,8 @@ class WebRtcVoiceEngine final {
   rtc::scoped_refptr<webrtc::AudioState> GetAudioState() const;
   VoiceMediaChannel* CreateChannel(webrtc::Call* call,
                                    const MediaConfig& config,
-                                   const AudioOptions& options);
+                                   const AudioOptions& options,
+                                   const webrtc::CryptoOptions& crypto_options);
 
   const std::vector<AudioCodec>& send_codecs() const;
   const std::vector<AudioCodec>& recv_codecs() const;
@@ -142,6 +143,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   WebRtcVoiceMediaChannel(WebRtcVoiceEngine* engine,
                           const MediaConfig& config,
                           const AudioOptions& options,
+                          const webrtc::CryptoOptions& crypto_options,
                           webrtc::Call* call);
   ~WebRtcVoiceMediaChannel() override;
 
@@ -306,6 +308,9 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   const webrtc::AudioCodecPairId codec_pair_id_ =
       webrtc::AudioCodecPairId::Create();
 
+  // Per peer connection crypto options that last for the lifetime of the peer
+  // connection.
+  const webrtc::CryptoOptions crypto_options_;
   // Unsignaled streams have an option to have a frame decryptor set on them.
   rtc::scoped_refptr<webrtc::FrameDecryptorInterface>
       unsignaled_frame_decryptor_;

@@ -96,9 +96,11 @@ class WebRtcVideoEngine {
 
   virtual ~WebRtcVideoEngine();
 
-  WebRtcVideoChannel* CreateChannel(webrtc::Call* call,
-                                    const MediaConfig& config,
-                                    const VideoOptions& options);
+  WebRtcVideoChannel* CreateChannel(
+      webrtc::Call* call,
+      const MediaConfig& config,
+      const VideoOptions& options,
+      const webrtc::CryptoOptions& crypto_options);
 
   std::vector<VideoCodec> codecs() const;
   RtpCapabilities GetCapabilities() const;
@@ -113,6 +115,7 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
   WebRtcVideoChannel(webrtc::Call* call,
                      const MediaConfig& config,
                      const VideoOptions& options,
+                     const webrtc::CryptoOptions& crypto_options,
                      webrtc::VideoEncoderFactory* encoder_factory,
                      webrtc::VideoDecoderFactory* decoder_factory);
   ~WebRtcVideoChannel() override;

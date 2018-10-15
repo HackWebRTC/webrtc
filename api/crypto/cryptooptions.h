@@ -33,6 +33,9 @@ struct CryptoOptions {
   // of crypto options.
   std::vector<int> GetSupportedDtlsSrtpCryptoSuites() const;
 
+  bool operator==(const CryptoOptions& other) const;
+  bool operator!=(const CryptoOptions& other) const;
+
   // SRTP Related Peer Connection options.
   struct Srtp {
     // Enable GCM crypto suites from RFC 7714 for SRTP. GCM will only be used
@@ -49,6 +52,14 @@ struct CryptoOptions {
     // will be negotiated. They will only be used if both peers support them.
     bool enable_encrypted_rtp_header_extensions = false;
   } srtp;
+
+  // Options to be used when the FrameEncryptor / FrameDecryptor APIs are used.
+  struct SFrame {
+    // If set all RtpSenders must have an FrameEncryptor attached to them before
+    // they are allowed to send packets. All RtpReceivers must have a
+    // FrameDecryptor attached to them before they are able to receive packets.
+    bool require_frame_encryption = false;
+  } sframe;
 };
 
 }  // namespace webrtc

@@ -17,6 +17,7 @@ CryptoOptions::CryptoOptions() {}
 
 CryptoOptions::CryptoOptions(const CryptoOptions& other) {
   srtp = other.srtp;
+  sframe = other.sframe;
 }
 
 CryptoOptions::~CryptoOptions() {}
@@ -44,6 +45,34 @@ std::vector<int> CryptoOptions::GetSupportedDtlsSrtpCryptoSuites() const {
   }
   crypto_suites.push_back(rtc::SRTP_AES128_CM_SHA1_80);
   return crypto_suites;
+}
+
+bool CryptoOptions::operator==(const CryptoOptions& other) const {
+  struct data_being_tested_for_equality {
+    struct Srtp {
+      bool enable_gcm_crypto_suites;
+      bool enable_aes128_sha1_32_crypto_cipher;
+      bool enable_encrypted_rtp_header_extensions;
+    } srtp;
+    struct SFrame {
+      bool require_frame_encryption;
+    } sframe;
+  };
+  static_assert(sizeof(data_being_tested_for_equality) == sizeof(*this),
+                "Did you add something to CryptoOptions and forget to "
+                "update operator==?");
+
+  return srtp.enable_gcm_crypto_suites == other.srtp.enable_gcm_crypto_suites &&
+         srtp.enable_aes128_sha1_32_crypto_cipher ==
+             other.srtp.enable_aes128_sha1_32_crypto_cipher &&
+         srtp.enable_encrypted_rtp_header_extensions ==
+             other.srtp.enable_encrypted_rtp_header_extensions &&
+         sframe.require_frame_encryption ==
+             other.sframe.require_frame_encryption;
+}
+
+bool CryptoOptions::operator!=(const CryptoOptions& other) const {
+  return !(*this == other);
 }
 
 }  // namespace webrtc

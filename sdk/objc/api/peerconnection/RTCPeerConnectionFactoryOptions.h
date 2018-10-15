@@ -35,6 +35,8 @@ RTC_OBJC_EXPORT
 
 @property(nonatomic, assign) BOOL enableGcmCryptoSuites;
 
+@property(nonatomic, assign) BOOL requireFrameEncryption;
+
 - (instancetype)init NS_DESIGNATED_INITIALIZER;
 
 @end

@@ -19,6 +19,7 @@
 #include "api/audio/audio_mixer.h"
 #include "api/call/audio_sink.h"
 #include "api/call/transport.h"
+#include "api/crypto/cryptooptions.h"
 #include "api/rtpreceiverinterface.h"
 #include "audio/audio_level.h"
 #include "call/syncable.h"
@@ -114,7 +115,8 @@ class ChannelReceive : public RtpData {
                  bool jitter_buffer_fast_playout,
                  rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
                  absl::optional<AudioCodecPairId> codec_pair_id,
-                 FrameDecryptorInterface* frame_decryptor);
+                 FrameDecryptorInterface* frame_decryptor,
+                 const webrtc::CryptoOptions& crypto_options);
   virtual ~ChannelReceive();
 
   void SetSink(AudioSinkInterface* sink);
@@ -259,6 +261,7 @@ class ChannelReceive : public RtpData {
 
   // E2EE Audio Frame Decryption
   FrameDecryptorInterface* frame_decryptor_ = nullptr;
+  webrtc::CryptoOptions crypto_options_;
 };
 
 }  // namespace voe

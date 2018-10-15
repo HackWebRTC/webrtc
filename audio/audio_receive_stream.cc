@@ -76,7 +76,7 @@ std::unique_ptr<voe::ChannelReceiveProxy> CreateChannelAndProxy(
           config.rtcp_send_transport, event_log, config.rtp.remote_ssrc,
           config.jitter_buffer_max_packets,
           config.jitter_buffer_fast_accelerate, config.decoder_factory,
-          config.codec_pair_id, config.frame_decryptor));
+          config.codec_pair_id, config.frame_decryptor, config.crypto_options));
 }
 }  // namespace
 

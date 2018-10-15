@@ -19,6 +19,7 @@
 #include "api/audio/audio_frame.h"
 #include "api/audio_codecs/audio_encoder.h"
 #include "api/call/transport.h"
+#include "api/crypto/cryptooptions.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/audio_processing/rms_level.h"
@@ -120,7 +121,8 @@ class ChannelSend
               ProcessThread* module_process_thread,
               RtcpRttStats* rtcp_rtt_stats,
               RtcEventLog* rtc_event_log,
-              FrameEncryptorInterface* frame_encryptor);
+              FrameEncryptorInterface* frame_encryptor,
+              const webrtc::CryptoOptions& crypto_options);
 
   virtual ~ChannelSend();
 
@@ -298,6 +300,8 @@ class ChannelSend
 
   // E2EE Audio Frame Encryption
   FrameEncryptorInterface* frame_encryptor_ = nullptr;
+  // E2EE Frame Encryption Options
+  webrtc::CryptoOptions crypto_options_;
 };
 
 }  // namespace voe
