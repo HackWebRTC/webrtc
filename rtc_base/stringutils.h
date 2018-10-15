@@ -40,35 +40,6 @@
 #define STACK_ARRAY(TYPE, LEN) \
   static_cast<TYPE*>(::alloca((LEN) * sizeof(TYPE)))
 
-namespace rtc {
-
-// Determines whether the simple wildcard pattern matches target.
-// Alpha characters in pattern match case-insensitively.
-// Asterisks in pattern match 0 or more characters.
-// Ex: string_match("www.TEST.GOOGLE.COM", "www.*.com") -> true
-bool string_match(const char* target, const char* pattern);
-
-}  // namespace rtc
-
-///////////////////////////////////////////////////////////////////////////////
-// Rename a few common string functions so they are consistent across platforms.
-// tolowercase is like tolower, but not compatible with end-of-file value
-//
-// It's not clear if we will ever use wchar_t strings on unix.  In theory,
-// all strings should be Utf8 all the time, except when interfacing with Win32
-// APIs that require Utf16.
-///////////////////////////////////////////////////////////////////////////////
-inline char tolowercase(char c) {
-  return static_cast<char>(tolower(c));
-}
-
-#if defined(WEBRTC_WIN)
-
-inline wchar_t tolowercase(wchar_t c) {
-  return static_cast<wchar_t>(towlower(c));
-}
-
-#endif  // WEBRTC_WIN
 
 #if defined(WEBRTC_POSIX)
 
@@ -195,60 +166,6 @@ size_t sprintfn(CTYPE* buffer, size_t buflen, const CTYPE* format, ...) {
   va_end(args);
   return len;
 }
-
-///////////////////////////////////////////////////////////////////////////////
-// Allow safe comparing and copying ascii (not UTF-8) with both wide and
-// non-wide character strings.
-///////////////////////////////////////////////////////////////////////////////
-
-inline int asccmp(const char* s1, const char* s2) {
-  return strcmp(s1, s2);
-}
-inline int ascicmp(const char* s1, const char* s2) {
-  return _stricmp(s1, s2);
-}
-inline int ascncmp(const char* s1, const char* s2, size_t n) {
-  return strncmp(s1, s2, n);
-}
-inline int ascnicmp(const char* s1, const char* s2, size_t n) {
-  return _strnicmp(s1, s2, n);
-}
-inline size_t asccpyn(char* buffer,
-                      size_t buflen,
-                      const char* source,
-                      size_t srclen = SIZE_UNKNOWN) {
-  return strcpyn(buffer, buflen, source, srclen);
-}
-
-#if defined(WEBRTC_WIN)
-
-typedef wchar_t (*CharacterTransformation)(wchar_t);
-inline wchar_t identity(wchar_t c) {
-  return c;
-}
-int ascii_string_compare(const wchar_t* s1,
-                         const char* s2,
-                         size_t n,
-                         CharacterTransformation transformation);
-
-inline int asccmp(const wchar_t* s1, const char* s2) {
-  return ascii_string_compare(s1, s2, static_cast<size_t>(-1), identity);
-}
-inline int ascicmp(const wchar_t* s1, const char* s2) {
-  return ascii_string_compare(s1, s2, static_cast<size_t>(-1), tolowercase);
-}
-inline int ascncmp(const wchar_t* s1, const char* s2, size_t n) {
-  return ascii_string_compare(s1, s2, n, identity);
-}
-inline int ascnicmp(const wchar_t* s1, const char* s2, size_t n) {
-  return ascii_string_compare(s1, s2, n, tolowercase);
-}
-size_t asccpyn(wchar_t* buffer,
-               size_t buflen,
-               const char* source,
-               size_t srclen = SIZE_UNKNOWN);
-
-#endif  // WEBRTC_WIN
 
 ///////////////////////////////////////////////////////////////////////////////
 // Traits<char> specializations
