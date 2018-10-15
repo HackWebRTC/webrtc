@@ -54,8 +54,8 @@ std::unique_ptr<SSLCertificateStats> SSLCertificate::GetStats() const {
   // |SSLCertificate::GetSignatureDigestAlgorithm| is not supported by the
   // implementation of |SSLCertificate::ComputeDigest|. This currently happens
   // with MD5- and SHA-224-signed certificates when linked to libNSS.
-  std::unique_ptr<SSLFingerprint> ssl_fingerprint =
-      SSLFingerprint::Create(digest_algorithm, *this);
+  std::unique_ptr<SSLFingerprint> ssl_fingerprint(
+      SSLFingerprint::Create(digest_algorithm, this));
   if (!ssl_fingerprint)
     return nullptr;
   std::string fingerprint = ssl_fingerprint->GetRfc4572Fingerprint();

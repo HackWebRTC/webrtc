@@ -126,7 +126,7 @@ class JsepTransport2Test : public testing::Test, public sigslot::has_slots<> {
 
     std::unique_ptr<rtc::SSLFingerprint> fingerprint;
     if (cert) {
-      fingerprint = rtc::SSLFingerprint::CreateFromCertificate(*cert);
+      fingerprint.reset(rtc::SSLFingerprint::CreateFromCertificate(cert));
     }
     jsep_description.transport_desc =
         TransportDescription(std::vector<std::string>(), ufrag, pwd,
@@ -386,9 +386,8 @@ TEST_P(JsepTransport2WithRtcpMux, VerifyCertificateFingerprint) {
     ASSERT_TRUE(certificate->ssl_certificate().GetSignatureDigestAlgorithm(
         &digest_algorithm));
     ASSERT_FALSE(digest_algorithm.empty());
-    std::unique_ptr<rtc::SSLFingerprint> good_fingerprint =
-        rtc::SSLFingerprint::CreateUnique(digest_algorithm,
-                                          *certificate->identity());
+    std::unique_ptr<rtc::SSLFingerprint> good_fingerprint(
+        rtc::SSLFingerprint::Create(digest_algorithm, certificate->identity()));
     ASSERT_NE(nullptr, good_fingerprint);
 
     EXPECT_TRUE(jsep_transport_

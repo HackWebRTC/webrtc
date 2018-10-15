@@ -120,8 +120,8 @@ bool TransportDescriptionFactory::SetSecurityInfo(TransportDescription* desc,
   // This digest algorithm is used to produce the a=fingerprint lines in SDP.
   // RFC 4572 Section 5 requires that those lines use the same hash function as
   // the certificate's signature, which is what CreateFromCertificate does.
-  desc->identity_fingerprint =
-      rtc::SSLFingerprint::CreateFromCertificate(*certificate_);
+  desc->identity_fingerprint.reset(
+      rtc::SSLFingerprint::CreateFromCertificate(certificate_));
   if (!desc->identity_fingerprint) {
     return false;
   }

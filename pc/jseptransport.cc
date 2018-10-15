@@ -316,9 +316,8 @@ webrtc::RTCError JsepTransport::VerifyCertificateFingerprint(
     return webrtc::RTCError(webrtc::RTCErrorType::INVALID_PARAMETER,
                             "Fingerprint provided but no identity available.");
   }
-  std::unique_ptr<rtc::SSLFingerprint> fp_tmp =
-      rtc::SSLFingerprint::CreateUnique(fingerprint->algorithm,
-                                        *certificate->identity());
+  std::unique_ptr<rtc::SSLFingerprint> fp_tmp(rtc::SSLFingerprint::Create(
+      fingerprint->algorithm, certificate->identity()));
   RTC_DCHECK(fp_tmp.get() != NULL);
   if (*fp_tmp == *fingerprint) {
     return webrtc::RTCError::OK();
@@ -507,8 +506,7 @@ webrtc::RTCError JsepTransport::NegotiateAndSetDtlsParameters(
         "Local fingerprint supplied when caller didn't offer DTLS.");
   } else {
     // We are not doing DTLS
-    remote_fingerprint = absl::make_unique<rtc::SSLFingerprint>(
-        "", rtc::ArrayView<const uint8_t>());
+    remote_fingerprint = absl::make_unique<rtc::SSLFingerprint>("", nullptr, 0);
   }
   // Now that we have negotiated everything, push it downward.
   // Note that we cache the result so that if we have race conditions
