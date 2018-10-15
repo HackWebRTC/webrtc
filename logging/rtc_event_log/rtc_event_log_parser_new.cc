@@ -26,7 +26,7 @@
 #include "api/rtpparameters.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
-#include "modules/congestion_controller/transport_feedback_adapter.h"
+#include "modules/congestion_controller/rtp/transport_feedback_adapter.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
@@ -1438,7 +1438,8 @@ const std::vector<MatchedSendArrivalTimes> GetNetworkTrace(
     clock.AdvanceTimeMicroseconds(time_us - clock.TimeInMicroseconds());
     if (clock.TimeInMicroseconds() >= NextRtcpTime()) {
       RTC_DCHECK_EQ(clock.TimeInMicroseconds(), NextRtcpTime());
-      feedback_adapter.OnTransportFeedback(rtcp_iterator->transport_feedback);
+      feedback_adapter.ProcessTransportFeedback(
+          rtcp_iterator->transport_feedback);
       std::vector<PacketFeedback> feedback =
           feedback_adapter.GetTransportFeedbackVector();
       SortPacketFeedbackVectorWithLoss(&feedback);
@@ -1452,14 +1453,25 @@ const std::vector<MatchedSendArrivalTimes> GetNetworkTrace(
     if (clock.TimeInMicroseconds() >= NextRtpTime()) {
       RTC_DCHECK_EQ(clock.TimeInMicroseconds(), NextRtpTime());
       const RtpPacketType& rtp_packet = *rtp_iterator->second;
+      rtc::SentPacket sent_packet;
+      sent_packet.send_time_ms = rtp_packet.rtp.log_time_ms();
+      sent_packet.info.packet_size_bytes = rtp_packet.rtp.total_length;
       if (rtp_packet.rtp.header.extension.hasTransportSequenceNumber) {
         feedback_adapter.AddPacket(
             rtp_packet.rtp.header.ssrc,
             rtp_packet.rtp.header.extension.transportSequenceNumber,
             rtp_packet.rtp.total_length, PacedPacketInfo());
-        feedback_adapter.OnSentPacket(
-            rtp_packet.rtp.header.extension.transportSequenceNumber,
-            rtp_packet.rtp.log_time_ms());
+        sent_packet.packet_id =
+            rtp_packet.rtp.header.extension.transportSequenceNumber;
+        sent_packet.info.included_in_feedback = true;
+        sent_packet.info.included_in_allocation = true;
+        feedback_adapter.ProcessSentPacket(sent_packet);
+      } else {
+        sent_packet.info.included_in_feedback = false;
+        // TODO(srte): Make it possible to indicate that all packets are part of
+        // allocation.
+        sent_packet.info.included_in_allocation = false;
+        feedback_adapter.ProcessSentPacket(sent_packet);
       }
       ++rtp_iterator;
     }
