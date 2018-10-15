@@ -68,9 +68,16 @@ bool RtcEventLogSource::OpenFile(const std::string& file_name,
   if (!parsed_log.ParseFile(file_name))
     return false;
 
+  const auto first_log_end_time_us =
+      parsed_log.stop_log_events().empty()
+          ? std::numeric_limits<int64_t>::max()
+          : parsed_log.stop_log_events().front().log_time_us();
+
   auto handle_rtp_packet =
-      [this](const webrtc::LoggedRtpPacketIncoming& incoming) {
-        if (!filter_.test(incoming.rtp.header.payloadType)) {
+      [this,
+       first_log_end_time_us](const webrtc::LoggedRtpPacketIncoming& incoming) {
+        if (!filter_.test(incoming.rtp.header.payloadType) &&
+            incoming.log_time_us() < first_log_end_time_us) {
           rtp_packets_.emplace_back(absl::make_unique<Packet>(
               incoming.rtp.header, incoming.rtp.total_length,
               incoming.rtp.total_length - incoming.rtp.header_length,
@@ -79,8 +86,11 @@ bool RtcEventLogSource::OpenFile(const std::string& file_name,
       };
 
   auto handle_audio_playout =
-      [this](const webrtc::LoggedAudioPlayoutEvent& audio_playout) {
-        audio_outputs_.emplace_back(audio_playout.log_time_ms());
+      [this, first_log_end_time_us](
+          const webrtc::LoggedAudioPlayoutEvent& audio_playout) {
+        if (audio_playout.log_time_us() < first_log_end_time_us) {
+          audio_outputs_.emplace_back(audio_playout.log_time_ms());
+        }
       };
 
   // This wouldn't be needed if we knew that there was at most one audio stream.
