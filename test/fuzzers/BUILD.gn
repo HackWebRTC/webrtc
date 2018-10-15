@@ -397,7 +397,7 @@ webrtc_fuzzer_test("neteq_signal_fuzzer") {
     "../../rtc_base:rtc_base_tests_utils",
   ]
 
-  libfuzzer_options = [ "max_len=100000" ]
+  libfuzzer_options = [ "max_len=90000" ]
 }
 
 webrtc_fuzzer_test("residual_echo_detector_fuzzer") {
