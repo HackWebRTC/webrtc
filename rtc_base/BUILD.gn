@@ -697,6 +697,7 @@ rtc_static_library("rtc_base") {
     ":stringutils",
     "..:webrtc_common",
     "../api:array_view",
+    "network:sent_packet",
     "third_party/base64",
     "third_party/sigslot",
     "//third_party/abseil-cpp/absl/memory",
