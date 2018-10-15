@@ -128,6 +128,7 @@ rtc_static_library("libjingle_peerconnection_api") {
     "../rtc_base:rtc_base",
     "../rtc_base:rtc_base_approved",
     "../rtc_base:stringutils",
+    "../rtc_base/system:rtc_export",
   ]
 
   if (is_nacl) {
@@ -250,6 +251,7 @@ rtc_source_set("rtc_stats_api") {
   deps = [
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
+    "../rtc_base/system:rtc_export",
   ]
 }
 

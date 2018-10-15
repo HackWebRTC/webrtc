@@ -18,6 +18,7 @@
 #include "api/audio_codecs/audio_codec_pair_id.h"
 #include "api/audio_codecs/audio_decoder.h"
 #include "api/audio_codecs/audio_format.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
@@ -25,7 +26,7 @@ namespace webrtc {
 // CreateAudioDecoderFactory<...>().
 //
 // NOTE: This struct is still under development and may change without notice.
-struct AudioDecoderG711 {
+struct RTC_EXPORT AudioDecoderG711 {
   struct Config {
     enum class Type { kPcmU, kPcmA };
     bool IsOk() const {

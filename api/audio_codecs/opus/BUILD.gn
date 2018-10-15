@@ -20,6 +20,7 @@ rtc_static_library("audio_encoder_opus_config") {
   ]
   deps = [
     "../../../rtc_base:rtc_base_approved",
+    "../../../rtc_base/system:rtc_export",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
   defines = []

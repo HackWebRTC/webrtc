@@ -203,6 +203,7 @@ rtc_static_library("peerconnection") {
     "../rtc_base:rtc_base_approved",
     "../rtc_base:stringutils",
     "../rtc_base/experiments:congestion_controller_experiment",
+    "../rtc_base/system:rtc_export",
     "../rtc_base/third_party/base64",
     "../rtc_base/third_party/sigslot",
     "../stats",

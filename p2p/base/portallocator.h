@@ -21,6 +21,7 @@
 #include "rtc_base/helpers.h"
 #include "rtc_base/proxyinfo.h"
 #include "rtc_base/sslcertificate.h"
+#include "rtc_base/system/rtc_export.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_checker.h"
@@ -146,7 +147,7 @@ struct RelayCredentials {
 
 typedef std::vector<ProtocolAddress> PortList;
 // TODO(deadbeef): Rename to TurnServerConfig.
-struct RelayServerConfig {
+struct RTC_EXPORT RelayServerConfig {
   explicit RelayServerConfig(RelayType type);
   RelayServerConfig(const rtc::SocketAddress& address,
                     const std::string& username,
@@ -183,7 +184,7 @@ struct RelayServerConfig {
   rtc::SSLCertificateVerifier* tls_cert_verifier = nullptr;
 };
 
-class PortAllocatorSession : public sigslot::has_slots<> {
+class RTC_EXPORT PortAllocatorSession : public sigslot::has_slots<> {
  public:
   // Content name passed in mostly for logging and debugging.
   PortAllocatorSession(const std::string& content_name,
@@ -330,7 +331,7 @@ class PortAllocatorSession : public sigslot::has_slots<> {
 //
 // This allows a PortAllocator subclass to be constructed and configured on one
 // thread, and passed into an object that uses it on a different thread.
-class PortAllocator : public sigslot::has_slots<> {
+class RTC_EXPORT PortAllocator : public sigslot::has_slots<> {
  public:
   PortAllocator();
   ~PortAllocator() override;

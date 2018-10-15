@@ -18,6 +18,7 @@
 #include "api/audio_codecs/audio_codec_pair_id.h"
 #include "api/audio_codecs/audio_decoder.h"
 #include "api/audio_codecs/audio_format.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
@@ -25,7 +26,7 @@ namespace webrtc {
 // CreateAudioDecoderFactory<...>().
 //
 // NOTE: This struct is still under development and may change without notice.
-struct AudioDecoderL16 {
+struct RTC_EXPORT AudioDecoderL16 {
   struct Config {
     bool IsOk() const {
       return (sample_rate_hz == 8000 || sample_rate_hz == 16000 ||

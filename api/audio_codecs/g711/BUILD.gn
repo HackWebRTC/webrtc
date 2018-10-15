@@ -43,6 +43,7 @@ rtc_static_library("audio_decoder_g711") {
     "../../..:webrtc_common",
     "../../../modules/audio_coding:g711",
     "../../../rtc_base:rtc_base_approved",
+    "../../../rtc_base/system:rtc_export",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
