@@ -865,15 +865,23 @@ void VideoSendStreamTest::TestNackRetransmission(
       RTPHeader header;
       EXPECT_TRUE(parser_->Parse(packet, length, &header));
 
-      int kRetransmitTarget = 6;
+      // NACK packets two times at some arbitrary points.
+      const int kNackedPacketsAtOnceCount = 3;
+      const int kRetransmitTarget = kNackedPacketsAtOnceCount * 2;
+
+      // Skip padding packets because they will never be retransmitted.
+      if (header.paddingLength + header.headerLength == length) {
+        return SEND_PACKET;
+      }
+
       ++send_count_;
+
+      // NACK packets at arbitrary points.
       if (send_count_ == 5 || send_count_ == 25) {
-        nacked_sequence_numbers_.push_back(
-            static_cast<uint16_t>(header.sequenceNumber - 3));
-        nacked_sequence_numbers_.push_back(
-            static_cast<uint16_t>(header.sequenceNumber - 2));
-        nacked_sequence_numbers_.push_back(
-            static_cast<uint16_t>(header.sequenceNumber - 1));
+        nacked_sequence_numbers_.insert(
+            nacked_sequence_numbers_.end(),
+            non_padding_sequence_numbers_.end() - kNackedPacketsAtOnceCount,
+            non_padding_sequence_numbers_.end());
 
         RTCPSender rtcp_sender(false, Clock::GetRealTimeClock(), nullptr,
                                nullptr, nullptr, transport_adapter_.get(),
@@ -891,7 +899,6 @@ void VideoSendStreamTest::TestNackRetransmission(
       }
 
       uint16_t sequence_number = header.sequenceNumber;
-
       if (header.ssrc == retransmit_ssrc_ &&
           retransmit_ssrc_ != kVideoSendSsrcs[0]) {
         // Not kVideoSendSsrcs[0], assume correct RTX packet. Extract sequence
@@ -899,6 +906,7 @@ void VideoSendStreamTest::TestNackRetransmission(
         const uint8_t* rtx_header = packet + header.headerLength;
         sequence_number = (rtx_header[0] << 8) + rtx_header[1];
       }
+
       auto found = std::find(nacked_sequence_numbers_.begin(),
                              nacked_sequence_numbers_.end(), sequence_number);
       if (found != nacked_sequence_numbers_.end()) {
@@ -909,6 +917,8 @@ void VideoSendStreamTest::TestNackRetransmission(
           EXPECT_EQ(retransmit_payload_type_, header.payloadType);
           observation_complete_.Set();
         }
+      } else {
+        non_padding_sequence_numbers_.push_back(sequence_number);
       }
 
       return SEND_PACKET;
@@ -937,6 +947,7 @@ void VideoSendStreamTest::TestNackRetransmission(
     uint32_t retransmit_ssrc_;
     uint8_t retransmit_payload_type_;
     std::vector<uint16_t> nacked_sequence_numbers_;
+    std::vector<uint16_t> non_padding_sequence_numbers_;
   } test(retransmit_ssrc, retransmit_payload_type);
 
   RunBaseTest(&test);

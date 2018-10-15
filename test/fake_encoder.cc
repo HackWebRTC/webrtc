@@ -24,7 +24,16 @@
 namespace webrtc {
 namespace test {
 
-const int kKeyframeSizeFactor = 10;
+const int kKeyframeSizeFactor = 5;
+
+// Inverse of proportion of frames assigned to each temporal layer for all
+// possible temporal layers numbers.
+const int kTemporalLayerRateFactor[4][4] = {
+    {1, 0, 0, 0},  // 1/1
+    {2, 2, 0, 0},  // 1/2 + 1/2
+    {4, 4, 2, 0},  // 1/4 + 1/4 + 1/2
+    {8, 8, 4, 2},  // 1/8 + 1/8 + 1/4 + 1/2
+};
 
 FakeEncoder::FakeEncoder(Clock* clock)
     : clock_(clock),
@@ -168,7 +177,9 @@ FakeEncoder::FrameInfo FakeEncoder::NextFrame(
     if (frame_info.keyframe) {
       layer_info.temporal_id = 0;
       size_t avg_frame_size =
-          (target_bitrate.GetBitrate(i, 0) + 7) / (8 * framerate);
+          (target_bitrate.GetBitrate(i, 0) + 7) *
+          kTemporalLayerRateFactor[frame_info.layers.size() - 1][i] /
+          (8 * framerate);
 
       // The first frame is a key frame and should be larger.
       // Store the overshoot bytes and distribute them over the coming frames,
@@ -177,7 +188,8 @@ FakeEncoder::FrameInfo FakeEncoder::NextFrame(
       layer_info.size = kKeyframeSizeFactor * avg_frame_size;
     } else {
       size_t avg_frame_size =
-          (target_bitrate.GetBitrate(i, layer_info.temporal_id) + 7) /
+          (target_bitrate.GetBitrate(i, layer_info.temporal_id) + 7) *
+          kTemporalLayerRateFactor[frame_info.layers.size() - 1][i] /
           (8 * framerate);
       layer_info.size = avg_frame_size;
       if (debt_bytes_ > 0) {
