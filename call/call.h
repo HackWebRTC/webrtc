@@ -27,8 +27,8 @@
 #include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/bitrateallocationstrategy.h"
 #include "rtc_base/copyonwritebuffer.h"
+#include "rtc_base/network/sent_packet.h"
 #include "rtc_base/networkroute.h"
-#include "rtc_base/socket.h"
 
 namespace webrtc {
 
