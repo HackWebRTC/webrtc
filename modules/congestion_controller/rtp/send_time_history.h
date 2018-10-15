@@ -14,6 +14,7 @@
 #include <map>
 #include <utility>
 
+#include "api/units/data_size.h"
 #include "modules/include/module_common_types.h"
 #include "rtc_base/constructormagic.h"
 
@@ -43,8 +44,8 @@ class SendTimeHistory {
   // thus be non-null and have the sequence_number field set.
   bool GetFeedback(PacketFeedback* packet_feedback, bool remove);
 
-  size_t GetOutstandingBytes(uint16_t local_net_id,
-                             uint16_t remote_net_id) const;
+  DataSize GetOutstandingData(uint16_t local_net_id,
+                              uint16_t remote_net_id) const;
 
  private:
   using RemoteAndLocalNetworkId = std::pair<uint16_t, uint16_t>;

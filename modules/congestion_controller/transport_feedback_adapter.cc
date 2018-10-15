@@ -201,6 +201,7 @@ absl::optional<int64_t> TransportFeedbackAdapter::GetMinFeedbackLoopRtt()
 
 size_t TransportFeedbackAdapter::GetOutstandingBytes() const {
   rtc::CritScope cs(&lock_);
-  return send_time_history_.GetOutstandingBytes(local_net_id_, remote_net_id_);
+  return send_time_history_.GetOutstandingData(local_net_id_, remote_net_id_)
+      .bytes();
 }
 }  // namespace webrtc

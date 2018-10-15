@@ -48,41 +48,6 @@ bool IsPacerPushbackExperimentEnabled() {
 }
 
 
-void SortPacketFeedbackVector(std::vector<webrtc::PacketFeedback>* input) {
-  std::sort(input->begin(), input->end(), PacketFeedbackComparator());
-}
-
-PacketResult NetworkPacketFeedbackFromRtpPacketFeedback(
-    const webrtc::PacketFeedback& pf) {
-  PacketResult feedback;
-  if (pf.arrival_time_ms == webrtc::PacketFeedback::kNotReceived)
-    feedback.receive_time = Timestamp::PlusInfinity();
-  else
-    feedback.receive_time = Timestamp::ms(pf.arrival_time_ms);
-  if (pf.send_time_ms != webrtc::PacketFeedback::kNoSendTime) {
-    feedback.sent_packet = SentPacket();
-    feedback.sent_packet->sequence_number = pf.long_sequence_number;
-    feedback.sent_packet->send_time = Timestamp::ms(pf.send_time_ms);
-    feedback.sent_packet->size = DataSize::bytes(pf.payload_size);
-    feedback.sent_packet->pacing_info = pf.pacing_info;
-  }
-  return feedback;
-}
-
-std::vector<PacketResult> PacketResultsFromRtpFeedbackVector(
-    const std::vector<PacketFeedback>& feedback_vector) {
-  RTC_DCHECK(std::is_sorted(feedback_vector.begin(), feedback_vector.end(),
-                            PacketFeedbackComparator()));
-
-  std::vector<PacketResult> packet_feedbacks;
-  packet_feedbacks.reserve(feedback_vector.size());
-  for (const PacketFeedback& rtp_feedback : feedback_vector) {
-    auto feedback = NetworkPacketFeedbackFromRtpPacketFeedback(rtp_feedback);
-    packet_feedbacks.push_back(feedback);
-  }
-  return packet_feedbacks;
-}
-
 TargetRateConstraints ConvertConstraints(int min_bitrate_bps,
                                          int max_bitrate_bps,
                                          int start_bitrate_bps,
@@ -547,29 +512,16 @@ void SendSideCongestionController::SignalNetworkState(NetworkState state) {
 
 void SendSideCongestionController::OnSentPacket(
     const rtc::SentPacket& sent_packet) {
-  if (sent_packet.packet_id != -1) {
-    transport_feedback_adapter_.OnSentPacket(sent_packet.packet_id,
-                                             sent_packet.send_time_ms);
-    MaybeUpdateOutstandingData();
-    auto packet = transport_feedback_adapter_.GetPacket(sent_packet.packet_id);
-    if (packet.has_value()) {
-      SentPacket msg;
-      msg.size = DataSize::bytes(packet->payload_size);
-      msg.send_time = Timestamp::ms(packet->send_time_ms);
-      msg.sequence_number = packet->long_sequence_number;
-      msg.prior_unacked_data = DataSize::bytes(packet->unacknowledged_data);
-      msg.data_in_flight =
-          DataSize::bytes(transport_feedback_adapter_.GetOutstandingBytes());
-      task_queue_->PostTask([this, msg]() {
-        RTC_DCHECK_RUN_ON(task_queue_);
-        if (controller_)
-          control_handler_->PostUpdates(controller_->OnSentPacket(msg));
-      });
-    }
-  } else if (sent_packet.info.included_in_allocation) {
-    transport_feedback_adapter_.AddUntracked(sent_packet.info.packet_size_bytes,
-                                             sent_packet.send_time_ms);
+  absl::optional<SentPacket> packet_msg =
+      transport_feedback_adapter_.ProcessSentPacket(sent_packet);
+  if (packet_msg) {
+    task_queue_->PostTask([this, packet_msg]() {
+      RTC_DCHECK_RUN_ON(task_queue_);
+      if (controller_)
+        control_handler_->PostUpdates(controller_->OnSentPacket(*packet_msg));
+    });
   }
+  MaybeUpdateOutstandingData();
 }
 
 void SendSideCongestionController::OnRttUpdate(int64_t avg_rtt_ms,
@@ -654,36 +606,22 @@ void SendSideCongestionController::AddPacket(
 void SendSideCongestionController::OnTransportFeedback(
     const rtcp::TransportFeedback& feedback) {
   RTC_DCHECK_RUNS_SERIALIZED(&worker_race_);
-  int64_t feedback_time_ms = clock_->TimeInMilliseconds();
 
-  DataSize prior_in_flight =
-      DataSize::bytes(transport_feedback_adapter_.GetOutstandingBytes());
-  transport_feedback_adapter_.OnTransportFeedback(feedback);
-  MaybeUpdateOutstandingData();
-
-  std::vector<PacketFeedback> feedback_vector =
-      transport_feedback_adapter_.GetTransportFeedbackVector();
-  SortPacketFeedbackVector(&feedback_vector);
-
-  if (!feedback_vector.empty()) {
-    TransportPacketsFeedback msg;
-    msg.packet_feedbacks = PacketResultsFromRtpFeedbackVector(feedback_vector);
-    msg.feedback_time = Timestamp::ms(feedback_time_ms);
-    msg.prior_in_flight = prior_in_flight;
-    msg.data_in_flight =
-        DataSize::bytes(transport_feedback_adapter_.GetOutstandingBytes());
-    task_queue_->PostTask([this, msg]() {
+  absl::optional<TransportPacketsFeedback> feedback_msg =
+      transport_feedback_adapter_.ProcessTransportFeedback(feedback);
+  if (feedback_msg) {
+    task_queue_->PostTask([this, feedback_msg]() {
       RTC_DCHECK_RUN_ON(task_queue_);
       if (controller_)
         control_handler_->PostUpdates(
-            controller_->OnTransportPacketsFeedback(msg));
+            controller_->OnTransportPacketsFeedback(*feedback_msg));
     });
   }
+  MaybeUpdateOutstandingData();
 }
 
 void SendSideCongestionController::MaybeUpdateOutstandingData() {
-  DataSize in_flight_data =
-      DataSize::bytes(transport_feedback_adapter_.GetOutstandingBytes());
+  DataSize in_flight_data = transport_feedback_adapter_.GetOutstandingData();
   task_queue_->PostTask([this, in_flight_data]() {
     RTC_DCHECK_RUN_ON(task_queue_);
     pacer_controller_->OnOutstandingData(in_flight_data);

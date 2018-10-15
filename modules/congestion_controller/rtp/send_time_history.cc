@@ -111,13 +111,13 @@ bool SendTimeHistory::GetFeedback(PacketFeedback* packet_feedback,
   return true;
 }
 
-size_t SendTimeHistory::GetOutstandingBytes(uint16_t local_net_id,
-                                            uint16_t remote_net_id) const {
+DataSize SendTimeHistory::GetOutstandingData(uint16_t local_net_id,
+                                             uint16_t remote_net_id) const {
   auto it = in_flight_bytes_.find({local_net_id, remote_net_id});
   if (it != in_flight_bytes_.end()) {
-    return it->second;
+    return DataSize::bytes(it->second);
   } else {
-    return 0;
+    return DataSize::Zero();
   }
 }
 
