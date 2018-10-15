@@ -11,7 +11,9 @@
 #include "call/rampup_tests.h"
 
 #include "call/fake_network_pipe.h"
+#include "logging/rtc_event_log/output/rtc_event_log_output_file.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/flags.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/stringencode.h"
@@ -37,6 +39,8 @@ std::vector<uint32_t> GenerateSsrcs(size_t num_streams, uint32_t ssrc_offset) {
   return ssrcs;
 }
 }  // namespace
+
+DEFINE_string(ramp_dump_name, "", "Filename for dumped received RTP stream.");
 
 RampUpTester::RampUpTester(size_t num_video_streams,
                            size_t num_audio_streams,
@@ -566,7 +570,23 @@ void RampUpDownUpTester::EvolveTestState(int bitrate_bps, bool suspended) {
 
 class RampUpTest : public test::CallTest {
  public:
-  RampUpTest() {}
+  RampUpTest() {
+    std::string dump_name(FLAG_ramp_dump_name);
+    if (!dump_name.empty()) {
+      send_event_log_ = RtcEventLog::Create(RtcEventLog::EncodingType::Legacy);
+      recv_event_log_ = RtcEventLog::Create(RtcEventLog::EncodingType::Legacy);
+      bool event_log_started =
+          send_event_log_->StartLogging(
+              absl::make_unique<RtcEventLogOutputFile>(
+                  dump_name + ".send.rtc.dat", RtcEventLog::kUnlimitedOutput),
+              RtcEventLog::kImmediateOutput) &&
+          recv_event_log_->StartLogging(
+              absl::make_unique<RtcEventLogOutputFile>(
+                  dump_name + ".recv.rtc.dat", RtcEventLog::kUnlimitedOutput),
+              RtcEventLog::kImmediateOutput);
+      RTC_DCHECK(event_log_started);
+    }
+  }
 };
 
 static const uint32_t kStartBitrateBps = 60000;

@@ -142,7 +142,7 @@ class RampUpDownUpTester : public RampUpTester {
     kTransitionToNextState,
   };
 
-  void ModifyReceiverCallConfig(Call::Config* config);
+  void ModifyReceiverCallConfig(Call::Config* config) override;
 
   std::string GetModifierString() const;
   int GetExpectedHighBitrate() const;

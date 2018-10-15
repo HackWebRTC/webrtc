@@ -386,6 +386,7 @@ if (rtc_include_tests) {
       "../api/video:video_bitrate_allocation",
       "../api/video_codecs:video_codecs_api",
       "../logging:rtc_event_log_api",
+      "../logging:rtc_event_log_impl_output",
       "../modules/audio_coding",
       "../modules/audio_device",
       "../modules/audio_device:audio_device_impl",
