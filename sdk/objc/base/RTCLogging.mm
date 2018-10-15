@@ -22,6 +22,8 @@ rtc::LoggingSeverity RTCGetNativeLoggingSeverity(RTCLoggingSeverity severity) {
       return rtc::LS_WARNING;
     case RTCLoggingSeverityError:
       return rtc::LS_ERROR;
+    case RTCLoggingSeverityNone:
+      return rtc::LS_NONE;
   }
 }
 

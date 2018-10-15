@@ -66,6 +66,25 @@
   [self waitForExpectations:@[ callbackExpectation ] timeout:10.0];
 }
 
+- (void)testCallbackDoesNotgetCalledForSeverityNone {
+  self.logger.severity = RTCLoggingSeverityNone;
+
+  XCTestExpectation *callbackExpectation = [self expectationWithDescription:@"unexpectedCallback"];
+
+  [self.logger start:^(NSString *message) {
+    [callbackExpectation fulfill];
+    XCTAssertTrue(false);
+  }];
+
+  RTCLogInfo("Just some info");
+  RTCLogWarning("Warning warning");
+  RTCLogError("Horrible error");
+
+  XCTWaiter *waiter = [[XCTWaiter alloc] init];
+  XCTWaiterResult result = [waiter waitForExpectations:@[ callbackExpectation ] timeout:1.0];
+  XCTAssertEqual(result, XCTWaiterResultTimedOut);
+}
+
 - (void)testStartingWithNilCallbackDoesNotCrash {
   [self.logger start:nil];
 
