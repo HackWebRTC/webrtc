@@ -21,7 +21,7 @@
 #include "api/transport/network_types.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/congestion_controller/include/send_side_congestion_controller_interface.h"
-#include "modules/congestion_controller/rtp/pacer_controller.h"
+#include "modules/congestion_controller/rtp/control_handler.h"
 #include "modules/congestion_controller/rtp/transport_feedback_adapter.h"
 #include "modules/include/module.h"
 #include "modules/include/module_common_types.h"
@@ -40,18 +40,11 @@ struct SentPacket;
 namespace webrtc {
 
 class Clock;
-class RateLimiter;
 class RtcEventLog;
 
 namespace webrtc_cc {
 
 namespace send_side_cc_internal {
-// This is used to observe the network controller state and route calls to
-// the proper handler. It also keeps cached values for safe asynchronous use.
-// This makes sure that things running on the worker queue can't access state
-// in SendSideCongestionController, which would risk causing data race on
-// destruction unless members are properly ordered.
-class ControlHandler;
 
 // TODO(srte): Make sure the PeriodicTask implementation is reusable and move it
 // to task_queue.h.
@@ -182,10 +175,7 @@ class SendSideCongestionController
   const std::unique_ptr<NetworkControllerFactoryInterface>
       controller_factory_fallback_ RTC_GUARDED_BY(task_queue_);
 
-  const std::unique_ptr<PacerController> pacer_controller_
-      RTC_GUARDED_BY(task_queue_);
-
-  std::unique_ptr<send_side_cc_internal::ControlHandler> control_handler_
+  std::unique_ptr<CongestionControlHandler> control_handler_
       RTC_GUARDED_BY(task_queue_);
 
   std::unique_ptr<NetworkControllerInterface> controller_
