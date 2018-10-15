@@ -23,14 +23,28 @@ namespace webrtc {
 // Class for performing echo cancellation on 64 sample blocks of audio data.
 class BlockProcessor {
  public:
+  // Create a block processor with the legacy render buffering.
   static BlockProcessor* Create(const EchoCanceller3Config& config,
                                 int sample_rate_hz);
+  // Create a block processor with the new render buffering.
+  static BlockProcessor* Create2(const EchoCanceller3Config& config,
+                                 int sample_rate_hz);
   // Only used for testing purposes.
   static BlockProcessor* Create(
       const EchoCanceller3Config& config,
       int sample_rate_hz,
       std::unique_ptr<RenderDelayBuffer> render_buffer);
+  static BlockProcessor* Create2(
+      const EchoCanceller3Config& config,
+      int sample_rate_hz,
+      std::unique_ptr<RenderDelayBuffer> render_buffer);
   static BlockProcessor* Create(
+      const EchoCanceller3Config& config,
+      int sample_rate_hz,
+      std::unique_ptr<RenderDelayBuffer> render_buffer,
+      std::unique_ptr<RenderDelayController> delay_controller,
+      std::unique_ptr<EchoRemover> echo_remover);
+  static BlockProcessor* Create2(
       const EchoCanceller3Config& config,
       int sample_rate_hz,
       std::unique_ptr<RenderDelayBuffer> render_buffer,
