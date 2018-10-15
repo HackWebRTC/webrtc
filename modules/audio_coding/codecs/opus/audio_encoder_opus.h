@@ -34,6 +34,26 @@ struct CodecInst;
 
 class AudioEncoderOpusImpl final : public AudioEncoder {
  public:
+  class NewPacketLossRateOptimizer {
+   public:
+    NewPacketLossRateOptimizer(float min_packet_loss_rate = 0.01,
+                               float max_packet_loss_rate = 0.2,
+                               float slope = 1.0);
+
+    float OptimizePacketLossRate(float packet_loss_rate) const;
+
+    // Getters for testing.
+    float min_packet_loss_rate() const { return min_packet_loss_rate_; };
+    float max_packet_loss_rate() const { return max_packet_loss_rate_; };
+    float slope() const { return slope_; };
+
+   private:
+    const float min_packet_loss_rate_;
+    const float max_packet_loss_rate_;
+    const float slope_;
+    RTC_DISALLOW_COPY_AND_ASSIGN(NewPacketLossRateOptimizer);
+  };
+
   static AudioEncoderOpusConfig CreateConfig(const CodecInst& codec_inst);
 
   // Returns empty if the current bitrate falls within the hysteresis window,
@@ -110,6 +130,9 @@ class AudioEncoderOpusImpl final : public AudioEncoder {
 
   // Getters for testing.
   float packet_loss_rate() const { return packet_loss_rate_; }
+  NewPacketLossRateOptimizer* new_packet_loss_optimizer() const {
+    return new_packet_loss_optimizer_.get();
+  }
   AudioEncoderOpusConfig::ApplicationMode application() const {
     return config_.application;
   }
@@ -159,6 +182,7 @@ class AudioEncoderOpusImpl final : public AudioEncoder {
   bool bitrate_changed_;
   float packet_loss_rate_;
   const float min_packet_loss_rate_;
+  const std::unique_ptr<NewPacketLossRateOptimizer> new_packet_loss_optimizer_;
   std::vector<int16_t> input_buffer_;
   OpusEncInst* inst_;
   uint32_t first_timestamp_in_buffer_;
