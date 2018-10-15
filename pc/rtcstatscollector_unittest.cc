@@ -703,7 +703,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsSingle) {
       CreateFakeCertificateAndInfoFromDers(
           std::vector<std::string>({"(remote) single certificate"}));
   pc_->SetRemoteCertChain(
-      kTransportName, remote_certinfo->certificate->ssl_cert_chain().Clone());
+      kTransportName,
+      remote_certinfo->certificate->ssl_cert_chain().UniqueCopy());
 
   rtc::scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
 
@@ -817,7 +818,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsMultiple) {
           std::vector<std::string>({"(remote) audio"}));
   pc_->SetRemoteCertChain(
       kAudioTransport,
-      audio_remote_certinfo->certificate->ssl_cert_chain().Clone());
+      audio_remote_certinfo->certificate->ssl_cert_chain().UniqueCopy());
 
   pc_->AddVideoChannel("video", kVideoTransport);
   std::unique_ptr<CertificateInfo> video_local_certinfo =
@@ -829,7 +830,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsMultiple) {
           std::vector<std::string>({"(remote) video"}));
   pc_->SetRemoteCertChain(
       kVideoTransport,
-      video_remote_certinfo->certificate->ssl_cert_chain().Clone());
+      video_remote_certinfo->certificate->ssl_cert_chain().UniqueCopy());
 
   rtc::scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
   ExpectReportContainsCertificateInfo(report, *audio_local_certinfo);
@@ -853,7 +854,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsChain) {
                                             "(remote) another",
                                             "(remote) chain"});
   pc_->SetRemoteCertChain(
-      kTransportName, remote_certinfo->certificate->ssl_cert_chain().Clone());
+      kTransportName,
+      remote_certinfo->certificate->ssl_cert_chain().UniqueCopy());
 
   rtc::scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
   ExpectReportContainsCertificateInfo(report, *local_certinfo);
@@ -1954,7 +1956,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCTransportStats) {
       CreateFakeCertificateAndInfoFromDers(
           {"(remote) local", "(remote) chain"});
   pc_->SetRemoteCertChain(
-      kTransportName, remote_certinfo->certificate->ssl_cert_chain().Clone());
+      kTransportName,
+      remote_certinfo->certificate->ssl_cert_chain().UniqueCopy());
 
   report = stats_->GetFreshStatsReport();
 

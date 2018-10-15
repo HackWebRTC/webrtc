@@ -179,10 +179,8 @@ class FakeDtlsTransport : public DtlsTransportInternal {
     return local_cert_;
   }
   std::unique_ptr<rtc::SSLCertChain> GetRemoteSSLCertChain() const override {
-    if (!remote_cert_) {
-      return nullptr;
-    }
-    return absl::make_unique<rtc::SSLCertChain>(remote_cert_->Clone());
+    return remote_cert_ ? absl::make_unique<rtc::SSLCertChain>(remote_cert_)
+                        : nullptr;
   }
   bool ExportKeyingMaterial(const std::string& label,
                             const uint8_t* context,

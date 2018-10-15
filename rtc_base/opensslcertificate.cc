@@ -130,11 +130,10 @@ static void PrintCert(X509* x509) {
 #endif
 
 OpenSSLCertificate::OpenSSLCertificate(X509* x509) : x509_(x509) {
-  RTC_DCHECK(x509_ != nullptr);
-  X509_up_ref(x509_);
+  AddReference();
 }
 
-std::unique_ptr<OpenSSLCertificate> OpenSSLCertificate::Generate(
+OpenSSLCertificate* OpenSSLCertificate::Generate(
     OpenSSLKeyPair* key_pair,
     const SSLIdentityParams& params) {
   SSLIdentityParams actual_params(params);
@@ -150,12 +149,12 @@ std::unique_ptr<OpenSSLCertificate> OpenSSLCertificate::Generate(
 #if !defined(NDEBUG)
   PrintCert(x509);
 #endif
-  auto ret = absl::make_unique<OpenSSLCertificate>(x509);
+  OpenSSLCertificate* ret = new OpenSSLCertificate(x509);
   X509_free(x509);
   return ret;
 }
 
-std::unique_ptr<OpenSSLCertificate> OpenSSLCertificate::FromPEMString(
+OpenSSLCertificate* OpenSSLCertificate::FromPEMString(
     const std::string& pem_string) {
   BIO* bio = BIO_new_mem_buf(const_cast<char*>(pem_string.c_str()), -1);
   if (!bio)
@@ -168,7 +167,7 @@ std::unique_ptr<OpenSSLCertificate> OpenSSLCertificate::FromPEMString(
   if (!x509)
     return nullptr;
 
-  auto ret = absl::make_unique<OpenSSLCertificate>(x509);
+  OpenSSLCertificate* ret = new OpenSSLCertificate(x509);
   X509_free(x509);
   return ret;
 }
@@ -250,8 +249,8 @@ OpenSSLCertificate::~OpenSSLCertificate() {
   X509_free(x509_);
 }
 
-std::unique_ptr<SSLCertificate> OpenSSLCertificate::Clone() const {
-  return absl::make_unique<OpenSSLCertificate>(x509_);
+OpenSSLCertificate* OpenSSLCertificate::GetReference() const {
+  return new OpenSSLCertificate(x509_);
 }
 
 std::string OpenSSLCertificate::ToPEMString() const {
@@ -288,6 +287,11 @@ void OpenSSLCertificate::ToDER(Buffer* der_buffer) const {
   size_t length = BIO_get_mem_data(bio, &data);
   der_buffer->SetData(data, length);
   BIO_free(bio);
+}
+
+void OpenSSLCertificate::AddReference() const {
+  RTC_DCHECK(x509_ != nullptr);
+  X509_up_ref(x509_);
 }
 
 bool OpenSSLCertificate::operator==(const OpenSSLCertificate& other) const {

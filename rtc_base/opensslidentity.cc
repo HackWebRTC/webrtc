@@ -316,7 +316,7 @@ const SSLCertChain& OpenSSLIdentity::cert_chain() const {
 
 OpenSSLIdentity* OpenSSLIdentity::GetReference() const {
   return new OpenSSLIdentity(absl::WrapUnique(key_pair_->GetReference()),
-                             cert_chain_->Clone());
+                             absl::WrapUnique(cert_chain_->Copy()));
 }
 
 bool OpenSSLIdentity::ConfigureIdentity(SSL_CTX* ctx) {

@@ -28,7 +28,7 @@ class FakeSSLCertificate : public SSLCertificate {
   ~FakeSSLCertificate() override;
 
   // SSLCertificate implementation.
-  std::unique_ptr<SSLCertificate> Clone() const override;
+  FakeSSLCertificate* GetReference() const override;
   std::string ToPEMString() const override;
   void ToDER(Buffer* der_buffer) const override;
   int64_t CertificateExpirationTime() const override;

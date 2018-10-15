@@ -319,7 +319,7 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase {
       const std::string& transport_name) override {
     auto it = remote_cert_chains_by_transport_.find(transport_name);
     if (it != remote_cert_chains_by_transport_.end()) {
-      return it->second->Clone();
+      return it->second->UniqueCopy();
     } else {
       return nullptr;
     }

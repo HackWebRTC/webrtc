@@ -201,7 +201,7 @@ class SSLIdentityTest : public testing::Test {
     ASSERT_TRUE(identity_ecdsa1_);
     ASSERT_TRUE(identity_ecdsa2_);
 
-    test_cert_ = rtc::SSLCertificate::FromPEMString(kTestCertificate);
+    test_cert_.reset(rtc::SSLCertificate::FromPEMString(kTestCertificate));
     ASSERT_TRUE(test_cert_);
   }
 
