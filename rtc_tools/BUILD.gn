@@ -255,10 +255,13 @@ if (!build_with_chromium) {
 
         # TODO(kwiberg): Remove this dependency.
         "../api/audio_codecs:audio_codecs_api",
+        "../api/transport:goog_cc",
         "../modules/congestion_controller",
         "../modules/congestion_controller/goog_cc:delay_based_bwe",
         "../modules/congestion_controller/goog_cc:estimators",
+        "../modules/congestion_controller/rtp:transport_feedback",
         "../modules/pacing",
+        "../modules/remote_bitrate_estimator",
         "../modules/rtp_rtcp",
         "//third_party/abseil-cpp/absl/memory",
       ]

@@ -18,6 +18,7 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
+#include "api/transport/goog_cc_factory.h"
 #include "call/audio_receive_stream.h"
 #include "call/audio_send_stream.h"
 #include "call/call.h"
@@ -36,8 +37,9 @@
 #include "modules/congestion_controller/goog_cc/bitrate_estimator.h"
 #include "modules/congestion_controller/goog_cc/delay_based_bwe.h"
 #include "modules/congestion_controller/include/receive_side_congestion_controller.h"
-#include "modules/congestion_controller/include/send_side_congestion_controller.h"
+#include "modules/congestion_controller/rtp/transport_feedback_adapter.h"
 #include "modules/pacing/packet_router.h"
+#include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtcp_packet.h"
@@ -486,17 +488,15 @@ EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLogNew& log,
                    << " (LOG_START, LOG_END) segments in log.";
 }
 
-class BitrateObserver : public NetworkChangedObserver,
-                        public RemoteBitrateObserver {
+class BitrateObserver : public RemoteBitrateObserver {
  public:
   BitrateObserver() : last_bitrate_bps_(0), bitrate_updated_(false) {}
 
-  void OnNetworkChanged(uint32_t bitrate_bps,
-                        uint8_t fraction_lost,
-                        int64_t rtt_ms,
-                        int64_t probing_interval_ms) override {
-    last_bitrate_bps_ = bitrate_bps;
-    bitrate_updated_ = true;
+  void Update(NetworkControlUpdate update) {
+    if (update.target_rate) {
+      last_bitrate_bps_ = update.target_rate->target_rate.bps();
+      bitrate_updated_ = true;
+    }
   }
 
   void OnReceiveBitrateChanged(const std::vector<uint32_t>& ssrcs,
@@ -1081,10 +1081,14 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
   RtcEventLogNullImpl null_event_log;
   PacketRouter packet_router;
   PacedSender pacer(&clock, &packet_router, &null_event_log);
-  SendSideCongestionController cc(&clock, &observer, &null_event_log, &pacer);
+  webrtc_cc::TransportFeedbackAdapter transport_feedback(&clock);
+  auto factory = GoogCcNetworkControllerFactory(&null_event_log);
+  TimeDelta process_interval = factory.GetProcessInterval();
   // TODO(holmer): Log the call config and use that here instead.
   static const uint32_t kDefaultStartBitrateBps = 300000;
-  cc.SetBweBitrates(0, kDefaultStartBitrateBps, -1);
+  NetworkControllerConfig cc_config;
+  cc_config.constraints.starting_rate = DataRate::bps(kDefaultStartBitrateBps);
+  auto goog_cc = factory.Create(cc_config);
 
   TimeSeries time_series("Delay-based estimate", LineStyle::kStep,
                          PointStyle::kHighlight);
@@ -1107,12 +1111,12 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
       return static_cast<int64_t>(rtcp_iterator->log_time_us());
     return std::numeric_limits<int64_t>::max();
   };
+  int64_t next_process_time_us_ = clock.TimeInMicroseconds();
 
   auto NextProcessTime = [&]() {
     if (rtcp_iterator != incoming_rtcp.end() ||
         rtp_iterator != outgoing_rtp.end()) {
-      return clock.TimeInMicroseconds() +
-             std::max<int64_t>(cc.TimeUntilNextProcess() * 1000, 0);
+      return next_process_time_us_;
     }
     return std::numeric_limits<int64_t>::max();
   };
@@ -1129,24 +1133,32 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
   AcknowledgedBitrateEstimator acknowledged_bitrate_estimator(
       absl::make_unique<BitrateEstimator>());
 #endif  // !(BWE_TEST_LOGGING_COMPILE_TIME_ENABLE)
-  int64_t time_us = std::min(NextRtpTime(), NextRtcpTime());
+  int64_t time_us =
+      std::min({NextRtpTime(), NextRtcpTime(), NextProcessTime()});
   int64_t last_update_us = 0;
   while (time_us != std::numeric_limits<int64_t>::max()) {
     clock.AdvanceTimeMicroseconds(time_us - clock.TimeInMicroseconds());
     if (clock.TimeInMicroseconds() >= NextRtcpTime()) {
       RTC_DCHECK_EQ(clock.TimeInMicroseconds(), NextRtcpTime());
-      cc.OnTransportFeedback(rtcp_iterator->transport_feedback);
-      std::vector<PacketFeedback> feedback = cc.GetTransportFeedbackVector();
-      SortPacketFeedbackVector(&feedback);
+
+      auto feedback_msg = transport_feedback.ProcessTransportFeedback(
+          rtcp_iterator->transport_feedback);
       absl::optional<uint32_t> bitrate_bps;
-      if (!feedback.empty()) {
+      if (feedback_msg) {
+        observer.Update(goog_cc->OnTransportPacketsFeedback(*feedback_msg));
+        std::vector<PacketFeedback> feedback =
+            transport_feedback.GetTransportFeedbackVector();
+        SortPacketFeedbackVector(&feedback);
+        if (!feedback.empty()) {
 #if !(BWE_TEST_LOGGING_COMPILE_TIME_ENABLE)
-        acknowledged_bitrate_estimator.IncomingPacketFeedbackVector(feedback);
+          acknowledged_bitrate_estimator.IncomingPacketFeedbackVector(feedback);
 #endif  // !(BWE_TEST_LOGGING_COMPILE_TIME_ENABLE)
-        for (const PacketFeedback& packet : feedback)
-          acked_bitrate.Update(packet.payload_size, packet.arrival_time_ms);
-        bitrate_bps = acked_bitrate.Rate(feedback.back().arrival_time_ms);
+          for (const PacketFeedback& packet : feedback)
+            acked_bitrate.Update(packet.payload_size, packet.arrival_time_ms);
+          bitrate_bps = acked_bitrate.Rate(feedback.back().arrival_time_ms);
+        }
       }
+
       float x = ToCallTimeSec(clock.TimeInMicroseconds());
       float y = bitrate_bps.value_or(0) / 1000;
       acked_time_series.points.emplace_back(x, y);
@@ -1161,19 +1173,25 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
       const RtpPacketType& rtp_packet = *rtp_iterator->second;
       if (rtp_packet.rtp.header.extension.hasTransportSequenceNumber) {
         RTC_DCHECK(rtp_packet.rtp.header.extension.hasTransportSequenceNumber);
-        cc.AddPacket(rtp_packet.rtp.header.ssrc,
-                     rtp_packet.rtp.header.extension.transportSequenceNumber,
-                     rtp_packet.rtp.total_length, PacedPacketInfo());
+        transport_feedback.AddPacket(
+            rtp_packet.rtp.header.ssrc,
+            rtp_packet.rtp.header.extension.transportSequenceNumber,
+            rtp_packet.rtp.total_length, PacedPacketInfo());
         rtc::SentPacket sent_packet(
             rtp_packet.rtp.header.extension.transportSequenceNumber,
             rtp_packet.rtp.log_time_us() / 1000);
-        cc.OnSentPacket(sent_packet);
+        auto sent_msg = transport_feedback.ProcessSentPacket(sent_packet);
+        if (sent_msg)
+          observer.Update(goog_cc->OnSentPacket(*sent_msg));
       }
       ++rtp_iterator;
     }
     if (clock.TimeInMicroseconds() >= NextProcessTime()) {
       RTC_DCHECK_EQ(clock.TimeInMicroseconds(), NextProcessTime());
-      cc.Process();
+      ProcessInterval msg;
+      msg.at_time = Timestamp::us(clock.TimeInMicroseconds());
+      observer.Update(goog_cc->OnProcessInterval(msg));
+      next_process_time_us_ += process_interval.us();
     }
     if (observer.GetAndResetBitrateUpdated() ||
         time_us - last_update_us >= 1e6) {
