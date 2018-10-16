@@ -32,7 +32,6 @@
 #include "rtc_base/messagedigest.h"
 #include "rtc_base/socketaddress.h"
 #include "rtc_base/strings/string_builder.h"
-#include "rtc_base/stringutils.h"                // for strcpyn, _stricmp
 #include "rtc_base/third_party/base64/base64.h"  // for Base64
 #include "rtc_base/zero_memory.h"                // for ExplicitZeroMemory
 
@@ -377,7 +376,7 @@ HttpAuthResult HttpAuthenticate(const char* challenge,
       return HAR_IGNORE;
     }
 #else
-    sprintfn(spn, MAX_SPN, "HTTP/%s", server.ToString().c_str());
+    snprintf(spn, MAX_SPN, "HTTP/%s", server.ToString().c_str());
 #endif
 
     SecBuffer out_sec;

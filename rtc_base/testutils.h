@@ -21,7 +21,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/stream.h"
-#include "rtc_base/stringutils.h"
 
 namespace webrtc {
 namespace testing {
@@ -164,7 +163,7 @@ class StreamSource : public StreamInterface {
     va_list args;
     va_start(args, format);
     char buffer[1024];
-    size_t len = vsprintfn(buffer, sizeof(buffer), format, args);
+    size_t len = vsnprintf(buffer, sizeof(buffer), format, args);
     RTC_CHECK(len < sizeof(buffer) - 1);
     va_end(args);
     QueueData(buffer, len);

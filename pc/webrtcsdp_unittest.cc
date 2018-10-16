@@ -2078,9 +2078,8 @@ TEST_F(WebRtcSdpTest, SerializeWithSctpDataChannelAndNewPort) {
 
   char default_portstr[16];
   char new_portstr[16];
-  rtc::sprintfn(default_portstr, sizeof(default_portstr), "%d",
-                kDefaultSctpPort);
-  rtc::sprintfn(new_portstr, sizeof(new_portstr), "%d", kNewPort);
+  snprintf(default_portstr, sizeof(default_portstr), "%d", kDefaultSctpPort);
+  snprintf(new_portstr, sizeof(new_portstr), "%d", kNewPort);
   rtc::replace_substrs(default_portstr, strlen(default_portstr), new_portstr,
                        strlen(new_portstr), &expected_sdp);
 
