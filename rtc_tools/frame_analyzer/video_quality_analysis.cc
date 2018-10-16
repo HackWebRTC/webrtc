@@ -13,6 +13,10 @@
 #include <algorithm>
 #include <numeric>
 
+#include "rtc_base/logging.h"
+#include "rtc_base/strings/string_builder.h"
+#include "rtc_tools/frame_analyzer/video_color_aligner.h"
+#include "rtc_tools/frame_analyzer/video_temporal_aligner.h"
 #include "test/testsupport/perf_test.h"
 #include "third_party/libyuv/include/libyuv/compare.h"
 #include "third_party/libyuv/include/libyuv/convert.h"
@@ -55,17 +59,32 @@ std::vector<AnalysisResult> RunAnalysis(
     const rtc::scoped_refptr<webrtc::test::Video>& reference_video,
     const rtc::scoped_refptr<webrtc::test::Video>& test_video,
     const std::vector<size_t>& test_frame_indices) {
-  std::vector<AnalysisResult> results;
-  for (size_t i = 0; i < test_frame_indices.size(); ++i) {
-    // Ignore duplicated frames in the test video.
-    if (i > 0 && test_frame_indices[i] == test_frame_indices[i - 1])
-      continue;
+  const rtc::scoped_refptr<Video> temporally_aligned_reference_video =
+      ReorderVideo(reference_video, test_frame_indices);
 
+  const ColorTransformationMatrix color_transformation =
+      CalculateColorTransformationMatrix(temporally_aligned_reference_video,
+                                         test_video);
+
+  char buf[256];
+  rtc::SimpleStringBuilder string_builder(buf);
+  for (int i = 0; i < 3; ++i) {
+    string_builder << "\n";
+    for (int j = 0; j < 4; ++j)
+      string_builder.AppendFormat("%6.2f ", color_transformation[i][j]);
+  }
+  RTC_LOG(LS_INFO) << "Adjusting test video with color transformation: "
+                   << string_builder.str();
+
+  const rtc::scoped_refptr<Video> color_adjusted_test_video =
+      AdjustColors(color_transformation, test_video);
+
+  std::vector<AnalysisResult> results;
+  for (size_t i = 0; i < color_adjusted_test_video->number_of_frames(); ++i) {
     const rtc::scoped_refptr<I420BufferInterface>& test_frame =
-        test_video->GetFrame(i);
+        color_adjusted_test_video->GetFrame(i);
     const rtc::scoped_refptr<I420BufferInterface>& reference_frame =
-        reference_video->GetFrame(test_frame_indices[i] %
-                                  reference_video->number_of_frames());
+        temporally_aligned_reference_video->GetFrame(i);
 
     // Fill in the result struct.
     AnalysisResult result;
