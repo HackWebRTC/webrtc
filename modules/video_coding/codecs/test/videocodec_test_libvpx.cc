@@ -63,8 +63,6 @@ VideoCodecTestFixture::Config CreateConfig() {
   config.filepath = ResourcePath(config.filename, "yuv");
   config.num_frames = kNumFramesLong;
   config.use_single_core = true;
-  config.hw_encoder = false;
-  config.hw_decoder = false;
   return config;
 }
 

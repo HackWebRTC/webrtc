@@ -130,9 +130,7 @@ bool RunEncodeInRealTime(const VideoCodecTestFixtureImpl::Config& config) {
 
 std::string FilenameWithParams(
     const VideoCodecTestFixtureImpl::Config& config) {
-  std::string implementation_type = config.hw_encoder ? "hw" : "sw";
   return config.filename + "_" + config.CodecName() + "_" +
-         implementation_type + "_" +
          std::to_string(config.codec_settings.startBitrate);
 }
 
