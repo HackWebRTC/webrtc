@@ -654,7 +654,7 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id) {
   // Try to find packet in RTP packet history. Also verify RTT here, so that we
   // don't retransmit too often.
   absl::optional<RtpPacketHistory::PacketState> stored_packet =
-      packet_history_.GetPacketState(packet_id, true);
+      packet_history_.GetPacketState(packet_id);
   if (!stored_packet) {
     // Packet not found.
     return 0;
@@ -685,7 +685,7 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id) {
   }
 
   std::unique_ptr<RtpPacketToSend> packet =
-      packet_history_.GetPacketAndSetSendTime(packet_id, true);
+      packet_history_.GetPacketAndSetSendTime(packet_id);
   if (!packet) {
     // Packet could theoretically time out between the first check and this one.
     return 0;
@@ -763,17 +763,14 @@ bool RTPSender::TimeToSendPacket(uint32_t ssrc,
     return true;
 
   std::unique_ptr<RtpPacketToSend> packet;
-  // No need to verify RTT here, it has already been checked before putting the
-  // packet into the pacer. But _do_ update the send time.
   if (ssrc == SSRC()) {
-    packet = packet_history_.GetPacketAndSetSendTime(sequence_number, false);
+    packet = packet_history_.GetPacketAndSetSendTime(sequence_number);
   } else if (ssrc == FlexfecSsrc()) {
-    packet =
-        flexfec_packet_history_.GetPacketAndSetSendTime(sequence_number, false);
+    packet = flexfec_packet_history_.GetPacketAndSetSendTime(sequence_number);
   }
 
   if (!packet) {
-    // Packet cannot be found.
+    // Packet cannot be found or was resend too recently.
     return true;
   }
 
