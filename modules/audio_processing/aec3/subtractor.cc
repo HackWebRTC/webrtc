@@ -191,7 +191,7 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
                   adaptation_during_saturation_, &shadow_saturation);
 
   // Compute the signal powers in the subtractor output.
-  output->UpdatePowers(y);
+  output->ComputeMetrics(y);
 
   // Adjust the filter if needed.
   bool main_filter_adjusted = false;
