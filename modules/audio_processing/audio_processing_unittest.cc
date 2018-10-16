@@ -1278,7 +1278,6 @@ TEST_F(ApmTest, AllProcessingDisabledByDefault) {
   EXPECT_FALSE(config.echo_canceller.enabled);
   EXPECT_FALSE(config.high_pass_filter.enabled);
   EXPECT_FALSE(apm_->gain_control()->is_enabled());
-  EXPECT_FALSE(apm_->high_pass_filter()->is_enabled());
   EXPECT_FALSE(apm_->level_estimator()->is_enabled());
   EXPECT_FALSE(apm_->noise_suppression()->is_enabled());
   EXPECT_FALSE(apm_->voice_detection()->is_enabled());

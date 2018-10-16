@@ -115,29 +115,6 @@ static const size_t kMaxAllowedValuesOfSamplesPerFrame = 480;
 // TODO(peah): Decrease this once we properly handle hugely unbalanced
 // reverse and forward call numbers.
 static const size_t kMaxNumFramesToBuffer = 100;
-
-class HighPassFilterImpl : public HighPassFilter {
- public:
-  explicit HighPassFilterImpl(AudioProcessingImpl* apm) : apm_(apm) {}
-  ~HighPassFilterImpl() override = default;
-
-  // HighPassFilter implementation.
-  int Enable(bool enable) override {
-    apm_->MutateConfig([enable](AudioProcessing::Config* config) {
-      config->high_pass_filter.enabled = enable;
-    });
-
-    return AudioProcessing::kNoError;
-  }
-
-  bool is_enabled() const override {
-    return apm_->GetConfig().high_pass_filter.enabled;
-  }
-
- private:
-  AudioProcessingImpl* apm_;
-  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(HighPassFilterImpl);
-};
 }  // namespace
 
 // Throughout webrtc, it's assumed that success is represented by zero.
@@ -352,7 +329,6 @@ AudioProcessingImpl::AudioProcessingImpl(
       render_runtime_settings_(kRuntimeSettingQueueSize),
       capture_runtime_settings_enqueuer_(&capture_runtime_settings_),
       render_runtime_settings_enqueuer_(&render_runtime_settings_),
-      high_pass_filter_impl_(new HighPassFilterImpl(this)),
       echo_control_factory_(std::move(echo_control_factory)),
       submodule_states_(!!capture_post_processor,
                         !!render_pre_processor,
@@ -1725,10 +1701,6 @@ GainControl* AudioProcessingImpl::gain_control() const {
     return public_submodules_->gain_control_for_experimental_agc.get();
   }
   return public_submodules_->gain_control.get();
-}
-
-HighPassFilter* AudioProcessingImpl::high_pass_filter() const {
-  return high_pass_filter_impl_.get();
 }
 
 LevelEstimator* AudioProcessingImpl::level_estimator() const {
