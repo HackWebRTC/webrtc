@@ -36,13 +36,15 @@ class OpenSSLCertificate : public SSLCertificate {
   // OpenSSLCertificate share ownership.
   explicit OpenSSLCertificate(X509* x509);
 
-  static OpenSSLCertificate* Generate(OpenSSLKeyPair* key_pair,
-                                      const SSLIdentityParams& params);
-  static OpenSSLCertificate* FromPEMString(const std::string& pem_string);
+  static std::unique_ptr<OpenSSLCertificate> Generate(
+      OpenSSLKeyPair* key_pair,
+      const SSLIdentityParams& params);
+  static std::unique_ptr<OpenSSLCertificate> FromPEMString(
+      const std::string& pem_string);
 
   ~OpenSSLCertificate() override;
 
-  OpenSSLCertificate* GetReference() const override;
+  std::unique_ptr<SSLCertificate> Clone() const override;
 
   X509* x509() const { return x509_; }
 
@@ -69,8 +71,6 @@ class OpenSSLCertificate : public SSLCertificate {
   int64_t CertificateExpirationTime() const override;
 
  private:
-  void AddReference() const;
-
   X509* x509_;  // NOT OWNED
   RTC_DISALLOW_COPY_AND_ASSIGN(OpenSSLCertificate);
 };

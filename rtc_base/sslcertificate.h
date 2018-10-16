@@ -28,7 +28,7 @@ struct SSLCertificateStats {
   SSLCertificateStats(std::string&& fingerprint,
                       std::string&& fingerprint_algorithm,
                       std::string&& base64_certificate,
-                      std::unique_ptr<SSLCertificateStats>&& issuer);
+                      std::unique_ptr<SSLCertificateStats> issuer);
   ~SSLCertificateStats();
   std::string fingerprint;
   std::string fingerprint_algorithm;
@@ -51,17 +51,13 @@ class SSLCertificate {
   // The length of the string representation of the certificate is
   // stored in *pem_length if it is non-null, and only if
   // parsing was successful.
-  // Caller is responsible for freeing the returned object.
-  static SSLCertificate* FromPEMString(const std::string& pem_string);
-  virtual ~SSLCertificate() {}
+  static std::unique_ptr<SSLCertificate> FromPEMString(
+      const std::string& pem_string);
+  virtual ~SSLCertificate() = default;
 
   // Returns a new SSLCertificate object instance wrapping the same
-  // underlying certificate, including its chain if present.  Caller is
-  // responsible for freeing the returned object. Use GetUniqueReference
-  // instead.
-  virtual SSLCertificate* GetReference() const = 0;
-
-  std::unique_ptr<SSLCertificate> GetUniqueReference() const;
+  // underlying certificate, including its chain if present.
+  virtual std::unique_ptr<SSLCertificate> Clone() const = 0;
 
   // Returns a PEM encoded string representation of the certificate.
   virtual std::string ToPEMString() const = 0;
@@ -94,11 +90,8 @@ class SSLCertificate {
 // SSLCertificate pointers.
 class SSLCertChain {
  public:
+  explicit SSLCertChain(std::unique_ptr<SSLCertificate> single_cert);
   explicit SSLCertChain(std::vector<std::unique_ptr<SSLCertificate>> certs);
-  // These constructors copy the provided SSLCertificate(s), so the caller
-  // retains ownership.
-  explicit SSLCertChain(const std::vector<SSLCertificate*>& certs);
-  explicit SSLCertChain(const SSLCertificate* cert);
   // Allow move semantics for the object.
   SSLCertChain(SSLCertChain&&);
   SSLCertChain& operator=(SSLCertChain&&);
@@ -112,10 +105,8 @@ class SSLCertChain {
   const SSLCertificate& Get(size_t pos) const { return *(certs_[pos]); }
 
   // Returns a new SSLCertChain object instance wrapping the same underlying
-  // certificate chain.  Caller is responsible for freeing the returned object.
-  SSLCertChain* Copy() const;
-  // Same as above, but returning a unique_ptr for convenience.
-  std::unique_ptr<SSLCertChain> UniqueCopy() const;
+  // certificate chain.
+  std::unique_ptr<SSLCertChain> Clone() const;
 
   // Gets information (fingerprint, etc.) about this certificate chain. This is
   // used for certificate stats, see

@@ -3159,7 +3159,7 @@ PeerConnection::GetRemoteAudioSSLCertificate() {
   if (!chain || !chain->GetSize()) {
     return nullptr;
   }
-  return chain->Get(0).GetUniqueReference();
+  return chain->Get(0).Clone();
 }
 
 std::unique_ptr<rtc::SSLCertChain>
