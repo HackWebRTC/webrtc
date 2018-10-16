@@ -387,20 +387,19 @@ bool RTPSenderVideo::SendVideo(enum VideoCodecType video_type,
   int packet_capacity = rtp_sender_->MaxRtpPacketSize() - fec_packet_overhead -
                         (rtp_sender_->RtxStatus() ? kRtxHeaderSize : 0);
 
-  auto create_packet = [&] {
-    std::unique_ptr<RtpPacketToSend> rtp_packet = rtp_sender_->AllocatePacket();
-    RTC_DCHECK_LE(packet_capacity, rtp_packet->capacity());
+  std::unique_ptr<RtpPacketToSend> single_packet =
+      rtp_sender_->AllocatePacket();
+  RTC_DCHECK_LE(packet_capacity, single_packet->capacity());
+  single_packet->SetPayloadType(payload_type);
+  single_packet->SetTimestamp(rtp_timestamp);
+  single_packet->set_capture_time_ms(capture_time_ms);
 
-    rtp_packet->SetPayloadType(payload_type);
-    rtp_packet->SetTimestamp(rtp_timestamp);
-    rtp_packet->set_capture_time_ms(capture_time_ms);
-    return rtp_packet;
-  };
-
-  auto first_packet = create_packet();
-  auto middle_packet = absl::make_unique<RtpPacketToSend>(*first_packet);
-  auto last_packet = absl::make_unique<RtpPacketToSend>(*first_packet);
+  auto first_packet = absl::make_unique<RtpPacketToSend>(*single_packet);
+  auto middle_packet = absl::make_unique<RtpPacketToSend>(*single_packet);
+  auto last_packet = absl::make_unique<RtpPacketToSend>(*single_packet);
   // Simplest way to estimate how much extensions would occupy is to set them.
+  AddRtpHeaderExtensions(*video_header, frame_type, set_video_rotation,
+                         /*first=*/true, /*last=*/true, single_packet.get());
   AddRtpHeaderExtensions(*video_header, frame_type, set_video_rotation,
                          /*first=*/true, /*last=*/false, first_packet.get());
   AddRtpHeaderExtensions(*video_header, frame_type, set_video_rotation,
@@ -408,11 +407,16 @@ bool RTPSenderVideo::SendVideo(enum VideoCodecType video_type,
   AddRtpHeaderExtensions(*video_header, frame_type, set_video_rotation,
                          /*first=*/false, /*last=*/true, last_packet.get());
 
+  RTC_DCHECK_GT(packet_capacity, single_packet->headers_size());
   RTC_DCHECK_GT(packet_capacity, first_packet->headers_size());
   RTC_DCHECK_GT(packet_capacity, middle_packet->headers_size());
   RTC_DCHECK_GT(packet_capacity, last_packet->headers_size());
   RtpPacketizer::PayloadSizeLimits limits;
   limits.max_payload_len = packet_capacity - middle_packet->headers_size();
+
+  RTC_DCHECK_GE(single_packet->headers_size(), middle_packet->headers_size());
+  limits.single_packet_reduction_len =
+      single_packet->headers_size() - middle_packet->headers_size();
 
   RTC_DCHECK_GE(first_packet->headers_size(), middle_packet->headers_size());
   limits.first_packet_reduction_len =
@@ -421,16 +425,6 @@ bool RTPSenderVideo::SendVideo(enum VideoCodecType video_type,
   RTC_DCHECK_GE(last_packet->headers_size(), middle_packet->headers_size());
   limits.last_packet_reduction_len =
       last_packet->headers_size() - middle_packet->headers_size();
-
-  // TODO(bugs.webrtc.org/9868, bugs.webrtc.org/7990): Calculate correctly:
-  // Single packet might need more space for extensions than sum of first and
-  // last packet reductions when two byte header extension is used. It also may
-  // need more even for one-byte header extension because of padding.
-  // e.g. if middle_packet uses 5 bytes for extensions, it is padded to 8.
-  // if first_packet and last_packet use 2 bytes for extensions each, reduction
-  // would be 0 for both of them, but single packet would need 4 extra bytes.
-  limits.single_packet_reduction_len =
-      limits.first_packet_reduction_len + limits.last_packet_reduction_len;
 
   RTPVideoHeader minimized_video_header;
   const RTPVideoHeader* packetize_video_header = video_header;
@@ -457,10 +451,7 @@ bool RTPSenderVideo::SendVideo(enum VideoCodecType video_type,
     int expected_payload_capacity;
     // Choose right packet template:
     if (num_packets == 1) {
-      // No prepared template, create a new packet.
-      packet = create_packet();
-      AddRtpHeaderExtensions(*video_header, frame_type, set_video_rotation,
-                             /*first=*/true, /*last=*/true, packet.get());
+      packet = std::move(single_packet);
       expected_payload_capacity =
           limits.max_payload_len - limits.single_packet_reduction_len;
     } else if (i == 0) {
