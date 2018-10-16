@@ -14,6 +14,7 @@
 #include <string>
 
 #include "common_types.h"  // NOLINT(build/include)
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
@@ -98,7 +99,7 @@ union VideoCodecUnion {
 enum class VideoCodecMode { kRealtimeVideo, kScreensharing };
 
 // Common video codec properties
-class VideoCodec {
+class RTC_EXPORT VideoCodec {
  public:
   VideoCodec();
 

@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "rtc_base/checks.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
@@ -47,7 +48,7 @@ class RTCStatsMemberInterface;
 // for (const RTCStatsMemberInterface* member : foo.Members()) {
 //   printf("%s = %s\n", member->name(), member->ValueToString().c_str());
 // }
-class RTCStats {
+class RTC_EXPORT RTCStats {
  public:
   RTCStats(const std::string& id, int64_t timestamp_us)
       : id_(id), timestamp_us_(timestamp_us) {}
@@ -247,7 +248,7 @@ class RTCStatsMemberInterface {
 // (undefined reference to |kType|). The supported types are the ones described
 // by |RTCStatsMemberInterface::Type|.
 template <typename T>
-class RTCStatsMember : public RTCStatsMemberInterface {
+class RTC_EXPORT RTCStatsMember : public RTCStatsMemberInterface {
  public:
   static const Type kType;
 

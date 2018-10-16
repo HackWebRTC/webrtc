@@ -54,6 +54,7 @@ rtc_source_set("module_api") {
     "../api:libjingle_peerconnection_api",
     "../modules/rtp_rtcp:rtp_video_header",
     "../rtc_base:safe_conversions",
+    "../rtc_base/system:rtc_export",
   ]
 }
 

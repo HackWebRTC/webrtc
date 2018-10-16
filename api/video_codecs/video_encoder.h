@@ -21,6 +21,7 @@
 #include "api/video/video_frame.h"
 #include "api/video_codecs/video_codec.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
@@ -73,7 +74,7 @@ class EncodedImageCallback {
   virtual void OnDroppedFrame(DropReason reason) {}
 };
 
-class VideoEncoder {
+class RTC_EXPORT VideoEncoder {
  public:
   struct QpThresholds {
     QpThresholds(int l, int h) : low(l), high(h) {}

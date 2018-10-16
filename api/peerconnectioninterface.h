@@ -113,6 +113,7 @@
 #include "rtc_base/socketaddress.h"
 #include "rtc_base/sslcertificate.h"
 #include "rtc_base/sslstreamadapter.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace rtc {
 class SSLIdentity;
@@ -1376,7 +1377,8 @@ rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
 // be created and used.
 // If |network_controller_factory| is provided, it will be used if enabled via
 // field trial.
-rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
+RTC_EXPORT rtc::scoped_refptr<PeerConnectionFactoryInterface>
+CreatePeerConnectionFactory(
     rtc::Thread* network_thread,
     rtc::Thread* worker_thread,
     rtc::Thread* signaling_thread,

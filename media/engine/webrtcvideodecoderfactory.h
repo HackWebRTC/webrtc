@@ -16,6 +16,7 @@
 #include "common_types.h"  // NOLINT(build/include)
 #include "media/base/codec.h"
 #include "rtc_base/refcount.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 class VideoDecoder;
@@ -29,7 +30,7 @@ struct VideoDecoderParams {
 
 // Deprecated. Use webrtc::VideoDecoderFactory instead.
 // https://bugs.chromium.org/p/webrtc/issues/detail?id=7925
-class WebRtcVideoDecoderFactory {
+class RTC_EXPORT WebRtcVideoDecoderFactory {
  public:
   // Caller takes the ownership of the returned object and it should be released
   // by calling DestroyVideoDecoder().

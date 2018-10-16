@@ -42,6 +42,7 @@ rtc_source_set("rtc_h264_profile_id") {
     "..:webrtc_common",
     "../rtc_base:rtc_base",
     "../rtc_base:rtc_base_approved",
+    "../rtc_base/system:rtc_export",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
@@ -218,6 +219,7 @@ rtc_static_library("rtc_internal_video_codecs") {
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
     "../rtc_base:sequenced_task_checker",
+    "../rtc_base/system:rtc_export",
     "../system_wrappers",
     "//third_party/abseil-cpp/absl/types:optional",
     "//third_party/libyuv",
@@ -239,6 +241,7 @@ rtc_static_library("rtc_audio_video") {
     "../modules/video_coding:video_coding_utility",
     "../rtc_base:audio_format_to_string",
     "../rtc_base:checks",
+    "../rtc_base/system:rtc_export",
     "../rtc_base/third_party/base64",
     "../system_wrappers:field_trial",
     "../system_wrappers:metrics",

@@ -35,6 +35,7 @@ rtc_source_set("video_codecs_api") {
     "../..:webrtc_common",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
+    "../../rtc_base/system:rtc_export",
     "../video:encoded_image",
     "../video:video_bitrate_allocation",
     "../video:video_frame",

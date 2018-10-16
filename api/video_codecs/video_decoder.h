@@ -18,6 +18,7 @@
 #include "api/video/encoded_image.h"
 #include "api/video/video_frame.h"
 #include "api/video_codecs/video_codec.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
@@ -47,7 +48,7 @@ class DecodedImageCallback {
   virtual int32_t ReceivedDecodedFrame(const uint64_t pictureId);
 };
 
-class VideoDecoder {
+class RTC_EXPORT VideoDecoder {
  public:
   virtual ~VideoDecoder() {}
 
