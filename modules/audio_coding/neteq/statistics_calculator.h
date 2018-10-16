@@ -199,6 +199,7 @@ class StatisticsCalculator {
   size_t discarded_secondary_packets_;
   PeriodicUmaCount delayed_packet_outage_counter_;
   PeriodicUmaAverage excess_buffer_delay_;
+  PeriodicUmaCount buffer_full_counter_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(StatisticsCalculator);
 };
