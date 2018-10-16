@@ -62,9 +62,6 @@ class FakeMediaTransportFactory : public MediaTransportFactory {
       rtc::PacketTransportInternal* packet_transport,
       rtc::Thread* network_thread,
       bool is_caller) override {
-    RTC_CHECK(network_thread != nullptr);
-    RTC_CHECK(packet_transport != nullptr);
-
     std::unique_ptr<MediaTransportInterface> media_transport =
         absl::make_unique<FakeMediaTransport>(is_caller);
 

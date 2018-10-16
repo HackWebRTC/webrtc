@@ -3027,14 +3027,14 @@ TEST_F(WebRtcVoiceEngineTestFake, TestSetDscpOptions) {
 
   channel.reset(static_cast<cricket::WebRtcVoiceMediaChannel*>(
       engine_->CreateChannel(&call_, config, cricket::AudioOptions())));
-  channel->SetInterface(&network_interface);
+  channel->SetInterface(&network_interface, /*media_transport=*/nullptr);
   // Default value when DSCP is disabled should be DSCP_DEFAULT.
   EXPECT_EQ(rtc::DSCP_DEFAULT, network_interface.dscp());
 
   config.enable_dscp = true;
   channel.reset(static_cast<cricket::WebRtcVoiceMediaChannel*>(
       engine_->CreateChannel(&call_, config, cricket::AudioOptions())));
-  channel->SetInterface(&network_interface);
+  channel->SetInterface(&network_interface, /*media_transport=*/nullptr);
   EXPECT_EQ(rtc::DSCP_EF, network_interface.dscp());
 
   // Packets should also self-identify their dscp in PacketOptions.
@@ -3047,11 +3047,11 @@ TEST_F(WebRtcVoiceEngineTestFake, TestSetDscpOptions) {
   config.enable_dscp = false;
   channel.reset(static_cast<cricket::WebRtcVoiceMediaChannel*>(
       engine_->CreateChannel(&call_, config, cricket::AudioOptions())));
-  channel->SetInterface(&network_interface);
+  channel->SetInterface(&network_interface, /*media_transport=*/nullptr);
   // Default value when DSCP is disabled should be DSCP_DEFAULT.
   EXPECT_EQ(rtc::DSCP_DEFAULT, network_interface.dscp());
 
-  channel->SetInterface(nullptr);
+  channel->SetInterface(nullptr, nullptr);
 }
 
 TEST_F(WebRtcVoiceEngineTestFake, SetOutputVolume) {

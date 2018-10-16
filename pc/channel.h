@@ -42,6 +42,7 @@
 
 namespace webrtc {
 class AudioSinkInterface;
+class MediaTransportInterface;
 }  // namespace webrtc
 
 namespace cricket {
@@ -84,7 +85,8 @@ class BaseChannel : public rtc::MessageHandler,
               bool srtp_required,
               webrtc::CryptoOptions crypto_options);
   virtual ~BaseChannel();
-  void Init_w(webrtc::RtpTransportInternal* rtp_transport);
+  void Init_w(webrtc::RtpTransportInternal* rtp_transport,
+              webrtc::MediaTransportInterface* media_transport);
 
   // Deinit may be called multiple times and is simply ignored if it's already
   // done.
@@ -160,6 +162,11 @@ class BaseChannel : public rtc::MessageHandler,
       return rtp_transport_->rtcp_packet_transport();
     }
     return nullptr;
+  }
+
+  // Returns media transport, can be null if media transport is not available.
+  webrtc::MediaTransportInterface* media_transport() {
+    return media_transport_;
   }
 
   // From RtpTransport - public for testing only
@@ -306,6 +313,11 @@ class BaseChannel : public rtc::MessageHandler,
   std::string transport_name_;
 
   webrtc::RtpTransportInternal* rtp_transport_ = nullptr;
+
+  // Optional media transport (experimental).
+  // If provided, audio and video will be sent through media_transport instead
+  // of RTP/RTCP. Currently media_transport can co-exist with rtp_transport.
+  webrtc::MediaTransportInterface* media_transport_ = nullptr;
 
   std::vector<std::pair<rtc::Socket::Option, int> > socket_options_;
   std::vector<std::pair<rtc::Socket::Option, int> > rtcp_socket_options_;
