@@ -49,7 +49,6 @@ class ProcessingConfig;
 
 class EchoDetector;
 class GainControl;
-class HighPassFilter;
 class LevelEstimator;
 class NoiseSuppression;
 class CustomAudioAnalyzer;
@@ -598,8 +597,6 @@ class AudioProcessing : public rtc::RefCountInterface {
   // NULL. The pointers will be valid for the lifetime of the APM instance.
   // The memory for these objects is entirely managed internally.
   virtual GainControl* gain_control() const = 0;
-  // TODO(peah): Deprecate this API call.
-  virtual HighPassFilter* high_pass_filter() const = 0;
   virtual LevelEstimator* level_estimator() const = 0;
   virtual NoiseSuppression* noise_suppression() const = 0;
   virtual VoiceDetection* voice_detection() const = 0;
@@ -787,17 +784,6 @@ class ProcessingConfig {
   }
 
   StreamConfig streams[StreamName::kNumStreamNames];
-};
-
-// TODO(peah): Remove this interface.
-// A filtering component which removes DC offset and low-frequency noise.
-// Recommended to be enabled on the client-side.
-class HighPassFilter {
- public:
-  virtual int Enable(bool enable) = 0;
-  virtual bool is_enabled() const = 0;
-
-  virtual ~HighPassFilter() {}
 };
 
 // An estimation component used to retrieve level metrics.
