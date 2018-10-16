@@ -2885,6 +2885,20 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
     return SafeSetError(RTCErrorType::INVALID_MODIFICATION, error);
   }
 
+  if (local_description() &&
+      configuration.use_media_transport != configuration_.use_media_transport) {
+    RTC_LOG(LS_ERROR) << "Can't change media_transport after calling "
+                         "SetLocalDescription.";
+    return SafeSetError(RTCErrorType::INVALID_MODIFICATION, error);
+  }
+
+  if (remote_description() &&
+      configuration.use_media_transport != configuration_.use_media_transport) {
+    RTC_LOG(LS_ERROR) << "Can't change media_transport after calling "
+                         "SetRemoteDescription.";
+    return SafeSetError(RTCErrorType::INVALID_MODIFICATION, error);
+  }
+
   // The simplest (and most future-compatible) way to tell if the config was
   // modified in an invalid way is to copy each property we do support
   // modifying, then use operator==. There are far more properties we don't
@@ -2909,6 +2923,7 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
   modified_config.network_preference = configuration.network_preference;
   modified_config.active_reset_srtp_params =
       configuration.active_reset_srtp_params;
+  modified_config.use_media_transport = configuration.use_media_transport;
   if (configuration != modified_config) {
     RTC_LOG(LS_ERROR) << "Modifying the configuration in an unsupported way.";
     return SafeSetError(RTCErrorType::INVALID_MODIFICATION, error);
