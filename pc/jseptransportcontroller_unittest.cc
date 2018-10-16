@@ -170,7 +170,7 @@ class JsepTransportControllerTest : public JsepTransportController::Observer,
                         rtc::scoped_refptr<rtc::RTCCertificate> cert) {
     std::unique_ptr<rtc::SSLFingerprint> fingerprint;
     if (cert) {
-      fingerprint.reset(rtc::SSLFingerprint::CreateFromCertificate(cert));
+      fingerprint = rtc::SSLFingerprint::CreateFromCertificate(*cert);
     }
 
     cricket::TransportDescription transport_desc(std::vector<std::string>(),

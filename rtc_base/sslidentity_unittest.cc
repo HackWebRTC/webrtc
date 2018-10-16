@@ -180,7 +180,7 @@ IdentityAndInfo CreateFakeIdentityAndInfoFromDers(
   const rtc::SSLCertChain& chain = info.identity->cert_chain();
   std::unique_ptr<rtc::SSLFingerprint> fp;
   for (size_t i = 0; i < chain.GetSize(); i++) {
-    fp.reset(rtc::SSLFingerprint::Create("sha-1", &chain.Get(i)));
+    fp = rtc::SSLFingerprint::Create("sha-1", chain.Get(i));
     EXPECT_TRUE(fp);
     info.fingerprints.push_back(fp->GetRfc4572Fingerprint());
   }
