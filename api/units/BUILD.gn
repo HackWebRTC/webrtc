@@ -19,7 +19,8 @@ rtc_source_set("data_rate") {
     ":data_size",
     ":time_delta",
     "../../rtc_base:checks",
-    "../../rtc_base:rtc_base_approved",
+    "../../rtc_base:safe_conversions",
+    "../../rtc_base:stringutils",
   ]
 }
 
@@ -32,7 +33,8 @@ rtc_source_set("data_size") {
 
   deps = [
     "../../rtc_base:checks",
-    "../../rtc_base:rtc_base_approved",
+    "../../rtc_base:safe_conversions",
+    "../../rtc_base:stringutils",
   ]
 }
 
@@ -45,7 +47,8 @@ rtc_source_set("time_delta") {
 
   deps = [
     "../../rtc_base:checks",
-    "../../rtc_base:rtc_base_approved",
+    "../../rtc_base:safe_conversions",
+    "../../rtc_base:stringutils",
   ]
 }
 
@@ -59,7 +62,8 @@ rtc_source_set("timestamp") {
   deps = [
     ":time_delta",
     "../../rtc_base:checks",
-    "../../rtc_base:rtc_base_approved",
+    "../../rtc_base:safe_conversions",
+    "../../rtc_base:stringutils",
   ]
 }
 

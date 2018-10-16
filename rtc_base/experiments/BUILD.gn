@@ -28,11 +28,11 @@ rtc_static_library("field_trial_parser") {
     "field_trial_units.h",
   ]
   deps = [
-    "../:rtc_base_approved",
     "../../api/units:data_rate",
     "../../api/units:data_size",
     "../../api/units:time_delta",
     "../../rtc_base:checks",
+    "../../rtc_base:logging",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
