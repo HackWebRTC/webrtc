@@ -64,19 +64,6 @@ void AecState::GetResidualEchoScaling(
 }
 
 absl::optional<float> AecState::ErleUncertainty() const {
-  bool filter_has_had_time_to_converge;
-  if (config_.filter.conservative_initial_phase) {
-    filter_has_had_time_to_converge =
-        strong_not_saturated_render_blocks_ >= 1.5f * kNumBlocksPerSecond;
-  } else {
-    filter_has_had_time_to_converge =
-        strong_not_saturated_render_blocks_ >= 0.8f * kNumBlocksPerSecond;
-  }
-
-  if (!filter_has_had_time_to_converge) {
-    return 1.f;
-  }
-
   if (SaturatedEcho() && use_legacy_saturation_behavior_) {
     return 1.f;
   }
