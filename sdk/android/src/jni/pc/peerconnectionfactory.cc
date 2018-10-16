@@ -199,6 +199,9 @@ static void JNI_PeerConnectionFactory_ShutdownInternalTracer(
   rtc::tracing::ShutdownInternalTracer();
 }
 
+// Following parameters are optional:
+// |audio_device_module|, |jencoder_factory|, |jdecoder_factory|,
+// |audio_processor|, |media_transport_factory|, |fec_controller_factory|.
 jlong CreatePeerConnectionFactoryForJava(
     JNIEnv* jni,
     const JavaParamRef<jobject>& jcontext,
@@ -207,7 +210,8 @@ jlong CreatePeerConnectionFactoryForJava(
     const JavaParamRef<jobject>& jencoder_factory,
     const JavaParamRef<jobject>& jdecoder_factory,
     rtc::scoped_refptr<AudioProcessing> audio_processor,
-    std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory) {
+    std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory,
+    std::unique_ptr<MediaTransportFactory> media_transport_factory) {
   // talk/ assumes pretty widely that the current Thread is ThreadManager'd, but
   // ThreadManager only WrapCurrentThread()s the thread where it is first
   // created.  Since the semantics around when auto-wrapping happens in
@@ -257,12 +261,19 @@ jlong CreatePeerConnectionFactoryForJava(
       std::unique_ptr<VideoDecoderFactory>(
           CreateVideoDecoderFactory(jni, jdecoder_factory)),
       audio_mixer, audio_processor));
+  PeerConnectionFactoryDependencies dependencies;
+  dependencies.network_thread = network_thread.get();
+  dependencies.worker_thread = worker_thread.get();
+  dependencies.signaling_thread = signaling_thread.get();
+  dependencies.media_engine = std::move(media_engine);
+  dependencies.call_factory = std::move(call_factory);
+  dependencies.event_log_factory = std::move(rtc_event_log_factory);
+  dependencies.fec_controller_factory = std::move(fec_controller_factory);
+  dependencies.media_transport_factory = std::move(media_transport_factory);
 
   rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
-      CreateModularPeerConnectionFactory(
-          network_thread.get(), worker_thread.get(), signaling_thread.get(),
-          std::move(media_engine), std::move(call_factory),
-          std::move(rtc_event_log_factory), std::move(fec_controller_factory)));
+      CreateModularPeerConnectionFactory(std::move(dependencies)));
+
   RTC_CHECK(factory) << "Failed to create the peer connection factory; "
                      << "WebRTC/libjingle init likely failed on this device";
   // TODO(honghaiz): Maybe put the options as the argument of
@@ -286,18 +297,21 @@ static jlong JNI_PeerConnectionFactory_CreatePeerConnectionFactory(
     const JavaParamRef<jobject>& jencoder_factory,
     const JavaParamRef<jobject>& jdecoder_factory,
     jlong native_audio_processor,
-    jlong native_fec_controller_factory) {
+    jlong native_fec_controller_factory,
+    jlong native_media_transport_factory) {
   rtc::scoped_refptr<AudioProcessing> audio_processor =
       reinterpret_cast<AudioProcessing*>(native_audio_processor);
   std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory(
       reinterpret_cast<FecControllerFactoryInterface*>(
           native_fec_controller_factory));
+  std::unique_ptr<MediaTransportFactory> media_transport_factory(
+      reinterpret_cast<MediaTransportFactory*>(native_media_transport_factory));
   return CreatePeerConnectionFactoryForJava(
       jni, jcontext, joptions,
       reinterpret_cast<AudioDeviceModule*>(native_audio_device_module),
       jencoder_factory, jdecoder_factory,
       audio_processor ? audio_processor : CreateAudioProcessing(),
-      std::move(fec_controller_factory));
+      std::move(fec_controller_factory), std::move(media_transport_factory));
 }
 
 static void JNI_PeerConnectionFactory_FreeFactory(JNIEnv*,

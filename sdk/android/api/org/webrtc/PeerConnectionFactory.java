@@ -158,6 +158,7 @@ public class PeerConnectionFactory {
     private @Nullable VideoDecoderFactory decoderFactory;
     private @Nullable AudioProcessingFactory audioProcessingFactory;
     private @Nullable FecControllerFactoryFactoryInterface fecControllerFactoryFactory;
+    private @Nullable MediaTransportFactoryFactory mediaTransportFactoryFactory;
 
     private Builder() {}
 
@@ -196,9 +197,16 @@ public class PeerConnectionFactory {
       return this;
     }
 
+    /** Sets a MediaTransportFactoryFactory for a PeerConnectionFactory. */
+    public Builder setMediaTransportFactoryFactory(
+        MediaTransportFactoryFactory mediaTransportFactoryFactory) {
+      this.mediaTransportFactoryFactory = mediaTransportFactoryFactory;
+      return this;
+    }
+
     public PeerConnectionFactory createPeerConnectionFactory() {
       return new PeerConnectionFactory(options, audioDeviceModule, encoderFactory, decoderFactory,
-          audioProcessingFactory, fecControllerFactoryFactory);
+          audioProcessingFactory, fecControllerFactoryFactory, mediaTransportFactoryFactory);
     }
   }
 
@@ -279,13 +287,17 @@ public class PeerConnectionFactory {
   private PeerConnectionFactory(Options options, @Nullable AudioDeviceModule audioDeviceModule,
       @Nullable VideoEncoderFactory encoderFactory, @Nullable VideoDecoderFactory decoderFactory,
       @Nullable AudioProcessingFactory audioProcessingFactory,
-      @Nullable FecControllerFactoryFactoryInterface fecControllerFactoryFactory) {
+      @Nullable FecControllerFactoryFactoryInterface fecControllerFactoryFactory,
+      @Nullable MediaTransportFactoryFactory mediaTransportFactoryFactory) {
     checkInitializeHasBeenCalled();
     nativeFactory = nativeCreatePeerConnectionFactory(ContextUtils.getApplicationContext(), options,
         audioDeviceModule == null ? 0 : audioDeviceModule.getNativeAudioDeviceModulePointer(),
         encoderFactory, decoderFactory,
         audioProcessingFactory == null ? 0 : audioProcessingFactory.createNative(),
-        fecControllerFactoryFactory == null ? 0 : fecControllerFactoryFactory.createNative());
+        fecControllerFactoryFactory == null ? 0 : fecControllerFactoryFactory.createNative(),
+        mediaTransportFactoryFactory == null
+            ? 0
+            : mediaTransportFactoryFactory.createNativeMediaTransportFactory());
     if (nativeFactory == 0) {
       throw new RuntimeException("Failed to initialize PeerConnectionFactory!");
     }
@@ -489,7 +501,7 @@ public class PeerConnectionFactory {
   private static native long nativeCreatePeerConnectionFactory(Context context, Options options,
       long nativeAudioDeviceModule, VideoEncoderFactory encoderFactory,
       VideoDecoderFactory decoderFactory, long nativeAudioProcessor,
-      long nativeFecControllerFactory);
+      long nativeFecControllerFactory, long mediaTransportFactory);
   private static native long nativeCreatePeerConnection(long factory,
       PeerConnection.RTCConfiguration rtcConfig, MediaConstraints constraints, long nativeObserver,
       SSLCertificateVerifier sslCertificateVerifier);
