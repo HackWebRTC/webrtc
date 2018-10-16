@@ -16,18 +16,15 @@ VideoOptions::VideoOptions() = default;
 VideoOptions::~VideoOptions() = default;
 
 MediaChannel::MediaChannel(const MediaConfig& config)
-    : enable_dscp_(config.enable_dscp) {}
+    : enable_dscp_(config.enable_dscp), network_interface_(NULL) {}
 
-MediaChannel::MediaChannel() : enable_dscp_(false) {}
+MediaChannel::MediaChannel() : enable_dscp_(false), network_interface_(NULL) {}
 
 MediaChannel::~MediaChannel() {}
 
-void MediaChannel::SetInterface(
-    NetworkInterface* iface,
-    webrtc::MediaTransportInterface* media_transport) {
+void MediaChannel::SetInterface(NetworkInterface* iface) {
   rtc::CritScope cs(&network_interface_crit_);
   network_interface_ = iface;
-  media_transport_ = media_transport;
   SetDscp(enable_dscp_ ? PreferredDscp() : rtc::DSCP_DEFAULT);
 }
 
