@@ -132,6 +132,17 @@ struct AudioStreamConfig {
   struct Source {
     int channels = 1;
   } source;
+  bool network_adaptation = false;
+  struct NetworkAdaptation {
+    struct FrameLength {
+      double min_packet_loss_for_decrease = 0;
+      double max_packet_loss_for_increase = 1;
+      DataRate min_rate_for_20_ms = DataRate::Zero();
+      DataRate max_rate_for_60_ms = DataRate::Infinity();
+      DataRate min_rate_for_60_ms = DataRate::Zero();
+      DataRate max_rate_for_120_ms = DataRate::Infinity();
+    } frame;
+  } adapt;
   struct Encoder {
     Encoder();
     Encoder(const Encoder&);

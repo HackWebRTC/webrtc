@@ -11,8 +11,55 @@
 
 #include "test/call_test.h"
 
+#if WEBRTC_ENABLE_PROTOBUF
+RTC_PUSH_IGNORING_WUNDEF()
+#ifdef WEBRTC_ANDROID_PLATFORM_BUILD
+#include "external/webrtc/webrtc/modules/audio_coding/audio_network_adaptor/config.pb.h"
+#else
+#include "modules/audio_coding/audio_network_adaptor/config.pb.h"
+#endif
+RTC_POP_IGNORING_WUNDEF()
+#endif
+
 namespace webrtc {
 namespace test {
+namespace {
+absl::optional<std::string> CreateAdaptationString(
+    AudioStreamConfig::NetworkAdaptation config) {
+#if WEBRTC_ENABLE_PROTOBUF
+
+  audio_network_adaptor::config::ControllerManager cont_conf;
+  if (config.frame.max_rate_for_60_ms.IsFinite()) {
+    auto controller =
+        cont_conf.add_controllers()->mutable_frame_length_controller();
+    controller->set_fl_decreasing_packet_loss_fraction(
+        config.frame.min_packet_loss_for_decrease);
+    controller->set_fl_increasing_packet_loss_fraction(
+        config.frame.max_packet_loss_for_increase);
+
+    controller->set_fl_20ms_to_60ms_bandwidth_bps(
+        config.frame.min_rate_for_20_ms.bps<int32_t>());
+    controller->set_fl_60ms_to_20ms_bandwidth_bps(
+        config.frame.max_rate_for_60_ms.bps<int32_t>());
+
+    if (config.frame.max_rate_for_120_ms.IsFinite()) {
+      controller->set_fl_60ms_to_120ms_bandwidth_bps(
+          config.frame.min_rate_for_60_ms.bps<int32_t>());
+      controller->set_fl_120ms_to_60ms_bandwidth_bps(
+          config.frame.max_rate_for_120_ms.bps<int32_t>());
+    }
+  }
+  cont_conf.add_controllers()->mutable_bitrate_controller();
+  std::string config_string = cont_conf.SerializeAsString();
+  return config_string;
+#else
+  RTC_LOG(LS_ERROR) << "audio_network_adaptation is enabled"
+                       " but WEBRTC_ENABLE_PROTOBUF is false.\n"
+                       "Ignoring settings.";
+  return absl::nullopt;
+#endif  // WEBRTC_ENABLE_PROTOBUF
+}
+}  // namespace
 
 SendAudioStream::SendAudioStream(
     CallClient* sender,
@@ -42,6 +89,10 @@ SendAudioStream::SendAudioStream(
     send_config.send_codec_spec->target_bitrate_bps =
         config.encoder.fixed_rate->bps();
 
+  if (config.network_adaptation) {
+    send_config.audio_network_adaptor_config =
+        CreateAdaptationString(config.adapt);
+  }
   if (config.encoder.allocate_bitrate ||
       config.stream.in_bandwidth_estimation) {
     DataRate min_rate = DataRate::Infinity();
@@ -54,11 +105,22 @@ SendAudioStream::SendAudioStream(
       max_rate = *config.encoder.max_rate;
     }
     if (field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")) {
-      TimeDelta frame_length = config.encoder.initial_frame_length;
+      TimeDelta min_frame_length = config.encoder.initial_frame_length;
+      ;
+      TimeDelta max_frame_length = config.encoder.initial_frame_length;
+      ;
+      if (field_trial::IsEnabled("WebRTC-Audio-FrameLengthAdaptation") &&
+          !config.adapt.frame.min_rate_for_20_ms.IsZero()) {
+        if (!config.adapt.frame.min_rate_for_60_ms.IsZero()) {
+          max_frame_length = TimeDelta::ms(120);
+        } else {
+          max_frame_length = TimeDelta::ms(60);
+        }
+      }
       DataSize rtp_overhead = DataSize::bytes(12);
       DataSize total_overhead = config.stream.packet_overhead + rtp_overhead;
-      min_rate += total_overhead / frame_length;
-      max_rate += total_overhead / frame_length;
+      min_rate += total_overhead / max_frame_length;
+      max_rate += total_overhead / min_frame_length;
     }
     send_config.min_bitrate_bps = min_rate.bps();
     send_config.max_bitrate_bps = max_rate.bps();

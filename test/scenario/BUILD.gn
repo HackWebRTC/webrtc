@@ -95,6 +95,9 @@ if (rtc_include_tests) {
     } else if (is_ios || is_mac) {
       deps += [ "../../modules/video_coding:objc_codec_factory_helper" ]
     }
+    if (rtc_enable_protobuf) {
+      deps += [ "../../modules/audio_coding:ana_config_proto" ]
+    }
     if (!build_with_chromium && is_clang) {
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
