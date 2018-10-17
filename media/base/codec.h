@@ -20,6 +20,7 @@
 #include "api/video_codecs/sdp_video_format.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "media/base/mediaconstants.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace cricket {
 
@@ -62,7 +63,7 @@ class FeedbackParams {
   std::vector<FeedbackParam> params_;
 };
 
-struct Codec {
+struct RTC_EXPORT Codec {
   int id;
   std::string name;
   int clockrate;
@@ -142,7 +143,7 @@ struct AudioCodec : public Codec {
   bool operator!=(const AudioCodec& c) const { return !(*this == c); }
 };
 
-struct VideoCodec : public Codec {
+struct RTC_EXPORT VideoCodec : public Codec {
   // Creates a codec with the given parameters.
   VideoCodec(int id, const std::string& name);
   // Creates a codec with the given name and empty id.
@@ -215,8 +216,9 @@ const Codec* FindCodecById(const std::vector<Codec>& codecs, int payload_type) {
   return nullptr;
 }
 
-bool CodecNamesEq(const std::string& name1, const std::string& name2);
-bool CodecNamesEq(const char* name1, const char* name2);
+RTC_EXPORT bool CodecNamesEq(const std::string& name1,
+                             const std::string& name2);
+RTC_EXPORT bool CodecNamesEq(const char* name1, const char* name2);
 bool HasNack(const Codec& codec);
 bool HasRemb(const Codec& codec);
 bool HasRrtr(const Codec& codec);

@@ -62,7 +62,7 @@ absl::optional<ProfileLevelId> ParseProfileLevelId(const char* str);
 // contained in an SDP key-value map. A default profile level id will be
 // returned if the profile-level-id key is missing. Nothing will be returned if
 // the key is present but the string is invalid.
-absl::optional<ProfileLevelId> ParseSdpProfileLevelId(
+RTC_EXPORT absl::optional<ProfileLevelId> ParseSdpProfileLevelId(
     const CodecParameterMap& params);
 
 // Given that a decoder supports up to a given frame size (in pixels) at up to a
@@ -74,7 +74,7 @@ RTC_EXPORT absl::optional<Level> SupportedLevel(int max_frame_pixel_count,
 
 // Returns canonical string representation as three hex bytes of the profile
 // level id, or returns nothing for invalid profile level ids.
-absl::optional<std::string> ProfileLevelIdToString(
+RTC_EXPORT absl::optional<std::string> ProfileLevelIdToString(
     const ProfileLevelId& profile_level_id);
 
 // Generate codec parameters that will be used as answer in an SDP negotiation
