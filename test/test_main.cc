@@ -14,7 +14,7 @@
 
 int main(int argc, char* argv[]) {
   std::unique_ptr<webrtc::TestMain> main = webrtc::TestMain::Create();
-  int err_code = main->Init(argc, argv);
+  int err_code = main->Init(&argc, argv);
   if (err_code != 0) {
     return err_code;
   }

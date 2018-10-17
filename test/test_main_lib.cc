@@ -79,8 +79,8 @@ namespace {
 
 class TestMainImpl : public TestMain {
  public:
-  int Init(int argc, char* argv[]) override {
-    ::testing::InitGoogleMock(&argc, argv);
+  int Init(int* argc, char* argv[]) override {
+    ::testing::InitGoogleMock(argc, argv);
 
     // Default to LS_INFO, even for release builds to provide better test
     // logging.
@@ -88,7 +88,7 @@ class TestMainImpl : public TestMain {
     if (rtc::LogMessage::GetLogToDebug() > rtc::LS_INFO)
       rtc::LogMessage::LogToDebug(rtc::LS_INFO);
 
-    if (rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, false)) {
+    if (rtc::FlagList::SetFlagsFromCommandLine(argc, argv, false)) {
       return 1;
     }
     if (FLAG_help) {

@@ -24,7 +24,7 @@ class TestMain {
   // Initializes test environment. Clients can add their own initialization
   // steps after call to this method and before running tests.
   // Returns 0 if initialization was successful and non 0 otherwise.
-  virtual int Init(int argc, char* argv[]) = 0;
+  virtual int Init(int* argc, char* argv[]) = 0;
 
   // Runs test end return result error code. 0 - no errors.
   virtual int Run(int argc, char* argv[]) = 0;
