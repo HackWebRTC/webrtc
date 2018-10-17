@@ -63,14 +63,15 @@ message IncomingRtpPackets {
 
   // TODO(terelius/dinor): Add CSRCs. Field number 7 reserved for this purpose.
 
-  // required - The size (in bytes) of the packet including header, payload
-  // and padding.
-  optional uint32 packet_size = 8;
+  // required - The size (in bytes) of the media payload, not including
+  // RTP header or padding. The packet size is the sum of payload, header and
+  // padding.
+  optional uint32 payload_size = 8;
 
   // required - The size (in bytes) of the RTP header.
   optional uint32 header_size = 9;
 
-  // required - The size (in bytes) of the RTP header.
+  // required - The size (in bytes) of the padding.
   optional uint32 padding_size = 10;
 
   // optional - required if the batch contains delta encoded events.
@@ -94,7 +95,7 @@ message IncomingRtpPackets {
   optional bytes rtp_timestamp_deltas = 105;
   // Field number 107 reserved for CSRC.
   optional bytes ssrc_deltas = 106;
-  optional bytes packet_size_deltas = 108;
+  optional bytes payload_size_deltas = 108;
   optional bytes header_size_deltas = 109;
   optional bytes padding_size_deltas = 110;
   // Field number 111-114 reserved for future use.
@@ -126,14 +127,15 @@ message OutgoingRtpPackets {
 
   // TODO(terelius/dinor): Add CSRCs. Field number 7 reserved for this purpose.
 
-  // required - The size (in bytes) of the packet including header, payload
-  // and padding.
-  optional uint32 packet_size = 8;
+  // required - The size (in bytes) of the media payload, not including
+  // RTP header or padding. The packet size is the sum of payload, header and
+  // padding.
+  optional uint32 payload_size = 8;
 
   // required - The size (in bytes) of the RTP header.
   optional uint32 header_size = 9;
 
-  // required - The size (in bytes) of the RTP header.
+  // required - The size (in bytes) of the padding.
   optional uint32 padding_size = 10;
 
   // optional - required if the batch contains delta encoded events.
@@ -157,7 +159,7 @@ message OutgoingRtpPackets {
   optional bytes rtp_timestamp_deltas = 105;
   optional bytes ssrc_deltas = 106;
   // Field number 107 reserved for CSRC.
-  optional bytes packet_size_deltas = 108;
+  optional bytes payload_size_deltas = 108;
   optional bytes header_size_deltas = 109;
   optional bytes padding_size_deltas = 110;
   // Field number 111-114 reserved for future use.
