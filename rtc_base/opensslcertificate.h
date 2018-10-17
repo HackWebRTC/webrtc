@@ -11,7 +11,7 @@
 #ifndef RTC_BASE_OPENSSLCERTIFICATE_H_
 #define RTC_BASE_OPENSSLCERTIFICATE_H_
 
-#include <openssl/base.h>  // for X509, ssl_ctx_st
+#include <openssl/ossl_typ.h>  // for X509, SSL_CTX
 
 #include <stddef.h>  // for size_t
 #include <stdint.h>  // for int64_t
@@ -21,8 +21,6 @@
 #include "rtc_base/constructormagic.h"  // for RTC_DISALLOW_COPY_AND_ASSIGN
 #include "rtc_base/sslcertificate.h"    // for SSLCertificate
 #include "rtc_base/sslidentity.h"       // for SSLIdentityParams
-
-typedef struct ssl_ctx_st SSL_CTX;
 
 namespace rtc {
 

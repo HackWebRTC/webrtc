@@ -11,7 +11,7 @@
 #ifndef RTC_BASE_OPENSSLIDENTITY_H_
 #define RTC_BASE_OPENSSLIDENTITY_H_
 
-#include <openssl/base.h>  // for EVP_PKEY, ssl_ctx_st
+#include <openssl/ossl_typ.h>  // for EVP_PKEY, SSL_CTX
 
 #include <ctime>   // for time_t
 #include <memory>  // for unique_ptr
@@ -22,8 +22,6 @@
 #include "rtc_base/opensslcertificate.h"  // for OpenSSLCertificate
 #include "rtc_base/sslcertificate.h"      // for SSLCertChain
 #include "rtc_base/sslidentity.h"         // for SSLIdentity, KeyParams, SSL...
-
-typedef struct ssl_ctx_st SSL_CTX;
 
 namespace rtc {
 
