@@ -56,6 +56,16 @@ void RtpGenericFrameDescriptor::SetSpatialLayersBitmask(
   spatial_layers_ = spatial_layers;
 }
 
+void RtpGenericFrameDescriptor::SetResolution(int width, int height) {
+  RTC_DCHECK(FirstPacketInSubFrame());
+  RTC_DCHECK_GE(width, 0);
+  RTC_DCHECK_LE(width, 0xFFFF);
+  RTC_DCHECK_GE(height, 0);
+  RTC_DCHECK_LE(height, 0xFFFF);
+  width_ = width;
+  height_ = height;
+}
+
 uint16_t RtpGenericFrameDescriptor::FrameId() const {
   RTC_DCHECK(FirstPacketInSubFrame());
   return frame_id_;
