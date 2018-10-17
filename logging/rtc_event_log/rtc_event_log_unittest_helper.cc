@@ -15,9 +15,11 @@
 #include <limits>
 #include <memory>
 #include <numeric>
+#include <string>
 #include <utility>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "modules/rtp_rtcp/include/rtp_cvo.h"
@@ -63,6 +65,16 @@ void ShuffleInPlace(Random* prng, rtc::ArrayView<T> array) {
     std::swap(array[i], array[other]);
   }
 }
+
+absl::optional<int> GetExtensionId(const std::vector<RtpExtension>& extensions,
+                                   const std::string& uri) {
+  for (const auto& extension : extensions) {
+    if (extension.uri == uri)
+      return extension.id;
+  }
+  return absl::nullopt;
+}
+
 }  // namespace
 
 std::unique_ptr<RtcEventAlrState> EventGenerator::NewAlrState() {
@@ -583,10 +595,6 @@ void VerifyLoggedRtpHeader(const RtpPacket& original_header,
   EXPECT_EQ(original_header.SequenceNumber(), logged_header.sequenceNumber);
   EXPECT_EQ(original_header.Timestamp(), logged_header.timestamp);
   EXPECT_EQ(original_header.Ssrc(), logged_header.ssrc);
-  ASSERT_EQ(original_header.Csrcs().size(), logged_header.numCSRCs);
-  for (size_t i = 0; i < logged_header.numCSRCs; i++) {
-    EXPECT_EQ(original_header.Csrcs()[i], logged_header.arrOfCSRCs[i]);
-  }
 
   EXPECT_EQ(original_header.headers_size(), logged_header.headerLength);
 
@@ -722,25 +730,51 @@ void VerifyLoggedStopEvent(int64_t stop_time_us,
   EXPECT_EQ(stop_time_us / 1000, logged_event.log_time_ms());
 }
 
+void VerifyLoggedStreamConfig(const rtclog::StreamConfig& original_config,
+                              const rtclog::StreamConfig& logged_config) {
+  EXPECT_EQ(original_config.local_ssrc, logged_config.local_ssrc);
+  EXPECT_EQ(original_config.remote_ssrc, logged_config.remote_ssrc);
+  EXPECT_EQ(original_config.rtx_ssrc, logged_config.rtx_ssrc);
+  EXPECT_EQ(original_config.rsid, logged_config.rsid);
+
+  EXPECT_EQ(original_config.rtp_extensions.size(),
+            logged_config.rtp_extensions.size());
+  size_t recognized_extensions = 0;
+  for (size_t i = 0; i < kMaxNumExtensions; i++) {
+    auto original_id =
+        GetExtensionId(original_config.rtp_extensions, kExtensions[i].name);
+    auto logged_id =
+        GetExtensionId(logged_config.rtp_extensions, kExtensions[i].name);
+    EXPECT_EQ(original_id, logged_id)
+        << "IDs for " << kExtensions[i].name << " don't match. Original ID "
+        << original_id.value_or(-1) << ". Parsed ID " << logged_id.value_or(-1)
+        << ".";
+    if (original_id) {
+      recognized_extensions++;
+    }
+  }
+  EXPECT_EQ(recognized_extensions, original_config.rtp_extensions.size());
+}
+
 void VerifyLoggedAudioRecvConfig(
     const RtcEventAudioReceiveStreamConfig& original_event,
     const LoggedAudioRecvConfig& logged_event) {
   EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
-  EXPECT_EQ(*original_event.config_, logged_event.config);
+  VerifyLoggedStreamConfig(*original_event.config_, logged_event.config);
 }
 
 void VerifyLoggedAudioSendConfig(
     const RtcEventAudioSendStreamConfig& original_event,
     const LoggedAudioSendConfig& logged_event) {
   EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
-  EXPECT_EQ(*original_event.config_, logged_event.config);
+  VerifyLoggedStreamConfig(*original_event.config_, logged_event.config);
 }
 
 void VerifyLoggedVideoRecvConfig(
     const RtcEventVideoReceiveStreamConfig& original_event,
     const LoggedVideoRecvConfig& logged_event) {
   EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
-  EXPECT_EQ(*original_event.config_, logged_event.config);
+  VerifyLoggedStreamConfig(*original_event.config_, logged_event.config);
 }
 
 void VerifyLoggedVideoSendConfig(
@@ -750,8 +784,8 @@ void VerifyLoggedVideoSendConfig(
   // TODO(terelius): In the past, we allowed storing multiple RtcStreamConfigs
   // in the same RtcEventVideoSendStreamConfig. Look into whether we should drop
   // backwards compatibility in the parser.
-  EXPECT_EQ(logged_event.configs.size(), 1u);
-  EXPECT_EQ(*original_event.config_, logged_event.configs[0]);
+  ASSERT_EQ(logged_event.configs.size(), 1u);
+  VerifyLoggedStreamConfig(*original_event.config_, logged_event.configs[0]);
 }
 
 }  // namespace test

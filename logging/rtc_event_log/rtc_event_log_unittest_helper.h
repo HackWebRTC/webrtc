@@ -33,6 +33,7 @@
 #include "logging/rtc_event_log/events/rtc_event_video_receive_stream_config.h"
 #include "logging/rtc_event_log/events/rtc_event_video_send_stream_config.h"
 #include "logging/rtc_event_log/rtc_event_log_parser_new.h"
+#include "logging/rtc_event_log/rtc_stream_config.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/receiver_report.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/report_block.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/sender_report.h"
@@ -168,6 +169,9 @@ void VerifyLoggedStartEvent(int64_t start_time_us,
                             const LoggedStartEvent& logged_event);
 void VerifyLoggedStopEvent(int64_t stop_time_us,
                            const LoggedStopEvent& logged_event);
+
+void VerifyLoggedStreamConfig(const rtclog::StreamConfig& original_config,
+                              const rtclog::StreamConfig& logged_config);
 
 void VerifyLoggedAudioRecvConfig(
     const RtcEventAudioReceiveStreamConfig& original_event,
