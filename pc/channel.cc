@@ -155,19 +155,21 @@ void BaseChannel::DisconnectFromRtpTransport() {
   rtp_transport_->SignalSentPacket.disconnect(this);
 }
 
-void BaseChannel::Init_w(webrtc::RtpTransportInternal* rtp_transport) {
+void BaseChannel::Init_w(webrtc::RtpTransportInternal* rtp_transport,
+                         webrtc::MediaTransportInterface* media_transport) {
   RTC_DCHECK_RUN_ON(worker_thread_);
   network_thread_->Invoke<void>(
       RTC_FROM_HERE, [this, rtp_transport] { SetRtpTransport(rtp_transport); });
 
   // Both RTP and RTCP channels should be set, we can call SetInterface on
   // the media channel and it can set network options.
-  media_channel_->SetInterface(this);
+  media_channel_->SetInterface(this, media_transport);
 }
 
 void BaseChannel::Deinit() {
   RTC_DCHECK(worker_thread_->IsCurrent());
-  media_channel_->SetInterface(NULL);
+  media_channel_->SetInterface(/*iface=*/nullptr,
+                               /*media_transport=*/nullptr);
   // Packets arrive on the network thread, processing packets calls virtual
   // functions, so need to stop this process in Deinit that is called in
   // derived classes destructor.
@@ -1036,7 +1038,7 @@ RtpDataChannel::~RtpDataChannel() {
 }
 
 void RtpDataChannel::Init_w(webrtc::RtpTransportInternal* rtp_transport) {
-  BaseChannel::Init_w(rtp_transport);
+  BaseChannel::Init_w(rtp_transport, /*media_transport=*/nullptr);
   media_channel()->SignalDataReceived.connect(this,
                                               &RtpDataChannel::OnDataReceived);
   media_channel()->SignalReadyToSend.connect(

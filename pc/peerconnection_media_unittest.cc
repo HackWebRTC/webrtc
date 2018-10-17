@@ -15,6 +15,7 @@
 #include <tuple>
 
 #include "api/call/callfactoryinterface.h"
+#include "api/test/fake_media_transport.h"
 #include "logging/rtc_event_log/rtc_event_log_factory.h"
 #include "media/base/fakemediaengine.h"
 #include "p2p/base/fakeportallocator.h"
@@ -71,13 +72,26 @@ class PeerConnectionMediaBaseTest : public ::testing::Test {
     return CreatePeerConnection(RTCConfiguration());
   }
 
+  // Creates PeerConnectionFactory and PeerConnection for given configuration.
+  // Note that PeerConnectionFactory is created with MediaTransportFactory,
+  // because some tests pass config.use_media_transport = true.
   WrapperPtr CreatePeerConnection(const RTCConfiguration& config) {
     auto media_engine = absl::make_unique<FakeMediaEngine>();
     auto* media_engine_ptr = media_engine.get();
-    auto pc_factory = CreateModularPeerConnectionFactory(
-        rtc::Thread::Current(), rtc::Thread::Current(), rtc::Thread::Current(),
-        std::move(media_engine), CreateCallFactory(),
-        CreateRtcEventLogFactory());
+
+    PeerConnectionFactoryDependencies factory_dependencies;
+
+    factory_dependencies.network_thread = rtc::Thread::Current();
+    factory_dependencies.worker_thread = rtc::Thread::Current();
+    factory_dependencies.signaling_thread = rtc::Thread::Current();
+    factory_dependencies.media_engine = std::move(media_engine);
+    factory_dependencies.call_factory = CreateCallFactory();
+    factory_dependencies.event_log_factory = CreateRtcEventLogFactory();
+    factory_dependencies.media_transport_factory =
+        absl::make_unique<FakeMediaTransportFactory>();
+
+    auto pc_factory =
+        CreateModularPeerConnectionFactory(std::move(factory_dependencies));
 
     auto fake_port_allocator = absl::make_unique<cricket::FakePortAllocator>(
         rtc::Thread::Current(), nullptr);
@@ -1070,6 +1084,69 @@ TEST_P(PeerConnectionMediaTest,
   const cricket::AudioOptions& audio_options = caller_voice->options();
   EXPECT_EQ(config.combined_audio_video_bwe,
             audio_options.combined_audio_video_bwe);
+}
+
+TEST_P(PeerConnectionMediaTest, MediaTransportPropagatedToVoiceEngine) {
+  RTCConfiguration config;
+
+  // Setup PeerConnection to use media transport.
+  config.use_media_transport = true;
+
+  auto caller = CreatePeerConnectionWithAudioVideo(config);
+  auto callee = CreatePeerConnectionWithAudioVideo(config);
+
+  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
+  auto answer = callee->CreateAnswer();
+  ASSERT_TRUE(callee->SetLocalDescription(std::move(answer)));
+
+  auto caller_voice = caller->media_engine()->GetVoiceChannel(0);
+  auto callee_voice = callee->media_engine()->GetVoiceChannel(0);
+  ASSERT_TRUE(caller_voice);
+  ASSERT_TRUE(callee_voice);
+
+  // Make sure media transport is propagated to voice channel.
+  FakeMediaTransport* caller_voice_media_transport =
+      static_cast<FakeMediaTransport*>(caller_voice->media_transport());
+  FakeMediaTransport* callee_voice_media_transport =
+      static_cast<FakeMediaTransport*>(callee_voice->media_transport());
+  ASSERT_NE(nullptr, caller_voice_media_transport);
+  ASSERT_NE(nullptr, callee_voice_media_transport);
+
+  // Make sure media transport is created with correct is_caller.
+  EXPECT_TRUE(caller_voice_media_transport->is_caller());
+  EXPECT_FALSE(callee_voice_media_transport->is_caller());
+
+  // TODO(sukhanov): Propagate media transport to video channel. This test
+  // will fail once media transport is propagated to video channel and it will
+  // serve as a reminder to add a test for video channel propagation.
+  auto caller_video = caller->media_engine()->GetVideoChannel(0);
+  auto callee_video = callee->media_engine()->GetVideoChannel(0);
+  ASSERT_EQ(nullptr, caller_video->media_transport());
+  ASSERT_EQ(nullptr, callee_video->media_transport());
+}
+
+TEST_P(PeerConnectionMediaTest, MediaTransportNotPropagatedToVoiceEngine) {
+  auto caller = CreatePeerConnectionWithAudioVideo();
+  auto callee = CreatePeerConnectionWithAudioVideo();
+
+  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
+  auto answer = callee->CreateAnswer();
+  ASSERT_TRUE(callee->SetLocalDescription(std::move(answer)));
+
+  auto caller_voice = caller->media_engine()->GetVoiceChannel(0);
+  auto callee_voice = callee->media_engine()->GetVoiceChannel(0);
+  ASSERT_TRUE(caller_voice);
+  ASSERT_TRUE(callee_voice);
+
+  // Since we did not setup PeerConnection to use media transport, media
+  // transport should not be created / propagated to the voice engine.
+  ASSERT_EQ(nullptr, caller_voice->media_transport());
+  ASSERT_EQ(nullptr, callee_voice->media_transport());
+
+  auto caller_video = caller->media_engine()->GetVideoChannel(0);
+  auto callee_video = callee->media_engine()->GetVideoChannel(0);
+  ASSERT_EQ(nullptr, caller_video->media_transport());
+  ASSERT_EQ(nullptr, callee_video->media_transport());
 }
 
 INSTANTIATE_TEST_CASE_P(PeerConnectionMediaTest,
