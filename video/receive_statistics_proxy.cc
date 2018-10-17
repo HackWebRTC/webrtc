@@ -816,8 +816,15 @@ void ReceiveStatisticsProxy::OnCompleteFrame(bool is_keyframe,
     ++stats_.frame_counts.delta_frames;
   }
 
+  // Content type extension is set only for keyframes and should be propagated
+  // for all the following delta frames. Here we may receive frames out of order
+  // and miscategorise some delta frames near the layer switch.
+  // This may slightly offset calculated bitrate and keyframes permille metrics.
+  VideoContentType propagated_content_type =
+      is_keyframe ? content_type : last_content_type_;
+
   ContentSpecificStats* content_specific_stats =
-      &content_specific_stats_[content_type];
+      &content_specific_stats_[propagated_content_type];
 
   content_specific_stats->total_media_bytes += size_bytes;
   if (is_keyframe) {
