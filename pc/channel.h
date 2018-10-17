@@ -351,9 +351,6 @@ class VoiceChannel : public BaseChannel {
     return static_cast<VoiceMediaChannel*>(BaseChannel::media_channel());
   }
 
-  webrtc::RtpParameters GetRtpSendParameters_w(uint32_t ssrc) const;
-  webrtc::RTCError SetRtpSendParameters_w(uint32_t ssrc,
-                                          webrtc::RtpParameters parameters);
   cricket::MediaType media_type() override { return cricket::MEDIA_TYPE_AUDIO; }
 
  private:
