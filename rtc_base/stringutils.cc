@@ -14,6 +14,24 @@
 
 namespace rtc {
 
+size_t strcpyn(char* buffer,
+               size_t buflen,
+               const char* source,
+               size_t srclen /* = SIZE_UNKNOWN */) {
+  if (buflen <= 0)
+    return 0;
+
+  if (srclen == SIZE_UNKNOWN) {
+    srclen = strlen(source);
+  }
+  if (srclen >= buflen) {
+    srclen = buflen - 1;
+  }
+  memcpy(buffer, source, srclen);
+  buffer[srclen] = 0;
+  return srclen;
+}
+
 void replace_substrs(const char* search,
                      size_t search_len,
                      const char* replace,

@@ -60,110 +60,11 @@ namespace rtc {
 
 const size_t SIZE_UNKNOWN = static_cast<size_t>(-1);
 
-template <class CTYPE>
-struct Traits {
-  // STL string type
-  // typedef XXX string;
-  // Null-terminated string
-  // inline static const CTYPE* empty_str();
-};
-
-///////////////////////////////////////////////////////////////////////////////
-// String utilities which work with char or wchar_t
-///////////////////////////////////////////////////////////////////////////////
-
-template <class CTYPE>
-inline const CTYPE* nonnull(const CTYPE* str, const CTYPE* def_str = nullptr) {
-  return str ? str : (def_str ? def_str : Traits<CTYPE>::empty_str());
-}
-
-template <class CTYPE>
-const CTYPE* strchr(const CTYPE* str, const CTYPE* chs) {
-  for (size_t i = 0; str[i]; ++i) {
-    for (size_t j = 0; chs[j]; ++j) {
-      if (str[i] == chs[j]) {
-        return str + i;
-      }
-    }
-  }
-  return 0;
-}
-
-template <class CTYPE>
-const CTYPE* strchrn(const CTYPE* str, size_t slen, CTYPE ch) {
-  for (size_t i = 0; i < slen && str[i]; ++i) {
-    if (str[i] == ch) {
-      return str + i;
-    }
-  }
-  return 0;
-}
-
-template <class CTYPE>
-size_t strlenn(const CTYPE* buffer, size_t buflen) {
-  size_t bufpos = 0;
-  while (buffer[bufpos] && (bufpos < buflen)) {
-    ++bufpos;
-  }
-  return bufpos;
-}
-
-// Safe versions of strncpy, strncat, snprintf and vsnprintf that always
-// null-terminate.
-
-template <class CTYPE>
-size_t strcpyn(CTYPE* buffer,
+// Safe version of strncpy that always nul-terminate.
+size_t strcpyn(char* buffer,
                size_t buflen,
-               const CTYPE* source,
-               size_t srclen = SIZE_UNKNOWN) {
-  if (buflen <= 0)
-    return 0;
-
-  if (srclen == SIZE_UNKNOWN) {
-    srclen = strlenn(source, buflen - 1);
-  } else if (srclen >= buflen) {
-    srclen = buflen - 1;
-  }
-  memcpy(buffer, source, srclen * sizeof(CTYPE));
-  buffer[srclen] = 0;
-  return srclen;
-}
-
-template <class CTYPE>
-size_t strcatn(CTYPE* buffer,
-               size_t buflen,
-               const CTYPE* source,
-               size_t srclen = SIZE_UNKNOWN) {
-  if (buflen <= 0)
-    return 0;
-
-  size_t bufpos = strlenn(buffer, buflen - 1);
-  return bufpos + strcpyn(buffer + bufpos, buflen - bufpos, source, srclen);
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// Traits<char> specializations
-///////////////////////////////////////////////////////////////////////////////
-
-template <>
-struct Traits<char> {
-  typedef std::string string;
-  inline static const char* empty_str() { return ""; }
-};
-
-///////////////////////////////////////////////////////////////////////////////
-// Traits<wchar_t> specializations (Windows only, currently)
-///////////////////////////////////////////////////////////////////////////////
-
-#if defined(WEBRTC_WIN)
-
-template <>
-struct Traits<wchar_t> {
-  typedef std::wstring string;
-  inline static const wchar_t* empty_str() { return L""; }
-};
-
-#endif  // WEBRTC_WIN
+               const char* source,
+               size_t srclen = SIZE_UNKNOWN);
 
 ///////////////////////////////////////////////////////////////////////////////
 // UTF helpers (Windows only)

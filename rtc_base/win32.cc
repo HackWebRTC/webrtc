@@ -224,8 +224,8 @@ int inet_pton_v6(const char* src, void* dst) {
       *(readcursor + 2) != 0) {
     // Check for periods, which we'll take as a sign of v4 addresses.
     const char* addrstart = readcursor + 2;
-    if (rtc::strchr(addrstart, ".")) {
-      const char* colon = rtc::strchr(addrstart, "::");
+    if (strchr(addrstart, '.')) {
+      const char* colon = strchr(addrstart, ':');
       if (colon) {
         uint16_t a_short;
         int bytesread = 0;
