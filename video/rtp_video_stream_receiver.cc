@@ -486,6 +486,16 @@ void RtpVideoStreamReceiver::ReceivePacket(const RtpPacketReceived& packet) {
         webrtc_rtp_header.header.markerBit ||
         (generic_descriptor_wire->LastSubFrameInFrame() &&
          generic_descriptor_wire->LastPacketInSubFrame());
+
+    if (generic_descriptor_wire->FirstPacketInSubFrame()) {
+      webrtc_rtp_header.frameType =
+          generic_descriptor_wire->FrameDependenciesDiffs().empty()
+              ? kVideoFrameKey
+              : kVideoFrameDelta;
+    }
+
+    webrtc_rtp_header.video_header().width = generic_descriptor_wire->Width();
+    webrtc_rtp_header.video_header().height = generic_descriptor_wire->Height();
   } else {
     generic_descriptor_wire.reset();
   }

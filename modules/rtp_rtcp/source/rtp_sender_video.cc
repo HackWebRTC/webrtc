@@ -91,6 +91,11 @@ void AddRtpHeaderExtensions(const RTPVideoHeader& video_header,
       generic_descriptor.SetSpatialLayersBitmask(spatial_bimask);
 
       generic_descriptor.SetTemporalLayer(video_header.generic->temporal_index);
+
+      if (frame_type == kVideoFrameKey) {
+        generic_descriptor.SetResolution(video_header.width,
+                                         video_header.height);
+      }
     }
     packet->SetExtension<RtpGenericFrameDescriptorExtension>(
         generic_descriptor);
