@@ -185,6 +185,17 @@ TEST(BufferTest, TestMoveAssign) {
   EXPECT_TRUE(buf1.empty());
 }
 
+TEST(BufferTest, TestMoveAssignSelf) {
+  // Move self-assignment isn't required to produce a meaningful state, but
+  // should not leave the object in an inconsistent state. (Such inconsistent
+  // state could be caught by the DCHECKs and/or by the leak checker.) We need
+  // to be sneaky when testing this; if we're doing a too-obvious
+  // move-assign-to-self, clang's -Wself-move triggers at compile time.
+  Buffer buf(kTestData, 3, 40);
+  Buffer* buf_ptr = &buf;
+  buf = std::move(*buf_ptr);
+}
+
 TEST(BufferTest, TestSwap) {
   Buffer buf1(kTestData, 3);
   Buffer buf2(kTestData, 6, 40);

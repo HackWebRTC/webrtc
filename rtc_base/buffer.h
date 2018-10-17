@@ -152,7 +152,9 @@ class BufferT {
     RTC_DCHECK(buf.IsConsistent());
     size_ = buf.size_;
     capacity_ = buf.capacity_;
-    data_ = std::move(buf.data_);
+    using std::swap;
+    swap(data_, buf.data_);
+    buf.data_.reset();
     buf.OnMovedFrom();
     return *this;
   }
@@ -399,6 +401,7 @@ class BufferT {
   // Called when *this has been moved from. Conceptually it's a no-op, but we
   // can mutate the state slightly to help subsequent sanity checks catch bugs.
   void OnMovedFrom() {
+    RTC_DCHECK(!data_);  // Our heap block should have been stolen.
 #if RTC_DCHECK_IS_ON
     // Ensure that *this is always inconsistent, to provoke bugs.
     size_ = 1;
