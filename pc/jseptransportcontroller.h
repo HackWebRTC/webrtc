@@ -167,6 +167,12 @@ class JsepTransportController : public sigslot::has_slots<> {
 
   void SetActiveResetSrtpParams(bool active_reset_srtp_params);
 
+  // Allows to overwrite the settings from config. You may set or reset the
+  // media transport factory on the jsep transport controller, as long as you
+  // did not call 'GetMediaTransport' or 'MaybeCreateJsepTransport'. Once Jsep
+  // transport is created, you can't change this setting.
+  void SetMediaTransportFactory(MediaTransportFactory* media_transport_factory);
+
   // All of these signals are fired on the signaling thread.
 
   // If any transport failed => failed,

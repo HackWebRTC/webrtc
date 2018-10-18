@@ -2981,6 +2981,9 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
   }
 
   transport_controller_->SetIceConfig(ParseIceConfig(modified_config));
+  transport_controller_->SetMediaTransportFactory(
+      modified_config.use_media_transport ? factory_->media_transport_factory()
+                                          : nullptr);
 
   if (configuration_.active_reset_srtp_params !=
       modified_config.active_reset_srtp_params) {

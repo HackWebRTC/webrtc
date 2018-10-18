@@ -378,6 +378,15 @@ void JsepTransportController::SetActiveResetSrtpParams(
   }
 }
 
+void JsepTransportController::SetMediaTransportFactory(
+    MediaTransportFactory* media_transport_factory) {
+  RTC_DCHECK(media_transport_factory == config_.media_transport_factory ||
+             jsep_transports_by_name_.empty())
+      << "You can only call SetMediaTransportFactory before "
+         "JsepTransportController created its first transport.";
+  config_.media_transport_factory = media_transport_factory;
+}
+
 std::unique_ptr<cricket::DtlsTransportInternal>
 JsepTransportController::CreateDtlsTransport(const std::string& transport_name,
                                              bool rtcp) {

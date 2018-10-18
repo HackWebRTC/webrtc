@@ -927,7 +927,10 @@ class PeerConnection : public PeerConnectionInternal,
   MediaTransportInterface* GetMediaTransport(const std::string& mid) {
     auto media_transport = transport_controller_->GetMediaTransport(mid);
     RTC_DCHECK(configuration_.use_media_transport ==
-               (media_transport != nullptr));
+               (media_transport != nullptr))
+        << "configuration_.use_media_transport="
+        << configuration_.use_media_transport
+        << ", (media_transport != nullptr)=" << (media_transport != nullptr);
     return media_transport;
   }
 
@@ -1042,10 +1045,6 @@ class PeerConnection : public PeerConnectionInternal,
   cricket::DataChannelType data_channel_type_ = cricket::DCT_NONE;
   // List of content names for which the remote side triggered an ICE restart.
   std::set<std::string> pending_ice_restarts_;
-
-  // Optional media transport for sending / receiving encoded frames.
-  // If available, media transport will be used instead of RTP / SRTP.
-  std::unique_ptr<MediaTransportFactory> media_transport_factory_;
 
   std::unique_ptr<WebRtcSessionDescriptionFactory> webrtc_session_desc_factory_;
 
