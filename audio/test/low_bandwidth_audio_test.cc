@@ -14,14 +14,15 @@
 #include "system_wrappers/include/sleep.h"
 #include "test/testsupport/fileutils.h"
 
-DEFINE_int(sample_rate_hz,
-           16000,
-           "Sample rate (Hz) of the produced audio files.");
+WEBRTC_DEFINE_int(sample_rate_hz,
+                  16000,
+                  "Sample rate (Hz) of the produced audio files.");
 
-DEFINE_bool(quick,
-            false,
-            "Don't do the full audio recording. "
-            "Used to quickly check that the test runs without crashing.");
+WEBRTC_DEFINE_bool(
+    quick,
+    false,
+    "Don't do the full audio recording. "
+    "Used to quickly check that the test runs without crashing.");
 
 namespace webrtc {
 namespace test {

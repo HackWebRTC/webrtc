@@ -21,7 +21,7 @@
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
 
-DECLARE_string(test_artifacts_dir);
+WEBRTC_DECLARE_string(test_artifacts_dir);
 
 namespace webrtc {
 namespace test {

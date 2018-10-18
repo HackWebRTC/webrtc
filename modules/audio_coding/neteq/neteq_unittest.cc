@@ -52,7 +52,7 @@ RTC_PUSH_IGNORING_WUNDEF()
 RTC_POP_IGNORING_WUNDEF()
 #endif
 
-DEFINE_bool(gen_ref, false, "Generate reference files.");
+WEBRTC_DEFINE_bool(gen_ref, false, "Generate reference files.");
 
 namespace webrtc {
 

@@ -16,10 +16,10 @@
 #include "rtc_base/flags.h"
 
 // Define command line flags.
-DEFINE_int(runtime_ms, 10000, "Simulated runtime in ms.");
-DEFINE_int(lossrate, 10, "Packet lossrate; drop every N packets.");
-DEFINE_float(drift, 0.1f, "Clockdrift factor.");
-DEFINE_bool(help, false, "Print this message.");
+WEBRTC_DEFINE_int(runtime_ms, 10000, "Simulated runtime in ms.");
+WEBRTC_DEFINE_int(lossrate, 10, "Packet lossrate; drop every N packets.");
+WEBRTC_DEFINE_float(drift, 0.1f, "Clockdrift factor.");
+WEBRTC_DEFINE_bool(help, false, "Print this message.");
 
 int main(int argc, char* argv[]) {
   std::string program_name = argv[0];

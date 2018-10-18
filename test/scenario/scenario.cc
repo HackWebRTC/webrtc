@@ -16,7 +16,7 @@
 #include "rtc_base/flags.h"
 #include "test/testsupport/fileutils.h"
 
-DEFINE_bool(scenario_logs, false, "Save logs from scenario framework.");
+WEBRTC_DEFINE_bool(scenario_logs, false, "Save logs from scenario framework.");
 
 namespace webrtc {
 namespace test {
