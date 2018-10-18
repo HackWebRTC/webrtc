@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/audio_processing/agc2/limiter.h"
+#include "modules/audio_processing/agc2/limiter_db_gain_curve.h"
 
 #include <cmath>
 
@@ -60,7 +60,7 @@ double ComputeLimiterI2(double max_input_level_db,
 
 }  // namespace
 
-Limiter::Limiter()
+LimiterDbGainCurve::LimiterDbGainCurve()
     : max_input_level_linear_(DbfsToFloatS16(max_input_level_db_)),
       knee_start_dbfs_(ComputeKneeStart(max_input_level_db_,
                                         knee_smoothness_db_,
@@ -83,11 +83,11 @@ Limiter::Limiter()
   RTC_CHECK_GE(max_input_level_db_, knee_start_dbfs_ + knee_smoothness_db_);
 }
 
-constexpr double Limiter::max_input_level_db_;
-constexpr double Limiter::knee_smoothness_db_;
-constexpr double Limiter::compression_ratio_;
+constexpr double LimiterDbGainCurve::max_input_level_db_;
+constexpr double LimiterDbGainCurve::knee_smoothness_db_;
+constexpr double LimiterDbGainCurve::compression_ratio_;
 
-double Limiter::GetOutputLevelDbfs(double input_level_dbfs) const {
+double LimiterDbGainCurve::GetOutputLevelDbfs(double input_level_dbfs) const {
   if (input_level_dbfs < knee_start_dbfs_) {
     return input_level_dbfs;
   } else if (input_level_dbfs < limiter_start_dbfs_) {
@@ -96,7 +96,7 @@ double Limiter::GetOutputLevelDbfs(double input_level_dbfs) const {
   return GetCompressorRegionOutputLevelDbfs(input_level_dbfs);
 }
 
-double Limiter::GetGainLinear(double input_level_linear) const {
+double LimiterDbGainCurve::GetGainLinear(double input_level_linear) const {
   if (input_level_linear < knee_start_linear_) {
     return 1.0;
   }
@@ -106,7 +106,7 @@ double Limiter::GetGainLinear(double input_level_linear) const {
 }
 
 // Computes the first derivative of GetGainLinear() in |x|.
-double Limiter::GetGainFirstDerivativeLinear(double x) const {
+double LimiterDbGainCurve::GetGainFirstDerivativeLinear(double x) const {
   // Beyond-knee region only.
   RTC_CHECK_GE(x, limiter_start_linear_ - 1e-7 * kMaxAbsFloatS16Value);
   return gain_curve_limiter_d1_ *
@@ -114,7 +114,7 @@ double Limiter::GetGainFirstDerivativeLinear(double x) const {
 }
 
 // Computes the integral of GetGainLinear() in the range [x0, x1].
-double Limiter::GetGainIntegralLinear(double x0, double x1) const {
+double LimiterDbGainCurve::GetGainIntegralLinear(double x0, double x1) const {
   RTC_CHECK_LE(x0, x1);                     // Valid interval.
   RTC_CHECK_GE(x0, limiter_start_linear_);  // Beyond-knee region only.
   auto limiter_integral = [this](const double& x) {
@@ -123,13 +123,14 @@ double Limiter::GetGainIntegralLinear(double x0, double x1) const {
   return limiter_integral(x1) - limiter_integral(x0);
 }
 
-double Limiter::GetKneeRegionOutputLevelDbfs(double input_level_dbfs) const {
+double LimiterDbGainCurve::GetKneeRegionOutputLevelDbfs(
+    double input_level_dbfs) const {
   return knee_region_polynomial_[0] * input_level_dbfs * input_level_dbfs +
          knee_region_polynomial_[1] * input_level_dbfs +
          knee_region_polynomial_[2];
 }
 
-double Limiter::GetCompressorRegionOutputLevelDbfs(
+double LimiterDbGainCurve::GetCompressorRegionOutputLevelDbfs(
     double input_level_dbfs) const {
   return (input_level_dbfs - max_input_level_db_) / compression_ratio_;
 }

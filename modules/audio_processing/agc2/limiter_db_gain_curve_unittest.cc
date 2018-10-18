@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/audio_processing/agc2/limiter.h"
+#include "modules/audio_processing/agc2/limiter_db_gain_curve.h"
 
 #include "rtc_base/gunit.h"
 
 namespace webrtc {
 
 TEST(FixedDigitalGainController2Limiter, ConstructDestruct) {
-  Limiter l;
+  LimiterDbGainCurve l;
 }
 
 TEST(FixedDigitalGainController2Limiter, GainCurveShouldBeMonotone) {
-  Limiter l;
+  LimiterDbGainCurve l;
   float last_output_level = 0.f;
   bool has_last_output_level = false;
   for (float level = -90.f; level <= l.max_input_level_db(); level += 0.5f) {
@@ -34,7 +34,7 @@ TEST(FixedDigitalGainController2Limiter, GainCurveShouldBeMonotone) {
 }
 
 TEST(FixedDigitalGainController2Limiter, GainCurveShouldBeContinuous) {
-  Limiter l;
+  LimiterDbGainCurve l;
   float last_output_level = 0.f;
   bool has_last_output_level = false;
   constexpr float kMaxDelta = 0.5f;
@@ -50,7 +50,7 @@ TEST(FixedDigitalGainController2Limiter, GainCurveShouldBeContinuous) {
 }
 
 TEST(FixedDigitalGainController2Limiter, OutputGainShouldBeLessThanFullScale) {
-  Limiter l;
+  LimiterDbGainCurve l;
   for (float level = -90.f; level <= l.max_input_level_db(); level += 0.5f) {
     const float current_output_level = l.GetOutputLevelDbfs(level);
     EXPECT_LE(current_output_level, 0.f);

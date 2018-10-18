@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_AUDIO_PROCESSING_AGC2_LIMITER_H_
-#define MODULES_AUDIO_PROCESSING_AGC2_LIMITER_H_
+#ifndef MODULES_AUDIO_PROCESSING_AGC2_LIMITER_DB_GAIN_CURVE_H_
+#define MODULES_AUDIO_PROCESSING_AGC2_LIMITER_DB_GAIN_CURVE_H_
 
 #include <array>
 
@@ -17,14 +17,16 @@
 
 namespace webrtc {
 
-// A class for computing gain curve parameters. The gain curve is
-// defined by constants kLimiterMaxInputLevelDbFs, kLimiterKneeSmoothnessDb,
-// kLimiterCompressionRatio. The curve consints of one linear part,
-// one quadratic polynomial part and another linear part. The
-// constants define the parameters of the parts.
-class Limiter {
+// A class for computing a limiter gain curve (in dB scale) given a set of
+// hard-coded parameters (namely, kLimiterDbGainCurveMaxInputLevelDbFs,
+// kLimiterDbGainCurveKneeSmoothnessDb, and
+// kLimiterDbGainCurveCompressionRatio). The generated curve consists of four
+// regions: identity (linear), knee (quadratic polynomial), compression
+// (linear), saturation (linear). The aforementioned constants are used to shape
+// the different regions.
+class LimiterDbGainCurve {
  public:
-  Limiter();
+  LimiterDbGainCurve();
 
   double max_input_level_db() const { return max_input_level_db_; }
   double max_input_level_linear() const { return max_input_level_linear_; }
@@ -71,4 +73,4 @@ class Limiter {
 
 }  // namespace webrtc
 
-#endif  // MODULES_AUDIO_PROCESSING_AGC2_LIMITER_H_
+#endif  // MODULES_AUDIO_PROCESSING_AGC2_LIMITER_DB_GAIN_CURVE_H_

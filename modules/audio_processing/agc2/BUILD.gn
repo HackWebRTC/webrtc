@@ -220,9 +220,9 @@ rtc_source_set("fixed_digital_unittests") {
     "fixed_gain_controller_unittest.cc",
     "gain_curve_applier_unittest.cc",
     "interpolated_gain_curve_unittest.cc",
-    "limiter.cc",
-    "limiter.h",
-    "limiter_unittest.cc",
+    "limiter_db_gain_curve.cc",
+    "limiter_db_gain_curve.h",
+    "limiter_db_gain_curve_unittest.cc",
   ]
   deps = [
     ":common",
