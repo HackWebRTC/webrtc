@@ -29,27 +29,34 @@ RTC_PUSH_IGNORING_WUNDEF()
 RTC_POP_IGNORING_WUNDEF()
 
 // TODO(andrew): unpack more of the data.
-DEFINE_string(input_file, "input", "The name of the input stream file.");
-DEFINE_string(output_file,
-              "ref_out",
-              "The name of the reference output stream file.");
-DEFINE_string(reverse_file,
-              "reverse",
-              "The name of the reverse input stream file.");
-DEFINE_string(delay_file, "delay.int32", "The name of the delay file.");
-DEFINE_string(drift_file, "drift.int32", "The name of the drift file.");
-DEFINE_string(level_file, "level.int32", "The name of the level file.");
-DEFINE_string(keypress_file, "keypress.bool", "The name of the keypress file.");
-DEFINE_string(callorder_file,
-              "callorder",
-              "The name of the render/capture call order file.");
-DEFINE_string(settings_file, "settings.txt", "The name of the settings file.");
-DEFINE_bool(full, false, "Unpack the full set of files (normally not needed).");
-DEFINE_bool(raw, false, "Write raw data instead of a WAV file.");
-DEFINE_bool(text,
-            false,
-            "Write non-audio files as text files instead of binary files.");
-DEFINE_bool(help, false, "Print this message.");
+WEBRTC_DEFINE_string(input_file, "input", "The name of the input stream file.");
+WEBRTC_DEFINE_string(output_file,
+                     "ref_out",
+                     "The name of the reference output stream file.");
+WEBRTC_DEFINE_string(reverse_file,
+                     "reverse",
+                     "The name of the reverse input stream file.");
+WEBRTC_DEFINE_string(delay_file, "delay.int32", "The name of the delay file.");
+WEBRTC_DEFINE_string(drift_file, "drift.int32", "The name of the drift file.");
+WEBRTC_DEFINE_string(level_file, "level.int32", "The name of the level file.");
+WEBRTC_DEFINE_string(keypress_file,
+                     "keypress.bool",
+                     "The name of the keypress file.");
+WEBRTC_DEFINE_string(callorder_file,
+                     "callorder",
+                     "The name of the render/capture call order file.");
+WEBRTC_DEFINE_string(settings_file,
+                     "settings.txt",
+                     "The name of the settings file.");
+WEBRTC_DEFINE_bool(full,
+                   false,
+                   "Unpack the full set of files (normally not needed).");
+WEBRTC_DEFINE_bool(raw, false, "Write raw data instead of a WAV file.");
+WEBRTC_DEFINE_bool(
+    text,
+    false,
+    "Write non-audio files as text files instead of binary files.");
+WEBRTC_DEFINE_bool(help, false, "Print this message.");
 
 #define PRINT_CONFIG(field_name)                                         \
   if (msg.has_##field_name()) {                                          \

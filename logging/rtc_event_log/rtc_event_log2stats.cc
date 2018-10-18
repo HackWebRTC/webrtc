@@ -36,7 +36,7 @@ RTC_POP_IGNORING_WUNDEF()
 
 namespace {
 
-DEFINE_bool(help, false, "Prints this message.");
+WEBRTC_DEFINE_bool(help, false, "Prints this message.");
 
 struct Stats {
   int count = 0;

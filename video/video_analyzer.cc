@@ -25,10 +25,11 @@
 #include "test/testsupport/perf_test.h"
 #include "test/testsupport/test_artifacts.h"
 
-DEFINE_bool(save_worst_frame,
-            false,
-            "Enable saving a frame with the lowest PSNR to a jpeg file in the "
-            "test_artifacts_dir");
+WEBRTC_DEFINE_bool(
+    save_worst_frame,
+    false,
+    "Enable saving a frame with the lowest PSNR to a jpeg file in the "
+    "test_artifacts_dir");
 
 namespace webrtc {
 namespace {
