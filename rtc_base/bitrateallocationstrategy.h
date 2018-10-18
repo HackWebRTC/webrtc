@@ -14,6 +14,8 @@
 #include <string>
 #include <vector>
 #include "api/array_view.h"
+#include "rtc_base/experiments/field_trial_parser.h"
+#include "rtc_base/experiments/field_trial_units.h"
 
 namespace rtc {
 
@@ -75,7 +77,21 @@ class BitrateAllocationStrategy {
 
   virtual ~BitrateAllocationStrategy() = default;
 };
+}  // namespace rtc
 
+namespace webrtc {
+struct AudioPriorityConfig {
+  FieldTrialOptional<DataRate> min_rate;
+  FieldTrialOptional<DataRate> max_rate;
+  FieldTrialOptional<DataRate> target_rate;
+  AudioPriorityConfig();
+  AudioPriorityConfig(const AudioPriorityConfig&);
+  AudioPriorityConfig& operator=(const AudioPriorityConfig&) = default;
+  ~AudioPriorityConfig();
+};
+}  // namespace webrtc
+
+namespace rtc {
 // Simple allocation strategy giving priority to audio until
 // sufficient_audio_bitrate is reached. Bitrate is distributed evenly between
 // the tracks after sufficient_audio_bitrate is reached. This implementation
@@ -90,6 +106,7 @@ class AudioPriorityBitrateAllocationStrategy
       const ArrayView<const TrackConfig*> track_configs) override;
 
  private:
+  webrtc::AudioPriorityConfig config_;
   std::string audio_track_id_;
   uint32_t sufficient_audio_bitrate_;
 };
