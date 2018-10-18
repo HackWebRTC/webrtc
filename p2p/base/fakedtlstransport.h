@@ -83,6 +83,7 @@ class FakeDtlsTransport : public DtlsTransportInternal {
     ice_transport_->SetReceiving(receiving);
     set_receiving(receiving);
   }
+  void SetDtlsState(DtlsTransportState state) { dtls_state_ = state; }
 
   // Simulates the two DTLS transports connecting to each other.
   // If |asymmetric| is true this method only affects this FakeDtlsTransport.

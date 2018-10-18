@@ -160,7 +160,7 @@ enum class SdpSemantics { kPlanB, kUnifiedPlan };
 
 class PeerConnectionInterface : public rtc::RefCountInterface {
  public:
-  // See https://w3c.github.io/webrtc-pc/#state-definitions
+  // See https://w3c.github.io/webrtc-pc/#dom-rtcsignalingstate
   enum SignalingState {
     kStable,
     kHaveLocalOffer,
@@ -170,12 +170,24 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     kClosed,
   };
 
+  // See https://w3c.github.io/webrtc-pc/#dom-rtcicegatheringstate
   enum IceGatheringState {
     kIceGatheringNew,
     kIceGatheringGathering,
     kIceGatheringComplete
   };
 
+  // See https://w3c.github.io/webrtc-pc/#dom-rtcpeerconnectionstate
+  enum class PeerConnectionState {
+    kNew,
+    kConnecting,
+    kConnected,
+    kDisconnected,
+    kFailed,
+    kClosed,
+  };
+
+  // See https://w3c.github.io/webrtc-pc/#dom-rtciceconnectionstate
   enum IceConnectionState {
     kIceConnectionNew,
     kIceConnectionChecking,
@@ -978,10 +990,12 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   virtual SignalingState signaling_state() = 0;
 
   // Returns the aggregate state of all ICE *and* DTLS transports.
-  // TODO(deadbeef): Implement "PeerConnectionState" according to the standard,
-  // to aggregate ICE+DTLS state, and change the scope of IceConnectionState to
-  // be just the ICE layer. See: crbug.com/webrtc/6145
+  // TODO(jonasolsson): Replace with standardized_ice_connection_state once it
+  // is ready, see crbug.com/webrtc/6145
   virtual IceConnectionState ice_connection_state() = 0;
+
+  // Returns the aggregated state of all ICE and DTLS transports.
+  virtual PeerConnectionState peer_connection_state();
 
   virtual IceGatheringState ice_gathering_state() = 0;
 
@@ -1050,6 +1064,10 @@ class PeerConnectionObserver {
   // state, so it may be "failed" if DTLS fails while ICE succeeds.
   virtual void OnIceConnectionChange(
       PeerConnectionInterface::IceConnectionState new_state) = 0;
+
+  // Called any time the PeerConnectionState changes.
+  virtual void OnConnectionChange(
+      PeerConnectionInterface::PeerConnectionState new_state) {}
 
   // Called any time the IceGatheringState changes.
   virtual void OnIceGatheringChange(

@@ -84,6 +84,10 @@ class JsepTransportControllerTest : public JsepTransportController::Observer,
   void ConnectTransportControllerSignals() {
     transport_controller_->SignalIceConnectionState.connect(
         this, &JsepTransportControllerTest::OnConnectionState);
+    transport_controller_->SignalStandardizedIceConnectionState.connect(
+        this, &JsepTransportControllerTest::OnStandardizedIceConnectionState);
+    transport_controller_->SignalConnectionState.connect(
+        this, &JsepTransportControllerTest::OnCombinedConnectionState);
     transport_controller_->SignalIceGatheringState.connect(
         this, &JsepTransportControllerTest::OnGatheringState);
     transport_controller_->SignalIceCandidatesGathered.connect(
@@ -243,6 +247,24 @@ class JsepTransportControllerTest : public JsepTransportController::Observer,
     ++connection_state_signal_count_;
   }
 
+  void OnStandardizedIceConnectionState(
+      PeerConnectionInterface::IceConnectionState state) {
+    if (!signaling_thread_->IsCurrent()) {
+      signaled_on_non_signaling_thread_ = true;
+    }
+    ice_connection_state_ = state;
+    ++ice_connection_state_signal_count_;
+  }
+
+  void OnCombinedConnectionState(
+      PeerConnectionInterface::PeerConnectionState state) {
+    if (!signaling_thread_->IsCurrent()) {
+      signaled_on_non_signaling_thread_ = true;
+    }
+    combined_connection_state_ = state;
+    ++combined_connection_state_signal_count_;
+  }
+
   void OnGatheringState(cricket::IceGatheringState state) {
     if (!signaling_thread_->IsCurrent()) {
       signaled_on_non_signaling_thread_ = true;
@@ -274,12 +296,18 @@ class JsepTransportControllerTest : public JsepTransportController::Observer,
   // Information received from signals from transport controller.
   cricket::IceConnectionState connection_state_ =
       cricket::kIceConnectionConnecting;
+  PeerConnectionInterface::IceConnectionState ice_connection_state_ =
+      PeerConnectionInterface::kIceConnectionNew;
+  PeerConnectionInterface::PeerConnectionState combined_connection_state_ =
+      PeerConnectionInterface::PeerConnectionState::kNew;
   bool receiving_ = false;
   cricket::IceGatheringState gathering_state_ = cricket::kIceGatheringNew;
   // transport_name => candidates
   std::map<std::string, Candidates> candidates_;
   // Counts of each signal emitted.
   int connection_state_signal_count_ = 0;
+  int ice_connection_state_signal_count_ = 0;
+  int combined_connection_state_signal_count_ = 0;
   int receiving_signal_count_ = 0;
   int gathering_state_signal_count_ = 0;
   int candidates_signal_count_ = 0;
@@ -617,6 +645,12 @@ TEST_F(JsepTransportControllerTest, SignalConnectionStateFailed) {
   fake_ice->SetConnectionCount(0);
   EXPECT_EQ_WAIT(cricket::kIceConnectionFailed, connection_state_, kTimeout);
   EXPECT_EQ(1, connection_state_signal_count_);
+  EXPECT_EQ(PeerConnectionInterface::kIceConnectionFailed,
+            ice_connection_state_);
+  EXPECT_EQ(1, ice_connection_state_signal_count_);
+  EXPECT_EQ(PeerConnectionInterface::PeerConnectionState::kFailed,
+            combined_connection_state_);
+  EXPECT_EQ(1, combined_connection_state_signal_count_);
 }
 
 TEST_F(JsepTransportControllerTest, SignalConnectionStateConnected) {
@@ -644,13 +678,27 @@ TEST_F(JsepTransportControllerTest, SignalConnectionStateConnected) {
 
   EXPECT_EQ_WAIT(cricket::kIceConnectionFailed, connection_state_, kTimeout);
   EXPECT_EQ(1, connection_state_signal_count_);
+  EXPECT_EQ(PeerConnectionInterface::kIceConnectionFailed,
+            ice_connection_state_);
+  EXPECT_EQ(1, ice_connection_state_signal_count_);
+  EXPECT_EQ(PeerConnectionInterface::PeerConnectionState::kFailed,
+            combined_connection_state_);
+  EXPECT_EQ(1, combined_connection_state_signal_count_);
 
+  fake_audio_dtls->SetDtlsState(cricket::DTLS_TRANSPORT_CONNECTED);
+  fake_video_dtls->SetDtlsState(cricket::DTLS_TRANSPORT_CONNECTED);
   // Set the connection count to be 2 and the cricket::FakeIceTransport will set
   // the transport state to be STATE_CONNECTING.
   fake_video_dtls->fake_ice_transport()->SetConnectionCount(2);
   fake_video_dtls->SetWritable(true);
   EXPECT_EQ_WAIT(cricket::kIceConnectionConnected, connection_state_, kTimeout);
   EXPECT_EQ(2, connection_state_signal_count_);
+  EXPECT_EQ(PeerConnectionInterface::kIceConnectionConnected,
+            ice_connection_state_);
+  EXPECT_EQ(2, ice_connection_state_signal_count_);
+  EXPECT_EQ(PeerConnectionInterface::PeerConnectionState::kConnected,
+            combined_connection_state_);
+  EXPECT_EQ(2, combined_connection_state_signal_count_);
 }
 
 TEST_F(JsepTransportControllerTest, SignalConnectionStateComplete) {
@@ -678,13 +726,27 @@ TEST_F(JsepTransportControllerTest, SignalConnectionStateComplete) {
 
   EXPECT_EQ_WAIT(cricket::kIceConnectionFailed, connection_state_, kTimeout);
   EXPECT_EQ(1, connection_state_signal_count_);
+  EXPECT_EQ(PeerConnectionInterface::kIceConnectionFailed,
+            ice_connection_state_);
+  EXPECT_EQ(1, ice_connection_state_signal_count_);
+  EXPECT_EQ(PeerConnectionInterface::PeerConnectionState::kFailed,
+            combined_connection_state_);
+  EXPECT_EQ(1, combined_connection_state_signal_count_);
 
+  fake_audio_dtls->SetDtlsState(cricket::DTLS_TRANSPORT_CONNECTED);
+  fake_video_dtls->SetDtlsState(cricket::DTLS_TRANSPORT_CONNECTED);
   // Set the connection count to be 1 and the cricket::FakeIceTransport will set
   // the transport state to be STATE_COMPLETED.
   fake_video_dtls->fake_ice_transport()->SetConnectionCount(1);
   fake_video_dtls->SetWritable(true);
   EXPECT_EQ_WAIT(cricket::kIceConnectionCompleted, connection_state_, kTimeout);
   EXPECT_EQ(2, connection_state_signal_count_);
+  EXPECT_EQ(PeerConnectionInterface::kIceConnectionCompleted,
+            ice_connection_state_);
+  EXPECT_EQ(2, ice_connection_state_signal_count_);
+  EXPECT_EQ(PeerConnectionInterface::PeerConnectionState::kConnected,
+            combined_connection_state_);
+  EXPECT_EQ(2, combined_connection_state_signal_count_);
 }
 
 TEST_F(JsepTransportControllerTest, SignalIceGatheringStateGathering) {
@@ -758,6 +820,7 @@ TEST_F(JsepTransportControllerTest,
   fake_audio_dtls->SetWritable(true);
   fake_audio_dtls->fake_ice_transport()->SetCandidatesGatheringComplete();
   fake_audio_dtls->fake_ice_transport()->SetConnectionCount(1);
+  fake_audio_dtls->SetDtlsState(cricket::DTLS_TRANSPORT_CONNECTED);
   EXPECT_EQ(1, gathering_state_signal_count_);
 
   // Set the remote description and enable the bundle.
@@ -770,6 +833,10 @@ TEST_F(JsepTransportControllerTest,
       transport_controller_->GetDtlsTransport(kVideoMid1));
   EXPECT_EQ(fake_audio_dtls, fake_video_dtls);
   EXPECT_EQ_WAIT(cricket::kIceConnectionCompleted, connection_state_, kTimeout);
+  EXPECT_EQ(PeerConnectionInterface::kIceConnectionCompleted,
+            ice_connection_state_);
+  EXPECT_EQ(PeerConnectionInterface::PeerConnectionState::kConnected,
+            combined_connection_state_);
   EXPECT_EQ_WAIT(cricket::kIceGatheringComplete, gathering_state_, kTimeout);
   EXPECT_EQ(2, gathering_state_signal_count_);
 }

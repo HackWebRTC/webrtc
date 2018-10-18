@@ -115,6 +115,15 @@ class FakeIceTransport : public IceTransportInternal {
   }
 
   webrtc::IceTransportState GetIceTransportState() const override {
+    if (connection_count_ == 0) {
+      return had_connection_ ? webrtc::IceTransportState::kFailed
+                             : webrtc::IceTransportState::kNew;
+    }
+
+    if (connection_count_ == 1) {
+      return webrtc::IceTransportState::kCompleted;
+    }
+
     return webrtc::IceTransportState::kConnected;
   }
 

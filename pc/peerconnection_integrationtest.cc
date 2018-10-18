@@ -318,6 +318,12 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
     ice_connection_state_history_.clear();
   }
 
+  // Every PeerConnection state in order that has been seen by the observer.
+  std::vector<PeerConnectionInterface::PeerConnectionState>
+  peer_connection_state_history() const {
+    return peer_connection_state_history_;
+  }
+
   // Every ICE gathering state in order that has been seen by the observer.
   std::vector<PeerConnectionInterface::IceGatheringState>
   ice_gathering_state_history() const {
@@ -914,6 +920,11 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
     EXPECT_EQ(pc()->ice_connection_state(), new_state);
     ice_connection_state_history_.push_back(new_state);
   }
+  void OnConnectionChange(
+      webrtc::PeerConnectionInterface::PeerConnectionState new_state) override {
+    peer_connection_state_history_.push_back(new_state);
+  }
+
   void OnIceGatheringChange(
       webrtc::PeerConnectionInterface::IceGatheringState new_state) override {
     EXPECT_EQ(pc()->ice_gathering_state(), new_state);
@@ -1010,6 +1021,8 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
 
   std::vector<PeerConnectionInterface::IceConnectionState>
       ice_connection_state_history_;
+  std::vector<PeerConnectionInterface::PeerConnectionState>
+      peer_connection_state_history_;
   std::vector<PeerConnectionInterface::IceGatheringState>
       ice_gathering_state_history_;
 
@@ -3562,6 +3575,17 @@ TEST_P(PeerConnectionIntegrationIceStatesTest, VerifyIceStates) {
               ElementsAre(PeerConnectionInterface::kIceConnectionChecking,
                           PeerConnectionInterface::kIceConnectionConnected,
                           PeerConnectionInterface::kIceConnectionCompleted));
+  // After the ice transport transitions from checking to connected we revert
+  // back to new as the standard requires, as at that point the DTLS transport
+  // is in the "new" state while no transports are "connecting", "checking",
+  // "failed" or disconnected. This is pretty unintuitive, and we might want to
+  // amend the spec to handle this case more gracefully.
+  EXPECT_THAT(
+      caller()->peer_connection_state_history(),
+      ElementsAre(PeerConnectionInterface::PeerConnectionState::kConnecting,
+                  PeerConnectionInterface::PeerConnectionState::kNew,
+                  PeerConnectionInterface::PeerConnectionState::kConnecting,
+                  PeerConnectionInterface::PeerConnectionState::kConnected));
   EXPECT_THAT(caller()->ice_gathering_state_history(),
               ElementsAre(PeerConnectionInterface::kIceGatheringGathering,
                           PeerConnectionInterface::kIceGatheringComplete));
