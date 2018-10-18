@@ -100,6 +100,7 @@ class AudioSendStream {
     int max_bitrate_bps = -1;
 
     double bitrate_priority = 1.0;
+    bool has_dscp = false;
 
     // Defines whether to turn on audio network adaptor, and defines its config
     // string.

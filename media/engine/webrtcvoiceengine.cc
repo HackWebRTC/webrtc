@@ -57,11 +57,6 @@ constexpr int kNackRtpHistoryMs = 5000;
 const int kOpusMinBitrateBps = 6000;
 const int kOpusBitrateFbBps = 32000;
 
-// Default audio dscp value.
-// See http://tools.ietf.org/html/rfc2474 for details.
-// See also http://tools.ietf.org/html/draft-jennings-rtcweb-qos-00
-const rtc::DiffServCodePoint kAudioDscpValue = rtc::DSCP_EF;
-
 const int kMinTelephoneEventCode = 0;  // RFC4733 (Section 2.3.1)
 const int kMaxTelephoneEventCode = 255;
 
@@ -730,6 +725,8 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     config_.rtp.mid = mid;
     config_.rtp.c_name = c_name;
     config_.rtp.extensions = extensions;
+    config_.has_dscp = rtp_parameters_.encodings[0].network_priority !=
+                       webrtc::kDefaultBitratePriority;
     config_.audio_network_adaptor_config = audio_network_adaptor_config;
     config_.encoder_factory = encoder_factory;
     config_.codec_pair_id = codec_pair_id;
@@ -926,12 +923,16 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     const absl::optional<int> old_rtp_max_bitrate =
         rtp_parameters_.encodings[0].max_bitrate_bps;
     double old_priority = rtp_parameters_.encodings[0].bitrate_priority;
+    double old_dscp = rtp_parameters_.encodings[0].network_priority;
     rtp_parameters_ = parameters;
     config_.bitrate_priority = rtp_parameters_.encodings[0].bitrate_priority;
+    config_.has_dscp = (rtp_parameters_.encodings[0].network_priority !=
+                        webrtc::kDefaultBitratePriority);
 
     bool reconfigure_send_stream =
         (rtp_parameters_.encodings[0].max_bitrate_bps != old_rtp_max_bitrate) ||
-        (rtp_parameters_.encodings[0].bitrate_priority != old_priority);
+        (rtp_parameters_.encodings[0].bitrate_priority != old_priority) ||
+        (rtp_parameters_.encodings[0].network_priority != old_dscp);
     if (rtp_parameters_.encodings[0].max_bitrate_bps != old_rtp_max_bitrate) {
       // Update the bitrate range.
       if (send_rate) {
@@ -1269,7 +1270,7 @@ WebRtcVoiceMediaChannel::~WebRtcVoiceMediaChannel() {
 }
 
 rtc::DiffServCodePoint WebRtcVoiceMediaChannel::PreferredDscp() const {
-  return kAudioDscpValue;
+  return preferred_dscp_;
 }
 
 bool WebRtcVoiceMediaChannel::SetSendParameters(
@@ -1373,6 +1374,29 @@ webrtc::RTCError WebRtcVoiceMediaChannel::SetRtpSendParameters(
     RTC_LOG(LS_ERROR) << "Using SetParameters to change the set of codecs "
                       << "is not currently supported.";
     return webrtc::RTCError(webrtc::RTCErrorType::UNSUPPORTED_PARAMETER);
+  }
+
+  if (!parameters.encodings.empty()) {
+    auto& priority = parameters.encodings[0].network_priority;
+    rtc::DiffServCodePoint new_dscp = rtc::DSCP_DEFAULT;
+    if (priority == 0.5 * webrtc::kDefaultBitratePriority) {
+      new_dscp = rtc::DSCP_CS1;
+    } else if (priority == 1.0 * webrtc::kDefaultBitratePriority) {
+      new_dscp = rtc::DSCP_DEFAULT;
+    } else if (priority == 2.0 * webrtc::kDefaultBitratePriority) {
+      new_dscp = rtc::DSCP_EF;
+    } else if (priority == 4.0 * webrtc::kDefaultBitratePriority) {
+      new_dscp = rtc::DSCP_EF;
+    } else {
+      RTC_LOG(LS_WARNING) << "Received invalid send network priority: "
+                          << priority;
+      return webrtc::RTCError(webrtc::RTCErrorType::INVALID_RANGE);
+    }
+
+    if (new_dscp != preferred_dscp_) {
+      preferred_dscp_ = new_dscp;
+      MediaChannel::UpdateDscp();
+    }
   }
 
   // TODO(minyue): The following legacy actions go into

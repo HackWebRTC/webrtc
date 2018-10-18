@@ -220,6 +220,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
     if (DscpEnabled()) {
       rtc_options.dscp = PreferredDscp();
     }
+    rtc_options.dscp = PreferredDscp();
     rtc_options.info_signaled_after_sent.included_in_feedback =
         options.included_in_feedback;
     rtc_options.info_signaled_after_sent.included_in_allocation =
@@ -233,6 +234,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
     if (DscpEnabled()) {
       rtc_options.dscp = PreferredDscp();
     }
+
     return VoiceMediaChannel::SendRtcp(&packet, rtc_options);
   }
 
@@ -264,6 +266,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   std::vector<AudioCodec> recv_codecs_;
 
   int max_send_bitrate_bps_ = 0;
+  rtc::DiffServCodePoint preferred_dscp_ = rtc::DSCP_DEFAULT;
   AudioOptions options_;
   absl::optional<int> dtmf_payload_type_;
   int dtmf_payload_freq_ = -1;

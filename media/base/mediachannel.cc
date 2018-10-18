@@ -28,7 +28,7 @@ void MediaChannel::SetInterface(
   rtc::CritScope cs(&network_interface_crit_);
   network_interface_ = iface;
   media_transport_ = media_transport;
-  SetDscp(enable_dscp_ ? PreferredDscp() : rtc::DSCP_DEFAULT);
+  UpdateDscp();
 }
 
 int MediaChannel::GetRtpSendTimeExtnId() const {

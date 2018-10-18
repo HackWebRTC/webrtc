@@ -4596,6 +4596,7 @@ TEST_F(WebRtcVideoChannelTest, TestSetDscpOptions) {
       new cricket::FakeNetworkInterface);
   MediaConfig config;
   std::unique_ptr<cricket::WebRtcVideoChannel> channel;
+  webrtc::RtpParameters parameters;
 
   channel.reset(static_cast<cricket::WebRtcVideoChannel*>(engine_.CreateChannel(
       call_.get(), config, VideoOptions(), webrtc::CryptoOptions())));
@@ -4603,17 +4604,37 @@ TEST_F(WebRtcVideoChannelTest, TestSetDscpOptions) {
   // Default value when DSCP is disabled should be DSCP_DEFAULT.
   EXPECT_EQ(rtc::DSCP_DEFAULT, network_interface->dscp());
 
+  // Default value when DSCP is enabled is also DSCP_DEFAULT, until it is set
+  // through rtp parameters.
   config.enable_dscp = true;
   channel.reset(static_cast<cricket::WebRtcVideoChannel*>(engine_.CreateChannel(
       call_.get(), config, VideoOptions(), webrtc::CryptoOptions())));
   channel->SetInterface(network_interface.get(), /*media_transport=*/nullptr);
+  EXPECT_EQ(rtc::DSCP_DEFAULT, network_interface->dscp());
+
+  // Create a send stream to configure
+  EXPECT_TRUE(channel->AddSendStream(StreamParams::CreateLegacy(kSsrc)));
+  parameters = channel->GetRtpSendParameters(kSsrc);
+  ASSERT_FALSE(parameters.encodings.empty());
+
+  // Various priorities map to various dscp values.
+  parameters.encodings[0].network_priority = 4.0;
+  ASSERT_TRUE(channel->SetRtpSendParameters(kSsrc, parameters).ok());
   EXPECT_EQ(rtc::DSCP_AF41, network_interface->dscp());
+  parameters.encodings[0].network_priority = 0.5;
+  ASSERT_TRUE(channel->SetRtpSendParameters(kSsrc, parameters).ok());
+  EXPECT_EQ(rtc::DSCP_CS1, network_interface->dscp());
+
+  // A bad priority does not change the dscp value.
+  parameters.encodings[0].network_priority = 0.0;
+  ASSERT_FALSE(channel->SetRtpSendParameters(kSsrc, parameters).ok());
+  EXPECT_EQ(rtc::DSCP_CS1, network_interface->dscp());
 
   // Packets should also self-identify their dscp in PacketOptions.
   const uint8_t kData[10] = {0};
   EXPECT_TRUE(static_cast<webrtc::Transport*>(channel.get())
                   ->SendRtcp(kData, sizeof(kData)));
-  EXPECT_EQ(rtc::DSCP_AF41, network_interface->options().dscp);
+  EXPECT_EQ(rtc::DSCP_CS1, network_interface->options().dscp);
 
   // Verify that setting the option to false resets the
   // DiffServCodePoint.
@@ -5677,6 +5698,28 @@ TEST_F(WebRtcVideoChannelTest, SetRtpSendParametersPrioritySimulcastStreams) {
   EXPECT_EQ(absl::nullopt,
             video_send_stream->GetVideoStreams()[2].bitrate_priority);
   EXPECT_TRUE(channel_->SetVideoSend(primary_ssrc, nullptr, nullptr));
+}
+
+// RTCRtpEncodingParameters.network_priority must be one of a few values
+// derived from the default priority, corresponding to very-low, low, medium,
+// or high.
+TEST_F(WebRtcVideoChannelTest, SetRtpSendParametersInvalidNetworkPriority) {
+  AddSendStream();
+  webrtc::RtpParameters parameters = channel_->GetRtpSendParameters(last_ssrc_);
+  EXPECT_EQ(1UL, parameters.encodings.size());
+  EXPECT_EQ(webrtc::kDefaultBitratePriority,
+            parameters.encodings[0].network_priority);
+
+  double good_values[] = {0.5, 1.0, 2.0, 4.0};
+  double bad_values[] = {-1.0, 0.0, 0.49, 0.51, 1.1, 3.99, 4.1, 5.0};
+  for (auto it : good_values) {
+    parameters.encodings[0].network_priority = it;
+    EXPECT_TRUE(channel_->SetRtpSendParameters(last_ssrc_, parameters).ok());
+  }
+  for (auto it : bad_values) {
+    parameters.encodings[0].network_priority = it;
+    EXPECT_FALSE(channel_->SetRtpSendParameters(last_ssrc_, parameters).ok());
+  }
 }
 
 TEST_F(WebRtcVideoChannelTest, GetAndSetRtpSendParametersMaxFramerate) {

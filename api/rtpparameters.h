@@ -404,6 +404,14 @@ struct RtpEncodingParameters {
   // bitrate priority.
   double bitrate_priority = kDefaultBitratePriority;
 
+  // The relative DiffServ Code Point priority for this encoding, allowing
+  // packets to be marked relatively higher or lower without affecting
+  // bandwidth allocations. See https://w3c.github.io/webrtc-dscp-exp/ . NB
+  // we follow chromium's translation of the allowed string enum values for
+  // this field to 1.0, 0.5, et cetera, similar to bitrate_priority above.
+  // TODO(http://crbug.com/webrtc/8630): Implement this per encoding parameter.
+  double network_priority = kDefaultBitratePriority;
+
   // Indicates the preferred duration of media represented by a packet in
   // milliseconds for this encoding. If set, this will take precedence over the
   // ptime set in the RtpCodecParameters. This could happen if SDP negotiation
@@ -471,7 +479,8 @@ struct RtpEncodingParameters {
   bool operator==(const RtpEncodingParameters& o) const {
     return ssrc == o.ssrc && codec_payload_type == o.codec_payload_type &&
            fec == o.fec && rtx == o.rtx && dtx == o.dtx &&
-           bitrate_priority == o.bitrate_priority && ptime == o.ptime &&
+           bitrate_priority == o.bitrate_priority &&
+           network_priority == o.network_priority && ptime == o.ptime &&
            max_bitrate_bps == o.max_bitrate_bps &&
            min_bitrate_bps == o.min_bitrate_bps &&
            max_framerate == o.max_framerate &&

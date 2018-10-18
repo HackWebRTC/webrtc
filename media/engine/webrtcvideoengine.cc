@@ -522,6 +522,7 @@ WebRtcVideoChannel::WebRtcVideoChannel(
       video_config_(config.video),
       encoder_factory_(encoder_factory),
       decoder_factory_(decoder_factory),
+      preferred_dscp_(rtc::DSCP_DEFAULT),
       default_send_options_(options),
       last_stats_log_ms_(-1),
       discard_unknown_ssrc_packets_(webrtc::field_trial::IsEnabled(
@@ -659,7 +660,7 @@ bool WebRtcVideoChannel::GetChangedSendParameters(
 }
 
 rtc::DiffServCodePoint WebRtcVideoChannel::PreferredDscp() const {
-  return rtc::DSCP_AF41;
+  return preferred_dscp_;
 }
 
 bool WebRtcVideoChannel::SetSendParameters(const VideoSendParameters& params) {
@@ -777,6 +778,29 @@ webrtc::RTCError WebRtcVideoChannel::SetRtpSendParameters(
     RTC_LOG(LS_ERROR) << "Using SetParameters to change the set of codecs "
                       << "is not currently supported.";
     return webrtc::RTCError(webrtc::RTCErrorType::INTERNAL_ERROR);
+  }
+
+  if (!parameters.encodings.empty()) {
+    const auto& priority = parameters.encodings[0].network_priority;
+    rtc::DiffServCodePoint new_dscp = rtc::DSCP_DEFAULT;
+    if (priority == 0.5 * webrtc::kDefaultBitratePriority) {
+      new_dscp = rtc::DSCP_CS1;
+    } else if (priority == webrtc::kDefaultBitratePriority) {
+      new_dscp = rtc::DSCP_DEFAULT;
+    } else if (priority == 2.0 * webrtc::kDefaultBitratePriority) {
+      new_dscp = rtc::DSCP_AF42;
+    } else if (priority == 4.0 * webrtc::kDefaultBitratePriority) {
+      new_dscp = rtc::DSCP_AF41;
+    } else {
+      RTC_LOG(LS_WARNING) << "Received invalid send network priority: "
+                          << priority;
+      return webrtc::RTCError(webrtc::RTCErrorType::INVALID_RANGE);
+    }
+
+    if (new_dscp != preferred_dscp_) {
+      preferred_dscp_ = new_dscp;
+      MediaChannel::UpdateDscp();
+    }
   }
 
   return it->second->SetRtpParameters(parameters);
@@ -1530,6 +1554,7 @@ bool WebRtcVideoChannel::SendRtcp(const uint8_t* data, size_t len) {
   if (DscpEnabled()) {
     rtc_options.dscp = PreferredDscp();
   }
+
   return MediaChannel::SendRtcp(&packet, rtc_options);
 }
 
