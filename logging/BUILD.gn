@@ -156,6 +156,8 @@ rtc_source_set("rtc_event_video") {
 rtc_static_library("rtc_event_log_impl_encoder") {
   visibility = [ "*" ]
   sources = [
+    "rtc_event_log/encoder/delta_encoding.cc",
+    "rtc_event_log/encoder/delta_encoding.h",
     "rtc_event_log/encoder/rtc_event_log_encoder_legacy.cc",
     "rtc_event_log/encoder/rtc_event_log_encoder_legacy.h",
   ]
@@ -177,6 +179,7 @@ rtc_static_library("rtc_event_log_impl_encoder") {
     "../modules/rtp_rtcp:rtp_rtcp_format",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
+    "//third_party/abseil-cpp/absl/memory",
   ]
 
   if (rtc_enable_protobuf) {
@@ -299,6 +302,7 @@ if (rtc_enable_protobuf) {
       assert(rtc_enable_protobuf)
       defines = [ "ENABLE_RTC_EVENT_LOG" ]
       sources = [
+        "rtc_event_log/encoder/delta_encoding_unittest.cc",
         "rtc_event_log/encoder/rtc_event_log_encoder_unittest.cc",
         "rtc_event_log/output/rtc_event_log_output_file_unittest.cc",
         "rtc_event_log/rtc_event_log_unittest.cc",
