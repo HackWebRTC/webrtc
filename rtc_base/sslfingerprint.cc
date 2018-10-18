@@ -13,6 +13,7 @@
 #include <ctype.h>
 #include <string>
 
+#include "absl/memory/memory.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/messagedigest.h"
 #include "rtc_base/stringencode.h"
