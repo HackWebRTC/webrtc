@@ -24,8 +24,6 @@ namespace webrtc {
 
 // L16 encoder API for use as a template parameter to
 // CreateAudioEncoderFactory<...>().
-//
-// NOTE: This struct is still under development and may change without notice.
 struct RTC_EXPORT AudioEncoderL16 {
   struct Config {
     bool IsOk() const {

@@ -25,8 +25,6 @@ namespace webrtc {
 
 // Opus encoder API for use as a template parameter to
 // CreateAudioEncoderFactory<...>().
-//
-// NOTE: This struct is still under development and may change without notice.
 struct RTC_EXPORT AudioEncoderOpus {
   using Config = AudioEncoderOpusConfig;
   static absl::optional<AudioEncoderOpusConfig> SdpToConfig(

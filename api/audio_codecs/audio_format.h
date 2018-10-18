@@ -20,7 +20,6 @@
 namespace webrtc {
 
 // SDP specification for a single audio codec.
-// NOTE: This class is still under development and may change without notice.
 struct SdpAudioFormat {
   using Parameters = std::map<std::string, std::string>;
 

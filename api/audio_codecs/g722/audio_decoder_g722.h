@@ -24,8 +24,6 @@ namespace webrtc {
 
 // G722 decoder API for use as a template parameter to
 // CreateAudioDecoderFactory<...>().
-//
-// NOTE: This struct is still under development and may change without notice.
 struct RTC_EXPORT AudioDecoderG722 {
   struct Config {
     bool IsOk() const { return num_channels == 1 || num_channels == 2; }

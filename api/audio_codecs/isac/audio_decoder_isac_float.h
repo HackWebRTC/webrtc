@@ -24,8 +24,6 @@ namespace webrtc {
 
 // iSAC decoder API (floating-point implementation) for use as a template
 // parameter to CreateAudioDecoderFactory<...>().
-//
-// NOTE: This struct is still under development and may change without notice.
 struct RTC_EXPORT AudioDecoderIsacFloat {
   struct Config {
     bool IsOk() const {

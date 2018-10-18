@@ -20,7 +20,6 @@
 
 namespace webrtc {
 
-// NOTE: This struct is still under development and may change without notice.
 struct RTC_EXPORT AudioEncoderOpusConfig {
   static constexpr int kDefaultFrameSizeMs = 20;
 

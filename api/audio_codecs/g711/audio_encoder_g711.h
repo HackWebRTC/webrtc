@@ -24,8 +24,6 @@ namespace webrtc {
 
 // G711 encoder API for use as a template parameter to
 // CreateAudioEncoderFactory<...>().
-//
-// NOTE: This struct is still under development and may change without notice.
 struct RTC_EXPORT AudioEncoderG711 {
   struct Config {
     enum class Type { kPcmU, kPcmA };

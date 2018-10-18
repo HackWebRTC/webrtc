@@ -24,8 +24,6 @@ namespace webrtc {
 
 // Opus decoder API for use as a template parameter to
 // CreateAudioDecoderFactory<...>().
-//
-// NOTE: This struct is still under development and may change without notice.
 struct RTC_EXPORT AudioDecoderOpus {
   struct Config {
     int num_channels;

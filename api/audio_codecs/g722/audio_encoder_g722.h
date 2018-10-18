@@ -25,8 +25,6 @@ namespace webrtc {
 
 // G722 encoder API for use as a template parameter to
 // CreateAudioEncoderFactory<...>().
-//
-// NOTE: This struct is still under development and may change without notice.
 struct RTC_EXPORT AudioEncoderG722 {
   using Config = AudioEncoderG722Config;
   static absl::optional<AudioEncoderG722Config> SdpToConfig(
