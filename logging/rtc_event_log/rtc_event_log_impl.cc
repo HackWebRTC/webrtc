@@ -372,8 +372,4 @@ std::unique_ptr<RtcEventLog> RtcEventLog::Create(
 #endif  // ENABLE_RTC_EVENT_LOG
 }
 
-std::unique_ptr<RtcEventLog> RtcEventLog::CreateNull() {
-  return std::unique_ptr<RtcEventLog>(new RtcEventLogNullImpl());
-}
-
 }  // namespace webrtc
