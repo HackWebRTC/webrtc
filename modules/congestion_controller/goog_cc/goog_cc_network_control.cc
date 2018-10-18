@@ -156,6 +156,7 @@ GoogCcNetworkController::GoogCcNetworkController(RtcEventLog* event_log,
       max_total_allocated_bitrate_(DataRate::Zero()),
       in_cwnd_experiment_(CwndExperimentEnabled()),
       accepted_queue_ms_(kDefaultAcceptedQueueMs) {
+  RTC_DCHECK(config.constraints.at_time.IsFinite());
   delay_based_bwe_->SetMinBitrate(congestion_controller::GetMinBitrateBps());
   if (in_cwnd_experiment_ &&
       !ReadCwndExperimentParameter(&accepted_queue_ms_)) {

@@ -1087,6 +1087,7 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
   // TODO(holmer): Log the call config and use that here instead.
   static const uint32_t kDefaultStartBitrateBps = 300000;
   NetworkControllerConfig cc_config;
+  cc_config.constraints.at_time = Timestamp::us(clock.TimeInMicroseconds());
   cc_config.constraints.starting_rate = DataRate::bps(kDefaultStartBitrateBps);
   auto goog_cc = factory.Create(cc_config);
 
