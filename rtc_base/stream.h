@@ -494,25 +494,6 @@ class FifoBuffer : public StreamInterface {
   RTC_DISALLOW_COPY_AND_ASSIGN(FifoBuffer);
 };
 
-///////////////////////////////////////////////////////////////////////////////
-
-// Flow attempts to move bytes from source to sink via buffer of size
-// buffer_len.  The function returns SR_SUCCESS when source reaches
-// end-of-stream (returns SR_EOS), and all the data has been written successful
-// to sink.  Alternately, if source returns SR_BLOCK or SR_ERROR, or if sink
-// returns SR_BLOCK, SR_ERROR, or SR_EOS, then the function immediately returns
-// with the unexpected StreamResult value.
-// data_len is the length of the valid data in buffer. in case of error
-// this is the data that read from source but can't move to destination.
-// as a pass in parameter, it indicates data in buffer that should move to sink
-StreamResult Flow(StreamInterface* source,
-                  char* buffer,
-                  size_t buffer_len,
-                  StreamInterface* sink,
-                  size_t* data_len = nullptr);
-
-///////////////////////////////////////////////////////////////////////////////
-
 }  // namespace rtc
 
 #endif  // RTC_BASE_STREAM_H_
