@@ -9,6 +9,7 @@
  */
 
 #include "call/video_send_stream.h"
+#include "api/crypto/frameencryptorinterface.h"
 #include "rtc_base/strings/string_builder.h"
 
 namespace webrtc {

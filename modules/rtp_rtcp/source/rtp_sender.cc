@@ -119,14 +119,21 @@ RTPSender::RTPSender(
     SendPacketObserver* send_packet_observer,
     RateLimiter* retransmission_rate_limiter,
     OverheadObserver* overhead_observer,
-    bool populate_network2_timestamp)
+    bool populate_network2_timestamp,
+    FrameEncryptorInterface* frame_encryptor,
+    bool require_frame_encryption)
     : clock_(clock),
       // TODO(holmer): Remove this conversion?
       clock_delta_ms_(clock_->TimeInMilliseconds() - rtc::TimeMillis()),
       random_(clock_->TimeInMicroseconds()),
       audio_configured_(audio),
       audio_(audio ? new RTPSenderAudio(clock, this) : nullptr),
-      video_(audio ? nullptr : new RTPSenderVideo(clock, this, flexfec_sender)),
+      video_(audio ? nullptr
+                   : new RTPSenderVideo(clock,
+                                        this,
+                                        flexfec_sender,
+                                        frame_encryptor,
+                                        require_frame_encryption)),
       paced_sender_(paced_sender),
       transport_sequence_number_allocator_(sequence_number_allocator),
       transport_feedback_observer_(transport_feedback_observer),

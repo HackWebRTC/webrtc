@@ -133,7 +133,7 @@ class RtpVideoStreamReceiverTest : public testing::Test {
         &mock_transport_, nullptr, &packet_router_, &config_,
         rtp_receive_statistics_.get(), nullptr, process_thread_.get(),
         &mock_nack_sender_, &mock_key_frame_request_sender_,
-        &mock_on_complete_frame_callback_);
+        &mock_on_complete_frame_callback_, nullptr);
   }
 
   WebRtcRTPHeader GetDefaultPacket() {

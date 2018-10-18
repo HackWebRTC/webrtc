@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "api/call/transport.h"
+#include "api/crypto/cryptooptions.h"
 #include "api/rtp_headers.h"
 #include "api/rtpparameters.h"
 #include "api/rtpreceiverinterface.h"
@@ -30,6 +31,7 @@
 
 namespace webrtc {
 
+class FrameDecryptorInterface;
 class RtpPacketSinkInterface;
 class VideoDecoderFactory;
 
@@ -214,6 +216,14 @@ class VideoReceiveStream {
     // TODO(nisse): Used with VideoDecoderFactory::LegacyCreateVideoDecoder.
     // Delete when that method is retired.
     std::string stream_id;
+
+    // An optional custom frame decryptor that allows the entire frame to be
+    // decrypted in whatever way the caller choses. This is not required by
+    // default.
+    rtc::scoped_refptr<webrtc::FrameDecryptorInterface> frame_decryptor;
+
+    // Per PeerConnection cryptography options.
+    CryptoOptions crypto_options;
   };
 
   // Starts stream activity.

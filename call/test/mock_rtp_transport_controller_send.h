@@ -17,6 +17,8 @@
 #include <vector>
 
 #include "api/bitrate_constraints.h"
+#include "api/crypto/cryptooptions.h"
+#include "api/crypto/frameencryptorinterface.h"
 #include "call/rtp_transport_controller_send_interface.h"
 #include "modules/congestion_controller/include/network_changed_observer.h"
 #include "modules/pacing/packet_router.h"
@@ -30,7 +32,7 @@ namespace webrtc {
 class MockRtpTransportControllerSend
     : public RtpTransportControllerSendInterface {
  public:
-  MOCK_METHOD9(
+  MOCK_METHOD10(
       CreateRtpVideoSender,
       RtpVideoSenderInterface*(const std::vector<uint32_t>&,
                                std::map<uint32_t, RtpState>,
@@ -40,7 +42,8 @@ class MockRtpTransportControllerSend
                                Transport*,
                                const RtpSenderObservers&,
                                RtcEventLog*,
-                               std::unique_ptr<FecController>));
+                               std::unique_ptr<FecController>,
+                               const RtpSenderFrameEncryptionConfig&));
   MOCK_METHOD1(DestroyRtpVideoSender, void(RtpVideoSenderInterface*));
   MOCK_METHOD0(GetWorkerQueue, rtc::TaskQueue*());
   MOCK_METHOD0(packet_router, PacketRouter*());

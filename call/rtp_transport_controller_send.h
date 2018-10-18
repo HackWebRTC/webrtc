@@ -29,7 +29,9 @@
 #include "rtc_base/task_queue.h"
 
 namespace webrtc {
+
 class Clock;
+class FrameEncryptorInterface;
 class RtcEventLog;
 
 // TODO(nisse): When we get the underlying transports here, we should
@@ -56,7 +58,8 @@ class RtpTransportControllerSend final
       Transport* send_transport,
       const RtpSenderObservers& observers,
       RtcEventLog* event_log,
-      std::unique_ptr<FecController> fec_controller) override;
+      std::unique_ptr<FecController> fec_controller,
+      const RtpSenderFrameEncryptionConfig& frame_encryption_config) override;
   void DestroyRtpVideoSender(
       RtpVideoSenderInterface* rtp_video_sender) override;
 

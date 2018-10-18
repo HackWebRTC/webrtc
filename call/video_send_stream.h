@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "api/call/transport.h"
+#include "api/crypto/cryptooptions.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_sink_interface.h"
 #include "api/video/video_source_interface.h"
@@ -28,6 +29,8 @@
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
 namespace webrtc {
+
+class FrameEncryptorInterface;
 
 class VideoSendStream {
  public:
@@ -136,6 +139,14 @@ class VideoSendStream {
 
     // Track ID as specified during track creation.
     std::string track_id;
+
+    // An optional custom frame encryptor that allows the entire frame to be
+    // encrypted in whatever way the caller chooses. This is not required by
+    // default.
+    rtc::scoped_refptr<webrtc::FrameEncryptorInterface> frame_encryptor;
+
+    // Per PeerConnection cryptography options.
+    CryptoOptions crypto_options;
 
    private:
     // Access to the copy constructor is private to force use of the Copy()

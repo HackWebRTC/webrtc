@@ -56,8 +56,11 @@ std::vector<std::unique_ptr<RtpRtcp>> CreateRtpRtcpModules(
     RtcEventLog* event_log,
     RateLimiter* retransmission_rate_limiter,
     OverheadObserver* overhead_observer,
-    RtpKeepAliveConfig keepalive_config) {
+    RtpKeepAliveConfig keepalive_config,
+    FrameEncryptorInterface* frame_encryptor,
+    const CryptoOptions& crypto_options) {
   RTC_DCHECK_GT(ssrcs.size(), 0);
+
   RtpRtcp::Configuration configuration;
   configuration.audio = false;
   configuration.receiver_only = false;
@@ -83,6 +86,10 @@ std::vector<std::unique_ptr<RtpRtcp>> CreateRtpRtcpModules(
       rtcp_config.video_report_interval_ms;
   configuration.rtcp_interval_config.audio_interval_ms =
       rtcp_config.audio_report_interval_ms;
+  configuration.frame_encryptor = frame_encryptor;
+  configuration.require_frame_encryption =
+      crypto_options.sframe.require_frame_encryption;
+
   std::vector<std::unique_ptr<RtpRtcp>> modules;
   const std::vector<uint32_t>& flexfec_protected_ssrcs = protected_media_ssrcs;
   for (uint32_t ssrc : ssrcs) {
@@ -183,7 +190,9 @@ RtpVideoSender::RtpVideoSender(
     RtpTransportControllerSendInterface* transport,
     RtcEventLog* event_log,
     RateLimiter* retransmission_limiter,
-    std::unique_ptr<FecController> fec_controller)
+    std::unique_ptr<FecController> fec_controller,
+    FrameEncryptorInterface* frame_encryptor,
+    const CryptoOptions& crypto_options)
     : send_side_bwe_with_overhead_(
           webrtc::field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")),
       active_(false),
@@ -209,7 +218,9 @@ RtpVideoSender::RtpVideoSender(
                                event_log,
                                retransmission_limiter,
                                this,
-                               transport->keepalive_config())),
+                               transport->keepalive_config(),
+                               frame_encryptor,
+                               crypto_options)),
       rtp_config_(rtp_config),
       transport_(transport),
       transport_overhead_bytes_per_packet_(0),

@@ -19,6 +19,7 @@
 
 #include "absl/types/optional.h"
 
+#include "api/crypto/framedecryptorinterface.h"
 #include "api/video_codecs/video_codec.h"
 #include "call/rtp_packet_sink_interface.h"
 #include "call/syncable.h"
@@ -67,7 +68,8 @@ class RtpVideoStreamReceiver : public RecoveredPacketReceiver,
       ProcessThread* process_thread,
       NackSender* nack_sender,
       KeyFrameRequestSender* keyframe_request_sender,
-      video_coding::OnCompleteFrameCallback* complete_frame_callback);
+      video_coding::OnCompleteFrameCallback* complete_frame_callback,
+      rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor);
   ~RtpVideoStreamReceiver() override;
 
   void AddReceiveCodec(const VideoCodec& video_codec,
@@ -203,6 +205,9 @@ class RtpVideoStreamReceiver : public RecoveredPacketReceiver,
       RTC_GUARDED_BY(rtp_sources_lock_);
   absl::optional<int64_t> last_received_rtp_system_time_ms_
       RTC_GUARDED_BY(rtp_sources_lock_);
+
+  // E2EE Video Frame Decryptor (Optional)
+  rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor_;
 };
 
 }  // namespace webrtc

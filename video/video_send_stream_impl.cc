@@ -111,6 +111,14 @@ int CalculateMaxPadBitrateBps(const std::vector<VideoStream>& streams,
   return pad_up_to_bitrate_bps;
 }
 
+RtpSenderFrameEncryptionConfig CreateFrameEncryptionConfig(
+    const VideoSendStream::Config* config) {
+  RtpSenderFrameEncryptionConfig frame_encryption_config;
+  frame_encryption_config.frame_encryptor = config->frame_encryptor;
+  frame_encryption_config.crypto_options = config->crypto_options;
+  return frame_encryption_config;
+}
+
 RtpSenderObservers CreateObservers(CallStats* call_stats,
                                    EncoderRtcpFeedback* encoder_feedback,
                                    SendStatisticsProxy* stats_proxy,
@@ -238,19 +246,20 @@ VideoSendStreamImpl::VideoSendStreamImpl(
                         config_->rtp.ssrcs,
                         video_stream_encoder),
       bandwidth_observer_(transport->GetBandwidthObserver()),
-      rtp_video_sender_(
-          transport_->CreateRtpVideoSender(config_->rtp.ssrcs,
-                                           suspended_ssrcs,
-                                           suspended_payload_states,
-                                           config_->rtp,
-                                           config_->rtcp,
-                                           config_->send_transport,
-                                           CreateObservers(call_stats,
-                                                           &encoder_feedback_,
-                                                           stats_proxy_,
-                                                           send_delay_stats),
-                                           event_log,
-                                           std::move(fec_controller))),
+      rtp_video_sender_(transport_->CreateRtpVideoSender(
+          config_->rtp.ssrcs,
+          suspended_ssrcs,
+          suspended_payload_states,
+          config_->rtp,
+          config_->rtcp,
+          config_->send_transport,
+          CreateObservers(call_stats,
+                          &encoder_feedback_,
+                          stats_proxy_,
+                          send_delay_stats),
+          event_log,
+          std::move(fec_controller),
+          CreateFrameEncryptionConfig(config_))),
       weak_ptr_factory_(this) {
   RTC_DCHECK_RUN_ON(worker_queue_);
   RTC_LOG(LS_INFO) << "VideoSendStreamInternal: " << config_->ToString();

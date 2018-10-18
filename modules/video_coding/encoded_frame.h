@@ -61,10 +61,20 @@ class VCMEncodedFrame : protected EncodedImage {
    */
   const uint8_t* Buffer() const { return _buffer; }
   /**
+   *   Get pointer to frame buffer that can be mutated.
+   */
+  uint8_t* MutableBuffer() { return _buffer; }
+  /**
    *   Get frame length
    */
   size_t Length() const { return _length; }
-
+  /**
+   *   Set frame length
+   */
+  void SetLength(size_t length) {
+    RTC_DCHECK(length <= _size);
+    _length = length;
+  }
   /**
    *   Frame RTP timestamp (90kHz)
    */

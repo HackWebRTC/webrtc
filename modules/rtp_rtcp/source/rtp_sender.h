@@ -37,6 +37,7 @@
 
 namespace webrtc {
 
+class FrameEncryptorInterface;
 class OverheadObserver;
 class RateLimiter;
 class RtcEventLog;
@@ -62,7 +63,9 @@ class RTPSender {
             SendPacketObserver* send_packet_observer,
             RateLimiter* nack_rate_limiter,
             OverheadObserver* overhead_observer,
-            bool populate_network2_timestamp);
+            bool populate_network2_timestamp,
+            FrameEncryptorInterface* frame_encryptor,
+            bool require_frame_encryption);
 
   ~RTPSender();
 
