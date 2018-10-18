@@ -15,7 +15,6 @@
 #include "media/base/fakemediaengine.h"
 #include "media/base/fakertp.h"
 #include "media/base/mediachannel.h"
-#include "media/base/testutils.h"
 #include "p2p/base/fakecandidatepair.h"
 #include "p2p/base/fakedtlstransport.h"
 #include "p2p/base/fakepackettransport.h"

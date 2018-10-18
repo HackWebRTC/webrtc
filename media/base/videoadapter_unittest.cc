@@ -18,7 +18,6 @@
 #include "absl/memory/memory.h"
 #include "media/base/fakeframesource.h"
 #include "media/base/mediachannel.h"
-#include "media/base/testutils.h"
 #include "media/base/videoadapter.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/logging.h"
