@@ -148,6 +148,14 @@ class TestMainImpl : public TestMain {
       result_file.close();
     }
 
+#if defined(ADDRESS_SANITIZER) || defined(LEAK_SANITIZER) ||  \
+    defined(MEMORY_SANITIZER) || defined(THREAD_SANITIZER) || \
+    defined(UNDEFINED_SANITIZER)
+    // We want the test flagged as failed only for sanitizer defects,
+    // in which case the sanitizer will override exit code with 66.
+    return 0;
+#endif
+
     return exit_code;
 #endif
   }

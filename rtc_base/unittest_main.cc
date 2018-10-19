@@ -137,5 +137,13 @@ int main(int argc, char* argv[]) {
     _CrtSetReportHook2(_CRT_RPTHOOK_REMOVE, TestCrtReportHandler);
 #endif
 
+#if defined(ADDRESS_SANITIZER) || defined(LEAK_SANITIZER) ||  \
+    defined(MEMORY_SANITIZER) || defined(THREAD_SANITIZER) || \
+    defined(UNDEFINED_SANITIZER)
+  // We want the test flagged as failed only for sanitizer defects,
+  // in which case the sanitizer will override exit code with 66.
+  return 0;
+#endif
+
   return res;
 }
