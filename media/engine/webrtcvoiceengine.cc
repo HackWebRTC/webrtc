@@ -19,6 +19,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/strings/match.h"
 #include "api/audio_codecs/audio_codec_pair_id.h"
 #include "api/call/audio_sink.h"
 #include "media/base/audiosource.h"
@@ -40,7 +41,6 @@
 #include "rtc_base/race_checker.h"
 #include "rtc_base/strings/audio_format_to_string.h"
 #include "rtc_base/strings/string_builder.h"
-#include "rtc_base/stringutils.h"
 #include "rtc_base/third_party/base64/base64.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/field_trial.h"
@@ -109,7 +109,7 @@ std::string ToString(const AudioCodec& codec) {
 }
 
 bool IsCodec(const AudioCodec& codec, const char* ref_name) {
-  return (_stricmp(codec.name.c_str(), ref_name) == 0);
+  return absl::EqualsIgnoreCase(codec.name, ref_name);
 }
 
 bool FindCodec(const std::vector<AudioCodec>& codecs,

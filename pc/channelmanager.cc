@@ -14,10 +14,10 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
+#include "absl/strings/match.h"
 #include "media/base/rtpdataengine.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/stringutils.h"
 #include "rtc_base/trace_event.h"
 
 namespace cricket {
@@ -95,7 +95,7 @@ void ChannelManager::GetSupportedVideoCodecs(
   std::vector<VideoCodec> video_codecs = media_engine_->video_codecs();
   for (const auto& video_codec : video_codecs) {
     if (!enable_rtx_ &&
-        _stricmp(kRtxCodecName, video_codec.name.c_str()) == 0) {
+        absl::EqualsIgnoreCase(kRtxCodecName, video_codec.name)) {
       continue;
     }
     codecs->push_back(video_codec);

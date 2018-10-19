@@ -704,6 +704,7 @@ rtc_static_library("rtc_base") {
     "third_party/base64",
     "third_party/sigslot",
     "//third_party/abseil-cpp/absl/memory",
+    "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
   public_deps = [

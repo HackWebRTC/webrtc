@@ -87,6 +87,7 @@ rtc_static_library("rtc_pc_base") {
     "../rtc_base/third_party/sigslot",
     "../system_wrappers:metrics",
     "//third_party/abseil-cpp/absl/memory",
+    "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 

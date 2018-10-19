@@ -12,6 +12,7 @@
 
 #include <utility>
 
+#include "absl/strings/match.h"
 #include "rtc_base/checks.h"
 
 namespace cricket {
@@ -128,7 +129,7 @@ bool FakeVoiceMediaChannel::CanInsertDtmf() {
   for (std::vector<AudioCodec>::const_iterator it = send_codecs_.begin();
        it != send_codecs_.end(); ++it) {
     // Find the DTMF telephone event "codec".
-    if (_stricmp(it->name.c_str(), "telephone-event") == 0) {
+    if (absl::EqualsIgnoreCase(it->name, "telephone-event")) {
       return true;
     }
   }

@@ -16,9 +16,9 @@
 #include <string>
 #include <type_traits>
 
+#include "absl/strings/match.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/strings/string_builder.h"
-#include "rtc_base/stringutils.h"
 
 namespace webrtc {
 
@@ -118,8 +118,9 @@ static const char* kPayloadNameI420 = "I420";
 static const char* kPayloadNameGeneric = "Generic";
 static const char* kPayloadNameMultiplex = "Multiplex";
 
+// TODO(nisse): Delete this wrapper.
 static bool CodecNamesEq(const char* name1, const char* name2) {
-  return _stricmp(name1, name2) == 0;
+  return absl::EqualsIgnoreCase(name1, name2);
 }
 
 const char* CodecTypeToPayloadString(VideoCodecType type) {

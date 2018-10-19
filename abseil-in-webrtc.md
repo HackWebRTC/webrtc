@@ -15,6 +15,7 @@ adds the first use.
 * `absl::make_unique` and `absl::WrapUnique`
 * `absl::optional` and related stuff from `absl/types/optional.h`.
 * `absl::string_view`
+* The functions in `absl/strings/ascii.h` and `absl/strings/match.h`
 * `absl::variant` and related stuff from `absl/types/variant.h`.
 
 ## **Disallowed**

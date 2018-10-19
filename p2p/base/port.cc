@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/strings/match.h"
 #include "p2p/base/portallocator.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/crc32.h"
@@ -27,7 +28,6 @@
 #include "rtc_base/network.h"
 #include "rtc_base/numerics/safe_minmax.h"
 #include "rtc_base/stringencode.h"
-#include "rtc_base/stringutils.h"
 #include "rtc_base/third_party/base64/base64.h"
 
 namespace {
@@ -183,7 +183,7 @@ const char* ProtoToString(ProtocolType proto) {
 
 bool StringToProto(const char* value, ProtocolType* proto) {
   for (size_t i = 0; i <= PROTO_LAST; ++i) {
-    if (_stricmp(PROTO_NAMES[i], value) == 0) {
+    if (absl::EqualsIgnoreCase(PROTO_NAMES[i], value)) {
       *proto = static_cast<ProtocolType>(i);
       return true;
     }

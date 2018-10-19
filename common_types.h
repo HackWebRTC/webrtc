@@ -15,7 +15,8 @@
 #include <string.h>
 #include <string>
 #include <vector>
-
+// TODO(nisse): Delete include together with STR_CASE_CMP
+#include "absl/strings/match.h"
 #include "api/array_view.h"
 // TODO(sprang): Remove this include when all usage includes it directly.
 #include "api/video/video_bitrate_allocation.h"
@@ -30,13 +31,15 @@
 
 #define RTP_PAYLOAD_NAME_SIZE 32u
 
-#if defined(WEBRTC_WIN) || defined(WIN32)
 // Compares two strings without regard to case.
-#define STR_CASE_CMP(s1, s2) ::_stricmp(s1, s2)
+// TODO(nisse): Delete, implementation using EqualsIgnoreCase is misleading
+// since this can't be used for sorting.
+#define STR_CASE_CMP(s1, s2) (absl::EqualsIgnoreCase(s1, s2) ? 0 : 1)
+
+#if defined(WEBRTC_WIN) || defined(WIN32)
 // Compares characters of two strings without regard to case.
 #define STR_NCASE_CMP(s1, s2, n) ::_strnicmp(s1, s2, n)
 #else
-#define STR_CASE_CMP(s1, s2) ::strcasecmp(s1, s2)
 #define STR_NCASE_CMP(s1, s2, n) ::strncasecmp(s1, s2, n)
 #endif
 
