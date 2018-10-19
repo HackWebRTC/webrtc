@@ -25,22 +25,22 @@ namespace rnn_vad {
 namespace test {
 namespace {
 
-WEBRTC_DEFINE_string(i, "", "Path to the input wav file");
+DEFINE_string(i, "", "Path to the input wav file");
 std::string InputWavFile() {
   return static_cast<std::string>(FLAG_i);
 }
 
-WEBRTC_DEFINE_string(f, "", "Path to the output features file");
+DEFINE_string(f, "", "Path to the output features file");
 std::string OutputFeaturesFile() {
   return static_cast<std::string>(FLAG_f);
 }
 
-WEBRTC_DEFINE_string(o, "", "Path to the output VAD probabilities file");
+DEFINE_string(o, "", "Path to the output VAD probabilities file");
 std::string OutputVadProbsFile() {
   return static_cast<std::string>(FLAG_o);
 }
 
-WEBRTC_DEFINE_bool(help, false, "Prints this message");
+DEFINE_bool(help, false, "Prints this message");
 
 }  // namespace
 

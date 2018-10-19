@@ -31,20 +31,19 @@
 #include "test/ios/test_support.h"
 #endif
 
-WEBRTC_DEFINE_bool(help, false, "prints this message");
-WEBRTC_DEFINE_string(log, "", "logging options to use");
-WEBRTC_DEFINE_string(
+DEFINE_bool(help, false, "prints this message");
+DEFINE_string(log, "", "logging options to use");
+DEFINE_string(
     force_fieldtrials,
     "",
     "Field trials control experimental feature code which can be forced. "
     "E.g. running with --force_fieldtrials=WebRTC-FooFeature/Enable/"
     " will assign the group Enable to field trial WebRTC-FooFeature.");
 #if defined(WEBRTC_WIN)
-WEBRTC_DEFINE_int(crt_break_alloc, -1, "memory allocation to break on");
-WEBRTC_DEFINE_bool(
-    default_error_handlers,
-    false,
-    "leave the default exception/dbg handler functions in place");
+DEFINE_int(crt_break_alloc, -1, "memory allocation to break on");
+DEFINE_bool(default_error_handlers,
+            false,
+            "leave the default exception/dbg handler functions in place");
 
 void TestInvalidParameterHandler(const wchar_t* expression,
                                  const wchar_t* function,

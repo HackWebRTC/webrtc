@@ -40,24 +40,20 @@ namespace test {
 namespace {
 
 // Define command line flags.
-WEBRTC_DEFINE_bool(list_codecs, false, "Enumerate all codecs");
-WEBRTC_DEFINE_string(codec, "opus", "Codec to use");
-WEBRTC_DEFINE_int(frame_len,
-                  0,
-                  "Frame length in ms; 0 indicates codec default value");
-WEBRTC_DEFINE_int(bitrate,
-                  0,
-                  "Bitrate in kbps; 0 indicates codec default value");
-WEBRTC_DEFINE_int(payload_type,
-                  -1,
-                  "RTP payload type; -1 indicates codec default value");
-WEBRTC_DEFINE_int(cng_payload_type,
-                  -1,
-                  "RTP payload type for CNG; -1 indicates default value");
-WEBRTC_DEFINE_int(ssrc, 0, "SSRC to write to the RTP header");
-WEBRTC_DEFINE_bool(dtx, false, "Use DTX/CNG");
-WEBRTC_DEFINE_int(sample_rate, 48000, "Sample rate of the input file");
-WEBRTC_DEFINE_bool(help, false, "Print this message");
+DEFINE_bool(list_codecs, false, "Enumerate all codecs");
+DEFINE_string(codec, "opus", "Codec to use");
+DEFINE_int(frame_len, 0, "Frame length in ms; 0 indicates codec default value");
+DEFINE_int(bitrate, 0, "Bitrate in kbps; 0 indicates codec default value");
+DEFINE_int(payload_type,
+           -1,
+           "RTP payload type; -1 indicates codec default value");
+DEFINE_int(cng_payload_type,
+           -1,
+           "RTP payload type for CNG; -1 indicates default value");
+DEFINE_int(ssrc, 0, "SSRC to write to the RTP header");
+DEFINE_bool(dtx, false, "Use DTX/CNG");
+DEFINE_int(sample_rate, 48000, "Sample rate of the input file");
+DEFINE_bool(help, false, "Print this message");
 
 // Add new codecs here, and to the map below.
 enum class CodecType {

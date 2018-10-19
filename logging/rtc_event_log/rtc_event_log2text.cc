@@ -42,44 +42,35 @@
 
 namespace {
 
-WEBRTC_DEFINE_bool(unknown, true, "Use --nounknown to exclude unknown events.");
-WEBRTC_DEFINE_bool(startstop,
-                   true,
-                   "Use --nostartstop to exclude start/stop events.");
-WEBRTC_DEFINE_bool(config,
-                   true,
-                   "Use --noconfig to exclude stream configurations.");
-WEBRTC_DEFINE_bool(bwe, true, "Use --nobwe to exclude BWE events.");
-WEBRTC_DEFINE_bool(incoming,
-                   true,
-                   "Use --noincoming to exclude incoming packets.");
-WEBRTC_DEFINE_bool(outgoing, true, "Use --nooutgoing to exclude packets.");
+DEFINE_bool(unknown, true, "Use --nounknown to exclude unknown events.");
+DEFINE_bool(startstop, true, "Use --nostartstop to exclude start/stop events.");
+DEFINE_bool(config, true, "Use --noconfig to exclude stream configurations.");
+DEFINE_bool(bwe, true, "Use --nobwe to exclude BWE events.");
+DEFINE_bool(incoming, true, "Use --noincoming to exclude incoming packets.");
+DEFINE_bool(outgoing, true, "Use --nooutgoing to exclude packets.");
 // TODO(terelius): Note that the media type doesn't work with outgoing packets.
-WEBRTC_DEFINE_bool(audio, true, "Use --noaudio to exclude audio packets.");
+DEFINE_bool(audio, true, "Use --noaudio to exclude audio packets.");
 // TODO(terelius): Note that the media type doesn't work with outgoing packets.
-WEBRTC_DEFINE_bool(video, true, "Use --novideo to exclude video packets.");
+DEFINE_bool(video, true, "Use --novideo to exclude video packets.");
 // TODO(terelius): Note that the media type doesn't work with outgoing packets.
-WEBRTC_DEFINE_bool(data, true, "Use --nodata to exclude data packets.");
-WEBRTC_DEFINE_bool(rtp, true, "Use --nortp to exclude RTP packets.");
-WEBRTC_DEFINE_bool(rtcp, true, "Use --nortcp to exclude RTCP packets.");
-WEBRTC_DEFINE_bool(playout,
-                   true,
-                   "Use --noplayout to exclude audio playout events.");
-WEBRTC_DEFINE_bool(ana, true, "Use --noana to exclude ANA events.");
-WEBRTC_DEFINE_bool(probe, true, "Use --noprobe to exclude probe events.");
-WEBRTC_DEFINE_bool(ice, true, "Use --noice to exclude ICE events.");
+DEFINE_bool(data, true, "Use --nodata to exclude data packets.");
+DEFINE_bool(rtp, true, "Use --nortp to exclude RTP packets.");
+DEFINE_bool(rtcp, true, "Use --nortcp to exclude RTCP packets.");
+DEFINE_bool(playout, true, "Use --noplayout to exclude audio playout events.");
+DEFINE_bool(ana, true, "Use --noana to exclude ANA events.");
+DEFINE_bool(probe, true, "Use --noprobe to exclude probe events.");
+DEFINE_bool(ice, true, "Use --noice to exclude ICE events.");
 
-WEBRTC_DEFINE_bool(print_full_packets,
-                   false,
-                   "Print the full RTP headers and RTCP packets in hex.");
+DEFINE_bool(print_full_packets,
+            false,
+            "Print the full RTP headers and RTCP packets in hex.");
 
 // TODO(terelius): Allow a list of SSRCs.
-WEBRTC_DEFINE_string(
-    ssrc,
-    "",
-    "Print only packets with this SSRC (decimal or hex, the latter "
-    "starting with 0x).");
-WEBRTC_DEFINE_bool(help, false, "Prints this message.");
+DEFINE_string(ssrc,
+              "",
+              "Print only packets with this SSRC (decimal or hex, the latter "
+              "starting with 0x).");
+DEFINE_bool(help, false, "Prints this message.");
 
 using MediaType = webrtc::ParsedRtcEventLogNew::MediaType;
 

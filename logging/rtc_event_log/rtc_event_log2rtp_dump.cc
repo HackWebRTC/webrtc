@@ -32,32 +32,31 @@ namespace {
 
 using MediaType = webrtc::ParsedRtcEventLogNew::MediaType;
 
-WEBRTC_DEFINE_bool(
+DEFINE_bool(
     audio,
     true,
     "Use --noaudio to exclude audio packets from the converted RTPdump file.");
-WEBRTC_DEFINE_bool(
+DEFINE_bool(
     video,
     true,
     "Use --novideo to exclude video packets from the converted RTPdump file.");
-WEBRTC_DEFINE_bool(
+DEFINE_bool(
     data,
     true,
     "Use --nodata to exclude data packets from the converted RTPdump file.");
-WEBRTC_DEFINE_bool(
+DEFINE_bool(
     rtp,
     true,
     "Use --nortp to exclude RTP packets from the converted RTPdump file.");
-WEBRTC_DEFINE_bool(
+DEFINE_bool(
     rtcp,
     true,
     "Use --nortcp to exclude RTCP packets from the converted RTPdump file.");
-WEBRTC_DEFINE_string(
-    ssrc,
-    "",
-    "Store only packets with this SSRC (decimal or hex, the latter "
-    "starting with 0x).");
-WEBRTC_DEFINE_bool(help, false, "Prints this message.");
+DEFINE_string(ssrc,
+              "",
+              "Store only packets with this SSRC (decimal or hex, the latter "
+              "starting with 0x).");
+DEFINE_bool(help, false, "Prints this message.");
 
 // Parses the input string for a valid SSRC. If a valid SSRC is found, it is
 // written to the output variable |ssrc|, and true is returned. Otherwise,

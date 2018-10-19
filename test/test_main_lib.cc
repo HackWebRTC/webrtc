@@ -32,13 +32,13 @@
 #if defined(WEBRTC_IOS)
 #include "test/ios/test_support.h"
 
-WEBRTC_DEFINE_string(NSTreatUnknownArgumentsAsOpen,
-                     "",
-                     "Intentionally ignored flag intended for iOS simulator.");
-WEBRTC_DEFINE_string(ApplePersistenceIgnoreState,
-                     "",
-                     "Intentionally ignored flag intended for iOS simulator.");
-WEBRTC_DEFINE_bool(
+DEFINE_string(NSTreatUnknownArgumentsAsOpen,
+              "",
+              "Intentionally ignored flag intended for iOS simulator.");
+DEFINE_string(ApplePersistenceIgnoreState,
+              "",
+              "Intentionally ignored flag intended for iOS simulator.");
+DEFINE_bool(
     save_chartjson_result,
     false,
     "Store the perf results in Documents/perf_result.json in the format "
@@ -48,12 +48,12 @@ WEBRTC_DEFINE_bool(
 
 #else
 
-WEBRTC_DEFINE_string(
+DEFINE_string(
     isolated_script_test_output,
     "",
     "Path to output an empty JSON file which Chromium infra requires.");
 
-WEBRTC_DEFINE_string(
+DEFINE_string(
     isolated_script_test_perf_output,
     "",
     "Path where the perf results should be stored in the JSON format described "
@@ -63,16 +63,16 @@ WEBRTC_DEFINE_string(
 
 #endif
 
-WEBRTC_DEFINE_bool(logs, false, "print logs to stderr");
+DEFINE_bool(logs, false, "print logs to stderr");
 
-WEBRTC_DEFINE_string(
+DEFINE_string(
     force_fieldtrials,
     "",
     "Field trials control experimental feature code which can be forced. "
     "E.g. running with --force_fieldtrials=WebRTC-FooFeature/Enable/"
     " will assign the group Enable to field trial WebRTC-FooFeature.");
 
-WEBRTC_DEFINE_bool(help, false, "Print this message.");
+DEFINE_bool(help, false, "Print this message.");
 
 namespace webrtc {
 

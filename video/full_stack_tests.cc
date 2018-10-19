@@ -22,24 +22,21 @@
 namespace webrtc {
 namespace flags {
 
-WEBRTC_DEFINE_string(rtc_event_log_name,
-                     "",
-                     "Filename for rtc event log. Two files "
-                     "with \"_send\" and \"_recv\" suffixes will be created.");
+DEFINE_string(rtc_event_log_name,
+              "",
+              "Filename for rtc event log. Two files "
+              "with \"_send\" and \"_recv\" suffixes will be created.");
 std::string RtcEventLogName() {
   return static_cast<std::string>(FLAG_rtc_event_log_name);
 }
-WEBRTC_DEFINE_string(rtp_dump_name,
-                     "",
-                     "Filename for dumped received RTP stream.");
+DEFINE_string(rtp_dump_name, "", "Filename for dumped received RTP stream.");
 std::string RtpDumpName() {
   return static_cast<std::string>(FLAG_rtp_dump_name);
 }
-WEBRTC_DEFINE_string(
-    encoded_frame_path,
-    "",
-    "The base path for encoded frame logs. Created files will have "
-    "the form <encoded_frame_path>.<n>.(recv|send.<m>).ivf");
+DEFINE_string(encoded_frame_path,
+              "",
+              "The base path for encoded frame logs. Created files will have "
+              "the form <encoded_frame_path>.<n>.(recv|send.<m>).ivf");
 std::string EncodedFramePath() {
   return static_cast<std::string>(FLAG_encoded_frame_path);
 }

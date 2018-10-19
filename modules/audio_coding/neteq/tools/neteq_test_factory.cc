@@ -91,57 +91,50 @@ static bool ValidateExtensionId(int value) {
 }
 
 // Define command line flags.
-WEBRTC_DEFINE_int(pcmu, 0, "RTP payload type for PCM-u");
-WEBRTC_DEFINE_int(pcma, 8, "RTP payload type for PCM-a");
-WEBRTC_DEFINE_int(ilbc, 102, "RTP payload type for iLBC");
-WEBRTC_DEFINE_int(isac, 103, "RTP payload type for iSAC");
-WEBRTC_DEFINE_int(isac_swb, 104, "RTP payload type for iSAC-swb (32 kHz)");
-WEBRTC_DEFINE_int(opus, 111, "RTP payload type for Opus");
-WEBRTC_DEFINE_int(pcm16b, 93, "RTP payload type for PCM16b-nb (8 kHz)");
-WEBRTC_DEFINE_int(pcm16b_wb, 94, "RTP payload type for PCM16b-wb (16 kHz)");
-WEBRTC_DEFINE_int(pcm16b_swb32,
-                  95,
-                  "RTP payload type for PCM16b-swb32 (32 kHz)");
-WEBRTC_DEFINE_int(pcm16b_swb48,
-                  96,
-                  "RTP payload type for PCM16b-swb48 (48 kHz)");
-WEBRTC_DEFINE_int(g722, 9, "RTP payload type for G.722");
-WEBRTC_DEFINE_int(avt, 106, "RTP payload type for AVT/DTMF (8 kHz)");
-WEBRTC_DEFINE_int(avt_16, 114, "RTP payload type for AVT/DTMF (16 kHz)");
-WEBRTC_DEFINE_int(avt_32, 115, "RTP payload type for AVT/DTMF (32 kHz)");
-WEBRTC_DEFINE_int(avt_48, 116, "RTP payload type for AVT/DTMF (48 kHz)");
-WEBRTC_DEFINE_int(red, 117, "RTP payload type for redundant audio (RED)");
-WEBRTC_DEFINE_int(cn_nb, 13, "RTP payload type for comfort noise (8 kHz)");
-WEBRTC_DEFINE_int(cn_wb, 98, "RTP payload type for comfort noise (16 kHz)");
-WEBRTC_DEFINE_int(cn_swb32, 99, "RTP payload type for comfort noise (32 kHz)");
-WEBRTC_DEFINE_int(cn_swb48, 100, "RTP payload type for comfort noise (48 kHz)");
-WEBRTC_DEFINE_string(replacement_audio_file,
-                     "",
-                     "A PCM file that will be used to populate "
-                     "dummy"
-                     " RTP packets");
-WEBRTC_DEFINE_string(
-    ssrc,
-    "",
-    "Only use packets with this SSRC (decimal or hex, the latter "
-    "starting with 0x)");
-WEBRTC_DEFINE_int(audio_level, 1, "Extension ID for audio level (RFC 6464)");
-WEBRTC_DEFINE_int(abs_send_time, 3, "Extension ID for absolute sender time");
-WEBRTC_DEFINE_int(transport_seq_no,
-                  5,
-                  "Extension ID for transport sequence number");
-WEBRTC_DEFINE_int(video_content_type, 7, "Extension ID for video content type");
-WEBRTC_DEFINE_int(video_timing, 8, "Extension ID for video timing");
-WEBRTC_DEFINE_bool(matlabplot,
-                   false,
-                   "Generates a matlab script for plotting the delay profile");
-WEBRTC_DEFINE_bool(pythonplot,
-                   false,
-                   "Generates a python script for plotting the delay profile");
-WEBRTC_DEFINE_bool(concealment_events, false, "Prints concealment events");
-WEBRTC_DEFINE_int(max_nr_packets_in_buffer,
-                  50,
-                  "Maximum allowed number of packets in the buffer");
+DEFINE_int(pcmu, 0, "RTP payload type for PCM-u");
+DEFINE_int(pcma, 8, "RTP payload type for PCM-a");
+DEFINE_int(ilbc, 102, "RTP payload type for iLBC");
+DEFINE_int(isac, 103, "RTP payload type for iSAC");
+DEFINE_int(isac_swb, 104, "RTP payload type for iSAC-swb (32 kHz)");
+DEFINE_int(opus, 111, "RTP payload type for Opus");
+DEFINE_int(pcm16b, 93, "RTP payload type for PCM16b-nb (8 kHz)");
+DEFINE_int(pcm16b_wb, 94, "RTP payload type for PCM16b-wb (16 kHz)");
+DEFINE_int(pcm16b_swb32, 95, "RTP payload type for PCM16b-swb32 (32 kHz)");
+DEFINE_int(pcm16b_swb48, 96, "RTP payload type for PCM16b-swb48 (48 kHz)");
+DEFINE_int(g722, 9, "RTP payload type for G.722");
+DEFINE_int(avt, 106, "RTP payload type for AVT/DTMF (8 kHz)");
+DEFINE_int(avt_16, 114, "RTP payload type for AVT/DTMF (16 kHz)");
+DEFINE_int(avt_32, 115, "RTP payload type for AVT/DTMF (32 kHz)");
+DEFINE_int(avt_48, 116, "RTP payload type for AVT/DTMF (48 kHz)");
+DEFINE_int(red, 117, "RTP payload type for redundant audio (RED)");
+DEFINE_int(cn_nb, 13, "RTP payload type for comfort noise (8 kHz)");
+DEFINE_int(cn_wb, 98, "RTP payload type for comfort noise (16 kHz)");
+DEFINE_int(cn_swb32, 99, "RTP payload type for comfort noise (32 kHz)");
+DEFINE_int(cn_swb48, 100, "RTP payload type for comfort noise (48 kHz)");
+DEFINE_string(replacement_audio_file,
+              "",
+              "A PCM file that will be used to populate "
+              "dummy"
+              " RTP packets");
+DEFINE_string(ssrc,
+              "",
+              "Only use packets with this SSRC (decimal or hex, the latter "
+              "starting with 0x)");
+DEFINE_int(audio_level, 1, "Extension ID for audio level (RFC 6464)");
+DEFINE_int(abs_send_time, 3, "Extension ID for absolute sender time");
+DEFINE_int(transport_seq_no, 5, "Extension ID for transport sequence number");
+DEFINE_int(video_content_type, 7, "Extension ID for video content type");
+DEFINE_int(video_timing, 8, "Extension ID for video timing");
+DEFINE_bool(matlabplot,
+            false,
+            "Generates a matlab script for plotting the delay profile");
+DEFINE_bool(pythonplot,
+            false,
+            "Generates a python script for plotting the delay profile");
+DEFINE_bool(concealment_events, false, "Prints concealment events");
+DEFINE_int(max_nr_packets_in_buffer,
+           50,
+           "Maximum allowed number of packets in the buffer");
 
 // Maps a codec type to a printable name string.
 std::string CodecName(NetEqDecoder codec) {

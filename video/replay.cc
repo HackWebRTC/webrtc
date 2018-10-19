@@ -72,39 +72,39 @@ namespace flags {
 // TODO(pbos): Multiple receivers.
 
 // Flag for payload type.
-WEBRTC_DEFINE_int(media_payload_type,
-                  test::CallTest::kPayloadTypeVP8,
-                  "Media payload type");
+DEFINE_int(media_payload_type,
+           test::CallTest::kPayloadTypeVP8,
+           "Media payload type");
 static int MediaPayloadType() {
   return static_cast<int>(FLAG_media_payload_type);
 }
 
 // Flag for RED payload type.
-WEBRTC_DEFINE_int(red_payload_type,
-                  test::CallTest::kRedPayloadType,
-                  "RED payload type");
+DEFINE_int(red_payload_type,
+           test::CallTest::kRedPayloadType,
+           "RED payload type");
 static int RedPayloadType() {
   return static_cast<int>(FLAG_red_payload_type);
 }
 
 // Flag for ULPFEC payload type.
-WEBRTC_DEFINE_int(ulpfec_payload_type,
-                  test::CallTest::kUlpfecPayloadType,
-                  "ULPFEC payload type");
+DEFINE_int(ulpfec_payload_type,
+           test::CallTest::kUlpfecPayloadType,
+           "ULPFEC payload type");
 static int UlpfecPayloadType() {
   return static_cast<int>(FLAG_ulpfec_payload_type);
 }
 
-WEBRTC_DEFINE_int(media_payload_type_rtx,
-                  test::CallTest::kSendRtxPayloadType,
-                  "Media over RTX payload type");
+DEFINE_int(media_payload_type_rtx,
+           test::CallTest::kSendRtxPayloadType,
+           "Media over RTX payload type");
 static int MediaPayloadTypeRtx() {
   return static_cast<int>(FLAG_media_payload_type_rtx);
 }
 
-WEBRTC_DEFINE_int(red_payload_type_rtx,
-                  test::CallTest::kRtxRedPayloadType,
-                  "RED over RTX payload type");
+DEFINE_int(red_payload_type_rtx,
+           test::CallTest::kRtxRedPayloadType,
+           "RED over RTX payload type");
 static int RedPayloadTypeRtx() {
   return static_cast<int>(FLAG_red_payload_type_rtx);
 }
@@ -115,7 +115,7 @@ const std::string& DefaultSsrc() {
       std::to_string(test::CallTest::kVideoSendSsrcs[0]);
   return ssrc;
 }
-WEBRTC_DEFINE_string(ssrc, DefaultSsrc().c_str(), "Incoming SSRC");
+DEFINE_string(ssrc, DefaultSsrc().c_str(), "Incoming SSRC");
 static uint32_t Ssrc() {
   return rtc::StringToNumber<uint32_t>(FLAG_ssrc).value();
 }
@@ -125,56 +125,54 @@ const std::string& DefaultSsrcRtx() {
       std::to_string(test::CallTest::kSendRtxSsrcs[0]);
   return ssrc_rtx;
 }
-WEBRTC_DEFINE_string(ssrc_rtx, DefaultSsrcRtx().c_str(), "Incoming RTX SSRC");
+DEFINE_string(ssrc_rtx, DefaultSsrcRtx().c_str(), "Incoming RTX SSRC");
 static uint32_t SsrcRtx() {
   return rtc::StringToNumber<uint32_t>(FLAG_ssrc_rtx).value();
 }
 
 // Flag for abs-send-time id.
-WEBRTC_DEFINE_int(abs_send_time_id, -1, "RTP extension ID for abs-send-time");
+DEFINE_int(abs_send_time_id, -1, "RTP extension ID for abs-send-time");
 static int AbsSendTimeId() {
   return static_cast<int>(FLAG_abs_send_time_id);
 }
 
 // Flag for transmission-offset id.
-WEBRTC_DEFINE_int(transmission_offset_id,
-                  -1,
-                  "RTP extension ID for transmission-offset");
+DEFINE_int(transmission_offset_id,
+           -1,
+           "RTP extension ID for transmission-offset");
 static int TransmissionOffsetId() {
   return static_cast<int>(FLAG_transmission_offset_id);
 }
 
 // Flag for rtpdump input file.
-WEBRTC_DEFINE_string(input_file, "", "input file");
+DEFINE_string(input_file, "", "input file");
 static std::string InputFile() {
   return static_cast<std::string>(FLAG_input_file);
 }
 
-WEBRTC_DEFINE_string(config_file, "", "config file");
+DEFINE_string(config_file, "", "config file");
 static std::string ConfigFile() {
   return static_cast<std::string>(FLAG_config_file);
 }
 
 // Flag for raw output files.
-WEBRTC_DEFINE_string(out_base, "", "Basename (excluding .jpg) for raw output");
+DEFINE_string(out_base, "", "Basename (excluding .jpg) for raw output");
 static std::string OutBase() {
   return static_cast<std::string>(FLAG_out_base);
 }
 
-WEBRTC_DEFINE_string(decoder_bitstream_filename,
-                     "",
-                     "Decoder bitstream output file");
+DEFINE_string(decoder_bitstream_filename, "", "Decoder bitstream output file");
 static std::string DecoderBitstreamFilename() {
   return static_cast<std::string>(FLAG_decoder_bitstream_filename);
 }
 
 // Flag for video codec.
-WEBRTC_DEFINE_string(codec, "VP8", "Video codec");
+DEFINE_string(codec, "VP8", "Video codec");
 static std::string Codec() {
   return static_cast<std::string>(FLAG_codec);
 }
 
-WEBRTC_DEFINE_bool(help, false, "Print this message.");
+DEFINE_bool(help, false, "Print this message.");
 }  // namespace flags
 
 static const uint32_t kReceiverLocalSsrc = 0x123456;

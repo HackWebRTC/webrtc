@@ -40,9 +40,7 @@ std::vector<uint32_t> GenerateSsrcs(size_t num_streams, uint32_t ssrc_offset) {
 }
 }  // namespace
 
-WEBRTC_DEFINE_string(ramp_dump_name,
-                     "",
-                     "Filename for dumped received RTP stream.");
+DEFINE_string(ramp_dump_name, "", "Filename for dumped received RTP stream.");
 
 RampUpTester::RampUpTester(size_t num_video_streams,
                            size_t num_audio_streams,

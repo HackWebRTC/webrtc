@@ -22,76 +22,73 @@ namespace webrtc {
 namespace flags {
 
 // Flags common with video loopback, with different default values.
-WEBRTC_DEFINE_int(width, 1850, "Video width (crops source).");
+DEFINE_int(width, 1850, "Video width (crops source).");
 size_t Width() {
   return static_cast<size_t>(FLAG_width);
 }
 
-WEBRTC_DEFINE_int(height, 1110, "Video height (crops source).");
+DEFINE_int(height, 1110, "Video height (crops source).");
 size_t Height() {
   return static_cast<size_t>(FLAG_height);
 }
 
-WEBRTC_DEFINE_int(fps, 5, "Frames per second.");
+DEFINE_int(fps, 5, "Frames per second.");
 int Fps() {
   return static_cast<int>(FLAG_fps);
 }
 
-WEBRTC_DEFINE_int(min_bitrate, 50, "Call and stream min bitrate in kbps.");
+DEFINE_int(min_bitrate, 50, "Call and stream min bitrate in kbps.");
 int MinBitrateKbps() {
   return static_cast<int>(FLAG_min_bitrate);
 }
 
-WEBRTC_DEFINE_int(start_bitrate, 300, "Call start bitrate in kbps.");
+DEFINE_int(start_bitrate, 300, "Call start bitrate in kbps.");
 int StartBitrateKbps() {
   return static_cast<int>(FLAG_start_bitrate);
 }
 
-WEBRTC_DEFINE_int(target_bitrate, 200, "Stream target bitrate in kbps.");
+DEFINE_int(target_bitrate, 200, "Stream target bitrate in kbps.");
 int TargetBitrateKbps() {
   return static_cast<int>(FLAG_target_bitrate);
 }
 
-WEBRTC_DEFINE_int(max_bitrate, 1000, "Call and stream max bitrate in kbps.");
+DEFINE_int(max_bitrate, 1000, "Call and stream max bitrate in kbps.");
 int MaxBitrateKbps() {
   return static_cast<int>(FLAG_max_bitrate);
 }
 
-WEBRTC_DEFINE_int(num_temporal_layers, 2, "Number of temporal layers to use.");
+DEFINE_int(num_temporal_layers, 2, "Number of temporal layers to use.");
 int NumTemporalLayers() {
   return static_cast<int>(FLAG_num_temporal_layers);
 }
 
 // Flags common with video loopback, with equal default values.
-WEBRTC_DEFINE_string(codec, "VP8", "Video codec to use.");
+DEFINE_string(codec, "VP8", "Video codec to use.");
 std::string Codec() {
   return static_cast<std::string>(FLAG_codec);
 }
 
-WEBRTC_DEFINE_string(rtc_event_log_name,
-                     "",
-                     "Filename for rtc event log. Two files "
-                     "with \"_send\" and \"_recv\" suffixes will be created.");
+DEFINE_string(rtc_event_log_name,
+              "",
+              "Filename for rtc event log. Two files "
+              "with \"_send\" and \"_recv\" suffixes will be created.");
 std::string RtcEventLogName() {
   return static_cast<std::string>(FLAG_rtc_event_log_name);
 }
 
-WEBRTC_DEFINE_string(rtp_dump_name,
-                     "",
-                     "Filename for dumped received RTP stream.");
+DEFINE_string(rtp_dump_name, "", "Filename for dumped received RTP stream.");
 std::string RtpDumpName() {
   return static_cast<std::string>(FLAG_rtp_dump_name);
 }
 
-WEBRTC_DEFINE_int(
-    selected_tl,
-    -1,
-    "Temporal layer to show or analyze. -1 to disable filtering.");
+DEFINE_int(selected_tl,
+           -1,
+           "Temporal layer to show or analyze. -1 to disable filtering.");
 int SelectedTL() {
   return static_cast<int>(FLAG_selected_tl);
 }
 
-WEBRTC_DEFINE_int(
+DEFINE_int(
     duration,
     0,
     "Duration of the test in seconds. If 0, rendered will be shown instead.");
@@ -99,74 +96,71 @@ int DurationSecs() {
   return static_cast<int>(FLAG_duration);
 }
 
-WEBRTC_DEFINE_string(output_filename, "", "Target graph data filename.");
+DEFINE_string(output_filename, "", "Target graph data filename.");
 std::string OutputFilename() {
   return static_cast<std::string>(FLAG_output_filename);
 }
 
-WEBRTC_DEFINE_string(graph_title,
-                     "",
-                     "If empty, title will be generated automatically.");
+DEFINE_string(graph_title,
+              "",
+              "If empty, title will be generated automatically.");
 std::string GraphTitle() {
   return static_cast<std::string>(FLAG_graph_title);
 }
 
-WEBRTC_DEFINE_int(loss_percent, 0, "Percentage of packets randomly lost.");
+DEFINE_int(loss_percent, 0, "Percentage of packets randomly lost.");
 int LossPercent() {
   return static_cast<int>(FLAG_loss_percent);
 }
 
-WEBRTC_DEFINE_int(link_capacity,
-                  0,
-                  "Capacity (kbps) of the fake link. 0 means infinite.");
+DEFINE_int(link_capacity,
+           0,
+           "Capacity (kbps) of the fake link. 0 means infinite.");
 int LinkCapacityKbps() {
   return static_cast<int>(FLAG_link_capacity);
 }
 
-WEBRTC_DEFINE_int(queue_size,
-                  0,
-                  "Size of the bottleneck link queue in packets.");
+DEFINE_int(queue_size, 0, "Size of the bottleneck link queue in packets.");
 int QueueSize() {
   return static_cast<int>(FLAG_queue_size);
 }
 
-WEBRTC_DEFINE_int(avg_propagation_delay_ms,
-                  0,
-                  "Average link propagation delay in ms.");
+DEFINE_int(avg_propagation_delay_ms,
+           0,
+           "Average link propagation delay in ms.");
 int AvgPropagationDelayMs() {
   return static_cast<int>(FLAG_avg_propagation_delay_ms);
 }
 
-WEBRTC_DEFINE_int(std_propagation_delay_ms,
-                  0,
-                  "Link propagation delay standard deviation in ms.");
+DEFINE_int(std_propagation_delay_ms,
+           0,
+           "Link propagation delay standard deviation in ms.");
 int StdPropagationDelayMs() {
   return static_cast<int>(FLAG_std_propagation_delay_ms);
 }
 
-WEBRTC_DEFINE_int(num_streams, 0, "Number of streams to show or analyze.");
+DEFINE_int(num_streams, 0, "Number of streams to show or analyze.");
 int NumStreams() {
   return static_cast<int>(FLAG_num_streams);
 }
 
-WEBRTC_DEFINE_int(selected_stream,
-                  0,
-                  "ID of the stream to show or analyze. "
-                  "Set to the number of streams to show them all.");
+DEFINE_int(selected_stream,
+           0,
+           "ID of the stream to show or analyze. "
+           "Set to the number of streams to show them all.");
 int SelectedStream() {
   return static_cast<int>(FLAG_selected_stream);
 }
 
-WEBRTC_DEFINE_int(num_spatial_layers, 1, "Number of spatial layers to use.");
+DEFINE_int(num_spatial_layers, 1, "Number of spatial layers to use.");
 int NumSpatialLayers() {
   return static_cast<int>(FLAG_num_spatial_layers);
 }
 
-WEBRTC_DEFINE_int(
-    inter_layer_pred,
-    0,
-    "Inter-layer prediction mode. "
-    "0 - enabled, 1 - disabled, 2 - enabled only for key pictures.");
+DEFINE_int(inter_layer_pred,
+           0,
+           "Inter-layer prediction mode. "
+           "0 - enabled, 1 - disabled, 2 - enabled only for key pictures.");
 InterLayerPredMode InterLayerPred() {
   if (FLAG_inter_layer_pred == 0) {
     return InterLayerPredMode::kOn;
@@ -178,65 +172,58 @@ InterLayerPredMode InterLayerPred() {
   }
 }
 
-WEBRTC_DEFINE_int(selected_sl,
-                  -1,
-                  "Spatial layer to show or analyze. -1 to disable filtering.");
+DEFINE_int(selected_sl,
+           -1,
+           "Spatial layer to show or analyze. -1 to disable filtering.");
 int SelectedSL() {
   return static_cast<int>(FLAG_selected_sl);
 }
 
-WEBRTC_DEFINE_string(
-    stream0,
-    "",
-    "Comma separated values describing VideoStream for stream #0.");
+DEFINE_string(stream0,
+              "",
+              "Comma separated values describing VideoStream for stream #0.");
 std::string Stream0() {
   return static_cast<std::string>(FLAG_stream0);
 }
 
-WEBRTC_DEFINE_string(
-    stream1,
-    "",
-    "Comma separated values describing VideoStream for stream #1.");
+DEFINE_string(stream1,
+              "",
+              "Comma separated values describing VideoStream for stream #1.");
 std::string Stream1() {
   return static_cast<std::string>(FLAG_stream1);
 }
 
-WEBRTC_DEFINE_string(
-    sl0,
-    "",
-    "Comma separated values describing SpatialLayer for layer #0.");
+DEFINE_string(sl0,
+              "",
+              "Comma separated values describing SpatialLayer for layer #0.");
 std::string SL0() {
   return static_cast<std::string>(FLAG_sl0);
 }
 
-WEBRTC_DEFINE_string(
-    sl1,
-    "",
-    "Comma separated values describing SpatialLayer for layer #1.");
+DEFINE_string(sl1,
+              "",
+              "Comma separated values describing SpatialLayer for layer #1.");
 std::string SL1() {
   return static_cast<std::string>(FLAG_sl1);
 }
 
-WEBRTC_DEFINE_string(
-    encoded_frame_path,
-    "",
-    "The base path for encoded frame logs. Created files will have "
-    "the form <encoded_frame_path>.<n>.(recv|send.<m>).ivf");
+DEFINE_string(encoded_frame_path,
+              "",
+              "The base path for encoded frame logs. Created files will have "
+              "the form <encoded_frame_path>.<n>.(recv|send.<m>).ivf");
 std::string EncodedFramePath() {
   return static_cast<std::string>(FLAG_encoded_frame_path);
 }
 
-WEBRTC_DEFINE_bool(logs, false, "print logs to stderr");
+DEFINE_bool(logs, false, "print logs to stderr");
 
-WEBRTC_DEFINE_bool(send_side_bwe, true, "Use send-side bandwidth estimation");
+DEFINE_bool(send_side_bwe, true, "Use send-side bandwidth estimation");
 
-WEBRTC_DEFINE_bool(generic_descriptor,
-                   false,
-                   "Use the generic frame descriptor.");
+DEFINE_bool(generic_descriptor, false, "Use the generic frame descriptor.");
 
-WEBRTC_DEFINE_bool(allow_reordering, false, "Allow packet reordering to occur");
+DEFINE_bool(allow_reordering, false, "Allow packet reordering to occur");
 
-WEBRTC_DEFINE_string(
+DEFINE_string(
     force_fieldtrials,
     "",
     "Field trials control experimental feature code which can be forced. "
@@ -245,14 +232,12 @@ WEBRTC_DEFINE_string(
     "trials are separated by \"/\"");
 
 // Screenshare-specific flags.
-WEBRTC_DEFINE_int(min_transmit_bitrate,
-                  400,
-                  "Min transmit bitrate incl. padding.");
+DEFINE_int(min_transmit_bitrate, 400, "Min transmit bitrate incl. padding.");
 int MinTransmitBitrateKbps() {
   return FLAG_min_transmit_bitrate;
 }
 
-WEBRTC_DEFINE_bool(
+DEFINE_bool(
     generate_slides,
     false,
     "Whether to use randomly generated slides or read them from files.");
@@ -260,14 +245,14 @@ bool GenerateSlides() {
   return static_cast<int>(FLAG_generate_slides);
 }
 
-WEBRTC_DEFINE_int(slide_change_interval,
-                  10,
-                  "Interval (in seconds) between simulated slide changes.");
+DEFINE_int(slide_change_interval,
+           10,
+           "Interval (in seconds) between simulated slide changes.");
 int SlideChangeInterval() {
   return static_cast<int>(FLAG_slide_change_interval);
 }
 
-WEBRTC_DEFINE_int(
+DEFINE_int(
     scroll_duration,
     0,
     "Duration (in seconds) during which a slide will be scrolled into place.");
@@ -275,10 +260,9 @@ int ScrollDuration() {
   return static_cast<int>(FLAG_scroll_duration);
 }
 
-WEBRTC_DEFINE_string(
-    slides,
-    "",
-    "Comma-separated list of *.yuv files to display as slides.");
+DEFINE_string(slides,
+              "",
+              "Comma-separated list of *.yuv files to display as slides.");
 std::vector<std::string> Slides() {
   std::vector<std::string> slides;
   std::string slides_list = FLAG_slides;
@@ -286,7 +270,7 @@ std::vector<std::string> Slides() {
   return slides;
 }
 
-WEBRTC_DEFINE_bool(help, false, "prints this message");
+DEFINE_bool(help, false, "prints this message");
 
 }  // namespace flags
 
