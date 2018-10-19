@@ -1325,7 +1325,8 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
 // rtc::Thread::Current()->Run(), or call
 // rtc::Thread::Current()->ProcessMessages() within the application's own
 // message loop.
-rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
+RTC_EXPORT rtc::scoped_refptr<PeerConnectionFactoryInterface>
+CreatePeerConnectionFactory(
     rtc::scoped_refptr<AudioEncoderFactory> audio_encoder_factory,
     rtc::scoped_refptr<AudioDecoderFactory> audio_decoder_factory);
 
@@ -1339,7 +1340,8 @@ rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
 // returned factory.
 // TODO(deadbeef): Use rtc::scoped_refptr<> and std::unique_ptr<> to make this
 // ownership transfer and ref counting more obvious.
-rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
+RTC_EXPORT rtc::scoped_refptr<PeerConnectionFactoryInterface>
+CreatePeerConnectionFactory(
     rtc::Thread* network_thread,
     rtc::Thread* worker_thread,
     rtc::Thread* signaling_thread,
@@ -1355,7 +1357,8 @@ rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
 // If |audio_mixer| is null, an internal audio mixer will be created and used.
 // If |audio_processing| is null, an internal audio processing module will be
 // created and used.
-rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
+RTC_EXPORT rtc::scoped_refptr<PeerConnectionFactoryInterface>
+CreatePeerConnectionFactory(
     rtc::Thread* network_thread,
     rtc::Thread* worker_thread,
     rtc::Thread* signaling_thread,
@@ -1399,7 +1402,8 @@ CreatePeerConnectionFactory(
 // extra internal video codecs will be added.
 // When building WebRTC with rtc_use_builtin_sw_codecs = false, this is the
 // only available CreatePeerConnectionFactory overload.
-rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
+RTC_EXPORT rtc::scoped_refptr<PeerConnectionFactoryInterface>
+CreatePeerConnectionFactory(
     rtc::Thread* network_thread,
     rtc::Thread* worker_thread,
     rtc::Thread* signaling_thread,
@@ -1416,7 +1420,7 @@ rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
 // mixer.
 //
 // If |audio_mixer| is null, an internal audio mixer will be created and used.
-rtc::scoped_refptr<PeerConnectionFactoryInterface>
+RTC_EXPORT rtc::scoped_refptr<PeerConnectionFactoryInterface>
 CreatePeerConnectionFactoryWithAudioMixer(
     rtc::Thread* network_thread,
     rtc::Thread* worker_thread,
@@ -1430,7 +1434,7 @@ CreatePeerConnectionFactoryWithAudioMixer(
 
 // Create a new instance of PeerConnectionFactoryInterface.
 // Same thread is used as worker and network thread.
-inline rtc::scoped_refptr<PeerConnectionFactoryInterface>
+RTC_EXPORT inline rtc::scoped_refptr<PeerConnectionFactoryInterface>
 CreatePeerConnectionFactory(
     rtc::Thread* worker_and_network_thread,
     rtc::Thread* signaling_thread,
