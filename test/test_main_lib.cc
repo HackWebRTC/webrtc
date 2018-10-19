@@ -13,6 +13,7 @@
 #include <fstream>
 #include <string>
 
+#include "absl/memory/memory.h"
 #include "rtc_base/flags.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/thread.h"

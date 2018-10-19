@@ -14,6 +14,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "api/media_transport_interface.h"
 
 namespace webrtc {
