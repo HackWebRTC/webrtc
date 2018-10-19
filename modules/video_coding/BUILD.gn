@@ -777,6 +777,7 @@ if (rtc_include_tests) {
       "../../media:rtc_h264_profile_id",
       "../../media:rtc_internal_video_codecs",
       "../../media:rtc_media_base",
+      "../../media:rtc_simulcast_encoder_adapter",
       "../../media:rtc_vp9_profile",
       "../../rtc_base:rtc_base",
       "../../test:field_trial",

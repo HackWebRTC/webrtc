@@ -162,6 +162,34 @@ rtc_static_library("rtc_constants") {
   ]
 }
 
+rtc_static_library("rtc_simulcast_encoder_adapter") {
+  visibility = [ "*" ]
+  defines = []
+  libs = []
+  sources = [
+    "engine/simulcast_encoder_adapter.cc",
+    "engine/simulcast_encoder_adapter.h",
+  ]
+  deps = [
+    "../api/video:video_bitrate_allocation",
+    "../api/video:video_frame_i420",
+    "../api/video_codecs:video_codecs_api",
+    "../modules/video_coding:video_codec_interface",
+    "../modules/video_coding:video_coding_utility",
+    "../rtc_base:checks",
+    "../rtc_base:rtc_base_approved",
+    "../rtc_base:sequenced_task_checker",
+    "../system_wrappers",
+    "../system_wrappers:field_trial",
+    "//third_party/abseil-cpp/absl/types:optional",
+    "//third_party/libyuv",
+  ]
+  if (!build_with_chromium && is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+  }
+}
+
 rtc_static_library("rtc_internal_video_codecs") {
   visibility = [ "*" ]
   allow_poison = [ "software_video_codecs" ]
@@ -169,8 +197,8 @@ rtc_static_library("rtc_internal_video_codecs") {
   libs = []
   deps = [
     ":rtc_h264_profile_id",
+    ":rtc_simulcast_encoder_adapter",
     "../modules/video_coding:video_codec_interface",
-    "../system_wrappers:field_trial",
     "//third_party/abseil-cpp/absl/memory",
   ]
   sources = [
@@ -186,7 +214,10 @@ rtc_static_library("rtc_internal_video_codecs") {
     "engine/scopedvideodecoder.h",
     "engine/scopedvideoencoder.cc",
     "engine/scopedvideoencoder.h",
-    "engine/simulcast_encoder_adapter.cc",
+
+    # TODO(bugs.webrtc.org/7925): When downstream projects depend directly on
+    # :rtc_simulcast_encoder_adapter, remove it from this target's deps, remove
+    # its deps from this target's deps, and stop exporting this header here.
     "engine/simulcast_encoder_adapter.h",
     "engine/vp8_encoder_simulcast_proxy.cc",
     "engine/vp8_encoder_simulcast_proxy.h",
@@ -207,12 +238,10 @@ rtc_static_library("rtc_internal_video_codecs") {
     ":rtc_media_base",
     "..:webrtc_common",
     "../api/video:video_bitrate_allocation",
-    "../api/video:video_frame_i420",
     "../api/video_codecs:rtc_software_fallback_wrappers",
     "../api/video_codecs:video_codecs_api",
     "../call:call_interfaces",
     "../call:video_stream_api",
-    "../modules/video_coding:video_coding_utility",
     "../modules/video_coding:webrtc_h264",
     "../modules/video_coding:webrtc_multiplex",
     "../modules/video_coding:webrtc_vp8",
@@ -221,9 +250,7 @@ rtc_static_library("rtc_internal_video_codecs") {
     "../rtc_base:rtc_base_approved",
     "../rtc_base:sequenced_task_checker",
     "../rtc_base/system:rtc_export",
-    "../system_wrappers",
     "//third_party/abseil-cpp/absl/types:optional",
-    "//third_party/libyuv",
   ]
 }
 
@@ -398,6 +425,7 @@ if (rtc_include_tests) {
     include_dirs = []
     deps = [
       ":rtc_audio_video",
+      ":rtc_simulcast_encoder_adapter",
       "../api:libjingle_peerconnection_api",
       "../api/video:video_frame_i420",
       "../call:video_stream_api",
@@ -576,6 +604,7 @@ if (rtc_include_tests) {
       ":rtc_media",
       ":rtc_media_base",
       ":rtc_media_tests_utils",
+      ":rtc_simulcast_encoder_adapter",
       ":rtc_vp9_profile",
       "../api:create_simulcast_test_fixture_api",
       "../api:libjingle_peerconnection_api",

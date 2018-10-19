@@ -10,7 +10,6 @@
 
 #include "media/engine/vp8_encoder_simulcast_proxy.h"
 
-#include "media/engine/scopedvideoencoder.h"
 #include "media/engine/simulcast_encoder_adapter.h"
 #include "rtc_base/checks.h"
 

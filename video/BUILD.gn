@@ -445,6 +445,7 @@ if (rtc_include_tests) {
       "../media:rtc_media",
       "../media:rtc_media_base",
       "../media:rtc_media_tests_utils",
+      "../media:rtc_simulcast_encoder_adapter",
       "../modules:module_api",
       "../modules/pacing",
       "../modules/rtp_rtcp",
