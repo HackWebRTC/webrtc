@@ -220,6 +220,15 @@ EchoCanceller3Config Aec3ConfigFromJsonString(absl::string_view json_string) {
               &cfg.echo_audibility.use_stationarity_properties_at_init);
   }
 
+  if (rtc::GetValueFromJsonObject(aec3_root, "render_levels", &section)) {
+    ReadParam(section, "active_render_limit",
+              &cfg.render_levels.active_render_limit);
+    ReadParam(section, "poor_excitation_render_limit",
+              &cfg.render_levels.poor_excitation_render_limit);
+    ReadParam(section, "poor_excitation_render_limit_ds8",
+              &cfg.render_levels.poor_excitation_render_limit_ds8);
+  }
+
   if (rtc::GetValueFromJsonObject(aec3_root, "echo_removal_control",
                                   &section)) {
     Json::Value subsection;
