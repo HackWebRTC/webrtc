@@ -17,6 +17,7 @@ import android.opengl.GLES20;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
+import android.os.Message;
 import android.view.Surface;
 import java.nio.ByteBuffer;
 import java.text.DecimalFormat;
@@ -75,6 +76,29 @@ public class EglRenderer implements VideoSink {
         eglBase.makeCurrent();
         // Necessary for YUV frames with odd width.
         GLES20.glPixelStorei(GLES20.GL_UNPACK_ALIGNMENT, 1);
+      }
+    }
+  }
+
+  /**
+   * Handler that triggers a callback when an uncaught exception happens when handling a message.
+   */
+  private static class HandlerWithExceptionCallback extends Handler {
+    private final Runnable exceptionCallback;
+
+    public HandlerWithExceptionCallback(Looper looper, Runnable exceptionCallback) {
+      super(looper);
+      this.exceptionCallback = exceptionCallback;
+    }
+
+    @Override
+    public void dispatchMessage(Message msg) {
+      try {
+        super.dispatchMessage(msg);
+      } catch (Exception e) {
+        Logging.e(TAG, "Exception on EglRenderer thread", e);
+        exceptionCallback.run();
+        throw e;
       }
     }
   }
@@ -174,7 +198,15 @@ public class EglRenderer implements VideoSink {
 
       final HandlerThread renderThread = new HandlerThread(name + "EglRenderer");
       renderThread.start();
-      renderThreadHandler = new Handler(renderThread.getLooper());
+      renderThreadHandler =
+          new HandlerWithExceptionCallback(renderThread.getLooper(), new Runnable() {
+            @Override
+            public void run() {
+              synchronized (handlerLock) {
+                renderThreadHandler = null;
+              }
+            }
+          });
       // Create EGL context on the newly created render thread. It should be possibly to create the
       // context on this thread and make it current on the render thread, but this causes failure on
       // some Marvel based JB devices. https://bugs.chromium.org/p/webrtc/issues/detail?id=6350.
