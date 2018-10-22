@@ -287,6 +287,8 @@ EchoCanceller3Config Aec3ConfigFromJsonString(absl::string_view json_string) {
                                     &subsection)) {
       ReadParam(subsection, "enr_threshold",
                 &cfg.suppressor.dominant_nearend_detection.enr_threshold);
+      ReadParam(subsection, "enr_exit_threshold",
+                &cfg.suppressor.dominant_nearend_detection.enr_exit_threshold);
       ReadParam(subsection, "snr_threshold",
                 &cfg.suppressor.dominant_nearend_detection.snr_threshold);
       ReadParam(subsection, "hold_duration",
@@ -520,6 +522,8 @@ std::string Aec3ConfigToJsonString(const EchoCanceller3Config& config) {
   ost << "\"dominant_nearend_detection\": {";
   ost << "\"enr_threshold\": "
       << config.suppressor.dominant_nearend_detection.enr_threshold << ",";
+  ost << "\"enr_exit_threshold\": "
+      << config.suppressor.dominant_nearend_detection.enr_exit_threshold << ",";
   ost << "\"snr_threshold\": "
       << config.suppressor.dominant_nearend_detection.snr_threshold << ",";
   ost << "\"hold_duration\": "

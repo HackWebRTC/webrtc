@@ -398,6 +398,7 @@ bool SuppressionGain::LowNoiseRenderDetector::Detect(
 SuppressionGain::DominantNearendDetector::DominantNearendDetector(
     const EchoCanceller3Config::Suppressor::DominantNearendDetection config)
     : enr_threshold_(config.enr_threshold),
+      enr_exit_threshold_(config.enr_exit_threshold),
       snr_threshold_(config.snr_threshold),
       hold_duration_(config.hold_duration),
       trigger_threshold_(config.trigger_threshold) {}
@@ -426,6 +427,12 @@ void SuppressionGain::DominantNearendDetector::Update(
   } else {
     // Forget previously detected strong active nearend activity.
     trigger_counter_ = std::max(0, trigger_counter_ - 1);
+  }
+
+  // Exit nearend-state early at strong echo.
+  if (ne_sum < enr_exit_threshold_ * echo_sum &&
+      echo_sum > snr_threshold_ * noise_sum) {
+    hold_counter_ = 0;
   }
 
   // Remain in any nearend mode for a certain duration.

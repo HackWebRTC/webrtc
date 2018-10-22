@@ -106,6 +106,7 @@ class SuppressionGain {
 
    private:
     const float enr_threshold_;
+    const float enr_exit_threshold_;
     const float snr_threshold_;
     const int hold_duration_;
     const int trigger_threshold_;
