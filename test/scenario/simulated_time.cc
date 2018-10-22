@@ -252,11 +252,12 @@ SimulatedTimeClient::SimulatedTimeClient(
       return_link_(return_link),
       sender_(send_link.front(), send_receiver_id),
       feedback_(config, return_receiver_id, return_link.front()) {
+  current_contraints_.at_time = at_time;
+  current_contraints_.starting_rate = config.transport.rates.start_rate;
+  current_contraints_.min_data_rate = config.transport.rates.min_rate;
+  current_contraints_.max_data_rate = config.transport.rates.max_rate;
   NetworkControllerConfig initial_config;
-  initial_config.constraints.at_time = at_time;
-  initial_config.constraints.starting_rate = config.transport.rates.start_rate;
-  initial_config.constraints.min_data_rate = config.transport.rates.min_rate;
-  initial_config.constraints.max_data_rate = config.transport.rates.max_rate;
+  initial_config.constraints = current_contraints_;
   congestion_controller_ = network_controller_factory_.Create(initial_config);
   for (auto& stream_config : stream_configs)
     packet_streams_.emplace_back(new PacketStream(stream_config));
@@ -334,6 +335,14 @@ void SimulatedTimeClient::ProcessFrames(Timestamp at_time) {
           SimulatedSender::PendingPacket{packet_size});
     }
   }
+}
+
+void SimulatedTimeClient::TriggerFakeReroute(Timestamp at_time) {
+  NetworkRouteChange msg;
+  msg.at_time = at_time;
+  msg.constraints = current_contraints_;
+  msg.constraints.at_time = at_time;
+  Update(congestion_controller_->OnNetworkRouteChange(msg));
 }
 
 TimeDelta SimulatedTimeClient::GetNetworkControllerProcessInterval() const {

@@ -24,7 +24,7 @@ namespace test {
 
 // SendAudioStream represents sending of audio. It can be used for starting the
 // stream if neccessary.
-class SendAudioStream : public NetworkReceiverInterface {
+class SendAudioStream {
  public:
   RTC_DISALLOW_COPY_AND_ASSIGN(SendAudioStream);
   ~SendAudioStream();
@@ -38,11 +38,6 @@ class SendAudioStream : public NetworkReceiverInterface {
                   AudioStreamConfig config,
                   rtc::scoped_refptr<AudioEncoderFactory> encoder_factory,
                   Transport* send_transport);
-  // Handles RTCP feedback for this stream.
-  bool TryDeliverPacket(rtc::CopyOnWriteBuffer packet,
-                        uint64_t receiver,
-                        Timestamp at_time) override;
-
   AudioSendStream* send_stream_ = nullptr;
   CallClient* const sender_;
   const AudioStreamConfig config_;
@@ -50,7 +45,7 @@ class SendAudioStream : public NetworkReceiverInterface {
 };
 
 // ReceiveAudioStream represents an audio receiver. It can't be used directly.
-class ReceiveAudioStream : public NetworkReceiverInterface {
+class ReceiveAudioStream {
  public:
   RTC_DISALLOW_COPY_AND_ASSIGN(ReceiveAudioStream);
   ~ReceiveAudioStream();
@@ -63,9 +58,6 @@ class ReceiveAudioStream : public NetworkReceiverInterface {
                      SendAudioStream* send_stream,
                      rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
                      Transport* feedback_transport);
-  bool TryDeliverPacket(rtc::CopyOnWriteBuffer packet,
-                        uint64_t receiver,
-                        Timestamp at_time) override;
   AudioReceiveStream* receive_stream_ = nullptr;
   CallClient* const receiver_;
   const AudioStreamConfig config_;
@@ -84,23 +76,13 @@ class AudioStreamPair {
  private:
   friend class Scenario;
   AudioStreamPair(CallClient* sender,
-                  std::vector<NetworkNode*> send_link,
-                  uint64_t send_receiver_id,
                   rtc::scoped_refptr<AudioEncoderFactory> encoder_factory,
-
                   CallClient* receiver,
-                  std::vector<NetworkNode*> return_link,
-                  uint64_t return_receiver_id,
                   rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
                   AudioStreamConfig config);
 
  private:
   const AudioStreamConfig config_;
-  std::vector<NetworkNode*> send_link_;
-  std::vector<NetworkNode*> return_link_;
-  NetworkNodeTransport send_transport_;
-  NetworkNodeTransport return_transport_;
-
   SendAudioStream send_stream_;
   ReceiveAudioStream receive_stream_;
 };

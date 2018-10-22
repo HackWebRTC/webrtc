@@ -234,16 +234,6 @@ void SendVideoStream::Start() {
   video_capturer_->Start();
 }
 
-bool SendVideoStream::TryDeliverPacket(rtc::CopyOnWriteBuffer packet,
-                                       uint64_t receiver,
-                                       Timestamp at_time) {
-  // Removes added overhead before delivering RTCP packet to sender.
-  RTC_DCHECK_GE(packet.size(), config_.stream.packet_overhead.bytes());
-  packet.SetSize(packet.size() - config_.stream.packet_overhead.bytes());
-  sender_->DeliverPacket(MediaType::VIDEO, packet, at_time);
-  return true;
-}
-
 void SendVideoStream::SetCaptureFramerate(int framerate) {
   RTC_CHECK(frame_generator_)
       << "Framerate change only implemented for generators";
@@ -300,11 +290,14 @@ ReceiveVideoStream::ReceiveVideoStream(CallClient* receiver,
   recv_config.renderer = renderer_.get();
   if (config.stream.use_rtx) {
     recv_config.rtp.rtx_ssrc = send_stream->rtx_ssrcs_[chosen_stream];
+    receiver->ssrc_media_types_[recv_config.rtp.rtx_ssrc] = MediaType::VIDEO;
     recv_config.rtp
         .rtx_associated_payload_types[CallTest::kSendRtxPayloadType] =
         CodecTypeToPayloadType(config.encoder.codec);
   }
   recv_config.rtp.remote_ssrc = send_stream->ssrcs_[chosen_stream];
+  receiver->ssrc_media_types_[recv_config.rtp.remote_ssrc] = MediaType::VIDEO;
+
   VideoReceiveStream::Decoder decoder =
       CreateMatchingDecoder(CodecTypeToPayloadType(config.encoder.codec),
                             CodecTypeToPayloadString(config.encoder.codec));
@@ -316,6 +309,7 @@ ReceiveVideoStream::ReceiveVideoStream(CallClient* receiver,
     FlexfecReceiveStream::Config flexfec_config(feedback_transport);
     flexfec_config.payload_type = CallTest::kFlexfecPayloadType;
     flexfec_config.remote_ssrc = CallTest::kFlexfecSendSsrc;
+    receiver->ssrc_media_types_[flexfec_config.remote_ssrc] = MediaType::VIDEO;
     flexfec_config.protected_media_ssrcs = send_stream->rtx_ssrcs_;
     flexfec_config.local_ssrc = recv_config.rtp.local_ssrc;
     flecfec_stream_ =
@@ -337,46 +331,18 @@ ReceiveVideoStream::~ReceiveVideoStream() {
     receiver_->call_->DestroyFlexfecReceiveStream(flecfec_stream_);
 }
 
-bool ReceiveVideoStream::TryDeliverPacket(rtc::CopyOnWriteBuffer packet,
-                                          uint64_t receiver,
-                                          Timestamp at_time) {
-  RTC_DCHECK_GE(packet.size(), config_.stream.packet_overhead.bytes());
-  packet.SetSize(packet.size() - config_.stream.packet_overhead.bytes());
-  receiver_->DeliverPacket(MediaType::VIDEO, packet, at_time);
-  return true;
-}
-
 VideoStreamPair::~VideoStreamPair() = default;
 
 VideoStreamPair::VideoStreamPair(CallClient* sender,
-                                 std::vector<NetworkNode*> send_link,
-                                 uint64_t send_receiver_id,
                                  CallClient* receiver,
-                                 std::vector<NetworkNode*> return_link,
-                                 uint64_t return_receiver_id,
                                  VideoStreamConfig config)
     : config_(config),
-      send_link_(send_link),
-      return_link_(return_link),
-      send_transport_(sender,
-                      send_link.front(),
-                      send_receiver_id,
-                      config.stream.packet_overhead),
-      return_transport_(receiver,
-                        return_link.front(),
-                        return_receiver_id,
-                        config.stream.packet_overhead),
-      send_stream_(sender, config, &send_transport_),
+      send_stream_(sender, config, &sender->transport_),
       receive_stream_(receiver,
                       config,
                       &send_stream_,
                       /*chosen_stream=*/0,
-                      &return_transport_) {
-  NetworkNode::Route(send_transport_.ReceiverId(), send_link_,
-                     &receive_stream_);
-  NetworkNode::Route(return_transport_.ReceiverId(), return_link_,
-                     &send_stream_);
-}
+                      &receiver->transport_) {}
 
 }  // namespace test
 }  // namespace webrtc

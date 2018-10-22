@@ -106,9 +106,7 @@ SendAudioStream::SendAudioStream(
     }
     if (field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")) {
       TimeDelta min_frame_length = config.encoder.initial_frame_length;
-      ;
       TimeDelta max_frame_length = config.encoder.initial_frame_length;
-      ;
       if (field_trial::IsEnabled("WebRTC-Audio-FrameLengthAdaptation") &&
           !config.adapt.frame.min_rate_for_20_ms.IsZero()) {
         if (!config.adapt.frame.min_rate_for_60_ms.IsZero()) {
@@ -118,7 +116,8 @@ SendAudioStream::SendAudioStream(
         }
       }
       DataSize rtp_overhead = DataSize::bytes(12);
-      DataSize total_overhead = config.stream.packet_overhead + rtp_overhead;
+      DataSize total_overhead =
+          sender_->transport_.packet_overhead() + rtp_overhead;
       min_rate += total_overhead / max_frame_length;
       max_rate += total_overhead / min_frame_length;
     }
@@ -138,7 +137,7 @@ SendAudioStream::SendAudioStream(
   send_stream_ = sender_->call_->CreateAudioSendStream(send_config);
   if (field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")) {
     sender->call_->OnAudioTransportOverheadChanged(
-        config.stream.packet_overhead.bytes());
+        sender_->transport_.packet_overhead().bytes());
   }
 }
 
@@ -150,15 +149,6 @@ void SendAudioStream::Start() {
   send_stream_->Start();
 }
 
-bool SendAudioStream::TryDeliverPacket(rtc::CopyOnWriteBuffer packet,
-                                       uint64_t receiver,
-                                       Timestamp at_time) {
-  // Removes added overhead before delivering RTCP packet to sender.
-  RTC_DCHECK_GE(packet.size(), config_.stream.packet_overhead.bytes());
-  packet.SetSize(packet.size() - config_.stream.packet_overhead.bytes());
-  sender_->DeliverPacket(MediaType::AUDIO, packet, at_time);
-  return true;
-}
 ReceiveAudioStream::ReceiveAudioStream(
     CallClient* receiver,
     AudioStreamConfig config,
@@ -170,6 +160,7 @@ ReceiveAudioStream::ReceiveAudioStream(
   recv_config.rtp.local_ssrc = CallTest::kReceiverLocalAudioSsrc;
   recv_config.rtcp_send_transport = feedback_transport;
   recv_config.rtp.remote_ssrc = send_stream->ssrc_;
+  receiver->ssrc_media_types_[recv_config.rtp.remote_ssrc] = MediaType::AUDIO;
   if (config.stream.in_bandwidth_estimation) {
     recv_config.rtp.transport_cc = true;
     recv_config.rtp.extensions = {
@@ -185,49 +176,21 @@ ReceiveAudioStream::~ReceiveAudioStream() {
   receiver_->call_->DestroyAudioReceiveStream(receive_stream_);
 }
 
-bool ReceiveAudioStream::TryDeliverPacket(rtc::CopyOnWriteBuffer packet,
-                                          uint64_t receiver,
-                                          Timestamp at_time) {
-  RTC_DCHECK_GE(packet.size(), config_.stream.packet_overhead.bytes());
-  packet.SetSize(packet.size() - config_.stream.packet_overhead.bytes());
-  receiver_->DeliverPacket(MediaType::AUDIO, packet, at_time);
-  return true;
-}
-
 AudioStreamPair::~AudioStreamPair() = default;
 
 AudioStreamPair::AudioStreamPair(
     CallClient* sender,
-    std::vector<NetworkNode*> send_link,
-    uint64_t send_receiver_id,
     rtc::scoped_refptr<AudioEncoderFactory> encoder_factory,
     CallClient* receiver,
-    std::vector<NetworkNode*> return_link,
-    uint64_t return_receiver_id,
     rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
     AudioStreamConfig config)
     : config_(config),
-      send_link_(send_link),
-      return_link_(return_link),
-      send_transport_(sender,
-                      send_link.front(),
-                      send_receiver_id,
-                      config.stream.packet_overhead),
-      return_transport_(receiver,
-                        return_link.front(),
-                        return_receiver_id,
-                        config.stream.packet_overhead),
-      send_stream_(sender, config, encoder_factory, &send_transport_),
+      send_stream_(sender, config, encoder_factory, &sender->transport_),
       receive_stream_(receiver,
                       config,
                       &send_stream_,
                       decoder_factory,
-                      &return_transport_) {
-  NetworkNode::Route(send_transport_.ReceiverId(), send_link_,
-                     &receive_stream_);
-  NetworkNode::Route(return_transport_.ReceiverId(), return_link_,
-                     &send_stream_);
-}
+                      &receiver->transport_) {}
 
 }  // namespace test
 }  // namespace webrtc

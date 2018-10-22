@@ -129,6 +129,7 @@ class SimulatedTimeClient : NetworkReceiverInterface {
   void CongestionProcess(Timestamp at_time);
   void PacerProcess(Timestamp at_time);
   void ProcessFrames(Timestamp at_time);
+  void TriggerFakeReroute(Timestamp at_time);
   TimeDelta GetNetworkControllerProcessInterval() const;
   double target_rate_kbps() const;
 
@@ -144,6 +145,7 @@ class SimulatedTimeClient : NetworkReceiverInterface {
   std::vector<NetworkNode*> return_link_;
   SimulatedSender sender_;
   SimulatedFeedback feedback_;
+  TargetRateConstraints current_contraints_;
   DataRate target_rate_ = DataRate::Infinity();
   FILE* packet_log_ = nullptr;
 
