@@ -11,6 +11,7 @@
 #include <memory>
 
 #include "absl/memory/memory.h"
+#include "absl/strings/match.h"
 #include "api/audio_codecs/L16/audio_decoder_L16.h"
 #include "api/audio_codecs/L16/audio_encoder_L16.h"
 #include "api/audio_codecs/audio_codec_pair_id.h"
@@ -299,7 +300,7 @@ CreateForwardingMockDecoderFactory(
 struct AudioEncoderUnicornSparklesRainbow {
   using Config = webrtc::AudioEncoderL16::Config;
   static absl::optional<Config> SdpToConfig(webrtc::SdpAudioFormat format) {
-    if (STR_CASE_CMP(format.name.c_str(), "UnicornSparklesRainbow") == 0) {
+    if (absl::EqualsIgnoreCase(format.name, "UnicornSparklesRainbow")) {
       const webrtc::SdpAudioFormat::Parameters expected_params = {
           {"num_horns", "1"}};
       EXPECT_EQ(expected_params, format.parameters);
@@ -336,7 +337,7 @@ struct AudioEncoderUnicornSparklesRainbow {
 struct AudioDecoderUnicornSparklesRainbow {
   using Config = webrtc::AudioDecoderL16::Config;
   static absl::optional<Config> SdpToConfig(webrtc::SdpAudioFormat format) {
-    if (STR_CASE_CMP(format.name.c_str(), "UnicornSparklesRainbow") == 0) {
+    if (absl::EqualsIgnoreCase(format.name, "UnicornSparklesRainbow")) {
       const webrtc::SdpAudioFormat::Parameters expected_params = {
           {"num_horns", "1"}};
       EXPECT_EQ(expected_params, format.parameters);

@@ -17,6 +17,7 @@
 // references, where appropriate.
 #include "modules/audio_coding/acm2/acm_codec_database.h"
 
+#include "absl/strings/match.h"
 #include "rtc_base/checks.h"
 
 #if ((defined WEBRTC_CODEC_ISAC) && (defined WEBRTC_CODEC_ISACFX))
@@ -239,12 +240,12 @@ int ACMCodecDB::CodecNumber(const CodecInst& codec_inst) {
   }
 
   // Comfort Noise is special case, packet-size & rate is not checked.
-  if (STR_CASE_CMP(database_[codec_id].plname, "CN") == 0) {
+  if (absl::EqualsIgnoreCase(database_[codec_id].plname, "CN")) {
     return codec_id;
   }
 
   // RED is special case, packet-size & rate is not checked.
-  if (STR_CASE_CMP(database_[codec_id].plname, "red") == 0) {
+  if (absl::EqualsIgnoreCase(database_[codec_id].plname, "red")) {
     return codec_id;
   }
 
@@ -272,12 +273,12 @@ int ACMCodecDB::CodecNumber(const CodecInst& codec_inst) {
 
   // Check the validity of rate. Codecs with multiple rates have their own
   // function for this.
-  if (STR_CASE_CMP("isac", codec_inst.plname) == 0) {
+  if (absl::EqualsIgnoreCase("isac", codec_inst.plname)) {
     return IsISACRateValid(codec_inst.rate) ? codec_id : kInvalidRate;
-  } else if (STR_CASE_CMP("ilbc", codec_inst.plname) == 0) {
+  } else if (absl::EqualsIgnoreCase("ilbc", codec_inst.plname)) {
     return IsILBCRateValid(codec_inst.rate, codec_inst.pacsize) ? codec_id
                                                                 : kInvalidRate;
-  } else if (STR_CASE_CMP("opus", codec_inst.plname) == 0) {
+  } else if (absl::EqualsIgnoreCase("opus", codec_inst.plname)) {
     return IsOpusRateValid(codec_inst.rate) ? codec_id : kInvalidRate;
   }
 
@@ -304,10 +305,10 @@ int ACMCodecDB::CodecId(const char* payload_name,
     // Payload name, sampling frequency and number of channels need to match.
     // NOTE! If |frequency| is -1, the frequency is not applicable, and is
     // always treated as true, like for RED.
-    name_match = (STR_CASE_CMP(ci.plname, payload_name) == 0);
+    name_match = absl::EqualsIgnoreCase(ci.plname, payload_name);
     frequency_match = (frequency == ci.plfreq) || (frequency == -1);
     // The number of channels must match for all codecs but Opus.
-    if (STR_CASE_CMP(payload_name, "opus") != 0) {
+    if (!absl::EqualsIgnoreCase(payload_name, "opus")) {
       channels_match = (channels == ci.channels);
     } else {
       // For opus we just check that number of channels is valid.

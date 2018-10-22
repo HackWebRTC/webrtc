@@ -173,7 +173,7 @@ void TestRedFec::RegisterSendCodec(
   auto encoder = encoder_factory_->MakeAudioEncoder(payload_type, codec_format,
                                                     absl::nullopt);
   EXPECT_NE(encoder, nullptr);
-  if (STR_CASE_CMP(codec_format.name.c_str(), "opus") != 0) {
+  if (!absl::EqualsIgnoreCase(codec_format.name, "opus")) {
     if (vad_mode.has_value()) {
       AudioEncoderCng::Config config;
       config.speech_encoder = std::move(encoder);

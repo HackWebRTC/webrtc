@@ -12,6 +12,7 @@
 
 #include <algorithm>
 
+#include "absl/strings/match.h"
 #include "modules/audio_coding/acm2/acm_receiver.h"
 #include "modules/audio_coding/acm2/acm_resampler.h"
 #include "modules/audio_coding/acm2/codec_manager.h"
@@ -990,7 +991,7 @@ int AudioCodingModuleImpl::RegisterReceiveCodecUnlocked(
   }
 
   AudioDecoder* isac_decoder = nullptr;
-  if (STR_CASE_CMP(codec.plname, "isac") == 0) {
+  if (absl::EqualsIgnoreCase(codec.plname, "isac")) {
     std::unique_ptr<AudioDecoder>& saved_isac_decoder =
         codec.plfreq == 16000 ? isac_decoder_16k_ : isac_decoder_32k_;
     if (!saved_isac_decoder) {

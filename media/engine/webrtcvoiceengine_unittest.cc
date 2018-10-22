@@ -11,6 +11,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/strings/match.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/rtpparameters.h"
@@ -3467,7 +3468,7 @@ TEST(WebRtcVoiceEngineTest, HasCorrectPayloadTypeMapping) {
   engine.Init();
   for (const cricket::AudioCodec& codec : engine.send_codecs()) {
     auto is_codec = [&codec](const char* name, int clockrate = 0) {
-      return STR_CASE_CMP(codec.name.c_str(), name) == 0 &&
+      return absl::EqualsIgnoreCase(codec.name, name) &&
              (clockrate == 0 || codec.clockrate == clockrate);
     };
     if (is_codec("CN", 16000)) {
@@ -3616,7 +3617,7 @@ TEST(WebRtcVoiceEngineTest, CollectRecvCodecs) {
   auto find_codec = [&codecs](const webrtc::SdpAudioFormat& format) -> int {
     for (size_t i = 0; i != codecs.size(); ++i) {
       const cricket::AudioCodec& codec = codecs[i];
-      if (STR_CASE_CMP(codec.name.c_str(), format.name.c_str()) == 0 &&
+      if (absl::EqualsIgnoreCase(codec.name, format.name) &&
           codec.clockrate == format.clockrate_hz &&
           codec.channels == format.num_channels) {
         return rtc::checked_cast<int>(i);

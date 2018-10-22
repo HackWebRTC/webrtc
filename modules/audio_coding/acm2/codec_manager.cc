@@ -10,6 +10,7 @@
 
 #include "modules/audio_coding/acm2/codec_manager.h"
 
+#include "absl/strings/match.h"
 #include "rtc_base/checks.h"
 //#include "rtc_base/format_macros.h"
 #include "modules/audio_coding/acm2/rent_a_codec.h"
@@ -35,7 +36,7 @@ int IsValidSendCodec(const CodecInst& send_codec) {
   }
 
   // Telephone-event cannot be a send codec.
-  if (!STR_CASE_CMP(send_codec.plname, "telephone-event")) {
+  if (absl::EqualsIgnoreCase(send_codec.plname, "telephone-event")) {
     RTC_LOG(LS_ERROR) << "telephone-event cannot be a send codec";
     return -1;
   }
@@ -53,7 +54,7 @@ int IsValidSendCodec(const CodecInst& send_codec) {
 bool IsOpus(const CodecInst& codec) {
   return
 #ifdef WEBRTC_CODEC_OPUS
-      !STR_CASE_CMP(codec.plname, "opus") ||
+      absl::EqualsIgnoreCase(codec.plname, "opus") ||
 #endif
       false;
 }

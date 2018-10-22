@@ -15,7 +15,7 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
-#include "common_types.h"  // NOLINT(build/include)
+#include "absl/strings/match.h"
 #include "modules/audio_coding/audio_network_adaptor/audio_network_adaptor_impl.h"
 #include "modules/audio_coding/audio_network_adaptor/controller_manager.h"
 #include "modules/audio_coding/codecs/opus/opus_interface.h"
@@ -316,7 +316,7 @@ std::unique_ptr<AudioEncoder> AudioEncoderOpusImpl::MakeAudioEncoder(
 
 absl::optional<AudioCodecInfo> AudioEncoderOpusImpl::QueryAudioEncoder(
     const SdpAudioFormat& format) {
-  if (STR_CASE_CMP(format.name.c_str(), GetPayloadName()) == 0 &&
+  if (absl::EqualsIgnoreCase(format.name, GetPayloadName()) &&
       format.clockrate_hz == 48000 && format.num_channels == 2) {
     const size_t num_channels = GetChannelCount(format);
     const int bitrate =
@@ -348,7 +348,7 @@ AudioEncoderOpusConfig AudioEncoderOpusImpl::CreateConfig(
 
 absl::optional<AudioEncoderOpusConfig> AudioEncoderOpusImpl::SdpToConfig(
     const SdpAudioFormat& format) {
-  if (STR_CASE_CMP(format.name.c_str(), "opus") != 0 ||
+  if (!absl::EqualsIgnoreCase(format.name, "opus") ||
       format.clockrate_hz != 48000 || format.num_channels != 2) {
     return absl::nullopt;
   }

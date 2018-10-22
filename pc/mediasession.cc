@@ -18,9 +18,9 @@
 #include <unordered_map>
 #include <utility>
 
+#include "absl/strings/match.h"
 #include "absl/types/optional.h"
 #include "api/cryptoparams.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "media/base/h264_profile_level_id.h"
 #include "media/base/mediaconstants.h"
 #include "p2p/base/p2pconstants.h"
@@ -653,7 +653,7 @@ static bool ContainsRtxCodec(const std::vector<C>& codecs) {
 
 template <class C>
 static bool IsRtxCodec(const C& codec) {
-  return STR_CASE_CMP(codec.name.c_str(), kRtxCodecName) == 0;
+  return absl::EqualsIgnoreCase(codec.name, kRtxCodecName);
 }
 
 template <class C>
@@ -668,7 +668,7 @@ static bool ContainsFlexfecCodec(const std::vector<C>& codecs) {
 
 template <class C>
 static bool IsFlexfecCodec(const C& codec) {
-  return STR_CASE_CMP(codec.name.c_str(), kFlexfecCodecName) == 0;
+  return absl::EqualsIgnoreCase(codec.name, kFlexfecCodecName);
 }
 
 // Create a media content to be offered for the given |sender_options|,
@@ -1041,9 +1041,8 @@ static void NegotiateRtpHeaderExtensions(
 static void StripCNCodecs(AudioCodecs* audio_codecs) {
   audio_codecs->erase(std::remove_if(audio_codecs->begin(), audio_codecs->end(),
                                      [](const AudioCodec& codec) {
-                                       return STR_CASE_CMP(
-                                                  codec.name.c_str(),
-                                                  kComfortNoiseCodecName) == 0;
+                                       return absl::EqualsIgnoreCase(
+                                           codec.name, kComfortNoiseCodecName);
                                      }),
                       audio_codecs->end());
 }

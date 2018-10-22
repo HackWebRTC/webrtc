@@ -434,10 +434,6 @@ rtc_source_set("webrtc_common") {
     "api/video:video_bitrate_allocation",
     "rtc_base:checks",
     "rtc_base:deprecation",
-
-    # TODO(nisse): Delete both of these together with STR_CASE_CMP and
-    # STR_NCASE_CMP.
-    "rtc_base:stringutils",
     "//third_party/abseil-cpp/absl/strings",
   ]
 

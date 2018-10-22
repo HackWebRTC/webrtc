@@ -968,8 +968,8 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
     const bool is_opus =
         config_.send_codec_spec &&
-        !STR_CASE_CMP(config_.send_codec_spec->format.name.c_str(),
-                      kOpusCodecName);
+        absl::EqualsIgnoreCase(config_.send_codec_spec->format.name,
+                               kOpusCodecName);
     if (is_opus && webrtc::field_trial::IsEnabled("WebRTC-Audio-SendSideBwe")) {
       config_.min_bitrate_bps = kOpusMinBitrateBps;
 
