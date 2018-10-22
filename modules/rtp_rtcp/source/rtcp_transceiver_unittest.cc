@@ -166,12 +166,11 @@ TEST(RtcpTransceiverTest, DoesntPostToRtcpObserverAfterCallToRemove) {
 
   rtcp_transceiver.AddMediaReceiverRtcpObserver(kRemoteSsrc, observer.get());
   rtcp_transceiver.ReceivePacket(CreateSenderReport(kRemoteSsrc, 1));
-  rtcp_transceiver.RemoveMediaReceiverRtcpObserver(
-      kRemoteSsrc, observer.get(),
-      /*on_removed=*/rtc::NewClosure([&] {
-        observer.reset();
-        observer_deleted.Set();
-      }));
+  rtcp_transceiver.RemoveMediaReceiverRtcpObserver(kRemoteSsrc, observer.get(),
+                                                   /*on_removed=*/[&] {
+                                                     observer.reset();
+                                                     observer_deleted.Set();
+                                                   });
   rtcp_transceiver.ReceivePacket(CreateSenderReport(kRemoteSsrc, 2));
 
   EXPECT_TRUE(observer_deleted.Wait(kTimeoutMs));
@@ -192,12 +191,11 @@ TEST(RtcpTransceiverTest, RemoveMediaReceiverRtcpObserverIsNonBlocking) {
   rtc::Event queue_blocker(false, false);
   rtc::Event observer_deleted(false, false);
   queue.PostTask([&] { EXPECT_TRUE(queue_blocker.Wait(kTimeoutMs)); });
-  rtcp_transceiver.RemoveMediaReceiverRtcpObserver(
-      kRemoteSsrc, observer.get(),
-      /*on_removed=*/rtc::NewClosure([&] {
-        observer.reset();
-        observer_deleted.Set();
-      }));
+  rtcp_transceiver.RemoveMediaReceiverRtcpObserver(kRemoteSsrc, observer.get(),
+                                                   /*on_removed=*/[&] {
+                                                     observer.reset();
+                                                     observer_deleted.Set();
+                                                   });
 
   EXPECT_THAT(observer, Not(IsNull()));
   queue_blocker.Set();
@@ -244,10 +242,10 @@ TEST(RtcpTransceiverTest, DoesntSendPacketsAfterStopCallback) {
   auto rtcp_transceiver = absl::make_unique<RtcpTransceiver>(config);
   rtc::Event done(false, false);
   rtcp_transceiver->SendCompoundPacket();
-  rtcp_transceiver->Stop(rtc::NewClosure([&] {
+  rtcp_transceiver->Stop([&] {
     EXPECT_CALL(outgoing_transport, SendRtcp).Times(0);
     done.Set();
-  }));
+  });
   rtcp_transceiver = nullptr;
   EXPECT_TRUE(done.Wait(kTimeoutMs));
 }
