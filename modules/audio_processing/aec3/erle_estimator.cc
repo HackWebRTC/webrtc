@@ -36,15 +36,15 @@ void ErleEstimator::Reset(bool delay_change) {
   }
 }
 
-void ErleEstimator::Update(rtc::ArrayView<const float> render_spectrum,
+void ErleEstimator::Update(rtc::ArrayView<const float> reverb_render_spectrum,
                            rtc::ArrayView<const float> capture_spectrum,
                            rtc::ArrayView<const float> subtractor_spectrum,
                            bool converged_filter,
                            bool onset_detection) {
-  RTC_DCHECK_EQ(kFftLengthBy2Plus1, render_spectrum.size());
+  RTC_DCHECK_EQ(kFftLengthBy2Plus1, reverb_render_spectrum.size());
   RTC_DCHECK_EQ(kFftLengthBy2Plus1, capture_spectrum.size());
   RTC_DCHECK_EQ(kFftLengthBy2Plus1, subtractor_spectrum.size());
-  const auto& X2 = render_spectrum;
+  const auto& X2_reverb = reverb_render_spectrum;
   const auto& Y2 = capture_spectrum;
   const auto& E2 = subtractor_spectrum;
 
@@ -52,8 +52,9 @@ void ErleEstimator::Update(rtc::ArrayView<const float> render_spectrum,
     return;
   }
 
-  subband_erle_estimator_.Update(X2, Y2, E2, converged_filter, onset_detection);
-  fullband_erle_estimator_.Update(X2, Y2, E2, converged_filter);
+  subband_erle_estimator_.Update(X2_reverb, Y2, E2, converged_filter,
+                                 onset_detection);
+  fullband_erle_estimator_.Update(X2_reverb, Y2, E2, converged_filter);
 }
 
 void ErleEstimator::Dump(

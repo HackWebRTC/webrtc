@@ -39,7 +39,7 @@ class ResidualEchoEstimator {
                 std::array<float, kFftLengthBy2Plus1>* R2);
 
   // Returns the reverberant power spectrum contributions to the echo residual.
-  const std::array<float, kFftLengthBy2Plus1>& GetReverbPowerSpectrum() const {
+  rtc::ArrayView<const float> GetReverbPowerSpectrum() const {
     if (echo_reverb_) {
       return echo_reverb_->GetPowerSpectrum();
     } else {
@@ -65,7 +65,6 @@ class ResidualEchoEstimator {
                          const std::array<float, kFftLengthBy2Plus1>& X2,
                          const std::array<float, kFftLengthBy2Plus1>& Y2,
                          std::array<float, kFftLengthBy2Plus1>* R2);
-
 
   // Estimates the echo generating signal power as gated maximal power over a
   // time window.

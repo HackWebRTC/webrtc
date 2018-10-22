@@ -41,6 +41,10 @@ bool EnableLegacySaturationBehavior() {
 bool UseSuppressionGainLimiter() {
   return field_trial::IsEnabled("WebRTC-Aec3GainLimiterDeactivationKillSwitch");
 }
+bool EnableErleUpdatesDuringReverb() {
+  return !field_trial::IsEnabled(
+      "WebRTC-Aec3EnableErleUpdatesDuringReverbKillSwitch");
+}
 
 constexpr size_t kBlocksSinceConvergencedFilterInit = 10000;
 constexpr size_t kBlocksSinceConsistentEstimateInit = 10000;
@@ -77,6 +81,7 @@ AecState::AecState(const EchoCanceller3Config& config)
       config_(config),
       use_legacy_saturation_behavior_(EnableLegacySaturationBehavior()),
       enable_erle_resets_at_gain_changes_(EnableErleResetsAtGainChanges()),
+      enable_erle_updates_during_reverb_(EnableErleUpdatesDuringReverb()),
       use_legacy_filter_quality_(UseLegacyFilterQualityState()),
       use_suppressor_gain_limiter_(UseSuppressionGainLimiter()),
       initial_state_(config_),
@@ -182,22 +187,33 @@ void AecState::Update(
     }
   }
 
+  std::array<float, kFftLengthBy2Plus1> X2_reverb;
+  render_reverb_.Apply(
+      render_buffer.GetSpectrumBuffer(), delay_state_.DirectPathFilterDelay(),
+      config_.ep_strength.reverb_based_on_render ? ReverbDecay() : 0.f,
+      X2_reverb);
+
   if (config_.echo_audibility.use_stationary_properties) {
     // Update the echo audibility evaluator.
-    echo_audibility_.Update(
-        render_buffer, delay_state_.DirectPathFilterDelay(),
-        delay_state_.ExternalDelayReported(),
-        config_.ep_strength.reverb_based_on_render ? ReverbDecay() : 0.f);
+    echo_audibility_.Update(render_buffer,
+                            render_reverb_.GetReverbContributionPowerSpectrum(),
+                            delay_state_.DirectPathFilterDelay(),
+                            delay_state_.ExternalDelayReported());
   }
 
   // Update the ERL and ERLE measures.
   if (initial_state_.TransitionTriggered()) {
     erle_estimator_.Reset(false);
   }
+
   const auto& X2 = render_buffer.Spectrum(delay_state_.DirectPathFilterDelay());
-  erle_estimator_.Update(X2, Y2, E2_main,
+  const auto& X2_input_erle =
+      enable_erle_updates_during_reverb_ ? X2_reverb : X2;
+
+  erle_estimator_.Update(X2_input_erle, Y2, E2_main,
                          subtractor_output_analyzer_.ConvergedFilter(),
                          config_.erle.onset_detection);
+
   erl_estimator_.Update(subtractor_output_analyzer_.ConvergedFilter(), X2, Y2);
 
   // Detect and flag echo saturation.

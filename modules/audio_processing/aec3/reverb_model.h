@@ -50,9 +50,7 @@ class ReverbModel {
       float reverb_decay);
 
   // Returns the current power spectrum reverberation contributions.
-  const std::array<float, kFftLengthBy2Plus1>& GetPowerSpectrum() const {
-    return reverb_;
-  }
+  rtc::ArrayView<const float> GetPowerSpectrum() const { return reverb_; }
 
  private:
   // Updates the reverberation contributions.
