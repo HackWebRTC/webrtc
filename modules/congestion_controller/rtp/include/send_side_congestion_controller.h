@@ -191,6 +191,7 @@ class SendSideCongestionController
   NetworkControllerConfig initial_config_ RTC_GUARDED_BY(task_queue_);
   StreamsConfig streams_config_ RTC_GUARDED_BY(task_queue_);
 
+  const bool reset_feedback_on_route_change_;
   const bool send_side_bwe_with_overhead_;
   // Transport overhead is written by OnNetworkRouteChanged and read by
   // AddPacket.

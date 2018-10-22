@@ -261,6 +261,16 @@ std::vector<ProbeClusterConfig> ProbeController::RequestProbe(
   return std::vector<ProbeClusterConfig>();
 }
 
+std::vector<ProbeClusterConfig> ProbeController::InitiateCapacityProbing(
+    int64_t bitrate_bps,
+    int64_t at_time_ms) {
+  if (state_ != State::kWaitingForProbingResult) {
+    RTC_DCHECK(network_available_);
+    return InitiateProbing(at_time_ms, {2 * bitrate_bps}, true);
+  }
+  return std::vector<ProbeClusterConfig>();
+}
+
 void ProbeController::Reset(int64_t at_time_ms) {
   network_available_ = true;
   state_ = State::kInit;

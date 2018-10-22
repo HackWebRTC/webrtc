@@ -64,6 +64,7 @@ class GoogCcNetworkController : public NetworkControllerInterface {
 
   RtcEventLog* const event_log_;
   const bool packet_feedback_only_;
+  const bool safe_reset_on_route_change_;
 
   const std::unique_ptr<ProbeController> probe_controller_;
   const std::unique_ptr<CongestionWindowPushbackController>

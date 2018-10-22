@@ -122,6 +122,8 @@ SendSideCongestionController::SendSideCongestionController(
       process_interval_(controller_factory_fallback_->GetProcessInterval()),
       last_report_block_time_(Timestamp::ms(clock_->TimeInMilliseconds())),
       observer_(nullptr),
+      reset_feedback_on_route_change_(
+          !field_trial::IsEnabled("WebRTC-Bwe-NoFeedbackReset")),
       send_side_bwe_with_overhead_(
           webrtc::field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")),
       transport_overhead_bytes_per_packet_(0),
@@ -255,8 +257,9 @@ void SendSideCongestionController::OnNetworkRouteChanged(
     int start_bitrate_bps,
     int min_bitrate_bps,
     int max_bitrate_bps) {
-  transport_feedback_adapter_.SetNetworkIds(network_route.local_network_id,
-                                            network_route.remote_network_id);
+  if (reset_feedback_on_route_change_)
+    transport_feedback_adapter_.SetNetworkIds(network_route.local_network_id,
+                                              network_route.remote_network_id);
   transport_overhead_bytes_per_packet_ = network_route.packet_overhead;
 
   NetworkRouteChange msg;
