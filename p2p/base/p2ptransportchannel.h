@@ -42,6 +42,7 @@
 #include "rtc_base/asyncpacketsocket.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/strings/string_builder.h"
+#include "rtc_base/system/rtc_export.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace webrtc {
@@ -75,7 +76,7 @@ class RemoteCandidate : public Candidate {
 
 // P2PTransportChannel manages the candidates and connection process to keep
 // two P2P clients connected to each other.
-class P2PTransportChannel : public IceTransportInternal {
+class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
  public:
   // For testing only.
   // TODO(zstein): Remove once AsyncResolverFactory is required.

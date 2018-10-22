@@ -16,11 +16,12 @@
 
 #include "absl/strings/string_view.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
 // SDP specification for a single audio codec.
-struct SdpAudioFormat {
+struct RTC_EXPORT SdpAudioFormat {
   using Parameters = std::map<std::string, std::string>;
 
   SdpAudioFormat(const SdpAudioFormat&);

@@ -17,10 +17,11 @@
 #include "api/video/color_space.h"
 #include "api/video/video_frame_buffer.h"
 #include "api/video/video_rotation.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
-class VideoFrame {
+class RTC_EXPORT VideoFrame {
  public:
   // Preferred way of building VideoFrame objects.
   class Builder {

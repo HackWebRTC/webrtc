@@ -17,6 +17,7 @@
 
 #include "absl/types/optional.h"
 #include "api/mediatypes.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
@@ -616,7 +617,7 @@ struct RtcpParameters final {
   bool operator!=(const RtcpParameters& o) const { return !(*this == o); }
 };
 
-struct RtpParameters {
+struct RTC_EXPORT RtpParameters {
   RtpParameters();
   RtpParameters(const RtpParameters&);
   ~RtpParameters();

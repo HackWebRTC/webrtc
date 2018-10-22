@@ -16,12 +16,13 @@
 #include "api/video/video_rotation.h"
 #include "api/video/video_timing.h"
 #include "common_types.h"  // NOLINT(build/include)
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
 // TODO(bug.webrtc.org/9378): This is a legacy api class, which is slowly being
 // cleaned up. Direct use of its members is strongly discouraged.
-class EncodedImage {
+class RTC_EXPORT EncodedImage {
  public:
   static const size_t kBufferPaddingBytesH264;
 

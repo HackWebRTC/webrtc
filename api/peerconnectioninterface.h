@@ -294,7 +294,7 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   // organization of the implementation, which isn't stable. So we
   // need getters and setters at least for fields which applications
   // are interested in.
-  struct RTCConfiguration {
+  struct RTC_EXPORT RTCConfiguration {
     // This struct is subject to reorganization, both for naming
     // consistency, and to group settings to match where they are used
     // in the implementation. To do that, we need getter and setter

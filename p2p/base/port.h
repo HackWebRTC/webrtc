@@ -37,6 +37,7 @@
 #include "rtc_base/proxyinfo.h"
 #include "rtc_base/ratetracker.h"
 #include "rtc_base/socketaddress.h"
+#include "rtc_base/system/rtc_export.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/weak_ptr.h"
@@ -49,7 +50,7 @@ class ConnectionRequest;
 extern const char LOCAL_PORT_TYPE[];
 extern const char STUN_PORT_TYPE[];
 extern const char PRFLX_PORT_TYPE[];
-extern const char RELAY_PORT_TYPE[];
+RTC_EXPORT extern const char RELAY_PORT_TYPE[];
 
 // RFC 6544, TCP candidate encoding rules.
 extern const int DISCARD_PORT;

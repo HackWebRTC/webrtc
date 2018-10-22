@@ -207,7 +207,8 @@ std::unique_ptr<SessionDescriptionInterface> CreateSessionDescription(
     std::unique_ptr<cricket::SessionDescription> description);
 
 // CreateOffer and CreateAnswer callback interface.
-class CreateSessionDescriptionObserver : public rtc::RefCountInterface {
+class RTC_EXPORT CreateSessionDescriptionObserver
+    : public rtc::RefCountInterface {
  public:
   // This callback transfers the ownership of the |desc|.
   // TODO(deadbeef): Make this take an std::unique_ptr<> to avoid confusion
@@ -228,7 +229,7 @@ class CreateSessionDescriptionObserver : public rtc::RefCountInterface {
 };
 
 // SetLocalDescription and SetRemoteDescription callback interface.
-class SetSessionDescriptionObserver : public rtc::RefCountInterface {
+class RTC_EXPORT SetSessionDescriptionObserver : public rtc::RefCountInterface {
  public:
   virtual void OnSuccess() = 0;
   // See description in CreateSessionDescriptionObserver for OnFailure.
