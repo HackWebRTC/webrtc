@@ -208,6 +208,8 @@ class RtpVideoStreamReceiver : public RecoveredPacketReceiver,
 
   // E2EE Video Frame Decryptor (Optional)
   rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor_;
+  // Set to true on the first successsfully decrypted frame.
+  bool has_received_decrypted_frame_ = false;
 };
 
 }  // namespace webrtc

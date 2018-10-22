@@ -378,6 +378,16 @@ int32_t RtpVideoStreamReceiver::ResendPackets(const uint16_t* sequence_numbers,
 
 void RtpVideoStreamReceiver::OnReceivedFrame(
     std::unique_ptr<video_coding::RtpFrameObject> frame) {
+  // Request a key frame as soon as possible.
+  bool key_frame_requested = false;
+  if (!has_received_frame_) {
+    has_received_frame_ = true;
+    if (frame->FrameType() != kVideoFrameKey) {
+      key_frame_requested = true;
+      keyframe_request_sender_->RequestKeyFrame();
+    }
+  }
+
   // Optionally attempt to decrypt the raw video frame if it was provided.
   if (frame_decryptor_ != nullptr) {
     // When using encryption we expect the frame to have the generic descriptor.
@@ -408,6 +418,14 @@ void RtpVideoStreamReceiver::OnReceivedFrame(
             inline_decrypted_bitstream, &bytes_written) != 0) {
       return;
     }
+
+    if (!has_received_decrypted_frame_ && !key_frame_requested) {
+      has_received_decrypted_frame_ = true;
+      if (frame->FrameType() != kVideoFrameKey) {
+        keyframe_request_sender_->RequestKeyFrame();
+      }
+    }
+
     RTC_CHECK(bytes_written <= max_plaintext_byte_size);
     // Update the frame to contain just the written bytes.
     frame->SetLength(bytes_written);
@@ -415,12 +433,6 @@ void RtpVideoStreamReceiver::OnReceivedFrame(
     RTC_LOG(LS_WARNING) << "Frame decryption required but not attached to this "
                            "stream. Dropping  frame.";
     return;
-  }
-
-  if (!has_received_frame_) {
-    has_received_frame_ = true;
-    if (frame->FrameType() != kVideoFrameKey)
-      keyframe_request_sender_->RequestKeyFrame();
   }
 
   reference_finder_->ManageFrame(std::move(frame));
