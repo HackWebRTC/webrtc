@@ -37,6 +37,8 @@ PacketResult NetworkPacketFeedbackFromRtpPacketFeedback(
     feedback.sent_packet->send_time = Timestamp::ms(pf.send_time_ms);
     feedback.sent_packet->size = DataSize::bytes(pf.payload_size);
     feedback.sent_packet->pacing_info = pf.pacing_info;
+    feedback.sent_packet->prior_unacked_data =
+        DataSize::bytes(pf.unacknowledged_data);
   }
   return feedback;
 }
