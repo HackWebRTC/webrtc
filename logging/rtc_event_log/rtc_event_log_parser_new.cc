@@ -28,6 +28,7 @@
 #include "modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
 #include "modules/congestion_controller/rtp/transport_feedback_adapter.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
+#include "modules/rtp_rtcp/include/rtp_cvo.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
@@ -39,6 +40,7 @@
 namespace webrtc {
 
 namespace {
+// Conversion functions for legacy wire format.
 RtcpMode GetRuntimeRtcpMode(rtclog::VideoReceiveConfig::RtcpMode rtcp_mode) {
   switch (rtcp_mode) {
     case rtclog::VideoReceiveConfig::RTCP_COMPOUND:
@@ -212,6 +214,175 @@ IceCandidatePairEventType GetRuntimeIceCandidatePairEventType(
   return IceCandidatePairEventType::kCheckSent;
 }
 
+// Conversion functions for version 2 of the wire format.
+BandwidthUsage GetRuntimeDetectorState(
+    rtclog2::DelayBasedBweUpdates::DetectorState detector_state) {
+  switch (detector_state) {
+    case rtclog2::DelayBasedBweUpdates::BWE_NORMAL:
+      return BandwidthUsage::kBwNormal;
+    case rtclog2::DelayBasedBweUpdates::BWE_UNDERUSING:
+      return BandwidthUsage::kBwUnderusing;
+    case rtclog2::DelayBasedBweUpdates::BWE_OVERUSING:
+      return BandwidthUsage::kBwOverusing;
+    case rtclog2::DelayBasedBweUpdates::BWE_UNKNOWN_STATE:
+      break;
+  }
+  RTC_NOTREACHED();
+  return BandwidthUsage::kBwNormal;
+}
+
+ProbeFailureReason GetRuntimeProbeFailureReason(
+    rtclog2::BweProbeResultFailure::FailureReason failure) {
+  switch (failure) {
+    case rtclog2::BweProbeResultFailure::INVALID_SEND_RECEIVE_INTERVAL:
+      return ProbeFailureReason::kInvalidSendReceiveInterval;
+    case rtclog2::BweProbeResultFailure::INVALID_SEND_RECEIVE_RATIO:
+      return ProbeFailureReason::kInvalidSendReceiveRatio;
+    case rtclog2::BweProbeResultFailure::TIMEOUT:
+      return ProbeFailureReason::kTimeout;
+    case rtclog2::BweProbeResultFailure::UNKNOWN:
+      break;
+  }
+  RTC_NOTREACHED();
+  return ProbeFailureReason::kTimeout;
+}
+
+IceCandidatePairConfigType GetRuntimeIceCandidatePairConfigType(
+    rtclog2::IceCandidatePairConfig::IceCandidatePairConfigType type) {
+  switch (type) {
+    case rtclog2::IceCandidatePairConfig::ADDED:
+      return IceCandidatePairConfigType::kAdded;
+    case rtclog2::IceCandidatePairConfig::UPDATED:
+      return IceCandidatePairConfigType::kUpdated;
+    case rtclog2::IceCandidatePairConfig::DESTROYED:
+      return IceCandidatePairConfigType::kDestroyed;
+    case rtclog2::IceCandidatePairConfig::SELECTED:
+      return IceCandidatePairConfigType::kSelected;
+    case rtclog2::IceCandidatePairConfig::UNKNOWN_CONFIG_TYPE:
+      break;
+  }
+  RTC_NOTREACHED();
+  return IceCandidatePairConfigType::kAdded;
+}
+
+IceCandidateType GetRuntimeIceCandidateType(
+    rtclog2::IceCandidatePairConfig::IceCandidateType type) {
+  switch (type) {
+    case rtclog2::IceCandidatePairConfig::LOCAL:
+      return IceCandidateType::kLocal;
+    case rtclog2::IceCandidatePairConfig::STUN:
+      return IceCandidateType::kStun;
+    case rtclog2::IceCandidatePairConfig::PRFLX:
+      return IceCandidateType::kPrflx;
+    case rtclog2::IceCandidatePairConfig::RELAY:
+      return IceCandidateType::kRelay;
+    case rtclog2::IceCandidatePairConfig::UNKNOWN_CANDIDATE_TYPE:
+      return IceCandidateType::kUnknown;
+  }
+  RTC_NOTREACHED();
+  return IceCandidateType::kUnknown;
+}
+
+IceCandidatePairProtocol GetRuntimeIceCandidatePairProtocol(
+    rtclog2::IceCandidatePairConfig::Protocol protocol) {
+  switch (protocol) {
+    case rtclog2::IceCandidatePairConfig::UDP:
+      return IceCandidatePairProtocol::kUdp;
+    case rtclog2::IceCandidatePairConfig::TCP:
+      return IceCandidatePairProtocol::kTcp;
+    case rtclog2::IceCandidatePairConfig::SSLTCP:
+      return IceCandidatePairProtocol::kSsltcp;
+    case rtclog2::IceCandidatePairConfig::TLS:
+      return IceCandidatePairProtocol::kTls;
+    case rtclog2::IceCandidatePairConfig::UNKNOWN_PROTOCOL:
+      return IceCandidatePairProtocol::kUnknown;
+  }
+  RTC_NOTREACHED();
+  return IceCandidatePairProtocol::kUnknown;
+}
+
+IceCandidatePairAddressFamily GetRuntimeIceCandidatePairAddressFamily(
+    rtclog2::IceCandidatePairConfig::AddressFamily address_family) {
+  switch (address_family) {
+    case rtclog2::IceCandidatePairConfig::IPV4:
+      return IceCandidatePairAddressFamily::kIpv4;
+    case rtclog2::IceCandidatePairConfig::IPV6:
+      return IceCandidatePairAddressFamily::kIpv6;
+    case rtclog2::IceCandidatePairConfig::UNKNOWN_ADDRESS_FAMILY:
+      return IceCandidatePairAddressFamily::kUnknown;
+  }
+  RTC_NOTREACHED();
+  return IceCandidatePairAddressFamily::kUnknown;
+}
+
+IceCandidateNetworkType GetRuntimeIceCandidateNetworkType(
+    rtclog2::IceCandidatePairConfig::NetworkType network_type) {
+  switch (network_type) {
+    case rtclog2::IceCandidatePairConfig::ETHERNET:
+      return IceCandidateNetworkType::kEthernet;
+    case rtclog2::IceCandidatePairConfig::LOOPBACK:
+      return IceCandidateNetworkType::kLoopback;
+    case rtclog2::IceCandidatePairConfig::WIFI:
+      return IceCandidateNetworkType::kWifi;
+    case rtclog2::IceCandidatePairConfig::VPN:
+      return IceCandidateNetworkType::kVpn;
+    case rtclog2::IceCandidatePairConfig::CELLULAR:
+      return IceCandidateNetworkType::kCellular;
+    case rtclog2::IceCandidatePairConfig::UNKNOWN_NETWORK_TYPE:
+      return IceCandidateNetworkType::kUnknown;
+  }
+  RTC_NOTREACHED();
+  return IceCandidateNetworkType::kUnknown;
+}
+
+IceCandidatePairEventType GetRuntimeIceCandidatePairEventType(
+    rtclog2::IceCandidatePairEvent::IceCandidatePairEventType type) {
+  switch (type) {
+    case rtclog2::IceCandidatePairEvent::CHECK_SENT:
+      return IceCandidatePairEventType::kCheckSent;
+    case rtclog2::IceCandidatePairEvent::CHECK_RECEIVED:
+      return IceCandidatePairEventType::kCheckReceived;
+    case rtclog2::IceCandidatePairEvent::CHECK_RESPONSE_SENT:
+      return IceCandidatePairEventType::kCheckResponseSent;
+    case rtclog2::IceCandidatePairEvent::CHECK_RESPONSE_RECEIVED:
+      return IceCandidatePairEventType::kCheckResponseReceived;
+    case rtclog2::IceCandidatePairEvent::UNKNOWN_CHECK_TYPE:
+      break;
+  }
+  RTC_NOTREACHED();
+  return IceCandidatePairEventType::kCheckSent;
+}
+
+std::vector<RtpExtension> GetRuntimeRtpHeaderExtensionConfig(
+    const rtclog2::RtpHeaderExtensionConfig& proto_header_extensions) {
+  std::vector<RtpExtension> rtp_extensions;
+  if (proto_header_extensions.has_transmission_time_offset_id()) {
+    rtp_extensions.emplace_back(
+        RtpExtension::kTimestampOffsetUri,
+        proto_header_extensions.transmission_time_offset_id());
+  }
+  if (proto_header_extensions.has_absolute_send_time_id()) {
+    rtp_extensions.emplace_back(
+        RtpExtension::kAbsSendTimeUri,
+        proto_header_extensions.absolute_send_time_id());
+  }
+  if (proto_header_extensions.has_transport_sequence_number_id()) {
+    rtp_extensions.emplace_back(
+        RtpExtension::kTransportSequenceNumberUri,
+        proto_header_extensions.transport_sequence_number_id());
+  }
+  if (proto_header_extensions.has_audio_level_id()) {
+    rtp_extensions.emplace_back(RtpExtension::kAudioLevelUri,
+                                proto_header_extensions.audio_level_id());
+  }
+  if (proto_header_extensions.has_video_rotation_id()) {
+    rtp_extensions.emplace_back(RtpExtension::kVideoRotationUri,
+                                proto_header_extensions.video_rotation_id());
+  }
+  return rtp_extensions;
+}
+// End of conversion functions.
+
 // Reads a VarInt from |stream| and returns it. Also writes the read bytes to
 // |buffer| starting |bytes_written| bytes into the buffer. |bytes_written| is
 // incremented for each written byte.
@@ -277,9 +448,15 @@ LoggedRtcpPacket::LoggedRtcpPacket(uint64_t timestamp_us,
                                    const uint8_t* packet,
                                    size_t total_length)
     : timestamp_us(timestamp_us), raw_data(packet, packet + total_length) {}
+LoggedRtcpPacket::LoggedRtcpPacket(uint64_t timestamp_us,
+                                   const std::string& packet)
+    : timestamp_us(timestamp_us), raw_data(packet.size()) {
+  memcpy(raw_data.data(), packet.data(), packet.size());
+}
 LoggedRtcpPacket::LoggedRtcpPacket(const LoggedRtcpPacket& rhs) = default;
 LoggedRtcpPacket::~LoggedRtcpPacket() = default;
 
+LoggedVideoSendConfig::LoggedVideoSendConfig() = default;
 LoggedVideoSendConfig::LoggedVideoSendConfig(
     int64_t timestamp_us,
     const std::vector<rtclog::StreamConfig>& configs)
@@ -478,9 +655,8 @@ bool ParsedRtcEventLogNew::ParseStream(
 
 bool ParsedRtcEventLogNew::ParseStreamInternal(
     std::istream& stream) {  // no-presubmit-check TODO(webrtc:8982)
-  const size_t kMaxEventSize = (1u << 16) - 1;
-  const size_t kMaxVarintSize = 10;
-  std::vector<char> buffer(kMaxEventSize + 2 * kMaxVarintSize);
+  constexpr uint64_t kMaxEventSize = 10000000;  // Sanity check.
+  std::vector<char> buffer(0xFFFF);
 
   RTC_DCHECK(stream.good());
 
@@ -491,10 +667,12 @@ bool ParsedRtcEventLogNew::ParseStreamInternal(
       break;
     }
 
-    // Read the next message tag. The tag number is defined as
-    // (fieldnumber << 3) | wire_type. In our case, the field number is
-    // supposed to be 1 and the wire type for a length-delimited field is 2.
-    const uint64_t kExpectedV1Tag = (1 << 3) | 2;
+    // Read the next message tag. Protobuf defines the message tag as
+    // (field_number << 3) | wire_type. In the legacy encoding, the field number
+    // is supposed to be 1 and the wire type for a length-delimited field is 2.
+    // In the new encoding we still expect the wire type to be 2, but the field
+    // number will be greater than 1.
+    constexpr uint64_t kExpectedV1Tag = (1 << 3) | 2;
     size_t bytes_written = 0;
     absl::optional<uint64_t> tag =
         ParseVarInt(stream, buffer.data(), &bytes_written);
@@ -502,9 +680,13 @@ bool ParsedRtcEventLogNew::ParseStreamInternal(
       RTC_LOG(LS_WARNING)
           << "Missing field tag from beginning of protobuf event.";
       return false;
-    } else if (*tag != kExpectedV1Tag) {
-      RTC_LOG(LS_WARNING)
-          << "Unexpected field tag at beginning of protobuf event.";
+    }
+    constexpr uint64_t kWireTypeMask = 0x07;
+    const uint64_t wire_type = *tag & kWireTypeMask;
+    if (wire_type != 2) {
+      RTC_LOG(LS_WARNING) << "Expected field tag with wire type 2 (length "
+                             "delimited message). Found wire type "
+                          << wire_type;
       return false;
     }
 
@@ -520,6 +702,8 @@ bool ParsedRtcEventLogNew::ParseStreamInternal(
     }
 
     // Read the next protobuf event to a temporary char buffer.
+    if (buffer.size() < bytes_written + *message_length)
+      buffer.resize(bytes_written + *message_length);
     stream.read(buffer.data() + bytes_written, *message_length);
     if (stream.gcount() != static_cast<int>(*message_length)) {
       RTC_LOG(LS_WARNING) << "Failed to read protobuf message from file.";
@@ -527,21 +711,32 @@ bool ParsedRtcEventLogNew::ParseStreamInternal(
     }
     size_t buffer_size = bytes_written + *message_length;
 
-    // Parse the protobuf event from the buffer.
-    rtclog::EventStream event_stream;
-    if (!event_stream.ParseFromArray(buffer.data(), buffer_size)) {
-      RTC_LOG(LS_WARNING) << "Failed to parse protobuf message.";
-      return false;
-    }
+    if (*tag == kExpectedV1Tag) {
+      // Parse the protobuf event from the buffer.
+      rtclog::EventStream event_stream;
+      if (!event_stream.ParseFromArray(buffer.data(), buffer_size)) {
+        RTC_LOG(LS_WARNING)
+            << "Failed to parse legacy-format protobuf message.";
+        return false;
+      }
 
-    RTC_CHECK_EQ(event_stream.stream_size(), 1);
-    StoreParsedEvent(event_stream.stream(0));
-    events_.push_back(event_stream.stream(0));
+      RTC_CHECK_EQ(event_stream.stream_size(), 1);
+      StoreParsedLegacyEvent(event_stream.stream(0));
+      events_.push_back(event_stream.stream(0));
+    } else {
+      // Parse the protobuf event from the buffer.
+      rtclog2::EventStream event_stream;
+      if (!event_stream.ParseFromArray(buffer.data(), buffer_size)) {
+        RTC_LOG(LS_WARNING) << "Failed to parse new-format protobuf message.";
+        return false;
+      }
+      StoreParsedNewFormatEvent(event_stream);
+    }
   }
   return true;
 }
 
-void ParsedRtcEventLogNew::StoreParsedEvent(const rtclog::Event& event) {
+void ParsedRtcEventLogNew::StoreParsedLegacyEvent(const rtclog::Event& event) {
   if (event.type() != rtclog::Event::VIDEO_RECEIVER_CONFIG_EVENT &&
       event.type() != rtclog::Event::VIDEO_SENDER_CONFIG_EVENT &&
       event.type() != rtclog::Event::AUDIO_RECEIVER_CONFIG_EVENT &&
@@ -1478,6 +1673,541 @@ const std::vector<MatchedSendArrivalTimes> GetNetworkTrace(
     time_us = std::min(NextRtpTime(), NextRtcpTime());
   }
   return rtp_rtcp_matched;
+}
+
+// Helper functions for new format starts here
+void ParsedRtcEventLogNew::StoreParsedNewFormatEvent(
+    const rtclog2::EventStream& stream) {
+  RTC_DCHECK_EQ(stream.stream_size(), 0);
+
+  RTC_DCHECK_LE(stream.incoming_rtp_packets_size(), 1);
+  if (stream.incoming_rtp_packets_size() == 1) {
+    StoreIncomingRtpPackets(stream.incoming_rtp_packets(0));
+  }
+
+  RTC_DCHECK_LE(stream.outgoing_rtp_packets_size(), 1);
+  if (stream.outgoing_rtp_packets_size() == 1) {
+    StoreOutgoingRtpPacket(stream.outgoing_rtp_packets(0));
+  }
+
+  RTC_DCHECK_LE(stream.incoming_rtcp_packets_size(), 1);
+  if (stream.incoming_rtcp_packets_size() == 1) {
+    StoreIncomingRtcpPackets(stream.incoming_rtcp_packets(0));
+  }
+
+  RTC_DCHECK_LE(stream.outgoing_rtcp_packets_size(), 1);
+  if (stream.outgoing_rtcp_packets_size() == 1) {
+    StoreOutgoingRtcpPackets(stream.outgoing_rtcp_packets(0));
+  }
+
+  RTC_DCHECK_LE(stream.audio_playout_events_size(), 1);
+  if (stream.audio_playout_events_size() == 1) {
+    StoreAudioPlayoutEvent(stream.audio_playout_events(0));
+  }
+
+  RTC_DCHECK_LE(stream.begin_log_events_size(), 1);
+  if (stream.begin_log_events_size() == 1) {
+    StoreStartEvent(stream.begin_log_events(0));
+  }
+
+  RTC_DCHECK_LE(stream.end_log_events_size(), 1);
+  if (stream.end_log_events_size() == 1) {
+    StoreStopEvent(stream.end_log_events(0));
+  }
+
+  RTC_DCHECK_LE(stream.loss_based_bwe_updates_size(), 1);
+  if (stream.loss_based_bwe_updates_size() == 1) {
+    StoreBweLossBasedUpdate(stream.loss_based_bwe_updates(0));
+  }
+
+  RTC_DCHECK_LE(stream.delay_based_bwe_updates_size(), 1);
+  if (stream.delay_based_bwe_updates_size() == 1) {
+    StoreBweDelayBasedUpdate(stream.delay_based_bwe_updates(0));
+  }
+
+  RTC_DCHECK_LE(stream.audio_network_adaptations_size(), 1);
+  if (stream.audio_network_adaptations_size() == 1) {
+    StoreAudioNetworkAdaptationEvent(stream.audio_network_adaptations(0));
+  }
+
+  RTC_DCHECK_LE(stream.probe_clusters_size(), 1);
+  if (stream.probe_clusters_size() == 1) {
+    StoreBweProbeClusterCreated(stream.probe_clusters(0));
+  }
+
+  RTC_DCHECK_LE(stream.probe_success_size(), 1);
+  if (stream.probe_success_size() == 1) {
+    StoreBweProbeSuccessEvent(stream.probe_success(0));
+  }
+
+  RTC_DCHECK_LE(stream.probe_failure_size(), 1);
+  if (stream.probe_failure_size() == 1) {
+    StoreBweProbeFailureEvent(stream.probe_failure(0));
+  }
+
+  RTC_DCHECK_LE(stream.alr_states_size(), 1);
+  if (stream.alr_states_size() == 1) {
+    StoreAlrStateEvent(stream.alr_states(0));
+  }
+
+  RTC_DCHECK_LE(stream.ice_candidate_configs_size(), 1);
+  if (stream.ice_candidate_configs_size() == 1) {
+    StoreIceCandidatePairConfig(stream.ice_candidate_configs(0));
+  }
+
+  RTC_DCHECK_LE(stream.ice_candidate_events_size(), 1);
+  if (stream.ice_candidate_events_size() == 1) {
+    StoreIceCandidateEvent(stream.ice_candidate_events(0));
+  }
+
+  RTC_DCHECK_LE(stream.audio_recv_stream_configs_size(), 1);
+  if (stream.audio_recv_stream_configs_size() == 1) {
+    StoreAudioRecvConfig(stream.audio_recv_stream_configs(0));
+  }
+
+  RTC_DCHECK_LE(stream.audio_send_stream_configs_size(), 1);
+  if (stream.audio_send_stream_configs_size() == 1) {
+    StoreAudioSendConfig(stream.audio_send_stream_configs(0));
+  }
+
+  RTC_DCHECK_LE(stream.video_recv_stream_configs_size(), 1);
+  if (stream.video_recv_stream_configs_size() == 1) {
+    StoreVideoRecvConfig(stream.video_recv_stream_configs(0));
+  }
+
+  RTC_DCHECK_LE(stream.video_send_stream_configs_size(), 1);
+  if (stream.video_send_stream_configs_size() == 1) {
+    StoreVideoSendConfig(stream.video_send_stream_configs(0));
+  }
+}
+
+void ParsedRtcEventLogNew::StoreAlrStateEvent(const rtclog2::AlrState& proto) {
+  RTC_CHECK(proto.has_timestamp_ms());
+  RTC_CHECK(proto.has_in_alr());
+  LoggedAlrStateEvent alr_event;
+  alr_event.timestamp_us = proto.timestamp_ms() * 1000;
+  alr_event.in_alr = proto.in_alr();
+
+  alr_state_events_.push_back(alr_event);
+  // TODO(terelius): Should we delta encode this event type?
+}
+
+void ParsedRtcEventLogNew::StoreAudioPlayoutEvent(
+    const rtclog2::AudioPlayoutEvents& proto) {
+  RTC_CHECK(proto.has_timestamp_ms());
+  RTC_CHECK(proto.has_local_ssrc());
+  LoggedAudioPlayoutEvent audio_playout_event;
+  audio_playout_event.timestamp_us = proto.timestamp_ms() * 1000;
+  audio_playout_event.ssrc = proto.local_ssrc();
+
+  audio_playout_events_[audio_playout_event.ssrc].push_back(
+      audio_playout_event);
+  // TODO(terelius): Parse deltas.
+}
+
+void ParsedRtcEventLogNew::StoreIncomingRtpPackets(
+    const rtclog2::IncomingRtpPackets& proto) {
+  RTC_CHECK(proto.has_timestamp_ms());
+  int64_t timestamp_ms = proto.timestamp_ms();
+
+  RTC_CHECK(proto.has_header_size());
+  size_t header_length = proto.header_size();
+
+  RTC_CHECK(proto.has_padding_size());
+  size_t padding_length = proto.padding_size();
+
+  RTC_CHECK(proto.has_payload_size());
+  size_t total_length = proto.payload_size() + header_length + padding_length;
+
+  RTPHeader header;
+  RTC_CHECK(proto.has_marker());
+  header.markerBit = proto.marker();
+  RTC_CHECK(proto.has_payload_type());
+  header.payloadType = proto.payload_type();
+  RTC_CHECK(proto.has_sequence_number());
+  header.sequenceNumber = proto.sequence_number();
+  RTC_CHECK(proto.has_rtp_timestamp());
+  header.timestamp = proto.rtp_timestamp();
+  RTC_CHECK(proto.has_ssrc());
+  header.ssrc = proto.ssrc();
+
+  header.numCSRCs = 0;  // TODO(terelius): Implement CSRC.
+  header.paddingLength = padding_length;
+  header.headerLength = header_length;
+  // TODO(terelius): Should we implement payload_type_frequency?
+
+  if (proto.has_transmission_time_offset()) {
+    header.extension.hasTransmissionTimeOffset = true;
+    header.extension.transmissionTimeOffset = proto.transmission_time_offset();
+  }
+  if (proto.has_absolute_send_time()) {
+    header.extension.hasAbsoluteSendTime = true;
+    header.extension.absoluteSendTime = proto.absolute_send_time();
+  }
+  if (proto.has_transport_sequence_number()) {
+    header.extension.hasTransportSequenceNumber = true;
+    header.extension.transportSequenceNumber =
+        proto.transport_sequence_number();
+  }
+  if (proto.has_audio_level()) {
+    header.extension.hasAudioLevel = true;
+    header.extension.voiceActivity = (proto.audio_level() >> 7) != 0;
+    header.extension.audioLevel = proto.audio_level() & 0x7Fu;
+  }
+  if (proto.has_video_rotation()) {
+    header.extension.hasVideoRotation = true;
+    header.extension.videoRotation =
+        ConvertCVOByteToVideoRotation(proto.video_rotation());
+  }
+
+  incoming_rtp_packets_map_[header.ssrc].push_back(LoggedRtpPacketIncoming(
+      timestamp_ms * 1000, header, header_length, total_length));
+  // TODO(terelius): Parse deltas.
+}
+
+void ParsedRtcEventLogNew::StoreOutgoingRtpPacket(
+    const rtclog2::OutgoingRtpPackets& proto) {
+  RTC_CHECK(proto.has_timestamp_ms());
+  int64_t timestamp_ms = proto.timestamp_ms();
+
+  RTC_CHECK(proto.has_header_size());
+  size_t header_length = proto.header_size();
+
+  RTC_CHECK(proto.has_padding_size());
+  size_t padding_length = proto.padding_size();
+
+  RTC_CHECK(proto.has_payload_size());
+  size_t total_length = proto.payload_size() + header_length + padding_length;
+
+  RTPHeader header;
+  RTC_CHECK(proto.has_marker());
+  header.markerBit = proto.marker();
+  RTC_CHECK(proto.has_payload_type());
+  header.payloadType = proto.payload_type();
+  RTC_CHECK(proto.has_sequence_number());
+  header.sequenceNumber = proto.sequence_number();
+  RTC_CHECK(proto.has_rtp_timestamp());
+  header.timestamp = proto.rtp_timestamp();
+  RTC_CHECK(proto.has_ssrc());
+  header.ssrc = proto.ssrc();
+
+  header.numCSRCs = 0;  // TODO(terelius): Implement CSRC.
+  header.paddingLength = padding_length;
+  header.headerLength = header_length;
+  // TODO(terelius): Should we implement payload_type_frequency?
+
+  if (proto.has_transmission_time_offset()) {
+    header.extension.hasTransmissionTimeOffset = true;
+    header.extension.transmissionTimeOffset = proto.transmission_time_offset();
+  }
+  if (proto.has_absolute_send_time()) {
+    header.extension.hasAbsoluteSendTime = true;
+    header.extension.absoluteSendTime = proto.absolute_send_time();
+  }
+  if (proto.has_transport_sequence_number()) {
+    header.extension.hasTransportSequenceNumber = true;
+    header.extension.transportSequenceNumber =
+        proto.transport_sequence_number();
+  }
+  if (proto.has_audio_level()) {
+    header.extension.hasAudioLevel = true;
+    header.extension.voiceActivity = (proto.audio_level() >> 7) != 0;
+    header.extension.audioLevel = proto.audio_level() & 0x7Fu;
+  }
+  if (proto.has_video_rotation()) {
+    header.extension.hasVideoRotation = true;
+    header.extension.videoRotation =
+        ConvertCVOByteToVideoRotation(proto.video_rotation());
+  }
+
+  outgoing_rtp_packets_map_[header.ssrc].push_back(LoggedRtpPacketOutgoing(
+      timestamp_ms * 1000, header, header_length, total_length));
+  // TODO(terelius): Parse deltas.
+}
+
+void ParsedRtcEventLogNew::StoreIncomingRtcpPackets(
+    const rtclog2::IncomingRtcpPackets& proto) {
+  RTC_CHECK(proto.has_timestamp_ms());
+  int64_t timestamp_ms = proto.timestamp_ms();
+
+  RTC_CHECK(proto.has_raw_packet());
+  incoming_rtcp_packets_.push_back(
+      LoggedRtcpPacketIncoming(timestamp_ms * 1000, proto.raw_packet()));
+
+  // TODO(terelius): Parse deltas.
+}
+
+void ParsedRtcEventLogNew::StoreOutgoingRtcpPackets(
+    const rtclog2::OutgoingRtcpPackets& proto) {
+  RTC_CHECK(proto.has_timestamp_ms());
+  int64_t timestamp_ms = proto.timestamp_ms();
+
+  RTC_CHECK(proto.has_raw_packet());
+  outgoing_rtcp_packets_.push_back(
+      LoggedRtcpPacketOutgoing(timestamp_ms * 1000, proto.raw_packet()));
+
+  // TODO(terelius): Parse deltas.
+}
+
+void ParsedRtcEventLogNew::StoreStartEvent(
+    const rtclog2::BeginLogEvent& proto) {
+  RTC_CHECK(proto.has_timestamp_ms());
+  LoggedStartEvent start_event(proto.timestamp_ms() * 1000);
+
+  start_log_events_.push_back(start_event);
+}
+
+void ParsedRtcEventLogNew::StoreStopEvent(const rtclog2::EndLogEvent& proto) {
+  RTC_CHECK(proto.has_timestamp_ms());
+  LoggedStopEvent stop_event(proto.timestamp_ms() * 1000);
+
+  stop_log_events_.push_back(stop_event);
+}
+
+void ParsedRtcEventLogNew::StoreBweLossBasedUpdate(
+    const rtclog2::LossBasedBweUpdates& proto) {
+  RTC_CHECK(proto.has_timestamp_ms());
+  RTC_CHECK(proto.has_bitrate_bps());
+  RTC_CHECK(proto.has_fraction_loss());
+  RTC_CHECK(proto.has_total_packets());
+
+  LoggedBweLossBasedUpdate loss_update;
+  loss_update.timestamp_us = proto.timestamp_ms() * 1000;
+  loss_update.bitrate_bps = proto.bitrate_bps();
+  loss_update.fraction_lost = proto.fraction_loss();
+  loss_update.expected_packets = proto.total_packets();
+
+  bwe_loss_updates_.push_back(loss_update);
+
+  // TODO(terelius): Parse deltas.
+}
+
+void ParsedRtcEventLogNew::StoreBweDelayBasedUpdate(
+    const rtclog2::DelayBasedBweUpdates& proto) {
+  RTC_CHECK(proto.has_timestamp_ms());
+  RTC_CHECK(proto.has_bitrate_bps());
+  RTC_CHECK(proto.has_detector_state());
+
+  LoggedBweDelayBasedUpdate delay_update;
+  delay_update.timestamp_us = proto.timestamp_ms() * 1000;
+  delay_update.bitrate_bps = proto.bitrate_bps();
+  delay_update.detector_state = GetRuntimeDetectorState(proto.detector_state());
+
+  bwe_delay_updates_.push_back(delay_update);
+
+  // TODO(terelius): Parse deltas.
+}
+
+void ParsedRtcEventLogNew::StoreBweProbeClusterCreated(
+    const rtclog2::BweProbeCluster& proto) {
+  LoggedBweProbeClusterCreatedEvent probe_cluster;
+  RTC_CHECK(proto.has_timestamp_ms());
+  probe_cluster.timestamp_us = proto.timestamp_ms() * 1000;
+  RTC_CHECK(proto.has_id());
+  probe_cluster.id = proto.id();
+  RTC_CHECK(proto.has_bitrate_bps());
+  probe_cluster.bitrate_bps = proto.bitrate_bps();
+  RTC_CHECK(proto.has_min_packets());
+  probe_cluster.min_packets = proto.min_packets();
+  RTC_CHECK(proto.has_min_bytes());
+  probe_cluster.min_bytes = proto.min_bytes();
+
+  bwe_probe_cluster_created_events_.push_back(probe_cluster);
+
+  // TODO(terelius): Should we delta encode this event type?
+}
+
+void ParsedRtcEventLogNew::StoreBweProbeSuccessEvent(
+    const rtclog2::BweProbeResultSuccess& proto) {
+  LoggedBweProbeSuccessEvent probe_result;
+  RTC_CHECK(proto.has_timestamp_ms());
+  probe_result.timestamp_us = proto.timestamp_ms() * 1000;
+  RTC_CHECK(proto.has_id());
+  probe_result.id = proto.id();
+  RTC_CHECK(proto.has_bitrate_bps());
+  probe_result.bitrate_bps = proto.bitrate_bps();
+
+  bwe_probe_success_events_.push_back(probe_result);
+
+  // TODO(terelius): Should we delta encode this event type?
+}
+
+void ParsedRtcEventLogNew::StoreBweProbeFailureEvent(
+    const rtclog2::BweProbeResultFailure& proto) {
+  LoggedBweProbeFailureEvent probe_result;
+  RTC_CHECK(proto.has_timestamp_ms());
+  probe_result.timestamp_us = proto.timestamp_ms() * 1000;
+  RTC_CHECK(proto.has_id());
+  probe_result.id = proto.id();
+  RTC_CHECK(proto.has_failure());
+  probe_result.failure_reason = GetRuntimeProbeFailureReason(proto.failure());
+
+  bwe_probe_failure_events_.push_back(probe_result);
+
+  // TODO(terelius): Should we delta encode this event type?
+}
+
+void ParsedRtcEventLogNew::StoreAudioNetworkAdaptationEvent(
+    const rtclog2::AudioNetworkAdaptations& proto) {
+  LoggedAudioNetworkAdaptationEvent ana_event;
+  RTC_CHECK(proto.has_timestamp_ms());
+  ana_event.timestamp_us = proto.timestamp_ms() * 1000;
+
+  if (proto.has_bitrate_bps()) {
+    ana_event.config.bitrate_bps = proto.bitrate_bps();
+  }
+  if (proto.has_frame_length_ms()) {
+    ana_event.config.frame_length_ms = proto.frame_length_ms();
+  }
+  if (proto.has_uplink_packet_loss_fraction()) {
+    ana_event.config.uplink_packet_loss_fraction =
+        proto.uplink_packet_loss_fraction();
+  }
+  if (proto.has_enable_fec()) {
+    ana_event.config.enable_fec = proto.enable_fec();
+  }
+  if (proto.has_enable_dtx()) {
+    ana_event.config.enable_dtx = proto.enable_dtx();
+  }
+  if (proto.has_num_channels()) {
+    ana_event.config.num_channels = proto.num_channels();
+  }
+
+  audio_network_adaptation_events_.push_back(ana_event);
+
+  // TODO(terelius): Parse deltas.
+}
+
+void ParsedRtcEventLogNew::StoreIceCandidatePairConfig(
+    const rtclog2::IceCandidatePairConfig& proto) {
+  LoggedIceCandidatePairConfig ice_config;
+  RTC_CHECK(proto.has_timestamp_ms());
+  ice_config.timestamp_us = proto.timestamp_ms() * 1000;
+
+  RTC_CHECK(proto.has_config_type());
+  ice_config.type = GetRuntimeIceCandidatePairConfigType(proto.config_type());
+  RTC_CHECK(proto.has_candidate_pair_id());
+  ice_config.candidate_pair_id = proto.candidate_pair_id();
+  RTC_CHECK(proto.has_local_candidate_type());
+  ice_config.local_candidate_type =
+      GetRuntimeIceCandidateType(proto.local_candidate_type());
+  RTC_CHECK(proto.has_local_relay_protocol());
+  ice_config.local_relay_protocol =
+      GetRuntimeIceCandidatePairProtocol(proto.local_relay_protocol());
+  RTC_CHECK(proto.has_local_network_type());
+  ice_config.local_network_type =
+      GetRuntimeIceCandidateNetworkType(proto.local_network_type());
+  RTC_CHECK(proto.has_local_address_family());
+  ice_config.local_address_family =
+      GetRuntimeIceCandidatePairAddressFamily(proto.local_address_family());
+  RTC_CHECK(proto.has_remote_candidate_type());
+  ice_config.remote_candidate_type =
+      GetRuntimeIceCandidateType(proto.remote_candidate_type());
+  RTC_CHECK(proto.has_remote_address_family());
+  ice_config.remote_address_family =
+      GetRuntimeIceCandidatePairAddressFamily(proto.remote_address_family());
+  RTC_CHECK(proto.has_candidate_pair_protocol());
+  ice_config.candidate_pair_protocol =
+      GetRuntimeIceCandidatePairProtocol(proto.candidate_pair_protocol());
+
+  ice_candidate_pair_configs_.push_back(ice_config);
+
+  // TODO(terelius): Should we delta encode this event type?
+}
+
+void ParsedRtcEventLogNew::StoreIceCandidateEvent(
+    const rtclog2::IceCandidatePairEvent& proto) {
+  LoggedIceCandidatePairEvent ice_event;
+  RTC_CHECK(proto.has_timestamp_ms());
+  ice_event.timestamp_us = proto.timestamp_ms() * 1000;
+  RTC_CHECK(proto.has_event_type());
+  ice_event.type = GetRuntimeIceCandidatePairEventType(proto.event_type());
+  RTC_CHECK(proto.has_candidate_pair_id());
+  ice_event.candidate_pair_id = proto.candidate_pair_id();
+
+  ice_candidate_pair_events_.push_back(ice_event);
+
+  // TODO(terelius): Should we delta encode this event type?
+}
+
+void ParsedRtcEventLogNew::StoreVideoRecvConfig(
+    const rtclog2::VideoRecvStreamConfig& proto) {
+  LoggedVideoRecvConfig stream;
+  RTC_CHECK(proto.has_timestamp_ms());
+  stream.timestamp_us = proto.timestamp_ms() * 1000;
+  RTC_CHECK(proto.has_remote_ssrc());
+  stream.config.remote_ssrc = proto.remote_ssrc();
+  RTC_CHECK(proto.has_local_ssrc());
+  stream.config.local_ssrc = proto.local_ssrc();
+  if (proto.has_rtx_ssrc()) {
+    stream.config.rtx_ssrc = proto.rtx_ssrc();
+  }
+  if (proto.has_rsid()) {
+    stream.config.rsid = proto.rsid();
+  }
+  if (proto.has_header_extensions()) {
+    stream.config.rtp_extensions =
+        GetRuntimeRtpHeaderExtensionConfig(proto.header_extensions());
+  }
+  video_recv_configs_.push_back(stream);
+}
+
+void ParsedRtcEventLogNew::StoreVideoSendConfig(
+    const rtclog2::VideoSendStreamConfig& proto) {
+  LoggedVideoSendConfig stream;
+  RTC_CHECK(proto.has_timestamp_ms());
+  stream.timestamp_us = proto.timestamp_ms() * 1000;
+  rtclog::StreamConfig config;
+  RTC_CHECK(proto.has_ssrc());
+  config.local_ssrc = proto.ssrc();
+  if (proto.has_rtx_ssrc()) {
+    config.rtx_ssrc = proto.rtx_ssrc();
+  }
+  if (proto.has_rsid()) {
+    config.rsid = proto.rsid();
+  }
+  if (proto.has_header_extensions()) {
+    config.rtp_extensions =
+        GetRuntimeRtpHeaderExtensionConfig(proto.header_extensions());
+  }
+  stream.configs.push_back(config);
+  video_send_configs_.push_back(stream);
+}
+
+void ParsedRtcEventLogNew::StoreAudioRecvConfig(
+    const rtclog2::AudioRecvStreamConfig& proto) {
+  LoggedAudioRecvConfig stream;
+  RTC_CHECK(proto.has_timestamp_ms());
+  stream.timestamp_us = proto.timestamp_ms() * 1000;
+  RTC_CHECK(proto.has_remote_ssrc());
+  stream.config.remote_ssrc = proto.remote_ssrc();
+  RTC_CHECK(proto.has_local_ssrc());
+  stream.config.local_ssrc = proto.local_ssrc();
+  if (proto.has_rsid()) {
+    stream.config.rsid = proto.rsid();
+  }
+  if (proto.has_header_extensions()) {
+    stream.config.rtp_extensions =
+        GetRuntimeRtpHeaderExtensionConfig(proto.header_extensions());
+  }
+  audio_recv_configs_.push_back(stream);
+}
+
+void ParsedRtcEventLogNew::StoreAudioSendConfig(
+    const rtclog2::AudioSendStreamConfig& proto) {
+  LoggedAudioSendConfig stream;
+  RTC_CHECK(proto.has_timestamp_ms());
+  stream.timestamp_us = proto.timestamp_ms() * 1000;
+  RTC_CHECK(proto.has_ssrc());
+  stream.config.local_ssrc = proto.ssrc();
+  if (proto.has_rsid()) {
+    stream.config.rsid = proto.rsid();
+  }
+  if (proto.has_header_extensions()) {
+    stream.config.rtp_extensions =
+        GetRuntimeRtpHeaderExtensionConfig(proto.header_extensions());
+  }
+  audio_send_configs_.push_back(stream);
 }
 
 }  // namespace webrtc

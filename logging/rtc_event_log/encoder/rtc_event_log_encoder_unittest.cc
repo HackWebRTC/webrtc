@@ -11,9 +11,11 @@
 #include <deque>
 #include <limits>
 #include <string>
+#include <tuple>
 
 #include "absl/memory/memory.h"
 #include "logging/rtc_event_log/encoder/rtc_event_log_encoder_legacy.h"
+#include "logging/rtc_event_log/encoder/rtc_event_log_encoder_new_format.h"
 #include "logging/rtc_event_log/events/rtc_event_alr_state.h"
 #include "logging/rtc_event_log/events/rtc_event_audio_network_adaptation.h"
 #include "logging/rtc_event_log/events/rtc_event_audio_playout.h"
@@ -40,14 +42,16 @@
 
 namespace webrtc {
 
-
-class RtcEventLogEncoderTest : public testing::TestWithParam<int> {
+class RtcEventLogEncoderTest
+    : public testing::TestWithParam<std::tuple<int, bool>> {
  protected:
   RtcEventLogEncoderTest()
-      : encoder_(new RtcEventLogEncoderLegacy),
-        seed_(GetParam()),
-        prng_(seed_),
-        gen_(seed_ * 880001UL) {}
+      : seed_(std::get<0>(GetParam())), prng_(seed_), gen_(seed_ * 880001UL) {
+    if (std::get<1>(GetParam()))
+      encoder_ = absl::make_unique<RtcEventLogEncoderNewFormat>();
+    else
+      encoder_ = absl::make_unique<RtcEventLogEncoderLegacy>();
+  }
   ~RtcEventLogEncoderTest() override = default;
 
   // ANA events have some optional fields, so we want to make sure that we get
@@ -85,16 +89,14 @@ void RtcEventLogEncoderTest::TestRtcEventAudioNetworkAdaptation(
   auto original_runtime_config = *runtime_config;
   auto event = absl::make_unique<RtcEventAudioNetworkAdaptation>(
       std::move(runtime_config));
-  const int64_t timestamp_us = event->timestamp_us_;
-  history_.push_back(std::move(event));
+  history_.push_back(event->Copy());
 
   std::string encoded = encoder_->EncodeBatch(history_.begin(), history_.end());
   ASSERT_TRUE(parsed_log_.ParseString(encoded));
   const auto& ana_configs = parsed_log_.audio_network_adaptation_events();
-  ASSERT_EQ(ana_configs.size(), 1u);
 
-  EXPECT_EQ(ana_configs[0].timestamp_us, timestamp_us);
-  EXPECT_EQ(ana_configs[0].config, original_runtime_config);
+  ASSERT_EQ(ana_configs.size(), 1u);
+  test::VerifyLoggedAudioNetworkAdaptationEvent(*event, ana_configs[0]);
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventAudioNetworkAdaptationBitrate) {
@@ -184,6 +186,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventAudioPlayout) {
   ASSERT_EQ(playout_events.size(), 1u);
   const auto playout_stream = playout_events.find(ssrc);
   ASSERT_TRUE(playout_stream != playout_events.end());
+
   ASSERT_EQ(playout_stream->second.size(), 1u);
   LoggedAudioPlayoutEvent playout_event = playout_stream->second[0];
   test::VerifyLoggedAudioPlayoutEvent(*event, playout_event);
@@ -242,7 +245,6 @@ TEST_P(RtcEventLogEncoderTest, RtcEventBweUpdateLossBased) {
   const auto& bwe_loss_updates = parsed_log_.bwe_loss_updates();
 
   ASSERT_EQ(bwe_loss_updates.size(), 1u);
-
   test::VerifyLoggedBweLossBasedUpdate(*event, bwe_loss_updates[0]);
 }
 
@@ -281,7 +283,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventLoggingStarted) {
   const auto& start_log_events = parsed_log_.start_log_events();
 
   ASSERT_EQ(start_log_events.size(), 1u);
-  EXPECT_EQ(start_log_events[0].timestamp_us, timestamp_us);
+  test::VerifyLoggedStartEvent(timestamp_us, start_log_events[0]);
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventLoggingStopped) {
@@ -291,7 +293,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventLoggingStopped) {
   const auto& stop_log_events = parsed_log_.stop_log_events();
 
   ASSERT_EQ(stop_log_events.size(), 1u);
-  EXPECT_EQ(stop_log_events[0].timestamp_us, timestamp_us);
+  test::VerifyLoggedStopEvent(timestamp_us, stop_log_events[0]);
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventProbeClusterCreated) {
@@ -435,6 +437,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventVideoSendStreamConfig) {
 
 INSTANTIATE_TEST_CASE_P(RandomSeeds,
                         RtcEventLogEncoderTest,
-                        ::testing::Values(1, 2, 3, 4, 5));
+                        ::testing::Combine(::testing::Values(1, 2, 3, 4, 5),
+                                           ::testing::Bool()));
 
 }  // namespace webrtc

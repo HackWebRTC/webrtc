@@ -101,13 +101,15 @@ struct EventCounts {
 };
 
 class RtcEventLogSession
-    : public ::testing::TestWithParam<std::tuple<uint64_t, int64_t>> {
+    : public ::testing::TestWithParam<
+          std::tuple<uint64_t, int64_t, RtcEventLog::EncodingType>> {
  public:
   RtcEventLogSession()
       : seed_(std::get<0>(GetParam())),
         prng_(seed_),
         gen_(seed_ * 880001UL),
-        output_period_ms_(std::get<1>(GetParam())) {
+        output_period_ms_(std::get<1>(GetParam())),
+        encoding_type_(std::get<2>(GetParam())) {
     clock_.SetTimeMicros(prng_.Rand<uint32_t>());
     // Find the name of the current test, in order to use it as a temporary
     // filename.
@@ -171,7 +173,8 @@ class RtcEventLogSession
   const uint64_t seed_;
   Random prng_;
   test::EventGenerator gen_;
-  int64_t output_period_ms_;
+  const int64_t output_period_ms_;
+  const RtcEventLog::EncodingType encoding_type_;
   rtc::ScopedFakeClock clock_;
   std::string temp_filename_;
 };
@@ -284,8 +287,7 @@ void RtcEventLogSession::WriteLog(EventCounts count,
   // Maybe always use the ScopedFakeClock, but conditionally SleepMs()?
 
   // The log file will be flushed to disk when the event_log goes out of scope.
-  std::unique_ptr<RtcEventLog> event_log(
-      RtcEventLog::Create(RtcEventLog::EncodingType::Legacy));
+  std::unique_ptr<RtcEventLog> event_log(RtcEventLog::Create(encoding_type_));
 
   // We can't send or receive packets without configured streams.
   RTC_CHECK_GE(count.video_recv_streams, 1);
@@ -676,7 +678,23 @@ TEST_P(RtcEventLogSession, StartLoggingInTheMiddle) {
   ReadAndVerifyLog();
 }
 
-TEST(RtcEventLogTest, CircularBufferKeepsMostRecentEvents) {
+INSTANTIATE_TEST_CASE_P(
+    RtcEventLogTest,
+    RtcEventLogSession,
+    ::testing::Combine(
+        ::testing::Values(1234567, 7654321),
+        ::testing::Values(RtcEventLog::kImmediateOutput, 1, 5),
+        ::testing::Values(RtcEventLog::EncodingType::Legacy,
+                          RtcEventLog::EncodingType::NewFormat)));
+
+class RtcEventLogCircularBufferTest
+    : public ::testing::TestWithParam<RtcEventLog::EncodingType> {
+ public:
+  RtcEventLogCircularBufferTest() : encoding_type_(GetParam()) {}
+  const RtcEventLog::EncodingType encoding_type_;
+};
+
+TEST_P(RtcEventLogCircularBufferTest, KeepsMostRecentEvents) {
   // TODO(terelius): Maybe make a separate RtcEventLogImplTest that can access
   // the size of the cyclic buffer?
   constexpr size_t kNumEvents = 20000;
@@ -695,8 +713,7 @@ TEST(RtcEventLogTest, CircularBufferKeepsMostRecentEvents) {
 
   // When log_dumper goes out of scope, it causes the log file to be flushed
   // to disk.
-  std::unique_ptr<RtcEventLog> log_dumper(
-      RtcEventLog::Create(RtcEventLog::EncodingType::Legacy));
+  std::unique_ptr<RtcEventLog> log_dumper(RtcEventLog::Create(encoding_type_));
 
   for (size_t i = 0; i < kNumEvents; i++) {
     // The purpose of the test is to verify that the log can handle
@@ -754,13 +771,14 @@ TEST(RtcEventLogTest, CircularBufferKeepsMostRecentEvents) {
   }
 }
 
+INSTANTIATE_TEST_CASE_P(
+    RtcEventLogTest,
+    RtcEventLogCircularBufferTest,
+    ::testing::Values(RtcEventLog::EncodingType::Legacy,
+                      RtcEventLog::EncodingType::NewFormat));
+
 // TODO(terelius): Verify parser behavior if the timestamps are not
 // monotonically increasing in the log.
 
-INSTANTIATE_TEST_CASE_P(
-    RtcEventLogTest,
-    RtcEventLogSession,
-    ::testing::Combine(::testing::Values(1234567, 7654321),
-                       ::testing::Values(RtcEventLog::kImmediateOutput, 1, 5)));
 
 }  // namespace webrtc
