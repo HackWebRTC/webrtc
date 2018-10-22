@@ -40,6 +40,7 @@ if (!build_with_chromium) {
     if (rtc_include_tests) {
       deps += [
         ":rtc_unittests",
+        ":slow_tests",
         ":video_engine_tests",
         ":webrtc_nonparallel_tests",
         ":webrtc_perf_tests",
@@ -499,6 +500,17 @@ if (rtc_include_tests) {
     if (is_ios || is_mac) {
       deps += [ "sdk:rtc_unittests_objc" ]
     }
+  }
+
+  # This runs tests that must run in real time and therefore can take some
+  # time to execute. They are in a separate executable to avoid making the
+  # regular unittest suite too slow to run frequently.
+  rtc_test("slow_tests") {
+    testonly = true
+    deps = [
+      "modules/congestion_controller/goog_cc:goog_cc_slow_tests",
+      "test:test_main",
+    ]
   }
 
   # TODO(pbos): Rename test suite, this is no longer "just" for video targets.

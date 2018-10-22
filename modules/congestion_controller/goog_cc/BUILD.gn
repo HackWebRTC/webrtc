@@ -214,4 +214,40 @@ if (rtc_include_tests) {
       "//third_party/abseil-cpp/absl/memory",
     ]
   }
+  rtc_source_set("goog_cc_slow_tests") {
+    testonly = true
+
+    sources = [
+      "goog_cc_network_control_slowtest.cc",
+    ]
+    if (!build_with_chromium && is_clang) {
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+    deps = [
+      ":alr_detector",
+      ":delay_based_bwe",
+      ":estimators",
+      ":goog_cc",
+      ":probe_controller",
+      ":pushback_controller",
+      "../../../api/transport:goog_cc",
+      "../../../api/transport:network_control",
+      "../../../api/transport:network_control_test",
+      "../../../logging:mocks",
+      "../../../rtc_base:checks",
+      "../../../rtc_base:rtc_base_approved",
+      "../../../rtc_base:rtc_base_tests_utils",
+      "../../../rtc_base/experiments:alr_experiment",
+      "../../../system_wrappers",
+      "../../../system_wrappers:field_trial",
+      "../../../test:field_trial",
+      "../../../test:test_support",
+      "../../../test/scenario",
+      "../../pacing",
+      "../../remote_bitrate_estimator",
+      "../../rtp_rtcp:rtp_rtcp_format",
+      "//testing/gmock",
+      "//third_party/abseil-cpp/absl/memory",
+    ]
+  }
 }
