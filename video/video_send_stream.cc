@@ -62,7 +62,7 @@ VideoSendStream::VideoSendStream(
     rtc::TaskQueue* worker_queue,
     CallStats* call_stats,
     RtpTransportControllerSendInterface* transport,
-    BitrateAllocator* bitrate_allocator,
+    BitrateAllocatorInterface* bitrate_allocator,
     SendDelayStats* send_delay_stats,
     RtcEventLog* event_log,
     VideoSendStream::Config config,

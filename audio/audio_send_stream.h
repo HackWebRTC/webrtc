@@ -46,7 +46,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
                   rtc::TaskQueue* worker_queue,
                   ProcessThread* module_process_thread,
                   RtpTransportControllerSendInterface* transport,
-                  BitrateAllocator* bitrate_allocator,
+                  BitrateAllocatorInterface* bitrate_allocator,
                   RtcEventLog* event_log,
                   RtcpRttStats* rtcp_rtt_stats,
                   const absl::optional<RtpState>& suspended_rtp_state,
@@ -56,7 +56,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
                   const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
                   rtc::TaskQueue* worker_queue,
                   RtpTransportControllerSendInterface* transport,
-                  BitrateAllocator* bitrate_allocator,
+                  BitrateAllocatorInterface* bitrate_allocator,
                   RtcEventLog* event_log,
                   RtcpRttStats* rtcp_rtt_stats,
                   const absl::optional<RtpState>& suspended_rtp_state,
@@ -140,7 +140,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   size_t encoder_num_channels_ = 0;
   bool sending_ = false;
 
-  BitrateAllocator* const bitrate_allocator_;
+  BitrateAllocatorInterface* const bitrate_allocator_;
   RtpTransportControllerSendInterface* const transport_;
 
   rtc::CriticalSection packet_loss_tracker_cs_;
