@@ -51,29 +51,6 @@ int RemoveOlderOrEqual(uint32_t timestamp, std::vector<uint32_t>* timestamps) {
   return num_removed;
 }
 
-class VideoStreamFactoryTest
-    : public VideoEncoderConfig::VideoStreamFactoryInterface {
- public:
-  explicit VideoStreamFactoryTest(size_t num_temporal_layers)
-      : num_temporal_layers_(num_temporal_layers) {}
-
- private:
-  std::vector<VideoStream> CreateEncoderStreams(
-      int width,
-      int height,
-      const VideoEncoderConfig& encoder_config) override {
-    std::vector<VideoStream> streams =
-        test::CreateVideoStreams(width, height, encoder_config);
-
-    for (size_t i = 0; i < encoder_config.number_of_streams; ++i)
-      streams[i].num_temporal_layers = num_temporal_layers_;
-
-    return streams;
-  }
-
-  const size_t num_temporal_layers_;
-};
-
 class FrameObserver : public test::RtpRtcpObserver,
                       public rtc::VideoSinkInterface<VideoFrame> {
  public:
@@ -217,9 +194,9 @@ void MultiCodecReceiveTest::ConfigureEncoder(const CodecConfig& config) {
       PayloadNameToPayloadType(config.payload_name);
   GetVideoEncoderConfig()->codec_type =
       PayloadStringToCodecType(config.payload_name);
-  GetVideoEncoderConfig()->video_stream_factory =
-      new rtc::RefCountedObject<VideoStreamFactoryTest>(
-          config.num_temporal_layers);
+  EXPECT_EQ(1u, GetVideoEncoderConfig()->simulcast_layers.size());
+  GetVideoEncoderConfig()->simulcast_layers[0].num_temporal_layers =
+      config.num_temporal_layers;
 }
 
 void MultiCodecReceiveTest::RunTestWithCodecs(

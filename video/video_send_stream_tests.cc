@@ -1148,31 +1148,8 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
       EXPECT_FALSE(send_config->rtp.extensions.empty());
 
       // Setup screen content disables frame dropping which makes this easier.
-      class VideoStreamFactory
-          : public VideoEncoderConfig::VideoStreamFactoryInterface {
-       public:
-        explicit VideoStreamFactory(size_t num_temporal_layers)
-            : num_temporal_layers_(num_temporal_layers) {
-          EXPECT_GT(num_temporal_layers, 0u);
-        }
-
-       private:
-        std::vector<VideoStream> CreateEncoderStreams(
-            int width,
-            int height,
-            const VideoEncoderConfig& encoder_config) override {
-          std::vector<VideoStream> streams =
-              test::CreateVideoStreams(width, height, encoder_config);
-          for (VideoStream& stream : streams) {
-            stream.num_temporal_layers = num_temporal_layers_;
-          }
-          return streams;
-        }
-        const size_t num_temporal_layers_;
-      };
-
-      encoder_config->video_stream_factory =
-          new rtc::RefCountedObject<VideoStreamFactory>(2);
+      EXPECT_EQ(1u, encoder_config->simulcast_layers.size());
+      encoder_config->simulcast_layers[0].num_temporal_layers = 2;
       encoder_config->content_type = VideoEncoderConfig::ContentType::kScreen;
     }
 
@@ -2547,26 +2524,6 @@ class VideoCodecConfigObserver : public test::SendTest,
   }
 
  private:
-  class VideoStreamFactory
-      : public VideoEncoderConfig::VideoStreamFactoryInterface {
-   public:
-    VideoStreamFactory() {}
-
-   private:
-    std::vector<VideoStream> CreateEncoderStreams(
-        int width,
-        int height,
-        const VideoEncoderConfig& encoder_config) override {
-      std::vector<VideoStream> streams =
-          test::CreateVideoStreams(width, height, encoder_config);
-      for (size_t i = 0; i < streams.size(); ++i) {
-        streams[i].num_temporal_layers =
-            kVideoCodecConfigObserverNumberOfTemporalLayers;
-      }
-      return streams;
-    }
-  };
-
   void ModifyVideoConfigs(
       VideoSendStream::Config* send_config,
       std::vector<VideoReceiveStream::Config>* receive_configs,
@@ -2576,8 +2533,9 @@ class VideoCodecConfigObserver : public test::SendTest,
 
     encoder_config->codec_type = video_codec_type_;
     encoder_config->encoder_specific_settings = GetEncoderSpecificSettings();
-    encoder_config->video_stream_factory =
-        new rtc::RefCountedObject<VideoStreamFactory>();
+    EXPECT_EQ(1u, encoder_config->simulcast_layers.size());
+    encoder_config->simulcast_layers[0].num_temporal_layers =
+        kVideoCodecConfigObserverNumberOfTemporalLayers;
     encoder_config_ = encoder_config->Copy();
   }
 
@@ -2803,8 +2761,6 @@ TEST_P(VideoSendStreamTest, TranslatesTwoLayerScreencastToTargetBitrate) {
         const VideoEncoderConfig& encoder_config) override {
       std::vector<VideoStream> streams =
           test::CreateVideoStreams(width, height, encoder_config);
-      EXPECT_FALSE(streams[0].num_temporal_layers.has_value());
-      streams[0].num_temporal_layers = 2;
       RTC_CHECK_GT(streams[0].max_bitrate_bps,
                    kScreencastMaxTargetBitrateDeltaKbps);
       streams[0].target_bitrate_bps =
@@ -2842,6 +2798,8 @@ TEST_P(VideoSendStreamTest, TranslatesTwoLayerScreencastToTargetBitrate) {
       EXPECT_EQ(1u, encoder_config->number_of_streams);
       encoder_config->video_stream_factory =
           new rtc::RefCountedObject<VideoStreamFactory>();
+      EXPECT_EQ(1u, encoder_config->simulcast_layers.size());
+      encoder_config->simulcast_layers[0].num_temporal_layers = 2;
       encoder_config->content_type = VideoEncoderConfig::ContentType::kScreen;
     }
 
@@ -3146,26 +3104,6 @@ class Vp9HeaderObserver : public test::SendTest {
  private:
   const int kVp9PayloadType = test::CallTest::kVideoSendPayloadType;
 
-  class VideoStreamFactory
-      : public VideoEncoderConfig::VideoStreamFactoryInterface {
-   public:
-    explicit VideoStreamFactory(size_t number_of_temporal_layers)
-        : number_of_temporal_layers_(number_of_temporal_layers) {}
-
-   private:
-    std::vector<VideoStream> CreateEncoderStreams(
-        int width,
-        int height,
-        const VideoEncoderConfig& encoder_config) override {
-      std::vector<VideoStream> streams =
-          test::CreateVideoStreams(width, height, encoder_config);
-      streams.back().num_temporal_layers = number_of_temporal_layers_;
-      return streams;
-    }
-
-    const size_t number_of_temporal_layers_;
-  };
-
   void ModifyVideoConfigs(
       VideoSendStream::Config* send_config,
       std::vector<VideoReceiveStream::Config>* receive_configs,
@@ -3177,9 +3115,9 @@ class Vp9HeaderObserver : public test::SendTest {
     encoder_config->encoder_specific_settings = new rtc::RefCountedObject<
         VideoEncoderConfig::Vp9EncoderSpecificSettings>(vp9_settings_);
     EXPECT_EQ(1u, encoder_config->number_of_streams);
-    encoder_config->video_stream_factory =
-        new rtc::RefCountedObject<VideoStreamFactory>(
-            vp9_settings_.numberOfTemporalLayers);
+    EXPECT_EQ(1u, encoder_config->simulcast_layers.size());
+    encoder_config->simulcast_layers[0].num_temporal_layers =
+        vp9_settings_.numberOfTemporalLayers;
     encoder_config_ = encoder_config->Copy();
   }
 
