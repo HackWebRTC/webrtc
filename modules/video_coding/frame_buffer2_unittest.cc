@@ -600,5 +600,21 @@ TEST_F(TestFrameBuffer2, DontUpdateOnUndecodableFrame) {
   ExtractFrame(0, true);
 }
 
+TEST_F(TestFrameBuffer2, DontDecodeOlderTimestamp) {
+  InsertFrame(2, 0, 1, false);
+  InsertFrame(1, 0, 2, false);  // Older picture id but newer timestamp.
+  ExtractFrame(0);
+  ExtractFrame(0);
+  CheckFrame(0, 1, 0);
+  CheckNoFrame(1);
+
+  InsertFrame(3, 0, 4, false);
+  InsertFrame(4, 0, 3, false);  // Newer picture id but older timestamp.
+  ExtractFrame(0);
+  ExtractFrame(0);
+  CheckFrame(2, 3, 0);
+  CheckNoFrame(3);
+}
+
 }  // namespace video_coding
 }  // namespace webrtc

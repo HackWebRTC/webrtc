@@ -161,7 +161,7 @@ class FrameBuffer {
   VCMJitterEstimator* const jitter_estimator_ RTC_GUARDED_BY(crit_);
   VCMTiming* const timing_ RTC_GUARDED_BY(crit_);
   VCMInterFrameDelay inter_frame_delay_ RTC_GUARDED_BY(crit_);
-  uint32_t last_decoded_frame_timestamp_ RTC_GUARDED_BY(crit_);
+  absl::optional<uint32_t> last_decoded_frame_timestamp_ RTC_GUARDED_BY(crit_);
   FrameMap::iterator last_decoded_frame_it_ RTC_GUARDED_BY(crit_);
   FrameMap::iterator last_continuous_frame_it_ RTC_GUARDED_BY(crit_);
   FrameMap::iterator next_frame_it_ RTC_GUARDED_BY(crit_);
