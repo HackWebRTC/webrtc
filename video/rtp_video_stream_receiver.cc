@@ -50,7 +50,7 @@ namespace {
 // TODO(philipel): Change kPacketBufferStartSize back to 32 in M63 see:
 //                 crbug.com/752886
 constexpr int kPacketBufferStartSize = 512;
-constexpr int kPacketBufferMaxSixe = 2048;
+constexpr int kPacketBufferMaxSize = 2048;
 }  // namespace
 
 std::unique_ptr<RtpRtcp> CreateRtpRtcpModule(
@@ -154,8 +154,21 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
     process_thread_->RegisterModule(nack_module_.get(), RTC_FROM_HERE);
   }
 
+  // The group here can be either a positive integer with an explicit size, in
+  // which case that is used as size. All other values shall result in the
+  // default value being used.
+  const std::string group_name =
+      webrtc::field_trial::FindFullName("WebRTC-PacketBufferMaxSize");
+  int packet_buffer_max_size = kPacketBufferMaxSize;
+  if (!group_name.empty() &&
+      (sscanf(group_name.c_str(), "%d", &packet_buffer_max_size) != 1 ||
+       packet_buffer_max_size <= 0)) {
+    RTC_LOG(LS_WARNING) << "Invalid packet buffer max size: " << group_name;
+    packet_buffer_max_size = kPacketBufferMaxSize;
+  }
+
   packet_buffer_ = video_coding::PacketBuffer::Create(
-      clock_, kPacketBufferStartSize, kPacketBufferMaxSixe, this);
+      clock_, kPacketBufferStartSize, packet_buffer_max_size, this);
   reference_finder_.reset(new video_coding::RtpFrameReferenceFinder(this));
 }
 
