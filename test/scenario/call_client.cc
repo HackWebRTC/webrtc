@@ -159,11 +159,6 @@ CallClient::~CallClient() {
   delete header_parser_;
 }
 
-void CallClient::DeliverPacket(MediaType media_type,
-                               rtc::CopyOnWriteBuffer packet,
-                               Timestamp at_time) {
-}
-
 ColumnPrinter CallClient::StatsPrinter() {
   return ColumnPrinter::Lambda(
       "pacer_delay call_send_bw",

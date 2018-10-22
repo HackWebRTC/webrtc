@@ -81,9 +81,6 @@ class CallClient : public NetworkReceiverInterface {
   friend class ReceiveAudioStream;
   friend class AudioStreamPair;
   friend class NetworkNodeTransport;
-  void DeliverPacket(MediaType media_type,
-                     rtc::CopyOnWriteBuffer packet,
-                     Timestamp at_time);
   uint32_t GetNextVideoSsrc();
   uint32_t GetNextAudioSsrc();
   uint32_t GetNextRtxSsrc();
