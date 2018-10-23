@@ -377,7 +377,10 @@ if (rtc_include_tests) {
 
 if (is_ios) {
   rtc_source_set("fileutils_ios_objc") {
-    visibility = [ ":fileutils" ]
+    visibility = [
+      ":fileutils",
+      ":fileutils_override_impl",
+    ]
     sources = [
       "testsupport/iosfileutils.h",
       "testsupport/iosfileutils.mm",
@@ -393,7 +396,10 @@ if (is_ios) {
 
 if (is_mac) {
   rtc_source_set("fileutils_mac_objc") {
-    visibility = [ ":fileutils" ]
+    visibility = [
+      ":fileutils",
+      ":fileutils_override_impl",
+    ]
     sources = [
       "testsupport/macfileutils.h",
       "testsupport/macfileutils.mm",
@@ -412,6 +418,42 @@ rtc_source_set("fileutils") {
     "testsupport/fileutils.h",
   ]
   deps = [
+    ":fileutils_override_api",
+    ":fileutils_override_impl",
+    "..:webrtc_common",
+    "../rtc_base:checks",
+    "../rtc_base:rtc_base_approved",
+    "../rtc_base/system:arch",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
+  if (is_ios) {
+    deps += [ ":fileutils_ios_objc" ]
+  }
+  if (is_mac) {
+    deps += [ ":fileutils_mac_objc" ]
+  }
+  if (is_win) {
+    deps += [ "../rtc_base:rtc_base" ]
+  }
+}
+
+# We separate header into own target to make it possible for downstream
+# projects to override implementation.
+rtc_source_set("fileutils_override_api") {
+  testonly = true
+  sources = [
+    "testsupport/fileutils_override.h",
+  ]
+}
+
+rtc_source_set("fileutils_override_impl") {
+  testonly = true
+  visibility = [ ":fileutils" ]
+  sources = [
+    "testsupport/fileutils_override.cc",
+  ]
+  deps = [
+    ":fileutils_override_api",
     "..:webrtc_common",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
