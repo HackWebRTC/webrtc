@@ -14,7 +14,14 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#if WEBRTC_APM_DEBUG_DUMP == 1
+#include <unordered_map>
+#endif
+
 #include "api/array_view.h"
+#if WEBRTC_APM_DEBUG_DUMP == 1
+#include "common_audio/wav_file.h"
+#endif
 #include "rtc_base/constructormagic.h"
 
 // Check to verify that the define is properly set.
