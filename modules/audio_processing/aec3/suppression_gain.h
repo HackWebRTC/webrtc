@@ -107,7 +107,8 @@ class SuppressionGain {
     // Updates the state selection based on latest spectral estimates.
     void Update(rtc::ArrayView<const float> nearend_spectrum,
                 rtc::ArrayView<const float> residual_echo_spectrum,
-                rtc::ArrayView<const float> comfort_noise_spectrum);
+                rtc::ArrayView<const float> comfort_noise_spectrum,
+                bool initial_state);
 
    private:
     const float enr_threshold_;
@@ -115,6 +116,7 @@ class SuppressionGain {
     const float snr_threshold_;
     const int hold_duration_;
     const int trigger_threshold_;
+    const bool use_during_initial_phase_;
 
     bool nearend_state_ = false;
     int trigger_counter_ = 0;

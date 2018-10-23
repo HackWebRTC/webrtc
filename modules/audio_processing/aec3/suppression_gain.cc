@@ -338,7 +338,7 @@ void SuppressionGain::GetGain(
 
   // Update the state selection.
   dominant_nearend_detector_.Update(nearend_spectrum, residual_echo_spectrum,
-                                    comfort_noise_spectrum);
+                                    comfort_noise_spectrum, initial_state_);
 
   // Compute gain for the lower band.
   bool low_noise_render = low_render_detector_.Detect(render);
@@ -400,12 +400,14 @@ SuppressionGain::DominantNearendDetector::DominantNearendDetector(
       enr_exit_threshold_(config.enr_exit_threshold),
       snr_threshold_(config.snr_threshold),
       hold_duration_(config.hold_duration),
-      trigger_threshold_(config.trigger_threshold) {}
+      trigger_threshold_(config.trigger_threshold),
+      use_during_initial_phase_(config.use_during_initial_phase) {}
 
 void SuppressionGain::DominantNearendDetector::Update(
     rtc::ArrayView<const float> nearend_spectrum,
     rtc::ArrayView<const float> residual_echo_spectrum,
-    rtc::ArrayView<const float> comfort_noise_spectrum) {
+    rtc::ArrayView<const float> comfort_noise_spectrum,
+    bool initial_state) {
   auto low_frequency_energy = [](rtc::ArrayView<const float> spectrum) {
     RTC_DCHECK_LE(16, spectrum.size());
     return std::accumulate(spectrum.begin() + 1, spectrum.begin() + 16, 0.f);
@@ -416,7 +418,8 @@ void SuppressionGain::DominantNearendDetector::Update(
 
   // Detect strong active nearend if the nearend is sufficiently stronger than
   // the echo and the nearend noise.
-  if (ne_sum > enr_threshold_ * echo_sum &&
+  if ((!initial_state || use_during_initial_phase_) &&
+      ne_sum > enr_threshold_ * echo_sum &&
       ne_sum > snr_threshold_ * noise_sum) {
     if (++trigger_counter_ >= trigger_threshold_) {
       // After a period of strong active nearend activity, flag nearend mode.
