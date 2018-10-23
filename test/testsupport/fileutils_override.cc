@@ -37,6 +37,7 @@
 #include "test/testsupport/macfileutils.h"
 #endif
 
+#include "absl/types/optional.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/stringutils.h"
@@ -68,11 +69,9 @@ const char* kResourcesDirName = "resources";
 
 }  // namespace
 
-const char* kCannotFindProjectRootDir = "ERROR_CANNOT_FIND_PROJECT_ROOT_DIR";
-
 // Finds the WebRTC src dir.
 // The returned path always ends with a path separator.
-std::string ProjectRootPath() {
+absl::optional<std::string> ProjectRootPath() {
 #if defined(WEBRTC_ANDROID)
   return kAndroidChromiumTestsRoot;
 #elif defined WEBRTC_IOS
@@ -89,7 +88,7 @@ std::string ProjectRootPath() {
   ssize_t count = ::readlink("/proc/self/exe", buf, arraysize(buf));
   if (count <= 0) {
     RTC_NOTREACHED() << "Unable to resolve /proc/self/exe.";
-    return kCannotFindProjectRootDir;
+    return absl::nullopt;
   }
   // On POSIX, tests execute in out/Whatever, so src is two levels up.
   std::string exe_dir = DirName(std::string(buf, count));
@@ -98,7 +97,7 @@ std::string ProjectRootPath() {
   wchar_t buf[MAX_PATH];
   buf[0] = 0;
   if (GetModuleFileName(NULL, buf, MAX_PATH) == 0)
-    return kCannotFindProjectRootDir;
+    return absl::nullopt;
 
   std::string exe_path = rtc::ToUtf8(std::wstring(buf));
   std::string exe_dir = DirName(exe_path);
@@ -112,9 +111,9 @@ std::string OutputPath() {
 #elif defined(WEBRTC_ANDROID)
   return kAndroidChromiumTestsRoot;
 #else
-  std::string path = ProjectRootPath();
-  RTC_DCHECK_NE(path, kCannotFindProjectRootDir);
-  path += "out";
+  absl::optional<std::string> path_opt = ProjectRootPath();
+  RTC_DCHECK(path_opt);
+  std::string path = *path_opt + "out";
   if (!CreateDir(path)) {
     return "./";
   }
@@ -140,8 +139,9 @@ std::string ResourcePath(const std::string& name,
 #if defined(WEBRTC_IOS)
   return IOSResourcePath(name, extension);
 #else
-  std::string resources_path =
-      ProjectRootPath() + kResourcesDirName + kPathDelimiter;
+  absl::optional<std::string> path_opt = ProjectRootPath();
+  RTC_DCHECK(path_opt);
+  std::string resources_path = *path_opt + kResourcesDirName + kPathDelimiter;
   return resources_path + name + "." + extension;
 #endif
 }
