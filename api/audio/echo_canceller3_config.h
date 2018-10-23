@@ -19,7 +19,7 @@ namespace webrtc {
 
 // Configuration struct for EchoCanceller3
 struct RTC_EXPORT EchoCanceller3Config {
-  // Checks and updates the parameters in a config to lie within reasonable
+  // Checks and updates the config parameters to lie within (mostly) reasonable
   // ranges. Returns true if and only of the config did not need to be changed.
   static bool Validate(EchoCanceller3Config* config);
 
