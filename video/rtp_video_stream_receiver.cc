@@ -154,15 +154,16 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
     process_thread_->RegisterModule(nack_module_.get(), RTC_FROM_HERE);
   }
 
-  // The group here can be either a positive integer with an explicit size, in
-  // which case that is used as size. All other values shall result in the
-  // default value being used.
+  // The group here must be a positive power of 2, in which case that is used as
+  // size. All other values shall result in the default value being used.
   const std::string group_name =
       webrtc::field_trial::FindFullName("WebRTC-PacketBufferMaxSize");
   int packet_buffer_max_size = kPacketBufferMaxSize;
   if (!group_name.empty() &&
       (sscanf(group_name.c_str(), "%d", &packet_buffer_max_size) != 1 ||
-       packet_buffer_max_size <= 0)) {
+       packet_buffer_max_size <= 0 ||
+       // Verify that the number is a positive power of 2.
+       (packet_buffer_max_size & (packet_buffer_max_size - 1)) != 0)) {
     RTC_LOG(LS_WARNING) << "Invalid packet buffer max size: " << group_name;
     packet_buffer_max_size = kPacketBufferMaxSize;
   }
