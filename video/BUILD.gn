@@ -52,6 +52,7 @@ rtc_static_library("video") {
   }
 
   deps = [
+    ":frame_dumping_decoder",
     "..:webrtc_common",
     "../api:fec_controller_api",
     "../api:libjingle_peerconnection_api",
@@ -133,6 +134,25 @@ rtc_source_set("video_stream_decoder_impl") {
   ]
 }
 
+rtc_source_set("frame_dumping_decoder") {
+  visibility = [ "*" ]
+
+  sources = [
+    "frame_dumping_decoder.cc",
+    "frame_dumping_decoder.h",
+  ]
+
+  deps = [
+    "../api/video:encoded_frame",
+    "../api/video_codecs:video_codecs_api",
+    "../modules/video_coding:video_codec_interface",
+    "../modules/video_coding:video_coding",
+    "../modules/video_coding:video_coding_utility",
+    "../rtc_base:rtc_base_approved",
+    "//third_party/abseil-cpp/absl/memory",
+  ]
+}
+
 rtc_source_set("video_stream_encoder_impl") {
   visibility = [ "*" ]
 
@@ -204,6 +224,7 @@ if (rtc_include_tests) {
       "video_quality_test.h",
     ]
     deps = [
+      ":frame_dumping_decoder",
       "../api:fec_controller_api",
       "../api:test_dependency_factory",
       "../api:video_quality_test_fixture_api",
