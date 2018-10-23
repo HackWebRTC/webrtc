@@ -226,8 +226,7 @@ TEST(RtpPacketTest, CreateWith2Extensions) {
 }
 
 TEST(RtpPacketTest, CreateWithTwoByteHeaderExtensionFirst) {
-  RtpPacketToSend::ExtensionManager extensions;
-  extensions.SetMixedOneTwoByteHeaderSupported(true);
+  RtpPacketToSend::ExtensionManager extensions(true);
   extensions.Register(kRtpExtensionTransmissionTimeOffset,
                       kTransmissionOffsetExtensionId);
   extensions.Register(kRtpExtensionAudioLevel, kAudioLevelExtensionId);
@@ -248,8 +247,7 @@ TEST(RtpPacketTest, CreateWithTwoByteHeaderExtensionFirst) {
 
 TEST(RtpPacketTest, CreateWithTwoByteHeaderExtensionLast) {
   // This test will trigger RtpPacket::PromoteToTwoByteHeaderExtension().
-  RtpPacketToSend::ExtensionManager extensions;
-  extensions.SetMixedOneTwoByteHeaderSupported(true);
+  RtpPacketToSend::ExtensionManager extensions(true);
   extensions.Register(kRtpExtensionTransmissionTimeOffset,
                       kTransmissionOffsetExtensionId);
   extensions.Register(kRtpExtensionAudioLevel, kAudioLevelExtensionId);

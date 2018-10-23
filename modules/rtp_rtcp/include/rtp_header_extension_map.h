@@ -26,6 +26,7 @@ class RtpHeaderExtensionMap {
   static constexpr int kInvalidId = 0;
 
   RtpHeaderExtensionMap();
+  explicit RtpHeaderExtensionMap(bool extmap_allow_mixed);
   explicit RtpHeaderExtensionMap(rtc::ArrayView<const RtpExtension> extensions);
 
   template <typename Extension>
@@ -53,18 +54,16 @@ class RtpHeaderExtensionMap {
   }
   int32_t Deregister(RTPExtensionType type);
 
-  bool IsMixedOneTwoByteHeaderSupported() const {
-    return mixed_one_two_byte_header_supported_;
-  }
-  void SetMixedOneTwoByteHeaderSupported(bool supported) {
-    mixed_one_two_byte_header_supported_ = supported;
-  }
+  // Corresponds to the SDP attribute extmap-allow-mixed, see RFC8285.
+  // Set to true if it's allowed to mix one- and two-byte RTP header extensions
+  // in the same stream.
+  bool ExtmapAllowMixed() const { return extmap_allow_mixed_; }
 
  private:
   bool Register(int id, RTPExtensionType type, const char* uri);
 
   uint8_t ids_[kRtpExtensionNumberOfExtensions];
-  bool mixed_one_two_byte_header_supported_;
+  bool extmap_allow_mixed_;
 };
 
 }  // namespace webrtc

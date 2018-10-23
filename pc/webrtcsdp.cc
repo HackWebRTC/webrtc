@@ -856,7 +856,7 @@ std::string SdpSerialize(const JsepSessionDescription& jdesc) {
   }
 
   // Mixed one- and two-byte header extension.
-  if (desc->extmap_allow_mixed_headers()) {
+  if (desc->extmap_allow_mixed()) {
     InitAttrLine(kAttributeExtmapAllowMixed, &os);
     AddLine(os.str(), &message);
   }
@@ -1496,7 +1496,7 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
   // The attribute MUST be either on session level or media level. We support
   // responding on both levels, however, we don't respond on media level if it's
   // set on session level.
-  if (media_desc->extmap_allow_mixed_headers() ==
+  if (media_desc->extmap_allow_mixed_enum() ==
       MediaContentDescription::kMedia) {
     InitAttrLine(kAttributeExtmapAllowMixed, &os);
     AddLine(os.str(), message);
@@ -2020,7 +2020,7 @@ bool ParseSessionDescription(const std::string& message,
   std::string line;
 
   desc->set_msid_supported(false);
-  desc->set_extmap_allow_mixed_headers(false);
+  desc->set_extmap_allow_mixed(false);
   // RFC 4566
   // v=  (protocol version)
   if (!GetLineWithType(message, pos, &line, kLineTypeVersion)) {
@@ -2158,7 +2158,7 @@ bool ParseSessionDescription(const std::string& message,
       desc->set_msid_supported(
           CaseInsensitiveFind(semantics, kMediaStreamSemantic));
     } else if (HasAttribute(line, kAttributeExtmapAllowMixed)) {
-      desc->set_extmap_allow_mixed_headers(true);
+      desc->set_extmap_allow_mixed(true);
     } else if (HasAttribute(line, kAttributeExtmap)) {
       RtpExtension extmap;
       if (!ParseExtmap(line, &extmap, error)) {
@@ -2930,7 +2930,7 @@ bool ParseContent(const std::string& message,
       } else if (HasAttribute(line, kAttributeSendRecv)) {
         media_desc->set_direction(RtpTransceiverDirection::kSendRecv);
       } else if (HasAttribute(line, kAttributeExtmapAllowMixed)) {
-        media_desc->set_extmap_allow_mixed_headers(
+        media_desc->set_extmap_allow_mixed_enum(
             MediaContentDescription::kMedia);
       } else if (HasAttribute(line, kAttributeExtmap)) {
         RtpExtension extmap;
