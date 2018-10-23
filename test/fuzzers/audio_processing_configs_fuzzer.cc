@@ -38,6 +38,7 @@ const std::string kFieldTrialNames[] = {
     "WebRTC-Aec3FilterAnalyzerPreprocessorKillSwitch",
     "WebRTC-Aec3MisadjustmentEstimatorKillSwitch",
     "WebRTC-Aec3NewFilterParamsKillSwitch",
+    "WebRTC-Aec3NewRenderBufferingKillSwitch",
     "WebRTC-Aec3OverrideEchoPathGainKillSwitch",
     "WebRTC-Aec3RapidAgcGainRecoveryKillSwitch",
     "WebRTC-Aec3ResetErleAtGainChangesKillSwitch",
