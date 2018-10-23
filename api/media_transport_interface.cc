@@ -17,6 +17,9 @@
 
 #include "api/media_transport_interface.h"
 
+#include <cstdint>
+#include <utility>
+
 namespace webrtc {
 
 MediaTransportEncodedAudioFrame::~MediaTransportEncodedAudioFrame() {}

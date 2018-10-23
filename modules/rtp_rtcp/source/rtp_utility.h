@@ -11,14 +11,13 @@
 #ifndef MODULES_RTP_RTCP_SOURCE_RTP_UTILITY_H_
 #define MODULES_RTP_RTCP_SOURCE_RTP_UTILITY_H_
 
+#include <stdint.h>
 #include <cstring>
-#include <map>
 
-#include "modules/rtp_rtcp/include/receive_statistics.h"
+#include "api/rtp_headers.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "modules/rtp_rtcp/source/rtp_rtcp_config.h"
-#include "rtc_base/deprecation.h"
 
 namespace webrtc {
 

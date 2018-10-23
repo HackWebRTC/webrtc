@@ -13,12 +13,12 @@
 #include <algorithm>
 #include <cstdio>
 #include <string>
+#include <utility>
 
 #include "rtc_base/checks.h"
 #include "rtc_base/fileutils.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/pathutils.h"
-#include "rtc_base/strings/string_builder.h"
 
 // Note: We use fprintf for logging in the write paths of this stream to avoid
 // infinite loops when logging.

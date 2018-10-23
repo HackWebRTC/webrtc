@@ -11,6 +11,8 @@
 #ifndef CALL_RTP_CONFIG_H_
 #define CALL_RTP_CONFIG_H_
 
+#include <stddef.h>
+#include <stdint.h>
 #include <string>
 #include <vector>
 

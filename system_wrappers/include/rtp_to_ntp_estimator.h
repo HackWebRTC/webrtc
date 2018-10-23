@@ -11,10 +11,12 @@
 #ifndef SYSTEM_WRAPPERS_INCLUDE_RTP_TO_NTP_ESTIMATOR_H_
 #define SYSTEM_WRAPPERS_INCLUDE_RTP_TO_NTP_ESTIMATOR_H_
 
+#include <stdint.h>
 #include <list>
 
 #include "absl/types/optional.h"
 #include "modules/include/module_common_types_public.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/numerics/moving_median_filter.h"
 #include "system_wrappers/include/ntp_time.h"
 

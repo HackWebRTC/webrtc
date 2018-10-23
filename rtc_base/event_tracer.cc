@@ -10,7 +10,9 @@
 #include "rtc_base/event_tracer.h"
 
 #include <inttypes.h>
-
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 #include <string>
 #include <vector>
 
@@ -20,6 +22,9 @@
 #include "rtc_base/event.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
+#include "rtc_base/platform_thread_types.h"
+#include "rtc_base/thread_annotations.h"
+#include "rtc_base/thread_checker.h"
 #include "rtc_base/timeutils.h"
 #include "rtc_base/trace_event.h"
 

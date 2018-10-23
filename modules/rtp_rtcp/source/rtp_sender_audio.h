@@ -11,14 +11,18 @@
 #ifndef MODULES_RTP_RTCP_SOURCE_RTP_SENDER_AUDIO_H_
 #define MODULES_RTP_RTCP_SOURCE_RTP_SENDER_AUDIO_H_
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/rtp_rtcp/source/dtmf_queue.h"
-#include "modules/rtp_rtcp/source/rtp_rtcp_config.h"
 #include "modules/rtp_rtcp/source/rtp_sender.h"
 #include "modules/rtp_rtcp/source/rtp_utility.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/onetimeevent.h"
+#include "rtc_base/thread_annotations.h"
+#include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 

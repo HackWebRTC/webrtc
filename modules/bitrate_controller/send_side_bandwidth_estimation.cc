@@ -11,12 +11,12 @@
 #include "modules/bitrate_controller/send_side_bandwidth_estimation.h"
 
 #include <algorithm>
-#include <cmath>
 #include <cstdio>
 #include <limits>
 #include <string>
 
 #include "absl/memory/memory.h"
+#include "logging/rtc_event_log/events/rtc_event.h"
 #include "logging/rtc_event_log/events/rtc_event_bwe_update_loss_based.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"

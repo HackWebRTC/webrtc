@@ -10,6 +10,8 @@
 
 #include "api/video/video_bitrate_allocation.h"
 
+#include <cstdint>
+
 #include "rtc_base/checks.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/strings/string_builder.h"

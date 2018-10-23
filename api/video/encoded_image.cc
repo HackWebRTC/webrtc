@@ -12,11 +12,6 @@
 
 #include <string.h>
 
-#include <algorithm>  // swap
-
-#include "rtc_base/bind.h"
-#include "rtc_base/checks.h"
-
 namespace webrtc {
 
 // FFmpeg's decoder, used by H264DecoderImpl, requires up to 8 bytes padding due

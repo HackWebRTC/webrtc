@@ -11,6 +11,8 @@
 #ifndef MODULES_AUDIO_PROCESSING_INCLUDE_AUDIO_PROCESSING_STATISTICS_H_
 #define MODULES_AUDIO_PROCESSING_INCLUDE_AUDIO_PROCESSING_STATISTICS_H_
 
+#include <stdint.h>
+
 #include "absl/types/optional.h"
 #include "rtc_base/system/rtc_export.h"
 

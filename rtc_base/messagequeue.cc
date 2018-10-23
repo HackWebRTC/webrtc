@@ -8,14 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 #include <algorithm>
-#include <utility>  // for move
+#include <string>
+#include <utility>
 
 #include "rtc_base/atomicops.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/messagequeue.h"
 #include "rtc_base/thread.h"
-#include "rtc_base/timeutils.h"  // for TimeMillis, TimeDiff, TimeUntil
+#include "rtc_base/timeutils.h"
 #include "rtc_base/trace_event.h"
 
 namespace rtc {

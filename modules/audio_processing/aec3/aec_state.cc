@@ -11,7 +11,7 @@
 #include "modules/audio_processing/aec3/aec_state.h"
 
 #include <math.h>
-
+#include <algorithm>
 #include <numeric>
 #include <vector>
 

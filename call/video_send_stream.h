@@ -11,19 +11,21 @@
 #ifndef CALL_VIDEO_SEND_STREAM_H_
 #define CALL_VIDEO_SEND_STREAM_H_
 
+#include <stdint.h>
 #include <map>
 #include <string>
-#include <utility>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "api/call/transport.h"
 #include "api/crypto/cryptooptions.h"
+#include "api/rtpparameters.h"
+#include "api/video/video_content_type.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_sink_interface.h"
 #include "api/video/video_source_interface.h"
 #include "api/video/video_stream_encoder_settings.h"
 #include "api/video_codecs/video_encoder_config.h"
-#include "api/video_codecs/video_encoder_factory.h"
 #include "call/rtp_config.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"

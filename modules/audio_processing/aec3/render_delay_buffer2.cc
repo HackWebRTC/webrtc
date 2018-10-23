@@ -8,23 +8,29 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/audio_processing/aec3/render_delay_buffer.h"
-
 #include <string.h>
 #include <algorithm>
+#include <memory>
 #include <numeric>
+#include <vector>
 
+#include "absl/types/optional.h"
+#include "api/array_view.h"
+#include "api/audio/echo_canceller3_config.h"
 #include "modules/audio_processing/aec3/aec3_common.h"
 #include "modules/audio_processing/aec3/aec3_fft.h"
-#include "modules/audio_processing/aec3/block_processor.h"
 #include "modules/audio_processing/aec3/decimator.h"
+#include "modules/audio_processing/aec3/downsampled_render_buffer.h"
 #include "modules/audio_processing/aec3/fft_buffer.h"
 #include "modules/audio_processing/aec3/fft_data.h"
 #include "modules/audio_processing/aec3/matrix_buffer.h"
+#include "modules/audio_processing/aec3/render_buffer.h"
+#include "modules/audio_processing/aec3/render_delay_buffer.h"
+#include "modules/audio_processing/aec3/vector_buffer.h"
+#include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/atomicops.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 namespace {

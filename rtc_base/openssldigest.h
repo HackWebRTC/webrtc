@@ -11,7 +11,8 @@
 #ifndef RTC_BASE_OPENSSLDIGEST_H_
 #define RTC_BASE_OPENSSLDIGEST_H_
 
-#include <openssl/ossl_typ.h>  // for EVP_MD, EVP_MD_CTX
+#include <openssl/base.h>
+#include <stddef.h>
 #include <string>
 
 #include "rtc_base/messagedigest.h"

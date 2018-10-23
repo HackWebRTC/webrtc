@@ -8,8 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/audio_device/audio_device_config.h"
+#include <string.h>
+
 #include "modules/audio_device/linux/audio_device_pulse_linux.h"
+#include "modules/audio_device/linux/latebindingsymboltable_linux.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/event_wrapper.h"

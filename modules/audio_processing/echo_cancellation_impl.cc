@@ -10,11 +10,13 @@
 
 #include "modules/audio_processing/echo_cancellation_impl.h"
 
+#include <stdint.h>
 #include <string.h>
 
 #include "modules/audio_processing/aec/aec_core.h"
 #include "modules/audio_processing/aec/echo_cancellation.h"
 #include "modules/audio_processing/audio_buffer.h"
+#include "modules/audio_processing/include/config.h"
 #include "rtc_base/checks.h"
 #include "system_wrappers/include/field_trial.h"
 

@@ -11,17 +11,24 @@
 #ifndef MODULES_RTP_RTCP_SOURCE_RTP_RTCP_IMPL_H_
 #define MODULES_RTP_RTCP_SOURCE_RTP_RTCP_IMPL_H_
 
+#include <stddef.h>
+#include <stdint.h>
 #include <memory>
 #include <set>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/rtp_headers.h"
 #include "api/video/video_bitrate_allocation.h"
+#include "common_types.h"  // NOLINT(build/include)
+#include "modules/include/module_common_types.h"
+#include "modules/include/module_fec_types.h"
+#include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"  // RTCPPacketType
 #include "modules/rtp_rtcp/source/packet_loss_stats.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/tmmb_item.h"
 #include "modules/rtp_rtcp/source/rtcp_receiver.h"
 #include "modules/rtp_rtcp/source/rtcp_sender.h"
 #include "modules/rtp_rtcp/source/rtp_sender.h"
@@ -29,6 +36,10 @@
 #include "rtc_base/gtest_prod_util.h"
 
 namespace webrtc {
+
+class Clock;
+struct PacedPacketInfo;
+struct RTPVideoHeader;
 
 class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
  public:

@@ -20,6 +20,7 @@
 #include <cstdlib>
 #include <limits>
 #include <string>
+#include <type_traits>
 
 #include "rtc_base/checks.h"
 #include "rtc_base/numerics/safe_conversions.h"

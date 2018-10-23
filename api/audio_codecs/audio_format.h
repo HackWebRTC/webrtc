@@ -11,6 +11,7 @@
 #ifndef API_AUDIO_CODECS_AUDIO_FORMAT_H_
 #define API_AUDIO_CODECS_AUDIO_FORMAT_H_
 
+#include <stddef.h>
 #include <map>
 #include <string>
 

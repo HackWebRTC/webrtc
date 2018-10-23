@@ -10,10 +10,15 @@
 
 #include "modules/audio_coding/neteq/decoder_database.h"
 
-#include <utility>  // pair
+#include <stddef.h>
+#include <cstdint>
+#include <list>
+#include <type_traits>
+#include <utility>
 
 #include "absl/strings/match.h"
 #include "api/audio_codecs/audio_decoder.h"
+#include "common_types.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/audio_format_to_string.h"

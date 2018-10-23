@@ -10,6 +10,8 @@
 
 #include "modules/utility/source/process_thread_impl.h"
 
+#include <string>
+
 #include "modules/include/module.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/task_queue.h"

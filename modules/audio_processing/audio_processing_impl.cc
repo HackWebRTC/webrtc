@@ -10,15 +10,16 @@
 
 #include "modules/audio_processing/audio_processing_impl.h"
 
-#include <math.h>
 #include <algorithm>
+#include <cstdint>
 #include <string>
+#include <type_traits>
+#include <utility>
 
+#include "absl/types/optional.h"
+#include "api/array_view.h"
 #include "common_audio/audio_converter.h"
-#include "common_audio/channel_buffer.h"
 #include "common_audio/include/audio_util.h"
-#include "common_audio/signal_processing/include/signal_processing_library.h"
-#include "modules/audio_processing/aec/aec_core.h"
 #include "modules/audio_processing/agc/agc_manager_direct.h"
 #include "modules/audio_processing/agc2/gain_applier.h"
 #include "modules/audio_processing/audio_buffer.h"
@@ -28,6 +29,7 @@
 #include "modules/audio_processing/gain_control_for_experimental_agc.h"
 #include "modules/audio_processing/gain_control_impl.h"
 #include "modules/audio_processing/gain_controller2.h"
+#include "modules/audio_processing/include/audio_frame_view.h"
 #include "modules/audio_processing/level_estimator_impl.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "modules/audio_processing/low_cut_filter.h"
@@ -37,10 +39,9 @@
 #include "modules/audio_processing/voice_detection_impl.h"
 #include "rtc_base/atomicops.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/constructormagic.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/platform_file.h"
 #include "rtc_base/refcountedobject.h"
-#include "rtc_base/system/arch.h"
 #include "rtc_base/timeutils.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/metrics.h"

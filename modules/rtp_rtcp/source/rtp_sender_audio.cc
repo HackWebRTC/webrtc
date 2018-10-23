@@ -11,16 +11,17 @@
 #include "modules/rtp_rtcp/source/rtp_sender_audio.h"
 
 #include <string.h>
-
 #include <memory>
 #include <utility>
 
+#include "api/audio_codecs/audio_format.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
+#include "modules/rtp_rtcp/source/rtp_packet.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/timeutils.h"
 #include "rtc_base/trace_event.h"
 
 namespace webrtc {

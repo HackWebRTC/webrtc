@@ -17,6 +17,7 @@
 #include <limits>     // numeric_limits<T>
 
 #include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "modules/audio_coding/neteq/audio_multi_vector.h"
 #include "modules/audio_coding/neteq/background_noise.h"
 #include "modules/audio_coding/neteq/cross_correlation.h"
 #include "modules/audio_coding/neteq/dsp_helper.h"

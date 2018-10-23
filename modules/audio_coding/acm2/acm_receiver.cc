@@ -10,21 +10,22 @@
 
 #include "modules/audio_coding/acm2/acm_receiver.h"
 
-#include <stdlib.h>  // malloc
-
-#include <algorithm>  // sort
+#include <stdlib.h>
+#include <string.h>
+#include <cstdint>
 #include <vector>
 
 #include "absl/strings/match.h"
+#include "api/audio/audio_frame.h"
 #include "api/audio_codecs/audio_decoder.h"
-#include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "common_types.h"
 #include "modules/audio_coding/acm2/acm_resampler.h"
 #include "modules/audio_coding/acm2/call_statistics.h"
 #include "modules/audio_coding/acm2/rent_a_codec.h"
 #include "modules/audio_coding/neteq/include/neteq.h"
+#include "modules/audio_coding/neteq/neteq_decoder_enum.h"
 #include "modules/include/module_common_types.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/format_macros.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/strings/audio_format_to_string.h"

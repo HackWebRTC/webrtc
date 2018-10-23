@@ -11,11 +11,13 @@
 #include "modules/audio_processing/echo_control_mobile_impl.h"
 
 #include <string.h>
+#include <cstdint>
 
 #include "modules/audio_processing/aecm/echo_control_mobile.h"
 #include "modules/audio_processing/audio_buffer.h"
+#include "modules/audio_processing/include/audio_processing.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/constructormagic.h"
-#include "rtc_base/logging.h"
 
 namespace webrtc {
 

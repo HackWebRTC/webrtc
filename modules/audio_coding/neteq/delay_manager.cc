@@ -11,14 +11,15 @@
 #include "modules/audio_coding/neteq/delay_manager.h"
 
 #include <assert.h>
-#include <math.h>
-
-#include <algorithm>  // max, min
+#include <stdio.h>
+#include <stdlib.h>
+#include <algorithm>
 #include <numeric>
+#include <string>
 
-#include "common_audio/signal_processing/include/signal_processing_library.h"
 #include "modules/audio_coding/neteq/delay_peak_detector.h"
-#include "modules/include/module_common_types.h"
+#include "modules/include/module_common_types_public.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "system_wrappers/include/field_trial.h"

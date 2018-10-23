@@ -11,6 +11,8 @@
 #include "modules/pacing/round_robin_packet_queue.h"
 
 #include <algorithm>
+#include <cstdint>
+#include <utility>
 
 #include "rtc_base/checks.h"
 

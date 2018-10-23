@@ -11,12 +11,16 @@
 #ifndef MODULES_PACING_ROUND_ROBIN_PACKET_QUEUE_H_
 #define MODULES_PACING_ROUND_ROBIN_PACKET_QUEUE_H_
 
+#include <stddef.h>
+#include <stdint.h>
 #include <list>
 #include <map>
 #include <queue>
 #include <set>
 
+#include "absl/types/optional.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 

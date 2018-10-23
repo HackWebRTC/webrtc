@@ -20,6 +20,7 @@
 #include <malloc.h>
 #include <wchar.h>
 #include <windows.h>
+
 #define alloca _alloca
 #endif  // WEBRTC_WIN
 
@@ -29,6 +30,7 @@
 #else  // BSD
 #include <alloca.h>
 #endif  // !BSD
+#include <strings.h>
 #endif  // WEBRTC_POSIX
 
 #include <string>

@@ -11,16 +11,16 @@
 #ifndef RTC_BASE_OPENSSLCERTIFICATE_H_
 #define RTC_BASE_OPENSSLCERTIFICATE_H_
 
-#include <openssl/ossl_typ.h>  // for X509, SSL_CTX
+#include <openssl/ossl_typ.h>
 
-#include <stddef.h>  // for size_t
-#include <stdint.h>  // for int64_t
+#include <stddef.h>
+#include <stdint.h>
 #include <string>
 
-#include "rtc_base/buffer.h"            // for Buffer
-#include "rtc_base/constructormagic.h"  // for RTC_DISALLOW_COPY_AND_ASSIGN
-#include "rtc_base/sslcertificate.h"    // for SSLCertificate
-#include "rtc_base/sslidentity.h"       // for SSLIdentityParams
+#include "rtc_base/buffer.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/sslcertificate.h"
+#include "rtc_base/sslidentity.h"
 
 namespace rtc {
 

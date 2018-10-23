@@ -10,11 +10,11 @@
 
 #include "modules/rtp_rtcp/source/rtp_packet.h"
 
+#include <cstdint>
 #include <cstring>
 #include <utility>
 
 #include "api/rtpparameters.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"

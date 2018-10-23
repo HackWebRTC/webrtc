@@ -10,10 +10,15 @@
 
 #include "rtc_base/rtccertificategenerator.h"
 
+#include <time.h>
 #include <algorithm>
 #include <memory>
+#include <utility>
 
 #include "rtc_base/checks.h"
+#include "rtc_base/location.h"
+#include "rtc_base/messagehandler.h"
+#include "rtc_base/messagequeue.h"
 #include "rtc_base/refcountedobject.h"
 #include "rtc_base/sslidentity.h"
 

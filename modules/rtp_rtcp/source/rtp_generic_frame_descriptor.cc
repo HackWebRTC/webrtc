@@ -10,6 +10,8 @@
 
 #include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor.h"
 
+#include <cstdint>
+
 #include "rtc_base/checks.h"
 
 namespace webrtc {

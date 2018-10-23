@@ -43,6 +43,7 @@ rtc_static_library("remote_bitrate_estimator") {
     "../..:webrtc_common",
     "../../api/units:data_rate",
     "../../modules:module_api",
+    "../../modules:module_api_public",
     "../../modules/rtp_rtcp:rtp_rtcp_format",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",

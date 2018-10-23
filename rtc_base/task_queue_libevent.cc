@@ -10,17 +10,17 @@
 
 #include "rtc_base/task_queue.h"
 
-#include <errno.h>  // for EAGAIN, errno
+#include <errno.h>
 #include <fcntl.h>
-#include <pthread.h>  // for pthread_getspecific
+#include <pthread.h>
 #include <signal.h>
-#include <stdint.h>  // for uint32_t
-#include <time.h>    // for nanosleep, timespec
+#include <stdint.h>
+#include <time.h>
 #include <unistd.h>
 #include <list>
-#include <memory>       // for unique_ptr, allocator
-#include <type_traits>  // for remove_reference<>::...
-#include <utility>      // for move
+#include <memory>
+#include <type_traits>
+#include <utility>
 
 #include "base/third_party/libevent/event.h"
 #include "rtc_base/checks.h"
@@ -28,13 +28,13 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/platform_thread.h"
-#include "rtc_base/platform_thread_types.h"  // for CurrentThreadRef
+#include "rtc_base/platform_thread_types.h"
 #include "rtc_base/refcount.h"
 #include "rtc_base/refcountedobject.h"
-#include "rtc_base/scoped_ref_ptr.h"  // for scoped_refptr
+#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/system/unused.h"
 #include "rtc_base/task_queue_posix.h"
-#include "rtc_base/thread_annotations.h"  // for RTC_GUARDED_BY
+#include "rtc_base/thread_annotations.h"
 #include "rtc_base/timeutils.h"
 
 namespace rtc {

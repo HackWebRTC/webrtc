@@ -13,14 +13,19 @@
 #include <string>
 #include <utility>
 
+#include "absl/memory/memory.h"
+#include "api/array_view.h"
+#include "api/audio_codecs/audio_format.h"
 #include "api/call/audio_sink.h"
+#include "api/rtpparameters.h"
 #include "audio/audio_send_stream.h"
 #include "audio/audio_state.h"
+#include "audio/channel_receive.h"
 #include "audio/channel_receive_proxy.h"
 #include "audio/conversion.h"
+#include "call/rtp_config.h"
 #include "call/rtp_stream_receiver_controller_interface.h"
-#include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/string_builder.h"

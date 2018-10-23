@@ -11,18 +11,19 @@
 #ifndef MODULES_AUDIO_PROCESSING_AEC3_STATIONARITY_ESTIMATOR_H_
 #define MODULES_AUDIO_PROCESSING_AEC3_STATIONARITY_ESTIMATOR_H_
 
+#include <stddef.h>
 #include <array>
 #include <memory>
-#include <vector>
 
 #include "api/array_view.h"
-#include "modules/audio_processing/aec3/aec3_common.h"
+#include "modules/audio_processing/aec3/aec3_common.h"  // kFftLengthBy2Plus1...
 #include "modules/audio_processing/aec3/reverb_model.h"
-#include "modules/audio_processing/aec3/vector_buffer.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 
 class ApmDataDumper;
+struct VectorBuffer;
 
 class StationarityEstimator {
  public:

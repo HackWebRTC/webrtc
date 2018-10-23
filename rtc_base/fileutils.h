@@ -19,15 +19,12 @@
 #include <dirent.h>
 #include <stdio.h>
 #include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
 #endif  // WEBRTC_WIN
 
 #include "rtc_base/constructormagic.h"
 
 namespace rtc {
 
-class FileStream;
 class Pathname;
 
 //////////////////////////

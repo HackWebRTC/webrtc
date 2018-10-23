@@ -11,8 +11,8 @@
 #include "modules/audio_processing/aec3/suppression_gain.h"
 
 #include <math.h>
+#include <stddef.h>
 #include <algorithm>
-#include <functional>
 #include <numeric>
 
 #include "modules/audio_processing/aec3/moving_average.h"
@@ -20,7 +20,6 @@
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/atomicops.h"
 #include "rtc_base/checks.h"
-#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 namespace {

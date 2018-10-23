@@ -11,11 +11,7 @@
 #ifndef MODULES_AUDIO_PROCESSING_AEC3_ECHO_AUDIBILITY_H_
 #define MODULES_AUDIO_PROCESSING_AEC3_ECHO_AUDIBILITY_H_
 
-#include <algorithm>
-#include <array>
-#include <limits>
-#include <memory>
-#include <vector>
+#include <stddef.h>
 
 #include "absl/types/optional.h"
 #include "api/array_view.h"
@@ -26,8 +22,6 @@
 #include "rtc_base/constructormagic.h"
 
 namespace webrtc {
-
-class ApmDataDumper;
 
 class EchoAudibility {
  public:

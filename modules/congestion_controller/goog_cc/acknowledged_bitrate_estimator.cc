@@ -10,10 +10,13 @@
 
 #include "modules/congestion_controller/goog_cc/acknowledged_bitrate_estimator.h"
 
+#include <stddef.h>
+#include <algorithm>
 #include <utility>
 
 #include "absl/memory/memory.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "system_wrappers/include/field_trial.h"
 

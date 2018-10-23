@@ -12,15 +12,10 @@
 #define MODULES_AUDIO_PROCESSING_AEC3_RENDER_DELAY_BUFFER_H_
 
 #include <stddef.h>
-#include <array>
 #include <vector>
 
-#include "absl/types/optional.h"
-#include "api/array_view.h"
 #include "api/audio/echo_canceller3_config.h"
-#include "modules/audio_processing/aec3/aec3_common.h"
 #include "modules/audio_processing/aec3/downsampled_render_buffer.h"
-#include "modules/audio_processing/aec3/fft_data.h"
 #include "modules/audio_processing/aec3/render_buffer.h"
 
 namespace webrtc {

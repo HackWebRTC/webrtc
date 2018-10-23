@@ -15,12 +15,21 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
-
+#include "api/audio_codecs/audio_encoder.h"
+#include "api/audio_codecs/audio_encoder_factory.h"
+#include "api/audio_codecs/audio_format.h"
+#include "api/call/transport.h"
+#include "api/crypto/frameencryptorinterface.h"
 #include "audio/audio_state.h"
+#include "audio/channel_send.h"
 #include "audio/channel_send_proxy.h"
 #include "audio/conversion.h"
+#include "call/rtp_config.h"
 #include "call/rtp_transport_controller_send_interface.h"
+#include "common_audio/vad/include/vad.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/cng/audio_encoder_cng.h"
+#include "modules/audio_processing/include/audio_processing.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/event.h"
 #include "rtc_base/function_view.h"

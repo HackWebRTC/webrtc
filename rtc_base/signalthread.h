@@ -14,13 +14,13 @@
 #include <string>
 
 #include "rtc_base/checks.h"
-#include "rtc_base/constructormagic.h"             // for RTC_DISALLOW_IMPLI...
-#include "rtc_base/criticalsection.h"              // for CriticalSection
-#include "rtc_base/messagehandler.h"               // for MessageHandler
-#include "rtc_base/messagequeue.h"                 // for Message
-#include "rtc_base/third_party/sigslot/sigslot.h"  // for has_slots, signal_...
-#include "rtc_base/thread.h"                       // for Thread
-#include "rtc_base/thread_annotations.h"           // for RTC_EXCLUSIVE_LOCK...
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/messagehandler.h"
+#include "rtc_base/messagequeue.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
+#include "rtc_base/thread.h"
+#include "rtc_base/thread_annotations.h"
 
 namespace rtc {
 

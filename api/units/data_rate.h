@@ -20,12 +20,12 @@
 #include <cmath>
 #include <limits>
 #include <string>
-
-#include "rtc_base/checks.h"
-#include "rtc_base/numerics/safe_conversions.h"
+#include <type_traits>
 
 #include "api/units/data_size.h"
 #include "api/units/time_delta.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/numerics/safe_conversions.h"
 
 namespace webrtc {
 namespace data_rate_impl {

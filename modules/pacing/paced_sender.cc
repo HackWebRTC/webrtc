@@ -11,15 +11,10 @@
 #include "modules/pacing/paced_sender.h"
 
 #include <algorithm>
-#include <map>
-#include <queue>
-#include <set>
-#include <utility>
-#include <vector>
 
 #include "absl/memory/memory.h"
+#include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/congestion_controller/goog_cc/alr_detector.h"
-#include "modules/include/module_common_types.h"
 #include "modules/pacing/bitrate_prober.h"
 #include "modules/pacing/interval_budget.h"
 #include "modules/utility/include/process_thread.h"

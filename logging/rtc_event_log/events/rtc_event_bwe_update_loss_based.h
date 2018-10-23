@@ -11,6 +11,7 @@
 #ifndef LOGGING_RTC_EVENT_LOG_EVENTS_RTC_EVENT_BWE_UPDATE_LOSS_BASED_H_
 #define LOGGING_RTC_EVENT_LOG_EVENTS_RTC_EVENT_BWE_UPDATE_LOSS_BASED_H_
 
+#include <stdint.h>
 #include <memory>
 
 #include "logging/rtc_event_log/events/rtc_event.h"

@@ -10,6 +10,10 @@
 
 #include "api/video_codecs/video_encoder.h"
 
+#include <string.h>
+
+#include "rtc_base/checks.h"
+
 namespace webrtc {
 
 // TODO(mflodman): Add default complexity for VP9 and VP9.

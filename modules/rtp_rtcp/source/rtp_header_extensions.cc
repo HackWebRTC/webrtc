@@ -10,10 +10,13 @@
 
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
 
+#include <string.h>
+
 #include "modules/rtp_rtcp/include/rtp_cvo.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
+// TODO(bug:9855) Move kNoSpatialIdx from vp9_globals.h to common_constants
+#include "modules/video_coding/codecs/interface/common_constants.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/logging.h"
 
 namespace webrtc {
 // Absolute send time in RTP streams.

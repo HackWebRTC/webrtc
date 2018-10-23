@@ -21,6 +21,7 @@
 #include "p2p/base/dtlstransportinternal.h"
 #include "p2p/base/fakeicetransport.h"
 #include "rtc_base/fakesslidentity.h"
+#include "rtc_base/rtccertificate.h"
 
 namespace cricket {
 

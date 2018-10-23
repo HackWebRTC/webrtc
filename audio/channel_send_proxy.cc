@@ -12,11 +12,8 @@
 
 #include <utility>
 
-#include "api/call/audio_sink.h"
 #include "call/rtp_transport_controller_send_interface.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/logging.h"
-#include "rtc_base/numerics/safe_minmax.h"
 
 namespace webrtc {
 namespace voe {

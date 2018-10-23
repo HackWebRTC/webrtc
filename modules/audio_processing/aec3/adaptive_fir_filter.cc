@@ -24,7 +24,6 @@
 
 #include "modules/audio_processing/aec3/fft_data.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/logging.h"
 #include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {

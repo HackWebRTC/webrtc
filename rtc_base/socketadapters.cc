@@ -13,18 +13,23 @@
 #endif
 
 #include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <time.h>
 
 #if defined(WEBRTC_WIN)
 #include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
+
 #define SECURITY_WIN32
 #include <security.h>
 #endif
 
 #include <algorithm>
 
+#include "rtc_base/buffer.h"
 #include "rtc_base/bytebuffer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/httpcommon.h"

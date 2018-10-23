@@ -11,13 +11,12 @@
 #ifndef MODULES_AUDIO_PROCESSING_AEC3_ECHO_PATH_DELAY_ESTIMATOR_H_
 #define MODULES_AUDIO_PROCESSING_AEC3_ECHO_PATH_DELAY_ESTIMATOR_H_
 
-#include <vector>
+#include <stddef.h>
 
 #include "absl/types/optional.h"
-#include "api/audio/echo_canceller3_config.h"
+#include "api/array_view.h"
 #include "modules/audio_processing/aec3/decimator.h"
 #include "modules/audio_processing/aec3/delay_estimate.h"
-#include "modules/audio_processing/aec3/downsampled_render_buffer.h"
 #include "modules/audio_processing/aec3/matched_filter.h"
 #include "modules/audio_processing/aec3/matched_filter_lag_aggregator.h"
 #include "rtc_base/constructormagic.h"
@@ -25,6 +24,8 @@
 namespace webrtc {
 
 class ApmDataDumper;
+struct DownsampledRenderBuffer;
+struct EchoCanceller3Config;
 
 // Estimates the delay of the echo path.
 class EchoPathDelayEstimator {

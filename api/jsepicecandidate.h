@@ -14,6 +14,7 @@
 #ifndef API_JSEPICECANDIDATE_H_
 #define API_JSEPICECANDIDATE_H_
 
+#include <stddef.h>
 #include <string>
 #include <vector>
 

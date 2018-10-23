@@ -32,6 +32,7 @@
 #include "rtc_base/openssladapter.h"
 #include "rtc_base/openssldigest.h"
 #include "rtc_base/opensslidentity.h"
+#include "rtc_base/sslcertificate.h"
 #include "rtc_base/stream.h"
 #include "rtc_base/stringutils.h"
 #include "rtc_base/thread.h"

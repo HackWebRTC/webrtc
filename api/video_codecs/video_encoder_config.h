@@ -11,12 +11,14 @@
 #ifndef API_VIDEO_CODECS_VIDEO_ENCODER_CONFIG_H_
 #define API_VIDEO_CODECS_VIDEO_ENCODER_CONFIG_H_
 
+#include <stddef.h>
 #include <string>
 #include <vector>
 
 #include "absl/types/optional.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_codec.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/refcount.h"
 #include "rtc_base/scoped_ref_ptr.h"
 

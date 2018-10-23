@@ -12,11 +12,11 @@
 
 #if defined(WEBRTC_WIN)
 #include <io.h>
+
 #include "rtc_base/stringutils.h"  // For ToUtf16
 #else
 #include <fcntl.h>
 #include <sys/stat.h>
-#include <sys/types.h>
 #include <unistd.h>
 #endif
 

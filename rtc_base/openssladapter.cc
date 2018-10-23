@@ -10,26 +10,25 @@
 
 #include "rtc_base/openssladapter.h"
 
-#if defined(WEBRTC_POSIX)
-#include <unistd.h>
-#endif
+#include <errno.h>
 
 #include <openssl/bio.h>
-#include <openssl/crypto.h>
 #include <openssl/err.h>
-#include <openssl/opensslv.h>
 #include <openssl/rand.h>
 #include <openssl/x509.h>
-#include <openssl/x509v3.h>
 #include "rtc_base/openssl.h"
 
-#include "absl/memory/memory.h"  // for make_unique
+#include <string.h>
+#include <time.h>
+
+#include "absl/memory/memory.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/location.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
+#include "rtc_base/opensslcertificate.h"
 #include "rtc_base/opensslutility.h"
 #include "rtc_base/stringencode.h"
-#include "rtc_base/stringutils.h"
 #include "rtc_base/thread.h"
 
 #ifndef OPENSSL_IS_BORINGSSL

@@ -41,6 +41,7 @@ rtc_source_set("call_interfaces") {
     "../modules/audio_processing:audio_processing",
     "../modules/audio_processing:audio_processing_statistics",
     "../rtc_base:audio_format_to_string",
+    "../rtc_base:checks",
     "../rtc_base:rtc_base",
     "../rtc_base:rtc_base_approved",
     "../rtc_base/network:sent_packet",

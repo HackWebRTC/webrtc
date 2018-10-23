@@ -24,9 +24,11 @@
 #pragma warning(disable : 4722)
 #endif
 
-#include <utility>  // for move
+#include <stdio.h>
+#include <utility>
 
 #include "rtc_base/checks.h"
+#include "rtc_base/criticalsection.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/nullsocketserver.h"
 #include "rtc_base/timeutils.h"
@@ -34,6 +36,7 @@
 
 #if defined(WEBRTC_MAC)
 #include "rtc_base/system/cocoa_threading.h"
+
 /*
  * These are forward-declarations for methods that are part of the
  * ObjC runtime. They are declared in the private header objc-internal.h.

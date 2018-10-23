@@ -11,11 +11,16 @@
 #include "rtc_base/sslfingerprint.h"
 
 #include <ctype.h>
+#include <algorithm>
+#include <cstdint>
 #include <string>
 
 #include "absl/memory/memory.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/messagedigest.h"
+#include "rtc_base/rtccertificate.h"
+#include "rtc_base/sslcertificate.h"
+#include "rtc_base/sslidentity.h"
 #include "rtc_base/stringencode.h"
 
 namespace rtc {

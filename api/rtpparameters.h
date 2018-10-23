@@ -11,6 +11,7 @@
 #ifndef API_RTPPARAMETERS_H_
 #define API_RTPPARAMETERS_H_
 
+#include <stdint.h>
 #include <string>
 #include <unordered_map>
 #include <vector>

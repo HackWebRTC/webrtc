@@ -10,17 +10,24 @@
 
 #include "modules/audio_coding/include/audio_coding_module.h"
 
+#include <assert.h>
 #include <algorithm>
+#include <cstdint>
 
 #include "absl/strings/match.h"
+#include "api/array_view.h"
 #include "modules/audio_coding/acm2/acm_receiver.h"
 #include "modules/audio_coding/acm2/acm_resampler.h"
 #include "modules/audio_coding/acm2/codec_manager.h"
 #include "modules/audio_coding/acm2/rent_a_codec.h"
 #include "modules/include/module_common_types.h"
+#include "modules/include/module_common_types_public.h"
+#include "rtc_base/buffer.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/criticalsection.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
+#include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/metrics.h"
 
 namespace webrtc {

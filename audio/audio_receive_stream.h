@@ -18,7 +18,6 @@
 #include "api/rtp_headers.h"
 #include "audio/audio_state.h"
 #include "call/audio_receive_stream.h"
-#include "call/rtp_packet_sink_interface.h"
 #include "call/syncable.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/thread_checker.h"

@@ -11,20 +11,25 @@
 #ifndef MODULES_PACING_PACED_SENDER_H_
 #define MODULES_PACING_PACED_SENDER_H_
 
+#include <stddef.h>
+#include <stdint.h>
 #include <memory>
 
 #include "absl/types/optional.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
+#include "api/transport/network_types.h"
 #include "modules/pacing/bitrate_prober.h"
 #include "modules/pacing/interval_budget.h"
 #include "modules/pacing/pacer.h"
 #include "modules/pacing/round_robin_packet_queue.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/utility/include/process_thread.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/thread_annotations.h"
-#include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 class AlrDetector;
+class Clock;
+class RtcEventLog;
 
 class PacedSender : public Pacer {
  public:

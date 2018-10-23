@@ -11,17 +11,21 @@
 #ifndef MODULES_AUDIO_CODING_CODECS_CNG_AUDIO_ENCODER_CNG_H_
 #define MODULES_AUDIO_CODING_CODECS_CNG_AUDIO_ENCODER_CNG_H_
 
+#include <stddef.h>
+#include <stdint.h>
 #include <memory>
 #include <vector>
 
+#include "absl/types/optional.h"
+#include "api/array_view.h"
 #include "api/audio_codecs/audio_encoder.h"
 #include "common_audio/vad/include/vad.h"
-#include "modules/audio_coding/codecs/cng/webrtc_cng.h"
+#include "rtc_base/buffer.h"
 #include "rtc_base/constructormagic.h"
 
 namespace webrtc {
 
-class Vad;
+class ComfortNoiseEncoder;
 
 class AudioEncoderCng final : public AudioEncoder {
  public:

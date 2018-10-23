@@ -11,24 +11,17 @@
 #if defined(WEBRTC_POSIX)
 #include <netinet/in.h>
 #include <sys/socket.h>
-#include <sys/types.h>
 #ifdef OPENBSD
 #include <netinet/in_systm.h>
 #endif
 #ifndef __native_client__
 #include <netinet/ip.h>
 #endif
-#include <arpa/inet.h>
 #include <netdb.h>
-#include <unistd.h>
 #endif
 
-#include <stdio.h>
-
 #include "rtc_base/byteorder.h"
-#include "rtc_base/checks.h"
 #include "rtc_base/ipaddress.h"
-#include "rtc_base/logging.h"
 #include "rtc_base/nethelpers.h"
 #include "rtc_base/stringutils.h"
 

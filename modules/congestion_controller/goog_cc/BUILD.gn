@@ -120,6 +120,7 @@ rtc_source_set("delay_based_bwe") {
 
   deps = [
     ":estimators",
+    "../../../api/transport:network_control",
     "../../../logging:rtc_event_bwe",
     "../../../logging:rtc_event_log_api",
     "../../../rtc_base:checks",
@@ -128,7 +129,9 @@ rtc_source_set("delay_based_bwe") {
     "../../../system_wrappers:metrics",
     "../../pacing",
     "../../remote_bitrate_estimator",
+    "../../rtp_rtcp:rtp_rtcp_format",
     "//third_party/abseil-cpp/absl/memory",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 

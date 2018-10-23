@@ -10,11 +10,11 @@
 
 #include "rtc_base/strings/string_builder.h"
 
-#include <stdarg.h>  // for va_end, va_list, va_start
-#include <cstring>   // for strlen
+#include <stdarg.h>
+#include <cstring>
 
-#include "rtc_base/checks.h"                // for FatalLogCall, RTC_DCHECK
-#include "rtc_base/numerics/safe_minmax.h"  // for SafeMin
+#include "rtc_base/checks.h"
+#include "rtc_base/numerics/safe_minmax.h"
 
 namespace rtc {
 

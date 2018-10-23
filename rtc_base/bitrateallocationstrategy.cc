@@ -11,6 +11,8 @@
 #include "rtc_base/bitrateallocationstrategy.h"
 
 #include <algorithm>
+#include <cstddef>
+#include <cstdint>
 #include <map>
 #include <utility>
 

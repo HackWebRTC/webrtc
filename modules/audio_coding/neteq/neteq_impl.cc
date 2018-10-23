@@ -11,13 +11,16 @@
 #include "modules/audio_coding/neteq/neteq_impl.h"
 
 #include <assert.h>
-
 #include <algorithm>
+#include <cstdint>
+#include <cstring>
+#include <list>
 #include <utility>
 #include <vector>
 
 #include "api/audio_codecs/audio_decoder.h"
 #include "common_audio/signal_processing/include/signal_processing_library.h"
+#include "modules/audio_coding/codecs/cng/webrtc_cng.h"
 #include "modules/audio_coding/neteq/accelerate.h"
 #include "modules/audio_coding/neteq/background_noise.h"
 #include "modules/audio_coding/neteq/buffer_level_filter.h"
@@ -40,15 +43,14 @@
 #include "modules/audio_coding/neteq/red_payload_splitter.h"
 #include "modules/audio_coding/neteq/sync_buffer.h"
 #include "modules/audio_coding/neteq/tick_timer.h"
+#include "modules/audio_coding/neteq/time_stretch.h"
 #include "modules/audio_coding/neteq/timestamp_scaler.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/sanitizer.h"
 #include "rtc_base/strings/audio_format_to_string.h"
-#include "rtc_base/system/fallthrough.h"
 #include "rtc_base/trace_event.h"
-#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 

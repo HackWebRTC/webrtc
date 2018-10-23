@@ -14,9 +14,6 @@
 #include <windows.h>
 #elif defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
 #include <ApplicationServices/ApplicationServices.h>
-#include <pthread.h>
-#else
-#include <pthread.h>
 #endif
 
 #include "rtc_base/event.h"

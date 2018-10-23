@@ -11,6 +11,7 @@
 #ifndef LOGGING_RTC_EVENT_LOG_RTC_EVENT_LOG_H_
 #define LOGGING_RTC_EVENT_LOG_RTC_EVENT_LOG_H_
 
+#include <stdint.h>
 #include <memory>
 
 #include "api/rtceventlogoutput.h"

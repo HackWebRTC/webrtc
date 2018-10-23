@@ -10,6 +10,13 @@
 
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
+#include <ctype.h>
+#include <string.h>
+#include <algorithm>
+#include <type_traits>
+
+#include "api/array_view.h"
+
 namespace webrtc {
 
 StreamDataCounters::StreamDataCounters() : first_packet_time_ms(-1) {}

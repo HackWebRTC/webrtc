@@ -11,9 +11,8 @@
 #ifndef MODULES_AUDIO_PROCESSING_AEC3_AEC_STATE_H_
 #define MODULES_AUDIO_PROCESSING_AEC3_AEC_STATE_H_
 
-#include <math.h>
-
-#include <algorithm>
+#include <stddef.h>
+#include <array>
 #include <memory>
 #include <vector>
 

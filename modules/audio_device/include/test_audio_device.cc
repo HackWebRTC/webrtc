@@ -8,8 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 #include <algorithm>
+#include <cstdint>
+#include <cstdlib>
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -28,6 +31,7 @@
 #include "rtc_base/random.h"
 #include "rtc_base/refcountedobject.h"
 #include "rtc_base/thread.h"
+#include "rtc_base/thread_annotations.h"
 #include "rtc_base/timeutils.h"
 
 namespace webrtc {

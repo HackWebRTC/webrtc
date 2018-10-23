@@ -16,6 +16,7 @@
 
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
+#include "common_types.h"
 #include "modules/audio_coding/audio_network_adaptor/audio_network_adaptor_impl.h"
 #include "modules/audio_coding/audio_network_adaptor/controller_manager.h"
 #include "modules/audio_coding/codecs/opus/opus_interface.h"

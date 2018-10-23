@@ -11,8 +11,10 @@
 #ifndef RTC_BASE_BITRATEALLOCATIONSTRATEGY_H_
 #define RTC_BASE_BITRATEALLOCATIONSTRATEGY_H_
 
+#include <stdint.h>
 #include <string>
 #include <vector>
+
 #include "api/array_view.h"
 #include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/experiments/field_trial_units.h"

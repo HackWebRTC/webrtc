@@ -11,8 +11,10 @@
 #ifndef MODULES_REMOTE_BITRATE_ESTIMATOR_AIMD_RATE_CONTROL_H_
 #define MODULES_REMOTE_BITRATE_ESTIMATOR_AIMD_RATE_CONTROL_H_
 
+#include <stdint.h>
+
+#include "absl/types/optional.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
-#include "rtc_base/constructormagic.h"
 
 namespace webrtc {
 

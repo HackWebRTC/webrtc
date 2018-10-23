@@ -13,13 +13,18 @@
 
 #include <openssl/ossl_typ.h>
 
+#include <stddef.h>
+#include <stdint.h>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "rtc_base/buffer.h"
+#include "rtc_base/messagequeue.h"
 #include "rtc_base/opensslidentity.h"
+#include "rtc_base/sslidentity.h"
 #include "rtc_base/sslstreamadapter.h"
+#include "rtc_base/stream.h"
 
 namespace rtc {
 
@@ -47,7 +52,7 @@ namespace rtc {
 
 // Look in sslstreamadapter.h for documentation of the methods.
 
-class OpenSSLIdentity;
+class SSLCertChain;
 
 ///////////////////////////////////////////////////////////////////////////////
 

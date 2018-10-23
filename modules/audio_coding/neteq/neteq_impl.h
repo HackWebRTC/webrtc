@@ -17,10 +17,10 @@
 #include "absl/types/optional.h"
 #include "api/audio/audio_frame.h"
 #include "modules/audio_coding/neteq/audio_multi_vector.h"
-#include "modules/audio_coding/neteq/defines.h"
+#include "modules/audio_coding/neteq/defines.h"  // Modes, Operations
 #include "modules/audio_coding/neteq/expand_uma_logger.h"
 #include "modules/audio_coding/neteq/include/neteq.h"
-#include "modules/audio_coding/neteq/packet.h"  // Declare PacketList.
+#include "modules/audio_coding/neteq/packet.h"
 #include "modules/audio_coding/neteq/random_vector.h"
 #include "modules/audio_coding/neteq/rtcp.h"
 #include "modules/audio_coding/neteq/statistics_calculator.h"

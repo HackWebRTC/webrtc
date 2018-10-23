@@ -12,9 +12,10 @@
 
 #include <algorithm>
 #include <cmath>
+#include <utility>
+#include <vector>
 
 #include "api/array_view.h"
-#include "modules/audio_processing/aec3/aec3_common.h"
 #include "modules/audio_processing/aec3/matrix_buffer.h"
 #include "modules/audio_processing/aec3/stationarity_estimator.h"
 #include "modules/audio_processing/aec3/vector_buffer.h"

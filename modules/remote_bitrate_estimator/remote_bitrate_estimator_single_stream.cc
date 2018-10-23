@@ -10,12 +10,18 @@
 
 #include "modules/remote_bitrate_estimator/remote_bitrate_estimator_single_stream.h"
 
+#include <assert.h>
+#include <cstdint>
 #include <utility>
 
+#include "absl/types/optional.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/remote_bitrate_estimator/aimd_rate_control.h"
+#include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "modules/remote_bitrate_estimator/inter_arrival.h"
 #include "modules/remote_bitrate_estimator/overuse_detector.h"
 #include "modules/remote_bitrate_estimator/overuse_estimator.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/metrics.h"

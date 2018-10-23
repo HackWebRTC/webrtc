@@ -11,12 +11,14 @@
 #include "modules/rtp_rtcp/source/rtp_rtcp_impl.h"
 
 #include <string.h>
-
 #include <algorithm>
+#include <cstdint>
 #include <set>
 #include <string>
+#include <utility>
 
-#include "api/rtpparameters.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/dlrr.h"
+#include "modules/rtp_rtcp/source/rtp_rtcp_config.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 

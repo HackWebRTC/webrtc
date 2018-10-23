@@ -10,11 +10,11 @@
 
 #include "modules/congestion_controller/goog_cc/bitrate_estimator.h"
 
+#include <stdio.h>
 #include <cmath>
 #include <string>
 
 #include "modules/remote_bitrate_estimator/test/bwe_test_logging.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/field_trial.h"
 

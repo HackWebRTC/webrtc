@@ -15,9 +15,11 @@
 #include <ostream>  // no-presubmit-check TODO(webrtc:8982)
 #endif              // UNIT_TEST
 
+#include <math.h>
 #include <stdint.h>
 #include <limits>
 #include <string>
+#include <type_traits>
 
 #include "api/units/time_delta.h"
 #include "rtc_base/checks.h"

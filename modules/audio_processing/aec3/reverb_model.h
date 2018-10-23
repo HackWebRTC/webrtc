@@ -11,6 +11,8 @@
 #ifndef MODULES_AUDIO_PROCESSING_AEC3_REVERB_MODEL_H_
 #define MODULES_AUDIO_PROCESSING_AEC3_REVERB_MODEL_H_
 
+#include <array>
+
 #include "api/array_view.h"
 #include "modules/audio_processing/aec3/aec3_common.h"
 

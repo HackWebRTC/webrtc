@@ -11,14 +11,10 @@
 #ifndef MODULES_AUDIO_PROCESSING_LOGGING_APM_DATA_DUMPER_H_
 #define MODULES_AUDIO_PROCESSING_LOGGING_APM_DATA_DUMPER_H_
 
+#include <stdint.h>
 #include <stdio.h>
 
-#include <memory>
-#include <string>
-#include <unordered_map>
-
 #include "api/array_view.h"
-#include "common_audio/wav_file.h"
 #include "rtc_base/constructormagic.h"
 
 // Check to verify that the define is properly set.

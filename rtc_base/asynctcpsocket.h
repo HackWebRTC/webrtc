@@ -11,14 +11,15 @@
 #ifndef RTC_BASE_ASYNCTCPSOCKET_H_
 #define RTC_BASE_ASYNCTCPSOCKET_H_
 
+#include <stddef.h>
 #include <memory>
 
-#include "rtc_base/asyncpacketsocket.h"  // for PacketOptions, AsyncPacketSo...
-#include "rtc_base/asyncsocket.h"        // for AsyncSocket
-#include "rtc_base/buffer.h"             // for Buffer
-#include "rtc_base/constructormagic.h"   // for RTC_DISALLOW_COPY_AND_ASSIGN
-#include "rtc_base/socket.h"             // for Socket, Socket::Option
-#include "rtc_base/socketaddress.h"      // for SocketAddress
+#include "rtc_base/asyncpacketsocket.h"
+#include "rtc_base/asyncsocket.h"
+#include "rtc_base/buffer.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/socket.h"
+#include "rtc_base/socketaddress.h"
 
 namespace rtc {
 

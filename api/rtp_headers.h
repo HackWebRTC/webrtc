@@ -12,6 +12,7 @@
 #define API_RTP_HEADERS_H_
 
 #include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 
 #include "api/array_view.h"
@@ -19,7 +20,6 @@
 #include "api/video/video_frame_marking.h"
 #include "api/video/video_rotation.h"
 #include "api/video/video_timing.h"
-
 #include "common_types.h"  // NOLINT(build/include)
 
 namespace webrtc {

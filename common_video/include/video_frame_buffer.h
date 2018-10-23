@@ -11,10 +11,11 @@
 #ifndef COMMON_VIDEO_INCLUDE_VIDEO_FRAME_BUFFER_H_
 #define COMMON_VIDEO_INCLUDE_VIDEO_FRAME_BUFFER_H_
 
-#include <memory>
+#include <stdint.h>
 
 #include "api/video/video_frame_buffer.h"
 #include "rtc_base/callback.h"
+#include "rtc_base/refcountedobject.h"
 #include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {

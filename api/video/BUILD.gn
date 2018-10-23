@@ -75,6 +75,9 @@ rtc_source_set("encoded_image") {
   deps = [
     ":video_frame",
     "../..:webrtc_common",
+
+    # TODO(bugs.webrtc.org/8311) Cleanup when kMaxSpatialLayers is moved to proper include.
+    "../../api/video:video_bitrate_allocation",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base/system:rtc_export",

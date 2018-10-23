@@ -128,6 +128,7 @@ rtc_static_library("audio_coding") {
            "../../system_wrappers:metrics",
            "../../api/audio:audio_frame_api",
            "..:module_api",
+           "..:module_api_public",
            "../../common_audio:common_audio_c",
            "../../rtc_base:deprecation",
            "../../rtc_base:checks",
@@ -135,6 +136,7 @@ rtc_static_library("audio_coding") {
            "../../api/audio_codecs:audio_codecs_api",
            ":audio_coding_module_typedefs",
            ":neteq",
+           ":neteq_decoder_enum",
            ":rent_a_codec",
            "../../rtc_base:audio_format_to_string",
            "../../rtc_base:rtc_base_approved",
@@ -153,7 +155,9 @@ rtc_static_library("legacy_encoded_audio_frame") {
   deps = [
     "../../api:array_view",
     "../../api/audio_codecs:audio_codecs_api",
+    "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 
@@ -172,7 +176,9 @@ rtc_static_library("cng") {
     "../../api/audio_codecs:audio_codecs_api",
     "../../common_audio",
     "../../common_audio:common_audio_c",
+    "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 
@@ -184,10 +190,12 @@ rtc_static_library("red") {
   ]
 
   deps = [
+    "../../api:array_view",
     "../../api/audio_codecs:audio_codecs_api",
     "../../common_audio",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 
@@ -204,6 +212,7 @@ rtc_static_library("g711") {
   deps = [
     ":legacy_encoded_audio_frame",
     "../..:webrtc_common",
+    "../../api:array_view",
     "../../api/audio_codecs:audio_codecs_api",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
@@ -238,6 +247,7 @@ rtc_static_library("g722") {
   deps = [
     ":legacy_encoded_audio_frame",
     "../..:webrtc_common",
+    "../../api:array_view",
     "../../api/audio_codecs:audio_codecs_api",
     "../../api/audio_codecs/g722:audio_encoder_g722_config",
     "../../rtc_base:checks",
@@ -273,6 +283,7 @@ rtc_static_library("ilbc") {
   deps = [
     ":legacy_encoded_audio_frame",
     "../..:webrtc_common",
+    "../../api:array_view",
     "../../api/audio_codecs:audio_codecs_api",
     "../../api/audio_codecs/ilbc:audio_encoder_ilbc_config",
     "../../common_audio",
@@ -789,6 +800,7 @@ rtc_static_library("pcm16b") {
     ":g711",
     ":legacy_encoded_audio_frame",
     "../..:webrtc_common",
+    "../../api:array_view",
     "../../api/audio_codecs:audio_codecs_api",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
@@ -823,6 +835,7 @@ rtc_static_library("webrtc_opus") {
   deps = [
     ":audio_network_adaptor",
     "../..:webrtc_common",
+    "../../api:array_view",
     "../../api/audio_codecs:audio_codecs_api",
     "../../api/audio_codecs/opus:audio_encoder_opus_config",
     "../../common_audio",
@@ -1056,6 +1069,7 @@ rtc_static_library("neteq") {
     ":cng",
     ":neteq_decoder_enum",
     "..:module_api",
+    "..:module_api_public",
     "../..:webrtc_common",
     "../../api:array_view",
     "../../api:libjingle_peerconnection_api",

@@ -11,6 +11,9 @@
 #ifndef RTC_BASE_PLATFORM_THREAD_H_
 #define RTC_BASE_PLATFORM_THREAD_H_
 
+#ifndef WEBRTC_WIN
+#include <pthread.h>
+#endif
 #include <string>
 
 #include "rtc_base/constructormagic.h"

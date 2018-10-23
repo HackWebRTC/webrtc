@@ -11,15 +11,16 @@
 // Handling of certificates and keypairs for SSLStreamAdapter's peer mode.
 #include "rtc_base/sslidentity.h"
 
-#include <string.h>  // for strspn
-#include <ctime>
+#include <string.h>
+#include <time.h>
 #include <string>
 
-#include "rtc_base/checks.h"                     // for FatalLogCall, RTC_DC...
-#include "rtc_base/opensslidentity.h"            // for OpenSSLIdentity
-#include "rtc_base/strings/string_builder.h"     // for StringBuilder
-#include "rtc_base/third_party/base64/base64.h"  // for Base64, Base64::DO_P...
-#include "rtc_base/timeutils.h"                  // for TmToSeconds
+#include "rtc_base/checks.h"
+#include "rtc_base/opensslidentity.h"
+#include "rtc_base/sslcertificate.h"
+#include "rtc_base/strings/string_builder.h"
+#include "rtc_base/third_party/base64/base64.h"
+#include "rtc_base/timeutils.h"
 
 namespace rtc {
 
@@ -239,7 +240,7 @@ int64_t ASN1TimeToSec(const unsigned char* s, size_t length, bool long_format) {
       year += 100;
   }
 
-  std::tm tm;
+  tm tm;
   tm.tm_year = year;
 
   // Read out remaining ASN1 time data and store it in |tm| in documented

@@ -9,6 +9,9 @@
  */
 
 #include "call/audio_send_stream.h"
+
+#include <stddef.h>
+
 #include "rtc_base/stringencode.h"
 #include "rtc_base/strings/audio_format_to_string.h"
 #include "rtc_base/strings/string_builder.h"

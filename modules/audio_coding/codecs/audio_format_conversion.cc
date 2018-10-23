@@ -11,12 +11,12 @@
 #include "modules/audio_coding/codecs/audio_format_conversion.h"
 
 #include <string.h>
+#include <string>
+#include <utility>
 
 #include "absl/strings/match.h"
-#include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/sanitizer.h"
 
 namespace webrtc {

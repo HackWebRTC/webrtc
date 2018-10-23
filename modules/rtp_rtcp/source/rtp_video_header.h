@@ -10,7 +10,10 @@
 #ifndef MODULES_RTP_RTCP_SOURCE_RTP_VIDEO_HEADER_H_
 #define MODULES_RTP_RTCP_SOURCE_RTP_VIDEO_HEADER_H_
 
+#include <cstdint>
+
 #include "absl/container/inlined_vector.h"
+#include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "api/video/video_content_type.h"
 #include "api/video/video_frame_marking.h"

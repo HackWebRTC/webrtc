@@ -18,7 +18,8 @@
 #include "modules/audio_coding/acm2/acm_codec_database.h"
 
 #include "absl/strings/match.h"
-#include "rtc_base/checks.h"
+#include "api/array_view.h"
+#include "modules/audio_coding/acm2/rent_a_codec.h"
 
 #if ((defined WEBRTC_CODEC_ISAC) && (defined WEBRTC_CODEC_ISACFX))
 #error iSAC and iSACFX codecs cannot be enabled at the same time

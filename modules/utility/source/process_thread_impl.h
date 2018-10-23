@@ -11,14 +11,17 @@
 #ifndef MODULES_UTILITY_SOURCE_PROCESS_THREAD_IMPL_H_
 #define MODULES_UTILITY_SOURCE_PROCESS_THREAD_IMPL_H_
 
+#include <stdint.h>
 #include <list>
 #include <memory>
 #include <queue>
 
+#include "modules/include/module.h"
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/location.h"
 #include "rtc_base/platform_thread.h"
+#include "rtc_base/task_queue.h"
 #include "rtc_base/thread_checker.h"
 #include "system_wrappers/include/event_wrapper.h"
 

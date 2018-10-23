@@ -11,6 +11,8 @@
 #ifndef MODULES_AUDIO_PROCESSING_AEC3_RENDER_DELAY_CONTROLLER_METRICS_H_
 #define MODULES_AUDIO_PROCESSING_AEC3_RENDER_DELAY_CONTROLLER_METRICS_H_
 
+#include <stddef.h>
+
 #include "absl/types/optional.h"
 #include "rtc_base/constructormagic.h"
 

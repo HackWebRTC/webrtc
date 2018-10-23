@@ -10,10 +10,12 @@
 
 #include "modules/audio_coding/codecs/cng/audio_encoder_cng.h"
 
-#include <algorithm>
-#include <limits>
+#include <cstdint>
 #include <memory>
 #include <utility>
+
+#include "modules/audio_coding/codecs/cng/webrtc_cng.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 

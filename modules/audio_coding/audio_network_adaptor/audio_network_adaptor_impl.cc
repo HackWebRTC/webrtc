@@ -10,9 +10,14 @@
 
 #include "modules/audio_coding/audio_network_adaptor/audio_network_adaptor_impl.h"
 
+#include <stdint.h>
 #include <utility>
+#include <vector>
 
-#include "rtc_base/logging.h"
+#include "modules/audio_coding/audio_network_adaptor/controller_manager.h"
+#include "modules/audio_coding/audio_network_adaptor/debug_dump_writer.h"
+#include "modules/audio_coding/audio_network_adaptor/event_log_writer.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/timeutils.h"
 #include "system_wrappers/include/field_trial.h"
 

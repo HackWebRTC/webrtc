@@ -11,9 +11,11 @@
 
 #include "modules/audio_processing/aec3/residual_echo_estimator.h"
 
-#include <numeric>
+#include <stddef.h>
+#include <algorithm>
 #include <vector>
 
+#include "api/array_view.h"
 #include "modules/audio_processing/aec3/reverb_model.h"
 #include "modules/audio_processing/aec3/reverb_model_fallback.h"
 #include "rtc_base/checks.h"

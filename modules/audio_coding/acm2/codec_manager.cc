@@ -10,10 +10,16 @@
 
 #include "modules/audio_coding/acm2/codec_manager.h"
 
+#include <string.h>
+#include <map>
+#include <memory>
+#include <utility>
+
 #include "absl/strings/match.h"
-#include "rtc_base/checks.h"
-//#include "rtc_base/format_macros.h"
+#include "api/array_view.h"
+#include "api/audio_codecs/audio_encoder.h"
 #include "modules/audio_coding/acm2/rent_a_codec.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 
 namespace webrtc {

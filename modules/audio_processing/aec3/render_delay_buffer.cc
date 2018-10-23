@@ -10,17 +10,21 @@
 
 #include "modules/audio_processing/aec3/render_delay_buffer.h"
 
-#include <string.h>
+#include <stdlib.h>
 #include <algorithm>
+#include <memory>
 #include <numeric>
 
+#include "absl/types/optional.h"
+#include "api/array_view.h"
 #include "modules/audio_processing/aec3/aec3_common.h"
 #include "modules/audio_processing/aec3/aec3_fft.h"
-#include "modules/audio_processing/aec3/block_processor.h"
 #include "modules/audio_processing/aec3/decimator.h"
 #include "modules/audio_processing/aec3/fft_buffer.h"
 #include "modules/audio_processing/aec3/fft_data.h"
 #include "modules/audio_processing/aec3/matrix_buffer.h"
+#include "modules/audio_processing/aec3/vector_buffer.h"
+#include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/atomicops.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructormagic.h"

@@ -14,7 +14,7 @@
 #include <errno.h>
 
 #include <map>
-#include <memory>  // for unique_ptr.
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>

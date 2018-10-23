@@ -10,10 +10,6 @@
 
 #include "rtc_base/opensslcertificate.h"
 
-#include <memory>
-#include <utility>
-#include <vector>
-
 #if defined(WEBRTC_WIN)
 // Must be included first before openssl headers.
 #include "rtc_base/win32.h"  // NOLINT
@@ -21,24 +17,17 @@
 
 #include <openssl/bio.h>
 #include <openssl/bn.h>
-#include <openssl/crypto.h>
-#include <openssl/err.h>
 #include <openssl/pem.h>
-#include <openssl/rsa.h>
+#include <time.h>
 
 #include "absl/memory/memory.h"
-#include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/helpers.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/numerics/safe_conversions.h"
-#include "rtc_base/openssl.h"
+#include "rtc_base/messagedigest.h"
 #include "rtc_base/openssldigest.h"
 #include "rtc_base/opensslidentity.h"
 #include "rtc_base/opensslutility.h"
-#ifndef WEBRTC_EXCLUDE_BUILT_IN_SSL_ROOT_CERTS
-#include "rtc_base/sslroots.h"
-#endif  // WEBRTC_EXCLUDE_BUILT_IN_SSL_ROOT_CERTS
 
 namespace rtc {
 

@@ -11,12 +11,13 @@
 #ifndef MODULES_AUDIO_CODING_NETEQ_RTCP_H_
 #define MODULES_AUDIO_CODING_NETEQ_RTCP_H_
 
-#include "modules/audio_coding/neteq/include/neteq.h"
+#include <stdint.h>
+
 #include "rtc_base/constructormagic.h"
 
 namespace webrtc {
 
-// Forward declaration.
+struct RtcpStatistics;
 struct RTPHeader;
 
 class Rtcp {

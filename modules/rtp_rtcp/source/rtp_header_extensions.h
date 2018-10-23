@@ -10,13 +10,17 @@
 #ifndef MODULES_RTP_RTCP_SOURCE_RTP_HEADER_EXTENSIONS_H_
 #define MODULES_RTP_RTCP_SOURCE_RTP_HEADER_EXTENSIONS_H_
 
+#include <stddef.h>
 #include <stdint.h>
 #include <string>
 
 #include "api/array_view.h"
+#include "api/rtp_headers.h"
 #include "api/video/video_content_type.h"
+#include "api/video/video_frame_marking.h"
 #include "api/video/video_rotation.h"
 #include "api/video/video_timing.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
 namespace webrtc {

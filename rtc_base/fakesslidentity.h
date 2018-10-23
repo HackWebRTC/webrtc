@@ -14,6 +14,7 @@
 #include <memory>
 #include <vector>
 
+#include "rtc_base/sslcertificate.h"
 #include "rtc_base/sslidentity.h"
 
 namespace rtc {

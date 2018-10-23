@@ -11,6 +11,8 @@
 #ifndef MODULES_REMOTE_BITRATE_ESTIMATOR_INCLUDE_BWE_DEFINES_H_
 #define MODULES_REMOTE_BITRATE_ESTIMATOR_INCLUDE_BWE_DEFINES_H_
 
+#include <stdint.h>
+
 #include "absl/types/optional.h"
 #include "api/units/data_rate.h"
 

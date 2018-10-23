@@ -11,14 +11,11 @@
 #include "api/video_codecs/video_codec.h"
 
 #include <string.h>
-#include <algorithm>
-#include <limits>
 #include <string>
-#include <type_traits>
 
 #include "absl/strings/match.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/strings/string_builder.h"
+#include "rtc_base/stringutils.h"
 
 namespace webrtc {
 
