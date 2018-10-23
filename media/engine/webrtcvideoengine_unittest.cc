@@ -14,6 +14,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/strings/match.h"
 #include "api/rtpparameters.h"
 #include "api/test/mock_video_decoder_factory.h"
 #include "api/test/mock_video_encoder_factory.h"
@@ -101,7 +102,7 @@ bool HasRtxCodec(const std::vector<cricket::VideoCodec>& codecs,
                  int payload_type) {
   for (const cricket::VideoCodec& codec : codecs) {
     int associated_payload_type;
-    if (cricket::CodecNamesEq(codec.name.c_str(), "rtx") &&
+    if (absl::EqualsIgnoreCase(codec.name.c_str(), "rtx") &&
         codec.GetParam(cricket::kCodecParamAssociatedPayloadType,
                        &associated_payload_type) &&
         associated_payload_type == payload_type) {
@@ -650,11 +651,11 @@ size_t WebRtcVideoEngineTest::GetEngineCodecIndex(
   const std::vector<cricket::VideoCodec> codecs = engine_.codecs();
   for (size_t i = 0; i < codecs.size(); ++i) {
     const cricket::VideoCodec engine_codec = codecs[i];
-    if (!CodecNamesEq(name, engine_codec.name))
+    if (!absl::EqualsIgnoreCase(name, engine_codec.name))
       continue;
     // The tests only use H264 Constrained Baseline. Make sure we don't return
     // an internal H264 codec from the engine with a different H264 profile.
-    if (CodecNamesEq(name.c_str(), kH264CodecName)) {
+    if (absl::EqualsIgnoreCase(name.c_str(), kH264CodecName)) {
       const absl::optional<webrtc::H264::ProfileLevelId> profile_level_id =
           webrtc::H264::ParseSdpProfileLevelId(engine_codec.params);
       if (profile_level_id->profile !=
@@ -1431,7 +1432,7 @@ class WebRtcVideoChannelBaseTest : public testing::Test {
 
   cricket::VideoCodec GetEngineCodec(const std::string& name) {
     for (const cricket::VideoCodec& engine_codec : engine_.codecs()) {
-      if (CodecNamesEq(name, engine_codec.name))
+      if (absl::EqualsIgnoreCase(name, engine_codec.name))
         return engine_codec;
     }
     // This point should never be reached.

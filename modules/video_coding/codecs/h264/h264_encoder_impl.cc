@@ -19,6 +19,7 @@
 #include "third_party/openh264/src/codec/api/svc/codec_def.h"
 #include "third_party/openh264/src/codec/api/svc/codec_ver.h"
 
+#include "absl/strings/match.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "modules/video_coding/utility/simulcast_utility.h"
@@ -167,7 +168,7 @@ H264EncoderImpl::H264EncoderImpl(const cricket::VideoCodec& codec)
       encoded_image_callback_(nullptr),
       has_reported_init_(false),
       has_reported_error_(false) {
-  RTC_CHECK(cricket::CodecNamesEq(codec.name, cricket::kH264CodecName));
+  RTC_CHECK(absl::EqualsIgnoreCase(codec.name, cricket::kH264CodecName));
   std::string packetization_mode_string;
   if (codec.GetParam(cricket::kH264FmtpPacketizationMode,
                      &packetization_mode_string) &&

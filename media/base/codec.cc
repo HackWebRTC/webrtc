@@ -268,10 +268,10 @@ static bool IsSameH264PacketizationMode(const CodecParameterMap& ours,
 bool VideoCodec::Matches(const VideoCodec& other) const {
   if (!Codec::Matches(other))
     return false;
-  if (CodecNamesEq(name.c_str(), kH264CodecName))
+  if (absl::EqualsIgnoreCase(name, kH264CodecName))
     return webrtc::H264::IsSameH264Profile(params, other.params) &&
            IsSameH264PacketizationMode(params, other.params);
-  if (CodecNamesEq(name.c_str(), kVp9CodecName))
+  if (absl::EqualsIgnoreCase(name, kVp9CodecName))
     return webrtc::IsSameVP9Profile(params, other.params);
   return true;
 }
@@ -362,15 +362,6 @@ bool HasTransportCc(const Codec& codec) {
       FeedbackParam(kRtcpFbParamTransportCc, kParamValueEmpty));
 }
 
-// TODO(nisse): Delete these wrappers.
-bool CodecNamesEq(const std::string& name1, const std::string& name2) {
-  return CodecNamesEq(name1.c_str(), name2.c_str());
-}
-
-bool CodecNamesEq(const char* name1, const char* name2) {
-  return absl::EqualsIgnoreCase(name1, name2);
-}
-
 const VideoCodec* FindMatchingCodec(
     const std::vector<VideoCodec>& supported_codecs,
     const VideoCodec& codec) {
@@ -388,12 +379,12 @@ bool IsSameCodec(const std::string& name1,
                  const std::string& name2,
                  const CodecParameterMap& params2) {
   // If different names (case insensitive), then not same formats.
-  if (!CodecNamesEq(name1, name2))
+  if (!absl::EqualsIgnoreCase(name1, name2))
     return false;
   // For every format besides H264 and VP9, comparing names is enough.
-  if (CodecNamesEq(name1.c_str(), kH264CodecName))
+  if (absl::EqualsIgnoreCase(name1, kH264CodecName))
     return webrtc::H264::IsSameH264Profile(params1, params2);
-  if (CodecNamesEq(name1.c_str(), kVp9CodecName))
+  if (absl::EqualsIgnoreCase(name1, kVp9CodecName))
     return webrtc::IsSameVP9Profile(params1, params2);
   return true;
 }

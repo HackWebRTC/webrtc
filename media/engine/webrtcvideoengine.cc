@@ -16,6 +16,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/strings/match.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder.h"
@@ -111,8 +112,8 @@ std::vector<VideoCodec> AssignPayloadTypesAndDefaultCodecs(
     }
 
     // Add associated RTX codec for non-FEC codecs.
-    if (!CodecNamesEq(codec.name, kUlpfecCodecName) &&
-        !CodecNamesEq(codec.name, kFlexfecCodecName)) {
+    if (!absl::EqualsIgnoreCase(codec.name, kUlpfecCodecName) &&
+        !absl::EqualsIgnoreCase(codec.name, kFlexfecCodecName)) {
       output_codecs.push_back(
           VideoCodec::CreateRtxCodec(payload_type, codec.id));
 
@@ -147,8 +148,8 @@ int GetMaxFramerate(const webrtc::VideoEncoderConfig& encoder_config,
 }
 
 bool IsTemporalLayersSupported(const std::string& codec_name) {
-  return CodecNamesEq(codec_name, kVp8CodecName) ||
-         CodecNamesEq(codec_name, kVp9CodecName);
+  return absl::EqualsIgnoreCase(codec_name, kVp8CodecName) ||
+         absl::EqualsIgnoreCase(codec_name, kVp9CodecName);
 }
 
 static std::string CodecVectorToString(const std::vector<VideoCodec>& codecs) {
@@ -220,9 +221,9 @@ static bool ValidateStreamParams(const StreamParams& sp) {
 // Returns true if the given codec is disallowed from doing simulcast.
 bool IsCodecBlacklistedForSimulcast(const std::string& codec_name) {
   return webrtc::field_trial::IsEnabled("WebRTC-H264Simulcast")
-    ? CodecNamesEq(codec_name, kVp9CodecName)
-    : CodecNamesEq(codec_name, kH264CodecName) ||
-      CodecNamesEq(codec_name, kVp9CodecName);
+             ? absl::EqualsIgnoreCase(codec_name, kVp9CodecName)
+             : absl::EqualsIgnoreCase(codec_name, kH264CodecName) ||
+                   absl::EqualsIgnoreCase(codec_name, kVp9CodecName);
 }
 
 // The selected thresholds for QVGA and VGA corresponded to a QP around 10.
@@ -337,14 +338,14 @@ WebRtcVideoChannel::WebRtcVideoSendStream::ConfigureVideoEncoderSettings(
     denoising = parameters_.options.video_noise_reduction.value_or(false);
   }
 
-  if (CodecNamesEq(codec.name, kH264CodecName)) {
+  if (absl::EqualsIgnoreCase(codec.name, kH264CodecName)) {
     webrtc::VideoCodecH264 h264_settings =
         webrtc::VideoEncoder::GetDefaultH264Settings();
     h264_settings.frameDroppingOn = frame_dropping;
     return new rtc::RefCountedObject<
         webrtc::VideoEncoderConfig::H264EncoderSpecificSettings>(h264_settings);
   }
-  if (CodecNamesEq(codec.name, kVp8CodecName)) {
+  if (absl::EqualsIgnoreCase(codec.name, kVp8CodecName)) {
     webrtc::VideoCodecVP8 vp8_settings =
         webrtc::VideoEncoder::GetDefaultVp8Settings();
     vp8_settings.automaticResizeOn = automatic_resize;
@@ -354,7 +355,7 @@ WebRtcVideoChannel::WebRtcVideoSendStream::ConfigureVideoEncoderSettings(
     return new rtc::RefCountedObject<
         webrtc::VideoEncoderConfig::Vp8EncoderSpecificSettings>(vp8_settings);
   }
-  if (CodecNamesEq(codec.name, kVp9CodecName)) {
+  if (absl::EqualsIgnoreCase(codec.name, kVp9CodecName)) {
     webrtc::VideoCodecVP9 vp9_settings =
         webrtc::VideoEncoder::GetDefaultVp9Settings();
     const size_t default_num_spatial_layers =
@@ -2684,10 +2685,11 @@ std::vector<webrtc::VideoStream> EncoderStreamFactory::CreateEncoderStreams(
   std::vector<webrtc::VideoStream> layers;
 
   if (encoder_config.number_of_streams > 1 ||
-     ((CodecNamesEq(codec_name_, kVp8CodecName) ||
-        CodecNamesEq(codec_name_, kH264CodecName)) &&
+      ((absl::EqualsIgnoreCase(codec_name_, kVp8CodecName) ||
+        absl::EqualsIgnoreCase(codec_name_, kH264CodecName)) &&
        is_screenshare_ && screenshare_config_explicitly_enabled_)) {
-    bool temporal_layers_supported = CodecNamesEq(codec_name_, kVp8CodecName);
+    bool temporal_layers_supported =
+        absl::EqualsIgnoreCase(codec_name_, kVp8CodecName);
     layers = GetSimulcastConfig(encoder_config.number_of_streams, width, height,
                                 0 /*not used*/, encoder_config.bitrate_priority,
                                 max_qp_, 0 /*not_used*/, is_screenshare_,
@@ -2780,7 +2782,7 @@ std::vector<webrtc::VideoStream> EncoderStreamFactory::CreateEncoderStreams(
   layer.max_qp = max_qp_;
   layer.bitrate_priority = encoder_config.bitrate_priority;
 
-  if (CodecNamesEq(codec_name_, kVp9CodecName)) {
+  if (absl::EqualsIgnoreCase(codec_name_, kVp9CodecName)) {
     RTC_DCHECK(encoder_config.encoder_specific_settings);
     // Use VP9 SVC layering from codec settings which might be initialized
     // though field trial in ConfigureVideoEncoderSettings.

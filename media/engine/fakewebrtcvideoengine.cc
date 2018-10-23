@@ -10,6 +10,7 @@
 
 #include "media/engine/fakewebrtcvideoengine.h"
 
+#include "absl/strings/match.h"
 #include "media/base/codec.h"
 #include "media/engine/simulcast_encoder_adapter.h"
 #include "media/engine/webrtcvideodecoderfactory.h"
@@ -218,7 +219,7 @@ FakeWebRtcVideoEncoderFactory::CreateVideoEncoder(
   rtc::CritScope lock(&crit_);
   std::unique_ptr<webrtc::VideoEncoder> encoder;
   if (IsFormatSupported(formats_, format)) {
-    if (CodecNamesEq(format.name.c_str(), kVp8CodecName) &&
+    if (absl::EqualsIgnoreCase(format.name, kVp8CodecName) &&
         !vp8_factory_mode_) {
       // The simulcast adapter will ask this factory for multiple VP8
       // encoders. Enter vp8_factory_mode so that we now create these encoders
