@@ -150,9 +150,6 @@ class FakeNetworkPipe : public webrtc::SimulatedPacketReceiverInterface,
 
  protected:
   void DeliverPacketWithLock(NetworkPacket* packet);
-  void AddToPacketDropCount();
-  void AddToPacketSentCount(int count);
-  void AddToTotalDelay(int delay_us);
   int64_t GetTimeInMicroseconds() const;
   bool ShouldProcess(int64_t time_now_us) const;
   void SetTimeToNextProcess(int64_t skip_us);

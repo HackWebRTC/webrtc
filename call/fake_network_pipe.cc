@@ -250,9 +250,11 @@ void FakeNetworkPipe::Process() {
         // arrived, due to NetworkProcess being called too late. For stats, use
         // the time it should have been on the link.
         total_packet_delay_us_ += added_delay_us;
+        ++sent_packets_;
+      } else {
+        ++dropped_packets_;
       }
     }
-    sent_packets_ += packets_to_deliver.size();
   }
 
   rtc::CritScope crit(&config_lock_);
@@ -314,21 +316,6 @@ void FakeNetworkPipe::ResetStats() {
   dropped_packets_ = 0;
   sent_packets_ = 0;
   total_packet_delay_us_ = 0;
-}
-
-void FakeNetworkPipe::AddToPacketDropCount() {
-  rtc::CritScope crit(&process_lock_);
-  ++dropped_packets_;
-}
-
-void FakeNetworkPipe::AddToPacketSentCount(int count) {
-  rtc::CritScope crit(&process_lock_);
-  sent_packets_ += count;
-}
-
-void FakeNetworkPipe::AddToTotalDelay(int delay_us) {
-  rtc::CritScope crit(&process_lock_);
-  total_packet_delay_us_ += delay_us;
 }
 
 int64_t FakeNetworkPipe::GetTimeInMicroseconds() const {
