@@ -183,6 +183,7 @@ rtc_static_library("rtc_event_log_impl_encoder") {
     "../rtc_base:rtc_base_approved",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/strings:strings",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 
   if (rtc_enable_protobuf) {

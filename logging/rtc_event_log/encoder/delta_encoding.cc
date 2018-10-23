@@ -27,12 +27,19 @@ namespace {
 
 // TODO(eladalon): Only build the decoder in tools and unit tests.
 
+bool g_force_unsigned_for_testing = false;
+bool g_force_signed_for_testing = false;
+
 size_t BitsToBytes(size_t bits) {
   return (bits / 8) + (bits % 8 > 0 ? 1 : 0);
 }
 
 // TODO(eladalon): Replace by something more efficient.
-uint64_t BitWidth(uint64_t input) {
+uint64_t UnsignedBitWidth(uint64_t input, bool zero_val_as_zero_width = false) {
+  if (zero_val_as_zero_width && input == 0) {
+    return 0;
+  }
+
   uint64_t width = 0;
   do {  // input == 0 -> width == 1
     width += 1;
@@ -41,13 +48,22 @@ uint64_t BitWidth(uint64_t input) {
   return width;
 }
 
+uint64_t SignedBitWidth(uint64_t max_pos_magnitude,
+                        uint64_t max_neg_magnitude) {
+  const uint64_t bitwidth_pos = UnsignedBitWidth(max_pos_magnitude, true);
+  const uint64_t bitwidth_neg =
+      (max_neg_magnitude > 0) ? UnsignedBitWidth(max_neg_magnitude - 1, true)
+                              : 0;
+  return 1 + std::max(bitwidth_pos, bitwidth_neg);
+}
+
 // Return the maximum integer of a given bit width.
 // Examples:
-// MaxValueOfBitWidth(1) = 0x01
-// MaxValueOfBitWidth(6) = 0x3f
-// MaxValueOfBitWidth(8) = 0xff
-// MaxValueOfBitWidth(32) = 0xffffffff
-uint64_t MaxValueOfBitWidth(uint64_t bit_width) {
+// MaxUnsignedValueOfBitWidth(1) = 0x01
+// MaxUnsignedValueOfBitWidth(6) = 0x3f
+// MaxUnsignedValueOfBitWidth(8) = 0xff
+// MaxUnsignedValueOfBitWidth(32) = 0xffffffff
+uint64_t MaxUnsignedValueOfBitWidth(uint64_t bit_width) {
   RTC_DCHECK_GE(bit_width, 1);
   RTC_DCHECK_LE(bit_width, 64);
   return (bit_width == 64) ? std::numeric_limits<uint64_t>::max()
@@ -55,18 +71,9 @@ uint64_t MaxValueOfBitWidth(uint64_t bit_width) {
 }
 
 // Computes the delta between |previous| and |current|, under the assumption
-// that wrap-around occurs after width |bit_width| is exceeded.
-uint64_t ComputeDelta(uint64_t previous, uint64_t current, uint64_t width) {
-  RTC_DCHECK(width == 64 || current < (static_cast<uint64_t>(1) << width));
-  RTC_DCHECK(width == 64 || previous < (static_cast<uint64_t>(1) << width));
-
-  if (current >= previous) {
-    // Simply "walk" forward.
-    return current - previous;
-  } else {  // previous > current
-    // "Walk" until the max value, one more step to 0, then to |current|.
-    return (MaxValueOfBitWidth(width) - previous) + 1 + current;
-  }
+// that wrap-around occurs after |width| is exceeded.
+uint64_t UnsignedDelta(uint64_t previous, uint64_t current, uint64_t bit_mask) {
+  return (current - previous) & bit_mask;
 }
 
 // Determines the encoding type (e.g. fixed-size encoding).
@@ -87,7 +94,7 @@ constexpr size_t kBitsInHeaderForEncodingType = 2;
 constexpr size_t kBitsInHeaderForDeltaWidthBits = 6;
 constexpr size_t kBitsInHeaderForSignedDeltas = 1;
 constexpr size_t kBitsInHeaderForValuesOptional = 1;
-constexpr size_t kBitsInHeaderForOriginalWidthBits = 6;
+constexpr size_t kBitsInHeaderForValueWidthBits = 6;
 
 static_assert(static_cast<size_t>(EncodingType::kNumberOfEncodingTypes) <=
                   1 << kBitsInHeaderForEncodingType,
@@ -96,7 +103,7 @@ static_assert(static_cast<size_t>(EncodingType::kNumberOfEncodingTypes) <=
 // Default values for when the encoding header does not specify explicitly.
 constexpr bool kDefaultSignedDeltas = false;
 constexpr bool kDefaultValuesOptional = false;
-constexpr uint64_t kDefaultOriginalWidthBits = 64;
+constexpr uint64_t kDefaultValueWidthBits = 64;
 
 // Wrap BitBufferWriter and extend its functionality by (1) keeping track of
 // the number of bits written and (2) owning its buffer.
@@ -145,33 +152,66 @@ class BitWriter final {
 
 // Parameters for fixed-size delta-encoding/decoding.
 // These are tailored for the sequence which will be encoded (e.g. widths).
-struct FixedLengthEncodingParameters final {
+class FixedLengthEncodingParameters final {
+ public:
+  static bool ValidParameters(uint64_t delta_width_bits,
+                              bool signed_deltas,
+                              bool values_optional,
+                              uint64_t value_width_bits) {
+    return (1 <= delta_width_bits && delta_width_bits <= 64 &&
+            1 <= value_width_bits && value_width_bits <= 64 &&
+            delta_width_bits <= value_width_bits);
+  }
+
   FixedLengthEncodingParameters(uint64_t delta_width_bits,
                                 bool signed_deltas,
                                 bool values_optional,
-                                uint64_t original_width_bits)
-      : delta_width_bits(delta_width_bits),
-        signed_deltas(signed_deltas),
-        values_optional(values_optional),
-        original_width_bits(original_width_bits) {}
+                                uint64_t value_width_bits)
+      : delta_width_bits_(delta_width_bits),
+        signed_deltas_(signed_deltas),
+        values_optional_(values_optional),
+        value_width_bits_(value_width_bits),
+        delta_mask_(MaxUnsignedValueOfBitWidth(delta_width_bits_)),
+        value_mask_(MaxUnsignedValueOfBitWidth(value_width_bits_)) {
+    RTC_DCHECK(ValidParameters(delta_width_bits, signed_deltas, values_optional,
+                               value_width_bits));
+  }
 
   // Number of bits necessary to hold the widest(*) of the deltas between the
   // values in the sequence.
   // (*) - Widest might not be the largest, if signed deltas are used.
-  uint64_t delta_width_bits;
+  uint64_t delta_width_bits() const { return delta_width_bits_; }
 
   // Whether deltas are signed.
-  // TODO(eladalon): Add support for signed deltas.
-  bool signed_deltas;
+  bool signed_deltas() const { return signed_deltas_; }
 
   // Whether the values of the sequence are optional. That is, it may be
   // that some of them do not have a value (not even a sentinel value indicating
   // invalidity).
   // TODO(eladalon): Add support for optional elements.
-  bool values_optional;
+  bool values_optional() const { return values_optional_; }
 
   // Number of bits necessary to hold the largest value in the sequence.
-  uint64_t original_width_bits;
+  uint64_t value_width_bits() const { return value_width_bits_; }
+
+  // Masks where only the bits relevant to the deltas/values are turned on.
+  uint64_t delta_mask() const { return delta_mask_; }
+  uint64_t value_mask() const { return value_mask_; }
+
+  void SetSignedDeltas(bool signed_deltas) { signed_deltas_ = signed_deltas; }
+  void SetDeltaWidthBits(uint64_t delta_width_bits) {
+    delta_width_bits_ = delta_width_bits;
+    delta_mask_ = MaxUnsignedValueOfBitWidth(delta_width_bits);
+  }
+
+ private:
+  uint64_t delta_width_bits_;  // Normally const, but mutable in tests.
+  bool signed_deltas_;         // Normally const, but mutable in tests.
+  const bool values_optional_;
+  const uint64_t value_width_bits_;
+
+  uint64_t delta_mask_;  // Normally const, but mutable in tests.
+  const uint64_t value_mask_;
 };
 
 // Performs delta-encoding of a single (non-empty) sequence of values, using
@@ -190,6 +230,21 @@ class FixedLengthDeltaEncoder final {
                                   const std::vector<uint64_t>& values);
 
  private:
+  // Calculate min/max values of unsigned/signed deltas, given the bit width
+  // of all the values in the series.
+  static void CalculateMinAndMaxDeltas(uint64_t base,
+                                       const std::vector<uint64_t>& values,
+                                       uint64_t bit_width,
+                                       uint64_t* max_unsigned_delta,
+                                       uint64_t* max_pos_signed_delta,
+                                       uint64_t* min_neg_signed_delta);
+
+  // No effect outside of unit tests.
+  // In unit tests, may lead to forcing signed/unsigned deltas, etc.
+  static void ConsiderTestOverrides(FixedLengthEncodingParameters* params,
+                                    uint64_t delta_width_bits_signed,
+                                    uint64_t delta_width_bits_unsigned);
+
   // FixedLengthDeltaEncoder objects are to be created by EncodeDeltas() and
   // released by it before it returns. They're mostly a convenient way to
   // avoid having to pass a lot of state between different functions.
@@ -213,6 +268,8 @@ class FixedLengthDeltaEncoder final {
 
   // Encode a given delta into the stream.
   void EncodeDelta(uint64_t previous, uint64_t current);
+  void EncodeUnsignedDelta(uint64_t previous, uint64_t current);
+  void EncodeSignedDelta(uint64_t previous, uint64_t current);
 
   // The parameters according to which encoding will be done (width of
   // fields, whether signed deltas should be used, etc.)
@@ -251,16 +308,14 @@ std::string FixedLengthDeltaEncoder::EncodeDeltas(
 
   // If the sequence is non-decreasing, it may be assumed to have width = 64;
   // there's no reason to encode the actual max width in the encoding header.
-  const uint64_t original_width_bits =
-      non_decreasing ? 64 : BitWidth(max_value_including_base);
+  const uint64_t value_width_bits =
+      non_decreasing ? 64 : UnsignedBitWidth(max_value_including_base);
 
-  uint64_t max_unsigned_delta =
-      ComputeDelta(base, values[0], original_width_bits);
-  for (size_t i = 1; i < values.size(); ++i) {
-    const uint64_t unsigned_delta =
-        ComputeDelta(values[i - 1], values[i], original_width_bits);
-    max_unsigned_delta = std::max(unsigned_delta, max_unsigned_delta);
-  }
+  uint64_t max_unsigned_delta;
+  uint64_t max_pos_signed_delta;
+  uint64_t min_neg_signed_delta;
+  CalculateMinAndMaxDeltas(base, values, value_width_bits, &max_unsigned_delta,
+                           &max_pos_signed_delta, &min_neg_signed_delta);
 
   // We indicate the special case of all values being equal to the base with
   // the empty string.
@@ -270,11 +325,10 @@ std::string FixedLengthDeltaEncoder::EncodeDeltas(
     return std::string();
   }
 
-  const uint64_t delta_width_bits_unsigned = BitWidth(max_unsigned_delta);
-  // This will prevent the use of signed deltas, by always assuming
-  // they will not provide value over unsigned.
-  // TODO(eladalon): Add support for signed deltas.
-  const uint64_t delta_width_bits_signed = 64;
+  const uint64_t delta_width_bits_unsigned =
+      UnsignedBitWidth(max_unsigned_delta);
+  const uint64_t delta_width_bits_signed =
+      SignedBitWidth(max_pos_signed_delta, min_neg_signed_delta);
 
   // Note: Preference for unsigned if the two have the same width (efficiency).
   const bool signed_deltas =
@@ -285,9 +339,68 @@ std::string FixedLengthDeltaEncoder::EncodeDeltas(
   const bool values_optional = false;
 
   FixedLengthEncodingParameters params(delta_width_bits, signed_deltas,
-                                       values_optional, original_width_bits);
+                                       values_optional, value_width_bits);
+
+  // No effect in production.
+  ConsiderTestOverrides(&params, delta_width_bits_signed,
+                        delta_width_bits_unsigned);
+
   FixedLengthDeltaEncoder encoder(params, base, values);
   return encoder.Encode();
+}
+
+void FixedLengthDeltaEncoder::CalculateMinAndMaxDeltas(
+    uint64_t base,
+    const std::vector<uint64_t>& values,
+    uint64_t bit_width,
+    uint64_t* max_unsigned_delta_out,
+    uint64_t* max_pos_signed_delta_out,
+    uint64_t* min_neg_signed_delta_out) {
+  RTC_DCHECK(!values.empty());
+  RTC_DCHECK(max_unsigned_delta_out);
+  RTC_DCHECK(max_pos_signed_delta_out);
+  RTC_DCHECK(min_neg_signed_delta_out);
+
+  const uint64_t bit_mask = MaxUnsignedValueOfBitWidth(bit_width);
+
+  uint64_t max_unsigned_delta = 0;
+  uint64_t max_pos_signed_delta = 0;
+  uint64_t min_neg_signed_delta = 0;
+
+  uint64_t prev = base;
+  for (size_t i = 0; i < values.size(); ++i) {
+    const uint64_t forward_delta = UnsignedDelta(prev, values[i], bit_mask);
+    const uint64_t backward_delta = UnsignedDelta(values[i], prev, bit_mask);
+
+    max_unsigned_delta = std::max(max_unsigned_delta, forward_delta);
+
+    if (forward_delta < backward_delta) {
+      max_pos_signed_delta = std::max(max_pos_signed_delta, forward_delta);
+    } else {
+      min_neg_signed_delta = std::max(min_neg_signed_delta, backward_delta);
+    }
+
+    prev = values[i];
+  }
+
+  *max_unsigned_delta_out = max_unsigned_delta;
+  *max_pos_signed_delta_out = max_pos_signed_delta;
+  *min_neg_signed_delta_out = min_neg_signed_delta;
+}
+
+void FixedLengthDeltaEncoder::ConsiderTestOverrides(
+    FixedLengthEncodingParameters* params,
+    uint64_t delta_width_bits_signed,
+    uint64_t delta_width_bits_unsigned) {
+  if (g_force_unsigned_for_testing) {
+    params->SetDeltaWidthBits(delta_width_bits_unsigned);
+    params->SetSignedDeltas(false);
+  } else if (g_force_signed_for_testing) {
+    params->SetDeltaWidthBits(delta_width_bits_signed);
+    params->SetSignedDeltas(true);
+  } else {
+    // Unchanged.
+  }
 }
 
 FixedLengthDeltaEncoder::FixedLengthDeltaEncoder(
@@ -295,11 +408,6 @@ FixedLengthDeltaEncoder::FixedLengthDeltaEncoder(
     uint64_t base,
     const std::vector<uint64_t>& values)
     : params_(params), base_(base), values_(values) {
-  RTC_DCHECK_GE(params_.delta_width_bits, 1);
-  RTC_DCHECK_LE(params_.delta_width_bits, 64);
-  RTC_DCHECK_GE(params_.original_width_bits, 1);
-  RTC_DCHECK_LE(params_.original_width_bits, 64);
-  RTC_DCHECK_LE(params_.delta_width_bits, params_.original_width_bits);
   RTC_DCHECK(!values_.empty());
   writer_ = absl::make_unique<BitWriter>(OutputLengthBytes());
 }
@@ -322,31 +430,31 @@ size_t FixedLengthDeltaEncoder::OutputLengthBytes() const {
 }
 
 size_t FixedLengthDeltaEncoder::HeaderLengthBits() const {
-  if (params_.signed_deltas == kDefaultSignedDeltas &&
-      params_.values_optional == kDefaultValuesOptional &&
-      params_.original_width_bits == kDefaultOriginalWidthBits) {
+  if (params_.signed_deltas() == kDefaultSignedDeltas &&
+      params_.values_optional() == kDefaultValuesOptional &&
+      params_.value_width_bits() == kDefaultValueWidthBits) {
     return kBitsInHeaderForEncodingType + kBitsInHeaderForDeltaWidthBits;
   } else {
     return kBitsInHeaderForEncodingType + kBitsInHeaderForDeltaWidthBits +
            kBitsInHeaderForSignedDeltas + kBitsInHeaderForValuesOptional +
-           kBitsInHeaderForOriginalWidthBits;
+           kBitsInHeaderForValueWidthBits;
   }
 }
 
 size_t FixedLengthDeltaEncoder::EncodedDeltasLengthBits() const {
   // TODO(eladalon): When optional values are supported, iterate over the
   // deltas to check the exact cost of each.
-  RTC_DCHECK(!params_.values_optional);
-  return values_.size() * params_.delta_width_bits;
+  RTC_DCHECK(!params_.values_optional());
+  return values_.size() * params_.delta_width_bits();
 }
 
 void FixedLengthDeltaEncoder::EncodeHeader() {
   RTC_DCHECK(writer_);
 
   const EncodingType encoding_type =
-      (params_.original_width_bits == kDefaultOriginalWidthBits &&
-       params_.signed_deltas == kDefaultSignedDeltas &&
-       params_.values_optional == kDefaultValuesOptional)
+      (params_.value_width_bits() == kDefaultValueWidthBits &&
+       params_.signed_deltas() == kDefaultSignedDeltas &&
+       params_.values_optional() == kDefaultValuesOptional)
           ? EncodingType::kFixedSizeUnsignedDeltasNoEarlyWrapNoOpt
           : EncodingType::kFixedSizeSignedDeltasEarlyWrapAndOptSupported;
 
@@ -356,26 +464,59 @@ void FixedLengthDeltaEncoder::EncodeHeader() {
   // Note: Since it's meaningless for a field to be of width 0, when it comes
   // to fields that relate widths, we encode  width 1 as 0, width 2 as 1,
 
-  writer_->WriteBits(params_.delta_width_bits - 1,
+  writer_->WriteBits(params_.delta_width_bits() - 1,
                      kBitsInHeaderForDeltaWidthBits);
 
   if (encoding_type == EncodingType::kFixedSizeUnsignedDeltasNoEarlyWrapNoOpt) {
     return;
   }
 
-  writer_->WriteBits(static_cast<uint64_t>(params_.signed_deltas),
+  writer_->WriteBits(static_cast<uint64_t>(params_.signed_deltas()),
                      kBitsInHeaderForSignedDeltas);
-  writer_->WriteBits(static_cast<uint64_t>(params_.values_optional),
+  writer_->WriteBits(static_cast<uint64_t>(params_.values_optional()),
                      kBitsInHeaderForValuesOptional);
-  writer_->WriteBits(params_.original_width_bits - 1,
-                     kBitsInHeaderForOriginalWidthBits);
+  writer_->WriteBits(params_.value_width_bits() - 1,
+                     kBitsInHeaderForValueWidthBits);
 }
 
 void FixedLengthDeltaEncoder::EncodeDelta(uint64_t previous, uint64_t current) {
+  if (params_.signed_deltas()) {
+    EncodeSignedDelta(previous, current);
+  } else {
+    EncodeUnsignedDelta(previous, current);
+  }
+}
+
+void FixedLengthDeltaEncoder::EncodeUnsignedDelta(uint64_t previous,
+                                                  uint64_t current) {
   RTC_DCHECK(writer_);
-  writer_->WriteBits(
-      ComputeDelta(previous, current, params_.original_width_bits),
-      params_.delta_width_bits);
+  const uint64_t delta = UnsignedDelta(previous, current, params_.value_mask());
+  writer_->WriteBits(delta, params_.delta_width_bits());
+}
+
+void FixedLengthDeltaEncoder::EncodeSignedDelta(uint64_t previous,
+                                                uint64_t current) {
+  RTC_DCHECK(writer_);
+
+  const uint64_t forward_delta =
+      UnsignedDelta(previous, current, params_.value_mask());
+  const uint64_t backward_delta =
+      UnsignedDelta(current, previous, params_.value_mask());
+
+  uint64_t delta;
+  if (forward_delta <= backward_delta) {
+    delta = forward_delta;
+  } else {
+    // Compute the unsigned representation of a negative delta.
+    // This is the two's complement representation of this negative value,
+    // when deltas are of width params_.delta_mask().
+    RTC_DCHECK_GE(params_.delta_mask(), backward_delta);
+    RTC_DCHECK_LT(params_.delta_mask() - backward_delta, params_.delta_mask());
+    delta = params_.delta_mask() - backward_delta + 1;
+    RTC_DCHECK_LE(delta, params_.delta_mask());
+  }
+
+  writer_->WriteBits(delta, params_.delta_width_bits());
 }
 
 // Perform decoding of a a delta-encoded stream, extracting the original
@@ -434,6 +575,10 @@ class FixedLengthDeltaDecoder final {
   // values' width, as specified by the aforementioned encoding parameters.
   uint64_t ApplyDelta(uint64_t base, uint64_t delta) const;
 
+  // Helpers for ApplyDelta().
+  uint64_t ApplyUnsignedDelta(uint64_t base, uint64_t delta) const;
+  uint64_t ApplySignedDelta(uint64_t base, uint64_t delta) const;
+
   // Reader of the input stream to be decoded. Does not own that buffer.
   // See comment above ctor for details.
   const std::unique_ptr<rtc::BitBuffer> reader_;
@@ -449,11 +594,6 @@ class FixedLengthDeltaDecoder final {
 
   // The number of values to be known to be decoded.
   const size_t num_of_deltas_;
-
-  // Bit mask corresponding to |params_.original_width_bits|. That is, the bits
-  // necessary for encoding all of the values in the encoded sequence are on.
-  // Used as an optimization.
-  const uint64_t value_mask_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(FixedLengthDeltaDecoder);
 };
@@ -524,24 +664,20 @@ std::unique_ptr<FixedLengthDeltaDecoder> FixedLengthDeltaDecoder::Create(
   const uint64_t delta_width_bits =
       read_buffer + 1;  // See encoding for +1's rationale.
 
-  // signed_deltas, values_optional, original_width_bits
+  // signed_deltas, values_optional, value_width_bits
   bool signed_deltas;
   bool values_optional;
-  uint64_t original_width_bits;
+  uint64_t value_width_bits;
   if (encoding == EncodingType::kFixedSizeUnsignedDeltasNoEarlyWrapNoOpt) {
     signed_deltas = kDefaultSignedDeltas;
     values_optional = kDefaultValuesOptional;
-    original_width_bits = kDefaultOriginalWidthBits;
+    value_width_bits = kDefaultValueWidthBits;
   } else {
     // signed_deltas
     if (!reader->ReadBits(&read_buffer, kBitsInHeaderForSignedDeltas)) {
       return nullptr;
     }
     signed_deltas = rtc::dchecked_cast<bool>(read_buffer);
-    if (signed_deltas) {
-      RTC_LOG(LS_WARNING) << "Not implemented.";
-      return nullptr;
-    }
 
     // values_optional
     if (!reader->ReadBits(&read_buffer, kBitsInHeaderForValuesOptional)) {
@@ -554,16 +690,25 @@ std::unique_ptr<FixedLengthDeltaDecoder> FixedLengthDeltaDecoder::Create(
       return nullptr;
     }
 
-    // original_width_bits
-    if (!reader->ReadBits(&read_buffer, kBitsInHeaderForOriginalWidthBits)) {
+    // value_width_bits
+    if (!reader->ReadBits(&read_buffer, kBitsInHeaderForValueWidthBits)) {
       return nullptr;
     }
-    RTC_DCHECK_LE(read_buffer, 64 - 1);     // See encoding for -1's rationale.
-    original_width_bits = read_buffer + 1;  // See encoding for +1's rationale.
+    RTC_DCHECK_LE(read_buffer, 64 - 1);  // See encoding for -1's rationale.
+    value_width_bits = read_buffer + 1;  // See encoding for +1's rationale.
+  }
+
+  // Note: Because of the way the parameters are read, it is not possible
+  // for illegal values to be read. We check nevertheless, in case the code
+  // changes in the future in a way that breaks this promise.
+  if (!FixedLengthEncodingParameters::ValidParameters(
+          delta_width_bits, signed_deltas, values_optional, value_width_bits)) {
+    RTC_LOG(LS_WARNING) << "Corrupt log; illegal encoding parameters.";
+    return nullptr;
   }
 
   FixedLengthEncodingParameters params(delta_width_bits, signed_deltas,
-                                       values_optional, original_width_bits);
+                                       values_optional, value_width_bits);
   return absl::WrapUnique(new FixedLengthDeltaDecoder(std::move(reader), params,
                                                       base, num_of_deltas));
 }
@@ -576,13 +721,10 @@ FixedLengthDeltaDecoder::FixedLengthDeltaDecoder(
     : reader_(std::move(reader)),
       params_(params),
       base_(base),
-      num_of_deltas_(num_of_deltas),
-      value_mask_(MaxValueOfBitWidth(params_.original_width_bits)) {
+      num_of_deltas_(num_of_deltas) {
   RTC_DCHECK(reader_);
-  // TODO(eladalon): Support signed deltas.
-  RTC_DCHECK(!params.signed_deltas) << "Not implemented.";
   // TODO(eladalon): Support optional values.
-  RTC_DCHECK(!params.values_optional) << "Not implemented.";
+  RTC_DCHECK(!params.values_optional()) << "Not implemented.";
 }
 
 std::vector<uint64_t> FixedLengthDeltaDecoder::Decode() {
@@ -603,15 +745,15 @@ std::vector<uint64_t> FixedLengthDeltaDecoder::Decode() {
 
 bool FixedLengthDeltaDecoder::ParseDelta(uint64_t* delta) {
   RTC_DCHECK(reader_);
-  RTC_DCHECK(!params_.signed_deltas) << "Not implemented.";    // Reminder.
-  RTC_DCHECK(!params_.values_optional) << "Not implemented.";  // Reminder.
+  RTC_DCHECK(!params_.values_optional()) << "Not implemented.";  // Reminder.
 
   // BitBuffer and BitBufferWriter read/write higher bits before lower bits.
 
   const size_t lower_bit_count =
-      std::min<uint64_t>(params_.delta_width_bits, 32u);
-  const size_t higher_bit_count =
-      (params_.delta_width_bits <= 32u) ? 0 : params_.delta_width_bits - 32u;
+      std::min<uint64_t>(params_.delta_width_bits(), 32u);
+  const size_t higher_bit_count = (params_.delta_width_bits() <= 32u)
+                                      ? 0
+                                      : params_.delta_width_bits() - 32u;
 
   uint32_t lower_bits;
   uint32_t higher_bits;
@@ -639,13 +781,37 @@ bool FixedLengthDeltaDecoder::ParseDelta(uint64_t* delta) {
 
 uint64_t FixedLengthDeltaDecoder::ApplyDelta(uint64_t base,
                                              uint64_t delta) const {
-  RTC_DCHECK(!params_.signed_deltas) << "Not implemented.";    // Reminder.
-  RTC_DCHECK(!params_.values_optional) << "Not implemented.";  // Reminder.
-  RTC_DCHECK_LE(base, MaxValueOfBitWidth(params_.original_width_bits));
-  RTC_DCHECK_LE(delta, MaxValueOfBitWidth(params_.delta_width_bits));
-  RTC_DCHECK_LE(params_.delta_width_bits,
-                params_.original_width_bits);  // Reminder.
-  return (base + delta) & value_mask_;
+  RTC_DCHECK(!params_.values_optional()) << "Not implemented.";  // Reminder.
+  RTC_DCHECK_LE(base, MaxUnsignedValueOfBitWidth(params_.value_width_bits()));
+  RTC_DCHECK_LE(delta, MaxUnsignedValueOfBitWidth(params_.delta_width_bits()));
+  return params_.signed_deltas() ? ApplySignedDelta(base, delta)
+                                 : ApplyUnsignedDelta(base, delta);
+}
+
+uint64_t FixedLengthDeltaDecoder::ApplyUnsignedDelta(uint64_t base,
+                                                     uint64_t delta) const {
+  // Note: May still be used if signed deltas used.
+  RTC_DCHECK_LE(base, MaxUnsignedValueOfBitWidth(params_.value_width_bits()));
+  RTC_DCHECK_LE(delta, MaxUnsignedValueOfBitWidth(params_.delta_width_bits()));
+  return (base + delta) & params_.value_mask();
+}
+
+uint64_t FixedLengthDeltaDecoder::ApplySignedDelta(uint64_t base,
+                                                   uint64_t delta) const {
+  RTC_DCHECK(params_.signed_deltas());
+  RTC_DCHECK_LE(base, MaxUnsignedValueOfBitWidth(params_.value_width_bits()));
+  RTC_DCHECK_LE(delta, MaxUnsignedValueOfBitWidth(params_.delta_width_bits()));
+
+  const uint64_t top_bit = static_cast<uint64_t>(1)
+                           << (params_.delta_width_bits() - 1);
+
+  const bool positive_delta = ((delta & top_bit) == 0);
+  if (positive_delta) {
+    return ApplyUnsignedDelta(base, delta);
+  }
+
+  const uint64_t delta_abs = (~delta & params_.delta_mask()) + 1;
+  return (base - delta_abs) & params_.value_mask();
 }
 
 }  // namespace
@@ -674,6 +840,16 @@ std::vector<uint64_t> DecodeDeltas(const std::string& input,
 
   RTC_LOG(LS_WARNING) << "Could not decode delta-encoded stream.";
   return std::vector<uint64_t>();
+}
+
+void SetFixedLengthEncoderDeltaSignednessForTesting(bool signedness) {
+  g_force_unsigned_for_testing = !signedness;
+  g_force_signed_for_testing = signedness;
+}
+
+void UnsetFixedLengthEncoderDeltaSignednessForTesting() {
+  g_force_unsigned_for_testing = false;
+  g_force_signed_for_testing = false;
 }
 
 }  // namespace webrtc
