@@ -115,6 +115,11 @@ static const char* kPayloadNameI420 = "I420";
 static const char* kPayloadNameGeneric = "Generic";
 static const char* kPayloadNameMultiplex = "Multiplex";
 
+// TODO(nisse): Delete this wrapper.
+static bool CodecNamesEq(const char* name1, const char* name2) {
+  return absl::EqualsIgnoreCase(name1, name2);
+}
+
 const char* CodecTypeToPayloadString(VideoCodecType type) {
   switch (type) {
     case kVideoCodecVP8:
@@ -132,15 +137,15 @@ const char* CodecTypeToPayloadString(VideoCodecType type) {
 }
 
 VideoCodecType PayloadStringToCodecType(const std::string& name) {
-  if (absl::EqualsIgnoreCase(name, kPayloadNameVp8))
+  if (CodecNamesEq(name.c_str(), kPayloadNameVp8))
     return kVideoCodecVP8;
-  if (absl::EqualsIgnoreCase(name, kPayloadNameVp9))
+  if (CodecNamesEq(name.c_str(), kPayloadNameVp9))
     return kVideoCodecVP9;
-  if (absl::EqualsIgnoreCase(name, kPayloadNameH264))
+  if (CodecNamesEq(name.c_str(), kPayloadNameH264))
     return kVideoCodecH264;
-  if (absl::EqualsIgnoreCase(name, kPayloadNameI420))
+  if (CodecNamesEq(name.c_str(), kPayloadNameI420))
     return kVideoCodecI420;
-  if (absl::EqualsIgnoreCase(name, kPayloadNameMultiplex))
+  if (CodecNamesEq(name.c_str(), kPayloadNameMultiplex))
     return kVideoCodecMultiplex;
   return kVideoCodecGeneric;
 }

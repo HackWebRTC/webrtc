@@ -312,8 +312,7 @@ void FilterDataCodecs(std::vector<DataCodec>* codecs, bool sctp) {
       sctp ? kGoogleRtpDataCodecName : kGoogleSctpDataCodecName;
   codecs->erase(std::remove_if(codecs->begin(), codecs->end(),
                                [&codec_name](const DataCodec& codec) {
-                                 return absl::EqualsIgnoreCase(codec.name,
-                                                               codec_name);
+                                 return CodecNamesEq(codec.name, codec_name);
                                }),
                 codecs->end());
 }
@@ -747,7 +746,7 @@ static void NegotiateCodecs(const std::vector<C>& local_codecs,
         RTC_DCHECK(apt_it != theirs.params.end());
         negotiated.SetParam(kCodecParamAssociatedPayloadType, apt_it->second);
       }
-      if (absl::EqualsIgnoreCase(ours.name, kH264CodecName)) {
+      if (CodecNamesEq(ours.name.c_str(), kH264CodecName)) {
         webrtc::H264::GenerateProfileLevelIdForAnswer(
             ours.params, theirs.params, &negotiated.params);
       }

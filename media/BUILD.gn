@@ -250,7 +250,6 @@ rtc_static_library("rtc_internal_video_codecs") {
     "../rtc_base:rtc_base_approved",
     "../rtc_base:sequenced_task_checker",
     "../rtc_base/system:rtc_export",
-    "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }

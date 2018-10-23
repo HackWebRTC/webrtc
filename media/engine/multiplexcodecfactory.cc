@@ -12,7 +12,6 @@
 
 #include <utility>
 
-#include "absl/strings/match.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "media/base/codec.h"
 #include "media/base/mediaconstants.h"
@@ -23,8 +22,8 @@
 namespace {
 
 bool IsMultiplexCodec(const cricket::VideoCodec& codec) {
-  return absl::EqualsIgnoreCase(codec.name.c_str(),
-                                cricket::kMultiplexCodecName);
+  return cricket::CodecNamesEq(codec.name.c_str(),
+                               cricket::kMultiplexCodecName);
 }
 
 }  // anonymous namespace
@@ -43,7 +42,7 @@ std::vector<SdpVideoFormat> MultiplexEncoderFactory::GetSupportedFormats()
     const {
   std::vector<SdpVideoFormat> formats = factory_->GetSupportedFormats();
   for (const auto& format : formats) {
-    if (absl::EqualsIgnoreCase(format.name, kMultiplexAssociatedCodecName)) {
+    if (cricket::CodecNamesEq(format.name, kMultiplexAssociatedCodecName)) {
       SdpVideoFormat multiplex_format = format;
       multiplex_format.parameters[cricket::kCodecParamAssociatedCodecName] =
           format.name;
@@ -89,7 +88,7 @@ std::vector<SdpVideoFormat> MultiplexDecoderFactory::GetSupportedFormats()
     const {
   std::vector<SdpVideoFormat> formats = factory_->GetSupportedFormats();
   for (const auto& format : formats) {
-    if (absl::EqualsIgnoreCase(format.name, kMultiplexAssociatedCodecName)) {
+    if (cricket::CodecNamesEq(format.name, kMultiplexAssociatedCodecName)) {
       SdpVideoFormat multiplex_format = format;
       multiplex_format.parameters[cricket::kCodecParamAssociatedCodecName] =
           format.name;

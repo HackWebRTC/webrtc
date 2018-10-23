@@ -216,6 +216,9 @@ const Codec* FindCodecById(const std::vector<Codec>& codecs, int payload_type) {
   return nullptr;
 }
 
+RTC_EXPORT bool CodecNamesEq(const std::string& name1,
+                             const std::string& name2);
+RTC_EXPORT bool CodecNamesEq(const char* name1, const char* name2);
 bool HasNack(const Codec& codec);
 bool HasRemb(const Codec& codec);
 bool HasRrtr(const Codec& codec);

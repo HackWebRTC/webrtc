@@ -15,7 +15,6 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
-#include "absl/strings/match.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_decoder_software_fallback_wrapper.h"
 #include "api/video_codecs/video_encoder_factory.h"
@@ -131,7 +130,7 @@ class EncoderAdapter : public webrtc::VideoEncoderFactory {
     if (IsFormatSupported(internal_encoder_factory_->GetSupportedFormats(),
                           format)) {
       internal_encoder =
-          absl::EqualsIgnoreCase(format.name, kVp8CodecName)
+          CodecNamesEq(format.name.c_str(), kVp8CodecName)
               ? absl::make_unique<webrtc::VP8EncoderSimulcastProxy>(
                     internal_encoder_factory_.get(), format)
               : internal_encoder_factory_->CreateVideoEncoder(format);
@@ -142,7 +141,7 @@ class EncoderAdapter : public webrtc::VideoEncoderFactory {
     if (IsFormatSupported(external_encoder_factory_->GetSupportedFormats(),
                           format)) {
       external_encoder =
-          absl::EqualsIgnoreCase(format.name, kVp8CodecName)
+          CodecNamesEq(format.name.c_str(), kVp8CodecName)
               ? absl::make_unique<webrtc::SimulcastEncoderAdapter>(
                     external_encoder_factory_.get(), format)
               : external_encoder_factory_->CreateVideoEncoder(format);

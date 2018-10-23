@@ -10,7 +10,6 @@
 
 #include "media/engine/internaldecoderfactory.h"
 
-#include "absl/strings/match.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "media/base/mediaconstants.h"
 #include "modules/video_coding/codecs/h264/include/h264.h"
@@ -56,11 +55,11 @@ std::unique_ptr<VideoDecoder> InternalDecoderFactory::CreateVideoDecoder(
     return nullptr;
   }
 
-  if (absl::EqualsIgnoreCase(format.name, cricket::kVp8CodecName))
+  if (cricket::CodecNamesEq(format.name, cricket::kVp8CodecName))
     return VP8Decoder::Create();
-  if (absl::EqualsIgnoreCase(format.name, cricket::kVp9CodecName))
+  if (cricket::CodecNamesEq(format.name, cricket::kVp9CodecName))
     return VP9Decoder::Create();
-  if (absl::EqualsIgnoreCase(format.name, cricket::kH264CodecName))
+  if (cricket::CodecNamesEq(format.name, cricket::kH264CodecName))
     return H264Decoder::Create();
 
   RTC_NOTREACHED();

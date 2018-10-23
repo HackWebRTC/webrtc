@@ -82,7 +82,6 @@ rtc_static_library("builtin_video_encoder_factory") {
     "../../rtc_base:ptr_util",
     "../../rtc_base/system:rtc_export",
     "//third_party/abseil-cpp/absl/memory",
-    "//third_party/abseil-cpp/absl/strings",
   ]
 }
 

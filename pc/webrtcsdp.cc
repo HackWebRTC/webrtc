@@ -23,12 +23,11 @@
 #include <utility>
 #include <vector>
 
-#include "absl/strings/match.h"
+#include "api/mediatypes.h"
 #include "api/candidate.h"
 #include "api/cryptoparams.h"
 #include "api/jsepicecandidate.h"
 #include "api/jsepsessiondescription.h"
-#include "api/mediatypes.h"
 // for RtpExtension
 #include "api/rtpparameters.h"
 #include "media/base/codec.h"
@@ -1313,8 +1312,8 @@ void BuildMediaDescription(const ContentInfo* content_info,
 
       if (data_desc->use_sctpmap()) {
         for (const cricket::DataCodec& codec : data_desc->codecs()) {
-          if (absl::EqualsIgnoreCase(codec.name,
-                                     cricket::kGoogleSctpDataCodecName) &&
+          if (cricket::CodecNamesEq(codec.name,
+                                    cricket::kGoogleSctpDataCodecName) &&
               codec.GetParam(cricket::kCodecParamPort, &sctp_port)) {
             break;
           }
@@ -1752,7 +1751,7 @@ void AddRtcpFbLines(const T& codec, std::string* message) {
 
 bool AddSctpDataCodec(DataContentDescription* media_desc, int sctp_port) {
   for (const auto& codec : media_desc->codecs()) {
-    if (absl::EqualsIgnoreCase(codec.name, cricket::kGoogleSctpDataCodecName)) {
+    if (cricket::CodecNamesEq(codec.name, cricket::kGoogleSctpDataCodecName)) {
       return ParseFailed("", "Can't have multiple sctp port attributes.", NULL);
     }
   }
