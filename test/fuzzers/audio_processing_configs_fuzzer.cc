@@ -13,10 +13,11 @@
 
 #include "absl/memory/memory.h"
 #include "api/audio/echo_canceller3_factory.h"
-#include "modules/audio_processing/aec_dump/mock_aec_dump.h"
+#include "modules/audio_processing/aec_dump/aec_dump_factory.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/numerics/safe_minmax.h"
+#include "rtc_base/task_queue.h"
 #include "system_wrappers/include/field_trial.h"
 #include "test/fuzzers/audio_processing_fuzzer_helper.h"
 #include "test/fuzzers/fuzz_data_helper.h"
@@ -61,7 +62,8 @@ const std::string kFieldTrialNames[] = {
 };
 
 std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
-                                           std::string* field_trial_string) {
+                                           std::string* field_trial_string,
+                                           rtc::TaskQueue* worker_queue) {
   // Parse boolean values for optionally enabling different
   // configurable public components of APM.
   bool exp_agc = fuzz_data->ReadOrDefaultValue(true);
@@ -136,8 +138,9 @@ std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
           .SetEchoControlFactory(std::move(echo_control_factory))
           .Create(config));
 
-  apm->AttachAecDump(
-      absl::make_unique<testing::NiceMock<webrtc::test::MockAecDump>>());
+#ifdef WEBRTC_LINUX
+  apm->AttachAecDump(AecDumpFactory::Create("/dev/null", -1, worker_queue));
+#endif
 
   webrtc::AudioProcessing::Config apm_config;
   apm_config.echo_canceller.enabled = use_aec || use_aecm;
@@ -165,7 +168,10 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
   // This string must be in scope during execution, according to documentation
   // for field_trial.h. Hence it's created here and not in CreateApm.
   std::string field_trial_string = "";
-  auto apm = CreateApm(&fuzz_data, &field_trial_string);
+
+  std::unique_ptr<rtc::TaskQueue> worker_queue(
+      new rtc::TaskQueue("rtc-low-prio", rtc::TaskQueue::Priority::LOW));
+  auto apm = CreateApm(&fuzz_data, &field_trial_string, worker_queue.get());
 
   if (apm) {
     FuzzAudioProcessing(&fuzz_data, std::move(apm));
