@@ -823,10 +823,13 @@ void SendStatisticsProxy::UpdateEncoderFallbackStats(
 
   const int64_t now_ms = clock_->TimeInMilliseconds();
   bool is_active = fallback_info->is_active;
-  if (codec_info->codec_name != stats_.encoder_implementation_name) {
+  if (encoder_changed_) {
     // Implementation changed.
-    is_active = strcmp(codec_info->codec_name, kVp8SwCodecName) == 0;
-    if (!is_active && stats_.encoder_implementation_name != kVp8SwCodecName) {
+    const bool last_was_vp8_software =
+        encoder_changed_->previous_encoder_implementation == kVp8SwCodecName;
+    is_active = encoder_changed_->new_encoder_implementation == kVp8SwCodecName;
+    encoder_changed_.reset();
+    if (!is_active && !last_was_vp8_software) {
       // First or not a VP8 SW change, update stats on next call.
       return;
     }
@@ -865,7 +868,7 @@ void SendStatisticsProxy::UpdateFallbackDisabledStats(
   }
 
   if (!IsForcedFallbackPossible(codec_info, simulcast_index) ||
-      strcmp(codec_info->codec_name, kVp8SwCodecName) == 0) {
+      stats_.encoder_implementation_name == kVp8SwCodecName) {
     uma_container_->fallback_info_disabled_.is_possible = false;
     return;
   }
@@ -895,13 +898,9 @@ void SendStatisticsProxy::OnSendEncodedImage(
   rtc::CritScope lock(&crit_);
   ++stats_.frames_encoded;
   if (codec_info) {
-    if (codec_info->codec_name) {
-      UpdateEncoderFallbackStats(
-          codec_info,
-          encoded_image._encodedWidth * encoded_image._encodedHeight,
-          simulcast_idx);
-      stats_.encoder_implementation_name = codec_info->codec_name;
-    }
+    UpdateEncoderFallbackStats(
+        codec_info, encoded_image._encodedWidth * encoded_image._encodedHeight,
+        simulcast_idx);
   }
 
   if (static_cast<size_t>(simulcast_idx) >= rtp_config_.ssrcs.size()) {
@@ -979,6 +978,14 @@ void SendStatisticsProxy::OnSendEncodedImage(
     if (quality_downscales_ > 0)
       uma_container_->quality_downscales_counter_.Add(quality_downscales_);
   }
+}
+
+void SendStatisticsProxy::OnEncoderImplementationChanged(
+    const std::string& implementation_name) {
+  rtc::CritScope lock(&crit_);
+  encoder_changed_ = EncoderChangeEvent{stats_.encoder_implementation_name,
+                                        implementation_name};
+  stats_.encoder_implementation_name = implementation_name;
 }
 
 int SendStatisticsProxy::GetInputFrameRate() const {

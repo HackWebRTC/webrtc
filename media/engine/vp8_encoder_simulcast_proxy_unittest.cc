@@ -104,7 +104,8 @@ TEST(VP8EncoderSimulcastProxy, ChoosesCorrectImplementation) {
                                                    SdpVideoFormat("VP8"));
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             simulcast_enabled_proxy.InitEncode(&codec_settings, 4, 1200));
-  EXPECT_EQ(kImplementationName, simulcast_enabled_proxy.ImplementationName());
+  EXPECT_EQ(kImplementationName,
+            simulcast_enabled_proxy.GetEncoderInfo().implementation_name);
 
   NiceMock<MockEncoder>* mock_encoder1 = new NiceMock<MockEncoder>();
   NiceMock<MockEncoder>* mock_encoder2 = new NiceMock<MockEncoder>();
@@ -145,7 +146,7 @@ TEST(VP8EncoderSimulcastProxy, ChoosesCorrectImplementation) {
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             simulcast_disabled_proxy.InitEncode(&codec_settings, 4, 1200));
   EXPECT_EQ(kSimulcastAdaptedImplementationName,
-            simulcast_disabled_proxy.ImplementationName());
+            simulcast_disabled_proxy.GetEncoderInfo().implementation_name);
 
   // Cleanup.
   simulcast_enabled_proxy.Release();

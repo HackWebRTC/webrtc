@@ -128,7 +128,6 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
                                 ? VideoContentType::SCREENSHARE
                                 : VideoContentType::UNSPECIFIED;
     encoded.SetSpatialIndex(i);
-    specifics.codec_name = ImplementationName();
     if (callback->OnEncodedImage(encoded, &specifics, nullptr).error !=
         EncodedImageCallback::Result::OK) {
       return -1;

@@ -735,9 +735,9 @@ TEST_F(TestSimulcastEncoderAdapterFake, SupportsNativeHandleForSingleStreams) {
   adapter_->RegisterEncodeCompleteCallback(this);
   ASSERT_EQ(1u, helper_->factory()->encoders().size());
   helper_->factory()->encoders()[0]->set_supports_native_handle(true);
-  EXPECT_TRUE(adapter_->SupportsNativeHandle());
+  EXPECT_TRUE(adapter_->GetEncoderInfo().supports_native_handle);
   helper_->factory()->encoders()[0]->set_supports_native_handle(false);
-  EXPECT_FALSE(adapter_->SupportsNativeHandle());
+  EXPECT_FALSE(adapter_->GetEncoderInfo().supports_native_handle);
 }
 
 TEST_F(TestSimulcastEncoderAdapterFake, SetRatesUnderMinBitrate) {
@@ -770,7 +770,8 @@ TEST_F(TestSimulcastEncoderAdapterFake, SetRatesUnderMinBitrate) {
 }
 
 TEST_F(TestSimulcastEncoderAdapterFake, SupportsImplementationName) {
-  EXPECT_STREQ("SimulcastEncoderAdapter", adapter_->ImplementationName());
+  EXPECT_EQ("SimulcastEncoderAdapter",
+            adapter_->GetEncoderInfo().implementation_name);
   SimulcastTestFixtureImpl::DefaultSettings(
       &codec_, static_cast<const int*>(kTestTemporalLayerProfile),
       kVideoCodecVP8);
@@ -780,8 +781,8 @@ TEST_F(TestSimulcastEncoderAdapterFake, SupportsImplementationName) {
   encoder_names.push_back("codec3");
   helper_->factory()->SetEncoderNames(encoder_names);
   EXPECT_EQ(0, adapter_->InitEncode(&codec_, 1, 1200));
-  EXPECT_STREQ("SimulcastEncoderAdapter (codec1, codec2, codec3)",
-               adapter_->ImplementationName());
+  EXPECT_EQ("SimulcastEncoderAdapter (codec1, codec2, codec3)",
+            adapter_->GetEncoderInfo().implementation_name);
 
   // Single streams should not expose "SimulcastEncoderAdapter" in name.
   EXPECT_EQ(0, adapter_->Release());
@@ -789,7 +790,7 @@ TEST_F(TestSimulcastEncoderAdapterFake, SupportsImplementationName) {
   EXPECT_EQ(0, adapter_->InitEncode(&codec_, 1, 1200));
   adapter_->RegisterEncodeCompleteCallback(this);
   ASSERT_EQ(1u, helper_->factory()->encoders().size());
-  EXPECT_STREQ("codec1", adapter_->ImplementationName());
+  EXPECT_EQ("codec1", adapter_->GetEncoderInfo().implementation_name);
 }
 
 TEST_F(TestSimulcastEncoderAdapterFake,
@@ -805,10 +806,10 @@ TEST_F(TestSimulcastEncoderAdapterFake,
     encoder->set_supports_native_handle(true);
   // If one encoder doesn't support it, then overall support is disabled.
   helper_->factory()->encoders()[0]->set_supports_native_handle(false);
-  EXPECT_FALSE(adapter_->SupportsNativeHandle());
+  EXPECT_FALSE(adapter_->GetEncoderInfo().supports_native_handle);
   // Once all do, then the adapter claims support.
   helper_->factory()->encoders()[0]->set_supports_native_handle(true);
-  EXPECT_TRUE(adapter_->SupportsNativeHandle());
+  EXPECT_TRUE(adapter_->GetEncoderInfo().supports_native_handle);
 }
 
 // TODO(nisse): Reuse definition in webrtc/test/fake_texture_handle.h.
@@ -844,7 +845,7 @@ TEST_F(TestSimulcastEncoderAdapterFake,
   ASSERT_EQ(3u, helper_->factory()->encoders().size());
   for (MockVideoEncoder* encoder : helper_->factory()->encoders())
     encoder->set_supports_native_handle(true);
-  EXPECT_TRUE(adapter_->SupportsNativeHandle());
+  EXPECT_TRUE(adapter_->GetEncoderInfo().supports_native_handle);
 
   rtc::scoped_refptr<VideoFrameBuffer> buffer(
       new rtc::RefCountedObject<FakeNativeBufferNoI420>(1280, 720));

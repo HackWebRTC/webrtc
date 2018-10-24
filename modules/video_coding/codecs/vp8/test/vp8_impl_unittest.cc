@@ -77,7 +77,7 @@ class TestVp8Impl : public VideoCodecUnitTest {
               encoder_->Encode(input_frame, nullptr, &frame_types));
     ASSERT_TRUE(WaitForEncodedFrame(encoded_frame, codec_specific_info));
     VerifyQpParser(*encoded_frame);
-    EXPECT_STREQ("libvpx", codec_specific_info->codec_name);
+    EXPECT_EQ("libvpx", encoder_->GetEncoderInfo().implementation_name);
     EXPECT_EQ(kVideoCodecVP8, codec_specific_info->codecType);
     EXPECT_EQ(0, encoded_frame->SpatialIndex());
   }
@@ -334,7 +334,8 @@ TEST_F(TestVp8Impl, ScalingDisabledIfAutomaticResizeOff) {
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             encoder_->InitEncode(&codec_settings_, kNumCores, kMaxPayloadSize));
 
-  VideoEncoder::ScalingSettings settings = encoder_->GetScalingSettings();
+  VideoEncoder::ScalingSettings settings =
+      encoder_->GetEncoderInfo().scaling_settings;
   EXPECT_FALSE(settings.thresholds.has_value());
 }
 
@@ -344,7 +345,8 @@ TEST_F(TestVp8Impl, ScalingEnabledIfAutomaticResizeOn) {
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             encoder_->InitEncode(&codec_settings_, kNumCores, kMaxPayloadSize));
 
-  VideoEncoder::ScalingSettings settings = encoder_->GetScalingSettings();
+  VideoEncoder::ScalingSettings settings =
+      encoder_->GetEncoderInfo().scaling_settings;
   EXPECT_TRUE(settings.thresholds.has_value());
   EXPECT_EQ(kDefaultMinPixelsPerFrame, settings.min_pixels_per_frame);
 }

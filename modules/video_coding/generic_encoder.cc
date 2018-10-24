@@ -166,7 +166,7 @@ bool VCMGenericEncoder::InternalSource() const {
 
 bool VCMGenericEncoder::SupportsNativeHandle() const {
   RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
-  return encoder_->SupportsNativeHandle();
+  return encoder_->GetEncoderInfo().supports_native_handle;
 }
 
 VCMEncodedFrameCallback::VCMEncodedFrameCallback(

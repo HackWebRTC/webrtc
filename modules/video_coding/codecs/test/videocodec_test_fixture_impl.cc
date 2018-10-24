@@ -671,7 +671,7 @@ void VideoCodecTestFixtureImpl::PrintSettings(
   std::string encoder_name;
   std::string decoder_name;
   task_queue->SendTask([this, &encoder_name, &decoder_name] {
-    encoder_name = encoder_->ImplementationName();
+    encoder_name = encoder_->GetEncoderInfo().implementation_name;
     decoder_name = decoders_.at(0)->ImplementationName();
   });
   printf("enc_impl_name: %s\n", encoder_name.c_str());

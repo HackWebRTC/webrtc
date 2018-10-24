@@ -103,18 +103,40 @@ class RTC_EXPORT VideoEncoder {
     ScalingSettings(KOff);  // NOLINT(runtime/explicit)
     ~ScalingSettings();
 
-    const absl::optional<QpThresholds> thresholds;
+    absl::optional<QpThresholds> thresholds;
 
     // We will never ask for a resolution lower than this.
     // TODO(kthelgason): Lower this limit when better testing
     // on MediaCodec and fallback implementations are in place.
     // See https://bugs.chromium.org/p/webrtc/issues/detail?id=7206
-    const int min_pixels_per_frame = 320 * 180;
+    int min_pixels_per_frame = 320 * 180;
 
    private:
     // Private constructor; to get an object without thresholds, use
     // the magic constant ScalingSettings::kOff.
     ScalingSettings();
+  };
+
+  // Struct containing metadata about the encoder implementing this interface.
+  struct EncoderInfo {
+    EncoderInfo();
+    EncoderInfo(const ScalingSettings& scaling_settings,
+                bool supports_native_handle,
+                const std::string& implementation_name);
+    // EncoderInfo(const EncoderInfo& rhs);
+    // EncoderInfo& operator=(const EncoderInfo& rhs);
+    ~EncoderInfo();
+
+    // Any encoder implementation wishing to use the WebRTC provided
+    // quality scaler must populate this field.
+    ScalingSettings scaling_settings;
+
+    // If true, encoder supports working with a native handle (e.g. texture
+    // handle for hw codecs) rather than requiring a raw I420 buffer.
+    bool supports_native_handle;
+
+    // The name of this particular encoder implementation, e.g. "libvpx".
+    std::string implementation_name;
   };
 
   static VideoCodecVP8 GetDefaultVp8Settings();
@@ -197,12 +219,13 @@ class RTC_EXPORT VideoEncoder {
   virtual int32_t SetRateAllocation(const VideoBitrateAllocation& allocation,
                                     uint32_t framerate);
 
-  // Any encoder implementation wishing to use the WebRTC provided
-  // quality scaler must implement this method.
+  // GetScalingSettings(), SupportsNativeHandle(), ImplementationName() are
+  // deprecated, use GetEncoderInfo() instead.
   virtual ScalingSettings GetScalingSettings() const;
-
   virtual bool SupportsNativeHandle() const;
   virtual const char* ImplementationName() const;
+
+  virtual EncoderInfo GetEncoderInfo() const;
 };
 }  // namespace webrtc
 #endif  // API_VIDEO_CODECS_VIDEO_ENCODER_H_

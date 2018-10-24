@@ -385,7 +385,6 @@ CodecSpecificInfo VideoEncoderWrapper::ParseCodecSpecificInfo(
   CodecSpecificInfo info;
   memset(&info, 0, sizeof(info));
   info.codecType = codec_settings_.codecType;
-  info.codec_name = implementation_name_.c_str();
 
   switch (codec_settings_.codecType) {
     case kVideoCodecVP8:

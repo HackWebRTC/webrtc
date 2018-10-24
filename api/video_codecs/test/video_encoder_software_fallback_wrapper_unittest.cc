@@ -61,9 +61,7 @@ class VideoEncoderSoftwareFallbackWrapperTest : public ::testing::Test {
       ++encode_count_;
       if (encode_complete_callback_ &&
           encode_return_code_ == WEBRTC_VIDEO_CODEC_OK) {
-        CodecSpecificInfo info;
-        info.codec_name = ImplementationName();
-        encode_complete_callback_->OnEncodedImage(EncodedImage(), &info,
+        encode_complete_callback_->OnEncodedImage(EncodedImage(), nullptr,
                                                   nullptr);
       }
       return encode_return_code_;
@@ -91,15 +89,10 @@ class VideoEncoderSoftwareFallbackWrapperTest : public ::testing::Test {
       return WEBRTC_VIDEO_CODEC_OK;
     }
 
-    bool SupportsNativeHandle() const override {
+    EncoderInfo GetEncoderInfo() const override {
       ++supports_native_handle_count_;
-      return supports_native_handle_;
-    }
-
-    const char* ImplementationName() const override { return "fake-encoder"; }
-
-    VideoEncoder::ScalingSettings GetScalingSettings() const override {
-      return VideoEncoder::ScalingSettings(kLowThreshold, kHighThreshold);
+      return EncoderInfo(ScalingSettings(kLowThreshold, kHighThreshold),
+                         supports_native_handle_, "fake-encoder");
     }
 
     int init_encode_count_ = 0;
@@ -121,11 +114,9 @@ class VideoEncoderSoftwareFallbackWrapperTest : public ::testing::Test {
         const CodecSpecificInfo* codec_specific_info,
         const RTPFragmentationHeader* fragmentation) override {
       ++callback_count_;
-      last_codec_name_ = codec_specific_info->codec_name;
       return Result(Result::OK, callback_count_);
     }
     int callback_count_ = 0;
-    std::string last_codec_name_;
   };
 
   void UtilizeFallbackEncoder();
@@ -133,7 +124,8 @@ class VideoEncoderSoftwareFallbackWrapperTest : public ::testing::Test {
   void EncodeFrame();
   void EncodeFrame(int expected_ret);
   void CheckLastEncoderName(const char* expected_name) {
-    EXPECT_STREQ(expected_name, callback_.last_codec_name_.c_str());
+    EXPECT_EQ(expected_name,
+              fallback_wrapper_->GetEncoderInfo().implementation_name);
   }
 
   test::ScopedFieldTrials override_field_trials_;
@@ -290,15 +282,19 @@ TEST_F(VideoEncoderSoftwareFallbackWrapperTest,
 
 TEST_F(VideoEncoderSoftwareFallbackWrapperTest,
        SupportsNativeHandleForwardedWithoutFallback) {
-  fallback_wrapper_->SupportsNativeHandle();
+  fallback_wrapper_->GetEncoderInfo();
   EXPECT_EQ(1, fake_encoder_->supports_native_handle_count_);
 }
 
 TEST_F(VideoEncoderSoftwareFallbackWrapperTest,
        SupportsNativeHandleNotForwardedDuringFallback) {
+  // Fake encoder signals support for native handle, default (libvpx) does not.
+  fake_encoder_->supports_native_handle_ = true;
+  EXPECT_TRUE(fallback_wrapper_->GetEncoderInfo().supports_native_handle);
   UtilizeFallbackEncoder();
-  fallback_wrapper_->SupportsNativeHandle();
-  EXPECT_EQ(0, fake_encoder_->supports_native_handle_count_);
+  EXPECT_FALSE(fallback_wrapper_->GetEncoderInfo().supports_native_handle);
+  // Both times, both encoders are queried.
+  EXPECT_EQ(2, fake_encoder_->supports_native_handle_count_);
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, fallback_wrapper_->Release());
 }
 
@@ -488,7 +484,7 @@ TEST_F(ForcedFallbackTestDisabled, GetScaleSettings) {
   EncodeFrameAndVerifyLastName("fake-encoder");
 
   // Default min pixels per frame should be used.
-  const auto settings = fallback_wrapper_->GetScalingSettings();
+  const auto settings = fallback_wrapper_->GetEncoderInfo().scaling_settings;
   EXPECT_TRUE(settings.thresholds.has_value());
   EXPECT_EQ(kDefaultMinPixelsPerFrame, settings.min_pixels_per_frame);
 }
@@ -499,7 +495,7 @@ TEST_F(ForcedFallbackTestEnabled, GetScaleSettingsWithNoFallback) {
   EncodeFrameAndVerifyLastName("fake-encoder");
 
   // Configured min pixels per frame should be used.
-  const auto settings = fallback_wrapper_->GetScalingSettings();
+  const auto settings = fallback_wrapper_->GetEncoderInfo().scaling_settings;
   EXPECT_EQ(kMinPixelsPerFrame, settings.min_pixels_per_frame);
   ASSERT_TRUE(settings.thresholds);
   EXPECT_EQ(kLowThreshold, settings.thresholds->low);
@@ -512,7 +508,7 @@ TEST_F(ForcedFallbackTestEnabled, GetScaleSettingsWithFallback) {
   EncodeFrameAndVerifyLastName("libvpx");
 
   // Configured min pixels per frame should be used.
-  const auto settings = fallback_wrapper_->GetScalingSettings();
+  const auto settings = fallback_wrapper_->GetEncoderInfo().scaling_settings;
   EXPECT_TRUE(settings.thresholds.has_value());
   EXPECT_EQ(kMinPixelsPerFrame, settings.min_pixels_per_frame);
 }
@@ -524,7 +520,7 @@ TEST_F(ForcedFallbackTestEnabled, ScalingDisabledIfResizeOff) {
   EncodeFrameAndVerifyLastName("libvpx");
 
   // Should be disabled for automatic resize off.
-  const auto settings = fallback_wrapper_->GetScalingSettings();
+  const auto settings = fallback_wrapper_->GetEncoderInfo().scaling_settings;
   EXPECT_FALSE(settings.thresholds.has_value());
 }
 

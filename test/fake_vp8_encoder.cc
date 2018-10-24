@@ -106,7 +106,6 @@ void FakeVP8Encoder::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
                                            uint32_t timestamp) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
   codec_specific->codecType = kVideoCodecVP8;
-  codec_specific->codec_name = ImplementationName();
   CodecSpecificInfoVP8* vp8Info = &(codec_specific->codecSpecific.VP8);
   vp8Info->keyIdx = kNoKeyIdx;
   vp8Info->nonReference = false;

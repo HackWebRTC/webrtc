@@ -256,7 +256,8 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
     if (i != 0) {
       implementation_name += ", ";
     }
-    implementation_name += streaminfos_[i].encoder->ImplementationName();
+    implementation_name +=
+        streaminfos_[i].encoder->GetEncoderInfo().implementation_name;
   }
 
   if (doing_simulcast) {
@@ -451,7 +452,6 @@ EncodedImageCallback::Result SimulcastEncoderAdapter::OnEncodedImage(
     const RTPFragmentationHeader* fragmentation) {
   EncodedImage stream_image(encodedImage);
   CodecSpecificInfo stream_codec_specific = *codecSpecificInfo;
-  stream_codec_specific.codec_name = implementation_name_.c_str();
 
   stream_image.SetSpatialIndex(stream_idx);
 
@@ -519,7 +519,6 @@ void SimulcastEncoderAdapter::DestroyStoredEncoders() {
 bool SimulcastEncoderAdapter::SupportsNativeHandle() const {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_queue_);
   // We should not be calling this method before streaminfos_ are configured.
-  RTC_DCHECK(!streaminfos_.empty());
   for (const auto& streaminfo : streaminfos_) {
     if (!streaminfo.encoder->SupportsNativeHandle()) {
       return false;
