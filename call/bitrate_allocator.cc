@@ -301,14 +301,14 @@ BitrateAllocator::ObserverAllocation BitrateAllocator::AllocateBitrates(
     return ObserverAllocation();
 
   if (bitrate_allocation_strategy_ != nullptr) {
-    std::vector<const rtc::BitrateAllocationStrategy::TrackConfig*>
-        track_configs(bitrate_observer_configs_.size());
-    int i = 0;
-    for (const auto& c : bitrate_observer_configs_) {
-      track_configs[i++] = &c;
-    }
+    // Note: This intentionally causes slicing, we only copy the fields in
+    // ObserverConfig that are inherited from TrackConfig.
+    std::vector<rtc::BitrateAllocationStrategy::TrackConfig> track_configs(
+        bitrate_observer_configs_.begin(), bitrate_observer_configs_.end());
+
     std::vector<uint32_t> track_allocations =
-        bitrate_allocation_strategy_->AllocateBitrates(bitrate, track_configs);
+        bitrate_allocation_strategy_->AllocateBitrates(
+            bitrate, std::move(track_configs));
     // The strategy should return allocation for all tracks.
     RTC_CHECK(track_allocations.size() == bitrate_observer_configs_.size());
     ObserverAllocation allocation;
