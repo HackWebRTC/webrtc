@@ -13,3 +13,6 @@ per-file peerconnection*=hbos@webrtc.org
 
 per-file *.gn=phoglund@webrtc.org
 per-file *.gni=phoglund@webrtc.org
+
+per-file DEPS=mbonadei@webrtc.org
+per-file DEPS=kwiberg@webrtc.org
