@@ -11,46 +11,7 @@
 #ifndef TEST_FUNCTION_VIDEO_DECODER_FACTORY_H_
 #define TEST_FUNCTION_VIDEO_DECODER_FACTORY_H_
 
-#include <functional>
-#include <memory>
-#include <utility>
-#include <vector>
-
-#include "api/video_codecs/sdp_video_format.h"
-#include "api/video_codecs/video_decoder_factory.h"
-#include "rtc_base/checks.h"
-
-namespace webrtc {
-namespace test {
-
-// A decoder factory producing decoders by calling a supplied create function.
-class FunctionVideoDecoderFactory final : public VideoDecoderFactory {
- public:
-  explicit FunctionVideoDecoderFactory(
-      std::function<std::unique_ptr<VideoDecoder>()> create)
-      : create_([create](const SdpVideoFormat&) { return create(); }) {}
-  explicit FunctionVideoDecoderFactory(
-      std::function<std::unique_ptr<VideoDecoder>(const SdpVideoFormat&)>
-          create)
-      : create_(std::move(create)) {}
-
-  // Unused by tests.
-  std::vector<SdpVideoFormat> GetSupportedFormats() const override {
-    RTC_NOTREACHED();
-    return {};
-  }
-
-  std::unique_ptr<VideoDecoder> CreateVideoDecoder(
-      const SdpVideoFormat& format) override {
-    return create_(format);
-  }
-
- private:
-  const std::function<std::unique_ptr<VideoDecoder>(const SdpVideoFormat&)>
-      create_;
-};
-
-}  // namespace test
-}  // namespace webrtc
+// TODO(danilchap): Remove this file when all users include api header directly.
+#include "api/test/video/function_video_decoder_factory.h"
 
 #endif  // TEST_FUNCTION_VIDEO_DECODER_FACTORY_H_

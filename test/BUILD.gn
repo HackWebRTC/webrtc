@@ -662,6 +662,7 @@ rtc_source_set("test_common") {
     "../api:transport_api",
     "../api/audio_codecs:builtin_audio_decoder_factory",
     "../api/audio_codecs:builtin_audio_encoder_factory",
+    "../api/test/video:function_video_factory",
     "../api/video:video_frame",
     "../api/video_codecs:video_codecs_api",
     "../audio",
