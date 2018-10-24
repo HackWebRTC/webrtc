@@ -18,8 +18,6 @@
 #include "logging/rtc_event_log/encoder/rtc_event_log_encoder.h"
 #include "rtc_base/buffer.h"
 
-#if defined(ENABLE_RTC_EVENT_LOG)
-
 namespace webrtc {
 
 namespace rtclog {
@@ -104,7 +102,5 @@ class RtcEventLogEncoderLegacy final : public RtcEventLogEncoder {
 };
 
 }  // namespace webrtc
-
-#endif  // ENABLE_RTC_EVENT_LOG
 
 #endif  // LOGGING_RTC_EVENT_LOG_ENCODER_RTC_EVENT_LOG_ENCODER_LEGACY_H_
