@@ -901,6 +901,7 @@ def CheckApiDepsFileIsUpToDate(input_api, output_api):
       'buildtools',
       'data',
       'infra',
+      'ios',
       'out',
       'resources',
       'testing',

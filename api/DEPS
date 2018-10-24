@@ -9,6 +9,7 @@ include_rules = [
   "-common_video",
   "-data",
   "-examples",
+  "-ios",
   "-infra",
   "-logging",
   "-media",
