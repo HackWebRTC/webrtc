@@ -126,9 +126,9 @@ int BitrateProber::TimeUntilNextProbe(int64_t now_ms) {
   if (next_probe_time_ms_ >= 0) {
     time_until_probe_ms = next_probe_time_ms_ - now_ms;
     if (time_until_probe_ms < -kMaxProbeDelayMs) {
-      RTC_LOG(LS_WARNING) << "Probe delay too high"
-                          << " (next_ms:" << next_probe_time_ms_
-                          << ", now_ms: " << now_ms << ")";
+      RTC_DLOG(LS_WARNING) << "Probe delay too high"
+                           << " (next_ms:" << next_probe_time_ms_
+                           << ", now_ms: " << now_ms << ")";
       return -1;
     }
   }
