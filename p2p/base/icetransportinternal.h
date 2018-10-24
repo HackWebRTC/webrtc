@@ -182,7 +182,7 @@ enum IceProtocolType {
 
 // IceTransportInternal is an internal abstract class that does ICE.
 // Once the public interface is supported,
-// (https://www.w3.org/TR/webrtc/#rtcicetransport-interface)
+// (https://www.w3.org/TR/webrtc/#rtcicetransport)
 // the IceTransportInterface will be split from this class.
 class RTC_EXPORT IceTransportInternal : public rtc::PacketTransportInternal {
  public:
