@@ -314,7 +314,6 @@ VideoQualityTest::Params::Params()
       audio({false, false, false, false}),
       screenshare{{false, false, 10, 0}, {false, false, 10, 0}},
       analyzer({"", 0.0, 0.0, 0, "", ""}),
-      pipe(),
       config(absl::nullopt),
       ss{{std::vector<VideoStream>(), 0, 0, -1, InterLayerPredMode::kOn,
           std::vector<SpatialLayer>()},
@@ -351,9 +350,7 @@ void VideoQualityTest::CheckParamsAndInjectionComponents() {
   }
   if (!params_.config && injection_components_->sender_network == nullptr &&
       injection_components_->receiver_network == nullptr) {
-    // TODO(titovartem) replace with default config creation when removing
-    // pipe.
-    params_.config = params_.pipe;
+    params_.config = BuiltInNetworkBehaviorConfig();
   }
   RTC_CHECK(
       (params_.config && injection_components_->sender_network == nullptr &&
