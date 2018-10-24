@@ -1393,8 +1393,6 @@ hooks = [
 recursedeps = [
   # buildtools provides clang_format, libc++, and libc++abi.
   'src/buildtools',
-  # android_tools manages the NDK.
-  'src/third_party/android_tools',
 ]
 
 # Define rules for which include paths are allowed in our source.
