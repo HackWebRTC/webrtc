@@ -82,7 +82,13 @@ class RTCPSender {
 
   void SetTimestampOffset(uint32_t timestamp_offset);
 
-  void SetLastRtpTime(uint32_t rtp_timestamp, int64_t capture_time_ms);
+  // TODO(bugs.webrtc.org/6458): Remove default parameter value when all the
+  // depending projects are updated to correctly set payload type.
+  void SetLastRtpTime(uint32_t rtp_timestamp,
+                      int64_t capture_time_ms,
+                      int8_t payload_type = -1);
+
+  void SetRtpClockRate(int8_t payload_type, int rtp_clock_rate_hz);
 
   uint32_t SSRC() const;
 
@@ -244,6 +250,11 @@ class RTCPSender {
       RTC_GUARDED_BY(critical_section_rtcp_sender_);
   bool send_video_bitrate_allocation_
       RTC_GUARDED_BY(critical_section_rtcp_sender_);
+
+  std::map<int8_t, int> rtp_clock_rates_khz_
+      RTC_GUARDED_BY(critical_section_rtcp_sender_);
+  int8_t last_payload_type_ RTC_GUARDED_BY(critical_section_rtcp_sender_);
+
   absl::optional<VideoBitrateAllocation> CheckAndUpdateLayerStructure(
       const VideoBitrateAllocation& bitrate) const
       RTC_EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);

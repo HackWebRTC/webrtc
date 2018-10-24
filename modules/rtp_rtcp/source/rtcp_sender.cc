@@ -151,7 +151,8 @@ RTCPSender::RTCPSender(
 
       xr_send_receiver_reference_time_enabled_(false),
       packet_type_counter_observer_(packet_type_counter_observer),
-      send_video_bitrate_allocation_(false) {
+      send_video_bitrate_allocation_(false),
+      last_payload_type_(-1) {
   RTC_DCHECK(transport_ != nullptr);
 
   builders_[kRtcpSr] = &RTCPSender::BuildSR;
@@ -254,8 +255,14 @@ void RTCPSender::SetTimestampOffset(uint32_t timestamp_offset) {
 }
 
 void RTCPSender::SetLastRtpTime(uint32_t rtp_timestamp,
-                                int64_t capture_time_ms) {
+                                int64_t capture_time_ms,
+                                int8_t payload_type) {
   rtc::CritScope lock(&critical_section_rtcp_sender_);
+  // For compatibility with clients who don't set payload type correctly on all
+  // calls.
+  if (payload_type != -1) {
+    last_payload_type_ = payload_type;
+  }
   last_rtp_timestamp_ = rtp_timestamp;
   if (capture_time_ms < 0) {
     // We don't currently get a capture time from VoiceEngine.
@@ -263,6 +270,11 @@ void RTCPSender::SetLastRtpTime(uint32_t rtp_timestamp,
   } else {
     last_frame_capture_time_ms_ = capture_time_ms;
   }
+}
+
+void RTCPSender::SetRtpClockRate(int8_t payload_type, int rtp_clock_rate_hz) {
+  rtc::CritScope lock(&critical_section_rtcp_sender_);
+  rtp_clock_rates_khz_[payload_type] = rtp_clock_rate_hz / 1000;
 }
 
 uint32_t RTCPSender::SSRC() const {
@@ -411,8 +423,12 @@ std::unique_ptr<rtcp::RtcpPacket> RTCPSender::BuildSR(const RtcpContext& ctx) {
   // the frame being captured at this moment. We are calculating that
   // timestamp as the last frame's timestamp + the time since the last frame
   // was captured.
-  uint32_t rtp_rate =
-      (audio_ ? kBogusRtpRateForAudioRtcp : kVideoPayloadTypeFrequency) / 1000;
+  int rtp_rate = rtp_clock_rates_khz_[last_payload_type_];
+  if (rtp_rate <= 0) {
+    rtp_rate =
+        (audio_ ? kBogusRtpRateForAudioRtcp : kVideoPayloadTypeFrequency) /
+        1000;
+  }
   uint32_t rtp_timestamp =
       timestamp_offset_ + last_rtp_timestamp_ +
       (clock_->TimeInMilliseconds() - last_frame_capture_time_ms_) * rtp_rate;
