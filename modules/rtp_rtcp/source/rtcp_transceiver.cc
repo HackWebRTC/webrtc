@@ -39,13 +39,6 @@ RtcpTransceiver::~RtcpTransceiver() {
   RTC_DCHECK(!rtcp_transceiver_);
 }
 
-void RtcpTransceiver::Stop(std::unique_ptr<rtc::QueuedTask> on_destroyed) {
-  RTC_DCHECK(rtcp_transceiver_);
-  task_queue_->PostTaskAndReply(Destructor{std::move(rtcp_transceiver_)},
-                                std::move(on_destroyed));
-  RTC_DCHECK(!rtcp_transceiver_);
-}
-
 void RtcpTransceiver::Stop(std::function<void()> on_destroyed) {
   RTC_DCHECK(rtcp_transceiver_);
   task_queue_->PostTask(rtc::NewClosure(
@@ -61,18 +54,6 @@ void RtcpTransceiver::AddMediaReceiverRtcpObserver(
   task_queue_->PostTask([ptr, remote_ssrc, observer] {
     ptr->AddMediaReceiverRtcpObserver(remote_ssrc, observer);
   });
-}
-
-void RtcpTransceiver::RemoveMediaReceiverRtcpObserver(
-    uint32_t remote_ssrc,
-    MediaReceiverRtcpObserver* observer,
-    std::unique_ptr<rtc::QueuedTask> on_removed) {
-  RTC_CHECK(rtcp_transceiver_);
-  RtcpTransceiverImpl* ptr = rtcp_transceiver_.get();
-  auto remove = [ptr, remote_ssrc, observer] {
-    ptr->RemoveMediaReceiverRtcpObserver(remote_ssrc, observer);
-  };
-  task_queue_->PostTaskAndReply(std::move(remove), std::move(on_removed));
 }
 
 void RtcpTransceiver::RemoveMediaReceiverRtcpObserver(
