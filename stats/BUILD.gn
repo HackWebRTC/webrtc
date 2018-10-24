@@ -40,6 +40,7 @@ rtc_source_set("rtc_stats_test_utils") {
   deps = [
     ":rtc_stats",
     "../api:rtc_stats_api",
+    "../rtc_base/system:rtc_export",
   ]
 }
 

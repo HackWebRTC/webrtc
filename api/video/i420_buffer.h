@@ -18,11 +18,12 @@
 #include "api/video/video_rotation.h"
 #include "rtc_base/memory/aligned_malloc.h"
 #include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
 // Plain I420 buffer in standard memory.
-class I420Buffer : public I420BufferInterface {
+class RTC_EXPORT I420Buffer : public I420BufferInterface {
  public:
   static rtc::scoped_refptr<I420Buffer> Create(int width, int height);
   static rtc::scoped_refptr<I420Buffer> Create(int width,

@@ -26,7 +26,7 @@ namespace webrtc {
 struct CodecSpecificInfo;
 class VideoCodec;
 
-class DecodedImageCallback {
+class RTC_EXPORT DecodedImageCallback {
  public:
   virtual ~DecodedImageCallback() {}
 
