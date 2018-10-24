@@ -263,10 +263,9 @@ message DelayBasedBweUpdates {
   optional uint32 bitrate_bps = 2;
 
   enum DetectorState {
-    BWE_UNKNOWN_STATE = 0;
-    BWE_NORMAL = 1;
-    BWE_UNDERUSING = 2;
-    BWE_OVERUSING = 3;
+    BWE_NORMAL = 0;
+    BWE_UNDERUSING = 1;
+    BWE_OVERUSING = 2;
   }
   optional DetectorState detector_state = 3;
 
@@ -475,11 +474,10 @@ message AlrState {
 
 message IceCandidatePairConfig {
   enum IceCandidatePairConfigType {
-    UNKNOWN_CONFIG_TYPE = 0;
-    ADDED = 1;
-    UPDATED = 2;
-    DESTROYED = 3;
-    SELECTED = 4;
+    ADDED = 0;
+    UPDATED = 1;
+    DESTROYED = 2;
+    SELECTED = 3;
   }
 
   enum IceCandidateType {
@@ -546,11 +544,10 @@ message IceCandidatePairConfig {
 
 message IceCandidatePairEvent {
   enum IceCandidatePairEventType {
-    UNKNOWN_CHECK_TYPE = 0;
-    CHECK_SENT = 1;
-    CHECK_RECEIVED = 2;
-    CHECK_RESPONSE_SENT = 3;
-    CHECK_RESPONSE_RECEIVED = 4;
+    CHECK_SENT = 0;
+    CHECK_RECEIVED = 1;
+    CHECK_RESPONSE_SENT = 2;
+    CHECK_RESPONSE_RECEIVED = 3;
   }
 
   // required

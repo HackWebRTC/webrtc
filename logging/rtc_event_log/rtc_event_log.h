@@ -28,9 +28,10 @@ class RtcEventLog {
   enum : size_t { kUnlimitedOutput = 0 };
   enum : int64_t { kImmediateOutput = 0 };
 
-  // TODO(eladalon):  Get rid of the legacy encoding and this enum once all
-  // clients have migrated to the new format.
-  enum class EncodingType { Legacy, NewFormat };
+  // TODO(eladalon): Two stages are upcoming.
+  // 1. Extend this to actually support the new encoding.
+  // 2. Get rid of the legacy encoding, allowing us to get rid of this enum.
+  enum class EncodingType { Legacy };
 
   virtual ~RtcEventLog() {}
 
