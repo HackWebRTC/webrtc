@@ -73,7 +73,7 @@ class BitrateAllocatorInterface {
   virtual void AddObserver(BitrateAllocatorObserver* observer,
                            MediaStreamAllocationConfig config) = 0;
   virtual void RemoveObserver(BitrateAllocatorObserver* observer) = 0;
-  virtual int GetStartBitrate(BitrateAllocatorObserver* observer) = 0;
+  virtual int GetStartBitrate(BitrateAllocatorObserver* observer) const = 0;
 
  protected:
   virtual ~BitrateAllocatorInterface() = default;
@@ -120,7 +120,7 @@ class BitrateAllocator : public BitrateAllocatorInterface {
 
   // Returns initial bitrate allocated for |observer|. If |observer| is not in
   // the list of added observers, a best guess is returned.
-  int GetStartBitrate(BitrateAllocatorObserver* observer) override;
+  int GetStartBitrate(BitrateAllocatorObserver* observer) const override;
 
   // Sets external allocation strategy. If strategy is not set default WebRTC
   // allocation mechanism will be used. The strategy may be changed during call.
@@ -171,31 +171,34 @@ class BitrateAllocator : public BitrateAllocatorInterface {
   void UpdateAllocationLimits() RTC_RUN_ON(&sequenced_checker_);
 
   typedef std::vector<ObserverConfig> ObserverConfigs;
+  ObserverConfigs::const_iterator FindObserverConfig(
+      const BitrateAllocatorObserver* observer) const
+      RTC_RUN_ON(&sequenced_checker_);
   ObserverConfigs::iterator FindObserverConfig(
       const BitrateAllocatorObserver* observer) RTC_RUN_ON(&sequenced_checker_);
 
   typedef std::multimap<uint32_t, const ObserverConfig*> ObserverSortingMap;
   typedef std::map<BitrateAllocatorObserver*, int> ObserverAllocation;
 
-  ObserverAllocation AllocateBitrates(uint32_t bitrate)
+  ObserverAllocation AllocateBitrates(uint32_t bitrate) const
       RTC_RUN_ON(&sequenced_checker_);
 
   // Allocates zero bitrate to all observers.
-  ObserverAllocation ZeroRateAllocation() RTC_RUN_ON(&sequenced_checker_);
+  ObserverAllocation ZeroRateAllocation() const RTC_RUN_ON(&sequenced_checker_);
   // Allocates bitrate to observers when there isn't enough to allocate the
   // minimum to all observers.
-  ObserverAllocation LowRateAllocation(uint32_t bitrate)
+  ObserverAllocation LowRateAllocation(uint32_t bitrate) const
       RTC_RUN_ON(&sequenced_checker_);
   // Allocates bitrate to all observers when the available bandwidth is enough
   // to allocate the minimum to all observers but not enough to allocate the
   // max bitrate of each observer.
   ObserverAllocation NormalRateAllocation(uint32_t bitrate,
-                                          uint32_t sum_min_bitrates)
+                                          uint32_t sum_min_bitrates) const
       RTC_RUN_ON(&sequenced_checker_);
   // Allocates bitrate to observers when there is enough available bandwidth
   // for all observers to be allocated their max bitrate.
   ObserverAllocation MaxRateAllocation(uint32_t bitrate,
-                                       uint32_t sum_max_bitrates)
+                                       uint32_t sum_max_bitrates) const
       RTC_RUN_ON(&sequenced_checker_);
 
   // Splits |bitrate| evenly to observers already in |allocation|.
@@ -205,9 +208,10 @@ class BitrateAllocator : public BitrateAllocatorInterface {
   void DistributeBitrateEvenly(uint32_t bitrate,
                                bool include_zero_allocations,
                                int max_multiplier,
-                               ObserverAllocation* allocation)
+                               ObserverAllocation* allocation) const
       RTC_RUN_ON(&sequenced_checker_);
-  bool EnoughBitrateForAllObservers(uint32_t bitrate, uint32_t sum_min_bitrates)
+  bool EnoughBitrateForAllObservers(uint32_t bitrate,
+                                    uint32_t sum_min_bitrates) const
       RTC_RUN_ON(&sequenced_checker_);
 
   // From the available |bitrate|, each observer will be allocated a
@@ -219,7 +223,7 @@ class BitrateAllocator : public BitrateAllocatorInterface {
   void DistributeBitrateRelatively(
       uint32_t bitrate,
       const ObserverAllocation& observers_capacities,
-      ObserverAllocation* allocation) RTC_RUN_ON(&sequenced_checker_);
+      ObserverAllocation* allocation) const RTC_RUN_ON(&sequenced_checker_);
 
   // Allow packets to be transmitted in up to 2 times max video bitrate if the
   // bandwidth estimate allows it.
