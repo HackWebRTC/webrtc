@@ -92,7 +92,7 @@ std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
 
   constexpr size_t kNumFieldTrials = arraysize(kFieldTrialNames);
   // Verify that the read data type has enough bits to fuzz the field trials.
-  using FieldTrialBitmaskType = uint32_t;
+  using FieldTrialBitmaskType = uint64_t;
   RTC_DCHECK_LE(kNumFieldTrials, sizeof(FieldTrialBitmaskType) * 8);
   std::bitset<kNumFieldTrials> field_trial_bitmask(
       fuzz_data->ReadOrDefaultValue<FieldTrialBitmaskType>(0));
