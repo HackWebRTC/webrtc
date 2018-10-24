@@ -47,7 +47,6 @@
 #include "rtc_base/ignore_wundef.h"
 #include "rtc_base/logging.h"
 
-#ifdef ENABLE_RTC_EVENT_LOG
 
 // *.pb.h files are generated at build-time by the protobuf compiler.
 RTC_PUSH_IGNORING_WUNDEF()
@@ -756,5 +755,3 @@ std::string RtcEventLogEncoderLegacy::Serialize(rtclog::Event* event) {
 }
 
 }  // namespace webrtc
-
-#endif  // ENABLE_RTC_EVENT_LOG

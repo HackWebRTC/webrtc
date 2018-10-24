@@ -160,25 +160,11 @@ rtc_static_library("rtc_event_log_impl_encoder") {
     "rtc_event_log/encoder/blob_encoding.h",
     "rtc_event_log/encoder/delta_encoding.cc",
     "rtc_event_log/encoder/delta_encoding.h",
-    "rtc_event_log/encoder/rtc_event_log_encoder_legacy.cc",
-    "rtc_event_log/encoder/rtc_event_log_encoder_legacy.h",
   ]
 
   defines = []
 
   deps = [
-    ":ice_log",
-    ":rtc_event_audio",
-    ":rtc_event_bwe",
-    ":rtc_event_log_api",
-    ":rtc_event_log_impl_output",
-    ":rtc_event_pacing",
-    ":rtc_event_rtp_rtcp",
-    ":rtc_event_video",
-    ":rtc_stream_config",
-    "../modules/audio_coding:audio_network_adaptor",
-    "../modules/remote_bitrate_estimator:remote_bitrate_estimator",
-    "../modules/rtp_rtcp:rtp_rtcp_format",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
     "//third_party/abseil-cpp/absl/memory",
@@ -188,7 +174,29 @@ rtc_static_library("rtc_event_log_impl_encoder") {
 
   if (rtc_enable_protobuf) {
     defines += [ "ENABLE_RTC_EVENT_LOG" ]
-    deps += [ ":rtc_event_log_proto" ]
+    deps += [
+      ":ice_log",
+      ":rtc_event_audio",
+      ":rtc_event_bwe",
+      ":rtc_event_log2_proto",
+      ":rtc_event_log_api",
+      ":rtc_event_log_impl_output",
+      ":rtc_event_log_proto",
+      ":rtc_event_pacing",
+      ":rtc_event_rtp_rtcp",
+      ":rtc_event_video",
+      ":rtc_stream_config",
+      "../api:array_view",
+      "../modules/audio_coding:audio_network_adaptor",
+      "../modules/remote_bitrate_estimator:remote_bitrate_estimator",
+      "../modules/rtp_rtcp:rtp_rtcp_format",
+    ]
+    sources += [
+      "rtc_event_log/encoder/rtc_event_log_encoder_legacy.cc",
+      "rtc_event_log/encoder/rtc_event_log_encoder_legacy.h",
+      "rtc_event_log/encoder/rtc_event_log_encoder_new_format.cc",
+      "rtc_event_log/encoder/rtc_event_log_encoder_new_format.h",
+    ]
   }
 }
 
@@ -219,8 +227,7 @@ rtc_static_library("rtc_event_log_impl_base") {
   deps = [
     ":ice_log",
     ":rtc_event_log_api",
-    ":rtc_event_log_impl_encoder",
-    ":rtc_event_log_impl_output",
+    "../api:libjingle_logging_api",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
     "../rtc_base:rtc_task_queue",
@@ -231,7 +238,7 @@ rtc_static_library("rtc_event_log_impl_base") {
 
   if (rtc_enable_protobuf) {
     defines += [ "ENABLE_RTC_EVENT_LOG" ]
-    deps += [ ":rtc_event_log_proto" ]
+    deps += [ ":rtc_event_log_impl_encoder" ]
   }
 }
 
@@ -319,6 +326,7 @@ if (rtc_enable_protobuf) {
         ":ice_log",
         ":rtc_event_audio",
         ":rtc_event_bwe",
+        ":rtc_event_log2_proto",
         ":rtc_event_log_api",
         ":rtc_event_log_impl_base",
         ":rtc_event_log_impl_encoder",
