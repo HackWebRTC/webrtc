@@ -109,15 +109,6 @@ rtc_static_library("rtc_p2p") {
     if (is_nacl) {
       deps += [ "//native_client_sdk/src/libraries/nacl_io" ]
     }
-  } else {
-    sources += [
-      "base/relayserver.cc",
-      "base/relayserver.h",
-      "base/stunserver.cc",
-      "base/stunserver.h",
-      "base/turnserver.cc",
-      "base/turnserver.h",
-    ]
   }
 }
 
@@ -139,6 +130,7 @@ if (rtc_include_tests) {
       "base/testturnserver.h",
     ]
     deps = [
+      ":p2p_server_utils",
       ":rtc_p2p",
       "../api:libjingle_peerconnection_api",
       "../api:ortc_api",
@@ -180,6 +172,7 @@ if (rtc_include_tests) {
       "client/basicportallocator_unittest.cc",
     ]
     deps = [
+      ":p2p_server_utils",
       ":p2p_test_utils",
       ":rtc_p2p",
       "../api:ortc_api",
@@ -198,6 +191,25 @@ if (rtc_include_tests) {
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
   }
+}
+
+rtc_source_set("p2p_server_utils") {
+  testonly = true
+  sources = [
+    "base/relayserver.cc",
+    "base/relayserver.h",
+    "base/stunserver.cc",
+    "base/stunserver.h",
+    "base/turnserver.cc",
+    "base/turnserver.h",
+  ]
+  deps = [
+    ":rtc_p2p",
+    "../rtc_base:checks",
+    "../rtc_base:rtc_base",
+    "../rtc_base/third_party/sigslot",
+    "//third_party/abseil-cpp/absl/memory",
+  ]
 }
 
 rtc_static_library("libstunprober") {
