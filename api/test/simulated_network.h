@@ -63,10 +63,6 @@ struct BuiltInNetworkBehaviorConfig {
   int avg_burst_loss_length = -1;
 };
 
-// TODO(bugs.webrtc.org/9630) remove it after migration to new API.
-// Deprecated. DO NOT USE. Use BuiltInNetworkBehaviorConfig instead.
-using DefaultNetworkSimulationConfig = BuiltInNetworkBehaviorConfig;
-
 class NetworkBehaviorInterface {
  public:
   virtual bool EnqueuePacket(PacketInFlightInfo packet_info) = 0;
