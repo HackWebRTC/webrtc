@@ -214,11 +214,6 @@ rtc_static_library("rtc_internal_video_codecs") {
     "engine/scopedvideodecoder.h",
     "engine/scopedvideoencoder.cc",
     "engine/scopedvideoencoder.h",
-
-    # TODO(bugs.webrtc.org/7925): When downstream projects depend directly on
-    # :rtc_simulcast_encoder_adapter, remove it from this target's deps, remove
-    # its deps from this target's deps, and stop exporting this header here.
-    "engine/simulcast_encoder_adapter.h",
     "engine/vp8_encoder_simulcast_proxy.cc",
     "engine/vp8_encoder_simulcast_proxy.h",
     "engine/webrtcvideodecoderfactory.h",
@@ -248,10 +243,8 @@ rtc_static_library("rtc_internal_video_codecs") {
     "../modules/video_coding:webrtc_vp9",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
-    "../rtc_base:sequenced_task_checker",
     "../rtc_base/system:rtc_export",
     "//third_party/abseil-cpp/absl/strings",
-    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 
