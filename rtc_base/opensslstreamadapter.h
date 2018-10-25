@@ -120,7 +120,7 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
 
   // Use our timeutils.h source of timing in BoringSSL, allowing us to test
   // using a fake clock.
-  static void enable_time_callback_for_testing();
+  static void EnableTimeCallbackForTesting();
 
  protected:
   void OnEvent(StreamInterface* stream, int events, int err) override;
@@ -176,7 +176,7 @@ class OpenSSLStreamAdapter : public SSLStreamAdapter {
   static int SSLVerifyCallback(X509_STORE_CTX* store, void* arg);
 
   bool waiting_to_verify_peer_certificate() const {
-    return client_auth_enabled() && !peer_certificate_verified_;
+    return GetClientAuthEnabled() && !peer_certificate_verified_;
   }
 
   bool has_peer_certificate_digest() const {

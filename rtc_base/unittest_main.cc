@@ -117,7 +117,7 @@ int main(int argc, char* argv[]) {
 
   // Initialize SSL which are used by several tests.
   rtc::InitializeSSL();
-  rtc::SSLStreamAdapter::enable_time_callback_for_testing();
+  rtc::SSLStreamAdapter::EnableTimeCallbackForTesting();
 
 #if defined(WEBRTC_IOS)
   rtc::test::InitTestSuite(RUN_ALL_TESTS, argc, argv, false);

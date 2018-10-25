@@ -94,9 +94,7 @@ SSLStreamAdapter* SSLStreamAdapter::Create(StreamInterface* stream) {
 }
 
 SSLStreamAdapter::SSLStreamAdapter(StreamInterface* stream)
-    : StreamAdapterInterface(stream),
-      ignore_bad_cert_(false),
-      client_auth_enabled_(true) {}
+    : StreamAdapterInterface(stream) {}
 
 SSLStreamAdapter::~SSLStreamAdapter() {}
 
@@ -135,8 +133,13 @@ bool SSLStreamAdapter::IsAcceptableCipher(const std::string& cipher,
 std::string SSLStreamAdapter::SslCipherSuiteToName(int cipher_suite) {
   return OpenSSLStreamAdapter::SslCipherSuiteToName(cipher_suite);
 }
-void SSLStreamAdapter::enable_time_callback_for_testing() {
-  OpenSSLStreamAdapter::enable_time_callback_for_testing();
+
+///////////////////////////////////////////////////////////////////////////////
+// Test only settings
+///////////////////////////////////////////////////////////////////////////////
+
+void SSLStreamAdapter::EnableTimeCallbackForTesting() {
+  OpenSSLStreamAdapter::EnableTimeCallbackForTesting();
 }
 
 ///////////////////////////////////////////////////////////////////////////////

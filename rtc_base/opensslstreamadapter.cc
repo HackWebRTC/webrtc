@@ -852,7 +852,7 @@ int OpenSSLStreamAdapter::ContinueSSL() {
       RTC_LOG(LS_VERBOSE) << " -- success";
       // By this point, OpenSSL should have given us a certificate, or errored
       // out if one was missing.
-      RTC_DCHECK(peer_cert_chain_ || !client_auth_enabled());
+      RTC_DCHECK(peer_cert_chain_ || !GetClientAuthEnabled());
 
       state_ = SSL_CONNECTED;
       if (!waiting_to_verify_peer_certificate()) {
@@ -1050,7 +1050,7 @@ SSL_CTX* OpenSSLStreamAdapter::SetupSSLContext() {
 #endif
 
   int mode = SSL_VERIFY_PEER;
-  if (client_auth_enabled()) {
+  if (GetClientAuthEnabled()) {
     // Require a certificate from the client.
     // Note: Normally this is always true in production, but it may be disabled
     // for testing purposes (e.g. SSLAdapter unit tests).
@@ -1238,7 +1238,7 @@ bool OpenSSLStreamAdapter::IsAcceptableCipher(const std::string& cipher,
   return false;
 }
 
-void OpenSSLStreamAdapter::enable_time_callback_for_testing() {
+void OpenSSLStreamAdapter::EnableTimeCallbackForTesting() {
   g_use_time_callback_for_testing = true;
 }
 

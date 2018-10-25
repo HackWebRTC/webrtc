@@ -116,12 +116,6 @@ class SSLStreamAdapter : public StreamAdapterInterface {
   explicit SSLStreamAdapter(StreamInterface* stream);
   ~SSLStreamAdapter() override;
 
-  void set_ignore_bad_cert(bool ignore) { ignore_bad_cert_ = ignore; }
-  bool ignore_bad_cert() const { return ignore_bad_cert_; }
-
-  void set_client_auth_enabled(bool enabled) { client_auth_enabled_ = enabled; }
-  bool client_auth_enabled() const { return client_auth_enabled_; }
-
   // Specify our SSL identity: key and certificate. SSLStream takes ownership
   // of the SSLIdentity object and will free it when appropriate. Should be
   // called no more than once on a given SSLStream instance.
@@ -235,22 +229,32 @@ class SSLStreamAdapter : public StreamAdapterInterface {
   // depending on specific SSL implementation.
   static std::string SslCipherSuiteToName(int cipher_suite);
 
+  ////////////////////////////////////////////////////////////////////////////
+  // Testing only member functions
+  ////////////////////////////////////////////////////////////////////////////
+
   // Use our timeutils.h source of timing in BoringSSL, allowing us to test
   // using a fake clock.
-  static void enable_time_callback_for_testing();
+  static void EnableTimeCallbackForTesting();
+
+  // Deprecated. Do not use this API outside of testing.
+  // Do not set this to false outside of testing.
+  void SetClientAuthEnabledForTesting(bool enabled) {
+    client_auth_enabled_ = enabled;
+  }
+
+  // Deprecated. Do not use this API outside of testing.
+  // Returns true by default, else false if explicitly set to disable client
+  // authentication.
+  bool GetClientAuthEnabled() const { return client_auth_enabled_; }
 
   sigslot::signal1<SSLHandshakeError> SignalSSLHandshakeError;
 
  private:
-  // If true, the server certificate need not match the configured
-  // server_name, and in fact missing certificate authority and other
-  // verification errors are ignored.
-  bool ignore_bad_cert_;
-
   // If true (default), the client is required to provide a certificate during
   // handshake. If no certificate is given, handshake fails. This applies to
   // server mode only.
-  bool client_auth_enabled_;
+  bool client_auth_enabled_ = true;
 };
 
 }  // namespace rtc
