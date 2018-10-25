@@ -1821,26 +1821,26 @@ TEST_P(PeerConnectionIntegrationTest,
 
   auto caller_remote_cert = GetRemoteAudioSSLCertificate(caller());
   ASSERT_TRUE(caller_remote_cert);
-  EXPECT_EQ(callee_cert->ssl_certificate().ToPEMString(),
+  EXPECT_EQ(callee_cert->GetSSLCertificate().ToPEMString(),
             caller_remote_cert->ToPEMString());
 
   auto callee_remote_cert = GetRemoteAudioSSLCertificate(callee());
   ASSERT_TRUE(callee_remote_cert);
-  EXPECT_EQ(caller_cert->ssl_certificate().ToPEMString(),
+  EXPECT_EQ(caller_cert->GetSSLCertificate().ToPEMString(),
             callee_remote_cert->ToPEMString());
 
   auto caller_remote_cert_chain = GetRemoteAudioSSLCertChain(caller());
   ASSERT_TRUE(caller_remote_cert_chain);
   ASSERT_EQ(1U, caller_remote_cert_chain->GetSize());
   auto remote_cert = &caller_remote_cert_chain->Get(0);
-  EXPECT_EQ(callee_cert->ssl_certificate().ToPEMString(),
+  EXPECT_EQ(callee_cert->GetSSLCertificate().ToPEMString(),
             remote_cert->ToPEMString());
 
   auto callee_remote_cert_chain = GetRemoteAudioSSLCertChain(callee());
   ASSERT_TRUE(callee_remote_cert_chain);
   ASSERT_EQ(1U, callee_remote_cert_chain->GetSize());
   remote_cert = &callee_remote_cert_chain->Get(0);
-  EXPECT_EQ(caller_cert->ssl_certificate().ToPEMString(),
+  EXPECT_EQ(caller_cert->GetSSLCertificate().ToPEMString(),
             remote_cert->ToPEMString());
 }
 

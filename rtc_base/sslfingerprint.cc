@@ -79,7 +79,7 @@ std::unique_ptr<SSLFingerprint> SSLFingerprint::CreateUniqueFromRfc4572(
 std::unique_ptr<SSLFingerprint> SSLFingerprint::CreateFromCertificate(
     const RTCCertificate& cert) {
   std::string digest_alg;
-  if (!cert.ssl_certificate().GetSignatureDigestAlgorithm(&digest_alg)) {
+  if (!cert.GetSSLCertificate().GetSignatureDigestAlgorithm(&digest_alg)) {
     RTC_LOG(LS_ERROR)
         << "Failed to retrieve the certificate's digest algorithm";
     return nullptr;

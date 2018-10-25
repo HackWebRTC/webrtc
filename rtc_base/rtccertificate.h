@@ -58,11 +58,15 @@ class RTCCertificate : public RefCountInterface {
   // Checks if the certificate has expired, where |now| is expressed in ms
   // relative to epoch, 1970-01-01T00:00:00Z.
   bool HasExpired(uint64_t now) const;
+
+  const SSLCertificate& GetSSLCertificate() const;
+  const SSLCertChain& GetSSLCertificateChain() const;
+
+  // Deprecated: TODO(benwright) - Remove once chromium is updated.
   const SSLCertificate& ssl_certificate() const;
-  const SSLCertChain& ssl_cert_chain() const;
 
   // TODO(hbos): If possible, remove once RTCCertificate and its
-  // ssl_certificate() is used in all relevant places. Should not pass around
+  // GetSSLCertificate() is used in all relevant places. Should not pass around
   // raw SSLIdentity* for the sake of accessing SSLIdentity::certificate().
   // However, some places might need SSLIdentity* for its public/private key...
   SSLIdentity* identity() const { return identity_.get(); }
@@ -80,7 +84,7 @@ class RTCCertificate : public RefCountInterface {
 
  private:
   // The SSLIdentity is the owner of the SSLCertificate. To protect our
-  // ssl_certificate() we take ownership of |identity_|.
+  // GetSSLCertificate() we take ownership of |identity_|.
   std::unique_ptr<SSLIdentity> identity_;
 };
 

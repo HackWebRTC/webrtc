@@ -1388,7 +1388,7 @@ RTCStatsCollector::PrepareTransportCertificateStats_n(
     rtc::scoped_refptr<rtc::RTCCertificate> local_certificate;
     if (pc_->GetLocalCertificate(transport_name, &local_certificate)) {
       certificate_stats_pair.local =
-          local_certificate->ssl_cert_chain().GetStats();
+          local_certificate->GetSSLCertificateChain().GetStats();
     }
 
     std::unique_ptr<rtc::SSLCertChain> remote_cert_chain =

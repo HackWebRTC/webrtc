@@ -513,8 +513,8 @@ TEST_F(DtlsTransportTest, TestCertificatesBeforeConnect) {
   // remote certificate, because connection has not yet occurred.
   auto certificate1 = client1_.dtls_transport()->GetLocalCertificate();
   auto certificate2 = client2_.dtls_transport()->GetLocalCertificate();
-  ASSERT_NE(certificate1->ssl_certificate().ToPEMString(),
-            certificate2->ssl_certificate().ToPEMString());
+  ASSERT_NE(certificate1->GetSSLCertificate().ToPEMString(),
+            certificate2->GetSSLCertificate().ToPEMString());
   ASSERT_FALSE(client1_.dtls_transport()->GetRemoteSSLCertChain());
   ASSERT_FALSE(client2_.dtls_transport()->GetRemoteSSLCertChain());
 }
@@ -527,8 +527,8 @@ TEST_F(DtlsTransportTest, TestCertificatesAfterConnect) {
   // After connection, each side has a distinct local certificate.
   auto certificate1 = client1_.dtls_transport()->GetLocalCertificate();
   auto certificate2 = client2_.dtls_transport()->GetLocalCertificate();
-  ASSERT_NE(certificate1->ssl_certificate().ToPEMString(),
-            certificate2->ssl_certificate().ToPEMString());
+  ASSERT_NE(certificate1->GetSSLCertificate().ToPEMString(),
+            certificate2->GetSSLCertificate().ToPEMString());
 
   // Each side's remote certificate is the other side's local certificate.
   std::unique_ptr<rtc::SSLCertChain> remote_cert1 =
@@ -536,13 +536,13 @@ TEST_F(DtlsTransportTest, TestCertificatesAfterConnect) {
   ASSERT_TRUE(remote_cert1);
   ASSERT_EQ(1u, remote_cert1->GetSize());
   ASSERT_EQ(remote_cert1->Get(0).ToPEMString(),
-            certificate2->ssl_certificate().ToPEMString());
+            certificate2->GetSSLCertificate().ToPEMString());
   std::unique_ptr<rtc::SSLCertChain> remote_cert2 =
       client2_.dtls_transport()->GetRemoteSSLCertChain();
   ASSERT_TRUE(remote_cert2);
   ASSERT_EQ(1u, remote_cert2->GetSize());
   ASSERT_EQ(remote_cert2->Get(0).ToPEMString(),
-            certificate1->ssl_certificate().ToPEMString());
+            certificate1->GetSSLCertificate().ToPEMString());
 }
 
 // Test that packets are retransmitted according to the expected schedule.

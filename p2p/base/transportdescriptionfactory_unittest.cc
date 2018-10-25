@@ -167,7 +167,7 @@ TEST_F(TransportDescriptionFactoryTest, TestOfferDtls) {
   f1_.set_certificate(cert1_);
   std::string digest_alg;
   ASSERT_TRUE(
-      cert1_->ssl_certificate().GetSignatureDigestAlgorithm(&digest_alg));
+      cert1_->GetSSLCertificate().GetSignatureDigestAlgorithm(&digest_alg));
   std::unique_ptr<TransportDescription> desc(
       f1_.CreateOffer(TransportOptions(), NULL, &ice_credentials_));
   CheckDesc(desc.get(), "", "", "", digest_alg);
@@ -192,7 +192,7 @@ TEST_F(TransportDescriptionFactoryTest, TestOfferDtlsReofferDtls) {
   f1_.set_certificate(cert1_);
   std::string digest_alg;
   ASSERT_TRUE(
-      cert1_->ssl_certificate().GetSignatureDigestAlgorithm(&digest_alg));
+      cert1_->GetSSLCertificate().GetSignatureDigestAlgorithm(&digest_alg));
   std::unique_ptr<TransportDescription> old_desc(
       f1_.CreateOffer(TransportOptions(), NULL, &ice_credentials_));
   ASSERT_TRUE(old_desc.get() != NULL);
@@ -269,7 +269,7 @@ TEST_F(TransportDescriptionFactoryTest, TestAnswerDtlsToDtls) {
   // answer must contain fingerprint lines with cert2_'s digest algorithm.
   std::string digest_alg2;
   ASSERT_TRUE(
-      cert2_->ssl_certificate().GetSignatureDigestAlgorithm(&digest_alg2));
+      cert2_->GetSSLCertificate().GetSignatureDigestAlgorithm(&digest_alg2));
 
   std::unique_ptr<TransportDescription> offer(
       f1_.CreateOffer(TransportOptions(), NULL, &ice_credentials_));

@@ -383,7 +383,7 @@ TEST_P(JsepTransport2WithRtcpMux, VerifyCertificateFingerprint) {
     ASSERT_NE(nullptr, certificate);
 
     std::string digest_algorithm;
-    ASSERT_TRUE(certificate->ssl_certificate().GetSignatureDigestAlgorithm(
+    ASSERT_TRUE(certificate->GetSSLCertificate().GetSignatureDigestAlgorithm(
         &digest_algorithm));
     ASSERT_FALSE(digest_algorithm.empty());
     std::unique_ptr<rtc::SSLFingerprint> good_fingerprint =
