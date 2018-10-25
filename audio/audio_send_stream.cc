@@ -424,24 +424,22 @@ bool AudioSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
   return channel_proxy_->ReceivedRTCPPacket(packet, length);
 }
 
-uint32_t AudioSendStream::OnBitrateUpdated(uint32_t bitrate_bps,
-                                           uint8_t fraction_loss,
-                                           int64_t rtt,
-                                           int64_t bwe_period_ms) {
+uint32_t AudioSendStream::OnBitrateUpdated(BitrateAllocationUpdate update) {
   // A send stream may be allocated a bitrate of zero if the allocator decides
   // to disable it. For now we ignore this decision and keep sending on min
   // bitrate.
-  if (bitrate_bps == 0) {
-    bitrate_bps = config_.min_bitrate_bps;
+  if (update.bitrate_bps == 0) {
+    update.bitrate_bps = config_.min_bitrate_bps;
   }
-  RTC_DCHECK_GE(bitrate_bps, static_cast<uint32_t>(config_.min_bitrate_bps));
+  RTC_DCHECK_GE(update.bitrate_bps,
+                static_cast<uint32_t>(config_.min_bitrate_bps));
   // The bitrate allocator might allocate an higher than max configured bitrate
   // if there is room, to allow for, as example, extra FEC. Ignore that for now.
   const uint32_t max_bitrate_bps = config_.max_bitrate_bps;
-  if (bitrate_bps > max_bitrate_bps)
-    bitrate_bps = max_bitrate_bps;
+  if (update.bitrate_bps > max_bitrate_bps)
+    update.bitrate_bps = max_bitrate_bps;
 
-  channel_proxy_->SetBitrate(bitrate_bps, bwe_period_ms);
+  channel_proxy_->SetBitrate(update.bitrate_bps, update.bwe_period_ms);
 
   // The amount of audio protection is not exposed by the encoder, hence
   // always returning 0.

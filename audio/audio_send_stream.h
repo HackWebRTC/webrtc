@@ -83,10 +83,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   bool DeliverRtcp(const uint8_t* packet, size_t length);
 
   // Implements BitrateAllocatorObserver.
-  uint32_t OnBitrateUpdated(uint32_t bitrate_bps,
-                            uint8_t fraction_loss,
-                            int64_t rtt,
-                            int64_t bwe_period_ms) override;
+  uint32_t OnBitrateUpdated(BitrateAllocationUpdate update) override;
 
   // From PacketFeedbackObserver.
   void OnPacketAdded(uint32_t ssrc, uint16_t seq_num) override;

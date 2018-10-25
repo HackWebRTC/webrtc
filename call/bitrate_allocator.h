@@ -26,6 +26,12 @@ namespace webrtc {
 
 class Clock;
 
+struct BitrateAllocationUpdate {
+  uint32_t bitrate_bps;
+  uint8_t fraction_loss;
+  int64_t rtt;
+  int64_t bwe_period_ms;
+};
 // Used by all send streams with adaptive bitrate, to get the currently
 // allocated bitrate for the send stream. The current network properties are
 // given at the same time, to let the send stream decide about possible loss
@@ -34,10 +40,7 @@ class BitrateAllocatorObserver {
  public:
   // Returns the amount of protection used by the BitrateAllocatorObserver
   // implementation, as bitrate in bps.
-  virtual uint32_t OnBitrateUpdated(uint32_t bitrate_bps,
-                                    uint8_t fraction_loss,
-                                    int64_t rtt,
-                                    int64_t bwe_period_ms) = 0;
+  virtual uint32_t OnBitrateUpdated(BitrateAllocationUpdate update) = 0;
 
  protected:
   virtual ~BitrateAllocatorObserver() {}

@@ -470,15 +470,24 @@ TEST(AudioSendStreamTest, DoesNotPassHigherBitrateThanMaxBitrate) {
   auto send_stream = helper.CreateAudioSendStream();
   EXPECT_CALL(*helper.channel_proxy(),
               SetBitrate(helper.config().max_bitrate_bps, _));
-  send_stream->OnBitrateUpdated(helper.config().max_bitrate_bps + 5000, 0.0, 50,
-                                6000);
+  BitrateAllocationUpdate update;
+  update.bitrate_bps = helper.config().max_bitrate_bps + 5000;
+  update.fraction_loss = 0;
+  update.rtt = 50;
+  update.bwe_period_ms = 6000;
+  send_stream->OnBitrateUpdated(update);
 }
 
 TEST(AudioSendStreamTest, ProbingIntervalOnBitrateUpdated) {
   ConfigHelper helper(false, true);
   auto send_stream = helper.CreateAudioSendStream();
   EXPECT_CALL(*helper.channel_proxy(), SetBitrate(_, 5000));
-  send_stream->OnBitrateUpdated(50000, 0.0, 50, 5000);
+  BitrateAllocationUpdate update;
+  update.bitrate_bps = helper.config().max_bitrate_bps + 5000;
+  update.fraction_loss = 0;
+  update.rtt = 50;
+  update.bwe_period_ms = 5000;
+  send_stream->OnBitrateUpdated(update);
 }
 
 // Test that AudioSendStream doesn't recreate the encoder unnecessarily.

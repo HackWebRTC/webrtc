@@ -83,10 +83,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   class CheckEncoderActivityTask;
 
   // Implements BitrateAllocatorObserver.
-  uint32_t OnBitrateUpdated(uint32_t bitrate_bps,
-                            uint8_t fraction_loss,
-                            int64_t rtt,
-                            int64_t probing_interval_ms) override;
+  uint32_t OnBitrateUpdated(BitrateAllocationUpdate update) override;
 
   void OnEncoderConfigurationChanged(std::vector<VideoStream> streams,
                                      int min_transmit_bitrate_bps) override;

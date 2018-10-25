@@ -111,7 +111,8 @@ void BitrateAllocator::OnNetworkChanged(uint32_t target_bitrate_bps,
   for (auto& config : bitrate_observer_configs_) {
     uint32_t allocated_bitrate = allocation[config.observer];
     uint32_t protection_bitrate = config.observer->OnBitrateUpdated(
-        allocated_bitrate, last_fraction_loss_, last_rtt_, last_bwe_period_ms_);
+        BitrateAllocationUpdate{allocated_bitrate, last_fraction_loss_,
+                                last_rtt_, last_bwe_period_ms_});
 
     if (allocated_bitrate == 0 && config.allocated_bitrate_bps > 0) {
       if (target_bitrate_bps > 0)
@@ -170,8 +171,8 @@ void BitrateAllocator::AddObserver(BitrateAllocatorObserver* observer,
     for (auto& config : bitrate_observer_configs_) {
       uint32_t allocated_bitrate = allocation[config.observer];
       uint32_t protection_bitrate = config.observer->OnBitrateUpdated(
-          allocated_bitrate, last_fraction_loss_, last_rtt_,
-          last_bwe_period_ms_);
+          BitrateAllocationUpdate{allocated_bitrate, last_fraction_loss_,
+                                  last_rtt_, last_bwe_period_ms_});
       config.allocated_bitrate_bps = allocated_bitrate;
       if (allocated_bitrate > 0)
         config.media_ratio = MediaRatio(allocated_bitrate, protection_bitrate);
@@ -181,8 +182,8 @@ void BitrateAllocator::AddObserver(BitrateAllocatorObserver* observer,
     // But we still have to return the initial config bitrate + let the
     // observer know that it can not produce frames.
     allocation = AllocateBitrates(last_non_zero_bitrate_bps_);
-    observer->OnBitrateUpdated(0, last_fraction_loss_, last_rtt_,
-                               last_bwe_period_ms_);
+    observer->OnBitrateUpdated(BitrateAllocationUpdate{
+        0, last_fraction_loss_, last_rtt_, last_bwe_period_ms_});
   }
   UpdateAllocationLimits();
 }
