@@ -497,7 +497,8 @@ if (rtc_include_tests) {
     deps = [
       ":peerconnection",
       ":rtc_pc_base",
-      "../api:fake_frame_crypto",
+      "../api:fake_frame_decryptor",
+      "../api:fake_frame_encryptor",
       "../api:libjingle_peerconnection_api",
       "../api:mock_rtp",
       "../api/units:time_delta",

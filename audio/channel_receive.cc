@@ -207,7 +207,7 @@ ChannelReceive::ChannelReceive(
     bool jitter_buffer_fast_playout,
     rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
     absl::optional<AudioCodecPairId> codec_pair_id,
-    FrameDecryptorInterface* frame_decryptor,
+    rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor,
     const webrtc::CryptoOptions& crypto_options)
     : event_log_(rtc_event_log),
       rtp_receive_statistics_(

@@ -453,13 +453,50 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("fake_frame_crypto") {
+  rtc_source_set("mock_frame_encryptor") {
+    testonly = true
+    sources = [
+      "test/mock_frame_encryptor.cc",
+      "test/mock_frame_encryptor.h",
+    ]
+    deps = [
+      ":libjingle_peerconnection_api",
+      "../test:test_support",
+    ]
+  }
+
+  rtc_source_set("mock_frame_decryptor") {
+    testonly = true
+    sources = [
+      "test/mock_frame_decryptor.cc",
+      "test/mock_frame_decryptor.h",
+    ]
+    deps = [
+      ":libjingle_peerconnection_api",
+      "../test:test_support",
+    ]
+  }
+
+  rtc_source_set("fake_frame_encryptor") {
+    testonly = true
+    sources = [
+      "test/fake_frame_encryptor.cc",
+      "test/fake_frame_encryptor.h",
+    ]
+    deps = [
+      ":array_view",
+      ":libjingle_peerconnection_api",
+      "..:webrtc_common",
+      "../rtc_base:checks",
+      "../rtc_base:rtc_base_approved",
+    ]
+  }
+
+  rtc_source_set("fake_frame_decryptor") {
     testonly = true
     sources = [
       "test/fake_frame_decryptor.cc",
       "test/fake_frame_decryptor.h",
-      "test/fake_frame_encryptor.cc",
-      "test/fake_frame_encryptor.h",
     ]
     deps = [
       ":array_view",

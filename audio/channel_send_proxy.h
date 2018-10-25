@@ -87,7 +87,8 @@ class ChannelSendProxy {
   virtual ChannelSend* GetChannel() const;
 
   // E2EE Custom Audio Frame Encryption (Optional)
-  virtual void SetFrameEncryptor(FrameEncryptorInterface* frame_encryptor);
+  virtual void SetFrameEncryptor(
+      rtc::scoped_refptr<FrameEncryptorInterface> frame_encryptor);
 
  private:
   // Thread checkers document and lock usage of some methods on voe::Channel to

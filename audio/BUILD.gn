@@ -135,6 +135,8 @@ if (rtc_include_tests) {
       ":audio",
       ":audio_end_to_end_test",
       "../api:mock_audio_mixer",
+      "../api:mock_frame_decryptor",
+      "../api:mock_frame_encryptor",
       "../api/audio:audio_frame_api",
       "../api/units:time_delta",
       "../call:mock_call_interfaces",

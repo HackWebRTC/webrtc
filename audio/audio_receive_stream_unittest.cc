@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "api/test/mock_audio_mixer.h"
+#include "api/test/mock_frame_decryptor.h"
 #include "audio/audio_receive_stream.h"
 #include "audio/conversion.h"
 #include "audio/mock_voe_channel_proxy.h"
@@ -373,5 +374,25 @@ TEST(AudioReceiveStreamTest, ReconfigureWithUpdatedConfig) {
 
   recv_stream->Reconfigure(new_config);
 }
+
+TEST(AudioReceiveStreamTest, ReconfigureWithFrameDecryptor) {
+  ConfigHelper helper;
+  auto recv_stream = helper.CreateAudioReceiveStream();
+
+  auto new_config_0 = helper.config();
+  rtc::scoped_refptr<FrameDecryptorInterface> mock_frame_decryptor_0(
+      new rtc::RefCountedObject<MockFrameDecryptor>());
+  new_config_0.frame_decryptor = mock_frame_decryptor_0;
+
+  recv_stream->Reconfigure(new_config_0);
+
+  auto new_config_1 = helper.config();
+  rtc::scoped_refptr<FrameDecryptorInterface> mock_frame_decryptor_1(
+      new rtc::RefCountedObject<MockFrameDecryptor>());
+  new_config_1.frame_decryptor = mock_frame_decryptor_1;
+  new_config_1.crypto_options.sframe.require_frame_encryption = true;
+  recv_stream->Reconfigure(new_config_1);
+}
+
 }  // namespace test
 }  // namespace webrtc

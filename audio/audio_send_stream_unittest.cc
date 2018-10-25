@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "api/test/mock_frame_encryptor.h"
 #include "api/units/time_delta.h"
 #include "audio/audio_send_stream.h"
 #include "audio/audio_state.h"
@@ -196,7 +197,7 @@ struct ConfigHelper {
     EXPECT_CALL(*channel_proxy_, SetLocalSSRC(kSsrc)).Times(1);
     EXPECT_CALL(*channel_proxy_, SetRTCP_CNAME(StrEq(kCName))).Times(1);
     EXPECT_CALL(*channel_proxy_, SetNACKStatus(true, 10)).Times(1);
-    EXPECT_CALL(*channel_proxy_, SetFrameEncryptor(nullptr)).Times(1);
+    EXPECT_CALL(*channel_proxy_, SetFrameEncryptor(_)).Times(1);
     EXPECT_CALL(*channel_proxy_,
                 SetSendAudioLevelIndicationStatus(true, kAudioLevelId))
         .Times(1);
@@ -525,6 +526,32 @@ TEST(AudioSendStreamTest, ReconfigureTransportCcResetsFirst) {
                                              helper.transport(), Ne(nullptr)))
         .Times(1);
   }
+  send_stream->Reconfigure(new_config);
+}
+
+// Validates that reconfiguring the AudioSendStream with a Frame encryptor
+// correctly reconfigures on the object without crashing.
+TEST(AudioSendStreamTest, ReconfigureWithFrameEncryptor) {
+  ConfigHelper helper(false, true);
+  auto send_stream = helper.CreateAudioSendStream();
+  auto new_config = helper.config();
+
+  rtc::scoped_refptr<FrameEncryptorInterface> mock_frame_encryptor_0(
+      new rtc::RefCountedObject<MockFrameEncryptor>());
+  new_config.frame_encryptor = mock_frame_encryptor_0;
+  EXPECT_CALL(*helper.channel_proxy(), SetFrameEncryptor(Ne(nullptr))).Times(1);
+  send_stream->Reconfigure(new_config);
+
+  // Not updating the frame encryptor shouldn't force it to reconfigure.
+  EXPECT_CALL(*helper.channel_proxy(), SetFrameEncryptor(_)).Times(0);
+  send_stream->Reconfigure(new_config);
+
+  // Updating frame encryptor to a new object should force a call to the proxy.
+  rtc::scoped_refptr<FrameEncryptorInterface> mock_frame_encryptor_1(
+      new rtc::RefCountedObject<MockFrameEncryptor>());
+  new_config.frame_encryptor = mock_frame_encryptor_1;
+  new_config.crypto_options.sframe.require_frame_encryption = true;
+  EXPECT_CALL(*helper.channel_proxy(), SetFrameEncryptor(Ne(nullptr))).Times(1);
   send_stream->Reconfigure(new_config);
 }
 

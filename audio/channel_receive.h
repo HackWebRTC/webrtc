@@ -115,7 +115,7 @@ class ChannelReceive : public RtpData {
                  bool jitter_buffer_fast_playout,
                  rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
                  absl::optional<AudioCodecPairId> codec_pair_id,
-                 FrameDecryptorInterface* frame_decryptor,
+                 rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor,
                  const webrtc::CryptoOptions& crypto_options);
   virtual ~ChannelReceive();
 
@@ -260,7 +260,7 @@ class ChannelReceive : public RtpData {
   rtc::ThreadChecker construction_thread_;
 
   // E2EE Audio Frame Decryption
-  FrameDecryptorInterface* frame_decryptor_ = nullptr;
+  rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor_;
   webrtc::CryptoOptions crypto_options_;
 };
 

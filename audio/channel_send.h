@@ -228,7 +228,8 @@ class ChannelSend
   int64_t GetRTT() const;
 
   // E2EE Custom Audio Frame Encryption
-  void SetFrameEncryptor(FrameEncryptorInterface* frame_encryptor);
+  void SetFrameEncryptor(
+      rtc::scoped_refptr<FrameEncryptorInterface> frame_encryptor);
 
  private:
   class ProcessAndEncodeAudioTask;
@@ -300,7 +301,7 @@ class ChannelSend
   rtc::TaskQueue* encoder_queue_ = nullptr;
 
   // E2EE Audio Frame Encryption
-  FrameEncryptorInterface* frame_encryptor_ = nullptr;
+  rtc::scoped_refptr<FrameEncryptorInterface> frame_encryptor_;
   // E2EE Frame Encryption Options
   webrtc::CryptoOptions crypto_options_;
   int configured_bitrate_bps_ = 0;
