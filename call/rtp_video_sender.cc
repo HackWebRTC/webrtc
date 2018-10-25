@@ -600,12 +600,14 @@ void RtpVideoSender::OnBitrateUpdated(uint32_t bitrate_bps,
   rtc::CritScope lock(&crit_);
   uint32_t payload_bitrate_bps = bitrate_bps;
   if (send_side_bwe_with_overhead_) {
-    payload_bitrate_bps -= CalculateOverheadRateBps(
+    uint32_t overhead_bps = CalculateOverheadRateBps(
         CalculatePacketRate(
             bitrate_bps,
             rtp_config_.max_packet_size + transport_overhead_bytes_per_packet_),
         overhead_bytes_per_packet_ + transport_overhead_bytes_per_packet_,
         bitrate_bps);
+    RTC_DCHECK_LE(overhead_bps, bitrate_bps);
+    payload_bitrate_bps = bitrate_bps - overhead_bps;
   }
 
   // Get the encoder target rate. It is the estimated network rate -
