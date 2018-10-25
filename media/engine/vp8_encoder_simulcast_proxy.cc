@@ -11,7 +11,6 @@
 #include "media/engine/vp8_encoder_simulcast_proxy.h"
 
 #include "media/engine/simulcast_encoder_adapter.h"
-#include "rtc_base/checks.h"
 
 namespace webrtc {
 VP8EncoderSimulcastProxy::VP8EncoderSimulcastProxy(VideoEncoderFactory* factory,

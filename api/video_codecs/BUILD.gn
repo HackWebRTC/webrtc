@@ -79,6 +79,7 @@ rtc_static_library("builtin_video_encoder_factory") {
     ":video_codecs_api",
     "../../media:rtc_internal_video_codecs",
     "../../media:rtc_media_base",
+    "../../media:rtc_vp8_encoder_simulcast_proxy",
     "../../rtc_base:ptr_util",
     "../../rtc_base/system:rtc_export",
     "//third_party/abseil-cpp/absl/memory",

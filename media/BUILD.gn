@@ -190,6 +190,24 @@ rtc_static_library("rtc_simulcast_encoder_adapter") {
   }
 }
 
+rtc_static_library("rtc_vp8_encoder_simulcast_proxy") {
+  visibility = [ "*" ]
+  defines = []
+  libs = []
+  sources = [
+    "engine/vp8_encoder_simulcast_proxy.cc",
+    "engine/vp8_encoder_simulcast_proxy.h",
+  ]
+  deps = [
+    ":rtc_simulcast_encoder_adapter",
+    "../api/video_codecs:video_codecs_api",
+  ]
+  if (!build_with_chromium && is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+  }
+}
+
 rtc_static_library("rtc_internal_video_codecs") {
   visibility = [ "*" ]
   allow_poison = [ "software_video_codecs" ]
@@ -198,6 +216,7 @@ rtc_static_library("rtc_internal_video_codecs") {
   deps = [
     ":rtc_h264_profile_id",
     ":rtc_simulcast_encoder_adapter",
+    ":rtc_vp8_encoder_simulcast_proxy",
     "../modules/video_coding:video_codec_interface",
     "//third_party/abseil-cpp/absl/memory",
   ]
@@ -214,7 +233,9 @@ rtc_static_library("rtc_internal_video_codecs") {
     "engine/scopedvideodecoder.h",
     "engine/scopedvideoencoder.cc",
     "engine/scopedvideoencoder.h",
-    "engine/vp8_encoder_simulcast_proxy.cc",
+
+    # TODO(bugs.webrtc.org/7925): stop exporting this header once downstream
+    # targets depend on :rtc_vp8_encoder_simulcast_proxy directly.
     "engine/vp8_encoder_simulcast_proxy.h",
     "engine/webrtcvideodecoderfactory.h",
     "engine/webrtcvideoencoderfactory.h",
@@ -599,6 +620,7 @@ if (rtc_include_tests) {
       ":rtc_media_base",
       ":rtc_media_tests_utils",
       ":rtc_simulcast_encoder_adapter",
+      ":rtc_vp8_encoder_simulcast_proxy",
       ":rtc_vp9_profile",
       "../api:create_simulcast_test_fixture_api",
       "../api:libjingle_peerconnection_api",
