@@ -11,6 +11,7 @@
 #import <Foundation/Foundation.h>
 
 #import "RTCCertificate.h"
+#import "RTCCryptoOptions.h"
 #import "RTCMacros.h"
 
 @class RTCIceServer;
@@ -173,6 +174,13 @@ RTC_OBJC_EXPORT
  * that it should use the MediaTransportInterface.
  */
 @property(nonatomic, assign) BOOL useMediaTransport;
+
+/**
+ * Defines advanced optional cryptographic settings related to SRTP and
+ * frame encryption for native WebRTC. Setting this will overwrite any
+ * options set through the PeerConnectionFactory (which is deprecated).
+ */
+@property(nonatomic, nullable) RTCCryptoOptions *cryptoOptions;
 
 - (instancetype)init;
 

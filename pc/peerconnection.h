@@ -922,6 +922,11 @@ class PeerConnection : public PeerConnectionInternal,
   // Returns the observer. Will crash on CHECK if the observer is removed.
   PeerConnectionObserver* Observer() const;
 
+  // Returns the CryptoOptions for this PeerConnection. This will always
+  // return the RTCConfiguration.crypto_options if set and will only default
+  // back to the PeerConnectionFactory settings if nothing was set.
+  CryptoOptions GetCryptoOptions();
+
   // Returns rtp transport, result can not be nullptr.
   RtpTransportInternal* GetRtpTransport(const std::string& mid) {
     auto rtp_transport = transport_controller_->GetRtpTransport(mid);

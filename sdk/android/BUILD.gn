@@ -276,6 +276,7 @@ if (is_android) {
       "api/org/webrtc/AudioSource.java",
       "api/org/webrtc/AudioTrack.java",
       "api/org/webrtc/CallSessionFileRotatingLogSink.java",
+      "api/org/webrtc/CryptoOptions.java",
       "api/org/webrtc/DataChannel.java",
       "api/org/webrtc/DtmfSender.java",
       "api/org/webrtc/FecControllerFactoryFactoryInterface.java",
@@ -609,6 +610,8 @@ if (is_android) {
       "src/jni/pc/androidnetworkmonitor.h",
       "src/jni/pc/audiotrack.cc",
       "src/jni/pc/callsessionfilerotatinglogsink.cc",
+      "src/jni/pc/cryptooptions.cc",
+      "src/jni/pc/cryptooptions.h",
       "src/jni/pc/datachannel.cc",
       "src/jni/pc/datachannel.h",
       "src/jni/pc/dtmfsender.cc",
@@ -674,6 +677,7 @@ if (is_android) {
       "../../rtc_base:stringutils",
       "../../system_wrappers:field_trial",
       "//third_party/abseil-cpp/absl/memory",
+      "//third_party/abseil-cpp/absl/types:optional",
     ]
   }
 
@@ -1173,6 +1177,7 @@ if (is_android) {
     sources = [
       "api/org/webrtc/AudioTrack.java",
       "api/org/webrtc/CallSessionFileRotatingLogSink.java",
+      "api/org/webrtc/CryptoOptions.java",
       "api/org/webrtc/DataChannel.java",
       "api/org/webrtc/DtmfSender.java",
       "api/org/webrtc/IceCandidate.java",

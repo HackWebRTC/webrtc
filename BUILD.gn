@@ -619,6 +619,7 @@ if (rtc_include_tests) {
         "sdk/android/tests/src/org/webrtc/GlGenericDrawerTest.java",
         "sdk/android/tests/src/org/webrtc/HardwareVideoEncoderTest.java",
         "sdk/android/tests/src/org/webrtc/ScalingSettingsTest.java",
+        "sdk/android/tests/src/org/webrtc/CryptoOptionsTest.java",
       ]
 
       deps = [

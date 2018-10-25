@@ -468,6 +468,13 @@ public class PeerConnection {
      */
     public boolean useMediaTransport;
 
+    /**
+     * Defines advanced optional cryptographic settings related to SRTP and
+     * frame encryption for native WebRTC. Setting this will overwrite any
+     * options set through the PeerConnectionFactory (which is deprecated).
+     */
+    @Nullable public CryptoOptions cryptoOptions;
+
     // TODO(deadbeef): Instead of duplicating the defaults here, we should do
     // something to pick up the defaults from C++. The Objective-C equivalent
     // of RTCConfiguration does that.
@@ -508,6 +515,7 @@ public class PeerConnection {
       sdpSemantics = SdpSemantics.PLAN_B;
       activeResetSrtpParams = false;
       useMediaTransport = false;
+      cryptoOptions = null;
     }
 
     @CalledByNative("RTCConfiguration")
@@ -710,6 +718,12 @@ public class PeerConnection {
     @CalledByNative("RTCConfiguration")
     boolean getUseMediaTransport() {
       return useMediaTransport;
+    }
+
+    @Nullable
+    @CalledByNative("RTCConfiguration")
+    CryptoOptions getCryptoOptions() {
+      return cryptoOptions;
     }
   };
 

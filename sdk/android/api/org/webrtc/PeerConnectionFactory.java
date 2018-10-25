@@ -123,6 +123,9 @@ public class PeerConnectionFactory {
     public boolean disableEncryption;
     public boolean disableNetworkMonitor;
 
+    // TODO(webrtc:9891) - The below crypto options are deprecated. Please use
+    // RTCConfiguration to set these options instead. They will be removed in
+    // a future release.
     /**
      * If set to true, the (potentially insecure) crypto cipher SRTP_AES128_CM_SHA1_32
      * will be included in the list of supported ciphers during negotiation. It will only
@@ -158,16 +161,19 @@ public class PeerConnectionFactory {
       return disableNetworkMonitor;
     }
 
+    @Deprecated
     @CalledByNative("Options")
     boolean getEnableAes128Sha1_32CryptoCipher() {
       return enableAes128Sha1_32CryptoCipher;
     }
 
+    @Deprecated
     @CalledByNative("Options")
     boolean getEnableGcmCryptoSuites() {
       return enableGcmCryptoSuites;
     }
 
+    @Deprecated
     @CalledByNative("Options")
     boolean getRequireFrameEncryption() {
       return requireFrameEncryption;

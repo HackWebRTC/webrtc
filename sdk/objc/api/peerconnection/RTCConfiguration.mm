@@ -49,6 +49,7 @@
 @synthesize turnCustomizer = _turnCustomizer;
 @synthesize activeResetSrtpParams = _activeResetSrtpParams;
 @synthesize useMediaTransport = _useMediaTransport;
+@synthesize cryptoOptions = _cryptoOptions;
 
 - (instancetype)init {
   // Copy defaults.
@@ -111,6 +112,17 @@
     _sdpSemantics = [[self class] sdpSemanticsForNativeSdpSemantics:config.sdp_semantics];
     _turnCustomizer = config.turn_customizer;
     _activeResetSrtpParams = config.active_reset_srtp_params;
+    if (config.crypto_options) {
+      _cryptoOptions = [[RTCCryptoOptions alloc]
+               initWithSrtpEnableGcmCryptoSuites:config.crypto_options->srtp
+                                                     .enable_gcm_crypto_suites
+             srtpEnableAes128Sha1_32CryptoCipher:config.crypto_options->srtp
+                                                     .enable_aes128_sha1_32_crypto_cipher
+          srtpEnableEncryptedRtpHeaderExtensions:config.crypto_options->srtp
+                                                     .enable_encrypted_rtp_header_extensions
+                    sframeRequireFrameEncryption:config.crypto_options->sframe
+                                                     .require_frame_encryption];
+    }
   }
   return self;
 }
@@ -224,6 +236,19 @@
     nativeConfig->turn_customizer = _turnCustomizer;
   }
   nativeConfig->active_reset_srtp_params = _activeResetSrtpParams ? true : false;
+  if (_cryptoOptions) {
+    webrtc::CryptoOptions nativeCryptoOptions;
+    nativeCryptoOptions.srtp.enable_gcm_crypto_suites =
+        _cryptoOptions.srtpEnableGcmCryptoSuites ? true : false;
+    nativeCryptoOptions.srtp.enable_aes128_sha1_32_crypto_cipher =
+        _cryptoOptions.srtpEnableAes128Sha1_32CryptoCipher ? true : false;
+    nativeCryptoOptions.srtp.enable_encrypted_rtp_header_extensions =
+        _cryptoOptions.srtpEnableEncryptedRtpHeaderExtensions ? true : false;
+    nativeCryptoOptions.sframe.require_frame_encryption =
+        _cryptoOptions.sframeRequireFrameEncryption ? true : false;
+    nativeConfig->crypto_options = absl::optional<webrtc::CryptoOptions>(nativeCryptoOptions);
+  }
+
   return nativeConfig.release();
 }
 

@@ -683,6 +683,27 @@ public class PeerConnectionTest {
   }
 
   @Test
+  @SmallTest
+  public void testCreationWithCryptoOptions() throws Exception {
+    PeerConnectionFactory factory = PeerConnectionFactory.builder().createPeerConnectionFactory();
+    PeerConnection.RTCConfiguration config = new PeerConnection.RTCConfiguration(Arrays.asList());
+
+    assertNull(config.cryptoOptions);
+
+    CryptoOptions cryptoOptions = CryptoOptions.builder()
+                                      .setEnableGcmCryptoSuites(true)
+                                      .setEnableAes128Sha1_32CryptoCipher(true)
+                                      .setEnableEncryptedRtpHeaderExtensions(true)
+                                      .setRequireFrameEncryption(true)
+                                      .createCryptoOptions();
+    config.cryptoOptions = cryptoOptions;
+
+    ObserverExpectations offeringExpectations = new ObserverExpectations("PCTest:offerer");
+    PeerConnection offeringPC = factory.createPeerConnection(config, offeringExpectations);
+    assertNotNull(offeringPC);
+  }
+
+  @Test
   @MediumTest
   public void testCompleteSession() throws Exception {
     Metrics.enable();
