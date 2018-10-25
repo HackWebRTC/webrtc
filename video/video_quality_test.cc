@@ -1381,7 +1381,7 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
     Start();
   });
 
-  test::PressEnterToContinue();
+  test::PressEnterToContinue(task_queue_);
 
   task_queue_.SendTask([&]() {
     Stop();
