@@ -393,7 +393,7 @@ TEST_F(TestVp9Impl, InterLayerPred) {
   ConfigureSvc(num_spatial_layers);
   codec_settings_.VP9()->frameDroppingOn = false;
 
-  BitrateAllocation bitrate_allocation;
+  VideoBitrateAllocation bitrate_allocation;
   for (size_t i = 0; i < num_spatial_layers; ++i) {
     bitrate_allocation.SetBitrate(
         i, 0, codec_settings_.spatialLayers[i].targetBitrate * 1000);

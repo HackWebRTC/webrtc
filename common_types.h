@@ -349,9 +349,6 @@ struct SpatialLayer {
 // settings such as resolution.
 typedef SpatialLayer SimulcastStream;
 
-// TODO(sprang): Remove this when downstream projects have been updated.
-using BitrateAllocation = VideoBitrateAllocation;
-
 // Bandwidth over-use detector options.  These are used to drive
 // experimentation with bandwidth estimation parameters.
 // See modules/remote_bitrate_estimator/overuse_detector.h

@@ -310,7 +310,7 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* inst,
   }
 
   SimulcastRateAllocator init_allocator(codec_);
-  BitrateAllocation allocation = init_allocator.GetAllocation(
+  VideoBitrateAllocation allocation = init_allocator.GetAllocation(
       codec_.startBitrate * 1000, codec_.maxFramerate);
   return SetRateAllocation(allocation, codec_.maxFramerate);
 }
@@ -339,7 +339,7 @@ int32_t H264EncoderImpl::RegisterEncodeCompleteCallback(
 }
 
 int32_t H264EncoderImpl::SetRateAllocation(
-    const BitrateAllocation& bitrate,
+    const VideoBitrateAllocation& bitrate,
     uint32_t new_framerate) {
   if (encoders_.empty())
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
