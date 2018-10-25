@@ -109,21 +109,29 @@ void ReadParam(const Json::Value& root,
 }
 }  // namespace
 
-EchoCanceller3Config Aec3ConfigFromJsonString(absl::string_view json_string) {
-  EchoCanceller3Config cfg;
+void Aec3ConfigFromJsonString(absl::string_view json_string,
+                              EchoCanceller3Config* config,
+                              bool* parsing_successful) {
+  RTC_DCHECK(config);
+  RTC_DCHECK(parsing_successful);
+  EchoCanceller3Config& cfg = *config;
+  cfg = EchoCanceller3Config();
+  *parsing_successful = true;
 
   Json::Value root;
   bool success = Json::Reader().parse(std::string(json_string), root);
   if (!success) {
     RTC_LOG(LS_ERROR) << "Incorrect JSON format: " << json_string;
-    return EchoCanceller3Config();
+    *parsing_successful = false;
+    return;
   }
 
   Json::Value aec3_root;
   success = rtc::GetValueFromJsonObject(root, "aec3", &aec3_root);
   if (!success) {
     RTC_LOG(LS_ERROR) << "Missing AEC3 config field: " << json_string;
-    return EchoCanceller3Config();
+    *parsing_successful = false;
+    return;
   }
 
   Json::Value section;
@@ -325,6 +333,12 @@ EchoCanceller3Config Aec3ConfigFromJsonString(absl::string_view json_string) {
     ReadParam(section, "enforce_empty_higher_bands",
               &cfg.suppressor.enforce_empty_higher_bands);
   }
+}
+
+EchoCanceller3Config Aec3ConfigFromJsonString(absl::string_view json_string) {
+  EchoCanceller3Config cfg;
+  bool not_used;
+  Aec3ConfigFromJsonString(json_string, &cfg, &not_used);
   return cfg;
 }
 

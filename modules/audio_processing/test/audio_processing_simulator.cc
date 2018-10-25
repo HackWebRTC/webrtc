@@ -48,7 +48,17 @@ EchoCanceller3Config ReadAec3ConfigFromJsonFile(const std::string& filename) {
   while (std::getline(f, s)) {
     json_string += s;
   }
-  return Aec3ConfigFromJsonString(json_string);
+
+  bool parsing_successful;
+  EchoCanceller3Config cfg;
+  Aec3ConfigFromJsonString(json_string, &cfg, &parsing_successful);
+  if (!parsing_successful) {
+    std::cout << "Parsing of json string failed: " << std::endl
+              << json_string << std::endl;
+    RTC_CHECK(false);
+  }
+
+  return cfg;
 }
 
 void CopyFromAudioFrame(const AudioFrame& src, ChannelBuffer<float>* dest) {

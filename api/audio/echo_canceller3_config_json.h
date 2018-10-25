@@ -20,6 +20,16 @@
 namespace webrtc {
 // Parses a JSON-encoded string into an Aec3 config. Fields corresponds to
 // substruct names, with the addition that there must be a top-level node
+// "aec3". Produces default config values for anything that cannot be parsed
+// from the string. If any error was found in the parsing, parsing_successful is
+// set to false.
+RTC_EXPORT void Aec3ConfigFromJsonString(absl::string_view json_string,
+                                         EchoCanceller3Config* config,
+                                         bool* parsing_successful);
+
+// To be deprecated.
+// Parses a JSON-encoded string into an Aec3 config. Fields corresponds to
+// substruct names, with the addition that there must be a top-level node
 // "aec3". Returns default config values for anything that cannot be parsed from
 // the string.
 RTC_EXPORT EchoCanceller3Config
