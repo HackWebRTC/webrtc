@@ -514,6 +514,7 @@ if (rtc_include_tests) {
   if (rtc_enable_protobuf) {
     rtc_source_set("audioproc_f_impl") {
       testonly = true
+      configs += [ ":apm_debug_dump" ]
       sources = [
         "test/aec_dump_based_simulator.cc",
         "test/aec_dump_based_simulator.h",
@@ -527,6 +528,7 @@ if (rtc_include_tests) {
 
       deps = [
         ":analog_mic_simulation",
+        ":apm_logging",
         ":audio_processing",
         ":audioproc_debug_proto",
         ":audioproc_protobuf_utils",

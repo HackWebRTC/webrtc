@@ -25,6 +25,7 @@
 #include "modules/audio_processing/echo_cancellation_impl.h"
 #include "modules/audio_processing/echo_control_mobile_impl.h"
 #include "modules/audio_processing/include/audio_processing.h"
+#include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "modules/audio_processing/test/fake_recording_device.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -114,6 +115,9 @@ AudioProcessingSimulator::AudioProcessingSimulator(
           settings.initial_mic_level,
           settings_.simulate_mic_gain ? *settings.simulated_mic_kind : 0),
       worker_queue_("file_writer_task_queue") {
+  RTC_CHECK(!settings_.dump_internal_data || WEBRTC_APM_DEBUG_DUMP == 1);
+  ApmDataDumper::SetActivated(settings_.dump_internal_data);
+
   if (settings_.ed_graph_output_filename &&
       !settings_.ed_graph_output_filename->empty()) {
     residual_echo_likelihood_graph_writer_.open(

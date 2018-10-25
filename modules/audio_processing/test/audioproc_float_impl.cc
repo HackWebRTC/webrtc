@@ -200,6 +200,9 @@ WEBRTC_DEFINE_bool(print_aec3_parameter_values,
 WEBRTC_DEFINE_string(aec3_settings,
                      "",
                      "File in JSON-format with custom AEC3 settings");
+WEBRTC_DEFINE_bool(dump_data,
+                   false,
+                   "Dump internal data during the call (requires build flag)");
 WEBRTC_DEFINE_bool(help, false, "Print this message");
 
 void SetSettingIfSpecified(const std::string& value,
@@ -311,6 +314,7 @@ SimulationSettings CreateSettings() {
   settings.fixed_interface = FLAG_fixed_interface;
   settings.store_intermediate_output = FLAG_store_intermediate_output;
   settings.print_aec3_parameter_values = FLAG_print_aec3_parameter_values;
+  settings.dump_internal_data = FLAG_dump_data;
 
   return settings;
 }
@@ -461,6 +465,10 @@ void PerformBasicParameterSanityChecks(const SimulationSettings& settings) {
       settings.artificial_nearend_filename &&
           !valid_wav_name(*settings.artificial_nearend_filename),
       "Error: --artifical_nearend must be a valid .wav file name.\n");
+
+  ReportConditionalErrorAndExit(
+      WEBRTC_APM_DEBUG_DUMP == 0 && settings.dump_internal_data,
+      "Error: --dump_data cannot be set without proper build support.\n");
 }
 
 }  // namespace
