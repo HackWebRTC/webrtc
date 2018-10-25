@@ -70,6 +70,7 @@ class ChannelSendProxy {
                                                 int payload_frequency);
   virtual bool SendTelephoneEventOutband(int event, int duration_ms);
   virtual void SetBitrate(int bitrate_bps, int64_t probing_interval_ms);
+  virtual int GetBitrate() const;
   virtual void SetInputMute(bool muted);
 
   virtual void ProcessAndEncodeAudio(std::unique_ptr<AudioFrame> audio_frame);

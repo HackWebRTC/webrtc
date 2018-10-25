@@ -147,6 +147,10 @@ void ChannelSendProxy::SetBitrate(int bitrate_bps,
   channel_->SetBitRate(bitrate_bps, probing_interval_ms);
 }
 
+int ChannelSendProxy::GetBitrate() const {
+  return channel_->GetBitRate();
+}
+
 void ChannelSendProxy::SetInputMute(bool muted) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   channel_->SetInputMute(muted);

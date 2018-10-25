@@ -29,6 +29,7 @@ class SendAudioStream {
   RTC_DISALLOW_COPY_AND_ASSIGN(SendAudioStream);
   ~SendAudioStream();
   void Start();
+  ColumnPrinter StatsPrinter();
 
  private:
   friend class Scenario;

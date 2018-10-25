@@ -58,6 +58,8 @@ class AudioSendStream {
 
     ANAStats ana_statistics;
     AudioProcessingStats apm_statistics;
+
+    int64_t target_bitrate_bps = 0;
   };
 
   struct Config {

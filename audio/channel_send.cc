@@ -572,6 +572,11 @@ void ChannelSend::SetBitRate(int bitrate_bps, int64_t probing_interval_ms) {
     }
   });
   retransmission_rate_limiter_->SetMaxRate(bitrate_bps);
+  configured_bitrate_bps_ = bitrate_bps;
+}
+
+int ChannelSend::GetBitRate() const {
+  return configured_bitrate_bps_;
 }
 
 void ChannelSend::OnTwccBasedUplinkPacketLossRate(float packet_loss_rate) {

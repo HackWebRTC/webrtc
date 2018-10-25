@@ -139,6 +139,7 @@ class ChannelSend
 
   // Codecs
   void SetBitRate(int bitrate_bps, int64_t probing_interval_ms);
+  int GetBitRate() const;
   bool EnableAudioNetworkAdaptor(const std::string& config_string);
   void DisableAudioNetworkAdaptor();
 
@@ -302,6 +303,7 @@ class ChannelSend
   FrameEncryptorInterface* frame_encryptor_ = nullptr;
   // E2EE Frame Encryption Options
   webrtc::CryptoOptions crypto_options_;
+  int configured_bitrate_bps_ = 0;
 };
 
 }  // namespace voe

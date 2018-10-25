@@ -367,6 +367,7 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats(
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   webrtc::AudioSendStream::Stats stats;
   stats.local_ssrc = config_.rtp.ssrc;
+  stats.target_bitrate_bps = channel_proxy_->GetBitrate();
 
   webrtc::CallSendStatistics call_stats = channel_proxy_->GetRTCPStatistics();
   stats.bytes_sent = call_stats.bytesSent;

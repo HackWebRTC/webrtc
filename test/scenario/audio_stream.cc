@@ -149,6 +149,16 @@ void SendAudioStream::Start() {
   send_stream_->Start();
 }
 
+ColumnPrinter SendAudioStream::StatsPrinter() {
+  return ColumnPrinter::Lambda(
+      "audio_target_rate",
+      [this](rtc::SimpleStringBuilder& sb) {
+        AudioSendStream::Stats stats = send_stream_->GetStats();
+        sb.AppendFormat("%.0lf", stats.target_bitrate_bps / 8.0);
+      },
+      64);
+}
+
 ReceiveAudioStream::ReceiveAudioStream(
     CallClient* receiver,
     AudioStreamConfig config,

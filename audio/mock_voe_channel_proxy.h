@@ -99,6 +99,7 @@ class MockChannelSendProxy : public voe::ChannelSendProxy {
                void(std::unique_ptr<AudioFrame>* audio_frame));
   MOCK_METHOD1(SetTransportOverhead, void(int transport_overhead_per_packet));
   MOCK_CONST_METHOD0(GetRtpRtcp, RtpRtcp*());
+  MOCK_CONST_METHOD0(GetBitrate, int());
   MOCK_METHOD1(OnTwccBasedUplinkPacketLossRate, void(float packet_loss_rate));
   MOCK_METHOD1(OnRecoverableUplinkPacketLossRate,
                void(float recoverable_packet_loss_rate));
