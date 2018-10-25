@@ -154,8 +154,8 @@ bool FakeNetworkPipe::EnqueuePacket(rtc::CopyOnWriteBuffer packet,
                                     bool is_rtcp,
                                     MediaType media_type,
                                     absl::optional<int64_t> packet_time_us) {
-  int64_t time_now_us = clock_->TimeInMicroseconds();
   rtc::CritScope crit(&process_lock_);
+  int64_t time_now_us = clock_->TimeInMicroseconds();
   size_t packet_size = packet.size();
   NetworkPacket net_packet(std::move(packet), time_now_us, time_now_us, options,
                            is_rtcp, media_type, packet_time_us);
@@ -201,10 +201,11 @@ size_t FakeNetworkPipe::SentPackets() {
 }
 
 void FakeNetworkPipe::Process() {
-  int64_t time_now_us = clock_->TimeInMicroseconds();
+  int64_t time_now_us;
   std::queue<NetworkPacket> packets_to_deliver;
   {
     rtc::CritScope crit(&process_lock_);
+    time_now_us = clock_->TimeInMicroseconds();
     if (time_now_us - last_log_time_us_ > kLogIntervalMs * 1000) {
       int64_t queueing_delay_us = 0;
       if (!packets_in_flight_.empty())
