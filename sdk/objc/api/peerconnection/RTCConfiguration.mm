@@ -189,6 +189,7 @@
       _iceConnectionReceivingTimeout;
   nativeConfig->ice_backup_candidate_pair_ping_interval =
       _iceBackupCandidatePairPingInterval;
+  nativeConfig->use_media_transport = _useMediaTransport;
   rtc::KeyType keyType =
       [[self class] nativeEncryptionKeyTypeForKeyType:_keyType];
   if (_certificate != nullptr) {
