@@ -1,3 +1,5 @@
+# This is supposed to be a complete list of top-level directories,
+# excepting only api/ itself.
 include_rules = [
   "-audio",
   "-base",
@@ -283,10 +285,10 @@ specific_include_rules = {
     "+rtc_base/scoped_ref_ptr.h",
   ],
 
-  # We allow .cc files in webrtc/api/ to #include a bunch of stuff
-  # that's off-limits for the .h files. That's because .h files leak
-  # their #includes to whoever's #including them, but .cc files do not
-  # since no one #includes them.
+  # .cc files in api/ should not be restricted in what they can #include,
+  # so we re-add all the top-level directories here. (That's because .h
+  # files leak their #includes to whoever's #including them, but .cc files
+  # do not since no one #includes them.)
   ".*\.cc": [
     "+audio",
     "+call",

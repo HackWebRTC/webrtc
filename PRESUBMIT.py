@@ -867,58 +867,56 @@ def CommonChecks(input_api, output_api):
 
 
 def CheckApiDepsFileIsUpToDate(input_api, output_api):
+  """Check that 'include_rules' in api/DEPS is up to date.
+
+  The file api/DEPS must be kept up to date in order to avoid to avoid to
+  include internal header from WebRTC's api/ headers.
+
+  This check is focused on ensuring that 'include_rules' contains a deny
+  rule for each root level directory. More focused allow rules can be
+  added to 'specific_include_rules'.
+  """
   results = []
   api_deps = os.path.join(input_api.PresubmitLocalPath(), 'api', 'DEPS')
   with open(api_deps) as f:
     deps_content = _ParseDeps(f.read())
 
   include_rules = deps_content.get('include_rules', [])
-  specific_include_rules = deps_content.get('specific_include_rules', [])
-  cc_include_rules = specific_include_rules.get(r'.*\.cc', [])
 
-  top_level_files = [f for f in os.listdir(input_api.PresubmitLocalPath())
-                     if f != 'api' and not f.startswith('.')]
-  top_level_dirs = []
-  for f in top_level_files:
-    if os.path.isdir(os.path.join(input_api.PresubmitLocalPath(), f)):
-      top_level_dirs.append(f)
+  # Only check top level directories affected by the current CL.
+  dirs_to_check = set()
+  for f in input_api.AffectedFiles():
+    path_tokens = [t for t in f.LocalPath().split(os.sep) if t]
+    if len(path_tokens) > 1:
+      if (path_tokens[0] != 'api' and
+          os.path.isdir(os.path.join(input_api.PresubmitLocalPath(),
+                                     path_tokens[0]))):
+        dirs_to_check.add(path_tokens[0])
 
-  missing_include_rules = []
-  for p in top_level_dirs:
+  missing_include_rules = set()
+  for p in dirs_to_check:
     rule = '-%s' % p
     if rule not in include_rules:
-      missing_include_rules.append(rule)
+      missing_include_rules.add(rule)
+
   if missing_include_rules:
-    results.append(output_api.PresubmitError(
-        'Please add the following lines to `include_rules` in file\n'
-        '%s:\n%s' % (api_deps, str(missing_include_rules))))
+    error_msg = [
+      'include_rules = [\n',
+      '  ...\n',
+    ]
 
-  missing_cc_include_rules = []
-  non_webrtc_dirs = [
-      'base',
-      'build',
-      'build_overrides',
-      'buildtools',
-      'data',
-      'infra',
-      'ios',
-      'out',
-      'resources',
-      'testing',
-      'style-guide',
-  ]
-  webrtc_top_level_dirs = [d for d in top_level_dirs
-                           if d not in non_webrtc_dirs]
+    for r in sorted(missing_include_rules):
+      error_msg.append('  "%s",\n' % str(r))
 
-  for p in webrtc_top_level_dirs:
-    rule = '+%s' % p
-    if rule not in cc_include_rules:
-      missing_cc_include_rules.append(rule)
-  if missing_cc_include_rules:
+    error_msg.append('  ...\n')
+    error_msg.append(']\n')
+
     results.append(output_api.PresubmitError(
-        r'Please add the following lines to the `.*\.cc` rule under '
-        '`specific_include_rules` in file\n'
-        '%s:\n%s' % (api_deps, str(missing_cc_include_rules))))
+        'New root level directory detected! WebRTC api/ headers should '
+        'not #include headers from \n'
+        'the new directory, so please update "include_rules" in file\n'
+        '"%s". Example:\n%s\n' % (api_deps, ''.join(error_msg))))
+
   return results
 
 
