@@ -53,7 +53,11 @@ class AndroidVideoTrackSource : public rtc::AdaptedVideoTrackSource {
                        VideoRotation rotation,
                        const JavaRef<jobject>& j_video_frame_buffer);
 
-  void OnOutputFormatRequest(int width, int height, int fps);
+  void OnOutputFormatRequest(int landscape_width,
+                             int landscape_height,
+                             int portrait_width,
+                             int portrait_height,
+                             int fps);
 
  private:
   rtc::Thread* signaling_thread_;

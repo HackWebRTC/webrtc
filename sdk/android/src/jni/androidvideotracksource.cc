@@ -84,10 +84,19 @@ void AndroidVideoTrackSource::OnFrameCaptured(
   int crop_x;
   int crop_y;
 
-  if (!AdaptFrame(width, height, camera_time_us, &adapted_width,
-                  &adapted_height, &crop_width, &crop_height, &crop_x,
-                  &crop_y)) {
-    return;
+  if (rotation % 180 == 0) {
+    if (!AdaptFrame(width, height, camera_time_us, &adapted_width,
+                    &adapted_height, &crop_width, &crop_height, &crop_x,
+                    &crop_y)) {
+      return;
+    }
+  } else {
+    // Swap all width/height and x/y.
+    if (!AdaptFrame(height, width, camera_time_us, &adapted_height,
+                    &adapted_width, &crop_height, &crop_width, &crop_y,
+                    &crop_x)) {
+      return;
+    }
   }
 
   rtc::scoped_refptr<VideoFrameBuffer> buffer =
@@ -103,12 +112,16 @@ void AndroidVideoTrackSource::OnFrameCaptured(
   OnFrame(VideoFrame(buffer, rotation, translated_camera_time_us));
 }
 
-void AndroidVideoTrackSource::OnOutputFormatRequest(int width,
-                                                    int height,
+void AndroidVideoTrackSource::OnOutputFormatRequest(int landscape_width,
+                                                    int landscape_height,
+                                                    int portrait_width,
+                                                    int portrait_height,
                                                     int fps) {
-  cricket::VideoFormat format(width, height,
-                              cricket::VideoFormat::FpsToInterval(fps), 0);
-  video_adapter()->OnOutputFormatRequest(format);
+  video_adapter()->OnOutputFormatRequest(
+      std::make_pair(landscape_width, landscape_height),
+      landscape_width * landscape_height,
+      std::make_pair(portrait_width, portrait_height),
+      portrait_width * portrait_height, fps);
 }
 
 }  // namespace jni
