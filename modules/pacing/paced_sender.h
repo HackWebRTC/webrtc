@@ -143,19 +143,25 @@ class PacedSender : public Pacer {
   void SetQueueTimeLimit(int limit_ms);
 
  private:
+  int64_t UpdateTimeAndGetElapsedMs(int64_t now_us)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
+  bool ShouldSendKeepalive(int64_t at_time_us) const
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
+
   // Updates the number of bytes that can be sent for the next time interval.
   void UpdateBudgetWithElapsedTime(int64_t delta_time_in_ms)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
   void UpdateBudgetWithBytesSent(size_t bytes)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
-  bool SendPacket(const RoundRobinPacketQueue::Packet& packet,
-                  const PacedPacketInfo& cluster_info)
+  const RoundRobinPacketQueue::Packet* GetPendingPacket(
+      const PacedPacketInfo& pacing_info)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
-  size_t SendPadding(size_t padding_needed, const PacedPacketInfo& cluster_info)
+  void OnPacketSent(const RoundRobinPacketQueue::Packet* packet)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
+  void OnPaddingSent(size_t padding_sent)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
-  void OnBytesSent(size_t bytes_sent) RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
   bool Congested() const RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
   int64_t TimeMilliseconds() const RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
