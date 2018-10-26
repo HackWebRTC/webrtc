@@ -47,6 +47,7 @@
 #include "pc/videocapturertracksource.h"
 #include "pc/videotrack.h"
 #include "rtc_base/experiments/congestion_controller_experiment.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 
@@ -445,7 +446,10 @@ rtc::Thread* PeerConnectionFactory::network_thread() {
 
 std::unique_ptr<RtcEventLog> PeerConnectionFactory::CreateRtcEventLog_w() {
   RTC_DCHECK_RUN_ON(worker_thread_);
-  const auto encoding_type = RtcEventLog::EncodingType::Legacy;
+
+  auto encoding_type = RtcEventLog::EncodingType::Legacy;
+  if (field_trial::IsEnabled("WebRTC-RtcEventLogNewFormat"))
+    encoding_type = RtcEventLog::EncodingType::NewFormat;
   return event_log_factory_
              ? event_log_factory_->CreateRtcEventLog(encoding_type)
              : absl::make_unique<RtcEventLogNullImpl>();
