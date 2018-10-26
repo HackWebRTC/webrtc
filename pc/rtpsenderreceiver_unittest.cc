@@ -1424,6 +1424,18 @@ TEST_F(RtpSenderReceiverTest, AudioSenderCanSetFrameEncryptor) {
             audio_rtp_sender_->GetFrameEncryptor().get());
 }
 
+// Validate that setting a FrameEncryptor after the send stream is stopped does
+// nothing.
+TEST_F(RtpSenderReceiverTest, AudioSenderCannotSetFrameEncryptorAfterStop) {
+  CreateAudioRtpSender();
+  rtc::scoped_refptr<FrameEncryptorInterface> fake_frame_encryptor(
+      new FakeFrameEncryptor());
+  EXPECT_EQ(nullptr, audio_rtp_sender_->GetFrameEncryptor());
+  audio_rtp_sender_->Stop();
+  audio_rtp_sender_->SetFrameEncryptor(fake_frame_encryptor);
+  // TODO(webrtc:9926) - Validate media channel not set once fakes updated.
+}
+
 // Validate that the default FrameEncryptor setting is nullptr.
 TEST_F(RtpSenderReceiverTest, AudioReceiverCanSetFrameDecryptor) {
   CreateAudioRtpReceiver();
@@ -1433,6 +1445,62 @@ TEST_F(RtpSenderReceiverTest, AudioReceiverCanSetFrameDecryptor) {
   audio_rtp_receiver_->SetFrameDecryptor(fake_frame_decryptor);
   EXPECT_EQ(fake_frame_decryptor.get(),
             audio_rtp_receiver_->GetFrameDecryptor().get());
+}
+
+// Validate that the default FrameEncryptor setting is nullptr.
+TEST_F(RtpSenderReceiverTest, AudioReceiverCannotSetFrameDecryptorAfterStop) {
+  CreateAudioRtpReceiver();
+  rtc::scoped_refptr<FrameDecryptorInterface> fake_frame_decryptor(
+      new FakeFrameDecryptor());
+  EXPECT_EQ(nullptr, audio_rtp_receiver_->GetFrameDecryptor());
+  audio_rtp_receiver_->Stop();
+  audio_rtp_receiver_->SetFrameDecryptor(fake_frame_decryptor);
+  // TODO(webrtc:9926) - Validate media channel not set once fakes updated.
+}
+
+// Validate that the default FrameEncryptor setting is nullptr.
+TEST_F(RtpSenderReceiverTest, VideoSenderCanSetFrameEncryptor) {
+  CreateVideoRtpSender();
+  rtc::scoped_refptr<FrameEncryptorInterface> fake_frame_encryptor(
+      new FakeFrameEncryptor());
+  EXPECT_EQ(nullptr, video_rtp_sender_->GetFrameEncryptor());
+  video_rtp_sender_->SetFrameEncryptor(fake_frame_encryptor);
+  EXPECT_EQ(fake_frame_encryptor.get(),
+            video_rtp_sender_->GetFrameEncryptor().get());
+}
+
+// Validate that setting a FrameEncryptor after the send stream is stopped does
+// nothing.
+TEST_F(RtpSenderReceiverTest, VideoSenderCannotSetFrameEncryptorAfterStop) {
+  CreateVideoRtpSender();
+  rtc::scoped_refptr<FrameEncryptorInterface> fake_frame_encryptor(
+      new FakeFrameEncryptor());
+  EXPECT_EQ(nullptr, video_rtp_sender_->GetFrameEncryptor());
+  video_rtp_sender_->Stop();
+  video_rtp_sender_->SetFrameEncryptor(fake_frame_encryptor);
+  // TODO(webrtc:9926) - Validate media channel not set once fakes updated.
+}
+
+// Validate that the default FrameEncryptor setting is nullptr.
+TEST_F(RtpSenderReceiverTest, VideoReceiverCanSetFrameDecryptor) {
+  CreateVideoRtpReceiver();
+  rtc::scoped_refptr<FrameDecryptorInterface> fake_frame_decryptor(
+      new FakeFrameDecryptor());
+  EXPECT_EQ(nullptr, video_rtp_receiver_->GetFrameDecryptor());
+  video_rtp_receiver_->SetFrameDecryptor(fake_frame_decryptor);
+  EXPECT_EQ(fake_frame_decryptor.get(),
+            video_rtp_receiver_->GetFrameDecryptor().get());
+}
+
+// Validate that the default FrameEncryptor setting is nullptr.
+TEST_F(RtpSenderReceiverTest, VideoReceiverCannotSetFrameDecryptorAfterStop) {
+  CreateVideoRtpReceiver();
+  rtc::scoped_refptr<FrameDecryptorInterface> fake_frame_decryptor(
+      new FakeFrameDecryptor());
+  EXPECT_EQ(nullptr, video_rtp_receiver_->GetFrameDecryptor());
+  video_rtp_receiver_->Stop();
+  video_rtp_receiver_->SetFrameDecryptor(fake_frame_decryptor);
+  // TODO(webrtc:9926) - Validate media channel not set once fakes updated.
 }
 
 }  // namespace webrtc

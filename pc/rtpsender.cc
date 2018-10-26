@@ -72,8 +72,9 @@ void MaybeAttachFrameEncryptorToMediaChannel(
     const uint32_t ssrc,
     rtc::Thread* worker_thread,
     rtc::scoped_refptr<webrtc::FrameEncryptorInterface> frame_encryptor,
-    cricket::MediaChannel* media_channel) {
-  if (media_channel && frame_encryptor && ssrc) {
+    cricket::MediaChannel* media_channel,
+    bool stopped) {
+  if (media_channel && frame_encryptor && ssrc && !stopped) {
     worker_thread->Invoke<void>(RTC_FROM_HERE, [&] {
       media_channel->SetFrameEncryptor(ssrc, frame_encryptor);
     });
@@ -307,7 +308,7 @@ void AudioRtpSender::SetFrameEncryptor(
     rtc::scoped_refptr<FrameEncryptorInterface> frame_encryptor) {
   frame_encryptor_ = std::move(frame_encryptor);
   // Special Case: Set the frame encryptor to any value on any existing channel.
-  if (media_channel_ && ssrc_) {
+  if (media_channel_ && ssrc_ && !stopped_) {
     worker_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
       media_channel_->SetFrameEncryptor(ssrc_, frame_encryptor_);
     });
@@ -361,8 +362,8 @@ void AudioRtpSender::SetSsrc(uint32_t ssrc) {
     });
   }
   // Each time there is an ssrc update.
-  MaybeAttachFrameEncryptorToMediaChannel(ssrc_, worker_thread_,
-                                          frame_encryptor_, media_channel_);
+  MaybeAttachFrameEncryptorToMediaChannel(
+      ssrc_, worker_thread_, frame_encryptor_, media_channel_, stopped_);
 }
 
 void AudioRtpSender::Stop() {
@@ -563,7 +564,7 @@ void VideoRtpSender::SetFrameEncryptor(
     rtc::scoped_refptr<FrameEncryptorInterface> frame_encryptor) {
   frame_encryptor_ = std::move(frame_encryptor);
   // Special Case: Set the frame encryptor to any value on any existing channel.
-  if (media_channel_ && ssrc_) {
+  if (media_channel_ && ssrc_ && !stopped_) {
     worker_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
       media_channel_->SetFrameEncryptor(ssrc_, frame_encryptor_);
     });
@@ -610,8 +611,8 @@ void VideoRtpSender::SetSsrc(uint32_t ssrc) {
       init_parameters_.encodings.clear();
     });
   }
-  MaybeAttachFrameEncryptorToMediaChannel(ssrc_, worker_thread_,
-                                          frame_encryptor_, media_channel_);
+  MaybeAttachFrameEncryptorToMediaChannel(
+      ssrc_, worker_thread_, frame_encryptor_, media_channel_, stopped_);
 }
 
 void VideoRtpSender::Stop() {

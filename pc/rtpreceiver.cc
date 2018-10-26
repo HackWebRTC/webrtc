@@ -50,8 +50,9 @@ void MaybeAttachFrameDecryptorToMediaChannel(
     const absl::optional<uint32_t>& ssrc,
     rtc::Thread* worker_thread,
     rtc::scoped_refptr<webrtc::FrameDecryptorInterface> frame_decryptor,
-    cricket::MediaChannel* media_channel) {
-  if (media_channel && frame_decryptor && ssrc.has_value()) {
+    cricket::MediaChannel* media_channel,
+    bool stopped) {
+  if (media_channel && frame_decryptor && ssrc.has_value() && !stopped) {
     worker_thread->Invoke<void>(RTC_FROM_HERE, [&] {
       media_channel->SetFrameDecryptor(*ssrc, frame_decryptor);
     });
@@ -157,7 +158,7 @@ void AudioRtpReceiver::SetFrameDecryptor(
     rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor) {
   frame_decryptor_ = std::move(frame_decryptor);
   // Special Case: Set the frame decryptor to any value on any existing channel.
-  if (media_channel_ && ssrc_.has_value()) {
+  if (media_channel_ && ssrc_.has_value() && !stopped_) {
     worker_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
       media_channel_->SetFrameDecryptor(*ssrc_, frame_decryptor_);
     });
@@ -255,8 +256,8 @@ void AudioRtpReceiver::Reconfigure() {
     RTC_NOTREACHED();
   }
   // Reattach the frame decryptor if we were reconfigured.
-  MaybeAttachFrameDecryptorToMediaChannel(ssrc_, worker_thread_,
-                                          frame_decryptor_, media_channel_);
+  MaybeAttachFrameDecryptorToMediaChannel(
+      ssrc_, worker_thread_, frame_decryptor_, media_channel_, stopped_);
 }
 
 void AudioRtpReceiver::SetObserver(RtpReceiverObserverInterface* observer) {
@@ -351,7 +352,7 @@ void VideoRtpReceiver::SetFrameDecryptor(
     rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor) {
   frame_decryptor_ = std::move(frame_decryptor);
   // Special Case: Set the frame decryptor to any value on any existing channel.
-  if (media_channel_ && ssrc_.has_value()) {
+  if (media_channel_ && ssrc_.has_value() && !stopped_) {
     worker_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
       media_channel_->SetFrameDecryptor(*ssrc_, frame_decryptor_);
     });
@@ -393,8 +394,8 @@ void VideoRtpReceiver::SetupMediaChannel(uint32_t ssrc) {
   ssrc_ = ssrc;
   SetSink(source_->sink());
   // Attach any existing frame decryptor to the media channel.
-  MaybeAttachFrameDecryptorToMediaChannel(ssrc_, worker_thread_,
-                                          frame_decryptor_, media_channel_);
+  MaybeAttachFrameDecryptorToMediaChannel(
+      ssrc_, worker_thread_, frame_decryptor_, media_channel_, stopped_);
 }
 
 void VideoRtpReceiver::set_stream_ids(std::vector<std::string> stream_ids) {
