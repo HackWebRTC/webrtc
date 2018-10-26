@@ -47,6 +47,10 @@ CongestionWindowPushbackController::CongestionWindowPushbackController() {
   }
 }
 
+CongestionWindowPushbackController::CongestionWindowPushbackController(
+    uint32_t min_pushback_target_bitrate_bps)
+    : min_pushback_target_bitrate_bps_(min_pushback_target_bitrate_bps) {}
+
 void CongestionWindowPushbackController::UpdateOutstandingData(
     size_t outstanding_bytes) {
   outstanding_bytes_ = outstanding_bytes;

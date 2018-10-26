@@ -164,6 +164,23 @@ SendSideCongestionController::SendSideCongestionController(
 
 SendSideCongestionController::~SendSideCongestionController() {}
 
+void SendSideCongestionController::EnableCongestionWindowPushback(
+    int64_t accepted_queue_ms,
+    uint32_t min_pushback_target_bitrate_bps) {
+  RTC_DCHECK(!congestion_window_pushback_controller_)
+      << "The congestion pushback is already enabled.";
+  RTC_CHECK_GE(accepted_queue_ms, 0)
+      << "Accepted must be greater than or equal to 0.";
+  RTC_CHECK_GE(min_pushback_target_bitrate_bps, 0)
+      << "Min pushback target bitrate must be greater than or equal to 0.";
+
+  in_cwnd_experiment_ = true;
+  accepted_queue_ms_ = accepted_queue_ms;
+  congestion_window_pushback_controller_ =
+      absl::make_unique<CongestionWindowPushbackController>(
+          min_pushback_target_bitrate_bps);
+}
+
 void SendSideCongestionController::RegisterPacketFeedbackObserver(
     PacketFeedbackObserver* observer) {
   transport_feedback_adapter_.RegisterPacketFeedbackObserver(observer);

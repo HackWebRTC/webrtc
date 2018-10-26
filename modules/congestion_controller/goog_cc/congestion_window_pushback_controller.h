@@ -23,6 +23,8 @@ namespace webrtc {
 class CongestionWindowPushbackController {
  public:
   CongestionWindowPushbackController();
+  explicit CongestionWindowPushbackController(
+      uint32_t min_pushback_target_bitrate_bps);
   void UpdateOutstandingData(size_t outstanding_bytes);
   void UpdateMaxOutstandingData(size_t max_outstanding_bytes);
   uint32_t UpdateTargetBitrate(uint32_t bitrate_bps);

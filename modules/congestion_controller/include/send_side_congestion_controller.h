@@ -113,6 +113,9 @@ class SendSideCongestionController
 
   void SetAllocatedBitrateWithoutFeedback(uint32_t bitrate_bps) override;
 
+  void EnableCongestionWindowPushback(int64_t accepted_queue_ms,
+                                      uint32_t min_pushback_target_bitrate_bps);
+
  private:
   void MaybeTriggerOnNetworkChanged();
 
@@ -161,7 +164,7 @@ class SendSideCongestionController
   bool pacer_pushback_experiment_ = false;
   float encoding_rate_ = 1.0;
 
-  const std::unique_ptr<CongestionWindowPushbackController>
+  std::unique_ptr<CongestionWindowPushbackController>
       congestion_window_pushback_controller_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(SendSideCongestionController);
