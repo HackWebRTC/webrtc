@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "api/test/video/function_video_encoder_factory.h"
 #include "media/engine/internaldecoderfactory.h"
 #include "media/engine/internalencoderfactory.h"
 #include "modules/video_coding/codecs/h264/include/h264.h"
@@ -18,7 +19,6 @@
 #include "test/call_test.h"
 #include "test/encoder_settings.h"
 #include "test/field_trial.h"
-#include "test/function_video_encoder_factory.h"
 #include "test/gtest.h"
 
 namespace webrtc {

@@ -13,6 +13,8 @@
 #include <memory>
 #include <vector>
 
+#include "api/test/video/function_video_decoder_factory.h"
+#include "api/test/video/function_video_encoder_factory.h"
 #include "call/call.h"
 #include "call/rtp_transport_controller_send.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
@@ -22,8 +24,6 @@
 #include "test/fake_videorenderer.h"
 #include "test/fake_vp8_encoder.h"
 #include "test/frame_generator_capturer.h"
-#include "test/function_video_decoder_factory.h"
-#include "test/function_video_encoder_factory.h"
 #include "test/rtp_rtcp_observer.h"
 #include "test/single_threaded_task_queue.h"
 

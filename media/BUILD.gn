@@ -537,6 +537,7 @@ if (rtc_include_tests) {
       ":rtc_audio_video",
       ":rtc_constants",
       ":rtc_data",
+      "../api/test/video:function_video_factory",
       "../api/units:time_delta",
       "../api/video:video_frame_i420",
       "../modules/audio_processing:mocks",
@@ -549,7 +550,6 @@ if (rtc_include_tests) {
       "../rtc_base:rtc_task_queue",
       "../rtc_base:stringutils",
       "../test:field_trial",
-      "../test:test_common",
       "//third_party/abseil-cpp/absl/memory",
     ]
     sources = [

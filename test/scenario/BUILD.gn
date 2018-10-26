@@ -42,6 +42,7 @@ if (rtc_include_tests) {
       "../../api:transport_api",
       "../../api/audio_codecs:builtin_audio_decoder_factory",
       "../../api/audio_codecs:builtin_audio_encoder_factory",
+      "../../api/test/video:function_video_factory",
       "../../api/units:data_rate",
       "../../api/units:time_delta",
       "../../api/units:timestamp",

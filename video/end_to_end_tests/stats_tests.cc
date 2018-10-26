@@ -9,6 +9,7 @@
  */
 
 #include "api/test/simulated_network.h"
+#include "api/test/video/function_video_encoder_factory.h"
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
 #include "modules/rtp_rtcp/source/rtp_utility.h"
@@ -18,7 +19,6 @@
 #include "system_wrappers/include/sleep.h"
 #include "test/call_test.h"
 #include "test/fake_encoder.h"
-#include "test/function_video_encoder_factory.h"
 #include "test/gtest.h"
 #include "test/rtcp_packet_parser.h"
 

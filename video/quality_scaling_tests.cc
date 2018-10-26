@@ -10,6 +10,7 @@
 
 #include <string>
 
+#include "api/test/video/function_video_encoder_factory.h"
 #include "media/engine/internalencoderfactory.h"
 #include "modules/video_coding/codecs/h264/include/h264.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
@@ -17,7 +18,6 @@
 #include "test/call_test.h"
 #include "test/field_trial.h"
 #include "test/frame_generator_capturer.h"
-#include "test/function_video_encoder_factory.h"
 
 namespace webrtc {
 namespace {

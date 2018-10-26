@@ -15,6 +15,7 @@
 #include <memory>
 #include <sstream>
 
+#include "api/test/video/function_video_decoder_factory.h"
 #include "api/video_codecs/video_decoder.h"
 #include "call/call.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
@@ -32,7 +33,6 @@
 #include "test/call_test.h"
 #include "test/encoder_settings.h"
 #include "test/fake_decoder.h"
-#include "test/function_video_decoder_factory.h"
 #include "test/gtest.h"
 #include "test/null_transport.h"
 #include "test/rtp_file_reader.h"

@@ -14,11 +14,11 @@
 #include "absl/memory/memory.h"
 #include "api/test/create_simulcast_test_fixture.h"
 #include "api/test/simulcast_test_fixture.h"
+#include "api/test/video/function_video_decoder_factory.h"
+#include "api/test/video/function_video_encoder_factory.h"
 #include "modules/video_coding/utility/simulcast_test_fixture_impl.h"
 #include "test/fake_vp8_decoder.h"
 #include "test/fake_vp8_encoder.h"
-#include "test/function_video_decoder_factory.h"
-#include "test/function_video_encoder_factory.h"
 
 namespace webrtc {
 namespace test {

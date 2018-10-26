@@ -353,6 +353,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       "..:webrtc_common",
+      "../api/test/video:function_video_factory",
       "../api/video_codecs:video_codecs_api",
       "../call:call_interfaces",
       "../common_video",
@@ -426,6 +427,7 @@ if (rtc_include_tests) {
       ":video_mocks",
       ":video_stream_encoder_impl",
       "../api:simulated_network_api",
+      "../api/test/video:function_video_factory",
       "../api/video:encoded_image",
       "../api/video:video_frame",
       "../api/video:video_frame_i420",

@@ -9,13 +9,13 @@
  */
 
 #include "api/test/simulated_network.h"
+#include "api/test/video/function_video_encoder_factory.h"
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/call_test.h"
 #include "test/field_trial.h"
-#include "test/function_video_encoder_factory.h"
 #include "test/gtest.h"
 #include "test/rtcp_packet_parser.h"
 

@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "api/test/simulated_network.h"
+#include "api/test/video/function_video_encoder_factory.h"
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
@@ -22,7 +23,6 @@
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "test/call_test.h"
 #include "test/encoder_settings.h"
-#include "test/function_video_encoder_factory.h"
 
 namespace webrtc {
 

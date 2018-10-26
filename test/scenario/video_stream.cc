@@ -12,13 +12,13 @@
 #include <algorithm>
 #include <utility>
 
+#include "api/test/video/function_video_encoder_factory.h"
 #include "media/base/mediaconstants.h"
 #include "media/engine/internaldecoderfactory.h"
 #include "media/engine/internalencoderfactory.h"
 #include "media/engine/webrtcvideoengine.h"
 #include "test/call_test.h"
 #include "test/fake_encoder.h"
-#include "test/function_video_encoder_factory.h"
 #include "test/scenario/hardware_codecs.h"
 #include "test/testsupport/fileutils.h"
 
