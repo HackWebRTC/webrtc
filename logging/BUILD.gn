@@ -160,6 +160,8 @@ rtc_static_library("rtc_event_log_impl_encoder") {
     "rtc_event_log/encoder/blob_encoding.h",
     "rtc_event_log/encoder/delta_encoding.cc",
     "rtc_event_log/encoder/delta_encoding.h",
+    "rtc_event_log/encoder/varint.cc",
+    "rtc_event_log/encoder/varint.h",
   ]
 
   defines = []

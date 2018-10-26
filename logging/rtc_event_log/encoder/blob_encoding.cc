@@ -12,62 +12,10 @@
 
 #include <algorithm>
 
+#include "logging/rtc_event_log/encoder/varint.h"
 #include "rtc_base/logging.h"
 
 namespace webrtc {
-
-const size_t kMaxVarIntLengthBytes = 10;  // ceil(64 / 7.0) is 10.
-
-namespace {
-
-// Encode a given uint64_t as a varint. From least to most significant,
-// each batch of seven bits are put into the lower bits of a byte, and the last
-// remaining bit in that byte (the highest one) marks whether additional bytes
-// follow (which happens if and only if there are other bits in |input| which
-// are non-zero).
-// Notes: If input == 0, one byte is used. If input is uint64_t::max, exactly
-// kMaxVarIntLengthBytes are used.
-std::string EncodeVarInt(uint64_t input) {
-  std::string output;
-  output.reserve(kMaxVarIntLengthBytes);
-
-  do {
-    uint8_t byte = static_cast<uint8_t>(input & 0x7f);
-    input >>= 7;
-    if (input > 0) {
-      byte |= 0x80;
-    }
-    output += byte;
-  } while (input > 0);
-
-  RTC_DCHECK_GE(output.size(), 1u);
-  RTC_DCHECK_LE(output.size(), kMaxVarIntLengthBytes);
-
-  return output;
-}
-
-// Inverse of EncodeVarInt().
-// If decoding is successful, a non-zero number is returned, indicating the
-// number of bytes read from |input|, and the decoded varint is written
-// into |output|.
-// If not successful, 0 is returned, and |output| is not modified.
-size_t DecodeVarInt(absl::string_view input, uint64_t* output) {
-  RTC_DCHECK(output);
-
-  uint64_t decoded = 0;
-  for (size_t i = 0; i < input.length() && i < kMaxVarIntLengthBytes; ++i) {
-    decoded += (static_cast<uint64_t>(input[i] & 0x7f)
-                << static_cast<uint64_t>(7 * i));
-    if (!(input[i] & 0x80)) {
-      *output = decoded;
-      return i + 1;
-    }
-  }
-
-  return 0;
-}
-
-}  // namespace
 
 std::string EncodeBlobs(const std::vector<std::string>& blobs) {
   RTC_DCHECK(!blobs.empty());

@@ -10,6 +10,7 @@
 
 #include "logging/rtc_event_log/encoder/delta_encoding.h"
 
+#include <algorithm>
 #include <limits>
 #include <numeric>
 #include <string>
@@ -157,21 +158,32 @@ std::vector<absl::optional<uint64_t>> CreateSequenceByDeltas(
 
 // Tests of the delta encoding, parameterized by the number of values
 // in the sequence created by the test.
-class DeltaEncodingTest : public ::testing::TestWithParam<
-                              std::tuple<DeltaSignedness, size_t, bool>> {
+class DeltaEncodingTest
+    : public ::testing::TestWithParam<
+          std::tuple<DeltaSignedness, size_t, bool, uint64_t>> {
  public:
   DeltaEncodingTest()
       : signedness_(std::get<0>(GetParam())),
         num_of_values_(std::get<1>(GetParam())),
-        optional_values_(std::get<2>(GetParam())) {
+        optional_values_(std::get<2>(GetParam())),
+        partial_random_seed_(std::get<3>(GetParam())) {
     MaybeSetSignedness(signedness_);
   }
 
   ~DeltaEncodingTest() override = default;
 
+  // Running with the same seed for all variants would make all tests start
+  // with the same sequence; avoid this by making the seed different.
+  uint64_t Seed() const {
+    // Multiply everything but by different primes to produce unique results.
+    return 2 * static_cast<uint64_t>(signedness_) + 3 * num_of_values_ +
+           5 * optional_values_ + 7 * partial_random_seed_;
+  }
+
   const DeltaSignedness signedness_;
   const uint64_t num_of_values_;
   const bool optional_values_;
+  const uint64_t partial_random_seed_;  // Explained where it's used.
 };
 
 TEST_P(DeltaEncodingTest, AllValuesEqualToExistentBaseValue) {
@@ -200,6 +212,36 @@ TEST_P(DeltaEncodingTest, AllValuesEqualToNonExistentBaseValue) {
   // Additional requirement - the encoding should be efficient in this
   // case - the empty string will be used.
   EXPECT_TRUE(encoded.empty());
+}
+
+TEST_P(DeltaEncodingTest, BaseNonExistentButSomeOtherValuesExist) {
+  if (!optional_values_) {
+    return;  // Test irrelevant for this case.
+  }
+
+  const absl::optional<uint64_t> base;
+  std::vector<absl::optional<uint64_t>> values(num_of_values_);
+
+  Random prng(Seed());
+
+  const uint64_t max_bit_width = 1 + prng.Rand(63);  // [1, 64]
+
+  for (size_t i = 0; i < values.size();) {
+    // Leave a random number of values as non-existent.
+    const size_t non_existent_count = prng.Rand(values.size() - i - 1);
+    i += non_existent_count;
+
+    // Assign random values to a random number of values. (At least one, to
+    // prevent this iteration of the outer loop from being a no-op.)
+    const size_t existent_count =
+        std::max<size_t>(prng.Rand(values.size() - i - 1), 1);
+    for (size_t j = 0; j < existent_count; ++j) {
+      values[i + j] = RandomWithMaxBitWidth(&prng, max_bit_width);
+    }
+    i += existent_count;
+  }
+
+  TestEncodingAndDecoding(base, values);
 }
 
 TEST_P(DeltaEncodingTest, MinDeltaNoWrapAround) {
@@ -408,18 +450,20 @@ INSTANTIATE_TEST_CASE_P(
                                          DeltaSignedness::kForceUnsigned,
                                          DeltaSignedness::kForceSigned),
                        ::testing::Values(1, 2, 100, 10000),
-                       ::testing::Bool()));
+                       ::testing::Bool(),
+                       ::testing::Values(10, 20, 30)));
 
 // Tests over the quality of the compression (as opposed to its correctness).
 // Not to be confused with tests of runtime efficiency.
 class DeltaEncodingCompressionQualityTest
     : public ::testing::TestWithParam<
-          std::tuple<DeltaSignedness, uint64_t, uint64_t>> {
+          std::tuple<DeltaSignedness, uint64_t, uint64_t, uint64_t>> {
  public:
   DeltaEncodingCompressionQualityTest()
       : signedness_(std::get<0>(GetParam())),
         delta_max_bit_width_(std::get<1>(GetParam())),
-        num_of_values_(std::get<2>(GetParam())) {
+        num_of_values_(std::get<2>(GetParam())),
+        partial_random_seed_(std::get<3>(GetParam())) {
     MaybeSetSignedness(signedness_);
   }
 
@@ -428,17 +472,16 @@ class DeltaEncodingCompressionQualityTest
   // Running with the same seed for all variants would make all tests start
   // with the same sequence; avoid this by making the seed different.
   uint64_t Seed() const {
-    constexpr uint64_t non_zero_base_seed = 3012;
-    // Multiply everything but |non_zero_base_seed| by different prime numbers
-    // to produce unique results.
-    return non_zero_base_seed + 2 * static_cast<uint64_t>(signedness_) +
-           3 * delta_max_bit_width_ + 5 * delta_max_bit_width_ +
-           7 * num_of_values_;
+    // Multiply everything but by different primes to produce unique results.
+    return 2 * static_cast<uint64_t>(signedness_) + 3 * delta_max_bit_width_ +
+           5 * delta_max_bit_width_ + 7 * num_of_values_ +
+           11 * partial_random_seed_;
   }
 
   const DeltaSignedness signedness_;
   const uint64_t delta_max_bit_width_;
   const uint64_t num_of_values_;
+  const uint64_t partial_random_seed_;  // Explained where it's used.
 };
 
 // If no wrap-around occurs in the stream, the width of the values does not
@@ -520,19 +563,21 @@ INSTANTIATE_TEST_CASE_P(
                           DeltaSignedness::kForceUnsigned,
                           DeltaSignedness::kForceSigned),
         ::testing::Values(1, 4, 8, 15, 16, 17, 31, 32, 33, 63, 64),
-        ::testing::Values(1, 2, 100, 10000)));
+        ::testing::Values(1, 2, 100, 10000),
+        ::testing::Values(11, 12, 13)));
 
 // Similar to DeltaEncodingTest, but instead of semi-surgically producing
 // specific cases, produce large amount of semi-realistic inputs.
 class DeltaEncodingFuzzerLikeTest
     : public ::testing::TestWithParam<
-          std::tuple<DeltaSignedness, uint64_t, uint64_t, bool>> {
+          std::tuple<DeltaSignedness, uint64_t, uint64_t, bool, uint64_t>> {
  public:
   DeltaEncodingFuzzerLikeTest()
       : signedness_(std::get<0>(GetParam())),
         delta_max_bit_width_(std::get<1>(GetParam())),
         num_of_values_(std::get<2>(GetParam())),
-        optional_values_(std::get<3>(GetParam())) {
+        optional_values_(std::get<3>(GetParam())),
+        partial_random_seed_(std::get<4>(GetParam())) {
     MaybeSetSignedness(signedness_);
   }
 
@@ -541,18 +586,18 @@ class DeltaEncodingFuzzerLikeTest
   // Running with the same seed for all variants would make all tests start
   // with the same sequence; avoid this by making the seed different.
   uint64_t Seed() const {
-    constexpr uint64_t non_zero_base_seed = 1983;
-    // Multiply everything but |non_zero_base_seed| by different prime numbers
-    // to produce unique results.
-    return non_zero_base_seed + 2 * static_cast<uint64_t>(signedness_) +
-           3 * delta_max_bit_width_ + 5 * delta_max_bit_width_ +
-           7 * num_of_values_ + 11 * static_cast<uint64_t>(optional_values_);
+    // Multiply everything but by different primes to produce unique results.
+    return 2 * static_cast<uint64_t>(signedness_) + 3 * delta_max_bit_width_ +
+           5 * delta_max_bit_width_ + 7 * num_of_values_ +
+           11 * static_cast<uint64_t>(optional_values_) +
+           13 * partial_random_seed_;
   }
 
   const DeltaSignedness signedness_;
   const uint64_t delta_max_bit_width_;
   const uint64_t num_of_values_;
   const bool optional_values_;
+  const uint64_t partial_random_seed_;  // Explained where it's used.
 };
 
 TEST_P(DeltaEncodingFuzzerLikeTest, Test) {
@@ -580,7 +625,8 @@ INSTANTIATE_TEST_CASE_P(
                           DeltaSignedness::kForceSigned),
         ::testing::Values(1, 4, 8, 15, 16, 17, 31, 32, 33, 63, 64),
         ::testing::Values(1, 2, 100, 10000),
-        ::testing::Bool()));
+        ::testing::Bool(),
+        ::testing::Values(21, 22, 23)));
 
 class DeltaEncodingSpecificEdgeCasesTest
     : public ::testing::TestWithParam<

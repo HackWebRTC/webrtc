@@ -18,8 +18,6 @@
 
 namespace webrtc {
 
-extern const size_t kMaxVarIntLengthBytes;
-
 // Encode/decode a sequence of strings, whose length is not known to be
 // discernable from the blob itself (i.e. without being transmitted OOB),
 // in a way that would allow us to separate them again on the decoding side.

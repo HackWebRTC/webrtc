@@ -16,6 +16,7 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
+#include "logging/rtc_event_log/encoder/varint.h"
 #include "rtc_base/bitbuffer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructormagic.h"
@@ -122,6 +123,13 @@ class BitWriter final {
     const bool success = bit_writer_.WriteBits(val, bit_count);
     RTC_DCHECK(success);
     written_bits_ += bit_count;
+  }
+
+  void WriteBits(const std::string& input) {
+    RTC_DCHECK(valid_);
+    for (std::string::value_type c : input) {
+      WriteBits(c, 8 * sizeof(std::string::value_type));
+    }
   }
 
   // Returns everything that was written so far.
@@ -233,7 +241,7 @@ class FixedLengthDeltaEncoder final {
   // Calculate min/max values of unsigned/signed deltas, given the bit width
   // of all the values in the series.
   static void CalculateMinAndMaxDeltas(
-      uint64_t base,
+      absl::optional<uint64_t> base,
       const std::vector<absl::optional<uint64_t>>& values,
       uint64_t bit_width,
       uint64_t* max_unsigned_delta,
@@ -310,21 +318,21 @@ std::string FixedLengthDeltaEncoder::EncodeDeltas(
     return std::string();
   }
 
-  const uint64_t base_val = base.value_or(0u);
-
   bool non_decreasing = true;
-  uint64_t max_value_including_base = base_val;
-  uint64_t previous = base_val;
+  uint64_t max_value_including_base = base.value_or(0u);
   size_t existent_values_count = 0;
-  for (size_t i = 0; i < values.size(); ++i) {
-    if (!values[i].has_value()) {
-      continue;
+  {
+    uint64_t previous = base.value_or(0u);
+    for (size_t i = 0; i < values.size(); ++i) {
+      if (!values[i].has_value()) {
+        continue;
+      }
+      ++existent_values_count;
+      non_decreasing &= (previous <= values[i].value());
+      max_value_including_base =
+          std::max(max_value_including_base, values[i].value());
+      previous = values[i].value();
     }
-    ++existent_values_count;
-    non_decreasing &= (previous <= values[i].value());
-    max_value_including_base =
-        std::max(max_value_including_base, values[i].value());
-    previous = values[i].value();
   }
 
   // If the sequence is non-decreasing, it may be assumed to have width = 64;
@@ -335,9 +343,8 @@ std::string FixedLengthDeltaEncoder::EncodeDeltas(
   uint64_t max_unsigned_delta;
   uint64_t max_pos_signed_delta;
   uint64_t min_neg_signed_delta;
-  CalculateMinAndMaxDeltas(base_val, values, value_width_bits,
-                           &max_unsigned_delta, &max_pos_signed_delta,
-                           &min_neg_signed_delta);
+  CalculateMinAndMaxDeltas(base, values, value_width_bits, &max_unsigned_delta,
+                           &max_pos_signed_delta, &min_neg_signed_delta);
 
   const uint64_t delta_width_bits_unsigned =
       UnsignedBitWidth(max_unsigned_delta);
@@ -350,7 +357,8 @@ std::string FixedLengthDeltaEncoder::EncodeDeltas(
   const uint64_t delta_width_bits =
       signed_deltas ? delta_width_bits_signed : delta_width_bits_unsigned;
 
-  const bool values_optional = (existent_values_count < values.size());
+  const bool values_optional =
+      !base.has_value() || (existent_values_count < values.size());
 
   FixedLengthEncodingParameters params(delta_width_bits, signed_deltas,
                                        values_optional, value_width_bits);
@@ -364,7 +372,7 @@ std::string FixedLengthDeltaEncoder::EncodeDeltas(
 }
 
 void FixedLengthDeltaEncoder::CalculateMinAndMaxDeltas(
-    uint64_t base,
+    absl::optional<uint64_t> base,
     const std::vector<absl::optional<uint64_t>>& values,
     uint64_t bit_width,
     uint64_t* max_unsigned_delta_out,
@@ -381,16 +389,24 @@ void FixedLengthDeltaEncoder::CalculateMinAndMaxDeltas(
   uint64_t max_pos_signed_delta = 0;
   uint64_t min_neg_signed_delta = 0;
 
-  uint64_t prev = base;
+  absl::optional<uint64_t> prev = base;
   for (size_t i = 0; i < values.size(); ++i) {
     if (!values[i].has_value()) {
       continue;
     }
 
+    if (!prev.has_value()) {
+      // If the base is non-existent, the first existent value is encoded as
+      // a varint, rather than as a delta.
+      RTC_DCHECK(!base.has_value());
+      prev = values[i];
+      continue;
+    }
+
     const uint64_t current = values[i].value();
 
-    const uint64_t forward_delta = UnsignedDelta(prev, current, bit_mask);
-    const uint64_t backward_delta = UnsignedDelta(current, prev, bit_mask);
+    const uint64_t forward_delta = UnsignedDelta(*prev, current, bit_mask);
+    const uint64_t backward_delta = UnsignedDelta(current, *prev, bit_mask);
 
     max_unsigned_delta = std::max(max_unsigned_delta, forward_delta);
 
@@ -444,14 +460,23 @@ std::string FixedLengthDeltaEncoder::Encode() {
     }
   }
 
-  uint64_t previous = base_.has_value() ? base_.value() : 0u;
+  absl::optional<uint64_t> previous = base_;
   for (absl::optional<uint64_t> value : values_) {
     if (!value.has_value()) {
       RTC_DCHECK(params_.values_optional());
       continue;
     }
-    EncodeDelta(previous, value.value());
-    previous = value.value();
+
+    if (!previous.has_value()) {
+      // If the base is non-existent, the first existent value is encoded as
+      // a varint, rather than as a delta.
+      RTC_DCHECK(!base_.has_value());
+      writer_->WriteBits(EncodeVarInt(value.value()));
+    } else {
+      EncodeDelta(previous.value(), value.value());
+    }
+
+    previous = value;
   }
 
   return writer_->GetString();
@@ -477,7 +502,9 @@ size_t FixedLengthDeltaEncoder::HeaderLengthBits() const {
 
 size_t FixedLengthDeltaEncoder::EncodedDeltasLengthBits(
     size_t existent_values_count) const {
-  if (params_.values_optional()) {
+  if (!params_.values_optional()) {
+    return values_.size() * params_.delta_width_bits();
+  } else {
     RTC_DCHECK_EQ(std::count_if(values_.begin(), values_.end(),
                                 [](absl::optional<uint64_t> val) {
                                   return val.has_value();
@@ -485,10 +512,16 @@ size_t FixedLengthDeltaEncoder::EncodedDeltasLengthBits(
                   existent_values_count);
     // One bit for each delta, to indicate if the value exists, and delta_width
     // for each existent value, to indicate the delta itself.
-    return (1 * values_.size()) +
-           (params_.delta_width_bits() * existent_values_count);
-  } else {
-    return values_.size() * params_.delta_width_bits();
+    // If base_ is non-existent, the first value (if any) is encoded as a varint
+    // rather than as a delta.
+    const size_t existence_bitmap_size_bits = 1 * values_.size();
+    const bool first_value_is_varint =
+        !base_.has_value() && existent_values_count >= 1;
+    const size_t first_value_varint_size_bits = 8 * kMaxVarIntLengthBytes;
+    const size_t deltas_count = existent_values_count - first_value_is_varint;
+    const size_t deltas_size_bits = deltas_count * params_.delta_width_bits();
+    return existence_bitmap_size_bits + first_value_varint_size_bits +
+           deltas_size_bits;
   }
 }
 
@@ -610,6 +643,11 @@ class FixedLengthDeltaDecoder final {
 
   // Perform the decoding using the parameters given to the ctor.
   std::vector<absl::optional<uint64_t>> Decode();
+
+  // Decode a varint and write it to |output|. Return value indicates success
+  // or failure. In case of failure, no guarantees are made about the contents
+  // of |output| or the results of additional reads.
+  bool ParseVarInt(uint64_t* output);
 
   // Attempt to parse a delta from the input reader.
   // Returns true/false for success/failure.
@@ -786,24 +824,42 @@ std::vector<absl::optional<uint64_t>> FixedLengthDeltaDecoder::Decode() {
     std::fill(existing_values.begin(), existing_values.end(), true);
   }
 
+  absl::optional<uint64_t> previous = base_;
   std::vector<absl::optional<uint64_t>> values(num_of_deltas_);
 
-  uint64_t previous = base_.has_value() ? base_.value() : 0u;
   for (size_t i = 0; i < num_of_deltas_; ++i) {
     if (!existing_values[i]) {
       RTC_DCHECK(params_.values_optional());
       continue;
     }
 
-    uint64_t delta;
-    if (!ParseDelta(&delta)) {
-      return std::vector<absl::optional<uint64_t>>();
+    if (!previous) {
+      // If the base is non-existent, the first existent value is encoded as
+      // a varint, rather than as a delta.
+      RTC_DCHECK(!base_.has_value());
+      uint64_t first_value;
+      if (!ParseVarInt(&first_value)) {
+        RTC_LOG(LS_WARNING) << "Failed to read first value.";
+        return std::vector<absl::optional<uint64_t>>();
+      }
+      values[i] = first_value;
+    } else {
+      uint64_t delta;
+      if (!ParseDelta(&delta)) {
+        return std::vector<absl::optional<uint64_t>>();
+      }
+      values[i] = ApplyDelta(previous.value(), delta);
     }
-    values[i] = ApplyDelta(previous, delta);
-    previous = values[i].value();
+
+    previous = values[i];
   }
 
   return values;
+}
+
+bool FixedLengthDeltaDecoder::ParseVarInt(uint64_t* output) {
+  RTC_DCHECK(reader_);
+  return DecodeVarInt(reader_.get(), output) != 0;
 }
 
 bool FixedLengthDeltaDecoder::ParseDelta(uint64_t* delta) {
