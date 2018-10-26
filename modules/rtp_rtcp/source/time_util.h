@@ -22,7 +22,14 @@ namespace webrtc {
 // difference of the passed values.
 // As a result TimeMicrosToNtp(rtc::TimeMicros()) doesn't guarantee to match
 // system time.
+// However, TimeMicrosToNtp Guarantees that returned NtpTime will be offsetted
+// from rtc::TimeMicros() by integral number of milliseconds.
+// Use NtpOffsetMs() to get that offset value.
 NtpTime TimeMicrosToNtp(int64_t time_us);
+
+// Difference between Ntp time and local relative time returned by
+// rtc::TimeMicros()
+int64_t NtpOffsetMs();
 
 // Converts NTP timestamp to RTP timestamp.
 inline uint32_t NtpToRtp(NtpTime ntp, uint32_t freq) {

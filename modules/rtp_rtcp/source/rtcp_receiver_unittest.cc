@@ -208,7 +208,8 @@ TEST_F(RtcpReceiverTest, InjectSrPacketCalculatesRTT) {
   EXPECT_EQ(
       -1, rtcp_receiver_.RTT(kSenderSsrc, &rtt_ms, nullptr, nullptr, nullptr));
 
-  uint32_t sent_ntp = CompactNtp(system_clock_.CurrentNtpTime());
+  uint32_t sent_ntp =
+      CompactNtp(TimeMicrosToNtp(system_clock_.TimeInMicroseconds()));
   system_clock_.AdvanceTimeMilliseconds(kRttMs + kDelayMs);
 
   rtcp::SenderReport sr;
@@ -238,7 +239,8 @@ TEST_F(RtcpReceiverTest, InjectSrPacketCalculatesNegativeRTTAsOne) {
   EXPECT_EQ(
       -1, rtcp_receiver_.RTT(kSenderSsrc, &rtt_ms, nullptr, nullptr, nullptr));
 
-  uint32_t sent_ntp = CompactNtp(system_clock_.CurrentNtpTime());
+  uint32_t sent_ntp =
+      CompactNtp(TimeMicrosToNtp(system_clock_.TimeInMicroseconds()));
   system_clock_.AdvanceTimeMilliseconds(kRttMs + kDelayMs);
 
   rtcp::SenderReport sr;
@@ -266,7 +268,8 @@ TEST_F(
   const uint32_t kDelayNtp = 123000;
   const int64_t kDelayMs = CompactNtpRttToMs(kDelayNtp);
 
-  uint32_t sent_ntp = CompactNtp(system_clock_.CurrentNtpTime());
+  uint32_t sent_ntp =
+      CompactNtp(TimeMicrosToNtp(system_clock_.TimeInMicroseconds()));
   system_clock_.AdvanceTimeMilliseconds(kRttMs + kDelayMs);
 
   rtcp::SenderReport sr;
@@ -737,7 +740,8 @@ TEST_F(RtcpReceiverTest, InjectExtendedReportsDlrrPacketWithSubBlock) {
 
   InjectRtcpPacket(xr);
 
-  uint32_t compact_ntp_now = CompactNtp(system_clock_.CurrentNtpTime());
+  uint32_t compact_ntp_now =
+      CompactNtp(TimeMicrosToNtp(system_clock_.TimeInMicroseconds()));
   EXPECT_TRUE(rtcp_receiver_.GetAndResetXrRrRtt(&rtt_ms));
   uint32_t rtt_ntp = compact_ntp_now - kDelay - kLastRR;
   EXPECT_NEAR(CompactNtpRttToMs(rtt_ntp), rtt_ms, 1);
@@ -756,7 +760,8 @@ TEST_F(RtcpReceiverTest, InjectExtendedReportsDlrrPacketWithMultipleSubBlocks) {
 
   InjectRtcpPacket(xr);
 
-  uint32_t compact_ntp_now = CompactNtp(system_clock_.CurrentNtpTime());
+  uint32_t compact_ntp_now =
+      CompactNtp(TimeMicrosToNtp(system_clock_.TimeInMicroseconds()));
   int64_t rtt_ms = 0;
   EXPECT_TRUE(rtcp_receiver_.GetAndResetXrRrRtt(&rtt_ms));
   uint32_t rtt_ntp = compact_ntp_now - kDelay - kLastRR;
@@ -818,7 +823,7 @@ TEST_F(RtcpReceiverTest, RttCalculatedAfterExtendedReportsDlrr) {
   const uint32_t kDelayNtp = rand.Rand(0, 0x7fffffff);
   const int64_t kDelayMs = CompactNtpRttToMs(kDelayNtp);
   rtcp_receiver_.SetRtcpXrRrtrStatus(true);
-  NtpTime now = system_clock_.CurrentNtpTime();
+  NtpTime now = TimeMicrosToNtp(system_clock_.TimeInMicroseconds());
   uint32_t sent_ntp = CompactNtp(now);
   system_clock_.AdvanceTimeMilliseconds(kRttMs + kDelayMs);
 
@@ -838,7 +843,7 @@ TEST_F(RtcpReceiverTest, XrDlrrCalculatesNegativeRttAsOne) {
   const int64_t kRttMs = rand.Rand(-3600 * 1000, -1);
   const uint32_t kDelayNtp = rand.Rand(0, 0x7fffffff);
   const int64_t kDelayMs = CompactNtpRttToMs(kDelayNtp);
-  NtpTime now = system_clock_.CurrentNtpTime();
+  NtpTime now = TimeMicrosToNtp(system_clock_.TimeInMicroseconds());
   uint32_t sent_ntp = CompactNtp(now);
   system_clock_.AdvanceTimeMilliseconds(kRttMs + kDelayMs);
   rtcp_receiver_.SetRtcpXrRrtrStatus(true);
