@@ -90,7 +90,7 @@ class SSLCertificate {
 // SSLCertChain is a simple wrapper for a vector of SSLCertificates. It serves
 // primarily to ensure proper memory management (especially deletion) of the
 // SSLCertificate pointers.
-class SSLCertChain {
+class SSLCertChain final {
  public:
   explicit SSLCertChain(std::unique_ptr<SSLCertificate> single_cert);
   explicit SSLCertChain(std::vector<std::unique_ptr<SSLCertificate>> certs);
