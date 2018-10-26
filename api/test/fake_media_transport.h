@@ -49,6 +49,9 @@ class FakeMediaTransport : public MediaTransportInterface {
   // Returns true if fake media trasport was created as a caller.
   bool is_caller() const { return is_caller_; }
 
+  void SetTargetTransferRateObserver(
+      webrtc::TargetTransferRateObserver* observer) override {}
+
  private:
   const bool is_caller_;
 };

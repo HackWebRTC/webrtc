@@ -17,6 +17,7 @@
 #ifndef API_MEDIA_TRANSPORT_INTERFACE_H_
 #define API_MEDIA_TRANSPORT_INTERFACE_H_
 
+#include <api/transport/network_control.h>
 #include <memory>
 #include <string>
 #include <utility>
@@ -240,8 +241,14 @@ class MediaTransportInterface {
   // pass a nullptr.
   virtual void SetReceiveVideoSink(MediaTransportVideoSinkInterface* sink) = 0;
 
+  // Sets a target bitrate observer. Before media transport is destructed
+  // the observer must be unregistered (set to nullptr).
+  // A newly registered observer will be called back with the latest recorded
+  // target rate, if available.
+  virtual void SetTargetTransferRateObserver(
+      webrtc::TargetTransferRateObserver* observer) = 0;
+
   // TODO(sukhanov): RtcEventLogs.
-  // TODO(sukhanov): Bandwidth updates.
 };
 
 // If media transport factory is set in peer connection factory, it will be

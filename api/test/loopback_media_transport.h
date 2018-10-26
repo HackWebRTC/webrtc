@@ -61,6 +61,9 @@ class MediaTransportPair {
 
     void SetReceiveVideoSink(MediaTransportVideoSinkInterface* sink) override {}
 
+    void SetTargetTransferRateObserver(
+        webrtc::TargetTransferRateObserver* observer) override {}
+
    private:
     void OnData(uint64_t channel_id, MediaTransportEncodedAudioFrame frame) {
       if (sink_) {
