@@ -231,7 +231,8 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
     CreateSendConfig(1, 0, 0, video_send_transport.get());
     CreateMatchingReceiveConfigs(receive_transport.get());
 
-    AudioSendStream::Config audio_send_config(audio_send_transport.get());
+    AudioSendStream::Config audio_send_config(audio_send_transport.get(),
+                                              /*media_transport=*/nullptr);
     audio_send_config.rtp.ssrc = kAudioSendSsrc;
     audio_send_config.send_codec_spec = AudioSendStream::Config::SendCodecSpec(
         kAudioSendPayloadType, {"ISAC", 16000, 1});

@@ -67,7 +67,8 @@ SendAudioStream::SendAudioStream(
     rtc::scoped_refptr<AudioEncoderFactory> encoder_factory,
     Transport* send_transport)
     : sender_(sender), config_(config) {
-  AudioSendStream::Config send_config(send_transport);
+  AudioSendStream::Config send_config(send_transport,
+                                      /*media_transport=*/nullptr);
   ssrc_ = sender->GetNextAudioSsrc();
   send_config.rtp.ssrc = ssrc_;
   SdpAudioFormat::Parameters sdp_params;

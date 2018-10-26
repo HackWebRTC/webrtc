@@ -58,14 +58,15 @@ void CallEncoder(const std::unique_ptr<voe::ChannelSendProxy>& channel_proxy,
 std::unique_ptr<voe::ChannelSendProxy> CreateChannelAndProxy(
     rtc::TaskQueue* worker_queue,
     ProcessThread* module_process_thread,
+    MediaTransportInterface* media_transport,
     RtcpRttStats* rtcp_rtt_stats,
     RtcEventLog* event_log,
     FrameEncryptorInterface* frame_encryptor,
     const webrtc::CryptoOptions& crypto_options) {
   return absl::make_unique<voe::ChannelSendProxy>(
-      absl::make_unique<voe::ChannelSend>(worker_queue, module_process_thread,
-                                          rtcp_rtt_stats, event_log,
-                                          frame_encryptor, crypto_options));
+      absl::make_unique<voe::ChannelSend>(
+          worker_queue, module_process_thread, media_transport, rtcp_rtt_stats,
+          event_log, frame_encryptor, crypto_options));
 }
 }  // namespace
 
@@ -97,7 +98,7 @@ AudioSendStream::AudioSendStream(
     const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
     rtc::TaskQueue* worker_queue,
     ProcessThread* module_process_thread,
-    RtpTransportControllerSendInterface* transport,
+    RtpTransportControllerSendInterface* rtp_transport,
     BitrateAllocatorInterface* bitrate_allocator,
     RtcEventLog* event_log,
     RtcpRttStats* rtcp_rtt_stats,
@@ -106,7 +107,7 @@ AudioSendStream::AudioSendStream(
     : AudioSendStream(config,
                       audio_state,
                       worker_queue,
-                      transport,
+                      rtp_transport,
                       bitrate_allocator,
                       event_log,
                       rtcp_rtt_stats,
@@ -114,6 +115,7 @@ AudioSendStream::AudioSendStream(
                       overall_call_lifetime,
                       CreateChannelAndProxy(worker_queue,
                                             module_process_thread,
+                                            config.media_transport,
                                             rtcp_rtt_stats,
                                             event_log,
                                             config.frame_encryptor,
@@ -123,7 +125,7 @@ AudioSendStream::AudioSendStream(
     const webrtc::AudioSendStream::Config& config,
     const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
     rtc::TaskQueue* worker_queue,
-    RtpTransportControllerSendInterface* transport,
+    RtpTransportControllerSendInterface* rtp_transport,
     BitrateAllocatorInterface* bitrate_allocator,
     RtcEventLog* event_log,
     RtcpRttStats* rtcp_rtt_stats,
@@ -131,12 +133,13 @@ AudioSendStream::AudioSendStream(
     TimeInterval* overall_call_lifetime,
     std::unique_ptr<voe::ChannelSendProxy> channel_proxy)
     : worker_queue_(worker_queue),
-      config_(Config(nullptr)),
+      config_(Config(/*send_transport=*/nullptr,
+                     /*media_transport=*/nullptr)),
       audio_state_(audio_state),
       channel_proxy_(std::move(channel_proxy)),
       event_log_(event_log),
       bitrate_allocator_(bitrate_allocator),
-      transport_(transport),
+      rtp_transport_(rtp_transport),
       packet_loss_tracker_(kPacketLossTrackerMaxWindowSizeMs,
                            kPacketLossRateMinNumAckedPackets,
                            kRecoverablePacketLossRateMinNumAckedPairs),
@@ -148,7 +151,11 @@ AudioSendStream::AudioSendStream(
   RTC_DCHECK(audio_state_);
   RTC_DCHECK(channel_proxy_);
   RTC_DCHECK(bitrate_allocator_);
-  RTC_DCHECK(transport);
+  // TODO(nisse): Eventually, we should have only media_transport. But for the
+  // time being, we can have either. When media transport is injected, there
+  // should be no rtp_transport, and below check should be strengthened to XOR
+  // (either rtp_transport or media_transport but not both).
+  RTC_DCHECK(rtp_transport || config.media_transport);
   RTC_DCHECK(overall_call_lifetime_);
 
   channel_proxy_->SetRTCPStatus(true);
@@ -158,17 +165,22 @@ AudioSendStream::AudioSendStream(
   ConfigureStream(this, config, true);
 
   pacer_thread_checker_.DetachFromThread();
-  // Signal congestion controller this object is ready for OnPacket* callbacks.
-  transport_->RegisterPacketFeedbackObserver(this);
+  if (rtp_transport_) {
+    // Signal congestion controller this object is ready for OnPacket*
+    // callbacks.
+    rtp_transport_->RegisterPacketFeedbackObserver(this);
+  }
 }
 
 AudioSendStream::~AudioSendStream() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   RTC_LOG(LS_INFO) << "~AudioSendStream: " << config_.rtp.ssrc;
   RTC_DCHECK(!sending_);
-  transport_->DeRegisterPacketFeedbackObserver(this);
-  channel_proxy_->RegisterTransport(nullptr);
-  channel_proxy_->ResetSenderCongestionControlObjects();
+  if (rtp_transport_) {
+    rtp_transport_->DeRegisterPacketFeedbackObserver(this);
+    channel_proxy_->RegisterTransport(nullptr);
+    channel_proxy_->ResetSenderCongestionControlObjects();
+  }
   // Lifetime can only be updated after deregistering
   // |timed_send_transport_adapter_| in the underlying channel object to avoid
   // data races in |active_lifetime_|.
@@ -272,14 +284,16 @@ void AudioSendStream::ConfigureStream(
       // Probing in application limited region is only used in combination with
       // send side congestion control, wich depends on feedback packets which
       // requires transport sequence numbers to be enabled.
-      stream->transport_->EnablePeriodicAlrProbing(true);
-      bandwidth_observer = stream->transport_->GetBandwidthObserver();
+      if (stream->rtp_transport_) {
+        stream->rtp_transport_->EnablePeriodicAlrProbing(true);
+        bandwidth_observer = stream->rtp_transport_->GetBandwidthObserver();
+      }
     }
-
-    channel_proxy->RegisterSenderCongestionControlObjects(stream->transport_,
-                                                          bandwidth_observer);
+    if (stream->rtp_transport_) {
+      channel_proxy->RegisterSenderCongestionControlObjects(
+          stream->rtp_transport_, bandwidth_observer);
+    }
   }
-
   // MID RTP header extension.
   if ((first_time || new_ids.mid != old_ids.mid ||
        new_config.rtp.mid != old_config.rtp.mid) &&
@@ -312,7 +326,7 @@ void AudioSendStream::Start() {
        !webrtc::field_trial::IsEnabled("WebRTC-Audio-SendSideBwe") ||
        webrtc::field_trial::IsEnabled("WebRTC-Audio-ABWENoTWCC"))) {
     // Audio BWE is enabled.
-    transport_->packet_sender()->SetAccountForAudioPackets(true);
+    rtp_transport_->packet_sender()->SetAccountForAudioPackets(true);
     rtp_rtcp_module_->SetAsPartOfAllocation(true);
     ConfigureBitrateObserver(config_.min_bitrate_bps, config_.max_bitrate_bps,
                              config_.bitrate_priority,
@@ -725,13 +739,13 @@ void AudioSendStream::ReconfigureBitrateObserver(
       !new_config.has_dscp &&
       (has_transport_sequence_number ||
        !webrtc::field_trial::IsEnabled("WebRTC-Audio-SendSideBwe"))) {
-    stream->transport_->packet_sender()->SetAccountForAudioPackets(true);
+    stream->rtp_transport_->packet_sender()->SetAccountForAudioPackets(true);
     stream->ConfigureBitrateObserver(
         new_config.min_bitrate_bps, new_config.max_bitrate_bps,
         new_config.bitrate_priority, has_transport_sequence_number);
     stream->rtp_rtcp_module_->SetAsPartOfAllocation(true);
   } else {
-    stream->transport_->packet_sender()->SetAccountForAudioPackets(false);
+    stream->rtp_transport_->packet_sender()->SetAccountForAudioPackets(false);
     stream->RemoveBitrateObserver();
     stream->rtp_rtcp_module_->SetAsPartOfAllocation(false);
   }

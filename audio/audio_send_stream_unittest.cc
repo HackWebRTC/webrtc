@@ -129,7 +129,7 @@ rtc::scoped_refptr<MockAudioEncoderFactory> SetupEncoderFactoryMock() {
 
 struct ConfigHelper {
   ConfigHelper(bool audio_bwe_enabled, bool expect_set_encoder_call)
-      : stream_config_(nullptr),
+      : stream_config_(/*send_transport=*/nullptr, /*media_transport=*/nullptr),
         audio_processing_(new rtc::RefCountedObject<MockAudioProcessing>()),
         bitrate_allocator_(&limit_observer_),
         worker_queue_("ConfigHelper_worker_queue"),
@@ -318,7 +318,8 @@ struct ConfigHelper {
 }  // namespace
 
 TEST(AudioSendStreamTest, ConfigToString) {
-  AudioSendStream::Config config(nullptr);
+  AudioSendStream::Config config(/*send_transport=*/nullptr,
+                                 /*media_transport=*/nullptr);
   config.rtp.ssrc = kSsrc;
   config.rtp.c_name = kCName;
   config.min_bitrate_bps = 12000;
@@ -335,6 +336,7 @@ TEST(AudioSendStreamTest, ConfigToString) {
       "{rtp: {ssrc: 1234, extensions: [{uri: "
       "urn:ietf:params:rtp-hdrext:ssrc-audio-level, id: 2}], nack: "
       "{rtp_history_ms: 0}, c_name: foo_name}, send_transport: null, "
+      "media_transport: null, "
       "min_bitrate_bps: 12000, max_bitrate_bps: 34000, "
       "send_codec_spec: {nack_enabled: true, transport_cc_enabled: false, "
       "cng_payload_type: 42, payload_type: 103, "

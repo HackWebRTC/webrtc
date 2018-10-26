@@ -176,9 +176,10 @@ class TestAudioDeviceModuleImpl
           uint32_t new_mic_level = 0;
           if (recording_buffer_.size() > 0) {
             audio_callback_->RecordedDataIsAvailable(
-                recording_buffer_.data(), recording_buffer_.size(), 2,
-                capturer_->NumChannels(), capturer_->SamplingFrequency(), 0, 0,
-                0, false, new_mic_level);
+                recording_buffer_.data(),
+                recording_buffer_.size() / capturer_->NumChannels(),
+                2 * capturer_->NumChannels(), capturer_->NumChannels(),
+                capturer_->SamplingFrequency(), 0, 0, 0, false, new_mic_level);
           }
           if (!keep_capturing) {
             capturing_ = false;
@@ -191,9 +192,10 @@ class TestAudioDeviceModuleImpl
           int64_t ntp_time_ms = -1;
           const int sampling_frequency = renderer_->SamplingFrequency();
           audio_callback_->NeedMorePlayData(
-              SamplesPerFrame(sampling_frequency), 2, renderer_->NumChannels(),
-              sampling_frequency, playout_buffer_.data(), samples_out,
-              &elapsed_time_ms, &ntp_time_ms);
+              SamplesPerFrame(sampling_frequency), 2 * renderer_->NumChannels(),
+              renderer_->NumChannels(), sampling_frequency,
+              playout_buffer_.data(), samples_out, &elapsed_time_ms,
+              &ntp_time_ms);
           const bool keep_rendering =
               renderer_->Render(rtc::ArrayView<const int16_t>(
                   playout_buffer_.data(), samples_out));

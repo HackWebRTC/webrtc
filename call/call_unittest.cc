@@ -62,7 +62,8 @@ TEST(CallTest, ConstructDestruct) {
 
 TEST(CallTest, CreateDestroy_AudioSendStream) {
   CallHelper call;
-  AudioSendStream::Config config(nullptr);
+  AudioSendStream::Config config(/*send_transport=*/nullptr,
+                                 /*media_transport=*/nullptr);
   config.rtp.ssrc = 42;
   AudioSendStream* stream = call->CreateAudioSendStream(config);
   EXPECT_NE(stream, nullptr);
@@ -84,7 +85,8 @@ TEST(CallTest, CreateDestroy_AudioReceiveStream) {
 
 TEST(CallTest, CreateDestroy_AudioSendStreams) {
   CallHelper call;
-  AudioSendStream::Config config(nullptr);
+  AudioSendStream::Config config(/*send_transport=*/nullptr,
+                                 /*media_transport=*/nullptr);
   std::list<AudioSendStream*> streams;
   for (int i = 0; i < 2; ++i) {
     for (uint32_t ssrc = 0; ssrc < 1234567; ssrc += 34567) {
@@ -142,7 +144,8 @@ TEST(CallTest, CreateDestroy_AssociateAudioSendReceiveStreams_RecvFirst) {
   AudioReceiveStream* recv_stream = call->CreateAudioReceiveStream(recv_config);
   EXPECT_NE(recv_stream, nullptr);
 
-  AudioSendStream::Config send_config(nullptr);
+  AudioSendStream::Config send_config(/*send_transport=*/nullptr,
+                                      /*media_transport=*/nullptr);
   send_config.rtp.ssrc = 777;
   AudioSendStream* send_stream = call->CreateAudioSendStream(send_config);
   EXPECT_NE(send_stream, nullptr);
@@ -160,7 +163,8 @@ TEST(CallTest, CreateDestroy_AssociateAudioSendReceiveStreams_RecvFirst) {
 
 TEST(CallTest, CreateDestroy_AssociateAudioSendReceiveStreams_SendFirst) {
   CallHelper call;
-  AudioSendStream::Config send_config(nullptr);
+  AudioSendStream::Config send_config(/*send_transport=*/nullptr,
+                                      /*media_transport=*/nullptr);
   send_config.rtp.ssrc = 777;
   AudioSendStream* send_stream = call->CreateAudioSendStream(send_config);
   EXPECT_NE(send_stream, nullptr);
@@ -263,7 +267,8 @@ TEST(CallTest, RecreatingAudioStreamWithSameSsrcReusesRtpState) {
   CallHelper call;
 
   auto create_stream_and_get_rtp_state = [&](uint32_t ssrc) {
-    AudioSendStream::Config config(nullptr);
+    AudioSendStream::Config config(/*send_transport=*/nullptr,
+                                   /*media_transport=*/nullptr);
     config.rtp.ssrc = ssrc;
     AudioSendStream* stream = call->CreateAudioSendStream(config);
     const RtpState rtp_state =

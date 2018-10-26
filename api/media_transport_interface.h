@@ -42,7 +42,10 @@ class MediaTransportEncodedAudioFrame final {
     kSpeech,
 
     // DTX frame (equivalent to webrtc::kAudioFrameCN).
-    kDiscountinuousTransmission,
+    // DTX frame (equivalent to webrtc::kAudioFrameCN).
+    kDiscontinuousTransmission,
+    // TODO(nisse): Mis-spelled version, update users, then delete.
+    kDiscountinuousTransmission = kDiscontinuousTransmission,
   };
 
   MediaTransportEncodedAudioFrame(

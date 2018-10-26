@@ -20,6 +20,7 @@
 #include "api/audio_codecs/audio_encoder.h"
 #include "api/call/transport.h"
 #include "api/crypto/cryptooptions.h"
+#include "api/media_transport_interface.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/audio_processing/rms_level.h"
@@ -119,6 +120,7 @@ class ChannelSend
 
   ChannelSend(rtc::TaskQueue* encoder_queue,
               ProcessThread* module_process_thread,
+              MediaTransportInterface* media_transport,
               RtcpRttStats* rtcp_rtt_stats,
               RtcEventLog* rtc_event_log,
               FrameEncryptorInterface* frame_encryptor,
@@ -251,6 +253,21 @@ class ChannelSend
 
   int GetRtpTimestampRateHz() const;
 
+  int32_t SendRtpAudio(FrameType frameType,
+                       uint8_t payloadType,
+                       uint32_t timeStamp,
+                       rtc::ArrayView<const uint8_t> payload,
+                       const RTPFragmentationHeader* fragmentation);
+
+  int32_t SendMediaTransportAudio(FrameType frameType,
+                                  uint8_t payloadType,
+                                  uint32_t timeStamp,
+                                  rtc::ArrayView<const uint8_t> payload,
+                                  const RTPFragmentationHeader* fragmentation);
+
+  // Return media transport or nullptr if using RTP.
+  MediaTransportInterface* media_transport() { return media_transport_; }
+
   // Called on the encoder task queue when a new input audio frame is ready
   // for encoding.
   void ProcessAndEncodeAudioOnTaskQueue(AudioFrame* audio_input);
@@ -299,6 +316,20 @@ class ChannelSend
   rtc::CriticalSection encoder_queue_lock_;
   bool encoder_queue_is_active_ RTC_GUARDED_BY(encoder_queue_lock_) = false;
   rtc::TaskQueue* encoder_queue_ = nullptr;
+
+  MediaTransportInterface* const media_transport_;
+  int media_transport_sequence_number_ RTC_GUARDED_BY(encoder_queue_) = 0;
+
+  rtc::CriticalSection media_transport_lock_;
+  // Currently set by SetLocalSSRC.
+  uint64_t media_transport_channel_id_ RTC_GUARDED_BY(&media_transport_lock_) =
+      0;
+  // Cache payload type and sampling frequency from most recent call to
+  // SetEncoder. Needed to set MediaTransportEncodedAudioFrame metadata, and
+  // invalidate on encoder change.
+  int media_transport_payload_type_ RTC_GUARDED_BY(&media_transport_lock_);
+  int media_transport_sampling_frequency_
+      RTC_GUARDED_BY(&media_transport_lock_);
 
   // E2EE Audio Frame Encryption
   rtc::scoped_refptr<FrameEncryptorInterface> frame_encryptor_;
