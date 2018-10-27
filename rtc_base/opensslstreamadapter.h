@@ -56,7 +56,7 @@ class SSLCertChain;
 
 ///////////////////////////////////////////////////////////////////////////////
 
-class OpenSSLStreamAdapter : public SSLStreamAdapter {
+class OpenSSLStreamAdapter final : public SSLStreamAdapter {
  public:
   explicit OpenSSLStreamAdapter(StreamInterface* stream);
   ~OpenSSLStreamAdapter() override;

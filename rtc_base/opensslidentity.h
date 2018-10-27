@@ -27,7 +27,7 @@ namespace rtc {
 
 // OpenSSLKeyPair encapsulates an OpenSSL EVP_PKEY* keypair object,
 // which is reference counted inside the OpenSSL library.
-class OpenSSLKeyPair {
+class OpenSSLKeyPair final {
  public:
   explicit OpenSSLKeyPair(EVP_PKEY* pkey) : pkey_(pkey) {
     RTC_DCHECK(pkey_ != nullptr);
@@ -58,7 +58,7 @@ class OpenSSLKeyPair {
 
 // Holds a keypair and certificate together, and a method to generate
 // them consistently.
-class OpenSSLIdentity : public SSLIdentity {
+class OpenSSLIdentity final : public SSLIdentity {
  public:
   static OpenSSLIdentity* GenerateWithExpiration(const std::string& common_name,
                                                  const KeyParams& key_params,

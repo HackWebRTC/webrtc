@@ -20,7 +20,7 @@
 namespace rtc {
 
 // An implementation of the digest class that uses OpenSSL.
-class OpenSSLDigest : public MessageDigest {
+class OpenSSLDigest final : public MessageDigest {
  public:
   // Creates an OpenSSLDigest with |algorithm| as the hash algorithm.
   explicit OpenSSLDigest(const std::string& algorithm);

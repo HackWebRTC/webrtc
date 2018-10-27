@@ -28,7 +28,7 @@ class OpenSSLKeyPair;
 
 // OpenSSLCertificate encapsulates an OpenSSL X509* certificate object,
 // which is also reference counted inside the OpenSSL library.
-class OpenSSLCertificate : public SSLCertificate {
+class OpenSSLCertificate final : public SSLCertificate {
  public:
   // X509 object has its reference count incremented. So the caller and
   // OpenSSLCertificate share ownership.
