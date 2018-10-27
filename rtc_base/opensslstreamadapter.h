@@ -175,11 +175,11 @@ class OpenSSLStreamAdapter final : public SSLStreamAdapter {
   // SSL_CTX_set_cert_verify_callback.
   static int SSLVerifyCallback(X509_STORE_CTX* store, void* arg);
 
-  bool waiting_to_verify_peer_certificate() const {
+  bool WaitingToVerifyPeerCertificate() const {
     return GetClientAuthEnabled() && !peer_certificate_verified_;
   }
 
-  bool has_peer_certificate_digest() const {
+  bool HasPeerCertificateDigest() const {
     return !peer_certificate_digest_algorithm_.empty() &&
            !peer_certificate_digest_value_.empty();
   }

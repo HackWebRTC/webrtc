@@ -302,7 +302,7 @@ bool OpenSSLStreamAdapter::SetPeerCertificateDigest(
     size_t digest_len,
     SSLPeerCertificateDigestError* error) {
   RTC_DCHECK(!peer_certificate_verified_);
-  RTC_DCHECK(!has_peer_certificate_digest());
+  RTC_DCHECK(!HasPeerCertificateDigest());
   size_t expected_len;
   if (error) {
     *error = SSLPeerCertificateDigestError::NONE;
@@ -534,7 +534,7 @@ StreamResult OpenSSLStreamAdapter::Write(const void* data,
       return SR_BLOCK;
 
     case SSL_CONNECTED:
-      if (waiting_to_verify_peer_certificate()) {
+      if (WaitingToVerifyPeerCertificate()) {
         return SR_BLOCK;
       }
       break;
@@ -600,7 +600,7 @@ StreamResult OpenSSLStreamAdapter::Read(void* data,
     case SSL_CONNECTING:
       return SR_BLOCK;
     case SSL_CONNECTED:
-      if (waiting_to_verify_peer_certificate()) {
+      if (WaitingToVerifyPeerCertificate()) {
         return SR_BLOCK;
       }
       break;
@@ -708,7 +708,7 @@ StreamState OpenSSLStreamAdapter::GetState() const {
     case SSL_CONNECTING:
       return SS_OPENING;
     case SSL_CONNECTED:
-      if (waiting_to_verify_peer_certificate()) {
+      if (WaitingToVerifyPeerCertificate()) {
         return SS_OPENING;
       }
       return SS_OPEN;
@@ -855,7 +855,7 @@ int OpenSSLStreamAdapter::ContinueSSL() {
       RTC_DCHECK(peer_cert_chain_ || !GetClientAuthEnabled());
 
       state_ = SSL_CONNECTED;
-      if (!waiting_to_verify_peer_certificate()) {
+      if (!WaitingToVerifyPeerCertificate()) {
         // We have everything we need to start the connection, so signal
         // SE_OPEN. If we need a client certificate fingerprint and don't have
         // it yet, we'll instead signal SE_OPEN in SetPeerCertificateDigest.
@@ -1082,7 +1082,7 @@ SSL_CTX* OpenSSLStreamAdapter::SetupSSLContext() {
 }
 
 bool OpenSSLStreamAdapter::VerifyPeerCertificate() {
-  if (!has_peer_certificate_digest() || !peer_cert_chain_ ||
+  if (!HasPeerCertificateDigest() || !peer_cert_chain_ ||
       !peer_cert_chain_->GetSize()) {
     RTC_LOG(LS_WARNING) << "Missing digest or peer certificate.";
     return false;
