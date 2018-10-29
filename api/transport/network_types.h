@@ -130,7 +130,7 @@ struct PacketResult {
   Timestamp receive_time = Timestamp::PlusInfinity();
   // TODO(bugs.webrtc.org/9934): Remove this when sent_packet is made
   // non-optional.
-  const SentPacket& GetSentPacket() {
+  const SentPacket& GetSentPacket() const {
     RTC_DCHECK(sent_packet.has_value());
     return *sent_packet;
   }
