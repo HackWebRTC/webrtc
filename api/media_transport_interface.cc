@@ -22,6 +22,9 @@
 
 namespace webrtc {
 
+MediaTransportSettings::MediaTransportSettings() = default;
+MediaTransportSettings::~MediaTransportSettings() = default;
+
 MediaTransportEncodedAudioFrame::~MediaTransportEncodedAudioFrame() {}
 
 MediaTransportEncodedAudioFrame::MediaTransportEncodedAudioFrame(
@@ -75,5 +78,21 @@ MediaTransportEncodedVideoFrame::MediaTransportEncodedVideoFrame(
 
 MediaTransportEncodedVideoFrame::MediaTransportEncodedVideoFrame(
     MediaTransportEncodedVideoFrame&&) = default;
+
+RTCErrorOr<std::unique_ptr<MediaTransportInterface>>
+MediaTransportFactory::CreateMediaTransport(
+    rtc::PacketTransportInternal* packet_transport,
+    rtc::Thread* network_thread,
+    bool is_caller) {
+  return std::unique_ptr<MediaTransportInterface>(nullptr);
+}
+
+RTCErrorOr<std::unique_ptr<MediaTransportInterface>>
+MediaTransportFactory::CreateMediaTransport(
+    rtc::PacketTransportInternal* packet_transport,
+    rtc::Thread* network_thread,
+    const MediaTransportSettings settings) {
+  return std::unique_ptr<MediaTransportInterface>(nullptr);
+}
 
 }  // namespace webrtc

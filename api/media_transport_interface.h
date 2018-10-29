@@ -18,9 +18,11 @@
 #define API_MEDIA_TRANSPORT_INTERFACE_H_
 
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/rtcerror.h"
 #include "api/video/encoded_image.h"
@@ -32,6 +34,19 @@ class Thread;
 }  // namespace rtc
 
 namespace webrtc {
+
+// A collection of settings for creation of media transport.
+struct MediaTransportSettings final {
+  MediaTransportSettings();
+  ~MediaTransportSettings();
+
+  // Group calls are not currently supported, in 1:1 call one side must set
+  // is_caller = true and another is_caller = false.
+  bool is_caller;
+
+  // Must be set if a pre-shared key is used for the call.
+  absl::optional<std::string> pre_shared_key;
+};
 
 // Represents encoded audio frame in any encoding (type of encoding is opaque).
 // To avoid copying of encoded data use move semantics when passing by value.
@@ -244,10 +259,21 @@ class MediaTransportFactory {
   // - Does not take ownership of packet_transport or network_thread.
   // - Does not support group calls, in 1:1 call one side must set
   //   is_caller = true and another is_caller = false.
+  // TODO(bugs.webrtc.org/9938) This constructor will be removed and replaced
+  // with the one below.
   virtual RTCErrorOr<std::unique_ptr<MediaTransportInterface>>
   CreateMediaTransport(rtc::PacketTransportInternal* packet_transport,
                        rtc::Thread* network_thread,
-                       bool is_caller) = 0;
+                       bool is_caller);
+
+  // Creates media transport.
+  // - Does not take ownership of packet_transport or network_thread.
+  // TODO(bugs.webrtc.org/9938): remove default implementation once all children
+  // override it.
+  virtual RTCErrorOr<std::unique_ptr<MediaTransportInterface>>
+  CreateMediaTransport(rtc::PacketTransportInternal* packet_transport,
+                       rtc::Thread* network_thread,
+                       const MediaTransportSettings settings);
 };
 
 }  // namespace webrtc
