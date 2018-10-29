@@ -683,6 +683,8 @@ if (is_linux || is_win) {
       "../rtc_base:checks",
       "../rtc_base:stringutils",
       "../rtc_base/third_party/sigslot",
+      "../system_wrappers:field_trial",
+      "../test:field_trial",
     ]
     if (is_win) {
       sources += [
@@ -745,6 +747,8 @@ if (is_linux || is_win) {
       "../rtc_base:rtc_base_approved",
       "../rtc_base:stringutils",
       "../rtc_tools:command_line_parser",
+      "../system_wrappers:field_trial",
+      "../test:field_trial",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).

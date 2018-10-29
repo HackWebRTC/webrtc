@@ -35,4 +35,13 @@ WEBRTC_DEFINE_bool(
     "the server without user intervention.  Note: this flag should only be set "
     "to true on one of the two clients.");
 
+WEBRTC_DEFINE_string(
+    force_fieldtrials,
+    "",
+    "Field trials control experimental features. This flag specifies the field "
+    "trials in effect. E.g. running with "
+    "--force_fieldtrials=WebRTC-FooFeature/Enabled/ "
+    "will assign the group Enabled to field trial WebRTC-FooFeature. Multiple "
+    "trials are separated by \"/\"");
+
 #endif  // EXAMPLES_PEERCONNECTION_CLIENT_FLAGDEFS_H_
