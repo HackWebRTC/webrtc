@@ -1037,6 +1037,7 @@ if (is_ios || is_mac) {
             "objc/unittests/RTCPeerConnectionFactory_xctest.m",
             "objc/unittests/frame_buffer_helpers.h",
             "objc/unittests/frame_buffer_helpers.mm",
+            "objc/unittests/nalu_rewriter_xctest.mm",
           ]
 
           # TODO(peterhanspers): Reenable these tests on simulator.
@@ -1059,6 +1060,7 @@ if (is_ios || is_mac) {
             ":native_api_audio_device_module",
             ":native_video",
             ":peerconnectionfactory_base_objc",
+            ":video_toolbox_cc",
             ":videocapture_objc",
             ":videocodec_objc",
             ":videoframebuffer_objc",
@@ -1599,7 +1601,10 @@ if (is_ios || is_mac) {
     }
 
     rtc_static_library("video_toolbox_cc") {
-      visibility = [ ":videotoolbox_objc" ]
+      visibility = [
+        ":videotoolbox_objc",
+        ":sdk_unittests_sources",
+      ]
       sources = [
         "objc/components/video_codec/helpers.cc",
         "objc/components/video_codec/helpers.h",
