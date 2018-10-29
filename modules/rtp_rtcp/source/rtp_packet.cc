@@ -61,12 +61,10 @@ RtpPacket::RtpPacket(const ExtensionManager* extensions)
 RtpPacket::RtpPacket(const RtpPacket&) = default;
 
 RtpPacket::RtpPacket(const ExtensionManager* extensions, size_t capacity)
-    : buffer_(capacity) {
+    : extensions_(extensions ? *extensions : ExtensionManager()),
+      buffer_(capacity) {
   RTC_DCHECK_GE(capacity, kFixedHeaderSize);
   Clear();
-  if (extensions) {
-    extensions_ = *extensions;
-  }
 }
 
 RtpPacket::~RtpPacket() {}
