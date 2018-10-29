@@ -60,9 +60,9 @@ char hex_encode(unsigned char val) {
 bool hex_decode(char ch, unsigned char* val) {
   if ((ch >= '0') && (ch <= '9')) {
     *val = ch - '0';
-  } else if ((ch >= 'A') && (ch <= 'Z')) {
+  } else if ((ch >= 'A') && (ch <= 'F')) {
     *val = (ch - 'A') + 10;
-  } else if ((ch >= 'a') && (ch <= 'z')) {
+  } else if ((ch >= 'a') && (ch <= 'f')) {
     *val = (ch - 'a') + 10;
   } else {
     return false;
