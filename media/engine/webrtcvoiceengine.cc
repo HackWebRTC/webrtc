@@ -705,6 +705,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
       const std::string track_id,
       const absl::optional<webrtc::AudioSendStream::Config::SendCodecSpec>&
           send_codec_spec,
+      bool extmap_allow_mixed,
       const std::vector<webrtc::RtpExtension>& extensions,
       int max_send_bitrate_bps,
       const absl::optional<std::string>& audio_network_adaptor_config,
@@ -726,6 +727,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     config_.rtp.ssrc = ssrc;
     config_.rtp.mid = mid;
     config_.rtp.c_name = c_name;
+    config_.rtp.extmap_allow_mixed = extmap_allow_mixed;
     config_.rtp.extensions = extensions;
     config_.has_dscp = rtp_parameters_.encodings[0].network_priority !=
                        webrtc::kDefaultBitratePriority;
@@ -762,6 +764,11 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
     config_.rtp.extensions = extensions;
     rtp_parameters_.header_extensions = extensions;
+    ReconfigureAudioSendStream();
+  }
+
+  void SetExtmapAllowMixed(bool extmap_allow_mixed) {
+    config_.rtp.extmap_allow_mixed = extmap_allow_mixed;
     ReconfigureAudioSendStream();
   }
 
@@ -1293,6 +1300,14 @@ bool WebRtcVoiceMediaChannel::SetSendParameters(
   if (!ValidateRtpExtensions(params.extensions)) {
     return false;
   }
+
+  if (ExtmapAllowMixed() != params.extmap_allow_mixed) {
+    SetExtmapAllowMixed(params.extmap_allow_mixed);
+    for (auto& it : send_streams_) {
+      it.second->SetExtmapAllowMixed(params.extmap_allow_mixed);
+    }
+  }
+
   std::vector<webrtc::RtpExtension> filtered_extensions = FilterRtpExtensions(
       params.extensions, webrtc::RtpExtension::IsSupportedForAudio, true);
   if (send_rtp_extensions_ != filtered_extensions) {
@@ -1794,10 +1809,10 @@ bool WebRtcVoiceMediaChannel::AddSendStream(const StreamParams& sp) {
   absl::optional<std::string> audio_network_adaptor_config =
       GetAudioNetworkAdaptorConfig(options_);
   WebRtcAudioSendStream* stream = new WebRtcAudioSendStream(
-      ssrc, mid_, sp.cname, sp.id, send_codec_spec_, send_rtp_extensions_,
-      max_send_bitrate_bps_, audio_network_adaptor_config, call_, this,
-      media_transport(), engine()->encoder_factory_, codec_pair_id_, nullptr,
-      crypto_options_);
+      ssrc, mid_, sp.cname, sp.id, send_codec_spec_, ExtmapAllowMixed(),
+      send_rtp_extensions_, max_send_bitrate_bps_, audio_network_adaptor_config,
+      call_, this, media_transport(), engine()->encoder_factory_,
+      codec_pair_id_, nullptr, crypto_options_);
   send_streams_.insert(std::make_pair(ssrc, stream));
 
   // At this point the stream's local SSRC has been updated. If it is the first

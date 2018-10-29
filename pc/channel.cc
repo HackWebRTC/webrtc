@@ -93,6 +93,7 @@ void RtpSendParametersFromMediaDescription(
     RtpSendParameters<Codec>* send_params) {
   RtpParametersFromMediaDescription(desc, extensions, send_params);
   send_params->max_bandwidth_bps = desc->bandwidth();
+  send_params->extmap_allow_mixed = desc->extmap_allow_mixed();
 }
 
 BaseChannel::BaseChannel(rtc::Thread* worker_thread,
@@ -799,6 +800,7 @@ bool VoiceChannel::SetLocalContent_w(const MediaContentDescription* content,
   RtpHeaderExtensions rtp_header_extensions =
       GetFilteredRtpHeaderExtensions(audio->rtp_header_extensions());
   UpdateRtpHeaderExtensionMap(rtp_header_extensions);
+  media_channel()->SetExtmapAllowMixed(audio->extmap_allow_mixed());
 
   AudioRecvParameters recv_params = last_recv_params_;
   RtpParametersFromMediaDescription(audio, rtp_header_extensions, &recv_params);
@@ -934,6 +936,7 @@ bool VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
   RtpHeaderExtensions rtp_header_extensions =
       GetFilteredRtpHeaderExtensions(video->rtp_header_extensions());
   UpdateRtpHeaderExtensionMap(rtp_header_extensions);
+  media_channel()->SetExtmapAllowMixed(video->extmap_allow_mixed());
 
   VideoRecvParameters recv_params = last_recv_params_;
   RtpParametersFromMediaDescription(video, rtp_header_extensions, &recv_params);

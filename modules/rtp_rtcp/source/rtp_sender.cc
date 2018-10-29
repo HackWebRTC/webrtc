@@ -121,7 +121,8 @@ RTPSender::RTPSender(
     OverheadObserver* overhead_observer,
     bool populate_network2_timestamp,
     FrameEncryptorInterface* frame_encryptor,
-    bool require_frame_encryption)
+    bool require_frame_encryption,
+    bool extmap_allow_mixed)
     : clock_(clock),
       // TODO(holmer): Remove this conversion?
       clock_delta_ms_(clock_->TimeInMilliseconds() - rtc::TimeMillis()),
@@ -144,7 +145,7 @@ RTPSender::RTPSender(
       max_packet_size_(IP_PACKET_SIZE - 28),  // Default is IP-v4/UDP.
       last_payload_type_(-1),
       payload_type_map_(),
-      rtp_header_extension_map_(),
+      rtp_header_extension_map_(extmap_allow_mixed),
       packet_history_(clock),
       flexfec_packet_history_(clock),
       // Statistics
@@ -243,6 +244,11 @@ uint32_t RTPSender::FecOverheadRate() const {
 uint32_t RTPSender::NackOverheadRate() const {
   rtc::CritScope cs(&statistics_crit_);
   return nack_bitrate_sent_.Rate(clock_->TimeInMilliseconds()).value_or(0);
+}
+
+void RTPSender::SetExtmapAllowMixed(bool extmap_allow_mixed) {
+  rtc::CritScope lock(&send_critsect_);
+  rtp_header_extension_map_.SetExtmapAllowMixed(extmap_allow_mixed);
 }
 
 int32_t RTPSender::RegisterRtpHeaderExtension(RTPExtensionType type,

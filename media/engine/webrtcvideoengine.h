@@ -219,6 +219,7 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
     absl::optional<VideoCodecSettings> codec;
     absl::optional<std::vector<webrtc::RtpExtension>> rtp_header_extensions;
     absl::optional<std::string> mid;
+    absl::optional<bool> extmap_allow_mixed;
     absl::optional<int> max_bandwidth_bps;
     absl::optional<bool> conference_mode;
     absl::optional<webrtc::RtcpMode> rtcp_mode;

@@ -65,7 +65,8 @@ class RTPSender {
             OverheadObserver* overhead_observer,
             bool populate_network2_timestamp,
             FrameEncryptorInterface* frame_encryptor,
-            bool require_frame_encryption);
+            bool require_frame_encryption,
+            bool extmap_allow_mixed);
 
   ~RTPSender();
 
@@ -117,6 +118,8 @@ class RTPSender {
                         const RTPVideoHeader* rtp_header,
                         uint32_t* transport_frame_id_out,
                         int64_t expected_retransmission_time_ms);
+
+  void SetExtmapAllowMixed(bool extmap_allow_mixed);
 
   // RTP header extension
   int32_t RegisterRtpHeaderExtension(RTPExtensionType type, uint8_t id);

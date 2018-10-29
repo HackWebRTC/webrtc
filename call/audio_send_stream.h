@@ -83,6 +83,9 @@ class AudioSendStream {
       // included in the list of extensions.
       std::string mid;
 
+      // Corresponds to the SDP attribute extmap-allow-mixed.
+      bool extmap_allow_mixed = false;
+
       // RTP header extensions used for the sent stream.
       std::vector<RtpExtension> extensions;
 

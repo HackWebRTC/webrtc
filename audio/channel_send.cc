@@ -453,7 +453,8 @@ ChannelSend::ChannelSend(rtc::TaskQueue* encoder_queue,
                          RtcpRttStats* rtcp_rtt_stats,
                          RtcEventLog* rtc_event_log,
                          FrameEncryptorInterface* frame_encryptor,
-                         const webrtc::CryptoOptions& crypto_options)
+                         const webrtc::CryptoOptions& crypto_options,
+                         bool extmap_allow_mixed)
     : event_log_(rtc_event_log),
       _timeStamp(0),  // This is just an offset, RTP module will add it's own
                       // random offset
@@ -496,6 +497,7 @@ ChannelSend::ChannelSend(rtc::TaskQueue* encoder_queue,
   configuration.rtt_stats = rtcp_rtt_stats;
   configuration.retransmission_rate_limiter =
       retransmission_rate_limiter_.get();
+  configuration.extmap_allow_mixed = extmap_allow_mixed;
 
   _rtpRtcpModule.reset(RtpRtcp::CreateRtpRtcp(configuration));
   _rtpRtcpModule->SetSendingMediaStatus(false);
@@ -834,6 +836,10 @@ void ChannelSend::SetMid(const std::string& mid, int extension_id) {
   int ret = SetSendRtpHeaderExtension(true, kRtpExtensionMid, extension_id);
   RTC_DCHECK_EQ(0, ret);
   _rtpRtcpModule->SetMid(mid);
+}
+
+void ChannelSend::SetExtmapAllowMixed(bool extmap_allow_mixed) {
+  _rtpRtcpModule->SetExtmapAllowMixed(extmap_allow_mixed);
 }
 
 int ChannelSend::SetSendAudioLevelIndicationStatus(bool enable,

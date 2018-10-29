@@ -70,6 +70,8 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
 
   int32_t DeRegisterSendPayload(int8_t payload_type) override;
 
+  void SetExtmapAllowMixed(bool extmap_allow_mixed) override;
+
   // Register RTP header extension.
   int32_t RegisterSendRtpHeaderExtension(RTPExtensionType type,
                                          uint8_t id) override;

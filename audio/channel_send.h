@@ -124,7 +124,8 @@ class ChannelSend
               RtcpRttStats* rtcp_rtt_stats,
               RtcEventLog* rtc_event_log,
               FrameEncryptorInterface* frame_encryptor,
-              const webrtc::CryptoOptions& crypto_options);
+              const webrtc::CryptoOptions& crypto_options,
+              bool extmap_allow_mixed);
 
   virtual ~ChannelSend();
 
@@ -171,6 +172,7 @@ class ChannelSend
   int SetLocalSSRC(unsigned int ssrc);
 
   void SetMid(const std::string& mid, int extension_id);
+  void SetExtmapAllowMixed(bool extmap_allow_mixed);
   int SetSendAudioLevelIndicationStatus(bool enable, unsigned char id);
   void EnableSendTransportSequenceNumber(int id);
 

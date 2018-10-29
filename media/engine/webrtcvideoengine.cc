@@ -624,6 +624,9 @@ bool WebRtcVideoChannel::GetChangedSendParameters(
     changed_params->codec = selected_send_codec;
 
   // Handle RTP header extensions.
+  if (params.extmap_allow_mixed != ExtmapAllowMixed()) {
+    changed_params->extmap_allow_mixed = params.extmap_allow_mixed;
+  }
   std::vector<webrtc::RtpExtension> filtered_extensions = FilterRtpExtensions(
       params.extensions, webrtc::RtpExtension::IsSupportedForVideo, true);
   if (!send_rtp_extensions_ || (*send_rtp_extensions_ != filtered_extensions)) {
@@ -678,6 +681,9 @@ bool WebRtcVideoChannel::SetSendParameters(const VideoSendParameters& params) {
     RTC_LOG(LS_INFO) << "Using codec: " << codec_settings.codec.ToString();
   }
 
+  if (changed_params.extmap_allow_mixed) {
+    SetExtmapAllowMixed(*changed_params.extmap_allow_mixed);
+  }
   if (changed_params.rtp_header_extensions) {
     send_rtp_extensions_ = changed_params.rtp_header_extensions;
   }
@@ -1064,6 +1070,7 @@ bool WebRtcVideoChannel::AddSendStream(const StreamParams& sp) {
       video_config_.experiment_cpu_load_estimator;
   config.encoder_settings.encoder_factory = encoder_factory_;
   config.crypto_options = crypto_options_;
+  config.rtp.extmap_allow_mixed = ExtmapAllowMixed();
 
   WebRtcVideoSendStream* stream = new WebRtcVideoSendStream(
       call_, sp, std::move(config), default_send_options_,
@@ -1630,7 +1637,6 @@ WebRtcVideoChannel::WebRtcVideoSendStream::WebRtcVideoSendStream(
                                          ? webrtc::RtcpMode::kReducedSize
                                          : webrtc::RtcpMode::kCompound;
   parameters_.config.rtp.mid = send_params.mid;
-
   rtp_parameters_.rtcp.reduced_size = send_params.rtcp.reduced_size;
 
   if (codec_settings) {
@@ -1758,6 +1764,10 @@ void WebRtcVideoChannel::WebRtcVideoSendStream::SetSendParameters(
     parameters_.config.rtp.rtcp_mode = *params.rtcp_mode;
     rtp_parameters_.rtcp.reduced_size =
         parameters_.config.rtp.rtcp_mode == webrtc::RtcpMode::kReducedSize;
+    recreate_stream = true;
+  }
+  if (params.extmap_allow_mixed) {
+    parameters_.config.rtp.extmap_allow_mixed = *params.extmap_allow_mixed;
     recreate_stream = true;
   }
   if (params.rtp_header_extensions) {

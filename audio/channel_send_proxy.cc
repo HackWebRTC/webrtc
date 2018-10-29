@@ -88,6 +88,11 @@ void ChannelSendProxy::SetRTCP_CNAME(const std::string& c_name) {
   RTC_DCHECK_EQ(0, error);
 }
 
+void ChannelSendProxy::SetExtmapAllowMixed(bool extmap_allow_mixed) {
+  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  channel_->SetExtmapAllowMixed(extmap_allow_mixed);
+}
+
 void ChannelSendProxy::SetSendAudioLevelIndicationStatus(bool enable, int id) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   int error = channel_->SetSendAudioLevelIndicationStatus(enable, id);

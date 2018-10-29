@@ -576,6 +576,37 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
         CodecMatches(content.codecs()[0], media_channel1_->codecs()[0]));
   }
 
+  // Test that SetLocalContent and SetRemoteContent properly configure
+  // extmap-allow-mixed.
+  void TestSetContentsExtmapAllowMixedCaller(bool offer, bool answer) {
+    // For a caller, SetLocalContent() is called first with an offer and next
+    // SetRemoteContent() is called with the answer.
+    CreateChannels(0, 0);
+    typename T::Content content;
+    CreateContent(0, kPcmuCodec, kH264Codec, &content);
+    auto offer_enum = offer ? (T::Content::kSession) : (T::Content::kNo);
+    auto answer_enum = answer ? (T::Content::kSession) : (T::Content::kNo);
+    content.set_extmap_allow_mixed_enum(offer_enum);
+    EXPECT_TRUE(channel1_->SetLocalContent(&content, SdpType::kOffer, NULL));
+    content.set_extmap_allow_mixed_enum(answer_enum);
+    EXPECT_TRUE(channel1_->SetRemoteContent(&content, SdpType::kAnswer, NULL));
+    EXPECT_EQ(answer, media_channel1_->ExtmapAllowMixed());
+  }
+  void TestSetContentsExtmapAllowMixedCallee(bool offer, bool answer) {
+    // For a callee, SetRemoteContent() is called first with an offer and next
+    // SetLocalContent() is called with the answer.
+    CreateChannels(0, 0);
+    typename T::Content content;
+    CreateContent(0, kPcmuCodec, kH264Codec, &content);
+    auto offer_enum = offer ? (T::Content::kSession) : (T::Content::kNo);
+    auto answer_enum = answer ? (T::Content::kSession) : (T::Content::kNo);
+    content.set_extmap_allow_mixed_enum(offer_enum);
+    EXPECT_TRUE(channel1_->SetRemoteContent(&content, SdpType::kOffer, NULL));
+    content.set_extmap_allow_mixed_enum(answer_enum);
+    EXPECT_TRUE(channel1_->SetLocalContent(&content, SdpType::kAnswer, NULL));
+    EXPECT_EQ(answer, media_channel1_->ExtmapAllowMixed());
+  }
+
   // Test that SetLocalContent and SetRemoteContent properly deals
   // with an empty offer.
   void TestSetContentsNullOffer() {
@@ -1614,6 +1645,24 @@ TEST_F(VoiceChannelSingleThreadTest, TestSetContents) {
   Base::TestSetContents();
 }
 
+TEST_F(VoiceChannelSingleThreadTest, TestSetContentsExtmapAllowMixedAsCaller) {
+  Base::TestSetContentsExtmapAllowMixedCaller(/*offer=*/true, /*answer=*/true);
+}
+
+TEST_F(VoiceChannelSingleThreadTest,
+       TestSetContentsExtmapAllowMixedNotSupportedAsCaller) {
+  Base::TestSetContentsExtmapAllowMixedCaller(/*offer=*/true, /*answer=*/false);
+}
+
+TEST_F(VoiceChannelSingleThreadTest, TestSetContentsExtmapAllowMixedAsCallee) {
+  Base::TestSetContentsExtmapAllowMixedCallee(/*offer=*/true, /*answer=*/true);
+}
+
+TEST_F(VoiceChannelSingleThreadTest,
+       TestSetContentsExtmapAllowMixedNotSupportedAsCallee) {
+  Base::TestSetContentsExtmapAllowMixedCallee(/*offer=*/true, /*answer=*/false);
+}
+
 TEST_F(VoiceChannelSingleThreadTest, TestSetContentsNullOffer) {
   Base::TestSetContentsNullOffer();
 }
@@ -1749,6 +1798,24 @@ TEST_F(VoiceChannelDoubleThreadTest, TestSetContents) {
   Base::TestSetContents();
 }
 
+TEST_F(VoiceChannelDoubleThreadTest, TestSetContentsExtmapAllowMixedAsCaller) {
+  Base::TestSetContentsExtmapAllowMixedCaller(/*offer=*/true, /*answer=*/true);
+}
+
+TEST_F(VoiceChannelDoubleThreadTest,
+       TestSetContentsExtmapAllowMixedNotSupportedAsCaller) {
+  Base::TestSetContentsExtmapAllowMixedCaller(/*offer=*/true, /*answer=*/false);
+}
+
+TEST_F(VoiceChannelDoubleThreadTest, TestSetContentsExtmapAllowMixedAsCallee) {
+  Base::TestSetContentsExtmapAllowMixedCallee(/*offer=*/true, /*answer=*/true);
+}
+
+TEST_F(VoiceChannelDoubleThreadTest,
+       TestSetContentsExtmapAllowMixedNotSupportedAsCallee) {
+  Base::TestSetContentsExtmapAllowMixedCallee(/*offer=*/true, /*answer=*/false);
+}
+
 TEST_F(VoiceChannelDoubleThreadTest, TestSetContentsNullOffer) {
   Base::TestSetContentsNullOffer();
 }
@@ -1882,6 +1949,24 @@ TEST_F(VideoChannelSingleThreadTest, TestSetContents) {
   Base::TestSetContents();
 }
 
+TEST_F(VideoChannelSingleThreadTest, TestSetContentsExtmapAllowMixedAsCaller) {
+  Base::TestSetContentsExtmapAllowMixedCaller(/*offer=*/true, /*answer=*/true);
+}
+
+TEST_F(VideoChannelSingleThreadTest,
+       TestSetContentsExtmapAllowMixedNotSupportedAsCaller) {
+  Base::TestSetContentsExtmapAllowMixedCaller(/*offer=*/true, /*answer=*/false);
+}
+
+TEST_F(VideoChannelSingleThreadTest, TestSetContentsExtmapAllowMixedAsCallee) {
+  Base::TestSetContentsExtmapAllowMixedCallee(/*offer=*/true, /*answer=*/true);
+}
+
+TEST_F(VideoChannelSingleThreadTest,
+       TestSetContentsExtmapAllowMixedNotSupportedAsCallee) {
+  Base::TestSetContentsExtmapAllowMixedCallee(/*offer=*/true, /*answer=*/false);
+}
+
 TEST_F(VideoChannelSingleThreadTest, TestSetContentsNullOffer) {
   Base::TestSetContentsNullOffer();
 }
@@ -2013,6 +2098,24 @@ TEST_F(VideoChannelDoubleThreadTest, TestDeinit) {
 
 TEST_F(VideoChannelDoubleThreadTest, TestSetContents) {
   Base::TestSetContents();
+}
+
+TEST_F(VideoChannelDoubleThreadTest, TestSetContentsExtmapAllowMixedAsCaller) {
+  Base::TestSetContentsExtmapAllowMixedCaller(/*offer=*/true, /*answer=*/true);
+}
+
+TEST_F(VideoChannelDoubleThreadTest,
+       TestSetContentsExtmapAllowMixedNotSupportedAsCaller) {
+  Base::TestSetContentsExtmapAllowMixedCaller(/*offer=*/true, /*answer=*/false);
+}
+
+TEST_F(VideoChannelDoubleThreadTest, TestSetContentsExtmapAllowMixedAsCallee) {
+  Base::TestSetContentsExtmapAllowMixedCallee(/*offer=*/true, /*answer=*/true);
+}
+
+TEST_F(VideoChannelDoubleThreadTest,
+       TestSetContentsExtmapAllowMixedNotSupportedAsCallee) {
+  Base::TestSetContentsExtmapAllowMixedCallee(/*offer=*/true, /*answer=*/false);
 }
 
 TEST_F(VideoChannelDoubleThreadTest, TestSetContentsNullOffer) {

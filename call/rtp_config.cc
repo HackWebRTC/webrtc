@@ -63,6 +63,7 @@ std::string RtpConfig::ToString() const {
      << (rtcp_mode == RtcpMode::kCompound ? "RtcpMode::kCompound"
                                           : "RtcpMode::kReducedSize");
   ss << ", max_packet_size: " << max_packet_size;
+  ss << ", extmap-allow-mixed: " << (extmap_allow_mixed ? "true" : "false");
   ss << ", extensions: [";
   for (size_t i = 0; i < extensions.size(); ++i) {
     ss << extensions[i].ToString();

@@ -79,6 +79,7 @@ bool FakeVoiceMediaChannel::SetSendParameters(
     const AudioSendParameters& params) {
   set_send_rtcp_parameters(params.rtcp);
   return (SetSendCodecs(params.codecs) &&
+          SetSendExtmapAllowMixed(params.extmap_allow_mixed) &&
           SetSendRtpHeaderExtensions(params.extensions) &&
           SetMaxSendBandwidth(params.max_bandwidth_bps) &&
           SetOptions(params.options));
@@ -260,6 +261,7 @@ bool FakeVideoMediaChannel::SetSendParameters(
     const VideoSendParameters& params) {
   set_send_rtcp_parameters(params.rtcp);
   return (SetSendCodecs(params.codecs) &&
+          SetSendExtmapAllowMixed(params.extmap_allow_mixed) &&
           SetSendRtpHeaderExtensions(params.extensions) &&
           SetMaxSendBandwidth(params.max_bandwidth_bps));
 }

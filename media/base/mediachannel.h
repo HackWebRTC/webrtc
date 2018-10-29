@@ -262,6 +262,15 @@ class MediaChannel : public sigslot::has_slots<> {
     return media_transport_;
   }
 
+  // Corresponds to the SDP attribute extmap-allow-mixed, see RFC8285.
+  // Set to true if it's allowed to mix one- and two-byte RTP header extensions
+  // in the same stream. The setter and getter must only be called from
+  // worker_thread.
+  void SetExtmapAllowMixed(bool extmap_allow_mixed) {
+    extmap_allow_mixed_ = extmap_allow_mixed;
+  }
+  bool ExtmapAllowMixed() const { return extmap_allow_mixed_; }
+
  protected:
   virtual rtc::DiffServCodePoint PreferredDscp() const;
 
@@ -298,6 +307,7 @@ class MediaChannel : public sigslot::has_slots<> {
   rtc::CriticalSection network_interface_crit_;
   NetworkInterface* network_interface_ = nullptr;
   webrtc::MediaTransportInterface* media_transport_ = nullptr;
+  bool extmap_allow_mixed_ = false;
 };
 
 // The stats information is structured as follows:
@@ -661,12 +671,14 @@ struct RtpSendParameters : RtpParameters<Codec> {
   // This is the value to be sent in the MID RTP header extension (if the header
   // extension in included in the list of extensions).
   std::string mid;
+  bool extmap_allow_mixed = false;
 
  protected:
   std::map<std::string, std::string> ToStringMap() const override {
     auto params = RtpParameters<Codec>::ToStringMap();
     params["max_bandwidth_bps"] = rtc::ToString(max_bandwidth_bps);
     params["mid"] = (mid.empty() ? "<not set>" : mid);
+    params["extmap-allow-mixed"] = extmap_allow_mixed ? "true" : "false";
     return params;
   }
 };

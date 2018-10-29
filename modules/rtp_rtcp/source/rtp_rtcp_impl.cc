@@ -102,7 +102,8 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
         configuration.retransmission_rate_limiter,
         configuration.overhead_observer,
         configuration.populate_network2_timestamp,
-        configuration.frame_encryptor, configuration.require_frame_encryption));
+        configuration.frame_encryptor, configuration.require_frame_encryption,
+        configuration.extmap_allow_mixed));
     // Make sure rtcp sender use same timestamp offset as rtp sender.
     rtcp_sender_.SetTimestampOffset(rtp_sender_->TimestampOffset());
 
@@ -613,6 +614,10 @@ void ModuleRtpRtcpImpl::SetRemb(int64_t bitrate_bps,
 
 void ModuleRtpRtcpImpl::UnsetRemb() {
   rtcp_sender_.UnsetRemb();
+}
+
+void ModuleRtpRtcpImpl::SetExtmapAllowMixed(bool extmap_allow_mixed) {
+  rtp_sender_->SetExtmapAllowMixed(extmap_allow_mixed);
 }
 
 int32_t ModuleRtpRtcpImpl::RegisterSendRtpHeaderExtension(

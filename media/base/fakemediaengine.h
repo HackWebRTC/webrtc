@@ -252,6 +252,12 @@ class RtpHelper : public Base {
     recv_extensions_ = extensions;
     return true;
   }
+  bool SetSendExtmapAllowMixed(bool extmap_allow_mixed) {
+    if (Base::ExtmapAllowMixed() != extmap_allow_mixed) {
+      Base::SetExtmapAllowMixed(extmap_allow_mixed);
+    }
+    return true;
+  }
   bool SetSendRtpHeaderExtensions(const std::vector<RtpExtension>& extensions) {
     send_extensions_ = extensions;
     return true;

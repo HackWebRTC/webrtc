@@ -59,6 +59,9 @@ class RtpHeaderExtensionMap {
   // Set to true if it's allowed to mix one- and two-byte RTP header extensions
   // in the same stream.
   bool ExtmapAllowMixed() const { return extmap_allow_mixed_; }
+  void SetExtmapAllowMixed(bool extmap_allow_mixed) {
+    extmap_allow_mixed_ = extmap_allow_mixed;
+  }
 
  private:
   bool Register(int id, RTPExtensionType type, const char* uri);

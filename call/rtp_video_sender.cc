@@ -40,7 +40,7 @@ static const size_t kPathMTU = 1500;
 
 std::vector<std::unique_ptr<RtpRtcp>> CreateRtpRtcpModules(
     const std::vector<uint32_t>& ssrcs,
-    const std::vector<uint32_t>& protected_media_ssrcs,
+    const RtpConfig& rtp_config,
     const RtcpConfig& rtcp_config,
     Transport* send_transport,
     RtcpIntraFrameObserver* intra_frame_callback,
@@ -89,9 +89,11 @@ std::vector<std::unique_ptr<RtpRtcp>> CreateRtpRtcpModules(
   configuration.frame_encryptor = frame_encryptor;
   configuration.require_frame_encryption =
       crypto_options.sframe.require_frame_encryption;
+  configuration.extmap_allow_mixed = rtp_config.extmap_allow_mixed;
 
   std::vector<std::unique_ptr<RtpRtcp>> modules;
-  const std::vector<uint32_t>& flexfec_protected_ssrcs = protected_media_ssrcs;
+  const std::vector<uint32_t>& flexfec_protected_ssrcs =
+      rtp_config.flexfec.protected_media_ssrcs;
   for (uint32_t ssrc : ssrcs) {
     bool enable_flexfec = flexfec_sender != nullptr &&
                           std::find(flexfec_protected_ssrcs.begin(),
@@ -200,27 +202,26 @@ RtpVideoSender::RtpVideoSender(
       suspended_ssrcs_(std::move(suspended_ssrcs)),
       flexfec_sender_(MaybeCreateFlexfecSender(rtp_config, suspended_ssrcs_)),
       fec_controller_(std::move(fec_controller)),
-      rtp_modules_(
-          CreateRtpRtcpModules(ssrcs,
-                               rtp_config.flexfec.protected_media_ssrcs,
-                               rtcp_config,
-                               send_transport,
-                               observers.intra_frame_callback,
-                               transport->GetBandwidthObserver(),
-                               transport,
-                               observers.rtcp_rtt_stats,
-                               flexfec_sender_.get(),
-                               observers.bitrate_observer,
-                               observers.frame_count_observer,
-                               observers.rtcp_type_observer,
-                               observers.send_delay_observer,
-                               observers.send_packet_observer,
-                               event_log,
-                               retransmission_limiter,
-                               this,
-                               transport->keepalive_config(),
-                               frame_encryptor,
-                               crypto_options)),
+      rtp_modules_(CreateRtpRtcpModules(ssrcs,
+                                        rtp_config,
+                                        rtcp_config,
+                                        send_transport,
+                                        observers.intra_frame_callback,
+                                        transport->GetBandwidthObserver(),
+                                        transport,
+                                        observers.rtcp_rtt_stats,
+                                        flexfec_sender_.get(),
+                                        observers.bitrate_observer,
+                                        observers.frame_count_observer,
+                                        observers.rtcp_type_observer,
+                                        observers.send_delay_observer,
+                                        observers.send_packet_observer,
+                                        event_log,
+                                        retransmission_limiter,
+                                        this,
+                                        transport->keepalive_config(),
+                                        frame_encryptor,
+                                        crypto_options)),
       rtp_config_(rtp_config),
       transport_(transport),
       transport_overhead_bytes_per_packet_(0),
