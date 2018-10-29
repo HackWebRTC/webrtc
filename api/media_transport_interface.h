@@ -39,6 +39,8 @@ namespace webrtc {
 // A collection of settings for creation of media transport.
 struct MediaTransportSettings final {
   MediaTransportSettings();
+  MediaTransportSettings(const MediaTransportSettings&);
+  MediaTransportSettings& operator=(const MediaTransportSettings&);
   ~MediaTransportSettings();
 
   // Group calls are not currently supported, in 1:1 call one side must set
@@ -280,7 +282,7 @@ class MediaTransportFactory {
   virtual RTCErrorOr<std::unique_ptr<MediaTransportInterface>>
   CreateMediaTransport(rtc::PacketTransportInternal* packet_transport,
                        rtc::Thread* network_thread,
-                       const MediaTransportSettings settings);
+                       const MediaTransportSettings& settings);
 };
 
 }  // namespace webrtc

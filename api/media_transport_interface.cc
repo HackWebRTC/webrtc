@@ -23,6 +23,10 @@
 namespace webrtc {
 
 MediaTransportSettings::MediaTransportSettings() = default;
+MediaTransportSettings::MediaTransportSettings(const MediaTransportSettings&) =
+    default;
+MediaTransportSettings& MediaTransportSettings::operator=(
+    const MediaTransportSettings&) = default;
 MediaTransportSettings::~MediaTransportSettings() = default;
 
 MediaTransportEncodedAudioFrame::~MediaTransportEncodedAudioFrame() {}
@@ -84,14 +88,16 @@ MediaTransportFactory::CreateMediaTransport(
     rtc::PacketTransportInternal* packet_transport,
     rtc::Thread* network_thread,
     bool is_caller) {
-  return std::unique_ptr<MediaTransportInterface>(nullptr);
+  MediaTransportSettings settings;
+  settings.is_caller = is_caller;
+  return CreateMediaTransport(packet_transport, network_thread, settings);
 }
 
 RTCErrorOr<std::unique_ptr<MediaTransportInterface>>
 MediaTransportFactory::CreateMediaTransport(
     rtc::PacketTransportInternal* packet_transport,
     rtc::Thread* network_thread,
-    const MediaTransportSettings settings) {
+    const MediaTransportSettings& settings) {
   return std::unique_ptr<MediaTransportInterface>(nullptr);
 }
 
