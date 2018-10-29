@@ -209,6 +209,25 @@ class MediaTransportVideoSinkInterface {
   virtual void OnKeyFrameRequested(uint64_t channel_id) = 0;
 };
 
+// State of the media transport.  Media transport begins in the pending state.
+// It transitions to writable when it is ready to send media.  It may transition
+// back to pending if the connection is blocked.  It may transition to closed at
+// any time.  Closed is terminal: a transport will never re-open once closed.
+enum class MediaTransportState {
+  kPending,
+  kWritable,
+  kClosed,
+};
+
+// Callback invoked whenever the state of the media transport changes.
+class MediaTransportStateCallback {
+ public:
+  virtual ~MediaTransportStateCallback() = default;
+
+  // Invoked whenever the state of the media transport changes.
+  virtual void OnStateChanged(MediaTransportState state) = 0;
+};
+
 // Media transport interface for sending / receiving encoded audio/video frames
 // and receiving bandwidth estimate update from congestion control.
 class MediaTransportInterface {
@@ -249,6 +268,14 @@ class MediaTransportInterface {
   // target rate, if available.
   virtual void SetTargetTransferRateObserver(
       webrtc::TargetTransferRateObserver* observer) = 0;
+
+  // Sets a state observer callback. Before media transport is destroyed, the
+  // callback must be unregistered by setting it to nullptr.
+  // A newly registered callback will be called with the current state.
+  // Media transport does not invoke this callback concurrently.
+  // TODO(mellem): Make this pure virtual once all implementations support it.
+  virtual void SetMediaTransportStateCallback(
+      MediaTransportStateCallback* callback) {}
 
   // TODO(sukhanov): RtcEventLogs.
 };
