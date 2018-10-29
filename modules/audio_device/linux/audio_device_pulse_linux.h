@@ -20,6 +20,7 @@
 #include "modules/audio_device/linux/audio_mixer_manager_pulse_linux.h"
 #include "modules/audio_device/linux/pulseaudiosymboltable_linux.h"
 #include "rtc_base/criticalsection.h"
+#include "rtc_base/event.h"
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/thread_checker.h"
@@ -103,7 +104,6 @@ typedef webrtc::adm_linux_pulse::PulseAudioSymbolTable WebRTCPulseSymbolTable;
 WebRTCPulseSymbolTable* GetPulseSymbolTable();
 
 namespace webrtc {
-class EventWrapper;
 
 class AudioDeviceLinuxPulse : public AudioDeviceGeneric {
  public:
@@ -262,10 +262,10 @@ class AudioDeviceLinuxPulse : public AudioDeviceGeneric {
   AudioDeviceBuffer* _ptrAudioBuffer;
 
   rtc::CriticalSection _critSect;
-  EventWrapper& _timeEventRec;
-  EventWrapper& _timeEventPlay;
-  EventWrapper& _recStartEvent;
-  EventWrapper& _playStartEvent;
+  rtc::Event _timeEventRec;
+  rtc::Event _timeEventPlay;
+  rtc::Event _recStartEvent;
+  rtc::Event _playStartEvent;
 
   // TODO(pbos): Remove unique_ptr and use directly without resetting.
   std::unique_ptr<rtc::PlatformThread> _ptrThreadPlay;

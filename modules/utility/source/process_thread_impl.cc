@@ -44,7 +44,7 @@ std::unique_ptr<ProcessThread> ProcessThread::Create(const char* thread_name) {
 }
 
 ProcessThreadImpl::ProcessThreadImpl(const char* thread_name)
-    : wake_up_(EventWrapper::Create()),
+    : wake_up_(/*manual_reset=*/false, /*initially_signaled=*/false),
       stop_(false),
       thread_name_(thread_name) {}
 
@@ -85,7 +85,7 @@ void ProcessThreadImpl::Stop() {
     stop_ = true;
   }
 
-  wake_up_->Set();
+  wake_up_.Set();
 
   thread_->Stop();
   stop_ = false;
@@ -104,7 +104,7 @@ void ProcessThreadImpl::WakeUp(Module* module) {
         m.next_callback = kCallProcessImmediately;
     }
   }
-  wake_up_->Set();
+  wake_up_.Set();
 }
 
 void ProcessThreadImpl::PostTask(std::unique_ptr<rtc::QueuedTask> task) {
@@ -113,7 +113,7 @@ void ProcessThreadImpl::PostTask(std::unique_ptr<rtc::QueuedTask> task) {
     rtc::CritScope lock(&lock_);
     queue_.push(task.release());
   }
-  wake_up_->Set();
+  wake_up_.Set();
 }
 
 void ProcessThreadImpl::RegisterModule(Module* module,
@@ -147,7 +147,7 @@ void ProcessThreadImpl::RegisterModule(Module* module,
   // Wake the thread calling ProcessThreadImpl::Process() to update the
   // waiting time. The waiting time for the just registered module may be
   // shorter than all other registered modules.
-  wake_up_->Set();
+  wake_up_.Set();
 }
 
 void ProcessThreadImpl::DeRegisterModule(Module* module) {
@@ -217,7 +217,7 @@ bool ProcessThreadImpl::Process() {
 
   int64_t time_to_wait = next_checkpoint - rtc::TimeMillis();
   if (time_to_wait > 0)
-    wake_up_->Wait(static_cast<unsigned long>(time_to_wait));
+    wake_up_.Wait(static_cast<int>(time_to_wait));
 
   return true;
 }

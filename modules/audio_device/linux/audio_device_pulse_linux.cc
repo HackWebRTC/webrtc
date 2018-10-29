@@ -14,7 +14,6 @@
 #include "modules/audio_device/linux/latebindingsymboltable_linux.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "system_wrappers/include/event_wrapper.h"
 
 WebRTCPulseSymbolTable* GetPulseSymbolTable() {
   static WebRTCPulseSymbolTable* pulse_symbol_table =
@@ -33,10 +32,10 @@ namespace webrtc {
 
 AudioDeviceLinuxPulse::AudioDeviceLinuxPulse()
     : _ptrAudioBuffer(NULL),
-      _timeEventRec(*EventWrapper::Create()),
-      _timeEventPlay(*EventWrapper::Create()),
-      _recStartEvent(*EventWrapper::Create()),
-      _playStartEvent(*EventWrapper::Create()),
+      _timeEventRec(false, false),
+      _timeEventPlay(false, false),
+      _recStartEvent(false, false),
+      _playStartEvent(false, false),
       _inputDeviceIndex(0),
       _outputDeviceIndex(0),
       _inputDeviceIsSpecified(false),
@@ -113,11 +112,6 @@ AudioDeviceLinuxPulse::~AudioDeviceLinuxPulse() {
     delete[] _recDeviceName;
     _recDeviceName = NULL;
   }
-
-  delete &_recStartEvent;
-  delete &_playStartEvent;
-  delete &_timeEventRec;
-  delete &_timeEventPlay;
 }
 
 void AudioDeviceLinuxPulse::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
@@ -1067,7 +1061,7 @@ int32_t AudioDeviceLinuxPulse::StartRecording() {
 
   // The audio thread will signal when recording has started.
   _timeEventRec.Set();
-  if (kEventTimeout == _recStartEvent.Wait(10000)) {
+  if (!_recStartEvent.Wait(10000)) {
     {
       rtc::CritScope lock(&_critSect);
       _startRec = false;
@@ -1182,7 +1176,7 @@ int32_t AudioDeviceLinuxPulse::StartPlayout() {
 
   // The audio thread will signal when playout has started.
   _timeEventPlay.Set();
-  if (kEventTimeout == _playStartEvent.Wait(10000)) {
+  if (!_playStartEvent.Wait(10000)) {
     {
       rtc::CritScope lock(&_critSect);
       _startPlay = false;
@@ -1996,14 +1990,8 @@ bool AudioDeviceLinuxPulse::RecThreadFunc(void* pThis) {
 }
 
 bool AudioDeviceLinuxPulse::PlayThreadProcess() {
-  switch (_timeEventPlay.Wait(1000)) {
-    case kEventSignaled:
-      break;
-    case kEventError:
-      RTC_LOG(LS_WARNING) << "EventWrapper::Wait() failed";
-      return true;
-    case kEventTimeout:
-      return true;
+  if (!_timeEventPlay.Wait(1000)) {
+    return true;
   }
 
   rtc::CritScope lock(&_critSect);
@@ -2170,14 +2158,8 @@ bool AudioDeviceLinuxPulse::PlayThreadProcess() {
 }
 
 bool AudioDeviceLinuxPulse::RecThreadProcess() {
-  switch (_timeEventRec.Wait(1000)) {
-    case kEventSignaled:
-      break;
-    case kEventError:
-      RTC_LOG(LS_WARNING) << "EventWrapper::Wait() failed";
-      return true;
-    case kEventTimeout:
-      return true;
+  if (!_timeEventRec.Wait(1000)) {
+    return true;
   }
 
   rtc::CritScope lock(&_critSect);

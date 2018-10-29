@@ -35,6 +35,7 @@
 #include "modules/audio_coding/neteq/tools/packet.h"
 #include "modules/audio_coding/neteq/tools/rtp_file_source.h"
 #include "rtc_base/criticalsection.h"
+#include "rtc_base/event.h"
 #include "rtc_base/messagedigest.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/platform_thread.h"
@@ -42,7 +43,6 @@
 #include "rtc_base/system/arch.h"
 #include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/clock.h"
-#include "system_wrappers/include/event_wrapper.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/gtest.h"
 #include "test/mock_audio_decoder.h"
@@ -481,7 +481,7 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
         send_thread_(CbSendThread, this, "send"),
         insert_packet_thread_(CbInsertPacketThread, this, "insert_packet"),
         pull_audio_thread_(CbPullAudioThread, this, "pull_audio"),
-        test_complete_(EventWrapper::Create()),
+        test_complete_(false, false),
         send_count_(0),
         insert_packet_count_(0),
         pull_audio_count_(0),
@@ -512,8 +512,8 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
     insert_packet_thread_.Stop();
   }
 
-  EventTypeWrapper RunTest() {
-    return test_complete_->Wait(10 * 60 * 1000);  // 10 minutes' timeout.
+  bool RunTest() {
+    return test_complete_.Wait(10 * 60 * 1000);  // 10 minutes' timeout.
   }
 
   virtual bool TestDone() {
@@ -538,12 +538,12 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
     SleepMs(1);
     if (HasFatalFailure()) {
       // End the test early if a fatal failure (ASSERT_*) has occurred.
-      test_complete_->Set();
+      test_complete_.Set();
     }
     ++send_count_;
     InsertAudioAndVerifyEncoding();
     if (TestDone()) {
-      test_complete_->Set();
+      test_complete_.Set();
     }
     return true;
   }
@@ -592,7 +592,7 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
   rtc::PlatformThread send_thread_;
   rtc::PlatformThread insert_packet_thread_;
   rtc::PlatformThread pull_audio_thread_;
-  const std::unique_ptr<EventWrapper> test_complete_;
+  rtc::Event test_complete_;
   int send_count_;
   int insert_packet_count_;
   int pull_audio_count_ RTC_GUARDED_BY(crit_sect_);
@@ -607,7 +607,7 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
 #define MAYBE_DoTest DoTest
 #endif
 TEST_F(AudioCodingModuleMtTestOldApi, MAYBE_DoTest) {
-  EXPECT_EQ(kEventSignaled, RunTest());
+  EXPECT_TRUE(RunTest());
 }
 
 // This is a multi-threaded ACM test using iSAC. The test encodes audio
@@ -717,7 +717,7 @@ class AcmIsacMtTestOldApi : public AudioCodingModuleMtTestOldApi {
 #endif
 #if defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)
 TEST_F(AcmIsacMtTestOldApi, MAYBE_DoTest) {
-  EXPECT_EQ(kEventSignaled, RunTest());
+  EXPECT_TRUE(RunTest());
 }
 #endif
 
@@ -734,7 +734,7 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
         codec_registration_thread_(CbCodecRegistrationThread,
                                    this,
                                    "codec_registration"),
-        test_complete_(EventWrapper::Create()),
+        test_complete_(false, false),
         codec_registered_(false),
         receive_packet_count_(0),
         next_insert_packet_time_ms_(0),
@@ -781,8 +781,8 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
     codec_registration_thread_.Stop();
   }
 
-  EventTypeWrapper RunTest() {
-    return test_complete_->Wait(10 * 60 * 1000);  // 10 minutes' timeout.
+  bool RunTest() {
+    return test_complete_.Wait(10 * 60 * 1000);  // 10 minutes' timeout.
   }
 
   static bool CbReceiveThread(void* context) {
@@ -845,7 +845,7 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
     SleepMs(1);
     if (HasFatalFailure()) {
       // End the test early if a fatal failure (ASSERT_*) has occurred.
-      test_complete_->Set();
+      test_complete_.Set();
     }
     rtc::CritScope lock(&crit_sect_);
     if (!codec_registered_ &&
@@ -856,14 +856,14 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
       codec_registered_ = true;
     }
     if (codec_registered_ && receive_packet_count_ > kNumPackets) {
-      test_complete_->Set();
+      test_complete_.Set();
     }
     return true;
   }
 
   rtc::PlatformThread receive_thread_;
   rtc::PlatformThread codec_registration_thread_;
-  const std::unique_ptr<EventWrapper> test_complete_;
+  rtc::Event test_complete_;
   rtc::CriticalSection crit_sect_;
   bool codec_registered_ RTC_GUARDED_BY(crit_sect_);
   int receive_packet_count_ RTC_GUARDED_BY(crit_sect_);
@@ -880,7 +880,7 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
 #endif
 #if defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)
 TEST_F(AcmReRegisterIsacMtTestOldApi, MAYBE_DoTest) {
-  EXPECT_EQ(kEventSignaled, RunTest());
+  EXPECT_TRUE(RunTest());
 }
 #endif
 
