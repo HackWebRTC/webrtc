@@ -258,6 +258,15 @@ void RTCPSender::SetLastRtpTime(uint32_t rtp_timestamp,
                                 int64_t capture_time_ms,
                                 int8_t payload_type) {
   rtc::CritScope lock(&critical_section_rtcp_sender_);
+  // Workaround for https://bugs.webrtc.org/9905
+  // Only very first SetLastRtpTime for audio should update
+  // last_frame_capture_time_ms_ and last_payload_type_.
+  // This eliminates jitter between last rtp and capture timestamps.
+  // TODO(https://bugs.webrtc.org/9905): remove once the bug is fixed.
+  if (capture_time_ms < 0 && last_frame_capture_time_ms_ > 0 &&
+      payload_type != -1 && last_payload_type_ == payload_type) {
+    return;
+  }
   // For compatibility with clients who don't set payload type correctly on all
   // calls.
   if (payload_type != -1) {

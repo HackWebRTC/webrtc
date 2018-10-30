@@ -333,6 +333,7 @@ int32_t ChannelSend::SendRtpAudio(FrameType frameType,
   // This call will trigger Transport::SendPacket() from the RTP/RTCP module.
   if (!_rtpRtcpModule->SendOutgoingData((FrameType&)frameType, payloadType,
                                         timeStamp,
+                                        // TODO(https://bugs.webrtc.org/9905):
                                         // Leaving the time when this frame was
                                         // received from the capture device as
                                         // undefined for voice for now.
