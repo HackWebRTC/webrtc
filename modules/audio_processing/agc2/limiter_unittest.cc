@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/audio_processing/agc2/gain_curve_applier.h"
+#include "modules/audio_processing/agc2/limiter.h"
 
 #include "common_audio/include/audio_util.h"
 #include "modules/audio_processing/agc2/agc2_common.h"
@@ -19,36 +19,36 @@
 
 namespace webrtc {
 
-TEST(GainCurveApplier, GainCurveApplierShouldConstructAndRun) {
+TEST(Limiter, LimiterShouldConstructAndRun) {
   const int sample_rate_hz = 48000;
   ApmDataDumper apm_data_dumper(0);
 
-  GainCurveApplier gain_curve_applier(sample_rate_hz, &apm_data_dumper, "");
+  Limiter limiter(sample_rate_hz, &apm_data_dumper, "");
 
   VectorFloatFrame vectors_with_float_frame(1, sample_rate_hz / 100,
                                             kMaxAbsFloatS16Value);
-  gain_curve_applier.Process(vectors_with_float_frame.float_frame_view());
+  limiter.Process(vectors_with_float_frame.float_frame_view());
 }
 
-TEST(GainCurveApplier, OutputVolumeAboveThreshold) {
+TEST(Limiter, OutputVolumeAboveThreshold) {
   const int sample_rate_hz = 48000;
   const float input_level =
       (kMaxAbsFloatS16Value + DbfsToFloatS16(test::kLimiterMaxInputLevelDbFs)) /
       2.f;
   ApmDataDumper apm_data_dumper(0);
 
-  GainCurveApplier gain_curve_applier(sample_rate_hz, &apm_data_dumper, "");
+  Limiter limiter(sample_rate_hz, &apm_data_dumper, "");
 
   // Give the level estimator time to adapt.
   for (int i = 0; i < 5; ++i) {
     VectorFloatFrame vectors_with_float_frame(1, sample_rate_hz / 100,
                                               input_level);
-    gain_curve_applier.Process(vectors_with_float_frame.float_frame_view());
+    limiter.Process(vectors_with_float_frame.float_frame_view());
   }
 
   VectorFloatFrame vectors_with_float_frame(1, sample_rate_hz / 100,
                                             input_level);
-  gain_curve_applier.Process(vectors_with_float_frame.float_frame_view());
+  limiter.Process(vectors_with_float_frame.float_frame_view());
   rtc::ArrayView<const float> channel =
       vectors_with_float_frame.float_frame_view().channel(0);
 

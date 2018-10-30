@@ -98,10 +98,10 @@ rtc_source_set("fixed_digital") {
     "fixed_digital_level_estimator.h",
     "fixed_gain_controller.cc",
     "fixed_gain_controller.h",
-    "gain_curve_applier.cc",
-    "gain_curve_applier.h",
     "interpolated_gain_curve.cc",
     "interpolated_gain_curve.h",
+    "limiter.cc",
+    "limiter.h",
   ]
 
   configs += [ "..:apm_debug_dump" ]
@@ -218,11 +218,11 @@ rtc_source_set("fixed_digital_unittests") {
     "compute_interpolated_gain_curve.h",
     "fixed_digital_level_estimator_unittest.cc",
     "fixed_gain_controller_unittest.cc",
-    "gain_curve_applier_unittest.cc",
     "interpolated_gain_curve_unittest.cc",
     "limiter_db_gain_curve.cc",
     "limiter_db_gain_curve.h",
     "limiter_db_gain_curve_unittest.cc",
+    "limiter_unittest.cc",
   ]
   deps = [
     ":common",

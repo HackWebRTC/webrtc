@@ -8,9 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_AUDIO_PROCESSING_AGC2_GAIN_CURVE_APPLIER_H_
-#define MODULES_AUDIO_PROCESSING_AGC2_GAIN_CURVE_APPLIER_H_
+#ifndef MODULES_AUDIO_PROCESSING_AGC2_LIMITER_H_
+#define MODULES_AUDIO_PROCESSING_AGC2_LIMITER_H_
 
+#include <string>
 #include <vector>
 
 #include "modules/audio_processing/agc2/fixed_digital_level_estimator.h"
@@ -21,13 +22,14 @@
 namespace webrtc {
 class ApmDataDumper;
 
-class GainCurveApplier {
+class Limiter {
  public:
-  GainCurveApplier(size_t sample_rate_hz,
-                   ApmDataDumper* apm_data_dumper,
-                   std::string histogram_name_prefix);
-
-  ~GainCurveApplier();
+  Limiter(size_t sample_rate_hz,
+          ApmDataDumper* apm_data_dumper,
+          std::string histogram_name_prefix);
+  Limiter(const Limiter& limiter) = delete;
+  Limiter& operator=(const Limiter& limiter) = delete;
+  ~Limiter();
 
   void Process(AudioFrameView<float> signal);
   InterpolatedGainCurve::Stats GetGainCurveStats() const;
@@ -54,10 +56,8 @@ class GainCurveApplier {
   std::array<float, kMaximalNumberOfSamplesPerChannel>
       per_sample_scaling_factors_ = {};
   float last_scaling_factor_ = 1.f;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(GainCurveApplier);
 };
 
 }  // namespace webrtc
 
-#endif  // MODULES_AUDIO_PROCESSING_AGC2_GAIN_CURVE_APPLIER_H_
+#endif  // MODULES_AUDIO_PROCESSING_AGC2_LIMITER_H_

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/audio_processing/agc2/gain_curve_applier.h"
+#include "modules/audio_processing/agc2/limiter.h"
 
 #include <algorithm>
 #include <array>
@@ -83,16 +83,16 @@ void ScaleSamples(rtc::ArrayView<const float> per_sample_scaling_factors,
 
 }  // namespace
 
-GainCurveApplier::GainCurveApplier(size_t sample_rate_hz,
-                                   ApmDataDumper* apm_data_dumper,
-                                   std::string histogram_name)
+Limiter::Limiter(size_t sample_rate_hz,
+                 ApmDataDumper* apm_data_dumper,
+                 std::string histogram_name)
     : interp_gain_curve_(apm_data_dumper, histogram_name),
       level_estimator_(sample_rate_hz, apm_data_dumper),
       apm_data_dumper_(apm_data_dumper) {}
 
-GainCurveApplier::~GainCurveApplier() = default;
+Limiter::~Limiter() = default;
 
-void GainCurveApplier::Process(AudioFrameView<float> signal) {
+void Limiter::Process(AudioFrameView<float> signal) {
   const auto level_estimate = level_estimator_.ComputeLevel(signal);
 
   RTC_DCHECK_EQ(level_estimate.size() + 1, scaling_factors_.size());
@@ -119,22 +119,22 @@ void GainCurveApplier::Process(AudioFrameView<float> signal) {
                             per_sample_scaling_factors_.data());
 }
 
-InterpolatedGainCurve::Stats GainCurveApplier::GetGainCurveStats() const {
+InterpolatedGainCurve::Stats Limiter::GetGainCurveStats() const {
   return interp_gain_curve_.get_stats();
 }
 
-void GainCurveApplier::SetSampleRate(size_t sample_rate_hz) {
+void Limiter::SetSampleRate(size_t sample_rate_hz) {
   level_estimator_.SetSampleRate(sample_rate_hz);
   // Check that per_sample_scaling_factors_ is large enough.
   RTC_DCHECK_LE(sample_rate_hz,
                 kMaximalNumberOfSamplesPerChannel * 1000 / kFrameDurationMs);
 }
 
-void GainCurveApplier::Reset() {
+void Limiter::Reset() {
   level_estimator_.Reset();
 }
 
-float GainCurveApplier::LastAudioLevel() const {
+float Limiter::LastAudioLevel() const {
   return level_estimator_.LastAudioLevel();
 }
 

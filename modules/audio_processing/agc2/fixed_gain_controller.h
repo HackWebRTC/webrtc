@@ -11,7 +11,7 @@
 #ifndef MODULES_AUDIO_PROCESSING_AGC2_FIXED_GAIN_CONTROLLER_H_
 #define MODULES_AUDIO_PROCESSING_AGC2_FIXED_GAIN_CONTROLLER_H_
 
-#include "modules/audio_processing/agc2/gain_curve_applier.h"
+#include "modules/audio_processing/agc2/limiter.h"
 #include "modules/audio_processing/include/audio_frame_view.h"
 
 namespace webrtc {
@@ -34,7 +34,7 @@ class FixedGainController {
  private:
   float gain_to_apply_ = 1.f;
   ApmDataDumper* apm_data_dumper_ = nullptr;
-  GainCurveApplier gain_curve_applier_;
+  Limiter limiter_;
 };
 
 }  // namespace webrtc
