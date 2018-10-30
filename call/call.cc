@@ -1216,10 +1216,10 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
 
   if (packet_time_us != -1) {
     if (receive_time_calculator_) {
-      int64_t system_time_us =
-          rtc::SystemTimeNanos() / rtc::kNumNanosecsPerMicrosec;
+      // Repair packet_time_us for clock resets by comparing a new read of
+      // the same clock (TimeUTCMicros) to a monotonic clock reading.
       packet_time_us = receive_time_calculator_->ReconcileReceiveTimes(
-          packet_time_us, system_time_us, clock_->TimeInMicroseconds());
+          packet_time_us, rtc::TimeUTCMicros(), clock_->TimeInMicroseconds());
     }
     parsed_packet.set_arrival_time_ms((packet_time_us + 500) / 1000);
   } else {
