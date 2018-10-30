@@ -115,7 +115,7 @@ void BlockProcessorImpl2::ProcessCapture(
     if (!capture_properly_started_) {
       capture_properly_started_ = true;
       render_buffer_->Reset();
-      delay_controller_->Reset();
+      delay_controller_->Reset(true);
     }
   } else {
     // If no render data has yet arrived, do not process the capture signal.
@@ -130,7 +130,7 @@ void BlockProcessorImpl2::ProcessCapture(
       render_properly_started_) {
     echo_path_variability.delay_change =
         EchoPathVariability::DelayAdjustment::kBufferFlush;
-    delay_controller_->Reset();
+    delay_controller_->Reset(true);
     RTC_LOG(LS_WARNING) << "Reset due to render buffer overrun at block  "
                         << capture_call_counter_;
   }
@@ -143,7 +143,7 @@ void BlockProcessorImpl2::ProcessCapture(
       render_buffer_->PrepareCaptureProcessing();
   // Reset the delay controller at render buffer underrun.
   if (buffer_event == RenderDelayBuffer::BufferingEvent::kRenderUnderrun) {
-    delay_controller_->Reset();
+    delay_controller_->Reset(false);
   }
 
   data_dumper_->DumpWav("aec3_processblock_capture_input2", kBlockSize,

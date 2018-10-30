@@ -108,7 +108,7 @@ void BlockProcessorImpl::ProcessCapture(
     if (!capture_properly_started_) {
       capture_properly_started_ = true;
       render_buffer_->Reset();
-      delay_controller_->Reset();
+      delay_controller_->Reset(true);
     }
   } else {
     // If no render data has yet arrived, do not process the capture signal.
@@ -123,7 +123,7 @@ void BlockProcessorImpl::ProcessCapture(
       render_properly_started_) {
     echo_path_variability.delay_change =
         EchoPathVariability::DelayAdjustment::kBufferFlush;
-    delay_controller_->Reset();
+    delay_controller_->Reset(true);
     RTC_LOG(LS_WARNING) << "Reset due to render buffer overrun at block  "
                         << capture_call_counter_;
   }
@@ -139,7 +139,7 @@ void BlockProcessorImpl::ProcessCapture(
         estimated_delay_->quality == DelayEstimate::Quality::kRefined) {
       echo_path_variability.delay_change =
           EchoPathVariability::DelayAdjustment::kDelayReset;
-      delay_controller_->Reset();
+      delay_controller_->Reset(true);
       capture_properly_started_ = false;
       render_properly_started_ = false;
 
@@ -151,7 +151,7 @@ void BlockProcessorImpl::ProcessCapture(
     // echo.
     echo_path_variability.delay_change =
         EchoPathVariability::DelayAdjustment::kDelayReset;
-    delay_controller_->Reset();
+    delay_controller_->Reset(true);
     capture_properly_started_ = false;
     render_properly_started_ = false;
     RTC_LOG(LS_WARNING) << "Reset due to render buffer api skew at block "
@@ -184,7 +184,7 @@ void BlockProcessorImpl::ProcessCapture(
       if (estimated_delay_->quality == DelayEstimate::Quality::kRefined) {
         echo_path_variability.delay_change =
             EchoPathVariability::DelayAdjustment::kDelayReset;
-        delay_controller_->Reset();
+        delay_controller_->Reset(true);
         render_buffer_->Reset();
         capture_properly_started_ = false;
         render_properly_started_ = false;

@@ -34,9 +34,9 @@ class EchoPathDelayEstimator {
                          const EchoCanceller3Config& config);
   ~EchoPathDelayEstimator();
 
-  // Resets the estimation. If the soft-reset is specified, only  the matched
-  // filters are reset.
-  void Reset(bool soft_reset);
+  // Resets the estimation. If the delay confidence is reset, the reset behavior
+  // is as if the call is restarted.
+  void Reset(bool reset_delay_confidence);
 
   // Produce a delay estimate if such is avaliable.
   absl::optional<DelayEstimate> EstimateDelay(
@@ -58,6 +58,9 @@ class EchoPathDelayEstimator {
   MatchedFilterLagAggregator matched_filter_lag_aggregator_;
   absl::optional<DelayEstimate> old_aggregated_lag_;
   size_t consistent_estimate_counter_ = 0;
+
+  // Internal reset method with more granularity.
+  void Reset(bool reset_lag_aggregator, bool reset_delay_confidence);
 
   RTC_DISALLOW_COPY_AND_ASSIGN(EchoPathDelayEstimator);
 };

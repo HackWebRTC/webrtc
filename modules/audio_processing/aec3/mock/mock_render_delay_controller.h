@@ -25,7 +25,7 @@ class MockRenderDelayController : public RenderDelayController {
   MockRenderDelayController();
   virtual ~MockRenderDelayController();
 
-  MOCK_METHOD0(Reset, void());
+  MOCK_METHOD1(Reset, void(bool reset_delay_statistics));
   MOCK_METHOD0(LogRenderCall, void());
   MOCK_METHOD4(GetDelay,
                absl::optional<DelayEstimate>(

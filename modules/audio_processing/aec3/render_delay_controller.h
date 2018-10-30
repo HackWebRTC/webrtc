@@ -31,8 +31,9 @@ class RenderDelayController {
                                         int sample_rate_hz);
   virtual ~RenderDelayController() = default;
 
-  // Resets the delay controller.
-  virtual void Reset() = 0;
+  // Resets the delay controller. If the delay confidence is reset, the reset
+  // behavior is as if the call is restarted.
+  virtual void Reset(bool reset_delay_confidence) = 0;
 
   // Logs a render call.
   virtual void LogRenderCall() = 0;
