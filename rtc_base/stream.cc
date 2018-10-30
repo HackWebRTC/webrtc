@@ -69,26 +69,6 @@ StreamResult StreamInterface::ReadAll(void* buffer,
   return result;
 }
 
-StreamResult StreamInterface::ReadLine(std::string* line) {
-  line->clear();
-  StreamResult result = SR_SUCCESS;
-  while (true) {
-    char ch;
-    result = Read(&ch, sizeof(ch), nullptr, nullptr);
-    if (result != SR_SUCCESS) {
-      break;
-    }
-    if (ch == '\n') {
-      break;
-    }
-    line->push_back(ch);
-  }
-  if (!line->empty()) {   // give back the line we've collected so far with
-    result = SR_SUCCESS;  // a success code.  Otherwise return the last code
-  }
-  return result;
-}
-
 void StreamInterface::PostEvent(Thread* t, int events, int err) {
   t->Post(RTC_FROM_HERE, this, MSG_POST_EVENT,
           new StreamEventData(events, err));

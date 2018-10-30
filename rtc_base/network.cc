@@ -38,7 +38,6 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/networkmonitor.h"
 #include "rtc_base/socket.h"  // includes something that makes windows happy
-#include "rtc_base/stream.h"
 #include "rtc_base/stringencode.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/stringutils.h"
@@ -775,26 +774,28 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
 
 #if defined(WEBRTC_LINUX)
 bool IsDefaultRoute(const std::string& network_name) {
-  FileStream fs;
-  if (!fs.Open("/proc/net/route", "r", nullptr)) {
+  FILE* f = fopen("/proc/net/route", "r");
+  if (!f) {
     RTC_LOG(LS_WARNING)
         << "Couldn't read /proc/net/route, skipping default "
         << "route check (assuming everything is a default route).";
     return true;
-  } else {
-    std::string line;
-    while (fs.ReadLine(&line) == SR_SUCCESS) {
-      char iface_name[256];
-      unsigned int iface_ip, iface_gw, iface_mask, iface_flags;
-      if (sscanf(line.c_str(), "%255s %8X %8X %4X %*d %*u %*d %8X", iface_name,
-                 &iface_ip, &iface_gw, &iface_flags, &iface_mask) == 5 &&
-          network_name == iface_name && iface_mask == 0 &&
-          (iface_flags & (RTF_UP | RTF_HOST)) == RTF_UP) {
-        return true;
-      }
+  }
+  bool is_default_route = false;
+  char line[500];
+  while (fgets(line, sizeof(line), f)) {
+    char iface_name[256];
+    unsigned int iface_ip, iface_gw, iface_mask, iface_flags;
+    if (sscanf(line, "%255s %8X %8X %4X %*d %*u %*d %8X", iface_name, &iface_ip,
+               &iface_gw, &iface_flags, &iface_mask) == 5 &&
+        network_name == iface_name && iface_mask == 0 &&
+        (iface_flags & (RTF_UP | RTF_HOST)) == RTF_UP) {
+      is_default_route = true;
+      break;
     }
   }
-  return false;
+  fclose(f);
+  return is_default_route;
 }
 #endif
 

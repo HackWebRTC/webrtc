@@ -213,12 +213,6 @@ class StreamInterface : public MessageHandler {
                        size_t* read,
                        int* error);
 
-  // ReadLine is a helper function which repeatedly calls Read until it hits
-  // the end-of-line character, or something other than SR_SUCCESS.
-  // TODO: this is too inefficient to keep here.  Break this out into a buffered
-  // readline object or adapter
-  StreamResult ReadLine(std::string* line);
-
  protected:
   StreamInterface();
 
