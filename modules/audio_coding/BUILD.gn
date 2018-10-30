@@ -1437,6 +1437,7 @@ if (rtc_include_tests) {
              ":neteq_tools",
              "../../rtc_base:rtc_base_approved",
              "../../test:test_support",
+             "//third_party/abseil-cpp/absl/strings",
              "//testing/gtest",
            ]
   }
@@ -2123,6 +2124,7 @@ if (rtc_include_tests) {
       "codecs/opus/test:test_unittest",
       "//testing/gtest",
       "//third_party/abseil-cpp/absl/memory",
+      "//third_party/abseil-cpp/absl/types:optional",
     ]
 
     defines = audio_coding_defines

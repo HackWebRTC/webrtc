@@ -455,6 +455,7 @@ if (rtc_include_tests) {
       "../rtc_base:rtc_task_queue",
       "../rtc_base:stringutils",
       "//third_party/abseil-cpp/absl/memory",
+      "//third_party/abseil-cpp/absl/strings",
     ]
     sources = [
       "base/fakeframesource.cc",
@@ -551,6 +552,7 @@ if (rtc_include_tests) {
       "../rtc_base:stringutils",
       "../test:field_trial",
       "//third_party/abseil-cpp/absl/memory",
+      "//third_party/abseil-cpp/absl/strings",
     ]
     sources = [
       "base/codec_unittest.cc",

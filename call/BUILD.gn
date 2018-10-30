@@ -362,6 +362,7 @@ if (rtc_include_tests) {
       "//testing/gmock",
       "//testing/gtest",
       "//third_party/abseil-cpp/absl/memory",
+      "//third_party/abseil-cpp/absl/types:optional",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).

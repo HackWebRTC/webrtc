@@ -509,6 +509,7 @@ if (rtc_include_tests) {
       "../system_wrappers:metrics",
       "../test:fileutils",
       "//third_party/abseil-cpp/absl/memory",
+      "//third_party/abseil-cpp/absl/strings",
     ]
     if (is_android) {
       deps += [ ":android_black_magic" ]
