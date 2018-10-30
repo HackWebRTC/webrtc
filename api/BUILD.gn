@@ -597,7 +597,7 @@ if (rtc_include_tests) {
     deps = [
       ":libjingle_peerconnection_api",
       "../rtc_base:checks",
-      "../third_party/abseil-cpp/absl/memory:memory",
+      "//third_party/abseil-cpp/absl/memory:memory",
     ]
   }
 

@@ -190,9 +190,9 @@ if (!build_with_chromium) {
         "../../common_video:common_video",
         "../../rtc_base:rtc_base_approved",
         "../../system_wrappers:system_wrappers",
+        "../../test:test_support",
         "../../test:video_test_common",
         "../utility",
-        "//test:test_support",
         "//testing/gtest",
       ]
       deps += [ "../../test:test_main" ]

@@ -211,8 +211,8 @@ if (rtc_include_tests) {
       "../rtc_base:rtc_base",
       "../system_wrappers:field_trial",
       "../system_wrappers:metrics",
-      "../third_party/abseil-cpp/absl/memory:memory",
       "//testing/gtest",
+      "//third_party/abseil-cpp/absl/memory:memory",
 
       # TODO(bugs.webrtc.org/9792): This is needed for downstream projects on
       # Android, where it's replaced by an internal version of fileutils that

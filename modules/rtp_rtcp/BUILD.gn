@@ -330,7 +330,7 @@ if (rtc_include_tests) {
       ":rtp_rtcp",
       "../../test:fileutils",
       "../../test:test_main",
-      "//test:test_support",
+      "../../test:test_support",
       "//testing/gtest",
     ]
   }  # test_packet_masks_metrics

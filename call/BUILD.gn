@@ -442,7 +442,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":bitrate_allocator",
-      "//test:test_support",
+      "../test:test_support",
     ]
   }
   rtc_source_set("mock_call_interfaces") {
@@ -453,7 +453,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":call_interfaces",
-      "//test:test_support",
+      "../test:test_support",
     ]
   }
 
@@ -470,7 +470,7 @@ if (rtc_include_tests) {
       "../system_wrappers",
       "../test:test_common",
       "../test:test_main",
-      "//test:test_support",
+      "../test:test_support",
       "//testing/gtest",
     ]
   }

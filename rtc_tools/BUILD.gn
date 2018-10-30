@@ -36,8 +36,10 @@ group("rtc_tools") {
       ":tools_unittests",
     ]
     if (rtc_enable_protobuf) {
+      if (!build_with_chromium) {
+        deps += [ ":event_log_visualizer" ]
+      }
       deps += [
-        ":event_log_visualizer",
         ":rtp_analyzer",
         ":unpack_aecdump",
         "network_tester",
@@ -275,7 +277,7 @@ if (!build_with_chromium) {
 }
 
 if (rtc_include_tests) {
-  if (rtc_enable_protobuf) {
+  if (rtc_enable_protobuf && !build_with_chromium) {
     rtc_executable("event_log_visualizer") {
       testonly = true
       sources = [
@@ -357,8 +359,6 @@ if (rtc_include_tests) {
 
     deps = [
       ":command_line_parser",
-      ":frame_editing_lib",
-      ":reference_less_video_analysis_lib",
       ":video_file_reader",
       ":video_file_writer",
       ":video_quality_analysis",
@@ -367,11 +367,18 @@ if (rtc_include_tests) {
       "../rtc_base:checks",
       "../test:fileutils",
       "../test:test_main",
-      "//test:test_support",
+      "../test:test_support",
       "//testing/gtest",
       "//third_party/abseil-cpp/absl/memory",
       "//third_party/libyuv",
     ]
+
+    if (!build_with_chromium) {
+      deps += [
+        ":frame_editing_lib",
+        ":reference_less_video_analysis_lib",
+      ]
+    }
 
     if (rtc_enable_protobuf) {
       deps += [ "network_tester:network_tester_unittests" ]

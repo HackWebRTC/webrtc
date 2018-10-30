@@ -179,7 +179,7 @@ if (rtc_include_tests) {
       "..:webrtc_common",
       "../rtc_base:rtc_base_approved",
       "../test:test_main",
-      "//test:test_support",
+      "../test:test_support",
       "//testing/gtest",
     ]
 
