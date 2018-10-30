@@ -829,8 +829,6 @@ rtc_static_library("rtc_base") {
       "logsinks.cc",
       "logsinks.h",
       "numerics/mathutils.h",
-      "optionsfile.cc",
-      "optionsfile.h",
       "rollingaccumulator.h",
       "sslroots.h",
     ]
@@ -1245,7 +1243,6 @@ if (rtc_include_tests) {
       "messagequeue_unittest.cc",
       "nat_unittest.cc",
       "network_unittest.cc",
-      "optionsfile_unittest.cc",
       "proxy_unittest.cc",
       "rollingaccumulator_unittest.cc",
       "rtccertificate_unittest.cc",

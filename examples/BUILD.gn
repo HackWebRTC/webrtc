@@ -60,6 +60,32 @@ group("examples") {
   }
 }
 
+rtc_source_set("read_auth_file") {
+  testonly = true
+  sources = [
+    "turnserver/read_auth_file.cc",
+    "turnserver/read_auth_file.h",
+  ]
+  deps = [
+    "../rtc_base:rtc_base",
+  ]
+}
+
+if (rtc_include_tests) {
+  rtc_test("examples_unittests") {
+    testonly = true
+    sources = [
+      "turnserver/read_auth_file_unittest.cc",
+    ]
+    deps = [
+      ":read_auth_file",
+      "../test:test_main",
+      "//test:test_support",
+      "//testing/gtest",
+    ]
+  }
+}
+
 if (is_android) {
   rtc_android_apk("AppRTCMobile") {
     testonly = true
@@ -747,6 +773,7 @@ if (is_linux || is_win) {
       "turnserver/turnserver_main.cc",
     ]
     deps = [
+      ":read_auth_file",
       "../p2p:rtc_p2p",
       "../pc:rtc_pc",
       "../rtc_base:rtc_base",
