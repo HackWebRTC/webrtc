@@ -95,6 +95,7 @@
     _iceConnectionReceivingTimeout = config.ice_connection_receiving_timeout;
     _iceBackupCandidatePairPingInterval =
         config.ice_backup_candidate_pair_ping_interval;
+    _useMediaTransport = config.use_media_transport;
     _keyType = RTCEncryptionKeyTypeECDSA;
     _iceCandidatePoolSize = config.ice_candidate_pool_size;
     _shouldPruneTurnPorts = config.prune_turn_ports;
