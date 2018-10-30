@@ -30,7 +30,6 @@
 #include "call/rtp_stream_receiver_controller.h"
 #include "call/rtp_transport_controller_send.h"
 #include "logging/rtc_event_log/events/rtc_event_audio_receive_stream_config.h"
-#include "logging/rtc_event_log/events/rtc_event_audio_send_stream_config.h"
 #include "logging/rtc_event_log/events/rtc_event_rtcp_packet_incoming.h"
 #include "logging/rtc_event_log/events/rtc_event_rtp_packet_incoming.h"
 #include "logging/rtc_event_log/events/rtc_event_video_receive_stream_config.h"
@@ -144,18 +143,6 @@ std::unique_ptr<rtclog::StreamConfig> CreateRtcLogStreamConfig(
   rtclog_config->remote_ssrc = config.rtp.remote_ssrc;
   rtclog_config->local_ssrc = config.rtp.local_ssrc;
   rtclog_config->rtp_extensions = config.rtp.extensions;
-  return rtclog_config;
-}
-
-std::unique_ptr<rtclog::StreamConfig> CreateRtcLogStreamConfig(
-    const AudioSendStream::Config& config) {
-  auto rtclog_config = absl::make_unique<rtclog::StreamConfig>();
-  rtclog_config->local_ssrc = config.rtp.ssrc;
-  rtclog_config->rtp_extensions = config.rtp.extensions;
-  if (config.send_codec_spec) {
-    rtclog_config->codecs.emplace_back(config.send_codec_spec->format.name,
-                                       config.send_codec_spec->payload_type, 0);
-  }
   return rtclog_config;
 }
 
@@ -579,9 +566,8 @@ webrtc::AudioSendStream* Call::CreateAudioSendStream(
     const webrtc::AudioSendStream::Config& config) {
   TRACE_EVENT0("webrtc", "Call::CreateAudioSendStream");
   RTC_DCHECK_CALLED_SEQUENTIALLY(&configuration_sequence_checker_);
-  event_log_->Log(absl::make_unique<RtcEventAudioSendStreamConfig>(
-      CreateRtcLogStreamConfig(config)));
-
+  // Stream config is logged in AudioSendStream::ConfigureStream, as it may
+  // change during the stream's lifetime.
   absl::optional<RtpState> suspended_rtp_state;
   {
     const auto& iter = suspended_audio_send_ssrcs_.find(config.rtp.ssrc);
