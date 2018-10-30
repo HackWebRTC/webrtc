@@ -83,6 +83,21 @@ MediaTransportEncodedVideoFrame::MediaTransportEncodedVideoFrame(
 MediaTransportEncodedVideoFrame::MediaTransportEncodedVideoFrame(
     MediaTransportEncodedVideoFrame&&) = default;
 
+SendDataParams::SendDataParams() = default;
+
+RTCError MediaTransportInterface::SendData(
+    int channel_id,
+    const SendDataParams& params,
+    const rtc::CopyOnWriteBuffer& buffer) {
+  RTC_NOTREACHED();
+  return RTCError(RTCErrorType::UNSUPPORTED_OPERATION, "Not implemented");
+}
+
+RTCError MediaTransportInterface::CloseChannel(int channel_id) {
+  RTC_NOTREACHED();
+  return RTCError(RTCErrorType::UNSUPPORTED_OPERATION, "Not implemented");
+}
+
 RTCErrorOr<std::unique_ptr<MediaTransportInterface>>
 MediaTransportFactory::CreateMediaTransport(
     rtc::PacketTransportInternal* packet_transport,

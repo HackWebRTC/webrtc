@@ -96,6 +96,10 @@ specific_include_rules = {
     "+rtc_base/scoped_ref_ptr.h",
   ],
 
+  "media_transport_interface\.h": [
+    "+rtc_base/copyonwritebuffer.h",  # As used by datachannelinterface.h
+  ],
+
   "peerconnectionfactoryproxy\.h": [
     "+rtc_base/bind.h",
   ],
