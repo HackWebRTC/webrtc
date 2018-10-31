@@ -860,14 +860,9 @@ int LibvpxVp8Encoder::GetEncodedPartitions(const VideoFrame& input_image) {
   for (size_t encoder_idx = 0; encoder_idx < encoders_.size();
        ++encoder_idx, --stream_idx) {
     vpx_codec_iter_t iter = NULL;
-    int part_idx = 0;
     encoded_images_[encoder_idx]._length = 0;
     encoded_images_[encoder_idx]._frameType = kVideoFrameDelta;
-    RTPFragmentationHeader frag_info;
-    // kTokenPartitions is number of bits used.
-    frag_info.VerifyAndAllocateFragmentationHeader((1 << kTokenPartitions) + 1);
     CodecSpecificInfo codec_specific;
-    bool is_keyframe = false;
     const vpx_codec_cx_pkt_t* pkt = NULL;
     while ((pkt = libvpx_->codec_get_cx_data(&encoders_[encoder_idx], &iter)) !=
            NULL) {
@@ -884,13 +879,8 @@ int LibvpxVp8Encoder::GetEncodedPartitions(const VideoFrame& input_image) {
           }
           memcpy(&encoded_images_[encoder_idx]._buffer[length],
                  pkt->data.frame.buf, pkt->data.frame.sz);
-          frag_info.fragmentationOffset[part_idx] = length;
-          frag_info.fragmentationLength[part_idx] = pkt->data.frame.sz;
-          frag_info.fragmentationPlType[part_idx] = 0;  // not known here
-          frag_info.fragmentationTimeDiff[part_idx] = 0;
           encoded_images_[encoder_idx]._length += pkt->data.frame.sz;
           assert(length <= encoded_images_[encoder_idx]._size);
-          ++part_idx;
           break;
         }
         default:
@@ -901,7 +891,6 @@ int LibvpxVp8Encoder::GetEncodedPartitions(const VideoFrame& input_image) {
         // check if encoded frame is a key frame
         if (pkt->data.frame.flags & VPX_FRAME_IS_KEY) {
           encoded_images_[encoder_idx]._frameType = kVideoFrameKey;
-          is_keyframe = true;
         }
         encoded_images_[encoder_idx].SetSpatialIndex(stream_idx);
         PopulateCodecSpecific(&codec_specific, *pkt, stream_idx, encoder_idx,
@@ -932,7 +921,7 @@ int LibvpxVp8Encoder::GetEncodedPartitions(const VideoFrame& input_image) {
                                &qp_128);
         encoded_images_[encoder_idx].qp_ = qp_128;
         encoded_complete_callback_->OnEncodedImage(encoded_images_[encoder_idx],
-                                                   &codec_specific, &frag_info);
+                                                   &codec_specific, nullptr);
       } else if (!temporal_layers_[stream_idx]
                       ->SupportsEncoderFrameDropping()) {
         result = WEBRTC_VIDEO_CODEC_TARGET_BITRATE_OVERSHOOT;
