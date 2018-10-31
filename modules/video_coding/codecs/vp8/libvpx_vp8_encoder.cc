@@ -23,14 +23,11 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/timeutils.h"
 #include "rtc_base/trace_event.h"
-#include "system_wrappers/include/field_trial.h"
 #include "third_party/libyuv/include/libyuv/convert.h"
 #include "third_party/libyuv/include/libyuv/scale.h"
 
 namespace webrtc {
 namespace {
-const char kVp8GfBoostFieldTrial[] = "WebRTC-VP8-GfBoost";
-
 // QP is obtained from VP8-bitstream for HW, so the QP corresponds to the
 // bitstream range of [0, 127] and not the user-level range of [0,63].
 constexpr int kLowVp8QpThreshold = 29;
@@ -59,20 +56,6 @@ static int GCD(int a, int b) {
     c = a % b;
   }
   return b;
-}
-
-bool GetGfBoostPercentageFromFieldTrialGroup(int* boost_percentage) {
-  std::string group = webrtc::field_trial::FindFullName(kVp8GfBoostFieldTrial);
-  if (group.empty())
-    return false;
-
-  if (sscanf(group.c_str(), "Enabled-%d", boost_percentage) != 1)
-    return false;
-
-  if (*boost_percentage < 0 || *boost_percentage > 100)
-    return false;
-
-  return true;
 }
 
 static_assert(Vp8EncoderConfig::kMaxPeriodicity == VPX_TS_MAX_PERIODICITY,
@@ -159,7 +142,6 @@ LibvpxVp8Encoder::LibvpxVp8Encoder()
 
 LibvpxVp8Encoder::LibvpxVp8Encoder(std::unique_ptr<LibvpxInterface> interface)
     : libvpx_(std::move(interface)),
-      use_gf_boost_(webrtc::field_trial::IsEnabled(kVp8GfBoostFieldTrial)),
       encoded_complete_callback_(nullptr),
       inited_(false),
       timestamp_(0),
@@ -641,14 +623,6 @@ int LibvpxVp8Encoder::InitAndSetControlSettings() {
     libvpx_->codec_control(
         &(encoders_[i]), VP8E_SET_SCREEN_CONTENT_MODE,
         codec_.mode == VideoCodecMode::kScreensharing ? 2u : 0u);
-    // Apply boost on golden frames (has only effect when resilience is off).
-    if (use_gf_boost_ && configurations_[0].g_error_resilient == 0) {
-      int gf_boost_percent;
-      if (GetGfBoostPercentageFromFieldTrialGroup(&gf_boost_percent)) {
-        libvpx_->codec_control(&(encoders_[i]), VP8E_SET_GF_CBR_BOOST_PCT,
-                               gf_boost_percent);
-      }
-    }
   }
   inited_ = true;
   return WEBRTC_VIDEO_CODEC_OK;

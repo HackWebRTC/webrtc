@@ -86,7 +86,6 @@ class LibvpxVp8Encoder : public VideoEncoder {
   uint32_t FrameDropThreshold(size_t spatial_idx) const;
 
   const std::unique_ptr<LibvpxInterface> libvpx_;
-  const bool use_gf_boost_;
 
   EncodedImageCallback* encoded_complete_callback_;
   VideoCodec codec_;
