@@ -56,6 +56,12 @@ NackModule::NackModule(Clock* clock,
 }
 
 int NackModule::OnReceivedPacket(uint16_t seq_num, bool is_keyframe) {
+  return OnReceivedPacket(seq_num, is_keyframe, false);
+}
+
+int NackModule::OnReceivedPacket(uint16_t seq_num,
+                                 bool is_keyframe,
+                                 bool is_recovered) {
   rtc::CritScope lock(&crit_);
   // TODO(philipel): When the packet includes information whether it is
   //                 retransmitted or not, use that value instead. For
@@ -88,8 +94,6 @@ int NackModule::OnReceivedPacket(uint16_t seq_num, bool is_keyframe) {
       UpdateReorderingStatistics(seq_num);
     return nacks_sent_for_packet;
   }
-  AddPacketsToNack(newest_seq_num_ + 1, seq_num);
-  newest_seq_num_ = seq_num;
 
   // Keep track of new keyframes.
   if (is_keyframe)
@@ -99,6 +103,21 @@ int NackModule::OnReceivedPacket(uint16_t seq_num, bool is_keyframe) {
   auto it = keyframe_list_.lower_bound(seq_num - kMaxPacketAge);
   if (it != keyframe_list_.begin())
     keyframe_list_.erase(keyframe_list_.begin(), it);
+
+  if (is_recovered) {
+    recovered_list_.insert(seq_num);
+
+    // Remove old ones so we don't accumulate recovered packets.
+    auto it = recovered_list_.lower_bound(seq_num - kMaxPacketAge);
+    if (it != recovered_list_.begin())
+      recovered_list_.erase(recovered_list_.begin(), it);
+
+    // Do not send nack for packets recovered by FEC or RTX.
+    return 0;
+  }
+
+  AddPacketsToNack(newest_seq_num_ + 1, seq_num);
+  newest_seq_num_ = seq_num;
 
   // Are there any nacks that are waiting for this seq_num.
   std::vector<uint16_t> nack_batch = GetNackBatch(kSeqNumOnly);
@@ -113,6 +132,8 @@ void NackModule::ClearUpTo(uint16_t seq_num) {
   nack_list_.erase(nack_list_.begin(), nack_list_.lower_bound(seq_num));
   keyframe_list_.erase(keyframe_list_.begin(),
                        keyframe_list_.lower_bound(seq_num));
+  recovered_list_.erase(recovered_list_.begin(),
+                        recovered_list_.lower_bound(seq_num));
 }
 
 void NackModule::UpdateRtt(int64_t rtt_ms) {
@@ -124,6 +145,7 @@ void NackModule::Clear() {
   rtc::CritScope lock(&crit_);
   nack_list_.clear();
   keyframe_list_.clear();
+  recovered_list_.clear();
 }
 
 int64_t NackModule::TimeUntilNextProcess() {
@@ -200,6 +222,9 @@ void NackModule::AddPacketsToNack(uint16_t seq_num_start,
   }
 
   for (uint16_t seq_num = seq_num_start; seq_num != seq_num_end; ++seq_num) {
+    // Do not send nack for packets that are already recovered by FEC or RTX
+    if (recovered_list_.find(seq_num) != recovered_list_.end())
+      continue;
     NackInfo nack_info(seq_num, seq_num + WaitNumberOfPackets(0.5));
     RTC_DCHECK(nack_list_.find(seq_num) == nack_list_.end());
     nack_list_[seq_num] = nack_info;

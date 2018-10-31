@@ -32,6 +32,8 @@ class NackModule : public Module {
              KeyFrameRequestSender* keyframe_request_sender);
 
   int OnReceivedPacket(uint16_t seq_num, bool is_keyframe);
+  int OnReceivedPacket(uint16_t seq_num, bool is_keyframe, bool is_recovered);
+
   void ClearUpTo(uint16_t seq_num);
   void UpdateRtt(int64_t rtt_ms);
   void Clear();
@@ -86,6 +88,8 @@ class NackModule : public Module {
   std::map<uint16_t, NackInfo, DescendingSeqNumComp<uint16_t>> nack_list_
       RTC_GUARDED_BY(crit_);
   std::set<uint16_t, DescendingSeqNumComp<uint16_t>> keyframe_list_
+      RTC_GUARDED_BY(crit_);
+  std::set<uint16_t, DescendingSeqNumComp<uint16_t>> recovered_list_
       RTC_GUARDED_BY(crit_);
   video_coding::Histogram reordering_histogram_ RTC_GUARDED_BY(crit_);
   bool initialized_ RTC_GUARDED_BY(crit_);

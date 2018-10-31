@@ -218,14 +218,15 @@ int32_t RtpVideoStreamReceiver::OnReceivedPayloadData(
     size_t payload_size,
     const WebRtcRTPHeader* rtp_header) {
   return OnReceivedPayloadData(payload_data, payload_size, rtp_header,
-                               absl::nullopt);
+                               absl::nullopt, false);
 }
 
 int32_t RtpVideoStreamReceiver::OnReceivedPayloadData(
     const uint8_t* payload_data,
     size_t payload_size,
     const WebRtcRTPHeader* rtp_header,
-    const absl::optional<RtpGenericFrameDescriptor>& generic_descriptor) {
+    const absl::optional<RtpGenericFrameDescriptor>& generic_descriptor,
+    bool is_recovered) {
   WebRtcRTPHeader rtp_header_with_ntp = *rtp_header;
   rtp_header_with_ntp.ntp_time_ms =
       ntp_estimator_.Estimate(rtp_header->header.timestamp);
@@ -237,7 +238,8 @@ int32_t RtpVideoStreamReceiver::OnReceivedPayloadData(
         rtp_header->frameType == kVideoFrameKey;
 
     packet.timesNacked = nack_module_->OnReceivedPacket(
-        rtp_header->header.sequenceNumber, is_keyframe);
+        rtp_header->header.sequenceNumber, is_keyframe, is_recovered);
+
   } else {
     packet.timesNacked = -1;
   }
@@ -568,7 +570,8 @@ void RtpVideoStreamReceiver::ReceivePacket(const RtpPacketReceived& packet) {
   }
 
   OnReceivedPayloadData(parsed_payload.payload, parsed_payload.payload_length,
-                        &webrtc_rtp_header, generic_descriptor_wire);
+                        &webrtc_rtp_header, generic_descriptor_wire,
+                        packet.recovered());
 }
 
 void RtpVideoStreamReceiver::ParseAndHandleEncapsulatingHeader(
@@ -600,7 +603,8 @@ void RtpVideoStreamReceiver::NotifyReceiverOfEmptyPacket(uint16_t seq_num) {
   reference_finder_->PaddingReceived(seq_num);
   packet_buffer_->PaddingReceived(seq_num);
   if (nack_module_) {
-    nack_module_->OnReceivedPacket(seq_num, /* is_keyframe = */ false);
+    nack_module_->OnReceivedPacket(seq_num, /* is_keyframe = */ false,
+                                   /* is _recovered = */ false);
   }
 }
 

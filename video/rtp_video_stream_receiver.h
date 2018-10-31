@@ -104,7 +104,8 @@ class RtpVideoStreamReceiver : public RecoveredPacketReceiver,
       const uint8_t* payload_data,
       size_t payload_size,
       const WebRtcRTPHeader* rtp_header,
-      const absl::optional<RtpGenericFrameDescriptor>& generic_descriptor);
+      const absl::optional<RtpGenericFrameDescriptor>& generic_descriptor,
+      bool is_recovered);
 
   // Implements RecoveredPacketReceiver.
   void OnRecoveredPacket(const uint8_t* packet, size_t packet_length) override;
