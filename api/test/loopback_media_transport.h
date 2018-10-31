@@ -64,6 +64,21 @@ class MediaTransportPair {
     void SetTargetTransferRateObserver(
         webrtc::TargetTransferRateObserver* observer) override {}
 
+    void SetMediaTransportStateCallback(
+        MediaTransportStateCallback* callback) override {}
+
+    RTCError SendData(int channel_id,
+                      const SendDataParams& params,
+                      const rtc::CopyOnWriteBuffer& buffer) override {
+      return RTCError(RTCErrorType::UNSUPPORTED_OPERATION, "Not implemented");
+    }
+
+    RTCError CloseChannel(int channel_id) override {
+      return RTCError(RTCErrorType::UNSUPPORTED_OPERATION, "Not implemented");
+    }
+
+    void SetDataSink(DataChannelSink* sink) override {}
+
    private:
     void OnData(uint64_t channel_id, MediaTransportEncodedAudioFrame frame) {
       if (sink_) {

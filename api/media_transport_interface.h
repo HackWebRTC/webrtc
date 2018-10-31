@@ -336,29 +336,25 @@ class MediaTransportInterface {
   // callback must be unregistered by setting it to nullptr.
   // A newly registered callback will be called with the current state.
   // Media transport does not invoke this callback concurrently.
-  // TODO(mellem): Make this pure virtual once all implementations support it.
   virtual void SetMediaTransportStateCallback(
-      MediaTransportStateCallback* callback) {}
+      MediaTransportStateCallback* callback) = 0;
 
   // Sends a data buffer to the remote endpoint using the given send parameters.
   // |buffer| may not be larger than 256 KiB. Returns an error if the send
   // fails.
-  // TODO(mellem): Make this pure virtual once all implementations support it.
   virtual RTCError SendData(int channel_id,
                             const SendDataParams& params,
-                            const rtc::CopyOnWriteBuffer& buffer);
+                            const rtc::CopyOnWriteBuffer& buffer) = 0;
 
   // Closes |channel_id| gracefully.  Returns an error if |channel_id| is not
   // open.  Data sent after the closing procedure begins will not be
   // transmitted. The channel becomes closed after pending data is transmitted.
-  // TODO(mellem): Make this pure virtual once all implementations support it.
-  virtual RTCError CloseChannel(int channel_id);
+  virtual RTCError CloseChannel(int channel_id) = 0;
 
   // Sets a sink for data messages and channel state callbacks. Before media
   // transport is destroyed, the sink must be unregistered by setting it to
   // nullptr.
-  // TODO(mellem): Make this pure virtual once all implementations support it.
-  virtual void SetDataSink(DataChannelSink* sink) {}
+  virtual void SetDataSink(DataChannelSink* sink) = 0;
 
   // TODO(sukhanov): RtcEventLogs.
 };

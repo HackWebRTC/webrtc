@@ -57,6 +57,19 @@ class FakeMediaTransport : public MediaTransportInterface {
   void SetTargetTransferRateObserver(
       webrtc::TargetTransferRateObserver* observer) override {}
 
+  void SetMediaTransportStateCallback(
+      MediaTransportStateCallback* callback) override {}
+
+  RTCError SendData(int channel_id,
+                    const SendDataParams& params,
+                    const rtc::CopyOnWriteBuffer& buffer) override {
+    return RTCError::OK();
+  }
+
+  RTCError CloseChannel(int channel_id) override { return RTCError::OK(); }
+
+  void SetDataSink(DataChannelSink* sink) override {}
+
  private:
   const MediaTransportSettings settings_;
 };
