@@ -41,6 +41,20 @@ static const char kDataMid1[] = "data1";
 
 namespace webrtc {
 
+namespace {
+
+// Media transport factory requires crypto settings to be present in order to
+// create media transport.
+void AddCryptoSettings(cricket::SessionDescription* description) {
+  for (auto& content : description->contents()) {
+    content.media_description()->AddCrypto(cricket::CryptoParams(
+        /*t=*/0, std::string(rtc::CS_AES_CM_128_HMAC_SHA1_80),
+        "inline:YUJDZGVmZ2hpSktMbW9QUXJzVHVWd3l6MTIzNDU2", ""));
+  }
+}
+
+}  // namespace
+
 class FakeTransportFactory : public cricket::TransportFactoryInterface {
  public:
   std::unique_ptr<cricket::IceTransportInternal> CreateIceTransport(
@@ -380,6 +394,8 @@ TEST_F(JsepTransportControllerTest, GetMediaTransportInCaller) {
   config.media_transport_factory = &fake_media_transport_factory;
   CreateJsepTransportController(config);
   auto description = CreateSessionDescriptionWithoutBundle();
+  AddCryptoSettings(description.get());
+
   EXPECT_TRUE(transport_controller_
                   ->SetLocalDescription(SdpType::kOffer, description.get())
                   .ok());
@@ -391,6 +407,7 @@ TEST_F(JsepTransportControllerTest, GetMediaTransportInCaller) {
 
   // After SetLocalDescription, media transport should be created as caller.
   EXPECT_TRUE(media_transport->is_caller());
+  EXPECT_TRUE(media_transport->pre_shared_key().has_value());
 
   // Return nullptr for non-existing mids.
   EXPECT_EQ(nullptr, transport_controller_->GetMediaTransport(kVideoMid2));
@@ -404,6 +421,7 @@ TEST_F(JsepTransportControllerTest, GetMediaTransportInCallee) {
   config.media_transport_factory = &fake_media_transport_factory;
   CreateJsepTransportController(config);
   auto description = CreateSessionDescriptionWithoutBundle();
+  AddCryptoSettings(description.get());
   EXPECT_TRUE(transport_controller_
                   ->SetRemoteDescription(SdpType::kOffer, description.get())
                   .ok());
@@ -415,9 +433,68 @@ TEST_F(JsepTransportControllerTest, GetMediaTransportInCallee) {
 
   // After SetRemoteDescription, media transport should be created as callee.
   EXPECT_FALSE(media_transport->is_caller());
+  EXPECT_TRUE(media_transport->pre_shared_key().has_value());
 
   // Return nullptr for non-existing mids.
   EXPECT_EQ(nullptr, transport_controller_->GetMediaTransport(kVideoMid2));
+}
+
+TEST_F(JsepTransportControllerTest, GetMediaTransportIsNotSetIfNoSdes) {
+  FakeMediaTransportFactory fake_media_transport_factory;
+  JsepTransportController::Config config;
+
+  config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyNegotiate;
+  config.media_transport_factory = &fake_media_transport_factory;
+  CreateJsepTransportController(config);
+  auto description = CreateSessionDescriptionWithoutBundle();
+  EXPECT_TRUE(transport_controller_
+                  ->SetRemoteDescription(SdpType::kOffer, description.get())
+                  .ok());
+
+  EXPECT_EQ(nullptr, transport_controller_->GetMediaTransport(kAudioMid1));
+
+  // Even if we set local description with crypto now (after the remote offer
+  // was set), media transport won't be provided.
+  auto description2 = CreateSessionDescriptionWithoutBundle();
+  AddCryptoSettings(description2.get());
+  EXPECT_TRUE(transport_controller_
+                  ->SetLocalDescription(SdpType::kAnswer, description2.get())
+                  .ok());
+
+  EXPECT_EQ(nullptr, transport_controller_->GetMediaTransport(kAudioMid1));
+}
+
+TEST_F(JsepTransportControllerTest,
+       AfterSettingAnswerTheSameMediaTransportIsReturned) {
+  FakeMediaTransportFactory fake_media_transport_factory;
+  JsepTransportController::Config config;
+
+  config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyNegotiate;
+  config.media_transport_factory = &fake_media_transport_factory;
+  CreateJsepTransportController(config);
+  auto description = CreateSessionDescriptionWithoutBundle();
+  AddCryptoSettings(description.get());
+  EXPECT_TRUE(transport_controller_
+                  ->SetRemoteDescription(SdpType::kOffer, description.get())
+                  .ok());
+
+  FakeMediaTransport* media_transport = static_cast<FakeMediaTransport*>(
+      transport_controller_->GetMediaTransport(kAudioMid1));
+  EXPECT_NE(nullptr, media_transport);
+  EXPECT_TRUE(media_transport->pre_shared_key().has_value());
+
+  // Even if we set local description with crypto now (after the remote offer
+  // was set), media transport won't be provided.
+  auto description2 = CreateSessionDescriptionWithoutBundle();
+  AddCryptoSettings(description2.get());
+
+  RTCError result = transport_controller_->SetLocalDescription(
+      SdpType::kAnswer, description2.get());
+  EXPECT_TRUE(result.ok()) << result.message();
+
+  // Media transport did not change.
+  EXPECT_EQ(media_transport,
+            transport_controller_->GetMediaTransport(kAudioMid1));
 }
 
 TEST_F(JsepTransportControllerTest, SetIceConfig) {

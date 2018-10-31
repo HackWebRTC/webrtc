@@ -12,6 +12,7 @@
 #define API_TEST_FAKE_MEDIA_TRANSPORT_H_
 
 #include <memory>
+#include <string>
 #include <utility>
 
 #include "absl/memory/memory.h"
@@ -25,7 +26,8 @@ namespace webrtc {
 // could unit test audio / video integration.
 class FakeMediaTransport : public MediaTransportInterface {
  public:
-  explicit FakeMediaTransport(bool is_caller) : is_caller_(is_caller) {}
+  explicit FakeMediaTransport(const MediaTransportSettings& settings)
+      : settings_(settings) {}
   ~FakeMediaTransport() = default;
 
   RTCError SendAudioFrame(uint64_t channel_id,
@@ -46,14 +48,17 @@ class FakeMediaTransport : public MediaTransportInterface {
   void SetReceiveAudioSink(MediaTransportAudioSinkInterface* sink) override {}
   void SetReceiveVideoSink(MediaTransportVideoSinkInterface* sink) override {}
 
-  // Returns true if fake media trasport was created as a caller.
-  bool is_caller() const { return is_caller_; }
+  // Returns true if fake media transport was created as a caller.
+  bool is_caller() const { return settings_.is_caller; }
+  absl::optional<std::string> pre_shared_key() const {
+    return settings_.pre_shared_key;
+  }
 
   void SetTargetTransferRateObserver(
       webrtc::TargetTransferRateObserver* observer) override {}
 
  private:
-  const bool is_caller_;
+  const MediaTransportSettings settings_;
 };
 
 // Fake media transport factory creates fake media transport.
@@ -66,9 +71,17 @@ class FakeMediaTransportFactory : public MediaTransportFactory {
       rtc::PacketTransportInternal* packet_transport,
       rtc::Thread* network_thread,
       bool is_caller) override {
-    std::unique_ptr<MediaTransportInterface> media_transport =
-        absl::make_unique<FakeMediaTransport>(is_caller);
+    MediaTransportSettings settings;
+    settings.is_caller = is_caller;
+    return CreateMediaTransport(packet_transport, network_thread, settings);
+  }
 
+  RTCErrorOr<std::unique_ptr<MediaTransportInterface>> CreateMediaTransport(
+      rtc::PacketTransportInternal* packet_transport,
+      rtc::Thread* network_thread,
+      const MediaTransportSettings& settings) override {
+    std::unique_ptr<MediaTransportInterface> media_transport =
+        absl::make_unique<FakeMediaTransport>(settings);
     return std::move(media_transport);
   }
 };

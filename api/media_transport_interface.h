@@ -48,6 +48,8 @@ struct MediaTransportSettings final {
   bool is_caller;
 
   // Must be set if a pre-shared key is used for the call.
+  // TODO(bugs.webrtc.org/9944): This should become zero buffer in the distant
+  // future.
   absl::optional<std::string> pre_shared_key;
 };
 

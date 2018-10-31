@@ -1092,6 +1092,9 @@ TEST_P(PeerConnectionMediaTest, MediaTransportPropagatedToVoiceEngine) {
   // Setup PeerConnection to use media transport.
   config.use_media_transport = true;
 
+  // Force SDES.
+  config.enable_dtls_srtp = false;
+
   auto caller = CreatePeerConnectionWithAudioVideo(config);
   auto callee = CreatePeerConnectionWithAudioVideo(config);
 
