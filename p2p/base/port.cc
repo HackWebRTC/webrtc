@@ -432,7 +432,7 @@ void Port::AddAddress(const rtc::SocketAddress& address,
   c.set_url(url);
   // TODO(bugs.webrtc.org/9723): Use a config to control the feature of IP
   // handling with mDNS.
-  if (network_->GetMDnsResponder() != nullptr) {
+  if (network_->GetMdnsResponder() != nullptr) {
     // Obfuscate the IP address of a host candidates by an mDNS hostname.
     if (type == LOCAL_PORT_TYPE) {
       auto weak_ptr = weak_factory_.GetWeakPtr();
@@ -451,7 +451,7 @@ void Port::AddAddress(const rtc::SocketAddress& address,
           weak_ptr->FinishAddingAddress(c, is_final);
         }
       };
-      network_->GetMDnsResponder()->CreateNameForAddress(c.address().ipaddr(),
+      network_->GetMdnsResponder()->CreateNameForAddress(c.address().ipaddr(),
                                                          callback);
       return;
     }

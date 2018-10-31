@@ -21,10 +21,10 @@
 
 namespace webrtc {
 
-class FakeMDnsResponder : public MDnsResponderInterface {
+class FakeMdnsResponder : public MdnsResponderInterface {
  public:
-  FakeMDnsResponder() = default;
-  ~FakeMDnsResponder() = default;
+  FakeMdnsResponder() = default;
+  ~FakeMdnsResponder() = default;
 
   void CreateNameForAddress(const rtc::IPAddress& addr,
                             NameCreatedCallback callback) override {

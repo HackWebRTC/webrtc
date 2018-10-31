@@ -4593,7 +4593,7 @@ TEST(P2PTransportChannelResolverTest, HostnameCandidateIsResolved) {
 // prflx candidate is updated to a host candidate after the name resolution is
 // done.
 TEST_F(P2PTransportChannelTest,
-       PeerReflexiveCandidateBeforeSignalingWithMDnsName) {
+       PeerReflexiveCandidateBeforeSignalingWithMdnsName) {
   rtc::MockAsyncResolver mock_async_resolver;
   webrtc::MockAsyncResolverFactory mock_async_resolver_factory;
   EXPECT_CALL(mock_async_resolver_factory, Create())
@@ -4604,7 +4604,7 @@ TEST_F(P2PTransportChannelTest,
   ConfigureEndpoints(OPEN, OPEN, kOnlyLocalPorts, kOnlyLocalPorts);
   // ICE parameter will be set up when creating the channels.
   set_remote_ice_parameter_source(FROM_SETICEPARAMETERS);
-  GetEndpoint(0)->network_manager_.CreateMDnsResponder();
+  GetEndpoint(0)->network_manager_.CreateMdnsResponder();
   GetEndpoint(1)->async_resolver_factory_ = &mock_async_resolver_factory;
   CreateChannels();
   // Pause sending candidates from both endpoints until we find out what port
@@ -4659,7 +4659,7 @@ TEST_F(P2PTransportChannelTest,
 // a host candidate if the hostname candidate turns out to have the same IP
 // address after the resolution completes.
 TEST_F(P2PTransportChannelTest,
-       PeerReflexiveCandidateDuringResolvingHostCandidateWithMDnsName) {
+       PeerReflexiveCandidateDuringResolvingHostCandidateWithMdnsName) {
   NiceMock<rtc::MockAsyncResolver> mock_async_resolver;
   webrtc::MockAsyncResolverFactory mock_async_resolver_factory;
   EXPECT_CALL(mock_async_resolver_factory, Create())
@@ -4670,7 +4670,7 @@ TEST_F(P2PTransportChannelTest,
   ConfigureEndpoints(OPEN, OPEN, kOnlyLocalPorts, kOnlyLocalPorts);
   // ICE parameter will be set up when creating the channels.
   set_remote_ice_parameter_source(FROM_SETICEPARAMETERS);
-  GetEndpoint(0)->network_manager_.CreateMDnsResponder();
+  GetEndpoint(0)->network_manager_.CreateMdnsResponder();
   GetEndpoint(1)->async_resolver_factory_ = &mock_async_resolver_factory;
   CreateChannels();
   // Pause sending candidates from both endpoints until we find out what port
@@ -4726,7 +4726,7 @@ TEST_F(P2PTransportChannelTest,
 // Test that if we only gather and signal a host candidate, the IP address of
 // which is obfuscated by an mDNS name, and if the peer can complete the name
 // resolution with the correct IP address, we can have a p2p connection.
-TEST_F(P2PTransportChannelTest, CanConnectWithHostCandidateWithMDnsName) {
+TEST_F(P2PTransportChannelTest, CanConnectWithHostCandidateWithMdnsName) {
   NiceMock<rtc::MockAsyncResolver> mock_async_resolver;
   webrtc::MockAsyncResolverFactory mock_async_resolver_factory;
   EXPECT_CALL(mock_async_resolver_factory, Create())
@@ -4737,7 +4737,7 @@ TEST_F(P2PTransportChannelTest, CanConnectWithHostCandidateWithMDnsName) {
   ConfigureEndpoints(OPEN, OPEN, kOnlyLocalPorts, kOnlyLocalPorts);
   // ICE parameter will be set up when creating the channels.
   set_remote_ice_parameter_source(FROM_SETICEPARAMETERS);
-  GetEndpoint(0)->network_manager_.CreateMDnsResponder();
+  GetEndpoint(0)->network_manager_.CreateMdnsResponder();
   GetEndpoint(1)->async_resolver_factory_ = &mock_async_resolver_factory;
   CreateChannels();
   // Pause sending candidates from both endpoints until we find out what port

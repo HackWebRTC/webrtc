@@ -360,9 +360,12 @@ PeerConnectionFactory::CreatePeerConnection(
                                                         network_thread_);
   }
   if (!dependencies.allocator) {
-    dependencies.allocator.reset(new cricket::BasicPortAllocator(
-        default_network_manager_.get(), default_socket_factory_.get(),
-        configuration.turn_customizer));
+    network_thread_->Invoke<void>(RTC_FROM_HERE, [this, &configuration,
+                                                  &dependencies]() {
+      dependencies.allocator = absl::make_unique<cricket::BasicPortAllocator>(
+          default_network_manager_.get(), default_socket_factory_.get(),
+          configuration.turn_customizer);
+    });
   }
 
   // TODO(zstein): Once chromium injects its own AsyncResolverFactory, set
