@@ -90,6 +90,7 @@ class PeerConnectionSignalingBaseTest : public ::testing::Test {
       return nullptr;
     }
 
+    observer->SetPeerConnectionInterface(pc.get());
     return absl::make_unique<PeerConnectionWrapperForSignalingTest>(
         pc_factory_, pc, std::move(observer));
   }

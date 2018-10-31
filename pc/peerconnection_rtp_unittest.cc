@@ -117,6 +117,8 @@ class PeerConnectionRtpBaseTest : public testing::Test {
     auto observer = absl::make_unique<MockPeerConnectionObserver>();
     auto pc = pc_factory_->CreatePeerConnection(config, nullptr, nullptr,
                                                 observer.get());
+    EXPECT_TRUE(pc.get());
+    observer->SetPeerConnectionInterface(pc.get());
     return absl::make_unique<PeerConnectionWrapper>(pc_factory_, pc,
                                                     std::move(observer));
   }

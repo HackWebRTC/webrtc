@@ -1397,6 +1397,8 @@ TEST_P(PeerConnectionInterfaceTest,
   rtc::scoped_refptr<PeerConnectionInterface> pc(
       pc_factory->CreatePeerConnection(config, std::move(port_allocator),
                                        nullptr, &observer_));
+  EXPECT_TRUE(pc.get());
+  observer_.SetPeerConnectionInterface(pc.get());
 
   // Now validate that the config fields set above were applied to the
   // PortAllocator, as flags or otherwise.

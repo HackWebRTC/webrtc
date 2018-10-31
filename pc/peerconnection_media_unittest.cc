@@ -105,6 +105,7 @@ class PeerConnectionMediaBaseTest : public ::testing::Test {
       return nullptr;
     }
 
+    observer->SetPeerConnectionInterface(pc.get());
     auto wrapper = absl::make_unique<PeerConnectionWrapperForMediaTest>(
         pc_factory, pc, std::move(observer));
     wrapper->set_media_engine(media_engine_ptr);

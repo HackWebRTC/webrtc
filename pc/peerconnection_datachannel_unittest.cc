@@ -123,6 +123,7 @@ class PeerConnectionDataChannelBaseTest : public ::testing::Test {
       return nullptr;
     }
 
+    observer->SetPeerConnectionInterface(pc.get());
     auto wrapper = absl::make_unique<PeerConnectionWrapperForDataChannelTest>(
         pc_factory, pc, std::move(observer));
     RTC_DCHECK(pc_factory->last_fake_sctp_transport_factory_);

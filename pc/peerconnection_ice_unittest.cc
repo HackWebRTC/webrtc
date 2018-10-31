@@ -125,6 +125,7 @@ class PeerConnectionIceBaseTest : public ::testing::Test {
       return nullptr;
     }
 
+    observer->SetPeerConnectionInterface(pc.get());
     auto wrapper = absl::make_unique<PeerConnectionWrapperForIceTest>(
         pc_factory_, pc, std::move(observer));
     wrapper->set_network(fake_network);
