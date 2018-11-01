@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
 #include <vector>
 
 #include "api/test/loopback_media_transport.h"
@@ -21,6 +22,14 @@ class MockMediaTransportAudioSinkInterface
     : public MediaTransportAudioSinkInterface {
  public:
   MOCK_METHOD2(OnData, void(uint64_t, MediaTransportEncodedAudioFrame));
+};
+
+class MockDataChannelSink : public DataChannelSink {
+ public:
+  MOCK_METHOD3(OnDataReceived,
+               void(int, DataMessageType, const rtc::CopyOnWriteBuffer&));
+  MOCK_METHOD1(OnChannelClosing, void(int));
+  MOCK_METHOD1(OnChannelClosed, void(int));
 };
 
 // Test only uses the sequence number.
@@ -39,13 +48,18 @@ MediaTransportEncodedAudioFrame CreateAudioFrame(int sequence_number) {
 }  // namespace
 
 TEST(LoopbackMediaTransport, AudioWithNoSinkSilentlyIgnored) {
-  MediaTransportPair transport_pair;
+  std::unique_ptr<rtc::Thread> thread = rtc::Thread::Create();
+  thread->Start();
+  MediaTransportPair transport_pair(thread.get());
   transport_pair.first()->SendAudioFrame(1, CreateAudioFrame(0));
   transport_pair.second()->SendAudioFrame(2, CreateAudioFrame(0));
+  transport_pair.FlushAsyncInvokes();
 }
 
 TEST(LoopbackMediaTransport, AudioDeliveredToSink) {
-  MediaTransportPair transport_pair;
+  std::unique_ptr<rtc::Thread> thread = rtc::Thread::Create();
+  thread->Start();
+  MediaTransportPair transport_pair(thread.get());
   testing::StrictMock<MockMediaTransportAudioSinkInterface> sink;
   EXPECT_CALL(sink,
               OnData(1, testing::Property(
@@ -54,7 +68,58 @@ TEST(LoopbackMediaTransport, AudioDeliveredToSink) {
   transport_pair.second()->SetReceiveAudioSink(&sink);
   transport_pair.first()->SendAudioFrame(1, CreateAudioFrame(10));
 
+  transport_pair.FlushAsyncInvokes();
   transport_pair.second()->SetReceiveAudioSink(nullptr);
+}
+
+TEST(LoopbackMediaTransport, DataDeliveredToSink) {
+  std::unique_ptr<rtc::Thread> thread = rtc::Thread::Create();
+  thread->Start();
+  MediaTransportPair transport_pair(thread.get());
+
+  MockDataChannelSink sink;
+  transport_pair.first()->SetDataSink(&sink);
+
+  const int channel_id = 1;
+  EXPECT_CALL(sink,
+              OnDataReceived(
+                  channel_id, DataMessageType::kText,
+                  testing::Property<rtc::CopyOnWriteBuffer, const char*>(
+                      &rtc::CopyOnWriteBuffer::cdata, testing::StrEq("foo"))));
+
+  SendDataParams params;
+  params.type = DataMessageType::kText;
+  rtc::CopyOnWriteBuffer buffer("foo");
+  transport_pair.second()->SendData(channel_id, params, buffer);
+
+  transport_pair.FlushAsyncInvokes();
+  transport_pair.first()->SetDataSink(nullptr);
+}
+
+TEST(LoopbackMediaTransport, CloseDeliveredToSink) {
+  std::unique_ptr<rtc::Thread> thread = rtc::Thread::Create();
+  thread->Start();
+  MediaTransportPair transport_pair(thread.get());
+
+  MockDataChannelSink first_sink;
+  transport_pair.first()->SetDataSink(&first_sink);
+
+  MockDataChannelSink second_sink;
+  transport_pair.second()->SetDataSink(&second_sink);
+
+  const int channel_id = 1;
+  {
+    testing::InSequence s;
+    EXPECT_CALL(second_sink, OnChannelClosing(channel_id));
+    EXPECT_CALL(second_sink, OnChannelClosed(channel_id));
+    EXPECT_CALL(first_sink, OnChannelClosed(channel_id));
+  }
+
+  transport_pair.first()->CloseChannel(channel_id);
+
+  transport_pair.FlushAsyncInvokes();
+  transport_pair.first()->SetDataSink(nullptr);
+  transport_pair.second()->SetDataSink(nullptr);
 }
 
 }  // namespace webrtc

@@ -14,6 +14,9 @@
 #include <utility>
 
 #include "api/media_transport_interface.h"
+#include "rtc_base/asyncinvoker.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/thread.h"
 
 namespace webrtc {
 
@@ -21,24 +24,36 @@ namespace webrtc {
 // Currently supports audio only.
 class MediaTransportPair {
  public:
-  MediaTransportPair()
-      : pipe_{LoopbackMediaTransport(&pipe_[1]),
-              LoopbackMediaTransport(&pipe_[0])} {}
+  explicit MediaTransportPair(rtc::Thread* thread)
+      : first_(thread, &second_), second_(thread, &first_) {}
 
   // Ownership stays with MediaTransportPair
-  MediaTransportInterface* first() { return &pipe_[0]; }
-  MediaTransportInterface* second() { return &pipe_[1]; }
+  MediaTransportInterface* first() { return &first_; }
+  MediaTransportInterface* second() { return &second_; }
+
+  void FlushAsyncInvokes() {
+    first_.FlushAsyncInvokes();
+    second_.FlushAsyncInvokes();
+  }
 
  private:
   class LoopbackMediaTransport : public MediaTransportInterface {
    public:
-    explicit LoopbackMediaTransport(LoopbackMediaTransport* other)
-        : other_(other) {}
-    ~LoopbackMediaTransport() { RTC_CHECK(sink_ == nullptr); }
+    LoopbackMediaTransport(rtc::Thread* thread, LoopbackMediaTransport* other)
+        : thread_(thread), other_(other) {}
+
+    ~LoopbackMediaTransport() {
+      rtc::CritScope lock(&sink_lock_);
+      RTC_CHECK(sink_ == nullptr);
+      RTC_CHECK(data_sink_ == nullptr);
+    }
 
     RTCError SendAudioFrame(uint64_t channel_id,
                             MediaTransportEncodedAudioFrame frame) override {
-      other_->OnData(channel_id, std::move(frame));
+      invoker_.AsyncInvoke<void>(RTC_FROM_HERE, thread_,
+                                 [this, channel_id, frame] {
+                                   other_->OnData(channel_id, std::move(frame));
+                                 });
       return RTCError::OK();
     };
 
@@ -53,6 +68,7 @@ class MediaTransportPair {
     }
 
     void SetReceiveAudioSink(MediaTransportAudioSinkInterface* sink) override {
+      rtc::CritScope lock(&sink_lock_);
       if (sink) {
         RTC_CHECK(sink_ == nullptr);
       }
@@ -70,27 +86,69 @@ class MediaTransportPair {
     RTCError SendData(int channel_id,
                       const SendDataParams& params,
                       const rtc::CopyOnWriteBuffer& buffer) override {
-      return RTCError(RTCErrorType::UNSUPPORTED_OPERATION, "Not implemented");
+      invoker_.AsyncInvoke<void>(
+          RTC_FROM_HERE, thread_, [this, channel_id, params, buffer] {
+            other_->OnData(channel_id, params.type, buffer);
+          });
+      return RTCError::OK();
     }
 
     RTCError CloseChannel(int channel_id) override {
-      return RTCError(RTCErrorType::UNSUPPORTED_OPERATION, "Not implemented");
+      invoker_.AsyncInvoke<void>(RTC_FROM_HERE, thread_, [this, channel_id] {
+        other_->OnRemoteCloseChannel(channel_id);
+        rtc::CritScope lock(&sink_lock_);
+        if (data_sink_) {
+          data_sink_->OnChannelClosed(channel_id);
+        }
+      });
+      return RTCError::OK();
     }
 
-    void SetDataSink(DataChannelSink* sink) override {}
+    void SetDataSink(DataChannelSink* sink) override {
+      rtc::CritScope lock(&sink_lock_);
+      data_sink_ = sink;
+    }
+
+    void FlushAsyncInvokes() { invoker_.Flush(thread_); }
 
    private:
     void OnData(uint64_t channel_id, MediaTransportEncodedAudioFrame frame) {
+      rtc::CritScope lock(&sink_lock_);
       if (sink_) {
         sink_->OnData(channel_id, frame);
       }
     }
 
-    MediaTransportAudioSinkInterface* sink_ = nullptr;
-    LoopbackMediaTransport* other_;
+    void OnData(int channel_id,
+                DataMessageType type,
+                const rtc::CopyOnWriteBuffer& buffer) {
+      rtc::CritScope lock(&sink_lock_);
+      if (data_sink_) {
+        data_sink_->OnDataReceived(channel_id, type, buffer);
+      }
+    }
+
+    void OnRemoteCloseChannel(int channel_id) {
+      rtc::CritScope lock(&sink_lock_);
+      if (data_sink_) {
+        data_sink_->OnChannelClosing(channel_id);
+        data_sink_->OnChannelClosed(channel_id);
+      }
+    }
+
+    rtc::Thread* const thread_;
+    rtc::CriticalSection sink_lock_;
+
+    MediaTransportAudioSinkInterface* sink_ RTC_GUARDED_BY(sink_lock_) =
+        nullptr;
+    DataChannelSink* data_sink_ RTC_GUARDED_BY(sink_lock_) = nullptr;
+    LoopbackMediaTransport* const other_;
+
+    rtc::AsyncInvoker invoker_;
   };
 
-  LoopbackMediaTransport pipe_[2];
+  LoopbackMediaTransport first_;
+  LoopbackMediaTransport second_;
 };
 
 }  // namespace webrtc

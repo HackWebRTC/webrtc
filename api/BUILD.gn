@@ -611,6 +611,7 @@ if (rtc_include_tests) {
     deps = [
       ":libjingle_peerconnection_api",
       "../rtc_base:checks",
+      "../rtc_base:rtc_base",
     ]
   }
 

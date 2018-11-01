@@ -65,7 +65,9 @@ class TestRenderer : public TestAudioDeviceModule::Renderer {
 }  // namespace
 
 TEST(AudioWithMediaTransport, DeliversAudio) {
-  MediaTransportPair transport_pair;
+  std::unique_ptr<rtc::Thread> transport_thread = rtc::Thread::Create();
+  transport_thread->Start();
+  MediaTransportPair transport_pair(transport_thread.get());
   MockTransport rtcp_send_transport;
   MockTransport send_transport;
   std::unique_ptr<RtcEventLog> null_event_log = RtcEventLog::CreateNull();
