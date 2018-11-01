@@ -212,6 +212,8 @@ jlong CreatePeerConnectionFactoryForJava(
     const JavaParamRef<jobject>& jcontext,
     const JavaParamRef<jobject>& joptions,
     rtc::scoped_refptr<AudioDeviceModule> audio_device_module,
+    rtc::scoped_refptr<AudioEncoderFactory> audio_encoder_factory,
+    rtc::scoped_refptr<AudioDecoderFactory> audio_decoder_factory,
     const JavaParamRef<jobject>& jencoder_factory,
     const JavaParamRef<jobject>& jdecoder_factory,
     rtc::scoped_refptr<AudioProcessing> audio_processor,
@@ -238,8 +240,6 @@ jlong CreatePeerConnectionFactoryForJava(
   RTC_CHECK(signaling_thread->Start()) << "Failed to start thread";
 
   rtc::NetworkMonitorFactory* network_monitor_factory = nullptr;
-  auto audio_encoder_factory = CreateAudioEncoderFactory();
-  auto audio_decoder_factory = CreateAudioDecoderFactory();
 
   PeerConnectionFactoryInterface::Options options;
   bool has_options = !joptions.is_null();
@@ -299,6 +299,8 @@ static jlong JNI_PeerConnectionFactory_CreatePeerConnectionFactory(
     const JavaParamRef<jobject>& jcontext,
     const JavaParamRef<jobject>& joptions,
     jlong native_audio_device_module,
+    jlong native_audio_encoder_factory,
+    jlong native_audio_decoder_factory,
     const JavaParamRef<jobject>& jencoder_factory,
     const JavaParamRef<jobject>& jdecoder_factory,
     jlong native_audio_processor,
@@ -306,6 +308,18 @@ static jlong JNI_PeerConnectionFactory_CreatePeerConnectionFactory(
     jlong native_media_transport_factory) {
   rtc::scoped_refptr<AudioProcessing> audio_processor =
       reinterpret_cast<AudioProcessing*>(native_audio_processor);
+  AudioEncoderFactory* audio_encoder_factory_ptr =
+      reinterpret_cast<AudioEncoderFactory*>(native_audio_encoder_factory);
+  rtc::scoped_refptr<AudioEncoderFactory> audio_encoder_factory(
+      audio_encoder_factory_ptr);
+  // Release the caller's reference count.
+  audio_encoder_factory->Release();
+  AudioDecoderFactory* audio_decoder_factory_ptr =
+      reinterpret_cast<AudioDecoderFactory*>(native_audio_decoder_factory);
+  rtc::scoped_refptr<AudioDecoderFactory> audio_decoder_factory(
+      audio_decoder_factory_ptr);
+  // Release the caller's reference count.
+  audio_decoder_factory->Release();
   std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory(
       reinterpret_cast<FecControllerFactoryInterface*>(
           native_fec_controller_factory));
@@ -314,7 +328,8 @@ static jlong JNI_PeerConnectionFactory_CreatePeerConnectionFactory(
   return CreatePeerConnectionFactoryForJava(
       jni, jcontext, joptions,
       reinterpret_cast<AudioDeviceModule*>(native_audio_device_module),
-      jencoder_factory, jdecoder_factory,
+      audio_encoder_factory, audio_decoder_factory, jencoder_factory,
+      jdecoder_factory,
       audio_processor ? audio_processor : CreateAudioProcessing(),
       std::move(fec_controller_factory), std::move(media_transport_factory));
 }

@@ -181,13 +181,17 @@ public class PeerConnectionFactory {
   }
 
   public static class Builder {
-    private @Nullable Options options;
-    private @Nullable AudioDeviceModule audioDeviceModule = new LegacyAudioDeviceModule();
-    private @Nullable VideoEncoderFactory encoderFactory;
-    private @Nullable VideoDecoderFactory decoderFactory;
-    private @Nullable AudioProcessingFactory audioProcessingFactory;
-    private @Nullable FecControllerFactoryFactoryInterface fecControllerFactoryFactory;
-    private @Nullable MediaTransportFactoryFactory mediaTransportFactoryFactory;
+    @Nullable private Options options;
+    @Nullable private AudioDeviceModule audioDeviceModule = new LegacyAudioDeviceModule();
+    private AudioEncoderFactoryFactory audioEncoderFactoryFactory =
+        new BuiltinAudioEncoderFactoryFactory();
+    private AudioDecoderFactoryFactory audioDecoderFactoryFactory =
+        new BuiltinAudioDecoderFactoryFactory();
+    @Nullable private VideoEncoderFactory videoEncoderFactory;
+    @Nullable private VideoDecoderFactory videoDecoderFactory;
+    @Nullable private AudioProcessingFactory audioProcessingFactory;
+    @Nullable private FecControllerFactoryFactoryInterface fecControllerFactoryFactory;
+    @Nullable private MediaTransportFactoryFactory mediaTransportFactoryFactory;
 
     private Builder() {}
 
@@ -201,13 +205,33 @@ public class PeerConnectionFactory {
       return this;
     }
 
-    public Builder setVideoEncoderFactory(VideoEncoderFactory encoderFactory) {
-      this.encoderFactory = encoderFactory;
+    public Builder setAudioEncoderFactoryFactory(
+        AudioEncoderFactoryFactory audioEncoderFactoryFactory) {
+      if (audioEncoderFactoryFactory == null) {
+        throw new IllegalArgumentException(
+            "PeerConnectionFactory.Builder does not accept a null AudioEncoderFactoryFactory.");
+      }
+      this.audioEncoderFactoryFactory = audioEncoderFactoryFactory;
       return this;
     }
 
-    public Builder setVideoDecoderFactory(VideoDecoderFactory decoderFactory) {
-      this.decoderFactory = decoderFactory;
+    public Builder setAudioDecoderFactoryFactory(
+        AudioDecoderFactoryFactory audioDecoderFactoryFactory) {
+      if (audioDecoderFactoryFactory == null) {
+        throw new IllegalArgumentException(
+            "PeerConnectionFactory.Builder does not accept a null AudioDecoderFactoryFactory.");
+      }
+      this.audioDecoderFactoryFactory = audioDecoderFactoryFactory;
+      return this;
+    }
+
+    public Builder setVideoEncoderFactory(VideoEncoderFactory videoEncoderFactory) {
+      this.videoEncoderFactory = videoEncoderFactory;
+      return this;
+    }
+
+    public Builder setVideoDecoderFactory(VideoDecoderFactory videoDecoderFactory) {
+      this.videoDecoderFactory = videoDecoderFactory;
       return this;
     }
 
@@ -234,7 +258,8 @@ public class PeerConnectionFactory {
     }
 
     public PeerConnectionFactory createPeerConnectionFactory() {
-      return new PeerConnectionFactory(options, audioDeviceModule, encoderFactory, decoderFactory,
+      return new PeerConnectionFactory(options, audioDeviceModule, audioEncoderFactoryFactory,
+          audioDecoderFactoryFactory, videoEncoderFactory, videoDecoderFactory,
           audioProcessingFactory, fecControllerFactoryFactory, mediaTransportFactoryFactory);
     }
   }
@@ -314,14 +339,19 @@ public class PeerConnectionFactory {
   }
 
   private PeerConnectionFactory(Options options, @Nullable AudioDeviceModule audioDeviceModule,
-      @Nullable VideoEncoderFactory encoderFactory, @Nullable VideoDecoderFactory decoderFactory,
+      AudioEncoderFactoryFactory audioEncoderFactoryFactory,
+      AudioDecoderFactoryFactory audioDecoderFactoryFactory,
+      @Nullable VideoEncoderFactory videoEncoderFactory,
+      @Nullable VideoDecoderFactory videoDecoderFactory,
       @Nullable AudioProcessingFactory audioProcessingFactory,
       @Nullable FecControllerFactoryFactoryInterface fecControllerFactoryFactory,
       @Nullable MediaTransportFactoryFactory mediaTransportFactoryFactory) {
     checkInitializeHasBeenCalled();
     nativeFactory = nativeCreatePeerConnectionFactory(ContextUtils.getApplicationContext(), options,
         audioDeviceModule == null ? 0 : audioDeviceModule.getNativeAudioDeviceModulePointer(),
-        encoderFactory, decoderFactory,
+        audioEncoderFactoryFactory.createNativeAudioEncoderFactory(),
+        audioDecoderFactoryFactory.createNativeAudioDecoderFactory(), videoEncoderFactory,
+        videoDecoderFactory,
         audioProcessingFactory == null ? 0 : audioProcessingFactory.createNative(),
         fecControllerFactoryFactory == null ? 0 : fecControllerFactoryFactory.createNative(),
         mediaTransportFactoryFactory == null
@@ -527,10 +557,12 @@ public class PeerConnectionFactory {
   private static native void nativeShutdownInternalTracer();
   private static native boolean nativeStartInternalTracingCapture(String tracingFilename);
   private static native void nativeStopInternalTracingCapture();
+
   private static native long nativeCreatePeerConnectionFactory(Context context, Options options,
-      long nativeAudioDeviceModule, VideoEncoderFactory encoderFactory,
-      VideoDecoderFactory decoderFactory, long nativeAudioProcessor,
-      long nativeFecControllerFactory, long mediaTransportFactory);
+      long nativeAudioDeviceModule, long audioEncoderFactory, long audioDecoderFactory,
+      VideoEncoderFactory encoderFactory, VideoDecoderFactory decoderFactory,
+      long nativeAudioProcessor, long nativeFecControllerFactory, long mediaTransportFactory);
+
   private static native long nativeCreatePeerConnection(long factory,
       PeerConnection.RTCConfiguration rtcConfig, MediaConstraints constraints, long nativeObserver,
       SSLCertificateVerifier sslCertificateVerifier);

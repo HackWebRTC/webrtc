@@ -38,6 +38,7 @@ if (is_android) {
     deps = [
       ":audio_api_java",
       ":base_java",
+      ":builtin_audio_codecs_java",
       ":camera_java",
       ":default_video_codec_factory_java",
       ":filevideo_java",
@@ -110,6 +111,7 @@ if (is_android) {
     public_deps = [  # no-presubmit-check TODO(webrtc:8603)
       ":audio_jni",
       ":base_jni",
+      ":builtin_audio_codecs_jni",
       ":java_audio_device_module_jni",
       ":media_jni",
       ":peerconnection_jni",
@@ -204,7 +206,11 @@ if (is_android) {
   }
 
   rtc_android_library("audio_api_java") {
-    java_files = [ "api/org/webrtc/audio/AudioDeviceModule.java" ]
+    java_files = [
+      "api/org/webrtc/audio/AudioDeviceModule.java",
+      "api/org/webrtc/AudioDecoderFactoryFactory.java",
+      "api/org/webrtc/AudioEncoderFactoryFactory.java",
+    ]
 
     deps = [
       ":base_java",
@@ -320,6 +326,7 @@ if (is_android) {
     deps = [
       ":audio_api_java",
       ":base_java",
+      ":builtin_audio_codecs_java",
       ":default_video_codec_factory_java",
       ":logging_java",
       ":swcodecs_java",
@@ -429,6 +436,17 @@ if (is_android) {
     ]
   }
 
+  rtc_android_library("builtin_audio_codecs_java") {
+    java_files = [
+      "api/org/webrtc/BuiltinAudioDecoderFactoryFactory.java",
+      "api/org/webrtc/BuiltinAudioEncoderFactoryFactory.java",
+    ]
+
+    deps = [
+      ":audio_api_java",
+    ]
+  }
+
   rtc_android_library("screencapturer_java") {
     java_files = [ "api/org/webrtc/ScreenCapturerAndroid.java" ]
 
@@ -514,9 +532,26 @@ if (is_android) {
 
     deps = [
       ":base_jni",
+      ":builtin_audio_codecs_jni",
       "../../api/audio_codecs:builtin_audio_decoder_factory",
       "../../api/audio_codecs:builtin_audio_encoder_factory",
       "../../modules/audio_processing:audio_processing",
+      "../../rtc_base:rtc_base_approved",
+    ]
+  }
+
+  rtc_static_library("builtin_audio_codecs_jni") {
+    sources = [
+      "src/jni/builtinaudiodecoderfactoryfactory.cc",
+      "src/jni/builtinaudioencoderfactoryfactory.cc",
+    ]
+
+    deps = [
+      ":base_jni",
+      ":generated_builtin_audio_codecs_jni",
+      ":native_api_jni",
+      "../../api/audio_codecs:builtin_audio_decoder_factory",
+      "../../api/audio_codecs:builtin_audio_encoder_factory",
       "../../rtc_base:rtc_base_approved",
     ]
   }
@@ -1216,6 +1251,16 @@ if (is_android) {
     jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
   }
 
+  generate_jni("generated_builtin_audio_codecs_jni") {
+    sources = [
+      "api/org/webrtc/BuiltinAudioDecoderFactoryFactory.java",
+      "api/org/webrtc/BuiltinAudioEncoderFactoryFactory.java",
+    ]
+    jni_package = ""
+    namespace = "webrtc::jni"
+    jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
+  }
+
   # Generated JNI for native API targets
 
   generate_jni("generated_native_api_jni") {
@@ -1268,6 +1313,7 @@ if (is_android) {
 
       java_files = [
         "instrumentationtests/src/org/webrtc/AndroidVideoDecoderInstrumentationTest.java",
+        "instrumentationtests/src/org/webrtc/BuiltinAudioCodecsFactoryFactoryTest.java",
         "instrumentationtests/src/org/webrtc/Camera1CapturerUsingByteBufferTest.java",
         "instrumentationtests/src/org/webrtc/Camera1CapturerUsingTextureTest.java",
         "instrumentationtests/src/org/webrtc/Camera2CapturerTest.java",
