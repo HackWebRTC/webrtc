@@ -32,8 +32,7 @@ class AudioBuffer;
 // for PC and IP phone applications.
 class EchoCancellationImpl {
  public:
-  EchoCancellationImpl(rtc::CriticalSection* crit_render,
-                       rtc::CriticalSection* crit_capture);
+  explicit EchoCancellationImpl();
   ~EchoCancellationImpl();
 
   void ProcessRenderAudio(rtc::ArrayView<const float> packed_render_audio);
@@ -154,28 +153,23 @@ class EchoCancellationImpl {
   void AllocateRenderQueue();
   int Configure();
 
-  rtc::CriticalSection* const crit_render_ RTC_ACQUIRED_BEFORE(crit_capture_);
-  rtc::CriticalSection* const crit_capture_;
-
   bool enabled_ = false;
-  bool drift_compensation_enabled_ RTC_GUARDED_BY(crit_capture_);
-  bool metrics_enabled_ RTC_GUARDED_BY(crit_capture_);
-  SuppressionLevel suppression_level_ RTC_GUARDED_BY(crit_capture_);
-  int stream_drift_samples_ RTC_GUARDED_BY(crit_capture_);
-  bool was_stream_drift_set_ RTC_GUARDED_BY(crit_capture_);
-  bool stream_has_echo_ RTC_GUARDED_BY(crit_capture_);
-  bool delay_logging_enabled_ RTC_GUARDED_BY(crit_capture_);
-  bool extended_filter_enabled_ RTC_GUARDED_BY(crit_capture_);
-  bool delay_agnostic_enabled_ RTC_GUARDED_BY(crit_capture_);
-  bool refined_adaptive_filter_enabled_ RTC_GUARDED_BY(crit_capture_) = false;
+  bool drift_compensation_enabled_;
+  bool metrics_enabled_;
+  SuppressionLevel suppression_level_;
+  int stream_drift_samples_;
+  bool was_stream_drift_set_;
+  bool stream_has_echo_;
+  bool delay_logging_enabled_;
+  bool extended_filter_enabled_;
+  bool delay_agnostic_enabled_;
+  bool refined_adaptive_filter_enabled_ = false;
 
   // Only active on Chrome OS devices.
-  const bool enforce_zero_stream_delay_ RTC_GUARDED_BY(crit_capture_);
+  const bool enforce_zero_stream_delay_;
 
   std::vector<std::unique_ptr<Canceller>> cancellers_;
   std::unique_ptr<StreamProperties> stream_properties_;
-
-  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(EchoCancellationImpl);
 };
 
 }  // namespace webrtc

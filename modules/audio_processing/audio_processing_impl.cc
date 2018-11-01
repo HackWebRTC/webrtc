@@ -227,7 +227,6 @@ bool AudioProcessingImpl::ApmSubmoduleStates::LowCutFilteringRequired() const {
 struct AudioProcessingImpl::ApmPublicSubmodules {
   ApmPublicSubmodules() {}
   // Accessed externally of APM without any lock acquired.
-  std::unique_ptr<EchoCancellationImpl> echo_cancellation;
   std::unique_ptr<EchoControlMobileImpl> echo_control_mobile;
   std::unique_ptr<GainControlImpl> gain_control;
   std::unique_ptr<LevelEstimatorImpl> level_estimator;
@@ -255,6 +254,7 @@ struct AudioProcessingImpl::ApmPrivateSubmodules {
   std::unique_ptr<LowCutFilter> low_cut_filter;
   rtc::scoped_refptr<EchoDetector> echo_detector;
   std::unique_ptr<EchoControl> echo_controller;
+  std::unique_ptr<EchoCancellationImpl> echo_cancellation;
   std::unique_ptr<CustomProcessing> capture_post_processor;
   std::unique_ptr<CustomProcessing> render_pre_processor;
   std::unique_ptr<GainApplier> pre_amplifier;
@@ -367,8 +367,7 @@ AudioProcessingImpl::AudioProcessingImpl(
     capture_nonlocked_.echo_controller_enabled =
         static_cast<bool>(echo_control_factory_);
 
-    public_submodules_->echo_cancellation.reset(
-        new EchoCancellationImpl(&crit_render_, &crit_capture_));
+    private_submodules_->echo_cancellation.reset(new EchoCancellationImpl());
     public_submodules_->echo_control_mobile.reset(
         new EchoControlMobileImpl(&crit_render_, &crit_capture_));
     public_submodules_->gain_control.reset(
@@ -507,14 +506,14 @@ int AudioProcessingImpl::InitializeLocked() {
                       formats_.api_format.output_stream().num_channels(),
                       formats_.api_format.output_stream().num_frames()));
 
-  public_submodules_->echo_cancellation->Initialize(
+  private_submodules_->echo_cancellation->Initialize(
       proc_sample_rate_hz(), num_reverse_channels(), num_output_channels(),
       num_proc_channels());
   AllocateRenderQueue();
 
-  int success = public_submodules_->echo_cancellation->enable_metrics(true);
+  int success = private_submodules_->echo_cancellation->enable_metrics(true);
   RTC_DCHECK_EQ(0, success);
-  success = public_submodules_->echo_cancellation->enable_delay_logging(true);
+  success = private_submodules_->echo_cancellation->enable_delay_logging(true);
   RTC_DCHECK_EQ(0, success);
   public_submodules_->echo_control_mobile->Initialize(
       proc_split_sample_rate_hz(), num_reverse_channels(),
@@ -645,12 +644,12 @@ void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
 
   config_ = config;
 
-  public_submodules_->echo_cancellation->Enable(
+  private_submodules_->echo_cancellation->Enable(
       config_.echo_canceller.enabled && !config_.echo_canceller.mobile_mode);
   public_submodules_->echo_control_mobile->Enable(
       config_.echo_canceller.enabled && config_.echo_canceller.mobile_mode);
 
-  public_submodules_->echo_cancellation->set_suppression_level(
+  private_submodules_->echo_cancellation->set_suppression_level(
       config.echo_canceller.legacy_moderate_suppression_level
           ? EchoCancellationImpl::SuppressionLevel::kModerateSuppression
           : EchoCancellationImpl::SuppressionLevel::kHighSuppression);
@@ -682,7 +681,7 @@ void AudioProcessingImpl::SetExtraOptions(const webrtc::Config& config) {
   rtc::CritScope cs_render(&crit_render_);
   rtc::CritScope cs_capture(&crit_capture_);
 
-  public_submodules_->echo_cancellation->SetExtraOptions(config);
+  private_submodules_->echo_cancellation->SetExtraOptions(config);
 
   if (capture_.transient_suppressor_enabled !=
       config.Get<ExperimentalNs>().enabled) {
@@ -1059,7 +1058,7 @@ void AudioProcessingImpl::AllocateRenderQueue() {
 void AudioProcessingImpl::EmptyQueuedRenderAudio() {
   rtc::CritScope cs_capture(&crit_capture_);
   while (aec_render_signal_queue_->Remove(&aec_capture_queue_buffer_)) {
-    public_submodules_->echo_cancellation->ProcessRenderAudio(
+    private_submodules_->echo_cancellation->ProcessRenderAudio(
         aec_capture_queue_buffer_);
   }
 
@@ -1157,7 +1156,7 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
   // Ensure that not both the AEC and AECM are active at the same time.
   // TODO(peah): Simplify once the public API Enable functions for these
   // are moved to APM.
-  RTC_DCHECK(!(public_submodules_->echo_cancellation->is_enabled() &&
+  RTC_DCHECK(!(private_submodules_->echo_cancellation->is_enabled() &&
                public_submodules_->echo_control_mobile->is_enabled()));
 
   MaybeUpdateHistograms();
@@ -1242,7 +1241,7 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
 
   // Ensure that the stream delay was set before the call to the
   // AEC ProcessCaptureAudio function.
-  if (public_submodules_->echo_cancellation->is_enabled() &&
+  if (private_submodules_->echo_cancellation->is_enabled() &&
       !private_submodules_->echo_controller && !was_stream_delay_set()) {
     return AudioProcessing::kStreamParameterNotSetError;
   }
@@ -1258,7 +1257,7 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
     private_submodules_->echo_controller->ProcessCapture(
         capture_buffer, capture_.echo_path_gain_change);
   } else {
-    RETURN_ON_ERR(public_submodules_->echo_cancellation->ProcessCaptureAudio(
+    RETURN_ON_ERR(private_submodules_->echo_cancellation->ProcessCaptureAudio(
         capture_buffer, stream_delay_ms()));
   }
 
@@ -1276,7 +1275,7 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
   }
 
   if (!(private_submodules_->echo_controller ||
-        public_submodules_->echo_cancellation->is_enabled())) {
+        private_submodules_->echo_cancellation->is_enabled())) {
     RETURN_ON_ERR(public_submodules_->echo_control_mobile->ProcessCaptureAudio(
         capture_buffer, stream_delay_ms()));
   }
@@ -1292,7 +1291,7 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
   }
   RETURN_ON_ERR(public_submodules_->gain_control->ProcessCaptureAudio(
       capture_buffer,
-      public_submodules_->echo_cancellation->stream_has_echo()));
+      private_submodules_->echo_cancellation->stream_has_echo()));
 
   if (submodule_states_.CaptureMultiBandProcessingActive() &&
       SampleRateSupportsMultiBand(
@@ -1627,7 +1626,7 @@ AudioProcessing::AudioProcessingStatistics AudioProcessingImpl::GetStatistics()
     // Instant value will also be used for min, max and average.
     stats.echo_return_loss.Set(erl, erl, erl, erl);
     stats.echo_return_loss_enhancement.Set(erle, erle, erle, erle);
-  } else if (public_submodules_->echo_cancellation->GetMetrics(&metrics) ==
+  } else if (private_submodules_->echo_cancellation->GetMetrics(&metrics) ==
              Error::kNoError) {
     stats.a_nlp.Set(metrics.a_nlp);
     stats.divergent_filter_fraction = metrics.divergent_filter_fraction;
@@ -1641,7 +1640,7 @@ AudioProcessing::AudioProcessingStatistics AudioProcessingImpl::GetStatistics()
   stats.residual_echo_likelihood = ed_metrics.echo_likelihood;
   stats.residual_echo_likelihood_recent_max =
       ed_metrics.echo_likelihood_recent_max;
-  public_submodules_->echo_cancellation->GetDelayMetrics(
+  private_submodules_->echo_cancellation->GetDelayMetrics(
       &stats.delay_median, &stats.delay_standard_deviation,
       &stats.fraction_poor_delays);
   return stats;
@@ -1659,7 +1658,7 @@ AudioProcessingStats AudioProcessingImpl::GetStatistics(
       stats.echo_return_loss_enhancement =
           ec_metrics.echo_return_loss_enhancement;
       stats.delay_ms = ec_metrics.delay_ms;
-    } else if (public_submodules_->echo_cancellation->GetMetrics(&metrics) ==
+    } else if (private_submodules_->echo_cancellation->GetMetrics(&metrics) ==
                Error::kNoError) {
       if (metrics.divergent_filter_fraction != -1.0f) {
         stats.divergent_filter_fraction =
@@ -1683,7 +1682,7 @@ AudioProcessingStats AudioProcessingImpl::GetStatistics(
     }
     int delay_median, delay_std;
     float fraction_poor_delays;
-    if (public_submodules_->echo_cancellation->GetDelayMetrics(
+    if (private_submodules_->echo_cancellation->GetDelayMetrics(
             &delay_median, &delay_std, &fraction_poor_delays) ==
         Error::kNoError) {
       if (delay_median >= 0) {
@@ -1733,7 +1732,7 @@ AudioProcessing::Config AudioProcessingImpl::GetConfig() const {
 bool AudioProcessingImpl::UpdateActiveSubmoduleStates() {
   return submodule_states_.Update(
       config_.high_pass_filter.enabled,
-      public_submodules_->echo_cancellation->is_enabled(),
+      private_submodules_->echo_cancellation->is_enabled(),
       public_submodules_->echo_control_mobile->is_enabled(),
       config_.residual_echo_detector.enabled,
       public_submodules_->noise_suppression->is_enabled(),
@@ -1821,15 +1820,15 @@ void AudioProcessingImpl::InitializePreProcessor() {
 void AudioProcessingImpl::MaybeUpdateHistograms() {
   static const int kMinDiffDelayMs = 60;
 
-  if (public_submodules_->echo_cancellation->is_enabled()) {
+  if (private_submodules_->echo_cancellation->is_enabled()) {
     // Activate delay_jumps_ counters if we know echo_cancellation is running.
     // If a stream has echo we know that the echo_cancellation is in process.
     if (capture_.stream_delay_jumps == -1 &&
-        public_submodules_->echo_cancellation->stream_has_echo()) {
+        private_submodules_->echo_cancellation->stream_has_echo()) {
       capture_.stream_delay_jumps = 0;
     }
     if (capture_.aec_system_delay_jumps == -1 &&
-        public_submodules_->echo_cancellation->stream_has_echo()) {
+        private_submodules_->echo_cancellation->stream_has_echo()) {
       capture_.aec_system_delay_jumps = 0;
     }
 
@@ -1852,7 +1851,7 @@ void AudioProcessingImpl::MaybeUpdateHistograms() {
         rtc::CheckedDivExact(capture_nonlocked_.split_rate, 1000);
     RTC_DCHECK_LT(0, samples_per_ms);
     const int aec_system_delay_ms =
-        public_submodules_->echo_cancellation->GetSystemDelayInSamples() /
+        private_submodules_->echo_cancellation->GetSystemDelayInSamples() /
         samples_per_ms;
     const int diff_aec_system_delay_ms =
         aec_system_delay_ms - capture_.last_aec_system_delay_ms;
@@ -1896,7 +1895,7 @@ void AudioProcessingImpl::WriteAecDumpConfigMessage(bool forced) {
     return;
   }
   std::string experiments_description =
-      public_submodules_->echo_cancellation->GetExperimentsDescription();
+      private_submodules_->echo_cancellation->GetExperimentsDescription();
   // TODO(peah): Add semicolon-separated concatenations of experiment
   // descriptions for other submodules.
   if (constants_.agc_clipped_level_min != kClippedLevelMin) {
@@ -1911,15 +1910,15 @@ void AudioProcessingImpl::WriteAecDumpConfigMessage(bool forced) {
 
   InternalAPMConfig apm_config;
 
-  apm_config.aec_enabled = public_submodules_->echo_cancellation->is_enabled();
+  apm_config.aec_enabled = private_submodules_->echo_cancellation->is_enabled();
   apm_config.aec_delay_agnostic_enabled =
-      public_submodules_->echo_cancellation->is_delay_agnostic_enabled();
+      private_submodules_->echo_cancellation->is_delay_agnostic_enabled();
   apm_config.aec_drift_compensation_enabled =
-      public_submodules_->echo_cancellation->is_drift_compensation_enabled();
+      private_submodules_->echo_cancellation->is_drift_compensation_enabled();
   apm_config.aec_extended_filter_enabled =
-      public_submodules_->echo_cancellation->is_extended_filter_enabled();
+      private_submodules_->echo_cancellation->is_extended_filter_enabled();
   apm_config.aec_suppression_level = static_cast<int>(
-      public_submodules_->echo_cancellation->suppression_level());
+      private_submodules_->echo_cancellation->suppression_level());
 
   apm_config.aecm_enabled =
       public_submodules_->echo_control_mobile->is_enabled();
@@ -2001,7 +2000,7 @@ void AudioProcessingImpl::RecordAudioProcessingState() {
   AecDump::AudioProcessingState audio_proc_state;
   audio_proc_state.delay = capture_nonlocked_.stream_delay_ms;
   audio_proc_state.drift =
-      public_submodules_->echo_cancellation->stream_drift_samples();
+      private_submodules_->echo_cancellation->stream_drift_samples();
   audio_proc_state.level = gain_control()->stream_analog_level();
   audio_proc_state.keypress = capture_.key_pressed;
   aec_dump_->AddAudioProcessingState(audio_proc_state);
