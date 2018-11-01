@@ -12,6 +12,7 @@
 #define RTC_BASE_ASYNCPACKETSOCKET_H_
 
 #include "rtc_base/constructormagic.h"
+#include "rtc_base/deprecation.h"
 #include "rtc_base/dscp.h"
 #include "rtc_base/socket.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
@@ -53,21 +54,21 @@ struct PacketOptions {
 // This structure will have the information about when packet is actually
 // received by socket.
 struct PacketTime {
-  PacketTime() : timestamp(-1), not_before(-1) {}
-  PacketTime(int64_t timestamp, int64_t not_before)
-      : timestamp(timestamp), not_before(not_before) {}
+  PacketTime() : timestamp(-1) {}
+  // Intentionally implicit.
+  PacketTime(int64_t timestamp) : timestamp(timestamp) {}
+  // Deprecated
+  PacketTime(int64_t timestamp, int64_t /* not_before */)
+      : timestamp(timestamp) {}
+
+  operator int64_t() const { return timestamp; }
 
   int64_t timestamp;  // Receive time after socket delivers the data.
-
-  // Earliest possible time the data could have arrived, indicating the
-  // potential error in the |timestamp| value, in case the system, is busy. For
-  // example, the time of the last select() call.
-  // If unknown, this value will be set to zero.
-  int64_t not_before;
 };
 
-inline PacketTime CreatePacketTime(int64_t not_before) {
-  return PacketTime(TimeMicros(), not_before);
+// Deprecated
+inline PacketTime CreatePacketTime(int64_t /* not_before */) {
+  return TimeMicros();
 }
 
 // Provides the ability to receive packets asynchronously. Sends are not

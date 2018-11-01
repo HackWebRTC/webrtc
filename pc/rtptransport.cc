@@ -195,8 +195,8 @@ void RtpTransport::DemuxPacket(rtc::CopyOnWriteBuffer* packet,
     return;
   }
 
-  if (time.timestamp != -1) {
-    parsed_packet.set_arrival_time_ms((time.timestamp + 500) / 1000);
+  if (time != -1) {
+    parsed_packet.set_arrival_time_ms((time + 500) / 1000);
   }
   rtp_demuxer_.OnRtpPacket(parsed_packet);
 }

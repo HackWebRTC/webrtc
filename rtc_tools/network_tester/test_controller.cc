@@ -109,7 +109,7 @@ void TestController::OnReadPacket(rtc::AsyncPacketSocket* socket,
       break;
     }
     case NetworkTesterPacket::TEST_DATA: {
-      packet.set_arrival_timestamp(packet_time.timestamp);
+      packet.set_arrival_timestamp(packet_time);
       packet.set_packet_size(len);
       packet_logger_.LogPacket(packet);
       break;

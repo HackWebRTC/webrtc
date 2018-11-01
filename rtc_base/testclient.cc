@@ -97,7 +97,7 @@ bool TestClient::CheckNextPacket(const char* buf,
   std::unique_ptr<Packet> packet = NextPacket(kTimeoutMs);
   if (packet) {
     res = (packet->size == size && memcmp(packet->buf, buf, size) == 0 &&
-           CheckTimestamp(packet->packet_time.timestamp));
+           CheckTimestamp(packet->packet_time));
     if (addr)
       *addr = packet->addr;
   }

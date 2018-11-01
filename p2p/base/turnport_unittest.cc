@@ -1031,8 +1031,7 @@ TEST_F(TurnPortTest, TestTurnAllocateMismatch) {
   std::string test_packet = "Test packet";
   EXPECT_FALSE(turn_port_->HandleIncomingPacket(
       socket_.get(), test_packet.data(), test_packet.size(),
-      rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0),
-      rtc::CreatePacketTime(0)));
+      rtc::SocketAddress(kTurnUdpExtAddr.ipaddr(), 0), rtc::TimeMicros()));
 }
 
 // Tests that a shared-socket-TurnPort creates its own socket after

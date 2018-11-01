@@ -266,7 +266,7 @@ class FakeIceTransport : public IceTransportInternal {
     if (dest_) {
       last_sent_packet_ = packet;
       dest_->SignalReadPacket(dest_, packet.data<char>(), packet.size(),
-                              rtc::CreatePacketTime(0), 0);
+                              rtc::TimeMicros(), 0);
     }
   }
 

@@ -446,9 +446,8 @@ void BaseChannel::OnRtpPacket(const webrtc::RtpPacketReceived& parsed_packet) {
   if (parsed_packet.arrival_time_ms() > 0) {
     timestamp = parsed_packet.arrival_time_ms() * 1000;
   }
-  rtc::PacketTime packet_time(timestamp, /*not_before=*/0);
 
-  OnPacketReceived(/*rtcp=*/false, parsed_packet.Buffer(), packet_time);
+  OnPacketReceived(/*rtcp=*/false, parsed_packet.Buffer(), timestamp);
 }
 
 void BaseChannel::UpdateRtpHeaderExtensionMap(

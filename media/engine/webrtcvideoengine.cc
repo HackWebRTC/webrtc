@@ -1379,7 +1379,7 @@ void WebRtcVideoChannel::OnPacketReceived(rtc::CopyOnWriteBuffer* packet,
                                           const rtc::PacketTime& packet_time) {
   const webrtc::PacketReceiver::DeliveryStatus delivery_result =
       call_->Receiver()->DeliverPacket(webrtc::MediaType::VIDEO, *packet,
-                                       packet_time.timestamp);
+                                       packet_time);
   switch (delivery_result) {
     case webrtc::PacketReceiver::DELIVERY_OK:
       return;
@@ -1427,7 +1427,7 @@ void WebRtcVideoChannel::OnPacketReceived(rtc::CopyOnWriteBuffer* packet,
   }
 
   if (call_->Receiver()->DeliverPacket(webrtc::MediaType::VIDEO, *packet,
-                                       packet_time.timestamp) !=
+                                       packet_time) !=
       webrtc::PacketReceiver::DELIVERY_OK) {
     RTC_LOG(LS_WARNING) << "Failed to deliver RTP packet on re-delivery.";
     return;
@@ -1441,7 +1441,7 @@ void WebRtcVideoChannel::OnRtcpReceived(rtc::CopyOnWriteBuffer* packet,
   // filter RTCP anymore incoming RTCP packets could've been going to audio (so
   // logging failures spam the log).
   call_->Receiver()->DeliverPacket(webrtc::MediaType::VIDEO, *packet,
-                                   packet_time.timestamp);
+                                   packet_time);
 }
 
 void WebRtcVideoChannel::OnReadyToSend(bool ready) {
