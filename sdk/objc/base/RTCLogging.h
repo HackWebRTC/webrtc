@@ -14,6 +14,7 @@
 
 // Subset of rtc::LoggingSeverity.
 typedef NS_ENUM(NSInteger, RTCLoggingSeverity) {
+  RTCLoggingSeveritySensitive,
   RTCLoggingSeverityVerbose,
   RTCLoggingSeverityInfo,
   RTCLoggingSeverityWarning,

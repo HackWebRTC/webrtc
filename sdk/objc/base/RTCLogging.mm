@@ -14,6 +14,8 @@
 
 rtc::LoggingSeverity RTCGetNativeLoggingSeverity(RTCLoggingSeverity severity) {
   switch (severity) {
+    case RTCLoggingSeveritySensitive:
+      return rtc::LS_SENSITIVE;
     case RTCLoggingSeverityVerbose:
       return rtc::LS_VERBOSE;
     case RTCLoggingSeverityInfo:
