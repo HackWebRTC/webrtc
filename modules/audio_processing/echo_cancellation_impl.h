@@ -83,17 +83,23 @@ class EchoCancellationImpl {
   // P_a:    Internal signal power at the point before the AEC's non-linear
   //         processor.
   struct Metrics {
+    struct Statistic {
+      int instant = 0;  // Instantaneous value.
+      int average = 0;  // Long-term average.
+      int maximum = 0;  // Long-term maximum.
+      int minimum = 0;  // Long-term minimum.
+    };
     // RERL = ERL + ERLE
-    AudioProcessing::Statistic residual_echo_return_loss;
+    Statistic residual_echo_return_loss;
 
     // ERL = 10log_10(P_far / P_echo)
-    AudioProcessing::Statistic echo_return_loss;
+    Statistic echo_return_loss;
 
     // ERLE = 10log_10(P_echo / P_out)
-    AudioProcessing::Statistic echo_return_loss_enhancement;
+    Statistic echo_return_loss_enhancement;
 
     // (Pre non-linear processing suppression) A_NLP = 10log_10(P_echo / P_a)
-    AudioProcessing::Statistic a_nlp;
+    Statistic a_nlp;
 
     // Fraction of time that the AEC linear filter is divergent, in a 1-second
     // non-overlapped aggregation window.

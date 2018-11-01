@@ -1589,63 +1589,6 @@ void AudioProcessingImpl::DetachPlayoutAudioGenerator() {
   // Delete audio generator, if one is attached.
 }
 
-AudioProcessing::AudioProcessingStatistics::AudioProcessingStatistics() {
-  residual_echo_return_loss.Set(-100.0f, -100.0f, -100.0f, -100.0f);
-  echo_return_loss.Set(-100.0f, -100.0f, -100.0f, -100.0f);
-  echo_return_loss_enhancement.Set(-100.0f, -100.0f, -100.0f, -100.0f);
-  a_nlp.Set(-100.0f, -100.0f, -100.0f, -100.0f);
-}
-
-AudioProcessing::AudioProcessingStatistics::AudioProcessingStatistics(
-    const AudioProcessingStatistics& other) = default;
-
-AudioProcessing::AudioProcessingStatistics::~AudioProcessingStatistics() =
-    default;
-
-// TODO(ivoc): Remove this when GetStatistics() becomes pure virtual.
-AudioProcessing::AudioProcessingStatistics AudioProcessing::GetStatistics()
-    const {
-  return AudioProcessingStatistics();
-}
-
-// TODO(ivoc): Remove this when GetStatistics() becomes pure virtual.
-AudioProcessingStats AudioProcessing::GetStatistics(
-    bool has_remote_tracks) const {
-  return AudioProcessingStats();
-}
-
-AudioProcessing::AudioProcessingStatistics AudioProcessingImpl::GetStatistics()
-    const {
-  AudioProcessingStatistics stats;
-  EchoCancellationImpl::Metrics metrics;
-  rtc::CritScope cs_capture(&crit_capture_);
-  if (private_submodules_->echo_controller) {
-    auto ec_metrics = private_submodules_->echo_controller->GetMetrics();
-    float erl = static_cast<float>(ec_metrics.echo_return_loss);
-    float erle = static_cast<float>(ec_metrics.echo_return_loss_enhancement);
-    // Instant value will also be used for min, max and average.
-    stats.echo_return_loss.Set(erl, erl, erl, erl);
-    stats.echo_return_loss_enhancement.Set(erle, erle, erle, erle);
-  } else if (private_submodules_->echo_cancellation->GetMetrics(&metrics) ==
-             Error::kNoError) {
-    stats.a_nlp.Set(metrics.a_nlp);
-    stats.divergent_filter_fraction = metrics.divergent_filter_fraction;
-    stats.echo_return_loss.Set(metrics.echo_return_loss);
-    stats.echo_return_loss_enhancement.Set(
-        metrics.echo_return_loss_enhancement);
-    stats.residual_echo_return_loss.Set(metrics.residual_echo_return_loss);
-  }
-  RTC_DCHECK(private_submodules_->echo_detector);
-  auto ed_metrics = private_submodules_->echo_detector->GetMetrics();
-  stats.residual_echo_likelihood = ed_metrics.echo_likelihood;
-  stats.residual_echo_likelihood_recent_max =
-      ed_metrics.echo_likelihood_recent_max;
-  private_submodules_->echo_cancellation->GetDelayMetrics(
-      &stats.delay_median, &stats.delay_standard_deviation,
-      &stats.fraction_poor_delays);
-  return stats;
-}
-
 AudioProcessingStats AudioProcessingImpl::GetStatistics(
     bool has_remote_tracks) const {
   AudioProcessingStats stats;

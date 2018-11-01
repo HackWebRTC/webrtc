@@ -57,14 +57,6 @@ class FakeAudioProcessor : public AudioProcessorInterface {
   ~FakeAudioProcessor() {}
 
  private:
-  void GetStats(AudioProcessorInterface::AudioProcessorStats* stats) override {
-    stats->typing_noise_detected = true;
-    stats->echo_return_loss = 2;
-    stats->echo_return_loss_enhancement = 3;
-    stats->echo_delay_median_ms = 4;
-    stats->echo_delay_std_ms = 6;
-  }
-
   AudioProcessorInterface::AudioProcessorStatistics GetStats(
       bool has_recv_streams) override {
     AudioProcessorStatistics stats;
@@ -108,14 +100,6 @@ class FakeAudioProcessorWithInitValue : public AudioProcessorInterface {
   ~FakeAudioProcessorWithInitValue() {}
 
  private:
-  void GetStats(AudioProcessorInterface::AudioProcessorStats* stats) override {
-    stats->typing_noise_detected = false;
-    stats->echo_return_loss = -100;
-    stats->echo_return_loss_enhancement = -100;
-    stats->echo_delay_median_ms = -1;
-    stats->echo_delay_std_ms = -1;
-  }
-
   AudioProcessorInterface::AudioProcessorStatistics GetStats(
       bool /*has_recv_streams*/) override {
     AudioProcessorStatistics stats;
@@ -1568,7 +1552,7 @@ TEST_P(StatsCollectorTrackTest, GetStatsAfterRemoveAudioStream) {
 
   // Verifies the values in the track report, no value will be changed by the
   // AudioTrackInterface::GetSignalValue() and
-  // AudioProcessorInterface::AudioProcessorStats::GetStats();
+  // AudioProcessorInterface::GetStats();
   VerifyVoiceSenderInfoReport(report, voice_sender_info);
 }
 
