@@ -960,6 +960,8 @@ rtc_source_set("rtc_base_tests_utils") {
     "firewallsocketserver.h",
     "gunit.cc",
     "gunit.h",
+    "memory_stream.cc",
+    "memory_stream.h",
     "memory_usage.cc",
     "memory_usage.h",
     "natserver.cc",
