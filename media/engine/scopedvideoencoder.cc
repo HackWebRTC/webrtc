@@ -37,10 +37,7 @@ class ScopedVideoEncoder : public webrtc::VideoEncoder {
   int32_t SetRates(uint32_t bitrate, uint32_t framerate) override;
   int32_t SetRateAllocation(const webrtc::VideoBitrateAllocation& allocation,
                             uint32_t framerate) override;
-  ScalingSettings GetScalingSettings() const override;
-  bool SupportsNativeHandle() const override;
-  const char* ImplementationName() const override;
-
+  EncoderInfo GetEncoderInfo() const override;
   ~ScopedVideoEncoder() override;
 
  private:
@@ -90,17 +87,8 @@ int32_t ScopedVideoEncoder::SetRateAllocation(
   return encoder_->SetRateAllocation(allocation, framerate);
 }
 
-webrtc::VideoEncoder::ScalingSettings ScopedVideoEncoder::GetScalingSettings()
-    const {
-  return encoder_->GetScalingSettings();
-}
-
-bool ScopedVideoEncoder::SupportsNativeHandle() const {
-  return encoder_->SupportsNativeHandle();
-}
-
-const char* ScopedVideoEncoder::ImplementationName() const {
-  return encoder_->ImplementationName();
+webrtc::VideoEncoder::EncoderInfo ScopedVideoEncoder::GetEncoderInfo() const {
+  return encoder_->GetEncoderInfo();
 }
 
 ScopedVideoEncoder::~ScopedVideoEncoder() {
