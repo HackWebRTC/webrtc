@@ -428,14 +428,6 @@ struct VoiceSenderInfo : public MediaSenderInfo {
   // https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats-totalaudioenergy
   double total_input_energy = 0.0;
   double total_input_duration = 0.0;
-  // TODO(bugs.webrtc.org/8572): Remove APM stats from this struct, since they
-  // are no longer needed now that we have apm_statistics.
-  int echo_delay_median_ms = 0;
-  int echo_delay_std_ms = 0;
-  int echo_return_loss = 0;
-  int echo_return_loss_enhancement = 0;
-  float residual_echo_likelihood = 0.0f;
-  float residual_echo_likelihood_recent_max = 0.0f;
   bool typing_noise_detected = false;
   webrtc::ANAStats ana_statistics;
   webrtc::AudioProcessingStats apm_statistics;
