@@ -71,9 +71,6 @@ class VideoEncoderProxyFactory final : public VideoEncoderFactory {
                        size_t max_payload_size) override {
       return encoder_->InitEncode(config, number_of_cores, max_payload_size);
     }
-    VideoEncoder::ScalingSettings GetScalingSettings() const override {
-      return encoder_->GetScalingSettings();
-    }
     int32_t RegisterEncodeCompleteCallback(
         EncodedImageCallback* callback) override {
       return encoder_->RegisterEncodeCompleteCallback(callback);
@@ -86,8 +83,8 @@ class VideoEncoderProxyFactory final : public VideoEncoderFactory {
                               uint32_t framerate) override {
       return encoder_->SetRateAllocation(rate_allocation, framerate);
     }
-    const char* ImplementationName() const override {
-      return encoder_->ImplementationName();
+    VideoEncoder::EncoderInfo GetEncoderInfo() const override {
+      return encoder_->GetEncoderInfo();
     }
 
     VideoEncoder* const encoder_;
