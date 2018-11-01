@@ -121,14 +121,8 @@ class QualityTestVideoEncoder : public VideoEncoder,
                             uint32_t framerate) override {
     return encoder_->SetRateAllocation(allocation, framerate);
   }
-  ScalingSettings GetScalingSettings() const override {
-    return encoder_->GetScalingSettings();
-  }
-  bool SupportsNativeHandle() const override {
-    return encoder_->SupportsNativeHandle();
-  }
-  const char* ImplementationName() const override {
-    return encoder_->ImplementationName();
+  EncoderInfo GetEncoderInfo() const override {
+    return encoder_->GetEncoderInfo();
   }
 
  private:
