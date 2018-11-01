@@ -13,6 +13,8 @@
 #include "api/array_view.h"
 #include "modules/audio_processing/audio_buffer.h"
 #include "modules/audio_processing/gain_controller2.h"
+#include "modules/audio_processing/test/audio_buffer_tools.h"
+#include "modules/audio_processing/test/bitexactness_tools.h"
 #include "rtc_base/checks.h"
 #include "test/gtest.h"
 
@@ -87,5 +89,64 @@ TEST(GainController2, Usage) {
   EXPECT_LT(sample_value, ab.channels_f()[0][0]);
 }
 
+float GainAfterProcessingFile(GainController2* gain_controller) {
+  // Set up an AudioBuffer to be filled from the speech file.
+  const StreamConfig capture_config(AudioProcessing::kSampleRate48kHz, kStereo,
+                                    false);
+  AudioBuffer ab(capture_config.num_frames(), capture_config.num_channels(),
+                 capture_config.num_frames(), capture_config.num_channels(),
+                 capture_config.num_frames());
+  test::InputAudioFile capture_file(
+      test::GetApmCaptureTestVectorFileName(AudioProcessing::kSampleRate48kHz));
+  std::vector<float> capture_input(capture_config.num_frames() *
+                                   capture_config.num_channels());
+
+  // The file should contain at least this many frames. Every iteration, we put
+  // a frame through the gain controller.
+  const int kNumFramesToProcess = 100;
+  for (int frame_no = 0; frame_no < kNumFramesToProcess; ++frame_no) {
+    ReadFloatSamplesFromStereoFile(capture_config.num_frames(),
+                                   capture_config.num_channels(), &capture_file,
+                                   capture_input);
+
+    test::CopyVectorToAudioBuffer(capture_config, capture_input, &ab);
+    gain_controller->Process(&ab);
+  }
+
+  // Send in a last frame with values constant 1 (It's low enough to detect high
+  // gain, and for ease of computation). The applied gain is the result.
+  constexpr float sample_value = 1.f;
+  SetAudioBufferSamples(sample_value, &ab);
+  gain_controller->Process(&ab);
+  return ab.channels_f()[0][0];
+}
+
+TEST(GainController2, UsageSaturationMargin) {
+  GainController2 gain_controller2;
+  gain_controller2.Initialize(AudioProcessing::kSampleRate48kHz);
+
+  AudioProcessing::Config::GainController2 config;
+  // Check that samples are not amplified as much when extra margin is
+  // high. They should not be amplified at all, but anly after convergence. GC2
+  // starts with a gain, and it takes time until it's down to 0db.
+  config.extra_saturation_margin_db = 50.f;
+  config.fixed_gain_db = 0.f;
+  gain_controller2.ApplyConfig(config);
+
+  EXPECT_LT(GainAfterProcessingFile(&gain_controller2), 2.f);
+}
+
+TEST(GainController2, UsageNoSaturationMargin) {
+  GainController2 gain_controller2;
+  gain_controller2.Initialize(AudioProcessing::kSampleRate48kHz);
+
+  AudioProcessing::Config::GainController2 config;
+  // Check that some gain is applied if there is no margin.
+  config.extra_saturation_margin_db = 0.f;
+  config.fixed_gain_db = 0.f;
+  gain_controller2.ApplyConfig(config);
+
+  EXPECT_GT(GainAfterProcessingFile(&gain_controller2), 2.f);
+}
 }  // namespace test
 }  // namespace webrtc

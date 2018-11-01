@@ -273,6 +273,7 @@ class AudioProcessing : public rtc::RefCountInterface {
     struct GainController2 {
       bool enabled = false;
       bool adaptive_digital_mode = true;
+      float extra_saturation_margin_db = 2.f;
       float fixed_gain_db = 0.f;
     } gain_controller2;
 

@@ -45,7 +45,7 @@ class GainController2 {
   std::unique_ptr<ApmDataDumper> data_dumper_;
   FixedGainController fixed_gain_controller_;
   AudioProcessing::Config::GainController2 config_;
-  AdaptiveAgc adaptive_agc_;
+  std::unique_ptr<AdaptiveAgc> adaptive_agc_;
   int analog_level_ = -1;
   bool adaptive_digital_mode_ = true;
 

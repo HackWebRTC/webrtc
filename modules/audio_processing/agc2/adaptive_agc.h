@@ -23,6 +23,7 @@ class ApmDataDumper;
 class AdaptiveAgc {
  public:
   explicit AdaptiveAgc(ApmDataDumper* apm_data_dumper);
+  AdaptiveAgc(ApmDataDumper* apm_data_dumper, float extra_saturation_margin_db);
   ~AdaptiveAgc();
 
   void Process(AudioFrameView<float> float_frame, float last_audio_level);

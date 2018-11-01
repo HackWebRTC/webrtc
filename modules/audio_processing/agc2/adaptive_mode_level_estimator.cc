@@ -22,6 +22,12 @@ AdaptiveModeLevelEstimator::AdaptiveModeLevelEstimator(
     : saturation_protector_(apm_data_dumper),
       apm_data_dumper_(apm_data_dumper) {}
 
+AdaptiveModeLevelEstimator::AdaptiveModeLevelEstimator(
+    ApmDataDumper* apm_data_dumper,
+    float extra_saturation_margin_db)
+    : saturation_protector_(apm_data_dumper, extra_saturation_margin_db),
+      apm_data_dumper_(apm_data_dumper) {}
+
 void AdaptiveModeLevelEstimator::UpdateEstimation(
     const VadWithLevel::LevelAndProbability& vad_data) {
   RTC_DCHECK_GT(vad_data.speech_rms_dbfs, -150.f);

@@ -25,7 +25,7 @@ GainController2::GainController2()
     : data_dumper_(
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
       fixed_gain_controller_(data_dumper_.get()),
-      adaptive_agc_(data_dumper_.get()) {}
+      adaptive_agc_(new AdaptiveAgc(data_dumper_.get())) {}
 
 GainController2::~GainController2() = default;
 
@@ -43,14 +43,15 @@ void GainController2::Process(AudioBuffer* audio) {
   AudioFrameView<float> float_frame(audio->channels_f(), audio->num_channels(),
                                     audio->num_frames());
   if (adaptive_digital_mode_) {
-    adaptive_agc_.Process(float_frame, fixed_gain_controller_.LastAudioLevel());
+    adaptive_agc_->Process(float_frame,
+                           fixed_gain_controller_.LastAudioLevel());
   }
   fixed_gain_controller_.Process(float_frame);
 }
 
 void GainController2::NotifyAnalogLevel(int level) {
   if (analog_level_ != level && adaptive_digital_mode_) {
-    adaptive_agc_.Reset();
+    adaptive_agc_->Reset();
   }
   analog_level_ = level;
 }
@@ -61,11 +62,15 @@ void GainController2::ApplyConfig(
   config_ = config;
   fixed_gain_controller_.SetGain(config_.fixed_gain_db);
   adaptive_digital_mode_ = config_.adaptive_digital_mode;
+  adaptive_agc_.reset(
+      new AdaptiveAgc(data_dumper_.get(), config_.extra_saturation_margin_db));
 }
 
 bool GainController2::Validate(
     const AudioProcessing::Config::GainController2& config) {
-  return config.fixed_gain_db >= 0.f;
+  return config.fixed_gain_db >= 0.f &&
+         config.extra_saturation_margin_db >= 0.f &&
+         config.extra_saturation_margin_db <= 100.f;
 }
 
 std::string GainController2::ToString(

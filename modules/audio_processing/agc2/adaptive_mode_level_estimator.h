@@ -23,6 +23,8 @@ class ApmDataDumper;
 class AdaptiveModeLevelEstimator {
  public:
   explicit AdaptiveModeLevelEstimator(ApmDataDumper* apm_data_dumper);
+  AdaptiveModeLevelEstimator(ApmDataDumper* apm_data_dumper,
+                             float extra_saturation_margin_db);
   void UpdateEstimation(const VadWithLevel::LevelAndProbability& vad_data);
   float LatestLevelEstimate() const;
   void Reset();
