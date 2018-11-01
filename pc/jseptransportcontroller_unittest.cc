@@ -730,7 +730,8 @@ TEST_F(JsepTransportControllerTest, SignalConnectionStateFailed) {
   EXPECT_EQ(1, combined_connection_state_signal_count_);
 }
 
-TEST_F(JsepTransportControllerTest, SignalConnectionStateConnected) {
+TEST_F(JsepTransportControllerTest,
+       SignalConnectionStateConnectedNoMediaTransport) {
   CreateJsepTransportController(JsepTransportController::Config());
   auto description = CreateSessionDescriptionWithoutBundle();
   EXPECT_TRUE(transport_controller_
@@ -776,6 +777,93 @@ TEST_F(JsepTransportControllerTest, SignalConnectionStateConnected) {
   EXPECT_EQ(PeerConnectionInterface::PeerConnectionState::kConnected,
             combined_connection_state_);
   EXPECT_EQ(2, combined_connection_state_signal_count_);
+}
+
+TEST_F(JsepTransportControllerTest,
+       SignalConnectionStateConnectedWithMediaTransport) {
+  FakeMediaTransportFactory fake_media_transport_factory;
+  JsepTransportController::Config config;
+  config.media_transport_factory = &fake_media_transport_factory;
+  CreateJsepTransportController(config);
+  auto description = CreateSessionDescriptionWithoutBundle();
+  AddCryptoSettings(description.get());
+  EXPECT_TRUE(transport_controller_
+                  ->SetLocalDescription(SdpType::kOffer, description.get())
+                  .ok());
+
+  auto fake_audio_dtls = static_cast<FakeDtlsTransport*>(
+      transport_controller_->GetDtlsTransport(kAudioMid1));
+  auto fake_video_dtls = static_cast<FakeDtlsTransport*>(
+      transport_controller_->GetDtlsTransport(kVideoMid1));
+  fake_audio_dtls->SetWritable(true);
+  fake_video_dtls->SetWritable(true);
+  // Decreasing connection count from 2 to 1 triggers connection state event.
+  fake_audio_dtls->fake_ice_transport()->SetConnectionCount(2);
+  fake_audio_dtls->fake_ice_transport()->SetConnectionCount(1);
+  fake_video_dtls->fake_ice_transport()->SetConnectionCount(2);
+  fake_video_dtls->fake_ice_transport()->SetConnectionCount(1);
+  fake_audio_dtls->SetDtlsState(cricket::DTLS_TRANSPORT_CONNECTED);
+  fake_video_dtls->SetDtlsState(cricket::DTLS_TRANSPORT_CONNECTED);
+
+  // Still not connected, because we are waiting for media transport.
+  EXPECT_EQ_WAIT(cricket::kIceConnectionConnecting, connection_state_,
+                 kTimeout);
+
+  FakeMediaTransport* media_transport = static_cast<FakeMediaTransport*>(
+      transport_controller_->GetMediaTransport(kAudioMid1));
+
+  media_transport->SetState(webrtc::MediaTransportState::kWritable);
+  EXPECT_EQ_WAIT(cricket::kIceConnectionConnecting, connection_state_,
+                 kTimeout);
+
+  // Still waiting for the second media transport.
+  media_transport = static_cast<FakeMediaTransport*>(
+      transport_controller_->GetMediaTransport(kVideoMid1));
+  media_transport->SetState(webrtc::MediaTransportState::kWritable);
+
+  EXPECT_EQ_WAIT(cricket::kIceConnectionConnected, connection_state_, kTimeout);
+}
+
+TEST_F(JsepTransportControllerTest,
+       SignalConnectionStateFailedWhenMediaTransportClosed) {
+  FakeMediaTransportFactory fake_media_transport_factory;
+  JsepTransportController::Config config;
+  config.media_transport_factory = &fake_media_transport_factory;
+  CreateJsepTransportController(config);
+  auto description = CreateSessionDescriptionWithoutBundle();
+  AddCryptoSettings(description.get());
+  EXPECT_TRUE(transport_controller_
+                  ->SetLocalDescription(SdpType::kOffer, description.get())
+                  .ok());
+
+  auto fake_audio_dtls = static_cast<FakeDtlsTransport*>(
+      transport_controller_->GetDtlsTransport(kAudioMid1));
+  auto fake_video_dtls = static_cast<FakeDtlsTransport*>(
+      transport_controller_->GetDtlsTransport(kVideoMid1));
+  fake_audio_dtls->SetWritable(true);
+  fake_video_dtls->SetWritable(true);
+  // Decreasing connection count from 2 to 1 triggers connection state event.
+  fake_audio_dtls->fake_ice_transport()->SetConnectionCount(2);
+  fake_audio_dtls->fake_ice_transport()->SetConnectionCount(1);
+  fake_video_dtls->fake_ice_transport()->SetConnectionCount(2);
+  fake_video_dtls->fake_ice_transport()->SetConnectionCount(1);
+  fake_audio_dtls->SetDtlsState(cricket::DTLS_TRANSPORT_CONNECTED);
+  fake_video_dtls->SetDtlsState(cricket::DTLS_TRANSPORT_CONNECTED);
+
+  FakeMediaTransport* media_transport = static_cast<FakeMediaTransport*>(
+      transport_controller_->GetMediaTransport(kAudioMid1));
+
+  media_transport->SetState(webrtc::MediaTransportState::kWritable);
+
+  media_transport = static_cast<FakeMediaTransport*>(
+      transport_controller_->GetMediaTransport(kVideoMid1));
+
+  media_transport->SetState(webrtc::MediaTransportState::kWritable);
+
+  EXPECT_EQ_WAIT(cricket::kIceConnectionConnected, connection_state_, kTimeout);
+
+  media_transport->SetState(webrtc::MediaTransportState::kClosed);
+  EXPECT_EQ_WAIT(cricket::kIceConnectionFailed, connection_state_, kTimeout);
 }
 
 TEST_F(JsepTransportControllerTest, SignalConnectionStateComplete) {

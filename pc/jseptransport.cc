@@ -115,9 +115,17 @@ JsepTransport::JsepTransport(
     RTC_DCHECK(!sdes_transport);
     dtls_srtp_transport_ = std::move(dtls_srtp_transport);
   }
+
+  if (media_transport_) {
+    media_transport_->SetMediaTransportStateCallback(this);
+  }
 }
 
-JsepTransport::~JsepTransport() {}
+JsepTransport::~JsepTransport() {
+  if (media_transport_) {
+    media_transport_->SetMediaTransportStateCallback(nullptr);
+  }
+}
 
 webrtc::RTCError JsepTransport::SetLocalJsepTransportDescription(
     const JsepTransportDescription& jsep_description,
@@ -634,6 +642,14 @@ bool JsepTransport::GetTransportStats(DtlsTransportInternal* dtls_transport,
   }
   stats->channel_stats.push_back(substats);
   return true;
+}
+
+void JsepTransport::OnStateChanged(webrtc::MediaTransportState state) {
+  // TODO(bugs.webrtc.org/9719) This method currently fires on the network
+  // thread, but media transport does not make such guarantees. We need to make
+  // sure this callback is guaranteed to be executed on the network thread.
+  media_transport_state_ = state;
+  SignalMediaTransportStateChanged();
 }
 
 }  // namespace cricket

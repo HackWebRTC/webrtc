@@ -1041,6 +1041,8 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
           std::move(media_transport));
   jsep_transport->SignalRtcpMuxActive.connect(
       this, &JsepTransportController::UpdateAggregateStates_n);
+  jsep_transport->SignalMediaTransportStateChanged.connect(
+      this, &JsepTransportController::UpdateAggregateStates_n);
   SetTransportForMid(content_info.name, jsep_transport.get());
 
   jsep_transports_by_name_[content_info.name] = std::move(jsep_transport);
@@ -1234,6 +1236,10 @@ void JsepTransportController::UpdateAggregateStates_n() {
       PeerConnectionInterface::PeerConnectionState::kNew;
   cricket::IceGatheringState new_gathering_state = cricket::kIceGatheringNew;
   bool any_failed = false;
+
+  // TODO(http://bugs.webrtc.org/9719) If(when) media_transport disables
+  // dtls_transports entirely, the below line will have to be changed to account
+  // for the fact that dtls transports might be absent.
   bool all_connected = !dtls_transports.empty();
   bool all_completed = !dtls_transports.empty();
   bool any_gathering = false;
@@ -1262,6 +1268,31 @@ void JsepTransportController::UpdateAggregateStates_n() {
     dtls_state_counts[dtls->dtls_state()]++;
     ice_state_counts[dtls->ice_transport()->GetIceTransportState()]++;
   }
+
+  for (auto it = jsep_transports_by_name_.begin();
+       it != jsep_transports_by_name_.end(); ++it) {
+    auto jsep_transport = it->second.get();
+    if (!jsep_transport->media_transport()) {
+      continue;
+    }
+
+    // There is no 'kIceConnectionDisconnected', so we only need to handle
+    // connected and completed.
+    // We treat kClosed as failed, because if it happens before shutting down
+    // media transports it means that there was a failure.
+    // MediaTransportInterface allows to flip back and forth between kWritable
+    // and kPending, but there does not exist an implementation that does that,
+    // and the contract of jsep transport controller doesn't quite expect that.
+    // When this happens, we would go from connected to connecting state, but
+    // this may change in future.
+    any_failed |= jsep_transport->media_transport_state() ==
+                  webrtc::MediaTransportState::kClosed;
+    all_completed &= jsep_transport->media_transport_state() ==
+                     webrtc::MediaTransportState::kWritable;
+    all_connected &= jsep_transport->media_transport_state() ==
+                     webrtc::MediaTransportState::kWritable;
+  }
+
   if (any_failed) {
     new_connection_state = cricket::kIceConnectionFailed;
   } else if (all_completed) {

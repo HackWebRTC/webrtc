@@ -71,7 +71,8 @@ struct JsepTransportDescription {
 //
 // On Threading: JsepTransport performs work solely on the network thread, and
 // so its methods should only be called on the network thread.
-class JsepTransport : public sigslot::has_slots<> {
+class JsepTransport : public sigslot::has_slots<>,
+                      public webrtc::MediaTransportStateCallback {
  public:
   // |mid| is just used for log statements in order to identify the Transport.
   // Note that |local_certificate| is allowed to be null since a remote
@@ -171,10 +172,18 @@ class JsepTransport : public sigslot::has_slots<> {
     return media_transport_.get();
   }
 
+  // Returns the latest media transport state.
+  webrtc::MediaTransportState media_transport_state() const {
+    return media_transport_state_;
+  }
+
   // This is signaled when RTCP-mux becomes active and
   // |rtcp_dtls_transport_| is destroyed. The JsepTransportController will
   // handle the signal and update the aggregate transport states.
   sigslot::signal<> SignalRtcpMuxActive;
+
+  // This is signaled for changes in |media_transport_| state.
+  sigslot::signal<> SignalMediaTransportStateChanged;
 
   // TODO(deadbeef): The methods below are only public for testing. Should make
   // them utility functions or objects so they can be tested independently from
@@ -231,6 +240,9 @@ class JsepTransport : public sigslot::has_slots<> {
   bool GetTransportStats(DtlsTransportInternal* dtls_transport,
                          TransportStats* stats);
 
+  // Invoked whenever the state of the media transport changes.
+  void OnStateChanged(webrtc::MediaTransportState state) override;
+
   const std::string mid_;
   // needs-ice-restart bit as described in JSEP.
   bool needs_ice_restart_ = false;
@@ -256,6 +268,11 @@ class JsepTransport : public sigslot::has_slots<> {
 
   // Optional media transport (experimental).
   std::unique_ptr<webrtc::MediaTransportInterface> media_transport_;
+
+  // If |media_transport_| is provided, this variable represents the state of
+  // media transport.
+  webrtc::MediaTransportState media_transport_state_ =
+      webrtc::MediaTransportState::kPending;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(JsepTransport);
 };
