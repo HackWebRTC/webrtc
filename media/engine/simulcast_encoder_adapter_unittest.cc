@@ -212,8 +212,11 @@ class MockVideoEncoder : public VideoEncoder {
 
   MOCK_METHOD2(SetChannelParameters, int32_t(uint32_t packetLoss, int64_t rtt));
 
-  bool SupportsNativeHandle() const /* override */ {
-    return supports_native_handle_;
+  EncoderInfo GetEncoderInfo() const override {
+    EncoderInfo info;
+    info.supports_native_handle = supports_native_handle_;
+    info.implementation_name = implementation_name_;
+    return info;
   }
 
   virtual ~MockVideoEncoder() { factory_->DestroyVideoEncoder(this); }
@@ -235,17 +238,20 @@ class MockVideoEncoder : public VideoEncoder {
     supports_native_handle_ = enabled;
   }
 
+  void set_implementation_name(const std::string& name) {
+    implementation_name_ = name;
+  }
+
   void set_init_encode_return_value(int32_t value) {
     init_encode_return_value_ = value;
   }
 
   VideoBitrateAllocation last_set_bitrate() const { return last_set_bitrate_; }
 
-  MOCK_CONST_METHOD0(ImplementationName, const char*());
-
  private:
   MockVideoEncoderFactory* const factory_;
   bool supports_native_handle_ = false;
+  std::string implementation_name_ = "unknown";
   int32_t init_encode_return_value_ = 0;
   VideoBitrateAllocation last_set_bitrate_;
 
@@ -267,7 +273,7 @@ std::unique_ptr<VideoEncoder> MockVideoEncoderFactory::CreateVideoEncoder(
   const char* encoder_name = encoder_names_.empty()
                                  ? "codec_implementation_name"
                                  : encoder_names_[encoders_.size()];
-  ON_CALL(*encoder, ImplementationName()).WillByDefault(Return(encoder_name));
+  encoder->set_implementation_name(encoder_name);
   encoders_.push_back(encoder.get());
   return encoder;
 }

@@ -516,31 +516,24 @@ void SimulcastEncoderAdapter::DestroyStoredEncoders() {
   }
 }
 
-bool SimulcastEncoderAdapter::SupportsNativeHandle() const {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_queue_);
-  // We should not be calling this method before streaminfos_ are configured.
+VideoEncoder::EncoderInfo SimulcastEncoderAdapter::GetEncoderInfo() const {
+  EncoderInfo info;
+
+  if (Initialized() && NumberOfStreams(codec_) > 1) {
+    info = streaminfos_[0].encoder->GetEncoderInfo();
+  }
+
+  info.supports_native_handle = true;
   for (const auto& streaminfo : streaminfos_) {
-    if (!streaminfo.encoder->SupportsNativeHandle()) {
-      return false;
+    if (!streaminfo.encoder->GetEncoderInfo().supports_native_handle) {
+      info.supports_native_handle = false;
+      break;
     }
   }
-  return true;
-}
 
-VideoEncoder::ScalingSettings SimulcastEncoderAdapter::GetScalingSettings()
-    const {
-  // TODO(brandtr): Investigate why the sequence checker below fails on mac.
-  // RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_queue_);
-  // Turn off quality scaling for simulcast.
-  if (!Initialized() || NumberOfStreams(codec_) != 1) {
-    return VideoEncoder::ScalingSettings::kOff;
-  }
-  return streaminfos_[0].encoder->GetScalingSettings();
-}
+  info.implementation_name = implementation_name_;
 
-const char* SimulcastEncoderAdapter::ImplementationName() const {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_queue_);
-  return implementation_name_.c_str();
+  return info;
 }
 
 }  // namespace webrtc

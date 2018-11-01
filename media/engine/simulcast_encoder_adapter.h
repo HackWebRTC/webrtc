@@ -61,10 +61,7 @@ class SimulcastEncoderAdapter : public VideoEncoder {
       const CodecSpecificInfo* codec_specific_info,
       const RTPFragmentationHeader* fragmentation);
 
-  VideoEncoder::ScalingSettings GetScalingSettings() const override;
-
-  bool SupportsNativeHandle() const override;
-  const char* ImplementationName() const override;
+  EncoderInfo GetEncoderInfo() const override;
 
  private:
   struct StreamInfo {

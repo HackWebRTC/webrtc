@@ -45,11 +45,7 @@ class VP8EncoderSimulcastProxy : public VideoEncoder {
   int SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;
   int SetRateAllocation(const VideoBitrateAllocation& bitrate,
                         uint32_t new_framerate) override;
-
-  VideoEncoder::ScalingSettings GetScalingSettings() const override;
-
-  bool SupportsNativeHandle() const override;
-  const char* ImplementationName() const override;
+  EncoderInfo GetEncoderInfo() const override;
 
  private:
   VideoEncoderFactory* const factory_;

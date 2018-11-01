@@ -66,17 +66,8 @@ int VP8EncoderSimulcastProxy::SetRateAllocation(
   return encoder_->SetRateAllocation(bitrate, new_framerate);
 }
 
-VideoEncoder::ScalingSettings VP8EncoderSimulcastProxy::GetScalingSettings()
-    const {
-  return encoder_->GetScalingSettings();
-}
-
-bool VP8EncoderSimulcastProxy::SupportsNativeHandle() const {
-  return encoder_->SupportsNativeHandle();
-}
-
-const char* VP8EncoderSimulcastProxy::ImplementationName() const {
-  return encoder_->ImplementationName();
+VideoEncoder::EncoderInfo VP8EncoderSimulcastProxy::GetEncoderInfo() const {
+  return encoder_->GetEncoderInfo();
 }
 
 }  // namespace webrtc
