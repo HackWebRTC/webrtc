@@ -73,8 +73,8 @@ deps = {
   'src/third_party/android_build_tools/aapt2': {
       'packages': [
           {
-              'package': 'chromium/third_party/android_tools_aapt2',
-              'version': 'version:3.2.0-alpha18-4804415-cr0',
+              'package': 'chromium/third_party/android_build_tools/aapt2',
+              'version': 'version:3.3.0-beta01-5013011-cr0',
           },
       ],
       'condition': 'checkout_android',
