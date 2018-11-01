@@ -55,10 +55,6 @@ WEBRTC_DEFINE_bool(
     "Plot the sequence number difference between consecutive incoming "
     "packets.");
 WEBRTC_DEFINE_bool(
-    plot_incoming_delay_delta,
-    false,
-    "Plot the difference in 1-way path delay between consecutive packets.");
-WEBRTC_DEFINE_bool(
     plot_incoming_delay,
     true,
     "Plot the 1-way path delay for incoming packets, normalized so "
@@ -216,7 +212,6 @@ int main(int argc, char* argv[]) {
   } else if (strcmp(FLAG_plot_profile, "receiveside_bwe") == 0) {
     SetAllPlotFlags(false);
     FLAG_plot_incoming_packet_sizes = true;
-    FLAG_plot_incoming_delay_delta = true;
     FLAG_plot_incoming_delay = true;
     FLAG_plot_incoming_loss_rate = true;
     FLAG_plot_incoming_bitrate = true;
@@ -297,9 +292,6 @@ int main(int argc, char* argv[]) {
   }
   if (FLAG_plot_incoming_sequence_number_delta) {
     analyzer.CreateSequenceNumberGraph(collection->AppendNewPlot());
-  }
-  if (FLAG_plot_incoming_delay_delta) {
-    analyzer.CreateIncomingDelayDeltaGraph(collection->AppendNewPlot());
   }
   if (FLAG_plot_incoming_delay) {
     analyzer.CreateIncomingDelayGraph(collection->AppendNewPlot());
@@ -487,7 +479,6 @@ void SetAllPlotFlags(bool setting) {
   FLAG_plot_audio_playout = setting;
   FLAG_plot_audio_level = setting;
   FLAG_plot_incoming_sequence_number_delta = setting;
-  FLAG_plot_incoming_delay_delta = setting;
   FLAG_plot_incoming_delay = setting;
   FLAG_plot_incoming_loss_rate = setting;
   FLAG_plot_incoming_bitrate = setting;

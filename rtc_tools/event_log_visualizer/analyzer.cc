@@ -177,13 +177,13 @@ constexpr float kBottomMargin = 0.02f;
 constexpr float kTopMargin = 0.05f;
 
 absl::optional<double> NetworkDelayDiff_AbsSendTime(
-    const LoggedRtpPacket& old_packet,
-    const LoggedRtpPacket& new_packet) {
-  if (old_packet.header.extension.hasAbsoluteSendTime &&
-      new_packet.header.extension.hasAbsoluteSendTime) {
+    const LoggedRtpPacketIncoming& old_packet,
+    const LoggedRtpPacketIncoming& new_packet) {
+  if (old_packet.rtp.header.extension.hasAbsoluteSendTime &&
+      new_packet.rtp.header.extension.hasAbsoluteSendTime) {
     int64_t send_time_diff = WrappingDifference(
-        new_packet.header.extension.absoluteSendTime,
-        old_packet.header.extension.absoluteSendTime, 1ul << 24);
+        new_packet.rtp.header.extension.absoluteSendTime,
+        old_packet.rtp.header.extension.absoluteSendTime, 1ul << 24);
     int64_t recv_time_diff =
         new_packet.log_time_us() - old_packet.log_time_us();
     double delay_change_us =
@@ -195,34 +195,31 @@ absl::optional<double> NetworkDelayDiff_AbsSendTime(
 }
 
 absl::optional<double> NetworkDelayDiff_CaptureTime(
-    const LoggedRtpPacket& old_packet,
-    const LoggedRtpPacket& new_packet) {
-  int64_t send_time_diff = WrappingDifference(
-      new_packet.header.timestamp, old_packet.header.timestamp, 1ull << 32);
+    const LoggedRtpPacketIncoming& old_packet,
+    const LoggedRtpPacketIncoming& new_packet,
+    const double sample_rate) {
+  int64_t send_time_diff =
+      WrappingDifference(new_packet.rtp.header.timestamp,
+                         old_packet.rtp.header.timestamp, 1ull << 32);
   int64_t recv_time_diff = new_packet.log_time_us() - old_packet.log_time_us();
-
-  const double kVideoSampleRate = 90000;
-  // TODO(terelius): We treat all streams as video for now, even though
-  // audio might be sampled at e.g. 16kHz, because it is really difficult to
-  // figure out the true sampling rate of a stream. The effect is that the
-  // delay will be scaled incorrectly for non-video streams.
 
   double delay_change =
       static_cast<double>(recv_time_diff) / 1000 -
-      static_cast<double>(send_time_diff) / kVideoSampleRate * 1000;
+      static_cast<double>(send_time_diff) / sample_rate * 1000;
   if (delay_change < -10000 || 10000 < delay_change) {
     RTC_LOG(LS_WARNING) << "Very large delay change. Timestamps correct?";
-    RTC_LOG(LS_WARNING) << "Old capture time " << old_packet.header.timestamp
-                        << ", received time " << old_packet.log_time_us();
-    RTC_LOG(LS_WARNING) << "New capture time " << new_packet.header.timestamp
-                        << ", received time " << new_packet.log_time_us();
+    RTC_LOG(LS_WARNING) << "Old capture time "
+                        << old_packet.rtp.header.timestamp << ", received time "
+                        << old_packet.log_time_us();
+    RTC_LOG(LS_WARNING) << "New capture time "
+                        << new_packet.rtp.header.timestamp << ", received time "
+                        << new_packet.log_time_us();
     RTC_LOG(LS_WARNING) << "Receive time difference " << recv_time_diff << " = "
                         << static_cast<double>(recv_time_diff) /
                                kNumMicrosecsPerSec
                         << "s";
     RTC_LOG(LS_WARNING) << "Send time difference " << send_time_diff << " = "
-                        << static_cast<double>(send_time_diff) /
-                               kVideoSampleRate
+                        << static_cast<double>(send_time_diff) / sample_rate
                         << "s";
   }
   return delay_change;
@@ -276,9 +273,10 @@ void AccumulatePairs(
   for (size_t i = 1; i < data.size(); i++) {
     float x = fx(data[i]);
     absl::optional<ResultType> y = fy(data[i - 1], data[i]);
-    if (y)
+    if (y) {
       sum += *y;
-    result->points.emplace_back(x, static_cast<float>(sum));
+      result->points.emplace_back(x, static_cast<float>(sum));
+    }
   }
 }
 
@@ -737,71 +735,58 @@ void EventLogAnalyzer::CreateIncomingPacketLossGraph(Plot* plot) {
   plot->SetTitle("Estimated incoming loss rate");
 }
 
-void EventLogAnalyzer::CreateIncomingDelayDeltaGraph(Plot* plot) {
-  for (const auto& stream : parsed_log_.rtp_packets_by_ssrc(kIncomingPacket)) {
-    // Filter on SSRC.
-    if (!MatchingSsrc(stream.ssrc, desired_ssrc_) ||
-        IsAudioSsrc(kIncomingPacket, stream.ssrc) ||
-        !IsVideoSsrc(kIncomingPacket, stream.ssrc) ||
-        IsRtxSsrc(kIncomingPacket, stream.ssrc)) {
-      continue;
-    }
-
-    TimeSeries capture_time_data(
-        GetStreamName(kIncomingPacket, stream.ssrc) + " capture-time",
-        LineStyle::kBar);
-    auto ToCallTime = [this](const LoggedRtpPacket& packet) {
-      return this->ToCallTimeSec(packet.log_time_us());
-    };
-    ProcessPairs<LoggedRtpPacket, double>(
-        ToCallTime, NetworkDelayDiff_CaptureTime, stream.packet_view,
-        &capture_time_data);
-    plot->AppendTimeSeries(std::move(capture_time_data));
-
-    TimeSeries send_time_data(
-        GetStreamName(kIncomingPacket, stream.ssrc) + " abs-send-time",
-        LineStyle::kBar);
-    ProcessPairs<LoggedRtpPacket, double>(ToCallTime,
-                                          NetworkDelayDiff_AbsSendTime,
-                                          stream.packet_view, &send_time_data);
-    plot->AppendTimeSeries(std::move(send_time_data));
-  }
-
-  plot->SetXAxis(ToCallTimeSec(begin_time_), call_duration_s_, "Time (s)",
-                 kLeftMargin, kRightMargin);
-  plot->SetSuggestedYAxis(0, 1, "Latency change (ms)", kBottomMargin,
-                          kTopMargin);
-  plot->SetTitle("Network latency difference between consecutive packets");
-}
-
 void EventLogAnalyzer::CreateIncomingDelayGraph(Plot* plot) {
-  for (const auto& stream : parsed_log_.rtp_packets_by_ssrc(kIncomingPacket)) {
+  for (const auto& stream : parsed_log_.incoming_rtp_packets_by_ssrc()) {
     // Filter on SSRC.
     if (!MatchingSsrc(stream.ssrc, desired_ssrc_) ||
-        IsAudioSsrc(kIncomingPacket, stream.ssrc) ||
-        !IsVideoSsrc(kIncomingPacket, stream.ssrc) ||
         IsRtxSsrc(kIncomingPacket, stream.ssrc)) {
       continue;
     }
 
+    const std::vector<LoggedRtpPacketIncoming>& packets =
+        stream.incoming_packets;
+    if (packets.size() < 100) {
+      RTC_LOG(LS_WARNING) << "Can't estimate the RTP clock frequency with "
+                          << packets.size() << " packets in the stream.";
+      continue;
+    }
+    int64_t end_time_us = log_segments_.empty()
+                              ? std::numeric_limits<int64_t>::max()
+                              : log_segments_.front().second;
+    absl::optional<uint32_t> estimated_frequency =
+        EstimateRtpClockFrequency(packets, end_time_us);
+    if (!estimated_frequency)
+      continue;
+    const double frequency_hz = *estimated_frequency;
+    if (IsVideoSsrc(kIncomingPacket, stream.ssrc) && frequency_hz != 90000) {
+      RTC_LOG(LS_WARNING)
+          << "Video stream should use a 90 kHz clock but appears to use "
+          << frequency_hz / 1000 << ". Discarding.";
+      continue;
+    }
+
+    auto ToCallTime = [this](const LoggedRtpPacketIncoming& packet) {
+      return this->ToCallTimeSec(packet.log_time_us());
+    };
+    auto ToNetworkDelay = [frequency_hz](
+                              const LoggedRtpPacketIncoming& old_packet,
+                              const LoggedRtpPacketIncoming& new_packet) {
+      return NetworkDelayDiff_CaptureTime(old_packet, new_packet, frequency_hz);
+    };
+
     TimeSeries capture_time_data(
         GetStreamName(kIncomingPacket, stream.ssrc) + " capture-time",
         LineStyle::kLine);
-    auto ToCallTime = [this](const LoggedRtpPacket& packet) {
-      return this->ToCallTimeSec(packet.log_time_us());
-    };
-    AccumulatePairs<LoggedRtpPacket, double>(
-        ToCallTime, NetworkDelayDiff_CaptureTime, stream.packet_view,
-        &capture_time_data);
+    AccumulatePairs<LoggedRtpPacketIncoming, double>(
+        ToCallTime, ToNetworkDelay, packets, &capture_time_data);
     plot->AppendTimeSeries(std::move(capture_time_data));
 
     TimeSeries send_time_data(
         GetStreamName(kIncomingPacket, stream.ssrc) + " abs-send-time",
         LineStyle::kLine);
-    AccumulatePairs<LoggedRtpPacket, double>(
-        ToCallTime, NetworkDelayDiff_AbsSendTime, stream.packet_view,
-        &send_time_data);
-    plot->AppendTimeSeries(std::move(send_time_data));
+    AccumulatePairs<LoggedRtpPacketIncoming, double>(
+        ToCallTime, NetworkDelayDiff_AbsSendTime, packets, &send_time_data);
+    plot->AppendTimeSeriesIfNotEmpty(std::move(send_time_data));
   }
 
   plot->SetXAxis(ToCallTimeSec(begin_time_), call_duration_s_, "Time (s)",
