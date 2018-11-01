@@ -46,7 +46,6 @@ if (rtc_include_tests) {
       "../../api/units:data_rate",
       "../../api/units:time_delta",
       "../../api/units:timestamp",
-      "../../api/video:builtin_video_bitrate_allocator_factory",
       "../../api/video:video_frame",
       "../../api/video:video_frame_i420",
       "../../api/video_codecs:video_codecs_api",

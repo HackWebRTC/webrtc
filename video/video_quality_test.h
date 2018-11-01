@@ -17,7 +17,6 @@
 
 #include "api/fec_controller.h"
 #include "api/test/video_quality_test_fixture.h"
-#include "api/video/video_bitrate_allocator_factory.h"
 #include "call/fake_network_pipe.h"
 #include "media/engine/internaldecoderfactory.h"
 #include "media/engine/internalencoderfactory.h"
@@ -106,8 +105,6 @@ class VideoQualityTest :
   InternalDecoderFactory internal_decoder_factory_;
   test::FunctionVideoEncoderFactory video_encoder_factory_;
   test::FunctionVideoEncoderFactory video_encoder_factory_with_analyzer_;
-  std::unique_ptr<VideoBitrateAllocatorFactory>
-      video_bitrate_allocator_factory_;
   InternalEncoderFactory internal_encoder_factory_;
   std::vector<VideoSendStream::Config> thumbnail_send_configs_;
   std::vector<VideoEncoderConfig> thumbnail_encoder_configs_;

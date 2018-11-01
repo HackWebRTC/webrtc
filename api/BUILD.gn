@@ -544,18 +544,6 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("mock_video_bitrate_allocator_factory") {
-    testonly = true
-    sources = [
-      "test/mock_video_bitrate_allocator_factory.h",
-    ]
-
-    deps = [
-      "../api/video:video_bitrate_allocator_factory",
-      "../test:test_support",
-    ]
-  }
-
   rtc_source_set("mock_video_codec_factory") {
     testonly = true
     sources = [

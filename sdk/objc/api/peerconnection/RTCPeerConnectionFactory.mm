@@ -30,7 +30,6 @@
 // is not smart enough to take the #ifdef into account.
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"     // nogncheck
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"     // nogncheck
-#include "api/video/builtin_video_bitrate_allocator_factory.h"  // nogncheck
 #include "media/engine/convert_legacy_video_factory.h"          // nogncheck
 #include "modules/audio_device/include/audio_device.h"          // nogncheck
 #include "modules/audio_processing/include/audio_processing.h"  // nogncheck
@@ -194,15 +193,13 @@
     if (!audioProcessingModule) audioProcessingModule = webrtc::AudioProcessingBuilder().Create();
 
     std::unique_ptr<cricket::MediaEngineInterface> media_engine =
-        cricket::WebRtcMediaEngineFactory::Create(
-            audioDeviceModule,
-            audioEncoderFactory,
-            audioDecoderFactory,
-            std::move(videoEncoderFactory),
-            std::move(videoDecoderFactory),
-            webrtc::CreateBuiltinVideoBitrateAllocatorFactory(),
-            nullptr,  // audio mixer
-            audioProcessingModule);
+        cricket::WebRtcMediaEngineFactory::Create(audioDeviceModule,
+                                                  audioEncoderFactory,
+                                                  audioDecoderFactory,
+                                                  std::move(videoEncoderFactory),
+                                                  std::move(videoDecoderFactory),
+                                                  nullptr,  // audio mixer
+                                                  audioProcessingModule);
 
     std::unique_ptr<webrtc::CallFactoryInterface> call_factory = webrtc::CreateCallFactory();
 

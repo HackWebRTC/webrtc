@@ -78,7 +78,6 @@ VideoSendStream::VideoSendStream(
       config_(std::move(config)),
       content_type_(encoder_config.content_type) {
   RTC_DCHECK(config_.encoder_settings.encoder_factory);
-  RTC_DCHECK(config_.encoder_settings.bitrate_allocator_factory);
 
   video_stream_encoder_ = CreateVideoStreamEncoder(num_cpu_cores, &stats_proxy_,
                                                    config_.encoder_settings,

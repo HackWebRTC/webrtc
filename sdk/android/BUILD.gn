@@ -573,7 +573,6 @@ if (is_android) {
       ":vp9_jni",  # TODO(bugs.webrtc.org/7925): Remove.
       "../..:webrtc_common",
       "../../api:libjingle_peerconnection_api",
-      "../../api/video:builtin_video_bitrate_allocator_factory",
       "../../api/video:encoded_image",
       "../../api/video:video_frame",
       "../../api/video_codecs:builtin_video_decoder_factory",
@@ -663,7 +662,6 @@ if (is_android) {
       ":native_api_jni",
       "../..:webrtc_common",
       "../../api:libjingle_peerconnection_api",
-      "../../api/video:video_bitrate_allocator_factory",
       "../../api/video_codecs:video_codecs_api",
       "../../logging:rtc_event_log_api",
       "../../logging:rtc_event_log_impl_base",
@@ -876,7 +874,6 @@ if (is_android) {
 
     deps = [
       ":base_jni",
-      "../../api/video:video_bitrate_allocator_factory",
       "../../api/video_codecs:video_codecs_api",
     ]
   }
@@ -899,7 +896,6 @@ if (is_android) {
     deps = [
       ":base_jni",
       "../../api:callfactory_api",
-      "../../api/video:video_bitrate_allocator_factory",
       "../../api/video_codecs:video_codecs_api",
       "../../call:call_interfaces",
       "../../logging:rtc_event_log_api",
@@ -1392,7 +1388,6 @@ if (is_android) {
       ":video_jni",
       "../../api/audio_codecs:builtin_audio_decoder_factory",
       "../../api/audio_codecs:builtin_audio_encoder_factory",
-      "../../api/video:builtin_video_bitrate_allocator_factory",
       "../../api/video:video_frame",
       "../../media:rtc_audio_video",
       "../../media:rtc_internal_video_codecs",

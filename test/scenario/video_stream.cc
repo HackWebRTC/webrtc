@@ -13,7 +13,6 @@
 #include <utility>
 
 #include "api/test/video/function_video_encoder_factory.h"
-#include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "media/base/mediaconstants.h"
 #include "media/engine/internaldecoderfactory.h"
 #include "media/engine/internalencoderfactory.h"
@@ -214,15 +213,9 @@ SendVideoStream::SendVideoStream(CallClient* sender,
   }
   RTC_CHECK(encoder_factory_);
 
-  bitrate_allocator_factory_ = CreateBuiltinVideoBitrateAllocatorFactory();
-  RTC_CHECK(bitrate_allocator_factory_);
-
   VideoSendStream::Config send_config =
       CreateVideoSendStreamConfig(config, ssrcs_, send_transport);
   send_config.encoder_settings.encoder_factory = encoder_factory_.get();
-  send_config.encoder_settings.bitrate_allocator_factory =
-      bitrate_allocator_factory_.get();
-
   VideoEncoderConfig encoder_config = CreateVideoEncoderConfig(config);
 
   send_stream_ = sender_->call_->CreateVideoSendStream(

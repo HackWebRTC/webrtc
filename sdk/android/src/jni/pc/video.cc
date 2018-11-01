@@ -13,7 +13,6 @@
 #include <jni.h>
 #include <memory>
 
-#include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
 #include "api/videosourceproxy.h"
@@ -51,11 +50,6 @@ void* CreateVideoSource(JNIEnv* env,
                                                          is_screencast));
   return VideoTrackSourceProxy::Create(signaling_thread, worker_thread, source)
       .release();
-}
-
-std::unique_ptr<VideoBitrateAllocatorFactory>
-CreateVideoBitrateAllocatorFactory() {
-  return CreateBuiltinVideoBitrateAllocatorFactory();
 }
 
 }  // namespace jni

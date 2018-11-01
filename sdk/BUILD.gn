@@ -913,7 +913,6 @@ if (is_ios || is_mac) {
         "../api/audio_codecs:audio_codecs_api",
         "../api/audio_codecs:builtin_audio_decoder_factory",
         "../api/audio_codecs:builtin_audio_encoder_factory",
-        "../api/video:builtin_video_bitrate_allocator_factory",
         "../api/video:video_frame",
         "../api/video_codecs:video_codecs_api",
         "../common_video",

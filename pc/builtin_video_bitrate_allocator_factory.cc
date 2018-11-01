@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "api/video/builtin_video_bitrate_allocator_factory.h"
+#include "pc/builtin_video_bitrate_allocator_factory.h"
 
 #include "absl/memory/memory.h"
 #include "media/base/codec.h"

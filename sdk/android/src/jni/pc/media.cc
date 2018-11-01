@@ -12,7 +12,6 @@
 #include <utility>
 
 #include "api/call/callfactoryinterface.h"
-#include "api/video/video_bitrate_allocator_factory.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
 #include "logging/rtc_event_log/rtc_event_log_factory_interface.h"
@@ -37,15 +36,12 @@ cricket::MediaEngineInterface* CreateMediaEngine(
     rtc::scoped_refptr<AudioDecoderFactory> audio_decoder_factory,
     std::unique_ptr<VideoEncoderFactory> video_encoder_factory,
     std::unique_ptr<VideoDecoderFactory> video_decoder_factory,
-    std::unique_ptr<VideoBitrateAllocatorFactory>
-        video_bitrate_allocator_factory,
     rtc::scoped_refptr<AudioMixer> audio_mixer,
     rtc::scoped_refptr<AudioProcessing> audio_processor) {
   return cricket::WebRtcMediaEngineFactory::Create(
              adm, audio_encoder_factory, audio_decoder_factory,
              std::move(video_encoder_factory), std::move(video_decoder_factory),
-             std::move(video_bitrate_allocator_factory), audio_mixer,
-             audio_processor)
+             audio_mixer, audio_processor)
       .release();
 }
 

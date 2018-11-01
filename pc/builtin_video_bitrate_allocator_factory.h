@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef API_VIDEO_BUILTIN_VIDEO_BITRATE_ALLOCATOR_FACTORY_H_
-#define API_VIDEO_BUILTIN_VIDEO_BITRATE_ALLOCATOR_FACTORY_H_
+#ifndef PC_BUILTIN_VIDEO_BITRATE_ALLOCATOR_FACTORY_H_
+#define PC_BUILTIN_VIDEO_BITRATE_ALLOCATOR_FACTORY_H_
 
 #include <memory>
 
@@ -22,4 +22,4 @@ CreateBuiltinVideoBitrateAllocatorFactory();
 
 }  // namespace webrtc
 
-#endif  // API_VIDEO_BUILTIN_VIDEO_BITRATE_ALLOCATOR_FACTORY_H_
+#endif  // PC_BUILTIN_VIDEO_BITRATE_ALLOCATOR_FACTORY_H_

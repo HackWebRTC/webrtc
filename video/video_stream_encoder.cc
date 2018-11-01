@@ -17,8 +17,6 @@
 
 #include "api/video/encoded_image.h"
 #include "api/video/i420_buffer.h"
-#include "api/video/video_bitrate_allocator_factory.h"
-#include "common_video/include/video_frame.h"
 #include "modules/video_coding/include/video_codec_initializer.h"
 #include "modules/video_coding/include/video_coding.h"
 #include "rtc_base/arraysize.h"
@@ -536,13 +534,10 @@ void VideoStreamEncoder::ReconfigureEncoder() {
   crop_height_ = last_frame_info_->height - highest_stream_height;
 
   VideoCodec codec;
-  if (!VideoCodecInitializer::SetupCodec(encoder_config_, streams, &codec)) {
+  if (!VideoCodecInitializer::SetupCodec(encoder_config_, streams, &codec,
+                                         &rate_allocator_)) {
     RTC_LOG(LS_ERROR) << "Failed to create encoder configuration.";
   }
-
-  rate_allocator_ =
-      settings_.bitrate_allocator_factory->CreateVideoBitrateAllocator(codec);
-  RTC_CHECK(rate_allocator_) << "Failed to create bitrate allocator.";
 
   // Set min_bitrate_bps, max_bitrate_bps, and max padding bit rate for VP9.
   if (encoder_config_.codec_type == kVideoCodecVP9) {

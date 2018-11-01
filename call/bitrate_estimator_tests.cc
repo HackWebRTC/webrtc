@@ -126,8 +126,6 @@ class BitrateEstimatorTest : public test::CallTest {
       video_send_config.rtp.ssrcs.push_back(kVideoSendSsrcs[0]);
       video_send_config.encoder_settings.encoder_factory =
           &fake_encoder_factory_;
-      video_send_config.encoder_settings.bitrate_allocator_factory =
-          bitrate_allocator_factory_.get();
       video_send_config.rtp.payload_name = "FAKE";
       video_send_config.rtp.payload_type = kFakeVideoSendPayloadType;
       SetVideoSendConfig(video_send_config);

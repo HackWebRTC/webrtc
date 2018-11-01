@@ -16,7 +16,6 @@
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/peerconnectioninterface.h"
-#include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "examples/androidnativeapi/generated_jni/jni/CallClient_jni.h"
 #include "media/engine/internaldecoderfactory.h"
 #include "media/engine/internalencoderfactory.h"
@@ -160,7 +159,6 @@ void AndroidCallClient::CreatePeerConnectionFactory() {
           webrtc::CreateBuiltinAudioDecoderFactory(),
           absl::make_unique<webrtc::InternalEncoderFactory>(),
           absl::make_unique<webrtc::InternalDecoderFactory>(),
-          webrtc::CreateBuiltinVideoBitrateAllocatorFactory(),
           nullptr /* audio_mixer */, webrtc::AudioProcessingBuilder().Create());
   RTC_LOG(LS_INFO) << "Media engine created: " << media_engine.get();
 

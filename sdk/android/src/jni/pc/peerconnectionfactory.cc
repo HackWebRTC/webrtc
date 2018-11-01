@@ -13,7 +13,6 @@
 #include <memory>
 #include <utility>
 
-#include "api/video/video_bitrate_allocator_factory.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
 #include "media/base/mediaengine.h"
@@ -260,17 +259,13 @@ jlong CreatePeerConnectionFactoryForJava(
   std::unique_ptr<RtcEventLogFactoryInterface> rtc_event_log_factory(
       CreateRtcEventLogFactory());
 
-  std::unique_ptr<VideoBitrateAllocatorFactory>
-      video_bitrate_allocator_factory = CreateVideoBitrateAllocatorFactory();
-
   std::unique_ptr<cricket::MediaEngineInterface> media_engine(CreateMediaEngine(
       audio_device_module, audio_encoder_factory, audio_decoder_factory,
       std::unique_ptr<VideoEncoderFactory>(
           CreateVideoEncoderFactory(jni, jencoder_factory)),
       std::unique_ptr<VideoDecoderFactory>(
           CreateVideoDecoderFactory(jni, jdecoder_factory)),
-      std::move(video_bitrate_allocator_factory), audio_mixer,
-      audio_processor));
+      audio_mixer, audio_processor));
   PeerConnectionFactoryDependencies dependencies;
   dependencies.network_thread = network_thread.get();
   dependencies.worker_thread = worker_thread.get();

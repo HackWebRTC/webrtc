@@ -174,7 +174,6 @@ rtc_source_set("video_stream_encoder") {
   ]
 
   deps = [
-    ":video_bitrate_allocator_factory",
     ":video_frame",
 
     # For rtpparameters.h
@@ -202,25 +201,6 @@ rtc_source_set("video_stream_encoder_create") {
     "../../rtc_base:ptr_util",
     "../../video:video_stream_encoder_impl",
     "../video_codecs:video_codecs_api",
-    "//third_party/abseil-cpp/absl/memory",
-  ]
-}
-
-rtc_static_library("builtin_video_bitrate_allocator_factory") {
-  visibility = [ "*" ]
-  sources = [
-    "builtin_video_bitrate_allocator_factory.cc",
-    "builtin_video_bitrate_allocator_factory.h",
-  ]
-
-  deps = [
-    ":video_bitrate_allocation",
-    ":video_bitrate_allocator_factory",
-    "../../media:rtc_media_base",
-    "../../modules/video_coding:video_coding_utility",
-    "../../modules/video_coding:webrtc_vp9_helpers",
-    "../../rtc_base:ptr_util",
-    "../../rtc_base/system:fallthrough",
     "//third_party/abseil-cpp/absl/memory",
   ]
 }

@@ -13,7 +13,6 @@
 
 #include <jni.h>
 
-#include <memory>
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/thread.h"
 #include "sdk/android/native_api/jni/scoped_java_ref.h"
@@ -21,7 +20,6 @@
 namespace webrtc {
 class VideoEncoderFactory;
 class VideoDecoderFactory;
-class VideoBitrateAllocatorFactory;
 }  // namespace webrtc
 
 namespace webrtc {
@@ -39,9 +37,6 @@ void* CreateVideoSource(JNIEnv* env,
                         rtc::Thread* signaling_thread,
                         rtc::Thread* worker_thread,
                         jboolean is_screencast);
-
-std::unique_ptr<VideoBitrateAllocatorFactory>
-CreateVideoBitrateAllocatorFactory();
 
 }  // namespace jni
 }  // namespace webrtc

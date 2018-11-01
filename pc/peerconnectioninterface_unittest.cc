@@ -22,7 +22,6 @@
 #include "api/peerconnectioninterface.h"
 #include "api/rtpreceiverinterface.h"
 #include "api/rtpsenderinterface.h"
-#include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "api/video_codecs/builtin_video_decoder_factory.h"
 #include "api/video_codecs/builtin_video_encoder_factory.h"
 #include "logging/rtc_event_log/output/rtc_event_log_output_file.h"
@@ -634,8 +633,6 @@ class PeerConnectionFactoryForTest : public webrtc::PeerConnectionFactory {
     auto audio_decoder_factory = webrtc::CreateBuiltinAudioDecoderFactory();
     auto video_encoder_factory = webrtc::CreateBuiltinVideoEncoderFactory();
     auto video_decoder_factory = webrtc::CreateBuiltinVideoDecoderFactory();
-    auto video_bitrate_allocator_factory =
-        webrtc::CreateBuiltinVideoBitrateAllocatorFactory();
 
     // Use fake audio device module since we're only testing the interface
     // level, and using a real one could make tests flaky when run in parallel.
@@ -643,8 +640,7 @@ class PeerConnectionFactoryForTest : public webrtc::PeerConnectionFactory {
         cricket::WebRtcMediaEngineFactory::Create(
             FakeAudioCaptureModule::Create(), audio_encoder_factory,
             audio_decoder_factory, std::move(video_encoder_factory),
-            std::move(video_decoder_factory),
-            std::move(video_bitrate_allocator_factory), nullptr,
+            std::move(video_decoder_factory), nullptr,
             webrtc::AudioProcessingBuilder().Create()));
 
     std::unique_ptr<webrtc::CallFactoryInterface> call_factory =

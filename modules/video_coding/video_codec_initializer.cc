@@ -24,13 +24,15 @@
 
 namespace webrtc {
 
-bool VideoCodecInitializer::SetupCodec(const VideoEncoderConfig& config,
-                                       const std::vector<VideoStream>& streams,
-                                       VideoCodec* codec) {
+bool VideoCodecInitializer::SetupCodec(
+    const VideoEncoderConfig& config,
+    const std::vector<VideoStream>& streams,
+    VideoCodec* codec,
+    std::unique_ptr<VideoBitrateAllocator>* bitrate_allocator) {
   if (config.codec_type == kVideoCodecMultiplex) {
     VideoEncoderConfig associated_config = config.Copy();
     associated_config.codec_type = kVideoCodecVP9;
-    if (!SetupCodec(associated_config, streams, codec)) {
+    if (!SetupCodec(associated_config, streams, codec, bitrate_allocator)) {
       RTC_LOG(LS_ERROR) << "Failed to create stereo encoder configuration.";
       return false;
     }
@@ -39,7 +41,29 @@ bool VideoCodecInitializer::SetupCodec(const VideoEncoderConfig& config,
   }
 
   *codec = VideoEncoderConfigToVideoCodec(config, streams);
+  *bitrate_allocator = CreateBitrateAllocator(*codec);
+
   return true;
+}
+
+std::unique_ptr<VideoBitrateAllocator>
+VideoCodecInitializer::CreateBitrateAllocator(const VideoCodec& codec) {
+  std::unique_ptr<VideoBitrateAllocator> rate_allocator;
+
+  switch (codec.codecType) {
+    case kVideoCodecVP8:
+      RTC_FALLTHROUGH();
+    case kVideoCodecH264:
+      rate_allocator.reset(new SimulcastRateAllocator(codec));
+      break;
+    case kVideoCodecVP9:
+      rate_allocator.reset(new SvcRateAllocator(codec));
+      break;
+    default:
+      rate_allocator.reset(new DefaultVideoBitrateAllocator(codec));
+  }
+
+  return rate_allocator;
 }
 
 // TODO(sprang): Split this up and separate the codec specific parts.

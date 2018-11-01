@@ -15,7 +15,6 @@
 #include "absl/memory/memory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
-#include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "api/video_codecs/video_encoder_config.h"
 #include "call/fake_network_pipe.h"
 #include "call/rtp_transport_controller_send.h"
@@ -55,7 +54,6 @@ CallTest::CallTest()
         return fake_encoder;
       }),
       fake_decoder_factory_([]() { return absl::make_unique<FakeDecoder>(); }),
-      bitrate_allocator_factory_(CreateBuiltinVideoBitrateAllocatorFactory()),
       num_video_streams_(1),
       num_audio_streams_(0),
       num_flexfec_streams_(0),
@@ -235,8 +233,6 @@ void CallTest::CreateVideoSendConfig(VideoSendStream::Config* video_config,
   RTC_DCHECK_LE(num_video_streams + num_used_ssrcs, kNumSsrcs);
   *video_config = VideoSendStream::Config(send_transport);
   video_config->encoder_settings.encoder_factory = &fake_encoder_factory_;
-  video_config->encoder_settings.bitrate_allocator_factory =
-      bitrate_allocator_factory_.get();
   video_config->rtp.payload_name = "FAKE";
   video_config->rtp.payload_type = kFakeVideoSendPayloadType;
   video_config->rtp.extensions.push_back(
