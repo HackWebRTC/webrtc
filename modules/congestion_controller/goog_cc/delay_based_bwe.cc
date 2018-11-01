@@ -148,15 +148,22 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedbackVector(
   }
 
   if (delayed_feedback) {
-    ++consecutive_delayed_feedbacks_;
-    if (consecutive_delayed_feedbacks_ >= kMaxConsecutiveFailedLookups) {
-      consecutive_delayed_feedbacks_ = 0;
-      return OnLongFeedbackDelay(packet_feedback_vector.back().arrival_time_ms);
-    }
+    return OnDelayedFeedback(packet_feedback_vector.back().arrival_time_ms);
+
   } else {
     consecutive_delayed_feedbacks_ = 0;
     return MaybeUpdateEstimate(acked_bitrate_bps, recovered_from_overuse,
                                at_time_ms);
+  }
+  return Result();
+}
+
+DelayBasedBwe::Result DelayBasedBwe::OnDelayedFeedback(
+    int64_t receive_time_ms) {
+  ++consecutive_delayed_feedbacks_;
+  if (consecutive_delayed_feedbacks_ >= kMaxConsecutiveFailedLookups) {
+    consecutive_delayed_feedbacks_ = 0;
+    return OnLongFeedbackDelay(receive_time_ms);
   }
   return Result();
 }

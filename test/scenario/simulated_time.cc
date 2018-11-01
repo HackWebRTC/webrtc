@@ -144,7 +144,7 @@ TransportPacketsFeedback SimulatedSender::PullFeedbackReport(
         }
       }
 
-      data_in_flight_ -= feedback.sent_packet->size;
+      data_in_flight_ -= feedback.sent_packet.size;
       report.packet_feedbacks.push_back(feedback);
     }
   }
@@ -284,9 +284,9 @@ bool SimulatedTimeClient::TryDeliverPacket(rtc::CopyOnWriteBuffer raw_buffer,
   for (PacketResult& feedback : report.packet_feedbacks) {
     if (packet_log_)
       fprintf(packet_log_, "%" PRId64 " %" PRId64 " %.3lf %.3lf %.3lf\n",
-              feedback.sent_packet->sequence_number,
-              feedback.sent_packet->size.bytes(),
-              feedback.sent_packet->send_time.seconds<double>(),
+              feedback.sent_packet.sequence_number,
+              feedback.sent_packet.size.bytes(),
+              feedback.sent_packet.send_time.seconds<double>(),
               feedback.receive_time.seconds<double>(),
               at_time.seconds<double>());
   }

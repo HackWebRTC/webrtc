@@ -84,9 +84,9 @@ class GoogCcNetworkControllerTest : public ::testing::Test {
                             PacedPacketInfo pacing_info) {
     PacketResult packet_result;
     packet_result.sent_packet = SentPacket();
-    packet_result.sent_packet->send_time = Timestamp::ms(send_time_ms);
-    packet_result.sent_packet->size = DataSize::bytes(payload_size);
-    packet_result.sent_packet->pacing_info = pacing_info;
+    packet_result.sent_packet.send_time = Timestamp::ms(send_time_ms);
+    packet_result.sent_packet.size = DataSize::bytes(payload_size);
+    packet_result.sent_packet.pacing_info = pacing_info;
     packet_result.receive_time = Timestamp::ms(arrival_time_ms);
     return packet_result;
   }
@@ -122,7 +122,7 @@ class GoogCcNetworkControllerTest : public ::testing::Test {
           CreateResult(current_time_.ms() + delay_buildup, current_time_.ms(),
                        kPayloadSize, PacedPacketInfo());
       delay_buildup += delay;
-      controller_->OnSentPacket(*packet.sent_packet);
+      controller_->OnSentPacket(packet.sent_packet);
       TransportPacketsFeedback feedback;
       feedback.feedback_time = packet.receive_time;
       feedback.packet_feedbacks.push_back(packet);
@@ -213,16 +213,13 @@ TEST_F(GoogCcNetworkControllerTest, LongFeedbackDelays) {
     packets.push_back(
         CreateResult(i * 100 + 40, 2 * i * 100 + 40, 1500, kPacingInfo1));
 
+    TransportPacketsFeedback feedback;
     for (PacketResult& packet : packets) {
-      controller_->OnSentPacket(*packet.sent_packet);
-      // Simulate packet timeout
-      packet.sent_packet = absl::nullopt;
+      controller_->OnSentPacket(packet.sent_packet);
+      feedback.sendless_arrival_times.push_back(packet.receive_time);
     }
 
-    TransportPacketsFeedback feedback;
     feedback.feedback_time = packets[0].receive_time;
-    feedback.packet_feedbacks = packets;
-
     AdvanceTimeMilliseconds(kFeedbackTimeoutMs);
     SentPacket later_packet;
     later_packet.send_time = Timestamp::ms(kFeedbackTimeoutMs + i * 200 + 40);
@@ -246,7 +243,7 @@ TEST_F(GoogCcNetworkControllerTest, LongFeedbackDelays) {
     packets.push_back(CreateResult(140, 240, 1500, kPacingInfo1));
 
     for (const PacketResult& packet : packets)
-      controller_->OnSentPacket(*packet.sent_packet);
+      controller_->OnSentPacket(packet.sent_packet);
 
     TransportPacketsFeedback feedback;
     feedback.feedback_time = packets[0].receive_time;

@@ -27,34 +27,18 @@ void SortPacketFeedbackVector(std::vector<webrtc::PacketFeedback>* input) {
 PacketResult NetworkPacketFeedbackFromRtpPacketFeedback(
     const webrtc::PacketFeedback& pf) {
   PacketResult feedback;
-  if (pf.arrival_time_ms == webrtc::PacketFeedback::kNotReceived)
+  if (pf.arrival_time_ms == webrtc::PacketFeedback::kNotReceived) {
     feedback.receive_time = Timestamp::PlusInfinity();
-  else
+  } else {
     feedback.receive_time = Timestamp::ms(pf.arrival_time_ms);
-  if (pf.send_time_ms != webrtc::PacketFeedback::kNoSendTime) {
-    feedback.sent_packet = SentPacket();
-    feedback.sent_packet->sequence_number = pf.long_sequence_number;
-    feedback.sent_packet->send_time = Timestamp::ms(pf.send_time_ms);
-    feedback.sent_packet->size = DataSize::bytes(pf.payload_size);
-    feedback.sent_packet->pacing_info = pf.pacing_info;
-    feedback.sent_packet->prior_unacked_data =
-        DataSize::bytes(pf.unacknowledged_data);
   }
+  feedback.sent_packet.sequence_number = pf.long_sequence_number;
+  feedback.sent_packet.send_time = Timestamp::ms(pf.send_time_ms);
+  feedback.sent_packet.size = DataSize::bytes(pf.payload_size);
+  feedback.sent_packet.pacing_info = pf.pacing_info;
+  feedback.sent_packet.prior_unacked_data =
+      DataSize::bytes(pf.unacknowledged_data);
   return feedback;
-}
-
-std::vector<PacketResult> PacketResultsFromRtpFeedbackVector(
-    const std::vector<PacketFeedback>& feedback_vector) {
-  RTC_DCHECK(std::is_sorted(feedback_vector.begin(), feedback_vector.end(),
-                            PacketFeedbackComparator()));
-
-  std::vector<PacketResult> packet_feedbacks;
-  packet_feedbacks.reserve(feedback_vector.size());
-  for (const PacketFeedback& rtp_feedback : feedback_vector) {
-    auto feedback = NetworkPacketFeedbackFromRtpPacketFeedback(rtp_feedback);
-    packet_feedbacks.push_back(feedback);
-  }
-  return packet_feedbacks;
 }
 }  // namespace
 const int64_t kNoTimestamp = -1;
@@ -151,7 +135,17 @@ TransportFeedbackAdapter::ProcessTransportFeedback(
 
   SortPacketFeedbackVector(&feedback_vector);
   TransportPacketsFeedback msg;
-  msg.packet_feedbacks = PacketResultsFromRtpFeedbackVector(feedback_vector);
+  for (const PacketFeedback& rtp_feedback : feedback_vector) {
+    if (rtp_feedback.send_time_ms != PacketFeedback::kNoSendTime) {
+      auto feedback = NetworkPacketFeedbackFromRtpPacketFeedback(rtp_feedback);
+      msg.packet_feedbacks.push_back(feedback);
+    } else if (rtp_feedback.arrival_time_ms == PacketFeedback::kNotReceived) {
+      msg.sendless_arrival_times.push_back(Timestamp::PlusInfinity());
+    } else {
+      msg.sendless_arrival_times.push_back(
+          Timestamp::ms(rtp_feedback.arrival_time_ms));
+    }
+  }
   msg.feedback_time = Timestamp::ms(feedback_time_ms);
   msg.prior_in_flight = prior_in_flight;
   msg.data_in_flight = GetOutstandingData();
