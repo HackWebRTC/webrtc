@@ -128,8 +128,6 @@ struct PacketResult {
 
   SentPacket sent_packet;
   Timestamp receive_time = Timestamp::PlusInfinity();
-  // TODO(bugs.webrtc.org/9934): Remove this when downsrteam projects are ready.
-  const SentPacket& GetSentPacket() const { return sent_packet; }
 };
 
 struct TransportPacketsFeedback {
