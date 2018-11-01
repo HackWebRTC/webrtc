@@ -517,7 +517,7 @@ webrtc_fuzzer_test("comfort_noise_decoder_fuzzer") {
   ]
   deps = [
     "../../api:array_view",
-    "../../modules/audio_coding:cng",
+    "../../modules/audio_coding:webrtc_cng",
     "../../rtc_base:rtc_base_approved",
   ]
 }

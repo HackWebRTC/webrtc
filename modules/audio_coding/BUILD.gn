@@ -15,7 +15,6 @@ if (!build_with_mozilla) {
 visibility = [ ":*" ]
 
 audio_codec_deps = [
-  ":cng",
   ":g711",
   ":pcm16b",
 ]
@@ -85,6 +84,7 @@ rtc_static_library("rent_a_codec") {
            ":audio_coding_module_typedefs",
            ":isac_common",
            ":isac_fix_c",
+           ":audio_encoder_cng",
            ":neteq_decoder_enum",
          ] + audio_codec_deps
 
@@ -161,24 +161,34 @@ rtc_static_library("legacy_encoded_audio_frame") {
   ]
 }
 
-rtc_static_library("cng") {
-  visibility += [ "*" ]
+rtc_static_library("webrtc_cng") {
+  visibility += webrtc_default_visibility
   sources = [
-    "codecs/cng/audio_encoder_cng.cc",
-    "codecs/cng/audio_encoder_cng.h",
     "codecs/cng/webrtc_cng.cc",
     "codecs/cng/webrtc_cng.h",
   ]
 
   deps = [
-    "../..:webrtc_common",
     "../../api:array_view",
-    "../../api/audio_codecs:audio_codecs_api",
-    "../../common_audio",
     "../../common_audio:common_audio_c",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
-    "//third_party/abseil-cpp/absl/types:optional",
+    "../../rtc_base:safe_conversions",
+  ]
+}
+
+rtc_static_library("audio_encoder_cng") {
+  visibility += [ "*" ]
+  sources = [
+    "codecs/cng/audio_encoder_cng.cc",
+    "codecs/cng/audio_encoder_cng.h",
+  ]
+
+  deps = [
+    ":webrtc_cng",
+    "../../api/audio_codecs:audio_codecs_api",
+    "../../common_audio",
+    "../../rtc_base:checks",
   ]
 }
 
@@ -1066,8 +1076,8 @@ rtc_static_library("neteq") {
 
   deps = [
     ":audio_coding_module_typedefs",
-    ":cng",
     ":neteq_decoder_enum",
+    ":webrtc_cng",
     "..:module_api",
     "..:module_api_public",
     "../..:webrtc_common",
@@ -1352,8 +1362,8 @@ if (rtc_include_tests) {
     deps = [
       ":audio_coding",
       ":audio_coding_module_typedefs",
+      ":audio_encoder_cng",
       ":audio_format_conversion",
-      ":cng",
       ":pcm16b_c",
       ":red",
       "..:module_api",
@@ -1687,6 +1697,7 @@ if (rtc_include_tests) {
     deps = audio_coding_deps + [
              "//third_party/abseil-cpp/absl/memory",
              ":audio_coding",
+             ":audio_encoder_cng",
              ":neteq_input_audio_tools",
              "../../api/audio:audio_frame_api",
              "../../api/audio_codecs/g711:audio_encoder_g711",
@@ -2074,9 +2085,9 @@ if (rtc_include_tests) {
       ":acm_send_test",
       ":audio_coding",
       ":audio_coding_module_typedefs",
+      ":audio_encoder_cng",
       ":audio_format_conversion",
       ":audio_network_adaptor",
-      ":cng",
       ":g711",
       ":ilbc",
       ":isac",
@@ -2090,6 +2101,7 @@ if (rtc_include_tests) {
       ":pcm16b",
       ":red",
       ":rent_a_codec",
+      ":webrtc_cng",
       ":webrtc_opus",
       "..:module_api",
       "../..:webrtc_common",

@@ -408,12 +408,12 @@ class AudioCodingModuleTestWithComfortNoiseOldApi
               acm_->RegisterReceiveCodec(
                   rtp_payload_type, SdpAudioFormat("cn", kSampleRateHz, 1)));
     acm_->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* enc) {
-      AudioEncoderCng::Config config;
+      AudioEncoderCngConfig config;
       config.speech_encoder = std::move(*enc);
       config.num_channels = 1;
       config.payload_type = rtp_payload_type;
       config.vad_mode = Vad::kVadNormal;
-      *enc = absl::make_unique<AudioEncoderCng>(std::move(config));
+      *enc = CreateComfortNoiseEncoder(std::move(config));
     });
   }
 

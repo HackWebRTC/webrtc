@@ -246,8 +246,8 @@ std::unique_ptr<AudioEncoder> CreateEncoder(CodecType codec_type,
   return nullptr;
 }
 
-AudioEncoderCng::Config GetCngConfig(int sample_rate_hz) {
-  AudioEncoderCng::Config cng_config;
+AudioEncoderCngConfig GetCngConfig(int sample_rate_hz) {
+  AudioEncoderCngConfig cng_config;
   const auto default_payload_type = [&] {
     switch (sample_rate_hz) {
       case 8000:
@@ -313,10 +313,10 @@ int RunRtpEncode(int argc, char* argv[]) {
 
   // Create an external VAD/CNG encoder if needed.
   if (FLAG_dtx && !codec_it->second.internal_dtx) {
-    AudioEncoderCng::Config cng_config = GetCngConfig(codec->SampleRateHz());
+    AudioEncoderCngConfig cng_config = GetCngConfig(codec->SampleRateHz());
     RTC_DCHECK(codec);
     cng_config.speech_encoder = std::move(codec);
-    codec = absl::make_unique<AudioEncoderCng>(std::move(cng_config));
+    codec = CreateComfortNoiseEncoder(std::move(cng_config));
   }
   RTC_DCHECK(codec);
 

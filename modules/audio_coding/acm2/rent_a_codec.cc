@@ -194,7 +194,7 @@ std::unique_ptr<AudioEncoder> CreateCngEncoder(
     std::unique_ptr<AudioEncoder> encoder,
     int payload_type,
     ACMVADMode vad_mode) {
-  AudioEncoderCng::Config config;
+  AudioEncoderCngConfig config;
   config.num_channels = encoder->NumChannels();
   config.payload_type = payload_type;
   config.speech_encoder = std::move(encoder);
@@ -214,7 +214,7 @@ std::unique_ptr<AudioEncoder> CreateCngEncoder(
     default:
       FATAL();
   }
-  return std::unique_ptr<AudioEncoder>(new AudioEncoderCng(std::move(config)));
+  return CreateComfortNoiseEncoder(std::move(config));
 }
 
 std::unique_ptr<AudioDecoder> CreateIsacDecoder(
