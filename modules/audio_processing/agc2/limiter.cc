@@ -15,8 +15,10 @@
 #include <cmath>
 
 #include "api/array_view.h"
+#include "modules/audio_processing/agc2/agc2_common.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/numerics/safe_minmax.h"
 
 namespace webrtc {
 namespace {
@@ -76,9 +78,16 @@ void ScaleSamples(rtc::ArrayView<const float> per_sample_scaling_factors,
   for (size_t i = 0; i < signal.num_channels(); ++i) {
     auto channel = signal.channel(i);
     for (size_t j = 0; j < samples_per_channel; ++j) {
-      channel[j] *= per_sample_scaling_factors[j];
+      channel[j] = rtc::SafeClamp(channel[j] * per_sample_scaling_factors[j],
+                                  kMinFloatS16Value, kMaxFloatS16Value);
     }
   }
+}
+
+void CheckLimiterSampleRate(size_t sample_rate_hz) {
+  // Check that per_sample_scaling_factors_ is large enough.
+  RTC_DCHECK_LE(sample_rate_hz,
+                kMaximalNumberOfSamplesPerChannel * 1000 / kFrameDurationMs);
 }
 
 }  // namespace
@@ -88,7 +97,9 @@ Limiter::Limiter(size_t sample_rate_hz,
                  std::string histogram_name)
     : interp_gain_curve_(apm_data_dumper, histogram_name),
       level_estimator_(sample_rate_hz, apm_data_dumper),
-      apm_data_dumper_(apm_data_dumper) {}
+      apm_data_dumper_(apm_data_dumper) {
+  CheckLimiterSampleRate(sample_rate_hz);
+}
 
 Limiter::~Limiter() = default;
 
@@ -124,10 +135,8 @@ InterpolatedGainCurve::Stats Limiter::GetGainCurveStats() const {
 }
 
 void Limiter::SetSampleRate(size_t sample_rate_hz) {
+  CheckLimiterSampleRate(sample_rate_hz);
   level_estimator_.SetSampleRate(sample_rate_hz);
-  // Check that per_sample_scaling_factors_ is large enough.
-  RTC_DCHECK_LE(sample_rate_hz,
-                kMaximalNumberOfSamplesPerChannel * 1000 / kFrameDurationMs);
 }
 
 void Limiter::Reset() {
