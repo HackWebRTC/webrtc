@@ -1129,6 +1129,74 @@ TEST_P(PeerConnectionMediaTest, MediaTransportPropagatedToVoiceEngine) {
   ASSERT_EQ(nullptr, callee_video->media_transport());
 }
 
+TEST_P(PeerConnectionMediaTest, MediaTransportOnlyForDataChannels) {
+  RTCConfiguration config;
+
+  // Setup PeerConnection to use media transport for data channels.
+  config.use_media_transport_for_data_channels = true;
+
+  // Force SDES.
+  config.enable_dtls_srtp = false;
+
+  auto caller = CreatePeerConnectionWithAudioVideo(config);
+  auto callee = CreatePeerConnectionWithAudioVideo(config);
+
+  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
+  ASSERT_TRUE(callee->SetLocalDescription(callee->CreateAnswer()));
+
+  auto caller_voice = caller->media_engine()->GetVoiceChannel(0);
+  auto callee_voice = callee->media_engine()->GetVoiceChannel(0);
+  ASSERT_TRUE(caller_voice);
+  ASSERT_TRUE(callee_voice);
+
+  // Make sure media transport is not propagated to voice channel.
+  EXPECT_EQ(nullptr, caller_voice->media_transport());
+  EXPECT_EQ(nullptr, callee_voice->media_transport());
+}
+
+TEST_P(PeerConnectionMediaTest, MediaTransportForMediaAndDataChannels) {
+  RTCConfiguration config;
+
+  // Setup PeerConnection to use media transport for both media and data
+  // channels.
+  config.use_media_transport = true;
+  config.use_media_transport_for_data_channels = true;
+
+  // Force SDES.
+  config.enable_dtls_srtp = false;
+
+  auto caller = CreatePeerConnectionWithAudioVideo(config);
+  auto callee = CreatePeerConnectionWithAudioVideo(config);
+
+  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
+  ASSERT_TRUE(callee->SetLocalDescription(callee->CreateAnswer()));
+
+  auto caller_voice = caller->media_engine()->GetVoiceChannel(0);
+  auto callee_voice = callee->media_engine()->GetVoiceChannel(0);
+  ASSERT_TRUE(caller_voice);
+  ASSERT_TRUE(callee_voice);
+
+  // Make sure media transport is propagated to voice channel.
+  FakeMediaTransport* caller_voice_media_transport =
+      static_cast<FakeMediaTransport*>(caller_voice->media_transport());
+  FakeMediaTransport* callee_voice_media_transport =
+      static_cast<FakeMediaTransport*>(callee_voice->media_transport());
+  ASSERT_NE(nullptr, caller_voice_media_transport);
+  ASSERT_NE(nullptr, callee_voice_media_transport);
+
+  // Make sure media transport is created with correct is_caller.
+  EXPECT_TRUE(caller_voice_media_transport->is_caller());
+  EXPECT_FALSE(callee_voice_media_transport->is_caller());
+
+  // TODO(sukhanov): Propagate media transport to video channel. This test
+  // will fail once media transport is propagated to video channel and it will
+  // serve as a reminder to add a test for video channel propagation.
+  auto caller_video = caller->media_engine()->GetVideoChannel(0);
+  auto callee_video = callee->media_engine()->GetVideoChannel(0);
+  ASSERT_EQ(nullptr, caller_video->media_transport());
+  ASSERT_EQ(nullptr, callee_video->media_transport());
+}
+
 TEST_P(PeerConnectionMediaTest, MediaTransportNotPropagatedToVoiceEngine) {
   auto caller = CreatePeerConnectionWithAudioVideo();
   auto callee = CreatePeerConnectionWithAudioVideo();

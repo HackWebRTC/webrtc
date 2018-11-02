@@ -249,6 +249,9 @@ void JavaToNativeRTCConfiguration(
       Java_RTCConfiguration_getActiveResetSrtpParams(jni, j_rtc_config);
   rtc_config->use_media_transport =
       Java_RTCConfiguration_getUseMediaTransport(jni, j_rtc_config);
+  rtc_config->use_media_transport_for_data_channels =
+      Java_RTCConfiguration_getUseMediaTransportForDataChannels(jni,
+                                                                j_rtc_config);
   rtc_config->crypto_options =
       JavaToNativeOptionalCryptoOptions(jni, j_crypto_options);
 }

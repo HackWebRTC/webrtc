@@ -706,6 +706,7 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
     absl::optional<rtc::AdapterType> network_preference;
     bool active_reset_srtp_params;
     bool use_media_transport;
+    bool use_media_transport_for_data_channels;
     absl::optional<CryptoOptions> crypto_options;
   };
   static_assert(sizeof(stuff_being_tested_for_equality) == sizeof(*this),
@@ -756,6 +757,8 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
          network_preference == o.network_preference &&
          active_reset_srtp_params == o.active_reset_srtp_params &&
          use_media_transport == o.use_media_transport &&
+         use_media_transport_for_data_channels ==
+             o.use_media_transport_for_data_channels &&
          crypto_options == o.crypto_options;
 }
 
@@ -946,11 +949,13 @@ bool PeerConnection::Initialize(
 #endif
   config.active_reset_srtp_params = configuration.active_reset_srtp_params;
 
-  if (configuration.use_media_transport) {
+  if (configuration.use_media_transport ||
+      configuration.use_media_transport_for_data_channels) {
     if (!factory_->media_transport_factory()) {
       RTC_DCHECK(false)
-          << "PeerConnecton is initialized with use_media_transport = true, "
-          << "but media transport factory is not set in PeerConnectioFactory";
+          << "PeerConnecton is initialized with use_media_transport = true or "
+          << "use_media_transport_for_data_channels = true "
+          << "but media transport factory is not set in PeerConnectionFactory";
       return false;
     }
 
@@ -2920,6 +2925,22 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
   }
 
   if (local_description() &&
+      configuration.use_media_transport_for_data_channels !=
+          configuration_.use_media_transport_for_data_channels) {
+    RTC_LOG(LS_ERROR) << "Can't change media_transport_for_data_channels "
+                         "after calling SetLocalDescription.";
+    return SafeSetError(RTCErrorType::INVALID_MODIFICATION, error);
+  }
+
+  if (remote_description() &&
+      configuration.use_media_transport_for_data_channels !=
+          configuration_.use_media_transport_for_data_channels) {
+    RTC_LOG(LS_ERROR) << "Can't change media_transport_for_data_channels "
+                         "after calling SetRemoteDescription.";
+    return SafeSetError(RTCErrorType::INVALID_MODIFICATION, error);
+  }
+
+  if (local_description() &&
       configuration.crypto_options != configuration_.crypto_options) {
     RTC_LOG(LS_ERROR) << "Can't change crypto_options after calling "
                          "SetLocalDescription.";
@@ -2951,6 +2972,8 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
   modified_config.active_reset_srtp_params =
       configuration.active_reset_srtp_params;
   modified_config.use_media_transport = configuration.use_media_transport;
+  modified_config.use_media_transport_for_data_channels =
+      configuration.use_media_transport_for_data_channels;
   if (configuration != modified_config) {
     RTC_LOG(LS_ERROR) << "Modifying the configuration in an unsupported way.";
     return SafeSetError(RTCErrorType::INVALID_MODIFICATION, error);
@@ -3009,8 +3032,10 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
 
   transport_controller_->SetIceConfig(ParseIceConfig(modified_config));
   transport_controller_->SetMediaTransportFactory(
-      modified_config.use_media_transport ? factory_->media_transport_factory()
-                                          : nullptr);
+      modified_config.use_media_transport ||
+              modified_config.use_media_transport_for_data_channels
+          ? factory_->media_transport_factory()
+          : nullptr);
 
   if (configuration_.active_reset_srtp_params !=
       modified_config.active_reset_srtp_params) {
@@ -5597,7 +5622,10 @@ RTCError PeerConnection::CreateChannels(const SessionDescription& desc) {
 cricket::VoiceChannel* PeerConnection::CreateVoiceChannel(
     const std::string& mid) {
   RtpTransportInternal* rtp_transport = GetRtpTransport(mid);
-  MediaTransportInterface* media_transport = GetMediaTransport(mid);
+  MediaTransportInterface* media_transport = nullptr;
+  if (configuration_.use_media_transport) {
+    media_transport = GetMediaTransport(mid);
+  }
 
   cricket::VoiceChannel* voice_channel = channel_manager()->CreateVoiceChannel(
       call_.get(), configuration_.media_config, rtp_transport, media_transport,

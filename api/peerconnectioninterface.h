@@ -583,6 +583,15 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     // provided.
     bool use_media_transport = false;
 
+    // If MediaTransportFactory is provided in PeerConnectionFactory, this flag
+    // informs PeerConnection that it should use the MediaTransportInterface for
+    // data channels.  It's invalid to set it to |true| if the
+    // MediaTransportFactory wasn't provided.  Data channels over media
+    // transport are not compatible with RTP or SCTP data channels.  Setting
+    // both |use_media_transport_for_data_channels| and
+    // |enable_rtp_data_channel| is invalid.
+    bool use_media_transport_for_data_channels = false;
+
     // Defines advanced optional cryptographic settings related to SRTP and
     // frame encryption for native WebRTC. Setting this will overwrite any
     // settings set in PeerConnectionFactory (which is deprecated).

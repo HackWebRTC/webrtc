@@ -938,10 +938,13 @@ class PeerConnection : public PeerConnectionInternal,
   // to use media transport. Otherwise returns nullptr.
   MediaTransportInterface* GetMediaTransport(const std::string& mid) {
     auto media_transport = transport_controller_->GetMediaTransport(mid);
-    RTC_DCHECK(configuration_.use_media_transport ==
+    RTC_DCHECK((configuration_.use_media_transport ||
+                configuration_.use_media_transport_for_data_channels) ==
                (media_transport != nullptr))
         << "configuration_.use_media_transport="
         << configuration_.use_media_transport
+        << ", configuration_.use_media_transport_for_data_channels="
+        << configuration_.use_media_transport_for_data_channels
         << ", (media_transport != nullptr)=" << (media_transport != nullptr);
     return media_transport;
   }
