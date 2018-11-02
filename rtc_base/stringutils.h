@@ -42,15 +42,6 @@
 #define STACK_ARRAY(TYPE, LEN) \
   static_cast<TYPE*>(::alloca((LEN) * sizeof(TYPE)))
 
-
-#if defined(WEBRTC_POSIX)
-
-inline int _strnicmp(const char* s1, const char* s2, size_t n) {
-  return strncasecmp(s1, s2, n);
-}
-
-#endif  // WEBRTC_POSIX
-
 ///////////////////////////////////////////////////////////////////////////////
 // Traits simplifies porting string functions to be CTYPE-agnostic
 ///////////////////////////////////////////////////////////////////////////////

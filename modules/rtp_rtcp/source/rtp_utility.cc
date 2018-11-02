@@ -43,10 +43,6 @@ enum {
  * Misc utility routines
  */
 
-bool StringCompare(const char* str1, const char* str2, const uint32_t length) {
-  return _strnicmp(str1, str2, length) == 0;
-}
-
 size_t Word32Align(size_t size) {
   uint32_t remainder = size % 4;
   if (remainder != 0)

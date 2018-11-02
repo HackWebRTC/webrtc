@@ -34,8 +34,6 @@ struct Payload {
   PayloadUnion typeSpecific;
 };
 
-bool StringCompare(const char* str1, const char* str2, const uint32_t length);
-
 // Round up to the nearest size that is a multiple of 4.
 size_t Word32Align(size_t size);
 

@@ -31,7 +31,7 @@ class RTPSenderAudio {
   RTPSenderAudio(Clock* clock, RTPSender* rtp_sender);
   ~RTPSenderAudio();
 
-  int32_t RegisterAudioPayload(const char payloadName[RTP_PAYLOAD_NAME_SIZE],
+  int32_t RegisterAudioPayload(const char* payloadName,
                                int8_t payload_type,
                                uint32_t frequency,
                                size_t channels,

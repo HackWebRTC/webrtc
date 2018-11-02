@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/strings/match.h"
 #include "api/crypto/frameencryptorinterface.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
@@ -152,18 +153,18 @@ VideoCodecType RTPSenderVideo::VideoCodecType() const {
 
 // Static.
 RtpUtility::Payload* RTPSenderVideo::CreateVideoPayload(
-    const char payload_name[RTP_PAYLOAD_NAME_SIZE],
+    const char* payload_name,
     int8_t payload_type) {
   enum VideoCodecType video_type = kVideoCodecGeneric;
-  if (RtpUtility::StringCompare(payload_name, "VP8", 3)) {
+  if (absl::EqualsIgnoreCase(payload_name, "VP8")) {
     video_type = kVideoCodecVP8;
-  } else if (RtpUtility::StringCompare(payload_name, "VP9", 3)) {
+  } else if (absl::EqualsIgnoreCase(payload_name, "VP9")) {
     video_type = kVideoCodecVP9;
-  } else if (RtpUtility::StringCompare(payload_name, "H264", 4)) {
+  } else if (absl::EqualsIgnoreCase(payload_name, "H264")) {
     video_type = kVideoCodecH264;
-  } else if (RtpUtility::StringCompare(payload_name, "I420", 4)) {
+  } else if (absl::EqualsIgnoreCase(payload_name, "I420")) {
     video_type = kVideoCodecGeneric;
-  } else if (RtpUtility::StringCompare(payload_name, "stereo", 6)) {
+  } else if (absl::EqualsIgnoreCase(payload_name, "stereo")) {
     video_type = kVideoCodecGeneric;
   } else {
     video_type = kVideoCodecGeneric;

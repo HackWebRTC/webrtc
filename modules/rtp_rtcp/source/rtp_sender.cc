@@ -16,6 +16,7 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
+#include "absl/strings/match.h"
 #include "logging/rtc_event_log/events/rtc_event_rtp_packet_outgoing.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/remote_bitrate_estimator/test/bwe_test_logging.h"
@@ -272,12 +273,11 @@ int32_t RTPSender::DeregisterRtpHeaderExtension(RTPExtensionType type) {
   return rtp_header_extension_map_.Deregister(type);
 }
 
-int32_t RTPSender::RegisterPayload(
-    const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-    int8_t payload_number,
-    uint32_t frequency,
-    size_t channels,
-    uint32_t rate) {
+int32_t RTPSender::RegisterPayload(const char* payload_name,
+                                   int8_t payload_number,
+                                   uint32_t frequency,
+                                   size_t channels,
+                                   uint32_t rate) {
   RTC_DCHECK_LT(strlen(payload_name), RTP_PAYLOAD_NAME_SIZE);
   rtc::CritScope lock(&send_critsect_);
 
@@ -290,8 +290,7 @@ int32_t RTPSender::RegisterPayload(
     RTC_DCHECK(payload);
 
     // Check if it's the same as we already have.
-    if (RtpUtility::StringCompare(payload->name, payload_name,
-                                  RTP_PAYLOAD_NAME_SIZE - 1)) {
+    if (absl::EqualsIgnoreCase(payload->name, payload_name)) {
       if (audio_configured_ && payload->typeSpecific.is_audio()) {
         auto& p = payload->typeSpecific.audio_payload();
         if (rtc::SafeEq(p.format.clockrate_hz, frequency) &&
