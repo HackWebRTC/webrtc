@@ -64,11 +64,15 @@
 namespace webrtc {
 namespace test {
 
+namespace {
+
 #if defined(WEBRTC_WIN)
 const char* kPathDelimiter = "\\";
 #else
 const char* kPathDelimiter = "/";
 #endif
+
+}  // namespace
 
 std::string DirName(const std::string& path) {
   if (path.empty())

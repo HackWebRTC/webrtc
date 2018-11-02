@@ -15,6 +15,7 @@
 #include "rtc_base/filerotatingstream.h"
 #include "rtc_base/fileutils.h"
 #include "rtc_base/gunit.h"
+#include "rtc_base/pathutils.h"
 #include "test/testsupport/fileutils.h"
 
 namespace rtc {
@@ -50,7 +51,7 @@ class MAYBE_FileRotatingStreamTest : public ::testing::Test {
 
     // Append per-test output path in order to run within gtest parallel.
     dir_path_.append(dir_name);
-    dir_path_.append(webrtc::test::kPathDelimiter);
+    dir_path_.push_back(Pathname::DefaultFolderDelimiter());
     ASSERT_TRUE(webrtc::test::CreateDir(dir_path_));
     stream_.reset(new FileRotatingStream(dir_path_, file_prefix, max_file_size,
                                          num_log_files));
@@ -217,7 +218,7 @@ class MAYBE_CallSessionFileRotatingStreamTest : public ::testing::Test {
 
     // Append per-test output path in order to run within gtest parallel.
     dir_path_.append(dir_name);
-    dir_path_.append(webrtc::test::kPathDelimiter);
+    dir_path_.push_back(Pathname::DefaultFolderDelimiter());
     ASSERT_TRUE(webrtc::test::CreateDir(dir_path_));
     stream_.reset(
         new CallSessionFileRotatingStream(dir_path_, max_total_log_size));

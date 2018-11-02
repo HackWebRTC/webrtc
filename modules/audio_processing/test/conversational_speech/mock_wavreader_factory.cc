@@ -12,6 +12,7 @@
 
 #include "modules/audio_processing/test/conversational_speech/mock_wavreader.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/pathutils.h"
 #include "test/gmock.h"
 
 namespace webrtc {
@@ -38,10 +39,9 @@ MockWavReaderFactory::~MockWavReaderFactory() = default;
 std::unique_ptr<WavReaderInterface> MockWavReaderFactory::CreateMock(
     const std::string& filepath) {
   // Search the parameters corresponding to filepath.
-  size_t delimiter = filepath.find_last_of("/\\");  // Either windows or posix
-  std::string filename =
-      filepath.substr(delimiter == std::string::npos ? 0 : delimiter + 1);
-  const auto it = audiotrack_names_params_.find(filename);
+  const rtc::Pathname audiotrack_file_path(filepath);
+  const auto it =
+      audiotrack_names_params_.find(audiotrack_file_path.filename());
 
   // If not found, use default parameters.
   if (it == audiotrack_names_params_.end()) {
