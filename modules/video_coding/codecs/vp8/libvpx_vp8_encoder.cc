@@ -142,6 +142,7 @@ LibvpxVp8Encoder::LibvpxVp8Encoder()
 
 LibvpxVp8Encoder::LibvpxVp8Encoder(std::unique_ptr<LibvpxInterface> interface)
     : libvpx_(std::move(interface)),
+      experimental_cpu_speed_config_arm_(CpuSpeedExperiment::GetConfigs()),
       encoded_complete_callback_(nullptr),
       inited_(false),
       timestamp_(0),
@@ -432,10 +433,10 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
   }
   cpu_speed_default_ = cpu_speed_[0];
   // Set encoding complexity (cpu_speed) based on resolution and/or platform.
-  cpu_speed_[0] = SetCpuSpeed(inst->width, inst->height);
+  cpu_speed_[0] = GetCpuSpeed(inst->width, inst->height);
   for (int i = 1; i < number_of_streams; ++i) {
     cpu_speed_[i] =
-        SetCpuSpeed(inst->simulcastStream[number_of_streams - 1 - i].width,
+        GetCpuSpeed(inst->simulcastStream[number_of_streams - 1 - i].width,
                     inst->simulcastStream[number_of_streams - 1 - i].height);
   }
   configurations_[0].g_w = inst->width;
@@ -507,7 +508,7 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
   return InitAndSetControlSettings();
 }
 
-int LibvpxVp8Encoder::SetCpuSpeed(int width, int height) {
+int LibvpxVp8Encoder::GetCpuSpeed(int width, int height) {
 #if defined(WEBRTC_ARCH_ARM) || defined(WEBRTC_ARCH_ARM64) || \
     defined(WEBRTC_ANDROID)
   // On mobile platform, use a lower speed setting for lower resolutions for
@@ -515,6 +516,11 @@ int LibvpxVp8Encoder::SetCpuSpeed(int width, int height) {
   RTC_DCHECK_GT(number_of_cores_, 0);
   if (number_of_cores_ <= 3)
     return -12;
+
+  if (experimental_cpu_speed_config_arm_) {
+    return CpuSpeedExperiment::GetValue(width * height,
+                                        *experimental_cpu_speed_config_arm_);
+  }
 
   if (width * height <= 352 * 288)
     return -8;
