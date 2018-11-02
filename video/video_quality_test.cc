@@ -1243,7 +1243,28 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
   std::unique_ptr<test::DirectTransport> recv_transport;
   std::unique_ptr<test::VideoRenderer> local_preview;
   std::vector<std::unique_ptr<test::VideoRenderer>> loopback_renderers;
-  RtcEventLogNullImpl null_event_log;
+
+  if (!params.logging.rtc_event_log_name.empty()) {
+    send_event_log_ = RtcEventLog::Create(RtcEventLog::EncodingType::Legacy);
+    recv_event_log_ = RtcEventLog::Create(RtcEventLog::EncodingType::Legacy);
+    std::unique_ptr<RtcEventLogOutputFile> send_output(
+        absl::make_unique<RtcEventLogOutputFile>(
+            params.logging.rtc_event_log_name + "_send",
+            RtcEventLog::kUnlimitedOutput));
+    std::unique_ptr<RtcEventLogOutputFile> recv_output(
+        absl::make_unique<RtcEventLogOutputFile>(
+            params.logging.rtc_event_log_name + "_recv",
+            RtcEventLog::kUnlimitedOutput));
+    bool event_log_started =
+        send_event_log_->StartLogging(std::move(send_output),
+                                      /*output_period_ms=*/5000) &&
+        recv_event_log_->StartLogging(std::move(recv_output),
+                                      /*output_period_ms=*/5000);
+    RTC_DCHECK(event_log_started);
+  } else {
+    send_event_log_ = RtcEventLog::CreateNull();
+    recv_event_log_ = RtcEventLog::CreateNull();
+  }
 
   task_queue_.SendTask([&]() {
     params_ = params;
@@ -1251,9 +1272,9 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
 
     // TODO(ivica): Remove bitrate_config and use the default Call::Config(), to
     // match the full stack tests.
-    Call::Config send_call_config(&null_event_log);
+    Call::Config send_call_config(send_event_log_.get());
     send_call_config.bitrate_config = params_.call.call_bitrate_config;
-    Call::Config recv_call_config(&null_event_log);
+    Call::Config recv_call_config(recv_event_log_.get());
 
     if (params_.audio.enabled)
       InitializeAudioDevice(
