@@ -16,6 +16,7 @@
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 
@@ -28,14 +29,29 @@ const int kProcessFrequency = 50;
 const int kProcessIntervalMs = 1000 / kProcessFrequency;
 const int kMaxReorderedPackets = 128;
 const int kNumReorderingBuckets = 10;
+const int kDefaultSendNackDelayMs = 0;
+
+int64_t GetSendNackDelay() {
+  int64_t delay_ms = strtol(
+      webrtc::field_trial::FindFullName("WebRTC-SendNackDelayMs").c_str(),
+      nullptr, 10);
+  if (delay_ms > 0 && delay_ms <= 20) {
+    RTC_LOG(LS_INFO) << "SendNackDelay is set to " << delay_ms;
+    return delay_ms;
+  }
+  return kDefaultSendNackDelayMs;
+}
 }  // namespace
 
 NackModule::NackInfo::NackInfo()
     : seq_num(0), send_at_seq_num(0), sent_at_time(-1), retries(0) {}
 
-NackModule::NackInfo::NackInfo(uint16_t seq_num, uint16_t send_at_seq_num)
+NackModule::NackInfo::NackInfo(uint16_t seq_num,
+                               uint16_t send_at_seq_num,
+                               int64_t created_at_time)
     : seq_num(seq_num),
       send_at_seq_num(send_at_seq_num),
+      created_at_time(created_at_time),
       sent_at_time(-1),
       retries(0) {}
 
@@ -49,7 +65,8 @@ NackModule::NackModule(Clock* clock,
       initialized_(false),
       rtt_ms_(kDefaultRttMs),
       newest_seq_num_(0),
-      next_process_time_ms_(-1) {
+      next_process_time_ms_(-1),
+      send_nack_delay_ms_(GetSendNackDelay()) {
   RTC_DCHECK(clock_);
   RTC_DCHECK(nack_sender_);
   RTC_DCHECK(keyframe_request_sender_);
@@ -225,7 +242,8 @@ void NackModule::AddPacketsToNack(uint16_t seq_num_start,
     // Do not send nack for packets that are already recovered by FEC or RTX
     if (recovered_list_.find(seq_num) != recovered_list_.end())
       continue;
-    NackInfo nack_info(seq_num, seq_num + WaitNumberOfPackets(0.5));
+    NackInfo nack_info(seq_num, seq_num + WaitNumberOfPackets(0.5),
+                       clock_->TimeInMilliseconds());
     RTC_DCHECK(nack_list_.find(seq_num) == nack_list_.end());
     nack_list_[seq_num] = nack_info;
   }
@@ -238,22 +256,14 @@ std::vector<uint16_t> NackModule::GetNackBatch(NackFilterOptions options) {
   std::vector<uint16_t> nack_batch;
   auto it = nack_list_.begin();
   while (it != nack_list_.end()) {
-    if (consider_seq_num && it->second.sent_at_time == -1 &&
-        AheadOrAt(newest_seq_num_, it->second.send_at_seq_num)) {
-      nack_batch.emplace_back(it->second.seq_num);
-      ++it->second.retries;
-      it->second.sent_at_time = now_ms;
-      if (it->second.retries >= kMaxNackRetries) {
-        RTC_LOG(LS_WARNING) << "Sequence number " << it->second.seq_num
-                            << " removed from NACK list due to max retries.";
-        it = nack_list_.erase(it);
-      } else {
-        ++it;
-      }
-      continue;
-    }
-
-    if (consider_timestamp && it->second.sent_at_time + rtt_ms_ <= now_ms) {
+    bool delay_timed_out =
+        now_ms - it->second.created_at_time >= send_nack_delay_ms_;
+    bool nack_on_rtt_passed = now_ms - it->second.sent_at_time >= rtt_ms_;
+    bool nack_on_seq_num_passed =
+        it->second.sent_at_time == -1 &&
+        AheadOrAt(newest_seq_num_, it->second.send_at_seq_num);
+    if (delay_timed_out && ((consider_seq_num && nack_on_seq_num_passed) ||
+                            (consider_timestamp && nack_on_rtt_passed))) {
       nack_batch.emplace_back(it->second.seq_num);
       ++it->second.retries;
       it->second.sent_at_time = now_ms;

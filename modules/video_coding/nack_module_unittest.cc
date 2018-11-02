@@ -14,6 +14,7 @@
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "modules/video_coding/nack_module.h"
 #include "system_wrappers/include/clock.h"
+#include "test/field_trial.h"
 #include "test/gtest.h"
 
 namespace webrtc {
@@ -285,4 +286,45 @@ TEST_F(TestNackModule, HandleFecRecoveredPacket) {
   EXPECT_EQ(2u, sent_nacks_.size());
 }
 
+TEST_F(TestNackModule, SendNackWithoutDelay) {
+  nack_module_.OnReceivedPacket(0, false, false);
+  nack_module_.OnReceivedPacket(100, false, false);
+  EXPECT_EQ(99u, sent_nacks_.size());
+}
+
+class TestNackModuleWithFieldTrial : public ::testing::Test,
+                                     public NackSender,
+                                     public KeyFrameRequestSender {
+ protected:
+  TestNackModuleWithFieldTrial()
+      : nack_delay_field_trial_("WebRTC-SendNackDelayMs/10/"),
+        clock_(new SimulatedClock(0)),
+        nack_module_(clock_.get(), this, this),
+        keyframes_requested_(0) {}
+
+  void SendNack(const std::vector<uint16_t>& sequence_numbers) override {
+    sent_nacks_.insert(sent_nacks_.end(), sequence_numbers.begin(),
+                       sequence_numbers.end());
+  }
+
+  void RequestKeyFrame() override { ++keyframes_requested_; }
+
+  test::ScopedFieldTrials nack_delay_field_trial_;
+  std::unique_ptr<SimulatedClock> clock_;
+  NackModule nack_module_;
+  std::vector<uint16_t> sent_nacks_;
+  int keyframes_requested_;
+};
+
+TEST_F(TestNackModuleWithFieldTrial, SendNackWithDelay) {
+  nack_module_.OnReceivedPacket(0, false, false);
+  nack_module_.OnReceivedPacket(100, false, false);
+  EXPECT_EQ(0u, sent_nacks_.size());
+  clock_->AdvanceTimeMilliseconds(10);
+  nack_module_.OnReceivedPacket(106, false, false);
+  EXPECT_EQ(99u, sent_nacks_.size());
+  clock_->AdvanceTimeMilliseconds(10);
+  nack_module_.OnReceivedPacket(109, false, false);
+  EXPECT_EQ(104u, sent_nacks_.size());
+}
 }  // namespace webrtc

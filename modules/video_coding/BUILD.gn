@@ -57,6 +57,7 @@ rtc_static_library("nack_module") {
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:rtc_numerics",
     "../../system_wrappers",
+    "../../system_wrappers:field_trial",
     "../utility:utility",
   ]
 }
