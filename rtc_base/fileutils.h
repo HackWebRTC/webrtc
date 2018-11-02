@@ -25,8 +25,6 @@
 
 namespace rtc {
 
-class Pathname;
-
 //////////////////////////
 // Directory Iterator   //
 //////////////////////////
@@ -44,21 +42,24 @@ class DirectoryIterator {
   // Destructor
   virtual ~DirectoryIterator();
 
-  // Starts traversing a directory
-  // dir is the directory to traverse
-  // returns true if the directory exists and is valid
-  // The iterator will point to the first entry in the directory
-  virtual bool Iterate(const Pathname& path);
+  // Starts traversing a directory.
+  // |dir| is the directory to traverse.
+  // returns true if the directory exists and is valid.
+  // The iterator will point to the first entry in the directory.
+  virtual bool Iterate(const std::string& dir);
 
   // Advances to the next file
   // returns true if there were more files in the directory.
   virtual bool Next();
 
-  // returns true if the file currently pointed to is a directory
+  // Returns true if the file currently pointed to is a directory.
   virtual bool IsDirectory() const;
 
-  // returns the name of the file currently pointed to
+  // Returns the name of the file currently pointed to.
   virtual std::string Name() const;
+
+  // Returns complete name of the file, including directory part.
+  virtual std::string PathName() const;
 
  private:
   std::string directory_;
@@ -79,42 +80,37 @@ class FilesystemInterface {
   // This will attempt to delete the path located at filename.
   // It DCHECKs and returns false if the path points to a folder or a
   // non-existent file.
-  virtual bool DeleteFile(const Pathname& filename) = 0;
+  virtual bool DeleteFile(const std::string& filename) = 0;
 
   // This moves a file from old_path to new_path, where "old_path" is a
   // plain file. This DCHECKs and returns false if old_path points to a
   // directory, and returns true if the function succeeds.
-  virtual bool MoveFile(const Pathname& old_path, const Pathname& new_path) = 0;
-
-  // Returns true if pathname refers to a directory
-  virtual bool IsFolder(const Pathname& pathname) = 0;
+  virtual bool MoveFile(const std::string& old_path,
+                        const std::string& new_path) = 0;
 
   // Returns true if pathname refers to a file
-  virtual bool IsFile(const Pathname& pathname) = 0;
+  virtual bool IsFile(const std::string& pathname) = 0;
 
   // Determines the size of the file indicated by path.
-  virtual bool GetFileSize(const Pathname& path, size_t* size) = 0;
+  virtual bool GetFileSize(const std::string& path, size_t* size) = 0;
 };
 
 class Filesystem {
  public:
-  static bool DeleteFile(const Pathname& filename) {
+  static bool DeleteFile(const std::string& filename) {
     return GetFilesystem()->DeleteFile(filename);
   }
 
-  static bool MoveFile(const Pathname& old_path, const Pathname& new_path) {
+  static bool MoveFile(const std::string& old_path,
+                       const std::string& new_path) {
     return GetFilesystem()->MoveFile(old_path, new_path);
   }
 
-  static bool IsFolder(const Pathname& pathname) {
-    return GetFilesystem()->IsFolder(pathname);
-  }
-
-  static bool IsFile(const Pathname& pathname) {
+  static bool IsFile(const std::string& pathname) {
     return GetFilesystem()->IsFile(pathname);
   }
 
-  static bool GetFileSize(const Pathname& path, size_t* size) {
+  static bool GetFileSize(const std::string& path, size_t* size) {
     return GetFilesystem()->GetFileSize(path, size);
   }
 

@@ -38,7 +38,6 @@
 
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/pathutils.h"
 
 namespace rtc {
 
@@ -46,47 +45,39 @@ UnixFilesystem::UnixFilesystem() {}
 
 UnixFilesystem::~UnixFilesystem() {}
 
-bool UnixFilesystem::DeleteFile(const Pathname& filename) {
-  RTC_LOG(LS_INFO) << "Deleting file:" << filename.pathname();
+bool UnixFilesystem::DeleteFile(const std::string& filename) {
+  RTC_LOG(LS_INFO) << "Deleting file:" << filename;
 
   if (!IsFile(filename)) {
     RTC_DCHECK(IsFile(filename));
     return false;
   }
-  return ::unlink(filename.pathname().c_str()) == 0;
+  return ::unlink(filename.c_str()) == 0;
 }
 
-bool UnixFilesystem::MoveFile(const Pathname& old_path,
-                              const Pathname& new_path) {
+bool UnixFilesystem::MoveFile(const std::string& old_path,
+                              const std::string& new_path) {
   if (!IsFile(old_path)) {
     RTC_DCHECK(IsFile(old_path));
     return false;
   }
-  RTC_LOG(LS_VERBOSE) << "Moving " << old_path.pathname() << " to "
-                      << new_path.pathname();
-  if (rename(old_path.pathname().c_str(), new_path.pathname().c_str()) != 0) {
+  RTC_LOG(LS_VERBOSE) << "Moving " << old_path << " to " << new_path;
+  if (rename(old_path.c_str(), new_path.c_str()) != 0) {
     return false;
   }
   return true;
 }
 
-bool UnixFilesystem::IsFolder(const Pathname& path) {
+bool UnixFilesystem::IsFile(const std::string& pathname) {
   struct stat st;
-  if (stat(path.pathname().c_str(), &st) < 0)
-    return false;
-  return S_ISDIR(st.st_mode);
-}
-
-bool UnixFilesystem::IsFile(const Pathname& pathname) {
-  struct stat st;
-  int res = ::stat(pathname.pathname().c_str(), &st);
+  int res = ::stat(pathname.c_str(), &st);
   // Treat symlinks, named pipes, etc. all as files.
   return res == 0 && !S_ISDIR(st.st_mode);
 }
 
-bool UnixFilesystem::GetFileSize(const Pathname& pathname, size_t* size) {
+bool UnixFilesystem::GetFileSize(const std::string& pathname, size_t* size) {
   struct stat st;
-  if (::stat(pathname.pathname().c_str(), &st) != 0)
+  if (::stat(pathname.c_str(), &st) != 0)
     return false;
   *size = st.st_size;
   return true;
