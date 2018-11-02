@@ -29,7 +29,7 @@ class RtcEventRtcpPacketIncoming final : public RtcEvent {
 
   bool IsConfigEvent() const override;
 
-  std::unique_ptr<RtcEvent> Copy() const override;
+  std::unique_ptr<RtcEventRtcpPacketIncoming> Copy() const;
 
   rtc::Buffer packet_;
 

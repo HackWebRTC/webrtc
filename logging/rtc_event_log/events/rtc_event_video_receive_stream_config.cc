@@ -35,8 +35,9 @@ bool RtcEventVideoReceiveStreamConfig::IsConfigEvent() const {
   return true;
 }
 
-std::unique_ptr<RtcEvent> RtcEventVideoReceiveStreamConfig::Copy() const {
-  return absl::WrapUnique<RtcEvent>(
+std::unique_ptr<RtcEventVideoReceiveStreamConfig>
+RtcEventVideoReceiveStreamConfig::Copy() const {
+  return absl::WrapUnique<RtcEventVideoReceiveStreamConfig>(
       new RtcEventVideoReceiveStreamConfig(*this));
 }
 

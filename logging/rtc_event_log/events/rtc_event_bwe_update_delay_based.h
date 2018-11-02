@@ -30,7 +30,7 @@ class RtcEventBweUpdateDelayBased final : public RtcEvent {
 
   bool IsConfigEvent() const override;
 
-  std::unique_ptr<RtcEvent> Copy() const override;
+  std::unique_ptr<RtcEventBweUpdateDelayBased> Copy() const;
 
   const int32_t bitrate_bps_;
   const BandwidthUsage detector_state_;

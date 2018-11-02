@@ -27,7 +27,7 @@ class RtcEventAudioPlayout final : public RtcEvent {
 
   bool IsConfigEvent() const override;
 
-  std::unique_ptr<RtcEvent> Copy() const override;
+  std::unique_ptr<RtcEventAudioPlayout> Copy() const;
 
   const uint32_t ssrc_;
 

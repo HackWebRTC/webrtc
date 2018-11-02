@@ -30,7 +30,7 @@ class RtcEventProbeClusterCreated final : public RtcEvent {
 
   bool IsConfigEvent() const override;
 
-  std::unique_ptr<RtcEvent> Copy() const override;
+  std::unique_ptr<RtcEventProbeClusterCreated> Copy() const;
 
   const int32_t id_;
   const int32_t bitrate_bps_;

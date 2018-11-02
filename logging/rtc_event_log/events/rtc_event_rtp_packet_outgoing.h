@@ -30,7 +30,7 @@ class RtcEventRtpPacketOutgoing final : public RtcEvent {
 
   bool IsConfigEvent() const override;
 
-  std::unique_ptr<RtcEvent> Copy() const override;
+  std::unique_ptr<RtcEventRtpPacketOutgoing> Copy() const;
 
   size_t packet_length() const {
     return payload_length_ + header_length_ + padding_length_;

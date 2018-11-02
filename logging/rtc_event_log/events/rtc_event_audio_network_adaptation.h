@@ -29,7 +29,7 @@ class RtcEventAudioNetworkAdaptation final : public RtcEvent {
 
   bool IsConfigEvent() const override;
 
-  std::unique_ptr<RtcEvent> Copy() const override;
+  std::unique_ptr<RtcEventAudioNetworkAdaptation> Copy() const;
 
   const std::unique_ptr<const AudioEncoderRuntimeConfig> config_;
 

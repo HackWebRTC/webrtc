@@ -26,7 +26,7 @@ class RtcEventAlrState final : public RtcEvent {
 
   bool IsConfigEvent() const override;
 
-  std::unique_ptr<RtcEvent> Copy() const override;
+  std::unique_ptr<RtcEventAlrState> Copy() const;
 
   const bool in_alr_;
 

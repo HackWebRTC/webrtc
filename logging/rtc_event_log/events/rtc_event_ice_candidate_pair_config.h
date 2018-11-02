@@ -92,7 +92,7 @@ class RtcEventIceCandidatePairConfig final : public RtcEvent {
 
   bool IsConfigEvent() const override;
 
-  std::unique_ptr<RtcEvent> Copy() const override;
+  std::unique_ptr<RtcEventIceCandidatePairConfig> Copy() const;
 
   const IceCandidatePairConfigType type_;
   const uint32_t candidate_pair_id_;

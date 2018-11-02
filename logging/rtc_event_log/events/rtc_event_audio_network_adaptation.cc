@@ -36,7 +36,8 @@ bool RtcEventAudioNetworkAdaptation::IsConfigEvent() const {
   return false;
 }
 
-std::unique_ptr<RtcEvent> RtcEventAudioNetworkAdaptation::Copy() const {
+std::unique_ptr<RtcEventAudioNetworkAdaptation>
+RtcEventAudioNetworkAdaptation::Copy() const {
   return absl::WrapUnique(new RtcEventAudioNetworkAdaptation(*this));
 }
 

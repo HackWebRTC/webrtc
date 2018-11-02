@@ -36,9 +36,11 @@ bool RtcEventAudioSendStreamConfig::IsConfigEvent() const {
   return true;
 }
 
-std::unique_ptr<RtcEvent> RtcEventAudioSendStreamConfig::Copy() const {
+std::unique_ptr<RtcEventAudioSendStreamConfig>
+RtcEventAudioSendStreamConfig::Copy() const {
   auto config_copy = absl::make_unique<rtclog::StreamConfig>(*config_);
-  return absl::WrapUnique<RtcEvent>(new RtcEventAudioSendStreamConfig(*this));
+  return absl::WrapUnique<RtcEventAudioSendStreamConfig>(
+      new RtcEventAudioSendStreamConfig(*this));
 }
 
 }  // namespace webrtc

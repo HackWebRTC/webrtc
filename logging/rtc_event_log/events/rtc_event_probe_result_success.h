@@ -27,7 +27,7 @@ class RtcEventProbeResultSuccess final : public RtcEvent {
 
   bool IsConfigEvent() const override;
 
-  std::unique_ptr<RtcEvent> Copy() const override;
+  std::unique_ptr<RtcEventProbeResultSuccess> Copy() const;
 
   const int32_t id_;
   const int32_t bitrate_bps_;

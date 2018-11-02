@@ -29,7 +29,7 @@ class RtcEventBweUpdateLossBased final : public RtcEvent {
 
   bool IsConfigEvent() const override;
 
-  std::unique_ptr<RtcEvent> Copy() const override;
+  std::unique_ptr<RtcEventBweUpdateLossBased> Copy() const;
 
   const int32_t bitrate_bps_;
   const uint8_t fraction_loss_;

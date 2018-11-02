@@ -57,8 +57,6 @@ class RtcEvent {
 
   virtual bool IsConfigEvent() const = 0;
 
-  virtual std::unique_ptr<RtcEvent> Copy() const = 0;
-
   const int64_t timestamp_us_;
 
  protected:
