@@ -240,7 +240,6 @@ class AudioProcessing : public rtc::RefCountInterface {
   // by changing the default values in the AudioProcessing::Config struct.
   // The config is applied by passing the struct to the ApplyConfig method.
   struct Config {
-    // TODO(bugs.webrtc.org/9535): Currently unused. Use this to determine AEC.
     struct EchoCanceller {
       bool enabled = false;
       bool mobile_mode = false;
