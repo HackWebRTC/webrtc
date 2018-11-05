@@ -166,6 +166,7 @@ void CallTest::RunBaseTest(BaseTest* test) {
       int height = kDefaultHeight;
       int frame_rate = kDefaultFramerate;
       test->ModifyVideoCaptureStartResolution(&width, &height, &frame_rate);
+      test->ModifyVideoDegradationPreference(&degradation_preference_);
       CreateFrameGeneratorCapturer(frame_rate, width, height);
       test->OnFrameGeneratorCapturerCreated(frame_generator_capturer_);
     }
@@ -782,6 +783,9 @@ void BaseTest::ModifyVideoConfigs(
 void BaseTest::ModifyVideoCaptureStartResolution(int* width,
                                                  int* heigt,
                                                  int* frame_rate) {}
+
+void BaseTest::ModifyVideoDegradationPreference(
+    DegradationPreference* degradation_preference) {}
 
 void BaseTest::OnVideoStreamsCreated(
     VideoSendStream* send_stream,

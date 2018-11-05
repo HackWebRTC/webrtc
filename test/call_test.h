@@ -263,6 +263,9 @@ class BaseTest : public RtpRtcpObserver {
   virtual void ModifyVideoCaptureStartResolution(int* width,
                                                  int* heigt,
                                                  int* frame_rate);
+  virtual void ModifyVideoDegradationPreference(
+      DegradationPreference* degradation_preference);
+
   virtual void OnVideoStreamsCreated(
       VideoSendStream* send_stream,
       const std::vector<VideoReceiveStream*>& receive_streams);

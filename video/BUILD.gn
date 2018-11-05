@@ -411,6 +411,7 @@ if (rtc_include_tests) {
     defines = []
     sources = [
       "call_stats_unittest.cc",
+      "cpu_scaling_tests.cc",
       "encoder_rtcp_feedback_unittest.cc",
       "end_to_end_tests/bandwidth_tests.cc",
       "end_to_end_tests/call_operation_tests.cc",
