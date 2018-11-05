@@ -126,7 +126,6 @@ RTCPSender::RTCPSender(
       event_log_(event_log),
       transport_(outgoing_transport),
       interval_config_(interval_config),
-      using_nack_(false),
       sending_(false),
       next_time_to_send_rtcp_(0),
       timestamp_offset_(0),
