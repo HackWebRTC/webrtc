@@ -153,7 +153,7 @@ VideoCodecType RTPSenderVideo::VideoCodecType() const {
 
 // Static.
 RtpUtility::Payload* RTPSenderVideo::CreateVideoPayload(
-    const char* payload_name,
+    absl::string_view payload_name,
     int8_t payload_type) {
   enum VideoCodecType video_type = kVideoCodecGeneric;
   if (absl::EqualsIgnoreCase(payload_name, "VP8")) {

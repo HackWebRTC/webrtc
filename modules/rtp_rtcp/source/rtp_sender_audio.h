@@ -14,6 +14,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "absl/strings/string_view.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/rtp_rtcp/source/dtmf_queue.h"
 #include "modules/rtp_rtcp/source/rtp_sender.h"
@@ -31,7 +32,7 @@ class RTPSenderAudio {
   RTPSenderAudio(Clock* clock, RTPSender* rtp_sender);
   ~RTPSenderAudio();
 
-  int32_t RegisterAudioPayload(const char* payloadName,
+  int32_t RegisterAudioPayload(absl::string_view payload_name,
                                int8_t payload_type,
                                uint32_t frequency,
                                size_t channels,

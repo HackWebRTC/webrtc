@@ -32,13 +32,13 @@ RTPSenderAudio::RTPSenderAudio(Clock* clock, RTPSender* rtp_sender)
 
 RTPSenderAudio::~RTPSenderAudio() {}
 
-int32_t RTPSenderAudio::RegisterAudioPayload(const char* payloadName,
+int32_t RTPSenderAudio::RegisterAudioPayload(absl::string_view payload_name,
                                              const int8_t payload_type,
                                              const uint32_t frequency,
                                              const size_t channels,
                                              const uint32_t rate,
                                              RtpUtility::Payload** payload) {
-  if (absl::EqualsIgnoreCase(payloadName, "cn")) {
+  if (absl::EqualsIgnoreCase(payload_name, "cn")) {
     rtc::CritScope cs(&send_audio_critsect_);
     //  we can have multiple CNG payload types
     switch (frequency) {
@@ -57,7 +57,7 @@ int32_t RTPSenderAudio::RegisterAudioPayload(const char* payloadName,
       default:
         return -1;
     }
-  } else if (absl::EqualsIgnoreCase(payloadName, "telephone-event")) {
+  } else if (absl::EqualsIgnoreCase(payload_name, "telephone-event")) {
     rtc::CritScope cs(&send_audio_critsect_);
     // Don't add it to the list
     // we dont want to allow send with a DTMF payloadtype
@@ -66,9 +66,9 @@ int32_t RTPSenderAudio::RegisterAudioPayload(const char* payloadName,
     return 0;
   }
   *payload = new RtpUtility::Payload(
-      payloadName,
+      payload_name,
       PayloadUnion(AudioPayload{
-          SdpAudioFormat(payloadName, frequency, channels), rate}));
+          SdpAudioFormat(payload_name, frequency, channels), rate}));
   return 0;
 }
 

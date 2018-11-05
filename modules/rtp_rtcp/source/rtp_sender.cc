@@ -273,12 +273,12 @@ int32_t RTPSender::DeregisterRtpHeaderExtension(RTPExtensionType type) {
   return rtp_header_extension_map_.Deregister(type);
 }
 
-int32_t RTPSender::RegisterPayload(const char* payload_name,
+int32_t RTPSender::RegisterPayload(absl::string_view payload_name,
                                    int8_t payload_number,
                                    uint32_t frequency,
                                    size_t channels,
                                    uint32_t rate) {
-  RTC_DCHECK_LT(strlen(payload_name), RTP_PAYLOAD_NAME_SIZE);
+  RTC_DCHECK_LT(payload_name.size(), RTP_PAYLOAD_NAME_SIZE);
   rtc::CritScope lock(&send_critsect_);
 
   std::map<int8_t, RtpUtility::Payload*>::iterator it =

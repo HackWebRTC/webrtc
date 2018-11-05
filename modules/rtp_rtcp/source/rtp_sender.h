@@ -17,6 +17,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/call/transport.h"
@@ -78,7 +79,7 @@ class RTPSender {
   uint32_t FecOverheadRate() const;
   uint32_t NackOverheadRate() const;
 
-  int32_t RegisterPayload(const char* payload_name,
+  int32_t RegisterPayload(absl::string_view payload_name,
                           const int8_t payload_type,
                           const uint32_t frequency,
                           const size_t channels,

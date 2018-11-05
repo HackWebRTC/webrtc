@@ -14,6 +14,7 @@
 #include <map>
 #include <memory>
 
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/rtp_rtcp/include/flexfec_sender.h"
@@ -47,9 +48,8 @@ class RTPSenderVideo {
 
   virtual enum VideoCodecType VideoCodecType() const;
 
-  static RtpUtility::Payload* CreateVideoPayload(
-      const char payload_name[RTP_PAYLOAD_NAME_SIZE],
-      int8_t payload_type);
+  static RtpUtility::Payload* CreateVideoPayload(absl::string_view payload_name,
+                                                 int8_t payload_type);
 
   bool SendVideo(enum VideoCodecType video_type,
                  FrameType frame_type,
