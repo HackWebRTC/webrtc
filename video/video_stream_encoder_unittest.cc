@@ -508,11 +508,14 @@ class VideoStreamEncoderTest : public ::testing::Test {
       block_next_encode_ = true;
     }
 
-    VideoEncoder::ScalingSettings GetScalingSettings() const override {
+    VideoEncoder::EncoderInfo GetEncoderInfo() const override {
+      EncoderInfo info;
       rtc::CritScope lock(&local_crit_sect_);
-      if (quality_scaling_)
-        return VideoEncoder::ScalingSettings(1, 2, kMinPixelsPerFrame);
-      return VideoEncoder::ScalingSettings::kOff;
+      if (quality_scaling_) {
+        info.scaling_settings =
+            VideoEncoder::ScalingSettings(1, 2, kMinPixelsPerFrame);
+      }
+      return info;
     }
 
     void ContinueEncode() { continue_encode_event_.Set(); }
