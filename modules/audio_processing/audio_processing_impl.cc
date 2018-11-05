@@ -227,7 +227,6 @@ bool AudioProcessingImpl::ApmSubmoduleStates::LowCutFilteringRequired() const {
 struct AudioProcessingImpl::ApmPublicSubmodules {
   ApmPublicSubmodules() {}
   // Accessed externally of APM without any lock acquired.
-  std::unique_ptr<EchoControlMobileImpl> echo_control_mobile;
   std::unique_ptr<GainControlImpl> gain_control;
   std::unique_ptr<LevelEstimatorImpl> level_estimator;
   std::unique_ptr<NoiseSuppressionImpl> noise_suppression;
@@ -253,8 +252,9 @@ struct AudioProcessingImpl::ApmPrivateSubmodules {
   std::unique_ptr<GainController2> gain_controller2;
   std::unique_ptr<LowCutFilter> low_cut_filter;
   rtc::scoped_refptr<EchoDetector> echo_detector;
-  std::unique_ptr<EchoControl> echo_controller;
   std::unique_ptr<EchoCancellationImpl> echo_cancellation;
+  std::unique_ptr<EchoControl> echo_controller;
+  std::unique_ptr<EchoControlMobileImpl> echo_control_mobile;
   std::unique_ptr<CustomProcessing> capture_post_processor;
   std::unique_ptr<CustomProcessing> render_pre_processor;
   std::unique_ptr<GainApplier> pre_amplifier;
@@ -367,9 +367,6 @@ AudioProcessingImpl::AudioProcessingImpl(
     capture_nonlocked_.echo_controller_enabled =
         static_cast<bool>(echo_control_factory_);
 
-    private_submodules_->echo_cancellation.reset(new EchoCancellationImpl());
-    public_submodules_->echo_control_mobile.reset(
-        new EchoControlMobileImpl(&crit_render_, &crit_capture_));
     public_submodules_->gain_control.reset(
         new GainControlImpl(&crit_render_, &crit_capture_));
     public_submodules_->level_estimator.reset(
@@ -388,6 +385,8 @@ AudioProcessingImpl::AudioProcessingImpl(
           new rtc::RefCountedObject<ResidualEchoDetector>();
     }
 
+    private_submodules_->echo_cancellation.reset(new EchoCancellationImpl());
+    private_submodules_->echo_control_mobile.reset(new EchoControlMobileImpl());
     // TODO(alessiob): Move the injected gain controller once injection is
     // implemented.
     private_submodules_->gain_controller2.reset(new GainController2());
@@ -515,7 +514,7 @@ int AudioProcessingImpl::InitializeLocked() {
   RTC_DCHECK_EQ(0, success);
   success = private_submodules_->echo_cancellation->enable_delay_logging(true);
   RTC_DCHECK_EQ(0, success);
-  public_submodules_->echo_control_mobile->Initialize(
+  private_submodules_->echo_control_mobile->Initialize(
       proc_split_sample_rate_hz(), num_reverse_channels(),
       num_output_channels());
 
@@ -646,7 +645,7 @@ void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
 
   private_submodules_->echo_cancellation->Enable(
       config_.echo_canceller.enabled && !config_.echo_canceller.mobile_mode);
-  public_submodules_->echo_control_mobile->Enable(
+  private_submodules_->echo_control_mobile->Enable(
       config_.echo_canceller.enabled && config_.echo_canceller.mobile_mode);
 
   private_submodules_->echo_cancellation->set_suppression_level(
@@ -1063,7 +1062,7 @@ void AudioProcessingImpl::EmptyQueuedRenderAudio() {
   }
 
   while (aecm_render_signal_queue_->Remove(&aecm_capture_queue_buffer_)) {
-    public_submodules_->echo_control_mobile->ProcessRenderAudio(
+    private_submodules_->echo_control_mobile->ProcessRenderAudio(
         aecm_capture_queue_buffer_);
   }
 
@@ -1085,9 +1084,6 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
     // Acquire the capture lock in order to safely call the function
     // that retrieves the render side data. This function accesses APM
     // getters that need the capture lock held when being called.
-    // The lock needs to be released as
-    // public_submodules_->echo_control_mobile->is_enabled() acquires this lock
-    // as well.
     rtc::CritScope cs_capture(&crit_capture_);
     EmptyQueuedRenderAudio();
   }
@@ -1157,7 +1153,7 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
   // TODO(peah): Simplify once the public API Enable functions for these
   // are moved to APM.
   RTC_DCHECK(!(private_submodules_->echo_cancellation->is_enabled() &&
-               public_submodules_->echo_control_mobile->is_enabled()));
+               private_submodules_->echo_control_mobile->is_enabled()));
 
   MaybeUpdateHistograms();
 
@@ -1261,7 +1257,7 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
         capture_buffer, stream_delay_ms()));
   }
 
-  if (public_submodules_->echo_control_mobile->is_enabled() &&
+  if (private_submodules_->echo_control_mobile->is_enabled() &&
       public_submodules_->noise_suppression->is_enabled()) {
     capture_buffer->CopyLowPassToReference();
   }
@@ -1269,14 +1265,14 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
 
   // Ensure that the stream delay was set before the call to the
   // AECM ProcessCaptureAudio function.
-  if (public_submodules_->echo_control_mobile->is_enabled() &&
+  if (private_submodules_->echo_control_mobile->is_enabled() &&
       !was_stream_delay_set()) {
     return AudioProcessing::kStreamParameterNotSetError;
   }
 
   if (!(private_submodules_->echo_controller ||
         private_submodules_->echo_cancellation->is_enabled())) {
-    RETURN_ON_ERR(public_submodules_->echo_control_mobile->ProcessCaptureAudio(
+    RETURN_ON_ERR(private_submodules_->echo_control_mobile->ProcessCaptureAudio(
         capture_buffer, stream_delay_ms()));
   }
 
@@ -1676,7 +1672,7 @@ bool AudioProcessingImpl::UpdateActiveSubmoduleStates() {
   return submodule_states_.Update(
       config_.high_pass_filter.enabled,
       private_submodules_->echo_cancellation->is_enabled(),
-      public_submodules_->echo_control_mobile->is_enabled(),
+      private_submodules_->echo_control_mobile->is_enabled(),
       config_.residual_echo_detector.enabled,
       public_submodules_->noise_suppression->is_enabled(),
       public_submodules_->gain_control->is_enabled(),
@@ -1864,11 +1860,11 @@ void AudioProcessingImpl::WriteAecDumpConfigMessage(bool forced) {
       private_submodules_->echo_cancellation->suppression_level());
 
   apm_config.aecm_enabled =
-      public_submodules_->echo_control_mobile->is_enabled();
+      private_submodules_->echo_control_mobile->is_enabled();
   apm_config.aecm_comfort_noise_enabled =
-      public_submodules_->echo_control_mobile->is_comfort_noise_enabled();
-  apm_config.aecm_routing_mode =
-      static_cast<int>(public_submodules_->echo_control_mobile->routing_mode());
+      private_submodules_->echo_control_mobile->is_comfort_noise_enabled();
+  apm_config.aecm_routing_mode = static_cast<int>(
+      private_submodules_->echo_control_mobile->routing_mode());
 
   apm_config.agc_enabled = public_submodules_->gain_control->is_enabled();
   apm_config.agc_mode =
