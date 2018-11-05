@@ -31,6 +31,8 @@ struct HdrMasteringMetadata {
 
     Chromaticity();
     Chromaticity(const Chromaticity& rhs);
+    Chromaticity(Chromaticity&& rhs);
+    Chromaticity& operator=(const Chromaticity& rhs);
   };
 
   // The nominal primaries of the mastering display.
@@ -53,6 +55,8 @@ struct HdrMasteringMetadata {
 
   HdrMasteringMetadata();
   HdrMasteringMetadata(const HdrMasteringMetadata& rhs);
+  HdrMasteringMetadata(HdrMasteringMetadata&& rhs);
+  HdrMasteringMetadata& operator=(const HdrMasteringMetadata& rhs);
 
   bool operator==(const HdrMasteringMetadata& rhs) const {
     return ((primary_r == rhs.primary_r) && (primary_g == rhs.primary_g) &&
@@ -76,6 +80,8 @@ struct HdrMetadata {
 
   HdrMetadata();
   HdrMetadata(const HdrMetadata& rhs);
+  HdrMetadata(HdrMetadata&& rhs);
+  HdrMetadata& operator=(const HdrMetadata& rhs);
 
   bool operator==(const HdrMetadata& rhs) const {
     return (

@@ -21,7 +21,7 @@ VideoFrame::Builder::~Builder() = default;
 
 VideoFrame VideoFrame::Builder::build() {
   return VideoFrame(video_frame_buffer_, timestamp_us_, timestamp_rtp_,
-                    ntp_time_ms_, rotation_, color_space_);
+                    ntp_time_ms_, rotation_, color_space_, hdr_metadata_);
 }
 
 VideoFrame::Builder& VideoFrame::Builder::set_video_frame_buffer(
@@ -64,6 +64,12 @@ VideoFrame::Builder& VideoFrame::Builder::set_color_space(
   return *this;
 }
 
+VideoFrame::Builder& VideoFrame::Builder::set_hdr_metadata(
+    const HdrMetadata& hdr_metadata) {
+  hdr_metadata_ = hdr_metadata;
+  return *this;
+}
+
 VideoFrame::VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
                        webrtc::VideoRotation rotation,
                        int64_t timestamp_us)
@@ -90,13 +96,15 @@ VideoFrame::VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
                        uint32_t timestamp_rtp,
                        int64_t ntp_time_ms,
                        VideoRotation rotation,
-                       const absl::optional<ColorSpace>& color_space)
+                       const absl::optional<ColorSpace>& color_space,
+                       const absl::optional<HdrMetadata>& hdr_metadata)
     : video_frame_buffer_(buffer),
       timestamp_rtp_(timestamp_rtp),
       ntp_time_ms_(ntp_time_ms),
       timestamp_us_(timestamp_us),
       rotation_(rotation),
-      color_space_(color_space) {}
+      color_space_(color_space),
+      hdr_metadata_(hdr_metadata) {}
 
 VideoFrame::~VideoFrame() = default;
 
