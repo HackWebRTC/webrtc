@@ -88,7 +88,7 @@ class UdpTransportTest : public testing::Test, public sigslot::has_slots<> {
     void OnReadPacket(rtc::PacketTransportInternal* transport,
                       const char* data,
                       size_t len,
-                      const rtc::PacketTime& packet_time,
+                      const int64_t& /* packet_time_us */,
                       int flags) {
       num_received_packets_++;
       RTC_LOG(LS_VERBOSE) << "OnReadPacket (unittest)";

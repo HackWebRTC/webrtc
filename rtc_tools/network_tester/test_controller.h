@@ -60,7 +60,7 @@ class TestController : public sigslot::has_slots<> {
                     const char* data,
                     size_t len,
                     const rtc::SocketAddress& remote_addr,
-                    const rtc::PacketTime& packet_time);
+                    const int64_t& packet_time_us);
   rtc::ThreadChecker test_controller_thread_checker_;
   rtc::SequencedTaskChecker packet_sender_checker_;
   rtc::BasicPacketSocketFactory socket_factory_;

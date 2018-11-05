@@ -187,7 +187,7 @@ void RelayServer::OnInternalPacket(rtc::AsyncPacketSocket* socket,
                                    const char* bytes,
                                    size_t size,
                                    const rtc::SocketAddress& remote_addr,
-                                   const rtc::PacketTime& packet_time) {
+                                   const int64_t& /* packet_time_us */) {
   // Get the address of the connection we just received on.
   rtc::SocketAddressPair ap(remote_addr, socket->GetLocalAddress());
   RTC_DCHECK(!ap.destination().IsNil());
@@ -232,7 +232,7 @@ void RelayServer::OnExternalPacket(rtc::AsyncPacketSocket* socket,
                                    const char* bytes,
                                    size_t size,
                                    const rtc::SocketAddress& remote_addr,
-                                   const rtc::PacketTime& packet_time) {
+                                   const int64_t& /* packet_time_us */) {
   // Get the address of the connection we just received on.
   rtc::SocketAddressPair ap(remote_addr, socket->GetLocalAddress());
   RTC_DCHECK(!ap.destination().IsNil());

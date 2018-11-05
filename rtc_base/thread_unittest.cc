@@ -69,7 +69,7 @@ class SocketClient : public TestGenerator, public sigslot::has_slots<> {
                 const char* buf,
                 size_t size,
                 const SocketAddress& remote_addr,
-                const PacketTime& packet_time) {
+                const int64_t& packet_time_us) {
     EXPECT_EQ(size, sizeof(uint32_t));
     uint32_t prev = reinterpret_cast<const uint32_t*>(buf)[0];
     uint32_t result = Next(prev);

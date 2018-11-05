@@ -2365,7 +2365,7 @@ bool P2PTransportChannel::PrunePort(PortInterface* port) {
 void P2PTransportChannel::OnReadPacket(Connection* connection,
                                        const char* data,
                                        size_t len,
-                                       const rtc::PacketTime& packet_time) {
+                                       int64_t packet_time_us) {
   RTC_DCHECK(network_thread_ == rtc::Thread::Current());
 
   // Do not deliver, if packet doesn't belong to the correct transport channel.
@@ -2373,7 +2373,7 @@ void P2PTransportChannel::OnReadPacket(Connection* connection,
     return;
 
   // Let the client know of an incoming packet
-  SignalReadPacket(this, data, len, packet_time, 0);
+  SignalReadPacket(this, data, len, packet_time_us, 0);
 
   // May need to switch the sending connection based on the receiving media path
   // if this is the controlled side.

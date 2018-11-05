@@ -1580,7 +1580,7 @@ void AllocationSequence::OnReadPacket(rtc::AsyncPacketSocket* socket,
                                       const char* data,
                                       size_t size,
                                       const rtc::SocketAddress& remote_addr,
-                                      const rtc::PacketTime& packet_time) {
+                                      const int64_t& packet_time_us) {
   RTC_DCHECK(socket == udp_socket_.get());
 
   bool turn_port_found = false;
@@ -1594,7 +1594,7 @@ void AllocationSequence::OnReadPacket(rtc::AsyncPacketSocket* socket,
   for (auto* port : relay_ports_) {
     if (port->CanHandleIncomingPacketsFrom(remote_addr)) {
       if (port->HandleIncomingPacket(socket, data, size, remote_addr,
-                                     packet_time)) {
+                                     packet_time_us)) {
         return;
       }
       turn_port_found = true;
@@ -1610,7 +1610,7 @@ void AllocationSequence::OnReadPacket(rtc::AsyncPacketSocket* socket,
         stun_servers.find(remote_addr) != stun_servers.end()) {
       RTC_DCHECK(udp_port_->SharedSocket());
       udp_port_->HandleIncomingPacket(socket, data, size, remote_addr,
-                                      packet_time);
+                                      packet_time_us);
     }
   }
 }

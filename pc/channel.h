@@ -232,14 +232,14 @@ class BaseChannel : public rtc::MessageHandler,
                   const rtc::PacketOptions& options);
 
   void OnRtcpPacketReceived(rtc::CopyOnWriteBuffer* packet,
-                            const rtc::PacketTime& packet_time);
+                            int64_t packet_time_us);
 
   void OnPacketReceived(bool rtcp,
                         const rtc::CopyOnWriteBuffer& packet,
-                        const rtc::PacketTime& packet_time);
+                        int64_t packet_time_us);
   void ProcessPacket(bool rtcp,
                      const rtc::CopyOnWriteBuffer& packet,
-                     const rtc::PacketTime& packet_time);
+                     int64_t packet_time_us);
 
   void EnableMedia_w();
   void DisableMedia_w();

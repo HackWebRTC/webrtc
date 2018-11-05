@@ -194,23 +194,23 @@ class TurnPortTest : public testing::Test,
   void OnTurnReadPacket(Connection* conn,
                         const char* data,
                         size_t size,
-                        const rtc::PacketTime& packet_time) {
+                        int64_t packet_time_us) {
     turn_packets_.push_back(rtc::Buffer(data, size));
   }
   void OnUdpPortComplete(Port* port) { udp_ready_ = true; }
   void OnUdpReadPacket(Connection* conn,
                        const char* data,
                        size_t size,
-                       const rtc::PacketTime& packet_time) {
+                       int64_t packet_time_us) {
     udp_packets_.push_back(rtc::Buffer(data, size));
   }
   void OnSocketReadPacket(rtc::AsyncPacketSocket* socket,
                           const char* data,
                           size_t size,
                           const rtc::SocketAddress& remote_addr,
-                          const rtc::PacketTime& packet_time) {
+                          const int64_t& packet_time_us) {
     turn_port_->HandleIncomingPacket(socket, data, size, remote_addr,
-                                     packet_time);
+                                     packet_time_us);
   }
   void OnTurnPortClosed(TurnPort* port) { turn_port_closed_ = true; }
   void OnTurnPortDestroyed(PortInterface* port) { turn_port_destroyed_ = true; }

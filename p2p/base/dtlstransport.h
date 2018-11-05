@@ -197,7 +197,7 @@ class DtlsTransport : public DtlsTransportInternal {
   void OnReadPacket(rtc::PacketTransportInternal* transport,
                     const char* data,
                     size_t size,
-                    const rtc::PacketTime& packet_time,
+                    const int64_t& packet_time_us,
                     int flags);
   void OnSentPacket(rtc::PacketTransportInternal* transport,
                     const rtc::SentPacket& sent_packet);

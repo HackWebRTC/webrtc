@@ -810,7 +810,7 @@ class P2PTransportChannelTestBase : public testing::Test,
   void OnReadPacket(rtc::PacketTransportInternal* transport,
                     const char* data,
                     size_t len,
-                    const rtc::PacketTime& packet_time,
+                    const int64_t& /* packet_time_us */,
                     int flags) {
     std::list<std::string>& packets = GetPacketList(transport);
     packets.push_front(std::string(data, len));

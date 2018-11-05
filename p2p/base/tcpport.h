@@ -94,7 +94,7 @@ class TCPPort : public Port {
                     const char* data,
                     size_t size,
                     const rtc::SocketAddress& remote_addr,
-                    const rtc::PacketTime& packet_time);
+                    const int64_t& packet_time_us);
 
   void OnSentPacket(rtc::AsyncPacketSocket* socket,
                     const rtc::SentPacket& sent_packet) override;
@@ -162,7 +162,7 @@ class TCPConnection : public Connection {
                     const char* data,
                     size_t size,
                     const rtc::SocketAddress& remote_addr,
-                    const rtc::PacketTime& packet_time);
+                    const int64_t& packet_time_us);
   void OnReadyToSend(rtc::AsyncPacketSocket* socket);
 
   std::unique_ptr<rtc::AsyncPacketSocket> socket_;

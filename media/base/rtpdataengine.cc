@@ -194,7 +194,7 @@ bool RtpDataMediaChannel::RemoveRecvStream(uint32_t ssrc) {
 }
 
 void RtpDataMediaChannel::OnPacketReceived(rtc::CopyOnWriteBuffer* packet,
-                                           const rtc::PacketTime& packet_time) {
+                                           int64_t /* packet_time_us */) {
   RtpHeader header;
   if (!GetRtpHeader(packet->cdata(), packet->size(), &header)) {
     return;

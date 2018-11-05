@@ -51,25 +51,9 @@ struct PacketOptions {
   PacketInfo info_signaled_after_sent;
 };
 
-// This structure will have the information about when packet is actually
-// received by socket.
-struct PacketTime {
-  PacketTime() : timestamp(-1) {}
-  // Intentionally implicit.
-  PacketTime(int64_t timestamp) : timestamp(timestamp) {}
-  // Deprecated
-  PacketTime(int64_t timestamp, int64_t /* not_before */)
-      : timestamp(timestamp) {}
-
-  operator int64_t() const { return timestamp; }
-
-  int64_t timestamp;  // Receive time after socket delivers the data.
-};
-
-// Deprecated
-inline PacketTime CreatePacketTime(int64_t /* not_before */) {
-  return TimeMicros();
-}
+// TODO(bugs.webrtc.org/9584): Compatibility alias, delete as soon as downstream
+// code is updated.
+typedef int64_t PacketTime;
 
 // Provides the ability to receive packets asynchronously. Sends are not
 // buffered since it is acceptable to drop packets under high load.
@@ -121,7 +105,9 @@ class AsyncPacketSocket : public sigslot::has_slots<> {
                    const char*,
                    size_t,
                    const SocketAddress&,
-                   const PacketTime&>
+                   // TODO(bugs.webrtc.org/9584): Change to passing the int64_t
+                   // timestamp by value.
+                   const int64_t&>
       SignalReadPacket;
 
   // Emitted each time a packet is sent.

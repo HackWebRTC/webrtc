@@ -175,13 +175,14 @@ class TurnPort : public Port {
                             const char* data,
                             size_t size,
                             const rtc::SocketAddress& remote_addr,
-                            const rtc::PacketTime& packet_time) override;
+                            int64_t packet_time_us) override;
   bool CanHandleIncomingPacketsFrom(
       const rtc::SocketAddress& addr) const override;
   virtual void OnReadPacket(rtc::AsyncPacketSocket* socket,
-                            const char* data, size_t size,
+                            const char* data,
+                            size_t size,
                             const rtc::SocketAddress& remote_addr,
-                            const rtc::PacketTime& packet_time);
+                            const int64_t& packet_time_us);
 
   void OnSentPacket(rtc::AsyncPacketSocket* socket,
                     const rtc::SentPacket& sent_packet) override;
@@ -313,13 +314,18 @@ class TurnPort : public Port {
   void OnAllocateError();
   void OnAllocateRequestTimeout();
 
-  void HandleDataIndication(const char* data, size_t size,
-                            const rtc::PacketTime& packet_time);
-  void HandleChannelData(int channel_id, const char* data, size_t size,
-                         const rtc::PacketTime& packet_time);
-  void DispatchPacket(const char* data, size_t size,
-      const rtc::SocketAddress& remote_addr,
-      ProtocolType proto, const rtc::PacketTime& packet_time);
+  void HandleDataIndication(const char* data,
+                            size_t size,
+                            int64_t packet_time_us);
+  void HandleChannelData(int channel_id,
+                         const char* data,
+                         size_t size,
+                         int64_t packet_time_us);
+  void DispatchPacket(const char* data,
+                      size_t size,
+                      const rtc::SocketAddress& remote_addr,
+                      ProtocolType proto,
+                      int64_t packet_time_us);
 
   bool ScheduleRefresh(uint32_t lifetime);
   void SendRequest(StunRequest* request, int delay);

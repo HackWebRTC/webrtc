@@ -119,15 +119,15 @@ class StunPortTestBase : public testing::Test, public sigslot::has_slots<> {
                     const char* data,
                     size_t size,
                     const rtc::SocketAddress& remote_addr,
-                    const rtc::PacketTime& packet_time) {
+                    const int64_t& /* packet_time_us */) {
     stun_port_->HandleIncomingPacket(socket, data, size, remote_addr,
-                                     rtc::PacketTime());
+                                     /* packet_time_us */ -1);
   }
 
   void SendData(const char* data, size_t len) {
     stun_port_->HandleIncomingPacket(socket_.get(), data, len,
                                      rtc::SocketAddress("22.22.22.22", 0),
-                                     rtc::PacketTime());
+                                     /* packet_time_us */ -1);
   }
 
  protected:

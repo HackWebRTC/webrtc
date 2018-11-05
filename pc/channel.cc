@@ -442,12 +442,12 @@ void BaseChannel::OnRtpPacket(const webrtc::RtpPacketReceived& parsed_packet) {
   // RtpPacketReceived.arrival_time_ms = (PacketTime + 500) / 1000;
   // Note: The |not_before| field is always 0 here. This field is not currently
   // used, so it should be fine.
-  int64_t timestamp = -1;
+  int64_t timestamp_us = -1;
   if (parsed_packet.arrival_time_ms() > 0) {
-    timestamp = parsed_packet.arrival_time_ms() * 1000;
+    timestamp_us = parsed_packet.arrival_time_ms() * 1000;
   }
 
-  OnPacketReceived(/*rtcp=*/false, parsed_packet.Buffer(), timestamp);
+  OnPacketReceived(/*rtcp=*/false, parsed_packet.Buffer(), timestamp_us);
 }
 
 void BaseChannel::UpdateRtpHeaderExtensionMap(
@@ -474,13 +474,13 @@ bool BaseChannel::RegisterRtpDemuxerSink() {
 }
 
 void BaseChannel::OnRtcpPacketReceived(rtc::CopyOnWriteBuffer* packet,
-                                       const rtc::PacketTime& packet_time) {
-  OnPacketReceived(/*rtcp=*/true, *packet, packet_time);
+                                       int64_t packet_time_us) {
+  OnPacketReceived(/*rtcp=*/true, *packet, packet_time_us);
 }
 
 void BaseChannel::OnPacketReceived(bool rtcp,
                                    const rtc::CopyOnWriteBuffer& packet,
-                                   const rtc::PacketTime& packet_time) {
+                                   int64_t packet_time_us) {
   if (!has_received_packet_ && !rtcp) {
     has_received_packet_ = true;
     signaling_thread()->Post(RTC_FROM_HERE, this, MSG_FIRSTPACKETRECEIVED);
@@ -506,21 +506,21 @@ void BaseChannel::OnPacketReceived(bool rtcp,
 
   invoker_.AsyncInvoke<void>(
       RTC_FROM_HERE, worker_thread_,
-      Bind(&BaseChannel::ProcessPacket, this, rtcp, packet, packet_time));
+      Bind(&BaseChannel::ProcessPacket, this, rtcp, packet, packet_time_us));
 }
 
 void BaseChannel::ProcessPacket(bool rtcp,
                                 const rtc::CopyOnWriteBuffer& packet,
-                                const rtc::PacketTime& packet_time) {
+                                int64_t packet_time_us) {
   RTC_DCHECK(worker_thread_->IsCurrent());
 
   // Need to copy variable because OnRtcpReceived/OnPacketReceived
   // requires non-const pointer to buffer. This doesn't memcpy the actual data.
   rtc::CopyOnWriteBuffer data(packet);
   if (rtcp) {
-    media_channel_->OnRtcpReceived(&data, packet_time);
+    media_channel_->OnRtcpReceived(&data, packet_time_us);
   } else {
-    media_channel_->OnPacketReceived(&data, packet_time);
+    media_channel_->OnPacketReceived(&data, packet_time_us);
   }
 }
 

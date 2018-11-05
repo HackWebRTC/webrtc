@@ -232,7 +232,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
   void OnTransportReadPacket(rtc::PacketTransportInternal* transport,
                              const char* data,
                              size_t size,
-                             const rtc::PacketTime& packet_time,
+                             const int64_t& /* packet_time_us */,
                              int flags) {
     uint32_t packet_num = 0;
     ASSERT_TRUE(VerifyPacket(data, size, &packet_num));
@@ -254,7 +254,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
   void OnFakeIceTransportReadPacket(rtc::PacketTransportInternal* transport,
                                     const char* data,
                                     size_t size,
-                                    const rtc::PacketTime& time,
+                                    const int64_t& /* packet_time_us */,
                                     int flags) {
     // Flags shouldn't be set on the underlying Transport packets.
     ASSERT_EQ(0, flags);

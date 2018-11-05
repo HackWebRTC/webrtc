@@ -104,7 +104,7 @@ class UDPPort : public Port {
                             const char* data,
                             size_t size,
                             const rtc::SocketAddress& remote_addr,
-                            const rtc::PacketTime& packet_time) override;
+                            int64_t packet_time_us) override;
 
   bool SupportsProtocol(const std::string& protocol) const override;
   ProtocolType GetProtocol() const override;
@@ -161,9 +161,10 @@ class UDPPort : public Port {
   void OnLocalAddressReady(rtc::AsyncPacketSocket* socket,
                            const rtc::SocketAddress& address);
   void OnReadPacket(rtc::AsyncPacketSocket* socket,
-                    const char* data, size_t size,
+                    const char* data,
+                    size_t size,
                     const rtc::SocketAddress& remote_addr,
-                    const rtc::PacketTime& packet_time);
+                    const int64_t& packet_time_us);
 
   void OnSentPacket(rtc::AsyncPacketSocket* socket,
                     const rtc::SentPacket& sent_packet) override;

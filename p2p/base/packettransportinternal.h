@@ -26,7 +26,6 @@
 
 namespace rtc {
 struct PacketOptions;
-struct PacketTime;
 struct SentPacket;
 
 class RTC_EXPORT PacketTransportInternal
@@ -87,7 +86,9 @@ class RTC_EXPORT PacketTransportInternal
   sigslot::signal5<PacketTransportInternal*,
                    const char*,
                    size_t,
-                   const rtc::PacketTime&,
+                   // TODO(bugs.webrtc.org/9584): Change to passing the int64_t
+                   // timestamp by value.
+                   const int64_t&,
                    int>
       SignalReadPacket;
 

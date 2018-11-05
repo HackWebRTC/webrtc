@@ -22,7 +22,6 @@
 
 namespace rtc {
 class AsyncPacketSocket;
-struct PacketTime;
 struct SentPacket;
 class SocketAddress;
 }  // namespace rtc
@@ -71,7 +70,7 @@ class UdpTransport : public rtc::PacketTransportInternal,
                           const char* data,
                           size_t len,
                           const rtc::SocketAddress& remote_addr,
-                          const rtc::PacketTime& packet_time);
+                          const int64_t& packet_time_us);
   void OnSocketSentPacket(rtc::AsyncPacketSocket* socket,
                           const rtc::SentPacket& packet);
   bool IsLocalConsistent();

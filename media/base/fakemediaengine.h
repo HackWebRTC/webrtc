@@ -269,11 +269,11 @@ class RtpHelper : public Base {
     recv_rtcp_parameters_ = params;
   }
   virtual void OnPacketReceived(rtc::CopyOnWriteBuffer* packet,
-                                const rtc::PacketTime& packet_time) {
+                                int64_t packet_time_us) {
     rtp_packets_.push_back(std::string(packet->data<char>(), packet->size()));
   }
   virtual void OnRtcpReceived(rtc::CopyOnWriteBuffer* packet,
-                              const rtc::PacketTime& packet_time) {
+                              int64_t packet_time_us) {
     rtcp_packets_.push_back(std::string(packet->data<char>(), packet->size()));
   }
   virtual void OnReadyToSend(bool ready) { ready_to_send_ = ready; }

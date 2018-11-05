@@ -238,9 +238,9 @@ class FakeDtlsTransport : public DtlsTransportInternal {
   void OnIceTransportReadPacket(PacketTransportInternal* ice_,
                                 const char* data,
                                 size_t len,
-                                const rtc::PacketTime& time,
+                                const int64_t& packet_time_us,
                                 int flags) {
-    SignalReadPacket(this, data, len, time, flags);
+    SignalReadPacket(this, data, len, packet_time_us, flags);
   }
 
   void set_receiving(bool receiving) {

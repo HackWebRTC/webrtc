@@ -773,7 +773,7 @@ bool Port::HandleIncomingPacket(rtc::AsyncPacketSocket* socket,
                                 const char* data,
                                 size_t size,
                                 const rtc::SocketAddress& remote_addr,
-                                const rtc::PacketTime& packet_time) {
+                                int64_t packet_time_us) {
   RTC_NOTREACHED();
   return false;
 }
@@ -1236,7 +1236,7 @@ void Connection::OnSendStunPacket(const void* data,
 
 void Connection::OnReadPacket(const char* data,
                               size_t size,
-                              const rtc::PacketTime& packet_time) {
+                              int64_t packet_time_us) {
   std::unique_ptr<IceMessage> msg;
   std::string remote_ufrag;
   const rtc::SocketAddress& addr(remote_candidate_.address());
@@ -1246,7 +1246,7 @@ void Connection::OnReadPacket(const char* data,
     last_data_received_ = rtc::TimeMillis();
     UpdateReceiving(last_data_received_);
     recv_rate_tracker_.AddSamples(size);
-    SignalReadPacket(this, data, size, packet_time);
+    SignalReadPacket(this, data, size, packet_time_us);
 
     // If timed out sending writability checks, start up again
     if (!pruned_ && (write_state_ == STATE_WRITE_TIMEOUT)) {
