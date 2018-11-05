@@ -31,6 +31,8 @@
 @synthesize tcpCandidatePolicy = _tcpCandidatePolicy;
 @synthesize candidateNetworkPolicy = _candidateNetworkPolicy;
 @synthesize continualGatheringPolicy = _continualGatheringPolicy;
+@synthesize disableIPV6 = _disableIPV6;
+@synthesize disableIPV6OnWiFi = _disableIPV6OnWiFi;
 @synthesize maxIPv6Networks = _maxIPv6Networks;
 @synthesize disableLinkLocalNetworks = _disableLinkLocalNetworks;
 @synthesize audioJitterBufferMaxPackets = _audioJitterBufferMaxPackets;
@@ -88,6 +90,8 @@
     config.continual_gathering_policy;
     _continualGatheringPolicy =
         [[self class] continualGatheringPolicyForNativePolicy:nativePolicy];
+    _disableIPV6 = config.disable_ipv6;
+    _disableIPV6OnWiFi = config.disable_ipv6_on_wifi;
     _maxIPv6Networks = config.max_ipv6_networks;
     _disableLinkLocalNetworks = config.disable_link_local_networks;
     _audioJitterBufferMaxPackets = config.audio_jitter_buffer_max_packets;
@@ -129,9 +133,9 @@
 }
 
 - (NSString *)description {
-  static NSString *formatString =
-      @"RTCConfiguration: "
-      @"{\n%@\n%@\n%@\n%@\n%@\n%@\n%@\n%@\n%d\n%d\n%d\n%d\n%d\n%d\n%d\n%@\n%@\n%d\n%d\n%d\n%@\n}\n";
+  static NSString *formatString = @"RTCConfiguration: "
+                                  @"{\n%@\n%@\n%@\n%@\n%@\n%@\n%@\n%@\n%d\n%d\n%d\n%d\n%d\n%d\n"
+                                  @"%d\n%@\n%@\n%d\n%d\n%d\n%d\n%d\n%@\n}\n";
 
   return [NSString
       stringWithFormat:formatString,
@@ -153,6 +157,8 @@
                        _iceCheckMinInterval,
                        _iceRegatherIntervalRange,
                        _disableLinkLocalNetworks,
+                       _disableIPV6,
+                       _disableIPV6OnWiFi,
                        _maxIPv6Networks,
                        _activeResetSrtpParams,
                        _useMediaTransport];
@@ -181,6 +187,8 @@
       nativeCandidateNetworkPolicyForPolicy:_candidateNetworkPolicy];
   nativeConfig->continual_gathering_policy = [[self class]
       nativeContinualGatheringPolicyForPolicy:_continualGatheringPolicy];
+  nativeConfig->disable_ipv6 = _disableIPV6;
+  nativeConfig->disable_ipv6_on_wifi = _disableIPV6OnWiFi;
   nativeConfig->max_ipv6_networks = _maxIPv6Networks;
   nativeConfig->disable_link_local_networks = _disableLinkLocalNetworks;
   nativeConfig->audio_jitter_buffer_max_packets = _audioJitterBufferMaxPackets;
