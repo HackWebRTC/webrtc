@@ -2378,11 +2378,6 @@ TEST_P(VideoSendStreamTest, EncoderIsProperlyInitializedAndDestroyed) {
       return 0;
     }
 
-    int32_t SetChannelParameters(uint32_t packetLoss, int64_t rtt) override {
-      EXPECT_TRUE(IsReadyForEncode());
-      return 0;
-    }
-
     int32_t SetRates(uint32_t newBitRate, uint32_t frameRate) override {
       EXPECT_TRUE(IsReadyForEncode());
       return 0;

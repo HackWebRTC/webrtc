@@ -87,7 +87,6 @@ class VideoEncoderSoftwareFallbackWrapper final : public VideoEncoder {
   int32_t Encode(const VideoFrame& frame,
                  const CodecSpecificInfo* codec_specific_info,
                  const std::vector<FrameType>* frame_types) override;
-  int32_t SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;
   int32_t SetRateAllocation(const VideoBitrateAllocation& bitrate_allocation,
                             uint32_t framerate) override;
   EncoderInfo GetEncoderInfo() const override;
@@ -183,8 +182,6 @@ bool VideoEncoderSoftwareFallbackWrapper::InitFallbackEncoder() {
     fallback_encoder_->RegisterEncodeCompleteCallback(callback_);
   if (rates_set_)
     fallback_encoder_->SetRateAllocation(bitrate_allocation_, framerate_);
-  if (channel_parameters_set_)
-    fallback_encoder_->SetChannelParameters(packet_loss_, rtt_);
 
   // Since we're switching to the fallback encoder, Release the real encoder. It
   // may be re-initialized via InitEncode later, and it will continue to get
@@ -204,7 +201,6 @@ int32_t VideoEncoderSoftwareFallbackWrapper::InitEncode(
   max_payload_size_ = max_payload_size;
   // Clear stored rate/channel parameters.
   rates_set_ = false;
-  channel_parameters_set_ = false;
   ValidateSettingsForForcedFallback();
 
   // Try to reinit forced software codec if it is in use.
@@ -265,18 +261,6 @@ int32_t VideoEncoderSoftwareFallbackWrapper::Encode(
     // Start using the fallback with this frame.
     return fallback_encoder_->Encode(frame, codec_specific_info, frame_types);
   }
-  return ret;
-}
-
-int32_t VideoEncoderSoftwareFallbackWrapper::SetChannelParameters(
-    uint32_t packet_loss,
-    int64_t rtt) {
-  channel_parameters_set_ = true;
-  packet_loss_ = packet_loss;
-  rtt_ = rtt;
-  int32_t ret = encoder_->SetChannelParameters(packet_loss, rtt);
-  if (use_fallback_encoder_)
-    return fallback_encoder_->SetChannelParameters(packet_loss, rtt);
   return ret;
 }
 

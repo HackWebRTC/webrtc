@@ -210,8 +210,6 @@ class MockVideoEncoder : public VideoEncoder {
     return 0;
   }
 
-  MOCK_METHOD2(SetChannelParameters, int32_t(uint32_t packetLoss, int64_t rtt));
-
   EncoderInfo GetEncoderInfo() const override {
     EncoderInfo info;
     info.supports_native_handle = supports_native_handle_;
@@ -313,15 +311,6 @@ class TestSimulcastEncoderAdapterFakeHelper {
   // ownership of |factory_|.
   VideoEncoder* CreateMockEncoderAdapter() {
     return new SimulcastEncoderAdapter(factory_.get(), SdpVideoFormat("VP8"));
-  }
-
-  void ExpectCallSetChannelParameters(uint32_t packetLoss, int64_t rtt) {
-    EXPECT_TRUE(!factory_->encoders().empty());
-    for (size_t i = 0; i < factory_->encoders().size(); ++i) {
-      EXPECT_CALL(*factory_->encoders()[i],
-                  SetChannelParameters(packetLoss, rtt))
-          .Times(1);
-    }
   }
 
   MockVideoEncoderFactory* factory() { return factory_.get(); }
@@ -470,14 +459,6 @@ TEST_F(TestSimulcastEncoderAdapterFake, Reinit) {
   EXPECT_EQ(0, adapter_->Release());
 
   EXPECT_EQ(0, adapter_->InitEncode(&codec_, 1, 1200));
-}
-
-TEST_F(TestSimulcastEncoderAdapterFake, SetChannelParameters) {
-  SetupCodec();
-  const uint32_t packetLoss = 5;
-  const int64_t rtt = 30;
-  helper_->ExpectCallSetChannelParameters(packetLoss, rtt);
-  adapter_->SetChannelParameters(packetLoss, rtt);
 }
 
 TEST_F(TestSimulcastEncoderAdapterFake, EncodedCallbackForDifferentEncoders) {

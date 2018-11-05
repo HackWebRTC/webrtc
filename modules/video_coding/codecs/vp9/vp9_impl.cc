@@ -1239,10 +1239,6 @@ void VP9EncoderImpl::DeliverBufferedFrame(bool end_of_picture) {
   }
 }
 
-int VP9EncoderImpl::SetChannelParameters(uint32_t packet_loss, int64_t rtt) {
-  return WEBRTC_VIDEO_CODEC_OK;
-}
-
 int VP9EncoderImpl::RegisterEncodeCompleteCallback(
     EncodedImageCallback* callback) {
   encoded_complete_callback_ = callback;

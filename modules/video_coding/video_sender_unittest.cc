@@ -369,9 +369,6 @@ TEST_F(TestVideoSenderWithMockEncoder,
   // Expect initial call to SetChannelParameters. Rates are initialized through
   // InitEncode and expects no additional call before the framerate (or bitrate)
   // updates.
-  EXPECT_CALL(encoder_, SetChannelParameters(kLossRate, kRtt))
-      .Times(1)
-      .WillOnce(Return(0));
   sender_->SetChannelParameters(settings_.startBitrate * 1000, kLossRate, kRtt,
                                 rate_allocator_.get(), nullptr);
   while (clock_.TimeInMilliseconds() < start_time + kRateStatsWindowMs) {

@@ -78,11 +78,6 @@ class VideoEncoderSoftwareFallbackWrapperTest : public ::testing::Test {
       return WEBRTC_VIDEO_CODEC_OK;
     }
 
-    int32_t SetChannelParameters(uint32_t packet_loss, int64_t rtt) override {
-      ++set_channel_parameters_count_;
-      return WEBRTC_VIDEO_CODEC_OK;
-    }
-
     int32_t SetRateAllocation(const VideoBitrateAllocation& bitrate_allocation,
                               uint32_t framerate) override {
       ++set_rates_count_;
@@ -101,7 +96,6 @@ class VideoEncoderSoftwareFallbackWrapperTest : public ::testing::Test {
     int encode_count_ = 0;
     EncodedImageCallback* encode_complete_callback_ = nullptr;
     int release_count_ = 0;
-    int set_channel_parameters_count_ = 0;
     int set_rates_count_ = 0;
     mutable int supports_native_handle_count_ = 0;
     bool supports_native_handle_ = false;
@@ -259,15 +253,6 @@ TEST_F(VideoEncoderSoftwareFallbackWrapperTest,
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             fallback_wrapper_->Encode(*frame_, nullptr, &types));
 
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, fallback_wrapper_->Release());
-}
-
-TEST_F(VideoEncoderSoftwareFallbackWrapperTest,
-       SetChannelParametersForwardedDuringFallback) {
-  UtilizeFallbackEncoder();
-  EXPECT_EQ(0, fake_encoder_->set_channel_parameters_count_);
-  fallback_wrapper_->SetChannelParameters(1, 1);
-  EXPECT_EQ(1, fake_encoder_->set_channel_parameters_count_);
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, fallback_wrapper_->Release());
 }
 

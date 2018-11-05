@@ -377,15 +377,6 @@ int SimulcastEncoderAdapter::RegisterEncodeCompleteCallback(
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int SimulcastEncoderAdapter::SetChannelParameters(uint32_t packet_loss,
-                                                  int64_t rtt) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_queue_);
-  for (size_t stream_idx = 0; stream_idx < streaminfos_.size(); ++stream_idx) {
-    streaminfos_[stream_idx].encoder->SetChannelParameters(packet_loss, rtt);
-  }
-  return WEBRTC_VIDEO_CODEC_OK;
-}
-
 int SimulcastEncoderAdapter::SetRateAllocation(
     const VideoBitrateAllocation& bitrate,
     uint32_t new_framerate) {

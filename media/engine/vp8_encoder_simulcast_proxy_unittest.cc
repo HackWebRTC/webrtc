@@ -51,8 +51,6 @@ class MockEncoder : public VideoEncoder {
               const CodecSpecificInfo* codecSpecificInfo,
               const std::vector<FrameType>* frame_types) /* override */);
 
-  MOCK_METHOD2(SetChannelParameters, int32_t(uint32_t packetLoss, int64_t rtt));
-
   MOCK_CONST_METHOD0(ImplementationName, const char*());
 };
 

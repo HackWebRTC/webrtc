@@ -86,8 +86,6 @@ class ObjCVideoEncoder : public VideoEncoder {
                  frameTypes:rtcFrameTypes];
   }
 
-  int32_t SetChannelParameters(uint32_t packet_loss, int64_t rtt) { return WEBRTC_VIDEO_CODEC_OK; }
-
   int32_t SetRates(uint32_t bitrate, uint32_t framerate) {
     return [encoder_ setBitrate:bitrate framerate:framerate];
   }

@@ -45,7 +45,6 @@ class MockVideoEncoder : public VideoEncoder {
                int32_t(EncodedImageCallback* callback));
   MOCK_METHOD0(Release, int32_t());
   MOCK_METHOD0(Reset, int32_t());
-  MOCK_METHOD2(SetChannelParameters, int32_t(uint32_t packetLoss, int64_t rtt));
   MOCK_METHOD2(SetRates, int32_t(uint32_t newBitRate, uint32_t frameRate));
   MOCK_METHOD2(SetRateAllocation,
                int32_t(const VideoBitrateAllocation& newBitRate,

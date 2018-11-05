@@ -37,8 +37,6 @@ class ConfigurableFrameSizeEncoder : public VideoEncoder {
 
   int32_t Release() override;
 
-  int32_t SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;
-
   int32_t SetRateAllocation(const VideoBitrateAllocation& allocation,
                             uint32_t framerate) override;
 

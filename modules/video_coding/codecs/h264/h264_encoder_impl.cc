@@ -625,11 +625,6 @@ void H264EncoderImpl::ReportError() {
   has_reported_error_ = true;
 }
 
-int32_t H264EncoderImpl::SetChannelParameters(uint32_t packet_loss,
-                                              int64_t rtt) {
-  return WEBRTC_VIDEO_CODEC_OK;
-}
-
 VideoEncoder::ScalingSettings H264EncoderImpl::GetScalingSettings() const {
   return VideoEncoder::ScalingSettings(kLowH264QpThreshold,
                                        kHighH264QpThreshold);

@@ -76,9 +76,6 @@ class VideoEncoderProxyFactory final : public VideoEncoderFactory {
       return encoder_->RegisterEncodeCompleteCallback(callback);
     }
     int32_t Release() override { return encoder_->Release(); }
-    int32_t SetChannelParameters(uint32_t packet_loss, int64_t rtt) override {
-      return encoder_->SetChannelParameters(packet_loss, rtt);
-    }
     int32_t SetRateAllocation(const VideoBitrateAllocation& rate_allocation,
                               uint32_t framerate) override {
       return encoder_->SetRateAllocation(rate_allocation, framerate);

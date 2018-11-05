@@ -925,10 +925,6 @@ VideoEncoder::ScalingSettings LibvpxVp8Encoder::GetScalingSettings() const {
                         : VideoEncoder::ScalingSettings::kOff;
 }
 
-int LibvpxVp8Encoder::SetChannelParameters(uint32_t packetLoss, int64_t rtt) {
-  return WEBRTC_VIDEO_CODEC_OK;
-}
-
 int LibvpxVp8Encoder::RegisterEncodeCompleteCallback(
     EncodedImageCallback* callback) {
   encoded_complete_callback_ = callback;

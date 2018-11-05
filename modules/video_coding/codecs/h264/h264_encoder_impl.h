@@ -74,9 +74,6 @@ class H264EncoderImpl : public H264Encoder {
 
   VideoEncoder::ScalingSettings GetScalingSettings() const override;
 
-  // Unsupported / Do nothing.
-  int32_t SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;
-
   // Exposed for testing.
   H264PacketizationMode PacketizationModeForTesting() const {
     return packetization_mode_;

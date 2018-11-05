@@ -168,11 +168,6 @@ int32_t FakeWebRtcVideoEncoder::Release() {
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int32_t FakeWebRtcVideoEncoder::SetChannelParameters(uint32_t packetLoss,
-                                                     int64_t rtt) {
-  return WEBRTC_VIDEO_CODEC_OK;
-}
-
 int32_t FakeWebRtcVideoEncoder::SetRateAllocation(
     const webrtc::VideoBitrateAllocation& allocation,
     uint32_t framerate) {

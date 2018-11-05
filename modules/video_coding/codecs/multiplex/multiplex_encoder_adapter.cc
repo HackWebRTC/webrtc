@@ -202,16 +202,6 @@ int MultiplexEncoderAdapter::RegisterEncodeCompleteCallback(
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int MultiplexEncoderAdapter::SetChannelParameters(uint32_t packet_loss,
-                                                  int64_t rtt) {
-  for (auto& encoder : encoders_) {
-    const int rv = encoder->SetChannelParameters(packet_loss, rtt);
-    if (rv)
-      return rv;
-  }
-  return WEBRTC_VIDEO_CODEC_OK;
-}
-
 int MultiplexEncoderAdapter::SetRateAllocation(
     const VideoBitrateAllocation& bitrate,
     uint32_t framerate) {

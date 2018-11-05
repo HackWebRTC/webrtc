@@ -136,14 +136,6 @@ int32_t VideoEncoderWrapper::Encode(
   return HandleReturnCode(jni, ret, "encode");
 }
 
-int32_t VideoEncoderWrapper::SetChannelParameters(uint32_t packet_loss,
-                                                  int64_t rtt) {
-  JNIEnv* jni = AttachCurrentThreadIfNeeded();
-  ScopedJavaLocalRef<jobject> ret = Java_VideoEncoder_setChannelParameters(
-      jni, encoder_, (jshort)packet_loss, (jlong)rtt);
-  return HandleReturnCode(jni, ret, "setChannelParameters");
-}
-
 int32_t VideoEncoderWrapper::SetRateAllocation(
     const VideoBitrateAllocation& allocation,
     uint32_t framerate) {

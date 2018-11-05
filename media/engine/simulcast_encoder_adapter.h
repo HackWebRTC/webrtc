@@ -48,7 +48,6 @@ class SimulcastEncoderAdapter : public VideoEncoder {
              const CodecSpecificInfo* codec_specific_info,
              const std::vector<FrameType>* frame_types) override;
   int RegisterEncodeCompleteCallback(EncodedImageCallback* callback) override;
-  int SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;
   int SetRateAllocation(const VideoBitrateAllocation& bitrate,
                         uint32_t new_framerate) override;
 

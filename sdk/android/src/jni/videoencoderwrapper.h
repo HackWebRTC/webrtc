@@ -45,8 +45,6 @@ class VideoEncoderWrapper : public VideoEncoder {
                  const CodecSpecificInfo* codec_specific_info,
                  const std::vector<FrameType>* frame_types) override;
 
-  int32_t SetChannelParameters(uint32_t packet_loss, int64_t rtt) override;
-
   int32_t SetRateAllocation(const VideoBitrateAllocation& allocation,
                             uint32_t framerate) override;
 

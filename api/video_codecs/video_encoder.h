@@ -203,7 +203,7 @@ class RTC_EXPORT VideoEncoder {
   //          - rtt         : Round-trip time in milliseconds
   // Return value           : WEBRTC_VIDEO_CODEC_OK if OK
   //                          <0 - Errors: WEBRTC_VIDEO_CODEC_ERROR
-  virtual int32_t SetChannelParameters(uint32_t packet_loss, int64_t rtt) = 0;
+  virtual int32_t SetChannelParameters(uint32_t packet_loss, int64_t rtt);
 
   // Inform the encoder about the new target bit rate.
   //

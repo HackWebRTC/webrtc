@@ -55,11 +55,6 @@ int VP8EncoderSimulcastProxy::RegisterEncodeCompleteCallback(
   return encoder_->RegisterEncodeCompleteCallback(callback);
 }
 
-int VP8EncoderSimulcastProxy::SetChannelParameters(uint32_t packet_loss,
-                                                   int64_t rtt) {
-  return encoder_->SetChannelParameters(packet_loss, rtt);
-}
-
 int VP8EncoderSimulcastProxy::SetRateAllocation(
     const VideoBitrateAllocation& bitrate,
     uint32_t new_framerate) {

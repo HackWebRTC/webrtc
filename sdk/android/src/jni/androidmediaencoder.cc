@@ -105,8 +105,6 @@ class MediaCodecVideoEncoder : public VideoEncoder {
   int32_t RegisterEncodeCompleteCallback(
       EncodedImageCallback* callback) override;
   int32_t Release() override;
-  int32_t SetChannelParameters(uint32_t /* packet_loss */,
-                               int64_t /* rtt */) override;
   int32_t SetRateAllocation(const VideoBitrateAllocation& rate_allocation,
                             uint32_t frame_rate) override;
 
@@ -362,11 +360,6 @@ int32_t MediaCodecVideoEncoder::InitEncode(const VideoCodec* codec_settings,
       init_width, init_height, codec_settings->startBitrate,
       codec_settings->maxFramerate,
       codec_settings->expect_encode_from_texture && has_egl_context_);
-}
-
-int32_t MediaCodecVideoEncoder::SetChannelParameters(uint32_t /* packet_loss */,
-                                                     int64_t /* rtt */) {
-  return WEBRTC_VIDEO_CODEC_OK;
 }
 
 bool MediaCodecVideoEncoder::ResetCodec() {

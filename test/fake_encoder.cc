@@ -214,10 +214,6 @@ int32_t FakeEncoder::Release() {
   return 0;
 }
 
-int32_t FakeEncoder::SetChannelParameters(uint32_t packet_loss, int64_t rtt) {
-  return 0;
-}
-
 int32_t FakeEncoder::SetRateAllocation(
     const VideoBitrateAllocation& rate_allocation,
     uint32_t framerate) {

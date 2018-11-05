@@ -111,9 +111,6 @@ class QualityTestVideoEncoder : public VideoEncoder,
     }
     return encoder_->Encode(frame, codec_specific_info, frame_types);
   }
-  int32_t SetChannelParameters(uint32_t packet_loss, int64_t rtt) override {
-    return encoder_->SetChannelParameters(packet_loss, rtt);
-  }
   int32_t SetRates(uint32_t bitrate, uint32_t framerate) override {
     return encoder_->SetRates(bitrate, framerate);
   }
