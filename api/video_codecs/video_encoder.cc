@@ -88,13 +88,6 @@ VideoEncoder::EncoderInfo::EncoderInfo()
       supports_native_handle(false),
       implementation_name("unknown") {}
 
-VideoEncoder::EncoderInfo::EncoderInfo(const ScalingSettings& scaling_settings,
-                                       bool supports_native_handle,
-                                       const std::string& implementation_name)
-    : scaling_settings(scaling_settings),
-      supports_native_handle(supports_native_handle),
-      implementation_name(implementation_name) {}
-
 VideoEncoder::EncoderInfo::~EncoderInfo() = default;
 
 int32_t VideoEncoder::SetRates(uint32_t bitrate, uint32_t framerate) {
@@ -120,9 +113,14 @@ const char* VideoEncoder::ImplementationName() const {
   return "unknown";
 }
 
+// TODO(webrtc:9722): Remove and make pure virtual when the three legacy
+// methods called here are gone.
 VideoEncoder::EncoderInfo VideoEncoder::GetEncoderInfo() const {
-  return EncoderInfo(GetScalingSettings(), SupportsNativeHandle(),
-                     ImplementationName());
+  EncoderInfo info;
+  info.scaling_settings = GetScalingSettings();
+  info.supports_native_handle = SupportsNativeHandle();
+  info.implementation_name = ImplementationName();
+  return info;
 }
 
 int32_t VideoEncoder::SetChannelParameters(uint32_t packet_loss, int64_t rtt) {

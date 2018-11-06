@@ -120,11 +120,6 @@ class RTC_EXPORT VideoEncoder {
   // Struct containing metadata about the encoder implementing this interface.
   struct EncoderInfo {
     EncoderInfo();
-    EncoderInfo(const ScalingSettings& scaling_settings,
-                bool supports_native_handle,
-                const std::string& implementation_name);
-    // EncoderInfo(const EncoderInfo& rhs);
-    // EncoderInfo& operator=(const EncoderInfo& rhs);
     ~EncoderInfo();
 
     // Any encoder implementation wishing to use the WebRTC provided

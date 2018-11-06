@@ -86,8 +86,11 @@ class VideoEncoderSoftwareFallbackWrapperTest : public ::testing::Test {
 
     EncoderInfo GetEncoderInfo() const override {
       ++supports_native_handle_count_;
-      return EncoderInfo(ScalingSettings(kLowThreshold, kHighThreshold),
-                         supports_native_handle_, "fake-encoder");
+      EncoderInfo info;
+      info.scaling_settings = ScalingSettings(kLowThreshold, kHighThreshold);
+      info.supports_native_handle = supports_native_handle_;
+      info.implementation_name = "fake-encoder";
+      return info;
     }
 
     int init_encode_count_ = 0;
