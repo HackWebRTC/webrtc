@@ -60,17 +60,4 @@ std::unique_ptr<DesktopCapturer> DesktopCapturer::CreateScreenCapturer(
   return capturer;
 }
 
-#if defined(WEBRTC_USE_PIPEWIRE) || defined(USE_X11)
-bool DesktopCapturer::IsRunningUnderWayland() {
-  const char* xdg_session_type = getenv("XDG_SESSION_TYPE");
-  if (!xdg_session_type || strncmp(xdg_session_type, "wayland", 7) != 0)
-    return false;
-
-  if (!(getenv("WAYLAND_DISPLAY")))
-    return false;
-
-  return true;
-}
-#endif  // defined(WEBRTC_USE_PIPEWIRE) || defined(USE_X11)
-
 }  // namespace webrtc

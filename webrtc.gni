@@ -9,7 +9,6 @@ import("//build/config/arm.gni")
 import("//build/config/features.gni")
 import("//build/config/mips.gni")
 import("//build/config/sanitizers/sanitizers.gni")
-import("//build/config/sysroot.gni")
 import("//build/config/ui.gni")
 import("//build_overrides/build.gni")
 
@@ -107,9 +106,6 @@ declare_args() {
 
   # Set this to false to skip building code that requires X11.
   rtc_use_x11 = use_x11
-
-  # Set this to use PipeWire on the Wayland display server.
-  rtc_use_pipewire = false
 
   # Enable to use the Mozilla internal settings.
   build_with_mozilla = false
@@ -233,8 +229,7 @@ rtc_libvpx_dir = "//third_party/libvpx"
 rtc_opus_dir = "//third_party/opus"
 
 # Desktop capturer is supported only on Windows, OSX and Linux.
-rtc_desktop_capture_supported =
-    is_win || is_mac || (is_linux && (rtc_use_x11 || rtc_use_pipewire))
+rtc_desktop_capture_supported = is_win || is_mac || (is_linux && rtc_use_x11)
 
 ###############################################################################
 # Templates
