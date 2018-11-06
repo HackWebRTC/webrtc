@@ -260,6 +260,9 @@ rtc_source_set("simulated_network") {
   ]
   deps = [
     "../api:simulated_network_api",
+    "../api/units:data_rate",
+    "../api/units:data_size",
+    "../api/units:time_delta",
     "../rtc_base:rtc_base_approved",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
