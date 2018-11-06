@@ -470,18 +470,44 @@ if (is_android) {
     ]
   }
 
+  rtc_android_library("libvpx_vp8_java") {
+    visibility = [ "*" ]
+    java_files = [
+      "api/org/webrtc/LibvpxVp8Decoder.java",
+      "api/org/webrtc/LibvpxVp8Encoder.java",
+    ]
+    deps = [
+      ":base_java",
+      ":video_api_java",
+      ":video_java",
+      "//rtc_base:base_java",
+    ]
+  }
+
+  rtc_android_library("libvpx_vp9_java") {
+    visibility = [ "*" ]
+    java_files = [
+      "api/org/webrtc/LibvpxVp9Decoder.java",
+      "api/org/webrtc/LibvpxVp9Encoder.java",
+    ]
+    deps = [
+      ":base_java",
+      ":video_api_java",
+      ":video_java",
+      "//rtc_base:base_java",
+    ]
+  }
+
   rtc_android_library("swcodecs_java") {
     java_files = [
       "api/org/webrtc/SoftwareVideoDecoderFactory.java",
       "api/org/webrtc/SoftwareVideoEncoderFactory.java",
-      "src/java/org/webrtc/VP8Encoder.java",
-      "src/java/org/webrtc/VP8Decoder.java",
-      "src/java/org/webrtc/VP9Encoder.java",
-      "src/java/org/webrtc/VP9Decoder.java",
     ]
 
     deps = [
       ":base_java",
+      ":libvpx_vp8_java",
+      ":libvpx_vp9_java",
       ":video_api_java",
       ":video_java",
       "//rtc_base:base_java",
@@ -603,9 +629,12 @@ if (is_android) {
       ":base_jni",
       ":generated_video_jni",
       ":native_api_jni",
+
+      # TODO(bugs.webrtc.org/7925): Remove. :swcodecs_jni isn't a true
+      # dependency of this target. It should be linked in explicitly where
+      # needed.
+      ":swcodecs_jni",
       ":videoframe_jni",
-      ":vp8_jni",  # TODO(bugs.webrtc.org/7925): Remove.
-      ":vp9_jni",  # TODO(bugs.webrtc.org/7925): Remove.
       "../..:webrtc_common",
       "../../api:libjingle_peerconnection_api",
       "../../api/video:encoded_image",
@@ -726,6 +755,52 @@ if (is_android) {
       ":base_jni",
       ":generated_java_audio_jni",
       ":java_audio_device_module",
+    ]
+  }
+
+  rtc_static_library("default_video_codec_factory_jni") {
+    deps = [
+      ":swcodecs_jni",
+      ":video_jni",
+    ]
+  }
+
+  rtc_static_library("libvpx_vp8_jni") {
+    visibility = [ "*" ]
+    allow_poison = [ "software_video_codecs" ]
+    sources = [
+      "src/jni/vp8codec.cc",
+    ]
+
+    # TODO(bugs.webrtc.org/7925): add a depenency on :video_jni once :video_jni
+    # does not depend on us.
+    deps = [
+      ":base_jni",
+      ":generated_libvpx_vp8_jni",
+      "../../modules/video_coding:webrtc_vp8",
+    ]
+  }
+
+  rtc_static_library("libvpx_vp9_jni") {
+    visibility = [ "*" ]
+    allow_poison = [ "software_video_codecs" ]
+    sources = [
+      "src/jni/vp9codec.cc",
+    ]
+
+    # TODO(bugs.webrtc.org/7925): add a depenency on :video_jni once :video_jni
+    # does not depend on us.
+    deps = [
+      ":base_jni",
+      ":generated_libvpx_vp9_jni",
+      "../../modules/video_coding:webrtc_vp9",
+    ]
+  }
+
+  rtc_static_library("swcodecs_jni") {
+    deps = [
+      ":libvpx_vp8_jni",
+      ":libvpx_vp9_jni",
     ]
   }
 
@@ -974,30 +1049,6 @@ if (is_android) {
     ]
   }
 
-  rtc_static_library("vp8_jni") {
-    sources = [
-      "src/jni/vp8codec.cc",
-    ]
-
-    deps = [
-      ":base_jni",
-      ":generated_vp8_jni",
-      "../../modules/video_coding:webrtc_vp8",
-    ]
-  }
-
-  rtc_static_library("vp9_jni") {
-    sources = [
-      "src/jni/vp9codec.cc",
-    ]
-
-    deps = [
-      ":base_jni",
-      ":generated_vp9_jni",
-      "../../modules/video_coding:webrtc_vp9",
-    ]
-  }
-
   rtc_static_library("logging_jni") {
     visibility = [ "*" ]
     sources = [
@@ -1186,10 +1237,10 @@ if (is_android) {
     jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
   }
 
-  generate_jni("generated_vp8_jni") {
+  generate_jni("generated_libvpx_vp8_jni") {
     sources = [
-      "src/java/org/webrtc/VP8Decoder.java",
-      "src/java/org/webrtc/VP8Encoder.java",
+      "api/org/webrtc/LibvpxVp8Decoder.java",
+      "api/org/webrtc/LibvpxVp8Encoder.java",
     ]
 
     jni_package = ""
@@ -1197,10 +1248,10 @@ if (is_android) {
     jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
   }
 
-  generate_jni("generated_vp9_jni") {
+  generate_jni("generated_libvpx_vp9_jni") {
     sources = [
-      "src/java/org/webrtc/VP9Decoder.java",
-      "src/java/org/webrtc/VP9Encoder.java",
+      "api/org/webrtc/LibvpxVp9Decoder.java",
+      "api/org/webrtc/LibvpxVp9Encoder.java",
     ]
 
     jni_package = ""

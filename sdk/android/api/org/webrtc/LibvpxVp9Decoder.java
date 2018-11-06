@@ -10,16 +10,13 @@
 
 package org.webrtc;
 
-class VP8Encoder extends WrappedNativeVideoEncoder {
+public class LibvpxVp9Decoder extends WrappedNativeVideoDecoder {
   @Override
-  public long createNativeVideoEncoder() {
-    return nativeCreateEncoder();
+  public long createNativeVideoDecoder() {
+    return nativeCreateDecoder();
   }
 
-  static native long nativeCreateEncoder();
+  static native long nativeCreateDecoder();
 
-  @Override
-  public boolean isHardwareEncoder() {
-    return false;
-  }
+  static native boolean nativeIsSupported();
 }
