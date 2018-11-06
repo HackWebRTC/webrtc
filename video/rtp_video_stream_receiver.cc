@@ -320,7 +320,8 @@ void RtpVideoStreamReceiver::OnRtpPacket(const RtpPacketReceived& packet) {
       last_received_rtp_system_time_ms_ = now_ms;
 
       std::vector<uint32_t> csrcs = packet.Csrcs();
-      contributing_sources_.Update(now_ms, csrcs);
+      contributing_sources_.Update(now_ms, csrcs,
+                                   /* audio level */absl::nullopt);
     }
     // Periodically log the RTP header of incoming packets.
     if (now_ms - last_packet_log_ms_ > kPacketLogIntervalMs) {

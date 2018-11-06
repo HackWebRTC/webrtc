@@ -437,7 +437,9 @@ void ChannelReceive::OnRtpPacket(const RtpPacketReceived& packet) {
     if (has_audio_level)
       last_received_rtp_audio_level_ = audio_level;
     std::vector<uint32_t> csrcs = packet.Csrcs();
-    contributing_sources_.Update(now_ms, csrcs);
+    contributing_sources_.Update(
+        now_ms, csrcs,
+        has_audio_level ? absl::optional<uint8_t>(audio_level) : absl::nullopt);
   }
 
   // Store playout timestamp for the received RTP packet
