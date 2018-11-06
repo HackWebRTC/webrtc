@@ -41,7 +41,7 @@ enum {
   // |kDefaultTimingFramesDelayMs|, or if the frame is at least
   // |kDefaultOutliserFrameSizePercent| in size of average frame.
   kDefaultTimingFramesDelayMs = 200,
-  kDefaultOutlierFrameSizePercent = 250,
+  kDefaultOutlierFrameSizePercent = 500,
   // Maximum number of frames for what we store encode start timing information.
   kMaxEncodeStartTimeListSize = 50,
 };
