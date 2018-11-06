@@ -62,8 +62,8 @@ class TestAudioDeviceModuleImpl
         audio_callback_(nullptr),
         rendering_(false),
         capturing_(false),
-        done_rendering_(true, true),
-        done_capturing_(true, true),
+        done_rendering_(false, false),
+        done_capturing_(false, false),
         stop_thread_(false) {
     auto good_sample_rate = [](int sr) {
       return sr == 8000 || sr == 16000 || sr == 32000 || sr == 44100 ||
@@ -112,14 +112,12 @@ class TestAudioDeviceModuleImpl
     rtc::CritScope cs(&lock_);
     RTC_CHECK(renderer_);
     rendering_ = true;
-    done_rendering_.Reset();
     return 0;
   }
 
   int32_t StopPlayout() {
     rtc::CritScope cs(&lock_);
     rendering_ = false;
-    done_rendering_.Set();
     return 0;
   }
 
@@ -127,14 +125,12 @@ class TestAudioDeviceModuleImpl
     rtc::CritScope cs(&lock_);
     RTC_CHECK(capturer_);
     capturing_ = true;
-    done_capturing_.Reset();
     return 0;
   }
 
   int32_t StopRecording() {
     rtc::CritScope cs(&lock_);
     capturing_ = false;
-    done_capturing_.Set();
     return 0;
   }
 
