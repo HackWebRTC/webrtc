@@ -1382,12 +1382,20 @@ TEST_P(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
           header.headerLength + header.paddingLength == length;
 
       if (test_state_ == kBeforeStopCapture) {
+        // Packets are flowing, stop camera.
         capturer_->Stop();
         test_state_ = kWaitingForPadding;
       } else if (test_state_ == kWaitingForPadding && only_padding) {
+        // We're still getting padding, after stopping camera.
         test_state_ = kWaitingForNoPackets;
-      } else if (test_state_ == kWaitingForPaddingAfterCameraRestart &&
+      } else if (test_state_ == kWaitingForMediaAfterCameraRestart &&
+                 !only_padding) {
+        // Media packets are flowing again, stop camera a second time.
+        capturer_->Stop();
+        test_state_ = kWaitingForPaddingAfterCameraStopsAgain;
+      } else if (test_state_ == kWaitingForPaddingAfterCameraStopsAgain &&
                  only_padding) {
+        // Padding is still flowing, test ok.
         observation_complete_.Set();
       }
       return SEND_PACKET;
@@ -1400,13 +1408,20 @@ TEST_P(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
           (last_packet_time_ms_ > 0 &&
            clock_->TimeInMilliseconds() - last_packet_time_ms_ >
                kNoPacketsThresholdMs)) {
+        // No packets seen for |kNoPacketsThresholdMs|, restart camera.
         capturer_->Start();
-        test_state_ = kWaitingForPaddingAfterCameraRestart;
+        test_state_ = kWaitingForMediaAfterCameraRestart;
       }
       return SEND_PACKET;
     }
 
-    size_t GetNumVideoStreams() const override { return 3; }
+    void ModifyVideoConfigs(
+        VideoSendStream::Config* send_config,
+        std::vector<VideoReceiveStream::Config>* receive_configs,
+        VideoEncoderConfig* encoder_config) override {
+      // Make sure padding is sent if encoder is not producing media.
+      encoder_config->min_transmit_bitrate_bps = 50000;
+    }
 
     void OnFrameGeneratorCapturerCreated(
         test::FrameGeneratorCapturer* frame_generator_capturer) override {
@@ -1423,7 +1438,8 @@ TEST_P(VideoSendStreamTest, NoPaddingWhenVideoIsMuted) {
       kBeforeStopCapture,
       kWaitingForPadding,
       kWaitingForNoPackets,
-      kWaitingForPaddingAfterCameraRestart
+      kWaitingForMediaAfterCameraRestart,
+      kWaitingForPaddingAfterCameraStopsAgain
     };
 
     TestState test_state_ = kBeforeStopCapture;
