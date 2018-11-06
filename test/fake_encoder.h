@@ -43,8 +43,8 @@ class FakeEncoder : public VideoEncoder {
   int32_t Release() override;
   int32_t SetRateAllocation(const VideoBitrateAllocation& rate_allocation,
                             uint32_t framerate) override;
-  const char* ImplementationName() const override;
   int GetConfiguredInputFramerate() const;
+  EncoderInfo GetEncoderInfo() const override;
 
   static const char* kImplementationName;
 

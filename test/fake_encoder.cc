@@ -245,8 +245,10 @@ int32_t FakeEncoder::SetRateAllocation(
 }
 
 const char* FakeEncoder::kImplementationName = "fake_encoder";
-const char* FakeEncoder::ImplementationName() const {
-  return kImplementationName;
+VideoEncoder::EncoderInfo FakeEncoder::GetEncoderInfo() const {
+  EncoderInfo info;
+  info.implementation_name = kImplementationName;
+  return info;
 }
 
 int FakeEncoder::GetConfiguredInputFramerate() const {
