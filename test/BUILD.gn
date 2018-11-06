@@ -137,6 +137,8 @@ if (is_ios) {
     testonly = true
     visibility = [ ":test_support" ]
     sources = [
+      "ios/coverage_util_ios.h",
+      "ios/coverage_util_ios.mm",
       "ios/test_support.h",
       "ios/test_support.mm",
     ]
@@ -144,6 +146,15 @@ if (is_ios) {
       ":perf_test",
       "../sdk:helpers_objc",
     ]
+    configs += [ ":test_support_objc_config" ]
+  }
+
+  config("test_support_objc_config") {
+    defines = []
+
+    if (use_clang_coverage) {
+      defines += [ "WEBRTC_IOS_ENABLE_COVERAGE" ]
+    }
   }
 }
 

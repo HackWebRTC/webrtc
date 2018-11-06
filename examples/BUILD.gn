@@ -648,12 +648,13 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       rtc_ios_xctest_test("apprtcmobile_tests") {
         info_plist = "objc/AppRTCMobile/ios/Info.plist"
         sources = [
-          "objc/AppRTCMobile/ios/main.m",
+          "objc/AppRTCMobile/tests/main.mm",
         ]
         deps = [
           ":AppRTCMobile_lib",
           ":apprtcmobile_test_sources",
           "../sdk:framework_objc",
+          "//test:test_support",
         ]
         ldflags = [ "-all_load" ]
       }
