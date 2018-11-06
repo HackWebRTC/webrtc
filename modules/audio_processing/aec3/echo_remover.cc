@@ -178,7 +178,7 @@ EchoRemoverImpl::EchoRemoverImpl(const EchoCanceller3Config& config,
       subtractor_(config, data_dumper_.get(), optimization_),
       suppression_gain_(config_, optimization_, sample_rate_hz),
       cng_(optimization_),
-      suppression_filter_(sample_rate_hz_),
+      suppression_filter_(optimization_, sample_rate_hz_),
       render_signal_analyzer_(config_),
       residual_echo_estimator_(config_),
       aec_state_(config_) {

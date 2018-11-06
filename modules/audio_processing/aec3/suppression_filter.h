@@ -24,7 +24,7 @@ namespace webrtc {
 
 class SuppressionFilter {
  public:
-  explicit SuppressionFilter(int sample_rate_hz);
+  SuppressionFilter(Aec3Optimization optimization, int sample_rate_hz);
   ~SuppressionFilter();
   void ApplyGain(const FftData& comfort_noise,
                  const FftData& comfort_noise_high_bands,
@@ -34,6 +34,7 @@ class SuppressionFilter {
                  std::vector<std::vector<float>>* e);
 
  private:
+  const Aec3Optimization optimization_;
   const int sample_rate_hz_;
   const OouraFft ooura_fft_;
   const Aec3Fft fft_;
