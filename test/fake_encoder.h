@@ -79,6 +79,7 @@ class FakeEncoder : public VideoEncoder {
   int configured_input_framerate_ RTC_GUARDED_BY(crit_sect_);
   int max_target_bitrate_kbps_ RTC_GUARDED_BY(crit_sect_);
   bool pending_keyframe_ RTC_GUARDED_BY(crit_sect_);
+  uint32_t counter_ RTC_GUARDED_BY(crit_sect_);
   rtc::CriticalSection crit_sect_;
 
   uint8_t encoded_buffer_[100000];

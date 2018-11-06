@@ -23,7 +23,7 @@
 
 namespace webrtc {
 namespace test {
-
+namespace {
 const int kKeyframeSizeFactor = 5;
 
 // Inverse of proportion of frames assigned to each temporal layer for all
@@ -35,12 +35,22 @@ const int kTemporalLayerRateFactor[4][4] = {
     {8, 8, 4, 2},  // 1/8 + 1/8 + 1/4 + 1/2
 };
 
+void WriteCounter(unsigned char* payload, uint32_t counter) {
+  payload[0] = (counter & 0x00FF);
+  payload[1] = (counter & 0xFF00) >> 8;
+  payload[2] = (counter & 0xFF0000) >> 16;
+  payload[3] = (counter & 0xFF000000) >> 24;
+}
+
+};  // namespace
+
 FakeEncoder::FakeEncoder(Clock* clock)
     : clock_(clock),
       callback_(nullptr),
       configured_input_framerate_(-1),
       max_target_bitrate_kbps_(-1),
       pending_keyframe_(true),
+      counter_(0),
       debt_bytes_(0) {
   // Generate some arbitrary not-all-zero data
   for (size_t i = 0; i < sizeof(encoded_buffer_); ++i) {
@@ -80,6 +90,7 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
   int framerate;
   VideoCodecMode mode;
   bool keyframe;
+  uint32_t counter;
   {
     rtc::CritScope cs(&crit_sect_);
     max_framerate = config_.maxFramerate;
@@ -97,13 +108,14 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
     }
     keyframe = pending_keyframe_;
     pending_keyframe_ = false;
+    counter = counter_++;
   }
 
   FrameInfo frame_info =
       NextFrame(frame_types, keyframe, num_simulcast_streams, target_bitrate,
                 simulcast_streams, framerate);
   for (uint8_t i = 0; i < frame_info.layers.size(); ++i) {
-    constexpr int kMinPayLoadLength = 10;
+    constexpr int kMinPayLoadLength = 14;
     if (frame_info.layers[i].size < kMinPayLoadLength) {
       // Drop this temporal layer.
       continue;
@@ -114,7 +126,10 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
     specifics.codecType = kVideoCodecGeneric;
     std::unique_ptr<uint8_t[]> encoded_buffer(
         new uint8_t[frame_info.layers[i].size]);
-    memcpy(encoded_buffer.get(), encoded_buffer_, frame_info.layers[i].size);
+    memcpy(encoded_buffer.get(), encoded_buffer_,
+           frame_info.layers[i].size - 4);
+    // Write a counter to the image to make each frame unique.
+    WriteCounter(encoded_buffer.get() + frame_info.layers[i].size - 4, counter);
     EncodedImage encoded(encoded_buffer.get(), frame_info.layers[i].size,
                          sizeof(encoded_buffer_));
     encoded.SetTimestamp(input_image.timestamp());
