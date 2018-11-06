@@ -15,11 +15,14 @@
 #include "modules/rtp_rtcp/source/rtp_header_extension_size.h"
 #include "modules/rtp_rtcp/source/rtp_sender.h"
 #include "rtc_base/logging.h"
+#include "system_wrappers/include/field_trial.h"
 #include "video/video_send_stream_impl.h"
 
 namespace webrtc {
 
 namespace {
+
+constexpr char kTargetBitrateRtcpFieldTrial[] = "WebRTC-Target-Bitrate-Rtcp";
 
 size_t CalculateMaxHeaderSize(const RtpConfig& config) {
   size_t header_size = kRtpHeaderSize;
@@ -103,9 +106,10 @@ VideoSendStream::VideoSendStream(
   // it was created on.
   thread_sync_event_.Wait(rtc::Event::kForever);
   send_stream_->RegisterProcessThread(module_process_thread);
-  // TODO(sprang): Enable this also for regular video calls if it works well.
-  if (encoder_config.content_type == VideoEncoderConfig::ContentType::kScreen) {
-    // Only signal target bitrate for screenshare streams, for now.
+  // TODO(sprang): Enable this also for regular video calls by default, if it
+  // works well.
+  if (encoder_config.content_type == VideoEncoderConfig::ContentType::kScreen ||
+      field_trial::IsEnabled(kTargetBitrateRtcpFieldTrial)) {
     video_stream_encoder_->SetBitrateAllocationObserver(send_stream_.get());
   }
 
