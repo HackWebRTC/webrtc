@@ -148,8 +148,16 @@ int32_t VideoEncoderWrapper::SetRateAllocation(
   return HandleReturnCode(jni, ret, "setRateAllocation");
 }
 
-VideoEncoderWrapper::ScalingSettings VideoEncoderWrapper::GetScalingSettings()
-    const {
+VideoEncoder::EncoderInfo VideoEncoderWrapper::GetEncoderInfo() const {
+  EncoderInfo info;
+  info.supports_native_handle = true;
+  info.implementation_name = implementation_name_;
+  info.scaling_settings = GetScalingSettingsInternal();
+  return info;
+}
+
+VideoEncoderWrapper::ScalingSettings
+VideoEncoderWrapper::GetScalingSettingsInternal() const {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedJavaLocalRef<jobject> j_scaling_settings =
       Java_VideoEncoder_getScalingSettings(jni, encoder_);
@@ -196,14 +204,6 @@ VideoEncoderWrapper::ScalingSettings VideoEncoderWrapper::GetScalingSettings()
     default:
       return ScalingSettings::kOff;
   }
-}
-
-bool VideoEncoderWrapper::SupportsNativeHandle() const {
-  return true;
-}
-
-const char* VideoEncoderWrapper::ImplementationName() const {
-  return implementation_name_.c_str();
 }
 
 void VideoEncoderWrapper::OnEncodedFrame(JNIEnv* jni,

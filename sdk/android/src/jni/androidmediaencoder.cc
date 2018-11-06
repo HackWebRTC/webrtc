@@ -107,9 +107,7 @@ class MediaCodecVideoEncoder : public VideoEncoder {
   int32_t Release() override;
   int32_t SetRateAllocation(const VideoBitrateAllocation& rate_allocation,
                             uint32_t frame_rate) override;
-
-  bool SupportsNativeHandle() const override { return has_egl_context_; }
-  const char* ImplementationName() const override;
+  EncoderInfo GetEncoderInfo() const override;
 
   // Fills the input buffer with data from the buffers passed as parameters.
   bool FillInputBuffer(JNIEnv* jni,
@@ -178,7 +176,7 @@ class MediaCodecVideoEncoder : public VideoEncoder {
   // true on success.
   bool DeliverPendingOutputs(JNIEnv* jni);
 
-  VideoEncoder::ScalingSettings GetScalingSettings() const override;
+  VideoEncoder::ScalingSettings GetScalingSettingsInternal() const;
 
   // Displays encoder statistics.
   void LogStatistics(bool force_log);
@@ -923,6 +921,14 @@ int32_t MediaCodecVideoEncoder::SetRateAllocation(
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
+VideoEncoder::EncoderInfo MediaCodecVideoEncoder::GetEncoderInfo() const {
+  EncoderInfo info;
+  info.supports_native_handle = has_egl_context_;
+  info.implementation_name = "MediaCodec";
+  info.scaling_settings = GetScalingSettingsInternal();
+  return info;
+}
+
 bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_queue_checker_);
 
@@ -1141,8 +1147,8 @@ void MediaCodecVideoEncoder::LogStatistics(bool force_log) {
   }
 }
 
-VideoEncoder::ScalingSettings MediaCodecVideoEncoder::GetScalingSettings()
-    const {
+VideoEncoder::ScalingSettings
+MediaCodecVideoEncoder::GetScalingSettingsInternal() const {
   if (!scale_)
     return VideoEncoder::ScalingSettings::kOff;
 
@@ -1197,10 +1203,6 @@ VideoEncoder::ScalingSettings MediaCodecVideoEncoder::GetScalingSettings()
                                          kHighH264QpThreshold);
   }
   return VideoEncoder::ScalingSettings::kOff;
-}
-
-const char* MediaCodecVideoEncoder::ImplementationName() const {
-  return "MediaCodec";
 }
 
 static void JNI_MediaCodecVideoEncoder_FillInputBuffer(

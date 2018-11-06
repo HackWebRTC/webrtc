@@ -48,9 +48,7 @@ class VideoEncoderWrapper : public VideoEncoder {
   int32_t SetRateAllocation(const VideoBitrateAllocation& allocation,
                             uint32_t framerate) override;
 
-  ScalingSettings GetScalingSettings() const override;
-
-  bool SupportsNativeHandle() const override;
+  EncoderInfo GetEncoderInfo() const override;
 
   // Should only be called by JNI.
   void OnEncodedFrame(JNIEnv* jni,
@@ -63,8 +61,6 @@ class VideoEncoderWrapper : public VideoEncoder {
                       jint rotation,
                       jboolean complete_frame,
                       const JavaRef<jobject>& j_qp);
-
-  const char* ImplementationName() const override;
 
  private:
   struct FrameExtraInfo {
@@ -89,6 +85,8 @@ class VideoEncoderWrapper : public VideoEncoder {
       JNIEnv* jni,
       const VideoBitrateAllocation& allocation);
   std::string GetImplementationName(JNIEnv* jni) const;
+
+  ScalingSettings GetScalingSettingsInternal() const;
 
   const ScopedJavaGlobalRef<jobject> encoder_;
   const ScopedJavaGlobalRef<jclass> int_array_class_;
