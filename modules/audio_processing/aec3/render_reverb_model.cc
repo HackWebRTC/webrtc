@@ -8,10 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "modules/audio_processing/aec3/render_reverb_model.h"
+
 #include <algorithm>
 
 #include "api/array_view.h"
-#include "modules/audio_processing/aec3/render_reverb_model.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {
