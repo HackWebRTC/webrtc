@@ -189,6 +189,7 @@ rtc_static_library("audio_encoder_cng") {
     "../../api/audio_codecs:audio_codecs_api",
     "../../common_audio",
     "../../rtc_base:checks",
+    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 
