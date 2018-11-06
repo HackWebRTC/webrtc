@@ -149,8 +149,8 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
   process_thread_->RegisterModule(rtp_rtcp_.get(), RTC_FROM_HERE);
 
   if (config_.rtp.nack.rtp_history_ms != 0) {
-    nack_module_.reset(
-        new NackModule(clock_, nack_sender, keyframe_request_sender));
+    nack_module_ = absl::make_unique<NackModule>(clock_, nack_sender,
+                                                 keyframe_request_sender);
     process_thread_->RegisterModule(nack_module_.get(), RTC_FROM_HERE);
   }
 
@@ -170,7 +170,8 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
 
   packet_buffer_ = video_coding::PacketBuffer::Create(
       clock_, kPacketBufferStartSize, packet_buffer_max_size, this);
-  reference_finder_.reset(new video_coding::RtpFrameReferenceFinder(this));
+  reference_finder_ =
+      absl::make_unique<video_coding::RtpFrameReferenceFinder>(this);
 }
 
 RtpVideoStreamReceiver::~RtpVideoStreamReceiver() {
