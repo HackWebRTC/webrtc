@@ -26,6 +26,27 @@ config("apm_debug_dump") {
   }
 }
 
+rtc_static_library("config") {
+  visibility = [ ":*" ]
+  sources = [
+    "include/config.cc",
+    "include/config.h",
+  ]
+  deps = [
+    "../../rtc_base:macromagic",
+    "../../rtc_base/system:rtc_export",
+  ]
+}
+
+# Temporary dummy target for the APM interface.
+rtc_source_set("api") {
+  visibility = [ "*" ]
+
+  # TODO(bugs.webrtc.org/9535): Adapt downstream projects and populate.
+  sources = []
+  deps = []
+}
+
 rtc_static_library("audio_processing") {
   visibility = [ "*" ]
   configs += [ ":apm_debug_dump" ]
@@ -55,10 +76,11 @@ rtc_static_library("audio_processing") {
     "gain_controller2.h",
     "include/aec_dump.cc",
     "include/aec_dump.h",
+
+    # TODO(bugs.webrtc.org/9535): Adapt downstream projects and remove
+    # include/audio_processing.cc/h.
     "include/audio_processing.cc",
     "include/audio_processing.h",
-    "include/config.cc",
-    "include/config.h",
     "level_estimator_impl.cc",
     "level_estimator_impl.h",
     "low_cut_filter.cc",
@@ -95,11 +117,13 @@ rtc_static_library("audio_processing") {
 
   defines = []
   deps = [
+    ":api",
     ":apm_logging",
     ":audio_frame_view",
     ":audio_generator_interface",
     ":audio_processing_c",
     ":audio_processing_statistics",
+    ":config",
     ":gain_control_interface",
     "../..:webrtc_common",
     "../../api:array_view",
@@ -360,10 +384,12 @@ if (rtc_include_tests) {
 
     deps = [
       ":analog_mic_simulation",
+      ":api",
       ":apm_logging",
       ":audio_frame_view",
       ":audio_processing",
       ":audioproc_test_utils",
+      ":config",
       ":file_audio_generator_unittests",
       ":mocks",
       "../..:webrtc_common",
