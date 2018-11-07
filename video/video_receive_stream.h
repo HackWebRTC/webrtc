@@ -146,6 +146,7 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   bool frame_decoded_ = false;
 
   int64_t last_keyframe_request_ms_ = 0;
+  int64_t last_complete_frame_time_ms_ = 0;
 };
 }  // namespace internal
 }  // namespace webrtc

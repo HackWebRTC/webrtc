@@ -110,6 +110,11 @@ class NullVideoDecoder : public webrtc::VideoDecoder {
   const char* ImplementationName() const override { return "NullVideoDecoder"; }
 };
 
+// TODO(https://bugs.webrtc.org/9974): Consider removing this workaround.
+// Maximum time between frames before resetting the FrameBuffer to avoid RTP
+// timestamps wraparound to affect FrameBuffer.
+constexpr int kInactiveStreamThresholdMs = 600000;  //  10 minutes.
+
 }  // namespace
 
 namespace internal {
@@ -372,6 +377,14 @@ void VideoReceiveStream::OnCompleteFrame(
   // TODO(webrtc:9249): Workaround to allow decoding of VP9 SVC stream with
   // partially enabled inter-layer prediction.
   frame->id.spatial_layer = 0;
+
+  // TODO(https://bugs.webrtc.org/9974): Consider removing this workaround.
+  int64_t time_now_ms = rtc::TimeMillis();
+  if (last_complete_frame_time_ms_ > 0 &&
+      time_now_ms - last_complete_frame_time_ms_ > kInactiveStreamThresholdMs) {
+    frame_buffer_->Clear();
+  }
+  last_complete_frame_time_ms_ = time_now_ms;
 
   int64_t last_continuous_pid = frame_buffer_->InsertFrame(std::move(frame));
   if (last_continuous_pid != -1)

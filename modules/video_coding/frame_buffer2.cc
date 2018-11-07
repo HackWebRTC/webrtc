@@ -113,6 +113,9 @@ FrameBuffer::ReturnReason FrameBuffer::NextFrame(
         if (keyframe_required && !frame->is_keyframe())
           continue;
 
+        // TODO(https://bugs.webrtc.org/9974): consider removing this check
+        // as it may make a stream undecodable after a very long delay between
+        // frames.
         if (last_decoded_frame_timestamp_ &&
             AheadOf(*last_decoded_frame_timestamp_, frame->Timestamp())) {
           continue;
@@ -242,6 +245,11 @@ void FrameBuffer::Stop() {
   rtc::CritScope lock(&crit_);
   stopped_ = true;
   new_continuous_frame_event_.Set();
+}
+
+void FrameBuffer::Clear() {
+  rtc::CritScope lock(&crit_);
+  ClearFramesAndHistory();
 }
 
 void FrameBuffer::UpdateRtt(int64_t rtt_ms) {

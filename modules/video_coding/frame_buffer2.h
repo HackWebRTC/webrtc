@@ -79,6 +79,9 @@ class FrameBuffer {
   // Updates the RTT for jitter buffer estimation.
   void UpdateRtt(int64_t rtt_ms);
 
+  // Clears the FrameBuffer, removing all the buffered frames.
+  void Clear();
+
  private:
   struct FrameInfo {
     FrameInfo();
