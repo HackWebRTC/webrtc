@@ -38,7 +38,6 @@ rtc_source_set("call_interfaces") {
     "../api/audio_codecs:audio_codecs_api",
     "../api/transport:network_control",
     "../modules/audio_device:audio_device",
-    "../modules/audio_processing:api",
     "../modules/audio_processing:audio_processing",
     "../modules/audio_processing:audio_processing_statistics",
     "../rtc_base:audio_format_to_string",

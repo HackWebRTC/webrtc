@@ -53,7 +53,6 @@ if (is_android) {
       "//media:rtc_audio_video",
       "//media:rtc_internal_video_codecs",
       "//modules/audio_processing",
-      "//modules/audio_processing:api",
       "//modules/utility:utility",
       "//pc:libjingle_peerconnection",
       "//rtc_base:rtc_base",

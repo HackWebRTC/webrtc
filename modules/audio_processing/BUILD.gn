@@ -38,27 +38,13 @@ rtc_static_library("config") {
   ]
 }
 
+# Temporary dummy target for the APM interface.
 rtc_source_set("api") {
   visibility = [ "*" ]
-  sources = [
-    "include/audio_processing.cc",
-    "include/audio_processing.h",
-  ]
-  deps = [
-    ":audio_frame_view",
-    ":audio_generator_interface",
-    ":audio_processing_statistics",
-    ":config",
-    ":gain_control_interface",
-    "../../api/audio:aec3_config",
-    "../../api/audio:echo_control",
-    "../../rtc_base:deprecation",
-    "../../rtc_base:macromagic",
-    "../../rtc_base:ptr_util",
-    "../../rtc_base:rtc_base_approved",
-    "../../rtc_base/system:rtc_export",
-    "//third_party/abseil-cpp/absl/types:optional",
-  ]
+
+  # TODO(bugs.webrtc.org/9535): Adapt downstream projects and populate.
+  sources = []
+  deps = []
 }
 
 rtc_static_library("audio_processing") {
@@ -90,6 +76,11 @@ rtc_static_library("audio_processing") {
     "gain_controller2.h",
     "include/aec_dump.cc",
     "include/aec_dump.h",
+
+    # TODO(bugs.webrtc.org/9535): Adapt downstream projects and remove
+    # include/audio_processing.cc/h.
+    "include/audio_processing.cc",
+    "include/audio_processing.h",
     "level_estimator_impl.cc",
     "level_estimator_impl.h",
     "low_cut_filter.cc",
@@ -342,7 +333,6 @@ if (rtc_include_tests) {
       "include/mock_audio_processing.h",
     ]
     deps = [
-      ":api",
       ":audio_processing",
       ":audio_processing_statistics",
       "../../test:test_support",
@@ -521,7 +511,6 @@ if (rtc_include_tests) {
     ]
 
     deps = [
-      ":api",
       ":audio_generator_factory",
       ":audio_processing",
       ":file_audio_generator",
@@ -566,7 +555,6 @@ if (rtc_include_tests) {
 
       deps = [
         ":analog_mic_simulation",
-        ":api",
         ":apm_logging",
         ":audio_processing",
         ":audioproc_debug_proto",
@@ -597,7 +585,6 @@ if (rtc_include_tests) {
         "test/audioproc_float_main.cc",
       ]
       deps = [
-        ":api",
         ":audio_processing",
         "../../api:audioproc_f_api",
         "../../rtc_base:rtc_base_approved",
@@ -623,7 +610,6 @@ if (rtc_include_tests) {
     ]
 
     deps = [
-      ":api",
       ":audio_processing",
       "../../api:array_view",
       "../../api/audio:audio_frame_api",
@@ -708,7 +694,6 @@ if (rtc_include_tests) {
       ]
 
       deps = [
-        ":api",
         ":audio_processing",
         ":audioproc_debug_proto",
         ":audioproc_protobuf_utils",

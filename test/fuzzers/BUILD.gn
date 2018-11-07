@@ -469,7 +469,6 @@ rtc_static_library("audio_processing_fuzzer_helper") {
     ":fuzz_data_helper",
     "../../api/audio:audio_frame_api",
     "../../modules/audio_processing",
-    "../../modules/audio_processing:api",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
     "//third_party/abseil-cpp/absl/types:optional",
@@ -484,7 +483,6 @@ webrtc_fuzzer_test("audio_processing_fuzzer") {
     ":audio_processing_fuzzer_helper",
     "../../api/audio:aec3_factory",
     "../../modules/audio_processing",
-    "../../modules/audio_processing:api",
     "../../modules/audio_processing/aec3",
     "../../modules/audio_processing/aec_dump",
     "../../modules/audio_processing/aec_dump:aec_dump_impl",
@@ -505,7 +503,6 @@ webrtc_fuzzer_test("agc_fuzzer") {
   deps = [
     ":fuzz_data_helper",
     "../../modules/audio_processing",
-    "../../modules/audio_processing:api",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:safe_minmax",
     "//third_party/abseil-cpp/absl/memory",

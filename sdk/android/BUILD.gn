@@ -535,7 +535,6 @@ if (is_android) {
       ":builtin_audio_codecs_jni",
       "../../api/audio_codecs:builtin_audio_decoder_factory",
       "../../api/audio_codecs:builtin_audio_encoder_factory",
-      "../../modules/audio_processing:api",
       "../../modules/audio_processing:audio_processing",
       "../../rtc_base:rtc_base_approved",
     ]
@@ -937,7 +936,6 @@ if (is_android) {
       "../../logging:rtc_event_log_api",
       "../../media:rtc_audio_video",
       "../../modules/audio_device:audio_device",
-      "../../modules/audio_processing:api",
       "../../modules/audio_processing:audio_processing",
     ]
   }
@@ -1442,7 +1440,6 @@ if (is_android) {
       "../../media:rtc_media_base",
       "../../modules/audio_device:audio_device",
       "../../modules/audio_device:mock_audio_device",
-      "../../modules/audio_processing:api",
       "../../modules/audio_processing:audio_processing",
       "../../modules/utility:utility",
       "../../pc:libjingle_peerconnection",

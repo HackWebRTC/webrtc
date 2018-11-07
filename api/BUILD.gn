@@ -354,7 +354,6 @@ if (rtc_include_tests) {
       ]
 
       deps = [
-        "../modules/audio_processing:api",
         "../modules/audio_processing:audio_processing",
         "../modules/audio_processing:audioproc_f_impl",
       ]
