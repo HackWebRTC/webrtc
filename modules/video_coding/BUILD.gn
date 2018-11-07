@@ -850,7 +850,6 @@ if (rtc_include_tests) {
       "session_info_unittest.cc",
       "test/stream_generator.cc",
       "test/stream_generator.h",
-      "test/test_util.h",
       "timing_unittest.cc",
       "utility/default_video_bitrate_allocator_unittest.cc",
       "utility/frame_dropper_unittest.cc",
