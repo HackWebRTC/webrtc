@@ -56,7 +56,6 @@ std::unique_ptr<SimulcastTestFixture> CreateSpecificSimulcastTestFixture(
                                     std::move(decoder_factory),
                                     SdpVideoFormat(cricket::kVp8CodecName));
 }
-
 }  // namespace
 
 TEST(SimulcastEncoderAdapterSimulcastTest, TestKeyFrameRequestsOnAllStreams) {
@@ -177,7 +176,9 @@ class MockVideoEncoderFactory : public VideoEncoderFactory {
 class MockVideoEncoder : public VideoEncoder {
  public:
   explicit MockVideoEncoder(MockVideoEncoderFactory* factory)
-      : factory_(factory), callback_(nullptr) {}
+      : factory_(factory),
+        scaling_settings_(VideoEncoder::ScalingSettings::kOff),
+        callback_(nullptr) {}
 
   // TODO(nisse): Valid overrides commented out, because the gmock
   // methods don't use any override declarations, and we want to avoid
@@ -214,6 +215,7 @@ class MockVideoEncoder : public VideoEncoder {
     EncoderInfo info;
     info.supports_native_handle = supports_native_handle_;
     info.implementation_name = implementation_name_;
+    info.scaling_settings = scaling_settings_;
     return info;
   }
 
@@ -244,12 +246,17 @@ class MockVideoEncoder : public VideoEncoder {
     init_encode_return_value_ = value;
   }
 
+  void set_scaling_settings(const VideoEncoder::ScalingSettings& settings) {
+    scaling_settings_ = settings;
+  }
+
   VideoBitrateAllocation last_set_bitrate() const { return last_set_bitrate_; }
 
  private:
   MockVideoEncoderFactory* const factory_;
   bool supports_native_handle_ = false;
   std::string implementation_name_ = "unknown";
+  VideoEncoder::ScalingSettings scaling_settings_;
   int32_t init_encode_return_value_ = 0;
   VideoBitrateAllocation last_set_bitrate_;
 
@@ -722,8 +729,10 @@ TEST_F(TestSimulcastEncoderAdapterFake, SupportsNativeHandleForSingleStreams) {
   adapter_->RegisterEncodeCompleteCallback(this);
   ASSERT_EQ(1u, helper_->factory()->encoders().size());
   helper_->factory()->encoders()[0]->set_supports_native_handle(true);
+  EXPECT_EQ(0, adapter_->InitEncode(&codec_, 1, 1200));
   EXPECT_TRUE(adapter_->GetEncoderInfo().supports_native_handle);
   helper_->factory()->encoders()[0]->set_supports_native_handle(false);
+  EXPECT_EQ(0, adapter_->InitEncode(&codec_, 1, 1200));
   EXPECT_FALSE(adapter_->GetEncoderInfo().supports_native_handle);
 }
 
@@ -796,6 +805,7 @@ TEST_F(TestSimulcastEncoderAdapterFake,
   EXPECT_FALSE(adapter_->GetEncoderInfo().supports_native_handle);
   // Once all do, then the adapter claims support.
   helper_->factory()->encoders()[0]->set_supports_native_handle(true);
+  EXPECT_EQ(0, adapter_->InitEncode(&codec_, 1, 1200));
   EXPECT_TRUE(adapter_->GetEncoderInfo().supports_native_handle);
 }
 
@@ -832,6 +842,7 @@ TEST_F(TestSimulcastEncoderAdapterFake,
   ASSERT_EQ(3u, helper_->factory()->encoders().size());
   for (MockVideoEncoder* encoder : helper_->factory()->encoders())
     encoder->set_supports_native_handle(true);
+  EXPECT_EQ(0, adapter_->InitEncode(&codec_, 1, 1200));
   EXPECT_TRUE(adapter_->GetEncoderInfo().supports_native_handle);
 
   rtc::scoped_refptr<VideoFrameBuffer> buffer(

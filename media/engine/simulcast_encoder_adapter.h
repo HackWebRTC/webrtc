@@ -100,7 +100,7 @@ class SimulcastEncoderAdapter : public VideoEncoder {
   VideoCodec codec_;
   std::vector<StreamInfo> streaminfos_;
   EncodedImageCallback* encoded_complete_callback_;
-  std::string implementation_name_;
+  EncoderInfo encoder_info_;
 
   // Used for checking the single-threaded access of the encoder interface.
   rtc::SequencedTaskChecker encoder_queue_;

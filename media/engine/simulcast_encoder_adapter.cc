@@ -19,6 +19,7 @@
 #include "api/video_codecs/video_encoder_factory.h"
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/field_trial.h"
 #include "third_party/libyuv/include/libyuv/scale.h"
@@ -126,9 +127,9 @@ SimulcastEncoderAdapter::SimulcastEncoderAdapter(VideoEncoderFactory* factory,
       factory_(factory),
       video_format_(format),
       encoded_complete_callback_(nullptr),
-      implementation_name_("SimulcastEncoderAdapter"),
       experimental_boosted_screenshare_qp_(GetScreenshareBoostedQpValue()) {
   RTC_DCHECK(factory_);
+  encoder_info_.implementation_name = "SimulcastEncoderAdapter";
 
   // The adapter is typically created on the worker thread, but operated on
   // the encoder task queue.
@@ -202,7 +203,8 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
     start_bitrates.push_back(stream_bitrate);
   }
 
-  std::string implementation_name;
+  encoder_info_.supports_native_handle = true;
+  encoder_info_.scaling_settings.thresholds = absl::nullopt;
   // Create |number_of_streams| of encoder instances and init them.
   for (int i = 0; i < number_of_streams; ++i) {
     VideoCodec stream_codec;
@@ -211,6 +213,7 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
     if (!doing_simulcast) {
       stream_codec = codec_;
       stream_codec.numberOfSimulcastStreams = 1;
+
     } else {
       // Cap start bitrate to the min bitrate in order to avoid strange codec
       // behavior. Since sending will be false, this should not matter.
@@ -253,18 +256,39 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
                               stream_codec.width, stream_codec.height,
                               send_stream);
 
-    if (i != 0) {
-      implementation_name += ", ";
+    if (!doing_simulcast) {
+      // Without simulcast, just pass through the encoder info from the one
+      // active encoder.
+      encoder_info_ = streaminfos_[0].encoder->GetEncoderInfo();
+    } else {
+      const EncoderInfo encoder_impl_info =
+          streaminfos_[i].encoder->GetEncoderInfo();
+
+      if (i == 0) {
+        // Quality scaling not enabled for simulcast.
+        encoder_info_.scaling_settings = VideoEncoder::ScalingSettings::kOff;
+
+        // Encoder name indicates names of all sub-encoders.
+        encoder_info_.implementation_name = "SimulcastEncoderAdapter (";
+        encoder_info_.implementation_name +=
+            encoder_impl_info.implementation_name;
+
+        encoder_info_.supports_native_handle =
+            encoder_impl_info.supports_native_handle;
+      } else {
+        encoder_info_.implementation_name += ", ";
+        encoder_info_.implementation_name +=
+            encoder_impl_info.implementation_name;
+
+        // Native handle supported only if all encoders supports it.
+        encoder_info_.supports_native_handle &=
+            encoder_impl_info.supports_native_handle;
+      }
     }
-    implementation_name +=
-        streaminfos_[i].encoder->GetEncoderInfo().implementation_name;
   }
 
   if (doing_simulcast) {
-    implementation_name_ =
-        "SimulcastEncoderAdapter (" + implementation_name + ")";
-  } else {
-    implementation_name_ = implementation_name;
+    encoder_info_.implementation_name += ")";
   }
 
   // To save memory, don't store encoders that we don't use.
@@ -508,23 +532,7 @@ void SimulcastEncoderAdapter::DestroyStoredEncoders() {
 }
 
 VideoEncoder::EncoderInfo SimulcastEncoderAdapter::GetEncoderInfo() const {
-  EncoderInfo info;
-
-  if (Initialized() && NumberOfStreams(codec_) > 1) {
-    info = streaminfos_[0].encoder->GetEncoderInfo();
-  }
-
-  info.supports_native_handle = true;
-  for (const auto& streaminfo : streaminfos_) {
-    if (!streaminfo.encoder->GetEncoderInfo().supports_native_handle) {
-      info.supports_native_handle = false;
-      break;
-    }
-  }
-
-  info.implementation_name = implementation_name_;
-
-  return info;
+  return encoder_info_;
 }
 
 }  // namespace webrtc
