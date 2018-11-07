@@ -261,10 +261,6 @@ int LibvpxVp8Encoder::SetRateAllocation(const VideoBitrateAllocation& bitrate,
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-const char* LibvpxVp8Encoder::ImplementationName() const {
-  return "libvpx";
-}
-
 void LibvpxVp8Encoder::SetStreamState(bool send_stream, int stream_idx) {
   if (send_stream && !send_stream_[stream_idx]) {
     // Need a key frame if we have not sent this stream before.
@@ -916,13 +912,20 @@ int LibvpxVp8Encoder::GetEncodedPartitions(const VideoFrame& input_image) {
   return result;
 }
 
-VideoEncoder::ScalingSettings LibvpxVp8Encoder::GetScalingSettings() const {
+VideoEncoder::EncoderInfo LibvpxVp8Encoder::GetEncoderInfo() const {
+  EncoderInfo info;
+  info.supports_native_handle = false;
+  info.implementation_name = "libvpx";
+
   const bool enable_scaling = encoders_.size() == 1 &&
                               configurations_[0].rc_dropframe_thresh > 0 &&
                               codec_.VP8().automaticResizeOn;
-  return enable_scaling ? VideoEncoder::ScalingSettings(kLowVp8QpThreshold,
-                                                        kHighVp8QpThreshold)
-                        : VideoEncoder::ScalingSettings::kOff;
+  info.scaling_settings = enable_scaling
+                              ? VideoEncoder::ScalingSettings(
+                                    kLowVp8QpThreshold, kHighVp8QpThreshold)
+                              : VideoEncoder::ScalingSettings::kOff;
+
+  return info;
 }
 
 int LibvpxVp8Encoder::RegisterEncodeCompleteCallback(

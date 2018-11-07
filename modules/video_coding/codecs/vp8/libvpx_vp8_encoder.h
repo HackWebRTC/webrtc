@@ -50,9 +50,7 @@ class LibvpxVp8Encoder : public VideoEncoder {
   int SetRateAllocation(const VideoBitrateAllocation& bitrate,
                         uint32_t new_framerate) override;
 
-  ScalingSettings GetScalingSettings() const override;
-
-  const char* ImplementationName() const override;
+  EncoderInfo GetEncoderInfo() const override;
 
   static vpx_enc_frame_flags_t EncodeFlags(
       const Vp8TemporalLayers::FrameConfig& references);
