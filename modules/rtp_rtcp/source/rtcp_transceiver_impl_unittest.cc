@@ -77,7 +77,6 @@ constexpr int kAlmostForeverMs = 1000;
 // Helper to wait for an rtcp packet produced on a different thread/task queue.
 class FakeRtcpTransport : public webrtc::Transport {
  public:
-  FakeRtcpTransport() : sent_rtcp_(false, false) {}
   bool SendRtcp(const uint8_t* data, size_t size) override {
     sent_rtcp_.Set();
     return true;
@@ -148,7 +147,7 @@ TEST(RtcpTransceiverImplTest, CanDestroyOnTaskQueue) {
   // Wait for a periodic packet.
   EXPECT_TRUE(transport.WaitPacket());
 
-  rtc::Event done(false, false);
+  rtc::Event done;
   queue.PostTask([rtcp_transceiver, &done] {
     delete rtcp_transceiver;
     done.Set();
@@ -187,7 +186,7 @@ TEST(RtcpTransceiverImplTest, DelaysSendingFirstCompondPacket) {
   EXPECT_GE(rtc::TimeMillis() - started_ms, config.initial_report_delay_ms);
 
   // Cleanup.
-  rtc::Event done(false, false);
+  rtc::Event done;
   queue.PostTask([&] {
     rtcp_transceiver.reset();
     done.Set();
@@ -220,7 +219,7 @@ TEST(RtcpTransceiverImplTest, PeriodicallySendsPackets) {
             config.report_period_ms - 1);
 
   // Cleanup.
-  rtc::Event done(false, false);
+  rtc::Event done;
   queue.PostTask([&] {
     rtcp_transceiver.reset();
     done.Set();
@@ -242,7 +241,7 @@ TEST(RtcpTransceiverImplTest, SendCompoundPacketDelaysPeriodicSendPackets) {
   // Wait for first packet.
   EXPECT_TRUE(transport.WaitPacket());
   // Send non periodic one after half period.
-  rtc::Event non_periodic(false, false);
+  rtc::Event non_periodic;
   int64_t time_of_non_periodic_packet_ms = 0;
   queue.PostDelayedTask(
       [&] {
@@ -265,7 +264,7 @@ TEST(RtcpTransceiverImplTest, SendCompoundPacketDelaysPeriodicSendPackets) {
             config.report_period_ms - 1);
 
   // Cleanup.
-  rtc::Event done(false, false);
+  rtc::Event done;
   queue.PostTask([&] {
     rtcp_transceiver.reset();
     done.Set();
@@ -329,7 +328,7 @@ TEST(RtcpTransceiverImplTest, SendsPeriodicRtcpWhenNetworkStateIsUp) {
   EXPECT_TRUE(transport.WaitPacket());
 
   // Cleanup.
-  rtc::Event done(false, false);
+  rtc::Event done;
   queue.PostTask([&] {
     rtcp_transceiver.reset();
     done.Set();

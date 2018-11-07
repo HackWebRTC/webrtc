@@ -47,8 +47,7 @@ TEST_F(StatsEndToEndTest, GetStats) {
                 Clock::GetRealTimeClock(), 10);
           }),
           send_stream_(nullptr),
-          expected_send_ssrcs_(),
-          check_stats_event_(false, false) {}
+          expected_send_ssrcs_() {}
 
    private:
     Action OnSendRtp(const uint8_t* packet, size_t length) override {

@@ -803,7 +803,7 @@ void AudioSendStream::ConfigureBitrateObserver(int min_bitrate_bps,
                                                bool has_packet_feedback) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   RTC_DCHECK_GE(max_bitrate_bps, min_bitrate_bps);
-  rtc::Event thread_sync_event(false /* manual_reset */, false);
+  rtc::Event thread_sync_event;
   worker_queue_->PostTask([&] {
     // We may get a callback immediately as the observer is registered, so make
     // sure the bitrate limits in config_ are up-to-date.
@@ -823,7 +823,7 @@ void AudioSendStream::ConfigureBitrateObserver(int min_bitrate_bps,
 
 void AudioSendStream::RemoveBitrateObserver() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  rtc::Event thread_sync_event(false /* manual_reset */, false);
+  rtc::Event thread_sync_event;
   worker_queue_->PostTask([this, &thread_sync_event] {
     bitrate_allocator_->RemoveObserver(this);
     thread_sync_event.Set();

@@ -22,7 +22,6 @@ namespace webrtc {
 
 class EventWrapperImpl : public EventWrapper {
  public:
-  EventWrapperImpl() : event_(false, false) {}
   ~EventWrapperImpl() override {}
 
   bool Set() override {

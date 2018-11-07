@@ -32,10 +32,6 @@ namespace webrtc {
 
 AudioDeviceLinuxPulse::AudioDeviceLinuxPulse()
     : _ptrAudioBuffer(NULL),
-      _timeEventRec(false, false),
-      _timeEventPlay(false, false),
-      _recStartEvent(false, false),
-      _playStartEvent(false, false),
       _inputDeviceIndex(0),
       _outputDeviceIndex(0),
       _inputDeviceIsSpecified(false),

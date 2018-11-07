@@ -1782,7 +1782,6 @@ class MaxPaddingSetTest : public test::SendTest {
 
   explicit MaxPaddingSetTest(bool test_switch_content_type, T* stream_reset_fun)
       : SendTest(test::CallTest::kDefaultTimeoutMs),
-        content_switch_event_(false, false),
         call_(nullptr),
         send_stream_(nullptr),
         send_stream_config_(nullptr),
@@ -1912,7 +1911,6 @@ TEST_P(VideoSendStreamTest,
    public:
     EncoderObserver()
         : FakeEncoder(Clock::GetRealTimeClock()),
-          init_encode_called_(false, false),
           number_of_initializations_(0),
           last_initialized_frame_width_(0),
           last_initialized_frame_height_(0) {}
@@ -1995,7 +1993,6 @@ TEST_P(VideoSendStreamTest, CanReconfigureToUseStartBitrateAbovePreviousMax) {
    public:
     StartBitrateObserver()
         : FakeEncoder(Clock::GetRealTimeClock()),
-          start_bitrate_changed_(false, false),
           start_bitrate_kbps_(0) {}
     int32_t InitEncode(const VideoCodec* config,
                        int32_t number_of_cores,
@@ -2070,10 +2067,7 @@ TEST_P(VideoSendStreamTest, CanReconfigureToUseStartBitrateAbovePreviousMax) {
 
 class StartStopBitrateObserver : public test::FakeEncoder {
  public:
-  StartStopBitrateObserver()
-      : FakeEncoder(Clock::GetRealTimeClock()),
-        encoder_init_(false, false),
-        bitrate_changed_(false, false) {}
+  StartStopBitrateObserver() : FakeEncoder(Clock::GetRealTimeClock()) {}
   int32_t InitEncode(const VideoCodec* config,
                      int32_t number_of_cores,
                      size_t max_payload_size) override {
@@ -2230,8 +2224,6 @@ TEST_P(VideoSendStreamTest, VideoSendStreamUpdateActiveSimulcastLayers) {
 TEST_P(VideoSendStreamTest, CapturesTextureAndVideoFrames) {
   class FrameObserver : public rtc::VideoSinkInterface<VideoFrame> {
    public:
-    FrameObserver() : output_frame_event_(false, false) {}
-
     void OnFrame(const VideoFrame& video_frame) override {
       output_frames_.push_back(video_frame);
       output_frame_event_.Set();
@@ -2455,7 +2447,6 @@ TEST_P(VideoSendStreamTest, EncoderSetupPropagatesCommonEncoderConfigValues) {
     VideoCodecConfigObserver()
         : SendTest(kDefaultTimeoutMs),
           FakeEncoder(Clock::GetRealTimeClock()),
-          init_encode_event_(false, false),
           num_initializations_(0),
           stream_(nullptr),
           encoder_factory_(this) {}
@@ -2527,7 +2518,6 @@ class VideoCodecConfigObserver : public test::SendTest,
         FakeEncoder(Clock::GetRealTimeClock()),
         video_codec_type_(video_codec_type),
         codec_name_(codec_name),
-        init_encode_event_(false, false),
         num_initializations_(0),
         stream_(nullptr),
         encoder_factory_(this) {
@@ -2841,8 +2831,6 @@ TEST_P(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
         : SendTest(kDefaultTimeoutMs),
           FakeEncoder(Clock::GetRealTimeClock()),
           task_queue_(task_queue),
-          init_encode_event_(false, false),
-          bitrate_changed_event_(false, false),
           target_bitrate_(0),
           num_initializations_(0),
           call_(nullptr),
@@ -3671,8 +3659,7 @@ TEST_P(VideoSendStreamTest, RemoveOverheadFromBandwidth) {
           encoder_factory_(this),
           call_(nullptr),
           max_bitrate_bps_(0),
-          first_packet_sent_(false),
-          bitrate_changed_event_(false, false) {}
+          first_packet_sent_(false) {}
 
     int32_t SetRateAllocation(const VideoBitrateAllocation& bitrate,
                               uint32_t frameRate) override {
@@ -3885,7 +3872,6 @@ class ContentSwitchTest : public test::SendTest {
 
   explicit ContentSwitchTest(T* stream_reset_fun)
       : SendTest(test::CallTest::kDefaultTimeoutMs),
-        content_switch_event_(false, false),
         call_(nullptr),
         state_(StreamState::kBeforeSwitch),
         send_stream_(nullptr),

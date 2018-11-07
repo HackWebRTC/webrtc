@@ -23,7 +23,7 @@ void SynchronousMethodCall::Invoke(const rtc::Location& posted_from,
   if (t->IsCurrent()) {
     proxy_->OnMessage(nullptr);
   } else {
-    e_.reset(new rtc::Event(false, false));
+    e_ = absl::make_unique<rtc::Event>();
     t->Post(posted_from, this, 0);
     e_->Wait(rtc::Event::kForever);
   }

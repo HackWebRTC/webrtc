@@ -54,7 +54,6 @@ RampUpTester::RampUpTester(size_t num_video_streams,
                            bool red,
                            bool report_perf_stats)
     : EndToEndTest(test::CallTest::kLongTimeoutMs),
-      stop_event_(false, false),
       clock_(Clock::GetRealTimeClock()),
       num_video_streams_(num_video_streams),
       num_audio_streams_(num_audio_streams),

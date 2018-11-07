@@ -158,8 +158,6 @@ TEST_F(NetworkStateEndToEndTest, RespectsNetworkState) {
         : EndToEndTest(kDefaultTimeoutMs),
           FakeEncoder(Clock::GetRealTimeClock()),
           task_queue_(task_queue),
-          encoded_frames_(false, false),
-          packet_event_(false, false),
           sender_call_(nullptr),
           receiver_call_(nullptr),
           encoder_factory_(this),

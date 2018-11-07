@@ -292,7 +292,7 @@ class LogThread {
   static void ThreadEntry(void* p) { static_cast<LogThread*>(p)->Run(); }
 
   PlatformThread thread_;
-  Event event_{false, false};
+  Event event_;
 };
 
 // Ensure we don't crash when adding/removing streams while threads are going.

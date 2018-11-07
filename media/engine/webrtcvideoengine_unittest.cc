@@ -1086,7 +1086,7 @@ TEST(WebRtcVideoEngineNewVideoCodecFactoryTest, Vp8) {
   EXPECT_CALL(*encoder_factory, QueryVideoEncoder(format))
       .WillRepeatedly(testing::Return(codec_info));
   FakeWebRtcVideoEncoder* const encoder = new FakeWebRtcVideoEncoder(nullptr);
-  rtc::Event encoder_created(false, false);
+  rtc::Event encoder_created;
   EXPECT_CALL(*encoder_factory, CreateVideoEncoderProxy(format))
       .WillOnce(
           ::testing::DoAll(::testing::InvokeWithoutArgs(

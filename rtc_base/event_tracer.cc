@@ -90,8 +90,7 @@ class EventLogger final {
       : logging_thread_(EventTracingThreadFunc,
                         this,
                         "EventTracingThread",
-                        kLowPriority),
-        shutdown_event_(false, false) {}
+                        kLowPriority) {}
   ~EventLogger() { RTC_DCHECK(thread_checker_.CalledOnValidThread()); }
 
   void AddTraceEvent(const char* name,

@@ -444,7 +444,7 @@ void VideoCodecTestFixtureImpl::ProcessAllFrames(
   }
 
   // Wait until we know that the last frame has been sent for encode.
-  rtc::Event sync_event(false, false);
+  rtc::Event sync_event;
   task_queue->PostTask([&sync_event] { sync_event.Set(); });
   sync_event.Wait(rtc::Event::kForever);
 

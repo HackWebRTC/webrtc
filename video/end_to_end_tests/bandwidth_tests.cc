@@ -145,7 +145,6 @@ TEST_F(BandwidthEndToEndTest, RembWithSendSideBwe) {
           sender_ssrc_(0),
           remb_bitrate_bps_(1000000),
           receive_transport_(nullptr),
-          stop_event_(false, false),
           poller_thread_(&BitrateStatsPollingThread,
                          this,
                          "BitrateStatsPollingThread"),

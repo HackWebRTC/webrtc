@@ -725,7 +725,6 @@ TEST_F(CallPerfTest, MAYBE_KeepsHighBitrateWhenReconfiguringSender) {
     BitrateObserver()
         : EndToEndTest(kDefaultTimeoutMs),
           FakeEncoder(Clock::GetRealTimeClock()),
-          time_to_reconfigure_(false, false),
           encoder_inits_(0),
           last_set_bitrate_kbps_(0),
           send_stream_(nullptr),

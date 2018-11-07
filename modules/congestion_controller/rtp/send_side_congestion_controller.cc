@@ -482,7 +482,7 @@ void SendSideCongestionController::PostPeriodicTasksForTest() {
 }
 
 void SendSideCongestionController::WaitOnTasksForTest() {
-  rtc::Event event(false, false);
+  rtc::Event event;
   task_queue_->PostTask([&event]() { event.Set(); });
   event.Wait(rtc::Event::kForever);
 }

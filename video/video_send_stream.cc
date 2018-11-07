@@ -71,7 +71,6 @@ VideoSendStream::VideoSendStream(
     const std::map<uint32_t, RtpPayloadState>& suspended_payload_states,
     std::unique_ptr<FecController> fec_controller)
     : worker_queue_(worker_queue),
-      thread_sync_event_(false /* manual_reset */, false),
       stats_proxy_(Clock::GetRealTimeClock(),
                    config,
                    encoder_config.content_type),

@@ -48,7 +48,7 @@ TEST_F(SsrcEndToEndTest, UnknownRtpPacketGivesUnknownSsrcReturnCode) {
   class PacketInputObserver : public PacketReceiver {
    public:
     explicit PacketInputObserver(PacketReceiver* receiver)
-        : receiver_(receiver), delivered_packet_(false, false) {}
+        : receiver_(receiver) {}
 
     bool Wait() { return delivered_packet_.Wait(kDefaultTimeoutMs); }
 

@@ -202,7 +202,7 @@ void RtcEventLogImpl::StopLogging() {
 
   RTC_LOG(LS_INFO) << "Stopping WebRTC event log.";
 
-  rtc::Event output_stopped(true, false);
+  rtc::Event output_stopped;
 
   // Binding to |this| is safe because |this| outlives the |task_queue_|.
   task_queue_->PostTask([this, &output_stopped]() {

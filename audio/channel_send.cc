@@ -595,7 +595,7 @@ void ChannelSend::StopSend() {
   // to acccess and invalid channel object.
   RTC_DCHECK(encoder_queue_);
 
-  rtc::Event flush(false, false);
+  rtc::Event flush;
   {
     // Clear |encoder_queue_is_active_| under lock to prevent any other tasks
     // than this final "flush task" to be posted on the queue.

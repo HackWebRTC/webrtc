@@ -137,9 +137,7 @@ class TestFrameBuffer2 : public ::testing::Test {
                                 &stats_callback_)),
         rand_(0x34678213),
         tear_down_(false),
-        extract_thread_(&ExtractLoop, this, "Extract Thread"),
-        trigger_extract_event_(false, false),
-        crit_acquired_event_(false, false) {}
+        extract_thread_(&ExtractLoop, this, "Extract Thread") {}
 
   void SetUp() override { extract_thread_.Start(); }
 

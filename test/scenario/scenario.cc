@@ -335,7 +335,7 @@ void Scenario::RunUntil(TimeDelta max_duration,
     call->call_->SignalChannelNetworkState(MediaType::VIDEO, kNetworkUp);
   }
 
-  rtc::Event done_(false, false);
+  rtc::Event done_;
   while (!exit_function() && Duration() < max_duration) {
     Timestamp current_time = Now();
     TimeDelta duration = current_time - start_time_;

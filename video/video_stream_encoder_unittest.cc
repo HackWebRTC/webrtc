@@ -104,7 +104,7 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
                                    new CpuOveruseDetectorProxy(stats_proxy))) {}
 
   void PostTaskAndWait(bool down, AdaptReason reason) {
-    rtc::Event event(false, false);
+    rtc::Event event;
     encoder_queue()->PostTask([this, &event, reason, down] {
       down ? AdaptDown(reason) : AdaptUp(reason);
       event.Set();
@@ -115,7 +115,7 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
   // This is used as a synchronisation mechanism, to make sure that the
   // encoder queue is not blocked before we start sending it frames.
   void WaitUntilTaskQueueIsIdle() {
-    rtc::Event event(false, false);
+    rtc::Event event;
     encoder_queue()->PostTask([&event] { event.Set(); });
     ASSERT_TRUE(event.Wait(5000));
   }
@@ -494,9 +494,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
 
   class TestEncoder : public test::FakeEncoder {
    public:
-    TestEncoder()
-        : FakeEncoder(Clock::GetRealTimeClock()),
-          continue_encode_event_(false, false) {}
+    TestEncoder() : FakeEncoder(Clock::GetRealTimeClock()) {}
 
     VideoCodec codec_config() const {
       rtc::CritScope lock(&crit_sect_);
@@ -599,7 +597,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
   class TestSink : public VideoStreamEncoder::EncoderSink {
    public:
     explicit TestSink(TestEncoder* test_encoder)
-        : test_encoder_(test_encoder), encoded_frame_event_(false, false) {}
+        : test_encoder_(test_encoder) {}
 
     void WaitForEncodedFrame(int64_t expected_ntp_time) {
       EXPECT_TRUE(
@@ -707,7 +705,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
 
 TEST_F(VideoStreamEncoderTest, EncodeOneFrame) {
   video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
-  rtc::Event frame_destroyed_event(false, false);
+  rtc::Event frame_destroyed_event;
   video_source_.IncomingCapturedFrame(CreateFrame(1, &frame_destroyed_event));
   WaitForEncodedFrame(1);
   EXPECT_TRUE(frame_destroyed_event.Wait(kDefaultTimeoutMs));
@@ -716,7 +714,7 @@ TEST_F(VideoStreamEncoderTest, EncodeOneFrame) {
 
 TEST_F(VideoStreamEncoderTest, DropsFramesBeforeFirstOnBitrateUpdated) {
   // Dropped since no target bitrate has been set.
-  rtc::Event frame_destroyed_event(false, false);
+  rtc::Event frame_destroyed_event;
   // The encoder will cache up to one frame for a short duration. Adding two
   // frames means that the first frame will be dropped and the second frame will
   // be sent when the encoder is enabled.
@@ -774,7 +772,7 @@ TEST_F(VideoStreamEncoderTest, DropsFrameAfterStop) {
 
   video_stream_encoder_->Stop();
   sink_.SetExpectNoFrames();
-  rtc::Event frame_destroyed_event(false, false);
+  rtc::Event frame_destroyed_event;
   video_source_.IncomingCapturedFrame(CreateFrame(2, &frame_destroyed_event));
   EXPECT_TRUE(frame_destroyed_event.Wait(kDefaultTimeoutMs));
 }

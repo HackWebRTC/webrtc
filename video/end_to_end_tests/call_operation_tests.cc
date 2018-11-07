@@ -92,8 +92,6 @@ TEST_P(CallOperationEndToEndTest, RendersSingleDelayedFrame) {
 
   class Renderer : public rtc::VideoSinkInterface<VideoFrame> {
    public:
-    Renderer() : event_(false, false) {}
-
     void OnFrame(const VideoFrame& video_frame) override {
       SleepMs(kRenderDelayMs);
       event_.Set();
@@ -161,8 +159,6 @@ TEST_P(CallOperationEndToEndTest, RendersSingleDelayedFrame) {
 TEST_P(CallOperationEndToEndTest, TransmitsFirstFrame) {
   class Renderer : public rtc::VideoSinkInterface<VideoFrame> {
    public:
-    Renderer() : event_(false, false) {}
-
     void OnFrame(const VideoFrame& video_frame) override { event_.Set(); }
 
     bool Wait() { return event_.Wait(kDefaultTimeoutMs); }

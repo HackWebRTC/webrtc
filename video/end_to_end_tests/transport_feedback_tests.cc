@@ -58,7 +58,6 @@ TEST_P(TransportFeedbackEndToEndTest, AssignsTransportSequenceNumbers) {
                                   BuiltInNetworkBehaviorConfig())),
                           sender_call,
                           payload_type_map),
-          done_(false, false),
           parser_(RtpHeaderParser::Create()),
           first_media_ssrc_(first_media_ssrc),
           rtx_to_media_ssrcs_(ssrc_map),

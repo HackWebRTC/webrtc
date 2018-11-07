@@ -263,7 +263,6 @@ rtc_source_set("platform_thread") {
 rtc_source_set("rtc_event") {
   deps = [
     ":checks",
-    ":macromagic",
   ]
 
   if (build_with_chromium) {

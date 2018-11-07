@@ -46,8 +46,6 @@ class LogObserver {
  private:
   class Callback : public rtc::LogSink {
    public:
-    Callback() : done_(false, false) {}
-
     void OnLogMessage(const std::string& message) override {
       rtc::CritScope lock(&crit_sect_);
       // Ignore log lines that are due to missing AST extensions, these are

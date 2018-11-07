@@ -46,7 +46,6 @@ FrameBuffer::FrameBuffer(Clock* clock,
                          VCMTiming* timing,
                          VCMReceiveStatisticsCallback* stats_callback)
     : clock_(clock),
-      new_continuous_frame_event_(false, false),
       jitter_estimator_(jitter_estimator),
       timing_(timing),
       inter_frame_delay_(clock_->TimeInMilliseconds()),

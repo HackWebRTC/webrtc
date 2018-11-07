@@ -470,9 +470,9 @@ TEST_F(AsyncInvokeTest, KillInvokerDuringExecute) {
   // Use these events to get in a state where the functor is in the middle of
   // executing, and then to wait for it to finish, ensuring the "EXPECT_FALSE"
   // is run.
-  Event functor_started(false, false);
-  Event functor_continue(false, false);
-  Event functor_finished(false, false);
+  Event functor_started;
+  Event functor_continue;
+  Event functor_finished;
 
   auto thread = Thread::CreateWithSocketServer();
   thread->Start();
@@ -507,7 +507,7 @@ TEST_F(AsyncInvokeTest, KillInvokerDuringExecute) {
 // destroyed. This shouldn't deadlock or crash; this second invocation should
 // just be ignored.
 TEST_F(AsyncInvokeTest, KillInvokerDuringExecuteWithReentrantInvoke) {
-  Event functor_started(false, false);
+  Event functor_started;
   // Flag used to verify that the recursively invoked task never actually runs.
   bool reentrant_functor_run = false;
 

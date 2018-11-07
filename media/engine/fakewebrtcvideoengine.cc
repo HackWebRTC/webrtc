@@ -129,9 +129,7 @@ FakeWebRtcVideoDecoderFactory::decoders() {
 // Encoder.
 FakeWebRtcVideoEncoder::FakeWebRtcVideoEncoder(
     FakeWebRtcVideoEncoderFactory* factory)
-    : init_encode_event_(false, false),
-      num_frames_encoded_(0),
-      factory_(factory) {}
+    : num_frames_encoded_(0), factory_(factory) {}
 
 FakeWebRtcVideoEncoder::~FakeWebRtcVideoEncoder() {
   if (factory_) {
@@ -190,8 +188,7 @@ int FakeWebRtcVideoEncoder::GetNumEncodedFrames() {
 
 // Video encoder factory.
 FakeWebRtcVideoEncoderFactory::FakeWebRtcVideoEncoderFactory()
-    : created_video_encoder_event_(false, false),
-      num_created_encoders_(0),
+    : num_created_encoders_(0),
       encoders_have_internal_sources_(false),
       vp8_factory_mode_(false) {}
 

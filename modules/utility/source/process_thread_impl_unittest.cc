@@ -83,7 +83,7 @@ TEST(ProcessThreadImpl, ProcessCall) {
   ProcessThreadImpl thread("ProcessThread");
   thread.Start();
 
-  rtc::Event event(false, false);
+  rtc::Event event;
 
   MockModule module;
   EXPECT_CALL(module, TimeUntilNextProcess())
@@ -105,7 +105,7 @@ TEST(ProcessThreadImpl, ProcessCall) {
 // call to Start().
 TEST(ProcessThreadImpl, ProcessCall2) {
   ProcessThreadImpl thread("ProcessThread");
-  rtc::Event event(false, false);
+  rtc::Event event;
 
   MockModule module;
   EXPECT_CALL(module, TimeUntilNextProcess())
@@ -129,7 +129,7 @@ TEST(ProcessThreadImpl, ProcessCall2) {
 // After unregistration, we should not receive any further callbacks.
 TEST(ProcessThreadImpl, Deregister) {
   ProcessThreadImpl thread("ProcessThread");
-  rtc::Event event(false, false);
+  rtc::Event event;
 
   int process_count = 0;
   MockModule module;
@@ -166,7 +166,7 @@ void ProcessCallAfterAFewMs(int64_t milliseconds) {
   ProcessThreadImpl thread("ProcessThread");
   thread.Start();
 
-  rtc::Event event(false, false);
+  rtc::Event event;
 
   MockModule module;
   int64_t start_time = 0;
@@ -228,7 +228,7 @@ TEST(ProcessThreadImpl, DISABLED_Process50Times) {
   ProcessThreadImpl thread("ProcessThread");
   thread.Start();
 
-  rtc::Event event(false, false);
+  rtc::Event event;
 
   MockModule module;
   int callback_count = 0;
@@ -259,8 +259,8 @@ TEST(ProcessThreadImpl, WakeUp) {
   ProcessThreadImpl thread("ProcessThread");
   thread.Start();
 
-  rtc::Event started(false, false);
-  rtc::Event called(false, false);
+  rtc::Event started;
+  rtc::Event called;
 
   MockModule module;
   int64_t start_time;
@@ -301,7 +301,7 @@ TEST(ProcessThreadImpl, WakeUp) {
 // thread.
 TEST(ProcessThreadImpl, PostTask) {
   ProcessThreadImpl thread("ProcessThread");
-  rtc::Event task_ran(false, false);
+  rtc::Event task_ran;
   std::unique_ptr<RaiseEventTask> task(new RaiseEventTask(&task_ran));
   thread.Start();
   thread.PostTask(std::move(task));

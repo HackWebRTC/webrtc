@@ -391,8 +391,7 @@ class TimedThreadApiProcessor {
 class CallSimulator : public ::testing::TestWithParam<SimulationConfig> {
  public:
   CallSimulator()
-      : test_complete_(false, false),
-        render_thread_(
+      : render_thread_(
             new rtc::PlatformThread(RenderProcessorThreadFunc, this, "render")),
         capture_thread_(new rtc::PlatformThread(CaptureProcessorThreadFunc,
                                                 this,

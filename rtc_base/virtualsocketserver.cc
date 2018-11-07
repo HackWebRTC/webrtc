@@ -525,7 +525,6 @@ VirtualSocketServer::VirtualSocketServer() : VirtualSocketServer(nullptr) {}
 
 VirtualSocketServer::VirtualSocketServer(FakeClock* fake_clock)
     : fake_clock_(fake_clock),
-      wakeup_(/*manual_reset=*/false, /*initially_signaled=*/false),
       msg_queue_(nullptr),
       stop_on_idle_(false),
       next_ipv4_(kInitialNextIPv4),
