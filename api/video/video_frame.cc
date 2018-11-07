@@ -65,8 +65,9 @@ VideoFrame::Builder& VideoFrame::Builder::set_color_space(
 }
 
 VideoFrame::Builder& VideoFrame::Builder::set_hdr_metadata(
-    const HdrMetadata& hdr_metadata) {
-  hdr_metadata_ = hdr_metadata;
+    const HdrMetadata* hdr_metadata) {
+  hdr_metadata_ =
+      hdr_metadata ? absl::make_optional(*hdr_metadata) : absl::nullopt;
   return *this;
 }
 

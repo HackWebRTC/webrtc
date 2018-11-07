@@ -104,6 +104,24 @@ class TestVp9Impl : public VideoCodecUnitTest {
       codec_settings_.spatialLayers[i] = layers[i];
     }
   }
+
+  HdrMetadata CreateTestHdrMetadata() {
+    // Random but reasonable HDR metadata.
+    HdrMetadata hdr_metadata;
+    hdr_metadata.mastering_metadata.luminance_max = 2000.0;
+    hdr_metadata.mastering_metadata.luminance_min = 2.0001;
+    hdr_metadata.mastering_metadata.primary_r.x = 0.30;
+    hdr_metadata.mastering_metadata.primary_r.y = 0.40;
+    hdr_metadata.mastering_metadata.primary_g.x = 0.32;
+    hdr_metadata.mastering_metadata.primary_g.y = 0.46;
+    hdr_metadata.mastering_metadata.primary_b.x = 0.34;
+    hdr_metadata.mastering_metadata.primary_b.y = 0.49;
+    hdr_metadata.mastering_metadata.white_point.x = 0.41;
+    hdr_metadata.mastering_metadata.white_point.y = 0.48;
+    hdr_metadata.max_content_light_level = 2345;
+    hdr_metadata.max_frame_average_light_level = 1789;
+    return hdr_metadata;
+  }
 };
 
 // Disabled on ios as flake, see https://crbug.com/webrtc/7057
@@ -155,6 +173,57 @@ TEST_F(TestVp9Impl, EncodedRotationEqualsInputRotation) {
             encoder_->Encode(*input_frame, nullptr, nullptr));
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
   EXPECT_EQ(kVideoRotation_90, encoded_frame.rotation_);
+}
+
+TEST_F(TestVp9Impl, EncodedHdrMetadataEqualsInputHdrMetadata) {
+  // Video frame without HDR metadata.
+  VideoFrame* input_frame = NextInputFrame();
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->Encode(*input_frame, nullptr, nullptr));
+  EncodedImage encoded_frame;
+  CodecSpecificInfo codec_specific_info;
+  ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
+  EXPECT_FALSE(encoded_frame.HdrMetadata());
+
+  // Video frame with HDR metadata.
+  HdrMetadata hdr_metadata = CreateTestHdrMetadata();
+  VideoFrame input_frame_w_hdr =
+      VideoFrame::Builder()
+          .set_video_frame_buffer(input_frame->video_frame_buffer())
+          .set_hdr_metadata(&hdr_metadata)
+          .build();
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->Encode(input_frame_w_hdr, nullptr, nullptr));
+  ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
+  EXPECT_TRUE(encoded_frame.HdrMetadata());
+  EXPECT_EQ(hdr_metadata, *encoded_frame.HdrMetadata());
+}
+
+TEST_F(TestVp9Impl, DecodedHdrMetadataEqualsEncodedHdrMetadata) {
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->Encode(*NextInputFrame(), nullptr, nullptr));
+  EncodedImage encoded_frame;
+  CodecSpecificInfo codec_specific_info;
+  ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
+
+  // Encoded frame without HDR metadata.
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            decoder_->Decode(encoded_frame, false, nullptr, 0));
+  std::unique_ptr<VideoFrame> decoded_frame;
+  absl::optional<uint8_t> decoded_qp;
+  ASSERT_TRUE(WaitForDecodedFrame(&decoded_frame, &decoded_qp));
+  ASSERT_TRUE(decoded_frame);
+  EXPECT_FALSE(decoded_frame->hdr_metadata());
+
+  // Encoded frame with HDR metadata.
+  HdrMetadata hdr_metadata = CreateTestHdrMetadata();
+  encoded_frame.SetHdrMetadata(&hdr_metadata);
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            decoder_->Decode(encoded_frame, false, nullptr, 0));
+  ASSERT_TRUE(WaitForDecodedFrame(&decoded_frame, &decoded_qp));
+  ASSERT_TRUE(decoded_frame);
+  ASSERT_TRUE(decoded_frame->hdr_metadata());
+  EXPECT_EQ(hdr_metadata, *decoded_frame->hdr_metadata());
 }
 
 TEST_F(TestVp9Impl, DecodedQpEqualsEncodedQp) {

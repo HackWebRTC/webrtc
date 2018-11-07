@@ -13,23 +13,9 @@
 namespace webrtc {
 
 HdrMasteringMetadata::Chromaticity::Chromaticity() = default;
-HdrMasteringMetadata::Chromaticity::Chromaticity(const Chromaticity& rhs) =
-    default;
-HdrMasteringMetadata::Chromaticity::Chromaticity(Chromaticity&& rhs) = default;
-HdrMasteringMetadata::Chromaticity& HdrMasteringMetadata::Chromaticity::
-operator=(const Chromaticity& rhs) = default;
 
 HdrMasteringMetadata::HdrMasteringMetadata() = default;
-HdrMasteringMetadata::HdrMasteringMetadata(const HdrMasteringMetadata& rhs) =
-    default;
-HdrMasteringMetadata::HdrMasteringMetadata(HdrMasteringMetadata&& rhs) =
-    default;
-HdrMasteringMetadata& HdrMasteringMetadata::operator=(
-    const HdrMasteringMetadata& rhs) = default;
 
 HdrMetadata::HdrMetadata() = default;
-HdrMetadata::HdrMetadata(const HdrMetadata& rhs) = default;
-HdrMetadata::HdrMetadata(HdrMetadata&& rhs) = default;
-HdrMetadata& HdrMetadata::operator=(const HdrMetadata& rhs) = default;
 
 }  // namespace webrtc

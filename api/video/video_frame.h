@@ -40,7 +40,7 @@ class RTC_EXPORT VideoFrame {
     Builder& set_ntp_time_ms(int64_t ntp_time_ms);
     Builder& set_rotation(VideoRotation rotation);
     Builder& set_color_space(const ColorSpace& color_space);
-    Builder& set_hdr_metadata(const HdrMetadata& hdr_metadata);
+    Builder& set_hdr_metadata(const HdrMetadata* hdr_metadata);
 
    private:
     rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer_;
@@ -119,7 +119,9 @@ class RTC_EXPORT VideoFrame {
   absl::optional<ColorSpace> color_space() const { return color_space_; }
 
   // Get HDR metadata when available.
-  absl::optional<HdrMetadata> hdr_metadata() const { return hdr_metadata_; }
+  const HdrMetadata* hdr_metadata() const {
+    return hdr_metadata_ ? &*hdr_metadata_ : nullptr;
+  }
 
   // Get render time in milliseconds.
   // TODO(nisse): Deprecated. Migrate all users to timestamp_us().
