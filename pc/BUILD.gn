@@ -258,6 +258,7 @@ rtc_static_library("create_pc_factory") {
     "../media:rtc_audio_video",
     "../media:rtc_media_base",
     "../modules/audio_device:audio_device",
+    "../modules/audio_processing:api",
     "../modules/audio_processing:audio_processing",
     "../rtc_base:rtc_base",
     "../rtc_base:rtc_base_approved",
@@ -424,6 +425,7 @@ if (rtc_include_tests) {
       "../media:rtc_media_base",
       "../media:rtc_media_tests_utils",
       "../modules/audio_device:audio_device",
+      "../modules/audio_processing:api",
       "../modules/audio_processing:audio_processing",
       "../p2p:p2p_test_utils",
       "../rtc_base:checks",
@@ -539,6 +541,7 @@ if (rtc_include_tests) {
       "../media:rtc_data",  # TODO(phoglund): AFAIK only used for one sctp constant.
       "../media:rtc_media_base",
       "../media:rtc_media_tests_utils",
+      "../modules/audio_processing:api",
       "../modules/audio_processing:audio_processing",
       "../modules/utility:utility",
       "../p2p:p2p_test_utils",

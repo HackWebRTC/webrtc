@@ -43,6 +43,7 @@ rtc_source_set("mock_aec_dump_unittests") {
 
   deps = [
     ":mock_aec_dump",
+    "..:api",
     "../",
     "../../../rtc_base:rtc_base_approved",
     "//testing/gtest",
