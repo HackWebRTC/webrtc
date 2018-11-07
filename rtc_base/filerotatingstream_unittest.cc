@@ -13,7 +13,6 @@
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/filerotatingstream.h"
-#include "rtc_base/fileutils.h"
 #include "rtc_base/gunit.h"
 #include "test/testsupport/fileutils.h"
 
@@ -161,12 +160,12 @@ TEST_F(MAYBE_FileRotatingStreamTest, WriteAndRead) {
   }
   // Check that exactly three files exist.
   for (size_t i = 0; i < arraysize(messages); ++i) {
-    EXPECT_TRUE(Filesystem::IsFile(stream_->GetFilePath(i)));
+    EXPECT_TRUE(webrtc::test::FileExists(stream_->GetFilePath(i)));
   }
   std::string message("d");
   WriteAndFlush(message.c_str(), message.size());
   for (size_t i = 0; i < arraysize(messages); ++i) {
-    EXPECT_TRUE(Filesystem::IsFile(stream_->GetFilePath(i)));
+    EXPECT_TRUE(webrtc::test::FileExists(stream_->GetFilePath(i)));
   }
   // TODO(tkchin): Maybe check all the files in the dir.
 

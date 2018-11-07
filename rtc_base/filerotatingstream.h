@@ -102,8 +102,6 @@ class FileRotatingStream : public StreamInterface {
   // create new file_0
   void RotateFiles();
 
-  // Returns a list of file names in the directory beginning with the prefix.
-  std::vector<std::string> GetFilesWithPrefix() const;
   // Private version of GetFilePath.
   std::string GetFilePath(size_t index, size_t num_files) const;
 
