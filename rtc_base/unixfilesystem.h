@@ -14,7 +14,6 @@
 #include <stddef.h>
 
 #include "rtc_base/fileutils.h"
-#include "rtc_base/pathutils.h"
 
 namespace rtc {
 
@@ -25,20 +24,18 @@ class UnixFilesystem : public FilesystemInterface {
 
   // This will attempt to delete the file located at filename.
   // It will fail with VERIY if you pass it a non-existant file, or a directory.
-  bool DeleteFile(const Pathname& filename) override;
+  bool DeleteFile(const std::string& filename) override;
 
   // This moves a file from old_path to new_path, where "file" can be a plain
   // file or directory, which will be moved recursively.
   // Returns true if function succeeds.
-  bool MoveFile(const Pathname& old_path, const Pathname& new_path) override;
-
-  // Returns true if a pathname is a directory
-  bool IsFolder(const Pathname& pathname) override;
+  bool MoveFile(const std::string& old_path,
+                const std::string& new_path) override;
 
   // Returns true of pathname represents an existing file
-  bool IsFile(const Pathname& pathname) override;
+  bool IsFile(const std::string& pathname) override;
 
-  bool GetFileSize(const Pathname& path, size_t* size) override;
+  bool GetFileSize(const std::string& path, size_t* size) override;
 };
 
 }  // namespace rtc

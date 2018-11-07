@@ -25,6 +25,9 @@ namespace test {
 // to find the project root.
 extern const char* kCannotFindProjectRootDir;
 
+// Slash or backslash, depending on platform. NUL-terminated string.
+extern const char* kPathDelimiter;
+
 // Returns the absolute path to the output directory where log files and other
 // test artifacts should be put. The output directory is generally a directory
 // named "out" at the project root. This root is assumed to be two levels above

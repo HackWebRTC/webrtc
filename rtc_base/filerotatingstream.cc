@@ -15,15 +15,64 @@
 #include <string>
 #include <utility>
 
+#if defined(WEBRTC_WIN)
+#include <windows.h>
+#include "rtc_base/stringutils.h"
+#else
+#include <sys/stat.h>
+#endif  // WEBRTC_WIN
+
+#include "absl/strings/match.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/fileutils.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/pathutils.h"
 
 // Note: We use fprintf for logging in the write paths of this stream to avoid
 // infinite loops when logging.
 
 namespace rtc {
+
+namespace {
+
+std::string AddTrailingPathDelimiterIfNeeded(std::string directory);
+bool IsFolder(const std::string& file);
+
+#if defined(WEBRTC_WIN)
+
+std::string AddTrailingPathDelimiterIfNeeded(std::string directory) {
+  if (absl::EndsWith(directory, "\\")) {
+    return directory;
+  }
+  return directory + "\\";
+}
+
+bool IsFolder(const std::string& file) {
+  WIN32_FILE_ATTRIBUTE_DATA data = {0};
+  if (0 == ::GetFileAttributesEx(ToUtf16(file).c_str(), GetFileExInfoStandard,
+                                 &data))
+    return false;
+  return (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ==
+         FILE_ATTRIBUTE_DIRECTORY;
+}
+
+#else  // defined(WEBRTC_WIN)
+
+std::string AddTrailingPathDelimiterIfNeeded(std::string directory) {
+  if (absl::EndsWith(directory, "/")) {
+    return directory;
+  }
+  return directory + "/";
+}
+
+bool IsFolder(const std::string& file) {
+  struct stat st;
+  int res = ::stat(file.c_str(), &st);
+  return res == 0 && S_ISDIR(st.st_mode);
+}
+
+#endif
+
+}  // namespace
 
 FileRotatingStream::FileRotatingStream(const std::string& dir_path,
                                        const std::string& file_prefix)
@@ -47,7 +96,7 @@ FileRotatingStream::FileRotatingStream(const std::string& dir_path,
                                        size_t max_file_size,
                                        size_t num_files,
                                        Mode mode)
-    : dir_path_(dir_path),
+    : dir_path_(AddTrailingPathDelimiterIfNeeded(dir_path)),
       file_prefix_(file_prefix),
       mode_(mode),
       file_stream_(nullptr),
@@ -56,7 +105,7 @@ FileRotatingStream::FileRotatingStream(const std::string& dir_path,
       rotation_index_(0),
       current_bytes_written_(0),
       disable_buffering_(false) {
-  RTC_DCHECK(Filesystem::IsFolder(dir_path));
+  RTC_DCHECK(IsFolder(dir_path));
   switch (mode) {
     case kWrite: {
       file_names_.clear();
@@ -188,7 +237,6 @@ bool FileRotatingStream::GetSize(size_t* size) const {
   *size = 0;
   size_t total_size = 0;
   for (auto file_name : file_names_) {
-    Pathname pathname(file_name);
     size_t file_size = 0;
     if (Filesystem::GetFileSize(file_name, &file_size)) {
       total_size += file_size;
@@ -307,17 +355,14 @@ std::vector<std::string> FileRotatingStream::GetFilesWithPrefix() const {
   std::vector<std::string> files;
   // Iterate over the files in the directory.
   DirectoryIterator it;
-  Pathname dir_path;
-  dir_path.SetFolder(dir_path_);
-  if (!it.Iterate(dir_path)) {
+  if (!it.Iterate(dir_path_)) {
     return files;
   }
   do {
     std::string current_name = it.Name();
     if (current_name.size() && !it.IsDirectory() &&
         current_name.compare(0, file_prefix_.size(), file_prefix_) == 0) {
-      Pathname path(dir_path_, current_name);
-      files.push_back(path.pathname());
+      files.push_back(it.PathName());
     }
   } while (it.Next());
   return files;
@@ -334,8 +379,7 @@ std::string FileRotatingStream::GetFilePath(size_t index,
   RTC_DCHECK_LT(1 + max_digits, buffer_size);
   std::snprintf(file_postfix, buffer_size, "_%0*zu", max_digits, index);
 
-  Pathname file_path(dir_path_, file_prefix_ + file_postfix);
-  return file_path.pathname();
+  return dir_path_ + file_prefix_ + file_postfix;
 }
 
 CallSessionFileRotatingStream::CallSessionFileRotatingStream(

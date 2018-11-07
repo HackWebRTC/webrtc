@@ -11,7 +11,6 @@
 #include "rtc_base/fileutils.h"
 
 #include "rtc_base/checks.h"
-#include "rtc_base/pathutils.h"
 
 #if defined(WEBRTC_WIN)
 #include "rtc_base/stringutils.h"  // for ToUtf16
@@ -58,12 +57,12 @@ DirectoryIterator::~DirectoryIterator() {
 // Starts traversing a directory.
 // dir is the directory to traverse
 // returns true if the directory exists and is valid
-bool DirectoryIterator::Iterate(const Pathname& dir) {
-  directory_ = dir.pathname();
+bool DirectoryIterator::Iterate(const std::string& dir) {
+  directory_ = dir;
 #if defined(WEBRTC_WIN)
   if (handle_ != INVALID_HANDLE_VALUE)
     ::FindClose(handle_);
-  std::string d = dir.pathname() + '*';
+  std::string d = dir + '*';
   handle_ = ::FindFirstFile(ToUtf16(d).c_str(), &data_);
   if (handle_ == INVALID_HANDLE_VALUE)
     return false;
@@ -77,7 +76,7 @@ bool DirectoryIterator::Iterate(const Pathname& dir) {
   if (dirent_ == nullptr)
     return false;
 
-  if (::stat(std::string(directory_ + Name()).c_str(), &stat_) != 0)
+  if (::stat(PathName().c_str(), &stat_) != 0)
     return false;
 #endif
   return true;
@@ -93,7 +92,7 @@ bool DirectoryIterator::Next() {
   if (dirent_ == nullptr)
     return false;
 
-  return ::stat(std::string(directory_ + Name()).c_str(), &stat_) == 0;
+  return ::stat(PathName().c_str(), &stat_) == 0;
 #endif
 }
 
@@ -112,7 +111,17 @@ std::string DirectoryIterator::Name() const {
   return ToUtf8(data_.cFileName);
 #else
   RTC_DCHECK(dirent_);
-  return dirent_->d_name;
+  return std::string(dirent_->d_name);
+#endif
+}
+
+// returns the name of the file currently pointed to
+std::string DirectoryIterator::PathName() const {
+#if defined(WEBRTC_WIN)
+  return directory_ + "\\" + ToUtf8(data_.cFileName);
+#else
+  RTC_DCHECK(dirent_);
+  return directory_ + "/" + dirent_->d_name;
 #endif
 }
 
