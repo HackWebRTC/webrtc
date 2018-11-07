@@ -23,7 +23,7 @@ namespace webrtc {
 
 class FakeMdnsResponder : public MdnsResponderInterface {
  public:
-  FakeMdnsResponder() = default;
+  explicit FakeMdnsResponder(rtc::Thread* thread) : thread_(thread) {}
   ~FakeMdnsResponder() = default;
 
   void CreateNameForAddress(const rtc::IPAddress& addr,
@@ -35,7 +35,9 @@ class FakeMdnsResponder : public MdnsResponderInterface {
       name = std::to_string(next_available_id_++) + ".local";
       addr_name_map_[addr] = name;
     }
-    callback(addr, name);
+    invoker_.AsyncInvoke<void>(
+        RTC_FROM_HERE, thread_,
+        [callback, addr, name]() { callback(addr, name); });
   }
   void RemoveNameForAddress(const rtc::IPAddress& addr,
                             NameRemovedCallback callback) override {
@@ -43,12 +45,16 @@ class FakeMdnsResponder : public MdnsResponderInterface {
     if (it != addr_name_map_.end()) {
       addr_name_map_.erase(it);
     }
-    callback(it != addr_name_map_.end());
+    bool result = it != addr_name_map_.end();
+    invoker_.AsyncInvoke<void>(RTC_FROM_HERE, thread_,
+                               [callback, result]() { callback(result); });
   }
 
  private:
   uint32_t next_available_id_ = 0;
   std::map<rtc::IPAddress, std::string> addr_name_map_;
+  rtc::Thread* thread_;
+  rtc::AsyncInvoker invoker_;
 };
 
 }  // namespace webrtc

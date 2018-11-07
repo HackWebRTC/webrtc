@@ -84,7 +84,8 @@ class FakeNetworkManager : public NetworkManagerBase, public MessageHandler {
 
   void CreateMdnsResponder() {
     if (mdns_responder_ == nullptr) {
-      mdns_responder_ = absl::make_unique<webrtc::FakeMdnsResponder>();
+      mdns_responder_ =
+          absl::make_unique<webrtc::FakeMdnsResponder>(rtc::Thread::Current());
     }
   }
 

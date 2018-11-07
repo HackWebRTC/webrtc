@@ -358,6 +358,10 @@ void UDPPort::OnLocalAddressReady(rtc::AsyncPacketSocket* socket,
   MaybePrepareStunCandidate();
 }
 
+void UDPPort::PostAddAddress(bool is_final) {
+  MaybeSetPortCompleteOrError();
+}
+
 void UDPPort::OnReadPacket(rtc::AsyncPacketSocket* socket,
                            const char* data,
                            size_t size,
@@ -517,8 +521,14 @@ void UDPPort::OnStunBindingOrResolveRequestFailed(
 }
 
 void UDPPort::MaybeSetPortCompleteOrError() {
-  if (ready_)
+  if (mdns_name_registration_status() ==
+      MdnsNameRegistrationStatus::kInProgress) {
     return;
+  }
+
+  if (ready_) {
+    return;
+  }
 
   // Do not set port ready if we are still waiting for bind responses.
   const size_t servers_done_bind_request =

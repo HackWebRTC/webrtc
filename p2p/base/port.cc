@@ -399,9 +399,9 @@ void Port::AddAddress(const rtc::SocketAddress& address,
                       const std::string& type,
                       uint32_t type_preference,
                       uint32_t relay_preference,
-                      bool final) {
+                      bool is_final) {
   AddAddress(address, base_address, related_address, protocol, relay_protocol,
-             tcptype, type, type_preference, relay_preference, "", final);
+             tcptype, type, type_preference, relay_preference, "", is_final);
 }
 
 void Port::AddAddress(const rtc::SocketAddress& address,
@@ -448,9 +448,13 @@ void Port::AddAddress(const rtc::SocketAddress& address,
         c.set_address(hostname_address);
         RTC_DCHECK(c.related_address() == rtc::SocketAddress());
         if (weak_ptr != nullptr) {
+          weak_ptr->set_mdns_name_registration_status(
+              MdnsNameRegistrationStatus::kCompleted);
           weak_ptr->FinishAddingAddress(c, is_final);
         }
       };
+      set_mdns_name_registration_status(
+          MdnsNameRegistrationStatus::kInProgress);
       network_->GetMdnsResponder()->CreateNameForAddress(c.address().ipaddr(),
                                                          callback);
       return;
@@ -468,6 +472,10 @@ void Port::FinishAddingAddress(const Candidate& c, bool is_final) {
   candidates_.push_back(c);
   SignalCandidateReady(this, c);
 
+  PostAddAddress(is_final);
+}
+
+void Port::PostAddAddress(bool is_final) {
   if (is_final) {
     SignalPortComplete(this);
   }
