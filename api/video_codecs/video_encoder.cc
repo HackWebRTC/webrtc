@@ -123,8 +123,4 @@ VideoEncoder::EncoderInfo VideoEncoder::GetEncoderInfo() const {
   info.implementation_name = ImplementationName();
   return info;
 }
-
-int32_t VideoEncoder::SetChannelParameters(uint32_t packet_loss, int64_t rtt) {
-  return 0;
-}
 }  // namespace webrtc

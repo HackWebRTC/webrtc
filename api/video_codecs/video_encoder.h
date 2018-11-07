@@ -202,17 +202,6 @@ class RTC_EXPORT VideoEncoder {
                          const CodecSpecificInfo* codec_specific_info,
                          const std::vector<FrameType>* frame_types) = 0;
 
-  // Inform the encoder of the new packet loss rate and the round-trip time of
-  // the network.
-  //
-  // Input:
-  //          - packet_loss : Fraction lost
-  //                          (loss rate in percent = 100 * packetLoss / 255)
-  //          - rtt         : Round-trip time in milliseconds
-  // Return value           : WEBRTC_VIDEO_CODEC_OK if OK
-  //                          <0 - Errors: WEBRTC_VIDEO_CODEC_ERROR
-  virtual int32_t SetChannelParameters(uint32_t packet_loss, int64_t rtt);
-
   // Inform the encoder about the new target bit rate.
   //
   // Input:
