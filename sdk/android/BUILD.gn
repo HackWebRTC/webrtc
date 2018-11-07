@@ -112,7 +112,9 @@ if (is_android) {
       ":audio_jni",
       ":base_jni",
       ":builtin_audio_codecs_jni",
+      ":default_video_codec_factory_jni",
       ":java_audio_device_module_jni",
+      ":legacy_hwcodecs_jni",
       ":media_jni",
       ":peerconnection_jni",
       ":video_jni",
@@ -122,13 +124,9 @@ if (is_android) {
 
   rtc_static_library("libjingle_peerconnection_metrics_default_jni") {
     visibility = [ "*" ]
-
-    allow_poison = [ "software_video_codecs" ]  # TODO(bugs.webrtc.org/7925): Remove.
-
     sources = [
       "src/jni/androidmetrics.cc",
     ]
-
     deps = [
       ":base_jni",
       ":generated_metrics_jni",
@@ -583,16 +581,41 @@ if (is_android) {
     ]
   }
 
-  rtc_static_library("video_jni") {
-    sources = []
-    deps = [
-      "../../system_wrappers:field_trial",
-    ]
-
-    sources += [
+  # Corresponds to MediaCodecVideoEncoder/Decoder in Java.
+  rtc_static_library("legacy_hwcodecs_jni") {
+    visibility = [ "*" ]
+    allow_poison = [ "software_video_codecs" ]
+    sources = [
       "src/jni/androidmediacodeccommon.h",
       "src/jni/androidmediadecoder.cc",
       "src/jni/androidmediaencoder.cc",
+    ]
+    deps = [
+      ":base_jni",
+      ":default_video_codec_factory_jni",
+      ":generated_video_jni",
+      ":native_api_jni",
+      ":video_jni",
+      ":videoframe_jni",
+      "../..:webrtc_common",
+      "../../api/video_codecs:video_codecs_api",
+      "../../common_video:common_video",
+      "../../media:rtc_internal_video_codecs",
+      "../../media:rtc_media_base",
+      "../../modules/video_coding:video_codec_interface",
+      "../../modules/video_coding:video_coding_utility",
+      "../../rtc_base:checks",
+      "../../rtc_base:rtc_base",
+      "../../rtc_base:rtc_task_queue_api",
+      "../../rtc_base:sequenced_task_checker",
+      "../../rtc_base:weak_ptr",
+      "../../system_wrappers:field_trial",
+      "//third_party/libyuv",
+    ]
+  }
+
+  rtc_static_library("video_jni") {
+    sources = [
       "src/jni/androidvideotracksource.cc",
       "src/jni/androidvideotracksource.h",
       "src/jni/encodedimage.cc",
@@ -626,40 +649,25 @@ if (is_android) {
       "src/jni/yuvhelper.cc",
     ]
 
-    deps += [
+    deps = [
       ":base_jni",
       ":generated_video_jni",
       ":native_api_jni",
-
-      # TODO(bugs.webrtc.org/7925): Remove. :swcodecs_jni isn't a true
-      # dependency of this target. It should be linked in explicitly where
-      # needed.
-      ":swcodecs_jni",
       ":videoframe_jni",
       "../..:webrtc_common",
       "../../api:libjingle_peerconnection_api",
       "../../api/video:encoded_image",
       "../../api/video:video_frame",
-      "../../api/video_codecs:builtin_video_decoder_factory",
-      "../../api/video_codecs:builtin_video_encoder_factory",
       "../../api/video_codecs:rtc_software_fallback_wrappers",
       "../../api/video_codecs:video_codecs_api",
       "../../common_video:common_video",
-      "../../media:rtc_audio_video",
-      "../../media:rtc_h264_profile_id",
-      "../../media:rtc_internal_video_codecs",
       "../../media:rtc_media_base",
-      "../../modules/utility:utility",
       "../../modules/video_coding:codec_globals_headers",
       "../../modules/video_coding:video_codec_interface",
       "../../modules/video_coding:video_coding_utility",
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base",
-      "../../rtc_base:rtc_base_approved",
-      "../../rtc_base:rtc_task_queue",
-      "../../rtc_base:sequenced_task_checker",
-      "../../rtc_base:weak_ptr",
-      "../../rtc_base/memory:aligned_malloc",
+      "../../rtc_base:rtc_task_queue_api",
       "//third_party/libyuv",
     ]
   }
@@ -760,6 +768,8 @@ if (is_android) {
   }
 
   rtc_static_library("default_video_codec_factory_jni") {
+    visibility = [ "*" ]
+    allow_poison = [ "software_video_codecs" ]
     deps = [
       ":swcodecs_jni",
       ":video_jni",
@@ -772,12 +782,10 @@ if (is_android) {
     sources = [
       "src/jni/vp8codec.cc",
     ]
-
-    # TODO(bugs.webrtc.org/7925): add a depenency on :video_jni once :video_jni
-    # does not depend on us.
     deps = [
       ":base_jni",
       ":generated_libvpx_vp8_jni",
+      ":video_jni",
       "../../modules/video_coding:webrtc_vp8",
     ]
   }
@@ -788,12 +796,10 @@ if (is_android) {
     sources = [
       "src/jni/vp9codec.cc",
     ]
-
-    # TODO(bugs.webrtc.org/7925): add a depenency on :video_jni once :video_jni
-    # does not depend on us.
     deps = [
       ":base_jni",
       ":generated_libvpx_vp9_jni",
+      ":video_jni",
       "../../modules/video_coding:webrtc_vp9",
     ]
   }
@@ -889,10 +895,7 @@ if (is_android) {
   # objects.
   rtc_static_library("native_api_codecs") {
     visibility = [ "*" ]
-    allow_poison = [
-      "audio_codecs",  # TODO(bugs.webrtc.org/8396): Remove.
-      "software_video_codecs",  # TODO(bugs.webrtc.org/7925): Remove.
-    ]
+    allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
     sources = [
       "native_api/codecs/wrapper.cc",
       "native_api/codecs/wrapper.h",
@@ -912,14 +915,10 @@ if (is_android) {
   # API for creating Java PeerConnectionFactory from C++ equivalents.
   rtc_static_library("native_api_peerconnection") {
     visibility = [ "*" ]
-
-    allow_poison = [ "software_video_codecs" ]  # TODO(bugs.webrtc.org/7925): Remove.
-
     sources = [
       "native_api/peerconnection/peerconnectionfactory.cc",
       "native_api/peerconnection/peerconnectionfactory.h",
     ]
-
     deps = [
       ":base_jni",
       ":peerconnection_jni",
@@ -933,10 +932,7 @@ if (is_android) {
   # video interfaces from their Java equivalents.
   rtc_static_library("native_api_video") {
     visibility = [ "*" ]
-    allow_poison = [
-      "audio_codecs",  # TODO(bugs.webrtc.org/8396): Remove.
-      "software_video_codecs",  # TODO(bugs.webrtc.org/7925): Remove.
-    ]
+    allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
     sources = [
       "native_api/video/videosource.cc",
       "native_api/video/videosource.h",
