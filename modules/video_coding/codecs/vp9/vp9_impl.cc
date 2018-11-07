@@ -1245,8 +1245,12 @@ int VP9EncoderImpl::RegisterEncodeCompleteCallback(
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-const char* VP9EncoderImpl::ImplementationName() const {
-  return "libvpx";
+VideoEncoder::EncoderInfo VP9EncoderImpl::GetEncoderInfo() const {
+  EncoderInfo info;
+  info.supports_native_handle = false;
+  info.implementation_name = "libvpx";
+  info.scaling_settings = VideoEncoder::ScalingSettings::kOff;
+  return info;
 }
 
 std::unique_ptr<VP9Decoder> VP9Decoder::Create() {

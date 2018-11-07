@@ -49,7 +49,7 @@ class VP9EncoderImpl : public VP9Encoder {
   int SetRateAllocation(const VideoBitrateAllocation& bitrate_allocation,
                         uint32_t frame_rate) override;
 
-  const char* ImplementationName() const override;
+  EncoderInfo GetEncoderInfo() const override;
 
  private:
   // Determine number of encoder threads to use.
