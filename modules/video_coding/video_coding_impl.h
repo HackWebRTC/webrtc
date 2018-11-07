@@ -127,7 +127,6 @@ class VideoSender {
 class VideoReceiver : public Module {
  public:
   VideoReceiver(Clock* clock,
-                EventFactory* event_factory,
                 VCMTiming* timing,
                 NackSender* nack_sender = nullptr,
                 KeyFrameRequestSender* keyframe_request_sender = nullptr);

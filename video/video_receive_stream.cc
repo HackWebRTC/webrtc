@@ -138,7 +138,7 @@ VideoReceiveStream::VideoReceiveStream(
       call_stats_(call_stats),
       rtp_receive_statistics_(ReceiveStatistics::Create(clock_)),
       timing_(new VCMTiming(clock_)),
-      video_receiver_(clock_, nullptr, timing_.get(), this, this),
+      video_receiver_(clock_, timing_.get(), this, this),
       stats_proxy_(&config_, clock_),
       rtp_video_stream_receiver_(&transport_adapter_,
                                  call_stats,

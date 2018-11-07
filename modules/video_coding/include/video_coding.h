@@ -27,6 +27,7 @@
 #include "modules/include/module.h"
 #include "modules/include/module_common_types.h"
 #include "modules/video_coding/include/video_coding_defines.h"
+#include "rtc_base/deprecation.h"
 #include "system_wrappers/include/event_wrapper.h"
 
 namespace webrtc {
@@ -37,6 +38,7 @@ class VideoDecoder;
 class VideoEncoder;
 struct CodecSpecificInfo;
 
+// DEPRECATED
 class EventFactory {
  public:
   virtual ~EventFactory() {}
@@ -44,7 +46,7 @@ class EventFactory {
   virtual EventWrapper* CreateEvent() = 0;
 };
 
-class EventFactoryImpl : public EventFactory {
+class RTC_DEPRECATED EventFactoryImpl : public EventFactory {
  public:
   ~EventFactoryImpl() override {}
 
@@ -68,8 +70,13 @@ class VideoCodingModule : public Module {
  public:
   enum SenderNackMode { kNackNone, kNackAll, kNackSelective };
 
+  RTC_DEPRECATED
+  static VideoCodingModule* Create(Clock* clock,
+                                   EventFactory* /* event_factory*/) {
+    return Create(clock);
+  }
   // DEPRECATED.
-  static VideoCodingModule* Create(Clock* clock, EventFactory* event_factory);
+  static VideoCodingModule* Create(Clock* clock);
 
   /*
    *   Sender
