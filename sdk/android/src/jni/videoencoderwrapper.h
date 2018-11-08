@@ -86,12 +86,10 @@ class VideoEncoderWrapper : public VideoEncoder {
       const VideoBitrateAllocation& allocation);
   std::string GetImplementationName(JNIEnv* jni) const;
 
-  ScalingSettings GetScalingSettingsInternal() const;
+  ScalingSettings GetScalingSettingsInternal(JNIEnv* jni) const;
 
   const ScopedJavaGlobalRef<jobject> encoder_;
   const ScopedJavaGlobalRef<jclass> int_array_class_;
-
-  std::string implementation_name_;
 
   rtc::TaskQueue* encoder_queue_;
   std::deque<FrameExtraInfo> frame_extra_infos_;
@@ -100,6 +98,7 @@ class VideoEncoderWrapper : public VideoEncoder {
   int num_resets_;
   int number_of_cores_;
   VideoCodec codec_settings_;
+  EncoderInfo encoder_info_;
   H264BitstreamParser h264_bitstream_parser_;
 
   // VP9 variables to populate codec specific structure.
