@@ -142,6 +142,9 @@ WEBRTC_DEFINE_bool(concealment_events, false, "Prints concealment events");
 WEBRTC_DEFINE_int(max_nr_packets_in_buffer,
                   50,
                   "Maximum allowed number of packets in the buffer");
+WEBRTC_DEFINE_bool(enable_fast_accelerate,
+                   false,
+                   "Enables jitter buffer fast accelerate");
 
 // Maps a codec type to a printable name string.
 std::string CodecName(NetEqDecoder codec) {
@@ -470,6 +473,7 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
   NetEq::Config config;
   config.sample_rate_hz = *sample_rate_hz;
   config.max_packets_in_buffer = FLAG_max_nr_packets_in_buffer;
+  config.enable_fast_accelerate = FLAG_enable_fast_accelerate;
   return absl::make_unique<NetEqTest>(config, codecs, ext_codecs_,
                                       std::move(input), std::move(output),
                                       callbacks);
