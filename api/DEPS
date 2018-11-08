@@ -98,6 +98,7 @@ specific_include_rules = {
 
   "media_transport_interface\.h": [
     "+rtc_base/copyonwritebuffer.h",  # As used by datachannelinterface.h
+    "+rtc_base/networkroute.h"
   ],
 
   "peerconnectionfactoryproxy\.h": [

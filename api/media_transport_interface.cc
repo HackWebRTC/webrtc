@@ -103,4 +103,25 @@ MediaTransportFactory::CreateMediaTransport(
   return std::unique_ptr<MediaTransportInterface>(nullptr);
 }
 
+absl::optional<TargetTransferRate>
+MediaTransportInterface::GetLatestTargetTransferRate() {
+  return absl::nullopt;
+}
+
+void MediaTransportInterface::SetNetworkChangeCallback(
+    MediaTransportNetworkChangeCallback* callback) {}
+
+void MediaTransportInterface::RemoveTargetTransferRateObserver(
+    webrtc::TargetTransferRateObserver* observer) {}
+
+void MediaTransportInterface::SetTargetTransferRateObserver(
+    webrtc::TargetTransferRateObserver* observer) {}
+
+void MediaTransportInterface::AddTargetTransferRateObserver(
+    webrtc::TargetTransferRateObserver* observer) {}
+
+size_t MediaTransportInterface::GetAudioPacketOverhead() const {
+  return 0;
+}
+
 }  // namespace webrtc

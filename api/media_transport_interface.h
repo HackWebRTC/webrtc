@@ -29,6 +29,7 @@
 #include "api/video/encoded_image.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/copyonwritebuffer.h"
+#include "rtc_base/networkroute.h"
 
 namespace rtc {
 class PacketTransportInternal;
@@ -137,6 +138,16 @@ class MediaTransportEncodedAudioFrame final {
   uint8_t payload_type_;
 
   std::vector<uint8_t> encoded_data_;
+};
+
+// Callback to notify about network route changes.
+class MediaTransportNetworkChangeCallback {
+ public:
+  virtual ~MediaTransportNetworkChangeCallback() = default;
+
+  // Called when the network route is changed, with the new network route.
+  virtual void OnNetworkRouteChanged(
+      const rtc::NetworkRoute& new_network_route) = 0;
 };
 
 // Interface for receiving encoded audio frames from MediaTransportInterface
@@ -329,8 +340,41 @@ class MediaTransportInterface {
   // the observer must be unregistered (set to nullptr).
   // A newly registered observer will be called back with the latest recorded
   // target rate, if available.
+  // TODO(psla): This method will be removed, in favor of
+  // AddTargetTransferRateObserver.
   virtual void SetTargetTransferRateObserver(
-      webrtc::TargetTransferRateObserver* observer) = 0;
+      TargetTransferRateObserver* observer);
+
+  // Adds a target bitrate observer. Before media transport is destructed
+  // the observer must be unregistered (by calling
+  // RemoveTargetTransferRateObserver).
+  // A newly registered observer will be called back with the latest recorded
+  // target rate, if available.
+  virtual void AddTargetTransferRateObserver(
+      webrtc::TargetTransferRateObserver* observer);
+
+  // Removes an existing |observer| from observers. If observer was never
+  // registered, an error is logged and method does nothing.
+  virtual void RemoveTargetTransferRateObserver(
+      webrtc::TargetTransferRateObserver* observer);
+
+  // Returns the last known target transfer rate as reported to the above
+  // observers.
+  virtual absl::optional<TargetTransferRate> GetLatestTargetTransferRate();
+
+  // Gets the audio packet overhead in bytes. Returned overhead does not include
+  // transport overhead (ipv4/6, turn channeldata, tcp/udp, etc.).
+  // If the transport is capable of fusing packets together, this overhead
+  // might not be a very accurate number.
+  virtual size_t GetAudioPacketOverhead() const;
+
+  // Sets an observer for network change events. If the network route is already
+  // established when the callback is set, |callback| will be called immediately
+  // with the current network route.
+  // Before media transport is destroyed, the callback must be unregistered by
+  // setting it to nullptr.
+  virtual void SetNetworkChangeCallback(
+      MediaTransportNetworkChangeCallback* callback);
 
   // Sets a state observer callback. Before media transport is destroyed, the
   // callback must be unregistered by setting it to nullptr.
