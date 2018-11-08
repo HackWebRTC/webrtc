@@ -38,21 +38,6 @@ class VideoDecoder;
 class VideoEncoder;
 struct CodecSpecificInfo;
 
-// DEPRECATED
-class EventFactory {
- public:
-  virtual ~EventFactory() {}
-
-  virtual EventWrapper* CreateEvent() = 0;
-};
-
-class RTC_DEPRECATED EventFactoryImpl : public EventFactory {
- public:
-  ~EventFactoryImpl() override {}
-
-  EventWrapper* CreateEvent() override;
-};
-
 // Used to indicate which decode with errors mode should be used.
 enum VCMDecodeErrorMode {
   kNoErrors,         // Never decode with errors. Video will freeze
@@ -70,11 +55,6 @@ class VideoCodingModule : public Module {
  public:
   enum SenderNackMode { kNackNone, kNackAll, kNackSelective };
 
-  RTC_DEPRECATED
-  static VideoCodingModule* Create(Clock* clock,
-                                   EventFactory* /* event_factory*/) {
-    return Create(clock);
-  }
   // DEPRECATED.
   static VideoCodingModule* Create(Clock* clock);
 

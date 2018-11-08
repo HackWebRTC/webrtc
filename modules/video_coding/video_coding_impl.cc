@@ -27,10 +27,6 @@
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {
-EventWrapper* EventFactoryImpl::CreateEvent() {
-  return EventWrapper::Create();
-}
-
 namespace vcm {
 
 int64_t VCMProcessTimer::Period() const {
@@ -81,7 +77,6 @@ class EncodedImageCallbackWrapper : public EncodedImageCallback {
 class VideoCodingModuleImpl : public VideoCodingModule {
  public:
   VideoCodingModuleImpl(Clock* clock,
-                        EventFactory* /* event_factory */,
                         NackSender* nack_sender,
                         KeyFrameRequestSender* keyframe_request_sender)
       : VideoCodingModule(),
@@ -219,7 +214,7 @@ class VideoCodingModuleImpl : public VideoCodingModule {
 // new jitter buffer is in place.
 VideoCodingModule* VideoCodingModule::Create(Clock* clock) {
   RTC_DCHECK(clock);
-  return new VideoCodingModuleImpl(clock, nullptr, nullptr, nullptr);
+  return new VideoCodingModuleImpl(clock, nullptr, nullptr);
 }
 
 }  // namespace webrtc
