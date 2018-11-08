@@ -41,7 +41,9 @@ bool VideoCodecInitializer::SetupCodec(
   }
 
   *codec = VideoEncoderConfigToVideoCodec(config, streams);
-  *bitrate_allocator = CreateBitrateAllocator(*codec);
+  if (bitrate_allocator) {
+    *bitrate_allocator = CreateBitrateAllocator(*codec);
+  }
 
   return true;
 }

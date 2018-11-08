@@ -34,7 +34,7 @@ class VideoCodecInitializer {
       const VideoEncoderConfig& config,
       const std::vector<VideoStream>& streams,
       VideoCodec* codec,
-      std::unique_ptr<VideoBitrateAllocator>* bitrate_allocator);
+      std::unique_ptr<VideoBitrateAllocator>* bitrate_allocator = nullptr);
 
   // Create a bitrate allocator for the specified codec.
   static std::unique_ptr<VideoBitrateAllocator> CreateBitrateAllocator(
