@@ -249,6 +249,7 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
       Release();
       return ret;
     }
+
     std::unique_ptr<EncodedImageCallback> callback(
         new AdapterEncodedImageCallback(this, i));
     encoder->RegisterEncodeCompleteCallback(callback.get());
@@ -275,6 +276,8 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
 
         encoder_info_.supports_native_handle =
             encoder_impl_info.supports_native_handle;
+        encoder_info_.has_trusted_rate_controller =
+            encoder_impl_info.has_trusted_rate_controller;
       } else {
         encoder_info_.implementation_name += ", ";
         encoder_info_.implementation_name +=
@@ -283,6 +286,10 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
         // Native handle supported only if all encoders supports it.
         encoder_info_.supports_native_handle &=
             encoder_impl_info.supports_native_handle;
+
+        // Trusted rate controller only if all encoders have it.
+        encoder_info_.has_trusted_rate_controller &=
+            encoder_impl_info.has_trusted_rate_controller;
       }
     }
   }

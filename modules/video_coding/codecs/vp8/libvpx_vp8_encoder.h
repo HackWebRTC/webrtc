@@ -86,6 +86,7 @@ class LibvpxVp8Encoder : public VideoEncoder {
 
   const absl::optional<std::vector<CpuSpeedExperiment::Config>>
       experimental_cpu_speed_config_arm_;
+  const bool trusted_rate_controller_;
 
   EncodedImageCallback* encoded_complete_callback_;
   VideoCodec codec_;

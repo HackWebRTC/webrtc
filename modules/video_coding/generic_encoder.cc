@@ -152,9 +152,9 @@ bool VCMGenericEncoder::InternalSource() const {
   return internal_source_;
 }
 
-bool VCMGenericEncoder::SupportsNativeHandle() const {
+VideoEncoder::EncoderInfo VCMGenericEncoder::GetEncoderInfo() const {
   RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
-  return encoder_->GetEncoderInfo().supports_native_handle;
+  return encoder_->GetEncoderInfo();
 }
 
 VCMEncodedFrameCallback::VCMEncodedFrameCallback(

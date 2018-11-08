@@ -52,6 +52,8 @@ namespace {
 static const int kFullStackTestDurationSecs = 45;
 const char kPacerPushBackExperiment[] =
     "WebRTC-PacerPushbackExperiment/Enabled/";
+const char kVp8TrustedRateControllerFieldTrial[] =
+    "WebRTC-LibvpxVp8TrustedRateController/Enabled/";
 
 struct ParamsWithLogging : public VideoQualityTest::Params {
  public:
@@ -235,6 +237,25 @@ TEST_P(GenericDescriptorTest, ForemanCif30kbpsWithoutPacketLoss) {
   fixture->RunWithAnalyzer(foreman_cif);
 }
 
+// TODO(webrtc:9722): Remove when experiment is cleaned up.
+TEST_P(GenericDescriptorTest,
+       ForemanCif30kbpsWithoutPacketLossTrustedRateControl) {
+  test::ScopedFieldTrials override_field_trials(
+      AppendFieldTrials(kVp8TrustedRateControllerFieldTrial));
+  auto fixture = CreateVideoQualityTestFixture();
+
+  ParamsWithLogging foreman_cif;
+  foreman_cif.call.send_side_bwe = true;
+  foreman_cif.video[0] = {true,  352,          288, 10, 30000, 30000, 30000,
+                          false, "VP8",        1,   0,  0,     false, false,
+                          false, "foreman_cif"};
+  foreman_cif.analyzer = {
+      GetTestName("foreman_cif_30kbps_net_delay_0_0_plr_0_trusted_rate_ctrl"),
+      0.0, 0.0, kFullStackTestDurationSecs};
+  foreman_cif.call.generic_descriptor = GenericDescriptorEnabled();
+  fixture->RunWithAnalyzer(foreman_cif);
+}
+
 // Link capacity below default start rate. Automatic down scaling enabled.
 TEST(FullStackTest, ForemanCifLink150kbpsWithoutPacketLoss) {
   auto fixture = CreateVideoQualityTestFixture();
@@ -366,9 +387,9 @@ TEST_P(GenericDescriptorTest, ForemanCifPlr5H264) {
 }
 
 TEST(FullStackTest, ForemanCifPlr5H264SpsPpsIdrIsKeyframe) {
-  auto fixture = CreateVideoQualityTestFixture();
   test::ScopedFieldTrials override_field_trials(
       AppendFieldTrials("WebRTC-SpsPpsIdrIsH264Keyframe/Enabled/"));
+  auto fixture = CreateVideoQualityTestFixture();
 
   ParamsWithLogging foreman_cif;
   foreman_cif.call.send_side_bwe = true;
@@ -522,16 +543,21 @@ TEST(FullStackTest, ConferenceMotionHd2000kbps100msLimitedQueue) {
   fixture->RunWithAnalyzer(conf_motion_hd);
 }
 
-TEST(FullStackTest, ConferenceMotionHd1TLModerateLimits) {
+// TODO(webrtc:9722): Remove when experiment is cleaned up.
+TEST(FullStackTest, ConferenceMotionHd1TLModerateLimitsWhitelistVp8) {
+  test::ScopedFieldTrials override_field_trials(
+      AppendFieldTrials(kVp8TrustedRateControllerFieldTrial));
   auto fixture = CreateVideoQualityTestFixture();
+
   ParamsWithLogging conf_motion_hd;
   conf_motion_hd.call.send_side_bwe = true;
   conf_motion_hd.video[0] = {
       true,    1280,    720,   50,    30000,
       3000000, 3000000, false, "VP8", 1,
       -1,      0,       false, false, false, "ConferenceMotion_1280_720_50"};
-  conf_motion_hd.analyzer = {"conference_motion_hd_1tl_moderate_limits", 0.0,
-                             0.0, kFullStackTestDurationSecs};
+  conf_motion_hd.analyzer = {
+      "conference_motion_hd_1tl_moderate_limits_trusted_rate_ctrl", 0.0, 0.0,
+      kFullStackTestDurationSecs};
   conf_motion_hd.config->queue_length_packets = 50;
   conf_motion_hd.config->loss_percent = 3;
   conf_motion_hd.config->queue_delay_ms = 100;
@@ -593,9 +619,9 @@ TEST(FullStackTest, ConferenceMotionHd4TLModerateLimits) {
 }
 
 TEST(FullStackTest, ConferenceMotionHd3TLModerateLimitsAltTLPattern) {
-  auto fixture = CreateVideoQualityTestFixture();
   test::ScopedFieldTrials field_trial(
       AppendFieldTrials("WebRTC-UseShortVP8TL3Pattern/Enabled/"));
+  auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging conf_motion_hd;
   conf_motion_hd.call.send_side_bwe = true;
   conf_motion_hd.video[0] = {
@@ -672,8 +698,9 @@ const char kScreenshareSimulcastExperiment[] =
     "WebRTC-SimulcastScreenshare/Enabled/";
 
 TEST(FullStackTest, ScreenshareSlidesVP8_3TL_Simulcast) {
+  test::ScopedFieldTrials field_trial(
+      AppendFieldTrials(kScreenshareSimulcastExperiment));
   auto fixture = CreateVideoQualityTestFixture();
-  test::ScopedFieldTrials field_trial(kScreenshareSimulcastExperiment);
   ParamsWithLogging screenshare;
   screenshare.call.send_side_bwe = true;
   screenshare.screenshare[0] = {true, false, 10};
@@ -914,6 +941,25 @@ TEST(FullStackTest, VP9KSVC_3SL_Medium_Network_Restricted) {
   simulcast.video[0] = kSvcVp9Video;
   simulcast.analyzer = {"vp9ksvc_3sl_medium_network_restricted", 0.0, 0.0,
                         kFullStackTestDurationSecs};
+  simulcast.ss[0] = {
+      std::vector<VideoStream>(),  0,    3, -1, InterLayerPredMode::kOnKeyPic,
+      std::vector<SpatialLayer>(), false};
+  simulcast.config->link_capacity_kbps = 1000;
+  simulcast.config->queue_delay_ms = 100;
+  fixture->RunWithAnalyzer(simulcast);
+}
+
+// TODO(webrtc:9722): Remove when experiment is cleaned up.
+TEST(FullStackTest, VP9KSVC_3SL_Medium_Network_Restricted_Trusted_Rate) {
+  webrtc::test::ScopedFieldTrials override_trials(
+      AppendFieldTrials("WebRTC-Vp9IssueKeyFrameOnLayerDeactivation/Enabled/"
+                        "WebRTC-LibvpxVp9TrustedRateController/Enabled/"));
+  auto fixture = CreateVideoQualityTestFixture();
+  ParamsWithLogging simulcast;
+  simulcast.call.send_side_bwe = true;
+  simulcast.video[0] = kSvcVp9Video;
+  simulcast.analyzer = {"vp9ksvc_3sl_medium_network_restricted_trusted_rate",
+                        0.0, 0.0, kFullStackTestDurationSecs};
   simulcast.ss[0] = {
       std::vector<VideoStream>(),  0,    3, -1, InterLayerPredMode::kOnKeyPic,
       std::vector<SpatialLayer>(), false};
