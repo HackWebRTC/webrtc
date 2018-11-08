@@ -466,6 +466,23 @@ TEST(RtpPacketTest, ParseWithExtension) {
   EXPECT_EQ(0u, packet.padding_size());
 }
 
+TEST(RtpPacketTest, GetExtensionWithoutParametersReturnsOptionalValue) {
+  RtpPacket::ExtensionManager extensions;
+  extensions.Register<TransmissionOffset>(kTransmissionOffsetExtensionId);
+  extensions.Register<RtpStreamId>(kRtpStreamIdExtensionId);
+
+  RtpPacketReceived packet(&extensions);
+  EXPECT_TRUE(packet.Parse(kPacketWithTO, sizeof(kPacketWithTO)));
+
+  auto time_offset = packet.GetExtension<TransmissionOffset>();
+  static_assert(
+      std::is_same<decltype(time_offset),
+                   absl::optional<TransmissionOffset::value_type>>::value,
+      "");
+  EXPECT_EQ(time_offset, kTimeOffset);
+  EXPECT_FALSE(packet.GetExtension<RtpStreamId>().has_value());
+}
+
 TEST(RtpPacketTest, GetRawExtensionWhenPresent) {
   constexpr uint8_t kRawPacket[] = {
       // comment for clang-format to align kRawPacket nicer.

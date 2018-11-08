@@ -27,6 +27,7 @@ namespace webrtc {
 
 class AbsoluteSendTime {
  public:
+  using value_type = uint32_t;
   static constexpr RTPExtensionType kId = kRtpExtensionAbsoluteSendTime;
   static constexpr uint8_t kValueSizeBytes = 3;
   static constexpr const char kUri[] =
@@ -61,6 +62,7 @@ class AudioLevel {
 
 class TransmissionOffset {
  public:
+  using value_type = int32_t;
   static constexpr RTPExtensionType kId = kRtpExtensionTransmissionTimeOffset;
   static constexpr uint8_t kValueSizeBytes = 3;
   static constexpr const char kUri[] = "urn:ietf:params:rtp-hdrext:toffset";
@@ -72,6 +74,7 @@ class TransmissionOffset {
 
 class TransportSequenceNumber {
  public:
+  using value_type = uint16_t;
   static constexpr RTPExtensionType kId = kRtpExtensionTransportSequenceNumber;
   static constexpr uint8_t kValueSizeBytes = 2;
   static constexpr const char kUri[] =
@@ -84,6 +87,7 @@ class TransportSequenceNumber {
 
 class VideoOrientation {
  public:
+  using value_type = VideoRotation;
   static constexpr RTPExtensionType kId = kRtpExtensionVideoRotation;
   static constexpr uint8_t kValueSizeBytes = 1;
   static constexpr const char kUri[] = "urn:3gpp:video-orientation";
@@ -98,6 +102,7 @@ class VideoOrientation {
 
 class PlayoutDelayLimits {
  public:
+  using value_type = PlayoutDelay;
   static constexpr RTPExtensionType kId = kRtpExtensionPlayoutDelay;
   static constexpr uint8_t kValueSizeBytes = 3;
   static constexpr const char kUri[] =
@@ -121,6 +126,7 @@ class PlayoutDelayLimits {
 
 class VideoContentTypeExtension {
  public:
+  using value_type = VideoContentType;
   static constexpr RTPExtensionType kId = kRtpExtensionVideoContentType;
   static constexpr uint8_t kValueSizeBytes = 1;
   static constexpr const char kUri[] =
@@ -137,6 +143,7 @@ class VideoContentTypeExtension {
 
 class VideoTimingExtension {
  public:
+  using value_type = VideoSendTiming;
   static constexpr RTPExtensionType kId = kRtpExtensionVideoTiming;
   static constexpr uint8_t kValueSizeBytes = 13;
   static constexpr const char kUri[] =
@@ -159,6 +166,7 @@ class VideoTimingExtension {
 
 class FrameMarkingExtension {
  public:
+  using value_type = FrameMarking;
   static constexpr RTPExtensionType kId = kRtpExtensionFrameMarking;
   static constexpr const char kUri[] =
       "http://tools.ietf.org/html/draft-ietf-avtext-framemarking-07";
@@ -177,6 +185,7 @@ class FrameMarkingExtension {
 // Subclasses must defined kId and kUri static constexpr members.
 class BaseRtpStringExtension {
  public:
+  using value_type = std::string;
   // String RTP header extensions are limited to 16 bytes because it is the
   // maximum length that can be encoded with one-byte header extensions.
   static constexpr uint8_t kMaxValueSizeBytes = 16;
