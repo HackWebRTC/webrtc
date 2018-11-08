@@ -485,6 +485,7 @@ if (rtc_include_tests) {
       "../api:fake_frame_decryptor",
       "../api:fake_frame_encryptor",
       "../api:libjingle_peerconnection_api",
+      "../api:loopback_media_transport",
       "../api:mock_rtp",
       "../api/units:time_delta",
       "../logging:fake_rtc_event_log",

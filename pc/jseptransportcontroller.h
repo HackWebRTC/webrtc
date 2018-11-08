@@ -117,6 +117,7 @@ class JsepTransportController : public sigslot::has_slots<> {
       const std::string& mid) const;
 
   MediaTransportInterface* GetMediaTransport(const std::string& mid) const;
+  MediaTransportState GetMediaTransportState(const std::string& mid) const;
 
   /*********************
    * ICE-related methods
@@ -199,6 +200,8 @@ class JsepTransportController : public sigslot::has_slots<> {
       SignalIceCandidatesRemoved;
 
   sigslot::signal1<rtc::SSLHandshakeError> SignalDtlsHandshakeError;
+
+  sigslot::signal<> SignalMediaTransportStateChanged;
 
  private:
   RTCError ApplyDescription_n(bool local,
@@ -311,6 +314,7 @@ class JsepTransportController : public sigslot::has_slots<> {
                                       const cricket::Candidates& candidates);
   void OnTransportRoleConflict_n(cricket::IceTransportInternal* transport);
   void OnTransportStateChanged_n(cricket::IceTransportInternal* transport);
+  void OnMediaTransportStateChanged_n();
 
   void UpdateAggregateStates_n();
 

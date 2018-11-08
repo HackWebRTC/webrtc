@@ -28,6 +28,7 @@
 #include "api/peerconnectioninterface.h"
 #include "api/peerconnectionproxy.h"
 #include "api/rtpreceiverinterface.h"
+#include "api/test/loopback_media_transport.h"
 #include "api/umametrics.h"
 #include "api/video_codecs/builtin_video_decoder_factory.h"
 #include "api/video_codecs/builtin_video_encoder_factory.h"
@@ -251,7 +252,8 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
     webrtc::PeerConnectionDependencies dependencies(nullptr);
     dependencies.cert_generator = std::move(cert_generator);
     if (!client->Init(nullptr, nullptr, std::move(dependencies), network_thread,
-                      worker_thread, nullptr)) {
+                      worker_thread, nullptr,
+                      /*media_transport_factory=*/nullptr)) {
       delete client;
       return nullptr;
     }
@@ -588,12 +590,14 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
   explicit PeerConnectionWrapper(const std::string& debug_name)
       : debug_name_(debug_name) {}
 
-  bool Init(const PeerConnectionFactory::Options* options,
-            const PeerConnectionInterface::RTCConfiguration* config,
-            webrtc::PeerConnectionDependencies dependencies,
-            rtc::Thread* network_thread,
-            rtc::Thread* worker_thread,
-            std::unique_ptr<webrtc::FakeRtcEventLogFactory> event_log_factory) {
+  bool Init(
+      const PeerConnectionFactory::Options* options,
+      const PeerConnectionInterface::RTCConfiguration* config,
+      webrtc::PeerConnectionDependencies dependencies,
+      rtc::Thread* network_thread,
+      rtc::Thread* worker_thread,
+      std::unique_ptr<webrtc::FakeRtcEventLogFactory> event_log_factory,
+      std::unique_ptr<webrtc::MediaTransportFactory> media_transport_factory) {
     // There's an error in this test code if Init ends up being called twice.
     RTC_DCHECK(!peer_connection_);
     RTC_DCHECK(!peer_connection_factory_);
@@ -630,6 +634,10 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
     } else {
       pc_factory_dependencies.event_log_factory =
           webrtc::CreateRtcEventLogFactory();
+    }
+    if (media_transport_factory) {
+      pc_factory_dependencies.media_transport_factory =
+          std::move(media_transport_factory);
     }
     peer_connection_factory_ = webrtc::CreateModularPeerConnectionFactory(
         std::move(pc_factory_dependencies));
@@ -1156,7 +1164,8 @@ class PeerConnectionIntegrationBaseTest : public testing::Test {
         ss_(new rtc::VirtualSocketServer()),
         fss_(new rtc::FirewallSocketServer(ss_.get())),
         network_thread_(new rtc::Thread(fss_.get())),
-        worker_thread_(rtc::Thread::Create()) {
+        worker_thread_(rtc::Thread::Create()),
+        loopback_media_transports_(network_thread_.get()) {
     network_thread_->SetName("PCNetworkThread", this);
     worker_thread_->SetName("PCWorkerThread", this);
     RTC_CHECK(network_thread_->Start());
@@ -1212,7 +1221,8 @@ class PeerConnectionIntegrationBaseTest : public testing::Test {
       const PeerConnectionFactory::Options* options,
       const RTCConfiguration* config,
       webrtc::PeerConnectionDependencies dependencies,
-      std::unique_ptr<webrtc::FakeRtcEventLogFactory> event_log_factory) {
+      std::unique_ptr<webrtc::FakeRtcEventLogFactory> event_log_factory,
+      std::unique_ptr<webrtc::MediaTransportFactory> media_transport_factory) {
     RTCConfiguration modified_config;
     if (config) {
       modified_config = *config;
@@ -1227,7 +1237,8 @@ class PeerConnectionIntegrationBaseTest : public testing::Test {
 
     if (!client->Init(options, &modified_config, std::move(dependencies),
                       network_thread_.get(), worker_thread_.get(),
-                      std::move(event_log_factory))) {
+                      std::move(event_log_factory),
+                      std::move(media_transport_factory))) {
       return nullptr;
     }
     return client;
@@ -1243,7 +1254,8 @@ class PeerConnectionIntegrationBaseTest : public testing::Test {
         new webrtc::FakeRtcEventLogFactory(rtc::Thread::Current()));
     return CreatePeerConnectionWrapper(debug_name, options, config,
                                        std::move(dependencies),
-                                       std::move(event_log_factory));
+                                       std::move(event_log_factory),
+                                       /*media_transport_factory=*/nullptr);
   }
 
   bool CreatePeerConnectionWrappers() {
@@ -1264,11 +1276,11 @@ class PeerConnectionIntegrationBaseTest : public testing::Test {
     sdp_semantics_ = caller_semantics;
     caller_ = CreatePeerConnectionWrapper(
         "Caller", nullptr, nullptr, webrtc::PeerConnectionDependencies(nullptr),
-        nullptr);
+        nullptr, /*media_transport_factory=*/nullptr);
     sdp_semantics_ = callee_semantics;
     callee_ = CreatePeerConnectionWrapper(
         "Callee", nullptr, nullptr, webrtc::PeerConnectionDependencies(nullptr),
-        nullptr);
+        nullptr, /*media_transport_factory=*/nullptr);
     sdp_semantics_ = original_semantics;
     return caller_ && callee_;
   }
@@ -1278,10 +1290,28 @@ class PeerConnectionIntegrationBaseTest : public testing::Test {
       const PeerConnectionInterface::RTCConfiguration& callee_config) {
     caller_ = CreatePeerConnectionWrapper(
         "Caller", nullptr, &caller_config,
-        webrtc::PeerConnectionDependencies(nullptr), nullptr);
+        webrtc::PeerConnectionDependencies(nullptr), nullptr,
+        /*media_transport_factory=*/nullptr);
     callee_ = CreatePeerConnectionWrapper(
         "Callee", nullptr, &callee_config,
-        webrtc::PeerConnectionDependencies(nullptr), nullptr);
+        webrtc::PeerConnectionDependencies(nullptr), nullptr,
+        /*media_transport_factory=*/nullptr);
+    return caller_ && callee_;
+  }
+
+  bool CreatePeerConnectionWrappersWithConfigAndMediaTransportFactory(
+      const PeerConnectionInterface::RTCConfiguration& caller_config,
+      const PeerConnectionInterface::RTCConfiguration& callee_config,
+      std::unique_ptr<webrtc::MediaTransportFactory> caller_factory,
+      std::unique_ptr<webrtc::MediaTransportFactory> callee_factory) {
+    caller_ =
+        CreatePeerConnectionWrapper("Caller", nullptr, &caller_config,
+                                    webrtc::PeerConnectionDependencies(nullptr),
+                                    nullptr, std::move(caller_factory));
+    callee_ =
+        CreatePeerConnectionWrapper("Callee", nullptr, &callee_config,
+                                    webrtc::PeerConnectionDependencies(nullptr),
+                                    nullptr, std::move(callee_factory));
     return caller_ && callee_;
   }
 
@@ -1292,10 +1322,12 @@ class PeerConnectionIntegrationBaseTest : public testing::Test {
       webrtc::PeerConnectionDependencies callee_dependencies) {
     caller_ =
         CreatePeerConnectionWrapper("Caller", nullptr, &caller_config,
-                                    std::move(caller_dependencies), nullptr);
+                                    std::move(caller_dependencies), nullptr,
+                                    /*media_transport_factory=*/nullptr);
     callee_ =
         CreatePeerConnectionWrapper("Callee", nullptr, &callee_config,
-                                    std::move(callee_dependencies), nullptr);
+                                    std::move(callee_dependencies), nullptr,
+                                    /*media_transport_factory=*/nullptr);
     return caller_ && callee_;
   }
 
@@ -1304,10 +1336,12 @@ class PeerConnectionIntegrationBaseTest : public testing::Test {
       const PeerConnectionFactory::Options& callee_options) {
     caller_ = CreatePeerConnectionWrapper(
         "Caller", &caller_options, nullptr,
-        webrtc::PeerConnectionDependencies(nullptr), nullptr);
+        webrtc::PeerConnectionDependencies(nullptr), nullptr,
+        /*media_transport_factory=*/nullptr);
     callee_ = CreatePeerConnectionWrapper(
         "Callee", &callee_options, nullptr,
-        webrtc::PeerConnectionDependencies(nullptr), nullptr);
+        webrtc::PeerConnectionDependencies(nullptr), nullptr,
+        /*media_transport_factory=*/nullptr);
     return caller_ && callee_;
   }
 
@@ -1331,7 +1365,8 @@ class PeerConnectionIntegrationBaseTest : public testing::Test {
     webrtc::PeerConnectionDependencies dependencies(nullptr);
     dependencies.cert_generator = std::move(cert_generator);
     return CreatePeerConnectionWrapper("New Peer", nullptr, nullptr,
-                                       std::move(dependencies), nullptr);
+                                       std::move(dependencies), nullptr,
+                                       /*media_transport_factory=*/nullptr);
   }
 
   cricket::TestTurnServer* CreateTurnServer(
@@ -1418,6 +1453,10 @@ class PeerConnectionIntegrationBaseTest : public testing::Test {
   rtc::Thread* network_thread() { return network_thread_.get(); }
 
   rtc::VirtualSocketServer* virtual_socket_server() { return ss_.get(); }
+
+  webrtc::MediaTransportPair* loopback_media_transports() {
+    return &loopback_media_transports_;
+  }
 
   PeerConnectionWrapper* caller() { return caller_.get(); }
 
@@ -1597,6 +1636,7 @@ class PeerConnectionIntegrationBaseTest : public testing::Test {
   // on the network thread.
   std::vector<std::unique_ptr<cricket::TestTurnServer>> turn_servers_;
   std::vector<std::unique_ptr<cricket::TestTurnCustomizer>> turn_customizers_;
+  webrtc::MediaTransportPair loopback_media_transports_;
   std::unique_ptr<PeerConnectionWrapper> caller_;
   std::unique_ptr<PeerConnectionWrapper> callee_;
 };
@@ -3346,6 +3386,111 @@ TEST_P(PeerConnectionIntegrationTest,
 }
 
 #endif  // HAVE_SCTP
+
+// This test sets up a call between two parties with audio, video, and a media
+// transport data channel.
+TEST_P(PeerConnectionIntegrationTest, MediaTransportDataChannelEndToEnd) {
+  PeerConnectionInterface::RTCConfiguration rtc_config;
+  rtc_config.use_media_transport_for_data_channels = true;
+  rtc_config.enable_dtls_srtp = false;  // SDES is required for media transport.
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithConfigAndMediaTransportFactory(
+      rtc_config, rtc_config, loopback_media_transports()->first_factory(),
+      loopback_media_transports()->second_factory()));
+  ConnectFakeSignaling();
+
+  // Expect that data channel created on caller side will show up for callee as
+  // well.
+  caller()->CreateDataChannel();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  // Ensure that the media transport is ready.
+  loopback_media_transports()->SetState(webrtc::MediaTransportState::kWritable);
+  loopback_media_transports()->FlushAsyncInvokes();
+
+  // Caller data channel should already exist (it created one). Callee data
+  // channel may not exist yet, since negotiation happens in-band, not in SDP.
+  ASSERT_NE(nullptr, caller()->data_channel());
+  ASSERT_TRUE_WAIT(callee()->data_channel() != nullptr, kDefaultTimeout);
+  EXPECT_TRUE_WAIT(caller()->data_observer()->IsOpen(), kDefaultTimeout);
+  EXPECT_TRUE_WAIT(callee()->data_observer()->IsOpen(), kDefaultTimeout);
+
+  // Ensure data can be sent in both directions.
+  std::string data = "hello world";
+  caller()->data_channel()->Send(DataBuffer(data));
+  EXPECT_EQ_WAIT(data, callee()->data_observer()->last_message(),
+                 kDefaultTimeout);
+  callee()->data_channel()->Send(DataBuffer(data));
+  EXPECT_EQ_WAIT(data, caller()->data_observer()->last_message(),
+                 kDefaultTimeout);
+}
+
+// Ensure that when the callee closes a media transport data channel, the
+// closing procedure results in the data channel being closed for the caller
+// as well.
+TEST_P(PeerConnectionIntegrationTest, MediaTransportDataChannelCalleeCloses) {
+  PeerConnectionInterface::RTCConfiguration rtc_config;
+  rtc_config.use_media_transport_for_data_channels = true;
+  rtc_config.enable_dtls_srtp = false;  // SDES is required for media transport.
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithConfigAndMediaTransportFactory(
+      rtc_config, rtc_config, loopback_media_transports()->first_factory(),
+      loopback_media_transports()->second_factory()));
+  ConnectFakeSignaling();
+
+  // Create a data channel on the caller and signal it to the callee.
+  caller()->CreateDataChannel();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  // Ensure that the media transport is ready.
+  loopback_media_transports()->SetState(webrtc::MediaTransportState::kWritable);
+  loopback_media_transports()->FlushAsyncInvokes();
+
+  // Data channels exist and open on both ends of the connection.
+  ASSERT_NE(nullptr, caller()->data_channel());
+  ASSERT_TRUE_WAIT(callee()->data_channel() != nullptr, kDefaultTimeout);
+  ASSERT_TRUE_WAIT(caller()->data_observer()->IsOpen(), kDefaultTimeout);
+  ASSERT_TRUE_WAIT(callee()->data_observer()->IsOpen(), kDefaultTimeout);
+
+  // Close the data channel on the callee side, and wait for it to reach the
+  // "closed" state on both sides.
+  callee()->data_channel()->Close();
+  EXPECT_TRUE_WAIT(!caller()->data_observer()->IsOpen(), kDefaultTimeout);
+  EXPECT_TRUE_WAIT(!callee()->data_observer()->IsOpen(), kDefaultTimeout);
+}
+
+TEST_P(PeerConnectionIntegrationTest,
+       MediaTransportDataChannelConfigSentToOtherSide) {
+  PeerConnectionInterface::RTCConfiguration rtc_config;
+  rtc_config.use_media_transport_for_data_channels = true;
+  rtc_config.enable_dtls_srtp = false;  // SDES is required for media transport.
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithConfigAndMediaTransportFactory(
+      rtc_config, rtc_config, loopback_media_transports()->first_factory(),
+      loopback_media_transports()->second_factory()));
+  ConnectFakeSignaling();
+
+  // Create a data channel with a non-default configuration and signal it to the
+  // callee.
+  webrtc::DataChannelInit init;
+  init.id = 53;
+  init.maxRetransmits = 52;
+  caller()->CreateDataChannel("data-channel", &init);
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  // Ensure that the media transport is ready.
+  loopback_media_transports()->SetState(webrtc::MediaTransportState::kWritable);
+  loopback_media_transports()->FlushAsyncInvokes();
+
+  // Ensure that the data channel exists on the callee with the correct
+  // configuration.
+  ASSERT_TRUE_WAIT(callee()->data_channel() != nullptr, kDefaultTimeout);
+  ASSERT_TRUE_WAIT(callee()->data_observer()->IsOpen(), kDefaultTimeout);
+  EXPECT_EQ(init.id, callee()->data_channel()->id());
+  EXPECT_EQ("data-channel", callee()->data_channel()->label());
+  EXPECT_EQ(init.maxRetransmits, callee()->data_channel()->maxRetransmits());
+  EXPECT_FALSE(callee()->data_channel()->negotiated());
+}
 
 // Test that the ICE connection and gathering states eventually reach
 // "complete".

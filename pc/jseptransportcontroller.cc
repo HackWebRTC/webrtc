@@ -143,6 +143,15 @@ MediaTransportInterface* JsepTransportController::GetMediaTransport(
   return jsep_transport->media_transport();
 }
 
+MediaTransportState JsepTransportController::GetMediaTransportState(
+    const std::string& mid) const {
+  auto jsep_transport = GetJsepTransportForMid(mid);
+  if (!jsep_transport) {
+    return MediaTransportState::kPending;
+  }
+  return jsep_transport->media_transport_state();
+}
+
 cricket::DtlsTransportInternal* JsepTransportController::GetDtlsTransport(
     const std::string& mid) const {
   auto jsep_transport = GetJsepTransportForMid(mid);
@@ -1042,7 +1051,7 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
   jsep_transport->SignalRtcpMuxActive.connect(
       this, &JsepTransportController::UpdateAggregateStates_n);
   jsep_transport->SignalMediaTransportStateChanged.connect(
-      this, &JsepTransportController::UpdateAggregateStates_n);
+      this, &JsepTransportController::OnMediaTransportStateChanged_n);
   SetTransportForMid(content_info.name, jsep_transport.get());
 
   jsep_transports_by_name_[content_info.name] = std::move(jsep_transport);
@@ -1221,6 +1230,11 @@ void JsepTransportController::OnTransportStateChanged_n(
   RTC_LOG(LS_INFO) << transport->transport_name() << " Transport "
                    << transport->component()
                    << " state changed. Check if state is complete.";
+  UpdateAggregateStates_n();
+}
+
+void JsepTransportController::OnMediaTransportStateChanged_n() {
+  SignalMediaTransportStateChanged();
   UpdateAggregateStates_n();
 }
 

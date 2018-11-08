@@ -32,6 +32,11 @@ class MockDataChannelSink : public DataChannelSink {
   MOCK_METHOD1(OnChannelClosed, void(int));
 };
 
+class MockStateCallback : public MediaTransportStateCallback {
+ public:
+  MOCK_METHOD1(OnStateChanged, void(MediaTransportState));
+};
+
 // Test only uses the sequence number.
 MediaTransportEncodedAudioFrame CreateAudioFrame(int sequence_number) {
   static constexpr int kSamplingRateHz = 48000;
@@ -120,6 +125,47 @@ TEST(LoopbackMediaTransport, CloseDeliveredToSink) {
   transport_pair.FlushAsyncInvokes();
   transport_pair.first()->SetDataSink(nullptr);
   transport_pair.second()->SetDataSink(nullptr);
+}
+
+TEST(LoopbackMediaTransport, InitialStateDeliveredWhenCallbackSet) {
+  std::unique_ptr<rtc::Thread> thread = rtc::Thread::Create();
+  thread->Start();
+  MediaTransportPair transport_pair(thread.get());
+
+  MockStateCallback state_callback;
+
+  EXPECT_CALL(state_callback, OnStateChanged(MediaTransportState::kPending));
+  transport_pair.first()->SetMediaTransportStateCallback(&state_callback);
+  transport_pair.FlushAsyncInvokes();
+}
+
+TEST(LoopbackMediaTransport, ChangedStateDeliveredWhenCallbackSet) {
+  std::unique_ptr<rtc::Thread> thread = rtc::Thread::Create();
+  thread->Start();
+  MediaTransportPair transport_pair(thread.get());
+
+  transport_pair.SetState(MediaTransportState::kWritable);
+  transport_pair.FlushAsyncInvokes();
+
+  MockStateCallback state_callback;
+
+  EXPECT_CALL(state_callback, OnStateChanged(MediaTransportState::kWritable));
+  transport_pair.first()->SetMediaTransportStateCallback(&state_callback);
+  transport_pair.FlushAsyncInvokes();
+}
+
+TEST(LoopbackMediaTransport, StateChangeDeliveredToCallback) {
+  std::unique_ptr<rtc::Thread> thread = rtc::Thread::Create();
+  thread->Start();
+  MediaTransportPair transport_pair(thread.get());
+
+  MockStateCallback state_callback;
+
+  EXPECT_CALL(state_callback, OnStateChanged(MediaTransportState::kPending));
+  EXPECT_CALL(state_callback, OnStateChanged(MediaTransportState::kWritable));
+  transport_pair.first()->SetMediaTransportStateCallback(&state_callback);
+  transport_pair.SetState(MediaTransportState::kWritable);
+  transport_pair.FlushAsyncInvokes();
 }
 
 }  // namespace webrtc

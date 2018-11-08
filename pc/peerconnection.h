@@ -52,6 +52,7 @@ class RtcEventLog;
 // - Generating stats.
 class PeerConnection : public PeerConnectionInternal,
                        public DataChannelProviderInterface,
+                       public DataChannelSink,
                        public JsepTransportController::Observer,
                        public rtc::MessageHandler,
                        public sigslot::has_slots<> {
@@ -632,6 +633,11 @@ class PeerConnection : public PeerConnectionInternal,
   // Called when a valid data channel OPEN message is received.
   void OnDataChannelOpenMessage(const std::string& label,
                                 const InternalDataChannelInit& config);
+  // Parses and handles open messages.  Returns true if the message is an open
+  // message, false otherwise.
+  bool HandleOpenMessage_s(const cricket::ReceiveDataParams& params,
+                           const rtc::CopyOnWriteBuffer& buffer)
+      RTC_RUN_ON(signaling_thread());
 
   // Returns true if the PeerConnection is configured to use Unified Plan
   // semantics for creating offers/answers and setting local/remote
@@ -733,6 +739,13 @@ class PeerConnection : public PeerConnectionInternal,
 
   cricket::DataChannelType data_channel_type() const;
 
+  // Implements DataChannelSink.
+  void OnDataReceived(int channel_id,
+                      DataMessageType type,
+                      const rtc::CopyOnWriteBuffer& buffer) override;
+  void OnChannelClosing(int channel_id) override;
+  void OnChannelClosed(int channel_id) override;
+
   // Called when an RTCCertificate is generated or retrieved by
   // WebRTCSessionDescriptionFactory. Should happen before setLocalDescription.
   void OnCertificateReady(
@@ -829,6 +842,11 @@ class PeerConnection : public PeerConnectionInternal,
                                      const rtc::CopyOnWriteBuffer& payload);
   void OnSctpClosingProcedureStartedRemotely_n(int sid);
   void OnSctpClosingProcedureComplete_n(int sid);
+
+  bool SetupMediaTransportForDataChannels_n(const std::string& mid)
+      RTC_RUN_ON(network_thread());
+  void OnMediaTransportStateChanged_n() RTC_RUN_ON(network_thread());
+  void TeardownMediaTransportForDataChannels_n() RTC_RUN_ON(network_thread());
 
   bool ValidateBundleSettings(const cricket::SessionDescription* desc);
   bool HasRtcpMuxEnabled(const cricket::ContentInfo* content);
@@ -1049,6 +1067,33 @@ class PeerConnection : public PeerConnectionInternal,
       SignalSctpDataReceived;
   sigslot::signal1<int> SignalSctpClosingProcedureStartedRemotely;
   sigslot::signal1<int> SignalSctpClosingProcedureComplete;
+
+  // Whether this peer is the caller. Set when the local description is applied.
+  absl::optional<bool> is_caller_ RTC_GUARDED_BY(signaling_thread());
+
+  // Content name (MID) for media transport data channels in SDP.
+  absl::optional<std::string> media_transport_data_mid_;
+
+  // Media transport used for data channels.  Thread-safe.
+  MediaTransportInterface* media_transport_ = nullptr;
+
+  // Cached value of whether the media transport is ready to send.
+  bool media_transport_ready_to_send_data_ RTC_GUARDED_BY(signaling_thread()) =
+      false;
+
+  // Used to invoke media transport signals on the signaling thread.
+  std::unique_ptr<rtc::AsyncInvoker> media_transport_invoker_;
+
+  // Identical to the signals for SCTP, but from media transport:
+  sigslot::signal1<bool> SignalMediaTransportWritable_s
+      RTC_GUARDED_BY(signaling_thread());
+  sigslot::signal2<const cricket::ReceiveDataParams&,
+                   const rtc::CopyOnWriteBuffer&>
+      SignalMediaTransportReceivedData_s RTC_GUARDED_BY(signaling_thread());
+  sigslot::signal1<int> SignalMediaTransportChannelClosing_s
+      RTC_GUARDED_BY(signaling_thread());
+  sigslot::signal1<int> SignalMediaTransportChannelClosed_s
+      RTC_GUARDED_BY(signaling_thread());
 
   std::unique_ptr<SessionDescriptionInterface> current_local_description_;
   std::unique_ptr<SessionDescriptionInterface> pending_local_description_;
