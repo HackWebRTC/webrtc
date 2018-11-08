@@ -51,6 +51,7 @@ rtc_static_library("common_audio") {
     "../rtc_base:checks",
     "../rtc_base:gtest_prod",
     "../rtc_base:rtc_base_approved",
+    "../rtc_base:sanitizer",
     "../rtc_base/memory:aligned_array",
     "../rtc_base/memory:aligned_malloc",
     "../rtc_base/system:arch",
