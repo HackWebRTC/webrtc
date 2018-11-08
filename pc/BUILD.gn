@@ -217,23 +217,6 @@ rtc_static_library("peerconnection") {
   ]
 }
 
-rtc_static_library("builtin_video_bitrate_allocator_factory") {
-  sources = [
-    "builtin_video_bitrate_allocator_factory.cc",
-    "builtin_video_bitrate_allocator_factory.h",
-  ]
-
-  deps = [
-    "../api/video:video_bitrate_allocator_factory",
-    "../media:rtc_media_base",
-    "../modules/video_coding:video_coding_utility",
-    "../modules/video_coding:webrtc_vp9_helpers",
-    "../rtc_base:ptr_util",
-    "../rtc_base/system:fallthrough",
-    "//third_party/abseil-cpp/absl/memory",
-  ]
-}
-
 # This target implements CreatePeerConnectionFactory methods that will create a
 # PeerConnection will full functionality (audio, video and data). Applications
 # that wish to reduce their binary size by ommitting functionality they don't

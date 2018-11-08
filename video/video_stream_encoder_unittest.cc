@@ -14,6 +14,7 @@
 #include <limits>
 #include <utility>
 
+#include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "api/video/i420_buffer.h"
 #include "api/video_codecs/create_vp8_temporal_layers.h"
 #include "api/video_codecs/vp8_temporal_layers.h"
@@ -279,6 +280,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
         max_framerate_(kDefaultFramerate),
         fake_encoder_(),
         encoder_factory_(&fake_encoder_),
+        bitrate_allocator_factory_(CreateBuiltinVideoBitrateAllocatorFactory()),
         stats_proxy_(new MockableSendStatisticsProxy(
             Clock::GetRealTimeClock(),
             video_send_config_,
@@ -289,6 +291,8 @@ class VideoStreamEncoderTest : public ::testing::Test {
     metrics::Reset();
     video_send_config_ = VideoSendStream::Config(nullptr);
     video_send_config_.encoder_settings.encoder_factory = &encoder_factory_;
+    video_send_config_.encoder_settings.bitrate_allocator_factory =
+        bitrate_allocator_factory_.get();
     video_send_config_.rtp.payload_name = "FAKE";
     video_send_config_.rtp.payload_type = 125;
 
@@ -696,6 +700,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
   int max_framerate_;
   TestEncoder fake_encoder_;
   test::VideoEncoderProxyFactory encoder_factory_;
+  std::unique_ptr<VideoBitrateAllocatorFactory> bitrate_allocator_factory_;
   std::unique_ptr<MockableSendStatisticsProxy> stats_proxy_;
   TestSink sink_;
   AdaptingFrameForwarder video_source_;

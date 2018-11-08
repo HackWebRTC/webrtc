@@ -16,6 +16,7 @@
 #include "absl/memory/memory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/test/simulated_network.h"
+#include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "api/video_codecs/video_encoder_config.h"
 #include "call/call.h"
@@ -729,7 +730,9 @@ TEST_F(CallPerfTest, MAYBE_KeepsHighBitrateWhenReconfiguringSender) {
           last_set_bitrate_kbps_(0),
           send_stream_(nullptr),
           frame_generator_(nullptr),
-          encoder_factory_(this) {}
+          encoder_factory_(this),
+          bitrate_allocator_factory_(
+              CreateBuiltinVideoBitrateAllocatorFactory()) {}
 
     int32_t InitEncode(const VideoCodec* config,
                        int32_t number_of_cores,
@@ -776,6 +779,8 @@ TEST_F(CallPerfTest, MAYBE_KeepsHighBitrateWhenReconfiguringSender) {
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
       send_config->encoder_settings.encoder_factory = &encoder_factory_;
+      send_config->encoder_settings.bitrate_allocator_factory =
+          bitrate_allocator_factory_.get();
       encoder_config->max_bitrate_bps = 2 * kReconfigureThresholdKbps * 1000;
       encoder_config->video_stream_factory =
           new rtc::RefCountedObject<VideoStreamFactory>();
@@ -811,6 +816,7 @@ TEST_F(CallPerfTest, MAYBE_KeepsHighBitrateWhenReconfiguringSender) {
     VideoSendStream* send_stream_;
     test::FrameGeneratorCapturer* frame_generator_;
     test::VideoEncoderProxyFactory encoder_factory_;
+    std::unique_ptr<VideoBitrateAllocatorFactory> bitrate_allocator_factory_;
     VideoEncoderConfig encoder_config_;
   } test;
 

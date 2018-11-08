@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <utility>
 
+#include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "api/video/video_bitrate_allocator.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "common_video/libyuv/include/webrtc_libyuv.h"
@@ -81,6 +82,7 @@ class VideoCodingModuleImpl : public VideoCodingModule {
                         KeyFrameRequestSender* keyframe_request_sender)
       : VideoCodingModule(),
         sender_(clock, &post_encode_callback_),
+        rate_allocator_factory_(CreateBuiltinVideoBitrateAllocatorFactory()),
         timing_(new VCMTiming(clock)),
         receiver_(clock, timing_.get(), nack_sender, keyframe_request_sender) {}
 
@@ -105,7 +107,8 @@ class VideoCodingModuleImpl : public VideoCodingModule {
       // asynchronously keep the instance alive until destruction or until a
       // new send codec is registered.
       VideoCodec codec = *sendCodec;
-      rate_allocator_ = VideoCodecInitializer::CreateBitrateAllocator(codec);
+      rate_allocator_ =
+          rate_allocator_factory_->CreateVideoBitrateAllocator(codec);
       return sender_.RegisterSendCodec(&codec, numberOfCores, maxPayloadSize);
     }
     return sender_.RegisterSendCodec(sendCodec, numberOfCores, maxPayloadSize);
@@ -204,8 +207,9 @@ class VideoCodingModuleImpl : public VideoCodingModule {
   rtc::ThreadChecker construction_thread_;
   EncodedImageCallbackWrapper post_encode_callback_;
   vcm::VideoSender sender_;
+  const std::unique_ptr<VideoBitrateAllocatorFactory> rate_allocator_factory_;
   std::unique_ptr<VideoBitrateAllocator> rate_allocator_;
-  std::unique_ptr<VCMTiming> timing_;
+  const std::unique_ptr<VCMTiming> timing_;
   vcm::VideoReceiver receiver_;
 };
 }  // namespace
