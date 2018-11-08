@@ -1136,6 +1136,7 @@ rtc_source_set("neteq_tools_minimal") {
     "../rtp_rtcp",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
+  defines = audio_codec_defines
 }
 
 rtc_source_set("neteq_test_tools") {
@@ -1537,7 +1538,7 @@ if (rtc_include_tests) {
     rtc_source_set("neteq_test_factory") {
       testonly = true
       visibility += webrtc_default_visibility
-      defines = []
+      defines = audio_codec_defines
       deps = [
         "../../rtc_base:checks",
         "../../test:fileutils",
