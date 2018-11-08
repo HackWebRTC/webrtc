@@ -688,13 +688,7 @@ TEST_F(RampUpTest, TransportSequenceNumberSimulcastRedRtx) {
   RunBaseTest(&test);
 }
 
-// TODO(bugs.webrtc.org/8878)
-#if defined(WEBRTC_MAC)
-#define MAYBE_AudioTransportSequenceNumber DISABLED_AudioTransportSequenceNumber
-#else
-#define MAYBE_AudioTransportSequenceNumber AudioTransportSequenceNumber
-#endif
-TEST_F(RampUpTest, MAYBE_AudioTransportSequenceNumber) {
+TEST_F(RampUpTest, AudioTransportSequenceNumber) {
   RampUpTester test(0, 1, 0, 300000, 10000,
                     RtpExtension::kTransportSequenceNumberUri, false, false,
                     false);
