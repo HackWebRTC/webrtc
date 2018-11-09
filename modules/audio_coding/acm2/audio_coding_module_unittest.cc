@@ -1439,14 +1439,14 @@ TEST_F(AcmSenderBitExactnessOldApi, MAYBE_G722_stereo_20ms) {
 TEST_F(AcmSenderBitExactnessOldApi, Opus_stereo_20ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 2, 120, 960, 960));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
-          "3e285b74510e62062fbd8142dacd16e9",
-          "3e285b74510e62062fbd8142dacd16e9",
+          "fd5d57d6d766908e6a7211e2a5c7f78a",
+          "fd5d57d6d766908e6a7211e2a5c7f78a",
           "439e97ad1932c49923b5da029c17dd5e",
           "038ec90f5f3fc2320f3090f8ecef6bb7",
           "038ec90f5f3fc2320f3090f8ecef6bb7"),
       AcmReceiverBitExactnessOldApi::PlatformChecksum(
-          "78cf8f03157358acdc69f6835caa0d9b",
-          "78cf8f03157358acdc69f6835caa0d9b",
+          "b693bd95c2ee2354f92340dd09e9da68",
+          "b693bd95c2ee2354f92340dd09e9da68",
           "ab88b1a049c36bdfeb7e8b057ef6982a",
           "27fef7b799393347ec3b5694369a1c36",
           "27fef7b799393347ec3b5694369a1c36"),
@@ -1459,14 +1459,14 @@ TEST_F(AcmSenderBitExactnessNewApi, MAYBE_OpusFromFormat_stereo_20ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTestExternalEncoder(
       AudioEncoderOpus::MakeAudioEncoder(*config, 120), 120));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
-          "3e285b74510e62062fbd8142dacd16e9",
-          "3e285b74510e62062fbd8142dacd16e9",
+          "fd5d57d6d766908e6a7211e2a5c7f78a",
+          "fd5d57d6d766908e6a7211e2a5c7f78a",
           "439e97ad1932c49923b5da029c17dd5e",
           "038ec90f5f3fc2320f3090f8ecef6bb7",
           "038ec90f5f3fc2320f3090f8ecef6bb7"),
       AcmReceiverBitExactnessOldApi::PlatformChecksum(
-          "78cf8f03157358acdc69f6835caa0d9b",
-          "78cf8f03157358acdc69f6835caa0d9b",
+          "b693bd95c2ee2354f92340dd09e9da68",
+          "b693bd95c2ee2354f92340dd09e9da68",
           "ab88b1a049c36bdfeb7e8b057ef6982a",
           "27fef7b799393347ec3b5694369a1c36",
           "27fef7b799393347ec3b5694369a1c36"),
@@ -1481,14 +1481,14 @@ TEST_F(AcmSenderBitExactnessNewApi, OpusFromFormat_stereo_20ms_voip) {
   ASSERT_NO_FATAL_FAILURE(SetUpTestExternalEncoder(
       AudioEncoderOpus::MakeAudioEncoder(*config, 120), 120));
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
-          "b0325df4e8104f04e03af23c0b75800e",
-          "b0325df4e8104f04e03af23c0b75800e",
+          "3cd4e1bc2acd9440bb9e97af34080ffc",
+          "3cd4e1bc2acd9440bb9e97af34080ffc",
           "1c81121f5d9286a5a865d01dbab22ce8",
           "11d547f89142e9ef03f37d7ca7f32379",
           "11d547f89142e9ef03f37d7ca7f32379"),
       AcmReceiverBitExactnessOldApi::PlatformChecksum(
-          "4eab2259b6fe24c22dd242a113e0b3d9",
-          "4eab2259b6fe24c22dd242a113e0b3d9",
+          "4fc0af0aa06c26454af09832d3ec1b4e",
+          "4fc0af0aa06c26454af09832d3ec1b4e",
           "839ea60399447268ee0f0262a50b75fd",
           "1815fd5589cad0c6f6cf946c76b81aeb",
           "1815fd5589cad0c6f6cf946c76b81aeb"),

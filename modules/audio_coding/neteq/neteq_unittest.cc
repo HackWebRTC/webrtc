@@ -502,11 +502,11 @@ TEST_F(NetEqDecodingTest, MAYBE_TestOpusBitExactness) {
       webrtc::test::ResourcePath("audio_coding/neteq_opus", "rtp");
 
   const std::string output_checksum =
-      PlatformChecksum("14a63b3c7b925c82296be4bafc71bec85f2915c2",
+      PlatformChecksum("2c05677daa968d6c68b92adf4affb7cd9bb4d363",
                        "b7b7ed802b0e18ee416973bf3b9ae98599b0181d",
                        "5876e52dda90d5ca433c3726555b907b97c86374",
-                       "14a63b3c7b925c82296be4bafc71bec85f2915c2",
-                       "14a63b3c7b925c82296be4bafc71bec85f2915c2");
+                       "2c05677daa968d6c68b92adf4affb7cd9bb4d363",
+                       "2c05677daa968d6c68b92adf4affb7cd9bb4d363");
 
   const std::string network_stats_checksum =
       PlatformChecksum("adb3272498e436d1c019cbfd71610e9510c54497",
@@ -537,11 +537,11 @@ TEST_F(NetEqDecodingTest, MAYBE_TestOpusDtxBitExactness) {
       webrtc::test::ResourcePath("audio_coding/neteq_opus_dtx", "rtp");
 
   const std::string output_checksum =
-      PlatformChecksum("713af6c92881f5aab1285765ee6680da9d1c06ce",
+      PlatformChecksum("2ac10c4e79aeedd0df2863b079da5848b40f00b5",
                        "3ec991b96872123f1554c03c543ca5d518431e46",
                        "da9f9a2d94e0c2d67342fad4965d7b91cda50b25",
-                       "713af6c92881f5aab1285765ee6680da9d1c06ce",
-                       "713af6c92881f5aab1285765ee6680da9d1c06ce");
+                       "2ac10c4e79aeedd0df2863b079da5848b40f00b5",
+                       "2ac10c4e79aeedd0df2863b079da5848b40f00b5");
 
   const std::string network_stats_checksum =
       "bab58dc587d956f326056d7340c96eb9d2d3cc21";
