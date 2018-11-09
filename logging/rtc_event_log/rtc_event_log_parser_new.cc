@@ -520,8 +520,9 @@ void StoreRtpPackets(
   }
 
   // timestamp_ms (event)
-  std::vector<absl::optional<uint64_t>> timestamp_ms_values = DecodeDeltas(
-      proto.timestamp_ms_deltas(), proto.timestamp_ms(), number_of_deltas);
+  std::vector<absl::optional<uint64_t>> timestamp_ms_values =
+      DecodeDeltas(proto.timestamp_ms_deltas(),
+                   ToUnsigned(proto.timestamp_ms()), number_of_deltas);
   RTC_CHECK_EQ(timestamp_ms_values.size(), number_of_deltas);
 
   // marker (RTP base)
@@ -648,6 +649,9 @@ void StoreRtpPackets(
     RTC_CHECK(header_size_values[i].has_value());
     RTC_CHECK(padding_size_values[i].has_value());
 
+    int64_t timestamp_ms;
+    RTC_CHECK(ToSigned(timestamp_ms_values[i].value(), &timestamp_ms));
+
     RTPHeader header;
     header.markerBit = rtc::checked_cast<bool>(*marker_values[i]);
     header.payloadType = rtc::checked_cast<uint8_t>(*payload_type_values[i]);
@@ -700,7 +704,7 @@ void StoreRtpPackets(
                 !voice_activity_values[i].has_value());
     }
     (*rtp_packets_map)[header.ssrc].emplace_back(
-        timestamp_ms_values[i].value() * 1000, header, header.headerLength,
+        1000 * timestamp_ms, header, header.headerLength,
         payload_size_values[i].value() + header.headerLength +
             header.paddingLength);
   }
@@ -722,8 +726,9 @@ void StoreRtcpPackets(const ProtoType& proto,
   }
 
   // timestamp_ms
-  std::vector<absl::optional<uint64_t>> timestamp_ms_values = DecodeDeltas(
-      proto.timestamp_ms_deltas(), proto.timestamp_ms(), number_of_deltas);
+  std::vector<absl::optional<uint64_t>> timestamp_ms_values =
+      DecodeDeltas(proto.timestamp_ms_deltas(),
+                   ToUnsigned(proto.timestamp_ms()), number_of_deltas);
   RTC_CHECK_EQ(timestamp_ms_values.size(), number_of_deltas);
 
   // raw_packet
@@ -735,8 +740,11 @@ void StoreRtcpPackets(const ProtoType& proto,
   // Delta decoding
   for (size_t i = 0; i < number_of_deltas; ++i) {
     RTC_CHECK(timestamp_ms_values[i].has_value());
+    int64_t timestamp_ms;
+    RTC_CHECK(ToSigned(timestamp_ms_values[i].value(), &timestamp_ms));
+
     rtcp_packets->emplace_back(
-        1000 * timestamp_ms_values[i].value(),
+        1000 * timestamp_ms,
         reinterpret_cast<const uint8_t*>(raw_packet_values[i].data()),
         raw_packet_values[i].size());
   }
@@ -2071,8 +2079,9 @@ void ParsedRtcEventLogNew::StoreAudioPlayoutEvent(
   }
 
   // timestamp_ms
-  std::vector<absl::optional<uint64_t>> timestamp_ms_values = DecodeDeltas(
-      proto.timestamp_ms_deltas(), proto.timestamp_ms(), number_of_deltas);
+  std::vector<absl::optional<uint64_t>> timestamp_ms_values =
+      DecodeDeltas(proto.timestamp_ms_deltas(),
+                   ToUnsigned(proto.timestamp_ms()), number_of_deltas);
   RTC_CHECK_EQ(timestamp_ms_values.size(), number_of_deltas);
 
   // local_ssrc
@@ -2086,10 +2095,14 @@ void ParsedRtcEventLogNew::StoreAudioPlayoutEvent(
     RTC_CHECK(local_ssrc_values[i].has_value());
     RTC_CHECK_LE(local_ssrc_values[i].value(),
                  std::numeric_limits<uint32_t>::max());
+
+    int64_t timestamp_ms;
+    RTC_CHECK(ToSigned(timestamp_ms_values[i].value(), &timestamp_ms));
+
     const uint32_t local_ssrc =
         static_cast<uint32_t>(local_ssrc_values[i].value());
-    audio_playout_events_[local_ssrc].emplace_back(
-        1000 * timestamp_ms_values[i].value(), local_ssrc);
+    audio_playout_events_[local_ssrc].emplace_back(1000 * timestamp_ms,
+                                                   local_ssrc);
   }
 }
 
@@ -2147,8 +2160,9 @@ void ParsedRtcEventLogNew::StoreBweLossBasedUpdate(
   }
 
   // timestamp_ms
-  std::vector<absl::optional<uint64_t>> timestamp_ms_values = DecodeDeltas(
-      proto.timestamp_ms_deltas(), proto.timestamp_ms(), number_of_deltas);
+  std::vector<absl::optional<uint64_t>> timestamp_ms_values =
+      DecodeDeltas(proto.timestamp_ms_deltas(),
+                   ToUnsigned(proto.timestamp_ms()), number_of_deltas);
   RTC_CHECK_EQ(timestamp_ms_values.size(), number_of_deltas);
 
   // bitrate_bps
@@ -2169,6 +2183,8 @@ void ParsedRtcEventLogNew::StoreBweLossBasedUpdate(
   // Delta decoding
   for (size_t i = 0; i < number_of_deltas; ++i) {
     RTC_CHECK(timestamp_ms_values[i].has_value());
+    int64_t timestamp_ms;
+    RTC_CHECK(ToSigned(timestamp_ms_values[i].value(), &timestamp_ms));
 
     RTC_CHECK(bitrate_bps_values[i].has_value());
     RTC_CHECK_LE(bitrate_bps_values[i].value(),
@@ -2188,8 +2204,8 @@ void ParsedRtcEventLogNew::StoreBweLossBasedUpdate(
     const uint32_t total_packets =
         static_cast<uint32_t>(total_packets_values[i].value());
 
-    bwe_loss_updates_.emplace_back(1000 * timestamp_ms_values[i].value(),
-                                   bitrate_bps, fraction_loss, total_packets);
+    bwe_loss_updates_.emplace_back(1000 * timestamp_ms, bitrate_bps,
+                                   fraction_loss, total_packets);
   }
 }
 
@@ -2212,8 +2228,9 @@ void ParsedRtcEventLogNew::StoreBweDelayBasedUpdate(
   }
 
   // timestamp_ms
-  std::vector<absl::optional<uint64_t>> timestamp_ms_values = DecodeDeltas(
-      proto.timestamp_ms_deltas(), proto.timestamp_ms(), number_of_deltas);
+  std::vector<absl::optional<uint64_t>> timestamp_ms_values =
+      DecodeDeltas(proto.timestamp_ms_deltas(),
+                   ToUnsigned(proto.timestamp_ms()), number_of_deltas);
   RTC_CHECK_EQ(timestamp_ms_values.size(), number_of_deltas);
 
   // bitrate_bps
@@ -2230,6 +2247,8 @@ void ParsedRtcEventLogNew::StoreBweDelayBasedUpdate(
   // Delta decoding
   for (size_t i = 0; i < number_of_deltas; ++i) {
     RTC_CHECK(timestamp_ms_values[i].has_value());
+    int64_t timestamp_ms;
+    RTC_CHECK(ToSigned(timestamp_ms_values[i].value(), &timestamp_ms));
 
     RTC_CHECK(bitrate_bps_values[i].has_value());
     RTC_CHECK_LE(bitrate_bps_values[i].value(),
@@ -2242,8 +2261,7 @@ void ParsedRtcEventLogNew::StoreBweDelayBasedUpdate(
         static_cast<rtclog2::DelayBasedBweUpdates::DetectorState>(
             detector_state_values[i].value());
 
-    bwe_delay_updates_.emplace_back(1000 * timestamp_ms_values[i].value(),
-                                    bitrate_bps,
+    bwe_delay_updates_.emplace_back(1000 * timestamp_ms, bitrate_bps,
                                     GetRuntimeDetectorState(detector_state));
   }
 }
@@ -2337,8 +2355,9 @@ void ParsedRtcEventLogNew::StoreAudioNetworkAdaptationEvent(
   }
 
   // timestamp_ms
-  std::vector<absl::optional<uint64_t>> timestamp_ms_values = DecodeDeltas(
-      proto.timestamp_ms_deltas(), proto.timestamp_ms(), number_of_deltas);
+  std::vector<absl::optional<uint64_t>> timestamp_ms_values =
+      DecodeDeltas(proto.timestamp_ms_deltas(),
+                   ToUnsigned(proto.timestamp_ms()), number_of_deltas);
   RTC_CHECK_EQ(timestamp_ms_values.size(), number_of_deltas);
 
   // bitrate_bps
@@ -2409,6 +2428,8 @@ void ParsedRtcEventLogNew::StoreAudioNetworkAdaptationEvent(
   // Delta decoding
   for (size_t i = 0; i < number_of_deltas; ++i) {
     RTC_CHECK(timestamp_ms_values[i].has_value());
+    int64_t timestamp_ms;
+    RTC_CHECK(ToSigned(timestamp_ms_values[i].value(), &timestamp_ms));
 
     AudioEncoderRuntimeConfig runtime_config;
     if (bitrate_bps_values[i].has_value()) {
@@ -2442,8 +2463,8 @@ void ParsedRtcEventLogNew::StoreAudioNetworkAdaptationEvent(
       runtime_config.num_channels =
           rtc::checked_cast<size_t>(num_channels_values[i].value());
     }
-    audio_network_adaptation_events_.emplace_back(
-        1000 * timestamp_ms_values[i].value(), runtime_config);
+    audio_network_adaptation_events_.emplace_back(1000 * timestamp_ms,
+                                                  runtime_config);
   }
 }
 

@@ -316,9 +316,9 @@ void EncodeRtcpPacket(rtc::ArrayView<const EventType*> batch,
   // timestamp_ms
   for (size_t i = 0; i < values.size(); ++i) {
     const EventType* event = batch[i + 1];
-    values[i] = event->timestamp_ms();
+    values[i] = ToUnsigned(event->timestamp_ms());
   }
-  encoded_deltas = EncodeDeltas(base_event->timestamp_ms(), values);
+  encoded_deltas = EncodeDeltas(ToUnsigned(base_event->timestamp_ms()), values);
   if (!encoded_deltas.empty()) {
     proto_batch->set_timestamp_ms_deltas(encoded_deltas);
   }
@@ -428,9 +428,9 @@ void EncodeRtpPacket(const std::vector<const EventType*>& batch,
   // timestamp_ms (event)
   for (size_t i = 0; i < values.size(); ++i) {
     const EventType* event = batch[i + 1];
-    values[i] = event->timestamp_ms();
+    values[i] = ToUnsigned(event->timestamp_ms());
   }
-  encoded_deltas = EncodeDeltas(base_event->timestamp_ms(), values);
+  encoded_deltas = EncodeDeltas(ToUnsigned(base_event->timestamp_ms()), values);
   if (!encoded_deltas.empty()) {
     proto_batch->set_timestamp_ms_deltas(encoded_deltas);
   }
@@ -862,9 +862,9 @@ void RtcEventLogEncoderNewFormat::EncodeAudioNetworkAdaptation(
   // timestamp_ms
   for (size_t i = 0; i < values.size(); ++i) {
     const RtcEventAudioNetworkAdaptation* event = batch[i + 1];
-    values[i] = event->timestamp_ms();
+    values[i] = ToUnsigned(event->timestamp_ms());
   }
-  encoded_deltas = EncodeDeltas(base_event->timestamp_ms(), values);
+  encoded_deltas = EncodeDeltas(ToUnsigned(base_event->timestamp_ms()), values);
   if (!encoded_deltas.empty()) {
     proto_batch->set_timestamp_ms_deltas(encoded_deltas);
   }
@@ -993,9 +993,9 @@ void RtcEventLogEncoderNewFormat::EncodeAudioPlayout(
   // timestamp_ms
   for (size_t i = 0; i < values.size(); ++i) {
     const RtcEventAudioPlayout* event = batch[i + 1];
-    values[i] = event->timestamp_ms();
+    values[i] = ToUnsigned(event->timestamp_ms());
   }
-  encoded_deltas = EncodeDeltas(base_event->timestamp_ms(), values);
+  encoded_deltas = EncodeDeltas(ToUnsigned(base_event->timestamp_ms()), values);
   if (!encoded_deltas.empty()) {
     proto_batch->set_timestamp_ms_deltas(encoded_deltas);
   }
@@ -1078,9 +1078,9 @@ void RtcEventLogEncoderNewFormat::EncodeBweUpdateDelayBased(
   // timestamp_ms
   for (size_t i = 0; i < values.size(); ++i) {
     const RtcEventBweUpdateDelayBased* event = batch[i + 1];
-    values[i] = event->timestamp_ms();
+    values[i] = ToUnsigned(event->timestamp_ms());
   }
-  encoded_deltas = EncodeDeltas(base_event->timestamp_ms(), values);
+  encoded_deltas = EncodeDeltas(ToUnsigned(base_event->timestamp_ms()), values);
   if (!encoded_deltas.empty()) {
     proto_batch->set_timestamp_ms_deltas(encoded_deltas);
   }
@@ -1135,9 +1135,9 @@ void RtcEventLogEncoderNewFormat::EncodeBweUpdateLossBased(
   // timestamp_ms
   for (size_t i = 0; i < values.size(); ++i) {
     const RtcEventBweUpdateLossBased* event = batch[i + 1];
-    values[i] = event->timestamp_ms();
+    values[i] = ToUnsigned(event->timestamp_ms());
   }
-  encoded_deltas = EncodeDeltas(base_event->timestamp_ms(), values);
+  encoded_deltas = EncodeDeltas(ToUnsigned(base_event->timestamp_ms()), values);
   if (!encoded_deltas.empty()) {
     proto_batch->set_timestamp_ms_deltas(encoded_deltas);
   }
