@@ -23,8 +23,13 @@ namespace cricket {
 
 class FakeIceTransport : public IceTransportInternal {
  public:
-  explicit FakeIceTransport(const std::string& name, int component)
-      : name_(name), component_(component) {}
+  explicit FakeIceTransport(const std::string& name,
+                            int component,
+                            rtc::Thread* network_thread = nullptr)
+      : name_(name),
+        component_(component),
+        network_thread_(network_thread ? network_thread
+                                       : rtc::Thread::Current()) {}
   ~FakeIceTransport() override {
     if (dest_ && dest_->dest_ == this) {
       dest_->dest_ = nullptr;
@@ -239,6 +244,8 @@ class FakeIceTransport : public IceTransportInternal {
   }
   void SetNetworkRoute(absl::optional<rtc::NetworkRoute> network_route) {
     network_route_ = network_route;
+    network_thread_->Invoke<void>(
+        RTC_FROM_HERE, [this] { SignalNetworkRouteChanged(network_route_); });
   }
 
  private:
@@ -295,6 +302,7 @@ class FakeIceTransport : public IceTransportInternal {
   absl::optional<rtc::NetworkRoute> network_route_;
   std::map<rtc::Socket::Option, int> socket_options_;
   rtc::CopyOnWriteBuffer last_sent_packet_;
+  rtc::Thread* const network_thread_;
 };
 
 }  // namespace cricket
