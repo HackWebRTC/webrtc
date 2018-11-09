@@ -96,8 +96,9 @@ void BitrateProber::CreateProbeCluster(int bitrate_bps, int64_t now_ms) {
   ProbeCluster cluster;
   cluster.time_created_ms = now_ms;
   cluster.pace_info.probe_cluster_min_probes = kMinProbePacketsSent;
-  cluster.pace_info.probe_cluster_min_bytes =
-      bitrate_bps * kMinProbeDurationMs / 8000;
+  cluster.pace_info.probe_cluster_min_bytes = static_cast<int32_t>(
+      static_cast<int64_t>(bitrate_bps) * kMinProbeDurationMs / 8000);
+  RTC_DCHECK_GE(cluster.pace_info.probe_cluster_min_bytes, 0);
   cluster.pace_info.send_bitrate_bps = bitrate_bps;
   cluster.pace_info.probe_cluster_id = next_cluster_id_++;
   clusters_.push(cluster);
