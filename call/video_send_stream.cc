@@ -79,7 +79,7 @@ std::string VideoSendStream::Config::ToString() const {
   ss << "{encoder_settings: { experiment_cpu_load_estimator: "
      << (encoder_settings.experiment_cpu_load_estimator ? "on" : "off") << "}}";
   ss << ", rtp: " << rtp.ToString();
-  ss << ", rtcp: " << rtcp.ToString();
+  ss << ", rtcp_report_interval_ms: " << rtcp_report_interval_ms;
   ss << ", pre_encode_callback: "
      << (pre_encode_callback ? "(VideoSinkInterface)" : "nullptr");
   ss << ", render_delay_ms: " << render_delay_ms;

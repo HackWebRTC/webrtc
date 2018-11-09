@@ -251,7 +251,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
           suspended_ssrcs,
           suspended_payload_states,
           config_->rtp,
-          config_->rtcp,
+          config_->rtcp_report_interval_ms,
           config_->send_transport,
           CreateObservers(call_stats,
                           &encoder_feedback_,

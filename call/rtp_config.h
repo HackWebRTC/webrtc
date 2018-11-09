@@ -134,17 +134,5 @@ struct RtpConfig {
   // RTCP CNAME, see RFC 3550.
   std::string c_name;
 };
-
-struct RtcpConfig {
-  RtcpConfig();
-  RtcpConfig(const RtcpConfig&);
-  ~RtcpConfig();
-  std::string ToString() const;
-
-  // Time interval between RTCP report for video
-  int64_t video_report_interval_ms = 1000;
-  // Time interval between RTCP report for audio
-  int64_t audio_report_interval_ms = 5000;
-};
 }  // namespace webrtc
 #endif  // CALL_RTP_CONFIG_H_

@@ -41,7 +41,7 @@ static const size_t kPathMTU = 1500;
 std::vector<std::unique_ptr<RtpRtcp>> CreateRtpRtcpModules(
     const std::vector<uint32_t>& ssrcs,
     const RtpConfig& rtp_config,
-    const RtcpConfig& rtcp_config,
+    int rtcp_report_interval_ms,
     Transport* send_transport,
     RtcpIntraFrameObserver* intra_frame_callback,
     RtcpBandwidthObserver* bandwidth_callback,
@@ -82,14 +82,12 @@ std::vector<std::unique_ptr<RtpRtcp>> CreateRtpRtcpModules(
   configuration.retransmission_rate_limiter = retransmission_rate_limiter;
   configuration.overhead_observer = overhead_observer;
   configuration.keepalive_config = keepalive_config;
-  configuration.rtcp_interval_config.video_interval_ms =
-      rtcp_config.video_report_interval_ms;
-  configuration.rtcp_interval_config.audio_interval_ms =
-      rtcp_config.audio_report_interval_ms;
   configuration.frame_encryptor = frame_encryptor;
   configuration.require_frame_encryption =
       crypto_options.sframe.require_frame_encryption;
   configuration.extmap_allow_mixed = rtp_config.extmap_allow_mixed;
+  configuration.rtcp_interval_config.video_interval_ms =
+      rtcp_report_interval_ms;
 
   std::vector<std::unique_ptr<RtpRtcp>> modules;
   const std::vector<uint32_t>& flexfec_protected_ssrcs =
@@ -186,7 +184,7 @@ RtpVideoSender::RtpVideoSender(
     std::map<uint32_t, RtpState> suspended_ssrcs,
     const std::map<uint32_t, RtpPayloadState>& states,
     const RtpConfig& rtp_config,
-    const RtcpConfig& rtcp_config,
+    int rtcp_report_interval_ms,
     Transport* send_transport,
     const RtpSenderObservers& observers,
     RtpTransportControllerSendInterface* transport,
@@ -204,7 +202,7 @@ RtpVideoSender::RtpVideoSender(
       fec_controller_(std::move(fec_controller)),
       rtp_modules_(CreateRtpRtcpModules(ssrcs,
                                         rtp_config,
-                                        rtcp_config,
+                                        rtcp_report_interval_ms,
                                         send_transport,
                                         observers.intra_frame_callback,
                                         transport->GetBandwidthObserver(),

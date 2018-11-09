@@ -276,6 +276,8 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   bool send_ = false;
   webrtc::Call* const call_ = nullptr;
 
+  const MediaConfig::Audio audio_config_;
+
   // Queue of unsignaled SSRCs; oldest at the beginning.
   std::vector<uint32_t> unsignaled_recv_ssrcs_;
 

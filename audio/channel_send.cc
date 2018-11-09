@@ -454,7 +454,8 @@ ChannelSend::ChannelSend(rtc::TaskQueue* encoder_queue,
                          RtcEventLog* rtc_event_log,
                          FrameEncryptorInterface* frame_encryptor,
                          const webrtc::CryptoOptions& crypto_options,
-                         bool extmap_allow_mixed)
+                         bool extmap_allow_mixed,
+                         int rtcp_report_interval_ms)
     : event_log_(rtc_event_log),
       _timeStamp(0),  // This is just an offset, RTP module will add it's own
                       // random offset
@@ -498,6 +499,8 @@ ChannelSend::ChannelSend(rtc::TaskQueue* encoder_queue,
   configuration.retransmission_rate_limiter =
       retransmission_rate_limiter_.get();
   configuration.extmap_allow_mixed = extmap_allow_mixed;
+  configuration.rtcp_interval_config.audio_interval_ms =
+      rtcp_report_interval_ms;
 
   _rtpRtcpModule.reset(RtpRtcp::CreateRtpRtcp(configuration));
   _rtpRtcpModule->SetSendingMediaStatus(false);

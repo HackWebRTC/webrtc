@@ -112,18 +112,4 @@ std::string RtpConfig::Rtx::ToString() const {
   ss << '}';
   return ss.str();
 }
-
-RtcpConfig::RtcpConfig() = default;
-RtcpConfig::RtcpConfig(const RtcpConfig&) = default;
-RtcpConfig::~RtcpConfig() = default;
-
-std::string RtcpConfig::ToString() const {
-  char buf[1024];
-  rtc::SimpleStringBuilder ss(buf);
-  ss << "{video_report_interval_ms: " << video_report_interval_ms;
-  ss << ", audio_report_interval_ms: " << audio_report_interval_ms;
-  ss << '}';
-  return ss.str();
-}
-
 }  // namespace webrtc

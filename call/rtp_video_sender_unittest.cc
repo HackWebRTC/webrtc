@@ -102,7 +102,7 @@ class RtpVideoSenderTestFixture {
     std::map<uint32_t, RtpState> suspended_ssrcs;
     router_ = absl::make_unique<RtpVideoSender>(
         config_.rtp.ssrcs, suspended_ssrcs, suspended_payload_states,
-        config_.rtp, config_.rtcp, &transport_,
+        config_.rtp, config_.rtcp_report_interval_ms, &transport_,
         CreateObservers(&call_stats_, &encoder_feedback_, &stats_proxy_,
                         &stats_proxy_, &stats_proxy_, &stats_proxy_,
                         &stats_proxy_, &stats_proxy_, &send_delay_stats_),

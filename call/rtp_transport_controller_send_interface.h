@@ -104,7 +104,7 @@ class RtpTransportControllerSendInterface {
       // TODO(holmer): Move states into RtpTransportControllerSend.
       const std::map<uint32_t, RtpPayloadState>& states,
       const RtpConfig& rtp_config,
-      const RtcpConfig& rtcp_config,
+      int rtcp_report_interval_ms,
       Transport* send_transport,
       const RtpSenderObservers& observers,
       RtcEventLog* event_log,

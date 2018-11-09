@@ -66,11 +66,13 @@ std::unique_ptr<voe::ChannelSendProxy> CreateChannelAndProxy(
     RtcEventLog* event_log,
     FrameEncryptorInterface* frame_encryptor,
     const webrtc::CryptoOptions& crypto_options,
-    bool extmap_allow_mixed) {
+    bool extmap_allow_mixed,
+    int rtcp_report_interval_ms) {
   return absl::make_unique<voe::ChannelSendProxy>(
       absl::make_unique<voe::ChannelSend>(
           worker_queue, module_process_thread, media_transport, rtcp_rtt_stats,
-          event_log, frame_encryptor, crypto_options, extmap_allow_mixed));
+          event_log, frame_encryptor, crypto_options, extmap_allow_mixed,
+          rtcp_report_interval_ms));
 }
 
 void UpdateEventLogStreamConfig(RtcEventLog* event_log,
@@ -157,7 +159,8 @@ AudioSendStream::AudioSendStream(
                                             event_log,
                                             config.frame_encryptor,
                                             config.crypto_options,
-                                            config.rtp.extmap_allow_mixed)) {}
+                                            config.rtp.extmap_allow_mixed,
+                                            config.rtcp_report_interval_ms)) {}
 
 AudioSendStream::AudioSendStream(
     const webrtc::AudioSendStream::Config& config,

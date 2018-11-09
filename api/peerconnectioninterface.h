@@ -340,6 +340,22 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
       media_config.video.experiment_cpu_load_estimator = enable;
     }
 
+    int audio_rtcp_report_interval_ms() const {
+      return media_config.audio.rtcp_report_interval_ms;
+    }
+    void set_audio_rtcp_report_interval_ms(int audio_rtcp_report_interval_ms) {
+      media_config.audio.rtcp_report_interval_ms =
+          audio_rtcp_report_interval_ms;
+    }
+
+    int video_rtcp_report_interval_ms() const {
+      return media_config.video.rtcp_report_interval_ms;
+    }
+    void set_video_rtcp_report_interval_ms(int video_rtcp_report_interval_ms) {
+      media_config.video.rtcp_report_interval_ms =
+          video_rtcp_report_interval_ms;
+    }
+
     static const int kUndefined = -1;
     // Default maximum number of packets in the audio jitter buffer.
     static const int kAudioJitterBufferMaxPackets = 50;

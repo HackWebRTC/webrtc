@@ -1082,6 +1082,7 @@ bool WebRtcVideoChannel::AddSendStream(const StreamParams& sp) {
       bitrate_allocator_factory_;
   config.crypto_options = crypto_options_;
   config.rtp.extmap_allow_mixed = ExtmapAllowMixed();
+  config.rtcp_report_interval_ms = video_config_.rtcp_report_interval_ms;
 
   WebRtcVideoSendStream* stream = new WebRtcVideoSendStream(
       call_, sp, std::move(config), default_send_options_,

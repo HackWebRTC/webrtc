@@ -125,7 +125,8 @@ class ChannelSend
               RtcEventLog* rtc_event_log,
               FrameEncryptorInterface* frame_encryptor,
               const webrtc::CryptoOptions& crypto_options,
-              bool extmap_allow_mixed);
+              bool extmap_allow_mixed,
+              int rtcp_report_interval_ms);
 
   virtual ~ChannelSend();
 

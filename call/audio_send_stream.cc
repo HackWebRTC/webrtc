@@ -34,6 +34,7 @@ std::string AudioSendStream::Config::ToString() const {
   char buf[1024];
   rtc::SimpleStringBuilder ss(buf);
   ss << "{rtp: " << rtp.ToString();
+  ss << ", rtcp_report_interval_ms: " << rtcp_report_interval_ms;
   ss << ", send_transport: " << (send_transport ? "(Transport)" : "null");
   ss << ", media_transport: " << (media_transport ? "(Transport)" : "null");
   ss << ", min_bitrate_bps: " << min_bitrate_bps;

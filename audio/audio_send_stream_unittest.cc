@@ -334,11 +334,12 @@ TEST(AudioSendStreamTest, ConfigToString) {
   config.rtp.extmap_allow_mixed = true;
   config.rtp.extensions.push_back(
       RtpExtension(RtpExtension::kAudioLevelUri, kAudioLevelId));
+  config.rtcp_report_interval_ms = 2500;
   EXPECT_EQ(
       "{rtp: {ssrc: 1234, extmap-allow-mixed: true, extensions: [{uri: "
       "urn:ietf:params:rtp-hdrext:ssrc-audio-level, id: 2}], nack: "
-      "{rtp_history_ms: 0}, c_name: foo_name}, send_transport: null, "
-      "media_transport: null, "
+      "{rtp_history_ms: 0}, c_name: foo_name}, rtcp_report_interval_ms: 2500, "
+      "send_transport: null, media_transport: null, "
       "min_bitrate_bps: 12000, max_bitrate_bps: 34000, "
       "send_codec_spec: {nack_enabled: true, transport_cc_enabled: false, "
       "cng_payload_type: 42, payload_type: 103, "

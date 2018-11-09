@@ -96,6 +96,9 @@ class AudioSendStream {
       std::string c_name;
     } rtp;
 
+    // Time interval between RTCP report for audio
+    int rtcp_report_interval_ms = 5000;
+
     // Transport for outgoing packets. The transport is expected to exist for
     // the entire life of the AudioSendStream and is owned by the API client.
     Transport* send_transport = nullptr;

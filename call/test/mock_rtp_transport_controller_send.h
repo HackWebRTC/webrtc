@@ -38,7 +38,7 @@ class MockRtpTransportControllerSend
                                std::map<uint32_t, RtpState>,
                                const std::map<uint32_t, RtpPayloadState>&,
                                const RtpConfig&,
-                               const RtcpConfig&,
+                               int rtcp_report_interval_ms,
                                Transport*,
                                const RtpSenderObservers&,
                                RtcEventLog*,

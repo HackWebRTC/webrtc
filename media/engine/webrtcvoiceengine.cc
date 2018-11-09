@@ -708,6 +708,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
       bool extmap_allow_mixed,
       const std::vector<webrtc::RtpExtension>& extensions,
       int max_send_bitrate_bps,
+      int rtcp_report_interval_ms,
       const absl::optional<std::string>& audio_network_adaptor_config,
       webrtc::Call* call,
       webrtc::Transport* send_transport,
@@ -737,6 +738,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
     config_.track_id = track_id;
     config_.frame_encryptor = frame_encryptor;
     config_.crypto_options = crypto_options;
+    config_.rtcp_report_interval_ms = rtcp_report_interval_ms;
     rtp_parameters_.encodings[0].ssrc = ssrc;
     rtp_parameters_.rtcp.cname = c_name;
     rtp_parameters_.header_extensions = extensions;
@@ -1258,6 +1260,7 @@ WebRtcVoiceMediaChannel::WebRtcVoiceMediaChannel(
     : VoiceMediaChannel(config),
       engine_(engine),
       call_(call),
+      audio_config_(config.audio),
       crypto_options_(crypto_options) {
   RTC_LOG(LS_VERBOSE) << "WebRtcVoiceMediaChannel::WebRtcVoiceMediaChannel";
   RTC_DCHECK(call);
@@ -1810,7 +1813,8 @@ bool WebRtcVoiceMediaChannel::AddSendStream(const StreamParams& sp) {
       GetAudioNetworkAdaptorConfig(options_);
   WebRtcAudioSendStream* stream = new WebRtcAudioSendStream(
       ssrc, mid_, sp.cname, sp.id, send_codec_spec_, ExtmapAllowMixed(),
-      send_rtp_extensions_, max_send_bitrate_bps_, audio_network_adaptor_config,
+      send_rtp_extensions_, max_send_bitrate_bps_,
+      audio_config_.rtcp_report_interval_ms, audio_network_adaptor_config,
       call_, this, media_transport(), engine()->encoder_factory_,
       codec_pair_id_, nullptr, crypto_options_);
   send_streams_.insert(std::make_pair(ssrc, stream));
