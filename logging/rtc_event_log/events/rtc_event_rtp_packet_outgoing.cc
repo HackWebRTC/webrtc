@@ -12,6 +12,7 @@
 
 #include "absl/memory/memory.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 

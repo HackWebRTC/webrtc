@@ -13,12 +13,15 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 
 RtcEventVideoReceiveStreamConfig::RtcEventVideoReceiveStreamConfig(
     std::unique_ptr<rtclog::StreamConfig> config)
-    : config_(std::move(config)) {}
+    : config_(std::move(config)) {
+  RTC_DCHECK(config_);
+}
 
 RtcEventVideoReceiveStreamConfig::RtcEventVideoReceiveStreamConfig(
     const RtcEventVideoReceiveStreamConfig& other)

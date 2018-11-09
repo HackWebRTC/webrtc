@@ -31,10 +31,12 @@ class RtcEventRtcpPacketIncoming final : public RtcEvent {
 
   std::unique_ptr<RtcEventRtcpPacketIncoming> Copy() const;
 
-  rtc::Buffer packet_;
+  const rtc::Buffer& packet() const { return packet_; }
 
  private:
   RtcEventRtcpPacketIncoming(const RtcEventRtcpPacketIncoming& other);
+
+  rtc::Buffer packet_;
 };
 
 }  // namespace webrtc

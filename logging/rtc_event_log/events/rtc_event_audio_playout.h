@@ -29,10 +29,12 @@ class RtcEventAudioPlayout final : public RtcEvent {
 
   std::unique_ptr<RtcEventAudioPlayout> Copy() const;
 
-  const uint32_t ssrc_;
+  uint32_t ssrc() const { return ssrc_; }
 
  private:
   RtcEventAudioPlayout(const RtcEventAudioPlayout& other);
+
+  const uint32_t ssrc_;
 };
 
 }  // namespace webrtc

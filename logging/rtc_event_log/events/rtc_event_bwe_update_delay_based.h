@@ -32,11 +32,14 @@ class RtcEventBweUpdateDelayBased final : public RtcEvent {
 
   std::unique_ptr<RtcEventBweUpdateDelayBased> Copy() const;
 
-  const int32_t bitrate_bps_;
-  const BandwidthUsage detector_state_;
+  int32_t bitrate_bps() const { return bitrate_bps_; }
+  BandwidthUsage detector_state() const { return detector_state_; }
 
  private:
   RtcEventBweUpdateDelayBased(const RtcEventBweUpdateDelayBased& other);
+
+  const int32_t bitrate_bps_;
+  const BandwidthUsage detector_state_;
 };
 
 }  // namespace webrtc

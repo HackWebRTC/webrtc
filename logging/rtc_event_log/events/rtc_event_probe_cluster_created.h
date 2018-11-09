@@ -32,13 +32,18 @@ class RtcEventProbeClusterCreated final : public RtcEvent {
 
   std::unique_ptr<RtcEventProbeClusterCreated> Copy() const;
 
+  int32_t id() const { return id_; }
+  int32_t bitrate_bps() const { return bitrate_bps_; }
+  uint32_t min_probes() const { return min_probes_; }
+  uint32_t min_bytes() const { return min_bytes_; }
+
+ private:
+  RtcEventProbeClusterCreated(const RtcEventProbeClusterCreated& other);
+
   const int32_t id_;
   const int32_t bitrate_bps_;
   const uint32_t min_probes_;
   const uint32_t min_bytes_;
-
- private:
-  RtcEventProbeClusterCreated(const RtcEventProbeClusterCreated& other);
 };
 
 }  // namespace webrtc

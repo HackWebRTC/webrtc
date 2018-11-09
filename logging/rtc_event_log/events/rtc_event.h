@@ -57,10 +57,14 @@ class RtcEvent {
 
   virtual bool IsConfigEvent() const = 0;
 
-  const int64_t timestamp_us_;
+  int64_t timestamp_us() const { return timestamp_us_; }
+
+  // TODO(eladalon): Add timestamp_ms().
 
  protected:
   explicit RtcEvent(int64_t timestamp_us) : timestamp_us_(timestamp_us) {}
+
+  const int64_t timestamp_us_;
 };
 
 }  // namespace webrtc

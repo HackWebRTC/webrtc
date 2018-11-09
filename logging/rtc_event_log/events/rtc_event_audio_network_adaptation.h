@@ -31,10 +31,12 @@ class RtcEventAudioNetworkAdaptation final : public RtcEvent {
 
   std::unique_ptr<RtcEventAudioNetworkAdaptation> Copy() const;
 
-  const std::unique_ptr<const AudioEncoderRuntimeConfig> config_;
+  const AudioEncoderRuntimeConfig& config() const { return *config_; }
 
  private:
   RtcEventAudioNetworkAdaptation(const RtcEventAudioNetworkAdaptation& other);
+
+  const std::unique_ptr<const AudioEncoderRuntimeConfig> config_;
 };
 
 }  // namespace webrtc

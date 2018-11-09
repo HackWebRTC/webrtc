@@ -36,11 +36,14 @@ class RtcEventProbeResultFailure final : public RtcEvent {
 
   std::unique_ptr<RtcEventProbeResultFailure> Copy() const;
 
-  const int32_t id_;
-  const ProbeFailureReason failure_reason_;
+  int32_t id() const { return id_; }
+  ProbeFailureReason failure_reason() const { return failure_reason_; }
 
  private:
   RtcEventProbeResultFailure(const RtcEventProbeResultFailure& other);
+
+  const int32_t id_;
+  const ProbeFailureReason failure_reason_;
 };
 
 }  // namespace webrtc

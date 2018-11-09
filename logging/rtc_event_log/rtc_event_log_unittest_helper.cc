@@ -503,37 +503,37 @@ EventGenerator::NewVideoSendStreamConfig(
 
 void VerifyLoggedAlrStateEvent(const RtcEventAlrState& original_event,
                                const LoggedAlrStateEvent& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
-  EXPECT_EQ(original_event.in_alr_, logged_event.in_alr);
+  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.in_alr(), logged_event.in_alr);
 }
 
 void VerifyLoggedAudioPlayoutEvent(
     const RtcEventAudioPlayout& original_event,
     const LoggedAudioPlayoutEvent& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
-  EXPECT_EQ(original_event.ssrc_, logged_event.ssrc);
+  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.ssrc(), logged_event.ssrc);
 }
 
 void VerifyLoggedAudioNetworkAdaptationEvent(
     const RtcEventAudioNetworkAdaptation& original_event,
     const LoggedAudioNetworkAdaptationEvent& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
 
-  EXPECT_EQ(original_event.config_->bitrate_bps,
+  EXPECT_EQ(original_event.config().bitrate_bps,
             logged_event.config.bitrate_bps);
-  EXPECT_EQ(original_event.config_->enable_dtx, logged_event.config.enable_dtx);
-  EXPECT_EQ(original_event.config_->enable_fec, logged_event.config.enable_fec);
-  EXPECT_EQ(original_event.config_->frame_length_ms,
+  EXPECT_EQ(original_event.config().enable_dtx, logged_event.config.enable_dtx);
+  EXPECT_EQ(original_event.config().enable_fec, logged_event.config.enable_fec);
+  EXPECT_EQ(original_event.config().frame_length_ms,
             logged_event.config.frame_length_ms);
-  EXPECT_EQ(original_event.config_->num_channels,
+  EXPECT_EQ(original_event.config().num_channels,
             logged_event.config.num_channels);
 
   // uplink_packet_loss_fraction
-  ASSERT_EQ(original_event.config_->uplink_packet_loss_fraction.has_value(),
+  ASSERT_EQ(original_event.config().uplink_packet_loss_fraction.has_value(),
             logged_event.config.uplink_packet_loss_fraction.has_value());
-  if (original_event.config_->uplink_packet_loss_fraction.has_value()) {
+  if (original_event.config().uplink_packet_loss_fraction.has_value()) {
     const float original =
-        original_event.config_->uplink_packet_loss_fraction.value();
+        original_event.config().uplink_packet_loss_fraction.value();
     const float logged =
         logged_event.config.uplink_packet_loss_fraction.value();
     const float uplink_packet_loss_fraction_delta = std::abs(original - logged);
@@ -544,76 +544,76 @@ void VerifyLoggedAudioNetworkAdaptationEvent(
 void VerifyLoggedBweDelayBasedUpdate(
     const RtcEventBweUpdateDelayBased& original_event,
     const LoggedBweDelayBasedUpdate& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
-  EXPECT_EQ(original_event.bitrate_bps_, logged_event.bitrate_bps);
-  EXPECT_EQ(original_event.detector_state_, logged_event.detector_state);
+  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.bitrate_bps(), logged_event.bitrate_bps);
+  EXPECT_EQ(original_event.detector_state(), logged_event.detector_state);
 }
 
 void VerifyLoggedBweLossBasedUpdate(
     const RtcEventBweUpdateLossBased& original_event,
     const LoggedBweLossBasedUpdate& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
-  EXPECT_EQ(original_event.bitrate_bps_, logged_event.bitrate_bps);
-  EXPECT_EQ(original_event.fraction_loss_, logged_event.fraction_lost);
-  EXPECT_EQ(original_event.total_packets_, logged_event.expected_packets);
+  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.bitrate_bps(), logged_event.bitrate_bps);
+  EXPECT_EQ(original_event.fraction_loss(), logged_event.fraction_lost);
+  EXPECT_EQ(original_event.total_packets(), logged_event.expected_packets);
 }
 
 void VerifyLoggedBweProbeClusterCreatedEvent(
     const RtcEventProbeClusterCreated& original_event,
     const LoggedBweProbeClusterCreatedEvent& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
-  EXPECT_EQ(original_event.id_, logged_event.id);
-  EXPECT_EQ(original_event.bitrate_bps_, logged_event.bitrate_bps);
-  EXPECT_EQ(original_event.min_probes_, logged_event.min_packets);
-  EXPECT_EQ(original_event.min_bytes_, logged_event.min_bytes);
+  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.id(), logged_event.id);
+  EXPECT_EQ(original_event.bitrate_bps(), logged_event.bitrate_bps);
+  EXPECT_EQ(original_event.min_probes(), logged_event.min_packets);
+  EXPECT_EQ(original_event.min_bytes(), logged_event.min_bytes);
 }
 
 void VerifyLoggedBweProbeFailureEvent(
     const RtcEventProbeResultFailure& original_event,
     const LoggedBweProbeFailureEvent& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
-  EXPECT_EQ(original_event.id_, logged_event.id);
-  EXPECT_EQ(original_event.failure_reason_, logged_event.failure_reason);
+  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.id(), logged_event.id);
+  EXPECT_EQ(original_event.failure_reason(), logged_event.failure_reason);
 }
 
 void VerifyLoggedBweProbeSuccessEvent(
     const RtcEventProbeResultSuccess& original_event,
     const LoggedBweProbeSuccessEvent& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
-  EXPECT_EQ(original_event.id_, logged_event.id);
-  EXPECT_EQ(original_event.bitrate_bps_, logged_event.bitrate_bps);
+  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.id(), logged_event.id);
+  EXPECT_EQ(original_event.bitrate_bps(), logged_event.bitrate_bps);
 }
 
 void VerifyLoggedIceCandidatePairConfig(
     const RtcEventIceCandidatePairConfig& original_event,
     const LoggedIceCandidatePairConfig& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
 
-  EXPECT_EQ(original_event.type_, logged_event.type);
-  EXPECT_EQ(original_event.candidate_pair_id_, logged_event.candidate_pair_id);
-  EXPECT_EQ(original_event.candidate_pair_desc_.local_candidate_type,
+  EXPECT_EQ(original_event.type(), logged_event.type);
+  EXPECT_EQ(original_event.candidate_pair_id(), logged_event.candidate_pair_id);
+  EXPECT_EQ(original_event.candidate_pair_desc().local_candidate_type,
             logged_event.local_candidate_type);
-  EXPECT_EQ(original_event.candidate_pair_desc_.local_relay_protocol,
+  EXPECT_EQ(original_event.candidate_pair_desc().local_relay_protocol,
             logged_event.local_relay_protocol);
-  EXPECT_EQ(original_event.candidate_pair_desc_.local_network_type,
+  EXPECT_EQ(original_event.candidate_pair_desc().local_network_type,
             logged_event.local_network_type);
-  EXPECT_EQ(original_event.candidate_pair_desc_.local_address_family,
+  EXPECT_EQ(original_event.candidate_pair_desc().local_address_family,
             logged_event.local_address_family);
-  EXPECT_EQ(original_event.candidate_pair_desc_.remote_candidate_type,
+  EXPECT_EQ(original_event.candidate_pair_desc().remote_candidate_type,
             logged_event.remote_candidate_type);
-  EXPECT_EQ(original_event.candidate_pair_desc_.remote_address_family,
+  EXPECT_EQ(original_event.candidate_pair_desc().remote_address_family,
             logged_event.remote_address_family);
-  EXPECT_EQ(original_event.candidate_pair_desc_.candidate_pair_protocol,
+  EXPECT_EQ(original_event.candidate_pair_desc().candidate_pair_protocol,
             logged_event.candidate_pair_protocol);
 }
 
 void VerifyLoggedIceCandidatePairEvent(
     const RtcEventIceCandidatePair& original_event,
     const LoggedIceCandidatePairEvent& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
 
-  EXPECT_EQ(original_event.type_, logged_event.type);
-  EXPECT_EQ(original_event.candidate_pair_id_, logged_event.candidate_pair_id);
+  EXPECT_EQ(original_event.type(), logged_event.type);
+  EXPECT_EQ(original_event.candidate_pair_id(), logged_event.candidate_pair_id);
 }
 
 void VerifyLoggedRtpHeader(const RtpPacket& original_header,
@@ -680,63 +680,63 @@ void VerifyLoggedRtpHeader(const RtpPacket& original_header,
 void VerifyLoggedRtpPacketIncoming(
     const RtcEventRtpPacketIncoming& original_event,
     const LoggedRtpPacketIncoming& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
 
-  EXPECT_EQ(original_event.header_.headers_size(),
+  EXPECT_EQ(original_event.header().headers_size(),
             logged_event.rtp.header_length);
 
   EXPECT_EQ(original_event.packet_length(), logged_event.rtp.total_length);
 
   // Currently, RTC eventlog encoder-parser can only maintain padding length
   // if packet is full padding.
-  EXPECT_EQ(original_event.padding_length_,
+  EXPECT_EQ(original_event.padding_length(),
             logged_event.rtp.header.paddingLength);
 
-  VerifyLoggedRtpHeader(original_event.header_, logged_event.rtp.header);
+  VerifyLoggedRtpHeader(original_event.header(), logged_event.rtp.header);
 }
 
 void VerifyLoggedRtpPacketOutgoing(
     const RtcEventRtpPacketOutgoing& original_event,
     const LoggedRtpPacketOutgoing& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
 
-  EXPECT_EQ(original_event.header_.headers_size(),
+  EXPECT_EQ(original_event.header().headers_size(),
             logged_event.rtp.header_length);
 
   EXPECT_EQ(original_event.packet_length(), logged_event.rtp.total_length);
 
   // Currently, RTC eventlog encoder-parser can only maintain padding length
   // if packet is full padding.
-  EXPECT_EQ(original_event.padding_length_,
+  EXPECT_EQ(original_event.padding_length(),
             logged_event.rtp.header.paddingLength);
 
   // TODO(terelius): Probe cluster ID isn't parsed, used or tested. Unless
   // someone has a strong reason to keep it, it'll be removed.
 
-  VerifyLoggedRtpHeader(original_event.header_, logged_event.rtp.header);
+  VerifyLoggedRtpHeader(original_event.header(), logged_event.rtp.header);
 }
 
 void VerifyLoggedRtcpPacketIncoming(
     const RtcEventRtcpPacketIncoming& original_event,
     const LoggedRtcpPacketIncoming& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
 
-  ASSERT_EQ(original_event.packet_.size(), logged_event.rtcp.raw_data.size());
+  ASSERT_EQ(original_event.packet().size(), logged_event.rtcp.raw_data.size());
   EXPECT_EQ(
-      memcmp(original_event.packet_.data(), logged_event.rtcp.raw_data.data(),
-             original_event.packet_.size()),
+      memcmp(original_event.packet().data(), logged_event.rtcp.raw_data.data(),
+             original_event.packet().size()),
       0);
 }
 
 void VerifyLoggedRtcpPacketOutgoing(
     const RtcEventRtcpPacketOutgoing& original_event,
     const LoggedRtcpPacketOutgoing& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
 
-  ASSERT_EQ(original_event.packet_.size(), logged_event.rtcp.raw_data.size());
+  ASSERT_EQ(original_event.packet().size(), logged_event.rtcp.raw_data.size());
   EXPECT_EQ(
-      memcmp(original_event.packet_.data(), logged_event.rtcp.raw_data.data(),
-             original_event.packet_.size()),
+      memcmp(original_event.packet().data(), logged_event.rtcp.raw_data.data(),
+             original_event.packet().size()),
       0);
 }
 
@@ -779,33 +779,33 @@ void VerifyLoggedStreamConfig(const rtclog::StreamConfig& original_config,
 void VerifyLoggedAudioRecvConfig(
     const RtcEventAudioReceiveStreamConfig& original_event,
     const LoggedAudioRecvConfig& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
-  VerifyLoggedStreamConfig(*original_event.config_, logged_event.config);
+  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
+  VerifyLoggedStreamConfig(original_event.config(), logged_event.config);
 }
 
 void VerifyLoggedAudioSendConfig(
     const RtcEventAudioSendStreamConfig& original_event,
     const LoggedAudioSendConfig& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
-  VerifyLoggedStreamConfig(*original_event.config_, logged_event.config);
+  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
+  VerifyLoggedStreamConfig(original_event.config(), logged_event.config);
 }
 
 void VerifyLoggedVideoRecvConfig(
     const RtcEventVideoReceiveStreamConfig& original_event,
     const LoggedVideoRecvConfig& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
-  VerifyLoggedStreamConfig(*original_event.config_, logged_event.config);
+  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
+  VerifyLoggedStreamConfig(original_event.config(), logged_event.config);
 }
 
 void VerifyLoggedVideoSendConfig(
     const RtcEventVideoSendStreamConfig& original_event,
     const LoggedVideoSendConfig& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us_ / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
   // TODO(terelius): In the past, we allowed storing multiple RtcStreamConfigs
   // in the same RtcEventVideoSendStreamConfig. Look into whether we should drop
   // backwards compatibility in the parser.
   ASSERT_EQ(logged_event.configs.size(), 1u);
-  VerifyLoggedStreamConfig(*original_event.config_, logged_event.configs[0]);
+  VerifyLoggedStreamConfig(original_event.config(), logged_event.configs[0]);
 }
 
 }  // namespace test

@@ -38,11 +38,14 @@ class RtcEventIceCandidatePair final : public RtcEvent {
 
   std::unique_ptr<RtcEventIceCandidatePair> Copy() const;
 
-  const IceCandidatePairEventType type_;
-  const uint32_t candidate_pair_id_;
+  IceCandidatePairEventType type() const { return type_; }
+  uint32_t candidate_pair_id() const { return candidate_pair_id_; }
 
  private:
   RtcEventIceCandidatePair(const RtcEventIceCandidatePair& other);
+
+  const IceCandidatePairEventType type_;
+  const uint32_t candidate_pair_id_;
 };
 
 }  // namespace webrtc

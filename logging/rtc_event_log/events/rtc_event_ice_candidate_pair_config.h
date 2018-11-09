@@ -94,12 +94,18 @@ class RtcEventIceCandidatePairConfig final : public RtcEvent {
 
   std::unique_ptr<RtcEventIceCandidatePairConfig> Copy() const;
 
-  const IceCandidatePairConfigType type_;
-  const uint32_t candidate_pair_id_;
-  const IceCandidatePairDescription candidate_pair_desc_;
+  IceCandidatePairConfigType type() const { return type_; }
+  uint32_t candidate_pair_id() const { return candidate_pair_id_; }
+  const IceCandidatePairDescription& candidate_pair_desc() const {
+    return candidate_pair_desc_;
+  }
 
  private:
   RtcEventIceCandidatePairConfig(const RtcEventIceCandidatePairConfig& other);
+
+  const IceCandidatePairConfigType type_;
+  const uint32_t candidate_pair_id_;
+  const IceCandidatePairDescription candidate_pair_desc_;
 };
 
 }  // namespace webrtc

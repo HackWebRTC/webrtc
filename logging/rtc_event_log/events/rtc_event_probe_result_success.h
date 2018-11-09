@@ -29,11 +29,14 @@ class RtcEventProbeResultSuccess final : public RtcEvent {
 
   std::unique_ptr<RtcEventProbeResultSuccess> Copy() const;
 
-  const int32_t id_;
-  const int32_t bitrate_bps_;
+  int32_t id() const { return id_; }
+  int32_t bitrate_bps() const { return bitrate_bps_; }
 
  private:
   RtcEventProbeResultSuccess(const RtcEventProbeResultSuccess& other);
+
+  const int32_t id_;
+  const int32_t bitrate_bps_;
 };
 
 }  // namespace webrtc
