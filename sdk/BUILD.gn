@@ -40,6 +40,7 @@ if (is_ios || is_mac) {
       "objc/Framework/Headers",  # TODO(bugs.webrtc.org/9627): Remove this.
     ]
     cflags = [
+      "-Wimplicit-retain-self",
       "-Wstrict-overflow",
       "-Wmissing-field-initializers",
     ]
