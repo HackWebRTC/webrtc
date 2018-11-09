@@ -379,28 +379,33 @@ if (!build_with_chromium) {
 
     deps = [
       ":webrtc_common",
+      "api:libjingle_peerconnection_api",
       "api:transport_api",
       "audio",
       "call",
       "common_audio",
       "common_video",
+      "logging:rtc_event_log_api",
+      "logging:rtc_event_log_impl_base",
       "media",
       "modules",
       "modules/video_capture:video_capture_internal_impl",
+      "p2p:rtc_p2p",
+      "pc:libjingle_peerconnection",
+      "pc:peerconnection",
+      "pc:rtc_pc",
+      "pc:rtc_pc_base",
       "rtc_base",
       "sdk",
       "video",
     ]
 
-    # Additional factory functions to be exposed.
-    # Rational: These factories are small enough (89 KiB / 32+ MiB)
-    #           to be unconditionaly included for user convenience.
-    # That begin said:
-    # TODO(yvesg) Consider making all non-core APIs optional, so that users
-    #             can build a customized library tailored to their needs.
+    # Include audio and video codecs by default.
     deps += [
       "api/audio_codecs:builtin_audio_decoder_factory",
       "api/audio_codecs:builtin_audio_encoder_factory",
+      "api/video_codecs:builtin_video_decoder_factory",
+      "api/video_codecs:builtin_video_encoder_factory",
     ]
 
     if (build_with_mozilla) {
