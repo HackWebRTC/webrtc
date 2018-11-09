@@ -845,6 +845,9 @@ void RtcEventLogEncoderNewFormat::EncodeAudioNetworkAdaptation(
     proto_batch->set_enable_fec(base_event->config().enable_fec.value());
   if (base_event->config().enable_dtx.has_value())
     proto_batch->set_enable_dtx(base_event->config().enable_dtx.value());
+  // Note that |num_channels_deltas| encodes N as N-1, to keep deltas smaller,
+  // but there's no reason to do the same for the base event's value, since
+  // no bits will be spared.
   if (base_event->config().num_channels.has_value())
     proto_batch->set_num_channels(base_event->config().num_channels.value());
 
@@ -940,9 +943,27 @@ void RtcEventLogEncoderNewFormat::EncodeAudioNetworkAdaptation(
   // num_channels
   for (size_t i = 0; i < values.size(); ++i) {
     const RtcEventAudioNetworkAdaptation* event = batch[i + 1];
-    values[i] = event->config().num_channels;
+    const absl::optional<size_t> num_channels = event->config().num_channels;
+    if (num_channels.has_value()) {
+      // Since the number of channels is always greater than 0, we can encode
+      // N channels as N-1, thereby making sure that we get smaller deltas.
+      // That is, a toggle of 1->2->1 can be encoded as deltas vector (1, 1),
+      // rather than as (1, 3) or (1, -1), either of which would require two
+      // bits per delta.
+      RTC_DCHECK_GT(num_channels.value(), 0u);
+      values[i] = num_channels.value() - 1;
+    } else {
+      values[i].reset();
+    }
   }
-  encoded_deltas = EncodeDeltas(base_event->config().num_channels, values);
+  // In the base event, N channels encoded as N channels, but for delta
+  // compression purposes, also shifted down by 1.
+  absl::optional<size_t> shifted_base_num_channels;
+  if (base_event->config().num_channels.has_value()) {
+    RTC_DCHECK_GT(base_event->config().num_channels.value(), 0u);
+    shifted_base_num_channels = base_event->config().num_channels.value() - 1;
+  }
+  encoded_deltas = EncodeDeltas(shifted_base_num_channels, values);
   if (!encoded_deltas.empty()) {
     proto_batch->set_num_channels_deltas(encoded_deltas);
   }

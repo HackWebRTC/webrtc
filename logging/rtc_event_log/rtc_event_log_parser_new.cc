@@ -2323,7 +2323,7 @@ void ParsedRtcEventLogNew::StoreAudioNetworkAdaptationEvent(
       runtime_config.enable_dtx = proto.enable_dtx();
     }
     if (proto.has_num_channels()) {
-      // TODO(eladalon): Encode 1/2 -> 0/1, to improve
+      // Note: Encoding N as N-1 only done for |num_channels_deltas|.
       runtime_config.num_channels = proto.num_channels();
     }
     audio_network_adaptation_events_.emplace_back(1000 * proto.timestamp_ms(),
@@ -2387,11 +2387,23 @@ void ParsedRtcEventLogNew::StoreAudioNetworkAdaptationEvent(
   RTC_CHECK_EQ(enable_dtx_values.size(), number_of_deltas);
 
   // num_channels
-  const absl::optional<uint64_t> num_channels =
-      proto.has_num_channels() ? absl::optional<uint64_t>(proto.num_channels())
-                               : absl::optional<uint64_t>();
-  std::vector<absl::optional<uint64_t>> num_channels_values =
-      DecodeDeltas(proto.num_channels_deltas(), num_channels, number_of_deltas);
+  // Note: For delta encoding, all num_channel values, including the base,
+  // were shifted down by one, but in the base event, they were not.
+  // We likewise shift the base event down by one, to get the same base as
+  // encoding had, but then shift all of the values (except the base) back up
+  //  to their original value.
+  absl::optional<uint64_t> shifted_base_num_channels;
+  if (proto.has_num_channels()) {
+    shifted_base_num_channels =
+        absl::optional<uint64_t>(proto.num_channels() - 1);
+  }
+  std::vector<absl::optional<uint64_t>> num_channels_values = DecodeDeltas(
+      proto.num_channels_deltas(), shifted_base_num_channels, number_of_deltas);
+  for (size_t i = 0; i < num_channels_values.size(); ++i) {
+    if (num_channels_values[i].has_value()) {
+      num_channels_values[i] = num_channels_values[i].value() + 1;
+    }
+  }
   RTC_CHECK_EQ(num_channels_values.size(), number_of_deltas);
 
   // Delta decoding
