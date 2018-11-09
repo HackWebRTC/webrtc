@@ -16,6 +16,7 @@
 
 #include "api/array_view.h"
 #include "api/rtp_headers.h"
+#include "api/video/hdr_metadata.h"
 #include "api/video/video_content_type.h"
 #include "api/video/video_frame_marking.h"
 #include "api/video/video_rotation.h"
@@ -179,6 +180,32 @@ class FrameMarkingExtension {
 
  private:
   static bool IsScalable(uint8_t temporal_id, uint8_t layer_id);
+};
+
+class HdrMetadataExtension {
+ public:
+  using value_type = HdrMetadata;
+  static constexpr RTPExtensionType kId = kRtpExtensionHdrMetadata;
+  static constexpr uint8_t kValueSizeBytes = 30;
+  // TODO(webrtc:8651): Change to a valid uri.
+  static constexpr const char kUri[] = "rtp-hdr-metadata-uri-placeholder";
+
+  static bool Parse(rtc::ArrayView<const uint8_t> data,
+                    HdrMetadata* hdr_metadata);
+  static size_t ValueSize(const HdrMetadata&) { return kValueSizeBytes; }
+  static bool Write(rtc::ArrayView<uint8_t> data,
+                    const HdrMetadata& hdr_metadata);
+
+ private:
+  static constexpr int kChromaticityDenominator = 10000;  // 0.0001 resolution.
+  static constexpr int kLuminanceMaxDenominator = 100;    // 0.01 resolution.
+  static constexpr int kLuminanceMinDenominator = 10000;  // 0.0001 resolution.
+  static size_t ParseChromaticity(const uint8_t* data,
+                                  HdrMasteringMetadata::Chromaticity* p);
+  static size_t ParseLuminance(const uint8_t* data, float* f, int denominator);
+  static size_t WriteChromaticity(uint8_t* data,
+                                  const HdrMasteringMetadata::Chromaticity& p);
+  static size_t WriteLuminance(uint8_t* data, float f, int denominator);
 };
 
 // Base extension class for RTP header extensions which are strings.
