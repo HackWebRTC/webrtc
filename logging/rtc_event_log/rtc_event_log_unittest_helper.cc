@@ -503,21 +503,21 @@ EventGenerator::NewVideoSendStreamConfig(
 
 void VerifyLoggedAlrStateEvent(const RtcEventAlrState& original_event,
                                const LoggedAlrStateEvent& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.timestamp_ms(), logged_event.log_time_ms());
   EXPECT_EQ(original_event.in_alr(), logged_event.in_alr);
 }
 
 void VerifyLoggedAudioPlayoutEvent(
     const RtcEventAudioPlayout& original_event,
     const LoggedAudioPlayoutEvent& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.timestamp_ms(), logged_event.log_time_ms());
   EXPECT_EQ(original_event.ssrc(), logged_event.ssrc);
 }
 
 void VerifyLoggedAudioNetworkAdaptationEvent(
     const RtcEventAudioNetworkAdaptation& original_event,
     const LoggedAudioNetworkAdaptationEvent& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.timestamp_ms(), logged_event.log_time_ms());
 
   EXPECT_EQ(original_event.config().bitrate_bps,
             logged_event.config.bitrate_bps);
@@ -544,7 +544,7 @@ void VerifyLoggedAudioNetworkAdaptationEvent(
 void VerifyLoggedBweDelayBasedUpdate(
     const RtcEventBweUpdateDelayBased& original_event,
     const LoggedBweDelayBasedUpdate& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.timestamp_ms(), logged_event.log_time_ms());
   EXPECT_EQ(original_event.bitrate_bps(), logged_event.bitrate_bps);
   EXPECT_EQ(original_event.detector_state(), logged_event.detector_state);
 }
@@ -552,7 +552,7 @@ void VerifyLoggedBweDelayBasedUpdate(
 void VerifyLoggedBweLossBasedUpdate(
     const RtcEventBweUpdateLossBased& original_event,
     const LoggedBweLossBasedUpdate& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.timestamp_ms(), logged_event.log_time_ms());
   EXPECT_EQ(original_event.bitrate_bps(), logged_event.bitrate_bps);
   EXPECT_EQ(original_event.fraction_loss(), logged_event.fraction_lost);
   EXPECT_EQ(original_event.total_packets(), logged_event.expected_packets);
@@ -561,7 +561,7 @@ void VerifyLoggedBweLossBasedUpdate(
 void VerifyLoggedBweProbeClusterCreatedEvent(
     const RtcEventProbeClusterCreated& original_event,
     const LoggedBweProbeClusterCreatedEvent& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.timestamp_ms(), logged_event.log_time_ms());
   EXPECT_EQ(original_event.id(), logged_event.id);
   EXPECT_EQ(original_event.bitrate_bps(), logged_event.bitrate_bps);
   EXPECT_EQ(original_event.min_probes(), logged_event.min_packets);
@@ -571,7 +571,7 @@ void VerifyLoggedBweProbeClusterCreatedEvent(
 void VerifyLoggedBweProbeFailureEvent(
     const RtcEventProbeResultFailure& original_event,
     const LoggedBweProbeFailureEvent& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.timestamp_ms(), logged_event.log_time_ms());
   EXPECT_EQ(original_event.id(), logged_event.id);
   EXPECT_EQ(original_event.failure_reason(), logged_event.failure_reason);
 }
@@ -579,7 +579,7 @@ void VerifyLoggedBweProbeFailureEvent(
 void VerifyLoggedBweProbeSuccessEvent(
     const RtcEventProbeResultSuccess& original_event,
     const LoggedBweProbeSuccessEvent& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.timestamp_ms(), logged_event.log_time_ms());
   EXPECT_EQ(original_event.id(), logged_event.id);
   EXPECT_EQ(original_event.bitrate_bps(), logged_event.bitrate_bps);
 }
@@ -587,7 +587,7 @@ void VerifyLoggedBweProbeSuccessEvent(
 void VerifyLoggedIceCandidatePairConfig(
     const RtcEventIceCandidatePairConfig& original_event,
     const LoggedIceCandidatePairConfig& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.timestamp_ms(), logged_event.log_time_ms());
 
   EXPECT_EQ(original_event.type(), logged_event.type);
   EXPECT_EQ(original_event.candidate_pair_id(), logged_event.candidate_pair_id);
@@ -610,7 +610,7 @@ void VerifyLoggedIceCandidatePairConfig(
 void VerifyLoggedIceCandidatePairEvent(
     const RtcEventIceCandidatePair& original_event,
     const LoggedIceCandidatePairEvent& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.timestamp_ms(), logged_event.log_time_ms());
 
   EXPECT_EQ(original_event.type(), logged_event.type);
   EXPECT_EQ(original_event.candidate_pair_id(), logged_event.candidate_pair_id);
@@ -680,7 +680,7 @@ void VerifyLoggedRtpHeader(const RtpPacket& original_header,
 void VerifyLoggedRtpPacketIncoming(
     const RtcEventRtpPacketIncoming& original_event,
     const LoggedRtpPacketIncoming& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.timestamp_ms(), logged_event.log_time_ms());
 
   EXPECT_EQ(original_event.header().headers_size(),
             logged_event.rtp.header_length);
@@ -698,7 +698,7 @@ void VerifyLoggedRtpPacketIncoming(
 void VerifyLoggedRtpPacketOutgoing(
     const RtcEventRtpPacketOutgoing& original_event,
     const LoggedRtpPacketOutgoing& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.timestamp_ms(), logged_event.log_time_ms());
 
   EXPECT_EQ(original_event.header().headers_size(),
             logged_event.rtp.header_length);
@@ -719,7 +719,7 @@ void VerifyLoggedRtpPacketOutgoing(
 void VerifyLoggedRtcpPacketIncoming(
     const RtcEventRtcpPacketIncoming& original_event,
     const LoggedRtcpPacketIncoming& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.timestamp_ms(), logged_event.log_time_ms());
 
   ASSERT_EQ(original_event.packet().size(), logged_event.rtcp.raw_data.size());
   EXPECT_EQ(
@@ -731,7 +731,7 @@ void VerifyLoggedRtcpPacketIncoming(
 void VerifyLoggedRtcpPacketOutgoing(
     const RtcEventRtcpPacketOutgoing& original_event,
     const LoggedRtcpPacketOutgoing& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.timestamp_ms(), logged_event.log_time_ms());
 
   ASSERT_EQ(original_event.packet().size(), logged_event.rtcp.raw_data.size());
   EXPECT_EQ(
@@ -779,28 +779,28 @@ void VerifyLoggedStreamConfig(const rtclog::StreamConfig& original_config,
 void VerifyLoggedAudioRecvConfig(
     const RtcEventAudioReceiveStreamConfig& original_event,
     const LoggedAudioRecvConfig& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.timestamp_ms(), logged_event.log_time_ms());
   VerifyLoggedStreamConfig(original_event.config(), logged_event.config);
 }
 
 void VerifyLoggedAudioSendConfig(
     const RtcEventAudioSendStreamConfig& original_event,
     const LoggedAudioSendConfig& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.timestamp_ms(), logged_event.log_time_ms());
   VerifyLoggedStreamConfig(original_event.config(), logged_event.config);
 }
 
 void VerifyLoggedVideoRecvConfig(
     const RtcEventVideoReceiveStreamConfig& original_event,
     const LoggedVideoRecvConfig& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.timestamp_ms(), logged_event.log_time_ms());
   VerifyLoggedStreamConfig(original_event.config(), logged_event.config);
 }
 
 void VerifyLoggedVideoSendConfig(
     const RtcEventVideoSendStreamConfig& original_event,
     const LoggedVideoSendConfig& logged_event) {
-  EXPECT_EQ(original_event.timestamp_us() / 1000, logged_event.log_time_ms());
+  EXPECT_EQ(original_event.timestamp_ms(), logged_event.log_time_ms());
   // TODO(terelius): In the past, we allowed storing multiple RtcStreamConfigs
   // in the same RtcEventVideoSendStreamConfig. Look into whether we should drop
   // backwards compatibility in the parser.
