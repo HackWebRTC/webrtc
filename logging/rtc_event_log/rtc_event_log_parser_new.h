@@ -1013,9 +1013,8 @@ class ParsedRtcEventLogNew {
 
   // Parsing functions for new format.
   void StoreParsedNewFormatEvent(const rtclog2::EventStream& event);
-
   void StoreIncomingRtpPackets(const rtclog2::IncomingRtpPackets& proto);
-  void StoreOutgoingRtpPacket(const rtclog2::OutgoingRtpPackets& proto);
+  void StoreOutgoingRtpPackets(const rtclog2::OutgoingRtpPackets& proto);
   void StoreIncomingRtcpPackets(const rtclog2::IncomingRtcpPackets& proto);
   void StoreOutgoingRtcpPackets(const rtclog2::OutgoingRtcpPackets& proto);
   void StoreAudioPlayoutEvent(const rtclog2::AudioPlayoutEvents& proto);

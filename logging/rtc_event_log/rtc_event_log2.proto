@@ -10,6 +10,8 @@ package webrtc.rtclog2;
 // single EventStream object containing the same events. Hence, it is not
 // necessary to wait for the entire log to be complete before beginning to
 // write it to a file.
+// Note: For all X_deltas fields, we rely on the default value being an
+// empty string.
 message EventStream {
   // Deprecated - Maintained for compatibility with the old event log.
   repeated Event stream = 1 [deprecated = true];
@@ -395,7 +397,12 @@ message AudioNetworkAdaptations {
 
   // Packet loss fraction that the encoder's forward error correction (FEC) is
   // optimized for.
-  optional float uplink_packet_loss_fraction = 4;
+  // Instead of encoding a float, we encode a value between 0 and 16383, which
+  // if divided by 16383, will give a value close to the original float.
+  // The value 16383 (2^14 - 1) was chosen so that it would give good precision
+  // on the one hand, and would be encodable with two bytes in varint form
+  // on the other hand.
+  optional uint32 uplink_packet_loss_fraction = 4;
 
   // Whether forward error correction (FEC) is turned on or off.
   optional bool enable_fec = 5;

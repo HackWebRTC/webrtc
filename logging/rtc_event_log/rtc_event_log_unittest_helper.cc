@@ -12,6 +12,7 @@
 
 #include <string.h>  // memcmp
 
+#include <algorithm>
 #include <limits>
 #include <memory>
 #include <numeric>
@@ -279,7 +280,8 @@ void EventGenerator::RandomizeRtpPacket(
     size_t padding_size,
     uint32_t ssrc,
     const RtpHeaderExtensionMap& extension_map,
-    RtpPacket* rtp_packet) {
+    RtpPacket* rtp_packet,
+    bool all_configured_exts) {
   constexpr int kMaxPayloadType = 127;
   rtp_packet->SetPayloadType(prng_.Rand(kMaxPayloadType));
   rtp_packet->SetMarker(prng_.Rand<bool>());
@@ -294,16 +296,30 @@ void EventGenerator::RandomizeRtpPacket(
   }
   rtp_packet->SetCsrcs(csrcs);
 
-  if (extension_map.IsRegistered(TransmissionOffset::kId))
+  if (extension_map.IsRegistered(TransmissionOffset::kId) &&
+      (all_configured_exts || prng_.Rand<bool>())) {
     rtp_packet->SetExtension<TransmissionOffset>(prng_.Rand(0x00ffffff));
-  if (extension_map.IsRegistered(AudioLevel::kId))
+  }
+
+  if (extension_map.IsRegistered(AudioLevel::kId) &&
+      (all_configured_exts || prng_.Rand<bool>())) {
     rtp_packet->SetExtension<AudioLevel>(prng_.Rand<bool>(), prng_.Rand(127));
-  if (extension_map.IsRegistered(AbsoluteSendTime::kId))
+  }
+
+  if (extension_map.IsRegistered(AbsoluteSendTime::kId) &&
+      (all_configured_exts || prng_.Rand<bool>())) {
     rtp_packet->SetExtension<AbsoluteSendTime>(prng_.Rand(0x00ffffff));
-  if (extension_map.IsRegistered(VideoOrientation::kId))
+  }
+
+  if (extension_map.IsRegistered(VideoOrientation::kId) &&
+      (all_configured_exts || prng_.Rand<bool>())) {
     rtp_packet->SetExtension<VideoOrientation>(prng_.Rand(3));
-  if (extension_map.IsRegistered(TransportSequenceNumber::kId))
+  }
+
+  if (extension_map.IsRegistered(TransportSequenceNumber::kId) &&
+      (all_configured_exts || prng_.Rand<bool>())) {
     rtp_packet->SetExtension<TransportSequenceNumber>(prng_.Rand<uint16_t>());
+  }
 
   RTC_CHECK_LE(rtp_packet->headers_size() + payload_size, IP_PACKET_SIZE);
 
@@ -317,7 +333,8 @@ void EventGenerator::RandomizeRtpPacket(
 
 std::unique_ptr<RtcEventRtpPacketIncoming> EventGenerator::NewRtpPacketIncoming(
     uint32_t ssrc,
-    const RtpHeaderExtensionMap& extension_map) {
+    const RtpHeaderExtensionMap& extension_map,
+    bool all_configured_exts) {
   constexpr size_t kMaxPaddingLength = 224;
   const bool padding = prng_.Rand(0, 9) == 0;  // Let padding be 10% probable.
   const size_t padding_size = !padding ? 0u : prng_.Rand(0u, kMaxPaddingLength);
@@ -338,14 +355,15 @@ std::unique_ptr<RtcEventRtpPacketIncoming> EventGenerator::NewRtpPacketIncoming(
 
   RtpPacketReceived rtp_packet(&extension_map);
   RandomizeRtpPacket(payload_size, padding_size, ssrc, extension_map,
-                     &rtp_packet);
+                     &rtp_packet, all_configured_exts);
 
   return absl::make_unique<RtcEventRtpPacketIncoming>(rtp_packet);
 }
 
 std::unique_ptr<RtcEventRtpPacketOutgoing> EventGenerator::NewRtpPacketOutgoing(
     uint32_t ssrc,
-    const RtpHeaderExtensionMap& extension_map) {
+    const RtpHeaderExtensionMap& extension_map,
+    bool all_configured_exts) {
   constexpr size_t kMaxPaddingLength = 224;
   const bool padding = prng_.Rand(0, 9) == 0;  // Let padding be 10% probable.
   const size_t padding_size = !padding ? 0u : prng_.Rand(0u, kMaxPaddingLength);
@@ -367,33 +385,34 @@ std::unique_ptr<RtcEventRtpPacketOutgoing> EventGenerator::NewRtpPacketOutgoing(
   RtpPacketToSend rtp_packet(&extension_map,
                              kMaxHeaderSize + payload_size + padding_size);
   RandomizeRtpPacket(payload_size, padding_size, ssrc, extension_map,
-                     &rtp_packet);
+                     &rtp_packet, all_configured_exts);
 
   int probe_cluster_id = prng_.Rand(0, 100000);
   return absl::make_unique<RtcEventRtpPacketOutgoing>(rtp_packet,
                                                       probe_cluster_id);
 }
 
-RtpHeaderExtensionMap EventGenerator::NewRtpHeaderExtensionMap() {
+RtpHeaderExtensionMap EventGenerator::NewRtpHeaderExtensionMap(
+    bool configure_all) {
   RtpHeaderExtensionMap extension_map;
   std::vector<int> id(RtpExtension::kOneByteHeaderExtensionMaxId -
                       RtpExtension::kMinId + 1);
   std::iota(id.begin(), id.end(), RtpExtension::kMinId);
   ShuffleInPlace(&prng_, rtc::ArrayView<int>(id));
 
-  if (prng_.Rand<bool>()) {
+  if (configure_all || prng_.Rand<bool>()) {
     extension_map.Register<AudioLevel>(id[0]);
   }
-  if (prng_.Rand<bool>()) {
+  if (configure_all || prng_.Rand<bool>()) {
     extension_map.Register<TransmissionOffset>(id[1]);
   }
-  if (prng_.Rand<bool>()) {
+  if (configure_all || prng_.Rand<bool>()) {
     extension_map.Register<AbsoluteSendTime>(id[2]);
   }
-  if (prng_.Rand<bool>()) {
+  if (configure_all || prng_.Rand<bool>()) {
     extension_map.Register<VideoOrientation>(id[3]);
   }
-  if (prng_.Rand<bool>()) {
+  if (configure_all || prng_.Rand<bool>()) {
     extension_map.Register<TransportSequenceNumber>(id[4]);
   }
 
@@ -508,8 +527,18 @@ void VerifyLoggedAudioNetworkAdaptationEvent(
             logged_event.config.frame_length_ms);
   EXPECT_EQ(original_event.config_->num_channels,
             logged_event.config.num_channels);
-  EXPECT_EQ(original_event.config_->uplink_packet_loss_fraction,
-            logged_event.config.uplink_packet_loss_fraction);
+
+  // uplink_packet_loss_fraction
+  ASSERT_EQ(original_event.config_->uplink_packet_loss_fraction.has_value(),
+            logged_event.config.uplink_packet_loss_fraction.has_value());
+  if (original_event.config_->uplink_packet_loss_fraction.has_value()) {
+    const float original =
+        original_event.config_->uplink_packet_loss_fraction.value();
+    const float logged =
+        logged_event.config.uplink_packet_loss_fraction.value();
+    const float uplink_packet_loss_fraction_delta = std::abs(original - logged);
+    EXPECT_LE(uplink_packet_loss_fraction_delta, 0.0001f);
+  }
 }
 
 void VerifyLoggedBweDelayBasedUpdate(
@@ -603,7 +632,7 @@ void VerifyLoggedRtpHeader(const RtpPacket& original_header,
             logged_header.extension.hasTransmissionTimeOffset);
   if (logged_header.extension.hasTransmissionTimeOffset) {
     int32_t offset;
-    original_header.GetExtension<TransmissionOffset>(&offset);
+    ASSERT_TRUE(original_header.GetExtension<TransmissionOffset>(&offset));
     EXPECT_EQ(offset, logged_header.extension.transmissionTimeOffset);
   }
 
@@ -612,7 +641,7 @@ void VerifyLoggedRtpHeader(const RtpPacket& original_header,
             logged_header.extension.hasAbsoluteSendTime);
   if (logged_header.extension.hasAbsoluteSendTime) {
     uint32_t sendtime;
-    original_header.GetExtension<AbsoluteSendTime>(&sendtime);
+    ASSERT_TRUE(original_header.GetExtension<AbsoluteSendTime>(&sendtime));
     EXPECT_EQ(sendtime, logged_header.extension.absoluteSendTime);
   }
 
@@ -621,7 +650,7 @@ void VerifyLoggedRtpHeader(const RtpPacket& original_header,
             logged_header.extension.hasTransportSequenceNumber);
   if (logged_header.extension.hasTransportSequenceNumber) {
     uint16_t seqnum;
-    original_header.GetExtension<TransportSequenceNumber>(&seqnum);
+    ASSERT_TRUE(original_header.GetExtension<TransportSequenceNumber>(&seqnum));
     EXPECT_EQ(seqnum, logged_header.extension.transportSequenceNumber);
   }
 
@@ -631,7 +660,8 @@ void VerifyLoggedRtpHeader(const RtpPacket& original_header,
   if (logged_header.extension.hasAudioLevel) {
     bool voice_activity;
     uint8_t audio_level;
-    original_header.GetExtension<AudioLevel>(&voice_activity, &audio_level);
+    ASSERT_TRUE(original_header.GetExtension<AudioLevel>(&voice_activity,
+                                                         &audio_level));
     EXPECT_EQ(voice_activity, logged_header.extension.voiceActivity);
     EXPECT_EQ(audio_level, logged_header.extension.audioLevel);
   }
@@ -641,7 +671,7 @@ void VerifyLoggedRtpHeader(const RtpPacket& original_header,
             logged_header.extension.hasVideoRotation);
   if (logged_header.extension.hasVideoRotation) {
     uint8_t rotation;
-    original_header.GetExtension<VideoOrientation>(&rotation);
+    ASSERT_TRUE(original_header.GetExtension<VideoOrientation>(&rotation));
     EXPECT_EQ(ConvertCVOByteToVideoRotation(rotation),
               logged_header.extension.videoRotation);
   }
