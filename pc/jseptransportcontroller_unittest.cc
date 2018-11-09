@@ -722,11 +722,11 @@ TEST_F(JsepTransportControllerTest, SignalConnectionStateFailed) {
   fake_ice->SetConnectionCount(0);
   EXPECT_EQ_WAIT(cricket::kIceConnectionFailed, connection_state_, kTimeout);
   EXPECT_EQ(1, connection_state_signal_count_);
-  EXPECT_EQ(PeerConnectionInterface::kIceConnectionFailed,
-            ice_connection_state_);
+  EXPECT_EQ_WAIT(PeerConnectionInterface::kIceConnectionFailed,
+                 ice_connection_state_, kTimeout);
   EXPECT_EQ(1, ice_connection_state_signal_count_);
-  EXPECT_EQ(PeerConnectionInterface::PeerConnectionState::kFailed,
-            combined_connection_state_);
+  EXPECT_EQ_WAIT(PeerConnectionInterface::PeerConnectionState::kFailed,
+                 combined_connection_state_, kTimeout);
   EXPECT_EQ(1, combined_connection_state_signal_count_);
 }
 
@@ -756,11 +756,11 @@ TEST_F(JsepTransportControllerTest,
 
   EXPECT_EQ_WAIT(cricket::kIceConnectionFailed, connection_state_, kTimeout);
   EXPECT_EQ(1, connection_state_signal_count_);
-  EXPECT_EQ(PeerConnectionInterface::kIceConnectionFailed,
-            ice_connection_state_);
+  EXPECT_EQ_WAIT(PeerConnectionInterface::kIceConnectionFailed,
+                 ice_connection_state_, kTimeout);
   EXPECT_EQ(1, ice_connection_state_signal_count_);
-  EXPECT_EQ(PeerConnectionInterface::PeerConnectionState::kFailed,
-            combined_connection_state_);
+  EXPECT_EQ_WAIT(PeerConnectionInterface::PeerConnectionState::kFailed,
+                 combined_connection_state_, kTimeout);
   EXPECT_EQ(1, combined_connection_state_signal_count_);
 
   fake_audio_dtls->SetDtlsState(cricket::DTLS_TRANSPORT_CONNECTED);
@@ -771,11 +771,11 @@ TEST_F(JsepTransportControllerTest,
   fake_video_dtls->SetWritable(true);
   EXPECT_EQ_WAIT(cricket::kIceConnectionConnected, connection_state_, kTimeout);
   EXPECT_EQ(2, connection_state_signal_count_);
-  EXPECT_EQ(PeerConnectionInterface::kIceConnectionConnected,
-            ice_connection_state_);
+  EXPECT_EQ_WAIT(PeerConnectionInterface::kIceConnectionConnected,
+                 ice_connection_state_, kTimeout);
   EXPECT_EQ(2, ice_connection_state_signal_count_);
-  EXPECT_EQ(PeerConnectionInterface::PeerConnectionState::kConnected,
-            combined_connection_state_);
+  EXPECT_EQ_WAIT(PeerConnectionInterface::PeerConnectionState::kConnected,
+                 combined_connection_state_, kTimeout);
   EXPECT_EQ(2, combined_connection_state_signal_count_);
 }
 
@@ -891,11 +891,11 @@ TEST_F(JsepTransportControllerTest, SignalConnectionStateComplete) {
 
   EXPECT_EQ_WAIT(cricket::kIceConnectionFailed, connection_state_, kTimeout);
   EXPECT_EQ(1, connection_state_signal_count_);
-  EXPECT_EQ(PeerConnectionInterface::kIceConnectionFailed,
-            ice_connection_state_);
+  EXPECT_EQ_WAIT(PeerConnectionInterface::kIceConnectionFailed,
+                 ice_connection_state_, kTimeout);
   EXPECT_EQ(1, ice_connection_state_signal_count_);
-  EXPECT_EQ(PeerConnectionInterface::PeerConnectionState::kFailed,
-            combined_connection_state_);
+  EXPECT_EQ_WAIT(PeerConnectionInterface::PeerConnectionState::kFailed,
+                 combined_connection_state_, kTimeout);
   EXPECT_EQ(1, combined_connection_state_signal_count_);
 
   fake_audio_dtls->SetDtlsState(cricket::DTLS_TRANSPORT_CONNECTED);
@@ -906,11 +906,11 @@ TEST_F(JsepTransportControllerTest, SignalConnectionStateComplete) {
   fake_video_dtls->SetWritable(true);
   EXPECT_EQ_WAIT(cricket::kIceConnectionCompleted, connection_state_, kTimeout);
   EXPECT_EQ(2, connection_state_signal_count_);
-  EXPECT_EQ(PeerConnectionInterface::kIceConnectionCompleted,
-            ice_connection_state_);
+  EXPECT_EQ_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
+                 ice_connection_state_, kTimeout);
   EXPECT_EQ(2, ice_connection_state_signal_count_);
-  EXPECT_EQ(PeerConnectionInterface::PeerConnectionState::kConnected,
-            combined_connection_state_);
+  EXPECT_EQ_WAIT(PeerConnectionInterface::PeerConnectionState::kConnected,
+                 combined_connection_state_, kTimeout);
   EXPECT_EQ(2, combined_connection_state_signal_count_);
 }
 
