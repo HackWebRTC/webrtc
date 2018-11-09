@@ -3387,8 +3387,8 @@ TEST_P(PeerConnectionIntegrationTest,
 
 #endif  // HAVE_SCTP
 
-// This test sets up a call between two parties with audio, video, and a media
-// transport data channel.
+// This test sets up a call between two parties with a media transport data
+// channel.
 TEST_P(PeerConnectionIntegrationTest, MediaTransportDataChannelEndToEnd) {
   PeerConnectionInterface::RTCConfiguration rtc_config;
   rtc_config.use_media_transport_for_data_channels = true;
