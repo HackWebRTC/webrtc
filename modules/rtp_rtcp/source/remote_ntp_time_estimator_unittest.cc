@@ -56,7 +56,8 @@ class RemoteNtpTimeEstimatorTest : public ::testing::Test {
                               int64_t networking_delay_ms) {
     uint32_t rtcp_timestamp = GetRemoteTimestamp();
     int64_t ntp_error_fractions =
-        ntp_error_ms * NtpTime::kFractionsPerSecond / 1000;
+        ntp_error_ms * static_cast<int64_t>(NtpTime::kFractionsPerSecond) /
+        1000;
     NtpTime ntp(static_cast<uint64_t>(remote_clock_.CurrentNtpTime()) +
                 ntp_error_fractions);
     AdvanceTimeMilliseconds(kTestRtt / 2 + networking_delay_ms);

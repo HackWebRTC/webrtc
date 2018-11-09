@@ -21,6 +21,11 @@ namespace {
 const size_t kNumRtcpReportsToUse = 2;
 // Number of parameters samples used to smooth.
 const size_t kNumSamplesToSmooth = 20;
+// Don't allow NTP timestamps to jump more than 1 hour. Chosen arbitrary as big
+// enough to not affect normal use-cases. Yet it is smaller than RTP wrap-around
+// half-period (90khz RTP clock wrap-arounds every 13.25 hours). After half of
+// wrap-around period it is impossible to unwrap RTP timestamps correctly.
+const int kMaxAllowedRtcpNtpIntervalMs = 60 * 60 * 1000;
 
 // Calculates the RTP timestamp frequency from two pairs of NTP/RTP timestamps.
 bool CalculateFrequency(int64_t ntp_ms1,
@@ -133,7 +138,8 @@ bool RtpToNtpEstimator::UpdateMeasurements(uint32_t ntp_secs,
   if (!measurements_.empty()) {
     int64_t old_rtp_timestamp = measurements_.front().unwrapped_rtp_timestamp;
     int64_t old_ntp_ms = measurements_.front().ntp_time.ToMs();
-    if (ntp_ms_new <= old_ntp_ms) {
+    if (ntp_ms_new <= old_ntp_ms ||
+        ntp_ms_new > old_ntp_ms + kMaxAllowedRtcpNtpIntervalMs) {
       invalid_sample = true;
     } else if (unwrapped_rtp_timestamp <= old_rtp_timestamp) {
       RTC_LOG(LS_WARNING)
