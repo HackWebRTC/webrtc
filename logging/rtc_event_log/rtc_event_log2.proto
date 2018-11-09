@@ -90,7 +90,7 @@ message IncomingRtpPackets {
   // TODO(terelius): Add other header extensions like playout delay?
 
   // Delta encodings.
-  optional bytes timestamp_deltas_ms = 101;
+  optional bytes timestamp_ms_deltas = 101;
   optional bytes marker_deltas = 102;
   optional bytes payload_type_deltas = 103;
   optional bytes sequence_number_deltas = 104;
@@ -154,7 +154,7 @@ message OutgoingRtpPackets {
   // TODO(terelius): Add other header extensions like playout delay?
 
   // Delta encodings.
-  optional bytes timestamp_deltas_ms = 101;
+  optional bytes timestamp_ms_deltas = 101;
   optional bytes marker_deltas = 102;
   optional bytes payload_type_deltas = 103;
   optional bytes sequence_number_deltas = 104;
@@ -183,9 +183,9 @@ message IncomingRtcpPackets {
   // optional - required if the batch contains delta encoded events.
   optional uint32 number_of_deltas = 3;
 
-  // Delta encodings.
-  optional bytes timestamp_deltas_ms = 101;
-  optional bytes raw_packet_deltas = 102;
+  // Delta/blob encodings.
+  optional bytes timestamp_ms_deltas = 101;
+  optional bytes raw_packet_blobs = 102;
 }
 
 message OutgoingRtcpPackets {
@@ -199,9 +199,9 @@ message OutgoingRtcpPackets {
   // optional - required if the batch contains delta encoded events.
   optional uint32 number_of_deltas = 3;
 
-  // Delta encodings.
-  optional bytes timestamp_deltas_ms = 101;
-  optional bytes raw_packet_deltas = 102;
+  // Delta/blob encodings.
+  optional bytes timestamp_ms_deltas = 101;
+  optional bytes raw_packet_blobs = 102;
 }
 
 message AudioPlayoutEvents {
@@ -215,7 +215,7 @@ message AudioPlayoutEvents {
   optional uint32 number_of_deltas = 3;
 
   // Delta encodings.
-  optional bytes timestamp_deltas_ms = 101;
+  optional bytes timestamp_ms_deltas = 101;
   optional bytes local_ssrc_deltas = 102;
 }
 
@@ -251,8 +251,8 @@ message LossBasedBweUpdates {
   optional uint32 number_of_deltas = 5;
 
   // Delta encodings.
-  optional bytes timestamp_deltas_ms = 101;
-  optional bytes bitrate_deltas_bps = 102;
+  optional bytes timestamp_ms_deltas = 101;
+  optional bytes bitrate_bps_deltas = 102;
   optional bytes fraction_loss_deltas = 103;
   optional bytes total_packets_deltas = 104;
 }
@@ -276,8 +276,8 @@ message DelayBasedBweUpdates {
   optional uint32 number_of_deltas = 4;
 
   // Delta encodings.
-  optional bytes timestamp_deltas_ms = 101;
-  optional bytes bitrate_deltas_bps = 102;
+  optional bytes timestamp_ms_deltas = 101;
+  optional bytes bitrate_bps_deltas = 102;
   optional bytes detector_state_deltas = 103;
 }
 
@@ -417,9 +417,9 @@ message AudioNetworkAdaptations {
   optional uint32 number_of_deltas = 8;
 
   // Delta encodings.
-  optional bytes timestamp_deltas_ms = 101;
-  optional bytes bitrate_deltas_bps = 102;
-  optional bytes frame_length_deltas_ms = 103;
+  optional bytes timestamp_ms_deltas = 101;
+  optional bytes bitrate_bps_deltas = 102;
+  optional bytes frame_length_ms_deltas = 103;
   optional bytes uplink_packet_loss_fraction_deltas = 104;
   optional bytes enable_fec_deltas = 105;
   optional bytes enable_dtx_deltas = 106;
