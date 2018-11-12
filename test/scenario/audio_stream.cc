@@ -9,6 +9,7 @@
  */
 #include "test/scenario/audio_stream.h"
 
+#include "rtc_base/bitrateallocationstrategy.h"
 #include "test/call_test.h"
 
 #if WEBRTC_ENABLE_PROTOBUF
@@ -131,8 +132,12 @@ SendAudioStream::SendAudioStream(
         {RtpExtension::kTransportSequenceNumberUri, 8}};
   }
 
-  if (config.stream.rate_allocation_priority) {
+  if (config.encoder.priority_rate) {
     send_config.track_id = sender->GetNextPriorityId();
+    sender_->call_->SetBitrateAllocationStrategy(
+        absl::make_unique<rtc::AudioPriorityBitrateAllocationStrategy>(
+            send_config.track_id,
+            config.encoder.priority_rate->bps<uint32_t>()));
   }
   send_stream_ = sender_->call_->CreateAudioSendStream(send_config);
   if (field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")) {

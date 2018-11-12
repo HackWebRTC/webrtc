@@ -147,12 +147,6 @@ CallClient::CallClient(Clock* clock,
                        fake_audio_setup_.audio_state)),
       transport_(clock_, call_.get()),
       header_parser_(RtpHeaderParser::Create()) {
-  if (!config.priority_target_rate.IsZero() &&
-      config.priority_target_rate.IsFinite()) {
-    call_->SetBitrateAllocationStrategy(
-        absl::make_unique<rtc::AudioPriorityBitrateAllocationStrategy>(
-            kPriorityStreamId, config.priority_target_rate.bps()));
-  }
 }  // namespace test
 
 CallClient::~CallClient() {

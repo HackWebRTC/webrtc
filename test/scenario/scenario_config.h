@@ -51,7 +51,6 @@ struct TransportControllerConfig {
 
 struct CallClientConfig {
   TransportControllerConfig transport;
-  DataRate priority_target_rate = DataRate::Zero();
 };
 
 struct SimulatedTimeClientConfig {
@@ -155,6 +154,7 @@ struct AudioStreamConfig {
     absl::optional<DataRate> fixed_rate;
     absl::optional<DataRate> min_rate;
     absl::optional<DataRate> max_rate;
+    absl::optional<DataRate> priority_rate;
     TimeDelta initial_frame_length = TimeDelta::ms(20);
   } encoder;
   struct Stream {
@@ -162,7 +162,6 @@ struct AudioStreamConfig {
     Stream(const Stream&);
     ~Stream();
     bool in_bandwidth_estimation = false;
-    bool rate_allocation_priority = false;
   } stream;
   struct Render {
     std::string sync_group;
