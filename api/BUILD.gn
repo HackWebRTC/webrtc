@@ -209,34 +209,16 @@ rtc_source_set("libjingle_logging_api") {
 rtc_source_set("ortc_api") {
   visibility = [ "*" ]
   sources = [
-    "ortc/mediadescription.cc",
-    "ortc/mediadescription.h",
-    "ortc/ortcfactoryinterface.h",
-    "ortc/ortcrtpreceiverinterface.h",
-    "ortc/ortcrtpsenderinterface.h",
     "ortc/packettransportinterface.h",
-    "ortc/rtptransportcontrollerinterface.h",
     "ortc/rtptransportinterface.h",
-    "ortc/sessiondescription.cc",
-    "ortc/sessiondescription.h",
     "ortc/srtptransportinterface.h",
-    "ortc/udptransportinterface.h",
   ]
 
-  # For mediastreaminterface.h, etc.
-  # TODO(deadbeef): Create a separate target for the common things ORTC and
-  # PeerConnection code shares, so that ortc_api can depend on that instead of
-  # libjingle_peerconnection_api.
   deps = [
     ":libjingle_peerconnection_api",
     "..:webrtc_common",
-    "../rtc_base:rtc_base",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
 }
 
 rtc_source_set("rtc_stats_api") {
@@ -633,8 +615,6 @@ if (rtc_include_tests) {
 
     sources = [
       "array_view_unittest.cc",
-      "ortc/mediadescription_unittest.cc",
-      "ortc/sessiondescription_unittest.cc",
       "rtcerror_unittest.cc",
       "rtpparameters_unittest.cc",
       "test/loopback_media_transport_unittest.cc",
@@ -649,7 +629,6 @@ if (rtc_include_tests) {
       ":array_view",
       ":libjingle_peerconnection_api",
       ":loopback_media_transport",
-      ":ortc_api",
       "../rtc_base:checks",
       "../rtc_base:rtc_base_approved",
       "../rtc_base:rtc_base_tests_utils",
