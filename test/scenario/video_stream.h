@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "rtc_base/constructormagic.h"
+#include "test/fake_encoder.h"
 #include "test/frame_generator_capturer.h"
 #include "test/scenario/call_client.h"
 #include "test/scenario/column_printer.h"
@@ -30,10 +31,10 @@ class SendVideoStream {
   RTC_DISALLOW_COPY_AND_ASSIGN(SendVideoStream);
   ~SendVideoStream();
   void SetCaptureFramerate(int framerate);
-  void SetMaxFramerate(absl::optional<int> max_framerate);
   VideoSendStream::Stats GetStats() const;
   ColumnPrinter StatsPrinter();
   void Start();
+  void UpdateConfig(std::function<void(VideoStreamConfig*)> modifier);
 
  private:
   friend class Scenario;
@@ -44,12 +45,14 @@ class SendVideoStream {
                   VideoStreamConfig config,
                   Transport* send_transport);
 
+  rtc::CriticalSection crit_;
   std::vector<uint32_t> ssrcs_;
   std::vector<uint32_t> rtx_ssrcs_;
   VideoSendStream* send_stream_ = nullptr;
   CallClient* const sender_;
-  const VideoStreamConfig config_;
+  VideoStreamConfig config_ RTC_GUARDED_BY(crit_);
   std::unique_ptr<VideoEncoderFactory> encoder_factory_;
+  std::vector<test::FakeEncoder*> fake_encoders_ RTC_GUARDED_BY(crit_);
   std::unique_ptr<VideoBitrateAllocatorFactory> bitrate_allocator_factory_;
   std::unique_ptr<TestVideoCapturer> video_capturer_;
   FrameGeneratorCapturer* frame_generator_ = nullptr;

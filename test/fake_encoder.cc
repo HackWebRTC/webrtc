@@ -65,6 +65,7 @@ void FakeEncoder::SetMaxBitrate(int max_kbps) {
   RTC_DCHECK_GE(max_kbps, -1);  // max_kbps == -1 disables it.
   rtc::CritScope cs(&crit_sect_);
   max_target_bitrate_kbps_ = max_kbps;
+  SetRateAllocation(target_bitrate_, configured_input_framerate_);
 }
 
 int32_t FakeEncoder::InitEncode(const VideoCodec* config,

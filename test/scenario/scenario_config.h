@@ -111,6 +111,7 @@ struct VideoStreamConfig {
     absl::optional<int> key_frame_interval = 3000;
 
     absl::optional<DataRate> max_data_rate;
+    absl::optional<int> max_framerate;
     size_t num_simulcast_streams = 1;
     using DegradationPreference = DegradationPreference;
     DegradationPreference degradation_preference =

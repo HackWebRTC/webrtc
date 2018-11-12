@@ -163,6 +163,12 @@ VideoEncoderConfig CreateVideoEncoderConfig(VideoStreamConfig config) {
   }
   encoder_config.encoder_specific_settings =
       CreateEncoderSpecificSettings(config);
+  if (config.encoder.max_framerate) {
+    for (auto& layer : encoder_config.simulcast_layers) {
+      layer.max_framerate = *config.encoder.max_framerate;
+    }
+  }
+
   return encoder_config;
 }
 }  // namespace
@@ -203,11 +209,13 @@ SendVideoStream::SendVideoStream(CallClient* sender,
     case Encoder::Implementation::kFake:
       if (config.encoder.codec == Codec::kVideoCodecGeneric) {
         encoder_factory_ =
-            absl::make_unique<FunctionVideoEncoderFactory>([this, config]() {
+            absl::make_unique<FunctionVideoEncoderFactory>([this]() {
+              rtc::CritScope cs(&crit_);
               auto encoder =
                   absl::make_unique<test::FakeEncoder>(sender_->clock_);
-              if (config.encoder.fake.max_rate.IsFinite())
-                encoder->SetMaxBitrate(config.encoder.fake.max_rate.kbps());
+              fake_encoders_.push_back(encoder.get());
+              if (config_.encoder.fake.max_rate.IsFinite())
+                encoder->SetMaxBitrate(config_.encoder.fake.max_rate.kbps());
               return encoder;
             });
       } else {
@@ -250,17 +258,31 @@ void SendVideoStream::Start() {
   video_capturer_->Start();
 }
 
+void SendVideoStream::UpdateConfig(
+    std::function<void(VideoStreamConfig*)> modifier) {
+  rtc::CritScope cs(&crit_);
+  VideoStreamConfig prior_config = config_;
+  modifier(&config_);
+  if (prior_config.encoder.fake.max_rate != config_.encoder.fake.max_rate) {
+    for (auto* encoder : fake_encoders_) {
+      encoder->SetMaxBitrate(config_.encoder.fake.max_rate.kbps());
+    }
+  }
+  // TODO(srte): Add more conditions that should cause reconfiguration.
+  if (prior_config.encoder.max_framerate != config_.encoder.max_framerate) {
+    VideoEncoderConfig encoder_config = CreateVideoEncoderConfig(config_);
+    send_stream_->ReconfigureVideoEncoder(std::move(encoder_config));
+  }
+  if (prior_config.source.framerate != config_.source.framerate) {
+    SetCaptureFramerate(config_.source.framerate);
+  }
+}
+
 void SendVideoStream::SetCaptureFramerate(int framerate) {
   RTC_CHECK(frame_generator_)
       << "Framerate change only implemented for generators";
   frame_generator_->ChangeFramerate(framerate);
-}
 
-void SendVideoStream::SetMaxFramerate(absl::optional<int> max_framerate) {
-  VideoEncoderConfig encoder_config = CreateVideoEncoderConfig(config_);
-  RTC_DCHECK_EQ(encoder_config.simulcast_layers.size(), 1);
-  encoder_config.simulcast_layers[0].max_framerate = max_framerate.value_or(-1);
-  send_stream_->ReconfigureVideoEncoder(std::move(encoder_config));
 }
 
 VideoSendStream::Stats SendVideoStream::GetStats() const {
@@ -290,9 +312,7 @@ ReceiveVideoStream::ReceiveVideoStream(CallClient* receiver,
                                        SendVideoStream* send_stream,
                                        size_t chosen_stream,
                                        Transport* feedback_transport)
-    : receiver_(receiver),
-      config_(config),
-      decoder_factory_(absl::make_unique<InternalDecoderFactory>()) {
+    : receiver_(receiver), config_(config) {
   renderer_ = absl::make_unique<FakeVideoRenderer>();
   VideoReceiveStream::Config recv_config(feedback_transport);
   recv_config.rtp.remb = !config.stream.packet_feedback;
@@ -317,6 +337,13 @@ ReceiveVideoStream::ReceiveVideoStream(CallClient* receiver,
   VideoReceiveStream::Decoder decoder =
       CreateMatchingDecoder(CodecTypeToPayloadType(config.encoder.codec),
                             CodecTypeToPayloadString(config.encoder.codec));
+  if (config.encoder.codec ==
+      VideoStreamConfig::Encoder::Codec::kVideoCodecGeneric) {
+    decoder_factory_ = absl::make_unique<FunctionVideoDecoderFactory>(
+        []() { return absl::make_unique<FakeDecoder>(); });
+  } else {
+    decoder_factory_ = absl::make_unique<InternalDecoderFactory>();
+  }
   decoder.decoder_factory = decoder_factory_.get();
   recv_config.decoders.push_back(decoder);
 
