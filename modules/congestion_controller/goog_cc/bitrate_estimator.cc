@@ -132,6 +132,12 @@ absl::optional<uint32_t> BitrateEstimator::bitrate_bps() const {
   return bitrate_estimate_ * 1000;
 }
 
+absl::optional<uint32_t> BitrateEstimator::PeekBps() const {
+  if (current_window_ms_ > 0)
+    return sum_ * 8000 / current_window_ms_;
+  return absl::nullopt;
+}
+
 void BitrateEstimator::ExpectFastRateChange() {
   // By setting the bitrate-estimate variance to a higher value we allow the
   // bitrate to change fast for the next few samples.

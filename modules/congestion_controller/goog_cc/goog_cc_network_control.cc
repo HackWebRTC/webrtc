@@ -132,8 +132,8 @@ GoogCcNetworkController::GoogCcNetworkController(RtcEventLog* event_log,
                                                  bool feedback_only)
     : event_log_(event_log),
       packet_feedback_only_(feedback_only),
-      safe_reset_on_route_change_(
-          field_trial::IsEnabled("WebRTC-Bwe-SafeResetOnRouteChange")),
+      safe_reset_on_route_change_("Enabled"),
+      safe_reset_acknowledged_rate_("ack"),
       probe_controller_(new ProbeController()),
       congestion_window_pushback_controller_(
           MaybeInitalizeCongestionWindowPushbackController()),
@@ -155,6 +155,10 @@ GoogCcNetworkController::GoogCcNetworkController(RtcEventLog* event_log,
       in_cwnd_experiment_(CwndExperimentEnabled()),
       accepted_queue_ms_(kDefaultAcceptedQueueMs) {
   RTC_DCHECK(config.constraints.at_time.IsFinite());
+  ParseFieldTrial(
+      {&safe_reset_on_route_change_, &safe_reset_acknowledged_rate_},
+      field_trial::FindFullName("WebRTC-Bwe-SafeResetOnRouteChange"));
+
   delay_based_bwe_->SetMinBitrate(congestion_controller::GetMinBitrateBps());
   if (in_cwnd_experiment_ &&
       !ReadCwndExperimentParameter(&accepted_queue_ms_)) {
@@ -183,14 +187,22 @@ NetworkControlUpdate GoogCcNetworkController::OnNetworkRouteChange(
   ClampBitrates(&start_bitrate_bps, &min_bitrate_bps, &max_bitrate_bps);
 
   if (safe_reset_on_route_change_) {
-    int32_t estimated_bitrate_bps;
-    uint8_t fraction_loss;
-    int64_t rtt_ms;
-    bandwidth_estimation_->CurrentEstimate(&estimated_bitrate_bps,
-                                           &fraction_loss, &rtt_ms);
-    if (!msg.constraints.starting_rate ||
-        estimated_bitrate_bps <= start_bitrate_bps) {
-      start_bitrate_bps = estimated_bitrate_bps;
+    absl::optional<uint32_t> estimated_bitrate_bps;
+    if (safe_reset_acknowledged_rate_) {
+      estimated_bitrate_bps = acknowledged_bitrate_estimator_->bitrate_bps();
+      if (!estimated_bitrate_bps)
+        estimated_bitrate_bps = acknowledged_bitrate_estimator_->PeekBps();
+    } else {
+      int32_t target_bitrate_bps;
+      uint8_t fraction_loss;
+      int64_t rtt_ms;
+      bandwidth_estimation_->CurrentEstimate(&target_bitrate_bps,
+                                             &fraction_loss, &rtt_ms);
+      estimated_bitrate_bps = target_bitrate_bps;
+    }
+    if (estimated_bitrate_bps && (!msg.constraints.starting_rate ||
+                                  estimated_bitrate_bps < start_bitrate_bps)) {
+      start_bitrate_bps = *estimated_bitrate_bps;
       if (msg.constraints.starting_rate) {
         msg.constraints.starting_rate = DataRate::bps(start_bitrate_bps);
       }

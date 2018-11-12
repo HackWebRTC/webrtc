@@ -29,6 +29,7 @@ class BitrateEstimator {
   virtual void Update(int64_t now_ms, int bytes);
 
   virtual absl::optional<uint32_t> bitrate_bps() const;
+  absl::optional<uint32_t> PeekBps() const;
 
   virtual void ExpectFastRateChange();
 
