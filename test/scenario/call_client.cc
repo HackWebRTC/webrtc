@@ -209,6 +209,11 @@ std::string CallClient::GetNextPriorityId() {
   return kPriorityStreamId;
 }
 
+void CallClient::AddExtensions(std::vector<RtpExtension> extensions) {
+  for (const auto& extension : extensions)
+    header_parser_->RegisterRtpHeaderExtension(extension);
+}
+
 CallClientPair::~CallClientPair() = default;
 
 }  // namespace test

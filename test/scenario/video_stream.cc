@@ -319,6 +319,7 @@ ReceiveVideoStream::ReceiveVideoStream(CallClient* receiver,
   recv_config.rtp.transport_cc = config.stream.packet_feedback;
   recv_config.rtp.local_ssrc = CallTest::kReceiverLocalVideoSsrc;
   recv_config.rtp.extensions = GetVideoRtpExtensions(config);
+  receiver_->AddExtensions(recv_config.rtp.extensions);
   RTC_DCHECK(!config.stream.use_rtx ||
              config.stream.nack_history_time > TimeDelta::Zero());
   recv_config.rtp.nack.rtp_history_ms = config.stream.nack_history_time.ms();

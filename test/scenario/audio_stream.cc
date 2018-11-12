@@ -181,6 +181,7 @@ ReceiveAudioStream::ReceiveAudioStream(
     recv_config.rtp.extensions = {
         {RtpExtension::kTransportSequenceNumberUri, 8}};
   }
+  receiver_->AddExtensions(recv_config.rtp.extensions);
   recv_config.decoder_factory = decoder_factory;
   recv_config.decoder_map = {
       {CallTest::kAudioSendPayloadType, {"opus", 48000, 2}}};

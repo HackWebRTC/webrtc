@@ -85,6 +85,7 @@ class CallClient : public NetworkReceiverInterface {
   uint32_t GetNextAudioSsrc();
   uint32_t GetNextRtxSsrc();
   std::string GetNextPriorityId();
+  void AddExtensions(std::vector<RtpExtension> extensions);
 
   Clock* clock_;
   LoggingNetworkControllerFactory network_controller_factory_;

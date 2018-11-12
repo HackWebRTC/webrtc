@@ -28,8 +28,10 @@ class RtpHeaderParserImpl : public RtpHeaderParser {
              RTPHeader* header) const override;
 
   bool RegisterRtpHeaderExtension(RTPExtensionType type, uint8_t id) override;
+  bool RegisterRtpHeaderExtension(RtpExtension extension) override;
 
   bool DeregisterRtpHeaderExtension(RTPExtensionType type) override;
+  bool DeregisterRtpHeaderExtension(RtpExtension extension) override;
 
  private:
   rtc::CriticalSection critical_section_;
@@ -66,11 +68,21 @@ bool RtpHeaderParserImpl::Parse(const uint8_t* packet,
   }
   return true;
 }
+bool RtpHeaderParserImpl::RegisterRtpHeaderExtension(RtpExtension extension) {
+  rtc::CritScope cs(&critical_section_);
+  return rtp_header_extension_map_.RegisterByUri(extension.id, extension.uri);
+}
 
 bool RtpHeaderParserImpl::RegisterRtpHeaderExtension(RTPExtensionType type,
                                                      uint8_t id) {
   rtc::CritScope cs(&critical_section_);
   return rtp_header_extension_map_.RegisterByType(id, type);
+}
+
+bool RtpHeaderParserImpl::DeregisterRtpHeaderExtension(RtpExtension extension) {
+  rtc::CritScope cs(&critical_section_);
+  return rtp_header_extension_map_.Deregister(
+      rtp_header_extension_map_.GetType(extension.id));
 }
 
 bool RtpHeaderParserImpl::DeregisterRtpHeaderExtension(RTPExtensionType type) {
