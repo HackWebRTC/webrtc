@@ -597,6 +597,14 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     // settings set in PeerConnectionFactory (which is deprecated).
     absl::optional<CryptoOptions> crypto_options;
 
+    // Configure if we should include the SDP attribute extmap-allow-mixed in
+    // our offer. Although we currently do support this, it's not included in
+    // our offer by default due to a previous bug that caused the SDP parser to
+    // abort parsing if this attribute was present. This is fixed in Chrome 71.
+    // TODO(webrtc:9985): Change default to true once sufficient time has
+    // passed.
+    bool offer_extmap_allow_mixed = false;
+
     //
     // Don't forget to update operator== if adding something.
     //

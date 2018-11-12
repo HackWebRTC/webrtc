@@ -737,6 +737,7 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
     bool use_media_transport;
     bool use_media_transport_for_data_channels;
     absl::optional<CryptoOptions> crypto_options;
+    bool offer_extmap_allow_mixed;
   };
   static_assert(sizeof(stuff_being_tested_for_equality) == sizeof(*this),
                 "Did you add something to RTCConfiguration and forget to "
@@ -788,7 +789,8 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
          use_media_transport == o.use_media_transport &&
          use_media_transport_for_data_channels ==
              o.use_media_transport_for_data_channels &&
-         crypto_options == o.crypto_options;
+         crypto_options == o.crypto_options &&
+         offer_extmap_allow_mixed == o.offer_extmap_allow_mixed;
 }
 
 bool PeerConnectionInterface::RTCConfiguration::operator!=(
@@ -3808,6 +3810,8 @@ void PeerConnection::GetOptionsForOffer(
           RTC_FROM_HERE,
           rtc::Bind(&cricket::PortAllocator::GetPooledIceCredentials,
                     port_allocator_.get()));
+  session_options->offer_extmap_allow_mixed =
+      configuration_.offer_extmap_allow_mixed;
 }
 
 void PeerConnection::GetOptionsForPlanBOffer(

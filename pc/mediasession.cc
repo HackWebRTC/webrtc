@@ -1378,6 +1378,8 @@ SessionDescription* MediaSessionDescriptionFactory::CreateOffer(
     offer->set_msid_signaling(cricket::kMsidSignalingSsrcAttribute);
   }
 
+  offer->set_extmap_allow_mixed(session_options.offer_extmap_allow_mixed);
+
   return offer.release();
 }
 

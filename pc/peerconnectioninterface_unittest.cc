@@ -3944,6 +3944,21 @@ TEST_P(PeerConnectionInterfaceTest,
   EXPECT_FALSE(DoSetLocalDescription(std::move(offer)));
 }
 
+TEST_P(PeerConnectionInterfaceTest, ExtmapAllowMixedIsConfigurable) {
+  RTCConfiguration config;
+  // Default behavior is false.
+  CreatePeerConnection(config);
+  std::unique_ptr<SessionDescriptionInterface> offer;
+  ASSERT_TRUE(DoCreateOffer(&offer, nullptr));
+  EXPECT_FALSE(offer->description()->extmap_allow_mixed());
+  // Possible to set to true.
+  config.offer_extmap_allow_mixed = true;
+  CreatePeerConnection(config);
+  offer.release();
+  ASSERT_TRUE(DoCreateOffer(&offer, nullptr));
+  EXPECT_TRUE(offer->description()->extmap_allow_mixed());
+}
+
 INSTANTIATE_TEST_CASE_P(PeerConnectionInterfaceTest,
                         PeerConnectionInterfaceTest,
                         Values(SdpSemantics::kPlanB,
