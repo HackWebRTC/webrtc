@@ -33,8 +33,7 @@ ChannelReceiveProxy::~ChannelReceiveProxy() {}
 
 void ChannelReceiveProxy::SetLocalSSRC(uint32_t ssrc) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  int error = channel_->SetLocalSSRC(ssrc);
-  RTC_DCHECK_EQ(0, error);
+  channel_->SetLocalSSRC(ssrc);
 }
 
 void ChannelReceiveProxy::SetNACKStatus(bool enable, int max_packets) {
@@ -44,10 +43,7 @@ void ChannelReceiveProxy::SetNACKStatus(bool enable, int max_packets) {
 
 CallReceiveStatistics ChannelReceiveProxy::GetRTCPStatistics() const {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  CallReceiveStatistics stats = {0};
-  int error = channel_->GetRTPStatistics(stats);
-  RTC_DCHECK_EQ(0, error);
-  return stats;
+  return channel_->GetRTCPStatistics();
 }
 
 bool ChannelReceiveProxy::ReceivedRTCPPacket(const uint8_t* packet,
@@ -69,17 +65,12 @@ void ChannelReceiveProxy::ResetReceiverCongestionControlObjects() {
 
 NetworkStatistics ChannelReceiveProxy::GetNetworkStatistics() const {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  NetworkStatistics stats = {0};
-  int error = channel_->GetNetworkStatistics(stats);
-  RTC_DCHECK_EQ(0, error);
-  return stats;
+  return channel_->GetNetworkStatistics();
 }
 
 AudioDecodingCallStats ChannelReceiveProxy::GetDecodingCallStatistics() const {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  AudioDecodingCallStats stats;
-  channel_->GetDecodingCallStatistics(&stats);
-  return stats;
+  return channel_->GetDecodingCallStatistics();
 }
 
 int ChannelReceiveProxy::GetSpeechOutputLevelFullRange() const {
@@ -154,10 +145,7 @@ absl::optional<Syncable::Info> ChannelReceiveProxy::GetSyncInfo() const {
 
 uint32_t ChannelReceiveProxy::GetPlayoutTimestamp() const {
   RTC_DCHECK_RUNS_SERIALIZED(&video_capture_thread_race_checker_);
-  unsigned int timestamp = 0;
-  int error = channel_->GetPlayoutTimestamp(timestamp);
-  RTC_DCHECK(!error || timestamp == 0);
-  return timestamp;
+  return channel_->GetPlayoutTimestamp();
 }
 
 void ChannelReceiveProxy::SetMinimumPlayoutDelay(int delay_ms) {
@@ -165,15 +153,12 @@ void ChannelReceiveProxy::SetMinimumPlayoutDelay(int delay_ms) {
   // Limit to range accepted by both VoE and ACM, so we're at least getting as
   // close as possible, instead of failing.
   delay_ms = rtc::SafeClamp(delay_ms, 0, 10000);
-  int error = channel_->SetMinimumPlayoutDelay(delay_ms);
-  if (0 != error) {
-    RTC_LOG(LS_WARNING) << "Error setting minimum playout delay.";
-  }
+  channel_->SetMinimumPlayoutDelay(delay_ms);
 }
 
 bool ChannelReceiveProxy::GetRecCodec(CodecInst* codec_inst) const {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  return channel_->GetRecCodec(*codec_inst) == 0;
+  return channel_->GetRecCodec(codec_inst);
 }
 
 std::vector<RtpSource> ChannelReceiveProxy::GetSources() const {
@@ -183,14 +168,12 @@ std::vector<RtpSource> ChannelReceiveProxy::GetSources() const {
 
 void ChannelReceiveProxy::StartPlayout() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  int error = channel_->StartPlayout();
-  RTC_DCHECK_EQ(0, error);
+  channel_->StartPlayout();
 }
 
 void ChannelReceiveProxy::StopPlayout() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  int error = channel_->StopPlayout();
-  RTC_DCHECK_EQ(0, error);
+  channel_->StopPlayout();
 }
 }  // namespace voe
 }  // namespace webrtc

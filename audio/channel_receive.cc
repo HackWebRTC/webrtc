@@ -372,29 +372,25 @@ void ChannelReceive::SetSink(AudioSinkInterface* sink) {
   audio_sink_ = sink;
 }
 
-int32_t ChannelReceive::StartPlayout() {
+void ChannelReceive::StartPlayout() {
   if (channel_state_.Get().playing) {
-    return 0;
+    return;
   }
 
   channel_state_.SetPlaying(true);
-
-  return 0;
 }
 
-int32_t ChannelReceive::StopPlayout() {
+void ChannelReceive::StopPlayout() {
   if (!channel_state_.Get().playing) {
-    return 0;
+    return;
   }
 
   channel_state_.SetPlaying(false);
   _outputAudioLevel.Clear();
-
-  return 0;
 }
 
-int32_t ChannelReceive::GetRecCodec(CodecInst& codec) {
-  return (audio_coding_->ReceiveCodec(&codec));
+bool ChannelReceive::GetRecCodec(CodecInst* codec) {
+  return (audio_coding_->ReceiveCodec(codec) == 0);
 }
 
 std::vector<webrtc::RtpSource> ChannelReceive::GetSources() const {
@@ -513,7 +509,8 @@ bool ChannelReceive::ReceivePacket(const uint8_t* packet,
                                &webrtc_rtp_header);
 }
 
-int32_t ChannelReceive::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
+// TODO(nisse): Drop always-true return value.
+bool ChannelReceive::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
   // Store playout timestamp for the received RTCP packet
   UpdatePlayoutTimestamp(true);
 
@@ -523,7 +520,7 @@ int32_t ChannelReceive::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
   int64_t rtt = GetRTT();
   if (rtt == 0) {
     // Waiting for valid RTT.
-    return 0;
+    return true;
   }
 
   int64_t nack_window_ms = rtt;
@@ -539,14 +536,14 @@ int32_t ChannelReceive::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
   if (0 != _rtpRtcpModule->RemoteNTP(&ntp_secs, &ntp_frac, NULL, NULL,
                                      &rtp_timestamp)) {
     // Waiting for RTCP.
-    return 0;
+    return true;
   }
 
   {
     rtc::CritScope lock(&ts_stats_lock_);
     ntp_estimator_.UpdateRtcpTimestamp(rtt, ntp_secs, ntp_frac, rtp_timestamp);
   }
-  return 0;
+  return true;
 }
 
 int ChannelReceive::GetSpeechOutputLevelFullRange() const {
@@ -566,9 +563,8 @@ void ChannelReceive::SetChannelOutputVolumeScaling(float scaling) {
   _outputGain = scaling;
 }
 
-int ChannelReceive::SetLocalSSRC(unsigned int ssrc) {
+void ChannelReceive::SetLocalSSRC(unsigned int ssrc) {
   _rtpRtcpModule->SetSSRC(ssrc);
-  return 0;
 }
 
 // TODO(nisse): Pass ssrc in return value instead.
@@ -592,8 +588,9 @@ void ChannelReceive::ResetReceiverCongestionControlObjects() {
   packet_router_ = nullptr;
 }
 
-int ChannelReceive::GetRTPStatistics(CallReceiveStatistics& stats) {
+CallReceiveStatistics ChannelReceive::GetRTCPStatistics() {
   // --- RtcpStatistics
+  CallReceiveStatistics stats;
 
   // The jitter statistics is updated for each received RTP packet and is
   // based on received packets.
@@ -630,7 +627,7 @@ int ChannelReceive::GetRTPStatistics(CallReceiveStatistics& stats) {
     rtc::CritScope lock(&ts_stats_lock_);
     stats.capture_start_ntp_time_ms_ = capture_start_ntp_time_ms_;
   }
-  return 0;
+  return stats;
 }
 
 void ChannelReceive::SetNACKStatus(bool enable, int maxNumberOfPackets) {
@@ -653,13 +650,17 @@ void ChannelReceive::SetAssociatedSendChannel(ChannelSend* channel) {
   associated_send_channel_ = channel;
 }
 
-int ChannelReceive::GetNetworkStatistics(NetworkStatistics& stats) {
-  return audio_coding_->GetNetworkStatistics(&stats);
+NetworkStatistics ChannelReceive::GetNetworkStatistics() const {
+  NetworkStatistics stats;
+  int error = audio_coding_->GetNetworkStatistics(&stats);
+  RTC_DCHECK_EQ(0, error);
+  return stats;
 }
 
-void ChannelReceive::GetDecodingCallStatistics(
-    AudioDecodingCallStats* stats) const {
-  audio_coding_->GetDecodingCallStatistics(stats);
+AudioDecodingCallStats ChannelReceive::GetDecodingCallStatistics() const {
+  AudioDecodingCallStats stats;
+  audio_coding_->GetDecodingCallStatistics(&stats);
+  return stats;
 }
 
 uint32_t ChannelReceive::GetDelayEstimate() const {
@@ -667,32 +668,23 @@ uint32_t ChannelReceive::GetDelayEstimate() const {
   return audio_coding_->FilteredCurrentDelayMs() + playout_delay_ms_;
 }
 
-int ChannelReceive::SetMinimumPlayoutDelay(int delayMs) {
+void ChannelReceive::SetMinimumPlayoutDelay(int delayMs) {
   if ((delayMs < kVoiceEngineMinMinPlayoutDelayMs) ||
       (delayMs > kVoiceEngineMaxMinPlayoutDelayMs)) {
     RTC_DLOG(LS_ERROR) << "SetMinimumPlayoutDelay() invalid min delay";
-    return -1;
+    return;
   }
   if (audio_coding_->SetMinimumPlayoutDelay(delayMs) != 0) {
     RTC_DLOG(LS_ERROR)
         << "SetMinimumPlayoutDelay() failed to set min playout delay";
-    return -1;
   }
-  return 0;
 }
 
-int ChannelReceive::GetPlayoutTimestamp(unsigned int& timestamp) {
-  uint32_t playout_timestamp_rtp = 0;
+uint32_t ChannelReceive::GetPlayoutTimestamp() {
   {
     rtc::CritScope lock(&video_sync_lock_);
-    playout_timestamp_rtp = playout_timestamp_rtp_;
+    return playout_timestamp_rtp_;
   }
-  if (playout_timestamp_rtp == 0) {
-    RTC_DLOG(LS_ERROR) << "GetPlayoutTimestamp() failed to retrieve timestamp";
-    return -1;
-  }
-  timestamp = playout_timestamp_rtp;
-  return 0;
 }
 
 absl::optional<Syncable::Info> ChannelReceive::GetSyncInfo() const {

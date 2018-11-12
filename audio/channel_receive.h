@@ -127,15 +127,14 @@ class ChannelReceive : public RtpData, public MediaTransportAudioSinkInterface {
 
   // API methods
 
-  // VoEBase
-  int32_t StartPlayout();
-  int32_t StopPlayout();
+  void StartPlayout();
+  void StopPlayout();
 
   // Codecs
-  int32_t GetRecCodec(CodecInst& codec);  // NOLINT
+  bool GetRecCodec(CodecInst* codec);
 
   // TODO(nisse, solenberg): Delete when VoENetwork is deleted.
-  int32_t ReceivedRTCPPacket(const uint8_t* data, size_t length);
+  bool ReceivedRTCPPacket(const uint8_t* data, size_t length);
   void OnRtpPacket(const RtpPacketReceived& packet);
 
   // Muting, Volume and Level.
@@ -147,34 +146,25 @@ class ChannelReceive : public RtpData, public MediaTransportAudioSinkInterface {
   double GetTotalOutputDuration() const;
 
   // Stats.
-  int GetNetworkStatistics(NetworkStatistics& stats);  // NOLINT
-  void GetDecodingCallStatistics(AudioDecodingCallStats* stats) const;
+  NetworkStatistics GetNetworkStatistics() const;
+  AudioDecodingCallStats GetDecodingCallStatistics() const;
 
   // Audio+Video Sync.
   uint32_t GetDelayEstimate() const;
-  int SetMinimumPlayoutDelay(int delayMs);
-  int GetPlayoutTimestamp(unsigned int& timestamp);  // NOLINT
+  void SetMinimumPlayoutDelay(int delayMs);
+  uint32_t GetPlayoutTimestamp();
 
   // Produces the transport-related timestamps; current_delay_ms is left unset.
   absl::optional<Syncable::Info> GetSyncInfo() const;
 
   // RTP+RTCP
-  int SetLocalSSRC(unsigned int ssrc);
+  void SetLocalSSRC(unsigned int ssrc);
 
   void RegisterReceiverCongestionControlObjects(PacketRouter* packet_router);
   void ResetReceiverCongestionControlObjects();
 
-  int GetRTPStatistics(CallReceiveStatistics& stats);  // NOLINT
+  CallReceiveStatistics GetRTCPStatistics();
   void SetNACKStatus(bool enable, int maxNumberOfPackets);
-
-  // MediaTransportAudioSinkInterface override;
-  void OnData(uint64_t channel_id,
-              MediaTransportEncodedAudioFrame frame) override;
-
-  // From RtpData in the RTP/RTCP module
-  int32_t OnReceivedPayloadData(const uint8_t* payloadData,
-                                size_t payloadSize,
-                                const WebRtcRTPHeader* rtpHeader) override;
 
   // From AudioMixer::Source.
   AudioMixer::Source::AudioFrameInfo GetAudioFrameWithInfo(
@@ -203,6 +193,15 @@ class ChannelReceive : public RtpData, public MediaTransportAudioSinkInterface {
 
   int GetRtpTimestampRateHz() const;
   int64_t GetRTT() const;
+
+  // MediaTransportAudioSinkInterface override;
+  void OnData(uint64_t channel_id,
+              MediaTransportEncodedAudioFrame frame) override;
+
+  // From RtpData in the RTP/RTCP module
+  int32_t OnReceivedPayloadData(const uint8_t* payloadData,
+                                size_t payloadSize,
+                                const WebRtcRTPHeader* rtpHeader) override;
 
   rtc::CriticalSection _callbackCritSect;
   rtc::CriticalSection volume_settings_critsect_;
