@@ -702,7 +702,7 @@ public class EglRenderer implements VideoSink {
   }
 
   private String averageTimeAsString(long sumTimeNs, int count) {
-    return (count <= 0) ? "NA" : TimeUnit.NANOSECONDS.toMicros(sumTimeNs / count) + " μs";
+    return (count <= 0) ? "NA" : TimeUnit.NANOSECONDS.toMicros(sumTimeNs / count) + " us";
   }
 
   private void logStatistics() {
