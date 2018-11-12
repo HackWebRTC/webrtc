@@ -42,23 +42,13 @@ class RtpToNtpEstimator {
 
   // Estimated parameters from RTP and NTP timestamp pairs in |measurements_|.
   struct Parameters {
-    // Implicit conversion from int because MovingMedianFilter returns 0
-    // internally if no samples are present. However, it should never happen as
-    // we don't ask smoothing_filter_ to return anything if there were no
-    // samples.
-    Parameters(const int& value) {  // NOLINT
-      RTC_NOTREACHED();
-    }
     Parameters() : frequency_khz(0.0), offset_ms(0.0) {}
+
+    Parameters(double frequency_khz, double offset_ms)
+        : frequency_khz(frequency_khz), offset_ms(offset_ms) {}
 
     double frequency_khz;
     double offset_ms;
-
-    // Needed to make it work inside MovingMedianFilter
-    bool operator<(const Parameters& other) const;
-    bool operator==(const Parameters& other) const;
-    bool operator<=(const Parameters& other) const;
-    bool operator!=(const Parameters& other) const;
   };
 
   // Updates measurements with RTP/NTP timestamp pair from a RTCP sender report.
@@ -70,7 +60,7 @@ class RtpToNtpEstimator {
 
   // Converts an RTP timestamp to the NTP domain in milliseconds.
   // Returns true on success, false otherwise.
-  bool Estimate(int64_t rtp_timestamp, int64_t* rtp_timestamp_ms) const;
+  bool Estimate(int64_t rtp_timestamp, int64_t* ntp_timestamp_ms) const;
 
   // Returns estimated rtp to ntp linear transform parameters.
   const absl::optional<Parameters> params() const;
@@ -82,8 +72,7 @@ class RtpToNtpEstimator {
 
   int consecutive_invalid_samples_;
   std::list<RtcpMeasurement> measurements_;
-  MovingMedianFilter<Parameters> smoothing_filter_;
-  bool params_calculated_;
+  absl::optional<Parameters> params_;
   mutable TimestampUnwrapper unwrapper_;
 };
 }  // namespace webrtc

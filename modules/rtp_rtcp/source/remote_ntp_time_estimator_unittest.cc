@@ -111,7 +111,17 @@ TEST_F(RemoteNtpTimeEstimatorTest, Estimate) {
 }
 
 TEST_F(RemoteNtpTimeEstimatorTest, AveragesErrorsOut) {
-  // Remote peer sends first 5 RTCP SR without errors.
+  // Remote peer sends first 10 RTCP SR without errors.
+  AdvanceTimeMilliseconds(1000);
+  SendRtcpSr();
+  AdvanceTimeMilliseconds(1000);
+  SendRtcpSr();
+  AdvanceTimeMilliseconds(1000);
+  SendRtcpSr();
+  AdvanceTimeMilliseconds(1000);
+  SendRtcpSr();
+  AdvanceTimeMilliseconds(1000);
+  SendRtcpSr();
   AdvanceTimeMilliseconds(1000);
   SendRtcpSr();
   AdvanceTimeMilliseconds(1000);
@@ -123,18 +133,17 @@ TEST_F(RemoteNtpTimeEstimatorTest, AveragesErrorsOut) {
   AdvanceTimeMilliseconds(1000);
   SendRtcpSr();
 
-  AdvanceTimeMilliseconds(15);
+  AdvanceTimeMilliseconds(150);
   uint32_t rtp_timestamp = GetRemoteTimestamp();
   int64_t capture_ntp_time_ms = local_clock_.CurrentNtpInMilliseconds();
-
   // Local peer gets enough RTCP SR to calculate the capture time.
   EXPECT_EQ(capture_ntp_time_ms, estimator_->Estimate(rtp_timestamp));
 
   // Remote sends corrupted RTCP SRs
   AdvanceTimeMilliseconds(1000);
-  SendRtcpSrInaccurately(10, 10);
+  SendRtcpSrInaccurately(/*ntp_error_ms=*/2, /*networking_delay_ms=*/-1);
   AdvanceTimeMilliseconds(1000);
-  SendRtcpSrInaccurately(-20, 5);
+  SendRtcpSrInaccurately(/*ntp_error_ms=*/-2, /*networking_delay_ms=*/1);
 
   // New RTP packet to estimate timestamp.
   AdvanceTimeMilliseconds(150);

@@ -34,6 +34,7 @@ rtc_static_library("system_wrappers") {
   deps = [
     ":cpu_features_api",
     "..:webrtc_common",
+    "../api:array_view",
     "../modules:module_api_public",
     "../rtc_base:checks",
     "../rtc_base/synchronization:rw_lock_wrapper",
