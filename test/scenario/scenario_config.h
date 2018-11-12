@@ -75,6 +75,10 @@ struct PacketStreamConfig {
 struct VideoStreamConfig {
   bool autostart = true;
   struct Source {
+    enum class ContentType {
+      kVideo,
+      kScreen,
+    } content_type = ContentType::kVideo;
     enum Capture {
       kGenerator,
       kVideoFile,
@@ -118,6 +122,7 @@ struct VideoStreamConfig {
     ~Stream();
     bool packet_feedback = true;
     bool use_rtx = true;
+    DataRate pad_to_rate = DataRate::Zero();
     TimeDelta nack_history_time = TimeDelta::ms(1000);
     bool use_flexfec = false;
     bool use_ulpfec = false;

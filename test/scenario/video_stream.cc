@@ -132,11 +132,20 @@ VideoEncoderConfig CreateVideoEncoderConfig(VideoStreamConfig config) {
   size_t num_streams = config.encoder.num_simulcast_streams;
   VideoEncoderConfig encoder_config;
   encoder_config.codec_type = config.encoder.codec;
-  encoder_config.content_type = VideoEncoderConfig::ContentType::kRealtimeVideo;
+  switch (config.source.content_type) {
+    case VideoStreamConfig::Source::ContentType::kVideo:
+      encoder_config.content_type =
+          VideoEncoderConfig::ContentType::kRealtimeVideo;
+      break;
+    case VideoStreamConfig::Source::ContentType::kScreen:
+      encoder_config.content_type = VideoEncoderConfig::ContentType::kScreen;
+      break;
+  }
   encoder_config.video_format =
       SdpVideoFormat(CodecTypeToPayloadString(config.encoder.codec), {});
   encoder_config.number_of_streams = num_streams;
   encoder_config.simulcast_layers = std::vector<VideoStream>(num_streams);
+  encoder_config.min_transmit_bitrate_bps = config.stream.pad_to_rate.bps();
 
   std::string cricket_codec = CodecTypeToCodecName(config.encoder.codec);
   if (!cricket_codec.empty()) {
