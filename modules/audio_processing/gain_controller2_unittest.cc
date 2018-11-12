@@ -117,7 +117,7 @@ TEST(GainController2, CreateApplyConfig) {
   EXPECT_FALSE(GainController2::Validate(config));
 
   // Check that valid configurations are applied.
-  for (const float& fixed_gain_db : {0.f, 5.f, 10.f, 50.f}) {
+  for (const float& fixed_gain_db : {0.f, 5.f, 10.f, 40.f}) {
     config.fixed_gain_db = fixed_gain_db;
     EXPECT_TRUE(GainController2::Validate(config));
     gain_controller2->ApplyConfig(config);

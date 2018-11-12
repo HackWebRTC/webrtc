@@ -89,7 +89,7 @@ std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
 
   // Read an int8 value, but don't let it be too large or small.
   const float gain_controller2_gain_db =
-      rtc::SafeClamp<int>(fuzz_data->ReadOrDefaultValue<int8_t>(0), -50, 50);
+      rtc::SafeClamp<int>(fuzz_data->ReadOrDefaultValue<int8_t>(0), -40, 40);
 
   constexpr size_t kNumFieldTrials = arraysize(kFieldTrialNames);
   // Verify that the read data type has enough bits to fuzz the field trials.
