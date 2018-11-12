@@ -646,11 +646,6 @@ if (rtc_include_tests) {
         "//base:base_java_test_support",
         "//third_party/google-truth:google_truth_java",
       ]
-
-      additional_jar_files = [ [
-            "sdk/android/tests/resources/robolectric.properties",
-            "robolectric.properties",
-          ] ]
     }
   }
 }
