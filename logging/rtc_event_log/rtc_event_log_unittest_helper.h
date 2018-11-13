@@ -122,83 +122,111 @@ class EventGenerator {
   Random prng_;
 };
 
-void VerifyLoggedAlrStateEvent(const RtcEventAlrState& original_event,
-                               const LoggedAlrStateEvent& logged_event);
+class EventVerifier {
+ public:
+  explicit EventVerifier(RtcEventLog::EncodingType encoding_type)
+      : encoding_type_(encoding_type) {}
 
-void VerifyLoggedAudioPlayoutEvent(const RtcEventAudioPlayout& original_event,
-                                   const LoggedAudioPlayoutEvent& logged_event);
+  void VerifyLoggedAlrStateEvent(const RtcEventAlrState& original_event,
+                                 const LoggedAlrStateEvent& logged_event) const;
 
-void VerifyLoggedAudioNetworkAdaptationEvent(
-    const RtcEventAudioNetworkAdaptation& original_event,
-    const LoggedAudioNetworkAdaptationEvent& logged_event);
+  void VerifyLoggedAudioPlayoutEvent(
+      const RtcEventAudioPlayout& original_event,
+      const LoggedAudioPlayoutEvent& logged_event) const;
 
-void VerifyLoggedBweDelayBasedUpdate(
-    const RtcEventBweUpdateDelayBased& original_event,
-    const LoggedBweDelayBasedUpdate& logged_event);
+  void VerifyLoggedAudioNetworkAdaptationEvent(
+      const RtcEventAudioNetworkAdaptation& original_event,
+      const LoggedAudioNetworkAdaptationEvent& logged_event) const;
 
-void VerifyLoggedBweLossBasedUpdate(
-    const RtcEventBweUpdateLossBased& original_event,
-    const LoggedBweLossBasedUpdate& logged_event);
+  void VerifyLoggedBweDelayBasedUpdate(
+      const RtcEventBweUpdateDelayBased& original_event,
+      const LoggedBweDelayBasedUpdate& logged_event) const;
 
-void VerifyLoggedBweProbeClusterCreatedEvent(
-    const RtcEventProbeClusterCreated& original_event,
-    const LoggedBweProbeClusterCreatedEvent& logged_event);
+  void VerifyLoggedBweLossBasedUpdate(
+      const RtcEventBweUpdateLossBased& original_event,
+      const LoggedBweLossBasedUpdate& logged_event) const;
 
-void VerifyLoggedBweProbeFailureEvent(
-    const RtcEventProbeResultFailure& original_event,
-    const LoggedBweProbeFailureEvent& logged_event);
+  void VerifyLoggedBweProbeClusterCreatedEvent(
+      const RtcEventProbeClusterCreated& original_event,
+      const LoggedBweProbeClusterCreatedEvent& logged_event) const;
 
-void VerifyLoggedBweProbeSuccessEvent(
-    const RtcEventProbeResultSuccess& original_event,
-    const LoggedBweProbeSuccessEvent& logged_event);
+  void VerifyLoggedBweProbeFailureEvent(
+      const RtcEventProbeResultFailure& original_event,
+      const LoggedBweProbeFailureEvent& logged_event) const;
 
-void VerifyLoggedIceCandidatePairConfig(
-    const RtcEventIceCandidatePairConfig& original_event,
-    const LoggedIceCandidatePairConfig& logged_event);
+  void VerifyLoggedBweProbeSuccessEvent(
+      const RtcEventProbeResultSuccess& original_event,
+      const LoggedBweProbeSuccessEvent& logged_event) const;
 
-void VerifyLoggedIceCandidatePairEvent(
-    const RtcEventIceCandidatePair& original_event,
-    const LoggedIceCandidatePairEvent& logged_event);
+  void VerifyLoggedIceCandidatePairConfig(
+      const RtcEventIceCandidatePairConfig& original_event,
+      const LoggedIceCandidatePairConfig& logged_event) const;
 
-void VerifyLoggedRtpPacketIncoming(
-    const RtcEventRtpPacketIncoming& original_event,
-    const LoggedRtpPacketIncoming& logged_event);
+  void VerifyLoggedIceCandidatePairEvent(
+      const RtcEventIceCandidatePair& original_event,
+      const LoggedIceCandidatePairEvent& logged_event) const;
 
-void VerifyLoggedRtpPacketOutgoing(
-    const RtcEventRtpPacketOutgoing& original_event,
-    const LoggedRtpPacketOutgoing& logged_event);
+  void VerifyLoggedRtpPacketIncoming(
+      const RtcEventRtpPacketIncoming& original_event,
+      const LoggedRtpPacketIncoming& logged_event) const;
 
-void VerifyLoggedRtcpPacketIncoming(
-    const RtcEventRtcpPacketIncoming& original_event,
-    const LoggedRtcpPacketIncoming& logged_event);
+  void VerifyLoggedRtpPacketOutgoing(
+      const RtcEventRtpPacketOutgoing& original_event,
+      const LoggedRtpPacketOutgoing& logged_event) const;
 
-void VerifyLoggedRtcpPacketOutgoing(
-    const RtcEventRtcpPacketOutgoing& original_event,
-    const LoggedRtcpPacketOutgoing& logged_event);
+  template <typename EventType, typename ParsedType>
+  void VerifyLoggedRtpPacket(const EventType& original_event,
+                             const ParsedType& logged_event) {
+    static_assert(sizeof(ParsedType) == 0,
+                  "You have to use one of the two defined template "
+                  "specializations of VerifyLoggedRtpPacket");
+  }
 
-void VerifyLoggedStartEvent(int64_t start_time_us,
-                            const LoggedStartEvent& logged_event);
-void VerifyLoggedStopEvent(int64_t stop_time_us,
-                           const LoggedStopEvent& logged_event);
+  template <>
+  void VerifyLoggedRtpPacket(const RtcEventRtpPacketIncoming& original_event,
+                             const LoggedRtpPacketIncoming& logged_event) {
+    VerifyLoggedRtpPacketIncoming(original_event, logged_event);
+  }
 
-void VerifyLoggedStreamConfig(const rtclog::StreamConfig& original_config,
-                              const rtclog::StreamConfig& logged_config);
+  template <>
+  void VerifyLoggedRtpPacket(const RtcEventRtpPacketOutgoing& original_event,
+                             const LoggedRtpPacketOutgoing& logged_event) {
+    VerifyLoggedRtpPacketOutgoing(original_event, logged_event);
+  }
 
-void VerifyLoggedAudioRecvConfig(
-    const RtcEventAudioReceiveStreamConfig& original_event,
-    const LoggedAudioRecvConfig& logged_event);
+  void VerifyLoggedRtcpPacketIncoming(
+      const RtcEventRtcpPacketIncoming& original_event,
+      const LoggedRtcpPacketIncoming& logged_event) const;
 
-void VerifyLoggedAudioSendConfig(
-    const RtcEventAudioSendStreamConfig& original_event,
-    const LoggedAudioSendConfig& logged_event);
+  void VerifyLoggedRtcpPacketOutgoing(
+      const RtcEventRtcpPacketOutgoing& original_event,
+      const LoggedRtcpPacketOutgoing& logged_event) const;
 
-void VerifyLoggedVideoRecvConfig(
-    const RtcEventVideoReceiveStreamConfig& original_event,
-    const LoggedVideoRecvConfig& logged_event);
+  void VerifyLoggedStartEvent(int64_t start_time_us,
+                              int64_t utc_start_time_us,
+                              const LoggedStartEvent& logged_event) const;
+  void VerifyLoggedStopEvent(int64_t stop_time_us,
+                             const LoggedStopEvent& logged_event) const;
 
-void VerifyLoggedVideoSendConfig(
-    const RtcEventVideoSendStreamConfig& original_event,
-    const LoggedVideoSendConfig& logged_event);
+  void VerifyLoggedAudioRecvConfig(
+      const RtcEventAudioReceiveStreamConfig& original_event,
+      const LoggedAudioRecvConfig& logged_event) const;
+
+  void VerifyLoggedAudioSendConfig(
+      const RtcEventAudioSendStreamConfig& original_event,
+      const LoggedAudioSendConfig& logged_event) const;
+
+  void VerifyLoggedVideoRecvConfig(
+      const RtcEventVideoReceiveStreamConfig& original_event,
+      const LoggedVideoRecvConfig& logged_event) const;
+
+  void VerifyLoggedVideoSendConfig(
+      const RtcEventVideoSendStreamConfig& original_event,
+      const LoggedVideoSendConfig& logged_event) const;
+
+ private:
+  RtcEventLog::EncodingType encoding_type_;
+};
 
 }  // namespace test
 }  // namespace webrtc

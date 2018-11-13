@@ -615,10 +615,13 @@ void EncodeRtpPacket(const std::vector<const EventType*>& batch,
 }
 }  // namespace
 
-std::string RtcEventLogEncoderNewFormat::EncodeLogStart(int64_t timestamp_us) {
+std::string RtcEventLogEncoderNewFormat::EncodeLogStart(int64_t timestamp_us,
+                                                        int64_t utc_time_us) {
   rtclog2::EventStream event_stream;
   rtclog2::BeginLogEvent* proto_batch = event_stream.add_begin_log_events();
   proto_batch->set_timestamp_ms(timestamp_us / 1000);
+  proto_batch->set_version(2);
+  proto_batch->set_utc_time_ms(utc_time_us / 1000);
   return event_stream.SerializeAsString();
 }
 

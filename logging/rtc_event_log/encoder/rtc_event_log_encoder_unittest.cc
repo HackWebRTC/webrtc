@@ -47,10 +47,12 @@ class RtcEventLogEncoderTest
   RtcEventLogEncoderTest()
       : seed_(std::get<0>(GetParam())),
         prng_(seed_),
-        gen_(seed_ * 880001UL),
         new_encoding_(std::get<1>(GetParam())),
         event_count_(std::get<2>(GetParam())),
-        force_repeated_fields_(std::get<3>(GetParam())) {
+        force_repeated_fields_(std::get<3>(GetParam())),
+        gen_(seed_ * 880001UL),
+        verifier_(new_encoding_ ? RtcEventLog::EncodingType::NewFormat
+                                : RtcEventLog::EncodingType::Legacy) {
     if (new_encoding_)
       encoder_ = absl::make_unique<RtcEventLogEncoderNewFormat>();
     else
@@ -70,8 +72,9 @@ class RtcEventLogEncoderTest
       const RtpHeaderExtensionMap& extension_map);
 
   template <typename ParsedType>
-  const std::vector<ParsedType>& GetRtpPacketsBySsrc(
-      const ParsedRtcEventLogNew* parsed_log);
+  const std::vector<ParsedType>* GetRtpPacketsBySsrc(
+      const ParsedRtcEventLogNew* parsed_log,
+      uint32_t ssrc);
 
   template <typename EventType, typename ParsedType>
   void TestRtpPackets();
@@ -81,10 +84,11 @@ class RtcEventLogEncoderTest
   ParsedRtcEventLogNew parsed_log_;
   const uint64_t seed_;
   Random prng_;
-  test::EventGenerator gen_;
   const bool new_encoding_;
   const size_t event_count_;
   const bool force_repeated_fields_;
+  test::EventGenerator gen_;
+  test::EventVerifier verifier_;
 };
 
 void RtcEventLogEncoderTest::TestRtcEventAudioNetworkAdaptation(
@@ -102,7 +106,8 @@ void RtcEventLogEncoderTest::TestRtcEventAudioNetworkAdaptation(
 
   ASSERT_EQ(ana_configs.size(), events.size());
   for (size_t i = 0; i < events.size(); ++i) {
-    test::VerifyLoggedAudioNetworkAdaptationEvent(*events[i], ana_configs[i]);
+    verifier_.VerifyLoggedAudioNetworkAdaptationEvent(*events[i],
+                                                      ana_configs[i]);
   }
 }
 
@@ -121,44 +126,31 @@ std::unique_ptr<RtcEventRtpPacketOutgoing> RtcEventLogEncoderTest::NewRtpPacket(
 }
 
 template <>
-const std::vector<ParsedRtcEventLogNew::LoggedRtpStreamIncoming>&
+const std::vector<LoggedRtpPacketIncoming>*
 RtcEventLogEncoderTest::GetRtpPacketsBySsrc(
-    const ParsedRtcEventLogNew* parsed_log) {
-  return parsed_log->incoming_rtp_packets_by_ssrc();
+    const ParsedRtcEventLogNew* parsed_log,
+    uint32_t ssrc) {
+  const auto& incoming_streams = parsed_log->incoming_rtp_packets_by_ssrc();
+  for (const auto& stream : incoming_streams) {
+    if (stream.ssrc == ssrc) {
+      return &stream.incoming_packets;
+    }
+  }
+  return nullptr;
 }
 
 template <>
-const std::vector<ParsedRtcEventLogNew::LoggedRtpStreamOutgoing>&
+const std::vector<LoggedRtpPacketOutgoing>*
 RtcEventLogEncoderTest::GetRtpPacketsBySsrc(
-    const ParsedRtcEventLogNew* parsed_log) {
-  return parsed_log->outgoing_rtp_packets_by_ssrc();
-}
-
-template <typename EventType, typename ParsedType>
-void CompareRtpPacketSequences(
-    const std::vector<std::unique_ptr<EventType>>& original_events,
-    const ParsedType& parsed_events);
-
-template <>
-void CompareRtpPacketSequences(
-    const std::vector<std::unique_ptr<RtcEventRtpPacketIncoming>>& original,
-    const ParsedRtcEventLogNew::LoggedRtpStreamIncoming& parsed) {
-  ASSERT_EQ(parsed.incoming_packets.size(), original.size());
-  for (size_t i = 0; i < original.size(); ++i) {
-    test::VerifyLoggedRtpPacketIncoming(*original[i],
-                                        parsed.incoming_packets[i]);
+    const ParsedRtcEventLogNew* parsed_log,
+    uint32_t ssrc) {
+  const auto& outgoing_streams = parsed_log->outgoing_rtp_packets_by_ssrc();
+  for (const auto& stream : outgoing_streams) {
+    if (stream.ssrc == ssrc) {
+      return &stream.outgoing_packets;
+    }
   }
-}
-
-template <>
-void CompareRtpPacketSequences(
-    const std::vector<std::unique_ptr<RtcEventRtpPacketOutgoing>>& original,
-    const ParsedRtcEventLogNew::LoggedRtpStreamOutgoing& parsed) {
-  ASSERT_EQ(parsed.outgoing_packets.size(), original.size());
-  for (size_t i = 0; i < original.size(); ++i) {
-    test::VerifyLoggedRtpPacketOutgoing(*original[i],
-                                        parsed.outgoing_packets[i]);
-  }
+  return nullptr;
 }
 
 template <typename EventType, typename ParsedType>
@@ -193,20 +185,19 @@ void RtcEventLogEncoderTest::TestRtpPackets() {
   std::string encoded = encoder_->EncodeBatch(history_.begin(), history_.end());
   ASSERT_TRUE(parsed_log_.ParseString(encoded));
 
-  // Expect as many distinct SSRCs to be parsed, as were simulated.
-  const std::vector<ParsedType>& parsed_rtp_packets =
-      GetRtpPacketsBySsrc<ParsedType>(&parsed_log_);
-  ASSERT_EQ(parsed_rtp_packets.size(), events_by_ssrc.size());
-
   // For each SSRC, make sure the RTP packets associated with it to have been
   // correctly encoded and parsed.
   for (auto it = events_by_ssrc.begin(); it != events_by_ssrc.end(); ++it) {
     const uint32_t ssrc = it->first;
-    auto parsed = std::find_if(
-        parsed_rtp_packets.begin(), parsed_rtp_packets.end(),
-        [ssrc](const ParsedType& packet) { return packet.ssrc == ssrc; });
-    ASSERT_NE(parsed, parsed_rtp_packets.end());
-    CompareRtpPacketSequences(it->second, *parsed);
+    const auto& original_packets = it->second;
+    const std::vector<ParsedType>* parsed_rtp_packets =
+        GetRtpPacketsBySsrc<ParsedType>(&parsed_log_, ssrc);
+    ASSERT_NE(parsed_rtp_packets, nullptr);
+    ASSERT_EQ(original_packets.size(), parsed_rtp_packets->size());
+    for (size_t i = 0; i < original_packets.size(); ++i) {
+      verifier_.VerifyLoggedRtpPacket<EventType, ParsedType>(
+          *original_packets[i], (*parsed_rtp_packets)[i]);
+    }
   }
 }
 
@@ -224,7 +215,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventAlrState) {
 
   ASSERT_EQ(alr_state_events.size(), event_count_);
   for (size_t i = 0; i < event_count_; ++i) {
-    test::VerifyLoggedAlrStateEvent(*events[i], alr_state_events[i]);
+    verifier_.VerifyLoggedAlrStateEvent(*events[i], alr_state_events[i]);
   }
 }
 
@@ -394,8 +385,8 @@ TEST_P(RtcEventLogEncoderTest, RtcEventAudioPlayout) {
     ASSERT_EQ(original_playout_events.size(), parsed_playout_events.size());
 
     for (size_t i = 0; i < original_playout_events.size(); ++i) {
-      test::VerifyLoggedAudioPlayoutEvent(*original_playout_events[i],
-                                          parsed_playout_events[i]);
+      verifier_.VerifyLoggedAudioPlayoutEvent(*original_playout_events[i],
+                                              parsed_playout_events[i]);
     }
   }
 }
@@ -413,7 +404,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventAudioReceiveStreamConfig) {
   const auto& audio_recv_configs = parsed_log_.audio_recv_configs();
 
   ASSERT_EQ(audio_recv_configs.size(), 1u);
-  test::VerifyLoggedAudioRecvConfig(*event, audio_recv_configs[0]);
+  verifier_.VerifyLoggedAudioRecvConfig(*event, audio_recv_configs[0]);
 }
 
 // TODO(eladalon/terelius): Test with multiple events in the batch.
@@ -429,7 +420,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventAudioSendStreamConfig) {
   const auto& audio_send_configs = parsed_log_.audio_send_configs();
 
   ASSERT_EQ(audio_send_configs.size(), 1u);
-  test::VerifyLoggedAudioSendConfig(*event, audio_send_configs[0]);
+  verifier_.VerifyLoggedAudioSendConfig(*event, audio_send_configs[0]);
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventBweUpdateDelayBased) {
@@ -449,7 +440,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventBweUpdateDelayBased) {
   ASSERT_EQ(bwe_delay_updates.size(), event_count_);
 
   for (size_t i = 0; i < event_count_; ++i) {
-    test::VerifyLoggedBweDelayBasedUpdate(*events[i], bwe_delay_updates[i]);
+    verifier_.VerifyLoggedBweDelayBasedUpdate(*events[i], bwe_delay_updates[i]);
   }
 }
 
@@ -469,7 +460,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventBweUpdateLossBased) {
   ASSERT_EQ(bwe_loss_updates.size(), event_count_);
 
   for (size_t i = 0; i < event_count_; ++i) {
-    test::VerifyLoggedBweLossBasedUpdate(*events[i], bwe_loss_updates[i]);
+    verifier_.VerifyLoggedBweLossBasedUpdate(*events[i], bwe_loss_updates[i]);
   }
 }
 
@@ -485,8 +476,8 @@ TEST_P(RtcEventLogEncoderTest, RtcEventIceCandidatePairConfig) {
       parsed_log_.ice_candidate_pair_configs();
 
   ASSERT_EQ(ice_candidate_pair_configs.size(), 1u);
-  test::VerifyLoggedIceCandidatePairConfig(*event,
-                                           ice_candidate_pair_configs[0]);
+  verifier_.VerifyLoggedIceCandidatePairConfig(*event,
+                                               ice_candidate_pair_configs[0]);
 }
 
 // TODO(eladalon/terelius): Test with multiple events in the batch.
@@ -500,23 +491,23 @@ TEST_P(RtcEventLogEncoderTest, RtcEventIceCandidatePair) {
       parsed_log_.ice_candidate_pair_events();
 
   ASSERT_EQ(ice_candidate_pair_events.size(), 1u);
-  test::VerifyLoggedIceCandidatePairEvent(*event, ice_candidate_pair_events[0]);
+  verifier_.VerifyLoggedIceCandidatePairEvent(*event,
+                                              ice_candidate_pair_events[0]);
 }
 
-// TODO(eladalon/terelius): Test with multiple events in the batch, or prevent
-// it from happening.
 TEST_P(RtcEventLogEncoderTest, RtcEventLoggingStarted) {
   const int64_t timestamp_us = rtc::TimeMicros();
+  const int64_t utc_time_us = rtc::TimeUTCMicros();
 
-  ASSERT_TRUE(parsed_log_.ParseString(encoder_->EncodeLogStart(timestamp_us)));
+  ASSERT_TRUE(parsed_log_.ParseString(
+      encoder_->EncodeLogStart(timestamp_us, utc_time_us)));
   const auto& start_log_events = parsed_log_.start_log_events();
 
   ASSERT_EQ(start_log_events.size(), 1u);
-  test::VerifyLoggedStartEvent(timestamp_us, start_log_events[0]);
+  verifier_.VerifyLoggedStartEvent(timestamp_us, utc_time_us,
+                                   start_log_events[0]);
 }
 
-// TODO(eladalon/terelius): Test with multiple events in the batch, or prevent
-// it from happening.
 TEST_P(RtcEventLogEncoderTest, RtcEventLoggingStopped) {
   const int64_t timestamp_us = rtc::TimeMicros();
 
@@ -524,7 +515,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventLoggingStopped) {
   const auto& stop_log_events = parsed_log_.stop_log_events();
 
   ASSERT_EQ(stop_log_events.size(), 1u);
-  test::VerifyLoggedStopEvent(timestamp_us, stop_log_events[0]);
+  verifier_.VerifyLoggedStopEvent(timestamp_us, stop_log_events[0]);
 }
 
 // TODO(eladalon/terelius): Test with multiple events in the batch.
@@ -539,7 +530,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventProbeClusterCreated) {
       parsed_log_.bwe_probe_cluster_created_events();
 
   ASSERT_EQ(bwe_probe_cluster_created_events.size(), 1u);
-  test::VerifyLoggedBweProbeClusterCreatedEvent(
+  verifier_.VerifyLoggedBweProbeClusterCreatedEvent(
       *event, bwe_probe_cluster_created_events[0]);
 }
 
@@ -554,7 +545,8 @@ TEST_P(RtcEventLogEncoderTest, RtcEventProbeResultFailure) {
   const auto& bwe_probe_failure_events = parsed_log_.bwe_probe_failure_events();
 
   ASSERT_EQ(bwe_probe_failure_events.size(), 1u);
-  test::VerifyLoggedBweProbeFailureEvent(*event, bwe_probe_failure_events[0]);
+  verifier_.VerifyLoggedBweProbeFailureEvent(*event,
+                                             bwe_probe_failure_events[0]);
 }
 
 // TODO(eladalon/terelius): Test with multiple events in the batch.
@@ -568,7 +560,8 @@ TEST_P(RtcEventLogEncoderTest, RtcEventProbeResultSuccess) {
   const auto& bwe_probe_success_events = parsed_log_.bwe_probe_success_events();
 
   ASSERT_EQ(bwe_probe_success_events.size(), 1u);
-  test::VerifyLoggedBweProbeSuccessEvent(*event, bwe_probe_success_events[0]);
+  verifier_.VerifyLoggedBweProbeSuccessEvent(*event,
+                                             bwe_probe_success_events[0]);
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventRtcpPacketIncoming) {
@@ -593,7 +586,8 @@ TEST_P(RtcEventLogEncoderTest, RtcEventRtcpPacketIncoming) {
   ASSERT_EQ(incoming_rtcp_packets.size(), event_count_);
 
   for (size_t i = 0; i < event_count_; ++i) {
-    test::VerifyLoggedRtcpPacketIncoming(*events[i], incoming_rtcp_packets[i]);
+    verifier_.VerifyLoggedRtcpPacketIncoming(*events[i],
+                                             incoming_rtcp_packets[i]);
   }
 }
 
@@ -613,18 +607,17 @@ TEST_P(RtcEventLogEncoderTest, RtcEventRtcpPacketOutgoing) {
   ASSERT_EQ(outgoing_rtcp_packets.size(), event_count_);
 
   for (size_t i = 0; i < event_count_; ++i) {
-    test::VerifyLoggedRtcpPacketOutgoing(*events[i], outgoing_rtcp_packets[i]);
+    verifier_.VerifyLoggedRtcpPacketOutgoing(*events[i],
+                                             outgoing_rtcp_packets[i]);
   }
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventRtpPacketIncoming) {
-  TestRtpPackets<RtcEventRtpPacketIncoming,
-                 ParsedRtcEventLogNew::LoggedRtpStreamIncoming>();
+  TestRtpPackets<RtcEventRtpPacketIncoming, LoggedRtpPacketIncoming>();
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventRtpPacketOutgoing) {
-  TestRtpPackets<RtcEventRtpPacketOutgoing,
-                 ParsedRtcEventLogNew::LoggedRtpStreamOutgoing>();
+  TestRtpPackets<RtcEventRtpPacketOutgoing, LoggedRtpPacketOutgoing>();
 }
 
 // TODO(eladalon/terelius): Test with multiple events in the batch.
@@ -640,7 +633,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventVideoReceiveStreamConfig) {
   const auto& video_recv_configs = parsed_log_.video_recv_configs();
 
   ASSERT_EQ(video_recv_configs.size(), 1u);
-  test::VerifyLoggedVideoRecvConfig(*event, video_recv_configs[0]);
+  verifier_.VerifyLoggedVideoRecvConfig(*event, video_recv_configs[0]);
 }
 
 // TODO(eladalon/terelius): Test with multiple events in the batch.
@@ -656,7 +649,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventVideoSendStreamConfig) {
   const auto& video_send_configs = parsed_log_.video_send_configs();
 
   ASSERT_EQ(video_send_configs.size(), 1u);
-  test::VerifyLoggedVideoSendConfig(*event, video_send_configs[0]);
+  verifier_.VerifyLoggedVideoSendConfig(*event, video_send_configs[0]);
 }
 
 INSTANTIATE_TEST_CASE_P(

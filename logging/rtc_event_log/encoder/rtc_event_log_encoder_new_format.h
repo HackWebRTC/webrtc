@@ -56,7 +56,8 @@ class RtcEventLogEncoderNewFormat final : public RtcEventLogEncoder {
       std::deque<std::unique_ptr<RtcEvent>>::const_iterator begin,
       std::deque<std::unique_ptr<RtcEvent>>::const_iterator end) override;
 
-  std::string EncodeLogStart(int64_t timestamp_us) override;
+  std::string EncodeLogStart(int64_t timestamp_us,
+                             int64_t utc_time_us) override;
   std::string EncodeLogEnd(int64_t timestamp_us) override;
 
  private:

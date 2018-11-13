@@ -107,9 +107,10 @@ class RtcEventLogSession
   RtcEventLogSession()
       : seed_(std::get<0>(GetParam())),
         prng_(seed_),
-        gen_(seed_ * 880001UL),
         output_period_ms_(std::get<1>(GetParam())),
-        encoding_type_(std::get<2>(GetParam())) {
+        encoding_type_(std::get<2>(GetParam())),
+        gen_(seed_ * 880001UL),
+        verifier_(encoding_type_) {
     clock_.SetTimeMicros(prng_.Rand<uint32_t>());
     // Find the name of the current test, in order to use it as a temporary
     // filename.
@@ -168,13 +169,15 @@ class RtcEventLogSession
   std::vector<std::unique_ptr<RtcEventRtcpPacketOutgoing>> outgoing_rtcp_list_;
 
   int64_t start_time_us_;
+  int64_t utc_start_time_us_;
   int64_t stop_time_us_;
 
   const uint64_t seed_;
   Random prng_;
-  test::EventGenerator gen_;
   const int64_t output_period_ms_;
   const RtcEventLog::EncodingType encoding_type_;
+  test::EventGenerator gen_;
+  test::EventVerifier verifier_;
   rtc::ScopedFakeClock clock_;
   std::string temp_filename_;
 };
@@ -308,6 +311,7 @@ void RtcEventLogSession::WriteLog(EventCounts count,
           absl::make_unique<RtcEventLogOutputFile>(temp_filename_, 10000000),
           output_period_ms_);
       start_time_us_ = rtc::TimeMicros();
+      utc_start_time_us_ = rtc::TimeUTCMicros();
     }
 
     clock_.AdvanceTimeMicros(prng_.Rand(20) * 1000);
@@ -467,17 +471,18 @@ void RtcEventLogSession::ReadAndVerifyLog() {
   // Start and stop events.
   auto& parsed_start_log_events = parsed_log.start_log_events();
   ASSERT_EQ(parsed_start_log_events.size(), static_cast<size_t>(1));
-  test::VerifyLoggedStartEvent(start_time_us_, parsed_start_log_events[0]);
+  verifier_.VerifyLoggedStartEvent(start_time_us_, utc_start_time_us_,
+                                   parsed_start_log_events[0]);
 
   auto& parsed_stop_log_events = parsed_log.stop_log_events();
   ASSERT_EQ(parsed_stop_log_events.size(), static_cast<size_t>(1));
-  test::VerifyLoggedStopEvent(stop_time_us_, parsed_stop_log_events[0]);
+  verifier_.VerifyLoggedStopEvent(stop_time_us_, parsed_stop_log_events[0]);
 
   auto& parsed_alr_state_events = parsed_log.alr_state_events();
   ASSERT_EQ(parsed_alr_state_events.size(), alr_state_list_.size());
   for (size_t i = 0; i < parsed_alr_state_events.size(); i++) {
-    test::VerifyLoggedAlrStateEvent(*alr_state_list_[i],
-                                    parsed_alr_state_events[i]);
+    verifier_.VerifyLoggedAlrStateEvent(*alr_state_list_[i],
+                                        parsed_alr_state_events[i]);
   }
 
   const auto& parsed_audio_playout_map = parsed_log.audio_playout_events();
@@ -488,8 +493,8 @@ void RtcEventLogSession::ReadAndVerifyLog() {
     const auto& audio_playout_stream = audio_playout_map_[ssrc];
     ASSERT_EQ(parsed_audio_playout_stream.size(), audio_playout_stream.size());
     for (size_t i = 0; i < parsed_audio_playout_map.size(); i++) {
-      test::VerifyLoggedAudioPlayoutEvent(*audio_playout_stream[i],
-                                          parsed_audio_playout_stream[i]);
+      verifier_.VerifyLoggedAudioPlayoutEvent(*audio_playout_stream[i],
+                                              parsed_audio_playout_stream[i]);
     }
   }
 
@@ -498,22 +503,22 @@ void RtcEventLogSession::ReadAndVerifyLog() {
   ASSERT_EQ(parsed_audio_network_adaptation_events.size(),
             ana_configs_list_.size());
   for (size_t i = 0; i < parsed_audio_network_adaptation_events.size(); i++) {
-    test::VerifyLoggedAudioNetworkAdaptationEvent(
+    verifier_.VerifyLoggedAudioNetworkAdaptationEvent(
         *ana_configs_list_[i], parsed_audio_network_adaptation_events[i]);
   }
 
   auto& parsed_bwe_delay_updates = parsed_log.bwe_delay_updates();
   ASSERT_EQ(parsed_bwe_delay_updates.size(), bwe_delay_list_.size());
   for (size_t i = 0; i < parsed_bwe_delay_updates.size(); i++) {
-    test::VerifyLoggedBweDelayBasedUpdate(*bwe_delay_list_[i],
-                                          parsed_bwe_delay_updates[i]);
+    verifier_.VerifyLoggedBweDelayBasedUpdate(*bwe_delay_list_[i],
+                                              parsed_bwe_delay_updates[i]);
   }
 
   auto& parsed_bwe_loss_updates = parsed_log.bwe_loss_updates();
   ASSERT_EQ(parsed_bwe_loss_updates.size(), bwe_loss_list_.size());
   for (size_t i = 0; i < parsed_bwe_loss_updates.size(); i++) {
-    test::VerifyLoggedBweLossBasedUpdate(*bwe_loss_list_[i],
-                                         parsed_bwe_loss_updates[i]);
+    verifier_.VerifyLoggedBweLossBasedUpdate(*bwe_loss_list_[i],
+                                             parsed_bwe_loss_updates[i]);
   }
 
   auto& parsed_bwe_probe_cluster_created_events =
@@ -521,29 +526,29 @@ void RtcEventLogSession::ReadAndVerifyLog() {
   ASSERT_EQ(parsed_bwe_probe_cluster_created_events.size(),
             probe_creation_list_.size());
   for (size_t i = 0; i < parsed_bwe_probe_cluster_created_events.size(); i++) {
-    test::VerifyLoggedBweProbeClusterCreatedEvent(
+    verifier_.VerifyLoggedBweProbeClusterCreatedEvent(
         *probe_creation_list_[i], parsed_bwe_probe_cluster_created_events[i]);
   }
 
   auto& parsed_bwe_probe_failure_events = parsed_log.bwe_probe_failure_events();
   ASSERT_EQ(parsed_bwe_probe_failure_events.size(), probe_failure_list_.size());
   for (size_t i = 0; i < parsed_bwe_probe_failure_events.size(); i++) {
-    test::VerifyLoggedBweProbeFailureEvent(*probe_failure_list_[i],
-                                           parsed_bwe_probe_failure_events[i]);
+    verifier_.VerifyLoggedBweProbeFailureEvent(
+        *probe_failure_list_[i], parsed_bwe_probe_failure_events[i]);
   }
 
   auto& parsed_bwe_probe_success_events = parsed_log.bwe_probe_success_events();
   ASSERT_EQ(parsed_bwe_probe_success_events.size(), probe_success_list_.size());
   for (size_t i = 0; i < parsed_bwe_probe_success_events.size(); i++) {
-    test::VerifyLoggedBweProbeSuccessEvent(*probe_success_list_[i],
-                                           parsed_bwe_probe_success_events[i]);
+    verifier_.VerifyLoggedBweProbeSuccessEvent(
+        *probe_success_list_[i], parsed_bwe_probe_success_events[i]);
   }
 
   auto& parsed_ice_candidate_pair_configs =
       parsed_log.ice_candidate_pair_configs();
   ASSERT_EQ(parsed_ice_candidate_pair_configs.size(), ice_config_list_.size());
   for (size_t i = 0; i < parsed_ice_candidate_pair_configs.size(); i++) {
-    test::VerifyLoggedIceCandidatePairConfig(
+    verifier_.VerifyLoggedIceCandidatePairConfig(
         *ice_config_list_[i], parsed_ice_candidate_pair_configs[i]);
   }
 
@@ -552,7 +557,7 @@ void RtcEventLogSession::ReadAndVerifyLog() {
   ASSERT_EQ(parsed_ice_candidate_pair_events.size(),
             parsed_ice_candidate_pair_events.size());
   for (size_t i = 0; i < parsed_ice_candidate_pair_events.size(); i++) {
-    test::VerifyLoggedIceCandidatePairEvent(
+    verifier_.VerifyLoggedIceCandidatePairEvent(
         *ice_event_list_[i], parsed_ice_candidate_pair_events[i]);
   }
 
@@ -566,7 +571,8 @@ void RtcEventLogSession::ReadAndVerifyLog() {
     const auto& rtp_stream = incoming_rtp_map_[ssrc];
     ASSERT_EQ(parsed_rtp_stream.size(), rtp_stream.size());
     for (size_t i = 0; i < parsed_rtp_stream.size(); i++) {
-      test::VerifyLoggedRtpPacketIncoming(*rtp_stream[i], parsed_rtp_stream[i]);
+      verifier_.VerifyLoggedRtpPacketIncoming(*rtp_stream[i],
+                                              parsed_rtp_stream[i]);
     }
   }
 
@@ -580,46 +586,47 @@ void RtcEventLogSession::ReadAndVerifyLog() {
     const auto& rtp_stream = outgoing_rtp_map_[ssrc];
     ASSERT_EQ(parsed_rtp_stream.size(), rtp_stream.size());
     for (size_t i = 0; i < parsed_rtp_stream.size(); i++) {
-      test::VerifyLoggedRtpPacketOutgoing(*rtp_stream[i], parsed_rtp_stream[i]);
+      verifier_.VerifyLoggedRtpPacketOutgoing(*rtp_stream[i],
+                                              parsed_rtp_stream[i]);
     }
   }
 
   auto& parsed_incoming_rtcp_packets = parsed_log.incoming_rtcp_packets();
   ASSERT_EQ(parsed_incoming_rtcp_packets.size(), incoming_rtcp_list_.size());
   for (size_t i = 0; i < parsed_incoming_rtcp_packets.size(); i++) {
-    test::VerifyLoggedRtcpPacketIncoming(*incoming_rtcp_list_[i],
-                                         parsed_incoming_rtcp_packets[i]);
+    verifier_.VerifyLoggedRtcpPacketIncoming(*incoming_rtcp_list_[i],
+                                             parsed_incoming_rtcp_packets[i]);
   }
 
   auto& parsed_outgoing_rtcp_packets = parsed_log.outgoing_rtcp_packets();
   ASSERT_EQ(parsed_outgoing_rtcp_packets.size(), outgoing_rtcp_list_.size());
   for (size_t i = 0; i < parsed_outgoing_rtcp_packets.size(); i++) {
-    test::VerifyLoggedRtcpPacketOutgoing(*outgoing_rtcp_list_[i],
-                                         parsed_outgoing_rtcp_packets[i]);
+    verifier_.VerifyLoggedRtcpPacketOutgoing(*outgoing_rtcp_list_[i],
+                                             parsed_outgoing_rtcp_packets[i]);
   }
   auto& parsed_audio_recv_configs = parsed_log.audio_recv_configs();
   ASSERT_EQ(parsed_audio_recv_configs.size(), audio_recv_config_list_.size());
   for (size_t i = 0; i < parsed_audio_recv_configs.size(); i++) {
-    test::VerifyLoggedAudioRecvConfig(*audio_recv_config_list_[i],
-                                      parsed_audio_recv_configs[i]);
+    verifier_.VerifyLoggedAudioRecvConfig(*audio_recv_config_list_[i],
+                                          parsed_audio_recv_configs[i]);
   }
   auto& parsed_audio_send_configs = parsed_log.audio_send_configs();
   ASSERT_EQ(parsed_audio_send_configs.size(), audio_send_config_list_.size());
   for (size_t i = 0; i < parsed_audio_send_configs.size(); i++) {
-    test::VerifyLoggedAudioSendConfig(*audio_send_config_list_[i],
-                                      parsed_audio_send_configs[i]);
+    verifier_.VerifyLoggedAudioSendConfig(*audio_send_config_list_[i],
+                                          parsed_audio_send_configs[i]);
   }
   auto& parsed_video_recv_configs = parsed_log.video_recv_configs();
   ASSERT_EQ(parsed_video_recv_configs.size(), video_recv_config_list_.size());
   for (size_t i = 0; i < parsed_video_recv_configs.size(); i++) {
-    test::VerifyLoggedVideoRecvConfig(*video_recv_config_list_[i],
-                                      parsed_video_recv_configs[i]);
+    verifier_.VerifyLoggedVideoRecvConfig(*video_recv_config_list_[i],
+                                          parsed_video_recv_configs[i]);
   }
   auto& parsed_video_send_configs = parsed_log.video_send_configs();
   ASSERT_EQ(parsed_video_send_configs.size(), video_send_config_list_.size());
   for (size_t i = 0; i < parsed_video_send_configs.size(); i++) {
-    test::VerifyLoggedVideoSendConfig(*video_send_config_list_[i],
-                                      parsed_video_send_configs[i]);
+    verifier_.VerifyLoggedVideoSendConfig(*video_send_config_list_[i],
+                                          parsed_video_send_configs[i]);
   }
 
   // Clean up temporary file - can be pretty slow.
@@ -690,8 +697,10 @@ INSTANTIATE_TEST_CASE_P(
 class RtcEventLogCircularBufferTest
     : public ::testing::TestWithParam<RtcEventLog::EncodingType> {
  public:
-  RtcEventLogCircularBufferTest() : encoding_type_(GetParam()) {}
+  RtcEventLogCircularBufferTest()
+      : encoding_type_(GetParam()), verifier_(encoding_type_) {}
   const RtcEventLog::EncodingType encoding_type_;
+  const test::EventVerifier verifier_;
 };
 
 TEST_P(RtcEventLogCircularBufferTest, KeepsMostRecentEvents) {
@@ -727,6 +736,7 @@ TEST_P(RtcEventLogCircularBufferTest, KeepsMostRecentEvents) {
     fake_clock->AdvanceTimeMicros(10000);
   }
   int64_t start_time_us = rtc::TimeMicros();
+  int64_t utc_start_time_us = rtc::TimeUTCMicros();
   log_dumper->StartLogging(
       absl::make_unique<RtcEventLogOutputFile>(temp_filename, 10000000),
       RtcEventLog::kImmediateOutput);
@@ -740,11 +750,12 @@ TEST_P(RtcEventLogCircularBufferTest, KeepsMostRecentEvents) {
 
   const auto& start_log_events = parsed_log.start_log_events();
   ASSERT_EQ(start_log_events.size(), 1u);
-  test::VerifyLoggedStartEvent(start_time_us, start_log_events[0]);
+  verifier_.VerifyLoggedStartEvent(start_time_us, utc_start_time_us,
+                                   start_log_events[0]);
 
   const auto& stop_log_events = parsed_log.stop_log_events();
   ASSERT_EQ(stop_log_events.size(), 1u);
-  test::VerifyLoggedStopEvent(stop_time_us, stop_log_events[0]);
+  verifier_.VerifyLoggedStopEvent(stop_time_us, stop_log_events[0]);
 
   const auto& probe_success_events = parsed_log.bwe_probe_success_events();
   // If the following fails, it probably means that kNumEvents isn't larger
@@ -765,7 +776,7 @@ TEST_P(RtcEventLogCircularBufferTest, KeepsMostRecentEvents) {
   fake_clock->SetTimeMicros(first_timestamp_us);
   for (size_t i = 1; i < probe_success_events.size(); i++) {
     fake_clock->AdvanceTimeMicros(10000);
-    test::VerifyLoggedBweProbeSuccessEvent(
+    verifier_.VerifyLoggedBweProbeSuccessEvent(
         RtcEventProbeResultSuccess(first_id + i, first_bitrate_bps + i * 1000),
         probe_success_events[i]);
   }

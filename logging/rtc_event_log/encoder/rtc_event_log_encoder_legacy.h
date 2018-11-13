@@ -50,7 +50,8 @@ class RtcEventLogEncoderLegacy final : public RtcEventLogEncoder {
  public:
   ~RtcEventLogEncoderLegacy() override = default;
 
-  std::string EncodeLogStart(int64_t timestamp_us) override;
+  std::string EncodeLogStart(int64_t timestamp_us,
+                             int64_t utc_time_us) override;
   std::string EncodeLogEnd(int64_t timestamp_us) override;
 
   std::string EncodeBatch(

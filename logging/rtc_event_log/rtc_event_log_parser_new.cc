@@ -1943,7 +1943,11 @@ void ParsedRtcEventLogNew::StoreOutgoingRtcpPackets(
 void ParsedRtcEventLogNew::StoreStartEvent(
     const rtclog2::BeginLogEvent& proto) {
   RTC_CHECK(proto.has_timestamp_ms());
-  LoggedStartEvent start_event(proto.timestamp_ms() * 1000);
+  RTC_CHECK(proto.has_version());
+  RTC_CHECK(proto.has_utc_time_ms());
+  RTC_CHECK_EQ(proto.version(), 2);
+  LoggedStartEvent start_event(proto.timestamp_ms() * 1000,
+                               proto.utc_time_ms());
 
   start_log_events_.push_back(start_event);
 }

@@ -230,6 +230,12 @@ message AudioPlayoutEvents {
 message BeginLogEvent {
   // required
   optional int64 timestamp_ms = 1;
+
+  // required
+  optional uint32 version = 2;
+
+  // required
+  optional int64 utc_time_ms = 3;
 }
 
 message EndLogEvent {

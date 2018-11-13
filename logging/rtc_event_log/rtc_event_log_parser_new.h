@@ -369,12 +369,16 @@ struct LoggedRtcpPacketTransportFeedback {
 
 struct LoggedStartEvent {
   explicit LoggedStartEvent(int64_t timestamp_us)
-      : timestamp_us(timestamp_us) {}
+      : LoggedStartEvent(timestamp_us, timestamp_us / 1000) {}
+
+  LoggedStartEvent(int64_t timestamp_us, int64_t utc_start_time_ms)
+      : timestamp_us(timestamp_us), utc_start_time_ms(utc_start_time_ms) {}
 
   int64_t log_time_us() const { return timestamp_us; }
   int64_t log_time_ms() const { return timestamp_us / 1000; }
 
   int64_t timestamp_us;
+  int64_t utc_start_time_ms;
 };
 
 struct LoggedStopEvent {
