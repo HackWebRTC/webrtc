@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <sstream>  // no-presubmit-check TODO(webrtc:8982)
+#include <sstream>
 
 #include "examples/turnserver/read_auth_file.h"
 #include "test/gtest.h"
@@ -16,21 +16,20 @@
 namespace webrtc_examples {
 
 TEST(ReadAuthFile, HandlesEmptyFile) {
-  std::istringstream empty;  // no-presubmit-check TODO(webrtc:8982)
+  std::istringstream empty;
   auto map = ReadAuthFile(&empty);
   EXPECT_TRUE(map.empty());
 }
 
 TEST(ReadAuthFile, RecognizesValidUser) {
-  std::istringstream  // no-presubmit-check TODO(webrtc:8982)
-      file("foo=deadbeaf\n");
+  std::istringstream file("foo=deadbeaf\n");
   auto map = ReadAuthFile(&file);
   ASSERT_NE(map.find("foo"), map.end());
   EXPECT_EQ(map["foo"], "\xde\xad\xbe\xaf");
 }
 
 TEST(ReadAuthFile, EmptyValueForInvalidHex) {
-  std::istringstream file(  // no-presubmit-check TODO(webrtc:8982)
+  std::istringstream file(
       "foo=deadbeaf\n"
       "bar=xxxxinvalidhex\n"
       "baz=cafe\n");

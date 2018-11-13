@@ -11,14 +11,13 @@
 #ifndef EXAMPLES_TURNSERVER_READ_AUTH_FILE_H_
 #define EXAMPLES_TURNSERVER_READ_AUTH_FILE_H_
 
-#include <istream>  // no-presubmit-check TODO(webrtc:8982)
+#include <istream>
 #include <map>
 #include <string>
 
 namespace webrtc_examples {
 
-std::map<std::string, std::string> ReadAuthFile(
-    std::istream* s);  // no-presubmit-check TODO(webrtc:8982)
+std::map<std::string, std::string> ReadAuthFile(std::istream* s);
 
 }  // namespace webrtc_examples
 

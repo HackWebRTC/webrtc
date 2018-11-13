@@ -481,7 +481,8 @@ def CheckNoStreamUsageIsAdded(input_api, output_api,
   file_filter = lambda x: (input_api.FilterSourceFile(x)
                            and source_file_filter(x))
   for f in input_api.AffectedSourceFiles(file_filter):
-    if f.LocalPath() == 'PRESUBMIT.py':
+    # Usage of stringstream is allowed under examples/.
+    if f.LocalPath() == 'PRESUBMIT.py' or f.LocalPath().startswith('examples'):
       continue
     for line_num, line in f.ChangedContents():
       if ((include_re.search(line) or usage_re.search(line))

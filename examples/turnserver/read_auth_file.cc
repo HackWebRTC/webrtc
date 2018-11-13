@@ -13,8 +13,7 @@
 
 namespace webrtc_examples {
 
-std::map<std::string, std::string> ReadAuthFile(
-    std::istream* s) {  // no-presubmit-check TODO(webrtc:8982)
+std::map<std::string, std::string> ReadAuthFile(std::istream* s) {
   std::map<std::string, std::string> name_to_key;
   for (std::string line; std::getline(*s, line);) {
     const size_t sep = line.find('=');
