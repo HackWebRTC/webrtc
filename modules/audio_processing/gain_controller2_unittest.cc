@@ -52,8 +52,8 @@ float RunAgc2WithConstantInput(GainController2* agc2,
 AudioProcessing::Config::GainController2 CreateAgc2FixedDigitalModeConfig(
     float fixed_gain_db) {
   AudioProcessing::Config::GainController2 config;
-  config.adaptive_digital_mode = false;
-  config.fixed_gain_db = fixed_gain_db;
+  config.adaptive_digital.enabled = false;
+  config.fixed_digital.gain_db = fixed_gain_db;
   // TODO(alessiob): Check why ASSERT_TRUE() below does not compile.
   EXPECT_TRUE(GainController2::Validate(config));
   return config;
@@ -113,29 +113,26 @@ TEST(GainController2, CreateApplyConfig) {
   gain_controller2->ApplyConfig(config);
 
   // Check that attenuation is not allowed.
-  config.fixed_gain_db = -5.f;
+  config.fixed_digital.gain_db = -5.f;
   EXPECT_FALSE(GainController2::Validate(config));
 
   // Check that valid configurations are applied.
   for (const float& fixed_gain_db : {0.f, 5.f, 10.f, 40.f}) {
-    config.fixed_gain_db = fixed_gain_db;
+    config.fixed_digital.gain_db = fixed_gain_db;
     EXPECT_TRUE(GainController2::Validate(config));
     gain_controller2->ApplyConfig(config);
   }
 }
 
 TEST(GainController2, ToString) {
-  // Tests GainController2::ToString().
+  // Tests GainController2::ToString(). Only test the enabled property.
   AudioProcessing::Config::GainController2 config;
-  config.fixed_gain_db = 5.f;
 
   config.enabled = false;
-  EXPECT_EQ("{enabled: false, fixed_gain_dB: 5}",
-            GainController2::ToString(config));
+  EXPECT_EQ("{enabled: false", GainController2::ToString(config).substr(0, 15));
 
   config.enabled = true;
-  EXPECT_EQ("{enabled: true, fixed_gain_dB: 5}",
-            GainController2::ToString(config));
+  EXPECT_EQ("{enabled: true", GainController2::ToString(config).substr(0, 14));
 }
 
 TEST(GainController2FixedDigital, GainShouldChangeOnSetGain) {
@@ -263,8 +260,8 @@ TEST(GainController2, UsageSaturationMargin) {
   // Check that samples are not amplified as much when extra margin is
   // high. They should not be amplified at all, but only after convergence. GC2
   // starts with a gain, and it takes time until it's down to 0 dB.
-  config.extra_saturation_margin_db = 50.f;
-  config.fixed_gain_db = 0.f;
+  config.fixed_digital.gain_db = 0.f;
+  config.adaptive_digital.extra_saturation_margin_db = 50.f;
   gain_controller2.ApplyConfig(config);
 
   EXPECT_LT(GainAfterProcessingFile(&gain_controller2), 2.f);
@@ -276,8 +273,8 @@ TEST(GainController2, UsageNoSaturationMargin) {
 
   AudioProcessing::Config::GainController2 config;
   // Check that some gain is applied if there is no margin.
-  config.extra_saturation_margin_db = 0.f;
-  config.fixed_gain_db = 0.f;
+  config.fixed_digital.gain_db = 0.f;
+  config.adaptive_digital.extra_saturation_margin_db = 0.f;
   gain_controller2.ApplyConfig(config);
 
   EXPECT_GT(GainAfterProcessingFile(&gain_controller2), 2.f);

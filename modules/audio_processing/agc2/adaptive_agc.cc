@@ -26,8 +26,12 @@ AdaptiveAgc::AdaptiveAgc(ApmDataDumper* apm_data_dumper)
 }
 
 AdaptiveAgc::AdaptiveAgc(ApmDataDumper* apm_data_dumper,
-                         float extra_saturation_margin_db)
-    : speech_level_estimator_(apm_data_dumper, extra_saturation_margin_db),
+                         const AudioProcessing::Config::GainController2& config)
+    : speech_level_estimator_(
+          apm_data_dumper,
+          config.adaptive_digital.level_estimator,
+          config.adaptive_digital.use_saturation_protector,
+          config.adaptive_digital.extra_saturation_margin_db),
       gain_applier_(apm_data_dumper),
       apm_data_dumper_(apm_data_dumper),
       noise_level_estimator_(apm_data_dumper) {
@@ -44,9 +48,9 @@ void AdaptiveAgc::Process(AudioFrameView<float> float_frame,
                             signal_with_levels.vad_result.speech_probability);
   apm_data_dumper_->DumpRaw("agc2_vad_rms_dbfs",
                             signal_with_levels.vad_result.speech_rms_dbfs);
-
   apm_data_dumper_->DumpRaw("agc2_vad_peak_dbfs",
                             signal_with_levels.vad_result.speech_peak_dbfs);
+
   speech_level_estimator_.UpdateEstimation(signal_with_levels.vad_result);
 
   signal_with_levels.input_level_dbfs =
@@ -68,7 +72,6 @@ void AdaptiveAgc::Process(AudioFrameView<float> float_frame,
 
   // The gain applier applies the gain.
   gain_applier_.Process(signal_with_levels);
-  ;
 }
 
 void AdaptiveAgc::Reset() {

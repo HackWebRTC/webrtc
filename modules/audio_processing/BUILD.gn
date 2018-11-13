@@ -429,6 +429,7 @@ if (rtc_include_tests) {
       "agc2:biquad_filter_unittests",
       "agc2:fixed_digital_unittests",
       "agc2:noise_estimator_unittests",
+      "agc2:rnn_vad_with_level_unittests",
       "agc2:test_utils",
       "agc2/rnn_vad:unittests",
       "test/conversational_speech:unittest",

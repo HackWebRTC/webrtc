@@ -27,6 +27,7 @@ rtc_source_set("level_estimation_agc") {
     ":gain_applier",
     ":noise_level_estimator",
     ":rnn_vad_with_level",
+    "..:api",
     "..:apm_logging",
     "..:audio_frame_view",
     "../../../api:array_view",
@@ -58,6 +59,7 @@ rtc_source_set("adaptive_digital") {
     ":gain_applier",
     ":noise_level_estimator",
     ":rnn_vad_with_level",
+    "..:api",
     "..:apm_logging",
     "..:audio_frame_view",
     "../../../api:array_view",
@@ -253,6 +255,18 @@ rtc_source_set("noise_estimator_unittests") {
     "../../../api:array_view",
     "../../../rtc_base:checks",
     "../../../rtc_base:rtc_base_approved",
+    "../../../rtc_base:rtc_base_tests_utils",
+  ]
+}
+
+rtc_source_set("rnn_vad_with_level_unittests") {
+  testonly = true
+  sources = [
+    "vad_with_level_unittest.cc",
+  ]
+  deps = [
+    ":rnn_vad_with_level",
+    "..:audio_frame_view",
     "../../../rtc_base:rtc_base_tests_utils",
   ]
 }

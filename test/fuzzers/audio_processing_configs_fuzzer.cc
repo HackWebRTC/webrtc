@@ -151,7 +151,7 @@ std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
   apm_config.high_pass_filter.enabled = hpf;
   apm_config.gain_controller2.enabled = use_agc2_limiter;
 
-  apm_config.gain_controller2.fixed_gain_db = gain_controller2_gain_db;
+  apm_config.gain_controller2.fixed_digital.gain_db = gain_controller2_gain_db;
 
   apm->ApplyConfig(apm_config);
 
