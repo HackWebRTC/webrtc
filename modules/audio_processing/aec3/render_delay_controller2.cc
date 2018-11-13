@@ -127,7 +127,7 @@ void RenderDelayControllerImpl2::Reset(bool reset_delay_confidence) {
   delay_samples_ = absl::nullopt;
   delay_estimator_.Reset(reset_delay_confidence);
   delay_change_counter_ = 0;
-  if (reset_delay_confidence || true) {
+  if (reset_delay_confidence) {
     last_delay_estimate_quality_ = DelayEstimate::Quality::kCoarse;
   }
 }
