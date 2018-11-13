@@ -873,7 +873,7 @@ if (rtc_enable_protobuf) {
     proto_out_dir = "modules/audio_coding/audio_network_adaptor"
   }
   proto_library("ana_config_proto") {
-    visibility += webrtc_default_visibility
+    visibility += [ "*" ]
     sources = [
       "audio_network_adaptor/config.proto",
     ]
