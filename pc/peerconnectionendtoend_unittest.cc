@@ -31,6 +31,7 @@
 #include "pc/test/mockpeerconnectionobservers.h"
 #include "test/mock_audio_decoder.h"
 #include "test/mock_audio_decoder_factory.h"
+#include "test/mock_audio_encoder_factory.h"
 
 using testing::AtLeast;
 using testing::Invoke;
@@ -481,7 +482,7 @@ TEST_P(PeerConnectionEndToEndTest, CallWithCustomCodec) {
 // Verifies that a DataChannel created before the negotiation can transition to
 // "OPEN" and transfer data.
 TEST_P(PeerConnectionEndToEndTest, CreateDataChannelBeforeNegotiate) {
-  CreatePcs(webrtc::CreateBuiltinAudioEncoderFactory(),
+  CreatePcs(webrtc::MockAudioEncoderFactory::CreateEmptyFactory(),
             webrtc::MockAudioDecoderFactory::CreateEmptyFactory());
 
   webrtc::DataChannelInit init;
@@ -506,7 +507,7 @@ TEST_P(PeerConnectionEndToEndTest, CreateDataChannelBeforeNegotiate) {
 // Verifies that a DataChannel created after the negotiation can transition to
 // "OPEN" and transfer data.
 TEST_P(PeerConnectionEndToEndTest, CreateDataChannelAfterNegotiate) {
-  CreatePcs(webrtc::CreateBuiltinAudioEncoderFactory(),
+  CreatePcs(webrtc::MockAudioEncoderFactory::CreateEmptyFactory(),
             webrtc::MockAudioDecoderFactory::CreateEmptyFactory());
 
   webrtc::DataChannelInit init;
@@ -538,7 +539,7 @@ TEST_P(PeerConnectionEndToEndTest, CreateDataChannelAfterNegotiate) {
 
 // Verifies that a DataChannel created can transfer large messages.
 TEST_P(PeerConnectionEndToEndTest, CreateDataChannelLargeTransfer) {
-  CreatePcs(webrtc::CreateBuiltinAudioEncoderFactory(),
+  CreatePcs(webrtc::MockAudioEncoderFactory::CreateEmptyFactory(),
             webrtc::MockAudioDecoderFactory::CreateEmptyFactory());
 
   webrtc::DataChannelInit init;
@@ -572,7 +573,7 @@ TEST_P(PeerConnectionEndToEndTest, CreateDataChannelLargeTransfer) {
 
 // Verifies that DataChannel IDs are even/odd based on the DTLS roles.
 TEST_P(PeerConnectionEndToEndTest, DataChannelIdAssignment) {
-  CreatePcs(webrtc::CreateBuiltinAudioEncoderFactory(),
+  CreatePcs(webrtc::MockAudioEncoderFactory::CreateEmptyFactory(),
             webrtc::MockAudioDecoderFactory::CreateEmptyFactory());
 
   webrtc::DataChannelInit init;
@@ -600,7 +601,7 @@ TEST_P(PeerConnectionEndToEndTest, DataChannelIdAssignment) {
 // there are multiple DataChannels.
 TEST_P(PeerConnectionEndToEndTest,
        MessageTransferBetweenTwoPairsOfDataChannels) {
-  CreatePcs(webrtc::CreateBuiltinAudioEncoderFactory(),
+  CreatePcs(webrtc::MockAudioEncoderFactory::CreateEmptyFactory(),
             webrtc::MockAudioDecoderFactory::CreateEmptyFactory());
 
   webrtc::DataChannelInit init;
@@ -640,7 +641,7 @@ TEST_P(PeerConnectionEndToEndTest,
 // channel, and the closed channel was incorrectly still assigned to the ID.
 TEST_P(PeerConnectionEndToEndTest,
        DataChannelFromOpenWorksAfterPreviousChannelClosed) {
-  CreatePcs(webrtc::CreateBuiltinAudioEncoderFactory(),
+  CreatePcs(webrtc::MockAudioEncoderFactory::CreateEmptyFactory(),
             webrtc::MockAudioDecoderFactory::CreateEmptyFactory());
 
   webrtc::DataChannelInit init;
@@ -673,7 +674,7 @@ TEST_P(PeerConnectionEndToEndTest,
 // closing before creating the second one.
 TEST_P(PeerConnectionEndToEndTest,
        DataChannelFromOpenWorksWhilePreviousChannelClosing) {
-  CreatePcs(webrtc::CreateBuiltinAudioEncoderFactory(),
+  CreatePcs(webrtc::MockAudioEncoderFactory::CreateEmptyFactory(),
             webrtc::MockAudioDecoderFactory::CreateEmptyFactory());
 
   webrtc::DataChannelInit init;
@@ -704,7 +705,7 @@ TEST_P(PeerConnectionEndToEndTest,
 // reference count), no memory access violation will occur.
 // See: https://code.google.com/p/chromium/issues/detail?id=565048
 TEST_P(PeerConnectionEndToEndTest, CloseDataChannelRemotelyWhileNotReferenced) {
-  CreatePcs(webrtc::CreateBuiltinAudioEncoderFactory(),
+  CreatePcs(webrtc::MockAudioEncoderFactory::CreateEmptyFactory(),
             webrtc::MockAudioDecoderFactory::CreateEmptyFactory());
 
   webrtc::DataChannelInit init;
