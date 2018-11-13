@@ -21,6 +21,7 @@
 #else
 #include <dirent.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #endif  // WEBRTC_WIN
 
 #include "absl/strings/match.h"
