@@ -47,7 +47,6 @@
 #include "third_party/libyuv/include/libyuv/video_common.h"
 
 using rtc::Bind;
-using rtc::Thread;
 using rtc::ThreadManager;
 
 namespace webrtc {
