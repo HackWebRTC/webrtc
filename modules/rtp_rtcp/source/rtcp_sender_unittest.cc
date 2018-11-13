@@ -45,7 +45,7 @@ class RtcpPacketTypeCounterObserverImpl : public RtcpPacketTypeCounterObserver {
   RtcpPacketTypeCounter counter_;
 };
 
-class TestTransport : public Transport, public RtpData {
+class TestTransport : public Transport {
  public:
   TestTransport() {}
 
@@ -57,11 +57,6 @@ class TestTransport : public Transport, public RtpData {
   bool SendRtcp(const uint8_t* data, size_t len) override {
     parser_.Parse(data, len);
     return true;
-  }
-  int OnReceivedPayloadData(const uint8_t* payload_data,
-                            size_t payload_size,
-                            const WebRtcRTPHeader* rtp_header) override {
-    return 0;
   }
   test::RtcpPacketParser parser_;
 };

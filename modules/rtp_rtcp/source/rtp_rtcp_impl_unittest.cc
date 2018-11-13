@@ -49,7 +49,7 @@ class RtcpRttStatsTestImpl : public RtcpRttStats {
   int64_t rtt_ms_;
 };
 
-class SendTransport : public Transport, public RtpData {
+class SendTransport : public Transport {
  public:
   SendTransport()
       : receiver_(nullptr),
@@ -89,11 +89,6 @@ class SendTransport : public Transport, public RtpData {
     receiver_->IncomingRtcpPacket(data, len);
     ++rtcp_packets_sent_;
     return true;
-  }
-  int32_t OnReceivedPayloadData(const uint8_t* payload_data,
-                                size_t payload_size,
-                                const WebRtcRTPHeader* rtp_header) override {
-    return 0;
   }
   void SetKeepalivePayloadType(uint8_t payload_type) {
     keepalive_payload_type_ = payload_type;

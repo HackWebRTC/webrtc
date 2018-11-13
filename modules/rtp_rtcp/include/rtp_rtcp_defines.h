@@ -223,15 +223,6 @@ struct RtpState {
   bool media_has_been_sent;
 };
 
-class RtpData {
- public:
-  virtual ~RtpData() {}
-
-  virtual int32_t OnReceivedPayloadData(const uint8_t* payload_data,
-                                        size_t payload_size,
-                                        const WebRtcRTPHeader* rtp_header) = 0;
-};
-
 // Callback interface for packets recovered by FlexFEC or ULPFEC. In
 // the FlexFEC case, the implementation should be able to demultiplex
 // the recovered RTP packets based on SSRC.
