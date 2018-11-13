@@ -8,19 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <memory>
+#include "modules/desktop_capture/linux/mouse_cursor_monitor_x11.h"
 
-#include "modules/desktop_capture/mouse_cursor_monitor.h"
-
-#include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/extensions/Xfixes.h>
+
+#include <algorithm>
+#include <memory>
 
 #include "modules/desktop_capture/desktop_capture_options.h"
 #include "modules/desktop_capture/desktop_capture_types.h"
 #include "modules/desktop_capture/desktop_frame.h"
+#include "modules/desktop_capture/linux/x_error_trap.h"
 #include "modules/desktop_capture/mouse_cursor.h"
-#include "modules/desktop_capture/x11/x_error_trap.h"
+#include "modules/desktop_capture/mouse_cursor_monitor.h"
 #include "rtc_base/logging.h"
 
 namespace {
@@ -58,36 +59,6 @@ Window GetTopLevelWindow(Display* display, Window window) {
 }  // namespace
 
 namespace webrtc {
-
-class MouseCursorMonitorX11 : public MouseCursorMonitor,
-                              public SharedXDisplay::XEventHandler {
- public:
-  MouseCursorMonitorX11(const DesktopCaptureOptions& options, Window window);
-  ~MouseCursorMonitorX11() override;
-
-  void Init(Callback* callback, Mode mode) override;
-  void Capture() override;
-
- private:
-  // SharedXDisplay::XEventHandler interface.
-  bool HandleXEvent(const XEvent& event) override;
-
-  Display* display() { return x_display_->display(); }
-
-  // Captures current cursor shape and stores it in |cursor_shape_|.
-  void CaptureCursor();
-
-  rtc::scoped_refptr<SharedXDisplay> x_display_;
-  Callback* callback_;
-  Mode mode_;
-  Window window_;
-
-  bool have_xfixes_;
-  int xfixes_event_base_;
-  int xfixes_error_base_;
-
-  std::unique_ptr<MouseCursor> cursor_shape_;
-};
 
 MouseCursorMonitorX11::MouseCursorMonitorX11(
     const DesktopCaptureOptions& options,
@@ -231,12 +202,11 @@ void MouseCursorMonitorX11::CaptureCursor() {
   std::unique_ptr<DesktopFrame> image(
       new BasicDesktopFrame(DesktopSize(img->width, img->height)));
 
-  // Xlib stores 32-bit data in longs, even if longs are 64-bits long.
-  unsigned long* src = img->pixels;
+  uint64_t* src = reinterpret_cast<uint64_t*>(img->pixels);
   uint32_t* dst = reinterpret_cast<uint32_t*>(image->data());
   uint32_t* dst_end = dst + (img->width * img->height);
   while (dst < dst_end) {
-    *dst++ = static_cast<uint32_t>(*src++);
+    *dst++ = *src++;
   }
 
   DesktopVector hotspot(std::min(img->width, img->xhot),
@@ -248,7 +218,7 @@ void MouseCursorMonitorX11::CaptureCursor() {
 }
 
 // static
-MouseCursorMonitor* MouseCursorMonitor::CreateForWindow(
+MouseCursorMonitor* MouseCursorMonitorX11::CreateForWindow(
     const DesktopCaptureOptions& options,
     WindowId window) {
   if (!options.x_display())
@@ -259,7 +229,7 @@ MouseCursorMonitor* MouseCursorMonitor::CreateForWindow(
   return new MouseCursorMonitorX11(options, window);
 }
 
-MouseCursorMonitor* MouseCursorMonitor::CreateForScreen(
+MouseCursorMonitor* MouseCursorMonitorX11::CreateForScreen(
     const DesktopCaptureOptions& options,
     ScreenId screen) {
   if (!options.x_display())
@@ -268,7 +238,7 @@ MouseCursorMonitor* MouseCursorMonitor::CreateForScreen(
       options, DefaultRootWindow(options.x_display()->display()));
 }
 
-std::unique_ptr<MouseCursorMonitor> MouseCursorMonitor::Create(
+std::unique_ptr<MouseCursorMonitor> MouseCursorMonitorX11::Create(
     const DesktopCaptureOptions& options) {
   return std::unique_ptr<MouseCursorMonitor>(
       CreateForScreen(options, kFullDesktopScreenId));
