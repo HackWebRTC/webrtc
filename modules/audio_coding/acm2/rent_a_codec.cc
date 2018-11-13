@@ -29,7 +29,8 @@ absl::optional<RentACodec::CodecId> RentACodec::CodecIdByParams(
 
 absl::optional<CodecInst> RentACodec::CodecInstById(CodecId codec_id) {
   absl::optional<int> mi = CodecIndexFromId(codec_id);
-  return mi ? absl::optional<CodecInst>(Database()[*mi]) : absl::nullopt;
+  return mi ? absl::optional<CodecInst>(ACMCodecDB::database_[*mi])
+            : absl::nullopt;
 }
 
 absl::optional<RentACodec::CodecId> RentACodec::CodecIdByInst(
@@ -53,20 +54,6 @@ absl::optional<CodecInst> RentACodec::CodecInstByParams(
   ci->channels = channels;
 
   return ci;
-}
-
-absl::optional<bool> RentACodec::IsSupportedNumChannels(CodecId codec_id,
-                                                        size_t num_channels) {
-  auto i = CodecIndexFromId(codec_id);
-  return i ? absl::optional<bool>(
-                 ACMCodecDB::codec_settings_[*i].channel_support >=
-                 num_channels)
-           : absl::nullopt;
-}
-
-rtc::ArrayView<const CodecInst> RentACodec::Database() {
-  return rtc::ArrayView<const CodecInst>(ACMCodecDB::database_,
-                                         NumberOfCodecs());
 }
 
 absl::optional<NetEqDecoder> RentACodec::NetEqDecoderFromCodecId(

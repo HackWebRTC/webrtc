@@ -132,11 +132,6 @@ struct RentACodec {
     return payload_type >= 0 && payload_type <= 127;
   }
 
-  static rtc::ArrayView<const CodecInst> Database();
-
-  static absl::optional<bool> IsSupportedNumChannels(CodecId codec_id,
-                                                     size_t num_channels);
-
   static absl::optional<NetEqDecoder> NetEqDecoderFromCodecId(
       CodecId codec_id,
       size_t num_channels);
