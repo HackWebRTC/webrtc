@@ -16,6 +16,7 @@
 #endif              // UNIT_TEST
 
 #include <stdint.h>
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <limits>
@@ -188,6 +189,12 @@ class TimeDelta {
   }
   constexpr bool IsMinusInfinity() const {
     return microseconds_ == timedelta_impl::kMinusInfinityVal;
+  }
+  TimeDelta Clamped(TimeDelta min_delta, TimeDelta max_delta) const {
+    return std::max(min_delta, std::min(*this, max_delta));
+  }
+  void Clamp(TimeDelta min_delta, TimeDelta max_delta) {
+    *this = Clamped(min_delta, max_delta);
   }
   TimeDelta operator+(const TimeDelta& other) const {
     if (IsPlusInfinity() || other.IsPlusInfinity()) {
