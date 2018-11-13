@@ -22,6 +22,7 @@ TESTS = [
   'video_engine_tests',
   'tools_unittests',
   'test_support_unittests',
+  'slow_tests',
   'system_wrappers_unittests',
   'rtc_unittests',
   'rtc_stats_unittests',
