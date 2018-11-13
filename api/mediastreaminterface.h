@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/audio_options.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_sink_interface.h"
 #include "api/video/video_source_interface.h"
@@ -207,6 +208,11 @@ class AudioSourceInterface : public MediaSourceInterface {
   // TODO(tommi): Make pure virtual.
   virtual void AddSink(AudioTrackSinkInterface* sink) {}
   virtual void RemoveSink(AudioTrackSinkInterface* sink) {}
+
+  // Returns options for the AudioSource.
+  // (for some of the settings this approach is broken, e.g. setting
+  // audio network adaptation on the source is the wrong layer of abstraction).
+  virtual const cricket::AudioOptions options() const;
 };
 
 // Interface of the audio processor used by the audio track to collect

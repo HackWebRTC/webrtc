@@ -405,9 +405,7 @@ void AudioRtpSender::SetAudioSend() {
   // options since it is also applied to all streams/channels, local or remote.
   if (track_->enabled() && track_->GetSource() &&
       !track_->GetSource()->remote()) {
-    // TODO(xians): Remove this static_cast since we should be able to connect
-    // a remote audio track to a peer connection.
-    options = static_cast<LocalAudioSource*>(track_->GetSource())->options();
+    options = track_->GetSource()->options();
   }
 #endif
 

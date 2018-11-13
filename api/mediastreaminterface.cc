@@ -30,4 +30,8 @@ AudioTrackInterface::GetAudioProcessor() {
   return nullptr;
 }
 
+const cricket::AudioOptions AudioSourceInterface::options() const {
+  return {};
+}
+
 }  // namespace webrtc
