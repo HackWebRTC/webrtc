@@ -206,6 +206,13 @@ inline DataRate operator*(const int32_t& scalar, const DataRate& rate) {
   return rate * scalar;
 }
 
+template <typename T>
+typename std::enable_if<std::is_arithmetic<T>::value, DataRate>::type operator/(
+    const DataRate& rate,
+    const T& scalar) {
+  return DataRate::bps(rate.bps<double>() / scalar);
+}
+
 inline DataRate operator/(const DataSize& size, const TimeDelta& duration) {
   return DataRate::bps(data_rate_impl::Microbits(size) / duration.us());
 }
