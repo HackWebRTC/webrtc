@@ -433,9 +433,10 @@ TEST_F(FecEndToEndTest, ReceivedUlpfecPacketsNotNacked) {
 
     // TODO(holmer): Investigate why we don't send FEC packets when the bitrate
     // is 10 kbps.
-    void ModifySenderCallConfig(Call::Config* config) override {
+    void ModifySenderBitrateConfig(
+        BitrateConstraints* bitrate_config) override {
       const int kMinBitrateBps = 30000;
-      config->bitrate_config.min_bitrate_bps = kMinBitrateBps;
+      bitrate_config->min_bitrate_bps = kMinBitrateBps;
     }
 
     void ModifyVideoConfigs(

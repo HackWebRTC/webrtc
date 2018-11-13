@@ -239,8 +239,9 @@ TEST_F(StatsEndToEndTest, GetStats) {
               Clock::GetRealTimeClock(),
               absl::make_unique<SimulatedNetwork>(network_config)));
     }
-    void ModifySenderCallConfig(Call::Config* config) override {
-      config->bitrate_config.start_bitrate_bps = kStartBitrateBps;
+    void ModifySenderBitrateConfig(
+        BitrateConstraints* bitrate_config) override {
+      bitrate_config->start_bitrate_bps = kStartBitrateBps;
     }
 
     // This test use other VideoStream settings than the the default settings
@@ -514,9 +515,9 @@ TEST_F(StatsEndToEndTest, MAYBE_ContentTypeSwitches) {
   metrics::Reset();
 
   Call::Config send_config(send_event_log_.get());
-  test.ModifySenderCallConfig(&send_config);
+  test.ModifySenderBitrateConfig(&send_config.bitrate_config);
   Call::Config recv_config(recv_event_log_.get());
-  test.ModifyReceiverCallConfig(&recv_config);
+  test.ModifyReceiverBitrateConfig(&recv_config.bitrate_config);
 
   VideoEncoderConfig encoder_config_with_screenshare;
 

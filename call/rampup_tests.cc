@@ -84,11 +84,12 @@ RampUpTester::RampUpTester(size_t num_video_streams,
 
 RampUpTester::~RampUpTester() {}
 
-void RampUpTester::ModifySenderCallConfig(Call::Config* config) {
+void RampUpTester::ModifySenderBitrateConfig(
+    BitrateConstraints* bitrate_config) {
   if (start_bitrate_bps_ != 0) {
-    config->bitrate_config.start_bitrate_bps = start_bitrate_bps_;
+    bitrate_config->start_bitrate_bps = start_bitrate_bps_;
   }
-  config->bitrate_config.min_bitrate_bps = 10000;
+  bitrate_config->min_bitrate_bps = 10000;
 }
 
 void RampUpTester::OnVideoStreamsCreated(
@@ -453,8 +454,9 @@ void RampUpDownUpTester::PollStats() {
   } while (!stop_event_.Wait(kPollIntervalMs));
 }
 
-void RampUpDownUpTester::ModifyReceiverCallConfig(Call::Config* config) {
-  config->bitrate_config.min_bitrate_bps = 10000;
+void RampUpDownUpTester::ModifyReceiverBitrateConfig(
+    BitrateConstraints* bitrate_config) {
+  bitrate_config->min_bitrate_bps = 10000;
 }
 
 std::string RampUpDownUpTester::GetModifierString() const {

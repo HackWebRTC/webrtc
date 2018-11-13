@@ -414,8 +414,9 @@ TEST_P(TransportFeedbackEndToEndTest,
       EXPECT_TRUE(parser.Parse(data, length));
       return parser.transport_feedback()->num_packets() > 0;
     }
-    void ModifySenderCallConfig(Call::Config* config) override {
-      config->bitrate_config.max_bitrate_bps = 300000;
+    void ModifySenderBitrateConfig(
+        BitrateConstraints* bitrate_config) override {
+      bitrate_config->max_bitrate_bps = 300000;
     }
 
     void PerformTest() override {

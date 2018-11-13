@@ -243,8 +243,8 @@ class BaseTest : public RtpRtcpObserver {
       TestAudioDeviceModule* send_audio_device,
       TestAudioDeviceModule* recv_audio_device);
 
-  virtual void ModifySenderCallConfig(Call::Config* config);
-  virtual void ModifyReceiverCallConfig(Call::Config* config);
+  virtual void ModifySenderBitrateConfig(BitrateConstraints* bitrate_config);
+  virtual void ModifyReceiverBitrateConfig(BitrateConstraints* bitrate_config);
 
   virtual void OnRtpTransportControllerSendCreated(
       RtpTransportControllerSend* controller);

@@ -78,7 +78,7 @@ void CallTest::RunBaseTest(BaseTest* test) {
     num_flexfec_streams_ = test->GetNumFlexfecStreams();
     RTC_DCHECK(num_video_streams_ > 0 || num_audio_streams_ > 0);
     Call::Config send_config(send_event_log_.get());
-    test->ModifySenderCallConfig(&send_config);
+    test->ModifySenderBitrateConfig(&send_config.bitrate_config);
     if (num_audio_streams_ > 0) {
       CreateFakeAudioDevices(test->CreateCapturer(), test->CreateRenderer());
       test->OnFakeAudioDevicesCreated(fake_send_audio_device_.get(),
@@ -102,7 +102,7 @@ void CallTest::RunBaseTest(BaseTest* test) {
     }
     if (test->ShouldCreateReceivers()) {
       Call::Config recv_config(recv_event_log_.get());
-      test->ModifyReceiverCallConfig(&recv_config);
+      test->ModifyReceiverBitrateConfig(&recv_config.bitrate_config);
       if (num_audio_streams_ > 0) {
         AudioState::Config audio_state_config;
         audio_state_config.audio_mixer = AudioMixerImpl::Create();
@@ -733,9 +733,10 @@ void BaseTest::OnFakeAudioDevicesCreated(
     TestAudioDeviceModule* send_audio_device,
     TestAudioDeviceModule* recv_audio_device) {}
 
-void BaseTest::ModifySenderCallConfig(Call::Config* config) {}
+void BaseTest::ModifySenderBitrateConfig(BitrateConstraints* bitrate_config) {}
 
-void BaseTest::ModifyReceiverCallConfig(Call::Config* config) {}
+void BaseTest::ModifyReceiverBitrateConfig(BitrateConstraints* bitrate_config) {
+}
 
 void BaseTest::OnRtpTransportControllerSendCreated(
     RtpTransportControllerSend* controller) {}
