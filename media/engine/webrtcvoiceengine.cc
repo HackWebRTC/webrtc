@@ -78,12 +78,12 @@ class ProxySink : public webrtc::AudioSinkInterface {
 
 bool ValidateStreamParams(const StreamParams& sp) {
   if (sp.ssrcs.empty()) {
-    RTC_LOG(LS_ERROR) << "No SSRCs in stream parameters: " << sp.ToString();
+    RTC_DLOG(LS_ERROR) << "No SSRCs in stream parameters: " << sp.ToString();
     return false;
   }
   if (sp.ssrcs.size() > 1) {
-    RTC_LOG(LS_ERROR) << "Multiple SSRCs in stream parameters: "
-                      << sp.ToString();
+    RTC_DLOG(LS_ERROR) << "Multiple SSRCs in stream parameters: "
+                       << sp.ToString();
     return false;
   }
   return true;
@@ -1393,8 +1393,8 @@ webrtc::RTCError WebRtcVoiceMediaChannel::SetRtpSendParameters(
   // different order (which should change the send codec).
   webrtc::RtpParameters current_parameters = GetRtpSendParameters(ssrc);
   if (current_parameters.codecs != parameters.codecs) {
-    RTC_LOG(LS_ERROR) << "Using SetParameters to change the set of codecs "
-                      << "is not currently supported.";
+    RTC_DLOG(LS_ERROR) << "Using SetParameters to change the set of codecs "
+                       << "is not currently supported.";
     return webrtc::RTCError(webrtc::RTCErrorType::UNSUPPORTED_PARAMETER);
   }
 
@@ -1491,8 +1491,8 @@ bool WebRtcVoiceMediaChannel::SetRtpReceiveParameters(
 
   webrtc::RtpParameters current_parameters = GetRtpReceiveParameters(ssrc);
   if (current_parameters != parameters) {
-    RTC_LOG(LS_ERROR) << "Changing the RTP receive parameters is currently "
-                      << "unsupported.";
+    RTC_DLOG(LS_ERROR) << "Changing the RTP receive parameters is currently "
+                       << "unsupported.";
     return false;
   }
   return true;
@@ -1879,7 +1879,7 @@ bool WebRtcVoiceMediaChannel::AddRecvStream(const StreamParams& sp) {
 
   const uint32_t ssrc = sp.first_ssrc();
   if (ssrc == 0) {
-    RTC_LOG(LS_WARNING) << "AddRecvStream with ssrc==0 is not supported.";
+    RTC_DLOG(LS_WARNING) << "AddRecvStream with ssrc==0 is not supported.";
     return false;
   }
 
@@ -2071,8 +2071,8 @@ void WebRtcVoiceMediaChannel::OnPacketReceived(rtc::CopyOnWriteBuffer* packet,
   // Remove oldest unsignaled stream, if we have too many.
   if (unsignaled_recv_ssrcs_.size() > kMaxUnsignaledRecvStreams) {
     uint32_t remove_ssrc = unsignaled_recv_ssrcs_.front();
-    RTC_LOG(LS_INFO) << "Removing unsignaled receive stream with SSRC="
-                     << remove_ssrc;
+    RTC_DLOG(LS_INFO) << "Removing unsignaled receive stream with SSRC="
+                      << remove_ssrc;
     RemoveRecvStream(remove_ssrc);
   }
   RTC_DCHECK_GE(kMaxUnsignaledRecvStreams, unsignaled_recv_ssrcs_.size());

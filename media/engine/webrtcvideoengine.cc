@@ -791,8 +791,8 @@ webrtc::RTCError WebRtcVideoChannel::SetRtpSendParameters(
   // different order (which should change the send codec).
   webrtc::RtpParameters current_parameters = GetRtpSendParameters(ssrc);
   if (current_parameters.codecs != parameters.codecs) {
-    RTC_LOG(LS_ERROR) << "Using SetParameters to change the set of codecs "
-                      << "is not currently supported.";
+    RTC_DLOG(LS_ERROR) << "Using SetParameters to change the set of codecs "
+                       << "is not currently supported.";
     return webrtc::RTCError(webrtc::RTCErrorType::INTERNAL_ERROR);
   }
 
@@ -882,8 +882,8 @@ bool WebRtcVideoChannel::SetRtpReceiveParameters(
 
   webrtc::RtpParameters current_parameters = GetRtpReceiveParameters(ssrc);
   if (current_parameters != parameters) {
-    RTC_LOG(LS_ERROR) << "Changing the RTP receive parameters is currently "
-                      << "unsupported.";
+    RTC_DLOG(LS_ERROR) << "Changing the RTP receive parameters is currently "
+                       << "unsupported.";
     return false;
   }
   return true;
@@ -999,7 +999,7 @@ bool WebRtcVideoChannel::SetSend(bool send) {
   TRACE_EVENT0("webrtc", "WebRtcVideoChannel::SetSend");
   RTC_LOG(LS_VERBOSE) << "SetSend: " << (send ? "true" : "false");
   if (send && !send_codec_) {
-    RTC_LOG(LS_ERROR) << "SetSend(true) called before setting codec.";
+    RTC_DLOG(LS_ERROR) << "SetSend(true) called before setting codec.";
     return false;
   }
   {
@@ -2322,9 +2322,9 @@ void WebRtcVideoChannel::WebRtcVideoReceiveStream::SetLocalSsrc(
   // right now this can't be done due to unittests depending on receiving what
   // they are sending from the same MediaChannel.
   if (local_ssrc == config_.rtp.local_ssrc) {
-    RTC_LOG(LS_INFO) << "Ignoring call to SetLocalSsrc because parameters are "
-                        "unchanged; local_ssrc="
-                     << local_ssrc;
+    RTC_DLOG(LS_INFO) << "Ignoring call to SetLocalSsrc because parameters are "
+                         "unchanged; local_ssrc="
+                      << local_ssrc;
     return;
   }
 
