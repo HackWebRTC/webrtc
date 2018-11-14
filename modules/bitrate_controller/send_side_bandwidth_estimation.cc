@@ -104,21 +104,43 @@ bool ReadBweLossExperimentParameters(float* low_loss_threshold,
 }
 }  // namespace
 
-RttBasedBackoffConfig::RttBasedBackoffConfig()
-    : rtt_limit("limit", TimeDelta::PlusInfinity()),
-      drop_fraction("fraction", 0.5),
-      drop_interval("interval", TimeDelta::ms(300)) {
-  std::string trial_string =
-      field_trial::FindFullName("WebRTC-Bwe-MaxRttLimit");
-  ParseFieldTrial({&rtt_limit, &drop_fraction, &drop_interval}, trial_string);
+RttBasedBackoff::RttBasedBackoff()
+    : rtt_limit_("limit", TimeDelta::PlusInfinity()),
+      drop_fraction_("fraction", 0.5),
+      drop_interval_("interval", TimeDelta::ms(300)),
+      persist_on_route_change_("persist"),
+      // By initializing this to plus infinity, we make sure that we never
+      // trigger rtt backoff unless packet feedback is enabled.
+      last_propagation_rtt_update_(Timestamp::PlusInfinity()),
+      last_propagation_rtt_(TimeDelta::Zero()) {
+  ParseFieldTrial({&rtt_limit_, &drop_fraction_, &drop_interval_,
+                   &persist_on_route_change_},
+                  field_trial::FindFullName("WebRTC-Bwe-MaxRttLimit"));
 }
-RttBasedBackoffConfig::RttBasedBackoffConfig(const RttBasedBackoffConfig&) =
-    default;
-RttBasedBackoffConfig::~RttBasedBackoffConfig() = default;
+
+void RttBasedBackoff::OnRouteChange() {
+  if (!persist_on_route_change_) {
+    last_propagation_rtt_update_ = Timestamp::PlusInfinity();
+    last_propagation_rtt_ = TimeDelta::Zero();
+  }
+}
+
+void RttBasedBackoff::UpdatePropagationRtt(Timestamp at_time,
+                                           TimeDelta propagation_rtt) {
+  last_propagation_rtt_update_ = at_time;
+  last_propagation_rtt_ = propagation_rtt;
+}
+
+TimeDelta RttBasedBackoff::RttLowerBound(Timestamp at_time) const {
+  // TODO(srte): Use time since last unacknowledged packet for this.
+  TimeDelta time_since_rtt = at_time - last_propagation_rtt_update_;
+  return time_since_rtt + last_propagation_rtt_;
+}
+
+RttBasedBackoff::~RttBasedBackoff() = default;
 
 SendSideBandwidthEstimation::SendSideBandwidthEstimation(RtcEventLog* event_log)
-    : rtt_backoff_config_(RttBasedBackoffConfig()),
-      lost_packets_since_last_loss_update_(0),
+    : lost_packets_since_last_loss_update_(0),
       expected_packets_since_last_loss_update_(0),
       current_bitrate_(DataRate::Zero()),
       min_bitrate_configured_(
@@ -132,10 +154,6 @@ SendSideBandwidthEstimation::SendSideBandwidthEstimation(RtcEventLog* event_log)
       last_fraction_loss_(0),
       last_logged_fraction_loss_(0),
       last_round_trip_time_(TimeDelta::Zero()),
-      // By initializing this to plus infinity, we make sure that we never
-      // trigger rtt backoff unless packet feedback is enabled.
-      last_propagation_rtt_update_(Timestamp::PlusInfinity()),
-      last_propagation_rtt_(TimeDelta::Zero()),
       bwe_incoming_(DataRate::Zero()),
       delay_based_bitrate_(DataRate::Zero()),
       time_last_decrease_(Timestamp::MinusInfinity()),
@@ -167,6 +185,34 @@ SendSideBandwidthEstimation::SendSideBandwidthEstimation(RtcEventLog* event_log)
 }
 
 SendSideBandwidthEstimation::~SendSideBandwidthEstimation() {}
+
+void SendSideBandwidthEstimation::OnRouteChange() {
+  lost_packets_since_last_loss_update_ = 0;
+  expected_packets_since_last_loss_update_ = 0;
+  current_bitrate_ = DataRate::Zero();
+  min_bitrate_configured_ =
+      DataRate::bps(congestion_controller::GetMinBitrateBps());
+  max_bitrate_configured_ = kDefaultMaxBitrate;
+  last_low_bitrate_log_ = Timestamp::MinusInfinity();
+  has_decreased_since_last_fraction_loss_ = false;
+  last_loss_feedback_ = Timestamp::MinusInfinity();
+  last_loss_packet_report_ = Timestamp::MinusInfinity();
+  last_timeout_ = Timestamp::MinusInfinity();
+  last_fraction_loss_ = 0;
+  last_logged_fraction_loss_ = 0;
+  last_round_trip_time_ = TimeDelta::Zero();
+  bwe_incoming_ = DataRate::Zero();
+  delay_based_bitrate_ = DataRate::Zero();
+  time_last_decrease_ = Timestamp::MinusInfinity();
+  first_report_time_ = Timestamp::MinusInfinity();
+  initially_lost_packets_ = 0;
+  bitrate_at_2_seconds_ = DataRate::Zero();
+  uma_update_state_ = kNoUpdate;
+  uma_rtt_state_ = kNoUpdate;
+  last_rtc_event_log_ = Timestamp::MinusInfinity();
+
+  rtt_backoff_.OnRouteChange();
+}
 
 void SendSideBandwidthEstimation::SetBitrates(
     absl::optional<DataRate> send_bitrate,
@@ -312,11 +358,10 @@ void SendSideBandwidthEstimation::UpdateRtt(TimeDelta rtt, Timestamp at_time) {
 
 void SendSideBandwidthEstimation::UpdateEstimate(Timestamp at_time) {
   DataRate new_bitrate = current_bitrate_;
-  TimeDelta time_since_rtt = at_time - last_propagation_rtt_update_;
-  if (time_since_rtt + last_propagation_rtt_ > rtt_backoff_config_.rtt_limit) {
-    if (at_time - time_last_decrease_ >= rtt_backoff_config_.drop_interval) {
+  if (rtt_backoff_.RttLowerBound(at_time) > rtt_backoff_.rtt_limit_) {
+    if (at_time - time_last_decrease_ >= rtt_backoff_.drop_interval_) {
       time_last_decrease_ = at_time;
-      new_bitrate = current_bitrate_ * rtt_backoff_config_.drop_fraction;
+      new_bitrate = current_bitrate_ * rtt_backoff_.drop_fraction_;
     }
     CapBitrateToThresholds(at_time, new_bitrate);
     return;
@@ -412,8 +457,7 @@ void SendSideBandwidthEstimation::UpdateEstimate(Timestamp at_time) {
 void SendSideBandwidthEstimation::UpdatePropagationRtt(
     Timestamp at_time,
     TimeDelta propagation_rtt) {
-  last_propagation_rtt_update_ = at_time;
-  last_propagation_rtt_ = propagation_rtt;
+  rtt_backoff_.UpdatePropagationRtt(at_time, propagation_rtt);
 }
 
 bool SendSideBandwidthEstimation::IsInStartPhase(Timestamp at_time) const {

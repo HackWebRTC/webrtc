@@ -29,14 +29,22 @@ namespace webrtc {
 
 class RtcEventLog;
 
-struct RttBasedBackoffConfig {
-  RttBasedBackoffConfig();
-  RttBasedBackoffConfig(const RttBasedBackoffConfig&);
-  RttBasedBackoffConfig& operator=(const RttBasedBackoffConfig&) = default;
-  ~RttBasedBackoffConfig();
-  FieldTrialParameter<TimeDelta> rtt_limit;
-  FieldTrialParameter<double> drop_fraction;
-  FieldTrialParameter<TimeDelta> drop_interval;
+class RttBasedBackoff {
+ public:
+  RttBasedBackoff();
+  ~RttBasedBackoff();
+  void OnRouteChange();
+  void UpdatePropagationRtt(Timestamp at_time, TimeDelta propagation_rtt);
+  TimeDelta RttLowerBound(Timestamp at_time) const;
+
+  FieldTrialParameter<TimeDelta> rtt_limit_;
+  FieldTrialParameter<double> drop_fraction_;
+  FieldTrialParameter<TimeDelta> drop_interval_;
+  FieldTrialFlag persist_on_route_change_;
+
+ public:
+  Timestamp last_propagation_rtt_update_;
+  TimeDelta last_propagation_rtt_;
 };
 
 class SendSideBandwidthEstimation {
@@ -45,12 +53,13 @@ class SendSideBandwidthEstimation {
   explicit SendSideBandwidthEstimation(RtcEventLog* event_log);
   ~SendSideBandwidthEstimation();
 
+  void OnRouteChange();
   void CurrentEstimate(int* bitrate, uint8_t* loss, int64_t* rtt) const;
 
   // Call periodically to update estimate.
   void UpdateEstimate(Timestamp at_time);
   void OnSentPacket(SentPacket sent_packet);
-  void UpdatePropagationRtt(Timestamp at_time, TimeDelta feedback_rtt);
+  void UpdatePropagationRtt(Timestamp at_time, TimeDelta propagation_rtt);
 
   // Call when we receive a RTCP message with TMMBR or REMB.
   void UpdateReceiverEstimate(Timestamp at_time, DataRate bandwidth);
@@ -96,7 +105,7 @@ class SendSideBandwidthEstimation {
   // set |current_bitrate_| to the capped value and updates the event log.
   void CapBitrateToThresholds(Timestamp at_time, DataRate bitrate);
 
-  RttBasedBackoffConfig rtt_backoff_config_;
+  RttBasedBackoff rtt_backoff_;
 
   std::deque<std::pair<Timestamp, DataRate> > min_bitrate_history_;
 
@@ -116,9 +125,6 @@ class SendSideBandwidthEstimation {
   uint8_t last_fraction_loss_;
   uint8_t last_logged_fraction_loss_;
   TimeDelta last_round_trip_time_;
-
-  Timestamp last_propagation_rtt_update_;
-  TimeDelta last_propagation_rtt_;
 
   DataRate bwe_incoming_;
   DataRate delay_based_bitrate_;

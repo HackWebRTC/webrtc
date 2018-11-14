@@ -213,8 +213,7 @@ NetworkControlUpdate GoogCcNetworkController::OnNetworkRouteChange(
   delay_based_bwe_.reset(new DelayBasedBwe(event_log_));
   delay_based_bwe_->SetStartBitrate(start_bitrate_bps);
   delay_based_bwe_->SetMinBitrate(min_bitrate_bps);
-  bandwidth_estimation_ =
-      absl::make_unique<SendSideBandwidthEstimation>(event_log_);
+  bandwidth_estimation_->OnRouteChange();
   bandwidth_estimation_->SetBitrates(
       msg.constraints.starting_rate, DataRate::bps(min_bitrate_bps),
       msg.constraints.max_data_rate.value_or(DataRate::Infinity()),
@@ -428,6 +427,7 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
     const size_t kMaxFeedbackRttWindow = 32;
     if (feedback_max_rtts_.size() > kMaxFeedbackRttWindow)
       feedback_max_rtts_.pop_front();
+    // TODO(srte): Use time since last unacknowledged packet.
     bandwidth_estimation_->UpdatePropagationRtt(report.feedback_time,
                                                 min_propagation_rtt);
   }
