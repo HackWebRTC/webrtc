@@ -281,12 +281,6 @@ class AudioProcessing : public rtc::RefCountInterface {
         bool use_saturation_protector = true;
         float extra_saturation_margin_db = 2.f;
       } adaptive_digital;
-      // Deprecated.
-      // TODO(webrtc:7494): Switch to fixed_digital.gain_db and remove.
-      float fixed_gain_db = 0.f;
-      // Deprecated.
-      // TODO(webrtc:7494): Switch to adaptive_digital.enabled and remove.
-      bool adaptive_digital_mode = false;
     } gain_controller2;
 
     // Explicit copy assignment implementation to avoid issues with memory
