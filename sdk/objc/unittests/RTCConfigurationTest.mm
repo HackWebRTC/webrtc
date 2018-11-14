@@ -54,6 +54,8 @@
                                                  srtpEnableAes128Sha1_32CryptoCipher:YES
                                               srtpEnableEncryptedRtpHeaderExtensions:YES
                                                         sframeRequireFrameEncryption:YES];
+  config.rtcpAudioReportIntervalMs = 2500;
+  config.rtcpVideoReportIntervalMs = 3750;
 
   std::unique_ptr<webrtc::PeerConnectionInterface::RTCConfiguration>
       nativeConfig([config createNativeConfiguration]);
@@ -86,6 +88,8 @@
   EXPECT_EQ(true, nativeConfig->crypto_options->srtp.enable_aes128_sha1_32_crypto_cipher);
   EXPECT_EQ(true, nativeConfig->crypto_options->srtp.enable_encrypted_rtp_header_extensions);
   EXPECT_EQ(true, nativeConfig->crypto_options->sframe.require_frame_encryption);
+  EXPECT_EQ(2500, nativeConfig->audio_rtcp_report_interval_ms());
+  EXPECT_EQ(3750, nativeConfig->video_rtcp_report_interval_ms());
 }
 
 - (void)testNativeConversionToConfiguration {
@@ -115,6 +119,8 @@
                                                  srtpEnableAes128Sha1_32CryptoCipher:NO
                                               srtpEnableEncryptedRtpHeaderExtensions:NO
                                                         sframeRequireFrameEncryption:NO];
+  config.rtcpAudioReportIntervalMs = 1500;
+  config.rtcpVideoReportIntervalMs = 2150;
 
   webrtc::PeerConnectionInterface::RTCConfiguration *nativeConfig =
       [config createNativeConfiguration];
@@ -150,6 +156,8 @@
             newConfig.cryptoOptions.srtpEnableEncryptedRtpHeaderExtensions);
   EXPECT_EQ(config.cryptoOptions.sframeRequireFrameEncryption,
             newConfig.cryptoOptions.sframeRequireFrameEncryption);
+  EXPECT_EQ(config.rtcpAudioReportIntervalMs, newConfig.rtcpAudioReportIntervalMs);
+  EXPECT_EQ(config.rtcpVideoReportIntervalMs, newConfig.rtcpVideoReportIntervalMs);
 }
 
 - (void)testDefaultValues {

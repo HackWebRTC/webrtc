@@ -53,6 +53,8 @@
 @synthesize useMediaTransport = _useMediaTransport;
 @synthesize useMediaTransportForDataChannels = _useMediaTransportForDataChannels;
 @synthesize cryptoOptions = _cryptoOptions;
+@synthesize rtcpAudioReportIntervalMs = _rtcpAudioReportIntervalMs;
+@synthesize rtcpVideoReportIntervalMs = _rtcpVideoReportIntervalMs;
 
 - (instancetype)init {
   // Copy defaults.
@@ -130,6 +132,8 @@
                     sframeRequireFrameEncryption:config.crypto_options->sframe
                                                      .require_frame_encryption];
     }
+    _rtcpAudioReportIntervalMs = config.audio_rtcp_report_interval_ms();
+    _rtcpVideoReportIntervalMs = config.video_rtcp_report_interval_ms();
   }
   return self;
 }
@@ -261,7 +265,8 @@
         _cryptoOptions.sframeRequireFrameEncryption ? true : false;
     nativeConfig->crypto_options = absl::optional<webrtc::CryptoOptions>(nativeCryptoOptions);
   }
-
+  nativeConfig->set_audio_rtcp_report_interval_ms(_rtcpAudioReportIntervalMs);
+  nativeConfig->set_video_rtcp_report_interval_ms(_rtcpVideoReportIntervalMs);
   return nativeConfig.release();
 }
 
