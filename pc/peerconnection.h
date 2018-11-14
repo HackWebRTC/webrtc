@@ -719,7 +719,7 @@ class PeerConnection : public PeerConnectionInternal,
   SessionError session_error() const { return session_error_; }
   const std::string& session_error_desc() const { return session_error_desc_; }
 
-  cricket::BaseChannel* GetChannel(const std::string& content_name);
+  cricket::ChannelInterface* GetChannel(const std::string& content_name);
 
   // Get current SSL role used by SCTP's underlying transport.
   bool GetSctpSslRole(rtc::SSLRole* role);
@@ -922,9 +922,9 @@ class PeerConnection : public PeerConnectionInternal,
   // Destroys the RTP data channel and/or the SCTP data channel and clears it.
   void DestroyDataChannel();
 
-  // Destroys the given BaseChannel. The channel cannot be accessed after this
-  // method is called.
-  void DestroyBaseChannel(cricket::BaseChannel* channel);
+  // Destroys the given ChannelInterface.
+  // The channel cannot be accessed after this method is called.
+  void DestroyChannelInterface(cricket::ChannelInterface* channel);
 
   // JsepTransportController::Observer override.
   //

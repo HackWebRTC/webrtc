@@ -386,9 +386,10 @@ void AudioRtpSender::Stop() {
   stopped_ = true;
 }
 
-void AudioRtpSender::SetVoiceMediaChannel(
-    cricket::VoiceMediaChannel* voice_media_channel) {
-  media_channel_ = voice_media_channel;
+void AudioRtpSender::SetMediaChannel(cricket::MediaChannel* media_channel) {
+  RTC_DCHECK(media_channel == nullptr ||
+             media_channel->media_type() == media_type());
+  media_channel_ = static_cast<cricket::VoiceMediaChannel*>(media_channel);
 }
 
 void AudioRtpSender::SetAudioSend() {
@@ -629,9 +630,10 @@ void VideoRtpSender::Stop() {
   stopped_ = true;
 }
 
-void VideoRtpSender::SetVideoMediaChannel(
-    cricket::VideoMediaChannel* video_media_channel) {
-  media_channel_ = video_media_channel;
+void VideoRtpSender::SetMediaChannel(cricket::MediaChannel* media_channel) {
+  RTC_DCHECK(media_channel == nullptr ||
+             media_channel->media_type() == media_type());
+  media_channel_ = static_cast<cricket::VideoMediaChannel*>(media_channel);
 }
 
 void VideoRtpSender::SetVideoSend() {

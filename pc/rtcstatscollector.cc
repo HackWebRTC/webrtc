@@ -1426,7 +1426,7 @@ RTCStatsCollector::PrepareTransceiverStatsInfos_s() const {
     stats.transceiver = transceiver->internal();
     stats.media_type = media_type;
 
-    cricket::BaseChannel* channel = transceiver->internal()->channel();
+    cricket::ChannelInterface* channel = transceiver->internal()->channel();
     if (!channel) {
       // The remaining fields require a BaseChannel.
       continue;

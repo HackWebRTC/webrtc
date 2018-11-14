@@ -184,6 +184,8 @@ class MediaChannel : public sigslot::has_slots<> {
   MediaChannel();
   ~MediaChannel() override;
 
+  virtual cricket::MediaType media_type() const = 0;
+
   // Sets the abstract interface class for sending RTP/RTCP data and
   // interface for media transport (experimental). If media transport is
   // provided, it should be used instead of RTP/RTCP.
@@ -700,6 +702,8 @@ class VoiceMediaChannel : public MediaChannel {
   explicit VoiceMediaChannel(const MediaConfig& config)
       : MediaChannel(config) {}
   ~VoiceMediaChannel() override {}
+
+  cricket::MediaType media_type() const override;
   virtual bool SetSendParameters(const AudioSendParameters& params) = 0;
   virtual bool SetRecvParameters(const AudioRecvParameters& params) = 0;
   virtual webrtc::RtpParameters GetRtpSendParameters(uint32_t ssrc) const = 0;
@@ -772,6 +776,7 @@ class VideoMediaChannel : public MediaChannel {
       : MediaChannel(config) {}
   ~VideoMediaChannel() override {}
 
+  cricket::MediaType media_type() const override;
   virtual bool SetSendParameters(const VideoSendParameters& params) = 0;
   virtual bool SetRecvParameters(const VideoRecvParameters& params) = 0;
   virtual webrtc::RtpParameters GetRtpSendParameters(uint32_t ssrc) const = 0;
@@ -883,6 +888,7 @@ class DataMediaChannel : public MediaChannel {
   explicit DataMediaChannel(const MediaConfig& config);
   ~DataMediaChannel() override;
 
+  cricket::MediaType media_type() const override;
   virtual bool SetSendParameters(const DataSendParameters& params) = 0;
   virtual bool SetRecvParameters(const DataRecvParameters& params) = 0;
 

@@ -268,9 +268,10 @@ void AudioRtpReceiver::SetObserver(RtpReceiverObserverInterface* observer) {
   }
 }
 
-void AudioRtpReceiver::SetVoiceMediaChannel(
-    cricket::VoiceMediaChannel* voice_media_channel) {
-  media_channel_ = voice_media_channel;
+void AudioRtpReceiver::SetMediaChannel(cricket::MediaChannel* media_channel) {
+  RTC_DCHECK(media_channel == nullptr ||
+             media_channel->media_type() == media_type());
+  media_channel_ = static_cast<cricket::VoiceMediaChannel*>(media_channel);
 }
 
 void AudioRtpReceiver::NotifyFirstPacketReceived() {
@@ -443,9 +444,10 @@ void VideoRtpReceiver::SetObserver(RtpReceiverObserverInterface* observer) {
   }
 }
 
-void VideoRtpReceiver::SetVideoMediaChannel(
-    cricket::VideoMediaChannel* video_media_channel) {
-  media_channel_ = video_media_channel;
+void VideoRtpReceiver::SetMediaChannel(cricket::MediaChannel* media_channel) {
+  RTC_DCHECK(media_channel == nullptr ||
+             media_channel->media_type() == media_type());
+  media_channel_ = static_cast<cricket::VideoMediaChannel*>(media_channel);
 }
 
 void VideoRtpReceiver::NotifyFirstPacketReceived() {

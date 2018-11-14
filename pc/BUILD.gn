@@ -31,6 +31,7 @@ rtc_static_library("rtc_pc_base") {
   sources = [
     "channel.cc",
     "channel.h",
+    "channelinterface.h",
     "channelmanager.cc",
     "channelmanager.h",
     "dtlssrtptransport.cc",
@@ -380,6 +381,7 @@ if (rtc_include_tests) {
       "test/fakevideotrackrenderer.h",
       "test/fakevideotracksource.h",
       "test/framegeneratorcapturervideotracksource.h",
+      "test/mock_channelinterface.h",
       "test/mock_datachannel.h",
       "test/mock_rtpreceiverinternal.h",
       "test/mock_rtpsenderinternal.h",
@@ -460,6 +462,7 @@ if (rtc_include_tests) {
       "rtpmediautils_unittest.cc",
       "rtpparametersconversion_unittest.cc",
       "rtpsenderreceiver_unittest.cc",
+      "rtptransceiver_unittest.cc",
       "sctputils_unittest.cc",
       "statscollector_unittest.cc",
       "test/fakeaudiocapturemodule_unittest.cc",

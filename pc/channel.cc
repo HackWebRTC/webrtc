@@ -702,7 +702,7 @@ void BaseChannel::OnMessage(rtc::Message* pmsg) {
       break;
     }
     case MSG_FIRSTPACKETRECEIVED: {
-      SignalFirstPacketReceived(this);
+      SignalFirstPacketReceived_(this);
       break;
     }
   }

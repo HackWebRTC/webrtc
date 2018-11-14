@@ -212,7 +212,12 @@ class PeerConnectionIceBaseTest : public ::testing::Test {
     PeerConnection* pc = static_cast<PeerConnection*>(pc_proxy->internal());
     for (auto transceiver : pc->GetTransceiversInternal()) {
       if (transceiver->media_type() == cricket::MEDIA_TYPE_AUDIO) {
-        cricket::BaseChannel* channel = transceiver->internal()->channel();
+        // TODO(amithi): This test seems to be using a method that should not
+        // be public |rtp_packet_transport|. Because the test is not mocking
+        // the channels or transceiver, workaround will be to |static_cast|
+        // the channel until the method is rewritten.
+        cricket::BaseChannel* channel = static_cast<cricket::BaseChannel*>(
+            transceiver->internal()->channel());
         if (channel) {
           auto dtls_transport = static_cast<cricket::DtlsTransportInternal*>(
               channel->rtp_packet_transport());

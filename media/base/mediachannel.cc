@@ -87,6 +87,10 @@ std::map<std::string, std::string> AudioSendParameters::ToStringMap() const {
   return params;
 }
 
+cricket::MediaType VoiceMediaChannel::media_type() const {
+  return cricket::MediaType::MEDIA_TYPE_AUDIO;
+}
+
 VideoSendParameters::VideoSendParameters() = default;
 VideoSendParameters::~VideoSendParameters() = default;
 
@@ -96,10 +100,18 @@ std::map<std::string, std::string> VideoSendParameters::ToStringMap() const {
   return params;
 }
 
+cricket::MediaType VideoMediaChannel::media_type() const {
+  return cricket::MediaType::MEDIA_TYPE_VIDEO;
+}
+
 DataMediaChannel::DataMediaChannel() = default;
 DataMediaChannel::DataMediaChannel(const MediaConfig& config)
     : MediaChannel(config) {}
 DataMediaChannel::~DataMediaChannel() = default;
+
+cricket::MediaType DataMediaChannel::media_type() const {
+  return cricket::MediaType::MEDIA_TYPE_DATA;
+}
 
 bool DataMediaChannel::GetStats(DataMediaInfo* info) {
   return true;
