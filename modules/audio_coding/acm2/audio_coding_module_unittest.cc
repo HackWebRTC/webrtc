@@ -1183,20 +1183,32 @@ class AcmSenderBitExactnessOldApi : public ::testing::Test,
 
     // Extract and verify the audio checksum.
     std::string checksum_string = audio_checksum.Finish();
-    EXPECT_EQ(audio_checksum_ref, checksum_string);
+    ExpectChecksumEq(audio_checksum_ref, checksum_string);
 
     // Extract and verify the payload checksum.
     rtc::Buffer checksum_result(payload_checksum_->Size());
     payload_checksum_->Finish(checksum_result.data(), checksum_result.size());
     checksum_string =
         rtc::hex_encode(checksum_result.data<char>(), checksum_result.size());
-    EXPECT_EQ(payload_checksum_ref, checksum_string);
+    ExpectChecksumEq(payload_checksum_ref, checksum_string);
 
     // Verify number of packets produced.
     EXPECT_EQ(expected_packets, packet_count_);
 
     // Delete the output file.
     remove(output_file_name.c_str());
+  }
+
+  // Helper: result must be one the "|"-separated checksums.
+  void ExpectChecksumEq(std::string ref, std::string result) {
+    if (ref.size() == result.size()) {
+      // Only one checksum: clearer message.
+      EXPECT_EQ(ref, result);
+    } else {
+      EXPECT_NE(ref.find(result), std::string::npos)
+          << result << " must be one of these:\n"
+          << ref;
+    }
   }
 
   // Inherited from test::PacketSource.
@@ -1436,21 +1448,35 @@ TEST_F(AcmSenderBitExactnessOldApi, MAYBE_G722_stereo_20ms) {
       50, test::AcmReceiveTestOldApi::kStereoOutput);
 }
 
+namespace {
+// Checksum depends on libopus being compiled with or without SSE.
+const std::string audio_maybe_sse =
+    "3e285b74510e62062fbd8142dacd16e9|"
+    "fd5d57d6d766908e6a7211e2a5c7f78a";
+const std::string payload_maybe_sse =
+    "78cf8f03157358acdc69f6835caa0d9b|"
+    "b693bd95c2ee2354f92340dd09e9da68";
+// Common checksums.
+const std::string audio_checksum =
+    AcmReceiverBitExactnessOldApi::PlatformChecksum(
+        audio_maybe_sse,
+        audio_maybe_sse,
+        "439e97ad1932c49923b5da029c17dd5e",
+        "038ec90f5f3fc2320f3090f8ecef6bb7",
+        "038ec90f5f3fc2320f3090f8ecef6bb7");
+const std::string payload_checksum =
+    AcmReceiverBitExactnessOldApi::PlatformChecksum(
+        payload_maybe_sse,
+        payload_maybe_sse,
+        "ab88b1a049c36bdfeb7e8b057ef6982a",
+        "27fef7b799393347ec3b5694369a1c36",
+        "27fef7b799393347ec3b5694369a1c36");
+};  // namespace
+
 TEST_F(AcmSenderBitExactnessOldApi, Opus_stereo_20ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 2, 120, 960, 960));
-  Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
-          "3e285b74510e62062fbd8142dacd16e9",
-          "3e285b74510e62062fbd8142dacd16e9",
-          "439e97ad1932c49923b5da029c17dd5e",
-          "038ec90f5f3fc2320f3090f8ecef6bb7",
-          "038ec90f5f3fc2320f3090f8ecef6bb7"),
-      AcmReceiverBitExactnessOldApi::PlatformChecksum(
-          "78cf8f03157358acdc69f6835caa0d9b",
-          "78cf8f03157358acdc69f6835caa0d9b",
-          "ab88b1a049c36bdfeb7e8b057ef6982a",
-          "27fef7b799393347ec3b5694369a1c36",
-          "27fef7b799393347ec3b5694369a1c36"),
-      50, test::AcmReceiveTestOldApi::kStereoOutput);
+  Run(audio_checksum, payload_checksum, 50,
+      test::AcmReceiveTestOldApi::kStereoOutput);
 }
 
 TEST_F(AcmSenderBitExactnessNewApi, MAYBE_OpusFromFormat_stereo_20ms) {
@@ -1458,19 +1484,8 @@ TEST_F(AcmSenderBitExactnessNewApi, MAYBE_OpusFromFormat_stereo_20ms) {
       SdpAudioFormat("opus", 48000, 2, {{"stereo", "1"}}));
   ASSERT_NO_FATAL_FAILURE(SetUpTestExternalEncoder(
       AudioEncoderOpus::MakeAudioEncoder(*config, 120), 120));
-  Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
-          "3e285b74510e62062fbd8142dacd16e9",
-          "3e285b74510e62062fbd8142dacd16e9",
-          "439e97ad1932c49923b5da029c17dd5e",
-          "038ec90f5f3fc2320f3090f8ecef6bb7",
-          "038ec90f5f3fc2320f3090f8ecef6bb7"),
-      AcmReceiverBitExactnessOldApi::PlatformChecksum(
-          "78cf8f03157358acdc69f6835caa0d9b",
-          "78cf8f03157358acdc69f6835caa0d9b",
-          "ab88b1a049c36bdfeb7e8b057ef6982a",
-          "27fef7b799393347ec3b5694369a1c36",
-          "27fef7b799393347ec3b5694369a1c36"),
-      50, test::AcmReceiveTestOldApi::kStereoOutput);
+  Run(audio_checksum, payload_checksum, 50,
+      test::AcmReceiveTestOldApi::kStereoOutput);
 }
 
 TEST_F(AcmSenderBitExactnessNewApi, OpusFromFormat_stereo_20ms_voip) {
@@ -1480,15 +1495,19 @@ TEST_F(AcmSenderBitExactnessNewApi, OpusFromFormat_stereo_20ms_voip) {
   config->application = AudioEncoderOpusConfig::ApplicationMode::kVoip;
   ASSERT_NO_FATAL_FAILURE(SetUpTestExternalEncoder(
       AudioEncoderOpus::MakeAudioEncoder(*config, 120), 120));
+  // Checksum depends on libopus being compiled with or without SSE.
+  const std::string audio_maybe_sse =
+      "b0325df4e8104f04e03af23c0b75800e|"
+      "3cd4e1bc2acd9440bb9e97af34080ffc";
+  const std::string payload_maybe_sse =
+      "4eab2259b6fe24c22dd242a113e0b3d9|"
+      "4fc0af0aa06c26454af09832d3ec1b4e";
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(
-          "b0325df4e8104f04e03af23c0b75800e",
-          "b0325df4e8104f04e03af23c0b75800e",
-          "1c81121f5d9286a5a865d01dbab22ce8",
+          audio_maybe_sse, audio_maybe_sse, "1c81121f5d9286a5a865d01dbab22ce8",
           "11d547f89142e9ef03f37d7ca7f32379",
           "11d547f89142e9ef03f37d7ca7f32379"),
       AcmReceiverBitExactnessOldApi::PlatformChecksum(
-          "4eab2259b6fe24c22dd242a113e0b3d9",
-          "4eab2259b6fe24c22dd242a113e0b3d9",
+          payload_maybe_sse, payload_maybe_sse,
           "839ea60399447268ee0f0262a50b75fd",
           "1815fd5589cad0c6f6cf946c76b81aeb",
           "1815fd5589cad0c6f6cf946c76b81aeb"),
