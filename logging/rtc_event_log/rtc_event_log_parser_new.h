@@ -612,30 +612,6 @@ class ParsedRtcEventLogNew {
   friend class RtcEventLogTestHelper;
 
  public:
-  ~ParsedRtcEventLogNew();
-
-  enum class EventType {
-    UNKNOWN_EVENT = 0,
-    LOG_START = 1,
-    LOG_END = 2,
-    RTP_EVENT = 3,
-    RTCP_EVENT = 4,
-    AUDIO_PLAYOUT_EVENT = 5,
-    LOSS_BASED_BWE_UPDATE = 6,
-    DELAY_BASED_BWE_UPDATE = 7,
-    VIDEO_RECEIVER_CONFIG_EVENT = 8,
-    VIDEO_SENDER_CONFIG_EVENT = 9,
-    AUDIO_RECEIVER_CONFIG_EVENT = 10,
-    AUDIO_SENDER_CONFIG_EVENT = 11,
-    AUDIO_NETWORK_ADAPTATION_EVENT = 16,
-    BWE_PROBE_CLUSTER_CREATED_EVENT = 17,
-    BWE_PROBE_FAILURE_EVENT = 18,
-    BWE_PROBE_SUCCESS_EVENT = 19,
-    ALR_STATE_EVENT = 20,
-    ICE_CANDIDATE_PAIR_CONFIG = 21,
-    ICE_CANDIDATE_PAIR_EVENT = 22,
-  };
-
   enum class MediaType { ANY, AUDIO, VIDEO, DATA };
   enum class UnconfiguredHeaderExtensions {
     kDontParse,
@@ -676,6 +652,8 @@ class ParsedRtcEventLogNew {
       UnconfiguredHeaderExtensions parse_unconfigured_header_extensions =
           UnconfiguredHeaderExtensions::kDontParse);
 
+  ~ParsedRtcEventLogNew();
+
   // Clears previously parsed events and resets the ParsedRtcEventLogNew to an
   // empty state.
   void Clear();
@@ -690,110 +668,7 @@ class ParsedRtcEventLogNew {
   bool ParseStream(
       std::istream& stream);  // no-presubmit-check TODO(webrtc:8982)
 
-  // Returns the number of events in an EventStream.
-  size_t GetNumberOfEvents() const;
-
-  // Reads the arrival timestamp (in microseconds) from a rtclog::Event.
-  int64_t GetTimestamp(size_t index) const;
-  int64_t GetTimestamp(const rtclog::Event& event) const;
-
-  // Reads the event type of the rtclog::Event at |index|.
-  EventType GetEventType(size_t index) const;
-  EventType GetEventType(const rtclog::Event& event) const;
-
-  // Reads the header, direction, header length and packet length from the RTP
-  // event at |index|, and stores the values in the corresponding output
-  // parameters. Each output parameter can be set to nullptr if that value
-  // isn't needed.
-  // NB: The header must have space for at least IP_PACKET_SIZE bytes.
-  // Returns: a pointer to a header extensions map acquired from parsing
-  // corresponding Audio/Video Sender/Receiver config events.
-  // Warning: if the same SSRC is reused by both video and audio streams during
-  // call, extensions maps may be incorrect (the last one would be returned).
-  const webrtc::RtpHeaderExtensionMap* GetRtpHeader(
-      size_t index,
-      PacketDirection* incoming,
-      uint8_t* header,
-      size_t* header_length,
-      size_t* total_length,
-      int* probe_cluster_id) const;
-  const webrtc::RtpHeaderExtensionMap* GetRtpHeader(
-      const rtclog::Event& event,
-      PacketDirection* incoming,
-      uint8_t* header,
-      size_t* header_length,
-      size_t* total_length,
-      int* probe_cluster_id) const;
-
-  // Reads packet, direction and packet length from the RTCP event at |index|,
-  // and stores the values in the corresponding output parameters.
-  // Each output parameter can be set to nullptr if that value isn't needed.
-  // NB: The packet must have space for at least IP_PACKET_SIZE bytes.
-  void GetRtcpPacket(size_t index,
-                     PacketDirection* incoming,
-                     uint8_t* packet,
-                     size_t* length) const;
-  void GetRtcpPacket(const rtclog::Event& event,
-                     PacketDirection* incoming,
-                     uint8_t* packet,
-                     size_t* length) const;
-
-  // Reads a video receive config event to a StreamConfig struct.
-  // Only the fields that are stored in the protobuf will be written.
-  rtclog::StreamConfig GetVideoReceiveConfig(size_t index) const;
-
-  // Reads a video send config event to a StreamConfig struct. If the proto
-  // contains multiple SSRCs and RTX SSRCs (this used to be the case for
-  // simulcast streams) then we return one StreamConfig per SSRC,RTX_SSRC pair.
-  // Only the fields that are stored in the protobuf will be written.
-  std::vector<rtclog::StreamConfig> GetVideoSendConfig(size_t index) const;
-
-  // Reads a audio receive config event to a StreamConfig struct.
-  // Only the fields that are stored in the protobuf will be written.
-  rtclog::StreamConfig GetAudioReceiveConfig(size_t index) const;
-
-  // Reads a config event to a StreamConfig struct.
-  // Only the fields that are stored in the protobuf will be written.
-  rtclog::StreamConfig GetAudioSendConfig(size_t index) const;
-
-  // Reads the SSRC from the audio playout event at |index|. The SSRC is stored
-  // in the output parameter ssrc. The output parameter can be set to nullptr
-  // and in that case the function only asserts that the event is well formed.
-  LoggedAudioPlayoutEvent GetAudioPlayout(size_t index) const;
-
-  // Reads bitrate, fraction loss (as defined in RFC 1889) and total number of
-  // expected packets from the loss based BWE event at |index| and stores the
-  // values in
-  // the corresponding output parameters. Each output parameter can be set to
-  // nullptr if that
-  // value isn't needed.
-  LoggedBweLossBasedUpdate GetLossBasedBweUpdate(size_t index) const;
-
-  // Reads bitrate and detector_state from the delay based BWE event at |index|
-  // and stores the values in the corresponding output parameters. Each output
-  // parameter can be set to nullptr if that
-  // value isn't needed.
-  LoggedBweDelayBasedUpdate GetDelayBasedBweUpdate(size_t index) const;
-
-  // Reads a audio network adaptation event to a (non-NULL)
-  // AudioEncoderRuntimeConfig struct. Only the fields that are
-  // stored in the protobuf will be written.
-  LoggedAudioNetworkAdaptationEvent GetAudioNetworkAdaptation(
-      size_t index) const;
-
-  LoggedBweProbeClusterCreatedEvent GetBweProbeClusterCreated(
-      size_t index) const;
-
-  LoggedBweProbeFailureEvent GetBweProbeFailure(size_t index) const;
-  LoggedBweProbeSuccessEvent GetBweProbeSuccess(size_t index) const;
-
   MediaType GetMediaType(uint32_t ssrc, PacketDirection direction) const;
-
-  LoggedAlrStateEvent GetAlrState(size_t index) const;
-
-  LoggedIceCandidatePairConfig GetIceCandidatePairConfig(size_t index) const;
-
-  LoggedIceCandidatePairEvent GetIceCandidatePairEvent(size_t index) const;
 
   // Configured SSRCs.
   const std::set<uint32_t>& incoming_rtx_ssrcs() const {
@@ -978,6 +853,35 @@ class ParsedRtcEventLogNew {
 
   void StoreParsedLegacyEvent(const rtclog::Event& event);
 
+  // Reads the arrival timestamp (in microseconds) from a rtclog::Event.
+  int64_t GetTimestamp(const rtclog::Event& event) const;
+
+  // Reads the header, direction, header length and packet length from the RTP
+  // event at |index|, and stores the values in the corresponding output
+  // parameters. Each output parameter can be set to nullptr if that value
+  // isn't needed.
+  // NB: The header must have space for at least IP_PACKET_SIZE bytes.
+  // Returns: a pointer to a header extensions map acquired from parsing
+  // corresponding Audio/Video Sender/Receiver config events.
+  // Warning: if the same SSRC is reused by both video and audio streams during
+  // call, extensions maps may be incorrect (the last one would be returned).
+  const webrtc::RtpHeaderExtensionMap* GetRtpHeader(
+      const rtclog::Event& event,
+      PacketDirection* incoming,
+      uint8_t* header,
+      size_t* header_length,
+      size_t* total_length,
+      int* probe_cluster_id) const;
+
+  // Reads packet, direction and packet length from the RTCP event at |index|,
+  // and stores the values in the corresponding output parameters.
+  // Each output parameter can be set to nullptr if that value isn't needed.
+  // NB: The packet must have space for at least IP_PACKET_SIZE bytes.
+  void GetRtcpPacket(const rtclog::Event& event,
+                     PacketDirection* incoming,
+                     uint8_t* packet,
+                     size_t* length) const;
+
   rtclog::StreamConfig GetVideoReceiveConfig(const rtclog::Event& event) const;
   std::vector<rtclog::StreamConfig> GetVideoSendConfig(
       const rtclog::Event& event) const;
@@ -1007,9 +911,6 @@ class ParsedRtcEventLogNew {
       const rtclog::Event& event) const;
   LoggedIceCandidatePairEvent GetIceCandidatePairEvent(
       const rtclog::Event& event) const;
-
-  // TODO(terelius): Remove
-  std::vector<rtclog::Event> events_;
 
   // Parsing functions for new format.
   void StoreParsedNewFormatEvent(const rtclog2::EventStream& event);

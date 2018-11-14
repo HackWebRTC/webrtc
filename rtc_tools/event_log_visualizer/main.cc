@@ -252,9 +252,7 @@ int main(int argc, char* argv[]) {
 
   if (!parsed_log.ParseFile(filename)) {
     std::cerr << "Could not parse the entire log file." << std::endl;
-    std::cerr << "Proceeding to analyze the first "
-              << parsed_log.GetNumberOfEvents() << " events in the file."
-              << std::endl;
+    std::cerr << "Only the parsable events will be analyzed." << std::endl;
   }
 
   webrtc::EventLogAnalyzer analyzer(parsed_log, FLAG_normalize_time);

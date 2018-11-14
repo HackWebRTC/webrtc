@@ -198,8 +198,6 @@ int main(int argc, char* argv[]) {
     return -1;
   }
 
-  std::cout << "Found " << parsed_stream.GetNumberOfEvents()
-            << " events in the input file." << std::endl;
   int rtp_counter = 0, rtcp_counter = 0;
   bool header_only = false;
 
