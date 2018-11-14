@@ -68,14 +68,12 @@ bool UseLegacyNormalSuppressorTuning() {
   return field_trial::IsEnabled("WebRTC-Aec3UseLegacyNormalSuppressorTuning");
 }
 
-bool DeactivateStationarityProperties() {
-  return field_trial::IsEnabled(
-      "WebRTC-Aec3UseStationarityPropertiesKillSwitch");
+bool ActivateStationarityProperties() {
+  return field_trial::IsEnabled("WebRTC-Aec3UseStationarityProperties");
 }
 
-bool DeactivateStationarityPropertiesAtInit() {
-  return field_trial::IsEnabled(
-      "WebRTC-Aec3UseStationarityPropertiesAtInitKillSwitch");
+bool ActivateStationarityPropertiesAtInit() {
+  return field_trial::IsEnabled("WebRTC-Aec3UseStationarityPropertiesAtInit");
 }
 
 bool EnableNewRenderBuffering() {
@@ -154,15 +152,12 @@ EchoCanceller3Config AdjustConfig(const EchoCanceller3Config& config) {
     adjusted_cfg.suppressor.dominant_nearend_detection.hold_duration = 25;
   }
 
-  // TODO(peah): Clean this up once upstream dependencies that forces this to
-  // zero are resolved.
-  adjusted_cfg.echo_audibility.use_stationary_properties = true;
-  if (DeactivateStationarityProperties()) {
-    adjusted_cfg.echo_audibility.use_stationary_properties = false;
+  if (ActivateStationarityProperties()) {
+    adjusted_cfg.echo_audibility.use_stationary_properties = true;
   }
 
-  if (DeactivateStationarityPropertiesAtInit()) {
-    adjusted_cfg.echo_audibility.use_stationarity_properties_at_init = false;
+  if (ActivateStationarityPropertiesAtInit()) {
+    adjusted_cfg.echo_audibility.use_stationarity_properties_at_init = true;
   }
 
   if (!UseEarlyDelayDetection()) {
