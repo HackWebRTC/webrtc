@@ -113,6 +113,18 @@ class PeerConnectionMediaBaseTest : public ::testing::Test {
   }
 
   // Accepts the same arguments as CreatePeerConnection and adds default audio
+  // track (but no video).
+  template <typename... Args>
+  WrapperPtr CreatePeerConnectionWithAudio(Args&&... args) {
+    auto wrapper = CreatePeerConnection(std::forward<Args>(args)...);
+    if (!wrapper) {
+      return nullptr;
+    }
+    wrapper->AddAudioTrack("a");
+    return wrapper;
+  }
+
+  // Accepts the same arguments as CreatePeerConnection and adds default audio
   // and video tracks.
   template <typename... Args>
   WrapperPtr CreatePeerConnectionWithAudioVideo(Args&&... args) {
@@ -1096,8 +1108,8 @@ TEST_P(PeerConnectionMediaTest, MediaTransportPropagatedToVoiceEngine) {
   // Force SDES.
   config.enable_dtls_srtp = false;
 
-  auto caller = CreatePeerConnectionWithAudioVideo(config);
-  auto callee = CreatePeerConnectionWithAudioVideo(config);
+  auto caller = CreatePeerConnectionWithAudio(config);
+  auto callee = CreatePeerConnectionWithAudio(config);
 
   ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
   auto answer = callee->CreateAnswer();
@@ -1120,13 +1132,9 @@ TEST_P(PeerConnectionMediaTest, MediaTransportPropagatedToVoiceEngine) {
   EXPECT_TRUE(caller_voice_media_transport->is_caller());
   EXPECT_FALSE(callee_voice_media_transport->is_caller());
 
-  // TODO(sukhanov): Propagate media transport to video channel. This test
-  // will fail once media transport is propagated to video channel and it will
-  // serve as a reminder to add a test for video channel propagation.
-  auto caller_video = caller->media_engine()->GetVideoChannel(0);
-  auto callee_video = callee->media_engine()->GetVideoChannel(0);
-  ASSERT_EQ(nullptr, caller_video->media_transport());
-  ASSERT_EQ(nullptr, callee_video->media_transport());
+  // TODO(sukhanov): Propagate media transport to video channel.
+  // This test does NOT set up video channels, because currently it causes
+  // us to create two media transports.
 }
 
 TEST_P(PeerConnectionMediaTest, MediaTransportOnlyForDataChannels) {
@@ -1138,8 +1146,8 @@ TEST_P(PeerConnectionMediaTest, MediaTransportOnlyForDataChannels) {
   // Force SDES.
   config.enable_dtls_srtp = false;
 
-  auto caller = CreatePeerConnectionWithAudioVideo(config);
-  auto callee = CreatePeerConnectionWithAudioVideo(config);
+  auto caller = CreatePeerConnectionWithAudio(config);
+  auto callee = CreatePeerConnectionWithAudio(config);
 
   ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
   ASSERT_TRUE(callee->SetLocalDescription(callee->CreateAnswer()));
@@ -1165,8 +1173,8 @@ TEST_P(PeerConnectionMediaTest, MediaTransportForMediaAndDataChannels) {
   // Force SDES.
   config.enable_dtls_srtp = false;
 
-  auto caller = CreatePeerConnectionWithAudioVideo(config);
-  auto callee = CreatePeerConnectionWithAudioVideo(config);
+  auto caller = CreatePeerConnectionWithAudio(config);
+  auto callee = CreatePeerConnectionWithAudio(config);
 
   ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
   ASSERT_TRUE(callee->SetLocalDescription(callee->CreateAnswer()));
@@ -1187,14 +1195,6 @@ TEST_P(PeerConnectionMediaTest, MediaTransportForMediaAndDataChannels) {
   // Make sure media transport is created with correct is_caller.
   EXPECT_TRUE(caller_voice_media_transport->is_caller());
   EXPECT_FALSE(callee_voice_media_transport->is_caller());
-
-  // TODO(sukhanov): Propagate media transport to video channel. This test
-  // will fail once media transport is propagated to video channel and it will
-  // serve as a reminder to add a test for video channel propagation.
-  auto caller_video = caller->media_engine()->GetVideoChannel(0);
-  auto callee_video = callee->media_engine()->GetVideoChannel(0);
-  ASSERT_EQ(nullptr, caller_video->media_transport());
-  ASSERT_EQ(nullptr, callee_video->media_transport());
 }
 
 TEST_P(PeerConnectionMediaTest, MediaTransportNotPropagatedToVoiceEngine) {

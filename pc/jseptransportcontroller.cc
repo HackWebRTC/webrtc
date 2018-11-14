@@ -762,6 +762,10 @@ bool JsepTransportController::HandleBundledContent(
   // BaseChannel/SctpTransport change the RtpTransport/DtlsTransport first,
   // then destroy the cricket::JsepTransport.
   if (SetTransportForMid(content_info.name, jsep_transport)) {
+    // TODO(bugs.webrtc.org/9719) For media transport this is far from ideal,
+    // because it means that we first create media transport and start
+    // connecting it, and then we destroy it. We will need to address it before
+    // video path is enabled.
     MaybeDestroyJsepTransport(content_info.name);
     return true;
   }
