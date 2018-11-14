@@ -12,8 +12,8 @@ enable_java_templates = true
 # Some non-Chromium builds don't use Chromium's third_party/binutils.
 linux_use_bundled_binutils_override = true
 
-# Variable that can be used to support multiple build scenarios, like having
-# Chromium specific targets in a client project's GN file etc.
+# Don't set this variable to true when building stadalone WebRTC, it is
+# only needed to support both WebRTC standalone and Chromium builds.
 build_with_chromium = false
 
 # Use our own suppressions files.
