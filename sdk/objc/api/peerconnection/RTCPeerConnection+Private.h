@@ -39,8 +39,6 @@ class PeerConnectionDelegateAdapter : public PeerConnectionObserver {
 
   void OnIceConnectionChange(PeerConnectionInterface::IceConnectionState new_state) override;
 
-  void OnConnectionChange(PeerConnectionInterface::PeerConnectionState new_state) override;
-
   void OnIceGatheringChange(PeerConnectionInterface::IceGatheringState new_state) override;
 
   void OnIceCandidate(const IceCandidateInterface *candidate) override;
@@ -87,18 +85,10 @@ class PeerConnectionDelegateAdapter : public PeerConnectionObserver {
 + (webrtc::PeerConnectionInterface::IceConnectionState)nativeIceConnectionStateForState:
         (RTCIceConnectionState)state;
 
-+ (webrtc::PeerConnectionInterface::PeerConnectionState)nativeConnectionStateForState:
-        (RTCPeerConnectionState)state;
-
 + (RTCIceConnectionState)iceConnectionStateForNativeState:
         (webrtc::PeerConnectionInterface::IceConnectionState)nativeState;
 
-+ (RTCPeerConnectionState)connectionStateForNativeState:
-        (webrtc::PeerConnectionInterface::PeerConnectionState)nativeState;
-
 + (NSString *)stringForIceConnectionState:(RTCIceConnectionState)state;
-
-+ (NSString *)stringForConnectionState:(RTCPeerConnectionState)state;
 
 + (webrtc::PeerConnectionInterface::IceGatheringState)nativeIceGatheringStateForState:
         (RTCIceGatheringState)state;

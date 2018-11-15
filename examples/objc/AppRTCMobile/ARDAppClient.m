@@ -405,11 +405,6 @@ static int const kKbpsMultiplier = 1000;
 }
 
 - (void)peerConnection:(RTCPeerConnection *)peerConnection
-    didChangeConnectionState:(RTCPeerConnectionState)newState {
-  RTCLog(@"ICE+DTLS state changed: %ld", (long)newState);
-}
-
-- (void)peerConnection:(RTCPeerConnection *)peerConnection
     didChangeIceGatheringState:(RTCIceGatheringState)newState {
   RTCLog(@"ICE gathering state changed: %ld", (long)newState);
 }
