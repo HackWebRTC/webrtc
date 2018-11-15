@@ -134,5 +134,11 @@ EncodedImageCallback::Result FakeVP8Encoder::OnEncodedImage(
                                    fragments);
 }
 
+VideoEncoder::EncoderInfo FakeVP8Encoder::GetEncoderInfo() const {
+  EncoderInfo info;
+  info.implementation_name = "FakeVp8Encoder";
+  return info;
+}
+
 }  // namespace test
 }  // namespace webrtc

@@ -37,11 +37,11 @@ class FakeVP8Encoder : public FakeEncoder, public EncodedImageCallback {
 
   int32_t Release() override;
 
-  const char* ImplementationName() const override { return "FakeVp8Encoder"; }
-
   Result OnEncodedImage(const EncodedImage& encodedImage,
                         const CodecSpecificInfo* codecSpecificInfo,
                         const RTPFragmentationHeader* fragments) override;
+
+  EncoderInfo GetEncoderInfo() const override;
 
  private:
   void SetupTemporalLayers(const VideoCodec& codec);
