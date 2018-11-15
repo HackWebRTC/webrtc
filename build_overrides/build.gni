@@ -42,7 +42,7 @@ if (host_os == "mac") {
                         [ target_os ],
                         "value")
   assert(_result != 2,
-         "Do not allow building targets with the default" +
+         "Do not allow building targets with the default " +
              "hermetic toolchain if the minimum OS version is not met.")
   use_system_xcode = _result == 0
 }
