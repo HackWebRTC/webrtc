@@ -440,9 +440,25 @@ public class PeerConnectionFactory {
     return new MediaStream(nativeCreateLocalMediaStream(nativeFactory, label));
   }
 
-  public VideoSource createVideoSource(boolean isScreencast) {
+  /**
+   * Create video source with given parameters. If alignTimestamps is false, the caller is
+   * responsible for aligning the frame timestamps to rtc::TimeNanos(). This can be used to achieve
+   * higher accuracy if there is a big delay between frame creation and frames being delivered to
+   * the returned video source. If alignTimestamps is true, timestamps will be aligned to
+   * rtc::TimeNanos() when they arrive to the returned video source.
+   */
+  public VideoSource createVideoSource(boolean isScreencast, boolean alignTimestamps) {
     checkPeerConnectionFactoryExists();
-    return new VideoSource(nativeCreateVideoSource(nativeFactory, isScreencast));
+    return new VideoSource(nativeCreateVideoSource(nativeFactory, isScreencast, alignTimestamps));
+  }
+
+  /**
+   * Same as above with alignTimestamps set to true.
+   *
+   * @see #createVideoSource(boolean, boolean)
+   */
+  public VideoSource createVideoSource(boolean isScreencast) {
+    return createVideoSource(isScreencast, /* alignTimestamps= */ true);
   }
 
   public VideoTrack createVideoTrack(String id, VideoSource source) {
@@ -567,7 +583,8 @@ public class PeerConnectionFactory {
       PeerConnection.RTCConfiguration rtcConfig, MediaConstraints constraints, long nativeObserver,
       SSLCertificateVerifier sslCertificateVerifier);
   private static native long nativeCreateLocalMediaStream(long factory, String label);
-  private static native long nativeCreateVideoSource(long factory, boolean is_screencast);
+  private static native long nativeCreateVideoSource(
+      long factory, boolean is_screencast, boolean alignTimestamps);
   private static native long nativeCreateVideoTrack(
       long factory, String id, long nativeVideoSource);
   private static native long nativeCreateAudioSource(long factory, MediaConstraints constraints);

@@ -473,12 +473,13 @@ static jlong JNI_PeerConnectionFactory_CreateVideoSource(
     JNIEnv* jni,
     const JavaParamRef<jclass>&,
     jlong native_factory,
-    jboolean is_screencast) {
+    jboolean is_screencast,
+    jboolean align_timestamps) {
   OwnedFactoryAndThreads* factory =
       reinterpret_cast<OwnedFactoryAndThreads*>(native_factory);
   return jlongFromPointer(CreateVideoSource(jni, factory->signaling_thread(),
                                             factory->worker_thread(),
-                                            is_screencast));
+                                            is_screencast, align_timestamps));
 }
 
 static jlong JNI_PeerConnectionFactory_CreateVideoTrack(

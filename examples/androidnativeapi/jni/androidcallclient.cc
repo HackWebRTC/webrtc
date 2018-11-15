@@ -100,7 +100,8 @@ void AndroidCallClient::Call(JNIEnv* env,
   remote_sink_ = webrtc::JavaToNativeVideoSink(env, remote_sink.obj());
 
   video_source_ = webrtc::CreateJavaVideoSource(env, signaling_thread_.get(),
-                                                false /* is_screencast */);
+                                                /* is_screencast= */ false,
+                                                /* align_timestamps= */ true);
 
   CreatePeerConnection();
   Connect();

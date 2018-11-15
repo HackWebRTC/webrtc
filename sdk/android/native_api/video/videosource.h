@@ -33,7 +33,8 @@ class JavaVideoTrackSourceInterface : public VideoTrackSourceInterface {
 rtc::scoped_refptr<JavaVideoTrackSourceInterface> CreateJavaVideoSource(
     JNIEnv* env,
     rtc::Thread* signaling_thread,
-    bool is_screencast);
+    bool is_screencast,
+    bool align_timestamps);
 
 }  // namespace webrtc
 

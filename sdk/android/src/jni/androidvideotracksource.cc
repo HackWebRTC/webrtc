@@ -25,10 +25,12 @@ const int kRequiredResolutionAlignment = 2;
 
 AndroidVideoTrackSource::AndroidVideoTrackSource(rtc::Thread* signaling_thread,
                                                  JNIEnv* jni,
-                                                 bool is_screencast)
+                                                 bool is_screencast,
+                                                 bool align_timestamps)
     : AdaptedVideoTrackSource(kRequiredResolutionAlignment),
       signaling_thread_(signaling_thread),
-      is_screencast_(is_screencast) {
+      is_screencast_(is_screencast),
+      align_timestamps_(align_timestamps) {
   RTC_LOG(LS_INFO) << "AndroidVideoTrackSource ctor";
   camera_thread_checker_.DetachFromThread();
 }
@@ -75,7 +77,9 @@ void AndroidVideoTrackSource::OnFrameCaptured(
 
   int64_t camera_time_us = timestamp_ns / rtc::kNumNanosecsPerMicrosec;
   int64_t translated_camera_time_us =
-      timestamp_aligner_.TranslateTimestamp(camera_time_us, rtc::TimeMicros());
+      align_timestamps_ ? timestamp_aligner_.TranslateTimestamp(
+                              camera_time_us, rtc::TimeMicros())
+                        : camera_time_us;
 
   int adapted_width;
   int adapted_height;
