@@ -864,6 +864,8 @@ def CommonChecks(input_api, output_api):
       input_api, output_api, non_third_party_sources))
   results.extend(CheckAddedDepsHaveTargetApprovals(input_api, output_api))
   results.extend(CheckApiDepsFileIsUpToDate(input_api, output_api))
+  results.extend(CheckAbslMemoryInclude(
+      input_api, output_api, non_third_party_sources))
   return results
 
 
@@ -920,6 +922,30 @@ def CheckApiDepsFileIsUpToDate(input_api, output_api):
 
   return results
 
+def CheckAbslMemoryInclude(input_api, output_api, source_file_filter):
+  pattern = input_api.re.compile(
+      r'^#include\s*"absl/memory/memory.h"', input_api.re.MULTILINE)
+  file_filter = lambda f: (f.LocalPath().endswith(('.cc', '.h'))
+                           and source_file_filter(f))
+
+  files = []
+  for f in input_api.AffectedFiles(
+      include_deletes=False, file_filter=file_filter):
+    contents = input_api.ReadFile(f)
+    if pattern.search(contents):
+      continue
+    for _, line in f.ChangedContents():
+      if 'absl::make_unique' in line:
+        files.append(f)
+        break
+
+  if len(files):
+    return [output_api.PresubmitError(
+        'Please include "absl/memory/memory.h" header for'
+        ' absl::make_unique.\nThis header may or may not be included'
+        ' transitively depends on the C++ standard version.',
+        files)]
+  return []
 
 def CheckChangeOnUpload(input_api, output_api):
   results = []
