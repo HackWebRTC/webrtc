@@ -56,13 +56,6 @@ class ReceiveStatistics : public ReceiveStatisticsProvider,
 
   static ReceiveStatistics* Create(Clock* clock);
 
-  // Updates the receive statistics with this packet.
-  // TODO(bugs.webrtc.org/8016): Deprecated. Delete as soon as
-  // downstream code is updated to use OnRtpPacket.
-  RTC_DEPRECATED
-  virtual void IncomingPacket(const RTPHeader& rtp_header,
-                              size_t packet_length) = 0;
-
   // Increment counter for number of FEC packets received.
   virtual void FecPacketReceived(const RtpPacketReceived& packet) = 0;
 

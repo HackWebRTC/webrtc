@@ -27,6 +27,7 @@
 #define IP_PACKET_SIZE 1500  // we assume ethernet
 
 namespace webrtc {
+class RtpPacket;
 namespace rtcp {
 class TransportFeedback;
 }
@@ -449,13 +450,8 @@ struct RtpPacketCounter {
     packets -= other.packets;
   }
 
-  void AddPacket(size_t packet_length, const RTPHeader& header) {
-    ++packets;
-    header_bytes += header.headerLength;
-    padding_bytes += header.paddingLength;
-    payload_bytes +=
-        packet_length - (header.headerLength + header.paddingLength);
-  }
+  // Not inlined, since use of RtpPacket would result in circular includes.
+  void AddPacket(const RtpPacket& packet);
 
   size_t TotalBytes() const {
     return header_bytes + payload_bytes + padding_bytes;

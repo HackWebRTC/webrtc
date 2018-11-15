@@ -9,6 +9,7 @@
  */
 
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/rtp_rtcp/source/rtp_packet.h"
 
 #include <ctype.h>
 #include <string.h>
@@ -128,6 +129,13 @@ bool PacketFeedback::operator==(const PacketFeedback& rhs) const {
          send_time_ms == rhs.send_time_ms &&
          sequence_number == rhs.sequence_number &&
          payload_size == rhs.payload_size && pacing_info == rhs.pacing_info;
+}
+
+void RtpPacketCounter::AddPacket(const RtpPacket& packet) {
+  ++packets;
+  header_bytes += packet.headers_size();
+  padding_bytes += packet.padding_size();
+  payload_bytes += packet.payload_size();
 }
 
 }  // namespace webrtc

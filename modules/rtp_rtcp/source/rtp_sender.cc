@@ -95,14 +95,6 @@ const char* FrameTypeToString(FrameType frame_type) {
   }
   return "";
 }
-
-void CountPacket(RtpPacketCounter* counter, const RtpPacketToSend& packet) {
-  ++counter->packets;
-  counter->header_bytes += packet.headers_size();
-  counter->padding_bytes += packet.padding_size();
-  counter->payload_bytes += packet.payload_size();
-}
-
 }  // namespace
 
 RTPSender::RTPSender(
@@ -883,13 +875,13 @@ void RTPSender::UpdateRtpStats(const RtpPacketToSend& packet,
     counters->first_packet_time_ms = now_ms;
 
   if (IsFecPacket(packet))
-    CountPacket(&counters->fec, packet);
+    counters->fec.AddPacket(packet);
 
   if (is_retransmit) {
-    CountPacket(&counters->retransmitted, packet);
+    counters->retransmitted.AddPacket(packet);
     nack_bitrate_sent_.Update(packet.size(), now_ms);
   }
-  CountPacket(&counters->transmitted, packet);
+  counters->transmitted.AddPacket(packet);
 
   if (rtp_stats_callback_)
     rtp_stats_callback_->DataCountersUpdated(*counters, packet.Ssrc());
