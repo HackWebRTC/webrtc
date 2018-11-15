@@ -136,7 +136,7 @@ class VideoCodingModuleImpl : public VideoCodingModule {
 
   int32_t AddVideoFrame(const VideoFrame& videoFrame,
                         const CodecSpecificInfo* codecSpecificInfo) override {
-    return sender_.AddVideoFrame(videoFrame, codecSpecificInfo);
+    return sender_.AddVideoFrame(videoFrame, codecSpecificInfo, absl::nullopt);
   }
 
   int32_t IntraFrameRequest(size_t stream_index) override {

@@ -902,7 +902,7 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
   }
   encoder_info_ = info;
 
-  video_sender_.AddVideoFrame(out_frame, nullptr);
+  video_sender_.AddVideoFrame(out_frame, nullptr, encoder_info_);
 }
 
 void VideoStreamEncoder::SendKeyFrame() {

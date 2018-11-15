@@ -245,8 +245,10 @@ void VideoSender::SetEncoderParameters(EncoderParameters params,
 }
 
 // Add one raw video frame to the encoder, blocking.
-int32_t VideoSender::AddVideoFrame(const VideoFrame& videoFrame,
-                                   const CodecSpecificInfo* codecSpecificInfo) {
+int32_t VideoSender::AddVideoFrame(
+    const VideoFrame& videoFrame,
+    const CodecSpecificInfo* codecSpecificInfo,
+    absl::optional<VideoEncoder::EncoderInfo> encoder_info) {
   EncoderParameters encoder_params;
   std::vector<FrameType> next_frame_types;
   bool encoder_has_internal_source = false;
@@ -260,14 +262,15 @@ int32_t VideoSender::AddVideoFrame(const VideoFrame& videoFrame,
   if (_encoder == nullptr)
     return VCM_UNINITIALIZED;
   SetEncoderParameters(encoder_params, encoder_has_internal_source);
-
-  const VideoEncoder::EncoderInfo encoder_info = _encoder->GetEncoderInfo();
+  if (!encoder_info) {
+    encoder_info = _encoder->GetEncoderInfo();
+  }
 
   // Frame dropping is enabled iff frame dropping has been requested, and
   // frame dropping is not force-disabled, and rate controller is not trusted.
-  const bool frame_dropping_enabled = frame_dropper_requested_ &&
-                                      !force_disable_frame_dropper_ &&
-                                      !encoder_info.has_trusted_rate_controller;
+  const bool frame_dropping_enabled =
+      frame_dropper_requested_ && !force_disable_frame_dropper_ &&
+      !encoder_info->has_trusted_rate_controller;
   _mediaOpt.EnableFrameDropper(frame_dropping_enabled);
 
   if (_mediaOpt.DropFrame()) {
@@ -295,7 +298,7 @@ int32_t VideoSender::AddVideoFrame(const VideoFrame& videoFrame,
   const bool is_buffer_type_supported =
       buffer_type == VideoFrameBuffer::Type::kI420 ||
       (buffer_type == VideoFrameBuffer::Type::kNative &&
-       encoder_info.supports_native_handle);
+       encoder_info->supports_native_handle);
   if (!is_buffer_type_supported) {
     // This module only supports software encoding.
     // TODO(pbos): Offload conversion from the encoder thread.
