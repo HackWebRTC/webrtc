@@ -932,10 +932,10 @@ class PeerConnection : public PeerConnectionInternal,
   // from a session description, and the mapping from m= sections to transports
   // changed (as a result of BUNDLE negotiation, or m= sections being
   // rejected).
-  bool OnTransportChanged(
-      const std::string& mid,
-      RtpTransportInternal* rtp_transport,
-      cricket::DtlsTransportInternal* dtls_transport) override;
+  bool OnTransportChanged(const std::string& mid,
+                          RtpTransportInternal* rtp_transport,
+                          cricket::DtlsTransportInternal* dtls_transport,
+                          MediaTransportInterface* media_transport) override;
 
   // Returns the observer. Will crash on CHECK if the observer is removed.
   PeerConnectionObserver* Observer() const;

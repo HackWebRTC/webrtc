@@ -783,12 +783,12 @@ bool JsepTransportController::SetTransportForMid(
   mid_to_transport_[mid] = jsep_transport;
   return config_.transport_observer->OnTransportChanged(
       mid, jsep_transport->rtp_transport(),
-      jsep_transport->rtp_dtls_transport());
+      jsep_transport->rtp_dtls_transport(), jsep_transport->media_transport());
 }
 
 void JsepTransportController::RemoveTransportForMid(const std::string& mid) {
-  bool ret =
-      config_.transport_observer->OnTransportChanged(mid, nullptr, nullptr);
+  bool ret = config_.transport_observer->OnTransportChanged(mid, nullptr,
+                                                            nullptr, nullptr);
   // Calling OnTransportChanged with nullptr should always succeed, since it is
   // only expected to fail when adding media to a transport (not removing).
   RTC_DCHECK(ret);
@@ -1029,6 +1029,7 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
       // TODO(sukhanov): Proper error handling.
       RTC_CHECK(media_transport_result.ok());
 
+      RTC_DCHECK(media_transport == nullptr);
       media_transport = std::move(media_transport_result.value());
     }
   }
@@ -1077,12 +1078,19 @@ void JsepTransportController::MaybeDestroyJsepTransport(
       return;
     }
   }
+
   jsep_transports_by_name_.erase(mid);
   UpdateAggregateStates_n();
 }
 
 void JsepTransportController::DestroyAllJsepTransports_n() {
   RTC_DCHECK(network_thread_->IsCurrent());
+
+  for (const auto& jsep_transport : jsep_transports_by_name_) {
+    config_.transport_observer->OnTransportChanged(jsep_transport.first,
+                                                   nullptr, nullptr, nullptr);
+  }
+
   jsep_transports_by_name_.clear();
 }
 

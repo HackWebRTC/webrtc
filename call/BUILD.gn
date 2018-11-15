@@ -332,6 +332,7 @@ if (rtc_include_tests) {
       ":simulated_network",
       "..:webrtc_common",
       "../api:array_view",
+      "../api:fake_media_transport",
       "../api:libjingle_peerconnection_api",
       "../api:mock_audio_mixer",
       "../api/audio_codecs:builtin_audio_decoder_factory",

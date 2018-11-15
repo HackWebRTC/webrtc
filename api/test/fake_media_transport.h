@@ -14,6 +14,7 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "absl/memory/memory.h"
 #include "api/media_transport_interface.h"
@@ -78,9 +79,29 @@ class FakeMediaTransport : public MediaTransportInterface {
     }
   }
 
+  void AddTargetTransferRateObserver(
+      webrtc::TargetTransferRateObserver* observer) override {
+    RTC_CHECK(std::find(target_rate_observers_.begin(),
+                        target_rate_observers_.end(),
+                        observer) == target_rate_observers_.end());
+    target_rate_observers_.push_back(observer);
+  }
+
+  void RemoveTargetTransferRateObserver(
+      webrtc::TargetTransferRateObserver* observer) override {
+    auto it = std::find(target_rate_observers_.begin(),
+                        target_rate_observers_.end(), observer);
+    if (it != target_rate_observers_.end()) {
+      target_rate_observers_.erase(it);
+    }
+  }
+
+  int target_rate_observers_size() { return target_rate_observers_.size(); }
+
  private:
   const MediaTransportSettings settings_;
   MediaTransportStateCallback* state_callback_;
+  std::vector<webrtc::TargetTransferRateObserver*> target_rate_observers_;
 };
 
 // Fake media transport factory creates fake media transport.

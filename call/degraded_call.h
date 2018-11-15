@@ -91,6 +91,7 @@ class DegradedCall : public Call, private Transport, private PacketReceiver {
   Clock* const clock_;
   const std::unique_ptr<Call> call_;
 
+  void MediaTransportChange(MediaTransportInterface* media_transport) override;
   const absl::optional<BuiltInNetworkBehaviorConfig> send_config_;
   const std::unique_ptr<ProcessThread> send_process_thread_;
   SimulatedNetwork* send_simulated_network_;

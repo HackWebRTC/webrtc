@@ -215,4 +215,10 @@ PacketReceiver::DeliveryStatus DegradedCall::DeliverPacket(
   return status;
 }
 
+void DegradedCall::MediaTransportChange(
+    MediaTransportInterface* media_transport) {
+  // TODO(bugs.webrtc.org/9719) We should add support for media transport here
+  // at some point.
+}
+
 }  // namespace webrtc

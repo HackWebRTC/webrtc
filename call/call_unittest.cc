@@ -15,6 +15,7 @@
 
 #include "absl/memory/memory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "api/test/fake_media_transport.h"
 #include "api/test/mock_audio_mixer.h"
 #include "audio/audio_receive_stream.h"
 #include "audio/audio_send_stream.h"

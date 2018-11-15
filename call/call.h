@@ -58,6 +58,11 @@ class Call {
 
   virtual AudioSendStream* CreateAudioSendStream(
       const AudioSendStream::Config& config) = 0;
+
+  // Gets called when media transport is created or removed.
+  virtual void MediaTransportChange(
+      MediaTransportInterface* media_transport_interface) = 0;
+
   virtual void DestroyAudioSendStream(AudioSendStream* send_stream) = 0;
 
   virtual AudioReceiveStream* CreateAudioReceiveStream(

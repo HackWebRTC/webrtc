@@ -11,6 +11,7 @@
 #include <map>
 #include <memory>
 
+#include "api/media_transport_interface.h"
 #include "api/test/fake_media_transport.h"
 #include "p2p/base/fakedtlstransport.h"
 #include "p2p/base/fakeicetransport.h"
@@ -298,12 +299,13 @@ class JsepTransportControllerTest : public JsepTransportController::Observer,
   }
 
   // JsepTransportController::Observer overrides.
-  bool OnTransportChanged(
-      const std::string& mid,
-      RtpTransportInternal* rtp_transport,
-      cricket::DtlsTransportInternal* dtls_transport) override {
+  bool OnTransportChanged(const std::string& mid,
+                          RtpTransportInternal* rtp_transport,
+                          cricket::DtlsTransportInternal* dtls_transport,
+                          MediaTransportInterface* media_transport) override {
     changed_rtp_transport_by_mid_[mid] = rtp_transport;
     changed_dtls_transport_by_mid_[mid] = dtls_transport;
+    changed_media_transport_by_mid_[mid] = media_transport;
     return true;
   }
 
@@ -328,7 +330,6 @@ class JsepTransportControllerTest : public JsepTransportController::Observer,
 
   // |network_thread_| should be destroyed after |transport_controller_|
   std::unique_ptr<rtc::Thread> network_thread_;
-  std::unique_ptr<JsepTransportController> transport_controller_;
   std::unique_ptr<FakeTransportFactory> fake_transport_factory_;
   rtc::Thread* const signaling_thread_ = nullptr;
   bool signaled_on_non_signaling_thread_ = false;
@@ -337,6 +338,12 @@ class JsepTransportControllerTest : public JsepTransportController::Observer,
   std::map<std::string, RtpTransportInternal*> changed_rtp_transport_by_mid_;
   std::map<std::string, cricket::DtlsTransportInternal*>
       changed_dtls_transport_by_mid_;
+  std::map<std::string, MediaTransportInterface*>
+      changed_media_transport_by_mid_;
+
+  // Transport controller needs to be destroyed first, because it may issue
+  // callbacks that modify the changed_*_by_mid in the destructor.
+  std::unique_ptr<JsepTransportController> transport_controller_;
 };
 
 TEST_F(JsepTransportControllerTest, GetRtpTransport) {
