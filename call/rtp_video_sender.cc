@@ -86,8 +86,7 @@ std::vector<std::unique_ptr<RtpRtcp>> CreateRtpRtcpModules(
   configuration.require_frame_encryption =
       crypto_options.sframe.require_frame_encryption;
   configuration.extmap_allow_mixed = rtp_config.extmap_allow_mixed;
-  configuration.rtcp_interval_config.video_interval_ms =
-      rtcp_report_interval_ms;
+  configuration.rtcp_report_interval_ms = rtcp_report_interval_ms;
 
   std::vector<std::unique_ptr<RtpRtcp>> modules;
   const std::vector<uint32_t>& flexfec_protected_ssrcs =

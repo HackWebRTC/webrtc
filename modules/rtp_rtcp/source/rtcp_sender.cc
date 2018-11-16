@@ -10,7 +10,8 @@
 
 #include "modules/rtp_rtcp/source/rtcp_sender.h"
 
-#include <string.h>  // memcpy
+#include <string.h>   // memcpy
+#include <algorithm>  // std::min
 
 #include <utility>
 
@@ -118,14 +119,14 @@ RTCPSender::RTCPSender(
     RtcpPacketTypeCounterObserver* packet_type_counter_observer,
     RtcEventLog* event_log,
     Transport* outgoing_transport,
-    RtcpIntervalConfig interval_config)
+    int report_interval_ms)
     : audio_(audio),
       clock_(clock),
       random_(clock_->TimeInMicroseconds()),
       method_(RtcpMode::kOff),
       event_log_(event_log),
       transport_(outgoing_transport),
-      interval_config_(interval_config),
+      report_interval_ms_(report_interval_ms),
       sending_(false),
       next_time_to_send_rtcp_(0),
       timestamp_offset_(0),
@@ -180,9 +181,8 @@ void RTCPSender::SetRTCPStatus(RtcpMode new_method) {
 
   if (method_ == RtcpMode::kOff && new_method != RtcpMode::kOff) {
     // When switching on, reschedule the next packet
-    int64_t interval_ms = audio_ ? interval_config_.audio_interval_ms
-                                 : interval_config_.video_interval_ms;
-    next_time_to_send_rtcp_ = clock_->TimeInMilliseconds() + (interval_ms / 2);
+    next_time_to_send_rtcp_ =
+        clock_->TimeInMilliseconds() + (report_interval_ms_ / 2);
   }
   method_ = new_method;
 }
@@ -765,28 +765,24 @@ void RTCPSender::PrepareReport(const FeedbackState& feedback_state) {
     }
 
     // generate next time to send an RTCP report
-    uint32_t minIntervalMs =
-        rtc::dchecked_cast<uint32_t>(interval_config_.audio_interval_ms);
+    int min_interval_ms = report_interval_ms_;
 
-    if (!audio_) {
-      if (sending_) {
-        // Calculate bandwidth for video; 360 / send bandwidth in kbit/s.
-        uint32_t send_bitrate_kbit = feedback_state.send_bitrate / 1000;
-        if (send_bitrate_kbit != 0)
-          minIntervalMs = 360000 / send_bitrate_kbit;
-      }
-      if (minIntervalMs >
-          rtc::dchecked_cast<uint32_t>(interval_config_.video_interval_ms)) {
-        minIntervalMs =
-            rtc::dchecked_cast<uint32_t>(interval_config_.video_interval_ms);
+    if (!audio_ && sending_) {
+      // Calculate bandwidth for video; 360 / send bandwidth in kbit/s.
+      int send_bitrate_kbit = feedback_state.send_bitrate / 1000;
+      if (send_bitrate_kbit != 0) {
+        min_interval_ms = 360000 / send_bitrate_kbit;
+        min_interval_ms = std::min(min_interval_ms, report_interval_ms_);
       }
     }
 
     // The interval between RTCP packets is varied randomly over the
     // range [1/2,3/2] times the calculated interval.
-    uint32_t timeToNext =
-        random_.Rand(minIntervalMs * 1 / 2, minIntervalMs * 3 / 2);
-    next_time_to_send_rtcp_ = clock_->TimeInMilliseconds() + timeToNext;
+    int time_to_next =
+        random_.Rand(min_interval_ms * 1 / 2, min_interval_ms * 3 / 2);
+
+    RTC_DCHECK_GT(time_to_next, 0);
+    next_time_to_send_rtcp_ = clock_->TimeInMilliseconds() + time_to_next;
 
     // RtcpSender expected to be used for sending either just sender reports
     // or just receiver reports.
@@ -964,14 +960,6 @@ bool RTCPSender::SendFeedbackPacket(const rtcp::TransportFeedback& packet) {
     }
   };
   return packet.Build(max_packet_size, callback) && !send_failure;
-}
-
-int64_t RTCPSender::RtcpAudioReportInverval() const {
-  return interval_config_.audio_interval_ms;
-}
-
-int64_t RTCPSender::RtcpVideoReportInverval() const {
-  return interval_config_.video_interval_ms;
 }
 
 }  // namespace webrtc

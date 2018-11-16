@@ -93,7 +93,8 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
     RateLimiter* retransmission_rate_limiter = nullptr;
     OverheadObserver* overhead_observer = nullptr;
     RtpKeepAliveConfig keepalive_config;
-    RtcpIntervalConfig rtcp_interval_config;
+
+    int rtcp_report_interval_ms = 0;
 
     // Update network2 instead of pacer_exit field of video timing extension.
     bool populate_network2_timestamp = false;

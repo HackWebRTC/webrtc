@@ -742,8 +742,7 @@ ChannelSend::ChannelSend(rtc::TaskQueue* encoder_queue,
   configuration.retransmission_rate_limiter =
       retransmission_rate_limiter_.get();
   configuration.extmap_allow_mixed = extmap_allow_mixed;
-  configuration.rtcp_interval_config.audio_interval_ms =
-      rtcp_report_interval_ms;
+  configuration.rtcp_report_interval_ms = rtcp_report_interval_ms;
 
   _rtpRtcpModule.reset(RtpRtcp::CreateRtpRtcp(configuration));
   _rtpRtcpModule->SetSendingMediaStatus(false);

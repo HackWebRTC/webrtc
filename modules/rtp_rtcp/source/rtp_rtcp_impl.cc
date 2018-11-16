@@ -33,6 +33,8 @@ const int64_t kRtpRtcpMaxIdleTimeProcessMs = 5;
 const int64_t kRtpRtcpRttProcessTimeMs = 1000;
 const int64_t kRtpRtcpBitrateProcessTimeMs = 10;
 const int64_t kDefaultExpectedRetransmissionTimeMs = 125;
+constexpr int32_t kDefaultVideoReportInterval = 1000;
+constexpr int32_t kDefaultAudioReportInterval = 5000;
 }  // namespace
 
 RtpRtcp::Configuration::Configuration() = default;
@@ -64,7 +66,10 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
                    configuration.rtcp_packet_type_counter_observer,
                    configuration.event_log,
                    configuration.outgoing_transport,
-                   configuration.rtcp_interval_config),
+                   configuration.rtcp_report_interval_ms > 0
+                       ? configuration.rtcp_report_interval_ms
+                       : (configuration.audio ? kDefaultAudioReportInterval
+                                              : kDefaultVideoReportInterval)),
       rtcp_receiver_(configuration.clock,
                      configuration.receiver_only,
                      configuration.rtcp_packet_type_counter_observer,
@@ -72,6 +77,10 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
                      configuration.intra_frame_callback,
                      configuration.transport_feedback_callback,
                      configuration.bitrate_allocation_observer,
+                     configuration.rtcp_report_interval_ms > 0
+                         ? configuration.rtcp_report_interval_ms
+                         : (configuration.audio ? kDefaultAudioReportInterval
+                                                : kDefaultVideoReportInterval),
                      this),
       clock_(configuration.clock),
       audio_(configuration.audio),
@@ -179,10 +188,9 @@ void ModuleRtpRtcpImpl::Process() {
 
     // Verify receiver reports are delivered and the reported sequence number
     // is increasing.
-    int64_t rtcp_interval = RtcpReportInterval();
-    if (rtcp_receiver_.RtcpRrTimeout(rtcp_interval)) {
+    if (rtcp_receiver_.RtcpRrTimeout()) {
       RTC_LOG_F(LS_WARNING) << "Timeout: No RTCP RR received.";
-    } else if (rtcp_receiver_.RtcpRrSequenceNumberTimeout(rtcp_interval)) {
+    } else if (rtcp_receiver_.RtcpRrSequenceNumberTimeout()) {
       RTC_LOG_F(LS_WARNING) << "Timeout: No increase in RTCP RR extended "
                                "highest sequence number.";
     }
@@ -857,13 +865,6 @@ bool ModuleRtpRtcpImpl::LastReceivedNTP(
 // Called from RTCPsender.
 std::vector<rtcp::TmmbItem> ModuleRtpRtcpImpl::BoundingSet(bool* tmmbr_owner) {
   return rtcp_receiver_.BoundingSet(tmmbr_owner);
-}
-
-int64_t ModuleRtpRtcpImpl::RtcpReportInterval() {
-  if (audio_)
-    return rtcp_sender_.RtcpAudioReportInverval();
-  else
-    return rtcp_sender_.RtcpVideoReportInverval();
 }
 
 void ModuleRtpRtcpImpl::SetRtcpReceiverSsrcs(uint32_t main_ssrc) {

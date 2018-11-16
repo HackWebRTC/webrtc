@@ -69,10 +69,14 @@ class VideoSendStreamPeer {
 };
 }  // namespace test
 
+namespace {
+constexpr int64_t kRtcpIntervalMs = 1000;
+
 enum VideoFormat {
   kGeneric,
   kVP8,
 };
+}  // namespace
 
 void ExpectEqualFramesVector(const std::vector<VideoFrame>& frames1,
                              const std::vector<VideoFrame>& frames2);
@@ -885,7 +889,7 @@ void VideoSendStreamTest::TestNackRetransmission(
 
         RTCPSender rtcp_sender(false, Clock::GetRealTimeClock(), nullptr,
                                nullptr, nullptr, transport_adapter_.get(),
-                               RtcpIntervalConfig{});
+                               kRtcpIntervalMs);
 
         rtcp_sender.SetRTCPStatus(RtcpMode::kReducedSize);
         rtcp_sender.SetRemoteSSRC(kVideoSendSsrcs[0]);
@@ -1099,7 +1103,7 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
             loss_ratio);    // Loss percent.
         RTCPSender rtcp_sender(false, Clock::GetRealTimeClock(),
                                &lossy_receive_stats, nullptr, nullptr,
-                               transport_adapter_.get(), RtcpIntervalConfig{});
+                               transport_adapter_.get(), kRtcpIntervalMs);
 
         rtcp_sender.SetRTCPStatus(RtcpMode::kReducedSize);
         rtcp_sender.SetRemoteSSRC(kVideoSendSsrcs[0]);
@@ -1334,7 +1338,7 @@ TEST_P(VideoSendStreamTest, SuspendBelowMinBitrate) {
       FakeReceiveStatistics receive_stats(kVideoSendSsrcs[0],
                                           last_sequence_number_, rtp_count_, 0);
       RTCPSender rtcp_sender(false, clock_, &receive_stats, nullptr, nullptr,
-                             transport_adapter_.get(), RtcpIntervalConfig{});
+                             transport_adapter_.get(), kRtcpIntervalMs);
 
       rtcp_sender.SetRTCPStatus(RtcpMode::kReducedSize);
       rtcp_sender.SetRemoteSSRC(kVideoSendSsrcs[0]);

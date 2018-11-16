@@ -131,6 +131,7 @@ RTCPReceiver::RTCPReceiver(
     RtcpIntraFrameObserver* rtcp_intra_frame_observer,
     TransportFeedbackObserver* transport_feedback_observer,
     VideoBitrateAllocationObserver* bitrate_allocation_observer,
+    int report_interval_ms,
     ModuleRtpRtcp* owner)
     : clock_(clock),
       receiver_only_(receiver_only),
@@ -139,6 +140,7 @@ RTCPReceiver::RTCPReceiver(
       rtcp_intra_frame_observer_(rtcp_intra_frame_observer),
       transport_feedback_observer_(transport_feedback_observer),
       bitrate_allocation_observer_(bitrate_allocation_observer),
+      report_interval_ms_(report_interval_ms),
       main_ssrc_(0),
       remote_ssrc_(0),
       remote_sender_rtp_time_(0),
@@ -561,12 +563,12 @@ RTCPReceiver::TmmbrInformation* RTCPReceiver::GetTmmbrInformation(
   return &it->second;
 }
 
-bool RTCPReceiver::RtcpRrTimeout(int64_t rtcp_interval_ms) {
+bool RTCPReceiver::RtcpRrTimeout() {
   rtc::CritScope lock(&rtcp_receiver_lock_);
   if (last_received_rb_ms_ == 0)
     return false;
 
-  int64_t time_out_ms = kRrTimeoutIntervals * rtcp_interval_ms;
+  int64_t time_out_ms = kRrTimeoutIntervals * report_interval_ms_;
   if (clock_->TimeInMilliseconds() > last_received_rb_ms_ + time_out_ms) {
     // Reset the timer to only trigger one log.
     last_received_rb_ms_ = 0;
@@ -575,12 +577,12 @@ bool RTCPReceiver::RtcpRrTimeout(int64_t rtcp_interval_ms) {
   return false;
 }
 
-bool RTCPReceiver::RtcpRrSequenceNumberTimeout(int64_t rtcp_interval_ms) {
+bool RTCPReceiver::RtcpRrSequenceNumberTimeout() {
   rtc::CritScope lock(&rtcp_receiver_lock_);
   if (last_increased_sequence_number_ms_ == 0)
     return false;
 
-  int64_t time_out_ms = kRrTimeoutIntervals * rtcp_interval_ms;
+  int64_t time_out_ms = kRrTimeoutIntervals * report_interval_ms_;
   if (clock_->TimeInMilliseconds() >
       last_increased_sequence_number_ms_ + time_out_ms) {
     // Reset the timer to only trigger one log.

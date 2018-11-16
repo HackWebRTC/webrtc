@@ -124,7 +124,7 @@ class RtpRtcpModule : public RtcpPacketTypeCounterObserver {
   std::unique_ptr<ModuleRtpRtcpImpl> impl_;
   uint32_t remote_ssrc_;
   RtpKeepAliveConfig keepalive_config_;
-  RtcpIntervalConfig rtcp_interval_config_;
+  int rtcp_report_interval_ms_ = 0;
 
   void SetRemoteSsrc(uint32_t ssrc) {
     remote_ssrc_ = ssrc;
@@ -159,8 +159,8 @@ class RtpRtcpModule : public RtcpPacketTypeCounterObserver {
     CreateModuleImpl();
     transport_.SetKeepalivePayloadType(config.payload_type);
   }
-  void SetRtcpIntervalConfigAndReset(const RtcpIntervalConfig& config) {
-    rtcp_interval_config_ = config;
+  void SetRtcpReportIntervalAndReset(int rtcp_report_interval_ms) {
+    rtcp_report_interval_ms_ = rtcp_report_interval_ms;
     CreateModuleImpl();
   }
 
@@ -174,7 +174,7 @@ class RtpRtcpModule : public RtcpPacketTypeCounterObserver {
     config.rtcp_packet_type_counter_observer = this;
     config.rtt_stats = &rtt_stats_;
     config.keepalive_config = keepalive_config_;
-    config.rtcp_interval_config = rtcp_interval_config_;
+    config.rtcp_report_interval_ms = rtcp_report_interval_ms_;
 
     impl_.reset(new ModuleRtpRtcpImpl(config));
     impl_->SetRTCPStatus(RtcpMode::kCompound);
@@ -643,11 +643,8 @@ TEST_F(RtpRtcpImplTest, SendsKeepaliveAfterTimout) {
 TEST_F(RtpRtcpImplTest, ConfigurableRtcpReportInterval) {
   const int kVideoReportInterval = 3000;
 
-  RtcpIntervalConfig config;
-  config.video_interval_ms = kVideoReportInterval;
-
   // Recreate sender impl with new configuration, and redo setup.
-  sender_.SetRtcpIntervalConfigAndReset(config);
+  sender_.SetRtcpReportIntervalAndReset(kVideoReportInterval);
   SetUp();
 
   SendFrame(&sender_, kBaseLayerTid);
