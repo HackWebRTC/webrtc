@@ -494,28 +494,29 @@ class FakeDataMediaChannel : public RtpHelper<DataMediaChannel> {
   int max_bps_;
 };
 
-class FakeVoiceEngine {
+class FakeVoiceEngine : public VoiceEngineInterface {
  public:
   FakeVoiceEngine();
-  RtpCapabilities GetCapabilities() const;
-  void Init();
-  rtc::scoped_refptr<webrtc::AudioState> GetAudioState() const;
+  RtpCapabilities GetCapabilities() const override;
+  void Init() override;
+  rtc::scoped_refptr<webrtc::AudioState> GetAudioState() const override;
 
-  VoiceMediaChannel* CreateChannel(webrtc::Call* call,
-                                   const MediaConfig& config,
-                                   const AudioOptions& options,
-                                   const webrtc::CryptoOptions& crypto_options);
+  VoiceMediaChannel* CreateMediaChannel(
+      webrtc::Call* call,
+      const MediaConfig& config,
+      const AudioOptions& options,
+      const webrtc::CryptoOptions& crypto_options) override;
   FakeVoiceMediaChannel* GetChannel(size_t index);
   void UnregisterChannel(VoiceMediaChannel* channel);
 
   // TODO(ossu): For proper testing, These should either individually settable
   //             or the voice engine should reference mockable factories.
-  const std::vector<AudioCodec>& send_codecs() const;
-  const std::vector<AudioCodec>& recv_codecs() const;
+  const std::vector<AudioCodec>& send_codecs() const override;
+  const std::vector<AudioCodec>& recv_codecs() const override;
   void SetCodecs(const std::vector<AudioCodec>& codecs);
   int GetInputLevel();
-  bool StartAecDump(rtc::PlatformFile file, int64_t max_size_bytes);
-  void StopAecDump();
+  bool StartAecDump(rtc::PlatformFile file, int64_t max_size_bytes) override;
+  void StopAecDump() override;
   bool StartRtcEventLog(rtc::PlatformFile file, int64_t max_size_bytes);
   void StopRtcEventLog();
 
@@ -527,18 +528,19 @@ class FakeVoiceEngine {
   friend class FakeMediaEngine;
 };
 
-class FakeVideoEngine {
+class FakeVideoEngine : public VideoEngineInterface {
  public:
   FakeVideoEngine();
-  RtpCapabilities GetCapabilities() const;
+  RtpCapabilities GetCapabilities() const override;
   bool SetOptions(const VideoOptions& options);
-  VideoMediaChannel* CreateChannel(webrtc::Call* call,
-                                   const MediaConfig& config,
-                                   const VideoOptions& options,
-                                   const webrtc::CryptoOptions& crypto_options);
+  VideoMediaChannel* CreateMediaChannel(
+      webrtc::Call* call,
+      const MediaConfig& config,
+      const VideoOptions& options,
+      const webrtc::CryptoOptions& crypto_options) override;
   FakeVideoMediaChannel* GetChannel(size_t index);
   void UnregisterChannel(VideoMediaChannel* channel);
-  std::vector<VideoCodec> codecs() const;
+  std::vector<VideoCodec> codecs() const override;
   void SetCodecs(const std::vector<VideoCodec> codecs);
   bool SetCapture(bool capture);
 

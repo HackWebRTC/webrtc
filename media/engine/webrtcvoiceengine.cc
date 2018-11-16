@@ -298,7 +298,7 @@ rtc::scoped_refptr<webrtc::AudioState> WebRtcVoiceEngine::GetAudioState()
   return audio_state_;
 }
 
-VoiceMediaChannel* WebRtcVoiceEngine::CreateChannel(
+VoiceMediaChannel* WebRtcVoiceEngine::CreateMediaChannel(
     webrtc::Call* call,
     const MediaConfig& config,
     const AudioOptions& options,

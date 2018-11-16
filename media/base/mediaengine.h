@@ -49,6 +49,58 @@ struct RtpCapabilities {
   std::vector<webrtc::RtpExtension> header_extensions;
 };
 
+class VoiceEngineInterface {
+ public:
+  VoiceEngineInterface() = default;
+  virtual ~VoiceEngineInterface() = default;
+  RTC_DISALLOW_COPY_AND_ASSIGN(VoiceEngineInterface);
+
+  // Initialization
+  // Starts the engine.
+  virtual void Init() = 0;
+
+  // TODO(solenberg): Remove once VoE API refactoring is done.
+  virtual rtc::scoped_refptr<webrtc::AudioState> GetAudioState() const = 0;
+
+  // MediaChannel creation
+  // Creates a voice media channel. Returns NULL on failure.
+  virtual VoiceMediaChannel* CreateMediaChannel(
+      webrtc::Call* call,
+      const MediaConfig& config,
+      const AudioOptions& options,
+      const webrtc::CryptoOptions& crypto_options) = 0;
+
+  virtual const std::vector<AudioCodec>& send_codecs() const = 0;
+  virtual const std::vector<AudioCodec>& recv_codecs() const = 0;
+  virtual RtpCapabilities GetCapabilities() const = 0;
+
+  // Starts AEC dump using existing file, a maximum file size in bytes can be
+  // specified. Logging is stopped just before the size limit is exceeded.
+  // If max_size_bytes is set to a value <= 0, no limit will be used.
+  virtual bool StartAecDump(rtc::PlatformFile file, int64_t max_size_bytes) = 0;
+
+  // Stops recording AEC dump.
+  virtual void StopAecDump() = 0;
+};
+
+class VideoEngineInterface {
+ public:
+  VideoEngineInterface() = default;
+  virtual ~VideoEngineInterface() = default;
+  RTC_DISALLOW_COPY_AND_ASSIGN(VideoEngineInterface);
+
+  // Creates a video media channel, paired with the specified voice channel.
+  // Returns NULL on failure.
+  virtual VideoMediaChannel* CreateMediaChannel(
+      webrtc::Call* call,
+      const MediaConfig& config,
+      const VideoOptions& options,
+      const webrtc::CryptoOptions& crypto_options) = 0;
+
+  virtual std::vector<VideoCodec> codecs() const = 0;
+  virtual RtpCapabilities GetCapabilities() const = 0;
+};
+
 // MediaEngineInterface is an abstraction of a media engine which can be
 // subclassed to support different media componentry backends.
 // It supports voice and video operations in the same class to facilitate
@@ -119,14 +171,14 @@ class CompositeMediaEngine : public MediaEngineInterface {
       const MediaConfig& config,
       const AudioOptions& options,
       const webrtc::CryptoOptions& crypto_options) {
-    return voice().CreateChannel(call, config, options, crypto_options);
+    return voice().CreateMediaChannel(call, config, options, crypto_options);
   }
   virtual VideoMediaChannel* CreateVideoChannel(
       webrtc::Call* call,
       const MediaConfig& config,
       const VideoOptions& options,
       const webrtc::CryptoOptions& crypto_options) {
-    return video().CreateChannel(call, config, options, crypto_options);
+    return video().CreateMediaChannel(call, config, options, crypto_options);
   }
 
   virtual const std::vector<AudioCodec>& audio_send_codecs() {

@@ -40,7 +40,7 @@ class WebRtcVoiceMediaChannel;
 
 // WebRtcVoiceEngine is a class to be used with CompositeMediaEngine.
 // It uses the WebRtc VoiceEngine library for audio handling.
-class WebRtcVoiceEngine final {
+class WebRtcVoiceEngine final : public VoiceEngineInterface {
   friend class WebRtcVoiceMediaChannel;
 
  public:
@@ -50,20 +50,21 @@ class WebRtcVoiceEngine final {
       const rtc::scoped_refptr<webrtc::AudioDecoderFactory>& decoder_factory,
       rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
       rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing);
-  ~WebRtcVoiceEngine();
+  ~WebRtcVoiceEngine() override;
 
   // Does initialization that needs to occur on the worker thread.
-  void Init();
+  void Init() override;
 
-  rtc::scoped_refptr<webrtc::AudioState> GetAudioState() const;
-  VoiceMediaChannel* CreateChannel(webrtc::Call* call,
-                                   const MediaConfig& config,
-                                   const AudioOptions& options,
-                                   const webrtc::CryptoOptions& crypto_options);
+  rtc::scoped_refptr<webrtc::AudioState> GetAudioState() const override;
+  VoiceMediaChannel* CreateMediaChannel(
+      webrtc::Call* call,
+      const MediaConfig& config,
+      const AudioOptions& options,
+      const webrtc::CryptoOptions& crypto_options) override;
 
-  const std::vector<AudioCodec>& send_codecs() const;
-  const std::vector<AudioCodec>& recv_codecs() const;
-  RtpCapabilities GetCapabilities() const;
+  const std::vector<AudioCodec>& send_codecs() const override;
+  const std::vector<AudioCodec>& recv_codecs() const override;
+  RtpCapabilities GetCapabilities() const override;
 
   // For tracking WebRtc channels. Needed because we have to pause them
   // all when switching devices.
@@ -75,10 +76,10 @@ class WebRtcVoiceEngine final {
   // specified. When the maximum file size is reached, logging is stopped and
   // the file is closed. If max_size_bytes is set to <= 0, no limit will be
   // used.
-  bool StartAecDump(rtc::PlatformFile file, int64_t max_size_bytes);
+  bool StartAecDump(rtc::PlatformFile file, int64_t max_size_bytes) override;
 
   // Stops AEC dump.
-  void StopAecDump();
+  void StopAecDump() override;
 
   const webrtc::AudioProcessing::Config GetApmConfigForTest() const {
     return apm()->GetConfig();

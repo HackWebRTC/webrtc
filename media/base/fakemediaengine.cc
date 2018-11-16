@@ -464,7 +464,7 @@ void FakeVoiceEngine::Init() {}
 rtc::scoped_refptr<webrtc::AudioState> FakeVoiceEngine::GetAudioState() const {
   return rtc::scoped_refptr<webrtc::AudioState>();
 }
-VoiceMediaChannel* FakeVoiceEngine::CreateChannel(
+VoiceMediaChannel* FakeVoiceEngine::CreateMediaChannel(
     webrtc::Call* call,
     const MediaConfig& config,
     const AudioOptions& options,
@@ -519,7 +519,7 @@ bool FakeVideoEngine::SetOptions(const VideoOptions& options) {
   options_ = options;
   return true;
 }
-VideoMediaChannel* FakeVideoEngine::CreateChannel(
+VideoMediaChannel* FakeVideoEngine::CreateMediaChannel(
     webrtc::Call* call,
     const MediaConfig& config,
     const VideoOptions& options,
