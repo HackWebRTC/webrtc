@@ -470,7 +470,8 @@ std::unique_ptr<Call> PeerConnectionFactory::CreateCall_w(
   if (!channel_manager_->media_engine() || !call_factory_) {
     return nullptr;
   }
-  call_config.audio_state = channel_manager_->media_engine()->GetAudioState();
+  call_config.audio_state =
+      channel_manager_->media_engine()->voice().GetAudioState();
   call_config.bitrate_config.min_bitrate_bps = kMinBandwidthBps;
   call_config.bitrate_config.start_bitrate_bps = kStartBandwidthBps;
   call_config.bitrate_config.max_bitrate_bps = kMaxBandwidthBps;

@@ -1717,7 +1717,7 @@ void PeerConnection::GetStats(
         break;
     }
   }
-  // If there is no |internal_sender| then |selector| is either null or does not
+  // If there is no |internal_sender| then |selector| is either null or does not
   // belong to the PeerConnection (in Plan B, senders can be removed from the
   // PeerConnection). This means that "all the stats objects representing the
   // selector" is an empty set. Invoking GetStatsReport() with a null selector
@@ -1745,7 +1745,7 @@ void PeerConnection::GetStats(
         break;
     }
   }
-  // If there is no |internal_receiver| then |selector| is either null or does
+  // If there is no |internal_receiver| then |selector| is either null or does
   // not belong to the PeerConnection (in Plan B, receivers can be removed from
   // the PeerConnection). This means that "all the stats objects representing
   // the selector" is an empty set. Invoking GetStatsReport() with a null
@@ -3254,7 +3254,7 @@ void PeerConnection::SetAudioPlayout(bool playout) {
     return;
   }
   auto audio_state =
-      factory_->channel_manager()->media_engine()->GetAudioState();
+      factory_->channel_manager()->media_engine()->voice().GetAudioState();
   audio_state->SetPlayout(playout);
 }
 
@@ -3266,7 +3266,7 @@ void PeerConnection::SetAudioRecording(bool recording) {
     return;
   }
   auto audio_state =
-      factory_->channel_manager()->media_engine()->GetAudioState();
+      factory_->channel_manager()->media_engine()->voice().GetAudioState();
   audio_state->SetRecording(recording);
 }
 

@@ -119,56 +119,6 @@ bool CompositeMediaEngine::Init() {
   return true;
 }
 
-rtc::scoped_refptr<webrtc::AudioState> CompositeMediaEngine::GetAudioState()
-    const {
-  return voice().GetAudioState();
-}
-
-VoiceMediaChannel* CompositeMediaEngine::CreateChannel(
-    webrtc::Call* call,
-    const MediaConfig& config,
-    const AudioOptions& options,
-    const webrtc::CryptoOptions& crypto_options) {
-  return voice().CreateMediaChannel(call, config, options, crypto_options);
-}
-
-VideoMediaChannel* CompositeMediaEngine::CreateVideoChannel(
-    webrtc::Call* call,
-    const MediaConfig& config,
-    const VideoOptions& options,
-    const webrtc::CryptoOptions& crypto_options) {
-  return video().CreateMediaChannel(call, config, options, crypto_options);
-}
-
-const std::vector<AudioCodec>& CompositeMediaEngine::audio_send_codecs() {
-  return voice().send_codecs();
-}
-
-const std::vector<AudioCodec>& CompositeMediaEngine::audio_recv_codecs() {
-  return voice().recv_codecs();
-}
-
-RtpCapabilities CompositeMediaEngine::GetAudioCapabilities() {
-  return voice().GetCapabilities();
-}
-
-std::vector<VideoCodec> CompositeMediaEngine::video_codecs() {
-  return video().codecs();
-}
-
-RtpCapabilities CompositeMediaEngine::GetVideoCapabilities() {
-  return video().GetCapabilities();
-}
-
-bool CompositeMediaEngine::StartAecDump(rtc::PlatformFile file,
-                                        int64_t max_size_bytes) {
-  return voice().StartAecDump(file, max_size_bytes);
-}
-
-void CompositeMediaEngine::StopAecDump() {
-  voice().StopAecDump();
-}
-
 VoiceEngineInterface& CompositeMediaEngine::voice() {
   return *voice_engine_.get();
 }

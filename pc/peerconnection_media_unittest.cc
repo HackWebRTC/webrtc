@@ -704,7 +704,7 @@ void AddComfortNoiseCodecsToSend(cricket::FakeMediaEngine* media_engine) {
   const cricket::AudioCodec kComfortNoiseCodec8k(102, "CN", 8000, 0, 1);
   const cricket::AudioCodec kComfortNoiseCodec16k(103, "CN", 16000, 0, 1);
 
-  auto codecs = media_engine->audio_send_codecs();
+  auto codecs = media_engine->voice().send_codecs();
   codecs.push_back(kComfortNoiseCodec8k);
   codecs.push_back(kComfortNoiseCodec16k);
   media_engine->SetAudioCodecs(codecs);
