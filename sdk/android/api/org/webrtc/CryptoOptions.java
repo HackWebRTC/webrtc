@@ -7,6 +7,7 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+
 package org.webrtc;
 
 /**
@@ -108,10 +109,10 @@ public final class CryptoOptions {
   }
 
   public static class Builder {
-    private boolean enableGcmCryptoSuites = false;
-    private boolean enableAes128Sha1_32CryptoCipher = false;
-    private boolean enableEncryptedRtpHeaderExtensions = false;
-    private boolean requireFrameEncryption = false;
+    private boolean enableGcmCryptoSuites;
+    private boolean enableAes128Sha1_32CryptoCipher;
+    private boolean enableEncryptedRtpHeaderExtensions;
+    private boolean requireFrameEncryption;
 
     private Builder() {}
 
