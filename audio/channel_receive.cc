@@ -1004,6 +1004,15 @@ int ChannelReceive::GetRtpTimestampRateHz() const {
 }
 
 int64_t ChannelReceive::GetRTT() const {
+  if (media_transport_) {
+    auto target_rate = media_transport_->GetLatestTargetTransferRate();
+    if (target_rate.has_value()) {
+      return target_rate->network_estimate.round_trip_time.ms();
+    }
+
+    return 0;
+  }
+
   RtcpMode method = _rtpRtcpModule->RTCP();
   if (method == RtcpMode::kOff) {
     return 0;

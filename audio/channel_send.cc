@@ -479,15 +479,23 @@ ChannelSend::ChannelSend(rtc::TaskQueue* encoder_queue,
   audio_coding_.reset(AudioCodingModule::Create(AudioCodingModule::Config()));
 
   RtpRtcp::Configuration configuration;
+
+  // We gradually remove codepaths that depend on RTP when using media
+  // transport. All of this logic should be moved to the future
+  // RTPMediaTransport. In this case it means that overhead and bandwidth
+  // observers should not be called when using media transport.
+  if (!media_transport_) {
+    configuration.overhead_observer = this;
+    configuration.bandwidth_callback = rtcp_observer_.get();
+    configuration.transport_feedback_callback = feedback_observer_proxy_.get();
+  }
+
   configuration.audio = true;
   configuration.outgoing_transport = this;
-  configuration.overhead_observer = this;
-  configuration.bandwidth_callback = rtcp_observer_.get();
 
   configuration.paced_sender = rtp_packet_sender_proxy_.get();
   configuration.transport_sequence_number_allocator =
       seq_num_allocator_proxy_.get();
-  configuration.transport_feedback_callback = feedback_observer_proxy_.get();
 
   configuration.event_log = event_log_;
   configuration.rtt_stats = rtcp_rtt_stats;
@@ -499,6 +507,16 @@ ChannelSend::ChannelSend(rtc::TaskQueue* encoder_queue,
 
   _rtpRtcpModule.reset(RtpRtcp::CreateRtpRtcp(configuration));
   _rtpRtcpModule->SetSendingMediaStatus(false);
+
+  // We want to invoke the 'TargetRateObserver' and |OnOverheadChanged|
+  // callbacks after the audio_coding_ is fully initialized.
+  if (media_transport_) {
+    RTC_DLOG(LS_INFO) << "Setting media_transport_ rate observers.";
+    media_transport_->AddTargetTransferRateObserver(this);
+    OnOverheadChanged(media_transport_->GetAudioPacketOverhead());
+  } else {
+    RTC_DLOG(LS_INFO) << "Not setting media_transport_ rate observers.";
+  }
 
   channel_state_.Reset();
 
@@ -521,6 +539,10 @@ ChannelSend::ChannelSend(rtc::TaskQueue* encoder_queue,
 
 ChannelSend::~ChannelSend() {
   RTC_DCHECK(construction_thread_.CalledOnValidThread());
+
+  if (media_transport_) {
+    media_transport_->RemoveTargetTransferRateObserver(this);
+  }
 
   StopSend();
 
@@ -693,6 +715,12 @@ void ChannelSend::RegisterTransport(Transport* transport) {
 
 // TODO(nisse): Delete always-true return value.
 bool ChannelSend::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
+  if (media_transport_) {
+    // Ignore RTCP packets while media transport is used.
+    // Those packets should not arrive, but we are seeing occasional packets.
+    return 0;
+  }
+
   // Deliver RTCP packet to RTP/RTCP module for parsing
   _rtpRtcpModule->IncomingRtcpPacket(data, length);
 
@@ -710,11 +738,7 @@ bool ChannelSend::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
   }
   retransmission_rate_limiter_->SetWindowSize(nack_window_ms);
 
-  // Invoke audio encoders OnReceivedRtt().
-  audio_coding_->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
-    if (*encoder)
-      (*encoder)->OnReceivedRtt(rtt);
-  });
+  OnReceivedRtt(rtt);
   return true;
 }
 
@@ -1010,6 +1034,19 @@ int ChannelSend::GetRtpTimestampRateHz() const {
 }
 
 int64_t ChannelSend::GetRTT() const {
+  if (media_transport_) {
+    // GetRTT is generally used in the RTCP codepath, where media transport is
+    // not present and so it shouldn't be needed. But it's also invoked in
+    // 'GetStats' method, and for now returning media transport RTT here gives
+    // us "free" rtt stats for media transport.
+    auto target_rate = media_transport_->GetLatestTargetTransferRate();
+    if (target_rate.has_value()) {
+      return target_rate.value().network_estimate.round_trip_time.ms();
+    }
+
+    return 0;
+  }
+
   RtcpMode method = _rtpRtcpModule->RTCP();
   if (method == RtcpMode::kOff) {
     return 0;
@@ -1044,6 +1081,21 @@ void ChannelSend::SetFrameEncryptor(
   } else {
     frame_encryptor_ = std::move(frame_encryptor);
   }
+}
+
+void ChannelSend::OnTargetTransferRate(TargetTransferRate rate) {
+  RTC_DCHECK(media_transport_);
+  OnReceivedRtt(rate.network_estimate.round_trip_time.ms());
+}
+
+void ChannelSend::OnReceivedRtt(int64_t rtt_ms) {
+  // Invoke audio encoders OnReceivedRtt().
+  audio_coding_->ModifyEncoder(
+      [rtt_ms](std::unique_ptr<AudioEncoder>* encoder) {
+        if (*encoder) {
+          (*encoder)->OnReceivedRtt(rtt_ms);
+        }
+      });
 }
 
 }  // namespace voe

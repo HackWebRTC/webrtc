@@ -72,7 +72,8 @@ class BaseChannel : public ChannelInterface,
                     public rtc::MessageHandler,
                     public sigslot::has_slots<>,
                     public MediaChannel::NetworkInterface,
-                    public webrtc::RtpPacketSinkInterface {
+                    public webrtc::RtpPacketSinkInterface,
+                    public webrtc::MediaTransportNetworkChangeCallback {
  public:
   // If |srtp_required| is true, the channel will not send or receive any
   // RTP/RTCP packets without using SRTP (either using SDES or DTLS-SRTP).
@@ -303,6 +304,9 @@ class BaseChannel : public ChannelInterface,
   void SignalSentPacket_n(const rtc::SentPacket& sent_packet);
   void SignalSentPacket_w(const rtc::SentPacket& sent_packet);
   bool IsReadyToSendMedia_n() const;
+
+  // MediaTransportNetworkChangeCallback override.
+  void OnNetworkRouteChanged(const rtc::NetworkRoute& network_route) override;
   rtc::Thread* const worker_thread_;
   rtc::Thread* const network_thread_;
   rtc::Thread* const signaling_thread_;

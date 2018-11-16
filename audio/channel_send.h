@@ -108,11 +108,11 @@ class ChannelSendState {
   State state_;
 };
 
-class ChannelSend
-    : public Transport,
-      public AudioPacketizationCallback,  // receive encoded packets from the
-                                          // ACM
-      public OverheadObserver {
+class ChannelSend : public Transport,
+                    public AudioPacketizationCallback,  // receive encoded
+                                                        // packets from the ACM
+                    public OverheadObserver,
+                    public TargetTransferRateObserver {
  public:
   // TODO(nisse): Make OnUplinkPacketLossRate public, and delete friend
   // declaration.
@@ -202,11 +202,23 @@ class ChannelSend
 
   void OnRecoverableUplinkPacketLossRate(float recoverable_packet_loss_rate);
 
+  // Returns the RTT in milliseconds.
   int64_t GetRTT() const;
 
   // E2EE Custom Audio Frame Encryption
   void SetFrameEncryptor(
       rtc::scoped_refptr<FrameEncryptorInterface> frame_encryptor);
+
+  // In RTP we currently rely on RTCP packets (|ReceivedRTCPPacket|) to inform
+  // about RTT.
+  // In media transport we rely on the TargetTransferRateObserver instead.
+  // In other words, if you are using RTP, you should expect
+  // |ReceivedRTCPPacket| to be called, if you are using media transport,
+  // |OnTargetTransferRate| will be called.
+  //
+  // In future, RTP media will move to the media transport implementation and
+  // these conditions will be removed.
+  void OnTargetTransferRate(TargetTransferRate rate) override;
 
  private:
   class ProcessAndEncodeAudioTask;
@@ -260,6 +272,8 @@ class ChannelSend
   // Called on the encoder task queue when a new input audio frame is ready
   // for encoding.
   void ProcessAndEncodeAudioOnTaskQueue(AudioFrame* audio_input);
+
+  void OnReceivedRtt(int64_t rtt_ms);
 
   rtc::CriticalSection _callbackCritSect;
   rtc::CriticalSection volume_settings_critsect_;

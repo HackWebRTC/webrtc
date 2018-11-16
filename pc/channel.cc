@@ -118,6 +118,11 @@ BaseChannel::BaseChannel(rtc::Thread* worker_thread,
 BaseChannel::~BaseChannel() {
   TRACE_EVENT0("webrtc", "BaseChannel::~BaseChannel");
   RTC_DCHECK_RUN_ON(worker_thread_);
+
+  if (media_transport_) {
+    media_transport_->SetNetworkChangeCallback(nullptr);
+  }
+
   // Eats any outstanding messages or packets.
   worker_thread_->Clear(&invoker_);
   worker_thread_->Clear(this);
@@ -137,8 +142,15 @@ bool BaseChannel::ConnectToRtpTransport() {
       this, &BaseChannel::OnTransportReadyToSend);
   rtp_transport_->SignalRtcpPacketReceived.connect(
       this, &BaseChannel::OnRtcpPacketReceived);
-  rtp_transport_->SignalNetworkRouteChanged.connect(
-      this, &BaseChannel::OnNetworkRouteChanged);
+
+  // If media transport is used, it's responsible for providing network
+  // route changed callbacks.
+  if (!media_transport_) {
+    rtp_transport_->SignalNetworkRouteChanged.connect(
+        this, &BaseChannel::OnNetworkRouteChanged);
+  }
+  // TODO(bugs.webrtc.org/9719): Media transport should also be used to provide
+  // 'writable' state here.
   rtp_transport_->SignalWritableState.connect(this,
                                               &BaseChannel::OnWritableState);
   rtp_transport_->SignalSentPacket.connect(this,
@@ -159,12 +171,20 @@ void BaseChannel::DisconnectFromRtpTransport() {
 void BaseChannel::Init_w(webrtc::RtpTransportInternal* rtp_transport,
                          webrtc::MediaTransportInterface* media_transport) {
   RTC_DCHECK_RUN_ON(worker_thread_);
+  media_transport_ = media_transport;
+
   network_thread_->Invoke<void>(
       RTC_FROM_HERE, [this, rtp_transport] { SetRtpTransport(rtp_transport); });
 
   // Both RTP and RTCP channels should be set, we can call SetInterface on
   // the media channel and it can set network options.
   media_channel_->SetInterface(this, media_transport);
+
+  RTC_LOG(LS_INFO) << "BaseChannel::Init_w, media_transport="
+                   << (media_transport_ != nullptr);
+  if (media_transport_) {
+    media_transport_->SetNetworkChangeCallback(this);
+  }
 }
 
 void BaseChannel::Deinit() {
@@ -353,6 +373,8 @@ void BaseChannel::OnWritableState(bool writable) {
 
 void BaseChannel::OnNetworkRouteChanged(
     absl::optional<rtc::NetworkRoute> network_route) {
+  RTC_LOG(LS_INFO) << "Network route was changed.";
+
   RTC_DCHECK(network_thread_->IsCurrent());
   rtc::NetworkRoute new_route;
   if (network_route) {
@@ -765,6 +787,11 @@ void BaseChannel::UpdateMediaSendRecvState() {
   invoker_.AsyncInvoke<void>(
       RTC_FROM_HERE, worker_thread_,
       Bind(&BaseChannel::UpdateMediaSendRecvState_w, this));
+}
+
+void BaseChannel::OnNetworkRouteChanged(
+    const rtc::NetworkRoute& network_route) {
+  OnNetworkRouteChanged(absl::make_optional(network_route));
 }
 
 void VoiceChannel::UpdateMediaSendRecvState_w() {
