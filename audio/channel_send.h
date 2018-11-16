@@ -324,7 +324,9 @@ class ChannelSend
   rtc::scoped_refptr<FrameEncryptorInterface> frame_encryptor_;
   // E2EE Frame Encryption Options
   webrtc::CryptoOptions crypto_options_;
-  int configured_bitrate_bps_ = 0;
+
+  rtc::CriticalSection bitrate_crit_section_;
+  int configured_bitrate_bps_ RTC_GUARDED_BY(bitrate_crit_section_) = 0;
 };
 
 }  // namespace voe

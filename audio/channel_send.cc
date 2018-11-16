@@ -641,6 +641,7 @@ void ChannelSend::ModifyEncoder(
 }
 
 void ChannelSend::SetBitRate(int bitrate_bps, int64_t probing_interval_ms) {
+  rtc::CritScope lock(&bitrate_crit_section_);
   audio_coding_->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
     if (*encoder) {
       (*encoder)->OnReceivedUplinkBandwidth(bitrate_bps, probing_interval_ms);
@@ -651,6 +652,7 @@ void ChannelSend::SetBitRate(int bitrate_bps, int64_t probing_interval_ms) {
 }
 
 int ChannelSend::GetBitRate() const {
+  rtc::CritScope lock(&bitrate_crit_section_);
   return configured_bitrate_bps_;
 }
 
