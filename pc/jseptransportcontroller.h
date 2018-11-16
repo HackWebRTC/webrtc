@@ -272,6 +272,14 @@ class JsepTransportController : public sigslot::has_slots<> {
   // differentiate initiator (caller) from answerer (callee).
   RTCError MaybeCreateJsepTransport(bool local,
                                     const cricket::ContentInfo& content_info);
+
+  // Creates media transport if config wants to use it, and pre-shared key is
+  // provided in content info. It modifies the config to disable media transport
+  // if pre-shared key is not provided.
+  std::unique_ptr<webrtc::MediaTransportInterface> MaybeCreateMediaTransport(
+      const cricket::ContentInfo& content_info,
+      bool local,
+      cricket::IceTransportInternal* ice_transport);
   void MaybeDestroyJsepTransport(const std::string& mid);
   void DestroyAllJsepTransports_n();
 

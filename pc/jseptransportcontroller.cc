@@ -922,39 +922,11 @@ cricket::JsepTransport* JsepTransportController::GetJsepTransportByName(
   return (it == jsep_transports_by_name_.end()) ? nullptr : it->second.get();
 }
 
-RTCError JsepTransportController::MaybeCreateJsepTransport(
+std::unique_ptr<webrtc::MediaTransportInterface>
+JsepTransportController::MaybeCreateMediaTransport(
+    const cricket::ContentInfo& content_info,
     bool local,
-    const cricket::ContentInfo& content_info) {
-  RTC_DCHECK(network_thread_->IsCurrent());
-  cricket::JsepTransport* transport = GetJsepTransportByName(content_info.name);
-  if (transport) {
-    return RTCError::OK();
-  }
-
-  const cricket::MediaContentDescription* content_desc =
-      static_cast<const cricket::MediaContentDescription*>(
-          content_info.description);
-  if (certificate_ && !content_desc->cryptos().empty()) {
-    return RTCError(RTCErrorType::INVALID_PARAMETER,
-                    "SDES and DTLS-SRTP cannot be enabled at the same time.");
-  }
-
-  std::unique_ptr<cricket::DtlsTransportInternal> rtp_dtls_transport =
-      CreateDtlsTransport(content_info.name, /*rtcp =*/false);
-
-  std::unique_ptr<cricket::DtlsTransportInternal> rtcp_dtls_transport;
-  std::unique_ptr<RtpTransport> unencrypted_rtp_transport;
-  std::unique_ptr<SrtpTransport> sdes_transport;
-  std::unique_ptr<DtlsSrtpTransport> dtls_srtp_transport;
-  std::unique_ptr<MediaTransportInterface> media_transport;
-
-  if (config_.rtcp_mux_policy !=
-          PeerConnectionInterface::kRtcpMuxPolicyRequire &&
-      content_info.type == cricket::MediaProtocolType::kRtp) {
-    rtcp_dtls_transport =
-        CreateDtlsTransport(content_info.name, /*rtcp =*/true);
-  }
-
+    cricket::IceTransportInternal* ice_transport) {
   absl::optional<cricket::CryptoParams> selected_crypto_for_media_transport;
   if (content_info.media_description() &&
       !content_info.media_description()->cryptos().empty()) {
@@ -1024,15 +996,52 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
                       key.value().size());
       auto media_transport_result =
           config_.media_transport_factory->CreateMediaTransport(
-              rtp_dtls_transport->ice_transport(), network_thread_, settings);
+              ice_transport, network_thread_, settings);
 
       // TODO(sukhanov): Proper error handling.
       RTC_CHECK(media_transport_result.ok());
 
-      RTC_DCHECK(media_transport == nullptr);
-      media_transport = std::move(media_transport_result.value());
+      return media_transport_result.MoveValue();
     }
   }
+
+  return nullptr;
+}
+
+RTCError JsepTransportController::MaybeCreateJsepTransport(
+    bool local,
+    const cricket::ContentInfo& content_info) {
+  RTC_DCHECK(network_thread_->IsCurrent());
+  cricket::JsepTransport* transport = GetJsepTransportByName(content_info.name);
+  if (transport) {
+    return RTCError::OK();
+  }
+
+  const cricket::MediaContentDescription* content_desc =
+      static_cast<const cricket::MediaContentDescription*>(
+          content_info.description);
+  if (certificate_ && !content_desc->cryptos().empty()) {
+    return RTCError(RTCErrorType::INVALID_PARAMETER,
+                    "SDES and DTLS-SRTP cannot be enabled at the same time.");
+  }
+
+  std::unique_ptr<cricket::DtlsTransportInternal> rtp_dtls_transport =
+      CreateDtlsTransport(content_info.name, /*rtcp =*/false);
+
+  std::unique_ptr<cricket::DtlsTransportInternal> rtcp_dtls_transport;
+  std::unique_ptr<RtpTransport> unencrypted_rtp_transport;
+  std::unique_ptr<SrtpTransport> sdes_transport;
+  std::unique_ptr<DtlsSrtpTransport> dtls_srtp_transport;
+  std::unique_ptr<MediaTransportInterface> media_transport;
+
+  if (config_.rtcp_mux_policy !=
+          PeerConnectionInterface::kRtcpMuxPolicyRequire &&
+      content_info.type == cricket::MediaProtocolType::kRtp) {
+    rtcp_dtls_transport =
+        CreateDtlsTransport(content_info.name, /*rtcp =*/true);
+  }
+  media_transport = MaybeCreateMediaTransport(
+      content_info, local, rtp_dtls_transport->ice_transport());
 
   // TODO(sukhanov): Do not create RTP/RTCP transports if media transport is
   // used.
