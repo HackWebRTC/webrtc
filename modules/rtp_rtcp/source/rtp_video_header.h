@@ -59,7 +59,7 @@ struct RTPVideoHeader {
   uint8_t simulcastIdx = 0;
   VideoCodecType codec = VideoCodecType::kVideoCodecGeneric;
 
-  PlayoutDelay playout_delay;
+  PlayoutDelay playout_delay = {-1, -1};
   VideoSendTiming video_timing;
   FrameMarking frame_marking;
   RTPVideoTypeHeader video_type_header;

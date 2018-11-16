@@ -530,8 +530,6 @@ void RtpVideoStreamReceiver::ReceivePacket(const RtpPacketReceived& packet) {
   webrtc_rtp_header.video_header().content_type = VideoContentType::UNSPECIFIED;
   webrtc_rtp_header.video_header().video_timing.flags =
       VideoSendTiming::kInvalid;
-  webrtc_rtp_header.video_header().playout_delay.min_ms = -1;
-  webrtc_rtp_header.video_header().playout_delay.max_ms = -1;
   webrtc_rtp_header.video_header().is_last_packet_in_frame =
       webrtc_rtp_header.header.markerBit;
 
