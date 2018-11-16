@@ -72,7 +72,6 @@ class MockChannelSendProxy : public voe::ChannelSendProxy {
   MOCK_METHOD1(
       ModifyEncoder,
       void(rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier));
-  MOCK_METHOD1(SetRTCPStatus, void(bool enable));
   MOCK_METHOD1(SetLocalSSRC, void(uint32_t ssrc));
   MOCK_METHOD1(SetRTCP_CNAME, void(absl::string_view c_name));
   MOCK_METHOD2(SetNACKStatus, void(bool enable, int max_packets));

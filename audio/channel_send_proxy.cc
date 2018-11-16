@@ -66,11 +66,6 @@ void ChannelSendProxy::ModifyEncoder(
   channel_->ModifyEncoder(modifier);
 }
 
-void ChannelSendProxy::SetRTCPStatus(bool enable) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  channel_->SetRTCPStatus(enable);
-}
-
 void ChannelSendProxy::SetMid(const std::string& mid, int extension_id) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   channel_->SetMid(mid, extension_id);

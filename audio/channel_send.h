@@ -175,7 +175,6 @@ class ChannelSend
       RtpTransportControllerSendInterface* transport,
       RtcpBandwidthObserver* bandwidth_observer);
   void ResetSenderCongestionControlObjects();
-  void SetRTCPStatus(bool enable);
   void SetRTCP_CNAME(absl::string_view c_name);
   std::vector<ReportBlock> GetRemoteRTCPReportBlocks() const;
   CallSendStatistics GetRTCPStatistics() const;
@@ -212,9 +211,6 @@ class ChannelSend
  private:
   class ProcessAndEncodeAudioTask;
 
-  void Init();
-  void Terminate();
-
   // From AudioPacketizationCallback in the ACM
   int32_t SendData(FrameType frameType,
                    uint8_t payloadType,
@@ -228,8 +224,6 @@ class ChannelSend
                size_t len,
                const PacketOptions& packet_options) override;
   bool SendRtcp(const uint8_t* data, size_t len) override;
-
-  int PreferredSampleRate() const;
 
   bool Sending() const { return channel_state_.Get().sending; }
 

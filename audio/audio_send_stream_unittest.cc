@@ -193,7 +193,6 @@ struct ConfigHelper {
     EXPECT_CALL(*channel_proxy_, GetRtpRtcp()).WillRepeatedly(Invoke([this]() {
       return &this->rtp_rtcp_;
     }));
-    EXPECT_CALL(*channel_proxy_, SetRTCPStatus(true)).Times(1);
     EXPECT_CALL(*channel_proxy_, SetLocalSSRC(kSsrc)).Times(1);
     EXPECT_CALL(*channel_proxy_, SetRTCP_CNAME(StrEq(kCName))).Times(1);
     EXPECT_CALL(*channel_proxy_, SetNACKStatus(true, 10)).Times(1);

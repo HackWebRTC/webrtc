@@ -199,7 +199,6 @@ AudioSendStream::AudioSendStream(
   RTC_DCHECK(rtp_transport || config.media_transport);
   RTC_DCHECK(overall_call_lifetime_);
 
-  channel_proxy_->SetRTCPStatus(true);
   rtp_rtcp_module_ = channel_proxy_->GetRtpRtcp();
   RTC_DCHECK(rtp_rtcp_module_);
 

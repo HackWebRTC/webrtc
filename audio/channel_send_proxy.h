@@ -55,7 +55,6 @@ class ChannelSendProxy {
   virtual void ModifyEncoder(
       rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier);
 
-  virtual void SetRTCPStatus(bool enable);
   virtual void SetMid(const std::string& mid, int extension_id);
   virtual void SetRTCP_CNAME(absl::string_view c_name);
   virtual void SetExtmapAllowMixed(bool extmap_allow_mixed);
