@@ -31,6 +31,7 @@ class RtcpRttStats;
 class RtpTransportControllerSendInterface;
 
 namespace voe {
+class ChannelSend;
 class ChannelSendProxy;
 }  // namespace voe
 
@@ -93,7 +94,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   void SetTransportOverhead(int transport_overhead_per_packet);
 
   RtpState GetRtpState() const;
-  const voe::ChannelSendProxy& GetChannelProxy() const;
+  const voe::ChannelSend* GetChannel() const;
 
  private:
   class TimedTransport;

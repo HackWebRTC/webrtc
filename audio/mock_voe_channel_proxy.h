@@ -17,7 +17,7 @@
 #include <vector>
 
 #include "api/test/mock_frame_encryptor.h"
-#include "audio/channel_receive_proxy.h"
+#include "audio/channel_receive.h"
 #include "audio/channel_send_proxy.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "test/gmock.h"
@@ -25,7 +25,7 @@
 namespace webrtc {
 namespace test {
 
-class MockChannelReceiveProxy : public voe::ChannelReceiveProxy {
+class MockChannelReceive : public voe::ChannelReceiveInterface {
  public:
   MOCK_METHOD1(SetLocalSSRC, void(uint32_t ssrc));
   MOCK_METHOD2(SetNACKStatus, void(bool enable, int max_packets));
@@ -47,10 +47,10 @@ class MockChannelReceiveProxy : public voe::ChannelReceiveProxy {
                AudioMixer::Source::AudioFrameInfo(int sample_rate_hz,
                                                   AudioFrame* audio_frame));
   MOCK_CONST_METHOD0(PreferredSampleRate, int());
-  MOCK_METHOD1(AssociateSendChannel,
-               void(const voe::ChannelSendProxy& send_channel_proxy));
-  MOCK_METHOD0(DisassociateSendChannel, void());
+  MOCK_METHOD1(SetAssociatedSendChannel,
+               void(const voe::ChannelSend* send_channel));
   MOCK_CONST_METHOD0(GetPlayoutTimestamp, uint32_t());
+  MOCK_CONST_METHOD0(GetSyncInfo, absl::optional<Syncable::Info>());
   MOCK_METHOD1(SetMinimumPlayoutDelay, void(int delay_ms));
   MOCK_CONST_METHOD1(GetRecCodec, bool(CodecInst* codec_inst));
   MOCK_METHOD1(SetReceiveCodecs,

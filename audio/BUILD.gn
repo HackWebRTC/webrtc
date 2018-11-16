@@ -26,8 +26,6 @@ rtc_static_library("audio") {
     "audio_transport_impl.h",
     "channel_receive.cc",
     "channel_receive.h",
-    "channel_receive_proxy.cc",
-    "channel_receive_proxy.h",
     "channel_send.cc",
     "channel_send.h",
     "channel_send_proxy.cc",

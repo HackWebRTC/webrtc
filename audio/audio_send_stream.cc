@@ -553,9 +553,9 @@ RtpState AudioSendStream::GetRtpState() const {
   return rtp_rtcp_module_->GetRtpState();
 }
 
-const voe::ChannelSendProxy& AudioSendStream::GetChannelProxy() const {
+const voe::ChannelSend* AudioSendStream::GetChannel() const {
   RTC_DCHECK(channel_proxy_.get());
-  return *channel_proxy_.get();
+  return channel_proxy_->GetChannel();
 }
 
 internal::AudioState* AudioSendStream::audio_state() {
