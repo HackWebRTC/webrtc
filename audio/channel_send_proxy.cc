@@ -30,8 +30,7 @@ ChannelSendProxy::~ChannelSendProxy() {}
 
 void ChannelSendProxy::SetLocalSSRC(uint32_t ssrc) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  int error = channel_->SetLocalSSRC(ssrc);
-  RTC_DCHECK_EQ(0, error);
+  return channel_->SetLocalSSRC(ssrc);
 }
 
 void ChannelSendProxy::SetNACKStatus(bool enable, int max_packets) {
@@ -41,10 +40,7 @@ void ChannelSendProxy::SetNACKStatus(bool enable, int max_packets) {
 
 CallSendStatistics ChannelSendProxy::GetRTCPStatistics() const {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  CallSendStatistics stats = {0};
-  int error = channel_->GetRTPStatistics(stats);
-  RTC_DCHECK_EQ(0, error);
-  return stats;
+  return channel_->GetRTCPStatistics();
 }
 
 void ChannelSendProxy::RegisterTransport(Transport* transport) {
@@ -55,7 +51,7 @@ void ChannelSendProxy::RegisterTransport(Transport* transport) {
 bool ChannelSendProxy::ReceivedRTCPPacket(const uint8_t* packet,
                                           size_t length) {
   // May be called on either worker thread or network thread.
-  return channel_->ReceivedRTCPPacket(packet, length) == 0;
+  return channel_->ReceivedRTCPPacket(packet, length);
 }
 
 bool ChannelSendProxy::SetEncoder(int payload_type,
@@ -80,12 +76,9 @@ void ChannelSendProxy::SetMid(const std::string& mid, int extension_id) {
   channel_->SetMid(mid, extension_id);
 }
 
-void ChannelSendProxy::SetRTCP_CNAME(const std::string& c_name) {
+void ChannelSendProxy::SetRTCP_CNAME(absl::string_view c_name) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  // Note: VoERTP_RTCP::SetRTCP_CNAME() accepts a char[256] array.
-  std::string c_name_limited = c_name.substr(0, 255);
-  int error = channel_->SetRTCP_CNAME(c_name_limited.c_str());
-  RTC_DCHECK_EQ(0, error);
+  channel_->SetRTCP_CNAME(c_name);
 }
 
 void ChannelSendProxy::SetExtmapAllowMixed(bool extmap_allow_mixed) {
@@ -95,8 +88,7 @@ void ChannelSendProxy::SetExtmapAllowMixed(bool extmap_allow_mixed) {
 
 void ChannelSendProxy::SetSendAudioLevelIndicationStatus(bool enable, int id) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  int error = channel_->SetSendAudioLevelIndicationStatus(enable, id);
-  RTC_DCHECK_EQ(0, error);
+  channel_->SetSendAudioLevelIndicationStatus(enable, id);
 }
 
 void ChannelSendProxy::EnableSendTransportSequenceNumber(int id) {
@@ -119,10 +111,7 @@ void ChannelSendProxy::ResetSenderCongestionControlObjects() {
 
 std::vector<ReportBlock> ChannelSendProxy::GetRemoteRTCPReportBlocks() const {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  std::vector<webrtc::ReportBlock> blocks;
-  int error = channel_->GetRemoteRTCPReportBlocks(&blocks);
-  RTC_DCHECK_EQ(0, error);
-  return blocks;
+  return channel_->GetRemoteRTCPReportBlocks();
 }
 
 ANAStats ChannelSendProxy::GetANAStatistics() const {
@@ -134,12 +123,12 @@ bool ChannelSendProxy::SetSendTelephoneEventPayloadType(int payload_type,
                                                         int payload_frequency) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   return channel_->SetSendTelephoneEventPayloadType(payload_type,
-                                                    payload_frequency) == 0;
+                                                    payload_frequency);
 }
 
 bool ChannelSendProxy::SendTelephoneEventOutband(int event, int duration_ms) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  return channel_->SendTelephoneEventOutband(event, duration_ms) == 0;
+  return channel_->SendTelephoneEventOutband(event, duration_ms);
 }
 
 void ChannelSendProxy::SetBitrate(int bitrate_bps,
@@ -191,8 +180,7 @@ void ChannelSendProxy::OnRecoverableUplinkPacketLossRate(
 
 void ChannelSendProxy::StartSend() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  int error = channel_->StartSend();
-  RTC_DCHECK_EQ(0, error);
+  channel_->StartSend();
 }
 
 void ChannelSendProxy::StopSend() {

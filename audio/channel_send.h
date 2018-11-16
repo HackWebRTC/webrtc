@@ -137,24 +137,17 @@ class ChannelSend
 
   // API methods
 
-  // VoEBase
-  int32_t StartSend();
+  void StartSend();
   void StopSend();
 
   // Codecs
   void SetBitRate(int bitrate_bps, int64_t probing_interval_ms);
   int GetBitRate() const;
-  bool EnableAudioNetworkAdaptor(const std::string& config_string);
-  void DisableAudioNetworkAdaptor();
-
-  // TODO(nisse): Modifies decoder, but not used?
-  void SetReceiverFrameLengthRange(int min_frame_length_ms,
-                                   int max_frame_length_ms);
 
   // Network
   void RegisterTransport(Transport* transport);
-  // TODO(nisse, solenberg): Delete when VoENetwork is deleted.
-  int32_t ReceivedRTCPPacket(const uint8_t* data, size_t length);
+
+  bool ReceivedRTCPPacket(const uint8_t* data, size_t length);
 
   // Muting, Volume and Level.
   void SetInputMute(bool enable);
@@ -166,15 +159,16 @@ class ChannelSend
   RtpRtcp* GetRtpRtcp() const;
 
   // DTMF.
-  int SendTelephoneEventOutband(int event, int duration_ms);
-  int SetSendTelephoneEventPayloadType(int payload_type, int payload_frequency);
+  bool SendTelephoneEventOutband(int event, int duration_ms);
+  bool SetSendTelephoneEventPayloadType(int payload_type,
+                                        int payload_frequency);
 
   // RTP+RTCP
-  int SetLocalSSRC(unsigned int ssrc);
+  void SetLocalSSRC(uint32_t ssrc);
 
   void SetMid(const std::string& mid, int extension_id);
   void SetExtmapAllowMixed(bool extmap_allow_mixed);
-  int SetSendAudioLevelIndicationStatus(bool enable, unsigned char id);
+  void SetSendAudioLevelIndicationStatus(bool enable, int id);
   void EnableSendTransportSequenceNumber(int id);
 
   void RegisterSenderCongestionControlObjects(
@@ -182,29 +176,10 @@ class ChannelSend
       RtcpBandwidthObserver* bandwidth_observer);
   void ResetSenderCongestionControlObjects();
   void SetRTCPStatus(bool enable);
-  int SetRTCP_CNAME(const char cName[256]);
-  int GetRemoteRTCPReportBlocks(std::vector<ReportBlock>* report_blocks);
-  int GetRTPStatistics(CallSendStatistics& stats);  // NOLINT
+  void SetRTCP_CNAME(absl::string_view c_name);
+  std::vector<ReportBlock> GetRemoteRTCPReportBlocks() const;
+  CallSendStatistics GetRTCPStatistics() const;
   void SetNACKStatus(bool enable, int maxNumberOfPackets);
-
-  // From AudioPacketizationCallback in the ACM
-  int32_t SendData(FrameType frameType,
-                   uint8_t payloadType,
-                   uint32_t timeStamp,
-                   const uint8_t* payloadData,
-                   size_t payloadSize,
-                   const RTPFragmentationHeader* fragmentation) override;
-
-  // From Transport (called by the RTP/RTCP module)
-  bool SendRtp(const uint8_t* data,
-               size_t len,
-               const PacketOptions& packet_options) override;
-  bool SendRtcp(const uint8_t* data, size_t len) override;
-
-  int PreferredSampleRate() const;
-
-  bool Sending() const { return channel_state_.Get().sending; }
-  RtpRtcp* RtpRtcpModulePtr() const { return _rtpRtcpModule.get(); }
 
   // ProcessAndEncodeAudio() posts a task on the shared encoder task queue,
   // which in turn calls (on the queue) ProcessAndEncodeAudioOnTaskQueue() where
@@ -217,10 +192,8 @@ class ChannelSend
   // packet.
   void ProcessAndEncodeAudio(std::unique_ptr<AudioFrame> audio_frame);
 
+ public:
   void SetTransportOverhead(size_t transport_overhead_per_packet);
-
-  // From OverheadObserver in the RTP/RTCP module
-  void OnOverheadChanged(size_t overhead_bytes_per_packet) override;
 
   // The existence of this function alongside OnUplinkPacketLossRate is
   // a compromise. We want the encoder to be agnostic of the PLR source, but
@@ -242,14 +215,33 @@ class ChannelSend
   void Init();
   void Terminate();
 
+  // From AudioPacketizationCallback in the ACM
+  int32_t SendData(FrameType frameType,
+                   uint8_t payloadType,
+                   uint32_t timeStamp,
+                   const uint8_t* payloadData,
+                   size_t payloadSize,
+                   const RTPFragmentationHeader* fragmentation) override;
+
+  // From Transport (called by the RTP/RTCP module)
+  bool SendRtp(const uint8_t* data,
+               size_t len,
+               const PacketOptions& packet_options) override;
+  bool SendRtcp(const uint8_t* data, size_t len) override;
+
+  int PreferredSampleRate() const;
+
+  bool Sending() const { return channel_state_.Get().sending; }
+
+  // From OverheadObserver in the RTP/RTCP module
+  void OnOverheadChanged(size_t overhead_bytes_per_packet) override;
+
   void OnUplinkPacketLossRate(float packet_loss_rate);
   bool InputMute() const;
 
   int ResendPackets(const uint16_t* sequence_numbers, int length);
 
-  int SetSendRtpHeaderExtension(bool enable,
-                                RTPExtensionType type,
-                                unsigned char id);
+  int SetSendRtpHeaderExtension(bool enable, RTPExtensionType type, int id);
 
   void UpdateOverheadForEncoder()
       RTC_EXCLUSIVE_LOCKS_REQUIRED(overhead_per_packet_lock_);

@@ -57,7 +57,7 @@ class ChannelSendProxy {
 
   virtual void SetRTCPStatus(bool enable);
   virtual void SetMid(const std::string& mid, int extension_id);
-  virtual void SetRTCP_CNAME(const std::string& c_name);
+  virtual void SetRTCP_CNAME(absl::string_view c_name);
   virtual void SetExtmapAllowMixed(bool extmap_allow_mixed);
   virtual void SetSendAudioLevelIndicationStatus(bool enable, int id);
   virtual void EnableSendTransportSequenceNumber(int id);
