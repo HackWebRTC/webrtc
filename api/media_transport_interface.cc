@@ -114,9 +114,6 @@ void MediaTransportInterface::SetNetworkChangeCallback(
 void MediaTransportInterface::RemoveTargetTransferRateObserver(
     webrtc::TargetTransferRateObserver* observer) {}
 
-void MediaTransportInterface::SetTargetTransferRateObserver(
-    webrtc::TargetTransferRateObserver* observer) {}
-
 void MediaTransportInterface::AddTargetTransferRateObserver(
     webrtc::TargetTransferRateObserver* observer) {}
 

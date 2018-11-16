@@ -335,15 +335,6 @@ class MediaTransportInterface {
   // pass a nullptr.
   virtual void SetReceiveVideoSink(MediaTransportVideoSinkInterface* sink) = 0;
 
-  // Sets a target bitrate observer. Before media transport is destructed
-  // the observer must be unregistered (set to nullptr).
-  // A newly registered observer will be called back with the latest recorded
-  // target rate, if available.
-  // TODO(psla): This method will be removed, in favor of
-  // AddTargetTransferRateObserver.
-  virtual void SetTargetTransferRateObserver(
-      TargetTransferRateObserver* observer);
-
   // Adds a target bitrate observer. Before media transport is destructed
   // the observer must be unregistered (by calling
   // RemoveTargetTransferRateObserver).

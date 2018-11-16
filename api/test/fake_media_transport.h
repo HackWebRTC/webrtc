@@ -55,9 +55,6 @@ class FakeMediaTransport : public MediaTransportInterface {
     return settings_.pre_shared_key;
   }
 
-  void SetTargetTransferRateObserver(
-      webrtc::TargetTransferRateObserver* observer) override {}
-
   RTCError SendData(int channel_id,
                     const SendDataParams& params,
                     const rtc::CopyOnWriteBuffer& buffer) override {
