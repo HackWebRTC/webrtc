@@ -654,7 +654,7 @@ TEST_P(VideoSendStreamTest, DISABLED_DoesUtilizeUlpfecForVp8WithNackEnabled) {
   RunBaseTest(&test);
 }
 
-#if !defined(RTC_DISABLE_VP9)
+#if defined(RTC_ENABLE_VP9)
 // Disabled as flaky, see https://crbug.com/webrtc/7285 for details.
 TEST_P(VideoSendStreamTest, DISABLED_DoesUtilizeUlpfecForVp9WithNackEnabled) {
   test::FunctionVideoEncoderFactory encoder_factory(
@@ -662,7 +662,7 @@ TEST_P(VideoSendStreamTest, DISABLED_DoesUtilizeUlpfecForVp9WithNackEnabled) {
   UlpfecObserver test(false, true, true, true, "VP9", &encoder_factory);
   RunBaseTest(&test);
 }
-#endif  // !defined(RTC_DISABLE_VP9)
+#endif  // defined(RTC_ENABLE_VP9)
 
 TEST_P(VideoSendStreamTest, SupportsUlpfecWithMultithreadedH264) {
   test::FunctionVideoEncoderFactory encoder_factory([]() {
@@ -805,7 +805,7 @@ TEST_P(VideoSendStreamTest, SupportsFlexfecWithRtpExtensionsVp8) {
   RunBaseTest(&test);
 }
 
-#if !defined(RTC_DISABLE_VP9)
+#if defined(RTC_ENABLE_VP9)
 TEST_P(VideoSendStreamTest, SupportsFlexfecVp9) {
   test::FunctionVideoEncoderFactory encoder_factory(
       []() { return VP9Encoder::Create(); });
@@ -819,7 +819,7 @@ TEST_P(VideoSendStreamTest, SupportsFlexfecWithNackVp9) {
   FlexfecObserver test(false, true, "VP9", &encoder_factory, 1);
   RunBaseTest(&test);
 }
-#endif  // defined(RTC_DISABLE_VP9)
+#endif  // defined(RTC_ENABLE_VP9)
 
 TEST_P(VideoSendStreamTest, SupportsFlexfecH264) {
   test::FunctionVideoEncoderFactory encoder_factory([]() {
@@ -3083,7 +3083,7 @@ TEST_P(VideoSendStreamTest, ReportsSentResolution) {
   RunBaseTest(&test);
 }
 
-#if !defined(RTC_DISABLE_VP9)
+#if defined(RTC_ENABLE_VP9)
 class Vp9HeaderObserver : public test::SendTest {
  public:
   Vp9HeaderObserver()
@@ -3576,7 +3576,7 @@ TEST_P(VideoSendStreamTest, MAYBE_Vp9FlexModeRefCount) {
 
   RunBaseTest(&test);
 }
-#endif  // !defined(RTC_DISABLE_VP9)
+#endif  // defined(RTC_ENABLE_VP9)
 
 void VideoSendStreamTest::TestRequestSourceRotateVideo(
     bool support_orientation_ext) {

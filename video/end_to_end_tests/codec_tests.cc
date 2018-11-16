@@ -118,7 +118,7 @@ TEST_P(CodecEndToEndTest, SendsAndReceivesVP8Rotation90) {
   RunBaseTest(&test);
 }
 
-#if !defined(RTC_DISABLE_VP9)
+#if defined(RTC_ENABLE_VP9)
 TEST_P(CodecEndToEndTest, SendsAndReceivesVP9) {
   test::FunctionVideoEncoderFactory encoder_factory(
       []() { return VP9Encoder::Create(); });
@@ -177,7 +177,7 @@ TEST_P(CodecEndToEndTest, SendsAndReceivesMultiplexVideoRotation90) {
   RunBaseTest(&test);
 }
 
-#endif  // !defined(RTC_DISABLE_VP9)
+#endif  // defined(RTC_ENABLE_VP9)
 
 #if defined(WEBRTC_USE_H264)
 class EndToEndTestH264 : public test::CallTest,

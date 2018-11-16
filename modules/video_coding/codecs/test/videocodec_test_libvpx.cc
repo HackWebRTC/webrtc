@@ -90,7 +90,7 @@ void PrintRdPerf(std::map<size_t, std::vector<VideoStatistics>> rd_stats) {
 }
 }  // namespace
 
-#if !defined(RTC_DISABLE_VP9)
+#if defined(RTC_ENABLE_VP9)
 TEST(VideoCodecTestLibvpx, HighBitrateVP9) {
   auto config = CreateConfig();
   config.SetCodecSettings(cricket::kVp9CodecName, 1, 1, 1, false, true, false,
@@ -200,7 +200,7 @@ TEST(VideoCodecTestLibvpx, VeryLowBitrateVP9) {
 // TODO(marpan): Add temporal layer test for VP9, once changes are in
 // vp9 wrapper for this.
 
-#endif  // !defined(RTC_DISABLE_VP9)
+#endif  // defined(RTC_ENABLE_VP9)
 
 TEST(VideoCodecTestLibvpx, HighBitrateVP8) {
   auto config = CreateConfig();

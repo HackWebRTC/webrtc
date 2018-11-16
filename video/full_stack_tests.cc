@@ -109,7 +109,7 @@ class GenericDescriptorTest : public ::testing::TestWithParam<std::string> {
   bool generic_descriptor_enabled_;
 };
 
-#if !defined(RTC_DISABLE_VP9)
+#if defined(RTC_ENABLE_VP9)
 TEST(FullStackTest, ForemanCifWithoutPacketLossVp9) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging foreman_cif;
@@ -190,7 +190,7 @@ TEST(FullStackTest, GeneratorWithoutPacketLossMultiplexI420AFrame) {
   fixture->RunWithAnalyzer(generator);
 }
 
-#endif  // !defined(RTC_DISABLE_VP9)
+#endif  // defined(RTC_ENABLE_VP9)
 
 #if defined(WEBRTC_LINUX)
 // Crashes on the linux trusty perf bot: bugs.webrtc.org/9129.
@@ -660,7 +660,7 @@ TEST(FullStackTest,
   fixture->RunWithAnalyzer(conf_motion_hd);
 }
 
-#if !defined(RTC_DISABLE_VP9)
+#if defined(RTC_ENABLE_VP9)
 TEST(FullStackTest, ConferenceMotionHd2000kbps100msLimitedQueueVP9) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging conf_motion_hd;
@@ -828,7 +828,7 @@ const ParamsWithLogging::Video kSimulcastVp8VideoLow = {
     150000, 200000, false, "VP8", 3,
     2,      400000, false, false, false, "ConferenceMotion_1280_720_50"};
 
-#if !defined(RTC_DISABLE_VP9)
+#if defined(RTC_ENABLE_VP9)
 TEST(FullStackTest, ScreenshareSlidesVP9_2SL) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging screenshare;
@@ -969,7 +969,7 @@ TEST(FullStackTest, VP9KSVC_3SL_Medium_Network_Restricted_Trusted_Rate) {
 }
 #endif  // !defined(WEBRTC_MAC)
 
-#endif  // !defined(RTC_DISABLE_VP9)
+#endif  // defined(RTC_ENABLE_VP9)
 
 // Android bots can't handle FullHD, so disable the test.
 // TODO(bugs.webrtc.org/9220): Investigate source of flakiness on Mac.

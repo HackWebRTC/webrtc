@@ -223,8 +223,8 @@ config("common_config") {
     defines += [ "WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE" ]
   }
 
-  if (!rtc_libvpx_build_vp9) {
-    defines += [ "RTC_DISABLE_VP9" ]
+  if (rtc_libvpx_build_vp9) {
+    defines += [ "RTC_ENABLE_VP9" ]
   }
 
   if (rtc_enable_sctp) {
