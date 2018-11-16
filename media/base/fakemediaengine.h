@@ -554,8 +554,7 @@ class FakeVideoEngine : public VideoEngineInterface {
   friend class FakeMediaEngine;
 };
 
-class FakeMediaEngine
-    : public CompositeMediaEngine<FakeVoiceEngine, FakeVideoEngine> {
+class FakeMediaEngine : public CompositeMediaEngine {
  public:
   FakeMediaEngine();
 

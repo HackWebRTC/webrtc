@@ -12,6 +12,7 @@
 
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "rtc_base/checks.h"
 
@@ -552,10 +553,10 @@ bool FakeVideoEngine::SetCapture(bool capture) {
 }
 
 FakeMediaEngine::FakeMediaEngine()
-    : CompositeMediaEngine<FakeVoiceEngine, FakeVideoEngine>(std::tuple<>(),
-                                                             std::tuple<>()),
-      voice_(&voice()),
-      video_(&video()) {}
+    : CompositeMediaEngine(absl::make_unique<FakeVoiceEngine>(),
+                           absl::make_unique<FakeVideoEngine>()),
+      voice_(static_cast<FakeVoiceEngine*>(&voice())),
+      video_(static_cast<FakeVideoEngine*>(&video())) {}
 FakeMediaEngine::~FakeMediaEngine() {}
 void FakeMediaEngine::SetAudioCodecs(const std::vector<AudioCodec>& codecs) {
   voice_->SetCodecs(codecs);

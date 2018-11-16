@@ -374,6 +374,7 @@ rtc_static_library("rtc_audio_video") {
     "../rtc_base:stringutils",
     "../rtc_base/experiments:normalize_simulcast_size_experiment",
     "../system_wrappers",
+    "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
