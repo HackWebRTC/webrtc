@@ -145,6 +145,13 @@ rtc_static_library("libjingle_peerconnection_api") {
   }
 }
 
+rtc_source_set("scoped_refptr") {
+  visibility = [ "*" ]
+  sources = [
+    "scoped_refptr.h",
+  ]
+}
+
 rtc_source_set("video_quality_test_fixture_api") {
   visibility = [ "*" ]
   testonly = true

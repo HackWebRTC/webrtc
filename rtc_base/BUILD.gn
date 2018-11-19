@@ -207,6 +207,9 @@ rtc_source_set("ptr_util") {
   sources = [
     "scoped_ref_ptr.h",
   ]
+  deps = [
+    "../api:scoped_refptr",
+  ]
 }
 
 rtc_source_set("refcount") {
