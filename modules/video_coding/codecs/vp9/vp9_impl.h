@@ -12,6 +12,8 @@
 #ifndef MODULES_VIDEO_CODING_CODECS_VP9_VP9_IMPL_H_
 #define MODULES_VIDEO_CODING_CODECS_VP9_VP9_IMPL_H_
 
+#ifdef RTC_ENABLE_VP9
+
 #include <map>
 #include <memory>
 #include <vector>
@@ -178,5 +180,7 @@ class VP9DecoderImpl : public VP9Decoder {
   bool key_frame_required_;
 };
 }  // namespace webrtc
+
+#endif  // RTC_ENABLE_VP9
 
 #endif  // MODULES_VIDEO_CODING_CODECS_VP9_VP9_IMPL_H_

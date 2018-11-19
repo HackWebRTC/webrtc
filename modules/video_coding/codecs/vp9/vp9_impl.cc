@@ -9,6 +9,8 @@
  *
  */
 
+#ifdef RTC_ENABLE_VP9
+
 #include "modules/video_coding/codecs/vp9/vp9_impl.h"
 
 #include <algorithm>
@@ -123,23 +125,6 @@ ColorSpace ExtractVP9ColorSpace(vpx_color_space_t space_t,
   return ColorSpace(primaries, transfer, matrix, range);
 }
 }  // namespace
-
-std::vector<SdpVideoFormat> SupportedVP9Codecs() {
-  // TODO(emircan): Add Profile 2 support after fixing browser_tests.
-  std::vector<SdpVideoFormat> supported_formats{SdpVideoFormat(
-      cricket::kVp9CodecName,
-      {{kVP9FmtpProfileId, VP9ProfileToString(VP9Profile::kProfile0)}})};
-  return supported_formats;
-}
-
-std::unique_ptr<VP9Encoder> VP9Encoder::Create() {
-  return absl::make_unique<VP9EncoderImpl>(cricket::VideoCodec());
-}
-
-std::unique_ptr<VP9Encoder> VP9Encoder::Create(
-    const cricket::VideoCodec& codec) {
-  return absl::make_unique<VP9EncoderImpl>(codec);
-}
 
 void VP9EncoderImpl::EncoderOutputCodedPacketCallback(vpx_codec_cx_pkt* pkt,
                                                       void* user_data) {
@@ -1260,10 +1245,6 @@ VideoEncoder::EncoderInfo VP9EncoderImpl::GetEncoderInfo() const {
   return info;
 }
 
-std::unique_ptr<VP9Decoder> VP9Decoder::Create() {
-  return absl::make_unique<VP9DecoderImpl>();
-}
-
 VP9DecoderImpl::VP9DecoderImpl()
     : decode_complete_callback_(nullptr),
       inited_(false),
@@ -1458,3 +1439,5 @@ const char* VP9DecoderImpl::ImplementationName() const {
 }
 
 }  // namespace webrtc
+
+#endif  // RTC_ENABLE_VP9

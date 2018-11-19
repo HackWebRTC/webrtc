@@ -501,19 +501,14 @@ rtc_static_library("webrtc_vp9_helpers") {
 rtc_static_library("webrtc_vp9") {
   visibility = [ "*" ]
   poisonous = [ "software_video_codecs" ]
-  if (rtc_libvpx_build_vp9) {
-    sources = [
-      "codecs/vp9/include/vp9.h",
-      "codecs/vp9/vp9_frame_buffer_pool.cc",
-      "codecs/vp9/vp9_frame_buffer_pool.h",
-      "codecs/vp9/vp9_impl.cc",
-      "codecs/vp9/vp9_impl.h",
-    ]
-  } else {
-    sources = [
-      "codecs/vp9/vp9_noop.cc",
-    ]
-  }
+  sources = [
+    "codecs/vp9/include/vp9.h",
+    "codecs/vp9/vp9.cc",
+    "codecs/vp9/vp9_frame_buffer_pool.cc",
+    "codecs/vp9/vp9_frame_buffer_pool.h",
+    "codecs/vp9/vp9_impl.cc",
+    "codecs/vp9/vp9_impl.h",
+  ]
 
   if (!build_with_chromium && is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
