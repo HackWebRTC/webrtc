@@ -62,8 +62,8 @@ size_t ReadTrendlineFilterWindowSize() {
       return window_size;
     RTC_LOG(WARNING) << "Window size must be greater than 1.";
   }
-  RTC_LOG(LS_WARNING) << "Failed to parse parameters for BweTrendlineFilter "
-                         "experiment from field trial string. Using default.";
+  RTC_LOG(LS_WARNING) << "Failed to parse parameters for BweWindowSizeInPackets"
+                         " experiment from field trial string. Using default.";
   return kDefaultTrendlineWindowSize;
 }
 }  // namespace
