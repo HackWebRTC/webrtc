@@ -42,6 +42,7 @@ rtc_static_library("remote_bitrate_estimator") {
   deps = [
     "../..:webrtc_common",
     "../../api/units:data_rate",
+    "../../api/units:timestamp",
     "../../modules:module_api",
     "../../modules:module_api_public",
     "../../modules/rtp_rtcp:rtp_rtcp_format",

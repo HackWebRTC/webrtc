@@ -27,6 +27,16 @@
 #include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
+namespace {
+absl::optional<DataRate> OptionalRateFromOptionalBps(
+    absl::optional<int> bitrate_bps) {
+  if (bitrate_bps) {
+    return DataRate::bps(*bitrate_bps);
+  } else {
+    return absl::nullopt;
+  }
+}
+}  // namespace
 
 enum { kTimestampGroupLengthMs = 5 };
 static const double kTimestampToMs = 1.0 / 90.0;
@@ -133,7 +143,8 @@ void RemoteBitrateEstimatorSingleStream::IncomingPacket(
         incoming_bitrate_.Rate(now_ms);
     if (incoming_bitrate_bps &&
         (prior_state != BandwidthUsage::kBwOverusing ||
-         GetRemoteRate()->TimeToReduceFurther(now_ms, *incoming_bitrate_bps))) {
+         GetRemoteRate()->TimeToReduceFurther(
+             Timestamp::ms(now_ms), DataRate::bps(*incoming_bitrate_bps)))) {
       // The first overuse should immediately trigger a new estimate.
       // We also have to update the estimate immediately if we are overusing
       // and the target bitrate is too high compared to what we are receiving.
@@ -187,10 +198,12 @@ void RemoteBitrateEstimatorSingleStream::UpdateEstimate(int64_t now_ms) {
   }
   AimdRateControl* remote_rate = GetRemoteRate();
 
-  const RateControlInput input(bw_state, incoming_bitrate_.Rate(now_ms));
-  uint32_t target_bitrate = remote_rate->Update(&input, now_ms);
+  const RateControlInput input(
+      bw_state, OptionalRateFromOptionalBps(incoming_bitrate_.Rate(now_ms)));
+  uint32_t target_bitrate =
+      remote_rate->Update(&input, Timestamp::ms(now_ms)).bps<uint32_t>();
   if (remote_rate->ValidEstimate()) {
-    process_interval_ms_ = remote_rate->GetFeedbackInterval();
+    process_interval_ms_ = remote_rate->GetFeedbackInterval().ms();
     RTC_DCHECK_GT(process_interval_ms_, 0);
     std::vector<uint32_t> ssrcs;
     GetSsrcs(&ssrcs);
@@ -202,7 +215,7 @@ void RemoteBitrateEstimatorSingleStream::UpdateEstimate(int64_t now_ms) {
 void RemoteBitrateEstimatorSingleStream::OnRttUpdate(int64_t avg_rtt_ms,
                                                      int64_t max_rtt_ms) {
   rtc::CritScope cs(&crit_sect_);
-  GetRemoteRate()->SetRtt(avg_rtt_ms);
+  GetRemoteRate()->SetRtt(TimeDelta::ms(avg_rtt_ms));
 }
 
 void RemoteBitrateEstimatorSingleStream::RemoveStream(unsigned int ssrc) {
@@ -226,7 +239,7 @@ bool RemoteBitrateEstimatorSingleStream::LatestEstimate(
   if (ssrcs->empty())
     *bitrate_bps = 0;
   else
-    *bitrate_bps = remote_rate_->LatestEstimate();
+    *bitrate_bps = remote_rate_->LatestEstimate().bps<uint32_t>();
   return true;
 }
 
@@ -249,7 +262,7 @@ AimdRateControl* RemoteBitrateEstimatorSingleStream::GetRemoteRate() {
 
 void RemoteBitrateEstimatorSingleStream::SetMinBitrate(int min_bitrate_bps) {
   rtc::CritScope cs(&crit_sect_);
-  remote_rate_->SetMinBitrate(min_bitrate_bps);
+  remote_rate_->SetMinBitrate(DataRate::bps(min_bitrate_bps));
 }
 
 }  // namespace webrtc
