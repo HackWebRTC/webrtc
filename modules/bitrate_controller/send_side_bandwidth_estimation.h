@@ -23,6 +23,8 @@
 #include "api/units/data_rate.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
+#include "modules/bitrate_controller/loss_based_bandwidth_estimation.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/experiments/field_trial_parser.h"
 
 namespace webrtc {
@@ -88,6 +90,8 @@ class SendSideBandwidthEstimation {
   void SetSendBitrate(DataRate bitrate, Timestamp at_time);
   void SetMinMaxBitrate(DataRate min_bitrate, DataRate max_bitrate);
   int GetMinBitrate() const;
+  void IncomingPacketFeedbackVector(const TransportPacketsFeedback& report,
+                                    absl::optional<uint32_t> acked_bitrate_bps);
 
  private:
   enum UmaState { kNoUpdate, kFirstDone, kDone };
@@ -100,6 +104,8 @@ class SendSideBandwidthEstimation {
   // After this method returns min_bitrate_history_.front().second contains the
   // min bitrate used during last kBweIncreaseIntervalMs.
   void UpdateMinHistory(Timestamp at_time);
+
+  DataRate MaybeRampupOrBackoff(DataRate new_bitrate, Timestamp at_time);
 
   // Cap |bitrate| to [min_bitrate_configured_, max_bitrate_configured_] and
   // set |current_bitrate_| to the capped value and updates the event log.
@@ -141,6 +147,7 @@ class SendSideBandwidthEstimation {
   float low_loss_threshold_;
   float high_loss_threshold_;
   DataRate bitrate_threshold_;
+  LossBasedBandwidthEstimation loss_based_bandwidth_estimation_;
 };
 }  // namespace webrtc
 #endif  // MODULES_BITRATE_CONTROLLER_SEND_SIDE_BANDWIDTH_ESTIMATION_H_

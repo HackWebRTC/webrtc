@@ -482,6 +482,9 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
   acknowledged_bitrate_estimator_->IncomingPacketFeedbackVector(
       received_feedback_vector);
   auto acknowledged_bitrate = acknowledged_bitrate_estimator_->bitrate_bps();
+  bandwidth_estimation_->IncomingPacketFeedbackVector(report,
+                                                      acknowledged_bitrate);
+
   DelayBasedBwe::Result result;
   result = delay_based_bwe_->IncomingPacketFeedbackVector(
       received_feedback_vector, acknowledged_bitrate,
