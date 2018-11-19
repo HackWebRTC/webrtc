@@ -45,6 +45,7 @@ rtc_source_set("callfactory_api") {
 }
 
 rtc_static_library("create_peerconnection_factory") {
+  visibility = [ "*" ]
   sources = [
     "create_peerconnection_factory.cc",
     "create_peerconnection_factory.h",
