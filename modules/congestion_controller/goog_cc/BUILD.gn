@@ -97,6 +97,7 @@ rtc_source_set("estimators") {
   ]
 
   deps = [
+    "../../../api/units:data_rate",
     "../../../logging:rtc_event_bwe",
     "../../../logging:rtc_event_log_api",
     "../../../rtc_base:checks",

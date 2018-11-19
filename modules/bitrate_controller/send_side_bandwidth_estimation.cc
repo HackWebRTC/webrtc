@@ -275,13 +275,12 @@ void SendSideBandwidthEstimation::UpdateDelayBasedEstimate(Timestamp at_time,
 
 void SendSideBandwidthEstimation::IncomingPacketFeedbackVector(
     const TransportPacketsFeedback& report,
-    absl::optional<uint32_t> acked_bitrate_bps) {
+    absl::optional<DataRate> acked_bitrate) {
   if (!loss_based_bandwidth_estimation_.Enabled())
     return;
-  if (acked_bitrate_bps) {
-    DataRate acked_bitrate = DataRate::bps(*acked_bitrate_bps);
+  if (acked_bitrate) {
     loss_based_bandwidth_estimation_.UpdateAcknowledgedBitrate(
-        acked_bitrate, report.feedback_time);
+        *acked_bitrate, report.feedback_time);
   }
   loss_based_bandwidth_estimation_.UpdateLossStatistics(report.packet_feedbacks,
                                                         report.feedback_time);

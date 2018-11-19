@@ -201,12 +201,12 @@ void DelayBasedBweTest::IncomingFeedback(int64_t arrival_time_ms,
   acknowledged_bitrate_estimator_->IncomingPacketFeedbackVector(packets);
   DelayBasedBwe::Result result =
       bitrate_estimator_->IncomingPacketFeedbackVector(
-          packets, acknowledged_bitrate_estimator_->bitrate_bps(),
-          clock_.TimeInMilliseconds());
+          packets, acknowledged_bitrate_estimator_->bitrate(),
+          Timestamp::ms(clock_.TimeInMilliseconds()));
   const uint32_t kDummySsrc = 0;
   if (result.updated) {
     bitrate_observer_.OnReceiveBitrateChanged({kDummySsrc},
-                                              result.target_bitrate_bps);
+                                              result.target_bitrate.bps());
   }
 }
 
@@ -237,13 +237,13 @@ bool DelayBasedBweTest::GenerateAndProcessFrame(uint32_t ssrc,
   acknowledged_bitrate_estimator_->IncomingPacketFeedbackVector(packets);
   DelayBasedBwe::Result result =
       bitrate_estimator_->IncomingPacketFeedbackVector(
-          packets, acknowledged_bitrate_estimator_->bitrate_bps(),
-          clock_.TimeInMilliseconds());
+          packets, acknowledged_bitrate_estimator_->bitrate(),
+          Timestamp::ms(clock_.TimeInMilliseconds()));
   const uint32_t kDummySsrc = 0;
   if (result.updated) {
     bitrate_observer_.OnReceiveBitrateChanged({kDummySsrc},
-                                              result.target_bitrate_bps);
-    if (!first_update_ && result.target_bitrate_bps < bitrate_bps)
+                                              result.target_bitrate.bps());
+    if (!first_update_ && result.target_bitrate.bps() < bitrate_bps)
       overuse = true;
     first_update_ = false;
   }
@@ -289,14 +289,14 @@ void DelayBasedBweTest::InitialBehaviorTestHelper(
   const int kFramerate = 50;  // 50 fps to avoid rounding errors.
   const int kFrameIntervalMs = 1000 / kFramerate;
   const PacedPacketInfo kPacingInfo(0, 5, 5000);
-  uint32_t bitrate_bps = 0;
+  DataRate bitrate = DataRate::Zero();
   int64_t send_time_ms = 0;
   uint16_t sequence_number = 0;
   std::vector<uint32_t> ssrcs;
-  EXPECT_FALSE(bitrate_estimator_->LatestEstimate(&ssrcs, &bitrate_bps));
+  EXPECT_FALSE(bitrate_estimator_->LatestEstimate(&ssrcs, &bitrate));
   EXPECT_EQ(0u, ssrcs.size());
   clock_.AdvanceTimeMilliseconds(1000);
-  EXPECT_FALSE(bitrate_estimator_->LatestEstimate(&ssrcs, &bitrate_bps));
+  EXPECT_FALSE(bitrate_estimator_->LatestEstimate(&ssrcs, &bitrate));
   EXPECT_FALSE(bitrate_observer_.updated());
   bitrate_observer_.Reset();
   clock_.AdvanceTimeMilliseconds(1000);
@@ -308,7 +308,7 @@ void DelayBasedBweTest::InitialBehaviorTestHelper(
         i < kInitialProbingPackets ? kPacingInfo : PacedPacketInfo();
 
     if (i == kNumInitialPackets) {
-      EXPECT_FALSE(bitrate_estimator_->LatestEstimate(&ssrcs, &bitrate_bps));
+      EXPECT_FALSE(bitrate_estimator_->LatestEstimate(&ssrcs, &bitrate));
       EXPECT_EQ(0u, ssrcs.size());
       EXPECT_FALSE(bitrate_observer_.updated());
       bitrate_observer_.Reset();
@@ -318,13 +318,14 @@ void DelayBasedBweTest::InitialBehaviorTestHelper(
     clock_.AdvanceTimeMilliseconds(1000 / kFramerate);
     send_time_ms += kFrameIntervalMs;
   }
-  EXPECT_TRUE(bitrate_estimator_->LatestEstimate(&ssrcs, &bitrate_bps));
+  EXPECT_TRUE(bitrate_estimator_->LatestEstimate(&ssrcs, &bitrate));
   ASSERT_EQ(1u, ssrcs.size());
   EXPECT_EQ(kDefaultSsrc, ssrcs.front());
-  EXPECT_NEAR(expected_converge_bitrate, bitrate_bps, kAcceptedBitrateErrorBps);
+  EXPECT_NEAR(expected_converge_bitrate, bitrate.bps(),
+              kAcceptedBitrateErrorBps);
   EXPECT_TRUE(bitrate_observer_.updated());
   bitrate_observer_.Reset();
-  EXPECT_EQ(bitrate_observer_.latest_bitrate(), bitrate_bps);
+  EXPECT_EQ(bitrate_observer_.latest_bitrate(), bitrate.bps());
 }
 
 void DelayBasedBweTest::RateIncreaseReorderingTestHelper(
@@ -509,7 +510,7 @@ void DelayBasedBweTest::TestWrappingHelper(int silence_time_s) {
     clock_.AdvanceTimeMilliseconds(kFrameIntervalMs);
     send_time_ms += kFrameIntervalMs;
   }
-  uint32_t bitrate_before = 0;
+  DataRate bitrate_before = DataRate::Zero();
   std::vector<uint32_t> ssrcs;
   bitrate_estimator_->LatestEstimate(&ssrcs, &bitrate_before);
 
@@ -522,7 +523,7 @@ void DelayBasedBweTest::TestWrappingHelper(int silence_time_s) {
     clock_.AdvanceTimeMilliseconds(2 * kFrameIntervalMs);
     send_time_ms += kFrameIntervalMs;
   }
-  uint32_t bitrate_after = 0;
+  DataRate bitrate_after = DataRate::Zero();
   bitrate_estimator_->LatestEstimate(&ssrcs, &bitrate_after);
   EXPECT_LT(bitrate_after, bitrate_before);
 }

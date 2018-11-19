@@ -72,6 +72,18 @@ absl::optional<uint32_t> AcknowledgedBitrateEstimator::PeekBps() const {
   return bitrate_estimator_->PeekBps();
 }
 
+absl::optional<DataRate> AcknowledgedBitrateEstimator::bitrate() const {
+  if (bitrate_bps())
+    return DataRate::bps(*bitrate_bps());
+  return absl::nullopt;
+}
+
+absl::optional<DataRate> AcknowledgedBitrateEstimator::PeekRate() const {
+  if (PeekBps())
+    return DataRate::bps(*PeekBps());
+  return absl::nullopt;
+}
+
 void AcknowledgedBitrateEstimator::SetAlrEndedTimeMs(
     int64_t alr_ended_time_ms) {
   alr_ended_time_ms_.emplace(alr_ended_time_ms);

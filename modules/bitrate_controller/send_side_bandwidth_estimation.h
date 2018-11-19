@@ -91,7 +91,7 @@ class SendSideBandwidthEstimation {
   void SetMinMaxBitrate(DataRate min_bitrate, DataRate max_bitrate);
   int GetMinBitrate() const;
   void IncomingPacketFeedbackVector(const TransportPacketsFeedback& report,
-                                    absl::optional<uint32_t> acked_bitrate_bps);
+                                    absl::optional<DataRate> acked_bitrate);
 
  private:
   enum UmaState { kNoUpdate, kFirstDone, kDone };

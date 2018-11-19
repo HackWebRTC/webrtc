@@ -17,6 +17,8 @@
 #include "absl/types/optional.h"
 #include "modules/congestion_controller/goog_cc/bitrate_estimator.h"
 
+#include "api/units/data_rate.h"
+
 namespace webrtc {
 
 struct PacketFeedback;
@@ -33,6 +35,8 @@ class AcknowledgedBitrateEstimator {
       const std::vector<PacketFeedback>& packet_feedback_vector);
   absl::optional<uint32_t> bitrate_bps() const;
   absl::optional<uint32_t> PeekBps() const;
+  absl::optional<DataRate> bitrate() const;
+  absl::optional<DataRate> PeekRate() const;
   void SetAlrEndedTimeMs(int64_t alr_ended_time_ms);
   void SetAllocatedBitrateWithoutFeedback(uint32_t bitrate_bps);
 
