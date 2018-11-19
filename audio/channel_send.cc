@@ -247,7 +247,7 @@ class ChannelSend
   rtc::CriticalSection _callbackCritSect;
   rtc::CriticalSection volume_settings_critsect_;
 
-  bool sending_ = false;
+  bool sending_ RTC_GUARDED_BY(&worker_thread_checker_) = false;
 
   RtcEventLog* const event_log_;
 
@@ -794,7 +794,7 @@ ChannelSend::~ChannelSend() {
 }
 
 void ChannelSend::StartSend() {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   RTC_DCHECK(!sending_);
   sending_ = true;
 
@@ -814,7 +814,7 @@ void ChannelSend::StartSend() {
 }
 
 void ChannelSend::StopSend() {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   if (!sending_) {
     return;
   }
@@ -856,7 +856,7 @@ void ChannelSend::StopSend() {
 
 bool ChannelSend::SetEncoder(int payload_type,
                              std::unique_ptr<AudioEncoder> encoder) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   RTC_DCHECK_GE(payload_type, 0);
   RTC_DCHECK_LE(payload_type, 127);
   // TODO(ossu): Make CodecInsts up, for now: one for the RTP/RTCP module and
@@ -900,7 +900,7 @@ bool ChannelSend::SetEncoder(int payload_type,
 
 void ChannelSend::ModifyEncoder(
     rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   audio_coding_->ModifyEncoder(modifier);
 }
 
@@ -928,7 +928,7 @@ int ChannelSend::GetBitrate() const {
 }
 
 void ChannelSend::OnTwccBasedUplinkPacketLossRate(float packet_loss_rate) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   if (!use_twcc_plr_for_ana_)
     return;
   audio_coding_->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
@@ -940,7 +940,7 @@ void ChannelSend::OnTwccBasedUplinkPacketLossRate(float packet_loss_rate) {
 
 void ChannelSend::OnRecoverableUplinkPacketLossRate(
     float recoverable_packet_loss_rate) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   audio_coding_->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
     if (*encoder) {
       (*encoder)->OnReceivedUplinkRecoverablePacketLossFraction(
@@ -960,7 +960,7 @@ void ChannelSend::OnUplinkPacketLossRate(float packet_loss_rate) {
 }
 
 void ChannelSend::RegisterTransport(Transport* transport) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   rtc::CritScope cs(&_callbackCritSect);
   _transportPtr = transport;
 }
@@ -996,7 +996,7 @@ bool ChannelSend::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
 }
 
 void ChannelSend::SetInputMute(bool enable) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   rtc::CritScope cs(&volume_settings_critsect_);
   input_mute_ = enable;
 }
@@ -1007,7 +1007,7 @@ bool ChannelSend::InputMute() const {
 }
 
 bool ChannelSend::SendTelephoneEventOutband(int event, int duration_ms) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   RTC_DCHECK_LE(0, event);
   RTC_DCHECK_GE(255, event);
   RTC_DCHECK_LE(0, duration_ms);
@@ -1025,7 +1025,7 @@ bool ChannelSend::SendTelephoneEventOutband(int event, int duration_ms) {
 
 bool ChannelSend::SetSendTelephoneEventPayloadType(int payload_type,
                                                    int payload_frequency) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   RTC_DCHECK_LE(0, payload_type);
   RTC_DCHECK_GE(127, payload_type);
   CodecInst codec = {0};
@@ -1045,7 +1045,7 @@ bool ChannelSend::SetSendTelephoneEventPayloadType(int payload_type,
 }
 
 void ChannelSend::SetLocalSSRC(uint32_t ssrc) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   RTC_DCHECK(!sending_);
 
   if (media_transport_) {
@@ -1056,26 +1056,26 @@ void ChannelSend::SetLocalSSRC(uint32_t ssrc) {
 }
 
 void ChannelSend::SetMid(const std::string& mid, int extension_id) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   int ret = SetSendRtpHeaderExtension(true, kRtpExtensionMid, extension_id);
   RTC_DCHECK_EQ(0, ret);
   _rtpRtcpModule->SetMid(mid);
 }
 
 void ChannelSend::SetExtmapAllowMixed(bool extmap_allow_mixed) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   _rtpRtcpModule->SetExtmapAllowMixed(extmap_allow_mixed);
 }
 
 void ChannelSend::SetSendAudioLevelIndicationStatus(bool enable, int id) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   _includeAudioLevelIndication = enable;
   int ret = SetSendRtpHeaderExtension(enable, kRtpExtensionAudioLevel, id);
   RTC_DCHECK_EQ(0, ret);
 }
 
 void ChannelSend::EnableSendTransportSequenceNumber(int id) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   int ret =
       SetSendRtpHeaderExtension(true, kRtpExtensionTransportSequenceNumber, id);
   RTC_DCHECK_EQ(0, ret);
@@ -1084,7 +1084,7 @@ void ChannelSend::EnableSendTransportSequenceNumber(int id) {
 void ChannelSend::RegisterSenderCongestionControlObjects(
     RtpTransportControllerSendInterface* transport,
     RtcpBandwidthObserver* bandwidth_observer) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   RtpPacketSender* rtp_packet_sender = transport->packet_sender();
   TransportFeedbackObserver* transport_feedback_observer =
       transport->transport_feedback_observer();
@@ -1106,7 +1106,7 @@ void ChannelSend::RegisterSenderCongestionControlObjects(
 }
 
 void ChannelSend::ResetSenderCongestionControlObjects() {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   RTC_DCHECK(packet_router_);
   _rtpRtcpModule->SetStorePacketsStatus(false, 600);
   rtcp_observer_->SetBandwidthObserver(nullptr);
@@ -1118,7 +1118,7 @@ void ChannelSend::ResetSenderCongestionControlObjects() {
 }
 
 void ChannelSend::SetRTCP_CNAME(absl::string_view c_name) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   // Note: SetCNAME() accepts a c string of length at most 255.
   const std::string c_name_limited(c_name.substr(0, 255));
   int ret = _rtpRtcpModule->SetCNAME(c_name_limited.c_str()) != 0;
@@ -1126,7 +1126,7 @@ void ChannelSend::SetRTCP_CNAME(absl::string_view c_name) {
 }
 
 std::vector<ReportBlock> ChannelSend::GetRemoteRTCPReportBlocks() const {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   // Get the report blocks from the latest received RTCP Sender or Receiver
   // Report. Each element in the vector contains the sender's SSRC and a
   // report block according to RFC 3550.
@@ -1155,7 +1155,7 @@ std::vector<ReportBlock> ChannelSend::GetRemoteRTCPReportBlocks() const {
 }
 
 CallSendStatistics ChannelSend::GetRTCPStatistics() const {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   CallSendStatistics stats = {0};
   stats.rttMs = GetRTT();
 
@@ -1175,7 +1175,7 @@ CallSendStatistics ChannelSend::GetRTCPStatistics() const {
 }
 
 void ChannelSend::SetNACKStatus(bool enable, int max_packets) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   // None of these functions can fail.
   if (enable)
     audio_coding_->EnableNack(max_packets);
@@ -1256,7 +1256,7 @@ void ChannelSend::UpdateOverheadForEncoder() {
 }
 
 void ChannelSend::SetTransportOverhead(size_t transport_overhead_per_packet) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   rtc::CritScope cs(&overhead_per_packet_lock_);
   transport_overhead_per_packet_ = transport_overhead_per_packet;
   UpdateOverheadForEncoder();
@@ -1270,7 +1270,7 @@ void ChannelSend::OnOverheadChanged(size_t overhead_bytes_per_packet) {
 }
 
 ANAStats ChannelSend::GetANAStatistics() const {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   return audio_coding_->GetANAStats();
 }
 
@@ -1343,7 +1343,7 @@ int64_t ChannelSend::GetRTT() const {
 
 void ChannelSend::SetFrameEncryptor(
     rtc::scoped_refptr<FrameEncryptorInterface> frame_encryptor) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   rtc::CritScope cs(&encoder_queue_lock_);
   if (encoder_queue_is_active_) {
     encoder_queue_->PostTask([this, frame_encryptor]() {
