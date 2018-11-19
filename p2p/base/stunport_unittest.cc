@@ -216,7 +216,7 @@ TEST_F(StunPortTest, TestPrepareAddressFail) {
 
 // Test that we can get an address from a STUN server specified by a hostname.
 // Crashes on Linux, see webrtc:7416
-#if defined(WEBRTC_LINUX) || defined(WEBRTC_WINDOWS)
+#if defined(WEBRTC_LINUX) || defined(WEBRTC_WIN)
 #define MAYBE_TestPrepareAddressHostname DISABLED_TestPrepareAddressHostname
 #else
 #define MAYBE_TestPrepareAddressHostname TestPrepareAddressHostname
