@@ -43,6 +43,7 @@ specific_include_rules = {
   ".*\.h": [
     "+rtc_base/checks.h",
     "+rtc_base/system/rtc_export.h",
+    "+rtc_base/units/unit_base.h",
   ],
 
   "array_view\.h": [
@@ -250,22 +251,6 @@ specific_include_rules = {
 
   "videocodec_test_fixture\.h": [
     "+modules/video_coding/include/video_codec_interface.h"
-  ],
-
-  "data_rate\.h": [
-    "+rtc_base/numerics/safe_conversions.h",
-  ],
-
-  "data_size\.h": [
-    "+rtc_base/numerics/safe_conversions.h",
-  ],
-
-  "time_delta\.h": [
-    "+rtc_base/numerics/safe_conversions.h",
-  ],
-
-  "timestamp\.h": [
-    "+rtc_base/numerics/safe_conversions.h",
   ],
 
   "i010_buffer\.h": [
