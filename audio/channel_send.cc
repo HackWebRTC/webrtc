@@ -259,7 +259,7 @@ class ChannelSend
   uint16_t send_sequence_number_;
 
   // uses
-  ProcessThread* _moduleProcessThreadPtr;
+  ProcessThread* const _moduleProcessThreadPtr;
   Transport* _transportPtr;  // WebRtc socket or external transport
   RmsLevel rms_level_ RTC_GUARDED_BY(encoder_queue_);
   bool input_mute_ RTC_GUARDED_BY(volume_settings_critsect_);
@@ -273,13 +273,14 @@ class ChannelSend
   size_t rtp_overhead_per_packet_ RTC_GUARDED_BY(overhead_per_packet_lock_);
   rtc::CriticalSection overhead_per_packet_lock_;
   // RtcpBandwidthObserver
-  std::unique_ptr<VoERtcpObserver> rtcp_observer_;
+  const std::unique_ptr<VoERtcpObserver> rtcp_observer_;
 
-  PacketRouter* packet_router_ = nullptr;
-  std::unique_ptr<TransportFeedbackProxy> feedback_observer_proxy_;
-  std::unique_ptr<TransportSequenceNumberProxy> seq_num_allocator_proxy_;
-  std::unique_ptr<RtpPacketSenderProxy> rtp_packet_sender_proxy_;
-  std::unique_ptr<RateLimiter> retransmission_rate_limiter_;
+  PacketRouter* packet_router_ RTC_GUARDED_BY(&worker_thread_checker_) =
+      nullptr;
+  const std::unique_ptr<TransportFeedbackProxy> feedback_observer_proxy_;
+  const std::unique_ptr<TransportSequenceNumberProxy> seq_num_allocator_proxy_;
+  const std::unique_ptr<RtpPacketSenderProxy> rtp_packet_sender_proxy_;
+  const std::unique_ptr<RateLimiter> retransmission_rate_limiter_;
 
   rtc::ThreadChecker construction_thread_;
 
@@ -287,7 +288,7 @@ class ChannelSend
 
   rtc::CriticalSection encoder_queue_lock_;
   bool encoder_queue_is_active_ RTC_GUARDED_BY(encoder_queue_lock_) = false;
-  rtc::TaskQueue* encoder_queue_ = nullptr;
+  rtc::TaskQueue* const encoder_queue_ = nullptr;
 
   MediaTransportInterface* const media_transport_;
   int media_transport_sequence_number_ RTC_GUARDED_BY(encoder_queue_) = 0;
@@ -306,7 +307,7 @@ class ChannelSend
   // E2EE Audio Frame Encryption
   rtc::scoped_refptr<FrameEncryptorInterface> frame_encryptor_;
   // E2EE Frame Encryption Options
-  webrtc::CryptoOptions crypto_options_;
+  const webrtc::CryptoOptions crypto_options_;
 
   rtc::CriticalSection bitrate_crit_section_;
   int configured_bitrate_bps_ RTC_GUARDED_BY(bitrate_crit_section_) = 0;
