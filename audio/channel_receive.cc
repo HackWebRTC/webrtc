@@ -45,10 +45,6 @@
 #include "rtc_base/timeutils.h"
 #include "system_wrappers/include/metrics.h"
 
-// TODO(solenberg, nisse): This file contains a few NOLINT marks, to silence
-// warnings about non-const reference arguments.
-// These need cleanup, in a separate cl.
-
 namespace webrtc {
 namespace voe {
 
@@ -93,40 +89,6 @@ WebRtcRTPHeader CreateWebrtcRTPHeaderForMediaTransportFrame(
   // The rest are initialized by the RTPHeader constructor.
   return webrtc_header;
 }
-
-// Helper class to simplify locking scheme for members that are accessed from
-// multiple threads.
-// Example: a member can be set on thread T1 and read by an internal audio
-// thread T2. Accessing the member via this class ensures that we are
-// safe and also avoid TSan v2 warnings.
-class ChannelReceiveState {
- public:
-  struct State {
-    bool playing = false;
-  };
-
-  ChannelReceiveState() {}
-  virtual ~ChannelReceiveState() {}
-
-  void Reset() {
-    rtc::CritScope lock(&lock_);
-    state_ = State();
-  }
-
-  State Get() const {
-    rtc::CritScope lock(&lock_);
-    return state_;
-  }
-
-  void SetPlaying(bool enable) {
-    rtc::CritScope lock(&lock_);
-    state_.playing = enable;
-  }
-
- private:
-  rtc::CriticalSection lock_;
-  State state_;
-};
 
 class ChannelReceive : public ChannelReceiveInterface,
                        public MediaTransportAudioSinkInterface {
@@ -206,11 +168,6 @@ class ChannelReceive : public ChannelReceiveInterface,
   std::vector<RtpSource> GetSources() const override;
 
  private:
-  void Init();
-  void Terminate();
-
-  int GetRemoteSSRC(unsigned int& ssrc);  // NOLINT
-
   bool ReceivePacket(const uint8_t* packet,
                      size_t packet_length,
                      const RTPHeader& header);
@@ -228,6 +185,11 @@ class ChannelReceive : public ChannelReceiveInterface,
                                 size_t payloadSize,
                                 const WebRtcRTPHeader* rtpHeader);
 
+  bool Playing() const {
+    rtc::CritScope lock(&playing_lock_);
+    return playing_;
+  }
+
   // Thread checkers document and lock usage of some methods to specific threads
   // we know about. The goal is to eventually split up voe::ChannelReceive into
   // parts with single-threaded semantics, and thereby reduce the need for
@@ -243,7 +205,8 @@ class ChannelReceive : public ChannelReceiveInterface,
   rtc::CriticalSection _callbackCritSect;
   rtc::CriticalSection volume_settings_critsect_;
 
-  ChannelReceiveState channel_state_;
+  rtc::CriticalSection playing_lock_;
+  bool playing_ RTC_GUARDED_BY(&playing_lock_) = false;
 
   RtcEventLog* const event_log_;
 
@@ -315,7 +278,7 @@ int32_t ChannelReceive::OnReceivedPayloadData(
   // We should not be receiving any RTP packets if media_transport is set.
   RTC_CHECK(!media_transport_);
 
-  if (!channel_state_.Get().playing) {
+  if (!Playing()) {
     // Avoid inserting into NetEQ when we are not playing. Count the
     // packet as discarded.
     return 0;
@@ -346,7 +309,7 @@ void ChannelReceive::OnData(uint64_t channel_id,
                             MediaTransportEncodedAudioFrame frame) {
   RTC_CHECK(media_transport_);
 
-  if (!channel_state_.Get().playing) {
+  if (!Playing()) {
     // Avoid inserting into NetEQ when we are not playing. Count the
     // packet as discarded.
     return;
@@ -368,9 +331,8 @@ AudioMixer::Source::AudioFrameInfo ChannelReceive::GetAudioFrameWithInfo(
   RTC_DCHECK_RUNS_SERIALIZED(&audio_thread_race_checker_);
   audio_frame->sample_rate_hz_ = sample_rate_hz;
 
-  unsigned int ssrc;
-  RTC_CHECK_EQ(GetRemoteSSRC(ssrc), 0);
-  event_log_->Log(absl::make_unique<RtcEventAudioPlayout>(ssrc));
+  event_log_->Log(absl::make_unique<RtcEventAudioPlayout>(remote_ssrc_));
+
   // Get 10ms raw PCM data from the ACM (mixer limits output frequency)
   bool muted;
   if (audio_coding_->PlayoutData10Ms(audio_frame->sample_rate_hz_, audio_frame,
@@ -536,25 +498,8 @@ ChannelReceive::ChannelReceive(
   _rtpRtcpModule.reset(RtpRtcp::CreateRtpRtcp(configuration));
   _rtpRtcpModule->SetSendingMediaStatus(false);
   _rtpRtcpModule->SetRemoteSSRC(remote_ssrc_);
-  Init();
-}
 
-ChannelReceive::~ChannelReceive() {
-  Terminate();
-  RTC_DCHECK(!channel_state_.Get().playing);
-}
-
-void ChannelReceive::Init() {
-  channel_state_.Reset();
-
-  // --- Add modules to process thread (for periodic schedulation)
   _moduleProcessThreadPtr->RegisterModule(_rtpRtcpModule.get(), RTC_FROM_HERE);
-
-  // --- ACM initialization
-  int error = audio_coding_->InitializeReceiver();
-  RTC_DCHECK_EQ(0, error);
-
-  // --- RTP/RTCP module initialization
 
   // Ensure that RTCP is enabled by default for the created channel.
   // Note that, the module will keep generating RTCP until it is explicitly
@@ -569,30 +514,22 @@ void ChannelReceive::Init() {
   }
 }
 
-void ChannelReceive::Terminate() {
+ChannelReceive::~ChannelReceive() {
   RTC_DCHECK(construction_thread_.CalledOnValidThread());
 
   if (media_transport_) {
     media_transport_->SetReceiveAudioSink(nullptr);
   }
 
-  // Must be called on the same thread as Init().
   rtp_receive_statistics_->RegisterRtcpStatisticsCallback(NULL);
 
   StopPlayout();
 
-  // The order to safely shutdown modules in a channel is:
-  // 1. De-register callbacks in modules
-  // 2. De-register modules in process thread
-  // 3. Destroy modules
   int error = audio_coding_->RegisterTransportCallback(NULL);
   RTC_DCHECK_EQ(0, error);
 
-  // De-register modules in process thread
   if (_moduleProcessThreadPtr)
     _moduleProcessThreadPtr->DeRegisterModule(_rtpRtcpModule.get());
-
-  // End of modules shutdown
 }
 
 void ChannelReceive::SetSink(AudioSinkInterface* sink) {
@@ -603,20 +540,14 @@ void ChannelReceive::SetSink(AudioSinkInterface* sink) {
 
 void ChannelReceive::StartPlayout() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  if (channel_state_.Get().playing) {
-    return;
-  }
-
-  channel_state_.SetPlaying(true);
+  rtc::CritScope lock(&playing_lock_);
+  playing_ = true;
 }
 
 void ChannelReceive::StopPlayout() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  if (!channel_state_.Get().playing) {
-    return;
-  }
-
-  channel_state_.SetPlaying(false);
+  rtc::CritScope lock(&playing_lock_);
+  playing_ = false;
   _outputAudioLevel.Clear();
 }
 
@@ -805,12 +736,6 @@ void ChannelReceive::SetChannelOutputVolumeScaling(float scaling) {
 void ChannelReceive::SetLocalSSRC(uint32_t ssrc) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   _rtpRtcpModule->SetSSRC(ssrc);
-}
-
-// TODO(nisse): Pass ssrc in return value instead.
-int ChannelReceive::GetRemoteSSRC(unsigned int& ssrc) {
-  ssrc = remote_ssrc_;
-  return 0;
 }
 
 void ChannelReceive::RegisterReceiverCongestionControlObjects(
