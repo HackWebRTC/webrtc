@@ -62,7 +62,7 @@ struct CallReceiveStatistics {
 
 namespace voe {
 
-class ChannelSend;
+class ChannelSendInterface;
 
 // Interface class needed for AudioReceiveStream tests that use a
 // MockChannelReceive.
@@ -120,7 +120,8 @@ class ChannelReceiveInterface : public RtpPacketSinkInterface {
 
   // Associate to a send channel.
   // Used for obtaining RTT for a receive-only channel.
-  virtual void SetAssociatedSendChannel(const ChannelSend* channel) = 0;
+  virtual void SetAssociatedSendChannel(
+      const ChannelSendInterface* channel) = 0;
 
   virtual std::vector<RtpSource> GetSources() const = 0;
 };

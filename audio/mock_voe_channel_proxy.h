@@ -18,7 +18,7 @@
 
 #include "api/test/mock_frame_encryptor.h"
 #include "audio/channel_receive.h"
-#include "audio/channel_send_proxy.h"
+#include "audio/channel_send.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "test/gmock.h"
 
@@ -48,7 +48,7 @@ class MockChannelReceive : public voe::ChannelReceiveInterface {
                                                   AudioFrame* audio_frame));
   MOCK_CONST_METHOD0(PreferredSampleRate, int());
   MOCK_METHOD1(SetAssociatedSendChannel,
-               void(const voe::ChannelSend* send_channel));
+               void(const voe::ChannelSendInterface* send_channel));
   MOCK_CONST_METHOD0(GetPlayoutTimestamp, uint32_t());
   MOCK_CONST_METHOD0(GetSyncInfo, absl::optional<Syncable::Info>());
   MOCK_METHOD1(SetMinimumPlayoutDelay, void(int delay_ms));
@@ -60,7 +60,7 @@ class MockChannelReceive : public voe::ChannelReceiveInterface {
   MOCK_METHOD0(StopPlayout, void());
 };
 
-class MockChannelSendProxy : public voe::ChannelSendProxy {
+class MockChannelSend : public voe::ChannelSendInterface {
  public:
   // GMock doesn't like move-only types, like std::unique_ptr.
   virtual bool SetEncoder(int payload_type,
@@ -72,6 +72,7 @@ class MockChannelSendProxy : public voe::ChannelSendProxy {
   MOCK_METHOD1(
       ModifyEncoder,
       void(rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier));
+  MOCK_METHOD2(SetMid, void(const std::string& mid, int extension_id));
   MOCK_METHOD1(SetLocalSSRC, void(uint32_t ssrc));
   MOCK_METHOD1(SetRTCP_CNAME, void(absl::string_view c_name));
   MOCK_METHOD2(SetNACKStatus, void(bool enable, int max_packets));
@@ -98,12 +99,14 @@ class MockChannelSendProxy : public voe::ChannelSendProxy {
   }
   MOCK_METHOD1(ProcessAndEncodeAudioForMock,
                void(std::unique_ptr<AudioFrame>* audio_frame));
-  MOCK_METHOD1(SetTransportOverhead, void(int transport_overhead_per_packet));
+  MOCK_METHOD1(SetTransportOverhead,
+               void(size_t transport_overhead_per_packet));
   MOCK_CONST_METHOD0(GetRtpRtcp, RtpRtcp*());
   MOCK_CONST_METHOD0(GetBitrate, int());
   MOCK_METHOD1(OnTwccBasedUplinkPacketLossRate, void(float packet_loss_rate));
   MOCK_METHOD1(OnRecoverableUplinkPacketLossRate,
                void(float recoverable_packet_loss_rate));
+  MOCK_CONST_METHOD0(GetRTT, int64_t());
   MOCK_METHOD0(StartSend, void());
   MOCK_METHOD0(StopSend, void());
   MOCK_METHOD1(

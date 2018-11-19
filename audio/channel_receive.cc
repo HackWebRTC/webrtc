@@ -201,7 +201,7 @@ class ChannelReceive : public ChannelReceiveInterface,
 
   // Associate to a send channel.
   // Used for obtaining RTT for a receive-only channel.
-  void SetAssociatedSendChannel(const ChannelSend* channel) override;
+  void SetAssociatedSendChannel(const ChannelSendInterface* channel) override;
 
   std::vector<RtpSource> GetSources() const override;
 
@@ -294,7 +294,7 @@ class ChannelReceive : public ChannelReceiveInterface,
 
   // An associated send channel.
   rtc::CriticalSection assoc_send_channel_lock_;
-  const ChannelSend* associated_send_channel_
+  const ChannelSendInterface* associated_send_channel_
       RTC_GUARDED_BY(assoc_send_channel_lock_);
 
   PacketRouter* packet_router_ = nullptr;
@@ -889,7 +889,8 @@ int ChannelReceive::ResendPackets(const uint16_t* sequence_numbers,
   return _rtpRtcpModule->SendNACK(sequence_numbers, length);
 }
 
-void ChannelReceive::SetAssociatedSendChannel(const ChannelSend* channel) {
+void ChannelReceive::SetAssociatedSendChannel(
+    const ChannelSendInterface* channel) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   rtc::CritScope lock(&assoc_send_channel_lock_);
   associated_send_channel_ = channel;
@@ -1012,7 +1013,6 @@ int64_t ChannelReceive::GetRTT() const {
 
     return 0;
   }
-
   RtcpMode method = _rtpRtcpModule->RTCP();
   if (method == RtcpMode::kOff) {
     return 0;

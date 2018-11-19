@@ -143,7 +143,7 @@ struct ConfigHelper {
         new rtc::RefCountedObject<MockAudioDeviceModule>();
     audio_state_ = AudioState::Create(config);
 
-    SetupDefaultChannelProxy(audio_bwe_enabled);
+    SetupDefaultChannelSend(audio_bwe_enabled);
     SetupMockForSetupSendCodec(expect_set_encoder_call);
 
     // Use ISAC as default codec so as to prevent unnecessary |channel_proxy_|
@@ -169,7 +169,7 @@ struct ConfigHelper {
             stream_config_, audio_state_, &worker_queue_, &rtp_transport_,
             &bitrate_allocator_, &event_log_, &rtcp_rtt_stats_, absl::nullopt,
             &active_lifetime_,
-            std::unique_ptr<voe::ChannelSendProxy>(channel_proxy_)));
+            std::unique_ptr<voe::ChannelSendInterface>(channel_send_)));
   }
 
   AudioSendStream::Config& config() { return stream_config_; }
@@ -177,7 +177,7 @@ struct ConfigHelper {
     return *static_cast<MockAudioEncoderFactory*>(
         stream_config_.encoder_factory.get());
   }
-  MockChannelSendProxy* channel_proxy() { return channel_proxy_; }
+  MockChannelSend* channel_send() { return channel_send_; }
   RtpTransportControllerSendInterface* transport() { return &rtp_transport_; }
   TimeInterval* active_lifetime() { return &active_lifetime_; }
 
@@ -187,47 +187,46 @@ struct ConfigHelper {
     config->send_codec_spec->transport_cc_enabled = true;
   }
 
-  void SetupDefaultChannelProxy(bool audio_bwe_enabled) {
-    EXPECT_TRUE(channel_proxy_ == nullptr);
-    channel_proxy_ = new testing::StrictMock<MockChannelSendProxy>();
-    EXPECT_CALL(*channel_proxy_, GetRtpRtcp()).WillRepeatedly(Invoke([this]() {
+  void SetupDefaultChannelSend(bool audio_bwe_enabled) {
+    EXPECT_TRUE(channel_send_ == nullptr);
+    channel_send_ = new testing::StrictMock<MockChannelSend>();
+    EXPECT_CALL(*channel_send_, GetRtpRtcp()).WillRepeatedly(Invoke([this]() {
       return &this->rtp_rtcp_;
     }));
-    EXPECT_CALL(*channel_proxy_, SetLocalSSRC(kSsrc)).Times(1);
-    EXPECT_CALL(*channel_proxy_, SetRTCP_CNAME(StrEq(kCName))).Times(1);
-    EXPECT_CALL(*channel_proxy_, SetNACKStatus(true, 10)).Times(1);
-    EXPECT_CALL(*channel_proxy_, SetFrameEncryptor(_)).Times(1);
-    EXPECT_CALL(*channel_proxy_, SetExtmapAllowMixed(false)).Times(1);
-    EXPECT_CALL(*channel_proxy_,
+    EXPECT_CALL(*channel_send_, SetLocalSSRC(kSsrc)).Times(1);
+    EXPECT_CALL(*channel_send_, SetRTCP_CNAME(StrEq(kCName))).Times(1);
+    EXPECT_CALL(*channel_send_, SetNACKStatus(true, 10)).Times(1);
+    EXPECT_CALL(*channel_send_, SetFrameEncryptor(_)).Times(1);
+    EXPECT_CALL(*channel_send_, SetExtmapAllowMixed(false)).Times(1);
+    EXPECT_CALL(*channel_send_,
                 SetSendAudioLevelIndicationStatus(true, kAudioLevelId))
         .Times(1);
     EXPECT_CALL(rtp_transport_, GetBandwidthObserver())
         .WillRepeatedly(Return(&bandwidth_observer_));
     if (audio_bwe_enabled) {
-      EXPECT_CALL(*channel_proxy_,
+      EXPECT_CALL(*channel_send_,
                   EnableSendTransportSequenceNumber(kTransportSequenceNumberId))
           .Times(1);
-      EXPECT_CALL(*channel_proxy_,
+      EXPECT_CALL(*channel_send_,
                   RegisterSenderCongestionControlObjects(
                       &rtp_transport_, Eq(&bandwidth_observer_)))
           .Times(1);
     } else {
-      EXPECT_CALL(*channel_proxy_, RegisterSenderCongestionControlObjects(
-                                       &rtp_transport_, Eq(nullptr)))
+      EXPECT_CALL(*channel_send_, RegisterSenderCongestionControlObjects(
+                                      &rtp_transport_, Eq(nullptr)))
           .Times(1);
     }
-    EXPECT_CALL(*channel_proxy_, ResetSenderCongestionControlObjects())
-        .Times(1);
+    EXPECT_CALL(*channel_send_, ResetSenderCongestionControlObjects()).Times(1);
     {
       ::testing::InSequence unregister_on_destruction;
-      EXPECT_CALL(*channel_proxy_, RegisterTransport(_)).Times(1);
-      EXPECT_CALL(*channel_proxy_, RegisterTransport(nullptr)).Times(1);
+      EXPECT_CALL(*channel_send_, RegisterTransport(_)).Times(1);
+      EXPECT_CALL(*channel_send_, RegisterTransport(nullptr)).Times(1);
     }
   }
 
   void SetupMockForSetupSendCodec(bool expect_set_encoder_call) {
     if (expect_set_encoder_call) {
-      EXPECT_CALL(*channel_proxy_, SetEncoderForMock(_, _))
+      EXPECT_CALL(*channel_send_, SetEncoderForMock(_, _))
           .WillOnce(Invoke(
               [this](int payload_type, std::unique_ptr<AudioEncoder>* encoder) {
                 this->audio_encoder_ = std::move(*encoder);
@@ -238,7 +237,7 @@ struct ConfigHelper {
 
   void SetupMockForModifyEncoder() {
     // Let ModifyEncoder to invoke mock audio encoder.
-    EXPECT_CALL(*channel_proxy_, ModifyEncoder(_))
+    EXPECT_CALL(*channel_send_, ModifyEncoder(_))
         .WillRepeatedly(Invoke(
             [this](rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)>
                        modifier) {
@@ -248,13 +247,13 @@ struct ConfigHelper {
   }
 
   void SetupMockForSendTelephoneEvent() {
-    EXPECT_TRUE(channel_proxy_);
-    EXPECT_CALL(*channel_proxy_, SetSendTelephoneEventPayloadType(
-                                     kTelephoneEventPayloadType,
-                                     kTelephoneEventPayloadFrequency))
+    EXPECT_TRUE(channel_send_);
+    EXPECT_CALL(*channel_send_, SetSendTelephoneEventPayloadType(
+                                    kTelephoneEventPayloadType,
+                                    kTelephoneEventPayloadFrequency))
         .WillOnce(Return(true));
     EXPECT_CALL(
-        *channel_proxy_,
+        *channel_send_,
         SendTelephoneEventOutband(kTelephoneEventCode, kTelephoneEventDuration))
         .WillOnce(Return(true));
   }
@@ -272,14 +271,14 @@ struct ConfigHelper {
     block.fraction_lost = 0;
     report_blocks.push_back(block);  // Duplicate SSRC, bad fraction_lost.
 
-    EXPECT_TRUE(channel_proxy_);
-    EXPECT_CALL(*channel_proxy_, GetRTCPStatistics())
+    EXPECT_TRUE(channel_send_);
+    EXPECT_CALL(*channel_send_, GetRTCPStatistics())
         .WillRepeatedly(Return(kCallStats));
-    EXPECT_CALL(*channel_proxy_, GetRemoteRTCPReportBlocks())
+    EXPECT_CALL(*channel_send_, GetRemoteRTCPReportBlocks())
         .WillRepeatedly(Return(report_blocks));
-    EXPECT_CALL(*channel_proxy_, GetANAStatistics())
+    EXPECT_CALL(*channel_send_, GetANAStatistics())
         .WillRepeatedly(Return(ANAStats()));
-    EXPECT_CALL(*channel_proxy_, GetBitrate()).WillRepeatedly(Return(0));
+    EXPECT_CALL(*channel_send_, GetBitrate()).WillRepeatedly(Return(0));
 
     audio_processing_stats_.echo_return_loss = kEchoReturnLoss;
     audio_processing_stats_.echo_return_loss_enhancement =
@@ -299,7 +298,7 @@ struct ConfigHelper {
  private:
   rtc::scoped_refptr<AudioState> audio_state_;
   AudioSendStream::Config stream_config_;
-  testing::StrictMock<MockChannelSendProxy>* channel_proxy_ = nullptr;
+  testing::StrictMock<MockChannelSend>* channel_send_ = nullptr;
   rtc::scoped_refptr<MockAudioProcessing> audio_processing_;
   AudioProcessingStats audio_processing_stats_;
   TimeInterval active_lifetime_;
@@ -364,7 +363,7 @@ TEST(AudioSendStreamTest, SendTelephoneEvent) {
 TEST(AudioSendStreamTest, SetMuted) {
   ConfigHelper helper(false, true);
   auto send_stream = helper.CreateAudioSendStream();
-  EXPECT_CALL(*helper.channel_proxy(), SetInputMute(true));
+  EXPECT_CALL(*helper.channel_send(), SetInputMute(true));
   send_stream->SetMuted(true);
 }
 
@@ -454,7 +453,7 @@ TEST(AudioSendStreamTest, SendCodecCanApplyVad) {
   helper.config().send_codec_spec->cng_payload_type = 105;
   using ::testing::Invoke;
   std::unique_ptr<AudioEncoder> stolen_encoder;
-  EXPECT_CALL(*helper.channel_proxy(), SetEncoderForMock(_, _))
+  EXPECT_CALL(*helper.channel_send(), SetEncoderForMock(_, _))
       .WillOnce(
           Invoke([&stolen_encoder](int payload_type,
                                    std::unique_ptr<AudioEncoder>* encoder) {
@@ -474,7 +473,7 @@ TEST(AudioSendStreamTest, SendCodecCanApplyVad) {
 TEST(AudioSendStreamTest, DoesNotPassHigherBitrateThanMaxBitrate) {
   ConfigHelper helper(false, true);
   auto send_stream = helper.CreateAudioSendStream();
-  EXPECT_CALL(*helper.channel_proxy(),
+  EXPECT_CALL(*helper.channel_send(),
               SetBitrate(helper.config().max_bitrate_bps, _));
   BitrateAllocationUpdate update;
   update.bitrate_bps = helper.config().max_bitrate_bps + 5000;
@@ -487,7 +486,7 @@ TEST(AudioSendStreamTest, DoesNotPassHigherBitrateThanMaxBitrate) {
 TEST(AudioSendStreamTest, ProbingIntervalOnBitrateUpdated) {
   ConfigHelper helper(false, true);
   auto send_stream = helper.CreateAudioSendStream();
-  EXPECT_CALL(*helper.channel_proxy(), SetBitrate(_, 5000));
+  EXPECT_CALL(*helper.channel_send(), SetBitrate(_, 5000));
   BitrateAllocationUpdate update;
   update.bitrate_bps = helper.config().max_bitrate_bps + 5000;
   update.fraction_loss = 0;
@@ -504,7 +503,7 @@ TEST(AudioSendStreamTest, DontRecreateEncoder) {
   // to be correct, it's instead set-up manually here. Otherwise a simple change
   // to ConfigHelper (say to WillRepeatedly) would silently make this test
   // useless.
-  EXPECT_CALL(*helper.channel_proxy(), SetEncoderForMock(_, _))
+  EXPECT_CALL(*helper.channel_send(), SetEncoderForMock(_, _))
       .WillOnce(Return(true));
 
   helper.config().send_codec_spec =
@@ -519,15 +518,15 @@ TEST(AudioSendStreamTest, ReconfigureTransportCcResetsFirst) {
   auto send_stream = helper.CreateAudioSendStream();
   auto new_config = helper.config();
   ConfigHelper::AddBweToConfig(&new_config);
-  EXPECT_CALL(*helper.channel_proxy(),
+  EXPECT_CALL(*helper.channel_send(),
               EnableSendTransportSequenceNumber(kTransportSequenceNumberId))
       .Times(1);
   {
     ::testing::InSequence seq;
-    EXPECT_CALL(*helper.channel_proxy(), ResetSenderCongestionControlObjects())
+    EXPECT_CALL(*helper.channel_send(), ResetSenderCongestionControlObjects())
         .Times(1);
-    EXPECT_CALL(*helper.channel_proxy(), RegisterSenderCongestionControlObjects(
-                                             helper.transport(), Ne(nullptr)))
+    EXPECT_CALL(*helper.channel_send(), RegisterSenderCongestionControlObjects(
+                                            helper.transport(), Ne(nullptr)))
         .Times(1);
   }
   send_stream->Reconfigure(new_config);
@@ -543,11 +542,11 @@ TEST(AudioSendStreamTest, ReconfigureWithFrameEncryptor) {
   rtc::scoped_refptr<FrameEncryptorInterface> mock_frame_encryptor_0(
       new rtc::RefCountedObject<MockFrameEncryptor>());
   new_config.frame_encryptor = mock_frame_encryptor_0;
-  EXPECT_CALL(*helper.channel_proxy(), SetFrameEncryptor(Ne(nullptr))).Times(1);
+  EXPECT_CALL(*helper.channel_send(), SetFrameEncryptor(Ne(nullptr))).Times(1);
   send_stream->Reconfigure(new_config);
 
   // Not updating the frame encryptor shouldn't force it to reconfigure.
-  EXPECT_CALL(*helper.channel_proxy(), SetFrameEncryptor(_)).Times(0);
+  EXPECT_CALL(*helper.channel_send(), SetFrameEncryptor(_)).Times(0);
   send_stream->Reconfigure(new_config);
 
   // Updating frame encryptor to a new object should force a call to the proxy.
@@ -555,7 +554,7 @@ TEST(AudioSendStreamTest, ReconfigureWithFrameEncryptor) {
       new rtc::RefCountedObject<MockFrameEncryptor>());
   new_config.frame_encryptor = mock_frame_encryptor_1;
   new_config.crypto_options.sframe.require_frame_encryption = true;
-  EXPECT_CALL(*helper.channel_proxy(), SetFrameEncryptor(Ne(nullptr))).Times(1);
+  EXPECT_CALL(*helper.channel_send(), SetFrameEncryptor(Ne(nullptr))).Times(1);
   send_stream->Reconfigure(new_config);
 }
 
@@ -568,7 +567,7 @@ TEST(AudioSendStreamTest, UpdateLifetime) {
   helper.config().send_transport = &mock_transport;
 
   Transport* registered_transport;
-  ON_CALL(*helper.channel_proxy(), RegisterTransport(_))
+  ON_CALL(*helper.channel_send(), RegisterTransport(_))
       .WillByDefault(Invoke([&registered_transport](Transport* transport) {
         registered_transport = transport;
       }));
