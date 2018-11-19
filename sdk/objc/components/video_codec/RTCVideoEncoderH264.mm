@@ -284,6 +284,7 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
   RTCVideoCodecInfo *_codecInfo;
   std::unique_ptr<webrtc::BitrateAdjuster> _bitrateAdjuster;
   uint32_t _targetBitrateBps;
+  uint32_t _encoderFrameRate;
   uint32_t _encoderBitrateBps;
   RTCH264PacketizationMode _packetizationMode;
   CFStringRef _profile;
@@ -333,6 +334,7 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
   // We can only set average bitrate on the HW encoder.
   _targetBitrateBps = settings.startBitrate * 1000;  // startBitrate is in kbps.
   _bitrateAdjuster->SetTargetBitrateBps(_targetBitrateBps);
+  _encoderFrameRate = settings.maxFramerate;
 
   // TODO(tkchin): Try setting payload size via
   // kVTCompressionPropertyKey_MaxH264SliceBytes.
@@ -432,7 +434,7 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
   encodeParams->codecSpecificInfo.packetizationMode = _packetizationMode;
 
   // Update the bitrate if needed.
-  [self setBitrateBps:_bitrateAdjuster->GetAdjustedBitrateBps()];
+  [self setBitrateBps:_bitrateAdjuster->GetAdjustedBitrateBps() frameRate:_encoderFrameRate];
 
   OSStatus status = VTCompressionSessionEncodeFrame(_compressionSession,
                                                     pixelBuffer,
@@ -468,7 +470,7 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
 - (int)setBitrate:(uint32_t)bitrateKbit framerate:(uint32_t)framerate {
   _targetBitrateBps = 1000 * bitrateKbit;
   _bitrateAdjuster->SetTargetBitrateBps(_targetBitrateBps);
-  [self setBitrateBps:_bitrateAdjuster->GetAdjustedBitrateBps()];
+  [self setBitrateBps:_bitrateAdjuster->GetAdjustedBitrateBps() frameRate:framerate];
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
@@ -616,7 +618,7 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
   SetVTSessionProperty(_compressionSession, kVTCompressionPropertyKey_RealTime, true);
   SetVTSessionProperty(_compressionSession, kVTCompressionPropertyKey_ProfileLevel, _profile);
   SetVTSessionProperty(_compressionSession, kVTCompressionPropertyKey_AllowFrameReordering, false);
-  [self setEncoderBitrateBps:_targetBitrateBps];
+  [self setEncoderBitrateBps:_targetBitrateBps frameRate:_encoderFrameRate];
   // TODO(tkchin): Look at entropy mode and colorspace matrices.
   // TODO(tkchin): Investigate to see if there's any way to make this work.
   // May need it to interop with Android. Currently this call just fails.
@@ -644,15 +646,17 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
   return @"VideoToolbox";
 }
 
-- (void)setBitrateBps:(uint32_t)bitrateBps {
-  if (_encoderBitrateBps != bitrateBps) {
-    [self setEncoderBitrateBps:bitrateBps];
+- (void)setBitrateBps:(uint32_t)bitrateBps frameRate:(uint32_t)frameRate {
+  if (_encoderBitrateBps != bitrateBps || _encoderFrameRate != frameRate) {
+    [self setEncoderBitrateBps:bitrateBps frameRate:frameRate];
   }
 }
 
-- (void)setEncoderBitrateBps:(uint32_t)bitrateBps {
+- (void)setEncoderBitrateBps:(uint32_t)bitrateBps frameRate:(uint32_t)frameRate {
   if (_compressionSession) {
     SetVTSessionProperty(_compressionSession, kVTCompressionPropertyKey_AverageBitRate, bitrateBps);
+    SetVTSessionProperty(
+        _compressionSession, kVTCompressionPropertyKey_ExpectedFrameRate, frameRate);
 
     // TODO(tkchin): Add a helper method to set array value.
     int64_t dataLimitBytesPerSecondValue =
@@ -680,6 +684,7 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
     }
 
     _encoderBitrateBps = bitrateBps;
+    _encoderFrameRate = frameRate;
   }
 }
 
