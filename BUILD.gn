@@ -440,7 +440,6 @@ rtc_source_set("webrtc_common") {
     "api:array_view",
     "api/video:video_bitrate_allocation",
     "rtc_base:checks",
-    "rtc_base:deprecation",
     "//third_party/abseil-cpp/absl/strings",
   ]
 

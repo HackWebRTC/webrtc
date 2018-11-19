@@ -26,6 +26,7 @@
 #include "call/rtp_packet_sink_interface.h"
 #include "call/syncable.h"
 #include "common_types.h"  // NOLINT(build/include)
+#include "modules/audio_coding/include/audio_coding_module.h"
 
 // TODO(solenberg, nisse): This file contains a few NOLINT marks, to silence
 // warnings about use of unsigned short.
