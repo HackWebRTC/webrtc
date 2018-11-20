@@ -100,6 +100,11 @@ class WrapperMediaTransportFactory : public MediaTransportFactory {
 // Currently supports audio only.
 class MediaTransportPair {
  public:
+  struct Stats {
+    int sent_audio_frames = 0;
+    int received_audio_frames = 0;
+  };
+
   explicit MediaTransportPair(rtc::Thread* thread)
       : first_(thread, &second_), second_(thread, &first_) {}
 
@@ -125,6 +130,9 @@ class MediaTransportPair {
     second_.FlushAsyncInvokes();
   }
 
+  Stats FirstStats() { return first_.GetStats(); }
+  Stats SecondStats() { return second_.GetStats(); }
+
  private:
   class LoopbackMediaTransport : public MediaTransportInterface {
    public:
@@ -139,6 +147,10 @@ class MediaTransportPair {
 
     RTCError SendAudioFrame(uint64_t channel_id,
                             MediaTransportEncodedAudioFrame frame) override {
+      {
+        rtc::CritScope lock(&stats_lock_);
+        ++stats_.sent_audio_frames;
+      }
       invoker_.AsyncInvoke<void>(RTC_FROM_HERE, thread_,
                                  [this, channel_id, frame] {
                                    other_->OnData(channel_id, std::move(frame));
@@ -215,11 +227,22 @@ class MediaTransportPair {
 
     void FlushAsyncInvokes() { invoker_.Flush(thread_); }
 
+    Stats GetStats() {
+      rtc::CritScope lock(&stats_lock_);
+      return stats_;
+    }
+
    private:
     void OnData(uint64_t channel_id, MediaTransportEncodedAudioFrame frame) {
-      rtc::CritScope lock(&sink_lock_);
-      if (sink_) {
-        sink_->OnData(channel_id, frame);
+      {
+        rtc::CritScope lock(&sink_lock_);
+        if (sink_) {
+          sink_->OnData(channel_id, frame);
+        }
+      }
+      {
+        rtc::CritScope lock(&stats_lock_);
+        ++stats_.received_audio_frames;
       }
     }
 
@@ -249,6 +272,7 @@ class MediaTransportPair {
 
     rtc::Thread* const thread_;
     rtc::CriticalSection sink_lock_;
+    rtc::CriticalSection stats_lock_;
 
     MediaTransportAudioSinkInterface* sink_ RTC_GUARDED_BY(sink_lock_) =
         nullptr;
@@ -260,6 +284,8 @@ class MediaTransportPair {
         MediaTransportState::kPending;
 
     LoopbackMediaTransport* const other_;
+
+    Stats stats_ RTC_GUARDED_BY(stats_lock_);
 
     rtc::AsyncInvoker invoker_;
   };
