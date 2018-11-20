@@ -148,11 +148,12 @@ bool EchoCanceller3Config::Validate(EchoCanceller3Config* config) {
     c->erle.min = std::min(c->erle.max_l, c->erle.max_h);
     res = false;
   }
+  res = res & Limit(&c->erle.num_sections, 1, c->filter.main.length_blocks);
 
   res = res & Limit(&c->ep_strength.lf, 0.f, 1000000.f);
   res = res & Limit(&c->ep_strength.mf, 0.f, 1000000.f);
   res = res & Limit(&c->ep_strength.hf, 0.f, 1000000.f);
-  res = res & Limit(&c->ep_strength.default_len, 0.f, 1.f);
+  res = res & Limit(&c->ep_strength.default_len, -1.f, 1.f);
 
   res =
       res & Limit(&c->echo_audibility.low_render_limit, 0.f, 32768.f * 32768.f);
@@ -242,6 +243,12 @@ bool EchoCanceller3Config::Validate(EchoCanceller3Config* config) {
                     0.f, 1.f);
 
   res = res & Limit(&c->suppressor.floor_first_increase, 0.f, 1000000.f);
+
+  if (c->delay.delay_headroom_blocks >
+      c->filter.main_initial.length_blocks - 1) {
+    c->delay.delay_headroom_blocks = c->filter.main_initial.length_blocks - 1;
+    res = false;
+  }
 
   return res;
 }

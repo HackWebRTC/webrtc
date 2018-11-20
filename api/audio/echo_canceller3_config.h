@@ -87,6 +87,7 @@ struct RTC_EXPORT EchoCanceller3Config {
     float max_l = 4.f;
     float max_h = 1.5f;
     bool onset_detection = true;
+    size_t num_sections = 1;
   } erle;
 
   struct EpStrength {

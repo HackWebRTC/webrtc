@@ -197,6 +197,7 @@ void Aec3ConfigFromJsonString(absl::string_view json_string,
     ReadParam(section, "max_l", &cfg.erle.max_l);
     ReadParam(section, "max_h", &cfg.erle.max_h);
     ReadParam(section, "onset_detection", &cfg.erle.onset_detection);
+    ReadParam(section, "num_sections", &cfg.erle.num_sections);
   }
 
   if (rtc::GetValueFromJsonObject(aec3_root, "ep_strength", &section)) {
@@ -425,7 +426,8 @@ std::string Aec3ConfigToJsonString(const EchoCanceller3Config& config) {
   ost << "\"max_l\": " << config.erle.max_l << ",";
   ost << "\"max_h\": " << config.erle.max_h << ",";
   ost << "\"onset_detection\": "
-      << (config.erle.onset_detection ? "true" : "false");
+      << (config.erle.onset_detection ? "true" : "false") << ",";
+  ost << "\"num_sections\": " << config.erle.num_sections;
   ost << "},";
 
   ost << "\"ep_strength\": {";

@@ -57,6 +57,7 @@ EchoCanceller3Config ReadAec3ConfigFromJsonFile(const std::string& filename) {
               << json_string << std::endl;
     RTC_CHECK(false);
   }
+  RTC_CHECK(EchoCanceller3Config::Validate(&cfg));
 
   return cfg;
 }

@@ -217,6 +217,12 @@ class ApmDataDumper {
 #endif
   }
 
+  void DumpRaw(const char* name, rtc::ArrayView<const size_t> v) {
+#if WEBRTC_APM_DEBUG_DUMP == 1
+    DumpRaw(name, v.size(), v.data());
+#endif
+  }
+
   void DumpWav(const char* name,
                size_t v_length,
                const float* v,
