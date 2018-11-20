@@ -50,12 +50,6 @@ JavaToNativePeerConnectionFactoryOptions(JNIEnv* jni,
   bool disable_encryption = Java_Options_getDisableEncryption(jni, options);
   bool disable_network_monitor =
       Java_Options_getDisableNetworkMonitor(jni, options);
-  bool enable_aes128_sha1_32_crypto_cipher =
-      Java_Options_getEnableAes128Sha1_32CryptoCipher(jni, options);
-  bool enable_gcm_crypto_suites =
-      Java_Options_getEnableGcmCryptoSuites(jni, options);
-  bool require_frame_encryption =
-      Java_Options_getRequireFrameEncryption(jni, options);
 
   PeerConnectionFactoryInterface::Options native_options;
 
@@ -64,13 +58,6 @@ JavaToNativePeerConnectionFactoryOptions(JNIEnv* jni,
   native_options.network_ignore_mask = network_ignore_mask;
   native_options.disable_encryption = disable_encryption;
   native_options.disable_network_monitor = disable_network_monitor;
-
-  native_options.crypto_options.srtp.enable_aes128_sha1_32_crypto_cipher =
-      enable_aes128_sha1_32_crypto_cipher;
-  native_options.crypto_options.srtp.enable_gcm_crypto_suites =
-      enable_gcm_crypto_suites;
-  native_options.crypto_options.sframe.require_frame_encryption =
-      require_frame_encryption;
 
   return native_options;
 }

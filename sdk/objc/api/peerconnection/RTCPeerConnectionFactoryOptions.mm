@@ -34,9 +34,6 @@ void setNetworkBit(webrtc::PeerConnectionFactoryInterface::Options* options,
 @synthesize ignoreCellularNetworkAdapter = _ignoreCellularNetworkAdapter;
 @synthesize ignoreWiFiNetworkAdapter = _ignoreWiFiNetworkAdapter;
 @synthesize ignoreEthernetNetworkAdapter = _ignoreEthernetNetworkAdapter;
-@synthesize enableAes128Sha1_32CryptoCipher = _enableAes128Sha1_32CryptoCipher;
-@synthesize enableGcmCryptoSuites = _enableGcmCryptoSuites;
-@synthesize requireFrameEncryption = _requireFrameEncryption;
 
 - (instancetype)init {
   return [super init];
@@ -52,11 +49,6 @@ void setNetworkBit(webrtc::PeerConnectionFactoryInterface::Options* options,
   setNetworkBit(&options, rtc::ADAPTER_TYPE_CELLULAR, self.ignoreCellularNetworkAdapter);
   setNetworkBit(&options, rtc::ADAPTER_TYPE_WIFI, self.ignoreWiFiNetworkAdapter);
   setNetworkBit(&options, rtc::ADAPTER_TYPE_ETHERNET, self.ignoreEthernetNetworkAdapter);
-
-  options.crypto_options.srtp.enable_aes128_sha1_32_crypto_cipher =
-      self.enableAes128Sha1_32CryptoCipher;
-  options.crypto_options.srtp.enable_gcm_crypto_suites = self.enableGcmCryptoSuites;
-  options.crypto_options.sframe.require_frame_encryption = self.requireFrameEncryption;
 
   return options;
 }

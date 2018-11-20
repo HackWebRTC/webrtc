@@ -124,29 +124,6 @@ public class PeerConnectionFactory {
     public boolean disableEncryption;
     public boolean disableNetworkMonitor;
 
-    // TODO(webrtc:9891) - The below crypto options are deprecated. Please use
-    // RTCConfiguration to set these options instead. They will be removed in
-    // a future release.
-    /**
-     * If set to true, the (potentially insecure) crypto cipher SRTP_AES128_CM_SHA1_32
-     * will be included in the list of supported ciphers during negotiation. It will only
-     * be used if both peers support it and no other ciphers get preferred.
-     */
-    public boolean enableAes128Sha1_32CryptoCipher;
-
-    /**
-     * Enable GCM crypto suites from RFC 7714 for SRTP. GCM will only be used if both sides enable
-     * it.
-     */
-    public boolean enableGcmCryptoSuites;
-
-    /**
-     * If set all RtpSenders must have an FrameEncryptor attached to them before they are allowed to
-     * send packets. All RtpReceivers must have a FrameDecryptor attached to them before they are
-     * able to receive packets.
-     */
-    public boolean requireFrameEncryption;
-
     @CalledByNative("Options")
     int getNetworkIgnoreMask() {
       return networkIgnoreMask;
@@ -160,24 +137,6 @@ public class PeerConnectionFactory {
     @CalledByNative("Options")
     boolean getDisableNetworkMonitor() {
       return disableNetworkMonitor;
-    }
-
-    @Deprecated
-    @CalledByNative("Options")
-    boolean getEnableAes128Sha1_32CryptoCipher() {
-      return enableAes128Sha1_32CryptoCipher;
-    }
-
-    @Deprecated
-    @CalledByNative("Options")
-    boolean getEnableGcmCryptoSuites() {
-      return enableGcmCryptoSuites;
-    }
-
-    @Deprecated
-    @CalledByNative("Options")
-    boolean getRequireFrameEncryption() {
-      return requireFrameEncryption;
     }
   }
 
