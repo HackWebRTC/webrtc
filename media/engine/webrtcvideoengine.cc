@@ -2252,26 +2252,20 @@ WebRtcVideoChannel::WebRtcVideoReceiveStream::GetSources() {
   return stream_->GetSources();
 }
 
-absl::optional<uint32_t>
-WebRtcVideoChannel::WebRtcVideoReceiveStream::GetFirstPrimarySsrc() const {
-  std::vector<uint32_t> primary_ssrcs;
-  stream_params_.GetPrimarySsrcs(&primary_ssrcs);
-
-  if (primary_ssrcs.empty()) {
-    RTC_LOG(LS_WARNING)
-        << "Empty primary ssrcs vector, returning empty optional";
-    return absl::nullopt;
-  } else {
-    return primary_ssrcs[0];
-  }
-}
-
 webrtc::RtpParameters
 WebRtcVideoChannel::WebRtcVideoReceiveStream::GetRtpParameters() const {
   webrtc::RtpParameters rtp_parameters;
-  rtp_parameters.encodings.emplace_back();
-  rtp_parameters.encodings[0].ssrc = GetFirstPrimarySsrc();
+
+  std::vector<uint32_t> primary_ssrcs;
+  stream_params_.GetPrimarySsrcs(&primary_ssrcs);
+  for (uint32_t ssrc : primary_ssrcs) {
+    rtp_parameters.encodings.emplace_back();
+    rtp_parameters.encodings.back().ssrc = ssrc;
+  }
+
   rtp_parameters.header_extensions = config_.rtp.extensions;
+  rtp_parameters.rtcp.reduced_size =
+      config_.rtp.rtcp_mode == webrtc::RtcpMode::kReducedSize;
 
   return rtp_parameters;
 }

@@ -420,8 +420,6 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
 
     std::string GetCodecNameFromPayloadType(int payload_type);
 
-    absl::optional<uint32_t> GetFirstPrimarySsrc() const;
-
     webrtc::Call* const call_;
     const StreamParams stream_params_;
 

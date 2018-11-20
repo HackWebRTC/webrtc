@@ -230,6 +230,24 @@ class RtpSenderReceiverTest : public testing::Test,
     VerifyVideoChannelOutput();
   }
 
+  void CreateVideoRtpReceiverWithSimulcast(
+      std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams = {},
+      int num_layers = kVideoSimulcastLayerCount) {
+    std::vector<uint32_t> ssrcs;
+    for (int i = 0; i < num_layers; ++i)
+      ssrcs.push_back(kVideoSsrcSimulcast + i);
+    cricket::StreamParams stream_params =
+        cricket::CreateSimStreamParams("cname", ssrcs);
+    video_media_channel_->AddRecvStream(stream_params);
+    uint32_t primary_ssrc = stream_params.first_ssrc();
+
+    video_rtp_receiver_ = new VideoRtpReceiver(
+        rtc::Thread::Current(), kVideoTrackId, std::move(streams));
+    video_rtp_receiver_->SetMediaChannel(video_media_channel_);
+    video_rtp_receiver_->SetupMediaChannel(primary_ssrc);
+    video_track_ = video_rtp_receiver_->video_track();
+  }
+
   void DestroyAudioRtpReceiver() {
     audio_rtp_receiver_ = nullptr;
     VerifyVoiceChannelNoOutput();
@@ -1259,6 +1277,15 @@ TEST_F(RtpSenderReceiverTest, VideoReceiverCanSetParameters) {
   RtpParameters params = video_rtp_receiver_->GetParameters();
   EXPECT_EQ(1u, params.encodings.size());
   EXPECT_TRUE(video_rtp_receiver_->SetParameters(params));
+
+  DestroyVideoRtpReceiver();
+}
+
+TEST_F(RtpSenderReceiverTest, VideoReceiverCanGetParametersWithSimulcast) {
+  CreateVideoRtpReceiverWithSimulcast({}, 2);
+
+  RtpParameters params = video_rtp_receiver_->GetParameters();
+  EXPECT_EQ(2u, params.encodings.size());
 
   DestroyVideoRtpReceiver();
 }

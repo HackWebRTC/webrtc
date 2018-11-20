@@ -124,7 +124,7 @@ class RtpHelper : public Base {
     }
     receive_streams_.push_back(sp);
     rtp_receive_parameters_[sp.first_ssrc()] =
-        CreateRtpParametersWithOneEncoding();
+        CreateRtpParametersWithEncodings(sp);
     return true;
   }
   virtual bool RemoveRecvStream(uint32_t ssrc) {
