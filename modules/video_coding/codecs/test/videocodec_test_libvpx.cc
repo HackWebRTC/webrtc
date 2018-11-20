@@ -103,7 +103,7 @@ TEST(VideoCodecTestLibvpx, HighBitrateVP9) {
   std::vector<RateProfile> rate_profiles = {{500, 30, kNumFramesShort}};
 
   std::vector<RateControlThresholds> rc_thresholds = {
-      {5, 1, 0, 0.11, 0.3, 0.1, 0, 1}};
+      {5, 1, 0, 1, 0.3, 0.1, 0, 1}};
 
   std::vector<QualityThresholds> quality_thresholds = {{37, 36, 0.94, 0.92}};
 
@@ -124,9 +124,9 @@ TEST(VideoCodecTestLibvpx, ChangeBitrateVP9) {
       {500, 30, kNumFramesLong}};
 
   std::vector<RateControlThresholds> rc_thresholds = {
-      {5, 1, 0, 0.15, 0.5, 0.1, 0, 1},
-      {15, 2, 0, 0.2, 0.5, 0.1, 0, 0},
-      {10, 1, 0, 0.3, 0.5, 0.1, 0, 0}};
+      {5, 1, 0, 1, 0.5, 0.1, 0, 1},
+      {15, 2, 0, 1, 0.5, 0.1, 0, 0},
+      {10, 1, 0, 1, 0.5, 0.1, 0, 0}};
 
   std::vector<QualityThresholds> quality_thresholds = {
       {34, 33, 0.90, 0.88}, {38, 35, 0.95, 0.91}, {35, 34, 0.93, 0.90}};
@@ -149,9 +149,9 @@ TEST(VideoCodecTestLibvpx, ChangeFramerateVP9) {
 
   // Framerate mismatch should be lower for lower framerate.
   std::vector<RateControlThresholds> rc_thresholds = {
-      {10, 2, 40, 0.5, 0.5, 0.2, 0, 1},
-      {8, 2, 5, 0.2, 0.5, 0.2, 0, 0},
-      {5, 2, 0, 0.21, 0.5, 0.3, 0, 0}};
+      {10, 2, 40, 1, 0.5, 0.2, 0, 1},
+      {8, 2, 5, 1, 0.5, 0.2, 0, 0},
+      {5, 2, 0, 1, 0.5, 0.3, 0, 0}};
 
   // Quality should be higher for lower framerates for the same content.
   std::vector<QualityThresholds> quality_thresholds = {
@@ -172,7 +172,7 @@ TEST(VideoCodecTestLibvpx, DenoiserOnVP9) {
   std::vector<RateProfile> rate_profiles = {{500, 30, kNumFramesShort}};
 
   std::vector<RateControlThresholds> rc_thresholds = {
-      {5, 1, 0, 0.11, 0.3, 0.1, 0, 1}};
+      {5, 1, 0, 1, 0.3, 0.1, 0, 1}};
 
   std::vector<QualityThresholds> quality_thresholds = {{37.5, 36, 0.94, 0.93}};
 
@@ -190,7 +190,7 @@ TEST(VideoCodecTestLibvpx, VeryLowBitrateVP9) {
   std::vector<RateProfile> rate_profiles = {{50, 30, kNumFramesLong}};
 
   std::vector<RateControlThresholds> rc_thresholds = {
-      {15, 3, 75, 1.0, 0.5, 0.4, 1, 1}};
+      {15, 3, 75, 1, 0.5, 0.4, 1, 1}};
 
   std::vector<QualityThresholds> quality_thresholds = {{28, 25, 0.80, 0.65}};
 
@@ -214,7 +214,7 @@ TEST(VideoCodecTestLibvpx, HighBitrateVP8) {
   std::vector<RateProfile> rate_profiles = {{500, 30, kNumFramesShort}};
 
   std::vector<RateControlThresholds> rc_thresholds = {
-      {5, 1, 0, 0.1, 0.2, 0.1, 0, 1}};
+      {5, 1, 0, 1, 0.2, 0.1, 0, 1}};
 
 #if defined(WEBRTC_ARCH_ARM) || defined(WEBRTC_ARCH_ARM64)
   std::vector<QualityThresholds> quality_thresholds = {{35, 33, 0.91, 0.89}};
@@ -253,9 +253,9 @@ TEST(VideoCodecTestLibvpx, MAYBE_ChangeBitrateVP8) {
       {500, 30, kNumFramesLong}};
 
   std::vector<RateControlThresholds> rc_thresholds = {
-      {5, 1, 0, 0.1, 0.2, 0.1, 0, 1},
-      {15.5, 1, 0, 0.1, 0.2, 0.1, 0, 0},
-      {15, 1, 0, 0.3, 0.2, 0.1, 0, 0}};
+      {5, 1, 0, 1, 0.2, 0.1, 0, 1},
+      {15.5, 1, 0, 1, 0.2, 0.1, 0, 0},
+      {15, 1, 0, 1, 0.2, 0.1, 0, 0}};
 
 #if defined(WEBRTC_ARCH_ARM) || defined(WEBRTC_ARCH_ARM64)
   std::vector<QualityThresholds> quality_thresholds = {
@@ -288,14 +288,14 @@ TEST(VideoCodecTestLibvpx, MAYBE_ChangeFramerateVP8) {
 
 #if defined(WEBRTC_ARCH_ARM) || defined(WEBRTC_ARCH_ARM64)
   std::vector<RateControlThresholds> rc_thresholds = {
-      {10, 2, 60, 0.5, 0.3, 0.3, 0, 1},
-      {10, 2, 30, 0.3, 0.3, 0.3, 0, 0},
-      {10, 2, 10, 0.2, 0.3, 0.2, 0, 0}};
+      {10, 2, 60, 1, 0.3, 0.3, 0, 1},
+      {10, 2, 30, 1, 0.3, 0.3, 0, 0},
+      {10, 2, 10, 1, 0.3, 0.2, 0, 0}};
 #else
   std::vector<RateControlThresholds> rc_thresholds = {
-      {10, 2, 20, 0.4, 0.3, 0.1, 0, 1},
-      {5, 2, 5, 0.3, 0.3, 0.1, 0, 0},
-      {4, 2, 1, 0.2, 0.3, 0.2, 0, 0}};
+      {10, 2, 20, 1, 0.3, 0.1, 0, 1},
+      {5, 2, 5, 1, 0.3, 0.1, 0, 0},
+      {4, 2, 1, 1, 0.3, 0.2, 0, 0}};
 #endif
 
 #if defined(WEBRTC_ARCH_ARM) || defined(WEBRTC_ARCH_ARM64)
@@ -326,10 +326,10 @@ TEST(VideoCodecTestLibvpx, MAYBE_TemporalLayersVP8) {
 
 #if defined(WEBRTC_ARCH_ARM) || defined(WEBRTC_ARCH_ARM64)
   std::vector<RateControlThresholds> rc_thresholds = {
-      {10, 1, 2, 0.3, 0.2, 0.1, 0, 1}, {12, 2, 3, 0.1, 0.2, 0.1, 0, 1}};
+      {10, 1, 2, 1, 0.2, 0.1, 0, 1}, {12, 2, 3, 1, 0.2, 0.1, 0, 1}};
 #else
   std::vector<RateControlThresholds> rc_thresholds = {
-      {5, 1, 0, 0.1, 0.2, 0.1, 0, 1}, {10, 2, 0, 0.1, 0.2, 0.1, 0, 1}};
+      {5, 1, 0, 1, 0.2, 0.1, 0, 1}, {10, 2, 0, 1, 0.2, 0.1, 0, 1}};
 #endif
 // Min SSIM drops because of high motion scene with complex backgound (trees).
 #if defined(WEBRTC_ARCH_ARM) || defined(WEBRTC_ARCH_ARM64)
@@ -362,7 +362,7 @@ TEST(VideoCodecTestLibvpx, MAYBE_MultiresVP8) {
   std::vector<RateProfile> rate_profiles = {{1500, 30, config.num_frames}};
 
   std::vector<RateControlThresholds> rc_thresholds = {
-      {5, 1, 5, 0.2, 0.3, 0.1, 0, 1}};
+      {5, 1, 5, 1, 0.3, 0.1, 0, 1}};
   std::vector<QualityThresholds> quality_thresholds = {{34, 32, 0.90, 0.88}};
 
   fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr);
@@ -399,7 +399,7 @@ TEST(VideoCodecTestLibvpx, MAYBE_SimulcastVP8) {
   std::vector<RateProfile> rate_profiles = {{1500, 30, config.num_frames}};
 
   std::vector<RateControlThresholds> rc_thresholds = {
-      {20, 5, 90, 0.8, 0.5, 0.3, 0, 1}};
+      {20, 5, 90, 1, 0.5, 0.3, 0, 1}};
   std::vector<QualityThresholds> quality_thresholds = {{34, 32, 0.90, 0.88}};
 
   fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr);
@@ -424,7 +424,7 @@ TEST(VideoCodecTestLibvpx, MAYBE_SvcVP9) {
   std::vector<RateProfile> rate_profiles = {{1500, 30, config.num_frames}};
 
   std::vector<RateControlThresholds> rc_thresholds = {
-      {5, 1, 5, 0.2, 0.3, 0.1, 0, 1}};
+      {5, 1, 5, 1, 0.3, 0.1, 0, 1}};
   std::vector<QualityThresholds> quality_thresholds = {{36, 34, 0.93, 0.90}};
 
   fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr);
