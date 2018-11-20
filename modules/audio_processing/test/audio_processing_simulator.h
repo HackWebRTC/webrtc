@@ -95,6 +95,7 @@ struct SimulationSettings {
   bool store_intermediate_output = false;
   bool print_aec3_parameter_values = false;
   bool dump_internal_data = false;
+  absl::optional<std::string> dump_internal_data_output_dir;
   absl::optional<std::string> custom_call_order_filename;
   absl::optional<std::string> aec3_settings_filename;
 };

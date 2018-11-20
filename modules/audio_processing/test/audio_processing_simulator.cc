@@ -128,6 +128,10 @@ AudioProcessingSimulator::AudioProcessingSimulator(
       worker_queue_("file_writer_task_queue") {
   RTC_CHECK(!settings_.dump_internal_data || WEBRTC_APM_DEBUG_DUMP == 1);
   ApmDataDumper::SetActivated(settings_.dump_internal_data);
+  if (settings_.dump_internal_data_output_dir.has_value()) {
+    ApmDataDumper::SetOutputDirectory(
+        settings_.dump_internal_data_output_dir.value());
+  }
 
   if (settings_.ed_graph_output_filename &&
       !settings_.ed_graph_output_filename->empty()) {

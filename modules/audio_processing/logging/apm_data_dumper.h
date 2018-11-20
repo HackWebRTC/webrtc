@@ -13,7 +13,9 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
+#include <string>
 #if WEBRTC_APM_DEBUG_DUMP == 1
 #include <unordered_map>
 #endif
@@ -21,6 +23,7 @@
 #include "api/array_view.h"
 #if WEBRTC_APM_DEBUG_DUMP == 1
 #include "common_audio/wav_file.h"
+#include "rtc_base/checks.h"
 #endif
 #include "rtc_base/constructormagic.h"
 
@@ -54,6 +57,14 @@ class ApmDataDumper {
   static void SetActivated(bool activated) {
 #if WEBRTC_APM_DEBUG_DUMP == 1
     recording_activated_ = activated;
+#endif
+  }
+
+  // Set an optional output directory.
+  static void SetOutputDirectory(const std::string& output_dir) {
+#if WEBRTC_APM_DEBUG_DUMP == 1
+    RTC_CHECK_LT(output_dir.size(), kOutputDirMaxLength);
+    strncpy(output_dir_, output_dir.c_str(), output_dir.size());
 #endif
   }
 
@@ -250,6 +261,8 @@ class ApmDataDumper {
  private:
 #if WEBRTC_APM_DEBUG_DUMP == 1
   static bool recording_activated_;
+  static constexpr size_t kOutputDirMaxLength = 1024;
+  static char output_dir_[kOutputDirMaxLength];
   const int instance_index_;
   int recording_set_index_ = 0;
   std::unordered_map<std::string, std::unique_ptr<FILE, RawFileCloseFunctor>>
