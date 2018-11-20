@@ -50,6 +50,7 @@ class ReceiveAudioStream {
  public:
   RTC_DISALLOW_COPY_AND_ASSIGN(ReceiveAudioStream);
   ~ReceiveAudioStream();
+  void Start();
 
  private:
   friend class Scenario;

@@ -152,6 +152,7 @@ SendAudioStream::~SendAudioStream() {
 
 void SendAudioStream::Start() {
   send_stream_->Start();
+  sender_->call_->SignalChannelNetworkState(MediaType::AUDIO, kNetworkUp);
 }
 
 ColumnPrinter SendAudioStream::StatsPrinter() {
@@ -190,6 +191,11 @@ ReceiveAudioStream::ReceiveAudioStream(
 }
 ReceiveAudioStream::~ReceiveAudioStream() {
   receiver_->call_->DestroyAudioReceiveStream(receive_stream_);
+}
+
+void ReceiveAudioStream::Start() {
+  receive_stream_->Start();
+  receiver_->call_->SignalChannelNetworkState(MediaType::AUDIO, kNetworkUp);
 }
 
 AudioStreamPair::~AudioStreamPair() = default;

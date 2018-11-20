@@ -256,6 +256,7 @@ SendVideoStream::~SendVideoStream() {
 void SendVideoStream::Start() {
   send_stream_->Start();
   video_capturer_->Start();
+  sender_->call_->SignalChannelNetworkState(MediaType::VIDEO, kNetworkUp);
 }
 
 void SendVideoStream::UpdateConfig(
@@ -373,6 +374,11 @@ ReceiveVideoStream::~ReceiveVideoStream() {
   receiver_->call_->DestroyVideoReceiveStream(receive_stream_);
   if (flecfec_stream_)
     receiver_->call_->DestroyFlexfecReceiveStream(flecfec_stream_);
+}
+
+void ReceiveVideoStream::Start() {
+  receive_stream_->Start();
+  receiver_->call_->SignalChannelNetworkState(MediaType::VIDEO, kNetworkUp);
 }
 
 VideoStreamPair::~VideoStreamPair() = default;

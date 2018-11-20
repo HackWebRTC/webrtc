@@ -65,6 +65,7 @@ class ReceiveVideoStream {
  public:
   RTC_DISALLOW_COPY_AND_ASSIGN(ReceiveVideoStream);
   ~ReceiveVideoStream();
+  void Start();
 
  private:
   friend class Scenario;

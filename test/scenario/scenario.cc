@@ -75,6 +75,8 @@ Scenario::Scenario(std::string file_name, bool real_time)
 }
 
 Scenario::~Scenario() {
+  if (start_time_.IsFinite())
+    Stop();
   if (!real_time_mode_)
     rtc::SetClockForTesting(nullptr);
 }
@@ -305,35 +307,18 @@ void Scenario::At(TimeDelta offset, std::function<void()> function) {
 }
 
 void Scenario::RunFor(TimeDelta duration) {
-  RunUntil(duration, TimeDelta::PlusInfinity(), []() { return false; });
+  RunUntil(Duration() + duration);
+}
+
+void Scenario::RunUntil(TimeDelta max_duration) {
+  RunUntil(max_duration, TimeDelta::PlusInfinity(), []() { return false; });
 }
 
 void Scenario::RunUntil(TimeDelta max_duration,
                         TimeDelta poll_interval,
                         std::function<bool()> exit_function) {
-  start_time_ = Timestamp::us(clock_->TimeInMicroseconds());
-  for (auto& activity : repeated_activities_) {
-    activity->SetStartTime(start_time_);
-  }
-
-  for (auto& stream_pair : video_streams_)
-    stream_pair->receive()->receive_stream_->Start();
-  for (auto& stream_pair : audio_streams_)
-    stream_pair->receive()->receive_stream_->Start();
-  for (auto& stream_pair : video_streams_) {
-    if (stream_pair->config_.autostart) {
-      stream_pair->send()->Start();
-    }
-  }
-  for (auto& stream_pair : audio_streams_) {
-    if (stream_pair->config_.autostart) {
-      stream_pair->send()->Start();
-    }
-  }
-  for (auto& call : clients_) {
-    call->call_->SignalChannelNetworkState(MediaType::AUDIO, kNetworkUp);
-    call->call_->SignalChannelNetworkState(MediaType::VIDEO, kNetworkUp);
-  }
+  if (start_time_.IsInfinite())
+    Start();
 
   rtc::Event done_;
   while (!exit_function() && Duration() < max_duration) {
@@ -363,6 +348,32 @@ void Scenario::RunUntil(TimeDelta max_duration,
                                            1000);
     }
   }
+}
+
+void Scenario::Start() {
+  start_time_ = Timestamp::us(clock_->TimeInMicroseconds());
+  for (auto& activity : repeated_activities_) {
+    activity->SetStartTime(start_time_);
+  }
+
+  for (auto& stream_pair : video_streams_)
+    stream_pair->receive()->Start();
+  for (auto& stream_pair : audio_streams_)
+    stream_pair->receive()->Start();
+  for (auto& stream_pair : video_streams_) {
+    if (stream_pair->config_.autostart) {
+      stream_pair->send()->Start();
+    }
+  }
+  for (auto& stream_pair : audio_streams_) {
+    if (stream_pair->config_.autostart) {
+      stream_pair->send()->Start();
+    }
+  }
+}
+
+void Scenario::Stop() {
+  RTC_DCHECK(start_time_.IsFinite());
   for (auto& stream_pair : video_streams_) {
     stream_pair->send()->video_capturer_->Stop();
     stream_pair->send()->send_stream_->Stop();
@@ -373,6 +384,7 @@ void Scenario::RunUntil(TimeDelta max_duration,
     stream_pair->receive()->receive_stream_->Stop();
   for (auto& stream_pair : audio_streams_)
     stream_pair->receive()->receive_stream_->Stop();
+  start_time_ = Timestamp::PlusInfinity();
 }
 
 Timestamp Scenario::Now() {
@@ -380,6 +392,8 @@ Timestamp Scenario::Now() {
 }
 
 TimeDelta Scenario::Duration() {
+  if (start_time_.IsInfinite())
+    return TimeDelta::Zero();
   return Now() - start_time_;
 }
 

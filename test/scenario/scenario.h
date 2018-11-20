@@ -140,9 +140,12 @@ class Scenario {
   // Runs the scenario for the given time or until the exit function returns
   // true.
   void RunFor(TimeDelta duration);
+  void RunUntil(TimeDelta max_duration);
   void RunUntil(TimeDelta max_duration,
                 TimeDelta probe_interval,
                 std::function<bool()> exit_function);
+  void Start();
+  void Stop();
 
   // Triggers sending of dummy packets over the given nodes.
   void TriggerPacketBurst(std::vector<NetworkNode*> over_nodes,
