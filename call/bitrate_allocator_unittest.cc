@@ -73,6 +73,18 @@ class TestBitrateObserver : public BitrateAllocatorObserver {
   double protection_ratio_;
 };
 
+class BitrateAllocatorForTest : public BitrateAllocator {
+ public:
+  using BitrateAllocator::BitrateAllocator;
+  void OnNetworkChanged(uint32_t target_bitrate_bps,
+                        uint8_t fraction_loss,
+                        int64_t rtt,
+                        int64_t bwe_period_ms) {
+    BitrateAllocator::OnNetworkChanged(target_bitrate_bps, target_bitrate_bps,
+                                       fraction_loss, rtt, bwe_period_ms);
+  }
+};
+
 namespace {
 constexpr int64_t kDefaultProbingIntervalMs = 3000;
 const double kDefaultBitratePriority = 1.0;
@@ -80,7 +92,8 @@ const double kDefaultBitratePriority = 1.0;
 
 class BitrateAllocatorTest : public ::testing::Test {
  protected:
-  BitrateAllocatorTest() : allocator_(new BitrateAllocator(&limit_observer_)) {
+  BitrateAllocatorTest()
+      : allocator_(new BitrateAllocatorForTest(&limit_observer_)) {
     allocator_->OnNetworkChanged(300000u, 0, 0, kDefaultProbingIntervalMs);
   }
   ~BitrateAllocatorTest() {}
@@ -97,7 +110,7 @@ class BitrateAllocatorTest : public ::testing::Test {
   }
 
   NiceMock<MockLimitObserver> limit_observer_;
-  std::unique_ptr<BitrateAllocator> allocator_;
+  std::unique_ptr<BitrateAllocatorForTest> allocator_;
 };
 
 TEST_F(BitrateAllocatorTest, UpdatingBitrateObserver) {
@@ -213,7 +226,7 @@ TEST_F(BitrateAllocatorTest, RemoveObserverTriggersLimitObserver) {
 class BitrateAllocatorTestNoEnforceMin : public ::testing::Test {
  protected:
   BitrateAllocatorTestNoEnforceMin()
-      : allocator_(new BitrateAllocator(&limit_observer_)) {
+      : allocator_(new BitrateAllocatorForTest(&limit_observer_)) {
     allocator_->OnNetworkChanged(300000u, 0, 0, kDefaultProbingIntervalMs);
   }
   ~BitrateAllocatorTestNoEnforceMin() {}
@@ -229,7 +242,7 @@ class BitrateAllocatorTestNoEnforceMin : public ::testing::Test {
                    enforce_min_bitrate, track_id, bitrate_priority, false});
   }
   NiceMock<MockLimitObserver> limit_observer_;
-  std::unique_ptr<BitrateAllocator> allocator_;
+  std::unique_ptr<BitrateAllocatorForTest> allocator_;
 };
 
 // The following three tests verify enforcing a minimum bitrate works as

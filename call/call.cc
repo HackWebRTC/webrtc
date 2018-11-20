@@ -1124,8 +1124,9 @@ void Call::OnTargetTransferRate(TargetTransferRate msg) {
   }
   // For controlling the rate of feedback messages.
   receive_side_cc_.OnBitrateChanged(target_bitrate_bps);
-  bitrate_allocator_->OnNetworkChanged(target_bitrate_bps, fraction_loss,
-                                       rtt_ms, probing_interval_ms);
+  bitrate_allocator_->OnNetworkChanged(target_bitrate_bps, bandwidth_bps,
+                                       fraction_loss, rtt_ms,
+                                       probing_interval_ms);
 
   // Ignore updates if bitrate is zero (the aggregate network state is down).
   if (target_bitrate_bps == 0) {
