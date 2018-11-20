@@ -45,7 +45,6 @@ rtc_static_library("audio") {
   }
 
   deps = [
-    "..:webrtc_common",
     "../api:array_view",
     "../api:call_api",
     "../api:libjingle_peerconnection_api",

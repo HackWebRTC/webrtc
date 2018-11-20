@@ -54,7 +54,6 @@ rtc_source_set("rtc_stream_config") {
 
   deps = [
     ":rtc_event_log_api",
-    "..:webrtc_common",
     "../api:libjingle_peerconnection_api",
   ]
 }
@@ -301,7 +300,6 @@ if (rtc_enable_protobuf) {
       ":rtc_event_log_impl_encoder",
       ":rtc_event_log_proto",
       ":rtc_stream_config",
-      "..:webrtc_common",
       "../api:libjingle_peerconnection_api",
       "../call:video_stream_api",
       "../modules/audio_coding:audio_network_adaptor",

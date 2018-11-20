@@ -29,7 +29,6 @@ rtc_static_library("primitives") {
   ]
 
   deps = [
-    "../..:webrtc_common",
     "../../rtc_base:checks",
     "../../rtc_base/system:rtc_export",
     "//third_party/abseil-cpp/absl/memory",
@@ -97,7 +96,6 @@ if (rtc_include_tests) {
       ":desktop_capture",
       ":desktop_capture_mock",
       ":primitives",
-      "../..:webrtc_common",
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
       "../../system_wrappers:cpu_features_api",
@@ -419,7 +417,6 @@ rtc_static_library("desktop_capture_generic") {
 
   deps = [
     ":primitives",
-    "../..:webrtc_common",
     "../../api:refcountedbase",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base",  # TODO(kjellander): Cleanup in bugs.webrtc.org/3806.

@@ -27,7 +27,6 @@
 #include "api/array_view.h"
 #include "api/rtcerror.h"
 #include "api/video/encoded_image.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/copyonwritebuffer.h"
 #include "rtc_base/networkroute.h"
 

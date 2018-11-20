@@ -18,7 +18,6 @@
 #include "api/video/video_stream_encoder_interface.h"
 #include "call/bitrate_allocator.h"
 #include "call/rtp_video_sender_interface.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/weak_ptr.h"
 #include "video/call_stats.h"

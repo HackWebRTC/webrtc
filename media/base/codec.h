@@ -18,7 +18,6 @@
 
 #include "api/rtpparameters.h"
 #include "api/video_codecs/sdp_video_format.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "media/base/mediaconstants.h"
 #include "rtc_base/system/rtc_export.h"
 

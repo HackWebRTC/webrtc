@@ -37,7 +37,6 @@ if (rtc_include_tests) {
       "../:test_common",
       "../:test_support",
       "../:video_test_common",
-      "../..:webrtc_common",
       "../../api:libjingle_peerconnection_api",
       "../../api:transport_api",
       "../../api/audio_codecs:builtin_audio_decoder_factory",

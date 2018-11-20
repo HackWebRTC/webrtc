@@ -24,7 +24,6 @@
 #include "audio/conversion.h"
 #include "call/rtp_config.h"
 #include "call/rtp_stream_receiver_controller_interface.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/string_builder.h"

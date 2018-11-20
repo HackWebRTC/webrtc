@@ -33,7 +33,6 @@ rtc_static_library("system_wrappers") {
   libs = []
   deps = [
     ":cpu_features_api",
-    "..:webrtc_common",
     "../api:array_view",
     "../modules:module_api_public",
     "../rtc_base:checks",
@@ -89,9 +88,6 @@ rtc_static_library("system_wrappers") {
 rtc_source_set("cpu_features_api") {
   sources = [
     "include/cpu_features_wrapper.h",
-  ]
-  deps = [
-    "..:webrtc_common",
   ]
 }
 

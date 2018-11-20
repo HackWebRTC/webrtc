@@ -14,7 +14,6 @@
 
 #include "absl/strings/ascii.h"
 #include "api/audio_codecs/audio_format.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "media/base/mediaconstants.h"
 
 namespace cricket {

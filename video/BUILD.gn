@@ -53,7 +53,6 @@ rtc_static_library("video") {
 
   deps = [
     ":frame_dumping_decoder",
-    "..:webrtc_common",
     "../api:fec_controller_api",
     "../api:libjingle_peerconnection_api",
     "../api:transport_api",
@@ -376,7 +375,6 @@ if (rtc_include_tests) {
       "replay.cc",
     ]
     deps = [
-      "..:webrtc_common",
       "../api/test/video:function_video_factory",
       "../api/video_codecs:video_codecs_api",
       "../call:call_interfaces",

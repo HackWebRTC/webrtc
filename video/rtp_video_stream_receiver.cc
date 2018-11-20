@@ -16,7 +16,6 @@
 
 #include "absl/memory/memory.h"
 
-#include "common_types.h"  // NOLINT(build/include)
 #include "media/base/mediaconstants.h"
 #include "modules/pacing/packet_router.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"

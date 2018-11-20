@@ -231,7 +231,6 @@ rtc_source_set("ortc_api") {
 
   deps = [
     ":libjingle_peerconnection_api",
-    "..:webrtc_common",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }

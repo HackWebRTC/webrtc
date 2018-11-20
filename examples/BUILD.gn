@@ -747,7 +747,6 @@ if (is_linux || is_win) {
       "peerconnection/server/utils.h",
     ]
     deps = [
-      "..:webrtc_common",
       "../rtc_base:rtc_base_approved",
       "../rtc_base:stringutils",
       "../rtc_tools:command_line_parser",

@@ -21,7 +21,6 @@
 #include "api/video_codecs/video_decoder_factory.h"
 #include "call/rtp_stream_receiver_controller_interface.h"
 #include "call/rtx_receive_stream.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "common_video/h264/profile_level_id.h"
 #include "common_video/include/incoming_video_stream.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
