@@ -27,6 +27,14 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 
+#if defined(WEBRTC_DLOPEN_PIPEWIRE)
+#include "modules/desktop_capture/linux/pipewire_stubs.h"
+
+using modules_desktop_capture_linux::kModulePipewire;
+using modules_desktop_capture_linux::InitializeStubs;
+using modules_desktop_capture_linux::StubPathMap;
+#endif  // defined(WEBRTC_DLOPEN_PIPEWIRE)
+
 namespace webrtc {
 
 const char kDesktopBusName[] = "org.freedesktop.portal.Desktop";
@@ -38,6 +46,10 @@ const char kRequestInterfaceName[] = "org.freedesktop.portal.Request";
 const char kScreenCastInterfaceName[] = "org.freedesktop.portal.ScreenCast";
 
 const int kBytesPerPixel = 4;
+
+#if defined(WEBRTC_DLOPEN_PIPEWIRE)
+const char kPipeWireLib[] = "libpipewire-0.2.so.1";
+#endif
 
 // static
 void BaseCapturerPipeWire::OnStateChanged(void* data,
@@ -251,6 +263,18 @@ void BaseCapturerPipeWire::InitPortal() {
 }
 
 void BaseCapturerPipeWire::InitPipeWire() {
+#if defined(WEBRTC_DLOPEN_PIPEWIRE)
+  StubPathMap paths;
+
+  // Check if the PipeWire library is available.
+  paths[kModulePipewire].push_back(kPipeWireLib);
+  if (!InitializeStubs(paths)) {
+    RTC_LOG(LS_ERROR) << "Failed to load the PipeWire library and symbols.";
+    portal_init_failed_ = true;
+    return;
+  }
+#endif  // defined(WEBRTC_DLOPEN_PIPEWIRE)
+
   pw_init(/*argc=*/nullptr, /*argc=*/nullptr);
 
   pw_loop_ = pw_loop_new(/*properties=*/nullptr);
@@ -279,6 +303,8 @@ void BaseCapturerPipeWire::InitPipeWire() {
     RTC_LOG(LS_ERROR) << "Failed to start main PipeWire loop";
     portal_init_failed_ = true;
   }
+
+  RTC_LOG(LS_INFO) << "PipeWire remote opened.";
 }
 
 void BaseCapturerPipeWire::InitPipeWireTypes() {
@@ -300,8 +326,8 @@ void BaseCapturerPipeWire::CreateReceivingStream() {
   spa_fraction pwFrameRateMin = spa_fraction{0, 1};
   spa_fraction pwFrameRateMax = spa_fraction{60, 1};
 
-  pw_properties* reuseProps = pw_properties_new("pipewire.client.reuse", "1",
-                                                /*end of varargs*/ nullptr);
+  pw_properties* reuseProps =
+      pw_properties_new_string("pipewire.client.reuse=1");
   pw_stream_ = pw_stream_new(pw_remote_, "webrtc-consume-stream", reuseProps);
 
   uint8_t buffer[1024] = {};
@@ -793,7 +819,6 @@ void BaseCapturerPipeWire::OnOpenPipeWireRemoteRequested(
   g_object_unref(outlist);
 
   that->InitPipeWire();
-  RTC_LOG(LS_INFO) << "PipeWire remote opened.";
 }
 
 void BaseCapturerPipeWire::Start(Callback* callback) {
