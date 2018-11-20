@@ -15,7 +15,6 @@
 #include <vector>
 
 #include "audio/channel_send.h"
-#include "audio/time_interval.h"
 #include "audio/transport_feedback_packet_loss_tracker.h"
 #include "call/audio_send_stream.h"
 #include "call/audio_state.h"
@@ -46,8 +45,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
                   BitrateAllocatorInterface* bitrate_allocator,
                   RtcEventLog* event_log,
                   RtcpRttStats* rtcp_rtt_stats,
-                  const absl::optional<RtpState>& suspended_rtp_state,
-                  TimeInterval* overall_call_lifetime);
+                  const absl::optional<RtpState>& suspended_rtp_state);
   // For unit tests, which need to supply a mock ChannelSend.
   AudioSendStream(const webrtc::AudioSendStream::Config& config,
                   const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
@@ -57,7 +55,6 @@ class AudioSendStream final : public webrtc::AudioSendStream,
                   RtcEventLog* event_log,
                   RtcpRttStats* rtcp_rtt_stats,
                   const absl::optional<RtpState>& suspended_rtp_state,
-                  TimeInterval* overall_call_lifetime,
                   std::unique_ptr<voe::ChannelSendInterface> channel_send);
   ~AudioSendStream() override;
 
@@ -143,10 +140,6 @@ class AudioSendStream final : public webrtc::AudioSendStream,
 
   RtpRtcp* rtp_rtcp_module_;
   absl::optional<RtpState> const suspended_rtp_state_;
-
-  std::unique_ptr<TimedTransport> timed_send_transport_adapter_;
-  TimeInterval active_lifetime_;
-  TimeInterval* overall_call_lifetime_ = nullptr;
 
   // RFC 5285: Each distinct extension MUST have a unique ID. The value 0 is
   // reserved for padding and MUST NOT be used as a local identifier.

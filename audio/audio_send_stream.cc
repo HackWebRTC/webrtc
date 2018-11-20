@@ -90,29 +90,6 @@ void UpdateEventLogStreamConfig(RtcEventLog* event_log,
 
 }  // namespace
 
-// Helper class to track the actively sending lifetime of this stream.
-class AudioSendStream::TimedTransport : public Transport {
- public:
-  TimedTransport(Transport* transport, TimeInterval* time_interval)
-      : transport_(transport), lifetime_(time_interval) {}
-  bool SendRtp(const uint8_t* packet,
-               size_t length,
-               const PacketOptions& options) {
-    if (lifetime_) {
-      lifetime_->Extend();
-    }
-    return transport_->SendRtp(packet, length, options);
-  }
-  bool SendRtcp(const uint8_t* packet, size_t length) {
-    return transport_->SendRtcp(packet, length);
-  }
-  ~TimedTransport() {}
-
- private:
-  Transport* transport_;
-  TimeInterval* lifetime_;
-};
-
 AudioSendStream::AudioSendStream(
     const webrtc::AudioSendStream::Config& config,
     const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
@@ -122,8 +99,7 @@ AudioSendStream::AudioSendStream(
     BitrateAllocatorInterface* bitrate_allocator,
     RtcEventLog* event_log,
     RtcpRttStats* rtcp_rtt_stats,
-    const absl::optional<RtpState>& suspended_rtp_state,
-    TimeInterval* overall_call_lifetime)
+    const absl::optional<RtpState>& suspended_rtp_state)
     : AudioSendStream(config,
                       audio_state,
                       worker_queue,
@@ -132,7 +108,6 @@ AudioSendStream::AudioSendStream(
                       event_log,
                       rtcp_rtt_stats,
                       suspended_rtp_state,
-                      overall_call_lifetime,
                       voe::CreateChannelSend(worker_queue,
                                              module_process_thread,
                                              config.media_transport,
@@ -152,7 +127,6 @@ AudioSendStream::AudioSendStream(
     RtcEventLog* event_log,
     RtcpRttStats* rtcp_rtt_stats,
     const absl::optional<RtpState>& suspended_rtp_state,
-    TimeInterval* overall_call_lifetime,
     std::unique_ptr<voe::ChannelSendInterface> channel_send)
     : worker_queue_(worker_queue),
       config_(Config(/*send_transport=*/nullptr,
@@ -166,8 +140,7 @@ AudioSendStream::AudioSendStream(
                            kPacketLossRateMinNumAckedPackets,
                            kRecoverablePacketLossRateMinNumAckedPairs),
       rtp_rtcp_module_(nullptr),
-      suspended_rtp_state_(suspended_rtp_state),
-      overall_call_lifetime_(overall_call_lifetime) {
+      suspended_rtp_state_(suspended_rtp_state) {
   RTC_LOG(LS_INFO) << "AudioSendStream: " << config.rtp.ssrc;
   RTC_DCHECK(worker_queue_);
   RTC_DCHECK(audio_state_);
@@ -178,7 +151,6 @@ AudioSendStream::AudioSendStream(
   // should be no rtp_transport, and below check should be strengthened to XOR
   // (either rtp_transport or media_transport but not both).
   RTC_DCHECK(rtp_transport || config.media_transport);
-  RTC_DCHECK(overall_call_lifetime_);
 
   rtp_rtcp_module_ = channel_send_->GetRtpRtcp();
   RTC_DCHECK(rtp_rtcp_module_);
@@ -202,10 +174,6 @@ AudioSendStream::~AudioSendStream() {
     channel_send_->RegisterTransport(nullptr);
     channel_send_->ResetSenderCongestionControlObjects();
   }
-  // Lifetime can only be updated after deregistering
-  // |timed_send_transport_adapter_| in the underlying channel object to avoid
-  // data races in |active_lifetime_|.
-  overall_call_lifetime_->Extend(active_lifetime_);
 }
 
 const webrtc::AudioSendStream::Config& AudioSendStream::GetConfig() const {
@@ -257,17 +225,7 @@ void AudioSendStream::ConfigureStream(
   }
 
   if (first_time || new_config.send_transport != old_config.send_transport) {
-    if (old_config.send_transport) {
-      channel_send->RegisterTransport(nullptr);
-    }
-    if (new_config.send_transport) {
-      stream->timed_send_transport_adapter_.reset(new TimedTransport(
-          new_config.send_transport, &stream->active_lifetime_));
-    } else {
-      stream->timed_send_transport_adapter_.reset(nullptr);
-    }
-    channel_send->RegisterTransport(
-        stream->timed_send_transport_adapter_.get());
+    channel_send->RegisterTransport(new_config.send_transport);
   }
 
   // Enable the frame encryptor if a new frame encryptor has been provided.

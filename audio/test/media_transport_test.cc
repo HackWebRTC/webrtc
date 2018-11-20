@@ -118,11 +118,10 @@ TEST(AudioWithMediaTransport, DeliversAudio) {
   rtc::TaskQueue send_tq("audio send queue");
   std::unique_ptr<ProcessThread> send_process_thread =
       ProcessThread::Create("audio send thread");
-  TimeInterval life_time;
   webrtc::internal::AudioSendStream send_stream(
       send_config, audio_state, &send_tq, send_process_thread.get(),
       /*transport=*/nullptr, &bitrate_allocator, null_event_log.get(),
-      /*rtcp_rtt_stats=*/nullptr, absl::optional<RtpState>(), &life_time);
+      /*rtcp_rtt_stats=*/nullptr, absl::optional<RtpState>());
 
   audio_device->Init();  // Starts thread.
   audio_device->RegisterAudioCallback(audio_state->audio_transport());

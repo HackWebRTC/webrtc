@@ -22,7 +22,6 @@
 #include "audio/audio_receive_stream.h"
 #include "audio/audio_send_stream.h"
 #include "audio/audio_state.h"
-#include "audio/time_interval.h"
 #include "call/bitrate_allocator.h"
 #include "call/call.h"
 #include "call/flexfec_receive_stream_impl.h"
@@ -347,7 +346,6 @@ class Call final : public webrtc::Call,
   absl::optional<int64_t> last_received_rtp_audio_ms_;
   absl::optional<int64_t> first_received_rtp_video_ms_;
   absl::optional<int64_t> last_received_rtp_video_ms_;
-  TimeInterval sent_rtp_audio_timer_ms_;
 
   rtc::CriticalSection last_bandwidth_bps_crit_;
   uint32_t last_bandwidth_bps_ RTC_GUARDED_BY(&last_bandwidth_bps_crit_);
@@ -541,11 +539,6 @@ void Call::UpdateHistograms() {
 void Call::UpdateSendHistograms(int64_t first_sent_packet_ms) {
   if (first_sent_packet_ms == -1)
     return;
-  if (!sent_rtp_audio_timer_ms_.Empty()) {
-    RTC_HISTOGRAM_COUNTS_100000(
-        "WebRTC.Call.TimeSendingAudioRtpPacketsInSeconds",
-        sent_rtp_audio_timer_ms_.Length() / 1000);
-  }
   int64_t elapsed_sec =
       (clock_->TimeInMilliseconds() - first_sent_packet_ms) / 1000;
   if (elapsed_sec < metrics::kMinRunTimeInSeconds)
@@ -649,7 +642,7 @@ webrtc::AudioSendStream* Call::CreateAudioSendStream(
       config, config_.audio_state, transport_send_ptr_->GetWorkerQueue(),
       module_process_thread_.get(), transport_send_ptr_,
       bitrate_allocator_.get(), event_log_, call_stats_.get(),
-      suspended_rtp_state, &sent_rtp_audio_timer_ms_);
+      suspended_rtp_state);
   {
     WriteLockScoped write_lock(*send_crit_);
     RTC_DCHECK(audio_send_ssrcs_.find(config.rtp.ssrc) ==

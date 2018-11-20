@@ -33,8 +33,6 @@ rtc_static_library("audio") {
     "null_audio_poller.h",
     "remix_resample.cc",
     "remix_resample.h",
-    "time_interval.cc",
-    "time_interval.h",
     "transport_feedback_packet_loss_tracker.cc",
     "transport_feedback_packet_loss_tracker.h",
   ]
@@ -126,7 +124,6 @@ if (rtc_include_tests) {
       "remix_resample_unittest.cc",
       "test/audio_stats_test.cc",
       "test/media_transport_test.cc",
-      "time_interval_unittest.cc",
       "transport_feedback_packet_loss_tracker_unittest.cc",
     ]
     deps = [
