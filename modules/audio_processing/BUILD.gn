@@ -589,6 +589,7 @@ if (rtc_include_tests) {
         "aec_dump:aec_dump_impl",
         "//testing/gtest",
         "//third_party/abseil-cpp/absl/memory",
+        "//third_party/abseil-cpp/absl/strings",
         "//third_party/abseil-cpp/absl/types:optional",
       ]
     }  # audioproc_f_impl

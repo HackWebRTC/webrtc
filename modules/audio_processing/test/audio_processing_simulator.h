@@ -75,6 +75,8 @@ struct SimulationSettings {
   absl::optional<int> agc_compression_gain;
   absl::optional<bool> agc2_use_adaptive_gain;
   float agc2_fixed_gain_db;
+  AudioProcessing::Config::GainController2::LevelEstimator
+      agc2_adaptive_level_estimator;
   float pre_amplifier_gain_factor;
   absl::optional<int> vad_likelihood;
   absl::optional<int> ns_level;
