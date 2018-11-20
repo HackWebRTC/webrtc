@@ -149,7 +149,7 @@ TEST(VideoCodecTestLibvpx, ChangeFramerateVP9) {
 
   // Framerate mismatch should be lower for lower framerate.
   std::vector<RateControlThresholds> rc_thresholds = {
-      {10, 2, 40, 0.4, 0.5, 0.2, 0, 1},
+      {10, 2, 40, 0.5, 0.5, 0.2, 0, 1},
       {8, 2, 5, 0.2, 0.5, 0.2, 0, 0},
       {5, 2, 0, 0.21, 0.5, 0.3, 0, 0}};
 
