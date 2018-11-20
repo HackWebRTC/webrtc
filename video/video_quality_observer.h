@@ -15,8 +15,8 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/video/video_codec_type.h"
 #include "api/video/video_content_type.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/numerics/sample_counter.h"
 
 namespace webrtc {

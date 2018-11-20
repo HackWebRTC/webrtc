@@ -16,6 +16,7 @@
 #include <string>
 
 #include "api/video/video_bitrate_allocation.h"
+#include "api/video/video_codec_type.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/system/rtc_export.h"
 

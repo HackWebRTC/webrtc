@@ -78,7 +78,6 @@ rtc_source_set("rtc_base_approved") {
     ":safe_compare",
     ":safe_minmax",
     ":type_traits",
-    "..:webrtc_common",
     "../api:array_view",
     "../system_wrappers:field_trial",
     "experiments:field_trial_parser",

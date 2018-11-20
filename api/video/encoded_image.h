@@ -16,6 +16,7 @@
 #include "absl/types/optional.h"
 #include "api/video/hdr_metadata.h"
 #include "api/video/video_bitrate_allocation.h"
+#include "api/video/video_codec_type.h"
 #include "api/video/video_content_type.h"
 #include "api/video/video_rotation.h"
 #include "api/video/video_timing.h"

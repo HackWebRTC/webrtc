@@ -17,6 +17,8 @@
 #include "absl/strings/match.h"
 // TODO(sprang): Remove this include when all usage includes it directly.
 #include "api/video/video_bitrate_allocation.h"
+// TODO(bugs.webrtc.org/7660): Delete include once downstream code is updated.
+#include "api/video/video_codec_type.h"
 #include "rtc_base/checks.h"
 
 #if defined(_MSC_VER)
@@ -242,18 +244,6 @@ enum Profile {
 };
 
 }  // namespace H264
-
-// Video codec types
-enum VideoCodecType {
-  // There are various memset(..., 0, ...) calls in the code that rely on
-  // kVideoCodecGeneric being zero.
-  kVideoCodecGeneric = 0,
-  kVideoCodecVP8,
-  kVideoCodecVP9,
-  kVideoCodecH264,
-  kVideoCodecI420,
-  kVideoCodecMultiplex,
-};
 
 struct SpatialLayer {
   bool operator==(const SpatialLayer& other) const;

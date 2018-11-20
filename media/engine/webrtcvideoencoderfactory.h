@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-#include "common_types.h"  // NOLINT(build/include)
+#include "api/video/video_codec_type.h"
 #include "media/base/codec.h"
 #include "rtc_base/system/rtc_export.h"
 
