@@ -41,7 +41,6 @@ bool RtcEventAudioReceiveStreamConfig::IsConfigEvent() const {
 
 std::unique_ptr<RtcEventAudioReceiveStreamConfig>
 RtcEventAudioReceiveStreamConfig::Copy() const {
-  auto config_copy = absl::make_unique<rtclog::StreamConfig>(*config_);
   return absl::WrapUnique<RtcEventAudioReceiveStreamConfig>(
       new RtcEventAudioReceiveStreamConfig(*this));
 }
