@@ -49,7 +49,6 @@ class GainController2 {
   std::unique_ptr<AdaptiveAgc> adaptive_agc_;
   Limiter limiter_;
   int analog_level_ = -1;
-  bool adaptive_digital_mode_ = true;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(GainController2);
 };
