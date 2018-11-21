@@ -461,12 +461,6 @@ void NetEqImpl::FlushBuffers() {
   first_packet_ = true;
 }
 
-void NetEqImpl::PacketBufferStatistics(int* current_num_packets,
-                                       int* max_num_packets) const {
-  rtc::CritScope lock(&crit_sect_);
-  packet_buffer_->BufferStat(current_num_packets, max_num_packets);
-}
-
 void NetEqImpl::EnableNack(size_t max_nack_list_size) {
   rtc::CritScope lock(&crit_sect_);
   if (!nack_enabled_) {

@@ -299,9 +299,4 @@ bool PacketBuffer::ContainsDtxOrCngPacket(
   return false;
 }
 
-void PacketBuffer::BufferStat(int* num_packets, int* max_num_packets) const {
-  *num_packets = static_cast<int>(buffer_.size());
-  *max_num_packets = static_cast<int>(max_number_of_packets_);
-}
-
 }  // namespace webrtc

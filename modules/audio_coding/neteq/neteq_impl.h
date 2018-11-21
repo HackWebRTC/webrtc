@@ -192,9 +192,6 @@ class NetEqImpl : public webrtc::NetEq {
   // Flushes both the packet buffer and the sync buffer.
   void FlushBuffers() override;
 
-  void PacketBufferStatistics(int* current_num_packets,
-                              int* max_num_packets) const override;
-
   void EnableNack(size_t max_nack_list_size) override;
 
   void DisableNack() override;
