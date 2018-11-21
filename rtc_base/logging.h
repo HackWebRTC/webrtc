@@ -73,8 +73,6 @@ namespace rtc {
 
 // Note that the non-standard LoggingSeverity aliases exist because they are
 // still in broad use.  The meanings of the levels are:
-//  LS_SENSITIVE: Information which should only be logged with the consent
-//   of the user, due to privacy concerns.
 //  LS_VERBOSE: This level is for data which we do not want to appear in the
 //   normal debug log, but should appear in diagnostic logs.
 //  LS_INFO: Chatty level used in debugging for all sorts of things, the default
@@ -83,7 +81,6 @@ namespace rtc {
 //  LS_ERROR: Something that should not have occurred.
 //  LS_NONE: Don't log.
 enum LoggingSeverity {
-  LS_SENSITIVE,
   LS_VERBOSE,
   LS_INFO,
   LS_WARNING,

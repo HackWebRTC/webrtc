@@ -308,8 +308,6 @@ void LogMessage::ConfigureLogging(const char* params) {
       LogThreads();
 
       // Logging levels
-    } else if (token == "sensitive") {
-      current_level = LS_SENSITIVE;
     } else if (token == "verbose") {
       current_level = LS_VERBOSE;
     } else if (token == "info") {
@@ -402,13 +400,6 @@ void LogMessage::OutputToDebug(const std::string& str,
   // from the shell.
   int prio;
   switch (severity) {
-    case LS_SENSITIVE:
-      __android_log_write(ANDROID_LOG_INFO, tag, "SENSITIVE");
-      if (log_to_stderr) {
-        fprintf(stderr, "SENSITIVE");
-        fflush(stderr);
-      }
-      return;
     case LS_VERBOSE:
       prio = ANDROID_LOG_VERBOSE;
       break;
