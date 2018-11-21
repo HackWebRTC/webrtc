@@ -14,7 +14,7 @@
 #include <stdint.h>
 
 #include "absl/types/optional.h"
-#include "api/video/hdr_metadata.h"
+#include "api/video/color_space.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "api/video/video_codec_type.h"
 #include "api/video/video_content_type.h"
@@ -59,12 +59,12 @@ class RTC_EXPORT EncodedImage {
     spatial_index_ = spatial_index;
   }
 
-  const webrtc::HdrMetadata* HdrMetadata() const {
-    return hdr_metadata_ ? &*hdr_metadata_ : nullptr;
+  const webrtc::ColorSpace* ColorSpace() const {
+    return color_space_ ? &*color_space_ : nullptr;
   }
-  void SetHdrMetadata(const webrtc::HdrMetadata* hdr_metadata) {
-    hdr_metadata_ =
-        hdr_metadata ? absl::make_optional(*hdr_metadata) : absl::nullopt;
+  void SetColorSpace(const webrtc::ColorSpace* color_space) {
+    color_space_ =
+        color_space ? absl::make_optional(*color_space) : absl::nullopt;
   }
 
   uint32_t _encodedWidth = 0;
@@ -101,7 +101,7 @@ class RTC_EXPORT EncodedImage {
  private:
   uint32_t timestamp_rtp_ = 0;
   absl::optional<int> spatial_index_;
-  absl::optional<webrtc::HdrMetadata> hdr_metadata_;
+  absl::optional<webrtc::ColorSpace> color_space_;
 };
 
 }  // namespace webrtc

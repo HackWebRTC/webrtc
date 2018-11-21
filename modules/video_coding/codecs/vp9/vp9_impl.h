@@ -170,7 +170,7 @@ class VP9DecoderImpl : public VP9Decoder {
                   uint32_t timestamp,
                   int64_t ntp_time_ms,
                   int qp,
-                  const HdrMetadata* hdr_metadata);
+                  const ColorSpace* explicit_color_space);
 
   // Memory pool used to share buffers between libvpx and webrtc.
   Vp9FrameBufferPool frame_buffer_pool_;

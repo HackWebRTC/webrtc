@@ -40,7 +40,7 @@ class RTC_EXPORT VideoFrame {
     Builder& set_ntp_time_ms(int64_t ntp_time_ms);
     Builder& set_rotation(VideoRotation rotation);
     Builder& set_color_space(const ColorSpace& color_space);
-    Builder& set_hdr_metadata(const HdrMetadata* hdr_metadata);
+    Builder& set_color_space(const ColorSpace* color_space);
 
    private:
     rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer_;
@@ -49,7 +49,6 @@ class RTC_EXPORT VideoFrame {
     int64_t ntp_time_ms_ = 0;
     VideoRotation rotation_ = kVideoRotation_0;
     absl::optional<ColorSpace> color_space_;
-    absl::optional<HdrMetadata> hdr_metadata_;
   };
 
   // To be deprecated. Migrate all use to Builder.
@@ -116,11 +115,8 @@ class RTC_EXPORT VideoFrame {
   void set_rotation(VideoRotation rotation) { rotation_ = rotation; }
 
   // Get color space when available.
-  absl::optional<ColorSpace> color_space() const { return color_space_; }
-
-  // Get HDR metadata when available.
-  const HdrMetadata* hdr_metadata() const {
-    return hdr_metadata_ ? &*hdr_metadata_ : nullptr;
+  const ColorSpace* color_space() const {
+    return color_space_ ? &*color_space_ : nullptr;
   }
 
   // Get render time in milliseconds.
@@ -143,8 +139,7 @@ class RTC_EXPORT VideoFrame {
              uint32_t timestamp_rtp,
              int64_t ntp_time_ms,
              VideoRotation rotation,
-             const absl::optional<ColorSpace>& color_space,
-             const absl::optional<HdrMetadata>& hdr_metadata);
+             const absl::optional<ColorSpace>& color_space);
 
   // An opaque reference counted handle that stores the pixel data.
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer_;
@@ -153,7 +148,6 @@ class RTC_EXPORT VideoFrame {
   int64_t timestamp_us_;
   VideoRotation rotation_;
   absl::optional<ColorSpace> color_space_;
-  absl::optional<HdrMetadata> hdr_metadata_;
 };
 
 }  // namespace webrtc

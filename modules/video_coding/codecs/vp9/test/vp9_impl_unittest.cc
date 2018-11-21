@@ -105,7 +105,7 @@ class TestVp9Impl : public VideoCodecUnitTest {
     }
   }
 
-  HdrMetadata CreateTestHdrMetadata() {
+  HdrMetadata CreateTestHdrMetadata() const {
     // Random but reasonable HDR metadata.
     HdrMetadata hdr_metadata;
     hdr_metadata.mastering_metadata.luminance_max = 2000.0;
@@ -121,6 +121,15 @@ class TestVp9Impl : public VideoCodecUnitTest {
     hdr_metadata.max_content_light_level = 2345;
     hdr_metadata.max_frame_average_light_level = 1789;
     return hdr_metadata;
+  }
+
+  ColorSpace CreateTestColorSpace() const {
+    HdrMetadata hdr_metadata = CreateTestHdrMetadata();
+    ColorSpace color_space(ColorSpace::PrimaryID::kBT709,
+                           ColorSpace::TransferID::kGAMMA22,
+                           ColorSpace::MatrixID::kSMPTE2085,
+                           ColorSpace::RangeID::kFull, &hdr_metadata);
+    return color_space;
   }
 };
 
@@ -146,7 +155,7 @@ TEST_F(TestVp9Impl, EncodeDecode) {
   ASSERT_TRUE(decoded_frame);
   EXPECT_GT(I420PSNR(input_frame, decoded_frame.get()), 36);
 
-  const ColorSpace color_space = decoded_frame->color_space().value();
+  const ColorSpace color_space = *decoded_frame->color_space();
   EXPECT_EQ(ColorSpace::PrimaryID::kInvalid, color_space.primaries());
   EXPECT_EQ(ColorSpace::TransferID::kInvalid, color_space.transfer());
   EXPECT_EQ(ColorSpace::MatrixID::kInvalid, color_space.matrix());
@@ -175,28 +184,28 @@ TEST_F(TestVp9Impl, EncodedRotationEqualsInputRotation) {
   EXPECT_EQ(kVideoRotation_90, encoded_frame.rotation_);
 }
 
-TEST_F(TestVp9Impl, EncodedHdrMetadataEqualsInputHdrMetadata) {
-  // Video frame without HDR metadata.
+TEST_F(TestVp9Impl, EncodedColorSpaceEqualsInputColorSpace) {
+  // Video frame without explicit color space information.
   VideoFrame* input_frame = NextInputFrame();
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             encoder_->Encode(*input_frame, nullptr, nullptr));
   EncodedImage encoded_frame;
   CodecSpecificInfo codec_specific_info;
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
-  EXPECT_FALSE(encoded_frame.HdrMetadata());
+  EXPECT_FALSE(encoded_frame.ColorSpace());
 
-  // Video frame with HDR metadata.
-  HdrMetadata hdr_metadata = CreateTestHdrMetadata();
+  // Video frame with explicit color space information.
+  ColorSpace color_space = CreateTestColorSpace();
   VideoFrame input_frame_w_hdr =
       VideoFrame::Builder()
           .set_video_frame_buffer(input_frame->video_frame_buffer())
-          .set_hdr_metadata(&hdr_metadata)
+          .set_color_space(&color_space)
           .build();
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             encoder_->Encode(input_frame_w_hdr, nullptr, nullptr));
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
-  EXPECT_TRUE(encoded_frame.HdrMetadata());
-  EXPECT_EQ(hdr_metadata, *encoded_frame.HdrMetadata());
+  ASSERT_TRUE(encoded_frame.ColorSpace());
+  EXPECT_EQ(*encoded_frame.ColorSpace(), color_space);
 }
 
 TEST_F(TestVp9Impl, DecodedHdrMetadataEqualsEncodedHdrMetadata) {
@@ -206,24 +215,27 @@ TEST_F(TestVp9Impl, DecodedHdrMetadataEqualsEncodedHdrMetadata) {
   CodecSpecificInfo codec_specific_info;
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
 
-  // Encoded frame without HDR metadata.
+  // Encoded frame without explicit color space information.
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             decoder_->Decode(encoded_frame, false, nullptr, 0));
   std::unique_ptr<VideoFrame> decoded_frame;
   absl::optional<uint8_t> decoded_qp;
   ASSERT_TRUE(WaitForDecodedFrame(&decoded_frame, &decoded_qp));
   ASSERT_TRUE(decoded_frame);
-  EXPECT_FALSE(decoded_frame->hdr_metadata());
+  // Color space present from encoded bitstream.
+  ASSERT_TRUE(decoded_frame->color_space());
+  // No HDR metadata present.
+  EXPECT_FALSE(decoded_frame->color_space()->hdr_metadata());
 
-  // Encoded frame with HDR metadata.
-  HdrMetadata hdr_metadata = CreateTestHdrMetadata();
-  encoded_frame.SetHdrMetadata(&hdr_metadata);
+  // Encoded frame with explicit color space information.
+  ColorSpace color_space = CreateTestColorSpace();
+  encoded_frame.SetColorSpace(&color_space);
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             decoder_->Decode(encoded_frame, false, nullptr, 0));
   ASSERT_TRUE(WaitForDecodedFrame(&decoded_frame, &decoded_qp));
   ASSERT_TRUE(decoded_frame);
-  ASSERT_TRUE(decoded_frame->hdr_metadata());
-  EXPECT_EQ(hdr_metadata, *decoded_frame->hdr_metadata());
+  ASSERT_TRUE(decoded_frame->color_space());
+  EXPECT_EQ(color_space, *decoded_frame->color_space());
 }
 
 TEST_F(TestVp9Impl, DecodedQpEqualsEncodedQp) {
