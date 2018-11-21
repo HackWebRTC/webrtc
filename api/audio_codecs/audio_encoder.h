@@ -17,6 +17,7 @@
 
 #include "absl/types/optional.h"
 #include "api/array_view.h"
+#include "api/call/bitrate_allocation.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/deprecation.h"
 
@@ -220,6 +221,10 @@ class AudioEncoder {
   // the bandwidth estimator to this encoder to allow it to adapt.
   virtual void OnReceivedUplinkBandwidth(int target_audio_bitrate_bps,
                                          absl::optional<int64_t> bwe_period_ms);
+
+  // Provides target audio bitrate and corresponding probing interval of
+  // the bandwidth estimator to this encoder to allow it to adapt.
+  virtual void OnReceivedUplinkAllocation(BitrateAllocationUpdate update);
 
   // Provides RTT to this encoder to allow it to adapt.
   virtual void OnReceivedRtt(int rtt_ms);
