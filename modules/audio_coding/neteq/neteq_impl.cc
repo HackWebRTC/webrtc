@@ -102,7 +102,6 @@ NetEqImpl::NetEqImpl(const NetEq::Config& config,
       new_codec_(false),
       timestamp_(0),
       reset_decoder_(false),
-      ssrc_(0),
       first_packet_(true),
       enable_fast_accelerate_(config.enable_fast_accelerate),
       nack_enabled_(false),
@@ -533,8 +532,7 @@ int NetEqImpl::InsertPacketInternal(const RTPHeader& rtp_header,
     return packet;
   }());
 
-  bool update_sample_rate_and_channels =
-      first_packet_ || (rtp_header.ssrc != ssrc_);
+  bool update_sample_rate_and_channels = first_packet_;
 
   if (update_sample_rate_and_channels) {
     // Reset timestamp scaling.
@@ -560,9 +558,6 @@ int NetEqImpl::InsertPacketInternal(const RTPHeader& rtp_header,
     // Flush the packet buffer and DTMF buffer.
     packet_buffer_->Flush();
     dtmf_buffer_->Flush();
-
-    // Store new SSRC.
-    ssrc_ = rtp_header.ssrc;
 
     // Update audio buffer timestamp.
     sync_buffer_->IncreaseEndTimestamp(main_timestamp - timestamp_);
