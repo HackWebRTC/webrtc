@@ -22,7 +22,6 @@
 #include "modules/audio_coding/neteq/include/neteq.h"
 #include "modules/audio_coding/neteq/packet.h"
 #include "modules/audio_coding/neteq/random_vector.h"
-#include "modules/audio_coding/neteq/rtcp.h"
 #include "modules/audio_coding/neteq/statistics_calculator.h"
 #include "modules/audio_coding/neteq/tick_timer.h"
 #include "rtc_base/constructormagic.h"
@@ -170,16 +169,9 @@ class NetEqImpl : public webrtc::NetEq {
   // after the call.
   int NetworkStatistics(NetEqNetworkStatistics* stats) override;
 
-  // Writes the current RTCP statistics to |stats|. The statistics are reset
-  // and a new report period is started with the call.
-  void GetRtcpStatistics(RtcpStatistics* stats) override;
-
   NetEqLifetimeStatistics GetLifetimeStatistics() const override;
 
   NetEqOperationsAndState GetOperationsAndState() const override;
-
-  // Same as RtcpStatistics(), but does not reset anything.
-  void GetRtcpStatisticsNoReset(RtcpStatistics* stats) override;
 
   // Enables post-decode VAD. When enabled, GetAudio() will return
   // kOutputVADPassive when the signal contains no speech.
@@ -395,7 +387,6 @@ class NetEqImpl : public webrtc::NetEq {
       RTC_GUARDED_BY(crit_sect_);
   RandomVector random_vector_ RTC_GUARDED_BY(crit_sect_);
   std::unique_ptr<ComfortNoise> comfort_noise_ RTC_GUARDED_BY(crit_sect_);
-  Rtcp rtcp_ RTC_GUARDED_BY(crit_sect_);
   StatisticsCalculator stats_ RTC_GUARDED_BY(crit_sect_);
   int fs_hz_ RTC_GUARDED_BY(crit_sect_);
   int fs_mult_ RTC_GUARDED_BY(crit_sect_);

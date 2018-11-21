@@ -231,13 +231,6 @@ class NetEq {
   // statistics are never reset.
   virtual NetEqOperationsAndState GetOperationsAndState() const = 0;
 
-  // Writes the current RTCP statistics to |stats|. The statistics are reset
-  // and a new report period is started with the call.
-  virtual void GetRtcpStatistics(RtcpStatistics* stats) = 0;
-
-  // Same as RtcpStatistics(), but does not reset anything.
-  virtual void GetRtcpStatisticsNoReset(RtcpStatistics* stats) = 0;
-
   // Enables post-decode VAD. When enabled, GetAudio() will return
   // kOutputVADPassive when the signal contains no speech.
   virtual void EnableVad() = 0;

@@ -387,20 +387,6 @@ NetEqOperationsAndState NetEqImpl::GetOperationsAndState() const {
   return result;
 }
 
-void NetEqImpl::GetRtcpStatistics(RtcpStatistics* stats) {
-  rtc::CritScope lock(&crit_sect_);
-  if (stats) {
-    rtcp_.GetStatistics(false, stats);
-  }
-}
-
-void NetEqImpl::GetRtcpStatisticsNoReset(RtcpStatistics* stats) {
-  rtc::CritScope lock(&crit_sect_);
-  if (stats) {
-    rtcp_.GetStatistics(true, stats);
-  }
-}
-
 void NetEqImpl::EnableVad() {
   rtc::CritScope lock(&crit_sect_);
   assert(vad_.get());
@@ -576,8 +562,6 @@ int NetEqImpl::InsertPacketInternal(const RTPHeader& rtp_header,
     // Note: |first_packet_| will be cleared further down in this method, once
     // the packet has been successfully inserted into the packet buffer.
 
-    rtcp_.Init(rtp_header.sequenceNumber);
-
     // Flush the packet buffer and DTMF buffer.
     packet_buffer_->Flush();
     dtmf_buffer_->Flush();
@@ -591,9 +575,6 @@ int NetEqImpl::InsertPacketInternal(const RTPHeader& rtp_header,
     // Update codecs.
     timestamp_ = main_timestamp;
   }
-
-  // Update RTCP statistics, only for regular packets.
-  rtcp_.Update(rtp_header, receive_timestamp);
 
   if (nack_enabled_) {
     RTC_DCHECK(nack_);

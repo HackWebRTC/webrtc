@@ -1025,8 +1025,6 @@ rtc_static_library("neteq") {
     "neteq/random_vector.h",
     "neteq/red_payload_splitter.cc",
     "neteq/red_payload_splitter.h",
-    "neteq/rtcp.cc",
-    "neteq/rtcp.h",
     "neteq/statistics_calculator.cc",
     "neteq/statistics_calculator.h",
     "neteq/sync_buffer.cc",

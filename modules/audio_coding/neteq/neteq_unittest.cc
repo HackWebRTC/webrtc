@@ -265,7 +265,6 @@ class NetEqDecodingTest : public ::testing::Test {
   void DecodeAndCompare(const std::string& rtp_file,
                         const std::string& output_checksum,
                         const std::string& network_stats_checksum,
-                        const std::string& rtcp_stats_checksum,
                         bool gen_ref);
 
   static void PopulateRtpInfo(int frame_index,
@@ -373,7 +372,6 @@ void NetEqDecodingTest::DecodeAndCompare(
     const std::string& rtp_file,
     const std::string& output_checksum,
     const std::string& network_stats_checksum,
-    const std::string& rtcp_stats_checksum,
     bool gen_ref) {
   OpenInputFile(rtp_file);
 
@@ -384,10 +382,6 @@ void NetEqDecodingTest::DecodeAndCompare(
   std::string stat_out_file =
       gen_ref ? webrtc::test::OutputPath() + "neteq_network_stats.dat" : "";
   ResultSink network_stats(stat_out_file);
-
-  std::string rtcp_out_file =
-      gen_ref ? webrtc::test::OutputPath() + "neteq_rtcp_stats.dat" : "";
-  ResultSink rtcp_stats(rtcp_out_file);
 
   packet_ = rtp_source_->NextPacket();
   int i = 0;
@@ -425,11 +419,6 @@ void NetEqDecodingTest::DecodeAndCompare(
       EXPECT_NEAR(
           (delta_concealed_samples << 14) / delta_total_samples_received,
           current_network_stats.expand_rate, (2 << 14) / 100.0);
-
-      // Process RTCPstat.
-      RtcpStatistics current_rtcp_stats;
-      neteq_->GetRtcpStatistics(&current_rtcp_stats);
-      ASSERT_NO_FATAL_FAILURE(rtcp_stats.AddResult(current_rtcp_stats));
     }
   }
 
@@ -437,8 +426,6 @@ void NetEqDecodingTest::DecodeAndCompare(
   output.VerifyChecksum(output_checksum);
   SCOPED_TRACE("Check network stats.");
   network_stats.VerifyChecksum(network_stats_checksum);
-  SCOPED_TRACE("Check rtcp stats.");
-  rtcp_stats.VerifyChecksum(rtcp_stats_checksum);
 }
 
 void NetEqDecodingTest::PopulateRtpInfo(int frame_index,
@@ -488,14 +475,8 @@ TEST_F(NetEqDecodingTest, MAYBE_TestBitExactness) {
                        "4b2370f5c794741d2a46be5c7935c66ef3fb53e9",
                        "4b2370f5c794741d2a46be5c7935c66ef3fb53e9");
 
-  const std::string rtcp_stats_checksum =
-      PlatformChecksum("b8880bf9fed2487efbddcb8d94b9937a29ae521d",
-                       "f3f7b3d3e71d7e635240b5373b57df6a7e4ce9d4", "not used",
-                       "b8880bf9fed2487efbddcb8d94b9937a29ae521d",
-                       "b8880bf9fed2487efbddcb8d94b9937a29ae521d");
-
   DecodeAndCompare(input_rtp_file, output_checksum, network_stats_checksum,
-                   rtcp_stats_checksum, FLAG_gen_ref);
+                   FLAG_gen_ref);
 }
 
 #if !defined(WEBRTC_IOS) && defined(WEBRTC_NETEQ_UNITTEST_BITEXACT) && \
@@ -523,15 +504,8 @@ TEST_F(NetEqDecodingTest, MAYBE_TestOpusBitExactness) {
                        "adb3272498e436d1c019cbfd71610e9510c54497",
                        "adb3272498e436d1c019cbfd71610e9510c54497");
 
-  const std::string rtcp_stats_checksum =
-      PlatformChecksum("e37c797e3de6a64dda88c9ade7a013d022a2e1e0",
-                       "e37c797e3de6a64dda88c9ade7a013d022a2e1e0",
-                       "e37c797e3de6a64dda88c9ade7a013d022a2e1e0",
-                       "e37c797e3de6a64dda88c9ade7a013d022a2e1e0",
-                       "e37c797e3de6a64dda88c9ade7a013d022a2e1e0");
-
   DecodeAndCompare(input_rtp_file, output_checksum, network_stats_checksum,
-                   rtcp_stats_checksum, FLAG_gen_ref);
+                   FLAG_gen_ref);
 }
 
 #if !defined(WEBRTC_IOS) && defined(WEBRTC_NETEQ_UNITTEST_BITEXACT) && \
@@ -554,11 +528,8 @@ TEST_F(NetEqDecodingTest, MAYBE_TestOpusDtxBitExactness) {
   const std::string network_stats_checksum =
       "bab58dc587d956f326056d7340c96eb9d2d3cc21";
 
-  const std::string rtcp_stats_checksum =
-      "ac27a7f305efb58b39bf123dccee25dee5758e63";
-
   DecodeAndCompare(input_rtp_file, output_checksum, network_stats_checksum,
-                   rtcp_stats_checksum, FLAG_gen_ref);
+                   FLAG_gen_ref);
 }
 
 // Use fax mode to avoid time-scaling. This is to simplify the testing of
