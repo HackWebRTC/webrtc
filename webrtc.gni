@@ -109,10 +109,7 @@ declare_args() {
   rtc_use_x11 = use_x11
 
   # Set this to use PipeWire on the Wayland display server.
-  rtc_use_pipewire = is_linux && use_sysroot
-
-  # Set this to link PipeWire directly instead of using the dlopen.
-  rtc_link_pipewire = false
+  rtc_use_pipewire = false
 
   # Enable to use the Mozilla internal settings.
   build_with_mozilla = false

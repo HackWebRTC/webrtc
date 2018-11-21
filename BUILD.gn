@@ -132,9 +132,6 @@ config("common_inherited_config") {
       # Allow includes to be prefixed with webrtc/ in case it is not an
       # immediate subdirectory of the top-level.
       ".",
-
-      # Allow the generated files to be found.
-      target_gen_dir,
     ]
   }
   if (is_posix || is_fuchsia) {
