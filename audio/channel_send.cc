@@ -111,7 +111,7 @@ class ChannelSend
   void StopSend() override;
 
   // Codecs
-  void SetBitrate(int bitrate_bps, int64_t probing_interval_ms) override;
+  void OnBitrateAllocation(BitrateAllocationUpdate update) override;
   int GetBitrate() const override;
 
   // Network
@@ -898,7 +898,7 @@ void ChannelSend::ModifyEncoder(
   audio_coding_->ModifyEncoder(modifier);
 }
 
-void ChannelSend::SetBitrate(int bitrate_bps, int64_t probing_interval_ms) {
+void ChannelSend::OnBitrateAllocation(BitrateAllocationUpdate update) {
   // This method can be called on the worker thread, module process thread
   // or on a TaskQueue via VideoSendStreamImpl::OnEncoderConfigurationChanged.
   // TODO(solenberg): Figure out a good way to check this or enforce calling
@@ -909,11 +909,11 @@ void ChannelSend::SetBitrate(int bitrate_bps, int64_t probing_interval_ms) {
 
   audio_coding_->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
     if (*encoder) {
-      (*encoder)->OnReceivedUplinkBandwidth(bitrate_bps, probing_interval_ms);
+      (*encoder)->OnReceivedUplinkAllocation(update);
     }
   });
-  retransmission_rate_limiter_->SetMaxRate(bitrate_bps);
-  configured_bitrate_bps_ = bitrate_bps;
+  retransmission_rate_limiter_->SetMaxRate(update.target_bitrate.bps());
+  configured_bitrate_bps_ = update.target_bitrate.bps();
 }
 
 int ChannelSend::GetBitrate() const {

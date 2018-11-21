@@ -42,6 +42,7 @@ namespace {
 using testing::_;
 using testing::Eq;
 using testing::Ne;
+using testing::Field;
 using testing::Invoke;
 using testing::Return;
 using testing::StrEq;
@@ -472,7 +473,9 @@ TEST(AudioSendStreamTest, DoesNotPassHigherBitrateThanMaxBitrate) {
   ConfigHelper helper(false, true);
   auto send_stream = helper.CreateAudioSendStream();
   EXPECT_CALL(*helper.channel_send(),
-              SetBitrate(helper.config().max_bitrate_bps, _));
+              OnBitrateAllocation(
+                  Field(&BitrateAllocationUpdate::target_bitrate,
+                        Eq(DataRate::bps(helper.config().max_bitrate_bps)))));
   BitrateAllocationUpdate update;
   update.target_bitrate = DataRate::bps(helper.config().max_bitrate_bps + 5000);
   update.packet_loss_ratio = 0;
@@ -484,7 +487,10 @@ TEST(AudioSendStreamTest, DoesNotPassHigherBitrateThanMaxBitrate) {
 TEST(AudioSendStreamTest, ProbingIntervalOnBitrateUpdated) {
   ConfigHelper helper(false, true);
   auto send_stream = helper.CreateAudioSendStream();
-  EXPECT_CALL(*helper.channel_send(), SetBitrate(_, 5000));
+
+  EXPECT_CALL(*helper.channel_send(),
+              OnBitrateAllocation(Field(&BitrateAllocationUpdate::bwe_period,
+                                        Eq(TimeDelta::ms(5000)))));
   BitrateAllocationUpdate update;
   update.target_bitrate = DataRate::bps(helper.config().max_bitrate_bps + 5000);
   update.packet_loss_ratio = 0;

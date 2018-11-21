@@ -80,7 +80,7 @@ class ChannelSendInterface {
   virtual bool SetSendTelephoneEventPayloadType(int payload_type,
                                                 int payload_frequency) = 0;
   virtual bool SendTelephoneEventOutband(int event, int duration_ms) = 0;
-  virtual void SetBitrate(int bitrate_bps, int64_t probing_interval_ms) = 0;
+  virtual void OnBitrateAllocation(BitrateAllocationUpdate update) = 0;
   virtual int GetBitrate() const = 0;
   virtual void SetInputMute(bool muted) = 0;
 

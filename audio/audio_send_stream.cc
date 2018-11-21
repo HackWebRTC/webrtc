@@ -475,8 +475,7 @@ uint32_t AudioSendStream::OnBitrateUpdated(BitrateAllocationUpdate update) {
   if (update.target_bitrate > max_bitrate)
     update.target_bitrate = max_bitrate;
 
-  channel_send_->SetBitrate(update.target_bitrate.bps(),
-                            update.bwe_period.ms());
+  channel_send_->OnBitrateAllocation(update);
 
   // The amount of audio protection is not exposed by the encoder, hence
   // always returning 0.
