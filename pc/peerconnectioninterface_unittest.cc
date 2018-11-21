@@ -1426,7 +1426,10 @@ TEST_P(PeerConnectionInterfaceTest, GetConfigurationAfterCreatePeerConnection) {
 // Check that GetConfiguration returns the last configuration passed into
 // SetConfiguration.
 TEST_P(PeerConnectionInterfaceTest, GetConfigurationAfterSetConfiguration) {
-  CreatePeerConnection();
+  PeerConnectionInterface::RTCConfiguration starting_config;
+  starting_config.bundle_policy =
+      webrtc::PeerConnection::kBundlePolicyMaxBundle;
+  CreatePeerConnection(starting_config);
 
   PeerConnectionInterface::RTCConfiguration config = pc_->GetConfiguration();
   config.type = PeerConnectionInterface::kRelay;

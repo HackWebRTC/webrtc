@@ -2997,6 +2997,12 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
     return SafeSetError(RTCErrorType::INVALID_MODIFICATION, error);
   }
 
+  if (configuration.use_media_transport_for_data_channels ||
+      configuration.use_media_transport) {
+    RTC_CHECK(configuration.bundle_policy == kBundlePolicyMaxBundle)
+        << "Media transport requires MaxBundle policy.";
+  }
+
   // The simplest (and most future-compatible) way to tell if the config was
   // modified in an invalid way is to copy each property we do support
   // modifying, then use operator==. There are far more properties we don't
