@@ -75,7 +75,6 @@ class MockChannelSend : public voe::ChannelSendInterface {
   MOCK_METHOD2(SetMid, void(const std::string& mid, int extension_id));
   MOCK_METHOD1(SetLocalSSRC, void(uint32_t ssrc));
   MOCK_METHOD1(SetRTCP_CNAME, void(absl::string_view c_name));
-  MOCK_METHOD2(SetNACKStatus, void(bool enable, int max_packets));
   MOCK_METHOD1(SetExtmapAllowMixed, void(bool extmap_allow_mixed));
   MOCK_METHOD2(SetSendAudioLevelIndicationStatus, void(bool enable, int id));
   MOCK_METHOD1(EnableSendTransportSequenceNumber, void(int id));

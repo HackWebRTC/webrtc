@@ -59,7 +59,6 @@ class ChannelSendInterface {
   virtual bool ReceivedRTCPPacket(const uint8_t* packet, size_t length) = 0;
 
   virtual CallSendStatistics GetRTCPStatistics() const = 0;
-  virtual void SetNACKStatus(bool enable, int max_packets) = 0;
 
   virtual bool SetEncoder(int payload_type,
                           std::unique_ptr<AudioEncoder> encoder) = 0;

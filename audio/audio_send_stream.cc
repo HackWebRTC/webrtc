@@ -255,13 +255,6 @@ void AudioSendStream::ConfigureStream(
   if (first_time || old_config.rtp.c_name != new_config.rtp.c_name) {
     channel_send->SetRTCP_CNAME(new_config.rtp.c_name);
   }
-  // TODO(solenberg): Config NACK history window (which is a packet count),
-  // using the actual packet size for the configured codec.
-  if (first_time || old_config.rtp.nack.rtp_history_ms !=
-                        new_config.rtp.nack.rtp_history_ms) {
-    channel_send->SetNACKStatus(new_config.rtp.nack.rtp_history_ms != 0,
-                                new_config.rtp.nack.rtp_history_ms / 20);
-  }
 
   if (first_time || new_config.send_transport != old_config.send_transport) {
     if (old_config.send_transport) {

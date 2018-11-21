@@ -1024,8 +1024,6 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
   void UpdateSendCodecSpec(
       const webrtc::AudioSendStream::Config::SendCodecSpec& send_codec_spec) {
     RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-    config_.rtp.nack.rtp_history_ms =
-        send_codec_spec.nack_enabled ? kNackRtpHistoryMs : 0;
     config_.send_codec_spec = send_codec_spec;
     auto info =
         config_.encoder_factory->QueryAudioEncoder(send_codec_spec.format);

@@ -62,7 +62,6 @@ std::string AudioSendStream::Config::Rtp::ToString() const {
     }
   }
   ss << ']';
-  ss << ", nack: " << nack.ToString();
   ss << ", c_name: " << c_name;
   ss << '}';
   return ss.str();

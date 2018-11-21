@@ -146,7 +146,6 @@ class ChannelSend
   void SetRTCP_CNAME(absl::string_view c_name) override;
   std::vector<ReportBlock> GetRemoteRTCPReportBlocks() const override;
   CallSendStatistics GetRTCPStatistics() const override;
-  void SetNACKStatus(bool enable, int max_packets) override;
 
   // ProcessAndEncodeAudio() posts a task on the shared encoder task queue,
   // which in turn calls (on the queue) ProcessAndEncodeAudioOnTaskQueue() where
@@ -199,14 +198,10 @@ class ChannelSend
   void OnUplinkPacketLossRate(float packet_loss_rate);
   bool InputMute() const;
 
-  int ResendPackets(const uint16_t* sequence_numbers, int length);
-
   int SetSendRtpHeaderExtension(bool enable, RTPExtensionType type, int id);
 
   void UpdateOverheadForEncoder()
       RTC_EXCLUSIVE_LOCKS_REQUIRED(overhead_per_packet_lock_);
-
-  int GetRtpTimestampRateHz() const;
 
   int32_t SendRtpAudio(FrameType frameType,
                        uint8_t payloadType,
@@ -1174,20 +1169,6 @@ CallSendStatistics ChannelSend::GetRTCPStatistics() const {
   return stats;
 }
 
-void ChannelSend::SetNACKStatus(bool enable, int max_packets) {
-  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
-  // None of these functions can fail.
-  if (enable)
-    audio_coding_->EnableNack(max_packets);
-  else
-    audio_coding_->DisableNack();
-}
-
-// Called when we are missing one or more packets.
-int ChannelSend::ResendPackets(const uint16_t* sequence_numbers, int length) {
-  return _rtpRtcpModule->SendNACK(sequence_numbers, length);
-}
-
 void ChannelSend::ProcessAndEncodeAudio(
     std::unique_ptr<AudioFrame> audio_frame) {
   RTC_DCHECK_RUNS_SERIALIZED(&audio_thread_race_checker_);
@@ -1291,17 +1272,6 @@ int ChannelSend::SetSendRtpHeaderExtension(bool enable,
         type, rtc::dchecked_cast<uint8_t>(id));
   }
   return error;
-}
-
-int ChannelSend::GetRtpTimestampRateHz() const {
-  const auto format = audio_coding_->ReceiveFormat();
-  // Default to the playout frequency if we've not gotten any packets yet.
-  // TODO(ossu): Zero clockrate can only happen if we've added an external
-  // decoder for a format we don't support internally. Remove once that way of
-  // adding decoders is gone!
-  return (format && format->clockrate_hz != 0)
-             ? format->clockrate_hz
-             : audio_coding_->PlayoutFrequency();
 }
 
 int64_t ChannelSend::GetRTT() const {

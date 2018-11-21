@@ -165,7 +165,6 @@ TEST_F(RetransmissionEndToEndTest, ReceivesNackAndRetransmitsAudio) {
     void ModifyAudioConfigs(
         AudioSendStream::Config* send_config,
         std::vector<AudioReceiveStream::Config>* receive_configs) override {
-      send_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
       (*receive_configs)[0].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
       local_ssrc_ = (*receive_configs)[0].rtp.local_ssrc;
       remote_ssrc_ = (*receive_configs)[0].rtp.remote_ssrc;

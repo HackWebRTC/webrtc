@@ -89,9 +89,6 @@ class AudioSendStream {
       // RTP header extensions used for the sent stream.
       std::vector<RtpExtension> extensions;
 
-      // See NackConfig for description.
-      NackConfig nack;
-
       // RTCP CNAME, see RFC 3550.
       std::string c_name;
     } rtp;

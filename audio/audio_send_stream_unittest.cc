@@ -151,7 +151,6 @@ struct ConfigHelper {
     stream_config_.send_codec_spec =
         AudioSendStream::Config::SendCodecSpec(kIsacPayloadType, kIsacFormat);
     stream_config_.rtp.ssrc = kSsrc;
-    stream_config_.rtp.nack.rtp_history_ms = 200;
     stream_config_.rtp.c_name = kCName;
     stream_config_.rtp.extensions.push_back(
         RtpExtension(RtpExtension::kAudioLevelUri, kAudioLevelId));
@@ -195,7 +194,6 @@ struct ConfigHelper {
     }));
     EXPECT_CALL(*channel_send_, SetLocalSSRC(kSsrc)).Times(1);
     EXPECT_CALL(*channel_send_, SetRTCP_CNAME(StrEq(kCName))).Times(1);
-    EXPECT_CALL(*channel_send_, SetNACKStatus(true, 10)).Times(1);
     EXPECT_CALL(*channel_send_, SetFrameEncryptor(_)).Times(1);
     EXPECT_CALL(*channel_send_, SetExtmapAllowMixed(false)).Times(1);
     EXPECT_CALL(*channel_send_,
@@ -335,8 +333,8 @@ TEST(AudioSendStreamTest, ConfigToString) {
   config.rtcp_report_interval_ms = 2500;
   EXPECT_EQ(
       "{rtp: {ssrc: 1234, extmap-allow-mixed: true, extensions: [{uri: "
-      "urn:ietf:params:rtp-hdrext:ssrc-audio-level, id: 2}], nack: "
-      "{rtp_history_ms: 0}, c_name: foo_name}, rtcp_report_interval_ms: 2500, "
+      "urn:ietf:params:rtp-hdrext:ssrc-audio-level, id: 2}], "
+      "c_name: foo_name}, rtcp_report_interval_ms: 2500, "
       "send_transport: null, media_transport: null, "
       "min_bitrate_bps: 12000, max_bitrate_bps: 34000, "
       "send_codec_spec: {nack_enabled: true, transport_cc_enabled: false, "

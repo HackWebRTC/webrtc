@@ -1635,18 +1635,6 @@ TEST_F(WebRtcVoiceEngineTestFake, SetMaxSendBandwidthForAudioDoesntAffectBwe) {
   SetSendParameters(send_parameters_);
 }
 
-// Test that we can enable NACK with opus as caller.
-TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecEnableNackAsCaller) {
-  EXPECT_TRUE(SetupSendStream());
-  cricket::AudioSendParameters parameters;
-  parameters.codecs.push_back(kOpusCodec);
-  parameters.codecs[0].AddFeedbackParam(cricket::FeedbackParam(
-      cricket::kRtcpFbParamNack, cricket::kParamValueEmpty));
-  EXPECT_EQ(0, GetSendStreamConfig(kSsrcX).rtp.nack.rtp_history_ms);
-  SetSendParameters(parameters);
-  EXPECT_EQ(kRtpHistoryMs, GetSendStreamConfig(kSsrcX).rtp.nack.rtp_history_ms);
-}
-
 // Test that we can enable NACK with opus as callee.
 TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecEnableNackAsCallee) {
   EXPECT_TRUE(SetupRecvStream());
@@ -1661,7 +1649,6 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecEnableNackAsCallee) {
 
   EXPECT_TRUE(
       channel_->AddSendStream(cricket::StreamParams::CreateLegacy(kSsrcX)));
-  EXPECT_EQ(kRtpHistoryMs, GetSendStreamConfig(kSsrcX).rtp.nack.rtp_history_ms);
 }
 
 // Test that we can enable NACK on receive streams.
@@ -1672,27 +1659,9 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecEnableNackRecvStreams) {
   parameters.codecs.push_back(kOpusCodec);
   parameters.codecs[0].AddFeedbackParam(cricket::FeedbackParam(
       cricket::kRtcpFbParamNack, cricket::kParamValueEmpty));
-  EXPECT_EQ(0, GetSendStreamConfig(kSsrcX).rtp.nack.rtp_history_ms);
   EXPECT_EQ(0, GetRecvStreamConfig(kSsrcY).rtp.nack.rtp_history_ms);
   SetSendParameters(parameters);
-  EXPECT_EQ(kRtpHistoryMs, GetSendStreamConfig(kSsrcX).rtp.nack.rtp_history_ms);
   EXPECT_EQ(kRtpHistoryMs, GetRecvStreamConfig(kSsrcY).rtp.nack.rtp_history_ms);
-}
-
-// Test that we can disable NACK.
-TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecDisableNack) {
-  EXPECT_TRUE(SetupSendStream());
-  cricket::AudioSendParameters parameters;
-  parameters.codecs.push_back(kOpusCodec);
-  parameters.codecs[0].AddFeedbackParam(cricket::FeedbackParam(
-      cricket::kRtcpFbParamNack, cricket::kParamValueEmpty));
-  SetSendParameters(parameters);
-  EXPECT_EQ(kRtpHistoryMs, GetSendStreamConfig(kSsrcX).rtp.nack.rtp_history_ms);
-
-  parameters.codecs.clear();
-  parameters.codecs.push_back(kOpusCodec);
-  SetSendParameters(parameters);
-  EXPECT_EQ(0, GetSendStreamConfig(kSsrcX).rtp.nack.rtp_history_ms);
 }
 
 // Test that we can disable NACK on receive streams.
@@ -1704,13 +1673,11 @@ TEST_F(WebRtcVoiceEngineTestFake, SetSendCodecDisableNackRecvStreams) {
   parameters.codecs[0].AddFeedbackParam(cricket::FeedbackParam(
       cricket::kRtcpFbParamNack, cricket::kParamValueEmpty));
   SetSendParameters(parameters);
-  EXPECT_EQ(kRtpHistoryMs, GetSendStreamConfig(kSsrcX).rtp.nack.rtp_history_ms);
   EXPECT_EQ(kRtpHistoryMs, GetRecvStreamConfig(kSsrcY).rtp.nack.rtp_history_ms);
 
   parameters.codecs.clear();
   parameters.codecs.push_back(kOpusCodec);
   SetSendParameters(parameters);
-  EXPECT_EQ(0, GetSendStreamConfig(kSsrcX).rtp.nack.rtp_history_ms);
   EXPECT_EQ(0, GetRecvStreamConfig(kSsrcY).rtp.nack.rtp_history_ms);
 }
 
@@ -1723,7 +1690,6 @@ TEST_F(WebRtcVoiceEngineTestFake, AddRecvStreamEnableNack) {
   parameters.codecs[0].AddFeedbackParam(cricket::FeedbackParam(
       cricket::kRtcpFbParamNack, cricket::kParamValueEmpty));
   SetSendParameters(parameters);
-  EXPECT_EQ(kRtpHistoryMs, GetSendStreamConfig(kSsrcX).rtp.nack.rtp_history_ms);
 
   EXPECT_TRUE(AddRecvStream(kSsrcY));
   EXPECT_EQ(kRtpHistoryMs, GetRecvStreamConfig(kSsrcY).rtp.nack.rtp_history_ms);
