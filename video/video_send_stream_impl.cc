@@ -616,14 +616,17 @@ uint32_t VideoSendStreamImpl::OnBitrateUpdated(BitrateAllocationUpdate update) {
   RTC_DCHECK(rtp_video_sender_->IsActive())
       << "VideoSendStream::Start has not been called.";
 
-  rtp_video_sender_->OnBitrateUpdated(update.bitrate_bps, update.fraction_loss,
-                                      update.rtt,
-                                      stats_proxy_->GetSendFrameRate());
+  rtp_video_sender_->OnBitrateUpdated(
+      update.target_bitrate.bps(),
+      rtc::dchecked_cast<uint8_t>(update.packet_loss_ratio * 256),
+      update.round_trip_time.ms(), stats_proxy_->GetSendFrameRate());
   encoder_target_rate_bps_ = rtp_video_sender_->GetPayloadBitrateBps();
   encoder_target_rate_bps_ =
       std::min(encoder_max_bitrate_bps_, encoder_target_rate_bps_);
-  video_stream_encoder_->OnBitrateUpdated(encoder_target_rate_bps_,
-                                          update.fraction_loss, update.rtt);
+  video_stream_encoder_->OnBitrateUpdated(
+      encoder_target_rate_bps_,
+      rtc::dchecked_cast<uint8_t>(update.packet_loss_ratio * 256),
+      update.round_trip_time.ms());
   stats_proxy_->OnSetEncoderTargetRate(encoder_target_rate_bps_);
   return rtp_video_sender_->GetProtectionBitrateBps();
 }

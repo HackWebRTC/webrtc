@@ -72,9 +72,9 @@ class MockRtpVideoSender : public RtpVideoSenderInterface {
 
 BitrateAllocationUpdate CreateAllocation(int bitrate_bps) {
   BitrateAllocationUpdate update;
-  update.bitrate_bps = bitrate_bps;
-  update.fraction_loss = 0;
-  update.rtt = 0;
+  update.target_bitrate = DataRate::bps(bitrate_bps);
+  update.packet_loss_ratio = 0;
+  update.round_trip_time = TimeDelta::Zero();
   return update;
 }
 }  // namespace

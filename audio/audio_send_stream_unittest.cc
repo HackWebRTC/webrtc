@@ -474,10 +474,10 @@ TEST(AudioSendStreamTest, DoesNotPassHigherBitrateThanMaxBitrate) {
   EXPECT_CALL(*helper.channel_send(),
               SetBitrate(helper.config().max_bitrate_bps, _));
   BitrateAllocationUpdate update;
-  update.bitrate_bps = helper.config().max_bitrate_bps + 5000;
-  update.fraction_loss = 0;
-  update.rtt = 50;
-  update.bwe_period_ms = 6000;
+  update.target_bitrate = DataRate::bps(helper.config().max_bitrate_bps + 5000);
+  update.packet_loss_ratio = 0;
+  update.round_trip_time = TimeDelta::ms(50);
+  update.bwe_period = TimeDelta::ms(6000);
   send_stream->OnBitrateUpdated(update);
 }
 
@@ -486,10 +486,10 @@ TEST(AudioSendStreamTest, ProbingIntervalOnBitrateUpdated) {
   auto send_stream = helper.CreateAudioSendStream();
   EXPECT_CALL(*helper.channel_send(), SetBitrate(_, 5000));
   BitrateAllocationUpdate update;
-  update.bitrate_bps = helper.config().max_bitrate_bps + 5000;
-  update.fraction_loss = 0;
-  update.rtt = 50;
-  update.bwe_period_ms = 5000;
+  update.target_bitrate = DataRate::bps(helper.config().max_bitrate_bps + 5000);
+  update.packet_loss_ratio = 0;
+  update.round_trip_time = TimeDelta::ms(50);
+  update.bwe_period = TimeDelta::ms(5000);
   send_stream->OnBitrateUpdated(update);
 }
 
