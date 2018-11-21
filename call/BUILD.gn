@@ -164,6 +164,7 @@ rtc_source_set("bitrate_allocator") {
     "bitrate_allocator.h",
   ]
   deps = [
+    "../api:bitrate_allocation",
     "../api/units:data_rate",
     "../api/units:time_delta",
     "../modules/bitrate_controller",

@@ -19,8 +19,7 @@
 #include <utility>
 #include <vector>
 
-#include "api/units/data_rate.h"
-#include "api/units/time_delta.h"
+#include "api/call/bitrate_allocation.h"
 #include "rtc_base/bitrateallocationstrategy.h"
 #include "rtc_base/sequenced_task_checker.h"
 
@@ -28,13 +27,6 @@ namespace webrtc {
 
 class Clock;
 
-struct BitrateAllocationUpdate {
-  DataRate target_bitrate = DataRate::Zero();
-  DataRate link_capacity = DataRate::Zero();
-  double packet_loss_ratio = 0;
-  TimeDelta round_trip_time = TimeDelta::PlusInfinity();
-  TimeDelta bwe_period = TimeDelta::PlusInfinity();
-};
 // Used by all send streams with adaptive bitrate, to get the currently
 // allocated bitrate for the send stream. The current network properties are
 // given at the same time, to let the send stream decide about possible loss
