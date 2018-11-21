@@ -276,7 +276,7 @@ class AudioProcessing : public rtc::RefCountInterface {
         float gain_db = 0.f;
       } fixed_digital;
       struct {
-        bool enabled = true;
+        bool enabled = false;
         LevelEstimator level_estimator = kRms;
         bool use_saturation_protector = true;
         float extra_saturation_margin_db = 2.f;

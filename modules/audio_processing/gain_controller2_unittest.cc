@@ -261,6 +261,7 @@ TEST(GainController2, UsageSaturationMargin) {
   // high. They should not be amplified at all, but only after convergence. GC2
   // starts with a gain, and it takes time until it's down to 0 dB.
   config.fixed_digital.gain_db = 0.f;
+  config.adaptive_digital.enabled = true;
   config.adaptive_digital.extra_saturation_margin_db = 50.f;
   gain_controller2.ApplyConfig(config);
 
@@ -274,6 +275,7 @@ TEST(GainController2, UsageNoSaturationMargin) {
   AudioProcessing::Config::GainController2 config;
   // Check that some gain is applied if there is no margin.
   config.fixed_digital.gain_db = 0.f;
+  config.adaptive_digital.enabled = true;
   config.adaptive_digital.extra_saturation_margin_db = 0.f;
   gain_controller2.ApplyConfig(config);
 
