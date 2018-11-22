@@ -95,9 +95,6 @@ class DtlsTransport : public DtlsTransportInternal {
   //
   // |crypto_options| are the options used for the DTLS handshake. This affects
   // whether GCM crypto suites are negotiated.
-  // TODO(zhihuang): Remove this once we switch to JsepTransportController.
-  explicit DtlsTransport(IceTransportInternal* ice_transport,
-                         const webrtc::CryptoOptions& crypto_options);
   explicit DtlsTransport(std::unique_ptr<IceTransportInternal> ice_transport,
                          const webrtc::CryptoOptions& crypto_options);
 
@@ -221,9 +218,8 @@ class DtlsTransport : public DtlsTransportInternal {
   std::string transport_name_;
   int component_;
   DtlsTransportState dtls_state_ = DTLS_TRANSPORT_NEW;
-  // Underlying ice_transport, not owned by this class.
-  IceTransportInternal* const ice_transport_;
-  std::unique_ptr<IceTransportInternal> owned_ice_transport_;
+  // Underlying ice_transport, owned by this class.
+  std::unique_ptr<IceTransportInternal> ice_transport_;
   std::unique_ptr<rtc::SSLStreamAdapter> dtls_;  // The DTLS stream
   StreamInterfaceChannel*
       downward_;  // Wrapper for ice_transport_, owned by dtls_.

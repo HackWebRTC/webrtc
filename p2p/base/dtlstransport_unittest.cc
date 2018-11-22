@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <memory>
 #include <set>
+#include <utility>
 
 #include "p2p/base/dtlstransport.h"
 #include "p2p/base/fakeicetransport.h"
@@ -76,18 +77,18 @@ class DtlsTestClient : public sigslot::has_slots<> {
   }
   // Set up fake ICE transport and real DTLS transport under test.
   void SetupTransports(IceRole role, int async_delay_ms = 0) {
-    fake_ice_transport_.reset(new FakeIceTransport("fake", 0));
-    fake_ice_transport_->SetAsync(true);
-    fake_ice_transport_->SetAsyncDelay(async_delay_ms);
-    fake_ice_transport_->SetIceRole(role);
-    fake_ice_transport_->SetIceTiebreaker((role == ICEROLE_CONTROLLING) ? 1
-                                                                        : 2);
+    std::unique_ptr<FakeIceTransport> fake_ice_transport;
+    fake_ice_transport.reset(new FakeIceTransport("fake", 0));
+    fake_ice_transport->SetAsync(true);
+    fake_ice_transport->SetAsyncDelay(async_delay_ms);
+    fake_ice_transport->SetIceRole(role);
+    fake_ice_transport->SetIceTiebreaker((role == ICEROLE_CONTROLLING) ? 1 : 2);
     // Hook the raw packets so that we can verify they are encrypted.
-    fake_ice_transport_->SignalReadPacket.connect(
+    fake_ice_transport->SignalReadPacket.connect(
         this, &DtlsTestClient::OnFakeIceTransportReadPacket);
 
     dtls_transport_ = absl::make_unique<DtlsTransport>(
-        fake_ice_transport_.get(), webrtc::CryptoOptions());
+        std::move(fake_ice_transport), webrtc::CryptoOptions());
     dtls_transport_->SetSslMaxProtocolVersion(ssl_max_version_);
     // Note: Certificate may be null here if testing passthrough.
     dtls_transport_->SetLocalCertificate(certificate_);
@@ -99,13 +100,16 @@ class DtlsTestClient : public sigslot::has_slots<> {
         this, &DtlsTestClient::OnTransportSentPacket);
   }
 
-  FakeIceTransport* fake_ice_transport() { return fake_ice_transport_.get(); }
+  FakeIceTransport* fake_ice_transport() {
+    return static_cast<FakeIceTransport*>(dtls_transport_->ice_transport());
+  }
 
   DtlsTransport* dtls_transport() { return dtls_transport_.get(); }
 
   // Simulate fake ICE transports connecting.
   bool Connect(DtlsTestClient* peer, bool asymmetric) {
-    fake_ice_transport_->SetDestination(peer->fake_ice_transport(), asymmetric);
+    fake_ice_transport()->SetDestination(peer->fake_ice_transport(),
+                                         asymmetric);
     return true;
   }
 
