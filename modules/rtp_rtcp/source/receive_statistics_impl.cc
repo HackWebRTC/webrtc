@@ -48,7 +48,6 @@ StreamStatisticianImpl::StreamStatisticianImpl(
       received_seq_first_(0),
       received_seq_max_(0),
       received_seq_wraps_(0),
-      received_packet_overhead_(12),
       last_report_inorder_packets_(0),
       last_report_old_packets_(0),
       last_report_seq_max_(0),
@@ -58,31 +57,34 @@ StreamStatisticianImpl::StreamStatisticianImpl(
 StreamStatisticianImpl::~StreamStatisticianImpl() = default;
 
 void StreamStatisticianImpl::OnRtpPacket(const RtpPacketReceived& packet) {
-  StreamDataCounters counters;
-  {
-    rtc::CritScope cs(&stream_lock_);
-
-    bool retransmitted =
-        enable_retransmit_detection_ && IsRetransmitOfOldPacket(packet);
-    counters = UpdateCounters(packet, retransmitted);
-  }
+  StreamDataCounters counters = UpdateCounters(packet);
   rtp_callback_->DataCountersUpdated(counters, ssrc_);
 }
 
 StreamDataCounters StreamStatisticianImpl::UpdateCounters(
-    const RtpPacketReceived& packet,
-    bool retransmitted) {
-  bool in_order = InOrderPacketInternal(packet.SequenceNumber());
+    const RtpPacketReceived& packet) {
+  rtc::CritScope cs(&stream_lock_);
   RTC_DCHECK_EQ(ssrc_, packet.Ssrc());
-  incoming_bitrate_.Update(packet.size(), clock_->TimeInMilliseconds());
+  uint16_t sequence_number = packet.SequenceNumber();
+  bool in_order =
+      // First packet is always in order.
+      last_receive_time_ms_ == 0 ||
+      IsNewerSequenceNumber(sequence_number, received_seq_max_) ||
+      // If we have a restart of the remote side this packet is still in order.
+      !IsNewerSequenceNumber(sequence_number,
+                             received_seq_max_ - max_reordering_threshold_);
+  int64_t now_ms = clock_->TimeInMilliseconds();
+
+  incoming_bitrate_.Update(packet.size(), now_ms);
   receive_counters_.transmitted.AddPacket(packet);
-  if (!in_order && retransmitted) {
+  if (!in_order && enable_retransmit_detection_ &&
+      IsRetransmitOfOldPacket(packet, now_ms)) {
     receive_counters_.retransmitted.AddPacket(packet);
   }
 
   if (receive_counters_.transmitted.packets == 1) {
     received_seq_first_ = packet.SequenceNumber();
-    receive_counters_.first_packet_time_ms = clock_->TimeInMilliseconds();
+    receive_counters_.first_packet_time_ms = now_ms;
   }
 
   // Count only the new packets received. That is, if packets 1, 2, 3, 5, 4, 6
@@ -109,14 +111,8 @@ StreamDataCounters StreamStatisticianImpl::UpdateCounters(
     }
     last_received_timestamp_ = packet.Timestamp();
     last_receive_time_ntp_ = receive_time;
-    last_receive_time_ms_ = clock_->TimeInMilliseconds();
+    last_receive_time_ms_ = now_ms;
   }
-
-  size_t packet_oh = packet.headers_size() + packet.padding_size();
-
-  // Our measured overhead. Filter from RFC 5104 4.2.1.2:
-  // avg_OH (new) = 15/16*avg_OH (old) + 1/16*pckt_OH,
-  received_packet_overhead_ = (15 * received_packet_overhead_ + packet_oh) >> 4;
   return receive_counters_;
 }
 
@@ -310,14 +306,12 @@ uint32_t StreamStatisticianImpl::BitrateReceived() const {
 }
 
 bool StreamStatisticianImpl::IsRetransmitOfOldPacket(
-    const RtpPacketReceived& packet) const {
-  if (InOrderPacketInternal(packet.SequenceNumber())) {
-    return false;
-  }
+    const RtpPacketReceived& packet,
+    int64_t now_ms) const {
   uint32_t frequency_khz = packet.payload_type_frequency() / 1000;
-  assert(frequency_khz > 0);
+  RTC_DCHECK_GT(frequency_khz, 0);
 
-  int64_t time_diff_ms = clock_->TimeInMilliseconds() - last_receive_time_ms_;
+  int64_t time_diff_ms = now_ms - last_receive_time_ms_;
 
   // Diff in time stamp since last received in order.
   uint32_t timestamp_diff = packet.Timestamp() - last_received_timestamp_;
@@ -337,21 +331,6 @@ bool StreamStatisticianImpl::IsRetransmitOfOldPacket(
     max_delay_ms = 1;
   }
   return time_diff_ms > rtp_time_stamp_diff_ms + max_delay_ms;
-}
-
-bool StreamStatisticianImpl::InOrderPacketInternal(
-    uint16_t sequence_number) const {
-  // First packet is always in order.
-  if (last_receive_time_ms_ == 0)
-    return true;
-
-  if (IsNewerSequenceNumber(sequence_number, received_seq_max_)) {
-    return true;
-  } else {
-    // If we have a restart of the remote side this packet is still in order.
-    return !IsNewerSequenceNumber(
-        sequence_number, received_seq_max_ - max_reordering_threshold_);
-  }
 }
 
 ReceiveStatistics* ReceiveStatistics::Create(Clock* clock) {
