@@ -47,8 +47,6 @@ enum class BandwidthUsage {
 
 enum RateControlState { kRcHold, kRcIncrease, kRcDecrease };
 
-enum RateControlRegion { kRcNearMax, kRcAboveMax, kRcMaxUnknown };
-
 struct RateControlInput {
   RateControlInput(BandwidthUsage bw_state,
                    const absl::optional<DataRate>& estimated_throughput);

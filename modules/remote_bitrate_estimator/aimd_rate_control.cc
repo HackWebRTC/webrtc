@@ -27,23 +27,23 @@
 namespace webrtc {
 
 constexpr TimeDelta kDefaultRtt = TimeDelta::Millis<200>();
-constexpr float kDefaultBackoffFactor = 0.85f;
+constexpr double kDefaultBackoffFactor = 0.85;
 constexpr TimeDelta kDefaultInitialBackOffInterval = TimeDelta::Millis<200>();
 
 const char kBweBackOffFactorExperiment[] = "WebRTC-BweBackOffFactor";
 const char kBweInitialBackOffIntervalExperiment[] =
     "WebRTC-BweInitialBackOffInterval";
 
-float ReadBackoffFactor() {
+double ReadBackoffFactor() {
   std::string experiment_string =
       webrtc::field_trial::FindFullName(kBweBackOffFactorExperiment);
-  float backoff_factor;
+  double backoff_factor;
   int parsed_values =
-      sscanf(experiment_string.c_str(), "Enabled-%f", &backoff_factor);
+      sscanf(experiment_string.c_str(), "Enabled-%lf", &backoff_factor);
   if (parsed_values == 1) {
-    if (backoff_factor >= 1.0f) {
+    if (backoff_factor >= 1.0) {
       RTC_LOG(WARNING) << "Back-off factor must be less than 1.";
-    } else if (backoff_factor <= 0.0f) {
+    } else if (backoff_factor <= 0.0) {
       RTC_LOG(WARNING) << "Back-off factor must be greater than 0.";
     } else {
       return backoff_factor;
@@ -78,10 +78,9 @@ AimdRateControl::AimdRateControl()
       max_configured_bitrate_(DataRate::kbps(30000)),
       current_bitrate_(max_configured_bitrate_),
       latest_estimated_throughput_(current_bitrate_),
-      avg_max_bitrate_kbps_(-1.0f),
-      var_max_bitrate_kbps_(0.4f),
+      link_capacity_estimate_kbps_(),
+      var_link_capacity_estimate_kbps_(0.4),
       rate_control_state_(kRcHold),
-      rate_control_region_(kRcMaxUnknown),
       time_last_bitrate_change_(Timestamp::MinusInfinity()),
       time_last_bitrate_decrease_(Timestamp::MinusInfinity()),
       time_first_throughput_estimate_(Timestamp::MinusInfinity()),
@@ -256,28 +255,37 @@ DataRate AimdRateControl::ChangeBitrate(DataRate new_bitrate,
 
   ChangeState(input, at_time);
   // Calculated here because it's used in multiple places.
-  const float estimated_throughput_kbps = estimated_throughput.kbps<double>();
+  const double estimated_throughput_kbps = estimated_throughput.kbps<double>();
+
   // Calculate the max bit rate std dev given the normalized
-  // variance and the current throughput bitrate.
-  const float std_max_bit_rate =
-      sqrt(var_max_bitrate_kbps_ * avg_max_bitrate_kbps_);
+  // variance and the current throughput bitrate. The standard deviation will
+  // only be used if link_capacity_estimate_kbps_ has a value.
+  const double std_link_capacity_kbps =
+      sqrt(var_link_capacity_estimate_kbps_ *
+           link_capacity_estimate_kbps_.value_or(0));
   switch (rate_control_state_) {
     case kRcHold:
       break;
 
     case kRcIncrease:
-      if (avg_max_bitrate_kbps_ >= 0 &&
-          estimated_throughput_kbps >
-              avg_max_bitrate_kbps_ + 3 * std_max_bit_rate) {
-        rate_control_region_ = kRcMaxUnknown;
-
-        avg_max_bitrate_kbps_ = -1.0;
+      if (link_capacity_estimate_kbps_.has_value() &&
+          estimated_throughput_kbps > link_capacity_estimate_kbps_.value() +
+                                          3 * std_link_capacity_kbps) {
+        // The link capacity appears to have changed. Forget the previous
+        // estimate and use multiplicative increase to quickly discover new
+        // capacity.
+        link_capacity_estimate_kbps_.reset();
       }
-      if (rate_control_region_ == kRcNearMax) {
+      if (link_capacity_estimate_kbps_.has_value()) {
+        // The link_capacity_estimate_kbps_ is reset if the measured throughput
+        // is too far from the estimate. We can therefore assume that our target
+        // rate is reasonably close to link capacity and use additive increase.
         DataRate additive_increase =
             AdditiveRateIncrease(at_time, time_last_bitrate_change_);
         new_bitrate += additive_increase;
       } else {
+        // If we don't have an estimate of the link capacity, use faster ramp up
+        // to discover the capacity.
         DataRate multiplicative_increase = MultiplicativeRateIncrease(
             at_time, time_last_bitrate_change_, new_bitrate);
         new_bitrate += multiplicative_increase;
@@ -287,20 +295,20 @@ DataRate AimdRateControl::ChangeBitrate(DataRate new_bitrate,
       break;
 
     case kRcDecrease:
-      // Set bit rate to something slightly lower than max
+      // Set bit rate to something slightly lower than the measured throughput
       // to get rid of any self-induced delay.
       new_bitrate = estimated_throughput * beta_;
       if (new_bitrate > current_bitrate_) {
         // Avoid increasing the rate when over-using.
-        if (rate_control_region_ != kRcMaxUnknown) {
-          new_bitrate = DataRate::kbps(beta_ * avg_max_bitrate_kbps_);
+        if (link_capacity_estimate_kbps_.has_value()) {
+          new_bitrate =
+              DataRate::kbps(beta_ * link_capacity_estimate_kbps_.value());
         }
         new_bitrate = std::min(new_bitrate, current_bitrate_);
       }
-      rate_control_region_ = kRcNearMax;
 
       if (bitrate_is_initialized_ && estimated_throughput < current_bitrate_) {
-        constexpr float kDegradationFactor = 0.9f;
+        constexpr double kDegradationFactor = 0.9;
         if (smoothing_experiment_ &&
             new_bitrate < kDegradationFactor * beta_ * current_bitrate_) {
           // If bitrate decreases more than a normal back off after overuse, it
@@ -311,13 +319,16 @@ DataRate AimdRateControl::ChangeBitrate(DataRate new_bitrate,
           last_decrease_ = current_bitrate_ - new_bitrate;
         }
       }
-      if (estimated_throughput_kbps <
-          avg_max_bitrate_kbps_ - 3 * std_max_bit_rate) {
-        avg_max_bitrate_kbps_ = -1.0f;
+      if (link_capacity_estimate_kbps_.has_value() &&
+          estimated_throughput_kbps < link_capacity_estimate_kbps_.value() -
+                                          3 * std_link_capacity_kbps) {
+        // The current throughput is far from the estimated link capacity. Clear
+        // the estimate to allow an fast update in UpdateLinkCapacityEstimate.
+        link_capacity_estimate_kbps_.reset();
       }
 
       bitrate_is_initialized_ = true;
-      UpdateMaxThroughputEstimate(estimated_throughput_kbps);
+      UpdateLinkCapacityEstimate(estimated_throughput_kbps);
       // Stay on hold until the pipes are cleared.
       rate_control_state_ = kRcHold;
       time_last_bitrate_change_ = at_time;
@@ -365,29 +376,32 @@ DataRate AimdRateControl::AdditiveRateIncrease(Timestamp at_time,
   return DataRate::bps(data_rate_increase_bps);
 }
 
-void AimdRateControl::UpdateMaxThroughputEstimate(
-    float estimated_throughput_kbps) {
-  const float alpha = 0.05f;
-  if (avg_max_bitrate_kbps_ == -1.0f) {
-    avg_max_bitrate_kbps_ = estimated_throughput_kbps;
+void AimdRateControl::UpdateLinkCapacityEstimate(
+    double estimated_throughput_kbps) {
+  const double alpha = 0.05;
+  if (!link_capacity_estimate_kbps_.has_value()) {
+    link_capacity_estimate_kbps_ = estimated_throughput_kbps;
   } else {
-    avg_max_bitrate_kbps_ =
-        (1 - alpha) * avg_max_bitrate_kbps_ + alpha * estimated_throughput_kbps;
+    link_capacity_estimate_kbps_ =
+        (1 - alpha) * link_capacity_estimate_kbps_.value() +
+        alpha * estimated_throughput_kbps;
   }
-  // Estimate the max bit rate variance and normalize the variance
-  // with the average max bit rate.
-  const float norm = std::max(avg_max_bitrate_kbps_, 1.0f);
-  var_max_bitrate_kbps_ =
-      (1 - alpha) * var_max_bitrate_kbps_ +
-      alpha * (avg_max_bitrate_kbps_ - estimated_throughput_kbps) *
-          (avg_max_bitrate_kbps_ - estimated_throughput_kbps) / norm;
+  // Estimate the variance of the link capacity estimate and normalize the
+  // variance with the link capacity estimate.
+  const double norm = std::max(link_capacity_estimate_kbps_.value(), 1.0);
+  var_link_capacity_estimate_kbps_ =
+      (1 - alpha) * var_link_capacity_estimate_kbps_ +
+      alpha *
+          (link_capacity_estimate_kbps_.value() - estimated_throughput_kbps) *
+          (link_capacity_estimate_kbps_.value() - estimated_throughput_kbps) /
+          norm;
   // 0.4 ~= 14 kbit/s at 500 kbit/s
-  if (var_max_bitrate_kbps_ < 0.4f) {
-    var_max_bitrate_kbps_ = 0.4f;
+  if (var_link_capacity_estimate_kbps_ < 0.4) {
+    var_link_capacity_estimate_kbps_ = 0.4;
   }
-  // 2.5f ~= 35 kbit/s at 500 kbit/s
-  if (var_max_bitrate_kbps_ > 2.5f) {
-    var_max_bitrate_kbps_ = 2.5f;
+  // 2.5 ~= 35 kbit/s at 500 kbit/s
+  if (var_link_capacity_estimate_kbps_ > 2.5) {
+    var_link_capacity_estimate_kbps_ = 2.5;
   }
 }
 

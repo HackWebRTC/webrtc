@@ -80,22 +80,21 @@ class AimdRateControl {
                                       DataRate current_bitrate) const;
   DataRate AdditiveRateIncrease(Timestamp at_time, Timestamp last_time) const;
   void UpdateChangePeriod(Timestamp at_time);
-  void UpdateMaxThroughputEstimate(float estimated_throughput_kbps);
+  void UpdateLinkCapacityEstimate(double estimated_throughput_kbps);
   void ChangeState(const RateControlInput& input, Timestamp at_time);
 
   DataRate min_configured_bitrate_;
   DataRate max_configured_bitrate_;
   DataRate current_bitrate_;
   DataRate latest_estimated_throughput_;
-  float avg_max_bitrate_kbps_;
-  float var_max_bitrate_kbps_;
+  absl::optional<double> link_capacity_estimate_kbps_;
+  double var_link_capacity_estimate_kbps_;
   RateControlState rate_control_state_;
-  RateControlRegion rate_control_region_;
   Timestamp time_last_bitrate_change_;
   Timestamp time_last_bitrate_decrease_;
   Timestamp time_first_throughput_estimate_;
   bool bitrate_is_initialized_;
-  float beta_;
+  double beta_;
   TimeDelta rtt_;
   const bool in_experiment_;
   const bool smoothing_experiment_;
