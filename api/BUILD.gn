@@ -46,9 +46,28 @@ rtc_source_set("callfactory_api") {
 
 rtc_static_library("create_peerconnection_factory") {
   visibility = [ "*" ]
+  allow_poison = [ "software_video_codecs" ]
   sources = [
     "create_peerconnection_factory.cc",
     "create_peerconnection_factory.h",
+  ]
+  deps = [
+    ":callfactory_api",
+    ":fec_controller_api",
+    ":libjingle_peerconnection_api",
+    "../logging:rtc_event_log_api",
+    "../logging:rtc_event_log_impl_base",
+    "../media:rtc_audio_video",
+    "../modules/audio_device:audio_device_api",
+    "../modules/audio_processing:api",
+    "../pc:peerconnection",
+    "../rtc_base:ptr_util",
+    "../rtc_base:rtc_base",
+    "../rtc_base:rtc_base_approved",
+    "audio:audio_mixer_api",
+    "audio_codecs:audio_codecs_api",
+    "transport:network_control",
+    "video_codecs:video_codecs_api",
   ]
 }
 

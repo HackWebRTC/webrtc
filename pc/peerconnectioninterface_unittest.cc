@@ -17,6 +17,7 @@
 #include "absl/memory/memory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
+#include "api/create_peerconnection_factory.h"
 #include "api/jsepsessiondescription.h"
 #include "api/mediastreaminterface.h"
 #include "api/peerconnectioninterface.h"

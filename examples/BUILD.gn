@@ -681,6 +681,7 @@ if (is_linux || is_win) {
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
     deps = [
+      "../api:create_peerconnection_factory",
       "../api:libjingle_peerconnection_api",
       "../api/video:video_frame_i420",
       "../rtc_base:checks",
@@ -838,6 +839,7 @@ if (is_win || is_android) {
       configs += [ "//build/config/win:windowed" ]
     }
     deps = [
+      "../api:create_peerconnection_factory",
       "../api:libjingle_peerconnection_api",
       "../api/audio_codecs:builtin_audio_decoder_factory",
       "../api/audio_codecs:builtin_audio_encoder_factory",

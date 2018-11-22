@@ -15,6 +15,7 @@
 #include "absl/memory/memory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
+#include "api/create_peerconnection_factory.h"
 #include "api/videosourceproxy.h"
 #include "media/engine/internaldecoderfactory.h"
 #include "media/engine/internalencoderfactory.h"

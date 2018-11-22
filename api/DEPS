@@ -66,6 +66,10 @@ specific_include_rules = {
     "+rtc_base/socketaddress.h",
   ],
 
+  "create_peerconnection_factory\.h": [
+    "+rtc_base/scoped_ref_ptr.h",
+  ],
+
   "datachannelinterface\.h": [
     "+rtc_base/copyonwritebuffer.h",
     "+rtc_base/refcount.h",

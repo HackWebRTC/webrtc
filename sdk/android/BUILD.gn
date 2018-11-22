@@ -7,9 +7,9 @@
 # be found in the AUTHORS file in the root of the source tree.
 
 if (is_android) {
-  import("../../webrtc.gni")
   import("//build/config/android/config.gni")
   import("//build/config/android/rules.gni")
+  import("../../webrtc.gni")
 
   group("android") {
     if (!build_with_chromium && is_android) {
@@ -118,7 +118,7 @@ if (is_android) {
       ":media_jni",
       ":peerconnection_jni",
       ":video_jni",
-      "../../pc:create_pc_factory",
+      "../../api:create_peerconnection_factory",
     ]
   }
 

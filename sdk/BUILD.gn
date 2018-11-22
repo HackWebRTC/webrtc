@@ -8,8 +8,8 @@
 
 import("../webrtc.gni")
 if (is_ios) {
-  import("//build/config/ios/rules.gni")
   import("//build/config/ios/ios_sdk.gni")
+  import("//build/config/ios/rules.gni")
 }
 if (is_mac) {
   import("//build/config/mac/rules.gni")
@@ -910,6 +910,7 @@ if (is_ios || is_mac) {
         ":videorendereradapter_objc",
         ":videosource_objc",
         ":videotoolbox_objc",
+        "../api:create_peerconnection_factory",
         "../api:libjingle_peerconnection_api",
         "../api/audio_codecs:audio_codecs_api",
         "../api/audio_codecs:builtin_audio_decoder_factory",
@@ -923,7 +924,6 @@ if (is_ios || is_mac) {
         "../modules/audio_processing:api",
         "../modules/audio_processing:audio_processing",
         "../modules/video_coding:video_codec_interface",
-        "../pc:create_pc_factory",
         "../pc:peerconnection",
         "../rtc_base:checks",
         "../rtc_base:rtc_base",
