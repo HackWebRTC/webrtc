@@ -33,6 +33,7 @@ class MockRenderDelayController : public RenderDelayController {
                    size_t render_delay_buffer_delay,
                    const absl::optional<int>& echo_remover_delay,
                    rtc::ArrayView<const float> capture));
+  MOCK_CONST_METHOD0(HasClockdrift, bool());
 };
 
 }  // namespace test

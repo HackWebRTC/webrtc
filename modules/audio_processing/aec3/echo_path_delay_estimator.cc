@@ -73,6 +73,12 @@ absl::optional<DelayEstimate> EchoPathDelayEstimator::EstimateDelay(
       matched_filter_lag_aggregator_.Aggregate(
           matched_filter_.GetLagEstimates());
 
+  // Run clockdrift detection.
+  if (aggregated_matched_filter_lag &&
+      (*aggregated_matched_filter_lag).quality ==
+          DelayEstimate::Quality::kRefined)
+    clockdrift_detector_.Update((*aggregated_matched_filter_lag).delay);
+
   // TODO(peah): Move this logging outside of this class once EchoCanceller3
   // development is done.
   data_dumper_->DumpRaw(
@@ -112,5 +118,4 @@ void EchoPathDelayEstimator::Reset(bool reset_lag_aggregator,
   old_aggregated_lag_ = absl::nullopt;
   consistent_estimate_counter_ = 0;
 }
-
 }  // namespace webrtc

@@ -194,6 +194,8 @@ void BlockProcessorImpl::ProcessCapture(
     }
   }
 
+  echo_path_variability.clock_drift = delay_controller_->HasClockdrift();
+
   // Remove the echo from the capture signal.
   echo_remover_->ProcessCapture(
       echo_path_variability, capture_signal_saturation, estimated_delay_,

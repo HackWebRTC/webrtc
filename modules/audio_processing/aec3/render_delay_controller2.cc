@@ -46,6 +46,7 @@ class RenderDelayControllerImpl2 final : public RenderDelayController {
       size_t render_delay_buffer_delay,
       const absl::optional<int>& echo_remover_delay,
       rtc::ArrayView<const float> capture) override;
+  bool HasClockdrift() const override;
 
  private:
   static int instance_count_;
@@ -192,7 +193,7 @@ absl::optional<DelayEstimate> RenderDelayControllerImpl2::GetDelay(
 
   metrics_.Update(delay_samples_ ? absl::optional<size_t>(delay_samples_->delay)
                                  : absl::nullopt,
-                  delay_ ? delay_->delay : 0, 0);
+                  delay_ ? delay_->delay : 0, 0, delay_estimator_.Clockdrift());
 
   data_dumper_->DumpRaw("aec3_render_delay_controller_delay",
                         delay_samples ? delay_samples->delay : 0);
@@ -200,6 +201,10 @@ absl::optional<DelayEstimate> RenderDelayControllerImpl2::GetDelay(
                         delay_ ? delay_->delay : 0);
 
   return delay_;
+}
+
+bool RenderDelayControllerImpl2::HasClockdrift() const {
+  return delay_estimator_.Clockdrift() != ClockdriftDetector::Level::kNone;
 }
 
 }  // namespace
