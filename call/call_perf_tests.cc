@@ -480,8 +480,8 @@ void CallPerfTest::TestCaptureNtpTime(
   RunBaseTest(&test);
 }
 
-// Flaky tests, disabled on Mac due to webrtc:8291.
-#if !(defined(WEBRTC_MAC))
+// Flaky tests, disabled on Mac and Windows due to webrtc:8291.
+#if !(defined(WEBRTC_MAC) || defined(WEBRTC_WIN))
 TEST_F(CallPerfTest, CaptureNtpTimeWithNetworkDelay) {
   BuiltInNetworkBehaviorConfig net_config;
   net_config.queue_delay_ms = 100;
