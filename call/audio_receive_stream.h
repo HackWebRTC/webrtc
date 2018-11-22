@@ -71,6 +71,7 @@ class AudioReceiveStream {
     int32_t decoding_plc_cng = 0;
     int32_t decoding_muted_output = 0;
     int64_t capture_start_ntp_time_ms = 0;
+    uint64_t jitter_buffer_flushes = 0;
   };
 
   struct Config {

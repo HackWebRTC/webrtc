@@ -604,11 +604,14 @@ class RTCStatsReportVerifier {
           media_stream_track.concealed_samples);
       verifier.TestMemberIsNonNegative<uint64_t>(
           media_stream_track.concealment_events);
+      verifier.TestMemberIsNonNegative<uint64_t>(
+          media_stream_track.jitter_buffer_flushes);
     } else {
       verifier.TestMemberIsUndefined(media_stream_track.jitter_buffer_delay);
       verifier.TestMemberIsUndefined(media_stream_track.total_samples_received);
       verifier.TestMemberIsUndefined(media_stream_track.concealed_samples);
       verifier.TestMemberIsUndefined(media_stream_track.concealment_events);
+      verifier.TestMemberIsUndefined(media_stream_track.jitter_buffer_flushes);
     }
     return verifier.ExpectAllMembersSuccessfullyTested();
   }

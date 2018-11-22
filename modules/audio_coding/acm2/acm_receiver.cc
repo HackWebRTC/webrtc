@@ -345,6 +345,11 @@ void AcmReceiver::GetNetworkStatistics(NetworkStatistics* acm_stat) {
   acm_stat->concealedSamples = neteq_lifetime_stat.concealed_samples;
   acm_stat->concealmentEvents = neteq_lifetime_stat.concealment_events;
   acm_stat->jitterBufferDelayMs = neteq_lifetime_stat.jitter_buffer_delay_ms;
+
+  NetEqOperationsAndState neteq_operations_and_state =
+      neteq_->GetOperationsAndState();
+  acm_stat->packetBufferFlushes =
+      neteq_operations_and_state.packet_buffer_flushes;
 }
 
 int AcmReceiver::DecoderByPayloadType(uint8_t payload_type,

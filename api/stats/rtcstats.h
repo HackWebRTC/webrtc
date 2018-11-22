@@ -295,15 +295,6 @@ class RTC_EXPORT RTCStatsMember : public RTCStatsMemberInterface {
     is_defined_ = true;
     return value_;
   }
-  T& operator=(const RTCStatsMember<T>& other) {
-    RTC_DCHECK(other.is_defined_);
-    // Shouldn't be attempting to assign an RTCNonStandardStatsMember to an
-    // RTCStatsMember or vice versa.
-    RTC_DCHECK(is_standardized() == other.is_standardized());
-    value_ = other.value_;
-    is_defined_ = true;
-    return value_;
-  }
 
   // Value getters.
   T& operator*() {
@@ -348,6 +339,11 @@ class RTCNonStandardStatsMember : public RTCStatsMember<T> {
       : RTCStatsMember<T>(std::move(other)) {}
 
   bool is_standardized() const override { return false; }
+
+  T& operator=(const T& value) { return RTCStatsMember<T>::operator=(value); }
+  T& operator=(const T&& value) {
+    return RTCStatsMember<T>::operator=(std::move(value));
+  }
 };
 }  // namespace webrtc
 

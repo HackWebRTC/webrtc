@@ -117,6 +117,8 @@ struct NetworkStatistics {
   int maxWaitingTimeMs;
   // added samples in off mode due to packet loss
   size_t addedSamples;
+  // count of the number of buffer flushes
+  uint64_t packetBufferFlushes;
 };
 
 }  // namespace webrtc

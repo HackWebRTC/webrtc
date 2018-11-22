@@ -476,6 +476,8 @@ struct VoiceReceiverInfo : public MediaReceiverInfo {
   int decoding_muted_output = 0;
   // Estimated capture start time in NTP time in ms.
   int64_t capture_start_ntp_time_ms = -1;
+  // Count of the number of buffer flushes.
+  uint64_t jitter_buffer_flushes = 0;
 };
 
 struct VideoSenderInfo : public MediaSenderInfo {
