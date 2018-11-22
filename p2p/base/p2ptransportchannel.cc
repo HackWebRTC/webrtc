@@ -2481,8 +2481,7 @@ void P2PTransportChannel::set_writable(bool writable) {
   if (writable_ == writable) {
     return;
   }
-  RTC_LOG(LS_VERBOSE) << ToString()
-                      << ": Changed writable_ to " << writable;
+  RTC_LOG(LS_VERBOSE) << ToString() << ": Changed writable_ to " << writable;
   writable_ = writable;
   if (writable_) {
     SignalReadyToSend(this);

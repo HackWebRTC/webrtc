@@ -37,7 +37,7 @@ BasicRegatheringController::BasicRegatheringController(
       rand_(rtc::SystemTimeNanos()) {
   RTC_DCHECK(ice_transport_);
   RTC_DCHECK(thread_);
-  ice_transport_->SignalStateChanged.connect(
+  ice_transport_->SignalIceTransportStateChanged.connect(
       this, &BasicRegatheringController::OnIceTransportStateChanged);
   ice_transport->SignalWritableState.connect(
       this, &BasicRegatheringController::OnIceTransportWritableState);
