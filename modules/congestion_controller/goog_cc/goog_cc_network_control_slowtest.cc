@@ -79,7 +79,13 @@ TEST(GoogCcNetworkControllerTest, CutsHighRateInSafeResetTrial) {
   EXPECT_NEAR(client->send_bandwidth().kbps(), kStartRate.kbps(), 30);
 }
 
-TEST(GoogCcNetworkControllerTest, DetectsHighRateInSafeResetTrial) {
+#ifdef WEBRTC_LINUX  // bugs.webrtc.org/10036
+#define MAYBE_DetectsHighRateInSafeResetTrial \
+  DISABLED_DetectsHighRateInSafeResetTrial
+#else
+#define MAYBE_DetectsHighRateInSafeResetTrial DetectsHighRateInSafeResetTrial
+#endif
+TEST(GoogCcNetworkControllerTest, MAYBE_DetectsHighRateInSafeResetTrial) {
   ScopedFieldTrials trial("WebRTC-Bwe-SafeResetOnRouteChange/Enabled/");
   const DataRate kInitialLinkCapacity = DataRate::kbps(200);
   const DataRate kNewLinkCapacity = DataRate::kbps(800);
