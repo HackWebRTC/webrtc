@@ -321,12 +321,9 @@ message VideoRecvStreamConfig {
   // optional - required if RTX is configured. SSRC for the RTX stream.
   optional uint32 rtx_ssrc = 4;
 
-  // optional - RTP source stream ID
-  optional bytes rsid = 5;
-
   // IDs for the header extension we care about. Only required if there are
   // header extensions configured.
-  optional RtpHeaderExtensionConfig header_extensions = 6;
+  optional RtpHeaderExtensionConfig header_extensions = 5;
 
   // TODO(terelius): Do we need codec-payload mapping? If so and rtx_ssrc is
   // used, we also need a map between RTP payload type and RTX payload type.
@@ -343,12 +340,9 @@ message VideoSendStreamConfig {
   // optional - required if RTX is configured. SSRC for the RTX stream.
   optional uint32 rtx_ssrc = 3;
 
-  // optional - RTP source stream ID
-  optional bytes rsid = 4;
-
   // IDs for the header extension we care about. Only required if there are
   // header extensions configured.
-  optional RtpHeaderExtensionConfig header_extensions = 5;
+  optional RtpHeaderExtensionConfig header_extensions = 4;
 
   // TODO(terelius): Do we need codec-payload mapping? If so and rtx_ssrc is
   // used, we also need a map between RTP payload type and RTX payload type.
@@ -366,12 +360,9 @@ message AudioRecvStreamConfig {
 
   // Field number 4 reserved for RTX SSRC.
 
-  // optional - RTP source stream ID.
-  optional bytes rsid = 5;
-
   // IDs for the header extension we care about. Only required if there are
   // header extensions configured.
-  optional RtpHeaderExtensionConfig header_extensions = 6;
+  optional RtpHeaderExtensionConfig header_extensions = 5;
 
   // TODO(terelius): Do we need codec-payload mapping? If so and rtx_ssrc is
   // used, we also need a map between RTP payload type and RTX payload type.
@@ -384,14 +375,11 @@ message AudioSendStreamConfig {
   // required - Synchronization source (stream identifier) for outgoing stream.
   optional uint32 ssrc = 2;
 
-  // Field number 3 reserved for RTX SSRC
-
-  // optional - RTP source stream ID
-  optional bytes rsid = 4;
+  // Field number 3 reserved for RTX SSRC.
 
   // IDs for the header extension we care about. Only required if there are
   // header extensions configured.
-  optional RtpHeaderExtensionConfig header_extensions = 5;
+  optional RtpHeaderExtensionConfig header_extensions = 4;
 
   // TODO(terelius): Do we need codec-payload mapping? If so and rtx_ssrc is
   // used, we also need a map between RTP payload type and RTX payload type.

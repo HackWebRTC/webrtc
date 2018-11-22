@@ -762,7 +762,6 @@ void VerifyLoggedStreamConfig(const rtclog::StreamConfig& original_config,
   EXPECT_EQ(original_config.local_ssrc, logged_config.local_ssrc);
   EXPECT_EQ(original_config.remote_ssrc, logged_config.remote_ssrc);
   EXPECT_EQ(original_config.rtx_ssrc, logged_config.rtx_ssrc);
-  EXPECT_EQ(original_config.rsid, logged_config.rsid);
 
   EXPECT_EQ(original_config.rtp_extensions.size(),
             logged_config.rtp_extensions.size());

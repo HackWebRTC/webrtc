@@ -2358,9 +2358,6 @@ void ParsedRtcEventLogNew::StoreVideoRecvConfig(
   if (proto.has_rtx_ssrc()) {
     stream.config.rtx_ssrc = proto.rtx_ssrc();
   }
-  if (proto.has_rsid()) {
-    stream.config.rsid = proto.rsid();
-  }
   if (proto.has_header_extensions()) {
     stream.config.rtp_extensions =
         GetRuntimeRtpHeaderExtensionConfig(proto.header_extensions());
@@ -2379,9 +2376,6 @@ void ParsedRtcEventLogNew::StoreVideoSendConfig(
   if (proto.has_rtx_ssrc()) {
     config.rtx_ssrc = proto.rtx_ssrc();
   }
-  if (proto.has_rsid()) {
-    config.rsid = proto.rsid();
-  }
   if (proto.has_header_extensions()) {
     config.rtp_extensions =
         GetRuntimeRtpHeaderExtensionConfig(proto.header_extensions());
@@ -2399,9 +2393,6 @@ void ParsedRtcEventLogNew::StoreAudioRecvConfig(
   stream.config.remote_ssrc = proto.remote_ssrc();
   RTC_CHECK(proto.has_local_ssrc());
   stream.config.local_ssrc = proto.local_ssrc();
-  if (proto.has_rsid()) {
-    stream.config.rsid = proto.rsid();
-  }
   if (proto.has_header_extensions()) {
     stream.config.rtp_extensions =
         GetRuntimeRtpHeaderExtensionConfig(proto.header_extensions());
@@ -2416,9 +2407,6 @@ void ParsedRtcEventLogNew::StoreAudioSendConfig(
   stream.timestamp_us = proto.timestamp_ms() * 1000;
   RTC_CHECK(proto.has_ssrc());
   stream.config.local_ssrc = proto.ssrc();
-  if (proto.has_rsid()) {
-    stream.config.rsid = proto.rsid();
-  }
   if (proto.has_header_extensions()) {
     stream.config.rtp_extensions =
         GetRuntimeRtpHeaderExtensionConfig(proto.header_extensions());

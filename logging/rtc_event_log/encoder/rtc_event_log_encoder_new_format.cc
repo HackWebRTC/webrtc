@@ -1023,8 +1023,6 @@ void RtcEventLogEncoderNewFormat::EncodeAudioRecvStreamConfig(
     proto_batch->set_timestamp_ms(base_event->timestamp_ms());
     proto_batch->set_remote_ssrc(base_event->config().remote_ssrc);
     proto_batch->set_local_ssrc(base_event->config().local_ssrc);
-    if (!base_event->config().rsid.empty())
-      proto_batch->set_rsid(base_event->config().rsid);
 
     rtclog2::RtpHeaderExtensionConfig* proto_config =
         proto_batch->mutable_header_extensions();
@@ -1043,8 +1041,6 @@ void RtcEventLogEncoderNewFormat::EncodeAudioSendStreamConfig(
         event_stream->add_audio_send_stream_configs();
     proto_batch->set_timestamp_ms(base_event->timestamp_ms());
     proto_batch->set_ssrc(base_event->config().local_ssrc);
-    if (!base_event->config().rsid.empty())
-      proto_batch->set_rsid(base_event->config().rsid);
 
     rtclog2::RtpHeaderExtensionConfig* proto_config =
         proto_batch->mutable_header_extensions();
@@ -1264,8 +1260,6 @@ void RtcEventLogEncoderNewFormat::EncodeVideoRecvStreamConfig(
     proto_batch->set_remote_ssrc(base_event->config().remote_ssrc);
     proto_batch->set_local_ssrc(base_event->config().local_ssrc);
     proto_batch->set_rtx_ssrc(base_event->config().rtx_ssrc);
-    if (!base_event->config().rsid.empty())
-      proto_batch->set_rsid(base_event->config().rsid);
 
     rtclog2::RtpHeaderExtensionConfig* proto_config =
         proto_batch->mutable_header_extensions();
@@ -1285,8 +1279,6 @@ void RtcEventLogEncoderNewFormat::EncodeVideoSendStreamConfig(
     proto_batch->set_timestamp_ms(base_event->timestamp_ms());
     proto_batch->set_ssrc(base_event->config().local_ssrc);
     proto_batch->set_rtx_ssrc(base_event->config().rtx_ssrc);
-    if (!base_event->config().rsid.empty())
-      proto_batch->set_rsid(base_event->config().rsid);
 
     rtclog2::RtpHeaderExtensionConfig* proto_config =
         proto_batch->mutable_header_extensions();
