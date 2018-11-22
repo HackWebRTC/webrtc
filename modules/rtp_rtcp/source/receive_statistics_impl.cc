@@ -33,13 +33,14 @@ StreamStatisticianImpl::StreamStatisticianImpl(
     uint32_t ssrc,
     Clock* clock,
     bool enable_retransmit_detection,
+    int max_reordering_threshold,
     RtcpStatisticsCallback* rtcp_callback,
     StreamDataCountersCallback* rtp_callback)
     : ssrc_(ssrc),
       clock_(clock),
       incoming_bitrate_(kStatisticsProcessIntervalMs,
                         RateStatistics::kBpsScale),
-      max_reordering_threshold_(kDefaultMaxReorderingThreshold),
+      max_reordering_threshold_(max_reordering_threshold),
       enable_retransmit_detection_(enable_retransmit_detection),
       jitter_q4_(0),
       cumulative_loss_(0),
@@ -340,6 +341,7 @@ ReceiveStatistics* ReceiveStatistics::Create(Clock* clock) {
 ReceiveStatisticsImpl::ReceiveStatisticsImpl(Clock* clock)
     : clock_(clock),
       last_returned_ssrc_(0),
+      max_reordering_threshold_(kDefaultMaxReorderingThreshold),
       rtcp_stats_callback_(NULL),
       rtp_stats_callback_(NULL) {}
 
@@ -360,7 +362,7 @@ void ReceiveStatisticsImpl::OnRtpPacket(const RtpPacketReceived& packet) {
     } else {
       impl = new StreamStatisticianImpl(
           packet.Ssrc(), clock_, /* enable_retransmit_detection = */ false,
-          this, this);
+          max_reordering_threshold_, this, this);
       statisticians_[packet.Ssrc()] = impl;
     }
   }
@@ -395,8 +397,13 @@ StreamStatistician* ReceiveStatisticsImpl::GetStatistician(
 
 void ReceiveStatisticsImpl::SetMaxReorderingThreshold(
     int max_reordering_threshold) {
-  rtc::CritScope cs(&receive_statistics_lock_);
-  for (auto& statistician : statisticians_) {
+  std::map<uint32_t, StreamStatisticianImpl*> statisticians;
+  {
+    rtc::CritScope cs(&receive_statistics_lock_);
+    max_reordering_threshold_ = max_reordering_threshold;
+    statisticians = statisticians_;
+  }
+  for (auto& statistician : statisticians) {
     statistician.second->SetMaxReorderingThreshold(max_reordering_threshold);
   }
 }
@@ -408,7 +415,8 @@ void ReceiveStatisticsImpl::EnableRetransmitDetection(uint32_t ssrc,
     rtc::CritScope cs(&receive_statistics_lock_);
     StreamStatisticianImpl*& impl_ref = statisticians_[ssrc];
     if (impl_ref == nullptr) {  // new element
-      impl_ref = new StreamStatisticianImpl(ssrc, clock_, enable, this, this);
+      impl_ref = new StreamStatisticianImpl(
+          ssrc, clock_, enable, max_reordering_threshold_, this, this);
       return;
     }
     impl = impl_ref;

@@ -19,6 +19,7 @@
 
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/rate_statistics.h"
+#include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/ntp_time.h"
 
 namespace webrtc {
@@ -29,6 +30,7 @@ class StreamStatisticianImpl : public StreamStatistician,
   StreamStatisticianImpl(uint32_t ssrc,
                          Clock* clock,
                          bool enable_retransmit_detection,
+                         int max_reordering_threshold,
                          RtcpStatisticsCallback* rtcp_callback,
                          StreamDataCountersCallback* rtp_callback);
   ~StreamStatisticianImpl() override;
@@ -128,7 +130,9 @@ class ReceiveStatisticsImpl : public ReceiveStatistics,
   Clock* const clock_;
   rtc::CriticalSection receive_statistics_lock_;
   uint32_t last_returned_ssrc_;
-  std::map<uint32_t, StreamStatisticianImpl*> statisticians_;
+  int max_reordering_threshold_ RTC_GUARDED_BY(receive_statistics_lock_);
+  std::map<uint32_t, StreamStatisticianImpl*> statisticians_
+      RTC_GUARDED_BY(receive_statistics_lock_);
 
   RtcpStatisticsCallback* rtcp_stats_callback_;
   StreamDataCountersCallback* rtp_stats_callback_;
