@@ -135,10 +135,11 @@ VideoReceiveStream::VideoReceiveStream(
                      "DecodingThread",
                      rtc::kHighestPriority),
       call_stats_(call_stats),
-      rtp_receive_statistics_(ReceiveStatistics::Create(clock_)),
+      stats_proxy_(&config_, clock_),
+      rtp_receive_statistics_(
+          ReceiveStatistics::Create(clock_, &stats_proxy_, &stats_proxy_)),
       timing_(new VCMTiming(clock_)),
       video_receiver_(clock_, timing_.get(), this, this),
-      stats_proxy_(&config_, clock_),
       rtp_video_stream_receiver_(&transport_adapter_,
                                  call_stats,
                                  packet_router,

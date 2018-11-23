@@ -11,10 +11,11 @@
 #include "modules/rtp_rtcp/source/receive_statistics_impl.h"
 
 #include <math.h>
-
 #include <cstdlib>
+#include <memory>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_config.h"
@@ -59,7 +60,8 @@ StreamStatisticianImpl::~StreamStatisticianImpl() = default;
 
 void StreamStatisticianImpl::OnRtpPacket(const RtpPacketReceived& packet) {
   StreamDataCounters counters = UpdateCounters(packet);
-  rtp_callback_->DataCountersUpdated(counters, ssrc_);
+  if (rtp_callback_)
+    rtp_callback_->DataCountersUpdated(counters, ssrc_);
 }
 
 StreamDataCounters StreamStatisticianImpl::UpdateCounters(
@@ -146,7 +148,8 @@ void StreamStatisticianImpl::FecPacketReceived(
     receive_counters_.fec.AddPacket(packet);
     counters = receive_counters_;
   }
-  rtp_callback_->DataCountersUpdated(counters, ssrc_);
+  if (rtp_callback_)
+    rtp_callback_->DataCountersUpdated(counters, ssrc_);
 }
 
 void StreamStatisticianImpl::SetMaxReorderingThreshold(
@@ -183,7 +186,8 @@ bool StreamStatisticianImpl::GetStatistics(RtcpStatistics* statistics,
     *statistics = CalculateRtcpStatistics();
   }
 
-  rtcp_callback_->StatisticsUpdated(*statistics, ssrc_);
+  if (rtcp_callback_)
+    rtcp_callback_->StatisticsUpdated(*statistics, ssrc_);
   return true;
 }
 
@@ -205,7 +209,8 @@ bool StreamStatisticianImpl::GetActiveStatisticsAndReset(
     *statistics = CalculateRtcpStatistics();
   }
 
-  rtcp_callback_->StatisticsUpdated(*statistics, ssrc_);
+  if (rtcp_callback_)
+    rtcp_callback_->StatisticsUpdated(*statistics, ssrc_);
   return true;
 }
 
@@ -334,16 +339,23 @@ bool StreamStatisticianImpl::IsRetransmitOfOldPacket(
   return time_diff_ms > rtp_time_stamp_diff_ms + max_delay_ms;
 }
 
-ReceiveStatistics* ReceiveStatistics::Create(Clock* clock) {
-  return new ReceiveStatisticsImpl(clock);
+std::unique_ptr<ReceiveStatistics> ReceiveStatistics::Create(
+    Clock* clock,
+    RtcpStatisticsCallback* rtcp_callback,
+    StreamDataCountersCallback* rtp_callback) {
+  return absl::make_unique<ReceiveStatisticsImpl>(clock, rtcp_callback,
+                                                  rtp_callback);
 }
 
-ReceiveStatisticsImpl::ReceiveStatisticsImpl(Clock* clock)
+ReceiveStatisticsImpl::ReceiveStatisticsImpl(
+    Clock* clock,
+    RtcpStatisticsCallback* rtcp_callback,
+    StreamDataCountersCallback* rtp_callback)
     : clock_(clock),
       last_returned_ssrc_(0),
       max_reordering_threshold_(kDefaultMaxReorderingThreshold),
-      rtcp_stats_callback_(NULL),
-      rtp_stats_callback_(NULL) {}
+      rtcp_stats_callback_(rtcp_callback),
+      rtp_stats_callback_(rtp_callback) {}
 
 ReceiveStatisticsImpl::~ReceiveStatisticsImpl() {
   while (!statisticians_.empty()) {
@@ -362,7 +374,7 @@ void ReceiveStatisticsImpl::OnRtpPacket(const RtpPacketReceived& packet) {
     } else {
       impl = new StreamStatisticianImpl(
           packet.Ssrc(), clock_, /* enable_retransmit_detection = */ false,
-          max_reordering_threshold_, this, this);
+          max_reordering_threshold_, rtcp_stats_callback_, rtp_stats_callback_);
       statisticians_[packet.Ssrc()] = impl;
     }
   }
@@ -416,49 +428,13 @@ void ReceiveStatisticsImpl::EnableRetransmitDetection(uint32_t ssrc,
     StreamStatisticianImpl*& impl_ref = statisticians_[ssrc];
     if (impl_ref == nullptr) {  // new element
       impl_ref = new StreamStatisticianImpl(
-          ssrc, clock_, enable, max_reordering_threshold_, this, this);
+          ssrc, clock_, enable, max_reordering_threshold_, rtcp_stats_callback_,
+          rtp_stats_callback_);
       return;
     }
     impl = impl_ref;
   }
   impl->EnableRetransmitDetection(enable);
-}
-
-void ReceiveStatisticsImpl::RegisterRtcpStatisticsCallback(
-    RtcpStatisticsCallback* callback) {
-  rtc::CritScope cs(&receive_statistics_lock_);
-  if (callback != NULL)
-    assert(rtcp_stats_callback_ == NULL);
-  rtcp_stats_callback_ = callback;
-}
-
-void ReceiveStatisticsImpl::StatisticsUpdated(const RtcpStatistics& statistics,
-                                              uint32_t ssrc) {
-  rtc::CritScope cs(&receive_statistics_lock_);
-  if (rtcp_stats_callback_)
-    rtcp_stats_callback_->StatisticsUpdated(statistics, ssrc);
-}
-
-void ReceiveStatisticsImpl::CNameChanged(const char* cname, uint32_t ssrc) {
-  rtc::CritScope cs(&receive_statistics_lock_);
-  if (rtcp_stats_callback_)
-    rtcp_stats_callback_->CNameChanged(cname, ssrc);
-}
-
-void ReceiveStatisticsImpl::RegisterRtpStatisticsCallback(
-    StreamDataCountersCallback* callback) {
-  rtc::CritScope cs(&receive_statistics_lock_);
-  if (callback != NULL)
-    assert(rtp_stats_callback_ == NULL);
-  rtp_stats_callback_ = callback;
-}
-
-void ReceiveStatisticsImpl::DataCountersUpdated(const StreamDataCounters& stats,
-                                                uint32_t ssrc) {
-  rtc::CritScope cs(&receive_statistics_lock_);
-  if (rtp_stats_callback_) {
-    rtp_stats_callback_->DataCountersUpdated(stats, ssrc);
-  }
 }
 
 std::vector<rtcp::ReportBlock> ReceiveStatisticsImpl::RtcpReportBlocks(

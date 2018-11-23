@@ -117,8 +117,6 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
       frame_decryptor_(frame_decryptor) {
   constexpr bool remb_candidate = true;
   packet_router_->AddReceiveRtpModule(rtp_rtcp_.get(), remb_candidate);
-  rtp_receive_statistics_->RegisterRtpStatisticsCallback(receive_stats_proxy);
-  rtp_receive_statistics_->RegisterRtcpStatisticsCallback(receive_stats_proxy);
 
   RTC_DCHECK(config_.rtp.rtcp_mode != RtcpMode::kOff)
       << "A stream should not be configured with RTCP disabled. This value is "

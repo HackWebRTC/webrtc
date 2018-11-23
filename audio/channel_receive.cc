@@ -521,8 +521,6 @@ ChannelReceive::~ChannelReceive() {
     media_transport_->SetReceiveAudioSink(nullptr);
   }
 
-  rtp_receive_statistics_->RegisterRtcpStatisticsCallback(NULL);
-
   StopPlayout();
 
   int error = audio_coding_->RegisterTransportCallback(NULL);
