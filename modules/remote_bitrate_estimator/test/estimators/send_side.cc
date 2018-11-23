@@ -32,6 +32,7 @@ SendSideBweSender::SendSideBweSender(int kbps,
                                                      &event_log_)),
       acknowledged_bitrate_estimator_(
           absl::make_unique<AcknowledgedBitrateEstimator>()),
+      probe_bitrate_estimator_(new ProbeBitrateEstimator(nullptr)),
       bwe_(new DelayBasedBwe(nullptr)),
       feedback_observer_(bitrate_controller_.get()),
       clock_(clock),
@@ -79,8 +80,14 @@ void SendSideBweSender::GiveFeedback(const FeedbackPacket& feedback) {
             PacketFeedbackComparator());
   acknowledged_bitrate_estimator_->IncomingPacketFeedbackVector(
       packet_feedback_vector);
+  for (PacketFeedback& packet : packet_feedback_vector) {
+    if (packet.send_time_ms != PacketFeedback::kNoSendTime &&
+        packet.pacing_info.probe_cluster_id != PacedPacketInfo::kNotAProbe)
+      probe_bitrate_estimator_->HandleProbeAndEstimateBitrate(packet);
+  }
   DelayBasedBwe::Result result = bwe_->IncomingPacketFeedbackVector(
       packet_feedback_vector, acknowledged_bitrate_estimator_->bitrate(),
+      probe_bitrate_estimator_->FetchAndResetLastEstimatedBitrate(),
       Timestamp::ms(clock_->TimeInMilliseconds()));
   if (result.updated)
     bitrate_controller_->OnDelayBasedBweResult(result);

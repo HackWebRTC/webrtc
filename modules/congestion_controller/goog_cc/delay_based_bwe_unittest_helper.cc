@@ -154,6 +154,7 @@ DelayBasedBweTest::DelayBasedBweTest()
       clock_(100000000),
       acknowledged_bitrate_estimator_(
           absl::make_unique<AcknowledgedBitrateEstimator>()),
+      probe_bitrate_estimator_(new ProbeBitrateEstimator(nullptr)),
       bitrate_estimator_(new DelayBasedBwe(nullptr)),
       stream_generator_(new test::StreamGenerator(1e6,  // Capacity.
                                                   clock_.TimeInMicroseconds())),
@@ -166,6 +167,7 @@ DelayBasedBweTest::DelayBasedBweTest(const std::string& field_trial_string)
       clock_(100000000),
       acknowledged_bitrate_estimator_(
           absl::make_unique<AcknowledgedBitrateEstimator>()),
+      probe_bitrate_estimator_(new ProbeBitrateEstimator(nullptr)),
       bitrate_estimator_(new DelayBasedBwe(nullptr)),
       stream_generator_(new test::StreamGenerator(1e6,  // Capacity.
                                                   clock_.TimeInMicroseconds())),
@@ -198,10 +200,15 @@ void DelayBasedBweTest::IncomingFeedback(int64_t arrival_time_ms,
                         sequence_number, payload_size, pacing_info);
   std::vector<PacketFeedback> packets;
   packets.push_back(packet);
+  if (packet.send_time_ms != PacketFeedback::kNoSendTime &&
+      packet.pacing_info.probe_cluster_id != PacedPacketInfo::kNotAProbe)
+    probe_bitrate_estimator_->HandleProbeAndEstimateBitrate(packet);
+
   acknowledged_bitrate_estimator_->IncomingPacketFeedbackVector(packets);
   DelayBasedBwe::Result result =
       bitrate_estimator_->IncomingPacketFeedbackVector(
           packets, acknowledged_bitrate_estimator_->bitrate(),
+          probe_bitrate_estimator_->FetchAndResetLastEstimatedBitrate(),
           Timestamp::ms(clock_.TimeInMilliseconds()));
   const uint32_t kDummySsrc = 0;
   if (result.updated) {
@@ -232,12 +239,17 @@ bool DelayBasedBweTest::GenerateAndProcessFrame(uint32_t ssrc,
   for (auto& packet : packets) {
     RTC_CHECK_GE(packet.arrival_time_ms + arrival_time_offset_ms_, 0);
     packet.arrival_time_ms += arrival_time_offset_ms_;
+
+    if (packet.send_time_ms != PacketFeedback::kNoSendTime &&
+        packet.pacing_info.probe_cluster_id != PacedPacketInfo::kNotAProbe)
+      probe_bitrate_estimator_->HandleProbeAndEstimateBitrate(packet);
   }
 
   acknowledged_bitrate_estimator_->IncomingPacketFeedbackVector(packets);
   DelayBasedBwe::Result result =
       bitrate_estimator_->IncomingPacketFeedbackVector(
           packets, acknowledged_bitrate_estimator_->bitrate(),
+          probe_bitrate_estimator_->FetchAndResetLastEstimatedBitrate(),
           Timestamp::ms(clock_.TimeInMilliseconds()));
   const uint32_t kDummySsrc = 0;
   if (result.updated) {

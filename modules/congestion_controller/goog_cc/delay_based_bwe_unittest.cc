@@ -31,7 +31,7 @@ constexpr Timestamp kDummyTimestamp = Timestamp::Seconds<1000>();
 TEST_F(DelayBasedBweTest, NoCrashEmptyFeedback) {
   std::vector<PacketFeedback> packet_feedback_vector;
   bitrate_estimator_->IncomingPacketFeedbackVector(
-      packet_feedback_vector, absl::nullopt, kDummyTimestamp);
+      packet_feedback_vector, absl::nullopt, absl::nullopt, kDummyTimestamp);
 }
 
 TEST_F(DelayBasedBweTest, NoCrashOnlyLostFeedback) {
@@ -43,7 +43,7 @@ TEST_F(DelayBasedBweTest, NoCrashOnlyLostFeedback) {
                                                   PacketFeedback::kNoSendTime,
                                                   1, 1500, PacedPacketInfo()));
   bitrate_estimator_->IncomingPacketFeedbackVector(
-      packet_feedback_vector, absl::nullopt, kDummyTimestamp);
+      packet_feedback_vector, absl::nullopt, absl::nullopt, kDummyTimestamp);
 }
 
 TEST_F(DelayBasedBweTest, ProbeDetection) {

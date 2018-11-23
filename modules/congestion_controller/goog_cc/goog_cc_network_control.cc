@@ -140,6 +140,7 @@ GoogCcNetworkController::GoogCcNetworkController(RtcEventLog* event_log,
       bandwidth_estimation_(
           absl::make_unique<SendSideBandwidthEstimation>(event_log_)),
       alr_detector_(absl::make_unique<AlrDetector>()),
+      probe_bitrate_estimator_(new ProbeBitrateEstimator(event_log)),
       delay_based_bwe_(new DelayBasedBwe(event_log_)),
       acknowledged_bitrate_estimator_(
           absl::make_unique<AcknowledgedBitrateEstimator>()),
@@ -208,6 +209,7 @@ NetworkControlUpdate GoogCcNetworkController::OnNetworkRouteChange(
   }
 
   acknowledged_bitrate_estimator_.reset(new AcknowledgedBitrateEstimator());
+  probe_bitrate_estimator_.reset(new ProbeBitrateEstimator(event_log_));
   delay_based_bwe_.reset(new DelayBasedBwe(event_log_));
   if (msg.constraints.starting_rate)
     delay_based_bwe_->SetStartBitrate(*msg.constraints.starting_rate);
@@ -484,10 +486,18 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
   auto acknowledged_bitrate = acknowledged_bitrate_estimator_->bitrate();
   bandwidth_estimation_->IncomingPacketFeedbackVector(report,
                                                       acknowledged_bitrate);
+  for (const auto& feedback : received_feedback_vector) {
+    if (feedback.pacing_info.probe_cluster_id != PacedPacketInfo::kNotAProbe) {
+      probe_bitrate_estimator_->HandleProbeAndEstimateBitrate(feedback);
+    }
+  }
+  absl::optional<DataRate> probe_bitrate =
+      probe_bitrate_estimator_->FetchAndResetLastEstimatedBitrate();
 
   DelayBasedBwe::Result result;
   result = delay_based_bwe_->IncomingPacketFeedbackVector(
-      received_feedback_vector, acknowledged_bitrate, report.feedback_time);
+      received_feedback_vector, acknowledged_bitrate, probe_bitrate,
+      report.feedback_time);
 
   NetworkControlUpdate update;
   if (result.updated) {

@@ -47,6 +47,7 @@ class DelayBasedBwe {
   Result IncomingPacketFeedbackVector(
       const std::vector<PacketFeedback>& packet_feedback_vector,
       absl::optional<DataRate> acked_bitrate,
+      absl::optional<DataRate> probe_bitrate,
       Timestamp at_time);
   Result OnDelayedFeedback(Timestamp receive_time);
   void OnRttUpdate(TimeDelta avg_rtt);
@@ -61,6 +62,7 @@ class DelayBasedBwe {
                               Timestamp at_time);
   Result OnLongFeedbackDelay(Timestamp arrival_time);
   Result MaybeUpdateEstimate(absl::optional<DataRate> acked_bitrate,
+                             absl::optional<DataRate> probe_bitrate,
                              bool request_probe,
                              Timestamp at_time);
   // Updates the current remote rate estimate and returns true if a valid
@@ -76,7 +78,6 @@ class DelayBasedBwe {
   Timestamp last_seen_packet_;
   bool uma_recorded_;
   AimdRateControl rate_control_;
-  ProbeBitrateEstimator probe_bitrate_estimator_;
   size_t trendline_window_size_;
   double trendline_smoothing_coeff_;
   double trendline_threshold_gain_;

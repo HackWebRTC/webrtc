@@ -143,6 +143,7 @@ SendSideCongestionController::SendSideCongestionController(
       pause_pacer_(false),
       pacer_paused_(false),
       min_bitrate_bps_(congestion_controller::GetMinBitrateBps()),
+      probe_bitrate_estimator_(new ProbeBitrateEstimator(event_log_)),
       delay_based_bwe_(new DelayBasedBwe(event_log_)),
       in_cwnd_experiment_(CwndExperimentEnabled()),
       accepted_queue_ms_(kDefaultAcceptedQueueMs),
@@ -258,6 +259,7 @@ void SendSideCongestionController::OnNetworkRouteChanged(
     rtc::CritScope cs(&bwe_lock_);
     transport_overhead_bytes_per_packet_ = network_route.packet_overhead;
     min_bitrate_bps_ = min_bitrate_bps;
+    probe_bitrate_estimator_.reset(new ProbeBitrateEstimator(event_log_));
     delay_based_bwe_.reset(new DelayBasedBwe(event_log_));
     acknowledged_bitrate_estimator_.reset(new AcknowledgedBitrateEstimator());
     if (bitrate_bps > 0) {
@@ -416,8 +418,15 @@ void SendSideCongestionController::OnTransportFeedback(
   DelayBasedBwe::Result result;
   {
     rtc::CritScope cs(&bwe_lock_);
+    for (const auto& packet : feedback_vector) {
+      if (packet.send_time_ms != PacketFeedback::kNoSendTime &&
+          packet.pacing_info.probe_cluster_id != PacedPacketInfo::kNotAProbe) {
+        probe_bitrate_estimator_->HandleProbeAndEstimateBitrate(packet);
+      }
+    }
     result = delay_based_bwe_->IncomingPacketFeedbackVector(
         feedback_vector, acknowledged_bitrate_estimator_->bitrate(),
+        probe_bitrate_estimator_->FetchAndResetLastEstimatedBitrate(),
         Timestamp::ms(clock_->TimeInMilliseconds()));
   }
   if (result.updated) {

@@ -88,7 +88,6 @@ DelayBasedBwe::DelayBasedBwe(RtcEventLog* event_log)
       delay_detector_(),
       last_seen_packet_(Timestamp::MinusInfinity()),
       uma_recorded_(false),
-      probe_bitrate_estimator_(event_log),
       trendline_window_size_(
           webrtc::field_trial::IsEnabled(kBweWindowSizeInPacketsExperiment)
               ? ReadTrendlineFilterWindowSize()
@@ -111,6 +110,7 @@ DelayBasedBwe::~DelayBasedBwe() {}
 DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedbackVector(
     const std::vector<PacketFeedback>& packet_feedback_vector,
     absl::optional<DataRate> acked_bitrate,
+    absl::optional<DataRate> probe_bitrate,
     Timestamp at_time) {
   RTC_DCHECK(std::is_sorted(packet_feedback_vector.begin(),
                             packet_feedback_vector.end(),
@@ -155,7 +155,8 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedbackVector(
 
   } else {
     consecutive_delayed_feedbacks_ = 0;
-    return MaybeUpdateEstimate(acked_bitrate, recovered_from_overuse, at_time);
+    return MaybeUpdateEstimate(acked_bitrate, probe_bitrate,
+                               recovered_from_overuse, at_time);
   }
   return Result();
 }
@@ -221,20 +222,15 @@ void DelayBasedBwe::IncomingPacketFeedback(
     delay_detector_->Update(t_delta, ts_delta_ms,
                             packet_feedback.arrival_time_ms);
   }
-  if (packet_feedback.pacing_info.probe_cluster_id !=
-      PacedPacketInfo::kNotAProbe) {
-    probe_bitrate_estimator_.HandleProbeAndEstimateBitrate(packet_feedback);
-  }
 }
 
 DelayBasedBwe::Result DelayBasedBwe::MaybeUpdateEstimate(
     absl::optional<DataRate> acked_bitrate,
+    absl::optional<DataRate> probe_bitrate,
     bool recovered_from_overuse,
     Timestamp at_time) {
   Result result;
 
-  absl::optional<DataRate> probe_bitrate =
-      probe_bitrate_estimator_.FetchAndResetLastEstimatedBitrate();
   // Currently overusing the bandwidth.
   if (delay_detector_->State() == BandwidthUsage::kBwOverusing) {
     if (acked_bitrate &&
