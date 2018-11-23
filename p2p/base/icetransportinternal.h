@@ -26,6 +26,14 @@ namespace cricket {
 
 typedef std::vector<Candidate> Candidates;
 
+enum IceConnectionState {
+  kIceConnectionConnecting = 0,
+  kIceConnectionFailed,
+  kIceConnectionConnected,  // Writable, but still checking one or more
+                            // connections
+  kIceConnectionCompleted,
+};
+
 // TODO(deadbeef): Unify with PeerConnectionInterface::IceConnectionState
 // once /talk/ and /webrtc/ are combined, and also switch to ENUM_NAME naming
 // style.

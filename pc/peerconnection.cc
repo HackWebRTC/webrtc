@@ -998,7 +998,9 @@ bool PeerConnection::Initialize(
       signaling_thread(), network_thread(), port_allocator_.get(),
       async_resolver_factory_.get(), config));
   transport_controller_->SignalIceConnectionState.connect(
-      this, &PeerConnection::SetIceConnectionState);
+      this, &PeerConnection::OnTransportControllerConnectionState);
+  transport_controller_->SignalStandardizedIceConnectionState.connect(
+      this, &PeerConnection::SetStandardizedIceConnectionState);
   transport_controller_->SignalConnectionState.connect(
       this, &PeerConnection::SetConnectionState);
   transport_controller_->SignalIceGatheringState.connect(
@@ -1758,6 +1760,11 @@ PeerConnectionInterface::SignalingState PeerConnection::signaling_state() {
 PeerConnectionInterface::IceConnectionState
 PeerConnection::ice_connection_state() {
   return ice_connection_state_;
+}
+
+PeerConnectionInterface::IceConnectionState
+PeerConnection::standardized_ice_connection_state() {
+  return standardized_ice_connection_state_;
 }
 
 PeerConnectionInterface::PeerConnectionState
@@ -3625,15 +3632,20 @@ void PeerConnection::SetIceConnectionState(IceConnectionState new_state) {
   RTC_DCHECK(ice_connection_state_ !=
              PeerConnectionInterface::kIceConnectionClosed);
 
-  if (new_state == PeerConnectionInterface::kIceConnectionConnected) {
-    NoteUsageEvent(UsageEvent::ICE_STATE_CONNECTED);
-  } else if (new_state == PeerConnectionInterface::kIceConnectionCompleted) {
-    NoteUsageEvent(UsageEvent::ICE_STATE_CONNECTED);
-    ReportTransportStats();
-  }
-
   ice_connection_state_ = new_state;
   Observer()->OnIceConnectionChange(ice_connection_state_);
+}
+
+void PeerConnection::SetStandardizedIceConnectionState(
+    PeerConnectionInterface::IceConnectionState new_state) {
+  RTC_DCHECK(signaling_thread()->IsCurrent());
+  if (standardized_ice_connection_state_ == new_state)
+    return;
+  if (IsClosed())
+    return;
+  standardized_ice_connection_state_ = new_state;
+  // TODO(jonasolsson): Pass this value on to OnIceConnectionChange instead of
+  // the old one once disconnects are handled properly.
 }
 
 void PeerConnection::SetConnectionState(
@@ -3694,6 +3706,8 @@ void PeerConnection::ChangeSignalingState(
   if (signaling_state == kClosed) {
     ice_connection_state_ = kIceConnectionClosed;
     Observer()->OnIceConnectionChange(ice_connection_state_);
+    standardized_ice_connection_state_ =
+        PeerConnectionInterface::IceConnectionState::kIceConnectionClosed;
     connection_state_ = PeerConnectionInterface::PeerConnectionState::kClosed;
     Observer()->OnConnectionChange(connection_state_);
     if (ice_gathering_state_ != kIceGatheringComplete) {
@@ -5491,6 +5505,51 @@ void PeerConnection::OnCertificateReady(
 void PeerConnection::OnDtlsSrtpSetupFailure(cricket::BaseChannel*, bool rtcp) {
   SetSessionError(SessionError::kTransport,
                   rtcp ? kDtlsSrtpSetupFailureRtcp : kDtlsSrtpSetupFailureRtp);
+}
+
+void PeerConnection::OnTransportControllerConnectionState(
+    cricket::IceConnectionState state) {
+  switch (state) {
+    case cricket::kIceConnectionConnecting:
+      // If the current state is Connected or Completed, then there were
+      // writable channels but now there are not, so the next state must
+      // be Disconnected.
+      // kIceConnectionConnecting is currently used as the default,
+      // un-connected state by the TransportController, so its only use is
+      // detecting disconnections.
+      if (ice_connection_state_ ==
+              PeerConnectionInterface::kIceConnectionConnected ||
+          ice_connection_state_ ==
+              PeerConnectionInterface::kIceConnectionCompleted) {
+        SetIceConnectionState(
+            PeerConnectionInterface::kIceConnectionDisconnected);
+      }
+      break;
+    case cricket::kIceConnectionFailed:
+      SetIceConnectionState(PeerConnectionInterface::kIceConnectionFailed);
+      break;
+    case cricket::kIceConnectionConnected:
+      RTC_LOG(LS_INFO) << "Changing to ICE connected state because "
+                          "all transports are writable.";
+      SetIceConnectionState(PeerConnectionInterface::kIceConnectionConnected);
+      NoteUsageEvent(UsageEvent::ICE_STATE_CONNECTED);
+      break;
+    case cricket::kIceConnectionCompleted:
+      RTC_LOG(LS_INFO) << "Changing to ICE completed state because "
+                          "all transports are complete.";
+      if (ice_connection_state_ !=
+          PeerConnectionInterface::kIceConnectionConnected) {
+        // If jumping directly from "checking" to "connected",
+        // signal "connected" first.
+        SetIceConnectionState(PeerConnectionInterface::kIceConnectionConnected);
+      }
+      SetIceConnectionState(PeerConnectionInterface::kIceConnectionCompleted);
+      NoteUsageEvent(UsageEvent::ICE_STATE_CONNECTED);
+      ReportTransportStats();
+      break;
+    default:
+      RTC_NOTREACHED();
+  }
 }
 
 void PeerConnection::OnTransportControllerCandidatesGathered(

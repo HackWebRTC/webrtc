@@ -553,10 +553,6 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
     return pc()->ice_connection_state();
   }
 
-  webrtc::PeerConnectionInterface::PeerConnectionState peer_connection_state() {
-    return pc()->peer_connection_state();
-  }
-
   webrtc::PeerConnectionInterface::IceGatheringState ice_gathering_state() {
     return pc()->ice_gathering_state();
   }
@@ -1205,11 +1201,17 @@ class PeerConnectionIntegrationBaseTest : public testing::Test {
   }
 
   bool DtlsConnected() {
-    return callee()->peer_connection_state() ==
-               webrtc::PeerConnectionInterface::PeerConnectionState::
-                   kConnected &&
-           caller()->peer_connection_state() ==
-               webrtc::PeerConnectionInterface::PeerConnectionState::kConnected;
+    // TODO(deadbeef): kIceConnectionConnected currently means both ICE and DTLS
+    // are connected. This is an important distinction. Once we have separate
+    // ICE and DTLS state, this check needs to use the DTLS state.
+    return (callee()->ice_connection_state() ==
+                webrtc::PeerConnectionInterface::kIceConnectionConnected ||
+            callee()->ice_connection_state() ==
+                webrtc::PeerConnectionInterface::kIceConnectionCompleted) &&
+           (caller()->ice_connection_state() ==
+                webrtc::PeerConnectionInterface::kIceConnectionConnected ||
+            caller()->ice_connection_state() ==
+                webrtc::PeerConnectionInterface::kIceConnectionCompleted);
   }
 
   // When |event_log_factory| is null, the default implementation of the event
@@ -1599,10 +1601,7 @@ class PeerConnectionIntegrationBaseTest : public testing::Test {
     EXPECT_EQ_WAIT(rtc::SrtpCryptoSuiteToName(expected_cipher_suite),
                    caller()->OldGetStats()->SrtpCipher(), kDefaultTimeout);
     // TODO(bugs.webrtc.org/9456): Fix it.
-    EXPECT_LE(1, webrtc::metrics::NumEvents(
-                     "WebRTC.PeerConnection.SrtpCryptoSuite.Audio",
-                     expected_cipher_suite));
-    EXPECT_GE(2, webrtc::metrics::NumEvents(
+    EXPECT_EQ(1, webrtc::metrics::NumEvents(
                      "WebRTC.PeerConnection.SrtpCryptoSuite.Audio",
                      expected_cipher_suite));
   }
@@ -2825,10 +2824,7 @@ TEST_P(PeerConnectionIntegrationTest, Dtls10CipherStatsAndUmaMetrics) {
   EXPECT_EQ_WAIT(rtc::SrtpCryptoSuiteToName(kDefaultSrtpCryptoSuite),
                  caller()->OldGetStats()->SrtpCipher(), kDefaultTimeout);
   // TODO(bugs.webrtc.org/9456): Fix it.
-  EXPECT_LE(1, webrtc::metrics::NumEvents(
-                   "WebRTC.PeerConnection.SrtpCryptoSuite.Audio",
-                   kDefaultSrtpCryptoSuite));
-  EXPECT_GE(2, webrtc::metrics::NumEvents(
+  EXPECT_EQ(1, webrtc::metrics::NumEvents(
                    "WebRTC.PeerConnection.SrtpCryptoSuite.Audio",
                    kDefaultSrtpCryptoSuite));
 }
@@ -2850,10 +2846,7 @@ TEST_P(PeerConnectionIntegrationTest, Dtls12CipherStatsAndUmaMetrics) {
   EXPECT_EQ_WAIT(rtc::SrtpCryptoSuiteToName(kDefaultSrtpCryptoSuite),
                  caller()->OldGetStats()->SrtpCipher(), kDefaultTimeout);
   // TODO(bugs.webrtc.org/9456): Fix it.
-  EXPECT_LE(1, webrtc::metrics::NumEvents(
-                   "WebRTC.PeerConnection.SrtpCryptoSuite.Audio",
-                   kDefaultSrtpCryptoSuite));
-  EXPECT_GE(2, webrtc::metrics::NumEvents(
+  EXPECT_EQ(1, webrtc::metrics::NumEvents(
                    "WebRTC.PeerConnection.SrtpCryptoSuite.Audio",
                    kDefaultSrtpCryptoSuite));
 }
@@ -3555,13 +3548,8 @@ TEST_P(PeerConnectionIntegrationTest, IceStatesReachCompletion) {
   // fixed, this test should be updated.
   EXPECT_EQ_WAIT(webrtc::PeerConnectionInterface::kIceConnectionCompleted,
                  caller()->ice_connection_state(), kDefaultTimeout);
-  EXPECT_TRUE_WAIT(
-      callee()->ice_connection_state() ==
-              webrtc::PeerConnectionInterface::kIceConnectionConnected ||
-          callee()->ice_connection_state() ==
-              webrtc::PeerConnectionInterface::kIceConnectionCompleted,
-      kDefaultTimeout)
-      << callee()->ice_connection_state();
+  EXPECT_EQ_WAIT(webrtc::PeerConnectionInterface::kIceConnectionConnected,
+                 callee()->ice_connection_state(), kDefaultTimeout);
 }
 
 // Replaces the first candidate with a static address and configures a
@@ -3876,13 +3864,8 @@ TEST_P(PeerConnectionIntegrationTest, MediaContinuesFlowingAfterIceRestart) {
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
   EXPECT_EQ_WAIT(webrtc::PeerConnectionInterface::kIceConnectionCompleted,
                  caller()->ice_connection_state(), kMaxWaitForFramesMs);
-  EXPECT_TRUE_WAIT(
-      callee()->ice_connection_state() ==
-              webrtc::PeerConnectionInterface::kIceConnectionConnected ||
-          callee()->ice_connection_state() ==
-              webrtc::PeerConnectionInterface::kIceConnectionCompleted,
-      kDefaultTimeout)
-      << callee()->ice_connection_state();
+  EXPECT_EQ_WAIT(webrtc::PeerConnectionInterface::kIceConnectionConnected,
+                 callee()->ice_connection_state(), kMaxWaitForFramesMs);
 
   // To verify that the ICE restart actually occurs, get
   // ufrag/password/candidates before and after restart.
@@ -3913,7 +3896,7 @@ TEST_P(PeerConnectionIntegrationTest, MediaContinuesFlowingAfterIceRestart) {
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
   EXPECT_EQ_WAIT(webrtc::PeerConnectionInterface::kIceConnectionCompleted,
                  caller()->ice_connection_state(), kMaxWaitForFramesMs);
-  EXPECT_EQ_WAIT(webrtc::PeerConnectionInterface::kIceConnectionCompleted,
+  EXPECT_EQ_WAIT(webrtc::PeerConnectionInterface::kIceConnectionConnected,
                  callee()->ice_connection_state(), kMaxWaitForFramesMs);
 
   // Grab the ufrags/candidates again.
