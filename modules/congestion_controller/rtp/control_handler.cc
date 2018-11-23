@@ -20,18 +20,23 @@ namespace {
 
 // When PacerPushbackExperiment is enabled, build-up in the pacer due to
 // the congestion window and/or data spikes reduces encoder allocations.
-const char kPacerPushbackExperiment[] = "WebRTC-PacerPushbackExperiment";
-
 bool IsPacerPushbackExperimentEnabled() {
-  return field_trial::IsEnabled(kPacerPushbackExperiment);
+  return field_trial::IsEnabled("WebRTC-PacerPushbackExperiment");
 }
+
+// By default, pacer emergency stops encoder when buffer reaches a high level.
+bool IsPacerEmergencyStopDisabled() {
+  return field_trial::IsEnabled("WebRTC-DisablePacerEmergencyStop");
+}
+
 }  // namespace
 CongestionControlHandler::CongestionControlHandler(
     NetworkChangedObserver* observer,
     PacedSender* pacer)
     : observer_(observer),
       pacer_(pacer),
-      pacer_pushback_experiment_(IsPacerPushbackExperimentEnabled()) {
+      pacer_pushback_experiment_(IsPacerPushbackExperimentEnabled()),
+      disable_pacer_emergency_stop_(IsPacerEmergencyStopDisabled()) {
   sequenced_checker_.Detach();
 }
 
@@ -109,9 +114,7 @@ void CongestionControlHandler::OnNetworkInvalidation() {
 
   if (!network_available_) {
     target_bitrate_bps = 0;
-  } else if (!pacer_pushback_experiment_) {
-    target_bitrate_bps = IsSendQueueFull() ? 0 : target_bitrate_bps;
-  } else {
+  } else if (pacer_pushback_experiment_) {
     int64_t queue_length_ms = pacer_expected_queue_ms_;
 
     if (queue_length_ms == 0) {
@@ -124,7 +127,10 @@ void CongestionControlHandler::OnNetworkInvalidation() {
 
     target_bitrate_bps *= encoding_rate_ratio_;
     target_bitrate_bps = target_bitrate_bps < 50000 ? 0 : target_bitrate_bps;
+  } else if (!disable_pacer_emergency_stop_) {
+    target_bitrate_bps = IsSendQueueFull() ? 0 : target_bitrate_bps;
   }
+
   if (HasNetworkParametersToReportChanged(target_bitrate_bps, fraction_loss,
                                           rtt_ms)) {
     observer_->OnNetworkChanged(target_bitrate_bps, fraction_loss, rtt_ms,
