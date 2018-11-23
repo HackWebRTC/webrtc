@@ -674,8 +674,8 @@ if (rtc_include_tests) {
       ":libjingle_peerconnection_api",
       ":loopback_media_transport",
       "../rtc_base:checks",
+      "../rtc_base:gunit_helpers",
       "../rtc_base:rtc_base_approved",
-      "../rtc_base:rtc_base_tests_utils",
       "../test:test_support",
       "units:units_unittests",
     ]

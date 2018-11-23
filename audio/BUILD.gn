@@ -150,6 +150,7 @@ if (rtc_include_tests) {
       "../logging:mocks",
       "../logging:rtc_event_log_api",
       "../modules/audio_device:mock_audio_device",
+      "../rtc_base:rtc_base_tests_utils",
 
       # For TestAudioDeviceModule
       "../modules/audio_device:audio_device_impl",
@@ -163,7 +164,6 @@ if (rtc_include_tests) {
       "../modules/utility",
       "../rtc_base:checks",
       "../rtc_base:rtc_base_approved",
-      "../rtc_base:rtc_base_tests_utils",
       "../rtc_base:rtc_task_queue",
       "../rtc_base:safe_compare",
       "../system_wrappers:system_wrappers",

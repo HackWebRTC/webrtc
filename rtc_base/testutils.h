@@ -19,7 +19,6 @@
 #include <vector>
 #include "rtc_base/asyncsocket.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/gunit.h"
 #include "rtc_base/stream.h"
 
 namespace webrtc {

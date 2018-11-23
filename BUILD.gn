@@ -58,7 +58,6 @@ if (!build_with_chromium) {
         "modules/video_capture:video_capture_internal_impl",
         "pc:peerconnection_unittests",
         "pc:rtc_pc_unittests",
-        "rtc_base:rtc_base_tests_utils",
         "stats:rtc_stats_unittests",
         "system_wrappers:system_wrappers_unittests",
         "test",
@@ -476,7 +475,6 @@ if (rtc_include_tests) {
       "p2p:rtc_p2p_unittests",
       "rtc_base:rtc_base_approved_unittests",
       "rtc_base:rtc_base_tests_main",
-      "rtc_base:rtc_base_tests_utils",
       "rtc_base:rtc_base_unittests",
       "rtc_base:rtc_json_unittests",
       "rtc_base:rtc_numerics_unittests",
@@ -544,7 +542,6 @@ if (rtc_include_tests) {
       # should move them to a more appropriate test suite.
       "call:call_tests",
       "modules/video_capture",
-      "rtc_base:rtc_base_tests_utils",
       "test:test_common",
       "test:test_main",
       "test:video_test_common",

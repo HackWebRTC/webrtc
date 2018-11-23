@@ -934,11 +934,41 @@ rtc_source_set("gtest_prod") {
   ]
 }
 
+rtc_source_set("gunit_helpers") {
+  testonly = true
+  sources = [
+    "gunit.cc",
+    "gunit.h",
+  ]
+  deps = [
+    ":logging",
+    ":rtc_base",
+    ":rtc_base_tests_utils",
+    ":stringutils",
+    "../test:test_support",
+  ]
+}
+
+rtc_source_set("testclient") {
+  testonly = true
+  sources = [
+    "testclient.cc",
+    "testclient.h",
+  ]
+  deps = [
+    ":criticalsection",
+    ":gunit_helpers",
+    ":macromagic",
+    ":rtc_base",
+    ":rtc_base_tests_utils",
+    ":timeutils",
+    "//third_party/abseil-cpp/absl/memory:memory",
+  ]
+}
+
 rtc_source_set("rtc_base_tests_utils") {
   testonly = true
   sources = [
-    # Also use this as a convenient dumping ground for misc files that are
-    # included by multiple targets below.
     "cpu_time.cc",
     "cpu_time.h",
     "fake_mdns_responder.h",
@@ -949,8 +979,6 @@ rtc_source_set("rtc_base_tests_utils") {
     "fakesslidentity.h",
     "firewallsocketserver.cc",
     "firewallsocketserver.h",
-    "gunit.cc",
-    "gunit.h",
     "memory_stream.cc",
     "memory_stream.h",
     "memory_usage.cc",
@@ -969,8 +997,6 @@ rtc_source_set("rtc_base_tests_utils") {
     "socketstream.h",
     "testbase64.h",
     "testcertificateverifier.h",
-    "testclient.cc",
-    "testclient.h",
     "testechoserver.cc",
     "testechoserver.h",
     "testutils.cc",
@@ -981,15 +1007,9 @@ rtc_source_set("rtc_base_tests_utils") {
   deps = [
     ":checks",
     ":rtc_base",
-    ":stringutils",
     "../api/units:time_delta",
-    "../test:test_support",
-    "system:fallthrough",
     "third_party/sigslot",
     "//third_party/abseil-cpp/absl/memory",
-  ]
-  public_deps = [
-    "//testing/gtest",
   ]
 }
 
@@ -1015,6 +1035,7 @@ if (rtc_include_tests) {
       "sigslot_unittest.cc",
     ]
     deps = [
+      ":gunit_helpers",
       ":rtc_base",
       ":rtc_base_tests_utils",
       "third_party/sigslot",
@@ -1027,6 +1048,7 @@ if (rtc_include_tests) {
       "unittest_main.cc",
     ]
     deps = [
+      ":gunit_helpers",
       ":rtc_base",
       ":rtc_base_approved",
       ":rtc_base_tests_utils",
@@ -1055,9 +1077,11 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":checks",
+      ":gunit_helpers",
       ":rtc_base",
       ":rtc_base_tests_main",
       ":rtc_base_tests_utils",
+      ":testclient",
       "../system_wrappers:system_wrappers",
       "../test:fileutils",
       "../test:test_support",
@@ -1124,6 +1148,7 @@ if (rtc_include_tests) {
     }
     deps = [
       ":checks",
+      ":gunit_helpers",
       ":rate_limiter",
       ":rtc_base",
       ":rtc_base_approved",
@@ -1134,6 +1159,7 @@ if (rtc_include_tests) {
       ":safe_minmax",
       ":sanitizer",
       ":stringutils",
+      ":testclient",
       "../api:array_view",
       "../system_wrappers:system_wrappers",
       "../test:fileutils",
@@ -1153,6 +1179,7 @@ if (rtc_include_tests) {
       "task_queue_unittest.cc",
     ]
     deps = [
+      ":gunit_helpers",
       ":rtc_base_approved",
       ":rtc_base_tests_main",
       ":rtc_base_tests_utils",
@@ -1186,6 +1213,7 @@ if (rtc_include_tests) {
       "weak_ptr_unittest.cc",
     ]
     deps = [
+      ":gunit_helpers",
       ":rtc_base_approved",
       ":rtc_base_tests_main",
       ":rtc_base_tests_utils",
@@ -1221,6 +1249,7 @@ if (rtc_include_tests) {
       "strings/json_unittest.cc",
     ]
     deps = [
+      ":gunit_helpers",
       ":rtc_base_tests_main",
       ":rtc_base_tests_utils",
       ":rtc_json",
@@ -1272,9 +1301,11 @@ if (rtc_include_tests) {
     }
     deps = [
       ":checks",
+      ":gunit_helpers",
       ":rtc_base_tests_main",
       ":rtc_base_tests_utils",
       ":stringutils",
+      ":testclient",
       "../api:array_view",
       "../test:fileutils",
       "../test:test_support",

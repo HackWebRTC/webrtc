@@ -6,9 +6,9 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-import("../../webrtc.gni")
 import("//build/config/features.gni")
 import("//testing/libfuzzer/fuzzer_test.gni")
+import("../../webrtc.gni")
 
 rtc_static_library("webrtc_fuzzer_main") {
   sources = [
@@ -364,7 +364,6 @@ webrtc_fuzzer_test("neteq_rtp_fuzzer") {
     "../../modules/audio_coding:pcm16b",
     "../../modules/rtp_rtcp:rtp_rtcp_format",
     "../../rtc_base:rtc_base_approved",
-    "../../rtc_base:rtc_base_tests_utils",
   ]
 }
 
@@ -379,7 +378,6 @@ webrtc_fuzzer_test("neteq_signal_fuzzer") {
     "../../modules/audio_coding:neteq_tools_minimal",
     "../../modules/audio_coding:pcm16b",
     "../../rtc_base:rtc_base_approved",
-    "../../rtc_base:rtc_base_tests_utils",
   ]
 }
 
