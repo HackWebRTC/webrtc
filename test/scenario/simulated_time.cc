@@ -308,6 +308,7 @@ void SimulatedTimeClient::Update(NetworkControlUpdate update) {
     DataRate rate_per_stream =
         update.target_rate->target_rate * ratio_per_stream;
     target_rate_ = update.target_rate->target_rate;
+    link_capacity_ = update.target_rate->network_estimate.bandwidth;
     for (auto& stream : packet_streams_)
       stream->OnTargetRateUpdate(rate_per_stream);
   }
@@ -347,6 +348,10 @@ void SimulatedTimeClient::TriggerFakeReroute(Timestamp at_time) {
 
 TimeDelta SimulatedTimeClient::GetNetworkControllerProcessInterval() const {
   return network_controller_factory_.GetProcessInterval();
+}
+
+DataRate SimulatedTimeClient::link_capacity() const {
+  return link_capacity_;
 }
 
 double SimulatedTimeClient::target_rate_kbps() const {

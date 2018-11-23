@@ -134,6 +134,8 @@ GoogCcNetworkController::GoogCcNetworkController(RtcEventLog* event_log,
       packet_feedback_only_(feedback_only),
       safe_reset_on_route_change_("Enabled"),
       safe_reset_acknowledged_rate_("ack"),
+      use_stable_bandwidth_estimate_(
+          field_trial::IsEnabled("WebRTC-Bwe-StableBandwidthEstimate")),
       probe_controller_(new ProbeController()),
       congestion_window_pushback_controller_(
           MaybeInitalizeCongestionWindowPushbackController()),
@@ -145,7 +147,7 @@ GoogCcNetworkController::GoogCcNetworkController(RtcEventLog* event_log,
       acknowledged_bitrate_estimator_(
           absl::make_unique<AcknowledgedBitrateEstimator>()),
       initial_config_(config),
-      last_bandwidth_(*config.constraints.starting_rate),
+      last_target_rate_(*config.constraints.starting_rate),
       pacing_factor_(config.stream_based_config.pacing_factor.value_or(
           kDefaultPaceMultiplier)),
       min_pacing_rate_(config.stream_based_config.min_pacing_rate.value_or(
@@ -484,8 +486,9 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
   acknowledged_bitrate_estimator_->IncomingPacketFeedbackVector(
       received_feedback_vector);
   auto acknowledged_bitrate = acknowledged_bitrate_estimator_->bitrate();
-  bandwidth_estimation_->IncomingPacketFeedbackVector(report,
-                                                      acknowledged_bitrate);
+  bandwidth_estimation_->SetAcknowledgedRate(acknowledged_bitrate,
+                                             report.feedback_time);
+  bandwidth_estimation_->IncomingPacketFeedbackVector(report);
   for (const auto& feedback : received_feedback_vector) {
     if (feedback.pacing_info.probe_cluster_id != PacedPacketInfo::kNotAProbe) {
       probe_bitrate_estimator_->HandleProbeAndEstimateBitrate(feedback);
@@ -528,7 +531,7 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
     const DataSize kMinCwnd = DataSize::bytes(2 * 1500);
     TimeDelta time_window =
         TimeDelta::ms(min_feedback_max_rtt_ms + accepted_queue_ms_);
-    DataSize data_window = last_bandwidth_ * time_window;
+    DataSize data_window = last_target_rate_ * time_window;
     if (current_data_window_) {
       data_window =
           std::max(kMinCwnd, (data_window + current_data_window_.value()) / 2);
@@ -595,14 +598,16 @@ void GoogCcNetworkController::MaybeTriggerOnNetworkChanged(
 
     alr_detector_->SetEstimatedBitrate(estimated_bitrate_bps);
 
-    DataRate bandwidth = DataRate::bps(estimated_bitrate_bps);
-    last_bandwidth_ = bandwidth;
+    last_target_rate_ = DataRate::bps(estimated_bitrate_bps);
+    DataRate bandwidth = use_stable_bandwidth_estimate_
+                             ? bandwidth_estimation_->GetEstimatedLinkCapacity()
+                             : last_target_rate_;
 
     TimeDelta bwe_period = delay_based_bwe_->GetExpectedBwePeriod();
 
     // Set the target rate to the full estimated bandwidth since the estimation
     // for legacy reasons includes target rate constraints.
-    DataRate target_rate = bandwidth;
+    DataRate target_rate = last_target_rate_;
     if (congestion_window_pushback_controller_) {
       int64_t pushback_rate =
           congestion_window_pushback_controller_->UpdateTargetBitrate(
@@ -623,8 +628,8 @@ void GoogCcNetworkController::MaybeTriggerOnNetworkChanged(
 
     update->target_rate = target_rate_msg;
 
-    auto probes =
-        probe_controller_->SetEstimatedBitrate(bandwidth.bps(), at_time.ms());
+    auto probes = probe_controller_->SetEstimatedBitrate(
+        last_target_rate_.bps(), at_time.ms());
     update->probe_cluster_configs.insert(update->probe_cluster_configs.end(),
                                          probes.begin(), probes.end());
     update->pacer_config = GetPacingRates(at_time);
@@ -633,8 +638,8 @@ void GoogCcNetworkController::MaybeTriggerOnNetworkChanged(
 
 PacerConfig GoogCcNetworkController::GetPacingRates(Timestamp at_time) const {
   DataRate pacing_rate =
-      std::max(min_pacing_rate_, last_bandwidth_) * pacing_factor_;
-  DataRate padding_rate = std::min(max_padding_rate_, last_bandwidth_);
+      std::max(min_pacing_rate_, last_target_rate_) * pacing_factor_;
+  DataRate padding_rate = std::min(max_padding_rate_, last_target_rate_);
   PacerConfig msg;
   msg.at_time = at_time;
   msg.time_window = TimeDelta::seconds(1);

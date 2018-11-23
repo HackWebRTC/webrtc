@@ -399,5 +399,61 @@ TEST_F(GoogCcNetworkControllerTest, UpdatesTargetRateBasedOnLinkCapacity) {
   EXPECT_NEAR(client->target_rate_kbps(), 90, 20);
 }
 
+TEST_F(GoogCcNetworkControllerTest, DefaultEstimateVariesInSteadyState) {
+  ScopedFieldTrials trial("WebRTC-Bwe-StableBandwidthEstimate/Disabled/");
+  Scenario s("googcc_unit/no_stable_varies", false);
+  SimulatedTimeClientConfig config;
+  config.transport.cc =
+      TransportControllerConfig::CongestionController::kGoogCcFeedback;
+  NetworkNodeConfig net_conf;
+  net_conf.simulation.bandwidth = DataRate::kbps(500);
+  net_conf.simulation.delay = TimeDelta::ms(100);
+  net_conf.update_frequency = TimeDelta::ms(5);
+  auto send_net = s.CreateSimulationNode(net_conf);
+  auto ret_net = s.CreateSimulationNode(net_conf);
+  SimulatedTimeClient* client = s.CreateSimulatedTimeClient(
+      "send", config, {PacketStreamConfig()}, {send_net}, {ret_net});
+  // Run for a while to allow the estimate to stabilize.
+  s.RunFor(TimeDelta::seconds(20));
+  DataRate min_estimate = DataRate::PlusInfinity();
+  DataRate max_estimate = DataRate::MinusInfinity();
+  // Measure variation in steady state.
+  for (int i = 0; i < 20; ++i) {
+    min_estimate = std::min(min_estimate, client->link_capacity());
+    max_estimate = std::max(max_estimate, client->link_capacity());
+    s.RunFor(TimeDelta::seconds(1));
+  }
+  // We should expect drops by at least 15% (default backoff.)
+  EXPECT_LT(min_estimate / max_estimate, 0.85);
+}
+
+TEST_F(GoogCcNetworkControllerTest, StableEstimateDoesNotVaryInSteadyState) {
+  ScopedFieldTrials trial("WebRTC-Bwe-StableBandwidthEstimate/Enabled/");
+  Scenario s("googcc_unit/stable_is_stable", false);
+  SimulatedTimeClientConfig config;
+  config.transport.cc =
+      TransportControllerConfig::CongestionController::kGoogCcFeedback;
+  NetworkNodeConfig net_conf;
+  net_conf.simulation.bandwidth = DataRate::kbps(500);
+  net_conf.simulation.delay = TimeDelta::ms(100);
+  net_conf.update_frequency = TimeDelta::ms(5);
+  auto send_net = s.CreateSimulationNode(net_conf);
+  auto ret_net = s.CreateSimulationNode(net_conf);
+  SimulatedTimeClient* client = s.CreateSimulatedTimeClient(
+      "send", config, {PacketStreamConfig()}, {send_net}, {ret_net});
+  // Run for a while to allow the estimate to stabilize.
+  s.RunFor(TimeDelta::seconds(20));
+  DataRate min_estimate = DataRate::PlusInfinity();
+  DataRate max_estimate = DataRate::MinusInfinity();
+  // Measure variation in steady state.
+  for (int i = 0; i < 20; ++i) {
+    min_estimate = std::min(min_estimate, client->link_capacity());
+    max_estimate = std::max(max_estimate, client->link_capacity());
+    s.RunFor(TimeDelta::seconds(1));
+  }
+  // We expect no variation under the trial in steady state.
+  EXPECT_GT(min_estimate / max_estimate, 0.95);
+}
+
 }  // namespace test
 }  // namespace webrtc

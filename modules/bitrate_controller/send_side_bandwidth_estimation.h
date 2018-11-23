@@ -31,6 +31,22 @@ namespace webrtc {
 
 class RtcEventLog;
 
+class LinkCapacityTracker {
+ public:
+  LinkCapacityTracker();
+  ~LinkCapacityTracker();
+  void OnOveruse(DataRate acknowledged_rate, Timestamp at_time);
+  void OnStartingRate(DataRate start_rate);
+  void OnRateUpdate(DataRate acknowledged, Timestamp at_time);
+  void OnRttBackoff(DataRate backoff_rate, Timestamp at_time);
+  DataRate estimate() const;
+
+ private:
+  FieldTrialParameter<TimeDelta> tracking_rate;
+  double capacity_estimate_bps_ = 0;
+  Timestamp last_link_capacity_update_ = Timestamp::MinusInfinity();
+};
+
 class RttBasedBackoff {
  public:
   RttBasedBackoff();
@@ -57,7 +73,7 @@ class SendSideBandwidthEstimation {
 
   void OnRouteChange();
   void CurrentEstimate(int* bitrate, uint8_t* loss, int64_t* rtt) const;
-
+  DataRate GetEstimatedLinkCapacity() const;
   // Call periodically to update estimate.
   void UpdateEstimate(Timestamp at_time);
   void OnSentPacket(SentPacket sent_packet);
@@ -90,8 +106,9 @@ class SendSideBandwidthEstimation {
   void SetSendBitrate(DataRate bitrate, Timestamp at_time);
   void SetMinMaxBitrate(DataRate min_bitrate, DataRate max_bitrate);
   int GetMinBitrate() const;
-  void IncomingPacketFeedbackVector(const TransportPacketsFeedback& report,
-                                    absl::optional<DataRate> acked_bitrate);
+  void SetAcknowledgedRate(absl::optional<DataRate> acknowledged_rate,
+                           Timestamp at_time);
+  void IncomingPacketFeedbackVector(const TransportPacketsFeedback& report);
 
  private:
   enum UmaState { kNoUpdate, kFirstDone, kDone };
@@ -112,6 +129,7 @@ class SendSideBandwidthEstimation {
   void CapBitrateToThresholds(Timestamp at_time, DataRate bitrate);
 
   RttBasedBackoff rtt_backoff_;
+  LinkCapacityTracker link_capacity_;
 
   std::deque<std::pair<Timestamp, DataRate> > min_bitrate_history_;
 
@@ -119,6 +137,7 @@ class SendSideBandwidthEstimation {
   int lost_packets_since_last_loss_update_;
   int expected_packets_since_last_loss_update_;
 
+  absl::optional<DataRate> acknowledged_rate_;
   DataRate current_bitrate_;
   DataRate min_bitrate_configured_;
   DataRate max_bitrate_configured_;
