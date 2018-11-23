@@ -54,6 +54,8 @@ enum WindowsMajorVersions {
   kWindowsVista = 6,
   kWindows10 = 10,
 };
+
+#if !defined(WINUWP)
 bool GetOsVersion(int* major, int* minor, int* build);
 
 inline bool IsWindowsVistaOrLater() {
@@ -86,6 +88,34 @@ inline bool IsCurrentProcessLowIntegrity() {
   return (GetCurrentProcessIntegrityLevel(&level) &&
           level < SECURITY_MANDATORY_MEDIUM_RID);
 }
+
+#else
+
+// When targetting WinUWP the OS must be Windows 10 (or greater) as lesser
+// Windows OS targets are not supported.
+inline bool IsWindowsVistaOrLater() {
+  return true;
+}
+
+inline bool IsWindowsXpOrLater() {
+  return true;
+}
+
+inline bool IsWindows8OrLater() {
+  return true;
+}
+
+inline bool IsWindows10OrLater() {
+  return true;
+}
+
+inline bool IsCurrentProcessLowIntegrity() {
+  // For WinUWP sandboxed store assume this is NOT a low integrity level run
+  // as application privileges can be requested in manifest as appropriate.
+  return true;
+}
+
+#endif  // !defined(WINUWP)
 
 }  // namespace rtc
 

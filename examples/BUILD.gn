@@ -47,12 +47,14 @@ group("examples") {
 
   if (is_linux || is_win) {
     deps += [
-      ":peerconnection_client",
       ":peerconnection_server",
       ":relayserver",
       ":stunserver",
       ":turnserver",
     ]
+    if (current_os != "winuwp") {
+      deps += [ ":peerconnection_client" ]
+    }
   }
 
   if (is_android || is_win) {

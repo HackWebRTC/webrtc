@@ -870,11 +870,13 @@ rtc_static_library("rtc_base") {
     ]
 
     if (is_win) {
-      sources += [
-        "win32socketinit.h",
-        "win32socketserver.cc",
-        "win32socketserver.h",
-      ]
+      sources += [ "win32socketinit.h" ]
+      if (current_os != "winuwp") {
+        sources += [
+          "win32socketserver.cc",
+          "win32socketserver.h",
+        ]
+      }
     }
   }  # !build_with_chromium
 

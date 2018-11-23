@@ -331,6 +331,11 @@ bool Utf8ToWindowsFilename(const std::string& utf8, std::wstring* filename) {
   }
   // Replace forward slashes with backslashes
   std::replace(wfilename, wfilename + wlen, L'/', L'\\');
+#if defined(WINUWP)
+  // WinUWP sandboxed store applications require the paths to remain as
+  // relative paths.
+  filename->assign(wfilename);
+#else
   // Convert to complete filename
   DWORD full_len = ::GetFullPathName(wfilename, 0, nullptr, nullptr);
   if (0 == full_len) {
@@ -360,8 +365,17 @@ bool Utf8ToWindowsFilename(const std::string& utf8, std::wstring* filename) {
     // Already in long-path form.
   }
   filename->assign(start);
+#endif  // defined(WINUWP)
+
   return true;
 }
+
+// Windows UWP applications cannot obtain versioning information from
+// the sandbox with intention (as behehaviour based on OS versioning rather
+// than feature discovery / compilation flags is discoraged and Windows
+// 10 is living continously updated version unlike previous versions
+// of Windows).
+#if !defined(WINUWP)
 
 bool GetOsVersion(int* major, int* minor, int* build) {
   OSVERSIONINFO info = {0};
@@ -398,5 +412,7 @@ bool GetCurrentProcessIntegrityLevel(int* level) {
   }
   return ret;
 }
+
+#endif  // !defined(WINUWP)
 
 }  // namespace rtc

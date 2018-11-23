@@ -327,7 +327,7 @@ void LogMessage::ConfigureLogging(const char* params) {
     }
   }
 
-#if defined(WEBRTC_WIN)
+#if defined(WEBRTC_WIN) && !defined(WINUWP)
   if ((LS_NONE != debug_level) && !::IsDebuggerPresent()) {
     // First, attempt to attach to our parent's console... so if you invoke
     // from the command line, we'll see the output there.  Otherwise, create
@@ -336,7 +336,7 @@ void LogMessage::ConfigureLogging(const char* params) {
     if (!AttachConsole(ATTACH_PARENT_PROCESS))
       ::AllocConsole();
   }
-#endif  // WEBRTC_WIN
+#endif  // defined(WEBRTC_WIN) && !defined(WINUWP)
 
   LogToDebug(debug_level);
 }

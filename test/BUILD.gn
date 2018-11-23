@@ -6,8 +6,8 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
-import("../webrtc.gni")
 import("//build/config/ui.gni")
+import("../webrtc.gni")
 if (is_android) {
   import("//build/config/android/rules.gni")
 }
@@ -647,9 +647,15 @@ rtc_source_set("test_common") {
     "statistics.h",
     "video_decoder_proxy_factory.h",
     "video_encoder_proxy_factory.h",
-    "win/run_loop_win.cc",
   ]
-  if (!is_win) {
+  if (current_os != "winuwp") {
+    # The filtering of *_win.cc is not done for WinUWP (intentionally) as
+    # most _win.cc files are compatible with WinUWP. However, the
+    # peek/dispatch Win32 runloops are entirely WinUWP incompatible thus
+    # WinUWP uses the generic runloop as defined for non-Windows targets.
+    sources += [ "win/run_loop_win.cc" ]
+  }
+  if (!is_win || current_os == "winuwp") {
     sources += [
       "run_loop.cc",
       "run_loop.h",

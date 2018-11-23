@@ -45,6 +45,104 @@ ClockInterface* GetClockForTesting() {
   return g_clock;
 }
 
+#if defined(WINUWP)
+
+namespace {
+
+class TimeHelper final {
+ public:
+  TimeHelper(const TimeHelper&) = delete;
+
+  // Resets the clock based upon an NTP server. This routine must be called
+  // prior to the main system start-up to ensure all clocks are based upon
+  // an NTP server time if NTP synchronization is required. No critical
+  // section is used thus this method must be called prior to any clock
+  // routines being used.
+  static void SyncWithNtp(int64_t ntp_server_time_ms) {
+    auto& singleton = Singleton();
+    TIME_ZONE_INFORMATION time_zone;
+    GetTimeZoneInformation(&time_zone);
+    int64_t time_zone_bias_ns =
+        rtc::dchecked_cast<int64_t>(time_zone.Bias) * 60 * 1000 * 1000 * 1000;
+    singleton.app_start_time_ns_ =
+        (ntp_server_time_ms - kNTPTimeToUnixTimeEpochOffset) * 1000000 -
+        time_zone_bias_ns;
+    singleton.UpdateReferenceTime();
+  }
+
+  // Returns the number of nanoseconds that have passed since unix epoch.
+  static int64_t TicksNs() {
+    auto& singleton = Singleton();
+    int64_t result = 0;
+    LARGE_INTEGER qpcnt;
+    QueryPerformanceCounter(&qpcnt);
+    result = rtc::dchecked_cast<int64_t>(
+        (rtc::dchecked_cast<uint64_t>(qpcnt.QuadPart) * 100000 /
+         rtc::dchecked_cast<uint64_t>(singleton.os_ticks_per_second_)) *
+        10000);
+    result = singleton.app_start_time_ns_ + result -
+             singleton.time_since_os_start_ns_;
+    return result;
+  }
+
+ private:
+  TimeHelper() {
+    TIME_ZONE_INFORMATION time_zone;
+    GetTimeZoneInformation(&time_zone);
+    int64_t time_zone_bias_ns =
+        rtc::dchecked_cast<int64_t>(time_zone.Bias) * 60 * 1000 * 1000 * 1000;
+    FILETIME ft;
+    // This will give us system file in UTC format.
+    GetSystemTimeAsFileTime(&ft);
+    LARGE_INTEGER li;
+    li.HighPart = ft.dwHighDateTime;
+    li.LowPart = ft.dwLowDateTime;
+
+    app_start_time_ns_ = (li.QuadPart - kFileTimeToUnixTimeEpochOffset) * 100 -
+                         time_zone_bias_ns;
+
+    UpdateReferenceTime();
+  }
+
+  static TimeHelper& Singleton() {
+    static TimeHelper singleton;
+    return singleton;
+  }
+
+  void UpdateReferenceTime() {
+    LARGE_INTEGER qpfreq;
+    QueryPerformanceFrequency(&qpfreq);
+    os_ticks_per_second_ = rtc::dchecked_cast<int64_t>(qpfreq.QuadPart);
+
+    LARGE_INTEGER qpcnt;
+    QueryPerformanceCounter(&qpcnt);
+    time_since_os_start_ns_ = rtc::dchecked_cast<int64_t>(
+        (rtc::dchecked_cast<uint64_t>(qpcnt.QuadPart) * 100000 /
+         rtc::dchecked_cast<uint64_t>(os_ticks_per_second_)) *
+        10000);
+  }
+
+ private:
+  static constexpr uint64_t kFileTimeToUnixTimeEpochOffset =
+      116444736000000000ULL;
+  static constexpr uint64_t kNTPTimeToUnixTimeEpochOffset = 2208988800000L;
+
+  // The number of nanoseconds since unix system epoch
+  int64_t app_start_time_ns_;
+  // The number of nanoseconds since the OS started
+  int64_t time_since_os_start_ns_;
+  // The OS calculated ticks per second
+  int64_t os_ticks_per_second_;
+};
+
+}  // namespace
+
+void SyncWithNtp(int64_t time_from_ntp_server_ms) {
+  TimeHelper::SyncWithNtp(time_from_ntp_server_ms);
+}
+
+#endif  // defined(WINUWP)
+
 int64_t SystemTimeNanos() {
   int64_t ticks;
 #if defined(WEBRTC_MAC)
@@ -71,6 +169,8 @@ int64_t SystemTimeNanos() {
   clock_gettime(CLOCK_MONOTONIC, &ts);
   ticks = kNumNanosecsPerSec * static_cast<int64_t>(ts.tv_sec) +
           static_cast<int64_t>(ts.tv_nsec);
+#elif defined(WINUWP)
+  ticks = TimeHelper::TicksNs();
 #elif defined(WEBRTC_WIN)
   static volatile LONG last_timegettime = 0;
   static volatile int64_t num_wrap_timegettime = 0;

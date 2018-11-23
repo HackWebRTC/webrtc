@@ -38,7 +38,7 @@
 
 namespace rtc {
 namespace {
-#if defined(WEBRTC_WIN)
+#if defined(WEBRTC_WIN) && !defined(WINUWP)
 ///////////////////////////////////////////////////////////////////////////////
 // ConstantToLabel can be used to easily generate string names from constant
 // values.  This can be useful for logging descriptive names of error messages.
@@ -113,7 +113,7 @@ const ConstantToLabel SECURITY_ERRORS[] = {
     LASTLABEL};
 #undef KLABEL
 #undef LASTLABEL
-#endif  // defined(WEBRTC_WIN)
+#endif  // defined(WEBRTC_WIN) && !defined(WINUWP)
 
 typedef std::pair<std::string, std::string> HttpAttribute;
 typedef std::vector<HttpAttribute> HttpAttributeList;
@@ -225,7 +225,7 @@ std::string quote(const std::string& str) {
   return result;
 }
 
-#if defined(WEBRTC_WIN)
+#if defined(WEBRTC_WIN) && !defined(WINUWP)
 struct NegotiateAuthContext : public HttpAuthContext {
   CredHandle cred;
   CtxtHandle ctx;
@@ -244,7 +244,7 @@ struct NegotiateAuthContext : public HttpAuthContext {
     FreeCredentialsHandle(&cred);
   }
 };
-#endif  // WEBRTC_WIN
+#endif  // defined(WEBRTC_WIN) && !defined(WINUWP)
 
 }  // anonymous namespace
 
@@ -359,7 +359,7 @@ HttpAuthResult HttpAuthenticate(const char* challenge,
     return HAR_RESPONSE;
   }
 
-#if defined(WEBRTC_WIN)
+#if defined(WEBRTC_WIN) && !defined(WINUWP)
 #if 1
   bool want_negotiate = absl::EqualsIgnoreCase(auth_method, "negotiate");
   bool want_ntlm = absl::EqualsIgnoreCase(auth_method, "ntlm");
@@ -544,7 +544,7 @@ HttpAuthResult HttpAuthenticate(const char* challenge,
     return HAR_RESPONSE;
   }
 #endif
-#endif  // WEBRTC_WIN
+#endif  // defined(WEBRTC_WIN) && !defined(WINUWP)
 
   return HAR_IGNORE;
 }
