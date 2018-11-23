@@ -812,14 +812,14 @@ if (is_android) {
                                "visibility",
                              ])
 
-      javac_args = []
+      errorprone_args = []
 
       # Treat warnings as errors.
-      javac_args += [ "-Werror" ]
+      errorprone_args += [ "-Werror" ]
 
       # TODO(crbug.com/824679): Find out why this fails in Chromium
       if (!build_with_chromium) {
-        javac_args += [
+        errorprone_args += [
           "-Xep:ParameterNotNullable:ERROR",
           "-Xep:FieldMissingNullable:ERROR",
           "-Xep:ReturnMissingNullable:ERROR",
@@ -827,8 +827,8 @@ if (is_android) {
       }
 
       # Add any arguments defined by the invoker.
-      if (defined(invoker.javac_args)) {
-        javac_args += invoker.javac_args
+      if (defined(invoker.errorprone_args)) {
+        errorprone_args += invoker.errorprone_args
       }
 
       if (!defined(deps)) {
@@ -852,11 +852,11 @@ if (is_android) {
                              ])
 
       # Treat warnings as errors.
-      javac_args = [ "-Werror" ]
+      errorprone_args = [ "-Werror" ]
 
       # TODO(crbug.com/824679): Find out why this fails in Chromium
       if (!build_with_chromium) {
-        javac_args += [
+        errorprone_args += [
           "-Xep:ParameterNotNullable:ERROR",
           "-Xep:FieldMissingNullable:ERROR",
           "-Xep:ReturnMissingNullable:ERROR",
@@ -884,11 +884,11 @@ if (is_android) {
                              ])
 
       # Treat warnings as errors.
-      javac_args = [ "-Werror" ]
+      errorprone_args = [ "-Werror" ]
 
       # TODO(crbug.com/824679): Find out why this fails in Chromium
       if (!build_with_chromium) {
-        javac_args += [
+        errorprone_args += [
           "-Xep:ParameterNotNullable:ERROR",
           "-Xep:FieldMissingNullable:ERROR",
           "-Xep:ReturnMissingNullable:ERROR",
