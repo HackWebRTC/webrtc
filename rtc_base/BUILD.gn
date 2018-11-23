@@ -243,6 +243,7 @@ rtc_source_set("platform_thread") {
     ":rtc_base_approved",
     ":rtc_task_queue_libevent",
     ":rtc_task_queue_win",
+    ":rtc_task_queue_stdlib",
     ":sequenced_task_checker",
   ]
   sources = [
@@ -604,6 +605,26 @@ if (is_win) {
   }
 }
 
+rtc_source_set("rtc_task_queue_stdlib") {
+  visibility = [ ":rtc_task_queue_impl" ]
+  sources = [
+    "task_queue_stdlib.cc",
+  ]
+  deps = [
+    ":checks",
+    ":criticalsection",
+    ":logging",
+    ":macromagic",
+    ":platform_thread",
+    ":ptr_util",
+    ":refcount",
+    ":rtc_event",
+    ":rtc_task_queue_api",
+    ":safe_conversions",
+    ":timeutils",
+  ]
+}
+
 rtc_source_set("rtc_task_queue_impl") {
   visibility = [ "*" ]
   if (rtc_enable_libevent) {
@@ -617,9 +638,15 @@ rtc_source_set("rtc_task_queue_impl") {
       ]
     }
     if (is_win) {
-      deps = [
-        ":rtc_task_queue_win",
-      ]
+      if (current_os == "winuwp") {
+        deps = [
+          ":rtc_task_queue_stdlib",
+        ]
+      } else {
+        deps = [
+          ":rtc_task_queue_win",
+        ]
+      }
     }
   }
 }
