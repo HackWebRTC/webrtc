@@ -63,8 +63,7 @@ class VP9EncoderImpl : public VP9Encoder {
   void PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
                              absl::optional<int>* spatial_idx,
                              const vpx_codec_cx_pkt& pkt,
-                             uint32_t timestamp,
-                             bool first_frame_in_picture);
+                             uint32_t timestamp);
   void FillReferenceIndices(const vpx_codec_cx_pkt& pkt,
                             const size_t pic_num,
                             const bool inter_layer_predicted,
@@ -120,6 +119,8 @@ class VP9EncoderImpl : public VP9Encoder {
   InterLayerPredMode inter_layer_pred_;
   bool external_ref_control_;
   const bool trusted_rate_controller_;
+  const bool full_superframe_drop_;
+  bool first_frame_in_picture_;
 
   std::vector<FramerateController> framerate_controller_;
 
