@@ -379,6 +379,9 @@ rtc_source_set("sanitizer") {
   sources = [
     "sanitizer.h",
   ]
+  deps = [
+    "//third_party/abseil-cpp/absl/meta:type_traits",
+  ]
 }
 
 rtc_source_set("safe_compare") {
