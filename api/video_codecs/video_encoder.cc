@@ -106,25 +106,9 @@ int32_t VideoEncoder::SetRateAllocation(
   return SetRates(allocation.get_sum_kbps(), framerate);
 }
 
-VideoEncoder::ScalingSettings VideoEncoder::GetScalingSettings() const {
-  return ScalingSettings::kOff;
-}
-
-bool VideoEncoder::SupportsNativeHandle() const {
-  return false;
-}
-
-const char* VideoEncoder::ImplementationName() const {
-  return "unknown";
-}
-
-// TODO(webrtc:9722): Remove and make pure virtual when the three legacy
-// methods called here are gone.
+// TODO(webrtc:9722): Remove and make pure virtual.
 VideoEncoder::EncoderInfo VideoEncoder::GetEncoderInfo() const {
-  EncoderInfo info;
-  info.scaling_settings = GetScalingSettings();
-  info.supports_native_handle = SupportsNativeHandle();
-  info.implementation_name = ImplementationName();
-  return info;
+  return EncoderInfo();
 }
+
 }  // namespace webrtc
