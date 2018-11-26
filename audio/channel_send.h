@@ -55,7 +55,6 @@ class ChannelSendInterface {
  public:
   virtual ~ChannelSendInterface() = default;
 
-  virtual void RegisterTransport(Transport* transport) = 0;
   virtual bool ReceivedRTCPPacket(const uint8_t* packet, size_t length) = 0;
 
   virtual CallSendStatistics GetRTCPStatistics() const = 0;
@@ -115,6 +114,7 @@ std::unique_ptr<ChannelSendInterface> CreateChannelSend(
     rtc::TaskQueue* encoder_queue,
     ProcessThread* module_process_thread,
     MediaTransportInterface* media_transport,
+    Transport* rtp_transport,
     RtcpRttStats* rtcp_rtt_stats,
     RtcEventLog* rtc_event_log,
     FrameEncryptorInterface* frame_encryptor,

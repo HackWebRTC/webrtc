@@ -90,7 +90,6 @@ class MockChannelSend : public voe::ChannelSendInterface {
   MOCK_METHOD2(SendTelephoneEventOutband, bool(int event, int duration_ms));
   MOCK_METHOD1(OnBitrateAllocation, void(BitrateAllocationUpdate update));
   MOCK_METHOD1(SetInputMute, void(bool muted));
-  MOCK_METHOD1(RegisterTransport, void(Transport* transport));
   MOCK_METHOD2(ReceivedRTCPPacket, bool(const uint8_t* packet, size_t length));
   // GMock doesn't like move-only types, like std::unique_ptr.
   virtual void ProcessAndEncodeAudio(std::unique_ptr<AudioFrame> audio_frame) {

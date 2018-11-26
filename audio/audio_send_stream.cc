@@ -111,6 +111,7 @@ AudioSendStream::AudioSendStream(
                       voe::CreateChannelSend(worker_queue,
                                              module_process_thread,
                                              config.media_transport,
+                                             config.send_transport,
                                              rtcp_rtt_stats,
                                              event_log,
                                              config.frame_encryptor,
@@ -171,7 +172,6 @@ AudioSendStream::~AudioSendStream() {
   RTC_DCHECK(!sending_);
   if (rtp_transport_) {
     rtp_transport_->DeRegisterPacketFeedbackObserver(this);
-    channel_send_->RegisterTransport(nullptr);
     channel_send_->ResetSenderCongestionControlObjects();
   }
 }
@@ -214,6 +214,10 @@ void AudioSendStream::ConfigureStream(
   const auto& channel_send = stream->channel_send_;
   const auto& old_config = stream->config_;
 
+  // Configuration parameters which cannot be changed.
+  RTC_DCHECK(first_time ||
+             old_config.send_transport == new_config.send_transport);
+
   if (first_time || old_config.rtp.ssrc != new_config.rtp.ssrc) {
     channel_send->SetLocalSSRC(new_config.rtp.ssrc);
     if (stream->suspended_rtp_state_) {
@@ -222,10 +226,6 @@ void AudioSendStream::ConfigureStream(
   }
   if (first_time || old_config.rtp.c_name != new_config.rtp.c_name) {
     channel_send->SetRTCP_CNAME(new_config.rtp.c_name);
-  }
-
-  if (first_time || new_config.send_transport != old_config.send_transport) {
-    channel_send->RegisterTransport(new_config.send_transport);
   }
 
   // Enable the frame encryptor if a new frame encryptor has been provided.

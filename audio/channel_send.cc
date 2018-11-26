@@ -91,6 +91,7 @@ class ChannelSend
   ChannelSend(rtc::TaskQueue* encoder_queue,
               ProcessThread* module_process_thread,
               MediaTransportInterface* media_transport,
+              Transport* rtp_transport,
               RtcpRttStats* rtcp_rtt_stats,
               RtcEventLog* rtc_event_log,
               FrameEncryptorInterface* frame_encryptor,
@@ -115,7 +116,6 @@ class ChannelSend
   int GetBitrate() const override;
 
   // Network
-  void RegisterTransport(Transport* transport) override;
   bool ReceivedRTCPPacket(const uint8_t* data, size_t length) override;
 
   // Muting, Volume and Level.
@@ -254,7 +254,7 @@ class ChannelSend
 
   // uses
   ProcessThread* const _moduleProcessThreadPtr;
-  Transport* _transportPtr;  // WebRtc socket or external transport
+  Transport* const _transportPtr;  // WebRtc socket or external transport
   RmsLevel rms_level_ RTC_GUARDED_BY(encoder_queue_);
   bool input_mute_ RTC_GUARDED_BY(volume_settings_critsect_);
   bool previous_frame_muted_ RTC_GUARDED_BY(encoder_queue_);
@@ -683,6 +683,7 @@ bool ChannelSend::SendRtcp(const uint8_t* data, size_t len) {
 ChannelSend::ChannelSend(rtc::TaskQueue* encoder_queue,
                          ProcessThread* module_process_thread,
                          MediaTransportInterface* media_transport,
+                         Transport* rtp_transport,
                          RtcpRttStats* rtcp_rtt_stats,
                          RtcEventLog* rtc_event_log,
                          FrameEncryptorInterface* frame_encryptor,
@@ -694,7 +695,7 @@ ChannelSend::ChannelSend(rtc::TaskQueue* encoder_queue,
                       // random offset
       send_sequence_number_(0),
       _moduleProcessThreadPtr(module_process_thread),
-      _transportPtr(NULL),
+      _transportPtr(rtp_transport),
       input_mute_(false),
       previous_frame_muted_(false),
       _includeAudioLevelIndication(false),
@@ -951,12 +952,6 @@ void ChannelSend::OnUplinkPacketLossRate(float packet_loss_rate) {
       (*encoder)->OnReceivedUplinkPacketLossFraction(packet_loss_rate);
     }
   });
-}
-
-void ChannelSend::RegisterTransport(Transport* transport) {
-  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
-  rtc::CritScope cs(&_callbackCritSect);
-  _transportPtr = transport;
 }
 
 // TODO(nisse): Delete always-true return value.
@@ -1344,6 +1339,7 @@ std::unique_ptr<ChannelSendInterface> CreateChannelSend(
     rtc::TaskQueue* encoder_queue,
     ProcessThread* module_process_thread,
     MediaTransportInterface* media_transport,
+    Transport* rtp_transport,
     RtcpRttStats* rtcp_rtt_stats,
     RtcEventLog* rtc_event_log,
     FrameEncryptorInterface* frame_encryptor,
@@ -1351,9 +1347,9 @@ std::unique_ptr<ChannelSendInterface> CreateChannelSend(
     bool extmap_allow_mixed,
     int rtcp_report_interval_ms) {
   return absl::make_unique<ChannelSend>(
-      encoder_queue, module_process_thread, media_transport, rtcp_rtt_stats,
-      rtc_event_log, frame_encryptor, crypto_options, extmap_allow_mixed,
-      rtcp_report_interval_ms);
+      encoder_queue, module_process_thread, media_transport, rtp_transport,
+      rtcp_rtt_stats, rtc_event_log, frame_encryptor, crypto_options,
+      extmap_allow_mixed, rtcp_report_interval_ms);
 }
 
 }  // namespace voe
