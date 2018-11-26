@@ -20,7 +20,6 @@
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/rate_statistics.h"
 #include "rtc_base/thread_annotations.h"
-#include "system_wrappers/include/ntp_time.h"
 
 namespace webrtc {
 
@@ -57,7 +56,7 @@ class StreamStatisticianImpl : public StreamStatistician,
       RTC_EXCLUSIVE_LOCKS_REQUIRED(stream_lock_);
   RtcpStatistics CalculateRtcpStatistics()
       RTC_EXCLUSIVE_LOCKS_REQUIRED(stream_lock_);
-  void UpdateJitter(const RtpPacketReceived& packet, NtpTime receive_time)
+  void UpdateJitter(const RtpPacketReceived& packet, int64_t receive_time_ms)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(stream_lock_);
   StreamDataCounters UpdateCounters(const RtpPacketReceived& packet);
 
@@ -74,7 +73,6 @@ class StreamStatisticianImpl : public StreamStatistician,
   uint32_t cumulative_loss_ RTC_GUARDED_BY(&stream_lock_);
 
   int64_t last_receive_time_ms_ RTC_GUARDED_BY(&stream_lock_);
-  NtpTime last_receive_time_ntp_ RTC_GUARDED_BY(&stream_lock_);
   uint32_t last_received_timestamp_ RTC_GUARDED_BY(&stream_lock_);
   uint16_t received_seq_first_ RTC_GUARDED_BY(&stream_lock_);
   uint16_t received_seq_max_ RTC_GUARDED_BY(&stream_lock_);

@@ -31,12 +31,6 @@ NtpTime TimeMicrosToNtp(int64_t time_us);
 // rtc::TimeMicros()
 int64_t NtpOffsetMs();
 
-// Converts NTP timestamp to RTP timestamp.
-inline uint32_t NtpToRtp(NtpTime ntp, uint32_t freq) {
-  uint32_t tmp = (static_cast<uint64_t>(ntp.fractions()) * freq) >> 32;
-  return ntp.seconds() * freq + tmp;
-}
-
 // Helper function for compact ntp representation:
 // RFC 3550, Section 4. Time Format.
 // Wallclock time is represented using the timestamp format of

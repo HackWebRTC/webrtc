@@ -93,9 +93,6 @@ StreamDataCounters StreamStatisticianImpl::UpdateCounters(
   // Count only the new packets received. That is, if packets 1, 2, 3, 5, 4, 6
   // are received, 4 will be ignored.
   if (in_order) {
-    // Current time in samples.
-    NtpTime receive_time = clock_->CurrentNtpTime();
-
     // Wrong if we use RetransmitOfOldPacket.
     if (receive_counters_.transmitted.packets > 1 &&
         received_seq_max_ > packet.SequenceNumber()) {
@@ -110,23 +107,22 @@ StreamDataCounters StreamStatisticianImpl::UpdateCounters(
     if (packet.Timestamp() != last_received_timestamp_ &&
         (receive_counters_.transmitted.packets -
          receive_counters_.retransmitted.packets) > 1) {
-      UpdateJitter(packet, receive_time);
+      UpdateJitter(packet, now_ms);
     }
     last_received_timestamp_ = packet.Timestamp();
-    last_receive_time_ntp_ = receive_time;
     last_receive_time_ms_ = now_ms;
   }
   return receive_counters_;
 }
 
 void StreamStatisticianImpl::UpdateJitter(const RtpPacketReceived& packet,
-                                          NtpTime receive_time) {
-  uint32_t receive_time_rtp =
-      NtpToRtp(receive_time, packet.payload_type_frequency());
-  uint32_t last_receive_time_rtp =
-      NtpToRtp(last_receive_time_ntp_, packet.payload_type_frequency());
-  int32_t time_diff_samples = (receive_time_rtp - last_receive_time_rtp) -
-                              (packet.Timestamp() - last_received_timestamp_);
+                                          int64_t receive_time_ms) {
+  int64_t receive_diff_ms = receive_time_ms - last_receive_time_ms_;
+  RTC_DCHECK_GE(receive_diff_ms, 0);
+  uint32_t receive_diff_rtp = static_cast<uint32_t>(
+      (receive_diff_ms * packet.payload_type_frequency()) / 1000);
+  int32_t time_diff_samples =
+      receive_diff_rtp - (packet.Timestamp() - last_received_timestamp_);
 
   time_diff_samples = std::abs(time_diff_samples);
 
@@ -195,7 +191,7 @@ bool StreamStatisticianImpl::GetActiveStatisticsAndReset(
     RtcpStatistics* statistics) {
   {
     rtc::CritScope cs(&stream_lock_);
-    if (clock_->CurrentNtpInMilliseconds() - last_receive_time_ntp_.ToMs() >=
+    if (clock_->TimeInMilliseconds() - last_receive_time_ms_ >=
         kStatisticsTimeoutMs) {
       // Not active.
       return false;
