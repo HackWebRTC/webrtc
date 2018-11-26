@@ -21,6 +21,13 @@
 #include "api/transport/network_control.h"
 #include "rtc_base/scoped_ref_ptr.h"
 
+namespace rtc {
+// TODO(bugs.webrtc.org/9987): Move rtc::Thread to api/ or expose a better
+// type. At the moment, rtc::Thread is not part of api/ so it cannot be
+// included in order to avoid to leak internal types.
+class Thread;
+}  // namespace rtc
+
 namespace cricket {
 class WebRtcVideoDecoderFactory;
 class WebRtcVideoEncoderFactory;
@@ -30,7 +37,6 @@ namespace webrtc {
 
 class AudioDeviceModule;
 class AudioProcessing;
-class Thread;
 
 #if defined(USE_BUILTIN_SW_CODECS)
 // Create a new instance of PeerConnectionFactoryInterface.
