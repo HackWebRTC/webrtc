@@ -2801,4 +2801,42 @@ TEST(MAYBE_ApmStatistics, AECMEnabledTest) {
   EXPECT_FALSE(stats.delay_median_ms);
   EXPECT_FALSE(stats.delay_standard_deviation_ms);
 }
+
+TEST(ApmStatistics, ReportOutputRmsDbfs) {
+  ProcessingConfig processing_config = {
+      {{32000, 1}, {32000, 1}, {32000, 1}, {32000, 1}}};
+  AudioProcessing::Config config;
+
+  // Set up an audioframe.
+  AudioFrame frame;
+  frame.num_channels_ = 1;
+  SetFrameSampleRate(&frame, AudioProcessing::NativeRate::kSampleRate48kHz);
+
+  // Fill the audio frame with a sawtooth pattern.
+  int16_t* ptr = frame.mutable_data();
+  for (size_t i = 0; i < frame.kMaxDataSizeSamples; i++) {
+    ptr[i] = 10000 * ((i % 3) - 1);
+  }
+
+  std::unique_ptr<AudioProcessing> apm(AudioProcessingBuilder().Create());
+  apm->Initialize(processing_config);
+
+  // If not enabled, no metric should be reported.
+  EXPECT_EQ(apm->ProcessStream(&frame), 0);
+  EXPECT_FALSE(apm->GetStatistics(false).output_rms_dbfs);
+
+  // If enabled, metrics should be reported.
+  config.level_estimation.enabled = true;
+  apm->ApplyConfig(config);
+  EXPECT_EQ(apm->ProcessStream(&frame), 0);
+  auto stats = apm->GetStatistics(false);
+  EXPECT_TRUE(stats.output_rms_dbfs);
+  EXPECT_GE(*stats.output_rms_dbfs, 0);
+
+  // If re-disabled, the value is again not reported.
+  config.level_estimation.enabled = false;
+  apm->ApplyConfig(config);
+  EXPECT_EQ(apm->ProcessStream(&frame), 0);
+  EXPECT_FALSE(apm->GetStatistics(false).output_rms_dbfs);
+}
 }  // namespace webrtc

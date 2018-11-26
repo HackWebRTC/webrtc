@@ -283,6 +283,11 @@ class AudioProcessing : public rtc::RefCountInterface {
       } adaptive_digital;
     } gain_controller2;
 
+    // Enables reporting of |output_rms_dbfs| in webrtc::AudioProcessingStats.
+    struct LevelEstimation {
+      bool enabled = false;
+    } level_estimation;
+
     // Explicit copy assignment implementation to avoid issues with memory
     // sanitizer complaints in case of self-assignment.
     // TODO(peah): Add buildflag to ensure that this is only included for memory

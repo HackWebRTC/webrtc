@@ -259,6 +259,7 @@ struct AudioProcessingImpl::ApmPrivateSubmodules {
   std::unique_ptr<CustomProcessing> render_pre_processor;
   std::unique_ptr<GainApplier> pre_amplifier;
   std::unique_ptr<CustomAudioAnalyzer> capture_analyzer;
+  std::unique_ptr<LevelEstimatorImpl> output_level_estimator;
 };
 
 AudioProcessingBuilder::AudioProcessingBuilder() = default;
@@ -673,6 +674,13 @@ void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
                    << config_.gain_controller2.enabled;
   RTC_LOG(LS_INFO) << "Pre-amplifier activated: "
                    << config_.pre_amplifier.enabled;
+
+  if (config_.level_estimation.enabled &&
+      !private_submodules_->output_level_estimator) {
+    private_submodules_->output_level_estimator.reset(
+        new LevelEstimatorImpl(&crit_capture_));
+    private_submodules_->output_level_estimator->Enable(true);
+  }
 }
 
 void AudioProcessingImpl::SetExtraOptions(const webrtc::Config& config) {
@@ -1336,6 +1344,13 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
 
   // The level estimator operates on the recombined data.
   public_submodules_->level_estimator->ProcessStream(capture_buffer);
+  if (config_.level_estimation.enabled) {
+    private_submodules_->output_level_estimator->ProcessStream(capture_buffer);
+    capture_.stats.output_rms_dbfs =
+        private_submodules_->output_level_estimator->RMS();
+  } else {
+    capture_.stats.output_rms_dbfs = absl::nullopt;
+  }
 
   capture_output_rms_.Analyze(rtc::ArrayView<const int16_t>(
       capture_buffer->channels_const()[0],
@@ -1587,49 +1602,50 @@ void AudioProcessingImpl::DetachPlayoutAudioGenerator() {
 
 AudioProcessingStats AudioProcessingImpl::GetStatistics(
     bool has_remote_tracks) const {
-  AudioProcessingStats stats;
-  if (has_remote_tracks) {
-    EchoCancellationImpl::Metrics metrics;
-    rtc::CritScope cs_capture(&crit_capture_);
-    if (private_submodules_->echo_controller) {
-      auto ec_metrics = private_submodules_->echo_controller->GetMetrics();
-      stats.echo_return_loss = ec_metrics.echo_return_loss;
+  rtc::CritScope cs_capture(&crit_capture_);
+  if (!has_remote_tracks) {
+    return capture_.stats;
+  }
+  AudioProcessingStats stats = capture_.stats;
+  EchoCancellationImpl::Metrics metrics;
+  if (private_submodules_->echo_controller) {
+    auto ec_metrics = private_submodules_->echo_controller->GetMetrics();
+    stats.echo_return_loss = ec_metrics.echo_return_loss;
+    stats.echo_return_loss_enhancement =
+        ec_metrics.echo_return_loss_enhancement;
+    stats.delay_ms = ec_metrics.delay_ms;
+  } else if (private_submodules_->echo_cancellation->GetMetrics(&metrics) ==
+             Error::kNoError) {
+    if (metrics.divergent_filter_fraction != -1.0f) {
+      stats.divergent_filter_fraction =
+          absl::optional<double>(metrics.divergent_filter_fraction);
+    }
+    if (metrics.echo_return_loss.instant != -100) {
+      stats.echo_return_loss =
+          absl::optional<double>(metrics.echo_return_loss.instant);
+    }
+    if (metrics.echo_return_loss_enhancement.instant != -100) {
       stats.echo_return_loss_enhancement =
-          ec_metrics.echo_return_loss_enhancement;
-      stats.delay_ms = ec_metrics.delay_ms;
-    } else if (private_submodules_->echo_cancellation->GetMetrics(&metrics) ==
-               Error::kNoError) {
-      if (metrics.divergent_filter_fraction != -1.0f) {
-        stats.divergent_filter_fraction =
-            absl::optional<double>(metrics.divergent_filter_fraction);
-      }
-      if (metrics.echo_return_loss.instant != -100) {
-        stats.echo_return_loss =
-            absl::optional<double>(metrics.echo_return_loss.instant);
-      }
-      if (metrics.echo_return_loss_enhancement.instant != -100) {
-        stats.echo_return_loss_enhancement = absl::optional<double>(
-            metrics.echo_return_loss_enhancement.instant);
-      }
+          absl::optional<double>(metrics.echo_return_loss_enhancement.instant);
     }
-    if (config_.residual_echo_detector.enabled) {
-      RTC_DCHECK(private_submodules_->echo_detector);
-      auto ed_metrics = private_submodules_->echo_detector->GetMetrics();
-      stats.residual_echo_likelihood = ed_metrics.echo_likelihood;
-      stats.residual_echo_likelihood_recent_max =
-          ed_metrics.echo_likelihood_recent_max;
+  }
+  if (config_.residual_echo_detector.enabled) {
+    RTC_DCHECK(private_submodules_->echo_detector);
+    auto ed_metrics = private_submodules_->echo_detector->GetMetrics();
+    stats.residual_echo_likelihood = ed_metrics.echo_likelihood;
+    stats.residual_echo_likelihood_recent_max =
+        ed_metrics.echo_likelihood_recent_max;
+  }
+  int delay_median, delay_std;
+  float fraction_poor_delays;
+  if (private_submodules_->echo_cancellation->GetDelayMetrics(
+          &delay_median, &delay_std, &fraction_poor_delays) ==
+      Error::kNoError) {
+    if (delay_median >= 0) {
+      stats.delay_median_ms = absl::optional<int32_t>(delay_median);
     }
-    int delay_median, delay_std;
-    float fraction_poor_delays;
-    if (private_submodules_->echo_cancellation->GetDelayMetrics(
-            &delay_median, &delay_std, &fraction_poor_delays) ==
-        Error::kNoError) {
-      if (delay_median >= 0) {
-        stats.delay_median_ms = absl::optional<int32_t>(delay_median);
-      }
-      if (delay_std >= 0) {
-        stats.delay_standard_deviation_ms = absl::optional<int32_t>(delay_std);
-      }
+    if (delay_std >= 0) {
+      stats.delay_standard_deviation_ms = absl::optional<int32_t>(delay_std);
     }
   }
   return stats;
