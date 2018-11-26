@@ -809,11 +809,11 @@ TEST_F(RTCStatsIntegrationTest, GetStatsWithInvalidReceiverSelector) {
   EXPECT_FALSE(report->size());
 }
 
-// TODO(bugs.webrtc.org/9847) Remove this test altogether if a proper fix cannot
-// be found. For now it is lying, as we cannot safely gets stats while
-// destroying PeerConnection.
+// TODO(bugs.webrtc.org/10041) For now this is equivalent to the following
+// test GetsStatsWhileClosingPeerConnection, because pc() is closed by
+// PeerConnectionTestWrapper. See: bugs.webrtc.org/9847
 TEST_F(RTCStatsIntegrationTest,
-       DISABLED_GetsStatsWhileDestroyingPeerConnection) {
+       DISABLED_GetStatsWhileDestroyingPeerConnection) {
   StartCall();
 
   rtc::scoped_refptr<RTCStatsObtainer> stats_obtainer =
