@@ -279,6 +279,7 @@ void WebRtcVoiceEngine::Init() {
     options.stereo_swapping = false;
     options.audio_jitter_buffer_max_packets = 50;
     options.audio_jitter_buffer_fast_accelerate = false;
+    options.audio_jitter_buffer_min_delay_ms = 0;
     options.typing_detection = true;
     options.experimental_agc = false;
     options.extended_filter_aec = false;
@@ -481,6 +482,12 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
                      << *options.audio_jitter_buffer_fast_accelerate;
     audio_jitter_buffer_fast_accelerate_ =
         *options.audio_jitter_buffer_fast_accelerate;
+  }
+  if (options.audio_jitter_buffer_min_delay_ms) {
+    RTC_LOG(LS_INFO) << "NetEq minimum delay is "
+                     << *options.audio_jitter_buffer_min_delay_ms;
+    audio_jitter_buffer_min_delay_ms_ =
+        *options.audio_jitter_buffer_min_delay_ms;
   }
 
   if (options.typing_detection) {
@@ -1091,6 +1098,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
       absl::optional<webrtc::AudioCodecPairId> codec_pair_id,
       size_t jitter_buffer_max_packets,
       bool jitter_buffer_fast_accelerate,
+      int jitter_buffer_min_delay_ms,
       rtc::scoped_refptr<webrtc::FrameDecryptorInterface> frame_decryptor,
       const webrtc::CryptoOptions& crypto_options)
       : call_(call), config_() {
@@ -1104,6 +1112,7 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
     config_.media_transport = media_transport;
     config_.jitter_buffer_max_packets = jitter_buffer_max_packets;
     config_.jitter_buffer_fast_accelerate = jitter_buffer_fast_accelerate;
+    config_.jitter_buffer_min_delay_ms = jitter_buffer_min_delay_ms;
     if (!stream_ids.empty()) {
       config_.sync_group = stream_ids[0];
     }
@@ -1902,6 +1911,7 @@ bool WebRtcVoiceMediaChannel::AddRecvStream(const StreamParams& sp) {
           this, media_transport(), engine()->decoder_factory_, decoder_map_,
           codec_pair_id_, engine()->audio_jitter_buffer_max_packets_,
           engine()->audio_jitter_buffer_fast_accelerate_,
+          engine()->audio_jitter_buffer_min_delay_ms_,
           unsignaled_frame_decryptor_, crypto_options_)));
   recv_streams_[ssrc]->SetPlayout(playout_);
 

@@ -135,6 +135,7 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
     uint32_t remote_ssrc,
     size_t jitter_buffer_max_packets,
     bool jitter_buffer_fast_playout,
+    int jitter_buffer_min_delay_ms,
     rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
     absl::optional<AudioCodecPairId> codec_pair_id,
     rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor,

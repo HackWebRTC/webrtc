@@ -714,6 +714,7 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
     CandidateNetworkPolicy candidate_network_policy;
     int audio_jitter_buffer_max_packets;
     bool audio_jitter_buffer_fast_accelerate;
+    int audio_jitter_buffer_min_delay_ms;
     int ice_connection_receiving_timeout;
     int ice_backup_candidate_pair_ping_interval;
     ContinualGatheringPolicy continual_gathering_policy;
@@ -750,6 +751,8 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
          audio_jitter_buffer_max_packets == o.audio_jitter_buffer_max_packets &&
          audio_jitter_buffer_fast_accelerate ==
              o.audio_jitter_buffer_fast_accelerate &&
+         audio_jitter_buffer_min_delay_ms ==
+             o.audio_jitter_buffer_min_delay_ms &&
          ice_connection_receiving_timeout ==
              o.ice_connection_receiving_timeout &&
          ice_backup_candidate_pair_ping_interval ==
@@ -1071,6 +1074,9 @@ bool PeerConnection::Initialize(
 
   audio_options_.audio_jitter_buffer_fast_accelerate =
       configuration.audio_jitter_buffer_fast_accelerate;
+
+  audio_options_.audio_jitter_buffer_min_delay_ms =
+      configuration.audio_jitter_buffer_min_delay_ms;
 
   // Whether the certificate generator/certificate is null or not determines
   // what PeerConnectionDescriptionFactory will do, so make sure that we give it

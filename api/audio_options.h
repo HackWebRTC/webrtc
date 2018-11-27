@@ -54,6 +54,8 @@ struct AudioOptions {
   absl::optional<int> audio_jitter_buffer_max_packets;
   // Audio receiver jitter buffer (NetEq) fast accelerate mode.
   absl::optional<bool> audio_jitter_buffer_fast_accelerate;
+  // Audio receiver jitter buffer (NetEq) minimum target delay in milliseconds.
+  absl::optional<int> audio_jitter_buffer_min_delay_ms;
   // Audio processing to detect typing.
   absl::optional<bool> typing_detection;
   absl::optional<bool> experimental_agc;

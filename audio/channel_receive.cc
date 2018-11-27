@@ -102,6 +102,7 @@ class ChannelReceive : public ChannelReceiveInterface,
                  uint32_t remote_ssrc,
                  size_t jitter_buffer_max_packets,
                  bool jitter_buffer_fast_playout,
+                 int jitter_buffer_min_delay_ms,
                  rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
                  absl::optional<AudioCodecPairId> codec_pair_id,
                  rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor,
@@ -449,6 +450,7 @@ ChannelReceive::ChannelReceive(
     uint32_t remote_ssrc,
     size_t jitter_buffer_max_packets,
     bool jitter_buffer_fast_playout,
+    int jitter_buffer_min_delay_ms,
     rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
     absl::optional<AudioCodecPairId> codec_pair_id,
     rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor,
@@ -481,6 +483,7 @@ ChannelReceive::ChannelReceive(
   acm_config.neteq_config.codec_pair_id = codec_pair_id;
   acm_config.neteq_config.max_packets_in_buffer = jitter_buffer_max_packets;
   acm_config.neteq_config.enable_fast_accelerate = jitter_buffer_fast_playout;
+  acm_config.neteq_config.min_delay_ms = jitter_buffer_min_delay_ms;
   acm_config.neteq_config.enable_muted_state = true;
   audio_coding_.reset(AudioCodingModule::Create(acm_config));
 
@@ -978,6 +981,7 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
     uint32_t remote_ssrc,
     size_t jitter_buffer_max_packets,
     bool jitter_buffer_fast_playout,
+    int jitter_buffer_min_delay_ms,
     rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
     absl::optional<AudioCodecPairId> codec_pair_id,
     rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor,
@@ -985,8 +989,9 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
   return absl::make_unique<ChannelReceive>(
       module_process_thread, audio_device_module, media_transport,
       rtcp_send_transport, rtc_event_log, remote_ssrc,
-      jitter_buffer_max_packets, jitter_buffer_fast_playout, decoder_factory,
-      codec_pair_id, frame_decryptor, crypto_options);
+      jitter_buffer_max_packets, jitter_buffer_fast_playout,
+      jitter_buffer_min_delay_ms, decoder_factory, codec_pair_id,
+      frame_decryptor, crypto_options);
 }
 
 }  // namespace voe
