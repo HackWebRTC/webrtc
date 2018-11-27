@@ -14,6 +14,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "p2p/base/port.h"
 #include "pc/srtpfilter.h"
 #include "rtc_base/bind.h"
@@ -425,8 +426,8 @@ JsepTransportController::CreateDtlsTransport(const std::string& transport_name,
     auto ice = absl::make_unique<cricket::P2PTransportChannel>(
         transport_name, component, port_allocator_, async_resolver_factory_,
         config_.event_log);
-    dtls = absl::make_unique<cricket::DtlsTransport>(std::move(ice),
-                                                     config_.crypto_options);
+    dtls = absl::make_unique<cricket::DtlsTransport>(
+        std::move(ice), config_.crypto_options, config_.event_log);
   }
 
   RTC_DCHECK(dtls);

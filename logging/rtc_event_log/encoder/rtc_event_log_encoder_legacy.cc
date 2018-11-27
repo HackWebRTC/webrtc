@@ -297,6 +297,10 @@ std::string RtcEventLogEncoderLegacy::Encode(const RtcEvent& event) {
       return EncodeBweUpdateLossBased(rtc_event);
     }
 
+    case RtcEvent::Type::DtlsTransportState: {
+      return "";
+    }
+
     case RtcEvent::Type::IceCandidatePairConfig: {
       auto& rtc_event =
           static_cast<const RtcEventIceCandidatePairConfig&>(event);

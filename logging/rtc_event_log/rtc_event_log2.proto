@@ -32,6 +32,7 @@ message EventStream {
   repeated AlrState alr_states = 24;
   repeated IceCandidatePairConfig ice_candidate_configs = 25;
   repeated IceCandidatePairEvent ice_candidate_events = 26;
+  repeated DtlsTransportStateEvent dtls_transport_state_events = 27;
 
   repeated AudioRecvStreamConfig audio_recv_stream_configs = 101;
   repeated AudioSendStreamConfig audio_send_stream_configs = 102;
@@ -570,4 +571,21 @@ message IceCandidatePairEvent {
 
   // required
   optional uint32 candidate_pair_id = 3;
+}
+
+message DtlsTransportStateEvent {
+  enum DtlsTransportState {
+    UNKNOWN_DTLS_TRANSPORT_STATE = 0;
+    DTLS_TRANSPORT_NEW = 1;
+    DTLS_TRANSPORT_CONNECTING = 2;
+    DTLS_TRANSPORT_CONNECTED = 3;
+    DTLS_TRANSPORT_CLOSED = 4;
+    DTLS_TRANSPORT_FAILED = 5;
+  }
+
+  // required
+  optional int64 timestamp_ms = 1;
+
+  // required
+  optional DtlsTransportState dtls_transport_state = 2;
 }

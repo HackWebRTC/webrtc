@@ -130,6 +130,14 @@ EventGenerator::NewBweUpdateLossBased() {
       bitrate_bps, fraction_lost, total_packets);
 }
 
+std::unique_ptr<RtcEventDtlsTransportState>
+EventGenerator::NewDtlsTransportState() {
+  DtlsTransportState state = static_cast<DtlsTransportState>(
+      prng_.Rand(static_cast<uint32_t>(DtlsTransportState::kNumValues) - 1));
+
+  return absl::make_unique<RtcEventDtlsTransportState>(state);
+}
+
 std::unique_ptr<RtcEventProbeClusterCreated>
 EventGenerator::NewProbeClusterCreated() {
   constexpr int kMaxBweBps = 20000000;
@@ -590,6 +598,14 @@ void EventVerifier::VerifyLoggedBweProbeSuccessEvent(
   EXPECT_EQ(original_event.timestamp_ms(), logged_event.log_time_ms());
   EXPECT_EQ(original_event.id(), logged_event.id);
   EXPECT_EQ(original_event.bitrate_bps(), logged_event.bitrate_bps);
+}
+
+void EventVerifier::VerifyLoggedDtlsTransportState(
+    const RtcEventDtlsTransportState& original_event,
+    const LoggedDtlsTransportState& logged_event) const {
+  EXPECT_EQ(original_event.timestamp_ms(), logged_event.log_time_ms());
+  EXPECT_EQ(original_event.dtls_transport_state(),
+            logged_event.dtls_transport_state);
 }
 
 void EventVerifier::VerifyLoggedIceCandidatePairConfig(

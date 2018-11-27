@@ -37,6 +37,7 @@ class RtcEvent {
     AudioSendStreamConfig,
     BweUpdateDelayBased,
     BweUpdateLossBased,
+    DtlsTransportState,
     IceCandidatePairConfig,
     IceCandidatePairEvent,
     ProbeClusterCreated,
