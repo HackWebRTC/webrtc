@@ -518,6 +518,10 @@ void BasicPortAllocatorSession::GetCandidatesFromPort(
   }
 }
 
+bool BasicPortAllocatorSession::MdnsObfuscationEnabled() const {
+  return allocator_->network_manager()->GetMdnsResponder() != nullptr;
+}
+
 Candidate BasicPortAllocatorSession::SanitizeCandidate(
     const Candidate& c) const {
   RTC_DCHECK_RUN_ON(network_thread_);
@@ -534,7 +538,7 @@ Candidate BasicPortAllocatorSession::SanitizeCandidate(
   bool filter_stun_related_address =
       ((flags() & PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION) &&
        (flags() & PORTALLOCATOR_DISABLE_DEFAULT_LOCAL_CANDIDATE)) ||
-      !(candidate_filter_ & CF_HOST);
+      !(candidate_filter_ & CF_HOST) || MdnsObfuscationEnabled();
   // If the candidate filter doesn't allow reflexive addresses, empty TURN raddr
   // to avoid reflexive address leakage.
   bool filter_turn_related_address = !(candidate_filter_ & CF_REFLEXIVE);
