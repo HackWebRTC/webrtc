@@ -690,8 +690,8 @@ TEST_P(RtpSenderTest, WritesPacerExitToTimingExtension) {
   EXPECT_EQ(kStoredTimeInMs, video_timing.pacer_exit_delta_ms);
 }
 
-TEST_P(RtpSenderTest, WritesNetwork2ToTimingExtension) {
-  SetUpRtpSender(true, true);
+TEST_P(RtpSenderTest, WritesNetwork2ToTimingExtensionWithPacer) {
+  SetUpRtpSender(/*pacer=*/true, /*populate_network2=*/true);
   rtp_sender_->SetStorePacketsStatus(true, 10);
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
                    kRtpExtensionVideoTiming, kVideoTimingExtensionId));
@@ -727,6 +727,31 @@ TEST_P(RtpSenderTest, WritesNetwork2ToTimingExtension) {
       &video_timing));
   EXPECT_EQ(kStoredTimeInMs, video_timing.network2_timestamp_delta_ms);
   EXPECT_EQ(kPacerExitMs, video_timing.pacer_exit_delta_ms);
+}
+
+TEST_P(RtpSenderTest, WritesNetwork2ToTimingExtensionWithoutPacer) {
+  SetUpRtpSender(/*pacer=*/false, /*populate_network2=*/true);
+  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(
+                   kRtpExtensionVideoTiming, kVideoTimingExtensionId));
+  auto packet = rtp_sender_->AllocatePacket();
+  packet->SetMarker(true);
+  packet->set_capture_time_ms(fake_clock_.TimeInMilliseconds());
+  const VideoSendTiming kVideoTiming = {0u, 0u, 0u, 0u, 0u, 0u, true};
+  packet->SetExtension<VideoTimingExtension>(kVideoTiming);
+  EXPECT_TRUE(rtp_sender_->AssignSequenceNumber(packet.get()));
+
+  const int kPropagateTimeMs = 10;
+  fake_clock_.AdvanceTimeMilliseconds(kPropagateTimeMs);
+
+  EXPECT_TRUE(rtp_sender_->SendToNetwork(std::move(packet),
+                                         kAllowRetransmission,
+                                         RtpPacketSender::kNormalPriority));
+
+  EXPECT_EQ(1, transport_.packets_sent());
+  absl::optional<VideoSendTiming> video_timing =
+      transport_.last_sent_packet().GetExtension<VideoTimingExtension>();
+  ASSERT_TRUE(video_timing);
+  EXPECT_EQ(kPropagateTimeMs, video_timing->network2_timestamp_delta_ms);
 }
 
 TEST_P(RtpSenderTest, TrafficSmoothingWithExtensions) {
