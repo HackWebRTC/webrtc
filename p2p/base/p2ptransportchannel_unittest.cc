@@ -4565,18 +4565,13 @@ TEST_F(P2PTransportChannelMostLikelyToWorkFirstTest, TestTcpTurn) {
 }
 
 // Test that a resolver is created, asked for a result, and destroyed
-// when the address is a hostname. The destruction should happen even
-// if the channel is not destroyed.
+// when the address is a hostname.
 TEST(P2PTransportChannelResolverTest, HostnameCandidateIsResolved) {
   rtc::MockAsyncResolver mock_async_resolver;
   EXPECT_CALL(mock_async_resolver, GetError()).WillOnce(Return(0));
   EXPECT_CALL(mock_async_resolver, GetResolvedAddress(_, _))
       .WillOnce(Return(true));
-  // Destroy is called asynchronously after the address is resolved,
-  // so we need a variable to wait on.
-  bool destroy_called = false;
-  EXPECT_CALL(mock_async_resolver, Destroy(_))
-      .WillOnce(testing::Assign(&destroy_called, true));
+  EXPECT_CALL(mock_async_resolver, Destroy(_));
   webrtc::MockAsyncResolverFactory mock_async_resolver_factory;
   EXPECT_CALL(mock_async_resolver_factory, Create())
       .WillOnce(Return(&mock_async_resolver));
@@ -4591,7 +4586,6 @@ TEST(P2PTransportChannelResolverTest, HostnameCandidateIsResolved) {
   ASSERT_EQ_WAIT(1u, channel.remote_candidates().size(), kDefaultTimeout);
   const RemoteCandidate& candidate = channel.remote_candidates()[0];
   EXPECT_FALSE(candidate.address().IsUnresolvedIP());
-  WAIT(destroy_called, kShortTimeout);
 }
 
 // Test that if we signal a hostname candidate after the remote endpoint
