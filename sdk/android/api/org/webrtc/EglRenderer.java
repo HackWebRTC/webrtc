@@ -330,9 +330,9 @@ public class EglRenderer implements VideoSink {
       if (renderThread != null) {
         final StackTraceElement[] renderStackTrace = renderThread.getStackTrace();
         if (renderStackTrace.length > 0) {
-          logD("EglRenderer stack trace:");
+          logW("EglRenderer stack trace:");
           for (StackTraceElement traceElem : renderStackTrace) {
-            logD(traceElem.toString());
+            logW(traceElem.toString());
           }
         }
       }
@@ -728,5 +728,9 @@ public class EglRenderer implements VideoSink {
 
   private void logD(String string) {
     Logging.d(TAG, name + string);
+  }
+
+  private void logW(String string) {
+    Logging.w(TAG, name + string);
   }
 }

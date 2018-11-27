@@ -490,9 +490,9 @@ public class PeerConnectionFactory {
     if (thread != null) {
       StackTraceElement[] stackTraces = thread.getStackTrace();
       if (stackTraces.length > 0) {
-        Logging.d(TAG, threadName + " stacks trace:");
+        Logging.w(TAG, threadName + " stacks trace:");
         for (StackTraceElement stackTrace : stackTraces) {
-          Logging.d(TAG, stackTrace.toString());
+          Logging.w(TAG, stackTrace.toString());
         }
       }
     }
