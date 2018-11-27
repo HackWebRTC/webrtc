@@ -29,6 +29,16 @@
 namespace webrtc {
 namespace internal {
 
+// Pacing buffer config; overridden by ALR config if provided.
+struct PacingConfig {
+  PacingConfig();
+  PacingConfig(const PacingConfig&);
+  PacingConfig& operator=(const PacingConfig&) = default;
+  ~PacingConfig();
+  FieldTrialParameter<double> pacing_factor;
+  FieldTrialParameter<TimeDelta> max_pacing_delay;
+};
+
 // VideoSendStreamImpl implements internal::VideoSendStream.
 // It is created and destroyed on |worker_queue|. The intent is to decrease the
 // need for locking and to ensure methods are called in sequence.
@@ -111,6 +121,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   void SignalEncoderActive();
 
   const bool has_alr_probing_;
+  const PacingConfig pacing_config_;
 
   SendStatisticsProxy* const stats_proxy_;
   const VideoSendStream::Config* const config_;

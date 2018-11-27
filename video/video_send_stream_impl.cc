@@ -159,6 +159,16 @@ bool SameStreamsEnabled(const VideoBitrateAllocation& lhs,
 }
 }  // namespace
 
+PacingConfig::PacingConfig()
+    : pacing_factor("factor", PacedSender::kDefaultPaceMultiplier),
+      max_pacing_delay("max_delay",
+                       TimeDelta::ms(PacedSender::kMaxQueueLengthMs)) {
+  ParseFieldTrial({&pacing_factor, &max_pacing_delay},
+                  field_trial::FindFullName("WebRTC-Video-Pacing"));
+}
+PacingConfig::PacingConfig(const PacingConfig&) = default;
+PacingConfig::~PacingConfig() = default;
+
 // CheckEncoderActivityTask is used for tracking when the encoder last produced
 // and encoded video frame. If the encoder has not produced anything the last
 // kEncoderTimeOutMs we also want to stop sending padding.
@@ -229,6 +239,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
     std::unique_ptr<FecController> fec_controller)
     : has_alr_probing_(config->periodic_alr_bandwidth_probing ||
                        GetAlrSettings(content_type)),
+      pacing_config_(PacingConfig()),
       stats_proxy_(stats_proxy),
       config_(config),
       worker_queue_(worker_queue),
@@ -302,9 +313,9 @@ VideoSendStreamImpl::VideoSendStreamImpl(
       transport->SetQueueTimeLimit(alr_settings->max_paced_queue_time);
     } else {
       transport->EnablePeriodicAlrProbing(false);
-      transport->SetPacingFactor(PacedSender::kDefaultPaceMultiplier);
-      configured_pacing_factor_ = PacedSender::kDefaultPaceMultiplier;
-      transport->SetQueueTimeLimit(PacedSender::kMaxQueueLengthMs);
+      transport->SetPacingFactor(pacing_config_.pacing_factor);
+      configured_pacing_factor_ = pacing_config_.pacing_factor;
+      transport->SetQueueTimeLimit(pacing_config_.max_pacing_delay.Get().ms());
     }
   }
 
