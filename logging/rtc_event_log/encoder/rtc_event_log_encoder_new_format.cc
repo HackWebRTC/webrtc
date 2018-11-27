@@ -1390,6 +1390,7 @@ void RtcEventLogEncoderNewFormat::EncodeIceCandidatePairEvent(
 
     proto_batch->set_event_type(ConvertToProtoFormat(base_event->type()));
     proto_batch->set_candidate_pair_id(base_event->candidate_pair_id());
+    proto_batch->set_transaction_id(base_event->transaction_id());
   }
   // TODO(terelius): Should we delta-compress this event type?
 }

@@ -572,6 +572,9 @@ message IceCandidatePairEvent {
 
   // required
   optional uint32 candidate_pair_id = 3;
+
+  // required
+  optional uint32 transaction_id = 4;
 }
 
 message DtlsTransportStateEvent {
