@@ -2233,6 +2233,7 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
     rinfo.secondary_discarded_rate = stats.secondary_discarded_rate;
     rinfo.accelerate_rate = stats.accelerate_rate;
     rinfo.preemptive_expand_rate = stats.preemptive_expand_rate;
+    rinfo.delayed_packet_outage_samples = stats.delayed_packet_outage_samples;
     rinfo.decoding_calls_to_silence_generator =
         stats.decoding_calls_to_silence_generator;
     rinfo.decoding_calls_to_neteq = stats.decoding_calls_to_neteq;

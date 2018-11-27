@@ -257,11 +257,14 @@ void StatisticsCalculator::FlushedPacketBuffer() {
   buffer_full_counter_.RegisterSample();
 }
 
-void StatisticsCalculator::LogDelayedPacketOutageEvent(int outage_duration_ms) {
+void StatisticsCalculator::LogDelayedPacketOutageEvent(int num_samples,
+                                                       int fs_hz) {
+  int outage_duration_ms = num_samples / (fs_hz / 1000);
   RTC_HISTOGRAM_COUNTS("WebRTC.Audio.DelayedPacketOutageEventMs",
                        outage_duration_ms, 1 /* min */, 2000 /* max */,
                        100 /* bucket count */);
   delayed_packet_outage_counter_.RegisterSample();
+  lifetime_stats_.delayed_packet_outage_samples += num_samples;
 }
 
 void StatisticsCalculator::StoreWaitingTime(int waiting_time_ms) {

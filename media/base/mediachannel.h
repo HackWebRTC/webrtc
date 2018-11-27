@@ -478,6 +478,8 @@ struct VoiceReceiverInfo : public MediaReceiverInfo {
   int64_t capture_start_ntp_time_ms = -1;
   // Count of the number of buffer flushes.
   uint64_t jitter_buffer_flushes = 0;
+  // Number of samples expanded due to delayed packets.
+  uint64_t delayed_packet_outage_samples = 0;
 };
 
 struct VideoSenderInfo : public MediaSenderInfo {

@@ -375,7 +375,8 @@ WEBRTC_RTCSTATS_IMPL(RTCMediaStreamTrackStats, RTCStats, "track",
                      &total_samples_duration,
                      &concealed_samples,
                      &concealment_events,
-                     &jitter_buffer_flushes);
+                     &jitter_buffer_flushes,
+                     &delayed_packet_outage_samples);
 // clang-format on
 
 RTCMediaStreamTrackStats::RTCMediaStreamTrackStats(const std::string& id,
@@ -412,7 +413,8 @@ RTCMediaStreamTrackStats::RTCMediaStreamTrackStats(std::string&& id,
       total_samples_duration("totalSamplesDuration"),
       concealed_samples("concealedSamples"),
       concealment_events("concealmentEvents"),
-      jitter_buffer_flushes("jitterBufferFlushes") {
+      jitter_buffer_flushes("jitterBufferFlushes"),
+      delayed_packet_outage_samples("delayedPacketOutageSamples") {
   RTC_DCHECK(kind == RTCMediaStreamTrackKind::kAudio ||
              kind == RTCMediaStreamTrackKind::kVideo);
 }
@@ -445,7 +447,8 @@ RTCMediaStreamTrackStats::RTCMediaStreamTrackStats(
       total_samples_duration(other.total_samples_duration),
       concealed_samples(other.concealed_samples),
       concealment_events(other.concealment_events),
-      jitter_buffer_flushes(other.jitter_buffer_flushes) {}
+      jitter_buffer_flushes(other.jitter_buffer_flushes),
+      delayed_packet_outage_samples(other.delayed_packet_outage_samples) {}
 
 RTCMediaStreamTrackStats::~RTCMediaStreamTrackStats() {}
 

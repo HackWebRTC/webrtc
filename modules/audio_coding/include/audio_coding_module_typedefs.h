@@ -119,6 +119,8 @@ struct NetworkStatistics {
   size_t addedSamples;
   // count of the number of buffer flushes
   uint64_t packetBufferFlushes;
+  // number of samples expanded due to delayed packets
+  uint64_t delayedPacketOutageSamples;
 };
 
 }  // namespace webrtc

@@ -456,6 +456,8 @@ ProduceMediaStreamTrackStatsFromVoiceReceiverInfo(
       voice_receiver_info.concealment_events;
   audio_track_stats->jitter_buffer_flushes =
       voice_receiver_info.jitter_buffer_flushes;
+  audio_track_stats->delayed_packet_outage_samples =
+      voice_receiver_info.delayed_packet_outage_samples;
   return audio_track_stats;
 }
 

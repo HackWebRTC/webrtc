@@ -214,6 +214,7 @@ webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
   stats.accelerate_rate = Q14ToFloat(ns.currentAccelerateRate);
   stats.preemptive_expand_rate = Q14ToFloat(ns.currentPreemptiveRate);
   stats.jitter_buffer_flushes = ns.packetBufferFlushes;
+  stats.delayed_packet_outage_samples = ns.delayedPacketOutageSamples;
 
   auto ds = channel_receive_->GetDecodingCallStatistics();
   stats.decoding_calls_to_silence_generator = ds.calls_to_silence_generator;

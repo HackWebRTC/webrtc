@@ -309,8 +309,9 @@ class RTC_EXPORT RTCMediaStreamTrackStats final : public RTCStats {
   RTCStatsMember<uint64_t> concealed_samples;
   RTCStatsMember<uint64_t> concealment_events;
   // Non-standard audio-only member
-  // TODO(kuddai): Add descriptoin to standard. crbug.com/webrtc/10042
+  // TODO(kuddai): Add description to standard. crbug.com/webrtc/10042
   RTCNonStandardStatsMember<uint64_t> jitter_buffer_flushes;
+  RTCNonStandardStatsMember<uint64_t> delayed_packet_outage_samples;
 };
 
 // https://w3c.github.io/webrtc-stats/#pcstats-dict*
