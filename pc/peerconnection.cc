@@ -518,33 +518,6 @@ bool VerifyIceUfragPwdPresent(const SessionDescription* desc) {
   return true;
 }
 
-bool GetTrackIdBySsrc(const SessionDescription* session_description,
-                      uint32_t ssrc,
-                      std::string* track_id) {
-  RTC_DCHECK(track_id != NULL);
-
-  const cricket::AudioContentDescription* audio_desc =
-      cricket::GetFirstAudioContentDescription(session_description);
-  if (audio_desc) {
-    const auto* found = cricket::GetStreamBySsrc(audio_desc->streams(), ssrc);
-    if (found) {
-      *track_id = found->id;
-      return true;
-    }
-  }
-
-  const cricket::VideoContentDescription* video_desc =
-      cricket::GetFirstVideoContentDescription(session_description);
-  if (video_desc) {
-    const auto* found = cricket::GetStreamBySsrc(video_desc->streams(), ssrc);
-    if (found) {
-      *track_id = found->id;
-      return true;
-    }
-  }
-  return false;
-}
-
 // Get the SCTP port out of a SessionDescription.
 // Return -1 if not found.
 int GetSctpPort(const SessionDescription* session_description) {
@@ -5246,22 +5219,34 @@ cricket::IceConfig PeerConnection::ParseIceConfig(
   return ice_config;
 }
 
-bool PeerConnection::GetLocalTrackIdBySsrc(uint32_t ssrc,
-                                           std::string* track_id) {
-  if (!local_description()) {
-    return false;
+static absl::string_view GetTrackIdBySsrc(
+    const SessionDescriptionInterface* session_description,
+    uint32_t ssrc) {
+  if (!session_description) {
+    return {};
   }
-  return webrtc::GetTrackIdBySsrc(local_description()->description(), ssrc,
-                                  track_id);
+  for (const cricket::ContentInfo& content :
+       session_description->description()->contents()) {
+    const cricket::MediaContentDescription& media =
+        *content.media_description();
+    if (media.type() == cricket::MEDIA_TYPE_AUDIO ||
+        media.type() == cricket::MEDIA_TYPE_VIDEO) {
+      const cricket::StreamParams* stream_params =
+          cricket::GetStreamBySsrc(media.streams(), ssrc);
+      if (stream_params) {
+        return stream_params->id;
+      }
+    }
+  }
+  return {};
 }
 
-bool PeerConnection::GetRemoteTrackIdBySsrc(uint32_t ssrc,
-                                            std::string* track_id) {
-  if (!remote_description()) {
-    return false;
-  }
-  return webrtc::GetTrackIdBySsrc(remote_description()->description(), ssrc,
-                                  track_id);
+absl::string_view PeerConnection::GetLocalTrackIdBySsrc(uint32_t ssrc) {
+  return GetTrackIdBySsrc(local_description(), ssrc);
+}
+
+absl::string_view PeerConnection::GetRemoteTrackIdBySsrc(uint32_t ssrc) {
+  return GetTrackIdBySsrc(remote_description(), ssrc);
 }
 
 bool PeerConnection::SendData(const cricket::SendDataParams& params,

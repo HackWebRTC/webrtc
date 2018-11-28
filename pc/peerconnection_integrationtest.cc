@@ -78,6 +78,7 @@ using cricket::StreamParams;
 using rtc::SocketAddress;
 using ::testing::Combine;
 using ::testing::ElementsAre;
+using ::testing::UnorderedElementsAreArray;
 using ::testing::Return;
 using ::testing::SetArgPointee;
 using ::testing::Values;
@@ -2614,6 +2615,34 @@ TEST_P(PeerConnectionIntegrationTest, GetCaptureStartNtpTimeWithOldStatsApi) {
       callee()->OldGetStatsForTrack(remote_audio_track)->CaptureStartNtpTime() >
           0,
       2 * kMaxWaitForFramesMs);
+}
+
+// Test that the track ID is associated with all local and remote SSRC stats
+// using the old GetStats() and more than 1 audio and more than 1 video track.
+// This is a regression test for crbug.com/906988
+TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
+       OldGetStatsAssociatesTrackIdForManyMediaSections) {
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+  auto audio_sender_1 = caller()->AddAudioTrack();
+  auto video_sender_1 = caller()->AddVideoTrack();
+  auto audio_sender_2 = caller()->AddAudioTrack();
+  auto video_sender_2 = caller()->AddVideoTrack();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  MediaExpectations media_expectations;
+  media_expectations.CalleeExpectsSomeAudioAndVideo();
+  ASSERT_TRUE_WAIT(ExpectNewFrames(media_expectations), kDefaultTimeout);
+
+  std::vector<std::string> track_ids = {
+      audio_sender_1->track()->id(), video_sender_1->track()->id(),
+      audio_sender_2->track()->id(), video_sender_2->track()->id()};
+
+  auto caller_stats = caller()->OldGetStats();
+  EXPECT_THAT(caller_stats->TrackIds(), UnorderedElementsAreArray(track_ids));
+  auto callee_stats = callee()->OldGetStats();
+  EXPECT_THAT(callee_stats->TrackIds(), UnorderedElementsAreArray(track_ids));
 }
 
 // Test that we can get stats (using the new stats implemnetation) for
