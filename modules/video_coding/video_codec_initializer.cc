@@ -181,7 +181,10 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
             video_codec.VP9()->numberOfTemporalLayers,
             video_codec.mode == VideoCodecMode::kScreensharing);
 
-        const bool no_spatial_layering = (spatial_layers.size() == 1);
+        // If there was no request for spatial layering, don't limit bitrate
+        // of single spatial layer.
+        const bool no_spatial_layering =
+            video_codec.VP9()->numberOfSpatialLayers <= 1;
         if (no_spatial_layering) {
           // Use codec's bitrate limits.
           spatial_layers.back().minBitrate = video_codec.minBitrate;

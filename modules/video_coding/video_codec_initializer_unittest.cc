@@ -286,4 +286,21 @@ TEST_F(VideoCodecInitializerTest,
             kDefaultMaxBitrateBps / 1000);
 }
 
+TEST_F(VideoCodecInitializerTest,
+       Vp9KeepBitrateLimitsIfNumberOfSpatialLayersIsReducedToOne) {
+  // Request 3 spatial layers for 320x180 input. Actual number of layers will be
+  // reduced to 1 due to low input resolution but SVC bitrate limits should be
+  // applied.
+  SetUpFor(VideoCodecType::kVideoCodecVP9, 3, 3, false);
+  VideoStream stream = DefaultStream();
+  stream.width = 320;
+  stream.height = 180;
+  stream.num_temporal_layers = 3;
+  streams_.push_back(stream);
+
+  EXPECT_TRUE(InitializeCodec());
+  EXPECT_LT(codec_out_.spatialLayers[0].maxBitrate,
+            kDefaultMaxBitrateBps / 1000);
+}
+
 }  // namespace webrtc
