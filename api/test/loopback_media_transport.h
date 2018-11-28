@@ -98,6 +98,8 @@ class MediaTransportPair {
   struct Stats {
     int sent_audio_frames = 0;
     int received_audio_frames = 0;
+    int sent_video_frames = 0;
+    int received_video_frames = 0;
   };
 
   explicit MediaTransportPair(rtc::Thread* thread)
@@ -136,7 +138,8 @@ class MediaTransportPair {
 
     ~LoopbackMediaTransport() {
       rtc::CritScope lock(&sink_lock_);
-      RTC_CHECK(sink_ == nullptr);
+      RTC_CHECK(audio_sink_ == nullptr);
+      RTC_CHECK(video_sink_ == nullptr);
       RTC_CHECK(data_sink_ == nullptr);
     }
 
@@ -156,6 +159,17 @@ class MediaTransportPair {
     RTCError SendVideoFrame(
         uint64_t channel_id,
         const MediaTransportEncodedVideoFrame& frame) override {
+      {
+        rtc::CritScope lock(&stats_lock_);
+        ++stats_.sent_video_frames;
+      }
+      // Ensure that we own the referenced data.
+      MediaTransportEncodedVideoFrame frame_copy = frame;
+      frame_copy.Retain();
+      invoker_.AsyncInvoke<void>(
+          RTC_FROM_HERE, thread_, [this, channel_id, frame_copy] {
+            other_->OnData(channel_id, std::move(frame_copy));
+          });
       return RTCError::OK();
     }
 
@@ -166,12 +180,18 @@ class MediaTransportPair {
     void SetReceiveAudioSink(MediaTransportAudioSinkInterface* sink) override {
       rtc::CritScope lock(&sink_lock_);
       if (sink) {
-        RTC_CHECK(sink_ == nullptr);
+        RTC_CHECK(audio_sink_ == nullptr);
       }
-      sink_ = sink;
+      audio_sink_ = sink;
     }
 
-    void SetReceiveVideoSink(MediaTransportVideoSinkInterface* sink) override {}
+    void SetReceiveVideoSink(MediaTransportVideoSinkInterface* sink) override {
+      rtc::CritScope lock(&sink_lock_);
+      if (sink) {
+        RTC_CHECK(video_sink_ == nullptr);
+      }
+      video_sink_ = sink;
+    }
 
     void SetMediaTransportStateCallback(
         MediaTransportStateCallback* callback) override {
@@ -228,13 +248,26 @@ class MediaTransportPair {
     void OnData(uint64_t channel_id, MediaTransportEncodedAudioFrame frame) {
       {
         rtc::CritScope lock(&sink_lock_);
-        if (sink_) {
-          sink_->OnData(channel_id, frame);
+        if (audio_sink_) {
+          audio_sink_->OnData(channel_id, frame);
         }
       }
       {
         rtc::CritScope lock(&stats_lock_);
         ++stats_.received_audio_frames;
+      }
+    }
+
+    void OnData(uint64_t channel_id, MediaTransportEncodedVideoFrame frame) {
+      {
+        rtc::CritScope lock(&sink_lock_);
+        if (video_sink_) {
+          video_sink_->OnData(channel_id, frame);
+        }
+      }
+      {
+        rtc::CritScope lock(&stats_lock_);
+        ++stats_.received_video_frames;
       }
     }
 
@@ -266,7 +299,9 @@ class MediaTransportPair {
     rtc::CriticalSection sink_lock_;
     rtc::CriticalSection stats_lock_;
 
-    MediaTransportAudioSinkInterface* sink_ RTC_GUARDED_BY(sink_lock_) =
+    MediaTransportAudioSinkInterface* audio_sink_ RTC_GUARDED_BY(sink_lock_) =
+        nullptr;
+    MediaTransportVideoSinkInterface* video_sink_ RTC_GUARDED_BY(sink_lock_) =
         nullptr;
     DataChannelSink* data_sink_ RTC_GUARDED_BY(sink_lock_) = nullptr;
     MediaTransportStateCallback* state_callback_ RTC_GUARDED_BY(sink_lock_) =

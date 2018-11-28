@@ -183,13 +183,22 @@ class MediaTransportEncodedVideoFrame final {
     return referenced_frame_ids_;
   }
 
+  // Hack to workaround lack of ownership of the encoded_image_._buffer. If we
+  // don't already own the underlying data, make a copy.
+  void Retain();
+
  private:
+  MediaTransportEncodedVideoFrame();
+
   VideoCodecType codec_type_;
 
-  // The buffer is not owned by the encoded image by default. On the sender it
-  // means that it will need to make a copy of it if it wants to deliver it
-  // asynchronously.
+  // The buffer is not owned by the encoded image. On the sender it means that
+  // it will need to make a copy using the Retain() method, if it wants to
+  // deliver it asynchronously.
   webrtc::EncodedImage encoded_image_;
+
+  // If non-empty, this is the data for the encoded image.
+  std::vector<uint8_t> encoded_data_;
 
   // Frame id uniquely identifies a frame in a stream. It needs to be unique in
   // a given time window (i.e. technically unique identifier for the lifetime of

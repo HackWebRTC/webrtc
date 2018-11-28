@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <algorithm>
 #include <memory>
 #include <vector>
 
@@ -22,6 +23,13 @@ class MockMediaTransportAudioSinkInterface
     : public MediaTransportAudioSinkInterface {
  public:
   MOCK_METHOD2(OnData, void(uint64_t, MediaTransportEncodedAudioFrame));
+};
+
+class MockMediaTransportVideoSinkInterface
+    : public MediaTransportVideoSinkInterface {
+ public:
+  MOCK_METHOD2(OnData, void(uint64_t, MediaTransportEncodedVideoFrame));
+  MOCK_METHOD1(OnKeyFrameRequested, void(uint64_t));
 };
 
 class MockDataChannelSink : public DataChannelSink {
@@ -50,6 +58,13 @@ MediaTransportEncodedAudioFrame CreateAudioFrame(int sequence_number) {
       kPayloadType, std::vector<uint8_t>(kSamplesPerChannel));
 }
 
+MediaTransportEncodedVideoFrame CreateVideoFrame(
+    int frame_id,
+    const webrtc::EncodedImage& encoded_image) {
+  return MediaTransportEncodedVideoFrame(frame_id, /*referenced_frame_ids=*/{},
+                                         kVideoCodecVP8, encoded_image);
+}
+
 }  // namespace
 
 TEST(LoopbackMediaTransport, AudioWithNoSinkSilentlyIgnored) {
@@ -75,6 +90,38 @@ TEST(LoopbackMediaTransport, AudioDeliveredToSink) {
 
   transport_pair.FlushAsyncInvokes();
   transport_pair.second()->SetReceiveAudioSink(nullptr);
+}
+
+TEST(LoopbackMediaTransport, VideoDeliveredToSink) {
+  std::unique_ptr<rtc::Thread> thread = rtc::Thread::Create();
+  thread->Start();
+  MediaTransportPair transport_pair(thread.get());
+  testing::StrictMock<MockMediaTransportVideoSinkInterface> sink;
+  uint8_t encoded_data[] = {1, 2, 3};
+  EncodedImage encoded_image;
+  encoded_image._buffer = encoded_data;
+  encoded_image._length = sizeof(encoded_data);
+
+  EXPECT_CALL(sink, OnData(1, testing::Property(
+                                  &MediaTransportEncodedVideoFrame::frame_id,
+                                  testing::Eq(10))))
+      .WillOnce(testing::Invoke(
+          [&encoded_image](int frame_id,
+                           const MediaTransportEncodedVideoFrame& frame) {
+            EXPECT_NE(frame.encoded_image()._buffer, encoded_image._buffer);
+            EXPECT_EQ(frame.encoded_image()._length, encoded_image._length);
+            EXPECT_EQ(
+                0, memcmp(frame.encoded_image()._buffer, encoded_image._buffer,
+                          std::min(frame.encoded_image()._length,
+                                   encoded_image._length)));
+          }));
+
+  transport_pair.second()->SetReceiveVideoSink(&sink);
+  transport_pair.first()->SendVideoFrame(1,
+                                         CreateVideoFrame(10, encoded_image));
+
+  transport_pair.FlushAsyncInvokes();
+  transport_pair.second()->SetReceiveVideoSink(nullptr);
 }
 
 TEST(LoopbackMediaTransport, DataDeliveredToSink) {
