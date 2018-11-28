@@ -46,6 +46,8 @@ if (is_android) {
       ":java_audio_device_module_java",
       ":libjingle_peerconnection_java",
       ":libjingle_peerconnection_metrics_default_java",
+      ":libvpx_vp8_java",
+      ":libvpx_vp9_java",
       ":logging_java",
       ":peerconnection_java",
       ":screencapturer_java",
