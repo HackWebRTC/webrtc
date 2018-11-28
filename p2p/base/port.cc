@@ -860,7 +860,8 @@ void Port::SendBindingResponse(StunMessage* request,
 
     conn->stats_.sent_ping_responses++;
     conn->LogCandidatePairEvent(
-        webrtc::IceCandidatePairEventType::kCheckResponseSent);
+        webrtc::IceCandidatePairEventType::kCheckResponseSent,
+        request->reduced_transaction_id());
   }
 }
 
@@ -1340,7 +1341,8 @@ void Connection::HandleBindingRequest(IceMessage* msg) {
   }
 
   stats_.recv_ping_requests++;
-  LogCandidatePairEvent(webrtc::IceCandidatePairEventType::kCheckReceived);
+  LogCandidatePairEvent(webrtc::IceCandidatePairEventType::kCheckReceived,
+                        msg->reduced_transaction_id());
 
   // This is a validated stun request from remote peer.
   port_->SendBindingResponse(msg, remote_addr);
@@ -1677,11 +1679,12 @@ void Connection::LogCandidatePairConfig(
   ice_event_log_->LogCandidatePairConfig(type, id(), ToLogDescription());
 }
 
-void Connection::LogCandidatePairEvent(webrtc::IceCandidatePairEventType type) {
+void Connection::LogCandidatePairEvent(webrtc::IceCandidatePairEventType type,
+                                       uint32_t transaction_id) {
   if (ice_event_log_ == nullptr) {
     return;
   }
-  ice_event_log_->LogCandidatePairEvent(type, id());
+  ice_event_log_->LogCandidatePairEvent(type, id(), transaction_id);
 }
 
 void Connection::OnConnectionRequestResponse(ConnectionRequest* request,
@@ -1708,7 +1711,8 @@ void Connection::OnConnectionRequestResponse(ConnectionRequest* request,
 
   stats_.recv_ping_responses++;
   LogCandidatePairEvent(
-      webrtc::IceCandidatePairEventType::kCheckResponseReceived);
+      webrtc::IceCandidatePairEventType::kCheckResponseReceived,
+      response->reduced_transaction_id());
 
   MaybeUpdateLocalCandidate(request, response);
 }
@@ -1754,7 +1758,8 @@ void Connection::OnConnectionRequestSent(ConnectionRequest* request) {
                  << ", use_candidate=" << use_candidate_attr()
                  << ", nomination=" << nomination();
   stats_.sent_ping_requests_total++;
-  LogCandidatePairEvent(webrtc::IceCandidatePairEventType::kCheckSent);
+  LogCandidatePairEvent(webrtc::IceCandidatePairEventType::kCheckSent,
+                        request->reduced_transaction_id());
   if (stats_.recv_ping_responses == 0) {
     stats_.sent_ping_requests_before_first_response++;
   }

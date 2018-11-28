@@ -100,6 +100,11 @@ class StunRequest : public rtc::MessageHandler {
   // Returns the transaction ID of this request.
   const std::string& id() { return msg_->transaction_id(); }
 
+  // Returns the reduced transaction ID of this request.
+  uint32_t reduced_transaction_id() const {
+    return msg_->reduced_transaction_id();
+  }
+
   // the origin value
   const std::string& origin() const { return origin_; }
   void set_origin(const std::string& origin) { origin_ = origin; }
