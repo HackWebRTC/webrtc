@@ -111,6 +111,10 @@
       'Linux Trusty': 'perf_release_bot_x64',
       'Mac 10.11': 'perf_release_bot_x64',
       'Win7': 'perf_release_bot_x86',
+
+      'Perf Linux Trusty': 'perf_release_bot_x64',
+      'Perf Mac 10.11': 'perf_release_bot_x64',
+      'Perf Win7': 'perf_release_bot_x86',
     },
     'client.webrtc.fyi': {
       # Mac
