@@ -75,6 +75,10 @@ specific_include_rules = {
     "+rtc_base/refcount.h",
   ],
 
+  "dtlstransportinterface\.h": [
+    "+rtc_base/refcount.h",
+  ],
+
   "dtmfsenderinterface\.h": [
     "+rtc_base/refcount.h",
   ],

@@ -3346,6 +3346,11 @@ void PeerConnection::StopRtcEventLog() {
       RTC_FROM_HERE, rtc::Bind(&PeerConnection::StopRtcEventLog_w, this));
 }
 
+rtc::scoped_refptr<DtlsTransportInterface>
+PeerConnection::LookupDtlsTransportByMid(const std::string& mid) {
+  return transport_controller_->LookupDtlsTransportByMid(mid);
+}
+
 const SessionDescriptionInterface* PeerConnection::local_description() const {
   return pending_local_description_ ? pending_local_description_.get()
                                     : current_local_description_.get();

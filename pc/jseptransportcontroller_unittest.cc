@@ -371,11 +371,20 @@ TEST_F(JsepTransportControllerTest, GetDtlsTransport) {
                   .ok());
   EXPECT_NE(nullptr, transport_controller_->GetDtlsTransport(kAudioMid1));
   EXPECT_NE(nullptr, transport_controller_->GetRtcpDtlsTransport(kAudioMid1));
+  EXPECT_NE(nullptr,
+            transport_controller_->LookupDtlsTransportByMid(kAudioMid1));
   EXPECT_NE(nullptr, transport_controller_->GetDtlsTransport(kVideoMid1));
   EXPECT_NE(nullptr, transport_controller_->GetRtcpDtlsTransport(kVideoMid1));
+  EXPECT_NE(nullptr,
+            transport_controller_->LookupDtlsTransportByMid(kVideoMid1));
+  // Lookup for all MIDs should return different transports (no bundle)
+  EXPECT_NE(transport_controller_->LookupDtlsTransportByMid(kAudioMid1),
+            transport_controller_->LookupDtlsTransportByMid(kVideoMid1));
   // Return nullptr for non-existing ones.
   EXPECT_EQ(nullptr, transport_controller_->GetDtlsTransport(kVideoMid2));
   EXPECT_EQ(nullptr, transport_controller_->GetRtcpDtlsTransport(kVideoMid2));
+  EXPECT_EQ(nullptr,
+            transport_controller_->LookupDtlsTransportByMid(kVideoMid2));
 }
 
 TEST_F(JsepTransportControllerTest, GetDtlsTransportWithRtcpMux) {
@@ -1274,6 +1283,9 @@ TEST_F(JsepTransportControllerTest, MultipleMediaSectionsOfSameTypeWithBundle) {
   EXPECT_EQ(transport1, transport2);
   EXPECT_EQ(transport1, transport3);
   EXPECT_EQ(transport1, transport4);
+
+  EXPECT_EQ(transport_controller_->LookupDtlsTransportByMid(kAudioMid1),
+            transport_controller_->LookupDtlsTransportByMid(kVideoMid1));
 
   // Verify the OnRtpTransport/DtlsTransportChanged signals are fired correctly.
   auto it = changed_rtp_transport_by_mid_.find(kAudioMid2);

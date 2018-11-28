@@ -51,6 +51,18 @@ constexpr int kDefaultTimeout = 10000;
 // will use: https://www.w3.org/TR/webrtc/#dom-rtcrtpsender-transport
 // Should also be able to remove GetTransceiversForTesting at that point.
 
+class FakeNetworkManagerWithNoAnyNetwork : public rtc::FakeNetworkManager {
+ public:
+  void GetAnyAddressNetworks(NetworkList* networks) override {
+    // This function allocates networks that are owned by the
+    // NetworkManager. But some tests assume that they can release
+    // all networks independent of the network manager.
+    // In order to prevent use-after-free issues, don't allow this
+    // function to have any effect when run in tests.
+    RTC_LOG(LS_INFO) << "FakeNetworkManager::GetAnyAddressNetworks ignored";
+  }
+};
+
 class PeerConnectionWrapperForBundleTest : public PeerConnectionWrapper {
  public:
   using PeerConnectionWrapper::PeerConnectionWrapper;
@@ -235,7 +247,7 @@ class PeerConnectionBundleBaseTest : public ::testing::Test {
     // base class members). Therefore, the test fixture will own all the fake
     // networks even though tests should access the fake network through the
     // PeerConnectionWrapper.
-    auto* fake_network = new rtc::FakeNetworkManager();
+    auto* fake_network = new FakeNetworkManagerWithNoAnyNetwork();
     fake_networks_.emplace_back(fake_network);
     return fake_network;
   }

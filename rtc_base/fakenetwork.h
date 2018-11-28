@@ -129,9 +129,6 @@ class FakeNetworkManager : public NetworkManagerBase, public MessageHandler {
   int start_count_ = 0;
   bool sent_first_update_ = false;
 
-  IPAddress default_local_ipv4_address_;
-  IPAddress default_local_ipv6_address_;
-
   std::unique_ptr<webrtc::FakeMdnsResponder> mdns_responder_;
 };
 

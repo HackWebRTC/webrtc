@@ -129,6 +129,7 @@ namespace webrtc {
 class AudioDeviceModule;
 class AudioMixer;
 class AudioProcessing;
+class DtlsTransportInterface;
 class MediaConstraintsInterface;
 class VideoDecoderFactory;
 class VideoEncoderFactory;
@@ -1028,6 +1029,14 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   // the appropriate SDP is also applied.
   // TODO(henrika): deprecate and remove this.
   virtual void SetAudioRecording(bool recording) {}
+
+  // Looks up the DtlsTransport associated with a MID value.
+  // In the Javascript API, DtlsTransport is a property of a sender, but
+  // because the PeerConnection owns the DtlsTransport in this implementation,
+  // it is better to look them up on the PeerConnection.
+  virtual rtc::scoped_refptr<DtlsTransportInterface> LookupDtlsTransportByMid(
+      const std::string& mid);
+  // TODO(hta): Remove default implementation.
 
   // Returns the current SignalingState.
   virtual SignalingState signaling_state() = 0;

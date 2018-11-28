@@ -36,6 +36,8 @@ rtc_static_library("rtc_pc_base") {
     "channelmanager.h",
     "dtlssrtptransport.cc",
     "dtlssrtptransport.h",
+    "dtlstransport.cc",
+    "dtlstransport.h",
     "externalhmac.cc",
     "externalhmac.h",
     "jseptransport.cc",

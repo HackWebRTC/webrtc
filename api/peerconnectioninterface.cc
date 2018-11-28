@@ -9,6 +9,7 @@
  */
 
 #include "api/peerconnectioninterface.h"
+#include "api/dtlstransportinterface.h"
 
 namespace webrtc {
 
@@ -173,6 +174,11 @@ bool PeerConnectionInterface::StartRtcEventLog(
     std::unique_ptr<RtcEventLogOutput> output,
     int64_t output_period_ms) {
   return false;
+}
+
+rtc::scoped_refptr<DtlsTransportInterface>
+PeerConnectionInterface::LookupDtlsTransportByMid(const std::string& mid) {
+  return nullptr;
 }
 
 PeerConnectionInterface::BitrateParameters::BitrateParameters() = default;

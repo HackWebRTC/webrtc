@@ -870,7 +870,7 @@ TEST_F(JsepTransport2Test, RtcpMuxNegotiation) {
       CreateJsepTransport2(/*rtcp_mux_enabled=*/false, SrtpMode::kDtlsSrtp);
   JsepTransportDescription local_desc;
   local_desc.rtcp_mux_enabled = true;
-  EXPECT_NE(nullptr, jsep_transport_->rtcp_dtls_transport());
+  ASSERT_NE(nullptr, jsep_transport_->rtcp_dtls_transport());
   EXPECT_FALSE(signal_rtcp_mux_active_received_);
 
   // The remote side supports RTCP-mux.

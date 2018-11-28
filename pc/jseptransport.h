@@ -24,6 +24,7 @@
 #include "p2p/base/p2pconstants.h"
 #include "p2p/base/transportinfo.h"
 #include "pc/dtlssrtptransport.h"
+#include "pc/dtlstransport.h"
 #include "pc/rtcpmuxfilter.h"
 #include "pc/rtptransport.h"
 #include "pc/sessiondescription.h"
@@ -117,7 +118,6 @@ class JsepTransport : public sigslot::has_slots<>,
   webrtc::RTCError SetRemoteJsepTransportDescription(
       const JsepTransportDescription& jsep_description,
       webrtc::SdpType type);
-
   webrtc::RTCError AddRemoteCandidates(const Candidates& candidates);
 
   // Set the "needs-ice-restart" flag as described in JSEP. After the flag is
@@ -157,12 +157,40 @@ class JsepTransport : public sigslot::has_slots<>,
     }
   }
 
-  DtlsTransportInternal* rtp_dtls_transport() const {
-    return rtp_dtls_transport_.get();
+  const DtlsTransportInternal* rtp_dtls_transport() const {
+    if (rtp_dtls_transport_) {
+      return rtp_dtls_transport_->internal();
+    } else {
+      return nullptr;
+    }
   }
 
-  DtlsTransportInternal* rtcp_dtls_transport() const {
-    return rtcp_dtls_transport_.get();
+  DtlsTransportInternal* rtp_dtls_transport() {
+    if (rtp_dtls_transport_) {
+      return rtp_dtls_transport_->internal();
+    } else {
+      return nullptr;
+    }
+  }
+
+  const DtlsTransportInternal* rtcp_dtls_transport() const {
+    if (rtcp_dtls_transport_) {
+      return rtcp_dtls_transport_->internal();
+    } else {
+      return nullptr;
+    }
+  }
+
+  DtlsTransportInternal* rtcp_dtls_transport() {
+    if (rtcp_dtls_transport_) {
+      return rtcp_dtls_transport_->internal();
+    } else {
+      return nullptr;
+    }
+  }
+
+  rtc::scoped_refptr<webrtc::DtlsTransportInterface> RtpDtlsTransport() {
+    return rtp_dtls_transport_;
   }
 
   // Returns media transport, if available.
@@ -256,8 +284,8 @@ class JsepTransport : public sigslot::has_slots<>,
   std::unique_ptr<webrtc::SrtpTransport> sdes_transport_;
   std::unique_ptr<webrtc::DtlsSrtpTransport> dtls_srtp_transport_;
 
-  std::unique_ptr<DtlsTransportInternal> rtp_dtls_transport_;
-  std::unique_ptr<DtlsTransportInternal> rtcp_dtls_transport_;
+  rtc::scoped_refptr<webrtc::DtlsTransport> rtp_dtls_transport_;
+  rtc::scoped_refptr<webrtc::DtlsTransport> rtcp_dtls_transport_;
 
   SrtpFilter sdes_negotiator_;
   RtcpMuxFilter rtcp_mux_negotiator_;

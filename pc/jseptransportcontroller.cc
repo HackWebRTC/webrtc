@@ -153,7 +153,7 @@ MediaTransportState JsepTransportController::GetMediaTransportState(
 }
 
 cricket::DtlsTransportInternal* JsepTransportController::GetDtlsTransport(
-    const std::string& mid) const {
+    const std::string& mid) {
   auto jsep_transport = GetJsepTransportForMid(mid);
   if (!jsep_transport) {
     return nullptr;
@@ -161,13 +161,22 @@ cricket::DtlsTransportInternal* JsepTransportController::GetDtlsTransport(
   return jsep_transport->rtp_dtls_transport();
 }
 
-cricket::DtlsTransportInternal* JsepTransportController::GetRtcpDtlsTransport(
-    const std::string& mid) const {
+const cricket::DtlsTransportInternal*
+JsepTransportController::GetRtcpDtlsTransport(const std::string& mid) const {
   auto jsep_transport = GetJsepTransportForMid(mid);
   if (!jsep_transport) {
     return nullptr;
   }
   return jsep_transport->rtcp_dtls_transport();
+}
+
+rtc::scoped_refptr<webrtc::DtlsTransportInterface>
+JsepTransportController::LookupDtlsTransportByMid(const std::string& mid) {
+  auto jsep_transport = GetJsepTransportForMid(mid);
+  if (!jsep_transport) {
+    return nullptr;
+  }
+  return jsep_transport->RtpDtlsTransport();
 }
 
 void JsepTransportController::SetIceConfig(const cricket::IceConfig& config) {
@@ -346,9 +355,10 @@ RTCError JsepTransportController::RemoveRemoteCandidates(
       continue;
     }
     for (const cricket::Candidate& candidate : candidates) {
-      auto dtls = candidate.component() == cricket::ICE_CANDIDATE_COMPONENT_RTP
-                      ? jsep_transport->rtp_dtls_transport()
-                      : jsep_transport->rtcp_dtls_transport();
+      cricket::DtlsTransportInternal* dtls =
+          candidate.component() == cricket::ICE_CANDIDATE_COMPONENT_RTP
+              ? jsep_transport->rtp_dtls_transport()
+              : jsep_transport->rtcp_dtls_transport();
       if (dtls) {
         dtls->ice_transport()->RemoveRemoteCandidate(candidate);
       }
