@@ -11,23 +11,29 @@
 #include "video/video_receive_stream.h"
 
 #include <stdlib.h>
-
+#include <string.h>
 #include <set>
 #include <string>
 #include <utility>
 
 #include "absl/memory/memory.h"
 #include "absl/types/optional.h"
+#include "api/array_view.h"
+#include "api/crypto/framedecryptorinterface.h"
+#include "api/video/encoded_image.h"
+#include "api/video_codecs/sdp_video_format.h"
+#include "api/video_codecs/video_codec.h"
 #include "api/video_codecs/video_decoder_factory.h"
+#include "api/video_codecs/video_encoder.h"
 #include "call/rtp_stream_receiver_controller_interface.h"
 #include "call/rtx_receive_stream.h"
-#include "common_video/h264/profile_level_id.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "common_video/include/incoming_video_stream.h"
-#include "common_video/libyuv/include/webrtc_libyuv.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp.h"
+#include "media/base/h264_profile_level_id.h"
 #include "modules/utility/include/process_thread.h"
-#include "modules/video_coding/frame_object.h"
-#include "modules/video_coding/include/video_coding.h"
+#include "modules/video_coding/include/video_codec_interface.h"
+#include "modules/video_coding/include/video_coding_defines.h"
+#include "modules/video_coding/include/video_error_codes.h"
 #include "modules/video_coding/jitter_estimator.h"
 #include "modules/video_coding/timing.h"
 #include "modules/video_coding/utility/vp8_header_parser.h"
@@ -36,6 +42,7 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_file.h"
 #include "rtc_base/strings/string_builder.h"
+#include "rtc_base/timeutils.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/field_trial.h"

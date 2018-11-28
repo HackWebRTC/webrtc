@@ -10,6 +10,7 @@
 
 #include "pc/rtpreceiver.h"
 
+#include <stddef.h>
 #include <utility>
 #include <vector>
 
@@ -19,6 +20,9 @@
 #include "pc/audiotrack.h"
 #include "pc/mediastream.h"
 #include "pc/videotrack.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/location.h"
+#include "rtc_base/logging.h"
 #include "rtc_base/trace_event.h"
 
 namespace webrtc {

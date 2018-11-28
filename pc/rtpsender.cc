@@ -13,11 +13,14 @@
 #include <utility>
 #include <vector>
 
+#include "api/audio_options.h"
 #include "api/mediastreaminterface.h"
-#include "pc/localaudiosource.h"
+#include "media/base/mediaengine.h"
 #include "pc/statscollector.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/helpers.h"
+#include "rtc_base/location.h"
+#include "rtc_base/logging.h"
 #include "rtc_base/trace_event.h"
 
 namespace webrtc {

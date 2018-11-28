@@ -11,6 +11,10 @@
 #include "api/stats/rtcstatsreport.h"
 
 #include <sstream>
+#include <type_traits>
+#include <utility>
+
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 

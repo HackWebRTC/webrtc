@@ -11,7 +11,6 @@
 #include "p2p/base/transportdescription.h"
 
 #include "absl/strings/match.h"
-#include "p2p/base/p2pconstants.h"
 #include "rtc_base/arraysize.h"
 
 namespace cricket {

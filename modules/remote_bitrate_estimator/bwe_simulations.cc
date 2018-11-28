@@ -8,13 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stddef.h>
+#include <cstdint>
 #include <memory>
+#include <string>
+#include <vector>
 
-#include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#include "modules/remote_bitrate_estimator/test/bwe.h"
 #include "modules/remote_bitrate_estimator/test/bwe_test.h"
+#include "modules/remote_bitrate_estimator/test/bwe_test_framework.h"
 #include "modules/remote_bitrate_estimator/test/packet_receiver.h"
 #include "modules/remote_bitrate_estimator/test/packet_sender.h"
 #include "rtc_base/constructormagic.h"
+#include "rtc_base/random.h"
+#include "system_wrappers/include/clock.h"
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
 

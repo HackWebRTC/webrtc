@@ -11,6 +11,7 @@
 #ifndef RTC_BASE_NUMERICS_HISTOGRAM_PERCENTILE_COUNTER_H_
 #define RTC_BASE_NUMERICS_HISTOGRAM_PERCENTILE_COUNTER_H_
 
+#include <stddef.h>
 #include <stdint.h>
 #include <map>
 #include <vector>

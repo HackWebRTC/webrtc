@@ -11,8 +11,11 @@
 #ifndef MODULES_VIDEO_CODING_ENCODER_DATABASE_H_
 #define MODULES_VIDEO_CODING_ENCODER_DATABASE_H_
 
+#include <stddef.h>
 #include <memory>
 
+#include "api/video_codecs/video_codec.h"
+#include "api/video_codecs/video_encoder.h"
 #include "modules/video_coding/generic_encoder.h"
 
 namespace webrtc {

@@ -11,7 +11,8 @@
 #ifndef API_TEST_VIDEOCODEC_TEST_STATS_H_
 #define API_TEST_VIDEOCODEC_TEST_STATS_H_
 
-#include <map>
+#include <stddef.h>
+#include <stdint.h>
 #include <string>
 #include <vector>
 

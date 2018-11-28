@@ -10,10 +10,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
-#include <map>
 #include <string>
-#include <vector>
 
 #include "rtc_tools/converter/converter.h"
 #include "rtc_tools/simple_command_line_parser.h"

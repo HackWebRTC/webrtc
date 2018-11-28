@@ -11,8 +11,9 @@
 // This file contains tests for |RtpTransceiver|.
 
 #include "pc/rtptransceiver.h"
-#include "rtc_base/gunit.h"
+
 #include "test/gmock.h"
+#include "test/gtest.h"
 #include "test/mock_channelinterface.h"
 
 using ::testing::Return;

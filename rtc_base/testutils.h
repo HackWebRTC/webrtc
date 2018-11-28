@@ -13,13 +13,12 @@
 
 // Utilities for testing rtc infrastructure in unittests
 
-#include <algorithm>
 #include <map>
-#include <memory>
-#include <vector>
+#include <utility>
+
 #include "rtc_base/asyncsocket.h"
-#include "rtc_base/checks.h"
 #include "rtc_base/stream.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace webrtc {
 namespace testing {

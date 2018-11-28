@@ -11,15 +11,15 @@
 #ifndef MODULES_VIDEO_CODING_UTILITY_QUALITY_SCALER_H_
 #define MODULES_VIDEO_CODING_UTILITY_QUALITY_SCALER_H_
 
+#include <stddef.h>
+#include <stdint.h>
 #include <memory>
-#include <utility>
 
-#include "absl/types/optional.h"
 #include "api/video_codecs/video_encoder.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/experiments/quality_scaling_experiment.h"
 #include "rtc_base/numerics/moving_average.h"
 #include "rtc_base/sequenced_task_checker.h"
+#include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
 
@@ -66,6 +66,7 @@ class QualityScaler {
  private:
   class CheckQpTask;
   class QpSmoother;
+
   void CheckQp();
   void ClearSamples();
   void ReportQpLow();

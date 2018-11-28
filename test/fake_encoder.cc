@@ -11,12 +11,16 @@
 #include "test/fake_encoder.h"
 
 #include <string.h>
-
 #include <algorithm>
+#include <cstdint>
 #include <memory>
+#include <string>
 
-#include "api/video_codecs/vp8_temporal_layers.h"
+#include "api/video/video_content_type.h"
+#include "common_types.h"  // NOLINT(build/include)
+#include "modules/video_coding/codecs/h264/include/h264_globals.h"
 #include "modules/video_coding/include/video_codec_interface.h"
+#include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/checks.h"
 #include "system_wrappers/include/sleep.h"
 

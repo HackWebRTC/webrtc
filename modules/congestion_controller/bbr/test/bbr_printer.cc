@@ -9,6 +9,8 @@
  */
 #include "modules/congestion_controller/bbr/test/bbr_printer.h"
 
+#include "rtc_base/checks.h"
+
 namespace webrtc {
 
 BbrStatePrinter::BbrStatePrinter() = default;

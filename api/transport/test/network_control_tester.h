@@ -11,12 +11,16 @@
 #ifndef API_TRANSPORT_TEST_NETWORK_CONTROL_TESTER_H_
 #define API_TRANSPORT_TEST_NETWORK_CONTROL_TESTER_H_
 
+#include <stdint.h>
 #include <deque>
 #include <functional>
 #include <memory>
 
-#include "absl/types/optional.h"
 #include "api/transport/network_control.h"
+#include "api/transport/network_types.h"
+#include "api/units/data_rate.h"
+#include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
 
 namespace webrtc {
 namespace test {

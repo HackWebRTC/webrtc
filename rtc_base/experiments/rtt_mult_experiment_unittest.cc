@@ -9,8 +9,9 @@
  */
 
 #include "rtc_base/experiments/rtt_mult_experiment.h"
-#include "rtc_base/gunit.h"
+
 #include "test/field_trial.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

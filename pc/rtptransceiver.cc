@@ -10,9 +10,12 @@
 
 #include "pc/rtptransceiver.h"
 
+#include <algorithm>
 #include <string>
 
 #include "pc/rtpmediautils.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 

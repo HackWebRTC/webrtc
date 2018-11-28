@@ -18,6 +18,7 @@ rtc_source_set("data_rate") {
   deps = [
     ":data_size",
     ":time_delta",
+    "..:array_view",
     "../../rtc_base:checks",
     "../../rtc_base:stringutils",
     "../../rtc_base/units:unit_base",
@@ -32,6 +33,7 @@ rtc_source_set("data_size") {
   ]
 
   deps = [
+    "..:array_view",
     "../../rtc_base:checks",
     "../../rtc_base:stringutils",
     "../../rtc_base/units:unit_base",
@@ -46,6 +48,7 @@ rtc_source_set("time_delta") {
   ]
 
   deps = [
+    "..:array_view",
     "../../rtc_base:checks",
     "../../rtc_base:stringutils",
     "../../rtc_base/units:unit_base",
@@ -61,6 +64,7 @@ rtc_source_set("timestamp") {
 
   deps = [
     ":time_delta",
+    "..:array_view",
     "../../rtc_base:checks",
     "../../rtc_base:stringutils",
     "../../rtc_base/units:unit_base",

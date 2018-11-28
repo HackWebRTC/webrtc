@@ -10,9 +10,11 @@
 
 #include "media/base/videobroadcaster.h"
 
-#include <limits>
+#include <vector>
 
+#include "absl/types/optional.h"
 #include "api/video/i420_buffer.h"
+#include "api/video/video_rotation.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 

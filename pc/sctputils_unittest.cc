@@ -9,9 +9,12 @@
  */
 
 #include "pc/sctputils.h"
+
+#include <stdint.h>
+
 #include "rtc_base/bytebuffer.h"
 #include "rtc_base/copyonwritebuffer.h"
-#include "rtc_base/gunit.h"
+#include "test/gtest.h"
 
 class SctpUtilsTest : public testing::Test {
  public:

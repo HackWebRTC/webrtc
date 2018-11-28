@@ -8,7 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 #include "pc/sessiondescription.h"
-#include "rtc_base/gunit.h"
+
+#include "test/gtest.h"
 
 namespace cricket {
 

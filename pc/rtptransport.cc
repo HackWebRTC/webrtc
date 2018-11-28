@@ -10,14 +10,18 @@
 
 #include "pc/rtptransport.h"
 
+#include <errno.h>
+#include <string>
 #include <utility>
 
+#include "api/rtp_headers.h"
+#include "api/rtpparameters.h"
 #include "media/base/rtputils.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
-#include "p2p/base/p2pconstants.h"
-#include "p2p/base/packettransportinterface.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/copyonwritebuffer.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/trace_event.h"
 
 namespace webrtc {

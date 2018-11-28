@@ -12,12 +12,13 @@
 
 #include <limits>
 #include <memory>
-#include <utility>
+#include <string>
 
 #include "api/video/i420_buffer.h"
 #include "api/video/video_frame.h"
+#include "api/video/video_frame_buffer.h"
 #include "api/video/video_rotation.h"
-#include "modules/video_coding/include/video_codec_interface.h"
+#include "rtc_base/scoped_ref_ptr.h"
 #include "system_wrappers/include/metrics.h"
 #include "test/gtest.h"
 

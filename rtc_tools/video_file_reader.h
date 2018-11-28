@@ -10,13 +10,14 @@
 #ifndef RTC_TOOLS_VIDEO_FILE_READER_H_
 #define RTC_TOOLS_VIDEO_FILE_READER_H_
 
+#include <stddef.h>
 #include <cstdio>
 #include <iterator>
 #include <string>
-#include <vector>
 
-#include "api/video/video_frame.h"
+#include "api/video/video_frame_buffer.h"
 #include "rtc_base/refcount.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 namespace test {

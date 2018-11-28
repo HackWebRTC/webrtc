@@ -10,11 +10,13 @@
 
 #include <limits>
 
+#include "absl/types/optional.h"
 #include "api/video/i420_buffer.h"
 #include "api/video/video_frame.h"
+#include "api/video/video_rotation.h"
 #include "media/base/fakevideorenderer.h"
 #include "media/base/videobroadcaster.h"
-#include "rtc_base/gunit.h"
+#include "test/gtest.h"
 
 using rtc::VideoBroadcaster;
 using rtc::VideoSinkWants;

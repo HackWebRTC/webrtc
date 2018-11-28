@@ -12,6 +12,7 @@
 // to stdout by void functions, but it's still useful as it executes the code.
 
 #include <stdio.h>
+#include <cstddef>
 #include <fstream>
 #include <string>
 

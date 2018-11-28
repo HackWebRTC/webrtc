@@ -10,10 +10,15 @@
 
 #include "media/engine/scopedvideoencoder.h"
 
+#include <stddef.h>
+#include <stdint.h>
 #include <vector>
 
 #include "api/video/video_bitrate_allocation.h"
+#include "api/video/video_frame.h"
+#include "api/video_codecs/video_codec.h"
 #include "api/video_codecs/video_encoder.h"
+#include "common_types.h"  // NOLINT(build/include)
 
 namespace cricket {
 

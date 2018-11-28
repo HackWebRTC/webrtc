@@ -20,7 +20,6 @@
 #include <memory>
 
 #include "rtc_base/constructormagic.h"
-#include "rtc_base/thread_checker.h"
 
 namespace webrtc {
 

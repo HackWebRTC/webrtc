@@ -11,7 +11,12 @@
 
 #include <math.h>
 
+#include "absl/types/optional.h"
+#include "modules/congestion_controller/goog_cc/alr_detector.h"
+#include "modules/congestion_controller/goog_cc/delay_based_bwe.h"
 #include "modules/congestion_controller/goog_cc/trendline_estimator.h"
+#include "modules/remote_bitrate_estimator/aimd_rate_control.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 

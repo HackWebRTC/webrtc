@@ -11,6 +11,7 @@
 #ifndef VIDEO_REPORT_BLOCK_STATS_H_
 #define VIDEO_REPORT_BLOCK_STATS_H_
 
+#include <stdint.h>
 #include <map>
 #include <vector>
 

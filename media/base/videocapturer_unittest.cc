@@ -9,16 +9,17 @@
  */
 
 #include <stdio.h>
-
 #include <memory>
 #include <vector>
 
+#include "absl/types/optional.h"
+#include "api/video/video_rotation.h"
 #include "media/base/fakevideocapturer.h"
 #include "media/base/fakevideorenderer.h"
 #include "media/base/videocapturer.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/logging.h"
 #include "rtc_base/thread.h"
+#include "test/gtest.h"
 
 using cricket::FakeVideoCapturerWithTaskQueue;
 

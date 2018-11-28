@@ -10,6 +10,10 @@
 
 #include "api/stats/rtcstats_objects.h"
 
+#include <utility>
+
+#include "rtc_base/checks.h"
+
 namespace webrtc {
 
 const char* const RTCDataChannelState::kConnecting = "connecting";

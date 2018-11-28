@@ -10,9 +10,13 @@
 
 #include "media/base/mediaengine.h"
 
+#include <stddef.h>
+#include <cstdint>
+#include <string>
 #include <utility>
 
 #include "api/video/video_bitrate_allocation.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/stringencode.h"
 
 namespace cricket {

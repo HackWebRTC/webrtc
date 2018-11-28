@@ -10,30 +10,43 @@
 
 #include "modules/video_coding/codecs/test/videocodec_test_fixture_impl.h"
 
+#include <stdint.h>
+#include <stdio.h>
 #include <algorithm>
 #include <cmath>
 #include <memory>
+#include <string>
 #include <utility>
 
 #include "absl/memory/memory.h"
+#include "absl/types/optional.h"
+#include "api/array_view.h"
+#include "api/video/video_bitrate_allocation.h"
 #include "api/video_codecs/sdp_video_format.h"
+#include "api/video_codecs/video_codec.h"
+#include "api/video_codecs/video_decoder.h"
+#include "api/video_codecs/video_encoder_config.h"
 #include "common_types.h"  // NOLINT(build/include)
+#include "common_video/h264/h264_common.h"
 #include "media/base/h264_profile_level_id.h"
 #include "media/base/mediaconstants.h"
 #include "media/engine/internaldecoderfactory.h"
 #include "media/engine/internalencoderfactory.h"
 #include "media/engine/simulcast.h"
+#include "modules/video_coding/codecs/h264/include/h264_globals.h"
 #include "modules/video_coding/codecs/vp9/svc_config.h"
-#include "modules/video_coding/include/video_codec_interface.h"
+#include "modules/video_coding/utility/ivf_file_writer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/cpu_time.h"
 #include "rtc_base/event.h"
 #include "rtc_base/file.h"
 #include "rtc_base/strings/string_builder.h"
+#include "rtc_base/timeutils.h"
 #include "system_wrappers/include/cpu_info.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
+#include "test/testsupport/frame_writer.h"
 #include "test/video_codec_settings.h"
 
 namespace webrtc {

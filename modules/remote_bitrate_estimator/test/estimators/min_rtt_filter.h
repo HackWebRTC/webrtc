@@ -12,8 +12,7 @@
 #ifndef MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_ESTIMATORS_MIN_RTT_FILTER_H_
 #define MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_ESTIMATORS_MIN_RTT_FILTER_H_
 
-#include <cstdint>
-#include <limits>
+#include <stddef.h>
 #include <list>
 
 #include "absl/types/optional.h"

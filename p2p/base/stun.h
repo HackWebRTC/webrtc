@@ -14,11 +14,14 @@
 // This file contains classes for dealing with the STUN protocol, as specified
 // in RFC 5389, and its descendants.
 
+#include <stddef.h>
+#include <stdint.h>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "rtc_base/bytebuffer.h"
+#include "rtc_base/ipaddress.h"
 #include "rtc_base/socketaddress.h"
 
 namespace cricket {
@@ -116,14 +119,15 @@ const size_t kStunLegacyTransactionIdLength = 16;
 // STUN Message Integrity HMAC length.
 const size_t kStunMessageIntegritySize = 20;
 
-class StunAttribute;
 class StunAddressAttribute;
-class StunXorAddressAttribute;
-class StunUInt32Attribute;
-class StunUInt64Attribute;
+class StunAttribute;
 class StunByteStringAttribute;
 class StunErrorCodeAttribute;
+
 class StunUInt16ListAttribute;
+class StunUInt32Attribute;
+class StunUInt64Attribute;
+class StunXorAddressAttribute;
 
 // Records a complete STUN/TURN message.  Each message consists of a type and
 // any number of attributes.  Each attribute is parsed into an instance of an

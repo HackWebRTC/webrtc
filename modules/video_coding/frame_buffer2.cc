@@ -11,15 +11,22 @@
 #include "modules/video_coding/frame_buffer2.h"
 
 #include <algorithm>
-#include <cstring>
+#include <cstdlib>
+#include <iterator>
 #include <queue>
+#include <utility>
 #include <vector>
 
+#include "api/video/encoded_image.h"
+#include "api/video/video_timing.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "modules/video_coding/jitter_estimator.h"
 #include "modules/video_coding/timing.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/experiments/rtt_mult_experiment.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/numerics/sequence_number_util.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/field_trial.h"

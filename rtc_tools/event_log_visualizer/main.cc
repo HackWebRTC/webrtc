@@ -8,9 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stdio.h>
+#include <string.h>
 #include <iostream>
+#include <map>
+#include <memory>
+#include <string>
+#include <utility>
 
+#include "logging/rtc_event_log/rtc_event_log.h"
 #include "logging/rtc_event_log/rtc_event_log_parser_new.h"
+#include "modules/audio_coding/neteq/include/neteq.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/report_block.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/flags.h"
 #include "rtc_tools/event_log_visualizer/analyzer.h"
 #include "rtc_tools/event_log_visualizer/plot_base.h"

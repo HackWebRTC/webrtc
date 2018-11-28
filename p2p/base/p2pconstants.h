@@ -11,7 +11,8 @@
 #ifndef P2P_BASE_P2PCONSTANTS_H_
 #define P2P_BASE_P2PCONSTANTS_H_
 
-#include <string>
+#include <stddef.h>
+#include <stdint.h>
 
 #include "rtc_base/system/rtc_export.h"
 

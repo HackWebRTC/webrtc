@@ -10,8 +10,11 @@
 
 #include "api/transport/goog_cc_factory.h"
 
+#include <stdint.h>
+
 #include "absl/memory/memory.h"
 #include "modules/congestion_controller/goog_cc/goog_cc_network_control.h"
+
 namespace webrtc {
 GoogCcNetworkControllerFactory::GoogCcNetworkControllerFactory(
     RtcEventLog* event_log)

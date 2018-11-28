@@ -11,11 +11,16 @@
 #ifndef EXAMPLES_PEERCONNECTION_CLIENT_LINUX_MAIN_WND_H_
 #define EXAMPLES_PEERCONNECTION_CLIENT_LINUX_MAIN_WND_H_
 
+#include <stdint.h>
 #include <memory>
 #include <string>
 
+#include "api/mediastreaminterface.h"
+#include "api/video/video_frame.h"
+#include "api/video/video_sink_interface.h"
 #include "examples/peerconnection/client/main_wnd.h"
 #include "examples/peerconnection/client/peer_connection_client.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 // Forward declarations.
 typedef struct _GtkWidget GtkWidget;

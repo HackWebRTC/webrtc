@@ -9,10 +9,14 @@
  */
 
 #include "rtc_base/third_party/base64/base64.h"
-#include "rtc_base/gunit.h"
-#include "rtc_base/logging.h"
 
+#include <stdio.h>
+#include <string.h>
+#include <algorithm>
+
+#include "rtc_base/logging.h"
 #include "rtc_base/testbase64.h"
+#include "test/gtest.h"
 
 using namespace std;
 using namespace rtc;

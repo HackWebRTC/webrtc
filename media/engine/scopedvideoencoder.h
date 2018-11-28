@@ -13,6 +13,8 @@
 
 #include <memory>
 
+#include "api/video_codecs/video_encoder.h"
+#include "media/base/codec.h"
 #include "media/engine/webrtcvideoencoderfactory.h"
 
 namespace cricket {

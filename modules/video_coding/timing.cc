@@ -10,6 +10,7 @@
 
 #include "modules/video_coding/timing.h"
 
+#include <assert.h>
 #include <algorithm>
 
 #include "rtc_base/time/timestamp_extrapolator.h"

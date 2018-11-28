@@ -11,17 +11,14 @@
 #include "modules/video_coding/video_coding_impl.h"
 
 #include <algorithm>
-#include <utility>
+#include <memory>
 
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
+#include "api/video/encoded_image.h"
 #include "api/video/video_bitrate_allocator.h"
+#include "api/video/video_bitrate_allocator_factory.h"
 #include "common_types.h"  // NOLINT(build/include)
-#include "common_video/libyuv/include/webrtc_libyuv.h"
-#include "modules/video_coding/encoded_frame.h"
-#include "modules/video_coding/include/video_codec_initializer.h"
 #include "modules/video_coding/include/video_codec_interface.h"
-#include "modules/video_coding/jitter_buffer.h"
-#include "modules/video_coding/packet.h"
 #include "modules/video_coding/timing.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/thread_checker.h"

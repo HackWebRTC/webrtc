@@ -18,5 +18,6 @@ rtc_source_set("rtc_api_video_unittests") {
     "..:video_bitrate_allocation",
     "..:video_frame",
     "../../../test:test_support",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }

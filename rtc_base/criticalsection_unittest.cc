@@ -8,8 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stddef.h>
+#include <stdint.h>
 #include <memory>
 #include <set>
+#include <utility>
 #include <vector>
 
 #include "rtc_base/arraysize.h"
@@ -17,9 +20,12 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/event.h"
-#include "rtc_base/gunit.h"
+#include "rtc_base/location.h"
+#include "rtc_base/messagehandler.h"
+#include "rtc_base/messagequeue.h"
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/thread.h"
+#include "test/gtest.h"
 
 namespace rtc {
 

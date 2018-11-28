@@ -80,6 +80,7 @@ rtc_static_library("builtin_video_encoder_factory") {
     "../../media:rtc_internal_video_codecs",
     "../../media:rtc_media_base",
     "../../media:rtc_vp8_encoder_simulcast_proxy",
+    "../../rtc_base:checks",
     "../../rtc_base:ptr_util",
     "../../rtc_base/system:rtc_export",
     "//third_party/abseil-cpp/absl/memory",
@@ -101,7 +102,7 @@ rtc_static_library("create_vp8_temporal_layers") {
     "../../modules/video_coding:video_codec_interface",
     "../../modules/video_coding:webrtc_vp8_temporal_layers",
     "../../system_wrappers:system_wrappers",
-    "//third_party/abseil-cpp/absl/memory:memory",
+    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 
@@ -122,6 +123,7 @@ rtc_static_library("rtc_software_fallback_wrappers") {
 
   deps = [
     ":video_codecs_api",
+    "../../:webrtc_common",
     "../../media:rtc_h264_profile_id",
     "../../media:rtc_media_base",
     "../../modules/video_coding:video_codec_interface",
@@ -129,7 +131,10 @@ rtc_static_library("rtc_software_fallback_wrappers") {
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base/system:fallthrough",
     "../../system_wrappers:field_trial",
+    "../video:encoded_image",
     "../video:video_bitrate_allocation",
+    "../video:video_frame",
     "//third_party/abseil-cpp/absl/memory",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }

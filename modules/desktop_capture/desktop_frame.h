@@ -11,9 +11,9 @@
 #ifndef MODULES_DESKTOP_CAPTURE_DESKTOP_FRAME_H_
 #define MODULES_DESKTOP_CAPTURE_DESKTOP_FRAME_H_
 
+#include <stdint.h>
 #include <memory>
 
-#include "modules/desktop_capture/desktop_capture_types.h"
 #include "modules/desktop_capture/desktop_geometry.h"
 #include "modules/desktop_capture/desktop_region.h"
 #include "modules/desktop_capture/shared_memory.h"

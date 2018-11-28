@@ -10,9 +10,15 @@
 
 #include "test/vcm_capturer.h"
 
-#include "call/video_send_stream.h"
+#include <stdint.h>
+#include <memory>
+
+#include "absl/types/optional.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_capture/video_capture_factory.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+
 namespace webrtc {
 namespace test {
 

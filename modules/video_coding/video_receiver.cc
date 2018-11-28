@@ -8,17 +8,34 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stddef.h>
+#include <cstdint>
+#include <vector>
+
+#include "api/rtp_headers.h"
+#include "api/video_codecs/video_codec.h"
+#include "api/video_codecs/video_decoder.h"
 #include "common_types.h"  // NOLINT(build/include)
-#include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "modules/include/module_common_types.h"
 #include "modules/utility/include/process_thread.h"
+#include "modules/video_coding/decoder_database.h"
 #include "modules/video_coding/encoded_frame.h"
-#include "modules/video_coding/include/video_codec_interface.h"
+#include "modules/video_coding/generic_decoder.h"
+#include "modules/video_coding/include/video_coding.h"
+#include "modules/video_coding/include/video_coding_defines.h"
+#include "modules/video_coding/internal_defines.h"
 #include "modules/video_coding/jitter_buffer.h"
+#include "modules/video_coding/media_opt_util.h"
 #include "modules/video_coding/packet.h"
+#include "modules/video_coding/receiver.h"
+#include "modules/video_coding/timing.h"
 #include "modules/video_coding/video_coding_impl.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/criticalsection.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/onetimeevent.h"
+#include "rtc_base/thread_checker.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/clock.h"
 

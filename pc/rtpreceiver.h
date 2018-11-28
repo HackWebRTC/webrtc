@@ -16,15 +16,25 @@
 #define PC_RTPRECEIVER_H_
 
 #include <stdint.h>
-
 #include <string>
 #include <vector>
 
+#include "absl/types/optional.h"
+#include "api/crypto/framedecryptorinterface.h"
 #include "api/mediastreaminterface.h"
+#include "api/mediatypes.h"
+#include "api/rtpparameters.h"
 #include "api/rtpreceiverinterface.h"
+#include "api/video/video_frame.h"
+#include "api/video/video_sink_interface.h"
+#include "api/video/video_source_interface.h"
+#include "media/base/mediachannel.h"
 #include "media/base/videobroadcaster.h"
 #include "pc/remoteaudiosource.h"
 #include "pc/videotracksource.h"
+#include "rtc_base/refcountedobject.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/thread.h"
 
 namespace webrtc {
 

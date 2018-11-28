@@ -10,10 +10,11 @@
 
 #include "modules/remote_bitrate_estimator/test/bwe_test_framework.h"
 
-#include <numeric>
-
+#include "modules/include/module_common_types_public.h"
+#include "modules/remote_bitrate_estimator/test/bwe.h"
 #include "modules/remote_bitrate_estimator/test/packet.h"
 #include "modules/remote_bitrate_estimator/test/packet_sender.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/constructormagic.h"
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"

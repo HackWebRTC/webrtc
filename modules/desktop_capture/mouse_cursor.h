@@ -13,12 +13,11 @@
 
 #include <memory>
 
+#include "modules/desktop_capture/desktop_frame.h"
 #include "modules/desktop_capture/desktop_geometry.h"
 #include "rtc_base/constructormagic.h"
 
 namespace webrtc {
-
-class DesktopFrame;
 
 class MouseCursor {
  public:

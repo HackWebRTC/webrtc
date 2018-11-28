@@ -10,16 +10,25 @@
 
 #include "pc/webrtcsessiondescriptionfactory.h"
 
+#include <stddef.h>
 #include <algorithm>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/types/optional.h"
 #include "api/jsep.h"
 #include "api/jsepsessiondescription.h"
+#include "api/rtcerror.h"
+#include "pc/sessiondescription.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/location.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/refcountedobject.h"
 #include "rtc_base/sslidentity.h"
+#include "rtc_base/sslstreamadapter.h"
+#include "rtc_base/stringencode.h"
 
 using cricket::MediaSessionOptions;
 

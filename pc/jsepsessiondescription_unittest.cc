@@ -8,20 +8,29 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stddef.h>
+#include <stdint.h>
 #include <memory>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "absl/memory/memory.h"
 #include "api/candidate.h"
+#include "api/jsep.h"
 #include "api/jsepicecandidate.h"
 #include "api/jsepsessiondescription.h"
+#include "media/base/codec.h"
 #include "p2p/base/p2pconstants.h"
 #include "p2p/base/port.h"
-#include "pc/mediasession.h"
+#include "p2p/base/transportdescription.h"
+#include "p2p/base/transportinfo.h"
 #include "pc/sessiondescription.h"
 #include "pc/webrtcsdp.h"
-#include "rtc_base/gunit.h"
+#include "rtc_base/helpers.h"
+#include "rtc_base/socketaddress.h"
 #include "rtc_base/stringencode.h"
+#include "test/gtest.h"
 
 using cricket::MediaProtocolType;
 using ::testing::Values;

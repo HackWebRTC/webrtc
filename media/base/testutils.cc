@@ -10,10 +10,10 @@
 
 #include "media/base/testutils.h"
 
-#include <algorithm>
-#include <memory>
+#include <cstdint>
 
 #include "api/video/video_frame.h"
+#include "api/video/video_source_interface.h"
 #include "media/base/videocapturer.h"
 
 namespace cricket {

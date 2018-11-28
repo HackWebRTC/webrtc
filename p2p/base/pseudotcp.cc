@@ -10,14 +10,13 @@
 
 #include "p2p/base/pseudotcp.h"
 
+#include <errno.h>
 #include <stdio.h>
-#include <stdlib.h>
-
 #include <algorithm>
+#include <cstdint>
 #include <memory>
 #include <set>
 
-#include "rtc_base/arraysize.h"
 #include "rtc_base/bytebuffer.h"
 #include "rtc_base/byteorder.h"
 #include "rtc_base/checks.h"

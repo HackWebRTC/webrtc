@@ -10,9 +10,7 @@
 
 #include "media/base/videocommon.h"
 
-#include <limits.h>  // For INT_MAX
-#include <math.h>
-
+#include "api/array_view.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/strings/string_builder.h"
 

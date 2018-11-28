@@ -9,11 +9,11 @@
  */
 
 #include "rtc_base/stringencode.h"
-#include "rtc_base/arraysize.h"
-#include "rtc_base/gunit.h"
-#include "rtc_base/stringutils.h"
 
+#include <string.h>
 #include <sstream>  // no-presubmit-check TODO(webrtc:8982)
+
+#include "test/gtest.h"
 
 namespace rtc {
 

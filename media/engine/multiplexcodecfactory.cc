@@ -10,6 +10,8 @@
 
 #include "media/engine/multiplexcodecfactory.h"
 
+#include <map>
+#include <string>
 #include <utility>
 
 #include "absl/strings/match.h"

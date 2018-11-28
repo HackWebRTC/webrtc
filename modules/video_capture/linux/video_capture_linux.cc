@@ -17,14 +17,15 @@
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
-#include <sys/stat.h>
+#include <sys/select.h>
+#include <time.h>
 #include <unistd.h>
-
 #include <new>
+#include <string>
 
 #include "media/base/videocommon.h"
+#include "modules/video_capture/video_capture.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/refcount.h"
 #include "rtc_base/refcountedobject.h"
 #include "rtc_base/scoped_ref_ptr.h"
 

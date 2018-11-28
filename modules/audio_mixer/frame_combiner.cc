@@ -12,18 +12,19 @@
 
 #include <algorithm>
 #include <array>
-#include <functional>
+#include <cstdint>
+#include <iterator>
+#include <string>
 
 #include "api/array_view.h"
-#include "audio/utility/audio_frame_operations.h"
 #include "common_audio/include/audio_util.h"
 #include "modules/audio_mixer/audio_frame_manipulator.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"
+#include "modules/audio_processing/include/audio_frame_view.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/logging.h"
 #include "system_wrappers/include/metrics.h"
 
 namespace webrtc {

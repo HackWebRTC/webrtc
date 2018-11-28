@@ -10,17 +10,22 @@
 
 #include "pc/srtptransport.h"
 
+#include <stdint.h>
+#include <string.h>
 #include <string>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "media/base/rtputils.h"
 #include "pc/rtptransport.h"
 #include "pc/srtpsession.h"
 #include "rtc_base/asyncpacketsocket.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/copyonwritebuffer.h"
+#include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
+#include "rtc_base/sslstreamadapter.h"
 #include "rtc_base/third_party/base64/base64.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/trace_event.h"
 #include "rtc_base/zero_memory.h"
 

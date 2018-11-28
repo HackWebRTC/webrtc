@@ -11,8 +11,14 @@
 #ifndef MODULES_VIDEO_CODING_PACKET_H_
 #define MODULES_VIDEO_CODING_PACKET_H_
 
+#include <stddef.h>
+#include <stdint.h>
+
+#include "absl/types/optional.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/include/module_common_types.h"
 #include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor.h"
+#include "modules/rtp_rtcp/source/rtp_video_header.h"
 
 namespace webrtc {
 

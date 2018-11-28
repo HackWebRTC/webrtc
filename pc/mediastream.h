@@ -14,10 +14,10 @@
 #define PC_MEDIASTREAM_H_
 
 #include <string>
-#include <vector>
 
 #include "api/mediastreaminterface.h"
 #include "api/notifier.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

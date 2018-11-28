@@ -10,8 +10,10 @@
 #ifndef MODULES_VIDEO_CODING_TEST_STREAM_GENERATOR_H_
 #define MODULES_VIDEO_CODING_TEST_STREAM_GENERATOR_H_
 
+#include <stdint.h>
 #include <list>
 
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/packet.h"
 #include "rtc_base/constructormagic.h"
 

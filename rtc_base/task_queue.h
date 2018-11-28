@@ -11,6 +11,7 @@
 #ifndef RTC_BASE_TASK_QUEUE_H_
 #define RTC_BASE_TASK_QUEUE_H_
 
+#include <stdint.h>
 #include <memory>
 #include <type_traits>
 #include <utility>
@@ -233,6 +234,7 @@ class RTC_LOCKABLE RTC_EXPORT TaskQueue {
 
  private:
   class Impl;
+
   const scoped_refptr<Impl> impl_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(TaskQueue);

@@ -10,6 +10,8 @@
 
 #include "rtc_base/testechoserver.h"
 
+#include "rtc_base/socketserver.h"
+
 namespace rtc {
 
 TestEchoServer::TestEchoServer(Thread* thread, const SocketAddress& addr)

@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <cstdint>
 #include <cstring>
 #include <memory>
 
-#include "modules/video_coding/include/video_coding_defines.h"
 #include "modules/video_coding/nack_module.h"
 #include "system_wrappers/include/clock.h"
 #include "test/field_trial.h"

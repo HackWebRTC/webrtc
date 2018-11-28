@@ -11,11 +11,15 @@
 #ifndef VIDEO_SEND_DELAY_STATS_H_
 #define VIDEO_SEND_DELAY_STATS_H_
 
+#include <stddef.h>
+#include <stdint.h>
 #include <map>
 #include <memory>
 #include <set>
 
 #include "call/video_send_stream.h"
+#include "common_types.h"  // NOLINT(build/include)
+#include "modules/include/module_common_types_public.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/clock.h"

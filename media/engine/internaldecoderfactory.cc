@@ -12,6 +12,7 @@
 
 #include "absl/strings/match.h"
 #include "api/video_codecs/sdp_video_format.h"
+#include "media/base/codec.h"
 #include "media/base/mediaconstants.h"
 #include "modules/video_coding/codecs/h264/include/h264.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"

@@ -10,7 +10,6 @@
 
 #include "modules/video_coding/utility/ivf_file_writer.h"
 
-#include <string>
 #include <utility>
 
 #include "api/video_codecs/video_codec.h"

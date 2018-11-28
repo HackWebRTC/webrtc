@@ -15,12 +15,10 @@
 #include "api/test/mock_video_encoder.h"
 #include "api/test/videocodec_test_fixture.h"
 #include "api/video/i420_buffer.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "media/base/mediaconstants.h"
 #include "modules/video_coding/codecs/test/videocodec_test_stats_impl.h"
 #include "modules/video_coding/codecs/test/videoprocessor.h"
-#include "modules/video_coding/include/video_coding.h"
-#include "rtc_base/event.h"
+#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/task_queue_for_test.h"
 #include "test/gmock.h"
 #include "test/gtest.h"

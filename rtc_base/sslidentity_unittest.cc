@@ -8,17 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <string.h>
 #include <memory>
 #include <string>
+#include <vector>
 
+#include "rtc_base/checks.h"
 #include "rtc_base/fakesslidentity.h"
-#include "rtc_base/gunit.h"
 #include "rtc_base/helpers.h"
+#include "rtc_base/logging.h"
 #include "rtc_base/messagedigest.h"
-#include "rtc_base/ssladapter.h"
 #include "rtc_base/sslfingerprint.h"
 #include "rtc_base/sslidentity.h"
 #include "rtc_base/stringutils.h"
+#include "test/gtest.h"
 
 using rtc::SSLIdentity;
 

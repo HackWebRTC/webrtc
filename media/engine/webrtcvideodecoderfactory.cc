@@ -11,6 +11,7 @@
 #include "media/engine/webrtcvideodecoderfactory.h"
 
 #include "api/video_codecs/video_codec.h"
+#include "rtc_base/checks.h"
 
 namespace cricket {
 

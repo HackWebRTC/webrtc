@@ -11,12 +11,16 @@
 #ifndef RTC_BASE_SSLSTREAMADAPTER_H_
 #define RTC_BASE_SSLSTREAMADAPTER_H_
 
+#include <stddef.h>
+#include <stdint.h>
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "rtc_base/sslcertificate.h"
 #include "rtc_base/sslidentity.h"
 #include "rtc_base/stream.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace rtc {
 

@@ -11,7 +11,6 @@
 #include "rtc_tools/event_log_visualizer/plot_base.h"
 
 #include <algorithm>
-#include <limits>
 
 #include "rtc_base/checks.h"
 

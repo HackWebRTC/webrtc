@@ -9,6 +9,8 @@
  */
 
 #include "p2p/base/icecredentialsiterator.h"
+
+#include "p2p/base/p2pconstants.h"
 #include "rtc_base/helpers.h"
 
 namespace cricket {

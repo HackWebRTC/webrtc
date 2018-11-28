@@ -11,6 +11,8 @@
 #ifndef LOGGING_RTC_EVENT_LOG_ENCODER_VARINT_H_
 #define LOGGING_RTC_EVENT_LOG_ENCODER_VARINT_H_
 
+#include <stddef.h>
+#include <stdint.h>
 #include <string>
 
 #include "absl/strings/string_view.h"

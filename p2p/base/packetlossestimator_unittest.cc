@@ -8,10 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <cstdint>
 #include <utility>
 
 #include "p2p/base/packetlossestimator.h"
-#include "rtc_base/gunit.h"
+#include "test/gtest.h"
 
 using cricket::PacketLossEstimator;
 

@@ -10,7 +10,7 @@
 
 #include "pc/videotracksource.h"
 
-#include <string>
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 

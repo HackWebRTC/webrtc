@@ -11,11 +11,12 @@
 #ifndef MODULES_VIDEO_CODING_UTILITY_IVF_FILE_WRITER_H_
 #define MODULES_VIDEO_CODING_UTILITY_IVF_FILE_WRITER_H_
 
+#include <stddef.h>
+#include <stdint.h>
 #include <memory>
-#include <string>
 
 #include "api/video/encoded_image.h"
-#include "modules/include/module_common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/file.h"
 #include "rtc_base/timeutils.h"

@@ -110,6 +110,12 @@ specific_include_rules = {
     "+rtc_base/bind.h",
   ],
 
+  "proxy\.h": [
+    "+rtc_base/messagehandler.h",  # Inherits from it.
+    "+rtc_base/messagequeue.h",    # Inherits from MessageData.
+    "+rtc_base/scoped_ref_ptr.h",
+  ],
+
   "refcountedbase\.h": [
     "+rtc_base/constructormagic.h",
     "+rtc_base/refcount.h",
@@ -258,7 +264,8 @@ specific_include_rules = {
   ],
 
   "i010_buffer\.h": [
-    "+rtc_base/memory/aligned_malloc.h"
+    "+rtc_base/memory/aligned_malloc.h",
+    "+rtc_base/scoped_ref_ptr.h",
   ],
 
   "i420_buffer\.h": [

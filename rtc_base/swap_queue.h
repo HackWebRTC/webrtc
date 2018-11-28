@@ -11,7 +11,7 @@
 #ifndef RTC_BASE_SWAP_QUEUE_H_
 #define RTC_BASE_SWAP_QUEUE_H_
 
-#include <algorithm>
+#include <stddef.h>
 #include <utility>
 #include <vector>
 
@@ -19,6 +19,7 @@
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/system/unused.h"
+#include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
 

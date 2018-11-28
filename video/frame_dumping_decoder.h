@@ -11,9 +11,13 @@
 #ifndef VIDEO_FRAME_DUMPING_DECODER_H_
 #define VIDEO_FRAME_DUMPING_DECODER_H_
 
+#include <stdint.h>
 #include <memory>
 
+#include "api/video/encoded_image.h"
+#include "api/video_codecs/video_codec.h"
 #include "api/video_codecs/video_decoder.h"
+#include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/utility/ivf_file_writer.h"
 #include "rtc_base/platform_file.h"
 

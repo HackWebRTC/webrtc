@@ -10,6 +10,8 @@
 
 #include "modules/remote_bitrate_estimator/test/bwe.h"
 
+#include <algorithm>
+#include <cstdint>
 #include <random>
 #include <vector>
 

@@ -13,10 +13,14 @@
 // The debug files are dumped as protobuf blobs. For analysis, it's necessary
 // to unpack the file into its component parts: audio and other data.
 
+#include <inttypes.h>
+#include <stdint.h>
 #include <stdio.h>
-
+#include <stdlib.h>
 #include <memory>
+#include <string>
 
+#include "common_audio/wav_file.h"
 #include "modules/audio_processing/test/protobuf_utils.h"
 #include "modules/audio_processing/test/test_utils.h"
 #include "rtc_base/flags.h"
@@ -26,6 +30,7 @@
 
 RTC_PUSH_IGNORING_WUNDEF()
 #include "modules/audio_processing/debug.pb.h"
+
 RTC_POP_IGNORING_WUNDEF()
 
 // TODO(andrew): unpack more of the data.

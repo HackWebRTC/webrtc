@@ -10,15 +10,20 @@
 
 #include "modules/remote_bitrate_estimator/test/packet_sender.h"
 
+#include <assert.h>
+#include <math.h>
 #include <algorithm>
+#include <limits>
 #include <list>
-#include <sstream>
+#include <vector>
 
-#include "modules/include/module_common_types.h"
+#include "modules/include/module_common_types_public.h"
 #include "modules/pacing/pacer.h"
 #include "modules/remote_bitrate_estimator/test/bbr_paced_sender.h"
 #include "modules/remote_bitrate_estimator/test/bwe.h"
+#include "modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 #include "modules/remote_bitrate_estimator/test/metric_recorder.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {

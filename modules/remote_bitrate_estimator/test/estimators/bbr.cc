@@ -12,6 +12,7 @@
 #include "modules/remote_bitrate_estimator/test/estimators/bbr.h"
 
 #include <stdlib.h>
+#include <time.h>
 #include <algorithm>
 
 #include "modules/remote_bitrate_estimator/test/estimators/congestion_window.h"

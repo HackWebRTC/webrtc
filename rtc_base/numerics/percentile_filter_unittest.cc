@@ -8,8 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stdlib.h>
 #include <algorithm>
 #include <climits>
+#include <cstdint>
 #include <random>
 
 #include "rtc_base/constructormagic.h"

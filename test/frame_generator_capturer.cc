@@ -10,11 +10,14 @@
 
 #include "test/frame_generator_capturer.h"
 
+#include <algorithm>
+#include <cmath>
+#include <limits>
 #include <utility>
 #include <vector>
 
 #include "absl/memory/memory.h"
-#include "call/video_send_stream.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/task_queue.h"

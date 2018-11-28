@@ -13,6 +13,7 @@
 
 #include <memory>
 
+#include "logging/rtc_event_log/rtc_event_log.h"
 #include "logging/rtc_event_log/rtc_event_log_factory_interface.h"
 #include "rtc_base/task_queue.h"
 

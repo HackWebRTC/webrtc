@@ -10,7 +10,10 @@
 
 #include "modules/desktop_capture/linux/x_server_pixel_buffer.h"
 
+#include <X11/Xutil.h>
+#include <stdint.h>
 #include <string.h>
+#include <sys/ipc.h>
 #include <sys/shm.h>
 
 #include "modules/desktop_capture/desktop_frame.h"

@@ -9,8 +9,9 @@
  */
 
 #include "rtc_base/messagedigest.h"
-#include "rtc_base/gunit.h"
+
 #include "rtc_base/stringencode.h"
+#include "test/gtest.h"
 
 namespace rtc {
 

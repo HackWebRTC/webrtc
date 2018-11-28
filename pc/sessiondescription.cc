@@ -10,7 +10,10 @@
 
 #include "pc/sessiondescription.h"
 
+#include <algorithm>
 #include <utility>
+
+#include "rtc_base/checks.h"
 
 namespace cricket {
 namespace {

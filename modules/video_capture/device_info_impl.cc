@@ -12,10 +12,10 @@
 #include <stdlib.h>
 
 #include "absl/strings/match.h"
+#include "absl/strings/string_view.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_capture/device_info_impl.h"
-#include "modules/video_capture/video_capture_config.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/stringutils.h"
 
 #ifndef abs
 #define abs(a) (a >= 0 ? a : -a)

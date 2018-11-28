@@ -10,9 +10,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <algorithm>
 #include <string>
 
+#include "api/video/video_frame_buffer.h"
+#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_tools/frame_analyzer/video_quality_analysis.h"
 #include "rtc_tools/simple_command_line_parser.h"
 #include "rtc_tools/video_file_reader.h"

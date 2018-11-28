@@ -8,19 +8,31 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <utility>
+#include <stddef.h>
+#include <stdint.h>
+#include <memory>
+#include <string>
+#include <vector>
 
+#include "absl/types/optional.h"
 #include "api/test/mock_video_encoder.h"
+#include "api/video/encoded_image.h"
 #include "api/video/i420_buffer.h"
 #include "api/video/video_bitrate_allocation.h"
+#include "api/video/video_frame.h"
+#include "api/video/video_frame_buffer.h"
+#include "api/video/video_rotation.h"
+#include "api/video_codecs/video_codec.h"
+#include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_software_fallback_wrapper.h"
-#include "api/video_codecs/vp8_temporal_layers.h"
+#include "common_types.h"  // NOLINT(build/include)
+#include "modules/include/module_common_types.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"
-#include "rtc_base/checks.h"
 #include "rtc_base/fakeclock.h"
+#include "rtc_base/scoped_ref_ptr.h"
 #include "test/field_trial.h"
 #include "test/gmock.h"
 #include "test/gtest.h"

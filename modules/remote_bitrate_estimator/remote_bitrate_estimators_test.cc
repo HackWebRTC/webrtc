@@ -9,20 +9,22 @@
  */
 
 #ifndef WEBRTC_WIN
-#include <sys/types.h>
 #include <unistd.h>
 #endif
 
+#include <stdint.h>
 #include <algorithm>
-#include <sstream>
 
-#include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#include "modules/remote_bitrate_estimator/test/bwe.h"
 #include "modules/remote_bitrate_estimator/test/bwe_test.h"
+#include "modules/remote_bitrate_estimator/test/bwe_test_framework.h"
 #include "modules/remote_bitrate_estimator/test/packet_receiver.h"
 #include "modules/remote_bitrate_estimator/test/packet_sender.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/random.h"
+#include "system_wrappers/include/clock.h"
 #include "test/field_trial.h"
+#include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
 
 namespace webrtc {

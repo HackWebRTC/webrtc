@@ -10,17 +10,19 @@
 
 #include "modules/video_coding/include/video_codec_initializer.h"
 
-#include "api/video/video_bitrate_allocator.h"
+#include <stdint.h>
+#include <string.h>
+#include <algorithm>
+
+#include "absl/types/optional.h"
+#include "api/video/video_bitrate_allocation.h"
 #include "api/video_codecs/video_encoder.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/codecs/vp9/svc_config.h"
-#include "modules/video_coding/codecs/vp9/svc_rate_allocator.h"
 #include "modules/video_coding/include/video_coding_defines.h"
-#include "modules/video_coding/utility/default_video_bitrate_allocator.h"
-#include "modules/video_coding/utility/simulcast_rate_allocator.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/system/fallthrough.h"
-#include "system_wrappers/include/clock.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

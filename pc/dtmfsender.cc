@@ -11,11 +11,12 @@
 #include "pc/dtmfsender.h"
 
 #include <ctype.h>
-
+#include <string.h>
 #include <string>
 
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/refcountedobject.h"
 #include "rtc_base/thread.h"
 
 namespace webrtc {

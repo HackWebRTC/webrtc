@@ -8,22 +8,35 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stddef.h>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "api/audio/audio_mixer.h"
+#include "api/audio_codecs/audio_decoder_factory.h"
+#include "api/audio_codecs/audio_encoder_factory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/create_peerconnection_factory.h"
+#include "api/datachannelinterface.h"
+#include "api/jsep.h"
 #include "api/mediastreaminterface.h"
 #include "api/video_codecs/builtin_video_decoder_factory.h"
 #include "api/video_codecs/builtin_video_encoder_factory.h"
+#include "api/video_codecs/video_decoder_factory.h"
+#include "api/video_codecs/video_encoder_factory.h"
 #include "media/base/fakevideocapturer.h"
+#include "modules/audio_device/include/audio_device.h"
+#include "modules/audio_processing/include/audio_processing.h"
 #include "p2p/base/fakeportallocator.h"
+#include "p2p/base/port.h"
+#include "p2p/base/portinterface.h"
 #include "pc/peerconnectionfactory.h"
 #include "pc/test/fakeaudiocapturemodule.h"
-#include "rtc_base/gunit.h"
+#include "rtc_base/socketaddress.h"
+#include "test/gtest.h"
 
 #ifdef WEBRTC_ANDROID
 #include "pc/test/androidtestinitializer.h"

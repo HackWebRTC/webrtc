@@ -11,9 +11,12 @@
 #ifndef RTC_BASE_SOCKETSTREAM_H_
 #define RTC_BASE_SOCKETSTREAM_H_
 
+#include <stddef.h>
+
 #include "rtc_base/asyncsocket.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/stream.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace rtc {
 

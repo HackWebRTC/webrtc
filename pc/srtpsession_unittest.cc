@@ -10,14 +10,15 @@
 
 #include "pc/srtpsession.h"
 
+#include <string.h>
 #include <string>
 
-#include "absl/memory/memory.h"
 #include "media/base/fakertp.h"
 #include "pc/srtptestutil.h"
-#include "rtc_base/gunit.h"
+#include "rtc_base/byteorder.h"
 #include "rtc_base/sslstreamadapter.h"  // For rtc::SRTP_*
 #include "system_wrappers/include/metrics.h"
+#include "test/gtest.h"
 #include "third_party/libsrtp/include/srtp.h"
 
 namespace rtc {

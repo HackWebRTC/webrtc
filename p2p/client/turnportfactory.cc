@@ -13,6 +13,7 @@
 #include <memory>
 #include <utility>
 
+#include "p2p/base/portallocator.h"
 #include "p2p/base/turnport.h"
 
 namespace cricket {

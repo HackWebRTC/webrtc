@@ -10,20 +10,26 @@
 
 #include "pc/dtlssrtptransport.h"
 
+#include <string.h>
+#include <cstdint>
 #include <memory>
-#include <utility>
+#include <set>
 
 #include "absl/memory/memory.h"
+#include "call/rtp_demuxer.h"
 #include "media/base/fakertp.h"
 #include "p2p/base/dtlstransportinternal.h"
 #include "p2p/base/fakedtlstransport.h"
-#include "p2p/base/fakepackettransport.h"
+#include "p2p/base/fakeicetransport.h"
 #include "p2p/base/p2pconstants.h"
 #include "pc/rtptransport.h"
 #include "pc/rtptransporttestutil.h"
 #include "rtc_base/asyncpacketsocket.h"
-#include "rtc_base/gunit.h"
-#include "rtc_base/sslstreamadapter.h"
+#include "rtc_base/byteorder.h"
+#include "rtc_base/copyonwritebuffer.h"
+#include "rtc_base/rtccertificate.h"
+#include "rtc_base/sslidentity.h"
+#include "test/gtest.h"
 
 using cricket::FakeDtlsTransport;
 using cricket::FakeIceTransport;

@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stddef.h>
 #include <string>
 
 #include "pc/audiotrack.h"
 #include "pc/mediastream.h"
 #include "pc/test/fakevideotracksource.h"
 #include "pc/videotrack.h"
-#include "rtc_base/gunit.h"
-#include "rtc_base/refcount.h"
+#include "rtc_base/thread.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 

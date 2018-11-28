@@ -10,8 +10,8 @@
 #include "test/statistics.h"
 
 #include <math.h>
-
 #include <algorithm>
+#include <limits>
 
 namespace webrtc {
 namespace test {

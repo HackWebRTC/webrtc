@@ -11,10 +11,15 @@
 #ifndef P2P_BASE_STUNSERVER_H_
 #define P2P_BASE_STUNSERVER_H_
 
+#include <stddef.h>
+#include <stdint.h>
 #include <memory>
 
 #include "p2p/base/stun.h"
+#include "rtc_base/asyncpacketsocket.h"
 #include "rtc_base/asyncudpsocket.h"
+#include "rtc_base/socketaddress.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace cricket {
 

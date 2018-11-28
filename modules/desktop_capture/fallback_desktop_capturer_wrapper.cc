@@ -10,9 +10,11 @@
 
 #include "modules/desktop_capture/fallback_desktop_capturer_wrapper.h"
 
+#include <stddef.h>
 #include <utility>
 
 #include "rtc_base/checks.h"
+#include "rtc_base/thread_checker.h"
 #include "system_wrappers/include/metrics.h"
 
 namespace webrtc {

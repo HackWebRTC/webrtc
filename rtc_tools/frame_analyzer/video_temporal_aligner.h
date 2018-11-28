@@ -11,8 +11,10 @@
 #ifndef RTC_TOOLS_FRAME_ANALYZER_VIDEO_TEMPORAL_ALIGNER_H_
 #define RTC_TOOLS_FRAME_ANALYZER_VIDEO_TEMPORAL_ALIGNER_H_
 
+#include <stddef.h>
 #include <vector>
 
+#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_tools/video_file_reader.h"
 
 namespace webrtc {

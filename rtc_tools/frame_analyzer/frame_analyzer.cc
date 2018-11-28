@@ -10,11 +10,11 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
-#include <map>
+#include <cstddef>
 #include <string>
 #include <vector>
 
+#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/stringutils.h"
 #include "rtc_tools/frame_analyzer/video_color_aligner.h"

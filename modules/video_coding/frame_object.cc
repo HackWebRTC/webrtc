@@ -10,9 +10,14 @@
 
 #include "modules/video_coding/frame_object.h"
 
-#include "common_video/h264/h264_common.h"
+#include <string.h>
+
+#include "api/video/encoded_image.h"
+#include "api/video/video_timing.h"
+#include "modules/video_coding/packet.h"
 #include "modules/video_coding/packet_buffer.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/criticalsection.h"
 
 namespace webrtc {
 namespace video_coding {

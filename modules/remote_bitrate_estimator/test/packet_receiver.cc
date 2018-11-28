@@ -10,14 +10,12 @@
 
 #include "modules/remote_bitrate_estimator/test/packet_receiver.h"
 
+#include <list>
 #include <vector>
 
-#include "modules/include/module_common_types.h"
 #include "modules/remote_bitrate_estimator/test/bwe.h"
 #include "modules/remote_bitrate_estimator/test/bwe_test_framework.h"
-#include "modules/rtp_rtcp/include/receive_statistics.h"
-#include "system_wrappers/include/clock.h"
-#include "test/gtest.h"
+#include "modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 
 namespace webrtc {
 namespace testing {

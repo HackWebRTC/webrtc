@@ -8,14 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <algorithm>
+#include <cstdint>
 
+#include "api/rtp_headers.h"
 #include "modules/remote_bitrate_estimator/test/estimators/tcp.h"
-
-#include "modules/bitrate_controller/include/bitrate_controller.h"
-#include "modules/remote_bitrate_estimator/test/bwe_test_logging.h"
-#include "modules/rtp_rtcp/include/receive_statistics.h"
-#include "test/gtest.h"
 
 namespace webrtc {
 namespace testing {

@@ -15,10 +15,12 @@
 //  From March 26, 2015.
 
 #include <math.h>
+#include <stddef.h>
 #include <algorithm>
+#include <cstdint>
+#include <list>
 #include <vector>
 
-#include "modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 #include "modules/remote_bitrate_estimator/test/estimators/nada.h"
 #include "modules/rtp_rtcp/include/receive_statistics.h"
 #include "rtc_base/arraysize.h"

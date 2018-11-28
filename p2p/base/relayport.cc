@@ -7,13 +7,24 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+#include <errno.h>
+#include <string.h>
 #include <algorithm>
 
 #include "p2p/base/relayport.h"
+#include "p2p/base/stun.h"
+#include "p2p/base/stunrequest.h"
 #include "rtc_base/asyncpacketsocket.h"
+#include "rtc_base/bytebuffer.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/helpers.h"
+#include "rtc_base/dscp.h"
+#include "rtc_base/location.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/messagehandler.h"
+#include "rtc_base/messagequeue.h"
+#include "rtc_base/nethelper.h"
+#include "rtc_base/proxyinfo.h"
+#include "rtc_base/timeutils.h"
 
 namespace cricket {
 

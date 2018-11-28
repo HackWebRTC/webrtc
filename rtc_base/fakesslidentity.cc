@@ -10,7 +10,6 @@
 
 #include "rtc_base/fakesslidentity.h"
 
-#include <algorithm>
 #include <string>
 #include <utility>
 

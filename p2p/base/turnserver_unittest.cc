@@ -9,9 +9,10 @@
  */
 
 #include "p2p/base/turnserver.h"
+
 #include "p2p/base/basicpacketsocketfactory.h"
-#include "rtc_base/gunit.h"
 #include "rtc_base/virtualsocketserver.h"
+#include "test/gtest.h"
 
 // NOTE: This is a work in progress. Currently this file only has tests for
 // TurnServerConnection, a primitive class used by TurnServer.

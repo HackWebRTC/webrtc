@@ -26,10 +26,9 @@
 #ifndef MEDIA_BASE_STREAMPARAMS_H_
 #define MEDIA_BASE_STREAMPARAMS_H_
 
-#include <stdint.h>
-
+#include <stddef.h>
 #include <algorithm>
-#include <set>
+#include <cstdint>
 #include <string>
 #include <vector>
 

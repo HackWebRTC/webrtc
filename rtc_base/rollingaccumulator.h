@@ -11,6 +11,7 @@
 #ifndef RTC_BASE_ROLLINGACCUMULATOR_H_
 #define RTC_BASE_ROLLINGACCUMULATOR_H_
 
+#include <stddef.h>
 #include <algorithm>
 #include <vector>
 

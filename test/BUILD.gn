@@ -219,11 +219,12 @@ if (rtc_include_tests) {
       ":field_trial",
       ":perf_test",
       ":test_support",
+      "../rtc_base:checks",
       "../rtc_base:rtc_base",
       "../system_wrappers:field_trial",
       "../system_wrappers:metrics",
       "//testing/gtest",
-      "//third_party/abseil-cpp/absl/memory:memory",
+      "//third_party/abseil-cpp/absl/memory",
 
       # TODO(bugs.webrtc.org/9792): This is needed for downstream projects on
       # Android, where it's replaced by an internal version of fileutils that
@@ -339,6 +340,7 @@ if (rtc_include_tests) {
       "../api:simulcast_test_fixture_api",
       "../api/test/video:function_video_factory",
       "../api/video:builtin_video_bitrate_allocator_factory",
+      "../api/video:video_frame",
       "../api/video:video_frame_i420",
       "../modules/rtp_rtcp:rtp_rtcp",
       "../modules/video_capture",
@@ -607,10 +609,14 @@ rtc_source_set("fake_video_codecs") {
   deps = [
     "..:webrtc_common",
     "../api/video:encoded_image",
+    "../api/video:video_bitrate_allocation",
+    "../api/video:video_frame",
     "../api/video:video_frame_i420",
     "../api/video_codecs:create_vp8_temporal_layers",
     "../api/video_codecs:video_codecs_api",
     "../common_video:common_video",
+    "../modules:module_api",
+    "../modules/video_coding:codec_globals_headers",
     "../modules/video_coding:video_codec_interface",
     "../modules/video_coding:video_coding_utility",
     "../modules/video_coding:webrtc_h264",
@@ -621,6 +627,7 @@ rtc_source_set("fake_video_codecs") {
     "../rtc_base:rtc_task_queue",
     "../rtc_base:sequenced_task_checker",
     "../system_wrappers",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 
@@ -674,6 +681,7 @@ rtc_source_set("test_common") {
     ":rtp_test_utils",
     ":test_support",
     ":video_test_common",
+    "../:webrtc_common",
     "../api:libjingle_peerconnection_api",
     "../api:simulated_network_api",
     "../api:transport_api",
@@ -688,6 +696,7 @@ rtc_source_set("test_common") {
     "../call",
     "../call:call_interfaces",
     "../call:fake_network",
+    "../call:rtp_interfaces",
     "../call:rtp_sender",
     "../call:simulated_network",
     "../call:simulated_packet_receiver",
@@ -705,6 +714,8 @@ rtc_source_set("test_common") {
     "../modules/rtp_rtcp",
     "../modules/rtp_rtcp:mock_rtp_rtcp",
     "../modules/rtp_rtcp:rtp_rtcp_format",
+    "../modules/rtp_rtcp:rtp_video_header",
+    "../modules/video_coding:codec_globals_headers",
     "../modules/video_coding:video_coding_utility",
     "../modules/video_coding:webrtc_h264",
     "../modules/video_coding:webrtc_multiplex",

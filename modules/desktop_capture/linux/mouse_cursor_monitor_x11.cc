@@ -10,18 +10,22 @@
 
 #include "modules/desktop_capture/linux/mouse_cursor_monitor_x11.h"
 
-#include <X11/Xutil.h>
+#include <X11/Xlib.h>
 #include <X11/extensions/Xfixes.h>
-
+#include <X11/extensions/xfixeswire.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <algorithm>
 #include <memory>
 
 #include "modules/desktop_capture/desktop_capture_options.h"
 #include "modules/desktop_capture/desktop_capture_types.h"
 #include "modules/desktop_capture/desktop_frame.h"
+#include "modules/desktop_capture/desktop_geometry.h"
 #include "modules/desktop_capture/linux/x_error_trap.h"
 #include "modules/desktop_capture/mouse_cursor.h"
 #include "modules/desktop_capture/mouse_cursor_monitor.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 
 namespace {

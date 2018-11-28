@@ -10,8 +10,12 @@
 
 #include "modules/congestion_controller/rtp/control_handler.h"
 
-#include "rtc_base/checks.h"
+#include <algorithm>
+#include <vector>
+
+#include "api/units/data_rate.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/numerics/safe_minmax.h"
 #include "system_wrappers/include/field_trial.h"
 

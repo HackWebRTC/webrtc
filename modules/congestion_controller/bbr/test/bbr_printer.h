@@ -10,8 +10,12 @@
 #ifndef MODULES_CONGESTION_CONTROLLER_BBR_TEST_BBR_PRINTER_H_
 #define MODULES_CONGESTION_CONTROLLER_BBR_TEST_BBR_PRINTER_H_
 
+#include <stdio.h>
 #include <memory>
 
+#include "api/transport/network_control.h"
+#include "api/transport/network_types.h"
+#include "api/units/timestamp.h"
 #include "modules/congestion_controller/bbr/bbr_factory.h"
 #include "modules/congestion_controller/bbr/bbr_network_controller.h"
 #include "modules/congestion_controller/test/controller_printer.h"

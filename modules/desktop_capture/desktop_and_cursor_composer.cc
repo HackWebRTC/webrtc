@@ -10,8 +10,8 @@
 
 #include "modules/desktop_capture/desktop_and_cursor_composer.h"
 
+#include <stdint.h>
 #include <string.h>
-
 #include <utility>
 
 #include "absl/memory/memory.h"

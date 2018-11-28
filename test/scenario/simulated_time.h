@@ -10,16 +10,22 @@
 #ifndef TEST_SCENARIO_SIMULATED_TIME_H_
 #define TEST_SCENARIO_SIMULATED_TIME_H_
 
+#include <stdint.h>
+#include <stdio.h>
 #include <deque>
 #include <map>
 #include <memory>
-#include <set>
 #include <string>
-#include <utility>
 #include <vector>
 
+#include "api/transport/network_control.h"
+#include "api/transport/network_types.h"
+#include "api/units/data_rate.h"
+#include "api/units/data_size.h"
+#include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
+#include "rtc_base/copyonwritebuffer.h"
 #include "test/scenario/call_client.h"
-#include "test/scenario/column_printer.h"
 #include "test/scenario/network_node.h"
 #include "test/scenario/scenario_config.h"
 

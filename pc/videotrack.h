@@ -12,12 +12,16 @@
 #define PC_VIDEOTRACK_H_
 
 #include <string>
-#include <vector>
 
+#include "api/mediastreaminterface.h"
+#include "api/video/video_frame.h"
+#include "api/video/video_sink_interface.h"
+#include "api/video/video_source_interface.h"
 #include "media/base/videosourcebase.h"
 #include "pc/mediastreamtrack.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/thread.h"
+#include "rtc_base/thread_annotations.h"
 #include "rtc_base/thread_checker.h"
 
 namespace webrtc {

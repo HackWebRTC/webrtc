@@ -69,6 +69,10 @@ if (rtc_include_tests) {
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
       "../../test:test_support",
+      "../units:data_rate",
+      "../units:data_size",
+      "../units:time_delta",
+      "../units:timestamp",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
   }

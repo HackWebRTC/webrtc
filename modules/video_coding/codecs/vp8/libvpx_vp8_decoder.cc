@@ -8,18 +8,31 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stdio.h>
+#include <string.h>
 #include <algorithm>
 #include <string>
 
 #include "absl/memory/memory.h"
+#include "absl/types/optional.h"
+#include "api/video/i420_buffer.h"
+#include "api/video/video_frame.h"
+#include "api/video/video_frame_buffer.h"
+#include "api/video/video_rotation.h"
+#include "common_types.h"  // NOLINT(build/include)
+#include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/codecs/vp8/libvpx_vp8_decoder.h"
+#include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/numerics/exp_filter.h"
+#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/timeutils.h"
 #include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/metrics.h"
 #include "third_party/libyuv/include/libyuv/convert.h"
-#include "third_party/libyuv/include/libyuv/scale.h"
+#include "vpx/vp8.h"
+#include "vpx/vp8dx.h"
+#include "vpx/vpx_decoder.h"
 
 namespace webrtc {
 namespace {

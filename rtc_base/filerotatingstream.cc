@@ -25,6 +25,7 @@
 #endif  // WEBRTC_WIN
 
 #include "absl/strings/match.h"
+#include "absl/types/optional.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 

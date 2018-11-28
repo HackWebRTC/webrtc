@@ -10,6 +10,8 @@
 
 #include "modules/video_coding/media_optimization.h"
 
+#include <string.h>
+#include <algorithm>
 #include <limits>
 
 #include "modules/video_coding/utility/frame_dropper.h"

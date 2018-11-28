@@ -9,18 +9,18 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "api/video/i420_buffer.h"
+#include "api/video/video_frame_buffer.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "common_video/libyuv/include/webrtc_libyuv.h"
-#include "modules/include/module_common_types.h"
 #include "modules/video_capture/video_capture_config.h"
 #include "modules/video_capture/video_capture_impl.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/refcount.h"
 #include "rtc_base/refcountedobject.h"
 #include "rtc_base/timeutils.h"
 #include "rtc_base/trace_event.h"
-#include "system_wrappers/include/clock.h"
 #include "third_party/libyuv/include/libyuv.h"
 
 namespace webrtc {

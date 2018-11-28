@@ -10,8 +10,7 @@
 #include "modules/congestion_controller/goog_cc/delay_based_bwe_unittest_helper.h"
 
 #include <algorithm>
-#include <limits>
-#include <utility>
+#include <cstdint>
 
 #include "absl/memory/memory.h"
 #include "modules/congestion_controller/goog_cc/delay_based_bwe.h"

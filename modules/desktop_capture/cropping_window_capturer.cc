@@ -10,6 +10,9 @@
 
 #include "modules/desktop_capture/cropping_window_capturer.h"
 
+#include <stddef.h>
+#include <utility>
+
 #include "modules/desktop_capture/cropped_desktop_frame.h"
 #include "rtc_base/logging.h"
 

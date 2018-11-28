@@ -15,10 +15,12 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "api/video_codecs/sdp_video_format.h"
+#include "api/video_codecs/video_encoder.h"
 #include "media/base/codec.h"
 #include "media/base/mediaconstants.h"
 #include "media/engine/internalencoderfactory.h"
 #include "media/engine/vp8_encoder_simulcast_proxy.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 

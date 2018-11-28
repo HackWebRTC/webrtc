@@ -9,11 +9,9 @@
  */
 
 #include "rtc_base/cpu_time.h"
-#include <algorithm>
-#include <memory>
+
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/timeutils.h"
-#include "system_wrappers/include/cpu_info.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/gtest.h"
 

@@ -20,11 +20,8 @@
 #include "modules/include/module_common_types.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/constructormagic.h"
+#include "rtc_base/network/sent_packet.h"
 #include "rtc_base/networkroute.h"
-
-namespace rtc {
-struct SentPacket;
-}
 
 namespace webrtc {
 

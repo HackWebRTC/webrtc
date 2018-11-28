@@ -13,7 +13,6 @@
 
 #include <stdint.h>
 
-#include "rtc_base/constructormagic.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {

@@ -11,18 +11,21 @@
 #ifdef HAVE_WEBRTC_VIDEO
 
 #include <stdio.h>
-
 #include <memory>
 #include <vector>
 
+#include "common_types.h"  // NOLINT(build/include)
 #include "media/base/testutils.h"
 #include "media/base/videocommon.h"
+#include "media/engine/fakewebrtcdeviceinfo.h"
 #include "media/engine/fakewebrtcvcmfactory.h"
+#include "media/engine/fakewebrtcvideocapturemodule.h"
 #include "media/engine/webrtcvideocapturer.h"
+// TODO(http://crbug.com/908819): Add this when Chromium android templates
+// stop to consider *_module to have a special meaning. See media/BUILD.gn
+// #include "modules/video_capture/video_capture_defines.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/logging.h"
-#include "rtc_base/stringutils.h"
-#include "rtc_base/thread.h"
+#include "test/gtest.h"
 
 using cricket::VideoFormat;
 

@@ -10,10 +10,9 @@
 
 #include "examples/peerconnection/server/peer_channel.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-
 #include <algorithm>
 
 #include "examples/peerconnection/server/data_socket.h"

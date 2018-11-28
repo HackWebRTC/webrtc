@@ -9,11 +9,13 @@
  */
 #include "modules/congestion_controller/test/controller_printer.h"
 
-#include <cmath>
 #include <limits>
 #include <utility>
 
-#include "rtc_base/checks.h"
+#include "absl/types/optional.h"
+#include "api/units/data_rate.h"
+#include "api/units/data_size.h"
+#include "api/units/time_delta.h"
 
 namespace webrtc {
 

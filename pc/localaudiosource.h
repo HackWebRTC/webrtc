@@ -11,9 +11,10 @@
 #ifndef PC_LOCALAUDIOSOURCE_H_
 #define PC_LOCALAUDIOSOURCE_H_
 
+#include "api/audio_options.h"
 #include "api/mediastreaminterface.h"
 #include "api/notifier.h"
-#include "media/base/mediachannel.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 // LocalAudioSource implements AudioSourceInterface.
 // This contains settings for switching audio processing on and off.

@@ -11,12 +11,14 @@
 #include "api/stats/rtcstats.h"
 
 #include <cmath>
+#include <cstdint>
 #include <cstring>
+#include <iostream>
 
 #include "rtc_base/checks.h"
-#include "rtc_base/gunit.h"
 #include "rtc_base/strings/json.h"
 #include "stats/test/rtcteststats.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

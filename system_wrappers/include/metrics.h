@@ -11,6 +11,7 @@
 #ifndef SYSTEM_WRAPPERS_INCLUDE_METRICS_H_
 #define SYSTEM_WRAPPERS_INCLUDE_METRICS_H_
 
+#include <stddef.h>
 #include <map>
 #include <memory>
 #include <string>

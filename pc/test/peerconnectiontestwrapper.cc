@@ -8,23 +8,36 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stddef.h>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
+#include "absl/types/optional.h"
+#include "api/audio/audio_mixer.h"
 #include "api/create_peerconnection_factory.h"
 #include "api/video_codecs/builtin_video_decoder_factory.h"
 #include "api/video_codecs/builtin_video_encoder_factory.h"
+#include "api/video_codecs/video_decoder_factory.h"
+#include "api/video_codecs/video_encoder_factory.h"
+#include "modules/audio_device/include/audio_device.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "p2p/base/fakeportallocator.h"
-#include "pc/sdputils.h"
+#include "p2p/base/portallocator.h"
+#include "pc/test/fakeperiodicvideosource.h"
 #include "pc/test/fakeperiodicvideotracksource.h"
 #include "pc/test/fakertccertificategenerator.h"
 #include "pc/test/mockpeerconnectionobservers.h"
 #include "pc/test/peerconnectiontestwrapper.h"
 #include "rtc_base/gunit.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/refcountedobject.h"
+#include "rtc_base/rtccertificategenerator.h"
+#include "rtc_base/stringencode.h"
 #include "rtc_base/thread_checker.h"
 #include "rtc_base/timeutils.h"
+#include "test/gtest.h"
 
 using webrtc::FakeConstraints;
 using webrtc::FakeVideoTrackRenderer;

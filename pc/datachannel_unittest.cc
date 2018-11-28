@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <string.h>
 #include <memory>
 #include <vector>
 
@@ -16,6 +17,7 @@
 #include "pc/test/fakedatachannelprovider.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/numerics/safe_conversions.h"
+#include "test/gtest.h"
 
 using webrtc::DataChannel;
 using webrtc::SctpSidAllocator;

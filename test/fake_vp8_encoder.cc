@@ -10,15 +10,16 @@
 
 #include "test/fake_vp8_encoder.h"
 
+#include <algorithm>
+
+#include "absl/types/optional.h"
 #include "api/video_codecs/create_vp8_temporal_layers.h"
 #include "api/video_codecs/vp8_temporal_layers.h"
+#include "common_types.h"  // NOLINT(build/include)
+#include "modules/video_coding/codecs/interface/common_constants.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "modules/video_coding/utility/simulcast_utility.h"
-#include "rtc_base/checks.h"
-#include "rtc_base/logging.h"
-#include "rtc_base/random.h"
-#include "rtc_base/timeutils.h"
 
 namespace {
 

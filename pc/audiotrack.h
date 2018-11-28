@@ -14,7 +14,6 @@
 #include <string>
 
 #include "api/mediastreaminterface.h"
-#include "api/notifier.h"
 #include "pc/mediastreamtrack.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/scoped_ref_ptr.h"

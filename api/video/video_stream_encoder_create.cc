@@ -11,6 +11,7 @@
 #include "api/video/video_stream_encoder_create.h"
 
 #include "absl/memory/memory.h"
+#include "video/overuse_frame_detector.h"
 #include "video/video_stream_encoder.h"
 
 namespace webrtc {

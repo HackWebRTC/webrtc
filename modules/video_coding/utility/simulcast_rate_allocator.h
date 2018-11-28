@@ -11,15 +11,13 @@
 #ifndef MODULES_VIDEO_CODING_UTILITY_SIMULCAST_RATE_ALLOCATOR_H_
 #define MODULES_VIDEO_CODING_UTILITY_SIMULCAST_RATE_ALLOCATOR_H_
 
+#include <stddef.h>
 #include <stdint.h>
-
-#include <map>
-#include <memory>
 #include <vector>
 
+#include "api/video/video_bitrate_allocation.h"
 #include "api/video/video_bitrate_allocator.h"
-#include "api/video_codecs/video_encoder.h"
-#include "common_types.h"  // NOLINT(build/include)
+#include "api/video_codecs/video_codec.h"
 #include "rtc_base/constructormagic.h"
 
 namespace webrtc {

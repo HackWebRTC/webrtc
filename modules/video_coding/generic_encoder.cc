@@ -10,19 +10,24 @@
 
 #include "modules/video_coding/generic_encoder.h"
 
+#include <cstddef>
+#include <cstdint>
 #include <vector>
 
 #include "absl/types/optional.h"
 #include "api/video/i420_buffer.h"
+#include "api/video/video_content_type.h"
+#include "api/video/video_frame_buffer.h"
+#include "api/video/video_rotation.h"
+#include "api/video/video_timing.h"
 #include "modules/include/module_common_types_public.h"
-#include "modules/video_coding/encoded_frame.h"
+#include "modules/video_coding/include/video_coding_defines.h"
 #include "modules/video_coding/media_optimization.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/experiments/alr_experiment.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/timeutils.h"
 #include "rtc_base/trace_event.h"
-#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 

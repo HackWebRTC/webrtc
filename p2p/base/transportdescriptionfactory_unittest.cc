@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stddef.h>
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
@@ -15,9 +17,12 @@
 #include "p2p/base/p2pconstants.h"
 #include "p2p/base/transportdescription.h"
 #include "p2p/base/transportdescriptionfactory.h"
+#include "rtc_base/copyonwritebuffer.h"
 #include "rtc_base/fakesslidentity.h"
-#include "rtc_base/gunit.h"
-#include "rtc_base/ssladapter.h"
+#include "rtc_base/sslcertificate.h"
+#include "rtc_base/sslfingerprint.h"
+#include "rtc_base/sslidentity.h"
+#include "test/gtest.h"
 
 using cricket::TransportDescriptionFactory;
 using cricket::TransportDescription;

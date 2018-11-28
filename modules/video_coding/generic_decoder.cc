@@ -10,10 +10,11 @@
 
 #include "modules/video_coding/generic_decoder.h"
 
+#include <stddef.h>
 #include <algorithm>
 
-#include "modules/video_coding/include/video_coding.h"
-#include "modules/video_coding/internal_defines.h"
+#include "api/video/video_timing.h"
+#include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/timeutils.h"

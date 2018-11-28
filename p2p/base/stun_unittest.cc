@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <string.h>
 #include <string>
 #include <utility>
 
@@ -15,10 +16,9 @@
 #include "p2p/base/stun.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/bytebuffer.h"
-#include "rtc_base/gunit.h"
-#include "rtc_base/logging.h"
-#include "rtc_base/messagedigest.h"
+#include "rtc_base/byteorder.h"
 #include "rtc_base/socketaddress.h"
+#include "test/gtest.h"
 
 namespace cricket {
 

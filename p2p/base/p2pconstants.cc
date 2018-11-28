@@ -10,8 +10,6 @@
 
 #include "p2p/base/p2pconstants.h"
 
-#include <string>
-
 namespace cricket {
 
 const char CN_AUDIO[] = "audio";

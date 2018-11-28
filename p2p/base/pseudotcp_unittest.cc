@@ -8,17 +8,23 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <string.h>
 #include <algorithm>
+#include <cstddef>
 #include <string>
 #include <vector>
 
 #include "p2p/base/pseudotcp.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/helpers.h"
+#include "rtc_base/location.h"
+#include "rtc_base/logging.h"
 #include "rtc_base/memory_stream.h"
 #include "rtc_base/messagehandler.h"
+#include "rtc_base/messagequeue.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/timeutils.h"
+#include "test/gtest.h"
 
 using cricket::PseudoTcp;
 

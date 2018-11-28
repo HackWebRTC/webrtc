@@ -12,11 +12,16 @@
 
 #include "media/base/videocapturer.h"
 
-#include <algorithm>
+#include <cstdint>
 
 #include "api/video/i420_buffer.h"
 #include "api/video/video_frame.h"
+#include "api/video/video_frame_buffer.h"
+#include "api/video/video_rotation.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/timeutils.h"
 
 namespace cricket {
 

@@ -10,11 +10,12 @@
 
 #include "pc/dtlssrtptransport.h"
 
-#include <memory>
+#include <string.h>
 #include <string>
 #include <utility>
 
-#include "media/base/rtputils.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 #include "rtc_base/sslstreamadapter.h"
 
 namespace {

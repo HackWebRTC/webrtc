@@ -9,8 +9,12 @@
  */
 
 #include <string>
+#include <vector>
 
+#include "api/notifier.h"
 #include "pc/videotrack.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/location.h"
 #include "rtc_base/refcountedobject.h"
 
 namespace webrtc {

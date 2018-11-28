@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stdint.h>
 #include <string.h>
-
 #include <memory>
 
 #include "test/gtest.h"

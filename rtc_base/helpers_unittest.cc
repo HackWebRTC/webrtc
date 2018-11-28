@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <string.h>
 #include <string>
 
 #include "rtc_base/buffer.h"
-#include "rtc_base/gunit.h"
 #include "rtc_base/helpers.h"
-#include "rtc_base/ssladapter.h"
+#include "test/gtest.h"
 
 namespace rtc {
 

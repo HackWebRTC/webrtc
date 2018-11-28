@@ -11,10 +11,14 @@
 #ifndef MODULES_VIDEO_CODING_SESSION_INFO_H_
 #define MODULES_VIDEO_CODING_SESSION_INFO_H_
 
+#include <stddef.h>
+#include <stdint.h>
 #include <list>
 #include <vector>
 
-#include "modules/include/module_common_types.h"
+#include "common_types.h"  // NOLINT(build/include)
+#include "modules/video_coding/codecs/h264/include/h264_globals.h"
+#include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
 #include "modules/video_coding/include/video_coding.h"
 #include "modules/video_coding/packet.h"
 

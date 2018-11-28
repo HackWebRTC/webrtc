@@ -8,23 +8,38 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <tuple>
+#include <memory>
+#include <set>
+#include <string>
+#include <utility>
+#include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/types/optional.h"
+#include "api/call/callfactoryinterface.h"
 #include "api/jsep.h"
+#include "api/peerconnectioninterface.h"
 #include "api/peerconnectionproxy.h"
+#include "api/rtcerror.h"
 #include "media/base/fakemediaengine.h"
+#include "p2p/base/portallocator.h"
 #include "p2p/client/basicportallocator.h"
-#include "pc/mediasession.h"
 #include "pc/peerconnection.h"
 #include "pc/peerconnectionfactory.h"
 #include "pc/peerconnectionwrapper.h"
 #include "pc/sdputils.h"
-#include "pc/test/fakesctptransport.h"
+#include "pc/test/mockpeerconnectionobservers.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/fakenetwork.h"
 #include "rtc_base/gunit.h"
+#include "rtc_base/refcountedobject.h"
+#include "rtc_base/rtccertificategenerator.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/socketaddress.h"
+#include "rtc_base/thread.h"
 #include "rtc_base/virtualsocketserver.h"
 #include "system_wrappers/include/metrics.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 
@@ -71,6 +86,7 @@ class PeerConnectionFactoryForUsageHistogramTest
 };
 
 class PeerConnectionWrapperForUsageHistogramTest;
+
 typedef PeerConnectionWrapperForUsageHistogramTest* RawWrapperPtr;
 
 class ObserverForUsageHistogramTest : public MockPeerConnectionObserver {

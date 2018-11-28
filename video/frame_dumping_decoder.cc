@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "modules/video_coding/include/video_codec_interface.h"
+#include "rtc_base/file.h"
 
 namespace webrtc {
 

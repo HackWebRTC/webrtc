@@ -8,24 +8,27 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stdint.h>
 #include <string.h>
-
 #include <iostream>
 #include <memory>
-#include <sstream>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "absl/memory/memory.h"
 #include "absl/types/optional.h"
+#include "api/array_view.h"
+#include "api/rtp_headers.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "logging/rtc_event_log/rtc_event_log_parser_new.h"
 #include "logging/rtc_event_log/rtc_event_processor.h"
-#include "modules/rtp_rtcp/source/byte_io.h"
+#include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "modules/rtp_rtcp/source/rtp_packet.h"
-#include "modules/rtp_rtcp/source/rtp_utility.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/flags.h"
+#include "test/rtp_file_reader.h"
 #include "test/rtp_file_writer.h"
 
 namespace {

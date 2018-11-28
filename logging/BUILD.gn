@@ -173,6 +173,8 @@ rtc_static_library("rtc_event_log_impl_encoder") {
   defines = []
 
   deps = [
+    "../api:libjingle_peerconnection_api",
+    "../api/transport:network_control",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
     "//third_party/abseil-cpp/absl/memory",
@@ -346,6 +348,7 @@ if (rtc_enable_protobuf) {
         ":rtc_event_rtp_rtcp",
         ":rtc_event_video",
         ":rtc_stream_config",
+        "../api:array_view",
         "../api:libjingle_peerconnection_api",
         "../call",
         "../call:call_interfaces",
@@ -355,6 +358,7 @@ if (rtc_enable_protobuf) {
         "../rtc_base:checks",
         "../rtc_base:rtc_base_approved",
         "../rtc_base:rtc_base_tests_utils",
+        "../system_wrappers:system_wrappers",
         "../test:fileutils",
         "../test:test_support",
         "//testing/gtest",
@@ -375,13 +379,15 @@ if (rtc_enable_protobuf) {
       deps = [
         ":rtc_event_log_api",
         ":rtc_event_log_parser",
+        "../api:array_view",
+        "../api:libjingle_peerconnection_api",
         "../modules/rtp_rtcp",
         "../modules/rtp_rtcp:rtp_rtcp_format",
         "../rtc_base:checks",
         "../rtc_base:protobuf_utils",
         "../rtc_base:rtc_base_approved",
         "../test:rtp_test_utils",
-        "//third_party/abseil-cpp/absl/memory:memory",
+        "//third_party/abseil-cpp/absl/memory",
         "//third_party/abseil-cpp/absl/types:optional",
       ]
       if (!build_with_chromium && is_clang) {

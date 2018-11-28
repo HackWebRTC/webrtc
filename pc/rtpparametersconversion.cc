@@ -10,10 +10,19 @@
 
 #include "pc/rtpparametersconversion.h"
 
+#include <cstdint>
 #include <set>
+#include <string>
+#include <unordered_map>
 #include <utility>
 
+#include "api/array_view.h"
+#include "api/mediatypes.h"
+#include "media/base/mediaconstants.h"
 #include "media/base/rtputils.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/strings/string_builder.h"
 
 namespace webrtc {
 

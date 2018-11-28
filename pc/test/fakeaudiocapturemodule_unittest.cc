@@ -10,11 +10,13 @@
 
 #include "pc/test/fakeaudiocapturemodule.h"
 
+#include <string.h>
 #include <algorithm>
 
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/scoped_ref_ptr.h"
+#include "test/gtest.h"
 
 using std::min;
 

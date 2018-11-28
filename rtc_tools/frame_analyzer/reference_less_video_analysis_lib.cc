@@ -8,12 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <iostream>
 #include <numeric>
 #include <vector>
 
+#include "api/video/video_frame_buffer.h"
 #include "rtc_tools/frame_analyzer/reference_less_video_analysis_lib.h"
 #include "rtc_tools/frame_analyzer/video_quality_analysis.h"
 

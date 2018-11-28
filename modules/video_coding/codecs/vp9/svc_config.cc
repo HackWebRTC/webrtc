@@ -14,8 +14,9 @@
 #include <cmath>
 #include <vector>
 
+#include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
 #include "modules/video_coding/codecs/vp9/svc_rate_allocator.h"
-#include "modules/video_coding/include/video_codec_interface.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 

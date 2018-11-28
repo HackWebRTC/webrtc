@@ -10,12 +10,12 @@
 
 #include "p2p/base/transportdescriptionfactory.h"
 
+#include <stddef.h>
 #include <memory>
+#include <string>
 
 #include "p2p/base/transportdescription.h"
-#include "rtc_base/helpers.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/messagedigest.h"
 #include "rtc_base/sslfingerprint.h"
 
 namespace cricket {

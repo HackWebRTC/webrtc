@@ -8,23 +8,37 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stdio.h>
+#include <string.h>
+#include <cstdint>
+#include <map>
 #include <memory>
-#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
+#include "api/array_view.h"
+#include "api/cryptoparams.h"
 #include "api/jsepsessiondescription.h"
+#include "api/mediatypes.h"
+#include "api/rtpparameters.h"
+#include "api/rtptransceiverinterface.h"
+#include "media/base/codec.h"
 #include "media/base/mediaconstants.h"
-#include "media/engine/webrtcvideoengine.h"
+#include "media/base/streamparams.h"
 #include "p2p/base/p2pconstants.h"
 #include "p2p/base/port.h"
+#include "p2p/base/transportdescription.h"
+#include "p2p/base/transportinfo.h"
 #include "pc/mediasession.h"
+#include "pc/sessiondescription.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/gunit.h"
-#include "rtc_base/logging.h"
 #include "rtc_base/messagedigest.h"
+#include "rtc_base/socketaddress.h"
+#include "rtc_base/sslfingerprint.h"
 #include "rtc_base/stringencode.h"
 #include "rtc_base/stringutils.h"
+#include "test/gtest.h"
 
 #ifdef WEBRTC_ANDROID
 #include "pc/test/androidtestinitializer.h"

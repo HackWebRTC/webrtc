@@ -10,9 +10,10 @@
 
 #include "media/base/streamparams.h"
 
+#include <stdint.h>
 #include <list>
 
-#include "rtc_base/checks.h"
+#include "api/array_view.h"
 #include "rtc_base/strings/string_builder.h"
 
 namespace cricket {

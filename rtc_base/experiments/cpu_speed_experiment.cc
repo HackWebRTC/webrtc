@@ -10,6 +10,7 @@
 
 #include "rtc_base/experiments/cpu_speed_experiment.h"
 
+#include <stdio.h>
 #include <string>
 
 #include "rtc_base/logging.h"

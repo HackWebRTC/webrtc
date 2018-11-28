@@ -9,11 +9,18 @@
  */
 
 #include "modules/video_coding/codecs/vp8/default_temporal_layers.h"
+
+#include <cstdint>
+
+#include "api/video/video_bitrate_allocation.h"
+#include "api/video_codecs/video_codec.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/codecs/vp8/libvpx_vp8_encoder.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
+#include "vpx/vp8cx.h"
 
 namespace webrtc {
 namespace test {

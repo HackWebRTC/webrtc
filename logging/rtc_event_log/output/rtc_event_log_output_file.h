@@ -13,8 +13,6 @@
 
 #include <stddef.h>
 #include <stdio.h>
-
-#include <memory>
 #include <string>
 
 #include "api/rtceventlogoutput.h"

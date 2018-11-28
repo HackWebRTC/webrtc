@@ -10,6 +10,8 @@
 
 #include "stats/test/rtcteststats.h"
 
+#include "rtc_base/checks.h"
+
 namespace webrtc {
 
 WEBRTC_RTCSTATS_IMPL(RTCTestStats,

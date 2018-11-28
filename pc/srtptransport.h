@@ -11,18 +11,22 @@
 #ifndef PC_SRTPTRANSPORT_H_
 #define PC_SRTPTRANSPORT_H_
 
+#include <stddef.h>
+#include <cstdint>
 #include <memory>
 #include <string>
-#include <utility>
 #include <vector>
 
-#include "api/ortc/srtptransportinterface.h"
-#include "p2p/base/dtlstransportinternal.h"
-#include "p2p/base/icetransportinternal.h"
+#include "absl/types/optional.h"
+#include "api/cryptoparams.h"
+#include "api/rtcerror.h"
+#include "p2p/base/packettransportinternal.h"
 #include "pc/rtptransport.h"
 #include "pc/srtpsession.h"
+#include "rtc_base/asyncpacketsocket.h"
 #include "rtc_base/buffer.h"
-#include "rtc_base/checks.h"
+#include "rtc_base/copyonwritebuffer.h"
+#include "rtc_base/networkroute.h"
 
 namespace webrtc {
 

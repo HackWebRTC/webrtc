@@ -9,13 +9,17 @@
  */
 
 #include "rtc_base/logging.h"
+
+#include <string.h>
+#include <algorithm>
+
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/event.h"
-#include "rtc_base/gunit.h"
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/stream.h"
-#include "test/testsupport/fileutils.h"
+#include "rtc_base/timeutils.h"
+#include "test/gtest.h"
 
 namespace rtc {
 

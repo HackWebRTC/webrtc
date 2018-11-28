@@ -11,10 +11,19 @@
 #ifndef MEDIA_BASE_ADAPTEDVIDEOTRACKSOURCE_H_
 #define MEDIA_BASE_ADAPTEDVIDEOTRACKSOURCE_H_
 
+#include <stdint.h>
+
+#include "absl/types/optional.h"
 #include "api/mediastreaminterface.h"
 #include "api/notifier.h"
+#include "api/video/video_frame.h"
+#include "api/video/video_sink_interface.h"
+#include "api/video/video_source_interface.h"
 #include "media/base/videoadapter.h"
 #include "media/base/videobroadcaster.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/thread_annotations.h"
+#include "rtc_base/thread_checker.h"
 
 namespace rtc {
 

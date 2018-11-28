@@ -11,7 +11,9 @@
 #ifndef MODULES_VIDEO_CODING_UTILITY_SIMULCAST_UTILITY_H_
 #define MODULES_VIDEO_CODING_UTILITY_SIMULCAST_UTILITY_H_
 
-#include "api/video_codecs/video_encoder.h"
+#include <stdint.h>
+
+#include "api/video_codecs/video_codec.h"
 
 namespace webrtc {
 

@@ -10,17 +10,21 @@
 
 #include "pc/peerconnectionwrapper.h"
 
+#include <stdint.h>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
-#include "api/jsepsessiondescription.h"
+#include "api/setremotedescriptionobserverinterface.h"
 #include "pc/sdputils.h"
 #include "pc/test/fakevideotracksource.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/function_view.h"
 #include "rtc_base/gunit.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/refcountedobject.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

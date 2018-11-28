@@ -12,9 +12,11 @@
 #ifndef MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_ESTIMATORS_CONGESTION_WINDOW_H_
 #define MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_ESTIMATORS_CONGESTION_WINDOW_H_
 
-#include "modules/remote_bitrate_estimator/test/estimators/bbr.h"
+#include <stddef.h>
+#include <stdint.h>
 
 #include "absl/types/optional.h"
+#include "modules/remote_bitrate_estimator/test/estimators/bbr.h"
 
 namespace webrtc {
 namespace testing {

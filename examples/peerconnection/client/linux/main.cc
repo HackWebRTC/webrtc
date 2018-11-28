@@ -8,13 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <glib.h>
 #include <gtk/gtk.h>
+#include <stdio.h>
 
 #include "examples/peerconnection/client/conductor.h"
 #include "examples/peerconnection/client/flagdefs.h"
 #include "examples/peerconnection/client/linux/main_wnd.h"
 #include "examples/peerconnection/client/peer_connection_client.h"
-
+#include "rtc_base/flags.h"
+#include "rtc_base/messagequeue.h"
+#include "rtc_base/physicalsocketserver.h"
+#include "rtc_base/refcountedobject.h"
+#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/ssladapter.h"
 #include "rtc_base/thread.h"
 #include "system_wrappers/include/field_trial.h"

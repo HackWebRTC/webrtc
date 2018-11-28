@@ -9,6 +9,8 @@
  */
 
 #include "common_video/include/bitrate_adjuster.h"
+
+#include "api/units/time_delta.h"
 #include "rtc_base/fakeclock.h"
 #include "test/gtest.h"
 

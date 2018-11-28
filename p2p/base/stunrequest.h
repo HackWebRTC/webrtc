@@ -11,9 +11,14 @@
 #ifndef P2P_BASE_STUNREQUEST_H_
 #define P2P_BASE_STUNREQUEST_H_
 
+#include <stddef.h>
+#include <stdint.h>
 #include <map>
 #include <string>
+
 #include "p2p/base/stun.h"
+#include "rtc_base/messagehandler.h"
+#include "rtc_base/messagequeue.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
 

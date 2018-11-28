@@ -10,23 +10,26 @@
 
 #include "modules/congestion_controller/include/send_side_congestion_controller.h"
 
+#include <inttypes.h>
 #include <algorithm>
 #include <cstdio>
 #include <iterator>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/types/optional.h"
+#include "api/units/data_rate.h"
+#include "api/units/timestamp.h"
 #include "modules/bitrate_controller/include/bitrate_controller.h"
 #include "modules/congestion_controller/goog_cc/acknowledged_bitrate_estimator.h"
 #include "modules/congestion_controller/goog_cc/congestion_window_pushback_controller.h"
 #include "modules/congestion_controller/goog_cc/probe_controller.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/format_macros.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/network/sent_packet.h"
-#include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/rate_limiter.h"
 #include "rtc_base/timeutils.h"
 #include "system_wrappers/include/field_trial.h"

@@ -12,6 +12,7 @@
 #define P2P_BASE_BASICASYNCRESOLVERFACTORY_H_
 
 #include "api/asyncresolverfactory.h"
+#include "rtc_base/asyncresolverinterface.h"
 
 namespace webrtc {
 

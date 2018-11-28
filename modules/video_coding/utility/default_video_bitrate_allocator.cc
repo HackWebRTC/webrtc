@@ -10,8 +10,8 @@
 
 #include "modules/video_coding/utility/default_video_bitrate_allocator.h"
 
+#include <stddef.h>
 #include <stdint.h>
-
 #include <algorithm>
 
 namespace webrtc {

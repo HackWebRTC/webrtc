@@ -7,11 +7,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/video_coding/jitter_estimator.h"
+#include <stdint.h>
+#include <memory>
+#include <vector>
 
+#include "absl/memory/memory.h"
+#include "absl/types/optional.h"
+#include "api/array_view.h"
+#include "modules/video_coding/jitter_estimator.h"
 #include "rtc_base/experiments/jitter_upper_bound_experiment.h"
-#include "rtc_base/logging.h"
 #include "rtc_base/numerics/histogram_percentile_counter.h"
+#include "rtc_base/strings/string_builder.h"
 #include "rtc_base/timeutils.h"
 #include "system_wrappers/include/clock.h"
 #include "test/field_trial.h"

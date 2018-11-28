@@ -13,7 +13,9 @@
 
 #include <memory>
 
+#include "p2p/base/port.h"
 #include "p2p/client/relayportfactoryinterface.h"
+#include "rtc_base/asyncpacketsocket.h"
 
 namespace cricket {
 

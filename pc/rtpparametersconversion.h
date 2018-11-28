@@ -11,14 +11,15 @@
 #ifndef PC_RTPPARAMETERSCONVERSION_H_
 #define PC_RTPPARAMETERSCONVERSION_H_
 
-#include <memory>
+#include <iosfwd>
 #include <vector>
 
 #include "absl/types/optional.h"
 #include "api/rtcerror.h"
 #include "api/rtpparameters.h"
 #include "media/base/codec.h"
-#include "pc/mediasession.h"
+#include "media/base/streamparams.h"
+#include "pc/sessiondescription.h"
 
 namespace webrtc {
 

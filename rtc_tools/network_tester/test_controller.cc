@@ -10,7 +10,11 @@
 
 #include "rtc_tools/network_tester/test_controller.h"
 
+#include <limits>
+
 #include "absl/types/optional.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/ipaddress.h"
 #include "rtc_base/thread.h"
 
 namespace webrtc {

@@ -10,17 +10,18 @@
 
 #include "p2p/base/basicpacketsocketfactory.h"
 
+#include <stddef.h>
 #include <string>
 
 #include "p2p/base/asyncstuntcpsocket.h"
-#include "p2p/base/stun.h"
 #include "rtc_base/asynctcpsocket.h"
 #include "rtc_base/asyncudpsocket.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/nethelpers.h"
-#include "rtc_base/physicalsocketserver.h"
+#include "rtc_base/socket.h"
 #include "rtc_base/socketadapters.h"
+#include "rtc_base/socketserver.h"
 #include "rtc_base/ssladapter.h"
 #include "rtc_base/thread.h"
 

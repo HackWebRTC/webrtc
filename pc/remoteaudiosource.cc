@@ -10,16 +10,18 @@
 
 #include "pc/remoteaudiosource.h"
 
+#include <stddef.h>
 #include <algorithm>
-#include <functional>
-#include <memory>
-#include <utility>
+#include <string>
 
 #include "absl/memory/memory.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructormagic.h"
+#include "rtc_base/location.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/thread.h"
+#include "rtc_base/thread_checker.h"
 
 namespace webrtc {
 

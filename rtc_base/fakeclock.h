@@ -11,8 +11,11 @@
 #ifndef RTC_BASE_FAKECLOCK_H_
 #define RTC_BASE_FAKECLOCK_H_
 
+#include <stdint.h>
+
 #include "api/units/time_delta.h"
 #include "rtc_base/criticalsection.h"
+#include "rtc_base/thread_annotations.h"
 #include "rtc_base/timeutils.h"
 
 namespace rtc {

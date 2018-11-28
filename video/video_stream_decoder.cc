@@ -10,15 +10,9 @@
 
 #include "video/video_stream_decoder.h"
 
-#include <algorithm>
-#include <map>
-#include <vector>
-
+#include "modules/video_coding/include/video_coding.h"
 #include "modules/video_coding/video_coding_impl.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/logging.h"
-#include "system_wrappers/include/metrics.h"
-#include "video/call_stats.h"
 #include "video/receive_statistics_proxy.h"
 
 namespace webrtc {

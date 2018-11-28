@@ -8,14 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <algorithm>
-#include <vector>
+#include <stdint.h>
+#include <memory>
 
 #include "logging/rtc_event_log/mock/mock_rtc_event_log.h"
 #include "modules/bitrate_controller/include/bitrate_controller.h"
-#include "modules/pacing/mock/mock_paced_sender.h"
+#include "modules/congestion_controller/goog_cc/delay_based_bwe.h"
+#include "modules/pacing/paced_sender.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "system_wrappers/include/clock.h"
 #include "test/field_trial.h"
+#include "test/gmock.h"
 #include "test/gtest.h"
 
 using ::testing::Exactly;

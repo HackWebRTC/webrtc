@@ -11,7 +11,9 @@
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 
 #include "absl/memory/memory.h"
-#include "media/base/codec.h"
+#include "api/video/video_bitrate_allocator.h"
+#include "api/video_codecs/video_codec.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/codecs/vp9/svc_rate_allocator.h"
 #include "modules/video_coding/utility/default_video_bitrate_allocator.h"
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"

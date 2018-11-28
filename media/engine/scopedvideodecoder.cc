@@ -10,8 +10,10 @@
 
 #include "media/engine/scopedvideodecoder.h"
 
-#include <vector>
+#include <stdint.h>
 
+#include "api/video/encoded_image.h"
+#include "api/video_codecs/video_codec.h"
 #include "api/video_codecs/video_decoder.h"
 
 namespace cricket {

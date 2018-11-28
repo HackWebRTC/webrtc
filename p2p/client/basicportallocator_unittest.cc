@@ -10,11 +10,13 @@
 
 #include <algorithm>
 #include <memory>
+#include <ostream>  // no-presubmit-check TODO(webrtc:8982)
 
 #include "p2p/base/basicpacketsocketfactory.h"
 #include "p2p/base/p2pconstants.h"
-#include "p2p/base/p2ptransportchannel.h"
 #include "p2p/base/stunport.h"
+#include "p2p/base/stunrequest.h"
+#include "p2p/base/stunserver.h"
 #include "p2p/base/testrelayserver.h"
 #include "p2p/base/teststunserver.h"
 #include "p2p/base/testturnserver.h"
@@ -23,18 +25,23 @@
 #include "rtc_base/fakenetwork.h"
 #include "rtc_base/firewallsocketserver.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/helpers.h"
 #include "rtc_base/ipaddress.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/natserver.h"
 #include "rtc_base/natsocketfactory.h"
+#include "rtc_base/nattypes.h"
+#include "rtc_base/nethelper.h"
 #include "rtc_base/nethelpers.h"
 #include "rtc_base/network.h"
+#include "rtc_base/network_constants.h"
+#include "rtc_base/networkmonitor.h"
+#include "rtc_base/socket.h"
 #include "rtc_base/socketaddress.h"
-#include "rtc_base/ssladapter.h"
+#include "rtc_base/socketaddresspair.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/virtualsocketserver.h"
 #include "system_wrappers/include/metrics.h"
+#include "test/gtest.h"
 
 using rtc::IPAddress;
 using rtc::SocketAddress;

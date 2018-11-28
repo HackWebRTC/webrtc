@@ -11,10 +11,15 @@
 
 #include <utility>
 
+#include "api/array_view.h"
 #include "api/video/video_stream_encoder_create.h"
+#include "api/video/video_stream_encoder_settings.h"
+#include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/source/rtp_header_extension_size.h"
 #include "modules/rtp_rtcp/source/rtp_sender.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/field_trial.h"
 #include "video/video_send_stream_impl.h"
 

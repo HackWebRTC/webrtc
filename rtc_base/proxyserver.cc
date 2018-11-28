@@ -10,6 +10,7 @@
 
 #include "rtc_base/proxyserver.h"
 
+#include <stddef.h>
 #include <algorithm>
 
 #include "rtc_base/checks.h"

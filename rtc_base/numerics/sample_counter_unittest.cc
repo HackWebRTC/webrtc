@@ -10,8 +10,7 @@
 
 #include "rtc_base/numerics/sample_counter.h"
 
-#include <utility>
-#include <vector>
+#include <initializer_list>
 
 #include "test/gmock.h"
 #include "test/gtest.h"

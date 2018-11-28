@@ -23,7 +23,6 @@
 #endif
 #include <string.h>
 #include <string>
-#include <vector>
 
 #include "rtc_base/byteorder.h"
 #if defined(WEBRTC_WIN)

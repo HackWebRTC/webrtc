@@ -14,25 +14,24 @@
 #include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
+
 #define SECURITY_WIN32
 #include <security.h>
 #endif
 
 #include <ctype.h>  // for isspace
 #include <stdio.h>  // for sprintf
-#include <algorithm>
 #include <utility>  // for pair
 #include <vector>
 
 #include "absl/strings/match.h"
-#include "rtc_base/arraysize.h"
-#include "rtc_base/checks.h"
 #include "rtc_base/cryptstring.h"  // for CryptString
 #include "rtc_base/httpcommon.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/messagedigest.h"
 #include "rtc_base/socketaddress.h"
 #include "rtc_base/strings/string_builder.h"
+#include "rtc_base/stringutils.h"
 #include "rtc_base/third_party/base64/base64.h"  // for Base64
 #include "rtc_base/zero_memory.h"                // for ExplicitZeroMemory
 

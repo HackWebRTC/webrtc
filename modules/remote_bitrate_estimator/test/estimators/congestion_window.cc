@@ -11,9 +11,8 @@
 
 #include "modules/remote_bitrate_estimator/test/estimators/congestion_window.h"
 
-#include <algorithm>
-
 #include "modules/remote_bitrate_estimator/test/estimators/bbr.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 namespace testing {

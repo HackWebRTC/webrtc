@@ -10,10 +10,17 @@
 
 #include "pc/iceserverparsing.h"
 
+#include <stddef.h>
 #include <cctype>  // For std::isdigit.
 #include <string>
 
+#include "p2p/base/portinterface.h"
 #include "rtc_base/arraysize.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/ipaddress.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/socketaddress.h"
+#include "rtc_base/stringencode.h"
 
 namespace webrtc {
 

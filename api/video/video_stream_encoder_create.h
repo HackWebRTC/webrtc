@@ -11,10 +11,11 @@
 #ifndef API_VIDEO_VIDEO_STREAM_ENCODER_CREATE_H_
 #define API_VIDEO_VIDEO_STREAM_ENCODER_CREATE_H_
 
-#include <map>
+#include <stdint.h>
 #include <memory>
-#include <utility>
 
+#include "api/video/video_frame.h"
+#include "api/video/video_sink_interface.h"
 #include "api/video/video_stream_encoder_interface.h"
 #include "api/video/video_stream_encoder_observer.h"
 #include "api/video/video_stream_encoder_settings.h"

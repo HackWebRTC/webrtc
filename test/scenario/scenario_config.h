@@ -10,15 +10,15 @@
 #ifndef TEST_SCENARIO_SCENARIO_CONFIG_H_
 #define TEST_SCENARIO_SCENARIO_CONFIG_H_
 
-#include <memory>
+#include <stddef.h>
 #include <string>
-#include <vector>
 
 #include "absl/types/optional.h"
 #include "api/rtpparameters.h"
 #include "api/units/data_rate.h"
+#include "api/units/data_size.h"
 #include "api/units/time_delta.h"
-#include "api/video_codecs/video_codec.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "test/frame_generator.h"
 
 namespace webrtc {

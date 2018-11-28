@@ -8,12 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <memory>
-#include <string>
 #include <vector>
 
 #include "p2p/base/icecredentialsiterator.h"
-#include "rtc_base/gunit.h"
+#include "test/gtest.h"
 
 using cricket::IceParameters;
 using cricket::IceCredentialsIterator;

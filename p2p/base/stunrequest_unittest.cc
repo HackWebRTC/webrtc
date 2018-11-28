@@ -13,10 +13,9 @@
 #include "p2p/base/stunrequest.h"
 #include "rtc_base/fakeclock.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/helpers.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ssladapter.h"
 #include "rtc_base/timeutils.h"
+#include "test/gtest.h"
 
 namespace cricket {
 

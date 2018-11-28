@@ -8,10 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stdint.h>
+#include <string.h>
 #include <algorithm>
 
 #include "media/base/fakertp.h"
-#include "rtc_base/gunit.h"
+#include "rtc_base/checks.h"
+#include "test/gtest.h"
 
 void CompareHeaderExtensions(const char* packet1,
                              size_t packet1_size,

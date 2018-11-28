@@ -10,9 +10,13 @@
 
 #include "modules/remote_bitrate_estimator/test/estimators/send_side.h"
 
+#include <assert.h>
+#include <stddef.h>
 #include <algorithm>
 
 #include "absl/memory/memory.h"
+#include "api/rtp_headers.h"
+#include "api/transport/network_types.h"
 #include "modules/congestion_controller/goog_cc/delay_based_bwe.h"
 #include "modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 #include "rtc_base/logging.h"

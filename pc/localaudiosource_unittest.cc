@@ -10,12 +10,8 @@
 
 #include "pc/localaudiosource.h"
 
-#include <string>
-#include <vector>
-
-#include "media/base/fakemediaengine.h"
-#include "media/base/fakevideorenderer.h"
-#include "rtc_base/gunit.h"
+#include "absl/types/optional.h"
+#include "test/gtest.h"
 
 using webrtc::LocalAudioSource;
 

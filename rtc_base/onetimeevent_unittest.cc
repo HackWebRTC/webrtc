@@ -9,7 +9,8 @@
  */
 
 #include "rtc_base/onetimeevent.h"
-#include "rtc_base/gunit.h"
+
+#include "test/gtest.h"
 
 namespace webrtc {
 

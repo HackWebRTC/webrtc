@@ -9,7 +9,8 @@
  */
 
 #include "pc/rtcpmuxfilter.h"
-#include "rtc_base/gunit.h"
+
+#include "test/gtest.h"
 
 TEST(RtcpMuxFilterTest, IsActiveSender) {
   cricket::RtcpMuxFilter filter;

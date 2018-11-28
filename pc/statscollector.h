@@ -14,6 +14,7 @@
 #ifndef PC_STATSCOLLECTOR_H_
 #define PC_STATSCOLLECTOR_H_
 
+#include <stdint.h>
 #include <map>
 #include <memory>
 #include <string>
@@ -23,7 +24,10 @@
 #include "api/mediastreaminterface.h"
 #include "api/peerconnectioninterface.h"
 #include "api/statstypes.h"
+#include "p2p/base/port.h"
 #include "pc/peerconnectioninternal.h"
+#include "rtc_base/network_constants.h"
+#include "rtc_base/sslcertificate.h"
 
 namespace webrtc {
 

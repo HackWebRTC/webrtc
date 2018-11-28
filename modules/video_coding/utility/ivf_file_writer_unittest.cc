@@ -10,13 +10,12 @@
 
 #include "modules/video_coding/utility/ivf_file_writer.h"
 
+#include <string.h>
 #include <memory>
+#include <string>
 
 #include "modules/rtp_rtcp/source/byte_io.h"
-#include "rtc_base/helpers.h"
-#include "rtc_base/logging.h"
-#include "rtc_base/thread.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/platform_file.h"
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
 

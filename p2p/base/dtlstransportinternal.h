@@ -11,14 +11,20 @@
 #ifndef P2P_BASE_DTLSTRANSPORTINTERNAL_H_
 #define P2P_BASE_DTLSTRANSPORTINTERNAL_H_
 
+#include <stddef.h>
+#include <stdint.h>
 #include <memory>
 #include <string>
-#include <vector>
 
 #include "api/crypto/cryptooptions.h"
 #include "p2p/base/icetransportinternal.h"
 #include "p2p/base/packettransportinternal.h"
+#include "rtc_base/constructormagic.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/sslcertificate.h"
+#include "rtc_base/sslfingerprint.h"
 #include "rtc_base/sslstreamadapter.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace cricket {
 

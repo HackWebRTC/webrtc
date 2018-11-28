@@ -10,9 +10,7 @@
 
 #include "pc/localaudiosource.h"
 
-#include <vector>
-
-#include "media/base/mediaengine.h"
+#include "rtc_base/refcountedobject.h"
 
 using webrtc::MediaSourceInterface;
 

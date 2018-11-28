@@ -11,6 +11,7 @@
 #ifndef MODULES_VIDEO_CODING_NACK_MODULE_H_
 #define MODULES_VIDEO_CODING_NACK_MODULE_H_
 
+#include <stdint.h>
 #include <map>
 #include <set>
 #include <vector>

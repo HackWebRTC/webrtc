@@ -9,8 +9,11 @@
  */
 
 #include "pc/mediastream.h"
+
+#include <stddef.h>
+#include <vector>
+
 #include "rtc_base/checks.h"
-#include "rtc_base/logging.h"
 #include "rtc_base/refcountedobject.h"
 
 namespace webrtc {

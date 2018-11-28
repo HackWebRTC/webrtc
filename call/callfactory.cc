@@ -10,14 +10,15 @@
 
 #include "call/callfactory.h"
 
+#include <stdio.h>
 #include <memory>
 #include <string>
-#include <utility>
 
 #include "absl/types/optional.h"
+#include "api/test/simulated_network.h"
 #include "call/call.h"
 #include "call/degraded_call.h"
-#include "call/fake_network_pipe.h"
+#include "rtc_base/checks.h"
 #include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {

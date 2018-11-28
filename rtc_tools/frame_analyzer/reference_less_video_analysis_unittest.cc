@@ -7,13 +7,11 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include <stdio.h>
-#include <string.h>
-#include <cstring>
-#include <iostream>
 #include <vector>
 
+#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_tools/frame_analyzer/reference_less_video_analysis_lib.h"
+#include "rtc_tools/video_file_reader.h"
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
 

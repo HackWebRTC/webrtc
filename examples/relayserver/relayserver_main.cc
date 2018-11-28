@@ -12,6 +12,9 @@
 #include <memory>
 
 #include "p2p/base/relayserver.h"
+#include "rtc_base/asyncudpsocket.h"
+#include "rtc_base/socketaddress.h"
+#include "rtc_base/socketserver.h"
 #include "rtc_base/thread.h"
 
 int main(int argc, char** argv) {

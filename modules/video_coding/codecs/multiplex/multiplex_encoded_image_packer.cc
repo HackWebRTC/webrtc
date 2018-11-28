@@ -14,6 +14,7 @@
 #include <utility>
 
 #include "modules/rtp_rtcp/source/byte_io.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 int PackHeader(uint8_t* buffer, MultiplexImageHeader header) {

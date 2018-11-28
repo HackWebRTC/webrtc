@@ -11,8 +11,8 @@
 #include "logging/rtc_event_log/rtc_event_log_unittest_helper.h"
 
 #include <string.h>  // memcmp
-
-#include <algorithm>
+#include <cmath>
+#include <cstdint>
 #include <limits>
 #include <memory>
 #include <numeric>
@@ -20,14 +20,21 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "absl/types/optional.h"
-#include "modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
+#include "api/array_view.h"
+#include "api/rtp_headers.h"
+#include "api/rtpparameters.h"
+#include "modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor_config.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "modules/rtp_rtcp/include/rtp_cvo.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
+#include "rtc_base/buffer.h"
 #include "rtc_base/checks.h"
+#include "system_wrappers/include/ntp_time.h"
 #include "test/gtest.h"
 
 namespace webrtc {

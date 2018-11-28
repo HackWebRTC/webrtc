@@ -12,7 +12,6 @@
 
 #include "p2p/base/stun.h"
 #include "rtc_base/byteorder.h"
-#include "rtc_base/checks.h"
 
 namespace cricket {
 

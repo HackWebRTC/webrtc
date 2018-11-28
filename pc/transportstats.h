@@ -14,8 +14,9 @@
 #include <string>
 #include <vector>
 
-#include "p2p/base/dtlstransport.h"
+#include "p2p/base/dtlstransportinternal.h"
 #include "p2p/base/port.h"
+#include "rtc_base/sslstreamadapter.h"
 
 namespace cricket {
 

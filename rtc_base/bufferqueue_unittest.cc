@@ -9,7 +9,10 @@
  */
 
 #include "rtc_base/bufferqueue.h"
-#include "rtc_base/gunit.h"
+
+#include <string.h>
+
+#include "test/gtest.h"
 
 namespace rtc {
 

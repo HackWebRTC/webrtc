@@ -10,6 +10,9 @@
 
 #include "modules/video_coding/encoder_database.h"
 
+#include <string.h>
+
+#include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 

@@ -10,6 +10,8 @@
 
 #include "pc/rtpmediautils.h"
 
+#include "rtc_base/checks.h"
+
 namespace webrtc {
 
 RtpTransceiverDirection RtpTransceiverDirectionFromSendRecv(bool send,

@@ -12,6 +12,8 @@
 #ifndef MODULES_VIDEO_CODING_CODECS_VP8_DEFAULT_TEMPORAL_LAYERS_H_
 #define MODULES_VIDEO_CODING_CODECS_VP8_DEFAULT_TEMPORAL_LAYERS_H_
 
+#include <stddef.h>
+#include <stdint.h>
 #include <limits>
 #include <map>
 #include <memory>
@@ -19,9 +21,9 @@
 #include <vector>
 
 #include "absl/types/optional.h"
-
 #include "api/video_codecs/vp8_temporal_layers.h"
 #include "modules/video_coding/codecs/vp8/include/temporal_layers_checker.h"
+#include "modules/video_coding/include/video_codec_interface.h"
 
 namespace webrtc {
 

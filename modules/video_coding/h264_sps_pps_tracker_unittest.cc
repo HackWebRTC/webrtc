@@ -10,9 +10,14 @@
 
 #include "modules/video_coding/h264_sps_pps_tracker.h"
 
+#include <string.h>
 #include <vector>
 
+#include "absl/types/variant.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "common_video/h264/h264_common.h"
+#include "modules/rtp_rtcp/source/rtp_video_header.h"
+#include "modules/video_coding/codecs/h264/include/h264_globals.h"
 #include "modules/video_coding/packet.h"
 #include "test/gtest.h"
 

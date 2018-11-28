@@ -11,11 +11,14 @@
 #ifndef MODULES_REMOTE_BITRATE_ESTIMATOR_REMOTE_BITRATE_ESTIMATOR_ABS_SEND_TIME_H_
 #define MODULES_REMOTE_BITRATE_ESTIMATOR_REMOTE_BITRATE_ESTIMATOR_ABS_SEND_TIME_H_
 
+#include <stddef.h>
+#include <stdint.h>
 #include <list>
 #include <map>
 #include <memory>
 #include <vector>
 
+#include "api/rtp_headers.h"
 #include "modules/remote_bitrate_estimator/aimd_rate_control.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "modules/remote_bitrate_estimator/inter_arrival.h"
@@ -26,6 +29,8 @@
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/race_checker.h"
 #include "rtc_base/rate_statistics.h"
+#include "rtc_base/thread_annotations.h"
+#include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 

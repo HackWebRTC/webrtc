@@ -10,6 +10,9 @@
 
 #include "modules/remote_bitrate_estimator/test/packet.h"
 
+#include <assert.h>
+#include <cstdint>
+
 namespace webrtc {
 namespace testing {
 namespace bwe {

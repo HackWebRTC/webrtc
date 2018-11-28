@@ -8,12 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <string.h>
+#include <cstdint>
 #include <vector>
 
 #include "media/base/fakertp.h"
 #include "media/base/rtputils.h"
 #include "rtc_base/asyncpacketsocket.h"
-#include "rtc_base/gunit.h"
+#include "test/gtest.h"
 
 namespace cricket {
 

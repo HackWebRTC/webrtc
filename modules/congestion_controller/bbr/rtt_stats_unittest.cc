@@ -10,6 +10,8 @@
 
 #include "modules/congestion_controller/bbr/rtt_stats.h"
 
+#include <stdlib.h>
+#include <cmath>
 #include <vector>
 
 #include "test/gtest.h"

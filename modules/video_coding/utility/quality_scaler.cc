@@ -10,11 +10,9 @@
 
 #include "modules/video_coding/utility/quality_scaler.h"
 
-#include <math.h>
-
-#include <algorithm>
 #include <memory>
 
+#include "absl/types/optional.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/exp_filter.h"

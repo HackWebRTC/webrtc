@@ -11,12 +11,14 @@
 #ifndef MEDIA_BASE_VIDEOADAPTER_H_
 #define MEDIA_BASE_VIDEOADAPTER_H_
 
+#include <stdint.h>
 #include <utility>
 
 #include "absl/types/optional.h"
 #include "media/base/videocommon.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/criticalsection.h"
+#include "rtc_base/thread_annotations.h"
 
 namespace cricket {
 

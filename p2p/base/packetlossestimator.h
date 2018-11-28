@@ -11,6 +11,7 @@
 #ifndef P2P_BASE_PACKETLOSSESTIMATOR_H_
 #define P2P_BASE_PACKETLOSSESTIMATOR_H_
 
+#include <stddef.h>
 #include <stdint.h>
 #include <string>
 #include <unordered_map>

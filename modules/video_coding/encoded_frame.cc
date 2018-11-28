@@ -10,6 +10,14 @@
 
 #include "modules/video_coding/encoded_frame.h"
 
+#include <string.h>
+
+#include "absl/types/variant.h"
+#include "api/video/video_timing.h"
+#include "modules/video_coding/codecs/interface/common_constants.h"
+#include "modules/video_coding/codecs/vp8/include/vp8_globals.h"
+#include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
+
 namespace webrtc {
 
 VCMEncodedFrame::VCMEncodedFrame()

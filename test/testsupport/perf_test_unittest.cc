@@ -10,6 +10,7 @@
 
 #include "test/testsupport/perf_test.h"
 
+#include <algorithm>
 #include <limits>
 #include <string>
 

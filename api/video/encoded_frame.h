@@ -13,6 +13,9 @@
 
 #include "modules/video_coding/encoded_frame.h"
 
+#include <stddef.h>
+#include <stdint.h>
+
 namespace webrtc {
 namespace video_coding {
 

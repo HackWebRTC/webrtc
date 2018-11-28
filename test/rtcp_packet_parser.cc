@@ -9,6 +9,9 @@
  */
 
 #include "test/rtcp_packet_parser.h"
+
+#include "modules/rtp_rtcp/source/rtcp_packet/psfb.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/rtpfb.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 

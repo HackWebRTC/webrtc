@@ -10,18 +10,21 @@
 
 #include "api/video_codecs/video_encoder_software_fallback_wrapper.h"
 
+#include <stdint.h>
 #include <cstdio>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "absl/memory/memory.h"
-#include "media/base/codec.h"
-#include "media/base/h264_profile_level_id.h"
+#include "absl/types/optional.h"
+#include "api/video/video_bitrate_allocation.h"
+#include "api/video/video_frame.h"
+#include "api/video_codecs/video_codec.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/timeutils.h"
 #include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {

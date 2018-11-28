@@ -10,8 +10,10 @@
 
 #include "api/mediaconstraintsinterface.h"
 
+#include "absl/types/optional.h"
 #include "api/test/fakeconstraints.h"
-#include "rtc_base/gunit.h"
+#include "media/base/mediaconfig.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

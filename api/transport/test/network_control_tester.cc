@@ -11,8 +11,13 @@
 #include "api/transport/test/network_control_tester.h"
 
 #include <algorithm>
+#include <string>
+#include <vector>
 
+#include "absl/types/optional.h"
 #include "api/transport/network_control.h"
+#include "api/units/data_size.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 
 namespace webrtc {

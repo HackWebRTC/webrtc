@@ -15,6 +15,8 @@
 
 #include "api/peerconnectioninterface.h"
 #include "api/rtcerror.h"
+#include "p2p/base/port.h"
+#include "p2p/base/portallocator.h"
 
 namespace webrtc {
 

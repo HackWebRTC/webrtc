@@ -13,10 +13,10 @@
 #include <memory>
 #include <string>
 
+#include "rtc_base/checks.h"
 #include "rtc_base/event.h"
 #include "rtc_base/task_queue.h"
 #include "test/field_trial.h"
-#include "test/gmock.h"
 #include "test/gtest.h"
 
 namespace webrtc {

@@ -11,12 +11,13 @@
 #ifndef RTC_BASE_NUMERICS_SEQUENCE_NUMBER_UTIL_H_
 #define RTC_BASE_NUMERICS_SEQUENCE_NUMBER_UTIL_H_
 
+#include <stdint.h>
 #include <limits>
 #include <type_traits>
 
 #include "absl/types/optional.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/numerics/mod_ops.h"
-#include "rtc_base/numerics/safe_compare.h"
 
 namespace webrtc {
 

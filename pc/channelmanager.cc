@@ -15,9 +15,11 @@
 
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
-#include "media/base/rtpdataengine.h"
+#include "media/base/mediaconstants.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/location.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/thread_checker.h"
 #include "rtc_base/trace_event.h"
 
 namespace cricket {

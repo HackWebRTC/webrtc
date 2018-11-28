@@ -10,15 +10,19 @@
 
 #include "pc/jseptransport.h"
 
+#include <stddef.h>
+#include <stdint.h>
 #include <memory>
+#include <type_traits>
 #include <utility>  // for std::pair
 
+#include "absl/memory/memory.h"
+#include "api/array_view.h"
 #include "api/candidate.h"
 #include "p2p/base/p2pconstants.h"
 #include "p2p/base/p2ptransportchannel.h"
-#include "p2p/base/port.h"
-#include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/copyonwritebuffer.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/string_builder.h"
 

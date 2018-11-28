@@ -10,10 +10,13 @@
 
 #include "api/video_codecs/video_decoder_software_fallback_wrapper.h"
 
+#include <stdint.h>
 #include <string>
 #include <utility>
 
 #include "absl/memory/memory.h"
+#include "api/video/encoded_image.h"
+#include "api/video_codecs/video_codec.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"

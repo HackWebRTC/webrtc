@@ -8,17 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <math.h>
+#include <assert.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#include <algorithm>
+#include <string.h>
+#include <iostream>
 #include <memory>
 
 #include "api/audio/audio_frame.h"
-#include "modules/audio_processing/agc/agc.h"
 #include "modules/audio_processing/agc/loudness_histogram.h"
-#include "modules/audio_processing/agc/utility.h"
 #include "modules/audio_processing/vad/common.h"
 #include "modules/audio_processing/vad/pitch_based_vad.h"
 #include "modules/audio_processing/vad/standalone_vad.h"

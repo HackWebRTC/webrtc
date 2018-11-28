@@ -10,6 +10,8 @@
 
 #include "media/base/videosourcebase.h"
 
+#include <algorithm>
+
 #include "rtc_base/checks.h"
 
 namespace rtc {

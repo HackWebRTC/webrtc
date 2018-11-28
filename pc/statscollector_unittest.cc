@@ -9,21 +9,37 @@
  */
 
 #include <stdio.h>
-
 #include <algorithm>
 #include <memory>
-#include <utility>
 
-#include "pc/statscollector.h"
-
+#include "absl/memory/memory.h"
+#include "absl/types/optional.h"
+#include "api/audio_codecs/audio_encoder.h"
+#include "api/candidate.h"
+#include "api/datachannelinterface.h"
+#include "call/call.h"
+#include "media/base/mediachannel.h"
+#include "modules/audio_processing/include/audio_processing_statistics.h"
+#include "pc/datachannel.h"
 #include "pc/mediastream.h"
 #include "pc/mediastreamtrack.h"
+#include "pc/statscollector.h"
 #include "pc/test/fakepeerconnectionforstats.h"
 #include "pc/test/fakevideotracksource.h"
+#include "pc/transportstats.h"
 #include "pc/videotrack.h"
 #include "rtc_base/fakesslidentity.h"
 #include "rtc_base/messagedigest.h"
+#include "rtc_base/nethelper.h"
+#include "rtc_base/refcountedobject.h"
+#include "rtc_base/rtccertificate.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/socketaddress.h"
+#include "rtc_base/sslidentity.h"
+#include "rtc_base/sslstreamadapter.h"
+#include "rtc_base/stringencode.h"
 #include "rtc_base/third_party/base64/base64.h"
+#include "rtc_base/thread.h"
 #include "test/gtest.h"
 
 using cricket::ConnectionInfo;

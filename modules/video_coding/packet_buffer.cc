@@ -10,15 +10,22 @@
 
 #include "modules/video_coding/packet_buffer.h"
 
+#include <string.h>
 #include <algorithm>
-#include <limits>
+#include <cstdint>
 #include <utility>
 
+#include "absl/types/variant.h"
+#include "api/video/encoded_frame.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "common_video/h264/h264_common.h"
+#include "modules/rtp_rtcp/source/rtp_video_header.h"
+#include "modules/video_coding/codecs/h264/include/h264_globals.h"
 #include "modules/video_coding/frame_object.h"
 #include "rtc_base/atomicops.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/numerics/mod_ops.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/field_trial.h"
 

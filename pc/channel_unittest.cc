@@ -8,23 +8,34 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <cstdint>
 #include <memory>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "api/array_view.h"
+#include "api/audio_options.h"
+#include "api/rtpparameters.h"
+#include "media/base/codec.h"
 #include "media/base/fakemediaengine.h"
 #include "media/base/fakertp.h"
 #include "media/base/mediachannel.h"
-#include "p2p/base/fakecandidatepair.h"
+#include "p2p/base/candidatepairinterface.h"
 #include "p2p/base/fakedtlstransport.h"
 #include "p2p/base/fakepackettransport.h"
+#include "p2p/base/icetransportinternal.h"
+#include "p2p/base/p2pconstants.h"
 #include "pc/channel.h"
+#include "pc/dtlssrtptransport.h"
+#include "pc/jseptransport.h"
+#include "pc/rtptransport.h"
+#include "rtc_base/arraysize.h"
 #include "rtc_base/buffer.h"
+#include "rtc_base/byteorder.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/fakeclock.h"
-#include "rtc_base/gunit.h"
-#include "rtc_base/logging.h"
-#include "rtc_base/sslstreamadapter.h"
+#include "rtc_base/rtccertificate.h"
+#include "rtc_base/sslidentity.h"
+#include "test/gtest.h"
 
 using cricket::DtlsTransportInternal;
 using cricket::FakeVoiceMediaChannel;

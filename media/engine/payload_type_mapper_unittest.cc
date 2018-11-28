@@ -11,6 +11,8 @@
 #include <set>
 #include <string>
 
+#include "absl/strings/string_view.h"
+#include "media/base/mediaconstants.h"
 #include "media/engine/payload_type_mapper.h"
 #include "test/gtest.h"
 

@@ -11,15 +11,31 @@
 #ifndef CALL_DEGRADED_CALL_H_
 #define CALL_DEGRADED_CALL_H_
 
+#include <stddef.h>
+#include <stdint.h>
 #include <memory>
 
 #include "absl/types/optional.h"
 #include "api/call/transport.h"
+#include "api/fec_controller.h"
+#include "api/mediatypes.h"
+#include "api/rtp_headers.h"
 #include "api/test/simulated_network.h"
+#include "api/video_codecs/video_encoder_config.h"
+#include "call/audio_receive_stream.h"
+#include "call/audio_send_stream.h"
 #include "call/call.h"
 #include "call/fake_network_pipe.h"
+#include "call/flexfec_receive_stream.h"
+#include "call/packet_receiver.h"
+#include "call/rtp_transport_controller_send_interface.h"
 #include "call/simulated_network.h"
+#include "call/video_receive_stream.h"
+#include "call/video_send_stream.h"
 #include "modules/utility/include/process_thread.h"
+#include "rtc_base/bitrateallocationstrategy.h"
+#include "rtc_base/copyonwritebuffer.h"
+#include "rtc_base/network/sent_packet.h"
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {

@@ -53,11 +53,19 @@
 #define API_PROXY_H_
 
 #include <memory>
+#include <string>
 #include <utility>
 
 #include "rtc_base/event.h"
+#include "rtc_base/messagehandler.h"
+#include "rtc_base/messagequeue.h"
 #include "rtc_base/refcountedobject.h"
+#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/thread.h"
+
+namespace rtc {
+class Location;
+}
 
 namespace webrtc {
 

@@ -10,10 +10,14 @@
 
 #include "media/base/rtputils.h"
 
+#include <string.h>
+#include <vector>
+
 // PacketTimeUpdateParams is defined in asyncpacketsocket.h.
 // TODO(sergeyu): Find more appropriate place for PacketTimeUpdateParams.
 #include "media/base/turnutils.h"
 #include "rtc_base/asyncpacketsocket.h"
+#include "rtc_base/byteorder.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/messagedigest.h"
 

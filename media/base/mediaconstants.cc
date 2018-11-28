@@ -10,8 +10,6 @@
 
 #include "media/base/mediaconstants.h"
 
-#include <string>
-
 namespace cricket {
 
 const int kVideoCodecClockrate = 90000;

@@ -12,17 +12,16 @@
 
 #include <assert.h>
 #include <math.h>
-#include <stdlib.h>
 #include <string.h>
 #include <algorithm>
-#include <string>
+#include <cstdint>
 
 #include "absl/types/optional.h"
 #include "modules/video_coding/internal_defines.h"
 #include "modules/video_coding/rtt_filter.h"
 #include "rtc_base/experiments/jitter_upper_bound_experiment.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "system_wrappers/include/clock.h"
-#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 namespace {

@@ -9,23 +9,39 @@
  */
 
 #include <math.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #if defined(WEBRTC_POSIX)
 #include <netinet/in.h>
 #endif
 
+#include <algorithm>
 #include <memory>
+#include <utility>
 
 #include "absl/memory/memory.h"
 #include "rtc_base/arraysize.h"
+#include "rtc_base/asyncpacketsocket.h"
+#include "rtc_base/asyncsocket.h"
+#include "rtc_base/asyncudpsocket.h"
 #include "rtc_base/fakeclock.h"
 #include "rtc_base/gunit.h"
+#include "rtc_base/ipaddress.h"
+#include "rtc_base/location.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/messagehandler.h"
+#include "rtc_base/messagequeue.h"
+#include "rtc_base/socket.h"
+#include "rtc_base/socketaddress.h"
 #include "rtc_base/testclient.h"
 #include "rtc_base/testutils.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/timeutils.h"
 #include "rtc_base/virtualsocketserver.h"
+#include "test/gtest.h"
 
 using namespace rtc;
 

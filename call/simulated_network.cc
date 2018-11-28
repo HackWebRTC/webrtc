@@ -13,7 +13,11 @@
 #include <algorithm>
 #include <cmath>
 #include <utility>
+
 #include "api/units/data_rate.h"
+#include "api/units/data_size.h"
+#include "api/units/time_delta.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 

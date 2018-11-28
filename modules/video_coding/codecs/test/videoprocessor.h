@@ -11,21 +11,32 @@
 #ifndef MODULES_VIDEO_CODING_CODECS_TEST_VIDEOPROCESSOR_H_
 #define MODULES_VIDEO_CODING_CODECS_TEST_VIDEOPROCESSOR_H_
 
+#include <stddef.h>
+#include <stdint.h>
 #include <map>
 #include <memory>
-#include <string>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "api/test/videocodec_test_fixture.h"
 #include "api/test/videocodec_test_stats.h"
+#include "api/video/encoded_image.h"
+#include "api/video/video_bitrate_allocation.h"
 #include "api/video/video_bitrate_allocator.h"
 #include "api/video/video_frame.h"
+#include "api/video_codecs/video_decoder.h"
+#include "api/video_codecs/video_encoder.h"
+#include "common_types.h"  // NOLINT(build/include)
+#include "modules/include/module_common_types.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/utility/ivf_file_writer.h"
 #include "rtc_base/buffer.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/sequenced_task_checker.h"
 #include "rtc_base/task_queue.h"
+#include "rtc_base/thread_annotations.h"
+#include "rtc_base/thread_checker.h"
 #include "test/testsupport/frame_reader.h"
 #include "test/testsupport/frame_writer.h"
 

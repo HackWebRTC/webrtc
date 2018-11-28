@@ -11,6 +11,7 @@
 #ifndef RTC_BASE_BUFFER_H_
 #define RTC_BASE_BUFFER_H_
 
+#include <stdint.h>
 #include <algorithm>
 #include <cstring>
 #include <memory>

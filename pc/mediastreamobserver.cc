@@ -11,6 +11,8 @@
 #include "pc/mediastreamobserver.h"
 
 #include <algorithm>
+#include <string>
+#include <vector>
 
 namespace webrtc {
 

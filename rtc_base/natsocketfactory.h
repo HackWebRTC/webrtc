@@ -11,14 +11,19 @@
 #ifndef RTC_BASE_NATSOCKETFACTORY_H_
 #define RTC_BASE_NATSOCKETFACTORY_H_
 
+#include <stddef.h>
 #include <map>
 #include <memory>
 #include <set>
-#include <string>
 
+#include "rtc_base/asyncsocket.h"
 #include "rtc_base/constructormagic.h"
+#include "rtc_base/messagequeue.h"
 #include "rtc_base/natserver.h"
+#include "rtc_base/nattypes.h"
+#include "rtc_base/socket.h"
 #include "rtc_base/socketaddress.h"
+#include "rtc_base/socketfactory.h"
 #include "rtc_base/socketserver.h"
 
 namespace rtc {
@@ -80,6 +85,7 @@ class NATSocketFactory : public SocketFactory, public NATInternalSocketFactory {
 class NATSocketServer : public SocketServer, public NATInternalSocketFactory {
  public:
   class Translator;
+
   // holds a list of NATs
   class TranslatorMap : private std::map<SocketAddress, Translator*> {
    public:

@@ -11,7 +11,7 @@
 #ifndef MEDIA_BASE_MEDIACONSTANTS_H_
 #define MEDIA_BASE_MEDIACONSTANTS_H_
 
-#include <string>
+#include <stddef.h>
 
 #include "rtc_base/system/rtc_export.h"
 

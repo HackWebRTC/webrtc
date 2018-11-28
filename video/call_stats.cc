@@ -11,12 +11,11 @@
 #include "video/call_stats.h"
 
 #include <algorithm>
+#include <memory>
 
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/constructormagic.h"
 #include "rtc_base/location.h"
-#include "rtc_base/logging.h"
 #include "rtc_base/task_queue.h"
 #include "system_wrappers/include/metrics.h"
 

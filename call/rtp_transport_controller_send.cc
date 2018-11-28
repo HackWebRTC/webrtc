@@ -11,9 +11,16 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/types/optional.h"
+#include "api/transport/network_types.h"
+#include "api/units/data_rate.h"
+#include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
 #include "call/rtp_transport_controller_send.h"
+#include "call/rtp_video_sender.h"
 #include "modules/congestion_controller/include/send_side_congestion_controller.h"
 #include "modules/congestion_controller/rtp/include/send_side_congestion_controller.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/rate_limiter.h"

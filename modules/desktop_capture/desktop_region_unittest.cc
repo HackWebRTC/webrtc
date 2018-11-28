@@ -10,7 +10,9 @@
 
 #include "modules/desktop_capture/desktop_region.h"
 
+#include <stdlib.h>
 #include <algorithm>
+#include <cstdint>
 
 #include "test/gtest.h"
 

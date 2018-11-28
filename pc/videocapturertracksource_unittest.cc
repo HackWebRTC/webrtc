@@ -8,20 +8,21 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stddef.h>
 #include <memory>
-#include <string>
 #include <utility>
 #include <vector>
 
 #include "api/test/fakeconstraints.h"
-#include "media/base/fakemediaengine.h"
 #include "media/base/fakevideocapturer.h"
 #include "media/base/fakevideorenderer.h"
+#include "media/base/mediachannel.h"
 #include "pc/videocapturertracksource.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/event.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/task_queue.h"
+#include "test/gtest.h"
 
 using cricket::FOURCC_I420;
 using cricket::VideoFormat;

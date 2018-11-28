@@ -8,13 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <string.h>
-
-#include "modules/include/module_common_types.h"
 #include "modules/video_coding/decoding_state.h"
+#include "common_types.h"  // NOLINT(build/include)
+#include "modules/rtp_rtcp/source/rtp_video_header.h"
+#include "modules/video_coding/codecs/interface/common_constants.h"
+#include "modules/video_coding/codecs/vp8/include/vp8_globals.h"
+#include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
 #include "modules/video_coding/frame_buffer.h"
-#include "modules/video_coding/jitter_buffer_common.h"
+#include "modules/video_coding/include/video_coding.h"
 #include "modules/video_coding/packet.h"
+#include "modules/video_coding/session_info.h"
 #include "test/gtest.h"
 
 namespace webrtc {

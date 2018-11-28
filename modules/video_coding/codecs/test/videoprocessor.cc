@@ -10,21 +10,27 @@
 
 #include "modules/video_coding/codecs/test/videoprocessor.h"
 
+#include <string.h>
 #include <algorithm>
+#include <cstddef>
 #include <limits>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "api/video/i420_buffer.h"
+#include "api/video/video_bitrate_allocator_factory.h"
+#include "api/video/video_frame_buffer.h"
+#include "api/video/video_rotation.h"
+#include "api/video_codecs/video_codec.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "common_video/h264/h264_common.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "modules/video_coding/include/video_codec_initializer.h"
+#include "modules/video_coding/codecs/interface/common_constants.h"
 #include "modules/video_coding/include/video_error_codes.h"
-#include "modules/video_coding/utility/default_video_bitrate_allocator.h"
-#include "modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/timeutils.h"
 #include "test/gtest.h"
 #include "third_party/libyuv/include/libyuv/compare.h"

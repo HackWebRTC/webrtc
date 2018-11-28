@@ -11,6 +11,8 @@
 #ifndef API_STATS_RTCSTATSREPORT_H_
 #define API_STATS_RTCSTATSREPORT_H_
 
+#include <stddef.h>
+#include <stdint.h>
 #include <map>
 #include <memory>
 #include <string>

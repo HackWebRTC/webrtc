@@ -12,6 +12,7 @@
 
 #include <math.h>
 #include <algorithm>
+#include <cstdint>
 #include <random>
 #include <vector>
 

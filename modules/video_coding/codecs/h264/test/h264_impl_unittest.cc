@@ -8,10 +8,25 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stdint.h>
+#include <memory>
+
+#include "absl/types/optional.h"
 #include "api/video/color_space.h"
+#include "api/video/encoded_image.h"
+#include "api/video/video_frame.h"
+#include "api/video_codecs/video_codec.h"
+#include "api/video_codecs/video_decoder.h"
+#include "api/video_codecs/video_encoder.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "media/base/codec.h"
+#include "media/base/mediaconstants.h"
 #include "modules/video_coding/codecs/h264/include/h264.h"
 #include "modules/video_coding/codecs/test/video_codec_unittest.h"
+#include "modules/video_coding/include/video_codec_interface.h"
+#include "modules/video_coding/include/video_error_codes.h"
+#include "test/gtest.h"
 #include "test/video_codec_settings.h"
 
 namespace webrtc {

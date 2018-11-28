@@ -11,12 +11,11 @@
 #ifndef MODULES_VIDEO_CODING_CODECS_TEST_VIDEOCODEC_TEST_STATS_IMPL_H_
 #define MODULES_VIDEO_CODING_CODECS_TEST_VIDEOCODEC_TEST_STATS_IMPL_H_
 
+#include <stddef.h>
 #include <map>
-#include <string>
 #include <vector>
 
 #include "api/test/videocodec_test_stats.h"  // NOLINT(build/include)
-#include "common_types.h"                    // NOLINT(build/include)
 
 namespace webrtc {
 namespace test {

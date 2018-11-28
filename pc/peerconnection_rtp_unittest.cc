@@ -8,33 +8,54 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stdint.h>
 #include <memory>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/types/optional.h"
+#include "api/audio/audio_mixer.h"
+#include "api/audio_codecs/audio_decoder_factory.h"
+#include "api/audio_codecs/audio_encoder_factory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/create_peerconnection_factory.h"
 #include "api/jsep.h"
 #include "api/mediastreaminterface.h"
+#include "api/mediatypes.h"
 #include "api/peerconnectioninterface.h"
+#include "api/rtcerror.h"
+#include "api/rtpparameters.h"
+#include "api/rtpreceiverinterface.h"
+#include "api/rtpsenderinterface.h"
+#include "api/rtptransceiverinterface.h"
+#include "api/setremotedescriptionobserverinterface.h"
 #include "api/umametrics.h"
 #include "api/video_codecs/builtin_video_decoder_factory.h"
 #include "api/video_codecs/builtin_video_encoder_factory.h"
+#include "api/video_codecs/video_decoder_factory.h"
+#include "api/video_codecs/video_encoder_factory.h"
+#include "media/base/streamparams.h"
+#include "modules/audio_device/include/audio_device.h"
+#include "modules/audio_processing/include/audio_processing.h"
+#include "p2p/base/portallocator.h"
 #include "pc/mediasession.h"
-#include "pc/mediastream.h"
-#include "pc/mediastreamtrack.h"
 #include "pc/peerconnectionwrapper.h"
 #include "pc/sdputils.h"
+#include "pc/sessiondescription.h"
 #include "pc/test/fakeaudiocapturemodule.h"
 #include "pc/test/mockpeerconnectionobservers.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/refcountedobject.h"
+#include "rtc_base/rtccertificategenerator.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/thread.h"
 #include "system_wrappers/include/metrics.h"
 #include "test/gmock.h"
+#include "test/gtest.h"
 
 // This file contains tests for RTP Media API-related behavior of
 // |webrtc::PeerConnection|, see https://w3c.github.io/webrtc-pc/#rtp-media-api.

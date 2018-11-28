@@ -11,7 +11,6 @@
 #ifndef MEDIA_BASE_VP9_PROFILE_H_
 #define MEDIA_BASE_VP9_PROFILE_H_
 
-#include <map>
 #include <string>
 
 #include "absl/types/optional.h"

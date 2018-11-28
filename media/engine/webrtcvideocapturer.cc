@@ -10,16 +10,18 @@
 
 #include "media/engine/webrtcvideocapturer.h"
 
+#include <stddef.h>
+#include <cstdint>
+#include <string>
+
+#include "common_types.h"  // NOLINT(build/include)
+#include "modules/video_capture/video_capture_defines.h"
+#include "modules/video_capture/video_capture_factory.h"
 #include "rtc_base/arraysize.h"
-#include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/criticalsection.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/timeutils.h"
-
-#include "modules/video_capture/video_capture_factory.h"
 
 #if defined(WEBRTC_WIN)
 #include "rtc_base/win32.h"  // Need this to #include the impl files.

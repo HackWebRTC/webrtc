@@ -12,6 +12,9 @@
 #ifndef TEST_RTCP_PACKET_PARSER_H_
 #define TEST_RTCP_PACKET_PARSER_H_
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include "api/array_view.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/app.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/bye.h"

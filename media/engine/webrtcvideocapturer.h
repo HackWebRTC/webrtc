@@ -11,17 +11,19 @@
 #ifndef MEDIA_ENGINE_WEBRTCVIDEOCAPTURER_H_
 #define MEDIA_ENGINE_WEBRTCVIDEOCAPTURER_H_
 
+#include <stdint.h>
 #include <memory>
-#include <string>
 #include <vector>
 
-#include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "api/video/video_frame.h"
+#include "api/video/video_sink_interface.h"
+#include "api/video/video_source_interface.h"
 #include "media/base/device.h"
 #include "media/base/videocapturer.h"
+#include "media/base/videocommon.h"
 #include "modules/video_capture/video_capture.h"
-#include "rtc_base/asyncinvoker.h"
-#include "rtc_base/messagehandler.h"
 #include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/thread.h"
 
 namespace cricket {
 

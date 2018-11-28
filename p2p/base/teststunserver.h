@@ -11,7 +11,9 @@
 #ifndef P2P_BASE_TESTSTUNSERVER_H_
 #define P2P_BASE_TESTSTUNSERVER_H_
 
+#include "p2p/base/stun.h"
 #include "p2p/base/stunserver.h"
+#include "rtc_base/asyncudpsocket.h"
 #include "rtc_base/socketaddress.h"
 #include "rtc_base/thread.h"
 

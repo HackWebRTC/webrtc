@@ -11,12 +11,15 @@
 #ifndef MODULES_CONGESTION_CONTROLLER_RTP_CONTROL_HANDLER_H_
 #define MODULES_CONGESTION_CONTROLLER_RTP_CONTROL_HANDLER_H_
 
-#include <algorithm>
-#include <memory>
+#include <stdint.h>
 
-#include "api/transport/network_control.h"
+#include "absl/types/optional.h"
+#include "api/transport/network_types.h"
+#include "api/units/data_size.h"
+#include "api/units/time_delta.h"
 #include "modules/congestion_controller/include/network_changed_observer.h"
 #include "modules/pacing/paced_sender.h"
+#include "rtc_base/constructormagic.h"
 #include "rtc_base/sequenced_task_checker.h"
 
 namespace webrtc {

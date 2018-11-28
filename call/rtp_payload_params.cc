@@ -10,7 +10,17 @@
 
 #include "call/rtp_payload_params.h"
 
-#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include <stddef.h>
+
+#include "absl/container/inlined_vector.h"
+#include "absl/types/optional.h"
+#include "absl/types/variant.h"
+#include "api/video/video_timing.h"
+#include "common_types.h"  // NOLINT(build/include)
+#include "modules/video_coding/codecs/h264/include/h264_globals.h"
+#include "modules/video_coding/codecs/interface/common_constants.h"
+#include "modules/video_coding/codecs/vp8/include/vp8_globals.h"
+#include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"

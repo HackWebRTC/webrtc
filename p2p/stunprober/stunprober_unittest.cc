@@ -9,18 +9,16 @@
  */
 
 #include <stdint.h>
-
 #include <memory>
 
 #include "p2p/base/basicpacketsocketfactory.h"
 #include "p2p/base/teststunserver.h"
 #include "p2p/stunprober/stunprober.h"
-#include "rtc_base/asyncresolverinterface.h"
-#include "rtc_base/bind.h"
-#include "rtc_base/checks.h"
 #include "rtc_base/gunit.h"
+#include "rtc_base/ipaddress.h"
 #include "rtc_base/ssladapter.h"
 #include "rtc_base/virtualsocketserver.h"
+#include "test/gtest.h"
 
 using stunprober::StunProber;
 using stunprober::AsyncCallback;

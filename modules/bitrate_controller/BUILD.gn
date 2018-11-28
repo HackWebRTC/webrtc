@@ -80,10 +80,14 @@ if (rtc_include_tests) {
       "../../logging:mocks",
       "../../logging:rtc_event_bwe",
       "../../logging:rtc_event_log_api",
+      "../../system_wrappers:system_wrappers",
       "../../test:field_trial",
       "../../test:test_support",
+      "../congestion_controller/goog_cc:delay_based_bwe",
       "../pacing:mock_paced_sender",
+      "../pacing:pacing",
       "../remote_bitrate_estimator:remote_bitrate_estimator",
+      "../rtp_rtcp:rtp_rtcp_format",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).

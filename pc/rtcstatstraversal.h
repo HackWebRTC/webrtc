@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include "api/stats/rtcstats.h"
 #include "api/stats/rtcstatsreport.h"
 #include "rtc_base/scoped_ref_ptr.h"
 

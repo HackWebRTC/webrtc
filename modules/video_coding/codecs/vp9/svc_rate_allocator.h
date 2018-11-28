@@ -11,10 +11,11 @@
 #ifndef MODULES_VIDEO_CODING_CODECS_VP9_SVC_RATE_ALLOCATOR_H_
 #define MODULES_VIDEO_CODING_CODECS_VP9_SVC_RATE_ALLOCATOR_H_
 
+#include <stddef.h>
 #include <stdint.h>
-
 #include <vector>
 
+#include "api/video/video_bitrate_allocation.h"
 #include "api/video/video_bitrate_allocator.h"
 #include "api/video_codecs/video_codec.h"
 

@@ -10,12 +10,12 @@
 
 #include "video/rtp_streams_synchronizer.h"
 
+#include "absl/types/optional.h"
 #include "call/syncable.h"
-#include "modules/video_coding/video_coding_impl.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/logging.h"
 #include "rtc_base/timeutils.h"
 #include "rtc_base/trace_event.h"
+#include "system_wrappers/include/rtp_to_ntp_estimator.h"
 
 namespace webrtc {
 namespace {

@@ -11,12 +11,23 @@
 #ifndef PC_CHANNELMANAGER_H_
 #define PC_CHANNELMANAGER_H_
 
+#include <stdint.h>
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "api/audio_options.h"
+#include "api/crypto/cryptooptions.h"
+#include "api/media_transport_interface.h"
+#include "call/call.h"
+#include "media/base/codec.h"
+#include "media/base/mediachannel.h"
+#include "media/base/mediaconfig.h"
 #include "media/base/mediaengine.h"
 #include "pc/channel.h"
+#include "pc/rtptransportinternal.h"
+#include "pc/sessiondescription.h"
+#include "rtc_base/platform_file.h"
 #include "rtc_base/thread.h"
 
 namespace cricket {

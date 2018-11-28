@@ -8,14 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <assert.h>
+#include <stddef.h>
 #include <algorithm>
-
-#include "modules/remote_bitrate_estimator/test/estimators/remb.h"
+#include <cstdint>
 
 #include "modules/bitrate_controller/include/bitrate_controller.h"
 #include "modules/remote_bitrate_estimator/remote_bitrate_estimator_abs_send_time.h"
 #include "modules/remote_bitrate_estimator/test/bwe_test_logging.h"
+#include "modules/remote_bitrate_estimator/test/estimators/remb.h"
 #include "modules/rtp_rtcp/include/receive_statistics.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/report_block.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/system/unused.h"
 #include "test/gtest.h"

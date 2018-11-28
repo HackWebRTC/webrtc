@@ -10,10 +10,9 @@
 #ifndef RTC_TOOLS_VIDEO_FILE_WRITER_H_
 #define RTC_TOOLS_VIDEO_FILE_WRITER_H_
 
-#include <cstdio>
 #include <string>
 
-#include "rtc_base/refcount.h"
+#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_tools/video_file_reader.h"
 
 namespace webrtc {

@@ -10,11 +10,9 @@
 
 #include "modules/congestion_controller/goog_cc/probe_bitrate_estimator.h"
 
-#include <utility>
-#include <vector>
+#include <stddef.h>
 
-#include "modules/remote_bitrate_estimator/aimd_rate_control.h"
-#include "test/gmock.h"
+#include "api/transport/network_types.h"
 #include "test/gtest.h"
 
 namespace webrtc {

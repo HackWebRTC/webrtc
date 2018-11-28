@@ -10,13 +10,16 @@
 
 #include "modules/congestion_controller/transport_feedback_adapter.h"
 
+#include <stdlib.h>
 #include <algorithm>
+#include <cmath>
+#include <cstdint>
 
+#include "api/units/data_size.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/numerics/mod_ops.h"
 
 namespace webrtc {
 

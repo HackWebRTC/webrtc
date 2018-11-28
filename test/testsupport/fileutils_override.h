@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <stdio.h>
 #include <string>
 
 #ifndef TEST_TESTSUPPORT_FILEUTILS_OVERRIDE_H_

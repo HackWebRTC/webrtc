@@ -10,9 +10,13 @@
 #ifndef TEST_LAYER_FILTERING_TRANSPORT_H_
 #define TEST_LAYER_FILTERING_TRANSPORT_H_
 
+#include <stddef.h>
+#include <stdint.h>
 #include <map>
+#include <memory>
 
-#include "api/test/simulated_network.h"
+#include "api/call/transport.h"
+#include "api/mediatypes.h"
 #include "call/call.h"
 #include "call/simulated_packet_receiver.h"
 #include "test/direct_transport.h"

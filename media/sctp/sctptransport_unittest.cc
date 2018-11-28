@@ -8,23 +8,21 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <errno.h>
-#include <stdarg.h>
 #include <stdio.h>
-
+#include <string.h>
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "media/sctp/sctptransport.h"
 #include "p2p/base/fakedtlstransport.h"
-#include "rtc_base/bind.h"
 #include "rtc_base/copyonwritebuffer.h"
-#include "rtc_base/criticalsection.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/helpers.h"
-#include "rtc_base/ssladapter.h"
+#include "rtc_base/logging.h"
+#include "rtc_base/messagequeue.h"
 #include "rtc_base/thread.h"
+#include "test/gtest.h"
 
 namespace {
 static const int kDefaultTimeout = 10000;  // 10 seconds.

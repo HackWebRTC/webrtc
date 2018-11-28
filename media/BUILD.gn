@@ -73,6 +73,7 @@ rtc_static_library("rtc_media_base") {
   defines = []
   libs = []
   deps = [
+    "../api:array_view",
     "../api:audio_options_api",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
@@ -172,6 +173,7 @@ rtc_static_library("rtc_simulcast_encoder_adapter") {
   ]
   deps = [
     "../api/video:video_bitrate_allocation",
+    "../api/video:video_frame",
     "../api/video:video_frame_i420",
     "../api/video_codecs:video_codecs_api",
     "../modules/video_coding:video_codec_interface",
@@ -200,7 +202,11 @@ rtc_static_library("rtc_vp8_encoder_simulcast_proxy") {
   ]
   deps = [
     ":rtc_simulcast_encoder_adapter",
+    "../:webrtc_common",
+    "../api/video:video_bitrate_allocation",
+    "../api/video:video_frame",
     "../api/video_codecs:video_codecs_api",
+    "../modules/video_coding:video_codec_interface",
   ]
   if (!build_with_chromium && is_clang) {
     # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -217,6 +223,9 @@ rtc_static_library("rtc_internal_video_codecs") {
     ":rtc_h264_profile_id",
     ":rtc_simulcast_encoder_adapter",
     ":rtc_vp8_encoder_simulcast_proxy",
+    "../:webrtc_common",
+    "../api/video:encoded_image",
+    "../api/video:video_frame",
     "../modules/video_coding:video_codec_interface",
     "//third_party/abseil-cpp/absl/memory",
   ]
@@ -278,8 +287,10 @@ rtc_static_library("rtc_audio_video") {
   defines = []
   libs = []
   deps = [
+    "../api/video:video_bitrate_allocation",
     "../api/video:video_bitrate_allocator_factory",
     "../modules/audio_processing:api",
+    "../modules/audio_processing:gain_control_interface",
     "../modules/audio_processing/aec_dump:aec_dump",
     "../modules/video_coding:video_codec_interface",
     "../modules/video_coding:video_coding",
@@ -446,6 +457,7 @@ if (rtc_include_tests) {
       ":rtc_audio_video",
       ":rtc_simulcast_encoder_adapter",
       "../api:libjingle_peerconnection_api",
+      "../api/video:encoded_image",
       "../api/video:video_frame_i420",
       "../call:video_stream_api",
       "../common_video:common_video",
@@ -543,12 +555,17 @@ if (rtc_include_tests) {
       ":rtc_audio_video",
       ":rtc_constants",
       ":rtc_data",
+      "../:webrtc_common",
       "../api/test/video:function_video_factory",
       "../api/units:time_delta",
       "../api/video:video_frame_i420",
       "../modules/audio_processing:api",
       "../modules/audio_processing:mocks",
       "../modules/rtp_rtcp",
+
+      # TODO(http://crbug.com/908819): Add this dependency when Chromium
+      # android templates stop to consider *_module to have a special meaning.
+      # "../modules/video_capture:video_capture_module",
       "../modules/video_coding:video_codec_interface",
       "../modules/video_coding:webrtc_vp8",
       "../pc:rtc_pc",
@@ -558,6 +575,7 @@ if (rtc_include_tests) {
       "../rtc_base:rtc_base_tests_utils",
       "../rtc_base:rtc_task_queue",
       "../rtc_base:stringutils",
+      "../rtc_base/third_party/sigslot:sigslot",
       "../test:field_trial",
       "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/strings",

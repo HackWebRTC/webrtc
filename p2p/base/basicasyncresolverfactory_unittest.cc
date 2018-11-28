@@ -9,7 +9,11 @@
  */
 
 #include "p2p/base/basicasyncresolverfactory.h"
+
 #include "rtc_base/gunit.h"
+#include "rtc_base/socketaddress.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

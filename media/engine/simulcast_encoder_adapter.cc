@@ -10,17 +10,23 @@
 
 #include "media/engine/simulcast_encoder_adapter.h"
 
+#include <stdio.h>
+#include <string.h>
 #include <algorithm>
+#include <cstdint>
 #include <string>
 #include <utility>
 
 #include "api/video/i420_buffer.h"
 #include "api/video/video_bitrate_allocation.h"
+#include "api/video/video_frame_buffer.h"
+#include "api/video/video_rotation.h"
 #include "api/video_codecs/video_encoder_factory.h"
+#include "modules/video_coding/include/video_error_codes.h"
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"
+#include "rtc_base/atomicops.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/logging.h"
-#include "system_wrappers/include/clock.h"
+#include "rtc_base/scoped_ref_ptr.h"
 #include "system_wrappers/include/field_trial.h"
 #include "third_party/libyuv/include/libyuv/scale.h"
 

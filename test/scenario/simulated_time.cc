@@ -9,9 +9,14 @@
  */
 #include "test/scenario/simulated_time.h"
 
+#include <inttypes.h>
+#include <string.h>
 #include <algorithm>
+#include <cstdint>
+#include <utility>
 
-#include "rtc_base/format_macros.h"
+#include "absl/types/optional.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 namespace test {

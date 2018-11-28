@@ -11,11 +11,14 @@
 #ifndef MODULES_VIDEO_CODING_INCLUDE_VIDEO_CODING_DEFINES_H_
 #define MODULES_VIDEO_CODING_INCLUDE_VIDEO_CODING_DEFINES_H_
 
-#include <string>
-#include <vector>
+#include <stddef.h>
+#include <stdint.h>
 
+#include "absl/types/optional.h"
+#include "api/video/video_content_type.h"
 #include "api/video/video_frame.h"
-#include "modules/include/module_common_types.h"
+#include "api/video/video_timing.h"
+#include "common_types.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

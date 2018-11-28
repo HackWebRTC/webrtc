@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <cstdint>
+#include <iterator>
 #include <set>
 
 #include "rtc_base/numerics/sequence_number_util.h"

@@ -8,22 +8,45 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <tuple>
+#include <memory>
+#include <string>
+#include <type_traits>
+#include <utility>
+#include <vector>
 
+#include "absl/types/optional.h"
+#include "api/call/callfactoryinterface.h"
+#include "api/jsep.h"
+#include "api/media_transport_interface.h"
+#include "api/mediatypes.h"
+#include "api/peerconnectioninterface.h"
 #include "api/peerconnectionproxy.h"
 #include "api/test/fake_media_transport.h"
+#include "media/base/codec.h"
 #include "media/base/fakemediaengine.h"
+#include "media/base/mediaconstants.h"
+#include "media/base/mediaengine.h"
+#include "media/sctp/sctptransportinternal.h"
+#include "p2p/base/p2pconstants.h"
+#include "p2p/base/portallocator.h"
 #include "pc/mediasession.h"
 #include "pc/peerconnection.h"
 #include "pc/peerconnectionfactory.h"
 #include "pc/peerconnectionwrapper.h"
 #include "pc/sdputils.h"
+#include "pc/sessiondescription.h"
+#include "pc/test/mockpeerconnectionobservers.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/refcountedobject.h"
+#include "rtc_base/rtccertificategenerator.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/thread.h"
+#include "test/gtest.h"
 #ifdef WEBRTC_ANDROID
 #include "pc/test/androidtestinitializer.h"
 #endif
 #include "absl/memory/memory.h"
 #include "pc/test/fakesctptransport.h"
-#include "rtc_base/gunit.h"
 #include "rtc_base/virtualsocketserver.h"
 
 namespace webrtc {

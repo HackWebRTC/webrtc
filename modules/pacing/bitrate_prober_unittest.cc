@@ -8,8 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <limits>
-
 #include "modules/pacing/bitrate_prober.h"
 #include "test/gtest.h"
 

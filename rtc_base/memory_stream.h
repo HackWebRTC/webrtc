@@ -11,6 +11,8 @@
 #ifndef RTC_BASE_MEMORY_STREAM_H_
 #define RTC_BASE_MEMORY_STREAM_H_
 
+#include <stddef.h>
+
 #include "rtc_base/stream.h"
 
 namespace rtc {

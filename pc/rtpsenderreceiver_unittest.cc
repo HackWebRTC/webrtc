@@ -8,30 +8,54 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stddef.h>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
+#include "absl/memory/memory.h"
+#include "absl/types/optional.h"
+#include "api/audio_options.h"
+#include "api/crypto/cryptooptions.h"
+#include "api/crypto/framedecryptorinterface.h"
+#include "api/crypto/frameencryptorinterface.h"
+#include "api/dtmfsenderinterface.h"
+#include "api/mediastreaminterface.h"
+#include "api/rtcerror.h"
 #include "api/rtpparameters.h"
 #include "api/test/fake_frame_decryptor.h"
 #include "api/test/fake_frame_encryptor.h"
+#include "logging/rtc_event_log/rtc_event_log.h"
+#include "media/base/codec.h"
 #include "media/base/fakemediaengine.h"
+#include "media/base/mediachannel.h"
+#include "media/base/mediaconfig.h"
+#include "media/base/mediaengine.h"
 #include "media/base/rtpdataengine.h"
+#include "media/base/streamparams.h"
 #include "media/base/testutils.h"
 #include "media/engine/fakewebrtccall.h"
+#include "p2p/base/dtlstransportinternal.h"
 #include "p2p/base/fakedtlstransport.h"
+#include "p2p/base/p2pconstants.h"
 #include "pc/audiotrack.h"
+#include "pc/channel.h"
 #include "pc/channelmanager.h"
+#include "pc/dtlssrtptransport.h"
 #include "pc/localaudiosource.h"
 #include "pc/mediastream.h"
-#include "pc/remoteaudiosource.h"
 #include "pc/rtpreceiver.h"
 #include "pc/rtpsender.h"
-#include "pc/streamcollection.h"
+#include "pc/rtptransportinternal.h"
 #include "pc/test/fakevideotracksource.h"
 #include "pc/videotrack.h"
-#include "pc/videotracksource.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/gunit.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
+#include "rtc_base/thread.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 

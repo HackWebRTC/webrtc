@@ -10,11 +10,12 @@
 
 #include "rtc_tools/video_file_writer.h"
 
+#include <stdint.h>
+#include <cstdio>
 #include <string>
 
-#include "api/video/i420_buffer.h"
+#include "api/video/video_frame_buffer.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/refcountedobject.h"
 #include "rtc_base/stringutils.h"
 
 namespace webrtc {

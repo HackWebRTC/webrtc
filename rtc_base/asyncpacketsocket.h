@@ -14,6 +14,7 @@
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/deprecation.h"
 #include "rtc_base/dscp.h"
+#include "rtc_base/network/sent_packet.h"
 #include "rtc_base/socket.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/timeutils.h"

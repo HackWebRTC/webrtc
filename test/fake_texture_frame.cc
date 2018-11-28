@@ -10,6 +10,9 @@
 
 #include "test/fake_texture_frame.h"
 
+#include "api/video/i420_buffer.h"
+#include "rtc_base/refcountedobject.h"
+
 namespace webrtc {
 namespace test {
 

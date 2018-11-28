@@ -11,9 +11,11 @@
 #ifndef MODULES_VIDEO_CODING_CODECS_MULTIPLEX_INCLUDE_AUGMENTED_VIDEO_FRAME_BUFFER_H_
 #define MODULES_VIDEO_CODING_CODECS_MULTIPLEX_INCLUDE_AUGMENTED_VIDEO_FRAME_BUFFER_H_
 
+#include <cstdint>
 #include <memory>
 
 #include "api/video/video_frame_buffer.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 class AugmentedVideoFrameBuffer : public VideoFrameBuffer {

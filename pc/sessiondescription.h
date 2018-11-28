@@ -11,17 +11,21 @@
 #ifndef PC_SESSIONDESCRIPTION_H_
 #define PC_SESSIONDESCRIPTION_H_
 
+#include <stddef.h>
+#include <stdint.h>
+#include <iosfwd>
 #include <string>
 #include <vector>
 
 #include "api/cryptoparams.h"
+#include "api/mediatypes.h"
 #include "api/rtpparameters.h"
 #include "api/rtptransceiverinterface.h"
-#include "media/base/codec.h"
 #include "media/base/mediachannel.h"
 #include "media/base/streamparams.h"
+#include "p2p/base/transportdescription.h"
 #include "p2p/base/transportinfo.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/socketaddress.h"
 
 namespace cricket {
 
@@ -49,8 +53,8 @@ extern const char kMediaProtocolTcpDtlsSctp[];
 const int kAutoBandwidth = -1;
 
 class AudioContentDescription;
-class VideoContentDescription;
 class DataContentDescription;
+class VideoContentDescription;
 
 // Describes a session description media section. There are subclasses for each
 // media type (audio, video, data) that will have additional information.

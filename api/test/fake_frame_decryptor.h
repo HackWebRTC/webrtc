@@ -11,9 +11,13 @@
 #ifndef API_TEST_FAKE_FRAME_DECRYPTOR_H_
 #define API_TEST_FAKE_FRAME_DECRYPTOR_H_
 
+#include <stddef.h>
+#include <stdint.h>
 #include <vector>
 
+#include "api/array_view.h"
 #include "api/crypto/framedecryptorinterface.h"
+#include "api/mediatypes.h"
 #include "rtc_base/refcountedobject.h"
 
 namespace webrtc {

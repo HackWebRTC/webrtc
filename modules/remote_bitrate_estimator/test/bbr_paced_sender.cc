@@ -11,10 +11,8 @@
 #include "modules/remote_bitrate_estimator/test/bbr_paced_sender.h"
 
 #include <algorithm>
-#include <queue>
-#include <set>
-#include <vector>
 
+#include "api/transport/network_types.h"
 #include "modules/pacing/paced_sender.h"
 #include "modules/remote_bitrate_estimator/test/estimators/congestion_window.h"
 #include "system_wrappers/include/clock.h"

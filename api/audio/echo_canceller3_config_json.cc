@@ -9,9 +9,11 @@
  */
 #include "api/audio/echo_canceller3_config_json.h"
 
+#include <stddef.h>
 #include <string>
 #include <vector>
 
+#include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/json.h"
 #include "rtc_base/strings/string_builder.h"

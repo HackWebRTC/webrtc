@@ -11,9 +11,13 @@
 #ifndef P2P_BASE_ASYNCSTUNTCPSOCKET_H_
 #define P2P_BASE_ASYNCSTUNTCPSOCKET_H_
 
+#include <stddef.h>
+
+#include "rtc_base/asyncpacketsocket.h"
+#include "rtc_base/asyncsocket.h"
 #include "rtc_base/asynctcpsocket.h"
 #include "rtc_base/constructormagic.h"
-#include "rtc_base/socketfactory.h"
+#include "rtc_base/socketaddress.h"
 
 namespace cricket {
 

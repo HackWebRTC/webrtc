@@ -10,8 +10,9 @@
 #include <memory>
 
 #include "api/transport/network_types.h"
+#include "api/units/data_rate.h"
+#include "api/units/timestamp.h"
 #include "modules/congestion_controller/goog_cc/probe_controller.h"
-#include "rtc_base/logging.h"
 #include "system_wrappers/include/clock.h"
 #include "test/gmock.h"
 #include "test/gtest.h"

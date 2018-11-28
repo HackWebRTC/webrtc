@@ -11,10 +11,12 @@
 #include "p2p/base/portallocator.h"
 
 #include <iterator>
+#include <set>
 #include <utility>
 
 #include "p2p/base/icecredentialsiterator.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 
 namespace cricket {
 

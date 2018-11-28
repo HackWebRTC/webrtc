@@ -12,15 +12,16 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <deque>
+#include <iterator>
 #include <limits>
 #include <vector>
 
 #include "api/video/i420_buffer.h"
-#include "rtc_base/checks.h"
+#include "api/video/video_frame_buffer.h"
 #include "rtc_base/refcountedobject.h"
 #include "rtc_tools/frame_analyzer/video_quality_analysis.h"
-#include "third_party/libyuv/include/libyuv/compare.h"
 
 namespace webrtc {
 namespace test {

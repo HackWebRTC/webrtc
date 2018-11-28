@@ -10,9 +10,13 @@
 
 #include "modules/audio_mixer/frame_combiner.h"
 
+#include <cstdint>
+#include <initializer_list>
 #include <numeric>
 #include <string>
+#include <type_traits>
 
+#include "api/array_view.h"
 #include "audio/utility/audio_frame_operations.h"
 #include "modules/audio_mixer/gain_change_calculator.h"
 #include "modules/audio_mixer/sine_wave_generator.h"

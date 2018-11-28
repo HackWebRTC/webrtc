@@ -8,19 +8,31 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stddef.h>
+#include <stdint.h>
+#include <vector>
 
-#include <algorithm>  // std::max
-
+#include "api/video/video_bitrate_allocation.h"
 #include "api/video/video_bitrate_allocator.h"
+#include "api/video/video_frame.h"
+#include "api/video/video_frame_buffer.h"
+#include "api/video_codecs/video_codec.h"
+#include "api/video_codecs/video_encoder.h"
 #include "common_types.h"  // NOLINT(build/include)
-#include "common_video/libyuv/include/webrtc_libyuv.h"
-#include "modules/video_coding/encoded_frame.h"
+#include "modules/video_coding/encoder_database.h"
+#include "modules/video_coding/generic_encoder.h"
 #include "modules/video_coding/include/video_codec_interface.h"
+#include "modules/video_coding/include/video_coding_defines.h"
+#include "modules/video_coding/include/video_error_codes.h"
+#include "modules/video_coding/internal_defines.h"
+#include "modules/video_coding/media_optimization.h"
 #include "modules/video_coding/utility/default_video_bitrate_allocator.h"
-#include "modules/video_coding/utility/quality_scaler.h"
 #include "modules/video_coding/video_coding_impl.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/criticalsection.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/scoped_ref_ptr.h"
+#include "rtc_base/sequenced_task_checker.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/field_trial.h"
 

@@ -8,10 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stdint.h>
+#include <stdio.h>
 #include <memory>
 #include <string>
 
 #include "api/video/i420_buffer.h"
+#include "api/video/video_frame_buffer.h"
+#include "rtc_base/scoped_ref_ptr.h"
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
 #include "test/testsupport/frame_reader.h"

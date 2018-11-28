@@ -10,11 +10,11 @@
 #ifndef CALL_SIMULATED_NETWORK_H_
 #define CALL_SIMULATED_NETWORK_H_
 
+#include <stdint.h>
 #include <deque>
 #include <queue>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 #include "api/test/simulated_network.h"
 #include "rtc_base/criticalsection.h"

@@ -9,9 +9,12 @@
  */
 
 #include "media/base/streamparams.h"
+
+#include <stdint.h>
+
 #include "media/base/testutils.h"
 #include "rtc_base/arraysize.h"
-#include "rtc_base/gunit.h"
+#include "test/gtest.h"
 
 static const uint32_t kSsrcs1[] = {1};
 static const uint32_t kSsrcs2[] = {1, 2};

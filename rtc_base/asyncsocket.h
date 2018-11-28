@@ -11,7 +11,11 @@
 #ifndef RTC_BASE_ASYNCSOCKET_H_
 #define RTC_BASE_ASYNCSOCKET_H_
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include "rtc_base/socket.h"
+#include "rtc_base/socketaddress.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace rtc {

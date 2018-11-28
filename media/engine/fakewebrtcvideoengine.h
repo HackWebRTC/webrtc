@@ -11,15 +11,23 @@
 #ifndef MEDIA_ENGINE_FAKEWEBRTCVIDEOENGINE_H_
 #define MEDIA_ENGINE_FAKEWEBRTCVIDEOENGINE_H_
 
+#include <stddef.h>
+#include <stdint.h>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "absl/memory/memory.h"
+#include "api/video/encoded_image.h"
+#include "api/video/video_bitrate_allocation.h"
+#include "api/video/video_frame.h"
+#include "api/video_codecs/sdp_video_format.h"
+#include "api/video_codecs/video_codec.h"
 #include "api/video_codecs/video_decoder.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_factory.h"
+#include "common_types.h"  // NOLINT(build/include)
+#include "modules/video_coding/include/video_codec_interface.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/event.h"
 #include "rtc_base/thread_annotations.h"

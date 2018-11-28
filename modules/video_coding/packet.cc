@@ -10,6 +10,7 @@
 
 #include "modules/video_coding/packet.h"
 
+#include "api/rtp_headers.h"
 #include "modules/include/module_common_types.h"
 
 namespace webrtc {

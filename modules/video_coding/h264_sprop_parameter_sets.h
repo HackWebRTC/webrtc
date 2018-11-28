@@ -11,6 +11,7 @@
 #ifndef MODULES_VIDEO_CODING_H264_SPROP_PARAMETER_SETS_H_
 #define MODULES_VIDEO_CODING_H264_SPROP_PARAMETER_SETS_H_
 
+#include <cstdint>
 #include <string>
 #include <vector>
 

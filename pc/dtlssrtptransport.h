@@ -11,13 +11,16 @@
 #ifndef PC_DTLSSRTPTRANSPORT_H_
 #define PC_DTLSSRTPTRANSPORT_H_
 
-#include <memory>
-#include <string>
 #include <vector>
 
+#include "absl/types/optional.h"
+#include "api/cryptoparams.h"
+#include "api/rtcerror.h"
 #include "p2p/base/dtlstransportinternal.h"
+#include "p2p/base/packettransportinternal.h"
 #include "pc/srtptransport.h"
 #include "rtc_base/buffer.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace webrtc {
 

@@ -11,8 +11,12 @@
 #ifndef TEST_FAKE_VP8_DECODER_H_
 #define TEST_FAKE_VP8_DECODER_H_
 
+#include <stdint.h>
+
+#include "api/video/encoded_image.h"
+#include "api/video_codecs/video_codec.h"
+#include "api/video_codecs/video_decoder.h"
 #include "modules/video_coding/include/video_codec_interface.h"
-#include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 namespace test {

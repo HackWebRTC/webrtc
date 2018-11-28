@@ -12,8 +12,8 @@
 
 #include <string>
 
-#include "rtc_base/gunit.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
+#include "test/gtest.h"
 
 namespace rtc {
 

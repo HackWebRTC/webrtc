@@ -8,16 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <algorithm>
 #include <string>
 
+#include "absl/types/optional.h"
+#include "api/video/video_bitrate_allocation.h"
 #include "media/base/mediaconstants.h"
-#include "media/base/streamparams.h"
 #include "media/engine/constants.h"
 #include "media/engine/simulcast.h"
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "rtc_base/arraysize.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/experiments/normalize_simulcast_size_experiment.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/field_trial.h"

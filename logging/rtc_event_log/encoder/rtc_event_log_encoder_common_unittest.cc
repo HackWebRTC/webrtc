@@ -10,6 +10,7 @@
 
 #include "logging/rtc_event_log/encoder/rtc_event_log_encoder_common.h"
 
+#include <cstdint>
 #include <limits>
 #include <type_traits>
 #include <vector>

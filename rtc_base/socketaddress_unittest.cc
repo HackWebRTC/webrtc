@@ -12,9 +12,11 @@
 #include <netinet/in.h>  // for sockaddr_in
 #endif
 
-#include "rtc_base/gunit.h"
+#include <string.h>
+
 #include "rtc_base/ipaddress.h"
 #include "rtc_base/socketaddress.h"
+#include "test/gtest.h"
 
 namespace rtc {
 

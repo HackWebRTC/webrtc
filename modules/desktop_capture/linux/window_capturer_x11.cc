@@ -12,13 +12,15 @@
 
 #include <X11/Xutil.h>
 #include <X11/extensions/Xcomposite.h>
-#include <X11/extensions/Xrender.h>
-
+#include <X11/extensions/composite.h>
+#include <string.h>
 #include <memory>
 #include <string>
 #include <utility>
 
+#include "modules/desktop_capture/desktop_capture_types.h"
 #include "modules/desktop_capture/desktop_frame.h"
+#include "modules/desktop_capture/desktop_region.h"
 #include "modules/desktop_capture/linux/shared_x_display.h"
 #include "modules/desktop_capture/linux/window_finder_x11.h"
 #include "modules/desktop_capture/linux/window_list_utils.h"

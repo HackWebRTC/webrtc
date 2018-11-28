@@ -12,7 +12,11 @@
 #include <algorithm>
 #include <string>
 
+#include "api/video_codecs/sdp_video_format.h"
+#include "call/rtp_config.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/refcountedobject.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 namespace test {

@@ -11,13 +11,13 @@
 #ifndef MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_PACKET_H_
 #define MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_PACKET_H_
 
+#include <stddef.h>
+#include <stdint.h>
 #include <list>
 #include <map>
-#include <utility>
 #include <vector>
 
-#include "common_types.h"  // NOLINT(build/include)
-#include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
+#include "api/rtp_headers.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 

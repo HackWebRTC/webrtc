@@ -8,12 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <cstddef>
 #include <vector>
 
-#include "modules/video_coding/encoded_frame.h"
+#include "api/video/video_timing.h"
 #include "modules/video_coding/generic_encoder.h"
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "rtc_base/fakeclock.h"
+#include "rtc_base/timeutils.h"
 #include "test/gtest.h"
 
 namespace webrtc {

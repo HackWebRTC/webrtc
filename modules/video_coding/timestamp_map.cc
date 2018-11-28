@@ -10,7 +10,7 @@
 
 #include <stdlib.h>
 
-#include "modules/include/module_common_types.h"
+#include "modules/include/module_common_types_public.h"
 #include "modules/video_coding/timestamp_map.h"
 
 namespace webrtc {

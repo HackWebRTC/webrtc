@@ -10,14 +10,13 @@
 
 #include "rtc_tools/video_file_reader.h"
 
-#include <algorithm>
-#include <cmath>
 #include <cstdio>
 #include <string>
-#include <utility>
+#include <vector>
 
 #include "absl/types/optional.h"
 #include "api/video/i420_buffer.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/refcountedobject.h"
 #include "rtc_base/string_to_number.h"

@@ -9,9 +9,12 @@
  */
 
 #include "rtc_base/bytebuffer.h"
+
+#include <string.h>
+
 #include "rtc_base/arraysize.h"
 #include "rtc_base/byteorder.h"
-#include "rtc_base/gunit.h"
+#include "test/gtest.h"
 
 namespace rtc {
 

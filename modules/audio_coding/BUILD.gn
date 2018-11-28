@@ -2090,6 +2090,7 @@ if (rtc_include_tests) {
       ":webrtc_cng",
       ":webrtc_opus",
       "..:module_api",
+      "..:module_api_public",
       "../..:webrtc_common",
       "../../api/audio:audio_frame_api",
       "../../api/audio_codecs:audio_codecs_api",

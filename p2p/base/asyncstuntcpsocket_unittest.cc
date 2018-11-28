@@ -8,14 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stdint.h>
+#include <string.h>
 #include <list>
 #include <memory>
 #include <string>
 
 #include "p2p/base/asyncstuntcpsocket.h"
 #include "rtc_base/asyncsocket.h"
-#include "rtc_base/gunit.h"
+#include "rtc_base/network/sent_packet.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
+#include "rtc_base/thread.h"
 #include "rtc_base/virtualsocketserver.h"
+#include "test/gtest.h"
 
 namespace cricket {
 

@@ -12,6 +12,8 @@
 #define CALL_CALLFACTORY_H_
 
 #include "api/call/callfactoryinterface.h"
+#include "call/call.h"
+#include "call/call_config.h"
 
 namespace webrtc {
 

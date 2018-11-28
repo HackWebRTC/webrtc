@@ -14,6 +14,8 @@
 
 #include <memory>
 
+#include "media/base/device.h"
+#include "media/base/videocapturer.h"
 #include "media/base/videocapturerfactory.h"
 
 namespace cricket {

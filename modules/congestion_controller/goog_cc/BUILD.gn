@@ -32,6 +32,10 @@ rtc_static_library("goog_cc") {
     "../..:module_api",
     "../../..:webrtc_common",
     "../../../api/transport:network_control",
+    "../../../api/units:data_rate",
+    "../../../api/units:data_size",
+    "../../../api/units:time_delta",
+    "../../../api/units:timestamp",
     "../../../logging:rtc_event_log_api",
     "../../../logging:rtc_event_pacing",
     "../../../rtc_base:checks",
@@ -55,6 +59,7 @@ rtc_source_set("pushback_controller") {
   ]
   deps = [
     "../../../api/transport:network_control",
+    "../../../api/units:data_size",
     "../../../rtc_base:checks",
     "../../../rtc_base:rtc_base_approved",
     "../../../system_wrappers:field_trial",
@@ -144,6 +149,9 @@ rtc_source_set("probe_controller") {
 
   deps = [
     "../../../api/transport:network_control",
+    "../../../api/units:data_rate",
+    "../../../api/units:time_delta",
+    "../../../api/units:timestamp",
     "../../../logging:rtc_event_log_api",
     "../../../logging:rtc_event_pacing",
     "../../../rtc_base:checks",
@@ -163,10 +171,18 @@ if (rtc_include_tests) {
       "test/goog_cc_printer.h",
     ]
     deps = [
+      ":alr_detector",
+      ":delay_based_bwe",
       ":estimators",
       ":goog_cc",
       "..:test_controller_printer",
       "../../../api/transport:goog_cc",
+      "../../../api/transport:network_control",
+      "../../../api/units:timestamp",
+      "../../../logging:rtc_event_log_api",
+      "../../../rtc_base:checks",
+      "../../remote_bitrate_estimator:remote_bitrate_estimator",
+      "//third_party/abseil-cpp/absl/types:optional",
     ]
   }
   rtc_source_set("goog_cc_unittests") {
@@ -198,6 +214,8 @@ if (rtc_include_tests) {
       "../../../api/transport:goog_cc",
       "../../../api/transport:network_control",
       "../../../api/transport:network_control_test",
+      "../../../api/units:data_rate",
+      "../../../api/units:timestamp",
       "../../../logging:mocks",
       "../../../rtc_base:checks",
       "../../../rtc_base:rtc_base_approved",

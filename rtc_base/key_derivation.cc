@@ -11,6 +11,7 @@
 #include "rtc_base/key_derivation.h"
 
 #include "absl/memory/memory.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/openssl_key_derivation_hkdf.h"
 
 namespace rtc {

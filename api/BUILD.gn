@@ -58,6 +58,7 @@ rtc_static_library("create_peerconnection_factory") {
     "../logging:rtc_event_log_api",
     "../logging:rtc_event_log_impl_base",
     "../media:rtc_audio_video",
+    "../media:rtc_media_base",
     "../modules/audio_device:audio_device_api",
     "../modules/audio_processing:api",
     "../pc:peerconnection",
@@ -202,6 +203,7 @@ rtc_source_set("test_dependency_factory") {
   ]
   deps = [
     ":video_quality_test_fixture_api",
+    "../rtc_base:checks",
     "../rtc_base:thread_checker",
     "//third_party/abseil-cpp/absl/memory",
   ]
@@ -279,6 +281,7 @@ rtc_source_set("audio_options_api") {
   ]
 
   deps = [
+    ":array_view",
     "../rtc_base:stringutils",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
@@ -636,7 +639,7 @@ if (rtc_include_tests) {
     deps = [
       ":libjingle_peerconnection_api",
       "../rtc_base:checks",
-      "//third_party/abseil-cpp/absl/memory:memory",
+      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 

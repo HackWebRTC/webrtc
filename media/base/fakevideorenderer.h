@@ -11,10 +11,14 @@
 #ifndef MEDIA_BASE_FAKEVIDEORENDERER_H_
 #define MEDIA_BASE_FAKEVIDEORENDERER_H_
 
+#include <stdint.h>
+
 #include "api/video/video_frame.h"
+#include "api/video/video_frame_buffer.h"
+#include "api/video/video_rotation.h"
 #include "api/video/video_sink_interface.h"
 #include "rtc_base/criticalsection.h"
-#include "rtc_base/logging.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 namespace cricket {
 

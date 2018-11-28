@@ -9,7 +9,10 @@
  */
 
 #include "rtc_base/copyonwritebuffer.h"
-#include "rtc_base/gunit.h"
+
+#include <cstdint>
+
+#include "test/gtest.h"
 
 namespace rtc {
 

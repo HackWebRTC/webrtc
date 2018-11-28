@@ -9,13 +9,13 @@
  */
 
 #include <math.h>
-
 #include <algorithm>
 #include <limits>
 
-#include "rtc_base/gunit.h"
 #include "rtc_base/random.h"
 #include "rtc_base/timestampaligner.h"
+#include "rtc_base/timeutils.h"
+#include "test/gtest.h"
 
 namespace rtc {
 

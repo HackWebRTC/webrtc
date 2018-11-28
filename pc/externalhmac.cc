@@ -11,11 +11,10 @@
 #include "pc/externalhmac.h"
 
 #include <stdlib.h>  // For malloc/free.
+#include <string.h>
 
 #include "rtc_base/logging.h"
 #include "rtc_base/zero_memory.h"
-
-#include "third_party/libsrtp/crypto/include/crypto_kernel.h"
 #include "third_party/libsrtp/include/srtp.h"
 
 // Begin test case 0 */

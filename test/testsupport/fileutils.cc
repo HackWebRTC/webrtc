@@ -26,12 +26,11 @@
 
 #include "Shlwapi.h"
 #include "WinDef.h"
-
 #include "rtc_base/win32.h"
+
 #define GET_CURRENT_DIR _getcwd
 #else
 #include <dirent.h>
-#include <unistd.h>
 
 #define GET_CURRENT_DIR getcwd
 #endif
@@ -43,9 +42,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-
 #include <memory>
+#include <type_traits>
 #include <utility>
 
 #if defined(WEBRTC_IOS)
@@ -56,7 +54,6 @@
 #include "test/testsupport/macfileutils.h"
 #endif
 
-#include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/stringutils.h"
 #include "test/testsupport/fileutils_override.h"

@@ -15,8 +15,7 @@
 #include <vector>
 
 #include "api/stats/rtcstats_objects.h"
-#include "rtc_base/checks.h"
-#include "rtc_base/gunit.h"
+#include "test/gtest.h"
 
 // This file contains tests for TakeReferencedStats().
 // GetStatsNeighborIds() is tested in rtcstats_integrationtest.cc.

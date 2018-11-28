@@ -11,14 +11,17 @@
 #include "modules/video_coding/receiver.h"
 
 #include <assert.h>
-
+#include <cstdint>
 #include <cstdlib>
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
+#include "api/video/encoded_image.h"
+#include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/encoded_frame.h"
 #include "modules/video_coding/internal_defines.h"
-#include "modules/video_coding/media_opt_util.h"
+#include "modules/video_coding/jitter_buffer_common.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/trace_event.h"

@@ -53,9 +53,13 @@ rtc_static_library("video") {
 
   deps = [
     ":frame_dumping_decoder",
+    "..:webrtc_common",
+    "../api:array_view",
     "../api:fec_controller_api",
     "../api:libjingle_peerconnection_api",
     "../api:transport_api",
+    "../api/video:encoded_image",
+    "../api/video:video_bitrate_allocation",
     "../api/video:video_bitrate_allocator",
     "../api/video:video_frame",
     "../api/video:video_frame_i420",
@@ -67,6 +71,8 @@ rtc_static_library("video") {
     "../call:rtp_interfaces",
     "../call:rtp_sender",
     "../call:video_stream_api",
+    "../media:rtc_h264_profile_id",
+    "../modules:module_api_public",
     "../modules/rtp_rtcp:rtp_rtcp_format",
     "../modules/rtp_rtcp:rtp_video_header",
     "../modules/video_coding:codec_globals_headers",
@@ -143,6 +149,7 @@ rtc_source_set("frame_dumping_decoder") {
 
   deps = [
     "../api/video:encoded_frame",
+    "../api/video:encoded_image",
     "../api/video_codecs:video_codecs_api",
     "../modules/video_coding:video_codec_interface",
     "../modules/video_coding:video_coding",
@@ -275,7 +282,11 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":video_quality_test",
+      "../:webrtc_common",
+      "../api:simulated_network_api",
       "../api:test_dependency_factory",
+      "../api:video_quality_test_fixture_api",
+      "../api/video_codecs:video_codecs_api",
       "../media:rtc_vp9_profile",
       "../modules/pacing:pacing",
       "../modules/video_coding:webrtc_vp9",
@@ -286,6 +297,7 @@ if (rtc_include_tests) {
       "../test:test_common",
       "../test:test_support",
       "//testing/gtest",
+      "//third_party/abseil-cpp/absl/memory",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -303,6 +315,11 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":video_quality_test",
+      "../api:libjingle_peerconnection_api",
+      "../api:simulated_network_api",
+      "../api:video_quality_test_fixture_api",
+      "../api/video_codecs:video_codecs_api",
+      "../rtc_base:checks",
       "../rtc_base:logging",
       "../rtc_base:rtc_base_approved",
       "../system_wrappers:field_trial",
@@ -313,6 +330,7 @@ if (rtc_include_tests) {
       "../test:test_renderer",
       "../test:test_support",
       "//testing/gtest",
+      "//third_party/abseil-cpp/absl/memory",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -328,6 +346,11 @@ if (rtc_include_tests) {
 
     deps = [
       ":video_quality_test",
+      "../api:libjingle_peerconnection_api",
+      "../api:simulated_network_api",
+      "../api:video_quality_test_fixture_api",
+      "../api/video_codecs:video_codecs_api",
+      "../rtc_base:checks",
       "../rtc_base:logging",
       "../rtc_base:rtc_base_approved",
       "../system_wrappers:field_trial",
@@ -337,6 +360,8 @@ if (rtc_include_tests) {
       "../test:test_common",
       "../test:test_renderer",
       "../test:test_support",
+      "//third_party/abseil-cpp/absl/memory",
+      "//third_party/abseil-cpp/absl/types:optional",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from Chrome's Clang plugins.
@@ -352,6 +377,11 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":video_quality_test",
+      "../api:libjingle_peerconnection_api",
+      "../api:simulated_network_api",
+      "../api:video_quality_test_fixture_api",
+      "../api/video_codecs:video_codecs_api",
+      "../rtc_base:checks",
       "../rtc_base:logging",
       "../rtc_base:rtc_base_approved",
       "../system_wrappers:field_trial",
@@ -362,6 +392,7 @@ if (rtc_include_tests) {
       "../test:test_renderer",
       "../test:test_support",
       "//testing/gtest",
+      "//third_party/abseil-cpp/absl/memory",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
@@ -450,8 +481,10 @@ if (rtc_include_tests) {
       ":video",
       ":video_mocks",
       ":video_stream_encoder_impl",
+      "../:webrtc_common",
       "../api:fake_frame_decryptor",
       "../api:fake_frame_encryptor",
+      "../api:libjingle_peerconnection_api",
       "../api:simulated_network_api",
       "../api/test/video:function_video_factory",
       "../api/video:builtin_video_bitrate_allocator_factory",
@@ -464,9 +497,11 @@ if (rtc_include_tests) {
       "../call:fake_network",
       "../call:mock_bitrate_allocator",
       "../call:mock_rtp_interfaces",
+      "../call:rtp_interfaces",
       "../call:rtp_receiver",
       "../call:rtp_sender",
       "../call:simulated_network",
+      "../call:simulated_packet_receiver",
       "../call:video_stream_api",
       "../common_video",
       "../logging:rtc_event_log_api",

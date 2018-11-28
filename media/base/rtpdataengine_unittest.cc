@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <string.h>
 #include <memory>
 #include <string>
 
@@ -16,9 +17,10 @@
 #include "media/base/rtpdataengine.h"
 #include "media/base/rtputils.h"
 #include "rtc_base/copyonwritebuffer.h"
-#include "rtc_base/gunit.h"
-#include "rtc_base/helpers.h"
-#include "rtc_base/ssladapter.h"
+#include "rtc_base/fakeclock.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
+#include "rtc_base/timeutils.h"
+#include "test/gtest.h"
 
 class FakeDataReceiver : public sigslot::has_slots<> {
  public:

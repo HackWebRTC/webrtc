@@ -10,14 +10,15 @@
 
 #include "media/engine/fakewebrtcvideoengine.h"
 
+#include <algorithm>
+
+#include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "media/base/codec.h"
+#include "media/base/mediaconstants.h"
 #include "media/engine/simulcast_encoder_adapter.h"
-#include "media/engine/webrtcvideodecoderfactory.h"
-#include "media/engine/webrtcvideoencoderfactory.h"
 #include "modules/video_coding/include/video_error_codes.h"
-#include "rtc_base/gunit.h"
-#include "rtc_base/stringutils.h"
+#include "rtc_base/timeutils.h"
 
 namespace cricket {
 

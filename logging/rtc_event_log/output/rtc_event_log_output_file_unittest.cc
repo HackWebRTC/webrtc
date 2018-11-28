@@ -11,6 +11,7 @@
 #include "logging/rtc_event_log/output/rtc_event_log_output_file.h"
 
 #include <fstream>
+#include <iterator>
 #include <memory>
 #include <string>
 

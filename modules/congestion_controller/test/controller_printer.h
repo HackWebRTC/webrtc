@@ -13,7 +13,8 @@
 #include <cstdio>
 #include <memory>
 
-#include "api/transport/network_control.h"
+#include "api/transport/network_types.h"
+#include "api/units/timestamp.h"
 
 namespace webrtc {
 class DebugStatePrinter {

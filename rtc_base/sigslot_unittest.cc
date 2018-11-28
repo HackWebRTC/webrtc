@@ -9,8 +9,9 @@
  */
 
 #include "rtc_base/third_party/sigslot/sigslot.h"
-#include "rtc_base/gunit.h"
+
 #include "rtc_base/sigslotrepeater.h"
+#include "test/gtest.h"
 
 // This function, when passed a has_slots or signalx, will break the build if
 // its threading requirement is not single threaded

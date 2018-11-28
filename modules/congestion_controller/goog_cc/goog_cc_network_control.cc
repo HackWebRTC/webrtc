@@ -10,25 +10,25 @@
 
 #include "modules/congestion_controller/goog_cc/goog_cc_network_control.h"
 
+#include <inttypes.h>
+#include <stdio.h>
 #include <algorithm>
-#include <functional>
-#include <limits>
+#include <cstdint>
 #include <memory>
 #include <numeric>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "api/units/time_delta.h"
 #include "modules/congestion_controller/goog_cc/acknowledged_bitrate_estimator.h"
 #include "modules/congestion_controller/goog_cc/alr_detector.h"
 #include "modules/congestion_controller/goog_cc/probe_controller.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "modules/remote_bitrate_estimator/test/bwe_test_logging.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/format_macros.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/timeutils.h"
 #include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {

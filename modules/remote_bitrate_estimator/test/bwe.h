@@ -11,17 +11,21 @@
 #ifndef MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_BWE_H_
 #define MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_BWE_H_
 
+#include <stddef.h>
+#include <stdint.h>
+#include <iterator>
 #include <list>
 #include <map>
-#include <sstream>
-#include <string>
+#include <utility>
 
 #include "modules/bitrate_controller/include/bitrate_controller.h"
+#include "modules/include/module.h"
 #include "modules/remote_bitrate_estimator/test/bwe_test_framework.h"
 #include "modules/remote_bitrate_estimator/test/packet.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/gtest_prod_util.h"
 #include "rtc_base/numerics/sequence_number_util.h"
+#include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 namespace testing {

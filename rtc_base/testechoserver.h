@@ -11,12 +11,18 @@
 #ifndef RTC_BASE_TESTECHOSERVER_H_
 #define RTC_BASE_TESTECHOSERVER_H_
 
+#include <stddef.h>
+#include <stdint.h>
+#include <algorithm>
 #include <list>
 #include <memory>
 
+#include "rtc_base/asyncpacketsocket.h"
+#include "rtc_base/asyncsocket.h"
 #include "rtc_base/asynctcpsocket.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/socketaddress.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
 
 namespace rtc {

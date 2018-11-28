@@ -10,22 +10,37 @@
 
 #include "examples/peerconnection/client/conductor.h"
 
+#include <stddef.h>
+#include <stdint.h>
 #include <memory>
 #include <utility>
 #include <vector>
 
+#include "absl/types/optional.h"
+#include "api/audio/audio_mixer.h"
+#include "api/audio_codecs/audio_decoder_factory.h"
+#include "api/audio_codecs/audio_encoder_factory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
+#include "api/audio_options.h"
 #include "api/create_peerconnection_factory.h"
+#include "api/rtpsenderinterface.h"
 #include "api/video_codecs/builtin_video_decoder_factory.h"
 #include "api/video_codecs/builtin_video_encoder_factory.h"
+#include "api/video_codecs/video_decoder_factory.h"
+#include "api/video_codecs/video_encoder_factory.h"
 #include "examples/peerconnection/client/defaults.h"
+#include "media/base/device.h"
 #include "media/engine/webrtcvideocapturerfactory.h"
 #include "modules/audio_device/include/audio_device.h"
 #include "modules/audio_processing/include/audio_processing.h"
+#include "modules/video_capture/video_capture.h"
 #include "modules/video_capture/video_capture_factory.h"
+#include "p2p/base/portallocator.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/refcountedobject.h"
+#include "rtc_base/rtccertificategenerator.h"
 #include "rtc_base/strings/json.h"
 
 // Names used for a IceCandidate JSON object.

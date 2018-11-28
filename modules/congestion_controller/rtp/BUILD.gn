@@ -72,6 +72,9 @@ rtc_source_set("control_handler") {
   deps = [
     "../:congestion_controller",
     "../../../api/transport:network_control",
+    "../../../api/units:data_rate",
+    "../../../api/units:data_size",
+    "../../../api/units:time_delta",
     "../../../rtc_base:checks",
     "../../../rtc_base:rate_limiter",
     "../../../rtc_base:safe_minmax",
@@ -83,6 +86,7 @@ rtc_source_set("control_handler") {
     "../../remote_bitrate_estimator",
     "../../rtp_rtcp:rtp_rtcp_format",
     "//third_party/abseil-cpp/absl/memory",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 
   if (!build_with_mozilla) {
@@ -102,6 +106,7 @@ rtc_static_library("transport_feedback") {
     "../..:module_api",
     "../../../api/transport:network_control",
     "../../../api/units:data_size",
+    "../../../api/units:timestamp",
     "../../../rtc_base:checks",
     "../../../rtc_base:rtc_base_approved",
     "../../../rtc_base/network:sent_packet",

@@ -12,12 +12,19 @@
 #ifndef MEDIA_ENGINE_VP8_ENCODER_SIMULCAST_PROXY_H_
 #define MEDIA_ENGINE_VP8_ENCODER_SIMULCAST_PROXY_H_
 
+#include <stddef.h>
+#include <stdint.h>
 #include <memory>
 #include <vector>
 
+#include "api/video/video_bitrate_allocation.h"
+#include "api/video/video_frame.h"
 #include "api/video_codecs/sdp_video_format.h"
+#include "api/video_codecs/video_codec.h"
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_factory.h"
+#include "common_types.h"  // NOLINT(build/include)
+#include "modules/video_coding/include/video_codec_interface.h"
 
 namespace webrtc {
 

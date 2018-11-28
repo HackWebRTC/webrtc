@@ -21,9 +21,7 @@
 // Fuzzer tests (test/fuzzers/mdns_parser_fuzzer.cc) MUST always be performed
 // after changes made to this file.
 
-#include <map>
-#include <memory>
-#include <set>
+#include <stdint.h>
 #include <string>
 #include <vector>
 

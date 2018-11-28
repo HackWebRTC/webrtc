@@ -9,8 +9,6 @@
  */
 
 #include "api/mediastreaminterface.h"
-#include "rtc_base/checks.h"
-#include "rtc_base/logging.h"
 
 namespace webrtc {
 

@@ -12,7 +12,12 @@
 #define RTC_BASE_FIREWALLSOCKETSERVER_H_
 
 #include <vector>
+
+#include "rtc_base/asyncsocket.h"
 #include "rtc_base/criticalsection.h"
+#include "rtc_base/ipaddress.h"
+#include "rtc_base/socket.h"
+#include "rtc_base/socketaddress.h"
 #include "rtc_base/socketserver.h"
 
 namespace rtc {

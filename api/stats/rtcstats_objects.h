@@ -11,6 +11,7 @@
 #ifndef API_STATS_RTCSTATS_OBJECTS_H_
 #define API_STATS_RTCSTATS_OBJECTS_H_
 
+#include <stdint.h>
 #include <memory>
 #include <string>
 #include <vector>

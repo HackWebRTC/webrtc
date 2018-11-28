@@ -26,7 +26,6 @@
 #endif
 
 #include "rtc_base/constructormagic.h"
-#include "rtc_base/network/sent_packet.h"
 #include "rtc_base/socketaddress.h"
 
 // Rather than converting errors into a private namespace,

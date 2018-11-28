@@ -11,10 +11,8 @@
 #include "test/testsupport/fileutils.h"
 
 #include <stdio.h>
-
+#include <algorithm>
 #include <fstream>
-#include <iostream>
-#include <list>
 #include <string>
 
 #include "absl/types/optional.h"

@@ -8,12 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <string.h>
+#include <cstdint>
 #include <memory>
 
 #include "rtc_base/arraysize.h"
-#include "rtc_base/checks.h"
 #include "rtc_base/filerotatingstream.h"
-#include "rtc_base/gunit.h"
+#include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
 
 namespace rtc {

@@ -10,11 +10,16 @@
 
 #include "p2p/base/asyncstuntcpsocket.h"
 
+#include <errno.h>
+#include <stdint.h>
 #include <string.h>
 
 #include "p2p/base/stun.h"
+#include "rtc_base/byteorder.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/logging.h"
+#include "rtc_base/network/sent_packet.h"
+#include "rtc_base/third_party/sigslot/sigslot.h"
+#include "rtc_base/timeutils.h"
 
 namespace cricket {
 

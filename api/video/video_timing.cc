@@ -10,6 +10,7 @@
 
 #include "api/video/video_timing.h"
 
+#include "api/array_view.h"
 #include "rtc_base/strings/string_builder.h"
 
 namespace webrtc {

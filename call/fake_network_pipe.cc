@@ -8,17 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <math.h>
 #include <string.h>
-
 #include <algorithm>
+#include <queue>
 #include <utility>
+#include <vector>
 
-#include "absl/memory/memory.h"
-#include "call/call.h"
+#include "api/mediatypes.h"
 #include "call/fake_network_pipe.h"
-#include "call/simulated_network.h"
 #include "modules/utility/include/process_thread.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/clock.h"
 

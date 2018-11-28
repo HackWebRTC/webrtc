@@ -10,7 +10,10 @@
 #ifndef TEST_DRIFTING_CLOCK_H_
 #define TEST_DRIFTING_CLOCK_H_
 
+#include <stdint.h>
+
 #include "system_wrappers/include/clock.h"
+#include "system_wrappers/include/ntp_time.h"
 
 namespace webrtc {
 namespace test {

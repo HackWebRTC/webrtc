@@ -11,8 +11,8 @@
 #ifndef MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_BWE_TEST_BASELINEFILE_H_
 #define MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_BWE_TEST_BASELINEFILE_H_
 
+#include <stdint.h>
 #include <string>
-#include "modules/include/module_common_types.h"
 
 namespace webrtc {
 namespace testing {

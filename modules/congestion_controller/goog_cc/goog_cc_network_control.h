@@ -18,6 +18,10 @@
 
 #include "absl/types/optional.h"
 #include "api/transport/network_control.h"
+#include "api/transport/network_types.h"
+#include "api/units/data_rate.h"
+#include "api/units/data_size.h"
+#include "api/units/timestamp.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/bitrate_controller/send_side_bandwidth_estimation.h"
 #include "modules/congestion_controller/goog_cc/acknowledged_bitrate_estimator.h"
@@ -26,6 +30,7 @@
 #include "modules/congestion_controller/goog_cc/delay_based_bwe.h"
 #include "modules/congestion_controller/goog_cc/probe_controller.h"
 #include "rtc_base/constructormagic.h"
+#include "rtc_base/experiments/field_trial_parser.h"
 
 namespace webrtc {
 

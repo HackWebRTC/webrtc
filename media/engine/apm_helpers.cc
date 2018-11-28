@@ -10,8 +10,9 @@
 
 #include "media/engine/apm_helpers.h"
 
-#include "modules/audio_device/include/audio_device.h"
 #include "modules/audio_processing/include/audio_processing.h"
+#include "modules/audio_processing/include/gain_control.h"
+#include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 
 namespace webrtc {

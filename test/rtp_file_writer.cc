@@ -10,8 +10,8 @@
 
 #include "test/rtp_file_writer.h"
 
+#include <stdint.h>
 #include <stdio.h>
-
 #include <string>
 
 #include "rtc_base/checks.h"

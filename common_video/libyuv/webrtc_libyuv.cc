@@ -10,7 +10,7 @@
 
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 
-#include <string.h>
+#include <cstdint>
 
 #include "api/video/i420_buffer.h"
 #include "common_video/include/video_frame_buffer.h"

@@ -11,6 +11,7 @@
 #ifndef STATS_TEST_RTCTESTSTATS_H_
 #define STATS_TEST_RTCTESTSTATS_H_
 
+#include <cstdint>
 #include <string>
 #include <vector>
 

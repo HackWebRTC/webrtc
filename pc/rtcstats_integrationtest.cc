@@ -8,16 +8,27 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <stdint.h>
+#include <string.h>
 #include <algorithm>
+#include <memory>
 #include <set>
+#include <string>
 #include <vector>
 
+#include "api/audio_codecs/audio_decoder_factory.h"
+#include "api/audio_codecs/audio_encoder_factory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
+#include "api/audio_options.h"
 #include "api/datachannelinterface.h"
 #include "api/peerconnectioninterface.h"
+#include "api/rtpreceiverinterface.h"
+#include "api/rtpsenderinterface.h"
+#include "api/stats/rtcstats.h"
 #include "api/stats/rtcstats_objects.h"
 #include "api/stats/rtcstatsreport.h"
+#include "api/test/fakeconstraints.h"
 #include "pc/rtcstatstraversal.h"
 #include "pc/test/peerconnectiontestwrapper.h"
 #include "pc/test/rtcstatsobtainer.h"
@@ -27,8 +38,10 @@
 #include "rtc_base/refcountedobject.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/stringutils.h"
+#include "rtc_base/thread.h"
 #include "rtc_base/trace_event.h"
 #include "rtc_base/virtualsocketserver.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

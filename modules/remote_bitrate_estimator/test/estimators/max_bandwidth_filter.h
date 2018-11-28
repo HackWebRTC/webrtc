@@ -12,15 +12,9 @@
 #ifndef MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_ESTIMATORS_MAX_BANDWIDTH_FILTER_H_
 #define MODULES_REMOTE_BITRATE_ESTIMATOR_TEST_ESTIMATORS_MAX_BANDWIDTH_FILTER_H_
 
-#include <climits>
-#include <list>
-#include <map>
-#include <memory>
+#include <cstddef>
+#include <cstdint>
 #include <utility>
-#include <vector>
-
-#include "logging/rtc_event_log/mock/mock_rtc_event_log.h"
-#include "modules/remote_bitrate_estimator/test/bwe.h"
 
 namespace webrtc {
 namespace testing {

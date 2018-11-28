@@ -13,10 +13,12 @@
 
 #include <memory>
 
+#include "api/video/video_frame_buffer.h"
 #include "common_video/include/i420_buffer_pool.h"
 #include "modules/video_processing/util/denoiser_filter.h"
 #include "modules/video_processing/util/noise_estimation.h"
 #include "modules/video_processing/util/skin_detection.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

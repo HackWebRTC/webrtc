@@ -10,17 +10,14 @@
 
 #include "modules/remote_bitrate_estimator/test/estimators/nada.h"
 
+#include <math.h>
+#include <stddef.h>
 #include <algorithm>
 #include <memory>
-#include <numeric>
 
-#include "modules/remote_bitrate_estimator/test/bwe_test_framework.h"
 #include "modules/remote_bitrate_estimator/test/packet.h"
-#include "modules/remote_bitrate_estimator/test/packet_sender.h"
 #include "rtc_base/arraysize.h"
-#include "rtc_base/constructormagic.h"
 #include "test/gtest.h"
-#include "test/testsupport/fileutils.h"
 
 namespace webrtc {
 namespace testing {

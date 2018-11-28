@@ -12,6 +12,10 @@
 
 #include "modules/desktop_capture/desktop_capturer.h"
 
+#include <stdlib.h>
+#include <string.h>
+#include <utility>
+
 #include "modules/desktop_capture/desktop_capture_options.h"
 #include "modules/desktop_capture/desktop_capturer_differ_wrapper.h"
 

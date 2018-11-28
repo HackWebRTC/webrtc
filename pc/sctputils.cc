@@ -10,6 +10,9 @@
 
 #include "pc/sctputils.h"
 
+#include <stddef.h>
+#include <stdint.h>
+
 #include "rtc_base/bytebuffer.h"
 #include "rtc_base/copyonwritebuffer.h"
 #include "rtc_base/logging.h"

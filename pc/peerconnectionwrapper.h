@@ -11,14 +11,22 @@
 #ifndef PC_PEERCONNECTIONWRAPPER_H_
 #define PC_PEERCONNECTIONWRAPPER_H_
 
-#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "api/datachannelinterface.h"
+#include "api/jsep.h"
+#include "api/mediastreaminterface.h"
+#include "api/mediatypes.h"
 #include "api/peerconnectioninterface.h"
+#include "api/rtcerror.h"
+#include "api/rtpsenderinterface.h"
+#include "api/rtptransceiverinterface.h"
+#include "api/stats/rtcstatsreport.h"
 #include "pc/test/mockpeerconnectionobservers.h"
 #include "rtc_base/function_view.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

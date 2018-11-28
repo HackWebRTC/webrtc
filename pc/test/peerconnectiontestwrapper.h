@@ -15,11 +15,21 @@
 #include <string>
 #include <vector>
 
+#include "api/audio_codecs/audio_decoder_factory.h"
+#include "api/audio_codecs/audio_encoder_factory.h"
+#include "api/audio_options.h"
+#include "api/datachannelinterface.h"
+#include "api/jsep.h"
+#include "api/mediastreaminterface.h"
 #include "api/peerconnectioninterface.h"
+#include "api/rtcerror.h"
+#include "api/rtpreceiverinterface.h"
 #include "api/test/fakeconstraints.h"
 #include "pc/test/fakeaudiocapturemodule.h"
 #include "pc/test/fakevideotrackrenderer.h"
+#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
+#include "rtc_base/thread.h"
 #include "rtc_base/thread_checker.h"
 
 class PeerConnectionTestWrapper

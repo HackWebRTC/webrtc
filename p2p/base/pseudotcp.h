@@ -11,6 +11,8 @@
 #ifndef P2P_BASE_PSEUDOTCP_H_
 #define P2P_BASE_PSEUDOTCP_H_
 
+#include <stddef.h>
+#include <stdint.h>
 #include <list>
 
 #include "rtc_base/stream.h"

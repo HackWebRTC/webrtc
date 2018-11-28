@@ -8,10 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <math.h>
-
 #include <algorithm>
 
+#include "system_wrappers/include/ntp_time.h"
 #include "test/gtest.h"
 #include "video/stream_synchronization.h"
 

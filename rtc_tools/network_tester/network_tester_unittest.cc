@@ -10,9 +10,10 @@
 
 #ifdef WEBRTC_NETWORK_TESTER_TEST_ENABLED
 
-#include "rtc_tools/network_tester/test_controller.h"
+#include <string>
 
 #include "rtc_base/gunit.h"
+#include "rtc_tools/network_tester/test_controller.h"
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
 

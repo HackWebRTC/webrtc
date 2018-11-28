@@ -10,14 +10,16 @@
 
 #include "pc/dtmfsender.h"
 
+#include <stddef.h>
 #include <memory>
-#include <set>
 #include <string>
 #include <vector>
 
 #include "rtc_base/fakeclock.h"
 #include "rtc_base/gunit.h"
+#include "rtc_base/refcountedobject.h"
 #include "rtc_base/timeutils.h"
+#include "test/gtest.h"
 
 using webrtc::DtmfProviderInterface;
 using webrtc::DtmfSender;

@@ -13,7 +13,9 @@
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/signalthread.h"
+#include "rtc_base/socketserver.h"
 #include "rtc_base/thread.h"
+#include "test/gtest.h"
 
 using namespace rtc;
 

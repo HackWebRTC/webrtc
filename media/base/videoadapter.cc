@@ -17,11 +17,10 @@
 #include <utility>
 
 #include "absl/types/optional.h"
-#include "media/base/mediaconstants.h"
 #include "media/base/videocommon.h"
-#include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/timeutils.h"
 
 namespace {
 struct Fraction {

@@ -10,7 +10,7 @@
 
 #include "api/jsepicecandidate.h"
 
-#include <vector>
+#include <memory>
 
 #include "absl/memory/memory.h"
 #include "pc/webrtcsdp.h"

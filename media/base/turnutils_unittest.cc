@@ -10,9 +10,7 @@
 
 #include "media/base/turnutils.h"
 
-#include <stddef.h>
-
-#include "rtc_base/gunit.h"
+#include "test/gtest.h"
 
 namespace cricket {
 

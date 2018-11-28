@@ -10,15 +10,32 @@
 #ifndef VIDEO_VIDEO_SEND_STREAM_IMPL_H_
 #define VIDEO_VIDEO_SEND_STREAM_IMPL_H_
 
+#include <stddef.h>
+#include <stdint.h>
 #include <map>
 #include <memory>
 #include <vector>
 
+#include "absl/types/optional.h"
+#include "api/fec_controller.h"
+#include "api/video/encoded_image.h"
+#include "api/video/video_bitrate_allocation.h"
 #include "api/video/video_bitrate_allocator.h"
 #include "api/video/video_stream_encoder_interface.h"
+#include "api/video_codecs/video_encoder.h"
+#include "api/video_codecs/video_encoder_config.h"
 #include "call/bitrate_allocator.h"
+#include "call/rtp_config.h"
+#include "call/rtp_transport_controller_send_interface.h"
 #include "call/rtp_video_sender_interface.h"
+#include "logging/rtc_event_log/rtc_event_log.h"
+#include "modules/include/module_common_types.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/utility/include/process_thread.h"
+#include "modules/video_coding/include/video_codec_interface.h"
+#include "rtc_base/criticalsection.h"
+#include "rtc_base/task_queue.h"
+#include "rtc_base/thread_annotations.h"
 #include "rtc_base/weak_ptr.h"
 #include "video/call_stats.h"
 #include "video/encoder_rtcp_feedback.h"

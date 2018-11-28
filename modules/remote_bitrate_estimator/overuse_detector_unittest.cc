@@ -8,10 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <math.h>
-
+#include <stdio.h>
+#include <string.h>
 #include <algorithm>
-#include <cmath>
 #include <cstdlib>
 #include <memory>
 
@@ -20,7 +19,6 @@
 #include "modules/remote_bitrate_estimator/overuse_detector.h"
 #include "modules/remote_bitrate_estimator/overuse_estimator.h"
 #include "rtc_base/random.h"
-#include "rtc_base/rate_statistics.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
 

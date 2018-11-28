@@ -8,6 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <map>
+#include <vector>
+
+#include "api/crypto/cryptooptions.h"
+#include "api/rtp_headers.h"
+#include "call/flexfec_receive_stream.h"
+#include "call/rtp_config.h"
+#include "call/video_receive_stream.h"
+#include "call/video_send_stream.h"
 #include "test/call_test.h"
 #include "test/gtest.h"
 #include "test/null_transport.h"

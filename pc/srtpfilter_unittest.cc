@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <algorithm>
-
-#include "pc/srtpfilter.h"
+#include <string.h>
 
 #include "api/cryptoparams.h"
-#include "rtc_base/gunit.h"
+#include "pc/srtpfilter.h"
+#include "rtc_base/sslstreamadapter.h"
+#include "test/gtest.h"
 
 using cricket::CryptoParams;
 using cricket::CS_LOCAL;

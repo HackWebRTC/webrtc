@@ -12,7 +12,7 @@
 
 #include "api/stats/rtcstats.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/gunit.h"
+#include "test/gtest.h"
 
 namespace webrtc {
 

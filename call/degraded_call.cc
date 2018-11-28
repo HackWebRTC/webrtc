@@ -10,9 +10,9 @@
 
 #include <utility>
 
-#include "call/degraded_call.h"
-
 #include "absl/memory/memory.h"
+#include "call/degraded_call.h"
+#include "rtc_base/location.h"
 
 namespace webrtc {
 DegradedCall::DegradedCall(

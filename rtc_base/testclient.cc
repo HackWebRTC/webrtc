@@ -10,6 +10,9 @@
 
 #include "rtc_base/testclient.h"
 
+#include <string.h>
+#include <utility>
+
 #include "absl/memory/memory.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/thread.h"

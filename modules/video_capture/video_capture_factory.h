@@ -15,6 +15,8 @@
 #define MODULES_VIDEO_CAPTURE_VIDEO_CAPTURE_FACTORY_H_
 
 #include "modules/video_capture/video_capture.h"
+#include "modules/video_capture/video_capture_defines.h"
+#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

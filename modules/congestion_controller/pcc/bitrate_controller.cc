@@ -9,10 +9,8 @@
  */
 
 #include <algorithm>
-#include <array>
 #include <cmath>
 #include <cstdlib>
-#include <string>
 #include <utility>
 #include <vector>
 
