@@ -189,6 +189,7 @@ if (is_android) {
   rtc_android_library("base_java") {
     java_files = [
       "api/org/webrtc/RefCounted.java",
+      "api/org/webrtc/Predicate.java",
       "src/java/org/webrtc/CalledByNative.java",
       "src/java/org/webrtc/CalledByNativeUnchecked.java",
       "src/java/org/webrtc/Histogram.java",
