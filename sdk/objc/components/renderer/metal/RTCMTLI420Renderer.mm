@@ -118,7 +118,7 @@ static NSString *const shaderSource = MTL_STRINGIFY(
   id<RTCI420Buffer> buffer = [frame.buffer toI420];
 
   // Luma (y) texture.
-  if (!_descriptor || (_width != frame.width && _height != frame.height)) {
+  if (!_descriptor || _width != frame.width || _height != frame.height) {
     _width = frame.width;
     _height = frame.height;
     _descriptor = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatR8Unorm
@@ -135,8 +135,7 @@ static NSString *const shaderSource = MTL_STRINGIFY(
                  withBytes:buffer.dataY
                bytesPerRow:buffer.strideY];
 
-  if (!_chromaDescriptor ||
-      (_chromaWidth != frame.width / 2 && _chromaHeight != frame.height / 2)) {
+  if (!_chromaDescriptor || _chromaWidth != frame.width / 2 || _chromaHeight != frame.height / 2) {
     _chromaWidth = frame.width / 2;
     _chromaHeight = frame.height / 2;
     _chromaDescriptor =
