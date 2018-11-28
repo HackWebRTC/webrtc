@@ -22,7 +22,7 @@
     {
       "include": "perf_tests.json",
       "device type": "iPhone 7",
-      "os": "11.4.1",
+      "os": "11.4.1"
     }
   ]
 }
