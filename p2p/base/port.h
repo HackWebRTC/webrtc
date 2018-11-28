@@ -789,7 +789,8 @@ class Connection : public CandidatePairInterface,
                                  StunMessage* response);
 
   void LogCandidatePairConfig(webrtc::IceCandidatePairConfigType type);
-  void LogCandidatePairEvent(webrtc::IceCandidatePairEventType type);
+  void LogCandidatePairEvent(webrtc::IceCandidatePairEventType type,
+                             uint32_t transaction_id);
 
   WriteState write_state_;
   bool receiving_;
