@@ -37,8 +37,6 @@ class RtpFrameObject : public EncodedFrame {
   int times_nacked() const;
   enum FrameType frame_type() const;
   VideoCodecType codec_type() const;
-  void SetBitstream(rtc::ArrayView<const uint8_t> bitstream);
-  bool GetBitstream(uint8_t* destination) const override;
   int64_t ReceivedTime() const override;
   int64_t RenderTime() const override;
   bool delayed_by_retransmission() const override;

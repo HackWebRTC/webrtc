@@ -80,9 +80,8 @@ class MockOnCompleteFrameCallback
       DoOnCompleteFrameFailLength(frame.get());
       return;
     }
-    std::vector<uint8_t> actual_data(frame->size());
-    frame->GetBitstream(actual_data.data());
-    if (memcmp(buffer_.Data(), actual_data.data(), buffer_.Length()) != 0) {
+    if (frame->Length() != buffer_.Length() ||
+        memcmp(buffer_.Data(), frame->Buffer(), buffer_.Length()) != 0) {
       DoOnCompleteFrameFailBitstream(frame.get());
       return;
     }

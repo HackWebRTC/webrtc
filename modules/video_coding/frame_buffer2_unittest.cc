@@ -88,8 +88,6 @@ class VCMJitterEstimatorMock : public VCMJitterEstimator {
 
 class FrameObjectFake : public EncodedFrame {
  public:
-  bool GetBitstream(uint8_t* destination) const override { return true; }
-
   int64_t ReceivedTime() const override { return 0; }
 
   int64_t RenderTime() const override { return _renderTimeMs; }

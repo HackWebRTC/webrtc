@@ -56,7 +56,6 @@ class FuzzyFrameObject : public video_coding::EncodedFrame {
   FuzzyFrameObject() {}
   ~FuzzyFrameObject() {}
 
-  bool GetBitstream(uint8_t* destination) const override { return false; }
   int64_t ReceivedTime() const override { return 0; }
   int64_t RenderTime() const override { return _renderTimeMs; }
 };

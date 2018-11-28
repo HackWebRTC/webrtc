@@ -13,6 +13,10 @@
 namespace webrtc {
 namespace video_coding {
 
+bool EncodedFrame::GetBitstream(uint8_t* destination) const {
+  return false;
+}
+
 bool EncodedFrame::delayed_by_retransmission() const {
   return 0;
 }

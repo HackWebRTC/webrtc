@@ -56,7 +56,9 @@ class EncodedFrame : public webrtc::VCMEncodedFrame {
   EncodedFrame() = default;
   virtual ~EncodedFrame() {}
 
-  virtual bool GetBitstream(uint8_t* destination) const = 0;
+  // TODO(nisse): Deprecated and unused. Delete method and default
+  // implementation as soon as downstream overrides are deleted.
+  virtual bool GetBitstream(uint8_t* destination) const;
 
   // When this frame was received.
   virtual int64_t ReceivedTime() const = 0;

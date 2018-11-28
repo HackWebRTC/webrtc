@@ -49,7 +49,7 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
   SetPlayoutDelay(first_packet->video_header.playout_delay);
 
   AllocateBitstreamBuffer(frame_size);
-  bool bitstream_copied = GetBitstream(_buffer);
+  bool bitstream_copied = packet_buffer_->GetBitstream(*this, _buffer);
   RTC_DCHECK(bitstream_copied);
   _encodedWidth = first_packet->width;
   _encodedHeight = first_packet->height;
@@ -120,15 +120,6 @@ FrameType RtpFrameObject::frame_type() const {
 
 VideoCodecType RtpFrameObject::codec_type() const {
   return codec_type_;
-}
-
-void RtpFrameObject::SetBitstream(rtc::ArrayView<const uint8_t> bitstream) {
-  AllocateBitstreamBuffer(bitstream.size());
-  memcpy(_buffer, bitstream.data(), _length);
-}
-
-bool RtpFrameObject::GetBitstream(uint8_t* destination) const {
-  return packet_buffer_->GetBitstream(*this, destination);
 }
 
 int64_t RtpFrameObject::ReceivedTime() const {
