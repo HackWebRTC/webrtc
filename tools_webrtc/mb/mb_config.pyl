@@ -89,6 +89,7 @@
       'Win64 Debug (Clang)': 'win_clang_debug_bot_x64',
       'Win64 Release (Clang)': 'win_clang_release_bot_x64',
       'Win32 ASan': 'win_asan_clang_release_bot_x86',
+      'Win64 UWP': 'win_uwp_release_bot_x64',
       'Win (more configs)': {
         'bwe_test_logging':
           'bwe_test_logging_x86',
@@ -229,6 +230,7 @@
       'win_experimental': 'release_bot_x86',
       'win_x64_win8': 'debug_bot_x64',
       'win_x64_win10': 'debug_bot_x64',
+      'win_x64_uwp': 'win_uwp_release_bot_x64',
       'win_more_configs': {
         'bwe_test_logging':
           'bwe_test_logging_x86',
@@ -347,6 +349,9 @@
     'win_asan_clang_release_bot_x86': [
       'gn', 'asan', 'clang',  'full_symbols', 'openh264', 'release_bot', 'x86',
       'win_fastlink',
+    ],
+    'win_uwp_release_bot_x64': [
+      'gn', 'clang', 'openh264', 'release_bot', 'x64', 'winuwp',
     ],
 
     # Mac
@@ -585,6 +590,10 @@
 
     'no_sctp': {
       'gn_args': 'rtc_enable_sctp=false',
+    },
+
+    'winuwp': {
+      'gn_args': 'target_os="winuwp"',
     },
   },
 }
