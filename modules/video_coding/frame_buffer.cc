@@ -102,7 +102,7 @@ VCMFrameBufferEnum VCMFrameBuffer::InsertPacket(
   }
 
   uint32_t requiredSizeBytes =
-      Length() + packet.sizeBytes +
+      size() + packet.sizeBytes +
       (packet.insertStartCode ? kH264StartCodeLengthBytes : 0) +
       EncodedImage::GetBufferPaddingBytes(packet.codec);
   if (requiredSizeBytes >= _size) {
@@ -139,7 +139,7 @@ VCMFrameBufferEnum VCMFrameBuffer::InsertPacket(
     return kOutOfBoundsPacket;
   }
   // update length
-  _length = Length() + static_cast<uint32_t>(retVal);
+  _length = size() + static_cast<uint32_t>(retVal);
 
   _latestPacketTimeMs = timeInMs;
 

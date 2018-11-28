@@ -553,7 +553,7 @@ VCMEncodedFrame* VCMJitterBuffer::ExtractAndSetDecode(uint32_t timestamp) {
   if (retransmitted) {
     if (WaitForRetransmissions())
       jitter_estimate_.FrameNacked();
-  } else if (frame->Length() > 0) {
+  } else if (frame->size() > 0) {
     // Ignore retransmitted and empty frames.
     if (waiting_for_completion_.latest_packet_time >= 0) {
       UpdateJitterEstimate(waiting_for_completion_, true);
@@ -562,7 +562,7 @@ VCMEncodedFrame* VCMJitterBuffer::ExtractAndSetDecode(uint32_t timestamp) {
       UpdateJitterEstimate(*frame, false);
     } else {
       // Wait for this one to get complete.
-      waiting_for_completion_.frame_size = frame->Length();
+      waiting_for_completion_.frame_size = frame->size();
       waiting_for_completion_.latest_packet_time = frame->LatestPacketTimeMs();
       waiting_for_completion_.timestamp = frame->Timestamp();
     }
@@ -1264,7 +1264,7 @@ void VCMJitterBuffer::UpdateJitterEstimate(const VCMFrameBuffer& frame,
   // No retransmitted frames should be a part of the jitter
   // estimate.
   UpdateJitterEstimate(frame.LatestPacketTimeMs(), frame.Timestamp(),
-                       frame.Length(), incomplete_frame);
+                       frame.size(), incomplete_frame);
 }
 
 // Must be called under the critical section |crit_sect_|. Should never be

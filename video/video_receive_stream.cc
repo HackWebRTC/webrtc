@@ -460,7 +460,7 @@ bool VideoReceiveStream::Decode() {
     // Current OnPreDecode only cares about QP for VP8.
     int qp = -1;
     if (frame->CodecSpecific()->codecType == kVideoCodecVP8) {
-      if (!vp8::GetQp(frame->Buffer(), frame->Length(), &qp)) {
+      if (!vp8::GetQp(frame->Buffer(), frame->size(), &qp)) {
         RTC_LOG(LS_WARNING) << "Failed to extract QP from VP8 video frame";
       }
     }

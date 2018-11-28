@@ -67,6 +67,9 @@ class RTC_EXPORT EncodedImage {
         color_space ? absl::make_optional(*color_space) : absl::nullopt;
   }
 
+  size_t size() const { return _length; }
+  size_t capacity() const { return _size; }
+
   uint32_t _encodedWidth = 0;
   uint32_t _encodedHeight = 0;
   // NTP time of the capture time in local timebase in milliseconds.
@@ -74,6 +77,7 @@ class RTC_EXPORT EncodedImage {
   int64_t capture_time_ms_ = 0;
   FrameType _frameType = kVideoFrameDelta;
   uint8_t* _buffer;
+  // TODO(bugs.webrtc.org/9378): Rename to size_, capacity_ and make private.
   size_t _length;
   size_t _size;
   VideoRotation rotation_ = kVideoRotation_0;

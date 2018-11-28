@@ -135,6 +135,11 @@ int64_t RtpFrameObject::RenderTime() const {
   return _renderTimeMs;
 }
 
+void RtpFrameObject::SetSize(size_t size) {
+  RTC_DCHECK_LE(size, _size);
+  _length = size;
+}
+
 bool RtpFrameObject::delayed_by_retransmission() const {
   return times_nacked() > 0;
 }

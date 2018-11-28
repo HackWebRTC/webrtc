@@ -430,7 +430,7 @@ void RtpVideoStreamReceiver::OnReceivedFrame(
 
     RTC_CHECK(bytes_written <= max_plaintext_byte_size);
     // Update the frame to contain just the written bytes.
-    frame->SetLength(bytes_written);
+    frame->SetSize(bytes_written);
   } else if (config_.crypto_options.sframe.require_frame_encryption) {
     RTC_LOG(LS_WARNING) << "Frame decryption required but not attached to this "
                            "stream. Dropping  frame.";

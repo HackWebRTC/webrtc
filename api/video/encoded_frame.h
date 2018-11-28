@@ -74,8 +74,6 @@ class EncodedFrame : public webrtc::VCMEncodedFrame {
   //                 been implemented.
   virtual bool delayed_by_retransmission() const;
 
-  size_t size() const { return _length; }
-
   bool is_keyframe() const { return num_references == 0; }
 
   VideoLayerFrameId id;

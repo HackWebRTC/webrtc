@@ -283,7 +283,7 @@ class TestBasicJitterBuffer : public ::testing::TestWithParam<std::string>,
       i += 4;
     }
 
-    EXPECT_EQ(size, frame_out->Length());
+    EXPECT_EQ(size, frame_out->size());
     int count = 3;
     for (; i < size; i++) {
       if (outData[i] == 0 && outData[i + 1] == 0 && outData[i + 2] == 0x80) {
