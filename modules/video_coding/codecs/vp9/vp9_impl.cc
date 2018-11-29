@@ -696,33 +696,30 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
     }
   }
 
-  size_t first_active_spatial_layer_id = 0;
-  if (VideoCodecMode::kScreensharing == codec_.mode) {
+  if (VideoCodecMode::kScreensharing == codec_.mode && !force_key_frame_) {
+    // Skip encoding spatial layer frames if their target frame rate is lower
+    // than actual input frame rate.
     vpx_svc_layer_id_t layer_id = {0};
-    if (!force_key_frame_) {
-      // Skip encoding spatial layer frames if their target frame rate is lower
-      // than actual input frame rate.
-      const size_t gof_idx = (pics_since_key_ + 1) % gof_.num_frames_in_gof;
-      layer_id.temporal_layer_id = gof_.temporal_idx[gof_idx];
+    const size_t gof_idx = (pics_since_key_ + 1) % gof_.num_frames_in_gof;
+    layer_id.temporal_layer_id = gof_.temporal_idx[gof_idx];
 
-      const uint32_t frame_timestamp_ms =
-          1000 * input_image.timestamp() / kVideoPayloadTypeFrequency;
+    const uint32_t frame_timestamp_ms =
+        1000 * input_image.timestamp() / kVideoPayloadTypeFrequency;
 
-      for (uint8_t sl_idx = 0; sl_idx < num_active_spatial_layers_; ++sl_idx) {
-        if (framerate_controller_[sl_idx].DropFrame(frame_timestamp_ms)) {
-          ++layer_id.spatial_layer_id;
-        } else {
-          break;
-        }
-      }
-
-      RTC_DCHECK_LE(layer_id.spatial_layer_id, num_active_spatial_layers_);
-      if (layer_id.spatial_layer_id >= num_active_spatial_layers_) {
-        // Drop entire picture.
-        return WEBRTC_VIDEO_CODEC_OK;
+    for (uint8_t sl_idx = 0; sl_idx < num_active_spatial_layers_; ++sl_idx) {
+      if (framerate_controller_[sl_idx].DropFrame(frame_timestamp_ms)) {
+        ++layer_id.spatial_layer_id;
+      } else {
+        break;
       }
     }
-    first_active_spatial_layer_id = layer_id.spatial_layer_id;
+
+    RTC_DCHECK_LE(layer_id.spatial_layer_id, num_active_spatial_layers_);
+    if (layer_id.spatial_layer_id >= num_active_spatial_layers_) {
+      // Drop entire picture.
+      return WEBRTC_VIDEO_CODEC_OK;
+    }
+
     vpx_codec_control(encoder_, VP9E_SET_SVC_LAYER_ID, &layer_id);
   }
 
@@ -783,8 +780,7 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
   }
 
   if (external_ref_control_) {
-    vpx_svc_ref_frame_config_t ref_config =
-        SetReferences(force_key_frame_, first_active_spatial_layer_id);
+    vpx_svc_ref_frame_config_t ref_config = SetReferences(force_key_frame_);
 
     if (VideoCodecMode::kScreensharing == codec_.mode) {
       for (uint8_t sl_idx = 0; sl_idx < num_active_spatial_layers_; ++sl_idx) {
@@ -989,8 +985,6 @@ void VP9EncoderImpl::FillReferenceIndices(const vpx_codec_cx_pkt& pkt,
 
   size_t max_ref_temporal_layer_id = 0;
 
-  std::vector<size_t> ref_pid_list;
-
   vp9_info->num_ref_pics = 0;
   for (const RefFrameBuffer& ref_buf : ref_buf_list) {
     RTC_DCHECK_LE(ref_buf.pic_num, pic_num);
@@ -1002,16 +996,6 @@ void VP9EncoderImpl::FillReferenceIndices(const vpx_codec_cx_pkt& pkt,
         RTC_DCHECK_EQ(ref_buf.spatial_layer_id, layer_id.spatial_layer_id);
       }
       RTC_DCHECK_LE(ref_buf.temporal_layer_id, layer_id.temporal_layer_id);
-
-      // Encoder may reference several spatial layers on the same previous
-      // frame in case if some spatial layers are skipped on the current frame.
-      // We shouldn't put duplicate references as it may break some old
-      // clients and isn't RTP compatible.
-      if (std::find(ref_pid_list.begin(), ref_pid_list.end(),
-                    ref_buf.pic_num) != ref_pid_list.end()) {
-        continue;
-      }
-      ref_pid_list.push_back(ref_buf.pic_num);
 
       const size_t p_diff = pic_num - ref_buf.pic_num;
       RTC_DCHECK_LE(p_diff, 127UL);
@@ -1077,9 +1061,7 @@ void VP9EncoderImpl::UpdateReferenceBuffers(const vpx_codec_cx_pkt& pkt,
   }
 }
 
-vpx_svc_ref_frame_config_t VP9EncoderImpl::SetReferences(
-    bool is_key_pic,
-    size_t first_active_spatial_layer_id) {
+vpx_svc_ref_frame_config_t VP9EncoderImpl::SetReferences(bool is_key_pic) {
   // kRefBufIdx, kUpdBufIdx need to be updated to support longer GOFs.
   RTC_DCHECK_LE(gof_.num_frames_in_gof, 4);
 
@@ -1131,14 +1113,13 @@ vpx_svc_ref_frame_config_t VP9EncoderImpl::SetReferences(
       }
     }
 
-    if (is_inter_layer_pred_allowed && sl_idx > first_active_spatial_layer_id) {
+    if (is_inter_layer_pred_allowed && sl_idx > 0) {
       // Set up spatial reference.
       RTC_DCHECK(last_updated_buf_idx);
       ref_config.gld_fb_idx[sl_idx] = *last_updated_buf_idx;
       ref_config.reference_golden[sl_idx] = 1;
     } else {
-      RTC_DCHECK(ref_config.reference_last[sl_idx] != 0 ||
-                 sl_idx == first_active_spatial_layer_id ||
+      RTC_DCHECK(ref_config.reference_last[sl_idx] != 0 || sl_idx == 0 ||
                  inter_layer_pred_ == InterLayerPredMode::kOff);
     }
 

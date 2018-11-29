@@ -151,7 +151,7 @@ TEST(SvcRateAllocatorTest, MinBitrateToGetQualityLayer) {
 
   const SpatialLayer* layers = codec.spatialLayers;
 
-  EXPECT_LE(codec.VP9()->numberOfSpatialLayers, 3U);
+  EXPECT_LE(codec.VP9()->numberOfSpatialLayers, 2U);
 
   VideoBitrateAllocation allocation =
       allocator.GetAllocation(layers[0].minBitrate * 1000, 30);
