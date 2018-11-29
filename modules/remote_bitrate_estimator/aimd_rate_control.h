@@ -14,13 +14,12 @@
 #include <stdint.h>
 
 #include "absl/types/optional.h"
-#include "modules/remote_bitrate_estimator/include/bwe_defines.h"
-
 #include "api/units/data_rate.h"
 #include "api/units/timestamp.h"
+#include "modules/congestion_controller/goog_cc/link_capacity_estimator.h"
+#include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 
 namespace webrtc {
-
 // A rate control implementation based on additive increases of
 // bitrate when no over-use is detected and multiplicative decreases when
 // over-uses are detected. When we think the available bandwidth has changes or
@@ -80,15 +79,13 @@ class AimdRateControl {
                                       DataRate current_bitrate) const;
   DataRate AdditiveRateIncrease(Timestamp at_time, Timestamp last_time) const;
   void UpdateChangePeriod(Timestamp at_time);
-  void UpdateLinkCapacityEstimate(double estimated_throughput_kbps);
   void ChangeState(const RateControlInput& input, Timestamp at_time);
 
   DataRate min_configured_bitrate_;
   DataRate max_configured_bitrate_;
   DataRate current_bitrate_;
   DataRate latest_estimated_throughput_;
-  absl::optional<double> link_capacity_estimate_kbps_;
-  double var_link_capacity_estimate_kbps_;
+  LinkCapacityEstimator link_capacity_;
   RateControlState rate_control_state_;
   Timestamp time_last_bitrate_change_;
   Timestamp time_last_bitrate_decrease_;

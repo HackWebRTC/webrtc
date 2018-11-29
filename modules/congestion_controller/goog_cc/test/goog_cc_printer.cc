@@ -43,8 +43,8 @@ void GoogCcStatePrinter::PrintValues(FILE* out) {
   auto* trendline_estimator = reinterpret_cast<TrendlineEstimator*>(detector);
   fprintf(out, "%i %f %i %.6lf %.6lf %.6lf",
           controller_->delay_based_bwe_->rate_control_.rate_control_state_,
-          controller_->delay_based_bwe_->rate_control_
-                  .link_capacity_estimate_kbps_.value_or(NAN) *
+          controller_->delay_based_bwe_->rate_control_.link_capacity_
+                  .estimate_kbps_.value_or(NAN) *
               1000 / 8,
           controller_->alr_detector_->alr_started_time_ms_.has_value(),
           trendline_estimator->prev_trend_,
