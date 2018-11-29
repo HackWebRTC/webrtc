@@ -301,6 +301,10 @@ std::string RtcEventLogEncoderLegacy::Encode(const RtcEvent& event) {
       return "";
     }
 
+    case RtcEvent::Type::DtlsWritableState: {
+      return "";
+    }
+
     case RtcEvent::Type::IceCandidatePairConfig: {
       auto& rtc_event =
           static_cast<const RtcEventIceCandidatePairConfig&>(event);

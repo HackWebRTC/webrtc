@@ -139,6 +139,17 @@ struct LoggedDtlsTransportState {
   DtlsTransportState dtls_transport_state;
 };
 
+struct LoggedDtlsWritableState {
+  LoggedDtlsWritableState() = default;
+  explicit LoggedDtlsWritableState(bool writable) : writable(writable) {}
+
+  int64_t log_time_us() const { return timestamp_us; }
+  int64_t log_time_ms() const { return timestamp_us / 1000; }
+
+  int64_t timestamp_us;
+  bool writable;
+};
+
 struct LoggedBweProbeClusterCreatedEvent {
   LoggedBweProbeClusterCreatedEvent() = default;
   LoggedBweProbeClusterCreatedEvent(int64_t timestamp_us,
@@ -769,6 +780,10 @@ class ParsedRtcEventLogNew {
     return bwe_loss_updates_;
   }
 
+  const std::vector<LoggedDtlsWritableState>& dtls_writable_states() const {
+    return dtls_writable_states_;
+  }
+
   const std::vector<LoggedAlrStateEvent>& alr_state_events() const {
     return alr_state_events_;
   }
@@ -941,6 +956,7 @@ class ParsedRtcEventLogNew {
   void StoreStopEvent(const rtclog2::EndLogEvent& proto);
   void StoreBweLossBasedUpdate(const rtclog2::LossBasedBweUpdates& proto);
   void StoreBweDelayBasedUpdate(const rtclog2::DelayBasedBweUpdates& proto);
+  void StoreDtlsWritableState(const rtclog2::DtlsWritableState& proto);
   void StoreAudioNetworkAdaptationEvent(
       const rtclog2::AudioNetworkAdaptations& proto);
   void StoreBweProbeClusterCreated(const rtclog2::BweProbeCluster& proto);
@@ -1043,6 +1059,7 @@ class ParsedRtcEventLogNew {
   std::vector<LoggedBweLossBasedUpdate> bwe_loss_updates_;
 
   std::vector<LoggedDtlsTransportState> dtls_transport_states_;
+  std::vector<LoggedDtlsWritableState> dtls_writable_states_;
 
   std::vector<LoggedAlrStateEvent> alr_state_events_;
 

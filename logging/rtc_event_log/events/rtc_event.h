@@ -38,6 +38,7 @@ class RtcEvent {
     BweUpdateDelayBased,
     BweUpdateLossBased,
     DtlsTransportState,
+    DtlsWritableState,
     IceCandidatePairConfig,
     IceCandidatePairEvent,
     ProbeClusterCreated,

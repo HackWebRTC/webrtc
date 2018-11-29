@@ -23,6 +23,7 @@
 #include "logging/rtc_event_log/events/rtc_event_bwe_update_delay_based.h"
 #include "logging/rtc_event_log/events/rtc_event_bwe_update_loss_based.h"
 #include "logging/rtc_event_log/events/rtc_event_dtls_transport_state.h"
+#include "logging/rtc_event_log/events/rtc_event_dtls_writable_state.h"
 #include "logging/rtc_event_log/events/rtc_event_ice_candidate_pair.h"
 #include "logging/rtc_event_log/events/rtc_event_ice_candidate_pair_config.h"
 #include "logging/rtc_event_log/events/rtc_event_probe_cluster_created.h"
@@ -670,6 +671,7 @@ std::string RtcEventLogEncoderNewFormat::EncodeBatch(
     std::vector<const RtcEventBweUpdateDelayBased*> bwe_delay_based_updates;
     std::vector<const RtcEventBweUpdateLossBased*> bwe_loss_based_updates;
     std::vector<const RtcEventDtlsTransportState*> dtls_transport_states;
+    std::vector<const RtcEventDtlsWritableState*> dtls_writable_states;
     std::vector<const RtcEventProbeClusterCreated*>
         probe_cluster_created_events;
     std::vector<const RtcEventProbeResultFailure*> probe_result_failure_events;
@@ -737,6 +739,12 @@ std::string RtcEventLogEncoderNewFormat::EncodeBatch(
           auto* rtc_event =
               static_cast<const RtcEventDtlsTransportState* const>(it->get());
           dtls_transport_states.push_back(rtc_event);
+          break;
+        }
+        case RtcEvent::Type::DtlsWritableState: {
+          auto* rtc_event =
+              static_cast<const RtcEventDtlsWritableState* const>(it->get());
+          dtls_writable_states.push_back(rtc_event);
           break;
         }
         case RtcEvent::Type::ProbeClusterCreated: {
@@ -822,6 +830,7 @@ std::string RtcEventLogEncoderNewFormat::EncodeBatch(
     EncodeBweUpdateDelayBased(bwe_delay_based_updates, &event_stream);
     EncodeBweUpdateLossBased(bwe_loss_based_updates, &event_stream);
     EncodeDtlsTransportState(dtls_transport_states, &event_stream);
+    EncodeDtlsWritableState(dtls_writable_states, &event_stream);
     EncodeProbeClusterCreated(probe_cluster_created_events, &event_stream);
     EncodeProbeResultFailure(probe_result_failure_events, &event_stream);
     EncodeProbeResultSuccess(probe_result_success_events, &event_stream);
@@ -1210,6 +1219,17 @@ void RtcEventLogEncoderNewFormat::EncodeDtlsTransportState(
     proto_batch->set_timestamp_ms(base_event->timestamp_ms());
     proto_batch->set_dtls_transport_state(
         ConvertToProtoFormat(base_event->dtls_transport_state()));
+  }
+}
+
+void RtcEventLogEncoderNewFormat::EncodeDtlsWritableState(
+    rtc::ArrayView<const RtcEventDtlsWritableState*> batch,
+    rtclog2::EventStream* event_stream) {
+  for (const RtcEventDtlsWritableState* base_event : batch) {
+    rtclog2::DtlsWritableState* proto_batch =
+        event_stream->add_dtls_writable_states();
+    proto_batch->set_timestamp_ms(base_event->timestamp_ms());
+    proto_batch->set_writable(base_event->writable());
   }
 }
 

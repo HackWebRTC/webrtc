@@ -33,6 +33,7 @@ message EventStream {
   repeated IceCandidatePairConfig ice_candidate_configs = 25;
   repeated IceCandidatePairEvent ice_candidate_events = 26;
   repeated DtlsTransportStateEvent dtls_transport_state_events = 27;
+  repeated DtlsWritableState dtls_writable_states = 28;
 
   repeated AudioRecvStreamConfig audio_recv_stream_configs = 101;
   repeated AudioSendStreamConfig audio_send_stream_configs = 102;
@@ -588,4 +589,12 @@ message DtlsTransportStateEvent {
 
   // required
   optional DtlsTransportState dtls_transport_state = 2;
+}
+
+message DtlsWritableState {
+  // required
+  optional int64 timestamp_ms = 1;
+
+  // required
+  optional bool writable = 2;
 }
