@@ -78,12 +78,18 @@ constexpr double kProbeUncertainty = 0.05;
 constexpr char kBweRapidRecoveryExperiment[] =
     "WebRTC-BweRapidRecoveryExperiment";
 
+// Never probe higher than configured by OnMaxTotalAllocatedBitrate().
+constexpr char kCappedProbingFieldTrialName[] = "WebRTC-BweCappedProbing";
+
 }  // namespace
 
-ProbeController::ProbeController() : enable_periodic_alr_probing_(false) {
+ProbeController::ProbeController()
+    : enable_periodic_alr_probing_(false),
+      in_rapid_recovery_experiment_(
+          webrtc::field_trial::IsEnabled(kBweRapidRecoveryExperiment)),
+      limit_probes_with_allocateable_rate_(
+          !webrtc::field_trial::IsDisabled(kCappedProbingFieldTrialName)) {
   Reset(0);
-  in_rapid_recovery_experiment_ = webrtc::field_trial::FindFullName(
-                                      kBweRapidRecoveryExperiment) == "Enabled";
 }
 
 ProbeController::~ProbeController() {}
@@ -141,8 +147,6 @@ std::vector<ProbeClusterConfig> ProbeController::SetBitrates(
 std::vector<ProbeClusterConfig> ProbeController::OnMaxTotalAllocatedBitrate(
     int64_t max_total_allocated_bitrate,
     int64_t at_time_ms) {
-  // TODO(philipel): Should |max_total_allocated_bitrate| be used as a limit for
-  //                 ALR probing?
   if (state_ == State::kProbingComplete &&
       max_total_allocated_bitrate != max_total_allocated_bitrate_ &&
       estimated_bitrate_bps_ != 0 &&
@@ -330,6 +334,11 @@ std::vector<ProbeClusterConfig> ProbeController::InitiateProbing(
     RTC_DCHECK_GT(bitrate, 0);
     int64_t max_probe_bitrate_bps =
         max_bitrate_bps_ > 0 ? max_bitrate_bps_ : kDefaultMaxProbingBitrateBps;
+    if (limit_probes_with_allocateable_rate_ &&
+        max_total_allocated_bitrate_ > 0) {
+      max_probe_bitrate_bps =
+          std::min(max_probe_bitrate_bps, max_total_allocated_bitrate_);
+    }
     if (bitrate > max_probe_bitrate_bps) {
       bitrate = max_probe_bitrate_bps;
       probe_further = false;

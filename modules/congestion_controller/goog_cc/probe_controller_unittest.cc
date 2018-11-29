@@ -263,5 +263,40 @@ TEST_F(ProbeControllerTest, TestExponentialProbingOverflow) {
   EXPECT_EQ(probes.size(), 0u);
 }
 
+TEST_F(ProbeControllerTest, TestAllocatedBitrateCap) {
+  const int64_t kMbpsMultiplier = 1000000;
+  auto probes = probe_controller_->SetBitrates(
+      kMinBitrateBps, 10 * kMbpsMultiplier, 100 * kMbpsMultiplier, NowMs());
+
+  // Configure ALR for periodic probing.
+  probe_controller_->EnablePeriodicAlrProbing(true);
+  int64_t alr_start_time = clock_.TimeInMilliseconds();
+  probe_controller_->SetAlrStartTimeMs(alr_start_time);
+
+  // Verify that probe bitrate is capped at the specified max bitrate.
+  probes =
+      probe_controller_->SetEstimatedBitrate(60 * kMbpsMultiplier, NowMs());
+  EXPECT_EQ(probes[0].target_data_rate.bps(), 100 * kMbpsMultiplier);
+
+  // Set a max allocated bitrate below the current max.
+  probes = probe_controller_->OnMaxTotalAllocatedBitrate(1 * kMbpsMultiplier,
+                                                         NowMs());
+  EXPECT_TRUE(probes.empty());  // No probe since lower than current max.
+
+  // Other probes, such as ALR, such also be capped at the same limit.
+  clock_.AdvanceTimeMilliseconds(5000);
+  probes = probe_controller_->Process(NowMs());
+  EXPECT_EQ(probes[0].target_data_rate.bps(), 1 * kMbpsMultiplier);
+
+  // Advance time and configure remove allocated bitrate limit.
+  EXPECT_TRUE(
+      probe_controller_->OnMaxTotalAllocatedBitrate(0, NowMs()).empty());
+
+  // New ALR probes use previous limits.
+  clock_.AdvanceTimeMilliseconds(5000);
+  probes = probe_controller_->Process(NowMs());
+  EXPECT_EQ(probes[0].target_data_rate.bps(), 100 * kMbpsMultiplier);
+}
+
 }  // namespace test
 }  // namespace webrtc
