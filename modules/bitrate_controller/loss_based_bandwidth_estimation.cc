@@ -156,9 +156,9 @@ void LossBasedBandwidthEstimation::UpdateAcknowledgedBitrate(
   if (acknowledged_bitrate > acknowledged_bitrate_max_) {
     acknowledged_bitrate_max_ = acknowledged_bitrate;
   } else {
-    acknowledged_bitrate_max_ +=
+    acknowledged_bitrate_max_ -=
         ExponentialUpdate(config_.acknowledged_rate_max_window, time_passed) *
-        (acknowledged_bitrate - acknowledged_bitrate_max_);
+        (acknowledged_bitrate_max_ - acknowledged_bitrate);
   }
 }
 

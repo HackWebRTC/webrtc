@@ -229,7 +229,8 @@ bool SimulatedFeedback::TryDeliverPacket(rtc::CopyOnWriteBuffer packet,
                                                     it->second});
         receive_times_.erase(it);
       }
-      if (receive_times_.size() >= RawFeedbackReportPacket::MAX_FEEDBACKS) {
+      if (report.receive_times.size() >=
+          RawFeedbackReportPacket::MAX_FEEDBACKS) {
         return_node_->TryDeliverPacket(FeedbackToBuffer(report),
                                        return_receiver_id_, at_time);
         report = SimpleFeedbackReportPacket();
