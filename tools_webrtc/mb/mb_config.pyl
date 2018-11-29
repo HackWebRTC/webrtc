@@ -351,7 +351,8 @@
       'win_fastlink',
     ],
     'win_uwp_release_bot_x64': [
-      'gn', 'clang', 'openh264', 'release_bot', 'x64', 'winuwp',
+      # UWP passes compiler flags that are not supported by goma.
+      'gn', 'clang', 'openh264', 'x64', 'winuwp', 'release_bot_no_goma'
     ],
 
     # Mac
@@ -546,6 +547,10 @@
 
     'release_bot': {
       'mixins': ['pure_release_bot', 'dcheck_always_on'],
+    },
+
+    'release_bot_no_goma': {
+      'mixins': ['release', 'dcheck_always_on'],
     },
 
     'tsan': {
