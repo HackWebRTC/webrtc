@@ -352,7 +352,7 @@
     ],
     'win_uwp_release_bot_x64': [
       # UWP passes compiler flags that are not supported by goma.
-      'gn', 'clang', 'openh264', 'x64', 'winuwp', 'release_bot_no_goma'
+      'gn', 'no_clang', 'openh264', 'x64', 'winuwp', 'release_bot_no_goma'
     ],
 
     # Mac
@@ -500,6 +500,10 @@
       'gn_args': 'use_goma=true',
     },
 
+    'no_goma': {
+      'gn_args': 'use_goma=false',
+    },
+
     'libfuzzer': {
       'gn_args': 'use_libfuzzer=true',
     },
@@ -550,7 +554,7 @@
     },
 
     'release_bot_no_goma': {
-      'mixins': ['release', 'dcheck_always_on'],
+      'mixins': ['release', 'no_goma', 'dcheck_always_on'],
     },
 
     'tsan': {
