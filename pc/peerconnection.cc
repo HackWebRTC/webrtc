@@ -5212,6 +5212,8 @@ cricket::IceConfig PeerConnection::ParseIceConfig(
   ice_config.ice_check_interval_weak_connectivity =
       config.ice_check_interval_weak_connectivity;
   ice_config.ice_check_min_interval = config.ice_check_min_interval;
+  ice_config.ice_unwritable_timeout = config.ice_unwritable_timeout;
+  ice_config.ice_unwritable_min_checks = config.ice_unwritable_min_checks;
   ice_config.stun_keepalive_interval = config.stun_candidate_keepalive_interval;
   ice_config.regather_all_networks_interval_range =
       config.ice_regather_interval_range;
