@@ -21,10 +21,6 @@
 #include "rtc_base/asyncpacketsocket.h"
 
 // TODO(mallinath) - Rename stunport.cc|h to udpport.cc|h.
-namespace rtc {
-class AsyncResolver;
-class SignalThread;
-}
 
 namespace cricket {
 

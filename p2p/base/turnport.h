@@ -26,11 +26,6 @@
 #include "rtc_base/asyncpacketsocket.h"
 #include "rtc_base/sslcertificate.h"
 
-namespace rtc {
-class AsyncResolver;
-class SignalThread;
-}
-
 namespace webrtc {
 class TurnCustomizer;
 }
