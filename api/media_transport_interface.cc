@@ -124,6 +124,7 @@ void MediaTransportEncodedVideoFrame::Retain() {
 }
 
 SendDataParams::SendDataParams() = default;
+SendDataParams::SendDataParams(const SendDataParams&) = default;
 
 RTCErrorOr<std::unique_ptr<MediaTransportInterface>>
 MediaTransportFactory::CreateMediaTransport(

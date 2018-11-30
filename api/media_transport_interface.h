@@ -268,6 +268,7 @@ enum class DataMessageType {
 // unreliable delivery.
 struct SendDataParams {
   SendDataParams();
+  SendDataParams(const SendDataParams&);
 
   DataMessageType type = DataMessageType::kText;
 

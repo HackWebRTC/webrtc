@@ -23,69 +23,15 @@
 namespace webrtc {
 
 // Wrapper used to hand out unique_ptrs to loopback media transports without
-// ownership changes.
-class WrapperMediaTransport : public MediaTransportInterface {
- public:
-  explicit WrapperMediaTransport(MediaTransportInterface* wrapped)
-      : wrapped_(wrapped) {}
-
-  RTCError SendAudioFrame(uint64_t channel_id,
-                          MediaTransportEncodedAudioFrame frame) override {
-    return wrapped_->SendAudioFrame(channel_id, std::move(frame));
-  }
-
-  RTCError SendVideoFrame(
-      uint64_t channel_id,
-      const MediaTransportEncodedVideoFrame& frame) override {
-    return wrapped_->SendVideoFrame(channel_id, frame);
-  }
-
-  RTCError RequestKeyFrame(uint64_t channel_id) override {
-    return wrapped_->RequestKeyFrame(channel_id);
-  }
-
-  void SetReceiveAudioSink(MediaTransportAudioSinkInterface* sink) override {
-    wrapped_->SetReceiveAudioSink(sink);
-  }
-
-  void SetReceiveVideoSink(MediaTransportVideoSinkInterface* sink) override {
-    wrapped_->SetReceiveVideoSink(sink);
-  }
-
-  void SetMediaTransportStateCallback(
-      MediaTransportStateCallback* callback) override {
-    wrapped_->SetMediaTransportStateCallback(callback);
-  }
-
-  RTCError SendData(int channel_id,
-                    const SendDataParams& params,
-                    const rtc::CopyOnWriteBuffer& buffer) override {
-    return wrapped_->SendData(channel_id, params, buffer);
-  }
-
-  RTCError CloseChannel(int channel_id) override {
-    return wrapped_->CloseChannel(channel_id);
-  }
-
-  void SetDataSink(DataChannelSink* sink) override {
-    wrapped_->SetDataSink(sink);
-  }
-
- private:
-  MediaTransportInterface* wrapped_;
-};
-
+// ownership changes to the underlying transport.
 class WrapperMediaTransportFactory : public MediaTransportFactory {
  public:
-  explicit WrapperMediaTransportFactory(MediaTransportInterface* wrapped)
-      : wrapped_(wrapped) {}
+  explicit WrapperMediaTransportFactory(MediaTransportInterface* wrapped);
 
   RTCErrorOr<std::unique_ptr<MediaTransportInterface>> CreateMediaTransport(
       rtc::PacketTransportInternal* packet_transport,
       rtc::Thread* network_thread,
-      const MediaTransportSettings& settings) override {
-    return {absl::make_unique<WrapperMediaTransport>(wrapped_)};
-  }
+      const MediaTransportSettings& settings) override;
 
  private:
   MediaTransportInterface* wrapped_;
@@ -133,167 +79,52 @@ class MediaTransportPair {
  private:
   class LoopbackMediaTransport : public MediaTransportInterface {
    public:
-    LoopbackMediaTransport(rtc::Thread* thread, LoopbackMediaTransport* other)
-        : thread_(thread), other_(other) {}
+    LoopbackMediaTransport(rtc::Thread* thread, LoopbackMediaTransport* other);
 
-    ~LoopbackMediaTransport() {
-      rtc::CritScope lock(&sink_lock_);
-      RTC_CHECK(audio_sink_ == nullptr);
-      RTC_CHECK(video_sink_ == nullptr);
-      RTC_CHECK(data_sink_ == nullptr);
-    }
+    ~LoopbackMediaTransport() override;
 
     RTCError SendAudioFrame(uint64_t channel_id,
-                            MediaTransportEncodedAudioFrame frame) override {
-      {
-        rtc::CritScope lock(&stats_lock_);
-        ++stats_.sent_audio_frames;
-      }
-      invoker_.AsyncInvoke<void>(RTC_FROM_HERE, thread_,
-                                 [this, channel_id, frame] {
-                                   other_->OnData(channel_id, std::move(frame));
-                                 });
-      return RTCError::OK();
-    };
+                            MediaTransportEncodedAudioFrame frame) override;
 
     RTCError SendVideoFrame(
         uint64_t channel_id,
-        const MediaTransportEncodedVideoFrame& frame) override {
-      {
-        rtc::CritScope lock(&stats_lock_);
-        ++stats_.sent_video_frames;
-      }
-      // Ensure that we own the referenced data.
-      MediaTransportEncodedVideoFrame frame_copy = frame;
-      frame_copy.Retain();
-      invoker_.AsyncInvoke<void>(
-          RTC_FROM_HERE, thread_, [this, channel_id, frame_copy] {
-            other_->OnData(channel_id, std::move(frame_copy));
-          });
-      return RTCError::OK();
-    }
+        const MediaTransportEncodedVideoFrame& frame) override;
 
-    RTCError RequestKeyFrame(uint64_t channel_id) override {
-      return RTCError::OK();
-    }
+    RTCError RequestKeyFrame(uint64_t channel_id) override;
 
-    void SetReceiveAudioSink(MediaTransportAudioSinkInterface* sink) override {
-      rtc::CritScope lock(&sink_lock_);
-      if (sink) {
-        RTC_CHECK(audio_sink_ == nullptr);
-      }
-      audio_sink_ = sink;
-    }
+    void SetReceiveAudioSink(MediaTransportAudioSinkInterface* sink) override;
 
-    void SetReceiveVideoSink(MediaTransportVideoSinkInterface* sink) override {
-      rtc::CritScope lock(&sink_lock_);
-      if (sink) {
-        RTC_CHECK(video_sink_ == nullptr);
-      }
-      video_sink_ = sink;
-    }
+    void SetReceiveVideoSink(MediaTransportVideoSinkInterface* sink) override;
 
     void SetMediaTransportStateCallback(
-        MediaTransportStateCallback* callback) override {
-      rtc::CritScope lock(&sink_lock_);
-      state_callback_ = callback;
-      invoker_.AsyncInvoke<void>(RTC_FROM_HERE, thread_, [this] {
-        RTC_DCHECK_RUN_ON(thread_);
-        OnStateChanged();
-      });
-    }
+        MediaTransportStateCallback* callback) override;
 
     RTCError SendData(int channel_id,
                       const SendDataParams& params,
-                      const rtc::CopyOnWriteBuffer& buffer) override {
-      invoker_.AsyncInvoke<void>(
-          RTC_FROM_HERE, thread_, [this, channel_id, params, buffer] {
-            other_->OnData(channel_id, params.type, buffer);
-          });
-      return RTCError::OK();
-    }
+                      const rtc::CopyOnWriteBuffer& buffer) override;
 
-    RTCError CloseChannel(int channel_id) override {
-      invoker_.AsyncInvoke<void>(RTC_FROM_HERE, thread_, [this, channel_id] {
-        other_->OnRemoteCloseChannel(channel_id);
-        rtc::CritScope lock(&sink_lock_);
-        if (data_sink_) {
-          data_sink_->OnChannelClosed(channel_id);
-        }
-      });
-      return RTCError::OK();
-    }
+    RTCError CloseChannel(int channel_id) override;
 
-    void SetDataSink(DataChannelSink* sink) override {
-      rtc::CritScope lock(&sink_lock_);
-      data_sink_ = sink;
-    }
+    void SetDataSink(DataChannelSink* sink) override;
 
-    void SetState(MediaTransportState state) {
-      invoker_.AsyncInvoke<void>(RTC_FROM_HERE, thread_, [this, state] {
-        RTC_DCHECK_RUN_ON(thread_);
-        state_ = state;
-        OnStateChanged();
-      });
-    }
+    void SetState(MediaTransportState state);
 
-    void FlushAsyncInvokes() { invoker_.Flush(thread_); }
+    void FlushAsyncInvokes();
 
-    Stats GetStats() {
-      rtc::CritScope lock(&stats_lock_);
-      return stats_;
-    }
+    Stats GetStats();
 
    private:
-    void OnData(uint64_t channel_id, MediaTransportEncodedAudioFrame frame) {
-      {
-        rtc::CritScope lock(&sink_lock_);
-        if (audio_sink_) {
-          audio_sink_->OnData(channel_id, frame);
-        }
-      }
-      {
-        rtc::CritScope lock(&stats_lock_);
-        ++stats_.received_audio_frames;
-      }
-    }
+    void OnData(uint64_t channel_id, MediaTransportEncodedAudioFrame frame);
 
-    void OnData(uint64_t channel_id, MediaTransportEncodedVideoFrame frame) {
-      {
-        rtc::CritScope lock(&sink_lock_);
-        if (video_sink_) {
-          video_sink_->OnData(channel_id, frame);
-        }
-      }
-      {
-        rtc::CritScope lock(&stats_lock_);
-        ++stats_.received_video_frames;
-      }
-    }
+    void OnData(uint64_t channel_id, MediaTransportEncodedVideoFrame frame);
 
     void OnData(int channel_id,
                 DataMessageType type,
-                const rtc::CopyOnWriteBuffer& buffer) {
-      rtc::CritScope lock(&sink_lock_);
-      if (data_sink_) {
-        data_sink_->OnDataReceived(channel_id, type, buffer);
-      }
-    }
+                const rtc::CopyOnWriteBuffer& buffer);
 
-    void OnRemoteCloseChannel(int channel_id) {
-      rtc::CritScope lock(&sink_lock_);
-      if (data_sink_) {
-        data_sink_->OnChannelClosing(channel_id);
-        data_sink_->OnChannelClosed(channel_id);
-      }
-    }
+    void OnRemoteCloseChannel(int channel_id);
 
-    void OnStateChanged() RTC_RUN_ON(thread_) {
-      rtc::CritScope lock(&sink_lock_);
-      if (state_callback_) {
-        state_callback_->OnStateChanged(state_);
-      }
-    }
+    void OnStateChanged() RTC_RUN_ON(thread_);
 
     rtc::Thread* const thread_;
     rtc::CriticalSection sink_lock_;

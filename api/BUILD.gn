@@ -648,6 +648,7 @@ if (rtc_include_tests) {
     testonly = true
 
     sources = [
+      "test/loopback_media_transport.cc",
       "test/loopback_media_transport.h",
     ]
 
@@ -655,6 +656,7 @@ if (rtc_include_tests) {
       ":libjingle_peerconnection_api",
       "../rtc_base:checks",
       "../rtc_base:rtc_base",
+      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 
