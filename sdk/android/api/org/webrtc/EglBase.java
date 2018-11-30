@@ -22,8 +22,10 @@ import javax.microedition.khronos.egl.EGL10;
 public interface EglBase {
   // EGL wrapper for an actual EGLContext.
   public interface Context {
+    public final static long NO_CONTEXT = 0;
+
     /**
-     * Returns an EGL context that can be used by native code. Returns 0 if the method is
+     * Returns an EGL context that can be used by native code. Returns NO_CONTEXT if the method is
      * unsupported.
      *
      * @note This is currently only supported for EGL 1.4 and not for EGL 1.0.
