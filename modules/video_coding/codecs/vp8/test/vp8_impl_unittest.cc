@@ -77,7 +77,10 @@ class TestVp8Impl : public VideoCodecUnitTest {
               encoder_->Encode(input_frame, nullptr, &frame_types));
     ASSERT_TRUE(WaitForEncodedFrame(encoded_frame, codec_specific_info));
     VerifyQpParser(*encoded_frame);
-    EXPECT_EQ("libvpx", encoder_->GetEncoderInfo().implementation_name);
+    VideoEncoder::EncoderInfo encoder_info = encoder_->GetEncoderInfo();
+    EXPECT_EQ("libvpx", encoder_info.implementation_name);
+    EXPECT_EQ(false, encoder_info.is_hardware_accelerated);
+    EXPECT_EQ(false, encoder_info.has_internal_source);
     EXPECT_EQ(kVideoCodecVP8, codec_specific_info->codecType);
     EXPECT_EQ(0, encoded_frame->SpatialIndex());
   }

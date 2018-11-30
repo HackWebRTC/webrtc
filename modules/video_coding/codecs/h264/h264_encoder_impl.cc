@@ -627,6 +627,8 @@ VideoEncoder::EncoderInfo H264EncoderImpl::GetEncoderInfo() const {
   info.implementation_name = "OpenH264";
   info.scaling_settings =
       VideoEncoder::ScalingSettings(kLowH264QpThreshold, kHighH264QpThreshold);
+  info.is_hardware_accelerated = false;
+  info.has_internal_source = false;
   return info;
 }
 

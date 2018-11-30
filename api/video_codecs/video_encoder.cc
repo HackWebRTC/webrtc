@@ -87,7 +87,11 @@ VideoEncoder::EncoderInfo::EncoderInfo()
     : scaling_settings(VideoEncoder::ScalingSettings::kOff),
       supports_native_handle(false),
       implementation_name("unknown"),
-      has_trusted_rate_controller(false) {}
+      has_trusted_rate_controller(false),
+      is_hardware_accelerated(false),
+      has_internal_source(false) {}
+
+VideoEncoder::EncoderInfo::EncoderInfo(const EncoderInfo&) = default;
 
 VideoEncoder::EncoderInfo::~EncoderInfo() = default;
 

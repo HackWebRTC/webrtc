@@ -50,9 +50,24 @@ const int kDefaultMinPixelsPerFrame = 320 * 180;
 const int kLowThreshold = 10;
 const int kHighThreshold = 20;
 
-VideoEncoder::EncoderInfo GetEncoderInfo(bool trusted_rate_controller) {
+VideoEncoder::EncoderInfo GetEncoderInfoWithTrustedRateController(
+    bool trusted_rate_controller) {
   VideoEncoder::EncoderInfo info;
   info.has_trusted_rate_controller = trusted_rate_controller;
+  return info;
+}
+
+VideoEncoder::EncoderInfo GetEncoderInfoWithHardwareAccelerated(
+    bool hardware_accelerated) {
+  VideoEncoder::EncoderInfo info;
+  info.is_hardware_accelerated = hardware_accelerated;
+  return info;
+}
+
+VideoEncoder::EncoderInfo GetEncoderInfoWithInternalSource(
+    bool internal_source) {
+  VideoEncoder::EncoderInfo info;
+  info.has_internal_source = internal_source;
   return info;
 }
 }  // namespace
@@ -539,9 +554,9 @@ TEST(SoftwareFallbackEncoderTest, BothRateControllersNotTrusted) {
   auto* hw_encoder = new testing::NiceMock<MockVideoEncoder>();
 
   EXPECT_CALL(*sw_encoder, GetEncoderInfo())
-      .WillRepeatedly(Return(GetEncoderInfo(false)));
+      .WillRepeatedly(Return(GetEncoderInfoWithTrustedRateController(false)));
   EXPECT_CALL(*hw_encoder, GetEncoderInfo())
-      .WillRepeatedly(Return(GetEncoderInfo(false)));
+      .WillRepeatedly(Return(GetEncoderInfoWithTrustedRateController(false)));
 
   std::unique_ptr<VideoEncoder> wrapper =
       CreateVideoEncoderSoftwareFallbackWrapper(
@@ -554,9 +569,9 @@ TEST(SoftwareFallbackEncoderTest, SwRateControllerTrusted) {
   auto* sw_encoder = new testing::NiceMock<MockVideoEncoder>();
   auto* hw_encoder = new testing::NiceMock<MockVideoEncoder>();
   EXPECT_CALL(*sw_encoder, GetEncoderInfo())
-      .WillRepeatedly(Return(GetEncoderInfo(true)));
+      .WillRepeatedly(Return(GetEncoderInfoWithTrustedRateController(true)));
   EXPECT_CALL(*hw_encoder, GetEncoderInfo())
-      .WillRepeatedly(Return(GetEncoderInfo(false)));
+      .WillRepeatedly(Return(GetEncoderInfoWithTrustedRateController(false)));
 
   std::unique_ptr<VideoEncoder> wrapper =
       CreateVideoEncoderSoftwareFallbackWrapper(
@@ -569,9 +584,9 @@ TEST(SoftwareFallbackEncoderTest, HwRateControllerTrusted) {
   auto* sw_encoder = new testing::NiceMock<MockVideoEncoder>();
   auto* hw_encoder = new testing::NiceMock<MockVideoEncoder>();
   EXPECT_CALL(*sw_encoder, GetEncoderInfo())
-      .WillRepeatedly(Return(GetEncoderInfo(false)));
+      .WillRepeatedly(Return(GetEncoderInfoWithTrustedRateController(false)));
   EXPECT_CALL(*hw_encoder, GetEncoderInfo())
-      .WillRepeatedly(Return(GetEncoderInfo(true)));
+      .WillRepeatedly(Return(GetEncoderInfoWithTrustedRateController(true)));
 
   std::unique_ptr<VideoEncoder> wrapper =
       CreateVideoEncoderSoftwareFallbackWrapper(
@@ -592,15 +607,59 @@ TEST(SoftwareFallbackEncoderTest, BothRateControllersTrusted) {
   auto* sw_encoder = new testing::NiceMock<MockVideoEncoder>();
   auto* hw_encoder = new testing::NiceMock<MockVideoEncoder>();
   EXPECT_CALL(*sw_encoder, GetEncoderInfo())
-      .WillRepeatedly(Return(GetEncoderInfo(true)));
+      .WillRepeatedly(Return(GetEncoderInfoWithTrustedRateController(true)));
   EXPECT_CALL(*hw_encoder, GetEncoderInfo())
-      .WillRepeatedly(Return(GetEncoderInfo(true)));
+      .WillRepeatedly(Return(GetEncoderInfoWithTrustedRateController(true)));
 
   std::unique_ptr<VideoEncoder> wrapper =
       CreateVideoEncoderSoftwareFallbackWrapper(
           std::unique_ptr<VideoEncoder>(sw_encoder),
           std::unique_ptr<VideoEncoder>(hw_encoder));
   EXPECT_TRUE(wrapper->GetEncoderInfo().has_trusted_rate_controller);
+}
+
+TEST(SoftwareFallbackEncoderTest, ReportsHardwareAccelerated) {
+  auto* sw_encoder = new testing::NiceMock<MockVideoEncoder>();
+  auto* hw_encoder = new testing::NiceMock<MockVideoEncoder>();
+  EXPECT_CALL(*sw_encoder, GetEncoderInfo())
+      .WillRepeatedly(Return(GetEncoderInfoWithHardwareAccelerated(false)));
+  EXPECT_CALL(*hw_encoder, GetEncoderInfo())
+      .WillRepeatedly(Return(GetEncoderInfoWithHardwareAccelerated(true)));
+
+  std::unique_ptr<VideoEncoder> wrapper =
+      CreateVideoEncoderSoftwareFallbackWrapper(
+          std::unique_ptr<VideoEncoder>(sw_encoder),
+          std::unique_ptr<VideoEncoder>(hw_encoder));
+  EXPECT_TRUE(wrapper->GetEncoderInfo().is_hardware_accelerated);
+
+  // Trigger fallback to software.
+  EXPECT_CALL(*hw_encoder, Encode)
+      .WillOnce(Return(WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE));
+  VideoFrame frame = VideoFrame::Builder().build();
+  wrapper->Encode(frame, nullptr, nullptr);
+  EXPECT_FALSE(wrapper->GetEncoderInfo().is_hardware_accelerated);
+}
+
+TEST(SoftwareFallbackEncoderTest, ReportsInternalSource) {
+  auto* sw_encoder = new testing::NiceMock<MockVideoEncoder>();
+  auto* hw_encoder = new testing::NiceMock<MockVideoEncoder>();
+  EXPECT_CALL(*sw_encoder, GetEncoderInfo())
+      .WillRepeatedly(Return(GetEncoderInfoWithInternalSource(false)));
+  EXPECT_CALL(*hw_encoder, GetEncoderInfo())
+      .WillRepeatedly(Return(GetEncoderInfoWithInternalSource(true)));
+
+  std::unique_ptr<VideoEncoder> wrapper =
+      CreateVideoEncoderSoftwareFallbackWrapper(
+          std::unique_ptr<VideoEncoder>(sw_encoder),
+          std::unique_ptr<VideoEncoder>(hw_encoder));
+  EXPECT_TRUE(wrapper->GetEncoderInfo().has_internal_source);
+
+  // Trigger fallback to software.
+  EXPECT_CALL(*hw_encoder, Encode)
+      .WillOnce(Return(WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE));
+  VideoFrame frame = VideoFrame::Builder().build();
+  wrapper->Encode(frame, nullptr, nullptr);
+  EXPECT_FALSE(wrapper->GetEncoderInfo().has_internal_source);
 }
 
 }  // namespace webrtc

@@ -116,6 +116,14 @@ int MultiplexEncoderAdapter::InitEncode(const VideoCodec* inst,
     if (i != kAlphaCodecStreams - 1) {
       encoder_info_.implementation_name += ", ";
     }
+    if (i == 0) {
+      encoder_info_.is_hardware_accelerated =
+          encoder_impl_info.is_hardware_accelerated;
+    } else {
+      encoder_info_.is_hardware_accelerated &=
+          encoder_impl_info.is_hardware_accelerated;
+    }
+    encoder_info_.has_internal_source = false;
 
     encoders_.emplace_back(std::move(encoder));
   }

@@ -98,6 +98,9 @@ class ObjCVideoEncoder : public VideoEncoder {
     RTCVideoEncoderQpThresholds *qp_thresholds = [encoder_ scalingSettings];
     info.scaling_settings = qp_thresholds ? ScalingSettings(qp_thresholds.low, qp_thresholds.high) :
                                             ScalingSettings::kOff;
+
+    info.is_hardware_accelerated = true;
+    info.has_internal_source = false;
     return info;
   }
 

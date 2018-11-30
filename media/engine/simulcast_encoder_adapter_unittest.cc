@@ -217,6 +217,8 @@ class MockVideoEncoder : public VideoEncoder {
     info.implementation_name = implementation_name_;
     info.scaling_settings = scaling_settings_;
     info.has_trusted_rate_controller = has_trusted_rate_controller_;
+    info.is_hardware_accelerated = is_hardware_accelerated_;
+    info.has_internal_source = has_internal_source_;
     return info;
   }
 
@@ -255,6 +257,14 @@ class MockVideoEncoder : public VideoEncoder {
     has_trusted_rate_controller_ = trusted;
   }
 
+  void set_is_hardware_accelerated(bool is_hardware_accelerated) {
+    is_hardware_accelerated_ = is_hardware_accelerated;
+  }
+
+  void set_has_internal_source(bool has_internal_source) {
+    has_internal_source_ = has_internal_source;
+  }
+
   VideoBitrateAllocation last_set_bitrate() const { return last_set_bitrate_; }
 
  private:
@@ -263,6 +273,8 @@ class MockVideoEncoder : public VideoEncoder {
   std::string implementation_name_ = "unknown";
   VideoEncoder::ScalingSettings scaling_settings_;
   bool has_trusted_rate_controller_ = false;
+  bool is_hardware_accelerated_ = false;
+  bool has_internal_source_ = false;
   int32_t init_encode_return_value_ = 0;
   VideoBitrateAllocation last_set_bitrate_;
 
@@ -1003,6 +1015,50 @@ TEST_F(TestSimulcastEncoderAdapterFake, TrustedRateControl) {
   original_encoders[1]->set_has_trusted_rate_controller(false);
   EXPECT_EQ(0, adapter_->InitEncode(&codec_, 1, 1200));
   EXPECT_FALSE(adapter_->GetEncoderInfo().has_trusted_rate_controller);
+}
+
+TEST_F(TestSimulcastEncoderAdapterFake, ReportsHardwareAccelerated) {
+  SimulcastTestFixtureImpl::DefaultSettings(
+      &codec_, static_cast<const int*>(kTestTemporalLayerProfile),
+      kVideoCodecVP8);
+  codec_.numberOfSimulcastStreams = 3;
+  adapter_->RegisterEncodeCompleteCallback(this);
+  EXPECT_EQ(0, adapter_->InitEncode(&codec_, 1, 1200));
+  ASSERT_EQ(3u, helper_->factory()->encoders().size());
+
+  // None of the encoders uses HW support, so simulcast adapter reports false.
+  for (MockVideoEncoder* encoder : helper_->factory()->encoders()) {
+    encoder->set_is_hardware_accelerated(false);
+  }
+  EXPECT_EQ(0, adapter_->InitEncode(&codec_, 1, 1200));
+  EXPECT_FALSE(adapter_->GetEncoderInfo().is_hardware_accelerated);
+
+  // One encoder uses HW support, so simulcast adapter reports true.
+  helper_->factory()->encoders()[2]->set_is_hardware_accelerated(true);
+  EXPECT_EQ(0, adapter_->InitEncode(&codec_, 1, 1200));
+  EXPECT_TRUE(adapter_->GetEncoderInfo().is_hardware_accelerated);
+}
+
+TEST_F(TestSimulcastEncoderAdapterFake, ReportsInternalSource) {
+  SimulcastTestFixtureImpl::DefaultSettings(
+      &codec_, static_cast<const int*>(kTestTemporalLayerProfile),
+      kVideoCodecVP8);
+  codec_.numberOfSimulcastStreams = 3;
+  adapter_->RegisterEncodeCompleteCallback(this);
+  EXPECT_EQ(0, adapter_->InitEncode(&codec_, 1, 1200));
+  ASSERT_EQ(3u, helper_->factory()->encoders().size());
+
+  // All encoders have internal source, simulcast adapter reports true.
+  for (MockVideoEncoder* encoder : helper_->factory()->encoders()) {
+    encoder->set_has_internal_source(true);
+  }
+  EXPECT_EQ(0, adapter_->InitEncode(&codec_, 1, 1200));
+  EXPECT_TRUE(adapter_->GetEncoderInfo().has_internal_source);
+
+  // One encoder does not have internal source, simulcast adapter reports false.
+  helper_->factory()->encoders()[2]->set_has_internal_source(false);
+  EXPECT_EQ(0, adapter_->InitEncode(&codec_, 1, 1200));
+  EXPECT_FALSE(adapter_->GetEncoderInfo().has_internal_source);
 }
 
 }  // namespace test

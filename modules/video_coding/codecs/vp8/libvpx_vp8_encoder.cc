@@ -932,6 +932,8 @@ VideoEncoder::EncoderInfo LibvpxVp8Encoder::GetEncoderInfo() const {
   info.supports_native_handle = false;
   info.implementation_name = "libvpx";
   info.has_trusted_rate_controller = trusted_rate_controller_;
+  info.is_hardware_accelerated = false;
+  info.has_internal_source = false;
 
   const bool enable_scaling = encoders_.size() == 1 &&
                               configurations_[0].rc_dropframe_thresh > 0 &&

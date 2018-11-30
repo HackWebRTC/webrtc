@@ -284,6 +284,10 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
             encoder_impl_info.supports_native_handle;
         encoder_info_.has_trusted_rate_controller =
             encoder_impl_info.has_trusted_rate_controller;
+        encoder_info_.is_hardware_accelerated =
+            encoder_impl_info.is_hardware_accelerated;
+        encoder_info_.has_internal_source =
+            encoder_impl_info.has_internal_source;
       } else {
         encoder_info_.implementation_name += ", ";
         encoder_info_.implementation_name +=
@@ -296,6 +300,17 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
         // Trusted rate controller only if all encoders have it.
         encoder_info_.has_trusted_rate_controller &=
             encoder_impl_info.has_trusted_rate_controller;
+
+        // Uses hardware support if any of the encoders uses it.
+        // For example, if we are having issues with down-scaling due to
+        // pipelining delay in HW encoders we need higher encoder usage
+        // thresholds in CPU adaptation.
+        encoder_info_.is_hardware_accelerated |=
+            encoder_impl_info.is_hardware_accelerated;
+
+        // Has internal source only if all encoders have it.
+        encoder_info_.has_internal_source &=
+            encoder_impl_info.has_internal_source;
       }
     }
   }

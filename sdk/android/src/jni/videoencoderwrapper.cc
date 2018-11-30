@@ -83,6 +83,8 @@ int32_t VideoEncoderWrapper::InitEncodeInternal(JNIEnv* jni) {
   encoder_info_.supports_native_handle = true;
   encoder_info_.implementation_name = GetImplementationName(jni);
   encoder_info_.scaling_settings = GetScalingSettingsInternal(jni);
+  encoder_info_.is_hardware_accelerated = IsHardwareVideoEncoder(jni, encoder_);
+  encoder_info_.has_internal_source = false;
 
   if (status == WEBRTC_VIDEO_CODEC_OK) {
     initialized_ = true;

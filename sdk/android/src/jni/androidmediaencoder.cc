@@ -357,6 +357,8 @@ int32_t MediaCodecVideoEncoder::InitEncode(const VideoCodec* codec_settings,
   encoder_info_.supports_native_handle = has_egl_context_;
   encoder_info_.implementation_name = "MediaCodec";
   encoder_info_.scaling_settings = GetScalingSettingsInternal();
+  encoder_info_.is_hardware_accelerated = true;
+  encoder_info_.has_internal_source = false;
 
   return InitEncodeInternal(
       init_width, init_height, codec_settings->startBitrate,
