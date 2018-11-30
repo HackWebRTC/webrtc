@@ -99,11 +99,10 @@ const HdrMetadata* ColorSpace::hdr_metadata() const {
 
 bool ColorSpace::set_primaries_from_uint8(uint8_t enum_value) {
   constexpr PrimaryID kPrimaryIds[] = {
-      PrimaryID::kInvalid,    PrimaryID::kBT709,      PrimaryID::kUNSPECIFIED,
-      PrimaryID::kBT470M,     PrimaryID::kBT470BG,    PrimaryID::kSMPTE170M,
-      PrimaryID::kSMPTE240M,  PrimaryID::kFILM,       PrimaryID::kBT2020,
-      PrimaryID::kSMPTEST428, PrimaryID::kSMPTEST431, PrimaryID::kSMPTEST432,
-      PrimaryID::kJEDECP22};
+      PrimaryID::kBT709,      PrimaryID::kUNSPECIFIED, PrimaryID::kBT470M,
+      PrimaryID::kBT470BG,    PrimaryID::kSMPTE170M,   PrimaryID::kSMPTE240M,
+      PrimaryID::kFILM,       PrimaryID::kBT2020,      PrimaryID::kSMPTEST428,
+      PrimaryID::kSMPTEST431, PrimaryID::kSMPTEST432,  PrimaryID::kJEDECP22};
   constexpr uint64_t enum_bitmask = CreateEnumBitmask(kPrimaryIds);
 
   return SetFromUint8(enum_value, enum_bitmask, &primaries_);
@@ -111,15 +110,15 @@ bool ColorSpace::set_primaries_from_uint8(uint8_t enum_value) {
 
 bool ColorSpace::set_transfer_from_uint8(uint8_t enum_value) {
   constexpr TransferID kTransferIds[] = {
-      TransferID::kInvalid,      TransferID::kBT709,
-      TransferID::kUNSPECIFIED,  TransferID::kGAMMA22,
-      TransferID::kGAMMA28,      TransferID::kSMPTE170M,
-      TransferID::kSMPTE240M,    TransferID::kLINEAR,
-      TransferID::kLOG,          TransferID::kLOG_SQRT,
-      TransferID::kIEC61966_2_4, TransferID::kBT1361_ECG,
-      TransferID::kIEC61966_2_1, TransferID::kBT2020_10,
-      TransferID::kBT2020_12,    TransferID::kSMPTEST2084,
-      TransferID::kSMPTEST428,   TransferID::kARIB_STD_B67};
+      TransferID::kBT709,       TransferID::kUNSPECIFIED,
+      TransferID::kGAMMA22,     TransferID::kGAMMA28,
+      TransferID::kSMPTE170M,   TransferID::kSMPTE240M,
+      TransferID::kLINEAR,      TransferID::kLOG,
+      TransferID::kLOG_SQRT,    TransferID::kIEC61966_2_4,
+      TransferID::kBT1361_ECG,  TransferID::kIEC61966_2_1,
+      TransferID::kBT2020_10,   TransferID::kBT2020_12,
+      TransferID::kSMPTEST2084, TransferID::kSMPTEST428,
+      TransferID::kARIB_STD_B67};
   constexpr uint64_t enum_bitmask = CreateEnumBitmask(kTransferIds);
 
   return SetFromUint8(enum_value, enum_bitmask, &transfer_);
@@ -127,11 +126,11 @@ bool ColorSpace::set_transfer_from_uint8(uint8_t enum_value) {
 
 bool ColorSpace::set_matrix_from_uint8(uint8_t enum_value) {
   constexpr MatrixID kMatrixIds[] = {
-      MatrixID::kRGB,       MatrixID::kBT709,        MatrixID::kUNSPECIFIED,
-      MatrixID::kFCC,       MatrixID::kBT470BG,      MatrixID::kSMPTE170M,
-      MatrixID::kSMPTE240M, MatrixID::kYCOCG,        MatrixID::kBT2020_NCL,
-      MatrixID::kBT2020_CL, MatrixID::kSMPTE2085,    MatrixID::kCDNCLS,
-      MatrixID::kCDCLS,     MatrixID::kBT2100_ICTCP, MatrixID::kInvalid};
+      MatrixID::kRGB,       MatrixID::kBT709,       MatrixID::kUNSPECIFIED,
+      MatrixID::kFCC,       MatrixID::kBT470BG,     MatrixID::kSMPTE170M,
+      MatrixID::kSMPTE240M, MatrixID::kYCOCG,       MatrixID::kBT2020_NCL,
+      MatrixID::kBT2020_CL, MatrixID::kSMPTE2085,   MatrixID::kCDNCLS,
+      MatrixID::kCDCLS,     MatrixID::kBT2100_ICTCP};
   constexpr uint64_t enum_bitmask = CreateEnumBitmask(kMatrixIds);
 
   return SetFromUint8(enum_value, enum_bitmask, &matrix_);

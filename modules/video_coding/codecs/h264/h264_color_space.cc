@@ -13,7 +13,7 @@
 namespace webrtc {
 
 ColorSpace ExtractH264ColorSpace(AVCodecContext* codec) {
-  ColorSpace::PrimaryID primaries = ColorSpace::PrimaryID::kInvalid;
+  ColorSpace::PrimaryID primaries = ColorSpace::PrimaryID::kUNSPECIFIED;
   switch (codec->color_primaries) {
     case AVCOL_PRI_BT709:
       primaries = ColorSpace::PrimaryID::kBT709;
@@ -55,7 +55,7 @@ ColorSpace ExtractH264ColorSpace(AVCodecContext* codec) {
       break;
   }
 
-  ColorSpace::TransferID transfer = ColorSpace::TransferID::kInvalid;
+  ColorSpace::TransferID transfer = ColorSpace::TransferID::kUNSPECIFIED;
   switch (codec->color_trc) {
     case AVCOL_TRC_BT709:
       transfer = ColorSpace::TransferID::kBT709;
@@ -112,7 +112,7 @@ ColorSpace ExtractH264ColorSpace(AVCodecContext* codec) {
       break;
   }
 
-  ColorSpace::MatrixID matrix = ColorSpace::MatrixID::kInvalid;
+  ColorSpace::MatrixID matrix = ColorSpace::MatrixID::kUNSPECIFIED;
   switch (codec->colorspace) {
     case AVCOL_SPC_RGB:
       matrix = ColorSpace::MatrixID::kRGB;

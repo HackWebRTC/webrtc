@@ -35,7 +35,6 @@ class ColorSpace {
  public:
   enum class PrimaryID : uint8_t {
     // The indices are equal to the values specified in T-REC H.273 Table 2.
-    kInvalid = 0,
     kBT709 = 1,
     kUNSPECIFIED = 2,
     kBT470M = 4,
@@ -54,7 +53,6 @@ class ColorSpace {
 
   enum class TransferID : uint8_t {
     // The indices are equal to the values specified in T-REC H.273 Table 3.
-    kInvalid = 0,
     kBT709 = 1,
     kUNSPECIFIED = 2,
     kGAMMA22 = 4,
@@ -92,7 +90,6 @@ class ColorSpace {
     kCDNCLS = 12,
     kCDCLS = 13,
     kBT2100_ICTCP = 14,
-    kInvalid = 63,
     // When adding/removing entries here, please make sure to do the
     // corresponding change to kMatrixIds.
   };
@@ -145,9 +142,9 @@ class ColorSpace {
   void set_hdr_metadata(const HdrMetadata* hdr_metadata);
 
  private:
-  PrimaryID primaries_ = PrimaryID::kInvalid;
-  TransferID transfer_ = TransferID::kInvalid;
-  MatrixID matrix_ = MatrixID::kInvalid;
+  PrimaryID primaries_ = PrimaryID::kUNSPECIFIED;
+  TransferID transfer_ = TransferID::kUNSPECIFIED;
+  MatrixID matrix_ = MatrixID::kUNSPECIFIED;
   RangeID range_ = RangeID::kInvalid;
   absl::optional<HdrMetadata> hdr_metadata_;
 };

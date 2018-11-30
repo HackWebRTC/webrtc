@@ -156,9 +156,9 @@ TEST_F(TestVp9Impl, EncodeDecode) {
   EXPECT_GT(I420PSNR(input_frame, decoded_frame.get()), 36);
 
   const ColorSpace color_space = *decoded_frame->color_space();
-  EXPECT_EQ(ColorSpace::PrimaryID::kInvalid, color_space.primaries());
-  EXPECT_EQ(ColorSpace::TransferID::kInvalid, color_space.transfer());
-  EXPECT_EQ(ColorSpace::MatrixID::kInvalid, color_space.matrix());
+  EXPECT_EQ(ColorSpace::PrimaryID::kUNSPECIFIED, color_space.primaries());
+  EXPECT_EQ(ColorSpace::TransferID::kUNSPECIFIED, color_space.transfer());
+  EXPECT_EQ(ColorSpace::MatrixID::kUNSPECIFIED, color_space.matrix());
   EXPECT_EQ(ColorSpace::RangeID::kLimited, color_space.range());
 }
 
