@@ -36,8 +36,7 @@ class IceEventLog {
       const IceCandidatePairDescription& candidate_pair_desc);
 
   void LogCandidatePairEvent(IceCandidatePairEventType type,
-                             uint32_t candidate_pair_id,
-                             uint32_t transaction_id);
+                             uint32_t candidate_pair_id);
 
   // This method constructs a config event for each candidate pair with their
   // description and logs these config events. It is intended to be called when

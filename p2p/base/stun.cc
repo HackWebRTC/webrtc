@@ -26,25 +26,6 @@
 using rtc::ByteBufferReader;
 using rtc::ByteBufferWriter;
 
-namespace {
-
-uint32_t ReduceTransactionId(const std::string& transaction_id) {
-  RTC_DCHECK(transaction_id.length() == cricket::kStunTransactionIdLength ||
-             transaction_id.length() ==
-                 cricket::kStunLegacyTransactionIdLength);
-  uint32_t transaction_id_as_ints[4];
-  memcpy(transaction_id_as_ints, transaction_id.c_str(),
-         transaction_id.length());
-
-  uint32_t result = 0;
-  for (size_t i = 0; i < transaction_id.length() / 4; ++i) {
-    result ^= transaction_id_as_ints[i];
-  }
-  return result;
-}
-
-}  // namespace
-
 namespace cricket {
 
 const char STUN_ERROR_REASON_TRY_ALTERNATE_SERVER[] = "Try Alternate Server";
@@ -87,7 +68,6 @@ bool StunMessage::SetTransactionID(const std::string& str) {
     return false;
   }
   transaction_id_ = str;
-  reduced_transaction_id_ = ReduceTransactionId(transaction_id_);
   return true;
 }
 
@@ -374,7 +354,6 @@ bool StunMessage::Read(ByteBufferReader* buf) {
   }
   RTC_DCHECK(IsValidTransactionId(transaction_id));
   transaction_id_ = transaction_id;
-  reduced_transaction_id_ = ReduceTransactionId(transaction_id_);
 
   if (length_ != buf->Length())
     return false;

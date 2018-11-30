@@ -141,7 +141,6 @@ class StunMessage {
   int type() const { return type_; }
   size_t length() const { return length_; }
   const std::string& transaction_id() const { return transaction_id_; }
-  uint32_t reduced_transaction_id() const { return reduced_transaction_id_; }
 
   // Returns true if the message confirms to RFC3489 rather than
   // RFC5389. The main difference between two version of the STUN
@@ -215,7 +214,6 @@ class StunMessage {
   uint16_t type_;
   uint16_t length_;
   std::string transaction_id_;
-  uint32_t reduced_transaction_id_;
   std::vector<std::unique_ptr<StunAttribute>> attrs_;
   uint32_t stun_magic_cookie_;
 };

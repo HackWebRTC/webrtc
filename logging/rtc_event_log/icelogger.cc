@@ -31,13 +31,12 @@ void IceEventLog::LogCandidatePairConfig(
 }
 
 void IceEventLog::LogCandidatePairEvent(IceCandidatePairEventType type,
-                                        uint32_t candidate_pair_id,
-                                        uint32_t transaction_id) {
+                                        uint32_t candidate_pair_id) {
   if (event_log_ == nullptr) {
     return;
   }
-  event_log_->Log(absl::make_unique<RtcEventIceCandidatePair>(
-      type, candidate_pair_id, transaction_id));
+  event_log_->Log(
+      absl::make_unique<RtcEventIceCandidatePair>(type, candidate_pair_id));
 }
 
 void IceEventLog::DumpCandidatePairDescriptionToMemoryAsConfigEvents() const {

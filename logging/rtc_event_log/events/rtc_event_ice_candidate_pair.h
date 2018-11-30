@@ -29,8 +29,7 @@ enum class IceCandidatePairEventType {
 class RtcEventIceCandidatePair final : public RtcEvent {
  public:
   RtcEventIceCandidatePair(IceCandidatePairEventType type,
-                           uint32_t candidate_pair_id,
-                           uint32_t transaction_id);
+                           uint32_t candidate_pair_id);
 
   ~RtcEventIceCandidatePair() override;
 
@@ -42,14 +41,12 @@ class RtcEventIceCandidatePair final : public RtcEvent {
 
   IceCandidatePairEventType type() const { return type_; }
   uint32_t candidate_pair_id() const { return candidate_pair_id_; }
-  uint32_t transaction_id() const { return transaction_id_; }
 
  private:
   RtcEventIceCandidatePair(const RtcEventIceCandidatePair& other);
 
   const IceCandidatePairEventType type_;
   const uint32_t candidate_pair_id_;
-  const uint32_t transaction_id_;
 };
 
 }  // namespace webrtc
