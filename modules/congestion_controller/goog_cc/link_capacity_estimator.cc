@@ -25,8 +25,8 @@ DataRate LinkCapacityEstimator::UpperBound() const {
 
 DataRate LinkCapacityEstimator::LowerBound() const {
   if (estimate_kbps_.has_value())
-    return DataRate::kbps(estimate_kbps_.value() -
-                          3 * deviation_estimate_kbps());
+    return DataRate::kbps(
+        std::max(0.0, estimate_kbps_.value() - 3 * deviation_estimate_kbps()));
   return DataRate::Zero();
 }
 
