@@ -52,10 +52,12 @@ class DataRate final : public rtc_units_impl::RelativeUnit<DataRate> {
   }
   template <typename T>
   static constexpr DataRate bps(T bits_per_second) {
+    static_assert(std::is_arithmetic<T>::value, "");
     return FromValue(bits_per_second);
   }
   template <typename T>
   static constexpr DataRate kbps(T kilobits_per_sec) {
+    static_assert(std::is_arithmetic<T>::value, "");
     return FromFraction<1000>(kilobits_per_sec);
   }
   template <typename T = int64_t>
