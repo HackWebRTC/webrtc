@@ -10,6 +10,7 @@
 
 #include <memory>
 
+#include "absl/memory/memory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/neteq/accelerate.h"
@@ -28,6 +29,7 @@
 #include "modules/audio_coding/neteq/sync_buffer.h"
 #include "modules/audio_coding/neteq/timestamp_scaler.h"
 #include "rtc_base/numerics/safe_conversions.h"
+#include "test/function_audio_decoder_factory.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/mock_audio_decoder.h"
@@ -59,8 +61,10 @@ class NetEqImplTest : public ::testing::Test {
  protected:
   NetEqImplTest() { config_.sample_rate_hz = 8000; }
 
-  void CreateInstance() {
-    NetEqImpl::Dependencies deps(config_, CreateBuiltinAudioDecoderFactory());
+  void CreateInstance(
+      const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory) {
+    ASSERT_TRUE(decoder_factory);
+    NetEqImpl::Dependencies deps(config_, decoder_factory);
 
     // Get a local pointer to NetEq's TickTimer object.
     tick_timer_ = deps.tick_timer.get();
@@ -136,6 +140,8 @@ class NetEqImplTest : public ::testing::Test {
     neteq_.reset(new NetEqImpl(config_, std::move(deps)));
     ASSERT_TRUE(neteq_ != NULL);
   }
+
+  void CreateInstance() { CreateInstance(CreateBuiltinAudioDecoderFactory()); }
 
   void UseNoMocks() {
     ASSERT_TRUE(neteq_ == NULL) << "Must call UseNoMocks before CreateInstance";
@@ -1328,13 +1334,17 @@ class NetEqImplTest120ms : public NetEqImplTest {
 
   void CreateInstanceNoMocks() {
     UseNoMocks();
-    CreateInstance();
+    CreateInstance(decoder_factory_);
+    EXPECT_TRUE(neteq_->RegisterPayloadType(
+        kPayloadType, SdpAudioFormat("opus", 48000, 2, {{"stereo", "1"}})));
   }
 
   void CreateInstanceWithDelayManagerMock() {
     UseNoMocks();
     use_mock_delay_manager_ = true;
-    CreateInstance();
+    CreateInstance(decoder_factory_);
+    EXPECT_TRUE(neteq_->RegisterPayloadType(
+        kPayloadType, SdpAudioFormat("opus", 48000, 2, {{"stereo", "1"}})));
   }
 
   uint32_t timestamp_diff_between_packets() const {
@@ -1364,14 +1374,18 @@ class NetEqImplTest120ms : public NetEqImplTest {
   }
 
   void Register120msCodec(AudioDecoder::SpeechType speech_type) {
-    decoder_.reset(new Decoder120ms(kSamplingFreq_, speech_type));
-    ASSERT_EQ(2u, decoder_->Channels());
-    EXPECT_EQ(NetEq::kOK, neteq_->RegisterExternalDecoder(
-                              decoder_.get(), NetEqDecoder::kDecoderOpus_2ch,
-                              "120ms codec", kPayloadType));
+    const uint32_t sampling_freq = kSamplingFreq_;
+    decoder_factory_ =
+        new rtc::RefCountedObject<test::FunctionAudioDecoderFactory>(
+            [sampling_freq, speech_type]() {
+              std::unique_ptr<AudioDecoder> decoder =
+                  absl::make_unique<Decoder120ms>(sampling_freq, speech_type);
+              RTC_CHECK_EQ(2, decoder->Channels());
+              return decoder;
+            });
   }
 
-  std::unique_ptr<Decoder120ms> decoder_;
+  rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;
   AudioFrame output_;
   const uint32_t kPayloadType = 17;
   const uint32_t kSamplingFreq_ = 48000;
@@ -1379,8 +1393,8 @@ class NetEqImplTest120ms : public NetEqImplTest {
 };
 
 TEST_F(NetEqImplTest120ms, CodecInternalCng) {
-  CreateInstanceNoMocks();
   Register120msCodec(AudioDecoder::kComfortNoise);
+  CreateInstanceNoMocks();
 
   InsertPacket(first_timestamp());
   GetFirstPacket();
@@ -1391,8 +1405,8 @@ TEST_F(NetEqImplTest120ms, CodecInternalCng) {
 }
 
 TEST_F(NetEqImplTest120ms, Normal) {
-  CreateInstanceNoMocks();
   Register120msCodec(AudioDecoder::kSpeech);
+  CreateInstanceNoMocks();
 
   InsertPacket(first_timestamp());
   GetFirstPacket();
@@ -1401,9 +1415,9 @@ TEST_F(NetEqImplTest120ms, Normal) {
 }
 
 TEST_F(NetEqImplTest120ms, Merge) {
+  Register120msCodec(AudioDecoder::kSpeech);
   CreateInstanceWithDelayManagerMock();
 
-  Register120msCodec(AudioDecoder::kSpeech);
   InsertPacket(first_timestamp());
 
   GetFirstPacket();
@@ -1420,8 +1434,8 @@ TEST_F(NetEqImplTest120ms, Merge) {
 }
 
 TEST_F(NetEqImplTest120ms, Expand) {
-  CreateInstanceNoMocks();
   Register120msCodec(AudioDecoder::kSpeech);
+  CreateInstanceNoMocks();
 
   InsertPacket(first_timestamp());
   GetFirstPacket();
@@ -1432,8 +1446,8 @@ TEST_F(NetEqImplTest120ms, Expand) {
 }
 
 TEST_F(NetEqImplTest120ms, FastAccelerate) {
-  CreateInstanceWithDelayManagerMock();
   Register120msCodec(AudioDecoder::kSpeech);
+  CreateInstanceWithDelayManagerMock();
 
   InsertPacket(first_timestamp());
   GetFirstPacket();
@@ -1450,8 +1464,8 @@ TEST_F(NetEqImplTest120ms, FastAccelerate) {
 }
 
 TEST_F(NetEqImplTest120ms, PreemptiveExpand) {
-  CreateInstanceWithDelayManagerMock();
   Register120msCodec(AudioDecoder::kSpeech);
+  CreateInstanceWithDelayManagerMock();
 
   InsertPacket(first_timestamp());
   GetFirstPacket();
@@ -1469,8 +1483,8 @@ TEST_F(NetEqImplTest120ms, PreemptiveExpand) {
 }
 
 TEST_F(NetEqImplTest120ms, Accelerate) {
-  CreateInstanceWithDelayManagerMock();
   Register120msCodec(AudioDecoder::kSpeech);
+  CreateInstanceWithDelayManagerMock();
 
   InsertPacket(first_timestamp());
   GetFirstPacket();
