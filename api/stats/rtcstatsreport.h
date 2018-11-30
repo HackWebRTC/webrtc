@@ -67,6 +67,19 @@ class RTC_EXPORT RTCStatsReport : public rtc::RefCountInterface {
   const RTCStats* Get(const std::string& id) const;
   size_t size() const { return stats_.size(); }
 
+  // Gets the stat object of type |T| by ID, where |T| is any class descending
+  // from |RTCStats|.
+  // Returns null if there is no stats object for the given ID or it is the
+  // wrong type.
+  template <typename T>
+  const T* GetAs(const std::string& id) const {
+    const RTCStats* stats = Get(id);
+    if (!stats || stats->type() != T::kType) {
+      return nullptr;
+    }
+    return &stats->cast_to<const T>();
+  }
+
   // Removes the stats object from the report, returning ownership of it or null
   // if there is no object with |id|.
   std::unique_ptr<const RTCStats> Take(const std::string& id);

@@ -82,6 +82,7 @@ using ::testing::UnorderedElementsAreArray;
 using ::testing::Return;
 using ::testing::SetArgPointee;
 using ::testing::Values;
+using ::testing::UnorderedElementsAreArray;
 using ::testing::_;
 using webrtc::DataBuffer;
 using webrtc::DataChannelInterface;
@@ -2645,7 +2646,65 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
   EXPECT_THAT(callee_stats->TrackIds(), UnorderedElementsAreArray(track_ids));
 }
 
-// Test that we can get stats (using the new stats implemnetation) for
+// Test that the new GetStats() returns stats for all outgoing/incoming streams
+// with the correct track IDs if there are more than one audio and more than one
+// video senders/receivers.
+TEST_P(PeerConnectionIntegrationTest, NewGetStatsManyAudioAndManyVideoStreams) {
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+  auto audio_sender_1 = caller()->AddAudioTrack();
+  auto video_sender_1 = caller()->AddVideoTrack();
+  auto audio_sender_2 = caller()->AddAudioTrack();
+  auto video_sender_2 = caller()->AddVideoTrack();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  MediaExpectations media_expectations;
+  media_expectations.CalleeExpectsSomeAudioAndVideo();
+  ASSERT_TRUE_WAIT(ExpectNewFrames(media_expectations), kDefaultTimeout);
+
+  std::vector<std::string> track_ids = {
+      audio_sender_1->track()->id(), video_sender_1->track()->id(),
+      audio_sender_2->track()->id(), video_sender_2->track()->id()};
+
+  rtc::scoped_refptr<const webrtc::RTCStatsReport> caller_report =
+      caller()->NewGetStats();
+  ASSERT_TRUE(caller_report);
+  auto outbound_stream_stats =
+      caller_report->GetStatsOfType<webrtc::RTCOutboundRTPStreamStats>();
+  ASSERT_EQ(4u, outbound_stream_stats.size());
+  std::vector<std::string> outbound_track_ids;
+  for (const auto& stat : outbound_stream_stats) {
+    ASSERT_TRUE(stat->bytes_sent.is_defined());
+    EXPECT_LT(0u, *stat->bytes_sent);
+    ASSERT_TRUE(stat->track_id.is_defined());
+    const auto* track_stat =
+        caller_report->GetAs<webrtc::RTCMediaStreamTrackStats>(*stat->track_id);
+    ASSERT_TRUE(track_stat);
+    outbound_track_ids.push_back(*track_stat->track_identifier);
+  }
+  EXPECT_THAT(outbound_track_ids, UnorderedElementsAreArray(track_ids));
+
+  rtc::scoped_refptr<const webrtc::RTCStatsReport> callee_report =
+      callee()->NewGetStats();
+  ASSERT_TRUE(callee_report);
+  auto inbound_stream_stats =
+      callee_report->GetStatsOfType<webrtc::RTCInboundRTPStreamStats>();
+  ASSERT_EQ(4u, inbound_stream_stats.size());
+  std::vector<std::string> inbound_track_ids;
+  for (const auto& stat : inbound_stream_stats) {
+    ASSERT_TRUE(stat->bytes_received.is_defined());
+    EXPECT_LT(0u, *stat->bytes_received);
+    ASSERT_TRUE(stat->track_id.is_defined());
+    const auto* track_stat =
+        callee_report->GetAs<webrtc::RTCMediaStreamTrackStats>(*stat->track_id);
+    ASSERT_TRUE(track_stat);
+    inbound_track_ids.push_back(*track_stat->track_identifier);
+  }
+  EXPECT_THAT(inbound_track_ids, UnorderedElementsAreArray(track_ids));
+}
+
+// Test that we can get stats (using the new stats implementation) for
 // unsignaled streams. Meaning when SSRCs/MSIDs aren't signaled explicitly in
 // SDP.
 TEST_P(PeerConnectionIntegrationTest,
