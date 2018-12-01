@@ -10,6 +10,8 @@ import("../webrtc.gni")
 
 rtc_static_library("video") {
   sources = [
+    "buffered_frame_decryptor.cc",
+    "buffered_frame_decryptor.h",
     "call_stats.cc",
     "call_stats.h",
     "encoder_rtcp_feedback.cc",
@@ -439,6 +441,7 @@ if (rtc_include_tests) {
 
     defines = []
     sources = [
+      "buffered_frame_decryptor_unittest.cc",
       "call_stats_unittest.cc",
       "cpu_scaling_tests.cc",
       "encoder_rtcp_feedback_unittest.cc",
@@ -485,6 +488,7 @@ if (rtc_include_tests) {
       "../api:fake_frame_decryptor",
       "../api:fake_frame_encryptor",
       "../api:libjingle_peerconnection_api",
+      "../api:mock_frame_decryptor",
       "../api:simulated_network_api",
       "../api/test/video:function_video_factory",
       "../api/video:builtin_video_bitrate_allocator_factory",

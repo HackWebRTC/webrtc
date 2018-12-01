@@ -31,7 +31,7 @@ class RtpFrameObject : public EncodedFrame {
                  int times_nacked,
                  int64_t received_time);
 
-  ~RtpFrameObject();
+  ~RtpFrameObject() override;
   uint16_t first_seq_num() const;
   uint16_t last_seq_num() const;
   int times_nacked() const;
