@@ -47,11 +47,12 @@ class Sender {
  public:
   Sender();
   void Setup(AudioCodingModule *acm, RTPStream *rtpStream,
-             std::string in_file_name, int in_sample_rate,
-             int payload_type, SdpAudioFormat format);
+             std::string in_file_name, int sample_rate, size_t channels);
   void Teardown();
   void Run();
   bool Add10MsData();
+
+  uint8_t codeId;
 
  protected:
   AudioCodingModule* _acm;
@@ -67,11 +68,14 @@ class Receiver {
   Receiver();
   virtual ~Receiver() {};
   void Setup(AudioCodingModule *acm, RTPStream *rtpStream,
-             std::string out_file_name, size_t channels, int file_num);
+             std::string out_file_name, size_t channels);
   void Teardown();
   void Run();
   virtual bool IncomingPacket();
   bool PlayoutData();
+
+  //for auto_test and logging
+  uint8_t codeId;
 
  private:
   PCMFile _pcmFile;
@@ -92,8 +96,17 @@ class Receiver {
 
 class EncodeDecodeTest {
  public:
-  EncodeDecodeTest();
+  explicit EncodeDecodeTest(int test_mode);
   void Perform();
+
+  uint16_t _playoutFreq;
+
+ private:
+  std::string EncodeToFile(int fileType, int codeId, int* codePars);
+
+ protected:
+  Sender _sender;
+  Receiver _receiver;
 };
 
 }  // namespace webrtc

@@ -11,6 +11,7 @@
 #ifndef MODULES_AUDIO_CODING_TEST_PACKETLOSSTEST_H_
 #define MODULES_AUDIO_CODING_TEST_PACKETLOSSTEST_H_
 
+#include <memory>
 #include <string>
 #include "modules/audio_coding/test/EncodeDecodeTest.h"
 
@@ -23,7 +24,6 @@ class ReceiverWithPacketLoss : public Receiver {
              RTPStream* rtpStream,
              std::string out_file_name,
              int channels,
-             int file_num,
              int loss_rate,
              int burst_length);
   bool IncomingPacket() override;
@@ -43,8 +43,8 @@ class SenderWithFEC : public Sender {
   void Setup(AudioCodingModule* acm,
              RTPStream* rtpStream,
              std::string in_file_name,
-             int payload_type,
-             SdpAudioFormat format,
+             int sample_rate,
+             int channels,
              int expected_loss_rate);
   bool SetPacketLossRate(int expected_loss_rate);
   bool SetFEC(bool enable_fec);
@@ -65,6 +65,8 @@ class PacketLossTest {
   int channels_;
   std::string in_file_name_;
   int sample_rate_hz_;
+  std::unique_ptr<SenderWithFEC> sender_;
+  std::unique_ptr<ReceiverWithPacketLoss> receiver_;
   int expected_loss_rate_;
   int actual_loss_rate_;
   int burst_length_;

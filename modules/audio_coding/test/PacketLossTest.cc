@@ -30,7 +30,6 @@ void ReceiverWithPacketLoss::Setup(AudioCodingModule* acm,
                                    RTPStream* rtpStream,
                                    std::string out_file_name,
                                    int channels,
-                                   int file_num,
                                    int loss_rate,
                                    int burst_length) {
   loss_rate_ = loss_rate;
@@ -38,7 +37,7 @@ void ReceiverWithPacketLoss::Setup(AudioCodingModule* acm,
   burst_lost_counter_ = burst_length_;  // To prevent first packet gets lost.
   rtc::StringBuilder ss;
   ss << out_file_name << "_" << loss_rate_ << "_" << burst_length_ << "_";
-  Receiver::Setup(acm, rtpStream, ss.str(), channels, file_num);
+  Receiver::Setup(acm, rtpStream, ss.str(), channels);
 }
 
 bool ReceiverWithPacketLoss::IncomingPacket() {
@@ -90,11 +89,10 @@ SenderWithFEC::SenderWithFEC() : expected_loss_rate_(0) {}
 void SenderWithFEC::Setup(AudioCodingModule* acm,
                           RTPStream* rtpStream,
                           std::string in_file_name,
-                          int payload_type,
-                          SdpAudioFormat format,
+                          int sample_rate,
+                          int channels,
                           int expected_loss_rate) {
-  Sender::Setup(acm, rtpStream, in_file_name, format.clockrate_hz, payload_type,
-                format);
+  Sender::Setup(acm, rtpStream, in_file_name, sample_rate, channels);
   EXPECT_TRUE(SetFEC(true));
   EXPECT_TRUE(SetPacketLossRate(expected_loss_rate));
 }
@@ -125,6 +123,8 @@ PacketLossTest::PacketLossTest(int channels,
       in_file_name_(channels_ == 1 ? "audio_coding/testfile32kHz"
                                    : "audio_coding/teststereo32kHz"),
       sample_rate_hz_(32000),
+      sender_(new SenderWithFEC),
+      receiver_(new ReceiverWithPacketLoss),
       expected_loss_rate_(expected_loss_rate),
       actual_loss_rate_(actual_loss_rate),
       burst_length_(burst_length) {}
@@ -133,32 +133,40 @@ void PacketLossTest::Perform() {
 #ifndef WEBRTC_CODEC_OPUS
   return;
 #else
-  RTPFile rtpFile;
-  std::unique_ptr<AudioCodingModule> acm(AudioCodingModule::Create(
-      AudioCodingModule::Config(CreateBuiltinAudioDecoderFactory())));
-  SdpAudioFormat send_format = SdpAudioFormat("opus", 48000, 2);
-  if (channels_ == 2) {
-    send_format.parameters = {{"stereo", "1"}};
-  }
+  AudioCodingModule::Config config;
+  config.decoder_factory = CreateBuiltinAudioDecoderFactory();
+  std::unique_ptr<AudioCodingModule> acm(AudioCodingModule::Create(config));
 
+  int codec_id = acm->Codec("opus", 48000, channels_);
+
+  RTPFile rtpFile;
   std::string fileName = webrtc::test::TempFilename(webrtc::test::OutputPath(),
                                                     "packet_loss_test");
+
+  // Encode to file
   rtpFile.Open(fileName.c_str(), "wb+");
   rtpFile.WriteHeader();
-  SenderWithFEC sender;
-  sender.Setup(acm.get(), &rtpFile, in_file_name_, 120, send_format,
+
+  sender_->codeId = codec_id;
+
+  sender_->Setup(acm.get(), &rtpFile, in_file_name_, sample_rate_hz_, channels_,
                  expected_loss_rate_);
-  sender.Run();
-  sender.Teardown();
+  if (acm->SendCodec()) {
+    sender_->Run();
+  }
+  sender_->Teardown();
   rtpFile.Close();
 
+  // Decode to file
   rtpFile.Open(fileName.c_str(), "rb");
   rtpFile.ReadHeader();
-  ReceiverWithPacketLoss receiver;
-  receiver.Setup(acm.get(), &rtpFile, "packetLoss_out", channels_, 15,
+
+  receiver_->codeId = codec_id;
+
+  receiver_->Setup(acm.get(), &rtpFile, "packetLoss_out", channels_,
                    actual_loss_rate_, burst_length_);
-  receiver.Run();
-  receiver.Teardown();
+  receiver_->Run();
+  receiver_->Teardown();
   rtpFile.Close();
 #endif
 }

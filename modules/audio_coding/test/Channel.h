@@ -58,6 +58,14 @@ class Channel : public AudioPacketizationCallback {
 
   void ResetStats();
 
+  int16_t Stats(CodecInst& codecInst, ACMTestPayloadStats& payloadStats);
+
+  void Stats(uint32_t* numPackets);
+
+  void Stats(uint8_t* payloadType, uint32_t* payloadLenByte);
+
+  void PrintStats(CodecInst& codecInst);
+
   void SetIsStereo(bool isStereo) { _isStereo = isStereo; }
 
   uint32_t LastInTimestamp();

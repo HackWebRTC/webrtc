@@ -25,8 +25,12 @@
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
 
+// This parameter is used to describe how to run the tests. It is normally
+// set to 0, and all tests are run in quite mode.
+#define ACM_TEST_MODE 0
+
 TEST(AudioCodingModuleTest, TestAllCodecs) {
-  webrtc::TestAllCodecs().Perform();
+  webrtc::TestAllCodecs(ACM_TEST_MODE).Perform();
 }
 
 #if defined(WEBRTC_ANDROID)
@@ -34,7 +38,7 @@ TEST(AudioCodingModuleTest, DISABLED_TestEncodeDecode) {
 #else
 TEST(AudioCodingModuleTest, TestEncodeDecode) {
 #endif
-  webrtc::EncodeDecodeTest().Perform();
+  webrtc::EncodeDecodeTest(ACM_TEST_MODE).Perform();
 }
 
 TEST(AudioCodingModuleTest, TestRedFec) {
@@ -46,7 +50,7 @@ TEST(AudioCodingModuleTest, DISABLED_TestIsac) {
 #else
 TEST(AudioCodingModuleTest, TestIsac) {
 #endif
-  webrtc::ISACTest().Perform();
+  webrtc::ISACTest(ACM_TEST_MODE).Perform();
 }
 
 #if (defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)) && \
@@ -66,7 +70,7 @@ TEST(AudioCodingModuleTest, DISABLED_TestStereo) {
 #else
 TEST(AudioCodingModuleTest, TestStereo) {
 #endif
-  webrtc::TestStereo().Perform();
+  webrtc::TestStereo(ACM_TEST_MODE).Perform();
 }
 
 TEST(AudioCodingModuleTest, TestWebRtcVadDtx) {
