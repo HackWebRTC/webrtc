@@ -11,16 +11,6 @@
 #ifndef MODULES_VIDEO_CODING_INCLUDE_VIDEO_CODING_H_
 #define MODULES_VIDEO_CODING_INCLUDE_VIDEO_CODING_H_
 
-#if defined(WEBRTC_WIN)
-// This is a workaround on Windows due to the fact that some Windows
-// headers define CreateEvent as a macro to either CreateEventW or CreateEventA.
-// This can cause problems since we use that name as well and could
-// declare them as one thing here whereas in another place a windows header
-// may have been included and then implementing CreateEvent() causes compilation
-// errors.  So for consistency, we include the main windows header here.
-#include <windows.h>
-#endif
-
 #include "api/fec_controller.h"
 #include "api/video/video_frame.h"
 #include "api/video_codecs/video_codec.h"
