@@ -15,7 +15,7 @@
 
 #include <memory>
 
-#include "modules/audio_coding/test/Channel.h"
+#include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/audio_coding/test/PCMFile.h"
 
 #define PCMA_AND_PCMU
@@ -58,7 +58,7 @@ class TestPackStereo : public AudioPacketizationCallback {
 
 class TestStereo {
  public:
-  explicit TestStereo(int test_mode);
+  TestStereo();
   ~TestStereo();
 
   void Perform();
@@ -79,9 +79,6 @@ class TestStereo {
            int out_channels,
            int percent_loss = 0);
   void OpenOutFile(int16_t test_number);
-  void DisplaySendReceiveCodec();
-
-  int test_mode_;
 
   std::unique_ptr<AudioCodingModule> acm_a_;
   std::unique_ptr<AudioCodingModule> acm_b_;

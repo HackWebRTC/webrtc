@@ -1343,8 +1343,6 @@ if (rtc_include_tests) {
       "test/opus_test.cc",
       "test/opus_test.h",
       "test/target_delay_unittest.cc",
-      "test/utility.cc",
-      "test/utility.h",
     ]
     deps = [
       ":audio_coding",
