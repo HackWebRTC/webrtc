@@ -85,7 +85,7 @@ std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
   bool use_le = fuzz_data->ReadOrDefaultValue(true);
   bool use_vad = fuzz_data->ReadOrDefaultValue(true);
   bool use_agc_limiter = fuzz_data->ReadOrDefaultValue(true);
-  bool use_agc2_limiter = fuzz_data->ReadOrDefaultValue(true);
+  bool use_agc2 = fuzz_data->ReadOrDefaultValue(true);
 
   // Read an int8 value, but don't let it be too large or small.
   const float gain_controller2_gain_db =
@@ -104,6 +104,12 @@ std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
     }
   }
   field_trial::InitFieldTrialsFromString(field_trial_string->c_str());
+
+  bool use_agc2_adaptive_digital = fuzz_data->ReadOrDefaultValue(true);
+  bool use_agc2_adaptive_digital_rms_estimator =
+      fuzz_data->ReadOrDefaultValue(true);
+  bool use_agc2_adaptive_digital_saturation_protector =
+      fuzz_data->ReadOrDefaultValue(true);
 
   // Ignore a few bytes. Bytes from this segment will be used for
   // future config flag changes. We assume 40 bytes is enough for
@@ -149,9 +155,18 @@ std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
   apm_config.echo_canceller.mobile_mode = use_aecm;
   apm_config.residual_echo_detector.enabled = red;
   apm_config.high_pass_filter.enabled = hpf;
-  apm_config.gain_controller2.enabled = use_agc2_limiter;
-
+  apm_config.gain_controller2.enabled = use_agc2;
   apm_config.gain_controller2.fixed_digital.gain_db = gain_controller2_gain_db;
+  apm_config.gain_controller2.adaptive_digital.enabled =
+      use_agc2_adaptive_digital;
+  apm_config.gain_controller2.adaptive_digital.level_estimator =
+      use_agc2_adaptive_digital_rms_estimator
+          ? webrtc::AudioProcessing::Config::GainController2::LevelEstimator::
+                kRms
+          : webrtc::AudioProcessing::Config::GainController2::LevelEstimator::
+                kPeak;
+  apm_config.gain_controller2.adaptive_digital.use_saturation_protector =
+      use_agc2_adaptive_digital_saturation_protector;
 
   apm->ApplyConfig(apm_config);
 
