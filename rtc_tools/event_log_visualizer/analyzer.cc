@@ -1961,7 +1961,9 @@ void EventLogAnalyzer::CreateIceConnectivityCheckGraph(Plot* plot) {
           LineStyle::kNone, PointStyle::kHighlight);
     }
     float x = ToCallTimeSec(event.log_time_us());
-    float y = static_cast<float>(event.type);
+    constexpr int kIceCandidatePairEventTypeOffset =
+        static_cast<int>(IceCandidatePairConfigType::kNumValues);
+    float y = static_cast<float>(event.type) + kIceCandidatePairEventTypeOffset;
     checks_by_cp_id[event.candidate_pair_id].points.emplace_back(x, y);
   }
 
