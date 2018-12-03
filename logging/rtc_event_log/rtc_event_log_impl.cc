@@ -159,6 +159,12 @@ RtcEventLogImpl::~RtcEventLogImpl() {
 
   // If we're logging to the output, this will stop that. Blocking function.
   StopLogging();
+
+  // We want to block on any executing task by invoking ~TaskQueue() before
+  // we set unique_ptr's internal pointer to null.
+  rtc::TaskQueue* tq = task_queue_.get();
+  delete tq;
+  task_queue_.release();
 }
 
 bool RtcEventLogImpl::StartLogging(std::unique_ptr<RtcEventLogOutput> output,
