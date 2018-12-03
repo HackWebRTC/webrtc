@@ -336,8 +336,14 @@ std::vector<ProbeClusterConfig> ProbeController::InitiateProbing(
         max_bitrate_bps_ > 0 ? max_bitrate_bps_ : kDefaultMaxProbingBitrateBps;
     if (limit_probes_with_allocateable_rate_ &&
         max_total_allocated_bitrate_ > 0) {
+      // If a max allocated bitrate has been configured, allow probing up to 2x
+      // that rate. This allows some overhead to account for bursty streams,
+      // which otherwise would have to ramp up when the overshoot is already in
+      // progress.
+      // It also avoids minor quality reduction caused by probes often being
+      // received at slightly less than the target probe bitrate.
       max_probe_bitrate_bps =
-          std::min(max_probe_bitrate_bps, max_total_allocated_bitrate_);
+          std::min(max_probe_bitrate_bps, max_total_allocated_bitrate_ * 2);
     }
     if (bitrate > max_probe_bitrate_bps) {
       bitrate = max_probe_bitrate_bps;

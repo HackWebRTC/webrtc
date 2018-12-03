@@ -265,37 +265,36 @@ TEST_F(ProbeControllerTest, TestExponentialProbingOverflow) {
 
 TEST_F(ProbeControllerTest, TestAllocatedBitrateCap) {
   const int64_t kMbpsMultiplier = 1000000;
+  const int64_t kMaxBitrateBps = 100 * kMbpsMultiplier;
   auto probes = probe_controller_->SetBitrates(
-      kMinBitrateBps, 10 * kMbpsMultiplier, 100 * kMbpsMultiplier, NowMs());
+      kMinBitrateBps, 10 * kMbpsMultiplier, kMaxBitrateBps, NowMs());
 
   // Configure ALR for periodic probing.
   probe_controller_->EnablePeriodicAlrProbing(true);
   int64_t alr_start_time = clock_.TimeInMilliseconds();
   probe_controller_->SetAlrStartTimeMs(alr_start_time);
 
-  // Verify that probe bitrate is capped at the specified max bitrate.
+  int64_t estimated_bitrate_bps = kMaxBitrateBps / 10;
   probes =
-      probe_controller_->SetEstimatedBitrate(60 * kMbpsMultiplier, NowMs());
-  EXPECT_EQ(probes[0].target_data_rate.bps(), 100 * kMbpsMultiplier);
+      probe_controller_->SetEstimatedBitrate(estimated_bitrate_bps, NowMs());
 
-  // Set a max allocated bitrate below the current max.
-  probes = probe_controller_->OnMaxTotalAllocatedBitrate(1 * kMbpsMultiplier,
-                                                         NowMs());
+  // Set a max allocated bitrate below the current estimate.
+  int64_t max_allocated_bps = estimated_bitrate_bps - 1 * kMbpsMultiplier;
+  probes =
+      probe_controller_->OnMaxTotalAllocatedBitrate(max_allocated_bps, NowMs());
   EXPECT_TRUE(probes.empty());  // No probe since lower than current max.
 
-  // Other probes, such as ALR, such also be capped at the same limit.
+  // Probes such as ALR capped at 2x the max allocation limit.
   clock_.AdvanceTimeMilliseconds(5000);
   probes = probe_controller_->Process(NowMs());
-  EXPECT_EQ(probes[0].target_data_rate.bps(), 1 * kMbpsMultiplier);
+  EXPECT_EQ(probes[0].target_data_rate.bps(), 2 * max_allocated_bps);
 
-  // Advance time and configure remove allocated bitrate limit.
+  // Remove allocation limit.
   EXPECT_TRUE(
       probe_controller_->OnMaxTotalAllocatedBitrate(0, NowMs()).empty());
-
-  // New ALR probes use previous limits.
   clock_.AdvanceTimeMilliseconds(5000);
   probes = probe_controller_->Process(NowMs());
-  EXPECT_EQ(probes[0].target_data_rate.bps(), 100 * kMbpsMultiplier);
+  EXPECT_EQ(probes[0].target_data_rate.bps(), estimated_bitrate_bps * 2);
 }
 
 }  // namespace test
