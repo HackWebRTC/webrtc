@@ -185,10 +185,11 @@ bool RtcEventLogImpl::StartLogging(std::unique_ptr<RtcEventLogOutput> output,
                    << "(" << timestamp_us << ", " << utc_time_us << ").";
 
   // Binding to |this| is safe because |this| outlives the |task_queue_|.
-  auto start = [this, timestamp_us,
+  auto start = [this, output_period_ms, timestamp_us,
                 utc_time_us](std::unique_ptr<RtcEventLogOutput> output) {
     RTC_DCHECK_RUN_ON(task_queue_.get());
     RTC_DCHECK(output->IsActive());
+    output_period_ms_ = output_period_ms;
     event_output_ = std::move(output);
     num_config_events_written_ = 0;
     WriteToOutput(event_encoder_->EncodeLogStart(timestamp_us, utc_time_us));
