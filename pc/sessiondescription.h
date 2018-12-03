@@ -25,6 +25,7 @@
 #include "media/base/streamparams.h"
 #include "p2p/base/transportdescription.h"
 #include "p2p/base/transportinfo.h"
+#include "pc/simulcastdescription.h"
 #include "rtc_base/socketaddress.h"
 
 namespace cricket {
@@ -203,6 +204,17 @@ class MediaContentDescription {
   }
   bool extmap_allow_mixed() const { return extmap_allow_mixed_enum_ != kNo; }
 
+  // Simulcast functionality.
+  virtual bool HasSimulcast() const { return !simulcast_.empty(); }
+  virtual SimulcastDescription& simulcast_description() { return simulcast_; }
+  virtual const SimulcastDescription& simulcast_description() const {
+    return simulcast_;
+  }
+  virtual void set_simulcast_description(
+      const SimulcastDescription& simulcast) {
+    simulcast_ = simulcast;
+  }
+
  protected:
   bool rtcp_mux_ = false;
   bool rtcp_reduced_size_ = false;
@@ -220,6 +232,8 @@ class MediaContentDescription {
   // session level, but we will respond that we support it. The plan is to add
   // it to our offer on session level. See todo in SessionDescription.
   ExtmapAllowMixed extmap_allow_mixed_enum_ = kNo;
+
+  SimulcastDescription simulcast_;
 };
 
 // TODO(bugs.webrtc.org/8620): Remove this alias once downstream projects have

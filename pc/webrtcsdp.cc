@@ -38,6 +38,7 @@
 #include "p2p/base/p2pconstants.h"
 #include "p2p/base/port.h"
 #include "pc/mediasession.h"
+#include "pc/sdpserializer.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -73,6 +74,7 @@ using cricket::MediaContentDescription;
 using cricket::MediaType;
 using cricket::RtpHeaderExtensions;
 using cricket::MediaProtocolType;
+using cricket::SimulcastDescription;
 using cricket::SsrcGroup;
 using cricket::StreamParams;
 using cricket::StreamParamsVec;
@@ -162,6 +164,9 @@ static const char kAttributeInactive[] = "inactive";
 // draft-ietf-mmusic-sctp-sdp-07
 // a=sctp-port
 static const char kAttributeSctpPort[] = "sctp-port";
+// draft-ietf-mmusic-sdp-simulcast-13
+// a=simulcast
+static const char kAttributeSimulcast[] = "simulcast";
 
 // Experimental flags
 static const char kAttributeXGoogleFlag[] = "x-google-flag";
@@ -1652,6 +1657,17 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
       }
     }
   }
+
+  // Simulcast (a=simulcast)
+  // https://tools.ietf.org/html/draft-ietf-mmusic-sdp-simulcast-13#section-5.1
+  if (media_desc->as_video() && media_desc->as_video()->HasSimulcast()) {
+    const auto& simulcast = media_desc->as_video()->simulcast_description();
+    InitAttrLine(kAttributeSimulcast, &os);
+    SdpSerializer serializer;
+    os << kSdpDelimiterColon
+       << serializer.SerializeSimulcastDescription(simulcast);
+    AddLine(os.str(), message);
+  }
 }
 
 void WriteFmtpHeader(int payload_type, rtc::StringBuilder* os) {
@@ -2750,6 +2766,7 @@ bool ParseContent(const std::string& message,
   std::string ptime_as_string;
   std::vector<std::string> stream_ids;
   std::string track_id;
+  SimulcastDescription simulcast;
 
   // Loop until the next m line
   while (!IsLineType(message, kLineTypeMedia, *pos)) {
@@ -2954,6 +2971,34 @@ bool ParseContent(const std::string& message,
           return false;
         }
         *msid_signaling |= cricket::kMsidSignalingMediaSection;
+      } else if (HasAttribute(line, kAttributeSimulcast)) {
+        const size_t kSimulcastPrefixLength =
+            kLinePrefixLength + arraysize(kAttributeSimulcast);
+        if (line.size() <= kSimulcastPrefixLength) {
+          return ParseFailed(line, "Simulcast attribute is empty.", error);
+        }
+
+        if (!simulcast.empty()) {
+          return ParseFailed(line, "Multiple Simulcast attributes specified.",
+                             error);
+        }
+
+        SdpSerializer deserializer;
+        RTCErrorOr<SimulcastDescription> error_or_simulcast =
+            deserializer.DeserializeSimulcastDescription(
+                line.substr(kSimulcastPrefixLength));
+        if (!error_or_simulcast.ok()) {
+          return ParseFailed(line,
+                             std::string("Malformed simulcast line: ") +
+                                 error_or_simulcast.error().message(),
+                             error);
+        }
+
+        simulcast = error_or_simulcast.value();
+      } else {
+        // Unrecognized attribute in RTP protocol.
+        RTC_LOG(LS_INFO) << "Ignored line: " << line;
+        continue;
       }
     } else {
       // Only parse lines that we are interested of.
@@ -3030,6 +3075,13 @@ bool ParseContent(const std::string& message,
     candidates->push_back(
         new JsepIceCandidate(mline_id, mline_index, candidate));
   }
+
+  if (!simulcast.empty()) {
+    // TODO(amithi, bugs.webrtc.org/10073):
+    // Verify that the rids in simulcast match rids in sdp.
+    media_desc->set_simulcast_description(simulcast);
+  }
+
   return true;
 }
 
