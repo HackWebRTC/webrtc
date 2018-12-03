@@ -188,8 +188,8 @@ class ColorSpaceExtension {
   static constexpr RTPExtensionType kId = kRtpExtensionColorSpace;
   static constexpr uint8_t kValueSizeBytes = 30;
   static constexpr uint8_t kValueSizeBytesWithoutHdrMetadata = 4;
-  // TODO(webrtc:8651): Change to a valid uri.
-  static constexpr const char kUri[] = "rtp-colorspace-uri-placeholder";
+  static constexpr const char kUri[] =
+      "http://www.webrtc.org/experiments/rtp-hdrext/color-space";
 
   static bool Parse(rtc::ArrayView<const uint8_t> data,
                     ColorSpace* color_space);

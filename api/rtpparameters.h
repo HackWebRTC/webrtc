@@ -309,6 +309,10 @@ struct RtpExtension {
   // https://tools.ietf.org/html/rfc6904
   static const char kEncryptHeaderExtensionsUri[];
 
+  // Header extension for color space information.
+  static const char kColorSpaceUri[];
+  static const int kColorSpaceDefaultId;
+
   // Inclusive min and max IDs for two-byte header extensions and one-byte
   // header extensions, per RFC8285 Section 4.2-4.3.
   static constexpr int kMinId = 1;

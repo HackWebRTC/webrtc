@@ -20,6 +20,7 @@
 #include "absl/types/optional.h"
 
 #include "api/crypto/framedecryptorinterface.h"
+#include "api/video/color_space.h"
 #include "api/video_codecs/video_codec.h"
 #include "call/rtp_packet_sink_interface.h"
 #include "call/syncable.h"
@@ -222,6 +223,7 @@ class RtpVideoStreamReceiver : public RecoveredPacketReceiver,
   // rtp_reference_finder if they are decryptable.
   std::unique_ptr<BufferedFrameDecryptor> buffered_frame_decryptor_
       RTC_PT_GUARDED_BY(network_tc_);
+  absl::optional<ColorSpace> last_color_space_;
 };
 
 }  // namespace webrtc

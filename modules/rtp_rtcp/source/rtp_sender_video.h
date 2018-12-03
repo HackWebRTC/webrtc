@@ -138,6 +138,8 @@ class RTPSenderVideo {
   enum VideoCodecType video_type_;
   int32_t retransmission_settings_ RTC_GUARDED_BY(crit_);
   VideoRotation last_rotation_ RTC_GUARDED_BY(crit_);
+  absl::optional<ColorSpace> last_color_space_ RTC_GUARDED_BY(crit_);
+  bool transmit_color_space_next_frame_ RTC_GUARDED_BY(crit_);
 
   // RED/ULPFEC.
   int red_payload_type_ RTC_GUARDED_BY(crit_);

@@ -54,9 +54,17 @@ void BuildRedPayload(const RtpPacketToSend& media_packet,
 void AddRtpHeaderExtensions(const RTPVideoHeader& video_header,
                             FrameType frame_type,
                             bool set_video_rotation,
+                            bool set_color_space,
                             bool first_packet,
                             bool last_packet,
                             RtpPacketToSend* packet) {
+  // Color space requires two-byte header extensions if HDR metadata is
+  // included. Therefore, it's best to add this extension first so that the
+  // other extensions in the same packet are written as two-byte headers at
+  // once.
+  if (last_packet && set_color_space && video_header.color_space)
+    packet->SetExtension<ColorSpaceExtension>(video_header.color_space.value());
+
   if (last_packet && set_video_rotation)
     packet->SetExtension<VideoOrientation>(video_header.rotation);
 
@@ -118,6 +126,28 @@ bool MinimizeDescriptor(const RTPVideoHeader& full, RTPVideoHeader* minimized) {
   return false;
 }
 
+bool IsBaseLayer(const RTPVideoHeader& video_header) {
+  switch (video_header.codec) {
+    case kVideoCodecVP8: {
+      const auto& vp8 =
+          absl::get<RTPVideoHeaderVP8>(video_header.video_type_header);
+      return (vp8.temporalIdx == 0 || vp8.temporalIdx == kNoTemporalIdx);
+    }
+    case kVideoCodecVP9: {
+      const auto& vp9 =
+          absl::get<RTPVideoHeaderVP9>(video_header.video_type_header);
+      return (vp9.temporal_idx == 0 || vp9.temporal_idx == kNoTemporalIdx);
+    }
+    case kVideoCodecH264:
+      // TODO(kron): Implement logic for H264 once WebRTC supports temporal
+      // layers for H264.
+      break;
+    default:
+      break;
+  }
+  return true;
+}
+
 }  // namespace
 
 RTPSenderVideo::RTPSenderVideo(Clock* clock,
@@ -131,6 +161,7 @@ RTPSenderVideo::RTPSenderVideo(Clock* clock,
       retransmission_settings_(kRetransmitBaseLayer |
                                kConditionallyRetransmitHigherLayers),
       last_rotation_(kVideoRotation_0),
+      transmit_color_space_next_frame_(false),
       red_payload_type_(-1),
       ulpfec_payload_type_(-1),
       flexfec_sender_(flexfec_sender),
@@ -361,6 +392,7 @@ bool RTPSenderVideo::SendVideo(enum VideoCodecType video_type,
   bool red_enabled;
   int32_t retransmission_settings;
   bool set_video_rotation;
+  bool set_color_space = false;
   {
     rtc::CritScope cs(&crit_);
     // According to
@@ -379,6 +411,21 @@ bool RTPSenderVideo::SendVideo(enum VideoCodecType video_type,
                          video_header->rotation != last_rotation_ ||
                          video_header->rotation != kVideoRotation_0;
     last_rotation_ = video_header->rotation;
+
+    // Send color space when changed or if the frame is a key frame. Keep
+    // sending color space information until the first base layer frame to
+    // guarantee that the information is retrieved by the receiver.
+    if (video_header->color_space != last_color_space_) {
+      last_color_space_ = video_header->color_space;
+      set_color_space = true;
+      transmit_color_space_next_frame_ = !IsBaseLayer(*video_header);
+    } else {
+      set_color_space =
+          frame_type == kVideoFrameKey || transmit_color_space_next_frame_;
+      transmit_color_space_next_frame_ = transmit_color_space_next_frame_
+                                             ? !IsBaseLayer(*video_header)
+                                             : false;
+    }
 
     // FEC settings.
     const FecProtectionParams& fec_params =
@@ -410,13 +457,17 @@ bool RTPSenderVideo::SendVideo(enum VideoCodecType video_type,
   auto last_packet = absl::make_unique<RtpPacketToSend>(*single_packet);
   // Simplest way to estimate how much extensions would occupy is to set them.
   AddRtpHeaderExtensions(*video_header, frame_type, set_video_rotation,
-                         /*first=*/true, /*last=*/true, single_packet.get());
+                         set_color_space, /*first=*/true, /*last=*/true,
+                         single_packet.get());
   AddRtpHeaderExtensions(*video_header, frame_type, set_video_rotation,
-                         /*first=*/true, /*last=*/false, first_packet.get());
+                         set_color_space, /*first=*/true, /*last=*/false,
+                         first_packet.get());
   AddRtpHeaderExtensions(*video_header, frame_type, set_video_rotation,
-                         /*first=*/false, /*last=*/false, middle_packet.get());
+                         set_color_space, /*first=*/false, /*last=*/false,
+                         middle_packet.get());
   AddRtpHeaderExtensions(*video_header, frame_type, set_video_rotation,
-                         /*first=*/false, /*last=*/true, last_packet.get());
+                         set_color_space, /*first=*/false, /*last=*/true,
+                         last_packet.get());
 
   RTC_DCHECK_GT(packet_capacity, single_packet->headers_size());
   RTC_DCHECK_GT(packet_capacity, first_packet->headers_size());

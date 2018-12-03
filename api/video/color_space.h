@@ -121,12 +121,13 @@ class ColorSpace {
              MatrixID matrix,
              RangeID range,
              const HdrMetadata* hdr_metadata);
-  bool operator==(const ColorSpace& other) const {
-    return primaries_ == other.primaries() && transfer_ == other.transfer() &&
-           matrix_ == other.matrix() && range_ == other.range() &&
-           ((hdr_metadata_.has_value() && other.hdr_metadata() &&
-             *hdr_metadata_ == *other.hdr_metadata()) ||
-            (!hdr_metadata_.has_value() && other.hdr_metadata() == nullptr));
+  friend bool operator==(const ColorSpace& lhs, const ColorSpace& rhs) {
+    return lhs.primaries_ == rhs.primaries_ && lhs.transfer_ == rhs.transfer_ &&
+           lhs.matrix_ == rhs.matrix_ && lhs.range_ == rhs.range_ &&
+           lhs.hdr_metadata_ == rhs.hdr_metadata_;
+  }
+  friend bool operator!=(const ColorSpace& lhs, const ColorSpace& rhs) {
+    return !(lhs == rhs);
   }
 
   PrimaryID primaries() const;

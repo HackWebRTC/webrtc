@@ -277,50 +277,42 @@ TEST_F(WebRtcVideoEngineTest, DefaultRtxCodecHasAssociatedPayloadTypeSet) {
 
 TEST_F(WebRtcVideoEngineTest, SupportsTimestampOffsetHeaderExtension) {
   RtpCapabilities capabilities = engine_.GetCapabilities();
-  ASSERT_FALSE(capabilities.header_extensions.empty());
-  for (const RtpExtension& extension : capabilities.header_extensions) {
-    if (extension.uri == RtpExtension::kTimestampOffsetUri) {
-      EXPECT_EQ(RtpExtension::kTimestampOffsetDefaultId, extension.id);
-      return;
-    }
-  }
-  FAIL() << "Timestamp offset extension not in header-extension list.";
+  EXPECT_THAT(
+      capabilities.header_extensions,
+      testing::Contains(RtpExtension(RtpExtension::kTimestampOffsetUri,
+                                     RtpExtension::kTimestampOffsetDefaultId)));
 }
 
 TEST_F(WebRtcVideoEngineTest, SupportsAbsoluteSenderTimeHeaderExtension) {
   RtpCapabilities capabilities = engine_.GetCapabilities();
-  ASSERT_FALSE(capabilities.header_extensions.empty());
-  for (const RtpExtension& extension : capabilities.header_extensions) {
-    if (extension.uri == RtpExtension::kAbsSendTimeUri) {
-      EXPECT_EQ(RtpExtension::kAbsSendTimeDefaultId, extension.id);
-      return;
-    }
-  }
-  FAIL() << "Absolute Sender Time extension not in header-extension list.";
+  EXPECT_THAT(
+      capabilities.header_extensions,
+      testing::Contains(RtpExtension(RtpExtension::kAbsSendTimeUri,
+                                     RtpExtension::kAbsSendTimeDefaultId)));
 }
 
 TEST_F(WebRtcVideoEngineTest, SupportsTransportSequenceNumberHeaderExtension) {
   RtpCapabilities capabilities = engine_.GetCapabilities();
-  ASSERT_FALSE(capabilities.header_extensions.empty());
-  for (const RtpExtension& extension : capabilities.header_extensions) {
-    if (extension.uri == RtpExtension::kTransportSequenceNumberUri) {
-      EXPECT_EQ(RtpExtension::kTransportSequenceNumberDefaultId, extension.id);
-      return;
-    }
-  }
-  FAIL() << "Transport sequence number extension not in header-extension list.";
+  EXPECT_THAT(capabilities.header_extensions,
+              testing::Contains(RtpExtension(
+                  RtpExtension::kTransportSequenceNumberUri,
+                  RtpExtension::kTransportSequenceNumberDefaultId)));
 }
 
 TEST_F(WebRtcVideoEngineTest, SupportsVideoRotationHeaderExtension) {
   RtpCapabilities capabilities = engine_.GetCapabilities();
-  ASSERT_FALSE(capabilities.header_extensions.empty());
-  for (const RtpExtension& extension : capabilities.header_extensions) {
-    if (extension.uri == RtpExtension::kVideoRotationUri) {
-      EXPECT_EQ(RtpExtension::kVideoRotationDefaultId, extension.id);
-      return;
-    }
-  }
-  FAIL() << "Video Rotation extension not in header-extension list.";
+  EXPECT_THAT(
+      capabilities.header_extensions,
+      testing::Contains(RtpExtension(RtpExtension::kVideoRotationUri,
+                                     RtpExtension::kVideoRotationDefaultId)));
+}
+
+TEST_F(WebRtcVideoEngineTest, SupportsColorSpaceHeaderExtension) {
+  RtpCapabilities capabilities = engine_.GetCapabilities();
+  EXPECT_THAT(
+      capabilities.header_extensions,
+      testing::Contains(RtpExtension(RtpExtension::kColorSpaceUri,
+                                     RtpExtension::kColorSpaceDefaultId)));
 }
 
 class WebRtcVideoEngineTestWithGenericDescriptor
