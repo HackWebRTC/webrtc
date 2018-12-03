@@ -21,7 +21,6 @@ namespace webrtc {
 namespace jni {
 
 static jlong JNI_Histogram_CreateCounts(JNIEnv* jni,
-                                        const JavaParamRef<jclass>&,
                                         const JavaParamRef<jstring>& j_name,
                                         jint min,
                                         jint max,
@@ -33,7 +32,6 @@ static jlong JNI_Histogram_CreateCounts(JNIEnv* jni,
 
 static jlong JNI_Histogram_CreateEnumeration(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     const JavaParamRef<jstring>& j_name,
     jint max) {
   std::string name = JavaToStdString(jni, j_name);
@@ -41,7 +39,6 @@ static jlong JNI_Histogram_CreateEnumeration(
 }
 
 static void JNI_Histogram_AddSample(JNIEnv* jni,
-                                    const JavaParamRef<jclass>&,
                                     jlong histogram,
                                     jint sample) {
   if (histogram) {

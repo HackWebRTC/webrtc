@@ -18,13 +18,11 @@
 namespace webrtc {
 namespace jni {
 
-static jlong JNI_LibvpxVp8Encoder_CreateEncoder(JNIEnv* jni,
-                                                const JavaParamRef<jclass>&) {
+static jlong JNI_LibvpxVp8Encoder_CreateEncoder(JNIEnv* jni) {
   return jlongFromPointer(VP8Encoder::Create().release());
 }
 
-static jlong JNI_LibvpxVp8Decoder_CreateDecoder(JNIEnv* jni,
-                                                const JavaParamRef<jclass>&) {
+static jlong JNI_LibvpxVp8Decoder_CreateDecoder(JNIEnv* jni) {
   return jlongFromPointer(VP8Decoder::Create().release());
 }
 

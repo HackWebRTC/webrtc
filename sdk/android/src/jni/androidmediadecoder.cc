@@ -772,7 +772,6 @@ const char* MediaCodecVideoDecoder::ImplementationName() const {
 
 static jlong JNI_MediaCodecVideoDecoder_CreateDecoder(
     JNIEnv* env,
-    const JavaParamRef<jclass>&,
     const JavaParamRef<jstring>& codec,
     jboolean use_surface) {
   ScopedLocalRefFrame local_ref_frame(env);

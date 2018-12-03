@@ -1209,7 +1209,6 @@ MediaCodecVideoEncoder::GetScalingSettingsInternal() const {
 
 static void JNI_MediaCodecVideoEncoder_FillInputBuffer(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     jlong native_encoder,
     jint input_buffer,
     const JavaParamRef<jobject>& j_buffer_y,
@@ -1239,7 +1238,6 @@ static void JNI_MediaCodecVideoEncoder_FillInputBuffer(
 
 static jlong JNI_MediaCodecVideoEncoder_CreateEncoder(
     JNIEnv* env,
-    const JavaParamRef<jclass>&,
     const JavaParamRef<jobject>& format,
     jboolean has_egl_context) {
   ScopedLocalRefFrame local_ref_frame(env);

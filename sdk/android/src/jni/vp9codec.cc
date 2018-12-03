@@ -18,23 +18,19 @@
 namespace webrtc {
 namespace jni {
 
-static jlong JNI_LibvpxVp9Encoder_CreateEncoder(JNIEnv* jni,
-                                                const JavaParamRef<jclass>& w) {
+static jlong JNI_LibvpxVp9Encoder_CreateEncoder(JNIEnv* jni) {
   return jlongFromPointer(VP9Encoder::Create().release());
 }
 
-static jboolean JNI_LibvpxVp9Encoder_IsSupported(JNIEnv* jni,
-                                                 const JavaParamRef<jclass>&) {
+static jboolean JNI_LibvpxVp9Encoder_IsSupported(JNIEnv* jni) {
   return !SupportedVP9Codecs().empty();
 }
 
-static jlong JNI_LibvpxVp9Decoder_CreateDecoder(JNIEnv* jni,
-                                                const JavaParamRef<jclass>& w) {
+static jlong JNI_LibvpxVp9Decoder_CreateDecoder(JNIEnv* jni) {
   return jlongFromPointer(VP9Decoder::Create().release());
 }
 
-static jboolean JNI_LibvpxVp9Decoder_IsSupported(JNIEnv* jni,
-                                                 const JavaParamRef<jclass>&) {
+static jboolean JNI_LibvpxVp9Decoder_IsSupported(JNIEnv* jni) {
   return !SupportedVP9Codecs().empty();
 }
 

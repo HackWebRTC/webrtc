@@ -25,13 +25,11 @@ AndroidVideoTrackSource* AndroidVideoTrackSourceFromJavaProxy(jlong j_proxy) {
 }  // namespace
 
 static jlong JNI_VideoSource_GetInternalSource(JNIEnv* jni,
-                                               const JavaParamRef<jclass>&,
                                                jlong j_source) {
   return NativeToJavaPointer(AndroidVideoTrackSourceFromJavaProxy(j_source));
 }
 
 static void JNI_VideoSource_AdaptOutputFormat(JNIEnv* jni,
-                                              const JavaParamRef<jclass>&,
                                               jlong j_source,
                                               jint j_landscape_width,
                                               jint j_landscape_height,

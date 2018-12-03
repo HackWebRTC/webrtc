@@ -18,7 +18,6 @@ namespace jni {
 
 static jboolean JNI_H264Utils_IsSameH264Profile(
     JNIEnv* env,
-    const JavaParamRef<jclass>&,
     const JavaParamRef<jobject>& params1,
     const JavaParamRef<jobject>& params2) {
   return H264::IsSameH264Profile(JavaToNativeStringMap(env, params1),

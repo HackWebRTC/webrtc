@@ -284,9 +284,7 @@ void SetLocalSessionDescriptionObserver::OnFailure(webrtc::RTCError error) {
                    << ToString(error.type()) << ": " << error.message();
 }
 
-static jlong JNI_CallClient_CreateClient(
-    JNIEnv* env,
-    const webrtc::JavaParamRef<jclass>& cls) {
+static jlong JNI_CallClient_CreateClient(JNIEnv* env) {
   return webrtc::NativeToJavaPointer(new webrtc_examples::AndroidCallClient());
 }
 

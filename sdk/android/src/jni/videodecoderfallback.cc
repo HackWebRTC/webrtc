@@ -20,7 +20,6 @@ namespace jni {
 
 static jlong JNI_VideoDecoderFallback_CreateDecoder(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     const JavaParamRef<jobject>& j_fallback_decoder,
     const JavaParamRef<jobject>& j_primary_decoder) {
   std::unique_ptr<VideoDecoder> fallback_decoder =

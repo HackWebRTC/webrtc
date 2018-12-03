@@ -17,14 +17,12 @@ namespace webrtc {
 namespace jni {
 
 static jboolean JNI_DtmfSender_CanInsertDtmf(JNIEnv* jni,
-                                             const JavaParamRef<jclass>&,
                                              jlong j_dtmf_sender_pointer) {
   return reinterpret_cast<DtmfSenderInterface*>(j_dtmf_sender_pointer)
       ->CanInsertDtmf();
 }
 
 static jboolean JNI_DtmfSender_InsertDtmf(JNIEnv* jni,
-                                          const JavaParamRef<jclass>&,
                                           jlong j_dtmf_sender_pointer,
                                           const JavaParamRef<jstring>& tones,
                                           jint duration,
@@ -35,7 +33,6 @@ static jboolean JNI_DtmfSender_InsertDtmf(JNIEnv* jni,
 
 static ScopedJavaLocalRef<jstring> JNI_DtmfSender_Tones(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     jlong j_dtmf_sender_pointer) {
   return NativeToJavaString(
       jni,
@@ -43,14 +40,12 @@ static ScopedJavaLocalRef<jstring> JNI_DtmfSender_Tones(
 }
 
 static jint JNI_DtmfSender_Duration(JNIEnv* jni,
-                                    const JavaParamRef<jclass>&,
                                     jlong j_dtmf_sender_pointer) {
   return reinterpret_cast<DtmfSenderInterface*>(j_dtmf_sender_pointer)
       ->duration();
 }
 
 static jint JNI_DtmfSender_InterToneGap(JNIEnv* jni,
-                                        const JavaParamRef<jclass>&,
                                         jlong j_dtmf_sender_pointer) {
   return reinterpret_cast<DtmfSenderInterface*>(j_dtmf_sender_pointer)
       ->inter_tone_gap();

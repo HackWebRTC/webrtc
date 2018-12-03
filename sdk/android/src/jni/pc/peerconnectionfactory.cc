@@ -122,9 +122,7 @@ jobject NativeToJavaPeerConnectionFactory(
       .Release();
 }
 
-static void JNI_PeerConnectionFactory_InitializeAndroidGlobals(
-    JNIEnv* jni,
-    const JavaParamRef<jclass>&) {
+static void JNI_PeerConnectionFactory_InitializeAndroidGlobals(JNIEnv* jni) {
   if (!factory_static_initialized) {
     JVM::Initialize(GetJVM());
     factory_static_initialized = true;
@@ -133,7 +131,6 @@ static void JNI_PeerConnectionFactory_InitializeAndroidGlobals(
 
 static void JNI_PeerConnectionFactory_InitializeFieldTrials(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     const JavaParamRef<jstring>& j_trials_init_string) {
   std::unique_ptr<std::string>& field_trials_init_string =
       GetStaticObjects().field_trials_init_string;
@@ -149,16 +146,13 @@ static void JNI_PeerConnectionFactory_InitializeFieldTrials(
   field_trial::InitFieldTrialsFromString(field_trials_init_string->c_str());
 }
 
-static void JNI_PeerConnectionFactory_InitializeInternalTracer(
-    JNIEnv* jni,
-    const JavaParamRef<jclass>&) {
+static void JNI_PeerConnectionFactory_InitializeInternalTracer(JNIEnv* jni) {
   rtc::tracing::SetupInternalTracer();
 }
 
 static ScopedJavaLocalRef<jstring>
 JNI_PeerConnectionFactory_FindFieldTrialsFullName(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     const JavaParamRef<jstring>& j_name) {
   return NativeToJavaString(
       jni, field_trial::FindFullName(JavaToStdString(jni, j_name)));
@@ -166,7 +160,6 @@ JNI_PeerConnectionFactory_FindFieldTrialsFullName(
 
 static jboolean JNI_PeerConnectionFactory_StartInternalTracingCapture(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     const JavaParamRef<jstring>& j_event_tracing_filename) {
   if (j_event_tracing_filename.is_null())
     return false;
@@ -179,15 +172,11 @@ static jboolean JNI_PeerConnectionFactory_StartInternalTracingCapture(
   return ret;
 }
 
-static void JNI_PeerConnectionFactory_StopInternalTracingCapture(
-    JNIEnv* jni,
-    const JavaParamRef<jclass>&) {
+static void JNI_PeerConnectionFactory_StopInternalTracingCapture(JNIEnv* jni) {
   rtc::tracing::StopInternalCapture();
 }
 
-static void JNI_PeerConnectionFactory_ShutdownInternalTracer(
-    JNIEnv* jni,
-    const JavaParamRef<jclass>&) {
+static void JNI_PeerConnectionFactory_ShutdownInternalTracer(JNIEnv* jni) {
   rtc::tracing::ShutdownInternalTracer();
 }
 
@@ -282,7 +271,6 @@ jlong CreatePeerConnectionFactoryForJava(
 
 static jlong JNI_PeerConnectionFactory_CreatePeerConnectionFactory(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     const JavaParamRef<jobject>& jcontext,
     const JavaParamRef<jobject>& joptions,
     jlong native_audio_device_module,
@@ -322,7 +310,6 @@ static jlong JNI_PeerConnectionFactory_CreatePeerConnectionFactory(
 }
 
 static void JNI_PeerConnectionFactory_FreeFactory(JNIEnv*,
-                                                  const JavaParamRef<jclass>&,
                                                   jlong j_p) {
   delete reinterpret_cast<OwnedFactoryAndThreads*>(j_p);
   field_trial::InitFieldTrialsFromString(nullptr);
@@ -331,7 +318,6 @@ static void JNI_PeerConnectionFactory_FreeFactory(JNIEnv*,
 
 static void JNI_PeerConnectionFactory_InvokeThreadsCallbacks(
     JNIEnv*,
-    const JavaParamRef<jclass>&,
     jlong j_p) {
   OwnedFactoryAndThreads* factory =
       reinterpret_cast<OwnedFactoryAndThreads*>(j_p);
@@ -340,7 +326,6 @@ static void JNI_PeerConnectionFactory_InvokeThreadsCallbacks(
 
 static jlong JNI_PeerConnectionFactory_CreateLocalMediaStream(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     jlong native_factory,
     const JavaParamRef<jstring>& label) {
   rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
@@ -352,7 +337,6 @@ static jlong JNI_PeerConnectionFactory_CreateLocalMediaStream(
 
 static jlong JNI_PeerConnectionFactory_CreateAudioSource(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     jlong native_factory,
     const JavaParamRef<jobject>& j_constraints) {
   std::unique_ptr<MediaConstraintsInterface> constraints =
@@ -368,7 +352,6 @@ static jlong JNI_PeerConnectionFactory_CreateAudioSource(
 
 jlong JNI_PeerConnectionFactory_CreateAudioTrack(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     jlong native_factory,
     const JavaParamRef<jstring>& id,
     jlong native_source) {
@@ -382,7 +365,6 @@ jlong JNI_PeerConnectionFactory_CreateAudioTrack(
 
 static jboolean JNI_PeerConnectionFactory_StartAecDump(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     jlong native_factory,
     jint file,
     jint filesize_limit_bytes) {
@@ -392,7 +374,6 @@ static jboolean JNI_PeerConnectionFactory_StartAecDump(
 }
 
 static void JNI_PeerConnectionFactory_StopAecDump(JNIEnv* jni,
-                                                  const JavaParamRef<jclass>&,
                                                   jlong native_factory) {
   rtc::scoped_refptr<PeerConnectionFactoryInterface> factory(
       factoryFromJava(native_factory));
@@ -401,7 +382,6 @@ static void JNI_PeerConnectionFactory_StopAecDump(JNIEnv* jni,
 
 static jlong JNI_PeerConnectionFactory_CreatePeerConnection(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     jlong factory,
     const JavaParamRef<jobject>& j_rtc_config,
     const JavaParamRef<jobject>& j_constraints,
@@ -458,7 +438,6 @@ static jlong JNI_PeerConnectionFactory_CreatePeerConnection(
 
 static jlong JNI_PeerConnectionFactory_CreateVideoSource(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     jlong native_factory,
     jboolean is_screencast,
     jboolean align_timestamps) {
@@ -471,7 +450,6 @@ static jlong JNI_PeerConnectionFactory_CreateVideoSource(
 
 static jlong JNI_PeerConnectionFactory_CreateVideoTrack(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     jlong native_factory,
     const JavaParamRef<jstring>& id,
     jlong native_source) {
@@ -485,14 +463,12 @@ static jlong JNI_PeerConnectionFactory_CreateVideoTrack(
 
 static jlong JNI_PeerConnectionFactory_GetNativePeerConnectionFactory(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     jlong native_factory) {
   return jlongFromPointer(factoryFromJava(native_factory));
 }
 
 static void JNI_PeerConnectionFactory_InjectLoggable(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     const JavaParamRef<jobject>& j_logging,
     jint nativeSeverity) {
   std::unique_ptr<JNILogSink>& jni_log_sink = GetStaticObjects().jni_log_sink;
@@ -507,9 +483,7 @@ static void JNI_PeerConnectionFactory_InjectLoggable(
   rtc::LogMessage::LogToDebug(rtc::LS_NONE);
 }
 
-static void JNI_PeerConnectionFactory_DeleteLoggable(
-    JNIEnv* jni,
-    const JavaParamRef<jclass>&) {
+static void JNI_PeerConnectionFactory_DeleteLoggable(JNIEnv* jni) {
   std::unique_ptr<JNILogSink>& jni_log_sink = GetStaticObjects().jni_log_sink;
 
   if (jni_log_sink) {

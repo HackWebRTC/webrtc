@@ -19,7 +19,6 @@ namespace webrtc {
 namespace jni {
 
 void JNI_YuvHelper_CopyPlane(JNIEnv* jni,
-                             const JavaParamRef<jclass>&,
                              const JavaParamRef<jobject>& j_src,
                              jint src_stride,
                              const JavaParamRef<jobject>& j_dst,
@@ -35,7 +34,6 @@ void JNI_YuvHelper_CopyPlane(JNIEnv* jni,
 }
 
 void JNI_YuvHelper_I420Copy(JNIEnv* jni,
-                            const JavaParamRef<jclass>&,
                             const JavaParamRef<jobject>& j_src_y,
                             jint src_stride_y,
                             const JavaParamRef<jobject>& j_src_u,
@@ -69,7 +67,6 @@ void JNI_YuvHelper_I420Copy(JNIEnv* jni,
 }
 
 static void JNI_YuvHelper_I420ToNV12(JNIEnv* jni,
-                                     const JavaParamRef<jclass>&,
                                      const JavaParamRef<jobject>& j_src_y,
                                      jint src_stride_y,
                                      const JavaParamRef<jobject>& j_src_u,
@@ -99,7 +96,6 @@ static void JNI_YuvHelper_I420ToNV12(JNIEnv* jni,
 }
 
 void JNI_YuvHelper_I420Rotate(JNIEnv* jni,
-                              const JavaParamRef<jclass>&,
                               const JavaParamRef<jobject>& j_src_y,
                               jint src_stride_y,
                               const JavaParamRef<jobject>& j_src_u,

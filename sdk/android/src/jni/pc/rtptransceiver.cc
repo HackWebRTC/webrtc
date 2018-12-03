@@ -78,7 +78,6 @@ JavaRtpTransceiverGlobalOwner::~JavaRtpTransceiverGlobalOwner() {
 
 ScopedJavaLocalRef<jobject> JNI_RtpTransceiver_GetMediaType(
     JNIEnv* jni,
-    const base::android::JavaParamRef<jclass>&,
     jlong j_rtp_transceiver_pointer) {
   return NativeToJavaMediaType(
       jni, reinterpret_cast<RtpTransceiverInterface*>(j_rtp_transceiver_pointer)
@@ -87,7 +86,6 @@ ScopedJavaLocalRef<jobject> JNI_RtpTransceiver_GetMediaType(
 
 ScopedJavaLocalRef<jstring> JNI_RtpTransceiver_GetMid(
     JNIEnv* jni,
-    const base::android::JavaParamRef<jclass>&,
     jlong j_rtp_transceiver_pointer) {
   absl::optional<std::string> mid =
       reinterpret_cast<RtpTransceiverInterface*>(j_rtp_transceiver_pointer)
@@ -97,7 +95,6 @@ ScopedJavaLocalRef<jstring> JNI_RtpTransceiver_GetMid(
 
 ScopedJavaLocalRef<jobject> JNI_RtpTransceiver_GetSender(
     JNIEnv* jni,
-    const base::android::JavaParamRef<jclass>&,
     jlong j_rtp_transceiver_pointer) {
   return NativeToJavaRtpSender(
       jni, reinterpret_cast<RtpTransceiverInterface*>(j_rtp_transceiver_pointer)
@@ -106,7 +103,6 @@ ScopedJavaLocalRef<jobject> JNI_RtpTransceiver_GetSender(
 
 ScopedJavaLocalRef<jobject> JNI_RtpTransceiver_GetReceiver(
     JNIEnv* jni,
-    const base::android::JavaParamRef<jclass>&,
     jlong j_rtp_transceiver_pointer) {
   return NativeToJavaRtpReceiver(
       jni, reinterpret_cast<RtpTransceiverInterface*>(j_rtp_transceiver_pointer)
@@ -114,7 +110,6 @@ ScopedJavaLocalRef<jobject> JNI_RtpTransceiver_GetReceiver(
 }
 
 jboolean JNI_RtpTransceiver_Stopped(JNIEnv* jni,
-                                    const base::android::JavaParamRef<jclass>&,
                                     jlong j_rtp_transceiver_pointer) {
   return reinterpret_cast<RtpTransceiverInterface*>(j_rtp_transceiver_pointer)
       ->stopped();
@@ -122,7 +117,6 @@ jboolean JNI_RtpTransceiver_Stopped(JNIEnv* jni,
 
 ScopedJavaLocalRef<jobject> JNI_RtpTransceiver_Direction(
     JNIEnv* jni,
-    const base::android::JavaParamRef<jclass>&,
     jlong j_rtp_transceiver_pointer) {
   return NativeToJavaRtpTransceiverDirection(
       jni, reinterpret_cast<RtpTransceiverInterface*>(j_rtp_transceiver_pointer)
@@ -131,7 +125,6 @@ ScopedJavaLocalRef<jobject> JNI_RtpTransceiver_Direction(
 
 ScopedJavaLocalRef<jobject> JNI_RtpTransceiver_CurrentDirection(
     JNIEnv* jni,
-    const base::android::JavaParamRef<jclass>&,
     jlong j_rtp_transceiver_pointer) {
   absl::optional<RtpTransceiverDirection> direction =
       reinterpret_cast<RtpTransceiverInterface*>(j_rtp_transceiver_pointer)
@@ -141,14 +134,12 @@ ScopedJavaLocalRef<jobject> JNI_RtpTransceiver_CurrentDirection(
 }
 
 void JNI_RtpTransceiver_Stop(JNIEnv* jni,
-                             const base::android::JavaParamRef<jclass>&,
                              jlong j_rtp_transceiver_pointer) {
   reinterpret_cast<RtpTransceiverInterface*>(j_rtp_transceiver_pointer)->Stop();
 }
 
 void JNI_RtpTransceiver_SetDirection(
     JNIEnv* jni,
-    const base::android::JavaParamRef<jclass>&,
     jlong j_rtp_transceiver_pointer,
     const base::android::JavaParamRef<jobject>& j_rtp_transceiver_direction) {
   if (IsNull(jni, j_rtp_transceiver_direction)) {

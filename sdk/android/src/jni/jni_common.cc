@@ -16,14 +16,12 @@ namespace webrtc {
 namespace jni {
 
 static void JNI_JniCommon_AddRef(JNIEnv* jni,
-                                 const JavaParamRef<jclass>&,
                                  jlong j_native_ref_counted_pointer) {
   reinterpret_cast<rtc::RefCountInterface*>(j_native_ref_counted_pointer)
       ->AddRef();
 }
 
 static void JNI_JniCommon_ReleaseRef(JNIEnv* jni,
-                                     const JavaParamRef<jclass>&,
                                      jlong j_native_ref_counted_pointer) {
   reinterpret_cast<rtc::RefCountInterface*>(j_native_ref_counted_pointer)
       ->Release();
@@ -31,7 +29,6 @@ static void JNI_JniCommon_ReleaseRef(JNIEnv* jni,
 
 static ScopedJavaLocalRef<jobject> JNI_JniCommon_AllocateByteBuffer(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     jint size) {
   void* new_data = ::operator new(size);
   return NewDirectByteBuffer(jni, new_data, size);
@@ -39,7 +36,6 @@ static ScopedJavaLocalRef<jobject> JNI_JniCommon_AllocateByteBuffer(
 
 static void JNI_JniCommon_FreeByteBuffer(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     const JavaParamRef<jobject>& byte_buffer) {
   void* data = jni->GetDirectBufferAddress(byte_buffer.obj());
   ::operator delete(data);

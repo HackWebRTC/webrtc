@@ -16,7 +16,6 @@ namespace jni {
 
 static void JNI_JavaI420Buffer_CropAndScaleI420(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     const JavaParamRef<jobject>& j_src_y,
     jint src_stride_y,
     const JavaParamRef<jobject>& j_src_u,

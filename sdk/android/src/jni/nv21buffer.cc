@@ -22,7 +22,6 @@ namespace webrtc {
 namespace jni {
 
 static void JNI_NV21Buffer_CropAndScale(JNIEnv* jni,
-                                        const JavaParamRef<jclass>&,
                                         jint crop_x,
                                         jint crop_y,
                                         jint crop_width,

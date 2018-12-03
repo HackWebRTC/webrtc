@@ -27,7 +27,6 @@ TurnCustomizer* GetNativeTurnCustomizer(
 
 static void JNI_TurnCustomizer_FreeTurnCustomizer(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     jlong j_turn_customizer_pointer) {
   delete reinterpret_cast<TurnCustomizer*>(j_turn_customizer_pointer);
 }

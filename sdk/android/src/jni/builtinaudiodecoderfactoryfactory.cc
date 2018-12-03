@@ -19,8 +19,7 @@ namespace jni {
 
 static jlong
 JNI_BuiltinAudioDecoderFactoryFactory_CreateBuiltinAudioDecoderFactory(
-    JNIEnv* env,
-    const JavaParamRef<jclass>& jcaller) {
+    JNIEnv* env) {
   return NativeToJavaPointer(CreateBuiltinAudioDecoderFactory().release());
 }
 

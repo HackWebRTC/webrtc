@@ -42,7 +42,6 @@ ScopedJavaLocalRef<jobject> NativeToJavaRTCCertificatePEM(
 
 static ScopedJavaLocalRef<jobject> JNI_RtcCertificatePem_GenerateCertificate(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     const JavaParamRef<jobject>& j_key_type,
     jlong j_expires) {
   rtc::KeyType key_type = JavaToNativeKeyType(jni, j_key_type);

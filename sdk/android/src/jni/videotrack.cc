@@ -19,7 +19,6 @@ namespace webrtc {
 namespace jni {
 
 static void JNI_VideoTrack_AddSink(JNIEnv* jni,
-                                   const JavaParamRef<jclass>&,
                                    jlong j_native_track,
                                    jlong j_native_sink) {
   reinterpret_cast<VideoTrackInterface*>(j_native_track)
@@ -29,7 +28,6 @@ static void JNI_VideoTrack_AddSink(JNIEnv* jni,
 }
 
 static void JNI_VideoTrack_RemoveSink(JNIEnv* jni,
-                                      const JavaParamRef<jclass>&,
                                       jlong j_native_track,
                                       jlong j_native_sink) {
   reinterpret_cast<VideoTrackInterface*>(j_native_track)
@@ -38,13 +36,11 @@ static void JNI_VideoTrack_RemoveSink(JNIEnv* jni,
 }
 
 static jlong JNI_VideoTrack_WrapSink(JNIEnv* jni,
-                                     const JavaParamRef<jclass>&,
                                      const JavaParamRef<jobject>& sink) {
   return jlongFromPointer(new VideoSinkWrapper(jni, sink));
 }
 
 static void JNI_VideoTrack_FreeSink(JNIEnv* jni,
-                                    const JavaParamRef<jclass>&,
                                     jlong j_native_sink) {
   delete reinterpret_cast<rtc::VideoSinkInterface<VideoFrame>*>(j_native_sink);
 }

@@ -18,7 +18,6 @@ namespace jni {
 
 static jlong JNI_JavaAudioDeviceModule_CreateAudioDeviceModule(
     JNIEnv* env,
-    const JavaParamRef<jclass>& j_caller,
     const JavaParamRef<jobject>& j_context,
     const JavaParamRef<jobject>& j_audio_manager,
     const JavaParamRef<jobject>& j_webrtc_audio_record,

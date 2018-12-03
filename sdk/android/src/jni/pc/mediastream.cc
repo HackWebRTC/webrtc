@@ -102,7 +102,6 @@ jclass GetMediaStreamClass(JNIEnv* env) {
 
 static jboolean JNI_MediaStream_AddAudioTrackToNativeStream(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     jlong pointer,
     jlong j_audio_track_pointer) {
   return reinterpret_cast<MediaStreamInterface*>(pointer)->AddTrack(
@@ -111,7 +110,6 @@ static jboolean JNI_MediaStream_AddAudioTrackToNativeStream(
 
 static jboolean JNI_MediaStream_AddVideoTrackToNativeStream(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     jlong pointer,
     jlong j_video_track_pointer) {
   return reinterpret_cast<MediaStreamInterface*>(pointer)->AddTrack(
@@ -119,7 +117,6 @@ static jboolean JNI_MediaStream_AddVideoTrackToNativeStream(
 }
 
 static jboolean JNI_MediaStream_RemoveAudioTrack(JNIEnv* jni,
-                                                 const JavaParamRef<jclass>&,
                                                  jlong pointer,
                                                  jlong j_audio_track_pointer) {
   return reinterpret_cast<MediaStreamInterface*>(pointer)->RemoveTrack(
@@ -127,15 +124,14 @@ static jboolean JNI_MediaStream_RemoveAudioTrack(JNIEnv* jni,
 }
 
 static jboolean JNI_MediaStream_RemoveVideoTrack(JNIEnv* jni,
-                                                 const JavaParamRef<jclass>&,
                                                  jlong pointer,
                                                  jlong j_video_track_pointer) {
   return reinterpret_cast<MediaStreamInterface*>(pointer)->RemoveTrack(
       reinterpret_cast<VideoTrackInterface*>(j_video_track_pointer));
 }
 
-static ScopedJavaLocalRef<jstring>
-JNI_MediaStream_GetId(JNIEnv* jni, const JavaParamRef<jclass>&, jlong j_p) {
+static ScopedJavaLocalRef<jstring> JNI_MediaStream_GetId(JNIEnv* jni,
+                                                         jlong j_p) {
   return NativeToJavaString(jni,
                             reinterpret_cast<MediaStreamInterface*>(j_p)->id());
 }

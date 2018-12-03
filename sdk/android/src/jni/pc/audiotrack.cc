@@ -15,7 +15,6 @@ namespace webrtc {
 namespace jni {
 
 static void JNI_AudioTrack_SetVolume(JNIEnv*,
-                                     const JavaParamRef<jclass>&,
                                      jlong j_p,
                                      jdouble volume) {
   rtc::scoped_refptr<AudioSourceInterface> source(

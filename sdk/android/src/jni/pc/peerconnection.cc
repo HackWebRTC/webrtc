@@ -423,14 +423,12 @@ OwnedPeerConnection::~OwnedPeerConnection() {
 
 static jlong JNI_PeerConnection_CreatePeerConnectionObserver(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     const JavaParamRef<jobject>& j_observer) {
   return jlongFromPointer(new PeerConnectionObserverJni(jni, j_observer));
 }
 
 static void JNI_PeerConnection_FreeOwnedPeerConnection(
     JNIEnv*,
-    const JavaParamRef<jclass>&,
     jlong j_p) {
   delete reinterpret_cast<OwnedPeerConnection*>(j_p);
 }

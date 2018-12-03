@@ -29,7 +29,6 @@ ScopedJavaLocalRef<jobject> NativeToJavaRtpSender(
 }
 
 static jboolean JNI_RtpSender_SetTrack(JNIEnv* jni,
-                                       const JavaParamRef<jclass>&,
                                        jlong j_rtp_sender_pointer,
                                        jlong j_track_pointer) {
   return reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)
@@ -37,7 +36,6 @@ static jboolean JNI_RtpSender_SetTrack(JNIEnv* jni,
 }
 
 jlong JNI_RtpSender_GetTrack(JNIEnv* jni,
-                             const JavaParamRef<jclass>&,
                              jlong j_rtp_sender_pointer) {
   // MediaStreamTrack will have shared ownership by the MediaStreamTrack Java
   // object.
@@ -48,7 +46,6 @@ jlong JNI_RtpSender_GetTrack(JNIEnv* jni,
 }
 
 jlong JNI_RtpSender_GetDtmfSender(JNIEnv* jni,
-                                  const JavaParamRef<jclass>&,
                                   jlong j_rtp_sender_pointer) {
   return jlongFromPointer(
       reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)
@@ -58,7 +55,6 @@ jlong JNI_RtpSender_GetDtmfSender(JNIEnv* jni,
 
 jboolean JNI_RtpSender_SetParameters(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     jlong j_rtp_sender_pointer,
     const JavaParamRef<jobject>& j_parameters) {
   if (IsNull(jni, j_parameters)) {
@@ -72,7 +68,6 @@ jboolean JNI_RtpSender_SetParameters(
 
 ScopedJavaLocalRef<jobject> JNI_RtpSender_GetParameters(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     jlong j_rtp_sender_pointer) {
   RtpParameters parameters =
       reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)
@@ -81,14 +76,12 @@ ScopedJavaLocalRef<jobject> JNI_RtpSender_GetParameters(
 }
 
 ScopedJavaLocalRef<jstring> JNI_RtpSender_GetId(JNIEnv* jni,
-                                                const JavaParamRef<jclass>&,
                                                 jlong j_rtp_sender_pointer) {
   return NativeToJavaString(
       jni, reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)->id());
 }
 
 static void JNI_RtpSender_SetFrameEncryptor(JNIEnv* jni,
-                                            const JavaParamRef<jclass>&,
                                             jlong j_rtp_sender_pointer,
                                             jlong j_frame_encryptor_pointer) {
   reinterpret_cast<RtpSenderInterface*>(j_rtp_sender_pointer)

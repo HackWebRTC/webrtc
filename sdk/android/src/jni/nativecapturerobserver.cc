@@ -36,7 +36,6 @@ ScopedJavaLocalRef<jobject> CreateJavaNativeCapturerObserver(
 
 static void JNI_NativeCapturerObserver_OnFrameCaptured(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     jlong j_source,
     jint j_width,
     jint j_height,
@@ -52,7 +51,6 @@ static void JNI_NativeCapturerObserver_OnFrameCaptured(
 
 static void JNI_NativeCapturerObserver_CapturerStarted(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     jlong j_source,
     jboolean j_success) {
   RTC_LOG(LS_INFO) << "NativeCapturerObserver_nativeCapturerStarted";
@@ -64,7 +62,6 @@ static void JNI_NativeCapturerObserver_CapturerStarted(
 
 static void JNI_NativeCapturerObserver_CapturerStopped(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     jlong j_source) {
   RTC_LOG(LS_INFO) << "NativeCapturerObserver_nativeCapturerStopped";
   AndroidVideoTrackSource* source =

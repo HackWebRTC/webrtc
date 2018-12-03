@@ -20,14 +20,12 @@
 namespace webrtc {
 namespace jni {
 
-static void JNI_Metrics_Enable(JNIEnv* jni, const JavaParamRef<jclass>&) {
+static void JNI_Metrics_Enable(JNIEnv* jni) {
   metrics::Enable();
 }
 
 // Gets and clears native histograms.
-static ScopedJavaLocalRef<jobject> JNI_Metrics_GetAndReset(
-    JNIEnv* jni,
-    const JavaParamRef<jclass>& jcaller) {
+static ScopedJavaLocalRef<jobject> JNI_Metrics_GetAndReset(JNIEnv* jni) {
   ScopedJavaLocalRef<jobject> j_metrics = Java_Metrics_Constructor(jni);
 
   std::map<std::string, std::unique_ptr<metrics::SampleInfo>> histograms;

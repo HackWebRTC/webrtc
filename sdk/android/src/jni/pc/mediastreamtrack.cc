@@ -32,7 +32,6 @@ cricket::MediaType JavaToNativeMediaType(JNIEnv* jni,
 
 static ScopedJavaLocalRef<jstring> JNI_MediaStreamTrack_GetId(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     jlong j_p) {
   return NativeToJavaString(
       jni, reinterpret_cast<MediaStreamTrackInterface*>(j_p)->id());
@@ -40,28 +39,24 @@ static ScopedJavaLocalRef<jstring> JNI_MediaStreamTrack_GetId(
 
 static ScopedJavaLocalRef<jstring> JNI_MediaStreamTrack_GetKind(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     jlong j_p) {
   return NativeToJavaString(
       jni, reinterpret_cast<MediaStreamTrackInterface*>(j_p)->kind());
 }
 
 static jboolean JNI_MediaStreamTrack_GetEnabled(JNIEnv* jni,
-                                                const JavaParamRef<jclass>&,
                                                 jlong j_p) {
   return reinterpret_cast<MediaStreamTrackInterface*>(j_p)->enabled();
 }
 
 static ScopedJavaLocalRef<jobject> JNI_MediaStreamTrack_GetState(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     jlong j_p) {
   return Java_State_fromNativeIndex(
       jni, reinterpret_cast<MediaStreamTrackInterface*>(j_p)->state());
 }
 
 static jboolean JNI_MediaStreamTrack_SetEnabled(JNIEnv* jni,
-                                                const JavaParamRef<jclass>&,
                                                 jlong j_p,
                                                 jboolean enabled) {
   return reinterpret_cast<MediaStreamTrackInterface*>(j_p)->set_enabled(

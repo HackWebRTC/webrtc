@@ -18,7 +18,6 @@ namespace jni {
 
 static jlong JNI_CallSessionFileRotatingLogSink_AddSink(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     const JavaParamRef<jstring>& j_dirPath,
     jint j_maxFileSize,
     jint j_severity) {
@@ -39,7 +38,6 @@ static jlong JNI_CallSessionFileRotatingLogSink_AddSink(
 
 static void JNI_CallSessionFileRotatingLogSink_DeleteSink(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     jlong j_sink) {
   rtc::CallSessionFileRotatingLogSink* sink =
       reinterpret_cast<rtc::CallSessionFileRotatingLogSink*>(j_sink);
@@ -50,7 +48,6 @@ static void JNI_CallSessionFileRotatingLogSink_DeleteSink(
 static ScopedJavaLocalRef<jbyteArray>
 JNI_CallSessionFileRotatingLogSink_GetLogData(
     JNIEnv* jni,
-    const JavaParamRef<jclass>&,
     const JavaParamRef<jstring>& j_dirPath) {
   std::string dir_path = JavaToStdString(jni, j_dirPath);
   std::unique_ptr<rtc::CallSessionFileRotatingStream> stream(
