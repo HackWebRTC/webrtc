@@ -147,7 +147,7 @@ EchoCanceller3Config AdjustConfig(const EchoCanceller3Config& config) {
             EchoCanceller3Config::Suppressor::MaskingThresholds(.07f, .1f, .3f),
             2.0f, 0.25f);
 
-    adjusted_cfg.suppressor.dominant_nearend_detection.enr_threshold = 10.f;
+    adjusted_cfg.suppressor.dominant_nearend_detection.enr_threshold = 0.1f;
     adjusted_cfg.suppressor.dominant_nearend_detection.snr_threshold = 10.f;
     adjusted_cfg.suppressor.dominant_nearend_detection.hold_duration = 25;
   }
