@@ -189,6 +189,11 @@ class FakePeerConnectionBase : public PeerConnectionInternal {
 
   void SetAudioRecording(bool recording) override {}
 
+  rtc::scoped_refptr<DtlsTransportInterface> LookupDtlsTransportByMid(
+      const std::string& mid) {
+    return nullptr;
+  }
+
   SignalingState signaling_state() override { return SignalingState::kStable; }
 
   IceConnectionState ice_connection_state() override {

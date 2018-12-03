@@ -1034,9 +1034,9 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   // In the Javascript API, DtlsTransport is a property of a sender, but
   // because the PeerConnection owns the DtlsTransport in this implementation,
   // it is better to look them up on the PeerConnection.
+  // TODO(hta): Remove default implementation after updating Chrome.
   virtual rtc::scoped_refptr<DtlsTransportInterface> LookupDtlsTransportByMid(
       const std::string& mid);
-  // TODO(hta): Remove default implementation.
 
   // Returns the current SignalingState.
   virtual SignalingState signaling_state() = 0;
