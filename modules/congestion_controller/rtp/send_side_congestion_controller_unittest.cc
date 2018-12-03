@@ -302,7 +302,7 @@ TEST_F(SendSideCongestionControllerTest, OldFeedback) {
     feedback.Build();
     controller_->OnTransportFeedback(feedback);
   }
-
+  controller_->WaitOnTasks();
   // If the bitrate is reset to -1, the new starting bitrate will be
   // the minimum default bitrate kMinBitrateBps.
   EXPECT_CALL(
