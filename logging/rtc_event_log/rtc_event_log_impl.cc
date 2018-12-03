@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/types/optional.h"
 #include "api/rtceventlogoutput.h"
 #include "logging/rtc_event_log/encoder/rtc_event_log_encoder_legacy.h"
 #include "logging/rtc_event_log/encoder/rtc_event_log_encoder_new_format.h"
@@ -127,7 +128,7 @@ class RtcEventLogImpl final : public RtcEventLog {
   std::unique_ptr<RtcEventLogOutput> event_output_ RTC_GUARDED_BY(*task_queue_);
 
   size_t num_config_events_written_ RTC_GUARDED_BY(*task_queue_);
-  int64_t output_period_ms_ RTC_GUARDED_BY(*task_queue_);
+  absl::optional<int64_t> output_period_ms_ RTC_GUARDED_BY(*task_queue_);
   int64_t last_output_ms_ RTC_GUARDED_BY(*task_queue_);
   bool output_scheduled_ RTC_GUARDED_BY(*task_queue_);
 
@@ -147,7 +148,6 @@ RtcEventLogImpl::RtcEventLogImpl(
       written_bytes_(0),
       event_encoder_(std::move(event_encoder)),
       num_config_events_written_(0),
-      output_period_ms_(kImmediateOutput),
       last_output_ms_(rtc::TimeMillis()),
       output_scheduled_(false),
       task_queue_(std::move(task_queue)) {
@@ -250,7 +250,8 @@ void RtcEventLogImpl::ScheduleOutput() {
     return;
   }
 
-  if (output_period_ms_ == kImmediateOutput) {
+  RTC_DCHECK(output_period_ms_.has_value());
+  if (*output_period_ms_ == kImmediateOutput) {
     // We are already on the |task_queue_| so there is no reason to post a task
     // if we want to output immediately.
     LogEventsFromMemoryToOutput();
@@ -268,10 +269,10 @@ void RtcEventLogImpl::ScheduleOutput() {
       }
       output_scheduled_ = false;
     };
-    int64_t now_ms = rtc::TimeMillis();
-    int64_t time_since_output_ms = now_ms - last_output_ms_;
-    uint32_t delay = rtc::SafeClamp(output_period_ms_ - time_since_output_ms, 0,
-                                    output_period_ms_);
+    const int64_t now_ms = rtc::TimeMillis();
+    const int64_t time_since_output_ms = now_ms - last_output_ms_;
+    const uint32_t delay = rtc::SafeClamp(
+        *output_period_ms_ - time_since_output_ms, 0, *output_period_ms_);
     task_queue_->PostDelayedTask(output_task, delay);
   }
 }
