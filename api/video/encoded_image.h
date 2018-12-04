@@ -70,6 +70,11 @@ class RTC_EXPORT EncodedImage {
   size_t size() const { return _length; }
   size_t capacity() const { return _size; }
 
+  void set_buffer(uint8_t* buffer, size_t capacity) {
+    _buffer = buffer;
+    _size = capacity;
+  }
+
   uint32_t _encodedWidth = 0;
   uint32_t _encodedHeight = 0;
   // NTP time of the capture time in local timebase in milliseconds.
