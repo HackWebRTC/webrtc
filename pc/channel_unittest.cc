@@ -925,12 +925,11 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     });
     WaitForThreads();
     EXPECT_EQ(1, media_channel1->num_network_route_changes());
-    rtc::NetworkRoute expected_network_route;
-    expected_network_route.connected = true;
-    expected_network_route.local_network_id = kLocalNetId;
-    expected_network_route.remote_network_id = kRemoteNetId;
-    expected_network_route.last_sent_packet_id = kLastPacketId;
-    EXPECT_EQ(expected_network_route, media_channel1->last_network_route());
+    EXPECT_TRUE(media_channel1->last_network_route().connected);
+    EXPECT_EQ(kLocalNetId,
+              media_channel1->last_network_route().local_network_id);
+    EXPECT_EQ(kRemoteNetId,
+              media_channel1->last_network_route().remote_network_id);
     EXPECT_EQ(kLastPacketId,
               media_channel1->last_network_route().last_sent_packet_id);
     EXPECT_EQ(kTransportOverheadPerPacket + kSrtpOverheadPerPacket,

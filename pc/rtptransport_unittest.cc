@@ -193,7 +193,9 @@ TEST(RtpTransportTest, SetRtpTransportWithNetworkRouteChanged) {
   fake_rtp.SetNetworkRoute(absl::optional<rtc::NetworkRoute>(network_route));
   transport.SetRtpPacketTransport(&fake_rtp);
   ASSERT_TRUE(observer.network_route());
-  EXPECT_EQ(network_route, *(observer.network_route()));
+  EXPECT_TRUE(observer.network_route()->connected);
+  EXPECT_EQ(kLocalNetId, observer.network_route()->local_network_id);
+  EXPECT_EQ(kRemoteNetId, observer.network_route()->remote_network_id);
   EXPECT_EQ(kTransportOverheadPerPacket,
             observer.network_route()->packet_overhead);
   EXPECT_EQ(kLastPacketId, observer.network_route()->last_sent_packet_id);
@@ -220,7 +222,9 @@ TEST(RtpTransportTest, SetRtcpTransportWithNetworkRouteChanged) {
   fake_rtcp.SetNetworkRoute(absl::optional<rtc::NetworkRoute>(network_route));
   transport.SetRtcpPacketTransport(&fake_rtcp);
   ASSERT_TRUE(observer.network_route());
-  EXPECT_EQ(network_route, *(observer.network_route()));
+  EXPECT_TRUE(observer.network_route()->connected);
+  EXPECT_EQ(kLocalNetId, observer.network_route()->local_network_id);
+  EXPECT_EQ(kRemoteNetId, observer.network_route()->remote_network_id);
   EXPECT_EQ(kTransportOverheadPerPacket,
             observer.network_route()->packet_overhead);
   EXPECT_EQ(kLastPacketId, observer.network_route()->last_sent_packet_id);

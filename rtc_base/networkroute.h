@@ -27,16 +27,6 @@ struct NetworkRoute {
   int last_sent_packet_id = -1;
   // The overhead in bytes from IP layer and above.
   int packet_overhead = 0;
-
-  // |last_sent_packet_id| and |packet_overhead| do not affect the NetworkRoute
-  // comparison.
-  bool operator==(const NetworkRoute& nr) const {
-    return connected == nr.connected &&
-           local_network_id == nr.local_network_id &&
-           remote_network_id == nr.remote_network_id;
-  }
-
-  bool operator!=(const NetworkRoute& nr) const { return !(*this == nr); }
 };
 }  // namespace rtc
 

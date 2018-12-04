@@ -236,7 +236,9 @@ void RtpTransportControllerSend::OnNetworkRouteChanged(
     // No need to reset BWE if this is the first time the network connects.
     return;
   }
-  if (kv->second != network_route) {
+  if (kv->second.connected != network_route.connected ||
+      kv->second.local_network_id != network_route.local_network_id ||
+      kv->second.remote_network_id != network_route.remote_network_id) {
     kv->second = network_route;
     BitrateConstraints bitrate_config = bitrate_configurator_.GetConfig();
     RTC_LOG(LS_INFO) << "Network route changed on transport " << transport_name
