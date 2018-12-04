@@ -2468,6 +2468,18 @@ RTCError PeerConnection::ApplyRemoteDescription(
           }
           media_streams.push_back(stream);
         }
+        // Special case: "a=msid" missing, use random stream ID.
+        if (media_streams.empty() &&
+            !(remote_description()->description()->msid_signaling() &
+              cricket::kMsidSignalingMediaSection)) {
+          if (!missing_msid_default_stream_) {
+            missing_msid_default_stream_ = MediaStreamProxy::Create(
+                rtc::Thread::Current(),
+                MediaStream::Create(rtc::CreateRandomUuid()));
+            added_streams.push_back(missing_msid_default_stream_);
+          }
+          media_streams.push_back(missing_msid_default_stream_);
+        }
         // This will add the remote track to the streams.
         // TODO(hbos): When we remove remote_streams(), use set_stream_ids()
         // instead. https://crbug.com/webrtc/9480

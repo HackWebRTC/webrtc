@@ -1033,6 +1033,11 @@ class PeerConnection : public PeerConnectionInternal,
   std::vector<
       rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
       transceivers_;
+  // In Unified Plan, if we encounter remote SDP that does not contain an a=msid
+  // line we create and use a stream with a random ID for our receivers. This is
+  // to support legacy endpoints that do not support the a=msid attribute (as
+  // opposed to streamless tracks with "a=msid:-").
+  rtc::scoped_refptr<MediaStreamInterface> missing_msid_default_stream_;
   // MIDs that have been seen either by SetLocalDescription or
   // SetRemoteDescription over the life of the PeerConnection.
   std::set<std::string> seen_mids_;
