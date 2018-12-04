@@ -178,7 +178,6 @@ class RTC_EXPORT VideoEncoder {
   //                                 <0 - Errors:
   //                                  WEBRTC_VIDEO_CODEC_ERR_PARAMETER
   //                                  WEBRTC_VIDEO_CODEC_ERR_SIZE
-  //                                  WEBRTC_VIDEO_CODEC_LEVEL_EXCEEDED
   //                                  WEBRTC_VIDEO_CODEC_MEMORY
   //                                  WEBRTC_VIDEO_CODEC_ERROR
   virtual int32_t InitEncode(const VideoCodec* codec_settings,
@@ -210,7 +209,6 @@ class RTC_EXPORT VideoEncoder {
   //                                  WEBRTC_VIDEO_CODEC_ERR_PARAMETER
   //                                  WEBRTC_VIDEO_CODEC_MEMORY
   //                                  WEBRTC_VIDEO_CODEC_ERROR
-  //                                  WEBRTC_VIDEO_CODEC_TIMEOUT
   virtual int32_t Encode(const VideoFrame& frame,
                          const CodecSpecificInfo* codec_specific_info,
                          const std::vector<FrameType>* frame_types) = 0;

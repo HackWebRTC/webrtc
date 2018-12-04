@@ -238,8 +238,7 @@ int32_t VCMGenericDecoder::Decode(const VCMEncodedFrame& frame, int64_t nowMs) {
                         << frame.Timestamp() << ", error code: " << ret;
     _callback->Pop(frame.Timestamp());
     return ret;
-  } else if (ret == WEBRTC_VIDEO_CODEC_NO_OUTPUT ||
-             ret == WEBRTC_VIDEO_CODEC_REQUEST_SLI) {
+  } else if (ret == WEBRTC_VIDEO_CODEC_NO_OUTPUT) {
     // No output
     _callback->Pop(frame.Timestamp());
   }
