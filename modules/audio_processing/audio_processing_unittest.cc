@@ -40,7 +40,6 @@
 #include "rtc_base/system/arch.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread.h"
-#include "system_wrappers/include/event_wrapper.h"
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
 

@@ -14,7 +14,6 @@
 #include "modules/audio_device/linux/audio_device_alsa_linux.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/system/arch.h"
-#include "system_wrappers/include/event_wrapper.h"
 #include "system_wrappers/include/sleep.h"
 
 WebRTCAlsaSymbolTable* GetAlsaSymbolTable() {

@@ -20,6 +20,7 @@
 #include "modules/video_coding/packet.h"
 #include "modules/video_coding/timing.h"
 #include "rtc_base/criticalsection.h"
+#include "system_wrappers/include/event_wrapper.h"
 
 namespace webrtc {
 

@@ -18,7 +18,6 @@
 #include "modules/include/module_common_types.h"
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "rtc_base/deprecation.h"
-#include "system_wrappers/include/event_wrapper.h"
 
 namespace webrtc {
 

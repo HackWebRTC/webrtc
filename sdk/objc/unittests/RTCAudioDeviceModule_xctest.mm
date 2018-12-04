@@ -14,8 +14,6 @@
 #import "sdk/objc/native/api/audio_device_module.h"
 #endif
 
-#include "system_wrappers/include/event_wrapper.h"
-
 #include "rtc_base/scoped_ref_ptr.h"
 
 typedef int32_t(^NeedMorePlayDataBlock)(const size_t nSamples,

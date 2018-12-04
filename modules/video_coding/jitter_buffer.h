@@ -28,6 +28,7 @@
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/thread_annotations.h"
+#include "system_wrappers/include/event_wrapper.h"
 
 namespace webrtc {
 
@@ -35,7 +36,6 @@ enum VCMNackMode { kNack, kNoNack };
 
 // forward declarations
 class Clock;
-class EventWrapper;
 class VCMFrameBuffer;
 class VCMPacket;
 class VCMEncodedFrame;
