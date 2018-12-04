@@ -22,12 +22,4 @@ std::unique_ptr<RtcEventLog> FakeRtcEventLogFactory::CreateRtcEventLog(
   return fake_event_log;
 }
 
-std::unique_ptr<RtcEventLog> FakeRtcEventLogFactory::CreateRtcEventLog(
-    RtcEventLog::EncodingType encoding_type,
-    std::unique_ptr<rtc::TaskQueue> task_queue) {
-  std::unique_ptr<RtcEventLog> fake_event_log(new FakeRtcEventLog(thread()));
-  last_log_created_ = fake_event_log.get();
-  return fake_event_log;
-}
-
 }  // namespace webrtc

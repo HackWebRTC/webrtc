@@ -369,16 +369,10 @@ void RtcEventLogImpl::WriteToOutput(const std::string& output_string) {
 
 // RtcEventLog member functions.
 std::unique_ptr<RtcEventLog> RtcEventLog::Create(EncodingType encoding_type) {
-  return Create(encoding_type,
-                absl::make_unique<rtc::TaskQueue>("rtc_event_log"));
-}
-
-std::unique_ptr<RtcEventLog> RtcEventLog::Create(
-    EncodingType encoding_type,
-    std::unique_ptr<rtc::TaskQueue> task_queue) {
 #ifdef ENABLE_RTC_EVENT_LOG
-  return absl::make_unique<RtcEventLogImpl>(CreateEncoder(encoding_type),
-                                            std::move(task_queue));
+  return absl::make_unique<RtcEventLogImpl>(
+      CreateEncoder(encoding_type),
+      absl::make_unique<rtc::TaskQueue>("rtc_event_log"));
 #else
   return CreateNull();
 #endif  // ENABLE_RTC_EVENT_LOG

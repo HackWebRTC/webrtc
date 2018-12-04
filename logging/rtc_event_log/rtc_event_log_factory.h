@@ -25,10 +25,6 @@ class RtcEventLogFactory : public RtcEventLogFactoryInterface {
 
   std::unique_ptr<RtcEventLog> CreateRtcEventLog(
       RtcEventLog::EncodingType encoding_type) override;
-
-  std::unique_ptr<RtcEventLog> CreateRtcEventLog(
-      RtcEventLog::EncodingType encoding_type,
-      std::unique_ptr<rtc::TaskQueue> task_queue) override;
 };
 
 std::unique_ptr<RtcEventLogFactoryInterface> CreateRtcEventLogFactory();
