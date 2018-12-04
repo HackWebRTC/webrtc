@@ -19,7 +19,7 @@ RtcEventDtlsWritableState::RtcEventDtlsWritableState(bool writable)
 
 RtcEventDtlsWritableState::RtcEventDtlsWritableState(
     const RtcEventDtlsWritableState& other)
-    : writable_(other.writable_) {}
+    : RtcEvent(other.timestamp_us_), writable_(other.writable_) {}
 
 RtcEventDtlsWritableState::~RtcEventDtlsWritableState() = default;
 
