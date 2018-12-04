@@ -80,6 +80,12 @@ class EventGenerator {
 
   std::unique_ptr<RtcEventRtcpPacketOutgoing> NewRtcpPacketOutgoing();
 
+  rtcp::SenderReport NewSenderReport();
+  rtcp::ReceiverReport NewReceiverReport();
+  rtcp::Nack NewNack();
+  rtcp::TransportFeedback NewTransportFeedback();
+  rtcp::Remb NewRemb();
+
   // |all_configured_exts| determines whether the RTP packet exhibits all
   // configured extensions, or a random subset thereof.
   void RandomizeRtpPacket(size_t payload_size,
@@ -125,8 +131,6 @@ class EventGenerator {
 
  private:
   rtcp::ReportBlock NewReportBlock();
-  rtcp::SenderReport NewSenderReport();
-  rtcp::ReceiverReport NewReceiverReport();
 
   Random prng_;
 };
@@ -219,6 +223,24 @@ class EventVerifier {
       const RtcEventRtcpPacketOutgoing& original_event,
       const LoggedRtcpPacketOutgoing& logged_event) const;
 
+  void VerifyLoggedSenderReport(int64_t log_time_us,
+                                const rtcp::SenderReport& original_sr,
+                                const LoggedRtcpPacketSenderReport& logged_sr);
+  void VerifyLoggedReceiverReport(
+      int64_t log_time_us,
+      const rtcp::ReceiverReport& original_rr,
+      const LoggedRtcpPacketReceiverReport& logged_rr);
+  void VerifyLoggedNack(int64_t log_time_us,
+                        const rtcp::Nack& original_nack,
+                        const LoggedRtcpPacketNack& logged_nack);
+  void VerifyLoggedTransportFeedback(
+      int64_t log_time_us,
+      const rtcp::TransportFeedback& original_transport_feedback,
+      const LoggedRtcpPacketTransportFeedback& logged_transport_feedback);
+  void VerifyLoggedRemb(int64_t log_time_us,
+                        const rtcp::Remb& original_remb,
+                        const LoggedRtcpPacketRemb& logged_remb);
+
   void VerifyLoggedStartEvent(int64_t start_time_us,
                               int64_t utc_start_time_us,
                               const LoggedStartEvent& logged_event) const;
@@ -242,6 +264,9 @@ class EventVerifier {
       const LoggedVideoSendConfig& logged_event) const;
 
  private:
+  void VerifyReportBlock(const rtcp::ReportBlock& original_report_block,
+                         const rtcp::ReportBlock& logged_report_block);
+
   RtcEventLog::EncodingType encoding_type_;
 };
 

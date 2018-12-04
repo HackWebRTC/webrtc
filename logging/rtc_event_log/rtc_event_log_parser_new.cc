@@ -725,6 +725,55 @@ void StoreRtcpPackets(const ProtoType& proto,
   }
 }
 
+void StoreRtcpBlocks(
+    int64_t timestamp_us,
+    const uint8_t* packet_begin,
+    const uint8_t* packet_end,
+    std::vector<LoggedRtcpPacketTransportFeedback>* transport_feedback_list,
+    std::vector<LoggedRtcpPacketSenderReport>* sr_list,
+    std::vector<LoggedRtcpPacketReceiverReport>* rr_list,
+    std::vector<LoggedRtcpPacketRemb>* remb_list,
+    std::vector<LoggedRtcpPacketNack>* nack_list) {
+  rtcp::CommonHeader header;
+  for (const uint8_t* block = packet_begin; block < packet_end;
+       block = header.NextPacket()) {
+    RTC_CHECK(header.Parse(block, packet_end - block));
+    if (header.type() == rtcp::TransportFeedback::kPacketType &&
+        header.fmt() == rtcp::TransportFeedback::kFeedbackMessageType) {
+      LoggedRtcpPacketTransportFeedback parsed_block;
+      parsed_block.timestamp_us = timestamp_us;
+      if (parsed_block.transport_feedback.Parse(header))
+        transport_feedback_list->push_back(std::move(parsed_block));
+    } else if (header.type() == rtcp::SenderReport::kPacketType) {
+      LoggedRtcpPacketSenderReport parsed_block;
+      parsed_block.timestamp_us = timestamp_us;
+      if (parsed_block.sr.Parse(header)) {
+        sr_list->push_back(std::move(parsed_block));
+      }
+    } else if (header.type() == rtcp::ReceiverReport::kPacketType) {
+      LoggedRtcpPacketReceiverReport parsed_block;
+      parsed_block.timestamp_us = timestamp_us;
+      if (parsed_block.rr.Parse(header)) {
+        rr_list->push_back(std::move(parsed_block));
+      }
+    } else if (header.type() == rtcp::Remb::kPacketType &&
+               header.fmt() == rtcp::Remb::kFeedbackMessageType) {
+      LoggedRtcpPacketRemb parsed_block;
+      parsed_block.timestamp_us = timestamp_us;
+      if (parsed_block.remb.Parse(header)) {
+        remb_list->push_back(std::move(parsed_block));
+      }
+    } else if (header.type() == rtcp::Nack::kPacketType &&
+               header.fmt() == rtcp::Nack::kFeedbackMessageType) {
+      LoggedRtcpPacketNack parsed_block;
+      parsed_block.timestamp_us = timestamp_us;
+      if (parsed_block.nack.Parse(header)) {
+        nack_list->push_back(std::move(parsed_block));
+      }
+    }
+  }
+}
+
 }  // namespace
 
 LoggedRtcpPacket::LoggedRtcpPacket(uint64_t timestamp_us,
@@ -922,7 +971,7 @@ bool ParsedRtcEventLogNew::ParseStream(
   }
   outgoing_rtp_packets_map_.clear();
 
-  // Build PacketViews for easier iteration over RTP packets
+  // Build PacketViews for easier iteration over RTP packets.
   for (const auto& stream : incoming_rtp_packets_by_ssrc_) {
     incoming_rtp_packet_views_by_ssrc_.emplace_back(
         LoggedRtpStreamView(stream.ssrc, stream.incoming_packets.data(),
@@ -932,6 +981,25 @@ bool ParsedRtcEventLogNew::ParseStream(
     outgoing_rtp_packet_views_by_ssrc_.emplace_back(
         LoggedRtpStreamView(stream.ssrc, stream.outgoing_packets.data(),
                             stream.outgoing_packets.size()));
+  }
+
+  // Set up convenience wrappers around the most commonly used RTCP types.
+  for (const auto& incoming : incoming_rtcp_packets_) {
+    const int64_t timestamp_us = incoming.rtcp.timestamp_us;
+    const uint8_t* packet_begin = incoming.rtcp.raw_data.data();
+    const uint8_t* packet_end = packet_begin + incoming.rtcp.raw_data.size();
+    StoreRtcpBlocks(timestamp_us, packet_begin, packet_end,
+                    &incoming_transport_feedback_, &incoming_sr_, &incoming_rr_,
+                    &incoming_remb_, &incoming_nack_);
+  }
+
+  for (const auto& outgoing : outgoing_rtcp_packets_) {
+    const int64_t timestamp_us = outgoing.rtcp.timestamp_us;
+    const uint8_t* packet_begin = outgoing.rtcp.raw_data.data();
+    const uint8_t* packet_end = packet_begin + outgoing.rtcp.raw_data.size();
+    StoreRtcpBlocks(timestamp_us, packet_begin, packet_end,
+                    &outgoing_transport_feedback_, &outgoing_sr_, &outgoing_rr_,
+                    &outgoing_remb_, &outgoing_nack_);
   }
 
   return success;
@@ -1153,68 +1221,6 @@ void ParsedRtcEventLogNew::StoreParsedLegacyEvent(const rtclog::Event& event) {
       } else {
         outgoing_rtcp_packets_.push_back(
             LoggedRtcpPacketOutgoing(timestamp_us, packet, total_length));
-      }
-      rtcp::CommonHeader header;
-      const uint8_t* packet_end = packet + total_length;
-      for (const uint8_t* block = packet; block < packet_end;
-           block = header.NextPacket()) {
-        RTC_CHECK(header.Parse(block, packet_end - block));
-        if (header.type() == rtcp::TransportFeedback::kPacketType &&
-            header.fmt() == rtcp::TransportFeedback::kFeedbackMessageType) {
-          if (direction == kIncomingPacket) {
-            incoming_transport_feedback_.emplace_back();
-            LoggedRtcpPacketTransportFeedback& parsed_block =
-                incoming_transport_feedback_.back();
-            parsed_block.timestamp_us = GetTimestamp(event);
-            if (!parsed_block.transport_feedback.Parse(header))
-              incoming_transport_feedback_.pop_back();
-          } else {
-            outgoing_transport_feedback_.emplace_back();
-            LoggedRtcpPacketTransportFeedback& parsed_block =
-                outgoing_transport_feedback_.back();
-            parsed_block.timestamp_us = GetTimestamp(event);
-            if (!parsed_block.transport_feedback.Parse(header))
-              outgoing_transport_feedback_.pop_back();
-          }
-        } else if (header.type() == rtcp::SenderReport::kPacketType) {
-          LoggedRtcpPacketSenderReport parsed_block;
-          parsed_block.timestamp_us = GetTimestamp(event);
-          if (parsed_block.sr.Parse(header)) {
-            if (direction == kIncomingPacket)
-              incoming_sr_.push_back(std::move(parsed_block));
-            else
-              outgoing_sr_.push_back(std::move(parsed_block));
-          }
-        } else if (header.type() == rtcp::ReceiverReport::kPacketType) {
-          LoggedRtcpPacketReceiverReport parsed_block;
-          parsed_block.timestamp_us = GetTimestamp(event);
-          if (parsed_block.rr.Parse(header)) {
-            if (direction == kIncomingPacket)
-              incoming_rr_.push_back(std::move(parsed_block));
-            else
-              outgoing_rr_.push_back(std::move(parsed_block));
-          }
-        } else if (header.type() == rtcp::Remb::kPacketType &&
-                   header.fmt() == rtcp::Remb::kFeedbackMessageType) {
-          LoggedRtcpPacketRemb parsed_block;
-          parsed_block.timestamp_us = GetTimestamp(event);
-          if (parsed_block.remb.Parse(header)) {
-            if (direction == kIncomingPacket)
-              incoming_remb_.push_back(std::move(parsed_block));
-            else
-              outgoing_remb_.push_back(std::move(parsed_block));
-          }
-        } else if (header.type() == rtcp::Nack::kPacketType &&
-                   header.fmt() == rtcp::Nack::kFeedbackMessageType) {
-          LoggedRtcpPacketNack parsed_block;
-          parsed_block.timestamp_us = GetTimestamp(event);
-          if (parsed_block.nack.Parse(header)) {
-            if (direction == kIncomingPacket)
-              incoming_nack_.push_back(std::move(parsed_block));
-            else
-              outgoing_nack_.push_back(std::move(parsed_block));
-          }
-        }
       }
       break;
     }
