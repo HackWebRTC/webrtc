@@ -131,7 +131,6 @@ RTPSender::RTPSender(
       paced_sender_(paced_sender),
       transport_sequence_number_allocator_(sequence_number_allocator),
       transport_feedback_observer_(transport_feedback_observer),
-      last_capture_time_ms_sent_(0),
       transport_(transport),
       sending_media_(true),  // Default to sending media.
       force_part_of_allocation_(false),
@@ -952,10 +951,6 @@ bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
 
     paced_sender_->InsertPacket(priority, ssrc, seq_no, corrected_time_ms,
                                 payload_length, false);
-    if (last_capture_time_ms_sent_ == 0 ||
-        corrected_time_ms > last_capture_time_ms_sent_) {
-      last_capture_time_ms_sent_ = corrected_time_ms;
-    }
     return true;
   }
 
