@@ -33,6 +33,7 @@
 #include "modules/rtp_rtcp/source/contributing_sources.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
+#include "modules/rtp_rtcp/source/rtp_rtcp_config.h"
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/criticalsection.h"
@@ -802,11 +803,14 @@ CallReceiveStatistics ChannelReceive::GetRTCPStatistics() const {
 void ChannelReceive::SetNACKStatus(bool enable, int max_packets) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   // None of these functions can fail.
-  rtp_receive_statistics_->SetMaxReorderingThreshold(max_packets);
-  if (enable)
+  if (enable) {
+    rtp_receive_statistics_->SetMaxReorderingThreshold(max_packets);
     audio_coding_->EnableNack(max_packets);
-  else
+  } else {
+    rtp_receive_statistics_->SetMaxReorderingThreshold(
+        kDefaultMaxReorderingThreshold);
     audio_coding_->DisableNack();
+  }
 }
 
 // Called when we are missing one or more packets.
