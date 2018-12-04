@@ -67,9 +67,11 @@ class VCMEncodedFrame : protected EncodedImage {
   /**
    *   Frame RTP timestamp (90kHz)
    */
-  using EncodedImage::Timestamp;
+  using EncodedImage::set_size;
   using EncodedImage::SetTimestamp;
   using EncodedImage::size;
+  using EncodedImage::Timestamp;
+
   /**
    *   Get render time in milliseconds
    */
@@ -90,6 +92,7 @@ class VCMEncodedFrame : protected EncodedImage {
    * Get video timing
    */
   EncodedImage::Timing video_timing() const { return timing_; }
+  EncodedImage::Timing* video_timing_mutable() { return &timing_; }
   /**
    *   True if this frame is complete, false otherwise
    */
@@ -109,8 +112,10 @@ class VCMEncodedFrame : protected EncodedImage {
    *   the object.
    */
   const CodecSpecificInfo* CodecSpecific() const { return &_codecSpecificInfo; }
+  void SetCodecSpecific(const CodecSpecificInfo* codec_specific) {
+    _codecSpecificInfo = *codec_specific;
+  }
 
- protected:
   /**
    * Verifies that current allocated buffer size is larger than or equal to the
    * input size.
@@ -121,6 +126,7 @@ class VCMEncodedFrame : protected EncodedImage {
    */
   void VerifyAndAllocate(size_t minimumSize);
 
+ protected:
   void Reset();
 
   void CopyCodecSpecific(const RTPVideoHeader* header);

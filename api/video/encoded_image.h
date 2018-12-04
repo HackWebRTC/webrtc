@@ -68,6 +68,10 @@ class RTC_EXPORT EncodedImage {
   }
 
   size_t size() const { return _length; }
+  void set_size(size_t new_size) {
+    RTC_DCHECK_LE(new_size, _size);
+    _length = new_size;
+  }
   size_t capacity() const { return _size; }
 
   void set_buffer(uint8_t* buffer, size_t capacity) {
