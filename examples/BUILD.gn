@@ -25,7 +25,6 @@ group("examples") {
   if (is_android) {
     deps += [
       ":AppRTCMobile",
-      ":AppRTCMobile_stubbed_video_io_test_apk",
       ":AppRTCMobile_test_apk",
       ":libwebrtc_unity",
     ]
@@ -178,51 +177,6 @@ if (is_android) {
       "../sdk/android:video_java",
       "//third_party/android_support_test_runner:runner_java",
       "//third_party/junit",
-    ]
-  }
-
-  group("video_quality_loopback_test") {
-    testonly = true
-
-    deps = [
-      ":AppRTCMobile_stubbed_video_io_test_apk",
-      "../rtc_tools:frame_analyzer_host",
-    ]
-
-    data = [
-      "../build/android/adb_reverse_forwarder.py",
-      "../examples/androidtests/video_quality_loopback_test.py",
-      "../resources/reference_video_640x360_30fps.y4m",
-      "../rtc_tools/compare_videos.py",
-      "../rtc_tools/testing/prebuilt_apprtc.zip",
-      "../rtc_tools/testing/golang/linux/go.tar.gz",
-      "../rtc_tools/testing/build_apprtc.py",
-      "../rtc_tools/testing/utils.py",
-      "../tools_webrtc/video_quality_toolchain/linux/ffmpeg",
-      "${root_out_dir}/frame_analyzer_host",
-    ]
-  }
-
-  rtc_instrumentation_test_apk("AppRTCMobile_stubbed_video_io_test_apk") {
-    apk_name = "AppRTCMobileTestStubbedVideoIO"
-    android_manifest = "androidtests/AndroidManifest.xml"
-
-    java_files = [ "androidtests/src/org/appspot/apprtc/test/CallActivityStubbedInputOutputTest.java" ]
-
-    apk_under_test = ":AppRTCMobile"
-
-    deps = [
-      ":AppRTCMobile_javalib",
-      "../sdk/android:libjingle_peerconnection_java",
-      "//third_party/android_support_test_runner:rules_java",
-      "//third_party/android_support_test_runner:runner_java",
-      "//third_party/espresso:espresso_all_java",
-      "//third_party/hamcrest:hamcrest_java",
-      "//third_party/junit",
-    ]
-
-    data = [
-      "../resources/reference_video_640x360_30fps.y4m",
     ]
   }
 }
