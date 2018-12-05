@@ -24,7 +24,8 @@
         { "os": "Mac-10.13.4", "pool": "Chrome" },
         { "os": "Mac-10.13.5", "pool": "Chrome" },
         { "os": "Mac-10.13.6", "pool": "Chrome" }
-      ]
+      ],
+      "priority": 30
     }
   ]
 }
