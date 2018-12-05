@@ -192,19 +192,6 @@ TEST(TaskQueueTest, PostDelayedAfterDestruct) {
   EXPECT_FALSE(run.Wait(0));  // and should not run.
 }
 
-TEST(TaskQueueTest, PostAndReply) {
-  static const char kPostQueue[] = "PostQueue";
-  static const char kReplyQueue[] = "ReplyQueue";
-  Event event;
-  TaskQueue post_queue(kPostQueue);
-  TaskQueue reply_queue(kReplyQueue);
-
-  post_queue.PostTaskAndReply(Bind(&CheckCurrent, nullptr, &post_queue),
-                              Bind(&CheckCurrent, &event, &reply_queue),
-                              &reply_queue);
-  EXPECT_TRUE(event.Wait(1000));
-}
-
 TEST(TaskQueueTest, PostAndReuse) {
   static const char kPostQueue[] = "PostQueue";
   static const char kReplyQueue[] = "ReplyQueue";
@@ -250,20 +237,6 @@ TEST(TaskQueueTest, PostAndReuse) {
 
   post_queue.PostTask(std::move(task));
   EXPECT_TRUE(event.Wait(1000));
-}
-
-TEST(TaskQueueTest, PostAndReplyLambda) {
-  static const char kPostQueue[] = "PostQueue";
-  static const char kReplyQueue[] = "ReplyQueue";
-  Event event;
-  TaskQueue post_queue(kPostQueue);
-  TaskQueue reply_queue(kReplyQueue);
-
-  bool my_flag = false;
-  post_queue.PostTaskAndReply([&my_flag]() { my_flag = true; },
-                              [&event]() { event.Set(); }, &reply_queue);
-  EXPECT_TRUE(event.Wait(1000));
-  EXPECT_TRUE(my_flag);
 }
 
 TEST(TaskQueueTest, PostCopyableClosure) {
@@ -363,66 +336,6 @@ TEST(TaskQueueTest, PostMoveOnlyCleanup) {
   EXPECT_TRUE(event_cleanup.Wait(1000));
   // Expect run closure to complete before cleanup closure.
   EXPECT_TRUE(event_run.Wait(0));
-}
-
-// This test covers a particular bug that we had in the libevent implementation
-// where we could hit a deadlock while trying to post a reply task to a queue
-// that was being deleted.  The test isn't guaranteed to hit that case but it's
-// written in a way that makes it likely and by running with --gtest_repeat=1000
-// the bug would occur. Alas, now it should be fixed.
-TEST(TaskQueueTest, PostAndReplyDeadlock) {
-  Event event;
-  TaskQueue post_queue("PostQueue");
-  TaskQueue reply_queue("ReplyQueue");
-
-  post_queue.PostTaskAndReply([&event]() { event.Set(); }, []() {},
-                              &reply_queue);
-  EXPECT_TRUE(event.Wait(1000));
-}
-
-// http://bugs.webrtc.org/9728
-#if defined(WEBRTC_WIN)
-#define MAYBE_DeleteTaskQueueAfterPostAndReply \
-  DISABLED_DeleteTaskQueueAfterPostAndReply
-#else
-#define MAYBE_DeleteTaskQueueAfterPostAndReply DeleteTaskQueueAfterPostAndReply
-#endif
-TEST(TaskQueueTest, MAYBE_DeleteTaskQueueAfterPostAndReply) {
-  Event task_deleted;
-  Event reply_deleted;
-  auto* task_queue = new TaskQueue("Queue");
-
-  task_queue->PostTaskAndReply(
-      /*task=*/rtc::NewClosure(
-          /*closure=*/[] {},
-          /*cleanup=*/[&task_deleted] { task_deleted.Set(); }),
-      /*reply=*/rtc::NewClosure(
-          /*closure=*/[] {},
-          /*cleanup=*/[&reply_deleted] { reply_deleted.Set(); }));
-
-  delete task_queue;
-
-  EXPECT_TRUE(task_deleted.Wait(1000));
-  EXPECT_TRUE(reply_deleted.Wait(1000));
-}
-
-void TestPostTaskAndReply(TaskQueue* work_queue, Event* event) {
-  ASSERT_FALSE(work_queue->IsCurrent());
-  work_queue->PostTaskAndReply(Bind(&CheckCurrent, nullptr, work_queue),
-                               NewClosure([event]() { event->Set(); }));
-}
-
-// Does a PostTaskAndReply from within a task to post and reply to the current
-// queue.  All in all there will be 3 tasks posted and run.
-TEST(TaskQueueTest, PostAndReply2) {
-  static const char kQueueName[] = "PostAndReply2";
-  static const char kWorkQueueName[] = "PostAndReply2_Worker";
-  Event event;
-  TaskQueue queue(kQueueName);
-  TaskQueue work_queue(kWorkQueueName);
-
-  queue.PostTask(Bind(&TestPostTaskAndReply, &work_queue, &event));
-  EXPECT_TRUE(event.Wait(1000));
 }
 
 // Tests posting more messages than a queue can queue up.

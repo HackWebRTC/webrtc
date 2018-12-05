@@ -55,10 +55,6 @@ class TaskQueue::Impl : public RefCountInterface {
   bool IsCurrent() const;
 
   void PostTask(std::unique_ptr<QueuedTask> task);
-  void PostTaskAndReply(std::unique_ptr<QueuedTask> task,
-                        std::unique_ptr<QueuedTask> reply,
-                        TaskQueue::Impl* reply_queue);
-
   void PostDelayedTask(std::unique_ptr<QueuedTask> task, uint32_t milliseconds);
 
  private:
@@ -95,41 +91,6 @@ class TaskQueue::Impl : public RefCountInterface {
 
     QueueContext* const queue_ctx;
     std::unique_ptr<QueuedTask> task;
-  };
-
-  // Special case context for holding two tasks, a |first_task| + the task
-  // that's owned by the parent struct, TaskContext, that then becomes the
-  // second (i.e. 'reply') task.
-  struct PostTaskAndReplyContext : public TaskContext {
-    explicit PostTaskAndReplyContext(QueueContext* first_queue_ctx,
-                                     std::unique_ptr<QueuedTask> first_task,
-                                     QueueContext* second_queue_ctx,
-                                     std::unique_ptr<QueuedTask> second_task)
-        : TaskContext(second_queue_ctx, std::move(second_task)),
-          first_queue_ctx(first_queue_ctx),
-          first_task(std::move(first_task)),
-          reply_queue_(second_queue_ctx->queue->impl_->queue_) {
-      // Retain the reply queue for as long as this object lives.
-      // If we don't, we may have memory leaks and/or failures.
-      dispatch_retain(reply_queue_);
-    }
-    ~PostTaskAndReplyContext() override { dispatch_release(reply_queue_); }
-
-    static void RunTask(void* context) {
-      auto* rc = static_cast<PostTaskAndReplyContext*>(context);
-      if (rc->first_queue_ctx->is_active) {
-        AutoSetCurrentQueuePtr set_current(rc->first_queue_ctx->queue);
-        if (!rc->first_task->Run())
-          rc->first_task.release();
-      }
-      // Post the reply task.  This hands the work over to the parent struct.
-      // This task will eventually delete |this|.
-      dispatch_async_f(rc->reply_queue_, rc, &TaskContext::RunTask);
-    }
-
-    QueueContext* const first_queue_ctx;
-    std::unique_ptr<QueuedTask> first_task;
-    dispatch_queue_t reply_queue_;
   };
 
   dispatch_queue_t queue_;
@@ -192,14 +153,6 @@ void TaskQueue::Impl::PostDelayedTask(std::unique_ptr<QueuedTask> task,
       context, &TaskContext::RunTask);
 }
 
-void TaskQueue::Impl::PostTaskAndReply(std::unique_ptr<QueuedTask> task,
-                                       std::unique_ptr<QueuedTask> reply,
-                                       TaskQueue::Impl* reply_queue) {
-  auto* context = new PostTaskAndReplyContext(
-      context_, std::move(task), reply_queue->context_, std::move(reply));
-  dispatch_async_f(queue_, context, &PostTaskAndReplyContext::RunTask);
-}
-
 // Boilerplate for the PIMPL pattern.
 TaskQueue::TaskQueue(const char* queue_name, Priority priority)
     : impl_(new RefCountedObject<TaskQueue::Impl>(queue_name, this, priority)) {
@@ -219,19 +172,6 @@ bool TaskQueue::IsCurrent() const {
 
 void TaskQueue::PostTask(std::unique_ptr<QueuedTask> task) {
   return TaskQueue::impl_->PostTask(std::move(task));
-}
-
-void TaskQueue::PostTaskAndReply(std::unique_ptr<QueuedTask> task,
-                                 std::unique_ptr<QueuedTask> reply,
-                                 TaskQueue* reply_queue) {
-  return TaskQueue::impl_->PostTaskAndReply(std::move(task), std::move(reply),
-                                            reply_queue->impl_.get());
-}
-
-void TaskQueue::PostTaskAndReply(std::unique_ptr<QueuedTask> task,
-                                 std::unique_ptr<QueuedTask> reply) {
-  return TaskQueue::impl_->PostTaskAndReply(std::move(task), std::move(reply),
-                                            impl_.get());
 }
 
 void TaskQueue::PostDelayedTask(std::unique_ptr<QueuedTask> task,
