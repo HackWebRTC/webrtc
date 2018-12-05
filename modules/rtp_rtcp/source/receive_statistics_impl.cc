@@ -48,11 +48,10 @@ StreamStatisticianImpl::StreamStatisticianImpl(
       last_receive_time_ms_(0),
       last_received_timestamp_(0),
       received_seq_first_(0),
-      received_seq_max_(0),
-      received_seq_wraps_(0),
+      received_seq_max_(-1),
       last_report_inorder_packets_(0),
       last_report_old_packets_(0),
-      last_report_seq_max_(0),
+      last_report_seq_max_(-1),
       rtcp_callback_(rtcp_callback),
       rtp_callback_(rtp_callback) {}
 
@@ -64,54 +63,75 @@ void StreamStatisticianImpl::OnRtpPacket(const RtpPacketReceived& packet) {
     rtp_callback_->DataCountersUpdated(counters, ssrc_);
 }
 
+bool StreamStatisticianImpl::UpdateOutOfOrder(const RtpPacketReceived& packet,
+                                              int64_t sequence_number,
+                                              int64_t now_ms) {
+  RTC_DCHECK_EQ(sequence_number,
+                seq_unwrapper_.UnwrapWithoutUpdate(packet.SequenceNumber()));
+
+  // Check if |packet| is second packet of a stream restart.
+  if (received_seq_out_of_order_) {
+    uint16_t expected_sequence_number = *received_seq_out_of_order_ + 1;
+    received_seq_out_of_order_ = absl::nullopt;
+    if (packet.SequenceNumber() == expected_sequence_number) {
+      // Ignore sequence number gap caused by stream restart for next packet
+      // loss calculation.
+      last_report_seq_max_ = sequence_number;
+      last_report_inorder_packets_ = receive_counters_.transmitted.packets -
+                                     receive_counters_.retransmitted.packets;
+      // As final part of stream restart consider |packet| is not out of order.
+      return false;
+    }
+  }
+
+  if (std::abs(sequence_number - received_seq_max_) >
+      max_reordering_threshold_) {
+    // Sequence number gap looks too large, wait until next packet to check
+    // for a stream restart.
+    received_seq_out_of_order_ = packet.SequenceNumber();
+    return true;
+  }
+
+  if (sequence_number > received_seq_max_)
+    return false;
+
+  // Old out of order packet, may be retransmit.
+  if (enable_retransmit_detection_ && IsRetransmitOfOldPacket(packet, now_ms))
+    receive_counters_.retransmitted.AddPacket(packet);
+  return true;
+}
+
 StreamDataCounters StreamStatisticianImpl::UpdateCounters(
     const RtpPacketReceived& packet) {
   rtc::CritScope cs(&stream_lock_);
   RTC_DCHECK_EQ(ssrc_, packet.Ssrc());
-  uint16_t sequence_number = packet.SequenceNumber();
-  bool in_order =
-      // First packet is always in order.
-      last_receive_time_ms_ == 0 ||
-      IsNewerSequenceNumber(sequence_number, received_seq_max_) ||
-      // If we have a restart of the remote side this packet is still in order.
-      !IsNewerSequenceNumber(sequence_number,
-                             received_seq_max_ - max_reordering_threshold_);
   int64_t now_ms = clock_->TimeInMilliseconds();
 
   incoming_bitrate_.Update(packet.size(), now_ms);
   receive_counters_.transmitted.AddPacket(packet);
-  if (!in_order && enable_retransmit_detection_ &&
-      IsRetransmitOfOldPacket(packet, now_ms)) {
-    receive_counters_.retransmitted.AddPacket(packet);
-  }
 
-  if (receive_counters_.transmitted.packets == 1) {
-    received_seq_first_ = packet.SequenceNumber();
+  int64_t sequence_number =
+      seq_unwrapper_.UnwrapWithoutUpdate(packet.SequenceNumber());
+  if (!ReceivedRtpPacket()) {
+    received_seq_first_ = sequence_number;
+    last_report_seq_max_ = sequence_number - 1;
     receive_counters_.first_packet_time_ms = now_ms;
+  } else if (UpdateOutOfOrder(packet, sequence_number, now_ms)) {
+    return receive_counters_;
   }
+  // In order packet.
+  received_seq_max_ = sequence_number;
+  seq_unwrapper_.UpdateLast(sequence_number);
 
-  // Count only the new packets received. That is, if packets 1, 2, 3, 5, 4, 6
-  // are received, 4 will be ignored.
-  if (in_order) {
-    // Wrong if we use RetransmitOfOldPacket.
-    if (receive_counters_.transmitted.packets > 1 &&
-        received_seq_max_ > packet.SequenceNumber()) {
-      // Wrap around detected.
-      received_seq_wraps_++;
-    }
-    // New max.
-    received_seq_max_ = packet.SequenceNumber();
-
-    // If new time stamp and more than one in-order packet received, calculate
-    // new jitter statistics.
-    if (packet.Timestamp() != last_received_timestamp_ &&
-        (receive_counters_.transmitted.packets -
-         receive_counters_.retransmitted.packets) > 1) {
-      UpdateJitter(packet, now_ms);
-    }
-    last_received_timestamp_ = packet.Timestamp();
-    last_receive_time_ms_ = now_ms;
+  // If new time stamp and more than one in-order packet received, calculate
+  // new jitter statistics.
+  if (packet.Timestamp() != last_received_timestamp_ &&
+      (receive_counters_.transmitted.packets -
+       receive_counters_.retransmitted.packets) > 1) {
+    UpdateJitter(packet, now_ms);
   }
+  last_received_timestamp_ = packet.Timestamp();
+  last_receive_time_ms_ = now_ms;
   return receive_counters_;
 }
 
@@ -163,9 +183,7 @@ bool StreamStatisticianImpl::GetStatistics(RtcpStatistics* statistics,
                                            bool reset) {
   {
     rtc::CritScope cs(&stream_lock_);
-    if (received_seq_first_ == 0 &&
-        receive_counters_.transmitted.payload_bytes == 0) {
-      // We have not received anything.
+    if (!ReceivedRtpPacket()) {
       return false;
     }
 
@@ -196,9 +214,7 @@ bool StreamStatisticianImpl::GetActiveStatisticsAndReset(
       // Not active.
       return false;
     }
-    if (received_seq_first_ == 0 &&
-        receive_counters_.transmitted.payload_bytes == 0) {
-      // We have not received anything.
+    if (!ReceivedRtpPacket()) {
       return false;
     }
 
@@ -212,19 +228,9 @@ bool StreamStatisticianImpl::GetActiveStatisticsAndReset(
 
 RtcpStatistics StreamStatisticianImpl::CalculateRtcpStatistics() {
   RtcpStatistics stats;
-
-  if (last_report_inorder_packets_ == 0) {
-    // First time we send a report.
-    last_report_seq_max_ = received_seq_first_ - 1;
-  }
-
   // Calculate fraction lost.
-  uint16_t exp_since_last = (received_seq_max_ - last_report_seq_max_);
-
-  if (last_report_seq_max_ > received_seq_max_) {
-    // Can we assume that the seq_num can't go decrease over a full RTCP period?
-    exp_since_last = 0;
-  }
+  int64_t exp_since_last = received_seq_max_ - last_report_seq_max_;
+  RTC_DCHECK_GE(exp_since_last, 0);
 
   // Number of received RTP packets since last report, counts all packets but
   // not re-transmissions.
@@ -261,7 +267,7 @@ RtcpStatistics StreamStatisticianImpl::CalculateRtcpStatistics() {
   cumulative_loss_ += missing;
   stats.packets_lost = cumulative_loss_;
   stats.extended_highest_sequence_number =
-      (received_seq_wraps_ << 16) + received_seq_max_;
+      static_cast<uint32_t>(received_seq_max_);
   // Note: internal jitter value is in Q4 and needs to be scaled by 1/16.
   stats.jitter = jitter_q4_ >> 4;
 
