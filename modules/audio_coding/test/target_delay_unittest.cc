@@ -12,10 +12,8 @@
 
 #include "api/audio/audio_frame.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/pcm16b/pcm16b.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
-#include "modules/audio_coding/test/utility.h"
 #include "modules/include/module_common_types.h"
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
@@ -35,8 +33,9 @@ class TargetDelayTest : public ::testing::Test {
 
     ASSERT_EQ(0, acm_->InitializeReceiver());
     constexpr int pltype = 108;
-    ASSERT_EQ(true,
-              acm_->RegisterReceiveCodec(pltype, {"L16", kSampleRateHz, 1}));
+    std::map<int, SdpAudioFormat> receive_codecs =
+        {{pltype, {"L16", kSampleRateHz, 1}}};
+    acm_->SetReceiveCodecs(receive_codecs);
 
     rtp_info_.header.payloadType = pltype;
     rtp_info_.header.timestamp = 0;

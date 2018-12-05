@@ -16,7 +16,6 @@
 #include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/audio_codecs/audio_encoder_factory.h"
 #include "common_audio/vad/include/vad.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "modules/audio_coding/test/Channel.h"

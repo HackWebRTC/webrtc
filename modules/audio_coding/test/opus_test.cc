@@ -13,12 +13,9 @@
 #include <string>
 
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
-#include "common_types.h"  // NOLINT(build/include)
-#include "modules/audio_coding/codecs/audio_format_conversion.h"
 #include "modules/audio_coding/codecs/opus/opus_interface.h"
 #include "modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "modules/audio_coding/test/TestStereo.h"
-#include "modules/audio_coding/test/utility.h"
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
 
@@ -89,13 +86,10 @@ void OpusTest::Perform() {
   EXPECT_EQ(0, acm_receiver_->InitializeReceiver());
 
   // Register Opus stereo as receiving codec.
-  CodecInst opus_codec_param;
-  int codec_id = acm_receiver_->Codec("opus", 48000, 2);
-  EXPECT_EQ(0, acm_receiver_->Codec(codec_id, &opus_codec_param));
-  payload_type_ = opus_codec_param.pltype;
-  EXPECT_EQ(true,
-            acm_receiver_->RegisterReceiveCodec(
-                opus_codec_param.pltype, CodecInstToSdp(opus_codec_param)));
+  constexpr int kOpusPayloadType = 120;
+  const SdpAudioFormat kOpusFormatStereo("opus", 48000, 2, {{"stereo", "1"}});
+  payload_type_ = kOpusPayloadType;
+  acm_receiver_->SetReceiveCodecs({{kOpusPayloadType, kOpusFormatStereo}});
 
   // Create and connect the channel.
   channel_a2b_ = new TestPackStereo;
@@ -159,10 +153,8 @@ void OpusTest::Perform() {
   OpenOutFile(test_cntr);
 
   // Register Opus mono as receiving codec.
-  opus_codec_param.channels = 1;
-  EXPECT_EQ(true,
-            acm_receiver_->RegisterReceiveCodec(
-                opus_codec_param.pltype, CodecInstToSdp(opus_codec_param)));
+  const SdpAudioFormat kOpusFormatMono("opus", 48000, 2);
+  acm_receiver_->SetReceiveCodecs({{kOpusPayloadType, kOpusFormatMono}});
 
   // Run Opus with 2.5 ms frame size.
   Run(channel_a2b_, audio_channels, 32000, 120);

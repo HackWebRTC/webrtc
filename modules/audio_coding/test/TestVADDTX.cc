@@ -23,8 +23,8 @@
 #include "api/audio_codecs/opus/audio_encoder_opus.h"
 #include "modules/audio_coding/codecs/cng/audio_encoder_cng.h"
 #include "modules/audio_coding/test/PCMFile.h"
-#include "modules/audio_coding/test/utility.h"
 #include "rtc_base/strings/string_builder.h"
+#include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
 
 namespace webrtc {
@@ -94,8 +94,9 @@ bool TestVadDtx::RegisterCodec(const SdpAudioFormat& codec_format,
   channel_->SetIsStereo(encoder->NumChannels() > 1);
   acm_send_->SetEncoder(std::move(encoder));
 
-  EXPECT_EQ(true,
-            acm_receive_->RegisterReceiveCodec(payload_type, codec_format));
+  std::map<int, SdpAudioFormat> receive_codecs = {{payload_type, codec_format}};
+  acm_receive_->SetReceiveCodecs(receive_codecs);
+
   return added_comfort_noise;
 }
 
