@@ -1002,6 +1002,39 @@ bool ParsedRtcEventLogNew::ParseStream(
                     &outgoing_remb_, &outgoing_nack_);
   }
 
+  // Store first and last timestamp events that might happen before the call is
+  // connected or after the call is disconnected. Typical examples are
+  // stream configurations and starting/stopping the log.
+  // TODO(terelius): Figure out if we actually need to find the first and last
+  // timestamp in the parser. It seems like this could be done by the caller.
+
+  first_timestamp_ = std::numeric_limits<int64_t>::max();
+  last_timestamp_ = std::numeric_limits<int64_t>::min();
+
+  StoreFirstAndLastTimestamp(alr_state_events());
+  for (const auto& audio_stream : audio_playout_events()) {
+    // Audio playout events are grouped by SSRC.
+    StoreFirstAndLastTimestamp(audio_stream.second);
+  }
+  StoreFirstAndLastTimestamp(audio_network_adaptation_events());
+  StoreFirstAndLastTimestamp(bwe_probe_cluster_created_events());
+  StoreFirstAndLastTimestamp(bwe_probe_failure_events());
+  StoreFirstAndLastTimestamp(bwe_probe_success_events());
+  StoreFirstAndLastTimestamp(bwe_delay_updates());
+  StoreFirstAndLastTimestamp(bwe_loss_updates());
+  StoreFirstAndLastTimestamp(dtls_transport_states());
+  StoreFirstAndLastTimestamp(dtls_writable_states());
+  StoreFirstAndLastTimestamp(ice_candidate_pair_configs());
+  StoreFirstAndLastTimestamp(ice_candidate_pair_events());
+  for (const auto& rtp_stream : incoming_rtp_packets_by_ssrc()) {
+    StoreFirstAndLastTimestamp(rtp_stream.incoming_packets);
+  }
+  for (const auto& rtp_stream : outgoing_rtp_packets_by_ssrc()) {
+    StoreFirstAndLastTimestamp(rtp_stream.outgoing_packets);
+  }
+  StoreFirstAndLastTimestamp(incoming_rtcp_packets());
+  StoreFirstAndLastTimestamp(outgoing_rtcp_packets());
+
   return success;
 }
 
@@ -1087,20 +1120,16 @@ bool ParsedRtcEventLogNew::ParseStreamInternal(
   return true;
 }
 
+template <typename T>
+void ParsedRtcEventLogNew::StoreFirstAndLastTimestamp(const std::vector<T>& v) {
+  if (v.empty())
+    return;
+  first_timestamp_ = std::min(first_timestamp_, v.front().log_time_us());
+  last_timestamp_ = std::max(last_timestamp_, v.back().log_time_us());
+}
+
 void ParsedRtcEventLogNew::StoreParsedLegacyEvent(const rtclog::Event& event) {
   RTC_CHECK(event.has_type());
-  if (event.type() != rtclog::Event::VIDEO_RECEIVER_CONFIG_EVENT &&
-      event.type() != rtclog::Event::VIDEO_SENDER_CONFIG_EVENT &&
-      event.type() != rtclog::Event::AUDIO_RECEIVER_CONFIG_EVENT &&
-      event.type() != rtclog::Event::AUDIO_SENDER_CONFIG_EVENT &&
-      event.type() != rtclog::Event::LOG_START &&
-      event.type() != rtclog::Event::LOG_END) {
-    RTC_CHECK(event.has_timestamp_us());
-    int64_t timestamp = event.timestamp_us();
-    first_timestamp_ = std::min(first_timestamp_, timestamp);
-    last_timestamp_ = std::max(last_timestamp_, timestamp);
-  }
-
   switch (event.type()) {
     case rtclog::Event::VIDEO_RECEIVER_CONFIG_EVENT: {
       rtclog::StreamConfig config = GetVideoReceiveConfig(event);
@@ -2271,7 +2300,7 @@ void ParsedRtcEventLogNew::StoreAudioNetworkAdaptationEvent(
   // were shifted down by one, but in the base event, they were not.
   // We likewise shift the base event down by one, to get the same base as
   // encoding had, but then shift all of the values (except the base) back up
-  //  to their original value.
+  // to their original value.
   absl::optional<uint64_t> shifted_base_num_channels;
   if (proto.has_num_channels()) {
     shifted_base_num_channels =

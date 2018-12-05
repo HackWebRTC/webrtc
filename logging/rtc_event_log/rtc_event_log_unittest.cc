@@ -9,6 +9,7 @@
  */
 
 #include <algorithm>
+#include <limits>
 #include <map>
 #include <memory>
 #include <string>
@@ -181,6 +182,9 @@ class RtcEventLogSession
   int64_t utc_start_time_us_;
   int64_t stop_time_us_;
 
+  int64_t first_timestamp_ms_ = std::numeric_limits<int64_t>::max();
+  int64_t last_timestamp_ms_ = std::numeric_limits<int64_t>::min();
+
   const uint64_t seed_;
   Random prng_;
   const int64_t output_period_ms_;
@@ -325,6 +329,8 @@ void RtcEventLogSession::WriteLog(EventCounts count,
 
     clock_.AdvanceTimeMicros(prng_.Rand(20) * 1000);
     size_t selection = prng_.Rand(remaining_events - 1);
+    first_timestamp_ms_ = std::min(first_timestamp_ms_, rtc::TimeMillis());
+    last_timestamp_ms_ = std::max(last_timestamp_ms_, rtc::TimeMillis());
 
     if (selection < count.alr_states) {
       auto event = gen_.NewAlrState();
@@ -655,6 +661,9 @@ void RtcEventLogSession::ReadAndVerifyLog() {
     verifier_.VerifyLoggedVideoSendConfig(*video_send_config_list_[i],
                                           parsed_video_send_configs[i]);
   }
+
+  EXPECT_EQ(first_timestamp_ms_, parsed_log.first_timestamp() / 1000);
+  EXPECT_EQ(last_timestamp_ms_, parsed_log.last_timestamp() / 1000);
 
   // Clean up temporary file - can be pretty slow.
   remove(temp_filename_.c_str());

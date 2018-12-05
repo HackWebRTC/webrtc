@@ -748,6 +748,10 @@ class ParsedRtcEventLogNew {
     return stop_log_events_;
   }
 
+  const std::vector<LoggedAlrStateEvent>& alr_state_events() const {
+    return alr_state_events_;
+  }
+
   // Audio
   const std::map<uint32_t, std::vector<LoggedAudioPlayoutEvent>>&
   audio_playout_events() const {
@@ -783,17 +787,13 @@ class ParsedRtcEventLogNew {
     return bwe_loss_updates_;
   }
 
-  const std::vector<LoggedDtlsWritableState>& dtls_writable_states() const {
-    return dtls_writable_states_;
-  }
-
-  const std::vector<LoggedAlrStateEvent>& alr_state_events() const {
-    return alr_state_events_;
-  }
-
   // DTLS
   const std::vector<LoggedDtlsTransportState>& dtls_transport_states() const {
     return dtls_transport_states_;
+  }
+
+  const std::vector<LoggedDtlsWritableState>& dtls_writable_states() const {
+    return dtls_writable_states_;
   }
 
   // ICE events
@@ -889,6 +889,9 @@ class ParsedRtcEventLogNew {
 
   void StoreParsedLegacyEvent(const rtclog::Event& event);
 
+  template <typename T>
+  void StoreFirstAndLastTimestamp(const std::vector<T>& v);
+
   // Reads the arrival timestamp (in microseconds) from a rtclog::Event.
   int64_t GetTimestamp(const rtclog::Event& event) const;
 
@@ -954,19 +957,19 @@ class ParsedRtcEventLogNew {
   void StoreOutgoingRtpPackets(const rtclog2::OutgoingRtpPackets& proto);
   void StoreIncomingRtcpPackets(const rtclog2::IncomingRtcpPackets& proto);
   void StoreOutgoingRtcpPackets(const rtclog2::OutgoingRtcpPackets& proto);
-  void StoreAudioPlayoutEvent(const rtclog2::AudioPlayoutEvents& proto);
   void StoreStartEvent(const rtclog2::BeginLogEvent& proto);
   void StoreStopEvent(const rtclog2::EndLogEvent& proto);
-  void StoreBweLossBasedUpdate(const rtclog2::LossBasedBweUpdates& proto);
-  void StoreBweDelayBasedUpdate(const rtclog2::DelayBasedBweUpdates& proto);
-  void StoreDtlsWritableState(const rtclog2::DtlsWritableState& proto);
+  void StoreAlrStateEvent(const rtclog2::AlrState& proto);
   void StoreAudioNetworkAdaptationEvent(
       const rtclog2::AudioNetworkAdaptations& proto);
+  void StoreAudioPlayoutEvent(const rtclog2::AudioPlayoutEvents& proto);
+  void StoreBweLossBasedUpdate(const rtclog2::LossBasedBweUpdates& proto);
+  void StoreBweDelayBasedUpdate(const rtclog2::DelayBasedBweUpdates& proto);
   void StoreBweProbeClusterCreated(const rtclog2::BweProbeCluster& proto);
   void StoreBweProbeSuccessEvent(const rtclog2::BweProbeResultSuccess& proto);
   void StoreBweProbeFailureEvent(const rtclog2::BweProbeResultFailure& proto);
-  void StoreAlrStateEvent(const rtclog2::AlrState& proto);
   void StoreDtlsTransportState(const rtclog2::DtlsTransportStateEvent& proto);
+  void StoreDtlsWritableState(const rtclog2::DtlsWritableState& proto);
   void StoreIceCandidatePairConfig(
       const rtclog2::IceCandidatePairConfig& proto);
   void StoreIceCandidateEvent(const rtclog2::IceCandidatePairEvent& proto);
@@ -1044,6 +1047,8 @@ class ParsedRtcEventLogNew {
   std::vector<LoggedStartEvent> start_log_events_;
   std::vector<LoggedStopEvent> stop_log_events_;
 
+  std::vector<LoggedAlrStateEvent> alr_state_events_;
+
   std::map<uint32_t, std::vector<LoggedAudioPlayoutEvent>>
       audio_playout_events_;
 
@@ -1057,17 +1062,12 @@ class ParsedRtcEventLogNew {
   std::vector<LoggedBweProbeSuccessEvent> bwe_probe_success_events_;
 
   std::vector<LoggedBweDelayBasedUpdate> bwe_delay_updates_;
-
-  // A list of all updates from the send-side loss-based bandwidth estimator.
   std::vector<LoggedBweLossBasedUpdate> bwe_loss_updates_;
 
   std::vector<LoggedDtlsTransportState> dtls_transport_states_;
   std::vector<LoggedDtlsWritableState> dtls_writable_states_;
 
-  std::vector<LoggedAlrStateEvent> alr_state_events_;
-
   std::vector<LoggedIceCandidatePairConfig> ice_candidate_pair_configs_;
-
   std::vector<LoggedIceCandidatePairEvent> ice_candidate_pair_events_;
 
   std::vector<LoggedAudioRecvConfig> audio_recv_configs_;
