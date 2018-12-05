@@ -11,6 +11,7 @@
 #ifndef CALL_RTP_TRANSPORT_CONTROLLER_SEND_H_
 #define CALL_RTP_TRANSPORT_CONTROLLER_SEND_H_
 
+#include <atomic>
 #include <map>
 #include <memory>
 #include <string>
@@ -20,15 +21,17 @@
 #include "call/rtp_bitrate_configurator.h"
 #include "call/rtp_transport_controller_send_interface.h"
 #include "call/rtp_video_sender.h"
-#include "modules/congestion_controller/include/send_side_congestion_controller_interface.h"
+#include "modules/congestion_controller/include/network_changed_observer.h"
+#include "modules/congestion_controller/rtp/control_handler.h"
+#include "modules/congestion_controller/rtp/transport_feedback_adapter.h"
 #include "modules/pacing/packet_router.h"
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/networkroute.h"
+#include "rtc_base/race_checker.h"
 #include "rtc_base/task_queue.h"
 
 namespace webrtc {
-
 class Clock;
 class FrameEncryptorInterface;
 class RtcEventLog;
@@ -38,7 +41,10 @@ class RtcEventLog;
 // per transport, sharing the same congestion controller.
 class RtpTransportControllerSend final
     : public RtpTransportControllerSendInterface,
-      public NetworkChangedObserver {
+      public NetworkChangedObserver,
+      public RtcpBandwidthObserver,
+      public CallStatsObserver,
+      public TransportFeedbackObserver {
  public:
   RtpTransportControllerSend(
       Clock* clock,
@@ -108,7 +114,39 @@ class RtpTransportControllerSend final
   void OnTransportOverheadChanged(
       size_t transport_overhead_per_packet) override;
 
+  // Implements RtcpBandwidthObserver interface
+  void OnReceivedEstimatedBitrate(uint32_t bitrate) override;
+  void OnReceivedRtcpReceiverReport(const ReportBlockList& report_blocks,
+                                    int64_t rtt,
+                                    int64_t now_ms) override;
+
+  // Implements TransportFeedbackObserver interface
+  void AddPacket(uint32_t ssrc,
+                 uint16_t sequence_number,
+                 size_t length,
+                 const PacedPacketInfo& pacing_info) override;
+  void OnTransportFeedback(const rtcp::TransportFeedback& feedback) override;
+
+  // Implements CallStatsObserver interface
+  void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override;
+
+  class PeriodicTask;
+
  private:
+  void MaybeCreateControllers() RTC_RUN_ON(task_queue_);
+  void UpdateInitialConstraints(TargetRateConstraints new_contraints)
+      RTC_RUN_ON(task_queue_);
+
+  void StartProcessPeriodicTasks() RTC_RUN_ON(task_queue_);
+  void UpdateControllerWithTimeInterval() RTC_RUN_ON(task_queue_);
+  void UpdatePacerQueue() RTC_RUN_ON(task_queue_);
+
+  void UpdateStreamsConfig() RTC_RUN_ON(task_queue_);
+  void MaybeUpdateOutstandingData();
+  void OnReceivedRtcpReceiverReportBlocks(const ReportBlockList& report_blocks,
+                                          int64_t now_ms)
+      RTC_RUN_ON(task_queue_);
+
   const Clock* const clock_;
   PacketRouter packet_router_;
   std::vector<std::unique_ptr<RtpVideoSenderInterface>> video_rtp_senders_;
@@ -117,9 +155,49 @@ class RtpTransportControllerSend final
   RtpBitrateConfigurator bitrate_configurator_;
   std::map<std::string, rtc::NetworkRoute> network_routes_;
   const std::unique_ptr<ProcessThread> process_thread_;
-  rtc::CriticalSection observer_crit_;
-  TargetTransferRateObserver* observer_ RTC_GUARDED_BY(observer_crit_);
-  std::unique_ptr<SendSideCongestionControllerInterface> send_side_cc_;
+
+  TargetTransferRateObserver* observer_ RTC_GUARDED_BY(task_queue_);
+
+  // TODO(srte): Move all access to feedback adapter to task queue.
+  TransportFeedbackAdapter transport_feedback_adapter_;
+
+  NetworkControllerFactoryInterface* const controller_factory_override_
+      RTC_PT_GUARDED_BY(task_queue_);
+  const std::unique_ptr<NetworkControllerFactoryInterface>
+      controller_factory_fallback_ RTC_PT_GUARDED_BY(task_queue_);
+
+  std::unique_ptr<CongestionControlHandler> control_handler_
+      RTC_GUARDED_BY(task_queue_) RTC_PT_GUARDED_BY(task_queue_);
+
+  std::unique_ptr<NetworkControllerInterface> controller_
+      RTC_GUARDED_BY(task_queue_) RTC_PT_GUARDED_BY(task_queue_);
+
+  TimeDelta process_interval_ RTC_GUARDED_BY(task_queue_);
+
+  std::map<uint32_t, RTCPReportBlock> last_report_blocks_
+      RTC_GUARDED_BY(task_queue_);
+  Timestamp last_report_block_time_ RTC_GUARDED_BY(task_queue_);
+
+  NetworkControllerConfig initial_config_ RTC_GUARDED_BY(task_queue_);
+  StreamsConfig streams_config_ RTC_GUARDED_BY(task_queue_);
+
+  const bool reset_feedback_on_route_change_;
+  const bool send_side_bwe_with_overhead_;
+  // Transport overhead is written by OnNetworkRouteChanged and read by
+  // AddPacket.
+  // TODO(srte): Remove atomic when feedback adapter runs on task queue.
+  std::atomic<size_t> transport_overhead_bytes_per_packet_;
+  bool network_available_ RTC_GUARDED_BY(task_queue_);
+  bool periodic_tasks_enabled_ RTC_GUARDED_BY(task_queue_);
+  bool packet_feedback_available_ RTC_GUARDED_BY(task_queue_);
+  PeriodicTask* pacer_queue_update_task_ RTC_GUARDED_BY(task_queue_)
+      RTC_PT_GUARDED_BY(task_queue_);
+  PeriodicTask* controller_task_ RTC_GUARDED_BY(task_queue_)
+      RTC_PT_GUARDED_BY(task_queue_);
+  // Protects access to last_packet_feedback_vector_ in feedback adapter.
+  // TODO(srte): Remove this checker when feedback adapter runs on task queue.
+  rtc::RaceChecker worker_race_;
+
   RateLimiter retransmission_rate_limiter_;
 
   // TODO(perkj): |task_queue_| is supposed to replace |process_thread_|.
