@@ -513,7 +513,7 @@ bool RTPSenderVideo::SendVideo(enum VideoCodecType video_type,
     size_t bytes_written = 0;
     if (frame_encryptor_->Encrypt(
             cricket::MEDIA_TYPE_VIDEO, first_packet->Ssrc(),
-            /*additional_data=*/nullptr,
+            generic_descriptor_raw,
             rtc::MakeArrayView(payload_data, payload_size),
             encrypted_video_payload, &bytes_written) != 0) {
       return false;

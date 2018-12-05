@@ -73,7 +73,7 @@ BufferedFrameDecryptor::FrameDecision BufferedFrameDecryptor::DecryptFrame(
   size_t bytes_written = 0;
   if (frame_decryptor_->Decrypt(
           cricket::MEDIA_TYPE_VIDEO, /*csrcs=*/{},
-          /*additional_data=*/nullptr, encrypted_frame_bitstream,
+          descriptor->GetByteRepresentation(), encrypted_frame_bitstream,
           inline_decrypted_bitstream, &bytes_written) != 0) {
     // Only stash frames if we have never decrypted a frame before.
     return first_frame_decrypted_ ? FrameDecision::kDrop
