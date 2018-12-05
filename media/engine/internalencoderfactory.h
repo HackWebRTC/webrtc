@@ -24,8 +24,6 @@ class InternalEncoderFactory : public VideoEncoderFactory {
  public:
   std::vector<SdpVideoFormat> GetSupportedFormats() const override;
 
-  CodecInfo QueryVideoEncoder(const SdpVideoFormat& format) const override;
-
   std::unique_ptr<VideoEncoder> CreateVideoEncoder(
       const SdpVideoFormat& format) override;
 };

@@ -25,6 +25,9 @@ class VideoEncoderFactory {
  public:
   // TODO(magjed): Try to get rid of this struct.
   struct CodecInfo {
+    CodecInfo();
+    ~CodecInfo();
+
     // |is_hardware_accelerated| is true if the encoders created by this factory
     // of the given codec will use hardware support.
     bool is_hardware_accelerated;
@@ -43,7 +46,7 @@ class VideoEncoderFactory {
   // Returns information about how this format will be encoded. The specified
   // format must be one of the supported formats by this factory.
   // TODO(magjed): Try to get rid of this method.
-  virtual CodecInfo QueryVideoEncoder(const SdpVideoFormat& format) const = 0;
+  virtual CodecInfo QueryVideoEncoder(const SdpVideoFormat& format) const;
 
   // Creates a VideoEncoder for the specified format.
   virtual std::unique_ptr<VideoEncoder> CreateVideoEncoder(

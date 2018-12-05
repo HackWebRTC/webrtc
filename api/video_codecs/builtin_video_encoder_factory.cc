@@ -44,17 +44,6 @@ class BuiltinVideoEncoderFactory : public VideoEncoderFactory {
   BuiltinVideoEncoderFactory()
       : internal_encoder_factory_(new InternalEncoderFactory()) {}
 
-  VideoEncoderFactory::CodecInfo QueryVideoEncoder(
-      const SdpVideoFormat& format) const override {
-    // Format must be one of the internal formats.
-    RTC_DCHECK(IsFormatSupported(
-        internal_encoder_factory_->GetSupportedFormats(), format));
-    VideoEncoderFactory::CodecInfo info;
-    info.has_internal_source = false;
-    info.is_hardware_accelerated = false;
-    return info;
-  }
-
   std::unique_ptr<VideoEncoder> CreateVideoEncoder(
       const SdpVideoFormat& format) override {
     // Try creating internal encoder.

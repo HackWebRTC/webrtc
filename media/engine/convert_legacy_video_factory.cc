@@ -60,21 +60,6 @@ class CricketToWebRtcEncoderFactory : public webrtc::VideoEncoderFactory {
       std::unique_ptr<WebRtcVideoEncoderFactory> external_encoder_factory)
       : external_encoder_factory_(std::move(external_encoder_factory)) {}
 
-  webrtc::VideoEncoderFactory::CodecInfo QueryVideoEncoder(
-      const webrtc::SdpVideoFormat& format) const override {
-    CodecInfo info;
-    info.has_internal_source = false;
-    info.is_hardware_accelerated = false;
-    if (!external_encoder_factory_)
-      return info;
-
-    info.has_internal_source =
-        external_encoder_factory_->EncoderTypeHasInternalSource(
-            webrtc::PayloadStringToCodecType(format.name));
-    info.is_hardware_accelerated = true;
-    return info;
-  }
-
   std::vector<webrtc::SdpVideoFormat> GetSupportedFormats() const override {
     if (!external_encoder_factory_)
       return std::vector<webrtc::SdpVideoFormat>();
@@ -112,22 +97,6 @@ class EncoderAdapter : public webrtc::VideoEncoderFactory {
       std::unique_ptr<webrtc::VideoEncoderFactory> external_encoder_factory)
       : internal_encoder_factory_(new webrtc::InternalEncoderFactory()),
         external_encoder_factory_(std::move(external_encoder_factory)) {}
-
-  webrtc::VideoEncoderFactory::CodecInfo QueryVideoEncoder(
-      const webrtc::SdpVideoFormat& format) const override {
-    if (IsFormatSupported(external_encoder_factory_->GetSupportedFormats(),
-                          format)) {
-      return external_encoder_factory_->QueryVideoEncoder(format);
-    }
-
-    // Format must be one of the internal formats.
-    RTC_DCHECK(IsFormatSupported(
-        internal_encoder_factory_->GetSupportedFormats(), format));
-    webrtc::VideoEncoderFactory::CodecInfo info;
-    info.has_internal_source = false;
-    info.is_hardware_accelerated = false;
-    return info;
-  }
 
   std::unique_ptr<webrtc::VideoEncoder> CreateVideoEncoder(
       const webrtc::SdpVideoFormat& format) override {

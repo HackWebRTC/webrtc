@@ -24,8 +24,6 @@ class MockVideoEncoderFactory : public webrtc::VideoEncoderFactory {
  public:
   MOCK_CONST_METHOD0(GetSupportedFormats,
                      std::vector<webrtc::SdpVideoFormat>());
-  MOCK_CONST_METHOD1(QueryVideoEncoder,
-                     CodecInfo(const webrtc::SdpVideoFormat&));
 
   // We need to proxy to a return type that is copyable.
   std::unique_ptr<webrtc::VideoEncoder> CreateVideoEncoder(

@@ -96,6 +96,7 @@ class FakeWebRtcVideoEncoder : public webrtc::VideoEncoder {
   int32_t Release() override;
   int32_t SetRateAllocation(const webrtc::VideoBitrateAllocation& allocation,
                             uint32_t framerate) override;
+  webrtc::VideoEncoder::EncoderInfo GetEncoderInfo() const override;
 
   bool WaitForInitEncode();
   webrtc::VideoCodec GetCodecSettings();
@@ -117,8 +118,6 @@ class FakeWebRtcVideoEncoderFactory : public webrtc::VideoEncoderFactory {
   std::vector<webrtc::SdpVideoFormat> GetSupportedFormats() const override;
   std::unique_ptr<webrtc::VideoEncoder> CreateVideoEncoder(
       const webrtc::SdpVideoFormat& format) override;
-  CodecInfo QueryVideoEncoder(
-      const webrtc::SdpVideoFormat& format) const override;
 
   bool WaitForCreatedVideoEncoders(int num_encoders);
   void EncoderDestroyed(FakeWebRtcVideoEncoder* encoder);
