@@ -1819,20 +1819,6 @@ const std::vector<MatchedSendArrivalTimes> GetNetworkTrace(
   std::vector<MatchedSendArrivalTimes> rtp_rtcp_matched;
   while (time_us != std::numeric_limits<int64_t>::max()) {
     clock.AdvanceTimeMicroseconds(time_us - clock.TimeInMicroseconds());
-    if (clock.TimeInMicroseconds() >= NextRtcpTime()) {
-      RTC_DCHECK_EQ(clock.TimeInMicroseconds(), NextRtcpTime());
-      feedback_adapter.ProcessTransportFeedback(
-          rtcp_iterator->transport_feedback);
-      std::vector<PacketFeedback> feedback =
-          feedback_adapter.GetTransportFeedbackVector();
-      SortPacketFeedbackVectorWithLoss(&feedback);
-      for (const PacketFeedback& packet : feedback) {
-        rtp_rtcp_matched.emplace_back(
-            clock.TimeInMilliseconds(), packet.send_time_ms,
-            packet.arrival_time_ms, packet.payload_size);
-      }
-      ++rtcp_iterator;
-    }
     if (clock.TimeInMicroseconds() >= NextRtpTime()) {
       RTC_DCHECK_EQ(clock.TimeInMicroseconds(), NextRtpTime());
       const RtpPacketType& rtp_packet = *rtp_iterator->second;
@@ -1857,6 +1843,20 @@ const std::vector<MatchedSendArrivalTimes> GetNetworkTrace(
         feedback_adapter.ProcessSentPacket(sent_packet);
       }
       ++rtp_iterator;
+    }
+    if (clock.TimeInMicroseconds() >= NextRtcpTime()) {
+      RTC_DCHECK_EQ(clock.TimeInMicroseconds(), NextRtcpTime());
+      feedback_adapter.ProcessTransportFeedback(
+          rtcp_iterator->transport_feedback);
+      std::vector<PacketFeedback> feedback =
+          feedback_adapter.GetTransportFeedbackVector();
+      SortPacketFeedbackVectorWithLoss(&feedback);
+      for (const PacketFeedback& packet : feedback) {
+        rtp_rtcp_matched.emplace_back(
+            clock.TimeInMilliseconds(), packet.send_time_ms,
+            packet.arrival_time_ms, packet.payload_size);
+      }
+      ++rtcp_iterator;
     }
     time_us = std::min(NextRtpTime(), NextRtcpTime());
   }

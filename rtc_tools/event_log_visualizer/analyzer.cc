@@ -1124,6 +1124,24 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
   int64_t last_update_us = 0;
   while (time_us != std::numeric_limits<int64_t>::max()) {
     clock.AdvanceTimeMicroseconds(time_us - clock.TimeInMicroseconds());
+    if (clock.TimeInMicroseconds() >= NextRtpTime()) {
+      RTC_DCHECK_EQ(clock.TimeInMicroseconds(), NextRtpTime());
+      const RtpPacketType& rtp_packet = *rtp_iterator->second;
+      if (rtp_packet.rtp.header.extension.hasTransportSequenceNumber) {
+        RTC_DCHECK(rtp_packet.rtp.header.extension.hasTransportSequenceNumber);
+        transport_feedback.AddPacket(
+            rtp_packet.rtp.header.ssrc,
+            rtp_packet.rtp.header.extension.transportSequenceNumber,
+            rtp_packet.rtp.total_length, PacedPacketInfo());
+        rtc::SentPacket sent_packet(
+            rtp_packet.rtp.header.extension.transportSequenceNumber,
+            rtp_packet.rtp.log_time_us() / 1000);
+        auto sent_msg = transport_feedback.ProcessSentPacket(sent_packet);
+        if (sent_msg)
+          observer.Update(goog_cc->OnSentPacket(*sent_msg));
+      }
+      ++rtp_iterator;
+    }
     if (clock.TimeInMicroseconds() >= NextRtcpTime()) {
       RTC_DCHECK_EQ(clock.TimeInMicroseconds(), NextRtcpTime());
 
@@ -1153,24 +1171,6 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
       acked_estimate_time_series.points.emplace_back(x, y);
 #endif  // !(BWE_TEST_LOGGING_COMPILE_TIME_ENABLE)
       ++rtcp_iterator;
-    }
-    if (clock.TimeInMicroseconds() >= NextRtpTime()) {
-      RTC_DCHECK_EQ(clock.TimeInMicroseconds(), NextRtpTime());
-      const RtpPacketType& rtp_packet = *rtp_iterator->second;
-      if (rtp_packet.rtp.header.extension.hasTransportSequenceNumber) {
-        RTC_DCHECK(rtp_packet.rtp.header.extension.hasTransportSequenceNumber);
-        transport_feedback.AddPacket(
-            rtp_packet.rtp.header.ssrc,
-            rtp_packet.rtp.header.extension.transportSequenceNumber,
-            rtp_packet.rtp.total_length, PacedPacketInfo());
-        rtc::SentPacket sent_packet(
-            rtp_packet.rtp.header.extension.transportSequenceNumber,
-            rtp_packet.rtp.log_time_us() / 1000);
-        auto sent_msg = transport_feedback.ProcessSentPacket(sent_packet);
-        if (sent_msg)
-          observer.Update(goog_cc->OnSentPacket(*sent_msg));
-      }
-      ++rtp_iterator;
     }
     if (clock.TimeInMicroseconds() >= NextProcessTime()) {
       RTC_DCHECK_EQ(clock.TimeInMicroseconds(), NextProcessTime());
