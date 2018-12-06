@@ -90,6 +90,10 @@ class AudioDecoder {
   virtual std::vector<ParseResult> ParsePayload(rtc::Buffer&& payload,
                                                 uint32_t timestamp);
 
+  // TODO(bugs.webrtc.org/10098): The Decode and DecodeRedundant methods are
+  // obsolete; callers should call ParsePayload instead. For now, subclasses
+  // must still implement DecodeInternal.
+
   // Decodes |encode_len| bytes from |encoded| and writes the result in
   // |decoded|. The maximum bytes allowed to be written into |decoded| is
   // |max_decoded_bytes|. Returns the total number of samples across all

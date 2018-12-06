@@ -29,6 +29,7 @@
 #include "modules/audio_coding/neteq/sync_buffer.h"
 #include "modules/audio_coding/neteq/timestamp_scaler.h"
 #include "rtc_base/numerics/safe_conversions.h"
+#include "test/audio_decoder_proxy_factory.h"
 #include "test/function_audio_decoder_factory.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -452,9 +453,6 @@ TEST_F(NetEqImplTest, TestDtmfPacketAVT48kHz) {
 // This test verifies that timestamps propagate from the incoming packets
 // through to the sync buffer and to the playout timestamp.
 TEST_F(NetEqImplTest, VerifyTimestampPropagation) {
-  UseNoMocks();
-  CreateInstance();
-
   const uint8_t kPayloadType = 17;   // Just an arbitrary number.
   const uint32_t kReceiveTime = 17;  // Value doesn't matter for this test.
   const int kSampleRateHz = 8000;
@@ -500,9 +498,14 @@ TEST_F(NetEqImplTest, VerifyTimestampPropagation) {
     int16_t next_value_;
   } decoder_;
 
-  EXPECT_EQ(NetEq::kOK, neteq_->RegisterExternalDecoder(
-                            &decoder_, NetEqDecoder::kDecoderPCM16B,
-                            "dummy name", kPayloadType));
+  rtc::scoped_refptr<AudioDecoderFactory> decoder_factory =
+      new rtc::RefCountedObject<test::AudioDecoderProxyFactory>(&decoder_);
+
+  UseNoMocks();
+  CreateInstance(decoder_factory);
+
+  EXPECT_TRUE(neteq_->RegisterPayloadType(kPayloadType,
+                                          SdpAudioFormat("l16", 8000, 1)));
 
   // Insert one packet.
   EXPECT_EQ(NetEq::kOK,
