@@ -1097,7 +1097,7 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
       return static_cast<int64_t>(rtcp_iterator->log_time_us());
     return std::numeric_limits<int64_t>::max();
   };
-  int64_t next_process_time_us_ = clock.TimeInMicroseconds();
+  int64_t next_process_time_us_ = std::min({NextRtpTime(), NextRtcpTime()});
 
   auto NextProcessTime = [&]() {
     if (rtcp_iterator != incoming_rtcp.end() ||
