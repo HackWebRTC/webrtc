@@ -722,6 +722,138 @@ rtc_source_set("rtc_json") {
   }
 }
 
+rtc_source_set("nethelpers") {
+  # TODO(bugs.webrtc.org/9987): This build target will soon contain
+  #                             the following files:
+  # sources = [
+  #   "nethelpers.cc",
+  #   "nethelpers.h",
+  # ]
+}
+
+rtc_source_set("asyncresolverinterface") {
+  # TODO(bugs.webrtc.org/9987): This build target will soon contain
+  #                             the following files:
+  # sources = [
+  #   "asyncresolverinterface.cc",
+  #   "asyncresolverinterface.h",
+  # ]
+}
+
+rtc_source_set("ipaddress") {
+  # TODO(bugs.webrtc.org/9987): This build target will soon contain
+  #                             the following files:
+  # sources = [
+  #   "ipaddress.cc",
+  #   "ipaddress.h",
+  # ]
+}
+
+rtc_source_set("socketaddress") {
+  # TODO(bugs.webrtc.org/9987): This build target will soon contain
+  #                             the following files:
+  # sources = [
+  #   "socketaddress.cc",
+  #   "socketaddress.h",
+  # ]
+}
+
+rtc_source_set("nullsocketserver") {
+  # TODO(bugs.webrtc.org/9987): This build target will soon contain
+  #                             the following files:
+  # sources = [
+  #   "nullsocketserver.cc",
+  #   "nullsocketserver.h",
+  # ]
+}
+
+rtc_source_set("socketserver") {
+  # TODO(bugs.webrtc.org/9987): This build target will soon contain
+  #                             the following files:
+  # sources = [
+  #   "socketserver.h",
+  # ]
+}
+
+rtc_source_set("threading") {
+  # TODO(bugs.webrtc.org/9987): This build target will soon contain
+  #                             the following files:
+  # sources = [
+  #   "asyncresolver.cc",
+  #   "asyncresolver.h",
+  #   "defaultsocketserver.cc",
+  #   "defaultsocketserver.h",
+  #   "messagehandler.cc",
+  #   "messagehandler.h",
+  #   "messagequeue.cc",
+  #   "messagequeue.h",
+  #   "networkmonitor.cc",
+  #   "networkmonitor.h",
+  #   "physicalsocketserver.cc",
+  #   "physicalsocketserver.h",
+  #   "signalthread.cc",
+  #   "signalthread.h",
+  #   "thread.cc",
+  #   "thread.h",
+  # ]
+}
+
+rtc_source_set("socketfactory") {
+  # TODO(bugs.webrtc.org/9987): This build target will soon contain
+  #                             the following files:
+  # sources = [
+  #   "socketfactory.h",
+  # ]
+}
+
+rtc_source_set("asyncsocket") {
+  # TODO(bugs.webrtc.org/9987): This build target will soon contain
+  #                             the following files:
+  # sources = [
+  #   "asyncsocket.cc",
+  #   "asyncsocket.h",
+  # ]
+}
+
+rtc_source_set("socket") {
+  # TODO(bugs.webrtc.org/9987): This build target will soon contain
+  #                             the following files:
+  # sources = [
+  #   "socket.cc",
+  #   "socket.h",
+  # ]
+}
+
+rtc_source_set("network_constants") {
+  # TODO(bugs.webrtc.org/9987): This build target will soon contain
+  #                             the following files:
+  # sources = [
+  #   "network_constants.h",
+  # ]
+}
+
+if (is_android) {
+  rtc_source_set("ifaddrs_android") {
+    # TODO(bugs.webrtc.org/9987): This build target will soon contain
+    #                             the following files:
+    # sources = [
+    #   "ifaddrs-android.cc",
+    #   "ifaddrs-android.h",
+    # ]
+  }
+}
+
+if (is_win) {
+  rtc_source_set("win32") {
+    # TODO(bugs.webrtc.org/9987): This build target will soon contain
+    #                             the following files:
+    # sources = [
+    #   "win32.cc",
+    #   "win32.h",
+    # ]
+  }
+}
+
 rtc_static_library("rtc_base") {
   visibility = [ "*" ]
   cflags = []
