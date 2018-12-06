@@ -50,7 +50,7 @@ MediaTransportEncodedAudioFrame CreateAudioFrame(int sequence_number) {
   static constexpr int kSamplingRateHz = 48000;
   static constexpr int kStartingSampleIndex = 0;
   static constexpr int kSamplesPerChannel = 480;
-  static constexpr uint8_t kPayloadType = 17;
+  static constexpr int kPayloadType = 17;
 
   return MediaTransportEncodedAudioFrame(
       kSamplingRateHz, kStartingSampleIndex, kSamplesPerChannel,
@@ -61,8 +61,9 @@ MediaTransportEncodedAudioFrame CreateAudioFrame(int sequence_number) {
 MediaTransportEncodedVideoFrame CreateVideoFrame(
     int frame_id,
     const webrtc::EncodedImage& encoded_image) {
+  static constexpr int kPayloadType = 18;
   return MediaTransportEncodedVideoFrame(frame_id, /*referenced_frame_ids=*/{},
-                                         kVideoCodecVP8, encoded_image);
+                                         kPayloadType, encoded_image);
 }
 
 }  // namespace

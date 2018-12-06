@@ -37,7 +37,7 @@ MediaTransportEncodedAudioFrame::MediaTransportEncodedAudioFrame(
     int samples_per_channel,
     int sequence_number,
     FrameType frame_type,
-    uint8_t payload_type,
+    int payload_type,
     std::vector<uint8_t> encoded_data)
     : sampling_rate_hz_(sampling_rate_hz),
       starting_sample_index_(starting_sample_index),
@@ -69,6 +69,18 @@ MediaTransportEncodedVideoFrame::MediaTransportEncodedVideoFrame(
     VideoCodecType codec_type,
     const webrtc::EncodedImage& encoded_image)
     : codec_type_(codec_type),
+      payload_type_(0),
+      encoded_image_(encoded_image),
+      frame_id_(frame_id),
+      referenced_frame_ids_(std::move(referenced_frame_ids)) {}
+
+MediaTransportEncodedVideoFrame::MediaTransportEncodedVideoFrame(
+    int64_t frame_id,
+    std::vector<int64_t> referenced_frame_ids,
+    int payload_type,
+    const webrtc::EncodedImage& encoded_image)
+    : codec_type_(kVideoCodecGeneric),
+      payload_type_(payload_type),
       encoded_image_(encoded_image),
       frame_id_(frame_id),
       referenced_frame_ids_(std::move(referenced_frame_ids)) {}
@@ -76,6 +88,7 @@ MediaTransportEncodedVideoFrame::MediaTransportEncodedVideoFrame(
 MediaTransportEncodedVideoFrame& MediaTransportEncodedVideoFrame::operator=(
     const MediaTransportEncodedVideoFrame& o) {
   codec_type_ = o.codec_type_;
+  payload_type_ = o.payload_type_;
   encoded_image_ = o.encoded_image_;
   encoded_data_ = o.encoded_data_;
   frame_id_ = o.frame_id_;
@@ -90,6 +103,7 @@ MediaTransportEncodedVideoFrame& MediaTransportEncodedVideoFrame::operator=(
 MediaTransportEncodedVideoFrame& MediaTransportEncodedVideoFrame::operator=(
     MediaTransportEncodedVideoFrame&& o) {
   codec_type_ = o.codec_type_;
+  payload_type_ = o.payload_type_;
   encoded_image_ = o.encoded_image_;
   encoded_data_ = std::move(o.encoded_data_);
   frame_id_ = o.frame_id_;
