@@ -26,12 +26,12 @@
 #include "api/video_codecs/video_encoder_software_fallback_wrapper.h"
 #include "media/base/codec.h"
 #include "media/base/mediaconstants.h"
+#include "media/engine/encoder_simulcast_proxy.h"
 #include "media/engine/internaldecoderfactory.h"
 #include "media/engine/internalencoderfactory.h"
 #include "media/engine/scopedvideodecoder.h"
 #include "media/engine/scopedvideoencoder.h"
 #include "media/engine/simulcast_encoder_adapter.h"
-#include "media/engine/vp8_encoder_simulcast_proxy.h"
 #include "media/engine/webrtcvideodecoderfactory.h"
 #include "media/engine/webrtcvideoencoderfactory.h"
 #include "rtc_base/checks.h"
@@ -137,7 +137,7 @@ class EncoderAdapter : public webrtc::VideoEncoderFactory {
                           format)) {
       internal_encoder =
           absl::EqualsIgnoreCase(format.name, kVp8CodecName)
-              ? absl::make_unique<webrtc::VP8EncoderSimulcastProxy>(
+              ? absl::make_unique<webrtc::EncoderSimulcastProxy>(
                     internal_encoder_factory_.get(), format)
               : internal_encoder_factory_->CreateVideoEncoder(format);
     }

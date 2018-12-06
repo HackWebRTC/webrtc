@@ -244,8 +244,8 @@ if (rtc_include_tests) {
       "../logging:rtc_event_log_api",
       "../logging:rtc_event_log_impl_output",
       "../media:rtc_audio_video",
+      "../media:rtc_encoder_simulcast_proxy",
       "../media:rtc_internal_video_codecs",
-      "../media:rtc_vp8_encoder_simulcast_proxy",
       "../modules/audio_device:audio_device_api",
       "../modules/audio_device:audio_device_module_from_input_and_output",
       "../modules/audio_device:windows_core_audio_utility",
@@ -269,6 +269,7 @@ if (rtc_include_tests) {
       "../test:test_support_test_artifacts",
       "../test:video_test_common",
       "../test:video_test_support",
+      "//third_party/abseil-cpp/absl/memory:memory",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).

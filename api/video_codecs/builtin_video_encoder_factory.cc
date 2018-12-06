@@ -18,8 +18,8 @@
 #include "api/video_codecs/video_encoder.h"
 #include "media/base/codec.h"
 #include "media/base/mediaconstants.h"
+#include "media/engine/encoder_simulcast_proxy.h"
 #include "media/engine/internalencoderfactory.h"
-#include "media/engine/vp8_encoder_simulcast_proxy.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {
@@ -63,7 +63,7 @@ class BuiltinVideoEncoderFactory : public VideoEncoderFactory {
                           format)) {
       internal_encoder =
           absl::EqualsIgnoreCase(format.name, cricket::kVp8CodecName)
-              ? absl::make_unique<VP8EncoderSimulcastProxy>(
+              ? absl::make_unique<EncoderSimulcastProxy>(
                     internal_encoder_factory_.get(), format)
               : internal_encoder_factory_->CreateVideoEncoder(format);
     }

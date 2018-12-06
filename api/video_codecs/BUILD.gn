@@ -77,6 +77,7 @@ rtc_static_library("builtin_video_encoder_factory") {
 
   deps = [
     ":video_codecs_api",
+    "../../media:rtc_encoder_simulcast_proxy",
     "../../media:rtc_internal_video_codecs",
     "../../media:rtc_media_base",
     "../../media:rtc_vp8_encoder_simulcast_proxy",

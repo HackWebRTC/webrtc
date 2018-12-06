@@ -16,13 +16,14 @@
 #include <string>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
 #include "logging/rtc_event_log/output/rtc_event_log_output_file.h"
 #include "media/engine/adm_helpers.h"
+#include "media/engine/encoder_simulcast_proxy.h"
 #include "media/engine/internalencoderfactory.h"
-#include "media/engine/vp8_encoder_simulcast_proxy.h"
 #include "media/engine/webrtcvideoengine.h"
 #include "modules/audio_device/include/audio_device.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"
@@ -187,7 +188,7 @@ std::unique_ptr<VideoEncoder> VideoQualityTest::CreateVideoEncoder(
     VideoAnalyzer* analyzer) {
   std::unique_ptr<VideoEncoder> encoder;
   if (format.name == "VP8") {
-    encoder = absl::make_unique<VP8EncoderSimulcastProxy>(
+    encoder = absl::make_unique<EncoderSimulcastProxy>(
         &internal_encoder_factory_, format);
   } else if (format.name == "multiplex") {
     encoder = absl::make_unique<MultiplexEncoderAdapter>(

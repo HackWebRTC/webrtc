@@ -214,12 +214,35 @@ rtc_static_library("rtc_vp8_encoder_simulcast_proxy") {
   }
 }
 
+rtc_static_library("rtc_encoder_simulcast_proxy") {
+  visibility = [ "*" ]
+  defines = []
+  libs = []
+  sources = [
+    "engine/encoder_simulcast_proxy.cc",
+    "engine/encoder_simulcast_proxy.h",
+  ]
+  deps = [
+    ":rtc_simulcast_encoder_adapter",
+    "../:webrtc_common",
+    "../api/video:video_bitrate_allocation",
+    "../api/video:video_frame",
+    "../api/video_codecs:video_codecs_api",
+    "../modules/video_coding:video_codec_interface",
+  ]
+  if (!build_with_chromium && is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+  }
+}
+
 rtc_static_library("rtc_internal_video_codecs") {
   visibility = [ "*" ]
   allow_poison = [ "software_video_codecs" ]
   defines = []
   libs = []
   deps = [
+    ":rtc_encoder_simulcast_proxy",
     ":rtc_h264_profile_id",
     ":rtc_simulcast_encoder_adapter",
     ":rtc_vp8_encoder_simulcast_proxy",
@@ -244,7 +267,8 @@ rtc_static_library("rtc_internal_video_codecs") {
     "engine/scopedvideoencoder.h",
 
     # TODO(bugs.webrtc.org/7925): stop exporting this header once downstream
-    # targets depend on :rtc_vp8_encoder_simulcast_proxy directly.
+    # targets depend on :rtc_encoder_simulcast_proxy directly.
+    "engine/encoder_simulcast_proxy.h",
     "engine/vp8_encoder_simulcast_proxy.h",
     "engine/webrtcvideodecoderfactory.h",
     "engine/webrtcvideoencoderfactory.h",
@@ -591,6 +615,7 @@ if (rtc_include_tests) {
       "base/videocapturer_unittest.cc",
       "base/videocommon_unittest.cc",
       "engine/apm_helpers_unittest.cc",
+      "engine/encoder_simulcast_proxy_unittest.cc",
       "engine/internaldecoderfactory_unittest.cc",
       "engine/multiplexcodecfactory_unittest.cc",
       "engine/nullwebrtcvideoengine_unittest.cc",
@@ -643,6 +668,7 @@ if (rtc_include_tests) {
     }
 
     deps += [
+      ":rtc_encoder_simulcast_proxy",
       ":rtc_internal_video_codecs",
       ":rtc_media",
       ":rtc_media_base",

@@ -9,8 +9,8 @@
  *
  */
 
-#ifndef MEDIA_ENGINE_VP8_ENCODER_SIMULCAST_PROXY_H_
-#define MEDIA_ENGINE_VP8_ENCODER_SIMULCAST_PROXY_H_
+#ifndef MEDIA_ENGINE_ENCODER_SIMULCAST_PROXY_H_
+#define MEDIA_ENGINE_ENCODER_SIMULCAST_PROXY_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -30,16 +30,15 @@ namespace webrtc {
 
 // This class provides fallback to SimulcastEncoderAdapter if default VP8Encoder
 // doesn't support simulcast for provided settings.
-// Deprecated: Use EncoderSimulcastProxy instead!
-class VP8EncoderSimulcastProxy : public VideoEncoder {
+class EncoderSimulcastProxy : public VideoEncoder {
  public:
-  VP8EncoderSimulcastProxy(VideoEncoderFactory* factory,
-                           const SdpVideoFormat& format);
+  EncoderSimulcastProxy(VideoEncoderFactory* factory,
+                        const SdpVideoFormat& format);
   // Deprecated. Remove once all clients use constructor with both factory and
   // SdpVideoFormat;
-  explicit VP8EncoderSimulcastProxy(VideoEncoderFactory* factory);
+  explicit EncoderSimulcastProxy(VideoEncoderFactory* factory);
 
-  ~VP8EncoderSimulcastProxy() override;
+  ~EncoderSimulcastProxy() override;
 
   // Implements VideoEncoder.
   int Release() override;
@@ -63,4 +62,4 @@ class VP8EncoderSimulcastProxy : public VideoEncoder {
 
 }  // namespace webrtc
 
-#endif  // MEDIA_ENGINE_VP8_ENCODER_SIMULCAST_PROXY_H_
+#endif  // MEDIA_ENGINE_ENCODER_SIMULCAST_PROXY_H_
