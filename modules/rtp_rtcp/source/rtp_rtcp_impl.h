@@ -64,7 +64,11 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
   // Sender part.
 
   int32_t RegisterSendPayload(const CodecInst& voice_codec) override;
-
+  void RegisterAudioSendPayload(int payload_type,
+                                absl::string_view payload_name,
+                                int frequency,
+                                int channels,
+                                int rate) override;
   void RegisterVideoSendPayload(int payload_type,
                                 const char* payload_name) override;
 
