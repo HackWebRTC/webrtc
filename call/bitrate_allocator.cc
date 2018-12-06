@@ -227,7 +227,12 @@ void BitrateAllocator::UpdateAllocationLimits() {
           std::max(config.MinBitrateWithHysteresis(), stream_padding);
     }
     total_requested_padding_bitrate += stream_padding;
-    total_requested_max_bitrate += config.max_bitrate_bps;
+    uint32_t max_bitrate_bps = config.max_bitrate_bps;
+    if (config.media_ratio > 0) {
+      max_bitrate_bps =
+          static_cast<uint32_t>(max_bitrate_bps / config.media_ratio);
+    }
+    total_requested_max_bitrate += max_bitrate_bps;
     if (config.allocated_bitrate_bps > 0 && config.has_packet_feedback)
       has_packet_feedback = true;
     // TODO(srte): Remove field trial check.
