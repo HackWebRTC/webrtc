@@ -136,6 +136,12 @@ JsepTransport::~JsepTransport() {
   if (media_transport_) {
     media_transport_->SetMediaTransportStateCallback(nullptr);
   }
+  // Clear all DtlsTransports. There may be pointers to these from
+  // other places, so we can't assume they'll be deleted by the destructor.
+  rtp_dtls_transport_->clear();
+  if (rtcp_dtls_transport_) {
+    rtcp_dtls_transport_->clear();
+  }
 }
 
 webrtc::RTCError JsepTransport::SetLocalJsepTransportDescription(
@@ -192,9 +198,11 @@ webrtc::RTCError JsepTransport::SetLocalJsepTransportDescription(
     }
   }
 
+  RTC_DCHECK(rtp_dtls_transport_->internal());
   SetLocalIceParameters(rtp_dtls_transport_->internal()->ice_transport());
 
   if (rtcp_dtls_transport_) {
+    RTC_DCHECK(rtcp_dtls_transport_->internal());
     SetLocalIceParameters(rtcp_dtls_transport_->internal()->ice_transport());
   }
 
@@ -255,9 +263,11 @@ webrtc::RTCError JsepTransport::SetRemoteJsepTransportDescription(
   }
 
   remote_description_.reset(new JsepTransportDescription(jsep_description));
+  RTC_DCHECK(rtp_dtls_transport_->internal());
   SetRemoteIceParameters(rtp_dtls_transport_->internal()->ice_transport());
 
   if (rtcp_dtls_transport_) {
+    RTC_DCHECK(rtcp_dtls_transport_->internal());
     SetRemoteIceParameters(rtcp_dtls_transport_->internal()->ice_transport());
   }
 
@@ -292,6 +302,7 @@ webrtc::RTCError JsepTransport::AddRemoteCandidates(
                               "Candidate has an unknown component: " +
                                   candidate.ToString() + " for mid " + mid());
     }
+    RTC_DCHECK(transport->internal() && transport->internal()->ice_transport());
     transport->internal()->ice_transport()->AddRemoteCandidate(candidate);
   }
   return webrtc::RTCError::OK();
@@ -306,6 +317,7 @@ void JsepTransport::SetNeedsIceRestartFlag() {
 
 absl::optional<rtc::SSLRole> JsepTransport::GetDtlsRole() const {
   RTC_DCHECK(rtp_dtls_transport_);
+  RTC_DCHECK(rtp_dtls_transport_->internal());
   rtc::SSLRole dtls_role;
   if (!rtp_dtls_transport_->internal()->GetDtlsRole(&dtls_role)) {
     return absl::optional<rtc::SSLRole>();
@@ -317,8 +329,10 @@ absl::optional<rtc::SSLRole> JsepTransport::GetDtlsRole() const {
 bool JsepTransport::GetStats(TransportStats* stats) {
   stats->transport_name = mid();
   stats->channel_stats.clear();
+  RTC_DCHECK(rtp_dtls_transport_->internal());
   bool ret = GetTransportStats(rtp_dtls_transport_->internal(), stats);
   if (rtcp_dtls_transport_) {
+    RTC_DCHECK(rtcp_dtls_transport_->internal());
     ret &= GetTransportStats(rtcp_dtls_transport_->internal(), stats);
   }
   return ret;
@@ -534,6 +548,7 @@ webrtc::RTCError JsepTransport::NegotiateAndSetDtlsParameters(
   // between future SetRemote/SetLocal invocations and new transport
   // creation, we have the negotiation state saved until a new
   // negotiation happens.
+  RTC_DCHECK(rtp_dtls_transport_->internal());
   webrtc::RTCError error = SetNegotiatedDtlsParameters(
       rtp_dtls_transport_->internal(), negotiated_dtls_role,
       remote_fingerprint.get());
@@ -542,6 +557,7 @@ webrtc::RTCError JsepTransport::NegotiateAndSetDtlsParameters(
   }
 
   if (rtcp_dtls_transport_) {
+    RTC_DCHECK(rtcp_dtls_transport_->internal());
     error = SetNegotiatedDtlsParameters(rtcp_dtls_transport_->internal(),
                                         negotiated_dtls_role,
                                         remote_fingerprint.get());

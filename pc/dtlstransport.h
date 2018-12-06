@@ -27,6 +27,7 @@ class DtlsTransport : public DtlsTransportInterface {
   cricket::DtlsTransportInternal* internal() {
     return internal_dtls_transport_.get();
   }
+  void clear() { internal_dtls_transport_.reset(); }
 
  private:
   std::unique_ptr<cricket::DtlsTransportInternal> internal_dtls_transport_;

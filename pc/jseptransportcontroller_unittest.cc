@@ -385,6 +385,15 @@ TEST_F(JsepTransportControllerTest, GetDtlsTransport) {
   EXPECT_EQ(nullptr, transport_controller_->GetRtcpDtlsTransport(kVideoMid2));
   EXPECT_EQ(nullptr,
             transport_controller_->LookupDtlsTransportByMid(kVideoMid2));
+  // Take a pointer to a transport, shut down the transport controller,
+  // and verify that the resulting container is empty.
+  auto dtls_transport =
+      transport_controller_->LookupDtlsTransportByMid(kVideoMid1);
+  webrtc::DtlsTransport* my_transport =
+      static_cast<DtlsTransport*>(dtls_transport.get());
+  EXPECT_NE(nullptr, my_transport->internal());
+  transport_controller_.reset();
+  EXPECT_EQ(nullptr, my_transport->internal());
 }
 
 TEST_F(JsepTransportControllerTest, GetDtlsTransportWithRtcpMux) {
