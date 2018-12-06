@@ -147,7 +147,7 @@ class PeerConnection : public PeerConnectionInternal,
   SignalingState signaling_state() override;
 
   IceConnectionState ice_connection_state() override;
-  IceConnectionState standardized_ice_connection_state();
+  IceConnectionState standardized_ice_connection_state() override;
   PeerConnectionState peer_connection_state() override;
   IceGatheringState ice_gathering_state() override;
 

@@ -1041,12 +1041,16 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   // Returns the current SignalingState.
   virtual SignalingState signaling_state() = 0;
 
-  // Returns the aggregate state of all ICE *and* DTLS transports.
-  // TODO(jonasolsson): Replace with standardized_ice_connection_state once it
-  // is ready, see crbug.com/webrtc/6145
+  // Returns an aggregate state of all ICE *and* DTLS transports.
+  // This is left in place to avoid breaking native clients who expect our old,
+  // nonstandard behavior.
+  // TODO(jonasolsson): deprecate and remove this.
   virtual IceConnectionState ice_connection_state() = 0;
 
-  // Returns the aggregated state of all ICE and DTLS transports.
+  // Returns an aggregated state of all ICE transports.
+  virtual IceConnectionState standardized_ice_connection_state();
+
+  // Returns an aggregated state of all ICE and DTLS transports.
   virtual PeerConnectionState peer_connection_state();
 
   virtual IceGatheringState ice_gathering_state() = 0;
@@ -1108,14 +1112,20 @@ class PeerConnectionObserver {
   // has begun.
   virtual void OnRenegotiationNeeded() = 0;
 
-  // Called any time the IceConnectionState changes.
+  // Called any time the legacy IceConnectionState changes.
   //
   // Note that our ICE states lag behind the standard slightly. The most
   // notable differences include the fact that "failed" occurs after 15
   // seconds, not 30, and this actually represents a combination ICE + DTLS
   // state, so it may be "failed" if DTLS fails while ICE succeeds.
+  //
+  // TODO(jonasolsson): deprecate and remove this.
   virtual void OnIceConnectionChange(
       PeerConnectionInterface::IceConnectionState new_state) = 0;
+
+  // Called any time the standards-compliant IceConnectionState changes.
+  virtual void OnStandardizedIceConnectionChange(
+      PeerConnectionInterface::IceConnectionState new_state) {}
 
   // Called any time the PeerConnectionState changes.
   virtual void OnConnectionChange(

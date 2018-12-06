@@ -160,9 +160,14 @@ RTCError PeerConnectionInterface::SetBitrate(
   return SetBitrate(bitrate);
 }
 
+PeerConnectionInterface::IceConnectionState
+PeerConnectionInterface::standardized_ice_connection_state() {
+  return PeerConnectionInterface::IceConnectionState::kIceConnectionFailed;
+}
+
 PeerConnectionInterface::PeerConnectionState
 PeerConnectionInterface::peer_connection_state() {
-  return PeerConnectionInterface::PeerConnectionState::kNew;
+  return PeerConnectionInterface::PeerConnectionState::kFailed;
 }
 
 bool PeerConnectionInterface::StartRtcEventLog(rtc::PlatformFile file,

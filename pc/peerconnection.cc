@@ -3644,8 +3644,7 @@ void PeerConnection::SetStandardizedIceConnectionState(
   if (IsClosed())
     return;
   standardized_ice_connection_state_ = new_state;
-  // TODO(jonasolsson): Pass this value on to OnIceConnectionChange instead of
-  // the old one once disconnects are handled properly.
+  Observer()->OnStandardizedIceConnectionChange(new_state);
 }
 
 void PeerConnection::SetConnectionState(
