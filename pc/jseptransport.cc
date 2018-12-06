@@ -135,6 +135,9 @@ JsepTransport::JsepTransport(
 JsepTransport::~JsepTransport() {
   if (media_transport_) {
     media_transport_->SetMediaTransportStateCallback(nullptr);
+
+    // Make sure we delete media transport before ICE.
+    media_transport_.reset();
   }
   // Clear all DtlsTransports. There may be pointers to these from
   // other places, so we can't assume they'll be deleted by the destructor.
