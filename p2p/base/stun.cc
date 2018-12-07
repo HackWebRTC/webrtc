@@ -32,13 +32,12 @@ uint32_t ReduceTransactionId(const std::string& transaction_id) {
   RTC_DCHECK(transaction_id.length() == cricket::kStunTransactionIdLength ||
              transaction_id.length() ==
                  cricket::kStunLegacyTransactionIdLength);
-  uint32_t transaction_id_as_ints[4];
-  memcpy(transaction_id_as_ints, transaction_id.c_str(),
-         transaction_id.length());
-
+  ByteBufferReader reader(transaction_id.c_str(), transaction_id.length(),
+                          rtc::ByteBuffer::ORDER_NETWORK);
   uint32_t result = 0;
-  for (size_t i = 0; i < transaction_id.length() / 4; ++i) {
-    result ^= transaction_id_as_ints[i];
+  uint32_t next;
+  while (reader.ReadUInt32(&next)) {
+    result ^= next;
   }
   return result;
 }
