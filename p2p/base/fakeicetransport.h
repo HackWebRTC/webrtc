@@ -15,6 +15,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/types/optional.h"
 #include "p2p/base/icetransportinternal.h"
 #include "rtc_base/asyncinvoker.h"
 #include "rtc_base/copyonwritebuffer.h"
@@ -69,6 +70,13 @@ class FakeIceTransport : public IceTransportInternal {
     }
   }
 
+  void SetTransportState(webrtc::IceTransportState state,
+                         IceTransportState legacy_state) {
+    transport_state_ = state;
+    legacy_transport_state_ = legacy_state;
+    SignalIceTransportStateChanged(this);
+  }
+
   void SetConnectionCount(size_t connection_count) {
     size_t old_connection_count = connection_count_;
     connection_count_ = connection_count;
@@ -107,6 +115,10 @@ class FakeIceTransport : public IceTransportInternal {
   const std::string& remote_ice_pwd() const { return remote_ice_pwd_; }
 
   IceTransportState GetState() const override {
+    if (legacy_transport_state_) {
+      return *legacy_transport_state_;
+    }
+
     if (connection_count_ == 0) {
       return had_connection_ ? IceTransportState::STATE_FAILED
                              : IceTransportState::STATE_INIT;
@@ -120,6 +132,10 @@ class FakeIceTransport : public IceTransportInternal {
   }
 
   webrtc::IceTransportState GetIceTransportState() const override {
+    if (transport_state_) {
+      return *transport_state_;
+    }
+
     if (connection_count_ == 0) {
       return had_connection_ ? webrtc::IceTransportState::kFailed
                              : webrtc::IceTransportState::kNew;
@@ -293,6 +309,8 @@ class FakeIceTransport : public IceTransportInternal {
   std::string remote_ice_pwd_;
   IceMode remote_ice_mode_ = ICEMODE_FULL;
   size_t connection_count_ = 0;
+  absl::optional<webrtc::IceTransportState> transport_state_;
+  absl::optional<IceTransportState> legacy_transport_state_;
   IceGatheringState gathering_state_ = kIceGatheringNew;
   bool had_connection_ = false;
   bool writable_ = false;

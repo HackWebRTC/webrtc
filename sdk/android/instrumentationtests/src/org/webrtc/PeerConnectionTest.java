@@ -836,8 +836,6 @@ public class PeerConnectionTest {
 
     offeringExpectations.expectIceConnectionChange(IceConnectionState.CHECKING);
     offeringExpectations.expectIceConnectionChange(IceConnectionState.CONNECTED);
-    offeringExpectations.expectConnectionChange(PeerConnectionState.NEW);
-    offeringExpectations.expectConnectionChange(PeerConnectionState.CONNECTING);
     offeringExpectations.expectConnectionChange(PeerConnectionState.CONNECTED);
     // TODO(bemasc): uncomment once delivery of ICECompleted is reliable
     // (https://code.google.com/p/webrtc/issues/detail?id=3021).
@@ -1071,8 +1069,6 @@ public class PeerConnectionTest {
 
     offeringExpectations.expectIceConnectionChange(IceConnectionState.CHECKING);
     offeringExpectations.expectIceConnectionChange(IceConnectionState.CONNECTED);
-    offeringExpectations.expectConnectionChange(PeerConnectionState.NEW);
-    offeringExpectations.expectConnectionChange(PeerConnectionState.CONNECTING);
     offeringExpectations.expectConnectionChange(PeerConnectionState.CONNECTED);
     // TODO(bemasc): uncomment once delivery of ICECompleted is reliable
     // (https://code.google.com/p/webrtc/issues/detail?id=3021).
@@ -1255,8 +1251,6 @@ public class PeerConnectionTest {
 
     offeringExpectations.expectIceConnectionChange(IceConnectionState.CHECKING);
     offeringExpectations.expectIceConnectionChange(IceConnectionState.CONNECTED);
-    offeringExpectations.expectConnectionChange(PeerConnectionState.NEW);
-    offeringExpectations.expectConnectionChange(PeerConnectionState.CONNECTING);
     offeringExpectations.expectConnectionChange(PeerConnectionState.CONNECTED);
     // TODO(bemasc): uncomment once delivery of ICECompleted is reliable
     // (https://code.google.com/p/webrtc/issues/detail?id=3021).

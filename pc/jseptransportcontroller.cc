@@ -1368,36 +1368,30 @@ void JsepTransportController::UpdateAggregateStates_n() {
   int total_ice = dtls_transports.size();
 
   if (total_ice_failed > 0) {
-    // Any of the RTCIceTransports are in the "failed" state.
+    // Any RTCIceTransports are in the "failed" state.
     new_ice_connection_state = PeerConnectionInterface::kIceConnectionFailed;
   } else if (total_ice_disconnected > 0) {
-    // Any of the RTCIceTransports are in the "disconnected" state and none of
-    // them are in the "failed" state.
+    // None of the previous states apply and any RTCIceTransports are in the
+    // "disconnected" state.
     new_ice_connection_state =
         PeerConnectionInterface::kIceConnectionDisconnected;
-  } else if (total_ice_checking > 0) {
-    // Any of the RTCIceTransports are in the "checking" state and none of them
-    // are in the "disconnected" or "failed" state.
+  } else if (total_ice_new + total_ice_closed == total_ice) {
+    // None of the previous states apply and all RTCIceTransports are in the
+    // "new" or "closed" state, or there are no transports.
+    new_ice_connection_state = PeerConnectionInterface::kIceConnectionNew;
+  } else if (total_ice_new + total_ice_checking > 0) {
+    // None of the previous states apply and any RTCIceTransports are in the
+    // "new" or "checking" state.
     new_ice_connection_state = PeerConnectionInterface::kIceConnectionChecking;
-  } else if (total_ice_completed + total_ice_closed == total_ice &&
-             total_ice_completed > 0) {
-    // All RTCIceTransports are in the "completed" or "closed" state and at
-    // least one of them is in the "completed" state.
+  } else if (total_ice_completed + total_ice_closed == total_ice) {
+    // None of the previous states apply and all RTCIceTransports are in the
+    // "completed" or "closed" state.
     new_ice_connection_state = PeerConnectionInterface::kIceConnectionCompleted;
   } else if (total_ice_connected + total_ice_completed + total_ice_closed ==
-                 total_ice &&
-             total_ice_connected > 0) {
-    // All RTCIceTransports are in the "connected", "completed" or "closed"
-    // state and at least one of them is in the "connected" state.
+             total_ice) {
+    // None of the previous states apply and all RTCIceTransports are in the
+    // "connected", "completed" or "closed" state.
     new_ice_connection_state = PeerConnectionInterface::kIceConnectionConnected;
-  } else if ((total_ice_new > 0 &&
-              total_ice_checking + total_ice_disconnected + total_ice_failed ==
-                  0) ||
-             total_ice == total_ice_closed) {
-    // Any of the RTCIceTransports are in the "new" state and none of them are
-    // in the "checking", "disconnected" or "failed" state, or all
-    // RTCIceTransports are in the "closed" state, or there are no transports.
-    new_ice_connection_state = PeerConnectionInterface::kIceConnectionNew;
   } else {
     RTC_NOTREACHED();
   }
@@ -1431,38 +1425,27 @@ void JsepTransportController::UpdateAggregateStates_n() {
   if (total_failed > 0) {
     // Any of the RTCIceTransports or RTCDtlsTransports are in a "failed" state.
     new_combined_state = PeerConnectionInterface::PeerConnectionState::kFailed;
-  } else if (total_ice_disconnected > 0 &&
-             total_dtls_connecting + total_ice_checking == 0) {
-    // Any of the RTCIceTransports or RTCDtlsTransports are in the
-    // "disconnected" state and none of them are in the "failed" or "connecting"
-    // or "checking" state.
+  } else if (total_ice_disconnected > 0) {
+    // None of the previous states apply and any RTCIceTransports or
+    // RTCDtlsTransports are in the "disconnected" state.
     new_combined_state =
         PeerConnectionInterface::PeerConnectionState::kDisconnected;
-  } else if (total_dtls_connecting + total_ice_checking > 0) {
-    // Any of the RTCIceTransports or RTCDtlsTransports are in the "connecting"
-    // or "checking" state and none of them is in the "failed" state.
+  } else if (total_new + total_closed == total_transports) {
+    // None of the previous states apply and all RTCIceTransports and
+    // RTCDtlsTransports are in the "new" or "closed" state, or there are no
+    // transports.
+    new_combined_state = PeerConnectionInterface::PeerConnectionState::kNew;
+  } else if (total_new + total_dtls_connecting + total_ice_checking > 0) {
+    // None of the previous states apply and all RTCIceTransports or
+    // RTCDtlsTransports are in the "new", "connecting" or "checking" state.
     new_combined_state =
         PeerConnectionInterface::PeerConnectionState::kConnecting;
   } else if (total_connected + total_ice_completed + total_closed ==
-                 total_transports &&
-             total_connected + total_ice_completed > 0) {
-    // All RTCIceTransports and RTCDtlsTransports are in the "connected",
-    // "completed" or "closed" state and at least one of them is in the
-    // "connected" or "completed" state.
+             total_transports) {
+    // None of the previous states apply and all RTCIceTransports and
+    // RTCDtlsTransports are in the "connected", "completed" or "closed" state.
     new_combined_state =
         PeerConnectionInterface::PeerConnectionState::kConnected;
-  } else if ((total_new > 0 && total_dtls_connecting + total_ice_checking +
-                                       total_failed + total_ice_disconnected ==
-                                   0) ||
-             total_transports == total_closed) {
-    // Any of the RTCIceTransports or RTCDtlsTransports are in the "new" state
-    // and none of the transports are in the "connecting", "checking", "failed"
-    // or "disconnected" state, or all transports are in the "closed" state, or
-    // there are no transports.
-    //
-    // Note that if none of the other conditions hold this is guaranteed to be
-    // true.
-    new_combined_state = PeerConnectionInterface::PeerConnectionState::kNew;
   } else {
     RTC_NOTREACHED();
   }
