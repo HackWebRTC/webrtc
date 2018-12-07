@@ -72,10 +72,14 @@ TEST_F(TestH264Impl, MAYBE_EncodeDecode) {
   EXPECT_GT(I420PSNR(input_frame, decoded_frame.get()), 36);
 
   const ColorSpace color_space = *decoded_frame->color_space();
-  EXPECT_EQ(ColorSpace::PrimaryID::kUNSPECIFIED, color_space.primaries());
-  EXPECT_EQ(ColorSpace::TransferID::kUNSPECIFIED, color_space.transfer());
-  EXPECT_EQ(ColorSpace::MatrixID::kUNSPECIFIED, color_space.matrix());
+  EXPECT_EQ(ColorSpace::PrimaryID::kUnspecified, color_space.primaries());
+  EXPECT_EQ(ColorSpace::TransferID::kUnspecified, color_space.transfer());
+  EXPECT_EQ(ColorSpace::MatrixID::kUnspecified, color_space.matrix());
   EXPECT_EQ(ColorSpace::RangeID::kLimited, color_space.range());
+  EXPECT_EQ(ColorSpace::ChromaSiting::kUnspecified,
+            color_space.chroma_siting_horizontal());
+  EXPECT_EQ(ColorSpace::ChromaSiting::kUnspecified,
+            color_space.chroma_siting_vertical());
 }
 
 TEST_F(TestH264Impl, MAYBE_DecodedQpEqualsEncodedQp) {

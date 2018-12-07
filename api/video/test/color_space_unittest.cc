@@ -52,4 +52,22 @@ TEST(ColorSpace, TestSettingRangeFromUint8) {
   EXPECT_FALSE(color_space.set_range_from_uint8(4));
 }
 
+TEST(ColorSpace, TestSettingChromaSitingHorizontalFromUint8) {
+  ColorSpace color_space;
+  EXPECT_TRUE(color_space.set_chroma_siting_horizontal_from_uint8(
+      static_cast<uint8_t>(ColorSpace::ChromaSiting::kCollocated)));
+  EXPECT_EQ(ColorSpace::ChromaSiting::kCollocated,
+            color_space.chroma_siting_horizontal());
+  EXPECT_FALSE(color_space.set_chroma_siting_horizontal_from_uint8(3));
+}
+
+TEST(ColorSpace, TestSettingChromaSitingVerticalFromUint8) {
+  ColorSpace color_space;
+  EXPECT_TRUE(color_space.set_chroma_siting_vertical_from_uint8(
+      static_cast<uint8_t>(ColorSpace::ChromaSiting::kHalf)));
+  EXPECT_EQ(ColorSpace::ChromaSiting::kHalf,
+            color_space.chroma_siting_vertical());
+  EXPECT_FALSE(color_space.set_chroma_siting_vertical_from_uint8(3));
+}
+
 }  // namespace webrtc

@@ -10,6 +10,7 @@
 
 #include "api/video/color_space.h"
 
+namespace webrtc {
 namespace {
 // Try to convert |enum_value| into the enum class T. |enum_bitmask| is created
 // by the funciton below. Returns true if conversion was successful, false
@@ -50,9 +51,17 @@ constexpr uint64_t CreateEnumBitmask(T (&values)[N]) {
   return MakeMask(0, N, values);
 }
 
-}  // namespace
+bool SetChromaSitingFromUint8(uint8_t enum_value,
+                              ColorSpace::ChromaSiting* chroma_siting) {
+  constexpr ColorSpace::ChromaSiting kChromaSitings[] = {
+      ColorSpace::ChromaSiting::kUnspecified,
+      ColorSpace::ChromaSiting::kCollocated, ColorSpace::ChromaSiting::kHalf};
+  constexpr uint64_t enum_bitmask = CreateEnumBitmask(kChromaSitings);
 
-namespace webrtc {
+  return SetFromUint8(enum_value, enum_bitmask, chroma_siting);
+}
+
+}  // namespace
 
 ColorSpace::ColorSpace() = default;
 ColorSpace::ColorSpace(const ColorSpace& other) = default;
@@ -63,17 +72,27 @@ ColorSpace::ColorSpace(PrimaryID primaries,
                        TransferID transfer,
                        MatrixID matrix,
                        RangeID range)
-    : ColorSpace(primaries, transfer, matrix, range, nullptr) {}
+    : ColorSpace(primaries,
+                 transfer,
+                 matrix,
+                 range,
+                 ChromaSiting::kUnspecified,
+                 ChromaSiting::kUnspecified,
+                 nullptr) {}
 
 ColorSpace::ColorSpace(PrimaryID primaries,
                        TransferID transfer,
                        MatrixID matrix,
                        RangeID range,
+                       ChromaSiting chroma_siting_horz,
+                       ChromaSiting chroma_siting_vert,
                        const HdrMetadata* hdr_metadata)
     : primaries_(primaries),
       transfer_(transfer),
       matrix_(matrix),
       range_(range),
+      chroma_siting_horizontal_(chroma_siting_horz),
+      chroma_siting_vertical_(chroma_siting_vert),
       hdr_metadata_(hdr_metadata ? absl::make_optional(*hdr_metadata)
                                  : absl::nullopt) {}
 
@@ -93,13 +112,21 @@ ColorSpace::RangeID ColorSpace::range() const {
   return range_;
 }
 
+ColorSpace::ChromaSiting ColorSpace::chroma_siting_horizontal() const {
+  return chroma_siting_horizontal_;
+}
+
+ColorSpace::ChromaSiting ColorSpace::chroma_siting_vertical() const {
+  return chroma_siting_vertical_;
+}
+
 const HdrMetadata* ColorSpace::hdr_metadata() const {
   return hdr_metadata_ ? &*hdr_metadata_ : nullptr;
 }
 
 bool ColorSpace::set_primaries_from_uint8(uint8_t enum_value) {
   constexpr PrimaryID kPrimaryIds[] = {
-      PrimaryID::kBT709,      PrimaryID::kUNSPECIFIED, PrimaryID::kBT470M,
+      PrimaryID::kBT709,      PrimaryID::kUnspecified, PrimaryID::kBT470M,
       PrimaryID::kBT470BG,    PrimaryID::kSMPTE170M,   PrimaryID::kSMPTE240M,
       PrimaryID::kFILM,       PrimaryID::kBT2020,      PrimaryID::kSMPTEST428,
       PrimaryID::kSMPTEST431, PrimaryID::kSMPTEST432,  PrimaryID::kJEDECP22};
@@ -110,7 +137,7 @@ bool ColorSpace::set_primaries_from_uint8(uint8_t enum_value) {
 
 bool ColorSpace::set_transfer_from_uint8(uint8_t enum_value) {
   constexpr TransferID kTransferIds[] = {
-      TransferID::kBT709,       TransferID::kUNSPECIFIED,
+      TransferID::kBT709,       TransferID::kUnspecified,
       TransferID::kGAMMA22,     TransferID::kGAMMA28,
       TransferID::kSMPTE170M,   TransferID::kSMPTE240M,
       TransferID::kLINEAR,      TransferID::kLOG,
@@ -126,7 +153,7 @@ bool ColorSpace::set_transfer_from_uint8(uint8_t enum_value) {
 
 bool ColorSpace::set_matrix_from_uint8(uint8_t enum_value) {
   constexpr MatrixID kMatrixIds[] = {
-      MatrixID::kRGB,       MatrixID::kBT709,       MatrixID::kUNSPECIFIED,
+      MatrixID::kRGB,       MatrixID::kBT709,       MatrixID::kUnspecified,
       MatrixID::kFCC,       MatrixID::kBT470BG,     MatrixID::kSMPTE170M,
       MatrixID::kSMPTE240M, MatrixID::kYCOCG,       MatrixID::kBT2020_NCL,
       MatrixID::kBT2020_CL, MatrixID::kSMPTE2085,   MatrixID::kCDNCLS,
@@ -142,6 +169,14 @@ bool ColorSpace::set_range_from_uint8(uint8_t enum_value) {
   constexpr uint64_t enum_bitmask = CreateEnumBitmask(kRangeIds);
 
   return SetFromUint8(enum_value, enum_bitmask, &range_);
+}
+
+bool ColorSpace::set_chroma_siting_horizontal_from_uint8(uint8_t enum_value) {
+  return SetChromaSitingFromUint8(enum_value, &chroma_siting_horizontal_);
+}
+
+bool ColorSpace::set_chroma_siting_vertical_from_uint8(uint8_t enum_value) {
+  return SetChromaSitingFromUint8(enum_value, &chroma_siting_vertical_);
 }
 
 void ColorSpace::set_hdr_metadata(const HdrMetadata* hdr_metadata) {

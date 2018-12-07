@@ -70,9 +70,9 @@ int GetCpuSpeed(int width, int height) {
 ColorSpace ExtractVP9ColorSpace(vpx_color_space_t space_t,
                                 vpx_color_range_t range_t,
                                 unsigned int bit_depth) {
-  ColorSpace::PrimaryID primaries = ColorSpace::PrimaryID::kUNSPECIFIED;
-  ColorSpace::TransferID transfer = ColorSpace::TransferID::kUNSPECIFIED;
-  ColorSpace::MatrixID matrix = ColorSpace::MatrixID::kUNSPECIFIED;
+  ColorSpace::PrimaryID primaries = ColorSpace::PrimaryID::kUnspecified;
+  ColorSpace::TransferID transfer = ColorSpace::TransferID::kUnspecified;
+  ColorSpace::MatrixID matrix = ColorSpace::MatrixID::kUnspecified;
   switch (space_t) {
     case VPX_CS_BT_601:
     case VPX_CS_SMPTE_170:

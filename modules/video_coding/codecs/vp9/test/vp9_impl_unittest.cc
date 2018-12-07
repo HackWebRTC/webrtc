@@ -126,10 +126,11 @@ class TestVp9Impl : public VideoCodecUnitTest {
 
   ColorSpace CreateTestColorSpace() const {
     HdrMetadata hdr_metadata = CreateTestHdrMetadata();
-    ColorSpace color_space(ColorSpace::PrimaryID::kBT709,
-                           ColorSpace::TransferID::kGAMMA22,
-                           ColorSpace::MatrixID::kSMPTE2085,
-                           ColorSpace::RangeID::kFull, &hdr_metadata);
+    ColorSpace color_space(
+        ColorSpace::PrimaryID::kBT709, ColorSpace::TransferID::kGAMMA22,
+        ColorSpace::MatrixID::kSMPTE2085, ColorSpace::RangeID::kFull,
+        ColorSpace::ChromaSiting::kCollocated,
+        ColorSpace::ChromaSiting::kCollocated, &hdr_metadata);
     return color_space;
   }
 };
@@ -157,10 +158,14 @@ TEST_F(TestVp9Impl, EncodeDecode) {
   EXPECT_GT(I420PSNR(input_frame, decoded_frame.get()), 36);
 
   const ColorSpace color_space = *decoded_frame->color_space();
-  EXPECT_EQ(ColorSpace::PrimaryID::kUNSPECIFIED, color_space.primaries());
-  EXPECT_EQ(ColorSpace::TransferID::kUNSPECIFIED, color_space.transfer());
-  EXPECT_EQ(ColorSpace::MatrixID::kUNSPECIFIED, color_space.matrix());
+  EXPECT_EQ(ColorSpace::PrimaryID::kUnspecified, color_space.primaries());
+  EXPECT_EQ(ColorSpace::TransferID::kUnspecified, color_space.transfer());
+  EXPECT_EQ(ColorSpace::MatrixID::kUnspecified, color_space.matrix());
   EXPECT_EQ(ColorSpace::RangeID::kLimited, color_space.range());
+  EXPECT_EQ(ColorSpace::ChromaSiting::kUnspecified,
+            color_space.chroma_siting_horizontal());
+  EXPECT_EQ(ColorSpace::ChromaSiting::kUnspecified,
+            color_space.chroma_siting_vertical());
 }
 
 // We only test the encoder here, since the decoded frame rotation is set based
