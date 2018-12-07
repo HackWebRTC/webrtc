@@ -27,11 +27,12 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
                                uint16_t last_seq_num,
                                size_t frame_size,
                                int times_nacked,
-                               int64_t received_time)
+                               int64_t first_packet_received_time,
+                               int64_t last_packet_received_time)
     : packet_buffer_(packet_buffer),
       first_seq_num_(first_seq_num),
       last_seq_num_(last_seq_num),
-      received_time_(received_time),
+      last_packet_received_time_(last_packet_received_time),
       times_nacked_(times_nacked) {
   VCMPacket* first_packet = packet_buffer_->GetPacket(first_seq_num);
   RTC_CHECK(first_packet);
@@ -100,9 +101,9 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
         ntp_time_ms_ +
         last_packet->video_header.video_timing.network2_timestamp_delta_ms;
   }
+  timing_.receive_start_ms = first_packet_received_time;
+  timing_.receive_finish_ms = last_packet_received_time;
   timing_.flags = last_packet->video_header.video_timing.flags;
-  timing_.receive_start_ms = first_packet->receive_time_ms;
-  timing_.receive_finish_ms = last_packet->receive_time_ms;
   is_last_spatial_layer = last_packet->markerBit;
 }
 
@@ -131,7 +132,7 @@ VideoCodecType RtpFrameObject::codec_type() const {
 }
 
 int64_t RtpFrameObject::ReceivedTime() const {
-  return received_time_;
+  return last_packet_received_time_;
 }
 
 int64_t RtpFrameObject::RenderTime() const {

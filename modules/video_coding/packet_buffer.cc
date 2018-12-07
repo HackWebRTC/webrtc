@@ -285,6 +285,8 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
       size_t frame_size = 0;
       int max_nack_count = -1;
       uint16_t start_seq_num = seq_num;
+      int64_t min_recv_time = data_buffer_[index].receive_time_ms;
+      int64_t max_recv_time = data_buffer_[index].receive_time_ms;
 
       // Find the start index by searching backward until the packet with
       // the |frame_begin| flag is set.
@@ -305,6 +307,11 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
         max_nack_count =
             std::max(max_nack_count, data_buffer_[start_index].timesNacked);
         sequence_buffer_[start_index].frame_created = true;
+
+        min_recv_time =
+            std::min(min_recv_time, data_buffer_[start_index].receive_time_ms);
+        max_recv_time =
+            std::max(max_recv_time, data_buffer_[start_index].receive_time_ms);
 
         if (!is_h264 && sequence_buffer_[start_index].frame_begin)
           break;
@@ -393,7 +400,7 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
 
       found_frames.emplace_back(
           new RtpFrameObject(this, start_seq_num, seq_num, frame_size,
-                             max_nack_count, clock_->TimeInMilliseconds()));
+                             max_nack_count, min_recv_time, max_recv_time));
     }
     ++seq_num;
   }
