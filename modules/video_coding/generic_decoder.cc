@@ -91,6 +91,7 @@ void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
                            frameInfo->renderTimeMs);
 
   // Report timing information.
+  TimingFrameInfo timing_frame_info;
   if (frameInfo->timing.flags != VideoSendTiming::kInvalid) {
     int64_t capture_time_ms = decodedImage.ntp_time_ms() - ntp_offset_;
     // Convert remote timestamps to local time from ntp timestamps.
@@ -115,7 +116,6 @@ void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
           1;
     }
 
-    TimingFrameInfo timing_frame_info;
 
     timing_frame_info.capture_time_ms = capture_time_ms - sender_delta_ms;
     timing_frame_info.encode_start_ms =
@@ -130,16 +130,16 @@ void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
         frameInfo->timing.network_timestamp_ms - sender_delta_ms;
     timing_frame_info.network2_timestamp_ms =
         frameInfo->timing.network2_timestamp_ms - sender_delta_ms;
-    timing_frame_info.receive_start_ms = frameInfo->timing.receive_start_ms;
-    timing_frame_info.receive_finish_ms = frameInfo->timing.receive_finish_ms;
-    timing_frame_info.decode_start_ms = frameInfo->decodeStartTimeMs;
-    timing_frame_info.decode_finish_ms = now_ms;
-    timing_frame_info.render_time_ms = frameInfo->renderTimeMs;
-    timing_frame_info.rtp_timestamp = decodedImage.timestamp();
-    timing_frame_info.flags = frameInfo->timing.flags;
-
-    _timing->SetTimingFrameInfo(timing_frame_info);
   }
+
+  timing_frame_info.flags = frameInfo->timing.flags;
+  timing_frame_info.decode_start_ms = frameInfo->decodeStartTimeMs;
+  timing_frame_info.decode_finish_ms = now_ms;
+  timing_frame_info.render_time_ms = frameInfo->renderTimeMs;
+  timing_frame_info.rtp_timestamp = decodedImage.timestamp();
+  timing_frame_info.receive_start_ms = frameInfo->timing.receive_start_ms;
+  timing_frame_info.receive_finish_ms = frameInfo->timing.receive_finish_ms;
+  _timing->SetTimingFrameInfo(timing_frame_info);
 
   decodedImage.set_timestamp_us(frameInfo->renderTimeMs *
                                 rtc::kNumMicrosecsPerMillisec);

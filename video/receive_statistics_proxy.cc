@@ -638,8 +638,10 @@ void ReceiveStatisticsProxy::OnUniqueFramesCounted(int num_unique_frames) {
 void ReceiveStatisticsProxy::OnTimingFrameInfoUpdated(
     const TimingFrameInfo& info) {
   rtc::CritScope lock(&crit_);
-  int64_t now_ms = clock_->TimeInMilliseconds();
-  timing_frame_info_counter_.Add(info, now_ms);
+  if (info.flags != VideoSendTiming::kInvalid) {
+    int64_t now_ms = clock_->TimeInMilliseconds();
+    timing_frame_info_counter_.Add(info, now_ms);
+  }
 }
 
 void ReceiveStatisticsProxy::RtcpPacketTypesCounterUpdated(

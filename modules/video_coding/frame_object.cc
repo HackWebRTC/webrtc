@@ -99,11 +99,10 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
     timing_.network2_timestamp_ms =
         ntp_time_ms_ +
         last_packet->video_header.video_timing.network2_timestamp_delta_ms;
-
-    timing_.receive_start_ms = first_packet->receive_time_ms;
-    timing_.receive_finish_ms = last_packet->receive_time_ms;
   }
   timing_.flags = last_packet->video_header.video_timing.flags;
+  timing_.receive_start_ms = first_packet->receive_time_ms;
+  timing_.receive_finish_ms = last_packet->receive_time_ms;
   is_last_spatial_layer = last_packet->markerBit;
 }
 
