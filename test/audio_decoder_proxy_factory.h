@@ -59,6 +59,10 @@ class AudioDecoderProxyFactory : public AudioDecoderFactory {
       return decoder_->ParsePayload(std::move(payload), timestamp);
     }
 
+    bool HasDecodePlc() const override { return decoder_->HasDecodePlc(); }
+
+    int ErrorCode() override { return decoder_->ErrorCode(); }
+
     void Reset() override { decoder_->Reset(); }
 
     int SampleRateHz() const override { return decoder_->SampleRateHz(); }
