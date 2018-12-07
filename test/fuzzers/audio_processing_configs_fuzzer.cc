@@ -60,6 +60,10 @@ const std::string kFieldTrialNames[] = {
     "WebRTC-Aec3UtilizeShadowFilterOutputKillSwitch",
     "WebRTC-Aec3ZeroExternalDelayHeadroomKillSwitch",
     "WebRTC-Aec3EarlyDelayDetectionKillSwitch",
+    "WebRTC-Aec3FilterQualityStateKillSwitch",
+    "WebRTC-Aec3NewSaturationBehaviorKillSwitch",
+    "WebRTC-Aec3GainLimiterDeactivationKillSwitch",
+    "WebRTC-Aec3EnableErleUpdatesDuringReverbKillSwitch",
 };
 
 std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
