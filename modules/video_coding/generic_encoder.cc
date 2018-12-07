@@ -150,7 +150,6 @@ int32_t VCMGenericEncoder::RequestFrame(
   return encoder_->Encode(
       VideoFrame(I420Buffer::Create(1, 1), kVideoRotation_0, 0), NULL,
       &frame_types);
-  return 0;
 }
 
 bool VCMGenericEncoder::InternalSource() const {
