@@ -69,6 +69,7 @@ class BufferedFrameDecryptor final {
 
   static const size_t kMaxStashedFrames = 24;
 
+  const bool generic_descriptor_auth_experiment_;
   bool first_frame_decrypted_ = false;
   const rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor_;
   OnDecryptedFrameCallback* const decrypted_frame_callback_;
