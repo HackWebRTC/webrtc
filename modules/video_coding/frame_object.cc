@@ -139,7 +139,7 @@ int64_t RtpFrameObject::RenderTime() const {
 }
 
 void RtpFrameObject::SetSize(size_t size) {
-  RTC_DCHECK_LE(size, _size);
+  RTC_DCHECK_LE(size, capacity());
   _length = size;
 }
 
@@ -182,10 +182,9 @@ void RtpFrameObject::AllocateBitstreamBuffer(size_t frame_size) {
   size_t new_size = frame_size + (codec_type_ == kVideoCodecH264
                                       ? EncodedImage::kBufferPaddingBytesH264
                                       : 0);
-  if (_size < new_size) {
+  if (capacity() < new_size) {
     delete[] _buffer;
-    _buffer = new uint8_t[new_size];
-    _size = new_size;
+    set_buffer(new uint8_t[new_size], new_size);
   }
 
   _length = frame_size;

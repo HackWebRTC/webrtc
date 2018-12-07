@@ -379,9 +379,9 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
     if (encoded_images_[i]._buffer != NULL) {
       delete[] encoded_images_[i]._buffer;
     }
-    encoded_images_[i]._size =
+    size_t frame_capacity =
         CalcBufferSize(VideoType::kI420, codec_.width, codec_.height);
-    encoded_images_[i]._buffer = new uint8_t[encoded_images_[i]._size];
+    encoded_images_[i].set_buffer(new uint8_t[frame_capacity], frame_capacity);
     encoded_images_[i]._completeFrame = true;
   }
   // populate encoder configuration with default values
@@ -861,17 +861,17 @@ int LibvpxVp8Encoder::GetEncodedPartitions(const VideoFrame& input_image) {
         case VPX_CODEC_CX_FRAME_PKT: {
           size_t length = encoded_images_[encoder_idx]._length;
           if (pkt->data.frame.sz + length >
-              encoded_images_[encoder_idx]._size) {
+              encoded_images_[encoder_idx].capacity()) {
             uint8_t* buffer = new uint8_t[pkt->data.frame.sz + length];
             memcpy(buffer, encoded_images_[encoder_idx]._buffer, length);
             delete[] encoded_images_[encoder_idx]._buffer;
-            encoded_images_[encoder_idx]._buffer = buffer;
-            encoded_images_[encoder_idx]._size = pkt->data.frame.sz + length;
+            encoded_images_[encoder_idx].set_buffer(
+                buffer, pkt->data.frame.sz + length);
           }
           memcpy(&encoded_images_[encoder_idx]._buffer[length],
                  pkt->data.frame.buf, pkt->data.frame.sz);
           encoded_images_[encoder_idx]._length += pkt->data.frame.sz;
-          assert(length <= encoded_images_[encoder_idx]._size);
+          assert(length <= encoded_images_[encoder_idx].capacity());
           break;
         }
         default:

@@ -152,16 +152,17 @@ void VCMEncodedFrame::CopyCodecSpecific(const RTPVideoHeader* header) {
 }
 
 void VCMEncodedFrame::VerifyAndAllocate(size_t minimumSize) {
-  if (minimumSize > _size) {
+  size_t old_capacity = capacity();
+  if (minimumSize > old_capacity) {
     // create buffer of sufficient size
-    uint8_t* newBuffer = new uint8_t[minimumSize];
-    if (_buffer) {
+    uint8_t* old_buffer = _buffer;
+
+    set_buffer(new uint8_t[minimumSize], minimumSize);
+    if (old_buffer) {
       // copy old data
-      memcpy(newBuffer, _buffer, _size);
-      delete[] _buffer;
+      memcpy(_buffer, old_buffer, old_capacity);
+      delete[] old_buffer;
     }
-    _buffer = newBuffer;
-    _size = minimumSize;
   }
 }
 

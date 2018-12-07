@@ -395,9 +395,9 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   if (encoded_image_._buffer != nullptr) {
     delete[] encoded_image_._buffer;
   }
-  encoded_image_._size =
+  size_t frame_capacity =
       CalcBufferSize(VideoType::kI420, codec_.width, codec_.height);
-  encoded_image_._buffer = new uint8_t[encoded_image_._size];
+  encoded_image_.set_buffer(new uint8_t[frame_capacity], frame_capacity);
   encoded_image_._completeFrame = true;
   // Populate encoder configuration with default values.
   if (vpx_codec_enc_config_default(vpx_codec_vp9_cx(), config_, 0)) {
@@ -1257,10 +1257,10 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
     DeliverBufferedFrame(end_of_picture);
   }
 
-  if (pkt->data.frame.sz > encoded_image_._size) {
+  if (pkt->data.frame.sz > encoded_image_.capacity()) {
     delete[] encoded_image_._buffer;
-    encoded_image_._size = pkt->data.frame.sz;
-    encoded_image_._buffer = new uint8_t[encoded_image_._size];
+    encoded_image_.set_buffer(new uint8_t[pkt->data.frame.sz],
+                              pkt->data.frame.sz);
   }
   memcpy(encoded_image_._buffer, pkt->data.frame.buf, pkt->data.frame.sz);
   encoded_image_._length = pkt->data.frame.sz;
@@ -1276,7 +1276,7 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
     encoded_image_._frameType = kVideoFrameKey;
     force_key_frame_ = false;
   }
-  RTC_DCHECK_LE(encoded_image_._length, encoded_image_._size);
+  RTC_DCHECK_LE(encoded_image_._length, encoded_image_.capacity());
 
   memset(&codec_specific_, 0, sizeof(codec_specific_));
   absl::optional<int> spatial_index;

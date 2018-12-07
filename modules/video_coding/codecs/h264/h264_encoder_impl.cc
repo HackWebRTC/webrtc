@@ -99,34 +99,34 @@ static void RtpFragmentize(EncodedImage* encoded_image,
                            SFrameBSInfo* info,
                            RTPFragmentationHeader* frag_header) {
   // Calculate minimum buffer size required to hold encoded data.
-  size_t required_size = 0;
+  size_t required_capacity = 0;
   size_t fragments_count = 0;
   for (int layer = 0; layer < info->iLayerNum; ++layer) {
     const SLayerBSInfo& layerInfo = info->sLayerInfo[layer];
     for (int nal = 0; nal < layerInfo.iNalCount; ++nal, ++fragments_count) {
       RTC_CHECK_GE(layerInfo.pNalLengthInByte[nal], 0);
-      // Ensure |required_size| will not overflow.
+      // Ensure |required_capacity| will not overflow.
       RTC_CHECK_LE(layerInfo.pNalLengthInByte[nal],
-                   std::numeric_limits<size_t>::max() - required_size);
-      required_size += layerInfo.pNalLengthInByte[nal];
+                   std::numeric_limits<size_t>::max() - required_capacity);
+      required_capacity += layerInfo.pNalLengthInByte[nal];
     }
   }
-  if (encoded_image->_size < required_size) {
+  if (encoded_image->capacity() < required_capacity) {
     // Increase buffer size. Allocate enough to hold an unencoded image, this
     // should be more than enough to hold any encoded data of future frames of
     // the same size (avoiding possible future reallocation due to variations in
     // required size).
-    encoded_image->_size = CalcBufferSize(
-        VideoType::kI420, frame_buffer.width(), frame_buffer.height());
-    if (encoded_image->_size < required_size) {
+    size_t new_capacity = CalcBufferSize(VideoType::kI420, frame_buffer.width(),
+                                         frame_buffer.height());
+    if (new_capacity < required_capacity) {
       // Encoded data > unencoded data. Allocate required bytes.
       RTC_LOG(LS_WARNING)
           << "Encoding produced more bytes than the original image "
-          << "data! Original bytes: " << encoded_image->_size
-          << ", encoded bytes: " << required_size << ".";
-      encoded_image->_size = required_size;
+          << "data! Original bytes: " << new_capacity
+          << ", encoded bytes: " << required_capacity << ".";
+      new_capacity = required_capacity;
     }
-    encoded_image->_buffer = new uint8_t[encoded_image->_size];
+    encoded_image->set_buffer(new uint8_t[new_capacity], new_capacity);
     encoded_image_buffer->reset(encoded_image->_buffer);
   }
 
@@ -141,7 +141,7 @@ static void RtpFragmentize(EncodedImage* encoded_image,
     // Iterate NAL units making up this layer, noting fragments.
     size_t layer_len = 0;
     for (int nal = 0; nal < layerInfo.iNalCount; ++nal, ++frag) {
-      // Because the sum of all layer lengths, |required_size|, fits in a
+      // Because the sum of all layer lengths, |required_capacity|, fits in a
       // |size_t|, we know that any indices in-between will not overflow.
       RTC_DCHECK_GE(layerInfo.pNalLengthInByte[nal], 4);
       RTC_DCHECK_EQ(layerInfo.pBsBuf[layer_len + 0], start_code[0]);
@@ -299,10 +299,11 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* inst,
     openh264_encoder->SetOption(ENCODER_OPTION_DATAFORMAT, &video_format);
 
     // Initialize encoded image. Default buffer size: size of unencoded data.
-    encoded_images_[i]._size =
+
+    const size_t new_capacity =
         CalcBufferSize(VideoType::kI420, codec_.simulcastStream[idx].width,
                        codec_.simulcastStream[idx].height);
-    encoded_images_[i]._buffer = new uint8_t[encoded_images_[i]._size];
+    encoded_images_[i].set_buffer(new uint8_t[new_capacity], new_capacity);
     encoded_image_buffers_[i].reset(encoded_images_[i]._buffer);
     encoded_images_[i]._completeFrame = true;
     encoded_images_[i]._encodedWidth = codec_.simulcastStream[idx].width;
