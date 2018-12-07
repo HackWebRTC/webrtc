@@ -99,6 +99,9 @@ class EventLogAnalyzer {
   void CreateIceCandidatePairConfigGraph(Plot* plot);
   void CreateIceConnectivityCheckGraph(Plot* plot);
 
+  void CreateDtlsTransportStateGraph(Plot* plot);
+  void CreateDtlsWritableStateGraph(Plot* plot);
+
   void CreateTriageNotifications();
   void PrintNotifications(FILE* file);
 

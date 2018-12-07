@@ -151,6 +151,12 @@ WEBRTC_DEFINE_bool(plot_ice_candidate_pair_config,
 WEBRTC_DEFINE_bool(plot_ice_connectivity_check,
                    false,
                    "Plot the ICE candidate pair connectivity checks.");
+WEBRTC_DEFINE_bool(plot_dtls_transport_state,
+                   false,
+                   "Plot DTLS transport state changes.");
+WEBRTC_DEFINE_bool(plot_dtls_writable_state,
+                   false,
+                   "Plot DTLS writable state changes.");
 
 WEBRTC_DEFINE_string(
     force_fieldtrials,
@@ -467,6 +473,13 @@ int main(int argc, char* argv[]) {
   }
   if (FLAG_plot_ice_connectivity_check) {
     analyzer.CreateIceConnectivityCheckGraph(collection->AppendNewPlot());
+  }
+
+  if (FLAG_plot_dtls_transport_state) {
+    analyzer.CreateDtlsTransportStateGraph(collection->AppendNewPlot());
+  }
+  if (FLAG_plot_dtls_writable_state) {
+    analyzer.CreateDtlsWritableStateGraph(collection->AppendNewPlot());
   }
 
   collection->Draw();

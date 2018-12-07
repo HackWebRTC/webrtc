@@ -1979,6 +1979,37 @@ void EventLogAnalyzer::CreateIceConnectivityCheckGraph(Plot* plot) {
   plot->SetTitle("[IceEventLog] ICE connectivity checks");
 }
 
+void EventLogAnalyzer::CreateDtlsTransportStateGraph(Plot* plot) {
+  TimeSeries states("DTLS Transport State", LineStyle::kNone,
+                    PointStyle::kHighlight);
+  for (const auto& event : parsed_log_.dtls_transport_states()) {
+    float x = ToCallTimeSec(event.log_time_us());
+    float y = static_cast<float>(event.dtls_transport_state);
+    states.points.emplace_back(x, y);
+  }
+  plot->AppendTimeSeries(std::move(states));
+  plot->SetXAxis(ToCallTimeSec(begin_time_), call_duration_s_, "Time (s)",
+                 kLeftMargin, kRightMargin);
+  plot->SetSuggestedYAxis(0, static_cast<float>(DtlsTransportState::kNumValues),
+                          "Numeric Transport State", kBottomMargin, kTopMargin);
+  plot->SetTitle("DTLS Transport State");
+}
+
+void EventLogAnalyzer::CreateDtlsWritableStateGraph(Plot* plot) {
+  TimeSeries writable("DTLS Writable", LineStyle::kNone,
+                      PointStyle::kHighlight);
+  for (const auto& event : parsed_log_.dtls_writable_states()) {
+    float x = ToCallTimeSec(event.log_time_us());
+    float y = static_cast<float>(event.writable);
+    writable.points.emplace_back(x, y);
+  }
+  plot->AppendTimeSeries(std::move(writable));
+  plot->SetXAxis(ToCallTimeSec(begin_time_), call_duration_s_, "Time (s)",
+                 kLeftMargin, kRightMargin);
+  plot->SetSuggestedYAxis(0, 1, "Writable", kBottomMargin, kTopMargin);
+  plot->SetTitle("DTLS Writable State");
+}
+
 void EventLogAnalyzer::PrintNotifications(FILE* file) {
   fprintf(file, "========== TRIAGE NOTIFICATIONS ==========\n");
   for (const auto& alert : incoming_rtp_recv_time_gaps_) {
