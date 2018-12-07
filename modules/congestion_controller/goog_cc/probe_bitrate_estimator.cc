@@ -166,6 +166,7 @@ int ProbeBitrateEstimator::HandleProbeAndEstimateBitrate(
     event_log_->Log(
         absl::make_unique<RtcEventProbeResultSuccess>(cluster_id, res));
   }
+  last_estimate_ = DataRate::bps(res);
   estimated_bitrate_bps_ = res;
   return *estimated_bitrate_bps_;
 }
@@ -177,6 +178,10 @@ ProbeBitrateEstimator::FetchAndResetLastEstimatedBitrate() {
   if (estimated_bitrate_bps)
     return DataRate::bps(*estimated_bitrate_bps);
   return absl::nullopt;
+}
+
+absl::optional<DataRate> ProbeBitrateEstimator::last_estimate() const {
+  return last_estimate_;
 }
 
 void ProbeBitrateEstimator::EraseOldClusters(int64_t timestamp_ms) {

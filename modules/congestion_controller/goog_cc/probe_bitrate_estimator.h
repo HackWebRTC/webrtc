@@ -14,6 +14,8 @@
 #include <limits>
 #include <map>
 
+#include "absl/types/optional.h"
+#include "api/units/data_rate.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
 namespace webrtc {
@@ -29,6 +31,8 @@ class ProbeBitrateEstimator {
   int HandleProbeAndEstimateBitrate(const PacketFeedback& packet_feedback);
 
   absl::optional<DataRate> FetchAndResetLastEstimatedBitrate();
+
+  absl::optional<DataRate> last_estimate() const;
 
  private:
   struct AggregatedCluster {
@@ -48,6 +52,7 @@ class ProbeBitrateEstimator {
   std::map<int, AggregatedCluster> clusters_;
   RtcEventLog* const event_log_;
   absl::optional<int> estimated_bitrate_bps_;
+  absl::optional<DataRate> last_estimate_;
 };
 
 }  // namespace webrtc

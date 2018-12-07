@@ -74,12 +74,10 @@ TEST(GoogCcNetworkControllerTest, CutsHighRateInSafeResetTrial) {
   EXPECT_NEAR(client->send_bandwidth().kbps(), kStartRate.kbps(), 30);
 }
 
-// This test is flaky because probing on route change can trigger overuse
-// without having any acknowledged rate, causing a 50% backoff from the probe
-// rate.
-// TODO(srte): Add a fix for the above problem and enable this test.
-TEST(GoogCcNetworkControllerTest, DISABLED_DetectsHighRateInSafeResetTrial) {
-  ScopedFieldTrials trial("WebRTC-Bwe-SafeResetOnRouteChange/Enabled,ack/");
+TEST(GoogCcNetworkControllerTest, DetectsHighRateInSafeResetTrial) {
+  ScopedFieldTrials trial(
+      "WebRTC-Bwe-SafeResetOnRouteChange/Enabled,ack/"
+      "WebRTC-Bwe-ProbeRateFallback/Enabled/");
   const DataRate kInitialLinkCapacity = DataRate::kbps(200);
   const DataRate kNewLinkCapacity = DataRate::kbps(800);
   const DataRate kStartRate = DataRate::kbps(300);
@@ -113,7 +111,7 @@ TEST(GoogCcNetworkControllerTest, DISABLED_DetectsHighRateInSafeResetTrial) {
   EXPECT_NEAR(client->send_bandwidth().kbps(), kInitialLinkCapacity.kbps(), 50);
   // However, probing should have made us detect the higher rate.
   s.RunFor(TimeDelta::ms(2000));
-  EXPECT_NEAR(client->send_bandwidth().kbps(), kNewLinkCapacity.kbps(), 200);
+  EXPECT_GT(client->send_bandwidth().kbps(), kNewLinkCapacity.kbps() - 300);
 }
 
 }  // namespace test
