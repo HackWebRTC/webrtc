@@ -71,6 +71,9 @@ int IceConfig::ice_unwritable_timeout_or_default() const {
 int IceConfig::ice_unwritable_min_checks_or_default() const {
   return ice_unwritable_min_checks.value_or(CONNECTION_WRITE_CONNECT_FAILURES);
 }
+int IceConfig::ice_inactive_timeout_or_default() const {
+  return ice_inactive_timeout.value_or(CONNECTION_WRITE_TIMEOUT);
+}
 int IceConfig::stun_keepalive_interval_or_default() const {
   return stun_keepalive_interval.value_or(STUN_KEEPALIVE_INTERVAL);
 }

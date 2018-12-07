@@ -1231,6 +1231,10 @@ int Connection::unwritable_min_checks() const {
   return unwritable_min_checks_.value_or(CONNECTION_WRITE_CONNECT_FAILURES);
 }
 
+int Connection::inactive_timeout() const {
+  return inactive_timeout_.value_or(CONNECTION_WRITE_TIMEOUT);
+}
+
 int Connection::receiving_timeout() const {
   return receiving_timeout_.value_or(WEAK_CONNECTION_RECEIVE_TIMEOUT);
 }
@@ -1483,8 +1487,8 @@ void Connection::UpdateState(int64_t now) {
   }
   if ((write_state_ == STATE_WRITE_UNRELIABLE ||
        write_state_ == STATE_WRITE_INIT) &&
-      TooLongWithoutResponse(pings_since_last_response_,
-                             CONNECTION_WRITE_TIMEOUT, now)) {
+      TooLongWithoutResponse(pings_since_last_response_, inactive_timeout(),
+                             now)) {
     RTC_LOG(LS_INFO) << ToString() << ": Timed out after "
                      << now - pings_since_last_response_[0].sent_time
                      << " ms without a response, rtt=" << rtt;

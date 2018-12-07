@@ -136,6 +136,13 @@ struct IceConfig {
   // overrides the default value given by |CONNECTION_WRITE_CONNECT_FAILURES| in
   // port.h if set, when determining the writability of a candidate pair.
   absl::optional<int> ice_unwritable_min_checks;
+
+  // The min time period for which a candidate pair must wait for response to
+  // connectivity checks it becomes inactive. This parameter overrides the
+  // default value given by |CONNECTION_WRITE_TIMEOUT| in port.h if set, when
+  // determining the writability of a candidate pair.
+  absl::optional<int> ice_inactive_timeout;
+
   // The interval in milliseconds at which STUN candidates will resend STUN
   // binding requests to keep NAT bindings open.
   absl::optional<int> stun_keepalive_interval;
@@ -166,6 +173,7 @@ struct IceConfig {
   int ice_check_min_interval_or_default() const;
   int ice_unwritable_timeout_or_default() const;
   int ice_unwritable_min_checks_or_default() const;
+  int ice_inactive_timeout_or_default() const;
   int stun_keepalive_interval_or_default() const;
 };
 

@@ -195,6 +195,7 @@ void P2PTransportChannel::AddConnection(Connection* connection) {
   connection->set_receiving_timeout(config_.receiving_timeout);
   connection->set_unwritable_timeout(config_.ice_unwritable_timeout);
   connection->set_unwritable_min_checks(config_.ice_unwritable_min_checks);
+  connection->set_inactive_timeout(config_.ice_inactive_timeout);
   connection->SignalReadPacket.connect(
       this, &P2PTransportChannel::OnReadPacket);
   connection->SignalReadyToSend.connect(
@@ -607,6 +608,15 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
                      << config_.ice_unwritable_min_checks_or_default();
   }
 
+  if (config_.ice_inactive_timeout != config.ice_inactive_timeout) {
+    config_.ice_inactive_timeout = config.ice_inactive_timeout;
+    for (Connection* conn : connections_) {
+      conn->set_inactive_timeout(config_.ice_inactive_timeout);
+    }
+    RTC_LOG(LS_INFO) << "Set inactive timeout to "
+                     << config_.ice_inactive_timeout_or_default();
+  }
+
   if (config_.network_preference != config.network_preference) {
     config_.network_preference = config.network_preference;
     RequestSortAndStateUpdate("network preference changed");
@@ -682,7 +692,8 @@ RTCError P2PTransportChannel::ValidateIceConfig(const IceConfig& config) {
                     "strongly connected");
   }
 
-  if (config.ice_unwritable_timeout_or_default() > CONNECTION_WRITE_TIMEOUT) {
+  if (config.ice_unwritable_timeout_or_default() >
+      config.ice_inactive_timeout_or_default()) {
     return RTCError(RTCErrorType::INVALID_PARAMETER,
                     "The timeout period for the writability state to become "
                     "UNRELIABLE is longer than that to become TIMEOUT.");

@@ -544,6 +544,11 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     // overrides the default value in the ICE implementation if set.
     absl::optional<int> ice_unwritable_min_checks;
 
+    // The min time period for which a candidate pair must wait for response to
+    // connectivity checks it becomes inactive. This parameter overrides the
+    // default value in the ICE implementation if set.
+    absl::optional<int> ice_inactive_timeout;
+
     // The interval in milliseconds at which STUN candidates will resend STUN
     // binding requests to keep NAT bindings open.
     absl::optional<int> stun_candidate_keepalive_interval;

@@ -87,6 +87,8 @@ extern const int REGATHER_ON_FAILED_NETWORKS_INTERVAL;
 extern const int CONNECTION_WRITE_CONNECT_TIMEOUT;
 // Default vaule of IceConfig.ice_unwritable_min_checks.
 extern const uint32_t CONNECTION_WRITE_CONNECT_FAILURES;
+// Default value of IceConfig.ice_inactive_timeout;
+extern const int CONNECTION_WRITE_TIMEOUT;
 // Default value of IceConfig.stun_keepalive_interval;
 extern const int STUN_KEEPALIVE_INTERVAL;
 
@@ -98,8 +100,6 @@ extern const int WEAK_CONNECTION_RECEIVE_TIMEOUT;
 // A connection will be declared dead if it has not received anything for this
 // long.
 extern const int DEAD_CONNECTION_RECEIVE_TIMEOUT;
-// The length of time we wait before timing out writability on a connection.
-extern const int CONNECTION_WRITE_TIMEOUT;
 // This is the length of time that we wait for a ping response to come back.
 extern const int CONNECTION_RESPONSE_TIMEOUT;
 // The minimum time we will wait before destroying a connection after creating
