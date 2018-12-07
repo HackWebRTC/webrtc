@@ -47,7 +47,7 @@ PacedSender::PacedSender(const Clock* clock,
                          RtcEventLog* event_log)
     : clock_(clock),
       packet_sender_(packet_sender),
-      alr_detector_(absl::make_unique<AlrDetector>(event_log)),
+      alr_detector_(),
       drain_large_queues_(!field_trial::IsDisabled("WebRTC-Pacer-DrainQueue")),
       send_padding_if_silent_(
           field_trial::IsEnabled("WebRTC-Pacer-PadInSilence")),
@@ -158,6 +158,8 @@ void PacedSender::SetEstimatedBitrate(uint32_t bitrate_bps) {
   pacing_bitrate_kbps_ =
       std::max(min_send_bitrate_kbps_, estimated_bitrate_bps_ / 1000) *
       pacing_factor_;
+  if (!alr_detector_)
+    alr_detector_ = absl::make_unique<AlrDetector>(nullptr /*event_log*/);
   alr_detector_->SetEstimatedBitrate(bitrate_bps);
 }
 
@@ -214,9 +216,10 @@ int64_t PacedSender::ExpectedQueueTimeMs() const {
                               pacing_bitrate_kbps_);
 }
 
-absl::optional<int64_t> PacedSender::GetApplicationLimitedRegionStartTime()
-    const {
+absl::optional<int64_t> PacedSender::GetApplicationLimitedRegionStartTime() {
   rtc::CritScope cs(&critsect_);
+  if (!alr_detector_)
+    alr_detector_ = absl::make_unique<AlrDetector>(nullptr /*event_log*/);
   return alr_detector_->GetApplicationLimitedRegionStartTime();
 }
 
@@ -295,7 +298,8 @@ void PacedSender::Process() {
     size_t bytes_sent = packet_sender_->TimeToSendPadding(1, PacedPacketInfo());
     critsect_.Enter();
     OnPaddingSent(bytes_sent);
-    alr_detector_->OnBytesSent(bytes_sent, now_us / 1000);
+    if (alr_detector_)
+      alr_detector_->OnBytesSent(bytes_sent, now_us / 1000);
   }
 
   if (paused_)
@@ -378,7 +382,8 @@ void PacedSender::Process() {
     if (!probing_send_failure_)
       prober_.ProbeSent(TimeMilliseconds(), bytes_sent);
   }
-  alr_detector_->OnBytesSent(bytes_sent, now_us / 1000);
+  if (alr_detector_)
+    alr_detector_->OnBytesSent(bytes_sent, now_us / 1000);
 }
 
 void PacedSender::ProcessThreadAttached(ProcessThread* process_thread) {

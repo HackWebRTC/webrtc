@@ -127,7 +127,7 @@ class PacedSender : public Pacer {
   virtual int64_t ExpectedQueueTimeMs() const;
 
   // Deprecated, alr detection will be moved out of the pacer.
-  virtual absl::optional<int64_t> GetApplicationLimitedRegionStartTime() const;
+  virtual absl::optional<int64_t> GetApplicationLimitedRegionStartTime();
 
   // Returns the number of milliseconds until the module want a worker thread
   // to call Process.
@@ -167,7 +167,7 @@ class PacedSender : public Pacer {
 
   const Clock* const clock_;
   PacketSender* const packet_sender_;
-  const std::unique_ptr<AlrDetector> alr_detector_ RTC_PT_GUARDED_BY(critsect_);
+  std::unique_ptr<AlrDetector> alr_detector_ RTC_PT_GUARDED_BY(critsect_);
 
   const bool drain_large_queues_;
   const bool send_padding_if_silent_;
