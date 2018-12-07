@@ -14,7 +14,6 @@
 #include <fstream>
 #include <memory>
 
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/neteq/include/neteq.h"
 #include "modules/audio_coding/neteq/tools/audio_sink.h"
 #include "modules/audio_coding/neteq/tools/input_audio_file.h"

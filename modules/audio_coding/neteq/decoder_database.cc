@@ -18,7 +18,6 @@
 
 #include "absl/strings/match.h"
 #include "api/audio_codecs/audio_decoder.h"
-#include "common_types.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/audio_format_to_string.h"

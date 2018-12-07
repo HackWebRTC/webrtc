@@ -17,7 +17,6 @@
 
 #include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/audio_codecs/audio_format.h"
-#include "common_types.h"  // NOLINT(build/include)  // NULL
 #include "modules/audio_coding/codecs/cng/webrtc_cng.h"
 #include "modules/audio_coding/neteq/neteq_decoder_enum.h"
 #include "modules/audio_coding/neteq/packet.h"

@@ -17,7 +17,6 @@
 
 #include "api/audio/audio_frame.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/codecs/pcm16b/pcm16b.h"
 #include "modules/audio_coding/neteq/include/neteq.h"
 #include "modules/audio_coding/neteq/tools/input_audio_file.h"

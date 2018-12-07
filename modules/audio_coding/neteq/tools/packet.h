@@ -15,7 +15,6 @@
 #include <memory>
 
 #include "api/rtp_headers.h"  // NOLINT(build/include)
-#include "common_types.h"     // NOLINT(build/include)
 #include "rtc_base/constructormagic.h"
 
 namespace webrtc {

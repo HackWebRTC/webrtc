@@ -12,7 +12,6 @@
 #define MODULES_AUDIO_CODING_NETEQ_TOOLS_RTP_GENERATOR_H_
 
 #include "api/rtp_headers.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/constructormagic.h"
 
 namespace webrtc {
