@@ -17,10 +17,10 @@ import android.media.MediaCodecInfo;
 import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaCodecList;
 import android.os.Build;
+import android.support.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import javax.annotation.Nullable;
 
 /** Factory for decoders backed by Android MediaCodec API. */
 @SuppressWarnings("deprecation") // API level 16 requires use of deprecated methods.

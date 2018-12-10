@@ -10,7 +10,7 @@
 
 package org.webrtc;
 
-import javax.annotation.Nullable;
+import android.support.annotation.Nullable;
 
 /**
  * Java wrapper of native AndroidVideoTrackSource.

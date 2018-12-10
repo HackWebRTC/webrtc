@@ -18,6 +18,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
+import android.support.annotation.Nullable;
 import android.view.Surface;
 import java.nio.ByteBuffer;
 import java.text.DecimalFormat;
@@ -25,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import javax.annotation.Nullable;
 
 /**
  * Implements VideoSink by displaying the video stream on an EGL Surface. This class is intended to

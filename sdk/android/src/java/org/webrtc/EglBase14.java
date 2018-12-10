@@ -19,7 +19,7 @@ import android.opengl.EGLDisplay;
 import android.opengl.EGLExt;
 import android.opengl.EGLSurface;
 import android.os.Build;
-import javax.annotation.Nullable;
+import android.support.annotation.Nullable;
 import android.view.Surface;
 import org.webrtc.EglBase;
 

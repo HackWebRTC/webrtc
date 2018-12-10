@@ -11,8 +11,8 @@
 package org.webrtc;
 
 import android.content.Context;
+import android.support.annotation.Nullable;
 import java.util.List;
-import javax.annotation.Nullable;
 import org.webrtc.Logging.Severity;
 import org.webrtc.PeerConnection;
 import org.webrtc.audio.AudioDeviceModule;

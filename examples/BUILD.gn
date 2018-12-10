@@ -153,7 +153,7 @@ if (is_android) {
       "../sdk/android:video_api_java",
       "../sdk/android:video_java",
       "androidapp/third_party/autobanh:autobanh_java",
-      "//third_party/jsr-305:jsr_305_javalib",
+      "//third_party/android_deps:android_support_annotations_java",
     ]
   }
 
@@ -884,7 +884,11 @@ if (is_android) {
     java_files = [ "unityplugin/java/src/org/webrtc/UnityUtility.java" ]
     deps = [
       "../rtc_base:base_java",
+      "../sdk/android:camera_java",
       "../sdk/android:libjingle_peerconnection_java",
+      "../sdk/android:peerconnection_java",
+      "../sdk/android:video_java",
+      "//third_party/android_deps:android_support_annotations_java",
     ]
   }
 
@@ -901,6 +905,7 @@ if (is_android) {
       "../rtc_base:base_java",
       "../sdk/android:libjingle_peerconnection_java",
       "../sdk/android:libjingle_peerconnection_metrics_default_java",
+      "//third_party/android_deps:android_support_annotations_java",
     ]
   }
 }

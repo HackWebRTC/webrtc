@@ -509,6 +509,7 @@ if (!build_with_chromium && is_android) {
     ]
     deps = [
       "../../rtc_base:base_java",
+      "//third_party/android_deps:android_support_annotations_java",
     ]
   }
 }

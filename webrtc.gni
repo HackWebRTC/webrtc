@@ -834,7 +834,6 @@ if (is_android) {
       if (!defined(deps)) {
         deps = []
       }
-      deps += [ "//third_party/jsr-305:jsr_305_javalib" ]
 
       no_build_hooks = true
     }
@@ -866,7 +865,6 @@ if (is_android) {
       if (!defined(deps)) {
         deps = []
       }
-      deps += [ "//third_party/jsr-305:jsr_305_javalib" ]
 
       no_build_hooks = true
     }
@@ -898,7 +896,6 @@ if (is_android) {
       if (!defined(deps)) {
         deps = []
       }
-      deps += [ "//third_party/jsr-305:jsr_305_javalib" ]
 
       no_build_hooks = true
     }

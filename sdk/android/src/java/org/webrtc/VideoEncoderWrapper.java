@@ -11,9 +11,9 @@
 package org.webrtc;
 
 // Explicit imports necessary for JNI generation.
-import javax.annotation.Nullable;
-import org.webrtc.VideoEncoder;
+import android.support.annotation.Nullable;
 import java.nio.ByteBuffer;
+import org.webrtc.VideoEncoder;
 
 /**
  * This class contains the Java glue code for JNI generation of VideoEncoder.

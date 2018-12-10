@@ -203,6 +203,7 @@ if (is_android) {
 
     deps = [
       "//rtc_base:base_java",
+      "//third_party/android_deps:android_support_annotations_java",
     ]
   }
 
@@ -236,6 +237,7 @@ if (is_android) {
     deps = [
       ":base_java",
       "//rtc_base:base_java",
+      "//third_party/android_deps:android_support_annotations_java",
     ]
   }
 
@@ -274,6 +276,7 @@ if (is_android) {
       ":base_java",
       ":video_api_java",
       "//rtc_base:base_java",
+      "//third_party/android_deps:android_support_annotations_java",
     ]
   }
 
@@ -336,6 +339,7 @@ if (is_android) {
       ":video_java",
       "//modules/audio_device:audio_device_java",
       "//rtc_base:base_java",
+      "//third_party/android_deps:android_support_annotations_java",
     ]
   }
 
@@ -361,6 +365,7 @@ if (is_android) {
       ":video_api_java",
       ":video_java",
       "//rtc_base:base_java",
+      "//third_party/android_deps:android_support_annotations_java",
     ]
   }
 
@@ -375,6 +380,7 @@ if (is_android) {
       ":swcodecs_java",
       ":video_api_java",
       ":video_java",
+      "//third_party/android_deps:android_support_annotations_java",
     ]
   }
 
@@ -417,6 +423,7 @@ if (is_android) {
       ":video_api_java",
       ":video_java",
       "//rtc_base:base_java",
+      "//third_party/android_deps:android_support_annotations_java",
     ]
   }
 
@@ -435,6 +442,7 @@ if (is_android) {
       ":audio_api_java",
       ":base_java",
       "//rtc_base:base_java",
+      "//third_party/android_deps:android_support_annotations_java",
     ]
   }
 
@@ -456,6 +464,7 @@ if (is_android) {
       ":video_api_java",
       ":video_java",
       "//rtc_base:base_java",
+      "//third_party/android_deps:android_support_annotations_java",
     ]
   }
 
@@ -513,6 +522,7 @@ if (is_android) {
       ":video_api_java",
       ":video_java",
       "//rtc_base:base_java",
+      "//third_party/android_deps:android_support_annotations_java",
     ]
   }
 

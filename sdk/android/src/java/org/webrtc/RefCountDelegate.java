@@ -10,8 +10,8 @@
 
 package org.webrtc;
 
+import android.support.annotation.Nullable;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.annotation.Nullable;
 
 /**
  * Implementation of RefCounted that executes a Runnable once the ref count reaches zero.

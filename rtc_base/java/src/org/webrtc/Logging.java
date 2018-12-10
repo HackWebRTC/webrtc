@@ -10,12 +10,12 @@
 
 package org.webrtc;
 
+import android.support.annotation.Nullable;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.EnumSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.annotation.Nullable;
 import org.webrtc.Loggable;
 
 /**

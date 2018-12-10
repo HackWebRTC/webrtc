@@ -1506,5 +1506,8 @@ if (is_android) {
       "java/src/org/webrtc/Size.java",
       "java/src/org/webrtc/ThreadUtils.java",
     ]
+    deps = [
+      "//third_party/android_deps:android_support_annotations_java",
+    ]
   }
 }

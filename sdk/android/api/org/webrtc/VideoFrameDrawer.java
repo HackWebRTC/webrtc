@@ -13,8 +13,8 @@ package org.webrtc;
 import android.graphics.Matrix;
 import android.graphics.Point;
 import android.opengl.GLES20;
+import android.support.annotation.Nullable;
 import java.nio.ByteBuffer;
-import javax.annotation.Nullable;
 
 /**
  * Helper class to draw VideoFrames. Calls either drawer.drawOes, drawer.drawRgb, or
