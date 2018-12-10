@@ -38,7 +38,7 @@ class RTC_EXPORT EncodedImage {
 
   EncodedImage();
   EncodedImage(const EncodedImage&);
-  EncodedImage(uint8_t* buffer, size_t length, size_t size);
+  EncodedImage(uint8_t* buffer, size_t length, size_t capacity);
 
   // TODO(nisse): Change style to timestamp(), set_timestamp(), for consistency
   // with the VideoFrame class.
@@ -69,14 +69,14 @@ class RTC_EXPORT EncodedImage {
 
   size_t size() const { return _length; }
   void set_size(size_t new_size) {
-    RTC_DCHECK_LE(new_size, _size);
+    RTC_DCHECK_LE(new_size, capacity_);
     _length = new_size;
   }
-  size_t capacity() const { return _size; }
+  size_t capacity() const { return capacity_; }
 
   void set_buffer(uint8_t* buffer, size_t capacity) {
     _buffer = buffer;
-    _size = capacity;
+    capacity_ = capacity;
   }
 
   uint32_t _encodedWidth = 0;
@@ -88,7 +88,6 @@ class RTC_EXPORT EncodedImage {
   uint8_t* _buffer;
   // TODO(bugs.webrtc.org/9378): Rename to size_, capacity_ and make private.
   size_t _length;
-  size_t _size;
   VideoRotation rotation_ = kVideoRotation_0;
   VideoContentType content_type_ = VideoContentType::UNSPECIFIED;
   bool _completeFrame = false;
@@ -112,6 +111,7 @@ class RTC_EXPORT EncodedImage {
   } timing_;
 
  private:
+  size_t capacity_;  // Allocated size of _buffer.
   uint32_t timestamp_rtp_ = 0;
   absl::optional<int> spatial_index_;
   absl::optional<webrtc::ColorSpace> color_space_;
