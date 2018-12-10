@@ -1494,7 +1494,7 @@ if (is_ios || is_mac) {
           "$root_build_dir/WebRTC.framework",
         ]
         outputs = [
-          "{{bundle_resources_dir}}/Frameworks/{{source_file_part}}",
+          "{{bundle_contents_dir}}/Frameworks/{{source_file_part}}",
         ]
       }
     }

@@ -579,6 +579,11 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
 
       libs = [ "AppKit.framework" ]
 
+      ldflags = [
+        "-rpath",
+        "@executable_path/../Frameworks",
+      ]
+
       deps = [
         ":AppRTCMobile_lib",
         "../sdk:mac_framework_bundle",
