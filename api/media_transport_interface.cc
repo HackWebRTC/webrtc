@@ -158,6 +158,9 @@ MediaTransportFactory::CreateMediaTransport(
   return std::unique_ptr<MediaTransportInterface>(nullptr);
 }
 
+void MediaTransportInterface::SetKeyFrameRequestCallback(
+    MediaTransportKeyFrameRequestCallback* callback) {}
+
 absl::optional<TargetTransferRate>
 MediaTransportInterface::GetLatestTargetTransferRate() {
   return absl::nullopt;

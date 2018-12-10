@@ -90,6 +90,9 @@ class MediaTransportPair {
         uint64_t channel_id,
         const MediaTransportEncodedVideoFrame& frame) override;
 
+    void SetKeyFrameRequestCallback(
+        MediaTransportKeyFrameRequestCallback* callback) override;
+
     RTCError RequestKeyFrame(uint64_t channel_id) override;
 
     void SetReceiveAudioSink(MediaTransportAudioSinkInterface* sink) override;
@@ -122,6 +125,8 @@ class MediaTransportPair {
                 DataMessageType type,
                 const rtc::CopyOnWriteBuffer& buffer);
 
+    void OnKeyFrameRequested(int channel_id);
+
     void OnRemoteCloseChannel(int channel_id);
 
     void OnStateChanged() RTC_RUN_ON(thread_);
@@ -135,6 +140,10 @@ class MediaTransportPair {
     MediaTransportVideoSinkInterface* video_sink_ RTC_GUARDED_BY(sink_lock_) =
         nullptr;
     DataChannelSink* data_sink_ RTC_GUARDED_BY(sink_lock_) = nullptr;
+
+    MediaTransportKeyFrameRequestCallback* key_frame_callback_
+        RTC_GUARDED_BY(sink_lock_) = nullptr;
+
     MediaTransportStateCallback* state_callback_ RTC_GUARDED_BY(sink_lock_) =
         nullptr;
 

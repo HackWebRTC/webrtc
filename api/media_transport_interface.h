@@ -239,6 +239,15 @@ class MediaTransportVideoSinkInterface {
   RTC_DEPRECATED virtual void OnKeyFrameRequested(uint64_t channel_id) {}
 };
 
+// Interface for video sender to be notified of received key frame request.
+class MediaTransportKeyFrameRequestCallback {
+ public:
+  virtual ~MediaTransportKeyFrameRequestCallback() = default;
+
+  // Called when a key frame request is received on the transport.
+  virtual void OnKeyFrameRequested(uint64_t channel_id) = 0;
+};
+
 // State of the media transport.  Media transport begins in the pending state.
 // It transitions to writable when it is ready to send media.  It may transition
 // back to pending if the connection is blocked.  It may transition to closed at
@@ -338,6 +347,10 @@ class MediaTransportInterface {
   virtual RTCError SendVideoFrame(
       uint64_t channel_id,
       const MediaTransportEncodedVideoFrame& frame) = 0;
+
+  // Used by video sender to be notified on key frame requests.
+  virtual void SetKeyFrameRequestCallback(
+      MediaTransportKeyFrameRequestCallback* callback);
 
   // Requests a keyframe for the particular channel (stream). The caller should
   // check that the keyframe is not present in a jitter buffer already (i.e.

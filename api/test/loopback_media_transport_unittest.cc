@@ -29,6 +29,11 @@ class MockMediaTransportVideoSinkInterface
     : public MediaTransportVideoSinkInterface {
  public:
   MOCK_METHOD2(OnData, void(uint64_t, MediaTransportEncodedVideoFrame));
+};
+
+class MockMediaTransportKeyFrameRequestCallback
+    : public MediaTransportKeyFrameRequestCallback {
+ public:
   MOCK_METHOD1(OnKeyFrameRequested, void(uint64_t));
 };
 
@@ -123,6 +128,26 @@ TEST(LoopbackMediaTransport, VideoDeliveredToSink) {
 
   transport_pair.FlushAsyncInvokes();
   transport_pair.second()->SetReceiveVideoSink(nullptr);
+}
+
+TEST(LoopbackMediaTransport, VideoKeyFrameRequestDeliveredToCallback) {
+  std::unique_ptr<rtc::Thread> thread = rtc::Thread::Create();
+  thread->Start();
+  MediaTransportPair transport_pair(thread.get());
+  testing::StrictMock<MockMediaTransportKeyFrameRequestCallback> callback1;
+  testing::StrictMock<MockMediaTransportKeyFrameRequestCallback> callback2;
+  const uint64_t kFirstChannelId = 1111;
+  const uint64_t kSecondChannelId = 2222;
+
+  EXPECT_CALL(callback1, OnKeyFrameRequested(kSecondChannelId));
+  EXPECT_CALL(callback2, OnKeyFrameRequested(kFirstChannelId));
+  transport_pair.first()->SetKeyFrameRequestCallback(&callback1);
+  transport_pair.second()->SetKeyFrameRequestCallback(&callback2);
+
+  transport_pair.first()->RequestKeyFrame(kFirstChannelId);
+  transport_pair.second()->RequestKeyFrame(kSecondChannelId);
+
+  transport_pair.FlushAsyncInvokes();
 }
 
 TEST(LoopbackMediaTransport, DataDeliveredToSink) {

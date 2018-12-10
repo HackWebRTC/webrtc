@@ -34,6 +34,11 @@ class WrapperMediaTransport : public MediaTransportInterface {
     return wrapped_->SendVideoFrame(channel_id, frame);
   }
 
+  void SetKeyFrameRequestCallback(
+      MediaTransportKeyFrameRequestCallback* callback) override {
+    wrapped_->SetKeyFrameRequestCallback(callback);
+  }
+
   RTCError RequestKeyFrame(uint64_t channel_id) override {
     return wrapped_->RequestKeyFrame(channel_id);
   }
@@ -125,8 +130,20 @@ RTCError MediaTransportPair::LoopbackMediaTransport::SendVideoFrame(
   return RTCError::OK();
 }
 
+void MediaTransportPair::LoopbackMediaTransport::SetKeyFrameRequestCallback(
+    MediaTransportKeyFrameRequestCallback* callback) {
+  rtc::CritScope lock(&sink_lock_);
+  if (callback) {
+    RTC_CHECK(key_frame_callback_ == nullptr);
+  }
+  key_frame_callback_ = callback;
+}
+
 RTCError MediaTransportPair::LoopbackMediaTransport::RequestKeyFrame(
     uint64_t channel_id) {
+  invoker_.AsyncInvoke<void>(RTC_FROM_HERE, thread_, [this, channel_id] {
+    other_->OnKeyFrameRequested(channel_id);
+  });
   return RTCError::OK();
 }
 
@@ -242,6 +259,14 @@ void MediaTransportPair::LoopbackMediaTransport::OnData(
   rtc::CritScope lock(&sink_lock_);
   if (data_sink_) {
     data_sink_->OnDataReceived(channel_id, type, buffer);
+  }
+}
+
+void MediaTransportPair::LoopbackMediaTransport::OnKeyFrameRequested(
+    int channel_id) {
+  rtc::CritScope lock(&sink_lock_);
+  if (key_frame_callback_) {
+    key_frame_callback_->OnKeyFrameRequested(channel_id);
   }
 }
 
