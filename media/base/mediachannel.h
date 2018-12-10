@@ -558,6 +558,9 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
   // Estimated capture start time in NTP time in ms.
   int64_t capture_start_ntp_time_ms = -1;
 
+  // First frame received to first frame decoded latency.
+  int64_t first_frame_received_to_decoded_ms = -1;
+
   // Timing frame info: all important timestamps for a full lifetime of a
   // single 'timing frame'.
   absl::optional<webrtc::TimingFrameInfo> timing_frame_info;

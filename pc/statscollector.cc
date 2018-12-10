@@ -252,6 +252,10 @@ void ExtractStats(const cricket::VideoReceiverInfo& info, StatsReport* report) {
     report->AddInt64(StatsReport::kStatsValueNameCaptureStartNtpTimeMs,
                      info.capture_start_ntp_time_ms);
   }
+  if (info.first_frame_received_to_decoded_ms >= 0) {
+    report->AddInt64(StatsReport::kStatsValueNameFirstFrameReceivedToDecodedMs,
+                     info.first_frame_received_to_decoded_ms);
+  }
   if (info.qp_sum)
     report->AddInt64(StatsReport::kStatsValueNameQpSum, *info.qp_sum);
 

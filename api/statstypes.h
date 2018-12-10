@@ -176,6 +176,7 @@ class StatsReport {
     kStatsValueNameFingerprintAlgorithm,
     kStatsValueNameFirsReceived,
     kStatsValueNameFirsSent,
+    kStatsValueNameFirstFrameReceivedToDecodedMs,
     kStatsValueNameFrameHeightInput,
     kStatsValueNameFrameHeightReceived,
     kStatsValueNameFrameHeightSent,

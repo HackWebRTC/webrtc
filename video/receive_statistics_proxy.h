@@ -181,6 +181,7 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   mutable std::map<int64_t, size_t> frame_window_ RTC_GUARDED_BY(&crit_);
   VideoContentType last_content_type_ RTC_GUARDED_BY(&crit_);
   VideoCodecType last_codec_type_ RTC_GUARDED_BY(&crit_);
+  absl::optional<int64_t> first_frame_received_time_ms_ RTC_GUARDED_BY(&crit_);
   absl::optional<int64_t> first_decoded_frame_time_ms_ RTC_GUARDED_BY(&crit_);
   absl::optional<int64_t> last_decoded_frame_time_ms_ RTC_GUARDED_BY(&crit_);
   size_t num_delayed_frames_rendered_ RTC_GUARDED_BY(&crit_);

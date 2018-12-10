@@ -516,6 +516,8 @@ const char* StatsReport::Value::display_name() const {
       return "googFirsReceived";
     case kStatsValueNameFirsSent:
       return "googFirsSent";
+    case kStatsValueNameFirstFrameReceivedToDecodedMs:
+      return "googFirstFrameReceivedToDecodedMs";
     case kStatsValueNameFrameHeightInput:
       return "googFrameHeightInput";
     case kStatsValueNameFrameHeightReceived:

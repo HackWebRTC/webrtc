@@ -642,6 +642,17 @@ void ReceiveStatisticsProxy::OnTimingFrameInfoUpdated(
     int64_t now_ms = clock_->TimeInMilliseconds();
     timing_frame_info_counter_.Add(info, now_ms);
   }
+
+  // Measure initial decoding latency between the first frame arriving and the
+  // first frame being decoded.
+  if (!first_frame_received_time_ms_.has_value()) {
+    first_frame_received_time_ms_ = info.receive_finish_ms;
+  }
+  if (stats_.first_frame_received_to_decoded_ms == -1 &&
+      first_decoded_frame_time_ms_) {
+    stats_.first_frame_received_to_decoded_ms =
+        *first_decoded_frame_time_ms_ - *first_frame_received_time_ms_;
+  }
 }
 
 void ReceiveStatisticsProxy::RtcpPacketTypesCounterUpdated(
@@ -749,8 +760,9 @@ void ReceiveStatisticsProxy::OnDecodedFrame(absl::optional<uint8_t> qp,
         interframe_delay_ms);
     content_specific_stats->flow_duration_ms += interframe_delay_ms;
   }
-  if (stats_.frames_decoded == 1)
+  if (stats_.frames_decoded == 1) {
     first_decoded_frame_time_ms_.emplace(now);
+  }
   last_decoded_frame_time_ms_.emplace(now);
 }
 
