@@ -788,15 +788,6 @@ LoggedRtcpPacket::LoggedRtcpPacket(uint64_t timestamp_us,
 LoggedRtcpPacket::LoggedRtcpPacket(const LoggedRtcpPacket& rhs) = default;
 LoggedRtcpPacket::~LoggedRtcpPacket() = default;
 
-LoggedVideoSendConfig::LoggedVideoSendConfig() = default;
-LoggedVideoSendConfig::LoggedVideoSendConfig(
-    int64_t timestamp_us,
-    const std::vector<rtclog::StreamConfig>& configs)
-    : timestamp_us(timestamp_us), configs(configs) {}
-LoggedVideoSendConfig::LoggedVideoSendConfig(const LoggedVideoSendConfig& rhs) =
-    default;
-LoggedVideoSendConfig::~LoggedVideoSendConfig() = default;
-
 ParsedRtcEventLogNew::~ParsedRtcEventLogNew() = default;
 
 ParsedRtcEventLogNew::LoggedRtpStreamIncoming::LoggedRtpStreamIncoming() =
@@ -1146,19 +1137,17 @@ void ParsedRtcEventLogNew::StoreParsedLegacyEvent(const rtclog::Event& event) {
       break;
     }
     case rtclog::Event::VIDEO_SENDER_CONFIG_EVENT: {
-      std::vector<rtclog::StreamConfig> configs = GetVideoSendConfig(event);
-      video_send_configs_.emplace_back(GetTimestamp(event), configs);
-      for (const auto& config : configs) {
-        if (!config.rtp_extensions.empty()) {
-          outgoing_rtp_extensions_maps_[config.local_ssrc] =
-              RtpHeaderExtensionMap(config.rtp_extensions);
-          outgoing_rtp_extensions_maps_[config.rtx_ssrc] =
-              RtpHeaderExtensionMap(config.rtp_extensions);
-        }
-        outgoing_video_ssrcs_.insert(config.local_ssrc);
-        outgoing_video_ssrcs_.insert(config.rtx_ssrc);
-        outgoing_rtx_ssrcs_.insert(config.rtx_ssrc);
+      rtclog::StreamConfig config = GetVideoSendConfig(event);
+      video_send_configs_.emplace_back(GetTimestamp(event), config);
+      if (!config.rtp_extensions.empty()) {
+        outgoing_rtp_extensions_maps_[config.local_ssrc] =
+            RtpHeaderExtensionMap(config.rtp_extensions);
+        outgoing_rtp_extensions_maps_[config.rtx_ssrc] =
+            RtpHeaderExtensionMap(config.rtp_extensions);
       }
+      outgoing_video_ssrcs_.insert(config.local_ssrc);
+      outgoing_video_ssrcs_.insert(config.rtx_ssrc);
+      outgoing_rtx_ssrcs_.insert(config.rtx_ssrc);
       break;
     }
     case rtclog::Event::AUDIO_RECEIVER_CONFIG_EVENT: {
@@ -1467,42 +1456,40 @@ rtclog::StreamConfig ParsedRtcEventLogNew::GetVideoReceiveConfig(
   return config;
 }
 
-std::vector<rtclog::StreamConfig> ParsedRtcEventLogNew::GetVideoSendConfig(
+rtclog::StreamConfig ParsedRtcEventLogNew::GetVideoSendConfig(
     const rtclog::Event& event) const {
-  std::vector<rtclog::StreamConfig> configs;
+  rtclog::StreamConfig config;
   RTC_CHECK(event.has_type());
   RTC_CHECK_EQ(event.type(), rtclog::Event::VIDEO_SENDER_CONFIG_EVENT);
   RTC_CHECK(event.has_video_sender_config());
   const rtclog::VideoSendConfig& sender_config = event.video_sender_config();
-  if (sender_config.rtx_ssrcs_size() > 0 &&
-      sender_config.ssrcs_size() != sender_config.rtx_ssrcs_size()) {
-    RTC_LOG(WARNING)
-        << "VideoSendConfig is configured for RTX but the number of "
-           "SSRCs doesn't match the number of RTX SSRCs.";
-  }
-  configs.resize(sender_config.ssrcs_size());
-  for (int i = 0; i < sender_config.ssrcs_size(); i++) {
-    // Get SSRCs.
-    configs[i].local_ssrc = sender_config.ssrcs(i);
-    if (sender_config.rtx_ssrcs_size() > 0 &&
-        i < sender_config.rtx_ssrcs_size()) {
-      RTC_CHECK(sender_config.has_rtx_payload_type());
-      configs[i].rtx_ssrc = sender_config.rtx_ssrcs(i);
-    }
-    // Get header extensions.
-    GetHeaderExtensions(&configs[i].rtp_extensions,
-                        sender_config.header_extensions());
+  RTC_CHECK_EQ(sender_config.ssrcs_size(), 1)
+      << "VideoSendStreamConfig no longer stores multiple SSRCs. If you are "
+         "analyzing a very old log, try building the parser from the same "
+         "WebRTC version.";
 
-    // Get the codec.
-    RTC_CHECK(sender_config.has_encoder());
-    RTC_CHECK(sender_config.encoder().has_name());
-    RTC_CHECK(sender_config.encoder().has_payload_type());
-    configs[i].codecs.emplace_back(
-        sender_config.encoder().name(), sender_config.encoder().payload_type(),
-        sender_config.has_rtx_payload_type() ? sender_config.rtx_payload_type()
-                                             : 0);
+  // Get SSRCs.
+  config.local_ssrc = sender_config.ssrcs(0);
+
+  if (sender_config.has_rtx_payload_type()) {
+    RTC_CHECK_EQ(sender_config.rtx_ssrcs_size(), 1);
+    config.rtx_ssrc = sender_config.rtx_ssrcs(0);
+  } else {
+    RTC_CHECK_EQ(sender_config.rtx_ssrcs_size(), 0);
   }
-  return configs;
+  // Get header extensions.
+  GetHeaderExtensions(&config.rtp_extensions,
+                      sender_config.header_extensions());
+
+  // Get the codec.
+  RTC_CHECK(sender_config.has_encoder());
+  RTC_CHECK(sender_config.encoder().has_name());
+  RTC_CHECK(sender_config.encoder().has_payload_type());
+  config.codecs.emplace_back(
+      sender_config.encoder().name(), sender_config.encoder().payload_type(),
+      sender_config.has_rtx_payload_type() ? sender_config.rtx_payload_type()
+                                           : 0);
+  return config;
 }
 
 rtclog::StreamConfig ParsedRtcEventLogNew::GetAudioReceiveConfig(
@@ -2457,17 +2444,15 @@ void ParsedRtcEventLogNew::StoreVideoSendConfig(
   LoggedVideoSendConfig stream;
   RTC_CHECK(proto.has_timestamp_ms());
   stream.timestamp_us = proto.timestamp_ms() * 1000;
-  rtclog::StreamConfig config;
   RTC_CHECK(proto.has_ssrc());
-  config.local_ssrc = proto.ssrc();
+  stream.config.local_ssrc = proto.ssrc();
   if (proto.has_rtx_ssrc()) {
-    config.rtx_ssrc = proto.rtx_ssrc();
+    stream.config.rtx_ssrc = proto.rtx_ssrc();
   }
   if (proto.has_header_extensions()) {
-    config.rtp_extensions =
+    stream.config.rtp_extensions =
         GetRuntimeRtpHeaderExtensionConfig(proto.header_extensions());
   }
-  stream.configs.push_back(config);
   video_send_configs_.push_back(stream);
 }
 

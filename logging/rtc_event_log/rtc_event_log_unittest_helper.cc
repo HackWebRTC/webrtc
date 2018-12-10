@@ -1023,11 +1023,7 @@ void EventVerifier::VerifyLoggedVideoSendConfig(
     const RtcEventVideoSendStreamConfig& original_event,
     const LoggedVideoSendConfig& logged_event) const {
   EXPECT_EQ(original_event.timestamp_ms(), logged_event.log_time_ms());
-  // TODO(terelius): In the past, we allowed storing multiple RtcStreamConfigs
-  // in the same RtcEventVideoSendStreamConfig. Look into whether we should drop
-  // backwards compatibility in the parser.
-  ASSERT_EQ(logged_event.configs.size(), 1u);
-  VerifyLoggedStreamConfig(original_event.config(), logged_event.configs[0]);
+  VerifyLoggedStreamConfig(original_event.config(), logged_event.config);
 }
 
 }  // namespace test

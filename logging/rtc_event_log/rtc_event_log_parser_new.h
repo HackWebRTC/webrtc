@@ -450,17 +450,15 @@ struct LoggedVideoRecvConfig {
 };
 
 struct LoggedVideoSendConfig {
-  LoggedVideoSendConfig();
-  LoggedVideoSendConfig(int64_t timestamp_us,
-                        const std::vector<rtclog::StreamConfig>& configs);
-  LoggedVideoSendConfig(const LoggedVideoSendConfig&);
-  ~LoggedVideoSendConfig();
+  LoggedVideoSendConfig() = default;
+  LoggedVideoSendConfig(int64_t timestamp_us, const rtclog::StreamConfig config)
+      : timestamp_us(timestamp_us), config(config) {}
 
   int64_t log_time_us() const { return timestamp_us; }
   int64_t log_time_ms() const { return timestamp_us / 1000; }
 
   int64_t timestamp_us;
-  std::vector<rtclog::StreamConfig> configs;
+  rtclog::StreamConfig config;
 };
 
 template <typename T>
@@ -922,8 +920,7 @@ class ParsedRtcEventLogNew {
                      size_t* length) const;
 
   rtclog::StreamConfig GetVideoReceiveConfig(const rtclog::Event& event) const;
-  std::vector<rtclog::StreamConfig> GetVideoSendConfig(
-      const rtclog::Event& event) const;
+  rtclog::StreamConfig GetVideoSendConfig(const rtclog::Event& event) const;
   rtclog::StreamConfig GetAudioReceiveConfig(const rtclog::Event& event) const;
   rtclog::StreamConfig GetAudioSendConfig(const rtclog::Event& event) const;
 
