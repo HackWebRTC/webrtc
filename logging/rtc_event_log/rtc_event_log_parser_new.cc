@@ -1137,10 +1137,7 @@ void ParsedRtcEventLogNew::StoreParsedLegacyEvent(const rtclog::Event& event) {
       if (!config.rtp_extensions.empty()) {
         incoming_rtp_extensions_maps_[config.remote_ssrc] =
             RtpHeaderExtensionMap(config.rtp_extensions);
-        // TODO(terelius): I don't understand the reason for configuring header
-        // extensions for the local SSRC. I think it should be removed, but for
-        // now I want to preserve the previous functionality.
-        incoming_rtp_extensions_maps_[config.local_ssrc] =
+        incoming_rtp_extensions_maps_[config.rtx_ssrc] =
             RtpHeaderExtensionMap(config.rtp_extensions);
       }
       incoming_video_ssrcs_.insert(config.remote_ssrc);
@@ -1169,8 +1166,6 @@ void ParsedRtcEventLogNew::StoreParsedLegacyEvent(const rtclog::Event& event) {
       audio_recv_configs_.emplace_back(GetTimestamp(event), config);
       if (!config.rtp_extensions.empty()) {
         incoming_rtp_extensions_maps_[config.remote_ssrc] =
-            RtpHeaderExtensionMap(config.rtp_extensions);
-        incoming_rtp_extensions_maps_[config.local_ssrc] =
             RtpHeaderExtensionMap(config.rtp_extensions);
       }
       incoming_audio_ssrcs_.insert(config.remote_ssrc);
