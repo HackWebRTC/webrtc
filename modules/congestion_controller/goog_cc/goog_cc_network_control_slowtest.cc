@@ -35,9 +35,6 @@ TEST(GoogCcNetworkControllerTest, MaintainsLowRateInSafeResetTrial) {
                                s.CreateClient("return", CallClientConfig()),
                                {s.CreateSimulationNode(NetworkNodeConfig())});
   s.CreateVideoStream(route->forward(), VideoStreamConfig());
-  // Trigger reroute message, but keep transport unchanged.
-  s.ChangeRoute(route->forward(), {send_net});
-
   // Allow the controller to stabilize.
   s.RunFor(TimeDelta::ms(500));
   EXPECT_NEAR(client->send_bandwidth().kbps(), kLinkCapacity.kbps(), 50);
@@ -67,8 +64,6 @@ TEST(GoogCcNetworkControllerTest, CutsHighRateInSafeResetTrial) {
                                s.CreateClient("return", CallClientConfig()),
                                {s.CreateSimulationNode(NetworkNodeConfig())});
   s.CreateVideoStream(route->forward(), VideoStreamConfig());
-
-  s.ChangeRoute(route->forward(), {send_net});
   // Allow the controller to stabilize.
   s.RunFor(TimeDelta::ms(500));
   EXPECT_NEAR(client->send_bandwidth().kbps(), kLinkCapacity.kbps(), 300);
@@ -79,14 +74,12 @@ TEST(GoogCcNetworkControllerTest, CutsHighRateInSafeResetTrial) {
   EXPECT_NEAR(client->send_bandwidth().kbps(), kStartRate.kbps(), 30);
 }
 
-#ifdef WEBRTC_LINUX  // bugs.webrtc.org/10036
-#define MAYBE_DetectsHighRateInSafeResetTrial \
-  DISABLED_DetectsHighRateInSafeResetTrial
-#else
-#define MAYBE_DetectsHighRateInSafeResetTrial DetectsHighRateInSafeResetTrial
-#endif
-TEST(GoogCcNetworkControllerTest, MAYBE_DetectsHighRateInSafeResetTrial) {
-  ScopedFieldTrials trial("WebRTC-Bwe-SafeResetOnRouteChange/Enabled/");
+// This test is flaky because probing on route change can trigger overuse
+// without having any acknowledged rate, causing a 50% backoff from the probe
+// rate.
+// TODO(srte): Add a fix for the above problem and enable this test.
+TEST(GoogCcNetworkControllerTest, DISABLED_DetectsHighRateInSafeResetTrial) {
+  ScopedFieldTrials trial("WebRTC-Bwe-SafeResetOnRouteChange/Enabled,ack/");
   const DataRate kInitialLinkCapacity = DataRate::kbps(200);
   const DataRate kNewLinkCapacity = DataRate::kbps(800);
   const DataRate kStartRate = DataRate::kbps(300);
@@ -109,14 +102,12 @@ TEST(GoogCcNetworkControllerTest, MAYBE_DetectsHighRateInSafeResetTrial) {
                                s.CreateClient("return", CallClientConfig()),
                                {s.CreateSimulationNode(NetworkNodeConfig())});
   s.CreateVideoStream(route->forward(), VideoStreamConfig());
-  s.ChangeRoute(route->forward(), {initial_net});
-
   // Allow the controller to stabilize.
   s.RunFor(TimeDelta::ms(1000));
   EXPECT_NEAR(client->send_bandwidth().kbps(), kInitialLinkCapacity.kbps(), 50);
   s.ChangeRoute(route->forward(), {new_net});
-  // Allow new settings to propagate.
-  s.RunFor(TimeDelta::ms(100));
+  // Allow new settings to propagate, but not probes to be received.
+  s.RunFor(TimeDelta::ms(50));
   // Under the field trial, the target rate should be unchanged since it's lower
   // than the starting rate.
   EXPECT_NEAR(client->send_bandwidth().kbps(), kInitialLinkCapacity.kbps(), 50);

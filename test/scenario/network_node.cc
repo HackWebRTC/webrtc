@@ -105,7 +105,7 @@ void NetworkNode::Process(Timestamp at_time) {
     // We don't want to keep the lock here. Otherwise we would get a deadlock if
     // the receiver tries to push a new packet.
     receiver->TryDeliverPacket(packet->packet_data, packet->receiver_id,
-                               at_time);
+                               Timestamp::us(delivery_info.receive_time_us));
     {
       rtc::CritScope crit(&crit_sect_);
       while (!packets_.empty() && packets_.front().removed) {
