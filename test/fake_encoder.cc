@@ -54,8 +54,6 @@ FakeEncoder::FakeEncoder(Clock* clock)
       max_target_bitrate_kbps_(-1),
       pending_keyframe_(true),
       counter_(0),
-      is_hardware_accelerated_(false),
-      has_internal_source_(false),
       debt_bytes_(0) {
   // Generate some arbitrary not-all-zero data
   for (size_t i = 0; i < sizeof(encoded_buffer_); ++i) {
@@ -269,17 +267,7 @@ const char* FakeEncoder::kImplementationName = "fake_encoder";
 VideoEncoder::EncoderInfo FakeEncoder::GetEncoderInfo() const {
   EncoderInfo info;
   info.implementation_name = kImplementationName;
-  info.is_hardware_accelerated = is_hardware_accelerated_;
-  info.has_internal_source = has_internal_source_;
   return info;
-}
-
-void FakeEncoder::SetIsHardwareAccelerated(bool is_hardware_accelerated) {
-  is_hardware_accelerated_ = is_hardware_accelerated;
-}
-
-void FakeEncoder::SetHasInternalSource(bool has_internal_source) {
-  has_internal_source_ = has_internal_source;
 }
 
 int FakeEncoder::GetConfiguredInputFramerate() const {

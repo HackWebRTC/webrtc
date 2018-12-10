@@ -26,8 +26,10 @@ namespace test {
 // a proxy for the same encoder, typically an instance of FakeEncoder.
 class VideoEncoderProxyFactory final : public VideoEncoderFactory {
  public:
-  explicit VideoEncoderProxyFactory(VideoEncoder* encoder)
-      : encoder_(encoder) {}
+  explicit VideoEncoderProxyFactory(VideoEncoder* encoder) : encoder_(encoder) {
+    codec_info_.is_hardware_accelerated = false;
+    codec_info_.has_internal_source = false;
+  }
 
   // Unused by tests.
   std::vector<SdpVideoFormat> GetSupportedFormats() const override {
@@ -35,9 +37,20 @@ class VideoEncoderProxyFactory final : public VideoEncoderFactory {
     return {};
   }
 
+  CodecInfo QueryVideoEncoder(const SdpVideoFormat& format) const override {
+    return codec_info_;
+  }
+
   std::unique_ptr<VideoEncoder> CreateVideoEncoder(
       const SdpVideoFormat& format) override {
     return absl::make_unique<EncoderProxy>(encoder_);
+  }
+
+  void SetIsHardwareAccelerated(bool is_hardware_accelerated) {
+    codec_info_.is_hardware_accelerated = is_hardware_accelerated;
+  }
+  void SetHasInternalSource(bool has_internal_source) {
+    codec_info_.has_internal_source = has_internal_source;
   }
 
  private:
@@ -75,6 +88,7 @@ class VideoEncoderProxyFactory final : public VideoEncoderFactory {
   };
 
   VideoEncoder* const encoder_;
+  CodecInfo codec_info_;
 };
 
 }  // namespace test

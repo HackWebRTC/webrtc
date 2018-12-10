@@ -49,6 +49,7 @@ class RTC_EXPORT MultiplexEncoderFactory : public VideoEncoderFactory {
                           bool supports_augmenting_data = false);
 
   std::vector<SdpVideoFormat> GetSupportedFormats() const override;
+  CodecInfo QueryVideoEncoder(const SdpVideoFormat& format) const override;
   std::unique_ptr<VideoEncoder> CreateVideoEncoder(
       const SdpVideoFormat& format) override;
 

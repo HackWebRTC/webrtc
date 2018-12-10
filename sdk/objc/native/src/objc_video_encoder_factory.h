@@ -29,6 +29,7 @@ class ObjCVideoEncoderFactory : public VideoEncoderFactory {
   std::vector<SdpVideoFormat> GetSupportedFormats() const override;
   std::unique_ptr<VideoEncoder> CreateVideoEncoder(
       const SdpVideoFormat& format) override;
+  CodecInfo QueryVideoEncoder(const SdpVideoFormat& format) const override;
 
  private:
   id<RTCVideoEncoderFactory> encoder_factory_;

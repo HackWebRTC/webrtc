@@ -187,17 +187,10 @@ int FakeWebRtcVideoEncoder::GetNumEncodedFrames() {
   return num_frames_encoded_;
 }
 
-webrtc::VideoEncoder::EncoderInfo FakeWebRtcVideoEncoder::GetEncoderInfo()
-    const {
-  EncoderInfo info;
-  info.is_hardware_accelerated = true;
-  info.has_internal_source = false;
-  return info;
-}
-
 // Video encoder factory.
 FakeWebRtcVideoEncoderFactory::FakeWebRtcVideoEncoderFactory()
     : num_created_encoders_(0),
+      encoders_have_internal_sources_(false),
       vp8_factory_mode_(false) {}
 
 std::vector<webrtc::SdpVideoFormat>
@@ -237,6 +230,15 @@ FakeWebRtcVideoEncoderFactory::CreateVideoEncoder(
   return encoder;
 }
 
+webrtc::VideoEncoderFactory::CodecInfo
+FakeWebRtcVideoEncoderFactory::QueryVideoEncoder(
+    const webrtc::SdpVideoFormat& format) const {
+  webrtc::VideoEncoderFactory::CodecInfo info;
+  info.has_internal_source = encoders_have_internal_sources_;
+  info.is_hardware_accelerated = true;
+  return info;
+}
+
 bool FakeWebRtcVideoEncoderFactory::WaitForCreatedVideoEncoders(
     int num_encoders) {
   int64_t start_offset_ms = rtc::TimeMillis();
@@ -254,6 +256,11 @@ void FakeWebRtcVideoEncoderFactory::EncoderDestroyed(
   rtc::CritScope lock(&crit_);
   encoders_.erase(std::remove(encoders_.begin(), encoders_.end(), encoder),
                   encoders_.end());
+}
+
+void FakeWebRtcVideoEncoderFactory::set_encoders_have_internal_sources(
+    bool internal_source) {
+  encoders_have_internal_sources_ = internal_source;
 }
 
 void FakeWebRtcVideoEncoderFactory::AddSupportedVideoCodec(

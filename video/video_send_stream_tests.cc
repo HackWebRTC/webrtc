@@ -2043,10 +2043,10 @@ TEST_P(VideoSendStreamTest, CanReconfigureToUseStartBitrateAbovePreviousMax) {
       bitrate_config);
 
   StartBitrateObserver encoder;
+  test::VideoEncoderProxyFactory encoder_factory(&encoder);
   // Since this test does not use a capturer, set |internal_source| = true.
   // Encoder configuration is otherwise updated on the next video frame.
-  encoder.SetHasInternalSource(true);
-  test::VideoEncoderProxyFactory encoder_factory(&encoder);
+  encoder_factory.SetHasInternalSource(true);
   GetVideoSendConfig()->encoder_settings.encoder_factory = &encoder_factory;
 
   CreateVideoStreams();
@@ -2125,8 +2125,8 @@ class StartStopBitrateObserver : public test::FakeEncoder {
 TEST_P(VideoSendStreamTest, VideoSendStreamStopSetEncoderRateToZero) {
   test::NullTransport transport;
   StartStopBitrateObserver encoder;
-  encoder.SetHasInternalSource(true);
   test::VideoEncoderProxyFactory encoder_factory(&encoder);
+  encoder_factory.SetHasInternalSource(true);
   test::FrameForwarder forwarder;
 
   task_queue_.SendTask([this, &transport, &encoder_factory, &forwarder]() {
@@ -2168,8 +2168,8 @@ TEST_P(VideoSendStreamTest, VideoSendStreamStopSetEncoderRateToZero) {
 TEST_P(VideoSendStreamTest, VideoSendStreamUpdateActiveSimulcastLayers) {
   test::NullTransport transport;
   StartStopBitrateObserver encoder;
-  encoder.SetHasInternalSource(true);
   test::VideoEncoderProxyFactory encoder_factory(&encoder);
+  encoder_factory.SetHasInternalSource(true);
   test::FrameForwarder forwarder;
 
   task_queue_.SendTask([this, &transport, &encoder_factory, &forwarder]() {

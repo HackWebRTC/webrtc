@@ -1090,7 +1090,12 @@ TEST(WebRtcVideoEngineNewVideoCodecFactoryTest, Vp8) {
   VerifyCodecHasDefaultFeedbackParams(engine_codecs.at(0));
 
   // Mock encoder creation. |engine| take ownership of the encoder.
+  webrtc::VideoEncoderFactory::CodecInfo codec_info;
+  codec_info.is_hardware_accelerated = false;
+  codec_info.has_internal_source = false;
   const webrtc::SdpVideoFormat format("VP8");
+  EXPECT_CALL(*encoder_factory, QueryVideoEncoder(format))
+      .WillRepeatedly(testing::Return(codec_info));
   FakeWebRtcVideoEncoder* const encoder = new FakeWebRtcVideoEncoder(nullptr);
   rtc::Event encoder_created;
   EXPECT_CALL(*encoder_factory, CreateVideoEncoderProxy(format))
