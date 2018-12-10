@@ -227,9 +227,10 @@ if (!build_with_chromium) {
   if (rtc_enable_protobuf) {
     proto_library("chart_proto") {
       sources = [
-        "event_log_visualizer/chart.proto",
+        "event_log_visualizer/proto/chart.proto",
+        "event_log_visualizer/proto/chart_enums.proto",
       ]
-      proto_out_dir = "rtc_tools/event_log_visualizer"
+      proto_out_dir = "rtc_tools/event_log_visualizer/proto"
     }
 
     rtc_static_library("event_log_visualizer_utils") {
