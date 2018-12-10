@@ -29,11 +29,14 @@ class AudioDecoderFactory : public rtc::RefCountInterface {
 
   virtual bool IsSupportedDecoder(const SdpAudioFormat& format) = 0;
 
-  // Create a new decoder instance. The `codec_pair_id` argument is used to
-  // link encoders and decoders that talk to the same remote entity; if a
-  // MakeAudioEncoder() and a MakeAudioDecoder() call receive non-null IDs that
+  // Create a new decoder instance. The `codec_pair_id` argument is used to link
+  // encoders and decoders that talk to the same remote entity: if a
+  // AudioEncoderFactory::MakeAudioEncoder() and a
+  // AudioDecoderFactory::MakeAudioDecoder() call receive non-null IDs that
   // compare equal, the factory implementations may assume that the encoder and
-  // decoder form a pair.
+  // decoder form a pair. (The intended use case for this is to set up
+  // communication between the AudioEncoder and AudioDecoder instances, which is
+  // needed for some codecs with built-in bandwidth adaptation.)
   //
   // Note: Implementations need to be robust against combinations other than
   // one encoder, one decoder getting the same ID; such decoders must still
