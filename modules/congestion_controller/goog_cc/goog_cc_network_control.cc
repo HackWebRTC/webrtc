@@ -150,6 +150,7 @@ GoogCcNetworkController::GoogCcNetworkController(RtcEventLog* event_log,
           absl::make_unique<AcknowledgedBitrateEstimator>()),
       initial_config_(config),
       last_target_rate_(*config.constraints.starting_rate),
+      pushback_target_rate_(last_target_rate_),
       pacing_factor_(config.stream_based_config.pacing_factor.value_or(
           kDefaultPaceMultiplier)),
       min_pacing_rate_(config.stream_based_config.min_pacing_rate.value_or(
@@ -619,6 +620,7 @@ void GoogCcNetworkController::MaybeTriggerOnNetworkChanged(
                                         pushback_rate);
       target_rate = DataRate::bps(pushback_rate);
     }
+    pushback_target_rate_ = target_rate;
 
     TargetTransferRate target_rate_msg;
     target_rate_msg.at_time = at_time;
@@ -642,7 +644,7 @@ void GoogCcNetworkController::MaybeTriggerOnNetworkChanged(
 PacerConfig GoogCcNetworkController::GetPacingRates(Timestamp at_time) const {
   DataRate pacing_rate =
       std::max(min_pacing_rate_, last_target_rate_) * pacing_factor_;
-  DataRate padding_rate = std::min(max_padding_rate_, last_target_rate_);
+  DataRate padding_rate = std::min(max_padding_rate_, pushback_target_rate_);
   PacerConfig msg;
   msg.at_time = at_time;
   msg.time_window = TimeDelta::seconds(1);

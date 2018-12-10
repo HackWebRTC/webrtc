@@ -264,6 +264,8 @@ SimulatedTimeClient::SimulatedTimeClient(
   current_contraints_.max_data_rate = config.transport.rates.max_rate;
   NetworkControllerConfig initial_config;
   initial_config.constraints = current_contraints_;
+  initial_config.stream_based_config.max_padding_rate =
+      config.transport.rates.max_padding_rate;
   congestion_controller_ = network_controller_factory_.Create(initial_config);
   for (auto& stream_config : stream_configs)
     packet_streams_.emplace_back(new PacketStream(stream_config));
@@ -362,6 +364,10 @@ DataRate SimulatedTimeClient::link_capacity() const {
 
 double SimulatedTimeClient::target_rate_kbps() const {
   return target_rate_.kbps<double>();
+}
+
+DataRate SimulatedTimeClient::padding_rate() const {
+  return sender_.pacer_config_.pad_rate();
 }
 
 }  // namespace test
