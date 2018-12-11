@@ -10,13 +10,19 @@
 
 #include "pc/sdpserializer.h"
 
+#include <algorithm>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "api/jsep.h"
+#include "rtc_base/checks.h"
+#include "rtc_base/string_to_number.h"
+#include "rtc_base/stringencode.h"
 #include "rtc_base/strings/string_builder.h"
 
+using cricket::RidDescription;
+using cricket::RidDirection;
 using cricket::SimulcastDescription;
 using cricket::SimulcastLayer;
 using cricket::SimulcastLayerList;
@@ -28,16 +34,20 @@ namespace {
 // delimiters
 const char kDelimiterComma[] = ",";
 const char kDelimiterCommaChar = ',';
+const char kDelimiterEqual[] = "=";
+const char kDelimiterEqualChar = '=';
 const char kDelimiterSemicolon[] = ";";
 const char kDelimiterSemicolonChar = ';';
 const char kDelimiterSpace[] = " ";
 const char kDelimiterSpaceChar = ' ';
 
 // https://tools.ietf.org/html/draft-ietf-mmusic-sdp-simulcast-13#section-5.1
+// https://tools.ietf.org/html/draft-ietf-mmusic-rid-15#section-10
 const char kSimulcastPausedStream[] = "~";
 const char kSimulcastPausedStreamChar = '~';
-const char kSimulcastSendStreams[] = "send";
-const char kSimulcastReceiveStreams[] = "recv";
+const char kSendDirection[] = "send";
+const char kReceiveDirection[] = "recv";
+const char kPayloadType[] = "pt";
 
 RTCError ParseError(const std::string& message) {
   return RTCError(RTCErrorType::SYNTAX_ERROR, message);
@@ -80,8 +90,7 @@ rtc::StringBuilder& operator<<(rtc::StringBuilder& builder,
   }
   return builder;
 }
-
-// These methods deserialize simulcast according to the specification:
+// This method deserializes simulcast according to the specification:
 // https://tools.ietf.org/html/draft-ietf-mmusic-sdp-simulcast-13#section-5.1
 // sc-str-list  = sc-alt-list *( ";" sc-alt-list )
 // sc-alt-list  = sc-id *( "," sc-id )
@@ -103,22 +112,19 @@ RTCErrorOr<SimulcastLayerList> ParseSimulcastLayerList(const std::string& str) {
 
     std::vector<std::string> rid_tokens;
     rtc::tokenize_with_empty_tokens(token, kDelimiterCommaChar, &rid_tokens);
+
     if (rid_tokens.empty()) {
       return ParseError("Simulcast alternative layer list is malformed.");
     }
 
     std::vector<SimulcastLayer> layers;
-    for (const auto& rid_token : rid_tokens) {
+    for (const std::string& rid_token : rid_tokens) {
       if (rid_token.empty() || rid_token == kSimulcastPausedStream) {
         return ParseError("Rid must not be empty.");
       }
 
       bool paused = rid_token[0] == kSimulcastPausedStreamChar;
       std::string rid = paused ? rid_token.substr(1) : rid_token;
-
-      // TODO(amithi, bugs.webrtc.org/10073):
-      // Validate the rid format.
-      // See also: https://github.com/w3c/webrtc-pc/issues/2013
       layers.push_back(SimulcastLayer(rid, paused));
     }
 
@@ -126,6 +132,48 @@ RTCErrorOr<SimulcastLayerList> ParseSimulcastLayerList(const std::string& str) {
   }
 
   return std::move(result);
+}
+
+webrtc::RTCError ParseRidPayloadList(const std::string& payload_list,
+                                     RidDescription* rid_description) {
+  RTC_DCHECK(rid_description);
+  std::vector<int>& payload_types = rid_description->payload_types;
+  // Check that the description doesn't have any payload types or restrictions.
+  // If the pt= field is specified, it must be first and must not repeat.
+  if (!payload_types.empty()) {
+    return ParseError("Multiple pt= found in RID Description.");
+  }
+  if (!rid_description->restrictions.empty()) {
+    return ParseError("Payload list must appear first in the restrictions.");
+  }
+
+  // If the pt= field is specified, it must have a value.
+  if (payload_list.empty()) {
+    return ParseError("Payload list must have at least one value.");
+  }
+
+  // Tokenize the ',' delimited list
+  std::vector<std::string> string_payloads;
+  rtc::tokenize(payload_list, kDelimiterCommaChar, &string_payloads);
+  if (string_payloads.empty()) {
+    return ParseError("Payload list must have at least one value.");
+  }
+
+  for (const std::string& payload_type : string_payloads) {
+    absl::optional<int> value = rtc::StringToNumber<int>(payload_type);
+    if (!value.has_value()) {
+      return ParseError("Invalid payload type: " + payload_type);
+    }
+
+    // Check if the value already appears in the payload list.
+    if (std::find(payload_types.begin(), payload_types.end(), value.value()) !=
+        payload_types.end()) {
+      return ParseError("Duplicate payload type in list: " + payload_type);
+    }
+    payload_types.push_back(value.value());
+  }
+
+  return RTCError::OK();
 }
 
 }  // namespace
@@ -136,12 +184,12 @@ std::string SdpSerializer::SerializeSimulcastDescription(
   std::string delimiter;
 
   if (!simulcast.send_layers().empty()) {
-    sb << kSimulcastSendStreams << kDelimiterSpace << simulcast.send_layers();
+    sb << kSendDirection << kDelimiterSpace << simulcast.send_layers();
     delimiter = kDelimiterSpace;
   }
 
   if (!simulcast.receive_layers().empty()) {
-    sb << delimiter << kSimulcastReceiveStreams << kDelimiterSpace
+    sb << delimiter << kReceiveDirection << kDelimiterSpace
        << simulcast.receive_layers();
   }
 
@@ -171,10 +219,9 @@ RTCErrorOr<SimulcastDescription> SdpSerializer::DeserializeSimulcastDescription(
   bool bidirectional = tokens.size() == 4;  // indicates both send and recv
 
   // Tokens 0, 2 (if exists) should be send / recv
-  if ((tokens[0] != kSimulcastSendStreams &&
-       tokens[0] != kSimulcastReceiveStreams) ||
-      (bidirectional && tokens[2] != kSimulcastSendStreams &&
-       tokens[2] != kSimulcastReceiveStreams) ||
+  if ((tokens[0] != kSendDirection && tokens[0] != kReceiveDirection) ||
+      (bidirectional && tokens[2] != kSendDirection &&
+       tokens[2] != kReceiveDirection) ||
       (bidirectional && tokens[0] == tokens[2])) {
     return ParseError("Valid values: send / recv.");
   }
@@ -194,7 +241,7 @@ RTCErrorOr<SimulcastDescription> SdpSerializer::DeserializeSimulcastDescription(
   }
 
   // Set the layers so that list1 is for send and list2 is for recv
-  if (tokens[0] != kSimulcastSendStreams) {
+  if (tokens[0] != kSendDirection) {
     std::swap(list1, list2);
   }
 
@@ -212,6 +259,129 @@ RTCErrorOr<SimulcastDescription> SdpSerializer::DeserializeSimulcastDescription(
   }
 
   return std::move(simulcast);
+}
+
+std::string SdpSerializer::SerializeRidDescription(
+    const RidDescription& rid_description) const {
+  RTC_DCHECK(!rid_description.rid.empty());
+  RTC_DCHECK(rid_description.direction == RidDirection::kSend ||
+             rid_description.direction == RidDirection::kReceive);
+
+  rtc::StringBuilder builder;
+  builder << rid_description.rid << kDelimiterSpace
+          << (rid_description.direction == RidDirection::kSend
+                  ? kSendDirection
+                  : kReceiveDirection);
+
+  const auto& payload_types = rid_description.payload_types;
+  const auto& restrictions = rid_description.restrictions;
+
+  // First property is separated by ' ', the next ones by ';'.
+  const char* propertyDelimiter = kDelimiterSpace;
+
+  // Serialize any codecs in the description.
+  if (!payload_types.empty()) {
+    builder << propertyDelimiter << kPayloadType << kDelimiterEqual;
+    propertyDelimiter = kDelimiterSemicolon;
+    const char* formatDelimiter = "";
+    for (int payload_type : payload_types) {
+      builder << formatDelimiter << payload_type;
+      formatDelimiter = kDelimiterComma;
+    }
+  }
+
+  // Serialize any restrictions in the description.
+  for (const auto& pair : restrictions) {
+    // Serialize key=val pairs. =val part is ommitted if val is empty.
+    builder << propertyDelimiter << pair.first;
+    if (!pair.second.empty()) {
+      builder << kDelimiterEqual << pair.second;
+    }
+
+    propertyDelimiter = kDelimiterSemicolon;
+  }
+
+  return builder.str();
+}
+
+// https://tools.ietf.org/html/draft-ietf-mmusic-rid-15#section-10
+// Formal Grammar
+// rid-syntax         = %s"a=rid:" rid-id SP rid-dir
+//                      [ rid-pt-param-list / rid-param-list ]
+// rid-id             = 1*(alpha-numeric / "-" / "_")
+// rid-dir            = %s"send" / %s"recv"
+// rid-pt-param-list  = SP rid-fmt-list *( ";" rid-param )
+// rid-param-list     = SP rid-param *( ";" rid-param )
+// rid-fmt-list       = %s"pt=" fmt *( "," fmt )
+// rid-param          = 1*(alpha-numeric / "-") [ "=" param-val ]
+// param-val          = *( %x20-58 / %x60-7E )
+//                      ; Any printable character except semicolon
+RTCErrorOr<RidDescription> SdpSerializer::DeserializeRidDescription(
+    absl::string_view string) const {
+  std::vector<std::string> tokens;
+  rtc::tokenize(std::string(string), kDelimiterSpaceChar, &tokens);
+
+  if (tokens.size() < 2) {
+    return ParseError("RID Description must contain <RID> <direction>.");
+  }
+
+  if (tokens.size() > 3) {
+    return ParseError("Invalid RID Description format. Too many arguments.");
+  }
+
+  if (tokens[1] != kSendDirection && tokens[1] != kReceiveDirection) {
+    return ParseError("Invalid RID direction. Supported values: send / recv.");
+  }
+
+  RidDirection direction = tokens[1] == kSendDirection ? RidDirection::kSend
+                                                       : RidDirection::kReceive;
+
+  RidDescription rid_description(tokens[0], direction);
+
+  // If there is a third argument it is a payload list and/or restriction list.
+  if (tokens.size() == 3) {
+    std::vector<std::string> restrictions;
+    rtc::tokenize(tokens[2], kDelimiterSemicolonChar, &restrictions);
+
+    // Check for malformed restriction list, such as ';' or ';;;' etc.
+    if (restrictions.empty()) {
+      return ParseError("Invalid RID restriction list: " + tokens[2]);
+    }
+
+    // Parse the restrictions. The payload indicator (pt) can only appear first.
+    for (const std::string& restriction : restrictions) {
+      std::vector<std::string> parts;
+      rtc::tokenize(restriction, kDelimiterEqualChar, &parts);
+      if (parts.empty() || parts.size() > 2) {
+        return ParseError("Invalid format for restriction: " + restriction);
+      }
+
+      // |parts| contains at least one value and it does not contain a space.
+      // Note: |parts| and other values might still contain tab, newline,
+      // unprintable characters, etc. which will not generate errors here but
+      // will (most-likely) be ignored by components down stream.
+      if (parts[0] == kPayloadType) {
+        RTCError error = ParseRidPayloadList(
+            parts.size() > 1 ? parts[1] : std::string(), &rid_description);
+        if (!error.ok()) {
+          return std::move(error);
+        }
+
+        continue;
+      }
+
+      // Parse |parts| as a key=value pair which allows unspecified values.
+      if (rid_description.restrictions.find(parts[0]) !=
+          rid_description.restrictions.end()) {
+        return ParseError("Duplicate restriction specified: " + parts[0]);
+      }
+
+      rid_description.restrictions[parts[0]] =
+          parts.size() > 1 ? parts[1] : std::string();
+    }
+  }
+
+  return std::move(rid_description);
 }
 
 }  // namespace webrtc

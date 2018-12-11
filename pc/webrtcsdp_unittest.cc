@@ -60,6 +60,8 @@ using cricket::LOCAL_PORT_TYPE;
 using cricket::RELAY_PORT_TYPE;
 using cricket::SessionDescription;
 using cricket::MediaProtocolType;
+using cricket::RidDescription;
+using cricket::RidDirection;
 using cricket::SimulcastDescription;
 using cricket::SimulcastLayer;
 using cricket::StreamParams;
@@ -697,6 +699,105 @@ static const char kUnifiedPlanSdpFullStringWithSpecialMsid[] =
     "a=ssrc:7 mslabel:-\r\n"
     "a=ssrc:7 label:audio_track_id_3\r\n";
 
+// SDP string for unified plan without SSRCs
+static const char kUnifiedPlanSdpFullStringNoSsrc[] =
+    "v=0\r\n"
+    "o=- 18446744069414584320 18446462598732840960 IN IP4 127.0.0.1\r\n"
+    "s=-\r\n"
+    "t=0 0\r\n"
+    "a=msid-semantic: WMS local_stream_1\r\n"
+    // Audio track 1, stream 1 (with candidates).
+    "m=audio 2345 RTP/SAVPF 111 103 104\r\n"
+    "c=IN IP4 74.125.127.126\r\n"
+    "a=rtcp:2347 IN IP4 74.125.127.126\r\n"
+    "a=candidate:a0+B/1 1 udp 2130706432 192.168.1.5 1234 typ host "
+    "generation 2\r\n"
+    "a=candidate:a0+B/1 2 udp 2130706432 192.168.1.5 1235 typ host "
+    "generation 2\r\n"
+    "a=candidate:a0+B/2 1 udp 2130706432 ::1 1238 typ host "
+    "generation 2\r\n"
+    "a=candidate:a0+B/2 2 udp 2130706432 ::1 1239 typ host "
+    "generation 2\r\n"
+    "a=candidate:a0+B/3 1 udp 2130706432 74.125.127.126 2345 typ srflx "
+    "raddr 192.168.1.5 rport 2346 "
+    "generation 2\r\n"
+    "a=candidate:a0+B/3 2 udp 2130706432 74.125.127.126 2347 typ srflx "
+    "raddr 192.168.1.5 rport 2348 "
+    "generation 2\r\n"
+    "a=ice-ufrag:ufrag_voice\r\na=ice-pwd:pwd_voice\r\n"
+    "a=mid:audio_content_name\r\n"
+    "a=msid:local_stream_1 audio_track_id_1\r\n"
+    "a=sendrecv\r\n"
+    "a=rtcp-mux\r\n"
+    "a=rtcp-rsize\r\n"
+    "a=crypto:1 AES_CM_128_HMAC_SHA1_32 "
+    "inline:NzB4d1BINUAvLEw6UzF3WSJ+PSdFcGdUJShpX1Zj|2^20|1:32 "
+    "dummy_session_params\r\n"
+    "a=rtpmap:111 opus/48000/2\r\n"
+    "a=rtpmap:103 ISAC/16000\r\n"
+    "a=rtpmap:104 ISAC/32000\r\n"
+    // Video track 1, stream 1 (with candidates).
+    "m=video 3457 RTP/SAVPF 120\r\n"
+    "c=IN IP4 74.125.224.39\r\n"
+    "a=rtcp:3456 IN IP4 74.125.224.39\r\n"
+    "a=candidate:a0+B/1 2 udp 2130706432 192.168.1.5 1236 typ host "
+    "generation 2\r\n"
+    "a=candidate:a0+B/1 1 udp 2130706432 192.168.1.5 1237 typ host "
+    "generation 2\r\n"
+    "a=candidate:a0+B/2 2 udp 2130706432 ::1 1240 typ host "
+    "generation 2\r\n"
+    "a=candidate:a0+B/2 1 udp 2130706432 ::1 1241 typ host "
+    "generation 2\r\n"
+    "a=candidate:a0+B/4 2 udp 2130706432 74.125.224.39 3456 typ relay "
+    "generation 2\r\n"
+    "a=candidate:a0+B/4 1 udp 2130706432 74.125.224.39 3457 typ relay "
+    "generation 2\r\n"
+    "a=ice-ufrag:ufrag_video\r\na=ice-pwd:pwd_video\r\n"
+    "a=mid:video_content_name\r\n"
+    "a=msid:local_stream_1 video_track_id_1\r\n"
+    "a=sendrecv\r\n"
+    "a=crypto:1 AES_CM_128_HMAC_SHA1_80 "
+    "inline:d0RmdmcmVCspeEc3QGZiNWpVLFJhQX1cfHAwJSoj|2^20|1:32\r\n"
+    "a=rtpmap:120 VP8/90000\r\n"
+    // Audio track 2, stream 2.
+    "m=audio 9 RTP/SAVPF 111 103 104\r\n"
+    "c=IN IP4 0.0.0.0\r\n"
+    "a=rtcp:9 IN IP4 0.0.0.0\r\n"
+    "a=ice-ufrag:ufrag_voice_2\r\na=ice-pwd:pwd_voice_2\r\n"
+    "a=mid:audio_content_name_2\r\n"
+    "a=msid:local_stream_2 audio_track_id_2\r\n"
+    "a=sendrecv\r\n"
+    "a=rtcp-mux\r\n"
+    "a=rtcp-rsize\r\n"
+    "a=crypto:1 AES_CM_128_HMAC_SHA1_32 "
+    "inline:NzB4d1BINUAvLEw6UzF3WSJ+PSdFcGdUJShpX1Zj|2^20|1:32 "
+    "dummy_session_params\r\n"
+    "a=rtpmap:111 opus/48000/2\r\n"
+    "a=rtpmap:103 ISAC/16000\r\n"
+    "a=rtpmap:104 ISAC/32000\r\n"
+    // Video track 2, stream 2.
+    "m=video 9 RTP/SAVPF 120\r\n"
+    "c=IN IP4 0.0.0.0\r\n"
+    "a=rtcp:9 IN IP4 0.0.0.0\r\n"
+    "a=ice-ufrag:ufrag_video_2\r\na=ice-pwd:pwd_video_2\r\n"
+    "a=mid:video_content_name_2\r\n"
+    "a=msid:local_stream_2 video_track_id_2\r\n"
+    "a=sendrecv\r\n"
+    "a=crypto:1 AES_CM_128_HMAC_SHA1_80 "
+    "inline:d0RmdmcmVCspeEc3QGZiNWpVLFJhQX1cfHAwJSoj|2^20|1:32\r\n"
+    "a=rtpmap:120 VP8/90000\r\n"
+    // Video track 3, stream 2.
+    "m=video 9 RTP/SAVPF 120\r\n"
+    "c=IN IP4 0.0.0.0\r\n"
+    "a=rtcp:9 IN IP4 0.0.0.0\r\n"
+    "a=ice-ufrag:ufrag_video_3\r\na=ice-pwd:pwd_video_3\r\n"
+    "a=mid:video_content_name_3\r\n"
+    "a=msid:local_stream_2 video_track_id_3\r\n"
+    "a=sendrecv\r\n"
+    "a=crypto:1 AES_CM_128_HMAC_SHA1_80 "
+    "inline:d0RmdmcmVCspeEc3QGZiNWpVLFJhQX1cfHAwJSoj|2^20|1:32\r\n"
+    "a=rtpmap:120 VP8/90000\r\n";
+
 // One candidate reference string as per W3c spec.
 // candidate:<blah> not a=candidate:<blah>CRLF
 static const char kRawCandidate[] =
@@ -1118,14 +1219,16 @@ class WebRtcSdpTest : public testing::Test {
 
   // Turns the existing reference description into a unified plan description,
   // with 2 audio tracks and 3 video tracks.
-  void MakeUnifiedPlanDescription() {
+  void MakeUnifiedPlanDescription(bool use_ssrcs = true) {
     // Audio track 2.
     AudioContentDescription* audio_desc_2 = CreateAudioContentDescription();
     StreamParams audio_track_2;
     audio_track_2.id = kAudioTrackId2;
-    audio_track_2.cname = kStream2Cname;
     audio_track_2.set_stream_ids({kStreamId2});
-    audio_track_2.ssrcs.push_back(kAudioTrack2Ssrc);
+    if (use_ssrcs) {
+      audio_track_2.cname = kStream2Cname;
+      audio_track_2.ssrcs.push_back(kAudioTrack2Ssrc);
+    }
     audio_desc_2->AddStream(audio_track_2);
     desc_.AddContent(kAudioContentName2, MediaProtocolType::kRtp, audio_desc_2);
     EXPECT_TRUE(desc_.AddTransportInfo(TransportInfo(
@@ -1134,9 +1237,11 @@ class WebRtcSdpTest : public testing::Test {
     VideoContentDescription* video_desc_2 = CreateVideoContentDescription();
     StreamParams video_track_2;
     video_track_2.id = kVideoTrackId2;
-    video_track_2.cname = kStream2Cname;
     video_track_2.set_stream_ids({kStreamId2});
-    video_track_2.ssrcs.push_back(kVideoTrack2Ssrc);
+    if (use_ssrcs) {
+      video_track_2.cname = kStream2Cname;
+      video_track_2.ssrcs.push_back(kVideoTrack2Ssrc);
+    }
     video_desc_2->AddStream(video_track_2);
     desc_.AddContent(kVideoContentName2, MediaProtocolType::kRtp, video_desc_2);
     EXPECT_TRUE(desc_.AddTransportInfo(TransportInfo(
@@ -1146,9 +1251,11 @@ class WebRtcSdpTest : public testing::Test {
     VideoContentDescription* video_desc_3 = CreateVideoContentDescription();
     StreamParams video_track_3;
     video_track_3.id = kVideoTrackId3;
-    video_track_3.cname = kStream2Cname;
     video_track_3.set_stream_ids({kStreamId2});
-    video_track_3.ssrcs.push_back(kVideoTrack3Ssrc);
+    if (use_ssrcs) {
+      video_track_3.cname = kStream2Cname;
+      video_track_3.ssrcs.push_back(kVideoTrack3Ssrc);
+    }
     video_desc_3->AddStream(video_track_3);
     desc_.AddContent(kVideoContentName3, MediaProtocolType::kRtp, video_desc_3);
     EXPECT_TRUE(desc_.AddTransportInfo(TransportInfo(
@@ -1300,6 +1407,10 @@ class WebRtcSdpTest : public testing::Test {
 
     // streams
     EXPECT_EQ(cd1->streams(), cd2->streams());
+    EXPECT_EQ(cd1->has_receive_stream(), cd2->has_receive_stream());
+    if (cd1->has_receive_stream() && cd2->has_receive_stream()) {
+      EXPECT_EQ(cd1->receive_stream(), cd2->receive_stream());
+    }
 
     // extmap-allow-mixed
     EXPECT_EQ(cd1->extmap_allow_mixed_enum(), cd2->extmap_allow_mixed_enum());
@@ -1313,6 +1424,18 @@ class WebRtcSdpTest : public testing::Test {
       EXPECT_EQ(ext1.uri, ext2.uri);
       EXPECT_EQ(ext1.id, ext2.id);
       EXPECT_EQ(ext1.encrypt, ext2.encrypt);
+    }
+  }
+
+  void CompareRidDescriptionIds(const std::vector<RidDescription>& rids,
+                                const std::vector<std::string>& ids) {
+    // Order of elements does not matter, only equivalence of sets.
+    EXPECT_EQ(rids.size(), ids.size());
+    for (const std::string& id : ids) {
+      EXPECT_EQ(1l, std::count_if(rids.begin(), rids.end(),
+                                  [id](const RidDescription& rid) {
+                                    return rid.rid == id;
+                                  }));
     }
   }
 
@@ -3952,7 +4075,13 @@ TEST_F(WebRtcSdpTest, DeserializeSimulcastNegative_DuplicateAttribute) {
 
 // Validates that deserialization uses the a=simulcast: attribute
 TEST_F(WebRtcSdpTest, TestDeserializeSimulcastAttribute) {
-  std::string sdp = kSdpFullString;
+  std::string sdp = kUnifiedPlanSdpFullStringNoSsrc;
+  sdp += "a=rid:1 send\r\n";
+  sdp += "a=rid:2 send\r\n";
+  sdp += "a=rid:3 send\r\n";
+  sdp += "a=rid:4 recv\r\n";
+  sdp += "a=rid:5 recv\r\n";
+  sdp += "a=rid:6 recv\r\n";
   sdp += "a=simulcast:send 1,2;3 recv 4;5;6\r\n";
   JsepSessionDescription output(kDummyType);
   SdpParseError error;
@@ -3963,6 +4092,188 @@ TEST_F(WebRtcSdpTest, TestDeserializeSimulcastAttribute) {
   EXPECT_TRUE(media->HasSimulcast());
   EXPECT_EQ(2ul, media->simulcast_description().send_layers().size());
   EXPECT_EQ(3ul, media->simulcast_description().receive_layers().size());
+  EXPECT_FALSE(media->streams().empty());
+  const std::vector<RidDescription>& rids = media->streams()[0].rids();
+  CompareRidDescriptionIds(rids, {"1", "2", "3"});
+  ASSERT_TRUE(media->has_receive_stream());
+  CompareRidDescriptionIds(media->receive_stream().rids(), {"4", "5", "6"});
+}
+
+// Validates that deserialization removes rids that do not appear in SDP
+TEST_F(WebRtcSdpTest, TestDeserializeSimulcastAttributeRemovesUnknownRids) {
+  std::string sdp = kUnifiedPlanSdpFullStringNoSsrc;
+  sdp += "a=rid:1 send\r\n";
+  sdp += "a=rid:3 send\r\n";
+  sdp += "a=rid:4 recv\r\n";
+  sdp += "a=simulcast:send 1,2;3 recv 4;5,6\r\n";
+  JsepSessionDescription output(kDummyType);
+  SdpParseError error;
+  EXPECT_TRUE(webrtc::SdpDeserialize(sdp, &output, &error));
+  const cricket::ContentInfos& contents = output.description()->contents();
+  const cricket::MediaContentDescription* media =
+      contents.back().media_description();
+  EXPECT_TRUE(media->HasSimulcast());
+  const SimulcastDescription& simulcast = media->simulcast_description();
+  EXPECT_EQ(2ul, simulcast.send_layers().size());
+  EXPECT_EQ(1ul, simulcast.receive_layers().size());
+
+  std::vector<SimulcastLayer> all_send_layers =
+      simulcast.send_layers().GetAllLayers();
+  EXPECT_EQ(2ul, all_send_layers.size());
+  EXPECT_EQ(0, std::count_if(all_send_layers.begin(), all_send_layers.end(),
+                             [](const SimulcastLayer& layer) {
+                               return layer.rid == "2";
+                             }));
+
+  std::vector<SimulcastLayer> all_receive_layers =
+      simulcast.receive_layers().GetAllLayers();
+  ASSERT_EQ(1ul, all_receive_layers.size());
+  EXPECT_EQ("4", all_receive_layers[0].rid);
+
+  EXPECT_FALSE(media->streams().empty());
+  const std::vector<RidDescription>& rids = media->streams()[0].rids();
+  CompareRidDescriptionIds(rids, {"1", "3"});
+  ASSERT_TRUE(media->has_receive_stream());
+  CompareRidDescriptionIds(media->receive_stream().rids(), {"4"});
+}
+
+// Validates that Simulcast removes rids that appear in both send and receive.
+TEST_F(WebRtcSdpTest,
+       TestDeserializeSimulcastAttributeRemovesDuplicateSendReceive) {
+  std::string sdp = kUnifiedPlanSdpFullStringNoSsrc;
+  sdp += "a=rid:1 send\r\n";
+  sdp += "a=rid:2 send\r\n";
+  sdp += "a=rid:3 send\r\n";
+  sdp += "a=rid:4 recv\r\n";
+  sdp += "a=simulcast:send 1;2;3 recv 2;4\r\n";
+  JsepSessionDescription output(kDummyType);
+  SdpParseError error;
+  EXPECT_TRUE(webrtc::SdpDeserialize(sdp, &output, &error));
+  const cricket::ContentInfos& contents = output.description()->contents();
+  const cricket::MediaContentDescription* media =
+      contents.back().media_description();
+  EXPECT_TRUE(media->HasSimulcast());
+  const SimulcastDescription& simulcast = media->simulcast_description();
+  EXPECT_EQ(2ul, simulcast.send_layers().size());
+  EXPECT_EQ(1ul, simulcast.receive_layers().size());
+  EXPECT_EQ(2ul, simulcast.send_layers().GetAllLayers().size());
+  EXPECT_EQ(1ul, simulcast.receive_layers().GetAllLayers().size());
+
+  EXPECT_FALSE(media->streams().empty());
+  const std::vector<RidDescription>& rids = media->streams()[0].rids();
+  CompareRidDescriptionIds(rids, {"1", "3"});
+  ASSERT_TRUE(media->has_receive_stream());
+  CompareRidDescriptionIds(media->receive_stream().rids(), {"4"});
+}
+
+// Ignores empty rid line.
+TEST_F(WebRtcSdpTest, TestDeserializeIgnoresEmptyRidLines) {
+  std::string sdp = kUnifiedPlanSdpFullStringNoSsrc;
+  sdp += "a=rid:1 send\r\n";
+  sdp += "a=rid:2 send\r\n";
+  sdp += "a=rid\r\n";   // Should ignore this line.
+  sdp += "a=rid:\r\n";  // Should ignore this line.
+  sdp += "a=simulcast:send 1;2\r\n";
+  JsepSessionDescription output(kDummyType);
+  SdpParseError error;
+  EXPECT_TRUE(webrtc::SdpDeserialize(sdp, &output, &error));
+  const cricket::ContentInfos& contents = output.description()->contents();
+  const cricket::MediaContentDescription* media =
+      contents.back().media_description();
+  EXPECT_TRUE(media->HasSimulcast());
+  const SimulcastDescription& simulcast = media->simulcast_description();
+  EXPECT_TRUE(simulcast.receive_layers().empty());
+  EXPECT_EQ(2ul, simulcast.send_layers().size());
+  EXPECT_EQ(2ul, simulcast.send_layers().GetAllLayers().size());
+
+  EXPECT_FALSE(media->streams().empty());
+  const std::vector<RidDescription>& rids = media->streams()[0].rids();
+  CompareRidDescriptionIds(rids, {"1", "2"});
+  ASSERT_FALSE(media->has_receive_stream());
+}
+
+// Ignores malformed rid lines.
+TEST_F(WebRtcSdpTest, TestDeserializeIgnoresMalformedRidLines) {
+  std::string sdp = kUnifiedPlanSdpFullStringNoSsrc;
+  sdp += "a=rid:1 send pt=\r\n";              // Should ignore this line.
+  sdp += "a=rid:2 receive\r\n";               // Should ignore this line.
+  sdp += "a=rid:3 max-width=720;pt=120\r\n";  // Should ignore this line.
+  sdp += "a=rid:4\r\n";                       // Should ignore this line.
+  sdp += "a=rid:5 send\r\n";
+  sdp += "a=simulcast:send 1,2,3;4,5\r\n";
+  JsepSessionDescription output(kDummyType);
+  SdpParseError error;
+  EXPECT_TRUE(webrtc::SdpDeserialize(sdp, &output, &error));
+  const cricket::ContentInfos& contents = output.description()->contents();
+  const cricket::MediaContentDescription* media =
+      contents.back().media_description();
+  EXPECT_TRUE(media->HasSimulcast());
+  const SimulcastDescription& simulcast = media->simulcast_description();
+  EXPECT_TRUE(simulcast.receive_layers().empty());
+  EXPECT_EQ(1ul, simulcast.send_layers().size());
+  EXPECT_EQ(1ul, simulcast.send_layers().GetAllLayers().size());
+
+  EXPECT_FALSE(media->streams().empty());
+  const std::vector<RidDescription>& rids = media->streams()[0].rids();
+  CompareRidDescriptionIds(rids, {"5"});
+  ASSERT_FALSE(media->has_receive_stream());
+}
+
+// Removes RIDs that specify a different format than the m= section.
+TEST_F(WebRtcSdpTest, TestDeserializeRemovesRidsWithInvalidCodec) {
+  std::string sdp = kUnifiedPlanSdpFullStringNoSsrc;
+  sdp += "a=rid:1 send pt=121,120\r\n";  // Should remove 121 and keep RID.
+  sdp += "a=rid:2 send pt=121\r\n";      // Should remove RID altogether.
+  sdp += "a=simulcast:send 1;2\r\n";
+  JsepSessionDescription output(kDummyType);
+  SdpParseError error;
+  EXPECT_TRUE(webrtc::SdpDeserialize(sdp, &output, &error));
+  const cricket::ContentInfos& contents = output.description()->contents();
+  const cricket::MediaContentDescription* media =
+      contents.back().media_description();
+  EXPECT_TRUE(media->HasSimulcast());
+  const SimulcastDescription& simulcast = media->simulcast_description();
+  EXPECT_TRUE(simulcast.receive_layers().empty());
+  EXPECT_EQ(1ul, simulcast.send_layers().size());
+  EXPECT_EQ(1ul, simulcast.send_layers().GetAllLayers().size());
+  EXPECT_EQ("1", simulcast.send_layers()[0][0].rid);
+  EXPECT_EQ(1ul, media->streams().size());
+  const std::vector<RidDescription>& rids = media->streams()[0].rids();
+  EXPECT_EQ(1ul, rids.size());
+  EXPECT_EQ("1", rids[0].rid);
+  EXPECT_EQ(1ul, rids[0].payload_types.size());
+  EXPECT_EQ(120, rids[0].payload_types[0]);
+
+  ASSERT_FALSE(media->has_receive_stream());
+}
+
+// Ignores duplicate rid lines
+TEST_F(WebRtcSdpTest, TestDeserializeIgnoresDuplicateRidLines) {
+  std::string sdp = kUnifiedPlanSdpFullStringNoSsrc;
+  sdp += "a=rid:1 send\r\n";
+  sdp += "a=rid:2 send\r\n";
+  sdp += "a=rid:2 send\r\n";
+  sdp += "a=rid:3 send\r\n";
+  sdp += "a=rid:4 recv\r\n";
+  sdp += "a=simulcast:send 1,2;3 recv 4\r\n";
+  JsepSessionDescription output(kDummyType);
+  SdpParseError error;
+  EXPECT_TRUE(webrtc::SdpDeserialize(sdp, &output, &error));
+  const cricket::ContentInfos& contents = output.description()->contents();
+  const cricket::MediaContentDescription* media =
+      contents.back().media_description();
+  EXPECT_TRUE(media->HasSimulcast());
+  const SimulcastDescription& simulcast = media->simulcast_description();
+  EXPECT_EQ(2ul, simulcast.send_layers().size());
+  EXPECT_EQ(1ul, simulcast.receive_layers().size());
+  EXPECT_EQ(2ul, simulcast.send_layers().GetAllLayers().size());
+  EXPECT_EQ(1ul, simulcast.receive_layers().GetAllLayers().size());
+
+  EXPECT_FALSE(media->streams().empty());
+  const std::vector<RidDescription>& rids = media->streams()[0].rids();
+  CompareRidDescriptionIds(rids, {"1", "3"});
+  ASSERT_TRUE(media->has_receive_stream());
+  CompareRidDescriptionIds(media->receive_stream().rids(), {"4"});
 }
 
 // Simulcast serialization integration test.
@@ -3970,9 +4281,28 @@ TEST_F(WebRtcSdpTest, TestDeserializeSimulcastAttribute) {
 // More detailed tests for parsing simulcast can be found in
 // unit tests for SdpSerializer.
 TEST_F(WebRtcSdpTest, SerializeSimulcast_ComplexSerialization) {
-  MakeUnifiedPlanDescription();
+  MakeUnifiedPlanDescription(/* use_ssrcs = */ false);
   auto description = jdesc_.description();
   auto media = description->GetContentDescriptionByName(kVideoContentName3);
+  ASSERT_EQ(media->streams().size(), 1ul);
+  StreamParams& send_stream = media->mutable_streams()[0];
+  std::vector<RidDescription> send_rids;
+  send_rids.push_back(RidDescription("1", RidDirection::kSend));
+  send_rids.push_back(RidDescription("2", RidDirection::kSend));
+  send_rids.push_back(RidDescription("3", RidDirection::kSend));
+  send_rids.push_back(RidDescription("4", RidDirection::kSend));
+  send_stream.set_rids(send_rids);
+  StreamParams recv_stream;
+  std::vector<RidDescription> recv_rids;
+  recv_rids.push_back(RidDescription("6", RidDirection::kReceive));
+  recv_rids.push_back(RidDescription("7", RidDirection::kReceive));
+  recv_rids.push_back(RidDescription("8", RidDirection::kReceive));
+  recv_rids.push_back(RidDescription("9", RidDirection::kReceive));
+  recv_rids.push_back(RidDescription("10", RidDirection::kReceive));
+  recv_rids.push_back(RidDescription("11", RidDirection::kReceive));
+  recv_stream.set_rids(recv_rids);
+  media->set_receive_stream(recv_stream);
+
   SimulcastDescription& simulcast = media->simulcast_description();
   simulcast.send_layers().AddLayerWithAlternatives(
       {SimulcastLayer("2", false), SimulcastLayer("1", true)});

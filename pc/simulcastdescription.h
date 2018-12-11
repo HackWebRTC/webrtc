@@ -70,6 +70,10 @@ class SimulcastLayerList final {
   size_t size() const { return list_.size(); }
   bool empty() const { return list_.empty(); }
 
+  // Provides access to all the layers in the simulcast without their
+  // association into groups of alternatives.
+  std::vector<SimulcastLayer> GetAllLayers() const;
+
  private:
   // TODO(amithi, bugs.webrtc.org/10075):
   // Validate that rids do not repeat in the list.

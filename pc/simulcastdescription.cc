@@ -17,7 +17,6 @@ namespace cricket {
 
 SimulcastLayer::SimulcastLayer(const std::string& rid, bool is_paused)
     : rid{rid}, is_paused{is_paused} {
-  // TODO(amithi, bugs.webrtc.org/10073): Validate rid format.
   RTC_DCHECK(!rid.empty());
 }
 
@@ -39,6 +38,17 @@ const std::vector<SimulcastLayer>& SimulcastLayerList::operator[](
 
 bool SimulcastDescription::empty() const {
   return send_layers_.empty() && receive_layers_.empty();
+}
+
+std::vector<SimulcastLayer> SimulcastLayerList::GetAllLayers() const {
+  std::vector<SimulcastLayer> result;
+  for (auto groupIt = begin(); groupIt != end(); groupIt++) {
+    for (auto it = groupIt->begin(); it != groupIt->end(); it++) {
+      result.push_back(*it);
+    }
+  }
+
+  return result;
 }
 
 }  // namespace cricket

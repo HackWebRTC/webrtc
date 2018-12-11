@@ -15,6 +15,7 @@
 
 #include "absl/strings/string_view.h"
 #include "api/rtcerror.h"
+#include "media/base/riddescription.h"
 #include "pc/sessiondescription.h"
 
 namespace webrtc {
@@ -41,6 +42,16 @@ class SdpSerializer {
   // Deserialization for the SimulcastDescription according to
   // https://tools.ietf.org/html/draft-ietf-mmusic-sdp-simulcast-13#section-5.1
   RTCErrorOr<cricket::SimulcastDescription> DeserializeSimulcastDescription(
+      absl::string_view string) const;
+
+  // Serialization for the RID description according to
+  // https://tools.ietf.org/html/draft-ietf-mmusic-rid-15#section-10
+  std::string SerializeRidDescription(
+      const cricket::RidDescription& rid_description) const;
+
+  // Deserialization for the RidDescription according to
+  // https://tools.ietf.org/html/draft-ietf-mmusic-rid-15#section-10
+  RTCErrorOr<cricket::RidDescription> DeserializeRidDescription(
       absl::string_view string) const;
 };
 

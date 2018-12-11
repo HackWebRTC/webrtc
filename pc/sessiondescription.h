@@ -140,39 +140,56 @@ class MediaContentDescription {
   // provide the ClearRtpHeaderExtensions method to allow "no support" to be
   // clearly indicated (i.e. when derived from other information).
   bool rtp_header_extensions_set() const { return rtp_header_extensions_set_; }
-  const StreamParamsVec& streams() const { return streams_; }
+  const StreamParamsVec& streams() const { return send_streams_; }
   // TODO(pthatcher): Remove this by giving mediamessage.cc access
   // to MediaContentDescription
-  StreamParamsVec& mutable_streams() { return streams_; }
-  void AddStream(const StreamParams& stream) { streams_.push_back(stream); }
+  StreamParamsVec& mutable_streams() { return send_streams_; }
+  void AddStream(const StreamParams& stream) {
+    send_streams_.push_back(stream);
+  }
   // Legacy streams have an ssrc, but nothing else.
   void AddLegacyStream(uint32_t ssrc) {
-    streams_.push_back(StreamParams::CreateLegacy(ssrc));
+    send_streams_.push_back(StreamParams::CreateLegacy(ssrc));
   }
   void AddLegacyStream(uint32_t ssrc, uint32_t fid_ssrc) {
     StreamParams sp = StreamParams::CreateLegacy(ssrc);
     sp.AddFidSsrc(ssrc, fid_ssrc);
-    streams_.push_back(sp);
+    send_streams_.push_back(sp);
   }
+
+  // In Unified Plan (ex. Simulcast scenario) the receive stream might need
+  // to be specified in the media section description to allow specifying
+  // restrictions and identifying it within the session (see also RID).
+  const StreamParams& receive_stream() const {
+    RTC_DCHECK(has_receive_stream());
+    return receive_stream_.value();
+  }
+
+  bool has_receive_stream() const { return receive_stream_.has_value(); }
+
+  void set_receive_stream(const StreamParams& receive_stream) {
+    receive_stream_ = receive_stream;
+  }
+
   // Sets the CNAME of all StreamParams if it have not been set.
   void SetCnameIfEmpty(const std::string& cname) {
-    for (cricket::StreamParamsVec::iterator it = streams_.begin();
-         it != streams_.end(); ++it) {
+    for (cricket::StreamParamsVec::iterator it = send_streams_.begin();
+         it != send_streams_.end(); ++it) {
       if (it->cname.empty())
         it->cname = cname;
     }
   }
   uint32_t first_ssrc() const {
-    if (streams_.empty()) {
+    if (send_streams_.empty()) {
       return 0;
     }
-    return streams_[0].first_ssrc();
+    return send_streams_[0].first_ssrc();
   }
   bool has_ssrcs() const {
-    if (streams_.empty()) {
+    if (send_streams_.empty()) {
       return false;
     }
-    return streams_[0].has_ssrcs();
+    return send_streams_[0].has_ssrcs();
   }
 
   void set_conference_mode(bool enable) { conference_mode_ = enable; }
@@ -223,7 +240,8 @@ class MediaContentDescription {
   std::vector<CryptoParams> cryptos_;
   std::vector<webrtc::RtpExtension> rtp_header_extensions_;
   bool rtp_header_extensions_set_ = false;
-  StreamParamsVec streams_;
+  StreamParamsVec send_streams_;
+  absl::optional<StreamParams> receive_stream_;
   bool conference_mode_ = false;
   webrtc::RtpTransceiverDirection direction_ =
       webrtc::RtpTransceiverDirection::kSendRecv;

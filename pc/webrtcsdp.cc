@@ -74,7 +74,10 @@ using cricket::MediaContentDescription;
 using cricket::MediaType;
 using cricket::RtpHeaderExtensions;
 using cricket::MediaProtocolType;
+using cricket::RidDescription;
 using cricket::SimulcastDescription;
+using cricket::SimulcastLayer;
+using cricket::SimulcastLayerList;
 using cricket::SsrcGroup;
 using cricket::StreamParams;
 using cricket::StreamParamsVec;
@@ -167,6 +170,9 @@ static const char kAttributeSctpPort[] = "sctp-port";
 // draft-ietf-mmusic-sdp-simulcast-13
 // a=simulcast
 static const char kAttributeSimulcast[] = "simulcast";
+// draft-ietf-mmusic-rid-15
+// a=rid
+static const char kAttributeRid[] = "rid";
 
 // Experimental flags
 static const char kAttributeXGoogleFlag[] = "x-google-flag";
@@ -353,6 +359,17 @@ static bool ParseMsidAttribute(const std::string& line,
                                std::vector<std::string>* stream_ids,
                                std::string* track_id,
                                SdpParseError* error);
+
+static void RemoveInvalidRidDescriptions(const std::vector<int>& payload_types,
+                                         std::vector<RidDescription>* rids);
+
+static SimulcastLayerList RemoveRidsFromSimulcastLayerList(
+    const std::set<std::string>& to_remove,
+    const SimulcastLayerList& layers);
+
+static void RemoveInvalidRidsFromSimulcast(
+    const std::vector<RidDescription>& rids,
+    SimulcastDescription* simulcast);
 
 // Helper functions
 
@@ -628,6 +645,7 @@ static bool GetPayloadTypeFromString(const std::string& line,
 // stream_ids/track_id if it's signaled with a=msid lines.
 void CreateTrackWithNoSsrcs(const std::vector<std::string>& msid_stream_ids,
                             const std::string& msid_track_id,
+                            const std::vector<RidDescription>& rids,
                             StreamParamsVec* tracks) {
   StreamParams track;
   if (msid_track_id.empty() || msid_stream_ids.empty()) {
@@ -636,6 +654,7 @@ void CreateTrackWithNoSsrcs(const std::vector<std::string>& msid_stream_ids,
   }
   track.set_stream_ids(msid_stream_ids);
   track.id = msid_track_id;
+  track.set_rids(rids);
   tracks->push_back(track);
 }
 
@@ -1496,6 +1515,7 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
                                const cricket::MediaType media_type,
                                int msid_signaling,
                                std::string* message) {
+  SdpSerializer serializer;
   rtc::StringBuilder os;
   // RFC 8285
   // a=extmap-allow-mixed
@@ -1656,14 +1676,31 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
         AddSsrcLine(ssrc, kSSrcAttributeLabel, track.id, message);
       }
     }
+
+    // Build the rid lines for each layer of the track
+    for (const RidDescription& rid_description : track.rids()) {
+      InitAttrLine(kAttributeRid, &os);
+      os << kSdpDelimiterColon
+         << serializer.SerializeRidDescription(rid_description);
+      AddLine(os.str(), message);
+    }
+  }
+
+  if (media_desc->has_receive_stream()) {
+    const auto& rids = media_desc->receive_stream().rids();
+    for (const RidDescription& rid_description : rids) {
+      InitAttrLine(kAttributeRid, &os);
+      os << kSdpDelimiterColon
+         << serializer.SerializeRidDescription(rid_description);
+      AddLine(os.str(), message);
+    }
   }
 
   // Simulcast (a=simulcast)
   // https://tools.ietf.org/html/draft-ietf-mmusic-sdp-simulcast-13#section-5.1
-  if (media_desc->as_video() && media_desc->as_video()->HasSimulcast()) {
-    const auto& simulcast = media_desc->as_video()->simulcast_description();
+  if (media_desc->HasSimulcast()) {
+    const auto& simulcast = media_desc->simulcast_description();
     InitAttrLine(kAttributeSimulcast, &os);
-    SdpSerializer serializer;
     os << kSdpDelimiterColon
        << serializer.SerializeSimulcastDescription(simulcast);
     AddLine(os.str(), message);
@@ -2309,6 +2346,143 @@ static bool ParseMsidAttribute(const std::string& line,
   return true;
 }
 
+static void RemoveInvalidRidDescriptions(const std::vector<int>& payload_types,
+                                         std::vector<RidDescription>* rids) {
+  RTC_DCHECK(rids);
+  std::set<std::string> to_remove;
+  std::set<std::string> unique_rids;
+
+  // Check the rids to see which ones should be removed.
+  for (RidDescription& rid : *rids) {
+    // In the case of a duplicate, the entire "a=rid" line, and all "a=rid"
+    // lines with rid-ids that duplicate this line, are discarded and MUST NOT
+    // be included in the SDP Answer.
+    auto pair = unique_rids.insert(rid.rid);
+    // Insert will "fail" if element already exists.
+    if (!pair.second) {
+      to_remove.insert(rid.rid);
+      continue;
+    }
+
+    // If the "a=rid" line contains a "pt=", the list of payload types
+    // is verified against the list of valid payload types for the media
+    // section (that is, those listed on the "m=" line).  Any PT missing
+    // from the "m=" line is discarded from the set of values in the
+    // "pt=".  If no values are left in the "pt=" parameter after this
+    // processing, then the "a=rid" line is discarded.
+    if (rid.payload_types.empty()) {
+      // If formats were not specified, rid should not be removed.
+      continue;
+    }
+
+    // Note: Spec does not mention how to handle duplicate formats.
+    // Media section does not handle duplicates either.
+    std::set<int> removed_formats;
+    for (int payload_type : rid.payload_types) {
+      if (std::find(payload_types.begin(), payload_types.end(), payload_type) ==
+          payload_types.end()) {
+        removed_formats.insert(payload_type);
+      }
+    }
+
+    rid.payload_types.erase(
+        std::remove_if(rid.payload_types.begin(), rid.payload_types.end(),
+                       [&removed_formats](int format) {
+                         return removed_formats.count(format) > 0;
+                       }),
+        rid.payload_types.end());
+
+    // If all formats were removed then remove the rid alogether.
+    if (rid.payload_types.empty()) {
+      to_remove.insert(rid.rid);
+    }
+  }
+
+  // Remove every rid description that appears in the to_remove list.
+  if (!to_remove.empty()) {
+    rids->erase(std::remove_if(rids->begin(), rids->end(),
+                               [&to_remove](const RidDescription& rid) {
+                                 return to_remove.count(rid.rid) > 0;
+                               }),
+                rids->end());
+  }
+}
+
+// Create a new list (because SimulcastLayerList is immutable) without any
+// layers that have a rid in the to_remove list.
+// If a group of alternatives is empty after removing layers, the group should
+// be removed altogether.
+static SimulcastLayerList RemoveRidsFromSimulcastLayerList(
+    const std::set<std::string>& to_remove,
+    const SimulcastLayerList& layers) {
+  SimulcastLayerList result;
+  for (const std::vector<SimulcastLayer>& vector : layers) {
+    std::vector<SimulcastLayer> new_layers;
+    for (const SimulcastLayer& layer : vector) {
+      if (to_remove.find(layer.rid) == to_remove.end()) {
+        new_layers.push_back(layer);
+      }
+    }
+    // If all layers were removed, do not add an entry.
+    if (!new_layers.empty()) {
+      result.AddLayerWithAlternatives(new_layers);
+    }
+  }
+
+  return result;
+}
+
+// Will remove Simulcast Layers if:
+// 1. They appear in both send and receive directions.
+// 2. They do not appear in the list of |valid_rids|.
+static void RemoveInvalidRidsFromSimulcast(
+    const std::vector<RidDescription>& valid_rids,
+    SimulcastDescription* simulcast) {
+  RTC_DCHECK(simulcast);
+  std::set<std::string> to_remove;
+  std::vector<SimulcastLayer> all_send_layers =
+      simulcast->send_layers().GetAllLayers();
+  std::vector<SimulcastLayer> all_receive_layers =
+      simulcast->receive_layers().GetAllLayers();
+
+  // If a rid appears in both send and receive directions, remove it from both.
+  // This algorithm runs in O(n^2) time, but for small n (as is the case with
+  // simulcast layers) it should still perform well.
+  for (const SimulcastLayer& send_layer : all_send_layers) {
+    if (std::find_if(all_receive_layers.begin(), all_receive_layers.end(),
+                     [&send_layer](const SimulcastLayer& layer) {
+                       return layer.rid == send_layer.rid;
+                     }) != all_receive_layers.end()) {
+      to_remove.insert(send_layer.rid);
+    }
+  }
+
+  // Add any rid that is not in the valid list to the remove set.
+  for (const SimulcastLayer& send_layer : all_send_layers) {
+    if (std::find_if(valid_rids.begin(), valid_rids.end(),
+                     [&send_layer](const RidDescription& rid) {
+                       return send_layer.rid == rid.rid;
+                     }) == valid_rids.end()) {
+      to_remove.insert(send_layer.rid);
+    }
+  }
+
+  // Add any rid that is not in the valid list to the remove set.
+  for (const SimulcastLayer& receive_layer : all_receive_layers) {
+    if (std::find_if(valid_rids.begin(), valid_rids.end(),
+                     [&receive_layer](const RidDescription& rid) {
+                       return receive_layer.rid == rid.rid;
+                     }) == valid_rids.end()) {
+      to_remove.insert(receive_layer.rid);
+    }
+  }
+
+  simulcast->send_layers() =
+      RemoveRidsFromSimulcastLayerList(to_remove, simulcast->send_layers());
+  simulcast->receive_layers() =
+      RemoveRidsFromSimulcastLayerList(to_remove, simulcast->receive_layers());
+}
+
 // RFC 3551
 //  PT   encoding    media type  clock rate   channels
 //                      name                    (Hz)
@@ -2766,6 +2940,8 @@ bool ParseContent(const std::string& message,
   std::string ptime_as_string;
   std::vector<std::string> stream_ids;
   std::string track_id;
+  SdpSerializer deserializer;
+  std::vector<RidDescription> rids;
   SimulcastDescription simulcast;
 
   // Loop until the next m line
@@ -2971,6 +3147,26 @@ bool ParseContent(const std::string& message,
           return false;
         }
         *msid_signaling |= cricket::kMsidSignalingMediaSection;
+      } else if (HasAttribute(line, kAttributeRid)) {
+        const size_t kRidPrefixLength =
+            kLinePrefixLength + arraysize(kAttributeRid);
+        if (line.size() <= kRidPrefixLength) {
+          RTC_LOG(LS_INFO) << "Ignoring empty RID attribute: " << line;
+          continue;
+        }
+        RTCErrorOr<RidDescription> error_or_rid_description =
+            deserializer.DeserializeRidDescription(
+                line.substr(kRidPrefixLength));
+
+        // Malformed a=rid lines are discarded.
+        if (!error_or_rid_description.ok()) {
+          RTC_LOG(LS_INFO) << "Ignoring malformed RID line: '" << line
+                           << "'. Error: "
+                           << error_or_rid_description.error().message();
+          continue;
+        }
+
+        rids.push_back(error_or_rid_description.MoveValue());
       } else if (HasAttribute(line, kAttributeSimulcast)) {
         const size_t kSimulcastPrefixLength =
             kLinePrefixLength + arraysize(kAttributeSimulcast);
@@ -2983,7 +3179,6 @@ bool ParseContent(const std::string& message,
                              error);
         }
 
-        SdpSerializer deserializer;
         RTCErrorOr<SimulcastDescription> error_or_simulcast =
             deserializer.DeserializeSimulcastDescription(
                 line.substr(kSimulcastPrefixLength));
@@ -3007,6 +3202,40 @@ bool ParseContent(const std::string& message,
     }
   }
 
+  // Remove duplicate or inconsistent rids.
+  RemoveInvalidRidDescriptions(payload_types, &rids);
+
+  // If simulcast is specifed, split the rids into send and receive.
+  // Rids that do not appear in simulcast attribute will be removed.
+  // If it is not specified, we assume that all rids are for send layers.
+  std::vector<RidDescription> send_rids, receive_rids;
+  if (!simulcast.empty()) {
+    // Verify that the rids in simulcast match rids in sdp.
+    RemoveInvalidRidsFromSimulcast(rids, &simulcast);
+
+    // Use simulcast description to figure out Send / Receive RIDs.
+    std::map<std::string, RidDescription> rid_map;
+    for (const RidDescription& rid : rids) {
+      rid_map[rid.rid] = rid;
+    }
+
+    for (const auto& layer : simulcast.send_layers().GetAllLayers()) {
+      auto iter = rid_map.find(layer.rid);
+      RTC_DCHECK(iter != rid_map.end());
+      send_rids.push_back(iter->second);
+    }
+
+    for (const auto& layer : simulcast.receive_layers().GetAllLayers()) {
+      auto iter = rid_map.find(layer.rid);
+      RTC_DCHECK(iter != rid_map.end());
+      receive_rids.push_back(iter->second);
+    }
+
+    media_desc->set_simulcast_description(simulcast);
+  } else {
+    send_rids = rids;
+  }
+
   // Create tracks from the |ssrc_infos|.
   // If the stream_id/track_id for all SSRCS are identical, one StreamParams
   // will be created in CreateTracksFromSsrcInfos, containing all the SSRCs from
@@ -3020,7 +3249,14 @@ bool ParseContent(const std::string& message,
     // still create a track. This isn't done for data media types because
     // StreamParams aren't used for SCTP streams, and RTP data channels don't
     // support unsignaled SSRCs.
-    CreateTrackWithNoSsrcs(stream_ids, track_id, &tracks);
+    CreateTrackWithNoSsrcs(stream_ids, track_id, send_rids, &tracks);
+  }
+
+  // Create receive track when we have incoming receive rids.
+  if (!receive_rids.empty()) {
+    StreamParams receive_track;
+    receive_track.set_rids(receive_rids);
+    media_desc->set_receive_stream(receive_track);
   }
 
   // Add the ssrc group to the track.
@@ -3074,12 +3310,6 @@ bool ParseContent(const std::string& message,
     candidate.set_password(transport->ice_pwd);
     candidates->push_back(
         new JsepIceCandidate(mline_id, mline_index, candidate));
-  }
-
-  if (!simulcast.empty()) {
-    // TODO(amithi, bugs.webrtc.org/10073):
-    // Verify that the rids in simulcast match rids in sdp.
-    media_desc->set_simulcast_description(simulcast);
   }
 
   return true;

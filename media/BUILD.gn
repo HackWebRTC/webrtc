@@ -97,6 +97,8 @@ rtc_static_library("rtc_media_base") {
     "base/mediaconstants.h",
     "base/mediaengine.cc",
     "base/mediaengine.h",
+    "base/riddescription.cc",
+    "base/riddescription.h",
     "base/rtpdataengine.cc",
     "base/rtpdataengine.h",
     "base/rtputils.cc",
