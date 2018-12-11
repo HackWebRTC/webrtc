@@ -1080,6 +1080,8 @@ class ParsedRtcEventLogNew {
 
   // The extension maps are mutable to allow us to insert the default
   // configuration when parsing an RTP header for an unconfigured stream.
+  // TODO(terelius): This is only used for the legacy format. Remove once we've
+  // fully transitioned to the new format.
   mutable std::map<uint32_t, webrtc::RtpHeaderExtensionMap>
       incoming_rtp_extensions_maps_;
   mutable std::map<uint32_t, webrtc::RtpHeaderExtensionMap>

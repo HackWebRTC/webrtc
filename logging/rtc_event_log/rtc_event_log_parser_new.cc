@@ -942,6 +942,24 @@ bool ParsedRtcEventLogNew::ParseStream(
   Clear();
   bool success = ParseStreamInternal(stream);
 
+  // Cache the configured SSRCs.
+  for (const auto& video_recv_config : video_recv_configs()) {
+    incoming_video_ssrcs_.insert(video_recv_config.config.remote_ssrc);
+    incoming_video_ssrcs_.insert(video_recv_config.config.rtx_ssrc);
+    incoming_rtx_ssrcs_.insert(video_recv_config.config.rtx_ssrc);
+  }
+  for (const auto& video_send_config : video_send_configs()) {
+    outgoing_video_ssrcs_.insert(video_send_config.config.local_ssrc);
+    outgoing_video_ssrcs_.insert(video_send_config.config.rtx_ssrc);
+    outgoing_rtx_ssrcs_.insert(video_send_config.config.rtx_ssrc);
+  }
+  for (const auto& audio_recv_config : audio_recv_configs()) {
+    incoming_audio_ssrcs_.insert(audio_recv_config.config.remote_ssrc);
+  }
+  for (const auto& audio_send_config : audio_send_configs()) {
+    outgoing_audio_ssrcs_.insert(audio_send_config.config.local_ssrc);
+  }
+
   // ParseStreamInternal stores the RTP packets in a map indexed by SSRC.
   // Since we dont need rapid lookup based on SSRC after parsing, we move the
   // packets_streams from map to vector.
@@ -998,10 +1016,8 @@ bool ParsedRtcEventLogNew::ParseStream(
   // stream configurations and starting/stopping the log.
   // TODO(terelius): Figure out if we actually need to find the first and last
   // timestamp in the parser. It seems like this could be done by the caller.
-
   first_timestamp_ = std::numeric_limits<int64_t>::max();
   last_timestamp_ = std::numeric_limits<int64_t>::min();
-
   StoreFirstAndLastTimestamp(alr_state_events());
   for (const auto& audio_stream : audio_playout_events()) {
     // Audio playout events are grouped by SSRC.
@@ -1131,9 +1147,6 @@ void ParsedRtcEventLogNew::StoreParsedLegacyEvent(const rtclog::Event& event) {
         incoming_rtp_extensions_maps_[config.rtx_ssrc] =
             RtpHeaderExtensionMap(config.rtp_extensions);
       }
-      incoming_video_ssrcs_.insert(config.remote_ssrc);
-      incoming_video_ssrcs_.insert(config.rtx_ssrc);
-      incoming_rtx_ssrcs_.insert(config.rtx_ssrc);
       break;
     }
     case rtclog::Event::VIDEO_SENDER_CONFIG_EVENT: {
@@ -1145,9 +1158,6 @@ void ParsedRtcEventLogNew::StoreParsedLegacyEvent(const rtclog::Event& event) {
         outgoing_rtp_extensions_maps_[config.rtx_ssrc] =
             RtpHeaderExtensionMap(config.rtp_extensions);
       }
-      outgoing_video_ssrcs_.insert(config.local_ssrc);
-      outgoing_video_ssrcs_.insert(config.rtx_ssrc);
-      outgoing_rtx_ssrcs_.insert(config.rtx_ssrc);
       break;
     }
     case rtclog::Event::AUDIO_RECEIVER_CONFIG_EVENT: {
@@ -1157,7 +1167,6 @@ void ParsedRtcEventLogNew::StoreParsedLegacyEvent(const rtclog::Event& event) {
         incoming_rtp_extensions_maps_[config.remote_ssrc] =
             RtpHeaderExtensionMap(config.rtp_extensions);
       }
-      incoming_audio_ssrcs_.insert(config.remote_ssrc);
       break;
     }
     case rtclog::Event::AUDIO_SENDER_CONFIG_EVENT: {
@@ -1167,7 +1176,6 @@ void ParsedRtcEventLogNew::StoreParsedLegacyEvent(const rtclog::Event& event) {
         outgoing_rtp_extensions_maps_[config.local_ssrc] =
             RtpHeaderExtensionMap(config.rtp_extensions);
       }
-      outgoing_audio_ssrcs_.insert(config.local_ssrc);
       break;
     }
     case rtclog::Event::RTP_EVENT: {
