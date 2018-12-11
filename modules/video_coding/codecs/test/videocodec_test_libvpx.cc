@@ -342,8 +342,7 @@ TEST(VideoCodecTestLibvpx, MAYBE_TemporalLayersVP8) {
   fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr);
 }
 
-// TODO(webrtc:9267): Fails on iOS
-#if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
+#if defined(WEBRTC_ANDROID)
 #define MAYBE_MultiresVP8 DISABLED_MultiresVP8
 #else
 #define MAYBE_MultiresVP8 MultiresVP8
@@ -360,9 +359,13 @@ TEST(VideoCodecTestLibvpx, MAYBE_MultiresVP8) {
   auto fixture = CreateVideoCodecTestFixture(config);
 
   std::vector<RateProfile> rate_profiles = {{1500, 30, config.num_frames}};
-
+#if defined(WEBRTC_ARCH_ARM) || defined(WEBRTC_ARCH_ARM64)
+  std::vector<RateControlThresholds> rc_thresholds = {
+      {3.5, 1.04, 6, 0.18, 0.14, 0.07, 0, 1}};
+#else
   std::vector<RateControlThresholds> rc_thresholds = {
       {5, 1, 5, 1, 0.3, 0.1, 0, 1}};
+#endif
   std::vector<QualityThresholds> quality_thresholds = {{34, 32, 0.90, 0.88}};
 
   fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr);

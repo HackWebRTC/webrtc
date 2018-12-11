@@ -30,6 +30,7 @@
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "modules/video_coding/utility/simulcast_utility.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/field_trial.h"
@@ -40,6 +41,11 @@ namespace webrtc {
 namespace {
 const char kVp8TrustedRateControllerFieldTrial[] =
     "WebRTC-LibvpxVp8TrustedRateController";
+#if defined(WEBRTC_IOS)
+const char kVP8IosMaxNumberOfThreadFieldTrial[] =
+    "WebRTC-VP8IosMaxNumberOfThread";
+const char kVP8IosMaxNumberOfThreadFieldTrialParameter[] = "max_thread";
+#endif
 
 // QP is obtained from VP8-bitstream for HW, so the QP corresponds to the
 // bitstream range of [0, 127] and not the user-level range of [0,63].
@@ -565,6 +571,20 @@ int LibvpxVp8Encoder::NumberOfThreads(int width, int height, int cpus) {
   }
   return 1;
 #else
+#if defined(WEBRTC_IOS)
+  std::string trial_string =
+      field_trial::FindFullName(kVP8IosMaxNumberOfThreadFieldTrial);
+  FieldTrialParameter<int> max_thread_number(
+      kVP8IosMaxNumberOfThreadFieldTrialParameter, 0);
+  ParseFieldTrial({&max_thread_number}, trial_string);
+  if (max_thread_number.Get() > 0) {
+    if (width * height < 320 * 180) {
+      return 1;  // Use single thread for small screens
+    }
+    // thread number must be less than or equal to the number of CPUs.
+    return std::min(cpus, max_thread_number.Get());
+  }
+#endif  // defined(WEBRTC_IOS)
   if (width * height >= 1920 * 1080 && cpus > 8) {
     return 8;  // 8 threads for 1080p on high perf machines.
   } else if (width * height > 1280 * 960 && cpus >= 6) {

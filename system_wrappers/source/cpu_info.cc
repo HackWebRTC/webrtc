@@ -32,7 +32,7 @@ static int DetectNumberOfCores() {
   number_of_cores = static_cast<int>(si.dwNumberOfProcessors);
 #elif defined(WEBRTC_LINUX) || defined(WEBRTC_ANDROID)
   number_of_cores = static_cast<int>(sysconf(_SC_NPROCESSORS_ONLN));
-#elif defined(WEBRTC_MAC)
+#elif defined(WEBRTC_MAC) || defined(WEBRTC_IOS)
   int name[] = {CTL_HW, HW_AVAILCPU};
   size_t size = sizeof(number_of_cores);
   if (0 != sysctl(name, 2, &number_of_cores, &size, NULL, 0)) {
