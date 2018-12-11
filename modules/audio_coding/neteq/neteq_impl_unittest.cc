@@ -698,7 +698,10 @@ TEST_F(NetEqImplTest, FirstPacketUnknown) {
 // internal CNG mode properly.
 TEST_F(NetEqImplTest, CodecInternalCng) {
   UseNoMocks();
-  CreateInstance();
+  // Create a mock decoder object.
+  MockAudioDecoder mock_decoder;
+  CreateInstance(
+      new rtc::RefCountedObject<test::AudioDecoderProxyFactory>(&mock_decoder));
 
   const uint8_t kPayloadType = 17;   // Just an arbitrary number.
   const uint32_t kReceiveTime = 17;  // Value doesn't matter for this test.
@@ -715,8 +718,6 @@ TEST_F(NetEqImplTest, CodecInternalCng) {
   rtp_header.timestamp = 0x12345678;
   rtp_header.ssrc = 0x87654321;
 
-  // Create a mock decoder object.
-  MockAudioDecoder mock_decoder;
   EXPECT_CALL(mock_decoder, Reset()).WillRepeatedly(Return());
   EXPECT_CALL(mock_decoder, SampleRateHz())
       .WillRepeatedly(Return(kSampleRateKhz * 1000));
@@ -760,9 +761,8 @@ TEST_F(NetEqImplTest, CodecInternalCng) {
                       SetArgPointee<4>(AudioDecoder::kSpeech),
                       Return(rtc::checked_cast<int>(kPayloadLengthSamples))));
 
-  EXPECT_EQ(NetEq::kOK, neteq_->RegisterExternalDecoder(
-                            &mock_decoder, NetEqDecoder::kDecoderOpus,
-                            "dummy name", kPayloadType));
+  EXPECT_TRUE(neteq_->RegisterPayloadType(kPayloadType,
+                                          SdpAudioFormat("opus", 48000, 2)));
 
   // Insert one packet (decoder will return speech).
   EXPECT_EQ(NetEq::kOK,
@@ -1151,7 +1151,11 @@ TEST_F(NetEqImplTest, DecodingError) {
 // This test checks the behavior of NetEq when audio decoder fails during CNG.
 TEST_F(NetEqImplTest, DecodingErrorDuringInternalCng) {
   UseNoMocks();
-  CreateInstance();
+
+  // Create a mock decoder object.
+  MockAudioDecoder mock_decoder;
+  CreateInstance(
+      new rtc::RefCountedObject<test::AudioDecoderProxyFactory>(&mock_decoder));
 
   const uint8_t kPayloadType = 17;   // Just an arbitrary number.
   const uint32_t kReceiveTime = 17;  // Value doesn't matter for this test.
@@ -1172,8 +1176,6 @@ TEST_F(NetEqImplTest, DecodingErrorDuringInternalCng) {
   rtp_header.timestamp = 0x12345678;
   rtp_header.ssrc = 0x87654321;
 
-  // Create a mock decoder object.
-  MockAudioDecoder mock_decoder;
   EXPECT_CALL(mock_decoder, Reset()).WillRepeatedly(Return());
   EXPECT_CALL(mock_decoder, SampleRateHz())
       .WillRepeatedly(Return(kSampleRateHz));
@@ -1215,9 +1217,8 @@ TEST_F(NetEqImplTest, DecodingErrorDuringInternalCng) {
                   Return(rtc::checked_cast<int>(kFrameLengthSamples))));
   }
 
-  EXPECT_EQ(NetEq::kOK, neteq_->RegisterExternalDecoder(
-                            &mock_decoder, NetEqDecoder::kDecoderPCM16B,
-                            "dummy name", kPayloadType));
+  EXPECT_TRUE(neteq_->RegisterPayloadType(kPayloadType,
+                                          SdpAudioFormat("l16", 8000, 1)));
 
   // Insert 2 packets. This will make netEq into codec internal CNG mode.
   for (int i = 0; i < 2; ++i) {
