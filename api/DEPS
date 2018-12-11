@@ -67,6 +67,7 @@ specific_include_rules = {
   ],
 
   "create_peerconnection_factory\.h": [
+    "+rtc_base/deprecation.h",
     "+rtc_base/scoped_ref_ptr.h",
   ],
 

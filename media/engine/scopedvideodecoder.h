@@ -16,8 +16,14 @@
 #include "api/video_codecs/video_decoder.h"
 #include "media/base/codec.h"
 #include "media/engine/webrtcvideodecoderfactory.h"
+#include "rtc_base/deprecation.h"
 
 namespace cricket {
+
+std::unique_ptr<webrtc::VideoDecoder> DEPRECATED_CreateScopedVideoDecoder(
+    cricket::WebRtcVideoDecoderFactory* factory,
+    const VideoCodec& codec,
+    VideoDecoderParams params);
 
 // Helper function that creates a webrtc::VideoDecoder held by an
 // std::unique_ptr instead of having to be deleted through
@@ -26,10 +32,12 @@ namespace cricket {
 // TODO(andersc): This helper function will be deleted once
 // cricket::WebRtcVideoDecoderFactory is deprecated, see
 // https://bugs.chromium.org/p/webrtc/issues/detail?id=7925 for more info.
-std::unique_ptr<webrtc::VideoDecoder> CreateScopedVideoDecoder(
-    cricket::WebRtcVideoDecoderFactory* factory,
-    const VideoCodec& codec,
-    VideoDecoderParams params);
+RTC_DEPRECATED inline std::unique_ptr<webrtc::VideoDecoder>
+CreateScopedVideoDecoder(cricket::WebRtcVideoDecoderFactory* factory,
+                         const VideoCodec& codec,
+                         VideoDecoderParams params) {
+  return DEPRECATED_CreateScopedVideoDecoder(factory, codec, params);
+}
 
 }  // namespace cricket
 

@@ -89,8 +89,8 @@ class CricketToWebRtcEncoderFactory : public webrtc::VideoEncoderFactory {
 
   std::unique_ptr<webrtc::VideoEncoder> CreateVideoEncoder(
       const webrtc::SdpVideoFormat& format) override {
-    return CreateScopedVideoEncoder(external_encoder_factory_.get(),
-                                    VideoCodec(format));
+    return DEPRECATED_CreateScopedVideoEncoder(external_encoder_factory_.get(),
+                                               VideoCodec(format));
   }
 
  private:
@@ -200,8 +200,9 @@ class CricketToWebRtcDecoderFactory : public webrtc::VideoDecoderFactory {
       const webrtc::SdpVideoFormat& format,
       const std::string& receive_stream_id) override {
     if (external_decoder_factory_ != nullptr) {
-      return CreateScopedVideoDecoder(external_decoder_factory_.get(),
-                                      VideoCodec(format), {receive_stream_id});
+      return DEPRECATED_CreateScopedVideoDecoder(
+          external_decoder_factory_.get(), VideoCodec(format),
+          {receive_stream_id});
     }
     return nullptr;
   }
@@ -279,13 +280,15 @@ class DecoderAdapter : public webrtc::VideoDecoderFactory {
 
 }  // namespace
 
-std::unique_ptr<webrtc::VideoEncoderFactory> ConvertVideoEncoderFactory(
+std::unique_ptr<webrtc::VideoEncoderFactory>
+DEPRECATED_ConvertVideoEncoderFactory(
     std::unique_ptr<WebRtcVideoEncoderFactory> external_encoder_factory) {
   return std::unique_ptr<webrtc::VideoEncoderFactory>(
       new EncoderAdapter(std::move(external_encoder_factory)));
 }
 
-std::unique_ptr<webrtc::VideoDecoderFactory> ConvertVideoDecoderFactory(
+std::unique_ptr<webrtc::VideoDecoderFactory>
+DEPRECATED_ConvertVideoDecoderFactory(
     std::unique_ptr<WebRtcVideoDecoderFactory> external_decoder_factory) {
   return std::unique_ptr<webrtc::VideoDecoderFactory>(
       new DecoderAdapter(std::move(external_decoder_factory)));

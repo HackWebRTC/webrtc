@@ -96,7 +96,7 @@ ScopedVideoEncoder::~ScopedVideoEncoder() {
 
 }  // namespace
 
-std::unique_ptr<webrtc::VideoEncoder> CreateScopedVideoEncoder(
+std::unique_ptr<webrtc::VideoEncoder> DEPRECATED_CreateScopedVideoEncoder(
     WebRtcVideoEncoderFactory* factory,
     const VideoCodec& codec) {
   webrtc::VideoEncoder* encoder = factory->CreateVideoEncoder(codec);

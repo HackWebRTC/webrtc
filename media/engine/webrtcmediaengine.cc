@@ -19,6 +19,10 @@
 #include "api/video_codecs/video_encoder_factory.h"
 #include "media/engine/webrtcvoiceengine.h"
 
+#if defined(USE_BUILTIN_SW_CODECS)
+#include "media/engine/convert_legacy_video_factory.h"
+#endif
+
 #ifdef HAVE_WEBRTC_VIDEO
 #include "media/engine/webrtcvideoengine.h"
 #else
@@ -45,8 +49,10 @@ MediaEngineInterface* CreateWebRtcMediaEngine(
   std::unique_ptr<VideoEngineInterface> video_engine;
 #ifdef HAVE_WEBRTC_VIDEO
   video_engine = absl::make_unique<WebRtcVideoEngine>(
-      std::unique_ptr<WebRtcVideoEncoderFactory>(video_encoder_factory),
-      std::unique_ptr<WebRtcVideoDecoderFactory>(video_decoder_factory),
+      DEPRECATED_ConvertVideoEncoderFactory(
+          std::unique_ptr<WebRtcVideoEncoderFactory>(video_encoder_factory)),
+      DEPRECATED_ConvertVideoDecoderFactory(
+          std::unique_ptr<WebRtcVideoDecoderFactory>(video_decoder_factory)),
       std::move(video_bitrate_allocator_factory));
 #else
   video_engine = absl::make_unique<NullWebRtcVideoEngine>();

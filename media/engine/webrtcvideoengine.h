@@ -83,7 +83,7 @@ class WebRtcVideoEngine : public VideoEngineInterface {
  public:
 #if defined(USE_BUILTIN_SW_CODECS)
   // Internal SW video codecs will be added on top of the external codecs.
-  WebRtcVideoEngine(
+  RTC_DEPRECATED WebRtcVideoEngine(
       std::unique_ptr<WebRtcVideoEncoderFactory> external_video_encoder_factory,
       std::unique_ptr<WebRtcVideoDecoderFactory> external_video_decoder_factory,
       std::unique_ptr<webrtc::VideoBitrateAllocatorFactory>

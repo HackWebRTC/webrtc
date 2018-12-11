@@ -62,6 +62,7 @@ rtc_static_library("create_peerconnection_factory") {
     "../modules/audio_device:audio_device_api",
     "../modules/audio_processing:api",
     "../pc:peerconnection",
+    "../rtc_base:deprecation",
     "../rtc_base:ptr_util",
     "../rtc_base:rtc_base",
     "../rtc_base:rtc_base_approved",

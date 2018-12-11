@@ -43,7 +43,7 @@ class WebRtcMediaEngineFactory {
   // TODO(deadbeef): Change these to return an std::unique_ptr<>, to indicate
   // that the caller owns the returned object.
 #if defined(USE_BUILTIN_SW_CODECS)
-  static MediaEngineInterface* Create(
+  RTC_DEPRECATED static MediaEngineInterface* Create(
       webrtc::AudioDeviceModule* adm,
       const rtc::scoped_refptr<webrtc::AudioEncoderFactory>&
           audio_encoder_factory,
@@ -52,7 +52,7 @@ class WebRtcMediaEngineFactory {
       WebRtcVideoEncoderFactory* video_encoder_factory,
       WebRtcVideoDecoderFactory* video_decoder_factory);
 
-  static MediaEngineInterface* Create(
+  RTC_DEPRECATED static MediaEngineInterface* Create(
       webrtc::AudioDeviceModule* adm,
       const rtc::scoped_refptr<webrtc::AudioEncoderFactory>&
           audio_encoder_factory,
@@ -63,7 +63,7 @@ class WebRtcMediaEngineFactory {
       rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
       rtc::scoped_refptr<webrtc::AudioProcessing> apm);
 
-  static MediaEngineInterface* Create(
+  RTC_DEPRECATED static MediaEngineInterface* Create(
       webrtc::AudioDeviceModule* adm,
       const rtc::scoped_refptr<webrtc::AudioEncoderFactory>&
           audio_encoder_factory,
@@ -74,7 +74,7 @@ class WebRtcMediaEngineFactory {
       std::unique_ptr<webrtc::VideoBitrateAllocatorFactory>
           video_bitrate_allocator_factory);
 
-  static MediaEngineInterface* Create(
+  RTC_DEPRECATED static MediaEngineInterface* Create(
       webrtc::AudioDeviceModule* adm,
       const rtc::scoped_refptr<webrtc::AudioEncoderFactory>&
           audio_encoder_factory,
