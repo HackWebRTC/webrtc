@@ -1275,7 +1275,7 @@ void MediaSessionDescriptionFactory::set_audio_codecs(
   ComputeAudioCodecsIntersectionAndUnion();
 }
 
-SessionDescription* MediaSessionDescriptionFactory::CreateOffer(
+std::unique_ptr<SessionDescription> MediaSessionDescriptionFactory::CreateOffer(
     const MediaSessionOptions& session_options,
     const SessionDescription* current_description) const {
   // Must have options for each existing section.
@@ -1400,10 +1400,11 @@ SessionDescription* MediaSessionDescriptionFactory::CreateOffer(
 
   offer->set_extmap_allow_mixed(session_options.offer_extmap_allow_mixed);
 
-  return offer.release();
+  return offer;
 }
 
-SessionDescription* MediaSessionDescriptionFactory::CreateAnswer(
+std::unique_ptr<SessionDescription>
+MediaSessionDescriptionFactory::CreateAnswer(
     const SessionDescription* offer,
     const MediaSessionOptions& session_options,
     const SessionDescription* current_description) const {
@@ -1575,7 +1576,7 @@ SessionDescription* MediaSessionDescriptionFactory::CreateAnswer(
     answer->set_msid_signaling(cricket::kMsidSignalingSsrcAttribute);
   }
 
-  return answer.release();
+  return answer;
 }
 
 const AudioCodecs& MediaSessionDescriptionFactory::GetAudioCodecsForOffer(

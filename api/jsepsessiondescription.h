@@ -18,6 +18,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "api/candidate.h"
 #include "api/jsep.h"
 #include "api/jsepicecandidate.h"
@@ -35,6 +36,11 @@ class JsepSessionDescription : public SessionDescriptionInterface {
   explicit JsepSessionDescription(SdpType type);
   // TODO(steveanton): Remove this once callers have switched to SdpType.
   explicit JsepSessionDescription(const std::string& type);
+  JsepSessionDescription(
+      SdpType type,
+      std::unique_ptr<cricket::SessionDescription> description,
+      absl::string_view session_id,
+      absl::string_view session_version);
   virtual ~JsepSessionDescription();
 
   // Takes ownership of |description|.

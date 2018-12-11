@@ -164,6 +164,19 @@ JsepSessionDescription::JsepSessionDescription(const std::string& type) {
   }
 }
 
+JsepSessionDescription::JsepSessionDescription(
+    SdpType type,
+    std::unique_ptr<cricket::SessionDescription> description,
+    absl::string_view session_id,
+    absl::string_view session_version)
+    : description_(std::move(description)),
+      session_id_(session_id),
+      session_version_(session_version),
+      type_(type) {
+  RTC_DCHECK(description_);
+  candidate_collection_.resize(number_of_mediasections());
+}
+
 JsepSessionDescription::~JsepSessionDescription() {}
 
 bool JsepSessionDescription::Initialize(

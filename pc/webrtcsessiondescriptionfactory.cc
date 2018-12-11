@@ -336,10 +336,17 @@ void WebRtcSessionDescriptionFactory::InternalCreateOffer(
     }
   }
 
-  cricket::SessionDescription* desc(session_desc_factory_.CreateOffer(
-      request.options, pc_->local_description()
-                           ? pc_->local_description()->description()
-                           : nullptr));
+  std::unique_ptr<cricket::SessionDescription> desc =
+      session_desc_factory_.CreateOffer(
+          request.options, pc_->local_description()
+                               ? pc_->local_description()->description()
+                               : nullptr);
+  if (!desc) {
+    PostCreateSessionDescriptionFailed(request.observer,
+                                       "Failed to initialize the offer.");
+    return;
+  }
+
   // RFC 3264
   // When issuing an offer that modifies the session,
   // the "o=" line of the new SDP MUST be identical to that in the
@@ -350,13 +357,9 @@ void WebRtcSessionDescriptionFactory::InternalCreateOffer(
   // is created regardless if it's identical to the previous one or not.
   // The |session_version_| is a uint64_t, the wrap around should not happen.
   RTC_DCHECK(session_version_ + 1 > session_version_);
-  auto offer = absl::make_unique<JsepSessionDescription>(SdpType::kOffer);
-  if (!offer->Initialize(desc, session_id_,
-                         rtc::ToString(session_version_++))) {
-    PostCreateSessionDescriptionFailed(request.observer,
-                                       "Failed to initialize the offer.");
-    return;
-  }
+  auto offer = absl::make_unique<JsepSessionDescription>(
+      SdpType::kOffer, std::move(desc), session_id_,
+      rtc::ToString(session_version_++));
   if (pc_->local_description()) {
     for (const cricket::MediaDescriptionOptions& options :
          request.options.media_description_options) {
@@ -389,12 +392,19 @@ void WebRtcSessionDescriptionFactory::InternalCreateAnswer(
     }
   }
 
-  cricket::SessionDescription* desc(session_desc_factory_.CreateAnswer(
-      pc_->remote_description() ? pc_->remote_description()->description()
-                                : nullptr,
-      request.options,
-      pc_->local_description() ? pc_->local_description()->description()
-                               : nullptr));
+  std::unique_ptr<cricket::SessionDescription> desc =
+      session_desc_factory_.CreateAnswer(
+          pc_->remote_description() ? pc_->remote_description()->description()
+                                    : nullptr,
+          request.options,
+          pc_->local_description() ? pc_->local_description()->description()
+                                   : nullptr);
+  if (!desc) {
+    PostCreateSessionDescriptionFailed(request.observer,
+                                       "Failed to initialize the answer.");
+    return;
+  }
+
   // RFC 3264
   // If the answer is different from the offer in any way (different IP
   // addresses, ports, etc.), the origin line MUST be different in the answer.
@@ -403,13 +413,9 @@ void WebRtcSessionDescriptionFactory::InternalCreateAnswer(
   // Get a new version number by increasing the |session_version_answer_|.
   // The |session_version_| is a uint64_t, the wrap around should not happen.
   RTC_DCHECK(session_version_ + 1 > session_version_);
-  auto answer = absl::make_unique<JsepSessionDescription>(SdpType::kAnswer);
-  if (!answer->Initialize(desc, session_id_,
-                          rtc::ToString(session_version_++))) {
-    PostCreateSessionDescriptionFailed(request.observer,
-                                       "Failed to initialize the answer.");
-    return;
-  }
+  auto answer = absl::make_unique<JsepSessionDescription>(
+      SdpType::kAnswer, std::move(desc), session_id_,
+      rtc::ToString(session_version_++));
   if (pc_->local_description()) {
     // Include all local ICE candidates in the SessionDescription unless
     // the remote peer has requested an ICE restart.

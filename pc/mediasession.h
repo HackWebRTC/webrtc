@@ -163,10 +163,10 @@ class MediaSessionDescriptionFactory {
     is_unified_plan_ = is_unified_plan;
   }
 
-  SessionDescription* CreateOffer(
+  std::unique_ptr<SessionDescription> CreateOffer(
       const MediaSessionOptions& options,
       const SessionDescription* current_description) const;
-  SessionDescription* CreateAnswer(
+  std::unique_ptr<SessionDescription> CreateAnswer(
       const SessionDescription* offer,
       const MediaSessionOptions& options,
       const SessionDescription* current_description) const;
