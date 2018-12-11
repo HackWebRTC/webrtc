@@ -23,7 +23,8 @@
 #include "rtc_base/thread.h"
 #include "rtc_base/timeutils.h"
 
-using namespace rtc;
+namespace rtc {
+namespace {
 
 class MessageQueueTest : public testing::Test, public MessageQueue {
  public:
@@ -231,3 +232,6 @@ TEST(MessageQueueManager, ClearReentrant) {
   t->Post(RTC_FROM_HERE, &handler, 0,
           new ScopedRefMessageData<RefCountedHandler>(inner_handler));
 }
+
+}  // namespace
+}  // namespace rtc

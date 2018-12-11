@@ -17,7 +17,8 @@
 #include "rtc_base/thread.h"
 #include "test/gtest.h"
 
-using namespace rtc;
+namespace rtc {
+namespace {
 
 // 10 seconds.
 static const int kTimeout = 10000;
@@ -208,3 +209,6 @@ TEST_F(SignalThreadTest, DeferredDestroyedThreadCleansUp) {
   ExpectState(1, 0, 0, 1, 0);
   ExpectStateWait(1, 1, 0, 1, 1, kTimeout);
 }
+
+}  // namespace
+}  // namespace rtc

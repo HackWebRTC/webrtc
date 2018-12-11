@@ -37,7 +37,8 @@
 #include "rtc_base/virtualsocketserver.h"
 #include "test/gtest.h"
 
-using namespace rtc;
+namespace rtc {
+namespace {
 
 bool CheckReceive(TestClient* client,
                   bool should_receive,
@@ -400,4 +401,6 @@ TEST_F(NatTcpTest, DISABLED_TestConnectOut) {
   out->Send(buf, len);
   EXPECT_TRUE(in->CheckNextPacket(buf, len, &trans_addr));
 }
-// #endif
+
+}  // namespace
+}  // namespace rtc

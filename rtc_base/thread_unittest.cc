@@ -24,7 +24,8 @@
 #include <comdef.h>  // NOLINT
 #endif
 
-using namespace rtc;
+namespace rtc {
+namespace {
 
 // Generates a sequence of numbers (collaboratively).
 class TestGenerator {
@@ -669,3 +670,6 @@ TEST_F(GuardedAsyncInvokeTest, FlushWithIds) {
   EXPECT_FALSE(flag1.get());
   EXPECT_TRUE(flag2.get());
 }
+
+}  // namespace
+}  // namespace rtc

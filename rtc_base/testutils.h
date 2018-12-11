@@ -23,8 +23,6 @@
 namespace webrtc {
 namespace testing {
 
-using namespace rtc;
-
 ///////////////////////////////////////////////////////////////////////////////
 // StreamSink - Monitor asynchronously signalled events from StreamInterface
 // or AsyncSocket (which should probably be a StreamInterface.
@@ -34,10 +32,10 @@ using namespace rtc;
 // event.
 
 enum StreamSinkEvent {
-  SSE_OPEN = SE_OPEN,
-  SSE_READ = SE_READ,
-  SSE_WRITE = SE_WRITE,
-  SSE_CLOSE = SE_CLOSE,
+  SSE_OPEN = rtc::SE_OPEN,
+  SSE_READ = rtc::SE_READ,
+  SSE_WRITE = rtc::SE_WRITE,
+  SSE_CLOSE = rtc::SE_CLOSE,
   SSE_ERROR = 16
 };
 
@@ -46,25 +44,25 @@ class StreamSink : public sigslot::has_slots<> {
   StreamSink();
   ~StreamSink() override;
 
-  void Monitor(StreamInterface* stream) {
+  void Monitor(rtc::StreamInterface* stream) {
     stream->SignalEvent.connect(this, &StreamSink::OnEvent);
     events_.erase(stream);
   }
-  void Unmonitor(StreamInterface* stream) {
+  void Unmonitor(rtc::StreamInterface* stream) {
     stream->SignalEvent.disconnect(this);
     // In case you forgot to unmonitor a previous object with this address
     events_.erase(stream);
   }
-  bool Check(StreamInterface* stream,
+  bool Check(rtc::StreamInterface* stream,
              StreamSinkEvent event,
              bool reset = true) {
     return DoCheck(stream, event, reset);
   }
-  int Events(StreamInterface* stream, bool reset = true) {
+  int Events(rtc::StreamInterface* stream, bool reset = true) {
     return DoEvents(stream, reset);
   }
 
-  void Monitor(AsyncSocket* socket) {
+  void Monitor(rtc::AsyncSocket* socket) {
     socket->SignalConnectEvent.connect(this, &StreamSink::OnConnectEvent);
     socket->SignalReadEvent.connect(this, &StreamSink::OnReadEvent);
     socket->SignalWriteEvent.connect(this, &StreamSink::OnWriteEvent);
@@ -72,33 +70,35 @@ class StreamSink : public sigslot::has_slots<> {
     // In case you forgot to unmonitor a previous object with this address
     events_.erase(socket);
   }
-  void Unmonitor(AsyncSocket* socket) {
+  void Unmonitor(rtc::AsyncSocket* socket) {
     socket->SignalConnectEvent.disconnect(this);
     socket->SignalReadEvent.disconnect(this);
     socket->SignalWriteEvent.disconnect(this);
     socket->SignalCloseEvent.disconnect(this);
     events_.erase(socket);
   }
-  bool Check(AsyncSocket* socket, StreamSinkEvent event, bool reset = true) {
+  bool Check(rtc::AsyncSocket* socket,
+             StreamSinkEvent event,
+             bool reset = true) {
     return DoCheck(socket, event, reset);
   }
-  int Events(AsyncSocket* socket, bool reset = true) {
+  int Events(rtc::AsyncSocket* socket, bool reset = true) {
     return DoEvents(socket, reset);
   }
 
  private:
   typedef std::map<void*, int> EventMap;
 
-  void OnEvent(StreamInterface* stream, int events, int error) {
+  void OnEvent(rtc::StreamInterface* stream, int events, int error) {
     if (error) {
       events = SSE_ERROR;
     }
     AddEvents(stream, events);
   }
-  void OnConnectEvent(AsyncSocket* socket) { AddEvents(socket, SSE_OPEN); }
-  void OnReadEvent(AsyncSocket* socket) { AddEvents(socket, SSE_READ); }
-  void OnWriteEvent(AsyncSocket* socket) { AddEvents(socket, SSE_WRITE); }
-  void OnCloseEvent(AsyncSocket* socket, int error) {
+  void OnConnectEvent(rtc::AsyncSocket* socket) { AddEvents(socket, SSE_OPEN); }
+  void OnReadEvent(rtc::AsyncSocket* socket) { AddEvents(socket, SSE_READ); }
+  void OnWriteEvent(rtc::AsyncSocket* socket) { AddEvents(socket, SSE_WRITE); }
+  void OnCloseEvent(rtc::AsyncSocket* socket, int error) {
     AddEvents(socket, (0 == error) ? SSE_CLOSE : SSE_ERROR);
   }
 

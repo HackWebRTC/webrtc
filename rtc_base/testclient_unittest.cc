@@ -23,7 +23,8 @@
 #include "rtc_base/thread.h"
 #include "test/gtest.h"
 
-using namespace rtc;
+namespace rtc {
+namespace {
 
 #define MAYBE_SKIP_IPV4                        \
   if (!HasIPv4Enabled()) {                     \
@@ -101,3 +102,6 @@ TEST(TestClientTest, MAYBE_TestTcpIPv6) {
   MAYBE_SKIP_IPV6;
   TestTcpInternal(SocketAddress("::1", 0));
 }
+
+}  // namespace
+}  // namespace rtc

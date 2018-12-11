@@ -43,7 +43,8 @@
 #include "rtc_base/virtualsocketserver.h"
 #include "test/gtest.h"
 
-using namespace rtc;
+namespace rtc {
+namespace {
 
 using webrtc::testing::SSE_CLOSE;
 using webrtc::testing::SSE_ERROR;
@@ -1143,3 +1144,6 @@ TEST_F(VirtualSocketServerTest, CreatesStandardDistribution) {
     }
   }
 }
+
+}  // namespace
+}  // namespace rtc
