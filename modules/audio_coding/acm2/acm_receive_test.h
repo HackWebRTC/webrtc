@@ -23,7 +23,6 @@
 namespace webrtc {
 class AudioCodingModule;
 class AudioDecoder;
-struct CodecInst;
 
 namespace test {
 class AudioSink;

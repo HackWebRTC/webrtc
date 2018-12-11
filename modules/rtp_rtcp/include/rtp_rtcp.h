@@ -136,9 +136,6 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
   // FEC/ULP/RED overhead (when FEC is enabled).
   virtual size_t MaxRtpPacketSize() const = 0;
 
-  // Sets codec name and payload type. Returns -1 on failure else 0.
-  virtual int32_t RegisterSendPayload(const CodecInst& voice_codec) = 0;
-
   virtual void RegisterAudioSendPayload(int payload_type,
                                         absl::string_view payload_name,
                                         int frequency,

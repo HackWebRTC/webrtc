@@ -188,8 +188,8 @@ void ISACTest::Setup() {
     Run10ms();
   }
 
-  EXPECT_TRUE(_acmA->ReceiveFormat());
-  EXPECT_TRUE(_acmB->ReceiveFormat());
+  EXPECT_TRUE(_acmA->ReceiveCodec());
+  EXPECT_TRUE(_acmB->ReceiveCodec());
 
   _inFileA.Close();
   _outFileA.Close();

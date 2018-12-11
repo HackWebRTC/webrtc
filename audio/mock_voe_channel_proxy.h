@@ -14,6 +14,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "api/test/mock_frame_encryptor.h"
@@ -52,7 +53,8 @@ class MockChannelReceive : public voe::ChannelReceiveInterface {
   MOCK_CONST_METHOD0(GetPlayoutTimestamp, uint32_t());
   MOCK_CONST_METHOD0(GetSyncInfo, absl::optional<Syncable::Info>());
   MOCK_METHOD1(SetMinimumPlayoutDelay, void(int delay_ms));
-  MOCK_CONST_METHOD1(GetRecCodec, bool(CodecInst* codec_inst));
+  MOCK_CONST_METHOD0(GetReceiveCodec,
+                     absl::optional<std::pair<int, SdpAudioFormat>>());
   MOCK_METHOD1(SetReceiveCodecs,
                void(const std::map<int, SdpAudioFormat>& codecs));
   MOCK_CONST_METHOD0(GetSources, std::vector<RtpSource>());

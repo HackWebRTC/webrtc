@@ -13,12 +13,12 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/types/optional.h"
 #include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/audio_codecs/audio_encoder.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "modules/audio_coding/neteq/include/neteq.h"
 #include "rtc_base/function_view.h"
@@ -27,7 +27,6 @@
 namespace webrtc {
 
 // forward declarations
-struct CodecInst;
 struct WebRtcRTPHeader;
 class AudioDecoder;
 class AudioEncoder;
@@ -77,80 +76,6 @@ class AudioCodingModule {
   virtual ~AudioCodingModule() = default;
 
   ///////////////////////////////////////////////////////////////////////////
-  //   Utility functions
-  //
-
-  ///////////////////////////////////////////////////////////////////////////
-  // uint8_t NumberOfCodecs()
-  // Returns number of supported codecs.
-  //
-  // Return value:
-  //   number of supported codecs.
-  ///
-  static int NumberOfCodecs();
-
-  ///////////////////////////////////////////////////////////////////////////
-  // int32_t Codec()
-  // Get supported codec with list number.
-  //
-  // Input:
-  //   -list_id             : list number.
-  //
-  // Output:
-  //   -codec              : a structure where the parameters of the codec,
-  //                         given by list number is written to.
-  //
-  // Return value:
-  //   -1 if the list number (list_id) is invalid.
-  //    0 if succeeded.
-  //
-  static int Codec(int list_id, CodecInst* codec);
-
-  ///////////////////////////////////////////////////////////////////////////
-  // int32_t Codec()
-  // Get supported codec with the given codec name, sampling frequency, and
-  // a given number of channels.
-  //
-  // Input:
-  //   -payload_name       : name of the codec.
-  //   -sampling_freq_hz   : sampling frequency of the codec. Note! for RED
-  //                         a sampling frequency of -1 is a valid input.
-  //   -channels           : number of channels ( 1 - mono, 2 - stereo).
-  //
-  // Output:
-  //   -codec              : a structure where the function returns the
-  //                         default parameters of the codec.
-  //
-  // Return value:
-  //   -1 if no codec matches the given parameters.
-  //    0 if succeeded.
-  //
-  static int Codec(const char* payload_name,
-                   CodecInst* codec,
-                   int sampling_freq_hz,
-                   size_t channels);
-
-  ///////////////////////////////////////////////////////////////////////////
-  // int32_t Codec()
-  //
-  // Returns the list number of the given codec name, sampling frequency, and
-  // a given number of channels.
-  //
-  // Input:
-  //   -payload_name        : name of the codec.
-  //   -sampling_freq_hz    : sampling frequency of the codec. Note! for RED
-  //                          a sampling frequency of -1 is a valid input.
-  //   -channels            : number of channels ( 1 - mono, 2 - stereo).
-  //
-  // Return value:
-  //   if the codec is found, the index of the codec in the list,
-  //   -1 if the codec is not found.
-  //
-  static int Codec(const char* payload_name,
-                   int sampling_freq_hz,
-                   size_t channels);
-
-  ///////////////////////////////////////////////////////////////////////////
   //   Sender
   //
 
@@ -168,15 +93,6 @@ class AudioCodingModule {
       *encoder = std::move(new_encoder);
     });
   }
-
-  ///////////////////////////////////////////////////////////////////////////
-  // int32_t SendCodec()
-  // Get parameters for the codec currently registered as send codec.
-  //
-  // Return value:
-  //   The send codec, or nothing if we don't have one
-  //
-  virtual absl::optional<CodecInst> SendCodec() const = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // Sets the bitrate to the specified value in bits/sec. If the value is not
@@ -302,60 +218,17 @@ class AudioCodingModule {
   virtual void SetReceiveCodecs(
       const std::map<int, SdpAudioFormat>& codecs) = 0;
 
-  // Registers a decoder for the given payload type. Returns true iff
-  // successful.
-  virtual bool RegisterReceiveCodec(int rtp_payload_type,
-                                    const SdpAudioFormat& audio_format) = 0;
-
-  // Registers an external decoder. The name is only used to provide information
-  // back to the caller about the decoder. Hence, the name is arbitrary, and may
-  // be empty.
-  virtual int RegisterExternalReceiveCodec(int rtp_payload_type,
-                                           AudioDecoder* external_decoder,
-                                           int sample_rate_hz,
-                                           int num_channels,
-                                           const std::string& name) = 0;
-
   ///////////////////////////////////////////////////////////////////////////
-  // int32_t UnregisterReceiveCodec()
-  // Unregister the codec currently registered with a specific payload type
-  // from the list of possible receive codecs.
-  //
-  // Input:
-  //   -payload_type        : The number representing the payload type to
-  //                         unregister.
-  //
-  // Output:
-  //   -1 if fails to unregister.
-  //    0 if the given codec is successfully unregistered.
-  //
-  virtual int UnregisterReceiveCodec(uint8_t payload_type) = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
-  // int32_t ReceiveCodec()
-  // Get the codec associated with last received payload.
-  //
-  // Output:
-  //   -curr_receive_codec : parameters of the codec associated with the last
-  //                         received payload, c.f. common_types.h for
-  //                         the definition of CodecInst.
+  // absl::optional<std::pair<int, SdpAudioFormat>> ReceiveCodec()
+  // Get the codec info associated with last received payload.
   //
   // Return value:
-  //   -1 if failed to retrieve the codec,
-  //    0 if the codec is successfully retrieved.
-  //
-  virtual int32_t ReceiveCodec(CodecInst* curr_receive_codec) const = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
-  // absl::optional<SdpAudioFormat> ReceiveFormat()
-  // Get the format associated with last received payload.
-  //
-  // Return value:
-  //    An SdpAudioFormat describing the format associated with the last
-  //    received payload.
+  //    A payload type and SdpAudioFormat describing the format associated with
+  //    the last received payload.
   //    An empty Optional if no payload has yet been received.
   //
-  virtual absl::optional<SdpAudioFormat> ReceiveFormat() const = 0;
+  virtual absl::optional<std::pair<int, SdpAudioFormat>>
+      ReceiveCodec() const = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t IncomingPacket()

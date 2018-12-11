@@ -120,7 +120,8 @@ class ChannelReceive : public ChannelReceiveInterface,
   void StopPlayout() override;
 
   // Codecs
-  bool GetRecCodec(CodecInst* codec) const override;
+  absl::optional<std::pair<int, SdpAudioFormat>>
+      GetReceiveCodec() const override;
 
   bool ReceivedRTCPPacket(const uint8_t* data, size_t length) override;
 
@@ -553,9 +554,10 @@ void ChannelReceive::StopPlayout() {
   _outputAudioLevel.Clear();
 }
 
-bool ChannelReceive::GetRecCodec(CodecInst* codec) const {
+absl::optional<std::pair<int, SdpAudioFormat>>
+    ChannelReceive::GetReceiveCodec() const {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  return (audio_coding_->ReceiveCodec(codec) == 0);
+  return audio_coding_->ReceiveCodec();
 }
 
 std::vector<webrtc::RtpSource> ChannelReceive::GetSources() const {
@@ -924,13 +926,13 @@ void ChannelReceive::UpdatePlayoutTimestamp(bool rtcp) {
 }
 
 int ChannelReceive::GetRtpTimestampRateHz() const {
-  const auto format = audio_coding_->ReceiveFormat();
+  const auto decoder = audio_coding_->ReceiveCodec();
   // Default to the playout frequency if we've not gotten any packets yet.
   // TODO(ossu): Zero clockrate can only happen if we've added an external
   // decoder for a format we don't support internally. Remove once that way of
   // adding decoders is gone!
-  return (format && format->clockrate_hz != 0)
-             ? format->clockrate_hz
+  return (decoder && decoder->second.clockrate_hz != 0)
+             ? decoder->second.clockrate_hz
              : audio_coding_->PlayoutFrequency();
 }
 

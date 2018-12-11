@@ -37,7 +37,6 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD1(SetRemoteSSRC, void(uint32_t ssrc));
   MOCK_METHOD1(SetMaxRtpPacketSize, void(size_t size));
   MOCK_CONST_METHOD0(MaxRtpPacketSize, size_t());
-  MOCK_METHOD1(RegisterSendPayload, int32_t(const CodecInst& voice_codec));
   MOCK_METHOD5(RegisterAudioSendPayload,
                void(int payload_type,
                     absl::string_view payload_name,

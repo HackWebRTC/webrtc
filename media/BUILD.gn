@@ -40,6 +40,7 @@ rtc_source_set("rtc_h264_profile_id") {
 
   deps = [
     "..:webrtc_common",
+    "../rtc_base:checks",
     "../rtc_base:rtc_base",
     "../rtc_base:rtc_base_approved",
     "../rtc_base/system:rtc_export",
@@ -488,7 +489,6 @@ if (rtc_include_tests) {
       "../api/video:video_frame_i420",
       "../call:video_stream_api",
       "../common_video:common_video",
-      "../modules/audio_coding:rent_a_codec",
       "../modules/audio_processing:api",
       "../modules/audio_processing:audio_processing",
       "../modules/rtp_rtcp:rtp_rtcp_format",

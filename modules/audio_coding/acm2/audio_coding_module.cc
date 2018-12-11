@@ -18,7 +18,6 @@
 #include "api/array_view.h"
 #include "modules/audio_coding/acm2/acm_receiver.h"
 #include "modules/audio_coding/acm2/acm_resampler.h"
-#include "modules/audio_coding/acm2/rent_a_codec.h"
 #include "modules/include/module_common_types.h"
 #include "modules/include/module_common_types_public.h"
 #include "rtc_base/buffer.h"
@@ -44,9 +43,6 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
 
   void ModifyEncoder(rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)>
                          modifier) override;
-
-  // Get current send codec.
-  absl::optional<CodecInst> SendCodec() const override;
 
   // Sets the bitrate to the specified value in bits/sec. In case the codec does
   // not support the requested value it will choose an appropriate value
@@ -90,19 +86,8 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
 
   void SetReceiveCodecs(const std::map<int, SdpAudioFormat>& codecs) override;
 
-  bool RegisterReceiveCodec(int rtp_payload_type,
-                            const SdpAudioFormat& audio_format) override;
-
-  int RegisterExternalReceiveCodec(int rtp_payload_type,
-                                   AudioDecoder* external_decoder,
-                                   int sample_rate_hz,
-                                   int num_channels,
-                                   const std::string& name) override;
-
   // Get current received codec.
-  int ReceiveCodec(CodecInst* current_codec) const override;
-
-  absl::optional<SdpAudioFormat> ReceiveFormat() const override;
+  absl::optional<std::pair<int, SdpAudioFormat>> ReceiveCodec() const override;
 
   // Incoming packet from network parsed and ready for decode.
   int IncomingPacket(const uint8_t* incoming_payload,
@@ -140,8 +125,6 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   int EnableOpusDtx() override;
 
   int DisableOpusDtx() override;
-
-  int UnregisterReceiveCodec(uint8_t payload_type) override;
 
   int EnableNack(size_t max_nack_list_size) override;
 
@@ -317,42 +300,6 @@ void ConvertEncodedInfoToFragmentationHeader(
   }
 }
 
-// Wraps a raw AudioEncoder pointer. The idea is that you can put one of these
-// in a unique_ptr, to protect the contained raw pointer from being deleted
-// when the unique_ptr expires. (This is of course a bad idea in general, but
-// backwards compatibility.)
-class RawAudioEncoderWrapper final : public AudioEncoder {
- public:
-  RawAudioEncoderWrapper(AudioEncoder* enc) : enc_(enc) {}
-  int SampleRateHz() const override { return enc_->SampleRateHz(); }
-  size_t NumChannels() const override { return enc_->NumChannels(); }
-  int RtpTimestampRateHz() const override { return enc_->RtpTimestampRateHz(); }
-  size_t Num10MsFramesInNextPacket() const override {
-    return enc_->Num10MsFramesInNextPacket();
-  }
-  size_t Max10MsFramesInAPacket() const override {
-    return enc_->Max10MsFramesInAPacket();
-  }
-  int GetTargetBitrate() const override { return enc_->GetTargetBitrate(); }
-  EncodedInfo EncodeImpl(uint32_t rtp_timestamp,
-                         rtc::ArrayView<const int16_t> audio,
-                         rtc::Buffer* encoded) override {
-    return enc_->Encode(rtp_timestamp, audio, encoded);
-  }
-  void Reset() override { return enc_->Reset(); }
-  bool SetFec(bool enable) override { return enc_->SetFec(enable); }
-  bool SetDtx(bool enable) override { return enc_->SetDtx(enable); }
-  bool SetApplication(Application application) override {
-    return enc_->SetApplication(application);
-  }
-  void SetMaxPlaybackRate(int frequency_hz) override {
-    return enc_->SetMaxPlaybackRate(frequency_hz);
-  }
-
- private:
-  AudioEncoder* enc_;
-};
-
 void AudioCodingModuleImpl::ChangeLogger::MaybeLog(int value) {
   if (value != last_value_ || first_time_) {
     first_time_ = false;
@@ -478,26 +425,6 @@ void AudioCodingModuleImpl::ModifyEncoder(
     rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier) {
   rtc::CritScope lock(&acm_crit_sect_);
   modifier(&encoder_stack_);
-}
-
-// Get current send codec.
-absl::optional<CodecInst> AudioCodingModuleImpl::SendCodec() const {
-  rtc::CritScope lock(&acm_crit_sect_);
-  if (encoder_stack_) {
-    CodecInst ci;
-    ci.channels = encoder_stack_->NumChannels();
-    ci.plfreq = encoder_stack_->SampleRateHz();
-    ci.pacsize = rtc::CheckedDivExact(
-        static_cast<int>(encoder_stack_->Max10MsFramesInAPacket() * ci.plfreq),
-        100);
-    ci.pltype = -1;  // Not valid.
-    ci.rate = -1;    // Not valid.
-    static const char kName[] = "external";
-    memcpy(ci.plname, kName, sizeof(kName));
-    return ci;
-  } else {
-    return absl::nullopt;
-  }
 }
 
 void AudioCodingModuleImpl::SetBitRate(int bitrate_bps) {
@@ -748,54 +675,10 @@ void AudioCodingModuleImpl::SetReceiveCodecs(
   receiver_.SetCodecs(codecs);
 }
 
-bool AudioCodingModuleImpl::RegisterReceiveCodec(
-    int rtp_payload_type,
-    const SdpAudioFormat& audio_format) {
+absl::optional<std::pair<int, SdpAudioFormat>>
+    AudioCodingModuleImpl::ReceiveCodec() const {
   rtc::CritScope lock(&acm_crit_sect_);
-  RTC_DCHECK(receiver_initialized_);
-
-  if (!acm2::RentACodec::IsPayloadTypeValid(rtp_payload_type)) {
-    RTC_LOG_F(LS_ERROR) << "Invalid payload-type " << rtp_payload_type
-                        << " for decoder.";
-    return false;
-  }
-
-  return receiver_.AddCodec(rtp_payload_type, audio_format);
-}
-
-int AudioCodingModuleImpl::RegisterExternalReceiveCodec(
-    int rtp_payload_type,
-    AudioDecoder* external_decoder,
-    int sample_rate_hz,
-    int num_channels,
-    const std::string& name) {
-  rtc::CritScope lock(&acm_crit_sect_);
-  RTC_DCHECK(receiver_initialized_);
-  if (num_channels > 2 || num_channels < 0) {
-    RTC_LOG_F(LS_ERROR) << "Unsupported number of channels: " << num_channels;
-    return -1;
-  }
-
-  // Check if the payload-type is valid.
-  if (!acm2::RentACodec::IsPayloadTypeValid(rtp_payload_type)) {
-    RTC_LOG_F(LS_ERROR) << "Invalid payload-type " << rtp_payload_type
-                        << " for external decoder.";
-    return -1;
-  }
-
-  return receiver_.AddCodec(-1 /* external */, rtp_payload_type, num_channels,
-                            sample_rate_hz, external_decoder, name);
-}
-
-// Get current received codec.
-int AudioCodingModuleImpl::ReceiveCodec(CodecInst* current_codec) const {
-  rtc::CritScope lock(&acm_crit_sect_);
-  return receiver_.LastAudioCodec(current_codec);
-}
-
-absl::optional<SdpAudioFormat> AudioCodingModuleImpl::ReceiveFormat() const {
-  rtc::CritScope lock(&acm_crit_sect_);
-  return receiver_.LastAudioFormat();
+  return receiver_.LastDecoder();
 }
 
 // Incoming packet from network parsed and ready for decode.
@@ -902,10 +785,6 @@ bool AudioCodingModuleImpl::HaveValidEncoder(const char* caller_name) const {
   return true;
 }
 
-int AudioCodingModuleImpl::UnregisterReceiveCodec(uint8_t payload_type) {
-  return receiver_.RemoveCodec(payload_type);
-}
-
 int AudioCodingModuleImpl::EnableNack(size_t max_nack_list_size) {
   return receiver_.EnableNack(max_nack_list_size);
 }
@@ -949,54 +828,6 @@ AudioCodingModule::Config::~Config() = default;
 
 AudioCodingModule* AudioCodingModule::Create(const Config& config) {
   return new AudioCodingModuleImpl(config);
-}
-
-int AudioCodingModule::NumberOfCodecs() {
-  return static_cast<int>(acm2::RentACodec::NumberOfCodecs());
-}
-
-int AudioCodingModule::Codec(int list_id, CodecInst* codec) {
-  auto codec_id = acm2::RentACodec::CodecIdFromIndex(list_id);
-  if (!codec_id)
-    return -1;
-  auto ci = acm2::RentACodec::CodecInstById(*codec_id);
-  if (!ci)
-    return -1;
-  *codec = *ci;
-  return 0;
-}
-
-int AudioCodingModule::Codec(const char* payload_name,
-                             CodecInst* codec,
-                             int sampling_freq_hz,
-                             size_t channels) {
-  absl::optional<CodecInst> ci = acm2::RentACodec::CodecInstByParams(
-      payload_name, sampling_freq_hz, channels);
-  if (ci) {
-    *codec = *ci;
-    return 0;
-  } else {
-    // We couldn't find a matching codec, so set the parameters to unacceptable
-    // values and return.
-    codec->plname[0] = '\0';
-    codec->pltype = -1;
-    codec->pacsize = 0;
-    codec->rate = 0;
-    codec->plfreq = 0;
-    return -1;
-  }
-}
-
-int AudioCodingModule::Codec(const char* payload_name,
-                             int sampling_freq_hz,
-                             size_t channels) {
-  absl::optional<acm2::RentACodec::CodecId> ci =
-      acm2::RentACodec::CodecIdByParams(payload_name, sampling_freq_hz,
-                                        channels);
-  if (!ci)
-    return -1;
-  absl::optional<int> i = acm2::RentACodec::CodecIndexFromId(*ci);
-  return i ? *i : -1;
 }
 
 }  // namespace webrtc

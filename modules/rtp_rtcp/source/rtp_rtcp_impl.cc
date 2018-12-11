@@ -264,13 +264,6 @@ void ModuleRtpRtcpImpl::IncomingRtcpPacket(const uint8_t* rtcp_packet,
   rtcp_receiver_.IncomingPacket(rtcp_packet, length);
 }
 
-int32_t ModuleRtpRtcpImpl::RegisterSendPayload(const CodecInst& voice_codec) {
-  rtcp_sender_.SetRtpClockRate(voice_codec.pltype, voice_codec.plfreq);
-  return rtp_sender_->RegisterPayload(
-      voice_codec.plname, voice_codec.pltype, voice_codec.plfreq,
-      voice_codec.channels, (voice_codec.rate < 0) ? 0 : voice_codec.rate);
-}
-
 void ModuleRtpRtcpImpl::RegisterAudioSendPayload(int payload_type,
                                                  absl::string_view payload_name,
                                                  int frequency,

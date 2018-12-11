@@ -854,33 +854,14 @@ bool ChannelSend::SetEncoder(int payload_type,
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   RTC_DCHECK_GE(payload_type, 0);
   RTC_DCHECK_LE(payload_type, 127);
-  // TODO(ossu): Make CodecInsts up, for now: one for the RTP/RTCP module and
-  // one for for us to keep track of sample rate and number of channels, etc.
 
   // The RTP/RTCP module needs to know the RTP timestamp rate (i.e. clockrate)
   // as well as some other things, so we collect this info and send it along.
-  CodecInst rtp_codec;
-  rtp_codec.pltype = payload_type;
-  strncpy(rtp_codec.plname, "audio", sizeof(rtp_codec.plname));
-  rtp_codec.plname[sizeof(rtp_codec.plname) - 1] = 0;
-  // Seems unclear if it should be clock rate or sample rate. CodecInst
-  // supposedly carries the sample rate, but only clock rate seems sensible to
-  // send to the RTP/RTCP module.
-  rtp_codec.plfreq = encoder->RtpTimestampRateHz();
-  rtp_codec.pacsize = rtc::CheckedDivExact(
-      static_cast<int>(encoder->Max10MsFramesInAPacket() * rtp_codec.plfreq),
-      100);
-  rtp_codec.channels = encoder->NumChannels();
-  rtp_codec.rate = 0;
-
-  if (_rtpRtcpModule->RegisterSendPayload(rtp_codec) != 0) {
-    _rtpRtcpModule->DeRegisterSendPayload(payload_type);
-    if (_rtpRtcpModule->RegisterSendPayload(rtp_codec) != 0) {
-      RTC_DLOG(LS_ERROR)
-          << "SetEncoder() failed to register codec to RTP/RTCP module";
-      return false;
-    }
-  }
+  _rtpRtcpModule->RegisterAudioSendPayload(payload_type,
+                                           "audio",
+                                           encoder->RtpTimestampRateHz(),
+                                           encoder->NumChannels(),
+                                           0);
 
   if (media_transport_) {
     rtc::CritScope cs(&media_transport_lock_);
@@ -1017,19 +998,8 @@ bool ChannelSend::SetSendTelephoneEventPayloadType(int payload_type,
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   RTC_DCHECK_LE(0, payload_type);
   RTC_DCHECK_GE(127, payload_type);
-  CodecInst codec = {0};
-  codec.pltype = payload_type;
-  codec.plfreq = payload_frequency;
-  memcpy(codec.plname, "telephone-event", 16);
-  if (_rtpRtcpModule->RegisterSendPayload(codec) != 0) {
-    _rtpRtcpModule->DeRegisterSendPayload(codec.pltype);
-    if (_rtpRtcpModule->RegisterSendPayload(codec) != 0) {
-      RTC_DLOG(LS_ERROR)
-          << "SetSendTelephoneEventPayloadType() failed to register "
-             "send payload type";
-      return false;
-    }
-  }
+  _rtpRtcpModule->RegisterAudioSendPayload(payload_type, "telephone-event",
+                                           payload_frequency, 0, 0);
   return true;
 }
 

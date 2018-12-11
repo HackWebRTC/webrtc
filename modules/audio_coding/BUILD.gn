@@ -32,35 +32,6 @@ rtc_static_library("audio_format_conversion") {
   ]
 }
 
-rtc_static_library("rent_a_codec") {
-  # Client code SHOULD NOT USE THIS TARGET, but for now it needs to be public
-  # because there exists client code that uses it.
-  # TODO(bugs.webrtc.org/9808): Move to private visibility as soon as that
-  # client code gets updated.
-  visibility += [ "*" ]
-
-  sources = [
-    "acm2/acm_codec_database.cc",
-    "acm2/acm_codec_database.h",
-    "acm2/rent_a_codec.cc",
-    "acm2/rent_a_codec.h",
-  ]
-  deps = [
-    ":audio_coding_module_typedefs",
-    ":neteq_decoder_enum",
-    "../..:webrtc_common",
-    "../../api:array_view",
-    "../../api/audio_codecs:audio_codecs_api",
-    "../../rtc_base:checks",
-    "../../rtc_base:protobuf_utils",
-    "../../rtc_base:rtc_base_approved",
-    "../../system_wrappers",
-    "//third_party/abseil-cpp/absl/strings",
-    "//third_party/abseil-cpp/absl/types:optional",
-  ]
-  defines = audio_codec_defines
-}
-
 rtc_source_set("audio_coding_module_typedefs") {
   sources = [
     "include/audio_coding_module_typedefs.h",
@@ -90,7 +61,6 @@ rtc_static_library("audio_coding") {
     ":audio_coding_module_typedefs",
     ":neteq",
     ":neteq_decoder_enum",
-    ":rent_a_codec",
     "..:module_api",
     "..:module_api_public",
     "../..:webrtc_common",
@@ -2081,11 +2051,11 @@ if (rtc_include_tests) {
       ":legacy_encoded_audio_frame",
       ":mocks",
       ":neteq",
+      ":neteq_decoder_enum",
       ":neteq_test_support",
       ":neteq_test_tools",
       ":pcm16b",
       ":red",
-      ":rent_a_codec",
       ":webrtc_cng",
       ":webrtc_opus",
       "..:module_api",

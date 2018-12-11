@@ -61,7 +61,6 @@ const int kTelephoneEventPayloadType = 123;
 const int kTelephoneEventPayloadFrequency = 65432;
 const int kTelephoneEventCode = 45;
 const int kTelephoneEventDuration = 6789;
-const CodecInst kIsacCodec = {103, "isac", 16000, 320, 1, 32000};
 constexpr int kIsacPayloadType = 103;
 const SdpAudioFormat kIsacFormat = {"isac", 16000, 1};
 const SdpAudioFormat kOpusFormat = {"opus", 48000, 2};
@@ -375,11 +374,11 @@ TEST(AudioSendStreamTest, GetStats) {
   EXPECT_EQ(kCallStats.packetsSent, stats.packets_sent);
   EXPECT_EQ(kReportBlock.cumulative_num_packets_lost, stats.packets_lost);
   EXPECT_EQ(Q8ToFloat(kReportBlock.fraction_lost), stats.fraction_lost);
-  EXPECT_EQ(std::string(kIsacCodec.plname), stats.codec_name);
+  EXPECT_EQ(kIsacFormat.name, stats.codec_name);
   EXPECT_EQ(static_cast<int32_t>(kReportBlock.extended_highest_sequence_number),
             stats.ext_seqnum);
   EXPECT_EQ(static_cast<int32_t>(kReportBlock.interarrival_jitter /
-                                 (kIsacCodec.plfreq / 1000)),
+                                 (kIsacFormat.clockrate_hz / 1000)),
             stats.jitter_ms);
   EXPECT_EQ(kCallStats.rttMs, stats.rtt_ms);
   EXPECT_EQ(0, stats.audio_level);

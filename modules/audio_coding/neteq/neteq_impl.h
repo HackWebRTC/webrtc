@@ -184,8 +184,6 @@ class NetEqImpl : public webrtc::NetEq {
 
   int last_output_sample_rate_hz() const override;
 
-  absl::optional<CodecInst> GetDecoder(int payload_type) const override;
-
   absl::optional<SdpAudioFormat> GetDecoderFormat(
       int payload_type) const override;
 

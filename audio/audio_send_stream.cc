@@ -765,14 +765,8 @@ void AudioSendStream::RemoveBitrateObserver() {
 
 void AudioSendStream::RegisterCngPayloadType(int payload_type,
                                              int clockrate_hz) {
-  const CodecInst codec = {payload_type, "CN", clockrate_hz, 0, 1, 0};
-  if (rtp_rtcp_module_->RegisterSendPayload(codec) != 0) {
-    rtp_rtcp_module_->DeRegisterSendPayload(codec.pltype);
-    if (rtp_rtcp_module_->RegisterSendPayload(codec) != 0) {
-      RTC_DLOG(LS_ERROR) << "RegisterCngPayloadType() failed to register CN to "
-                            "RTP/RTCP module";
-    }
-  }
+  rtp_rtcp_module_->RegisterAudioSendPayload(payload_type, "CN", clockrate_hz,
+                                             1, 0);
 }
 }  // namespace internal
 }  // namespace webrtc

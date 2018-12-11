@@ -10,6 +10,7 @@
 
 #include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "api/test/mock_audio_mixer.h"
@@ -63,7 +64,8 @@ const double kTotalOutputDuration = 0.5;
 
 const CallReceiveStatistics kCallStats = {345, 678, 901, 234,
                                           -12, 567, 890, 123};
-const CodecInst kCodecInst = {123, "codec_name_recv", 96000, -187, 0, -103};
+const std::pair<int, SdpAudioFormat> kReceiveCodec =
+    {123, {"codec_name_recv", 96000, 0}};
 const NetworkStatistics kNetworkStats = {
     123, 456, false, 789012, 3456, 123, 456, 0,  {}, 789, 12,
     345, 678, 901,   0,      -1,   -1,  -1,  -1, -1, 0};
@@ -140,8 +142,8 @@ struct ConfigHelper {
         .WillOnce(Return(kNetworkStats));
     EXPECT_CALL(*channel_receive_, GetDecodingCallStatistics())
         .WillOnce(Return(kAudioDecodeStats));
-    EXPECT_CALL(*channel_receive_, GetRecCodec(_))
-        .WillOnce(DoAll(SetArgPointee<0>(kCodecInst), Return(true)));
+    EXPECT_CALL(*channel_receive_, GetReceiveCodec())
+        .WillOnce(Return(kReceiveCodec));
   }
 
  private:
@@ -267,10 +269,11 @@ TEST(AudioReceiveStreamTest, GetStats) {
             stats.packets_rcvd);
   EXPECT_EQ(kCallStats.cumulativeLost, stats.packets_lost);
   EXPECT_EQ(Q8ToFloat(kCallStats.fractionLost), stats.fraction_lost);
-  EXPECT_EQ(std::string(kCodecInst.plname), stats.codec_name);
+  EXPECT_EQ(kReceiveCodec.second.name, stats.codec_name);
   EXPECT_EQ(kCallStats.extendedMax, stats.ext_seqnum);
-  EXPECT_EQ(kCallStats.jitterSamples / (kCodecInst.plfreq / 1000),
-            stats.jitter_ms);
+  EXPECT_EQ(
+      kCallStats.jitterSamples / (kReceiveCodec.second.clockrate_hz / 1000),
+      stats.jitter_ms);
   EXPECT_EQ(kNetworkStats.currentBufferSize, stats.jitter_buffer_ms);
   EXPECT_EQ(kNetworkStats.preferredBufferSize,
             stats.jitter_buffer_preferred_ms);
