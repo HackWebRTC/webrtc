@@ -15,6 +15,7 @@
 
 #include <algorithm>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -197,7 +198,7 @@ class MediaSessionDescriptionFactory {
                          SessionDescription* offer,
                          IceCredentialsIterator* ice_credentials) const;
 
-  TransportDescription* CreateTransportAnswer(
+  std::unique_ptr<TransportDescription> CreateTransportAnswer(
       const std::string& content_name,
       const SessionDescription* offer_desc,
       const TransportOptions& transport_options,

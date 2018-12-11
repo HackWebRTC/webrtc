@@ -11,6 +11,8 @@
 #ifndef P2P_BASE_TRANSPORTDESCRIPTIONFACTORY_H_
 #define P2P_BASE_TRANSPORTDESCRIPTIONFACTORY_H_
 
+#include <memory>
+
 #include "p2p/base/icecredentialsiterator.h"
 #include "p2p/base/transportdescription.h"
 #include "rtc_base/rtccertificate.h"
@@ -53,7 +55,7 @@ class TransportDescriptionFactory {
   }
 
   // Creates a transport description suitable for use in an offer.
-  TransportDescription* CreateOffer(
+  std::unique_ptr<TransportDescription> CreateOffer(
       const TransportOptions& options,
       const TransportDescription* current_description,
       IceCredentialsIterator* ice_credentials) const;
@@ -64,7 +66,7 @@ class TransportDescriptionFactory {
   // sdp-mux-attributes, and null will be returned otherwise. It's expected
   // that this will be set to false for an m= section that's in a BUNDLE group
   // but isn't the first m= section in the group.
-  TransportDescription* CreateAnswer(
+  std::unique_ptr<TransportDescription> CreateAnswer(
       const TransportDescription* offer,
       const TransportOptions& options,
       bool require_transport_attributes,

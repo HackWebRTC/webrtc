@@ -14,6 +14,7 @@
 #include <memory>
 #include <string>
 
+#include "absl/memory/memory.h"
 #include "p2p/base/transportdescription.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/sslfingerprint.h"
@@ -25,11 +26,11 @@ TransportDescriptionFactory::TransportDescriptionFactory()
 
 TransportDescriptionFactory::~TransportDescriptionFactory() = default;
 
-TransportDescription* TransportDescriptionFactory::CreateOffer(
+std::unique_ptr<TransportDescription> TransportDescriptionFactory::CreateOffer(
     const TransportOptions& options,
     const TransportDescription* current_description,
     IceCredentialsIterator* ice_credentials) const {
-  std::unique_ptr<TransportDescription> desc(new TransportDescription());
+  auto desc = absl::make_unique<TransportDescription>();
 
   // Generate the ICE credentials if we don't already have them.
   if (!current_description || options.ice_restart) {
@@ -54,10 +55,10 @@ TransportDescription* TransportDescriptionFactory::CreateOffer(
     }
   }
 
-  return desc.release();
+  return desc;
 }
 
-TransportDescription* TransportDescriptionFactory::CreateAnswer(
+std::unique_ptr<TransportDescription> TransportDescriptionFactory::CreateAnswer(
     const TransportDescription* offer,
     const TransportOptions& options,
     bool require_transport_attributes,
@@ -70,7 +71,7 @@ TransportDescription* TransportDescriptionFactory::CreateAnswer(
     return NULL;
   }
 
-  std::unique_ptr<TransportDescription> desc(new TransportDescription());
+  auto desc = absl::make_unique<TransportDescription>();
   // Generate the ICE credentials if we don't already have them or ice is
   // being restarted.
   if (!current_description || options.ice_restart) {
@@ -107,7 +108,7 @@ TransportDescription* TransportDescriptionFactory::CreateAnswer(
     return NULL;
   }
 
-  return desc.release();
+  return desc;
 }
 
 bool TransportDescriptionFactory::SetSecurityInfo(TransportDescription* desc,

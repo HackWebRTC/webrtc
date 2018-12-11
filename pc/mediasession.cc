@@ -1807,7 +1807,8 @@ bool MediaSessionDescriptionFactory::AddTransportOffer(
   return ret;
 }
 
-TransportDescription* MediaSessionDescriptionFactory::CreateTransportAnswer(
+std::unique_ptr<TransportDescription>
+MediaSessionDescriptionFactory::CreateTransportAnswer(
     const std::string& content_name,
     const SessionDescription* offer_desc,
     const TransportOptions& transport_options,
@@ -2091,10 +2092,10 @@ bool MediaSessionDescriptionFactory::AddAudioContentForAnswer(
   const AudioContentDescription* offer_audio_description =
       offer_content->media_description()->as_audio();
 
-  std::unique_ptr<TransportDescription> audio_transport(CreateTransportAnswer(
+  std::unique_ptr<TransportDescription> audio_transport = CreateTransportAnswer(
       media_description_options.mid, offer_description,
       media_description_options.transport_options, current_description,
-      bundle_transport != nullptr, ice_credentials));
+      bundle_transport != nullptr, ice_credentials);
   if (!audio_transport) {
     return false;
   }
@@ -2188,10 +2189,10 @@ bool MediaSessionDescriptionFactory::AddVideoContentForAnswer(
   const VideoContentDescription* offer_video_description =
       offer_content->media_description()->as_video();
 
-  std::unique_ptr<TransportDescription> video_transport(CreateTransportAnswer(
+  std::unique_ptr<TransportDescription> video_transport = CreateTransportAnswer(
       media_description_options.mid, offer_description,
       media_description_options.transport_options, current_description,
-      bundle_transport != nullptr, ice_credentials));
+      bundle_transport != nullptr, ice_credentials);
   if (!video_transport) {
     return false;
   }
@@ -2273,10 +2274,10 @@ bool MediaSessionDescriptionFactory::AddDataContentForAnswer(
     StreamParamsVec* current_streams,
     SessionDescription* answer,
     IceCredentialsIterator* ice_credentials) const {
-  std::unique_ptr<TransportDescription> data_transport(CreateTransportAnswer(
+  std::unique_ptr<TransportDescription> data_transport = CreateTransportAnswer(
       media_description_options.mid, offer_description,
       media_description_options.transport_options, current_description,
-      bundle_transport != nullptr, ice_credentials));
+      bundle_transport != nullptr, ice_credentials);
   if (!data_transport) {
     return false;
   }

@@ -70,22 +70,22 @@ class TransportDescriptionFactoryTest : public testing::Test {
     SetDtls(dtls);
     cricket::TransportOptions options;
     // The initial offer / answer exchange.
-    std::unique_ptr<TransportDescription> offer(
-        f1_.CreateOffer(options, NULL, &ice_credentials_));
-    std::unique_ptr<TransportDescription> answer(
-        f2_.CreateAnswer(offer.get(), options, true, NULL, &ice_credentials_));
+    std::unique_ptr<TransportDescription> offer =
+        f1_.CreateOffer(options, NULL, &ice_credentials_);
+    std::unique_ptr<TransportDescription> answer =
+        f2_.CreateAnswer(offer.get(), options, true, NULL, &ice_credentials_);
 
     // Create an updated offer where we restart ice.
     options.ice_restart = true;
-    std::unique_ptr<TransportDescription> restart_offer(
-        f1_.CreateOffer(options, offer.get(), &ice_credentials_));
+    std::unique_ptr<TransportDescription> restart_offer =
+        f1_.CreateOffer(options, offer.get(), &ice_credentials_);
 
     VerifyUfragAndPasswordChanged(dtls, offer.get(), restart_offer.get());
 
     // Create a new answer. The transport ufrag and password is changed since
     // |options.ice_restart == true|
-    std::unique_ptr<TransportDescription> restart_answer(f2_.CreateAnswer(
-        restart_offer.get(), options, true, answer.get(), &ice_credentials_));
+    std::unique_ptr<TransportDescription> restart_answer = f2_.CreateAnswer(
+        restart_offer.get(), options, true, answer.get(), &ice_credentials_);
     ASSERT_TRUE(restart_answer.get() != NULL);
 
     VerifyUfragAndPasswordChanged(dtls, answer.get(), restart_answer.get());
@@ -114,21 +114,21 @@ class TransportDescriptionFactoryTest : public testing::Test {
 
     cricket::TransportOptions options;
     // The initial offer / answer exchange.
-    std::unique_ptr<TransportDescription> offer(
-        f1_.CreateOffer(options, nullptr, &ice_credentials_));
-    std::unique_ptr<TransportDescription> answer(f2_.CreateAnswer(
-        offer.get(), options, true, nullptr, &ice_credentials_));
+    std::unique_ptr<TransportDescription> offer =
+        f1_.CreateOffer(options, nullptr, &ice_credentials_);
+    std::unique_ptr<TransportDescription> answer = f2_.CreateAnswer(
+        offer.get(), options, true, nullptr, &ice_credentials_);
     VerifyRenomination(offer.get(), false);
     VerifyRenomination(answer.get(), false);
 
     options.enable_ice_renomination = true;
-    std::unique_ptr<TransportDescription> renomination_offer(
-        f1_.CreateOffer(options, offer.get(), &ice_credentials_));
+    std::unique_ptr<TransportDescription> renomination_offer =
+        f1_.CreateOffer(options, offer.get(), &ice_credentials_);
     VerifyRenomination(renomination_offer.get(), true);
 
-    std::unique_ptr<TransportDescription> renomination_answer(
+    std::unique_ptr<TransportDescription> renomination_answer =
         f2_.CreateAnswer(renomination_offer.get(), options, true, answer.get(),
-                         &ice_credentials_));
+                         &ice_credentials_);
     VerifyRenomination(renomination_answer.get(), true);
   }
 
@@ -162,8 +162,8 @@ class TransportDescriptionFactoryTest : public testing::Test {
 };
 
 TEST_F(TransportDescriptionFactoryTest, TestOfferDefault) {
-  std::unique_ptr<TransportDescription> desc(
-      f1_.CreateOffer(TransportOptions(), NULL, &ice_credentials_));
+  std::unique_ptr<TransportDescription> desc =
+      f1_.CreateOffer(TransportOptions(), NULL, &ice_credentials_);
   CheckDesc(desc.get(), "", "", "", "");
 }
 
@@ -173,20 +173,20 @@ TEST_F(TransportDescriptionFactoryTest, TestOfferDtls) {
   std::string digest_alg;
   ASSERT_TRUE(
       cert1_->GetSSLCertificate().GetSignatureDigestAlgorithm(&digest_alg));
-  std::unique_ptr<TransportDescription> desc(
-      f1_.CreateOffer(TransportOptions(), NULL, &ice_credentials_));
+  std::unique_ptr<TransportDescription> desc =
+      f1_.CreateOffer(TransportOptions(), NULL, &ice_credentials_);
   CheckDesc(desc.get(), "", "", "", digest_alg);
   // Ensure it also works with SEC_REQUIRED.
   f1_.set_secure(cricket::SEC_REQUIRED);
-  desc.reset(f1_.CreateOffer(TransportOptions(), NULL, &ice_credentials_));
+  desc = f1_.CreateOffer(TransportOptions(), NULL, &ice_credentials_);
   CheckDesc(desc.get(), "", "", "", digest_alg);
 }
 
 // Test generating an offer with DTLS fails with no identity.
 TEST_F(TransportDescriptionFactoryTest, TestOfferDtlsWithNoIdentity) {
   f1_.set_secure(cricket::SEC_ENABLED);
-  std::unique_ptr<TransportDescription> desc(
-      f1_.CreateOffer(TransportOptions(), NULL, &ice_credentials_));
+  std::unique_ptr<TransportDescription> desc =
+      f1_.CreateOffer(TransportOptions(), NULL, &ice_credentials_);
   ASSERT_TRUE(desc.get() == NULL);
 }
 
@@ -198,37 +198,36 @@ TEST_F(TransportDescriptionFactoryTest, TestOfferDtlsReofferDtls) {
   std::string digest_alg;
   ASSERT_TRUE(
       cert1_->GetSSLCertificate().GetSignatureDigestAlgorithm(&digest_alg));
-  std::unique_ptr<TransportDescription> old_desc(
-      f1_.CreateOffer(TransportOptions(), NULL, &ice_credentials_));
+  std::unique_ptr<TransportDescription> old_desc =
+      f1_.CreateOffer(TransportOptions(), NULL, &ice_credentials_);
   ASSERT_TRUE(old_desc.get() != NULL);
-  std::unique_ptr<TransportDescription> desc(
-      f1_.CreateOffer(TransportOptions(), old_desc.get(), &ice_credentials_));
+  std::unique_ptr<TransportDescription> desc =
+      f1_.CreateOffer(TransportOptions(), old_desc.get(), &ice_credentials_);
   CheckDesc(desc.get(), "", old_desc->ice_ufrag, old_desc->ice_pwd, digest_alg);
 }
 
 TEST_F(TransportDescriptionFactoryTest, TestAnswerDefault) {
-  std::unique_ptr<TransportDescription> offer(
-      f1_.CreateOffer(TransportOptions(), NULL, &ice_credentials_));
+  std::unique_ptr<TransportDescription> offer =
+      f1_.CreateOffer(TransportOptions(), NULL, &ice_credentials_);
   ASSERT_TRUE(offer.get() != NULL);
-  std::unique_ptr<TransportDescription> desc(f2_.CreateAnswer(
-      offer.get(), TransportOptions(), true, NULL, &ice_credentials_));
+  std::unique_ptr<TransportDescription> desc = f2_.CreateAnswer(
+      offer.get(), TransportOptions(), true, NULL, &ice_credentials_);
   CheckDesc(desc.get(), "", "", "", "");
-  desc.reset(f2_.CreateAnswer(offer.get(), TransportOptions(), true, NULL,
-                              &ice_credentials_));
+  desc = f2_.CreateAnswer(offer.get(), TransportOptions(), true, NULL,
+                          &ice_credentials_);
   CheckDesc(desc.get(), "", "", "", "");
 }
 
 // Test that we can update an answer properly; ICE credentials shouldn't change.
 TEST_F(TransportDescriptionFactoryTest, TestReanswer) {
-  std::unique_ptr<TransportDescription> offer(
-      f1_.CreateOffer(TransportOptions(), NULL, &ice_credentials_));
+  std::unique_ptr<TransportDescription> offer =
+      f1_.CreateOffer(TransportOptions(), NULL, &ice_credentials_);
   ASSERT_TRUE(offer.get() != NULL);
-  std::unique_ptr<TransportDescription> old_desc(f2_.CreateAnswer(
-      offer.get(), TransportOptions(), true, NULL, &ice_credentials_));
+  std::unique_ptr<TransportDescription> old_desc = f2_.CreateAnswer(
+      offer.get(), TransportOptions(), true, NULL, &ice_credentials_);
   ASSERT_TRUE(old_desc.get() != NULL);
-  std::unique_ptr<TransportDescription> desc(
-      f2_.CreateAnswer(offer.get(), TransportOptions(), true, old_desc.get(),
-                       &ice_credentials_));
+  std::unique_ptr<TransportDescription> desc = f2_.CreateAnswer(
+      offer.get(), TransportOptions(), true, old_desc.get(), &ice_credentials_);
   ASSERT_TRUE(desc.get() != NULL);
   CheckDesc(desc.get(), "", old_desc->ice_ufrag, old_desc->ice_pwd, "");
 }
@@ -237,11 +236,11 @@ TEST_F(TransportDescriptionFactoryTest, TestReanswer) {
 TEST_F(TransportDescriptionFactoryTest, TestAnswerDtlsToNoDtls) {
   f1_.set_secure(cricket::SEC_ENABLED);
   f1_.set_certificate(cert1_);
-  std::unique_ptr<TransportDescription> offer(
-      f1_.CreateOffer(TransportOptions(), NULL, &ice_credentials_));
+  std::unique_ptr<TransportDescription> offer =
+      f1_.CreateOffer(TransportOptions(), NULL, &ice_credentials_);
   ASSERT_TRUE(offer.get() != NULL);
-  std::unique_ptr<TransportDescription> desc(f2_.CreateAnswer(
-      offer.get(), TransportOptions(), true, NULL, &ice_credentials_));
+  std::unique_ptr<TransportDescription> desc = f2_.CreateAnswer(
+      offer.get(), TransportOptions(), true, NULL, &ice_credentials_);
   CheckDesc(desc.get(), "", "", "", "");
 }
 
@@ -250,15 +249,15 @@ TEST_F(TransportDescriptionFactoryTest, TestAnswerDtlsToNoDtls) {
 TEST_F(TransportDescriptionFactoryTest, TestAnswerNoDtlsToDtls) {
   f2_.set_secure(cricket::SEC_ENABLED);
   f2_.set_certificate(cert2_);
-  std::unique_ptr<TransportDescription> offer(
-      f1_.CreateOffer(TransportOptions(), NULL, &ice_credentials_));
+  std::unique_ptr<TransportDescription> offer =
+      f1_.CreateOffer(TransportOptions(), NULL, &ice_credentials_);
   ASSERT_TRUE(offer.get() != NULL);
-  std::unique_ptr<TransportDescription> desc(f2_.CreateAnswer(
-      offer.get(), TransportOptions(), true, NULL, &ice_credentials_));
+  std::unique_ptr<TransportDescription> desc = f2_.CreateAnswer(
+      offer.get(), TransportOptions(), true, NULL, &ice_credentials_);
   CheckDesc(desc.get(), "", "", "", "");
   f2_.set_secure(cricket::SEC_REQUIRED);
-  desc.reset(f2_.CreateAnswer(offer.get(), TransportOptions(), true, NULL,
-                              &ice_credentials_));
+  desc = f2_.CreateAnswer(offer.get(), TransportOptions(), true, NULL,
+                          &ice_credentials_);
   ASSERT_TRUE(desc.get() == NULL);
 }
 
@@ -276,15 +275,15 @@ TEST_F(TransportDescriptionFactoryTest, TestAnswerDtlsToDtls) {
   ASSERT_TRUE(
       cert2_->GetSSLCertificate().GetSignatureDigestAlgorithm(&digest_alg2));
 
-  std::unique_ptr<TransportDescription> offer(
-      f1_.CreateOffer(TransportOptions(), NULL, &ice_credentials_));
+  std::unique_ptr<TransportDescription> offer =
+      f1_.CreateOffer(TransportOptions(), NULL, &ice_credentials_);
   ASSERT_TRUE(offer.get() != NULL);
-  std::unique_ptr<TransportDescription> desc(f2_.CreateAnswer(
-      offer.get(), TransportOptions(), true, NULL, &ice_credentials_));
+  std::unique_ptr<TransportDescription> desc = f2_.CreateAnswer(
+      offer.get(), TransportOptions(), true, NULL, &ice_credentials_);
   CheckDesc(desc.get(), "", "", "", digest_alg2);
   f2_.set_secure(cricket::SEC_REQUIRED);
-  desc.reset(f2_.CreateAnswer(offer.get(), TransportOptions(), true, NULL,
-                              &ice_credentials_));
+  desc = f2_.CreateAnswer(offer.get(), TransportOptions(), true, NULL,
+                          &ice_credentials_);
   CheckDesc(desc.get(), "", "", "", digest_alg2);
 }
 
@@ -316,11 +315,11 @@ TEST_F(TransportDescriptionFactoryTest, TestIceRenominationWithDtls) {
 // Test that offers and answers have ice-option:trickle.
 TEST_F(TransportDescriptionFactoryTest, AddsTrickleIceOption) {
   cricket::TransportOptions options;
-  std::unique_ptr<TransportDescription> offer(
-      f1_.CreateOffer(options, nullptr, &ice_credentials_));
+  std::unique_ptr<TransportDescription> offer =
+      f1_.CreateOffer(options, nullptr, &ice_credentials_);
   EXPECT_TRUE(offer->HasOption("trickle"));
-  std::unique_ptr<TransportDescription> answer(
-      f2_.CreateAnswer(offer.get(), options, true, nullptr, &ice_credentials_));
+  std::unique_ptr<TransportDescription> answer =
+      f2_.CreateAnswer(offer.get(), options, true, nullptr, &ice_credentials_);
   EXPECT_TRUE(answer->HasOption("trickle"));
 }
 
@@ -330,8 +329,8 @@ TEST_F(TransportDescriptionFactoryTest, CreateOfferIceCredentialsIterator) {
       cricket::IceParameters("kalle", "anka", false)};
   cricket::IceCredentialsIterator credentialsIterator(credentials);
   cricket::TransportOptions options;
-  std::unique_ptr<TransportDescription> offer(
-      f1_.CreateOffer(options, nullptr, &credentialsIterator));
+  std::unique_ptr<TransportDescription> offer =
+      f1_.CreateOffer(options, nullptr, &credentialsIterator);
   EXPECT_EQ(offer->GetIceParameters().ufrag, credentials[0].ufrag);
   EXPECT_EQ(offer->GetIceParameters().pwd, credentials[0].pwd);
 }
@@ -339,14 +338,14 @@ TEST_F(TransportDescriptionFactoryTest, CreateOfferIceCredentialsIterator) {
 // Test CreateAnswer with IceCredentialsIterator.
 TEST_F(TransportDescriptionFactoryTest, CreateAnswerIceCredentialsIterator) {
   cricket::TransportOptions options;
-  std::unique_ptr<TransportDescription> offer(
-      f1_.CreateOffer(options, nullptr, &ice_credentials_));
+  std::unique_ptr<TransportDescription> offer =
+      f1_.CreateOffer(options, nullptr, &ice_credentials_);
 
   std::vector<cricket::IceParameters> credentials = {
       cricket::IceParameters("kalle", "anka", false)};
   cricket::IceCredentialsIterator credentialsIterator(credentials);
-  std::unique_ptr<TransportDescription> answer(f1_.CreateAnswer(
-      offer.get(), options, false, nullptr, &credentialsIterator));
+  std::unique_ptr<TransportDescription> answer = f1_.CreateAnswer(
+      offer.get(), options, false, nullptr, &credentialsIterator);
   EXPECT_EQ(answer->GetIceParameters().ufrag, credentials[0].ufrag);
   EXPECT_EQ(answer->GetIceParameters().pwd, credentials[0].pwd);
 }
