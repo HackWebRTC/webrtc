@@ -104,6 +104,10 @@ class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
     session_desc_factory_.set_enable_encrypted_rtp_header_extensions(enable);
   }
 
+  void set_is_unified_plan(bool is_unified_plan) {
+    session_desc_factory_.set_is_unified_plan(is_unified_plan);
+  }
+
   sigslot::signal1<const rtc::scoped_refptr<rtc::RTCCertificate>&>
       SignalCertificateReady;
 

@@ -93,7 +93,6 @@ struct MediaSessionOptions {
   bool vad_enabled = true;  // When disabled, removes all CN codecs from SDP.
   bool rtcp_mux_enabled = true;
   bool bundle_enabled = false;
-  bool is_unified_plan = false;
   bool offer_extmap_allow_mixed = false;
   std::string rtcp_cname = kDefaultRtcpCname;
   webrtc::CryptoOptions crypto_options;
@@ -127,10 +126,10 @@ class MediaSessionDescriptionFactory {
   void set_audio_rtp_header_extensions(const RtpHeaderExtensions& extensions) {
     audio_rtp_extensions_ = extensions;
   }
-  RtpHeaderExtensions audio_rtp_header_extensions(bool unified_plan) const {
+  RtpHeaderExtensions audio_rtp_header_extensions() const {
     RtpHeaderExtensions extensions = audio_rtp_extensions_;
     // If we are Unified Plan, also offer the MID header extension.
-    if (unified_plan) {
+    if (is_unified_plan_) {
       extensions.push_back(webrtc::RtpExtension(
           webrtc::RtpExtension::kMidUri, webrtc::RtpExtension::kMidDefaultId));
     }
@@ -141,10 +140,10 @@ class MediaSessionDescriptionFactory {
   void set_video_rtp_header_extensions(const RtpHeaderExtensions& extensions) {
     video_rtp_extensions_ = extensions;
   }
-  RtpHeaderExtensions video_rtp_header_extensions(bool unified_plan) const {
+  RtpHeaderExtensions video_rtp_header_extensions() const {
     RtpHeaderExtensions extensions = video_rtp_extensions_;
     // If we are Unified Plan, also offer the MID header extension.
-    if (unified_plan) {
+    if (is_unified_plan_) {
       extensions.push_back(webrtc::RtpExtension(
           webrtc::RtpExtension::kMidUri, webrtc::RtpExtension::kMidDefaultId));
     }
@@ -157,6 +156,10 @@ class MediaSessionDescriptionFactory {
 
   void set_enable_encrypted_rtp_header_extensions(bool enable) {
     enable_encrypted_rtp_header_extensions_ = enable;
+  }
+
+  void set_is_unified_plan(bool is_unified_plan) {
+    is_unified_plan_ = is_unified_plan;
   }
 
   SessionDescription* CreateOffer(
@@ -186,7 +189,6 @@ class MediaSessionDescriptionFactory {
       DataCodecs* data_codecs) const;
   void GetRtpHdrExtsToOffer(
       const std::vector<const ContentInfo*>& current_active_contents,
-      bool is_unified_plan,
       RtpHeaderExtensions* audio_extensions,
       RtpHeaderExtensions* video_extensions) const;
   bool AddTransportOffer(const std::string& content_name,
@@ -284,6 +286,7 @@ class MediaSessionDescriptionFactory {
 
   void ComputeAudioCodecsIntersectionAndUnion();
 
+  bool is_unified_plan_ = false;
   AudioCodecs audio_send_codecs_;
   AudioCodecs audio_recv_codecs_;
   // Intersection of send and recv.

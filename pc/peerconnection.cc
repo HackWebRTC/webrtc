@@ -1074,6 +1074,7 @@ bool PeerConnection::Initialize(
 
   webrtc_session_desc_factory_->set_enable_encrypted_rtp_header_extensions(
       GetCryptoOptions().srtp.enable_encrypted_rtp_header_extensions);
+  webrtc_session_desc_factory_->set_is_unified_plan(IsUnifiedPlan());
 
   // Add default audio/video transceivers for Plan B SDP.
   if (!IsUnifiedPlan()) {
@@ -3809,7 +3810,6 @@ void PeerConnection::GetOptionsForOffer(
 
   session_options->rtcp_cname = rtcp_cname_;
   session_options->crypto_options = GetCryptoOptions();
-  session_options->is_unified_plan = IsUnifiedPlan();
   session_options->pooled_ice_credentials =
       network_thread()->Invoke<std::vector<cricket::IceParameters>>(
           RTC_FROM_HERE,
@@ -4092,7 +4092,6 @@ void PeerConnection::GetOptionsForAnswer(
 
   session_options->rtcp_cname = rtcp_cname_;
   session_options->crypto_options = GetCryptoOptions();
-  session_options->is_unified_plan = IsUnifiedPlan();
   session_options->pooled_ice_credentials =
       network_thread()->Invoke<std::vector<cricket::IceParameters>>(
           RTC_FROM_HERE,

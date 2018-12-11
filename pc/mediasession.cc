@@ -1311,8 +1311,8 @@ SessionDescription* MediaSessionDescriptionFactory::CreateOffer(
 
   RtpHeaderExtensions audio_rtp_extensions;
   RtpHeaderExtensions video_rtp_extensions;
-  GetRtpHdrExtsToOffer(current_active_contents, session_options.is_unified_plan,
-                       &audio_rtp_extensions, &video_rtp_extensions);
+  GetRtpHdrExtsToOffer(current_active_contents, &audio_rtp_extensions,
+                       &video_rtp_extensions);
 
   auto offer = absl::make_unique<SessionDescription>();
 
@@ -1387,7 +1387,7 @@ SessionDescription* MediaSessionDescriptionFactory::CreateOffer(
 
   // The following determines how to signal MSIDs to ensure compatibility with
   // older endpoints (in particular, older Plan B endpoints).
-  if (session_options.is_unified_plan) {
+  if (is_unified_plan_) {
     // Be conservative and signal using both a=msid and a=ssrc lines. Unified
     // Plan answerers will look at a=msid and Plan B answerers will look at the
     // a=ssrc MSID line.
@@ -1544,7 +1544,7 @@ SessionDescription* MediaSessionDescriptionFactory::CreateAnswer(
 
   // The following determines how to signal MSIDs to ensure compatibility with
   // older endpoints (in particular, older Plan B endpoints).
-  if (session_options.is_unified_plan) {
+  if (is_unified_plan_) {
     // Unified Plan needs to look at what the offer included to find the most
     // compatible answer.
     if (offer->msid_signaling() == 0) {
@@ -1734,10 +1734,8 @@ void MediaSessionDescriptionFactory::GetCodecsForAnswer(
                          &used_pltypes);
 }
 
-// TODO(steveanton): Replace |is_unified_plan| flag with a member variable.
 void MediaSessionDescriptionFactory::GetRtpHdrExtsToOffer(
     const std::vector<const ContentInfo*>& current_active_contents,
-    bool is_unified_plan,
     RtpHeaderExtensions* offer_audio_extensions,
     RtpHeaderExtensions* offer_video_extensions) const {
   // All header extensions allocated from the same range to avoid potential
@@ -1768,12 +1766,12 @@ void MediaSessionDescriptionFactory::GetRtpHdrExtsToOffer(
 
   // Add our default RTP header extensions that are not in the current
   // description.
-  MergeRtpHdrExts(audio_rtp_header_extensions(is_unified_plan),
-                  offer_audio_extensions, &all_regular_extensions,
-                  &all_encrypted_extensions, &used_ids);
-  MergeRtpHdrExts(video_rtp_header_extensions(is_unified_plan),
-                  offer_video_extensions, &all_regular_extensions,
-                  &all_encrypted_extensions, &used_ids);
+  MergeRtpHdrExts(audio_rtp_header_extensions(), offer_audio_extensions,
+                  &all_regular_extensions, &all_encrypted_extensions,
+                  &used_ids);
+  MergeRtpHdrExts(video_rtp_header_extensions(), offer_video_extensions,
+                  &all_regular_extensions, &all_encrypted_extensions,
+                  &used_ids);
 
   // TODO(jbauch): Support adding encrypted header extensions to existing
   // sessions.
@@ -2147,7 +2145,7 @@ bool MediaSessionDescriptionFactory::AddAudioContentForAnswer(
   if (!CreateMediaContentAnswer(
           offer_audio_description, media_description_options, session_options,
           filtered_codecs, sdes_policy, GetCryptos(current_content),
-          audio_rtp_header_extensions(session_options.is_unified_plan),
+          audio_rtp_header_extensions(),
           enable_encrypted_rtp_header_extensions_, current_streams,
           bundle_enabled, audio_answer.get())) {
     return false;  // Fails the session setup.
@@ -2236,7 +2234,7 @@ bool MediaSessionDescriptionFactory::AddVideoContentForAnswer(
   if (!CreateMediaContentAnswer(
           offer_video_description, media_description_options, session_options,
           filtered_codecs, sdes_policy, GetCryptos(current_content),
-          video_rtp_header_extensions(session_options.is_unified_plan),
+          video_rtp_header_extensions(),
           enable_encrypted_rtp_header_extensions_, current_streams,
           bundle_enabled, video_answer.get())) {
     return false;  // Failed the sessin setup.
