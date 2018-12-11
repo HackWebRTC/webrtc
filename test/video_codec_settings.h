@@ -35,7 +35,6 @@ static void CodecSettings(VideoCodecType codec_type, VideoCodec* settings) {
   settings->startBitrate = kTestStartBitrateKbps;
   settings->maxBitrate = 0;
   settings->minBitrate = kTestMinBitrateKbps;
-  settings->targetBitrate = 0;
 
   settings->maxFramerate = kTestFrameRate;
 

@@ -66,7 +66,6 @@ VideoCodec::VideoCodec()
       startBitrate(0),
       maxBitrate(0),
       minBitrate(0),
-      targetBitrate(0),
       maxFramerate(0),
       active(true),
       qpMax(0),

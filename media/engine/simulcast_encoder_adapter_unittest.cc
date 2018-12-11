@@ -679,7 +679,6 @@ TEST_F(TestSimulcastEncoderAdapterFake, ReinitDoesNotReorderEncoderSettings) {
     EXPECT_EQ(codec_before.startBitrate, codec_after.startBitrate);
     EXPECT_EQ(codec_before.maxBitrate, codec_after.maxBitrate);
     EXPECT_EQ(codec_before.minBitrate, codec_after.minBitrate);
-    EXPECT_EQ(codec_before.targetBitrate, codec_after.targetBitrate);
     EXPECT_EQ(codec_before.maxFramerate, codec_after.maxFramerate);
     EXPECT_EQ(codec_before.qpMax, codec_after.qpMax);
     EXPECT_EQ(codec_before.numberOfSimulcastStreams,

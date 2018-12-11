@@ -400,7 +400,6 @@ TEST_F(TestVp8Impl, KeepsTimestampOnReencode) {
 
   // Settings needed to trigger ScreenshareLayers usage, which is required for
   // overshoot-drop-reencode logic.
-  codec_settings_.targetBitrate = 200;
   codec_settings_.maxBitrate = 1000;
   codec_settings_.mode = VideoCodecMode::kScreensharing;
   codec_settings_.VP8()->numberOfTemporalLayers = 2;
