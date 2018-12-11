@@ -357,7 +357,7 @@ TEST_F(BitrateAllocatorTestNoEnforceMin, OneBitrateObserverWithPacketLoss) {
   const double kProtectionRatio = 0.4;
   uint32_t target_bitrate_bps = 200000;
   const uint32_t kMaxBitrateWithProtectionBps =
-      static_cast<uint32_t>(kMaxBitrateBps / (1 - kProtectionRatio));
+      static_cast<uint32_t>(kMaxBitrateBps * 2);
   uint8_t fraction_loss = kProtectionRatio * 256;
   bitrate_observer.SetBitrateProtectionRatio(kProtectionRatio);
   EXPECT_CALL(limit_observer_,
