@@ -215,6 +215,7 @@ class Call final : public webrtc::Call,
 
   // Implements TargetTransferRateObserver,
   void OnTargetTransferRate(TargetTransferRate msg) override;
+  void OnStartRateUpdate(DataRate start_rate) override;
 
   // Implements BitrateAllocator::LimitObserver.
   void OnAllocationLimitsChanged(uint32_t min_send_bitrate_bps,
@@ -1089,6 +1090,15 @@ void Call::OnSentPacket(const rtc::SentPacket& sent_packet) {
   video_send_delay_stats_->OnSentPacket(sent_packet.packet_id,
                                         clock_->TimeInMilliseconds());
   transport_send_ptr_->OnSentPacket(sent_packet);
+}
+
+void Call::OnStartRateUpdate(DataRate start_rate) {
+  if (!transport_send_ptr_->GetWorkerQueue()->IsCurrent()) {
+    transport_send_ptr_->GetWorkerQueue()->PostTask(
+        [this, start_rate] { this->OnStartRateUpdate(start_rate); });
+    return;
+  }
+  bitrate_allocator_->UpdateStartRate(start_rate.bps<uint32_t>());
 }
 
 void Call::OnTargetTransferRate(TargetTransferRate msg) {

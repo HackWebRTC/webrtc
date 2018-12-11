@@ -271,6 +271,7 @@ void RtpTransportControllerSend::RegisterTargetTransferRateObserver(
     RTC_DCHECK_RUN_ON(&task_queue_);
     RTC_DCHECK(observer_ == nullptr);
     observer_ = observer;
+    observer_->OnStartRateUpdate(*initial_config_.constraints.starting_rate);
     MaybeCreateControllers();
   });
 }
