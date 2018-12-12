@@ -205,14 +205,13 @@ HdrMetadata CreateTestHdrMetadata() {
 }
 
 ColorSpace CreateTestColorSpace(bool with_hdr_metadata) {
-  ColorSpace color_space(
+  HdrMetadata hdr_metadata = CreateTestHdrMetadata();
+  return ColorSpace(
       ColorSpace::PrimaryID::kBT709, ColorSpace::TransferID::kGAMMA22,
-      ColorSpace::MatrixID::kSMPTE2085, ColorSpace::RangeID::kFull);
-  if (with_hdr_metadata) {
-    HdrMetadata hdr_metadata = CreateTestHdrMetadata();
-    color_space.set_hdr_metadata(&hdr_metadata);
-  }
-  return color_space;
+      ColorSpace::MatrixID::kSMPTE2085, ColorSpace::RangeID::kFull,
+      ColorSpace::ChromaSiting::kCollocated,
+      ColorSpace::ChromaSiting::kCollocated,
+      with_hdr_metadata ? &hdr_metadata : nullptr);
 }
 
 void TestCreateAndParseColorSpaceExtension(bool with_hdr_metadata) {
