@@ -74,6 +74,7 @@ class FrameGeneratorCapturer : public TestVideoCapturer {
 
   void ForceFrame();
   void SetFakeRotation(VideoRotation rotation);
+  void SetFakeColorSpace(absl::optional<ColorSpace> color_space);
 
   int64_t first_frame_capture_time() const { return first_frame_capture_time_; }
 
@@ -101,6 +102,7 @@ class FrameGeneratorCapturer : public TestVideoCapturer {
   int target_capture_fps_ RTC_GUARDED_BY(&lock_);
   absl::optional<int> wanted_fps_ RTC_GUARDED_BY(&lock_);
   VideoRotation fake_rotation_ = kVideoRotation_0;
+  absl::optional<ColorSpace> fake_color_space_ RTC_GUARDED_BY(&lock_);
 
   int64_t first_frame_capture_time_;
   // Must be the last field, so it will be deconstructed first as tasks

@@ -50,6 +50,9 @@ class FrameGenerator {
   virtual ~FrameGenerator() = default;
 
   // Returns video frame that remains valid until next call.
+  // TODO(kron): Return rtc::scoped_refptr<VideoFrameBuffer> instead of
+  // VideoFrame* and populate the VideoFrame struct in FrameGeneratorCapturer
+  // using VideoFrame::Builder.
   virtual VideoFrame* NextFrame() = 0;
 
   // Change the capture resolution.

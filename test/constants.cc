@@ -21,6 +21,7 @@ const int kVideoRotationExtensionId = 9;
 const int kVideoContentTypeExtensionId = 10;
 const int kVideoTimingExtensionId = 11;
 const int kGenericDescriptorExtensionId = 12;
+const int kColorSpaceExtensionId = 13;
 
 }  // namespace test
 }  // namespace webrtc

@@ -118,6 +118,10 @@ class RTC_EXPORT VideoFrame {
   const ColorSpace* color_space() const {
     return color_space_ ? &*color_space_ : nullptr;
   }
+  void set_color_space(ColorSpace* color_space) {
+    color_space_ =
+        color_space ? absl::make_optional(*color_space) : absl::nullopt;
+  }
 
   // Get render time in milliseconds.
   // TODO(nisse): Deprecated. Migrate all users to timestamp_us().

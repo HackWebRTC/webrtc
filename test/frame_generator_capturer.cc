@@ -147,6 +147,12 @@ void FrameGeneratorCapturer::SetFakeRotation(VideoRotation rotation) {
   fake_rotation_ = rotation;
 }
 
+void FrameGeneratorCapturer::SetFakeColorSpace(
+    absl::optional<ColorSpace> color_space) {
+  rtc::CritScope cs(&lock_);
+  fake_color_space_ = color_space;
+}
+
 bool FrameGeneratorCapturer::Init() {
   // This check is added because frame_generator_ might be file based and should
   // not crash because a file moved.
@@ -173,6 +179,9 @@ void FrameGeneratorCapturer::InsertFrame() {
     frame->set_timestamp_us(clock_->TimeInMicroseconds());
     frame->set_ntp_time_ms(clock_->CurrentNtpInMilliseconds());
     frame->set_rotation(fake_rotation_);
+    if (fake_color_space_) {
+      frame->set_color_space(&fake_color_space_.value());
+    }
     if (first_frame_capture_time_ == -1) {
       first_frame_capture_time_ = frame->ntp_time_ms();
     }

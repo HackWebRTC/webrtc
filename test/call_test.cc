@@ -31,10 +31,6 @@
 namespace webrtc {
 namespace test {
 
-namespace {
-const int kVideoRotationRtpExtensionId = 4;
-}
-
 CallTest::CallTest()
     : clock_(Clock::GetRealTimeClock()),
       send_event_log_(RtcEventLog::CreateNull()),
@@ -240,6 +236,7 @@ void CallTest::CreateVideoSendConfig(VideoSendStream::Config* video_config,
       bitrate_allocator_factory_.get();
   video_config->rtp.payload_name = "FAKE";
   video_config->rtp.payload_type = kFakeVideoSendPayloadType;
+  video_config->rtp.extmap_allow_mixed = true;
   video_config->rtp.extensions.push_back(
       RtpExtension(RtpExtension::kTransportSequenceNumberUri,
                    kTransportSequenceNumberExtensionId));
@@ -255,8 +252,10 @@ void CallTest::CreateVideoSendConfig(VideoSendStream::Config* video_config,
 
   for (size_t i = 0; i < num_video_streams; ++i)
     video_config->rtp.ssrcs.push_back(kVideoSendSsrcs[num_used_ssrcs + i]);
-  video_config->rtp.extensions.push_back(RtpExtension(
-      RtpExtension::kVideoRotationUri, kVideoRotationRtpExtensionId));
+  video_config->rtp.extensions.push_back(
+      RtpExtension(RtpExtension::kVideoRotationUri, kVideoRotationExtensionId));
+  video_config->rtp.extensions.push_back(
+      RtpExtension(RtpExtension::kColorSpaceUri, kColorSpaceExtensionId));
 }
 
 void CallTest::CreateAudioAndFecSendConfigs(size_t num_audio_streams,
