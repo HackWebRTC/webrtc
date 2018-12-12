@@ -544,3 +544,12 @@ webrtc_fuzzer_test("frame_buffer2_fuzzer") {
     "../../system_wrappers:system_wrappers",
   ]
 }
+
+webrtc_fuzzer_test("url_decode_fuzzer") {
+  sources = [
+    "url_decode_fuzzer.cc",
+  ]
+  deps = [
+    "../../rtc_base:rtc_base_approved",
+  ]
+}
