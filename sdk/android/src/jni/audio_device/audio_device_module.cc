@@ -505,7 +505,7 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
 
   int32_t PlayoutDelay(uint16_t* delay_ms) const override {
     // Best guess we can do is to use half of the estimated total delay.
-    *delay_ms = playout_delay_ms_;
+    *delay_ms = playout_delay_ms_ / 2;
     RTC_DCHECK_GT(*delay_ms, 0);
     return 0;
   }

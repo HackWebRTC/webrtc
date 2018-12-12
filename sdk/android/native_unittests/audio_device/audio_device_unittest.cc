@@ -747,12 +747,12 @@ TEST_F(AudioDeviceTest,
 // selected audio layer. Note that, this delay estimate will only be utilized
 // if the HW AEC is disabled.
 TEST_F(AudioDeviceTest, UsesCorrectDelayEstimateForHighLatencyOutputPath) {
-  EXPECT_EQ(kHighLatencyModeDelayEstimateInMilliseconds,
+  EXPECT_EQ(kHighLatencyModeDelayEstimateInMilliseconds / 2,
             TestDelayOnAudioLayer(AudioDeviceModule::kAndroidJavaAudio));
 }
 
 TEST_F(AudioDeviceTest, UsesCorrectDelayEstimateForLowLatencyOutputPath) {
-  EXPECT_EQ(kLowLatencyModeDelayEstimateInMilliseconds,
+  EXPECT_EQ(kLowLatencyModeDelayEstimateInMilliseconds / 2,
             TestDelayOnAudioLayer(
                 AudioDeviceModule::kAndroidJavaInputAndOpenSLESOutputAudio));
 }
