@@ -1741,6 +1741,8 @@ LoggedIceCandidatePairEvent ParsedRtcEventLogNew::GetIceCandidatePairEvent(
   res.type = GetRuntimeIceCandidatePairEventType(event.event_type());
   RTC_CHECK(event.has_candidate_pair_id());
   res.candidate_pair_id = event.candidate_pair_id();
+  // transaction_id is not supported by rtclog::Event
+  res.transaction_id = 0;
   return res;
 }
 
@@ -2420,8 +2422,8 @@ void ParsedRtcEventLogNew::StoreIceCandidateEvent(
   ice_event.candidate_pair_id = proto.candidate_pair_id();
   // TODO(zstein): Make the transaction_id field required once all old versions
   // of the log (which don't have the field) are obsolete.
-  if (proto.has_transaction_id())
-    ice_event.transaction_id = proto.transaction_id();
+  ice_event.transaction_id =
+      proto.has_transaction_id() ? proto.transaction_id() : 0;
 
   ice_candidate_pair_events_.push_back(ice_event);
 
