@@ -47,15 +47,6 @@ class MockRtcpIntraFrameObserver : public RtcpIntraFrameObserver {
   MOCK_METHOD1(OnReceivedIntraFrameRequest, void(uint32_t));
 };
 
-class MockCongestionObserver : public NetworkChangedObserver {
- public:
-  MOCK_METHOD4(OnNetworkChanged,
-               void(uint32_t bitrate_bps,
-                    uint8_t fraction_loss,
-                    int64_t rtt_ms,
-                    int64_t probing_interval_ms));
-};
-
 RtpSenderObservers CreateObservers(
     RtcpRttStats* rtcp_rtt_stats,
     RtcpIntraFrameObserver* intra_frame_callback,
@@ -115,7 +106,6 @@ class RtpVideoSenderTestFixture {
 
  private:
   NiceMock<MockTransport> transport_;
-  NiceMock<MockCongestionObserver> congestion_observer_;
   NiceMock<MockRtcpIntraFrameObserver> encoder_feedback_;
   SimulatedClock clock_;
   RtcEventLogNullImpl event_log_;

@@ -21,7 +21,6 @@
 #include "call/rtp_bitrate_configurator.h"
 #include "call/rtp_transport_controller_send_interface.h"
 #include "call/rtp_video_sender.h"
-#include "modules/congestion_controller/include/network_changed_observer.h"
 #include "modules/congestion_controller/rtp/control_handler.h"
 #include "modules/congestion_controller/rtp/transport_feedback_adapter.h"
 #include "modules/pacing/packet_router.h"
@@ -41,7 +40,6 @@ class RtcEventLog;
 // per transport, sharing the same congestion controller.
 class RtpTransportControllerSend final
     : public RtpTransportControllerSendInterface,
-      public NetworkChangedObserver,
       public RtcpBandwidthObserver,
       public CallStatsObserver,
       public TransportFeedbackObserver {
@@ -67,12 +65,6 @@ class RtpTransportControllerSend final
       const RtpSenderFrameEncryptionConfig& frame_encryption_config) override;
   void DestroyRtpVideoSender(
       RtpVideoSenderInterface* rtp_video_sender) override;
-
-  // Implements NetworkChangedObserver interface.
-  void OnNetworkChanged(uint32_t bitrate_bps,
-                        uint8_t fraction_loss,
-                        int64_t rtt_ms,
-                        int64_t probing_interval_ms) override;
 
   // Implements RtpTransportControllerSendInterface
   rtc::TaskQueue* GetWorkerQueue() override;
@@ -139,13 +131,13 @@ class RtpTransportControllerSend final
 
   void StartProcessPeriodicTasks() RTC_RUN_ON(task_queue_);
   void UpdateControllerWithTimeInterval() RTC_RUN_ON(task_queue_);
-  void UpdatePacerQueue() RTC_RUN_ON(task_queue_);
 
   void UpdateStreamsConfig() RTC_RUN_ON(task_queue_);
-  void MaybeUpdateOutstandingData();
   void OnReceivedRtcpReceiverReportBlocks(const ReportBlockList& report_blocks,
                                           int64_t now_ms)
       RTC_RUN_ON(task_queue_);
+  void PostUpdates(NetworkControlUpdate update) RTC_RUN_ON(task_queue_);
+  void UpdateControlState() RTC_RUN_ON(task_queue_);
 
   const Clock* const clock_;
   PacketRouter packet_router_;
@@ -188,7 +180,6 @@ class RtpTransportControllerSend final
   // TODO(srte): Remove atomic when feedback adapter runs on task queue.
   std::atomic<size_t> transport_overhead_bytes_per_packet_;
   bool network_available_ RTC_GUARDED_BY(task_queue_);
-  bool periodic_tasks_enabled_ RTC_GUARDED_BY(task_queue_);
   bool packet_feedback_available_ RTC_GUARDED_BY(task_queue_);
   PeriodicTask* pacer_queue_update_task_ RTC_GUARDED_BY(task_queue_)
       RTC_PT_GUARDED_BY(task_queue_);
