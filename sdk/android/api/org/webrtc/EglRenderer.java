@@ -274,6 +274,8 @@ public class EglRenderer implements VideoSink {
       renderThreadHandler.removeCallbacks(logStatisticsRunnable);
       // Release EGL and GL resources on render thread.
       renderThreadHandler.postAtFrontOfQueue(() -> {
+        // Detach current shader program.
+        GLES20.glUseProgram(/* program= */ 0);
         if (drawer != null) {
           drawer.release();
           drawer = null;
