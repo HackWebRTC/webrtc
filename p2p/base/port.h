@@ -792,6 +792,8 @@ class Connection : public CandidatePairInterface,
   void MaybeUpdateLocalCandidate(ConnectionRequest* request,
                                  StunMessage* response);
 
+  void CopyCandidatesToStatsAndSanitizeIfNecessary();
+
   void LogCandidatePairConfig(webrtc::IceCandidatePairConfigType type);
   void LogCandidatePairEvent(webrtc::IceCandidatePairEventType type,
                              uint32_t transaction_id);

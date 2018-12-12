@@ -6449,7 +6449,8 @@ void PeerConnection::ReportBestConnectionState(
                                   kBestConnections_IPv6,
                                   kPeerConnectionAddressFamilyCounter_Max);
       } else {
-        RTC_CHECK(0);
+        RTC_CHECK(!local.address().hostname().empty() &&
+                  local.address().IsUnresolvedIP());
       }
 
       return;
