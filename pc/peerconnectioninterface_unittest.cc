@@ -94,6 +94,9 @@
 #include "pc/test/androidtestinitializer.h"
 #endif
 
+namespace webrtc {
+namespace {
+
 static const char kStreamId1[] = "local_stream_1";
 static const char kStreamId2[] = "local_stream_2";
 static const char kStreamId3[] = "local_stream_3";
@@ -449,48 +452,12 @@ static const char kDtlsSdesFallbackSdp[] =
     "inline:NzB4d1BINUAvLEw6UzF3WSJ+PSdFcGdUJShpX1Zj|2^20|1:32 "
     "dummy_session_params\r\n";
 
+using ::cricket::StreamParams;
 using ::testing::Exactly;
 using ::testing::Values;
-using cricket::StreamParams;
-using webrtc::AudioSourceInterface;
-using webrtc::AudioTrack;
-using webrtc::AudioTrackInterface;
-using webrtc::DataBuffer;
-using webrtc::DataChannelInterface;
-using webrtc::IceCandidateInterface;
-using webrtc::MediaStream;
-using webrtc::MediaStreamInterface;
-using webrtc::MediaStreamTrackInterface;
-using webrtc::MockCreateSessionDescriptionObserver;
-using webrtc::MockDataChannelObserver;
-using webrtc::MockPeerConnectionObserver;
-using webrtc::MockSetSessionDescriptionObserver;
-using webrtc::MockStatsObserver;
-using webrtc::NotifierInterface;
-using webrtc::ObserverInterface;
-using webrtc::PeerConnectionInterface;
-using webrtc::PeerConnectionObserver;
-using webrtc::RTCError;
-using webrtc::RTCErrorType;
-using webrtc::RtpReceiverInterface;
-using webrtc::RtpSenderInterface;
-using webrtc::RtpSenderProxyWithInternal;
-using webrtc::RtpSenderInternal;
-using webrtc::RtpTransceiverDirection;
-using webrtc::SdpParseError;
-using webrtc::SdpSemantics;
-using webrtc::SdpType;
-using webrtc::SessionDescriptionInterface;
-using webrtc::StreamCollection;
-using webrtc::StreamCollectionInterface;
-using webrtc::VideoTrackSourceInterface;
-using webrtc::VideoTrack;
-using webrtc::VideoTrackInterface;
 
 using RTCConfiguration = PeerConnectionInterface::RTCConfiguration;
 using RTCOfferAnswerOptions = PeerConnectionInterface::RTCOfferAnswerOptions;
-
-namespace {
 
 // Gets the first ssrc of given content type from the ContentInfo.
 bool GetFirstSsrc(const cricket::ContentInfo* content_info, int* ssrc) {
@@ -659,8 +626,6 @@ class MockTrackObserver : public ObserverInterface {
  private:
   NotifierInterface* notifier_;
 };
-
-}  // namespace
 
 // The PeerConnectionMediaConfig tests below verify that configuration and
 // constraints are propagated into the PeerConnection's MediaConfig. These
@@ -4104,3 +4069,6 @@ TEST(RTCConfigurationTest, ComparisonOperators) {
       PeerConnectionInterface::RTCConfigurationType::kAggressive);
   EXPECT_NE(a, h);
 }
+
+}  // namespace
+}  // namespace webrtc
