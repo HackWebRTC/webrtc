@@ -377,12 +377,7 @@ struct RtpEncodingParameters {
   // unset SSRC acts as a "wildcard" SSRC.
   absl::optional<uint32_t> ssrc;
 
-  // Can be used to reference a codec in the |codecs| member of the
-  // RtpParameters that contains this RtpEncodingParameters. If unset, the
-  // implementation will choose the first possible codec (if a sender), or
-  // prepare to receive any codec (for a receiver).
-  // TODO(deadbeef): Not implemented. Implementation of RtpSender will always
-  // choose the first codec from the list.
+  // Read-only parameter indicating the payload type of the codec being used.
   absl::optional<int> codec_payload_type;
 
   // Specifies the FEC mechanism, if set.

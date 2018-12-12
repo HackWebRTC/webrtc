@@ -17,6 +17,11 @@ NS_ASSUME_NONNULL_BEGIN
 RTC_OBJC_EXPORT
 @interface RTCRtpEncodingParameters : NSObject
 
+/** The codec payloadType used by the encoder, or nil if it is not currently
+ * available.
+ */
+@property(nonatomic, readonly, nullable) NSNumber *codecPayloadType;
+
 /** Controls whether the encoding is currently transmitted. */
 @property(nonatomic, assign) BOOL isActive;
 

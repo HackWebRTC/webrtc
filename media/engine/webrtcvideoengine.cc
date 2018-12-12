@@ -1765,6 +1765,10 @@ void WebRtcVideoChannel::WebRtcVideoSendStream::SetCodec(
 
   parameters_.codec_settings = codec_settings;
 
+  for (auto& encoding : rtp_parameters_.encodings) {
+    encoding.codec_payload_type = codec_settings.codec.id;
+  }
+
   // TODO(nisse): Avoid recreation, it should be enough to call
   // ReconfigureEncoder.
   RTC_LOG(LS_INFO) << "RecreateWebRtcStream (send) because of SetCodec.";

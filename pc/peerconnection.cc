@@ -1443,6 +1443,12 @@ PeerConnection::AddTransceiver(
           RTCErrorType::UNSUPPORTED_PARAMETER,
           "Attempted to set an unimplemented parameter of RtpParameters.");
     }
+
+    if (encoding.codec_payload_type.has_value()) {
+      LOG_AND_RETURN_ERROR(
+          RTCErrorType::INVALID_MODIFICATION,
+          "Attempted to set a read-only value in RtpParameters.");
+    }
   }
 
   RtpParameters parameters;

@@ -4640,6 +4640,34 @@ TEST_P(PeerConnectionIntegrationTest, GetSourcesVideo) {
   EXPECT_EQ(webrtc::RtpSourceType::SSRC, sources[0].source_type());
 }
 
+TEST_P(PeerConnectionIntegrationTest, GetParametersCodecPayloadTypeAudio) {
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+  caller()->AddAudioTrack();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  ASSERT_EQ(caller()->pc()->GetSenders().size(), 1u);
+  auto sender = caller()->pc()->GetSenders()[0];
+  ASSERT_EQ(sender->media_type(), cricket::MEDIA_TYPE_AUDIO);
+  ASSERT_GT(sender->GetParameters().encodings.size(), 0u);
+  EXPECT_TRUE(
+      sender->GetParameters().encodings[0].codec_payload_type.has_value());
+}
+
+TEST_P(PeerConnectionIntegrationTest, GetParametersCodecPayloadTypeVideo) {
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+  caller()->AddVideoTrack();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  ASSERT_EQ(caller()->pc()->GetSenders().size(), 1u);
+  auto sender = caller()->pc()->GetSenders()[0];
+  ASSERT_EQ(sender->media_type(), cricket::MEDIA_TYPE_VIDEO);
+  ASSERT_GT(sender->GetParameters().encodings.size(), 0u);
+  EXPECT_TRUE(
+      sender->GetParameters().encodings[0].codec_payload_type.has_value());
+}
+
 // Test that if a track is removed and added again with a different stream ID,
 // the new stream ID is successfully communicated in SDP and media continues to
 // flow end-to-end.

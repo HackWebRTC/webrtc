@@ -1050,6 +1050,9 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
         max_send_bitrate_bps_, rtp_parameters_.encodings[0].max_bitrate_bps,
         *audio_codec_spec_);
 
+    rtp_parameters_.encodings[0].codec_payload_type =
+        send_codec_spec.payload_type;
+
     UpdateAllowedBitrateRange();
   }
 

@@ -798,19 +798,33 @@ TEST_F(RtpSenderReceiverTest, AudioSenderCantSetUnimplementedRtpParameters) {
   DestroyAudioRtpSender();
 }
 
+TEST_F(RtpSenderReceiverTest, AudioSenderCantSetReadOnlyEncodingParameters) {
+  CreateAudioRtpSender();
+  RtpParameters params = audio_rtp_sender_->GetParameters();
+
+  for (size_t i = 0; i < params.encodings.size(); i++) {
+    params.encodings[i].ssrc = 1337;
+    EXPECT_EQ(RTCErrorType::INVALID_MODIFICATION,
+              audio_rtp_sender_->SetParameters(params).type());
+    params = audio_rtp_sender_->GetParameters();
+
+    params.encodings[i].codec_payload_type = 42;
+    EXPECT_EQ(RTCErrorType::INVALID_MODIFICATION,
+              audio_rtp_sender_->SetParameters(params).type());
+    params = audio_rtp_sender_->GetParameters();
+  }
+
+  DestroyAudioRtpSender();
+}
+
 TEST_F(RtpSenderReceiverTest,
        AudioSenderCantSetUnimplementedRtpEncodingParameters) {
   CreateAudioRtpSender();
   RtpParameters params = audio_rtp_sender_->GetParameters();
   EXPECT_EQ(1u, params.encodings.size());
 
-  // Unimplemented RtpParameters: codec_payload_type, fec, rtx, dtx, ptime,
+  // Unimplemented RtpParameters: fec, rtx, dtx, ptime,
   // scale_resolution_down_by, scale_framerate_down_by, rid, dependency_rids.
-  params.encodings[0].codec_payload_type = 1;
-  EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
-            audio_rtp_sender_->SetParameters(params).type());
-  params = audio_rtp_sender_->GetParameters();
-
   params.encodings[0].fec = RtpFecParameters();
   EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
             audio_rtp_sender_->SetParameters(params).type());
@@ -1079,13 +1093,8 @@ TEST_F(RtpSenderReceiverTest,
   RtpParameters params = video_rtp_sender_->GetParameters();
   EXPECT_EQ(1u, params.encodings.size());
 
-  // Unimplemented RtpParameters: codec_payload_type, fec, rtx, dtx, ptime,
+  // Unimplemented RtpParameters: fec, rtx, dtx, ptime,
   // scale_resolution_down_by, scale_framerate_down_by, rid, dependency_rids.
-  params.encodings[0].codec_payload_type = 1;
-  EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
-            video_rtp_sender_->SetParameters(params).type());
-  params = video_rtp_sender_->GetParameters();
-
   params.encodings[0].fec = RtpFecParameters();
   EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
             video_rtp_sender_->SetParameters(params).type());
@@ -1129,14 +1138,9 @@ TEST_F(RtpSenderReceiverTest,
   RtpParameters params = video_rtp_sender_->GetParameters();
   EXPECT_EQ(kVideoSimulcastLayerCount, params.encodings.size());
 
-  // Unimplemented RtpParameters: codec_payload_type, fec, rtx, dtx, ptime,
+  // Unimplemented RtpParameters: fec, rtx, dtx, ptime,
   // scale_resolution_down_by, scale_framerate_down_by, rid, dependency_rids.
   for (size_t i = 0; i < params.encodings.size(); i++) {
-    params.encodings[i].codec_payload_type = 1;
-    EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
-              video_rtp_sender_->SetParameters(params).type());
-    params = video_rtp_sender_->GetParameters();
-
     params.encodings[i].fec = RtpFecParameters();
     EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
               video_rtp_sender_->SetParameters(params).type());
@@ -1202,6 +1206,11 @@ TEST_F(RtpSenderReceiverTest, VideoSenderCantSetReadOnlyEncodingParameters) {
 
   for (size_t i = 0; i < params.encodings.size(); i++) {
     params.encodings[i].ssrc = 1337;
+    EXPECT_EQ(RTCErrorType::INVALID_MODIFICATION,
+              video_rtp_sender_->SetParameters(params).type());
+    params = video_rtp_sender_->GetParameters();
+
+    params.encodings[i].codec_payload_type = 1337;
     EXPECT_EQ(RTCErrorType::INVALID_MODIFICATION,
               video_rtp_sender_->SetParameters(params).type());
     params = video_rtp_sender_->GetParameters();
