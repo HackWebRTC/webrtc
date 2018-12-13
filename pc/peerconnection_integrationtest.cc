@@ -3674,6 +3674,10 @@ TEST_P(PeerConnectionIntegrationTest,
                  caller()->ice_connection_state(), kDefaultTimeout);
   EXPECT_EQ_WAIT(webrtc::PeerConnectionInterface::kIceConnectionConnected,
                  callee()->ice_connection_state(), kDefaultTimeout);
+
+  EXPECT_EQ(1, webrtc::metrics::NumEvents(
+                   "WebRTC.PeerConnection.CandidatePairType_UDP",
+                   webrtc::kIceCandidatePairHostNameHostName));
 }
 
 // Test that firewalling the ICE connection causes the clients to identify the
