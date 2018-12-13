@@ -12,7 +12,6 @@
 
 @implementation RTCRtpEncodingParameters
 
-@synthesize codecPayloadType = _codecPayloadType;
 @synthesize isActive = _isActive;
 @synthesize maxBitrateBps = _maxBitrateBps;
 @synthesize minBitrateBps = _minBitrateBps;
@@ -27,9 +26,6 @@
 - (instancetype)initWithNativeParameters:
     (const webrtc::RtpEncodingParameters &)nativeParameters {
   if (self = [self init]) {
-    if (nativeParameters.codec_payload_type) {
-      _codecPayloadType = [NSNumber numberWithInt:*nativeParameters.codec_payload_type];
-    }
     _isActive = nativeParameters.active;
     if (nativeParameters.max_bitrate_bps) {
       _maxBitrateBps =
@@ -54,9 +50,6 @@
 
 - (webrtc::RtpEncodingParameters)nativeParameters {
   webrtc::RtpEncodingParameters parameters;
-  if (_codecPayloadType != nil) {
-    parameters.codec_payload_type = absl::optional<int>(_codecPayloadType.intValue);
-  }
   parameters.active = _isActive;
   if (_maxBitrateBps != nil) {
     parameters.max_bitrate_bps = absl::optional<int>(_maxBitrateBps.intValue);

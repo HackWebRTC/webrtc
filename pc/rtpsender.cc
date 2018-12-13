@@ -38,7 +38,8 @@ int GenerateUniqueId() {
 // contains a value.
 bool UnimplementedRtpEncodingParameterHasValue(
     const RtpEncodingParameters& encoding_params) {
-  if (encoding_params.fec.has_value() || encoding_params.rtx.has_value() ||
+  if (encoding_params.codec_payload_type.has_value() ||
+      encoding_params.fec.has_value() || encoding_params.rtx.has_value() ||
       encoding_params.dtx.has_value() || encoding_params.ptime.has_value() ||
       !encoding_params.rid.empty() ||
       encoding_params.scale_resolution_down_by.has_value() ||

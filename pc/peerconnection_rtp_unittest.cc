@@ -1424,10 +1424,18 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan,
 
   auto default_send_encodings = init.send_encodings;
 
-  // Unimplemented RtpParameters: ssrc, fec, rtx, dtx,
+  // Unimplemented RtpParameters: ssrc, codec_payload_type, fec, rtx, dtx,
   // ptime, scale_resolution_down_by, scale_framerate_down_by, rid,
   // dependency_rids.
   init.send_encodings[0].ssrc = 1;
+  EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
+            caller->pc()
+                ->AddTransceiver(cricket::MEDIA_TYPE_AUDIO, init)
+                .error()
+                .type());
+  init.send_encodings = default_send_encodings;
+
+  init.send_encodings[0].codec_payload_type = 1;
   EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
             caller->pc()
                 ->AddTransceiver(cricket::MEDIA_TYPE_AUDIO, init)

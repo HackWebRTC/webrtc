@@ -73,12 +73,6 @@ webrtc::RTCError ValidateRtpParameters(
       LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_MODIFICATION,
                            "Attempted to set RtpParameters with modified SSRC");
     }
-    if (rtp_parameters.encodings[i].codec_payload_type !=
-        old_rtp_parameters.encodings[i].codec_payload_type) {
-      LOG_AND_RETURN_ERROR(
-          RTCErrorType::INVALID_MODIFICATION,
-          "Attempted to set RtpParameters with modified codecPayloadType");
-    }
     if (rtp_parameters.encodings[i].bitrate_priority <= 0) {
       LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_RANGE,
                            "Attempted to set RtpParameters bitrate_priority to "

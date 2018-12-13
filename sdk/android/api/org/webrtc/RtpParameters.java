@@ -30,9 +30,6 @@ public class RtpParameters {
     // Set to true to cause this encoding to be sent, and false for it not to
     // be sent.
     public boolean active = true;
-    // The payloadType of the codec used by the sender.
-    // Can't be changed between getParameters/setParameters.
-    @Nullable public Integer codecPayloadType;
     // If non-null, this represents the Transport Independent Application
     // Specific maximum bandwidth defined in RFC3890. If null, there is no
     // maximum bitrate.
@@ -48,21 +45,14 @@ public class RtpParameters {
     public Long ssrc;
 
     @CalledByNative("Encoding")
-    Encoding(boolean active, Integer codecPayloadType, Integer maxBitrateBps, Integer minBitrateBps,
-        Integer maxFramerate, Integer numTemporalLayers, Long ssrc) {
+    Encoding(boolean active, Integer maxBitrateBps, Integer minBitrateBps, Integer maxFramerate,
+        Integer numTemporalLayers, Long ssrc) {
       this.active = active;
-      this.codecPayloadType = codecPayloadType;
       this.maxBitrateBps = maxBitrateBps;
       this.minBitrateBps = minBitrateBps;
       this.maxFramerate = maxFramerate;
       this.numTemporalLayers = numTemporalLayers;
       this.ssrc = ssrc;
-    }
-
-    @Nullable
-    @CalledByNative("Encoding")
-    Integer getCodecPayloadType() {
-      return codecPayloadType;
     }
 
     @CalledByNative("Encoding")
