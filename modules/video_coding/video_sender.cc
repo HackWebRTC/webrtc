@@ -55,7 +55,6 @@ VideoSender::VideoSender(Clock* clock,
       frame_dropper_requested_(true),
       force_disable_frame_dropper_(false),
       current_codec_(),
-      encoder_params_({VideoBitrateAllocation(), 0, 0, 0}),
       encoder_has_internal_source_(false),
       next_frame_types_(1, kVideoFrameDelta) {
   // Allow VideoSender to be created on one thread but used on another, post
@@ -167,22 +166,31 @@ EncoderParameters VideoSender::UpdateEncoderParameters(
   if (input_frame_rate == 0)
     input_frame_rate = current_codec_.maxFramerate;
 
+  EncoderParameters new_encoder_params = {
+      DataRate::bps(target_bitrate_bps),
+      GetAllocation(video_target_rate_bps, input_frame_rate, bitrate_allocator),
+      input_frame_rate};
+  return new_encoder_params;
+}
+
+VideoBitrateAllocation VideoSender::GetAllocation(
+    uint32_t bitrate_bps,
+    uint32_t framerate_fps,
+    VideoBitrateAllocator* bitrate_allocator) const {
   VideoBitrateAllocation bitrate_allocation;
   // Only call allocators if bitrate > 0 (ie, not suspended), otherwise they
   // might cap the bitrate to the min bitrate configured.
-  if (target_bitrate_bps > 0) {
+  if (bitrate_bps > 0) {
     if (bitrate_allocator) {
-      bitrate_allocation = bitrate_allocator->GetAllocation(
-          video_target_rate_bps, input_frame_rate);
+      bitrate_allocation =
+          bitrate_allocator->GetAllocation(bitrate_bps, framerate_fps);
     } else {
       DefaultVideoBitrateAllocator default_allocator(current_codec_);
-      bitrate_allocation = default_allocator.GetAllocation(
-          video_target_rate_bps, input_frame_rate);
+      bitrate_allocation =
+          default_allocator.GetAllocation(bitrate_bps, framerate_fps);
     }
   }
-  EncoderParameters new_encoder_params = {bitrate_allocation, params.loss_rate,
-                                          params.rtt, input_frame_rate};
-  return new_encoder_params;
+  return bitrate_allocation;
 }
 
 void VideoSender::UpdateChannelParameters(
@@ -193,22 +201,19 @@ void VideoSender::UpdateChannelParameters(
     rtc::CritScope cs(&params_crit_);
     encoder_params_ =
         UpdateEncoderParameters(encoder_params_, bitrate_allocator,
-                                encoder_params_.target_bitrate.get_sum_bps());
+                                encoder_params_.total_bitrate.bps());
     target_rate = encoder_params_.target_bitrate;
   }
-  if (bitrate_updated_callback && target_rate.get_sum_bps() > 0)
+  if (bitrate_updated_callback && target_rate.get_sum_bps() > 0) {
     bitrate_updated_callback->OnBitrateAllocationUpdated(target_rate);
+  }
 }
 
 int32_t VideoSender::SetChannelParameters(
     uint32_t target_bitrate_bps,
-    uint8_t loss_rate,
-    int64_t rtt,
     VideoBitrateAllocator* bitrate_allocator,
     VideoBitrateAllocationObserver* bitrate_updated_callback) {
   EncoderParameters encoder_params;
-  encoder_params.loss_rate = loss_rate;
-  encoder_params.rtt = rtt;
   encoder_params = UpdateEncoderParameters(encoder_params, bitrate_allocator,
                                            target_bitrate_bps);
   if (bitrate_updated_callback && target_bitrate_bps > 0) {
@@ -286,11 +291,10 @@ int32_t VideoSender::AddVideoFrame(
   _mediaOpt.EnableFrameDropper(frame_dropping_enabled);
 
   if (_mediaOpt.DropFrame()) {
-    RTC_LOG(LS_VERBOSE) << "Drop Frame "
+    RTC_LOG(LS_VERBOSE) << "Drop Frame: "
                         << "target bitrate "
                         << encoder_params.target_bitrate.get_sum_bps()
-                        << " loss rate " << encoder_params.loss_rate << " rtt "
-                        << encoder_params.rtt << " input frame rate "
+                        << ", input frame rate "
                         << encoder_params.input_frame_rate;
     post_encode_callback_->OnDroppedFrame(
         EncodedImageCallback::DropReason::kDroppedByMediaOptimizations);

@@ -121,8 +121,8 @@ class VideoCodingModuleImpl : public VideoCodingModule {
   int32_t SetChannelParameters(uint32_t target_bitrate,  // bits/s.
                                uint8_t lossRate,
                                int64_t rtt) override {
-    return sender_.SetChannelParameters(target_bitrate, lossRate, rtt,
-                                        rate_allocator_.get(), nullptr);
+    return sender_.SetChannelParameters(target_bitrate, rate_allocator_.get(),
+                                        nullptr);
   }
 
   int32_t SetVideoProtection(VCMVideoProtection videoProtection,

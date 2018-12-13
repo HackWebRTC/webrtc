@@ -79,8 +79,6 @@ class VideoSender {
   // cause an immediate call to VideoEncoder::SetRateAllocation().
   int32_t SetChannelParameters(
       uint32_t target_bitrate_bps,
-      uint8_t loss_rate,
-      int64_t rtt,
       VideoBitrateAllocator* bitrate_allocator,
       VideoBitrateAllocationObserver* bitrate_updated_callback);
 
@@ -107,6 +105,10 @@ class VideoSender {
       uint32_t target_bitrate_bps);
   void SetEncoderParameters(EncoderParameters params, bool has_internal_source)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(encoder_crit_);
+  VideoBitrateAllocation GetAllocation(
+      uint32_t bitrate_bps,
+      uint32_t framerate_fps,
+      VideoBitrateAllocator* bitrate_allocator) const;
 
   rtc::CriticalSection encoder_crit_;
   VCMGenericEncoder* _encoder;

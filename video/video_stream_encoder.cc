@@ -1003,8 +1003,7 @@ void VideoStreamEncoder::OnBitrateUpdated(uint32_t bitrate_bps,
     has_seen_first_significant_bwe_change_ = true;
   }
 
-  video_sender_.SetChannelParameters(bitrate_bps, fraction_lost,
-                                     round_trip_time_ms, rate_allocator_.get(),
+  video_sender_.SetChannelParameters(bitrate_bps, rate_allocator_.get(),
                                      bitrate_observer_);
 
   encoder_start_bitrate_bps_ =

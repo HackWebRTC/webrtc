@@ -15,9 +15,9 @@
 #include <list>
 #include <vector>
 
+#include "api/units/data_rate.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/include/video_coding_defines.h"
-
 #include "rtc_base/criticalsection.h"
 #include "rtc_base/race_checker.h"
 
@@ -28,9 +28,21 @@ class MediaOptimization;
 }  // namespace media_optimization
 
 struct EncoderParameters {
+  EncoderParameters() : total_bitrate(DataRate::Zero()), input_frame_rate(0) {}
+  EncoderParameters(DataRate total_bitrate,
+                    const VideoBitrateAllocation& allocation,
+                    uint32_t framerate)
+      : total_bitrate(total_bitrate),
+        target_bitrate(allocation),
+        input_frame_rate(framerate) {}
+
+  // Total bitrate allocated for this encoder.
+  DataRate total_bitrate;
+  // The bitrate allocation, across spatial and/or temporal layers. Note that
+  // the sum of these might be less than |total_bitrate| if the allocator has
+  // capped the bitrate for some configuration.
   VideoBitrateAllocation target_bitrate;
-  uint8_t loss_rate;
-  int64_t rtt;
+  // The input frame rate to the encoder in fps, measured in the video sender.
   uint32_t input_frame_rate;
 };
 

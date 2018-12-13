@@ -314,14 +314,14 @@ TEST_F(TestVideoSenderWithMockEncoder, TestSetRate) {
               SetRateAllocation(new_rate_allocation, settings_.maxFramerate))
       .Times(1)
       .WillOnce(Return(0));
-  sender_->SetChannelParameters(new_bitrate_kbps * 1000, 0, 200,
-                                rate_allocator_.get(), nullptr);
+  sender_->SetChannelParameters(new_bitrate_kbps * 1000, rate_allocator_.get(),
+                                nullptr);
   AddFrame();
   clock_.AdvanceTimeMilliseconds(kFrameIntervalMs);
 
   // Expect no call to encoder_.SetRates if the new bitrate is zero.
   EXPECT_CALL(encoder_, SetRateAllocation(_, _)).Times(0);
-  sender_->SetChannelParameters(0, 0, 200, rate_allocator_.get(), nullptr);
+  sender_->SetChannelParameters(0, rate_allocator_.get(), nullptr);
   AddFrame();
 }
 
@@ -358,21 +358,19 @@ TEST_F(TestVideoSenderWithMockEncoder, TestEncoderParametersForInternalSource) {
   EXPECT_CALL(encoder_, SetRateAllocation(new_rate_allocation, _))
       .Times(1)
       .WillOnce(Return(0));
-  sender_->SetChannelParameters(new_bitrate_kbps * 1000, 0, 200,
-                                rate_allocator_.get(), nullptr);
+  sender_->SetChannelParameters(new_bitrate_kbps * 1000, rate_allocator_.get(),
+                                nullptr);
 }
 
 TEST_F(TestVideoSenderWithMockEncoder,
        NoRedundantSetChannelParameterOrSetRatesCalls) {
-  const uint8_t kLossRate = 4;
-  const uint8_t kRtt = 200;
   const int64_t kRateStatsWindowMs = 2000;
   const uint32_t kInputFps = 20;
   int64_t start_time = clock_.TimeInMilliseconds();
   // Expect initial call to SetChannelParameters. Rates are initialized through
   // InitEncode and expects no additional call before the framerate (or bitrate)
   // updates.
-  sender_->SetChannelParameters(settings_.startBitrate * 1000, kLossRate, kRtt,
+  sender_->SetChannelParameters(settings_.startBitrate * 1000,
                                 rate_allocator_.get(), nullptr);
   while (clock_.TimeInMilliseconds() < start_time + kRateStatsWindowMs) {
     AddFrame();
@@ -387,8 +385,8 @@ TEST_F(TestVideoSenderWithMockEncoder,
   EXPECT_CALL(encoder_, SetRateAllocation(new_rate_allocation, kInputFps))
       .Times(1)
       .WillOnce(Return(0));
-  sender_->SetChannelParameters(new_bitrate_bps, kLossRate, kRtt,
-                                rate_allocator_.get(), nullptr);
+  sender_->SetChannelParameters(new_bitrate_bps, rate_allocator_.get(),
+                                nullptr);
   AddFrame();
 }
 
@@ -440,7 +438,7 @@ class TestVideoSenderWithVp8 : public TestVideoSender {
       // buffer since it will fail to calculate the framerate.
       if (i != 0) {
         EXPECT_EQ(VCM_OK, sender_->SetChannelParameters(
-                              available_bitrate_kbps_ * 1000, 0, 200,
+                              available_bitrate_kbps_ * 1000,
                               rate_allocator_.get(), nullptr));
       }
     }
