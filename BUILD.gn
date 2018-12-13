@@ -603,7 +603,7 @@ if (rtc_include_tests) {
     data = webrtc_perf_tests_resources
     if (is_android) {
       deps += [ "//testing/android/native_test:native_test_native_code" ]
-      shard_timeout = 2700
+      shard_timeout = 4500
     }
     if (is_ios) {
       deps += [ ":webrtc_perf_tests_bundle_data" ]
