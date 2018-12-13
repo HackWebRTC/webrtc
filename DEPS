@@ -40,7 +40,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling luci-go CIPD package version
   # and whatever else without interference from each other.
-  'luci_go': 'git_revision:fdf05508e8a66c773a41521e0243c9d11b9a2a1c',
+  'luci_go': 'git_revision:25958d48e89e980e2a97daeddc977fb5e2e1fb8c',
 }
 deps = {
   # TODO(kjellander): Move this to be Android-only once the libevent dependency
