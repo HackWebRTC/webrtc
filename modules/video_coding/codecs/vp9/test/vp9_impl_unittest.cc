@@ -187,7 +187,7 @@ TEST_F(TestVp9Impl, EncodedColorSpaceEqualsInputColorSpace) {
   EXPECT_EQ(*encoded_frame.ColorSpace(), color_space);
 }
 
-TEST_F(TestVp9Impl, DecodedHdrMetadataEqualsEncodedHdrMetadata) {
+TEST_F(TestVp9Impl, DecodedColorSpaceEqualsEncodedColorSpace) {
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             encoder_->Encode(*NextInputFrame(), nullptr, nullptr));
   EncodedImage encoded_frame;

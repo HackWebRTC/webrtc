@@ -918,6 +918,7 @@ int LibvpxVp8Encoder::GetEncodedPartitions(const VideoFrame& input_image) {
             ? VideoContentType::SCREENSHARE
             : VideoContentType::UNSPECIFIED;
     encoded_images_[encoder_idx].timing_.flags = VideoSendTiming::kInvalid;
+    encoded_images_[encoder_idx].SetColorSpace(input_image.color_space());
 
     if (send_stream_[stream_idx]) {
       if (encoded_images_[encoder_idx]._length > 0) {

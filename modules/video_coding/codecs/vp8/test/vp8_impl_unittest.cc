@@ -16,6 +16,7 @@
 #include "api/test/mock_video_encoder.h"
 #include "api/video_codecs/vp8_temporal_layers.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
+#include "common_video/test/utilities.h"
 #include "modules/video_coding/codecs/test/video_codec_unittest.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/codecs/vp8/libvpx_vp8_encoder.h"
@@ -173,6 +174,28 @@ TEST_F(TestVp8Impl, EncodedRotationEqualsInputRotation) {
   EXPECT_EQ(kVideoRotation_90, encoded_frame.rotation_);
 }
 
+TEST_F(TestVp8Impl, EncodedColorSpaceEqualsInputColorSpace) {
+  // Video frame without explicit color space information.
+  VideoFrame* input_frame = NextInputFrame();
+  EncodedImage encoded_frame;
+  CodecSpecificInfo codec_specific_info;
+  EncodeAndWaitForFrame(*input_frame, &encoded_frame, &codec_specific_info);
+  EXPECT_FALSE(encoded_frame.ColorSpace());
+
+  // Video frame with explicit color space information.
+  ColorSpace color_space = CreateTestColorSpace(/*with_hdr_metadata=*/false);
+  VideoFrame input_frame_w_color_space =
+      VideoFrame::Builder()
+          .set_video_frame_buffer(input_frame->video_frame_buffer())
+          .set_color_space(&color_space)
+          .build();
+
+  EncodeAndWaitForFrame(input_frame_w_color_space, &encoded_frame,
+                        &codec_specific_info);
+  ASSERT_TRUE(encoded_frame.ColorSpace());
+  EXPECT_EQ(*encoded_frame.ColorSpace(), color_space);
+}
+
 TEST_F(TestVp8Impl, DecodedQpEqualsEncodedQp) {
   VideoFrame* input_frame = NextInputFrame();
   EncodedImage encoded_frame;
@@ -190,6 +213,25 @@ TEST_F(TestVp8Impl, DecodedQpEqualsEncodedQp) {
   ASSERT_TRUE(decoded_qp);
   EXPECT_GT(I420PSNR(input_frame, decoded_frame.get()), 36);
   EXPECT_EQ(encoded_frame.qp_, *decoded_qp);
+}
+
+TEST_F(TestVp8Impl, DecodedColorSpaceEqualsEncodedColorSpace) {
+  VideoFrame* input_frame = NextInputFrame();
+  EncodedImage encoded_frame;
+  CodecSpecificInfo codec_specific_info;
+  EncodeAndWaitForFrame(*input_frame, &encoded_frame, &codec_specific_info);
+
+  // Encoded frame with explicit color space information.
+  ColorSpace color_space = CreateTestColorSpace(/*with_hdr_metadata=*/false);
+  encoded_frame.SetColorSpace(&color_space);
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            decoder_->Decode(encoded_frame, false, nullptr, -1));
+  std::unique_ptr<VideoFrame> decoded_frame;
+  absl::optional<uint8_t> decoded_qp;
+  ASSERT_TRUE(WaitForDecodedFrame(&decoded_frame, &decoded_qp));
+  ASSERT_TRUE(decoded_frame);
+  ASSERT_TRUE(decoded_frame->color_space());
+  EXPECT_EQ(color_space, *decoded_frame->color_space());
 }
 
 TEST_F(TestVp8Impl, ChecksSimulcastSettings) {

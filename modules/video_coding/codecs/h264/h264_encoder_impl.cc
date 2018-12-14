@@ -502,6 +502,7 @@ int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
     encoded_images_[i].ntp_time_ms_ = input_frame.ntp_time_ms();
     encoded_images_[i].capture_time_ms_ = input_frame.render_time_ms();
     encoded_images_[i].rotation_ = input_frame.rotation();
+    encoded_images_[i].SetColorSpace(input_frame.color_space());
     encoded_images_[i].content_type_ =
             (codec_.mode == VideoCodecMode::kScreensharing)
             ? VideoContentType::SCREENSHARE

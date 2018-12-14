@@ -300,7 +300,10 @@ int32_t H264DecoderImpl::Decode(const EncodedImage& input_image,
   RTC_CHECK_EQ(av_frame_->data[kUPlaneIndex], i420_buffer->DataU());
   RTC_CHECK_EQ(av_frame_->data[kVPlaneIndex], i420_buffer->DataV());
 
-  const ColorSpace& color_space = ExtractH264ColorSpace(av_context_.get());
+  // Pass on color space from input frame if explicitly specified.
+  const ColorSpace& color_space =
+      input_frame->color_space() ? *input_frame->color_space()
+                                 : ExtractH264ColorSpace(av_context_.get());
   VideoFrame decoded_frame =
       VideoFrame::Builder()
           .set_video_frame_buffer(input_frame->video_frame_buffer())
