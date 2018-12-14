@@ -34,9 +34,6 @@ class TestVideoCapturer : public rtc::VideoSourceInterface<VideoFrame> {
   TestVideoCapturer();
   virtual ~TestVideoCapturer();
 
-  virtual void Start() = 0;
-  virtual void Stop() = 0;
-
   void AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
                        const rtc::VideoSinkWants& wants) override;
 

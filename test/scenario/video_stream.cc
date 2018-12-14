@@ -255,7 +255,6 @@ SendVideoStream::~SendVideoStream() {
 
 void SendVideoStream::Start() {
   send_stream_->Start();
-  video_capturer_->Start();
   sender_->call_->SignalChannelNetworkState(MediaType::VIDEO, kNetworkUp);
 }
 

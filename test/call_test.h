@@ -154,9 +154,7 @@ class CallTest : public ::testing::Test {
 
   void Start();
   void StartVideoStreams();
-  void StartVideoCapture();
   void Stop();
-  void StopVideoCapture();
   void StopVideoStreams();
   void DestroyStreams();
   void DestroyVideoSendStreams();

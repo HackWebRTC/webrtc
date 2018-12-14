@@ -953,18 +953,6 @@ void VideoQualityTest::StartAudioStreams() {
     audio_recv_stream->Start();
 }
 
-void VideoQualityTest::StartThumbnailCapture() {
-  for (std::unique_ptr<test::TestVideoCapturer>& capturer :
-       thumbnail_capturers_)
-    capturer->Start();
-}
-
-void VideoQualityTest::StopThumbnailCapture() {
-  for (std::unique_ptr<test::TestVideoCapturer>& capturer :
-       thumbnail_capturers_)
-    capturer->Stop();
-}
-
 void VideoQualityTest::StartThumbnails() {
   for (VideoSendStream* send_stream : thumbnail_send_streams_)
     send_stream->Start();
@@ -1130,14 +1118,11 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
     StartVideoStreams();
     StartThumbnails();
     analyzer_->StartMeasuringCpuProcessTime();
-    StartVideoCapture();
-    StartThumbnailCapture();
   });
 
   analyzer_->Wait();
 
   task_queue_.SendTask([&]() {
-    StopThumbnailCapture();
     StopThumbnails();
     Stop();
 

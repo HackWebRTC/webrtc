@@ -323,7 +323,6 @@ void RtpRtcpEndToEndTest::TestRtpStatePreservation(
   // get set once (this could be due to using std::map::insert for instance).
   for (size_t i = 0; i < 3; ++i) {
     task_queue_.SendTask([&]() {
-      frame_generator_capturer_->Stop();
       DestroyVideoSendStreams();
 
       // Re-create VideoSendStream with only one stream.
@@ -339,7 +338,6 @@ void RtpRtcpEndToEndTest::TestRtpStatePreservation(
             ->SendRtcp(packet.data(), packet.size());
       }
       CreateFrameGeneratorCapturer(30, 1280, 720);
-      frame_generator_capturer_->Start();
     });
 
     observer.ResetExpectedSsrcs(1);
@@ -560,13 +558,11 @@ TEST_F(RtpRtcpEndToEndTest, DISABLED_TestFlexfecRtpStatePreservation) {
 
   task_queue_.SendTask([this, &observer]() {
     // Ensure monotonicity when the VideoSendStream is recreated.
-    frame_generator_capturer_->Stop();
     DestroyVideoSendStreams();
     observer.ResetPacketCount();
     CreateVideoSendStreams();
     GetVideoSendStream()->Start();
     CreateFrameGeneratorCapturer(kFrameRate, kFrameMaxWidth, kFrameMaxHeight);
-    frame_generator_capturer_->Start();
   });
 
   EXPECT_TRUE(observer.Wait()) << "Timed out waiting for packets.";

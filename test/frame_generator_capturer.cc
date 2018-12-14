@@ -126,7 +126,7 @@ FrameGeneratorCapturer::FrameGeneratorCapturer(
     std::unique_ptr<FrameGenerator> frame_generator,
     int target_fps)
     : clock_(clock),
-      sending_(false),
+      sending_(true),
       sink_(nullptr),
       sink_wants_observer_(nullptr),
       frame_generator_(std::move(frame_generator)),

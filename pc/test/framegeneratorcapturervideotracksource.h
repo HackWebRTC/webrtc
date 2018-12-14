@@ -49,12 +49,10 @@ class FrameGeneratorCapturerVideoTrackSource : public VideoTrackSource {
   ~FrameGeneratorCapturerVideoTrackSource() = default;
 
   void Start() {
-    video_capturer_->Start();
     SetState(kLive);
   }
 
   void Stop() {
-    video_capturer_->Stop();
     SetState(kMuted);
   }
 

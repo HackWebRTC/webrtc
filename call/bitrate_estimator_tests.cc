@@ -183,7 +183,6 @@ class BitrateEstimatorTest : public test::CallTest {
       send_stream_->SetSource(frame_generator_capturer_.get(),
                               DegradationPreference::MAINTAIN_FRAMERATE);
       send_stream_->Start();
-      frame_generator_capturer_->Start();
 
       VideoReceiveStream::Decoder decoder;
       decoder.decoder_factory = &decoder_factory_;
@@ -215,7 +214,6 @@ class BitrateEstimatorTest : public test::CallTest {
 
     void StopSending() {
       if (is_sending_receiving_) {
-        frame_generator_capturer_->Stop();
         send_stream_->Stop();
         if (video_receive_stream_) {
           video_receive_stream_->Stop();

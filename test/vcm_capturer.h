@@ -30,8 +30,6 @@ class VcmCapturer : public TestVideoCapturer,
                              size_t capture_device_index);
   virtual ~VcmCapturer();
 
-  void Start() override;
-  void Stop() override;
   void AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
                        const rtc::VideoSinkWants& wants) override;
   void RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) override;
@@ -47,7 +45,6 @@ class VcmCapturer : public TestVideoCapturer,
   void Destroy();
 
   rtc::CriticalSection crit_;
-  bool started_ RTC_GUARDED_BY(crit_);
   rtc::VideoSinkInterface<VideoFrame>* sink_ RTC_GUARDED_BY(crit_);
   rtc::scoped_refptr<VideoCaptureModule> vcm_;
   VideoCaptureCapability capability_;

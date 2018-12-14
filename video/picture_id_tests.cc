@@ -363,7 +363,6 @@ void PictureIdTest::TestPictureIdIncreaseAfterRecreateStreams(
   observer_->SetMaxExpectedPictureIdGap(kMaxFramesLost);
   for (int ssrc_count : ssrc_counts) {
     task_queue_.SendTask([this, &ssrc_count]() {
-      frame_generator_capturer_->Stop();
       DestroyVideoSendStreams();
 
       GetVideoEncoderConfig()->number_of_streams = ssrc_count;
@@ -373,7 +372,6 @@ void PictureIdTest::TestPictureIdIncreaseAfterRecreateStreams(
       CreateVideoSendStreams();
       GetVideoSendStream()->Start();
       CreateFrameGeneratorCapturer(kFrameRate, kFrameMaxWidth, kFrameMaxHeight);
-      frame_generator_capturer_->Start();
     });
 
     EXPECT_TRUE(observer_->Wait()) << "Timed out waiting for packets.";

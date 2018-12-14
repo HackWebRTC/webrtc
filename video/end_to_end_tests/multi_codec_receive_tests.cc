@@ -219,7 +219,6 @@ void MultiCodecReceiveTest::RunTestWithCodecs(
   for (size_t i = 1; i < configs.size(); ++i) {
     // Recreate VideoSendStream with new config (codec, temporal layers).
     task_queue_.SendTask([this, i, &configs]() {
-      frame_generator_capturer_->Stop();
       DestroyVideoSendStreams();
       observer_.Reset();
 
@@ -228,7 +227,6 @@ void MultiCodecReceiveTest::RunTestWithCodecs(
       GetVideoSendStream()->Start();
       CreateFrameGeneratorCapturer(kFps, kWidth / 2, kHeight / 2);
       ConnectVideoSourcesToStreams();
-      frame_generator_capturer_->Start();
     });
     EXPECT_TRUE(observer_.Wait()) << "Timed out waiting for frames.";
   }

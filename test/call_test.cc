@@ -588,7 +588,6 @@ void CallTest::Start() {
   }
   for (AudioReceiveStream* audio_recv_stream : audio_receive_streams_)
     audio_recv_stream->Start();
-  StartVideoCapture();
 }
 
 void CallTest::StartVideoStreams() {
@@ -598,24 +597,13 @@ void CallTest::StartVideoStreams() {
     video_recv_stream->Start();
 }
 
-void CallTest::StartVideoCapture() {
-  for (auto& capturer : video_capturers_)
-    capturer->Start();
-}
-
 void CallTest::Stop() {
-  StopVideoCapture();
   for (AudioReceiveStream* audio_recv_stream : audio_receive_streams_)
     audio_recv_stream->Stop();
   if (audio_send_stream_) {
     audio_send_stream_->Stop();
   }
   StopVideoStreams();
-}
-
-void CallTest::StopVideoCapture() {
-  for (auto& capturer : video_capturers_)
-    capturer->Stop();
 }
 
 void CallTest::StopVideoStreams() {

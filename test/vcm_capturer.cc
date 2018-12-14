@@ -22,7 +22,7 @@
 namespace webrtc {
 namespace test {
 
-VcmCapturer::VcmCapturer() : started_(false), sink_(nullptr), vcm_(nullptr) {}
+VcmCapturer::VcmCapturer() : sink_(nullptr), vcm_(nullptr) {}
 
 bool VcmCapturer::Init(size_t width,
                        size_t height,
@@ -74,16 +74,6 @@ VcmCapturer* VcmCapturer::Create(size_t width,
   return vcm_capturer.release();
 }
 
-void VcmCapturer::Start() {
-  rtc::CritScope lock(&crit_);
-  started_ = true;
-}
-
-void VcmCapturer::Stop() {
-  rtc::CritScope lock(&crit_);
-  started_ = false;
-}
-
 void VcmCapturer::AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
                                   const rtc::VideoSinkWants& wants) {
   rtc::CritScope lock(&crit_);
@@ -114,7 +104,7 @@ VcmCapturer::~VcmCapturer() {
 
 void VcmCapturer::OnFrame(const VideoFrame& frame) {
   rtc::CritScope lock(&crit_);
-  if (started_ && sink_) {
+  if (sink_) {
     absl::optional<VideoFrame> out_frame = AdaptFrame(frame);
     if (out_frame)
       sink_->OnFrame(*out_frame);
