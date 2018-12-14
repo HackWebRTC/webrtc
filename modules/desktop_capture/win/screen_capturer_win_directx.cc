@@ -108,6 +108,11 @@ void ScreenCapturerWinDirectx::Start(Callback* callback) {
   RTC_DCHECK(callback);
 
   callback_ = callback;
+
+  // Send initial desktop display summary.
+  auto displays = std::make_unique<DisplayList>();
+  if (GetDisplayList(displays.get()))
+    callback_->OnDisplayChanged(std::move(displays));
 }
 
 void ScreenCapturerWinDirectx::SetSharedMemoryFactory(

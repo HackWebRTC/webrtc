@@ -120,6 +120,11 @@ void ScreenCapturerWinGdi::Start(Callback* callback) {
   // under Windows 8 or higher.  See crbug.com/124018.
   if (composition_func_)
     (*composition_func_)(DWM_EC_DISABLECOMPOSITION);
+
+  // Send initial desktop display summary.
+  auto displays = std::make_unique<DisplayList>();
+  if (GetDisplayList(displays.get()))
+    callback_->OnDisplayChanged(std::move(displays));
 }
 
 void ScreenCapturerWinGdi::PrepareCaptureResources() {
@@ -220,7 +225,7 @@ bool ScreenCapturerWinGdi::CaptureImage() {
     RTC_LOG_GLE(LS_WARNING) << "BitBlt failed";
   }
 
-  // Select back the previously selected object to that the device contect
+  // Select back the previously selected object so that the device context
   // could be destroyed independently of the bitmap if needed.
   SelectObject(memory_dc_, previous_object);
 

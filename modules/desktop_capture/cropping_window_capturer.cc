@@ -103,6 +103,11 @@ void CroppingWindowCapturer::OnCaptureResult(
       CreateCroppedDesktopFrame(std::move(screen_frame), window_rect));
 }
 
+void CroppingWindowCapturer::OnDisplayChanged(
+    std::unique_ptr<DisplayList> displays) {
+  callback_->OnDisplayChanged(std::move(displays));
+}
+
 bool CroppingWindowCapturer::IsOccluded(const DesktopVector& pos) {
   // Returns true if either capturer returns true.
   if (window_capturer_->IsOccluded(pos)) {

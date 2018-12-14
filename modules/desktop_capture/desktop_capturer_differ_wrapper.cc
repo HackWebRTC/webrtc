@@ -222,4 +222,10 @@ void DesktopCapturerDifferWrapper::OnCaptureResult(
   callback_->OnCaptureResult(result, std::move(frame));
 }
 
+void DesktopCapturerDifferWrapper::OnDisplayChanged(
+    std::unique_ptr<DisplayList> displays) {
+  RTC_DCHECK(callback_);
+  callback_->OnDisplayChanged(std::move(displays));
+}
+
 }  // namespace webrtc
