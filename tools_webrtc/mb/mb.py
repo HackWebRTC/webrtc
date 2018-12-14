@@ -839,7 +839,7 @@ class MetaBuildWrapper(object):
     elif is_android:
       cmdline = ['../../build/android/test_wrapper/logdog_wrapper.py',
                  '--target', target,
-                 '--logdog-bin-cmd', '../../bin/logdog_butler',
+                 '--logdog-bin-cmd', '../../logdog_butler',
                  '--logcat-output-file', '${ISOLATED_OUTDIR}/logcats',
                  '--store-tombstones']
     else:
