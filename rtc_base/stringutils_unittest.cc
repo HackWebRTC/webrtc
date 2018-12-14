@@ -22,26 +22,6 @@ TEST(string_trim_Test, Trimming) {
   EXPECT_EQ("", string_trim(""));
 }
 
-TEST(string_startsTest, StartsWith) {
-  EXPECT_TRUE(starts_with("foobar", "foo"));
-  EXPECT_TRUE(starts_with("foobar", "foobar"));
-  EXPECT_TRUE(starts_with("foobar", ""));
-  EXPECT_TRUE(starts_with("", ""));
-  EXPECT_FALSE(starts_with("foobar", "bar"));
-  EXPECT_FALSE(starts_with("foobar", "foobarbaz"));
-  EXPECT_FALSE(starts_with("", "f"));
-}
-
-TEST(string_endsTest, EndsWith) {
-  EXPECT_TRUE(ends_with("foobar", "bar"));
-  EXPECT_TRUE(ends_with("foobar", "foobar"));
-  EXPECT_TRUE(ends_with("foobar", ""));
-  EXPECT_TRUE(ends_with("", ""));
-  EXPECT_FALSE(ends_with("foobar", "foo"));
-  EXPECT_FALSE(ends_with("foobar", "foobarbaz"));
-  EXPECT_FALSE(ends_with("", "f"));
-}
-
 TEST(string_toHexTest, ToHex) {
   EXPECT_EQ(ToHex(0), "0");
   EXPECT_EQ(ToHex(0X1243E), "1243e");

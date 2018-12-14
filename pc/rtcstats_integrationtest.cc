@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/match.h"
 #include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/audio_codecs/audio_encoder_factory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
@@ -37,7 +38,6 @@
 #include "rtc_base/gunit.h"
 #include "rtc_base/refcountedobject.h"
 #include "rtc_base/scoped_ref_ptr.h"
-#include "rtc_base/stringutils.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/trace_event.h"
 #include "rtc_base/virtualsocketserver.h"
@@ -876,12 +876,12 @@ TEST_F(RTCStatsIntegrationTest, GetStatsReferencedIds) {
       if (!member->is_defined())
         continue;
       if (member->type() == RTCStatsMemberInterface::kString) {
-        if (rtc::ends_with(member->name(), "Id")) {
+        if (absl::EndsWith(member->name(), "Id")) {
           const auto& id = member->cast_to<const RTCStatsMember<std::string>>();
           expected_ids.insert(&(*id));
         }
       } else if (member->type() == RTCStatsMemberInterface::kSequenceString) {
-        if (rtc::ends_with(member->name(), "Ids")) {
+        if (absl::EndsWith(member->name(), "Ids")) {
           const auto& ids =
               member->cast_to<const RTCStatsMember<std::vector<std::string>>>();
           for (const std::string& id : *ids)

@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/match.h"
 #include "absl/types/optional.h"
 #include "api/video/i420_buffer.h"
 #include "rtc_base/checks.h"
@@ -21,7 +22,6 @@
 #include "rtc_base/refcountedobject.h"
 #include "rtc_base/string_to_number.h"
 #include "rtc_base/stringencode.h"
-#include "rtc_base/stringutils.h"
 
 namespace webrtc {
 namespace test {
@@ -270,9 +270,9 @@ rtc::scoped_refptr<Video> OpenYuvFile(const std::string& file_name,
 rtc::scoped_refptr<Video> OpenYuvOrY4mFile(const std::string& file_name,
                                            int width,
                                            int height) {
-  if (rtc::ends_with(file_name.c_str(), ".yuv"))
+  if (absl::EndsWith(file_name, ".yuv"))
     return OpenYuvFile(file_name, width, height);
-  if (rtc::ends_with(file_name.c_str(), ".y4m"))
+  if (absl::EndsWith(file_name, ".y4m"))
     return OpenY4mFile(file_name);
 
   RTC_LOG(LS_ERROR) << "Video file does not end in either .yuv or .y4m: "

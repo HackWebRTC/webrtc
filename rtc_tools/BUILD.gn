@@ -69,6 +69,7 @@ rtc_static_library("video_file_reader") {
     "../api/video:video_frame_i420",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
+    "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
@@ -83,6 +84,7 @@ rtc_static_library("video_file_writer") {
     "../api/video:video_frame",
     "../api/video:video_frame_i420",
     "../rtc_base:rtc_base_approved",
+    "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
@@ -128,6 +130,7 @@ rtc_executable("frame_analyzer") {
     "../rtc_base:ptr_util",
     "../rtc_base:stringutils",
     "../test:perf_test",
+    "//third_party/abseil-cpp/absl/strings",
   ]
 }
 
