@@ -304,7 +304,7 @@ class UnitTest(unittest.TestCase):
     self.assertEqual(command, [
         '../../build/android/test_wrapper/logdog_wrapper.py',
         '--target', 'base_unittests',
-        '--logdog-bin-cmd', '../../logdog_butler',
+        '--logdog-bin-cmd', '../../bin/logdog_butler',
         '--logcat-output-file', '${ISOLATED_OUTDIR}/logcats',
         '--store-tombstones',
     ])
@@ -338,7 +338,7 @@ class UnitTest(unittest.TestCase):
     self.assertEqual(command, [
         '../../build/android/test_wrapper/logdog_wrapper.py',
         '--target', 'base_unittests',
-        '--logdog-bin-cmd', '../../logdog_butler',
+        '--logdog-bin-cmd', '../../bin/logdog_butler',
         '--logcat-output-file', '${ISOLATED_OUTDIR}/logcats',
         '--store-tombstones',
     ])
