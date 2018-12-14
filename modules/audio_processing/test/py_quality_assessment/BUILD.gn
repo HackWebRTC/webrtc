@@ -114,7 +114,7 @@ rtc_executable("fake_polqa") {
     "quality_assessment/fake_polqa.cc",
   ]
   visibility = [ ":*" ]  # Only targets in this file can depend on this.
-  output_name = "py_quality_assessment/quality_assessment/fake_polqa"
+  output_dir = "${root_out_dir}/py_quality_assessment/quality_assessment"
   deps = [
     "../../../..:webrtc_common",
     "../../../../rtc_base:checks",
