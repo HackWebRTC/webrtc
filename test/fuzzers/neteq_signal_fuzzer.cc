@@ -183,7 +183,7 @@ void FuzzOneInputTest(const uint8_t* data, size_t size) {
 
   NetEqTest::ExtDecoderMap ext_codecs;
 
-  NetEqTest test(config, codecs, ext_codecs, std::move(input),
+  NetEqTest test(config, codecs, ext_codecs, nullptr, std::move(input),
                  std::move(output), callbacks);
   test.Run();
 }

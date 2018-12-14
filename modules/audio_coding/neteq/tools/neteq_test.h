@@ -11,6 +11,7 @@
 #ifndef MODULES_AUDIO_CODING_NETEQ_TOOLS_NETEQ_TEST_H_
 #define MODULES_AUDIO_CODING_NETEQ_TOOLS_NETEQ_TEST_H_
 
+#include <fstream>
 #include <map>
 #include <memory>
 #include <string>
@@ -87,6 +88,7 @@ class NetEqTest : public NetEqSimulator {
   NetEqTest(const NetEq::Config& config,
             const DecoderMap& codecs,
             const ExtDecoderMap& ext_codecs,
+            std::unique_ptr<std::ofstream> text_log,
             std::unique_ptr<NetEqInput> input,
             std::unique_ptr<AudioSink> output,
             Callbacks callbacks);
@@ -121,6 +123,9 @@ class NetEqTest : public NetEqSimulator {
   int sample_rate_hz_;
   NetEqState current_state_;
   NetEqOperationsAndState prev_ops_state_;
+  NetEqLifetimeStatistics prev_lifetime_stats_;
+  absl::optional<uint32_t> last_packet_timestamp_;
+  std::unique_ptr<std::ofstream> text_log_;
 };
 
 }  // namespace test

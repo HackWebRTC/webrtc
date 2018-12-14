@@ -85,6 +85,8 @@ struct NetEqOperationsAndState {
   uint64_t accelerate_samples = 0;
   // Count of the number of buffer flushes.
   uint64_t packet_buffer_flushes = 0;
+  // The number of primary packets that were discarded.
+  uint64_t discarded_primary_packets = 0;
   // The statistics below are not cumulative.
   // The waiting time of the last decoded packet.
   uint64_t last_waiting_time_ms = 0;

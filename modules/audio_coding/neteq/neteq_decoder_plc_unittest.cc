@@ -185,7 +185,7 @@ NetEqNetworkStatistics RunTest(int loss_cadence, std::string* checksum) {
   // No callback objects.
   NetEqTest::Callbacks callbacks;
 
-  NetEqTest neteq_test(config, decoders, external_decoders,
+  NetEqTest neteq_test(config, decoders, external_decoders, nullptr,
                        std::move(lossy_input), std::move(output), callbacks);
   EXPECT_LE(kRunTimeMs, neteq_test.Run());
 

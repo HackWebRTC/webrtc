@@ -216,7 +216,7 @@ void StatisticsCalculator::AddZeros(size_t num_samples) {
 }
 
 void StatisticsCalculator::PacketsDiscarded(size_t num_packets) {
-  discarded_packets_ += num_packets;
+  operations_and_state_.discarded_primary_packets += num_packets;
 }
 
 void StatisticsCalculator::SecondaryPacketsDiscarded(size_t num_packets) {

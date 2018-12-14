@@ -14,6 +14,7 @@
 #include <limits.h>  // For ULONG_MAX returned by strtoul.
 #include <stdio.h>
 #include <stdlib.h>  // For strtoul.
+#include <fstream>
 #include <iostream>
 #include <memory>
 #include <set>
@@ -138,6 +139,10 @@ WEBRTC_DEFINE_bool(matlabplot,
 WEBRTC_DEFINE_bool(pythonplot,
                    false,
                    "Generates a python script for plotting the delay profile");
+WEBRTC_DEFINE_bool(textlog,
+                   false,
+                   "Generates a text log describing the simulation on a "
+                   "step-by-step basis.");
 WEBRTC_DEFINE_bool(concealment_events, false, "Prints concealment events");
 WEBRTC_DEFINE_int(max_nr_packets_in_buffer,
                   50,
@@ -460,6 +465,13 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
     ext_codecs_[replacement_pt] = ext_dec_info;
   }
 
+  // Create a text log file if needed.
+  std::unique_ptr<std::ofstream> text_log;
+  if (FLAG_textlog) {
+    text_log =
+        absl::make_unique<std::ofstream>(output_file_name + ".text_log.txt");
+  }
+
   NetEqTest::Callbacks callbacks;
   stats_plotter_.reset(new NetEqStatsPlotter(FLAG_matlabplot, FLAG_pythonplot,
                                              FLAG_concealment_events,
@@ -475,8 +487,8 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
   config.max_packets_in_buffer = FLAG_max_nr_packets_in_buffer;
   config.enable_fast_accelerate = FLAG_enable_fast_accelerate;
   return absl::make_unique<NetEqTest>(config, codecs, ext_codecs_,
-                                      std::move(input), std::move(output),
-                                      callbacks);
+                                      std::move(text_log), std::move(input),
+                                      std::move(output), callbacks);
 }
 
 }  // namespace test

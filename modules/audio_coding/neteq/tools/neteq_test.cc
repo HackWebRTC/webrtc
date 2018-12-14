@@ -10,9 +10,11 @@
 
 #include "modules/audio_coding/neteq/tools/neteq_test.h"
 
+#include <iomanip>
 #include <iostream>
 
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "modules/rtp_rtcp/source/byte_io.h"
 
 namespace webrtc {
 namespace test {
@@ -52,6 +54,7 @@ void DefaultNetEqTestErrorCallback::OnGetAudioError() {
 NetEqTest::NetEqTest(const NetEq::Config& config,
                      const DecoderMap& codecs,
                      const ExtDecoderMap& ext_codecs,
+                     std::unique_ptr<std::ofstream> text_log,
                      std::unique_ptr<NetEqInput> input,
                      std::unique_ptr<AudioSink> output,
                      Callbacks callbacks)
@@ -59,7 +62,8 @@ NetEqTest::NetEqTest(const NetEq::Config& config,
       input_(std::move(input)),
       output_(std::move(output)),
       callbacks_(callbacks),
-      sample_rate_hz_(config.sample_rate_hz) {
+      sample_rate_hz_(config.sample_rate_hz),
+      text_log_(std::move(text_log)) {
   RTC_CHECK(!config.enable_muted_state)
       << "The code does not handle enable_muted_state";
   RegisterDecoders(codecs);
@@ -117,7 +121,35 @@ NetEqTest::SimulationStepResult NetEqTest::RunToNextGetAudio() {
         current_state_.packet_iat_ms.push_back(time_now_ms -
                                                *last_packet_time_ms_);
       }
+      if (text_log_) {
+        const auto ops_state = neteq_->GetOperationsAndState();
+        const auto delta_wallclock =
+            last_packet_time_ms_ ? (time_now_ms - *last_packet_time_ms_) : -1;
+        const auto delta_timestamp =
+            last_packet_timestamp_
+                ? (static_cast<int64_t>(packet_data->header.timestamp) -
+                   *last_packet_timestamp_) *
+                      1000 / sample_rate_hz_
+                : -1;
+        const auto packet_size_bytes =
+            packet_data->payload.size() == 12
+                ? ByteReader<uint32_t>::ReadLittleEndian(
+                      &packet_data->payload[8])
+                : -1;
+        *text_log_ << "Packet   - wallclock: " << std::setw(5) << time_now_ms
+                   << ", delta wc: " << std::setw(4) << delta_wallclock
+                   << ", timestamp: " << std::setw(10)
+                   << packet_data->header.timestamp
+                   << ", delta ts: " << std::setw(4) << delta_timestamp
+                   << ", size: " << std::setw(5) << packet_size_bytes
+                   << ", frame size: " << std::setw(3)
+                   << ops_state.current_frame_size_ms
+                   << ", buffer size: " << std::setw(4)
+                   << ops_state.current_buffer_size_ms << std::endl;
+      }
       last_packet_time_ms_ = absl::make_optional<int>(time_now_ms);
+      last_packet_timestamp_ =
+          absl::make_optional<uint32_t>(packet_data->header.timestamp);
     }
 
     // Check if it is time to get output audio.
@@ -186,6 +218,39 @@ NetEqTest::SimulationStepResult NetEqTest::RunToNextGetAudio() {
         // Consider the whole frame to be the result of normal playout.
         result.action_times_ms[Action::kNormal] = 10;
       }
+      auto lifetime_stats = LifetimeStats();
+      if (text_log_) {
+        const bool plc =
+            (out_frame.speech_type_ == AudioFrame::SpeechType::kPLC) ||
+            (out_frame.speech_type_ == AudioFrame::SpeechType::kPLCCNG);
+        const bool cng = out_frame.speech_type_ == AudioFrame::SpeechType::kCNG;
+        const bool voice_concealed =
+            lifetime_stats.voice_concealed_samples >
+            prev_lifetime_stats_.voice_concealed_samples;
+        *text_log_ << "GetAudio - wallclock: " << std::setw(5) << time_now_ms
+                   << ", delta wc: " << std::setw(4)
+                   << (input_->NextEventTime().value_or(time_now_ms) -
+                       start_time_ms)
+                   << ", CNG: " << cng << ", PLC: " << plc
+                   << ", voice concealed: " << voice_concealed
+                   << ", buffer size: " << std::setw(4)
+                   << current_state_.current_delay_ms << std::endl;
+        if (operations_state.discarded_primary_packets >
+            prev_ops_state_.discarded_primary_packets) {
+          *text_log_ << "Discarded "
+                     << (operations_state.discarded_primary_packets -
+                         prev_ops_state_.discarded_primary_packets)
+                     << " primary packets." << std::endl;
+        }
+        if (operations_state.packet_buffer_flushes >
+            prev_ops_state_.packet_buffer_flushes) {
+          *text_log_ << "Flushed packet buffer "
+                     << (operations_state.packet_buffer_flushes -
+                         prev_ops_state_.packet_buffer_flushes)
+                     << " times." << std::endl;
+        }
+      }
+      prev_lifetime_stats_ = lifetime_stats;
       result.is_simulation_finished = input_->ended();
       prev_ops_state_ = operations_state;
       return result;
