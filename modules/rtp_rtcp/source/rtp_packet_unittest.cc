@@ -10,6 +10,7 @@
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 
+#include "common_video/test/utilities.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "rtc_base/random.h"
@@ -185,34 +186,6 @@ constexpr uint8_t kPacketWithLegacyTimingExtension[] = {
     0x04, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00};
 // clang-format on
-
-HdrMetadata CreateTestHdrMetadata() {
-  // Random but reasonable HDR metadata.
-  HdrMetadata hdr_metadata;
-  hdr_metadata.mastering_metadata.luminance_max = 2000.0;
-  hdr_metadata.mastering_metadata.luminance_min = 2.0001;
-  hdr_metadata.mastering_metadata.primary_r.x = 0.3003;
-  hdr_metadata.mastering_metadata.primary_r.y = 0.4004;
-  hdr_metadata.mastering_metadata.primary_g.x = 0.3201;
-  hdr_metadata.mastering_metadata.primary_g.y = 0.4604;
-  hdr_metadata.mastering_metadata.primary_b.x = 0.3409;
-  hdr_metadata.mastering_metadata.primary_b.y = 0.4907;
-  hdr_metadata.mastering_metadata.white_point.x = 0.4103;
-  hdr_metadata.mastering_metadata.white_point.y = 0.4806;
-  hdr_metadata.max_content_light_level = 2345;
-  hdr_metadata.max_frame_average_light_level = 1789;
-  return hdr_metadata;
-}
-
-ColorSpace CreateTestColorSpace(bool with_hdr_metadata) {
-  HdrMetadata hdr_metadata = CreateTestHdrMetadata();
-  return ColorSpace(
-      ColorSpace::PrimaryID::kBT709, ColorSpace::TransferID::kGAMMA22,
-      ColorSpace::MatrixID::kSMPTE2085, ColorSpace::RangeID::kFull,
-      ColorSpace::ChromaSiting::kCollocated,
-      ColorSpace::ChromaSiting::kCollocated,
-      with_hdr_metadata ? &hdr_metadata : nullptr);
-}
 
 void TestCreateAndParseColorSpaceExtension(bool with_hdr_metadata) {
   // Create packet with extension.

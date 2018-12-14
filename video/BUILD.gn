@@ -510,6 +510,7 @@ if (rtc_include_tests) {
       "../call:simulated_packet_receiver",
       "../call:video_stream_api",
       "../common_video",
+      "../common_video/test:utilities",
       "../logging:rtc_event_log_api",
       "../media:rtc_audio_video",
       "../media:rtc_internal_video_codecs",
