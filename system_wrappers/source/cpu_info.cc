@@ -14,9 +14,10 @@
 #include <windows.h>
 #elif defined(WEBRTC_LINUX)
 #include <unistd.h>
-#endif
-#if defined(WEBRTC_MAC)
+#elif defined(WEBRTC_MAC)
 #include <sys/sysctl.h>
+#elif defined(WEBRTC_FUCHSIA)
+#include <zircon/syscalls.h>
 #endif
 
 #include "rtc_base/logging.h"
@@ -39,6 +40,8 @@ static int DetectNumberOfCores() {
     RTC_LOG(LS_ERROR) << "Failed to get number of cores";
     number_of_cores = 1;
   }
+#elif defined(WEBRTC_FUCHSIA)
+  number_of_cores = zx_system_get_num_cpus();
 #else
   RTC_LOG(LS_ERROR) << "No function to get number of cores";
 #endif
