@@ -353,31 +353,6 @@ rtc_static_library("webrtc_h264") {
   }
 }
 
-rtc_static_library("webrtc_i420") {
-  visibility = [ "*" ]
-  sources = [
-    "codecs/i420/i420.cc",
-    "codecs/i420/include/i420.h",
-  ]
-
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-
-  deps = [
-    ":video_codec_interface",
-    ":video_coding_utility",
-    "../..:webrtc_common",
-    "../../api/video:video_frame_i420",
-    "../../common_video:common_video",
-    "../../rtc_base:checks",
-    "../../rtc_base:rtc_base_approved",
-    "../../system_wrappers",
-    "//third_party/libyuv",
-  ]
-}
-
 rtc_static_library("webrtc_multiplex") {
   sources = [
     "codecs/multiplex/augmented_video_frame_buffer.cc",

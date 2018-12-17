@@ -84,7 +84,6 @@ LEGACY_API_DIRS = (
   'modules/rtp_rtcp/source',
   'modules/utility/include',
   'modules/video_coding/codecs/h264/include',
-  'modules/video_coding/codecs/i420/include',
   'modules/video_coding/codecs/vp8/include',
   'modules/video_coding/codecs/vp9/include',
   'modules/video_coding/include',
