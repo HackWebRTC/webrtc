@@ -136,7 +136,9 @@ public class EglRenderer implements VideoSink {
   private final Object layoutLock = new Object();
   private float layoutAspectRatio;
   // If true, mirrors the video stream horizontally.
-  private boolean mirror;
+  private boolean mirrorHorizontally;
+  // If true, mirrors the video stream vertically.
+  private boolean mirrorVertically;
 
   // These variables are synchronized on |statisticsLock|.
   private final Object statisticsLock = new Object();
@@ -342,12 +344,22 @@ public class EglRenderer implements VideoSink {
   }
 
   /**
-   * Set if the video stream should be mirrored or not.
+   * Set if the video stream should be mirrored horizontally or not.
    */
   public void setMirror(final boolean mirror) {
-    logD("setMirror: " + mirror);
+    logD("setMirrorHorizontally: " + mirror);
     synchronized (layoutLock) {
-      this.mirror = mirror;
+      this.mirrorHorizontally = mirror;
+    }
+  }
+
+  /**
+   * Set if the video stream should be mirrored vertically or not.
+   */
+  public void setMirrorVertically(final boolean mirrorVertically) {
+    logD("setMirrorVertically: " + mirrorVertically);
+    synchronized (layoutLock) {
+      this.mirrorVertically = mirrorVertically;
     }
   }
 
@@ -621,8 +633,7 @@ public class EglRenderer implements VideoSink {
 
     drawMatrix.reset();
     drawMatrix.preTranslate(0.5f, 0.5f);
-    if (mirror)
-      drawMatrix.preScale(-1f, 1f);
+    drawMatrix.preScale(mirrorHorizontally ? -1f : 1f, mirrorVertically ? -1f : 1f);
     drawMatrix.preScale(scaleX, scaleY);
     drawMatrix.preTranslate(-0.5f, -0.5f);
 
@@ -657,8 +668,7 @@ public class EglRenderer implements VideoSink {
 
     drawMatrix.reset();
     drawMatrix.preTranslate(0.5f, 0.5f);
-    if (mirror)
-      drawMatrix.preScale(-1f, 1f);
+    drawMatrix.preScale(mirrorHorizontally ? -1f : 1f, mirrorVertically ? -1f : 1f);
     drawMatrix.preScale(1f, -1f); // We want the output to be upside down for Bitmap.
     drawMatrix.preTranslate(-0.5f, -0.5f);
 
