@@ -12,7 +12,6 @@
 #define RTC_BASE_ASYNCPACKETSOCKET_H_
 
 #include "rtc_base/constructormagic.h"
-#include "rtc_base/deprecation.h"
 #include "rtc_base/dscp.h"
 #include "rtc_base/network/sent_packet.h"
 #include "rtc_base/socket.h"
@@ -51,10 +50,6 @@ struct PacketOptions {
   // PacketInfo is passed to SentPacket when signaling this packet is sent.
   PacketInfo info_signaled_after_sent;
 };
-
-// TODO(bugs.webrtc.org/9584): Compatibility alias, delete as soon as downstream
-// code is updated.
-typedef int64_t PacketTime;
 
 // Provides the ability to receive packets asynchronously. Sends are not
 // buffered since it is acceptable to drop packets under high load.

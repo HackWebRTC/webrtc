@@ -77,8 +77,8 @@ class NetworkPacket {
   absl::optional<PacketOptions> packet_options_;
   bool is_rtcp_;
   // If using a PacketReceiver for incoming degradation, populate with
-  // appropriate MediaType and PacketTime. This type/timing will be kept and
-  // forwarded. The PacketTime might be altered to reflect time spent in fake
+  // appropriate MediaType and packet time. This type/timing will be kept and
+  // forwarded. The packet time might be altered to reflect time spent in fake
   // network pipe.
   MediaType media_type_;
   absl::optional<int64_t> packet_time_us_;
@@ -124,8 +124,8 @@ class FakeNetworkPipe : public webrtc::SimulatedPacketReceiverInterface,
 
   // Implements the PacketReceiver interface. When/if packets are delivered,
   // they will be passed directly to the receiver instance given in
-  // SetReceiver(), without passing through a Demuxer. The receive time in
-  // PacketTime will be increased by the amount of time the packet spent in the
+  // SetReceiver(), without passing through a Demuxer. The receive time
+  // will be increased by the amount of time the packet spent in the
   // fake network pipe.
   PacketReceiver::DeliveryStatus DeliverPacket(MediaType media_type,
                                                rtc::CopyOnWriteBuffer packet,

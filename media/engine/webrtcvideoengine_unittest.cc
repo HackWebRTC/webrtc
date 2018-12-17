@@ -7042,7 +7042,7 @@ TEST_F(WebRtcVideoChannelTestWithClock, GetSources) {
   EXPECT_TRUE(SetDefaultCodec());
   EXPECT_TRUE(SetSend(true));
   EXPECT_EQ(0, renderer_.num_rendered_frames());
-  channel_->OnPacketReceived(&packet1, rtc::PacketTime());
+  channel_->OnPacketReceived(&packet1, /*packet_time_us=*/-1);
 
   std::vector<webrtc::RtpSource> sources = channel_->GetSources(kSsrc);
   EXPECT_EQ(1u, sources.size());
@@ -7052,7 +7052,7 @@ TEST_F(WebRtcVideoChannelTestWithClock, GetSources) {
   // a new packet.
   int64_t timeDeltaMs = 1;
   fake_clock_.AdvanceTime(webrtc::TimeDelta::ms(timeDeltaMs));
-  channel_->OnPacketReceived(&packet1, rtc::PacketTime());
+  channel_->OnPacketReceived(&packet1, /*packet_time_us=*/-1);
   int64_t timestamp2 = channel_->GetSources(kSsrc)[0].timestamp_ms();
   EXPECT_EQ(timestamp2, timestamp1 + timeDeltaMs);
 
@@ -7077,7 +7077,7 @@ TEST_F(WebRtcVideoChannelTestWithClock, GetContributingSources) {
   EXPECT_TRUE(SetDefaultCodec());
   EXPECT_TRUE(SetSend(true));
   EXPECT_EQ(0, renderer_.num_rendered_frames());
-  channel_->OnPacketReceived(&packet1, rtc::PacketTime());
+  channel_->OnPacketReceived(&packet1, /*packet_time_us=*/-1);
 
   {
     ASSERT_EQ(2u, channel_->GetSources(kSsrc).size());
@@ -7106,7 +7106,7 @@ TEST_F(WebRtcVideoChannelTestWithClock, GetContributingSources) {
 
   int64_t timeDeltaMs = 1;
   fake_clock_.AdvanceTime(webrtc::TimeDelta::ms(timeDeltaMs));
-  channel_->OnPacketReceived(&packet2, rtc::PacketTime());
+  channel_->OnPacketReceived(&packet2, /*packet_time_us=*/-1);
 
   {
     ASSERT_EQ(2u, channel_->GetSources(kSsrc).size());

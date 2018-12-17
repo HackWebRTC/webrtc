@@ -460,10 +460,8 @@ bool BaseChannel::SendPacket(bool rtcp,
 }
 
 void BaseChannel::OnRtpPacket(const webrtc::RtpPacketReceived& parsed_packet) {
-  // Reconstruct the PacketTime from the |parsed_packet|.
-  // RtpPacketReceived.arrival_time_ms = (PacketTime + 500) / 1000;
-  // Note: The |not_before| field is always 0 here. This field is not currently
-  // used, so it should be fine.
+  // Take packet time from the |parsed_packet|.
+  // RtpPacketReceived.arrival_time_ms = (timestamp_us + 500) / 1000;
   int64_t timestamp_us = -1;
   if (parsed_packet.arrival_time_ms() > 0) {
     timestamp_us = parsed_packet.arrival_time_ms() * 1000;
