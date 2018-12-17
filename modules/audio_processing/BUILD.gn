@@ -459,6 +459,8 @@ if (rtc_include_tests) {
         ":audioproc_unittest_proto",
         ":runtime_settings_protobuf_utils",
         "../../api/audio:audio_frame_api",
+        "../../api/audio:echo_control",
+        "../../rtc_base:rtc_base_tests_utils",
         "../../rtc_base:rtc_task_queue",
         "aec_dump",
         "aec_dump:aec_dump_unittests",
@@ -485,6 +487,7 @@ if (rtc_include_tests) {
         "test/echo_canceller_test_tools.cc",
         "test/echo_canceller_test_tools.h",
         "test/echo_canceller_test_tools_unittest.cc",
+        "test/echo_control_mock.h",
         "test/test_utils.h",
         "voice_detection_unittest.cc",
       ]
