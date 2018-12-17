@@ -195,28 +195,6 @@ rtc_static_library("rtc_simulcast_encoder_adapter") {
   }
 }
 
-rtc_static_library("rtc_vp8_encoder_simulcast_proxy") {
-  visibility = [ "*" ]
-  defines = []
-  libs = []
-  sources = [
-    "engine/vp8_encoder_simulcast_proxy.cc",
-    "engine/vp8_encoder_simulcast_proxy.h",
-  ]
-  deps = [
-    ":rtc_simulcast_encoder_adapter",
-    "../:webrtc_common",
-    "../api/video:video_bitrate_allocation",
-    "../api/video:video_frame",
-    "../api/video_codecs:video_codecs_api",
-    "../modules/video_coding:video_codec_interface",
-  ]
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-}
-
 rtc_static_library("rtc_encoder_simulcast_proxy") {
   visibility = [ "*" ]
   defines = []
@@ -248,7 +226,6 @@ rtc_static_library("rtc_internal_video_codecs") {
     ":rtc_encoder_simulcast_proxy",
     ":rtc_h264_profile_id",
     ":rtc_simulcast_encoder_adapter",
-    ":rtc_vp8_encoder_simulcast_proxy",
     "../:webrtc_common",
     "../api/video:encoded_image",
     "../api/video:video_frame",
@@ -272,7 +249,6 @@ rtc_static_library("rtc_internal_video_codecs") {
     # TODO(bugs.webrtc.org/7925): stop exporting this header once downstream
     # targets depend on :rtc_encoder_simulcast_proxy directly.
     "engine/encoder_simulcast_proxy.h",
-    "engine/vp8_encoder_simulcast_proxy.h",
     "engine/webrtcvideodecoderfactory.h",
     "engine/webrtcvideoencoderfactory.h",
   ]
@@ -625,7 +601,6 @@ if (rtc_include_tests) {
       "engine/payload_type_mapper_unittest.cc",
       "engine/simulcast_encoder_adapter_unittest.cc",
       "engine/simulcast_unittest.cc",
-      "engine/vp8_encoder_simulcast_proxy_unittest.cc",
       "engine/webrtcmediaengine_unittest.cc",
       "engine/webrtcvideocapturer_unittest.cc",
       "engine/webrtcvideoencoderfactory_unittest.cc",
@@ -677,7 +652,6 @@ if (rtc_include_tests) {
       ":rtc_media_base",
       ":rtc_media_tests_utils",
       ":rtc_simulcast_encoder_adapter",
-      ":rtc_vp8_encoder_simulcast_proxy",
       ":rtc_vp9_profile",
       "../api:create_simulcast_test_fixture_api",
       "../api:libjingle_peerconnection_api",
