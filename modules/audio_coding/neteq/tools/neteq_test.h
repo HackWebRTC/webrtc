@@ -18,6 +18,7 @@
 #include <utility>
 
 #include "absl/types/optional.h"
+#include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/test/neteq_simulator.h"
 #include "modules/audio_coding/neteq/include/neteq.h"
 #include "modules/audio_coding/neteq/tools/audio_sink.h"
@@ -86,6 +87,7 @@ class NetEqTest : public NetEqSimulator {
   // Sets up the test with given configuration, codec mappings, input, ouput,
   // and callback objects for error reporting.
   NetEqTest(const NetEq::Config& config,
+            rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
             const DecoderMap& codecs,
             const ExtDecoderMap& ext_codecs,
             std::unique_ptr<std::ofstream> text_log,

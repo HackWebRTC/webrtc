@@ -358,6 +358,7 @@ webrtc_fuzzer_test("neteq_rtp_fuzzer") {
   ]
   deps = [
     "../../api:array_view",
+    "../../api/audio_codecs:builtin_audio_decoder_factory",
     "../../modules/audio_coding:neteq",
     "../../modules/audio_coding:neteq_test_tools",
     "../../modules/audio_coding:neteq_tools_minimal",
@@ -373,6 +374,7 @@ webrtc_fuzzer_test("neteq_signal_fuzzer") {
   ]
   deps = [
     "../../api:array_view",
+    "../../api/audio_codecs:builtin_audio_decoder_factory",
     "../../modules/audio_coding:neteq",
     "../../modules/audio_coding:neteq_test_tools",
     "../../modules/audio_coding:neteq_tools_minimal",

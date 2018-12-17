@@ -22,6 +22,7 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
+#include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "modules/audio_coding/neteq/include/neteq.h"
 #include "modules/audio_coding/neteq/tools/fake_decode_from_file.h"
 #include "modules/audio_coding/neteq/tools/input_audio_file.h"
@@ -486,9 +487,9 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
   config.sample_rate_hz = *sample_rate_hz;
   config.max_packets_in_buffer = FLAG_max_nr_packets_in_buffer;
   config.enable_fast_accelerate = FLAG_enable_fast_accelerate;
-  return absl::make_unique<NetEqTest>(config, codecs, ext_codecs_,
-                                      std::move(text_log), std::move(input),
-                                      std::move(output), callbacks);
+  return absl::make_unique<NetEqTest>(
+      config, CreateBuiltinAudioDecoderFactory(), codecs, ext_codecs_,
+      std::move(text_log), std::move(input), std::move(output), callbacks);
 }
 
 }  // namespace test
