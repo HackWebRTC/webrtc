@@ -14,7 +14,6 @@
 #include <vector>
 
 #include "api/array_view.h"
-#include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "modules/audio_coding/codecs/pcm16b/audio_encoder_pcm16b.h"
 #include "modules/audio_coding/neteq/tools/audio_checksum.h"
 #include "modules/audio_coding/neteq/tools/encode_neteq_input.h"
@@ -184,8 +183,8 @@ void FuzzOneInputTest(const uint8_t* data, size_t size) {
 
   NetEqTest::ExtDecoderMap ext_codecs;
 
-  NetEqTest test(config, CreateBuiltinAudioDecoderFactory(), codecs, ext_codecs,
-                 nullptr, std::move(input), std::move(output), callbacks);
+  NetEqTest test(config, codecs, ext_codecs, nullptr, std::move(input),
+                 std::move(output), callbacks);
   test.Run();
 }
 

@@ -15,7 +15,6 @@
 #include <vector>
 
 #include "absl/types/optional.h"
-#include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "modules/audio_coding/codecs/pcm16b/audio_encoder_pcm16b.h"
 #include "modules/audio_coding/neteq/tools/audio_checksum.h"
 #include "modules/audio_coding/neteq/tools/audio_sink.h"
@@ -186,9 +185,8 @@ NetEqNetworkStatistics RunTest(int loss_cadence, std::string* checksum) {
   // No callback objects.
   NetEqTest::Callbacks callbacks;
 
-  NetEqTest neteq_test(config, CreateBuiltinAudioDecoderFactory(), decoders,
-                       external_decoders, nullptr, std::move(lossy_input),
-                       std::move(output), callbacks);
+  NetEqTest neteq_test(config, decoders, external_decoders, nullptr,
+                       std::move(lossy_input), std::move(output), callbacks);
   EXPECT_LE(kRunTimeMs, neteq_test.Run());
 
   auto lifetime_stats = neteq_test.LifetimeStats();
