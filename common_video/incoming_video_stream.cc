@@ -23,31 +23,6 @@ namespace {
 const char kIncomingQueueName[] = "IncomingVideoStream";
 }
 
-// Capture by moving (std::move) into a lambda isn't possible in C++11
-// (supported in C++14). This class provides the functionality of what would be
-// something like (inside OnFrame):
-// VideoFrame frame(video_frame);
-// incoming_render_queue_.PostTask([this, frame = std::move(frame)](){
-//   if (render_buffers_.AddFrame(std::move(frame)) == 1)
-//     Dequeue();
-// });
-class IncomingVideoStream::NewFrameTask : public rtc::QueuedTask {
- public:
-  NewFrameTask(IncomingVideoStream* stream, VideoFrame frame)
-      : stream_(stream), frame_(std::move(frame)) {}
-
- private:
-  bool Run() override {
-    RTC_DCHECK(stream_->incoming_render_queue_.IsCurrent());
-    if (stream_->render_buffers_.AddFrame(std::move(frame_)) == 1)
-      stream_->Dequeue();
-    return true;
-  }
-
-  IncomingVideoStream* stream_;
-  VideoFrame frame_;
-};
-
 IncomingVideoStream::IncomingVideoStream(
     int32_t delay_ms,
     rtc::VideoSinkInterface<VideoFrame>* callback)
@@ -64,8 +39,18 @@ void IncomingVideoStream::OnFrame(const VideoFrame& video_frame) {
   TRACE_EVENT0("webrtc", "IncomingVideoStream::OnFrame");
   RTC_CHECK_RUNS_SERIALIZED(&decoder_race_checker_);
   RTC_DCHECK(!incoming_render_queue_.IsCurrent());
-  incoming_render_queue_.PostTask(
-      std::unique_ptr<rtc::QueuedTask>(new NewFrameTask(this, video_frame)));
+  // TODO(srte): This struct should be replaced by a lambda with move capture
+  // when C++14 lambdas are allowed.
+  struct NewFrameTask {
+    void operator()() {
+      RTC_DCHECK(stream->incoming_render_queue_.IsCurrent());
+      if (stream->render_buffers_.AddFrame(std::move(frame)) == 1)
+        stream->Dequeue();
+    }
+    IncomingVideoStream* stream;
+    VideoFrame frame;
+  };
+  incoming_render_queue_.PostTask(NewFrameTask{this, std::move(video_frame)});
 }
 
 void IncomingVideoStream::Dequeue() {

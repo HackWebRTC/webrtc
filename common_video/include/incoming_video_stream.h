@@ -32,9 +32,6 @@ class IncomingVideoStream : public rtc::VideoSinkInterface<VideoFrame> {
   void OnFrame(const VideoFrame& video_frame) override;
   void Dequeue();
 
-  // Fwd decl of a QueuedTask implementation for carrying frames over to the TQ.
-  class NewFrameTask;
-
   rtc::ThreadChecker main_thread_checker_;
   rtc::RaceChecker decoder_race_checker_;
 
