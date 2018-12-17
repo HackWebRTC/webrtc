@@ -21,12 +21,9 @@
 
 namespace webrtc {
 
-struct CodecInst;
-
 class AudioEncoderG722Impl final : public AudioEncoder {
  public:
   AudioEncoderG722Impl(const AudioEncoderG722Config& config, int payload_type);
-  explicit AudioEncoderG722Impl(const CodecInst& codec_inst);
   ~AudioEncoderG722Impl() override;
 
   int SampleRateHz() const override;

@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "api/video_codecs/vp8_temporal_layers.h"
+#include "rtc_base/checks.h"
 #include "test/field_trial.h"
 #include "test/gmock.h"
 #include "test/gtest.h"

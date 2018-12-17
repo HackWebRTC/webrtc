@@ -14,12 +14,10 @@
 #include <stddef.h>  // For size_t
 #include <cstdint>
 
-#include "absl/strings/match.h"
 // TODO(sprang): Remove this include when all usage includes it directly.
 #include "api/video/video_bitrate_allocation.h"
 // TODO(bugs.webrtc.org/7660): Delete include once downstream code is updated.
 #include "api/video/video_codec_type.h"
-#include "rtc_base/checks.h"
 
 #if defined(_MSC_VER)
 // Disable "new behavior: elements of array will be default initialized"
@@ -156,29 +154,6 @@ class OverheadObserver {
  public:
   virtual ~OverheadObserver() = default;
   virtual void OnOverheadChanged(size_t overhead_bytes_per_packet) = 0;
-};
-
-// ==================================================================
-// Voice specific types
-// ==================================================================
-
-// Each codec supported can be described by this structure.
-struct CodecInst {
-  int pltype;
-  char plname[RTP_PAYLOAD_NAME_SIZE];
-  int plfreq;
-  int pacsize;
-  size_t channels;
-  int rate;  // bits/sec unlike {start,min,max}Bitrate elsewhere in this file!
-
-  bool operator==(const CodecInst& other) const {
-    return pltype == other.pltype &&
-           absl::EqualsIgnoreCase(plname, other.plname) &&
-           plfreq == other.plfreq && pacsize == other.pacsize &&
-           channels == other.channels && rate == other.rate;
-  }
-
-  bool operator!=(const CodecInst& other) const { return !(*this == other); }
 };
 
 // RTP

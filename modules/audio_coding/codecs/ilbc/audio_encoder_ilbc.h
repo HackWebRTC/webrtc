@@ -18,12 +18,9 @@
 
 namespace webrtc {
 
-struct CodecInst;
-
 class AudioEncoderIlbcImpl final : public AudioEncoder {
  public:
   AudioEncoderIlbcImpl(const AudioEncoderIlbcConfig& config, int payload_type);
-  explicit AudioEncoderIlbcImpl(const CodecInst& codec_inst);
   ~AudioEncoderIlbcImpl() override;
 
   int SampleRateHz() const override;

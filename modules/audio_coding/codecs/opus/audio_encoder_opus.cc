@@ -16,7 +16,6 @@
 
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
-#include "common_types.h"
 #include "modules/audio_coding/audio_network_adaptor/audio_network_adaptor_impl.h"
 #include "modules/audio_coding/audio_network_adaptor/controller_manager.h"
 #include "modules/audio_coding/codecs/opus/opus_interface.h"
@@ -334,19 +333,6 @@ absl::optional<AudioCodecInfo> AudioEncoderOpusImpl::QueryAudioEncoder(
   return absl::nullopt;
 }
 
-AudioEncoderOpusConfig AudioEncoderOpusImpl::CreateConfig(
-    const CodecInst& codec_inst) {
-  AudioEncoderOpusConfig config;
-  config.frame_size_ms = rtc::CheckedDivExact(codec_inst.pacsize, 48);
-  config.num_channels = codec_inst.channels;
-  config.bitrate_bps = codec_inst.rate;
-  config.application = config.num_channels == 1
-                           ? AudioEncoderOpusConfig::ApplicationMode::kVoip
-                           : AudioEncoderOpusConfig::ApplicationMode::kAudio;
-  config.supported_frame_lengths_ms.push_back(config.frame_size_ms);
-  return config;
-}
-
 absl::optional<AudioEncoderOpusConfig> AudioEncoderOpusImpl::SdpToConfig(
     const SdpAudioFormat& format) {
   if (!absl::EqualsIgnoreCase(format.name, "opus") ||
@@ -493,9 +479,6 @@ AudioEncoderOpusImpl::AudioEncoderOpusImpl(
   RTC_CHECK(RecreateEncoderInstance(config));
   SetProjectedPacketLossRate(packet_loss_rate_);
 }
-
-AudioEncoderOpusImpl::AudioEncoderOpusImpl(const CodecInst& codec_inst)
-    : AudioEncoderOpusImpl(CreateConfig(codec_inst), codec_inst.pltype) {}
 
 AudioEncoderOpusImpl::AudioEncoderOpusImpl(int payload_type,
                                            const SdpAudioFormat& format)

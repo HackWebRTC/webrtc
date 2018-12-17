@@ -20,8 +20,6 @@
 
 namespace webrtc {
 
-struct CodecInst;
-
 template <typename T>
 class AudioEncoderIsacT final : public AudioEncoder {
  public:
@@ -52,9 +50,6 @@ class AudioEncoderIsacT final : public AudioEncoder {
   };
 
   explicit AudioEncoderIsacT(const Config& config);
-  explicit AudioEncoderIsacT(
-      const CodecInst& codec_inst,
-      const rtc::scoped_refptr<LockedIsacBandwidthInfo>& bwinfo);
   ~AudioEncoderIsacT() override;
 
   int SampleRateHz() const override;

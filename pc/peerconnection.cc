@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/strings/match.h"
 #include "api/jsepicecandidate.h"
 #include "api/jsepsessiondescription.h"
 #include "api/mediastreamproxy.h"

@@ -15,7 +15,6 @@
 #include "absl/memory/memory.h"
 #include "api/audio_codecs/opus/audio_encoder_opus.h"
 #include "common_audio/mocks/mock_smoothing_filter.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/audio_network_adaptor/mock/mock_audio_network_adaptor.h"
 #include "modules/audio_coding/codecs/opus/audio_encoder_opus.h"
 #include "modules/audio_coding/codecs/opus/opus_interface.h"
@@ -33,20 +32,10 @@ using ::testing::Return;
 
 namespace {
 
-const CodecInst kDefaultOpusSettings = {105, "opus", 48000, 960, 1, 32000};
+constexpr int kDefaultOpusPayloadType = 105;
+constexpr int kDefaultOpusRate = 32000;
+constexpr int kDefaultOpusPacSize = 960;
 constexpr int64_t kInitialTimeUs = 12345678;
-
-AudioEncoderOpusConfig CreateConfig(const CodecInst& codec_inst) {
-  AudioEncoderOpusConfig config;
-  config.frame_size_ms = rtc::CheckedDivExact(codec_inst.pacsize, 48);
-  config.num_channels = codec_inst.channels;
-  config.bitrate_bps = codec_inst.rate;
-  config.application = config.num_channels == 1
-                           ? AudioEncoderOpusConfig::ApplicationMode::kVoip
-                           : AudioEncoderOpusConfig::ApplicationMode::kAudio;
-  config.supported_frame_lengths_ms.push_back(config.frame_size_ms);
-  return config;
-}
 
 AudioEncoderOpusConfig CreateConfigWithParameters(
     const SdpAudioFormat::Parameters& params) {
@@ -79,15 +68,22 @@ std::unique_ptr<AudioEncoderOpusStates> CreateCodec(size_t num_channels) {
         return adaptor;
       };
 
-  CodecInst codec_inst = kDefaultOpusSettings;
-  codec_inst.channels = num_channels;
-  states->config = CreateConfig(codec_inst);
+  AudioEncoderOpusConfig config;
+  config.frame_size_ms = rtc::CheckedDivExact(kDefaultOpusPacSize, 48);
+  config.num_channels = num_channels;
+  config.bitrate_bps = kDefaultOpusRate;
+  config.application = num_channels == 1
+                           ? AudioEncoderOpusConfig::ApplicationMode::kVoip
+                           : AudioEncoderOpusConfig::ApplicationMode::kAudio;
+  config.supported_frame_lengths_ms.push_back(config.frame_size_ms);
+  states->config = config;
+
   std::unique_ptr<MockSmoothingFilter> bitrate_smoother(
       new MockSmoothingFilter());
   states->mock_bitrate_smoother = bitrate_smoother.get();
 
   states->encoder.reset(new AudioEncoderOpusImpl(
-      states->config, codec_inst.pltype, std::move(creator),
+      states->config, kDefaultOpusPayloadType, std::move(creator),
       std::move(bitrate_smoother)));
   return states;
 }
@@ -436,12 +432,12 @@ TEST(AudioEncoderOpusTest, DoNotInvokeSetTargetBitrateIfOverheadUnknown) {
 
   auto states = CreateCodec(2);
 
-  states->encoder->OnReceivedUplinkBandwidth(kDefaultOpusSettings.rate * 2,
+  states->encoder->OnReceivedUplinkBandwidth(kDefaultOpusRate * 2,
                                              absl::nullopt);
 
   // Since |OnReceivedOverhead| has not been called, the codec bitrate should
   // not change.
-  EXPECT_EQ(kDefaultOpusSettings.rate, states->encoder->GetTargetBitrate());
+  EXPECT_EQ(kDefaultOpusRate, states->encoder->GetTargetBitrate());
 }
 
 TEST(AudioEncoderOpusTest, OverheadRemovedFromTargetAudioBitrate) {
@@ -456,7 +452,7 @@ TEST(AudioEncoderOpusTest, OverheadRemovedFromTargetAudioBitrate) {
   constexpr int kTargetBitrateBps = 40000;
   states->encoder->OnReceivedUplinkBandwidth(kTargetBitrateBps, absl::nullopt);
 
-  int packet_rate = rtc::CheckedDivExact(48000, kDefaultOpusSettings.pacsize);
+  int packet_rate = rtc::CheckedDivExact(48000, kDefaultOpusPacSize);
   EXPECT_EQ(kTargetBitrateBps -
                 8 * static_cast<int>(kOverheadBytesPerPacket) * packet_rate,
             states->encoder->GetTargetBitrate());
@@ -474,7 +470,7 @@ TEST(AudioEncoderOpusTest, BitrateBounded) {
   constexpr size_t kOverheadBytesPerPacket = 64;
   states->encoder->OnReceivedOverhead(kOverheadBytesPerPacket);
 
-  int packet_rate = rtc::CheckedDivExact(48000, kDefaultOpusSettings.pacsize);
+  int packet_rate = rtc::CheckedDivExact(48000, kDefaultOpusPacSize);
 
   // Set a target rate that is smaller than |kMinBitrateBps| when overhead is
   // subtracted. The eventual codec rate should be bounded by |kMinBitrateBps|.

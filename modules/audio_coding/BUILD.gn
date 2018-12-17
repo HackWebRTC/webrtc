@@ -14,24 +14,6 @@ if (!build_with_mozilla) {
 
 visibility = [ ":*" ]
 
-rtc_static_library("audio_format_conversion") {
-  visibility += webrtc_default_visibility
-  sources = [
-    "codecs/audio_format_conversion.cc",
-    "codecs/audio_format_conversion.h",
-  ]
-  deps = [
-    "../..:webrtc_common",
-    "../../api:array_view",
-    "../../api/audio_codecs:audio_codecs_api",
-    "../../rtc_base:checks",
-    "../../rtc_base:rtc_base_approved",
-    "../../rtc_base:sanitizer",
-    "//third_party/abseil-cpp/absl/strings",
-    "//third_party/abseil-cpp/absl/types:optional",
-  ]
-}
-
 rtc_source_set("audio_coding_module_typedefs") {
   sources = [
     "include/audio_coding_module_typedefs.h",
@@ -1319,7 +1301,6 @@ if (rtc_include_tests) {
       ":audio_coding",
       ":audio_coding_module_typedefs",
       ":audio_encoder_cng",
-      ":audio_format_conversion",
       ":pcm16b_c",
       ":red",
       ":webrtc_opus_c",
@@ -1398,7 +1379,6 @@ if (rtc_include_tests) {
     deps = audio_coding_deps + [
              "..:module_api",
              ":audio_coding",
-             ":audio_format_conversion",
              "../../api/audio_codecs:audio_codecs_api",
              "../../api/audio_codecs:builtin_audio_decoder_factory",
              ":neteq_tools",
@@ -1422,7 +1402,6 @@ if (rtc_include_tests) {
              "../../api/audio:audio_frame_api",
              "../../rtc_base:checks",
              ":audio_coding",
-             ":audio_format_conversion",
              ":neteq_tools",
              "../../api/audio_codecs:builtin_audio_decoder_factory",
              "../../api/audio_codecs:builtin_audio_encoder_factory",
@@ -2041,7 +2020,6 @@ if (rtc_include_tests) {
       ":audio_coding",
       ":audio_coding_module_typedefs",
       ":audio_encoder_cng",
-      ":audio_format_conversion",
       ":audio_network_adaptor",
       ":g711",
       ":ilbc",
