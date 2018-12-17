@@ -41,6 +41,7 @@ rtc_static_library("congestion_controller") {
     "../../api/units:data_rate",
     "../../api/units:timestamp",
     "../../rtc_base:checks",
+    "../../rtc_base:deprecation",
     "../../rtc_base:ptr_util",
     "../../rtc_base:rate_limiter",
     "../../rtc_base/network:sent_packet",

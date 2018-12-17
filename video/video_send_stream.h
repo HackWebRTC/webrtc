@@ -32,7 +32,6 @@ class VideoSendStreamPeer;
 }  // namespace test
 
 class CallStats;
-class SendSideCongestionController;
 class IvfFileWriter;
 class ProcessThread;
 class RateLimiter;

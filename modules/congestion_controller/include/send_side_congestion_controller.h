@@ -24,6 +24,7 @@
 #include "modules/pacing/paced_sender.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/criticalsection.h"
+#include "rtc_base/deprecation.h"
 #include "rtc_base/networkroute.h"
 #include "rtc_base/race_checker.h"
 
@@ -41,15 +42,17 @@ class RateLimiter;
 class RtcEventLog;
 class CongestionWindowPushbackController;
 
-class SendSideCongestionController
+// Deprecated, for somewhat similar funtionality GoogCcNetworkController can be
+// used via GoogCcNetworkControllerFactory.
+class DEPRECATED_SendSideCongestionController
     : public SendSideCongestionControllerInterface {
  public:
   using Observer = NetworkChangedObserver;
-  SendSideCongestionController(const Clock* clock,
-                               Observer* observer,
-                               RtcEventLog* event_log,
-                               PacedSender* pacer);
-  ~SendSideCongestionController() override;
+  DEPRECATED_SendSideCongestionController(const Clock* clock,
+                                          Observer* observer,
+                                          RtcEventLog* event_log,
+                                          PacedSender* pacer);
+  ~DEPRECATED_SendSideCongestionController() override;
 
   void RegisterPacketFeedbackObserver(
       PacketFeedbackObserver* observer) override;
@@ -169,7 +172,13 @@ class SendSideCongestionController
   std::unique_ptr<CongestionWindowPushbackController>
       congestion_window_pushback_controller_;
 
-  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(SendSideCongestionController);
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(DEPRECATED_SendSideCongestionController);
+};
+class RTC_DEPRECATED SendSideCongestionController
+    : public DEPRECATED_SendSideCongestionController {
+ public:
+  using DEPRECATED_SendSideCongestionController::
+      DEPRECATED_SendSideCongestionController;
 };
 
 }  // namespace webrtc

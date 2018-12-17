@@ -122,11 +122,11 @@ bool IsPacerPushbackExperimentEnabled() {
 
 }  // namespace
 
-SendSideCongestionController::SendSideCongestionController(
-    const Clock* clock,
-    Observer* observer,
-    RtcEventLog* event_log,
-    PacedSender* pacer)
+DEPRECATED_SendSideCongestionController::
+    DEPRECATED_SendSideCongestionController(const Clock* clock,
+                                            Observer* observer,
+                                            RtcEventLog* event_log,
+                                            PacedSender* pacer)
     : clock_(clock),
       observer_(observer),
       event_log_(event_log),
@@ -166,9 +166,10 @@ SendSideCongestionController::SendSideCongestionController(
   }
 }
 
-SendSideCongestionController::~SendSideCongestionController() {}
+DEPRECATED_SendSideCongestionController::
+    ~DEPRECATED_SendSideCongestionController() {}
 
-void SendSideCongestionController::EnableCongestionWindowPushback(
+void DEPRECATED_SendSideCongestionController::EnableCongestionWindowPushback(
     int64_t accepted_queue_ms,
     uint32_t min_pushback_target_bitrate_bps) {
   RTC_DCHECK(!congestion_window_pushback_controller_)
@@ -185,32 +186,34 @@ void SendSideCongestionController::EnableCongestionWindowPushback(
           min_pushback_target_bitrate_bps);
 }
 
-void SendSideCongestionController::RegisterPacketFeedbackObserver(
+void DEPRECATED_SendSideCongestionController::RegisterPacketFeedbackObserver(
     PacketFeedbackObserver* observer) {
   transport_feedback_adapter_.RegisterPacketFeedbackObserver(observer);
 }
 
-void SendSideCongestionController::DeRegisterPacketFeedbackObserver(
+void DEPRECATED_SendSideCongestionController::DeRegisterPacketFeedbackObserver(
     PacketFeedbackObserver* observer) {
   transport_feedback_adapter_.DeRegisterPacketFeedbackObserver(observer);
 }
 
-void SendSideCongestionController::RegisterNetworkObserver(Observer* observer) {
+void DEPRECATED_SendSideCongestionController::RegisterNetworkObserver(
+    Observer* observer) {
   rtc::CritScope cs(&observer_lock_);
   RTC_DCHECK(observer_ == nullptr);
   observer_ = observer;
 }
 
-void SendSideCongestionController::DeRegisterNetworkObserver(
+void DEPRECATED_SendSideCongestionController::DeRegisterNetworkObserver(
     Observer* observer) {
   rtc::CritScope cs(&observer_lock_);
   RTC_DCHECK_EQ(observer_, observer);
   observer_ = nullptr;
 }
 
-void SendSideCongestionController::SetBweBitrates(int min_bitrate_bps,
-                                                  int start_bitrate_bps,
-                                                  int max_bitrate_bps) {
+void DEPRECATED_SendSideCongestionController::SetBweBitrates(
+    int min_bitrate_bps,
+    int start_bitrate_bps,
+    int max_bitrate_bps) {
   ClampBitrates(&start_bitrate_bps, &min_bitrate_bps, &max_bitrate_bps);
   bitrate_controller_->SetBitrates(start_bitrate_bps, min_bitrate_bps,
                                    max_bitrate_bps);
@@ -232,7 +235,7 @@ void SendSideCongestionController::SetBweBitrates(int min_bitrate_bps,
   MaybeTriggerOnNetworkChanged();
 }
 
-void SendSideCongestionController::SetAllocatedSendBitrateLimits(
+void DEPRECATED_SendSideCongestionController::SetAllocatedSendBitrateLimits(
     int64_t min_send_bitrate_bps,
     int64_t max_padding_bitrate_bps,
     int64_t max_total_bitrate_bps) {
@@ -245,7 +248,7 @@ void SendSideCongestionController::SetAllocatedSendBitrateLimits(
 
 // TODO(holmer): Split this up and use SetBweBitrates in combination with
 // OnNetworkRouteChanged.
-void SendSideCongestionController::OnNetworkRouteChanged(
+void DEPRECATED_SendSideCongestionController::OnNetworkRouteChanged(
     const rtc::NetworkRoute& network_route,
     int bitrate_bps,
     int min_bitrate_bps,
@@ -281,37 +284,41 @@ void SendSideCongestionController::OnNetworkRouteChanged(
   MaybeTriggerOnNetworkChanged();
 }
 
-bool SendSideCongestionController::AvailableBandwidth(
+bool DEPRECATED_SendSideCongestionController::AvailableBandwidth(
     uint32_t* bandwidth) const {
   return bitrate_controller_->AvailableBandwidth(bandwidth);
 }
 
-RtcpBandwidthObserver* SendSideCongestionController::GetBandwidthObserver() {
+RtcpBandwidthObserver*
+DEPRECATED_SendSideCongestionController::GetBandwidthObserver() {
   return bitrate_controller_.get();
 }
 
-void SendSideCongestionController::SetPerPacketFeedbackAvailable(
+void DEPRECATED_SendSideCongestionController::SetPerPacketFeedbackAvailable(
     bool available) {}
 
-void SendSideCongestionController::EnablePeriodicAlrProbing(bool enable) {
+void DEPRECATED_SendSideCongestionController::EnablePeriodicAlrProbing(
+    bool enable) {
   rtc::CritScope cs(&probe_lock_);
   probe_controller_->EnablePeriodicAlrProbing(enable);
 }
 
-int64_t SendSideCongestionController::GetPacerQueuingDelayMs() const {
+int64_t DEPRECATED_SendSideCongestionController::GetPacerQueuingDelayMs()
+    const {
   return IsNetworkDown() ? 0 : pacer_->QueueInMs();
 }
 
-int64_t SendSideCongestionController::GetFirstPacketTimeMs() const {
+int64_t DEPRECATED_SendSideCongestionController::GetFirstPacketTimeMs() const {
   return pacer_->FirstSentPacketTimeMs();
 }
 
 TransportFeedbackObserver*
-SendSideCongestionController::GetTransportFeedbackObserver() {
+DEPRECATED_SendSideCongestionController::GetTransportFeedbackObserver() {
   return this;
 }
 
-void SendSideCongestionController::SignalNetworkState(NetworkState state) {
+void DEPRECATED_SendSideCongestionController::SignalNetworkState(
+    NetworkState state) {
   RTC_LOG(LS_INFO) << "SignalNetworkState "
                    << (state == kNetworkUp ? "Up" : "Down");
   {
@@ -330,7 +337,7 @@ void SendSideCongestionController::SignalNetworkState(NetworkState state) {
   MaybeTriggerOnNetworkChanged();
 }
 
-void SendSideCongestionController::OnSentPacket(
+void DEPRECATED_SendSideCongestionController::OnSentPacket(
     const rtc::SentPacket& sent_packet) {
   // We're not interested in packets without an id, which may be stun packets,
   // etc, sent on the same transport.
@@ -342,24 +349,24 @@ void SendSideCongestionController::OnSentPacket(
     LimitOutstandingBytes(transport_feedback_adapter_.GetOutstandingBytes());
 }
 
-void SendSideCongestionController::OnRttUpdate(int64_t avg_rtt_ms,
-                                               int64_t max_rtt_ms) {
+void DEPRECATED_SendSideCongestionController::OnRttUpdate(int64_t avg_rtt_ms,
+                                                          int64_t max_rtt_ms) {
   rtc::CritScope cs(&bwe_lock_);
   delay_based_bwe_->OnRttUpdate(TimeDelta::ms(avg_rtt_ms));
 }
 
-int64_t SendSideCongestionController::TimeUntilNextProcess() {
+int64_t DEPRECATED_SendSideCongestionController::TimeUntilNextProcess() {
   return bitrate_controller_->TimeUntilNextProcess();
 }
 
-void SendSideCongestionController::SendProbes(
+void DEPRECATED_SendSideCongestionController::SendProbes(
     std::vector<ProbeClusterConfig> probe_configs) {
   for (auto probe_config : probe_configs) {
     pacer_->CreateProbeCluster(probe_config.target_data_rate.bps());
   }
 }
 
-void SendSideCongestionController::Process() {
+void DEPRECATED_SendSideCongestionController::Process() {
   bool pause_pacer;
   // TODO(holmer): Once this class is running on a task queue we should
   // replace this with a task instead.
@@ -385,7 +392,7 @@ void SendSideCongestionController::Process() {
   MaybeTriggerOnNetworkChanged();
 }
 
-void SendSideCongestionController::AddPacket(
+void DEPRECATED_SendSideCongestionController::AddPacket(
     uint32_t ssrc,
     uint16_t sequence_number,
     size_t length,
@@ -398,7 +405,7 @@ void SendSideCongestionController::AddPacket(
                                         pacing_info);
 }
 
-void SendSideCongestionController::OnTransportFeedback(
+void DEPRECATED_SendSideCongestionController::OnTransportFeedback(
     const rtcp::TransportFeedback& feedback) {
   RTC_DCHECK_RUNS_SERIALIZED(&worker_race_);
   transport_feedback_adapter_.OnTransportFeedback(feedback);
@@ -448,7 +455,7 @@ void SendSideCongestionController::OnTransportFeedback(
   }
 }
 
-void SendSideCongestionController::LimitOutstandingBytes(
+void DEPRECATED_SendSideCongestionController::LimitOutstandingBytes(
     size_t num_outstanding_bytes) {
   RTC_DCHECK(in_cwnd_experiment_);
   rtc::CritScope lock(&network_state_lock_);
@@ -474,22 +481,23 @@ void SendSideCongestionController::LimitOutstandingBytes(
 }
 
 std::vector<PacketFeedback>
-SendSideCongestionController::GetTransportFeedbackVector() const {
+DEPRECATED_SendSideCongestionController::GetTransportFeedbackVector() const {
   RTC_DCHECK_RUNS_SERIALIZED(&worker_race_);
   return transport_feedback_adapter_.GetTransportFeedbackVector();
 }
 
-void SendSideCongestionController::SetPacingFactor(float pacing_factor) {
+void DEPRECATED_SendSideCongestionController::SetPacingFactor(
+    float pacing_factor) {
   pacer_->SetPacingFactor(pacing_factor);
 }
 
-void SendSideCongestionController::SetAllocatedBitrateWithoutFeedback(
-    uint32_t bitrate_bps) {
+void DEPRECATED_SendSideCongestionController::
+    SetAllocatedBitrateWithoutFeedback(uint32_t bitrate_bps) {
   acknowledged_bitrate_estimator_->SetAllocatedBitrateWithoutFeedback(
       bitrate_bps);
 }
 
-void SendSideCongestionController::MaybeTriggerOnNetworkChanged() {
+void DEPRECATED_SendSideCongestionController::MaybeTriggerOnNetworkChanged() {
   uint32_t bitrate_bps;
   uint8_t fraction_loss;
   int64_t rtt;
@@ -544,10 +552,10 @@ void SendSideCongestionController::MaybeTriggerOnNetworkChanged() {
   }
 }
 
-bool SendSideCongestionController::HasNetworkParametersToReportChanged(
-    uint32_t bitrate_bps,
-    uint8_t fraction_loss,
-    int64_t rtt) {
+bool DEPRECATED_SendSideCongestionController::
+    HasNetworkParametersToReportChanged(uint32_t bitrate_bps,
+                                        uint8_t fraction_loss,
+                                        int64_t rtt) {
   rtc::CritScope cs(&network_state_lock_);
   bool changed =
       last_reported_bitrate_bps_ != bitrate_bps ||
@@ -563,11 +571,11 @@ bool SendSideCongestionController::HasNetworkParametersToReportChanged(
   return changed;
 }
 
-bool SendSideCongestionController::IsSendQueueFull() const {
+bool DEPRECATED_SendSideCongestionController::IsSendQueueFull() const {
   return pacer_->ExpectedQueueTimeMs() > PacedSender::kMaxQueueLengthMs;
 }
 
-bool SendSideCongestionController::IsNetworkDown() const {
+bool DEPRECATED_SendSideCongestionController::IsNetworkDown() const {
   rtc::CritScope cs(&network_state_lock_);
   return network_state_ == kNetworkDown;
 }

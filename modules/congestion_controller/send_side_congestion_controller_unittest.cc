@@ -54,7 +54,7 @@ class LegacySendSideCongestionControllerTest : public ::testing::Test {
 
   void SetUp() override {
     pacer_.reset(new NiceMock<MockPacedSender>());
-    controller_.reset(new SendSideCongestionController(
+    controller_.reset(new DEPRECATED_SendSideCongestionController(
         &clock_, &observer_, &event_log_, pacer_.get()));
     bandwidth_observer_ = controller_->GetBandwidthObserver();
 
@@ -71,7 +71,7 @@ class LegacySendSideCongestionControllerTest : public ::testing::Test {
   // prescribing on which iterations it must change (like a mock would).
   void TargetBitrateTrackingSetup() {
     pacer_.reset(new NiceMock<MockPacedSender>());
-    controller_.reset(new SendSideCongestionController(
+    controller_.reset(new DEPRECATED_SendSideCongestionController(
         &clock_, &target_bitrate_observer_, &event_log_, pacer_.get()));
     controller_->SetBweBitrates(0, kInitialBitrateBps, 5 * kInitialBitrateBps);
   }
@@ -140,7 +140,7 @@ class LegacySendSideCongestionControllerTest : public ::testing::Test {
   RtcpBandwidthObserver* bandwidth_observer_;
   PacketRouter packet_router_;
   std::unique_ptr<NiceMock<MockPacedSender>> pacer_;
-  std::unique_ptr<SendSideCongestionController> controller_;
+  std::unique_ptr<DEPRECATED_SendSideCongestionController> controller_;
 
   absl::optional<uint32_t> target_bitrate_bps_;
 };
