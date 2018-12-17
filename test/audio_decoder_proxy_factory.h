@@ -83,6 +83,11 @@ class AudioDecoderProxyFactory : public AudioDecoderFactory {
                               max_decoded_bytes, decoded, speech_type);
     }
 
+    void GeneratePlc(size_t requested_samples_per_channel,
+                     rtc::BufferT<int16_t>* concealment_audio) override {
+      decoder_->GeneratePlc(requested_samples_per_channel, concealment_audio);
+    }
+
     AudioDecoder* const decoder_;
   };
 

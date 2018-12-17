@@ -15,7 +15,6 @@
 #include <vector>
 
 #include "absl/types/optional.h"
-#include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "modules/audio_coding/codecs/pcm16b/audio_encoder_pcm16b.h"
 #include "modules/audio_coding/neteq/tools/audio_checksum.h"
 #include "modules/audio_coding/neteq/tools/audio_sink.h"
@@ -24,6 +23,8 @@
 #include "modules/audio_coding/neteq/tools/input_audio_file.h"
 #include "modules/audio_coding/neteq/tools/neteq_test.h"
 #include "rtc_base/numerics/safe_conversions.h"
+#include "rtc_base/refcountedobject.h"
+#include "test/audio_decoder_proxy_factory.h"
 #include "test/gtest.h"
 #include "test/testsupport/fileutils.h"
 
@@ -175,10 +176,7 @@ NetEqNetworkStatistics RunTest(int loss_cadence, std::string* checksum) {
       webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm"));
   AudioDecoderPlc dec(std::move(input_file), kSampleRateHz);
   // Masquerading as a PCM16b decoder.
-  NetEqTest::ExternalDecoderInfo dec_info = {
-      &dec, NetEqDecoder::kDecoderPCM16Bswb32kHz, "pcm16b_PLC"};
-  NetEqTest::ExtDecoderMap external_decoders;
-  external_decoders.insert(std::make_pair(kPayloadType, dec_info));
+  decoders[kPayloadType] = {NetEqDecoder::kDecoderPCM16Bswb32kHz, "pcm16b_PLC"};
 
   // Output is simply a checksum calculator.
   auto output = absl::make_unique<AudioChecksumWithOutput>(checksum);
@@ -186,9 +184,11 @@ NetEqNetworkStatistics RunTest(int loss_cadence, std::string* checksum) {
   // No callback objects.
   NetEqTest::Callbacks callbacks;
 
-  NetEqTest neteq_test(config, CreateBuiltinAudioDecoderFactory(), decoders,
-                       external_decoders, nullptr, std::move(lossy_input),
-                       std::move(output), callbacks);
+  NetEqTest::ExtDecoderMap external_decoders;
+  NetEqTest neteq_test(
+      config, new rtc::RefCountedObject<test::AudioDecoderProxyFactory>(&dec),
+      decoders, external_decoders, nullptr, std::move(lossy_input),
+      std::move(output), callbacks);
   EXPECT_LE(kRunTimeMs, neteq_test.Run());
 
   auto lifetime_stats = neteq_test.LifetimeStats();
