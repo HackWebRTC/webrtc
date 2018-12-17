@@ -15,7 +15,7 @@
 
 #include "p2p/base/relayserver.h"
 #include "rtc_base/asynctcpsocket.h"
-#include "rtc_base/socketadapters.h"
+#include "rtc_base/server_socket_adapters.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
 

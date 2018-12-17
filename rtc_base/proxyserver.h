@@ -15,7 +15,7 @@
 #include <memory>
 #include "rtc_base/asyncsocket.h"
 #include "rtc_base/constructormagic.h"
-#include "rtc_base/socketadapters.h"
+#include "rtc_base/server_socket_adapters.h"
 #include "rtc_base/socketaddress.h"
 #include "rtc_base/stream.h"
 

@@ -22,7 +22,7 @@
 #include "rtc_base/helpers.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
-#include "rtc_base/socketadapters.h"
+#include "rtc_base/server_socket_adapters.h"
 
 namespace cricket {
 
