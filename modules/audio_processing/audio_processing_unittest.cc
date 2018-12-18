@@ -195,6 +195,7 @@ void EnableAllAPComponents(AudioProcessing* ap) {
 #endif
 
   apm_config.high_pass_filter.enabled = true;
+  apm_config.level_estimation.enabled = true;
   ap->ApplyConfig(apm_config);
 
   EXPECT_NOERR(ap->level_estimator()->Enable(true));
@@ -1276,6 +1277,7 @@ TEST_F(ApmTest, AllProcessingDisabledByDefault) {
   AudioProcessing::Config config = apm_->GetConfig();
   EXPECT_FALSE(config.echo_canceller.enabled);
   EXPECT_FALSE(config.high_pass_filter.enabled);
+  EXPECT_FALSE(config.level_estimation.enabled);
   EXPECT_FALSE(apm_->gain_control()->is_enabled());
   EXPECT_FALSE(apm_->level_estimator()->is_enabled());
   EXPECT_FALSE(apm_->noise_suppression()->is_enabled());
@@ -1835,6 +1837,7 @@ TEST_F(ApmTest, Process) {
     int analog_level_average = 0;
     int max_output_average = 0;
     float ns_speech_prob_average = 0.0f;
+    float rms_dbfs_average = 0.0f;
 #if defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
   int stats_index = 0;
 #endif
@@ -1869,6 +1872,9 @@ TEST_F(ApmTest, Process) {
       }
 
       ns_speech_prob_average += apm_->noise_suppression()->speech_probability();
+      AudioProcessingStats stats =
+          apm_->GetStatistics(/*has_remote_tracks=*/false);
+      rms_dbfs_average += *stats.output_rms_dbfs;
 
       size_t frame_size = frame_->samples_per_channel_ * frame_->num_channels_;
       size_t write_count = fwrite(frame_->data(),
@@ -1904,11 +1910,6 @@ TEST_F(ApmTest, Process) {
         const int32_t delay_standard_deviation_ms =
             stats.delay_standard_deviation_ms.value_or(-1.0);
 
-        // Get RMS.
-        int rms_level = apm_->level_estimator()->RMS();
-        EXPECT_LE(0, rms_level);
-        EXPECT_GE(127, rms_level);
-
         if (!write_ref_data) {
           const audioproc::Test::EchoMetrics& reference =
               test->echo_metrics(stats_index);
@@ -1929,8 +1930,6 @@ TEST_F(ApmTest, Process) {
           EXPECT_EQ(reference_delay.median(), delay_median_ms);
           EXPECT_EQ(reference_delay.std(), delay_standard_deviation_ms);
 
-          EXPECT_EQ(test->rms_level(stats_index), rms_level);
-
           ++stats_index;
         } else {
           audioproc::Test::EchoMetrics* message_echo = test->add_echo_metrics();
@@ -1946,8 +1945,6 @@ TEST_F(ApmTest, Process) {
               test->add_delay_metrics();
           message_delay->set_median(delay_median_ms);
           message_delay->set_std(delay_standard_deviation_ms);
-
-          test->add_rms_level(rms_level);
         }
       }
 #endif  // defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE).
@@ -1955,6 +1952,7 @@ TEST_F(ApmTest, Process) {
     max_output_average /= frame_count;
     analog_level_average /= frame_count;
     ns_speech_prob_average /= frame_count;
+    rms_dbfs_average /= frame_count;
 
     if (!write_ref_data) {
       const int kIntNear = 1;
@@ -1989,6 +1987,7 @@ TEST_F(ApmTest, Process) {
       EXPECT_NEAR(test->ns_speech_probability_average(),
                   ns_speech_prob_average,
                   kFloatNear);
+      EXPECT_NEAR(test->rms_dbfs_average(), rms_dbfs_average, kFloatNear);
 #endif
     } else {
       test->set_has_voice_count(has_voice_count);
@@ -2001,6 +2000,7 @@ TEST_F(ApmTest, Process) {
       EXPECT_LE(0.0f, ns_speech_prob_average);
       EXPECT_GE(1.0f, ns_speech_prob_average);
       test->set_ns_speech_probability_average(ns_speech_prob_average);
+      test->set_rms_dbfs_average(rms_dbfs_average);
 #endif
     }
 
