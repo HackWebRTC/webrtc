@@ -11,11 +11,11 @@
 #include <algorithm>
 #include <memory>
 
-#include "api/transport/test/network_control_tester.h"
 #include "modules/congestion_controller/bbr/bbr_factory.h"
 #include "modules/congestion_controller/bbr/bbr_network_controller.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
+#include "test/scenario/scenario.h"
 
 using testing::Field;
 using testing::Matcher;
@@ -28,7 +28,6 @@ using testing::StrictMock;
 using testing::_;
 
 namespace webrtc {
-namespace bbr {
 namespace test {
 namespace {
 
@@ -85,7 +84,7 @@ class BbrNetworkControllerTest : public ::testing::Test {
 
 TEST_F(BbrNetworkControllerTest, SendsConfigurationOnFirstProcess) {
   std::unique_ptr<NetworkControllerInterface> controller_;
-  controller_.reset(new BbrNetworkController(InitialConfig()));
+  controller_.reset(new bbr::BbrNetworkController(InitialConfig()));
 
   NetworkControlUpdate update =
       controller_->OnProcessInterval(InitialProcessInterval());
@@ -97,7 +96,7 @@ TEST_F(BbrNetworkControllerTest, SendsConfigurationOnFirstProcess) {
 
 TEST_F(BbrNetworkControllerTest, SendsConfigurationOnNetworkRouteChanged) {
   std::unique_ptr<NetworkControllerInterface> controller_;
-  controller_.reset(new BbrNetworkController(InitialConfig()));
+  controller_.reset(new bbr::BbrNetworkController(InitialConfig()));
 
   NetworkControlUpdate update =
       controller_->OnProcessInterval(InitialProcessInterval());
@@ -118,35 +117,49 @@ TEST_F(BbrNetworkControllerTest, SendsConfigurationOnNetworkRouteChanged) {
 // Feedbacks which show an increasing delay cause the estimation to be reduced.
 TEST_F(BbrNetworkControllerTest, UpdatesTargetSendRate) {
   BbrNetworkControllerFactory factory;
-  webrtc::test::NetworkControllerTester tester(&factory,
-                                               InitialConfig(60, 0, 600));
-  auto packet_producer = &webrtc::test::SimpleTargetRateProducer::ProduceNext;
+  Scenario s("bbr_unit/updates_rate", false);
+  SimulatedTimeClientConfig config;
+  config.transport.cc =
+      TransportControllerConfig::CongestionController::kInjected;
+  config.transport.cc_factory = &factory;
+  config.transport.rates.min_rate = DataRate::kbps(10);
+  config.transport.rates.max_rate = DataRate::kbps(1500);
+  config.transport.rates.start_rate = DataRate::kbps(300);
+  NetworkNodeConfig net_conf;
+  auto send_net = s.CreateSimulationNode([](NetworkNodeConfig* c) {
+    c->simulation.bandwidth = DataRate::kbps(500);
+    c->simulation.delay = TimeDelta::ms(100);
+    c->simulation.loss_rate = 0.0;
+    c->update_frequency = TimeDelta::ms(5);
+  });
+  auto ret_net = s.CreateSimulationNode([](NetworkNodeConfig* c) {
+    c->simulation.delay = TimeDelta::ms(100);
+    c->update_frequency = TimeDelta::ms(5);
+  });
+  SimulatedTimeClient* client = s.CreateSimulatedTimeClient(
+      "send", config, {PacketStreamConfig()}, {send_net}, {ret_net});
 
-  tester.RunSimulation(TimeDelta::seconds(5), TimeDelta::ms(10),
-                       DataRate::kbps(300), TimeDelta::ms(100),
-                       packet_producer);
-  EXPECT_GE(tester.GetState().target_rate->target_rate,
-            DataRate::kbps(300) * kMinDataRateFactor);
-  EXPECT_LE(tester.GetState().target_rate->target_rate,
-            DataRate::kbps(300) * kMaxDataRateFactor);
+  s.RunFor(TimeDelta::seconds(25));
+  EXPECT_NEAR(client->target_rate_kbps(), 450, 100);
 
-  tester.RunSimulation(TimeDelta::seconds(30), TimeDelta::ms(10),
-                       DataRate::kbps(500), TimeDelta::ms(100),
-                       packet_producer);
-  EXPECT_GE(tester.GetState().target_rate->target_rate,
-            DataRate::kbps(500) * kMinDataRateFactor);
-  EXPECT_LE(tester.GetState().target_rate->target_rate,
-            DataRate::kbps(500) * kMaxDataRateFactor);
+  send_net->UpdateConfig([](NetworkNodeConfig* c) {
+    c->simulation.bandwidth = DataRate::kbps(800);
+    c->simulation.delay = TimeDelta::ms(100);
+  });
 
-  tester.RunSimulation(TimeDelta::seconds(30), TimeDelta::ms(10),
-                       DataRate::kbps(100), TimeDelta::ms(200),
-                       packet_producer);
-  EXPECT_GE(tester.GetState().target_rate->target_rate,
-            DataRate::kbps(100) * kMinDataRateFactor);
-  EXPECT_LE(tester.GetState().target_rate->target_rate,
-            DataRate::kbps(100) * kMaxDataRateFactor);
+  s.RunFor(TimeDelta::seconds(20));
+  EXPECT_NEAR(client->target_rate_kbps(), 750, 150);
+
+  send_net->UpdateConfig([](NetworkNodeConfig* c) {
+    c->simulation.bandwidth = DataRate::kbps(200);
+    c->simulation.delay = TimeDelta::ms(200);
+  });
+  ret_net->UpdateConfig(
+      [](NetworkNodeConfig* c) { c->simulation.delay = TimeDelta::ms(200); });
+
+  s.RunFor(TimeDelta::seconds(40));
+  EXPECT_NEAR(client->target_rate_kbps(), 200, 40);
 }
 
 }  // namespace test
-}  // namespace bbr
 }  // namespace webrtc

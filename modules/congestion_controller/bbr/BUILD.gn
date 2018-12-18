@@ -157,6 +157,7 @@ if (rtc_include_tests) {
       "../../../api/units:timestamp",
       "../../../rtc_base:logging",
       "../../../test:test_support",
+      "../../../test/scenario",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).

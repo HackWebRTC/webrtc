@@ -61,18 +61,12 @@ if (rtc_include_tests) {
     testonly = true
     sources = [
       "test/mock_network_control.h",
-      "test/network_control_tester.cc",
-      "test/network_control_tester.h",
     ]
     deps = [
       ":network_control",
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
       "../../test:test_support",
-      "../units:data_rate",
-      "../units:data_size",
-      "../units:time_delta",
-      "../units:timestamp",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
   }
