@@ -39,6 +39,7 @@ class DelayBasedBwe {
     bool probe;
     DataRate target_bitrate = DataRate::Zero();
     bool recovered_from_overuse;
+    bool backoff_in_alr;
   };
 
   explicit DelayBasedBwe(RtcEventLog* event_log);
@@ -48,12 +49,14 @@ class DelayBasedBwe {
       const std::vector<PacketFeedback>& packet_feedback_vector,
       absl::optional<DataRate> acked_bitrate,
       absl::optional<DataRate> probe_bitrate,
+      bool in_alr,
       Timestamp at_time);
   void OnRttUpdate(TimeDelta avg_rtt);
   bool LatestEstimate(std::vector<uint32_t>* ssrcs, DataRate* bitrate) const;
   void SetStartBitrate(DataRate start_bitrate);
   void SetMinBitrate(DataRate min_bitrate);
   TimeDelta GetExpectedBwePeriod() const;
+  void SetAlrLimitedBackoffExperiment(bool enabled);
 
  private:
   friend class GoogCcStatePrinter;
@@ -61,7 +64,8 @@ class DelayBasedBwe {
                               Timestamp at_time);
   Result MaybeUpdateEstimate(absl::optional<DataRate> acked_bitrate,
                              absl::optional<DataRate> probe_bitrate,
-                             bool request_probe,
+                             bool recovered_from_overuse,
+                             bool in_alr,
                              Timestamp at_time);
   // Updates the current remote rate estimate and returns true if a valid
   // estimate exists.
@@ -81,6 +85,7 @@ class DelayBasedBwe {
   double trendline_threshold_gain_;
   DataRate prev_bitrate_;
   BandwidthUsage prev_state_;
+  bool alr_limited_backoff_enabled_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(DelayBasedBwe);
 };

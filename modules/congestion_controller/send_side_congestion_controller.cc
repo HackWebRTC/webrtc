@@ -186,6 +186,12 @@ void DEPRECATED_SendSideCongestionController::EnableCongestionWindowPushback(
           min_pushback_target_bitrate_bps);
 }
 
+void DEPRECATED_SendSideCongestionController::SetAlrLimitedBackoffExperiment(
+    bool enable) {
+  rtc::CritScope cs(&bwe_lock_);
+  delay_based_bwe_->SetAlrLimitedBackoffExperiment(enable);
+}
+
 void DEPRECATED_SendSideCongestionController::RegisterPacketFeedbackObserver(
     PacketFeedbackObserver* observer) {
   transport_feedback_adapter_.RegisterPacketFeedbackObserver(observer);
@@ -437,7 +443,7 @@ void DEPRECATED_SendSideCongestionController::OnTransportFeedback(
     result = delay_based_bwe_->IncomingPacketFeedbackVector(
         feedback_vector, acknowledged_bitrate_estimator_->bitrate(),
         probe_bitrate_estimator_->FetchAndResetLastEstimatedBitrate(),
-        Timestamp::ms(clock_->TimeInMilliseconds()));
+        currently_in_alr, Timestamp::ms(clock_->TimeInMilliseconds()));
   }
   if (result.updated) {
     bitrate_controller_->OnDelayBasedBweResult(result);
@@ -448,6 +454,9 @@ void DEPRECATED_SendSideCongestionController::OnTransportFeedback(
     rtc::CritScope cs(&probe_lock_);
     probe_controller_->SetAlrStartTimeMs(
         pacer_->GetApplicationLimitedRegionStartTime());
+    SendProbes(probe_controller_->RequestProbe(clock_->TimeInMilliseconds()));
+  } else if (result.backoff_in_alr) {
+    rtc::CritScope cs(&probe_lock_);
     SendProbes(probe_controller_->RequestProbe(clock_->TimeInMilliseconds()));
   }
   if (in_cwnd_experiment_) {

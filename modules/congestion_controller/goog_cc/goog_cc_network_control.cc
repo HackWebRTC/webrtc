@@ -498,7 +498,7 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
   DelayBasedBwe::Result result;
   result = delay_based_bwe_->IncomingPacketFeedbackVector(
       received_feedback_vector, acknowledged_bitrate, probe_bitrate,
-      report.feedback_time);
+      alr_start_time.has_value(), report.feedback_time);
 
   NetworkControlUpdate update;
   if (result.updated) {
@@ -515,6 +515,11 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
   }
   if (result.recovered_from_overuse) {
     probe_controller_->SetAlrStartTimeMs(alr_start_time);
+    auto probes = probe_controller_->RequestProbe(report.feedback_time.ms());
+    update.probe_cluster_configs.insert(update.probe_cluster_configs.end(),
+                                        probes.begin(), probes.end());
+  } else if (result.backoff_in_alr) {
+    // If we just backed off during ALR, request a new probe.
     auto probes = probe_controller_->RequestProbe(report.feedback_time.ms());
     update.probe_cluster_configs.insert(update.probe_cluster_configs.end(),
                                         probes.begin(), probes.end());
