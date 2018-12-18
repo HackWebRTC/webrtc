@@ -36,6 +36,7 @@
 #include "rtc_base/strings/string_builder.h"
 #include "test/run_loop.h"
 #include "test/testsupport/fileutils.h"
+#include "test/vcm_capturer.h"
 #include "test/video_renderer.h"
 #include "video/frame_dumping_decoder.h"
 #ifdef WEBRTC_WIN
@@ -823,9 +824,9 @@ void VideoQualityTest::DestroyThumbnailStreams() {
   }
   thumbnail_send_streams_.clear();
   thumbnail_receive_streams_.clear();
-  for (std::unique_ptr<test::TestVideoCapturer>& video_caputurer :
+  for (std::unique_ptr<rtc::VideoSourceInterface<VideoFrame>>& video_capturer :
        thumbnail_capturers_) {
-    video_caputurer.reset();
+    video_capturer.reset();
   }
 }
 
@@ -887,8 +888,7 @@ std::unique_ptr<test::FrameGenerator> VideoQualityTest::CreateFrameGenerator(
 
 void VideoQualityTest::CreateCapturers() {
   RTC_DCHECK(video_sources_.empty());
-  RTC_DCHECK(video_capturers_.empty());
-  video_capturers_.resize(num_video_streams_);
+  video_sources_.resize(num_video_streams_);
   for (size_t video_idx = 0; video_idx < num_video_streams_; ++video_idx) {
     if (params_.screenshare[video_idx].enabled) {
       std::unique_ptr<test::FrameGenerator> frame_generator =
@@ -897,53 +897,50 @@ void VideoQualityTest::CreateCapturers() {
           new test::FrameGeneratorCapturer(clock_, std::move(frame_generator),
                                            params_.video[video_idx].fps);
       EXPECT_TRUE(frame_generator_capturer->Init());
-      video_capturers_[video_idx].reset(frame_generator_capturer);
+      video_sources_[video_idx].reset(frame_generator_capturer);
     } else {
       if (params_.video[video_idx].clip_name == "Generator") {
-        video_capturers_[video_idx].reset(test::FrameGeneratorCapturer::Create(
+        video_sources_[video_idx].reset(test::FrameGeneratorCapturer::Create(
             static_cast<int>(params_.video[video_idx].width),
             static_cast<int>(params_.video[video_idx].height), absl::nullopt,
             absl::nullopt, params_.video[video_idx].fps, clock_));
       } else if (params_.video[video_idx].clip_name == "GeneratorI420A") {
-        video_capturers_[video_idx].reset(test::FrameGeneratorCapturer::Create(
+        video_sources_[video_idx].reset(test::FrameGeneratorCapturer::Create(
             static_cast<int>(params_.video[video_idx].width),
             static_cast<int>(params_.video[video_idx].height),
             test::FrameGenerator::OutputType::I420A, absl::nullopt,
             params_.video[video_idx].fps, clock_));
       } else if (params_.video[video_idx].clip_name == "GeneratorI010") {
-        video_capturers_[video_idx].reset(test::FrameGeneratorCapturer::Create(
+        video_sources_[video_idx].reset(test::FrameGeneratorCapturer::Create(
             static_cast<int>(params_.video[video_idx].width),
             static_cast<int>(params_.video[video_idx].height),
             test::FrameGenerator::OutputType::I010, absl::nullopt,
             params_.video[video_idx].fps, clock_));
       } else if (params_.video[video_idx].clip_name.empty()) {
-        video_capturers_[video_idx].reset(test::VcmCapturer::Create(
+        video_sources_[video_idx].reset(test::VcmCapturer::Create(
             params_.video[video_idx].width, params_.video[video_idx].height,
             params_.video[video_idx].fps,
             params_.video[video_idx].capture_device_index));
-        if (!video_capturers_[video_idx]) {
+        if (!video_sources_[video_idx]) {
           // Failed to get actual camera, use chroma generator as backup.
-          video_capturers_[video_idx].reset(
-              test::FrameGeneratorCapturer::Create(
-                  static_cast<int>(params_.video[video_idx].width),
-                  static_cast<int>(params_.video[video_idx].height),
-                  absl::nullopt, absl::nullopt, params_.video[video_idx].fps,
-                  clock_));
+          video_sources_[video_idx].reset(test::FrameGeneratorCapturer::Create(
+              static_cast<int>(params_.video[video_idx].width),
+              static_cast<int>(params_.video[video_idx].height), absl::nullopt,
+              absl::nullopt, params_.video[video_idx].fps, clock_));
         }
       } else {
-        video_capturers_[video_idx].reset(
+        video_sources_[video_idx].reset(
             test::FrameGeneratorCapturer::CreateFromYuvFile(
                 test::ResourcePath(params_.video[video_idx].clip_name, "yuv"),
                 params_.video[video_idx].width, params_.video[video_idx].height,
                 params_.video[video_idx].fps, clock_));
-        ASSERT_TRUE(video_capturers_[video_idx])
+        ASSERT_TRUE(video_sources_[video_idx])
             << "Could not create capturer for "
             << params_.video[video_idx].clip_name
             << ".yuv. Is this resource file present?";
       }
     }
-    RTC_DCHECK(video_capturers_[video_idx].get());
-    video_sources_.push_back(video_capturers_[video_idx].get());
+    RTC_DCHECK(video_sources_[video_idx]);
   }
 }
 
@@ -1102,12 +1099,11 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
 
     CreateCapturers();
 
-    analyzer_->SetSource(video_capturers_[0].get(),
-                         params_.ss[0].infer_streams);
+    analyzer_->SetSource(video_sources_[0].get(), params_.ss[0].infer_streams);
 
     for (size_t video_idx = 1; video_idx < num_video_streams_; ++video_idx) {
-      video_send_streams_[video_idx]->SetSource(
-          video_capturers_[video_idx].get(), degradation_preference_);
+      video_send_streams_[video_idx]->SetSource(video_sources_[video_idx].get(),
+                                                degradation_preference_);
     }
 
     if (params_.audio.enabled) {
@@ -1132,7 +1128,7 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
     if (graph_data_output_file)
       fclose(graph_data_output_file);
 
-    video_capturers_.clear();
+    video_sources_.clear();
     send_transport.reset();
     recv_transport.reset();
 
@@ -1350,7 +1346,7 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
     Stop();
     DestroyStreams();
 
-    video_capturers_.clear();
+    video_sources_.clear();
     send_transport.reset();
     recv_transport.reset();
 

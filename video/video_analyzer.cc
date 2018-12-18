@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <utility>
 
+#include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/rtp_rtcp/source/rtp_format.h"
 #include "modules/rtp_rtcp/source/rtp_utility.h"
 #include "rtc_base/cpu_time.h"
@@ -138,12 +139,13 @@ void VideoAnalyzer::SetReceiver(PacketReceiver* receiver) {
   receiver_ = receiver;
 }
 
-void VideoAnalyzer::SetSource(test::TestVideoCapturer* video_capturer,
-                              bool respect_sink_wants) {
+void VideoAnalyzer::SetSource(
+    rtc::VideoSourceInterface<VideoFrame>* video_source,
+    bool respect_sink_wants) {
   if (respect_sink_wants)
-    captured_frame_forwarder_.SetSource(video_capturer);
+    captured_frame_forwarder_.SetSource(video_source);
   rtc::VideoSinkWants wants;
-  video_capturer->AddOrUpdateSink(InputInterface(), wants);
+  video_source->AddOrUpdateSink(InputInterface(), wants);
 }
 
 void VideoAnalyzer::SetCall(Call* call) {
@@ -841,12 +843,12 @@ VideoAnalyzer::CapturedFrameForwarder::CapturedFrameForwarder(
     Clock* clock)
     : analyzer_(analyzer),
       send_stream_input_(nullptr),
-      video_capturer_(nullptr),
+      video_source_(nullptr),
       clock_(clock) {}
 
 void VideoAnalyzer::CapturedFrameForwarder::SetSource(
-    test::TestVideoCapturer* video_capturer) {
-  video_capturer_ = video_capturer;
+    VideoSourceInterface<VideoFrame>* video_source) {
+  video_source_ = video_source;
 }
 
 void VideoAnalyzer::CapturedFrameForwarder::OnFrame(
@@ -872,8 +874,8 @@ void VideoAnalyzer::CapturedFrameForwarder::AddOrUpdateSink(
     RTC_DCHECK(!send_stream_input_ || send_stream_input_ == sink);
     send_stream_input_ = sink;
   }
-  if (video_capturer_) {
-    video_capturer_->AddOrUpdateSink(this, wants);
+  if (video_source_) {
+    video_source_->AddOrUpdateSink(this, wants);
   }
 }
 

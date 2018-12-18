@@ -63,7 +63,7 @@ CallTest::~CallTest() {
   task_queue_.SendTask([this]() {
     fake_send_audio_device_ = nullptr;
     fake_recv_audio_device_ = nullptr;
-    video_capturers_.clear();
+    video_sources_.clear();
   });
 }
 
@@ -454,12 +454,10 @@ void CallTest::CreateFrameGeneratorCapturerWithDrift(Clock* clock,
                                                      int width,
                                                      int height) {
   video_sources_.clear();
-  video_capturers_.clear();
   frame_generator_capturer_ = test::FrameGeneratorCapturer::Create(
       width, height, absl::nullopt, absl::nullopt, framerate * speed, clock);
-  video_capturers_.emplace_back(
+  video_sources_.emplace_back(
       std::unique_ptr<FrameGeneratorCapturer>(frame_generator_capturer_));
-  video_sources_.push_back(video_capturers_.back().get());
   ConnectVideoSourcesToStreams();
 }
 
@@ -467,12 +465,10 @@ void CallTest::CreateFrameGeneratorCapturer(int framerate,
                                             int width,
                                             int height) {
   video_sources_.clear();
-  video_capturers_.clear();
   frame_generator_capturer_ = test::FrameGeneratorCapturer::Create(
       width, height, absl::nullopt, absl::nullopt, framerate, clock_);
-  video_capturers_.emplace_back(
+  video_sources_.emplace_back(
       std::unique_ptr<FrameGeneratorCapturer>(frame_generator_capturer_));
-  video_sources_.push_back(video_capturers_.back().get());
   ConnectVideoSourcesToStreams();
 }
 
@@ -560,7 +556,7 @@ void CallTest::CreateFlexfecStreams() {
 
 void CallTest::ConnectVideoSourcesToStreams() {
   for (size_t i = 0; i < video_sources_.size(); ++i)
-    video_send_streams_[i]->SetSource(video_sources_[i],
+    video_send_streams_[i]->SetSource(video_sources_[i].get(),
                                       degradation_preference_);
 }
 

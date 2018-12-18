@@ -192,8 +192,8 @@ class CallTest : public ::testing::Test {
   std::vector<FlexfecReceiveStream*> flexfec_receive_streams_;
 
   test::FrameGeneratorCapturer* frame_generator_capturer_;
-  std::vector<rtc::VideoSourceInterface<VideoFrame>*> video_sources_;
-  std::vector<std::unique_ptr<TestVideoCapturer>> video_capturers_;
+  std::vector<std::unique_ptr<rtc::VideoSourceInterface<VideoFrame>>>
+      video_sources_;
   DegradationPreference degradation_preference_ =
       DegradationPreference::MAINTAIN_FRAMERATE;
 

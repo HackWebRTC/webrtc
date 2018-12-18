@@ -16,10 +16,10 @@
 #include <string>
 #include <vector>
 
+#include "api/video/video_source_interface.h"
 #include "test/layer_filtering_transport.h"
 #include "test/rtp_file_writer.h"
 #include "test/statistics.h"
-#include "test/vcm_capturer.h"
 
 namespace webrtc {
 
@@ -45,7 +45,7 @@ class VideoAnalyzer : public PacketReceiver,
   ~VideoAnalyzer();
 
   virtual void SetReceiver(PacketReceiver* receiver);
-  void SetSource(test::TestVideoCapturer* video_capturer,
+  void SetSource(rtc::VideoSourceInterface<VideoFrame>* video_source,
                  bool respect_sink_wants);
   void SetCall(Call* call);
   void SetSendStream(VideoSendStream* stream);
@@ -136,7 +136,7 @@ class VideoAnalyzer : public PacketReceiver,
                                  public rtc::VideoSourceInterface<VideoFrame> {
    public:
     explicit CapturedFrameForwarder(VideoAnalyzer* analyzer, Clock* clock);
-    void SetSource(test::TestVideoCapturer* video_capturer);
+    void SetSource(rtc::VideoSourceInterface<VideoFrame>* video_source);
 
    private:
     void OnFrame(const VideoFrame& video_frame) override;
@@ -152,7 +152,7 @@ class VideoAnalyzer : public PacketReceiver,
     rtc::CriticalSection crit_;
     rtc::VideoSinkInterface<VideoFrame>* send_stream_input_
         RTC_GUARDED_BY(crit_);
-    test::TestVideoCapturer* video_capturer_;
+    VideoSourceInterface<VideoFrame>* video_source_;
     Clock* clock_;
   };
 
