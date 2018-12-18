@@ -71,7 +71,6 @@ if (rtc_include_tests) {
       "../../modules/audio_mixer:audio_mixer_impl",
       "../../modules/audio_processing",
       "../../modules/congestion_controller:test_controller_printer",
-      "../../modules/congestion_controller/bbr:test_bbr_printer",
       "../../modules/congestion_controller/goog_cc:test_goog_cc_printer",
       "../../modules/rtp_rtcp",
       "../../modules/rtp_rtcp:mock_rtp_rtcp",

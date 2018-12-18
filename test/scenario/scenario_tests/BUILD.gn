@@ -21,6 +21,7 @@ if (rtc_include_tests) {
       "../../:fileutils",
       "../../:test_common",
       "../../:test_support",
+      "../../../modules/congestion_controller/bbr",
       "../../../rtc_base:rtc_base_approved",
       "../../../rtc_base:stringutils",
       "../../../rtc_base/experiments:field_trial_parser",

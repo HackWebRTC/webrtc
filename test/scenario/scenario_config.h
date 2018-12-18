@@ -15,6 +15,7 @@
 
 #include "absl/types/optional.h"
 #include "api/rtpparameters.h"
+#include "api/transport/network_control.h"
 #include "api/units/data_rate.h"
 #include "api/units/data_size.h"
 #include "api/units/time_delta.h"
@@ -46,7 +47,12 @@ struct TransportControllerConfig {
     DataRate start_rate = DataRate::kbps(300);
     DataRate max_padding_rate = DataRate::Zero();
   } rates;
-  enum CongestionController { kBbr, kGoogCc, kGoogCcFeedback } cc = kGoogCc;
+  enum CongestionController {
+    kGoogCc,
+    kGoogCcFeedback,
+    kInjected
+  } cc = kGoogCc;
+  NetworkControllerFactoryInterface* cc_factory = nullptr;
   TimeDelta state_log_interval = TimeDelta::ms(100);
 };
 

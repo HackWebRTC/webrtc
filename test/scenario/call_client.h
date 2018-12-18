@@ -42,7 +42,8 @@ class LoggingNetworkControllerFactory
 
  private:
   std::unique_ptr<RtcEventLog> event_log_;
-  std::unique_ptr<NetworkControllerFactoryInterface> cc_factory_;
+  std::unique_ptr<NetworkControllerFactoryInterface> owned_cc_factory_;
+  NetworkControllerFactoryInterface* cc_factory_ = nullptr;
   std::unique_ptr<ControlStatePrinter> cc_printer_;
   FILE* cc_out_ = nullptr;
 };

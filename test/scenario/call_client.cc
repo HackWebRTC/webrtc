@@ -13,7 +13,6 @@
 
 #include "logging/rtc_event_log/output/rtc_event_log_output_file.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"
-#include "modules/congestion_controller/bbr/test/bbr_printer.h"
 #include "modules/congestion_controller/goog_cc/test/goog_cc_printer.h"
 #include "test/call_test.h"
 
@@ -69,46 +68,44 @@ LoggingNetworkControllerFactory::LoggingNetworkControllerFactory(
         RtcEventLog::kImmediateOutput);
     RTC_CHECK(success);
     cc_out_ = fopen((filename + ".cc_state.txt").c_str(), "w");
-    switch (config.cc) {
-      case TransportControllerConfig::CongestionController::kBbr: {
-        auto bbr_printer = absl::make_unique<BbrStatePrinter>();
-        cc_factory_.reset(new BbrDebugFactory(bbr_printer.get()));
-        cc_printer_.reset(
-            new ControlStatePrinter(cc_out_, std::move(bbr_printer)));
-        break;
-      }
-      case TransportControllerConfig::CongestionController::kGoogCc: {
+  }
+  switch (config.cc) {
+    case TransportControllerConfig::CongestionController::kGoogCc:
+      if (cc_out_) {
         auto goog_printer = absl::make_unique<GoogCcStatePrinter>();
-        cc_factory_.reset(
+        owned_cc_factory_.reset(
             new GoogCcDebugFactory(event_log_.get(), goog_printer.get()));
         cc_printer_.reset(
             new ControlStatePrinter(cc_out_, std::move(goog_printer)));
-        break;
+      } else {
+        owned_cc_factory_.reset(
+            new GoogCcNetworkControllerFactory(event_log_.get()));
       }
-      case TransportControllerConfig::CongestionController::kGoogCcFeedback: {
+      break;
+    case TransportControllerConfig::CongestionController::kGoogCcFeedback:
+      if (cc_out_) {
         auto goog_printer = absl::make_unique<GoogCcStatePrinter>();
-        cc_factory_.reset(new GoogCcFeedbackDebugFactory(event_log_.get(),
-                                                         goog_printer.get()));
+        owned_cc_factory_.reset(new GoogCcFeedbackDebugFactory(
+            event_log_.get(), goog_printer.get()));
         cc_printer_.reset(
             new ControlStatePrinter(cc_out_, std::move(goog_printer)));
-        break;
-      }
-    }
-    cc_printer_->PrintHeaders();
-  }
-  if (!cc_factory_) {
-    switch (config.cc) {
-      case TransportControllerConfig::CongestionController::kBbr:
-        cc_factory_.reset(new BbrNetworkControllerFactory());
-        break;
-      case TransportControllerConfig::CongestionController::kGoogCcFeedback:
-        cc_factory_.reset(
+      } else {
+        owned_cc_factory_.reset(
             new GoogCcFeedbackNetworkControllerFactory(event_log_.get()));
-        break;
-      case TransportControllerConfig::CongestionController::kGoogCc:
-        cc_factory_.reset(new GoogCcNetworkControllerFactory(event_log_.get()));
-        break;
-    }
+      }
+      break;
+    case TransportControllerConfig::CongestionController::kInjected:
+      cc_factory_ = config.cc_factory;
+      if (cc_out_)
+        RTC_LOG(LS_WARNING)
+            << "Can't log controller state for injected network controllers";
+      break;
+  }
+  if (cc_printer_)
+    cc_printer_->PrintHeaders();
+  if (owned_cc_factory_) {
+    RTC_DCHECK(!cc_factory_);
+    cc_factory_ = owned_cc_factory_.get();
   }
 }
 
