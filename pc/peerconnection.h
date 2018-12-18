@@ -652,6 +652,12 @@ class PeerConnection : public PeerConnectionInternal,
     return configuration_.sdp_semantics == SdpSemantics::kUnifiedPlan;
   }
 
+  // The offer/answer machinery assumes the media section MID is present and
+  // unique. To support legacy end points that do not supply a=mid lines, this
+  // method will modify the session description to add MIDs generated according
+  // to the SDP semantics.
+  void FillInMissingRemoteMids(cricket::SessionDescription* remote_description);
+
   // Is there an RtpSender of the given type?
   bool HasRtpSender(cricket::MediaType type) const;
 

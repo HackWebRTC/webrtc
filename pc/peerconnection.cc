@@ -649,6 +649,25 @@ DataMessageType ToWebrtcDataMessageType(cricket::DataMessageType type) {
   return DataMessageType::kControl;
 }
 
+// Find a new MID that is not already in |used_mids|, then add it to |used_mids|
+// and return a reference to it.
+// Generated MIDs should be no more than 3 bytes long to take up less space in
+// the RTP packet.
+const std::string& AllocateMid(std::set<std::string>* used_mids) {
+  RTC_DCHECK(used_mids);
+  // We're boring: just generate MIDs 0, 1, 2, ...
+  size_t i = 0;
+  std::set<std::string>::iterator it;
+  bool inserted;
+  do {
+    std::string mid = rtc::ToString(i++);
+    auto insert_result = used_mids->insert(mid);
+    it = insert_result.first;
+    inserted = insert_result.second;
+  } while (!inserted);
+  return *it;
+}
+
 }  // namespace
 
 // Upon completion, posts a task to execute the callback of the
@@ -2234,6 +2253,56 @@ RTCError PeerConnection::ApplyLocalDescription(
   return RTCError::OK();
 }
 
+// The SDP parser used to populate these values by default for the 'content
+// name' if an a=mid line was absent.
+static absl::string_view GetDefaultMidForPlanB(cricket::MediaType media_type) {
+  switch (media_type) {
+    case cricket::MEDIA_TYPE_AUDIO:
+      return cricket::CN_AUDIO;
+    case cricket::MEDIA_TYPE_VIDEO:
+      return cricket::CN_VIDEO;
+    case cricket::MEDIA_TYPE_DATA:
+      return cricket::CN_DATA;
+  }
+  RTC_NOTREACHED();
+  return "";
+}
+
+void PeerConnection::FillInMissingRemoteMids(
+    cricket::SessionDescription* remote_description) {
+  RTC_DCHECK(remote_description);
+  const cricket::ContentInfos& local_contents =
+      (local_description() ? local_description()->description()->contents()
+                           : cricket::ContentInfos());
+  std::set<std::string> used_mids = seen_mids_;
+  for (size_t i = 0; i < remote_description->contents().size(); ++i) {
+    cricket::ContentInfo& content = remote_description->contents()[i];
+    if (!content.name.empty()) {
+      continue;
+    }
+    absl::string_view new_mid;
+    absl::string_view source_explanation;
+    if (IsUnifiedPlan()) {
+      if (i < local_contents.size()) {
+        new_mid = local_contents[i].name;
+        source_explanation = "from the matching local media section";
+      } else {
+        new_mid = AllocateMid(&used_mids);
+        source_explanation = "generated just now";
+      }
+    } else {
+      new_mid = GetDefaultMidForPlanB(content.media_description()->type());
+      source_explanation = "to match pre-existing behavior";
+    }
+    content.name = std::string(new_mid);
+    remote_description->transport_infos()[i].content_name =
+        std::string(new_mid);
+    RTC_LOG(LS_INFO) << "SetRemoteDescription: Remote media section at i=" << i
+                     << " is missing an a=mid line. Filling in the value '"
+                     << new_mid << "' " << source_explanation << ".";
+  }
+}
+
 void PeerConnection::SetRemoteDescription(
     SetSessionDescriptionObserver* observer,
     SessionDescriptionInterface* desc) {
@@ -2273,6 +2342,10 @@ void PeerConnection::SetRemoteDescription(
     // Report to UMA the format of the received offer.
     ReportSdpFormatReceived(*desc);
   }
+
+  // Handle remote descriptions missing a=mid lines for interop with legacy end
+  // points.
+  FillInMissingRemoteMids(desc->description());
 
   RTCError error = ValidateSessionDescription(desc.get(), cricket::CS_REMOTE);
   if (!error.ok()) {
@@ -3917,25 +3990,6 @@ void PeerConnection::GetOptionsForPlanBOffer(
   AddRtpSenderOptions(GetSendersInternal(), audio_media_description_options,
                       video_media_description_options,
                       offer_answer_options.num_simulcast_layers);
-}
-
-// Find a new MID that is not already in |used_mids|, then add it to |used_mids|
-// and return a reference to it.
-// Generated MIDs should be no more than 3 bytes long to take up less space in
-// the RTP packet.
-static const std::string& AllocateMid(std::set<std::string>* used_mids) {
-  RTC_DCHECK(used_mids);
-  // We're boring: just generate MIDs 0, 1, 2, ...
-  size_t i = 0;
-  std::set<std::string>::iterator it;
-  bool inserted;
-  do {
-    std::string mid = rtc::ToString(i++);
-    auto insert_result = used_mids->insert(mid);
-    it = insert_result.first;
-    inserted = insert_result.second;
-  } while (!inserted);
-  return *it;
 }
 
 static cricket::MediaDescriptionOptions
@@ -6099,6 +6153,17 @@ bool PeerConnection::HasRtcpMuxEnabled(const cricket::ContentInfo* content) {
   return content->media_description()->rtcp_mux();
 }
 
+static RTCError ValidateMids(const cricket::SessionDescription& description) {
+  std::set<std::string> mids;
+  for (const cricket::ContentInfo& content : description.contents()) {
+    if (!mids.insert(content.name).second) {
+      LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
+                           "Duplicate a=mid value '" + content.name + "'.");
+    }
+  }
+  return RTCError::OK();
+}
+
 RTCError PeerConnection::ValidateSessionDescription(
     const SessionDescriptionInterface* sdesc,
     cricket::ContentSource source) {
@@ -6116,6 +6181,11 @@ RTCError PeerConnection::ValidateSessionDescription(
     LOG_AND_RETURN_ERROR(
         RTCErrorType::INVALID_STATE,
         "Called in wrong state: " + GetSignalingStateString(signaling_state()));
+  }
+
+  RTCError error = ValidateMids(*sdesc->description());
+  if (!error.ok()) {
+    return error;
   }
 
   // Verify crypto settings.
