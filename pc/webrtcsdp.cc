@@ -23,6 +23,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "api/candidate.h"
 #include "api/cryptoparams.h"
@@ -296,21 +297,22 @@ static bool ParseMediaDescription(
     size_t* pos,
     const rtc::SocketAddress& session_connection_addr,
     cricket::SessionDescription* desc,
-    std::vector<JsepIceCandidate*>* candidates,
+    std::vector<std::unique_ptr<JsepIceCandidate>>* candidates,
     SdpParseError* error);
-static bool ParseContent(const std::string& message,
-                         const cricket::MediaType media_type,
-                         int mline_index,
-                         const std::string& protocol,
-                         const std::vector<int>& payload_types,
-                         size_t* pos,
-                         std::string* content_name,
-                         bool* bundle_only,
-                         int* msid_signaling,
-                         MediaContentDescription* media_desc,
-                         TransportDescription* transport,
-                         std::vector<JsepIceCandidate*>* candidates,
-                         SdpParseError* error);
+static bool ParseContent(
+    const std::string& message,
+    const cricket::MediaType media_type,
+    int mline_index,
+    const std::string& protocol,
+    const std::vector<int>& payload_types,
+    size_t* pos,
+    std::string* content_name,
+    bool* bundle_only,
+    int* msid_signaling,
+    MediaContentDescription* media_desc,
+    TransportDescription* transport,
+    std::vector<std::unique_ptr<JsepIceCandidate>>* candidates,
+    SdpParseError* error);
 static bool ParseSsrcAttribute(const std::string& line,
                                SsrcInfoVec* ssrc_infos,
                                int* msid_signaling,
@@ -957,34 +959,28 @@ bool SdpDeserialize(const std::string& message,
   TransportDescription session_td("", "");
   RtpHeaderExtensions session_extmaps;
   rtc::SocketAddress session_connection_addr;
-  cricket::SessionDescription* desc = new cricket::SessionDescription();
-  std::vector<JsepIceCandidate*> candidates;
+  auto desc = absl::make_unique<cricket::SessionDescription>();
   size_t current_pos = 0;
 
   // Session Description
   if (!ParseSessionDescription(message, &current_pos, &session_id,
                                &session_version, &session_td, &session_extmaps,
-                               &session_connection_addr, desc, error)) {
-    delete desc;
+                               &session_connection_addr, desc.get(), error)) {
     return false;
   }
 
   // Media Description
+  std::vector<std::unique_ptr<JsepIceCandidate>> candidates;
   if (!ParseMediaDescription(message, session_td, session_extmaps, &current_pos,
-                             session_connection_addr, desc, &candidates,
+                             session_connection_addr, desc.get(), &candidates,
                              error)) {
-    delete desc;
-    for (JsepIceCandidate* candidate : candidates) {
-      delete candidate;
-    }
     return false;
   }
 
-  jdesc->Initialize(desc, session_id, session_version);
+  jdesc->Initialize(desc.release(), session_id, session_version);
 
-  for (JsepIceCandidate* candidate : candidates) {
-    jdesc->AddCandidate(candidate);
-    delete candidate;
+  for (const auto& candidate : candidates) {
+    jdesc->AddCandidate(candidate.get());
   }
   return true;
 }
@@ -2540,19 +2536,20 @@ void MaybeCreateStaticPayloadAudioCodecs(const std::vector<int>& fmts,
 }
 
 template <class C>
-static C* ParseContentDescription(const std::string& message,
-                                  const cricket::MediaType media_type,
-                                  int mline_index,
-                                  const std::string& protocol,
-                                  const std::vector<int>& payload_types,
-                                  size_t* pos,
-                                  std::string* content_name,
-                                  bool* bundle_only,
-                                  int* msid_signaling,
-                                  TransportDescription* transport,
-                                  std::vector<JsepIceCandidate*>* candidates,
-                                  webrtc::SdpParseError* error) {
-  C* media_desc = new C();
+static std::unique_ptr<C> ParseContentDescription(
+    const std::string& message,
+    const cricket::MediaType media_type,
+    int mline_index,
+    const std::string& protocol,
+    const std::vector<int>& payload_types,
+    size_t* pos,
+    std::string* content_name,
+    bool* bundle_only,
+    int* msid_signaling,
+    TransportDescription* transport,
+    std::vector<std::unique_ptr<JsepIceCandidate>>* candidates,
+    webrtc::SdpParseError* error) {
+  auto media_desc = absl::make_unique<C>();
   switch (media_type) {
     case cricket::MEDIA_TYPE_AUDIO:
       *content_name = cricket::CN_AUDIO;
@@ -2568,9 +2565,8 @@ static C* ParseContentDescription(const std::string& message,
       break;
   }
   if (!ParseContent(message, media_type, mline_index, protocol, payload_types,
-                    pos, content_name, bundle_only, msid_signaling, media_desc,
-                    transport, candidates, error)) {
-    delete media_desc;
+                    pos, content_name, bundle_only, msid_signaling,
+                    media_desc.get(), transport, candidates, error)) {
     return nullptr;
   }
   // Sort the codecs according to the m-line fmt list.
@@ -2593,14 +2589,15 @@ static C* ParseContentDescription(const std::string& message,
   return media_desc;
 }
 
-bool ParseMediaDescription(const std::string& message,
-                           const TransportDescription& session_td,
-                           const RtpHeaderExtensions& session_extmaps,
-                           size_t* pos,
-                           const rtc::SocketAddress& session_connection_addr,
-                           cricket::SessionDescription* desc,
-                           std::vector<JsepIceCandidate*>* candidates,
-                           SdpParseError* error) {
+bool ParseMediaDescription(
+    const std::string& message,
+    const TransportDescription& session_td,
+    const RtpHeaderExtensions& session_extmaps,
+    size_t* pos,
+    const rtc::SocketAddress& session_connection_addr,
+    cricket::SessionDescription* desc,
+    std::vector<std::unique_ptr<JsepIceCandidate>>* candidates,
+    SdpParseError* error) {
   RTC_DCHECK(desc != NULL);
   std::string line;
   int mline_index = -1;
@@ -2663,33 +2660,34 @@ bool ParseMediaDescription(const std::string& message,
     bool bundle_only = false;
     int section_msid_signaling = 0;
     if (HasAttribute(line, kMediaTypeVideo)) {
-      content.reset(ParseContentDescription<VideoContentDescription>(
+      content = ParseContentDescription<VideoContentDescription>(
           message, cricket::MEDIA_TYPE_VIDEO, mline_index, protocol,
           payload_types, pos, &content_name, &bundle_only,
-          &section_msid_signaling, &transport, candidates, error));
+          &section_msid_signaling, &transport, candidates, error);
     } else if (HasAttribute(line, kMediaTypeAudio)) {
-      content.reset(ParseContentDescription<AudioContentDescription>(
+      content = ParseContentDescription<AudioContentDescription>(
           message, cricket::MEDIA_TYPE_AUDIO, mline_index, protocol,
           payload_types, pos, &content_name, &bundle_only,
-          &section_msid_signaling, &transport, candidates, error));
+          &section_msid_signaling, &transport, candidates, error);
     } else if (HasAttribute(line, kMediaTypeData)) {
-      DataContentDescription* data_desc =
+      std::unique_ptr<DataContentDescription> data_desc =
           ParseContentDescription<DataContentDescription>(
               message, cricket::MEDIA_TYPE_DATA, mline_index, protocol,
               payload_types, pos, &content_name, &bundle_only,
               &section_msid_signaling, &transport, candidates, error);
-      content.reset(data_desc);
 
       if (data_desc && IsDtlsSctp(protocol)) {
         int p;
         if (rtc::FromString(fields[3], &p)) {
-          if (!AddSctpDataCodec(data_desc, p)) {
+          if (!AddSctpDataCodec(data_desc.get(), p)) {
             return false;
           }
         } else if (fields[3] == kDefaultSctpmapProtocol) {
           data_desc->set_use_sctpmap(false);
         }
       }
+
+      content = std::move(data_desc);
     } else {
       RTC_LOG(LS_WARNING) << "Unsupported media type: " << line;
       continue;
@@ -2917,7 +2915,7 @@ bool ParseContent(const std::string& message,
                   int* msid_signaling,
                   MediaContentDescription* media_desc,
                   TransportDescription* transport,
-                  std::vector<JsepIceCandidate*>* candidates,
+                  std::vector<std::unique_ptr<JsepIceCandidate>>* candidates,
                   SdpParseError* error) {
   RTC_DCHECK(media_desc != NULL);
   RTC_DCHECK(content_name != NULL);
@@ -3309,7 +3307,7 @@ bool ParseContent(const std::string& message,
     RTC_DCHECK(candidate.password().empty());
     candidate.set_password(transport->ice_pwd);
     candidates->push_back(
-        new JsepIceCandidate(mline_id, mline_index, candidate));
+        absl::make_unique<JsepIceCandidate>(mline_id, mline_index, candidate));
   }
 
   return true;
