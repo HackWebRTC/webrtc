@@ -152,7 +152,6 @@ RtpTransportControllerSend::~RtpTransportControllerSend() {
 }
 
 RtpVideoSenderInterface* RtpTransportControllerSend::CreateRtpVideoSender(
-    const std::vector<uint32_t>& ssrcs,
     std::map<uint32_t, RtpState> suspended_ssrcs,
     const std::map<uint32_t, RtpPayloadState>& states,
     const RtpConfig& rtp_config,
@@ -163,7 +162,7 @@ RtpVideoSenderInterface* RtpTransportControllerSend::CreateRtpVideoSender(
     std::unique_ptr<FecController> fec_controller,
     const RtpSenderFrameEncryptionConfig& frame_encryption_config) {
   video_rtp_senders_.push_back(absl::make_unique<RtpVideoSender>(
-      ssrcs, suspended_ssrcs, states, rtp_config, rtcp_report_interval_ms,
+      suspended_ssrcs, states, rtp_config, rtcp_report_interval_ms,
       send_transport, observers,
       // TODO(holmer): Remove this circular dependency by injecting
       // the parts of RtpTransportControllerSendInterface that are really used.

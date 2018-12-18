@@ -268,7 +268,6 @@ VideoSendStreamImpl::VideoSendStreamImpl(
                         video_stream_encoder),
       bandwidth_observer_(transport->GetBandwidthObserver()),
       rtp_video_sender_(transport_->CreateRtpVideoSender(
-          config_->rtp.ssrcs,
           suspended_ssrcs,
           suspended_payload_states,
           config_->rtp,

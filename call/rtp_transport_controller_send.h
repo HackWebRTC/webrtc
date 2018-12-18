@@ -52,7 +52,6 @@ class RtpTransportControllerSend final
   ~RtpTransportControllerSend() override;
 
   RtpVideoSenderInterface* CreateRtpVideoSender(
-      const std::vector<uint32_t>& ssrcs,
       std::map<uint32_t, RtpState> suspended_ssrcs,
       const std::map<uint32_t, RtpPayloadState>&
           states,  // move states into RtpTransportControllerSend

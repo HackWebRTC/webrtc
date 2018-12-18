@@ -39,7 +39,6 @@ static const int kSendSideSeqNumSetMaxSize = 5500;
 static const size_t kPathMTU = 1500;
 
 std::vector<std::unique_ptr<RtpRtcp>> CreateRtpRtcpModules(
-    const std::vector<uint32_t>& ssrcs,
     const RtpConfig& rtp_config,
     int rtcp_report_interval_ms,
     Transport* send_transport,
@@ -59,7 +58,7 @@ std::vector<std::unique_ptr<RtpRtcp>> CreateRtpRtcpModules(
     RtpKeepAliveConfig keepalive_config,
     FrameEncryptorInterface* frame_encryptor,
     const CryptoOptions& crypto_options) {
-  RTC_DCHECK_GT(ssrcs.size(), 0);
+  RTC_DCHECK_GT(rtp_config.ssrcs.size(), 0);
 
   RtpRtcp::Configuration configuration;
   configuration.audio = false;
@@ -91,7 +90,7 @@ std::vector<std::unique_ptr<RtpRtcp>> CreateRtpRtcpModules(
   std::vector<std::unique_ptr<RtpRtcp>> modules;
   const std::vector<uint32_t>& flexfec_protected_ssrcs =
       rtp_config.flexfec.protected_media_ssrcs;
-  for (uint32_t ssrc : ssrcs) {
+  for (uint32_t ssrc : rtp_config.ssrcs) {
     bool enable_flexfec = flexfec_sender != nullptr &&
                           std::find(flexfec_protected_ssrcs.begin(),
                                     flexfec_protected_ssrcs.end(),
@@ -179,7 +178,6 @@ int CalculatePacketRate(uint32_t bitrate_bps, size_t packet_size_bytes) {
 }  // namespace
 
 RtpVideoSender::RtpVideoSender(
-    const std::vector<uint32_t>& ssrcs,
     std::map<uint32_t, RtpState> suspended_ssrcs,
     const std::map<uint32_t, RtpPayloadState>& states,
     const RtpConfig& rtp_config,
@@ -199,8 +197,7 @@ RtpVideoSender::RtpVideoSender(
       suspended_ssrcs_(std::move(suspended_ssrcs)),
       flexfec_sender_(MaybeCreateFlexfecSender(rtp_config, suspended_ssrcs_)),
       fec_controller_(std::move(fec_controller)),
-      rtp_modules_(CreateRtpRtcpModules(ssrcs,
-                                        rtp_config,
+      rtp_modules_(CreateRtpRtcpModules(rtp_config,
                                         rtcp_report_interval_ms,
                                         send_transport,
                                         observers.intra_frame_callback,
@@ -224,13 +221,10 @@ RtpVideoSender::RtpVideoSender(
       transport_overhead_bytes_per_packet_(0),
       overhead_bytes_per_packet_(0),
       encoder_target_rate_bps_(0) {
-  RTC_DCHECK_EQ(ssrcs.size(), rtp_modules_.size());
-  // The same argument for SSRCs is given to this method twice.
-  // The SSRCs are also accessed in this method through both variables.
-  RTC_DCHECK(ssrcs == rtp_config.ssrcs);
+  RTC_DCHECK_EQ(rtp_config.ssrcs.size(), rtp_modules_.size());
   module_process_thread_checker_.DetachFromThread();
   // SSRCs are assumed to be sorted in the same order as |rtp_modules|.
-  for (uint32_t ssrc : ssrcs) {
+  for (uint32_t ssrc : rtp_config.ssrcs) {
     // Restore state if it previously existed.
     const RtpPayloadState* state = nullptr;
     auto it = states.find(ssrc);
