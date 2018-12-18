@@ -78,7 +78,6 @@ class VoERtcpObserver;
 
 class ChannelSend
     : public ChannelSendInterface,
-      public Transport,
       public OverheadObserver,
       public AudioPacketizationCallback,  // receive encoded packets from the
                                           // ACM
@@ -186,12 +185,6 @@ class ChannelSend
                    size_t payloadSize,
                    const RTPFragmentationHeader* fragmentation) override;
 
-  // From Transport (called by the RTP/RTCP module)
-  bool SendRtp(const uint8_t* data,
-               size_t len,
-               const PacketOptions& packet_options) override;
-  bool SendRtcp(const uint8_t* data, size_t len) override;
-
   // From OverheadObserver in the RTP/RTCP module
   void OnOverheadChanged(size_t overhead_bytes_per_packet) override;
 
@@ -238,7 +231,6 @@ class ChannelSend
   // audio thread to another, but access is still sequential.
   rtc::RaceChecker audio_thread_race_checker_;
 
-  rtc::CriticalSection _callbackCritSect;
   rtc::CriticalSection volume_settings_critsect_;
 
   bool sending_ RTC_GUARDED_BY(&worker_thread_checker_) = false;
@@ -254,7 +246,6 @@ class ChannelSend
 
   // uses
   ProcessThread* const _moduleProcessThreadPtr;
-  Transport* const _transportPtr;  // WebRtc socket or external transport
   RmsLevel rms_level_ RTC_GUARDED_BY(encoder_queue_);
   bool input_mute_ RTC_GUARDED_BY(volume_settings_critsect_);
   bool previous_frame_muted_ RTC_GUARDED_BY(encoder_queue_);
@@ -641,45 +632,6 @@ int32_t ChannelSend::SendMediaTransportAudio(
   return 0;
 }
 
-bool ChannelSend::SendRtp(const uint8_t* data,
-                          size_t len,
-                          const PacketOptions& options) {
-  // We should not be sending RTP packets if media transport is available.
-  RTC_CHECK(!media_transport());
-
-  rtc::CritScope cs(&_callbackCritSect);
-
-  if (_transportPtr == NULL) {
-    RTC_DLOG(LS_ERROR)
-        << "ChannelSend::SendPacket() failed to send RTP packet due to"
-        << " invalid transport object";
-    return false;
-  }
-
-  if (!_transportPtr->SendRtp(data, len, options)) {
-    RTC_DLOG(LS_ERROR) << "ChannelSend::SendPacket() RTP transmission failed";
-    return false;
-  }
-  return true;
-}
-
-bool ChannelSend::SendRtcp(const uint8_t* data, size_t len) {
-  rtc::CritScope cs(&_callbackCritSect);
-  if (_transportPtr == NULL) {
-    RTC_DLOG(LS_ERROR)
-        << "ChannelSend::SendRtcp() failed to send RTCP packet due to"
-        << " invalid transport object";
-    return false;
-  }
-
-  int n = _transportPtr->SendRtcp(data, len);
-  if (n < 0) {
-    RTC_DLOG(LS_ERROR) << "ChannelSend::SendRtcp() transmission failed";
-    return false;
-  }
-  return true;
-}
-
 ChannelSend::ChannelSend(rtc::TaskQueue* encoder_queue,
                          ProcessThread* module_process_thread,
                          MediaTransportInterface* media_transport,
@@ -695,7 +647,6 @@ ChannelSend::ChannelSend(rtc::TaskQueue* encoder_queue,
                       // random offset
       send_sequence_number_(0),
       _moduleProcessThreadPtr(module_process_thread),
-      _transportPtr(rtp_transport),
       input_mute_(false),
       previous_frame_muted_(false),
       _includeAudioLevelIndication(false),
@@ -732,7 +683,7 @@ ChannelSend::ChannelSend(rtc::TaskQueue* encoder_queue,
   }
 
   configuration.audio = true;
-  configuration.outgoing_transport = this;
+  configuration.outgoing_transport = rtp_transport;
 
   configuration.paced_sender = rtp_packet_sender_proxy_.get();
   configuration.transport_sequence_number_allocator =
