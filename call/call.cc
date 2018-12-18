@@ -455,15 +455,6 @@ Call::Call(const Call::Config& config,
   RTC_DCHECK(config.event_log != nullptr);
   transport_send_ = std::move(transport_send);
   transport_send_ptr_ = transport_send_.get();
-
-  call_stats_->RegisterStatsObserver(&receive_side_cc_);
-  call_stats_->RegisterStatsObserver(transport_send_->GetCallStatsObserver());
-
-  module_process_thread_->RegisterModule(
-      receive_side_cc_.GetRemoteBitrateEstimator(true), RTC_FROM_HERE);
-  module_process_thread_->RegisterModule(call_stats_.get(), RTC_FROM_HERE);
-  module_process_thread_->RegisterModule(&receive_side_cc_, RTC_FROM_HERE);
-  module_process_thread_->Start();
 }
 
 Call::~Call() {
@@ -475,13 +466,16 @@ Call::~Call() {
   RTC_CHECK(audio_receive_streams_.empty());
   RTC_CHECK(video_receive_streams_.empty());
 
-  module_process_thread_->DeRegisterModule(
-      receive_side_cc_.GetRemoteBitrateEstimator(true));
-  module_process_thread_->DeRegisterModule(&receive_side_cc_);
-  module_process_thread_->DeRegisterModule(call_stats_.get());
-  module_process_thread_->Stop();
-  call_stats_->DeregisterStatsObserver(&receive_side_cc_);
-  call_stats_->DeregisterStatsObserver(transport_send_->GetCallStatsObserver());
+  if (!media_transport_) {
+    module_process_thread_->DeRegisterModule(
+        receive_side_cc_.GetRemoteBitrateEstimator(true));
+    module_process_thread_->DeRegisterModule(&receive_side_cc_);
+    module_process_thread_->DeRegisterModule(call_stats_.get());
+    module_process_thread_->Stop();
+    call_stats_->DeregisterStatsObserver(&receive_side_cc_);
+    call_stats_->DeregisterStatsObserver(
+        transport_send_->GetCallStatsObserver());
+  }
 
   int64_t first_sent_packet_ms = transport_send_->GetFirstPacketTimeMs();
   // Only update histograms after process threads have been shut down, so that
@@ -504,9 +498,21 @@ void Call::RegisterRateObserver() {
   is_target_rate_observer_registered_ = true;
 
   if (media_transport_) {
+    // TODO(bugs.webrtc.org/9719): We should report call_stats_ from
+    // media transport (at least Rtt). We should extend media transport
+    // interface to include "receive_side bwe" if needed.
     media_transport_->AddTargetTransferRateObserver(this);
   } else {
     transport_send_ptr_->RegisterTargetTransferRateObserver(this);
+
+    call_stats_->RegisterStatsObserver(&receive_side_cc_);
+    call_stats_->RegisterStatsObserver(transport_send_->GetCallStatsObserver());
+
+    module_process_thread_->RegisterModule(
+        receive_side_cc_.GetRemoteBitrateEstimator(true), RTC_FROM_HERE);
+    module_process_thread_->RegisterModule(call_stats_.get(), RTC_FROM_HERE);
+    module_process_thread_->RegisterModule(&receive_side_cc_, RTC_FROM_HERE);
+    module_process_thread_->Start();
   }
 }
 
@@ -695,6 +701,7 @@ webrtc::AudioReceiveStream* Call::CreateAudioReceiveStream(
     const webrtc::AudioReceiveStream::Config& config) {
   TRACE_EVENT0("webrtc", "Call::CreateAudioReceiveStream");
   RTC_DCHECK_CALLED_SEQUENTIALLY(&configuration_sequence_checker_);
+  RegisterRateObserver();
   event_log_->Log(absl::make_unique<RtcEventAudioReceiveStreamConfig>(
       CreateRtcLogStreamConfig(config)));
   AudioReceiveStream* receive_stream = new AudioReceiveStream(
@@ -848,6 +855,8 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
     webrtc::VideoReceiveStream::Config configuration) {
   TRACE_EVENT0("webrtc", "Call::CreateVideoReceiveStream");
   RTC_DCHECK_CALLED_SEQUENTIALLY(&configuration_sequence_checker_);
+
+  RegisterRateObserver();
 
   VideoReceiveStream* receive_stream = new VideoReceiveStream(
       &video_receiver_controller_, num_cpu_cores_,
