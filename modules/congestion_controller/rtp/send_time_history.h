@@ -47,6 +47,8 @@ class SendTimeHistory {
   DataSize GetOutstandingData(uint16_t local_net_id,
                               uint16_t remote_net_id) const;
 
+  absl::optional<int64_t> GetFirstUnackedSendTime() const;
+
  private:
   using RemoteAndLocalNetworkId = std::pair<uint16_t, uint16_t>;
 

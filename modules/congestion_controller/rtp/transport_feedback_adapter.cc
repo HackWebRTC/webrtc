@@ -148,6 +148,13 @@ TransportFeedbackAdapter::ProcessTransportFeedback(
           Timestamp::ms(rtp_feedback.arrival_time_ms));
     }
   }
+  {
+    rtc::CritScope cs(&lock_);
+    absl::optional<int64_t> first_unacked_send_time_ms =
+        send_time_history_.GetFirstUnackedSendTime();
+    if (first_unacked_send_time_ms)
+      msg.first_unacked_send_time = Timestamp::ms(*first_unacked_send_time_ms);
+  }
   msg.feedback_time = Timestamp::ms(feedback_time_ms);
   msg.prior_in_flight = prior_in_flight;
   msg.data_in_flight = GetOutstandingData();

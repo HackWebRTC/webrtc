@@ -121,6 +121,16 @@ DataSize SendTimeHistory::GetOutstandingData(uint16_t local_net_id,
   }
 }
 
+absl::optional<int64_t> SendTimeHistory::GetFirstUnackedSendTime() const {
+  if (!last_ack_seq_num_)
+    return absl::nullopt;
+  auto it = history_.find(*last_ack_seq_num_);
+  if (it == history_.end() ||
+      it->second.send_time_ms == PacketFeedback::kNoSendTime)
+    return absl::nullopt;
+  return it->second.send_time_ms;
+}
+
 void SendTimeHistory::AddPacketBytes(const PacketFeedback& packet) {
   if (packet.send_time_ms < 0 || packet.payload_size == 0 ||
       (last_ack_seq_num_ && *last_ack_seq_num_ >= packet.long_sequence_number))
