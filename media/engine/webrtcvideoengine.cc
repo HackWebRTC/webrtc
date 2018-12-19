@@ -219,7 +219,7 @@ static bool ValidateStreamParams(const StreamParams& sp) {
 
 // Returns true if the given codec is disallowed from doing simulcast.
 bool IsCodecBlacklistedForSimulcast(const std::string& codec_name) {
-  return webrtc::field_trial::IsEnabled("WebRTC-H264Simulcast")
+  return !webrtc::field_trial::IsDisabled("WebRTC-H264Simulcast")
              ? absl::EqualsIgnoreCase(codec_name, kVp9CodecName)
              : absl::EqualsIgnoreCase(codec_name, kH264CodecName) ||
                    absl::EqualsIgnoreCase(codec_name, kVp9CodecName);
