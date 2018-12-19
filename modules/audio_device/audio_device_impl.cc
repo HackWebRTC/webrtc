@@ -548,11 +548,14 @@ int32_t AudioDeviceModuleImpl::SetStereoRecording(bool enable) {
   RTC_LOG(INFO) << __FUNCTION__ << "(" << enable << ")";
   CHECKinitialized_();
   if (audio_device_->RecordingIsInitialized()) {
-    RTC_LOG(WARNING) << "recording in stereo is not supported";
+    RTC_LOG(LERROR)
+        << "unable to set stereo mode after recording is initialized";
     return -1;
   }
   if (audio_device_->SetStereoRecording(enable) == -1) {
-    RTC_LOG(WARNING) << "failed to change stereo recording";
+    if (enable) {
+      RTC_LOG(WARNING) << "failed to enable stereo recording";
+    }
     return -1;
   }
   int8_t nChannels(1);
