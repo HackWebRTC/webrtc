@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "api/test/video/function_video_encoder_factory.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "media/base/mediaconstants.h"
@@ -175,7 +176,8 @@ VideoEncoderConfig CreateVideoEncoderConfig(VideoStreamConfig config) {
 
 SendVideoStream::SendVideoStream(CallClient* sender,
                                  VideoStreamConfig config,
-                                 Transport* send_transport)
+                                 Transport* send_transport,
+                                 VideoQualityAnalyzer* analyzer)
     : sender_(sender), config_(config) {
   for (size_t i = 0; i < config.encoder.num_simulcast_streams; ++i) {
     ssrcs_.push_back(sender->GetNextVideoSsrc());
@@ -244,9 +246,20 @@ SendVideoStream::SendVideoStream(CallClient* sender,
 
   send_stream_ = sender_->call_->CreateVideoSendStream(
       std::move(send_config), std::move(encoder_config));
+  std::vector<std::function<void(const VideoFrameQualityInfo&)> >
+      frame_info_handlers;
+  if (config.analyzer.frame_quality_handler)
+    frame_info_handlers.push_back(config.analyzer.frame_quality_handler);
 
-  send_stream_->SetSource(video_capturer_.get(),
-                          config.encoder.degradation_preference);
+  if (analyzer->Active()) {
+    frame_tap_.reset(new ForwardingCapturedFrameTap(sender_->clock_, analyzer,
+                                                    video_capturer_.get()));
+    send_stream_->SetSource(frame_tap_.get(),
+                            config.encoder.degradation_preference);
+  } else {
+    send_stream_->SetSource(video_capturer_.get(),
+                            config.encoder.degradation_preference);
+  }
 }
 
 SendVideoStream::~SendVideoStream() {
@@ -282,7 +295,6 @@ void SendVideoStream::SetCaptureFramerate(int framerate) {
   RTC_CHECK(frame_generator_)
       << "Framerate change only implemented for generators";
   frame_generator_->ChangeFramerate(framerate);
-
 }
 
 VideoSendStream::Stats SendVideoStream::GetStats() const {
@@ -311,9 +323,14 @@ ReceiveVideoStream::ReceiveVideoStream(CallClient* receiver,
                                        VideoStreamConfig config,
                                        SendVideoStream* send_stream,
                                        size_t chosen_stream,
-                                       Transport* feedback_transport)
+                                       Transport* feedback_transport,
+                                       VideoQualityAnalyzer* analyzer)
     : receiver_(receiver), config_(config) {
-  renderer_ = absl::make_unique<FakeVideoRenderer>();
+  if (analyzer->Active()) {
+    renderer_ = absl::make_unique<DecodedFrameTap>(analyzer);
+  } else {
+    renderer_ = absl::make_unique<FakeVideoRenderer>();
+  }
   VideoReceiveStream::Config recv_config(feedback_transport);
   recv_config.rtp.remb = !config.stream.packet_feedback;
   recv_config.rtp.transport_cc = config.stream.packet_feedback;
@@ -384,14 +401,17 @@ VideoStreamPair::~VideoStreamPair() = default;
 
 VideoStreamPair::VideoStreamPair(CallClient* sender,
                                  CallClient* receiver,
-                                 VideoStreamConfig config)
+                                 VideoStreamConfig config,
+                                 std::string quality_log_file_name)
     : config_(config),
-      send_stream_(sender, config, &sender->transport_),
+      analyzer_(quality_log_file_name, config.analyzer.frame_quality_handler),
+      send_stream_(sender, config, &sender->transport_, &analyzer_),
       receive_stream_(receiver,
                       config,
                       &send_stream_,
                       /*chosen_stream=*/0,
-                      &receiver->transport_) {}
+                      &receiver->transport_,
+                      &analyzer_) {}
 
 }  // namespace test
 }  // namespace webrtc

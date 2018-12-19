@@ -21,6 +21,7 @@
 #include "api/units/time_delta.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "test/frame_generator.h"
+#include "test/scenario/quality_info.h"
 
 namespace webrtc {
 namespace test {
@@ -138,6 +139,10 @@ struct VideoStreamConfig {
   struct Renderer {
     enum Type { kFake } type = kFake;
   };
+  struct analyzer {
+    bool log_to_file = false;
+    std::function<void(const VideoFrameQualityInfo&)> frame_quality_handler;
+  } analyzer;
 };
 
 struct AudioStreamConfig {

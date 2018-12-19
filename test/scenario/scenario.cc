@@ -107,7 +107,8 @@ StatesPrinter* Scenario::CreatePrinter(std::string name,
 
 CallClient* Scenario::CreateClient(std::string name, CallClientConfig config) {
   RTC_DCHECK(real_time_mode_);
-  CallClient* client = new CallClient(clock_, GetFullPathOrEmpty(name), config);
+  CallClient* client =
+      new CallClient(clock_, name, GetFullPathOrEmpty(name), config);
   if (config.transport.state_log_interval.IsFinite()) {
     Every(config.transport.state_log_interval, [this, client]() {
       client->network_controller_factory_.LogCongestionControllerStats(Now());
@@ -266,8 +267,12 @@ VideoStreamPair* Scenario::CreateVideoStream(
 VideoStreamPair* Scenario::CreateVideoStream(
     std::pair<CallClient*, CallClient*> clients,
     VideoStreamConfig config) {
-  video_streams_.emplace_back(
-      new VideoStreamPair(clients.first, clients.second, config));
+  std::string quality_log_file_name;
+  if (config.analyzer.log_to_file)
+    quality_log_file_name =
+        GetFullPathOrEmpty(clients.first->name_ + ".video_quality.txt");
+  video_streams_.emplace_back(new VideoStreamPair(
+      clients.first, clients.second, config, quality_log_file_name));
   return video_streams_.back().get();
 }
 

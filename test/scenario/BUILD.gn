@@ -16,12 +16,16 @@ if (rtc_include_tests) {
       "audio_stream.h",
       "call_client.cc",
       "call_client.h",
+      "call_client.h",
       "column_printer.cc",
       "column_printer.h",
       "hardware_codecs.cc",
       "hardware_codecs.h",
       "network_node.cc",
       "network_node.h",
+      "quality_info.h",
+      "quality_stats.cc",
+      "quality_stats.h",
       "scenario.cc",
       "scenario.h",
       "scenario_config.cc",
@@ -90,6 +94,7 @@ if (rtc_include_tests) {
       "../../system_wrappers",
       "../../system_wrappers:field_trial",
       "../../video",
+      "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
     if (is_android) {
@@ -108,6 +113,27 @@ if (rtc_include_tests) {
     testonly = true
     sources = [
       "scenario_unittest.cc",
+    ]
+    if (!build_with_chromium && is_clang) {
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+    deps = [
+      ":scenario",
+      "../../logging:mocks",
+      "../../rtc_base:checks",
+      "../../rtc_base:rtc_base_approved",
+      "../../system_wrappers",
+      "../../system_wrappers:field_trial",
+      "../../test:field_trial",
+      "../../test:test_support",
+      "//testing/gmock",
+      "//third_party/abseil-cpp/absl/memory",
+    ]
+  }
+  rtc_source_set("scenario_slow_tests") {
+    testonly = true
+    sources = [
+      "quality_stats_unittest.cc",
     ]
     if (!build_with_chromium && is_clang) {
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]

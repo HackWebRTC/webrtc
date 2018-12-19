@@ -58,7 +58,10 @@ struct CallClientFakeAudio {
 // stream session.
 class CallClient : public NetworkReceiverInterface {
  public:
-  CallClient(Clock* clock, std::string log_filename, CallClientConfig config);
+  CallClient(Clock* clock,
+             std::string name,
+             std::string log_filename,
+             CallClientConfig config);
   RTC_DISALLOW_COPY_AND_ASSIGN(CallClient);
 
   ~CallClient();
@@ -89,6 +92,7 @@ class CallClient : public NetworkReceiverInterface {
   void AddExtensions(std::vector<RtpExtension> extensions);
 
   Clock* clock_;
+  const std::string name_;
   LoggingNetworkControllerFactory network_controller_factory_;
   CallClientFakeAudio fake_audio_setup_;
   std::unique_ptr<Call> call_;

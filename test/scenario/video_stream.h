@@ -19,6 +19,7 @@
 #include "test/scenario/call_client.h"
 #include "test/scenario/column_printer.h"
 #include "test/scenario/network_node.h"
+#include "test/scenario/quality_stats.h"
 #include "test/scenario/scenario_config.h"
 #include "test/test_video_capturer.h"
 
@@ -43,7 +44,8 @@ class SendVideoStream {
   // Handles RTCP feedback for this stream.
   SendVideoStream(CallClient* sender,
                   VideoStreamConfig config,
-                  Transport* send_transport);
+                  Transport* send_transport,
+                  VideoQualityAnalyzer* analyzer);
 
   rtc::CriticalSection crit_;
   std::vector<uint32_t> ssrcs_;
@@ -55,6 +57,7 @@ class SendVideoStream {
   std::vector<test::FakeEncoder*> fake_encoders_ RTC_GUARDED_BY(crit_);
   std::unique_ptr<VideoBitrateAllocatorFactory> bitrate_allocator_factory_;
   std::unique_ptr<TestVideoCapturer> video_capturer_;
+  std::unique_ptr<ForwardingCapturedFrameTap> frame_tap_;
   FrameGeneratorCapturer* frame_generator_ = nullptr;
   int next_local_network_id_ = 0;
   int next_remote_network_id_ = 0;
@@ -74,11 +77,12 @@ class ReceiveVideoStream {
                      VideoStreamConfig config,
                      SendVideoStream* send_stream,
                      size_t chosen_stream,
-                     Transport* feedback_transport);
+                     Transport* feedback_transport,
+                     VideoQualityAnalyzer* analyzer);
 
   VideoReceiveStream* receive_stream_ = nullptr;
   FlexfecReceiveStream* flecfec_stream_ = nullptr;
-  std::unique_ptr<rtc::VideoSinkInterface<webrtc::VideoFrame>> renderer_;
+  std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>> renderer_;
   CallClient* const receiver_;
   const VideoStreamConfig config_;
   std::unique_ptr<VideoDecoderFactory> decoder_factory_;
@@ -93,15 +97,18 @@ class VideoStreamPair {
   ~VideoStreamPair();
   SendVideoStream* send() { return &send_stream_; }
   ReceiveVideoStream* receive() { return &receive_stream_; }
+  VideoQualityAnalyzer* analyzer() { return &analyzer_; }
 
  private:
   friend class Scenario;
   VideoStreamPair(CallClient* sender,
                   CallClient* receiver,
-                  VideoStreamConfig config);
+                  VideoStreamConfig config,
+                  std::string quality_log_file_name);
 
   const VideoStreamConfig config_;
 
+  VideoQualityAnalyzer analyzer_;
   SendVideoStream send_stream_;
   ReceiveVideoStream receive_stream_;
 };

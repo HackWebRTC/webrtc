@@ -134,17 +134,18 @@ TimeDelta LoggingNetworkControllerFactory::GetProcessInterval() const {
 }
 
 CallClient::CallClient(Clock* clock,
+                       std::string name,
                        std::string log_filename,
                        CallClientConfig config)
     : clock_(clock),
+      name_(name),
       network_controller_factory_(log_filename, config.transport),
       fake_audio_setup_(InitAudio()),
       call_(CreateCall(config,
                        &network_controller_factory_,
                        fake_audio_setup_.audio_state)),
       transport_(clock_, call_.get()),
-      header_parser_(RtpHeaderParser::Create()) {
-}  // namespace test
+      header_parser_(RtpHeaderParser::Create()) {}
 
 CallClient::~CallClient() {
   delete header_parser_;
