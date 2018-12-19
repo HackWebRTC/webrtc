@@ -57,6 +57,7 @@
 #include "rtc_base/numerics/sequence_number_util.h"
 #include "rtc_base/rate_statistics.h"
 #include "rtc_base/strings/string_builder.h"
+#include "test/function_audio_decoder_factory.h"
 
 #ifndef BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
 #define BWE_TEST_LOGGING_COMPILE_TIME_ENABLE 0
@@ -1710,20 +1711,23 @@ std::unique_ptr<test::NetEqStatsGetter> CreateNetEqTestAndRun(
 
   std::unique_ptr<test::VoidAudioSink> output(new test::VoidAudioSink());
 
+  // Factory to create a "replacement decoder" that produces the decoded audio
+  // by reading from a file rather than from the encoded payloads.
+  rtc::scoped_refptr<AudioDecoderFactory> decoder_factory =
+      new rtc::RefCountedObject<test::FunctionAudioDecoderFactory>(
+          [replacement_file_name, file_sample_rate_hz]() {
+            std::unique_ptr<test::ResampleInputAudioFile> replacement_file(
+                new test::ResampleInputAudioFile(replacement_file_name,
+                                                 file_sample_rate_hz));
+            replacement_file->set_output_rate_hz(48000);
+            return absl::make_unique<test::FakeDecodeFromFile>(
+                std::move(replacement_file), 48000, false);
+          });
+
   test::NetEqTest::DecoderMap codecs;
 
-  // Create a "replacement decoder" that produces the decoded audio by reading
-  // from a file rather than from the encoded payloads.
-  std::unique_ptr<test::ResampleInputAudioFile> replacement_file(
-      new test::ResampleInputAudioFile(replacement_file_name,
-                                       file_sample_rate_hz));
-  replacement_file->set_output_rate_hz(48000);
-  std::unique_ptr<AudioDecoder> replacement_decoder(
-      new test::FakeDecodeFromFile(std::move(replacement_file), 48000, false));
-  test::NetEqTest::ExtDecoderMap ext_codecs;
-  ext_codecs[kReplacementPt] = {replacement_decoder.get(),
-                                NetEqDecoder::kDecoderArbitrary,
-                                "replacement codec"};
+  codecs[kReplacementPt] = {NetEqDecoder::kDecoderPCM16Bswb48kHz,
+                            "replacement codec"};
 
   std::unique_ptr<test::NetEqDelayAnalyzer> delay_cb(
       new test::NetEqDelayAnalyzer);
@@ -1735,8 +1739,9 @@ std::unique_ptr<test::NetEqStatsGetter> CreateNetEqTestAndRun(
   callbacks.post_insert_packet = neteq_stats_getter->delay_analyzer();
   callbacks.get_audio_callback = neteq_stats_getter.get();
 
-  test::NetEqTest test(config, codecs, ext_codecs, nullptr, std::move(input),
-                       std::move(output), callbacks);
+  test::NetEqTest::ExtDecoderMap ext_codecs;
+  test::NetEqTest test(config, decoder_factory, codecs, ext_codecs, nullptr,
+                       std::move(input), std::move(output), callbacks);
   test.Run();
   return neteq_stats_getter;
 }
