@@ -79,7 +79,7 @@ class LowCutFilter::BiquadFilter {
   }
 
  private:
-  const int16_t* const ba_ = nullptr;
+  const int16_t* const ba_;
   int16_t x_[2];
   int16_t y_[4];
 };
