@@ -1694,4 +1694,20 @@ TEST_F(PeerConnectionJsepTest, LegacyNoMidAudioVideoAnswer) {
   ASSERT_TRUE(caller->SetRemoteDescription(std::move(answer)));
 }
 
+// Test that SetLocalDescription fails if a=mid lines are missing.
+TEST_F(PeerConnectionJsepTest, SetLocalDescriptionFailsMissingMid) {
+  auto caller = CreatePeerConnection();
+  caller->AddAudioTrack("audio");
+
+  auto offer = caller->CreateOffer();
+  ClearMids(offer.get());
+
+  std::string error;
+  ASSERT_FALSE(caller->SetLocalDescription(std::move(offer), &error));
+  EXPECT_EQ(
+      "Failed to set local offer sdp: A media section is missing a MID "
+      "attribute.",
+      error);
+}
+
 }  // namespace webrtc

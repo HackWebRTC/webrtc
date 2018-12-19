@@ -6156,6 +6156,10 @@ bool PeerConnection::HasRtcpMuxEnabled(const cricket::ContentInfo* content) {
 static RTCError ValidateMids(const cricket::SessionDescription& description) {
   std::set<std::string> mids;
   for (const cricket::ContentInfo& content : description.contents()) {
+    if (content.name.empty()) {
+      LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
+                           "A media section is missing a MID attribute.");
+    }
     if (!mids.insert(content.name).second) {
       LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
                            "Duplicate a=mid value '" + content.name + "'.");
