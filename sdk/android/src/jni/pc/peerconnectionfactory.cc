@@ -22,7 +22,6 @@
 // The user may pass in a nullptr.
 #include "modules/audio_processing/include/audio_processing.h"  // nogncheck
 #include "rtc_base/event_tracer.h"
-#include "rtc_base/stringutils.h"
 #include "rtc_base/thread.h"
 #include "sdk/android/generated_peerconnection_jni/jni/PeerConnectionFactory_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"

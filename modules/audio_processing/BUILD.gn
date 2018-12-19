@@ -331,7 +331,6 @@ rtc_source_set("apm_logging") {
     "../../common_audio:common_audio",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
-    "../../rtc_base:stringutils",
   ]
   defines = []
 }
@@ -583,7 +582,6 @@ if (rtc_include_tests) {
         "../../rtc_base:rtc_base_approved",
         "../../rtc_base:rtc_json",
         "../../rtc_base:rtc_task_queue",
-        "../../rtc_base:stringutils",
         "../../system_wrappers",
         "../../test:test_support",
         "aec_dump",

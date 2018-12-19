@@ -49,7 +49,6 @@
 #include "rtc_base/fakeclock.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/numerics/safe_conversions.h"
-#include "rtc_base/stringutils.h"
 #include "test/field_trial.h"
 #include "test/gmock.h"
 

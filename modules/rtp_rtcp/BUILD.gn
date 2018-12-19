@@ -215,7 +215,6 @@ rtc_static_library("rtp_rtcp") {
     "../../rtc_base:rtc_numerics",
     "../../rtc_base:safe_minmax",
     "../../rtc_base:sequenced_task_checker",
-    "../../rtc_base:stringutils",
     "../../rtc_base/system:fallthrough",
     "../../rtc_base/time:timestamp_extrapolator",
     "../../system_wrappers",

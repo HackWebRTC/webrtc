@@ -29,7 +29,6 @@
 #include "pc/test/fakeaudiocapturemodule.h"
 #include "pc/test/fakertccertificategenerator.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/stringutils.h"
 #include "rtc_base/virtualsocketserver.h"
 #include "test/gmock.h"
 

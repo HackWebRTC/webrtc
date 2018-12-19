@@ -762,7 +762,6 @@ if (is_android) {
       "../../rtc_base:rtc_base",
       "../../rtc_base:rtc_base_approved",
       "../../rtc_base:rtc_task_queue",
-      "../../rtc_base:stringutils",
       "../../system_wrappers:field_trial",
       "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",

@@ -36,7 +36,6 @@ enum PreservedErrno {
 #include "rtc_base/helpers.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
-#include "rtc_base/stringutils.h"
 #include "rtc_base/thread_checker.h"
 #include "rtc_base/trace_event.h"
 #include "usrsctplib/usrsctp.h"

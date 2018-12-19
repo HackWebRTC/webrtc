@@ -31,7 +31,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/helpers.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/stringutils.h"
 #include "rtc_base/third_party/base64/base64.h"
 
 namespace {

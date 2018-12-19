@@ -34,7 +34,6 @@
 #include "rtc_base/opensslidentity.h"
 #include "rtc_base/sslcertificate.h"
 #include "rtc_base/stream.h"
-#include "rtc_base/stringutils.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/timeutils.h"
 

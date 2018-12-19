@@ -32,7 +32,6 @@
 #include "rtc_base/copyonwritebuffer.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/string_builder.h"
-#include "rtc_base/stringutils.h"
 #include "rtc_base/timeutils.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/field_trial.h"

@@ -35,7 +35,6 @@
 #include "rtc_base/fakesslidentity.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/stringutils.h"
 #include "rtc_base/timeutils.h"
 
 using testing::AtLeast;

@@ -24,7 +24,6 @@
 #include "rtc_base/ssladapter.h"
 #include "rtc_base/sslidentity.h"
 #include "rtc_base/sslstreamadapter.h"
-#include "rtc_base/stringutils.h"
 
 #define MAYBE_SKIP_TEST(feature)                                  \
   if (!(rtc::SSLStreamAdapter::feature())) {                      \

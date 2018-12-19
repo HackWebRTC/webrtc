@@ -31,7 +31,6 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/json.h"
 #include "rtc_base/strings/string_builder.h"
-#include "rtc_base/stringutils.h"
 
 namespace webrtc {
 namespace test {
