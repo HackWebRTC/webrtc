@@ -1106,20 +1106,11 @@ absl::string_view StatsCollector::GetTrackIdBySsrc(
     uint32_t ssrc,
     StatsReport::Direction direction) {
   RTC_DCHECK(pc_->signaling_thread()->IsCurrent());
-  absl::string_view track_id;
   if (direction == StatsReport::kSend) {
-    track_id = pc_->GetLocalTrackIdBySsrc(ssrc);
-  } else {
-    RTC_DCHECK_EQ(direction, StatsReport::kReceive);
-    track_id = pc_->GetRemoteTrackIdBySsrc(ssrc);
+    return pc_->GetLocalTrackIdBySsrc(ssrc);
   }
-  if (track_id.empty()) {
-    RTC_LOG(LS_WARNING) << "The SSRC " << ssrc << " is not associated with a "
-                        << (direction == StatsReport::kSend ? "sending"
-                                                            : "receiving")
-                        << " track";
-  }
-  return track_id;
+  RTC_DCHECK_EQ(direction, StatsReport::kReceive);
+  return pc_->GetRemoteTrackIdBySsrc(ssrc);
 }
 
 void StatsCollector::UpdateTrackReports() {
