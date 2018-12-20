@@ -44,6 +44,7 @@ void VCMEncodedFrame::Free() {
 
 void VCMEncodedFrame::Reset() {
   SetTimestamp(0);
+  SetSpatialIndex(absl::nullopt);
   _renderTimeMs = -1;
   _payloadType = 0;
   _frameType = kVideoFrameDelta;
@@ -116,6 +117,7 @@ void VCMEncodedFrame::CopyCodecSpecific(const RTPVideoHeader* header) {
         if (vp9_header.spatial_idx != kNoSpatialIdx) {
           _codecSpecificInfo.codecSpecific.VP9.inter_layer_predicted =
               vp9_header.inter_layer_predicted;
+          SetSpatialIndex(vp9_header.spatial_idx);
         }
         if (vp9_header.gof_idx != kNoGofIdx) {
           _codecSpecificInfo.codecSpecific.VP9.gof_idx = vp9_header.gof_idx;

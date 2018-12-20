@@ -668,28 +668,34 @@ void FrameBuffer::ClearFramesAndHistory() {
 EncodedFrame* FrameBuffer::CombineAndDeleteFrames(
     const std::vector<EncodedFrame*>& frames) const {
   RTC_DCHECK(!frames.empty());
-  EncodedFrame* frame = frames[0];
+  EncodedFrame* first_frame = frames[0];
+  EncodedFrame* last_frame = frames.back();
   size_t total_length = 0;
   for (size_t i = 0; i < frames.size(); ++i) {
     total_length += frames[i]->size();
   }
-  frame->VerifyAndAllocate(total_length);
-  uint8_t* buffer = frame->MutableBuffer();
+  first_frame->VerifyAndAllocate(total_length);
+
+  // Spatial index of combined frame is set equal to spatial index of its top
+  // spatial layer.
+  first_frame->SetSpatialIndex(last_frame->id.spatial_layer);
+  first_frame->id.spatial_layer = last_frame->id.spatial_layer;
+
+  first_frame->video_timing_mutable()->network2_timestamp_ms =
+      last_frame->video_timing().network2_timestamp_ms;
+  first_frame->video_timing_mutable()->receive_finish_ms =
+      last_frame->video_timing().receive_finish_ms;
+
   // Append all remaining frames to the first one.
-  size_t used_buffer_bytes = frame->size();
+  uint8_t* buffer = first_frame->MutableBuffer() + first_frame->size();
   for (size_t i = 1; i < frames.size(); ++i) {
-    EncodedFrame* frame_to_append = frames[i];
-    memcpy(buffer + used_buffer_bytes, frame_to_append->Buffer(),
-           frame_to_append->size());
-    used_buffer_bytes += frame_to_append->size();
-    frame->video_timing_mutable()->network2_timestamp_ms =
-        frame_to_append->video_timing().network2_timestamp_ms;
-    frame->video_timing_mutable()->receive_finish_ms =
-        frame_to_append->video_timing().receive_finish_ms;
-    delete frame_to_append;
+    EncodedFrame* next_frame = frames[i];
+    memcpy(buffer, next_frame->Buffer(), next_frame->size());
+    buffer += next_frame->size();
+    delete next_frame;
   }
-  frame->set_size(total_length);
-  return frame;
+  first_frame->set_size(total_length);
+  return first_frame;
 }
 
 FrameBuffer::FrameInfo::FrameInfo() = default;

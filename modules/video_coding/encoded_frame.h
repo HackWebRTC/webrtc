@@ -68,6 +68,7 @@ class VCMEncodedFrame : protected EncodedImage {
    *   Frame RTP timestamp (90kHz)
    */
   using EncodedImage::set_size;
+  using EncodedImage::SetSpatialIndex;
   using EncodedImage::SetTimestamp;
   using EncodedImage::size;
   using EncodedImage::Timestamp;
