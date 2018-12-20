@@ -21,12 +21,11 @@
 
 namespace rtc {
 
-// VideoBroadcaster broadcast video frames to sinks and combines
-// VideoSinkWants from its sinks. It does that by implementing
-// rtc::VideoSourceInterface and rtc::VideoSinkInterface.
-// Sinks must be added and removed on one and only one thread.
-// Video frames can be broadcasted on any thread. I.e VideoBroadcaster::OnFrame
-// can be called on any thread.
+// VideoBroadcaster broadcast video frames to sinks and combines VideoSinkWants
+// from its sinks. It does that by implementing rtc::VideoSourceInterface and
+// rtc::VideoSinkInterface. The class is threadsafe; methods may be called on
+// any thread. This is needed because VideoStreamEncoder calls AddOrUpdateSink
+// both on the worker thread and on the encoder task queue.
 class VideoBroadcaster : public VideoSourceBase,
                          public VideoSinkInterface<webrtc::VideoFrame> {
  public:
@@ -57,7 +56,6 @@ class VideoBroadcaster : public VideoSourceBase,
       int width,
       int height) RTC_EXCLUSIVE_LOCKS_REQUIRED(sinks_and_wants_lock_);
 
-  ThreadChecker thread_checker_;
   rtc::CriticalSection sinks_and_wants_lock_;
 
   VideoSinkWants current_wants_ RTC_GUARDED_BY(sinks_and_wants_lock_);

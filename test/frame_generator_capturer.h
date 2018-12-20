@@ -89,10 +89,10 @@ class FrameGeneratorCapturer : public TestVideoCapturer {
   void InsertFrame();
   static bool Run(void* obj);
   int GetCurrentConfiguredFramerate();
+  void UpdateFps(int max_fps) RTC_EXCLUSIVE_LOCKS_REQUIRED(&lock_);
 
   Clock* const clock_;
   bool sending_;
-  rtc::VideoSinkInterface<VideoFrame>* sink_ RTC_GUARDED_BY(&lock_);
   SinkWantsObserver* sink_wants_observer_ RTC_GUARDED_BY(&lock_);
 
   rtc::CriticalSection lock_;

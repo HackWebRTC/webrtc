@@ -127,7 +127,6 @@ FrameGeneratorCapturer::FrameGeneratorCapturer(
     int target_fps)
     : clock_(clock),
       sending_(true),
-      sink_(nullptr),
       sink_wants_observer_(nullptr),
       frame_generator_(std::move(frame_generator)),
       source_fps_(target_fps),
@@ -186,11 +185,7 @@ void FrameGeneratorCapturer::InsertFrame() {
       first_frame_capture_time_ = frame->ntp_time_ms();
     }
 
-    if (sink_) {
-      absl::optional<VideoFrame> out_frame = AdaptFrame(*frame);
-      if (out_frame)
-        sink_->OnFrame(*out_frame);
-    }
+    TestVideoCapturer::OnFrame(*frame);
   }
 }
 
@@ -236,31 +231,29 @@ void FrameGeneratorCapturer::SetSinkWantsObserver(SinkWantsObserver* observer) {
 void FrameGeneratorCapturer::AddOrUpdateSink(
     rtc::VideoSinkInterface<VideoFrame>* sink,
     const rtc::VideoSinkWants& wants) {
+  TestVideoCapturer::AddOrUpdateSink(sink, wants);
   rtc::CritScope cs(&lock_);
-  RTC_CHECK(!sink_ || sink_ == sink);
-  sink_ = sink;
-  if (sink_wants_observer_)
+  if (sink_wants_observer_) {
+    // Tests need to observe unmodified sink wants.
     sink_wants_observer_->OnSinkWantsChanged(sink, wants);
-
-  // Handle framerate within this class, just pass on resolution for possible
-  // adaptation.
-  rtc::VideoSinkWants resolution_wants = wants;
-  resolution_wants.max_framerate_fps = std::numeric_limits<int>::max();
-  TestVideoCapturer::AddOrUpdateSink(sink, resolution_wants);
-
-  // Ignore any requests for framerate higher than initially configured.
-  if (wants.max_framerate_fps < target_capture_fps_) {
-    wanted_fps_.emplace(wants.max_framerate_fps);
-  } else {
-    wanted_fps_.reset();
   }
+  UpdateFps(GetSinkWants().max_framerate_fps);
 }
 
 void FrameGeneratorCapturer::RemoveSink(
     rtc::VideoSinkInterface<VideoFrame>* sink) {
+  TestVideoCapturer::RemoveSink(sink);
+
   rtc::CritScope cs(&lock_);
-  RTC_CHECK(sink_ == sink);
-  sink_ = nullptr;
+  UpdateFps(GetSinkWants().max_framerate_fps);
+}
+
+void FrameGeneratorCapturer::UpdateFps(int max_fps) {
+  if (max_fps < target_capture_fps_) {
+    wanted_fps_.emplace(max_fps);
+  } else {
+    wanted_fps_.reset();
+  }
 }
 
 void FrameGeneratorCapturer::ForceFrame() {
