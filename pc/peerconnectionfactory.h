@@ -151,8 +151,6 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory_;
   std::unique_ptr<NetworkControllerFactoryInterface>
       injected_network_controller_factory_;
-  std::unique_ptr<NetworkControllerFactoryInterface>
-      bbr_network_controller_factory_;
   std::unique_ptr<MediaTransportFactory> media_transport_factory_;
 };
 

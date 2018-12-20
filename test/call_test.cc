@@ -21,10 +21,8 @@
 #include "call/rtp_transport_controller_send.h"
 #include "call/simulated_network.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"
-#include "modules/congestion_controller/bbr/bbr_factory.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/event.h"
-#include "rtc_base/experiments/congestion_controller_experiment.h"
 #include "test/fake_encoder.h"
 #include "test/testsupport/fileutils.h"
 
@@ -39,7 +37,6 @@ CallTest::CallTest()
       audio_send_config_(/*send_transport=*/nullptr,
                          /*media_transport=*/nullptr),
       audio_send_stream_(nullptr),
-      bbr_network_controller_factory_(new BbrNetworkControllerFactory()),
       fake_encoder_factory_([this]() {
         std::unique_ptr<FakeEncoder> fake_encoder;
         if (video_encoder_configs_[0].codec_type == kVideoCodecVP8) {
@@ -200,14 +197,12 @@ void CallTest::CreateSenderCall() {
 void CallTest::CreateSenderCall(const Call::Config& config) {
   NetworkControllerFactoryInterface* injected_factory =
       config.network_controller_factory;
-  if (!injected_factory) {
-    if (CongestionControllerExperiment::BbrControllerEnabled()) {
-      RTC_LOG(LS_INFO) << "Using BBR network controller factory";
-      injected_factory = bbr_network_controller_factory_.get();
-    } else {
-      RTC_LOG(LS_INFO) << "Using default network controller factory";
-    }
+  if (injected_factory) {
+    RTC_LOG(LS_INFO) << "Using injected network controller factory";
+  } else {
+    RTC_LOG(LS_INFO) << "Using default network controller factory";
   }
+
   std::unique_ptr<RtpTransportControllerSend> controller_send =
       absl::make_unique<RtpTransportControllerSend>(
           Clock::GetRealTimeClock(), config.event_log, injected_factory,

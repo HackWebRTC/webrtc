@@ -23,11 +23,6 @@ rtc_source_set("control_handler") {
     "control_handler.h",
   ]
 
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-
   deps = [
     "../:congestion_controller",
     "../../../api/transport:network_control",
@@ -38,7 +33,6 @@ rtc_source_set("control_handler") {
     "../../../rtc_base:rate_limiter",
     "../../../rtc_base:safe_minmax",
     "../../../rtc_base:sequenced_task_checker",
-    "../../../rtc_base/experiments:congestion_controller_experiment",
     "../../../system_wrappers",
     "../../../system_wrappers:field_trial",
     "../../pacing",
