@@ -22,11 +22,11 @@
 namespace webrtc {
 namespace test {
 
-// Rates for the encoder and the frame number when to change profile.
+// Rates for the encoder and the frame number when to apply profile.
 struct RateProfile {
   size_t target_kbps;
   size_t input_fps;
-  size_t frame_index_rate_update;
+  size_t frame_num;
 };
 
 struct RateControlThresholds {
