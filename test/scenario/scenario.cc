@@ -17,6 +17,9 @@
 #include "test/testsupport/fileutils.h"
 
 WEBRTC_DEFINE_bool(scenario_logs, false, "Save logs from scenario framework.");
+WEBRTC_DEFINE_string(out_root,
+                     "",
+                     "Output root path, based on project root if unset.");
 
 namespace webrtc {
 namespace test {
@@ -60,12 +63,16 @@ Scenario::Scenario(std::string file_name, bool real_time)
       audio_decoder_factory_(CreateBuiltinAudioDecoderFactory()),
       audio_encoder_factory_(CreateBuiltinAudioEncoderFactory()) {
   if (FLAG_scenario_logs && !file_name.empty()) {
-    CreateDir(OutputPath() + "output_data");
+    std::string output_root = FLAG_out_root;
+    if (output_root.empty())
+      output_root = OutputPath() + "output_data/";
+    if (output_root.back() == '/')
+      CreateDir(output_root);
     for (size_t i = 0; i < file_name.size(); ++i) {
       if (file_name[i] == '/')
-        CreateDir(OutputPath() + "output_data/" + file_name.substr(0, i));
+        CreateDir(output_root + file_name.substr(0, i));
     }
-    base_filename_ = OutputPath() + "output_data/" + file_name;
+    base_filename_ = output_root + file_name;
     RTC_LOG(LS_INFO) << "Saving scenario logs to: " << base_filename_;
   }
   if (!real_time_mode_ && !base_filename_.empty()) {
