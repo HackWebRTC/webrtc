@@ -36,6 +36,7 @@ rtc_static_library("pacing") {
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base/experiments:alr_experiment",
+    "../../rtc_base/experiments:field_trial_parser",
     "../../system_wrappers",
     "../../system_wrappers:field_trial",
     "../congestion_controller/goog_cc:alr_detector",

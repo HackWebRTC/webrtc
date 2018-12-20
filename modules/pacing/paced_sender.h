@@ -24,6 +24,7 @@
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/criticalsection.h"
+#include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
@@ -172,6 +173,7 @@ class PacedSender : public Pacer {
   const bool drain_large_queues_;
   const bool send_padding_if_silent_;
   const bool video_blocks_audio_;
+  FieldTrialParameter<int> min_packet_limit_ms_;
 
   rtc::CriticalSection critsect_;
   // TODO(webrtc:9716): Remove this when we are certain clocks are monotonic.

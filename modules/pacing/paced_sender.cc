@@ -26,7 +26,7 @@
 
 namespace {
 // Time limit in milliseconds between packet bursts.
-const int64_t kMinPacketLimitMs = 5;
+const int64_t kDefaultMinPacketLimitMs = 5;
 const int64_t kCongestedPacketIntervalMs = 500;
 const int64_t kPausedProcessIntervalMs = kCongestedPacketIntervalMs;
 const int64_t kMaxElapsedTimeMs = 2000;
@@ -52,6 +52,7 @@ PacedSender::PacedSender(const Clock* clock,
       send_padding_if_silent_(
           field_trial::IsEnabled("WebRTC-Pacer-PadInSilence")),
       video_blocks_audio_(!field_trial::IsDisabled("WebRTC-Pacer-BlockAudio")),
+      min_packet_limit_ms_("", kDefaultMinPacketLimitMs),
       last_timestamp_ms_(clock_->TimeInMilliseconds()),
       paused_(false),
       media_budget_(0),
@@ -70,10 +71,13 @@ PacedSender::PacedSender(const Clock* clock,
       pacing_factor_(kDefaultPaceMultiplier),
       queue_time_limit(kMaxQueueLengthMs),
       account_for_audio_(false) {
-  if (!drain_large_queues_)
+  if (!drain_large_queues_) {
     RTC_LOG(LS_WARNING) << "Pacer queues will not be drained,"
                            "pushback experiment must be enabled.";
-  UpdateBudgetWithElapsedTime(kMinPacketLimitMs);
+  }
+  ParseFieldTrial({&min_packet_limit_ms_},
+                  field_trial::FindFullName("WebRTC-Pacer-MinPacketLimitMs"));
+  UpdateBudgetWithElapsedTime(min_packet_limit_ms_);
 }
 
 PacedSender::~PacedSender() {}
@@ -258,7 +262,7 @@ int64_t PacedSender::TimeUntilNextProcess() {
     if (ret > 0 || (ret == 0 && !probing_send_failure_))
       return ret;
   }
-  return std::max<int64_t>(kMinPacketLimitMs - elapsed_time_ms, 0);
+  return std::max<int64_t>(min_packet_limit_ms_ - elapsed_time_ms, 0);
 }
 
 int64_t PacedSender::UpdateTimeAndGetElapsedMs(int64_t now_us) {
