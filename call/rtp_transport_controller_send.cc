@@ -140,7 +140,7 @@ RtpTransportControllerSend::RtpTransportControllerSend(
   initial_config_.constraints = ConvertConstraints(bitrate_config, clock_);
   RTC_DCHECK(bitrate_config.start_bitrate_bps > 0);
 
-  pacer_.SetEstimatedBitrate(bitrate_config.start_bitrate_bps);
+  pacer_.SetPacingRates(bitrate_config.start_bitrate_bps, 0);
 
   process_thread_->RegisterModule(&pacer_, RTC_FROM_HERE);
   process_thread_->Start();
