@@ -30,24 +30,24 @@ namespace test {
 
 class NetworkReceiverInterface {
  public:
-  virtual bool TryDeliverPacket(rtc::CopyOnWriteBuffer packet,
-                                uint64_t receiver,
-                                Timestamp at_time) = 0;
+  virtual void DeliverPacket(rtc::CopyOnWriteBuffer packet,
+                             uint64_t receiver,
+                             Timestamp at_time) = 0;
   virtual ~NetworkReceiverInterface() = default;
 };
 class NullReceiver : public NetworkReceiverInterface {
  public:
-  bool TryDeliverPacket(rtc::CopyOnWriteBuffer packet,
-                        uint64_t receiver,
-                        Timestamp at_time) override;
+  void DeliverPacket(rtc::CopyOnWriteBuffer packet,
+                     uint64_t receiver,
+                     Timestamp at_time) override;
 };
 class ActionReceiver : public NetworkReceiverInterface {
  public:
   explicit ActionReceiver(std::function<void()> action);
   virtual ~ActionReceiver() = default;
-  bool TryDeliverPacket(rtc::CopyOnWriteBuffer packet,
-                        uint64_t receiver,
-                        Timestamp at_time) override;
+  void DeliverPacket(rtc::CopyOnWriteBuffer packet,
+                     uint64_t receiver,
+                     Timestamp at_time) override;
 
  private:
   std::function<void()> action_;
@@ -60,9 +60,9 @@ class NetworkNode : public NetworkReceiverInterface {
   ~NetworkNode() override;
   RTC_DISALLOW_COPY_AND_ASSIGN(NetworkNode);
 
-  bool TryDeliverPacket(rtc::CopyOnWriteBuffer packet,
-                        uint64_t receiver,
-                        Timestamp at_time) override;
+  void DeliverPacket(rtc::CopyOnWriteBuffer packet,
+                     uint64_t receiver,
+                     Timestamp at_time) override;
   // Creates a route  for the given receiver_id over all the given nodes to the
   // given receiver.
   static void Route(int64_t receiver_id,

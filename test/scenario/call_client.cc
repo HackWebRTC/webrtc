@@ -166,9 +166,9 @@ Call::Stats CallClient::GetStats() {
   return call_->GetStats();
 }
 
-bool CallClient::TryDeliverPacket(rtc::CopyOnWriteBuffer packet,
-                                  uint64_t receiver,
-                                  Timestamp at_time) {
+void CallClient::DeliverPacket(rtc::CopyOnWriteBuffer packet,
+                               uint64_t receiver,
+                               Timestamp at_time) {
   // Removes added overhead before delivering packet to sender.
   RTC_DCHECK_GE(packet.size(), route_overhead_.at(receiver).bytes());
   packet.SetSize(packet.size() - route_overhead_.at(receiver).bytes());
@@ -178,12 +178,13 @@ bool CallClient::TryDeliverPacket(rtc::CopyOnWriteBuffer packet,
     RTPHeader header;
     bool success =
         header_parser_->Parse(packet.cdata(), packet.size(), &header);
-    if (!success)
-      return false;
+    if (!success) {
+      RTC_DLOG(LS_ERROR) << "Failed to parse RTP header of packet";
+      return;
+    }
     media_type = ssrc_media_types_[header.ssrc];
   }
   call_->Receiver()->DeliverPacket(media_type, packet, at_time.us());
-  return true;
 }
 
 uint32_t CallClient::GetNextVideoSsrc() {

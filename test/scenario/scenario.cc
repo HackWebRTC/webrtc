@@ -221,8 +221,8 @@ void Scenario::TriggerPacketBurst(std::vector<NetworkNode*> over_nodes,
   int64_t route_id = next_route_id_++;
   NetworkNode::Route(route_id, over_nodes, &null_receiver_);
   for (size_t i = 0; i < num_packets; ++i)
-    over_nodes[0]->TryDeliverPacket(rtc::CopyOnWriteBuffer(packet_size),
-                                    route_id, Now());
+    over_nodes[0]->DeliverPacket(rtc::CopyOnWriteBuffer(packet_size), route_id,
+                                 Now());
 }
 
 void Scenario::NetworkDelayedAction(std::vector<NetworkNode*> over_nodes,
@@ -231,8 +231,8 @@ void Scenario::NetworkDelayedAction(std::vector<NetworkNode*> over_nodes,
   int64_t route_id = next_route_id_++;
   action_receivers_.emplace_back(new ActionReceiver(action));
   NetworkNode::Route(route_id, over_nodes, action_receivers_.back().get());
-  over_nodes[0]->TryDeliverPacket(rtc::CopyOnWriteBuffer(packet_size), route_id,
-                                  Now());
+  over_nodes[0]->DeliverPacket(rtc::CopyOnWriteBuffer(packet_size), route_id,
+                               Now());
 }
 
 CrossTrafficSource* Scenario::CreateCrossTraffic(

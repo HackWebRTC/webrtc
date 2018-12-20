@@ -52,9 +52,9 @@ class SimulatedFeedback : NetworkReceiverInterface {
   SimulatedFeedback(SimulatedTimeClientConfig config,
                     uint64_t return_receiver_id,
                     NetworkNode* return_node);
-  bool TryDeliverPacket(rtc::CopyOnWriteBuffer packet,
-                        uint64_t receiver,
-                        Timestamp at_time) override;
+  void DeliverPacket(rtc::CopyOnWriteBuffer packet,
+                     uint64_t receiver,
+                     Timestamp at_time) override;
 
  private:
   friend class SimulatedTimeClient;
@@ -141,9 +141,9 @@ class SimulatedTimeClient : NetworkReceiverInterface {
   DataRate link_capacity() const;
   DataRate padding_rate() const;
 
-  bool TryDeliverPacket(rtc::CopyOnWriteBuffer packet,
-                        uint64_t receiver,
-                        Timestamp at_time) override;
+  void DeliverPacket(rtc::CopyOnWriteBuffer packet,
+                     uint64_t receiver,
+                     Timestamp at_time) override;
 
  private:
   friend class Scenario;

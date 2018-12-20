@@ -71,9 +71,9 @@ class CallClient : public NetworkReceiverInterface {
     return DataRate::bps(GetStats().send_bandwidth_bps);
   }
 
-  bool TryDeliverPacket(rtc::CopyOnWriteBuffer packet,
-                        uint64_t receiver,
-                        Timestamp at_time) override;
+  void DeliverPacket(rtc::CopyOnWriteBuffer packet,
+                     uint64_t receiver,
+                     Timestamp at_time) override;
 
  private:
   friend class Scenario;

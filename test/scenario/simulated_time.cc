@@ -210,9 +210,9 @@ SimulatedFeedback::SimulatedFeedback(SimulatedTimeClientConfig config,
 
 // Polls receiver side for a feedback report and sends it to the stream sender
 // via return_node_,
-bool SimulatedFeedback::TryDeliverPacket(rtc::CopyOnWriteBuffer packet,
-                                         uint64_t receiver,
-                                         Timestamp at_time) {
+void SimulatedFeedback::DeliverPacket(rtc::CopyOnWriteBuffer packet,
+                                      uint64_t receiver,
+                                      Timestamp at_time) {
   int64_t sequence_number;
   memcpy(&sequence_number, packet.cdata(), sizeof(sequence_number));
   receive_times_.insert({sequence_number, at_time});
@@ -231,17 +231,16 @@ bool SimulatedFeedback::TryDeliverPacket(rtc::CopyOnWriteBuffer packet,
       }
       if (report.receive_times.size() >=
           RawFeedbackReportPacket::MAX_FEEDBACKS) {
-        return_node_->TryDeliverPacket(FeedbackToBuffer(report),
-                                       return_receiver_id_, at_time);
+        return_node_->DeliverPacket(FeedbackToBuffer(report),
+                                    return_receiver_id_, at_time);
         report = SimpleFeedbackReportPacket();
       }
     }
     if (!report.receive_times.empty())
-      return_node_->TryDeliverPacket(FeedbackToBuffer(report),
-                                     return_receiver_id_, at_time);
+      return_node_->DeliverPacket(FeedbackToBuffer(report), return_receiver_id_,
+                                  at_time);
     last_feedback_time_ = at_time;
   }
-  return true;
 }
 
 SimulatedTimeClient::SimulatedTimeClient(
@@ -284,9 +283,9 @@ SimulatedTimeClient::SimulatedTimeClient(
 
 // Pulls feedback reports from sender side based on the recieved feedback
 // packet. Updates congestion controller with the resulting report.
-bool SimulatedTimeClient::TryDeliverPacket(rtc::CopyOnWriteBuffer raw_buffer,
-                                           uint64_t receiver,
-                                           Timestamp at_time) {
+void SimulatedTimeClient::DeliverPacket(rtc::CopyOnWriteBuffer raw_buffer,
+                                        uint64_t receiver,
+                                        Timestamp at_time) {
   auto report =
       sender_.PullFeedbackReport(FeedbackFromBuffer(raw_buffer), at_time);
   for (PacketResult& feedback : report.packet_feedbacks) {
@@ -299,7 +298,6 @@ bool SimulatedTimeClient::TryDeliverPacket(rtc::CopyOnWriteBuffer raw_buffer,
               at_time.seconds<double>());
   }
   Update(congestion_controller_->OnTransportPacketsFeedback(report));
-  return true;
 }
 SimulatedTimeClient::~SimulatedTimeClient() {
   if (packet_log_)
@@ -331,8 +329,8 @@ void SimulatedTimeClient::CongestionProcess(Timestamp at_time) {
 void SimulatedTimeClient::PacerProcess(Timestamp at_time) {
   ProcessFrames(at_time);
   for (auto to_send : sender_.PaceAndPullSendPackets(at_time)) {
-    sender_.send_node_->TryDeliverPacket(to_send.data,
-                                         sender_.send_receiver_id_, at_time);
+    sender_.send_node_->DeliverPacket(to_send.data, sender_.send_receiver_id_,
+                                      at_time);
     Update(congestion_controller_->OnSentPacket(to_send.send_info));
   }
 }
