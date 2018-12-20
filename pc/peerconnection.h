@@ -475,6 +475,14 @@ class PeerConnection : public PeerConnectionInternal,
           transceiver,
       const SessionDescriptionInterface* sdesc) const;
 
+  // Runs the algorithm **set the associated remote streams** specified in
+  // https://w3c.github.io/webrtc-pc/#set-associated-remote-streams.
+  void SetAssociatedRemoteStreams(
+      rtc::scoped_refptr<RtpReceiverInternal> receiver,
+      const std::vector<std::string>& stream_ids,
+      std::vector<rtc::scoped_refptr<MediaStreamInterface>>* added_streams,
+      std::vector<rtc::scoped_refptr<MediaStreamInterface>>* removed_streams);
+
   // Runs the algorithm **process the removal of a remote track** specified in
   // the WebRTC specification.
   // This method will update the following lists:
@@ -487,6 +495,11 @@ class PeerConnection : public PeerConnectionInternal,
       rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
           transceiver,
       std::vector<rtc::scoped_refptr<RtpTransceiverInterface>>* remove_list,
+      std::vector<rtc::scoped_refptr<MediaStreamInterface>>* removed_streams);
+
+  void RemoveRemoteStreamsIfEmpty(
+      const std::vector<rtc::scoped_refptr<MediaStreamInterface>>&
+          remote_streams,
       std::vector<rtc::scoped_refptr<MediaStreamInterface>>* removed_streams);
 
   void OnNegotiationNeeded();
