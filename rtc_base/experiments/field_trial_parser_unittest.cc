@@ -112,6 +112,14 @@ TEST(FieldTrialParserTest, IgnoresOutOfRange) {
   EXPECT_EQ(low.Get(), 20);
   EXPECT_EQ(high.Get(), 20);
 }
+TEST(FieldTrialParserTest, ReadsValuesFromFieldWithoutKey) {
+  FieldTrialFlag enabled("Enabled");
+  FieldTrialParameter<int> req("", 10);
+  ParseFieldTrial({&enabled, &req}, "Enabled,20");
+  EXPECT_EQ(req.Get(), 20);
+  ParseFieldTrial({&req}, "30");
+  EXPECT_EQ(req.Get(), 30);
+}
 TEST(FieldTrialParserTest, ParsesOptionalParameters) {
   FieldTrialOptional<int> max_count("c", absl::nullopt);
   ParseFieldTrial({&max_count}, "");

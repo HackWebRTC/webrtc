@@ -55,7 +55,7 @@ class FieldTrialParameterInterface {
 };
 
 // ParseFieldTrial function parses the given string and fills the given fields
-// with extrated values if available.
+// with extracted values if available.
 void ParseFieldTrial(
     std::initializer_list<FieldTrialParameterInterface*> fields,
     std::string raw_string);
