@@ -77,6 +77,8 @@ absl::optional<SdpAudioFormat> NetEqDecoderToSdpAudioFormat(NetEqDecoder nd) {
       return SdpAudioFormat("cn", 32000, 1);
     case NetEqDecoder::kDecoderCNGswb48kHz:
       return SdpAudioFormat("cn", 48000, 1);
+    case NetEqDecoder::kDecoderReplacementForTest:
+      return SdpAudioFormat("replacement", 48000, 1);
     default:
       return absl::nullopt;
   }

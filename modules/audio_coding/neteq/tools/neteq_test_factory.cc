@@ -38,6 +38,8 @@
 #include "modules/audio_coding/neteq/tools/rtp_file_source.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/flags.h"
+#include "rtc_base/refcountedobject.h"
+#include "test/function_audio_decoder_factory.h"
 #include "test/testsupport/fileutils.h"
 
 namespace webrtc {
@@ -431,12 +433,14 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
      std::make_pair(NetEqDecoder::kDecoderCNGswb48kHz, "cng-swb48")}
   };
 
+  rtc::scoped_refptr<AudioDecoderFactory> decoder_factory =
+      CreateBuiltinAudioDecoderFactory();
+
   // Check if a replacement audio file was provided.
   if (strlen(FLAG_replacement_audio_file) > 0) {
     // Find largest unused payload type.
     int replacement_pt = 127;
-    while (!(codecs.find(replacement_pt) == codecs.end() &&
-             ext_codecs_.find(replacement_pt) == ext_codecs_.end())) {
+    while (codecs.find(replacement_pt) != codecs.end()) {
       --replacement_pt;
       RTC_CHECK_GE(replacement_pt, 0);
     }
@@ -456,14 +460,23 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
     input.reset(new NetEqReplacementInput(std::move(input), replacement_pt,
                                           cn_types, forbidden_types));
 
-    replacement_decoder_.reset(new FakeDecodeFromFile(
-        std::unique_ptr<InputAudioFile>(
-            new InputAudioFile(FLAG_replacement_audio_file)),
-        48000, false));
-    NetEqTest::ExternalDecoderInfo ext_dec_info = {
-        replacement_decoder_.get(), NetEqDecoder::kDecoderArbitrary,
-        "replacement codec"};
-    ext_codecs_[replacement_pt] = ext_dec_info;
+    // Note that capture-by-copy implies that the lambda captures the value of
+    // decoder_factory before it's reassigned on the left-hand side.
+    decoder_factory = new rtc::RefCountedObject<FunctionAudioDecoderFactory>(
+        [decoder_factory](const SdpAudioFormat& format,
+                          absl::optional<AudioCodecPairId> codec_pair_id) {
+          std::unique_ptr<AudioDecoder> decoder =
+              decoder_factory->MakeAudioDecoder(format, codec_pair_id);
+          if (!decoder && format.name == "replacement") {
+            decoder = absl::make_unique<FakeDecodeFromFile>(
+                absl::make_unique<InputAudioFile>(FLAG_replacement_audio_file),
+                format.clockrate_hz, format.num_channels > 1);
+          }
+          return decoder;
+        });
+
+    codecs[replacement_pt] = {NetEqDecoder::kDecoderReplacementForTest,
+                              "replacement codec"};
   }
 
   // Create a text log file if needed.
@@ -487,9 +500,10 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
   config.sample_rate_hz = *sample_rate_hz;
   config.max_packets_in_buffer = FLAG_max_nr_packets_in_buffer;
   config.enable_fast_accelerate = FLAG_enable_fast_accelerate;
+  NetEqTest::ExtDecoderMap ext_codecs;
   return absl::make_unique<NetEqTest>(
-      config, CreateBuiltinAudioDecoderFactory(), codecs, ext_codecs_,
-      std::move(text_log), std::move(input), std::move(output), callbacks);
+      config, decoder_factory, codecs, ext_codecs, std::move(text_log),
+      std::move(input), std::move(output), callbacks);
 }
 
 }  // namespace test

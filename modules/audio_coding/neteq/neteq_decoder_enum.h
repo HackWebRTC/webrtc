@@ -16,6 +16,7 @@
 
 namespace webrtc {
 
+// TODO(bugs.webrtc.org/10080): Delete, together with RegisterExternalDecoder.
 enum class NetEqDecoder {
   kDecoderPCMu,
   kDecoderPCMa,
@@ -47,6 +48,8 @@ enum class NetEqDecoder {
   kDecoderArbitrary,
   kDecoderOpus,
   kDecoderOpus_2ch,
+  // Used in NetEqTestFactory
+  kDecoderReplacementForTest,
 };
 
 absl::optional<SdpAudioFormat> NetEqDecoderToSdpAudioFormat(NetEqDecoder nd);

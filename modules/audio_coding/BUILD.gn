@@ -1492,6 +1492,7 @@ if (rtc_include_tests) {
         "../..:webrtc_common",
         "../../api/audio_codecs:builtin_audio_decoder_factory",
         "../../rtc_base:rtc_base_approved",
+        "../../test:audio_codec_mocks",
         "../../test:test_support",
         "//third_party/abseil-cpp/absl/memory",
       ]
