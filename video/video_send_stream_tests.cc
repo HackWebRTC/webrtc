@@ -78,8 +78,6 @@ enum VideoFormat {
 };
 }  // namespace
 
-void ExpectEqualFramesVector(const std::vector<VideoFrame>& frames1,
-                             const std::vector<VideoFrame>& frames2);
 VideoFrame CreateVideoFrame(int width, int height, uint8_t data);
 
 class VideoSendStreamTest : public test::CallTest,
@@ -2225,91 +2223,6 @@ TEST_P(VideoSendStreamTest, VideoSendStreamUpdateActiveSimulcastLayers) {
     DestroyStreams();
     DestroyCalls();
   });
-}
-TEST_P(VideoSendStreamTest, CapturesTextureAndVideoFrames) {
-  class FrameObserver : public rtc::VideoSinkInterface<VideoFrame> {
-   public:
-    void OnFrame(const VideoFrame& video_frame) override {
-      output_frames_.push_back(video_frame);
-      output_frame_event_.Set();
-    }
-
-    void WaitOutputFrame() {
-      const int kWaitFrameTimeoutMs = 3000;
-      EXPECT_TRUE(output_frame_event_.Wait(kWaitFrameTimeoutMs))
-          << "Timeout while waiting for output frames.";
-    }
-
-    const std::vector<VideoFrame>& output_frames() const {
-      return output_frames_;
-    }
-
-   private:
-    // Delivered output frames.
-    std::vector<VideoFrame> output_frames_;
-
-    // Indicate an output frame has arrived.
-    rtc::Event output_frame_event_;
-  };
-
-  test::NullTransport transport;
-  FrameObserver observer;
-  std::vector<VideoFrame> input_frames;
-
-  task_queue_.SendTask([this, &transport, &observer, &input_frames]() {
-    // Initialize send stream.
-    CreateSenderCall();
-
-    CreateSendConfig(1, 0, 0, &transport);
-    GetVideoSendConfig()->pre_encode_callback = &observer;
-    CreateVideoStreams();
-
-    // Prepare five input frames. Send ordinary VideoFrame and texture frames
-    // alternatively.
-    int width = 168;
-    int height = 132;
-
-    input_frames.push_back(test::FakeNativeBuffer::CreateFrame(
-        width, height, 1, 1, kVideoRotation_0));
-    input_frames.push_back(test::FakeNativeBuffer::CreateFrame(
-        width, height, 2, 2, kVideoRotation_0));
-    input_frames.push_back(CreateVideoFrame(width, height, 3));
-    input_frames.push_back(CreateVideoFrame(width, height, 4));
-    input_frames.push_back(test::FakeNativeBuffer::CreateFrame(
-        width, height, 5, 5, kVideoRotation_0));
-
-    GetVideoSendStream()->Start();
-    test::FrameForwarder forwarder;
-    GetVideoSendStream()->SetSource(&forwarder,
-                                    DegradationPreference::MAINTAIN_FRAMERATE);
-    for (size_t i = 0; i < input_frames.size(); i++) {
-      forwarder.IncomingCapturedFrame(input_frames[i]);
-      // Wait until the output frame is received before sending the next input
-      // frame. Or the previous input frame may be replaced without delivering.
-      observer.WaitOutputFrame();
-    }
-    GetVideoSendStream()->Stop();
-    GetVideoSendStream()->SetSource(nullptr,
-                                    DegradationPreference::MAINTAIN_FRAMERATE);
-  });
-
-  // Test if the input and output frames are the same. render_time_ms and
-  // timestamp are not compared because capturer sets those values.
-  ExpectEqualFramesVector(input_frames, observer.output_frames());
-
-  task_queue_.SendTask([this]() {
-    DestroyStreams();
-    DestroyCalls();
-  });
-}
-
-void ExpectEqualFramesVector(const std::vector<VideoFrame>& frames1,
-                             const std::vector<VideoFrame>& frames2) {
-  EXPECT_EQ(frames1.size(), frames2.size());
-  for (size_t i = 0; i < std::min(frames1.size(), frames2.size()); ++i)
-    // Compare frame buffers, since we don't care about differing timestamps.
-    EXPECT_TRUE(test::FrameBufsEqual(frames1[i].video_frame_buffer(),
-                                     frames2[i].video_frame_buffer()));
 }
 
 VideoFrame CreateVideoFrame(int width, int height, uint8_t data) {
