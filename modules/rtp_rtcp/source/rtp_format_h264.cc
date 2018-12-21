@@ -219,10 +219,19 @@ bool RtpPacketizerH264::PacketizeFuA(size_t fragment_index) {
   PayloadSizeLimits limits = limits_;
   // Leave room for the FU-A header.
   limits.max_payload_len -= kFuAHeaderSize;
-  // Ignore single/first/last packet reductions unless it is single/first/last
+  // Update single/first/last packet reductions unless it is single/first/last
   // fragment.
-  if (input_fragments_.size() != 1)
-    limits.single_packet_reduction_len = 0;
+  if (input_fragments_.size() != 1) {
+    // if this fragment is put into a single packet, it might still be the
+    // first or the last packet in the whole sequence of packets.
+    if (fragment_index == input_fragments_.size() - 1) {
+      limits.single_packet_reduction_len = limits_.last_packet_reduction_len;
+    } else if (fragment_index == 0) {
+      limits.single_packet_reduction_len = limits_.first_packet_reduction_len;
+    } else {
+      limits.single_packet_reduction_len = 0;
+    }
+  }
   if (fragment_index != 0)
     limits.first_packet_reduction_len = 0;
   if (fragment_index != input_fragments_.size() - 1)
