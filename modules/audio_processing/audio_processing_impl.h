@@ -181,6 +181,7 @@ class AudioProcessingImpl : public AudioProcessing {
                 bool pre_amplifier_enabled,
                 bool echo_controller_enabled,
                 bool voice_activity_detector_enabled,
+                bool private_voice_detector_enabled,
                 bool level_estimator_enabled,
                 bool transient_suppressor_enabled);
     bool CaptureMultiBandSubModulesActive() const;
@@ -207,6 +208,7 @@ class AudioProcessingImpl : public AudioProcessing {
     bool echo_controller_enabled_ = false;
     bool level_estimator_enabled_ = false;
     bool voice_activity_detector_enabled_ = false;
+    bool private_voice_detector_enabled_ = false;
     bool transient_suppressor_enabled_ = false;
     bool first_update_ = true;
   };

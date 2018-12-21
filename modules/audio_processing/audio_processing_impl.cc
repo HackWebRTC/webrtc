@@ -140,6 +140,7 @@ bool AudioProcessingImpl::ApmSubmoduleStates::Update(
     bool pre_amplifier_enabled,
     bool echo_controller_enabled,
     bool voice_activity_detector_enabled,
+    bool private_voice_detector_enabled,
     bool level_estimator_enabled,
     bool transient_suppressor_enabled) {
   bool changed = false;
@@ -159,6 +160,8 @@ bool AudioProcessingImpl::ApmSubmoduleStates::Update(
   changed |= (level_estimator_enabled != level_estimator_enabled_);
   changed |=
       (voice_activity_detector_enabled != voice_activity_detector_enabled_);
+  changed |=
+      (private_voice_detector_enabled != private_voice_detector_enabled_);
   changed |= (transient_suppressor_enabled != transient_suppressor_enabled_);
   if (changed) {
     high_pass_filter_enabled_ = high_pass_filter_enabled;
@@ -172,6 +175,7 @@ bool AudioProcessingImpl::ApmSubmoduleStates::Update(
     echo_controller_enabled_ = echo_controller_enabled;
     level_estimator_enabled_ = level_estimator_enabled;
     voice_activity_detector_enabled_ = voice_activity_detector_enabled;
+    private_voice_detector_enabled_ = private_voice_detector_enabled;
     transient_suppressor_enabled_ = transient_suppressor_enabled;
   }
 
@@ -182,7 +186,8 @@ bool AudioProcessingImpl::ApmSubmoduleStates::Update(
 
 bool AudioProcessingImpl::ApmSubmoduleStates::CaptureMultiBandSubModulesActive()
     const {
-  return CaptureMultiBandProcessingActive() || voice_activity_detector_enabled_;
+  return CaptureMultiBandProcessingActive() ||
+         voice_activity_detector_enabled_ || private_voice_detector_enabled_;
 }
 
 bool AudioProcessingImpl::ApmSubmoduleStates::CaptureMultiBandProcessingActive()
@@ -260,6 +265,7 @@ struct AudioProcessingImpl::ApmPrivateSubmodules {
   std::unique_ptr<GainApplier> pre_amplifier;
   std::unique_ptr<CustomAudioAnalyzer> capture_analyzer;
   std::unique_ptr<LevelEstimatorImpl> output_level_estimator;
+  std::unique_ptr<VoiceDetectionImpl> voice_detector;
 };
 
 AudioProcessingBuilder::AudioProcessingBuilder() = default;
@@ -540,6 +546,10 @@ int AudioProcessingImpl::InitializeLocked() {
   public_submodules_->noise_suppression->Initialize(num_proc_channels(),
                                                     proc_sample_rate_hz());
   public_submodules_->voice_detection->Initialize(proc_split_sample_rate_hz());
+  if (private_submodules_->voice_detector) {
+    private_submodules_->voice_detector->Initialize(
+        proc_split_sample_rate_hz());
+  }
   public_submodules_->level_estimator->Initialize();
   InitializeResidualEchoDetector();
   InitializeEchoController();
@@ -680,6 +690,16 @@ void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
     private_submodules_->output_level_estimator.reset(
         new LevelEstimatorImpl(&crit_capture_));
     private_submodules_->output_level_estimator->Enable(true);
+  }
+
+  if (config_.voice_detection.enabled && !private_submodules_->voice_detector) {
+    private_submodules_->voice_detector.reset(
+        new VoiceDetectionImpl(&crit_capture_));
+    private_submodules_->voice_detector->Enable(true);
+    private_submodules_->voice_detector->set_likelihood(
+        VoiceDetection::kVeryLowLikelihood);
+    private_submodules_->voice_detector->Initialize(
+        proc_split_sample_rate_hz());
   }
 }
 
@@ -1285,6 +1305,13 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
   }
 
   public_submodules_->voice_detection->ProcessCaptureAudio(capture_buffer);
+  if (config_.voice_detection.enabled) {
+    private_submodules_->voice_detector->ProcessCaptureAudio(capture_buffer);
+    capture_.stats.voice_detected =
+        private_submodules_->voice_detector->stream_has_voice();
+  } else {
+    capture_.stats.voice_detected = absl::nullopt;
+  }
 
   if (constants_.use_experimental_agc &&
       public_submodules_->gain_control->is_enabled() &&
@@ -1695,6 +1722,7 @@ bool AudioProcessingImpl::UpdateActiveSubmoduleStates() {
       config_.gain_controller2.enabled, config_.pre_amplifier.enabled,
       capture_nonlocked_.echo_controller_enabled,
       public_submodules_->voice_detection->is_enabled(),
+      config_.voice_detection.enabled,
       public_submodules_->level_estimator->is_enabled(),
       capture_.transient_suppressor_enabled);
 }

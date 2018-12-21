@@ -288,6 +288,11 @@ class AudioProcessing : public rtc::RefCountInterface {
       bool enabled = false;
     } level_estimation;
 
+    // Enables reporting of |has_voice| in webrtc::AudioProcessingStats.
+    struct VoiceDetection {
+      bool enabled = false;
+    } voice_detection;
+
     // Explicit copy assignment implementation to avoid issues with memory
     // sanitizer complaints in case of self-assignment.
     // TODO(peah): Add buildflag to ensure that this is only included for memory
