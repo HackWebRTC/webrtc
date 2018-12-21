@@ -101,28 +101,28 @@
     },
     'client.webrtc.perf': {
       # Android
-      'Android32 Builder': 'perf_android_release_bot_arm',
-      'Android64 Builder': 'perf_android_release_bot_arm64',
+      'Android32 Builder': 'android_pure_release_bot_arm',
+      'Android64 Builder': 'android_pure_release_bot_arm64',
       'Android32 Tests (J Nexus4)': 'none',
       'Android32 Tests (K Nexus5)': 'none',
       'Android32 Tests (L Nexus5)': 'none',
       'Android32 Tests (L Nexus6)': 'none',
       'Android32 Tests (L Nexus7.2)': 'none',
       'Android64 Tests (L Nexus9)': 'none',
-      'Linux Trusty': 'perf_release_bot_x64',
-      'Mac 10.11': 'perf_release_bot_x64',
-      'Win7': 'perf_release_bot_x86',
+      'Linux Trusty': 'pure_release_bot_x64',
+      'Mac 10.11': 'pure_release_bot_x64',
+      'Win7': 'pure_release_bot_x86',
 
-      'Perf Linux Trusty': 'perf_release_bot_x64',
-      'Perf Mac 10.11': 'perf_release_bot_x64',
-      'Perf Win7': 'perf_release_bot_x86',
+      'Perf Linux Trusty': 'pure_release_bot_x64',
+      'Perf Mac 10.11': 'pure_release_bot_x64',
+      'Perf Win7': 'pure_release_bot_x86',
     },
     'client.webrtc.fyi': {
       # Mac
       'Mac (swarming)': 'release_bot_x64',
 
       # Android
-      'Android Perf (swarming)': 'perf_android_release_bot_arm',
+      'Android Perf (swarming)': 'android_pure_release_bot_arm',
       'Android ASan (swarming)': 'android_asan_shared_release_bot_arm',
       # Windows
       'Win (swarming)': 'release_bot_x86',
@@ -308,12 +308,6 @@
     'pure_release_bot_x64': [
       'gn', 'openh264', 'pure_release_bot', 'x64'
     ],
-    'perf_release_bot_x86': [
-      'gn', 'openh264', 'release', 'goma', 'x86'
-    ],
-    'perf_release_bot_x64': [
-      'gn', 'openh264', 'release', 'goma', 'x64'
-    ],
     'libfuzzer_asan_release_bot_x64': [
       'libfuzzer', 'asan', 'optimize_for_fuzzing', 'openh264', 'release_bot',
       'x64', 'no_rtc_tests'
@@ -398,12 +392,6 @@
     ],
     'android_asan_shared_release_bot_arm': [
       'android', 'gn', 'asan', 'clang', 'release_bot', 'arm'
-    ],
-    'perf_android_release_bot_arm': [
-      'android', 'gn', 'release', 'goma', 'arm'
-    ],
-    'perf_android_release_bot_arm64': [
-      'android', 'gn', 'release', 'goma', 'arm64'
     ],
 
     # More configs
