@@ -179,10 +179,4 @@ void FallbackDesktopCapturerWrapper::OnCaptureResult(
   secondary_capturer_->CaptureFrame();
 }
 
-void FallbackDesktopCapturerWrapper::OnDisplayChanged(
-    std::unique_ptr<DisplayList> displays) {
-  RTC_DCHECK(callback_);
-  callback_->OnDisplayChanged(std::move(displays));
-}
-
 }  // namespace webrtc

@@ -105,47 +105,4 @@ DesktopRect GetScreenRect(DesktopCapturer::SourceId screen,
       device_mode.dmPelsWidth, device_mode.dmPelsHeight);
 }
 
-bool GetDisplayList(DesktopCapturer::DisplayList* displays) {
-  RTC_DCHECK_EQ(displays->size(), 0U);
-
-  BOOL result = TRUE;
-  for (int device_index = 0;; ++device_index) {
-    DISPLAY_DEVICE device;
-    device.cb = sizeof(device);
-    result = EnumDisplayDevices(NULL, device_index, &device, 0);
-
-    // |enum_result| is 0 if we have enumerated all devices.
-    if (!result)
-      break;
-
-    // We only care about active displays.
-    if (!(device.StateFlags & DISPLAY_DEVICE_ACTIVE))
-      continue;
-
-    DesktopCapturer::DesktopDisplay display;
-    display.id = device_index;
-
-    display.is_default = false;
-    if (device.StateFlags & DISPLAY_DEVICE_PRIMARY_DEVICE)
-      display.is_default = true;
-
-    // Get additional info about device.
-    DEVMODE devmode = {};
-    devmode.dmSize = sizeof(devmode);
-    result = EnumDisplaySettingsEx(device.DeviceName, ENUM_CURRENT_SETTINGS,
-                                   &devmode, 0);
-    if (result) {
-      display.x = devmode.dmPosition.x;
-      display.y = devmode.dmPosition.y;
-      display.width = devmode.dmPelsWidth;
-      display.height = devmode.dmPelsHeight;
-      display.dpi = devmode.dmLogPixels;
-      display.bpp = devmode.dmBitsPerPel;
-    }
-    displays->push_back(display);
-  }
-
-  return true;
-}
-
 }  // namespace webrtc

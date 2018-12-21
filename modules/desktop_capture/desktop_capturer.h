@@ -47,21 +47,6 @@ class RTC_EXPORT DesktopCapturer {
     MAX_VALUE = ERROR_PERMANENT
   };
 
-  typedef intptr_t SourceId;
-
-  struct DesktopDisplay {
-    // The unique id to represent a Source of current DesktopCapturer.
-    SourceId id;
-
-    int32_t x, y;
-    uint32_t width, height;
-    uint32_t dpi;     // Number of pixels per logical inch.
-    uint32_t bpp;     // Number of bits per pixel.
-    bool is_default;  // True if this is the default display.
-  };
-
-  typedef std::vector<DesktopDisplay> DisplayList;
-
   // Interface that must be implemented by the DesktopCapturer consumers.
   class Callback {
    public:
@@ -70,14 +55,11 @@ class RTC_EXPORT DesktopCapturer {
     virtual void OnCaptureResult(Result result,
                                  std::unique_ptr<DesktopFrame> frame) = 0;
 
-    // Called once at the start of a session and again anytime the monitor
-    // configuration is changed.
-    // TODO(garykac): Make pure virtual after Chromium is updated.
-    virtual void OnDisplayChanged(std::unique_ptr<DisplayList> displays) {}
-
    protected:
     virtual ~Callback() {}
   };
+
+  typedef intptr_t SourceId;
 
   static_assert(std::is_same<SourceId, ScreenId>::value,
                 "SourceId should be a same type as ScreenId.");

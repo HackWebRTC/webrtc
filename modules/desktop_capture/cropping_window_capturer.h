@@ -49,7 +49,6 @@ class RTC_EXPORT CroppingWindowCapturer : public DesktopCapturer,
   // intercept the capture result.
   void OnCaptureResult(DesktopCapturer::Result result,
                        std::unique_ptr<DesktopFrame> frame) override;
-  void OnDisplayChanged(std::unique_ptr<DisplayList> displays) override;
 
  protected:
   explicit CroppingWindowCapturer(const DesktopCaptureOptions& options);

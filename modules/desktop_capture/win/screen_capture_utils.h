@@ -42,10 +42,6 @@ DesktopRect GetFullscreenRect();
 DesktopRect GetScreenRect(DesktopCapturer::SourceId screen,
                           const std::wstring& device_key);
 
-// Get the list of active displays, returning true if successful.
-// The list of displays contains geometry information about each display.
-bool GetDisplayList(DesktopCapturer::DisplayList* displays);
-
 }  // namespace webrtc
 
 #endif  // MODULES_DESKTOP_CAPTURE_WIN_SCREEN_CAPTURE_UTILS_H_

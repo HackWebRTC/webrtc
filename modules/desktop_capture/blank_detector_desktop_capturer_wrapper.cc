@@ -91,12 +91,6 @@ void BlankDetectorDesktopCapturerWrapper::OnCaptureResult(
                              std::unique_ptr<DesktopFrame>());
 }
 
-void BlankDetectorDesktopCapturerWrapper::OnDisplayChanged(
-    std::unique_ptr<DisplayList> displays) {
-  RTC_DCHECK(callback_);
-  callback_->OnDisplayChanged(std::move(displays));
-}
-
 bool BlankDetectorDesktopCapturerWrapper::IsBlankFrame(
     const DesktopFrame& frame) const {
   // We will check 7489 pixels for a frame with 1024 x 768 resolution.

@@ -51,7 +51,6 @@ class FallbackDesktopCapturerWrapper final : public DesktopCapturer,
   // DesktopCapturer::Callback interface.
   void OnCaptureResult(Result result,
                        std::unique_ptr<DesktopFrame> frame) override;
-  void OnDisplayChanged(std::unique_ptr<DisplayList> displays) override;
 
   const std::unique_ptr<DesktopCapturer> main_capturer_;
   const std::unique_ptr<DesktopCapturer> secondary_capturer_;

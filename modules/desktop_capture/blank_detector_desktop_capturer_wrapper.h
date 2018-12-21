@@ -51,7 +51,6 @@ class BlankDetectorDesktopCapturerWrapper final
   // DesktopCapturer::Callback interface.
   void OnCaptureResult(Result result,
                        std::unique_ptr<DesktopFrame> frame) override;
-  void OnDisplayChanged(std::unique_ptr<DisplayList> displays) override;
 
   bool IsBlankFrame(const DesktopFrame& frame) const;
 
