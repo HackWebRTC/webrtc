@@ -52,7 +52,6 @@ VideoSender::VideoSender(Clock* clock,
       _encodedFrameCallback(post_encode_callback, &_mediaOpt),
       post_encode_callback_(post_encode_callback),
       _codecDataBase(&_encodedFrameCallback),
-      frame_dropper_requested_(true),
       force_disable_frame_dropper_(false),
       current_codec_(),
       encoder_has_internal_source_(false),
@@ -286,7 +285,7 @@ int32_t VideoSender::AddVideoFrame(
   // Frame dropping is enabled iff frame dropping has been requested, and
   // frame dropping is not force-disabled, and rate controller is not trusted.
   const bool frame_dropping_enabled =
-      frame_dropper_requested_ && !force_disable_frame_dropper_ &&
+      !force_disable_frame_dropper_ &&
       !encoder_info->has_trusted_rate_controller;
   _mediaOpt.EnableFrameDropper(frame_dropping_enabled);
 
@@ -383,11 +382,5 @@ int32_t VideoSender::IntraFrameRequest(size_t stream_index) {
   return VCM_OK;
 }
 
-int32_t VideoSender::EnableFrameDropper(bool enable) {
-  rtc::CritScope lock(&encoder_crit_);
-  frame_dropper_requested_ = enable;
-  _mediaOpt.EnableFrameDropper(enable);
-  return VCM_OK;
-}
 }  // namespace vcm
 }  // namespace webrtc
