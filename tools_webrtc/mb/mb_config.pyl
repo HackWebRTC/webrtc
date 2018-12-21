@@ -30,6 +30,7 @@
       # Mac
       'Mac64 Debug': 'debug_bot_x64',
       'Mac64 Release': 'release_bot_x64',
+      'Mac64 Builder': 'pure_release_bot_x64',
       'Mac Asan': 'mac_asan_clang_release_bot_x64',
 
       # Linux
@@ -86,6 +87,7 @@
       'Win64 Release': 'win_msvc_release_bot_x64',
       'Win32 Debug (Clang)': 'win_clang_debug_bot_x86',
       'Win32 Release (Clang)': 'win_clang_release_bot_x86',
+      'Win32 Builder (Clang)': 'win_clang_pure_release_bot_x86',
       'Win64 Debug (Clang)': 'win_clang_debug_bot_x64',
       'Win64 Release (Clang)': 'win_clang_release_bot_x64',
       'Win32 ASan': 'win_asan_clang_release_bot_x86',
@@ -111,11 +113,7 @@
       'Android64 Tests (L Nexus9)': 'none',
       'Linux Trusty': 'pure_release_bot_x64',
       'Mac 10.11': 'pure_release_bot_x64',
-      'Win7': 'pure_release_bot_x86',
-
-      'Perf Linux Trusty': 'pure_release_bot_x64',
-      'Perf Mac 10.11': 'pure_release_bot_x64',
-      'Perf Win7': 'pure_release_bot_x86',
+      'Win7': 'win_clang_pure_release_bot_x86',
     },
     'client.webrtc.fyi': {
       # Mac
@@ -326,6 +324,9 @@
     ],
     'win_clang_release_bot_x86': [
       'gn', 'clang', 'openh264', 'release_bot', 'x86',
+    ],
+    'win_clang_pure_release_bot_x86': [
+      'gn', 'clang', 'openh264', 'pure_release_bot', 'x86',
     ],
     'win_clang_debug_bot_x64': [
       'gn', 'clang', 'openh264', 'debug_bot', 'x64',
