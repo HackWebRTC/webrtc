@@ -201,7 +201,6 @@ void SignalDependentErleEstimator::Dump(
   for (auto& factor : correction_factors_) {
     data_dumper->DumpRaw("aec3_erle_correction_factor", factor);
   }
-  data_dumper->DumpRaw("aec3_erle", erle_);
 }
 
 // Estimates for each band the smallest number of sections in the filter that
