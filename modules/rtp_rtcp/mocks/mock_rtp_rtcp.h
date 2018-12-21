@@ -64,6 +64,7 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_CONST_METHOD0(GetRtxState, RtpState());
   MOCK_CONST_METHOD0(SSRC, uint32_t());
   MOCK_METHOD1(SetSSRC, void(uint32_t ssrc));
+  MOCK_METHOD1(SetRid, void(const std::string& rid));
   MOCK_METHOD1(SetMid, void(const std::string& mid));
   MOCK_CONST_METHOD1(CSRCs, int32_t(uint32_t csrcs[kRtpCsrcSize]));
   MOCK_METHOD1(SetCsrcs, void(const std::vector<uint32_t>& csrcs));

@@ -133,6 +133,9 @@ class ChannelSend
 
   // RTP+RTCP
   void SetLocalSSRC(uint32_t ssrc) override;
+  void SetRid(const std::string& rid,
+              int extension_id,
+              int repaired_extension_id) override;
   void SetMid(const std::string& mid, int extension_id) override;
   void SetExtmapAllowMixed(bool extmap_allow_mixed) override;
   void SetSendAudioLevelIndicationStatus(bool enable, int id) override;
@@ -963,6 +966,23 @@ void ChannelSend::SetLocalSSRC(uint32_t ssrc) {
     media_transport_channel_id_ = ssrc;
   }
   _rtpRtcpModule->SetSSRC(ssrc);
+}
+
+void ChannelSend::SetRid(const std::string& rid,
+                         int extension_id,
+                         int repaired_extension_id) {
+  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
+  if (extension_id != 0) {
+    int ret = SetSendRtpHeaderExtension(!rid.empty(), kRtpExtensionRtpStreamId,
+                                        extension_id);
+    RTC_DCHECK_EQ(0, ret);
+  }
+  if (repaired_extension_id != 0) {
+    int ret = SetSendRtpHeaderExtension(!rid.empty(), kRtpExtensionRtpStreamId,
+                                        repaired_extension_id);
+    RTC_DCHECK_EQ(0, ret);
+  }
+  _rtpRtcpModule->SetRid(rid);
 }
 
 void ChannelSend::SetMid(const std::string& mid, int extension_id) {

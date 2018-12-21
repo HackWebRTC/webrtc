@@ -127,29 +127,13 @@ class MediaSessionDescriptionFactory {
   void set_audio_rtp_header_extensions(const RtpHeaderExtensions& extensions) {
     audio_rtp_extensions_ = extensions;
   }
-  RtpHeaderExtensions audio_rtp_header_extensions() const {
-    RtpHeaderExtensions extensions = audio_rtp_extensions_;
-    // If we are Unified Plan, also offer the MID header extension.
-    if (is_unified_plan_) {
-      extensions.push_back(webrtc::RtpExtension(
-          webrtc::RtpExtension::kMidUri, webrtc::RtpExtension::kMidDefaultId));
-    }
-    return extensions;
-  }
+  RtpHeaderExtensions audio_rtp_header_extensions() const;
   const VideoCodecs& video_codecs() const { return video_codecs_; }
   void set_video_codecs(const VideoCodecs& codecs) { video_codecs_ = codecs; }
   void set_video_rtp_header_extensions(const RtpHeaderExtensions& extensions) {
     video_rtp_extensions_ = extensions;
   }
-  RtpHeaderExtensions video_rtp_header_extensions() const {
-    RtpHeaderExtensions extensions = video_rtp_extensions_;
-    // If we are Unified Plan, also offer the MID header extension.
-    if (is_unified_plan_) {
-      extensions.push_back(webrtc::RtpExtension(
-          webrtc::RtpExtension::kMidUri, webrtc::RtpExtension::kMidDefaultId));
-    }
-    return extensions;
-  }
+  RtpHeaderExtensions video_rtp_header_extensions() const;
   const DataCodecs& data_codecs() const { return data_codecs_; }
   void set_data_codecs(const DataCodecs& codecs) { data_codecs_ = codecs; }
   SecurePolicy secure() const { return secure_; }

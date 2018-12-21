@@ -569,4 +569,9 @@ rtc::ArrayView<uint8_t> RtpPacket::AllocateExtension(ExtensionType type,
   return AllocateRawExtension(id, length);
 }
 
+bool RtpPacket::HasExtension(ExtensionType type) const {
+  // TODO(webrtc:7990): Add support for empty extensions (length==0).
+  return !FindExtension(type).empty();
+}
+
 }  // namespace webrtc

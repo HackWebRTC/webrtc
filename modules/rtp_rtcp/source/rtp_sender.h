@@ -100,6 +100,8 @@ class RTPSender {
 
   void SetSSRC(uint32_t ssrc);
 
+  void SetRid(const std::string& rid);
+
   void SetMid(const std::string& mid);
 
   uint16_t SequenceNumber() const;
@@ -330,6 +332,8 @@ class RTPSender {
   // Must be explicitly set by the application, use of absl::optional
   // only to keep track of correct use.
   absl::optional<uint32_t> ssrc_ RTC_GUARDED_BY(send_critsect_);
+  // RID value to send in the RID or RepairedRID header extension.
+  std::string rid_ RTC_GUARDED_BY(send_critsect_);
   // MID value to send in the MID header extension.
   std::string mid_ RTC_GUARDED_BY(send_critsect_);
   uint32_t last_rtp_timestamp_ RTC_GUARDED_BY(send_critsect_);

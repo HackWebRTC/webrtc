@@ -1274,6 +1274,38 @@ void MediaSessionDescriptionFactory::set_audio_codecs(
   ComputeAudioCodecsIntersectionAndUnion();
 }
 
+static void AddUnifiedPlanExtensions(RtpHeaderExtensions* extensions) {
+  RTC_DCHECK(extensions);
+  // Unified Plan also offers the MID and RID header extensions.
+  extensions->push_back(webrtc::RtpExtension(
+      webrtc::RtpExtension::kMidUri, webrtc::RtpExtension::kMidDefaultId));
+  extensions->push_back(webrtc::RtpExtension(
+      webrtc::RtpExtension::kRidUri, webrtc::RtpExtension::kRidDefaultId));
+  extensions->push_back(
+      webrtc::RtpExtension(webrtc::RtpExtension::kRepairedRidUri,
+                           webrtc::RtpExtension::kRepairedRidDefaultId));
+}
+
+RtpHeaderExtensions
+MediaSessionDescriptionFactory::audio_rtp_header_extensions() const {
+  RtpHeaderExtensions extensions = audio_rtp_extensions_;
+  if (is_unified_plan_) {
+    AddUnifiedPlanExtensions(&extensions);
+  }
+
+  return extensions;
+}
+
+RtpHeaderExtensions
+MediaSessionDescriptionFactory::video_rtp_header_extensions() const {
+  RtpHeaderExtensions extensions = video_rtp_extensions_;
+  if (is_unified_plan_) {
+    AddUnifiedPlanExtensions(&extensions);
+  }
+
+  return extensions;
+}
+
 std::unique_ptr<SessionDescription> MediaSessionDescriptionFactory::CreateOffer(
     const MediaSessionOptions& session_options,
     const SessionDescription* current_description) const {

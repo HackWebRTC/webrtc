@@ -186,6 +186,12 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
   // Sets SSRC, default is a random number.
   virtual void SetSSRC(uint32_t ssrc) = 0;
 
+  // Sets the value for sending in the RID (and Repaired) RTP header extension.
+  // RIDs are used to identify an RTP stream if SSRCs are not negotiated.
+  // If the RID and Repaired RID extensions are not registered, the RID will
+  // not be sent.
+  virtual void SetRid(const std::string& rid) = 0;
+
   // Sets the value for sending in the MID RTP header extension.
   // The MID RTP header extension should be registered for this to do anything.
   // Once set, this value can not be changed or removed.

@@ -105,6 +105,8 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
   // Configure SSRC, default is a random number.
   void SetSSRC(uint32_t ssrc) override;
 
+  void SetRid(const std::string& rid) override;
+
   void SetMid(const std::string& mid) override;
 
   void SetCsrcs(const std::vector<uint32_t>& csrcs) override;

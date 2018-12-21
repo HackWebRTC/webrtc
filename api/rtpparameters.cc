@@ -137,12 +137,20 @@ const char RtpExtension::kGenericFrameDescriptorUri[] =
     "http://www.webrtc.org/experiments/rtp-hdrext/generic-frame-descriptor-00";
 const int RtpExtension::kGenericFrameDescriptorDefaultId = 11;
 
+const char RtpExtension::kEncryptHeaderExtensionsUri[] =
+    "urn:ietf:params:rtp-hdrext:encrypt";
+
 const char RtpExtension::kColorSpaceUri[] =
     "http://www.webrtc.org/experiments/rtp-hdrext/color-space";
 const int RtpExtension::kColorSpaceDefaultId = 12;
 
-const char RtpExtension::kEncryptHeaderExtensionsUri[] =
-    "urn:ietf:params:rtp-hdrext:encrypt";
+const char RtpExtension::kRidUri[] =
+    "urn:ietf:params:rtp-hdrext:sdes:rtp-stream-id";
+const int RtpExtension::kRidDefaultId = 13;
+
+const char RtpExtension::kRepairedRidUri[] =
+    "urn:ietf:params:rtp-hdrext:sdes:repaired-rtp-stream-id";
+const int RtpExtension::kRepairedRidDefaultId = 14;
 
 constexpr int RtpExtension::kMinId;
 constexpr int RtpExtension::kMaxId;
@@ -153,7 +161,9 @@ constexpr int RtpExtension::kOneByteHeaderExtensionMaxValueSize;
 bool RtpExtension::IsSupportedForAudio(const std::string& uri) {
   return uri == webrtc::RtpExtension::kAudioLevelUri ||
          uri == webrtc::RtpExtension::kTransportSequenceNumberUri ||
-         uri == webrtc::RtpExtension::kMidUri;
+         uri == webrtc::RtpExtension::kMidUri ||
+         uri == webrtc::RtpExtension::kRidUri ||
+         uri == webrtc::RtpExtension::kRepairedRidUri;
 }
 
 bool RtpExtension::IsSupportedForVideo(const std::string& uri) {
@@ -167,7 +177,9 @@ bool RtpExtension::IsSupportedForVideo(const std::string& uri) {
          uri == webrtc::RtpExtension::kMidUri ||
          uri == webrtc::RtpExtension::kFrameMarkingUri ||
          uri == webrtc::RtpExtension::kGenericFrameDescriptorUri ||
-         uri == webrtc::RtpExtension::kColorSpaceUri;
+         uri == webrtc::RtpExtension::kColorSpaceUri ||
+         uri == webrtc::RtpExtension::kRidUri ||
+         uri == webrtc::RtpExtension::kRepairedRidUri;
 }
 
 bool RtpExtension::IsEncryptionSupported(const std::string& uri) {
@@ -185,7 +197,9 @@ bool RtpExtension::IsEncryptionSupported(const std::string& uri) {
          uri == webrtc::RtpExtension::kTransportSequenceNumberUri ||
          uri == webrtc::RtpExtension::kPlayoutDelayUri ||
          uri == webrtc::RtpExtension::kVideoContentTypeUri ||
-         uri == webrtc::RtpExtension::kMidUri;
+         uri == webrtc::RtpExtension::kMidUri ||
+         uri == webrtc::RtpExtension::kRidUri ||
+         uri == webrtc::RtpExtension::kRepairedRidUri;
 }
 
 const RtpExtension* RtpExtension::FindHeaderExtensionByUri(

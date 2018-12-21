@@ -126,6 +126,7 @@ class RtpVideoSender : public RtpVideoSenderInterface,
   void UpdateModuleSendingState() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
   void ConfigureProtection(const RtpConfig& rtp_config);
   void ConfigureSsrcs(const RtpConfig& rtp_config);
+  void ConfigureRids(const RtpConfig& rtp_config);
   bool FecEnabled() const;
   bool NackEnabled() const;
 

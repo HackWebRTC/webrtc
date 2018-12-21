@@ -45,6 +45,11 @@ const int kAbsoluteSendTimeExtensionId = 14;
 const int kTransportSequenceNumberExtensionId = 13;
 const int kVideoTimingExtensionId = 12;
 const int kMidExtensionId = 11;
+const int kGenericDescriptorId = 10;
+const int kAudioLevelExtensionId = 9;
+const int kRidExtensionId = 8;
+const int kRepairedRidExtensionId = 7;
+const int kVideoRotationExtensionId = 5;
 const int kPayload = 100;
 const int kRtxPayload = 98;
 const uint32_t kTimestamp = 10;
@@ -53,15 +58,14 @@ const uint32_t kSsrc = 725242;
 const int kMaxPacketLength = 1500;
 const uint8_t kAudioLevel = 0x5a;
 const uint16_t kTransportSequenceNumber = 0xaabbu;
-const uint8_t kAudioLevelExtensionId = 9;
 const int kAudioPayload = 103;
 const uint64_t kStartTime = 123456789;
 const size_t kMaxPaddingSize = 224u;
-const int kVideoRotationExtensionId = 5;
 const size_t kGenericHeaderLength = 1;
 const uint8_t kPayloadData[] = {47, 11, 32, 93, 89};
 const int64_t kDefaultExpectedRetransmissionTimeMs = 125;
-const int kGenericDescriptorId = 10;
+const char kNoRid[] = "";
+const char kNoMid[] = "";
 
 using ::testing::_;
 using ::testing::ElementsAre;
@@ -91,6 +95,9 @@ class LoopbackTransportTest : public webrtc::Transport {
     receivers_extensions_.Register(kRtpExtensionMid, kMidExtensionId);
     receivers_extensions_.Register(kRtpExtensionGenericFrameDescriptor,
                                    kGenericDescriptorId);
+    receivers_extensions_.Register(kRtpExtensionRtpStreamId, kRidExtensionId);
+    receivers_extensions_.Register(kRtpExtensionRepairedRtpStreamId,
+                                   kRepairedRidExtensionId);
   }
 
   bool SendRtp(const uint8_t* data,
@@ -1146,7 +1153,6 @@ TEST_P(RtpSenderTest, SendFlexfecPackets) {
   constexpr int kFlexfecPayloadType = 118;
   constexpr uint32_t kMediaSsrc = 1234;
   constexpr uint32_t kFlexfecSsrc = 5678;
-  const char kNoMid[] = "";
   const std::vector<RtpExtension> kNoRtpExtensions;
   const std::vector<RtpExtensionSize> kNoRtpExtensionSizes;
   FlexfecSender flexfec_sender(kFlexfecPayloadType, kFlexfecSsrc, kMediaSsrc,
@@ -1205,7 +1211,6 @@ TEST_P(RtpSenderTest, NoFlexfecForTimingFrames) {
   constexpr int kFlexfecPayloadType = 118;
   constexpr uint32_t kMediaSsrc = 1234;
   constexpr uint32_t kFlexfecSsrc = 5678;
-  const char kNoMid[] = "";
   const std::vector<RtpExtension> kNoRtpExtensions;
   const std::vector<RtpExtensionSize> kNoRtpExtensionSizes;
 
@@ -1305,7 +1310,6 @@ TEST_P(RtpSenderTestWithoutPacer, SendFlexfecPackets) {
   constexpr int kFlexfecPayloadType = 118;
   constexpr uint32_t kMediaSsrc = 1234;
   constexpr uint32_t kFlexfecSsrc = 5678;
-  const char kNoMid[] = "";
   const std::vector<RtpExtension> kNoRtpExtensions;
   const std::vector<RtpExtensionSize> kNoRtpExtensionSizes;
   FlexfecSender flexfec_sender(kFlexfecPayloadType, kFlexfecSsrc, kMediaSsrc,
@@ -1365,11 +1369,64 @@ TEST_P(RtpSenderTestWithoutPacer, MidIncludedOnSentPackets) {
   }
 }
 
+TEST_P(RtpSenderTestWithoutPacer, RidIncludedOnSentPackets) {
+  const char kRid[] = "f";
+
+  rtp_sender_->SetSendingMediaStatus(false);
+  rtp_sender_->RegisterRtpHeaderExtension(kRtpExtensionRtpStreamId,
+                                          kRidExtensionId);
+  rtp_sender_->SetRid(kRid);
+  rtp_sender_->SetSendingMediaStatus(true);
+
+  SendGenericPayload();
+
+  ASSERT_EQ(1u, transport_.sent_packets_.size());
+  const RtpPacketReceived& packet = transport_.sent_packets_[0];
+  std::string rid;
+  ASSERT_TRUE(packet.GetExtension<RtpStreamId>(&rid));
+  EXPECT_EQ(kRid, rid);
+}
+
+TEST_P(RtpSenderTestWithoutPacer, RidIncludedOnRtxSentPackets) {
+  const char kRid[] = "f";
+  const uint8_t kPayloadType = 127;
+
+  rtp_sender_->SetSendingMediaStatus(false);
+  rtp_sender_->RegisterRtpHeaderExtension(kRtpExtensionRtpStreamId,
+                                          kRidExtensionId);
+  rtp_sender_->RegisterRtpHeaderExtension(kRtpExtensionRepairedRtpStreamId,
+                                          kRepairedRidExtensionId);
+  rtp_sender_->SetRid(kRid);
+  rtp_sender_->SetSendingMediaStatus(true);
+
+  rtp_sender_->SetRtxStatus(kRtxRetransmitted | kRtxRedundantPayloads);
+  rtp_sender_->SetRtxSsrc(1234);
+  rtp_sender_->SetRtxPayloadType(kRtxPayload, kPayloadType);
+
+  rtp_sender_->SetStorePacketsStatus(true, 10);
+
+  SendGenericPayload();
+  ASSERT_EQ(1u, transport_.sent_packets_.size());
+  const RtpPacketReceived& packet = transport_.sent_packets_[0];
+  std::string rid;
+  ASSERT_TRUE(packet.GetExtension<RtpStreamId>(&rid));
+  EXPECT_EQ(kRid, rid);
+  rid = kNoRid;
+  EXPECT_FALSE(packet.GetExtension<RepairedRtpStreamId>(&rid));
+
+  uint16_t packet_id = packet.SequenceNumber();
+  rtp_sender_->ReSendPacket(packet_id);
+  ASSERT_EQ(2u, transport_.sent_packets_.size());
+  const RtpPacketReceived& rtx_packet = transport_.sent_packets_[1];
+  ASSERT_TRUE(rtx_packet.GetExtension<RepairedRtpStreamId>(&rid));
+  EXPECT_EQ(kRid, rid);
+  EXPECT_FALSE(rtx_packet.HasExtension<RtpStreamId>());
+}
+
 TEST_P(RtpSenderTest, FecOverheadRate) {
   constexpr int kFlexfecPayloadType = 118;
   constexpr uint32_t kMediaSsrc = 1234;
   constexpr uint32_t kFlexfecSsrc = 5678;
-  const char kNoMid[] = "";
   const std::vector<RtpExtension> kNoRtpExtensions;
   const std::vector<RtpExtensionSize> kNoRtpExtensionSizes;
   FlexfecSender flexfec_sender(kFlexfecPayloadType, kFlexfecSsrc, kMediaSsrc,

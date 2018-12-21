@@ -335,6 +335,12 @@ void ModuleRtpRtcpImpl::SetSSRC(const uint32_t ssrc) {
   SetRtcpReceiverSsrcs(ssrc);
 }
 
+void ModuleRtpRtcpImpl::SetRid(const std::string& rid) {
+  if (rtp_sender_) {
+    rtp_sender_->SetRid(rid);
+  }
+}
+
 void ModuleRtpRtcpImpl::SetMid(const std::string& mid) {
   if (rtp_sender_) {
     rtp_sender_->SetMid(mid);

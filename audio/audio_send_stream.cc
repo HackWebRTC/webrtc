@@ -197,6 +197,10 @@ AudioSendStream::ExtensionIds AudioSendStream::FindExtensionIds(
       ids.transport_sequence_number = extension.id;
     } else if (extension.uri == RtpExtension::kMidUri) {
       ids.mid = extension.id;
+    } else if (extension.uri == RtpExtension::kRidUri) {
+      ids.rid = extension.id;
+    } else if (extension.uri == RtpExtension::kRepairedRidUri) {
+      ids.repaired_rid = extension.id;
     }
   }
   return ids;
@@ -279,6 +283,13 @@ void AudioSendStream::ConfigureStream(
        new_config.rtp.mid != old_config.rtp.mid) &&
       new_ids.mid != 0 && !new_config.rtp.mid.empty()) {
     channel_send->SetMid(new_config.rtp.mid, new_ids.mid);
+  }
+
+  // RID RTP header extension
+  if ((first_time || new_ids.rid != old_ids.rid ||
+       new_ids.repaired_rid != old_ids.repaired_rid ||
+       new_config.rtp.rid != old_config.rtp.rid)) {
+    channel_send->SetRid(new_config.rtp.rid, new_ids.rid, new_ids.repaired_rid);
   }
 
   if (!ReconfigureSendCodec(stream, new_config)) {

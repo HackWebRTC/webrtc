@@ -514,10 +514,7 @@ RtpCapabilities WebRtcVideoEngine::GetCapabilities() const {
         webrtc::RtpExtension::kGenericFrameDescriptorUri,
         webrtc::RtpExtension::kGenericFrameDescriptorDefaultId));
   }
-  // TODO(bugs.webrtc.org/4050): Add MID header extension as capability once MID
-  // demuxing is completed.
-  // capabilities.header_extensions.push_back(webrtc::RtpExtension(
-  //     webrtc::RtpExtension::kMidUri, webrtc::RtpExtension::kMidDefaultId));
+
   return capabilities;
 }
 

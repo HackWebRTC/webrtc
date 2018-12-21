@@ -17,6 +17,7 @@
 
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
+#include "api/array_view.h"
 #include "logging/rtc_event_log/events/rtc_event_rtp_packet_outgoing.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/remote_bitrate_estimator/test/bwe_test_logging.h"
@@ -57,13 +58,18 @@ constexpr RtpExtensionSize CreateExtensionSize() {
   return {Extension::kId, Extension::kValueSizeBytes};
 }
 
+template <typename Extension>
+constexpr RtpExtensionSize CreateMaxExtensionSize() {
+  return {Extension::kId, Extension::kMaxValueSizeBytes};
+}
+
 // Size info for header extensions that might be used in padding or FEC packets.
 constexpr RtpExtensionSize kFecOrPaddingExtensionSizes[] = {
     CreateExtensionSize<AbsoluteSendTime>(),
     CreateExtensionSize<TransmissionOffset>(),
     CreateExtensionSize<TransportSequenceNumber>(),
     CreateExtensionSize<PlayoutDelayLimits>(),
-    {RtpMid::kId, RtpMid::kMaxValueSizeBytes},
+    CreateMaxExtensionSize<RtpMid>(),
 };
 
 // Size info for header extensions that might be used in video packets.
@@ -75,7 +81,9 @@ constexpr RtpExtensionSize kVideoExtensionSizes[] = {
     CreateExtensionSize<VideoOrientation>(),
     CreateExtensionSize<VideoContentTypeExtension>(),
     CreateExtensionSize<VideoTimingExtension>(),
-    {RtpMid::kId, RtpMid::kMaxValueSizeBytes},
+    CreateMaxExtensionSize<RtpStreamId>(),
+    CreateMaxExtensionSize<RepairedRtpStreamId>(),
+    CreateMaxExtensionSize<RtpMid>(),
     {RtpGenericFrameDescriptorExtension::kId,
      RtpGenericFrameDescriptorExtension::kMaxSizeBytes},
 };
@@ -1174,6 +1182,10 @@ std::unique_ptr<RtpPacketToSend> RTPSender::AllocatePacket() const {
     // This is a no-op if the MID header extension is not registered.
     packet->SetExtension<RtpMid>(mid_);
   }
+  if (!rid_.empty()) {
+    // This is a no-op if the RID header extension is not registered.
+    packet->SetExtension<RtpStreamId>(rid_);
+  }
   return packet;
 }
 
@@ -1258,6 +1270,13 @@ uint32_t RTPSender::SSRC() const {
   return *ssrc_;
 }
 
+void RTPSender::SetRid(const std::string& rid) {
+  // RID is used in simulcast scenario when multiple layers share the same mid.
+  rtc::CritScope lock(&send_critsect_);
+  RTC_DCHECK_LE(rid.length(), RtpStreamId::kMaxValueSizeBytes);
+  rid_ = rid;
+}
+
 void RTPSender::SetMid(const std::string& mid) {
   // This is configured via the API.
   rtc::CritScope lock(&send_critsect_);
@@ -1316,14 +1335,69 @@ bool RTPSender::SetFecParameters(const FecProtectionParams& delta_params,
   return true;
 }
 
-std::unique_ptr<RtpPacketToSend> RTPSender::BuildRtxPacket(
-    const RtpPacketToSend& packet) {
+static std::unique_ptr<RtpPacketToSend> CreateRtxPacket(
+    const RtpPacketToSend& packet,
+    RtpHeaderExtensionMap* extension_map) {
+  RTC_DCHECK(extension_map);
   // TODO(danilchap): Create rtx packet with extra capacity for SRTP
   // when transport interface would be updated to take buffer class.
-  std::unique_ptr<RtpPacketToSend> rtx_packet(new RtpPacketToSend(
-      &rtp_header_extension_map_, packet.size() + kRtxHeaderSize));
+  size_t packet_size = packet.size() + kRtxHeaderSize;
+  std::unique_ptr<RtpPacketToSend> rtx_packet =
+      absl::make_unique<RtpPacketToSend>(extension_map, packet_size);
+
+  // Set the relevant fixed packet headers. The following are not set:
+  // * Payload type - it is replaced in rtx packets.
+  // * Sequence number - RTX has a separate sequence numbering.
+  // * SSRC - RTX stream has its own SSRC.
+  rtx_packet->SetMarker(packet.Marker());
+  rtx_packet->SetTimestamp(packet.Timestamp());
+
+  // Set the variable fields in the packet header:
+  // * CSRCs - must be set before header extensions.
+  // * Header extensions - replace Rid header with RepairedRid header.
+  const std::vector<uint32_t> csrcs = packet.Csrcs();
+  rtx_packet->SetCsrcs(csrcs);
+  for (int extension = kRtpExtensionNone + 1;
+       extension < kRtpExtensionNumberOfExtensions; ++extension) {
+    RTPExtensionType source_extension =
+        static_cast<RTPExtensionType>(extension);
+    // Rid header should be replaced with RepairedRid header
+    RTPExtensionType destination_extension =
+        source_extension == kRtpExtensionRtpStreamId
+            ? kRtpExtensionRepairedRtpStreamId
+            : source_extension;
+
+    // Empty extensions should be supported, so not checking |source.empty()|.
+    if (!packet.HasExtension(source_extension)) {
+      continue;
+    }
+
+    rtc::ArrayView<const uint8_t> source =
+        packet.FindExtension(source_extension);
+
+    rtc::ArrayView<uint8_t> destination =
+        rtx_packet->AllocateExtension(destination_extension, source.size());
+
+    // Could happen if any:
+    // 1. Extension has 0 length.
+    // 2. Extension is not registered in destination.
+    // 3. Allocating extension in destination failed.
+    if (destination.empty() || source.size() != destination.size()) {
+      continue;
+    }
+
+    std::memcpy(destination.begin(), source.begin(), destination.size());
+  }
+
+  return rtx_packet;
+}
+
+std::unique_ptr<RtpPacketToSend> RTPSender::BuildRtxPacket(
+    const RtpPacketToSend& packet) {
+  std::unique_ptr<RtpPacketToSend> rtx_packet =
+      CreateRtxPacket(packet, &rtp_header_extension_map_);
+
   // Add original RTP header.
-  rtx_packet->CopyHeaderFrom(packet);
   {
     rtc::CritScope lock(&send_critsect_);
     if (!sending_media_)
@@ -1343,10 +1417,19 @@ std::unique_ptr<RtpPacketToSend> RTPSender::BuildRtxPacket(
     // Replace SSRC.
     rtx_packet->SetSsrc(*ssrc_rtx_);
 
-    // Possibly include the MID header extension.
+    // The spec indicates that it is possible for a sender to stop sending mids
+    // once the SSRCs have been bound on the receiver. As a result the source
+    // rtp packet might not have the MID header extension set.
+    // However, the SSRC of the RTX stream might not have been bound on the
+    // receiver. This means that we should include it here.
+    // The same argument goes for the Repaired RID extension.
     if (!mid_.empty()) {
       // This is a no-op if the MID header extension is not registered.
       rtx_packet->SetExtension<RtpMid>(mid_);
+    }
+    if (!rid_.empty()) {
+      // This is a no-op if the Repaired-RID header extension is not registered.
+      // rtx_packet->SetExtension<RepairedRtpStreamId>(rid_);
     }
   }
 

@@ -95,6 +95,7 @@ class RtpPacket {
   // Header extensions.
   template <typename Extension>
   bool HasExtension() const;
+  bool HasExtension(ExtensionType type) const;
 
   template <typename Extension, typename FirstValue, typename... Values>
   bool GetExtension(FirstValue, Values...) const;
@@ -111,6 +112,14 @@ class RtpPacket {
 
   template <typename Extension>
   bool ReserveExtension();
+
+  // Find or allocate an extension |type|. Returns view of size |length|
+  // to write raw extension to or an empty view on failure.
+  rtc::ArrayView<uint8_t> AllocateExtension(ExtensionType type, size_t length);
+
+  // Find an extension |type|.
+  // Returns view of the raw extension or empty view on failure.
+  rtc::ArrayView<const uint8_t> FindExtension(ExtensionType type) const;
 
   // Reserve size_bytes for payload. Returns nullptr on failure.
   uint8_t* SetPayloadSize(size_t size_bytes);
@@ -145,10 +154,6 @@ class RtpPacket {
   // with the specified id if not found.
   ExtensionInfo& FindOrCreateExtensionInfo(int id);
 
-  // Find an extension |type|.
-  // Returns view of the raw extension or empty view on failure.
-  rtc::ArrayView<const uint8_t> FindExtension(ExtensionType type) const;
-
   // Allocates and returns place to store rtp header extension.
   // Returns empty arrayview on failure.
   rtc::ArrayView<uint8_t> AllocateRawExtension(int id, size_t length);
@@ -158,10 +163,6 @@ class RtpPacket {
   void PromoteToTwoByteHeaderExtension();
 
   uint16_t SetExtensionLengthMaybeAddZeroPadding(size_t extensions_offset);
-
-  // Find or allocate an extension |type|. Returns view of size |length|
-  // to write raw extension to or an empty view on failure.
-  rtc::ArrayView<uint8_t> AllocateExtension(ExtensionType type, size_t length);
 
   uint8_t* WriteAt(size_t offset) { return buffer_.data() + offset; }
   void WriteAt(size_t offset, uint8_t byte) { buffer_.data()[offset] = byte; }
@@ -184,7 +185,7 @@ class RtpPacket {
 
 template <typename Extension>
 bool RtpPacket::HasExtension() const {
-  return !FindExtension(Extension::kId).empty();
+  return HasExtension(Extension::kId);
 }
 
 template <typename Extension, typename FirstValue, typename... Values>

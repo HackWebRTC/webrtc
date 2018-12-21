@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
@@ -3684,6 +3685,56 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestSetAudioCodecs) {
   EXPECT_EQ(no_codecs, sf.audio_send_codecs());
   EXPECT_EQ(no_codecs, sf.audio_recv_codecs());
   EXPECT_EQ(no_codecs, sf.audio_sendrecv_codecs());
+}
+
+// Checks that the RID extensions are added to the video RTP header extensions.
+// Note: This test somewhat shows that |set_video_rtp_header_extensions()| is
+// not very well defined, as calling set() and immediately get() will yield
+// an object that is not semantically equivalent to the set object.
+TEST_F(MediaSessionDescriptionFactoryTest, VideoHasRidExtensionsInUnifiedPlan) {
+  TransportDescriptionFactory tdf;
+  MediaSessionDescriptionFactory sf(&tdf);
+  sf.set_is_unified_plan(true);
+  cricket::RtpHeaderExtensions extensions;
+  sf.set_video_rtp_header_extensions(extensions);
+  cricket::RtpHeaderExtensions result = sf.video_rtp_header_extensions();
+  // Check to see that RID extensions were added to the extension list
+  EXPECT_GE(result.size(), 2u);
+  auto rid_extension = std::find_if(
+      result.begin(), result.end(), [](const RtpExtension& extension) {
+        return extension.uri == webrtc::RtpExtension::kRidUri;
+      });
+  EXPECT_NE(rid_extension, extensions.end());
+  auto repaired_rid_extension = std::find_if(
+      result.begin(), result.end(), [](const RtpExtension& extension) {
+        return extension.uri == webrtc::RtpExtension::kRepairedRidUri;
+      });
+  EXPECT_NE(repaired_rid_extension, extensions.end());
+}
+
+// Checks that the RID extensions are added to the audio RTP header extensions.
+// Note: This test somewhat shows that |set_audio_rtp_header_extensions()| is
+// not very well defined, as calling set() and immediately get() will yield
+// an object that is not semantically equivalent to the set object.
+TEST_F(MediaSessionDescriptionFactoryTest, AudioHasRidExtensionsInUnifiedPlan) {
+  TransportDescriptionFactory tdf;
+  MediaSessionDescriptionFactory sf(&tdf);
+  sf.set_is_unified_plan(true);
+  cricket::RtpHeaderExtensions extensions;
+  sf.set_audio_rtp_header_extensions(extensions);
+  cricket::RtpHeaderExtensions result = sf.audio_rtp_header_extensions();
+  // Check to see that RID extensions were added to the extension list
+  EXPECT_GE(result.size(), 2u);
+  auto rid_extension = std::find_if(
+      result.begin(), result.end(), [](const RtpExtension& extension) {
+        return extension.uri == webrtc::RtpExtension::kRidUri;
+      });
+  EXPECT_NE(rid_extension, extensions.end());
+  auto repaired_rid_extension = std::find_if(
+      result.begin(), result.end(), [](const RtpExtension& extension) {
+        return extension.uri == webrtc::RtpExtension::kRepairedRidUri;
+      });
+  EXPECT_NE(repaired_rid_extension, extensions.end());
 }
 
 namespace {
