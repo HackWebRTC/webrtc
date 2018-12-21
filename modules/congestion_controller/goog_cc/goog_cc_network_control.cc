@@ -145,7 +145,15 @@ GoogCcNetworkController::GoogCcNetworkController(RtcEventLog* event_log,
           absl::make_unique<SendSideBandwidthEstimation>(event_log_)),
       alr_detector_(absl::make_unique<AlrDetector>()),
       probe_bitrate_estimator_(new ProbeBitrateEstimator(event_log)),
-      delay_based_bwe_(new DelayBasedBwe(event_log_)),
+      use_new_delay_based_controller_(
+          field_trial::IsEnabled("WebRTC-Bwe-DelayBasedRateController")),
+      delay_based_bwe_(use_new_delay_based_controller_
+                           ? nullptr
+                           : new DelayBasedBwe(event_log_)),
+      delay_based_controller_(
+          use_new_delay_based_controller_
+              ? new DelayBasedRateController(event_log_, config.constraints)
+              : nullptr),
       acknowledged_bitrate_estimator_(
           absl::make_unique<AcknowledgedBitrateEstimator>()),
       initial_config_(config),
@@ -164,8 +172,8 @@ GoogCcNetworkController::GoogCcNetworkController(RtcEventLog* event_log,
   ParseFieldTrial(
       {&safe_reset_on_route_change_, &safe_reset_acknowledged_rate_},
       field_trial::FindFullName("WebRTC-Bwe-SafeResetOnRouteChange"));
-
-  delay_based_bwe_->SetMinBitrate(congestion_controller::GetMinBitrate());
+  if (delay_based_bwe_)
+    delay_based_bwe_->SetMinBitrate(congestion_controller::GetMinBitrate());
   if (in_cwnd_experiment_ &&
       !ReadCwndExperimentParameter(&accepted_queue_ms_)) {
     RTC_LOG(LS_WARNING) << "Failed to parse parameters for CwndExperiment "
@@ -215,11 +223,16 @@ NetworkControlUpdate GoogCcNetworkController::OnNetworkRouteChange(
 
   acknowledged_bitrate_estimator_.reset(new AcknowledgedBitrateEstimator());
   probe_bitrate_estimator_.reset(new ProbeBitrateEstimator(event_log_));
-  delay_based_bwe_.reset(new DelayBasedBwe(event_log_));
-  if (msg.constraints.starting_rate)
-    delay_based_bwe_->SetStartBitrate(*msg.constraints.starting_rate);
-  // TODO(srte): Use original values instead of converted.
-  delay_based_bwe_->SetMinBitrate(DataRate::bps(min_bitrate_bps));
+  if (delay_based_bwe_) {
+    delay_based_bwe_.reset(new DelayBasedBwe(event_log_));
+    if (msg.constraints.starting_rate)
+      delay_based_bwe_->SetStartBitrate(*msg.constraints.starting_rate);
+    // TODO(srte): Use original values instead of converted.
+    delay_based_bwe_->SetMinBitrate(DataRate::bps(min_bitrate_bps));
+  } else {
+    delay_based_controller_->UpdateConstraints(msg.constraints);
+    delay_based_controller_->OnRouteChange();
+  }
   bandwidth_estimation_->OnRouteChange();
   bandwidth_estimation_->SetBitrates(
       msg.constraints.starting_rate, DataRate::bps(min_bitrate_bps),
@@ -257,7 +270,11 @@ NetworkControlUpdate GoogCcNetworkController::OnProcessInterval(
     }
     initial_config_.reset();
   }
-
+  if (delay_based_controller_) {
+    delay_based_controller_->OnTimeUpdate(msg.at_time);
+    bandwidth_estimation_->UpdateDelayBasedEstimate(
+        msg.at_time, delay_based_controller_->target_rate());
+  }
   bandwidth_estimation_->UpdateEstimate(msg.at_time);
   absl::optional<int64_t> start_time_ms =
       alr_detector_->GetApplicationLimitedRegionStartTime();
@@ -277,6 +294,8 @@ NetworkControlUpdate GoogCcNetworkController::OnRemoteBitrateReport(
     RTC_LOG(LS_ERROR) << "Received REMB for packet feedback only GoogCC";
     return NetworkControlUpdate();
   }
+  if (delay_based_controller_)
+    delay_based_controller_->OnRemoteBitrateControl(msg);
   bandwidth_estimation_->UpdateReceiverEstimate(msg.receive_time,
                                                 msg.bandwidth);
   BWE_TEST_LOGGING_PLOT(1, "REMB_kbps", msg.receive_time.ms(),
@@ -289,7 +308,8 @@ NetworkControlUpdate GoogCcNetworkController::OnRoundTripTimeUpdate(
   if (packet_feedback_only_)
     return NetworkControlUpdate();
   if (msg.smoothed) {
-    delay_based_bwe_->OnRttUpdate(msg.round_trip_time);
+    if (delay_based_bwe_)
+      delay_based_bwe_->OnRttUpdate(msg.round_trip_time);
   } else {
     bandwidth_estimation_->UpdateRtt(msg.round_trip_time, msg.receive_time);
   }
@@ -377,9 +397,13 @@ GoogCcNetworkController::UpdateBitrateConstraints(
       starting_rate, DataRate::bps(min_bitrate_bps),
       constraints.max_data_rate.value_or(DataRate::Infinity()),
       constraints.at_time);
-  if (starting_rate)
-    delay_based_bwe_->SetStartBitrate(*starting_rate);
-  delay_based_bwe_->SetMinBitrate(DataRate::bps(min_bitrate_bps));
+  if (delay_based_bwe_) {
+    if (starting_rate)
+      delay_based_bwe_->SetStartBitrate(*starting_rate);
+    delay_based_bwe_->SetMinBitrate(DataRate::bps(min_bitrate_bps));
+  } else {
+    delay_based_controller_->UpdateConstraints(constraints);
+  }
   return probes;
 }
 
@@ -437,7 +461,8 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
       int64_t sum_rtt_ms = std::accumulate(feedback_max_rtts_.begin(),
                                            feedback_max_rtts_.end(), 0);
       int64_t mean_rtt_ms = sum_rtt_ms / feedback_max_rtts_.size();
-      delay_based_bwe_->OnRttUpdate(TimeDelta::ms(mean_rtt_ms));
+      if (delay_based_bwe_)
+        delay_based_bwe_->OnRttUpdate(TimeDelta::ms(mean_rtt_ms));
     }
 
     TimeDelta feedback_min_rtt = TimeDelta::PlusInfinity();
@@ -488,6 +513,7 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
       probe_bitrate_estimator_->HandleProbeAndEstimateBitrate(feedback);
     }
   }
+
   absl::optional<DataRate> probe_bitrate =
       probe_bitrate_estimator_->FetchAndResetLastEstimatedBitrate();
   if (fall_back_to_probe_rate_ && !acknowledged_bitrate)
@@ -495,30 +521,52 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
   bandwidth_estimation_->SetAcknowledgedRate(acknowledged_bitrate,
                                              report.feedback_time);
   bandwidth_estimation_->IncomingPacketFeedbackVector(report);
-  DelayBasedBwe::Result result;
-  result = delay_based_bwe_->IncomingPacketFeedbackVector(
-      received_feedback_vector, acknowledged_bitrate, probe_bitrate,
-      alr_start_time.has_value(), report.feedback_time);
 
   NetworkControlUpdate update;
-  if (result.updated) {
-    if (result.probe) {
-      bandwidth_estimation_->SetSendBitrate(result.target_bitrate,
-                                            report.feedback_time);
+  bool recovered_from_overuse = false;
+  bool backoff_in_alr = false;
+  // TODO(srte): Add support for ALR backoff trial in the new rate controller.
+  if (delay_based_controller_) {
+    if (acknowledged_bitrate)
+      delay_based_controller_->SetAcknowledgedRate(*acknowledged_bitrate);
+    bool prior_underuse = delay_based_controller_->in_underuse();
+    delay_based_controller_->OnTransportPacketsFeedback(report, probe_bitrate);
+    recovered_from_overuse =
+        prior_underuse && !delay_based_controller_->in_underuse();
+    if (probe_bitrate) {
+      bandwidth_estimation_->SetSendBitrate(
+          delay_based_controller_->target_rate(), report.feedback_time);
     }
-    // Since SetSendBitrate now resets the delay-based estimate, we have to call
-    // UpdateDelayBasedEstimate after SetSendBitrate.
-    bandwidth_estimation_->UpdateDelayBasedEstimate(report.feedback_time,
-                                                    result.target_bitrate);
-    // Update the estimate in the ProbeController, in case we want to probe.
+    bandwidth_estimation_->UpdateDelayBasedEstimate(
+        report.feedback_time, delay_based_controller_->target_rate());
     MaybeTriggerOnNetworkChanged(&update, report.feedback_time);
+  } else {
+    DelayBasedBwe::Result result;
+    result = delay_based_bwe_->IncomingPacketFeedbackVector(
+        received_feedback_vector, acknowledged_bitrate, probe_bitrate,
+        alr_start_time.has_value(), report.feedback_time);
+
+    if (result.updated) {
+      if (result.probe) {
+        bandwidth_estimation_->SetSendBitrate(result.target_bitrate,
+                                              report.feedback_time);
+      }
+      // Since SetSendBitrate now resets the delay-based estimate, we have to
+      // call UpdateDelayBasedEstimate after SetSendBitrate.
+      bandwidth_estimation_->UpdateDelayBasedEstimate(report.feedback_time,
+                                                      result.target_bitrate);
+      // Update the estimate in the ProbeController, in case we want to probe.
+      MaybeTriggerOnNetworkChanged(&update, report.feedback_time);
+    }
+    recovered_from_overuse = result.recovered_from_overuse;
+    backoff_in_alr = result.backoff_in_alr;
   }
-  if (result.recovered_from_overuse) {
+  if (recovered_from_overuse) {
     probe_controller_->SetAlrStartTimeMs(alr_start_time);
     auto probes = probe_controller_->RequestProbe(report.feedback_time.ms());
     update.probe_cluster_configs.insert(update.probe_cluster_configs.end(),
                                         probes.begin(), probes.end());
-  } else if (result.backoff_in_alr) {
+  } else if (backoff_in_alr) {
     // If we just backed off during ALR, request a new probe.
     auto probes = probe_controller_->RequestProbe(report.feedback_time.ms());
     update.probe_cluster_configs.insert(update.probe_cluster_configs.end(),
@@ -565,7 +613,9 @@ NetworkControlUpdate GoogCcNetworkController::GetNetworkState(
       last_estimated_fraction_loss_ / 255.0;
   update.target_rate->network_estimate.round_trip_time = rtt;
   update.target_rate->network_estimate.bwe_period =
-      delay_based_bwe_->GetExpectedBwePeriod();
+      delay_based_bwe_ ? delay_based_bwe_->GetExpectedBwePeriod()
+                       : delay_based_controller_->GetExpectedBandwidthPeriod();
+
   update.target_rate->at_time = at_time;
   update.target_rate->target_rate = bandwidth;
   update.pacer_config = GetPacingRates(at_time);
@@ -606,7 +656,10 @@ void GoogCcNetworkController::MaybeTriggerOnNetworkChanged(
                              ? bandwidth_estimation_->GetEstimatedLinkCapacity()
                              : last_target_rate_;
 
-    TimeDelta bwe_period = delay_based_bwe_->GetExpectedBwePeriod();
+    TimeDelta bwe_period =
+        delay_based_bwe_
+            ? delay_based_bwe_->GetExpectedBwePeriod()
+            : delay_based_controller_->GetExpectedBandwidthPeriod();
 
     // Set the target rate to the full estimated bandwidth since the estimation
     // for legacy reasons includes target rate constraints.

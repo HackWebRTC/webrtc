@@ -28,6 +28,7 @@
 #include "modules/congestion_controller/goog_cc/alr_detector.h"
 #include "modules/congestion_controller/goog_cc/congestion_window_pushback_controller.h"
 #include "modules/congestion_controller/goog_cc/delay_based_bwe.h"
+#include "modules/congestion_controller/goog_cc/delay_based_rate_controller.h"
 #include "modules/congestion_controller/goog_cc/probe_controller.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/experiments/field_trial_parser.h"
@@ -81,7 +82,9 @@ class GoogCcNetworkController : public NetworkControllerInterface {
   std::unique_ptr<SendSideBandwidthEstimation> bandwidth_estimation_;
   std::unique_ptr<AlrDetector> alr_detector_;
   std::unique_ptr<ProbeBitrateEstimator> probe_bitrate_estimator_;
+  const bool use_new_delay_based_controller_;
   std::unique_ptr<DelayBasedBwe> delay_based_bwe_;
+  std::unique_ptr<DelayBasedRateController> delay_based_controller_;
   std::unique_ptr<AcknowledgedBitrateEstimator> acknowledged_bitrate_estimator_;
 
   absl::optional<NetworkControllerConfig> initial_config_;

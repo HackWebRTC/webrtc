@@ -21,11 +21,13 @@ class LinkCapacityEstimator {
   DataRate LowerBound() const;
   void Reset();
   void OnOveruseDetected(DataRate acknowledged_rate);
+  void OnProbeRate(DataRate probe_rate);
   bool has_estimate() const;
   DataRate estimate() const;
 
  private:
   friend class GoogCcStatePrinter;
+  void Update(DataRate capacity_sample, double alpha);
 
   double deviation_estimate_kbps() const;
   absl::optional<double> estimate_kbps_;

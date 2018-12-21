@@ -35,18 +35,24 @@ void LinkCapacityEstimator::Reset() {
 }
 
 void LinkCapacityEstimator::OnOveruseDetected(DataRate acknowledged_rate) {
-  double ack_rate_kbps = acknowledged_rate.kbps();
-  const float alpha = 0.05f;
+  Update(acknowledged_rate, 0.05);
+}
+
+void LinkCapacityEstimator::OnProbeRate(DataRate probe_rate) {
+  Update(probe_rate, 0.5);
+}
+
+void LinkCapacityEstimator::Update(DataRate capacity_sample, double alpha) {
+  double sample_kbps = capacity_sample.kbps();
   if (!estimate_kbps_.has_value()) {
-    estimate_kbps_ = ack_rate_kbps;
+    estimate_kbps_ = sample_kbps;
   } else {
-    estimate_kbps_ =
-        (1 - alpha) * estimate_kbps_.value() + alpha * ack_rate_kbps;
+    estimate_kbps_ = (1 - alpha) * estimate_kbps_.value() + alpha * sample_kbps;
   }
   // Estimate the variance of the link capacity estimate and normalize the
   // variance with the link capacity estimate.
   const double norm = std::max(estimate_kbps_.value(), 1.0);
-  double error_kbps = estimate_kbps_.value() - ack_rate_kbps;
+  double error_kbps = estimate_kbps_.value() - sample_kbps;
   deviation_kbps_ =
       (1 - alpha) * deviation_kbps_ + alpha * error_kbps * error_kbps / norm;
   // 0.4 ~= 14 kbit/s at 500 kbit/s
