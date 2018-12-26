@@ -11,12 +11,12 @@
 #ifndef SDK_ANDROID_SRC_JNI_PC_PEERCONNECTION_H_
 #define SDK_ANDROID_SRC_JNI_PC_PEERCONNECTION_H_
 
-#include <pc/mediastreamobserver.h>
 #include <map>
 #include <memory>
 #include <vector>
 
 #include "api/peerconnectioninterface.h"
+#include "pc/mediastreamobserver.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 #include "sdk/android/src/jni/pc/mediaconstraints.h"
 #include "sdk/android/src/jni/pc/mediastream.h"
