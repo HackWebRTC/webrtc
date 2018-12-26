@@ -12,9 +12,9 @@
 
 #include "pc/rtptransceiver.h"
 
+#include "pc/test/mock_channelinterface.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
-#include "test/mock_channelinterface.h"
 
 using ::testing::Return;
 using ::testing::ReturnRef;
