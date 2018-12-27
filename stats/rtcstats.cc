@@ -10,10 +10,11 @@
 
 #include "api/stats/rtcstats.h"
 
-#include <iomanip>
-#include <sstream>
+#include <cstdio>
 
+#include "rtc_base/arraysize.h"
 #include "rtc_base/stringencode.h"
+#include "rtc_base/strings/string_builder.h"
 
 namespace webrtc {
 
@@ -23,53 +24,54 @@ namespace {
 // types.
 template <typename T>
 std::string VectorToString(const std::vector<T>& vector) {
-  if (vector.empty())
-    return "[]";
-  std::ostringstream oss;
-  oss << "[" << rtc::ToString(vector[0]);
-  for (size_t i = 1; i < vector.size(); ++i) {
-    oss << "," << rtc::ToString(vector[i]);
+  rtc::StringBuilder sb;
+  sb << "[";
+  const char* separator = "";
+  for (const T& element : vector) {
+    sb << separator << rtc::ToString(element);
+    separator = ",";
   }
-  oss << "]";
-  return oss.str();
+  sb << "]";
+  return sb.Release();
 }
 
 // Produces "[\"a\",\"b\",\"c\"]". Works for vectors of both const char* and
 // std::string element types.
 template <typename T>
 std::string VectorOfStringsToString(const std::vector<T>& strings) {
-  if (strings.empty())
-    return "[]";
-  std::ostringstream oss;
-  oss << "[\"" << rtc::ToString(strings[0]) << '\"';
-  for (size_t i = 1; i < strings.size(); ++i) {
-    oss << ",\"" << rtc::ToString(strings[i]) << '\"';
+  rtc::StringBuilder sb;
+  sb << "[";
+  const char* separator = "";
+  for (const T& element : strings) {
+    sb << separator << "\"" << rtc::ToString(element) << "\"";
+    separator = ",";
   }
-  oss << "]";
-  return oss.str();
+  sb << "]";
+  return sb.Release();
 }
 
 template <typename T>
 std::string ToStringAsDouble(const T value) {
   // JSON represents numbers as floating point numbers with about 15 decimal
   // digits of precision.
-  const int JSON_PRECISION = 16;
-  std::ostringstream oss;
-  oss << std::setprecision(JSON_PRECISION) << static_cast<double>(value);
-  return oss.str();
+  char buf[32];
+  const int len = std::snprintf(&buf[0], arraysize(buf), "%.16g",
+                                static_cast<double>(value));
+  RTC_DCHECK_LE(len, arraysize(buf));
+  return std::string(&buf[0], len);
 }
 
 template <typename T>
 std::string VectorToStringAsDouble(const std::vector<T>& vector) {
-  if (vector.empty())
-    return "[]";
-  std::ostringstream oss;
-  oss << "[" << ToStringAsDouble<T>(vector[0]);
-  for (size_t i = 1; i < vector.size(); ++i) {
-    oss << "," << ToStringAsDouble<T>(vector[i]);
+  rtc::StringBuilder sb;
+  sb << "[";
+  const char* separator = "";
+  for (const T& element : vector) {
+    sb << separator << ToStringAsDouble<T>(element);
+    separator = ",";
   }
-  oss << "]";
-  return oss.str();
+  sb << "]";
+  return sb.Release();
 }
 
 }  // namespace
@@ -96,21 +98,21 @@ bool RTCStats::operator!=(const RTCStats& other) const {
 }
 
 std::string RTCStats::ToJson() const {
-  std::ostringstream oss;
-  oss << "{\"type\":\"" << type() << "\","
-      << "\"id\":\"" << id_ << "\","
-      << "\"timestamp\":" << timestamp_us_;
+  rtc::StringBuilder sb;
+  sb << "{\"type\":\"" << type() << "\","
+     << "\"id\":\"" << id_ << "\","
+     << "\"timestamp\":" << timestamp_us_;
   for (const RTCStatsMemberInterface* member : Members()) {
     if (member->is_defined()) {
-      oss << ",\"" << member->name() << "\":";
+      sb << ",\"" << member->name() << "\":";
       if (member->is_string())
-        oss << '"' << member->ValueToJson() << '"';
+        sb << "\"" << member->ValueToJson() << "\"";
       else
-        oss << member->ValueToJson();
+        sb << member->ValueToJson();
     }
   }
-  oss << "}";
-  return oss.str();
+  sb << "}";
+  return sb.Release();
 }
 
 std::vector<const RTCStatsMemberInterface*> RTCStats::Members() const {

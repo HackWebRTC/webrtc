@@ -10,11 +10,11 @@
 
 #include "api/stats/rtcstatsreport.h"
 
-#include <sstream>
 #include <type_traits>
 #include <utility>
 
 #include "rtc_base/checks.h"
+#include "rtc_base/strings/string_builder.h"
 
 namespace webrtc {
 
@@ -119,16 +119,17 @@ RTCStatsReport::ConstIterator RTCStatsReport::end() const {
 }
 
 std::string RTCStatsReport::ToJson() const {
-  std::ostringstream oss;
-  ConstIterator it = begin();
-  if (it != end()) {
-    oss << '[' << it->ToJson();
-    for (++it; it != end(); ++it) {
-      oss << "," << it->ToJson();
-    }
-    oss << ']';
+  if (begin() == end()) {
+    return "";
   }
-  return oss.str();
+  rtc::StringBuilder sb;
+  sb << "[";
+  const char* separator = "";
+  for (ConstIterator it = begin(); it != end(); ++it) {
+    sb << separator << it->ToJson();
+  }
+  sb << "]";
+  return sb.Release();
 }
 
 }  // namespace webrtc
