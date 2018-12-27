@@ -116,10 +116,29 @@ specific_include_rules = {
     "+rtc_base/bind.h",
   ],
 
+  "peerconnectioninterface\.h": [
+    "+logging/rtc_event_log/rtc_event_log_factory_interface.h",
+    "+media/base/mediaconfig.h",
+    "+media/base/videocapturer.h",
+    "+media/base/mediaengine.h",
+    "+p2p/base/portallocator.h",
+    "+rtc_base/bitrateallocationstrategy.h",
+    "+rtc_base/network.h",
+    "+rtc_base/platform_file.h",
+    "+rtc_base/rtccertificate.h",
+    "+rtc_base/rtccertificategenerator.h",
+    "+rtc_base/socketaddress.h",
+    "+rtc_base/sslcertificate.h",
+    "+rtc_base/sslstreamadapter.h",
+  ],
+
   "proxy\.h": [
+    "+rtc_base/event.h",
     "+rtc_base/messagehandler.h",  # Inherits from it.
     "+rtc_base/messagequeue.h",    # Inherits from MessageData.
+    "+rtc_base/refcountedobject.h",
     "+rtc_base/scoped_ref_ptr.h",
+    "+rtc_base/thread.h",
   ],
 
   "refcountedbase\.h": [
@@ -144,6 +163,7 @@ specific_include_rules = {
 
   "rtptransceiverinterface\.h": [
     "+rtc_base/refcount.h",
+    "+rtc_base/scoped_ref_ptr.h",
   ],
 
   "setremotedescriptionobserverinterface\.h": [
@@ -214,16 +234,6 @@ specific_include_rules = {
     "+rtc_base/refcount.h",
   ],
 
-  "ortcfactoryinterface\.h": [
-    "+rtc_base/network.h",
-    "+rtc_base/scoped_ref_ptr.h",
-    "+rtc_base/thread.h",
-  ],
-
-  "udptransportinterface\.h": [
-    "+rtc_base/socketaddress.h",
-  ],
-
   "rtcstatscollectorcallback\.h": [
     "+rtc_base/refcount.h",
     "+rtc_base/scoped_ref_ptr.h",
@@ -247,10 +257,6 @@ specific_include_rules = {
     "+rtc_base/refcountedobject.h",
   ],
 
-  "fakeconstraints\.h": [
-    "+rtc_base/stringencode.h",
-  ],
-
   "mock.*\.h": [
     "+test/gmock.h",
   ],
@@ -267,20 +273,6 @@ specific_include_rules = {
 
   "videocodec_test_fixture\.h": [
     "+modules/video_coding/include/video_codec_interface.h"
-  ],
-
-  "i010_buffer\.h": [
-    "+rtc_base/memory/aligned_malloc.h",
-    "+rtc_base/scoped_ref_ptr.h",
-  ],
-
-  "i420_buffer\.h": [
-    "+rtc_base/memory/aligned_malloc.h",
-  ],
-
-  "video_frame_buffer\.h": [
-    "+rtc_base/refcount.h",
-    "+rtc_base/scoped_ref_ptr.h",
   ],
 
   "video_timing\.h": [

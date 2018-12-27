@@ -5,6 +5,9 @@ specific_include_rules = {
   ".*": [
     "+video"
   ],
+  "fakeconstraints\.h": [
+    "+rtc_base/stringencode.h",
+  ],
   "loopback_media_transport\.h": [
     "+rtc_base/asyncinvoker.h",
     "+rtc_base/criticalsection.h",
