@@ -38,6 +38,8 @@ class Thread;
 
 namespace webrtc {
 
+class RtcEventLog;
+
 // A collection of settings for creation of media transport.
 struct MediaTransportSettings final {
   MediaTransportSettings();
@@ -53,6 +55,11 @@ struct MediaTransportSettings final {
   // TODO(bugs.webrtc.org/9944): This should become zero buffer in the distant
   // future.
   absl::optional<std::string> pre_shared_key;
+
+  // If present, provides the event log that media transport should use.
+  // Media transport does not own it. The lifetime of |event_log| will exceed
+  // the lifetime of the instance of MediaTransportInterface instance.
+  RtcEventLog* event_log = nullptr;
 };
 
 // Represents encoded audio frame in any encoding (type of encoding is opaque).
