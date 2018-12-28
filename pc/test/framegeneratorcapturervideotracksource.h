@@ -12,6 +12,7 @@
 #define PC_TEST_FRAMEGENERATORCAPTURERVIDEOTRACKSOURCE_H_
 
 #include <memory>
+#include <utility>
 
 #include "pc/videotracksource.h"
 #include "test/frame_generator_capturer.h"
@@ -45,6 +46,11 @@ class FrameGeneratorCapturerVideoTrackSource : public VideoTrackSource {
         config.width, config.height, absl::nullopt,
         config.num_squares_generated, config.frames_per_second, clock));
   }
+
+  explicit FrameGeneratorCapturerVideoTrackSource(
+      std::unique_ptr<test::FrameGeneratorCapturer> video_capturer)
+      : VideoTrackSource(false /* remote */),
+        video_capturer_(std::move(video_capturer)) {}
 
   ~FrameGeneratorCapturerVideoTrackSource() = default;
 
