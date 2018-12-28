@@ -614,27 +614,27 @@ bool BaseChannel::UpdateLocalStreams_w(const std::vector<StreamParams>& streams,
                                        std::string* error_desc) {
   // Check for streams that have been removed.
   bool ret = true;
-  for (StreamParamsVec::const_iterator it = local_streams_.begin();
-       it != local_streams_.end(); ++it) {
-    if (it->has_ssrcs() && !GetStreamBySsrc(streams, it->first_ssrc())) {
-      if (!media_channel()->RemoveSendStream(it->first_ssrc())) {
+  for (const StreamParams& old_stream : local_streams_) {
+    if (old_stream.has_ssrcs() &&
+        !GetStreamBySsrc(streams, old_stream.first_ssrc())) {
+      if (!media_channel()->RemoveSendStream(old_stream.first_ssrc())) {
         rtc::StringBuilder desc;
-        desc << "Failed to remove send stream with ssrc " << it->first_ssrc()
-             << ".";
+        desc << "Failed to remove send stream with ssrc "
+             << old_stream.first_ssrc() << ".";
         SafeSetError(desc.str(), error_desc);
         ret = false;
       }
     }
   }
   // Check for new streams.
-  for (StreamParamsVec::const_iterator it = streams.begin();
-       it != streams.end(); ++it) {
-    if (it->has_ssrcs() && !GetStreamBySsrc(local_streams_, it->first_ssrc())) {
-      if (media_channel()->AddSendStream(*it)) {
-        RTC_LOG(LS_INFO) << "Add send stream ssrc: " << it->ssrcs[0];
+  for (const StreamParams& new_stream : streams) {
+    if (new_stream.has_ssrcs() &&
+        !GetStreamBySsrc(local_streams_, new_stream.first_ssrc())) {
+      if (media_channel()->AddSendStream(new_stream)) {
+        RTC_LOG(LS_INFO) << "Add send stream ssrc: " << new_stream.ssrcs[0];
       } else {
         rtc::StringBuilder desc;
-        desc << "Failed to add send stream ssrc: " << it->first_ssrc();
+        desc << "Failed to add send stream ssrc: " << new_stream.first_ssrc();
         SafeSetError(desc.str(), error_desc);
         ret = false;
       }
@@ -650,18 +650,17 @@ bool BaseChannel::UpdateRemoteStreams_w(
     std::string* error_desc) {
   // Check for streams that have been removed.
   bool ret = true;
-  for (StreamParamsVec::const_iterator it = remote_streams_.begin();
-       it != remote_streams_.end(); ++it) {
+  for (const StreamParams& old_stream : remote_streams_) {
     // If we no longer have an unsignaled stream, we would like to remove
     // the unsignaled stream params that are cached.
-    if ((!it->has_ssrcs() && !HasStreamWithNoSsrcs(streams)) ||
-        !GetStreamBySsrc(streams, it->first_ssrc())) {
-      if (RemoveRecvStream_w(it->first_ssrc())) {
-        RTC_LOG(LS_INFO) << "Remove remote ssrc: " << it->first_ssrc();
+    if ((!old_stream.has_ssrcs() && !HasStreamWithNoSsrcs(streams)) ||
+        !GetStreamBySsrc(streams, old_stream.first_ssrc())) {
+      if (RemoveRecvStream_w(old_stream.first_ssrc())) {
+        RTC_LOG(LS_INFO) << "Remove remote ssrc: " << old_stream.first_ssrc();
       } else {
         rtc::StringBuilder desc;
-        desc << "Failed to remove remote stream with ssrc " << it->first_ssrc()
-             << ".";
+        desc << "Failed to remove remote stream with ssrc "
+             << old_stream.first_ssrc() << ".";
         SafeSetError(desc.str(), error_desc);
         ret = false;
       }
@@ -669,24 +668,24 @@ bool BaseChannel::UpdateRemoteStreams_w(
   }
   demuxer_criteria_.ssrcs.clear();
   // Check for new streams.
-  for (StreamParamsVec::const_iterator it = streams.begin();
-       it != streams.end(); ++it) {
+  for (const StreamParams& new_stream : streams) {
     // We allow a StreamParams with an empty list of SSRCs, in which case the
     // MediaChannel will cache the parameters and use them for any unsignaled
     // stream received later.
-    if ((!it->has_ssrcs() && !HasStreamWithNoSsrcs(remote_streams_)) ||
-        !GetStreamBySsrc(remote_streams_, it->first_ssrc())) {
-      if (AddRecvStream_w(*it)) {
-        RTC_LOG(LS_INFO) << "Add remote ssrc: " << it->first_ssrc();
+    if ((!new_stream.has_ssrcs() && !HasStreamWithNoSsrcs(remote_streams_)) ||
+        !GetStreamBySsrc(remote_streams_, new_stream.first_ssrc())) {
+      if (AddRecvStream_w(new_stream)) {
+        RTC_LOG(LS_INFO) << "Add remote ssrc: " << new_stream.first_ssrc();
       } else {
         rtc::StringBuilder desc;
-        desc << "Failed to add remote stream ssrc: " << it->first_ssrc();
+        desc << "Failed to add remote stream ssrc: " << new_stream.first_ssrc();
         SafeSetError(desc.str(), error_desc);
         ret = false;
       }
     }
     // Update the receiving SSRCs.
-    demuxer_criteria_.ssrcs.insert(it->ssrcs.begin(), it->ssrcs.end());
+    demuxer_criteria_.ssrcs.insert(new_stream.ssrcs.begin(),
+                                   new_stream.ssrcs.end());
   }
   // Re-register the sink to update the receiving ssrcs.
   RegisterRtpDemuxerSink();
