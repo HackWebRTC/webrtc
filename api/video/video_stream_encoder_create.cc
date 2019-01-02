@@ -18,11 +18,9 @@ namespace webrtc {
 std::unique_ptr<VideoStreamEncoderInterface> CreateVideoStreamEncoder(
     uint32_t number_of_cores,
     VideoStreamEncoderObserver* encoder_stats_observer,
-    const VideoStreamEncoderSettings& settings,
-    // Deprecated, used for tests only.
-    rtc::VideoSinkInterface<VideoFrame>* pre_encode_callback) {
+    const VideoStreamEncoderSettings& settings) {
   return absl::make_unique<VideoStreamEncoder>(
-      number_of_cores, encoder_stats_observer, settings, pre_encode_callback,
+      number_of_cores, encoder_stats_observer, settings,
       absl::make_unique<OveruseFrameDetector>(encoder_stats_observer));
 }
 }  // namespace webrtc

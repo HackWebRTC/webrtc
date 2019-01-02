@@ -88,8 +88,7 @@ VideoSendStream::VideoSendStream(
   RTC_DCHECK(config_.encoder_settings.bitrate_allocator_factory);
 
   video_stream_encoder_ = CreateVideoStreamEncoder(num_cpu_cores, &stats_proxy_,
-                                                   config_.encoder_settings,
-                                                   config_.pre_encode_callback);
+                                                   config_.encoder_settings);
   // TODO(srte): Initialization should not be done posted on a task queue.
   // Note that the posted task must not outlive this scope since the closure
   // references local variables.

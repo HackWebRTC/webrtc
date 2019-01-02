@@ -37,8 +37,7 @@ TEST_F(StatsEndToEndTest, GetStats) {
     void OnFrame(const VideoFrame& video_frame) override {}
   };
 
-  class StatsObserver : public test::EndToEndTest,
-                        public rtc::VideoSinkInterface<VideoFrame> {
+  class StatsObserver : public test::EndToEndTest {
    public:
     StatsObserver()
         : EndToEndTest(kLongTimeoutMs),
@@ -78,11 +77,6 @@ TEST_F(StatsEndToEndTest, GetStats) {
     Action OnReceiveRtcp(const uint8_t* packet, size_t length) override {
       check_stats_event_.Set();
       return SEND_PACKET;
-    }
-
-    void OnFrame(const VideoFrame& video_frame) override {
-      // Ensure that we have at least 5ms send side delay.
-      SleepMs(5);
     }
 
     bool CheckReceiveStats() {
@@ -250,7 +244,7 @@ TEST_F(StatsEndToEndTest, GetStats) {
     // in ModifyVideoConfigs.
     class VideoStreamFactory
         : public VideoEncoderConfig::VideoStreamFactoryInterface {
-     public:
+     public:  // NOLINT(whitespace/blank_line)
       VideoStreamFactory() {}
 
      private:
@@ -276,7 +270,6 @@ TEST_F(StatsEndToEndTest, GetStats) {
         VideoEncoderConfig* encoder_config) override {
       encoder_config->video_stream_factory =
           new rtc::RefCountedObject<VideoStreamFactory>();
-      send_config->pre_encode_callback = this;  // Used to inject delay.
       expected_cname_ = send_config->rtp.c_name = "SomeCName";
 
       send_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;

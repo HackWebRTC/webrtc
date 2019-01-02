@@ -119,10 +119,6 @@ class VideoSendStream {
     // Transport for outgoing packets.
     Transport* send_transport = nullptr;
 
-    // Called for each I420 frame before encoding the frame. Can be used for
-    // effects, snapshots etc. 'nullptr' disables the callback.
-    rtc::VideoSinkInterface<VideoFrame>* pre_encode_callback = nullptr;
-
     // Expected delay needed by the renderer, i.e. the frame will be delivered
     // this many milliseconds, if possible, earlier than expected render time.
     // Only valid if |local_renderer| is set.

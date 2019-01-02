@@ -50,7 +50,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   VideoStreamEncoder(uint32_t number_of_cores,
                      VideoStreamEncoderObserver* encoder_stats_observer,
                      const VideoStreamEncoderSettings& settings,
-                     rtc::VideoSinkInterface<VideoFrame>* pre_encode_callback,
                      std::unique_ptr<OveruseFrameDetector> overuse_detector);
   ~VideoStreamEncoder() override;
 
@@ -196,7 +195,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
       RTC_PT_GUARDED_BY(&encoder_queue_);
 
   VideoStreamEncoderObserver* const encoder_stats_observer_;
-  rtc::VideoSinkInterface<VideoFrame>* const pre_encode_callback_;
   // |thread_checker_| checks that public methods that are related to lifetime
   // of VideoStreamEncoder are called on the same thread.
   rtc::ThreadChecker thread_checker_;

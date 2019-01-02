@@ -1286,12 +1286,7 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
 
     if (params_.video[0].enabled) {
       // Create video renderers.
-      local_preview.reset(test::VideoRenderer::Create(
-          "Local Preview", params_.video[0].width, params_.video[0].height));
-
       SetupVideo(send_transport.get(), recv_transport.get());
-      GetVideoSendConfig()->pre_encode_callback = local_preview.get();
-
       size_t num_streams_processed = 0;
       for (size_t video_idx = 0; video_idx < num_video_streams_; ++video_idx) {
         const size_t selected_stream_id = params_.ss[video_idx].selected_stream;
@@ -1330,6 +1325,14 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
       CreateVideoStreams();
 
       CreateCapturers();
+      if (params_.video[0].enabled) {
+        // Create local preview
+        local_preview.reset(test::VideoRenderer::Create(
+            "Local Preview", params_.video[0].width, params_.video[0].height));
+
+        video_sources_[0]->AddOrUpdateSink(local_preview.get(),
+                                           rtc::VideoSinkWants());
+      }
       ConnectVideoSourcesToStreams();
     }
 

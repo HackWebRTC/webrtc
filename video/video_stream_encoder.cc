@@ -347,7 +347,6 @@ VideoStreamEncoder::VideoStreamEncoder(
     uint32_t number_of_cores,
     VideoStreamEncoderObserver* encoder_stats_observer,
     const VideoStreamEncoderSettings& settings,
-    rtc::VideoSinkInterface<VideoFrame>* pre_encode_callback,
     std::unique_ptr<OveruseFrameDetector> overuse_detector)
     : shutdown_event_(true /* manual_reset */, false),
       number_of_cores_(number_of_cores),
@@ -361,7 +360,6 @@ VideoStreamEncoder::VideoStreamEncoder(
       video_sender_(Clock::GetRealTimeClock(), this),
       overuse_detector_(std::move(overuse_detector)),
       encoder_stats_observer_(encoder_stats_observer),
-      pre_encode_callback_(pre_encode_callback),
       max_framerate_(-1),
       pending_encoder_reconfiguration_(false),
       pending_encoder_creation_(false),
@@ -781,9 +779,6 @@ void VideoStreamEncoder::TraceFrameDropEnd() {
 void VideoStreamEncoder::MaybeEncodeVideoFrame(const VideoFrame& video_frame,
                                                int64_t time_when_posted_us) {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
-
-  if (pre_encode_callback_)
-    pre_encode_callback_->OnFrame(video_frame);
 
   if (!last_frame_info_ || video_frame.width() != last_frame_info_->width ||
       video_frame.height() != last_frame_info_->height ||

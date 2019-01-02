@@ -1219,12 +1219,32 @@ TEST_P(VideoSendStreamTest, FragmentsVp8AccordingToMaxPacketSizeWithFec) {
 TEST_P(VideoSendStreamTest, SuspendBelowMinBitrate) {
   static const int kSuspendTimeFrames = 60;  // Suspend for 2 seconds @ 30 fps.
 
-  class RembObserver : public test::SendTest,
-                       public rtc::VideoSinkInterface<VideoFrame> {
+  class RembObserver : public test::SendTest {
    public:
+    class CaptureObserver : public rtc::VideoSinkInterface<VideoFrame> {
+     public:
+      explicit CaptureObserver(RembObserver* remb_observer)
+          : remb_observer_(remb_observer) {}
+
+      void OnFrame(const VideoFrame&) {
+        rtc::CritScope lock(&remb_observer_->crit_);
+        if (remb_observer_->test_state_ == kDuringSuspend &&
+            ++remb_observer_->suspended_frame_count_ > kSuspendTimeFrames) {
+          VideoSendStream::Stats stats = remb_observer_->stream_->GetStats();
+          EXPECT_TRUE(stats.suspended);
+          remb_observer_->SendRtcpFeedback(remb_observer_->high_remb_bps_);
+          remb_observer_->test_state_ = kWaitingForPacket;
+        }
+      }
+
+     private:
+      RembObserver* const remb_observer_;
+    };
+
     RembObserver()
         : SendTest(kDefaultTimeoutMs),
           clock_(Clock::GetRealTimeClock()),
+          capture_observer_(this),
           stream_(nullptr),
           test_state_(kBeforeSuspend),
           rtp_count_(0),
@@ -1271,19 +1291,6 @@ TEST_P(VideoSendStreamTest, SuspendBelowMinBitrate) {
       return SEND_PACKET;
     }
 
-    // This method implements the rtc::VideoSinkInterface. This is called when
-    // a frame is provided to the VideoSendStream.
-    void OnFrame(const VideoFrame& video_frame) override {
-      rtc::CritScope lock(&crit_);
-      if (test_state_ == kDuringSuspend &&
-          ++suspended_frame_count_ > kSuspendTimeFrames) {
-        VideoSendStream::Stats stats = stream_->GetStats();
-        EXPECT_TRUE(stats.suspended);
-        SendRtcpFeedback(high_remb_bps_);
-        test_state_ = kWaitingForPacket;
-      }
-    }
-
     void set_low_remb_bps(int value) {
       rtc::CritScope lock(&crit_);
       low_remb_bps_ = value;
@@ -1300,6 +1307,12 @@ TEST_P(VideoSendStreamTest, SuspendBelowMinBitrate) {
       stream_ = send_stream;
     }
 
+    void OnFrameGeneratorCapturerCreated(
+        test::FrameGeneratorCapturer* frame_generator_capturer) override {
+      frame_generator_capturer->AddOrUpdateSink(&capture_observer_,
+                                                rtc::VideoSinkWants());
+    }
+
     void ModifyVideoConfigs(
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
@@ -1309,7 +1322,6 @@ TEST_P(VideoSendStreamTest, SuspendBelowMinBitrate) {
           new internal::TransportAdapter(send_config->send_transport));
       transport_adapter_->Enable();
       send_config->rtp.nack.rtp_history_ms = kNackRtpHistoryMs;
-      send_config->pre_encode_callback = this;
       send_config->suspend_below_min_bitrate = true;
       int min_bitrate_bps =
           test::DefaultVideoStreamFactory::kDefaultMinBitratePerStream[0];
@@ -1349,6 +1361,7 @@ TEST_P(VideoSendStreamTest, SuspendBelowMinBitrate) {
 
     std::unique_ptr<internal::TransportAdapter> transport_adapter_;
     Clock* const clock_;
+    CaptureObserver capture_observer_;
     VideoSendStream* stream_;
 
     rtc::CriticalSection crit_;
