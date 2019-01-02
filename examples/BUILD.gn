@@ -868,7 +868,9 @@ if (is_win || is_android) {
       "../modules/audio_processing:audio_processing",
       "../modules/video_capture:video_capture_module",
       "../pc:libjingle_peerconnection",
+      "../pc:peerconnection",
       "../rtc_base:rtc_base",
+      "../test:video_test_common",
       "//third_party/abseil-cpp/absl/memory",
     ]
     if (is_android) {

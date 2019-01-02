@@ -66,7 +66,6 @@ class SimplePeerConnection : public webrtc::PeerConnectionObserver,
                             const char* username,
                             const char* credential);
   void CloseDataChannel();
-  std::unique_ptr<cricket::VideoCapturer> OpenVideoCaptureDevice();
   void SetAudioControl();
 
   // PeerConnectionObserver implementation.
