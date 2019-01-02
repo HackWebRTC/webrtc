@@ -1712,7 +1712,6 @@ TEST(NetEqNoTimeStretchingMode, RunTest) {
   NetEq::Config config;
   config.for_test_no_time_stretching = true;
   auto codecs = NetEqTest::StandardDecoderMap();
-  NetEqTest::ExtDecoderMap ext_codecs;
   NetEqPacketSourceInput::RtpHeaderExtensionMap rtp_ext_map = {
       {1, kRtpExtensionAudioLevel},
       {3, kRtpExtensionAbsoluteSendTime},
@@ -1726,9 +1725,8 @@ TEST(NetEqNoTimeStretchingMode, RunTest) {
       new TimeLimitedNetEqInput(std::move(input), 20000));
   std::unique_ptr<AudioSink> output(new VoidAudioSink);
   NetEqTest::Callbacks callbacks;
-  NetEqTest test(config, CreateBuiltinAudioDecoderFactory(), codecs, ext_codecs,
-                 nullptr, std::move(input_time_limit), std::move(output),
-                 callbacks);
+  NetEqTest test(config, CreateBuiltinAudioDecoderFactory(), codecs, nullptr,
+                 std::move(input_time_limit), std::move(output), callbacks);
   test.Run();
   const auto stats = test.SimulationStats();
   EXPECT_EQ(0, stats.accelerate_rate);

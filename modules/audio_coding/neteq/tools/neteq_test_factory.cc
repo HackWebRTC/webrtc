@@ -500,10 +500,9 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
   config.sample_rate_hz = *sample_rate_hz;
   config.max_packets_in_buffer = FLAG_max_nr_packets_in_buffer;
   config.enable_fast_accelerate = FLAG_enable_fast_accelerate;
-  NetEqTest::ExtDecoderMap ext_codecs;
-  return absl::make_unique<NetEqTest>(
-      config, decoder_factory, codecs, ext_codecs, std::move(text_log),
-      std::move(input), std::move(output), callbacks);
+  return absl::make_unique<NetEqTest>(config, decoder_factory, codecs,
+                                      std::move(text_log), std::move(input),
+                                      std::move(output), callbacks);
 }
 
 }  // namespace test

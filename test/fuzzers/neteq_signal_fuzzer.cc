@@ -182,10 +182,8 @@ void FuzzOneInputTest(const uint8_t* data, size_t size) {
   RTC_CHECK(codecs[rate_types[3].second].first ==
             NetEqDecoder::kDecoderPCM16Bswb48kHz);
 
-  NetEqTest::ExtDecoderMap ext_codecs;
-
-  NetEqTest test(config, CreateBuiltinAudioDecoderFactory(), codecs, ext_codecs,
-                 nullptr, std::move(input), std::move(output), callbacks);
+  NetEqTest test(config, CreateBuiltinAudioDecoderFactory(), codecs, nullptr,
+                 std::move(input), std::move(output), callbacks);
   test.Run();
 }
 
