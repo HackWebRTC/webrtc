@@ -28,7 +28,7 @@ int OverheadRateBps(size_t overhead_bytes_per_packet, int frame_length_ms) {
 }  // namespace
 
 FrameLengthController::Config::Config(
-    const std::vector<int>& encoder_frame_lengths_ms,
+    const std::set<int>& encoder_frame_lengths_ms,
     int initial_frame_length_ms,
     int min_encoder_bitrate_bps,
     float fl_increasing_packet_loss_fraction,

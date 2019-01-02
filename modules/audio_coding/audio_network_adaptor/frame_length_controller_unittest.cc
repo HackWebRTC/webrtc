@@ -42,7 +42,7 @@ int VeryLowBitrate(int frame_length_ms) {
 std::unique_ptr<FrameLengthController> CreateController(
     const std::map<FrameLengthController::Config::FrameLengthChange, int>&
         frame_length_change_criteria,
-    const std::vector<int>& encoder_frame_lengths_ms,
+    const std::set<int>& encoder_frame_lengths_ms,
     int initial_frame_length_ms) {
   std::unique_ptr<FrameLengthController> controller(
       new FrameLengthController(FrameLengthController::Config(

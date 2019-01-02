@@ -13,7 +13,7 @@
 
 #include <stddef.h>
 #include <map>
-#include <vector>
+#include <set>
 
 #include "absl/types/optional.h"
 #include "modules/audio_coding/audio_network_adaptor/controller.h"
@@ -33,7 +33,7 @@ class FrameLengthController final : public Controller {
       int from_frame_length_ms;
       int to_frame_length_ms;
     };
-    Config(const std::vector<int>& encoder_frame_lengths_ms,
+    Config(const std::set<int>& encoder_frame_lengths_ms,
            int initial_frame_length_ms,
            int min_encoder_bitrate_bps,
            float fl_increasing_packet_loss_fraction,
@@ -43,7 +43,7 @@ class FrameLengthController final : public Controller {
            std::map<FrameLengthChange, int> fl_changing_bandwidths_bps);
     Config(const Config& other);
     ~Config();
-    std::vector<int> encoder_frame_lengths_ms;
+    std::set<int> encoder_frame_lengths_ms;
     int initial_frame_length_ms;
     int min_encoder_bitrate_bps;
     // Uplink packet loss fraction below which frame length can increase.
@@ -74,7 +74,7 @@ class FrameLengthController final : public Controller {
 
   const Config config_;
 
-  std::vector<int>::const_iterator frame_length_ms_;
+  std::set<int>::const_iterator frame_length_ms_;
 
   absl::optional<int> uplink_bandwidth_bps_;
 
