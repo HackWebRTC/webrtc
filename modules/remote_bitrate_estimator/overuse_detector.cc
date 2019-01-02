@@ -31,7 +31,7 @@ const size_t kDisabledPrefixLength = sizeof(kDisabledPrefix) - 1;
 
 const double kMaxAdaptOffsetMs = 15.0;
 const double kOverUsingTimeThreshold = 10;
-const int kMinNumDeltas = 60;
+const int kMaxNumDeltas = 60;
 
 bool AdaptiveThresholdExperimentIsDisabled() {
   std::string experiment_string =
@@ -85,7 +85,7 @@ BandwidthUsage OveruseDetector::Detect(double offset,
   if (num_of_deltas < 2) {
     return BandwidthUsage::kBwNormal;
   }
-  const double T = std::min(num_of_deltas, kMinNumDeltas) * offset;
+  const double T = std::min(num_of_deltas, kMaxNumDeltas) * offset;
   BWE_TEST_LOGGING_PLOT(1, "T", now_ms, T);
   BWE_TEST_LOGGING_PLOT(1, "threshold", now_ms, threshold_);
   if (T > threshold_) {
