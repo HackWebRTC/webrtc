@@ -28,6 +28,7 @@
 #include "pc/channelmanager.h"
 #include "pc/rtpmediautils.h"
 #include "pc/srtpfilter.h"
+#include "pc/unique_id_generator.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/helpers.h"
 #include "rtc_base/logging.h"
@@ -36,6 +37,7 @@
 namespace {
 
 using webrtc::RtpTransceiverDirection;
+using webrtc::UniqueRandomIdGenerator;
 
 const char kInline[] = "inline:";
 
@@ -272,22 +274,6 @@ static bool SelectCrypto(const MediaContentDescription* offer,
   return false;
 }
 
-// Generate random SSRC values that are not already present in |params_vec|.
-// The generated values are added to |ssrcs|.
-// |num_ssrcs| is the number of the SSRC will be generated.
-static void GenerateSsrcs(const StreamParamsVec& params_vec,
-                          int num_ssrcs,
-                          std::vector<uint32_t>* ssrcs) {
-  for (int i = 0; i < num_ssrcs; i++) {
-    uint32_t candidate;
-    do {
-      candidate = rtc::CreateRandomNonZeroId();
-    } while (GetStreamBySsrc(params_vec, candidate) ||
-             std::count(ssrcs->begin(), ssrcs->end(), candidate) > 0);
-    ssrcs->push_back(candidate);
-  }
-}
-
 // Finds all StreamParams of all media types and attach them to stream_params.
 static StreamParamsVec GetCurrentStreamParams(
     const std::vector<const ContentInfo*>& active_local_contents) {
@@ -401,6 +387,135 @@ class UsedRtpHeaderExtensionIds : public UsedIds<webrtc::RtpExtension> {
  private:
 };
 
+static StreamParams CreateStreamParamsForNewSenderWithSsrcs(
+    const SenderOptions& sender,
+    const std::string& rtcp_cname,
+    const StreamParamsVec& current_streams,
+    bool include_rtx_streams,
+    bool include_flexfec_stream) {
+  StreamParams result;
+  result.id = sender.track_id;
+
+  std::vector<uint32_t> known_ssrcs;
+  for (const StreamParams& params : current_streams) {
+    for (uint32_t ssrc : params.ssrcs) {
+      known_ssrcs.push_back(ssrc);
+    }
+  }
+
+  UniqueRandomIdGenerator ssrc_generator(known_ssrcs);
+  // We need to keep |primary_ssrcs| separate from |result.ssrcs|  because
+  // iterators are invalidated when rtx and flexfec ssrcs are added to the list.
+  std::vector<uint32_t> primary_ssrcs;
+  for (int i = 0; i < sender.num_sim_layers; ++i) {
+    primary_ssrcs.push_back(ssrc_generator());
+  }
+  result.ssrcs = primary_ssrcs;
+
+  if (sender.num_sim_layers > 1) {
+    SsrcGroup group(kSimSsrcGroupSemantics, result.ssrcs);
+    result.ssrc_groups.push_back(group);
+  }
+  // Generate an RTX ssrc for every ssrc in the group.
+  if (include_rtx_streams) {
+    for (uint32_t ssrc : primary_ssrcs) {
+      result.AddFidSsrc(ssrc, ssrc_generator());
+    }
+  }
+  // Generate extra ssrc for include_flexfec_stream case.
+  if (include_flexfec_stream) {
+    // TODO(brandtr): Update when we support multistream protection.
+    if (result.ssrcs.size() == 1) {
+      for (uint32_t ssrc : primary_ssrcs) {
+        result.AddFecFrSsrc(ssrc, ssrc_generator());
+      }
+    } else if (!result.ssrcs.empty()) {
+      RTC_LOG(LS_WARNING)
+          << "Our FlexFEC implementation only supports protecting "
+             "a single media streams. This session has multiple "
+             "media streams however, so no FlexFEC SSRC will be generated.";
+    }
+  }
+  result.cname = rtcp_cname;
+  result.set_stream_ids(sender.stream_ids);
+
+  return result;
+}
+
+static bool ValidateSimulcastLayers(
+    const std::vector<RidDescription>& rids,
+    const SimulcastLayerList& simulcast_layers) {
+  std::vector<SimulcastLayer> all_layers = simulcast_layers.GetAllLayers();
+  return std::all_of(all_layers.begin(), all_layers.end(),
+                     [&rids](const SimulcastLayer& layer) {
+                       return std::find_if(rids.begin(), rids.end(),
+                                           [&layer](const RidDescription& rid) {
+                                             return rid.rid == layer.rid;
+                                           }) != rids.end();
+                     });
+}
+
+static StreamParams CreateStreamParamsForNewSenderWithRids(
+    const SenderOptions& sender,
+    const std::string& rtcp_cname) {
+  RTC_DCHECK(!sender.rids.empty());
+  RTC_DCHECK_EQ(sender.num_sim_layers, 0)
+      << "RIDs are the compliant way to indicate simulcast.";
+  RTC_DCHECK(ValidateSimulcastLayers(sender.rids, sender.simulcast_layers));
+  StreamParams result;
+  result.id = sender.track_id;
+  result.cname = rtcp_cname;
+  result.set_stream_ids(sender.stream_ids);
+
+  // More than one rid should be signaled.
+  if (sender.rids.size() > 1) {
+    result.set_rids(sender.rids);
+  }
+
+  return result;
+}
+
+// Adds SimulcastDescription if indicated by the media description options.
+// MediaContentDescription should already be set up with the send rids.
+static void AddSimulcastToMediaDescription(
+    const MediaDescriptionOptions& media_description_options,
+    MediaContentDescription* description) {
+  RTC_DCHECK(description);
+
+  // Check if we are using RIDs in this scenario.
+  if (std::all_of(
+          description->streams().begin(), description->streams().end(),
+          [](const StreamParams& params) { return !params.has_rids(); })) {
+    return;
+  }
+
+  RTC_DCHECK_EQ(1, description->streams().size())
+      << "RIDs are only supported in Unified Plan semantics.";
+  RTC_DCHECK_EQ(1, media_description_options.sender_options.size());
+  RTC_DCHECK(description->type() == MediaType::MEDIA_TYPE_AUDIO ||
+             description->type() == MediaType::MEDIA_TYPE_VIDEO);
+
+  // One RID or less indicates that simulcast is not needed.
+  if (description->streams()[0].rids().size() <= 1) {
+    return;
+  }
+
+  RTC_DCHECK(!media_description_options.receive_rids.empty());
+  RTC_DCHECK(ValidateSimulcastLayers(
+      media_description_options.receive_rids,
+      media_description_options.receive_simulcast_layers));
+  StreamParams receive_stream;
+  receive_stream.set_rids(media_description_options.receive_rids);
+  description->set_receive_stream(receive_stream);
+
+  SimulcastDescription simulcast;
+  simulcast.send_layers() =
+      media_description_options.sender_options[0].simulcast_layers;
+  simulcast.receive_layers() =
+      media_description_options.receive_simulcast_layers;
+  description->set_simulcast_description(simulcast);
+}
+
 // Adds a StreamParams for each SenderOptions in |sender_options| to
 // content_description.
 // |current_params| - All currently known StreamParams of any media type.
@@ -428,44 +543,17 @@ static bool AddStreamParams(
         GetStreamByIds(*current_streams, "" /*group_id*/, sender.track_id);
     if (!param) {
       // This is a new sender.
-      std::vector<uint32_t> ssrcs;
-      GenerateSsrcs(*current_streams, sender.num_sim_layers, &ssrcs);
-      StreamParams stream_param;
-      stream_param.id = sender.track_id;
-      // Add the generated ssrc.
-      for (size_t i = 0; i < ssrcs.size(); ++i) {
-        stream_param.ssrcs.push_back(ssrcs[i]);
-      }
-      if (sender.num_sim_layers > 1) {
-        SsrcGroup group(kSimSsrcGroupSemantics, stream_param.ssrcs);
-        stream_param.ssrc_groups.push_back(group);
-      }
-      // Generate extra ssrcs for include_rtx_streams case.
-      if (include_rtx_streams) {
-        // Generate an RTX ssrc for every ssrc in the group.
-        std::vector<uint32_t> rtx_ssrcs;
-        GenerateSsrcs(*current_streams, static_cast<int>(ssrcs.size()),
-                      &rtx_ssrcs);
-        for (size_t i = 0; i < ssrcs.size(); ++i) {
-          stream_param.AddFidSsrc(ssrcs[i], rtx_ssrcs[i]);
-        }
-      }
-      // Generate extra ssrc for include_flexfec_stream case.
-      if (include_flexfec_stream) {
-        // TODO(brandtr): Update when we support multistream protection.
-        if (ssrcs.size() == 1) {
-          std::vector<uint32_t> flexfec_ssrcs;
-          GenerateSsrcs(*current_streams, 1, &flexfec_ssrcs);
-          stream_param.AddFecFrSsrc(ssrcs[0], flexfec_ssrcs[0]);
-        } else if (!ssrcs.empty()) {
-          RTC_LOG(LS_WARNING)
-              << "Our FlexFEC implementation only supports protecting "
-                 "a single media streams. This session has multiple "
-                 "media streams however, so no FlexFEC SSRC will be generated.";
-        }
-      }
-      stream_param.cname = rtcp_cname;
-      stream_param.set_stream_ids(sender.stream_ids);
+      StreamParams stream_param =
+          sender.rids.empty()
+              ?
+              // Signal SSRCs and legacy simulcast (if requested).
+              CreateStreamParamsForNewSenderWithSsrcs(
+                  sender, rtcp_cname, *current_streams, include_rtx_streams,
+                  include_flexfec_stream)
+              :
+              // Signal RIDs and spec-compliant simulcast (if requested).
+              CreateStreamParamsForNewSenderWithRids(sender, rtcp_cname);
+
       content_description->AddStream(stream_param);
 
       // Store the new StreamParams in current_streams.
@@ -692,7 +780,7 @@ static bool IsFlexfecCodec(const C& codec) {
 // offer.
 template <class C>
 static bool CreateMediaContentOffer(
-    const std::vector<SenderOptions>& sender_options,
+    const MediaDescriptionOptions& media_description_options,
     const MediaSessionOptions& session_options,
     const std::vector<C>& codecs,
     const SecurePolicy& secure_policy,
@@ -709,10 +797,12 @@ static bool CreateMediaContentOffer(
   }
   offer->set_rtp_header_extensions(rtp_extensions);
 
-  if (!AddStreamParams(sender_options, session_options.rtcp_cname,
-                       current_streams, offer)) {
+  if (!AddStreamParams(media_description_options.sender_options,
+                       session_options.rtcp_cname, current_streams, offer)) {
     return false;
   }
+
+  AddSimulcastToMediaDescription(media_description_options, offer);
 
   if (secure_policy != SEC_DISABLED) {
     if (current_cryptos) {
@@ -1117,6 +1207,8 @@ static bool CreateMediaContentAnswer(
     return false;  // Something went seriously wrong.
   }
 
+  AddSimulcastToMediaDescription(media_description_options, answer);
+
   answer->set_direction(NegotiateRtpTransceiverDirection(
       offer->direction(), media_description_options.direction));
   return true;
@@ -1200,15 +1292,21 @@ void MediaDescriptionOptions::AddAudioSender(
     const std::string& track_id,
     const std::vector<std::string>& stream_ids) {
   RTC_DCHECK(type == MEDIA_TYPE_AUDIO);
-  AddSenderInternal(track_id, stream_ids, 1);
+  AddSenderInternal(track_id, stream_ids, {}, SimulcastLayerList(), 1);
 }
 
 void MediaDescriptionOptions::AddVideoSender(
     const std::string& track_id,
     const std::vector<std::string>& stream_ids,
+    const std::vector<RidDescription>& rids,
+    const SimulcastLayerList& simulcast_layers,
     int num_sim_layers) {
   RTC_DCHECK(type == MEDIA_TYPE_VIDEO);
-  AddSenderInternal(track_id, stream_ids, num_sim_layers);
+  RTC_DCHECK(rids.empty() || num_sim_layers == 0)
+      << "RIDs are the compliant way to indicate simulcast.";
+  RTC_DCHECK(ValidateSimulcastLayers(rids, simulcast_layers));
+  AddSenderInternal(track_id, stream_ids, rids, simulcast_layers,
+                    num_sim_layers);
 }
 
 void MediaDescriptionOptions::AddRtpDataChannel(const std::string& track_id,
@@ -1216,16 +1314,24 @@ void MediaDescriptionOptions::AddRtpDataChannel(const std::string& track_id,
   RTC_DCHECK(type == MEDIA_TYPE_DATA);
   // TODO(steveanton): Is it the case that RtpDataChannel will never have more
   // than one stream?
-  AddSenderInternal(track_id, {stream_id}, 1);
+  AddSenderInternal(track_id, {stream_id}, {}, SimulcastLayerList(), 1);
 }
 
 void MediaDescriptionOptions::AddSenderInternal(
     const std::string& track_id,
     const std::vector<std::string>& stream_ids,
+    const std::vector<RidDescription>& rids,
+    const SimulcastLayerList& simulcast_layers,
     int num_sim_layers) {
   // TODO(steveanton): Support any number of stream ids.
   RTC_CHECK(stream_ids.size() == 1U);
-  sender_options.push_back(SenderOptions{track_id, stream_ids, num_sim_layers});
+  SenderOptions options;
+  options.track_id = track_id;
+  options.stream_ids = stream_ids;
+  options.simulcast_layers = simulcast_layers;
+  options.rids = rids;
+  options.num_sim_layers = num_sim_layers;
+  sender_options.push_back(options);
 }
 
 bool MediaSessionOptions::HasMediaDescription(MediaType type) const {
@@ -1928,9 +2034,9 @@ bool MediaSessionDescriptionFactory::AddAudioContentForOffer(
   GetSupportedAudioSdesCryptoSuiteNames(session_options.crypto_options,
                                         &crypto_suites);
   if (!CreateMediaContentOffer(
-          media_description_options.sender_options, session_options,
-          filtered_codecs, sdes_policy, GetCryptos(current_content),
-          crypto_suites, audio_rtp_extensions, current_streams, audio.get())) {
+          media_description_options, session_options, filtered_codecs,
+          sdes_policy, GetCryptos(current_content), crypto_suites,
+          audio_rtp_extensions, current_streams, audio.get())) {
     return false;
   }
 
@@ -1998,9 +2104,9 @@ bool MediaSessionDescriptionFactory::AddVideoContentForOffer(
   }
 
   if (!CreateMediaContentOffer(
-          media_description_options.sender_options, session_options,
-          filtered_codecs, sdes_policy, GetCryptos(current_content),
-          crypto_suites, video_rtp_extensions, current_streams, video.get())) {
+          media_description_options, session_options, filtered_codecs,
+          sdes_policy, GetCryptos(current_content), crypto_suites,
+          video_rtp_extensions, current_streams, video.get())) {
     return false;
   }
 
@@ -2066,9 +2172,9 @@ bool MediaSessionDescriptionFactory::AddDataContentForOffer(
 
   // Even SCTP uses a "codec".
   if (!CreateMediaContentOffer(
-          media_description_options.sender_options, session_options,
-          data_codecs, sdes_policy, GetCryptos(current_content), crypto_suites,
-          RtpHeaderExtensions(), current_streams, data.get())) {
+          media_description_options, session_options, data_codecs, sdes_policy,
+          GetCryptos(current_content), crypto_suites, RtpHeaderExtensions(),
+          current_streams, data.get())) {
     return false;
   }
 

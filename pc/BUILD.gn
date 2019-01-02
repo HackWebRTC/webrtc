@@ -66,6 +66,8 @@ rtc_static_library("rtc_pc_base") {
     "srtptransport.h",
     "transportstats.cc",
     "transportstats.h",
+    "unique_id_generator.cc",
+    "unique_id_generator.h",
   ]
 
   deps = [
@@ -90,6 +92,7 @@ rtc_static_library("rtc_pc_base") {
     "../rtc_base:checks",
     "../rtc_base:rtc_base",
     "../rtc_base:rtc_task_queue",
+    "../rtc_base:stringutils",
     "../rtc_base/third_party/base64",
     "../rtc_base/third_party/sigslot",
     "../system_wrappers:metrics",
@@ -257,6 +260,7 @@ if (rtc_include_tests) {
       "srtpsession_unittest.cc",
       "srtptestutil.h",
       "srtptransport_unittest.cc",
+      "unique_id_generator_unittest.cc",
     ]
 
     include_dirs = [ "//third_party/libsrtp/srtp" ]

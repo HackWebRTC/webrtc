@@ -25,6 +25,7 @@ struct SimulcastLayer final {
 
   SimulcastLayer(const SimulcastLayer& other) = default;
   SimulcastLayer& operator=(const SimulcastLayer& other) = default;
+  bool operator==(const SimulcastLayer& other) const;
 
   std::string rid;
   bool is_paused;
@@ -48,6 +49,12 @@ struct SimulcastLayer final {
 //            {SimulcastLayer("4", false), SimulcastLayer("5", false});
 class SimulcastLayerList final {
  public:
+  // Type definitions required by a container.
+  typedef size_t size_type;
+  typedef std::vector<SimulcastLayer> value_type;
+  typedef std::vector<std::vector<SimulcastLayer>>::const_iterator
+      const_iterator;
+
   // Use to add a layer when there will be no alternatives.
   void AddLayer(const SimulcastLayer& layer);
 
@@ -57,13 +64,9 @@ class SimulcastLayerList final {
 
   // Read-only access to the contents.
   // Note: This object does not allow removal of layers.
-  std::vector<std::vector<SimulcastLayer>>::const_iterator begin() const {
-    return list_.begin();
-  }
+  const_iterator begin() const { return list_.begin(); }
 
-  std::vector<std::vector<SimulcastLayer>>::const_iterator end() const {
-    return list_.end();
-  }
+  const_iterator end() const { return list_.end(); }
 
   const std::vector<SimulcastLayer>& operator[](size_t index) const;
 

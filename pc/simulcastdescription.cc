@@ -20,6 +20,10 @@ SimulcastLayer::SimulcastLayer(const std::string& rid, bool is_paused)
   RTC_DCHECK(!rid.empty());
 }
 
+bool SimulcastLayer::operator==(const SimulcastLayer& other) const {
+  return rid == other.rid && is_paused == other.is_paused;
+}
+
 void SimulcastLayerList::AddLayer(const SimulcastLayer& layer) {
   list_.push_back({layer});
 }

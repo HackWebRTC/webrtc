@@ -35,9 +35,14 @@ class ChannelManager;
 const char kDefaultRtcpCname[] = "DefaultRtcpCname";
 
 // Options for an RtpSender contained with an media description/"m=" section.
+// Note: Spec-compliant Simulcast and legacy simulcast are mutually exclusive.
 struct SenderOptions {
   std::string track_id;
   std::vector<std::string> stream_ids;
+  // Use RIDs and Simulcast Layers to indicate spec-compliant Simulcast.
+  std::vector<RidDescription> rids;
+  SimulcastLayerList simulcast_layers;
+  // Use |num_sim_layers| to indicate legacy simulcast.
   int num_sim_layers;
 };
 
@@ -55,6 +60,8 @@ struct MediaDescriptionOptions {
                       const std::vector<std::string>& stream_ids);
   void AddVideoSender(const std::string& track_id,
                       const std::vector<std::string>& stream_ids,
+                      const std::vector<RidDescription>& rids,
+                      const SimulcastLayerList& simulcast_layers,
                       int num_sim_layers);
 
   // Internally just uses sender_options.
@@ -69,11 +76,22 @@ struct MediaDescriptionOptions {
   // Note: There's no equivalent "RtpReceiverOptions" because only send
   // stream information goes in the local descriptions.
   std::vector<SenderOptions> sender_options;
+  // |receive_rids| and |receive_simulcast_layers| are used with spec-compliant
+  // simulcast. When Simulcast is used, they should both not be empty.
+  // All RIDs in |receive_simulcast_layers| must appear in receive_rids as well.
+  // |receive_rids| could also be used outside of simulcast. It is possible to
+  // add restrictions on the incoming stream during negotiation outside the
+  // simulcast scenario. This is currently not fully supported, as meaningful
+  // restrictions are not handled by this library.
+  std::vector<RidDescription> receive_rids;
+  SimulcastLayerList receive_simulcast_layers;
 
  private:
   // Doesn't DCHECK on |type|.
   void AddSenderInternal(const std::string& track_id,
                          const std::vector<std::string>& stream_ids,
+                         const std::vector<RidDescription>& rids,
+                         const SimulcastLayerList& simulcast_layers,
                          int num_sim_layers);
 };
 
