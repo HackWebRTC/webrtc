@@ -14,41 +14,8 @@
 
 #include "api/video/video_frame.h"
 #include "api/video/video_source_interface.h"
-#include "media/base/videocapturer.h"
 
 namespace cricket {
-
-// Implementation of VideoCaptureListener.
-VideoCapturerListener::VideoCapturerListener(VideoCapturer* capturer)
-    : capturer_(capturer),
-      last_capture_state_(CS_STARTING),
-      frame_count_(0),
-      frame_width_(0),
-      frame_height_(0),
-      resolution_changed_(false) {
-  capturer->SignalStateChange.connect(this,
-                                      &VideoCapturerListener::OnStateChange);
-  capturer->AddOrUpdateSink(this, rtc::VideoSinkWants());
-}
-
-VideoCapturerListener::~VideoCapturerListener() {
-  capturer_->RemoveSink(this);
-}
-
-void VideoCapturerListener::OnStateChange(VideoCapturer* capturer,
-                                          CaptureState result) {
-  last_capture_state_ = result;
-}
-
-void VideoCapturerListener::OnFrame(const webrtc::VideoFrame& frame) {
-  ++frame_count_;
-  if (1 == frame_count_) {
-    frame_width_ = frame.width();
-    frame_height_ = frame.height();
-  } else if (frame_width_ != frame.width() || frame_height_ != frame.height()) {
-    resolution_changed_ = true;
-  }
-}
 
 cricket::StreamParams CreateSimStreamParams(
     const std::string& cname,

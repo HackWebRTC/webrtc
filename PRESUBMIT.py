@@ -21,7 +21,6 @@ CPPLINT_BLACKLIST = [
   'examples/objc',
   'media/base/streamparams.h',
   'media/base/videocommon.h',
-  'media/engine/fakewebrtcdeviceinfo.h',
   'media/sctp/sctptransport.cc',
   'modules/audio_coding',
   'modules/audio_device',

@@ -15,10 +15,8 @@
 #include <vector>
 
 #include "media/base/mediachannel.h"
-#include "media/base/videocapturer.h"
 #include "media/base/videocommon.h"
 #include "rtc_base/arraysize.h"
-#include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace webrtc {
 class VideoFrame;
@@ -36,32 +34,6 @@ inline std::vector<T> MakeVector(const T a[], size_t s) {
   return std::vector<T>(a, a + s);
 }
 #define MAKE_VECTOR(a) cricket::MakeVector(a, arraysize(a))
-
-// Test helper for testing VideoCapturer implementations.
-class VideoCapturerListener
-    : public sigslot::has_slots<>,
-      public rtc::VideoSinkInterface<webrtc::VideoFrame> {
- public:
-  explicit VideoCapturerListener(VideoCapturer* cap);
-  ~VideoCapturerListener();
-
-  CaptureState last_capture_state() const { return last_capture_state_; }
-  int frame_count() const { return frame_count_; }
-  int frame_width() const { return frame_width_; }
-  int frame_height() const { return frame_height_; }
-  bool resolution_changed() const { return resolution_changed_; }
-
-  void OnStateChange(VideoCapturer* capturer, CaptureState state);
-  void OnFrame(const webrtc::VideoFrame& frame) override;
-
- private:
-  VideoCapturer* capturer_;
-  CaptureState last_capture_state_;
-  int frame_count_;
-  int frame_width_;
-  int frame_height_;
-  bool resolution_changed_;
-};
 
 // Checks whether |codecs| contains |codec|; checks using Codec::Matches().
 template <class C>
