@@ -97,8 +97,8 @@ class GoogCcNetworkController : public NetworkControllerInterface {
 
   std::deque<int64_t> feedback_max_rtts_;
 
-  DataRate last_target_rate_;
-  DataRate pushback_target_rate_;
+  DataRate last_raw_target_rate_;
+  DataRate last_pushback_target_rate_;
 
   int32_t last_estimated_bitrate_bps_ = 0;
   uint8_t last_estimated_fraction_loss_ = 0;
