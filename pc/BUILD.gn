@@ -249,6 +249,7 @@ if (rtc_include_tests) {
       "channel_unittest.cc",
       "channelmanager_unittest.cc",
       "dtlssrtptransport_unittest.cc",
+      "dtlstransport_unittest.cc",
       "jseptransport_unittest.cc",
       "jseptransportcontroller_unittest.cc",
       "mediasession_unittest.cc",

@@ -15,21 +15,41 @@
 
 #include "api/dtlstransportinterface.h"
 #include "p2p/base/dtlstransport.h"
+#include "rtc_base/asyncinvoker.h"
 
 namespace webrtc {
 
 // This implementation wraps a cricket::DtlsTransport, and takes
 // ownership of it.
-class DtlsTransport : public DtlsTransportInterface {
+class DtlsTransport : public DtlsTransportInterface,
+                      public sigslot::has_slots<> {
  public:
+  // This object must be constructed on the signaling thread.
   explicit DtlsTransport(
       std::unique_ptr<cricket::DtlsTransportInternal> internal);
+
+  DtlsTransportInformation Information() override;
+  void RegisterObserver(DtlsTransportObserverInterface* observer) override;
+  void UnregisterObserver() override;
+  void Clear();
+
   cricket::DtlsTransportInternal* internal() {
     return internal_dtls_transport_.get();
   }
-  void clear() { internal_dtls_transport_.reset(); }
+
+  const cricket::DtlsTransportInternal* internal() const {
+    return internal_dtls_transport_.get();
+  }
+
+ protected:
+  ~DtlsTransport();
 
  private:
+  void OnInternalDtlsState(cricket::DtlsTransportInternal* transport,
+                           cricket::DtlsTransportState state);
+
+  DtlsTransportObserverInterface* observer_ = nullptr;
+  rtc::Thread* signaling_thread_;
   std::unique_ptr<cricket::DtlsTransportInternal> internal_dtls_transport_;
 };
 

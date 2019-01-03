@@ -141,9 +141,9 @@ JsepTransport::~JsepTransport() {
   }
   // Clear all DtlsTransports. There may be pointers to these from
   // other places, so we can't assume they'll be deleted by the destructor.
-  rtp_dtls_transport_->clear();
+  rtp_dtls_transport_->Clear();
   if (rtcp_dtls_transport_) {
-    rtcp_dtls_transport_->clear();
+    rtcp_dtls_transport_->Clear();
   }
 }
 
