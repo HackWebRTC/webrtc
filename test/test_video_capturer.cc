@@ -41,8 +41,12 @@ void TestVideoCapturer::OnFrame(const VideoFrame& frame) {
     rtc::scoped_refptr<I420Buffer> scaled_buffer =
         I420Buffer::Create(out_width, out_height);
     scaled_buffer->ScaleFrom(*frame.video_frame_buffer()->ToI420());
-    broadcaster_.OnFrame(
-        VideoFrame(scaled_buffer, kVideoRotation_0, frame.timestamp_us()));
+    broadcaster_.OnFrame(VideoFrame::Builder()
+                             .set_video_frame_buffer(scaled_buffer)
+                             .set_rotation(kVideoRotation_0)
+                             .set_timestamp_us(frame.timestamp_us())
+                             .set_id(frame.id())
+                             .build());
   } else {
     // No adaptations needed, just return the frame as is.
     broadcaster_.OnFrame(frame);

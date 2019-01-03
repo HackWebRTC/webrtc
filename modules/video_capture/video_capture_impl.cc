@@ -196,8 +196,13 @@ int32_t VideoCaptureImpl::IncomingFrame(uint8_t* videoFrame,
     return -1;
   }
 
-  VideoFrame captureFrame(buffer, 0, rtc::TimeMillis(),
-                          !apply_rotation ? _rotateFrame : kVideoRotation_0);
+  VideoFrame captureFrame =
+      VideoFrame::Builder()
+          .set_video_frame_buffer(buffer)
+          .set_timestamp_rtp(0)
+          .set_timestamp_ms(rtc::TimeMillis())
+          .set_rotation(!apply_rotation ? _rotateFrame : kVideoRotation_0)
+          .build();
   captureFrame.set_ntp_time_ms(captureTime);
 
   DeliverCapturedFrame(captureFrame);

@@ -197,8 +197,13 @@ int MultiplexEncoderAdapter::Encode(
                      multiplex_dummy_planes_.data(), yuva_buffer->StrideU(),
                      multiplex_dummy_planes_.data(), yuva_buffer->StrideV(),
                      rtc::KeepRefUntilDone(input_image.video_frame_buffer()));
-  VideoFrame alpha_image(alpha_buffer, input_image.timestamp(),
-                         input_image.render_time_ms(), input_image.rotation());
+  VideoFrame alpha_image = VideoFrame::Builder()
+                               .set_video_frame_buffer(alpha_buffer)
+                               .set_timestamp_rtp(input_image.timestamp())
+                               .set_timestamp_ms(input_image.render_time_ms())
+                               .set_rotation(input_image.rotation())
+                               .set_id(input_image.id())
+                               .build();
   rv = encoders_[kAXXStream]->Encode(alpha_image, codec_specific_info,
                                      &adjusted_frame_types);
   return rv;

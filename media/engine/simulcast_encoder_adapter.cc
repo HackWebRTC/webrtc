@@ -409,10 +409,14 @@ int SimulcastEncoderAdapter::Encode(
                         dst_buffer->StrideV(), dst_width, dst_height,
                         libyuv::kFilterBilinear);
 
+      VideoFrame frame = VideoFrame::Builder()
+                             .set_video_frame_buffer(dst_buffer)
+                             .set_timestamp_rtp(input_image.timestamp())
+                             .set_rotation(webrtc::kVideoRotation_0)
+                             .set_timestamp_ms(input_image.render_time_ms())
+                             .build();
       int ret = streaminfos_[stream_idx].encoder->Encode(
-          VideoFrame(dst_buffer, input_image.timestamp(),
-                     input_image.render_time_ms(), webrtc::kVideoRotation_0),
-          codec_specific_info, &stream_frame_types);
+          frame, codec_specific_info, &stream_frame_types);
       if (ret != WEBRTC_VIDEO_CODEC_OK) {
         return ret;
       }

@@ -539,7 +539,12 @@ TEST_F(TestSimulcastEncoderAdapterFake, ReusesEncodersInOrder) {
 
   // Input data.
   rtc::scoped_refptr<VideoFrameBuffer> buffer(I420Buffer::Create(1280, 720));
-  VideoFrame input_frame(buffer, 100, 1000, kVideoRotation_180);
+  VideoFrame input_frame = VideoFrame::Builder()
+                               .set_video_frame_buffer(buffer)
+                               .set_timestamp_rtp(100)
+                               .set_timestamp_ms(1000)
+                               .set_rotation(kVideoRotation_180)
+                               .build();
   std::vector<FrameType> frame_types;
 
   // Encode with three streams.
@@ -864,7 +869,12 @@ TEST_F(TestSimulcastEncoderAdapterFake,
 
   rtc::scoped_refptr<VideoFrameBuffer> buffer(
       new rtc::RefCountedObject<FakeNativeBufferNoI420>(1280, 720));
-  VideoFrame input_frame(buffer, 100, 1000, kVideoRotation_180);
+  VideoFrame input_frame = VideoFrame::Builder()
+                               .set_video_frame_buffer(buffer)
+                               .set_timestamp_rtp(100)
+                               .set_timestamp_ms(1000)
+                               .set_rotation(kVideoRotation_180)
+                               .build();
   // Expect calls with the given video frame verbatim, since it's a texture
   // frame and can't otherwise be modified/resized.
   for (MockVideoEncoder* encoder : helper_->factory()->encoders())
@@ -889,7 +899,12 @@ TEST_F(TestSimulcastEncoderAdapterFake, TestFailureReturnCodesFromEncodeCalls) {
   rtc::scoped_refptr<I420Buffer> input_buffer =
       I420Buffer::Create(kDefaultWidth, kDefaultHeight);
   input_buffer->InitializeData();
-  VideoFrame input_frame(input_buffer, 0, 0, webrtc::kVideoRotation_0);
+  VideoFrame input_frame = VideoFrame::Builder()
+                               .set_video_frame_buffer(input_buffer)
+                               .set_timestamp_rtp(0)
+                               .set_timestamp_us(0)
+                               .set_rotation(kVideoRotation_0)
+                               .build();
   std::vector<FrameType> frame_types(3, kVideoFrameKey);
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE,
             adapter_->Encode(input_frame, nullptr, &frame_types));
@@ -954,7 +969,12 @@ TEST_F(TestSimulcastEncoderAdapterFake, ActivatesCorrectStreamsInInitEncode) {
 
   // Input data.
   rtc::scoped_refptr<VideoFrameBuffer> buffer(I420Buffer::Create(1280, 720));
-  VideoFrame input_frame(buffer, 100, 1000, kVideoRotation_180);
+  VideoFrame input_frame = VideoFrame::Builder()
+                               .set_video_frame_buffer(buffer)
+                               .set_timestamp_rtp(100)
+                               .set_timestamp_ms(1000)
+                               .set_rotation(kVideoRotation_180)
+                               .build();
 
   // Encode with three streams.
   EXPECT_EQ(0, adapter_->InitEncode(&codec_, 1, 1200));
@@ -987,7 +1007,12 @@ TEST_F(TestSimulcastEncoderAdapterFake, TrustedRateControl) {
 
   // Input data.
   rtc::scoped_refptr<VideoFrameBuffer> buffer(I420Buffer::Create(1280, 720));
-  VideoFrame input_frame(buffer, 100, 1000, kVideoRotation_180);
+  VideoFrame input_frame = VideoFrame::Builder()
+                               .set_video_frame_buffer(buffer)
+                               .set_timestamp_rtp(100)
+                               .set_timestamp_ms(1000)
+                               .set_rotation(kVideoRotation_180)
+                               .build();
 
   // No encoder trusted, so simulcast adapter should not be either.
   EXPECT_EQ(0, adapter_->InitEncode(&codec_, 1, 1200));

@@ -615,6 +615,7 @@ if (rtc_include_tests) {
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
       "../../test:test_support",
+      "//third_party/abseil-cpp/absl/memory:memory",
     ]
   }
 

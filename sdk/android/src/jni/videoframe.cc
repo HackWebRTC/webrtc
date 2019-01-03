@@ -196,9 +196,12 @@ VideoFrame JavaToNativeFrame(JNIEnv* jni,
   int64_t timestamp_ns = Java_VideoFrame_getTimestampNs(jni, j_video_frame);
   rtc::scoped_refptr<AndroidVideoBuffer> buffer =
       AndroidVideoBuffer::Create(jni, j_video_frame_buffer);
-  return VideoFrame(buffer, timestamp_rtp,
-                    timestamp_ns / rtc::kNumNanosecsPerMillisec,
-                    static_cast<VideoRotation>(rotation));
+  return VideoFrame::Builder()
+      .set_video_frame_buffer(buffer)
+      .set_timestamp_rtp(timestamp_rtp)
+      .set_timestamp_ms(timestamp_ns / rtc::kNumNanosecsPerMillisec)
+      .set_rotation(static_cast<VideoRotation>(rotation))
+      .build();
 }
 
 ScopedJavaLocalRef<jobject> NativeToJavaVideoFrame(JNIEnv* jni,

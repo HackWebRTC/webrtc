@@ -63,9 +63,15 @@ void VideoBroadcaster::OnFrame(const webrtc::VideoFrame& frame) {
       continue;
     }
     if (sink_pair.wants.black_frames) {
-      sink_pair.sink->OnFrame(
-          webrtc::VideoFrame(GetBlackFrameBuffer(frame.width(), frame.height()),
-                             frame.rotation(), frame.timestamp_us()));
+      webrtc::VideoFrame black_frame =
+          webrtc::VideoFrame::Builder()
+              .set_video_frame_buffer(
+                  GetBlackFrameBuffer(frame.width(), frame.height()))
+              .set_rotation(frame.rotation())
+              .set_timestamp_us(frame.timestamp_us())
+              .set_id(frame.id())
+              .build();
+      sink_pair.sink->OnFrame(black_frame);
     } else {
       sink_pair.sink->OnFrame(frame);
     }

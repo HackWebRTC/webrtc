@@ -68,8 +68,13 @@ class ReceiveStatisticsProxyTest
   }
 
   VideoFrame CreateVideoFrame(int width, int height, int64_t render_time_ms) {
-    VideoFrame frame(I420Buffer::Create(width, height), 0, render_time_ms,
-                     kVideoRotation_0);
+    VideoFrame frame =
+        VideoFrame::Builder()
+            .set_video_frame_buffer(I420Buffer::Create(width, height))
+            .set_timestamp_rtp(0)
+            .set_timestamp_ms(render_time_ms)
+            .set_rotation(kVideoRotation_0)
+            .build();
     frame.set_ntp_time_ms(fake_clock_.CurrentNtpInMilliseconds());
     return frame;
   }
@@ -248,8 +253,13 @@ TEST_F(ReceiveStatisticsProxyTest, OnDecodedFrameWithoutQpResetsQpSum) {
 
 TEST_F(ReceiveStatisticsProxyTest, OnRenderedFrameIncreasesFramesRendered) {
   EXPECT_EQ(0u, statistics_proxy_->GetStats().frames_rendered);
-  webrtc::VideoFrame frame(webrtc::I420Buffer::Create(1, 1), 0, 0,
-                           webrtc::kVideoRotation_0);
+  webrtc::VideoFrame frame =
+      VideoFrame::Builder()
+          .set_video_frame_buffer(webrtc::I420Buffer::Create(1, 1))
+          .set_timestamp_rtp(0)
+          .set_timestamp_us(0)
+          .set_rotation(kVideoRotation_0)
+          .build();
   for (uint32_t i = 1; i <= 3; ++i) {
     statistics_proxy_->OnRenderedFrame(frame);
     EXPECT_EQ(i, statistics_proxy_->GetStats().frames_rendered);
@@ -724,7 +734,11 @@ TEST_F(ReceiveStatisticsProxyTest, DoesNotReportStaleFramerates) {
   const int kDefaultFps = 30;
   rtc::scoped_refptr<VideoFrameBuffer> video_frame_buffer(
       I420Buffer::Create(kWidth, kHeight));
-  VideoFrame frame(video_frame_buffer, kVideoRotation_0, 0);
+  VideoFrame frame = VideoFrame::Builder()
+                         .set_video_frame_buffer(video_frame_buffer)
+                         .set_rotation(webrtc::kVideoRotation_0)
+                         .set_timestamp_us(0)
+                         .build();
 
   for (int i = 0; i < kDefaultFps; ++i) {
     // Since OnRenderedFrame is never called the fps in each sample will be 0,
@@ -1058,8 +1072,13 @@ TEST_P(ReceiveStatisticsProxyTest, FreezesAreReported) {
   const int kFreezeDelayMs = 200;
   const int kCallDurationMs =
       kMinRequiredSamples * kInterFrameDelayMs + kFreezeDelayMs;
-  webrtc::VideoFrame frame(webrtc::I420Buffer::Create(1, 1), 0, 0,
-                           webrtc::kVideoRotation_0);
+  webrtc::VideoFrame frame =
+      VideoFrame::Builder()
+          .set_video_frame_buffer(webrtc::I420Buffer::Create(1, 1))
+          .set_timestamp_rtp(0)
+          .set_timestamp_us(0)
+          .set_rotation(kVideoRotation_0)
+          .build();
   for (int i = 0; i < kMinRequiredSamples; ++i) {
     statistics_proxy_->OnDecodedFrame(absl::nullopt, kWidth, kHeight,
                                       content_type);
@@ -1100,8 +1119,13 @@ TEST_P(ReceiveStatisticsProxyTest, PausesAreIgnored) {
   const VideoContentType content_type = GetParam();
   const int kInterFrameDelayMs = 33;
   const int kPauseDurationMs = 10000;
-  webrtc::VideoFrame frame(webrtc::I420Buffer::Create(1, 1), 0, 0,
-                           webrtc::kVideoRotation_0);
+  webrtc::VideoFrame frame =
+      VideoFrame::Builder()
+          .set_video_frame_buffer(webrtc::I420Buffer::Create(1, 1))
+          .set_timestamp_rtp(0)
+          .set_timestamp_us(0)
+          .set_rotation(kVideoRotation_0)
+          .build();
   for (int i = 0; i <= kMinRequiredSamples; ++i) {
     statistics_proxy_->OnDecodedFrame(absl::nullopt, kWidth, kHeight,
                                       content_type);

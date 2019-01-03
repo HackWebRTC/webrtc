@@ -113,7 +113,11 @@ void AndroidVideoTrackSource::OnFrameCaptured(
     buffer = buffer->ToI420();
   }
 
-  OnFrame(VideoFrame(buffer, rotation, translated_camera_time_us));
+  OnFrame(VideoFrame::Builder()
+              .set_video_frame_buffer(buffer)
+              .set_rotation(rotation)
+              .set_timestamp_us(translated_camera_time_us)
+              .build());
 }
 
 void AndroidVideoTrackSource::OnOutputFormatRequest(int landscape_width,

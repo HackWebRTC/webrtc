@@ -58,10 +58,14 @@ class MultiplexDecoderAdapter::AdapterDecodedImageCallback
 struct MultiplexDecoderAdapter::DecodedImageData {
   explicit DecodedImageData(AlphaCodecStream stream_idx)
       : stream_idx_(stream_idx),
-        decoded_image_(I420Buffer::Create(1 /* width */, 1 /* height */),
-                       0,
-                       0,
-                       kVideoRotation_0) {
+        decoded_image_(
+            VideoFrame::Builder()
+                .set_video_frame_buffer(
+                    I420Buffer::Create(1 /* width */, 1 /* height */))
+                .set_timestamp_rtp(0)
+                .set_timestamp_us(0)
+                .set_rotation(kVideoRotation_0)
+                .build()) {
     RTC_DCHECK_EQ(kAXXStream, stream_idx);
   }
   DecodedImageData(AlphaCodecStream stream_idx,
@@ -253,8 +257,13 @@ void MultiplexDecoderAdapter::MergeAlphaImages(
             merged_buffer, std::move(augmenting_data), augmenting_data_length));
   }
 
-  VideoFrame merged_image(merged_buffer, decoded_image->timestamp(),
-                          0 /* render_time_ms */, decoded_image->rotation());
+  VideoFrame merged_image = VideoFrame::Builder()
+                                .set_video_frame_buffer(merged_buffer)
+                                .set_timestamp_rtp(decoded_image->timestamp())
+                                .set_timestamp_us(0)
+                                .set_rotation(decoded_image->rotation())
+                                .set_id(decoded_image->id())
+                                .build();
   decoded_complete_callback_->Decoded(merged_image, decode_time_ms, qp);
 }
 

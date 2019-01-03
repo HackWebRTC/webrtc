@@ -77,8 +77,11 @@ webrtc::VideoFrame FakeFrameSource::GetFrame(int width,
       webrtc::I420Buffer::Create(width, height));
 
   buffer->InitializeData();
-  webrtc::VideoFrame frame =
-      webrtc::VideoFrame(buffer, rotation, next_timestamp_us_);
+  webrtc::VideoFrame frame = webrtc::VideoFrame::Builder()
+                                 .set_video_frame_buffer(buffer)
+                                 .set_rotation(rotation)
+                                 .set_timestamp_us(next_timestamp_us_)
+                                 .build();
 
   next_timestamp_us_ += interval_us;
   return frame;

@@ -93,8 +93,12 @@ class OveruseFrameDetectorTest : public ::testing::Test,
                                                int width,
                                                int height,
                                                int delay_us) {
-    VideoFrame frame(I420Buffer::Create(width, height),
-                     webrtc::kVideoRotation_0, 0);
+    VideoFrame frame =
+        VideoFrame::Builder()
+            .set_video_frame_buffer(I420Buffer::Create(width, height))
+            .set_rotation(webrtc::kVideoRotation_0)
+            .set_timestamp_us(0)
+            .build();
     uint32_t timestamp = 0;
     while (num_frames-- > 0) {
       frame.set_timestamp(timestamp);
@@ -115,8 +119,12 @@ class OveruseFrameDetectorTest : public ::testing::Test,
       int height,
       // One element per layer
       rtc::ArrayView<const int> delays_us) {
-    VideoFrame frame(I420Buffer::Create(width, height),
-                     webrtc::kVideoRotation_0, 0);
+    VideoFrame frame =
+        VideoFrame::Builder()
+            .set_video_frame_buffer(I420Buffer::Create(width, height))
+            .set_rotation(webrtc::kVideoRotation_0)
+            .set_timestamp_us(0)
+            .build();
     uint32_t timestamp = 0;
     while (num_frames-- > 0) {
       frame.set_timestamp(timestamp);
@@ -146,8 +154,12 @@ class OveruseFrameDetectorTest : public ::testing::Test,
                                                      int delay_us) {
     webrtc::Random random(17);
 
-    VideoFrame frame(I420Buffer::Create(width, height),
-                     webrtc::kVideoRotation_0, 0);
+    VideoFrame frame =
+        VideoFrame::Builder()
+            .set_video_frame_buffer(I420Buffer::Create(width, height))
+            .set_rotation(webrtc::kVideoRotation_0)
+            .set_timestamp_us(0)
+            .build();
     uint32_t timestamp = 0;
     while (num_frames-- > 0) {
       frame.set_timestamp(timestamp);
@@ -359,8 +371,12 @@ TEST_F(OveruseFrameDetectorTest, MeasuresMultipleConcurrentSamples) {
   EXPECT_CALL(mock_observer_, AdaptDown(reason_)).Times(testing::AtLeast(1));
   static const int kIntervalUs = 33 * rtc::kNumMicrosecsPerMillisec;
   static const size_t kNumFramesEncodingDelay = 3;
-  VideoFrame frame(I420Buffer::Create(kWidth, kHeight),
-                   webrtc::kVideoRotation_0, 0);
+  VideoFrame frame =
+      VideoFrame::Builder()
+          .set_video_frame_buffer(I420Buffer::Create(kWidth, kHeight))
+          .set_rotation(webrtc::kVideoRotation_0)
+          .set_timestamp_us(0)
+          .build();
   for (size_t i = 0; i < 1000; ++i) {
     // Unique timestamps.
     frame.set_timestamp(static_cast<uint32_t>(i));
@@ -382,8 +398,12 @@ TEST_F(OveruseFrameDetectorTest, UpdatesExistingSamples) {
   EXPECT_CALL(mock_observer_, AdaptDown(reason_)).Times(testing::AtLeast(1));
   static const int kIntervalUs = 33 * rtc::kNumMicrosecsPerMillisec;
   static const int kDelayUs = 30 * rtc::kNumMicrosecsPerMillisec;
-  VideoFrame frame(I420Buffer::Create(kWidth, kHeight),
-                   webrtc::kVideoRotation_0, 0);
+  VideoFrame frame =
+      VideoFrame::Builder()
+          .set_video_frame_buffer(I420Buffer::Create(kWidth, kHeight))
+          .set_rotation(webrtc::kVideoRotation_0)
+          .set_timestamp_us(0)
+          .build();
   uint32_t timestamp = 0;
   for (size_t i = 0; i < 1000; ++i) {
     frame.set_timestamp(timestamp);
@@ -642,8 +662,12 @@ class OveruseFrameDetectorTest2 : public OveruseFrameDetectorTest {
                                        int width,
                                        int height,
                                        int delay_us) override {
-    VideoFrame frame(I420Buffer::Create(width, height),
-                     webrtc::kVideoRotation_0, 0);
+    VideoFrame frame =
+        VideoFrame::Builder()
+            .set_video_frame_buffer(I420Buffer::Create(width, height))
+            .set_rotation(webrtc::kVideoRotation_0)
+            .set_timestamp_us(0)
+            .build();
     while (num_frames-- > 0) {
       int64_t capture_time_us = rtc::TimeMicros();
       overuse_detector_->FrameCaptured(frame, capture_time_us /* ignored */);
@@ -662,8 +686,12 @@ class OveruseFrameDetectorTest2 : public OveruseFrameDetectorTest {
                                              int delay_us) override {
     webrtc::Random random(17);
 
-    VideoFrame frame(I420Buffer::Create(width, height),
-                     webrtc::kVideoRotation_0, 0);
+    VideoFrame frame =
+        VideoFrame::Builder()
+            .set_video_frame_buffer(I420Buffer::Create(width, height))
+            .set_rotation(webrtc::kVideoRotation_0)
+            .set_timestamp_us(0)
+            .build();
     for (int i = 0; i < num_frames; i++) {
       int interval_us = random.Rand(min_interval_us, max_interval_us);
       int64_t capture_time_us = rtc::TimeMicros();
@@ -823,8 +851,12 @@ TEST_F(OveruseFrameDetectorTest2, MeasuresMultipleConcurrentSamples) {
   EXPECT_CALL(mock_observer_, AdaptDown(reason_)).Times(testing::AtLeast(1));
   static const int kIntervalUs = 33 * rtc::kNumMicrosecsPerMillisec;
   static const size_t kNumFramesEncodingDelay = 3;
-  VideoFrame frame(I420Buffer::Create(kWidth, kHeight),
-                   webrtc::kVideoRotation_0, 0);
+  VideoFrame frame =
+      VideoFrame::Builder()
+          .set_video_frame_buffer(I420Buffer::Create(kWidth, kHeight))
+          .set_rotation(webrtc::kVideoRotation_0)
+          .set_timestamp_us(0)
+          .build();
   for (size_t i = 0; i < 1000; ++i) {
     // Unique timestamps.
     frame.set_timestamp(static_cast<uint32_t>(i));
@@ -846,8 +878,12 @@ TEST_F(OveruseFrameDetectorTest2, UpdatesExistingSamples) {
   EXPECT_CALL(mock_observer_, AdaptDown(reason_)).Times(testing::AtLeast(1));
   static const int kIntervalUs = 33 * rtc::kNumMicrosecsPerMillisec;
   static const int kDelayUs = 30 * rtc::kNumMicrosecsPerMillisec;
-  VideoFrame frame(I420Buffer::Create(kWidth, kHeight),
-                   webrtc::kVideoRotation_0, 0);
+  VideoFrame frame =
+      VideoFrame::Builder()
+          .set_video_frame_buffer(I420Buffer::Create(kWidth, kHeight))
+          .set_rotation(webrtc::kVideoRotation_0)
+          .set_timestamp_us(0)
+          .build();
   uint32_t timestamp = 0;
   for (size_t i = 0; i < 1000; ++i) {
     frame.set_timestamp(timestamp);

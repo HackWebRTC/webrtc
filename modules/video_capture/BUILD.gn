@@ -195,6 +195,7 @@ if (!build_with_chromium) {
         "../../test:video_test_common",
         "../utility",
         "//testing/gtest",
+        "//third_party/abseil-cpp/absl/memory:memory",
       ]
       deps += [ "../../test:test_main" ]
     }

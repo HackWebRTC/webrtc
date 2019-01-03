@@ -325,10 +325,13 @@ int32_t VideoSender::AddVideoFrame(
       RTC_LOG(LS_ERROR) << "Frame conversion failed, dropping frame.";
       return VCM_PARAMETER_ERROR;
     }
-    converted_frame = VideoFrame(converted_buffer,
-                                 converted_frame.timestamp(),
-                                 converted_frame.render_time_ms(),
-                                 converted_frame.rotation());
+    converted_frame = VideoFrame::Builder()
+                          .set_video_frame_buffer(converted_buffer)
+                          .set_timestamp_rtp(converted_frame.timestamp())
+                          .set_timestamp_ms(converted_frame.render_time_ms())
+                          .set_rotation(converted_frame.rotation())
+                          .set_id(converted_frame.id())
+                          .build();
   }
   int32_t ret =
       _encoder->Encode(converted_frame, codecSpecificInfo, next_frame_types);

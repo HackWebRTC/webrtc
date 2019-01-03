@@ -272,8 +272,12 @@ void VideoStreamDecoderImpl::Decoded(VideoFrame& decoded_image,
                             frame_timestamps->render_time_us / 1000);
 
     callbacks_->OnDecodedFrame(
-        VideoFrame(decoded_image.video_frame_buffer(), decoded_image.rotation(),
-                   frame_timestamps->render_time_us),
+        VideoFrame::Builder()
+            .set_video_frame_buffer(decoded_image.video_frame_buffer())
+            .set_rotation(decoded_image.rotation())
+            .set_timestamp_us(frame_timestamps->render_time_us)
+            .set_id(decoded_image.id())
+            .build(),
         casted_decode_time_ms, casted_qp);
   });
 }

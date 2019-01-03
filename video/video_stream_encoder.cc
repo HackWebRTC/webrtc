@@ -873,9 +873,13 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
       cropped_buffer->ScaleFrom(
           *video_frame.video_frame_buffer()->ToI420().get());
     }
-    out_frame =
-        VideoFrame(cropped_buffer, video_frame.timestamp(),
-                   video_frame.render_time_ms(), video_frame.rotation());
+    out_frame = VideoFrame::Builder()
+                    .set_video_frame_buffer(cropped_buffer)
+                    .set_timestamp_rtp(video_frame.timestamp())
+                    .set_timestamp_ms(video_frame.render_time_ms())
+                    .set_rotation(video_frame.rotation())
+                    .set_id(video_frame.id())
+                    .build();
     out_frame.set_ntp_time_ms(video_frame.ntp_time_ms());
   }
 

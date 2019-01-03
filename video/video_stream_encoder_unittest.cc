@@ -191,9 +191,14 @@ class AdaptingFrameForwarder : public test::FrameForwarder {
               video_frame.width(), video_frame.height(),
               video_frame.timestamp_us() * 1000, &cropped_width,
               &cropped_height, &out_width, &out_height)) {
-        VideoFrame adapted_frame(new rtc::RefCountedObject<TestBuffer>(
-                                     nullptr, out_width, out_height),
-                                 99, 99, kVideoRotation_0);
+        VideoFrame adapted_frame =
+            VideoFrame::Builder()
+                .set_video_frame_buffer(new rtc::RefCountedObject<TestBuffer>(
+                    nullptr, out_width, out_height))
+                .set_timestamp_rtp(99)
+                .set_timestamp_ms(99)
+                .set_rotation(kVideoRotation_0)
+                .build();
         adapted_frame.set_ntp_time_ms(video_frame.ntp_time_ms());
         test::FrameForwarder::IncomingCapturedFrame(adapted_frame);
         last_width_.emplace(adapted_frame.width());
@@ -354,17 +359,27 @@ class VideoStreamEncoderTest : public ::testing::Test {
 
   VideoFrame CreateFrame(int64_t ntp_time_ms,
                          rtc::Event* destruction_event) const {
-    VideoFrame frame(new rtc::RefCountedObject<TestBuffer>(
-                         destruction_event, codec_width_, codec_height_),
-                     99, 99, kVideoRotation_0);
+    VideoFrame frame =
+        VideoFrame::Builder()
+            .set_video_frame_buffer(new rtc::RefCountedObject<TestBuffer>(
+                destruction_event, codec_width_, codec_height_))
+            .set_timestamp_rtp(99)
+            .set_timestamp_ms(99)
+            .set_rotation(kVideoRotation_0)
+            .build();
     frame.set_ntp_time_ms(ntp_time_ms);
     return frame;
   }
 
   VideoFrame CreateFrame(int64_t ntp_time_ms, int width, int height) const {
-    VideoFrame frame(
-        new rtc::RefCountedObject<TestBuffer>(nullptr, width, height), 99, 99,
-        kVideoRotation_0);
+    VideoFrame frame =
+        VideoFrame::Builder()
+            .set_video_frame_buffer(
+                new rtc::RefCountedObject<TestBuffer>(nullptr, width, height))
+            .set_timestamp_rtp(99)
+            .set_timestamp_ms(99)
+            .set_rotation(kVideoRotation_0)
+            .build();
     frame.set_ntp_time_ms(ntp_time_ms);
     frame.set_timestamp_us(ntp_time_ms * 1000);
     return frame;

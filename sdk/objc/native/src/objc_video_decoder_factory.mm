@@ -77,10 +77,13 @@ class ObjCVideoDecoder : public VideoDecoder {
     [decoder_ setCallback:^(RTCVideoFrame *frame) {
       const rtc::scoped_refptr<VideoFrameBuffer> buffer =
           new rtc::RefCountedObject<ObjCFrameBuffer>(frame.buffer);
-      VideoFrame videoFrame(buffer,
-                            (uint32_t)(frame.timeStampNs / rtc::kNumNanosecsPerMicrosec),
-                            0,
-                            (VideoRotation)frame.rotation);
+      VideoFrame videoFrame =
+          VideoFrame::Builder()
+              .set_video_frame_buffer(buffer)
+              .set_timestamp_rtp((uint32_t)(frame.timeStampNs / rtc::kNumNanosecsPerMicrosec))
+              .set_timestamp_ms(0)
+              .set_rotation((VideoRotation)frame.rotation)
+              .build();
       videoFrame.set_timestamp(frame.timeStamp);
 
       callback->Decoded(videoFrame);

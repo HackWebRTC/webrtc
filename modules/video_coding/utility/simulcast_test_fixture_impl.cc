@@ -15,6 +15,7 @@
 #include <memory>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "api/video/encoded_image.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
@@ -273,8 +274,12 @@ void SimulcastTestFixtureImpl::SetUpCodec(const int* temporal_layer_profile) {
   EXPECT_EQ(0, decoder_->InitDecode(&settings_, 1));
   input_buffer_ = I420Buffer::Create(kDefaultWidth, kDefaultHeight);
   input_buffer_->InitializeData();
-  input_frame_.reset(new VideoFrame(input_buffer_, webrtc::kVideoRotation_0,
-                                    0 /* timestamp_us */));
+  input_frame_ = absl::make_unique<webrtc::VideoFrame>(
+      webrtc::VideoFrame::Builder()
+          .set_video_frame_buffer(input_buffer_)
+          .set_rotation(webrtc::kVideoRotation_0)
+          .set_timestamp_us(0)
+          .build());
 }
 
 void SimulcastTestFixtureImpl::SetUpRateAllocator() {
@@ -591,8 +596,12 @@ void SimulcastTestFixtureImpl::SwitchingToOneStream(int width, int height) {
   input_buffer_ = I420Buffer::Create(settings_.width, settings_.height);
   input_buffer_->InitializeData();
 
-  input_frame_.reset(new VideoFrame(input_buffer_, webrtc::kVideoRotation_0,
-                                    0 /* timestamp_us */));
+  input_frame_ = absl::make_unique<webrtc::VideoFrame>(
+      webrtc::VideoFrame::Builder()
+          .set_video_frame_buffer(input_buffer_)
+          .set_rotation(webrtc::kVideoRotation_0)
+          .set_timestamp_us(0)
+          .build());
 
   // The for loop above did not set the bitrate of the highest layer.
   settings_.simulcastStream[settings_.numberOfSimulcastStreams - 1].maxBitrate =
@@ -631,8 +640,12 @@ void SimulcastTestFixtureImpl::SwitchingToOneStream(int width, int height) {
   // Resize |input_frame_| to the new resolution.
   input_buffer_ = I420Buffer::Create(settings_.width, settings_.height);
   input_buffer_->InitializeData();
-  input_frame_.reset(new VideoFrame(input_buffer_, webrtc::kVideoRotation_0,
-                                    0 /* timestamp_us */));
+  input_frame_ = absl::make_unique<webrtc::VideoFrame>(
+      webrtc::VideoFrame::Builder()
+          .set_video_frame_buffer(input_buffer_)
+          .set_rotation(webrtc::kVideoRotation_0)
+          .set_timestamp_us(0)
+          .build());
   EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
 }
 
@@ -791,8 +804,12 @@ void SimulcastTestFixtureImpl::TestStrideEncodeDecode() {
   int stride_uv = ((kDefaultWidth + 1) / 2) + 5;
   input_buffer_ = I420Buffer::Create(kDefaultWidth, kDefaultHeight, stride_y,
                                      stride_uv, stride_uv);
-  input_frame_.reset(new VideoFrame(input_buffer_, webrtc::kVideoRotation_0,
-                                    0 /* timestamp_us */));
+  input_frame_ = absl::make_unique<webrtc::VideoFrame>(
+      webrtc::VideoFrame::Builder()
+          .set_video_frame_buffer(input_buffer_)
+          .set_rotation(webrtc::kVideoRotation_0)
+          .set_timestamp_us(0)
+          .build());
 
   // Set color.
   int plane_offset[kNumOfPlanes];

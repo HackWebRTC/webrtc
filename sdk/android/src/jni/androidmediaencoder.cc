@@ -670,8 +670,13 @@ int32_t MediaCodecVideoEncoder::Encode(
 
   rtc::scoped_refptr<VideoFrameBuffer> input_buffer(frame.video_frame_buffer());
 
-  VideoFrame input_frame(input_buffer, frame.timestamp(),
-                         frame.render_time_ms(), frame.rotation());
+  VideoFrame input_frame = VideoFrame::Builder()
+                               .set_video_frame_buffer(input_buffer)
+                               .set_timestamp_rtp(frame.timestamp())
+                               .set_timestamp_ms(frame.render_time_ms())
+                               .set_rotation(frame.rotation())
+                               .set_id(frame.id())
+                               .build();
 
   if (!MaybeReconfigureEncoder(jni, input_frame)) {
     ALOGE << "Failed to reconfigure encoder.";

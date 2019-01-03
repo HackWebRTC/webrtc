@@ -146,9 +146,12 @@ int32_t VCMGenericEncoder::RequestFrame(
   // VideoSendStreamTest.VideoSendStreamStopSetEncoderRateToZero, set
   // internal_source to true and use FakeEncoder. And the latter will
   // happily encode this 1x1 frame and pass it on down the pipeline.
-  return encoder_->Encode(
-      VideoFrame(I420Buffer::Create(1, 1), kVideoRotation_0, 0), NULL,
-      &frame_types);
+  return encoder_->Encode(VideoFrame::Builder()
+                              .set_video_frame_buffer(I420Buffer::Create(1, 1))
+                              .set_rotation(kVideoRotation_0)
+                              .set_timestamp_us(0)
+                              .build(),
+                          NULL, &frame_types);
 }
 
 bool VCMGenericEncoder::InternalSource() const {

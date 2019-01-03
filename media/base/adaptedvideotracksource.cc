@@ -54,9 +54,15 @@ void AdaptedVideoTrackSource::OnFrame(const webrtc::VideoFrame& frame) {
   if (apply_rotation() && frame.rotation() != webrtc::kVideoRotation_0 &&
       buffer->type() == webrtc::VideoFrameBuffer::Type::kI420) {
     /* Apply pending rotation. */
-    broadcaster_.OnFrame(webrtc::VideoFrame(
-        webrtc::I420Buffer::Rotate(*buffer->GetI420(), frame.rotation()),
-        webrtc::kVideoRotation_0, frame.timestamp_us()));
+    webrtc::VideoFrame rotated_frame =
+        webrtc::VideoFrame::Builder()
+            .set_video_frame_buffer(webrtc::I420Buffer::Rotate(
+                *buffer->GetI420(), frame.rotation()))
+            .set_rotation(webrtc::kVideoRotation_0)
+            .set_timestamp_us(frame.timestamp_us())
+            .set_id(frame.id())
+            .build();
+    broadcaster_.OnFrame(rotated_frame);
   } else {
     broadcaster_.OnFrame(frame);
   }

@@ -267,9 +267,13 @@ void VideoProcessor::ProcessFrame() {
   RTC_CHECK(buffer) << "Tried to read too many frames from the file.";
   const size_t timestamp =
       last_inputed_timestamp_ + kVideoPayloadTypeFrequency / framerate_fps_;
-  VideoFrame input_frame(buffer, static_cast<uint32_t>(timestamp),
-                         static_cast<int64_t>(timestamp / kMsToRtpTimestamp),
-                         webrtc::kVideoRotation_0);
+  VideoFrame input_frame =
+      VideoFrame::Builder()
+          .set_video_frame_buffer(buffer)
+          .set_timestamp_rtp(static_cast<uint32_t>(timestamp))
+          .set_timestamp_ms(static_cast<int64_t>(timestamp / kMsToRtpTimestamp))
+          .set_rotation(webrtc::kVideoRotation_0)
+          .build();
   // Store input frame as a reference for quality calculations.
   if (config_.decode && !config_.measure_cpu) {
     if (input_frames_.size() == kMaxBufferedInputFrames) {
@@ -323,8 +327,13 @@ int32_t VideoProcessor::VideoProcessorDecodeCompleteCallback::Decoded(
   if (!task_queue_->IsCurrent()) {
     // There might be a limited amount of output buffers, make a copy to make
     // sure we don't block the decoder.
-    VideoFrame copy(I420Buffer::Copy(*image.video_frame_buffer()->ToI420()),
-                    image.rotation(), image.timestamp_us());
+    VideoFrame copy = VideoFrame::Builder()
+                          .set_video_frame_buffer(I420Buffer::Copy(
+                              *image.video_frame_buffer()->ToI420()))
+                          .set_rotation(image.rotation())
+                          .set_timestamp_us(image.timestamp_us())
+                          .set_id(image.id())
+                          .build();
     copy.set_timestamp(image.timestamp());
 
     task_queue_->PostTask([this, copy]() {

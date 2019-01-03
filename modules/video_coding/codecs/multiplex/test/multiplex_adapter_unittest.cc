@@ -95,9 +95,14 @@ class TestMultiplexAdapter
     rtc::scoped_refptr<AugmentedVideoFrameBuffer> augmented_video_frame_buffer =
         new rtc::RefCountedObject<AugmentedVideoFrameBuffer>(
             video_buffer, std::move(data), 16);
-    return absl::WrapUnique<VideoFrame>(
-        new VideoFrame(augmented_video_frame_buffer, video_frame->timestamp(),
-                       video_frame->render_time_ms(), video_frame->rotation()));
+    return absl::make_unique<VideoFrame>(
+        VideoFrame::Builder()
+            .set_video_frame_buffer(augmented_video_frame_buffer)
+            .set_timestamp_rtp(video_frame->timestamp())
+            .set_timestamp_ms(video_frame->render_time_ms())
+            .set_rotation(video_frame->rotation())
+            .set_id(video_frame->id())
+            .build());
   }
 
   std::unique_ptr<VideoFrame> CreateI420AInputFrame() {
@@ -109,9 +114,13 @@ class TestMultiplexAdapter
         yuv_buffer->StrideY(), yuv_buffer->DataU(), yuv_buffer->StrideU(),
         yuv_buffer->DataV(), yuv_buffer->StrideV(), yuv_buffer->DataY(),
         yuv_buffer->StrideY(), rtc::KeepRefUntilDone(yuv_buffer));
-    return absl::WrapUnique<VideoFrame>(
-        new VideoFrame(yuva_buffer, 123 /* RTP timestamp */,
-                       345 /* render_time_ms */, kVideoRotation_0));
+    return absl::make_unique<VideoFrame>(
+        VideoFrame::Builder()
+            .set_video_frame_buffer(yuva_buffer)
+            .set_timestamp_rtp(123)
+            .set_timestamp_ms(345)
+            .set_rotation(kVideoRotation_0)
+            .build());
   }
 
   std::unique_ptr<VideoFrame> CreateInputFrame(bool contains_alpha) {
@@ -120,9 +129,14 @@ class TestMultiplexAdapter
       video_frame = CreateI420AInputFrame();
     } else {
       VideoFrame* next_frame = NextInputFrame();
-      video_frame = absl::WrapUnique<VideoFrame>(new VideoFrame(
-          next_frame->video_frame_buffer(), next_frame->timestamp(),
-          next_frame->render_time_ms(), next_frame->rotation()));
+      video_frame = absl::make_unique<VideoFrame>(
+          VideoFrame::Builder()
+              .set_video_frame_buffer(next_frame->video_frame_buffer())
+              .set_timestamp_rtp(next_frame->timestamp())
+              .set_timestamp_ms(next_frame->render_time_ms())
+              .set_rotation(next_frame->rotation())
+              .set_id(next_frame->id())
+              .build());
     }
     if (supports_augmenting_data_) {
       video_frame = CreateDataAugmentedInputFrame(video_frame.get());
@@ -158,9 +172,12 @@ class TestMultiplexAdapter
         yuva_buffer->StrideA(), yuva_buffer->DataU(), yuva_buffer->StrideU(),
         yuva_buffer->DataV(), yuva_buffer->StrideV(),
         rtc::KeepRefUntilDone(video_frame_buffer));
-    return absl::WrapUnique<VideoFrame>(
-        new VideoFrame(axx_buffer, 123 /* RTP timestamp */,
-                       345 /* render_time_ms */, kVideoRotation_0));
+    return absl::make_unique<VideoFrame>(VideoFrame::Builder()
+                                             .set_video_frame_buffer(axx_buffer)
+                                             .set_timestamp_rtp(123)
+                                             .set_timestamp_ms(345)
+                                             .set_rotation(kVideoRotation_0)
+                                             .build());
   }
 
  private:

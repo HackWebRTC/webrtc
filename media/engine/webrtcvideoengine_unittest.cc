@@ -3555,9 +3555,13 @@ TEST_F(WebRtcVideoChannelTest, EstimatesNtpStartTimeCorrectly) {
   cricket::FakeVideoRenderer renderer;
   EXPECT_TRUE(channel_->SetSink(last_ssrc_, &renderer));
 
-  webrtc::VideoFrame video_frame(CreateBlackFrameBuffer(4, 4),
-                                 kInitialTimestamp, 0,
-                                 webrtc::kVideoRotation_0);
+  webrtc::VideoFrame video_frame =
+      webrtc::VideoFrame::Builder()
+          .set_video_frame_buffer(CreateBlackFrameBuffer(4, 4))
+          .set_timestamp_rtp(kInitialTimestamp)
+          .set_timestamp_us(0)
+          .set_rotation(webrtc::kVideoRotation_0)
+          .build();
   // Initial NTP time is not available on the first frame, but should still be
   // able to be estimated.
   stream->InjectFrame(video_frame);
@@ -5326,8 +5330,13 @@ TEST_F(WebRtcVideoChannelTest, ReceiveDifferentUnsignaledSsrc) {
   FakeVideoReceiveStream* recv_stream = fake_call_->GetVideoReceiveStreams()[0];
   EXPECT_EQ(rtpHeader.ssrc, recv_stream->GetConfig().rtp.remote_ssrc);
   // Verify that the receive stream sinks to a renderer.
-  webrtc::VideoFrame video_frame(CreateBlackFrameBuffer(4, 4), 100, 0,
-                                 webrtc::kVideoRotation_0);
+  webrtc::VideoFrame video_frame =
+      webrtc::VideoFrame::Builder()
+          .set_video_frame_buffer(CreateBlackFrameBuffer(4, 4))
+          .set_timestamp_rtp(100)
+          .set_timestamp_us(0)
+          .set_rotation(webrtc::kVideoRotation_0)
+          .build();
   recv_stream->InjectFrame(video_frame);
   EXPECT_EQ(1, renderer.num_rendered_frames());
 
@@ -5342,8 +5351,13 @@ TEST_F(WebRtcVideoChannelTest, ReceiveDifferentUnsignaledSsrc) {
   recv_stream = fake_call_->GetVideoReceiveStreams()[0];
   EXPECT_EQ(rtpHeader.ssrc, recv_stream->GetConfig().rtp.remote_ssrc);
   // Verify that the receive stream sinks to a renderer.
-  webrtc::VideoFrame video_frame2(CreateBlackFrameBuffer(4, 4), 200, 0,
-                                  webrtc::kVideoRotation_0);
+  webrtc::VideoFrame video_frame2 =
+      webrtc::VideoFrame::Builder()
+          .set_video_frame_buffer(CreateBlackFrameBuffer(4, 4))
+          .set_timestamp_rtp(200)
+          .set_timestamp_us(0)
+          .set_rotation(webrtc::kVideoRotation_0)
+          .build();
   recv_stream->InjectFrame(video_frame2);
   EXPECT_EQ(2, renderer.num_rendered_frames());
 
@@ -5359,8 +5373,13 @@ TEST_F(WebRtcVideoChannelTest, ReceiveDifferentUnsignaledSsrc) {
   recv_stream = fake_call_->GetVideoReceiveStreams()[0];
   EXPECT_EQ(rtpHeader.ssrc, recv_stream->GetConfig().rtp.remote_ssrc);
   // Verify that the receive stream sinks to a renderer.
-  webrtc::VideoFrame video_frame3(CreateBlackFrameBuffer(4, 4), 300, 0,
-                                  webrtc::kVideoRotation_0);
+  webrtc::VideoFrame video_frame3 =
+      webrtc::VideoFrame::Builder()
+          .set_video_frame_buffer(CreateBlackFrameBuffer(4, 4))
+          .set_timestamp_rtp(300)
+          .set_timestamp_us(0)
+          .set_rotation(webrtc::kVideoRotation_0)
+          .build();
   recv_stream->InjectFrame(video_frame3);
   EXPECT_EQ(3, renderer.num_rendered_frames());
 #endif

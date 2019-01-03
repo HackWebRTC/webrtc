@@ -54,9 +54,12 @@ int32_t FakeVp8Decoder::Decode(const EncodedImage& input,
   }
   ParseFakeVp8(input._buffer, &width_, &height_);
 
-  VideoFrame frame(I420Buffer::Create(width_, height_),
-                   webrtc::kVideoRotation_0,
-                   render_time_ms * rtc::kNumMicrosecsPerMillisec);
+  VideoFrame frame =
+      VideoFrame::Builder()
+          .set_video_frame_buffer(I420Buffer::Create(width_, height_))
+          .set_rotation(webrtc::kVideoRotation_0)
+          .set_timestamp_ms(render_time_ms)
+          .build();
   frame.set_timestamp(input.Timestamp());
   frame.set_ntp_time_ms(input.ntp_time_ms_);
 

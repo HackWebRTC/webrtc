@@ -729,7 +729,12 @@ bool MediaCodecVideoDecoder::DeliverPendingOutputs(JNIEnv* jni,
 
   // If the frame was dropped, frame_buffer is left as nullptr.
   if (frame_buffer) {
-    VideoFrame decoded_frame(frame_buffer, 0, 0, kVideoRotation_0);
+    VideoFrame decoded_frame = VideoFrame::Builder()
+                                   .set_video_frame_buffer(frame_buffer)
+                                   .set_timestamp_rtp(0)
+                                   .set_timestamp_ms(0)
+                                   .set_rotation(kVideoRotation_0)
+                                   .build();
     decoded_frame.set_timestamp(output_timestamps_ms);
     decoded_frame.set_ntp_time_ms(output_ntp_timestamps_ms);
 

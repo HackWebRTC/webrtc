@@ -90,8 +90,14 @@ bool FakeVideoCapturer::CaptureFrame(const webrtc::VideoFrame& frame) {
         webrtc::I420Buffer::Create(adapted_width, adapted_height));
     buffer->InitializeData();
 
-    OnFrame(webrtc::VideoFrame(buffer, frame.rotation(), frame.timestamp_us()),
-            frame.width(), frame.height());
+    webrtc::VideoFrame adapted_frame =
+        webrtc::VideoFrame::Builder()
+            .set_video_frame_buffer(buffer)
+            .set_rotation(frame.rotation())
+            .set_timestamp_us(frame.timestamp_us())
+            .set_id(frame.id())
+            .build();
+    OnFrame(adapted_frame, frame.width(), frame.height());
   }
 
   return true;

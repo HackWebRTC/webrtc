@@ -79,7 +79,11 @@ TEST(ObjCVideoEncoderFactoryTest, EncodeReturnsOKOnSuccess) {
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer =
       new rtc::RefCountedObject<webrtc::ObjCFrameBuffer>(
           [[RTCCVPixelBuffer alloc] initWithPixelBuffer:pixel_buffer]);
-  webrtc::VideoFrame frame(buffer, webrtc::kVideoRotation_0, 0);
+  webrtc::VideoFrame frame = webrtc::VideoFrame::Builder()
+                                 .set_video_frame_buffer(buffer)
+                                 .set_rotation(webrtc::kVideoRotation_0)
+                                 .set_timestamp_us(0)
+                                 .build();
   webrtc::CodecSpecificInfo info;
   info.codecType = webrtc::kVideoCodecH264;
   std::vector<webrtc::FrameType> frame_types;
@@ -95,7 +99,11 @@ TEST(ObjCVideoEncoderFactoryTest, EncodeReturnsErrorOnFail) {
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> buffer =
       new rtc::RefCountedObject<webrtc::ObjCFrameBuffer>(
           [[RTCCVPixelBuffer alloc] initWithPixelBuffer:pixel_buffer]);
-  webrtc::VideoFrame frame(buffer, webrtc::kVideoRotation_0, 0);
+  webrtc::VideoFrame frame = webrtc::VideoFrame::Builder()
+                                 .set_video_frame_buffer(buffer)
+                                 .set_rotation(webrtc::kVideoRotation_0)
+                                 .set_timestamp_us(0)
+                                 .build();
   webrtc::CodecSpecificInfo info;
   info.codecType = webrtc::kVideoCodecH264;
   std::vector<webrtc::FrameType> frame_types;

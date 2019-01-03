@@ -11,6 +11,7 @@
 #include <memory>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "api/test/mock_video_encoder.h"
 #include "api/video/i420_buffer.h"
 #include "api/video_codecs/vp8_temporal_layers.h"
@@ -76,8 +77,12 @@ class EmptyFrameGenerator : public FrameGenerator {
  public:
   EmptyFrameGenerator(int width, int height) : width_(width), height_(height) {}
   VideoFrame* NextFrame() override {
-    frame_.reset(new VideoFrame(I420Buffer::Create(width_, height_),
-                                webrtc::kVideoRotation_0, 0));
+    frame_ = absl::make_unique<VideoFrame>(
+        VideoFrame::Builder()
+            .set_video_frame_buffer(I420Buffer::Create(width_, height_))
+            .set_rotation(webrtc::kVideoRotation_0)
+            .set_timestamp_us(0)
+            .build());
     return frame_.get();
   }
 

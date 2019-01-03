@@ -37,6 +37,7 @@ if (rtc_include_tests) {
       "../../video:video_frame",
       "../../video:video_frame_i420",
       "//testing/gtest",
+      "//third_party/abseil-cpp/absl/memory:memory",
     ]
   }
 }

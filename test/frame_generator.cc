@@ -14,6 +14,7 @@
 #include <cstdio>
 #include <memory>
 
+#include "absl/memory/memory.h"
 #include "api/video/i010_buffer.h"
 #include "api/video/i420_buffer.h"
 #include "api/video/video_frame_buffer.h"
@@ -100,8 +101,12 @@ class SquareGenerator : public FrameGenerator {
       buffer = I010Buffer::Copy(*buffer->ToI420());
     }
 
-    frame_.reset(
-        new VideoFrame(buffer, webrtc::kVideoRotation_0, 0 /* timestamp_us */));
+    frame_ = absl::make_unique<VideoFrame>(
+        VideoFrame::Builder()
+            .set_video_frame_buffer(buffer)
+            .set_rotation(webrtc::kVideoRotation_0)
+            .set_timestamp_us(0)
+            .build());
     return frame_.get();
   }
 
@@ -203,8 +208,12 @@ class YuvFileGenerator : public FrameGenerator {
     if (++current_display_count_ >= frame_display_count_)
       current_display_count_ = 0;
 
-    temp_frame_.reset(new VideoFrame(
-        last_read_buffer_, webrtc::kVideoRotation_0, 0 /* timestamp_us */));
+    temp_frame_ = absl::make_unique<VideoFrame>(
+        VideoFrame::Builder()
+            .set_video_frame_buffer(last_read_buffer_)
+            .set_rotation(webrtc::kVideoRotation_0)
+            .set_timestamp_us(0)
+            .build());
     return temp_frame_.get();
   }
 
@@ -260,8 +269,12 @@ class SlideGenerator : public FrameGenerator {
     if (++current_display_count_ >= frame_display_count_)
       current_display_count_ = 0;
 
-    frame_.reset(new VideoFrame(buffer_, webrtc::kVideoRotation_0,
-                                0 /* timestamp_us */));
+    frame_ = absl::make_unique<VideoFrame>(
+        VideoFrame::Builder()
+            .set_video_frame_buffer(buffer_)
+            .set_rotation(webrtc::kVideoRotation_0)
+            .set_timestamp_us(0)
+            .build());
     return frame_.get();
   }
 
@@ -393,13 +406,16 @@ class ScrollingImageFrameGenerator : public FrameGenerator {
     int offset_v = (i420_buffer->StrideV() * (pixels_scrolled_y / 2)) +
                    (pixels_scrolled_x / 2);
 
-    current_frame_ = webrtc::VideoFrame(
-        WrapI420Buffer(target_width_, target_height_,
-                       &i420_buffer->DataY()[offset_y], i420_buffer->StrideY(),
-                       &i420_buffer->DataU()[offset_u], i420_buffer->StrideU(),
-                       &i420_buffer->DataV()[offset_v], i420_buffer->StrideV(),
-                       KeepRefUntilDone(i420_buffer)),
-        kVideoRotation_0, 0);
+    current_frame_ =
+        VideoFrame::Builder()
+            .set_video_frame_buffer(WrapI420Buffer(
+                target_width_, target_height_, &i420_buffer->DataY()[offset_y],
+                i420_buffer->StrideY(), &i420_buffer->DataU()[offset_u],
+                i420_buffer->StrideU(), &i420_buffer->DataV()[offset_v],
+                i420_buffer->StrideV(), KeepRefUntilDone(i420_buffer)))
+            .set_rotation(kVideoRotation_0)
+            .set_timestamp_us(0)
+            .build();
   }
 
   Clock* const clock_;

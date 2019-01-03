@@ -49,7 +49,11 @@ TEST(VideoBroadcasterTest, OnFrame) {
   // Initialize, to avoid warnings on use of initialized values.
   webrtc::I420Buffer::SetBlack(buffer);
 
-  webrtc::VideoFrame frame(buffer, webrtc::kVideoRotation_0, 0);
+  webrtc::VideoFrame frame = webrtc::VideoFrame::Builder()
+                                 .set_video_frame_buffer(buffer)
+                                 .set_rotation(webrtc::kVideoRotation_0)
+                                 .set_timestamp_us(0)
+                                 .build();
 
   broadcaster.OnFrame(frame);
   EXPECT_EQ(1, sink1.num_rendered_frames());
@@ -172,8 +176,11 @@ TEST(VideoBroadcasterTest, SinkWantsBlackFrames) {
   // Makes it not all black.
   buffer->InitializeData();
 
-  webrtc::VideoFrame frame1(buffer, webrtc::kVideoRotation_0,
-                            10 /* timestamp_us */);
+  webrtc::VideoFrame frame1 = webrtc::VideoFrame::Builder()
+                                  .set_video_frame_buffer(buffer)
+                                  .set_rotation(webrtc::kVideoRotation_0)
+                                  .set_timestamp_us(10)
+                                  .build();
   broadcaster.OnFrame(frame1);
   EXPECT_TRUE(sink1.black_frame());
   EXPECT_EQ(10, sink1.timestamp_us());
@@ -186,8 +193,11 @@ TEST(VideoBroadcasterTest, SinkWantsBlackFrames) {
   wants2.black_frames = true;
   broadcaster.AddOrUpdateSink(&sink2, wants2);
 
-  webrtc::VideoFrame frame2(buffer, webrtc::kVideoRotation_0,
-                            30 /* timestamp_us */);
+  webrtc::VideoFrame frame2 = webrtc::VideoFrame::Builder()
+                                  .set_video_frame_buffer(buffer)
+                                  .set_rotation(webrtc::kVideoRotation_0)
+                                  .set_timestamp_us(30)
+                                  .build();
   broadcaster.OnFrame(frame2);
   EXPECT_FALSE(sink1.black_frame());
   EXPECT_EQ(30, sink1.timestamp_us());
