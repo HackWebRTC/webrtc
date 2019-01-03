@@ -445,7 +445,7 @@ std::string GetDirectionAsShortString(PacketDirection direction) {
 
 }  // namespace
 
-EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLogNew& log,
+EventLogAnalyzer::EventLogAnalyzer(const ParsedRtcEventLog& log,
                                    bool normalize_time)
     : parsed_log_(log),
       window_duration_(250000),

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "logging/rtc_event_log/rtc_event_log_parser_new.h"
+#include "logging/rtc_event_log/rtc_event_log_parser.h"
 
 #include <stdint.h>
 #include <string.h>
@@ -788,23 +788,21 @@ LoggedRtcpPacket::LoggedRtcpPacket(uint64_t timestamp_us,
 LoggedRtcpPacket::LoggedRtcpPacket(const LoggedRtcpPacket& rhs) = default;
 LoggedRtcpPacket::~LoggedRtcpPacket() = default;
 
-ParsedRtcEventLogNew::~ParsedRtcEventLogNew() = default;
+ParsedRtcEventLog::~ParsedRtcEventLog() = default;
 
-ParsedRtcEventLogNew::LoggedRtpStreamIncoming::LoggedRtpStreamIncoming() =
-    default;
-ParsedRtcEventLogNew::LoggedRtpStreamIncoming::LoggedRtpStreamIncoming(
+ParsedRtcEventLog::LoggedRtpStreamIncoming::LoggedRtpStreamIncoming() = default;
+ParsedRtcEventLog::LoggedRtpStreamIncoming::LoggedRtpStreamIncoming(
     const LoggedRtpStreamIncoming& rhs) = default;
-ParsedRtcEventLogNew::LoggedRtpStreamIncoming::~LoggedRtpStreamIncoming() =
+ParsedRtcEventLog::LoggedRtpStreamIncoming::~LoggedRtpStreamIncoming() =
     default;
 
-ParsedRtcEventLogNew::LoggedRtpStreamOutgoing::LoggedRtpStreamOutgoing() =
-    default;
-ParsedRtcEventLogNew::LoggedRtpStreamOutgoing::LoggedRtpStreamOutgoing(
+ParsedRtcEventLog::LoggedRtpStreamOutgoing::LoggedRtpStreamOutgoing() = default;
+ParsedRtcEventLog::LoggedRtpStreamOutgoing::LoggedRtpStreamOutgoing(
     const LoggedRtpStreamOutgoing& rhs) = default;
-ParsedRtcEventLogNew::LoggedRtpStreamOutgoing::~LoggedRtpStreamOutgoing() =
+ParsedRtcEventLog::LoggedRtpStreamOutgoing::~LoggedRtpStreamOutgoing() =
     default;
 
-ParsedRtcEventLogNew::LoggedRtpStreamView::LoggedRtpStreamView(
+ParsedRtcEventLog::LoggedRtpStreamView::LoggedRtpStreamView(
     uint32_t ssrc,
     const LoggedRtpPacketIncoming* ptr,
     size_t num_elements)
@@ -814,7 +812,7 @@ ParsedRtcEventLogNew::LoggedRtpStreamView::LoggedRtpStreamView(
           num_elements,
           offsetof(LoggedRtpPacketIncoming, rtp))) {}
 
-ParsedRtcEventLogNew::LoggedRtpStreamView::LoggedRtpStreamView(
+ParsedRtcEventLog::LoggedRtpStreamView::LoggedRtpStreamView(
     uint32_t ssrc,
     const LoggedRtpPacketOutgoing* ptr,
     size_t num_elements)
@@ -824,7 +822,7 @@ ParsedRtcEventLogNew::LoggedRtpStreamView::LoggedRtpStreamView(
           num_elements,
           offsetof(LoggedRtpPacketOutgoing, rtp))) {}
 
-ParsedRtcEventLogNew::LoggedRtpStreamView::LoggedRtpStreamView(
+ParsedRtcEventLog::LoggedRtpStreamView::LoggedRtpStreamView(
     const LoggedRtpStreamView&) = default;
 
 // Return default values for header extensions, to use on streams without stored
@@ -833,7 +831,7 @@ ParsedRtcEventLogNew::LoggedRtpStreamView::LoggedRtpStreamView(
 // TODO(ivoc): Remove this once this mapping is stored in the event log for
 //             audio streams. Tracking bug: webrtc:6399
 webrtc::RtpHeaderExtensionMap
-ParsedRtcEventLogNew::GetDefaultHeaderExtensionMap() {
+ParsedRtcEventLog::GetDefaultHeaderExtensionMap() {
   webrtc::RtpHeaderExtensionMap default_map;
   default_map.Register<AudioLevel>(webrtc::RtpExtension::kAudioLevelDefaultId);
   default_map.Register<TransmissionOffset>(
@@ -853,14 +851,14 @@ ParsedRtcEventLogNew::GetDefaultHeaderExtensionMap() {
   return default_map;
 }
 
-ParsedRtcEventLogNew::ParsedRtcEventLogNew(
+ParsedRtcEventLog::ParsedRtcEventLog(
     UnconfiguredHeaderExtensions parse_unconfigured_header_extensions)
     : parse_unconfigured_header_extensions_(
           parse_unconfigured_header_extensions) {
   Clear();
 }
 
-void ParsedRtcEventLogNew::Clear() {
+void ParsedRtcEventLog::Clear() {
   default_extension_map_ = GetDefaultHeaderExtensionMap();
 
   incoming_rtx_ssrcs_.clear();
@@ -920,7 +918,7 @@ void ParsedRtcEventLogNew::Clear() {
   outgoing_rtp_extensions_maps_.clear();
 }
 
-bool ParsedRtcEventLogNew::ParseFile(const std::string& filename) {
+bool ParsedRtcEventLog::ParseFile(const std::string& filename) {
   std::ifstream file(  // no-presubmit-check TODO(webrtc:8982)
       filename, std::ios_base::in | std::ios_base::binary);
   if (!file.good() || !file.is_open()) {
@@ -931,13 +929,13 @@ bool ParsedRtcEventLogNew::ParseFile(const std::string& filename) {
   return ParseStream(file);
 }
 
-bool ParsedRtcEventLogNew::ParseString(const std::string& s) {
+bool ParsedRtcEventLog::ParseString(const std::string& s) {
   std::istringstream stream(  // no-presubmit-check TODO(webrtc:8982)
       s, std::ios_base::in | std::ios_base::binary);
   return ParseStream(stream);
 }
 
-bool ParsedRtcEventLogNew::ParseStream(
+bool ParsedRtcEventLog::ParseStream(
     std::istream& stream) {  // no-presubmit-check TODO(webrtc:8982)
   Clear();
   bool success = ParseStreamInternal(stream);
@@ -1045,7 +1043,7 @@ bool ParsedRtcEventLogNew::ParseStream(
   return success;
 }
 
-bool ParsedRtcEventLogNew::ParseStreamInternal(
+bool ParsedRtcEventLog::ParseStreamInternal(
     std::istream& stream) {  // no-presubmit-check TODO(webrtc:8982)
   constexpr uint64_t kMaxEventSize = 10000000;  // Sanity check.
   std::vector<char> buffer(0xFFFF);
@@ -1128,14 +1126,14 @@ bool ParsedRtcEventLogNew::ParseStreamInternal(
 }
 
 template <typename T>
-void ParsedRtcEventLogNew::StoreFirstAndLastTimestamp(const std::vector<T>& v) {
+void ParsedRtcEventLog::StoreFirstAndLastTimestamp(const std::vector<T>& v) {
   if (v.empty())
     return;
   first_timestamp_ = std::min(first_timestamp_, v.front().log_time_us());
   last_timestamp_ = std::max(last_timestamp_, v.back().log_time_us());
 }
 
-void ParsedRtcEventLogNew::StoreParsedLegacyEvent(const rtclog::Event& event) {
+void ParsedRtcEventLog::StoreParsedLegacyEvent(const rtclog::Event& event) {
   RTC_CHECK(event.has_type());
   switch (event.type()) {
     case rtclog::Event::VIDEO_RECEIVER_CONFIG_EVENT: {
@@ -1308,14 +1306,13 @@ void ParsedRtcEventLogNew::StoreParsedLegacyEvent(const rtclog::Event& event) {
   }
 }
 
-
-int64_t ParsedRtcEventLogNew::GetTimestamp(const rtclog::Event& event) const {
+int64_t ParsedRtcEventLog::GetTimestamp(const rtclog::Event& event) const {
   RTC_CHECK(event.has_timestamp_us());
   return event.timestamp_us();
 }
 
 // The header must have space for at least IP_PACKET_SIZE bytes.
-const webrtc::RtpHeaderExtensionMap* ParsedRtcEventLogNew::GetRtpHeader(
+const webrtc::RtpHeaderExtensionMap* ParsedRtcEventLog::GetRtpHeader(
     const rtclog::Event& event,
     PacketDirection* incoming,
     uint8_t* header,
@@ -1376,10 +1373,10 @@ const webrtc::RtpHeaderExtensionMap* ParsedRtcEventLogNew::GetRtpHeader(
 }
 
 // The packet must have space for at least IP_PACKET_SIZE bytes.
-void ParsedRtcEventLogNew::GetRtcpPacket(const rtclog::Event& event,
-                                         PacketDirection* incoming,
-                                         uint8_t* packet,
-                                         size_t* length) const {
+void ParsedRtcEventLog::GetRtcpPacket(const rtclog::Event& event,
+                                      PacketDirection* incoming,
+                                      uint8_t* packet,
+                                      size_t* length) const {
   RTC_CHECK(event.has_type());
   RTC_CHECK_EQ(event.type(), rtclog::Event::RTCP_EVENT);
   RTC_CHECK(event.has_rtcp_packet());
@@ -1403,7 +1400,7 @@ void ParsedRtcEventLogNew::GetRtcpPacket(const rtclog::Event& event,
   }
 }
 
-rtclog::StreamConfig ParsedRtcEventLogNew::GetVideoReceiveConfig(
+rtclog::StreamConfig ParsedRtcEventLog::GetVideoReceiveConfig(
     const rtclog::Event& event) const {
   rtclog::StreamConfig config;
   RTC_CHECK(event.has_type());
@@ -1464,7 +1461,7 @@ rtclog::StreamConfig ParsedRtcEventLogNew::GetVideoReceiveConfig(
   return config;
 }
 
-rtclog::StreamConfig ParsedRtcEventLogNew::GetVideoSendConfig(
+rtclog::StreamConfig ParsedRtcEventLog::GetVideoSendConfig(
     const rtclog::Event& event) const {
   rtclog::StreamConfig config;
   RTC_CHECK(event.has_type());
@@ -1500,7 +1497,7 @@ rtclog::StreamConfig ParsedRtcEventLogNew::GetVideoSendConfig(
   return config;
 }
 
-rtclog::StreamConfig ParsedRtcEventLogNew::GetAudioReceiveConfig(
+rtclog::StreamConfig ParsedRtcEventLog::GetAudioReceiveConfig(
     const rtclog::Event& event) const {
   rtclog::StreamConfig config;
   RTC_CHECK(event.has_type());
@@ -1519,7 +1516,7 @@ rtclog::StreamConfig ParsedRtcEventLogNew::GetAudioReceiveConfig(
   return config;
 }
 
-rtclog::StreamConfig ParsedRtcEventLogNew::GetAudioSendConfig(
+rtclog::StreamConfig ParsedRtcEventLog::GetAudioSendConfig(
     const rtclog::Event& event) const {
   rtclog::StreamConfig config;
   RTC_CHECK(event.has_type());
@@ -1535,7 +1532,7 @@ rtclog::StreamConfig ParsedRtcEventLogNew::GetAudioSendConfig(
   return config;
 }
 
-LoggedAudioPlayoutEvent ParsedRtcEventLogNew::GetAudioPlayout(
+LoggedAudioPlayoutEvent ParsedRtcEventLog::GetAudioPlayout(
     const rtclog::Event& event) const {
   RTC_CHECK(event.has_type());
   RTC_CHECK_EQ(event.type(), rtclog::Event::AUDIO_PLAYOUT_EVENT);
@@ -1548,7 +1545,7 @@ LoggedAudioPlayoutEvent ParsedRtcEventLogNew::GetAudioPlayout(
   return res;
 }
 
-LoggedBweLossBasedUpdate ParsedRtcEventLogNew::GetLossBasedBweUpdate(
+LoggedBweLossBasedUpdate ParsedRtcEventLog::GetLossBasedBweUpdate(
     const rtclog::Event& event) const {
   RTC_CHECK(event.has_type());
   RTC_CHECK_EQ(event.type(), rtclog::Event::LOSS_BASED_BWE_UPDATE);
@@ -1566,7 +1563,7 @@ LoggedBweLossBasedUpdate ParsedRtcEventLogNew::GetLossBasedBweUpdate(
   return bwe_update;
 }
 
-LoggedBweDelayBasedUpdate ParsedRtcEventLogNew::GetDelayBasedBweUpdate(
+LoggedBweDelayBasedUpdate ParsedRtcEventLog::GetDelayBasedBweUpdate(
     const rtclog::Event& event) const {
   RTC_CHECK(event.has_type());
   RTC_CHECK_EQ(event.type(), rtclog::Event::DELAY_BASED_BWE_UPDATE);
@@ -1583,8 +1580,7 @@ LoggedBweDelayBasedUpdate ParsedRtcEventLogNew::GetDelayBasedBweUpdate(
   return res;
 }
 
-LoggedAudioNetworkAdaptationEvent
-ParsedRtcEventLogNew::GetAudioNetworkAdaptation(
+LoggedAudioNetworkAdaptationEvent ParsedRtcEventLog::GetAudioNetworkAdaptation(
     const rtclog::Event& event) const {
   RTC_CHECK(event.has_type());
   RTC_CHECK_EQ(event.type(), rtclog::Event::AUDIO_NETWORK_ADAPTATION_EVENT);
@@ -1610,8 +1606,7 @@ ParsedRtcEventLogNew::GetAudioNetworkAdaptation(
   return res;
 }
 
-LoggedBweProbeClusterCreatedEvent
-ParsedRtcEventLogNew::GetBweProbeClusterCreated(
+LoggedBweProbeClusterCreatedEvent ParsedRtcEventLog::GetBweProbeClusterCreated(
     const rtclog::Event& event) const {
   RTC_CHECK(event.has_type());
   RTC_CHECK_EQ(event.type(), rtclog::Event::BWE_PROBE_CLUSTER_CREATED_EVENT);
@@ -1630,7 +1625,7 @@ ParsedRtcEventLogNew::GetBweProbeClusterCreated(
   return res;
 }
 
-LoggedBweProbeFailureEvent ParsedRtcEventLogNew::GetBweProbeFailure(
+LoggedBweProbeFailureEvent ParsedRtcEventLog::GetBweProbeFailure(
     const rtclog::Event& event) const {
   RTC_CHECK(event.has_type());
   RTC_CHECK_EQ(event.type(), rtclog::Event::BWE_PROBE_RESULT_EVENT);
@@ -1660,7 +1655,7 @@ LoggedBweProbeFailureEvent ParsedRtcEventLogNew::GetBweProbeFailure(
   return res;
 }
 
-LoggedBweProbeSuccessEvent ParsedRtcEventLogNew::GetBweProbeSuccess(
+LoggedBweProbeSuccessEvent ParsedRtcEventLog::GetBweProbeSuccess(
     const rtclog::Event& event) const {
   RTC_CHECK(event.has_type());
   RTC_CHECK_EQ(event.type(), rtclog::Event::BWE_PROBE_RESULT_EVENT);
@@ -1679,7 +1674,7 @@ LoggedBweProbeSuccessEvent ParsedRtcEventLogNew::GetBweProbeSuccess(
   return res;
 }
 
-LoggedAlrStateEvent ParsedRtcEventLogNew::GetAlrState(
+LoggedAlrStateEvent ParsedRtcEventLog::GetAlrState(
     const rtclog::Event& event) const {
   RTC_CHECK(event.has_type());
   RTC_CHECK_EQ(event.type(), rtclog::Event::ALR_STATE_EVENT);
@@ -1693,7 +1688,7 @@ LoggedAlrStateEvent ParsedRtcEventLogNew::GetAlrState(
   return res;
 }
 
-LoggedIceCandidatePairConfig ParsedRtcEventLogNew::GetIceCandidatePairConfig(
+LoggedIceCandidatePairConfig ParsedRtcEventLog::GetIceCandidatePairConfig(
     const rtclog::Event& rtc_event) const {
   RTC_CHECK(rtc_event.has_type());
   RTC_CHECK_EQ(rtc_event.type(), rtclog::Event::ICE_CANDIDATE_PAIR_CONFIG);
@@ -1729,7 +1724,7 @@ LoggedIceCandidatePairConfig ParsedRtcEventLogNew::GetIceCandidatePairConfig(
   return res;
 }
 
-LoggedIceCandidatePairEvent ParsedRtcEventLogNew::GetIceCandidatePairEvent(
+LoggedIceCandidatePairEvent ParsedRtcEventLog::GetIceCandidatePairEvent(
     const rtclog::Event& rtc_event) const {
   RTC_CHECK(rtc_event.has_type());
   RTC_CHECK_EQ(rtc_event.type(), rtclog::Event::ICE_CANDIDATE_PAIR_EVENT);
@@ -1748,7 +1743,7 @@ LoggedIceCandidatePairEvent ParsedRtcEventLogNew::GetIceCandidatePairEvent(
 
 // Returns the MediaType for registered SSRCs. Search from the end to use last
 // registered types first.
-ParsedRtcEventLogNew::MediaType ParsedRtcEventLogNew::GetMediaType(
+ParsedRtcEventLog::MediaType ParsedRtcEventLog::GetMediaType(
     uint32_t ssrc,
     PacketDirection direction) const {
   if (direction == kIncomingPacket) {
@@ -1774,7 +1769,7 @@ ParsedRtcEventLogNew::MediaType ParsedRtcEventLogNew::GetMediaType(
 }
 
 const std::vector<MatchedSendArrivalTimes> GetNetworkTrace(
-    const ParsedRtcEventLogNew& parsed_log) {
+    const ParsedRtcEventLog& parsed_log) {
   using RtpPacketType = LoggedRtpPacketOutgoing;
   using TransportFeedbackType = LoggedRtcpPacketTransportFeedback;
 
@@ -1856,7 +1851,7 @@ const std::vector<MatchedSendArrivalTimes> GetNetworkTrace(
 }
 
 // Helper functions for new format start here
-void ParsedRtcEventLogNew::StoreParsedNewFormatEvent(
+void ParsedRtcEventLog::StoreParsedNewFormatEvent(
     const rtclog2::EventStream& stream) {
   RTC_DCHECK_EQ(stream.stream_size(), 0);
 
@@ -1929,7 +1924,7 @@ void ParsedRtcEventLogNew::StoreParsedNewFormatEvent(
   }
 }
 
-void ParsedRtcEventLogNew::StoreAlrStateEvent(const rtclog2::AlrState& proto) {
+void ParsedRtcEventLog::StoreAlrStateEvent(const rtclog2::AlrState& proto) {
   RTC_CHECK(proto.has_timestamp_ms());
   RTC_CHECK(proto.has_in_alr());
   LoggedAlrStateEvent alr_event;
@@ -1940,7 +1935,7 @@ void ParsedRtcEventLogNew::StoreAlrStateEvent(const rtclog2::AlrState& proto) {
   // TODO(terelius): Should we delta encode this event type?
 }
 
-void ParsedRtcEventLogNew::StoreAudioPlayoutEvent(
+void ParsedRtcEventLog::StoreAudioPlayoutEvent(
     const rtclog2::AudioPlayoutEvents& proto) {
   RTC_CHECK(proto.has_timestamp_ms());
   RTC_CHECK(proto.has_local_ssrc());
@@ -1984,28 +1979,27 @@ void ParsedRtcEventLogNew::StoreAudioPlayoutEvent(
   }
 }
 
-void ParsedRtcEventLogNew::StoreIncomingRtpPackets(
+void ParsedRtcEventLog::StoreIncomingRtpPackets(
     const rtclog2::IncomingRtpPackets& proto) {
   StoreRtpPackets(proto, &incoming_rtp_packets_map_);
 }
 
-void ParsedRtcEventLogNew::StoreOutgoingRtpPackets(
+void ParsedRtcEventLog::StoreOutgoingRtpPackets(
     const rtclog2::OutgoingRtpPackets& proto) {
   StoreRtpPackets(proto, &outgoing_rtp_packets_map_);
 }
 
-void ParsedRtcEventLogNew::StoreIncomingRtcpPackets(
+void ParsedRtcEventLog::StoreIncomingRtcpPackets(
     const rtclog2::IncomingRtcpPackets& proto) {
   StoreRtcpPackets(proto, &incoming_rtcp_packets_);
 }
 
-void ParsedRtcEventLogNew::StoreOutgoingRtcpPackets(
+void ParsedRtcEventLog::StoreOutgoingRtcpPackets(
     const rtclog2::OutgoingRtcpPackets& proto) {
   StoreRtcpPackets(proto, &outgoing_rtcp_packets_);
 }
 
-void ParsedRtcEventLogNew::StoreStartEvent(
-    const rtclog2::BeginLogEvent& proto) {
+void ParsedRtcEventLog::StoreStartEvent(const rtclog2::BeginLogEvent& proto) {
   RTC_CHECK(proto.has_timestamp_ms());
   RTC_CHECK(proto.has_version());
   RTC_CHECK(proto.has_utc_time_ms());
@@ -2016,14 +2010,14 @@ void ParsedRtcEventLogNew::StoreStartEvent(
   start_log_events_.push_back(start_event);
 }
 
-void ParsedRtcEventLogNew::StoreStopEvent(const rtclog2::EndLogEvent& proto) {
+void ParsedRtcEventLog::StoreStopEvent(const rtclog2::EndLogEvent& proto) {
   RTC_CHECK(proto.has_timestamp_ms());
   LoggedStopEvent stop_event(proto.timestamp_ms() * 1000);
 
   stop_log_events_.push_back(stop_event);
 }
 
-void ParsedRtcEventLogNew::StoreBweLossBasedUpdate(
+void ParsedRtcEventLog::StoreBweLossBasedUpdate(
     const rtclog2::LossBasedBweUpdates& proto) {
   RTC_CHECK(proto.has_timestamp_ms());
   RTC_CHECK(proto.has_bitrate_bps());
@@ -2091,7 +2085,7 @@ void ParsedRtcEventLogNew::StoreBweLossBasedUpdate(
   }
 }
 
-void ParsedRtcEventLogNew::StoreBweDelayBasedUpdate(
+void ParsedRtcEventLog::StoreBweDelayBasedUpdate(
     const rtclog2::DelayBasedBweUpdates& proto) {
   RTC_CHECK(proto.has_timestamp_ms());
   RTC_CHECK(proto.has_bitrate_bps());
@@ -2148,7 +2142,7 @@ void ParsedRtcEventLogNew::StoreBweDelayBasedUpdate(
   }
 }
 
-void ParsedRtcEventLogNew::StoreBweProbeClusterCreated(
+void ParsedRtcEventLog::StoreBweProbeClusterCreated(
     const rtclog2::BweProbeCluster& proto) {
   LoggedBweProbeClusterCreatedEvent probe_cluster;
   RTC_CHECK(proto.has_timestamp_ms());
@@ -2167,7 +2161,7 @@ void ParsedRtcEventLogNew::StoreBweProbeClusterCreated(
   // TODO(terelius): Should we delta encode this event type?
 }
 
-void ParsedRtcEventLogNew::StoreBweProbeSuccessEvent(
+void ParsedRtcEventLog::StoreBweProbeSuccessEvent(
     const rtclog2::BweProbeResultSuccess& proto) {
   LoggedBweProbeSuccessEvent probe_result;
   RTC_CHECK(proto.has_timestamp_ms());
@@ -2182,7 +2176,7 @@ void ParsedRtcEventLogNew::StoreBweProbeSuccessEvent(
   // TODO(terelius): Should we delta encode this event type?
 }
 
-void ParsedRtcEventLogNew::StoreBweProbeFailureEvent(
+void ParsedRtcEventLog::StoreBweProbeFailureEvent(
     const rtclog2::BweProbeResultFailure& proto) {
   LoggedBweProbeFailureEvent probe_result;
   RTC_CHECK(proto.has_timestamp_ms());
@@ -2197,7 +2191,7 @@ void ParsedRtcEventLogNew::StoreBweProbeFailureEvent(
   // TODO(terelius): Should we delta encode this event type?
 }
 
-void ParsedRtcEventLogNew::StoreAudioNetworkAdaptationEvent(
+void ParsedRtcEventLog::StoreAudioNetworkAdaptationEvent(
     const rtclog2::AudioNetworkAdaptations& proto) {
   RTC_CHECK(proto.has_timestamp_ms());
 
@@ -2350,7 +2344,7 @@ void ParsedRtcEventLogNew::StoreAudioNetworkAdaptationEvent(
   }
 }
 
-void ParsedRtcEventLogNew::StoreDtlsTransportState(
+void ParsedRtcEventLog::StoreDtlsTransportState(
     const rtclog2::DtlsTransportStateEvent& proto) {
   LoggedDtlsTransportState dtls_state;
   RTC_CHECK(proto.has_timestamp_ms());
@@ -2363,7 +2357,7 @@ void ParsedRtcEventLogNew::StoreDtlsTransportState(
   dtls_transport_states_.push_back(dtls_state);
 }
 
-void ParsedRtcEventLogNew::StoreDtlsWritableState(
+void ParsedRtcEventLog::StoreDtlsWritableState(
     const rtclog2::DtlsWritableState& proto) {
   LoggedDtlsWritableState dtls_writable_state;
   RTC_CHECK(proto.has_timestamp_ms());
@@ -2374,7 +2368,7 @@ void ParsedRtcEventLogNew::StoreDtlsWritableState(
   dtls_writable_states_.push_back(dtls_writable_state);
 }
 
-void ParsedRtcEventLogNew::StoreIceCandidatePairConfig(
+void ParsedRtcEventLog::StoreIceCandidatePairConfig(
     const rtclog2::IceCandidatePairConfig& proto) {
   LoggedIceCandidatePairConfig ice_config;
   RTC_CHECK(proto.has_timestamp_ms());
@@ -2411,7 +2405,7 @@ void ParsedRtcEventLogNew::StoreIceCandidatePairConfig(
   // TODO(terelius): Should we delta encode this event type?
 }
 
-void ParsedRtcEventLogNew::StoreIceCandidateEvent(
+void ParsedRtcEventLog::StoreIceCandidateEvent(
     const rtclog2::IceCandidatePairEvent& proto) {
   LoggedIceCandidatePairEvent ice_event;
   RTC_CHECK(proto.has_timestamp_ms());
@@ -2430,7 +2424,7 @@ void ParsedRtcEventLogNew::StoreIceCandidateEvent(
   // TODO(terelius): Should we delta encode this event type?
 }
 
-void ParsedRtcEventLogNew::StoreVideoRecvConfig(
+void ParsedRtcEventLog::StoreVideoRecvConfig(
     const rtclog2::VideoRecvStreamConfig& proto) {
   LoggedVideoRecvConfig stream;
   RTC_CHECK(proto.has_timestamp_ms());
@@ -2449,7 +2443,7 @@ void ParsedRtcEventLogNew::StoreVideoRecvConfig(
   video_recv_configs_.push_back(stream);
 }
 
-void ParsedRtcEventLogNew::StoreVideoSendConfig(
+void ParsedRtcEventLog::StoreVideoSendConfig(
     const rtclog2::VideoSendStreamConfig& proto) {
   LoggedVideoSendConfig stream;
   RTC_CHECK(proto.has_timestamp_ms());
@@ -2466,7 +2460,7 @@ void ParsedRtcEventLogNew::StoreVideoSendConfig(
   video_send_configs_.push_back(stream);
 }
 
-void ParsedRtcEventLogNew::StoreAudioRecvConfig(
+void ParsedRtcEventLog::StoreAudioRecvConfig(
     const rtclog2::AudioRecvStreamConfig& proto) {
   LoggedAudioRecvConfig stream;
   RTC_CHECK(proto.has_timestamp_ms());
@@ -2482,7 +2476,7 @@ void ParsedRtcEventLogNew::StoreAudioRecvConfig(
   audio_recv_configs_.push_back(stream);
 }
 
-void ParsedRtcEventLogNew::StoreAudioSendConfig(
+void ParsedRtcEventLog::StoreAudioSendConfig(
     const rtclog2::AudioSendStreamConfig& proto) {
   LoggedAudioSendConfig stream;
   RTC_CHECK(proto.has_timestamp_ms());

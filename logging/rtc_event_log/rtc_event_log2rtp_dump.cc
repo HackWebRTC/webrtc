@@ -21,7 +21,7 @@
 #include "api/array_view.h"
 #include "api/rtp_headers.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
-#include "logging/rtc_event_log/rtc_event_log_parser_new.h"
+#include "logging/rtc_event_log/rtc_event_log_parser.h"
 #include "logging/rtc_event_log/rtc_event_processor.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
@@ -33,7 +33,7 @@
 
 namespace {
 
-using MediaType = webrtc::ParsedRtcEventLogNew::MediaType;
+using MediaType = webrtc::ParsedRtcEventLog::MediaType;
 
 WEBRTC_DEFINE_bool(
     audio,
@@ -185,7 +185,7 @@ int main(int argc, char* argv[]) {
     RTC_CHECK(ssrc_filter.has_value()) << "Failed to read SSRC filter flag.";
   }
 
-  webrtc::ParsedRtcEventLogNew parsed_stream;
+  webrtc::ParsedRtcEventLog parsed_stream;
   if (!parsed_stream.ParseFile(input_file)) {
     std::cerr << "Error while parsing input file: " << input_file << std::endl;
     return -1;
@@ -205,7 +205,7 @@ int main(int argc, char* argv[]) {
   bool header_only = false;
 
   webrtc::RtpHeaderExtensionMap default_extension_map =
-      webrtc::ParsedRtcEventLogNew::GetDefaultHeaderExtensionMap();
+      webrtc::ParsedRtcEventLog::GetDefaultHeaderExtensionMap();
   auto handle_rtp = [&default_extension_map, &rtp_writer, &rtp_counter](
                         const webrtc::LoggedRtpPacketIncoming& incoming) {
     webrtc::test::RtpPacket packet;

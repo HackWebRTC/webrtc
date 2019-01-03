@@ -291,7 +291,8 @@ if (rtc_enable_protobuf) {
     visibility = [ "*" ]
     sources = [
       "rtc_event_log/logged_events.h",
-      "rtc_event_log/rtc_event_log_parser_new.cc",
+      "rtc_event_log/rtc_event_log_parser.cc",
+      "rtc_event_log/rtc_event_log_parser.h",
       "rtc_event_log/rtc_event_log_parser_new.h",
       "rtc_event_log/rtc_event_processor.h",
     ]
@@ -312,6 +313,7 @@ if (rtc_enable_protobuf) {
       "../modules/rtp_rtcp",
       "../modules/rtp_rtcp:rtp_rtcp_format",
       "../rtc_base:checks",
+      "../rtc_base:deprecation",
       "../rtc_base:protobuf_utils",
       "../rtc_base:rtc_base_approved",
       "//third_party/abseil-cpp/absl/memory",

@@ -24,10 +24,10 @@ namespace webrtc {
 namespace test {
 
 namespace {
-bool ShouldSkipStream(ParsedRtcEventLogNew::MediaType media_type,
+bool ShouldSkipStream(ParsedRtcEventLog::MediaType media_type,
                       uint32_t ssrc,
                       absl::optional<uint32_t> ssrc_filter) {
-  if (media_type != ParsedRtcEventLogNew::MediaType::AUDIO)
+  if (media_type != ParsedRtcEventLog::MediaType::AUDIO)
     return true;
   if (ssrc_filter.has_value() && ssrc != *ssrc_filter)
     return true;
@@ -65,7 +65,7 @@ RtcEventLogSource::RtcEventLogSource() : PacketSource() {}
 
 bool RtcEventLogSource::OpenFile(const std::string& file_name,
                                  absl::optional<uint32_t> ssrc_filter) {
-  ParsedRtcEventLogNew parsed_log;
+  ParsedRtcEventLog parsed_log;
   if (!parsed_log.ParseFile(file_name))
     return false;
 
@@ -104,7 +104,7 @@ bool RtcEventLogSource::OpenFile(const std::string& file_name,
   // This wouldn't be needed if we knew that there was at most one audio stream.
   webrtc::RtcEventProcessor event_processor;
   for (const auto& rtp_packets : parsed_log.incoming_rtp_packets_by_ssrc()) {
-    ParsedRtcEventLogNew::MediaType media_type =
+    ParsedRtcEventLog::MediaType media_type =
         parsed_log.GetMediaType(rtp_packets.ssrc, webrtc::kIncomingPacket);
     if (ShouldSkipStream(media_type, rtp_packets.ssrc, ssrc_filter)) {
       continue;

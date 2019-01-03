@@ -18,7 +18,7 @@
 #include <utility>
 #include <vector>
 
-#include "logging/rtc_event_log/rtc_event_log_parser_new.h"
+#include "logging/rtc_event_log/rtc_event_log_parser.h"
 #include "modules/audio_coding/neteq/tools/neteq_stats_getter.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_tools/event_log_visualizer/plot_base.h"
@@ -31,7 +31,7 @@ class EventLogAnalyzer {
   // The EventLogAnalyzer keeps a reference to the ParsedRtcEventLogNew for the
   // duration of its lifetime. The ParsedRtcEventLogNew must not be destroyed or
   // modified while the EventLogAnalyzer is being used.
-  EventLogAnalyzer(const ParsedRtcEventLogNew& log, bool normalize_time);
+  EventLogAnalyzer(const ParsedRtcEventLog& log, bool normalize_time);
 
   void CreatePacketGraph(PacketDirection direction, Plot* plot);
 
@@ -223,7 +223,7 @@ class EventLogAnalyzer {
 
   std::string GetCandidatePairLogDescriptionFromId(uint32_t candidate_pair_id);
 
-  const ParsedRtcEventLogNew& parsed_log_;
+  const ParsedRtcEventLog& parsed_log_;
 
   // A list of SSRCs we are interested in analysing.
   // If left empty, all SSRCs will be considered relevant.

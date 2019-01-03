@@ -17,7 +17,7 @@
 #include <utility>
 
 #include "logging/rtc_event_log/rtc_event_log.h"
-#include "logging/rtc_event_log/rtc_event_log_parser_new.h"
+#include "logging/rtc_event_log/rtc_event_log_parser.h"
 #include "modules/audio_coding/neteq/include/neteq.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/report_block.h"
 #include "rtc_base/checks.h"
@@ -258,13 +258,13 @@ int main(int argc, char* argv[]) {
 
   std::string filename = argv[1];
 
-  webrtc::ParsedRtcEventLogNew::UnconfiguredHeaderExtensions header_extensions =
-      webrtc::ParsedRtcEventLogNew::UnconfiguredHeaderExtensions::kDontParse;
+  webrtc::ParsedRtcEventLog::UnconfiguredHeaderExtensions header_extensions =
+      webrtc::ParsedRtcEventLog::UnconfiguredHeaderExtensions::kDontParse;
   if (FLAG_parse_unconfigured_header_extensions) {
-    header_extensions = webrtc::ParsedRtcEventLogNew::
+    header_extensions = webrtc::ParsedRtcEventLog::
         UnconfiguredHeaderExtensions::kAttemptWebrtcDefaultConfig;
   }
-  webrtc::ParsedRtcEventLogNew parsed_log(header_extensions);
+  webrtc::ParsedRtcEventLog parsed_log(header_extensions);
 
   if (!parsed_log.ParseFile(filename)) {
     std::cerr << "Could not parse the entire log file." << std::endl;

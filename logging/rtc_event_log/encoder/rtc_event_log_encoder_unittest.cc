@@ -32,7 +32,7 @@
 #include "logging/rtc_event_log/events/rtc_event_rtp_packet_outgoing.h"
 #include "logging/rtc_event_log/events/rtc_event_video_receive_stream_config.h"
 #include "logging/rtc_event_log/events/rtc_event_video_send_stream_config.h"
-#include "logging/rtc_event_log/rtc_event_log_parser_new.h"
+#include "logging/rtc_event_log/rtc_event_log_parser.h"
 #include "logging/rtc_event_log/rtc_event_log_unittest_helper.h"
 #include "modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor_config.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
@@ -74,7 +74,7 @@ class RtcEventLogEncoderTest
 
   template <typename ParsedType>
   const std::vector<ParsedType>* GetRtpPacketsBySsrc(
-      const ParsedRtcEventLogNew* parsed_log,
+      const ParsedRtcEventLog* parsed_log,
       uint32_t ssrc);
 
   template <typename EventType, typename ParsedType>
@@ -82,7 +82,7 @@ class RtcEventLogEncoderTest
 
   std::deque<std::unique_ptr<RtcEvent>> history_;
   std::unique_ptr<RtcEventLogEncoder> encoder_;
-  ParsedRtcEventLogNew parsed_log_;
+  ParsedRtcEventLog parsed_log_;
   const uint64_t seed_;
   Random prng_;
   const bool new_encoding_;
@@ -128,9 +128,8 @@ std::unique_ptr<RtcEventRtpPacketOutgoing> RtcEventLogEncoderTest::NewRtpPacket(
 
 template <>
 const std::vector<LoggedRtpPacketIncoming>*
-RtcEventLogEncoderTest::GetRtpPacketsBySsrc(
-    const ParsedRtcEventLogNew* parsed_log,
-    uint32_t ssrc) {
+RtcEventLogEncoderTest::GetRtpPacketsBySsrc(const ParsedRtcEventLog* parsed_log,
+                                            uint32_t ssrc) {
   const auto& incoming_streams = parsed_log->incoming_rtp_packets_by_ssrc();
   for (const auto& stream : incoming_streams) {
     if (stream.ssrc == ssrc) {
@@ -142,9 +141,8 @@ RtcEventLogEncoderTest::GetRtpPacketsBySsrc(
 
 template <>
 const std::vector<LoggedRtpPacketOutgoing>*
-RtcEventLogEncoderTest::GetRtpPacketsBySsrc(
-    const ParsedRtcEventLogNew* parsed_log,
-    uint32_t ssrc) {
+RtcEventLogEncoderTest::GetRtpPacketsBySsrc(const ParsedRtcEventLog* parsed_log,
+                                            uint32_t ssrc) {
   const auto& outgoing_streams = parsed_log->outgoing_rtp_packets_by_ssrc();
   for (const auto& stream : outgoing_streams) {
     if (stream.ssrc == ssrc) {

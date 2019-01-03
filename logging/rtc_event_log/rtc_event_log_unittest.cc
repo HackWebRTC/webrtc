@@ -37,7 +37,7 @@
 #include "logging/rtc_event_log/events/rtc_event_video_send_stream_config.h"
 #include "logging/rtc_event_log/output/rtc_event_log_output_file.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
-#include "logging/rtc_event_log/rtc_event_log_parser_new.h"
+#include "logging/rtc_event_log/rtc_event_log_parser.h"
 #include "logging/rtc_event_log/rtc_event_log_unittest_helper.h"
 #include "logging/rtc_event_log/rtc_stream_config.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
@@ -498,7 +498,7 @@ void RtcEventLogSession::WriteLog(EventCounts count,
 // same as what we wrote down.
 void RtcEventLogSession::ReadAndVerifyLog() {
   // Read the generated file from disk.
-  ParsedRtcEventLogNew parsed_log;
+  ParsedRtcEventLog parsed_log;
   ASSERT_TRUE(parsed_log.ParseFile(temp_filename_));
 
   // Start and stop events.
@@ -785,7 +785,7 @@ TEST_P(RtcEventLogCircularBufferTest, KeepsMostRecentEvents) {
   log_dumper->StopLogging();
 
   // Read the generated file from disk.
-  ParsedRtcEventLogNew parsed_log;
+  ParsedRtcEventLog parsed_log;
   ASSERT_TRUE(parsed_log.ParseFile(temp_filename));
 
   const auto& start_log_events = parsed_log.start_log_events();

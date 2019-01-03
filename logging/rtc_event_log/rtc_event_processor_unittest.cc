@@ -16,7 +16,7 @@
 #include <numeric>
 
 #include "absl/memory/memory.h"
-#include "logging/rtc_event_log/rtc_event_log_parser_new.h"
+#include "logging/rtc_event_log/rtc_event_log_parser.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/random.h"
 #include "test/gtest.h"
