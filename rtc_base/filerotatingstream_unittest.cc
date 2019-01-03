@@ -80,6 +80,8 @@ class MAYBE_FileRotatingStreamTest : public ::testing::Test {
                         const size_t expected_length,
                         const std::string& dir_path,
                         const char* file_prefix) {
+    // TODO(nisse): Delete the part of this method using read-mode
+    // FileRotatingStream, together with support for read-mode.
     std::unique_ptr<FileRotatingStream> stream;
     stream.reset(new FileRotatingStream(dir_path, file_prefix));
     ASSERT_TRUE(stream->Open());
@@ -92,6 +94,13 @@ class MAYBE_FileRotatingStreamTest : public ::testing::Test {
     EXPECT_EQ(0, memcmp(expected_contents, buffer.get(), expected_length));
     EXPECT_EQ(SR_EOS, stream->ReadAll(buffer.get(), 1, nullptr, nullptr));
     EXPECT_EQ(stream_size, read);
+
+    // Test also with the FileRotatingStreamReader class.
+    FileRotatingStreamReader reader(dir_path, file_prefix);
+    EXPECT_EQ(reader.GetSize(), expected_length);
+    memset(buffer.get(), 0, expected_length);
+    EXPECT_EQ(expected_length, reader.ReadAll(buffer.get(), expected_length));
+    EXPECT_EQ(0, memcmp(expected_contents, buffer.get(), expected_length));
   }
 
   void VerifyFileContents(const char* expected_contents,
@@ -293,6 +302,8 @@ class MAYBE_CallSessionFileRotatingStreamTest : public ::testing::Test {
   void VerifyStreamRead(const char* expected_contents,
                         const size_t expected_length,
                         const std::string& dir_path) {
+    // TODO(nisse): Delete the part of this method using read-mode
+    // CallSessionFileRotatingStream, together with support for read-mode.
     std::unique_ptr<CallSessionFileRotatingStream> stream(
         new CallSessionFileRotatingStream(dir_path));
     ASSERT_TRUE(stream->Open());
@@ -305,6 +316,13 @@ class MAYBE_CallSessionFileRotatingStreamTest : public ::testing::Test {
     EXPECT_EQ(0, memcmp(expected_contents, buffer.get(), expected_length));
     EXPECT_EQ(SR_EOS, stream->ReadAll(buffer.get(), 1, nullptr, nullptr));
     EXPECT_EQ(stream_size, read);
+
+    // Test also with the CallSessionFileRotatingStreamReader class.
+    CallSessionFileRotatingStreamReader reader(dir_path);
+    EXPECT_EQ(reader.GetSize(), expected_length);
+    memset(buffer.get(), 0, expected_length);
+    EXPECT_EQ(expected_length, reader.ReadAll(buffer.get(), expected_length));
+    EXPECT_EQ(0, memcmp(expected_contents, buffer.get(), expected_length));
   }
 
   std::unique_ptr<CallSessionFileRotatingStream> stream_;

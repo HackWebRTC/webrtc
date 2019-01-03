@@ -158,13 +158,33 @@ class CallSessionFileRotatingStream : public FileRotatingStream {
  private:
   static size_t GetRotatingLogSize(size_t max_total_log_size);
   static size_t GetNumRotatingLogFiles(size_t max_total_log_size);
-  static const char* kLogPrefix;
   static const size_t kRotatingLogFileDefaultSize;
 
   const size_t max_total_log_size_;
   size_t num_rotations_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(CallSessionFileRotatingStream);
+};
+
+// This is a convenience class, to read all files produced by a
+// FileRotatingStream, all in one go. Typical use calls GetSize and ReadData
+// only once. The list of file names to read is based on the contents of the log
+// directory at construction time.
+class FileRotatingStreamReader {
+ public:
+  FileRotatingStreamReader(const std::string& dir_path,
+                           const std::string& file_prefix);
+  ~FileRotatingStreamReader();
+  size_t GetSize() const;
+  size_t ReadAll(void* buffer, size_t size) const;
+
+ private:
+  std::vector<std::string> file_names_;
+};
+
+class CallSessionFileRotatingStreamReader : public FileRotatingStreamReader {
+ public:
+  CallSessionFileRotatingStreamReader(const std::string& dir_path);
 };
 
 }  // namespace rtc

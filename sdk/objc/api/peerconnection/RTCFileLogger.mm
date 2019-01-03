@@ -129,29 +129,24 @@ const char *kRTCFileLoggerRotatingLogPrefix = "rotating_log";
     return nil;
   }
   NSMutableData* logData = [NSMutableData data];
-  std::unique_ptr<rtc::FileRotatingStream> stream;
+  std::unique_ptr<rtc::FileRotatingStreamReader> stream;
   switch(_rotationType) {
     case RTCFileLoggerTypeApp:
-      stream.reset(
-          new rtc::FileRotatingStream(_dirPath.UTF8String,
-                                      kRTCFileLoggerRotatingLogPrefix));
+      stream = absl::make_unique<rtc::FileRotatingStreamReader>(_dirPath.UTF8String,
+                                                                kRTCFileLoggerRotatingLogPrefix);
       break;
     case RTCFileLoggerTypeCall:
-      stream.reset(new rtc::CallSessionFileRotatingStream(_dirPath.UTF8String));
+      stream = absl::make_unique<rtc::CallSessionFileRotatingStreamReader>(_dirPath.UTF8String);
       break;
   }
-  if (!stream->Open()) {
+  size_t bufferSize = stream->GetSize();
+  if (bufferSize == 0) {
     return logData;
   }
-  size_t bufferSize = 0;
-  if (!stream->GetSize(&bufferSize) || bufferSize == 0) {
-    return logData;
-  }
-  size_t read = 0;
   // Allocate memory using malloc so we can pass it direcly to NSData without
   // copying.
   std::unique_ptr<uint8_t[]> buffer(static_cast<uint8_t*>(malloc(bufferSize)));
-  stream->ReadAll(buffer.get(), bufferSize, &read, nullptr);
+  size_t read = stream->ReadAll(buffer.get(), bufferSize);
   logData = [[NSMutableData alloc] initWithBytesNoCopy:buffer.release()
                                                 length:read];
   return logData;
