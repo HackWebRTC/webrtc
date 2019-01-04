@@ -76,35 +76,4 @@ TYPED_TEST(UniqueIdGeneratorTest, KnownElementsAreNotGenerated) {
   EXPECT_THAT(intersection, IsEmpty());
 }
 
-TYPED_TEST(UniqueIdGeneratorTest, AddedElementsAreNotGenerated) {
-  typedef TypeParam Generator;
-  const size_t num_elements = 100;
-  rtc::InitRandom(0);
-  Generator generator1;
-  std::vector<typename Generator::value_type> known_values;
-  for (size_t i = 0; i < num_elements; i++) {
-    known_values.push_back(generator1());
-  }
-  EXPECT_EQ(num_elements, known_values.size());
-
-  rtc::InitRandom(0);
-  Generator generator2;
-
-  for (typename Generator::value_type value : known_values) {
-    generator2.AddKnownId(value);
-  }
-
-  std::vector<typename Generator::value_type> values;
-  for (size_t i = 0; i < num_elements; i++) {
-    values.push_back(generator2());
-  }
-  EXPECT_THAT(values, ::testing::SizeIs(num_elements));
-  std::sort(values.begin(), values.end());
-  std::sort(known_values.begin(), known_values.end());
-  std::vector<typename Generator::value_type> intersection;
-  std::set_intersection(values.begin(), values.end(), known_values.begin(),
-                        known_values.end(), std::back_inserter(intersection));
-  EXPECT_THAT(intersection, IsEmpty());
-}
-
 }  // namespace webrtc

@@ -42,12 +42,13 @@ class UniqueNumberGenerator {
   TIntegral GenerateNumber();
   TIntegral operator()() { return GenerateNumber(); }
 
-  // Adds an id that this generator should no longer generate.
-  void AddKnownId(TIntegral value);
-
  private:
   static_assert(std::is_integral<TIntegral>::value, "Must be integral type.");
   TIntegral counter_;
+  // This class can be further optimized by removing the known_ids_ set when
+  // the generator was created without a sequence of ids to ignore.
+  // In such a case, the implementation uses a counter which is sufficient to
+  // prevent repetitions of the generated values.
   std::set<TIntegral> known_ids_;
 };
 
@@ -70,9 +71,6 @@ class UniqueRandomIdGenerator {
   uint32_t GenerateId();
   uint32_t operator()() { return GenerateId(); }
 
-  // Adds an id that this generator should no longer generate.
-  void AddKnownId(uint32_t value);
-
  private:
   std::set<uint32_t> known_ids_;
 };
@@ -91,9 +89,6 @@ class UniqueStringGenerator {
 
   std::string GenerateString();
   std::string operator()() { return GenerateString(); }
-
-  // Adds an id that this generator should no longer generate.
-  void AddKnownId(const std::string& value);
 
  private:
   // This implementation will be simple and will generate "0", "1", ...
@@ -122,10 +117,6 @@ TIntegral UniqueNumberGenerator<TIntegral>::GenerateNumber() {
   }
 }
 
-template <typename TIntegral>
-void UniqueNumberGenerator<TIntegral>::AddKnownId(TIntegral value) {
-  known_ids_.insert(value);
-}
 }  // namespace webrtc
 
 #endif  // PC_UNIQUE_ID_GENERATOR_H_
