@@ -968,6 +968,13 @@ void EventLogAnalyzer::CreateTotalOutgoingBitrateGraph(Plot* plot,
     result_series.points.emplace_back(x, y);
   }
 
+  TimeSeries probe_failures_series("Probe failed", LineStyle::kNone,
+                                   PointStyle::kHighlight);
+  for (auto& failure : parsed_log_.bwe_probe_failure_events()) {
+    float x = ToCallTimeSec(failure.log_time_us());
+    probe_failures_series.points.emplace_back(x, 0);
+  }
+
   IntervalSeries alr_state("ALR", "#555555", IntervalSeries::kHorizontal);
   bool previously_in_alr = false;
   int64_t alr_start = 0;
@@ -999,6 +1006,7 @@ void EventLogAnalyzer::CreateTotalOutgoingBitrateGraph(Plot* plot,
     plot->AppendIntervalSeries(std::move(alr_state));
   }
   plot->AppendTimeSeries(std::move(loss_series));
+  plot->AppendTimeSeriesIfNotEmpty(std::move(probe_failures_series));
   plot->AppendTimeSeries(std::move(delay_series));
   plot->AppendTimeSeries(std::move(created_series));
   plot->AppendTimeSeries(std::move(result_series));
