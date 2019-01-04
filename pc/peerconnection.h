@@ -28,6 +28,7 @@
 #include "pc/rtptransceiver.h"
 #include "pc/statscollector.h"
 #include "pc/streamcollection.h"
+#include "pc/unique_id_generator.h"
 #include "pc/webrtcsessiondescriptionfactory.h"
 
 namespace webrtc {
@@ -1057,9 +1058,9 @@ class PeerConnection : public PeerConnectionInternal,
   // to support legacy endpoints that do not support the a=msid attribute (as
   // opposed to streamless tracks with "a=msid:-").
   rtc::scoped_refptr<MediaStreamInterface> missing_msid_default_stream_;
-  // MIDs that have been seen either by SetLocalDescription or
-  // SetRemoteDescription over the life of the PeerConnection.
-  std::set<std::string> seen_mids_;
+  // MIDs will be generated using this generator which will keep track of
+  // all the MIDs that have been seen over the life of the PeerConnection.
+  UniqueStringGenerator mid_generator_;
 
   SessionError session_error_ = SessionError::kNone;
   std::string session_error_desc_;

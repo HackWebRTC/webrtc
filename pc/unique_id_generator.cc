@@ -19,20 +19,6 @@
 
 namespace webrtc {
 
-namespace {
-UniqueNumberGenerator<uint32_t> CreateUniqueNumberGenerator(
-    rtc::ArrayView<std::string> known_ids) {
-  std::vector<uint32_t> known_ints;
-  for (const std::string& str : known_ids) {
-    absl::optional<uint32_t> value = rtc::StringToNumber<uint32_t>(str);
-    if (value.has_value()) {
-      known_ints.push_back(value.value());
-    }
-  }
-  return UniqueNumberGenerator<uint32_t>(known_ints);
-}
-}  // namespace
-
 UniqueRandomIdGenerator::UniqueRandomIdGenerator() : known_ids_() {}
 UniqueRandomIdGenerator::UniqueRandomIdGenerator(
     rtc::ArrayView<uint32_t> known_ids)
@@ -50,15 +36,31 @@ uint32_t UniqueRandomIdGenerator::GenerateId() {
   }
 }
 
+void UniqueRandomIdGenerator::AddKnownId(uint32_t value) {
+  known_ids_.insert(value);
+}
+
 UniqueStringGenerator::UniqueStringGenerator() : unique_number_generator_() {}
 UniqueStringGenerator::UniqueStringGenerator(
-    rtc::ArrayView<std::string> known_ids)
-    : unique_number_generator_(CreateUniqueNumberGenerator(known_ids)) {}
+    rtc::ArrayView<std::string> known_ids) {
+  for (const std::string& str : known_ids) {
+    AddKnownId(str);
+  }
+}
 
 UniqueStringGenerator::~UniqueStringGenerator() = default;
 
 std::string UniqueStringGenerator::GenerateString() {
   return rtc::ToString(unique_number_generator_.GenerateNumber());
+}
+
+void UniqueStringGenerator::AddKnownId(const std::string& value) {
+  absl::optional<uint32_t> int_value = rtc::StringToNumber<uint32_t>(value);
+  // The underlying generator works for uint32_t values, so if the provided
+  // value is not a uint32_t it will never be generated anyway.
+  if (int_value.has_value()) {
+    unique_number_generator_.AddKnownId(int_value.value());
+  }
 }
 
 }  // namespace webrtc
