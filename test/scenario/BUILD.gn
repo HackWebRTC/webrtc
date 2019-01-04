@@ -86,6 +86,7 @@ if (rtc_include_tests) {
       "../../modules/video_coding:webrtc_vp8",
       "../../modules/video_coding:webrtc_vp9",
       "../../rtc_base:checks",
+      "../../rtc_base:rtc_base",
       "../../rtc_base:rtc_base_approved",
       "../../rtc_base:rtc_base_tests_utils",
       "../../rtc_base:rtc_task_queue",
@@ -94,6 +95,7 @@ if (rtc_include_tests) {
       "../../system_wrappers",
       "../../system_wrappers:field_trial",
       "../../video",
+      "network:emulated_network",
       "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
     ]

@@ -47,14 +47,13 @@ class PacketStream {
   int64_t budget_ = 0;
 };
 
-class SimulatedFeedback : NetworkReceiverInterface {
+class SimulatedFeedback : EmulatedNetworkReceiverInterface {
  public:
   SimulatedFeedback(SimulatedTimeClientConfig config,
                     uint64_t return_receiver_id,
                     NetworkNode* return_node);
-  void DeliverPacket(rtc::CopyOnWriteBuffer packet,
-                     uint64_t receiver,
-                     Timestamp at_time) override;
+
+  void OnPacketReceived(EmulatedIpPacket packet) override;
 
  private:
   friend class SimulatedTimeClient;
@@ -119,7 +118,7 @@ class SimulatedSender {
 // unit tests to ensure that congestion controllers behave in a reasonable way.
 // It does not, however, completely simulate the actual behavior of WebRTC. For
 // a more accurate simulation, use the real time only CallClient.
-class SimulatedTimeClient : NetworkReceiverInterface {
+class SimulatedTimeClient : EmulatedNetworkReceiverInterface {
  public:
   SimulatedTimeClient(std::string log_filename,
                       SimulatedTimeClientConfig config,
@@ -141,9 +140,7 @@ class SimulatedTimeClient : NetworkReceiverInterface {
   DataRate link_capacity() const;
   DataRate padding_rate() const;
 
-  void DeliverPacket(rtc::CopyOnWriteBuffer packet,
-                     uint64_t receiver,
-                     Timestamp at_time) override;
+  void OnPacketReceived(EmulatedIpPacket packet) override;
 
  private:
   friend class Scenario;

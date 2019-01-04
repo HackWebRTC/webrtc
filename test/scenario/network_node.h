@@ -23,31 +23,22 @@
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/copyonwritebuffer.h"
 #include "test/scenario/column_printer.h"
+#include "test/scenario/network/network_emulation.h"
 #include "test/scenario/scenario_config.h"
 
 namespace webrtc {
 namespace test {
 
-class NetworkReceiverInterface {
+class NullReceiver : public EmulatedNetworkReceiverInterface {
  public:
-  virtual void DeliverPacket(rtc::CopyOnWriteBuffer packet,
-                             uint64_t receiver,
-                             Timestamp at_time) = 0;
-  virtual ~NetworkReceiverInterface() = default;
+  void OnPacketReceived(EmulatedIpPacket packet) override;
 };
-class NullReceiver : public NetworkReceiverInterface {
- public:
-  void DeliverPacket(rtc::CopyOnWriteBuffer packet,
-                     uint64_t receiver,
-                     Timestamp at_time) override;
-};
-class ActionReceiver : public NetworkReceiverInterface {
+class ActionReceiver : public EmulatedNetworkReceiverInterface {
  public:
   explicit ActionReceiver(std::function<void()> action);
   virtual ~ActionReceiver() = default;
-  void DeliverPacket(rtc::CopyOnWriteBuffer packet,
-                     uint64_t receiver,
-                     Timestamp at_time) override;
+
+  void OnPacketReceived(EmulatedIpPacket packet) override;
 
  private:
   std::function<void()> action_;
@@ -55,19 +46,17 @@ class ActionReceiver : public NetworkReceiverInterface {
 
 // NetworkNode represents one link in a simulated network. It is created by a
 // scenario and can be used when setting up audio and video stream sessions.
-class NetworkNode : public NetworkReceiverInterface {
+class NetworkNode : public EmulatedNetworkReceiverInterface {
  public:
   ~NetworkNode() override;
   RTC_DISALLOW_COPY_AND_ASSIGN(NetworkNode);
 
-  void DeliverPacket(rtc::CopyOnWriteBuffer packet,
-                     uint64_t receiver,
-                     Timestamp at_time) override;
+  void OnPacketReceived(EmulatedIpPacket packet) override;
   // Creates a route  for the given receiver_id over all the given nodes to the
   // given receiver.
-  static void Route(int64_t receiver_id,
+  static void Route(uint64_t receiver_id,
                     std::vector<NetworkNode*> nodes,
-                    NetworkReceiverInterface* receiver);
+                    EmulatedNetworkReceiverInterface* receiver);
 
  protected:
   friend class Scenario;
@@ -76,23 +65,22 @@ class NetworkNode : public NetworkReceiverInterface {
 
   NetworkNode(NetworkNodeConfig config,
               std::unique_ptr<NetworkBehaviorInterface> simulation);
-  static void ClearRoute(int64_t receiver_id, std::vector<NetworkNode*> nodes);
+  static void ClearRoute(uint64_t receiver_id, std::vector<NetworkNode*> nodes);
   void Process(Timestamp at_time);
 
  private:
   struct StoredPacket {
-    rtc::CopyOnWriteBuffer packet_data;
-    uint64_t receiver_id;
+    EmulatedIpPacket packet;
     uint64_t id;
     bool removed;
   };
-  void SetRoute(uint64_t receiver, NetworkReceiverInterface* node);
+  void SetRoute(uint64_t receiver, EmulatedNetworkReceiverInterface* node);
   void ClearRoute(uint64_t receiver_id);
   rtc::CriticalSection crit_sect_;
   size_t packet_overhead_ RTC_GUARDED_BY(crit_sect_);
   const std::unique_ptr<NetworkBehaviorInterface> behavior_
       RTC_GUARDED_BY(crit_sect_);
-  std::map<uint64_t, NetworkReceiverInterface*> routing_
+  std::map<uint64_t, EmulatedNetworkReceiverInterface*> routing_
       RTC_GUARDED_BY(crit_sect_);
   std::deque<StoredPacket> packets_ RTC_GUARDED_BY(crit_sect_);
 
@@ -155,12 +143,12 @@ class CrossTrafficSource {
 
  private:
   friend class Scenario;
-  CrossTrafficSource(NetworkReceiverInterface* target,
+  CrossTrafficSource(EmulatedNetworkReceiverInterface* target,
                      uint64_t receiver_id,
                      CrossTrafficConfig config);
   void Process(Timestamp at_time, TimeDelta delta);
 
-  NetworkReceiverInterface* const target_;
+  EmulatedNetworkReceiverInterface* const target_;
   const uint64_t receiver_id_;
   CrossTrafficConfig config_;
   webrtc::Random random_;

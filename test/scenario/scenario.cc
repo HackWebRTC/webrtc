@@ -14,6 +14,8 @@
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "rtc_base/flags.h"
+#include "rtc_base/socketaddress.h"
+#include "test/scenario/network/network_emulation.h"
 #include "test/testsupport/fileutils.h"
 
 WEBRTC_DEFINE_bool(scenario_logs, false, "Save logs from scenario framework.");
@@ -225,21 +227,23 @@ NetworkNode* Scenario::CreateNetworkNode(
 void Scenario::TriggerPacketBurst(std::vector<NetworkNode*> over_nodes,
                                   size_t num_packets,
                                   size_t packet_size) {
-  int64_t route_id = next_route_id_++;
+  uint64_t route_id = next_route_id_++;
   NetworkNode::Route(route_id, over_nodes, &null_receiver_);
   for (size_t i = 0; i < num_packets; ++i)
-    over_nodes[0]->DeliverPacket(rtc::CopyOnWriteBuffer(packet_size), route_id,
-                                 Now());
+    over_nodes[0]->OnPacketReceived(EmulatedIpPacket(
+        rtc::SocketAddress() /*from*/, rtc::SocketAddress(), /*to*/
+        route_id, rtc::CopyOnWriteBuffer(packet_size), Now()));
 }
 
 void Scenario::NetworkDelayedAction(std::vector<NetworkNode*> over_nodes,
                                     size_t packet_size,
                                     std::function<void()> action) {
-  int64_t route_id = next_route_id_++;
+  uint64_t route_id = next_route_id_++;
   action_receivers_.emplace_back(new ActionReceiver(action));
   NetworkNode::Route(route_id, over_nodes, action_receivers_.back().get());
-  over_nodes[0]->DeliverPacket(rtc::CopyOnWriteBuffer(packet_size), route_id,
-                               Now());
+  over_nodes[0]->OnPacketReceived(EmulatedIpPacket(
+      rtc::SocketAddress() /*from*/, rtc::SocketAddress() /*to*/, route_id,
+      rtc::CopyOnWriteBuffer(packet_size), Now()));
 }
 
 CrossTrafficSource* Scenario::CreateCrossTraffic(
@@ -253,7 +257,7 @@ CrossTrafficSource* Scenario::CreateCrossTraffic(
 CrossTrafficSource* Scenario::CreateCrossTraffic(
     std::vector<NetworkNode*> over_nodes,
     CrossTrafficConfig config) {
-  int64_t route_id = next_route_id_++;
+  uint64_t route_id = next_route_id_++;
   cross_traffic_sources_.emplace_back(
       new CrossTrafficSource(over_nodes.front(), route_id, config));
   CrossTrafficSource* node = cross_traffic_sources_.back().get();

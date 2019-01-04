@@ -17,6 +17,7 @@
 
 #include "absl/types/optional.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/socketaddress.h"
 
 namespace webrtc {
 namespace test {
@@ -210,15 +211,13 @@ SimulatedFeedback::SimulatedFeedback(SimulatedTimeClientConfig config,
 
 // Polls receiver side for a feedback report and sends it to the stream sender
 // via return_node_,
-void SimulatedFeedback::DeliverPacket(rtc::CopyOnWriteBuffer packet,
-                                      uint64_t receiver,
-                                      Timestamp at_time) {
+void SimulatedFeedback::OnPacketReceived(EmulatedIpPacket packet) {
   int64_t sequence_number;
   memcpy(&sequence_number, packet.cdata(), sizeof(sequence_number));
-  receive_times_.insert({sequence_number, at_time});
+  receive_times_.insert({sequence_number, packet.arrival_time});
   if (last_feedback_time_.IsInfinite())
-    last_feedback_time_ = at_time;
-  if (at_time >= last_feedback_time_ + config_.feedback.interval) {
+    last_feedback_time_ = packet.arrival_time;
+  if (packet.arrival_time >= last_feedback_time_ + config_.feedback.interval) {
     SimpleFeedbackReportPacket report;
     for (; next_feedback_seq_num_ <= sequence_number;
          ++next_feedback_seq_num_) {
@@ -231,15 +230,17 @@ void SimulatedFeedback::DeliverPacket(rtc::CopyOnWriteBuffer packet,
       }
       if (report.receive_times.size() >=
           RawFeedbackReportPacket::MAX_FEEDBACKS) {
-        return_node_->DeliverPacket(FeedbackToBuffer(report),
-                                    return_receiver_id_, at_time);
+        return_node_->OnPacketReceived(
+            EmulatedIpPacket(packet.to, packet.from, return_receiver_id_,
+                             FeedbackToBuffer(report), packet.arrival_time));
         report = SimpleFeedbackReportPacket();
       }
     }
     if (!report.receive_times.empty())
-      return_node_->DeliverPacket(FeedbackToBuffer(report), return_receiver_id_,
-                                  at_time);
-    last_feedback_time_ = at_time;
+      return_node_->OnPacketReceived(
+          EmulatedIpPacket(packet.to, packet.from, return_receiver_id_,
+                           FeedbackToBuffer(report), packet.arrival_time));
+    last_feedback_time_ = packet.arrival_time;
   }
 }
 
@@ -283,11 +284,9 @@ SimulatedTimeClient::SimulatedTimeClient(
 
 // Pulls feedback reports from sender side based on the recieved feedback
 // packet. Updates congestion controller with the resulting report.
-void SimulatedTimeClient::DeliverPacket(rtc::CopyOnWriteBuffer raw_buffer,
-                                        uint64_t receiver,
-                                        Timestamp at_time) {
-  auto report =
-      sender_.PullFeedbackReport(FeedbackFromBuffer(raw_buffer), at_time);
+void SimulatedTimeClient::OnPacketReceived(EmulatedIpPacket packet) {
+  auto report = sender_.PullFeedbackReport(FeedbackFromBuffer(packet.data),
+                                           packet.arrival_time);
   for (PacketResult& feedback : report.packet_feedbacks) {
     if (packet_log_)
       fprintf(packet_log_, "%" PRId64 " %" PRId64 " %.3lf %.3lf %.3lf\n",
@@ -295,7 +294,7 @@ void SimulatedTimeClient::DeliverPacket(rtc::CopyOnWriteBuffer raw_buffer,
               feedback.sent_packet.size.bytes(),
               feedback.sent_packet.send_time.seconds<double>(),
               feedback.receive_time.seconds<double>(),
-              at_time.seconds<double>());
+              packet.arrival_time.seconds<double>());
   }
   Update(congestion_controller_->OnTransportPacketsFeedback(report));
 }
@@ -329,8 +328,9 @@ void SimulatedTimeClient::CongestionProcess(Timestamp at_time) {
 void SimulatedTimeClient::PacerProcess(Timestamp at_time) {
   ProcessFrames(at_time);
   for (auto to_send : sender_.PaceAndPullSendPackets(at_time)) {
-    sender_.send_node_->DeliverPacket(to_send.data, sender_.send_receiver_id_,
-                                      at_time);
+    sender_.send_node_->OnPacketReceived(EmulatedIpPacket(
+        rtc::SocketAddress() /*from*/, rtc::SocketAddress() /*to*/,
+        sender_.send_receiver_id_, to_send.data, at_time));
     Update(congestion_controller_->OnSentPacket(to_send.send_info));
   }
 }

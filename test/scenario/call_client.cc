@@ -166,25 +166,26 @@ Call::Stats CallClient::GetStats() {
   return call_->GetStats();
 }
 
-void CallClient::DeliverPacket(rtc::CopyOnWriteBuffer packet,
-                               uint64_t receiver,
-                               Timestamp at_time) {
+void CallClient::OnPacketReceived(EmulatedIpPacket packet) {
   // Removes added overhead before delivering packet to sender.
-  RTC_DCHECK_GE(packet.size(), route_overhead_.at(receiver).bytes());
-  packet.SetSize(packet.size() - route_overhead_.at(receiver).bytes());
+  RTC_DCHECK_GE(packet.data.size(),
+                route_overhead_.at(packet.dest_endpoint_id).bytes());
+  packet.data.SetSize(packet.data.size() -
+                      route_overhead_.at(packet.dest_endpoint_id).bytes());
 
   MediaType media_type = MediaType::ANY;
-  if (!RtpHeaderParser::IsRtcp(packet.cdata(), packet.size())) {
+  if (!RtpHeaderParser::IsRtcp(packet.cdata(), packet.data.size())) {
     RTPHeader header;
     bool success =
-        header_parser_->Parse(packet.cdata(), packet.size(), &header);
+        header_parser_->Parse(packet.cdata(), packet.data.size(), &header);
     if (!success) {
       RTC_DLOG(LS_ERROR) << "Failed to parse RTP header of packet";
       return;
     }
     media_type = ssrc_media_types_[header.ssrc];
   }
-  call_->Receiver()->DeliverPacket(media_type, packet, at_time.us());
+  call_->Receiver()->DeliverPacket(media_type, packet.data,
+                                   packet.arrival_time.us());
 }
 
 uint32_t CallClient::GetNextVideoSsrc() {
