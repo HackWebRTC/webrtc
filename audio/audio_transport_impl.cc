@@ -133,9 +133,9 @@ int32_t AudioTransportImpl::RecordedDataIsAvailable(
 
   // Typing detection (utilizes the APM/VAD decision). We let the VAD determine
   // if we're using this feature or not.
-  // TODO(solenberg): is_enabled() takes a lock. Work around that.
+  // TODO(solenberg): GetConfig() takes a lock. Work around that.
   bool typing_detected = false;
-  if (audio_processing_->voice_detection()->is_enabled()) {
+  if (audio_processing_->GetConfig().voice_detection.enabled) {
     if (audio_frame->vad_activity_ != AudioFrame::kVadUnknown) {
       bool vad_active = audio_frame->vad_activity_ == AudioFrame::kVadActive;
       typing_detected = typing_detection_.Process(key_pressed, vad_active);

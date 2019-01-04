@@ -147,21 +147,4 @@ TEST(ApmHelpersTest, NsStatus_EnableDisable) {
   EXPECT_EQ(NoiseSuppression::kHigh, ns->level());
   EXPECT_FALSE(ns->is_enabled());
 }
-
-TEST(ApmHelpersTest, TypingDetectionStatus_DefaultMode) {
-  TestHelper helper;
-  VoiceDetection* vd = helper.apm()->voice_detection();
-  EXPECT_FALSE(vd->is_enabled());
-}
-
-TEST(ApmHelpersTest, TypingDetectionStatus_EnableDisable) {
-  TestHelper helper;
-  VoiceDetection* vd = helper.apm()->voice_detection();
-  apm_helpers::SetTypingDetectionStatus(helper.apm(), true);
-  EXPECT_EQ(VoiceDetection::kVeryLowLikelihood, vd->likelihood());
-  EXPECT_TRUE(vd->is_enabled());
-  apm_helpers::SetTypingDetectionStatus(helper.apm(), false);
-  EXPECT_EQ(VoiceDetection::kVeryLowLikelihood, vd->likelihood());
-  EXPECT_FALSE(vd->is_enabled());
-}
 }  // namespace webrtc

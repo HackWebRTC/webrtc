@@ -38,7 +38,6 @@ void SetEcStatus(AudioProcessing* apm, bool enable, EcModes mode);
 void SetEcMetricsStatus(AudioProcessing* apm, bool enable);
 void SetAecmMode(AudioProcessing* apm, bool enable_cng);
 void SetNsStatus(AudioProcessing* apm, bool enable);
-void SetTypingDetectionStatus(AudioProcessing* apm, bool enable);
 
 }  // namespace apm_helpers
 }  // namespace webrtc

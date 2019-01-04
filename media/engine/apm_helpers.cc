@@ -103,19 +103,5 @@ void SetNsStatus(AudioProcessing* apm, bool enable) {
   }
   RTC_LOG(LS_INFO) << "NS set to " << enable;
 }
-
-void SetTypingDetectionStatus(AudioProcessing* apm, bool enable) {
-  RTC_DCHECK(apm);
-  VoiceDetection* vd = apm->voice_detection();
-  if (vd->Enable(enable)) {
-    RTC_LOG(LS_ERROR) << "Failed to enable/disable VAD: " << enable;
-    return;
-  }
-  if (vd->set_likelihood(VoiceDetection::kVeryLowLikelihood)) {
-    RTC_LOG(LS_ERROR) << "Failed to set low VAD likelihood.";
-    return;
-  }
-  RTC_LOG(LS_INFO) << "VAD set to " << enable << " for typing detection.";
-}
 }  // namespace apm_helpers
 }  // namespace webrtc

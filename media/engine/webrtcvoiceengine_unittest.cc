@@ -170,7 +170,6 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
              StrictMock<webrtc::test::MockAudioProcessing>>()),
         apm_gc_(*apm_->gain_control()),
         apm_ns_(*apm_->noise_suppression()),
-        apm_vd_(*apm_->voice_detection()),
         call_(),
         override_field_trials_(field_trials) {
     // AudioDeviceModule.
@@ -186,7 +185,6 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     EXPECT_CALL(apm_gc_, set_analog_level_limits(0, 255)).WillOnce(Return(0));
     EXPECT_CALL(apm_ns_, set_level(kDefaultNsLevel)).WillOnce(Return(0));
     EXPECT_CALL(apm_ns_, Enable(true)).WillOnce(Return(0));
-    EXPECT_CALL(apm_vd_, Enable(true)).WillOnce(Return(0));
     // Init does not overwrite default AGC config.
     EXPECT_CALL(apm_gc_, target_level_dbfs()).WillOnce(Return(1));
     EXPECT_CALL(apm_gc_, compression_gain_db()).WillRepeatedly(Return(5));
@@ -207,6 +205,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     // Default Options.
     EXPECT_TRUE(IsEchoCancellationEnabled());
     EXPECT_TRUE(IsHighPassFilterEnabled());
+    EXPECT_TRUE(IsTypingDetectionEnabled());
   }
 
   bool SetupChannel() {
@@ -742,12 +741,15 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
     return engine_->GetApmConfigForTest().high_pass_filter.enabled;
   }
 
+  bool IsTypingDetectionEnabled() {
+    return engine_->GetApmConfigForTest().voice_detection.enabled;
+  }
+
  protected:
   StrictMock<webrtc::test::MockAudioDeviceModule> adm_;
   rtc::scoped_refptr<StrictMock<webrtc::test::MockAudioProcessing>> apm_;
   webrtc::test::MockGainControl& apm_gc_;
   webrtc::test::MockNoiseSuppression& apm_ns_;
-  webrtc::test::MockVoiceDetection& apm_vd_;
   cricket::FakeCall call_;
   std::unique_ptr<cricket::WebRtcVoiceEngine> engine_;
   cricket::VoiceMediaChannel* channel_ = nullptr;
@@ -2848,8 +2850,24 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
   SetSendParameters(send_parameters_);
   EXPECT_TRUE(IsEchoCancellationEnabled());
   EXPECT_TRUE(IsHighPassFilterEnabled());
+  EXPECT_TRUE(IsTypingDetectionEnabled());
   EXPECT_EQ(50u, GetRecvStreamConfig(kSsrcY).jitter_buffer_max_packets);
   EXPECT_FALSE(GetRecvStreamConfig(kSsrcY).jitter_buffer_fast_accelerate);
+
+  // Turn typing detection off.
+  send_parameters_.options.typing_detection = false;
+  SetSendParameters(send_parameters_);
+  EXPECT_FALSE(IsTypingDetectionEnabled());
+
+  // Leave typing detection unchanged, but non-default.
+  send_parameters_.options.typing_detection = absl::nullopt;
+  SetSendParameters(send_parameters_);
+  EXPECT_FALSE(IsTypingDetectionEnabled());
+
+  // Turn typing detection on.
+  send_parameters_.options.typing_detection = true;
+  SetSendParameters(send_parameters_);
+  EXPECT_TRUE(IsTypingDetectionEnabled());
 
   // Turn echo cancellation off
   send_parameters_.options.echo_cancellation = false;
@@ -2899,10 +2917,8 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
   EXPECT_CALL(apm_gc_, Enable(true)).WillOnce(Return(0));
   EXPECT_CALL(apm_ns_, set_level(kDefaultNsLevel)).WillOnce(Return(0));
   EXPECT_CALL(apm_ns_, Enable(false)).WillOnce(Return(0));
-  EXPECT_CALL(apm_vd_, Enable(false)).WillOnce(Return(0));
   send_parameters_.options.noise_suppression = false;
   send_parameters_.options.highpass_filter = false;
-  send_parameters_.options.typing_detection = false;
   send_parameters_.options.stereo_swapping = true;
   SetSendParameters(send_parameters_);
   EXPECT_TRUE(IsEchoCancellationEnabled());
@@ -2913,7 +2929,6 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
   EXPECT_CALL(apm_gc_, Enable(true)).WillOnce(Return(0));
   EXPECT_CALL(apm_ns_, set_level(kDefaultNsLevel)).WillOnce(Return(0));
   EXPECT_CALL(apm_ns_, Enable(false)).WillOnce(Return(0));
-  EXPECT_CALL(apm_vd_, Enable(false)).WillOnce(Return(0));
   SetSendParameters(send_parameters_);
   EXPECT_TRUE(IsEchoCancellationEnabled());
 }
