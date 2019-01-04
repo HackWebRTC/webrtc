@@ -590,6 +590,8 @@ bool StatsProcessor::Process() {
   apm_->noise_suppression()->speech_probability();
   apm_->voice_detection()->is_enabled();
 
+  apm_->GetStatistics(/*has_remote_tracks=*/true);
+
   return true;
 }
 

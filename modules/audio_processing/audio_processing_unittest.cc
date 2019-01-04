@@ -1278,6 +1278,7 @@ TEST_F(ApmTest, AllProcessingDisabledByDefault) {
   EXPECT_FALSE(config.echo_canceller.enabled);
   EXPECT_FALSE(config.high_pass_filter.enabled);
   EXPECT_FALSE(config.level_estimation.enabled);
+  EXPECT_FALSE(config.voice_detection.enabled);
   EXPECT_FALSE(apm_->gain_control()->is_enabled());
   EXPECT_FALSE(apm_->level_estimator()->is_enabled());
   EXPECT_FALSE(apm_->noise_suppression()->is_enabled());
@@ -1399,20 +1400,35 @@ TEST_F(ApmTest, SplittingFilter) {
   EXPECT_TRUE(FrameDataAreEqual(*frame_, frame_copy));
   EXPECT_EQ(apm_->kNoError, apm_->voice_detection()->Enable(false));
 
-  // 4. Both VAD and the level estimator are enabled...
+  // 4. Only GetStatistics-reporting VAD is enabled...
+  SetFrameTo(frame_, 1000);
+  frame_copy.CopyFrom(*frame_);
+  auto apm_config = apm_->GetConfig();
+  apm_config.voice_detection.enabled = true;
+  apm_->ApplyConfig(apm_config);
+  EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
+  EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
+  EXPECT_TRUE(FrameDataAreEqual(*frame_, frame_copy));
+  apm_config.voice_detection.enabled = false;
+  apm_->ApplyConfig(apm_config);
+
+  // 5. Both VADs and the level estimator are enabled...
   SetFrameTo(frame_, 1000);
   frame_copy.CopyFrom(*frame_);
   EXPECT_EQ(apm_->kNoError, apm_->level_estimator()->Enable(true));
   EXPECT_EQ(apm_->kNoError, apm_->voice_detection()->Enable(true));
+  apm_config.voice_detection.enabled = true;
+  apm_->ApplyConfig(apm_config);
   EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
   EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
   EXPECT_TRUE(FrameDataAreEqual(*frame_, frame_copy));
   EXPECT_EQ(apm_->kNoError, apm_->level_estimator()->Enable(false));
   EXPECT_EQ(apm_->kNoError, apm_->voice_detection()->Enable(false));
+  apm_config.voice_detection.enabled = false;
+  apm_->ApplyConfig(apm_config);
 
   // Check the test is valid. We should have distortion from the filter
   // when AEC is enabled (which won't affect the audio).
-  AudioProcessing::Config apm_config = apm_->GetConfig();
   apm_config.echo_canceller.enabled = true;
   apm_config.echo_canceller.mobile_mode = false;
   apm_->ApplyConfig(apm_config);

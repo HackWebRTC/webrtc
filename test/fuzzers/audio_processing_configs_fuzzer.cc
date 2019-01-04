@@ -171,6 +171,7 @@ std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
                 kPeak;
   apm_config.gain_controller2.adaptive_digital.use_saturation_protector =
       use_agc2_adaptive_digital_saturation_protector;
+  apm_config.voice_detection.enabled = use_vad;
 
   apm->ApplyConfig(apm_config);
 
