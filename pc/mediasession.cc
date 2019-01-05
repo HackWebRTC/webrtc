@@ -1500,9 +1500,12 @@ std::unique_ptr<SessionDescription> MediaSessionDescriptionFactory::CreateOffer(
 
   // Bundle the contents together, if we've been asked to do so, and update any
   // parameters that need to be tweaked for BUNDLE.
-  if (session_options.bundle_enabled && offer->contents().size() > 0u) {
+  if (session_options.bundle_enabled) {
     ContentGroup offer_bundle(GROUP_TYPE_BUNDLE);
     for (const ContentInfo& content : offer->contents()) {
+      if (content.rejected) {
+        continue;
+      }
       // TODO(deadbeef): There are conditions that make bundling two media
       // descriptions together illegal. For example, they use the same payload
       // type to represent different codecs, or same IDs for different header
@@ -1510,15 +1513,18 @@ std::unique_ptr<SessionDescription> MediaSessionDescriptionFactory::CreateOffer(
       // descriptions together.
       offer_bundle.AddContentName(content.name);
     }
-    offer->AddGroup(offer_bundle);
-    if (!UpdateTransportInfoForBundle(offer_bundle, offer.get())) {
-      RTC_LOG(LS_ERROR)
-          << "CreateOffer failed to UpdateTransportInfoForBundle.";
-      return nullptr;
-    }
-    if (!UpdateCryptoParamsForBundle(offer_bundle, offer.get())) {
-      RTC_LOG(LS_ERROR) << "CreateOffer failed to UpdateCryptoParamsForBundle.";
-      return nullptr;
+    if (!offer_bundle.content_names().empty()) {
+      offer->AddGroup(offer_bundle);
+      if (!UpdateTransportInfoForBundle(offer_bundle, offer.get())) {
+        RTC_LOG(LS_ERROR)
+            << "CreateOffer failed to UpdateTransportInfoForBundle.";
+        return nullptr;
+      }
+      if (!UpdateCryptoParamsForBundle(offer_bundle, offer.get())) {
+        RTC_LOG(LS_ERROR)
+            << "CreateOffer failed to UpdateCryptoParamsForBundle.";
+        return nullptr;
+      }
     }
   }
 

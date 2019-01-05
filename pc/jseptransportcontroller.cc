@@ -691,13 +691,6 @@ RTCError JsepTransportController::ValidateAndMaybeUpdateBundleGroup(
   }
 
   if (ShouldUpdateBundleGroup(type, description)) {
-    const std::string* new_bundled_mid = new_bundle_group->FirstContentName();
-    if (bundled_mid() && new_bundled_mid &&
-        *bundled_mid() != *new_bundled_mid) {
-      return RTCError(RTCErrorType::UNSUPPORTED_OPERATION,
-                      "Changing the negotiated BUNDLE-tag is not supported.");
-    }
-
     bundle_group_ = *new_bundle_group;
   }
 

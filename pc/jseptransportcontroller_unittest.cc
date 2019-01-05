@@ -11,6 +11,7 @@
 #include <map>
 #include <memory>
 
+#include "absl/memory/memory.h"
 #include "api/media_transport_interface.h"
 #include "api/test/fake_media_transport.h"
 #include "p2p/base/fakedtlstransport.h"
@@ -1728,6 +1729,53 @@ TEST_F(JsepTransportControllerTest, RemoveContentFromBundleGroup) {
   EXPECT_TRUE(transport_controller_
                   ->SetRemoteDescription(SdpType::kAnswer, new_answer.get())
                   .ok());
+}
+
+// Test that the JsepTransportController can process a new local and remote
+// description that changes the tagged BUNDLE group with the max-bundle policy
+// specified.
+// This is a regression test for bugs.webrtc.org/9954
+TEST_F(JsepTransportControllerTest, ChangeTaggedMediaSectionMaxBundle) {
+  CreateJsepTransportController(JsepTransportController::Config());
+
+  auto local_offer = absl::make_unique<cricket::SessionDescription>();
+  AddAudioSection(local_offer.get(), kAudioMid1, kIceUfrag1, kIcePwd1,
+                  cricket::ICEMODE_FULL, cricket::CONNECTIONROLE_ACTPASS,
+                  nullptr);
+  cricket::ContentGroup bundle_group(cricket::GROUP_TYPE_BUNDLE);
+  bundle_group.AddContentName(kAudioMid1);
+  local_offer->AddGroup(bundle_group);
+  EXPECT_TRUE(transport_controller_
+                  ->SetLocalDescription(SdpType::kOffer, local_offer.get())
+                  .ok());
+
+  std::unique_ptr<cricket::SessionDescription> remote_answer(
+      local_offer->Copy());
+  EXPECT_TRUE(transport_controller_
+                  ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
+                  .ok());
+
+  std::unique_ptr<cricket::SessionDescription> local_reoffer(
+      local_offer->Copy());
+  local_reoffer->contents()[0].rejected = true;
+  AddVideoSection(local_reoffer.get(), kVideoMid1, kIceUfrag1, kIcePwd1,
+                  cricket::ICEMODE_FULL, cricket::CONNECTIONROLE_ACTPASS,
+                  nullptr);
+  local_reoffer->RemoveGroupByName(cricket::GROUP_TYPE_BUNDLE);
+  cricket::ContentGroup new_bundle_group(cricket::GROUP_TYPE_BUNDLE);
+  new_bundle_group.AddContentName(kVideoMid1);
+  local_reoffer->AddGroup(new_bundle_group);
+
+  EXPECT_TRUE(transport_controller_
+                  ->SetLocalDescription(SdpType::kOffer, local_reoffer.get())
+                  .ok());
+
+  std::unique_ptr<cricket::SessionDescription> remote_reanswer(
+      local_reoffer->Copy());
+  EXPECT_TRUE(
+      transport_controller_
+          ->SetRemoteDescription(SdpType::kAnswer, remote_reanswer.get())
+          .ok());
 }
 
 }  // namespace webrtc
