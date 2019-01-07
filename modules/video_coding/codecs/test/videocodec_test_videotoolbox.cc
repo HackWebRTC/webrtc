@@ -59,7 +59,7 @@ MAYBE_TEST(VideoCodecTestVideoToolbox, ForemanCif500kbpsH264CBP) {
   config.encoded_frame_checker = frame_checker.get();
   auto fixture = CreateTestFixtureWithConfig(config);
 
-  std::vector<RateProfile> rate_profiles = {{500, 30, kForemanNumFrames}};
+  std::vector<RateProfile> rate_profiles = {{500, 30, 0}};
 
   std::vector<QualityThresholds> quality_thresholds = {{33, 29, 0.9, 0.82}};
 
@@ -76,7 +76,7 @@ MAYBE_TEST(VideoCodecTestVideoToolbox, ForemanCif500kbpsH264CHP) {
   config.encoded_frame_checker = frame_checker.get();
   auto fixture = CreateTestFixtureWithConfig(config);
 
-  std::vector<RateProfile> rate_profiles = {{500, 30, kForemanNumFrames}};
+  std::vector<RateProfile> rate_profiles = {{500, 30, 0}};
 
   std::vector<QualityThresholds> quality_thresholds = {{33, 30, 0.91, 0.83}};
 

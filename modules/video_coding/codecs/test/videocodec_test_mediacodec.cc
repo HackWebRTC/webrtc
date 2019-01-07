@@ -54,8 +54,7 @@ TEST(VideoCodecTestMediaCodec, ForemanCif500kbpsVp8) {
                           352, 288);
   auto fixture = CreateTestFixtureWithConfig(config);
 
-  std::vector<RateProfile> rate_profiles = {
-      {500, kForemanFramerateFps, kForemanNumFrames}};
+  std::vector<RateProfile> rate_profiles = {{500, kForemanFramerateFps, 0}};
 
   // The thresholds below may have to be tweaked to let even poor MediaCodec
   // implementations pass. If this test fails on the bots, disable it and
@@ -77,8 +76,7 @@ TEST(VideoCodecTestMediaCodec, ForemanCif500kbpsH264CBP) {
                           352, 288);
   auto fixture = CreateTestFixtureWithConfig(config);
 
-  std::vector<RateProfile> rate_profiles = {
-      {500, kForemanFramerateFps, kForemanNumFrames}};
+  std::vector<RateProfile> rate_profiles = {{500, kForemanFramerateFps, 0}};
 
   // The thresholds below may have to be tweaked to let even poor MediaCodec
   // implementations pass. If this test fails on the bots, disable it and
@@ -104,8 +102,7 @@ TEST(VideoCodecTestMediaCodec, DISABLED_ForemanCif500kbpsH264CHP) {
                           352, 288);
   auto fixture = CreateTestFixtureWithConfig(config);
 
-  std::vector<RateProfile> rate_profiles = {
-      {500, kForemanFramerateFps, kForemanNumFrames}};
+  std::vector<RateProfile> rate_profiles = {{500, kForemanFramerateFps, 0}};
 
   // The thresholds below may have to be tweaked to let even poor MediaCodec
   // implementations pass. If this test fails on the bots, disable it and
@@ -126,7 +123,7 @@ TEST(VideoCodecTestMediaCodec, ForemanMixedRes100kbpsVp8H264) {
   const std::vector<std::tuple<int, int>> resolutions = {
       {128, 96}, {160, 120}, {176, 144}, {240, 136}, {320, 240}, {480, 272}};
   const std::vector<RateProfile> rate_profiles = {
-      {100, kForemanFramerateFps, kNumFrames}};
+      {100, kForemanFramerateFps, 0}};
   const std::vector<QualityThresholds> quality_thresholds = {
       {29, 26, 0.8, 0.75}};
 

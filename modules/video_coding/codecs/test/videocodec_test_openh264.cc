@@ -45,7 +45,7 @@ TEST(VideoCodecTestOpenH264, ConstantHighBitrate) {
   config.encoded_frame_checker = frame_checker.get();
   auto fixture = CreateVideoCodecTestFixture(config);
 
-  std::vector<RateProfile> rate_profiles = {{500, 30, kNumFrames}};
+  std::vector<RateProfile> rate_profiles = {{500, 30, 0}};
 
   std::vector<RateControlThresholds> rc_thresholds = {
       {5, 1, 0, 0.1, 0.2, 0.1, 0, 1}};
@@ -69,7 +69,7 @@ TEST(VideoCodecTestOpenH264, SingleNalUnit) {
   config.encoded_frame_checker = frame_checker.get();
   auto fixture = CreateVideoCodecTestFixture(config);
 
-  std::vector<RateProfile> rate_profiles = {{500, 30, kNumFrames}};
+  std::vector<RateProfile> rate_profiles = {{500, 30, 0}};
 
   std::vector<RateControlThresholds> rc_thresholds = {
       {5, 1, 0, 0.1, 0.2, 0.1, 0, 1}};

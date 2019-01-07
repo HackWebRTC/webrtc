@@ -67,8 +67,7 @@ class VideoCodecTestParameterized
                             kDenoisingOn, kFrameDropperOn, kSpatialResizeOn,
                             width, height);
 
-    std::vector<RateProfile> rate_profiles = {
-        {bitrate_, framerate, kNumFrames}};
+    std::vector<RateProfile> rate_profiles = {{bitrate_, framerate, 0}};
 
     fixture_ = CreateVideoCodecTestFixture(config);
     fixture_->RunTest(rate_profiles, nullptr, nullptr, nullptr);
