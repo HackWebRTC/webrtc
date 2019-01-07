@@ -76,7 +76,7 @@ std::vector<std::vector<FrameType>> GetTimingFrames(
     const int num_streams,
     const int num_frames) {
   FakeEncodedImageCallback sink;
-  VCMEncodedFrameCallback callback(&sink, nullptr);
+  VCMEncodedFrameCallback callback(&sink);
   const size_t kFramerate = 30;
   callback.SetTimingFramesThresholds(
       {delay_ms, kDefaultOutlierFrameSizePercent});
@@ -192,7 +192,7 @@ TEST(TestVCMEncodedFrameCallback, NoTimingFrameIfNoEncodeStartTime) {
   image.SetTimestamp(static_cast<uint32_t>(timestamp * 90));
   codec_specific.codecType = kVideoCodecGeneric;
   FakeEncodedImageCallback sink;
-  VCMEncodedFrameCallback callback(&sink, nullptr);
+  VCMEncodedFrameCallback callback(&sink);
   VideoCodec::TimingFrameTriggerThresholds thresholds;
   thresholds.delay_ms = 1;  // Make all frames timing frames.
   callback.SetTimingFramesThresholds(thresholds);
@@ -223,7 +223,7 @@ TEST(TestVCMEncodedFrameCallback, AdjustsCaptureTimeForInternalSourceEncoder) {
   image.SetTimestamp(static_cast<uint32_t>(timestamp * 90));
   codec_specific.codecType = kVideoCodecGeneric;
   FakeEncodedImageCallback sink;
-  VCMEncodedFrameCallback callback(&sink, nullptr);
+  VCMEncodedFrameCallback callback(&sink);
   callback.SetInternalSource(true);
   VideoCodec::TimingFrameTriggerThresholds thresholds;
   thresholds.delay_ms = 1;  // Make all frames timing frames.
@@ -258,7 +258,7 @@ TEST(TestVCMEncodedFrameCallback, NotifiesAboutDroppedFrames) {
   const int64_t kTimestampMs4 = 47721870;
   codec_specific.codecType = kVideoCodecGeneric;
   FakeEncodedImageCallback sink;
-  VCMEncodedFrameCallback callback(&sink, nullptr);
+  VCMEncodedFrameCallback callback(&sink);
   // Any non-zero bitrate needed to be set before the first frame.
   callback.OnTargetBitrateChanged(500, 0);
   image.capture_time_ms_ = kTimestampMs1;
@@ -293,7 +293,7 @@ TEST(TestVCMEncodedFrameCallback, RestoresCaptureTimestamps) {
   const int64_t kTimestampMs = 123456;
   codec_specific.codecType = kVideoCodecGeneric;
   FakeEncodedImageCallback sink;
-  VCMEncodedFrameCallback callback(&sink, nullptr);
+  VCMEncodedFrameCallback callback(&sink);
   // Any non-zero bitrate needed to be set before the first frame.
   callback.OnTargetBitrateChanged(500, 0);
   image.capture_time_ms_ = kTimestampMs;  // Incorrect timesetamp.

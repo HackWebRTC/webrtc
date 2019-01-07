@@ -204,6 +204,7 @@ rtc_source_set("video_stream_encoder_impl") {
     "../rtc_base/experiments:quality_scaling_experiment",
     "../rtc_base/system:fallthrough",
     "../system_wrappers:field_trial",
+    "//third_party/abseil-cpp/absl/memory:memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
