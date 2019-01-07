@@ -12,6 +12,7 @@
 
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "api/audio_codecs/L16/audio_decoder_L16.h"
 #include "api/audio_codecs/L16/audio_encoder_L16.h"

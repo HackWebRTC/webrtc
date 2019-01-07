@@ -13,6 +13,7 @@
 #include <set>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "p2p/base/dtlstransport.h"
 #include "p2p/base/fakeicetransport.h"
 #include "p2p/base/packettransportinternal.h"

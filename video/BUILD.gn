@@ -204,7 +204,7 @@ rtc_source_set("video_stream_encoder_impl") {
     "../rtc_base/experiments:quality_scaling_experiment",
     "../rtc_base/system:fallthrough",
     "../system_wrappers:field_trial",
-    "//third_party/abseil-cpp/absl/memory:memory",
+    "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
@@ -433,6 +433,7 @@ if (rtc_include_tests) {
       "../test:test_support",
       "../test:video_test_common",
       "../test:video_test_support",
+      "//third_party/abseil-cpp/absl/memory",
     ]
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).

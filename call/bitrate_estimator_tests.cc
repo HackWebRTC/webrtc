@@ -12,6 +12,7 @@
 #include <memory>
 #include <string>
 
+#include "absl/memory/memory.h"
 #include "call/call.h"
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"

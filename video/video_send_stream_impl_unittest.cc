@@ -10,6 +10,7 @@
 
 #include <string>
 
+#include "absl/memory/memory.h"
 #include "call/rtp_video_sender.h"
 #include "call/test/mock_bitrate_allocator.h"
 #include "call/test/mock_rtp_transport_controller_send.h"

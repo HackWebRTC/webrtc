@@ -10,6 +10,7 @@
 
 #include <memory>
 
+#include "absl/memory/memory.h"
 #include "api/video/encoded_image.h"
 #include "api/video/i420_buffer.h"
 #include "modules/video_coding/utility/quality_scaler.h"

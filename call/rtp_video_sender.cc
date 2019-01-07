@@ -15,6 +15,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "call/rtp_transport_controller_send_interface.h"
 #include "modules/pacing/packet_router.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"

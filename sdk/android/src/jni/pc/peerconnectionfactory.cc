@@ -13,6 +13,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
 #include "media/base/mediaengine.h"

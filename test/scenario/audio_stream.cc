@@ -9,6 +9,7 @@
  */
 #include "test/scenario/audio_stream.h"
 
+#include "absl/memory/memory.h"
 #include "rtc_base/bitrateallocationstrategy.h"
 #include "test/call_test.h"
 

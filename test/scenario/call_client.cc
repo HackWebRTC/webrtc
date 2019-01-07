@@ -11,6 +11,7 @@
 
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "logging/rtc_event_log/output/rtc_event_log_output_file.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"
 #include "modules/congestion_controller/goog_cc/test/goog_cc_printer.h"

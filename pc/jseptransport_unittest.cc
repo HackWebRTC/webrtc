@@ -12,6 +12,7 @@
 #include <tuple>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "media/base/fakertp.h"
 #include "p2p/base/fakedtlstransport.h"
 #include "p2p/base/fakeicetransport.h"

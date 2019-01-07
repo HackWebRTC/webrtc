@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "rtc_base/numerics/safe_minmax.h"
 
 namespace webrtc {

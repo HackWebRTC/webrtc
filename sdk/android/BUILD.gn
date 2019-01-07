@@ -778,6 +778,7 @@ if (is_android) {
       ":base_jni",
       ":generated_java_audio_jni",
       ":java_audio_device_module",
+      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 
@@ -1094,6 +1095,7 @@ if (is_android) {
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
       "../../system_wrappers:metrics",
+      "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
   }

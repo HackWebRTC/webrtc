@@ -10,6 +10,7 @@
 
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "api/test/create_videocodec_test_fixture.h"
 #include "media/base/mediaconstants.h"
 #include "modules/video_coding/codecs/test/videocodec_test_fixture_impl.h"

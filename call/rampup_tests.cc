@@ -10,6 +10,7 @@
 
 #include "call/rampup_tests.h"
 
+#include "absl/memory/memory.h"
 #include "call/fake_network_pipe.h"
 #include "logging/rtc_event_log/output/rtc_event_log_output_file.h"
 #include "rtc_base/checks.h"

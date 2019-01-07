@@ -1184,6 +1184,7 @@ if (rtc_enable_protobuf) {
       "../../rtc_base:rtc_base_approved",
       "../rtp_rtcp",
       "../rtp_rtcp:rtp_rtcp_format",
+      "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
     public_deps = [
@@ -1328,6 +1329,7 @@ if (rtc_include_tests) {
       "../../system_wrappers",
       "../../test:fileutils",
       "../../test:test_support",
+      "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/strings",
       "//third_party/abseil-cpp/absl/types:optional",
     ]

@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "absl/memory/memory.h"
 #include "api/audio_codecs/audio_decoder_factory_template.h"
 #include "api/audio_codecs/audio_encoder_factory_template.h"
 #include "api/audio_codecs/opus/audio_decoder_opus.h"

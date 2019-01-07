@@ -11,6 +11,7 @@
 #include <memory>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "api/test/simulated_network.h"
 #include "api/video/encoded_image.h"
 #include "call/call.h"

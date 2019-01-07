@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 #include "api/test/video/function_video_encoder_factory.h"
 #include "api/video/color_space.h"

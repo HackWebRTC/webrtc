@@ -13,6 +13,7 @@
 #include <memory>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "api/audio_codecs/audio_encoder.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"

@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "absl/memory/memory.h"
 #include "api/test/simulated_network.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "call/fake_network_pipe.h"

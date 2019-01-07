@@ -11,6 +11,7 @@
 #include <memory>
 #include <string>
 
+#include "absl/memory/memory.h"
 #include "call/rtp_transport_controller_send.h"
 #include "call/rtp_video_sender.h"
 #include "modules/video_coding/fec_controller_default.h"

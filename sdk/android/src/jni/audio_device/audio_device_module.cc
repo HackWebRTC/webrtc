@@ -12,6 +12,7 @@
 
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "modules/audio_device/audio_device_buffer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"

@@ -12,6 +12,7 @@
 
 #include <memory>
 
+#include "absl/memory/memory.h"
 #include "call/call.h"
 #include "call/simulated_network.h"
 #include "modules/rtp_rtcp/include/rtp_header_parser.h"

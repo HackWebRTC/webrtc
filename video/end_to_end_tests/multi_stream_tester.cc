@@ -14,6 +14,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "api/test/simulated_network.h"
 #include "api/test/video/function_video_encoder_factory.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"

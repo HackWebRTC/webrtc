@@ -10,6 +10,7 @@
 
 #include "rtc_base/cancelable_periodic_task.h"
 
+#include "absl/memory/memory.h"
 #include "rtc_base/event.h"
 #include "test/gmock.h"
 

@@ -14,6 +14,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "api/media_transport_interface.h"
 #include "rtc_base/asyncinvoker.h"
 #include "rtc_base/criticalsection.h"

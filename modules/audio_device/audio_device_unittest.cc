@@ -13,6 +13,7 @@
 #include <memory>
 #include <numeric>
 
+#include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "modules/audio_device/audio_device_impl.h"

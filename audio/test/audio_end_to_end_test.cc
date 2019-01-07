@@ -10,6 +10,7 @@
 
 #include <algorithm>
 
+#include "absl/memory/memory.h"
 #include "audio/test/audio_end_to_end_test.h"
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"

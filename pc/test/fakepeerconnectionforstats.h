@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "media/base/fakemediaengine.h"
 #include "pc/streamcollection.h"
 #include "pc/test/fakedatachannelprovider.h"

@@ -16,6 +16,7 @@
 #include <set>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "logging/rtc_event_log/rtc_event_processor.h"
 #include "modules/audio_coding/neteq/tools/packet.h"
 #include "rtc_base/checks.h"

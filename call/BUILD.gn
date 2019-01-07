@@ -506,6 +506,7 @@ if (rtc_include_tests) {
       "../test:test_main",
       "../test:test_support",
       "//testing/gtest",
+      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 }

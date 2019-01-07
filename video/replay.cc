@@ -15,6 +15,7 @@
 #include <memory>
 #include <sstream>
 
+#include "absl/memory/memory.h"
 #include "api/test/video/function_video_decoder_factory.h"
 #include "api/video_codecs/video_decoder.h"
 #include "call/call.h"
