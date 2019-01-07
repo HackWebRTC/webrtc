@@ -66,6 +66,7 @@ class VideoQualityTestFixtureInterface {
       bool sync_video;
       bool dtx;
       bool use_real_adm;
+      absl::optional<std::string> ana_config;
     } audio;
     struct Screenshare {
       bool enabled;
