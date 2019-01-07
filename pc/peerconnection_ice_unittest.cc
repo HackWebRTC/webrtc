@@ -756,7 +756,7 @@ TEST_P(PeerConnectionIceTest, IceRestartOfferClearsExistingCandidate) {
   auto caller = CreatePeerConnectionWithAudioVideo();
   auto callee = CreatePeerConnectionWithAudioVideo();
 
-  auto offer = caller->CreateOffer();
+  auto offer = caller->CreateOfferAndSetAsLocal();
   cricket::Candidate candidate = CreateLocalUdpCandidate(kCallerAddress);
   AddCandidateToFirstTransport(&candidate, offer.get());
 
@@ -764,7 +764,8 @@ TEST_P(PeerConnectionIceTest, IceRestartOfferClearsExistingCandidate) {
 
   RTCOfferAnswerOptions options;
   options.ice_restart = true;
-  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOffer(options)));
+  ASSERT_TRUE(
+      callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal(options)));
 
   EXPECT_EQ(0u, callee->GetIceCandidatesFromRemoteDescription().size());
 }
@@ -776,7 +777,7 @@ TEST_P(PeerConnectionIceTest,
   auto caller = CreatePeerConnectionWithAudioVideo();
   auto callee = CreatePeerConnectionWithAudioVideo();
 
-  auto offer = caller->CreateOffer();
+  auto offer = caller->CreateOfferAndSetAsLocal();
   cricket::Candidate old_candidate =
       CreateLocalUdpCandidate(kFirstCallerAddress);
   AddCandidateToFirstTransport(&old_candidate, offer.get());
@@ -785,7 +786,7 @@ TEST_P(PeerConnectionIceTest,
 
   RTCOfferAnswerOptions options;
   options.ice_restart = true;
-  auto restart_offer = caller->CreateOffer(options);
+  auto restart_offer = caller->CreateOfferAndSetAsLocal(options);
   cricket::Candidate new_candidate =
       CreateLocalUdpCandidate(kRestartedCallerAddress);
   AddCandidateToFirstTransport(&new_candidate, restart_offer.get());
