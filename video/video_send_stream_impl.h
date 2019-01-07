@@ -82,7 +82,8 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
       std::map<uint32_t, RtpState> suspended_ssrcs,
       std::map<uint32_t, RtpPayloadState> suspended_payload_states,
       VideoEncoderConfig::ContentType content_type,
-      std::unique_ptr<FecController> fec_controller);
+      std::unique_ptr<FecController> fec_controller,
+      MediaTransportInterface* media_transport);
   ~VideoSendStreamImpl() override;
 
   // RegisterProcessThread register |module_process_thread| with those objects
@@ -185,6 +186,10 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   };
   absl::optional<VbaSendContext> video_bitrate_allocation_context_
       RTC_GUARDED_BY(worker_queue_);
+  MediaTransportInterface* const media_transport_;
+  rtc::CriticalSection media_transport_id_lock_;
+  int64_t media_transport_frame_id_ RTC_GUARDED_BY(media_transport_id_lock_) =
+      0;
 };
 }  // namespace internal
 }  // namespace webrtc

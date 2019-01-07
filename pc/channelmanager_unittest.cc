@@ -86,7 +86,7 @@ class ChannelManagerTest : public testing::Test {
         webrtc::CryptoOptions(), AudioOptions());
     EXPECT_TRUE(voice_channel != nullptr);
     cricket::VideoChannel* video_channel = cm_->CreateVideoChannel(
-        &fake_call_, cricket::MediaConfig(), rtp_transport,
+        &fake_call_, cricket::MediaConfig(), rtp_transport, media_transport,
         rtc::Thread::Current(), cricket::CN_VIDEO, kDefaultSrtpRequired,
         webrtc::CryptoOptions(), VideoOptions());
     EXPECT_TRUE(video_channel != nullptr);

@@ -18,6 +18,7 @@
 
 #include "api/call/transport.h"
 #include "api/crypto/cryptooptions.h"
+#include "api/media_transport_interface.h"
 #include "api/rtp_headers.h"
 #include "api/rtpparameters.h"
 #include "api/rtpreceiverinterface.h"
@@ -113,6 +114,8 @@ class VideoReceiveStream {
    public:
     Config() = delete;
     Config(Config&&);
+    Config(Transport* rtcp_send_transport,
+           MediaTransportInterface* media_transport);
     explicit Config(Transport* rtcp_send_transport);
     Config& operator=(Config&&);
     Config& operator=(const Config&) = delete;
@@ -187,6 +190,8 @@ class VideoReceiveStream {
 
     // Transport for outgoing packets (RTCP).
     Transport* rtcp_send_transport = nullptr;
+
+    MediaTransportInterface* media_transport = nullptr;
 
     // Must not be 'nullptr' when the stream is started.
     rtc::VideoSinkInterface<VideoFrame>* renderer = nullptr;

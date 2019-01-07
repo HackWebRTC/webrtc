@@ -246,7 +246,8 @@ VideoSendStreamImpl::VideoSendStreamImpl(
     std::map<uint32_t, RtpState> suspended_ssrcs,
     std::map<uint32_t, RtpPayloadState> suspended_payload_states,
     VideoEncoderConfig::ContentType content_type,
-    std::unique_ptr<FecController> fec_controller)
+    std::unique_ptr<FecController> fec_controller,
+    MediaTransportInterface* media_transport)
     : has_alr_probing_(config->periodic_alr_bandwidth_probing ||
                        GetAlrSettings(content_type)),
       pacing_config_(PacingConfig()),
@@ -280,12 +281,19 @@ VideoSendStreamImpl::VideoSendStreamImpl(
           event_log,
           std::move(fec_controller),
           CreateFrameEncryptionConfig(config_))),
-      weak_ptr_factory_(this) {
+      weak_ptr_factory_(this),
+      media_transport_(media_transport) {
   RTC_DCHECK_RUN_ON(worker_queue_);
   RTC_LOG(LS_INFO) << "VideoSendStreamInternal: " << config_->ToString();
   weak_ptr_ = weak_ptr_factory_.GetWeakPtr();
 
-  RTC_DCHECK(!config_->rtp.ssrcs.empty());
+  if (media_transport_) {
+    // The configured ssrc is interpreted as a channel id, so there must be
+    // exactly one.
+    RTC_DCHECK_EQ(config_->rtp.ssrcs.size(), 1);
+  } else {
+    RTC_DCHECK(!config_->rtp.ssrcs.empty());
+  }
   RTC_DCHECK(call_stats_);
   RTC_DCHECK(transport_);
   RTC_DCHECK_NE(initial_encoder_max_bitrate, 0);
@@ -599,9 +607,32 @@ EncodedImageCallback::Result VideoSendStreamImpl::OnEncodedImage(
       check_encoder_activity_task_->UpdateEncoderActivity();
   }
 
-  EncodedImageCallback::Result result = rtp_video_sender_->OnEncodedImage(
-      encoded_image, codec_specific_info, fragmentation);
-
+  EncodedImageCallback::Result result(EncodedImageCallback::Result::OK);
+  if (media_transport_) {
+    int64_t frame_id;
+    {
+      // TODO(nisse): Responsibility for allocation of frame ids should move to
+      // VideoStreamEncoder.
+      rtc::CritScope cs(&media_transport_id_lock_);
+      frame_id = media_transport_frame_id_++;
+    }
+    // TODO(nisse): Responsibility for reference meta data should be moved
+    // upstream, ideally close to the encoders, but probably VideoStreamEncoder
+    // will need to do some translation to produce reference info using frame
+    // ids.
+    std::vector<int64_t> referenced_frame_ids;
+    if (encoded_image._frameType != kVideoFrameKey) {
+      RTC_DCHECK_GT(frame_id, 0);
+      referenced_frame_ids.push_back(frame_id - 1);
+    }
+    media_transport_->SendVideoFrame(
+        config_->rtp.ssrcs[0], webrtc::MediaTransportEncodedVideoFrame(
+                                   frame_id, referenced_frame_ids,
+                                   config_->rtp.payload_type, encoded_image));
+  } else {
+    result = rtp_video_sender_->OnEncodedImage(
+        encoded_image, codec_specific_info, fragmentation);
+  }
   // Check if there's a throttled VideoBitrateAllocation that we should try
   // sending.
   rtc::WeakPtr<VideoSendStreamImpl> send_stream = weak_ptr_;

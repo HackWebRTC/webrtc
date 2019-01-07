@@ -3598,6 +3598,41 @@ TEST_P(PeerConnectionIntegrationTest, MediaTransportBidirectionalAudio) {
   EXPECT_GE(first_stats.sent_audio_frames, second_stats.received_audio_frames);
 }
 
+TEST_P(PeerConnectionIntegrationTest, MediaTransportBidirectionalVideo) {
+  PeerConnectionInterface::RTCConfiguration rtc_config;
+  rtc_config.use_media_transport = true;
+  rtc_config.enable_dtls_srtp = false;  // SDES is required for media transport.
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithConfigAndMediaTransportFactory(
+      rtc_config, rtc_config, loopback_media_transports()->first_factory(),
+      loopback_media_transports()->second_factory()));
+  ConnectFakeSignaling();
+
+  caller()->AddVideoTrack();
+  callee()->AddVideoTrack();
+  // Start offer/answer exchange and wait for it to complete.
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  // Ensure that the media transport is ready.
+  loopback_media_transports()->SetState(webrtc::MediaTransportState::kWritable);
+  loopback_media_transports()->FlushAsyncInvokes();
+
+  MediaExpectations media_expectations;
+  media_expectations.ExpectBidirectionalVideo();
+  ASSERT_TRUE(ExpectNewFrames(media_expectations));
+
+  webrtc::MediaTransportPair::Stats first_stats =
+      loopback_media_transports()->FirstStats();
+  webrtc::MediaTransportPair::Stats second_stats =
+      loopback_media_transports()->SecondStats();
+
+  EXPECT_GT(first_stats.received_video_frames, 0);
+  EXPECT_GE(second_stats.sent_video_frames, first_stats.received_video_frames);
+
+  EXPECT_GT(second_stats.received_video_frames, 0);
+  EXPECT_GE(first_stats.sent_video_frames, second_stats.received_video_frames);
+}
+
 // Test that the ICE connection and gathering states eventually reach
 // "complete".
 TEST_P(PeerConnectionIntegrationTest, IceStatesReachCompletion) {

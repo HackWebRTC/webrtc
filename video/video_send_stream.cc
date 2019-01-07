@@ -102,7 +102,7 @@ VideoSendStream::VideoSendStream(
             event_log, &config_, encoder_config.max_bitrate_bps,
             encoder_config.bitrate_priority, suspended_ssrcs,
             suspended_payload_states, encoder_config.content_type,
-            std::move(fec_controller)));
+            std::move(fec_controller), config_.media_transport));
       },
       [this]() { thread_sync_event_.Set(); }));
 

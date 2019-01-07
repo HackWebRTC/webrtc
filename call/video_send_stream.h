@@ -19,6 +19,7 @@
 #include "absl/types/optional.h"
 #include "api/call/transport.h"
 #include "api/crypto/cryptooptions.h"
+#include "api/media_transport_interface.h"
 #include "api/rtpparameters.h"
 #include "api/video/video_content_type.h"
 #include "api/video/video_frame.h"
@@ -97,6 +98,7 @@ class VideoSendStream {
    public:
     Config() = delete;
     Config(Config&&);
+    Config(Transport* send_transport, MediaTransportInterface* media_transport);
     explicit Config(Transport* send_transport);
 
     Config& operator=(Config&&);
@@ -118,6 +120,8 @@ class VideoSendStream {
 
     // Transport for outgoing packets.
     Transport* send_transport = nullptr;
+
+    MediaTransportInterface* media_transport = nullptr;
 
     // Expected delay needed by the renderer, i.e. the frame will be delivered
     // this many milliseconds, if possible, earlier than expected render time.

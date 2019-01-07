@@ -169,11 +169,15 @@ MediaTransportInterface::GetLatestTargetTransferRate() {
 void MediaTransportInterface::SetNetworkChangeCallback(
     MediaTransportNetworkChangeCallback* callback) {}
 
-void MediaTransportInterface::RemoveTargetTransferRateObserver(
-    webrtc::TargetTransferRateObserver* observer) {}
-
 void MediaTransportInterface::AddTargetTransferRateObserver(
-    webrtc::TargetTransferRateObserver* observer) {}
+    TargetTransferRateObserver* observer) {}
+void MediaTransportInterface::RemoveTargetTransferRateObserver(
+    TargetTransferRateObserver* observer) {}
+
+void MediaTransportInterface::AddRttObserver(
+    MediaTransportRttObserver* observer) {}
+void MediaTransportInterface::RemoveRttObserver(
+    MediaTransportRttObserver* observer) {}
 
 size_t MediaTransportInterface::GetAudioPacketOverhead() const {
   return 0;

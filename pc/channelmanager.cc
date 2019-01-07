@@ -226,6 +226,7 @@ VideoChannel* ChannelManager::CreateVideoChannel(
     webrtc::Call* call,
     const cricket::MediaConfig& media_config,
     webrtc::RtpTransportInternal* rtp_transport,
+    webrtc::MediaTransportInterface* media_transport,
     rtc::Thread* signaling_thread,
     const std::string& content_name,
     bool srtp_required,
@@ -234,8 +235,8 @@ VideoChannel* ChannelManager::CreateVideoChannel(
   if (!worker_thread_->IsCurrent()) {
     return worker_thread_->Invoke<VideoChannel*>(RTC_FROM_HERE, [&] {
       return CreateVideoChannel(call, media_config, rtp_transport,
-                                signaling_thread, content_name, srtp_required,
-                                crypto_options, options);
+                                media_transport, signaling_thread, content_name,
+                                srtp_required, crypto_options, options);
     });
   }
 
@@ -257,8 +258,7 @@ VideoChannel* ChannelManager::CreateVideoChannel(
       absl::WrapUnique(media_channel), content_name, srtp_required,
       crypto_options);
 
-  // TODO(sukhanov): Add media_transport support for video channel.
-  video_channel->Init_w(rtp_transport, /*media_transport=*/nullptr);
+  video_channel->Init_w(rtp_transport, media_transport);
 
   VideoChannel* video_channel_ptr = video_channel.get();
   video_channels_.push_back(std::move(video_channel));

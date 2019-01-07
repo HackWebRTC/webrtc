@@ -107,14 +107,16 @@ class ChannelManager final {
   // Creates a video channel, synced with the specified voice channel, and
   // associated with the specified session.
   // Version of the above that takes PacketTransportInternal.
-  VideoChannel* CreateVideoChannel(webrtc::Call* call,
-                                   const cricket::MediaConfig& media_config,
-                                   webrtc::RtpTransportInternal* rtp_transport,
-                                   rtc::Thread* signaling_thread,
-                                   const std::string& content_name,
-                                   bool srtp_required,
-                                   const webrtc::CryptoOptions& crypto_options,
-                                   const VideoOptions& options);
+  VideoChannel* CreateVideoChannel(
+      webrtc::Call* call,
+      const cricket::MediaConfig& media_config,
+      webrtc::RtpTransportInternal* rtp_transport,
+      webrtc::MediaTransportInterface* media_transport,
+      rtc::Thread* signaling_thread,
+      const std::string& content_name,
+      bool srtp_required,
+      const webrtc::CryptoOptions& crypto_options,
+      const VideoOptions& options);
   // Destroys a video channel created by CreateVideoChannel.
   void DestroyVideoChannel(VideoChannel* video_channel);
 

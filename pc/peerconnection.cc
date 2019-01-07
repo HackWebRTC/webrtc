@@ -5922,10 +5922,13 @@ cricket::VoiceChannel* PeerConnection::CreateVoiceChannel(
 cricket::VideoChannel* PeerConnection::CreateVideoChannel(
     const std::string& mid) {
   RtpTransportInternal* rtp_transport = GetRtpTransport(mid);
+  MediaTransportInterface* media_transport = nullptr;
+  if (configuration_.use_media_transport) {
+    media_transport = GetMediaTransport(mid);
+  }
 
-  // TODO(sukhanov): Propagate media_transport to video channel.
   cricket::VideoChannel* video_channel = channel_manager()->CreateVideoChannel(
-      call_.get(), configuration_.media_config, rtp_transport,
+      call_.get(), configuration_.media_config, rtp_transport, media_transport,
       signaling_thread(), mid, SrtpRequired(), GetCryptoOptions(),
       video_options_);
   if (!video_channel) {

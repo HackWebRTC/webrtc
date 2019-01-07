@@ -257,6 +257,10 @@ class Call final : public webrtc::Call,
   //  media transport.
   void RegisterRateObserver() RTC_LOCKS_EXCLUDED(target_observer_crit_);
 
+  // Intended for DCHECKs, to avoid locking in production builds.
+  MediaTransportInterface* media_transport()
+      RTC_LOCKS_EXCLUDED(target_observer_crit_);
+
   Clock* const clock_;
 
   const int num_cpu_cores_;
@@ -516,6 +520,11 @@ void Call::RegisterRateObserver() {
   }
 }
 
+MediaTransportInterface* Call::media_transport() {
+  rtc::CritScope lock(&target_observer_crit_);
+  return media_transport_;
+}
+
 void Call::MediaTransportChange(MediaTransportInterface* media_transport) {
   rtc::CritScope lock(&target_observer_crit_);
 
@@ -625,10 +634,7 @@ webrtc::AudioSendStream* Call::CreateAudioSendStream(
   TRACE_EVENT0("webrtc", "Call::CreateAudioSendStream");
   RTC_DCHECK_CALLED_SEQUENTIALLY(&configuration_sequence_checker_);
 
-  {
-    rtc::CritScope lock(&target_observer_crit_);
-    RTC_DCHECK(media_transport_ == config.media_transport);
-  }
+  RTC_DCHECK(media_transport() == config.media_transport);
 
   RegisterRateObserver();
 
@@ -761,6 +767,8 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
     std::unique_ptr<FecController> fec_controller) {
   TRACE_EVENT0("webrtc", "Call::CreateVideoSendStream");
   RTC_DCHECK_CALLED_SEQUENTIALLY(&configuration_sequence_checker_);
+
+  RTC_DCHECK(media_transport() == config.media_transport);
 
   RegisterRateObserver();
 
