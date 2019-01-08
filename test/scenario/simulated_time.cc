@@ -111,7 +111,7 @@ rtc::CopyOnWriteBuffer FeedbackToBuffer(
                                 sizeof(RawFeedbackReportPacket));
 }
 
-SimulatedSender::SimulatedSender(NetworkNode* send_node,
+SimulatedSender::SimulatedSender(EmulatedNetworkNode* send_node,
                                  uint64_t send_receiver_id)
     : send_node_(send_node), send_receiver_id_(send_receiver_id) {}
 
@@ -204,7 +204,7 @@ void SimulatedSender::Update(NetworkControlUpdate update) {
 
 SimulatedFeedback::SimulatedFeedback(SimulatedTimeClientConfig config,
                                      uint64_t return_receiver_id,
-                                     NetworkNode* return_node)
+                                     EmulatedNetworkNode* return_node)
     : config_(config),
       return_receiver_id_(return_receiver_id),
       return_node_(return_node) {}
@@ -248,8 +248,8 @@ SimulatedTimeClient::SimulatedTimeClient(
     std::string log_filename,
     SimulatedTimeClientConfig config,
     std::vector<PacketStreamConfig> stream_configs,
-    std::vector<NetworkNode*> send_link,
-    std::vector<NetworkNode*> return_link,
+    std::vector<EmulatedNetworkNode*> send_link,
+    std::vector<EmulatedNetworkNode*> return_link,
     uint64_t send_receiver_id,
     uint64_t return_receiver_id,
     Timestamp at_time)
@@ -269,8 +269,8 @@ SimulatedTimeClient::SimulatedTimeClient(
   congestion_controller_ = network_controller_factory_.Create(initial_config);
   for (auto& stream_config : stream_configs)
     packet_streams_.emplace_back(new PacketStream(stream_config));
-  NetworkNode::Route(send_receiver_id, send_link, &feedback_);
-  NetworkNode::Route(return_receiver_id, return_link, this);
+  EmulatedNetworkNode::CreateRoute(send_receiver_id, send_link, &feedback_);
+  EmulatedNetworkNode::CreateRoute(return_receiver_id, return_link, this);
 
   CongestionProcess(at_time);
   network_controller_factory_.LogCongestionControllerStats(at_time);

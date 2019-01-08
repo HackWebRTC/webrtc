@@ -51,7 +51,7 @@ class SimulatedFeedback : EmulatedNetworkReceiverInterface {
  public:
   SimulatedFeedback(SimulatedTimeClientConfig config,
                     uint64_t return_receiver_id,
-                    NetworkNode* return_node);
+                    EmulatedNetworkNode* return_node);
 
   void OnPacketReceived(EmulatedIpPacket packet) override;
 
@@ -59,7 +59,7 @@ class SimulatedFeedback : EmulatedNetworkReceiverInterface {
   friend class SimulatedTimeClient;
   const SimulatedTimeClientConfig config_;
   const uint64_t return_receiver_id_;
-  NetworkNode* return_node_;
+  EmulatedNetworkNode* return_node_;
   Timestamp last_feedback_time_ = Timestamp::MinusInfinity();
   int32_t next_feedback_seq_num_ = 1;
   std::map<int64_t, Timestamp> receive_times_;
@@ -88,7 +88,7 @@ class SimulatedSender {
     int64_t size;
   };
 
-  SimulatedSender(NetworkNode* send_node, uint64_t send_receiver_id);
+  SimulatedSender(EmulatedNetworkNode* send_node, uint64_t send_receiver_id);
   SimulatedSender(const SimulatedSender&) = delete;
   ~SimulatedSender();
   TransportPacketsFeedback PullFeedbackReport(SimpleFeedbackReportPacket report,
@@ -98,7 +98,7 @@ class SimulatedSender {
 
  private:
   friend class SimulatedTimeClient;
-  NetworkNode* send_node_;
+  EmulatedNetworkNode* send_node_;
   uint64_t send_receiver_id_;
   PacerConfig pacer_config_;
   DataSize max_in_flight_ = DataSize::Infinity();
@@ -123,8 +123,8 @@ class SimulatedTimeClient : EmulatedNetworkReceiverInterface {
   SimulatedTimeClient(std::string log_filename,
                       SimulatedTimeClientConfig config,
                       std::vector<PacketStreamConfig> stream_configs,
-                      std::vector<NetworkNode*> send_link,
-                      std::vector<NetworkNode*> return_link,
+                      std::vector<EmulatedNetworkNode*> send_link,
+                      std::vector<EmulatedNetworkNode*> return_link,
                       uint64_t send_receiver_id,
                       uint64_t return_receiver_id,
                       Timestamp at_time);
@@ -146,8 +146,8 @@ class SimulatedTimeClient : EmulatedNetworkReceiverInterface {
   friend class Scenario;
   LoggingNetworkControllerFactory network_controller_factory_;
   std::unique_ptr<NetworkControllerInterface> congestion_controller_;
-  std::vector<NetworkNode*> send_link_;
-  std::vector<NetworkNode*> return_link_;
+  std::vector<EmulatedNetworkNode*> send_link_;
+  std::vector<EmulatedNetworkNode*> return_link_;
   SimulatedSender sender_;
   SimulatedFeedback feedback_;
   TargetRateConstraints current_contraints_;

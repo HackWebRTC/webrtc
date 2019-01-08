@@ -135,21 +135,23 @@ CallClient* Scenario::CreateClient(
   return CreateClient(name, config);
 }
 
-CallClientPair* Scenario::CreateRoutes(CallClient* first,
-                                       std::vector<NetworkNode*> send_link,
-                                       CallClient* second,
-                                       std::vector<NetworkNode*> return_link) {
+CallClientPair* Scenario::CreateRoutes(
+    CallClient* first,
+    std::vector<EmulatedNetworkNode*> send_link,
+    CallClient* second,
+    std::vector<EmulatedNetworkNode*> return_link) {
   return CreateRoutes(first, send_link,
                       DataSize::bytes(PacketOverhead::kDefault), second,
                       return_link, DataSize::bytes(PacketOverhead::kDefault));
 }
 
-CallClientPair* Scenario::CreateRoutes(CallClient* first,
-                                       std::vector<NetworkNode*> send_link,
-                                       DataSize first_overhead,
-                                       CallClient* second,
-                                       std::vector<NetworkNode*> return_link,
-                                       DataSize second_overhead) {
+CallClientPair* Scenario::CreateRoutes(
+    CallClient* first,
+    std::vector<EmulatedNetworkNode*> send_link,
+    DataSize first_overhead,
+    CallClient* second,
+    std::vector<EmulatedNetworkNode*> return_link,
+    DataSize second_overhead) {
   CallClientPair* client_pair = new CallClientPair(first, second);
   ChangeRoute(client_pair->forward(), send_link, first_overhead);
   ChangeRoute(client_pair->reverse(), return_link, second_overhead);
@@ -158,16 +160,16 @@ CallClientPair* Scenario::CreateRoutes(CallClient* first,
 }
 
 void Scenario::ChangeRoute(std::pair<CallClient*, CallClient*> clients,
-                           std::vector<NetworkNode*> over_nodes) {
+                           std::vector<EmulatedNetworkNode*> over_nodes) {
   ChangeRoute(clients, over_nodes, DataSize::bytes(PacketOverhead::kDefault));
 }
 
 void Scenario::ChangeRoute(std::pair<CallClient*, CallClient*> clients,
-                           std::vector<NetworkNode*> over_nodes,
+                           std::vector<EmulatedNetworkNode*> over_nodes,
                            DataSize overhead) {
   uint64_t route_id = next_route_id_++;
   clients.second->route_overhead_.insert({route_id, overhead});
-  NetworkNode::Route(route_id, over_nodes, clients.second);
+  EmulatedNetworkNode::CreateRoute(route_id, over_nodes, clients.second);
   clients.first->transport_.Connect(over_nodes.front(), route_id, overhead);
 }
 
@@ -175,8 +177,8 @@ SimulatedTimeClient* Scenario::CreateSimulatedTimeClient(
     std::string name,
     SimulatedTimeClientConfig config,
     std::vector<PacketStreamConfig> stream_configs,
-    std::vector<NetworkNode*> send_link,
-    std::vector<NetworkNode*> return_link) {
+    std::vector<EmulatedNetworkNode*> send_link,
+    std::vector<EmulatedNetworkNode*> return_link) {
   uint64_t send_id = next_route_id_++;
   uint64_t return_id = next_route_id_++;
   SimulatedTimeClient* client = new SimulatedTimeClient(
@@ -213,41 +215,44 @@ SimulationNode* Scenario::CreateSimulationNode(NetworkNodeConfig config) {
   return sim_node;
 }
 
-NetworkNode* Scenario::CreateNetworkNode(
+EmulatedNetworkNode* Scenario::CreateNetworkNode(
     NetworkNodeConfig config,
     std::unique_ptr<NetworkBehaviorInterface> behavior) {
   RTC_DCHECK(config.mode == NetworkNodeConfig::TrafficMode::kCustom);
-  network_nodes_.emplace_back(new NetworkNode(config, std::move(behavior)));
-  NetworkNode* network_node = network_nodes_.back().get();
+  network_nodes_.emplace_back(new EmulatedNetworkNode(
+      std::move(behavior), config.packet_overhead.bytes_or(0)));
+  EmulatedNetworkNode* network_node = network_nodes_.back().get();
   Every(config.update_frequency,
         [this, network_node] { network_node->Process(Now()); });
   return network_node;
 }
 
-void Scenario::TriggerPacketBurst(std::vector<NetworkNode*> over_nodes,
+void Scenario::TriggerPacketBurst(std::vector<EmulatedNetworkNode*> over_nodes,
                                   size_t num_packets,
                                   size_t packet_size) {
   uint64_t route_id = next_route_id_++;
-  NetworkNode::Route(route_id, over_nodes, &null_receiver_);
+  EmulatedNetworkNode::CreateRoute(route_id, over_nodes, &null_receiver_);
   for (size_t i = 0; i < num_packets; ++i)
     over_nodes[0]->OnPacketReceived(EmulatedIpPacket(
         rtc::SocketAddress() /*from*/, rtc::SocketAddress(), /*to*/
         route_id, rtc::CopyOnWriteBuffer(packet_size), Now()));
 }
 
-void Scenario::NetworkDelayedAction(std::vector<NetworkNode*> over_nodes,
-                                    size_t packet_size,
-                                    std::function<void()> action) {
+void Scenario::NetworkDelayedAction(
+    std::vector<EmulatedNetworkNode*> over_nodes,
+    size_t packet_size,
+    std::function<void()> action) {
   uint64_t route_id = next_route_id_++;
   action_receivers_.emplace_back(new ActionReceiver(action));
-  NetworkNode::Route(route_id, over_nodes, action_receivers_.back().get());
+  EmulatedNetworkNode::CreateRoute(route_id, over_nodes,
+                                   action_receivers_.back().get());
   over_nodes[0]->OnPacketReceived(EmulatedIpPacket(
       rtc::SocketAddress() /*from*/, rtc::SocketAddress() /*to*/, route_id,
       rtc::CopyOnWriteBuffer(packet_size), Now()));
 }
 
 CrossTrafficSource* Scenario::CreateCrossTraffic(
-    std::vector<NetworkNode*> over_nodes,
+    std::vector<EmulatedNetworkNode*> over_nodes,
     std::function<void(CrossTrafficConfig*)> config_modifier) {
   CrossTrafficConfig cross_config;
   config_modifier(&cross_config);
@@ -255,13 +260,13 @@ CrossTrafficSource* Scenario::CreateCrossTraffic(
 }
 
 CrossTrafficSource* Scenario::CreateCrossTraffic(
-    std::vector<NetworkNode*> over_nodes,
+    std::vector<EmulatedNetworkNode*> over_nodes,
     CrossTrafficConfig config) {
   uint64_t route_id = next_route_id_++;
   cross_traffic_sources_.emplace_back(
       new CrossTrafficSource(over_nodes.front(), route_id, config));
   CrossTrafficSource* node = cross_traffic_sources_.back().get();
-  NetworkNode::Route(route_id, over_nodes, &null_receiver_);
+  EmulatedNetworkNode::CreateRoute(route_id, over_nodes, &null_receiver_);
   Every(config.min_packet_interval,
         [this, node](TimeDelta delta) { node->Process(Now(), delta); });
   return node;

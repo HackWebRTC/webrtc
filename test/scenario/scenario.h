@@ -69,7 +69,7 @@ class Scenario {
   SimulationNode* CreateSimulationNode(NetworkNodeConfig config);
   SimulationNode* CreateSimulationNode(
       std::function<void(NetworkNodeConfig*)> config_modifier);
-  NetworkNode* CreateNetworkNode(
+  EmulatedNetworkNode* CreateNetworkNode(
       NetworkNodeConfig config,
       std::unique_ptr<NetworkBehaviorInterface> behavior);
 
@@ -79,30 +79,30 @@ class Scenario {
       std::function<void(CallClientConfig*)> config_modifier);
 
   CallClientPair* CreateRoutes(CallClient* first,
-                               std::vector<NetworkNode*> send_link,
+                               std::vector<EmulatedNetworkNode*> send_link,
                                CallClient* second,
-                               std::vector<NetworkNode*> return_link);
+                               std::vector<EmulatedNetworkNode*> return_link);
 
   CallClientPair* CreateRoutes(CallClient* first,
-                               std::vector<NetworkNode*> send_link,
+                               std::vector<EmulatedNetworkNode*> send_link,
                                DataSize first_overhead,
                                CallClient* second,
-                               std::vector<NetworkNode*> return_link,
+                               std::vector<EmulatedNetworkNode*> return_link,
                                DataSize second_overhead);
 
   void ChangeRoute(std::pair<CallClient*, CallClient*> clients,
-                   std::vector<NetworkNode*> over_nodes);
+                   std::vector<EmulatedNetworkNode*> over_nodes);
 
   void ChangeRoute(std::pair<CallClient*, CallClient*> clients,
-                   std::vector<NetworkNode*> over_nodes,
+                   std::vector<EmulatedNetworkNode*> over_nodes,
                    DataSize overhead);
 
   SimulatedTimeClient* CreateSimulatedTimeClient(
       std::string name,
       SimulatedTimeClientConfig config,
       std::vector<PacketStreamConfig> stream_configs,
-      std::vector<NetworkNode*> send_link,
-      std::vector<NetworkNode*> return_link);
+      std::vector<EmulatedNetworkNode*> send_link,
+      std::vector<EmulatedNetworkNode*> return_link);
 
   VideoStreamPair* CreateVideoStream(
       std::pair<CallClient*, CallClient*> clients,
@@ -119,10 +119,11 @@ class Scenario {
       AudioStreamConfig config);
 
   CrossTrafficSource* CreateCrossTraffic(
-      std::vector<NetworkNode*> over_nodes,
+      std::vector<EmulatedNetworkNode*> over_nodes,
       std::function<void(CrossTrafficConfig*)> config_modifier);
-  CrossTrafficSource* CreateCrossTraffic(std::vector<NetworkNode*> over_nodes,
-                                         CrossTrafficConfig config);
+  CrossTrafficSource* CreateCrossTraffic(
+      std::vector<EmulatedNetworkNode*> over_nodes,
+      CrossTrafficConfig config);
 
   // Runs the provided function with a fixed interval.
   RepeatedActivity* Every(TimeDelta interval,
@@ -133,7 +134,7 @@ class Scenario {
   void At(TimeDelta offset, std::function<void()> function);
 
   // Sends a packet over the nodes and runs |action| when it has been delivered.
-  void NetworkDelayedAction(std::vector<NetworkNode*> over_nodes,
+  void NetworkDelayedAction(std::vector<EmulatedNetworkNode*> over_nodes,
                             size_t packet_size,
                             std::function<void()> action);
 
@@ -148,7 +149,7 @@ class Scenario {
   void Stop();
 
   // Triggers sending of dummy packets over the given nodes.
-  void TriggerPacketBurst(std::vector<NetworkNode*> over_nodes,
+  void TriggerPacketBurst(std::vector<EmulatedNetworkNode*> over_nodes,
                           size_t num_packets,
                           size_t packet_size);
 
@@ -180,7 +181,7 @@ class Scenario {
 
   std::vector<std::unique_ptr<CallClient>> clients_;
   std::vector<std::unique_ptr<CallClientPair>> client_pairs_;
-  std::vector<std::unique_ptr<NetworkNode>> network_nodes_;
+  std::vector<std::unique_ptr<EmulatedNetworkNode>> network_nodes_;
   std::vector<std::unique_ptr<CrossTrafficSource>> cross_traffic_sources_;
   std::vector<std::unique_ptr<VideoStreamPair>> video_streams_;
   std::vector<std::unique_ptr<AudioStreamPair>> audio_streams_;
