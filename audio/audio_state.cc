@@ -17,9 +17,9 @@
 #include "absl/memory/memory.h"
 #include "audio/audio_receive_stream.h"
 #include "modules/audio_device/include/audio_device.h"
-#include "rtc_base/atomicops.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/refcountedobject.h"
 #include "rtc_base/thread.h"
 
 namespace webrtc {
@@ -168,20 +168,6 @@ void AudioState::SetStereoChannelSwapping(bool enable) {
   audio_transport_.SetStereoChannelSwapping(enable);
 }
 
-// Reference count; implementation copied from rtc::RefCountedObject.
-void AudioState::AddRef() const {
-  rtc::AtomicOps::Increment(&ref_count_);
-}
-
-// Reference count; implementation copied from rtc::RefCountedObject.
-rtc::RefCountReleaseStatus AudioState::Release() const {
-  if (rtc::AtomicOps::Decrement(&ref_count_) == 0) {
-    delete this;
-    return rtc::RefCountReleaseStatus::kDroppedLastRef;
-  }
-  return rtc::RefCountReleaseStatus::kOtherRefsRemained;
-}
-
 void AudioState::UpdateAudioTransportWithSendingStreams() {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   std::vector<webrtc::AudioSendStream*> sending_streams;
@@ -199,6 +185,6 @@ void AudioState::UpdateAudioTransportWithSendingStreams() {
 
 rtc::scoped_refptr<AudioState> AudioState::Create(
     const AudioState::Config& config) {
-  return rtc::scoped_refptr<AudioState>(new internal::AudioState(config));
+  return new rtc::RefCountedObject<internal::AudioState>(config);
 }
 }  // namespace webrtc

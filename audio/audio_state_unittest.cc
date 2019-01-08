@@ -98,14 +98,14 @@ TEST(AudioStateTest, Create) {
 
 TEST(AudioStateTest, ConstructDestruct) {
   ConfigHelper helper;
-  std::unique_ptr<internal::AudioState> audio_state(
-      new internal::AudioState(helper.config()));
+  rtc::scoped_refptr<internal::AudioState> audio_state(
+      new rtc::RefCountedObject<internal::AudioState>(helper.config()));
 }
 
 TEST(AudioStateTest, RecordedAudioArrivesAtSingleStream) {
   ConfigHelper helper;
-  std::unique_ptr<internal::AudioState> audio_state(
-      new internal::AudioState(helper.config()));
+  rtc::scoped_refptr<internal::AudioState> audio_state(
+      new rtc::RefCountedObject<internal::AudioState>(helper.config()));
 
   MockAudioSendStream stream;
   audio_state->AddSendingStream(&stream, 8000, 2);
@@ -142,8 +142,8 @@ TEST(AudioStateTest, RecordedAudioArrivesAtSingleStream) {
 
 TEST(AudioStateTest, RecordedAudioArrivesAtMultipleStreams) {
   ConfigHelper helper;
-  std::unique_ptr<internal::AudioState> audio_state(
-      new internal::AudioState(helper.config()));
+  rtc::scoped_refptr<internal::AudioState> audio_state(
+      new rtc::RefCountedObject<internal::AudioState>(helper.config()));
 
   MockAudioSendStream stream_1;
   MockAudioSendStream stream_2;
@@ -196,8 +196,9 @@ TEST(AudioStateTest, EnableChannelSwap) {
   constexpr size_t kNumChannels = 2;
 
   ConfigHelper helper;
-  std::unique_ptr<internal::AudioState> audio_state(
-      new internal::AudioState(helper.config()));
+  rtc::scoped_refptr<internal::AudioState> audio_state(
+      new rtc::RefCountedObject<internal::AudioState>(helper.config()));
+
   audio_state->SetStereoChannelSwapping(true);
 
   MockAudioSendStream stream;
@@ -227,8 +228,8 @@ TEST(AudioStateTest, InputLevelStats) {
   constexpr size_t kNumChannels = 1;
 
   ConfigHelper helper;
-  std::unique_ptr<internal::AudioState> audio_state(
-      new internal::AudioState(helper.config()));
+  rtc::scoped_refptr<internal::AudioState> audio_state(
+      new rtc::RefCountedObject<internal::AudioState>(helper.config()));
 
   // Push a silent buffer -> Level stats should be zeros except for duration.
   {

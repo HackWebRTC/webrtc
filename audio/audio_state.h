@@ -30,7 +30,7 @@ class AudioReceiveStream;
 
 namespace internal {
 
-class AudioState final : public webrtc::AudioState {
+class AudioState : public webrtc::AudioState {
  public:
   explicit AudioState(const AudioState::Config& config);
   ~AudioState() override;
@@ -60,10 +60,6 @@ class AudioState final : public webrtc::AudioState {
   void RemoveSendingStream(webrtc::AudioSendStream* stream);
 
  private:
-  // rtc::RefCountInterface implementation.
-  void AddRef() const override;
-  rtc::RefCountReleaseStatus Release() const override;
-
   void UpdateAudioTransportWithSendingStreams();
 
   rtc::ThreadChecker thread_checker_;
@@ -71,10 +67,6 @@ class AudioState final : public webrtc::AudioState {
   const webrtc::AudioState::Config config_;
   bool recording_enabled_ = true;
   bool playout_enabled_ = true;
-
-  // Reference count; implementation copied from rtc::RefCountedObject.
-  // TODO(nisse): Use RefCountedObject or RefCountedBase instead.
-  mutable volatile int ref_count_ = 0;
 
   // Transports mixed audio from the mixer to the audio device and
   // recorded audio to the sending streams.
