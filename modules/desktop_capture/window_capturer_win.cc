@@ -41,6 +41,14 @@ BOOL CALLBACK WindowsEnumerationHandler(HWND hwnd, LPARAM param) {
       (owner && !(exstyle & WS_EX_APPWINDOW))) {
     return TRUE;
   }
+  // Skip unresponsive windows. Set timout with 50ms, in case system is under
+  // heavy load, the check can wait longer but wont' be too long to delay the
+  // the enumeration.
+  const UINT uTimeout = 50;  // ms
+  if (!SendMessageTimeout(hwnd, WM_NULL, 0, 0, SMTO_ABORTIFHUNG, uTimeout,
+                          nullptr)) {
+    return TRUE;
+  }
 
   // Skip the Program Manager window and the Start button.
   const size_t kClassLength = 256;
