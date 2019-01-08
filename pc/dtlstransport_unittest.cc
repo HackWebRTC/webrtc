@@ -35,6 +35,14 @@ class TestDtlsTransportObserver : public DtlsTransportObserverInterface {
 
   void OnError(RTCError error) override {}
 
+  DtlsTransportState state() {
+    if (states_.size() > 0) {
+      return states_[states_.size() - 1];
+    } else {
+      return DtlsTransportState::kNew;
+    }
+  }
+
   bool state_change_called_ = false;
   std::vector<DtlsTransportState> states_;
 };
@@ -92,6 +100,17 @@ TEST_F(DtlsTransportTest, EventsObservedWhenConnecting) {
                     // TODO(hta): fix FakeDtlsTransport or file bug on it.
                     // DtlsTransportState::kConnecting,
           DtlsTransportState::kConnected));
+}
+
+TEST_F(DtlsTransportTest, CloseWhenClearing) {
+  CreateTransport();
+  transport()->RegisterObserver(observer());
+  CompleteDtlsHandshake();
+  ASSERT_TRUE_WAIT(observer_.state() == DtlsTransportState::kConnected,
+                   kDefaultTimeout);
+  transport()->Clear();
+  ASSERT_TRUE_WAIT(observer_.state() == DtlsTransportState::kClosed,
+                   kDefaultTimeout);
 }
 
 }  // namespace webrtc
