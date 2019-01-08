@@ -29,14 +29,17 @@ class CongestionWindowPushbackController {
   CongestionWindowPushbackController();
   explicit CongestionWindowPushbackController(
       uint32_t min_pushback_target_bitrate_bps);
-  void UpdateOutstandingData(size_t outstanding_bytes);
+  void UpdateOutstandingData(int64_t outstanding_bytes);
+  void UpdatePacingQueue(int64_t pacing_bytes);
   void UpdateMaxOutstandingData(size_t max_outstanding_bytes);
   uint32_t UpdateTargetBitrate(uint32_t bitrate_bps);
   void SetDataWindow(DataSize data_window);
 
  private:
   absl::optional<DataSize> current_data_window_;
-  size_t outstanding_bytes_ = 0;
+  int64_t outstanding_bytes_ = 0;
+  int64_t pacing_bytes_ = 0;
+  const bool add_pacing_;
   uint32_t min_pushback_target_bitrate_bps_;
   double encoding_rate_ratio_ = 1.0;
 };

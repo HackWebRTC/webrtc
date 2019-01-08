@@ -13,6 +13,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <atomic>
 #include <memory>
 
 #include "absl/types/optional.h"
@@ -118,6 +119,7 @@ class PacedSender : public Pacer {
   virtual int64_t QueueInMs() const;
 
   virtual size_t QueueSizePackets() const;
+  virtual int64_t QueueSizeBytes() const;
 
   // Returns the time when the first packet was sent, or -1 if no packet is
   // sent.

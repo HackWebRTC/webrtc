@@ -130,6 +130,8 @@ RtpTransportControllerSend::RtpTransportControllerSend(
           !field_trial::IsEnabled("WebRTC-Bwe-NoFeedbackReset")),
       send_side_bwe_with_overhead_(
           webrtc::field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")),
+      add_pacing_to_cwin_(
+          field_trial::IsEnabled("WebRTC-AddPacingToCongestionWindowPushback")),
       transport_overhead_bytes_per_packet_(0),
       network_available_(false),
       packet_feedback_available_(false),
@@ -600,6 +602,8 @@ void RtpTransportControllerSend::UpdateControllerWithTimeInterval() {
   RTC_DCHECK(controller_);
   ProcessInterval msg;
   msg.at_time = Timestamp::ms(clock_->TimeInMilliseconds());
+  if (add_pacing_to_cwin_)
+    msg.pacer_queue = DataSize::bytes(pacer_.QueueSizeBytes());
   PostUpdates(controller_->OnProcessInterval(msg));
 }
 

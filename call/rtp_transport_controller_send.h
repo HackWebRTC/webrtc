@@ -174,6 +174,7 @@ class RtpTransportControllerSend final
 
   const bool reset_feedback_on_route_change_;
   const bool send_side_bwe_with_overhead_;
+  const bool add_pacing_to_cwin_;
   // Transport overhead is written by OnNetworkRouteChanged and read by
   // AddPacket.
   // TODO(srte): Remove atomic when feedback adapter runs on task queue.

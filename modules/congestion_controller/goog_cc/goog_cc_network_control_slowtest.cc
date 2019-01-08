@@ -114,5 +114,37 @@ TEST(GoogCcNetworkControllerTest, DetectsHighRateInSafeResetTrial) {
   EXPECT_GT(client->send_bandwidth().kbps(), kNewLinkCapacity.kbps() - 300);
 }
 
+TEST(GoogCcNetworkControllerTest,
+     TargetRateReducedOnPacingBufferBuildupInTrial) {
+  // Configure strict pacing to ensure build-up.
+  ScopedFieldTrials trial(
+      "WebRTC-CongestionWindowPushback/Enabled/WebRTC-CwndExperiment/"
+      "Enabled-100/WebRTC-Video-Pacing/factor:1.0/"
+      "WebRTC-AddPacingToCongestionWindowPushback/Enabled/");
+
+  const DataRate kLinkCapacity = DataRate::kbps(1000);
+  const DataRate kStartRate = DataRate::kbps(1000);
+
+  Scenario s("googcc_unit/pacing_buffer_buildup", true);
+  auto* net = s.CreateSimulationNode([&](NetworkNodeConfig* c) {
+    c->simulation.bandwidth = kLinkCapacity;
+    c->simulation.delay = TimeDelta::ms(50);
+  });
+  // TODO(srte): replace with SimulatedTimeClient when it supports pacing.
+  auto* client = s.CreateClient("send", [&](CallClientConfig* c) {
+    c->transport.cc = TransportControllerConfig::CongestionController::kGoogCc;
+    c->transport.rates.start_rate = kStartRate;
+  });
+  auto* route = s.CreateRoutes(client, {net},
+                               s.CreateClient("return", CallClientConfig()),
+                               {s.CreateSimulationNode(NetworkNodeConfig())});
+  s.CreateVideoStream(route->forward(), VideoStreamConfig());
+  // Allow some time for the buffer to build up.
+  s.RunFor(TimeDelta::seconds(5));
+
+  // Without trial, pacer delay reaches ~250 ms.
+  EXPECT_LT(client->GetStats().pacer_delay_ms, 150);
+}
+
 }  // namespace test
 }  // namespace webrtc

@@ -19,6 +19,8 @@
 
 namespace webrtc {
 
+namespace {
+
 // When CongestionWindowPushback is enabled, the pacer is oblivious to
 // the congestion window. The relation between outstanding data and
 // the congestion window affects encoder allocations directly.
@@ -41,7 +43,11 @@ bool ReadCongestionWindowPushbackExperimentParameter(
   return false;
 }
 
-CongestionWindowPushbackController::CongestionWindowPushbackController() {
+}  // namespace
+
+CongestionWindowPushbackController::CongestionWindowPushbackController()
+    : add_pacing_(field_trial::IsEnabled(
+          "WebRTC-AddPacingToCongestionWindowPushback")) {
   if (!ReadCongestionWindowPushbackExperimentParameter(
           &min_pushback_target_bitrate_bps_)) {
     min_pushback_target_bitrate_bps_ = kDefaultMinPushbackTargetBitrateBps;
@@ -50,11 +56,17 @@ CongestionWindowPushbackController::CongestionWindowPushbackController() {
 
 CongestionWindowPushbackController::CongestionWindowPushbackController(
     uint32_t min_pushback_target_bitrate_bps)
-    : min_pushback_target_bitrate_bps_(min_pushback_target_bitrate_bps) {}
+    : add_pacing_(
+          field_trial::IsEnabled("WebRTC-AddPacingToCongestionWindowPushback")),
+      min_pushback_target_bitrate_bps_(min_pushback_target_bitrate_bps) {}
 
 void CongestionWindowPushbackController::UpdateOutstandingData(
-    size_t outstanding_bytes) {
+    int64_t outstanding_bytes) {
   outstanding_bytes_ = outstanding_bytes;
+}
+void CongestionWindowPushbackController::UpdatePacingQueue(
+    int64_t pacing_bytes) {
+  pacing_bytes_ = pacing_bytes;
 }
 
 void CongestionWindowPushbackController::UpdateMaxOutstandingData(
@@ -74,8 +86,11 @@ uint32_t CongestionWindowPushbackController::UpdateTargetBitrate(
     uint32_t bitrate_bps) {
   if (!current_data_window_ || current_data_window_->IsZero())
     return bitrate_bps;
+  int64_t total_bytes = outstanding_bytes_;
+  if (add_pacing_)
+    total_bytes += pacing_bytes_;
   double fill_ratio =
-      outstanding_bytes_ / static_cast<double>(current_data_window_->bytes());
+      total_bytes / static_cast<double>(current_data_window_->bytes());
   if (fill_ratio > 1.5) {
     encoding_rate_ratio_ *= 0.9;
   } else if (fill_ratio > 1) {

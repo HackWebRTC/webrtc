@@ -232,6 +232,11 @@ size_t PacedSender::QueueSizePackets() const {
   return packets_.SizeInPackets();
 }
 
+int64_t PacedSender::QueueSizeBytes() const {
+  rtc::CritScope cs(&critsect_);
+  return packets_.SizeInBytes();
+}
+
 int64_t PacedSender::FirstSentPacketTimeMs() const {
   rtc::CritScope cs(&critsect_);
   return first_sent_packet_ms_;

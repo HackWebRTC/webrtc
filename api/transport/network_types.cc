@@ -81,4 +81,8 @@ bool PacedPacketInfo::operator==(const PacedPacketInfo& rhs) const {
          probe_cluster_min_bytes == rhs.probe_cluster_min_bytes;
 }
 
+ProcessInterval::ProcessInterval() = default;
+ProcessInterval::ProcessInterval(const ProcessInterval&) = default;
+ProcessInterval::~ProcessInterval() = default;
+
 }  // namespace webrtc
