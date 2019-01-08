@@ -180,11 +180,6 @@ class VideoReceiveStream {
       // Map from rtx payload type -> media payload type.
       // For RTX to be enabled, both an SSRC and this mapping are needed.
       std::map<int, int> rtx_associated_payload_types;
-      // TODO(nisse): This is a temporary accessor function to enable
-      // reversing and renaming of the rtx_payload_types mapping.
-      void AddRtxBinding(int rtx_payload_type, int media_payload_type) {
-        rtx_associated_payload_types[rtx_payload_type] = media_payload_type;
-      }
 
       // RTP header extensions used for the received stream.
       std::vector<RtpExtension> extensions;
