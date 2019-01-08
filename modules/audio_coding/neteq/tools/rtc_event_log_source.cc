@@ -109,21 +109,13 @@ bool RtcEventLogSource::OpenFile(const std::string& file_name,
     if (ShouldSkipStream(media_type, rtp_packets.ssrc, ssrc_filter)) {
       continue;
     }
-    auto rtp_view = absl::make_unique<
-        webrtc::ProcessableEventList<webrtc::LoggedRtpPacketIncoming>>(
-        rtp_packets.incoming_packets.begin(),
-        rtp_packets.incoming_packets.end(), handle_rtp_packet);
-    event_processor.AddEvents(std::move(rtp_view));
+    event_processor.AddEvents(rtp_packets.incoming_packets, handle_rtp_packet);
   }
 
   for (const auto& audio_playouts : parsed_log.audio_playout_events()) {
     if (ssrc_filter.has_value() && audio_playouts.first != *ssrc_filter)
       continue;
-    auto audio_view = absl::make_unique<
-        webrtc::ProcessableEventList<webrtc::LoggedAudioPlayoutEvent>>(
-        audio_playouts.second.begin(), audio_playouts.second.end(),
-        handle_audio_playout);
-    event_processor.AddEvents(std::move(audio_view));
+    event_processor.AddEvents(audio_playouts.second, handle_audio_playout);
   }
 
   // Fills in rtp_packets_ and audio_outputs_.

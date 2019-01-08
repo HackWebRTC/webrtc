@@ -236,21 +236,13 @@ int main(int argc, char* argv[]) {
         parsed_stream.GetMediaType(stream.ssrc, webrtc::kIncomingPacket);
     if (ShouldSkipStream(media_type, stream.ssrc, ssrc_filter))
       continue;
-    auto rtp_view = absl::make_unique<
-        webrtc::ProcessableEventList<webrtc::LoggedRtpPacketIncoming>>(
-        stream.incoming_packets.begin(), stream.incoming_packets.end(),
-        handle_rtp);
-    event_processor.AddEvents(std::move(rtp_view));
+    event_processor.AddEvents(stream.incoming_packets, handle_rtp);
   }
   // Note that |packet_ssrc| is the sender SSRC. An RTCP message may contain
   // report blocks for many streams, thus several SSRCs and they don't
   // necessarily have to be of the same media type. We therefore don't
   // support filtering of RTCP based on SSRC and media type.
-  auto rtcp_view = absl::make_unique<
-      webrtc::ProcessableEventList<webrtc::LoggedRtcpPacketIncoming>>(
-      parsed_stream.incoming_rtcp_packets().begin(),
-      parsed_stream.incoming_rtcp_packets().end(), handle_rtcp);
-  event_processor.AddEvents(std::move(rtcp_view));
+  event_processor.AddEvents(parsed_stream.incoming_rtcp_packets(), handle_rtcp);
 
   event_processor.ProcessEventsInOrder();
 

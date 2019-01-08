@@ -105,6 +105,9 @@ class PacketIterator {
   T& operator*() { return *reinterpret_cast<T*>(ptr_); }
   const T& operator*() const { return *reinterpret_cast<const T*>(ptr_); }
 
+  T* operator->() { return reinterpret_cast<T*>(ptr_); }
+  const T* operator->() const { return reinterpret_cast<const T*>(ptr_); }
+
  private:
   PacketIterator(typename std::conditional<std::is_const<T>::value,
                                            const void*,
@@ -154,6 +157,10 @@ class PacketView {
                   "PacketView can only be created for standard layout types.");
     return PacketView(ptr, num_elements, offset, sizeof(U));
   }
+
+  using value_type = T;
+  using reference = value_type&;
+  using const_reference = const value_type&;
 
   using iterator = PacketIterator<T>;
   using const_iterator = PacketIterator<const T>;

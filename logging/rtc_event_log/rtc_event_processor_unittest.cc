@@ -33,8 +33,6 @@ std::vector<LoggedStartEvent> CreateEventList(
   return v;
 }
 
-using OrderedEventView = ProcessableEventList<LoggedStartEvent>;
-
 std::vector<std::vector<LoggedStartEvent>>
 CreateRandomEventLists(size_t num_lists, size_t num_elements, uint64_t seed) {
   Random prng(seed);
@@ -58,8 +56,7 @@ TEST(RtcEventProcessor, EmptyList) {
   std::vector<LoggedStartEvent> events;
   RtcEventProcessor processor;
 
-  processor.AddEvents(absl::make_unique<OrderedEventView>(
-      events.begin(), events.end(), not_called));
+  processor.AddEvents(events, not_called);
   processor.ProcessEventsInOrder();  // Don't crash but do nothing.
 }
 
@@ -69,8 +66,7 @@ TEST(RtcEventProcessor, OneList) {
 
   std::vector<LoggedStartEvent> events(CreateEventList({1, 2, 3, 4}));
   RtcEventProcessor processor;
-  processor.AddEvents(
-      absl::make_unique<OrderedEventView>(events.begin(), events.end(), f));
+  processor.AddEvents(events, f);
   processor.ProcessEventsInOrder();
 
   std::vector<int64_t> expected_results{1, 2, 3, 4};
@@ -87,10 +83,8 @@ TEST(RtcEventProcessor, MergeTwoLists) {
   std::vector<LoggedStartEvent> events1(CreateEventList({1, 2, 4, 7, 8, 9}));
   std::vector<LoggedStartEvent> events2(CreateEventList({3, 5, 6, 10}));
   RtcEventProcessor processor;
-  processor.AddEvents(
-      absl::make_unique<OrderedEventView>(events1.begin(), events1.end(), f));
-  processor.AddEvents(
-      absl::make_unique<OrderedEventView>(events2.begin(), events2.end(), f));
+  processor.AddEvents(events1, f);
+  processor.AddEvents(events2, f);
   processor.ProcessEventsInOrder();
 
   std::vector<int64_t> expected_results{1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
@@ -107,10 +101,8 @@ TEST(RtcEventProcessor, MergeTwoListsWithDuplicatedElements) {
   std::vector<LoggedStartEvent> events1(CreateEventList({1, 2, 2, 3, 5, 5}));
   std::vector<LoggedStartEvent> events2(CreateEventList({1, 3, 4, 4}));
   RtcEventProcessor processor;
-  processor.AddEvents(
-      absl::make_unique<OrderedEventView>(events1.begin(), events1.end(), f));
-  processor.AddEvents(
-      absl::make_unique<OrderedEventView>(events2.begin(), events2.end(), f));
+  processor.AddEvents(events1, f);
+  processor.AddEvents(events2, f);
   processor.ProcessEventsInOrder();
 
   std::vector<int64_t> expected_results{1, 1, 2, 2, 3, 3, 4, 4, 5, 5};
@@ -132,8 +124,7 @@ TEST(RtcEventProcessor, MergeManyLists) {
   RTC_DCHECK_EQ(lists.size(), kNumLists);
   RtcEventProcessor processor;
   for (const auto& list : lists) {
-    processor.AddEvents(
-        absl::make_unique<OrderedEventView>(list.begin(), list.end(), f));
+    processor.AddEvents(list, f);
   }
   processor.ProcessEventsInOrder();
 
@@ -157,10 +148,8 @@ TEST(RtcEventProcessor, DifferentTypes) {
   std::vector<LoggedStartEvent> events1{LoggedStartEvent(2000)};
   std::vector<LoggedStopEvent> events2{LoggedStopEvent(1000)};
   RtcEventProcessor processor;
-  processor.AddEvents(absl::make_unique<ProcessableEventList<LoggedStartEvent>>(
-      events1.begin(), events1.end(), f1));
-  processor.AddEvents(absl::make_unique<ProcessableEventList<LoggedStopEvent>>(
-      events2.begin(), events2.end(), f2));
+  processor.AddEvents(events1, f1);
+  processor.AddEvents(events2, f2);
   processor.ProcessEventsInOrder();
 
   std::vector<int64_t> expected_results{1, 2};
