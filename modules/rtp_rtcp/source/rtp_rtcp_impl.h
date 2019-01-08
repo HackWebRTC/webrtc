@@ -299,6 +299,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
                    uint32_t* video_rate,
                    uint32_t* fec_rate,
                    uint32_t* nackRate) const override;
+  uint32_t PacketizationOverheadBps() const override;
 
   void RegisterSendChannelRtpStatisticsCallback(
       StreamDataCountersCallback* callback) override;

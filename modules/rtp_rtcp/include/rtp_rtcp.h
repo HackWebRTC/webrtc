@@ -238,11 +238,16 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
   // bitrate estimate since the stream participates in the bitrate allocation.
   virtual void SetAsPartOfAllocation(bool part_of_allocation) = 0;
 
-  // Returns current bitrate in Kbit/s.
+  // Fetches the current send bitrates in bits/s.
   virtual void BitrateSent(uint32_t* total_rate,
                            uint32_t* video_rate,
                            uint32_t* fec_rate,
                            uint32_t* nack_rate) const = 0;
+
+  // Returns the current packetization overhead rate, in bps. Note that this is
+  // the payload overhead, eg the VP8 payload headers, not the RTP headers
+  // or extension/
+  virtual uint32_t PacketizationOverheadBps() const = 0;
 
   // Used by the codec module to deliver a video or audio frame for
   // packetization.

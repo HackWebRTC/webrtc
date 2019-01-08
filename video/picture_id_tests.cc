@@ -259,11 +259,12 @@ class VideoStreamFactory
     std::vector<VideoStream> streams =
         test::CreateVideoStreams(width, height, encoder_config);
 
-    // Use the same total bitrates when sending a single stream to avoid
-    // lowering the bitrate estimate and requiring a subsequent rampup.
-    const int encoder_stream_bps =
-        kEncoderBitrateBps /
-        rtc::checked_cast<int>(encoder_config.number_of_streams);
+    // Always divide the same total bitrate across all streams so that sending a
+    // single stream avoids lowering the bitrate estimate and requiring a
+    // subsequent rampup. Also reduce the target by 10% to account for overhead
+    // that might sometimes otherwise cause streams to not be enabled.
+    const int encoder_stream_bps = rtc::checked_cast<int>(
+        0.9 * (kEncoderBitrateBps / encoder_config.number_of_streams));
 
     for (size_t i = 0; i < encoder_config.number_of_streams; ++i) {
       streams[i].min_bitrate_bps = encoder_stream_bps;

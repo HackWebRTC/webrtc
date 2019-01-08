@@ -78,6 +78,7 @@ class RTPSender {
   uint32_t VideoBitrateSent() const;
   uint32_t FecOverheadRate() const;
   uint32_t NackOverheadRate() const;
+  uint32_t PacketizationOverheadBps() const;
 
   int32_t RegisterPayload(absl::string_view payload_name,
                           const int8_t payload_type,

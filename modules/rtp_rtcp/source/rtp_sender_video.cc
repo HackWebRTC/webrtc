@@ -170,6 +170,7 @@ RTPSenderVideo::RTPSenderVideo(Clock* clock,
       key_fec_params_{0, 1, kFecMaskRandom},
       fec_bitrate_(1000, RateStatistics::kBpsScale),
       video_bitrate_(1000, RateStatistics::kBpsScale),
+      packetization_overhead_bitrate_(1000, RateStatistics::kBpsScale),
       frame_encryptor_(frame_encryptor),
       require_frame_encryption_(require_frame_encryption),
       generic_descriptor_auth_experiment_(
@@ -546,6 +547,17 @@ bool RTPSenderVideo::SendVideo(enum VideoCodecType video_type,
                                        expected_retransmission_time_ms);
   size_t num_packets = packetizer->NumPackets();
 
+  size_t unpacketized_payload_size;
+  if (fragmentation && fragmentation->fragmentationVectorSize > 0) {
+    unpacketized_payload_size = 0;
+    for (uint16_t i = 0; i < fragmentation->fragmentationVectorSize; ++i) {
+      unpacketized_payload_size += fragmentation->fragmentationLength[i];
+    }
+  } else {
+    unpacketized_payload_size = payload_size;
+  }
+  size_t packetized_payload_size = 0;
+
   if (num_packets == 0)
     return false;
 
@@ -576,6 +588,7 @@ bool RTPSenderVideo::SendVideo(enum VideoCodecType video_type,
     RTC_DCHECK_LE(packet->payload_size(), expected_payload_capacity);
     if (!rtp_sender_->AssignSequenceNumber(packet.get()))
       return false;
+    packetized_payload_size += packet->payload_size();
 
     // No FEC protection for upper temporal layers, if used.
     bool protect_packet = temporal_id == 0 || temporal_id == kNoTemporalIdx;
@@ -615,6 +628,12 @@ bool RTPSenderVideo::SendVideo(enum VideoCodecType video_type,
     }
   }
 
+  rtc::CritScope cs(&stats_crit_);
+  RTC_DCHECK_GE(packetized_payload_size, unpacketized_payload_size);
+  packetization_overhead_bitrate_.Update(
+      packetized_payload_size - unpacketized_payload_size,
+      clock_->TimeInMilliseconds());
+
   TRACE_EVENT_ASYNC_END1("webrtc", "Video", capture_time_ms, "timestamp",
                          rtp_timestamp);
   return true;
@@ -628,6 +647,12 @@ uint32_t RTPSenderVideo::VideoBitrateSent() const {
 uint32_t RTPSenderVideo::FecOverheadRate() const {
   rtc::CritScope cs(&stats_crit_);
   return fec_bitrate_.Rate(clock_->TimeInMilliseconds()).value_or(0);
+}
+
+uint32_t RTPSenderVideo::PacketizationOverheadBps() const {
+  rtc::CritScope cs(&stats_crit_);
+  return packetization_overhead_bitrate_.Rate(clock_->TimeInMilliseconds())
+      .value_or(0);
 }
 
 int RTPSenderVideo::SelectiveRetransmissions() const {

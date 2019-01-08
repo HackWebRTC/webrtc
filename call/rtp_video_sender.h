@@ -128,6 +128,7 @@ class RtpVideoSender : public RtpVideoSenderInterface,
   void ConfigureRids(const RtpConfig& rtp_config);
   bool FecEnabled() const;
   bool NackEnabled() const;
+  uint32_t GetPacketizationOverheadRate() const;
 
   const bool send_side_bwe_with_overhead_;
 

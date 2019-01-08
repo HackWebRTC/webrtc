@@ -77,6 +77,7 @@ class RTPSenderVideo {
 
   uint32_t VideoBitrateSent() const;
   uint32_t FecOverheadRate() const;
+  uint32_t PacketizationOverheadBps() const;
 
   int SelectiveRetransmissions() const;
   void SetSelectiveRetransmissions(uint8_t settings);
@@ -159,6 +160,7 @@ class RTPSenderVideo {
   RateStatistics fec_bitrate_ RTC_GUARDED_BY(stats_crit_);
   // Bitrate used for video payload and RTP headers.
   RateStatistics video_bitrate_ RTC_GUARDED_BY(stats_crit_);
+  RateStatistics packetization_overhead_bitrate_ RTC_GUARDED_BY(stats_crit_);
 
   std::map<int, TemporalLayerStats> frame_stats_by_temporal_layer_
       RTC_GUARDED_BY(stats_crit_);
