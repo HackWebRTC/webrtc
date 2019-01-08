@@ -170,64 +170,30 @@ absl::optional<size_t> GetFileSize(const std::string& file) {
 }  // namespace
 
 FileRotatingStream::FileRotatingStream(const std::string& dir_path,
-                                       const std::string& file_prefix)
-    : FileRotatingStream(dir_path, file_prefix, 0, 0, kRead) {}
-
-FileRotatingStream::FileRotatingStream(const std::string& dir_path,
                                        const std::string& file_prefix,
                                        size_t max_file_size,
                                        size_t num_files)
-    : FileRotatingStream(dir_path,
-                         file_prefix,
-                         max_file_size,
-                         num_files,
-                         kWrite) {
-  RTC_DCHECK_GT(max_file_size, 0);
-  RTC_DCHECK_GT(num_files, 1);
-}
-
-FileRotatingStream::FileRotatingStream(const std::string& dir_path,
-                                       const std::string& file_prefix,
-                                       size_t max_file_size,
-                                       size_t num_files,
-                                       Mode mode)
     : dir_path_(AddTrailingPathDelimiterIfNeeded(dir_path)),
       file_prefix_(file_prefix),
-      mode_(mode),
       file_stream_(nullptr),
       max_file_size_(max_file_size),
       current_file_index_(0),
       rotation_index_(0),
       current_bytes_written_(0),
       disable_buffering_(false) {
+  RTC_DCHECK_GT(max_file_size, 0);
+  RTC_DCHECK_GT(num_files, 1);
   RTC_DCHECK(IsFolder(dir_path));
-  switch (mode) {
-    case kWrite: {
-      file_names_.clear();
-      for (size_t i = 0; i < num_files; ++i) {
-        file_names_.push_back(GetFilePath(i, num_files));
-      }
-      rotation_index_ = num_files - 1;
-      break;
-    }
-    case kRead: {
-      file_names_ = GetFilesWithPrefix(dir_path_, file_prefix_);
-      std::sort(file_names_.begin(), file_names_.end());
-      if (file_names_.size() > 0) {
-        // |file_names_| is sorted newest first, so read from the end.
-        current_file_index_ = file_names_.size() - 1;
-      }
-      break;
-    }
+  file_names_.clear();
+  for (size_t i = 0; i < num_files; ++i) {
+    file_names_.push_back(GetFilePath(i, num_files));
   }
+  rotation_index_ = num_files - 1;
 }
 
 FileRotatingStream::~FileRotatingStream() {}
 
 StreamState FileRotatingStream::GetState() const {
-  if (mode_ == kRead && current_file_index_ < file_names_.size()) {
-    return SS_OPEN;
-  }
   if (!file_stream_) {
     return SS_CLOSED;
   }
@@ -239,59 +205,14 @@ StreamResult FileRotatingStream::Read(void* buffer,
                                       size_t* read,
                                       int* error) {
   RTC_DCHECK(buffer);
-  if (mode_ != kRead) {
-    return SR_EOS;
-  }
-  if (current_file_index_ >= file_names_.size()) {
-    return SR_EOS;
-  }
-  // We will have no file stream initially, and when we are finished with the
-  // previous file.
-  if (!file_stream_) {
-    if (!OpenCurrentFile()) {
-      return SR_ERROR;
-    }
-  }
-  int local_error = 0;
-  if (!error) {
-    error = &local_error;
-  }
-  StreamResult result = file_stream_->Read(buffer, buffer_len, read, error);
-  if (result == SR_EOS || result == SR_ERROR) {
-    if (result == SR_ERROR) {
-      RTC_LOG(LS_ERROR) << "Failed to read from: "
-                        << file_names_[current_file_index_]
-                        << "Error: " << error;
-    }
-    // Reached the end of the file, read next file. If there is an error return
-    // the error status but allow for a next read by reading next file.
-    CloseCurrentFile();
-    if (current_file_index_ == 0) {
-      // Just finished reading the last file, signal EOS by setting index.
-      current_file_index_ = file_names_.size();
-    } else {
-      --current_file_index_;
-    }
-    if (read) {
-      *read = 0;
-    }
-    return result == SR_EOS ? SR_SUCCESS : result;
-  } else if (result == SR_SUCCESS) {
-    // Succeeded, continue reading from this file.
-    return SR_SUCCESS;
-  } else {
-    RTC_NOTREACHED();
-  }
-  return result;
+  RTC_NOTREACHED();
+  return SR_EOS;
 }
 
 StreamResult FileRotatingStream::Write(const void* data,
                                        size_t data_len,
                                        size_t* written,
                                        int* error) {
-  if (mode_ != kWrite) {
-    return SR_EOS;
-  }
   if (!file_stream_) {
     std::fprintf(stderr, "Open() must be called before Write.\n");
     return SR_ERROR;
@@ -323,19 +244,9 @@ bool FileRotatingStream::Flush() {
 }
 
 bool FileRotatingStream::GetSize(size_t* size) const {
-  if (mode_ != kRead) {
-    // Not possible to get accurate size on disk when writing because of
-    // potential buffering.
-    return false;
-  }
-  RTC_DCHECK(size);
-  *size = 0;
-  size_t total_size = 0;
-  for (auto file_name : file_names_) {
-    total_size += GetFileSize(file_name).value_or(0);
-  }
-  *size = total_size;
-  return true;
+  // Not possible to get accurate size on disk when writing because of
+  // potential buffering.
+  return false;
 }
 
 void FileRotatingStream::Close() {
@@ -343,24 +254,15 @@ void FileRotatingStream::Close() {
 }
 
 bool FileRotatingStream::Open() {
-  switch (mode_) {
-    case kRead:
-      // Defer opening to when we first read since we want to return read error
-      // if we fail to open next file.
-      return true;
-    case kWrite: {
-      // Delete existing files when opening for write.
-      std::vector<std::string> matching_files =
-          GetFilesWithPrefix(dir_path_, file_prefix_);
-      for (const auto& matching_file : matching_files) {
-        if (!DeleteFile(matching_file)) {
-          std::fprintf(stderr, "Failed to delete: %s\n", matching_file.c_str());
-        }
-      }
-      return OpenCurrentFile();
+  // Delete existing files when opening for write.
+  std::vector<std::string> matching_files =
+      GetFilesWithPrefix(dir_path_, file_prefix_);
+  for (const auto& matching_file : matching_files) {
+    if (!DeleteFile(matching_file)) {
+      std::fprintf(stderr, "Failed to delete: %s\n", matching_file.c_str());
     }
   }
-  return false;
+  return OpenCurrentFile();
 }
 
 bool FileRotatingStream::DisableBuffering() {
@@ -384,19 +286,11 @@ bool FileRotatingStream::OpenCurrentFile() {
   RTC_DCHECK_LT(current_file_index_, file_names_.size());
   std::string file_path = file_names_[current_file_index_];
   file_stream_.reset(new FileStream());
-  const char* mode = nullptr;
-  switch (mode_) {
-    case kWrite:
-      mode = "w+";
-      // We should always we writing to the zero-th file.
-      RTC_DCHECK_EQ(current_file_index_, 0);
-      break;
-    case kRead:
-      mode = "r";
-      break;
-  }
+
+  // We should always be writing to the zero-th file.
+  RTC_DCHECK_EQ(current_file_index_, 0);
   int error = 0;
-  if (!file_stream_->Open(file_path, mode, &error)) {
+  if (!file_stream_->Open(file_path, "w+", &error)) {
     std::fprintf(stderr, "Failed to open: %s Error: %i\n", file_path.c_str(),
                  error);
     file_stream_.reset();
@@ -417,7 +311,6 @@ void FileRotatingStream::CloseCurrentFile() {
 }
 
 void FileRotatingStream::RotateFiles() {
-  RTC_DCHECK_EQ(mode_, kWrite);
   CloseCurrentFile();
   // Rotates the files by deleting the file at |rotation_index_|, which is the
   // oldest file and then renaming the newer files to have an incremented index.
@@ -457,12 +350,6 @@ std::string FileRotatingStream::GetFilePath(size_t index,
 
   return dir_path_ + file_prefix_ + file_postfix;
 }
-
-CallSessionFileRotatingStream::CallSessionFileRotatingStream(
-    const std::string& dir_path)
-    : FileRotatingStream(dir_path, kCallSessionLogPrefix),
-      max_total_log_size_(0),
-      num_rotations_(0) {}
 
 CallSessionFileRotatingStream::CallSessionFileRotatingStream(
     const std::string& dir_path,

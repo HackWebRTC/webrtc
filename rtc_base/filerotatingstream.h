@@ -83,14 +83,6 @@ class FileRotatingStream : public StreamInterface {
   virtual void OnRotation() {}
 
  private:
-  enum Mode { kRead, kWrite };
-
-  FileRotatingStream(const std::string& dir_path,
-                     const std::string& file_prefix,
-                     size_t max_file_size,
-                     size_t num_files,
-                     Mode mode);
-
   bool OpenCurrentFile();
   void CloseCurrentFile();
 
@@ -107,7 +99,6 @@ class FileRotatingStream : public StreamInterface {
 
   const std::string dir_path_;
   const std::string file_prefix_;
-  const Mode mode_;
 
   // FileStream is used to write to the current file.
   std::unique_ptr<FileStream> file_stream_;
@@ -127,7 +118,7 @@ class FileRotatingStream : public StreamInterface {
 };
 
 // CallSessionFileRotatingStream is meant to be used in situations where we will
-// have limited disk space. Its purpose is to read and write logs up to a
+// have limited disk space. Its purpose is to write logs up to a
 // maximum size. Once the maximum size is exceeded, logs from the middle are
 // deleted whereas logs from the beginning and end are preserved. The reason for
 // this is because we anticipate that in WebRTC the beginning and end of the
@@ -140,11 +131,11 @@ class FileRotatingStream : public StreamInterface {
 // (earliest) file on rotate, and that that file's size is bigger.
 //
 // Open() must be called before using this stream.
+
+// To read the logs produced by this class, one can use the companion class
+// CallSessionFileRotatingStreamReader.
 class CallSessionFileRotatingStream : public FileRotatingStream {
  public:
-  // Use this constructor for reading a directory previously written to with
-  // this stream.
-  explicit CallSessionFileRotatingStream(const std::string& dir_path);
   // Use this constructor for writing to a directory. Files in the directory
   // matching what's used by the stream will be deleted. |max_total_log_size|
   // must be at least 4.
