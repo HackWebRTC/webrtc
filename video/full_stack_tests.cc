@@ -702,11 +702,13 @@ TEST(FullStackTest, ScreenshareSlidesVP8_2TL) {
   fixture->RunWithAnalyzer(screenshare);
 }
 
-// TODO(bugs.webrtc.org/9840): Investigate why is this test flaky on MAC.
 #if !defined(WEBRTC_MAC)
+// All the tests using this constant are disabled on Mac.
 const char kScreenshareSimulcastExperiment[] =
     "WebRTC-SimulcastScreenshare/Enabled/";
 
+// TODO(bugs.webrtc.org/9840): Investigate why is this test flaky on Win/Mac.
+#if !defined(WEBRTC_WIN)
 TEST(FullStackTest, ScreenshareSlidesVP8_3TL_Simulcast) {
   test::ScopedFieldTrials field_trial(
       AppendFieldTrials(kScreenshareSimulcastExperiment));
@@ -736,6 +738,7 @@ TEST(FullStackTest, ScreenshareSlidesVP8_3TL_Simulcast) {
       false};
   fixture->RunWithAnalyzer(screenshare);
 }
+#endif  // !defined(WEBRTC_WIN)
 #endif  // !defined(WEBRTC_MAC)
 
 TEST(FullStackTest, ScreenshareSlidesVP8_2TL_Scroll) {
