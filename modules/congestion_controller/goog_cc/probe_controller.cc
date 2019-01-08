@@ -280,6 +280,10 @@ std::vector<ProbeClusterConfig> ProbeController::InitiateCapacityProbing(
   return std::vector<ProbeClusterConfig>();
 }
 
+void ProbeController::SetMaxBitrate(int64_t max_bitrate_bps) {
+  max_bitrate_bps_ = max_bitrate_bps;
+}
+
 void ProbeController::Reset(int64_t at_time_ms) {
   network_available_ = true;
   state_ = State::kInit;

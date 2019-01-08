@@ -63,6 +63,9 @@ class ProbeController {
   RTC_WARN_UNUSED_RESULT std::vector<ProbeClusterConfig>
   InitiateCapacityProbing(int64_t bitrate_bps, int64_t at_time_ms);
 
+  // Sets a new maximum probing bitrate, without generating a new probe cluster.
+  void SetMaxBitrate(int64_t max_bitrate_bps);
+
   // Resets the ProbeController to a state equivalent to as if it was just
   // created EXCEPT for |enable_periodic_alr_probing_|.
   void Reset(int64_t at_time_ms);

@@ -192,6 +192,12 @@ void DEPRECATED_SendSideCongestionController::SetAlrLimitedBackoffExperiment(
   delay_based_bwe_->SetAlrLimitedBackoffExperiment(enable);
 }
 
+void DEPRECATED_SendSideCongestionController::SetMaxProbingBitrate(
+    int64_t max_probing_bitrate_bps) {
+  rtc::CritScope cs(&probe_lock_);
+  probe_controller_->SetMaxBitrate(max_probing_bitrate_bps);
+}
+
 void DEPRECATED_SendSideCongestionController::RegisterPacketFeedbackObserver(
     PacketFeedbackObserver* observer) {
   transport_feedback_adapter_.RegisterPacketFeedbackObserver(observer);
