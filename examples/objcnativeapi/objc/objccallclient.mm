@@ -22,6 +22,7 @@
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/peerconnectioninterface.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
+#include "logging/rtc_event_log/rtc_event_log_factory.h"
 #include "media/engine/webrtcmediaengine.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "sdk/objc/native/api/video_capturer.h"

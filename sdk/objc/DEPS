@@ -7,6 +7,7 @@ include_rules = [
   "+common_video/h264",
   "+common_video/include",
   "+common_video/libyuv/include",
+  "+logging/rtc_event_log/rtc_event_log_factory.h",
   "+media",
   "+modules/video_coding",
   "+pc",

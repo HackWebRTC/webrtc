@@ -36,6 +36,7 @@
 #include "api/video_codecs/sdp_video_format.h"
 #include "call/call.h"
 #include "logging/rtc_event_log/fake_rtc_event_log_factory.h"
+#include "logging/rtc_event_log/rtc_event_log_factory.h"
 #include "logging/rtc_event_log/rtc_event_log_factory_interface.h"
 #include "media/engine/fakewebrtcvideoengine.h"
 #include "media/engine/webrtcmediaengine.h"

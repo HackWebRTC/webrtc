@@ -18,6 +18,7 @@
 #include "api/peerconnectioninterface.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "examples/androidnativeapi/generated_jni/jni/CallClient_jni.h"
+#include "logging/rtc_event_log/rtc_event_log_factory.h"
 #include "media/engine/internaldecoderfactory.h"
 #include "media/engine/internalencoderfactory.h"
 #include "media/engine/webrtcmediaengine.h"

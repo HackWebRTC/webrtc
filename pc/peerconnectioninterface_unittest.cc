@@ -42,6 +42,7 @@
 #include "api/video_codecs/video_encoder_factory.h"
 #include "logging/rtc_event_log/output/rtc_event_log_output_file.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
+#include "logging/rtc_event_log/rtc_event_log_factory.h"
 #include "logging/rtc_event_log/rtc_event_log_factory_interface.h"
 #include "media/base/codec.h"
 #include "media/base/fakevideocapturer.h"

@@ -16,7 +16,6 @@
 
 #include "api/rtceventlogoutput.h"
 #include "logging/rtc_event_log/events/rtc_event.h"
-#include "rtc_base/task_queue.h"
 
 namespace webrtc {
 
