@@ -55,7 +55,8 @@ class FunctorMessageHandler : public MessageHandler {
 template <class FunctorT>
 class FunctorMessageHandler<void, FunctorT> : public MessageHandler {
  public:
-  explicit FunctorMessageHandler(const FunctorT& functor) : functor_(functor) {}
+  explicit FunctorMessageHandler(FunctorT&& functor)
+      : functor_(std::forward<FunctorT>(functor)) {}
   virtual void OnMessage(Message* msg) { functor_(); }
   void result() const {}
   void MoveResult() {}

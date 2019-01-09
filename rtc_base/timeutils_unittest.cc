@@ -272,7 +272,7 @@ TEST(FakeClock, SettingTimeWakesThreads) {
   auto functor = [&message_handler_dispatched] {
     message_handler_dispatched.Set();
   };
-  FunctorMessageHandler<void, decltype(functor)> handler(functor);
+  FunctorMessageHandler<void, decltype(functor)> handler(std::move(functor));
   worker->PostDelayed(RTC_FROM_HERE, 60000, &handler);
 
   // Wait for a bit for the worker thread to be started and enter its socket

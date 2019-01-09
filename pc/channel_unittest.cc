@@ -520,9 +520,10 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   class ScopedCallThread {
    public:
     template <class FunctorT>
-    explicit ScopedCallThread(const FunctorT& functor)
+    explicit ScopedCallThread(FunctorT&& functor)
         : thread_(rtc::Thread::Create()),
-          task_(new rtc::FunctorMessageHandler<void, FunctorT>(functor)) {
+          task_(new rtc::FunctorMessageHandler<void, FunctorT>(
+              std::forward<FunctorT>(functor))) {
       thread_->Start();
       thread_->Post(RTC_FROM_HERE, task_.get());
     }
