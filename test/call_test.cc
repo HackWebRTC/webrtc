@@ -37,6 +37,7 @@ CallTest::CallTest()
       audio_send_config_(/*send_transport=*/nullptr,
                          /*media_transport=*/nullptr),
       audio_send_stream_(nullptr),
+      frame_generator_capturer_(nullptr),
       fake_encoder_factory_([this]() {
         std::unique_ptr<FakeEncoder> fake_encoder;
         if (video_encoder_configs_[0].codec_type == kVideoCodecVP8) {
@@ -175,6 +176,8 @@ void CallTest::RunBaseTest(BaseTest* test) {
     DestroyStreams();
     send_transport_.reset();
     receive_transport_.reset();
+    frame_generator_capturer_ = nullptr;
+    video_sources_.clear();
     DestroyCalls();
   });
 }
