@@ -1468,20 +1468,18 @@ rtclog::StreamConfig ParsedRtcEventLog::GetVideoSendConfig(
   RTC_CHECK_EQ(event.type(), rtclog::Event::VIDEO_SENDER_CONFIG_EVENT);
   RTC_CHECK(event.has_video_sender_config());
   const rtclog::VideoSendConfig& sender_config = event.video_sender_config();
+
+  // Get SSRCs.
   RTC_CHECK_EQ(sender_config.ssrcs_size(), 1)
       << "VideoSendStreamConfig no longer stores multiple SSRCs. If you are "
          "analyzing a very old log, try building the parser from the same "
          "WebRTC version.";
-
-  // Get SSRCs.
   config.local_ssrc = sender_config.ssrcs(0);
-
-  if (sender_config.has_rtx_payload_type()) {
-    RTC_CHECK_EQ(sender_config.rtx_ssrcs_size(), 1);
+  RTC_CHECK_LE(sender_config.rtx_ssrcs_size(), 1);
+  if (sender_config.rtx_ssrcs_size() == 1) {
     config.rtx_ssrc = sender_config.rtx_ssrcs(0);
-  } else {
-    RTC_CHECK_EQ(sender_config.rtx_ssrcs_size(), 0);
   }
+
   // Get header extensions.
   GetHeaderExtensions(&config.rtp_extensions,
                       sender_config.header_extensions());
