@@ -404,10 +404,6 @@ void NetEqDecodingTest::DecodeAndCompare(
       ASSERT_EQ(0, neteq_->NetworkStatistics(&current_network_stats));
       ASSERT_NO_FATAL_FAILURE(network_stats.AddResult(current_network_stats));
 
-      // Compare with CurrentDelay, which should be identical.
-      EXPECT_EQ(current_network_stats.current_buffer_size_ms,
-                neteq_->CurrentDelayMs());
-
       // Verify that liftime stats and network stats report similar loss
       // concealment rates.
       auto lifetime_stats = neteq_->GetLifetimeStatistics();

@@ -220,9 +220,6 @@ class NetEqNetworkStatsTest {
     CHECK_NETEQ_NETWORK_STATS(added_zero_samples);
 
 #undef CHECK_NETEQ_NETWORK_STATS
-
-    // Compare with CurrentDelay, which should be identical.
-    EXPECT_EQ(stats.current_buffer_size_ms, neteq_->CurrentDelayMs());
   }
 
   void RunTest(int num_loops, NetEqNetworkStatsCheck expects) {

@@ -303,21 +303,6 @@ int NetEqImpl::TargetDelayMs() const {
          rtc::CheckedDivExact(fs_hz_, 1000);
 }
 
-int NetEqImpl::CurrentDelayMs() const {
-  rtc::CritScope lock(&crit_sect_);
-  if (fs_hz_ == 0)
-    return 0;
-  // Sum up the samples in the packet buffer with the future length of the sync
-  // buffer, and divide the sum by the sample rate.
-  const size_t delay_samples =
-      packet_buffer_->NumSamplesInBuffer(decoder_frame_length_) +
-      sync_buffer_->FutureLength();
-  // The division below will truncate.
-  const int delay_ms =
-      static_cast<int>(delay_samples) / rtc::CheckedDivExact(fs_hz_, 1000);
-  return delay_ms;
-}
-
 int NetEqImpl::FilteredCurrentDelayMs() const {
   rtc::CritScope lock(&crit_sect_);
   // Calculate the filtered packet buffer level in samples. The value from
