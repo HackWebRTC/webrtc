@@ -234,6 +234,8 @@ rtc_static_library("rtc_internal_video_codecs") {
   sources = [
     "engine/convert_legacy_video_factory.cc",
     "engine/convert_legacy_video_factory.h",
+    "engine/fake_video_codec_factory.cc",
+    "engine/fake_video_codec_factory.h",
     "engine/internaldecoderfactory.cc",
     "engine/internaldecoderfactory.h",
     "engine/internalencoderfactory.cc",
@@ -269,6 +271,7 @@ rtc_static_library("rtc_internal_video_codecs") {
     "../api/video_codecs:video_codecs_api",
     "../call:call_interfaces",
     "../call:video_stream_api",
+    "../modules:module_api",
     "../modules/video_coding:webrtc_h264",
     "../modules/video_coding:webrtc_multiplex",
     "../modules/video_coding:webrtc_vp8",
@@ -277,6 +280,7 @@ rtc_static_library("rtc_internal_video_codecs") {
     "../rtc_base:deprecation",
     "../rtc_base:rtc_base_approved",
     "../rtc_base/system:rtc_export",
+    "../test:fake_video_codecs",
     "//third_party/abseil-cpp/absl/strings",
   ]
 }
