@@ -21,21 +21,47 @@
 
 namespace webrtc {
 
+// Base interface for video quality analyzer for peer connection level end-2-end
+// tests. Interface has only one abstract method, which have to return frame id.
+// Other methods have empty implementation by default, so user can override only
+// required parts.
+//
+// VideoQualityAnalyzerInterface will be injected into WebRTC pipeline on both
+// sides of the call. Here is video data flow in WebRTC pipeline
+//
+// Alice:
+//  ___________       ________       _________
+// |           |     |        |     |         |
+// |   Frame   |-(A)→| WebRTC |-(B)→| Video   |-(C)┐
+// | Generator |     | Stack  |     | Decoder |    |
+//  ¯¯¯¯¯¯¯¯¯¯¯       ¯¯¯¯¯¯¯¯       ¯¯¯¯¯¯¯¯¯     |
+//                                               __↓________
+//                                              | Transport |
+//                                              |     &     |
+//                                              |  Network  |
+//                                               ¯¯|¯¯¯¯¯¯¯¯
+// Bob:                                            |
+//  _______       ________       _________         |
+// |       |     |        |     |         |        |
+// | Video |←(F)-| WebRTC |←(E)-| Video   |←(D)----┘
+// | Sink  |     | Stack  |     | Decoder |
+//  ¯¯¯¯¯¯¯       ¯¯¯¯¯¯¯¯       ¯¯¯¯¯¯¯¯¯
+// The analyzer will be injected in all points from A to F.
 class VideoQualityAnalyzerInterface {
  public:
   virtual ~VideoQualityAnalyzerInterface() = default;
 
   // Will be called by framework before test. |threads_count| is number of
-  // threads, that analyzer can use for heavy calculations. Analyzer can perform
+  // threads that analyzer can use for heavy calculations. Analyzer can perform
   // simple calculations on the calling thread in each method, but should
-  // remember, that is the same thread, that is used in video pipeline.
-  virtual void Start(uint16_t threads_count) {}
+  // remember, that it is the same thread, that is used in video pipeline.
+  virtual void Start(int max_threads_count) {}
 
   // Will be called when frame was generated from the input stream.
   // Returns frame id, that will be set by framework to the frame.
-  virtual uint16_t OnFrameCaptured(std::string stream_label,
+  virtual uint16_t OnFrameCaptured(const std::string& stream_label,
                                    const VideoFrame& frame) = 0;
-  // Will be called before calling the real encoder.
+  // Will be called before calling the encoder.
   virtual void OnFramePreEncode(const VideoFrame& frame) {}
   // Will be called for each EncodedImage received from encoder. Single
   // VideoFrame can produce multiple EncodedImages. Each encoded image will
@@ -44,7 +70,7 @@ class VideoQualityAnalyzerInterface {
                               const EncodedImage& encoded_image) {}
   // Will be called for each frame dropped by encoder.
   virtual void OnFrameDropped(EncodedImageCallback::DropReason reason) {}
-  // Will be called before calling the real decoder.
+  // Will be called before calling the decoder.
   virtual void OnFrameReceived(uint16_t frame_id,
                                const EncodedImage& encoded_image) {}
   // Will be called after decoding the frame. |decode_time_ms| is a decode
@@ -55,12 +81,16 @@ class VideoQualityAnalyzerInterface {
                               absl::optional<uint8_t> qp) {}
   // Will be called when frame will be obtained from PeerConnection stack.
   virtual void OnFrameRendered(const VideoFrame& frame) {}
-  // Will be called if real encoder return not WEBRTC_VIDEO_CODEC_OK.
+  // Will be called if encoder return not WEBRTC_VIDEO_CODEC_OK.
+  // All available codes are listed in
+  // modules/video_coding/include/video_error_codes.h
   virtual void OnEncoderError(const VideoFrame& frame, int32_t error_code) {}
-  // Will be called if real decoder return not WEBRTC_VIDEO_CODEC_OK.
+  // Will be called if decoder return not WEBRTC_VIDEO_CODEC_OK.
+  // All available codes are listed in
+  // modules/video_coding/include/video_error_codes.h
   virtual void OnDecoderError(uint16_t frame_id, int32_t error_code) {}
 
-  // Tells analyzer, that analysis complete and it should calculate final
+  // Tells analyzer that analysis complete and it should calculate final
   // statistics.
   virtual void Stop() {}
 };

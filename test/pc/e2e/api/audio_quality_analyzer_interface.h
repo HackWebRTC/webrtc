@@ -13,7 +13,10 @@
 
 namespace webrtc {
 
-class AudioQualityAnalyzerInterface {};
+class AudioQualityAnalyzerInterface {
+ public:
+  virtual ~AudioQualityAnalyzerInterface() = default;
+};
 
 }  // namespace webrtc
 

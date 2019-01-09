@@ -21,6 +21,7 @@
 #include "api/peer_connection_interface.h"
 #include "api/test/simulated_network.h"
 #include "api/transport/network_control.h"
+#include "api/units/time_delta.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_factory.h"
@@ -37,6 +38,15 @@ namespace webrtc {
 // TODO(titovartem) move to API when it will be stabilized.
 class PeerConnectionE2EQualityTestFixture {
  public:
+  // Contains most part from PeerConnectionFactoryDependencies. Also all fields
+  // are optional and defaults will be provided by fixture implementation if
+  // any will be omitted.
+  //
+  // Separate class was introduced to clarify which components can be
+  // overridden. For example worker and signaling threads will be provided by
+  // fixture implementation. The same is applicable to the media engine. So user
+  // can override only some parts of media engine like video encoder/decoder
+  // factories.
   struct PeerConnectionFactoryComponents {
     std::unique_ptr<CallFactoryInterface> call_factory;
     std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory;
@@ -51,6 +61,15 @@ class PeerConnectionE2EQualityTestFixture {
     std::unique_ptr<VideoDecoderFactory> video_decoder_factory;
   };
 
+  // Contains most parts from PeerConnectionDependencies. Also all fields are
+  // optional and defaults will be provided by fixture implementation if any
+  // will be omitted.
+  //
+  // Separate class was introduced to clarify which components can be
+  // overridden. For example observer, which is required to
+  // PeerConnectionDependencies, will be provided by fixture implementation,
+  // so client can't inject its own. Also only network manager can be overridden
+  // inside port allocator.
   struct PeerConnectionComponents {
     std::unique_ptr<rtc::NetworkManager> network_manager;
     std::unique_ptr<webrtc::AsyncResolverFactory> async_resolver_factory;
@@ -58,26 +77,34 @@ class PeerConnectionE2EQualityTestFixture {
     std::unique_ptr<rtc::SSLCertificateVerifier> tls_cert_verifier;
   };
 
+  // Contains all components, that can be overridden in peer connection. Also
+  // has a network thread, that will be used to communicate with another peers.
   struct InjectableComponents {
     explicit InjectableComponents(rtc::Thread* network_thread)
-        : network_thread(network_thread) {}
+        : network_thread(network_thread) {
+      RTC_CHECK(network_thread);
+    }
 
-    rtc::Thread* network_thread;
+    rtc::Thread* const network_thread;
 
     std::unique_ptr<PeerConnectionFactoryComponents> pcf_dependencies;
     std::unique_ptr<PeerConnectionComponents> pc_dependencies;
   };
 
+  // Contains screen share video stream properties.
   struct ScreenShareConfig {
     // If true, slides will be generated programmatically.
     bool generate_slides;
-    int32_t slide_change_interval;
+    // Shows how long one slide should be presented on the screen during
+    // slide generation.
+    TimeDelta slide_change_interval;
     // If equal to 0, no scrolling will be applied.
-    int32_t scroll_duration;
+    TimeDelta scroll_duration;
     // If empty, default set of slides will be used.
     std::vector<std::string> slides_yuv_file_names;
   };
 
+  // Contains properties of single video stream.
   struct VideoConfig {
     size_t width;
     size_t height;
@@ -99,6 +126,7 @@ class PeerConnectionE2EQualityTestFixture {
     absl::optional<std::string> output_file_name;
   };
 
+  // Contains properties for audio in the call.
   struct AudioConfig {
     enum Mode {
       kGenerated,
@@ -115,6 +143,9 @@ class PeerConnectionE2EQualityTestFixture {
     cricket::AudioOptions audio_options;
   };
 
+  // Contains information about call media streams (up to 1 audio stream and
+  // unlimited amount of video streams) and rtc configuration, that will be used
+  // to set up peer connection.
   struct Params {
     // If |video_configs| is empty - no video should be added to the test call.
     std::vector<VideoConfig> video_configs;
@@ -124,6 +155,8 @@ class PeerConnectionE2EQualityTestFixture {
     PeerConnectionInterface::RTCConfiguration rtc_configuration;
   };
 
+  // Contains analyzers for audio and video stream. Both of them are optional
+  // and default implementations will be provided, if any will be omitted.
   struct Analyzers {
     std::unique_ptr<AudioQualityAnalyzerInterface> audio_quality_analyzer;
     std::unique_ptr<VideoQualityAnalyzerInterface> video_quality_analyzer;

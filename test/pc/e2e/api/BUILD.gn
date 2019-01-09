@@ -45,6 +45,7 @@ rtc_source_set("peer_connection_quality_test_fixture_api") {
     "../../../../api:libjingle_peerconnection_api",
     "../../../../api:simulated_network_api",
     "../../../../api/transport:network_control",
+    "../../../../api/units:time_delta",
     "../../../../api/video_codecs:video_codecs_api",
     "../../../../logging:rtc_event_log_api",
     "../../../../rtc_base:rtc_base",
