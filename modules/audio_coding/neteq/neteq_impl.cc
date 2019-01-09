@@ -1938,13 +1938,14 @@ int NetEqImpl::ExtractPackets(size_t required_samples,
         !has_cng_packet) {
       int16_t seq_no_diff = next_packet->sequence_number - prev_sequence_number;
       size_t ts_diff = next_packet->timestamp - prev_timestamp;
-      if (seq_no_diff == 1 ||
-          (seq_no_diff == 0 && ts_diff == decoder_frame_length_)) {
+      if ((seq_no_diff == 1 || seq_no_diff == 0) &&
+          ts_diff <= packet_duration) {
         // The next sequence number is available, or the next part of a packet
         // that was split into pieces upon insertion.
         next_packet_available = true;
       }
       prev_sequence_number = next_packet->sequence_number;
+      prev_timestamp = next_packet->timestamp;
     }
   } while (extracted_samples < required_samples && next_packet_available);
 
