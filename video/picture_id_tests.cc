@@ -262,13 +262,15 @@ class VideoStreamFactory
 
     // Always divide the same total bitrate across all streams so that sending a
     // single stream avoids lowering the bitrate estimate and requiring a
-    // subsequent rampup. Also reduce the target by 10% to account for overhead
-    // that might sometimes otherwise cause streams to not be enabled.
-    const int encoder_stream_bps = rtc::checked_cast<int>(
-        0.9 * (kEncoderBitrateBps / encoder_config.number_of_streams));
+    // subsequent rampup.
+    const int encoder_stream_bps =
+        kEncoderBitrateBps /
+        rtc::checked_cast<int>(encoder_config.number_of_streams);
 
     for (size_t i = 0; i < encoder_config.number_of_streams; ++i) {
-      streams[i].min_bitrate_bps = encoder_stream_bps;
+      // Reduce the min bitrate by 10% to account for overhead that might
+      // otherwise cause streams to not be enabled.
+      streams[i].min_bitrate_bps = static_cast<int>(encoder_stream_bps * 0.9);
       streams[i].target_bitrate_bps = encoder_stream_bps;
       streams[i].max_bitrate_bps = encoder_stream_bps;
       streams[i].num_temporal_layers = num_of_temporal_layers_;

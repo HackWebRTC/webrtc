@@ -131,6 +131,7 @@ class RtpVideoSender : public RtpVideoSenderInterface,
   uint32_t GetPacketizationOverheadRate() const;
 
   const bool send_side_bwe_with_overhead_;
+  const bool account_for_packetization_overhead_;
 
   // TODO(holmer): Remove crit_ once RtpVideoSender runs on the
   // transport task queue.
