@@ -50,9 +50,6 @@ class DecoderDatabase {
     explicit DecoderInfo(NetEqDecoder ct,
                          absl::optional<AudioCodecPairId> codec_pair_id,
                          AudioDecoderFactory* factory = nullptr);
-    DecoderInfo(const SdpAudioFormat& audio_format,
-                AudioDecoder* ext_dec,
-                const std::string& codec_name);
     DecoderInfo(DecoderInfo&&);
     ~DecoderInfo();
 
@@ -109,9 +106,6 @@ class DecoderDatabase {
     AudioDecoderFactory* const factory_;
     mutable std::unique_ptr<AudioDecoder> decoder_;
 
-    // Set iff this is an external decoder.
-    AudioDecoder* const external_decoder_;
-
     // Set iff this is a comfort noise decoder.
     struct CngDecoder {
       static absl::optional<CngDecoder> Create(const SdpAudioFormat& format);
@@ -164,13 +158,6 @@ class DecoderDatabase {
   // otherwise an error code.
   virtual int RegisterPayload(int rtp_payload_type,
                               const SdpAudioFormat& audio_format);
-
-  // Registers an externally created AudioDecoder object, and associates it
-  // as a decoder of type |codec_type| with |rtp_payload_type|.
-  virtual int InsertExternal(uint8_t rtp_payload_type,
-                             NetEqDecoder codec_type,
-                             const std::string& codec_name,
-                             AudioDecoder* decoder);
 
   // Removes the entry for |rtp_payload_type| from the database.
   // Returns kDecoderNotFound or kOK depending on the outcome of the operation.

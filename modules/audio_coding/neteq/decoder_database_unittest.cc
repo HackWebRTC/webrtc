@@ -165,35 +165,6 @@ TEST(DecoderDatabase, TypeTests) {
   EXPECT_TRUE(db.IsRed(kPayloadTypeRed));
 }
 
-TEST(DecoderDatabase, ExternalDecoder) {
-  DecoderDatabase db(new rtc::RefCountedObject<MockAudioDecoderFactory>,
-                     absl::nullopt);
-  const uint8_t kPayloadType = 0;
-  const std::string kCodecName = "Robert\'); DROP TABLE Students;";
-  MockAudioDecoder decoder;
-  // Load into database.
-  EXPECT_EQ(DecoderDatabase::kOK,
-            db.InsertExternal(kPayloadType, NetEqDecoder::kDecoderPCMu,
-                              kCodecName, &decoder));
-  EXPECT_EQ(1, db.Size());
-  // Get decoder and make sure we get the external one.
-  EXPECT_EQ(&decoder, db.GetDecoder(kPayloadType));
-  // Get the decoder info struct and check it too.
-  const DecoderDatabase::DecoderInfo* info;
-  info = db.GetDecoderInfo(kPayloadType);
-  ASSERT_TRUE(info != NULL);
-  EXPECT_TRUE(info->IsType("pcmu"));
-  EXPECT_EQ(info->get_name(), kCodecName);
-  EXPECT_EQ(kCodecName, info->get_name());
-  // Expect not to delete the decoder when removing it from the database, since
-  // it was declared externally.
-  EXPECT_CALL(decoder, Die()).Times(0);
-  EXPECT_EQ(DecoderDatabase::kOK, db.Remove(kPayloadType));
-  EXPECT_TRUE(db.Empty());
-
-  EXPECT_CALL(decoder, Die()).Times(1);  // Will be called when |db| is deleted.
-}
-
 TEST(DecoderDatabase, CheckPayloadTypes) {
   constexpr int kNumPayloads = 10;
   rtc::scoped_refptr<MockAudioDecoderFactory> factory(

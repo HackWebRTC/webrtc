@@ -248,26 +248,6 @@ int NetEqImpl::RegisterPayloadType(NetEqDecoder codec,
   return kOK;
 }
 
-int NetEqImpl::RegisterExternalDecoder(AudioDecoder* decoder,
-                                       NetEqDecoder codec,
-                                       const std::string& codec_name,
-                                       uint8_t rtp_payload_type) {
-  rtc::CritScope lock(&crit_sect_);
-  RTC_LOG(LS_VERBOSE) << "RegisterExternalDecoder "
-                      << static_cast<int>(rtp_payload_type) << " "
-                      << static_cast<int>(codec);
-  if (!decoder) {
-    RTC_LOG(LS_ERROR) << "Cannot register external decoder with NULL pointer";
-    assert(false);
-    return kFail;
-  }
-  if (decoder_database_->InsertExternal(rtp_payload_type, codec, codec_name,
-                                        decoder) != DecoderDatabase::kOK) {
-    return kFail;
-  }
-  return kOK;
-}
-
 bool NetEqImpl::RegisterPayloadType(int rtp_payload_type,
                                     const SdpAudioFormat& audio_format) {
   RTC_LOG(LS_VERBOSE) << "NetEqImpl::RegisterPayloadType: payload type "
