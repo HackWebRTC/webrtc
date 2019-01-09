@@ -266,6 +266,8 @@ bool PacketBuffer::PotentialNewFrame(uint16_t seq_num) const {
       static_cast<uint16_t>(sequence_buffer_[index].seq_num - 1)) {
     return false;
   }
+  if (data_buffer_[prev_index].timestamp != data_buffer_[index].timestamp)
+    return false;
   if (sequence_buffer_[prev_index].continuous)
     return true;
 

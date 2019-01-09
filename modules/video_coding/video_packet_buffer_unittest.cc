@@ -706,6 +706,13 @@ TEST_F(TestPacketBuffer, FramesAfterClear) {
   CheckFrame(9057);
 }
 
+TEST_F(TestPacketBuffer, SameFrameDifferentTimestamps) {
+  Insert(0, kKeyFrame, kFirst, kNotLast, 0, nullptr, 1000);
+  Insert(1, kKeyFrame, kNotFirst, kLast, 0, nullptr, 1001);
+
+  ASSERT_EQ(0UL, frames_from_callback_.size());
+}
+
 TEST_F(TestPacketBuffer, DontLeakPayloadData) {
   // NOTE! Any eventual leak is suppose to be detected by valgrind
   //       or any other similar tool.
