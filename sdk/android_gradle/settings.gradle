@@ -1,1 +1,1 @@
-include ':apprtc', ':webrtc'
+include ':AppRTCMobile', ':webrtc'

@@ -64,6 +64,9 @@ file(GLOB_RECURSE src_api
     ${WEBRTC_REPO}/api/*.cc
 )
 list(FILTER src_api EXCLUDE REGEX ${TEST_CC_FILTER})
+list(FILTER src_api EXCLUDE REGEX
+    ".*echo_canceller3_config_json.cc"
+)
 
 file(GLOB_RECURSE src_audio
     ${WEBRTC_REPO}/audio/*.cc
@@ -98,6 +101,7 @@ file(GLOB_RECURSE src_logging
     ${WEBRTC_REPO}/logging/rtc_event_log/rtc_event_log_impl.cc
     ${WEBRTC_REPO}/logging/rtc_event_log/rtc_stream_config.cc
     ${WEBRTC_REPO}/${WEBRTC_BUILD_DIR}/gen/logging/rtc_event_log/rtc_event_log.pb.cc
+    ${WEBRTC_REPO}/${WEBRTC_BUILD_DIR}/gen/logging/rtc_event_log/rtc_event_log2.pb.cc
 )
 list(FILTER src_logging EXCLUDE REGEX ${TEST_CC_FILTER})
 
@@ -115,7 +119,7 @@ file(GLOB_RECURSE src_modules
 list(FILTER src_modules EXCLUDE REGEX ${TEST_CC_FILTER})
 list(FILTER src_modules EXCLUDE REGEX ${OTHER_PLATFORM_CC_FILTER})
 list(FILTER src_modules EXCLUDE REGEX 
-    ".*/desktop_capture/.|.*/linux/.*|.*include/audio_device_factory.cc|.*bwe_simulations.cc|.*/audio_coding/neteq/tools/.*|.*/remote_bitrate_estimator/tools/.*|.*rnn_vad_tool.cc|.*null_aec_dump_factory.cc|.*h264_color_space.cc|.*vp9_noop.cc|.*h264_decoder_impl.cc|.*h264_encoder_impl.cc|.*/android/aaudio_.*|.*ensure_initialized.cc"
+    ".*/desktop_capture/.|.*/linux/.*|.*include/audio_device_factory.cc|.*bwe_simulations.cc|.*/audio_coding/neteq/tools/.*|.*/remote_bitrate_estimator/tools/.*|.*rnn_vad_tool.cc|.*null_aec_dump_factory.cc|.*h264_color_space.cc|.*vp9_noop.cc|.*h264_decoder_impl.cc|.*h264_encoder_impl.cc|.*/android/aaudio_.*|.*ensure_initialized.cc|.*fixed_gain_controller.cc"
 )
 
 file(GLOB_RECURSE src_ortc
@@ -142,7 +146,7 @@ file(GLOB_RECURSE src_rtc_base
 list(FILTER src_rtc_base EXCLUDE REGEX ${TEST_CC_FILTER})
 list(FILTER src_rtc_base EXCLUDE REGEX ${OTHER_PLATFORM_CC_FILTER})
 list(FILTER src_rtc_base EXCLUDE REGEX 
-    ".*macutils.cc|.*macifaddrs_converter.cc|.*testechoserver.cc|.*task_queue_gcd.cc|.*task_queue_for_test.cc|.*virtualsocketserver.cc|.*natsocketfactory.cc|.*natserver.cc"
+    ".*macutils.cc|.*macifaddrs_converter.cc|.*testechoserver.cc|.*task_queue_gcd.cc|.*task_queue_stdlib.cc|.*task_queue_for_test.cc|.*virtualsocketserver.cc|.*natsocketfactory.cc|.*natserver.cc|.*strings/json.cc"
 )
 
 file(GLOB_RECURSE src_sdk
@@ -192,11 +196,12 @@ add_library(jingle_peerconnection_so SHARED
 )
 
 target_link_libraries(jingle_peerconnection_so
-    absl_optional
-    absl_variant
+    absl::optional
+    absl::variant
+    absl::strings
     crypto
     event
-    json
+    #json
     opus
     protobuf_lite
     rnnoise

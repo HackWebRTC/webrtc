@@ -4,7 +4,7 @@ set(ENABLE_STATIC TRUE)
 
 add_subdirectory(abseil-cpp)
 add_subdirectory(boringssl)
-add_subdirectory(jsoncpp)
+#add_subdirectory(jsoncpp)
 add_subdirectory(libevent)
 add_subdirectory(libsrtp)
 add_subdirectory(libvpx)
