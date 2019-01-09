@@ -60,12 +60,6 @@ class VideoCodingModuleImpl : public VideoCodingModule {
 
   void Process() override { receiver_.Process(); }
 
-  int32_t SetVideoProtection(VCMVideoProtection videoProtection,
-                             bool enable) override {
-    // TODO(pbos): Remove enable from receive-side protection modes as well.
-    return receiver_.SetVideoProtection(videoProtection, enable);
-  }
-
   int32_t RegisterReceiveCodec(const VideoCodec* receiveCodec,
                                int32_t numberOfCores,
                                bool requireKeyFrame) override {

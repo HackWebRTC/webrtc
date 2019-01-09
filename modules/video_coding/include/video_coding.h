@@ -47,18 +47,6 @@ class VideoCodingModule : public Module {
   // DEPRECATED.
   static VideoCodingModule* Create(Clock* clock);
 
-  // Enable or disable a video protection method.
-  //
-  // Input:
-  //      - videoProtection  : The method to enable or disable.
-  //      - enable           : True if the method should be enabled, false if
-  //                           it should be disabled.
-  //
-  // Return value      : VCM_OK, on success.
-  //                     < 0,    on error.
-  virtual int32_t SetVideoProtection(VCMVideoProtection videoProtection,
-                                     bool enable) = 0;
-
   /*
    *   Receiver
    */
