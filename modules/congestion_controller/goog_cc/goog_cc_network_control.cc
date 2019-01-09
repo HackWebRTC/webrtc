@@ -256,8 +256,10 @@ NetworkControlUpdate GoogCcNetworkController::OnProcessInterval(
                                  initial_config_->constraints.starting_rate);
     update.pacer_config = GetPacingRates(msg.at_time);
 
-    probe_controller_->EnablePeriodicAlrProbing(
-        initial_config_->stream_based_config.requests_alr_probing);
+    if (initial_config_->stream_based_config.requests_alr_probing) {
+      probe_controller_->EnablePeriodicAlrProbing(
+          *initial_config_->stream_based_config.requests_alr_probing);
+    }
     absl::optional<DataRate> total_bitrate =
         initial_config_->stream_based_config.max_total_allocated_bitrate;
     if (total_bitrate) {
@@ -345,7 +347,9 @@ NetworkControlUpdate GoogCcNetworkController::OnSentPacket(
 NetworkControlUpdate GoogCcNetworkController::OnStreamsConfig(
     StreamsConfig msg) {
   NetworkControlUpdate update;
-  probe_controller_->EnablePeriodicAlrProbing(msg.requests_alr_probing);
+  if (msg.requests_alr_probing) {
+    probe_controller_->EnablePeriodicAlrProbing(*msg.requests_alr_probing);
+  }
   if (msg.max_total_allocated_bitrate &&
       *msg.max_total_allocated_bitrate != max_total_allocated_bitrate_) {
     update.probe_cluster_configs =
