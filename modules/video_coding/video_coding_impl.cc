@@ -99,9 +99,8 @@ class VideoCodingModuleImpl : public VideoCodingModule {
     return receiver_.IncomingPacket(incomingPayload, payloadLength, rtpInfo);
   }
 
-  int SetReceiverRobustnessMode(ReceiverRobustness robustnessMode,
-                                VCMDecodeErrorMode errorMode) override {
-    return receiver_.SetReceiverRobustnessMode(robustnessMode, errorMode);
+  int SetReceiverRobustnessMode(ReceiverRobustness robustnessMode) override {
+    return receiver_.SetReceiverRobustnessMode(robustnessMode);
   }
 
   void SetNackSettings(size_t max_nack_list_size,

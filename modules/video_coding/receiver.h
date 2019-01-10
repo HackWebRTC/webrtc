@@ -79,10 +79,6 @@ class VCMReceiver {
   VCMNackMode NackMode() const;
   std::vector<uint16_t> NackList(bool* request_key_frame);
 
-  // Decoding with errors.
-  void SetDecodeErrorMode(VCMDecodeErrorMode decode_error_mode);
-  VCMDecodeErrorMode DecodeErrorMode() const;
-
   void RegisterStatsCallback(VCMReceiveStatisticsCallback* callback);
 
   void TriggerDecoderShutdown();

@@ -140,8 +140,7 @@ VCMEncodedFrame* VCMReceiver::FrameForDecoding(uint16_t max_wait_time_ms,
     min_playout_delay_ms = found_frame->EncodedImage().playout_delay_.min_ms;
     max_playout_delay_ms = found_frame->EncodedImage().playout_delay_.max_ms;
   } else {
-    if (!jitter_buffer_.NextMaybeIncompleteTimestamp(&frame_timestamp))
-      return nullptr;
+    return nullptr;
   }
 
   if (min_playout_delay_ms >= 0)
@@ -258,14 +257,6 @@ VCMNackMode VCMReceiver::NackMode() const {
 
 std::vector<uint16_t> VCMReceiver::NackList(bool* request_key_frame) {
   return jitter_buffer_.GetNackList(request_key_frame);
-}
-
-void VCMReceiver::SetDecodeErrorMode(VCMDecodeErrorMode decode_error_mode) {
-  jitter_buffer_.SetDecodeErrorMode(decode_error_mode);
-}
-
-VCMDecodeErrorMode VCMReceiver::DecodeErrorMode() const {
-  return jitter_buffer_.decode_error_mode();
 }
 
 void VCMReceiver::RegisterStatsCallback(

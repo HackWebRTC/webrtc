@@ -131,14 +131,11 @@ class VideoReceiver : public Module {
 
   // DEPRECATED.
   int SetReceiverRobustnessMode(
-      VideoCodingModule::ReceiverRobustness robustnessMode,
-      VCMDecodeErrorMode errorMode);
+      VideoCodingModule::ReceiverRobustness robustnessMode);
 
   void SetNackSettings(size_t max_nack_list_size,
                        int max_packet_age_to_nack,
                        int max_incomplete_time_ms);
-
-  void SetDecodeErrorMode(VCMDecodeErrorMode decode_error_mode);
 
   int32_t SetReceiveChannelParameters(int64_t rtt);
   int32_t SetVideoProtection(VCMVideoProtection videoProtection, bool enable);

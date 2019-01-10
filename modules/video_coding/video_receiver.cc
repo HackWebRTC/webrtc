@@ -158,8 +158,6 @@ int32_t VideoReceiver::SetReceiveChannelParameters(int64_t rtt) {
 // between the protection method and decoding with or without errors.
 int32_t VideoReceiver::SetVideoProtection(VCMVideoProtection videoProtection,
                                           bool enable) {
-  // By default, do not decode with errors.
-  _receiver.SetDecodeErrorMode(kNoErrors);
   switch (videoProtection) {
     case kProtectionNack: {
       RTC_DCHECK(enable);
@@ -171,7 +169,6 @@ int32_t VideoReceiver::SetVideoProtection(VCMVideoProtection videoProtection,
       RTC_DCHECK(enable);
       _receiver.SetNackMode(kNack, media_optimization::kLowRttNackMs,
                             media_optimization::kMaxRttDelayThreshold);
-      _receiver.SetDecodeErrorMode(kNoErrors);
       break;
     }
     case kProtectionFEC:
@@ -179,7 +176,6 @@ int32_t VideoReceiver::SetVideoProtection(VCMVideoProtection videoProtection,
       // No receiver-side protection.
       RTC_DCHECK(enable);
       _receiver.SetNackMode(kNoNack, -1, -1);
-      _receiver.SetDecodeErrorMode(kWithErrors);
       break;
   }
   return VCM_OK;
@@ -439,10 +435,8 @@ int32_t VideoReceiver::Delay() const {
   return _timing->TargetVideoDelay();
 }
 
-// Only used by VCMRobustnessTest.
 int VideoReceiver::SetReceiverRobustnessMode(
-    VideoCodingModule::ReceiverRobustness robustnessMode,
-    VCMDecodeErrorMode decode_error_mode) {
+    VideoCodingModule::ReceiverRobustness robustnessMode) {
   RTC_DCHECK_RUN_ON(&construction_thread_checker_);
   RTC_DCHECK(!IsDecoderThreadRunning());
   switch (robustnessMode) {
@@ -457,14 +451,7 @@ int VideoReceiver::SetReceiverRobustnessMode(
       RTC_NOTREACHED();
       return VCM_PARAMETER_ERROR;
   }
-  _receiver.SetDecodeErrorMode(decode_error_mode);
   return VCM_OK;
-}
-
-void VideoReceiver::SetDecodeErrorMode(VCMDecodeErrorMode decode_error_mode) {
-  RTC_DCHECK_RUN_ON(&construction_thread_checker_);
-  RTC_DCHECK(!IsDecoderThreadRunning());
-  _receiver.SetDecodeErrorMode(decode_error_mode);
 }
 
 void VideoReceiver::SetNackSettings(size_t max_nack_list_size,

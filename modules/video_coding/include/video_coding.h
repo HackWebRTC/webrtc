@@ -27,19 +27,6 @@ class VideoDecoder;
 class VideoEncoder;
 struct CodecSpecificInfo;
 
-// Used to indicate which decode with errors mode should be used.
-enum VCMDecodeErrorMode {
-  kNoErrors,         // Never decode with errors. Video will freeze
-                     // if nack is disabled.
-  kSelectiveErrors,  // Frames that are determined decodable in
-                     // VCMSessionInfo may be decoded with missing
-                     // packets. As not all incomplete frames will be
-                     // decodable, video will freeze if nack is disabled.
-  kWithErrors        // Release frames as needed. Errors may be
-                     // introduced as some encoded frames may not be
-                     // complete.
-};
-
 class VideoCodingModule : public Module {
  public:
   enum SenderNackMode { kNackNone, kNackAll, kNackSelective };
@@ -166,12 +153,7 @@ class VideoCodingModule : public Module {
   // Return value      : VCM_OK, on success;
   //                     < 0, on error.
   enum ReceiverRobustness { kNone, kHardNack };
-  virtual int SetReceiverRobustnessMode(ReceiverRobustness robustnessMode,
-                                        VCMDecodeErrorMode errorMode) = 0;
-
-  int SetReceiverRobustnessMode(ReceiverRobustness robustnessMode) {
-    return SetReceiverRobustnessMode(robustnessMode, kNoErrors);
-  }
+  virtual int SetReceiverRobustnessMode(ReceiverRobustness robustnessMode) = 0;
 
   // Sets the maximum number of sequence numbers that we are allowed to NACK
   // and the oldest sequence number that we will consider to NACK. If a

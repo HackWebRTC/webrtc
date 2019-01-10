@@ -80,7 +80,6 @@ bool VCMFrameBuffer::IsSessionComplete() const {
 VCMFrameBufferEnum VCMFrameBuffer::InsertPacket(
     const VCMPacket& packet,
     int64_t timeInMs,
-    VCMDecodeErrorMode decode_error_mode,
     const FrameData& frame_data) {
   TRACE_EVENT0("webrtc", "VCMFrameBuffer::InsertPacket");
   assert(!(NULL == packet.dataPtr && packet.sizeBytes > 0));
@@ -129,8 +128,7 @@ VCMFrameBufferEnum VCMFrameBuffer::InsertPacket(
   if (packet.sizeBytes > 0)
     CopyCodecSpecific(&packet.video_header);
 
-  int retVal =
-      _sessionInfo.InsertPacket(packet, _buffer, decode_error_mode, frame_data);
+  int retVal = _sessionInfo.InsertPacket(packet, _buffer, frame_data);
   if (retVal == -1) {
     return kSizeError;
   } else if (retVal == -2) {
@@ -182,9 +180,6 @@ VCMFrameBufferEnum VCMFrameBuffer::InsertPacket(
   if (_sessionInfo.complete()) {
     SetState(kStateComplete);
     return kCompleteSession;
-  } else if (_sessionInfo.decodable()) {
-    SetState(kStateDecodable);
-    return kDecodableSession;
   }
   return kIncomplete;
 }
@@ -240,18 +235,13 @@ void VCMFrameBuffer::SetState(VCMFrameBufferStateEnum state) {
       break;
 
     case kStateComplete:
-      assert(_state == kStateEmpty || _state == kStateIncomplete ||
-             _state == kStateDecodable);
+      assert(_state == kStateEmpty || _state == kStateIncomplete);
 
       break;
 
     case kStateEmpty:
       // Should only be set to empty through Reset().
       assert(false);
-      break;
-
-    case kStateDecodable:
-      assert(_state == kStateEmpty || _state == kStateIncomplete);
       break;
   }
   _state = state;

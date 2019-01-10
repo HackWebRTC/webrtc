@@ -41,9 +41,7 @@ VideoStreamDecoder::VideoStreamDecoder(
       enable_nack ? (enable_fec ? kProtectionNackFEC : kProtectionNack)
                   : kProtectionNone;
 
-  VCMDecodeErrorMode decode_error_mode = enable_nack ? kNoErrors : kWithErrors;
   video_receiver_->SetVideoProtection(video_protection, true);
-  video_receiver_->SetDecodeErrorMode(decode_error_mode);
   VCMPacketRequestCallback* packet_request_callback =
       enable_nack ? vcm_packet_request_callback : nullptr;
   video_receiver_->RegisterPacketRequestCallback(packet_request_callback);

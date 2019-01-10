@@ -35,7 +35,6 @@ class VCMFrameBuffer : public VCMEncodedFrame {
 
   VCMFrameBufferEnum InsertPacket(const VCMPacket& packet,
                                   int64_t timeInMs,
-                                  VCMDecodeErrorMode decode_error_mode,
                                   const FrameData& frame_data);
 
   // State
