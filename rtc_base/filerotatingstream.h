@@ -52,8 +52,6 @@ class FileRotatingStream : public StreamInterface {
                      size_t* written,
                      int* error) override;
   bool Flush() override;
-  // Returns the total file size currently used on disk.
-  bool GetSize(size_t* size) const override;
   void Close() override;
 
   // Opens the appropriate file(s). Call this before using the stream.

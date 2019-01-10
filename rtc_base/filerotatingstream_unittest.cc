@@ -91,18 +91,15 @@ class MAYBE_FileRotatingStreamTest : public ::testing::Test {
   void VerifyFileContents(const char* expected_contents,
                           const size_t expected_length,
                           const std::string& file_path) {
-    std::unique_ptr<uint8_t[]> buffer(new uint8_t[expected_length]);
+    std::unique_ptr<uint8_t[]> buffer(new uint8_t[expected_length + 1]);
     FileStream stream;
     ASSERT_TRUE(stream.Open(file_path, "r", nullptr));
     size_t size_read = 0;
-    EXPECT_EQ(rtc::SR_SUCCESS, stream.ReadAll(buffer.get(), expected_length,
-                                              &size_read, nullptr));
+    EXPECT_EQ(rtc::SR_EOS, stream.ReadAll(buffer.get(), expected_length + 1,
+                                          &size_read, nullptr));
     EXPECT_EQ(size_read, expected_length);
     EXPECT_EQ(0, memcmp(expected_contents, buffer.get(),
                         std::min(expected_length, size_read)));
-    size_t file_size = 0;
-    EXPECT_TRUE(stream.GetSize(&file_size));
-    EXPECT_EQ(file_size, expected_length);
   }
 
   std::unique_ptr<FileRotatingStream> stream_;
@@ -134,9 +131,10 @@ TEST_F(MAYBE_FileRotatingStreamTest, EmptyWrite) {
   std::string logfile_path = stream_->GetFilePath(0);
   FileStream stream;
   ASSERT_TRUE(stream.Open(logfile_path, "r", nullptr));
-  size_t file_size = 0;
-  EXPECT_TRUE(stream.GetSize(&file_size));
-  EXPECT_EQ(0u, file_size);
+  char buf[1];
+  size_t read_nbytes;
+  int read_error;
+  EXPECT_EQ(SR_EOS, stream.Read(buf, sizeof(buf), &read_nbytes, &read_error));
 }
 
 // Tests that a write operation followed by a read returns the expected data

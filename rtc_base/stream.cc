@@ -9,7 +9,6 @@
  */
 #include <errno.h>
 #include <string.h>
-#include <sys/stat.h>
 #include <algorithm>
 #include <string>
 
@@ -86,10 +85,6 @@ bool StreamInterface::GetPosition(size_t* position) const {
   return false;
 }
 
-bool StreamInterface::GetSize(size_t* size) const {
-  return false;
-}
-
 bool StreamInterface::Flush() {
   return false;
 }
@@ -144,10 +139,6 @@ bool StreamAdapterInterface::SetPosition(size_t position) {
 
 bool StreamAdapterInterface::GetPosition(size_t* position) const {
   return stream_->GetPosition(position);
-}
-
-bool StreamAdapterInterface::GetSize(size_t* size) const {
-  return stream_->GetSize(size);
 }
 
 bool StreamAdapterInterface::ReserveSize(size_t size) {
@@ -314,18 +305,6 @@ bool FileStream::GetPosition(size_t* position) const {
     return false;
   if (position)
     *position = result;
-  return true;
-}
-
-bool FileStream::GetSize(size_t* size) const {
-  RTC_DCHECK(nullptr != size);
-  if (!file_)
-    return false;
-  struct stat file_stats;
-  if (fstat(fileno(file_), &file_stats) != 0)
-    return false;
-  if (size)
-    *size = file_stats.st_size;
   return true;
 }
 

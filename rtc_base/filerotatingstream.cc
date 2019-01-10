@@ -243,12 +243,6 @@ bool FileRotatingStream::Flush() {
   return file_stream_->Flush();
 }
 
-bool FileRotatingStream::GetSize(size_t* size) const {
-  // Not possible to get accurate size on disk when writing because of
-  // potential buffering.
-  return false;
-}
-
 void FileRotatingStream::Close() {
   CloseCurrentFile();
 }

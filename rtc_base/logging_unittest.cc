@@ -42,7 +42,6 @@ class StringStream : public StreamInterface {
   void Close() override;
   bool SetPosition(size_t position) override;
   bool GetPosition(size_t* position) const override;
-  bool GetSize(size_t* size) const override;
   bool ReserveSize(size_t size) override;
 
  private:
@@ -104,12 +103,6 @@ bool StringStream::SetPosition(size_t position) {
 bool StringStream::GetPosition(size_t* position) const {
   if (position)
     *position = read_pos_;
-  return true;
-}
-
-bool StringStream::GetSize(size_t* size) const {
-  if (size)
-    *size = str_.size();
   return true;
 }
 
