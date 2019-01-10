@@ -130,7 +130,7 @@ void VideoQualityObserver::OnRenderedFrame(const VideoFrame& frame,
 
   ++num_frames_rendered_;
 
-  auto blocky_frame_it = blocky_frames_.find(frame.timestamp_us());
+  auto blocky_frame_it = blocky_frames_.find(frame.timestamp());
 
   if (!is_paused_ && num_frames_rendered_ > 1) {
     // Process inter-frame delay.
@@ -208,8 +208,7 @@ void VideoQualityObserver::OnDecodedFrame(const VideoFrame& frame,
         qp_blocky_threshold = absl::nullopt;
     }
 
-    RTC_DCHECK(blocky_frames_.find(frame.timestamp_us()) ==
-               blocky_frames_.end());
+    RTC_DCHECK(blocky_frames_.find(frame.timestamp()) == blocky_frames_.end());
 
     if (qp_blocky_threshold && *qp > *qp_blocky_threshold) {
       // Cache blocky frame. Its duration will be calculated in render callback.
@@ -220,7 +219,7 @@ void VideoQualityObserver::OnDecodedFrame(const VideoFrame& frame,
             std::next(blocky_frames_.begin(), kMaxNumCachedBlockyFrames / 2));
       }
 
-      blocky_frames_.insert(frame.timestamp_us());
+      blocky_frames_.insert(frame.timestamp());
     }
   }
 }
