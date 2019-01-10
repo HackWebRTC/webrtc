@@ -25,6 +25,7 @@
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "modules/video_coding/internal_defines.h"
+#include "modules/video_coding/media_optimization.h"
 #include "modules/video_coding/utility/default_video_bitrate_allocator.h"
 #include "modules/video_coding/video_coding_impl.h"
 #include "rtc_base/checks.h"
@@ -38,11 +39,20 @@
 namespace webrtc {
 namespace vcm {
 
+namespace {
+
+constexpr char kFrameDropperFieldTrial[] = "WebRTC-FrameDropper";
+
+}  // namespace
+
 VideoSender::VideoSender(Clock* clock,
                          EncodedImageCallback* post_encode_callback)
     : _encoder(nullptr),
-      _encodedFrameCallback(post_encode_callback),
+      _mediaOpt(clock),
+      _encodedFrameCallback(post_encode_callback, &_mediaOpt),
+      post_encode_callback_(post_encode_callback),
       _codecDataBase(&_encodedFrameCallback),
+      force_disable_frame_dropper_(false),
       current_codec_(),
       encoder_has_internal_source_(false),
       next_frame_types_(1, kVideoFrameDelta) {
@@ -83,6 +93,27 @@ int32_t VideoSender::RegisterSendCodec(const VideoCodec* sendCodec,
   // SetSendCodec succeeded, _encoder should be set.
   RTC_DCHECK(_encoder);
 
+  int numLayers;
+  if (sendCodec->codecType == kVideoCodecVP8) {
+    numLayers = sendCodec->VP8().numberOfTemporalLayers;
+  } else if (sendCodec->codecType == kVideoCodecVP9) {
+    numLayers = sendCodec->VP9().numberOfTemporalLayers;
+  } else if (sendCodec->codecType == kVideoCodecGeneric &&
+             sendCodec->numberOfSimulcastStreams > 0) {
+    // This is mainly for unit testing, disabling frame dropping.
+    // TODO(sprang): Add a better way to disable frame dropping.
+    numLayers = sendCodec->simulcastStream[0].numberOfTemporalLayers;
+  } else {
+    numLayers = 1;
+  }
+
+  // Force-disable frame dropper if either:
+  //  * We have screensharing with layers.
+  //  * "WebRTC-FrameDropper" field trial is "Disabled".
+  force_disable_frame_dropper_ =
+      field_trial::IsDisabled(kFrameDropperFieldTrial) ||
+      (numLayers > 1 && sendCodec->mode == VideoCodecMode::kScreensharing);
+
   {
     rtc::CritScope cs(&params_crit_);
     next_frame_types_.clear();
@@ -97,6 +128,9 @@ int32_t VideoSender::RegisterSendCodec(const VideoCodec* sendCodec,
                       << " start bitrate " << sendCodec->startBitrate
                       << " max frame rate " << sendCodec->maxFramerate
                       << " max payload size " << maxPayloadSize;
+  _mediaOpt.SetEncodingData(sendCodec->maxBitrate * 1000,
+                            sendCodec->startBitrate * 1000,
+                            sendCodec->maxFramerate);
   return VCM_OK;
 }
 
@@ -122,41 +156,108 @@ void VideoSender::RegisterExternalEncoder(VideoEncoder* externalEncoder,
                                          internalSource);
 }
 
+EncoderParameters VideoSender::UpdateEncoderParameters(
+    const EncoderParameters& params,
+    VideoBitrateAllocator* bitrate_allocator,
+    uint32_t target_bitrate_bps) {
+  uint32_t video_target_rate_bps = _mediaOpt.SetTargetRates(target_bitrate_bps);
+  uint32_t input_frame_rate = _mediaOpt.InputFrameRate();
+  if (input_frame_rate == 0)
+    input_frame_rate = current_codec_.maxFramerate;
+
+  EncoderParameters new_encoder_params = {
+      DataRate::bps(target_bitrate_bps),
+      GetAllocation(video_target_rate_bps, input_frame_rate, bitrate_allocator),
+      input_frame_rate};
+  return new_encoder_params;
+}
+
+VideoBitrateAllocation VideoSender::GetAllocation(
+    uint32_t bitrate_bps,
+    uint32_t framerate_fps,
+    VideoBitrateAllocator* bitrate_allocator) const {
+  VideoBitrateAllocation bitrate_allocation;
+  // Only call allocators if bitrate > 0 (ie, not suspended), otherwise they
+  // might cap the bitrate to the min bitrate configured.
+  if (bitrate_bps > 0) {
+    if (bitrate_allocator) {
+      bitrate_allocation =
+          bitrate_allocator->GetAllocation(bitrate_bps, framerate_fps);
+    } else {
+      DefaultVideoBitrateAllocator default_allocator(current_codec_);
+      bitrate_allocation =
+          default_allocator.GetAllocation(bitrate_bps, framerate_fps);
+    }
+  }
+  return bitrate_allocation;
+}
+
+void VideoSender::UpdateChannelParameters(
+    VideoBitrateAllocator* bitrate_allocator,
+    VideoBitrateAllocationObserver* bitrate_updated_callback) {
+  VideoBitrateAllocation target_rate;
+  {
+    rtc::CritScope cs(&params_crit_);
+    encoder_params_ =
+        UpdateEncoderParameters(encoder_params_, bitrate_allocator,
+                                encoder_params_.total_bitrate.bps());
+    target_rate = encoder_params_.target_bitrate;
+  }
+  if (bitrate_updated_callback && target_rate.get_sum_bps() > 0) {
+    bitrate_updated_callback->OnBitrateAllocationUpdated(target_rate);
+  }
+}
+
 int32_t VideoSender::SetChannelParameters(
-    const VideoBitrateAllocation& bitrate_allocation,
-    uint32_t framerate_fps) {
+    uint32_t target_bitrate_bps,
+    VideoBitrateAllocator* bitrate_allocator,
+    VideoBitrateAllocationObserver* bitrate_updated_callback) {
+  EncoderParameters encoder_params;
+  encoder_params = UpdateEncoderParameters(encoder_params, bitrate_allocator,
+                                           target_bitrate_bps);
+  if (bitrate_updated_callback && target_bitrate_bps > 0) {
+    bitrate_updated_callback->OnBitrateAllocationUpdated(
+        encoder_params.target_bitrate);
+  }
+
   bool encoder_has_internal_source;
   {
     rtc::CritScope cs(&params_crit_);
+    encoder_params_ = encoder_params;
     encoder_has_internal_source = encoder_has_internal_source_;
   }
 
-  {
+  // For encoders with internal sources, we need to tell the encoder directly,
+  // instead of waiting for an AddVideoFrame that will never come (internal
+  // source encoders don't get input frames).
+  if (encoder_has_internal_source) {
     rtc::CritScope cs(&encoder_crit_);
     if (_encoder) {
-      // |target_bitrate == 0 | means that the network is down or the send pacer
-      // is full. We currently only report this if the encoder has an internal
-      // source. If the encoder does not have an internal source, higher levels
-      // are expected to not call AddVideoFrame. We do this since its unclear
-      // how current encoder implementations behave when given a zero target
-      // bitrate.
-      // TODO(perkj): Make sure all known encoder implementations handle zero
-      // target bitrate and remove this check.
-      if (!encoder_has_internal_source &&
-          bitrate_allocation.get_sum_bps() == 0) {
-        return VCM_OK;
-      }
-
-      if (framerate_fps == 0) {
-        // No frame rate estimate available, use default.
-        framerate_fps = current_codec_.maxFramerate;
-      }
-      if (_encoder != nullptr)
-        _encoder->SetEncoderParameters(bitrate_allocation, framerate_fps);
+      SetEncoderParameters(encoder_params, encoder_has_internal_source);
     }
   }
 
   return VCM_OK;
+}
+
+void VideoSender::SetEncoderParameters(EncoderParameters params,
+                                       bool has_internal_source) {
+  // |target_bitrate == 0 | means that the network is down or the send pacer is
+  // full. We currently only report this if the encoder has an internal source.
+  // If the encoder does not have an internal source, higher levels are expected
+  // to not call AddVideoFrame. We do this since its unclear how current
+  // encoder implementations behave when given a zero target bitrate.
+  // TODO(perkj): Make sure all known encoder implementations handle zero
+  // target bitrate and remove this check.
+  if (!has_internal_source && params.target_bitrate.get_sum_bps() == 0)
+    return;
+
+  if (params.input_frame_rate == 0) {
+    // No frame rate estimate available, use default.
+    params.input_frame_rate = current_codec_.maxFramerate;
+  }
+  if (_encoder != nullptr)
+    _encoder->SetEncoderParameters(params);
 }
 
 // Add one raw video frame to the encoder, blocking.
@@ -164,16 +265,40 @@ int32_t VideoSender::AddVideoFrame(
     const VideoFrame& videoFrame,
     const CodecSpecificInfo* codecSpecificInfo,
     absl::optional<VideoEncoder::EncoderInfo> encoder_info) {
+  EncoderParameters encoder_params;
   std::vector<FrameType> next_frame_types;
   bool encoder_has_internal_source = false;
   {
     rtc::CritScope lock(&params_crit_);
+    encoder_params = encoder_params_;
     next_frame_types = next_frame_types_;
     encoder_has_internal_source = encoder_has_internal_source_;
   }
   rtc::CritScope lock(&encoder_crit_);
   if (_encoder == nullptr)
     return VCM_UNINITIALIZED;
+  SetEncoderParameters(encoder_params, encoder_has_internal_source);
+  if (!encoder_info) {
+    encoder_info = _encoder->GetEncoderInfo();
+  }
+
+  // Frame dropping is enabled iff frame dropping has been requested, and
+  // frame dropping is not force-disabled, and rate controller is not trusted.
+  const bool frame_dropping_enabled =
+      !force_disable_frame_dropper_ &&
+      !encoder_info->has_trusted_rate_controller;
+  _mediaOpt.EnableFrameDropper(frame_dropping_enabled);
+
+  if (_mediaOpt.DropFrame()) {
+    RTC_LOG(LS_VERBOSE) << "Drop Frame: "
+                        << "target bitrate "
+                        << encoder_params.target_bitrate.get_sum_bps()
+                        << ", input frame rate "
+                        << encoder_params.input_frame_rate;
+    post_encode_callback_->OnDroppedFrame(
+        EncodedImageCallback::DropReason::kDroppedByMediaOptimizations);
+    return VCM_OK;
+  }
   // TODO(pbos): Make sure setting send codec is synchronized with video
   // processing so frame size always matches.
   if (!_codecDataBase.MatchesCurrentResolution(videoFrame.width(),

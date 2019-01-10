@@ -23,9 +23,33 @@
 
 namespace webrtc {
 
+namespace media_optimization {
+class MediaOptimization;
+}  // namespace media_optimization
+
+struct EncoderParameters {
+  EncoderParameters() : total_bitrate(DataRate::Zero()), input_frame_rate(0) {}
+  EncoderParameters(DataRate total_bitrate,
+                    const VideoBitrateAllocation& allocation,
+                    uint32_t framerate)
+      : total_bitrate(total_bitrate),
+        target_bitrate(allocation),
+        input_frame_rate(framerate) {}
+
+  // Total bitrate allocated for this encoder.
+  DataRate total_bitrate;
+  // The bitrate allocation, across spatial and/or temporal layers. Note that
+  // the sum of these might be less than |total_bitrate| if the allocator has
+  // capped the bitrate for some configuration.
+  VideoBitrateAllocation target_bitrate;
+  // The input frame rate to the encoder in fps, measured in the video sender.
+  uint32_t input_frame_rate;
+};
+
 class VCMEncodedFrameCallback : public EncodedImageCallback {
  public:
-  explicit VCMEncodedFrameCallback(EncodedImageCallback* post_encode_callback);
+  VCMEncodedFrameCallback(EncodedImageCallback* post_encode_callback,
+                          media_optimization::MediaOptimization* media_opt);
   ~VCMEncodedFrameCallback() override;
 
   // Implements EncodedImageCallback.
@@ -76,6 +100,7 @@ class VCMEncodedFrameCallback : public EncodedImageCallback {
   rtc::CriticalSection timing_params_lock_;
   bool internal_source_;
   EncodedImageCallback* const post_encode_callback_;
+  media_optimization::MediaOptimization* const media_opt_;
 
   struct EncodeStartTimeRecord {
     EncodeStartTimeRecord(uint32_t timestamp,
@@ -128,8 +153,8 @@ class VCMGenericEncoder {
                  const CodecSpecificInfo* codec_specific,
                  const std::vector<FrameType>& frame_types);
 
-  void SetEncoderParameters(const VideoBitrateAllocation& target_bitrate,
-                            uint32_t input_frame_rate);
+  void SetEncoderParameters(const EncoderParameters& params);
+  EncoderParameters GetEncoderParameters() const;
 
   int32_t RequestFrame(const std::vector<FrameType>& frame_types);
   bool InternalSource() const;
@@ -142,8 +167,7 @@ class VCMGenericEncoder {
   VCMEncodedFrameCallback* const vcm_encoded_frame_callback_;
   const bool internal_source_;
   rtc::CriticalSection params_lock_;
-  VideoBitrateAllocation bitrate_allocation_ RTC_GUARDED_BY(params_lock_);
-  uint32_t input_frame_rate_ RTC_GUARDED_BY(params_lock_);
+  EncoderParameters encoder_params_ RTC_GUARDED_BY(params_lock_);
   size_t streams_or_svc_num_ RTC_GUARDED_BY(race_checker_);
   VideoCodecType codec_type_ RTC_GUARDED_BY(race_checker_);
 };

@@ -22,6 +22,7 @@
 #include "api/video/video_timing.h"
 #include "modules/include/module_common_types_public.h"
 #include "modules/video_coding/include/video_coding_defines.h"
+#include "modules/video_coding/media_optimization.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/experiments/alr_experiment.h"
 #include "rtc_base/logging.h"
@@ -45,7 +46,6 @@ VCMGenericEncoder::VCMGenericEncoder(
     : encoder_(encoder),
       vcm_encoded_frame_callback_(encoded_frame_callback),
       internal_source_(internal_source),
-      input_frame_rate_(0),
       streams_or_svc_num_(0),
       codec_type_(VideoCodecType::kVideoCodecGeneric) {}
 
@@ -103,32 +103,36 @@ int32_t VCMGenericEncoder::Encode(const VideoFrame& frame,
   return encoder_->Encode(frame, codec_specific, &frame_types);
 }
 
-void VCMGenericEncoder::SetEncoderParameters(
-    const VideoBitrateAllocation& target_bitrate,
-    uint32_t input_frame_rate) {
+void VCMGenericEncoder::SetEncoderParameters(const EncoderParameters& params) {
   RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
   bool rates_have_changed;
   {
     rtc::CritScope lock(&params_lock_);
-    rates_have_changed = target_bitrate != bitrate_allocation_ ||
-                         input_frame_rate != input_frame_rate_;
-    bitrate_allocation_ = target_bitrate;
-    input_frame_rate_ = input_frame_rate;
+    rates_have_changed =
+        params.target_bitrate != encoder_params_.target_bitrate ||
+        params.input_frame_rate != encoder_params_.input_frame_rate;
+    encoder_params_ = params;
   }
   if (rates_have_changed) {
-    int res = encoder_->SetRateAllocation(target_bitrate, input_frame_rate);
+    int res = encoder_->SetRateAllocation(params.target_bitrate,
+                                          params.input_frame_rate);
     if (res != 0) {
       RTC_LOG(LS_WARNING) << "Error set encoder rate (total bitrate bps = "
-                          << target_bitrate.get_sum_bps()
-                          << ", framerate = " << input_frame_rate
+                          << params.target_bitrate.get_sum_bps()
+                          << ", framerate = " << params.input_frame_rate
                           << "): " << res;
     }
-    vcm_encoded_frame_callback_->OnFrameRateChanged(input_frame_rate);
+    vcm_encoded_frame_callback_->OnFrameRateChanged(params.input_frame_rate);
     for (size_t i = 0; i < streams_or_svc_num_; ++i) {
       vcm_encoded_frame_callback_->OnTargetBitrateChanged(
-          target_bitrate.GetSpatialLayerSum(i) / 8, i);
+          params.target_bitrate.GetSpatialLayerSum(i) / 8, i);
     }
   }
+}
+
+EncoderParameters VCMGenericEncoder::GetEncoderParameters() const {
+  rtc::CritScope lock(&params_lock_);
+  return encoder_params_;
 }
 
 int32_t VCMGenericEncoder::RequestFrame(
@@ -160,9 +164,11 @@ VideoEncoder::EncoderInfo VCMGenericEncoder::GetEncoderInfo() const {
 }
 
 VCMEncodedFrameCallback::VCMEncodedFrameCallback(
-    EncodedImageCallback* post_encode_callback)
+    EncodedImageCallback* post_encode_callback,
+    media_optimization::MediaOptimization* media_opt)
     : internal_source_(false),
       post_encode_callback_(post_encode_callback),
+      media_opt_(media_opt),
       framerate_(1),
       last_timing_frame_time_ms_(-1),
       timing_frames_thresholds_({-1, 0}),
@@ -400,8 +406,20 @@ EncodedImageCallback::Result VCMEncodedFrameCallback::OnEncodedImage(
   RTC_CHECK(videocontenttypehelpers::SetSimulcastId(
       &image_copy.content_type_, static_cast<uint8_t>(spatial_idx + 1)));
 
-  return post_encode_callback_->OnEncodedImage(image_copy, codec_specific,
-                                               fragmentation_header);
+  Result result = post_encode_callback_->OnEncodedImage(
+      image_copy, codec_specific, fragmentation_header);
+  if (result.error != Result::OK)
+    return result;
+
+  if (media_opt_) {
+    media_opt_->UpdateWithEncodedData(image_copy._length,
+                                      image_copy._frameType);
+    if (internal_source_) {
+      // Signal to encoder to drop next frame.
+      result.drop_next_frame = media_opt_->DropFrame();
+    }
+  }
+  return result;
 }
 
 }  // namespace webrtc
