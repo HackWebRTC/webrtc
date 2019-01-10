@@ -36,10 +36,10 @@ namespace video_coding {
 
 namespace {
 // Max number of frames the buffer will hold.
-constexpr int kMaxFramesBuffered = 600;
+constexpr size_t kMaxFramesBuffered = 600;
 
 // Max number of decoded frame info that will be saved.
-constexpr int kMaxFramesHistory = 50;
+constexpr size_t kMaxFramesHistory = 50;
 
 // The time it's allowed for a frame to be late to its rendering prediction and
 // still be rendered.
@@ -56,10 +56,6 @@ FrameBuffer::FrameBuffer(Clock* clock,
       jitter_estimator_(jitter_estimator),
       timing_(timing),
       inter_frame_delay_(clock_->TimeInMilliseconds()),
-      last_decoded_frame_it_(frames_.end()),
-      last_continuous_frame_it_(frames_.end()),
-      num_frames_history_(0),
-      num_frames_buffered_(0),
       stopped_(false),
       protection_mode_(kProtectionNack),
       stats_callback_(stats_callback),
@@ -92,23 +88,11 @@ FrameBuffer::ReturnReason FrameBuffer::NextFrame(
       // acquire the lock unnecessarily.
       frames_to_decode_.clear();
 
-      // |frame_it| points to the first frame after the
-      // |last_decoded_frame_it_|.
-      auto frame_it = frames_.end();
-      if (last_decoded_frame_it_ == frames_.end()) {
-        frame_it = frames_.begin();
-      } else {
-        frame_it = last_decoded_frame_it_;
-        ++frame_it;
-      }
-
-      // |continuous_end_it| points to the first frame after the
-      // |last_continuous_frame_it_|.
-      auto continuous_end_it = last_continuous_frame_it_;
-      if (continuous_end_it != frames_.end())
-        ++continuous_end_it;
-
-      for (; frame_it != continuous_end_it && frame_it != frames_.end();
+      // |last_continuous_frame_| may be empty below, but nullopt is smaller
+      // than everything else and loop will immediately terminate as expected.
+      for (auto frame_it = frames_.begin();
+           frame_it != frames_.end() &&
+           frame_it->first <= last_continuous_frame_;
            ++frame_it) {
         if (!frame_it->second.continuous ||
             frame_it->second.num_missing_decodable > 0) {
@@ -362,9 +346,7 @@ int64_t FrameBuffer::InsertFrame(std::unique_ptr<EncodedFrame> frame) {
   rtc::CritScope lock(&crit_);
 
   int64_t last_continuous_picture_id =
-      last_continuous_frame_it_ == frames_.end()
-          ? -1
-          : last_continuous_frame_it_->first.picture_id;
+      !last_continuous_frame_ ? -1 : last_continuous_frame_->picture_id;
 
   if (!ValidReferences(*frame)) {
     RTC_LOG(LS_WARNING) << "Frame with (picture_id:spatial_id) ("
@@ -374,7 +356,7 @@ int64_t FrameBuffer::InsertFrame(std::unique_ptr<EncodedFrame> frame) {
     return last_continuous_picture_id;
   }
 
-  if (num_frames_buffered_ >= kMaxFramesBuffered) {
+  if (frames_.size() >= kMaxFramesBuffered) {
     if (frame->is_keyframe()) {
       RTC_LOG(LS_WARNING) << "Inserting keyframe (picture_id:spatial_id) ("
                           << id.picture_id << ":"
@@ -392,8 +374,7 @@ int64_t FrameBuffer::InsertFrame(std::unique_ptr<EncodedFrame> frame) {
     }
   }
 
-  if (last_decoded_frame_it_ != frames_.end() &&
-      id <= last_decoded_frame_it_->first) {
+  if (last_decoded_frame_ && id <= *last_decoded_frame_) {
     if (AheadOf(frame->Timestamp(), *last_decoded_frame_timestamp_) &&
         frame->is_keyframe()) {
       // If this frame has a newer timestamp but an earlier picture id then we
@@ -410,9 +391,9 @@ int64_t FrameBuffer::InsertFrame(std::unique_ptr<EncodedFrame> frame) {
                           << id.picture_id << ":"
                           << static_cast<int>(id.spatial_layer)
                           << ") inserted after frame ("
-                          << last_decoded_frame_it_->first.picture_id << ":"
+                          << last_decoded_frame_->picture_id << ":"
                           << static_cast<int>(
-                                 last_decoded_frame_it_->first.spatial_layer)
+                                 last_decoded_frame_->spatial_layer)
                           << ") was handed off for decoding, dropping frame.";
       return last_continuous_picture_id;
     }
@@ -444,12 +425,11 @@ int64_t FrameBuffer::InsertFrame(std::unique_ptr<EncodedFrame> frame) {
   UpdatePlayoutDelays(*frame);
 
   info->second.frame = std::move(frame);
-  ++num_frames_buffered_;
 
   if (info->second.num_missing_continuous == 0) {
     info->second.continuous = true;
     PropagateContinuity(info);
-    last_continuous_picture_id = last_continuous_frame_it_->first.picture_id;
+    last_continuous_picture_id = last_continuous_frame_->picture_id;
 
     // Since we now have new continuous frames there might be a better frame
     // to return from NextFrame. Signal that thread so that it again can choose
@@ -463,8 +443,6 @@ int64_t FrameBuffer::InsertFrame(std::unique_ptr<EncodedFrame> frame) {
 void FrameBuffer::PropagateContinuity(FrameMap::iterator start) {
   TRACE_EVENT0("webrtc", "FrameBuffer::PropagateContinuity");
   RTC_DCHECK(start->second.continuous);
-  if (last_continuous_frame_it_ == frames_.end())
-    last_continuous_frame_it_ = start;
 
   std::queue<FrameMap::iterator> continuous_frames;
   continuous_frames.push(start);
@@ -474,8 +452,9 @@ void FrameBuffer::PropagateContinuity(FrameMap::iterator start) {
     auto frame = continuous_frames.front();
     continuous_frames.pop();
 
-    if (last_continuous_frame_it_->first < frame->first)
-      last_continuous_frame_it_ = frame;
+    if (!last_continuous_frame_ || *last_continuous_frame_ < frame->first) {
+      last_continuous_frame_ = frame->first;
+    }
 
     // Loop through all dependent frames, and if that frame no longer has
     // any unfulfilled dependencies then that frame is continuous as well.
@@ -510,27 +489,22 @@ void FrameBuffer::PropagateDecodability(const FrameInfo& info) {
 
 void FrameBuffer::AdvanceLastDecodedFrame(FrameMap::iterator decoded) {
   TRACE_EVENT0("webrtc", "FrameBuffer::AdvanceLastDecodedFrame");
-  if (last_decoded_frame_it_ == frames_.end()) {
-    last_decoded_frame_it_ = frames_.begin();
-  } else {
-    RTC_DCHECK(last_decoded_frame_it_->first < decoded->first);
-    ++last_decoded_frame_it_;
-  }
-  --num_frames_buffered_;
-  ++num_frames_history_;
+
+  decoded_frames_history_.insert(decoded->first);
+
+  FrameMap::iterator frame_it = frames_.begin();
 
   // First, delete non-decoded frames from the history.
-  while (last_decoded_frame_it_ != decoded) {
-    if (last_decoded_frame_it_->second.frame)
-      --num_frames_buffered_;
-    last_decoded_frame_it_ = frames_.erase(last_decoded_frame_it_);
-  }
+  while (frame_it != decoded)
+    frame_it = frames_.erase(frame_it);
 
   // Then remove old history if we have too much history saved.
-  if (num_frames_history_ > kMaxFramesHistory) {
-    frames_.erase(frames_.begin());
-    --num_frames_history_;
-  }
+  if (decoded_frames_history_.size() > kMaxFramesHistory)
+    decoded_frames_history_.erase(decoded_frames_history_.begin());
+
+  // Then remove the frame from the undecoded frames list.
+  last_decoded_frame_ = decoded->first;
+  frames_.erase(decoded);
 }
 
 bool FrameBuffer::UpdateFrameInfoWithIncomingFrame(const EncodedFrame& frame,
@@ -538,8 +512,7 @@ bool FrameBuffer::UpdateFrameInfoWithIncomingFrame(const EncodedFrame& frame,
   TRACE_EVENT0("webrtc", "FrameBuffer::UpdateFrameInfoWithIncomingFrame");
   const VideoLayerFrameId& id = frame.id;
 
-  RTC_DCHECK(last_decoded_frame_it_ == frames_.end() ||
-             last_decoded_frame_it_->first < info->first);
+  RTC_DCHECK(!last_decoded_frame_ || *last_decoded_frame_ < info->first);
 
   // In this function we determine how many missing dependencies this |frame|
   // has to become continuous/decodable. If a frame that this |frame| depend
@@ -558,14 +531,12 @@ bool FrameBuffer::UpdateFrameInfoWithIncomingFrame(const EncodedFrame& frame,
   // Find all dependencies that have not yet been fulfilled.
   for (size_t i = 0; i < frame.num_references; ++i) {
     VideoLayerFrameId ref_key(frame.references[i], frame.id.spatial_layer);
-    auto ref_info = frames_.find(ref_key);
-
     // Does |frame| depend on a frame earlier than the last decoded one?
-    if (last_decoded_frame_it_ != frames_.end() &&
-        ref_key <= last_decoded_frame_it_->first) {
+    if (last_decoded_frame_ && ref_key <= *last_decoded_frame_) {
       // Was that frame decoded? If not, this |frame| will never become
       // decodable.
-      if (ref_info == frames_.end()) {
+      if (decoded_frames_history_.find(ref_key) ==
+          decoded_frames_history_.end()) {
         int64_t now_ms = clock_->TimeInMilliseconds();
         if (last_log_non_decoded_ms_ + kLogNonDecodedIntervalMs < now_ms) {
           RTC_LOG(LS_WARNING)
@@ -578,6 +549,7 @@ bool FrameBuffer::UpdateFrameInfoWithIncomingFrame(const EncodedFrame& frame,
         return false;
       }
     } else {
+      auto ref_info = frames_.find(ref_key);
       bool ref_continuous =
           ref_info != frames_.end() && ref_info->second.continuous;
       not_yet_fulfilled_dependencies.push_back({ref_key, ref_continuous});
@@ -589,10 +561,11 @@ bool FrameBuffer::UpdateFrameInfoWithIncomingFrame(const EncodedFrame& frame,
     VideoLayerFrameId ref_key(frame.id.picture_id, frame.id.spatial_layer - 1);
     auto ref_info = frames_.find(ref_key);
 
+    bool lower_layer_decoded =
+        last_decoded_frame_ && *last_decoded_frame_ == ref_key;
     bool lower_layer_continuous =
-        ref_info != frames_.end() && ref_info->second.continuous;
-    bool lower_layer_decoded = last_decoded_frame_it_ != frames_.end() &&
-                               last_decoded_frame_it_->first == ref_key;
+        lower_layer_decoded ||
+        (ref_info != frames_.end() && ref_info->second.continuous);
 
     if (!lower_layer_continuous || !lower_layer_decoded) {
       not_yet_fulfilled_dependencies.push_back(
@@ -644,11 +617,10 @@ void FrameBuffer::UpdateTimingFrameInfo() {
 void FrameBuffer::ClearFramesAndHistory() {
   TRACE_EVENT0("webrtc", "FrameBuffer::ClearFramesAndHistory");
   frames_.clear();
-  last_decoded_frame_it_ = frames_.end();
-  last_continuous_frame_it_ = frames_.end();
+  last_decoded_frame_.reset();
+  last_continuous_frame_.reset();
   frames_to_decode_.clear();
-  num_frames_history_ = 0;
-  num_frames_buffered_ = 0;
+  decoded_frames_history_.clear();
 }
 
 EncodedFrame* FrameBuffer::CombineAndDeleteFrames(
