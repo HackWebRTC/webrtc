@@ -53,10 +53,6 @@ class DecoderDatabase {
     DecoderInfo(DecoderInfo&&);
     ~DecoderInfo();
 
-    // Was this info object created with a specification that allows us to
-    // actually produce a decoder?
-    bool CanGetDecoder() const;
-
     // Get the AudioDecoder object, creating it first if necessary.
     AudioDecoder* GetDecoder() const;
 
@@ -145,14 +141,6 @@ class DecoderDatabase {
   // payload types that were reassigned or removed while doing so.
   virtual std::vector<int> SetCodecs(
       const std::map<int, SdpAudioFormat>& codecs);
-
-  // Registers |rtp_payload_type| as a decoder of type |codec_type|. The |name|
-  // is only used to populate the name field in the DecoderInfo struct in the
-  // database, and can be arbitrary (including empty). Returns kOK on success;
-  // otherwise an error code.
-  virtual int RegisterPayload(uint8_t rtp_payload_type,
-                              NetEqDecoder codec_type,
-                              const std::string& name);
 
   // Registers a decoder for the given payload type. Returns kOK on success;
   // otherwise an error code.

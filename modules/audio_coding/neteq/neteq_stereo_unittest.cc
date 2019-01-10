@@ -89,51 +89,12 @@ class NetEqStereoTest : public ::testing::TestWithParam<TestParameters> {
     const std::string file_name =
         webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm");
     input_file_.reset(new test::InputAudioFile(file_name));
-    NetEqDecoder mono_decoder;
-    NetEqDecoder multi_decoder;
-    switch (sample_rate_hz_) {
-      case 8000:
-        mono_decoder = NetEqDecoder::kDecoderPCM16B;
-        if (num_channels_ == 2) {
-          multi_decoder = NetEqDecoder::kDecoderPCM16B_2ch;
-        } else if (num_channels_ == 5) {
-          multi_decoder = NetEqDecoder::kDecoderPCM16B_5ch;
-        } else {
-          FAIL() << "Only 2 and 5 channels supported for 8000 Hz.";
-        }
-        break;
-      case 16000:
-        mono_decoder = NetEqDecoder::kDecoderPCM16Bwb;
-        if (num_channels_ == 2) {
-          multi_decoder = NetEqDecoder::kDecoderPCM16Bwb_2ch;
-        } else {
-          FAIL() << "More than 2 channels is not supported for 16000 Hz.";
-        }
-        break;
-      case 32000:
-        mono_decoder = NetEqDecoder::kDecoderPCM16Bswb32kHz;
-        if (num_channels_ == 2) {
-          multi_decoder = NetEqDecoder::kDecoderPCM16Bswb32kHz_2ch;
-        } else {
-          FAIL() << "More than 2 channels is not supported for 32000 Hz.";
-        }
-        break;
-      case 48000:
-        mono_decoder = NetEqDecoder::kDecoderPCM16Bswb48kHz;
-        if (num_channels_ == 2) {
-          multi_decoder = NetEqDecoder::kDecoderPCM16Bswb48kHz_2ch;
-        } else {
-          FAIL() << "More than 2 channels is not supported for 48000 Hz.";
-        }
-        break;
-      default:
-        FAIL() << "We shouldn't get here.";
-    }
-    ASSERT_EQ(NetEq::kOK, neteq_mono_->RegisterPayloadType(mono_decoder, "mono",
-                                                           kPayloadTypeMono));
-    ASSERT_EQ(NetEq::kOK,
-              neteq_->RegisterPayloadType(multi_decoder, "multi-channel",
-                                          kPayloadTypeMulti));
+    RTC_CHECK_GE(num_channels_, 2);
+    ASSERT_TRUE(neteq_mono_->RegisterPayloadType(
+        kPayloadTypeMono, SdpAudioFormat("l16", sample_rate_hz_, 1)));
+    ASSERT_TRUE(neteq_->RegisterPayloadType(
+        kPayloadTypeMulti,
+        SdpAudioFormat("l16", sample_rate_hz_, num_channels_)));
   }
 
   virtual void TearDown() {}

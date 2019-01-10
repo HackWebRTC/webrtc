@@ -131,10 +131,8 @@ void AddMessage(FILE* file,
 void LoadDecoders(webrtc::NetEq* neteq) {
   ASSERT_EQ(true,
             neteq->RegisterPayloadType(0, SdpAudioFormat("pcmu", 8000, 1)));
-  // Use non-SdpAudioFormat argument when registering PCMa, so that we get test
-  // coverage for that as well.
-  ASSERT_EQ(0, neteq->RegisterPayloadType(webrtc::NetEqDecoder::kDecoderPCMa,
-                                          "pcma", 8));
+  ASSERT_EQ(true,
+            neteq->RegisterPayloadType(8, SdpAudioFormat("pcma", 8000, 1)));
 #ifdef WEBRTC_CODEC_ILBC
   ASSERT_EQ(true,
             neteq->RegisterPayloadType(102, SdpAudioFormat("ilbc", 8000, 1)));

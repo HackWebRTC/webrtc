@@ -35,7 +35,7 @@ class NetEqPcmuQualityTest : public NetEqQualityTest {
       : NetEqQualityTest(FLAG_frame_size_ms,
                          kInputSampleRateKhz,
                          kOutputSampleRateKhz,
-                         NetEqDecoder::kDecoderPCMu) {
+                         SdpAudioFormat("pcmu", 8000, 1)) {
     // Flag validation
     RTC_CHECK(FLAG_frame_size_ms >= 10 && FLAG_frame_size_ms <= 60 &&
               (FLAG_frame_size_ms % 10) == 0)

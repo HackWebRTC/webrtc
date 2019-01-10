@@ -399,39 +399,7 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
 
   std::cout << "Output file: " << output_file_name << std::endl;
 
-  NetEqTest::DecoderMap codecs = {
-    {FLAG_pcmu, std::make_pair(NetEqDecoder::kDecoderPCMu, "pcmu")},
-    {FLAG_pcma, std::make_pair(NetEqDecoder::kDecoderPCMa, "pcma")},
-#ifdef WEBRTC_CODEC_ILBC
-    {FLAG_ilbc, std::make_pair(NetEqDecoder::kDecoderILBC, "ilbc")},
-#endif
-    {FLAG_isac, std::make_pair(NetEqDecoder::kDecoderISAC, "isac")},
-#if !defined(WEBRTC_ANDROID)
-    {FLAG_isac_swb, std::make_pair(NetEqDecoder::kDecoderISACswb, "isac-swb")},
-#endif
-#ifdef WEBRTC_CODEC_OPUS
-    {FLAG_opus, std::make_pair(NetEqDecoder::kDecoderOpus, "opus")},
-#endif
-    {FLAG_pcm16b, std::make_pair(NetEqDecoder::kDecoderPCM16B, "pcm16-nb")},
-    {FLAG_pcm16b_wb,
-     std::make_pair(NetEqDecoder::kDecoderPCM16Bwb, "pcm16-wb")},
-    {FLAG_pcm16b_swb32,
-     std::make_pair(NetEqDecoder::kDecoderPCM16Bswb32kHz, "pcm16-swb32")},
-    {FLAG_pcm16b_swb48,
-     std::make_pair(NetEqDecoder::kDecoderPCM16Bswb48kHz, "pcm16-swb48")},
-    {FLAG_g722, std::make_pair(NetEqDecoder::kDecoderG722, "g722")},
-    {FLAG_avt, std::make_pair(NetEqDecoder::kDecoderAVT, "avt")},
-    {FLAG_avt_16, std::make_pair(NetEqDecoder::kDecoderAVT16kHz, "avt-16")},
-    {FLAG_avt_32, std::make_pair(NetEqDecoder::kDecoderAVT32kHz, "avt-32")},
-    {FLAG_avt_48, std::make_pair(NetEqDecoder::kDecoderAVT48kHz, "avt-48")},
-    {FLAG_red, std::make_pair(NetEqDecoder::kDecoderRED, "red")},
-    {FLAG_cn_nb, std::make_pair(NetEqDecoder::kDecoderCNGnb, "cng-nb")},
-    {FLAG_cn_wb, std::make_pair(NetEqDecoder::kDecoderCNGwb, "cng-wb")},
-    {FLAG_cn_swb32,
-     std::make_pair(NetEqDecoder::kDecoderCNGswb32kHz, "cng-swb32")},
-    {FLAG_cn_swb48,
-     std::make_pair(NetEqDecoder::kDecoderCNGswb48kHz, "cng-swb48")}
-  };
+  NetEqTest::DecoderMap codecs = NetEqTest::StandardDecoderMap();
 
   rtc::scoped_refptr<AudioDecoderFactory> decoder_factory =
       CreateBuiltinAudioDecoderFactory();
@@ -475,8 +443,9 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
           return decoder;
         });
 
-    codecs[replacement_pt] = {NetEqDecoder::kDecoderReplacementForTest,
-                              "replacement codec"};
+    RTC_CHECK(
+        codecs.insert({replacement_pt, SdpAudioFormat("replacement", 48000, 1)})
+            .second);
   }
 
   // Create a text log file if needed.

@@ -177,7 +177,7 @@ NetEqNetworkStatistics RunTest(int loss_cadence, std::string* checksum) {
       webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm"));
   AudioDecoderPlc dec(std::move(input_file), kSampleRateHz);
   // Masquerading as a PCM16b decoder.
-  decoders[kPayloadType] = {NetEqDecoder::kDecoderPCM16Bswb32kHz, "pcm16b_PLC"};
+  decoders.emplace(kPayloadType, SdpAudioFormat("l16", 32000, 1));
 
   // Output is simply a checksum calculator.
   auto output = absl::make_unique<AudioChecksumWithOutput>(checksum);

@@ -48,8 +48,6 @@ enum class NetEqDecoder {
   kDecoderArbitrary,
   kDecoderOpus,
   kDecoderOpus_2ch,
-  // Used in NetEqTestFactory
-  kDecoderReplacementForTest,
 };
 
 absl::optional<SdpAudioFormat> NetEqDecoderToSdpAudioFormat(NetEqDecoder nd);

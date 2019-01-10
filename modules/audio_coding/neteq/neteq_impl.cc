@@ -236,20 +236,6 @@ void NetEqImpl::SetCodecs(const std::map<int, SdpAudioFormat>& codecs) {
   }
 }
 
-int NetEqImpl::RegisterPayloadType(NetEqDecoder codec,
-                                   const std::string& name,
-                                   uint8_t rtp_payload_type) {
-  rtc::CritScope lock(&crit_sect_);
-  RTC_LOG(LS_VERBOSE) << "RegisterPayloadType "
-                      << static_cast<int>(rtp_payload_type) << " "
-                      << static_cast<int>(codec);
-  if (decoder_database_->RegisterPayload(rtp_payload_type, codec, name) !=
-      DecoderDatabase::kOK) {
-    return kFail;
-  }
-  return kOK;
-}
-
 bool NetEqImpl::RegisterPayloadType(int rtp_payload_type,
                                     const SdpAudioFormat& audio_format) {
   RTC_LOG(LS_VERBOSE) << "NetEqImpl::RegisterPayloadType: payload type "

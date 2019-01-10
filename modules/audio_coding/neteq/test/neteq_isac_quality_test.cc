@@ -44,7 +44,7 @@ NetEqIsacQualityTest::NetEqIsacQualityTest()
     : NetEqQualityTest(kIsacBlockDurationMs,
                        kIsacInputSamplingKhz,
                        kIsacOutputSamplingKhz,
-                       NetEqDecoder::kDecoderISAC),
+                       SdpAudioFormat("isac", 16000, 1)),
       isac_encoder_(NULL),
       bit_rate_kbps_(FLAG_bit_rate_kbps) {
   // Flag validation

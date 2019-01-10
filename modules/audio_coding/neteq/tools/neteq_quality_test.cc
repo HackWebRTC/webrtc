@@ -135,8 +135,8 @@ static double ProbTrans00Solver(int units,
 NetEqQualityTest::NetEqQualityTest(int block_duration_ms,
                                    int in_sampling_khz,
                                    int out_sampling_khz,
-                                   NetEqDecoder decoder_type)
-    : decoder_type_(decoder_type),
+                                   const SdpAudioFormat& format)
+    : audio_format_(format),
       channels_(static_cast<size_t>(FLAG_channels)),
       decoded_time_ms_(0),
       decodable_time_ms_(0),
@@ -271,8 +271,7 @@ bool FixedLossModel::Lost(int now_ms) {
 }
 
 void NetEqQualityTest::SetUp() {
-  ASSERT_EQ(0,
-            neteq_->RegisterPayloadType(decoder_type_, "noname", kPayloadType));
+  ASSERT_TRUE(neteq_->RegisterPayloadType(kPayloadType, audio_format_));
   rtp_generator_->set_drift_factor(drift_factor_);
 
   int units = block_duration_ms_ / kPacketLossTimeUnitMs;

@@ -280,42 +280,40 @@ NetEqLifetimeStatistics NetEqTest::LifetimeStats() const {
 
 NetEqTest::DecoderMap NetEqTest::StandardDecoderMap() {
   DecoderMap codecs = {
-    {0, std::make_pair(NetEqDecoder::kDecoderPCMu, "pcmu")},
-    {8, std::make_pair(NetEqDecoder::kDecoderPCMa, "pcma")},
+    {0, SdpAudioFormat("pcmu", 8000, 1)},
+    {8, SdpAudioFormat("pcma", 8000, 1)},
 #ifdef WEBRTC_CODEC_ILBC
-    {102, std::make_pair(NetEqDecoder::kDecoderILBC, "ilbc")},
+    {102, SdpAudioFormat("ilbc", 8000, 1)},
 #endif
-    {103, std::make_pair(NetEqDecoder::kDecoderISAC, "isac")},
+    {103, SdpAudioFormat("isac", 16000, 1)},
 #if !defined(WEBRTC_ANDROID)
-    {104, std::make_pair(NetEqDecoder::kDecoderISACswb, "isac-swb")},
+    {104, SdpAudioFormat("isac", 32000, 1)},
 #endif
 #ifdef WEBRTC_CODEC_OPUS
-    {111, std::make_pair(NetEqDecoder::kDecoderOpus, "opus")},
+    {111, SdpAudioFormat("opus", 48000, 2)},
 #endif
-    {93, std::make_pair(NetEqDecoder::kDecoderPCM16B, "pcm16-nb")},
-    {94, std::make_pair(NetEqDecoder::kDecoderPCM16Bwb, "pcm16-wb")},
-    {95, std::make_pair(NetEqDecoder::kDecoderPCM16Bswb32kHz, "pcm16-swb32")},
-    {96, std::make_pair(NetEqDecoder::kDecoderPCM16Bswb48kHz, "pcm16-swb48")},
-    {9, std::make_pair(NetEqDecoder::kDecoderG722, "g722")},
-    {106, std::make_pair(NetEqDecoder::kDecoderAVT, "avt")},
-    {114, std::make_pair(NetEqDecoder::kDecoderAVT16kHz, "avt-16")},
-    {115, std::make_pair(NetEqDecoder::kDecoderAVT32kHz, "avt-32")},
-    {116, std::make_pair(NetEqDecoder::kDecoderAVT48kHz, "avt-48")},
-    {117, std::make_pair(NetEqDecoder::kDecoderRED, "red")},
-    {13, std::make_pair(NetEqDecoder::kDecoderCNGnb, "cng-nb")},
-    {98, std::make_pair(NetEqDecoder::kDecoderCNGwb, "cng-wb")},
-    {99, std::make_pair(NetEqDecoder::kDecoderCNGswb32kHz, "cng-swb32")},
-    {100, std::make_pair(NetEqDecoder::kDecoderCNGswb48kHz, "cng-swb48")}
+    {93, SdpAudioFormat("l16", 8000, 1)},
+    {94, SdpAudioFormat("l16", 16000, 1)},
+    {95, SdpAudioFormat("l16", 32000, 1)},
+    {96, SdpAudioFormat("l16", 48000, 1)},
+    {9, SdpAudioFormat("g722", 8000, 1)},
+    {106, SdpAudioFormat("telephone-event", 8000, 1)},
+    {114, SdpAudioFormat("telephone-event", 16000, 1)},
+    {115, SdpAudioFormat("telephone-event", 32000, 1)},
+    {116, SdpAudioFormat("telephone-event", 48000, 1)},
+    {117, SdpAudioFormat("red", 8000, 1)},
+    {13, SdpAudioFormat("cn", 8000, 1)},
+    {98, SdpAudioFormat("cn", 16000, 1)},
+    {99, SdpAudioFormat("cn", 32000, 1)},
+    {100, SdpAudioFormat("cn", 48000, 1)}
   };
   return codecs;
 }
 
 void NetEqTest::RegisterDecoders(const DecoderMap& codecs) {
   for (const auto& c : codecs) {
-    RTC_CHECK_EQ(
-        neteq_->RegisterPayloadType(c.second.first, c.second.second, c.first),
-        NetEq::kOK)
-        << "Cannot register " << c.second.second << " to payload type "
+    RTC_CHECK(neteq_->RegisterPayloadType(c.first, c.second))
+        << "Cannot register " << c.second.name << " to payload type "
         << c.first;
   }
 }

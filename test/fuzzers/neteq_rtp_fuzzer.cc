@@ -134,8 +134,9 @@ void FuzzOneInputTest(const uint8_t* data, size_t size) {
   // kPayloadType is the payload type that will be used for encoding. Verify
   // that it is included in the standard decoder map, and that it points to the
   // expected decoder type.
-  RTC_CHECK_EQ(codecs.count(kPayloadType), 1);
-  RTC_CHECK(codecs[kPayloadType].first == NetEqDecoder::kDecoderPCM16Bswb32kHz);
+  const auto it = codecs.find(kPayloadType);
+  RTC_CHECK(it != codecs.end());
+  RTC_CHECK(it->second == SdpAudioFormat("l16", 32000, 2));
 
   NetEqTest test(config, CreateBuiltinAudioDecoderFactory(), codecs, nullptr,
                  std::move(input), std::move(output), callbacks);

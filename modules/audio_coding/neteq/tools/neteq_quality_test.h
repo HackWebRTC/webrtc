@@ -98,7 +98,7 @@ class NetEqQualityTest : public ::testing::Test {
   NetEqQualityTest(int block_duration_ms,
                    int in_sampling_khz,
                    int out_sampling_khz,
-                   NetEqDecoder decoder_type);
+                   const SdpAudioFormat& format);
   ~NetEqQualityTest() override;
 
   void SetUp() override;
@@ -132,7 +132,7 @@ class NetEqQualityTest : public ::testing::Test {
   // Write to log file. Usage Log() << ...
   std::ofstream& Log();
 
-  NetEqDecoder decoder_type_;
+  SdpAudioFormat audio_format_;
   const size_t channels_;
 
  private:

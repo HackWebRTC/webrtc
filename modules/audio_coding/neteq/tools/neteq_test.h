@@ -67,7 +67,7 @@ class NetEqSimulationEndedCallback {
 // directed to an AudioSink object.
 class NetEqTest : public NetEqSimulator {
  public:
-  using DecoderMap = std::map<int, std::pair<NetEqDecoder, std::string> >;
+  using DecoderMap = std::map<int, SdpAudioFormat>;
 
   struct Callbacks {
     NetEqTestErrorCallback* error_callback = nullptr;

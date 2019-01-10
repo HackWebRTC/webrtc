@@ -36,7 +36,7 @@ class NetEqPcm16bQualityTest : public NetEqQualityTest {
       : NetEqQualityTest(FLAG_frame_size_ms,
                          kInputSampleRateKhz,
                          kOutputSampleRateKhz,
-                         NetEqDecoder::kDecoderPCM16Bswb48kHz) {
+                         SdpAudioFormat("l16", 48000, 1)) {
     // Flag validation
     RTC_CHECK(FLAG_frame_size_ms >= 10 && FLAG_frame_size_ms <= 60 &&
               (FLAG_frame_size_ms % 10) == 0)
