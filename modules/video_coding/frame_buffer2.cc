@@ -479,7 +479,7 @@ void FrameBuffer::PropagateContinuity(FrameMap::iterator start) {
 
     // Loop through all dependent frames, and if that frame no longer has
     // any unfulfilled dependencies then that frame is continuous as well.
-    for (size_t d = 0; d < frame->second.num_dependent_frames; ++d) {
+    for (size_t d = 0; d < frame->second.dependent_frames.size(); ++d) {
       auto frame_ref = frames_.find(frame->second.dependent_frames[d]);
       RTC_DCHECK(frame_ref != frames_.end());
 
@@ -497,8 +497,7 @@ void FrameBuffer::PropagateContinuity(FrameMap::iterator start) {
 
 void FrameBuffer::PropagateDecodability(const FrameInfo& info) {
   TRACE_EVENT0("webrtc", "FrameBuffer::PropagateDecodability");
-  RTC_CHECK(info.num_dependent_frames < FrameInfo::kMaxNumDependentFrames);
-  for (size_t d = 0; d < info.num_dependent_frames; ++d) {
+  for (size_t d = 0; d < info.dependent_frames.size(); ++d) {
     auto ref_info = frames_.find(info.dependent_frames[d]);
     RTC_DCHECK(ref_info != frames_.end());
     // TODO(philipel): Look into why we've seen this happen.
@@ -608,20 +607,7 @@ bool FrameBuffer::UpdateFrameInfoWithIncomingFrame(const EncodedFrame& frame,
     if (dep.continuous)
       --info->second.num_missing_continuous;
 
-    // At this point we know we want to insert this frame, so here we
-    // intentionally get or create the FrameInfo for this dependency.
-    FrameInfo* dep_info = &frames_[dep.id];
-
-    if (dep_info->num_dependent_frames <
-        (FrameInfo::kMaxNumDependentFrames - 1)) {
-      dep_info->dependent_frames[dep_info->num_dependent_frames] = id;
-      ++dep_info->num_dependent_frames;
-    } else {
-      RTC_LOG(LS_WARNING) << "Frame with (picture_id:spatial_id) ("
-                          << dep.id.picture_id << ":"
-                          << static_cast<int>(dep.id.spatial_layer)
-                          << ") is referenced by too many frames.";
-    }
+    frames_[dep.id].dependent_frames.push_back(id);
   }
 
   return true;

@@ -17,6 +17,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/container/inlined_vector.h"
 #include "api/video/encoded_frame.h"
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "modules/video_coding/inter_frame_delay.h"
@@ -89,15 +90,9 @@ class FrameBuffer {
     FrameInfo(FrameInfo&&);
     ~FrameInfo();
 
-    // The maximum number of frames that can depend on this frame.
-    static constexpr size_t kMaxNumDependentFrames = 8;
-
     // Which other frames that have direct unfulfilled dependencies
     // on this frame.
-    // TODO(philipel): Add simple modify/access functions to prevent adding too
-    // many |dependent_frames|.
-    VideoLayerFrameId dependent_frames[kMaxNumDependentFrames];
-    size_t num_dependent_frames = 0;
+    absl::InlinedVector<VideoLayerFrameId, 8> dependent_frames;
 
     // A frame is continiuous if it has all its referenced/indirectly
     // referenced frames.

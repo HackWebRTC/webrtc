@@ -197,6 +197,7 @@ rtc_static_library("video_coding") {
     "../../system_wrappers",
     "../rtp_rtcp:rtp_rtcp_format",
     "../utility:utility",
+    "//third_party/abseil-cpp/absl/container:inlined_vector",
     "//third_party/abseil-cpp/absl/types:optional",
     "//third_party/abseil-cpp/absl/types:variant",
   ]
