@@ -87,7 +87,7 @@ class NetEqImplTest : public ::testing::Test {
 
     if (use_mock_delay_peak_detector_) {
       std::unique_ptr<MockDelayPeakDetector> mock(
-          new MockDelayPeakDetector(tick_timer_));
+          new MockDelayPeakDetector(tick_timer_, config_.enable_rtx_handling));
       mock_delay_peak_detector_ = mock.get();
       EXPECT_CALL(*mock_delay_peak_detector_, Reset()).Times(1);
       deps.delay_peak_detector = std::move(mock);
@@ -1299,6 +1299,43 @@ TEST_F(NetEqImplTest, InsertEmptyPacket) {
 
   EXPECT_CALL(*mock_delay_manager_, RegisterEmptyPacket());
   neteq_->InsertEmptyPacket(rtp_header);
+}
+
+TEST_F(NetEqImplTest, EnableRtxHandling) {
+  UseNoMocks();
+  use_mock_delay_manager_ = true;
+  config_.enable_rtx_handling = true;
+  CreateInstance();
+  EXPECT_CALL(*mock_delay_manager_, BufferLimits(_, _))
+      .Times(1)
+      .WillOnce(DoAll(SetArgPointee<0>(0), SetArgPointee<1>(0)));
+
+  const int kPayloadLengthSamples = 80;
+  const size_t kPayloadLengthBytes = 2 * kPayloadLengthSamples;  // PCM 16-bit.
+  const uint8_t kPayloadType = 17;  // Just an arbitrary number.
+  const uint32_t kReceiveTime = 17;
+  uint8_t payload[kPayloadLengthBytes] = {0};
+  RTPHeader rtp_header;
+  rtp_header.payloadType = kPayloadType;
+  rtp_header.sequenceNumber = 0x1234;
+  rtp_header.timestamp = 0x12345678;
+  rtp_header.ssrc = 0x87654321;
+
+  EXPECT_EQ(NetEq::kOK, neteq_->RegisterPayloadType(
+                            NetEqDecoder::kDecoderPCM16B, "", kPayloadType));
+  EXPECT_EQ(NetEq::kOK,
+            neteq_->InsertPacket(rtp_header, payload, kReceiveTime));
+  AudioFrame output;
+  bool muted;
+  EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
+
+  // Insert second packet that was sent before the first packet.
+  rtp_header.sequenceNumber -= 1;
+  rtp_header.timestamp -= kPayloadLengthSamples;
+  EXPECT_CALL(*mock_delay_manager_,
+              Update(rtp_header.sequenceNumber, rtp_header.timestamp, _));
+  EXPECT_EQ(NetEq::kOK,
+            neteq_->InsertPacket(rtp_header, payload, kReceiveTime));
 }
 
 class Decoder120ms : public AudioDecoder {

@@ -34,7 +34,7 @@ class MockDelayManager : public DelayManager {
                int(uint16_t sequence_number,
                    uint32_t timestamp,
                    int sample_rate_hz));
-  MOCK_METHOD1(CalculateTargetLevel, int(int iat_packets));
+  MOCK_METHOD2(CalculateTargetLevel, int(int iat_packets, bool reordered));
   MOCK_METHOD1(SetPacketAudioLength, int(int length_ms));
   MOCK_METHOD0(Reset, void());
   MOCK_CONST_METHOD0(PeakFound, bool());

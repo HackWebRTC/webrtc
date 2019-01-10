@@ -117,6 +117,7 @@ class NetEq {
     int min_delay_ms = 0;
     bool enable_fast_accelerate = false;
     bool enable_muted_state = false;
+    bool enable_rtx_handling = false;
     absl::optional<AudioCodecPairId> codec_pair_id;
     bool for_test_no_time_stretching = false;  // Use only for testing.
   };

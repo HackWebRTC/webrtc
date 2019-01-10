@@ -408,6 +408,7 @@ class NetEqImpl : public webrtc::NetEq {
   ExpandUmaLogger speech_expand_uma_logger_ RTC_GUARDED_BY(crit_sect_);
   bool no_time_stretching_ RTC_GUARDED_BY(crit_sect_);  // Only used for test.
   rtc::BufferT<int16_t> concealment_audio_ RTC_GUARDED_BY(crit_sect_);
+  const bool enable_rtx_handling_ RTC_GUARDED_BY(crit_sect_);
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(NetEqImpl);

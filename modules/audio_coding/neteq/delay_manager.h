@@ -57,7 +57,7 @@ class DelayManager {
   // Sets target_level_ (in Q8) and returns the same value. Also calculates
   // and updates base_target_level_, which is the target buffer level before
   // taking delay peaks into account.
-  virtual int CalculateTargetLevel(int iat_packets);
+  virtual int CalculateTargetLevel(int iat_packets, bool reordered);
 
   // Notifies the DelayManager of how much audio data is carried in each packet.
   // The method updates the DelayPeakDetector too, and resets the inter-arrival

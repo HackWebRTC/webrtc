@@ -158,6 +158,7 @@ int DelayManager::Update(uint16_t sequence_number,
     }
 
     // Check for discontinuous packet sequence and re-ordering.
+    bool reordered = false;
     if (IsNewerSequenceNumber(sequence_number, last_seq_no_ + 1)) {
       // Compensate for gap in the sequence numbers. Reduce IAT with the
       // expected extra time due to lost packets, but ensure that the IAT is
@@ -166,6 +167,7 @@ int DelayManager::Update(uint16_t sequence_number,
       iat_packets = std::max(iat_packets, 0);
     } else if (!IsNewerSequenceNumber(sequence_number, last_seq_no_)) {
       iat_packets += static_cast<uint16_t>(last_seq_no_ + 1 - sequence_number);
+      reordered = true;
     }
 
     // Saturate IAT at maximum value.
@@ -173,7 +175,7 @@ int DelayManager::Update(uint16_t sequence_number,
     iat_packets = std::min(iat_packets, max_iat);
     UpdateHistogram(iat_packets);
     // Calculate new |target_level_| based on updated statistics.
-    target_level_ = CalculateTargetLevel(iat_packets);
+    target_level_ = CalculateTargetLevel(iat_packets, reordered);
     if (streaming_mode_) {
       target_level_ = std::max(target_level_, max_iat_cumulative_sum_);
     }
@@ -294,7 +296,7 @@ void DelayManager::LimitTargetLevel() {
   target_level_ = std::max(target_level_, 1 << 8);
 }
 
-int DelayManager::CalculateTargetLevel(int iat_packets) {
+int DelayManager::CalculateTargetLevel(int iat_packets, bool reordered) {
   int limit_probability = forced_limit_probability_.value_or(kLimitProbability);
   if (streaming_mode_) {
     limit_probability = kLimitProbabilityStreaming;
@@ -325,7 +327,8 @@ int DelayManager::CalculateTargetLevel(int iat_packets) {
   base_target_level_ = static_cast<int>(index);
 
   // Update detector for delay peaks.
-  bool delay_peak_found = peak_detector_.Update(iat_packets, target_level);
+  bool delay_peak_found =
+      peak_detector_.Update(iat_packets, reordered, target_level);
   if (delay_peak_found) {
     target_level = std::max(target_level, peak_detector_.MaxPeakHeight());
   }

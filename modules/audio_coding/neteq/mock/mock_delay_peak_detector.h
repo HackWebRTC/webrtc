@@ -19,8 +19,9 @@ namespace webrtc {
 
 class MockDelayPeakDetector : public DelayPeakDetector {
  public:
-  MockDelayPeakDetector(const TickTimer* tick_timer)
-      : DelayPeakDetector(tick_timer) {}
+  MockDelayPeakDetector(const TickTimer* tick_timer,
+                        bool ignore_reordered_packets)
+      : DelayPeakDetector(tick_timer, ignore_reordered_packets) {}
   virtual ~MockDelayPeakDetector() { Die(); }
   MOCK_METHOD0(Die, void());
   MOCK_METHOD0(Reset, void());
@@ -28,7 +29,8 @@ class MockDelayPeakDetector : public DelayPeakDetector {
   MOCK_METHOD0(peak_found, bool());
   MOCK_CONST_METHOD0(MaxPeakHeight, int());
   MOCK_CONST_METHOD0(MaxPeakPeriod, uint64_t());
-  MOCK_METHOD2(Update, bool(int inter_arrival_time, int target_level));
+  MOCK_METHOD3(Update,
+               bool(int inter_arrival_time, bool reordered, int target_level));
 };
 
 }  // namespace webrtc
