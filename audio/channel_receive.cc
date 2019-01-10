@@ -104,6 +104,7 @@ class ChannelReceive : public ChannelReceiveInterface,
                  size_t jitter_buffer_max_packets,
                  bool jitter_buffer_fast_playout,
                  int jitter_buffer_min_delay_ms,
+                 bool jitter_buffer_enable_rtx_handling,
                  rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
                  absl::optional<AudioCodecPairId> codec_pair_id,
                  rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor,
@@ -453,6 +454,7 @@ ChannelReceive::ChannelReceive(
     size_t jitter_buffer_max_packets,
     bool jitter_buffer_fast_playout,
     int jitter_buffer_min_delay_ms,
+    bool jitter_buffer_enable_rtx_handling,
     rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
     absl::optional<AudioCodecPairId> codec_pair_id,
     rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor,
@@ -487,6 +489,8 @@ ChannelReceive::ChannelReceive(
   acm_config.neteq_config.enable_fast_accelerate = jitter_buffer_fast_playout;
   acm_config.neteq_config.min_delay_ms = jitter_buffer_min_delay_ms;
   acm_config.neteq_config.enable_muted_state = true;
+  acm_config.neteq_config.enable_rtx_handling =
+      jitter_buffer_enable_rtx_handling;
   audio_coding_.reset(AudioCodingModule::Create(acm_config));
 
   _outputAudioLevel.Clear();
@@ -988,6 +992,7 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
     size_t jitter_buffer_max_packets,
     bool jitter_buffer_fast_playout,
     int jitter_buffer_min_delay_ms,
+    bool jitter_buffer_enable_rtx_handling,
     rtc::scoped_refptr<AudioDecoderFactory> decoder_factory,
     absl::optional<AudioCodecPairId> codec_pair_id,
     rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor,
@@ -996,8 +1001,8 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
       module_process_thread, audio_device_module, media_transport,
       rtcp_send_transport, rtc_event_log, remote_ssrc,
       jitter_buffer_max_packets, jitter_buffer_fast_playout,
-      jitter_buffer_min_delay_ms, decoder_factory, codec_pair_id,
-      frame_decryptor, crypto_options);
+      jitter_buffer_min_delay_ms, jitter_buffer_enable_rtx_handling,
+      decoder_factory, codec_pair_id, frame_decryptor, crypto_options);
 }
 
 }  // namespace voe

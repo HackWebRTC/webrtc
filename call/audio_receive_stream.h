@@ -115,6 +115,7 @@ class AudioReceiveStream {
     size_t jitter_buffer_max_packets = 50;
     bool jitter_buffer_fast_accelerate = false;
     int jitter_buffer_min_delay_ms = 0;
+    bool jitter_buffer_enable_rtx_handling = false;
 
     // Identifier for an A/V synchronization group. Empty string to disable.
     // TODO(pbos): Synchronize streams in a sync group, not just one video

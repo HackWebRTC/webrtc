@@ -52,6 +52,8 @@ void AudioOptions::SetAll(const AudioOptions& change) {
           change.audio_jitter_buffer_fast_accelerate);
   SetFrom(&audio_jitter_buffer_min_delay_ms,
           change.audio_jitter_buffer_min_delay_ms);
+  SetFrom(&audio_jitter_buffer_enable_rtx_handling,
+          change.audio_jitter_buffer_enable_rtx_handling);
   SetFrom(&typing_detection, change.typing_detection);
   SetFrom(&experimental_agc, change.experimental_agc);
   SetFrom(&extended_filter_aec, change.extended_filter_aec);
@@ -81,6 +83,8 @@ bool AudioOptions::operator==(const AudioOptions& o) const {
              o.audio_jitter_buffer_fast_accelerate &&
          audio_jitter_buffer_min_delay_ms ==
              o.audio_jitter_buffer_min_delay_ms &&
+         audio_jitter_buffer_enable_rtx_handling ==
+             o.audio_jitter_buffer_enable_rtx_handling &&
          typing_detection == o.typing_detection &&
          experimental_agc == o.experimental_agc &&
          extended_filter_aec == o.extended_filter_aec &&
@@ -114,6 +118,8 @@ std::string AudioOptions::ToString() const {
                 audio_jitter_buffer_fast_accelerate);
   ToStringIfSet(&result, "audio_jitter_buffer_min_delay_ms",
                 audio_jitter_buffer_min_delay_ms);
+  ToStringIfSet(&result, "audio_jitter_buffer_enable_rtx_handling",
+                audio_jitter_buffer_enable_rtx_handling);
   ToStringIfSet(&result, "typing", typing_detection);
   ToStringIfSet(&result, "experimental_agc", experimental_agc);
   ToStringIfSet(&result, "extended_filter_aec", extended_filter_aec);
