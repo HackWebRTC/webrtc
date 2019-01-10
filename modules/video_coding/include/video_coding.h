@@ -169,6 +169,10 @@ class VideoCodingModule : public Module {
   virtual int SetReceiverRobustnessMode(ReceiverRobustness robustnessMode,
                                         VCMDecodeErrorMode errorMode) = 0;
 
+  int SetReceiverRobustnessMode(ReceiverRobustness robustnessMode) {
+    return SetReceiverRobustnessMode(robustnessMode, kNoErrors);
+  }
+
   // Sets the maximum number of sequence numbers that we are allowed to NACK
   // and the oldest sequence number that we will consider to NACK. If a
   // sequence number older than |max_packet_age_to_nack| is missing
