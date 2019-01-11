@@ -52,12 +52,6 @@ DecoderDatabase::DecoderInfo::DecoderInfo(
     AudioDecoderFactory* factory)
     : DecoderInfo(audio_format, codec_pair_id, factory, audio_format.name) {}
 
-DecoderDatabase::DecoderInfo::DecoderInfo(
-    NetEqDecoder ct,
-    absl::optional<AudioCodecPairId> codec_pair_id,
-    AudioDecoderFactory* factory)
-    : DecoderInfo(*NetEqDecoderToSdpAudioFormat(ct), codec_pair_id, factory) {}
-
 DecoderDatabase::DecoderInfo::DecoderInfo(DecoderInfo&&) = default;
 DecoderDatabase::DecoderInfo::~DecoderInfo() = default;
 

@@ -42,7 +42,6 @@ rtc_static_library("audio_coding") {
   deps = [
     ":audio_coding_module_typedefs",
     ":neteq",
-    ":neteq_decoder_enum",
     "..:module_api",
     "..:module_api_public",
     "../..:webrtc_common",
@@ -907,18 +906,6 @@ rtc_static_library("audio_network_adaptor") {
   }
 }
 
-rtc_source_set("neteq_decoder_enum") {
-  sources = [
-    "neteq/neteq_decoder_enum.cc",
-    "neteq/neteq_decoder_enum.h",
-  ]
-  deps = [
-    "../../api/audio_codecs:audio_codecs_api",
-    "../../rtc_base:rtc_base_approved",
-    "//third_party/abseil-cpp/absl/types:optional",
-  ]
-}
-
 rtc_static_library("neteq") {
   visibility += webrtc_default_visibility
   sources = [
@@ -991,7 +978,6 @@ rtc_static_library("neteq") {
 
   deps = [
     ":audio_coding_module_typedefs",
-    ":neteq_decoder_enum",
     ":webrtc_cng",
     "..:module_api",
     "..:module_api_public",
@@ -2028,7 +2014,6 @@ if (rtc_include_tests) {
       ":legacy_encoded_audio_frame",
       ":mocks",
       ":neteq",
-      ":neteq_decoder_enum",
       ":neteq_test_support",
       ":neteq_test_tools",
       ":pcm16b",

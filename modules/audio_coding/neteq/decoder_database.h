@@ -18,7 +18,6 @@
 #include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/audio_codecs/audio_format.h"
 #include "modules/audio_coding/codecs/cng/webrtc_cng.h"
-#include "modules/audio_coding/neteq/neteq_decoder_enum.h"
 #include "modules/audio_coding/neteq/packet.h"
 #include "rtc_base/constructormagic.h"
 #include "rtc_base/scoped_ref_ptr.h"
@@ -45,9 +44,6 @@ class DecoderDatabase {
                 AudioDecoderFactory* factory,
                 const std::string& codec_name);
     explicit DecoderInfo(const SdpAudioFormat& audio_format,
-                         absl::optional<AudioCodecPairId> codec_pair_id,
-                         AudioDecoderFactory* factory = nullptr);
-    explicit DecoderInfo(NetEqDecoder ct,
                          absl::optional<AudioCodecPairId> codec_pair_id,
                          AudioDecoderFactory* factory = nullptr);
     DecoderInfo(DecoderInfo&&);

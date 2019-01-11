@@ -10,11 +10,27 @@
 
 #include "modules/audio_coding/codecs/legacy_encoded_audio_frame.h"
 
-#include "modules/audio_coding/neteq/neteq_decoder_enum.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "test/gtest.h"
 
 namespace webrtc {
+
+enum class NetEqDecoder {
+  kDecoderPCMu,
+  kDecoderPCMa,
+  kDecoderPCMu_2ch,
+  kDecoderPCMa_2ch,
+  kDecoderPCM16B,
+  kDecoderPCM16Bwb,
+  kDecoderPCM16Bswb32kHz,
+  kDecoderPCM16Bswb48kHz,
+  kDecoderPCM16B_2ch,
+  kDecoderPCM16Bwb_2ch,
+  kDecoderPCM16Bswb32kHz_2ch,
+  kDecoderPCM16Bswb48kHz_2ch,
+  kDecoderPCM16B_5ch,
+  kDecoderG722,
+};
 
 class SplitBySamplesTest : public ::testing::TestWithParam<NetEqDecoder> {
  protected:

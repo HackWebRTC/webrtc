@@ -21,7 +21,6 @@
 #include "modules/audio_coding/acm2/acm_resampler.h"
 #include "modules/audio_coding/acm2/call_statistics.h"
 #include "modules/audio_coding/neteq/include/neteq.h"
-#include "modules/audio_coding/neteq/neteq_decoder_enum.h"
 #include "modules/include/module_common_types.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"

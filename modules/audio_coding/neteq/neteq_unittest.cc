@@ -258,7 +258,6 @@ class NetEqDecodingTest : public ::testing::Test {
   NetEqDecodingTest();
   virtual void SetUp();
   virtual void TearDown();
-  void SelectDecoders(NetEqDecoder* used_codec);
   void OpenInputFile(const std::string& rtp_file);
   void Process();
 

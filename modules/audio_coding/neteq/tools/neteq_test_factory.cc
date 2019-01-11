@@ -154,82 +154,31 @@ WEBRTC_DEFINE_bool(enable_fast_accelerate,
                    false,
                    "Enables jitter buffer fast accelerate");
 
-// Maps a codec type to a printable name string.
-std::string CodecName(NetEqDecoder codec) {
-  switch (codec) {
-    case NetEqDecoder::kDecoderPCMu:
-      return "PCM-u";
-    case NetEqDecoder::kDecoderPCMa:
-      return "PCM-a";
-    case NetEqDecoder::kDecoderILBC:
-      return "iLBC";
-    case NetEqDecoder::kDecoderISAC:
-      return "iSAC";
-    case NetEqDecoder::kDecoderISACswb:
-      return "iSAC-swb (32 kHz)";
-    case NetEqDecoder::kDecoderOpus:
-      return "Opus";
-    case NetEqDecoder::kDecoderPCM16B:
-      return "PCM16b-nb (8 kHz)";
-    case NetEqDecoder::kDecoderPCM16Bwb:
-      return "PCM16b-wb (16 kHz)";
-    case NetEqDecoder::kDecoderPCM16Bswb32kHz:
-      return "PCM16b-swb32 (32 kHz)";
-    case NetEqDecoder::kDecoderPCM16Bswb48kHz:
-      return "PCM16b-swb48 (48 kHz)";
-    case NetEqDecoder::kDecoderG722:
-      return "G.722";
-    case NetEqDecoder::kDecoderRED:
-      return "redundant audio (RED)";
-    case NetEqDecoder::kDecoderAVT:
-      return "AVT/DTMF (8 kHz)";
-    case NetEqDecoder::kDecoderAVT16kHz:
-      return "AVT/DTMF (16 kHz)";
-    case NetEqDecoder::kDecoderAVT32kHz:
-      return "AVT/DTMF (32 kHz)";
-    case NetEqDecoder::kDecoderAVT48kHz:
-      return "AVT/DTMF (48 kHz)";
-    case NetEqDecoder::kDecoderCNGnb:
-      return "comfort noise (8 kHz)";
-    case NetEqDecoder::kDecoderCNGwb:
-      return "comfort noise (16 kHz)";
-    case NetEqDecoder::kDecoderCNGswb32kHz:
-      return "comfort noise (32 kHz)";
-    case NetEqDecoder::kDecoderCNGswb48kHz:
-      return "comfort noise (48 kHz)";
-    default:
-      FATAL();
-      return "undefined";
-  }
-}
-
-void PrintCodecMappingEntry(NetEqDecoder codec, int flag) {
-  std::cout << CodecName(codec) << ": " << flag << std::endl;
+void PrintCodecMappingEntry(const char* codec, int flag) {
+  std::cout << codec << ": " << flag << std::endl;
 }
 
 void PrintCodecMapping() {
-  PrintCodecMappingEntry(NetEqDecoder::kDecoderPCMu, FLAG_pcmu);
-  PrintCodecMappingEntry(NetEqDecoder::kDecoderPCMa, FLAG_pcma);
-  PrintCodecMappingEntry(NetEqDecoder::kDecoderILBC, FLAG_ilbc);
-  PrintCodecMappingEntry(NetEqDecoder::kDecoderISAC, FLAG_isac);
-  PrintCodecMappingEntry(NetEqDecoder::kDecoderISACswb, FLAG_isac_swb);
-  PrintCodecMappingEntry(NetEqDecoder::kDecoderOpus, FLAG_opus);
-  PrintCodecMappingEntry(NetEqDecoder::kDecoderPCM16B, FLAG_pcm16b);
-  PrintCodecMappingEntry(NetEqDecoder::kDecoderPCM16Bwb, FLAG_pcm16b_wb);
-  PrintCodecMappingEntry(NetEqDecoder::kDecoderPCM16Bswb32kHz,
-                         FLAG_pcm16b_swb32);
-  PrintCodecMappingEntry(NetEqDecoder::kDecoderPCM16Bswb48kHz,
-                         FLAG_pcm16b_swb48);
-  PrintCodecMappingEntry(NetEqDecoder::kDecoderG722, FLAG_g722);
-  PrintCodecMappingEntry(NetEqDecoder::kDecoderAVT, FLAG_avt);
-  PrintCodecMappingEntry(NetEqDecoder::kDecoderAVT16kHz, FLAG_avt_16);
-  PrintCodecMappingEntry(NetEqDecoder::kDecoderAVT32kHz, FLAG_avt_32);
-  PrintCodecMappingEntry(NetEqDecoder::kDecoderAVT48kHz, FLAG_avt_48);
-  PrintCodecMappingEntry(NetEqDecoder::kDecoderRED, FLAG_red);
-  PrintCodecMappingEntry(NetEqDecoder::kDecoderCNGnb, FLAG_cn_nb);
-  PrintCodecMappingEntry(NetEqDecoder::kDecoderCNGwb, FLAG_cn_wb);
-  PrintCodecMappingEntry(NetEqDecoder::kDecoderCNGswb32kHz, FLAG_cn_swb32);
-  PrintCodecMappingEntry(NetEqDecoder::kDecoderCNGswb48kHz, FLAG_cn_swb48);
+  PrintCodecMappingEntry("PCM-u", FLAG_pcmu);
+  PrintCodecMappingEntry("PCM-a", FLAG_pcma);
+  PrintCodecMappingEntry("iLBC", FLAG_ilbc);
+  PrintCodecMappingEntry("iSAC", FLAG_isac);
+  PrintCodecMappingEntry("iSAC-swb (32 kHz)", FLAG_isac_swb);
+  PrintCodecMappingEntry("Opus", FLAG_opus);
+  PrintCodecMappingEntry("PCM16b-nb (8 kHz)", FLAG_pcm16b);
+  PrintCodecMappingEntry("PCM16b-wb (16 kHz)", FLAG_pcm16b_wb);
+  PrintCodecMappingEntry("PCM16b-swb32 (32 kHz)", FLAG_pcm16b_swb32);
+  PrintCodecMappingEntry("PCM16b-swb48 (48 kHz)", FLAG_pcm16b_swb48);
+  PrintCodecMappingEntry("G.722", FLAG_g722);
+  PrintCodecMappingEntry("AVT/DTMF (8 kHz)", FLAG_avt);
+  PrintCodecMappingEntry("AVT/DTMF (16 kHz)", FLAG_avt_16);
+  PrintCodecMappingEntry("AVT/DTMF (32 kHz)", FLAG_avt_32);
+  PrintCodecMappingEntry("AVT/DTMF (48 kHz)", FLAG_avt_48);
+  PrintCodecMappingEntry("redundant audio (RED)", FLAG_red);
+  PrintCodecMappingEntry("comfort noise (8 kHz)", FLAG_cn_nb);
+  PrintCodecMappingEntry("comfort noise (16 kHz)", FLAG_cn_wb);
+  PrintCodecMappingEntry("comfort noise (32 kHz)", FLAG_cn_swb32);
+  PrintCodecMappingEntry("comfort noise (48 kHz)", FLAG_cn_swb48);
 }
 
 absl::optional<int> CodecSampleRate(uint8_t payload_type) {
