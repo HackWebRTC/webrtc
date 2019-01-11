@@ -36,6 +36,7 @@ rtc_source_set("rtc_stats_test_utils") {
   sources = [
     "test/rtc_test_stats.cc",
     "test/rtc_test_stats.h",
+    "test/rtcteststats.h",
   ]
 
   deps = [

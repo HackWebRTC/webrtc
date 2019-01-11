@@ -193,6 +193,7 @@ rtc_static_library("call") {
     "call.cc",
     "call_factory.cc",
     "call_factory.h",
+    "callfactory.h",
     "degraded_call.cc",
     "degraded_call.h",
     "flexfec_receive_stream_impl.cc",

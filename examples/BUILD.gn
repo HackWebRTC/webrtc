@@ -494,6 +494,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
         "objcnativeapi/objc/NADViewController.mm",
         "objcnativeapi/objc/objc_call_client.h",
         "objcnativeapi/objc/objc_call_client.mm",
+        "objcnativeapi/objc/objccallclient.h",
       ]
 
       if (!build_with_chromium && is_clang) {
@@ -707,6 +708,7 @@ if (is_linux || is_win) {
     if (is_win) {
       sources += [
         "peerconnection/client/flag_defs.h",
+        "peerconnection/client/flagdefs.h",
         "peerconnection/client/main.cc",
         "peerconnection/client/main_wnd.cc",
         "peerconnection/client/main_wnd.h",
@@ -844,6 +846,7 @@ if (is_win || is_android) {
       sources += [
         "unityplugin/class_reference_holder.cc",
         "unityplugin/class_reference_holder.h",
+        "unityplugin/classreferenceholder.h",
         "unityplugin/jni_onload.cc",
       ]
       suppressed_configs += [ "//build/config/android:hide_all_but_jni_onload" ]

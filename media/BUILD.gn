@@ -52,6 +52,7 @@ rtc_source_set("rtc_media_config") {
   visibility = [ "*" ]
   sources = [
     "base/media_config.h",
+    "base/mediaconfig.h",
   ]
 }
 
@@ -87,7 +88,9 @@ rtc_static_library("rtc_media_base") {
   sources = [
     "base/adapted_video_track_source.cc",
     "base/adapted_video_track_source.h",
+    "base/adaptedvideotracksource.h",
     "base/audio_source.h",
+    "base/audiosource.h",
     "base/codec.cc",
     "base/codec.h",
     "base/device.h",
@@ -97,16 +100,24 @@ rtc_static_library("rtc_media_base") {
     "base/media_constants.h",
     "base/media_engine.cc",
     "base/media_engine.h",
+    "base/mediachannel.h",
+    "base/mediaconstants.h",
+    "base/mediaengine.h",
     "base/rid_description.cc",
     "base/rid_description.h",
+    "base/riddescription.h",
     "base/rtp_data_engine.cc",
     "base/rtp_data_engine.h",
     "base/rtp_utils.cc",
     "base/rtp_utils.h",
+    "base/rtpdataengine.h",
+    "base/rtputils.h",
     "base/stream_params.cc",
     "base/stream_params.h",
+    "base/streamparams.h",
     "base/turn_utils.cc",
     "base/turn_utils.h",
+    "base/turnutils.h",
     "base/video_adapter.cc",
     "base/video_adapter.h",
     "base/video_broadcaster.cc",
@@ -117,6 +128,11 @@ rtc_static_library("rtc_media_base") {
     "base/video_common.h",
     "base/video_source_base.cc",
     "base/video_source_base.h",
+    "base/videoadapter.h",
+    "base/videobroadcaster.h",
+    "base/videocapturer.h",
+    "base/videocommon.h",
+    "base/videosourcebase.h",
   ]
 
   if (!build_with_chromium && is_clang) {
@@ -238,18 +254,25 @@ rtc_static_library("rtc_internal_video_codecs") {
     "engine/internal_decoder_factory.h",
     "engine/internal_encoder_factory.cc",
     "engine/internal_encoder_factory.h",
+    "engine/internaldecoderfactory.h",
+    "engine/internalencoderfactory.h",
     "engine/multiplex_codec_factory.cc",
     "engine/multiplex_codec_factory.h",
+    "engine/multiplexcodecfactory.h",
     "engine/scoped_video_decoder.cc",
     "engine/scoped_video_decoder.h",
     "engine/scoped_video_encoder.cc",
     "engine/scoped_video_encoder.h",
+    "engine/scopedvideodecoder.h",
+    "engine/scopedvideoencoder.h",
 
     # TODO(bugs.webrtc.org/7925): stop exporting this header once downstream
     # targets depend on :rtc_encoder_simulcast_proxy directly.
     "engine/encoder_simulcast_proxy.h",
     "engine/webrtc_video_decoder_factory.h",
     "engine/webrtc_video_encoder_factory.h",
+    "engine/webrtcvideodecoderfactory.h",
+    "engine/webrtcvideoencoderfactory.h",
   ]
 
   if (!build_with_chromium && is_clang) {
@@ -312,6 +335,7 @@ rtc_static_library("rtc_audio_video") {
     "engine/apm_helpers.cc",
     "engine/apm_helpers.h",
     "engine/null_webrtc_video_engine.h",
+    "engine/nullwebrtcvideoengine.h",
     "engine/payload_type_mapper.cc",
     "engine/payload_type_mapper.h",
     "engine/simulcast.cc",
@@ -326,6 +350,11 @@ rtc_static_library("rtc_audio_video") {
     "engine/webrtc_video_engine.h",
     "engine/webrtc_voice_engine.cc",
     "engine/webrtc_voice_engine.h",
+    "engine/webrtcmediaengine.h",
+    "engine/webrtcvideodecoderfactory.h",
+    "engine/webrtcvideoencoderfactory.h",
+    "engine/webrtcvideoengine.h",
+    "engine/webrtcvoiceengine.h",
   ]
 
   if (!build_with_chromium && is_clang) {
@@ -399,6 +428,8 @@ rtc_static_library("rtc_data") {
       "sctp/sctp_transport.cc",
       "sctp/sctp_transport.h",
       "sctp/sctp_transport_internal.h",
+      "sctp/sctptransport.h",
+      "sctp/sctptransportinternal.h",
     ]
   } else {
     # libtool on mac does not like empty targets.
@@ -485,12 +516,21 @@ if (rtc_include_tests) {
       "base/fake_video_capturer.h",
       "base/fake_video_renderer.cc",
       "base/fake_video_renderer.h",
+      "base/fakeframesource.h",
+      "base/fakemediaengine.h",
+      "base/fakenetworkinterface.h",
+      "base/fakertp.h",
+      "base/fakevideocapturer.h",
+      "base/fakevideorenderer.h",
       "base/test_utils.cc",
       "base/test_utils.h",
+      "base/testutils.h",
       "engine/fake_webrtc_call.cc",
       "engine/fake_webrtc_call.h",
       "engine/fake_webrtc_video_engine.cc",
       "engine/fake_webrtc_video_engine.h",
+      "engine/fakewebrtccall.h",
+      "engine/fakewebrtcvideoengine.h",
     ]
 
     if (!build_with_chromium && is_clang) {

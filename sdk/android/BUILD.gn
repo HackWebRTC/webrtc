@@ -538,8 +538,10 @@ if (is_android) {
       "src/jni/android_histogram.cc",
       "src/jni/android_network_monitor.cc",
       "src/jni/android_network_monitor.h",
+      "src/jni/androidnetworkmonitor.h",
       "src/jni/class_loader.h",
       "src/jni/class_reference_holder.h",
+      "src/jni/classreferenceholder.h",
       "src/jni/jni_common.cc",
       "src/jni/jni_helpers.cc",
       "src/jni/jni_helpers.h",
@@ -603,6 +605,7 @@ if (is_android) {
       "src/jni/android_media_codec_common.h",
       "src/jni/android_media_decoder.cc",
       "src/jni/android_media_encoder.cc",
+      "src/jni/androidmediacodeccommon.h",
     ]
     deps = [
       ":base_jni",
@@ -632,13 +635,16 @@ if (is_android) {
     sources = [
       "src/jni/android_video_track_source.cc",
       "src/jni/android_video_track_source.h",
+      "src/jni/androidvideotracksource.h",
       "src/jni/encoded_image.cc",
       "src/jni/encoded_image.h",
+      "src/jni/encodedimage.h",
       "src/jni/h264_utils.cc",
       "src/jni/java_i420_buffer.cc",
       "src/jni/jni_generator_helper.h",
       "src/jni/native_capturer_observer.cc",
       "src/jni/native_capturer_observer.h",
+      "src/jni/nativecapturerobserver.h",
       "src/jni/nv12_buffer.cc",
       "src/jni/nv21_buffer.cc",
       "src/jni/pc/video.cc",
@@ -661,6 +667,13 @@ if (is_android) {
       "src/jni/video_sink.h",
       "src/jni/video_source.cc",
       "src/jni/video_track.cc",
+      "src/jni/videocodecinfo.h",
+      "src/jni/videocodecstatus.h",
+      "src/jni/videodecoderfactorywrapper.h",
+      "src/jni/videodecoderwrapper.h",
+      "src/jni/videoencoderfactorywrapper.h",
+      "src/jni/videoencoderwrapper.h",
+      "src/jni/videosink.h",
       "src/jni/yuv_helper.cc",
     ]
 
@@ -695,16 +708,21 @@ if (is_android) {
 
     sources = [
       "src/jni/android_network_monitor_jni.h",
+      "src/jni/androidnetworkmonitor_jni.h",
       "src/jni/pc/android_network_monitor.h",
+      "src/jni/pc/androidnetworkmonitor.h",
       "src/jni/pc/audio_track.cc",
       "src/jni/pc/call_session_file_rotating_log_sink.cc",
       "src/jni/pc/crypto_options.cc",
       "src/jni/pc/crypto_options.h",
+      "src/jni/pc/cryptooptions.h",
       "src/jni/pc/data_channel.cc",
       "src/jni/pc/data_channel.h",
+      "src/jni/pc/datachannel.h",
       "src/jni/pc/dtmf_sender.cc",
       "src/jni/pc/ice_candidate.cc",
       "src/jni/pc/ice_candidate.h",
+      "src/jni/pc/icecandidate.h",
       "src/jni/pc/media_constraints.cc",
       "src/jni/pc/media_constraints.h",
       "src/jni/pc/media_source.cc",
@@ -712,16 +730,24 @@ if (is_android) {
       "src/jni/pc/media_stream.h",
       "src/jni/pc/media_stream_track.cc",
       "src/jni/pc/media_stream_track.h",
+      "src/jni/pc/mediaconstraints.h",
+      "src/jni/pc/mediastream.h",
+      "src/jni/pc/mediastreamtrack.h",
       "src/jni/pc/owned_factory_and_threads.cc",
       "src/jni/pc/owned_factory_and_threads.h",
+      "src/jni/pc/ownedfactoryandthreads.h",
       "src/jni/pc/peer_connection.cc",
       "src/jni/pc/peer_connection.h",
       "src/jni/pc/peer_connection_factory.cc",
       "src/jni/pc/peer_connection_factory.h",
+      "src/jni/pc/peerconnection.h",
+      "src/jni/pc/peerconnectionfactory.h",
       "src/jni/pc/rtc_certificate.cc",
       "src/jni/pc/rtc_certificate.h",
       "src/jni/pc/rtc_stats_collector_callback_wrapper.cc",
       "src/jni/pc/rtc_stats_collector_callback_wrapper.h",
+      "src/jni/pc/rtccertificate.h",
+      "src/jni/pc/rtcstatscollectorcallbackwrapper.h",
       "src/jni/pc/rtp_parameters.cc",
       "src/jni/pc/rtp_parameters.h",
       "src/jni/pc/rtp_receiver.cc",
@@ -730,16 +756,25 @@ if (is_android) {
       "src/jni/pc/rtp_sender.h",
       "src/jni/pc/rtp_transceiver.cc",
       "src/jni/pc/rtp_transceiver.h",
+      "src/jni/pc/rtpparameters.h",
+      "src/jni/pc/rtpreceiver.h",
+      "src/jni/pc/rtpsender.h",
+      "src/jni/pc/rtptransceiver.h",
       "src/jni/pc/sdp_observer.cc",
       "src/jni/pc/sdp_observer.h",
+      "src/jni/pc/sdpobserver.h",
       "src/jni/pc/session_description.cc",
       "src/jni/pc/session_description.h",
+      "src/jni/pc/sessiondescription.h",
       "src/jni/pc/ssl_certificate_verifier_wrapper.cc",
       "src/jni/pc/ssl_certificate_verifier_wrapper.h",
+      "src/jni/pc/sslcertificateverifierwrapper.h",
       "src/jni/pc/stats_observer.cc",
       "src/jni/pc/stats_observer.h",
+      "src/jni/pc/statsobserver.h",
       "src/jni/pc/turn_customizer.cc",
       "src/jni/pc/turn_customizer.h",
+      "src/jni/pc/turncustomizer.h",
     ]
 
     deps = [
@@ -869,6 +904,7 @@ if (is_android) {
       "native_api/base/init.h",
       "native_api/base/network_monitor.cc",
       "native_api/base/network_monitor.h",
+      "native_api/base/networkmonitor.h",
     ]
 
     deps = [
@@ -933,6 +969,7 @@ if (is_android) {
     sources = [
       "native_api/peerconnection/peer_connection_factory.cc",
       "native_api/peerconnection/peer_connection_factory.h",
+      "native_api/peerconnection/peerconnectionfactory.h",
     ]
     deps = [
       ":base_jni",
@@ -951,6 +988,7 @@ if (is_android) {
     sources = [
       "native_api/video/video_source.cc",
       "native_api/video/video_source.h",
+      "native_api/video/videosource.h",
       "native_api/video/wrapper.cc",
       "native_api/video/wrapper.h",
     ]
@@ -1047,6 +1085,7 @@ if (is_android) {
     sources = [
       "src/jni/video_frame.cc",
       "src/jni/video_frame.h",
+      "src/jni/videoframe.h",
       "src/jni/wrapped_native_i420_buffer.cc",
       "src/jni/wrapped_native_i420_buffer.h",
     ]
@@ -1068,6 +1107,7 @@ if (is_android) {
     sources = [
       "src/jni/logging/log_sink.cc",
       "src/jni/logging/log_sink.h",
+      "src/jni/logging/logsink.h",
     ]
 
     deps = [
