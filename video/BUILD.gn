@@ -408,7 +408,7 @@ if (rtc_include_tests) {
   rtc_executable("video_replay") {
     testonly = true
     sources = [
-      "replay.cc",
+      "video_replay.cc",
     ]
     deps = [
       "../api/test/video:function_video_factory",
@@ -422,6 +422,7 @@ if (rtc_include_tests) {
       "../rtc_base:rtc_base_approved",
       "../rtc_base:rtc_json",
       "../system_wrappers",
+      "../test:call_config_utils",
       "../test:fake_video_codecs",
       "../test:rtp_test_utils",
       "../test:run_test",

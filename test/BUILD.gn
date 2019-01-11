@@ -874,3 +874,15 @@ if (!build_with_chromium && is_android) {
     ]
   }
 }
+
+rtc_source_set("call_config_utils") {
+  sources = [
+    "call_config_utils.cc",
+    "call_config_utils.h",
+  ]
+  deps = [
+    "../call:call_interfaces",
+    "../call:video_stream_api",
+    "../rtc_base:rtc_json",
+  ]
+}
