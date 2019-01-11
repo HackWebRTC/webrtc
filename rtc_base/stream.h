@@ -119,13 +119,6 @@ class StreamInterface : public MessageHandler {
   // Return true if flush is successful.
   virtual bool Flush();
 
-  // Communicates the amount of data which will be written to the stream.  The
-  // stream may choose to preallocate memory to accomodate this data.  The
-  // stream may return false to indicate that there is not enough room (ie,
-  // Write will return SR_EOS/SR_ERROR at some point).  Note that calling this
-  // function should not affect the existing state of data in the stream.
-  virtual bool ReserveSize(size_t size);
-
   //
   // CONVENIENCE METHODS
   //
@@ -189,7 +182,6 @@ class StreamAdapterInterface : public StreamInterface,
 
   bool SetPosition(size_t position) override;
   bool GetPosition(size_t* position) const override;
-  bool ReserveSize(size_t size) override;
   bool Flush() override;
 
   void Attach(StreamInterface* stream, bool owned = true);
@@ -242,7 +234,6 @@ class FileStream : public StreamInterface {
   void Close() override;
   bool SetPosition(size_t position) override;
   bool GetPosition(size_t* position) const override;
-  bool ReserveSize(size_t size) override;
 
   bool Flush() override;
 

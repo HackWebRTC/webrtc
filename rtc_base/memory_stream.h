@@ -39,7 +39,7 @@ class MemoryStream final : public StreamInterface {
   bool SetPosition(size_t position) override;
   bool GetPosition(size_t* position) const override;
   bool GetSize(size_t* size) const;
-  bool ReserveSize(size_t size) override;
+  bool ReserveSize(size_t size);
 
   char* GetBuffer() { return buffer_; }
   const char* GetBuffer() const { return buffer_; }

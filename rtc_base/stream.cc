@@ -89,10 +89,6 @@ bool StreamInterface::Flush() {
   return false;
 }
 
-bool StreamInterface::ReserveSize(size_t size) {
-  return true;
-}
-
 StreamInterface::StreamInterface() {}
 
 void StreamInterface::OnMessage(Message* msg) {
@@ -139,10 +135,6 @@ bool StreamAdapterInterface::SetPosition(size_t position) {
 
 bool StreamAdapterInterface::GetPosition(size_t* position) const {
   return stream_->GetPosition(position);
-}
-
-bool StreamAdapterInterface::ReserveSize(size_t size) {
-  return stream_->ReserveSize(size);
 }
 
 bool StreamAdapterInterface::Flush() {
@@ -305,11 +297,6 @@ bool FileStream::GetPosition(size_t* position) const {
     return false;
   if (position)
     *position = result;
-  return true;
-}
-
-bool FileStream::ReserveSize(size_t size) {
-  // TODO: extend the file to the proper length
   return true;
 }
 
