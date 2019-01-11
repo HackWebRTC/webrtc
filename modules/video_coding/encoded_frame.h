@@ -56,17 +56,8 @@ class VCMEncodedFrame : protected EncodedImage {
   const webrtc::EncodedImage& EncodedImage() const {
     return static_cast<const webrtc::EncodedImage&>(*this);
   }
-  /**
-   *   Get pointer to frame buffer
-   */
-  const uint8_t* Buffer() const { return _buffer; }
-  /**
-   *   Get pointer to frame buffer that can be mutated.
-   */
-  uint8_t* MutableBuffer() { return _buffer; }
-  /**
-   *   Frame RTP timestamp (90kHz)
-   */
+
+  using EncodedImage::data;
   using EncodedImage::set_size;
   using EncodedImage::SetSpatialIndex;
   using EncodedImage::SetTimestamp;

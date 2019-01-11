@@ -61,16 +61,13 @@ BufferedFrameDecryptor::FrameDecision BufferedFrameDecryptor::DecryptFrame(
     RTC_LOG(LS_ERROR) << "No generic frame descriptor found dropping frame.";
     return FrameDecision::kDrop;
   }
-  // Retrieve the bitstream of the encrypted video frame.
-  rtc::ArrayView<const uint8_t> encrypted_frame_bitstream(frame->Buffer(),
-                                                          frame->size());
   // Retrieve the maximum possible size of the decrypted payload.
   const size_t max_plaintext_byte_size =
       frame_decryptor_->GetMaxPlaintextByteSize(cricket::MEDIA_TYPE_VIDEO,
                                                 frame->size());
   RTC_CHECK_LE(max_plaintext_byte_size, frame->size());
   // Place the decrypted frame inline into the existing frame.
-  rtc::ArrayView<uint8_t> inline_decrypted_bitstream(frame->MutableBuffer(),
+  rtc::ArrayView<uint8_t> inline_decrypted_bitstream(frame->data(),
                                                      max_plaintext_byte_size);
 
   // Only enable authenticating the header if the field trial is enabled.
@@ -81,10 +78,9 @@ BufferedFrameDecryptor::FrameDecision BufferedFrameDecryptor::DecryptFrame(
 
   // Attempt to decrypt the video frame.
   size_t bytes_written = 0;
-  if (frame_decryptor_->Decrypt(cricket::MEDIA_TYPE_VIDEO, /*csrcs=*/{},
-                                additional_data, encrypted_frame_bitstream,
-                                inline_decrypted_bitstream,
-                                &bytes_written) != 0) {
+  if (frame_decryptor_->Decrypt(
+          cricket::MEDIA_TYPE_VIDEO, /*csrcs=*/{}, additional_data, *frame,
+          inline_decrypted_bitstream, &bytes_written) != 0) {
     // Only stash frames if we have never decrypted a frame before.
     return first_frame_decrypted_ ? FrameDecision::kDrop
                                   : FrameDecision::kStash;

@@ -451,7 +451,7 @@ TEST_F(TestPacketBuffer, GetBitstream) {
   ASSERT_EQ(1UL, frames_from_callback_.size());
   CheckFrame(seq_num);
   EXPECT_EQ(frames_from_callback_[seq_num]->size(), result_length);
-  EXPECT_EQ(memcmp(frames_from_callback_[seq_num]->Buffer(),
+  EXPECT_EQ(memcmp(frames_from_callback_[seq_num]->data(),
                    "many bitstream, such data", result_length),
             0);
 }
@@ -468,7 +468,7 @@ TEST_F(TestPacketBuffer, GetBitstreamOneFrameOnePacket) {
   CheckFrame(0);
   EXPECT_EQ(frames_from_callback_[0]->size(), sizeof(bitstream_data));
   EXPECT_EQ(
-      memcmp(frames_from_callback_[0]->Buffer(), data, sizeof(bitstream_data)),
+      memcmp(frames_from_callback_[0]->data(), data, sizeof(bitstream_data)),
       0);
 }
 
@@ -491,8 +491,7 @@ TEST_F(TestPacketBuffer, GetBitstreamOneFrameFullBuffer) {
   ASSERT_EQ(1UL, frames_from_callback_.size());
   CheckFrame(0);
   EXPECT_EQ(frames_from_callback_[0]->size(), static_cast<size_t>(kStartSize));
-  EXPECT_EQ(memcmp(frames_from_callback_[0]->Buffer(), expected, kStartSize),
-            0);
+  EXPECT_EQ(memcmp(frames_from_callback_[0]->data(), expected, kStartSize), 0);
 }
 
 TEST_F(TestPacketBuffer, InsertPacketAfterOldFrameObjectIsRemoved) {
@@ -619,8 +618,7 @@ TEST_P(TestPacketBufferH264Parameterized, GetBitstreamOneFrameFullBuffer) {
   ASSERT_EQ(1UL, frames_from_callback_.size());
   CheckFrame(0);
   EXPECT_EQ(frames_from_callback_[0]->size(), static_cast<size_t>(kStartSize));
-  EXPECT_EQ(memcmp(frames_from_callback_[0]->Buffer(), expected, kStartSize),
-            0);
+  EXPECT_EQ(memcmp(frames_from_callback_[0]->data(), expected, kStartSize), 0);
 }
 
 TEST_P(TestPacketBufferH264Parameterized, GetBitstreamBufferPadding) {
@@ -650,7 +648,7 @@ TEST_P(TestPacketBufferH264Parameterized, GetBitstreamBufferPadding) {
   EXPECT_EQ(frames_from_callback_[seq_num]->EncodedImage().capacity(),
             sizeof(data_data) + EncodedImage::kBufferPaddingBytesH264);
   EXPECT_EQ(
-      memcmp(frames_from_callback_[seq_num]->Buffer(), data, sizeof(data_data)),
+      memcmp(frames_from_callback_[seq_num]->data(), data, sizeof(data_data)),
       0);
 }
 

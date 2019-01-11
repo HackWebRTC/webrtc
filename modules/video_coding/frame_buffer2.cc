@@ -645,10 +645,10 @@ EncodedFrame* FrameBuffer::CombineAndDeleteFrames(
       last_frame->video_timing().receive_finish_ms;
 
   // Append all remaining frames to the first one.
-  uint8_t* buffer = first_frame->MutableBuffer() + first_frame->size();
+  uint8_t* buffer = first_frame->data() + first_frame->size();
   for (size_t i = 1; i < frames.size(); ++i) {
     EncodedFrame* next_frame = frames[i];
-    memcpy(buffer, next_frame->Buffer(), next_frame->size());
+    memcpy(buffer, next_frame->data(), next_frame->size());
     buffer += next_frame->size();
     delete next_frame;
   }

@@ -272,7 +272,7 @@ class TestBasicJitterBuffer : public ::testing::TestWithParam<std::string>,
                      bool startCode) {
     ASSERT_TRUE(frame_out);
 
-    const uint8_t* outData = frame_out->Buffer();
+    const uint8_t* outData = frame_out->data();
     unsigned int i = 0;
 
     if (startCode) {

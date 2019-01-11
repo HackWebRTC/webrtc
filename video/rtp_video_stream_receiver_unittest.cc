@@ -81,7 +81,7 @@ class MockOnCompleteFrameCallback
       return;
     }
     if (frame->size() != buffer_.Length() ||
-        memcmp(buffer_.Data(), frame->Buffer(), buffer_.Length()) != 0) {
+        memcmp(buffer_.Data(), frame->data(), buffer_.Length()) != 0) {
       DoOnCompleteFrameFailBitstream(frame.get());
       return;
     }
