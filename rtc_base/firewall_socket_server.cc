@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/firewallsocketserver.h"
+#include "rtc_base/firewall_socket_server.h"
 
 #include <errno.h>
 #include <stddef.h>
@@ -16,7 +16,7 @@
 #include <algorithm>
 #include <string>
 
-#include "rtc_base/asyncsocket.h"
+#include "rtc_base/async_socket.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 

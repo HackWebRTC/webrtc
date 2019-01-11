@@ -23,7 +23,7 @@
 #include "modules/desktop_capture/linux/window_finder_x11.h"
 #include "modules/desktop_capture/linux/x_atom_cache.h"
 #include "modules/desktop_capture/linux/x_server_pixel_buffer.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {

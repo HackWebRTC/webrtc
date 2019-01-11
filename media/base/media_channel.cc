@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "media/base/mediachannel.h"
+#include "media/base/media_channel.h"
 
 namespace cricket {
 

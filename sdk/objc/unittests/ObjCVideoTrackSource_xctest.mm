@@ -20,8 +20,8 @@
 #import "frame_buffer_helpers.h"
 
 #include "common_video/libyuv/include/webrtc_libyuv.h"
-#include "media/base/fakevideorenderer.h"
-#include "rtc_base/refcountedobject.h"
+#include "media/base/fake_video_renderer.h"
+#include "rtc_base/ref_counted_object.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "sdk/objc/native/api/video_frame.h"
 

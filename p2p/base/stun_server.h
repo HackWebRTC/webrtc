@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_STUNSERVER_H_
-#define P2P_BASE_STUNSERVER_H_
+#ifndef P2P_BASE_STUN_SERVER_H_
+#define P2P_BASE_STUN_SERVER_H_
 
 #include <stddef.h>
 #include <stdint.h>
 #include <memory>
 
 #include "p2p/base/stun.h"
-#include "rtc_base/asyncpacketsocket.h"
-#include "rtc_base/asyncudpsocket.h"
-#include "rtc_base/socketaddress.h"
+#include "rtc_base/async_packet_socket.h"
+#include "rtc_base/async_udp_socket.h"
+#include "rtc_base/socket_address.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace cricket {
@@ -67,4 +67,4 @@ class StunServer : public sigslot::has_slots<> {
 
 }  // namespace cricket
 
-#endif  // P2P_BASE_STUNSERVER_H_
+#endif  // P2P_BASE_STUN_SERVER_H_

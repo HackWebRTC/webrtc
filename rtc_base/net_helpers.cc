@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/nethelpers.h"
+#include "rtc_base/net_helpers.h"
 
 #include <memory>
 
@@ -19,14 +19,14 @@
 #endif
 #if defined(WEBRTC_POSIX) && !defined(__native_client__)
 #if defined(WEBRTC_ANDROID)
-#include "rtc_base/ifaddrs-android.h"
+#include "rtc_base/ifaddrs_android.h"
 #else
 #include <ifaddrs.h>
 #endif
 #endif  // defined(WEBRTC_POSIX) && !defined(__native_client__)
 
 #include "rtc_base/logging.h"
-#include "rtc_base/signalthread.h"
+#include "rtc_base/signal_thread.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"  // for signal_with_thread...
 
 namespace rtc {

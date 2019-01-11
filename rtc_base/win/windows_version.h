@@ -14,7 +14,7 @@
 #include <stddef.h>
 #include <string>
 
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 
 typedef void* HANDLE;
 

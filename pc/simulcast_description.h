@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_SIMULCASTDESCRIPTION_H_
-#define PC_SIMULCASTDESCRIPTION_H_
+#ifndef PC_SIMULCAST_DESCRIPTION_H_
+#define PC_SIMULCAST_DESCRIPTION_H_
 
 #include <string>
 #include <vector>
@@ -108,4 +108,4 @@ class SimulcastDescription final {
 
 }  // namespace cricket
 
-#endif  // PC_SIMULCASTDESCRIPTION_H_
+#endif  // PC_SIMULCAST_DESCRIPTION_H_

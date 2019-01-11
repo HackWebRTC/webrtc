@@ -5,12 +5,12 @@ specific_include_rules = {
   ".*": [
     "+video"
   ],
-  "fakeconstraints\.h": [
-    "+rtc_base/stringencode.h",
+  "fake_constraints\.h": [
+    "+rtc_base/string_encode.h",
   ],
   "loopback_media_transport\.h": [
-    "+rtc_base/asyncinvoker.h",
-    "+rtc_base/criticalsection.h",
+    "+rtc_base/async_invoker.h",
+    "+rtc_base/critical_section.h",
     "+rtc_base/thread.h",
     "+rtc_base/thread_checker.h",
   ],

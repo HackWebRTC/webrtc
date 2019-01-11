@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef API_DTMFSENDERINTERFACE_H_
-#define API_DTMFSENDERINTERFACE_H_
+#ifndef API_DTMF_SENDER_INTERFACE_H_
+#define API_DTMF_SENDER_INTERFACE_H_
 
 #include <string>
 
-#include "api/mediastreaminterface.h"
-#include "rtc_base/refcount.h"
+#include "api/media_stream_interface.h"
+#include "rtc_base/ref_count.h"
 
 namespace webrtc {
 
@@ -97,4 +97,4 @@ class DtmfSenderInterface : public rtc::RefCountInterface {
 
 }  // namespace webrtc
 
-#endif  // API_DTMFSENDERINTERFACE_H_
+#endif  // API_DTMF_SENDER_INTERFACE_H_

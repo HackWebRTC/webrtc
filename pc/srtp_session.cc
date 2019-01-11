@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/srtpsession.h"
+#include "pc/srtp_session.h"
 
-#include "media/base/rtputils.h"
-#include "pc/externalhmac.h"
-#include "rtc_base/criticalsection.h"
+#include "media/base/rtp_utils.h"
+#include "pc/external_hmac.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/sslstreamadapter.h"
+#include "rtc_base/ssl_stream_adapter.h"
 #include "system_wrappers/include/metrics.h"
 #include "third_party/libsrtp/include/srtp.h"
 #include "third_party/libsrtp/include/srtp_priv.h"

@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/strings/string_builder.h"
 
 namespace webrtc {

@@ -14,10 +14,10 @@
 #include <utility>
 
 #include "api/rtp_headers.h"
-#include "api/rtpparameters.h"
-#include "p2p/base/fakepackettransport.h"
-#include "pc/rtptransport.h"
-#include "pc/rtptransporttestutil.h"
+#include "api/rtp_parameters.h"
+#include "p2p/base/fake_packet_transport.h"
+#include "pc/rtp_transport.h"
+#include "pc/test/rtp_transport_test_util.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "test/gtest.h"

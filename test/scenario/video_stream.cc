@@ -15,14 +15,14 @@
 #include "absl/memory/memory.h"
 #include "api/test/video/function_video_encoder_factory.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
-#include "media/base/mediaconstants.h"
-#include "media/engine/internaldecoderfactory.h"
-#include "media/engine/internalencoderfactory.h"
-#include "media/engine/webrtcvideoengine.h"
+#include "media/base/media_constants.h"
+#include "media/engine/internal_decoder_factory.h"
+#include "media/engine/internal_encoder_factory.h"
+#include "media/engine/webrtc_video_engine.h"
 #include "test/call_test.h"
 #include "test/fake_encoder.h"
 #include "test/scenario/hardware_codecs.h"
-#include "test/testsupport/fileutils.h"
+#include "test/testsupport/file_utils.h"
 
 namespace webrtc {
 namespace test {

@@ -17,7 +17,7 @@
 #include "api/video/video_frame_buffer.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "test/gtest.h"
-#include "test/testsupport/fileutils.h"
+#include "test/testsupport/file_utils.h"
 #include "test/testsupport/frame_reader.h"
 
 namespace webrtc {

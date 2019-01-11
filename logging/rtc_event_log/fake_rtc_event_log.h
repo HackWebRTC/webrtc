@@ -16,7 +16,7 @@
 
 #include "logging/rtc_event_log/events/rtc_event.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
-#include "rtc_base/asyncinvoker.h"
+#include "rtc_base/async_invoker.h"
 #include "rtc_base/thread.h"
 
 namespace webrtc {

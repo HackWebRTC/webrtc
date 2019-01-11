@@ -10,11 +10,11 @@
 
 #include <vector>
 
-#include "p2p/base/stunrequest.h"
-#include "rtc_base/fakeclock.h"
+#include "p2p/base/stun_request.h"
+#include "rtc_base/fake_clock.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"
 #include "test/gtest.h"
 
 namespace cricket {

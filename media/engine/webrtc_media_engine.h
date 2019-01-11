@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MEDIA_ENGINE_WEBRTCMEDIAENGINE_H_
-#define MEDIA_ENGINE_WEBRTCMEDIAENGINE_H_
+#ifndef MEDIA_ENGINE_WEBRTC_MEDIA_ENGINE_H_
+#define MEDIA_ENGINE_WEBRTC_MEDIA_ENGINE_H_
 
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "call/call.h"
-#include "media/base/mediaengine.h"
+#include "media/base/media_engine.h"
 #include "modules/audio_device/include/audio_device.h"
 
 namespace webrtc {
@@ -128,4 +128,4 @@ webrtc::BitrateConstraints GetBitrateConfigForCodec(const Codec& codec);
 
 }  // namespace cricket
 
-#endif  // MEDIA_ENGINE_WEBRTCMEDIAENGINE_H_
+#endif  // MEDIA_ENGINE_WEBRTC_MEDIA_ENGINE_H_

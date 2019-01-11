@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MEDIA_BASE_VIDEOBROADCASTER_H_
-#define MEDIA_BASE_VIDEOBROADCASTER_H_
+#ifndef MEDIA_BASE_VIDEO_BROADCASTER_H_
+#define MEDIA_BASE_VIDEO_BROADCASTER_H_
 
 #include "api/video/video_frame_buffer.h"
 #include "api/video/video_source_interface.h"
-#include "media/base/videosourcebase.h"
-#include "rtc_base/criticalsection.h"
+#include "media/base/video_source_base.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/thread_checker.h"
@@ -64,4 +64,4 @@ class VideoBroadcaster : public VideoSourceBase,
 
 }  // namespace rtc
 
-#endif  // MEDIA_BASE_VIDEOBROADCASTER_H_
+#endif  // MEDIA_BASE_VIDEO_BROADCASTER_H_

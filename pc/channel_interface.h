@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_CHANNELINTERFACE_H_
-#define PC_CHANNELINTERFACE_H_
+#ifndef PC_CHANNEL_INTERFACE_H_
+#define PC_CHANNEL_INTERFACE_H_
 
 #include <string>
 
 #include "api/jsep.h"
-#include "api/mediatypes.h"
-#include "media/base/mediachannel.h"
-#include "pc/rtptransportinternal.h"
+#include "api/media_types.h"
+#include "media/base/media_channel.h"
+#include "pc/rtp_transport_internal.h"
 
 namespace cricket {
 
@@ -65,4 +65,4 @@ class ChannelInterface {
 
 }  // namespace cricket
 
-#endif  // PC_CHANNELINTERFACE_H_
+#endif  // PC_CHANNEL_INTERFACE_H_

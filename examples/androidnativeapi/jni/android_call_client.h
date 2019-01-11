@@ -8,20 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef EXAMPLES_ANDROIDNATIVEAPI_JNI_ANDROIDCALLCLIENT_H_
-#define EXAMPLES_ANDROIDNATIVEAPI_JNI_ANDROIDCALLCLIENT_H_
+#ifndef EXAMPLES_ANDROIDNATIVEAPI_JNI_ANDROID_CALL_CLIENT_H_
+#define EXAMPLES_ANDROIDNATIVEAPI_JNI_ANDROID_CALL_CLIENT_H_
 
 #include <jni.h>
 
 #include <memory>
 #include <string>
 
-#include "api/peerconnectioninterface.h"
-#include "rtc_base/criticalsection.h"
+#include "api/peer_connection_interface.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/thread_checker.h"
 #include "sdk/android/native_api/jni/scoped_java_ref.h"
-#include "sdk/android/native_api/video/videosource.h"
+#include "sdk/android/native_api/video/video_source.h"
 
 namespace webrtc_examples {
 
@@ -76,4 +76,4 @@ class AndroidCallClient {
 
 }  // namespace webrtc_examples
 
-#endif  // EXAMPLES_ANDROIDNATIVEAPI_JNI_ANDROIDCALLCLIENT_H_
+#endif  // EXAMPLES_ANDROIDNATIVEAPI_JNI_ANDROID_CALL_CLIENT_H_

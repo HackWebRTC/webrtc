@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/test/androidtestinitializer.h"
+#include "pc/test/android_test_initializer.h"
 
 #include <pthread.h>
 
@@ -28,7 +28,7 @@ RTC_POP_IGNORING_WUNDEF()
 // TODO(phoglund): This include is also to a target we can't really depend on.
 // We need to either break it out into a smaller target or find some way to
 // not use it.
-#include "rtc_base/ssladapter.h"
+#include "rtc_base/ssl_adapter.h"
 
 namespace webrtc {
 

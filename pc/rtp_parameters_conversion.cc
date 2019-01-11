@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/rtpparametersconversion.h"
+#include "pc/rtp_parameters_conversion.h"
 
 #include <cstdint>
 #include <set>
@@ -17,9 +17,9 @@
 #include <utility>
 
 #include "api/array_view.h"
-#include "api/mediatypes.h"
-#include "media/base/mediaconstants.h"
-#include "media/base/rtputils.h"
+#include "api/media_types.h"
+#include "media/base/media_constants.h"
+#include "media/base/rtp_utils.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/string_builder.h"

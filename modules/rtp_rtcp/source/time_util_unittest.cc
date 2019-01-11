@@ -9,8 +9,8 @@
  */
 #include "modules/rtp_rtcp/source/time_util.h"
 
-#include "rtc_base/fakeclock.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/fake_clock.h"
+#include "rtc_base/time_utils.h"
 #include "system_wrappers/include/clock.h"
 #include "test/gtest.h"
 

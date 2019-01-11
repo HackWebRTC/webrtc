@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_JSEPTRANSPORT_H_
-#define PC_JSEPTRANSPORT_H_
+#ifndef PC_JSEP_TRANSPORT_H_
+#define PC_JSEP_TRANSPORT_H_
 
 #include <map>
 #include <memory>
@@ -20,21 +20,21 @@
 #include "api/candidate.h"
 #include "api/jsep.h"
 #include "api/media_transport_interface.h"
-#include "p2p/base/dtlstransport.h"
-#include "p2p/base/p2pconstants.h"
-#include "p2p/base/transportinfo.h"
-#include "pc/dtlssrtptransport.h"
-#include "pc/dtlstransport.h"
-#include "pc/rtcpmuxfilter.h"
-#include "pc/rtptransport.h"
-#include "pc/sessiondescription.h"
-#include "pc/srtpfilter.h"
-#include "pc/srtptransport.h"
-#include "pc/transportstats.h"
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/messagequeue.h"
-#include "rtc_base/rtccertificate.h"
-#include "rtc_base/sslstreamadapter.h"
+#include "p2p/base/dtls_transport.h"
+#include "p2p/base/p2p_constants.h"
+#include "p2p/base/transport_info.h"
+#include "pc/dtls_srtp_transport.h"
+#include "pc/dtls_transport.h"
+#include "pc/rtcp_mux_filter.h"
+#include "pc/rtp_transport.h"
+#include "pc/session_description.h"
+#include "pc/srtp_filter.h"
+#include "pc/srtp_transport.h"
+#include "pc/transport_stats.h"
+#include "rtc_base/constructor_magic.h"
+#include "rtc_base/message_queue.h"
+#include "rtc_base/rtc_certificate.h"
+#include "rtc_base/ssl_stream_adapter.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace cricket {
@@ -307,4 +307,4 @@ class JsepTransport : public sigslot::has_slots<>,
 
 }  // namespace cricket
 
-#endif  // PC_JSEPTRANSPORT_H_
+#endif  // PC_JSEP_TRANSPORT_H_

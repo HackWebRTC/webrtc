@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/bitrateallocationstrategy.h"
+#include "rtc_base/bitrate_allocation_strategy.h"
 
 #include <algorithm>
 #include <cstddef>

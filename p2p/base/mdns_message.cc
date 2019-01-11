@@ -10,8 +10,8 @@
 
 #include "p2p/base/mdns_message.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/nethelpers.h"
-#include "rtc_base/stringencode.h"
+#include "rtc_base/net_helpers.h"
+#include "rtc_base/string_encode.h"
 
 namespace webrtc {
 

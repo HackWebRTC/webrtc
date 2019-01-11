@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/testclient.h"
+#include "rtc_base/test_client.h"
 
 #include <utility>
 
 #include "absl/memory/memory.h"
-#include "rtc_base/asyncsocket.h"
-#include "rtc_base/asynctcpsocket.h"
-#include "rtc_base/asyncudpsocket.h"
+#include "rtc_base/async_socket.h"
+#include "rtc_base/async_tcp_socket.h"
+#include "rtc_base/async_udp_socket.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/nethelpers.h"
-#include "rtc_base/socketserver.h"
-#include "rtc_base/testechoserver.h"
+#include "rtc_base/net_helpers.h"
+#include "rtc_base/socket_server.h"
+#include "rtc_base/test_echo_server.h"
 #include "rtc_base/thread.h"
 #include "test/gtest.h"
 

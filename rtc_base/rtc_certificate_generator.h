@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_RTCCERTIFICATEGENERATOR_H_
-#define RTC_BASE_RTCCERTIFICATEGENERATOR_H_
+#ifndef RTC_BASE_RTC_CERTIFICATE_GENERATOR_H_
+#define RTC_BASE_RTC_CERTIFICATE_GENERATOR_H_
 
 #include <stdint.h>
 
 #include "absl/types/optional.h"
-#include "rtc_base/refcount.h"
-#include "rtc_base/rtccertificate.h"
+#include "rtc_base/ref_count.h"
+#include "rtc_base/rtc_certificate.h"
 #include "rtc_base/scoped_ref_ptr.h"
-#include "rtc_base/sslidentity.h"
+#include "rtc_base/ssl_identity.h"
 #include "rtc_base/thread.h"
 
 namespace rtc {
@@ -84,4 +84,4 @@ class RTCCertificateGenerator : public RTCCertificateGeneratorInterface {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_RTCCERTIFICATEGENERATOR_H_
+#endif  // RTC_BASE_RTC_CERTIFICATE_GENERATOR_H_

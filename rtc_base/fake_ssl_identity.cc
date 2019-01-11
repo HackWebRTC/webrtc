@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/fakesslidentity.h"
+#include "rtc_base/fake_ssl_identity.h"
 
 #include <string>
 #include <utility>
 
 #include "absl/memory/memory.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/messagedigest.h"
+#include "rtc_base/message_digest.h"
 
 namespace rtc {
 

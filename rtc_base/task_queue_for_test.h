@@ -12,7 +12,7 @@
 #define RTC_BASE_TASK_QUEUE_FOR_TEST_H_
 
 #include "rtc_base/checks.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/event.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread_annotations.h"

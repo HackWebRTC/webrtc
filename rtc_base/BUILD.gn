@@ -90,18 +90,18 @@ rtc_source_set("rtc_base_approved") {
 
   sources = [
     "bind.h",
-    "bitbuffer.cc",
-    "bitbuffer.h",
-    "bitrateallocationstrategy.cc",
-    "bitrateallocationstrategy.h",
+    "bit_buffer.cc",
+    "bit_buffer.h",
+    "bitrate_allocation_strategy.cc",
+    "bitrate_allocation_strategy.h",
     "buffer.h",
-    "bufferqueue.cc",
-    "bufferqueue.h",
-    "bytebuffer.cc",
-    "bytebuffer.h",
-    "byteorder.h",
-    "copyonwritebuffer.cc",
-    "copyonwritebuffer.h",
+    "buffer_queue.cc",
+    "buffer_queue.h",
+    "byte_buffer.cc",
+    "byte_buffer.h",
+    "byte_order.h",
+    "copy_on_write_buffer.cc",
+    "copy_on_write_buffer.h",
     "event_tracer.cc",
     "event_tracer.h",
     "file.cc",
@@ -119,7 +119,7 @@ rtc_source_set("rtc_base_approved") {
     "numerics/moving_max_counter.h",
     "numerics/sample_counter.cc",
     "numerics/sample_counter.h",
-    "onetimeevent.h",
+    "one_time_event.h",
     "platform_file.cc",
     "platform_file.h",
     "race_checker.cc",
@@ -128,12 +128,12 @@ rtc_source_set("rtc_base_approved") {
     "random.h",
     "rate_statistics.cc",
     "rate_statistics.h",
-    "ratetracker.cc",
-    "ratetracker.h",
+    "rate_tracker.cc",
+    "rate_tracker.h",
     "swap_queue.h",
     "template_util.h",
-    "timestampaligner.cc",
-    "timestampaligner.h",
+    "timestamp_aligner.cc",
+    "timestamp_aligner.h",
     "trace_event.h",
     "zero_memory.cc",
     "zero_memory.h",
@@ -184,7 +184,7 @@ rtc_source_set("macromagic") {
   visibility = [ "*" ]
   sources = [
     "arraysize.h",
-    "constructormagic.h",
+    "constructor_magic.h",
     "format_macros.h",
     "stringize_macros.h",
     "thread_annotations.h",
@@ -214,9 +214,9 @@ rtc_source_set("ptr_util") {
 rtc_source_set("refcount") {
   visibility = [ "*" ]
   sources = [
-    "refcount.h",
-    "refcountedobject.h",
-    "refcounter.h",
+    "ref_count.h",
+    "ref_counted_object.h",
+    "ref_counter.h",
   ]
   deps = [
     ":atomicops",
@@ -226,8 +226,8 @@ rtc_source_set("refcount") {
 
 rtc_source_set("criticalsection") {
   sources = [
-    "criticalsection.cc",
-    "criticalsection.h",
+    "critical_section.cc",
+    "critical_section.h",
   ]
   deps = [
     ":atomicops",
@@ -342,7 +342,7 @@ rtc_source_set("thread_checker") {
 
 rtc_source_set("atomicops") {
   sources = [
-    "atomicops.h",
+    "atomic_ops.h",
   ]
 }
 
@@ -417,8 +417,8 @@ rtc_source_set("safe_conversions") {
 rtc_source_set("timeutils") {
   visibility = [ "*" ]
   sources = [
-    "timeutils.cc",
-    "timeutils.h",
+    "time_utils.cc",
+    "time_utils.h",
   ]
   deps = [
     ":checks",
@@ -429,14 +429,14 @@ rtc_source_set("timeutils") {
 
 rtc_source_set("stringutils") {
   sources = [
+    "string_encode.cc",
+    "string_encode.h",
     "string_to_number.cc",
     "string_to_number.h",
-    "stringencode.cc",
-    "stringencode.h",
+    "string_utils.cc",
+    "string_utils.h",
     "strings/string_builder.cc",
     "strings/string_builder.h",
-    "stringutils.cc",
-    "stringutils.h",
   ]
   deps = [
     ":checks",
@@ -728,8 +728,8 @@ rtc_source_set("nethelpers") {
   # TODO(bugs.webrtc.org/9987): This build target will soon contain
   #                             the following files:
   # sources = [
-  #   "nethelpers.cc",
-  #   "nethelpers.h",
+  #   "net_helpers.cc",
+  #   "net_helpers.h",
   # ]
 }
 
@@ -737,8 +737,8 @@ rtc_source_set("asyncresolverinterface") {
   # TODO(bugs.webrtc.org/9987): This build target will soon contain
   #                             the following files:
   # sources = [
-  #   "asyncresolverinterface.cc",
-  #   "asyncresolverinterface.h",
+  #   "async_resolver_interface.cc",
+  #   "async_resolver_interface.h",
   # ]
 }
 
@@ -746,8 +746,8 @@ rtc_source_set("ipaddress") {
   # TODO(bugs.webrtc.org/9987): This build target will soon contain
   #                             the following files:
   # sources = [
-  #   "ipaddress.cc",
-  #   "ipaddress.h",
+  #   "ip_address.cc",
+  #   "ip_address.h",
   # ]
 }
 
@@ -755,8 +755,8 @@ rtc_source_set("socketaddress") {
   # TODO(bugs.webrtc.org/9987): This build target will soon contain
   #                             the following files:
   # sources = [
-  #   "socketaddress.cc",
-  #   "socketaddress.h",
+  #   "socket_address.cc",
+  #   "socket_address.h",
   # ]
 }
 
@@ -764,8 +764,8 @@ rtc_source_set("nullsocketserver") {
   # TODO(bugs.webrtc.org/9987): This build target will soon contain
   #                             the following files:
   # sources = [
-  #   "nullsocketserver.cc",
-  #   "nullsocketserver.h",
+  #   "null_socket_server.cc",
+  #   "null_socket_server.h",
   # ]
 }
 
@@ -773,7 +773,7 @@ rtc_source_set("socketserver") {
   # TODO(bugs.webrtc.org/9987): This build target will soon contain
   #                             the following files:
   # sources = [
-  #   "socketserver.h",
+  #   "socket_server.h",
   # ]
 }
 
@@ -785,16 +785,16 @@ rtc_source_set("threading") {
   #   "asyncresolver.h",
   #   "defaultsocketserver.cc",
   #   "defaultsocketserver.h",
-  #   "messagehandler.cc",
-  #   "messagehandler.h",
-  #   "messagequeue.cc",
-  #   "messagequeue.h",
-  #   "networkmonitor.cc",
-  #   "networkmonitor.h",
-  #   "physicalsocketserver.cc",
-  #   "physicalsocketserver.h",
-  #   "signalthread.cc",
-  #   "signalthread.h",
+  #   "message_handler.cc",
+  #   "message_handler.h",
+  #   "message_queue.cc",
+  #   "message_queue.h",
+  #   "network_monitor.cc",
+  #   "network_monitor.h",
+  #   "physical_socket_server.cc",
+  #   "physical_socket_server.h",
+  #   "signal_thread.cc",
+  #   "signal_thread.h",
   #   "thread.cc",
   #   "thread.h",
   # ]
@@ -804,7 +804,7 @@ rtc_source_set("socketfactory") {
   # TODO(bugs.webrtc.org/9987): This build target will soon contain
   #                             the following files:
   # sources = [
-  #   "socketfactory.h",
+  #   "socket_factory.h",
   # ]
 }
 
@@ -812,8 +812,8 @@ rtc_source_set("asyncsocket") {
   # TODO(bugs.webrtc.org/9987): This build target will soon contain
   #                             the following files:
   # sources = [
-  #   "asyncsocket.cc",
-  #   "asyncsocket.h",
+  #   "async_socket.cc",
+  #   "async_socket.h",
   # ]
 }
 
@@ -839,8 +839,8 @@ if (is_android) {
     # TODO(bugs.webrtc.org/9987): This build target will soon contain
     #                             the following files:
     # sources = [
-    #   "ifaddrs-android.cc",
-    #   "ifaddrs-android.h",
+    #   "ifaddrs_android.cc",
+    #   "ifaddrs_android.h",
     # ]
   }
 }
@@ -882,105 +882,105 @@ rtc_static_library("rtc_base") {
   all_dependent_configs = [ ":rtc_base_all_dependent_config" ]
 
   sources = [
-    "asyncinvoker-inl.h",
-    "asyncinvoker.cc",
-    "asyncinvoker.h",
-    "asyncpacketsocket.cc",
-    "asyncpacketsocket.h",
-    "asyncresolverinterface.cc",
-    "asyncresolverinterface.h",
-    "asyncsocket.cc",
-    "asyncsocket.h",
-    "asynctcpsocket.cc",
-    "asynctcpsocket.h",
-    "asyncudpsocket.cc",
-    "asyncudpsocket.h",
+    "async_invoker.cc",
+    "async_invoker.h",
+    "async_invoker_inl.h",
+    "async_packet_socket.cc",
+    "async_packet_socket.h",
+    "async_resolver_interface.cc",
+    "async_resolver_interface.h",
+    "async_socket.cc",
+    "async_socket.h",
+    "async_tcp_socket.cc",
+    "async_tcp_socket.h",
+    "async_udp_socket.cc",
+    "async_udp_socket.h",
     "crc32.cc",
     "crc32.h",
-    "cryptstring.cc",
-    "cryptstring.h",
+    "crypt_string.cc",
+    "crypt_string.h",
     "data_rate_limiter.cc",
     "data_rate_limiter.h",
     "dscp.h",
-    "filerotatingstream.cc",
-    "filerotatingstream.h",
+    "file_rotating_stream.cc",
+    "file_rotating_stream.h",
     "gunit_prod.h",
     "helpers.cc",
     "helpers.h",
-    "httpcommon.cc",
-    "httpcommon.h",
-    "ipaddress.cc",
-    "ipaddress.h",
+    "http_common.cc",
+    "http_common.h",
+    "ip_address.cc",
+    "ip_address.h",
     "keep_ref_until_done.h",
     "key_derivation.cc",
     "key_derivation.h",
     "mdns_responder_interface.h",
-    "messagedigest.cc",
-    "messagedigest.h",
-    "messagehandler.cc",
-    "messagehandler.h",
-    "messagequeue.cc",
-    "messagequeue.h",
-    "nethelper.cc",
-    "nethelper.h",
-    "nethelpers.cc",
-    "nethelpers.h",
+    "message_digest.cc",
+    "message_digest.h",
+    "message_handler.cc",
+    "message_handler.h",
+    "message_queue.cc",
+    "message_queue.h",
+    "net_helper.cc",
+    "net_helper.h",
+    "net_helpers.cc",
+    "net_helpers.h",
     "network.cc",
     "network.h",
     "network_constants.h",
-    "networkmonitor.cc",
-    "networkmonitor.h",
-    "networkroute.h",
-    "nullsocketserver.cc",
-    "nullsocketserver.h",
+    "network_monitor.cc",
+    "network_monitor.h",
+    "network_route.h",
+    "null_socket_server.cc",
+    "null_socket_server.h",
     "openssl.h",
+    "openssl_adapter.cc",
+    "openssl_adapter.h",
+    "openssl_certificate.cc",
+    "openssl_certificate.h",
+    "openssl_digest.cc",
+    "openssl_digest.h",
+    "openssl_identity.cc",
+    "openssl_identity.h",
     "openssl_key_derivation_hkdf.cc",
     "openssl_key_derivation_hkdf.h",
-    "openssladapter.cc",
-    "openssladapter.h",
-    "opensslcertificate.cc",
-    "opensslcertificate.h",
-    "openssldigest.cc",
-    "openssldigest.h",
-    "opensslidentity.cc",
-    "opensslidentity.h",
-    "opensslsessioncache.cc",
-    "opensslsessioncache.h",
-    "opensslstreamadapter.cc",
-    "opensslstreamadapter.h",
-    "opensslutility.cc",
-    "opensslutility.h",
-    "physicalsocketserver.cc",
-    "physicalsocketserver.h",
-    "proxyinfo.cc",
-    "proxyinfo.h",
-    "rtccertificate.cc",
-    "rtccertificate.h",
-    "rtccertificategenerator.cc",
-    "rtccertificategenerator.h",
-    "signalthread.cc",
-    "signalthread.h",
-    "sigslotrepeater.h",
+    "openssl_session_cache.cc",
+    "openssl_session_cache.h",
+    "openssl_stream_adapter.cc",
+    "openssl_stream_adapter.h",
+    "openssl_utility.cc",
+    "openssl_utility.h",
+    "physical_socket_server.cc",
+    "physical_socket_server.h",
+    "proxy_info.cc",
+    "proxy_info.h",
+    "rtc_certificate.cc",
+    "rtc_certificate.h",
+    "rtc_certificate_generator.cc",
+    "rtc_certificate_generator.h",
+    "signal_thread.cc",
+    "signal_thread.h",
+    "sigslot_repeater.h",
     "socket.cc",
     "socket.h",
-    "socketadapters.cc",
-    "socketadapters.h",
-    "socketaddress.cc",
-    "socketaddress.h",
-    "socketaddresspair.cc",
-    "socketaddresspair.h",
-    "socketfactory.h",
-    "socketserver.h",
-    "ssladapter.cc",
-    "ssladapter.h",
-    "sslcertificate.cc",
-    "sslcertificate.h",
-    "sslfingerprint.cc",
-    "sslfingerprint.h",
-    "sslidentity.cc",
-    "sslidentity.h",
-    "sslstreamadapter.cc",
-    "sslstreamadapter.h",
+    "socket_adapters.cc",
+    "socket_adapters.h",
+    "socket_address.cc",
+    "socket_address.h",
+    "socket_address_pair.cc",
+    "socket_address_pair.h",
+    "socket_factory.h",
+    "socket_server.h",
+    "ssl_adapter.cc",
+    "ssl_adapter.h",
+    "ssl_certificate.cc",
+    "ssl_certificate.h",
+    "ssl_fingerprint.cc",
+    "ssl_fingerprint.h",
+    "ssl_identity.cc",
+    "ssl_identity.h",
+    "ssl_stream_adapter.cc",
+    "ssl_stream_adapter.h",
     "stream.cc",
     "stream.h",
     "thread.cc",
@@ -993,19 +993,19 @@ rtc_static_library("rtc_base") {
   } else {
     sources += [
       "callback.h",
-      "logsinks.cc",
-      "logsinks.h",
-      "numerics/mathutils.h",
-      "rollingaccumulator.h",
-      "sslroots.h",
+      "log_sinks.cc",
+      "log_sinks.h",
+      "numerics/math_utils.h",
+      "rolling_accumulator.h",
+      "ssl_roots.h",
     ]
 
     if (is_win) {
-      sources += [ "win32socketinit.h" ]
+      sources += [ "win32_socket_init.h" ]
       if (current_os != "winuwp") {
         sources += [
-          "win32socketserver.cc",
-          "win32socketserver.h",
+          "win32_socket_server.cc",
+          "win32_socket_server.h",
         ]
       }
     }
@@ -1019,8 +1019,8 @@ rtc_static_library("rtc_base") {
 
   if (is_android) {
     sources += [
-      "ifaddrs-android.cc",
-      "ifaddrs-android.h",
+      "ifaddrs_android.cc",
+      "ifaddrs_android.h",
     ]
 
     libs += [
@@ -1030,7 +1030,7 @@ rtc_static_library("rtc_base") {
   }
 
   if (is_ios || is_mac) {
-    sources += [ "macifaddrs_converter.cc" ]
+    sources += [ "mac_ifaddrs_converter.cc" ]
     deps += [ "system:cocoa_threading" ]
   }
 
@@ -1054,8 +1054,8 @@ rtc_static_library("rtc_base") {
 
   if (is_mac) {
     sources += [
-      "macutils.cc",
-      "macutils.h",
+      "mac_utils.cc",
+      "mac_utils.h",
     ]
   }
 
@@ -1063,8 +1063,8 @@ rtc_static_library("rtc_base") {
     sources += [
       "win32.cc",
       "win32.h",
-      "win32window.cc",
-      "win32window.h",
+      "win32_window.cc",
+      "win32_window.h",
     ]
 
     libs += [
@@ -1116,8 +1116,8 @@ rtc_source_set("gunit_helpers") {
 rtc_source_set("testclient") {
   testonly = true
   sources = [
-    "testclient.cc",
-    "testclient.h",
+    "test_client.cc",
+    "test_client.h",
   ]
   deps = [
     ":criticalsection",
@@ -1135,40 +1135,40 @@ rtc_source_set("rtc_base_tests_utils") {
   sources = [
     "cpu_time.cc",
     "cpu_time.h",
+    "fake_clock.cc",
+    "fake_clock.h",
     "fake_mdns_responder.h",
-    "fakeclock.cc",
-    "fakeclock.h",
-    "fakenetwork.h",
-    "fakesslidentity.cc",
-    "fakesslidentity.h",
-    "firewallsocketserver.cc",
-    "firewallsocketserver.h",
+    "fake_network.h",
+    "fake_ssl_identity.cc",
+    "fake_ssl_identity.h",
+    "firewall_socket_server.cc",
+    "firewall_socket_server.h",
     "memory_stream.cc",
     "memory_stream.h",
     "memory_usage.cc",
     "memory_usage.h",
-    "natserver.cc",
-    "natserver.h",
-    "natsocketfactory.cc",
-    "natsocketfactory.h",
-    "nattypes.cc",
-    "nattypes.h",
-    "proxyserver.cc",
-    "proxyserver.h",
+    "nat_server.cc",
+    "nat_server.h",
+    "nat_socket_factory.cc",
+    "nat_socket_factory.h",
+    "nat_types.cc",
+    "nat_types.h",
+    "proxy_server.cc",
+    "proxy_server.h",
     "server_socket_adapters.cc",
     "server_socket_adapters.h",
-    "sigslottester.h",
+    "sigslot_tester.h",
     "sigslottester.h.pump",
-    "socketstream.cc",
-    "socketstream.h",
-    "testbase64.h",
-    "testcertificateverifier.h",
-    "testechoserver.cc",
-    "testechoserver.h",
-    "testutils.cc",
-    "testutils.h",
-    "virtualsocketserver.cc",
-    "virtualsocketserver.h",
+    "socket_stream.cc",
+    "socket_stream.h",
+    "test_base64.h",
+    "test_certificate_verifier.h",
+    "test_echo_server.cc",
+    "test_echo_server.h",
+    "test_utils.cc",
+    "test_utils.h",
+    "virtual_socket_server.cc",
+    "virtual_socket_server.h",
   ]
   deps = [
     ":checks",
@@ -1235,12 +1235,12 @@ if (rtc_include_tests) {
 
     sources = [
       "cpu_time_unittest.cc",
-      "filerotatingstream_unittest.cc",
-      "nullsocketserver_unittest.cc",
-      "physicalsocketserver_unittest.cc",
+      "file_rotating_stream_unittest.cc",
+      "null_socket_server_unittest.cc",
+      "physical_socket_server_unittest.cc",
+      "socket_address_unittest.cc",
       "socket_unittest.cc",
       "socket_unittest.h",
-      "socketaddress_unittest.cc",
     ]
     deps = [
       ":checks",
@@ -1257,7 +1257,7 @@ if (rtc_include_tests) {
       "//third_party/abseil-cpp/absl/memory",
     ]
     if (is_win) {
-      sources += [ "win32socketserver_unittest.cc" ]
+      sources += [ "win32_socket_server_unittest.cc" ]
     }
   }
 
@@ -1267,17 +1267,17 @@ if (rtc_include_tests) {
       cflags = [ "-fsanitize=memory" ]
     }
     sources = [
-      "atomicops_unittest.cc",
+      "atomic_ops_unittest.cc",
       "base64_unittest.cc",
       "bind_unittest.cc",
-      "bitbuffer_unittest.cc",
-      "bitrateallocationstrategy_unittest.cc",
+      "bit_buffer_unittest.cc",
+      "bitrate_allocation_strategy_unittest.cc",
+      "buffer_queue_unittest.cc",
       "buffer_unittest.cc",
-      "bufferqueue_unittest.cc",
-      "bytebuffer_unittest.cc",
-      "byteorder_unittest.cc",
-      "copyonwritebuffer_unittest.cc",
-      "criticalsection_unittest.cc",
+      "byte_buffer_unittest.cc",
+      "byte_order_unittest.cc",
+      "copy_on_write_buffer_unittest.cc",
+      "critical_section_unittest.cc",
       "event_tracer_unittest.cc",
       "event_unittest.cc",
       "file_unittest.cc",
@@ -1289,26 +1289,26 @@ if (rtc_include_tests) {
       "numerics/safe_compare_unittest.cc",
       "numerics/safe_minmax_unittest.cc",
       "numerics/sample_counter_unittest.cc",
-      "onetimeevent_unittest.cc",
+      "one_time_event_unittest.cc",
       "platform_file_unittest.cc",
       "platform_thread_unittest.cc",
       "random_unittest.cc",
       "rate_limiter_unittest.cc",
       "rate_statistics_unittest.cc",
-      "ratetracker_unittest.cc",
-      "refcountedobject_unittest.cc",
+      "rate_tracker_unittest.cc",
+      "ref_counted_object_unittest.cc",
       "sanitizer_unittest.cc",
+      "string_encode_unittest.cc",
       "string_to_number_unittest.cc",
-      "stringencode_unittest.cc",
+      "string_utils_unittest.cc",
       "stringize_macros_unittest.cc",
       "strings/string_builder_unittest.cc",
-      "stringutils_unittest.cc",
       "swap_queue_unittest.cc",
       "thread_annotations_unittest.cc",
       "thread_checker_unittest.cc",
-      "timestampaligner_unittest.cc",
-      "timeutils_unittest.cc",
-      "virtualsocket_unittest.cc",
+      "time_utils_unittest.cc",
+      "timestamp_aligner_unittest.cc",
+      "virtual_socket_unittest.cc",
       "zero_memory_unittest.cc",
     ]
     if (is_win) {
@@ -1439,37 +1439,37 @@ if (rtc_include_tests) {
       "crc32_unittest.cc",
       "data_rate_limiter_unittest.cc",
       "helpers_unittest.cc",
-      "ipaddress_unittest.cc",
+      "ip_address_unittest.cc",
       "memory_usage_unittest.cc",
-      "messagedigest_unittest.cc",
-      "messagequeue_unittest.cc",
+      "message_digest_unittest.cc",
+      "message_queue_unittest.cc",
       "nat_unittest.cc",
       "network_unittest.cc",
       "proxy_unittest.cc",
-      "rollingaccumulator_unittest.cc",
-      "rtccertificate_unittest.cc",
-      "rtccertificategenerator_unittest.cc",
-      "signalthread_unittest.cc",
-      "sigslottester_unittest.cc",
+      "rolling_accumulator_unittest.cc",
+      "rtc_certificate_generator_unittest.cc",
+      "rtc_certificate_unittest.cc",
+      "signal_thread_unittest.cc",
+      "sigslot_tester_unittest.cc",
       "stream_unittest.cc",
-      "testclient_unittest.cc",
+      "test_client_unittest.cc",
       "thread_unittest.cc",
     ]
     if (is_win) {
       sources += [
         "win32_unittest.cc",
-        "win32window_unittest.cc",
+        "win32_window_unittest.cc",
       ]
     }
     if (is_posix || is_fuchsia) {
       sources += [
+        "openssl_adapter_unittest.cc",
         "openssl_key_derivation_hkdf_unittest.cc",
-        "openssladapter_unittest.cc",
-        "opensslsessioncache_unittest.cc",
-        "opensslutility_unittest.cc",
-        "ssladapter_unittest.cc",
-        "sslidentity_unittest.cc",
-        "sslstreamadapter_unittest.cc",
+        "openssl_session_cache_unittest.cc",
+        "openssl_utility_unittest.cc",
+        "ssl_adapter_unittest.cc",
+        "ssl_identity_unittest.cc",
+        "ssl_stream_adapter_unittest.cc",
       ]
     }
     deps = [

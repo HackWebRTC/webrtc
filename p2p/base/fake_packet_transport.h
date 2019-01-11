@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_FAKEPACKETTRANSPORT_H_
-#define P2P_BASE_FAKEPACKETTRANSPORT_H_
+#ifndef P2P_BASE_FAKE_PACKET_TRANSPORT_H_
+#define P2P_BASE_FAKE_PACKET_TRANSPORT_H_
 
 #include <string>
 
-#include "api/ortc/packettransportinterface.h"
-#include "p2p/base/packettransportinternal.h"
-#include "rtc_base/asyncinvoker.h"
-#include "rtc_base/copyonwritebuffer.h"
+#include "api/ortc/packet_transport_interface.h"
+#include "p2p/base/packet_transport_internal.h"
+#include "rtc_base/async_invoker.h"
+#include "rtc_base/copy_on_write_buffer.h"
 
 namespace rtc {
 
@@ -137,4 +137,4 @@ class FakePacketTransport : public PacketTransportInternal {
 
 }  // namespace rtc
 
-#endif  // P2P_BASE_FAKEPACKETTRANSPORT_H_
+#endif  // P2P_BASE_FAKE_PACKET_TRANSPORT_H_

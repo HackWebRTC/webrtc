@@ -13,7 +13,7 @@
 #include <string>
 #include <vector>
 
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "test/fake_encoder.h"
 #include "test/frame_generator_capturer.h"
 #include "test/scenario/call_client.h"

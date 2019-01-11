@@ -25,7 +25,7 @@ extern "C" {
 #include "modules/audio_processing/aec/aec_common.h"
 #include "modules/audio_processing/utility/block_mean_calculator.h"
 #include "modules/audio_processing/utility/ooura_fft.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 
 namespace webrtc {
 

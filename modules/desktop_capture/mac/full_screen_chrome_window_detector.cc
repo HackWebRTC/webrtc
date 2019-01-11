@@ -15,8 +15,8 @@
 
 #include "modules/desktop_capture/mac/window_list_utils.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/macutils.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/mac_utils.h"
+#include "rtc_base/time_utils.h"
 
 namespace webrtc {
 

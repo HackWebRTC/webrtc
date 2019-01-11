@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "p2p/base/asyncstuntcpsocket.h"
+#include "p2p/base/async_stun_tcp_socket.h"
 
 #include <errno.h>
 #include <stdint.h>
 #include <string.h>
 
 #include "p2p/base/stun.h"
-#include "rtc_base/byteorder.h"
+#include "rtc_base/byte_order.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/network/sent_packet.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"
 
 namespace cricket {
 

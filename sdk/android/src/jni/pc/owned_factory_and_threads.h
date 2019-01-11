@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SDK_ANDROID_SRC_JNI_PC_OWNEDFACTORYANDTHREADS_H_
-#define SDK_ANDROID_SRC_JNI_PC_OWNEDFACTORYANDTHREADS_H_
+#ifndef SDK_ANDROID_SRC_JNI_PC_OWNED_FACTORY_AND_THREADS_H_
+#define SDK_ANDROID_SRC_JNI_PC_OWNED_FACTORY_AND_THREADS_H_
 
 #include <jni.h>
 #include <memory>
 #include <utility>
 
-#include "api/peerconnectioninterface.h"
+#include "api/peer_connection_interface.h"
 #include "rtc_base/thread.h"
 
 namespace webrtc {
@@ -60,4 +60,4 @@ class OwnedFactoryAndThreads {
 }  // namespace jni
 }  // namespace webrtc
 
-#endif  // SDK_ANDROID_SRC_JNI_PC_OWNEDFACTORYANDTHREADS_H_
+#endif  // SDK_ANDROID_SRC_JNI_PC_OWNED_FACTORY_AND_THREADS_H_

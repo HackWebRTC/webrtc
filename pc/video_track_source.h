@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_VIDEOTRACKSOURCE_H_
-#define PC_VIDEOTRACKSOURCE_H_
+#ifndef PC_VIDEO_TRACK_SOURCE_H_
+#define PC_VIDEO_TRACK_SOURCE_H_
 
-#include "api/mediastreaminterface.h"
+#include "api/media_stream_interface.h"
 #include "api/notifier.h"
 #include "api/video/video_sink_interface.h"
-#include "media/base/mediachannel.h"
+#include "media/base/media_channel.h"
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/thread_checker.h"
 
@@ -52,4 +52,4 @@ class RTC_EXPORT VideoTrackSource : public Notifier<VideoTrackSourceInterface> {
 
 }  // namespace webrtc
 
-#endif  //  PC_VIDEOTRACKSOURCE_H_
+#endif  //  PC_VIDEO_TRACK_SOURCE_H_

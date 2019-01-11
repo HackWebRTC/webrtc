@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_BASICASYNCRESOLVERFACTORY_H_
-#define P2P_BASE_BASICASYNCRESOLVERFACTORY_H_
+#ifndef P2P_BASE_BASIC_ASYNC_RESOLVER_FACTORY_H_
+#define P2P_BASE_BASIC_ASYNC_RESOLVER_FACTORY_H_
 
-#include "api/asyncresolverfactory.h"
-#include "rtc_base/asyncresolverinterface.h"
+#include "api/async_resolver_factory.h"
+#include "rtc_base/async_resolver_interface.h"
 
 namespace webrtc {
 
@@ -23,4 +23,4 @@ class BasicAsyncResolverFactory : public AsyncResolverFactory {
 
 }  // namespace webrtc
 
-#endif  // P2P_BASE_BASICASYNCRESOLVERFACTORY_H_
+#endif  // P2P_BASE_BASIC_ASYNC_RESOLVER_FACTORY_H_

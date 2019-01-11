@@ -18,8 +18,8 @@
 #include "modules/video_capture/video_capture_config.h"
 #include "modules/video_capture/video_capture_impl.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/refcountedobject.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/ref_counted_object.h"
+#include "rtc_base/time_utils.h"
 #include "rtc_base/trace_event.h"
 #include "third_party/libyuv/include/libyuv.h"
 

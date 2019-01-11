@@ -18,7 +18,7 @@
 #include <vector>
 
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "system_wrappers/include/clock.h"
 #include "test/gtest.h"
 

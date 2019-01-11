@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "test/testsupport/fileutils_override.h"
+#include "test/testsupport/file_utils_override.h"
 
 #include <limits.h>
 #include <stdio.h>
@@ -33,17 +33,17 @@
 #endif
 
 #if defined(WEBRTC_IOS)
-#include "test/testsupport/iosfileutils.h"
+#include "test/testsupport/ios_file_utils.h"
 #endif
 
 #if defined(WEBRTC_MAC)
-#include "test/testsupport/macfileutils.h"
+#include "test/testsupport/mac_file_utils.h"
 #endif
 
 #include "absl/types/optional.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/stringutils.h"
+#include "rtc_base/string_utils.h"
 
 namespace webrtc {
 namespace test {

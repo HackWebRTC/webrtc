@@ -15,7 +15,7 @@
 
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/packet.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 
 namespace webrtc {
 

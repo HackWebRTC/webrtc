@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_SOCKETADDRESS_H_
-#define RTC_BASE_SOCKETADDRESS_H_
+#ifndef RTC_BASE_SOCKET_ADDRESS_H_
+#define RTC_BASE_SOCKET_ADDRESS_H_
 
 #include <string>
 #ifdef UNIT_TEST
 #include <ostream>  // no-presubmit-check TODO(webrtc:8982)
 #endif              // UNIT_TEST
-#include "rtc_base/ipaddress.h"
+#include "rtc_base/ip_address.h"
 
 #undef SetPort
 
@@ -199,4 +199,4 @@ SocketAddress EmptySocketAddressWithFamily(int family);
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_SOCKETADDRESS_H_
+#endif  // RTC_BASE_SOCKET_ADDRESS_H_

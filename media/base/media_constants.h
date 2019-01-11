@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MEDIA_BASE_MEDIACONSTANTS_H_
-#define MEDIA_BASE_MEDIACONSTANTS_H_
+#ifndef MEDIA_BASE_MEDIA_CONSTANTS_H_
+#define MEDIA_BASE_MEDIA_CONSTANTS_H_
 
 #include <stddef.h>
 
@@ -145,4 +145,4 @@ extern const size_t kConferenceMaxNumTemporalLayers;
 extern const size_t kConferenceDefaultNumTemporalLayers;
 }  // namespace cricket
 
-#endif  // MEDIA_BASE_MEDIACONSTANTS_H_
+#endif  // MEDIA_BASE_MEDIA_CONSTANTS_H_

@@ -7,8 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef SDK_ANDROID_SRC_JNI_LOGGING_LOGSINK_H_
-#define SDK_ANDROID_SRC_JNI_LOGGING_LOGSINK_H_
+#ifndef SDK_ANDROID_SRC_JNI_LOGGING_LOG_SINK_H_
+#define SDK_ANDROID_SRC_JNI_LOGGING_LOG_SINK_H_
 
 #include <string>
 
@@ -36,4 +36,4 @@ class JNILogSink : public rtc::LogSink {
 }  // namespace jni
 }  // namespace webrtc
 
-#endif  // SDK_ANDROID_SRC_JNI_LOGGING_LOGSINK_H_
+#endif  // SDK_ANDROID_SRC_JNI_LOGGING_LOG_SINK_H_

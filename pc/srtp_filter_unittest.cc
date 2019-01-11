@@ -10,9 +10,9 @@
 
 #include <string.h>
 
-#include "api/cryptoparams.h"
-#include "pc/srtpfilter.h"
-#include "rtc_base/sslstreamadapter.h"
+#include "api/crypto_params.h"
+#include "pc/srtp_filter.h"
+#include "rtc_base/ssl_stream_adapter.h"
 #include "test/gtest.h"
 
 using cricket::CryptoParams;

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SDK_ANDROID_SRC_JNI_VIDEOENCODERWRAPPER_H_
-#define SDK_ANDROID_SRC_JNI_VIDEOENCODERWRAPPER_H_
+#ifndef SDK_ANDROID_SRC_JNI_VIDEO_ENCODER_WRAPPER_H_
+#define SDK_ANDROID_SRC_JNI_VIDEO_ENCODER_WRAPPER_H_
 
 #include <jni.h>
 #include <deque>
@@ -21,7 +21,7 @@
 #include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
 #include "rtc_base/task_queue.h"
 #include "sdk/android/src/jni/jni_helpers.h"
-#include "sdk/android/src/jni/videoframe.h"
+#include "sdk/android/src/jni/video_frame.h"
 
 namespace webrtc {
 namespace jni {
@@ -119,4 +119,4 @@ bool IsHardwareVideoEncoder(JNIEnv* jni, const JavaRef<jobject>& j_encoder);
 }  // namespace jni
 }  // namespace webrtc
 
-#endif  // SDK_ANDROID_SRC_JNI_VIDEOENCODERWRAPPER_H_
+#endif  // SDK_ANDROID_SRC_JNI_VIDEO_ENCODER_WRAPPER_H_

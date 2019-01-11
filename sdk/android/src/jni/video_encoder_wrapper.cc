@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "sdk/android/src/jni/videoencoderwrapper.h"
+#include "sdk/android/src/jni/video_encoder_wrapper.h"
 
 #include <utility>
 
@@ -18,13 +18,13 @@
 #include "modules/video_coding/utility/vp8_header_parser.h"
 #include "modules/video_coding/utility/vp9_uncompressed_header_parser.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"
 #include "sdk/android/generated_video_jni/jni/VideoEncoderWrapper_jni.h"
 #include "sdk/android/generated_video_jni/jni/VideoEncoder_jni.h"
 #include "sdk/android/native_api/jni/class_loader.h"
 #include "sdk/android/native_api/jni/java_types.h"
-#include "sdk/android/src/jni/encodedimage.h"
-#include "sdk/android/src/jni/videocodecstatus.h"
+#include "sdk/android/src/jni/encoded_image.h"
+#include "sdk/android/src/jni/video_codec_status.h"
 
 namespace webrtc {
 namespace jni {

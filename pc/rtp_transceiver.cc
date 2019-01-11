@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/rtptransceiver.h"
+#include "pc/rtp_transceiver.h"
 
 #include <algorithm>
 #include <string>
 
-#include "pc/rtpmediautils.h"
+#include "pc/rtp_media_utils.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 

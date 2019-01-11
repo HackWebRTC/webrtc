@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/bufferqueue.h"
+#include "rtc_base/buffer_queue.h"
 
 #include <string.h>
 

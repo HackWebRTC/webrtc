@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef API_PEERCONNECTIONPROXY_H_
-#define API_PEERCONNECTIONPROXY_H_
+#ifndef API_PEER_CONNECTION_PROXY_H_
+#define API_PEER_CONNECTION_PROXY_H_
 
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "api/peerconnectioninterface.h"
+#include "api/peer_connection_interface.h"
 #include "api/proxy.h"
 
 namespace webrtc {
@@ -141,4 +141,4 @@ END_PROXY_MAP()
 
 }  // namespace webrtc
 
-#endif  // API_PEERCONNECTIONPROXY_H_
+#endif  // API_PEER_CONNECTION_PROXY_H_

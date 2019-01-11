@@ -17,7 +17,7 @@
 #endif
 
 #include "media/base/h264_profile_level_id.h"
-#include "media/base/mediaconstants.h"
+#include "media/base/media_constants.h"
 
 namespace {
 

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "api/datachannelinterface.h"
+#include "api/data_channel_interface.h"
 
 namespace webrtc {
 

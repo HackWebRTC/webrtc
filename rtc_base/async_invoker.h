@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_ASYNCINVOKER_H_
-#define RTC_BASE_ASYNCINVOKER_H_
+#ifndef RTC_BASE_ASYNC_INVOKER_H_
+#define RTC_BASE_ASYNC_INVOKER_H_
 
 #include <atomic>
 #include <memory>
 #include <utility>
 
-#include "rtc_base/asyncinvoker-inl.h"
+#include "rtc_base/async_invoker_inl.h"
 #include "rtc_base/bind.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/event.h"
-#include "rtc_base/refcountedobject.h"
+#include "rtc_base/ref_counted_object.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
@@ -262,4 +262,4 @@ class GuardedAsyncInvoker : public sigslot::has_slots<> {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_ASYNCINVOKER_H_
+#endif  // RTC_BASE_ASYNC_INVOKER_H_

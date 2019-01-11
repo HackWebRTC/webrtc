@@ -14,8 +14,8 @@
 #include <memory>
 #include <utility>
 
-#include "media/engine/webrtcvideodecoderfactory.h"
-#include "media/engine/webrtcvideoencoderfactory.h"
+#include "media/engine/webrtc_video_decoder_factory.h"
+#include "media/engine/webrtc_video_encoder_factory.h"
 #include "rtc_base/deprecation.h"
 #include "rtc_base/system/rtc_export.h"
 

@@ -17,8 +17,8 @@
 // * draft-lennox-mmusic-sdp-source-selection-02 -
 //   Mechanisms for Media Source Selection in SDP
 
-#ifndef PC_WEBRTCSDP_H_
-#define PC_WEBRTCSDP_H_
+#ifndef PC_WEBRTC_SDP_H_
+#define PC_WEBRTC_SDP_H_
 
 #include <string>
 
@@ -86,4 +86,4 @@ RTC_EXPORT bool SdpDeserializeCandidate(const std::string& transport_name,
 
 }  // namespace webrtc
 
-#endif  // PC_WEBRTCSDP_H_
+#endif  // PC_WEBRTC_SDP_H_

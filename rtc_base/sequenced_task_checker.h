@@ -17,7 +17,7 @@
 #define ENABLE_SEQUENCED_TASK_CHECKER RTC_DCHECK_IS_ON
 
 #include "rtc_base/checks.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/sequenced_task_checker_impl.h"
 #include "rtc_base/thread_annotations.h"
 

@@ -13,8 +13,8 @@
 #include <utility>
 
 #include "rtc_base/checks.h"
-#include "rtc_base/refcount.h"
-#include "rtc_base/refcounter.h"
+#include "rtc_base/ref_count.h"
+#include "rtc_base/ref_counter.h"
 #include "rtc_base/sequenced_task_checker.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/thread_checker.h"

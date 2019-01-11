@@ -16,7 +16,7 @@
 #include "absl/types/optional.h"
 #include "api/audio_codecs/audio_decoder.h"
 #include "modules/audio_coding/codecs/isac/locked_bandwidth_info.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {

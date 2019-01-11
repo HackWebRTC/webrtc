@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/gtest_prod_util.h"
 
 // This is a very basic command line parsing class. We pass the command line

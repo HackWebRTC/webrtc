@@ -7,15 +7,15 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef RTC_BASE_REFCOUNTEDOBJECT_H_
-#define RTC_BASE_REFCOUNTEDOBJECT_H_
+#ifndef RTC_BASE_REF_COUNTED_OBJECT_H_
+#define RTC_BASE_REF_COUNTED_OBJECT_H_
 
 #include <type_traits>
 #include <utility>
 
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/refcount.h"
-#include "rtc_base/refcounter.h"
+#include "rtc_base/constructor_magic.h"
+#include "rtc_base/ref_count.h"
+#include "rtc_base/ref_counter.h"
 
 namespace rtc {
 
@@ -61,4 +61,4 @@ class RefCountedObject : public T {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_REFCOUNTEDOBJECT_H_
+#endif  // RTC_BASE_REF_COUNTED_OBJECT_H_

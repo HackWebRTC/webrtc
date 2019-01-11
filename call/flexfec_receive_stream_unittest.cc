@@ -16,7 +16,7 @@
 #include "api/array_view.h"
 #include "api/call/transport.h"
 #include "api/rtp_headers.h"
-#include "api/rtpparameters.h"
+#include "api/rtp_parameters.h"
 #include "call/flexfec_receive_stream.h"
 #include "call/flexfec_receive_stream_impl.h"
 #include "call/rtp_stream_receiver_controller.h"

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_CONSTRUCTORMAGIC_H_
-#define RTC_BASE_CONSTRUCTORMAGIC_H_
+#ifndef RTC_BASE_CONSTRUCTOR_MAGIC_H_
+#define RTC_BASE_CONSTRUCTOR_MAGIC_H_
 
 // Put this in the declarations for a class to be unassignable.
 #define RTC_DISALLOW_ASSIGN(TypeName) \
@@ -31,4 +31,4 @@
   TypeName() = delete;                               \
   RTC_DISALLOW_COPY_AND_ASSIGN(TypeName)
 
-#endif  // RTC_BASE_CONSTRUCTORMAGIC_H_
+#endif  // RTC_BASE_CONSTRUCTOR_MAGIC_H_

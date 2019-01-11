@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef API_CRYPTO_FRAMEDECRYPTORINTERFACE_H_
-#define API_CRYPTO_FRAMEDECRYPTORINTERFACE_H_
+#ifndef API_CRYPTO_FRAME_DECRYPTOR_INTERFACE_H_
+#define API_CRYPTO_FRAME_DECRYPTOR_INTERFACE_H_
 
 #include <vector>
 
 #include "api/array_view.h"
-#include "api/mediatypes.h"
-#include "rtc_base/refcount.h"
+#include "api/media_types.h"
+#include "rtc_base/ref_count.h"
 
 namespace webrtc {
 
@@ -56,4 +56,4 @@ class FrameDecryptorInterface : public rtc::RefCountInterface {
 
 }  // namespace webrtc
 
-#endif  // API_CRYPTO_FRAMEDECRYPTORINTERFACE_H_
+#endif  // API_CRYPTO_FRAME_DECRYPTOR_INTERFACE_H_

@@ -13,7 +13,7 @@
 #include "modules/video_capture/video_capture_config.h"
 #include "modules/video_capture/windows/help_functions_ds.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/stringutils.h"
+#include "rtc_base/string_utils.h"
 
 #include <dvdmedia.h>
 #include <streams.h>

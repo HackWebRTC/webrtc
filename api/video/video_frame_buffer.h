@@ -13,7 +13,7 @@
 
 #include <stdint.h>
 
-#include "rtc_base/refcount.h"
+#include "rtc_base/ref_count.h"
 #include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {

@@ -17,7 +17,7 @@
 #include "common_audio/wav_file.h"
 #include "common_audio/wav_header.h"
 #include "test/gtest.h"
-#include "test/testsupport/fileutils.h"
+#include "test/testsupport/file_utils.h"
 
 // WavWriterTest.CPPFileDescriptor and WavWriterTest.CPP flaky on Mac.
 // See webrtc:9247.

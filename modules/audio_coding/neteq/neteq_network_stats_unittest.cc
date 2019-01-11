@@ -17,7 +17,7 @@
 
 #include "modules/audio_coding/neteq/include/neteq.h"
 #include "modules/audio_coding/neteq/tools/rtp_generator.h"
-#include "rtc_base/refcountedobject.h"
+#include "rtc_base/ref_counted_object.h"
 #include "test/audio_decoder_proxy_factory.h"
 #include "test/gmock.h"
 

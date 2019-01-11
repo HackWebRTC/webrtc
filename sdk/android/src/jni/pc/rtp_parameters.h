@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SDK_ANDROID_SRC_JNI_PC_RTPPARAMETERS_H_
-#define SDK_ANDROID_SRC_JNI_PC_RTPPARAMETERS_H_
+#ifndef SDK_ANDROID_SRC_JNI_PC_RTP_PARAMETERS_H_
+#define SDK_ANDROID_SRC_JNI_PC_RTP_PARAMETERS_H_
 
 #include <jni.h>
 
-#include "api/rtpparameters.h"
+#include "api/rtp_parameters.h"
 #include "sdk/android/native_api/jni/scoped_java_ref.h"
 
 namespace webrtc {
@@ -32,4 +32,4 @@ ScopedJavaLocalRef<jobject> NativeToJavaRtpParameters(
 }  // namespace jni
 }  // namespace webrtc
 
-#endif  // SDK_ANDROID_SRC_JNI_PC_RTPPARAMETERS_H_
+#endif  // SDK_ANDROID_SRC_JNI_PC_RTP_PARAMETERS_H_

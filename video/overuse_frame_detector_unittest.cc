@@ -15,7 +15,7 @@
 #include "api/video/i420_buffer.h"
 #include "modules/video_coding/utility/quality_scaler.h"
 #include "rtc_base/event.h"
-#include "rtc_base/fakeclock.h"
+#include "rtc_base/fake_clock.h"
 #include "rtc_base/random.h"
 #include "test/gmock.h"
 #include "test/gtest.h"

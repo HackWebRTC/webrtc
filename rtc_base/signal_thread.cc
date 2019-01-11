@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/signalthread.h"
+#include "rtc_base/signal_thread.h"
 
 #include <memory>
 
 #include "absl/memory/memory.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/location.h"
-#include "rtc_base/nullsocketserver.h"
-#include "rtc_base/socketserver.h"
+#include "rtc_base/null_socket_server.h"
+#include "rtc_base/socket_server.h"
 
 namespace rtc {
 

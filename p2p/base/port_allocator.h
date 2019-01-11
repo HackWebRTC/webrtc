@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_PORTALLOCATOR_H_
-#define P2P_BASE_PORTALLOCATOR_H_
+#ifndef P2P_BASE_PORT_ALLOCATOR_H_
+#define P2P_BASE_PORT_ALLOCATOR_H_
 
 #include <deque>
 #include <memory>
@@ -17,10 +17,10 @@
 #include <vector>
 
 #include "p2p/base/port.h"
-#include "p2p/base/portinterface.h"
+#include "p2p/base/port_interface.h"
 #include "rtc_base/helpers.h"
-#include "rtc_base/proxyinfo.h"
-#include "rtc_base/sslcertificate.h"
+#include "rtc_base/proxy_info.h"
+#include "rtc_base/ssl_certificate.h"
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
@@ -626,4 +626,4 @@ class RTC_EXPORT PortAllocator : public sigslot::has_slots<> {
 
 }  // namespace cricket
 
-#endif  // P2P_BASE_PORTALLOCATOR_H_
+#endif  // P2P_BASE_PORT_ALLOCATOR_H_

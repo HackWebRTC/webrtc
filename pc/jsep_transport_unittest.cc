@@ -13,10 +13,10 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
-#include "media/base/fakertp.h"
-#include "p2p/base/fakedtlstransport.h"
-#include "p2p/base/fakeicetransport.h"
-#include "pc/jseptransport.h"
+#include "media/base/fake_rtp.h"
+#include "p2p/base/fake_dtls_transport.h"
+#include "p2p/base/fake_ice_transport.h"
+#include "pc/jsep_transport.h"
 #include "rtc_base/gunit.h"
 
 namespace cricket {

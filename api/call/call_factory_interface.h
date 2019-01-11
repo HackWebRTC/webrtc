@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef API_CALL_CALLFACTORYINTERFACE_H_
-#define API_CALL_CALLFACTORYINTERFACE_H_
+#ifndef API_CALL_CALL_FACTORY_INTERFACE_H_
+#define API_CALL_CALL_FACTORY_INTERFACE_H_
 
 #include <memory>
 
@@ -33,4 +33,4 @@ std::unique_ptr<CallFactoryInterface> CreateCallFactory();
 
 }  // namespace webrtc
 
-#endif  // API_CALL_CALLFACTORYINTERFACE_H_
+#endif  // API_CALL_CALL_FACTORY_INTERFACE_H_

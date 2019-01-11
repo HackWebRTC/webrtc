@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_NETHELPERS_H_
-#define RTC_BASE_NETHELPERS_H_
+#ifndef RTC_BASE_NET_HELPERS_H_
+#define RTC_BASE_NET_HELPERS_H_
 
 #if defined(WEBRTC_POSIX)
 #include <sys/socket.h>
@@ -19,10 +19,10 @@
 
 #include <vector>
 
-#include "rtc_base/asyncresolverinterface.h"
-#include "rtc_base/ipaddress.h"
-#include "rtc_base/signalthread.h"
-#include "rtc_base/socketaddress.h"
+#include "rtc_base/async_resolver_interface.h"
+#include "rtc_base/ip_address.h"
+#include "rtc_base/signal_thread.h"
+#include "rtc_base/socket_address.h"
 
 namespace rtc {
 
@@ -60,4 +60,4 @@ bool HasIPv4Enabled();
 bool HasIPv6Enabled();
 }  // namespace rtc
 
-#endif  // RTC_BASE_NETHELPERS_H_
+#endif  // RTC_BASE_NET_HELPERS_H_

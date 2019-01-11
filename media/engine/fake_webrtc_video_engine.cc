@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "media/engine/fakewebrtcvideoengine.h"
+#include "media/engine/fake_webrtc_video_engine.h"
 
 #include <algorithm>
 
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "media/base/codec.h"
-#include "media/base/mediaconstants.h"
+#include "media/base/media_constants.h"
 #include "media/engine/simulcast_encoder_adapter.h"
 #include "modules/video_coding/include/video_error_codes.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"
 
 namespace cricket {
 

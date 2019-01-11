@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_NETWORKMONITOR_H_
-#define RTC_BASE_NETWORKMONITOR_H_
+#ifndef RTC_BASE_NETWORK_MONITOR_H_
+#define RTC_BASE_NETWORK_MONITOR_H_
 
 #include "rtc_base/network_constants.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
@@ -120,4 +120,4 @@ class NetworkMonitorFactory {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_NETWORKMONITOR_H_
+#endif  // RTC_BASE_NETWORK_MONITOR_H_

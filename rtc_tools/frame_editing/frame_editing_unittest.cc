@@ -18,7 +18,7 @@
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "rtc_tools/frame_editing/frame_editing_lib.h"
 #include "test/gtest.h"
-#include "test/testsupport/fileutils.h"
+#include "test/testsupport/file_utils.h"
 
 namespace webrtc {
 namespace test {

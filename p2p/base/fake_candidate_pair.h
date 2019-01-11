@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_FAKECANDIDATEPAIR_H_
-#define P2P_BASE_FAKECANDIDATEPAIR_H_
+#ifndef P2P_BASE_FAKE_CANDIDATE_PAIR_H_
+#define P2P_BASE_FAKE_CANDIDATE_PAIR_H_
 
 #include <memory>
 
 #include "api/candidate.h"
-#include "p2p/base/candidatepairinterface.h"
+#include "p2p/base/candidate_pair_interface.h"
 
 namespace cricket {
 
@@ -51,4 +51,4 @@ class FakeCandidatePair : public CandidatePairInterface {
 
 }  // namespace cricket
 
-#endif  // P2P_BASE_FAKECANDIDATEPAIR_H_
+#endif  // P2P_BASE_FAKE_CANDIDATE_PAIR_H_

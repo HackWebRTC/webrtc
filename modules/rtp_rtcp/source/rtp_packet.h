@@ -16,7 +16,7 @@
 #include "api/array_view.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "rtc_base/copyonwritebuffer.h"
+#include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/deprecation.h"
 
 namespace webrtc {

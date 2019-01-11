@@ -17,7 +17,7 @@
 
 #include "modules/desktop_capture/linux/x_error_trap.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/logging.h"
 
 namespace webrtc {

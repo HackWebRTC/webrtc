@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_LOGSINKS_H_
-#define RTC_BASE_LOGSINKS_H_
+#ifndef RTC_BASE_LOG_SINKS_H_
+#define RTC_BASE_LOG_SINKS_H_
 
 #include <stddef.h>
 #include <memory>
 #include <string>
 
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/filerotatingstream.h"
+#include "rtc_base/constructor_magic.h"
+#include "rtc_base/file_rotating_stream.h"
 #include "rtc_base/logging.h"
 
 namespace rtc {
@@ -69,4 +69,4 @@ class CallSessionFileRotatingLogSink : public FileRotatingLogSink {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_LOGSINKS_H_
+#endif  // RTC_BASE_LOG_SINKS_H_

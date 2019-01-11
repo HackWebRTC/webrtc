@@ -21,7 +21,7 @@
 #include "modules/audio_processing/agc/agc.h"
 #include "rtc_base/flags.h"
 #include "test/gtest.h"
-#include "test/testsupport/fileutils.h"
+#include "test/testsupport/file_utils.h"
 
 WEBRTC_DEFINE_string(in_file_name, "", "PCM file that contains the signal.");
 WEBRTC_DEFINE_string(detection_file_name,

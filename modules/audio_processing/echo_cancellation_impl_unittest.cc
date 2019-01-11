@@ -13,7 +13,7 @@
 #include "modules/audio_processing/aec/aec_core.h"
 #include "modules/audio_processing/echo_cancellation_impl.h"
 #include "modules/audio_processing/include/audio_processing.h"
-#include "rtc_base/criticalsection.h"
+#include "rtc_base/critical_section.h"
 #include "test/gtest.h"
 
 namespace webrtc {

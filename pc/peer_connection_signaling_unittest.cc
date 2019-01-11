@@ -16,20 +16,20 @@
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/create_peerconnection_factory.h"
-#include "api/peerconnectionproxy.h"
+#include "api/peer_connection_proxy.h"
 #include "api/video_codecs/builtin_video_decoder_factory.h"
 #include "api/video_codecs/builtin_video_encoder_factory.h"
-#include "pc/peerconnection.h"
-#include "pc/peerconnectionwrapper.h"
-#include "pc/sdputils.h"
+#include "pc/peer_connection.h"
+#include "pc/peer_connection_wrapper.h"
+#include "pc/sdp_utils.h"
 #ifdef WEBRTC_ANDROID
-#include "pc/test/androidtestinitializer.h"
+#include "pc/test/android_test_initializer.h"
 #endif
 #include "absl/memory/memory.h"
-#include "pc/test/fakeaudiocapturemodule.h"
-#include "pc/test/fakertccertificategenerator.h"
+#include "pc/test/fake_audio_capture_module.h"
+#include "pc/test/fake_rtc_certificate_generator.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/virtualsocketserver.h"
+#include "rtc_base/virtual_socket_server.h"
 #include "test/gmock.h"
 
 namespace webrtc {

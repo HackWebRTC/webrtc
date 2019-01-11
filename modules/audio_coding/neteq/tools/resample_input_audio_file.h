@@ -15,7 +15,7 @@
 
 #include "common_audio/resampler/include/resampler.h"
 #include "modules/audio_coding/neteq/tools/input_audio_file.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 
 namespace webrtc {
 namespace test {

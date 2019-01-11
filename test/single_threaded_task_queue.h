@@ -14,7 +14,7 @@
 #include <list>
 #include <memory>
 
-#include "rtc_base/criticalsection.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/event.h"
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/thread_checker.h"

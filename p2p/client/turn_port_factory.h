@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_CLIENT_TURNPORTFACTORY_H_
-#define P2P_CLIENT_TURNPORTFACTORY_H_
+#ifndef P2P_CLIENT_TURN_PORT_FACTORY_H_
+#define P2P_CLIENT_TURN_PORT_FACTORY_H_
 
 #include <memory>
 
 #include "p2p/base/port.h"
-#include "p2p/client/relayportfactoryinterface.h"
-#include "rtc_base/asyncpacketsocket.h"
+#include "p2p/client/relay_port_factory_interface.h"
+#include "rtc_base/async_packet_socket.h"
 
 namespace cricket {
 
@@ -34,4 +34,4 @@ class TurnPortFactory : public RelayPortFactoryInterface {
 
 }  // namespace cricket
 
-#endif  // P2P_CLIENT_TURNPORTFACTORY_H_
+#endif  // P2P_CLIENT_TURN_PORT_FACTORY_H_

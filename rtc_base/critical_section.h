@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_CRITICALSECTION_H_
-#define RTC_BASE_CRITICALSECTION_H_
+#ifndef RTC_BASE_CRITICAL_SECTION_H_
+#define RTC_BASE_CRITICAL_SECTION_H_
 
 #include "rtc_base/checks.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/platform_thread_types.h"
 #include "rtc_base/thread_annotations.h"
 
@@ -157,4 +157,4 @@ class RTC_SCOPED_LOCKABLE GlobalLockScope {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_CRITICALSECTION_H_
+#endif  // RTC_BASE_CRITICAL_SECTION_H_

@@ -16,9 +16,9 @@
 #include <vector>
 
 #include "api/array_view.h"
-#include "api/crypto/framedecryptorinterface.h"
-#include "api/mediatypes.h"
-#include "rtc_base/refcountedobject.h"
+#include "api/crypto/frame_decryptor_interface.h"
+#include "api/media_types.h"
+#include "rtc_base/ref_counted_object.h"
 
 namespace webrtc {
 

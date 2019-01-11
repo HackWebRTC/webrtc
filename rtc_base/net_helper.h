@@ -7,8 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef RTC_BASE_NETHELPER_H_
-#define RTC_BASE_NETHELPER_H_
+#ifndef RTC_BASE_NET_HELPER_H_
+#define RTC_BASE_NET_HELPER_H_
 
 #include <string>
 
@@ -29,4 +29,4 @@ int GetProtocolOverhead(const std::string& protocol);
 
 }  // namespace cricket
 
-#endif  // RTC_BASE_NETHELPER_H_
+#endif  // RTC_BASE_NET_HELPER_H_

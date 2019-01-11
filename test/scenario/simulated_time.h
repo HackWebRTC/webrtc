@@ -24,7 +24,7 @@
 #include "api/units/data_size.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
-#include "rtc_base/copyonwritebuffer.h"
+#include "rtc_base/copy_on_write_buffer.h"
 #include "test/scenario/call_client.h"
 #include "test/scenario/network_node.h"
 #include "test/scenario/scenario_config.h"

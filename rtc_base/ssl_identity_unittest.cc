@@ -14,13 +14,13 @@
 #include <vector>
 
 #include "rtc_base/checks.h"
-#include "rtc_base/fakesslidentity.h"
+#include "rtc_base/fake_ssl_identity.h"
 #include "rtc_base/helpers.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/messagedigest.h"
-#include "rtc_base/sslfingerprint.h"
-#include "rtc_base/sslidentity.h"
-#include "rtc_base/stringutils.h"
+#include "rtc_base/message_digest.h"
+#include "rtc_base/ssl_fingerprint.h"
+#include "rtc_base/ssl_identity.h"
+#include "rtc_base/string_utils.h"
 #include "test/gtest.h"
 
 using rtc::SSLIdentity;

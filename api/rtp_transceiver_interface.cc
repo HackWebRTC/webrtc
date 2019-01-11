@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "api/rtptransceiverinterface.h"
+#include "api/rtp_transceiver_interface.h"
 
 #include "rtc_base/checks.h"
 

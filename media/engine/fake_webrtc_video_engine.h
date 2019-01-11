@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MEDIA_ENGINE_FAKEWEBRTCVIDEOENGINE_H_
-#define MEDIA_ENGINE_FAKEWEBRTCVIDEOENGINE_H_
+#ifndef MEDIA_ENGINE_FAKE_WEBRTC_VIDEO_ENGINE_H_
+#define MEDIA_ENGINE_FAKE_WEBRTC_VIDEO_ENGINE_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -28,7 +28,7 @@
 #include "api/video_codecs/video_encoder_factory.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/include/video_codec_interface.h"
-#include "rtc_base/criticalsection.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/event.h"
 #include "rtc_base/thread_annotations.h"
 
@@ -140,4 +140,4 @@ class FakeWebRtcVideoEncoderFactory : public webrtc::VideoEncoderFactory {
 
 }  // namespace cricket
 
-#endif  // MEDIA_ENGINE_FAKEWEBRTCVIDEOENGINE_H_
+#endif  // MEDIA_ENGINE_FAKE_WEBRTC_VIDEO_ENGINE_H_

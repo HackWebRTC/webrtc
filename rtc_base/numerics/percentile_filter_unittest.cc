@@ -14,7 +14,7 @@
 #include <cstdint>
 #include <random>
 
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/numerics/percentile_filter.h"
 #include "test/gtest.h"
 

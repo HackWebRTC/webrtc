@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_PROXYINFO_H_
-#define RTC_BASE_PROXYINFO_H_
+#ifndef RTC_BASE_PROXY_INFO_H_
+#define RTC_BASE_PROXY_INFO_H_
 
 #include <string>
-#include "rtc_base/cryptstring.h"
-#include "rtc_base/socketaddress.h"
+#include "rtc_base/crypt_string.h"
+#include "rtc_base/socket_address.h"
 
 namespace rtc {
 
@@ -35,4 +35,4 @@ struct ProxyInfo {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_PROXYINFO_H_
+#endif  // RTC_BASE_PROXY_INFO_H_

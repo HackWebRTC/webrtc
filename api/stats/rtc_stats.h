@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef API_STATS_RTCSTATS_H_
-#define API_STATS_RTCSTATS_H_
+#ifndef API_STATS_RTC_STATS_H_
+#define API_STATS_RTC_STATS_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -348,4 +348,4 @@ class RTCNonStandardStatsMember : public RTCStatsMember<T> {
 };
 }  // namespace webrtc
 
-#endif  // API_STATS_RTCSTATS_H_
+#endif  // API_STATS_RTC_STATS_H_

@@ -14,7 +14,7 @@
 #include <stdint.h>
 #include <memory>
 
-#include "api/rtceventlogoutput.h"
+#include "api/rtc_event_log_output.h"
 #include "logging/rtc_event_log/events/rtc_event.h"
 
 namespace webrtc {

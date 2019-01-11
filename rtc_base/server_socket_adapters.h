@@ -11,7 +11,7 @@
 #ifndef RTC_BASE_SERVER_SOCKET_ADAPTERS_H_
 #define RTC_BASE_SERVER_SOCKET_ADAPTERS_H_
 
-#include "rtc_base/socketadapters.h"
+#include "rtc_base/socket_adapters.h"
 
 namespace rtc {
 

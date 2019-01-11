@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "media/base/turnutils.h"
+#include "media/base/turn_utils.h"
 
 #include "p2p/base/stun.h"
-#include "rtc_base/byteorder.h"
+#include "rtc_base/byte_order.h"
 
 namespace cricket {
 

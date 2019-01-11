@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_MESSAGEHANDLER_H_
-#define RTC_BASE_MESSAGEHANDLER_H_
+#ifndef RTC_BASE_MESSAGE_HANDLER_H_
+#define RTC_BASE_MESSAGE_HANDLER_H_
 
 #include <utility>
 
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 
 namespace rtc {
 
@@ -67,4 +67,4 @@ class FunctorMessageHandler<void, FunctorT> : public MessageHandler {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_MESSAGEHANDLER_H_
+#endif  // RTC_BASE_MESSAGE_HANDLER_H_

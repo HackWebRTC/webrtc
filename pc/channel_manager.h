@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_CHANNELMANAGER_H_
-#define PC_CHANNELMANAGER_H_
+#ifndef PC_CHANNEL_MANAGER_H_
+#define PC_CHANNEL_MANAGER_H_
 
 #include <stdint.h>
 #include <memory>
@@ -17,16 +17,16 @@
 #include <vector>
 
 #include "api/audio_options.h"
-#include "api/crypto/cryptooptions.h"
+#include "api/crypto/crypto_options.h"
 #include "api/media_transport_interface.h"
 #include "call/call.h"
 #include "media/base/codec.h"
-#include "media/base/mediachannel.h"
-#include "media/base/mediaconfig.h"
-#include "media/base/mediaengine.h"
+#include "media/base/media_channel.h"
+#include "media/base/media_config.h"
+#include "media/base/media_engine.h"
 #include "pc/channel.h"
-#include "pc/rtptransportinternal.h"
-#include "pc/sessiondescription.h"
+#include "pc/rtp_transport_internal.h"
+#include "pc/session_description.h"
 #include "rtc_base/platform_file.h"
 #include "rtc_base/thread.h"
 
@@ -172,4 +172,4 @@ class ChannelManager final {
 
 }  // namespace cricket
 
-#endif  // PC_CHANNELMANAGER_H_
+#endif  // PC_CHANNEL_MANAGER_H_

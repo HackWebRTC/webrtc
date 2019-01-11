@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/externalhmac.h"
+#include "pc/external_hmac.h"
 
 #include <stdlib.h>  // For malloc/free.
 #include <string.h>

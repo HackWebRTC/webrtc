@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_PACKETSOCKETFACTORY_H_
-#define P2P_BASE_PACKETSOCKETFACTORY_H_
+#ifndef P2P_BASE_PACKET_SOCKET_FACTORY_H_
+#define P2P_BASE_PACKET_SOCKET_FACTORY_H_
 
 #include <string>
 #include <vector>
 
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/proxyinfo.h"
-#include "rtc_base/sslcertificate.h"
+#include "rtc_base/constructor_magic.h"
+#include "rtc_base/proxy_info.h"
+#include "rtc_base/ssl_certificate.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace rtc {
@@ -91,4 +91,4 @@ class RTC_EXPORT PacketSocketFactory {
 
 }  // namespace rtc
 
-#endif  // P2P_BASE_PACKETSOCKETFACTORY_H_
+#endif  // P2P_BASE_PACKET_SOCKET_FACTORY_H_

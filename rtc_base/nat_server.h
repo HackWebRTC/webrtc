@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_NATSERVER_H_
-#define RTC_BASE_NATSERVER_H_
+#ifndef RTC_BASE_NAT_SERVER_H_
+#define RTC_BASE_NAT_SERVER_H_
 
 #include <map>
 #include <set>
 
-#include "rtc_base/asyncudpsocket.h"
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/nattypes.h"
-#include "rtc_base/proxyserver.h"
-#include "rtc_base/socketaddresspair.h"
-#include "rtc_base/socketfactory.h"
+#include "rtc_base/async_udp_socket.h"
+#include "rtc_base/constructor_magic.h"
+#include "rtc_base/nat_types.h"
+#include "rtc_base/proxy_server.h"
+#include "rtc_base/socket_address_pair.h"
+#include "rtc_base/socket_factory.h"
 #include "rtc_base/thread.h"
 
 namespace rtc {
@@ -126,4 +126,4 @@ class NATServer : public sigslot::has_slots<> {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_NATSERVER_H_
+#endif  // RTC_BASE_NAT_SERVER_H_

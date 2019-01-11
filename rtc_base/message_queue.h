@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_MESSAGEQUEUE_H_
-#define RTC_BASE_MESSAGEQUEUE_H_
+#ifndef RTC_BASE_MESSAGE_QUEUE_H_
+#define RTC_BASE_MESSAGE_QUEUE_H_
 
 #include <string.h>
 
@@ -19,12 +19,12 @@
 #include <queue>
 #include <vector>
 
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/criticalsection.h"
+#include "rtc_base/constructor_magic.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/location.h"
-#include "rtc_base/messagehandler.h"
+#include "rtc_base/message_handler.h"
 #include "rtc_base/scoped_ref_ptr.h"
-#include "rtc_base/socketserver.h"
+#include "rtc_base/socket_server.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread_annotations.h"
 
@@ -330,4 +330,4 @@ class MessageQueue {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_MESSAGEQUEUE_H_
+#endif  // RTC_BASE_MESSAGE_QUEUE_H_

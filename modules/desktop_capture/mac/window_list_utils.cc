@@ -17,7 +17,7 @@
 #include <iterator>
 
 #include "rtc_base/checks.h"
-#include "rtc_base/macutils.h"
+#include "rtc_base/mac_utils.h"
 
 static_assert(static_cast<webrtc::WindowId>(kCGNullWindowID) ==
                   webrtc::kNullWindowId,

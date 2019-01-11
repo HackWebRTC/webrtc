@@ -20,7 +20,7 @@
 #include "modules/remote_bitrate_estimator/test/bwe_test_framework.h"
 #include "modules/remote_bitrate_estimator/test/metric_recorder.h"
 #include "modules/remote_bitrate_estimator/test/packet.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 
 namespace webrtc {
 namespace testing {

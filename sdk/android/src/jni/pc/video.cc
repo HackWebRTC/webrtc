@@ -15,12 +15,12 @@
 
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
-#include "api/videosourceproxy.h"
+#include "api/video_track_source_proxy.h"
 #include "rtc_base/logging.h"
 #include "sdk/android/native_api/jni/java_types.h"
-#include "sdk/android/src/jni/androidvideotracksource.h"
-#include "sdk/android/src/jni/videodecoderfactorywrapper.h"
-#include "sdk/android/src/jni/videoencoderfactorywrapper.h"
+#include "sdk/android/src/jni/android_video_track_source.h"
+#include "sdk/android/src/jni/video_decoder_factory_wrapper.h"
+#include "sdk/android/src/jni/video_encoder_factory_wrapper.h"
 
 namespace webrtc {
 namespace jni {

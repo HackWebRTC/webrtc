@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "p2p/base/pseudotcp.h"
+#include "p2p/base/pseudo_tcp.h"
 
 #include <errno.h>
 #include <stdio.h>
@@ -17,13 +17,13 @@
 #include <memory>
 #include <set>
 
-#include "rtc_base/bytebuffer.h"
-#include "rtc_base/byteorder.h"
+#include "rtc_base/byte_buffer.h"
+#include "rtc_base/byte_order.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_minmax.h"
 #include "rtc_base/socket.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"
 
 // The following logging is for detailed (packet-level) analysis only.
 #define _DBG_NONE 0

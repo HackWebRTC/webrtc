@@ -14,9 +14,9 @@
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "rtc_base/flags.h"
-#include "rtc_base/socketaddress.h"
+#include "rtc_base/socket_address.h"
 #include "test/scenario/network/network_emulation.h"
-#include "test/testsupport/fileutils.h"
+#include "test/testsupport/file_utils.h"
 
 WEBRTC_DEFINE_bool(scenario_logs, false, "Save logs from scenario framework.");
 WEBRTC_DEFINE_string(out_root,

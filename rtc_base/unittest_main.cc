@@ -16,15 +16,15 @@
 
 #include "rtc_base/flags.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/ssladapter.h"
-#include "rtc_base/sslstreamadapter.h"
+#include "rtc_base/ssl_adapter.h"
+#include "rtc_base/ssl_stream_adapter.h"
 #include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/metrics.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
 
 #if defined(WEBRTC_WIN)
-#include "rtc_base/win32socketinit.h"
+#include "rtc_base/win32_socket_init.h"
 #endif
 
 #if defined(WEBRTC_IOS)

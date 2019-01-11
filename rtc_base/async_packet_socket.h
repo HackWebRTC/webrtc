@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_ASYNCPACKETSOCKET_H_
-#define RTC_BASE_ASYNCPACKETSOCKET_H_
+#ifndef RTC_BASE_ASYNC_PACKET_SOCKET_H_
+#define RTC_BASE_ASYNC_PACKET_SOCKET_H_
 
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/dscp.h"
 #include "rtc_base/network/sent_packet.h"
 #include "rtc_base/socket.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"
 
 namespace rtc {
 
@@ -140,4 +140,4 @@ void CopySocketInformationToPacketInfo(size_t packet_size_bytes,
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_ASYNCPACKETSOCKET_H_
+#endif  // RTC_BASE_ASYNC_PACKET_SOCKET_H_

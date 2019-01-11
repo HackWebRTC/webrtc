@@ -15,11 +15,11 @@
 #include "absl/memory/memory.h"
 #include "api/test/create_videocodec_test_fixture.h"
 #include "common_types.h"  // NOLINT(build/include)
-#include "media/base/mediaconstants.h"
+#include "media/base/media_constants.h"
 #include "modules/video_coding/codecs/test/android_codec_factory_helper.h"
 #include "modules/video_coding/codecs/test/videocodec_test_fixture_impl.h"
 #include "test/gtest.h"
-#include "test/testsupport/fileutils.h"
+#include "test/testsupport/file_utils.h"
 
 namespace webrtc {
 namespace test {

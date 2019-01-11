@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "sdk/android/src/jni/videocodecinfo.h"
+#include "sdk/android/src/jni/video_codec_info.h"
 
 #include "common_video/h264/profile_level_id.h"
 #include "sdk/android/generated_video_jni/jni/H264Utils_jni.h"

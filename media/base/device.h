@@ -13,7 +13,7 @@
 
 #include <string>
 
-#include "rtc_base/stringencode.h"
+#include "rtc_base/string_encode.h"
 
 namespace cricket {
 

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "p2p/base/transportdescription.h"
+#include "p2p/base/transport_description.h"
 
 #include "absl/strings/match.h"
 #include "rtc_base/arraysize.h"

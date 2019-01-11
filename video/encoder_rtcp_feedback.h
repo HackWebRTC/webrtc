@@ -13,7 +13,7 @@
 #include <vector>
 
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "rtc_base/criticalsection.h"
+#include "rtc_base/critical_section.h"
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {

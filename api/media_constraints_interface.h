@@ -18,15 +18,15 @@
 // be removed from WebRTC.
 // https://bugs.chromium.org/p/webrtc/issues/detail?id=9239
 
-#ifndef API_MEDIACONSTRAINTSINTERFACE_H_
-#define API_MEDIACONSTRAINTSINTERFACE_H_
+#ifndef API_MEDIA_CONSTRAINTS_INTERFACE_H_
+#define API_MEDIA_CONSTRAINTS_INTERFACE_H_
 
 #include <stddef.h>
 #include <string>
 #include <vector>
 
 #include "api/audio_options.h"
-#include "api/peerconnectioninterface.h"
+#include "api/peer_connection_interface.h"
 
 namespace webrtc {
 
@@ -156,4 +156,4 @@ bool CopyConstraintsIntoOfferAnswerOptions(
 
 }  // namespace webrtc
 
-#endif  // API_MEDIACONSTRAINTSINTERFACE_H_
+#endif  // API_MEDIA_CONSTRAINTS_INTERFACE_H_

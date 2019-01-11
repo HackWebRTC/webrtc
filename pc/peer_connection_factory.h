@@ -9,18 +9,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_PEERCONNECTIONFACTORY_H_
-#define PC_PEERCONNECTIONFACTORY_H_
+#ifndef PC_PEER_CONNECTION_FACTORY_H_
+#define PC_PEER_CONNECTION_FACTORY_H_
 
 #include <memory>
 #include <string>
 
+#include "api/media_stream_interface.h"
 #include "api/media_transport_interface.h"
-#include "api/mediastreaminterface.h"
-#include "api/peerconnectioninterface.h"
-#include "media/sctp/sctptransportinternal.h"
-#include "pc/channelmanager.h"
-#include "rtc_base/rtccertificategenerator.h"
+#include "api/peer_connection_interface.h"
+#include "media/sctp/sctp_transport_internal.h"
+#include "pc/channel_manager.h"
+#include "rtc_base/rtc_certificate_generator.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/thread.h"
 
@@ -156,4 +156,4 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
 
 }  // namespace webrtc
 
-#endif  // PC_PEERCONNECTIONFACTORY_H_
+#endif  // PC_PEER_CONNECTION_FACTORY_H_

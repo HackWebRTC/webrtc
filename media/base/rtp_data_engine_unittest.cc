@@ -12,14 +12,14 @@
 #include <memory>
 #include <string>
 
-#include "media/base/fakenetworkinterface.h"
-#include "media/base/mediaconstants.h"
-#include "media/base/rtpdataengine.h"
-#include "media/base/rtputils.h"
-#include "rtc_base/copyonwritebuffer.h"
-#include "rtc_base/fakeclock.h"
+#include "media/base/fake_network_interface.h"
+#include "media/base/media_constants.h"
+#include "media/base/rtp_data_engine.h"
+#include "media/base/rtp_utils.h"
+#include "rtc_base/copy_on_write_buffer.h"
+#include "rtc_base/fake_clock.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"
 #include "test/gtest.h"
 
 class FakeDataReceiver : public sigslot::has_slots<> {

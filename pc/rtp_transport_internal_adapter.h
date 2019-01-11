@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_RTPTRANSPORTINTERNALADAPTER_H_
-#define PC_RTPTRANSPORTINTERNALADAPTER_H_
+#ifndef PC_RTP_TRANSPORT_INTERNAL_ADAPTER_H_
+#define PC_RTP_TRANSPORT_INTERNAL_ADAPTER_H_
 
 #include <memory>
 #include <utility>
 
-#include "pc/rtptransportinternal.h"
+#include "pc/rtp_transport_internal.h"
 
 namespace webrtc {
 
@@ -111,4 +111,4 @@ class RtpTransportInternalAdapter : public RtpTransportInternal {
 
 }  // namespace webrtc
 
-#endif  // PC_RTPTRANSPORTINTERNALADAPTER_H_
+#endif  // PC_RTP_TRANSPORT_INTERNAL_ADAPTER_H_

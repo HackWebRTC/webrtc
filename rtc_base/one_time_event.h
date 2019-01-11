@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_ONETIMEEVENT_H_
-#define RTC_BASE_ONETIMEEVENT_H_
+#ifndef RTC_BASE_ONE_TIME_EVENT_H_
+#define RTC_BASE_ONE_TIME_EVENT_H_
 
-#include "rtc_base/criticalsection.h"
+#include "rtc_base/critical_section.h"
 
 namespace webrtc {
 // Provides a simple way to perform an operation (such as logging) one
@@ -57,4 +57,4 @@ class ThreadUnsafeOneTimeEvent {
 
 }  // namespace webrtc
 
-#endif  // RTC_BASE_ONETIMEEVENT_H_
+#endif  // RTC_BASE_ONE_TIME_EVENT_H_

@@ -18,7 +18,7 @@
 #include "modules/audio_device/include/test_audio_device.h"
 #include "modules/congestion_controller/test/controller_printer.h"
 #include "modules/rtp_rtcp/include/rtp_header_parser.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "test/scenario/column_printer.h"
 #include "test/scenario/network/network_emulation.h"
 #include "test/scenario/network_node.h"

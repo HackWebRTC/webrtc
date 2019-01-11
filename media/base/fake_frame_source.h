@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MEDIA_BASE_FAKEFRAMESOURCE_H_
-#define MEDIA_BASE_FAKEFRAMESOURCE_H_
+#ifndef MEDIA_BASE_FAKE_FRAME_SOURCE_H_
+#define MEDIA_BASE_FAKE_FRAME_SOURCE_H_
 
 #include "api/video/video_frame.h"
 
-#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"
 
 namespace cricket {
 
@@ -48,4 +48,4 @@ class FakeFrameSource {
 
 }  // namespace cricket
 
-#endif  // MEDIA_BASE_FAKEFRAMESOURCE_H_
+#endif  // MEDIA_BASE_FAKE_FRAME_SOURCE_H_

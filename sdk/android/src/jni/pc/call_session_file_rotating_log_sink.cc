@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/logsinks.h"
+#include "rtc_base/log_sinks.h"
 #include "sdk/android/generated_peerconnection_jni/jni/CallSessionFileRotatingLogSink_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/src/jni/jni_helpers.h"

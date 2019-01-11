@@ -11,10 +11,10 @@
 #include <stddef.h>
 #include <string>
 
-#include "pc/audiotrack.h"
-#include "pc/mediastream.h"
-#include "pc/test/fakevideotracksource.h"
-#include "pc/videotrack.h"
+#include "pc/audio_track.h"
+#include "pc/media_stream.h"
+#include "pc/test/fake_video_track_source.h"
+#include "pc/video_track.h"
 #include "rtc_base/thread.h"
 #include "test/gmock.h"
 #include "test/gtest.h"

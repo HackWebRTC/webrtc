@@ -22,10 +22,10 @@
 #include "modules/include/module.h"
 #include "modules/include/module_common_types.h"
 #include "modules/pacing/paced_sender.h"
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/criticalsection.h"
+#include "rtc_base/constructor_magic.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/deprecation.h"
-#include "rtc_base/networkroute.h"
+#include "rtc_base/network_route.h"
 #include "rtc_base/race_checker.h"
 
 namespace rtc {

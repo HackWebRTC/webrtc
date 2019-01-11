@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/virtualsocketserver.h"
+#include "rtc_base/virtual_socket_server.h"
 
 #include <errno.h>
 #include <math.h>
@@ -19,12 +19,12 @@
 #include <vector>
 
 #include "rtc_base/checks.h"
-#include "rtc_base/fakeclock.h"
+#include "rtc_base/fake_clock.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/physicalsocketserver.h"
-#include "rtc_base/socketaddresspair.h"
+#include "rtc_base/physical_socket_server.h"
+#include "rtc_base/socket_address_pair.h"
 #include "rtc_base/thread.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"
 
 namespace rtc {
 #if defined(WEBRTC_WIN)

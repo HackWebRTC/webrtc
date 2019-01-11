@@ -14,9 +14,9 @@
 
 #include "absl/memory/memory.h"
 #include "api/video/video_frame.h"
-#include "media/base/fakeframesource.h"
-#include "media/base/videoadapter.h"
-#include "rtc_base/timeutils.h"
+#include "media/base/fake_frame_source.h"
+#include "media/base/video_adapter.h"
+#include "rtc_base/time_utils.h"
 #include "test/gtest.h"
 
 namespace cricket {

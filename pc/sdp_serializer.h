@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_SDPSERIALIZER_H_
-#define PC_SDPSERIALIZER_H_
+#ifndef PC_SDP_SERIALIZER_H_
+#define PC_SDP_SERIALIZER_H_
 
 #include <string>
 
 #include "absl/strings/string_view.h"
-#include "api/rtcerror.h"
-#include "media/base/riddescription.h"
-#include "pc/sessiondescription.h"
+#include "api/rtc_error.h"
+#include "media/base/rid_description.h"
+#include "pc/session_description.h"
 
 namespace webrtc {
 
@@ -57,4 +57,4 @@ class SdpSerializer {
 
 }  // namespace webrtc
 
-#endif  // PC_SDPSERIALIZER_H_
+#endif  // PC_SDP_SERIALIZER_H_

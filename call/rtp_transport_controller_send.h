@@ -25,8 +25,8 @@
 #include "modules/congestion_controller/rtp/transport_feedback_adapter.h"
 #include "modules/pacing/packet_router.h"
 #include "modules/utility/include/process_thread.h"
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/networkroute.h"
+#include "rtc_base/constructor_magic.h"
+#include "rtc_base/network_route.h"
 #include "rtc_base/race_checker.h"
 #include "rtc_base/task_queue.h"
 

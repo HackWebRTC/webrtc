@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef API_SETREMOTEDESCRIPTIONOBSERVERINTERFACE_H_
-#define API_SETREMOTEDESCRIPTIONOBSERVERINTERFACE_H_
+#ifndef API_SET_REMOTE_DESCRIPTION_OBSERVER_INTERFACE_H_
+#define API_SET_REMOTE_DESCRIPTION_OBSERVER_INTERFACE_H_
 
-#include "api/rtcerror.h"
-#include "rtc_base/refcount.h"
+#include "api/rtc_error.h"
+#include "rtc_base/ref_count.h"
 
 namespace webrtc {
 
@@ -28,4 +28,4 @@ class SetRemoteDescriptionObserverInterface : public rtc::RefCountInterface {
 
 }  // namespace webrtc
 
-#endif  // API_SETREMOTEDESCRIPTIONOBSERVERINTERFACE_H_
+#endif  // API_SET_REMOTE_DESCRIPTION_OBSERVER_INTERFACE_H_

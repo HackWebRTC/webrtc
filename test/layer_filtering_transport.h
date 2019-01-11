@@ -16,7 +16,7 @@
 #include <memory>
 
 #include "api/call/transport.h"
-#include "api/mediatypes.h"
+#include "api/media_types.h"
 #include "call/call.h"
 #include "call/simulated_packet_receiver.h"
 #include "test/direct_transport.h"

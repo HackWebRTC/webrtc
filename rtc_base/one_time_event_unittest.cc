@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/onetimeevent.h"
+#include "rtc_base/one_time_event.h"
 
 #include "test/gtest.h"
 

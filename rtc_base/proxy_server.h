@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_PROXYSERVER_H_
-#define RTC_BASE_PROXYSERVER_H_
+#ifndef RTC_BASE_PROXY_SERVER_H_
+#define RTC_BASE_PROXY_SERVER_H_
 
 #include <list>
 #include <memory>
-#include "rtc_base/asyncsocket.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/async_socket.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/server_socket_adapters.h"
-#include "rtc_base/socketaddress.h"
+#include "rtc_base/socket_address.h"
 #include "rtc_base/stream.h"
 
 namespace rtc {
@@ -101,4 +101,4 @@ class SocksProxyServer : public ProxyServer {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_PROXYSERVER_H_
+#endif  // RTC_BASE_PROXY_SERVER_H_

@@ -17,9 +17,9 @@
 
 #include "api/video/encoded_image.h"
 #include "common_types.h"  // NOLINT(build/include)
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/file.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"
 
 namespace webrtc {
 

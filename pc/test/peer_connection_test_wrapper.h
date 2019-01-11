@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_TEST_PEERCONNECTIONTESTWRAPPER_H_
-#define PC_TEST_PEERCONNECTIONTESTWRAPPER_H_
+#ifndef PC_TEST_PEER_CONNECTION_TEST_WRAPPER_H_
+#define PC_TEST_PEER_CONNECTION_TEST_WRAPPER_H_
 
 #include <memory>
 #include <string>
@@ -18,15 +18,15 @@
 #include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/audio_codecs/audio_encoder_factory.h"
 #include "api/audio_options.h"
-#include "api/datachannelinterface.h"
+#include "api/data_channel_interface.h"
 #include "api/jsep.h"
-#include "api/mediastreaminterface.h"
-#include "api/peerconnectioninterface.h"
-#include "api/rtcerror.h"
-#include "api/rtpreceiverinterface.h"
-#include "api/test/fakeconstraints.h"
-#include "pc/test/fakeaudiocapturemodule.h"
-#include "pc/test/fakevideotrackrenderer.h"
+#include "api/media_stream_interface.h"
+#include "api/peer_connection_interface.h"
+#include "api/rtc_error.h"
+#include "api/rtp_receiver_interface.h"
+#include "api/test/fake_constraints.h"
+#include "pc/test/fake_audio_capture_module.h"
+#include "pc/test/fake_video_track_renderer.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
@@ -126,4 +126,4 @@ class PeerConnectionTestWrapper
   int num_get_user_media_calls_ = 0;
 };
 
-#endif  // PC_TEST_PEERCONNECTIONTESTWRAPPER_H_
+#endif  // PC_TEST_PEER_CONNECTION_TEST_WRAPPER_H_

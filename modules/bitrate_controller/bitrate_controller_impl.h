@@ -23,8 +23,8 @@
 #include <vector>
 
 #include "modules/bitrate_controller/send_side_bandwidth_estimation.h"
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/criticalsection.h"
+#include "rtc_base/constructor_magic.h"
+#include "rtc_base/critical_section.h"
 
 namespace webrtc {
 

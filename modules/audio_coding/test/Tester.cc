@@ -23,7 +23,7 @@
 #include "modules/audio_coding/test/iSACTest.h"
 #include "modules/audio_coding/test/opus_test.h"
 #include "test/gtest.h"
-#include "test/testsupport/fileutils.h"
+#include "test/testsupport/file_utils.h"
 
 TEST(AudioCodingModuleTest, TestAllCodecs) {
   webrtc::TestAllCodecs().Perform();

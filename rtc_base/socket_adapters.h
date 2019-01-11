@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_SOCKETADAPTERS_H_
-#define RTC_BASE_SOCKETADAPTERS_H_
+#ifndef RTC_BASE_SOCKET_ADAPTERS_H_
+#define RTC_BASE_SOCKET_ADAPTERS_H_
 
 #include <string>
 
 #include "api/array_view.h"
-#include "rtc_base/asyncsocket.h"
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/cryptstring.h"
+#include "rtc_base/async_socket.h"
+#include "rtc_base/constructor_magic.h"
+#include "rtc_base/crypt_string.h"
 
 namespace rtc {
 
@@ -167,4 +167,4 @@ class AsyncSocksProxySocket : public BufferedReadAdapter {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_SOCKETADAPTERS_H_
+#endif  // RTC_BASE_SOCKET_ADAPTERS_H_

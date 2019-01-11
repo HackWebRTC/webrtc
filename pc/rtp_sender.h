@@ -12,19 +12,19 @@
 // An RtpSender associates a MediaStreamTrackInterface with an underlying
 // transport (provided by AudioProviderInterface/VideoProviderInterface)
 
-#ifndef PC_RTPSENDER_H_
-#define PC_RTPSENDER_H_
+#ifndef PC_RTP_SENDER_H_
+#define PC_RTP_SENDER_H_
 
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "api/mediastreaminterface.h"
-#include "api/rtpsenderinterface.h"
-#include "media/base/audiosource.h"
-#include "media/base/mediachannel.h"
-#include "pc/dtmfsender.h"
-#include "rtc_base/criticalsection.h"
+#include "api/media_stream_interface.h"
+#include "api/rtp_sender_interface.h"
+#include "media/base/audio_source.h"
+#include "media/base/media_channel.h"
+#include "pc/dtmf_sender.h"
+#include "rtc_base/critical_section.h"
 
 namespace webrtc {
 
@@ -270,4 +270,4 @@ class VideoRtpSender : public ObserverInterface,
 
 }  // namespace webrtc
 
-#endif  // PC_RTPSENDER_H_
+#endif  // PC_RTP_SENDER_H_

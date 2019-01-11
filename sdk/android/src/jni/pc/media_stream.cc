@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "sdk/android/src/jni/pc/mediastream.h"
+#include "sdk/android/src/jni/pc/media_stream.h"
 
 #include "absl/memory/memory.h"
 #include "sdk/android/generated_peerconnection_jni/jni/MediaStream_jni.h"

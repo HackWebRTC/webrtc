@@ -10,12 +10,12 @@
 
 #include <memory>
 
-#include "media/base/fakevideocapturer.h"
-#include "media/base/videocommon.h"
-#include "pc/test/fakevideotrackrenderer.h"
-#include "pc/videotrack.h"
-#include "pc/videotracksource.h"
-#include "rtc_base/refcountedobject.h"
+#include "media/base/fake_video_capturer.h"
+#include "media/base/video_common.h"
+#include "pc/test/fake_video_track_renderer.h"
+#include "pc/video_track.h"
+#include "pc/video_track_source.h"
+#include "rtc_base/ref_counted_object.h"
 #include "test/gtest.h"
 
 using webrtc::FakeVideoTrackRenderer;

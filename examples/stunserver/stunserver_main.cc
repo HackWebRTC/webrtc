@@ -9,10 +9,10 @@
  */
 #include <iostream>
 
-#include "p2p/base/stunserver.h"
-#include "rtc_base/asyncudpsocket.h"
-#include "rtc_base/socketaddress.h"
-#include "rtc_base/socketserver.h"
+#include "p2p/base/stun_server.h"
+#include "rtc_base/async_udp_socket.h"
+#include "rtc_base/socket_address.h"
+#include "rtc_base/socket_server.h"
 #include "rtc_base/thread.h"
 
 using cricket::StunServer;

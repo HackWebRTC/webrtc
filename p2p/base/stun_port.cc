@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "p2p/base/stunport.h"
+#include "p2p/base/stun_port.h"
 
 #include <utility>
 #include <vector>
 
-#include "p2p/base/p2pconstants.h"
-#include "p2p/base/portallocator.h"
+#include "p2p/base/p2p_constants.h"
+#include "p2p/base/port_allocator.h"
 #include "p2p/base/stun.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/helpers.h"
-#include "rtc_base/ipaddress.h"
+#include "rtc_base/ip_address.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/nethelpers.h"
+#include "rtc_base/net_helpers.h"
 #include "rtc_base/strings/string_builder.h"
 
 namespace cricket {

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_STRINGUTILS_H_
-#define RTC_BASE_STRINGUTILS_H_
+#ifndef RTC_BASE_STRING_UTILS_H_
+#define RTC_BASE_STRING_UTILS_H_
 
 #include <ctype.h>
 #include <stdarg.h>
@@ -110,4 +110,4 @@ std::string LeftPad(char padding, unsigned length, std::string s);
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_STRINGUTILS_H_
+#endif  // RTC_BASE_STRING_UTILS_H_

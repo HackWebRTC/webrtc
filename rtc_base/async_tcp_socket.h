@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_ASYNCTCPSOCKET_H_
-#define RTC_BASE_ASYNCTCPSOCKET_H_
+#ifndef RTC_BASE_ASYNC_TCP_SOCKET_H_
+#define RTC_BASE_ASYNC_TCP_SOCKET_H_
 
 #include <stddef.h>
 #include <memory>
 
-#include "rtc_base/asyncpacketsocket.h"
-#include "rtc_base/asyncsocket.h"
+#include "rtc_base/async_packet_socket.h"
+#include "rtc_base/async_socket.h"
 #include "rtc_base/buffer.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/socket.h"
-#include "rtc_base/socketaddress.h"
+#include "rtc_base/socket_address.h"
 
 namespace rtc {
 
@@ -109,4 +109,4 @@ class AsyncTCPSocket : public AsyncTCPSocketBase {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_ASYNCTCPSOCKET_H_
+#endif  // RTC_BASE_ASYNC_TCP_SOCKET_H_

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_CANDIDATEPAIRINTERFACE_H_
-#define P2P_BASE_CANDIDATEPAIRINTERFACE_H_
+#ifndef P2P_BASE_CANDIDATE_PAIR_INTERFACE_H_
+#define P2P_BASE_CANDIDATE_PAIR_INTERFACE_H_
 
 namespace cricket {
 
@@ -25,4 +25,4 @@ class CandidatePairInterface {
 
 }  // namespace cricket
 
-#endif  // P2P_BASE_CANDIDATEPAIRINTERFACE_H_
+#endif  // P2P_BASE_CANDIDATE_PAIR_INTERFACE_H_

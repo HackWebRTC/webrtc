@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "sdk/android/src/jni/pc/rtccertificate.h"
-#include "sdk/android/src/jni/pc/icecandidate.h"
+#include "sdk/android/src/jni/pc/rtc_certificate.h"
+#include "sdk/android/src/jni/pc/ice_candidate.h"
 
-#include "rtc_base/refcount.h"
-#include "rtc_base/rtccertificate.h"
-#include "rtc_base/rtccertificategenerator.h"
+#include "rtc_base/ref_count.h"
+#include "rtc_base/rtc_certificate.h"
+#include "rtc_base/rtc_certificate_generator.h"
 #include "sdk/android/generated_peerconnection_jni/jni/RtcCertificatePem_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/src/jni/jni_helpers.h"

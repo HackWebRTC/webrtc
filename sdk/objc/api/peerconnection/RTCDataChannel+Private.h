@@ -10,7 +10,7 @@
 
 #import "RTCDataChannel.h"
 
-#include "api/datachannelinterface.h"
+#include "api/data_channel_interface.h"
 #include "rtc_base/scoped_ref_ptr.h"
 
 NS_ASSUME_NONNULL_BEGIN

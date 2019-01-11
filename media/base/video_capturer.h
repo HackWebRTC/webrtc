@@ -10,8 +10,8 @@
 
 // Declaration of abstract class VideoCapturer
 
-#ifndef MEDIA_BASE_VIDEOCAPTURER_H_
-#define MEDIA_BASE_VIDEOCAPTURER_H_
+#ifndef MEDIA_BASE_VIDEO_CAPTURER_H_
+#define MEDIA_BASE_VIDEO_CAPTURER_H_
 
 #include <stdint.h>
 
@@ -21,15 +21,15 @@
 #include <vector>
 
 #include "api/video/video_source_interface.h"
-#include "media/base/videoadapter.h"
-#include "media/base/videobroadcaster.h"
-#include "media/base/videocommon.h"
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/criticalsection.h"
+#include "media/base/video_adapter.h"
+#include "media/base/video_broadcaster.h"
+#include "media/base/video_common.h"
+#include "rtc_base/constructor_magic.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread_checker.h"
-#include "rtc_base/timestampaligner.h"
+#include "rtc_base/timestamp_aligner.h"
 
 namespace webrtc {
 class VideoFrame;
@@ -280,4 +280,4 @@ class RTC_EXPORT VideoCapturer
 
 }  // namespace cricket
 
-#endif  // MEDIA_BASE_VIDEOCAPTURER_H_
+#endif  // MEDIA_BASE_VIDEO_CAPTURER_H_

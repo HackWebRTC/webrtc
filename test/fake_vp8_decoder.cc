@@ -19,7 +19,7 @@
 #include "api/video/video_rotation.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/scoped_ref_ptr.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"
 
 namespace webrtc {
 namespace test {

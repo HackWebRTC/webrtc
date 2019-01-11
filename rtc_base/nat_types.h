@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_NATTYPES_H_
-#define RTC_BASE_NATTYPES_H_
+#ifndef RTC_BASE_NAT_TYPES_H_
+#define RTC_BASE_NAT_TYPES_H_
 
 namespace rtc {
 
@@ -44,4 +44,4 @@ class NAT {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_NATTYPES_H_
+#endif  // RTC_BASE_NAT_TYPES_H_

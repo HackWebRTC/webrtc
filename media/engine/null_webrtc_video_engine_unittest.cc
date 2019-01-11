@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "media/engine/nullwebrtcvideoengine.h"
+#include "media/engine/null_webrtc_video_engine.h"
 #include "absl/memory/memory.h"
-#include "media/engine/webrtcvoiceengine.h"
+#include "media/engine/webrtc_voice_engine.h"
 #include "modules/audio_device/include/mock_audio_device.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "test/gtest.h"

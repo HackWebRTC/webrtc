@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SDK_ANDROID_SRC_JNI_PC_RTPRECEIVER_H_
-#define SDK_ANDROID_SRC_JNI_PC_RTPRECEIVER_H_
+#ifndef SDK_ANDROID_SRC_JNI_PC_RTP_RECEIVER_H_
+#define SDK_ANDROID_SRC_JNI_PC_RTP_RECEIVER_H_
 
 #include <jni.h>
 
-#include "api/rtpreceiverinterface.h"
+#include "api/rtp_receiver_interface.h"
 #include "sdk/android/native_api/jni/scoped_java_ref.h"
 
 namespace webrtc {
@@ -38,4 +38,4 @@ class JavaRtpReceiverGlobalOwner {
 }  // namespace jni
 }  // namespace webrtc
 
-#endif  // SDK_ANDROID_SRC_JNI_PC_RTPRECEIVER_H_
+#endif  // SDK_ANDROID_SRC_JNI_PC_RTP_RECEIVER_H_

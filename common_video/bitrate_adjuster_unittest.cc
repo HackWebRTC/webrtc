@@ -11,7 +11,7 @@
 #include "common_video/include/bitrate_adjuster.h"
 
 #include "api/units/time_delta.h"
-#include "rtc_base/fakeclock.h"
+#include "rtc_base/fake_clock.h"
 #include "test/gtest.h"
 
 namespace webrtc {

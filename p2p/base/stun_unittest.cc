@@ -15,9 +15,9 @@
 #include "absl/memory/memory.h"
 #include "p2p/base/stun.h"
 #include "rtc_base/arraysize.h"
-#include "rtc_base/bytebuffer.h"
-#include "rtc_base/byteorder.h"
-#include "rtc_base/socketaddress.h"
+#include "rtc_base/byte_buffer.h"
+#include "rtc_base/byte_order.h"
+#include "rtc_base/socket_address.h"
 #include "test/gtest.h"
 
 namespace cricket {

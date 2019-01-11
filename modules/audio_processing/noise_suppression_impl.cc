@@ -12,7 +12,7 @@
 
 #include "modules/audio_processing/audio_buffer.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #if defined(WEBRTC_NS_FLOAT)
 #include "modules/audio_processing/ns/noise_suppression.h"
 

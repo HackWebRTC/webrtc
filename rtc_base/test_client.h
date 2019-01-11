@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_TESTCLIENT_H_
-#define RTC_BASE_TESTCLIENT_H_
+#ifndef RTC_BASE_TEST_CLIENT_H_
+#define RTC_BASE_TEST_CLIENT_H_
 
 #include <memory>
 #include <vector>
-#include "rtc_base/asyncudpsocket.h"
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/criticalsection.h"
-#include "rtc_base/fakeclock.h"
+#include "rtc_base/async_udp_socket.h"
+#include "rtc_base/constructor_magic.h"
+#include "rtc_base/critical_section.h"
+#include "rtc_base/fake_clock.h"
 
 namespace rtc {
 
@@ -113,4 +113,4 @@ class TestClient : public sigslot::has_slots<> {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_TESTCLIENT_H_
+#endif  // RTC_BASE_TEST_CLIENT_H_

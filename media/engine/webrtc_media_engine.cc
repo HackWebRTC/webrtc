@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "media/engine/webrtcmediaengine.h"
+#include "media/engine/webrtc_media_engine.h"
 
 #include <algorithm>
 #include <utility>
@@ -17,16 +17,16 @@
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
-#include "media/engine/webrtcvoiceengine.h"
+#include "media/engine/webrtc_voice_engine.h"
 
 #if defined(USE_BUILTIN_SW_CODECS)
 #include "media/engine/convert_legacy_video_factory.h"
 #endif
 
 #ifdef HAVE_WEBRTC_VIDEO
-#include "media/engine/webrtcvideoengine.h"
+#include "media/engine/webrtc_video_engine.h"
 #else
-#include "media/engine/nullwebrtcvideoengine.h"
+#include "media/engine/null_webrtc_video_engine.h"
 #endif
 
 namespace cricket {

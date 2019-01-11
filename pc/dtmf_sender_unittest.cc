@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/dtmfsender.h"
+#include "pc/dtmf_sender.h"
 
 #include <stddef.h>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "rtc_base/fakeclock.h"
+#include "rtc_base/fake_clock.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/refcountedobject.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/ref_counted_object.h"
+#include "rtc_base/time_utils.h"
 #include "test/gtest.h"
 
 using webrtc::DtmfProviderInterface;

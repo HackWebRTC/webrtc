@@ -8,21 +8,21 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MEDIA_BASE_FAKENETWORKINTERFACE_H_
-#define MEDIA_BASE_FAKENETWORKINTERFACE_H_
+#ifndef MEDIA_BASE_FAKE_NETWORK_INTERFACE_H_
+#define MEDIA_BASE_FAKE_NETWORK_INTERFACE_H_
 
 #include <map>
 #include <set>
 #include <vector>
 
-#include "media/base/mediachannel.h"
-#include "media/base/rtputils.h"
-#include "rtc_base/byteorder.h"
-#include "rtc_base/copyonwritebuffer.h"
-#include "rtc_base/criticalsection.h"
+#include "media/base/media_channel.h"
+#include "media/base/rtp_utils.h"
+#include "rtc_base/byte_order.h"
+#include "rtc_base/copy_on_write_buffer.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/dscp.h"
-#include "rtc_base/messagehandler.h"
-#include "rtc_base/messagequeue.h"
+#include "rtc_base/message_handler.h"
+#include "rtc_base/message_queue.h"
 #include "rtc_base/thread.h"
 
 namespace cricket {
@@ -224,4 +224,4 @@ class FakeNetworkInterface : public MediaChannel::NetworkInterface,
 
 }  // namespace cricket
 
-#endif  // MEDIA_BASE_FAKENETWORKINTERFACE_H_
+#endif  // MEDIA_BASE_FAKE_NETWORK_INTERFACE_H_

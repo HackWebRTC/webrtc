@@ -8,22 +8,22 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_DTLSTRANSPORTINTERNAL_H_
-#define P2P_BASE_DTLSTRANSPORTINTERNAL_H_
+#ifndef P2P_BASE_DTLS_TRANSPORT_INTERNAL_H_
+#define P2P_BASE_DTLS_TRANSPORT_INTERNAL_H_
 
 #include <stddef.h>
 #include <stdint.h>
 #include <memory>
 #include <string>
 
-#include "api/crypto/cryptooptions.h"
-#include "p2p/base/icetransportinternal.h"
-#include "p2p/base/packettransportinternal.h"
-#include "rtc_base/constructormagic.h"
+#include "api/crypto/crypto_options.h"
+#include "p2p/base/ice_transport_internal.h"
+#include "p2p/base/packet_transport_internal.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/scoped_ref_ptr.h"
-#include "rtc_base/sslcertificate.h"
-#include "rtc_base/sslfingerprint.h"
-#include "rtc_base/sslstreamadapter.h"
+#include "rtc_base/ssl_certificate.h"
+#include "rtc_base/ssl_fingerprint.h"
+#include "rtc_base/ssl_stream_adapter.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace cricket {
@@ -119,4 +119,4 @@ class DtlsTransportInternal : public rtc::PacketTransportInternal {
 
 }  // namespace cricket
 
-#endif  // P2P_BASE_DTLSTRANSPORTINTERNAL_H_
+#endif  // P2P_BASE_DTLS_TRANSPORT_INTERNAL_H_

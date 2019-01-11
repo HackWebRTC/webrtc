@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MEDIA_BASE_MEDIACONFIG_H_
-#define MEDIA_BASE_MEDIACONFIG_H_
+#ifndef MEDIA_BASE_MEDIA_CONFIG_H_
+#define MEDIA_BASE_MEDIA_CONFIG_H_
 
 namespace cricket {
 
@@ -90,4 +90,4 @@ struct MediaConfig {
 
 }  // namespace cricket
 
-#endif  // MEDIA_BASE_MEDIACONFIG_H_
+#endif  // MEDIA_BASE_MEDIA_CONFIG_H_

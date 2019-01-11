@@ -37,8 +37,8 @@ if (is_android) {
   rtc_shared_library("examples_androidnativeapi_jni") {
     testonly = true
     sources = [
-      "jni/androidcallclient.cc",
-      "jni/androidcallclient.h",
+      "jni/android_call_client.cc",
+      "jni/android_call_client.h",
       "jni/onload.cc",
     ]
 

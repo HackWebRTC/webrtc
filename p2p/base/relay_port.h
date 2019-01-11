@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_RELAYPORT_H_
-#define P2P_BASE_RELAYPORT_H_
+#ifndef P2P_BASE_RELAY_PORT_H_
+#define P2P_BASE_RELAY_PORT_H_
 
 #include <deque>
 #include <memory>
@@ -19,7 +19,7 @@
 
 #include "absl/memory/memory.h"
 #include "p2p/base/port.h"
-#include "p2p/base/stunrequest.h"
+#include "p2p/base/stun_request.h"
 
 namespace cricket {
 
@@ -115,4 +115,4 @@ class RelayPort : public Port {
 
 }  // namespace cricket
 
-#endif  // P2P_BASE_RELAYPORT_H_
+#endif  // P2P_BASE_RELAY_PORT_H_

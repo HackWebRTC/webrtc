@@ -10,14 +10,14 @@
 
 #include <memory>
 
-#include "p2p/base/basicpacketsocketfactory.h"
-#include "p2p/base/stunport.h"
-#include "p2p/base/teststunserver.h"
+#include "p2p/base/basic_packet_socket_factory.h"
+#include "p2p/base/stun_port.h"
+#include "p2p/base/test_stun_server.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/helpers.h"
-#include "rtc_base/socketaddress.h"
-#include "rtc_base/ssladapter.h"
-#include "rtc_base/virtualsocketserver.h"
+#include "rtc_base/socket_address.h"
+#include "rtc_base/ssl_adapter.h"
+#include "rtc_base/virtual_socket_server.h"
 #include "test/gmock.h"
 
 using cricket::ServerAddresses;

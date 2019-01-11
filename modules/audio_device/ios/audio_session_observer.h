@@ -11,7 +11,7 @@
 #ifndef MODULES_AUDIO_DEVICE_IOS_AUDIO_SESSION_OBSERVER_H_
 #define MODULES_AUDIO_DEVICE_IOS_AUDIO_SESSION_OBSERVER_H_
 
-#include "rtc_base/asyncinvoker.h"
+#include "rtc_base/async_invoker.h"
 #include "rtc_base/thread.h"
 
 namespace webrtc {

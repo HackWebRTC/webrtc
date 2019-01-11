@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_SCTPUTILS_H_
-#define PC_SCTPUTILS_H_
+#ifndef PC_SCTP_UTILS_H_
+#define PC_SCTP_UTILS_H_
 
 #include <string>
 
-#include "api/datachannelinterface.h"
+#include "api/data_channel_interface.h"
 
 namespace rtc {
 class CopyOnWriteBuffer;
@@ -38,4 +38,4 @@ bool WriteDataChannelOpenMessage(const std::string& label,
 void WriteDataChannelOpenAckMessage(rtc::CopyOnWriteBuffer* payload);
 }  // namespace webrtc
 
-#endif  // PC_SCTPUTILS_H_
+#endif  // PC_SCTP_UTILS_H_

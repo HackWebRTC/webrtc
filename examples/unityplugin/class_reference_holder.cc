@@ -7,7 +7,7 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "examples/unityplugin/classreferenceholder.h"
+#include "examples/unityplugin/class_reference_holder.h"
 
 #include <utility>
 

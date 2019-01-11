@@ -21,9 +21,9 @@
 #include "absl/types/optional.h"
 #include "api/test/simulated_network.h"
 #include "api/units/timestamp.h"
-#include "rtc_base/asyncsocket.h"
-#include "rtc_base/copyonwritebuffer.h"
-#include "rtc_base/socketaddress.h"
+#include "rtc_base/async_socket.h"
+#include "rtc_base/copy_on_write_buffer.h"
+#include "rtc_base/socket_address.h"
 #include "rtc_base/thread.h"
 
 namespace webrtc {

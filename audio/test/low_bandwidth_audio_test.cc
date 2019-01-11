@@ -12,7 +12,7 @@
 #include "audio/test/audio_end_to_end_test.h"
 #include "rtc_base/flags.h"
 #include "system_wrappers/include/sleep.h"
-#include "test/testsupport/fileutils.h"
+#include "test/testsupport/file_utils.h"
 
 WEBRTC_DEFINE_int(sample_rate_hz,
                   16000,

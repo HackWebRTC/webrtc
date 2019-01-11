@@ -37,7 +37,7 @@ specific_include_rules = {
     "+p2p/base/mdns_message.h",
   ],
   ".*pseudotcp_parser_fuzzer\.cc": [
-    "+p2p/base/pseudotcp.h",
+    "+p2p/base/pseudo_tcp.h",
   ],
   ".*stun_parser_fuzzer\.cc": [
     "+p2p/base/stun.h",

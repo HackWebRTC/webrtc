@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/stringencode.h"
+#include "rtc_base/string_encode.h"
 
 #include <string.h>
 #include <sstream>  // no-presubmit-check TODO(webrtc:8982)

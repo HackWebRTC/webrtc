@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "api/videosourceproxy.h"
+#include "api/video_track_source_proxy.h"
 #include "rtc_base/logging.h"
 #include "sdk/android/generated_video_jni/jni/VideoSource_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"
-#include "sdk/android/src/jni/androidvideotracksource.h"
+#include "sdk/android/src/jni/android_video_track_source.h"
 
 namespace webrtc {
 namespace jni {

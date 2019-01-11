@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"
 
 #include <memory>
 
 #include "api/units/time_delta.h"
 #include "rtc_base/event.h"
-#include "rtc_base/fakeclock.h"
+#include "rtc_base/fake_clock.h"
 #include "rtc_base/helpers.h"
 #include "rtc_base/location.h"
-#include "rtc_base/messagehandler.h"
+#include "rtc_base/message_handler.h"
 #include "rtc_base/thread.h"
 #include "test/gtest.h"
 

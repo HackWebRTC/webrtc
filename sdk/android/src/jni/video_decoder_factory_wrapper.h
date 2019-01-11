@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SDK_ANDROID_SRC_JNI_VIDEODECODERFACTORYWRAPPER_H_
-#define SDK_ANDROID_SRC_JNI_VIDEODECODERFACTORYWRAPPER_H_
+#ifndef SDK_ANDROID_SRC_JNI_VIDEO_DECODER_FACTORY_WRAPPER_H_
+#define SDK_ANDROID_SRC_JNI_VIDEO_DECODER_FACTORY_WRAPPER_H_
 
 #include <jni.h>
 
@@ -38,4 +38,4 @@ class VideoDecoderFactoryWrapper : public VideoDecoderFactory {
 }  // namespace jni
 }  // namespace webrtc
 
-#endif  // SDK_ANDROID_SRC_JNI_VIDEODECODERFACTORYWRAPPER_H_
+#endif  // SDK_ANDROID_SRC_JNI_VIDEO_DECODER_FACTORY_WRAPPER_H_

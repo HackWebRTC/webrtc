@@ -10,10 +10,10 @@
 
 // This file contains enums related to IPv4/IPv6 metrics.
 
-#ifndef API_UMAMETRICS_H_
-#define API_UMAMETRICS_H_
+#ifndef API_UMA_METRICS_H_
+#define API_UMA_METRICS_H_
 
-#include "rtc_base/refcount.h"
+#include "rtc_base/ref_count.h"
 
 namespace webrtc {
 
@@ -157,4 +157,4 @@ enum AddIceCandidateResult {
 
 }  // namespace webrtc
 
-#endif  // API_UMAMETRICS_H_
+#endif  // API_UMA_METRICS_H_

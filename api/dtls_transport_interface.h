@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef API_DTLSTRANSPORTINTERFACE_H_
-#define API_DTLSTRANSPORTINTERFACE_H_
+#ifndef API_DTLS_TRANSPORT_INTERFACE_H_
+#define API_DTLS_TRANSPORT_INTERFACE_H_
 
-#include "api/rtcerror.h"
-#include "rtc_base/refcount.h"
+#include "api/rtc_error.h"
+#include "rtc_base/ref_count.h"
 
 namespace webrtc {
 
@@ -66,4 +66,4 @@ class DtlsTransportInterface : public rtc::RefCountInterface {
 
 }  // namespace webrtc
 
-#endif  // API_DTLSTRANSPORTINTERFACE_H_
+#endif  // API_DTLS_TRANSPORT_INTERFACE_H_

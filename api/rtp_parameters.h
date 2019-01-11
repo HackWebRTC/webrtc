@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef API_RTPPARAMETERS_H_
-#define API_RTPPARAMETERS_H_
+#ifndef API_RTP_PARAMETERS_H_
+#define API_RTP_PARAMETERS_H_
 
 #include <stdint.h>
 #include <string>
@@ -17,7 +17,7 @@
 #include <vector>
 
 #include "absl/types/optional.h"
-#include "api/mediatypes.h"
+#include "api/media_types.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
@@ -673,4 +673,4 @@ struct RTC_EXPORT RtpParameters {
 
 }  // namespace webrtc
 
-#endif  // API_RTPPARAMETERS_H_
+#endif  // API_RTP_PARAMETERS_H_

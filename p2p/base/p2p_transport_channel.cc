@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "p2p/base/p2ptransportchannel.h"
+#include "p2p/base/p2p_transport_channel.h"
 
 #include <algorithm>
 #include <iterator>
@@ -16,16 +16,16 @@
 #include <utility>
 
 #include "api/candidate.h"
-#include "logging/rtc_event_log/icelogger.h"
-#include "p2p/base/candidatepairinterface.h"
+#include "logging/rtc_event_log/ice_logger.h"
+#include "p2p/base/candidate_pair_interface.h"
 #include "p2p/base/port.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/crc32.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/nethelper.h"
-#include "rtc_base/nethelpers.h"
-#include "rtc_base/stringencode.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/net_helper.h"
+#include "rtc_base/net_helpers.h"
+#include "rtc_base/string_encode.h"
+#include "rtc_base/time_utils.h"
 #include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/metrics.h"
 

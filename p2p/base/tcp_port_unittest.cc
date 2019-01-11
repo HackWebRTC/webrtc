@@ -12,17 +12,17 @@
 #include <memory>
 #include <vector>
 
-#include "p2p/base/basicpacketsocketfactory.h"
-#include "p2p/base/p2pconstants.h"
-#include "p2p/base/tcpport.h"
-#include "p2p/base/transportdescription.h"
+#include "p2p/base/basic_packet_socket_factory.h"
+#include "p2p/base/p2p_constants.h"
+#include "p2p/base/tcp_port.h"
+#include "p2p/base/transport_description.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/helpers.h"
-#include "rtc_base/ipaddress.h"
+#include "rtc_base/ip_address.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
-#include "rtc_base/timeutils.h"
-#include "rtc_base/virtualsocketserver.h"
+#include "rtc_base/time_utils.h"
+#include "rtc_base/virtual_socket_server.h"
 #include "test/gtest.h"
 
 using rtc::SocketAddress;

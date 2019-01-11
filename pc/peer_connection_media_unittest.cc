@@ -14,22 +14,22 @@
 
 #include <tuple>
 
-#include "api/call/callfactoryinterface.h"
+#include "api/call/call_factory_interface.h"
 #include "api/test/fake_media_transport.h"
 #include "logging/rtc_event_log/rtc_event_log_factory.h"
-#include "media/base/fakemediaengine.h"
-#include "p2p/base/fakeportallocator.h"
-#include "pc/mediasession.h"
-#include "pc/peerconnectionwrapper.h"
-#include "pc/rtpmediautils.h"
-#include "pc/sdputils.h"
+#include "media/base/fake_media_engine.h"
+#include "p2p/base/fake_port_allocator.h"
+#include "pc/media_session.h"
+#include "pc/peer_connection_wrapper.h"
+#include "pc/rtp_media_utils.h"
+#include "pc/sdp_utils.h"
 #ifdef WEBRTC_ANDROID
-#include "pc/test/androidtestinitializer.h"
+#include "pc/test/android_test_initializer.h"
 #endif
 #include "absl/memory/memory.h"
-#include "pc/test/fakertccertificategenerator.h"
+#include "pc/test/fake_rtc_certificate_generator.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/virtualsocketserver.h"
+#include "rtc_base/virtual_socket_server.h"
 #include "test/gmock.h"
 
 namespace webrtc {

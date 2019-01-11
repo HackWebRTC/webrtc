@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "api/rtpsenderinterface.h"
+#include "api/rtp_sender_interface.h"
 
 namespace webrtc {
 

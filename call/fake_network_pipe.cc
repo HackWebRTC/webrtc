@@ -14,7 +14,7 @@
 #include <utility>
 #include <vector>
 
-#include "api/mediatypes.h"
+#include "api/media_types.h"
 #include "call/fake_network_pipe.h"
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/checks.h"

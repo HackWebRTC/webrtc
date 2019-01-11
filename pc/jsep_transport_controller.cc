@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/jseptransportcontroller.h"
+#include "pc/jsep_transport_controller.h"
 
 #include <algorithm>
 #include <memory>
@@ -16,7 +16,7 @@
 
 #include "absl/memory/memory.h"
 #include "p2p/base/port.h"
-#include "pc/srtpfilter.h"
+#include "pc/srtp_filter.h"
 #include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/key_derivation.h"

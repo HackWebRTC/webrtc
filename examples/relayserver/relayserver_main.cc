@@ -11,10 +11,10 @@
 #include <iostream>  // NOLINT
 #include <memory>
 
-#include "p2p/base/relayserver.h"
-#include "rtc_base/asyncudpsocket.h"
-#include "rtc_base/socketaddress.h"
-#include "rtc_base/socketserver.h"
+#include "p2p/base/relay_server.h"
+#include "rtc_base/async_udp_socket.h"
+#include "rtc_base/socket_address.h"
+#include "rtc_base/socket_server.h"
 #include "rtc_base/thread.h"
 
 int main(int argc, char** argv) {

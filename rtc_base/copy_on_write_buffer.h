@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_COPYONWRITEBUFFER_H_
-#define RTC_BASE_COPYONWRITEBUFFER_H_
+#ifndef RTC_BASE_COPY_ON_WRITE_BUFFER_H_
+#define RTC_BASE_COPY_ON_WRITE_BUFFER_H_
 
 #include <stdint.h>
 #include <algorithm>
@@ -20,7 +20,7 @@
 
 #include "rtc_base/buffer.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/refcountedobject.h"
+#include "rtc_base/ref_counted_object.h"
 #include "rtc_base/scoped_ref_ptr.h"
 
 namespace rtc {
@@ -243,4 +243,4 @@ class CopyOnWriteBuffer {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_COPYONWRITEBUFFER_H_
+#endif  // RTC_BASE_COPY_ON_WRITE_BUFFER_H_

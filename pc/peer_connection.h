@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_PEERCONNECTION_H_
-#define PC_PEERCONNECTION_H_
+#ifndef PC_PEER_CONNECTION_H_
+#define PC_PEER_CONNECTION_H_
 
 #include <map>
 #include <memory>
@@ -18,18 +18,18 @@
 #include <vector>
 
 #include "api/media_transport_interface.h"
-#include "api/peerconnectioninterface.h"
-#include "api/turncustomizer.h"
-#include "pc/iceserverparsing.h"
-#include "pc/jseptransportcontroller.h"
-#include "pc/peerconnectionfactory.h"
-#include "pc/peerconnectioninternal.h"
-#include "pc/rtcstatscollector.h"
-#include "pc/rtptransceiver.h"
-#include "pc/statscollector.h"
-#include "pc/streamcollection.h"
+#include "api/peer_connection_interface.h"
+#include "api/turn_customizer.h"
+#include "pc/ice_server_parsing.h"
+#include "pc/jsep_transport_controller.h"
+#include "pc/peer_connection_factory.h"
+#include "pc/peer_connection_internal.h"
+#include "pc/rtc_stats_collector.h"
+#include "pc/rtp_transceiver.h"
+#include "pc/stats_collector.h"
+#include "pc/stream_collection.h"
 #include "pc/unique_id_generator.h"
-#include "pc/webrtcsessiondescriptionfactory.h"
+#include "pc/webrtc_session_description_factory.h"
 
 namespace webrtc {
 
@@ -1151,4 +1151,4 @@ class PeerConnection : public PeerConnectionInternal,
 
 }  // namespace webrtc
 
-#endif  // PC_PEERCONNECTION_H_
+#endif  // PC_PEER_CONNECTION_H_

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_PACKETLOSSESTIMATOR_H_
-#define P2P_BASE_PACKETLOSSESTIMATOR_H_
+#ifndef P2P_BASE_PACKET_LOSS_ESTIMATOR_H_
+#define P2P_BASE_PACKET_LOSS_ESTIMATOR_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -82,4 +82,4 @@ class PacketLossEstimator {
 
 }  // namespace cricket
 
-#endif  // P2P_BASE_PACKETLOSSESTIMATOR_H_
+#endif  // P2P_BASE_PACKET_LOSS_ESTIMATOR_H_

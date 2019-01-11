@@ -18,7 +18,7 @@
 #include "api/units/data_size.h"
 #include "api/units/time_delta.h"
 #include "modules/pacing/paced_sender.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/sequenced_task_checker.h"
 
 namespace webrtc {

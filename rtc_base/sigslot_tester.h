@@ -12,8 +12,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_SIGSLOTTESTER_H_
-#define RTC_BASE_SIGSLOTTESTER_H_
+#ifndef RTC_BASE_SIGSLOT_TESTER_H_
+#define RTC_BASE_SIGSLOT_TESTER_H_
 
 // To generate sigslottester.h from sigslottester.h.pump, execute:
 // /home/build/google3/third_party/gtest/scripts/pump.py sigslottester.h.pump
@@ -38,7 +38,7 @@
 //   EXPECT_EQ("hello", capture);
 //   /* See unit-tests for more examples */
 
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace rtc {
@@ -237,4 +237,4 @@ class SigslotTester5 : public sigslot::has_slots<> {
 };
 }  // namespace rtc
 
-#endif  // RTC_BASE_SIGSLOTTESTER_H_
+#endif  // RTC_BASE_SIGSLOT_TESTER_H_

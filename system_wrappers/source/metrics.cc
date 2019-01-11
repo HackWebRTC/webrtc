@@ -11,7 +11,7 @@
 
 #include <algorithm>
 
-#include "rtc_base/criticalsection.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/thread_annotations.h"
 
 // Default implementation of histogram methods for WebRTC clients that do not

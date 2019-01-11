@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "media/base/fakevideorenderer.h"
+#include "media/base/fake_video_renderer.h"
 
 namespace cricket {
 

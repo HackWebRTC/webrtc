@@ -14,8 +14,8 @@
 #include "api/video/video_timing.h"
 #include "modules/video_coding/generic_encoder.h"
 #include "modules/video_coding/include/video_coding_defines.h"
-#include "rtc_base/fakeclock.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/fake_clock.h"
+#include "rtc_base/time_utils.h"
 #include "test/gtest.h"
 
 namespace webrtc {

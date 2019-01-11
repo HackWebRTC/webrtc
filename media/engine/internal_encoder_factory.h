@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MEDIA_ENGINE_INTERNALENCODERFACTORY_H_
-#define MEDIA_ENGINE_INTERNALENCODERFACTORY_H_
+#ifndef MEDIA_ENGINE_INTERNAL_ENCODER_FACTORY_H_
+#define MEDIA_ENGINE_INTERNAL_ENCODER_FACTORY_H_
 
 #include <memory>
 #include <vector>
@@ -32,4 +32,4 @@ class InternalEncoderFactory : public VideoEncoderFactory {
 
 }  // namespace webrtc
 
-#endif  // MEDIA_ENGINE_INTERNALENCODERFACTORY_H_
+#endif  // MEDIA_ENGINE_INTERNAL_ENCODER_FACTORY_H_

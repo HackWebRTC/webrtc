@@ -8,20 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_STUNPROBER_STUNPROBER_H_
-#define P2P_STUNPROBER_STUNPROBER_H_
+#ifndef P2P_STUNPROBER_STUN_PROBER_H_
+#define P2P_STUNPROBER_STUN_PROBER_H_
 
 #include <set>
 #include <string>
 #include <vector>
 
-#include "rtc_base/asyncinvoker.h"
-#include "rtc_base/bytebuffer.h"
+#include "rtc_base/async_invoker.h"
+#include "rtc_base/byte_buffer.h"
 #include "rtc_base/callback.h"
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/ipaddress.h"
+#include "rtc_base/constructor_magic.h"
+#include "rtc_base/ip_address.h"
 #include "rtc_base/network.h"
-#include "rtc_base/socketaddress.h"
+#include "rtc_base/socket_address.h"
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_checker.h"
@@ -248,4 +248,4 @@ class RTC_EXPORT StunProber : public sigslot::has_slots<> {
 
 }  // namespace stunprober
 
-#endif  // P2P_STUNPROBER_STUNPROBER_H_
+#endif  // P2P_STUNPROBER_STUN_PROBER_H_

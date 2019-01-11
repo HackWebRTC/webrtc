@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_FAKEPORTALLOCATOR_H_
-#define P2P_BASE_FAKEPORTALLOCATOR_H_
+#ifndef P2P_BASE_FAKE_PORT_ALLOCATOR_H_
+#define P2P_BASE_FAKE_PORT_ALLOCATOR_H_
 
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "p2p/base/basicpacketsocketfactory.h"
-#include "p2p/base/portallocator.h"
-#include "p2p/base/udpport.h"
+#include "p2p/base/basic_packet_socket_factory.h"
+#include "p2p/base/port_allocator.h"
+#include "p2p/base/udp_port.h"
 #include "rtc_base/bind.h"
-#include "rtc_base/nethelpers.h"
+#include "rtc_base/net_helpers.h"
 #include "rtc_base/thread.h"
 
 namespace rtc {
@@ -264,4 +264,4 @@ class FakePortAllocator : public cricket::PortAllocator {
 
 }  // namespace cricket
 
-#endif  // P2P_BASE_FAKEPORTALLOCATOR_H_
+#endif  // P2P_BASE_FAKE_PORT_ALLOCATOR_H_

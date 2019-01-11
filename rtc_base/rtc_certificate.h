@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_RTCCERTIFICATE_H_
-#define RTC_BASE_RTCCERTIFICATE_H_
+#ifndef RTC_BASE_RTC_CERTIFICATE_H_
+#define RTC_BASE_RTC_CERTIFICATE_H_
 
 #include <stdint.h>
 #include <memory>
 #include <string>
 
-#include "rtc_base/refcount.h"
+#include "rtc_base/ref_count.h"
 #include "rtc_base/scoped_ref_ptr.h"
 
 namespace rtc {
@@ -90,4 +90,4 @@ class RTCCertificate : public RefCountInterface {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_RTCCERTIFICATE_H_
+#endif  // RTC_BASE_RTC_CERTIFICATE_H_

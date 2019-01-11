@@ -23,11 +23,11 @@
 #include "rtc_base/logging.h"
 
 #ifdef WEBRTC_ANDROID
-#include "pc/test/androidtestinitializer.h"
+#include "pc/test/android_test_initializer.h"
 #endif
-#include "pc/test/peerconnectiontestwrapper.h"
+#include "pc/test/peer_connection_test_wrapper.h"
 // Notice that mockpeerconnectionobservers.h must be included after the above!
-#include "pc/test/mockpeerconnectionobservers.h"
+#include "pc/test/mock_peer_connection_observers.h"
 #include "test/mock_audio_decoder.h"
 #include "test/mock_audio_decoder_factory.h"
 #include "test/mock_audio_encoder_factory.h"

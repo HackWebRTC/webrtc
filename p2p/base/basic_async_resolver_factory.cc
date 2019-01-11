@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "p2p/base/basicasyncresolverfactory.h"
+#include "p2p/base/basic_async_resolver_factory.h"
 
-#include "rtc_base/nethelpers.h"
+#include "rtc_base/net_helpers.h"
 
 namespace webrtc {
 

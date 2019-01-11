@@ -14,8 +14,8 @@
 #include <utility>
 #include <vector>
 
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/fakeclock.h"
+#include "rtc_base/constructor_magic.h"
+#include "rtc_base/fake_clock.h"
 #include "test/scenario/audio_stream.h"
 #include "test/scenario/call_client.h"
 #include "test/scenario/column_printer.h"

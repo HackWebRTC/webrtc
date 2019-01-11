@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_ASYNCRESOLVERINTERFACE_H_
-#define RTC_BASE_ASYNCRESOLVERINTERFACE_H_
+#ifndef RTC_BASE_ASYNC_RESOLVER_INTERFACE_H_
+#define RTC_BASE_ASYNC_RESOLVER_INTERFACE_H_
 
-#include "rtc_base/socketaddress.h"
+#include "rtc_base/socket_address.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace rtc {

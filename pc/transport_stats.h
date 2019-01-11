@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_TRANSPORTSTATS_H_
-#define PC_TRANSPORTSTATS_H_
+#ifndef PC_TRANSPORT_STATS_H_
+#define PC_TRANSPORT_STATS_H_
 
 #include <string>
 #include <vector>
 
-#include "p2p/base/dtlstransportinternal.h"
+#include "p2p/base/dtls_transport_internal.h"
 #include "p2p/base/port.h"
-#include "rtc_base/sslstreamadapter.h"
+#include "rtc_base/ssl_stream_adapter.h"
 
 namespace cricket {
 
@@ -48,4 +48,4 @@ struct TransportStats {
 
 }  // namespace cricket
 
-#endif  // PC_TRANSPORTSTATS_H_
+#endif  // PC_TRANSPORT_STATS_H_

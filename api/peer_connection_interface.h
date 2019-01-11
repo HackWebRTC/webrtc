@@ -64,55 +64,55 @@
 // 7. Once a candidate has been gathered, the PeerConnection will call the
 // observer function OnIceCandidate. Send these candidates to the remote peer.
 
-#ifndef API_PEERCONNECTIONINTERFACE_H_
-#define API_PEERCONNECTIONINTERFACE_H_
+#ifndef API_PEER_CONNECTION_INTERFACE_H_
+#define API_PEER_CONNECTION_INTERFACE_H_
 
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "api/asyncresolverfactory.h"
+#include "api/async_resolver_factory.h"
 #include "api/audio/audio_mixer.h"
 #include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/audio_codecs/audio_encoder_factory.h"
 #include "api/audio_options.h"
-#include "api/call/callfactoryinterface.h"
-#include "api/crypto/cryptooptions.h"
-#include "api/datachannelinterface.h"
+#include "api/call/call_factory_interface.h"
+#include "api/crypto/crypto_options.h"
+#include "api/data_channel_interface.h"
 #include "api/fec_controller.h"
 #include "api/jsep.h"
+#include "api/media_stream_interface.h"
 #include "api/media_transport_interface.h"
-#include "api/mediastreaminterface.h"
-#include "api/rtcerror.h"
-#include "api/rtceventlogoutput.h"
-#include "api/rtpreceiverinterface.h"
-#include "api/rtpsenderinterface.h"
-#include "api/rtptransceiverinterface.h"
-#include "api/setremotedescriptionobserverinterface.h"
-#include "api/stats/rtcstatscollectorcallback.h"
-#include "api/statstypes.h"
+#include "api/rtc_error.h"
+#include "api/rtc_event_log_output.h"
+#include "api/rtp_receiver_interface.h"
+#include "api/rtp_sender_interface.h"
+#include "api/rtp_transceiver_interface.h"
+#include "api/set_remote_description_observer_interface.h"
+#include "api/stats/rtc_stats_collector_callback.h"
+#include "api/stats_types.h"
 #include "api/transport/bitrate_settings.h"
 #include "api/transport/network_control.h"
-#include "api/turncustomizer.h"
+#include "api/turn_customizer.h"
 #include "logging/rtc_event_log/rtc_event_log_factory_interface.h"
-#include "media/base/mediaconfig.h"
+#include "media/base/media_config.h"
 // TODO(bugs.webrtc.org/6353): cricket::VideoCapturer is deprecated and should
 // be deleted from the PeerConnection api.
-#include "media/base/videocapturer.h"  // nogncheck
+#include "media/base/video_capturer.h"  // nogncheck
 // TODO(bugs.webrtc.org/7447): We plan to provide a way to let applications
 // inject a PacketSocketFactory and/or NetworkManager, and not expose
 // PortAllocator in the PeerConnection api.
-#include "media/base/mediaengine.h"  // nogncheck
-#include "p2p/base/portallocator.h"  // nogncheck
+#include "media/base/media_engine.h"  // nogncheck
+#include "p2p/base/port_allocator.h"  // nogncheck
 // TODO(nisse): The interface for bitrate allocation strategy belongs in api/.
-#include "rtc_base/bitrateallocationstrategy.h"
+#include "rtc_base/bitrate_allocation_strategy.h"
 #include "rtc_base/network.h"
 #include "rtc_base/platform_file.h"
-#include "rtc_base/rtccertificate.h"
-#include "rtc_base/rtccertificategenerator.h"
-#include "rtc_base/socketaddress.h"
-#include "rtc_base/sslcertificate.h"
-#include "rtc_base/sslstreamadapter.h"
+#include "rtc_base/rtc_certificate.h"
+#include "rtc_base/rtc_certificate_generator.h"
+#include "rtc_base/socket_address.h"
+#include "rtc_base/ssl_certificate.h"
+#include "rtc_base/ssl_stream_adapter.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace rtc {
@@ -1462,4 +1462,4 @@ CreateModularPeerConnectionFactory(
 
 }  // namespace webrtc
 
-#endif  // API_PEERCONNECTIONINTERFACE_H_
+#endif  // API_PEER_CONNECTION_INTERFACE_H_

@@ -7,11 +7,11 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef RTC_BASE_REFCOUNTER_H_
-#define RTC_BASE_REFCOUNTER_H_
+#ifndef RTC_BASE_REF_COUNTER_H_
+#define RTC_BASE_REF_COUNTER_H_
 
-#include "rtc_base/atomicops.h"
-#include "rtc_base/refcount.h"
+#include "rtc_base/atomic_ops.h"
+#include "rtc_base/ref_count.h"
 
 namespace webrtc {
 namespace webrtc_impl {
@@ -49,4 +49,4 @@ class RefCounter {
 }  // namespace webrtc_impl
 }  // namespace webrtc
 
-#endif  // RTC_BASE_REFCOUNTER_H_
+#endif  // RTC_BASE_REF_COUNTER_H_

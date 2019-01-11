@@ -20,7 +20,7 @@
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "modules/audio_coding/test/PCMFile.h"
 #include "test/gtest.h"
-#include "test/testsupport/fileutils.h"
+#include "test/testsupport/file_utils.h"
 
 namespace webrtc {
 

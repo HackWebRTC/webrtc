@@ -24,7 +24,7 @@
 #include "system_wrappers/include/clock.h"
 #include "test/frame_generator.h"
 #include "test/gtest.h"
-#include "test/testsupport/fileutils.h"
+#include "test/testsupport/file_utils.h"
 #include "test/video_codec_settings.h"
 
 using ::testing::_;

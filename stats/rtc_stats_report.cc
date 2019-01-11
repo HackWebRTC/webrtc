@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "api/stats/rtcstatsreport.h"
+#include "api/stats/rtc_stats_report.h"
 
 #include <type_traits>
 #include <utility>

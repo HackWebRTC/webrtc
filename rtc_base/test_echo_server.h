@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_TESTECHOSERVER_H_
-#define RTC_BASE_TESTECHOSERVER_H_
+#ifndef RTC_BASE_TEST_ECHO_SERVER_H_
+#define RTC_BASE_TEST_ECHO_SERVER_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -17,11 +17,11 @@
 #include <list>
 #include <memory>
 
-#include "rtc_base/asyncpacketsocket.h"
-#include "rtc_base/asyncsocket.h"
-#include "rtc_base/asynctcpsocket.h"
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/socketaddress.h"
+#include "rtc_base/async_packet_socket.h"
+#include "rtc_base/async_socket.h"
+#include "rtc_base/async_tcp_socket.h"
+#include "rtc_base/constructor_magic.h"
+#include "rtc_base/socket_address.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
 
@@ -69,4 +69,4 @@ class TestEchoServer : public sigslot::has_slots<> {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_TESTECHOSERVER_H_
+#endif  // RTC_BASE_TEST_ECHO_SERVER_H_

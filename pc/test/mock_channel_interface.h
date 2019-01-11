@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_TEST_MOCK_CHANNELINTERFACE_H_
-#define PC_TEST_MOCK_CHANNELINTERFACE_H_
+#ifndef PC_TEST_MOCK_CHANNEL_INTERFACE_H_
+#define PC_TEST_MOCK_CHANNEL_INTERFACE_H_
 
 #include <string>
 
-#include "pc/channelinterface.h"
+#include "pc/channel_interface.h"
 #include "test/gmock.h"
 
 namespace cricket {
@@ -44,4 +44,4 @@ class MockChannelInterface : public cricket::ChannelInterface {
 
 }  // namespace cricket
 
-#endif  // PC_TEST_MOCK_CHANNELINTERFACE_H_
+#endif  // PC_TEST_MOCK_CHANNEL_INTERFACE_H_

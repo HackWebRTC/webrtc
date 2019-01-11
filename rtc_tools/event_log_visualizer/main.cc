@@ -28,7 +28,7 @@
 #include "rtc_tools/event_log_visualizer/plot_python.h"
 #include "system_wrappers/include/field_trial.h"
 #include "test/field_trial.h"
-#include "test/testsupport/fileutils.h"
+#include "test/testsupport/file_utils.h"
 
 WEBRTC_DEFINE_string(
     plot_profile,

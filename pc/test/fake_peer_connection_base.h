@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_TEST_FAKEPEERCONNECTIONBASE_H_
-#define PC_TEST_FAKEPEERCONNECTIONBASE_H_
+#ifndef PC_TEST_FAKE_PEER_CONNECTION_BASE_H_
+#define PC_TEST_FAKE_PEER_CONNECTION_BASE_H_
 
 #include <map>
 #include <memory>
@@ -17,7 +17,7 @@
 #include <string>
 #include <vector>
 
-#include "pc/peerconnectioninternal.h"
+#include "pc/peer_connection_internal.h"
 
 namespace webrtc {
 
@@ -299,4 +299,4 @@ class FakePeerConnectionBase : public PeerConnectionInternal {
 
 }  // namespace webrtc
 
-#endif  // PC_TEST_FAKEPEERCONNECTIONBASE_H_
+#endif  // PC_TEST_FAKE_PEER_CONNECTION_BASE_H_

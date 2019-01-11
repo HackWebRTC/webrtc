@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "p2p/base/portallocator.h"
+#include "p2p/base/port_allocator.h"
 
 #include <iterator>
 #include <set>
 #include <utility>
 
-#include "p2p/base/icecredentialsiterator.h"
+#include "p2p/base/ice_credentials_iterator.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 

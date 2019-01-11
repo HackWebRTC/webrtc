@@ -12,9 +12,9 @@
 
 #import <UIKit/UIKit.h>
 
-#include "rtc_base/atomicops.h"
+#include "rtc_base/atomic_ops.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/criticalsection.h"
+#include "rtc_base/critical_section.h"
 
 #import "RTCAudioSessionConfiguration.h"
 #import "base/RTCLogging.h"

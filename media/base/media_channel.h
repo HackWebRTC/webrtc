@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MEDIA_BASE_MEDIACHANNEL_H_
-#define MEDIA_BASE_MEDIACHANNEL_H_
+#ifndef MEDIA_BASE_MEDIA_CHANNEL_H_
+#define MEDIA_BASE_MEDIA_CHANNEL_H_
 
 #include <map>
 #include <memory>
@@ -20,30 +20,30 @@
 #include "absl/types/optional.h"
 #include "api/audio_codecs/audio_encoder.h"
 #include "api/audio_options.h"
-#include "api/crypto/framedecryptorinterface.h"
-#include "api/crypto/frameencryptorinterface.h"
+#include "api/crypto/frame_decryptor_interface.h"
+#include "api/crypto/frame_encryptor_interface.h"
 #include "api/media_transport_interface.h"
-#include "api/rtcerror.h"
-#include "api/rtpparameters.h"
-#include "api/rtpreceiverinterface.h"
+#include "api/rtc_error.h"
+#include "api/rtp_parameters.h"
+#include "api/rtp_receiver_interface.h"
 #include "api/video/video_content_type.h"
 #include "api/video/video_sink_interface.h"
 #include "api/video/video_source_interface.h"
 #include "api/video/video_timing.h"
 #include "api/video_codecs/video_encoder_config.h"
 #include "media/base/codec.h"
-#include "media/base/mediaconfig.h"
-#include "media/base/mediaconstants.h"
-#include "media/base/streamparams.h"
+#include "media/base/media_config.h"
+#include "media/base/media_constants.h"
+#include "media/base/stream_params.h"
 #include "modules/audio_processing/include/audio_processing_statistics.h"
-#include "rtc_base/asyncpacketsocket.h"
+#include "rtc_base/async_packet_socket.h"
 #include "rtc_base/buffer.h"
-#include "rtc_base/copyonwritebuffer.h"
+#include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/dscp.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/networkroute.h"
+#include "rtc_base/network_route.h"
 #include "rtc_base/socket.h"
-#include "rtc_base/stringencode.h"
+#include "rtc_base/string_encode.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 
@@ -913,4 +913,4 @@ class DataMediaChannel : public MediaChannel {
 
 }  // namespace cricket
 
-#endif  // MEDIA_BASE_MEDIACHANNEL_H_
+#endif  // MEDIA_BASE_MEDIA_CHANNEL_H_

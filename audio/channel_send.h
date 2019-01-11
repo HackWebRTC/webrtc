@@ -17,7 +17,7 @@
 
 #include "api/audio/audio_frame.h"
 #include "api/audio_codecs/audio_encoder.h"
-#include "api/crypto/cryptooptions.h"
+#include "api/crypto/crypto_options.h"
 #include "api/media_transport_interface.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "rtc_base/function_view.h"

@@ -16,7 +16,7 @@
 #include <vector>
 
 #include "api/rtp_headers.h"
-#include "api/rtpparameters.h"
+#include "api/rtp_parameters.h"
 
 namespace webrtc {
 namespace rtclog {

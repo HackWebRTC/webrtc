@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <string>
 
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 
 namespace webrtc {
 namespace testing {

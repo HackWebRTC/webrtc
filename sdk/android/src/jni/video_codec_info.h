@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SDK_ANDROID_SRC_JNI_VIDEOCODECINFO_H_
-#define SDK_ANDROID_SRC_JNI_VIDEOCODECINFO_H_
+#ifndef SDK_ANDROID_SRC_JNI_VIDEO_CODEC_INFO_H_
+#define SDK_ANDROID_SRC_JNI_VIDEO_CODEC_INFO_H_
 
 #include <jni.h>
 
@@ -28,4 +28,4 @@ ScopedJavaLocalRef<jobject> SdpVideoFormatToVideoCodecInfo(
 }  // namespace jni
 }  // namespace webrtc
 
-#endif  // SDK_ANDROID_SRC_JNI_VIDEOCODECINFO_H_
+#endif  // SDK_ANDROID_SRC_JNI_VIDEO_CODEC_INFO_H_

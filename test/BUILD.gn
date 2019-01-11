@@ -398,8 +398,8 @@ if (is_ios) {
       ":fileutils_override_impl",
     ]
     sources = [
-      "testsupport/iosfileutils.h",
-      "testsupport/iosfileutils.mm",
+      "testsupport/ios_file_utils.h",
+      "testsupport/ios_file_utils.mm",
     ]
     deps = [
       "..:webrtc_common",
@@ -417,8 +417,8 @@ if (is_mac) {
       ":fileutils_override_impl",
     ]
     sources = [
-      "testsupport/macfileutils.h",
-      "testsupport/macfileutils.mm",
+      "testsupport/mac_file_utils.h",
+      "testsupport/mac_file_utils.mm",
     ]
     deps = [
       "../rtc_base:checks",
@@ -430,8 +430,8 @@ rtc_source_set("fileutils") {
   testonly = true
   visibility = [ "*" ]
   sources = [
-    "testsupport/fileutils.cc",
-    "testsupport/fileutils.h",
+    "testsupport/file_utils.cc",
+    "testsupport/file_utils.h",
   ]
   deps = [
     ":fileutils_override_api",
@@ -458,7 +458,7 @@ rtc_source_set("fileutils") {
 rtc_source_set("fileutils_override_api") {
   testonly = true
   sources = [
-    "testsupport/fileutils_override.h",
+    "testsupport/file_utils_override.h",
   ]
 }
 
@@ -466,7 +466,7 @@ rtc_source_set("fileutils_override_impl") {
   testonly = true
   visibility = [ ":fileutils" ]
   sources = [
-    "testsupport/fileutils_override.cc",
+    "testsupport/file_utils_override.cc",
   ]
   deps = [
     ":fileutils_override_api",
@@ -534,7 +534,7 @@ rtc_source_set("fileutils_unittests") {
   testonly = true
   visibility = [ ":*" ]  # Only targets in this file can depend on this.
   sources = [
-    "testsupport/fileutils_unittest.cc",
+    "testsupport/file_utils_unittest.cc",
   ]
   deps = [
     ":fileutils",

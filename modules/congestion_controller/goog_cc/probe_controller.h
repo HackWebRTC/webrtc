@@ -18,7 +18,7 @@
 
 #include "absl/types/optional.h"
 #include "api/transport/network_control.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/system/unused.h"
 
 namespace webrtc {

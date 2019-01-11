@@ -22,7 +22,7 @@
 #include "modules/include/module.h"
 #include "modules/remote_bitrate_estimator/test/bwe_test_framework.h"
 #include "modules/remote_bitrate_estimator/test/packet.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/gtest_prod_util.h"
 #include "rtc_base/numerics/sequence_number_util.h"
 #include "system_wrappers/include/clock.h"

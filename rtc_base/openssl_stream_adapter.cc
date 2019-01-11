@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/opensslstreamadapter.h"
+#include "rtc_base/openssl_stream_adapter.h"
 
 #include <openssl/bio.h>
 #include <openssl/crypto.h>
@@ -29,13 +29,13 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/openssl.h"
-#include "rtc_base/openssladapter.h"
-#include "rtc_base/openssldigest.h"
-#include "rtc_base/opensslidentity.h"
-#include "rtc_base/sslcertificate.h"
+#include "rtc_base/openssl_adapter.h"
+#include "rtc_base/openssl_digest.h"
+#include "rtc_base/openssl_identity.h"
+#include "rtc_base/ssl_certificate.h"
 #include "rtc_base/stream.h"
 #include "rtc_base/thread.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"
 
 namespace {
 bool g_use_time_callback_for_testing = false;

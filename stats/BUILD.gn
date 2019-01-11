@@ -18,9 +18,9 @@ rtc_static_library("rtc_stats") {
   visibility = [ "*" ]
   cflags = []
   sources = [
-    "rtcstats.cc",
+    "rtc_stats.cc",
+    "rtc_stats_report.cc",
     "rtcstats_objects.cc",
-    "rtcstatsreport.cc",
   ]
 
   deps = [
@@ -34,8 +34,8 @@ rtc_source_set("rtc_stats_test_utils") {
   visibility = [ "*" ]
   cflags = []
   sources = [
-    "test/rtcteststats.cc",
-    "test/rtcteststats.h",
+    "test/rtc_test_stats.cc",
+    "test/rtc_test_stats.h",
   ]
 
   deps = [
@@ -50,8 +50,8 @@ if (rtc_include_tests) {
   rtc_test("rtc_stats_unittests") {
     testonly = true
     sources = [
-      "rtcstats_unittest.cc",
-      "rtcstatsreport_unittest.cc",
+      "rtc_stats_report_unittest.cc",
+      "rtc_stats_unittest.cc",
     ]
 
     deps = [

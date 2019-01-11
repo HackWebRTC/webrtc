@@ -10,7 +10,7 @@
 #include "test/scenario/audio_stream.h"
 
 #include "absl/memory/memory.h"
-#include "rtc_base/bitrateallocationstrategy.h"
+#include "rtc_base/bitrate_allocation_strategy.h"
 #include "test/call_test.h"
 
 #if WEBRTC_ENABLE_PROTOBUF

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/sslcertificate.h"
+#include "rtc_base/ssl_certificate.h"
 
 #include <algorithm>
 #include <string>
@@ -16,8 +16,8 @@
 
 #include "absl/memory/memory.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/opensslcertificate.h"
-#include "rtc_base/sslfingerprint.h"
+#include "rtc_base/openssl_certificate.h"
+#include "rtc_base/ssl_fingerprint.h"
 #include "rtc_base/third_party/base64/base64.h"
 
 namespace rtc {

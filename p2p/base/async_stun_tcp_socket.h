@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_ASYNCSTUNTCPSOCKET_H_
-#define P2P_BASE_ASYNCSTUNTCPSOCKET_H_
+#ifndef P2P_BASE_ASYNC_STUN_TCP_SOCKET_H_
+#define P2P_BASE_ASYNC_STUN_TCP_SOCKET_H_
 
 #include <stddef.h>
 
-#include "rtc_base/asyncpacketsocket.h"
-#include "rtc_base/asyncsocket.h"
-#include "rtc_base/asynctcpsocket.h"
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/socketaddress.h"
+#include "rtc_base/async_packet_socket.h"
+#include "rtc_base/async_socket.h"
+#include "rtc_base/async_tcp_socket.h"
+#include "rtc_base/constructor_magic.h"
+#include "rtc_base/socket_address.h"
 
 namespace cricket {
 
@@ -49,4 +49,4 @@ class AsyncStunTCPSocket : public rtc::AsyncTCPSocketBase {
 
 }  // namespace cricket
 
-#endif  // P2P_BASE_ASYNCSTUNTCPSOCKET_H_
+#endif  // P2P_BASE_ASYNC_STUN_TCP_SOCKET_H_

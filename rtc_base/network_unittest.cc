@@ -16,8 +16,8 @@
 #include <vector>
 
 #include "rtc_base/checks.h"
-#include "rtc_base/nethelpers.h"
-#include "rtc_base/networkmonitor.h"
+#include "rtc_base/net_helpers.h"
+#include "rtc_base/network_monitor.h"
 #if defined(WEBRTC_POSIX)
 #include <net/if.h>
 #include <sys/types.h>

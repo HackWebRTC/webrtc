@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MEDIA_ENGINE_MULTIPLEXCODECFACTORY_H_
-#define MEDIA_ENGINE_MULTIPLEXCODECFACTORY_H_
+#ifndef MEDIA_ENGINE_MULTIPLEX_CODEC_FACTORY_H_
+#define MEDIA_ENGINE_MULTIPLEX_CODEC_FACTORY_H_
 
 #include <memory>
 #include <vector>
@@ -77,4 +77,4 @@ class RTC_EXPORT MultiplexDecoderFactory : public VideoDecoderFactory {
 
 }  // namespace webrtc
 
-#endif  // MEDIA_ENGINE_MULTIPLEXCODECFACTORY_H_
+#endif  // MEDIA_ENGINE_MULTIPLEX_CODEC_FACTORY_H_

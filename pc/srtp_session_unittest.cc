@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/srtpsession.h"
+#include "pc/srtp_session.h"
 
 #include <string.h>
 #include <string>
 
-#include "media/base/fakertp.h"
-#include "pc/srtptestutil.h"
-#include "rtc_base/byteorder.h"
-#include "rtc_base/sslstreamadapter.h"  // For rtc::SRTP_*
+#include "media/base/fake_rtp.h"
+#include "pc/test/srtp_test_util.h"
+#include "rtc_base/byte_order.h"
+#include "rtc_base/ssl_stream_adapter.h"  // For rtc::SRTP_*
 #include "system_wrappers/include/metrics.h"
 #include "test/gtest.h"
 #include "third_party/libsrtp/include/srtp.h"

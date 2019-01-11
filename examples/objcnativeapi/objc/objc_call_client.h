@@ -14,8 +14,8 @@
 #include <memory>
 #include <string>
 
-#include "api/peerconnectioninterface.h"
-#include "rtc_base/criticalsection.h"
+#include "api/peer_connection_interface.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/thread_checker.h"
 

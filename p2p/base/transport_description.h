@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_TRANSPORTDESCRIPTION_H_
-#define P2P_BASE_TRANSPORTDESCRIPTION_H_
+#ifndef P2P_BASE_TRANSPORT_DESCRIPTION_H_
+#define P2P_BASE_TRANSPORT_DESCRIPTION_H_
 
 #include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "p2p/base/p2pconstants.h"
-#include "rtc_base/sslfingerprint.h"
+#include "p2p/base/p2p_constants.h"
+#include "rtc_base/ssl_fingerprint.h"
 
 namespace cricket {
 
@@ -138,4 +138,4 @@ struct TransportDescription {
 
 }  // namespace cricket
 
-#endif  // P2P_BASE_TRANSPORTDESCRIPTION_H_
+#endif  // P2P_BASE_TRANSPORT_DESCRIPTION_H_

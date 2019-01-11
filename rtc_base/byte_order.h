@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_BYTEORDER_H_
-#define RTC_BASE_BYTEORDER_H_
+#ifndef RTC_BASE_BYTE_ORDER_H_
+#define RTC_BASE_BYTE_ORDER_H_
 
 #include <stdint.h>
 
@@ -177,4 +177,4 @@ inline uint64_t NetworkToHost64(uint64_t n) {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_BYTEORDER_H_
+#endif  // RTC_BASE_BYTE_ORDER_H_

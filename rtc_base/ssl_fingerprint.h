@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_SSLFINGERPRINT_H_
-#define RTC_BASE_SSLFINGERPRINT_H_
+#ifndef RTC_BASE_SSL_FINGERPRINT_H_
+#define RTC_BASE_SSL_FINGERPRINT_H_
 
 #include <stddef.h>
 #include <stdint.h>
 #include <string>
 
-#include "rtc_base/copyonwritebuffer.h"
+#include "rtc_base/copy_on_write_buffer.h"
 
 namespace rtc {
 
@@ -70,4 +70,4 @@ struct SSLFingerprint {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_SSLFINGERPRINT_H_
+#endif  // RTC_BASE_SSL_FINGERPRINT_H_

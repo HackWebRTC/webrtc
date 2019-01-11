@@ -10,13 +10,13 @@
 
 #include <memory>
 
-#include "rtc_base/asyncinvoker.h"
-#include "rtc_base/asyncudpsocket.h"
+#include "rtc_base/async_invoker.h"
+#include "rtc_base/async_udp_socket.h"
 #include "rtc_base/event.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/nullsocketserver.h"
-#include "rtc_base/physicalsocketserver.h"
-#include "rtc_base/socketaddress.h"
+#include "rtc_base/null_socket_server.h"
+#include "rtc_base/physical_socket_server.h"
+#include "rtc_base/socket_address.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
 

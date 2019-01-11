@@ -11,9 +11,9 @@
 #include <memory>
 #include <string>
 
-#include "rtc_base/asynctcpsocket.h"
+#include "rtc_base/async_tcp_socket.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/virtualsocketserver.h"
+#include "rtc_base/virtual_socket_server.h"
 
 namespace rtc {
 

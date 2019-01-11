@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_ICECREDENTIALSITERATOR_H_
-#define P2P_BASE_ICECREDENTIALSITERATOR_H_
+#ifndef P2P_BASE_ICE_CREDENTIALS_ITERATOR_H_
+#define P2P_BASE_ICE_CREDENTIALS_ITERATOR_H_
 
 #include <vector>
 
-#include "p2p/base/transportdescription.h"
+#include "p2p/base/transport_description.h"
 
 namespace cricket {
 
@@ -34,4 +34,4 @@ class IceCredentialsIterator {
 
 }  // namespace cricket
 
-#endif  // P2P_BASE_ICECREDENTIALSITERATOR_H_
+#endif  // P2P_BASE_ICE_CREDENTIALS_ITERATOR_H_

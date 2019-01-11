@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/win32socketserver.h"
+#include "rtc_base/win32_socket_server.h"
 
 #include <ws2tcpip.h>  // NOLINT
 #include <algorithm>
 
-#include "rtc_base/byteorder.h"
+#include "rtc_base/byte_order.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/timeutils.h"  // For Time, TimeSince
-#include "rtc_base/win32window.h"
+#include "rtc_base/time_utils.h"  // For Time, TimeSince
+#include "rtc_base/win32_window.h"
 
 namespace rtc {
 

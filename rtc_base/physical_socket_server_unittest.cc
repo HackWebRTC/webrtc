@@ -13,12 +13,12 @@
 #include <memory>
 
 #include "rtc_base/gunit.h"
-#include "rtc_base/ipaddress.h"
+#include "rtc_base/ip_address.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/networkmonitor.h"
-#include "rtc_base/physicalsocketserver.h"
+#include "rtc_base/network_monitor.h"
+#include "rtc_base/physical_socket_server.h"
 #include "rtc_base/socket_unittest.h"
-#include "rtc_base/testutils.h"
+#include "rtc_base/test_utils.h"
 #include "rtc_base/thread.h"
 #include "test/gtest.h"
 

@@ -23,7 +23,7 @@
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "modules/remote_bitrate_estimator/inter_arrival.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"  // For PacketFeedback
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/race_checker.h"
 
 namespace webrtc {

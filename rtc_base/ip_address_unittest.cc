@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/ipaddress.h"
+#include "rtc_base/ip_address.h"
 
 #include "test/gtest.h"
 

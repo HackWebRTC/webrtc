@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_SESSIONDESCRIPTION_H_
-#define PC_SESSIONDESCRIPTION_H_
+#ifndef PC_SESSION_DESCRIPTION_H_
+#define PC_SESSION_DESCRIPTION_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -17,16 +17,16 @@
 #include <string>
 #include <vector>
 
-#include "api/cryptoparams.h"
-#include "api/mediatypes.h"
-#include "api/rtpparameters.h"
-#include "api/rtptransceiverinterface.h"
-#include "media/base/mediachannel.h"
-#include "media/base/streamparams.h"
-#include "p2p/base/transportdescription.h"
-#include "p2p/base/transportinfo.h"
-#include "pc/simulcastdescription.h"
-#include "rtc_base/socketaddress.h"
+#include "api/crypto_params.h"
+#include "api/media_types.h"
+#include "api/rtp_parameters.h"
+#include "api/rtp_transceiver_interface.h"
+#include "media/base/media_channel.h"
+#include "media/base/stream_params.h"
+#include "p2p/base/transport_description.h"
+#include "p2p/base/transport_info.h"
+#include "pc/simulcast_description.h"
+#include "rtc_base/socket_address.h"
 
 namespace cricket {
 
@@ -549,4 +549,4 @@ enum ContentSource { CS_LOCAL, CS_REMOTE };
 
 }  // namespace cricket
 
-#endif  // PC_SESSIONDESCRIPTION_H_
+#endif  // PC_SESSION_DESCRIPTION_H_

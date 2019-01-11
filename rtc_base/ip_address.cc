@@ -20,10 +20,10 @@
 #include <netdb.h>
 #endif
 
-#include "rtc_base/byteorder.h"
-#include "rtc_base/ipaddress.h"
-#include "rtc_base/nethelpers.h"
-#include "rtc_base/stringutils.h"
+#include "rtc_base/byte_order.h"
+#include "rtc_base/ip_address.h"
+#include "rtc_base/net_helpers.h"
+#include "rtc_base/string_utils.h"
 
 #if defined(WEBRTC_WIN)
 #include "rtc_base/win32.h"

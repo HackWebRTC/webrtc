@@ -13,8 +13,8 @@
 
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/timestampaligner.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"
+#include "rtc_base/timestamp_aligner.h"
 
 namespace rtc {
 

@@ -10,7 +10,7 @@
 
 #include "api/test/create_videocodec_test_fixture.h"
 #include "test/gtest.h"
-#include "test/testsupport/fileutils.h"
+#include "test/testsupport/file_utils.h"
 
 namespace webrtc {
 namespace test {

@@ -10,9 +10,9 @@
 
 // This file contains tests for |RtpTransceiver|.
 
-#include "pc/rtptransceiver.h"
+#include "pc/rtp_transceiver.h"
 
-#include "pc/test/mock_channelinterface.h"
+#include "pc/test/mock_channel_interface.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 

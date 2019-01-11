@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "api/stats/rtcstats.h"
+#include "api/stats/rtc_stats.h"
 
 #include <cmath>
 #include <cstdint>
@@ -17,7 +17,7 @@
 
 #include "rtc_base/checks.h"
 #include "rtc_base/strings/json.h"
-#include "stats/test/rtcteststats.h"
+#include "stats/test/rtc_test_stats.h"
 #include "test/gtest.h"
 
 namespace webrtc {

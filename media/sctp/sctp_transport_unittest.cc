@@ -15,12 +15,12 @@
 #include <string>
 #include <vector>
 
-#include "media/sctp/sctptransport.h"
-#include "p2p/base/fakedtlstransport.h"
-#include "rtc_base/copyonwritebuffer.h"
+#include "media/sctp/sctp_transport.h"
+#include "p2p/base/fake_dtls_transport.h"
+#include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/messagequeue.h"
+#include "rtc_base/message_queue.h"
 #include "rtc_base/thread.h"
 #include "test/gtest.h"
 

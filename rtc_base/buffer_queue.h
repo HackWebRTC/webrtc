@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_BUFFERQUEUE_H_
-#define RTC_BASE_BUFFERQUEUE_H_
+#ifndef RTC_BASE_BUFFER_QUEUE_H_
+#define RTC_BASE_BUFFER_QUEUE_H_
 
 #include <stddef.h>
 #include <deque>
 #include <vector>
 
 #include "rtc_base/buffer.h"
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/criticalsection.h"
+#include "rtc_base/constructor_magic.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/thread_annotations.h"
 
 namespace rtc {
@@ -60,4 +60,4 @@ class BufferQueue {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_BUFFERQUEUE_H_
+#endif  // RTC_BASE_BUFFER_QUEUE_H_

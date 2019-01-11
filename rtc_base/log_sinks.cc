@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/logsinks.h"
+#include "rtc_base/log_sinks.h"
 
 #include <string.h>
 #include <cstdio>

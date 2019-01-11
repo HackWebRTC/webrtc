@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_RTPTRANSPORTTESTUTIL_H_
-#define PC_RTPTRANSPORTTESTUTIL_H_
+#ifndef PC_TEST_RTP_TRANSPORT_TEST_UTIL_H_
+#define PC_TEST_RTP_TRANSPORT_TEST_UTIL_H_
 
 #include "call/rtp_packet_sink_interface.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
-#include "pc/rtptransportinternal.h"
+#include "pc/rtp_transport_internal.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace webrtc {
@@ -75,4 +75,4 @@ class TransportObserver : public RtpPacketSinkInterface,
 
 }  // namespace webrtc
 
-#endif  // PC_RTPTRANSPORTTESTUTIL_H_
+#endif  // PC_TEST_RTP_TRANSPORT_TEST_UTIL_H_

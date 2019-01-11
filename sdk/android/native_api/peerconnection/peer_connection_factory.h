@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SDK_ANDROID_NATIVE_API_PEERCONNECTION_PEERCONNECTIONFACTORY_H_
-#define SDK_ANDROID_NATIVE_API_PEERCONNECTION_PEERCONNECTIONFACTORY_H_
+#ifndef SDK_ANDROID_NATIVE_API_PEERCONNECTION_PEER_CONNECTION_FACTORY_H_
+#define SDK_ANDROID_NATIVE_API_PEERCONNECTION_PEER_CONNECTION_FACTORY_H_
 
 #include <jni.h>
 
 #include <memory>
 
-#include "api/peerconnectioninterface.h"
+#include "api/peer_connection_interface.h"
 #include "rtc_base/thread.h"
 
 namespace webrtc {
@@ -31,4 +31,4 @@ jobject NativeToJavaPeerConnectionFactory(
 
 }  // namespace webrtc
 
-#endif  // SDK_ANDROID_NATIVE_API_PEERCONNECTION_PEERCONNECTIONFACTORY_H_
+#endif  // SDK_ANDROID_NATIVE_API_PEERCONNECTION_PEER_CONNECTION_FACTORY_H_

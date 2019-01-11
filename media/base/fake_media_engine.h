@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MEDIA_BASE_FAKEMEDIAENGINE_H_
-#define MEDIA_BASE_FAKEMEDIAENGINE_H_
+#ifndef MEDIA_BASE_FAKE_MEDIA_ENGINE_H_
+#define MEDIA_BASE_FAKE_MEDIA_ENGINE_H_
 
 #include <list>
 #include <map>
@@ -20,14 +20,14 @@
 #include <vector>
 
 #include "api/call/audio_sink.h"
-#include "media/base/audiosource.h"
-#include "media/base/mediaengine.h"
-#include "media/base/rtputils.h"
-#include "media/base/streamparams.h"
-#include "media/engine/webrtcvideoengine.h"
+#include "media/base/audio_source.h"
+#include "media/base/media_engine.h"
+#include "media/base/rtp_utils.h"
+#include "media/base/stream_params.h"
+#include "media/engine/webrtc_video_engine.h"
 #include "modules/audio_processing/include/audio_processing.h"
-#include "rtc_base/copyonwritebuffer.h"
-#include "rtc_base/networkroute.h"
+#include "rtc_base/copy_on_write_buffer.h"
+#include "rtc_base/network_route.h"
 
 using webrtc::RtpExtension;
 
@@ -594,4 +594,4 @@ class FakeDataEngine : public DataEngineInterface {
 
 }  // namespace cricket
 
-#endif  // MEDIA_BASE_FAKEMEDIAENGINE_H_
+#endif  // MEDIA_BASE_FAKE_MEDIA_ENGINE_H_

@@ -10,7 +10,7 @@
 
 #include "modules/rtp_rtcp/source/contributing_sources.h"
 
-#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"
 
 #include "test/gmock.h"
 #include "test/gtest.h"

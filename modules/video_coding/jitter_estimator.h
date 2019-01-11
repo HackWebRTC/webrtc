@@ -12,7 +12,7 @@
 #define MODULES_VIDEO_CODING_JITTER_ESTIMATOR_H_
 
 #include "modules/video_coding/rtt_filter.h"
-#include "rtc_base/rollingaccumulator.h"
+#include "rtc_base/rolling_accumulator.h"
 
 namespace webrtc {
 

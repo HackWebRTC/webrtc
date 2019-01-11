@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "p2p/client/basicportallocator.h"
+#include "p2p/client/basic_port_allocator.h"
 
 #include <algorithm>
 #include <functional>
@@ -16,13 +16,13 @@
 #include <string>
 #include <vector>
 
-#include "p2p/base/basicpacketsocketfactory.h"
+#include "p2p/base/basic_packet_socket_factory.h"
 #include "p2p/base/port.h"
-#include "p2p/base/relayport.h"
-#include "p2p/base/stunport.h"
-#include "p2p/base/tcpport.h"
-#include "p2p/base/turnport.h"
-#include "p2p/base/udpport.h"
+#include "p2p/base/relay_port.h"
+#include "p2p/base/stun_port.h"
+#include "p2p/base/tcp_port.h"
+#include "p2p/base/turn_port.h"
+#include "p2p/base/udp_port.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/helpers.h"
 #include "rtc_base/logging.h"

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/rtpmediautils.h"
+#include "pc/rtp_media_utils.h"
 
 #include "rtc_base/checks.h"
 

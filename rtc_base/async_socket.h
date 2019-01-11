@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_ASYNCSOCKET_H_
-#define RTC_BASE_ASYNCSOCKET_H_
+#ifndef RTC_BASE_ASYNC_SOCKET_H_
+#define RTC_BASE_ASYNC_SOCKET_H_
 
 #include <stddef.h>
 #include <stdint.h>
 
 #include "rtc_base/socket.h"
-#include "rtc_base/socketaddress.h"
+#include "rtc_base/socket_address.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace rtc {
@@ -83,4 +83,4 @@ class AsyncSocketAdapter : public AsyncSocket, public sigslot::has_slots<> {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_ASYNCSOCKET_H_
+#endif  // RTC_BASE_ASYNC_SOCKET_H_

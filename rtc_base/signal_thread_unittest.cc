@@ -10,10 +10,10 @@
 
 #include <memory>
 
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/signalthread.h"
-#include "rtc_base/socketserver.h"
+#include "rtc_base/signal_thread.h"
+#include "rtc_base/socket_server.h"
 #include "rtc_base/thread.h"
 #include "test/gtest.h"
 

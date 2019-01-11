@@ -16,7 +16,7 @@
 #include "rtc_base/file.h"
 #include "rtc_base/flags.h"
 #include "test/gtest.h"
-#include "test/testsupport/fileutils.h"
+#include "test/testsupport/file_utils.h"
 
 WEBRTC_DECLARE_string(test_artifacts_dir);
 

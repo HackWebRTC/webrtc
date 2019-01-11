@@ -17,7 +17,7 @@
 #include "absl/types/optional.h"
 #include "api/video/video_stream_encoder_observer.h"
 #include "modules/video_coding/utility/quality_scaler.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/numerics/exp_filter.h"
 #include "rtc_base/sequenced_task_checker.h"
 #include "rtc_base/task_queue.h"

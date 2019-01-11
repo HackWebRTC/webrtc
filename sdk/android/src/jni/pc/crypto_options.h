@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SDK_ANDROID_SRC_JNI_PC_CRYPTOOPTIONS_H_
-#define SDK_ANDROID_SRC_JNI_PC_CRYPTOOPTIONS_H_
+#ifndef SDK_ANDROID_SRC_JNI_PC_CRYPTO_OPTIONS_H_
+#define SDK_ANDROID_SRC_JNI_PC_CRYPTO_OPTIONS_H_
 
 #include <jni.h>
 
 #include "absl/types/optional.h"
-#include "api/crypto/cryptooptions.h"
+#include "api/crypto/crypto_options.h"
 #include "sdk/android/native_api/jni/scoped_java_ref.h"
 
 namespace webrtc {
@@ -27,4 +27,4 @@ absl::optional<CryptoOptions> JavaToNativeOptionalCryptoOptions(
 }  // namespace jni
 }  // namespace webrtc
 
-#endif  // SDK_ANDROID_SRC_JNI_PC_CRYPTOOPTIONS_H_
+#endif  // SDK_ANDROID_SRC_JNI_PC_CRYPTO_OPTIONS_H_

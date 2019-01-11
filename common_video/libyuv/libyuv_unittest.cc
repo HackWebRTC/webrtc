@@ -20,7 +20,7 @@
 #include "test/frame_utils.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
-#include "test/testsupport/fileutils.h"
+#include "test/testsupport/file_utils.h"
 #include "third_party/libyuv/include/libyuv.h"
 
 namespace webrtc {

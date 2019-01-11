@@ -19,11 +19,11 @@
 
 #include "absl/memory/memory.h"
 #include "absl/types/optional.h"
-#include "api/rtceventlogoutput.h"
+#include "api/rtc_event_log_output.h"
 #include "logging/rtc_event_log/encoder/rtc_event_log_encoder_legacy.h"
 #include "logging/rtc_event_log/encoder/rtc_event_log_encoder_new_format.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/event.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"

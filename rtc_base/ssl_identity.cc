@@ -9,18 +9,18 @@
  */
 
 // Handling of certificates and keypairs for SSLStreamAdapter's peer mode.
-#include "rtc_base/sslidentity.h"
+#include "rtc_base/ssl_identity.h"
 
 #include <string.h>
 #include <time.h>
 #include <string>
 
 #include "rtc_base/checks.h"
-#include "rtc_base/opensslidentity.h"
-#include "rtc_base/sslcertificate.h"
+#include "rtc_base/openssl_identity.h"
+#include "rtc_base/ssl_certificate.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/third_party/base64/base64.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"
 
 namespace rtc {
 

@@ -13,18 +13,18 @@
 #include <string>
 #include <vector>
 
-#include "p2p/base/fakeportallocator.h"
-#include "p2p/base/mockicetransport.h"
-#include "p2p/base/p2pconstants.h"
+#include "p2p/base/fake_port_allocator.h"
+#include "p2p/base/mock_ice_transport.h"
+#include "p2p/base/p2p_constants.h"
 #include "p2p/base/port.h"
-#include "p2p/base/regatheringcontroller.h"
-#include "p2p/base/stunserver.h"
+#include "p2p/base/regathering_controller.h"
+#include "p2p/base/stun_server.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/refcountedobject.h"
+#include "rtc_base/ref_counted_object.h"
 #include "rtc_base/scoped_ref_ptr.h"
-#include "rtc_base/socketaddress.h"
+#include "rtc_base/socket_address.h"
 #include "rtc_base/thread.h"
-#include "rtc_base/virtualsocketserver.h"
+#include "rtc_base/virtual_socket_server.h"
 
 namespace {
 

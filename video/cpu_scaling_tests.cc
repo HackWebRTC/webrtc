@@ -11,7 +11,7 @@
 #include <limits>
 #include <vector>
 
-#include "api/rtpparameters.h"
+#include "api/rtp_parameters.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_sink_interface.h"
 #include "api/video/video_source_interface.h"

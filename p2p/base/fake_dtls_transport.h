@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_FAKEDTLSTRANSPORT_H_
-#define P2P_BASE_FAKEDTLSTRANSPORT_H_
+#ifndef P2P_BASE_FAKE_DTLS_TRANSPORT_H_
+#define P2P_BASE_FAKE_DTLS_TRANSPORT_H_
 
 #include <memory>
 #include <string>
@@ -17,11 +17,11 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
-#include "api/crypto/cryptooptions.h"
-#include "p2p/base/dtlstransportinternal.h"
-#include "p2p/base/fakeicetransport.h"
-#include "rtc_base/fakesslidentity.h"
-#include "rtc_base/rtccertificate.h"
+#include "api/crypto/crypto_options.h"
+#include "p2p/base/dtls_transport_internal.h"
+#include "p2p/base/fake_ice_transport.h"
+#include "rtc_base/fake_ssl_identity.h"
+#include "rtc_base/rtc_certificate.h"
 
 namespace cricket {
 
@@ -288,4 +288,4 @@ class FakeDtlsTransport : public DtlsTransportInternal {
 
 }  // namespace cricket
 
-#endif  // P2P_BASE_FAKEDTLSTRANSPORT_H_
+#endif  // P2P_BASE_FAKE_DTLS_TRANSPORT_H_

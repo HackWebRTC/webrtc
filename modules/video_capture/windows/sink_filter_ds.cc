@@ -14,7 +14,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
-#include "rtc_base/stringutils.h"
+#include "rtc_base/string_utils.h"
 
 #include <dvdmedia.h>  // VIDEOINFOHEADER2
 #include <initguid.h>

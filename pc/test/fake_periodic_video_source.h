@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_TEST_FAKEPERIODICVIDEOSOURCE_H_
-#define PC_TEST_FAKEPERIODICVIDEOSOURCE_H_
+#ifndef PC_TEST_FAKE_PERIODIC_VIDEO_SOURCE_H_
+#define PC_TEST_FAKE_PERIODIC_VIDEO_SOURCE_H_
 
 #include <memory>
 
 #include "absl/memory/memory.h"
 #include "api/video/video_source_interface.h"
-#include "media/base/fakeframesource.h"
-#include "media/base/videobroadcaster.h"
+#include "media/base/fake_frame_source.h"
+#include "media/base/video_broadcaster.h"
 #include "rtc_base/task_queue.h"
 
 namespace webrtc {
@@ -99,4 +99,4 @@ class FakePeriodicVideoSource final
 
 }  // namespace webrtc
 
-#endif  // PC_TEST_FAKEPERIODICVIDEOSOURCE_H_
+#endif  // PC_TEST_FAKE_PERIODIC_VIDEO_SOURCE_H_

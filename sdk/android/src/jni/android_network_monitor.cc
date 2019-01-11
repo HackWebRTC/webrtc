@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "sdk/android/src/jni/androidnetworkmonitor.h"
+#include "sdk/android/src/jni/android_network_monitor.h"
 
 #include <dlfcn.h>
 #ifndef RTLD_NOLOAD
@@ -18,7 +18,7 @@
 
 #include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/ipaddress.h"
+#include "rtc_base/ip_address.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/string_builder.h"
 #include "sdk/android/generated_base_jni/jni/NetworkMonitorAutoDetect_jni.h"

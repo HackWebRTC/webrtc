@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "p2p/client/turnportfactory.h"
+#include "p2p/client/turn_port_factory.h"
 
 #include <memory>
 #include <utility>
 
-#include "p2p/base/portallocator.h"
-#include "p2p/base/turnport.h"
+#include "p2p/base/port_allocator.h"
+#include "p2p/base/turn_port.h"
 
 namespace cricket {
 

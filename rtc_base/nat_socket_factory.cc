@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/natsocketfactory.h"
+#include "rtc_base/nat_socket_factory.h"
 
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/natserver.h"
-#include "rtc_base/virtualsocketserver.h"
+#include "rtc_base/nat_server.h"
+#include "rtc_base/virtual_socket_server.h"
 
 namespace rtc {
 

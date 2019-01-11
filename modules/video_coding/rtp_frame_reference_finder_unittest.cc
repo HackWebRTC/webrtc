@@ -17,7 +17,7 @@
 #include "modules/video_coding/frame_object.h"
 #include "modules/video_coding/packet_buffer.h"
 #include "rtc_base/random.h"
-#include "rtc_base/refcount.h"
+#include "rtc_base/ref_count.h"
 #include "system_wrappers/include/clock.h"
 #include "test/gtest.h"
 

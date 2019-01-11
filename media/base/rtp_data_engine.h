@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MEDIA_BASE_RTPDATAENGINE_H_
-#define MEDIA_BASE_RTPDATAENGINE_H_
+#ifndef MEDIA_BASE_RTP_DATA_ENGINE_H_
+#define MEDIA_BASE_RTP_DATA_ENGINE_H_
 
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "media/base/mediachannel.h"
-#include "media/base/mediaconstants.h"
-#include "media/base/mediaengine.h"
+#include "media/base/media_channel.h"
+#include "media/base/media_constants.h"
+#include "media/base/media_engine.h"
 
 namespace rtc {
 class DataRateLimiter;
@@ -109,4 +109,4 @@ class RtpDataMediaChannel : public DataMediaChannel {
 
 }  // namespace cricket
 
-#endif  // MEDIA_BASE_RTPDATAENGINE_H_
+#endif  // MEDIA_BASE_RTP_DATA_ENGINE_H_

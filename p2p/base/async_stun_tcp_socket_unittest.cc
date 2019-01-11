@@ -14,12 +14,12 @@
 #include <memory>
 #include <string>
 
-#include "p2p/base/asyncstuntcpsocket.h"
-#include "rtc_base/asyncsocket.h"
+#include "p2p/base/async_stun_tcp_socket.h"
+#include "rtc_base/async_socket.h"
 #include "rtc_base/network/sent_packet.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
-#include "rtc_base/virtualsocketserver.h"
+#include "rtc_base/virtual_socket_server.h"
 #include "test/gtest.h"
 
 namespace cricket {

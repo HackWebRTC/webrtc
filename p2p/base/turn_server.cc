@@ -8,22 +8,22 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "p2p/base/turnserver.h"
+#include "p2p/base/turn_server.h"
 
 #include <tuple>  // for std::tie
 #include <utility>
 
 #include "absl/memory/memory.h"
-#include "p2p/base/asyncstuntcpsocket.h"
-#include "p2p/base/packetsocketfactory.h"
+#include "p2p/base/async_stun_tcp_socket.h"
+#include "p2p/base/packet_socket_factory.h"
 #include "p2p/base/stun.h"
 #include "rtc_base/bind.h"
-#include "rtc_base/bytebuffer.h"
+#include "rtc_base/byte_buffer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/helpers.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/messagedigest.h"
-#include "rtc_base/socketadapters.h"
+#include "rtc_base/message_digest.h"
+#include "rtc_base/socket_adapters.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/thread.h"
 

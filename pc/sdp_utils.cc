@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/sdputils.h"
+#include "pc/sdp_utils.h"
 
 #include <string>
 #include <utility>
 
 #include "absl/memory/memory.h"
-#include "api/jsepsessiondescription.h"
+#include "api/jsep_session_description.h"
 
 namespace webrtc {
 

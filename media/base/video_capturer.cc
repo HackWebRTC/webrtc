@@ -10,7 +10,7 @@
 
 // Implementation file of class VideoCapturer.
 
-#include "media/base/videocapturer.h"
+#include "media/base/video_capturer.h"
 
 #include <cstdint>
 
@@ -21,7 +21,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/scoped_ref_ptr.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"
 
 namespace cricket {
 

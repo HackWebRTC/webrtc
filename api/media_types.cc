@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "api/mediatypes.h"
+#include "api/media_types.h"
 
-#include "api/mediastreaminterface.h"
+#include "api/media_stream_interface.h"
 #include "rtc_base/checks.h"
 
 namespace {

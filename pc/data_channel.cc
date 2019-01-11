@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/datachannel.h"
+#include "pc/data_channel.h"
 
 #include <memory>
 #include <string>
 #include <utility>
 
 #include "absl/memory/memory.h"
-#include "media/sctp/sctptransportinternal.h"
-#include "pc/sctputils.h"
+#include "media/sctp/sctp_transport_internal.h"
+#include "pc/sctp_utils.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/refcountedobject.h"
+#include "rtc_base/ref_counted_object.h"
 #include "rtc_base/thread.h"
 
 namespace webrtc {

@@ -25,11 +25,11 @@
 
 #include "absl/types/optional.h"
 #include "api/array_view.h"
-#include "api/rtcerror.h"
+#include "api/rtc_error.h"
 #include "api/video/encoded_image.h"
-#include "rtc_base/copyonwritebuffer.h"
+#include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/deprecation.h"
-#include "rtc_base/networkroute.h"
+#include "rtc_base/network_route.h"
 
 namespace rtc {
 class PacketTransportInternal;

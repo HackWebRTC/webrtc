@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/mediastreamobserver.h"
+#include "pc/media_stream_observer.h"
 
 #include <algorithm>
 #include <string>

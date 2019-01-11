@@ -16,9 +16,9 @@
 #include <string>
 #include <vector>
 
-#include "api/rtpparameters.h"
+#include "api/rtp_parameters.h"
 #include "api/video_codecs/sdp_video_format.h"
-#include "media/base/mediaconstants.h"
+#include "media/base/media_constants.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace cricket {

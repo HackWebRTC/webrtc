@@ -15,7 +15,7 @@
 
 #include "absl/types/optional.h"
 #include "api/video/video_bitrate_allocation.h"
-#include "media/base/mediaconstants.h"
+#include "media/base/media_constants.h"
 #include "media/engine/constants.h"
 #include "media/engine/simulcast.h"
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"

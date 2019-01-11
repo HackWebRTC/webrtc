@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_WIN32WINDOW_H_
-#define RTC_BASE_WIN32WINDOW_H_
+#ifndef RTC_BASE_WIN32_WINDOW_H_
+#define RTC_BASE_WIN32_WINDOW_H_
 
 #if defined(WEBRTC_WIN)
 
@@ -67,4 +67,4 @@ class Win32Window {
 
 #endif  // WEBRTC_WIN
 
-#endif  // RTC_BASE_WIN32WINDOW_H_
+#endif  // RTC_BASE_WIN32_WINDOW_H_

@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_SOCKETADDRESSPAIR_H_
-#define RTC_BASE_SOCKETADDRESSPAIR_H_
+#ifndef RTC_BASE_SOCKET_ADDRESS_PAIR_H_
+#define RTC_BASE_SOCKET_ADDRESS_PAIR_H_
 
 #include <stddef.h>
 
-#include "rtc_base/socketaddress.h"
+#include "rtc_base/socket_address.h"
 
 namespace rtc {
 
@@ -40,4 +40,4 @@ class SocketAddressPair {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_SOCKETADDRESSPAIR_H_
+#endif  // RTC_BASE_SOCKET_ADDRESS_PAIR_H_

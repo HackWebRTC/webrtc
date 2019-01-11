@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "sdk/android/src/jni/pc/mediastreamtrack.h"
+#include "sdk/android/src/jni/pc/media_stream_track.h"
 
-#include "api/mediastreaminterface.h"
+#include "api/media_stream_interface.h"
 #include "sdk/android/generated_peerconnection_jni/jni/MediaStreamTrack_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/src/jni/jni_helpers.h"

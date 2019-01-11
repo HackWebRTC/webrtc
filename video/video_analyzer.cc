@@ -21,7 +21,7 @@
 #include "rtc_base/memory_usage.h"
 #include "system_wrappers/include/cpu_info.h"
 #include "test/call_test.h"
-#include "test/testsupport/fileutils.h"
+#include "test/testsupport/file_utils.h"
 #include "test/testsupport/frame_writer.h"
 #include "test/testsupport/perf_test.h"
 #include "test/testsupport/test_artifacts.h"

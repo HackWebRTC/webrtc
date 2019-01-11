@@ -11,8 +11,8 @@
 // TODO(deadbeef): Move this out of api/; it's an implementation detail and
 // shouldn't be used externally.
 
-#ifndef API_JSEPSESSIONDESCRIPTION_H_
-#define API_JSEPSESSIONDESCRIPTION_H_
+#ifndef API_JSEP_SESSION_DESCRIPTION_H_
+#define API_JSEP_SESSION_DESCRIPTION_H_
 
 #include <memory>
 #include <string>
@@ -21,8 +21,8 @@
 #include "absl/strings/string_view.h"
 #include "api/candidate.h"
 #include "api/jsep.h"
-#include "api/jsepicecandidate.h"
-#include "rtc_base/constructormagic.h"
+#include "api/jsep_ice_candidate.h"
+#include "rtc_base/constructor_magic.h"
 
 namespace cricket {
 class SessionDescription;
@@ -88,4 +88,4 @@ class JsepSessionDescription : public SessionDescriptionInterface {
 
 }  // namespace webrtc
 
-#endif  // API_JSEPSESSIONDESCRIPTION_H_
+#endif  // API_JSEP_SESSION_DESCRIPTION_H_

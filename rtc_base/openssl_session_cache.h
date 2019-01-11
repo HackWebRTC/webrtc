@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_OPENSSLSESSIONCACHE_H_
-#define RTC_BASE_OPENSSLSESSIONCACHE_H_
+#ifndef RTC_BASE_OPENSSL_SESSION_CACHE_H_
+#define RTC_BASE_OPENSSL_SESSION_CACHE_H_
 
 #include <openssl/ossl_typ.h>
 #include <map>
 #include <string>
 
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/sslstreamadapter.h"
+#include "rtc_base/constructor_magic.h"
+#include "rtc_base/ssl_stream_adapter.h"
 
 #ifndef OPENSSL_IS_BORINGSSL
 typedef struct ssl_session_st SSL_SESSION;
@@ -64,4 +64,4 @@ class OpenSSLSessionCache final {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_OPENSSLSESSIONCACHE_H_
+#endif  // RTC_BASE_OPENSSL_SESSION_CACHE_H_

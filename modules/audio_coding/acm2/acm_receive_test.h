@@ -16,7 +16,7 @@
 #include <string>
 
 #include "api/audio_codecs/audio_decoder_factory.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "system_wrappers/include/clock.h"
 

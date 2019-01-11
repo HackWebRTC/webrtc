@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "media/base/videosourcebase.h"
+#include "media/base/video_source_base.h"
 
 #include <algorithm>
 

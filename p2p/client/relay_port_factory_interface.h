@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_CLIENT_RELAYPORTFACTORYINTERFACE_H_
-#define P2P_CLIENT_RELAYPORTFACTORYINTERFACE_H_
+#ifndef P2P_CLIENT_RELAY_PORT_FACTORY_INTERFACE_H_
+#define P2P_CLIENT_RELAY_PORT_FACTORY_INTERFACE_H_
 
 #include <memory>
 #include <string>
 
-#include "p2p/base/portinterface.h"
-#include "rtc_base/refcount.h"
+#include "p2p/base/port_interface.h"
+#include "rtc_base/ref_count.h"
 
 namespace rtc {
 class AsyncPacketSocket;
@@ -67,4 +67,4 @@ class RelayPortFactoryInterface {
 
 }  // namespace cricket
 
-#endif  // P2P_CLIENT_RELAYPORTFACTORYINTERFACE_H_
+#endif  // P2P_CLIENT_RELAY_PORT_FACTORY_INTERFACE_H_

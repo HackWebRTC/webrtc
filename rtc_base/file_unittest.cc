@@ -13,7 +13,7 @@
 
 #include "rtc_base/file.h"
 #include "test/gtest.h"
-#include "test/testsupport/fileutils.h"
+#include "test/testsupport/file_utils.h"
 
 #if defined(WEBRTC_WIN)
 

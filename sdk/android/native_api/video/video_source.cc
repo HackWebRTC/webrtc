@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "sdk/android/native_api/video/videosource.h"
+#include "sdk/android/native_api/video/video_source.h"
 
-#include "sdk/android/src/jni/androidvideotracksource.h"
-#include "sdk/android/src/jni/nativecapturerobserver.h"
+#include "sdk/android/src/jni/android_video_track_source.h"
+#include "sdk/android/src/jni/native_capturer_observer.h"
 
 namespace webrtc {
 

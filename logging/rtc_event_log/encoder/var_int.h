@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef LOGGING_RTC_EVENT_LOG_ENCODER_VARINT_H_
-#define LOGGING_RTC_EVENT_LOG_ENCODER_VARINT_H_
+#ifndef LOGGING_RTC_EVENT_LOG_ENCODER_VAR_INT_H_
+#define LOGGING_RTC_EVENT_LOG_ENCODER_VAR_INT_H_
 
 #include <stddef.h>
 #include <stdint.h>
 #include <string>
 
 #include "absl/strings/string_view.h"
-#include "rtc_base/bitbuffer.h"
+#include "rtc_base/bit_buffer.h"
 
 namespace webrtc {
 
@@ -44,4 +44,4 @@ size_t DecodeVarInt(rtc::BitBuffer* input, uint64_t* output);
 
 }  // namespace webrtc
 
-#endif  // LOGGING_RTC_EVENT_LOG_ENCODER_VARINT_H_
+#endif  // LOGGING_RTC_EVENT_LOG_ENCODER_VAR_INT_H_

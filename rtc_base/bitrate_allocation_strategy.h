@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_BITRATEALLOCATIONSTRATEGY_H_
-#define RTC_BASE_BITRATEALLOCATIONSTRATEGY_H_
+#ifndef RTC_BASE_BITRATE_ALLOCATION_STRATEGY_H_
+#define RTC_BASE_BITRATE_ALLOCATION_STRATEGY_H_
 
 #include <stdint.h>
 #include <string>
@@ -117,4 +117,4 @@ class AudioPriorityBitrateAllocationStrategy
 };
 }  // namespace rtc
 
-#endif  // RTC_BASE_BITRATEALLOCATIONSTRATEGY_H_
+#endif  // RTC_BASE_BITRATE_ALLOCATION_STRATEGY_H_

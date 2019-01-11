@@ -15,8 +15,8 @@
 
 #include <utility>
 
-#include "rtc_base/refcount.h"
-#include "rtc_base/refcountedobject.h"
+#include "rtc_base/ref_count.h"
+#include "rtc_base/ref_counted_object.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/sequenced_task_checker.h"
 

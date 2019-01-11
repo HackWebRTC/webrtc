@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef LOGGING_RTC_EVENT_LOG_ICELOGGER_H_
-#define LOGGING_RTC_EVENT_LOG_ICELOGGER_H_
+#ifndef LOGGING_RTC_EVENT_LOG_ICE_LOGGER_H_
+#define LOGGING_RTC_EVENT_LOG_ICE_LOGGER_H_
 
 #include <unordered_map>
 
@@ -53,4 +53,4 @@ class IceEventLog {
 
 }  // namespace webrtc
 
-#endif  // LOGGING_RTC_EVENT_LOG_ICELOGGER_H_
+#endif  // LOGGING_RTC_EVENT_LOG_ICE_LOGGER_H_

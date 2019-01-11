@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_SSLADAPTER_H_
-#define RTC_BASE_SSLADAPTER_H_
+#ifndef RTC_BASE_SSL_ADAPTER_H_
+#define RTC_BASE_SSL_ADAPTER_H_
 
 #include <string>
 #include <vector>
 
-#include "rtc_base/asyncsocket.h"
-#include "rtc_base/sslcertificate.h"
-#include "rtc_base/sslidentity.h"
-#include "rtc_base/sslstreamadapter.h"
+#include "rtc_base/async_socket.h"
+#include "rtc_base/ssl_certificate.h"
+#include "rtc_base/ssl_identity.h"
+#include "rtc_base/ssl_stream_adapter.h"
 
 namespace rtc {
 
@@ -103,4 +103,4 @@ bool CleanupSSL();
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_SSLADAPTER_H_
+#endif  // RTC_BASE_SSL_ADAPTER_H_

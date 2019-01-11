@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_SIGSLOTREPEATER_H__
-#define RTC_BASE_SIGSLOTREPEATER_H__
+#ifndef RTC_BASE_SIGSLOT_REPEATER_H__
+#define RTC_BASE_SIGSLOT_REPEATER_H__
 
 // repeaters are both signals and slots, which are designed as intermediate
 // pass-throughs for signals and slots which don't know about each other (for
@@ -53,4 +53,4 @@ using repeater =
 
 }  // namespace sigslot
 
-#endif  // RTC_BASE_SIGSLOTREPEATER_H__
+#endif  // RTC_BASE_SIGSLOT_REPEATER_H__

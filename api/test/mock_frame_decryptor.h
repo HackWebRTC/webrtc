@@ -13,7 +13,7 @@
 
 #include <vector>
 
-#include "api/crypto/framedecryptorinterface.h"
+#include "api/crypto/frame_decryptor_interface.h"
 #include "test/gmock.h"
 
 namespace webrtc {

@@ -17,7 +17,7 @@
 
 #include "modules/desktop_capture/desktop_capturer.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/stringutils.h"
+#include "rtc_base/string_utils.h"
 #include "rtc_base/win32.h"
 
 namespace webrtc {

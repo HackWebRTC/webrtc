@@ -17,11 +17,11 @@
 #include <vector>
 
 #include "api/call/transport.h"
-#include "api/crypto/cryptooptions.h"
+#include "api/crypto/crypto_options.h"
 #include "api/media_transport_interface.h"
 #include "api/rtp_headers.h"
-#include "api/rtpparameters.h"
-#include "api/rtpreceiverinterface.h"
+#include "api/rtp_parameters.h"
+#include "api/rtp_receiver_interface.h"
 #include "api/video/video_content_type.h"
 #include "api/video/video_sink_interface.h"
 #include "api/video/video_timing.h"

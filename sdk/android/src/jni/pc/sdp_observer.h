@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SDK_ANDROID_SRC_JNI_PC_SDPOBSERVER_H_
-#define SDK_ANDROID_SRC_JNI_PC_SDPOBSERVER_H_
+#ifndef SDK_ANDROID_SRC_JNI_PC_SDP_OBSERVER_H_
+#define SDK_ANDROID_SRC_JNI_PC_SDP_OBSERVER_H_
 
 #include <memory>
 #include <string>
 
-#include "api/peerconnectioninterface.h"
+#include "api/peer_connection_interface.h"
 #include "sdk/android/src/jni/jni_helpers.h"
-#include "sdk/android/src/jni/pc/sessiondescription.h"
+#include "sdk/android/src/jni/pc/session_description.h"
 
 namespace webrtc {
 namespace jni {
@@ -58,4 +58,4 @@ class SetSdpObserverJni : public SetSessionDescriptionObserver {
 }  // namespace jni
 }  // namespace webrtc
 
-#endif  // SDK_ANDROID_SRC_JNI_PC_SDPOBSERVER_H_
+#endif  // SDK_ANDROID_SRC_JNI_PC_SDP_OBSERVER_H_

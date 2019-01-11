@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "api/audio_codecs/audio_encoder.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 
 namespace webrtc {
 

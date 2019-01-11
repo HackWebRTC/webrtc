@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_SRTPSESSION_H_
-#define PC_SRTPSESSION_H_
+#ifndef PC_SRTP_SESSION_H_
+#define PC_SRTP_SESSION_H_
 
 #include <vector>
 
@@ -128,4 +128,4 @@ class SrtpSession {
 
 }  // namespace cricket
 
-#endif  // PC_SRTPSESSION_H_
+#endif  // PC_SRTP_SESSION_H_

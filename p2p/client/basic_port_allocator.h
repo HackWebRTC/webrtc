@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_CLIENT_BASICPORTALLOCATOR_H_
-#define P2P_CLIENT_BASICPORTALLOCATOR_H_
+#ifndef P2P_CLIENT_BASIC_PORT_ALLOCATOR_H_
+#define P2P_CLIENT_BASIC_PORT_ALLOCATOR_H_
 
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "api/turncustomizer.h"
-#include "p2p/base/portallocator.h"
-#include "p2p/client/relayportfactoryinterface.h"
-#include "p2p/client/turnportfactory.h"
+#include "api/turn_customizer.h"
+#include "p2p/base/port_allocator.h"
+#include "p2p/client/relay_port_factory_interface.h"
+#include "p2p/client/turn_port_factory.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/messagequeue.h"
+#include "rtc_base/message_queue.h"
 #include "rtc_base/network.h"
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/thread.h"
@@ -410,4 +410,4 @@ class AllocationSequence : public rtc::MessageHandler,
 
 }  // namespace cricket
 
-#endif  // P2P_CLIENT_BASICPORTALLOCATOR_H_
+#endif  // P2P_CLIENT_BASIC_PORT_ALLOCATOR_H_

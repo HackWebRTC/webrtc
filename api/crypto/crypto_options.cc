@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "api/crypto/cryptooptions.h"
-#include "rtc_base/sslstreamadapter.h"
+#include "api/crypto/crypto_options.h"
+#include "rtc_base/ssl_stream_adapter.h"
 
 namespace webrtc {
 

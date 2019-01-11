@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_SOCKETSERVER_H_
-#define RTC_BASE_SOCKETSERVER_H_
+#ifndef RTC_BASE_SOCKET_SERVER_H_
+#define RTC_BASE_SOCKET_SERVER_H_
 
 #include <memory>
-#include "rtc_base/socketfactory.h"
+#include "rtc_base/socket_factory.h"
 
 namespace rtc {
 
@@ -59,4 +59,4 @@ class SocketServer : public SocketFactory {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_SOCKETSERVER_H_
+#endif  // RTC_BASE_SOCKET_SERVER_H_

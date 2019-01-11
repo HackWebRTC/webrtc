@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_VIRTUALSOCKETSERVER_H_
-#define RTC_BASE_VIRTUALSOCKETSERVER_H_
+#ifndef RTC_BASE_VIRTUAL_SOCKET_SERVER_H_
+#define RTC_BASE_VIRTUAL_SOCKET_SERVER_H_
 
 #include <deque>
 #include <map>
 
 #include "rtc_base/checks.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/event.h"
-#include "rtc_base/fakeclock.h"
-#include "rtc_base/messagequeue.h"
-#include "rtc_base/socketserver.h"
+#include "rtc_base/fake_clock.h"
+#include "rtc_base/message_queue.h"
+#include "rtc_base/socket_server.h"
 
 namespace rtc {
 
@@ -409,4 +409,4 @@ class VirtualSocket : public AsyncSocket,
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_VIRTUALSOCKETSERVER_H_
+#endif  // RTC_BASE_VIRTUAL_SOCKET_SERVER_H_

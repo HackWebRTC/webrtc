@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SDK_ANDROID_SRC_JNI_ANDROIDMEDIACODECCOMMON_H_
-#define SDK_ANDROID_SRC_JNI_ANDROIDMEDIACODECCOMMON_H_
+#ifndef SDK_ANDROID_SRC_JNI_ANDROID_MEDIA_CODEC_COMMON_H_
+#define SDK_ANDROID_SRC_JNI_ANDROID_MEDIA_CODEC_COMMON_H_
 
 #include <string>
 
@@ -84,4 +84,4 @@ static inline bool CheckException(JNIEnv* jni) {
 }  // namespace jni
 }  // namespace webrtc
 
-#endif  // SDK_ANDROID_SRC_JNI_ANDROIDMEDIACODECCOMMON_H_
+#endif  // SDK_ANDROID_SRC_JNI_ANDROID_MEDIA_CODEC_COMMON_H_

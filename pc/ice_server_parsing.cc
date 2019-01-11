@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/iceserverparsing.h"
+#include "pc/ice_server_parsing.h"
 
 #include <stddef.h>
 #include <cctype>  // For std::isdigit.
 #include <string>
 
-#include "p2p/base/portinterface.h"
+#include "p2p/base/port_interface.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/ipaddress.h"
+#include "rtc_base/ip_address.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/socketaddress.h"
-#include "rtc_base/stringencode.h"
+#include "rtc_base/socket_address.h"
+#include "rtc_base/string_encode.h"
 
 namespace webrtc {
 

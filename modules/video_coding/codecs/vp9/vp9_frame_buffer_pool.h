@@ -17,8 +17,8 @@
 #include <vector>
 
 #include "rtc_base/buffer.h"
-#include "rtc_base/criticalsection.h"
-#include "rtc_base/refcount.h"
+#include "rtc_base/critical_section.h"
+#include "rtc_base/ref_count.h"
 #include "rtc_base/scoped_ref_ptr.h"
 
 struct vpx_codec_ctx;

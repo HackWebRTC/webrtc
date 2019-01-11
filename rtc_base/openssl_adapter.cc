@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/openssladapter.h"
+#include "rtc_base/openssl_adapter.h"
 
 #include <errno.h>
 
@@ -26,9 +26,9 @@
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
-#include "rtc_base/opensslcertificate.h"
-#include "rtc_base/opensslutility.h"
-#include "rtc_base/stringencode.h"
+#include "rtc_base/openssl_certificate.h"
+#include "rtc_base/openssl_utility.h"
+#include "rtc_base/string_encode.h"
 #include "rtc_base/thread.h"
 
 #ifndef OPENSSL_IS_BORINGSSL

@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_BASICPACKETSOCKETFACTORY_H_
-#define P2P_BASE_BASICPACKETSOCKETFACTORY_H_
+#ifndef P2P_BASE_BASIC_PACKET_SOCKET_FACTORY_H_
+#define P2P_BASE_BASIC_PACKET_SOCKET_FACTORY_H_
 
 #include <string>
 
-#include "p2p/base/packetsocketfactory.h"
+#include "p2p/base/packet_socket_factory.h"
 
 namespace rtc {
 
@@ -63,4 +63,4 @@ class BasicPacketSocketFactory : public PacketSocketFactory {
 
 }  // namespace rtc
 
-#endif  // P2P_BASE_BASICPACKETSOCKETFACTORY_H_
+#endif  // P2P_BASE_BASIC_PACKET_SOCKET_FACTORY_H_

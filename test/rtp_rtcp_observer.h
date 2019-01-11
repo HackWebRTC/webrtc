@@ -18,7 +18,7 @@
 #include "call/simulated_packet_receiver.h"
 #include "call/video_send_stream.h"
 #include "modules/rtp_rtcp/include/rtp_header_parser.h"
-#include "rtc_base/criticalsection.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/event.h"
 #include "system_wrappers/include/field_trial.h"
 #include "test/constants.h"

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_RTCSTATSCOLLECTOR_H_
-#define PC_RTCSTATSCOLLECTOR_H_
+#ifndef PC_RTC_STATS_COLLECTOR_H_
+#define PC_RTC_STATS_COLLECTOR_H_
 
 #include <map>
 #include <memory>
@@ -18,20 +18,20 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/stats/rtc_stats_collector_callback.h"
+#include "api/stats/rtc_stats_report.h"
 #include "api/stats/rtcstats_objects.h"
-#include "api/stats/rtcstatscollectorcallback.h"
-#include "api/stats/rtcstatsreport.h"
 #include "call/call.h"
-#include "media/base/mediachannel.h"
-#include "pc/datachannel.h"
-#include "pc/peerconnectioninternal.h"
-#include "pc/trackmediainfomap.h"
-#include "rtc_base/asyncinvoker.h"
-#include "rtc_base/refcount.h"
+#include "media/base/media_channel.h"
+#include "pc/data_channel.h"
+#include "pc/peer_connection_internal.h"
+#include "pc/track_media_info_map.h"
+#include "rtc_base/async_invoker.h"
+#include "rtc_base/ref_count.h"
 #include "rtc_base/scoped_ref_ptr.h"
-#include "rtc_base/sslidentity.h"
+#include "rtc_base/ssl_identity.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"
 
 namespace webrtc {
 
@@ -271,4 +271,4 @@ const char* DataStateToRTCDataChannelStateForTesting(
 
 }  // namespace webrtc
 
-#endif  // PC_RTCSTATSCOLLECTOR_H_
+#endif  // PC_RTC_STATS_COLLECTOR_H_

@@ -64,19 +64,19 @@
  *
  */
 
-#include "p2p/base/tcpport.h"
+#include "p2p/base/tcp_port.h"
 
 #include <errno.h>
 #include <algorithm>
 #include <vector>
 
-#include "p2p/base/p2pconstants.h"
+#include "p2p/base/p2p_constants.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/ipaddress.h"
+#include "rtc_base/ip_address.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/nethelper.h"
-#include "rtc_base/ratetracker.h"
+#include "rtc_base/net_helper.h"
+#include "rtc_base/rate_tracker.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace cricket {

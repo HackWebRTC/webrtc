@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_MOCKICETRANSPORT_H_
-#define P2P_BASE_MOCKICETRANSPORT_H_
+#ifndef P2P_BASE_MOCK_ICE_TRANSPORT_H_
+#define P2P_BASE_MOCK_ICE_TRANSPORT_H_
 
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "p2p/base/icetransportinternal.h"
+#include "p2p/base/ice_transport_internal.h"
 #include "rtc_base/gunit.h"
 #include "test/gmock.h"
 
@@ -78,4 +78,4 @@ class MockIceTransport : public IceTransportInternal {
 
 }  // namespace cricket
 
-#endif  // P2P_BASE_MOCKICETRANSPORT_H_
+#endif  // P2P_BASE_MOCK_ICE_TRANSPORT_H_

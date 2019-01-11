@@ -17,15 +17,15 @@
 // Note P postfix of a function indicates that it should only be called by the
 // processing thread.
 
-#ifndef PC_TEST_FAKEAUDIOCAPTUREMODULE_H_
-#define PC_TEST_FAKEAUDIOCAPTUREMODULE_H_
+#ifndef PC_TEST_FAKE_AUDIO_CAPTURE_MODULE_H_
+#define PC_TEST_FAKE_AUDIO_CAPTURE_MODULE_H_
 
 #include <memory>
 
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_device/include/audio_device.h"
-#include "rtc_base/criticalsection.h"
-#include "rtc_base/messagehandler.h"
+#include "rtc_base/critical_section.h"
+#include "rtc_base/message_handler.h"
 #include "rtc_base/scoped_ref_ptr.h"
 
 namespace rtc {
@@ -224,4 +224,4 @@ class FakeAudioCaptureModule : public webrtc::AudioDeviceModule,
   rtc::CriticalSection crit_callback_;
 };
 
-#endif  // PC_TEST_FAKEAUDIOCAPTUREMODULE_H_
+#endif  // PC_TEST_FAKE_AUDIO_CAPTURE_MODULE_H_

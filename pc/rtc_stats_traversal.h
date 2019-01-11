@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_RTCSTATSTRAVERSAL_H_
-#define PC_RTCSTATSTRAVERSAL_H_
+#ifndef PC_RTC_STATS_TRAVERSAL_H_
+#define PC_RTC_STATS_TRAVERSAL_H_
 
 #include <string>
 #include <vector>
 
-#include "api/stats/rtcstats.h"
-#include "api/stats/rtcstatsreport.h"
+#include "api/stats/rtc_stats.h"
+#include "api/stats/rtc_stats_report.h"
 #include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
@@ -41,4 +41,4 @@ std::vector<const std::string*> GetStatsReferencedIds(const RTCStats& stats);
 
 }  // namespace webrtc
 
-#endif  // PC_RTCSTATSTRAVERSAL_H_
+#endif  // PC_RTC_STATS_TRAVERSAL_H_

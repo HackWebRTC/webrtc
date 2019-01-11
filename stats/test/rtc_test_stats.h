@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef STATS_TEST_RTCTESTSTATS_H_
-#define STATS_TEST_RTCTESTSTATS_H_
+#ifndef STATS_TEST_RTC_TEST_STATS_H_
+#define STATS_TEST_RTC_TEST_STATS_H_
 
 #include <cstdint>
 #include <string>
 #include <vector>
 
-#include "api/stats/rtcstats.h"
+#include "api/stats/rtc_stats.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
@@ -46,4 +46,4 @@ class RTC_EXPORT RTCTestStats : public RTCStats {
 
 }  // namespace webrtc
 
-#endif  // STATS_TEST_RTCTESTSTATS_H_
+#endif  // STATS_TEST_RTC_TEST_STATS_H_

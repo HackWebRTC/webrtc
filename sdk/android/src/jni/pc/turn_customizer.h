@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SDK_ANDROID_SRC_JNI_PC_TURNCUSTOMIZER_H_
-#define SDK_ANDROID_SRC_JNI_PC_TURNCUSTOMIZER_H_
+#ifndef SDK_ANDROID_SRC_JNI_PC_TURN_CUSTOMIZER_H_
+#define SDK_ANDROID_SRC_JNI_PC_TURN_CUSTOMIZER_H_
 
-#include "api/turncustomizer.h"
+#include "api/turn_customizer.h"
 #include "sdk/android/native_api/jni/scoped_java_ref.h"
 
 namespace webrtc {
@@ -24,4 +24,4 @@ TurnCustomizer* GetNativeTurnCustomizer(
 }  // namespace jni
 }  // namespace webrtc
 
-#endif  // SDK_ANDROID_SRC_JNI_PC_TURNCUSTOMIZER_H_
+#endif  // SDK_ANDROID_SRC_JNI_PC_TURN_CUSTOMIZER_H_

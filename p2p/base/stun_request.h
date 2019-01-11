@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_STUNREQUEST_H_
-#define P2P_BASE_STUNREQUEST_H_
+#ifndef P2P_BASE_STUN_REQUEST_H_
+#define P2P_BASE_STUN_REQUEST_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -17,8 +17,8 @@
 #include <string>
 
 #include "p2p/base/stun.h"
-#include "rtc_base/messagehandler.h"
-#include "rtc_base/messagequeue.h"
+#include "rtc_base/message_handler.h"
+#include "rtc_base/message_queue.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
 
@@ -154,4 +154,4 @@ class StunRequest : public rtc::MessageHandler {
 
 }  // namespace cricket
 
-#endif  // P2P_BASE_STUNREQUEST_H_
+#endif  // P2P_BASE_STUN_REQUEST_H_

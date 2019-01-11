@@ -43,8 +43,8 @@
 // See https://tools.ietf.org/html/draft-ietf-mmusic-sdp-simulcast-13
 // and https://tools.ietf.org/html/draft-ietf-mmusic-rid-15.
 
-#ifndef MEDIA_BASE_STREAMPARAMS_H_
-#define MEDIA_BASE_STREAMPARAMS_H_
+#ifndef MEDIA_BASE_STREAM_PARAMS_H_
+#define MEDIA_BASE_STREAM_PARAMS_H_
 
 #include <stddef.h>
 #include <algorithm>
@@ -52,8 +52,8 @@
 #include <string>
 #include <vector>
 
-#include "media/base/riddescription.h"
-#include "rtc_base/constructormagic.h"
+#include "media/base/rid_description.h"
+#include "rtc_base/constructor_magic.h"
 
 namespace cricket {
 
@@ -374,4 +374,4 @@ bool IsSimulcastStream(const StreamParams& sp);
 
 }  // namespace cricket
 
-#endif  // MEDIA_BASE_STREAMPARAMS_H_
+#endif  // MEDIA_BASE_STREAM_PARAMS_H_

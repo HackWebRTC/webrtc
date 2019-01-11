@@ -25,7 +25,7 @@
 // return to the Java frame that called code in this file, at which point it's
 // impossible to tell which JNI call broke).
 
-#include "sdk/android/src/jni/pc/peerconnection.h"
+#include "sdk/android/src/jni/pc/peer_connection.h"
 
 #include <limits>
 #include <memory>
@@ -33,28 +33,28 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
-#include "api/mediaconstraintsinterface.h"
-#include "api/peerconnectioninterface.h"
-#include "api/rtpreceiverinterface.h"
-#include "api/rtpsenderinterface.h"
-#include "api/rtptransceiverinterface.h"
+#include "api/media_constraints_interface.h"
+#include "api/peer_connection_interface.h"
+#include "api/rtp_receiver_interface.h"
+#include "api/rtp_sender_interface.h"
+#include "api/rtp_transceiver_interface.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "sdk/android/generated_peerconnection_jni/jni/PeerConnection_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/src/jni/jni_helpers.h"
-#include "sdk/android/src/jni/pc/cryptooptions.h"
-#include "sdk/android/src/jni/pc/datachannel.h"
-#include "sdk/android/src/jni/pc/icecandidate.h"
-#include "sdk/android/src/jni/pc/mediaconstraints.h"
-#include "sdk/android/src/jni/pc/mediastreamtrack.h"
-#include "sdk/android/src/jni/pc/rtccertificate.h"
-#include "sdk/android/src/jni/pc/rtcstatscollectorcallbackwrapper.h"
-#include "sdk/android/src/jni/pc/rtpsender.h"
-#include "sdk/android/src/jni/pc/sdpobserver.h"
-#include "sdk/android/src/jni/pc/sessiondescription.h"
-#include "sdk/android/src/jni/pc/statsobserver.h"
-#include "sdk/android/src/jni/pc/turncustomizer.h"
+#include "sdk/android/src/jni/pc/crypto_options.h"
+#include "sdk/android/src/jni/pc/data_channel.h"
+#include "sdk/android/src/jni/pc/ice_candidate.h"
+#include "sdk/android/src/jni/pc/media_constraints.h"
+#include "sdk/android/src/jni/pc/media_stream_track.h"
+#include "sdk/android/src/jni/pc/rtc_certificate.h"
+#include "sdk/android/src/jni/pc/rtc_stats_collector_callback_wrapper.h"
+#include "sdk/android/src/jni/pc/rtp_sender.h"
+#include "sdk/android/src/jni/pc/sdp_observer.h"
+#include "sdk/android/src/jni/pc/session_description.h"
+#include "sdk/android/src/jni/pc/stats_observer.h"
+#include "sdk/android/src/jni/pc/turn_customizer.h"
 
 namespace webrtc {
 namespace jni {

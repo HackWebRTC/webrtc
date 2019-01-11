@@ -15,7 +15,7 @@
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "api/video_codecs/builtin_video_decoder_factory.h"
 #include "api/video_codecs/builtin_video_encoder_factory.h"
-#include "media/engine/webrtcmediaengine.h"
+#include "media/engine/webrtc_media_engine.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "test/gtest.h"
 

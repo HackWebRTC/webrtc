@@ -16,7 +16,7 @@
 #include <utility>
 #include <vector>
 
-#include "api/peerconnectioninterface.h"
+#include "api/peer_connection_interface.h"
 #include "test/gmock.h"
 
 namespace webrtc {

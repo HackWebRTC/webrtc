@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef CALL_CALLFACTORY_H_
-#define CALL_CALLFACTORY_H_
+#ifndef CALL_CALL_FACTORY_H_
+#define CALL_CALL_FACTORY_H_
 
-#include "api/call/callfactoryinterface.h"
+#include "api/call/call_factory_interface.h"
 #include "call/call.h"
 #include "call/call_config.h"
 
@@ -25,4 +25,4 @@ class CallFactory : public CallFactoryInterface {
 
 }  // namespace webrtc
 
-#endif  // CALL_CALLFACTORY_H_
+#endif  // CALL_CALL_FACTORY_H_

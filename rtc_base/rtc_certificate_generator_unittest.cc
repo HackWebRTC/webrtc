@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/rtccertificategenerator.h"
+#include "rtc_base/rtc_certificate_generator.h"
 
 #include <memory>
 
 #include "absl/types/optional.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/refcountedobject.h"
+#include "rtc_base/ref_counted_object.h"
 #include "rtc_base/thread.h"
 #include "test/gtest.h"
 

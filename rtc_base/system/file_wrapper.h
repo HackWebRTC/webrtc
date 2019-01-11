@@ -14,7 +14,7 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#include "rtc_base/criticalsection.h"
+#include "rtc_base/critical_section.h"
 
 // Implementation that can read (exclusive) or write from/to a file.
 

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/remoteaudiosource.h"
+#include "pc/remote_audio_source.h"
 
 #include <stddef.h>
 #include <algorithm>
@@ -16,7 +16,7 @@
 
 #include "absl/memory/memory.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/scoped_ref_ptr.h"

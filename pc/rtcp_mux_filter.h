@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_RTCPMUXFILTER_H_
-#define PC_RTCPMUXFILTER_H_
+#ifndef PC_RTCP_MUX_FILTER_H_
+#define PC_RTCP_MUX_FILTER_H_
 
-#include "pc/sessiondescription.h"
+#include "pc/session_description.h"
 
 namespace cricket {
 
@@ -75,4 +75,4 @@ class RtcpMuxFilter {
 
 }  // namespace cricket
 
-#endif  // PC_RTCPMUXFILTER_H_
+#endif  // PC_RTCP_MUX_FILTER_H_

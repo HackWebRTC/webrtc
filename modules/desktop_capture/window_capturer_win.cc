@@ -18,9 +18,9 @@
 #include "modules/desktop_capture/win/window_capture_utils.h"
 #include "modules/desktop_capture/window_finder_win.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/stringutils.h"
+#include "rtc_base/string_utils.h"
 #include "rtc_base/trace_event.h"
 #include "rtc_base/win32.h"
 

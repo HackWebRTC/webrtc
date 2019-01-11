@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SDK_ANDROID_SRC_JNI_VIDEOSINK_H_
-#define SDK_ANDROID_SRC_JNI_VIDEOSINK_H_
+#ifndef SDK_ANDROID_SRC_JNI_VIDEO_SINK_H_
+#define SDK_ANDROID_SRC_JNI_VIDEO_SINK_H_
 
 #include <jni.h>
 
-#include "api/mediastreaminterface.h"
+#include "api/media_stream_interface.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {
@@ -33,4 +33,4 @@ class VideoSinkWrapper : public rtc::VideoSinkInterface<VideoFrame> {
 }  // namespace jni
 }  // namespace webrtc
 
-#endif  // SDK_ANDROID_SRC_JNI_VIDEOSINK_H_
+#endif  // SDK_ANDROID_SRC_JNI_VIDEO_SINK_H_

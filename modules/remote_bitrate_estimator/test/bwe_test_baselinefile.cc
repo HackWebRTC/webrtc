@@ -17,8 +17,8 @@
 #include <vector>
 
 #include "modules/remote_bitrate_estimator/test/bwe_test_fileutils.h"
-#include "rtc_base/constructormagic.h"
-#include "test/testsupport/fileutils.h"
+#include "rtc_base/constructor_magic.h"
+#include "test/testsupport/file_utils.h"
 
 namespace webrtc {
 namespace testing {

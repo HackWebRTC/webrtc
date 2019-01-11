@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "sdk/android/src/jni/videosink.h"
+#include "sdk/android/src/jni/video_sink.h"
 
 #include "sdk/android/generated_video_jni/jni/VideoSink_jni.h"
-#include "sdk/android/src/jni/videoframe.h"
+#include "sdk/android/src/jni/video_frame.h"
 
 namespace webrtc {
 namespace jni {

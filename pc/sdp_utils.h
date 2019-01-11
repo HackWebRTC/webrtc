@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_SDPUTILS_H_
-#define PC_SDPUTILS_H_
+#ifndef PC_SDP_UTILS_H_
+#define PC_SDP_UTILS_H_
 
 #include <functional>
 #include <memory>
 #include <string>
 
 #include "api/jsep.h"
-#include "pc/sessiondescription.h"
+#include "pc/session_description.h"
 
 namespace webrtc {
 
@@ -57,4 +57,4 @@ void SdpContentsForEach(SdpContentMutator fn,
 
 }  // namespace webrtc
 
-#endif  // PC_SDPUTILS_H_
+#endif  // PC_SDP_UTILS_H_

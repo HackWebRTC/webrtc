@@ -14,7 +14,7 @@
 #include "absl/types/optional.h"
 #include "api/bitrate_constraints.h"
 #include "api/transport/bitrate_settings.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 
 namespace webrtc {
 

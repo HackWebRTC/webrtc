@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/messagedigest.h"
+#include "rtc_base/message_digest.h"
 
 #include <string.h>
 #include <cstdint>
 #include <memory>
 
-#include "rtc_base/openssldigest.h"
-#include "rtc_base/stringencode.h"
+#include "rtc_base/openssl_digest.h"
+#include "rtc_base/string_encode.h"
 
 namespace rtc {
 

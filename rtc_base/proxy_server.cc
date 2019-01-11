@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/proxyserver.h"
+#include "rtc_base/proxy_server.h"
 
 #include <stddef.h>
 #include <algorithm>
 
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/socketfactory.h"
+#include "rtc_base/socket_factory.h"
 
 namespace rtc {
 

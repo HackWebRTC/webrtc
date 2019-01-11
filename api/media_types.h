@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef API_MEDIATYPES_H_
-#define API_MEDIATYPES_H_
+#ifndef API_MEDIA_TYPES_H_
+#define API_MEDIA_TYPES_H_
 
 #include <string>
 
@@ -33,4 +33,4 @@ enum class MediaType { ANY, AUDIO, VIDEO, DATA };
 
 }  // namespace webrtc
 
-#endif  // API_MEDIATYPES_H_
+#endif  // API_MEDIA_TYPES_H_

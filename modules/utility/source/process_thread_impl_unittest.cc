@@ -15,7 +15,7 @@
 #include "modules/utility/source/process_thread_impl.h"
 #include "rtc_base/location.h"
 #include "rtc_base/task_queue.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 

@@ -10,8 +10,8 @@
 
 // Types and classes used in media session descriptions.
 
-#ifndef PC_MEDIASESSION_H_
-#define PC_MEDIASESSION_H_
+#ifndef PC_MEDIA_SESSION_H_
+#define PC_MEDIA_SESSION_H_
 
 #include <algorithm>
 #include <map>
@@ -19,13 +19,13 @@
 #include <string>
 #include <vector>
 
-#include "api/mediatypes.h"
-#include "media/base/mediaconstants.h"
-#include "media/base/mediaengine.h"  // For DataChannelType
-#include "p2p/base/icecredentialsiterator.h"
-#include "p2p/base/transportdescriptionfactory.h"
-#include "pc/jseptransport.h"
-#include "pc/sessiondescription.h"
+#include "api/media_types.h"
+#include "media/base/media_constants.h"
+#include "media/base/media_engine.h"  // For DataChannelType
+#include "p2p/base/ice_credentials_iterator.h"
+#include "p2p/base/transport_description_factory.h"
+#include "pc/jsep_transport.h"
+#include "pc/session_description.h"
 
 namespace cricket {
 
@@ -371,4 +371,4 @@ bool IsRtpProtocol(const std::string& protocol);
 
 }  // namespace cricket
 
-#endif  // PC_MEDIASESSION_H_
+#endif  // PC_MEDIA_SESSION_H_

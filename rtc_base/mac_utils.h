@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_MACUTILS_H_
-#define RTC_BASE_MACUTILS_H_
+#ifndef RTC_BASE_MAC_UTILS_H_
+#define RTC_BASE_MAC_UTILS_H_
 
 #include <CoreFoundation/CoreFoundation.h>
 #include <string>
@@ -19,4 +19,4 @@ bool ToUtf8(const CFStringRef str16, std::string* str8);
 bool ToUtf16(const std::string& str8, CFStringRef* str16);
 }  // namespace rtc
 
-#endif  // RTC_BASE_MACUTILS_H_
+#endif  // RTC_BASE_MAC_UTILS_H_

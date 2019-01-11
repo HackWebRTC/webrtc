@@ -20,7 +20,7 @@
 #define RTC_ENABLE_THREAD_CHECKER RTC_DCHECK_IS_ON
 
 #include "rtc_base/checks.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/thread_checker_impl.h"
 

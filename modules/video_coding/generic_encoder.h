@@ -18,7 +18,7 @@
 #include "api/units/data_rate.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/include/video_coding_defines.h"
-#include "rtc_base/criticalsection.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/race_checker.h"
 
 namespace webrtc {

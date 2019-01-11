@@ -8,20 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MEDIA_BASE_ADAPTEDVIDEOTRACKSOURCE_H_
-#define MEDIA_BASE_ADAPTEDVIDEOTRACKSOURCE_H_
+#ifndef MEDIA_BASE_ADAPTED_VIDEO_TRACK_SOURCE_H_
+#define MEDIA_BASE_ADAPTED_VIDEO_TRACK_SOURCE_H_
 
 #include <stdint.h>
 
 #include "absl/types/optional.h"
-#include "api/mediastreaminterface.h"
+#include "api/media_stream_interface.h"
 #include "api/notifier.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_sink_interface.h"
 #include "api/video/video_source_interface.h"
-#include "media/base/videoadapter.h"
-#include "media/base/videobroadcaster.h"
-#include "rtc_base/criticalsection.h"
+#include "media/base/video_adapter.h"
+#include "media/base/video_broadcaster.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/thread_checker.h"
 
@@ -91,4 +91,4 @@ class AdaptedVideoTrackSource
 
 }  // namespace rtc
 
-#endif  // MEDIA_BASE_ADAPTEDVIDEOTRACKSOURCE_H_
+#endif  // MEDIA_BASE_ADAPTED_VIDEO_TRACK_SOURCE_H_

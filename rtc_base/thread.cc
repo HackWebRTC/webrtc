@@ -28,10 +28,10 @@
 #include <utility>
 
 #include "rtc_base/checks.h"
-#include "rtc_base/criticalsection.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/nullsocketserver.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/null_socket_server.h"
+#include "rtc_base/time_utils.h"
 #include "rtc_base/trace_event.h"
 
 #if defined(WEBRTC_MAC)

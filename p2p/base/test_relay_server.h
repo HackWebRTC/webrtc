@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_TESTRELAYSERVER_H_
-#define P2P_BASE_TESTRELAYSERVER_H_
+#ifndef P2P_BASE_TEST_RELAY_SERVER_H_
+#define P2P_BASE_TEST_RELAY_SERVER_H_
 
 #include <memory>
 
-#include "p2p/base/relayserver.h"
-#include "rtc_base/asynctcpsocket.h"
+#include "p2p/base/relay_server.h"
+#include "rtc_base/async_tcp_socket.h"
 #include "rtc_base/server_socket_adapters.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
@@ -98,4 +98,4 @@ class TestRelayServer : public sigslot::has_slots<> {
 
 }  // namespace cricket
 
-#endif  // P2P_BASE_TESTRELAYSERVER_H_
+#endif  // P2P_BASE_TEST_RELAY_SERVER_H_

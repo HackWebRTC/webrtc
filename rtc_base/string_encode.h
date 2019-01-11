@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_STRINGENCODE_H_
-#define RTC_BASE_STRINGENCODE_H_
+#ifndef RTC_BASE_STRING_ENCODE_H_
+#define RTC_BASE_STRING_ENCODE_H_
 
 #include <stddef.h>
 #include <string>
@@ -197,4 +197,4 @@ static inline T FromString(const std::string& str) {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_STRINGENCODE_H__
+#endif  // RTC_BASE_STRING_ENCODE_H__

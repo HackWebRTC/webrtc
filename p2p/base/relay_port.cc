@@ -11,20 +11,20 @@
 #include <string.h>
 #include <algorithm>
 
-#include "p2p/base/relayport.h"
+#include "p2p/base/relay_port.h"
 #include "p2p/base/stun.h"
-#include "p2p/base/stunrequest.h"
-#include "rtc_base/asyncpacketsocket.h"
-#include "rtc_base/bytebuffer.h"
+#include "p2p/base/stun_request.h"
+#include "rtc_base/async_packet_socket.h"
+#include "rtc_base/byte_buffer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/dscp.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/messagehandler.h"
-#include "rtc_base/messagequeue.h"
-#include "rtc_base/nethelper.h"
-#include "rtc_base/proxyinfo.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/message_handler.h"
+#include "rtc_base/message_queue.h"
+#include "rtc_base/net_helper.h"
+#include "rtc_base/proxy_info.h"
+#include "rtc_base/time_utils.h"
 
 namespace cricket {
 

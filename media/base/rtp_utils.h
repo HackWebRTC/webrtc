@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MEDIA_BASE_RTPUTILS_H_
-#define MEDIA_BASE_RTPUTILS_H_
+#ifndef MEDIA_BASE_RTP_UTILS_H_
+#define MEDIA_BASE_RTP_UTILS_H_
 
-#include "rtc_base/byteorder.h"
+#include "rtc_base/byte_order.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace rtc {
@@ -89,4 +89,4 @@ ApplyPacketOptions(uint8_t* data,
 
 }  // namespace cricket
 
-#endif  // MEDIA_BASE_RTPUTILS_H_
+#endif  // MEDIA_BASE_RTP_UTILS_H_

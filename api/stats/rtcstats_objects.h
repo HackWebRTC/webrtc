@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 
-#include "api/stats/rtcstats.h"
+#include "api/stats/rtc_stats.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {

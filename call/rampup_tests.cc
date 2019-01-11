@@ -17,7 +17,7 @@
 #include "rtc_base/flags.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
-#include "rtc_base/stringencode.h"
+#include "rtc_base/string_encode.h"
 #include "test/encoder_settings.h"
 #include "test/gtest.h"
 #include "test/testsupport/perf_test.h"

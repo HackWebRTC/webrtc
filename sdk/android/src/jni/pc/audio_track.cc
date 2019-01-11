@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "api/mediastreaminterface.h"
+#include "api/media_stream_interface.h"
 #include "sdk/android/generated_peerconnection_jni/jni/AudioTrack_jni.h"
 
 namespace webrtc {

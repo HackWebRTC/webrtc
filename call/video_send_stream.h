@@ -18,9 +18,9 @@
 
 #include "absl/types/optional.h"
 #include "api/call/transport.h"
-#include "api/crypto/cryptooptions.h"
+#include "api/crypto/crypto_options.h"
 #include "api/media_transport_interface.h"
-#include "api/rtpparameters.h"
+#include "api/rtp_parameters.h"
 #include "api/video/video_content_type.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_sink_interface.h"

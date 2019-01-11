@@ -14,9 +14,9 @@
 #include <utility>
 
 #include "rtc_base/checks.h"
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/nullsocketserver.h"
-#include "rtc_base/socketserver.h"
+#include "rtc_base/constructor_magic.h"
+#include "rtc_base/null_socket_server.h"
+#include "rtc_base/socket_server.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_checker.h"

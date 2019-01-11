@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "api/mediaconstraintsinterface.h"
+#include "api/media_constraints_interface.h"
 
 #include "absl/types/optional.h"
-#include "api/test/fakeconstraints.h"
-#include "media/base/mediaconfig.h"
+#include "api/test/fake_constraints.h"
+#include "media/base/media_config.h"
 #include "test/gtest.h"
 
 namespace webrtc {

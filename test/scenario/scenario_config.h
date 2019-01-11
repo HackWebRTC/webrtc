@@ -14,7 +14,7 @@
 #include <string>
 
 #include "absl/types/optional.h"
-#include "api/rtpparameters.h"
+#include "api/rtp_parameters.h"
 #include "api/transport/network_control.h"
 #include "api/units/data_rate.h"
 #include "api/units/data_size.h"

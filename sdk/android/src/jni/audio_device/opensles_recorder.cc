@@ -19,7 +19,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/format_macros.h"
 #include "rtc_base/platform_thread.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"
 #include "sdk/android/src/jni/audio_device/audio_common.h"
 
 #define TAG "OpenSLESRecorder"

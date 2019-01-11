@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "api/stats/rtcstats.h"
+#include "api/stats/rtc_stats.h"
 
 #include <cstdio>
 
 #include "rtc_base/arraysize.h"
-#include "rtc_base/stringencode.h"
+#include "rtc_base/string_encode.h"
 #include "rtc_base/strings/string_builder.h"
 
 namespace webrtc {

@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SDK_ANDROID_SRC_JNI_PC_MEDIASTREAMTRACK_H_
-#define SDK_ANDROID_SRC_JNI_PC_MEDIASTREAMTRACK_H_
+#ifndef SDK_ANDROID_SRC_JNI_PC_MEDIA_STREAM_TRACK_H_
+#define SDK_ANDROID_SRC_JNI_PC_MEDIA_STREAM_TRACK_H_
 
 #include <jni.h>
 
-#include "api/mediatypes.h"
+#include "api/media_types.h"
 #include "sdk/android/native_api/jni/scoped_java_ref.h"
 
 namespace webrtc {
@@ -28,4 +28,4 @@ cricket::MediaType JavaToNativeMediaType(JNIEnv* jni,
 }  // namespace jni
 }  // namespace webrtc
 
-#endif  // SDK_ANDROID_SRC_JNI_PC_MEDIASTREAMTRACK_H_
+#endif  // SDK_ANDROID_SRC_JNI_PC_MEDIA_STREAM_TRACK_H_

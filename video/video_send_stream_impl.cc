@@ -15,14 +15,14 @@
 #include <string>
 #include <utility>
 
-#include "api/crypto/cryptooptions.h"
-#include "api/rtpparameters.h"
+#include "api/crypto/crypto_options.h"
+#include "api/rtp_parameters.h"
 #include "api/video_codecs/video_codec.h"
 #include "call/rtp_transport_controller_send_interface.h"
 #include "call/video_send_stream.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/pacing/paced_sender.h"
-#include "rtc_base/atomicops.h"
+#include "rtc_base/atomic_ops.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/experiments/alr_experiment.h"
 #include "rtc_base/logging.h"
@@ -30,7 +30,7 @@
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/sequenced_task_checker.h"
 #include "rtc_base/thread_checker.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/field_trial.h"

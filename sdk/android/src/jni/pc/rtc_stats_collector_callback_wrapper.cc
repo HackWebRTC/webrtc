@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "sdk/android/src/jni/pc/rtcstatscollectorcallbackwrapper.h"
+#include "sdk/android/src/jni/pc/rtc_stats_collector_callback_wrapper.h"
 
 #include <string>
 #include <vector>
 
-#include "rtc_base/stringencode.h"
+#include "rtc_base/string_encode.h"
 #include "sdk/android/generated_external_classes_jni/jni/BigInteger_jni.h"
 #include "sdk/android/generated_peerconnection_jni/jni/RTCStatsCollectorCallback_jni.h"
 #include "sdk/android/generated_peerconnection_jni/jni/RTCStatsReport_jni.h"

@@ -10,7 +10,7 @@
 
 #include <tuple>
 
-#include "pc/rtpmediautils.h"
+#include "pc/rtp_media_utils.h"
 #include "test/gtest.h"
 
 namespace webrtc {

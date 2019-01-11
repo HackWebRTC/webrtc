@@ -13,7 +13,7 @@
 
 #include <vector>
 
-#include "api/rtpparameters.h"  // For DegradationPreference.
+#include "api/rtp_parameters.h"  // For DegradationPreference.
 #include "api/video/video_sink_interface.h"
 #include "api/video/video_source_interface.h"
 #include "api/video_codecs/video_encoder.h"

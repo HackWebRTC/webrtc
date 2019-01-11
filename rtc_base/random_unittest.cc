@@ -13,7 +13,7 @@
 #include <limits>
 #include <vector>
 
-#include "rtc_base/numerics/mathutils.h"  // unsigned difference
+#include "rtc_base/numerics/math_utils.h"  // unsigned difference
 #include "rtc_base/random.h"
 #include "test/gtest.h"
 

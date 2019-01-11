@@ -16,7 +16,7 @@
 #include <memory>
 #include <string>
 
-#include "rtc_base/atomicops.h"
+#include "rtc_base/atomic_ops.h"
 #include "rtc_base/checks.h"
 
 // Macros for allowing WebRTC clients (e.g. Chrome) to gather and aggregate

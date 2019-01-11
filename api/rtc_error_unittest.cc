@@ -10,7 +10,7 @@
 
 #include <utility>
 
-#include "api/rtcerror.h"
+#include "api/rtc_error.h"
 #include "test/gtest.h"
 
 namespace {

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "media/base/videoadapter.h"
+#include "media/base/video_adapter.h"
 
 #include <algorithm>
 #include <cmath>
@@ -17,10 +17,10 @@
 #include <utility>
 
 #include "absl/types/optional.h"
-#include "media/base/videocommon.h"
+#include "media/base/video_common.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"
 
 namespace {
 struct Fraction {

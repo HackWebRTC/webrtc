@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/statscollector.h"
+#include "pc/stats_collector.h"
 
 #include <memory>
 #include <set>
@@ -16,7 +16,7 @@
 #include <vector>
 
 #include "pc/channel.h"
-#include "pc/peerconnection.h"
+#include "pc/peer_connection.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/third_party/base64/base64.h"
 

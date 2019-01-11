@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_STUNPORT_H_
-#define P2P_BASE_STUNPORT_H_
+#ifndef P2P_BASE_STUN_PORT_H_
+#define P2P_BASE_STUN_PORT_H_
 
 #include <map>
 #include <memory>
@@ -17,8 +17,8 @@
 
 #include "absl/memory/memory.h"
 #include "p2p/base/port.h"
-#include "p2p/base/stunrequest.h"
-#include "rtc_base/asyncpacketsocket.h"
+#include "p2p/base/stun_request.h"
+#include "rtc_base/async_packet_socket.h"
 
 // TODO(mallinath) - Rename stunport.cc|h to udpport.cc|h.
 
@@ -294,4 +294,4 @@ class StunPort : public UDPPort {
 
 }  // namespace cricket
 
-#endif  // P2P_BASE_STUNPORT_H_
+#endif  // P2P_BASE_STUN_PORT_H_

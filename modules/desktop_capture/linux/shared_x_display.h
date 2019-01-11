@@ -16,8 +16,8 @@
 
 #include <string>
 
-#include "api/refcountedbase.h"
-#include "rtc_base/constructormagic.h"
+#include "api/ref_counted_base.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/scoped_ref_ptr.h"
 
 // Including Xlib.h will involve evil defines (Bool, Status, True, False), which

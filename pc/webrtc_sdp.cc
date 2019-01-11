@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/webrtcsdp.h"
+#include "pc/webrtc_sdp.h"
 
 #include <ctype.h>
 #include <limits.h>
@@ -26,24 +26,24 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "api/candidate.h"
-#include "api/cryptoparams.h"
-#include "api/jsepicecandidate.h"
-#include "api/jsepsessiondescription.h"
-#include "api/mediatypes.h"
+#include "api/crypto_params.h"
+#include "api/jsep_ice_candidate.h"
+#include "api/jsep_session_description.h"
+#include "api/media_types.h"
 // for RtpExtension
-#include "api/rtpparameters.h"
+#include "api/rtp_parameters.h"
 #include "media/base/codec.h"
-#include "media/base/mediaconstants.h"
-#include "media/base/rtputils.h"
-#include "media/sctp/sctptransportinternal.h"
-#include "p2p/base/p2pconstants.h"
+#include "media/base/media_constants.h"
+#include "media/base/rtp_utils.h"
+#include "media/sctp/sctp_transport_internal.h"
+#include "p2p/base/p2p_constants.h"
 #include "p2p/base/port.h"
-#include "pc/mediasession.h"
-#include "pc/sdpserializer.h"
+#include "pc/media_session.h"
+#include "pc/sdp_serializer.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/messagedigest.h"
+#include "rtc_base/message_digest.h"
 #include "rtc_base/strings/string_builder.h"
 
 using cricket::AudioContentDescription;

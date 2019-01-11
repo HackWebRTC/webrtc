@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "sdk/android/src/jni/pc/ownedfactoryandthreads.h"
+#include "sdk/android/src/jni/pc/owned_factory_and_threads.h"
 
 #include "sdk/android/src/jni/jni_helpers.h"
-#include "sdk/android/src/jni/pc/peerconnectionfactory.h"
+#include "sdk/android/src/jni/pc/peer_connection_factory.h"
 
 namespace webrtc {
 namespace jni {

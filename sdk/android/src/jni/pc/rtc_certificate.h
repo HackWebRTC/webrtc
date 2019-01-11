@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SDK_ANDROID_SRC_JNI_PC_RTCCERTIFICATE_H_
-#define SDK_ANDROID_SRC_JNI_PC_RTCCERTIFICATE_H_
+#ifndef SDK_ANDROID_SRC_JNI_PC_RTC_CERTIFICATE_H_
+#define SDK_ANDROID_SRC_JNI_PC_RTC_CERTIFICATE_H_
 
-#include "rtc_base/refcount.h"
-#include "rtc_base/rtccertificate.h"
+#include "rtc_base/ref_count.h"
+#include "rtc_base/rtc_certificate.h"
 #include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 
@@ -30,4 +30,4 @@ ScopedJavaLocalRef<jobject> NativeToJavaRTCCertificatePEM(
 }  // namespace jni
 }  // namespace webrtc
 
-#endif  // SDK_ANDROID_SRC_JNI_PC_RTCCERTIFICATE_H_
+#endif  // SDK_ANDROID_SRC_JNI_PC_RTC_CERTIFICATE_H_

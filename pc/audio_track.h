@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_AUDIOTRACK_H_
-#define PC_AUDIOTRACK_H_
+#ifndef PC_AUDIO_TRACK_H_
+#define PC_AUDIO_TRACK_H_
 
 #include <string>
 
-#include "api/mediastreaminterface.h"
-#include "pc/mediastreamtrack.h"
-#include "rtc_base/constructormagic.h"
+#include "api/media_stream_interface.h"
+#include "pc/media_stream_track.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/thread_checker.h"
 
@@ -55,4 +55,4 @@ class AudioTrack : public MediaStreamTrack<AudioTrackInterface>,
 
 }  // namespace webrtc
 
-#endif  // PC_AUDIOTRACK_H_
+#endif  // PC_AUDIO_TRACK_H_

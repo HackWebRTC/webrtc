@@ -12,9 +12,9 @@
 #include <cstdint>
 #include <vector>
 
-#include "media/base/fakertp.h"
-#include "media/base/rtputils.h"
-#include "rtc_base/asyncpacketsocket.h"
+#include "media/base/fake_rtp.h"
+#include "media/base/rtp_utils.h"
+#include "rtc_base/async_packet_socket.h"
 #include "test/gtest.h"
 
 namespace cricket {

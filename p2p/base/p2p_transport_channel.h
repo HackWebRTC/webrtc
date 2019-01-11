@@ -17,8 +17,8 @@
 // When all of the available connections become invalid (non-writable), we
 // kick off a process of determining more candidates and more connections.
 //
-#ifndef P2P_BASE_P2PTRANSPORTCHANNEL_H_
-#define P2P_BASE_P2PTRANSPORTCHANNEL_H_
+#ifndef P2P_BASE_P2P_TRANSPORT_CHANNEL_H_
+#define P2P_BASE_P2P_TRANSPORT_CHANNEL_H_
 
 #include <algorithm>
 #include <map>
@@ -27,20 +27,20 @@
 #include <string>
 #include <vector>
 
-#include "api/asyncresolverfactory.h"
+#include "api/async_resolver_factory.h"
 #include "api/candidate.h"
-#include "api/rtcerror.h"
+#include "api/rtc_error.h"
 #include "logging/rtc_event_log/events/rtc_event_ice_candidate_pair_config.h"
-#include "logging/rtc_event_log/icelogger.h"
-#include "p2p/base/candidatepairinterface.h"
-#include "p2p/base/icetransportinternal.h"
-#include "p2p/base/p2pconstants.h"
-#include "p2p/base/portallocator.h"
-#include "p2p/base/portinterface.h"
-#include "p2p/base/regatheringcontroller.h"
-#include "rtc_base/asyncinvoker.h"
-#include "rtc_base/asyncpacketsocket.h"
-#include "rtc_base/constructormagic.h"
+#include "logging/rtc_event_log/ice_logger.h"
+#include "p2p/base/candidate_pair_interface.h"
+#include "p2p/base/ice_transport_internal.h"
+#include "p2p/base/p2p_constants.h"
+#include "p2p/base/port_allocator.h"
+#include "p2p/base/port_interface.h"
+#include "p2p/base/regathering_controller.h"
+#include "rtc_base/async_invoker.h"
+#include "rtc_base/async_packet_socket.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
@@ -452,4 +452,4 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
 
 }  // namespace cricket
 
-#endif  // P2P_BASE_P2PTRANSPORTCHANNEL_H_
+#endif  // P2P_BASE_P2P_TRANSPORT_CHANNEL_H_

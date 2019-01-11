@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "sdk/android/native_api/base/networkmonitor.h"
+#include "sdk/android/native_api/base/network_monitor.h"
 
 #include <memory>
 
 #include "absl/memory/memory.h"
-#include "sdk/android/src/jni/androidnetworkmonitor.h"
+#include "sdk/android/src/jni/android_network_monitor.h"
 
 namespace webrtc {
 

@@ -12,9 +12,9 @@
 #include <memory>
 #include <vector>
 
-#include "pc/datachannel.h"
-#include "pc/sctputils.h"
-#include "pc/test/fakedatachannelprovider.h"
+#include "pc/data_channel.h"
+#include "pc/sctp_utils.h"
+#include "pc/test/fake_data_channel_provider.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "test/gtest.h"

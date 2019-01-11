@@ -7,12 +7,12 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef API_REFCOUNTEDBASE_H_
-#define API_REFCOUNTEDBASE_H_
+#ifndef API_REF_COUNTED_BASE_H_
+#define API_REF_COUNTED_BASE_H_
 
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/refcount.h"
-#include "rtc_base/refcounter.h"
+#include "rtc_base/constructor_magic.h"
+#include "rtc_base/ref_count.h"
+#include "rtc_base/ref_counter.h"
 
 namespace rtc {
 
@@ -40,4 +40,4 @@ class RefCountedBase {
 
 }  // namespace rtc
 
-#endif  // API_REFCOUNTEDBASE_H_
+#endif  // API_REF_COUNTED_BASE_H_

@@ -24,7 +24,7 @@
 #include "api/video_codecs/video_encoder_factory.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"
-#include "rtc_base/atomicops.h"
+#include "rtc_base/atomic_ops.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "system_wrappers/include/field_trial.h"

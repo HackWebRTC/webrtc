@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_TEST_MOCK_RTPRECEIVERINTERNAL_H_
-#define PC_TEST_MOCK_RTPRECEIVERINTERNAL_H_
+#ifndef PC_TEST_MOCK_RTP_RECEIVER_INTERNAL_H_
+#define PC_TEST_MOCK_RTP_RECEIVER_INTERNAL_H_
 
 #include <string>
 #include <vector>
 
-#include "pc/rtpreceiver.h"
+#include "pc/rtp_receiver.h"
 #include "test/gmock.h"
 
 namespace webrtc {
@@ -54,4 +54,4 @@ class MockRtpReceiverInternal : public RtpReceiverInternal {
 
 }  // namespace webrtc
 
-#endif  // PC_TEST_MOCK_RTPRECEIVERINTERNAL_H_
+#endif  // PC_TEST_MOCK_RTP_RECEIVER_INTERNAL_H_

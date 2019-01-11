@@ -15,7 +15,7 @@
 
 #include "modules/audio_processing/agc/agc.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/gtest_prod_util.h"
 
 namespace webrtc {

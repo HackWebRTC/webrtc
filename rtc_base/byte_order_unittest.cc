@@ -10,7 +10,7 @@
 
 #include <stdint.h>
 
-#include "rtc_base/byteorder.h"
+#include "rtc_base/byte_order.h"
 #include "test/gtest.h"
 
 namespace rtc {

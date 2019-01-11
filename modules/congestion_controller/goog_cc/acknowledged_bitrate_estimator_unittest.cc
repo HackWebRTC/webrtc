@@ -14,7 +14,7 @@
 
 #include "absl/memory/memory.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "rtc_base/fakeclock.h"
+#include "rtc_base/fake_clock.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 

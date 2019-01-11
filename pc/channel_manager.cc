@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/channelmanager.h"
+#include "pc/channel_manager.h"
 
 #include <algorithm>
 #include <utility>
 
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
-#include "media/base/mediaconstants.h"
+#include "media/base/media_constants.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"

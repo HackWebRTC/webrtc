@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/webrtcsessiondescriptionfactory.h"
+#include "pc/webrtc_session_description_factory.h"
 
 #include <stddef.h>
 #include <algorithm>
@@ -19,16 +19,16 @@
 #include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 #include "api/jsep.h"
-#include "api/jsepsessiondescription.h"
-#include "api/rtcerror.h"
-#include "pc/sessiondescription.h"
+#include "api/jsep_session_description.h"
+#include "api/rtc_error.h"
+#include "pc/session_description.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/refcountedobject.h"
-#include "rtc_base/sslidentity.h"
-#include "rtc_base/sslstreamadapter.h"
-#include "rtc_base/stringencode.h"
+#include "rtc_base/ref_counted_object.h"
+#include "rtc_base/ssl_identity.h"
+#include "rtc_base/ssl_stream_adapter.h"
+#include "rtc_base/string_encode.h"
 
 using cricket::MediaSessionOptions;
 

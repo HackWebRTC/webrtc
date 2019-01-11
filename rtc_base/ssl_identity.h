@@ -10,8 +10,8 @@
 
 // Handling of certificates and keypairs for SSLStreamAdapter's peer mode.
 
-#ifndef RTC_BASE_SSLIDENTITY_H_
-#define RTC_BASE_SSLIDENTITY_H_
+#ifndef RTC_BASE_SSL_IDENTITY_H_
+#define RTC_BASE_SSL_IDENTITY_H_
 
 #include <stdint.h>
 #include <ctime>
@@ -164,4 +164,4 @@ extern const char kPemTypeEcPrivateKey[];
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_SSLIDENTITY_H_
+#endif  // RTC_BASE_SSL_IDENTITY_H_

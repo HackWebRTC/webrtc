@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_NULLSOCKETSERVER_H_
-#define RTC_BASE_NULLSOCKETSERVER_H_
+#ifndef RTC_BASE_NULL_SOCKET_SERVER_H_
+#define RTC_BASE_NULL_SOCKET_SERVER_H_
 
-#include "rtc_base/asyncsocket.h"
+#include "rtc_base/async_socket.h"
 #include "rtc_base/event.h"
 #include "rtc_base/socket.h"
-#include "rtc_base/socketserver.h"
+#include "rtc_base/socket_server.h"
 
 namespace rtc {
 
@@ -35,4 +35,4 @@ class NullSocketServer : public SocketServer {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_NULLSOCKETSERVER_H_
+#endif  // RTC_BASE_NULL_SOCKET_SERVER_H_

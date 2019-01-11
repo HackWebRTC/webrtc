@@ -11,13 +11,13 @@
 #include <stdint.h>
 #include <memory>
 
-#include "p2p/base/basicpacketsocketfactory.h"
-#include "p2p/base/teststunserver.h"
-#include "p2p/stunprober/stunprober.h"
+#include "p2p/base/basic_packet_socket_factory.h"
+#include "p2p/base/test_stun_server.h"
+#include "p2p/stunprober/stun_prober.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/ipaddress.h"
-#include "rtc_base/ssladapter.h"
-#include "rtc_base/virtualsocketserver.h"
+#include "rtc_base/ip_address.h"
+#include "rtc_base/ssl_adapter.h"
+#include "rtc_base/virtual_socket_server.h"
 #include "test/gtest.h"
 
 using stunprober::StunProber;

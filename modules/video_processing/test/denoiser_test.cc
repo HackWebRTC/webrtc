@@ -22,7 +22,7 @@
 #include "rtc_base/scoped_ref_ptr.h"
 #include "test/frame_utils.h"
 #include "test/gtest.h"
-#include "test/testsupport/fileutils.h"
+#include "test/testsupport/file_utils.h"
 
 namespace webrtc {
 

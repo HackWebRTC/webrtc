@@ -11,8 +11,8 @@
 // This file contains a class used for gathering statistics from an ongoing
 // libjingle PeerConnection.
 
-#ifndef PC_STATSCOLLECTOR_H_
-#define PC_STATSCOLLECTOR_H_
+#ifndef PC_STATS_COLLECTOR_H_
+#define PC_STATS_COLLECTOR_H_
 
 #include <stdint.h>
 #include <map>
@@ -21,13 +21,13 @@
 #include <utility>
 #include <vector>
 
-#include "api/mediastreaminterface.h"
-#include "api/peerconnectioninterface.h"
-#include "api/statstypes.h"
+#include "api/media_stream_interface.h"
+#include "api/peer_connection_interface.h"
+#include "api/stats_types.h"
 #include "p2p/base/port.h"
-#include "pc/peerconnectioninternal.h"
+#include "pc/peer_connection_internal.h"
 #include "rtc_base/network_constants.h"
-#include "rtc_base/sslcertificate.h"
+#include "rtc_base/ssl_certificate.h"
 
 namespace webrtc {
 
@@ -154,4 +154,4 @@ class StatsCollector {
 
 }  // namespace webrtc
 
-#endif  // PC_STATSCOLLECTOR_H_
+#endif  // PC_STATS_COLLECTOR_H_

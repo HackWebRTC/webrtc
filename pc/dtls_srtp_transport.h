@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_DTLSSRTPTRANSPORT_H_
-#define PC_DTLSSRTPTRANSPORT_H_
+#ifndef PC_DTLS_SRTP_TRANSPORT_H_
+#define PC_DTLS_SRTP_TRANSPORT_H_
 
 #include <vector>
 
 #include "absl/types/optional.h"
-#include "api/cryptoparams.h"
-#include "api/rtcerror.h"
-#include "p2p/base/dtlstransportinternal.h"
-#include "p2p/base/packettransportinternal.h"
-#include "pc/srtptransport.h"
+#include "api/crypto_params.h"
+#include "api/rtc_error.h"
+#include "p2p/base/dtls_transport_internal.h"
+#include "p2p/base/packet_transport_internal.h"
+#include "pc/srtp_transport.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 
@@ -100,4 +100,4 @@ class DtlsSrtpTransport : public SrtpTransport {
 
 }  // namespace webrtc
 
-#endif  // PC_DTLSSRTPTRANSPORT_H_
+#endif  // PC_DTLS_SRTP_TRANSPORT_H_

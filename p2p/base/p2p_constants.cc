@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "p2p/base/p2pconstants.h"
+#include "p2p/base/p2p_constants.h"
 
 namespace cricket {
 

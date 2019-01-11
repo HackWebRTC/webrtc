@@ -18,13 +18,13 @@
 #include <string>
 
 #include "absl/types/optional.h"
-#include "p2p/base/basicpacketsocketfactory.h"
-#include "rtc_base/asyncpacketsocket.h"
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/criticalsection.h"
+#include "p2p/base/basic_packet_socket_factory.h"
+#include "rtc_base/async_packet_socket.h"
+#include "rtc_base/constructor_magic.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/ignore_wundef.h"
 #include "rtc_base/sequenced_task_checker.h"
-#include "rtc_base/socketaddress.h"
+#include "rtc_base/socket_address.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/thread_checker.h"

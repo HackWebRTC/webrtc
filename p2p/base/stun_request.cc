@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "p2p/base/stunrequest.h"
+#include "p2p/base/stun_request.h"
 
 #include <algorithm>
 #include <memory>
@@ -18,7 +18,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/helpers.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/timeutils.h"  // For TimeMillis
+#include "rtc_base/time_utils.h"  // For TimeMillis
 
 namespace cricket {
 

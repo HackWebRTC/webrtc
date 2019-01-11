@@ -15,7 +15,7 @@
 #include <memory>
 #include <string>
 
-#include "api/mediastreaminterface.h"
+#include "api/media_stream_interface.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_sink_interface.h"
 #include "examples/peerconnection/client/main_wnd.h"

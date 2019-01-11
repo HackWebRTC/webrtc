@@ -12,9 +12,9 @@
 
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/natserver.h"
-#include "rtc_base/natsocketfactory.h"
-#include "rtc_base/socketadapters.h"
+#include "rtc_base/nat_server.h"
+#include "rtc_base/nat_socket_factory.h"
+#include "rtc_base/socket_adapters.h"
 
 namespace rtc {
 

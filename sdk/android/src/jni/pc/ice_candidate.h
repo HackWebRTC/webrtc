@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SDK_ANDROID_SRC_JNI_PC_ICECANDIDATE_H_
-#define SDK_ANDROID_SRC_JNI_PC_ICECANDIDATE_H_
+#ifndef SDK_ANDROID_SRC_JNI_PC_ICE_CANDIDATE_H_
+#define SDK_ANDROID_SRC_JNI_PC_ICE_CANDIDATE_H_
 
 #include <vector>
 
-#include "api/datachannelinterface.h"
+#include "api/data_channel_interface.h"
 #include "api/jsep.h"
-#include "api/jsepicecandidate.h"
-#include "api/peerconnectioninterface.h"
-#include "api/rtpparameters.h"
-#include "rtc_base/sslidentity.h"
+#include "api/jsep_ice_candidate.h"
+#include "api/peer_connection_interface.h"
+#include "api/rtp_parameters.h"
+#include "rtc_base/ssl_identity.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {
@@ -82,4 +82,4 @@ absl::optional<rtc::AdapterType> JavaToNativeNetworkPreference(
 }  // namespace jni
 }  // namespace webrtc
 
-#endif  // SDK_ANDROID_SRC_JNI_PC_ICECANDIDATE_H_
+#endif  // SDK_ANDROID_SRC_JNI_PC_ICE_CANDIDATE_H_

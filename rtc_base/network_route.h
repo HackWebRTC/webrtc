@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_NETWORKROUTE_H_
-#define RTC_BASE_NETWORKROUTE_H_
+#ifndef RTC_BASE_NETWORK_ROUTE_H_
+#define RTC_BASE_NETWORK_ROUTE_H_
 
 #include <stdint.h>
 
@@ -30,4 +30,4 @@ struct NetworkRoute {
 };
 }  // namespace rtc
 
-#endif  // RTC_BASE_NETWORKROUTE_H_
+#endif  // RTC_BASE_NETWORK_ROUTE_H_

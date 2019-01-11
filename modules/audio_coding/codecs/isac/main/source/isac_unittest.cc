@@ -11,7 +11,7 @@
 
 #include "modules/audio_coding/codecs/isac/main/include/isac.h"
 #include "test/gtest.h"
-#include "test/testsupport/fileutils.h"
+#include "test/testsupport/file_utils.h"
 
 struct WebRtcISACStruct;
 

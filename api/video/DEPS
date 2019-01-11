@@ -21,7 +21,7 @@ specific_include_rules = {
   ],
 
   "video_frame_buffer\.h": [
-    "+rtc_base/refcount.h",
+    "+rtc_base/ref_count.h",
     "+rtc_base/scoped_ref_ptr.h",
   ],
 

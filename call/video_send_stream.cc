@@ -12,7 +12,7 @@
 
 #include <utility>
 
-#include "api/crypto/frameencryptorinterface.h"
+#include "api/crypto/frame_encryptor_interface.h"
 #include "rtc_base/strings/string_builder.h"
 
 namespace webrtc {

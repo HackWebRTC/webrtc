@@ -19,7 +19,7 @@
 
 #include "absl/types/optional.h"
 #include "modules/include/module_common_types_public.h"
-#include "rtc_base/criticalsection.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/rate_statistics.h"
 #include "rtc_base/thread_annotations.h"
 

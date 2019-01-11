@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "media/engine/webrtcvideoencoderfactory.h"
+#include "media/engine/webrtc_video_encoder_factory.h"
 
 #include "test/gtest.h"
 

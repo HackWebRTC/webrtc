@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_DTLSTRANSPORT_H_
-#define PC_DTLSTRANSPORT_H_
+#ifndef PC_DTLS_TRANSPORT_H_
+#define PC_DTLS_TRANSPORT_H_
 
 #include <memory>
 
-#include "api/dtlstransportinterface.h"
-#include "p2p/base/dtlstransport.h"
-#include "rtc_base/asyncinvoker.h"
+#include "api/dtls_transport_interface.h"
+#include "p2p/base/dtls_transport.h"
+#include "rtc_base/async_invoker.h"
 
 namespace webrtc {
 
@@ -54,4 +54,4 @@ class DtlsTransport : public DtlsTransportInterface,
 };
 
 }  // namespace webrtc
-#endif  // PC_DTLSTRANSPORT_H_
+#endif  // PC_DTLS_TRANSPORT_H_

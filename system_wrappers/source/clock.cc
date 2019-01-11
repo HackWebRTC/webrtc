@@ -17,7 +17,7 @@
 
 #include <mmsystem.h>
 
-#include "rtc_base/criticalsection.h"
+#include "rtc_base/critical_section.h"
 
 #elif defined(WEBRTC_POSIX)
 
@@ -27,7 +27,7 @@
 #endif  // defined(WEBRTC_POSIX)
 
 #include "rtc_base/synchronization/rw_lock_wrapper.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"
 
 namespace webrtc {
 

@@ -14,14 +14,14 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
-#include "p2p/base/relayserver.h"
-#include "rtc_base/asyncudpsocket.h"
-#include "rtc_base/bytebuffer.h"
+#include "p2p/base/relay_server.h"
+#include "rtc_base/async_udp_socket.h"
+#include "rtc_base/byte_buffer.h"
 #include "rtc_base/helpers.h"
-#include "rtc_base/socketaddress.h"
-#include "rtc_base/testclient.h"
+#include "rtc_base/socket_address.h"
+#include "rtc_base/test_client.h"
 #include "rtc_base/thread.h"
-#include "rtc_base/virtualsocketserver.h"
+#include "rtc_base/virtual_socket_server.h"
 #include "test/gtest.h"
 
 using rtc::SocketAddress;

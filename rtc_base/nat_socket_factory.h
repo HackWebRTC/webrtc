@@ -8,23 +8,23 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_NATSOCKETFACTORY_H_
-#define RTC_BASE_NATSOCKETFACTORY_H_
+#ifndef RTC_BASE_NAT_SOCKET_FACTORY_H_
+#define RTC_BASE_NAT_SOCKET_FACTORY_H_
 
 #include <stddef.h>
 #include <map>
 #include <memory>
 #include <set>
 
-#include "rtc_base/asyncsocket.h"
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/messagequeue.h"
-#include "rtc_base/natserver.h"
-#include "rtc_base/nattypes.h"
+#include "rtc_base/async_socket.h"
+#include "rtc_base/constructor_magic.h"
+#include "rtc_base/message_queue.h"
+#include "rtc_base/nat_server.h"
+#include "rtc_base/nat_types.h"
 #include "rtc_base/socket.h"
-#include "rtc_base/socketaddress.h"
-#include "rtc_base/socketfactory.h"
-#include "rtc_base/socketserver.h"
+#include "rtc_base/socket_address.h"
+#include "rtc_base/socket_factory.h"
+#include "rtc_base/socket_server.h"
 
 namespace rtc {
 
@@ -175,4 +175,4 @@ size_t UnpackAddressFromNAT(const char* buf,
                             SocketAddress* remote_addr);
 }  // namespace rtc
 
-#endif  // RTC_BASE_NATSOCKETFACTORY_H_
+#endif  // RTC_BASE_NAT_SOCKET_FACTORY_H_

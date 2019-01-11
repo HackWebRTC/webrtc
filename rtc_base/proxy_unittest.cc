@@ -11,11 +11,11 @@
 #include <memory>
 #include <string>
 #include "rtc_base/gunit.h"
-#include "rtc_base/proxyserver.h"
-#include "rtc_base/socketadapters.h"
-#include "rtc_base/testclient.h"
-#include "rtc_base/testechoserver.h"
-#include "rtc_base/virtualsocketserver.h"
+#include "rtc_base/proxy_server.h"
+#include "rtc_base/socket_adapters.h"
+#include "rtc_base/test_client.h"
+#include "rtc_base/test_echo_server.h"
+#include "rtc_base/virtual_socket_server.h"
 
 using rtc::Socket;
 using rtc::SocketAddress;

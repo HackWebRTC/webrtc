@@ -11,8 +11,8 @@
 // This file contains mock implementations of observers used in PeerConnection.
 // TODO(steveanton): These aren't really mocks and should be renamed.
 
-#ifndef PC_TEST_MOCKPEERCONNECTIONOBSERVERS_H_
-#define PC_TEST_MOCKPEERCONNECTIONOBSERVERS_H_
+#ifndef PC_TEST_MOCK_PEER_CONNECTION_OBSERVERS_H_
+#define PC_TEST_MOCK_PEER_CONNECTION_OBSERVERS_H_
 
 #include <map>
 #include <memory>
@@ -21,9 +21,9 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
-#include "api/datachannelinterface.h"
-#include "api/jsepicecandidate.h"
-#include "pc/streamcollection.h"
+#include "api/data_channel_interface.h"
+#include "api/jsep_ice_candidate.h"
+#include "pc/stream_collection.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {
@@ -515,4 +515,4 @@ class MockRTCStatsCollectorCallback : public webrtc::RTCStatsCollectorCallback {
 
 }  // namespace webrtc
 
-#endif  // PC_TEST_MOCKPEERCONNECTIONOBSERVERS_H_
+#endif  // PC_TEST_MOCK_PEER_CONNECTION_OBSERVERS_H_

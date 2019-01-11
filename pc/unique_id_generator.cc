@@ -14,8 +14,8 @@
 #include <vector>
 
 #include "rtc_base/helpers.h"
+#include "rtc_base/string_encode.h"
 #include "rtc_base/string_to_number.h"
-#include "rtc_base/stringencode.h"
 
 namespace webrtc {
 

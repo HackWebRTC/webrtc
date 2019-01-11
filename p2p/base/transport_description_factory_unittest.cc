@@ -14,14 +14,14 @@
 #include <string>
 #include <vector>
 
-#include "p2p/base/p2pconstants.h"
-#include "p2p/base/transportdescription.h"
-#include "p2p/base/transportdescriptionfactory.h"
-#include "rtc_base/copyonwritebuffer.h"
-#include "rtc_base/fakesslidentity.h"
-#include "rtc_base/sslcertificate.h"
-#include "rtc_base/sslfingerprint.h"
-#include "rtc_base/sslidentity.h"
+#include "p2p/base/p2p_constants.h"
+#include "p2p/base/transport_description.h"
+#include "p2p/base/transport_description_factory.h"
+#include "rtc_base/copy_on_write_buffer.h"
+#include "rtc_base/fake_ssl_identity.h"
+#include "rtc_base/ssl_certificate.h"
+#include "rtc_base/ssl_fingerprint.h"
+#include "rtc_base/ssl_identity.h"
 #include "test/gtest.h"
 
 using cricket::TransportDescriptionFactory;

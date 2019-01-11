@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MEDIA_ENGINE_WEBRTCVIDEOENGINE_H_
-#define MEDIA_ENGINE_WEBRTCVIDEOENGINE_H_
+#ifndef MEDIA_ENGINE_WEBRTC_VIDEO_ENGINE_H_
+#define MEDIA_ENGINE_WEBRTC_VIDEO_ENGINE_H_
 
 #include <map>
 #include <memory>
@@ -28,12 +28,12 @@
 #include "call/flexfec_receive_stream.h"
 #include "call/video_receive_stream.h"
 #include "call/video_send_stream.h"
-#include "media/base/mediaengine.h"
-#include "media/engine/webrtcvideodecoderfactory.h"
-#include "media/engine/webrtcvideoencoderfactory.h"
-#include "rtc_base/asyncinvoker.h"
-#include "rtc_base/criticalsection.h"
-#include "rtc_base/networkroute.h"
+#include "media/base/media_engine.h"
+#include "media/engine/webrtc_video_decoder_factory.h"
+#include "media/engine/webrtc_video_encoder_factory.h"
+#include "rtc_base/async_invoker.h"
+#include "rtc_base/critical_section.h"
+#include "rtc_base/network_route.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/thread_checker.h"
 
@@ -546,4 +546,4 @@ class EncoderStreamFactory
 
 }  // namespace cricket
 
-#endif  // MEDIA_ENGINE_WEBRTCVIDEOENGINE_H_
+#endif  // MEDIA_ENGINE_WEBRTC_VIDEO_ENGINE_H_

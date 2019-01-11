@@ -14,17 +14,17 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
-#include "p2p/base/dtlstransport.h"
-#include "p2p/base/fakeicetransport.h"
-#include "p2p/base/packettransportinternal.h"
+#include "p2p/base/dtls_transport.h"
+#include "p2p/base/fake_ice_transport.h"
+#include "p2p/base/packet_transport_internal.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/dscp.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/helpers.h"
-#include "rtc_base/rtccertificate.h"
-#include "rtc_base/ssladapter.h"
-#include "rtc_base/sslidentity.h"
-#include "rtc_base/sslstreamadapter.h"
+#include "rtc_base/rtc_certificate.h"
+#include "rtc_base/ssl_adapter.h"
+#include "rtc_base/ssl_identity.h"
+#include "rtc_base/ssl_stream_adapter.h"
 
 #define MAYBE_SKIP_TEST(feature)                                  \
   if (!(rtc::SSLStreamAdapter::feature())) {                      \

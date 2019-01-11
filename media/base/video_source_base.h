@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MEDIA_BASE_VIDEOSOURCEBASE_H_
-#define MEDIA_BASE_VIDEOSOURCEBASE_H_
+#ifndef MEDIA_BASE_VIDEO_SOURCE_BASE_H_
+#define MEDIA_BASE_VIDEO_SOURCE_BASE_H_
 
 #include <vector>
 
@@ -46,4 +46,4 @@ class VideoSourceBase : public VideoSourceInterface<webrtc::VideoFrame> {
 
 }  // namespace rtc
 
-#endif  // MEDIA_BASE_VIDEOSOURCEBASE_H_
+#endif  // MEDIA_BASE_VIDEO_SOURCE_BASE_H_

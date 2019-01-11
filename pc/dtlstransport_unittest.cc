@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/dtlstransport.h"
+#include "pc/dtls_transport.h"
 
 #include <utility>
 #include <vector>
 
 #include "absl/memory/memory.h"
-#include "p2p/base/fakedtlstransport.h"
+#include "p2p/base/fake_dtls_transport.h"
 #include "rtc_base/gunit.h"
 #include "test/gmock.h"
 #include "test/gtest.h"

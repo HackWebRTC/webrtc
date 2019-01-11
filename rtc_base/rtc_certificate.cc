@@ -10,13 +10,13 @@
 
 #include <memory>
 
-#include "rtc_base/rtccertificate.h"
+#include "rtc_base/rtc_certificate.h"
 
 #include "rtc_base/checks.h"
-#include "rtc_base/refcountedobject.h"
-#include "rtc_base/sslcertificate.h"
-#include "rtc_base/sslidentity.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/ref_counted_object.h"
+#include "rtc_base/ssl_certificate.h"
+#include "rtc_base/ssl_identity.h"
+#include "rtc_base/time_utils.h"
 
 namespace rtc {
 

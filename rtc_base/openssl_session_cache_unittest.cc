@@ -16,7 +16,7 @@
 
 #include "rtc_base/gunit.h"
 #include "rtc_base/openssl.h"
-#include "rtc_base/opensslsessioncache.h"
+#include "rtc_base/openssl_session_cache.h"
 
 namespace rtc {
 

@@ -15,7 +15,7 @@
 #include <algorithm>
 
 #include "rtc_base/logging.h"
-#include "rtc_base/testbase64.h"
+#include "rtc_base/test_base64.h"
 #include "test/gtest.h"
 
 namespace rtc {

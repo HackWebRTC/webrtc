@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_MEDIASTREAMTRACK_H_
-#define PC_MEDIASTREAMTRACK_H_
+#ifndef PC_MEDIA_STREAM_TRACK_H_
+#define PC_MEDIA_STREAM_TRACK_H_
 
 #include <string>
 
-#include "api/mediastreaminterface.h"
+#include "api/media_stream_interface.h"
 #include "api/notifier.h"
 
 namespace webrtc {
@@ -59,4 +59,4 @@ class MediaStreamTrack : public Notifier<T> {
 
 }  // namespace webrtc
 
-#endif  // PC_MEDIASTREAMTRACK_H_
+#endif  // PC_MEDIA_STREAM_TRACK_H_

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "media/base/streamparams.h"
+#include "media/base/stream_params.h"
 
 #include <stdint.h>
 #include <algorithm>

@@ -24,7 +24,7 @@
 #include "modules/audio_processing/include/mock_audio_processing.h"
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/task_queue.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"
 #include "test/gtest.h"
 #include "test/mock_transport.h"
 

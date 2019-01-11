@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_TURNPORT_H_
-#define P2P_BASE_TURNPORT_H_
+#ifndef P2P_BASE_TURN_PORT_H_
+#define P2P_BASE_TURN_PORT_H_
 
 #include <stdio.h>
 #include <list>
@@ -21,10 +21,10 @@
 
 #include "absl/memory/memory.h"
 #include "p2p/base/port.h"
-#include "p2p/client/basicportallocator.h"
-#include "rtc_base/asyncinvoker.h"
-#include "rtc_base/asyncpacketsocket.h"
-#include "rtc_base/sslcertificate.h"
+#include "p2p/client/basic_port_allocator.h"
+#include "rtc_base/async_invoker.h"
+#include "rtc_base/async_packet_socket.h"
+#include "rtc_base/ssl_certificate.h"
 
 namespace webrtc {
 class TurnCustomizer;
@@ -396,4 +396,4 @@ class TurnPort : public Port {
 
 }  // namespace cricket
 
-#endif  // P2P_BASE_TURNPORT_H_
+#endif  // P2P_BASE_TURN_PORT_H_

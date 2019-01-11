@@ -13,7 +13,7 @@
 
 #include "modules/audio_coding/neteq/defines.h"
 #include "modules/audio_coding/neteq/tick_timer.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 
 namespace webrtc {
 

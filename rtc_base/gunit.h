@@ -11,7 +11,7 @@
 #ifndef RTC_BASE_GUNIT_H_
 #define RTC_BASE_GUNIT_H_
 
-#include "rtc_base/fakeclock.h"
+#include "rtc_base/fake_clock.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/thread.h"
 #include "test/gtest.h"

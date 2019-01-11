@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_TURNSERVER_H_
-#define P2P_BASE_TURNSERVER_H_
+#ifndef P2P_BASE_TURN_SERVER_H_
+#define P2P_BASE_TURN_SERVER_H_
 
 #include <list>
 #include <map>
@@ -19,11 +19,11 @@
 #include <utility>
 #include <vector>
 
-#include "p2p/base/portinterface.h"
-#include "rtc_base/asyncinvoker.h"
-#include "rtc_base/asyncpacketsocket.h"
-#include "rtc_base/messagequeue.h"
-#include "rtc_base/socketaddress.h"
+#include "p2p/base/port_interface.h"
+#include "rtc_base/async_invoker.h"
+#include "rtc_base/async_packet_socket.h"
+#include "rtc_base/message_queue.h"
+#include "rtc_base/socket_address.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread_checker.h"
 
@@ -348,4 +348,4 @@ class TurnServer : public sigslot::has_slots<> {
 
 }  // namespace cricket
 
-#endif  // P2P_BASE_TURNSERVER_H_
+#endif  // P2P_BASE_TURN_SERVER_H_

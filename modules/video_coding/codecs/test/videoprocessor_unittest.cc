@@ -15,7 +15,7 @@
 #include "api/test/mock_video_encoder.h"
 #include "api/test/videocodec_test_fixture.h"
 #include "api/video/i420_buffer.h"
-#include "media/base/mediaconstants.h"
+#include "media/base/media_constants.h"
 #include "modules/video_coding/codecs/test/videocodec_test_stats_impl.h"
 #include "modules/video_coding/codecs/test/videoprocessor.h"
 #include "rtc_base/scoped_ref_ptr.h"

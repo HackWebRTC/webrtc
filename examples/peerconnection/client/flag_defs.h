@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef EXAMPLES_PEERCONNECTION_CLIENT_FLAGDEFS_H_
-#define EXAMPLES_PEERCONNECTION_CLIENT_FLAGDEFS_H_
+#ifndef EXAMPLES_PEERCONNECTION_CLIENT_FLAG_DEFS_H_
+#define EXAMPLES_PEERCONNECTION_CLIENT_FLAG_DEFS_H_
 
 #include "rtc_base/flags.h"
 
@@ -44,4 +44,4 @@ WEBRTC_DEFINE_string(
     "will assign the group Enabled to field trial WebRTC-FooFeature. Multiple "
     "trials are separated by \"/\"");
 
-#endif  // EXAMPLES_PEERCONNECTION_CLIENT_FLAGDEFS_H_
+#endif  // EXAMPLES_PEERCONNECTION_CLIENT_FLAG_DEFS_H_

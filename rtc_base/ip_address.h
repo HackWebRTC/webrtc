@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_IPADDRESS_H_
-#define RTC_BASE_IPADDRESS_H_
+#ifndef RTC_BASE_IP_ADDRESS_H_
+#define RTC_BASE_IP_ADDRESS_H_
 
 #if defined(WEBRTC_POSIX)
 #include <arpa/inet.h>
@@ -24,7 +24,7 @@
 #include <string.h>
 #include <string>
 
-#include "rtc_base/byteorder.h"
+#include "rtc_base/byte_order.h"
 #if defined(WEBRTC_WIN)
 #include "rtc_base/win32.h"
 #endif
@@ -189,4 +189,4 @@ int CountIPMaskBits(IPAddress mask);
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_IPADDRESS_H_
+#endif  // RTC_BASE_IP_ADDRESS_H_

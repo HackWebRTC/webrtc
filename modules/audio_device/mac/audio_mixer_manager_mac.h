@@ -12,7 +12,7 @@
 #define AUDIO_DEVICE_AUDIO_MIXER_MANAGER_MAC_H_
 
 #include "modules/audio_device/include/audio_device.h"
-#include "rtc_base/criticalsection.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/logging.h"
 
 #include <CoreAudio/CoreAudio.h>

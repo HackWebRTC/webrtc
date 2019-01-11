@@ -15,8 +15,8 @@
 
 #include "absl/memory/memory.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/refcount.h"
-#include "rtc_base/refcountedobject.h"
+#include "rtc_base/ref_count.h"
+#include "rtc_base/ref_counted_object.h"
 
 #if defined(AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO)
 #include "sdk/android/src/jni/audio_device/aaudio_player.h"

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MEDIA_BASE_FAKEVIDEOCAPTURER_H_
-#define MEDIA_BASE_FAKEVIDEOCAPTURER_H_
+#ifndef MEDIA_BASE_FAKE_VIDEO_CAPTURER_H_
+#define MEDIA_BASE_FAKE_VIDEO_CAPTURER_H_
 
 #include <string.h>
 
@@ -18,11 +18,11 @@
 
 #include "api/video/i420_buffer.h"
 #include "api/video/video_frame.h"
-#include "media/base/fakeframesource.h"
-#include "media/base/videocapturer.h"
-#include "media/base/videocommon.h"
+#include "media/base/fake_frame_source.h"
+#include "media/base/video_capturer.h"
+#include "media/base/video_common.h"
 #include "rtc_base/task_queue_for_test.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"
 
 namespace cricket {
 
@@ -77,4 +77,4 @@ class FakeVideoCapturerWithTaskQueue : public FakeVideoCapturer {
 
 }  // namespace cricket
 
-#endif  // MEDIA_BASE_FAKEVIDEOCAPTURER_H_
+#endif  // MEDIA_BASE_FAKE_VIDEO_CAPTURER_H_

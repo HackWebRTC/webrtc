@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef API_RTPTRANSCEIVERINTERFACE_H_
-#define API_RTPTRANSCEIVERINTERFACE_H_
+#ifndef API_RTP_TRANSCEIVER_INTERFACE_H_
+#define API_RTP_TRANSCEIVER_INTERFACE_H_
 
 #include <string>
 #include <vector>
 
 #include "absl/types/optional.h"
 #include "api/array_view.h"
-#include "api/mediatypes.h"
-#include "api/rtpparameters.h"
-#include "api/rtpreceiverinterface.h"
-#include "api/rtpsenderinterface.h"
-#include "rtc_base/refcount.h"
+#include "api/media_types.h"
+#include "api/rtp_parameters.h"
+#include "api/rtp_receiver_interface.h"
+#include "api/rtp_sender_interface.h"
+#include "rtc_base/ref_count.h"
 #include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
@@ -137,4 +137,4 @@ class RtpTransceiverInterface : public rtc::RefCountInterface {
 
 }  // namespace webrtc
 
-#endif  // API_RTPTRANSCEIVERINTERFACE_H_
+#endif  // API_RTP_TRANSCEIVER_INTERFACE_H_

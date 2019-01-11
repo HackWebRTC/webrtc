@@ -14,7 +14,7 @@
 
 #include "absl/types/optional.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/ipaddress.h"
+#include "rtc_base/ip_address.h"
 #include "rtc_base/thread.h"
 
 namespace webrtc {

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MEDIA_BASE_RIDDESCRIPTION_H_
-#define MEDIA_BASE_RIDDESCRIPTION_H_
+#ifndef MEDIA_BASE_RID_DESCRIPTION_H_
+#define MEDIA_BASE_RID_DESCRIPTION_H_
 
 #include <map>
 #include <string>
@@ -90,4 +90,4 @@ struct RidDescription final {
 
 }  // namespace cricket
 
-#endif  // MEDIA_BASE_RIDDESCRIPTION_H_
+#endif  // MEDIA_BASE_RID_DESCRIPTION_H_

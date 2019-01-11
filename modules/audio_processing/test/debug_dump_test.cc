@@ -21,7 +21,7 @@
 #include "modules/audio_processing/test/test_utils.h"
 #include "rtc_base/task_queue.h"
 #include "test/gtest.h"
-#include "test/testsupport/fileutils.h"
+#include "test/testsupport/file_utils.h"
 
 namespace webrtc {
 namespace test {

@@ -17,7 +17,7 @@
 
 #include "absl/types/optional.h"
 #include "api/test/simulated_network.h"
-#include "rtc_base/criticalsection.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/random.h"
 #include "rtc_base/thread_annotations.h"
 

@@ -25,7 +25,7 @@
 #include "rtc_base/checks.h"
 
 #if defined(WEBRTC_WIN)
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #endif
 
 namespace rtc {

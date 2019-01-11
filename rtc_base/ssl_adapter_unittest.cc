@@ -14,15 +14,15 @@
 
 #include "absl/memory/memory.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/ipaddress.h"
-#include "rtc_base/messagedigest.h"
-#include "rtc_base/socketstream.h"
-#include "rtc_base/ssladapter.h"
-#include "rtc_base/sslidentity.h"
-#include "rtc_base/sslstreamadapter.h"
+#include "rtc_base/ip_address.h"
+#include "rtc_base/message_digest.h"
+#include "rtc_base/socket_stream.h"
+#include "rtc_base/ssl_adapter.h"
+#include "rtc_base/ssl_identity.h"
+#include "rtc_base/ssl_stream_adapter.h"
 #include "rtc_base/stream.h"
-#include "rtc_base/stringencode.h"
-#include "rtc_base/virtualsocketserver.h"
+#include "rtc_base/string_encode.h"
+#include "rtc_base/virtual_socket_server.h"
 #include "test/gmock.h"
 
 using ::testing::_;

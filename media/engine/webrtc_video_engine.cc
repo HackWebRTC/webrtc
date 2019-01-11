@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "media/engine/webrtcvideoengine.h"
+#include "media/engine/webrtc_video_engine.h"
 
 #include <stdio.h>
 #include <algorithm>
@@ -27,12 +27,12 @@
 #include "media/engine/convert_legacy_video_factory.h"  // nogncheck
 #endif
 #include "media/engine/simulcast.h"
-#include "media/engine/webrtcmediaengine.h"
-#include "media/engine/webrtcvoiceengine.h"
-#include "rtc_base/copyonwritebuffer.h"
+#include "media/engine/webrtc_media_engine.h"
+#include "media/engine/webrtc_voice_engine.h"
+#include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/string_builder.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/field_trial.h"
 

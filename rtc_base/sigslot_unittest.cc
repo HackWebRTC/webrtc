@@ -10,7 +10,7 @@
 
 #include "rtc_base/third_party/sigslot/sigslot.h"
 
-#include "rtc_base/sigslotrepeater.h"
+#include "rtc_base/sigslot_repeater.h"
 #include "test/gtest.h"
 
 // This function, when passed a has_slots or signalx, will break the build if

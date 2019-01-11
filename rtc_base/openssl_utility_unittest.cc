@@ -32,8 +32,8 @@
 #include "rtc_base/gunit.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/openssl.h"
-#include "rtc_base/opensslutility.h"
-#include "rtc_base/sslroots.h"
+#include "rtc_base/openssl_utility.h"
+#include "rtc_base/ssl_roots.h"
 #include "test/gmock.h"
 
 namespace rtc {

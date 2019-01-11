@@ -14,11 +14,11 @@
 #include <string>
 #include <vector>
 
-#include "api/asyncresolverfactory.h"
-#include "api/call/callfactoryinterface.h"
+#include "api/async_resolver_factory.h"
+#include "api/call/call_factory_interface.h"
 #include "api/fec_controller.h"
 #include "api/media_transport_interface.h"
-#include "api/peerconnectioninterface.h"
+#include "api/peer_connection_interface.h"
 #include "api/test/simulated_network.h"
 #include "api/transport/network_control.h"
 #include "api/video_codecs/video_decoder_factory.h"
@@ -26,8 +26,8 @@
 #include "api/video_codecs/video_encoder_factory.h"
 #include "logging/rtc_event_log/rtc_event_log_factory_interface.h"
 #include "rtc_base/network.h"
-#include "rtc_base/rtccertificategenerator.h"
-#include "rtc_base/sslcertificate.h"
+#include "rtc_base/rtc_certificate_generator.h"
+#include "rtc_base/ssl_certificate.h"
 #include "rtc_base/thread.h"
 #include "test/pc/e2e/api/audio_quality_analyzer_interface.h"
 #include "test/pc/e2e/api/video_quality_analyzer_interface.h"

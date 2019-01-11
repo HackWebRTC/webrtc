@@ -16,7 +16,7 @@
 
 #include "api/units/data_size.h"
 #include "modules/include/module_common_types.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 
 namespace webrtc {
 class Clock;

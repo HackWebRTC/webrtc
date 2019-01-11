@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_OPENSSLADAPTER_H_
-#define RTC_BASE_OPENSSLADAPTER_H_
+#ifndef RTC_BASE_OPENSSL_ADAPTER_H_
+#define RTC_BASE_OPENSSL_ADAPTER_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -17,18 +17,18 @@
 #include <string>
 #include <vector>
 
-#include "rtc_base/asyncsocket.h"
+#include "rtc_base/async_socket.h"
 #include "rtc_base/buffer.h"
-#include "rtc_base/messagehandler.h"
-#include "rtc_base/messagequeue.h"
-#include "rtc_base/opensslidentity.h"
-#include "rtc_base/opensslsessioncache.h"
+#include "rtc_base/message_handler.h"
+#include "rtc_base/message_queue.h"
+#include "rtc_base/openssl_identity.h"
+#include "rtc_base/openssl_session_cache.h"
 #include "rtc_base/socket.h"
-#include "rtc_base/socketaddress.h"
-#include "rtc_base/ssladapter.h"
-#include "rtc_base/sslcertificate.h"
-#include "rtc_base/sslidentity.h"
-#include "rtc_base/sslstreamadapter.h"
+#include "rtc_base/socket_address.h"
+#include "rtc_base/ssl_adapter.h"
+#include "rtc_base/ssl_certificate.h"
+#include "rtc_base/ssl_identity.h"
+#include "rtc_base/ssl_stream_adapter.h"
 
 namespace rtc {
 
@@ -189,4 +189,4 @@ std::string TransformAlpnProtocols(const std::vector<std::string>& protos);
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_OPENSSLADAPTER_H_
+#endif  // RTC_BASE_OPENSSL_ADAPTER_H_

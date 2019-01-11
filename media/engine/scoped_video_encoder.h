@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MEDIA_ENGINE_SCOPEDVIDEOENCODER_H_
-#define MEDIA_ENGINE_SCOPEDVIDEOENCODER_H_
+#ifndef MEDIA_ENGINE_SCOPED_VIDEO_ENCODER_H_
+#define MEDIA_ENGINE_SCOPED_VIDEO_ENCODER_H_
 
 #include <memory>
 
 #include "api/video_codecs/video_encoder.h"
 #include "media/base/codec.h"
-#include "media/engine/webrtcvideoencoderfactory.h"
+#include "media/engine/webrtc_video_encoder_factory.h"
 #include "rtc_base/deprecation.h"
 
 namespace cricket {
@@ -39,4 +39,4 @@ CreateScopedVideoEncoder(cricket::WebRtcVideoEncoderFactory* factory,
 
 }  // namespace cricket
 
-#endif  // MEDIA_ENGINE_SCOPEDVIDEOENCODER_H_
+#endif  // MEDIA_ENGINE_SCOPED_VIDEO_ENCODER_H_

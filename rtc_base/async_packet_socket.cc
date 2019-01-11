@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/asyncpacketsocket.h"
-#include "rtc_base/nethelper.h"
+#include "rtc_base/async_packet_socket.h"
+#include "rtc_base/net_helper.h"
 
 namespace rtc {
 

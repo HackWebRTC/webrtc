@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "api/stats/rtcstatsreport.h"
+#include "api/stats/rtc_stats_report.h"
 
-#include "api/stats/rtcstats.h"
+#include "api/stats/rtc_stats.h"
 #include "rtc_base/checks.h"
 #include "test/gtest.h"
 

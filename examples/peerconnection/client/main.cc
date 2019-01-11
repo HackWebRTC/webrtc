@@ -9,13 +9,13 @@
  */
 
 #include "examples/peerconnection/client/conductor.h"
-#include "examples/peerconnection/client/flagdefs.h"
+#include "examples/peerconnection/client/flag_defs.h"
 #include "examples/peerconnection/client/main_wnd.h"
 #include "examples/peerconnection/client/peer_connection_client.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/ssladapter.h"
-#include "rtc_base/win32socketinit.h"
-#include "rtc_base/win32socketserver.h"
+#include "rtc_base/ssl_adapter.h"
+#include "rtc_base/win32_socket_init.h"
+#include "rtc_base/win32_socket_server.h"
 #include "system_wrappers/include/field_trial.h"
 #include "test/field_trial.h"
 

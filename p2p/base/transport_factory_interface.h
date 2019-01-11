@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_TRANSPORTFACTORYINTERFACE_H_
-#define P2P_BASE_TRANSPORTFACTORYINTERFACE_H_
+#ifndef P2P_BASE_TRANSPORT_FACTORY_INTERFACE_H_
+#define P2P_BASE_TRANSPORT_FACTORY_INTERFACE_H_
 
 #include <memory>
 #include <string>
 
-#include "p2p/base/dtlstransportinternal.h"
-#include "p2p/base/icetransportinternal.h"
+#include "p2p/base/dtls_transport_internal.h"
+#include "p2p/base/ice_transport_internal.h"
 
 namespace cricket {
 
@@ -39,4 +39,4 @@ class TransportFactoryInterface {
 
 }  // namespace cricket
 
-#endif  // P2P_BASE_TRANSPORTFACTORYINTERFACE_H_
+#endif  // P2P_BASE_TRANSPORT_FACTORY_INTERFACE_H_

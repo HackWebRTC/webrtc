@@ -13,7 +13,7 @@
 
 #include "common_audio/vad/mock/mock_vad.h"
 #include "modules/audio_coding/codecs/cng/audio_encoder_cng.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "test/gtest.h"
 #include "test/mock_audio_encoder.h"

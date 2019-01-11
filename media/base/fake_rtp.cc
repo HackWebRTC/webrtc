@@ -12,7 +12,7 @@
 #include <string.h>
 #include <algorithm>
 
-#include "media/base/fakertp.h"
+#include "media/base/fake_rtp.h"
 #include "rtc_base/checks.h"
 #include "test/gtest.h"
 

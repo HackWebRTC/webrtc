@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MEDIA_SCTP_SCTPTRANSPORTINTERNAL_H_
-#define MEDIA_SCTP_SCTPTRANSPORTINTERNAL_H_
+#ifndef MEDIA_SCTP_SCTP_TRANSPORT_INTERNAL_H_
+#define MEDIA_SCTP_SCTP_TRANSPORT_INTERNAL_H_
 
 // TODO(deadbeef): Move SCTP code out of media/, and make it not depend on
 // anything in media/.
@@ -18,13 +18,13 @@
 #include <string>
 #include <vector>
 
-#include "rtc_base/copyonwritebuffer.h"
+#include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/thread.h"
 // For SendDataParams/ReceiveDataParams.
 // TODO(deadbeef): Use something else for SCTP. It's confusing that we use an
 // SSRC field for SID.
-#include "media/base/mediachannel.h"
-#include "p2p/base/packettransportinternal.h"
+#include "media/base/media_channel.h"
+#include "p2p/base/packet_transport_internal.h"
 
 namespace cricket {
 
@@ -138,4 +138,4 @@ class SctpTransportInternalFactory {
 
 }  // namespace cricket
 
-#endif  // MEDIA_SCTP_SCTPTRANSPORTINTERNAL_H_
+#endif  // MEDIA_SCTP_SCTP_TRANSPORT_INTERNAL_H_

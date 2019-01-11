@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_ICESERVERPARSING_H_
-#define PC_ICESERVERPARSING_H_
+#ifndef PC_ICE_SERVER_PARSING_H_
+#define PC_ICE_SERVER_PARSING_H_
 
 #include <vector>
 
-#include "api/peerconnectioninterface.h"
-#include "api/rtcerror.h"
+#include "api/peer_connection_interface.h"
+#include "api/rtc_error.h"
 #include "p2p/base/port.h"
-#include "p2p/base/portallocator.h"
+#include "p2p/base/port_allocator.h"
 
 namespace webrtc {
 
@@ -33,4 +33,4 @@ RTCErrorType ParseIceServers(
 
 }  // namespace webrtc
 
-#endif  // PC_ICESERVERPARSING_H_
+#endif  // PC_ICE_SERVER_PARSING_H_

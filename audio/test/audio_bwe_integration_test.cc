@@ -17,7 +17,7 @@
 #include "system_wrappers/include/sleep.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
-#include "test/testsupport/fileutils.h"
+#include "test/testsupport/file_utils.h"
 
 namespace webrtc {
 namespace test {

@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_TEST_FAKESCTPTRANSPORT_H_
-#define PC_TEST_FAKESCTPTRANSPORT_H_
+#ifndef PC_TEST_FAKE_SCTP_TRANSPORT_H_
+#define PC_TEST_FAKE_SCTP_TRANSPORT_H_
 
 #include <memory>
 
-#include "media/sctp/sctptransportinternal.h"
+#include "media/sctp/sctp_transport_internal.h"
 
 // Used for tests in this file to verify that PeerConnection responds to signals
 // from the SctpTransport correctly, and calls Start with the correct
@@ -61,4 +61,4 @@ class FakeSctpTransportFactory : public cricket::SctpTransportInternalFactory {
   FakeSctpTransport* last_fake_sctp_transport_ = nullptr;
 };
 
-#endif  // PC_TEST_FAKESCTPTRANSPORT_H_
+#endif  // PC_TEST_FAKE_SCTP_TRANSPORT_H_

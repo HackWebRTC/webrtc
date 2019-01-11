@@ -23,7 +23,7 @@
 #include "modules/desktop_capture/win/dxgi_texture_staging.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/stringutils.h"
+#include "rtc_base/string_utils.h"
 #include "rtc_base/win32.h"
 
 namespace webrtc {

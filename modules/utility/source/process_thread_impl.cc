@@ -15,7 +15,7 @@
 #include "modules/include/module.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/task_queue.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"
 #include "rtc_base/trace_event.h"
 
 namespace webrtc {

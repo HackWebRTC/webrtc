@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/filerotatingstream.h"
+#include "rtc_base/file_rotating_stream.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -17,7 +17,7 @@
 
 #if defined(WEBRTC_WIN)
 #include <windows.h>
-#include "rtc_base/stringutils.h"
+#include "rtc_base/string_utils.h"
 #else
 #include <dirent.h>
 #include <sys/stat.h>

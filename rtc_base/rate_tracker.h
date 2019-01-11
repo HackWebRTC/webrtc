@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_RATETRACKER_H_
-#define RTC_BASE_RATETRACKER_H_
+#ifndef RTC_BASE_RATE_TRACKER_H_
+#define RTC_BASE_RATE_TRACKER_H_
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -66,4 +66,4 @@ class RateTracker {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_RATETRACKER_H_
+#endif  // RTC_BASE_RATE_TRACKER_H_

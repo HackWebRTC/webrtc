@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_PACKETTRANSPORTINTERNAL_H_
-#define P2P_BASE_PACKETTRANSPORTINTERNAL_H_
+#ifndef P2P_BASE_PACKET_TRANSPORT_INTERNAL_H_
+#define P2P_BASE_PACKET_TRANSPORT_INTERNAL_H_
 
 #include <string>
 #include <vector>
 
 #include "absl/types/optional.h"
 // This is included for PacketOptions.
-#include "api/ortc/packettransportinterface.h"
+#include "api/ortc/packet_transport_interface.h"
 #include "p2p/base/port.h"
-#include "rtc_base/asyncpacketsocket.h"
-#include "rtc_base/networkroute.h"
+#include "rtc_base/async_packet_socket.h"
+#include "rtc_base/network_route.h"
 #include "rtc_base/socket.h"
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
@@ -108,4 +108,4 @@ class RTC_EXPORT PacketTransportInternal
 
 }  // namespace rtc
 
-#endif  // P2P_BASE_PACKETTRANSPORTINTERNAL_H_
+#endif  // P2P_BASE_PACKET_TRANSPORT_INTERNAL_H_

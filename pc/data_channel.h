@@ -8,19 +8,19 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_DATACHANNEL_H_
-#define PC_DATACHANNEL_H_
+#ifndef PC_DATA_CHANNEL_H_
+#define PC_DATA_CHANNEL_H_
 
 #include <deque>
 #include <memory>
 #include <set>
 #include <string>
 
-#include "api/datachannelinterface.h"
+#include "api/data_channel_interface.h"
 #include "api/proxy.h"
-#include "media/base/mediachannel.h"
+#include "media/base/media_channel.h"
 #include "pc/channel.h"
-#include "rtc_base/asyncinvoker.h"
+#include "rtc_base/async_invoker.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 
@@ -313,4 +313,4 @@ END_PROXY_MAP()
 
 }  // namespace webrtc
 
-#endif  // PC_DATACHANNEL_H_
+#endif  // PC_DATA_CHANNEL_H_

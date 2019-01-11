@@ -40,7 +40,7 @@
 
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
-#include "rtc_base/stringutils.h"
+#include "rtc_base/string_utils.h"
 #include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/sleep.h"
 

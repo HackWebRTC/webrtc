@@ -23,11 +23,11 @@
 #include "test/field_trial.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
-#include "test/testsupport/fileutils.h"
+#include "test/testsupport/file_utils.h"
 #include "test/testsupport/perf_test.h"
 
 #if defined(WEBRTC_WIN)
-#include "rtc_base/win32socketinit.h"
+#include "rtc_base/win32_socket_init.h"
 #endif
 
 #if defined(WEBRTC_IOS)

@@ -16,7 +16,7 @@
 #include <vector>
 
 #include "modules/audio_coding/audio_network_adaptor/controller.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/protobuf_utils.h"
 
 namespace webrtc {

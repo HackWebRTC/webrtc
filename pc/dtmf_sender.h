@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_DTMFSENDER_H_
-#define PC_DTMFSENDER_H_
+#ifndef PC_DTMF_SENDER_H_
+#define PC_DTMF_SENDER_H_
 
 #include <string>
 
-#include "api/dtmfsenderinterface.h"
+#include "api/dtmf_sender_interface.h"
 #include "api/proxy.h"
-#include "rtc_base/asyncinvoker.h"
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/refcount.h"
+#include "rtc_base/async_invoker.h"
+#include "rtc_base/constructor_magic.h"
+#include "rtc_base/ref_count.h"
 #include "rtc_base/thread.h"
 
 // DtmfSender is the native implementation of the RTCDTMFSender defined by
@@ -107,4 +107,4 @@ bool GetDtmfCode(char tone, int* code);
 
 }  // namespace webrtc
 
-#endif  // PC_DTMFSENDER_H_
+#endif  // PC_DTMF_SENDER_H_

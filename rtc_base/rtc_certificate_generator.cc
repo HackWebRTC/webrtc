@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/rtccertificategenerator.h"
+#include "rtc_base/rtc_certificate_generator.h"
 
 #include <time.h>
 #include <algorithm>
@@ -17,10 +17,10 @@
 
 #include "rtc_base/checks.h"
 #include "rtc_base/location.h"
-#include "rtc_base/messagehandler.h"
-#include "rtc_base/messagequeue.h"
-#include "rtc_base/refcountedobject.h"
-#include "rtc_base/sslidentity.h"
+#include "rtc_base/message_handler.h"
+#include "rtc_base/message_queue.h"
+#include "rtc_base/ref_counted_object.h"
+#include "rtc_base/ssl_identity.h"
 
 namespace rtc {
 

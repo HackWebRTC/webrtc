@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "p2p/base/packetlossestimator.h"
+#include "p2p/base/packet_loss_estimator.h"
 
 #include "rtc_base/checks.h"
 

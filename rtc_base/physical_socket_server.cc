@@ -7,7 +7,7 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "rtc_base/physicalsocketserver.h"
+#include "rtc_base/physical_socket_server.h"
 
 #if defined(_MSC_VER) && _MSC_VER < 1300
 #pragma warning(disable : 4786)
@@ -44,12 +44,12 @@
 #include <map>
 
 #include "rtc_base/arraysize.h"
-#include "rtc_base/byteorder.h"
+#include "rtc_base/byte_order.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/networkmonitor.h"
-#include "rtc_base/nullsocketserver.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/network_monitor.h"
+#include "rtc_base/null_socket_server.h"
+#include "rtc_base/time_utils.h"
 
 #if defined(WEBRTC_WIN)
 #define LAST_SYSTEM_ERROR (::GetLastError())

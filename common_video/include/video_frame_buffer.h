@@ -15,7 +15,7 @@
 
 #include "api/video/video_frame_buffer.h"
 #include "rtc_base/callback.h"
-#include "rtc_base/refcountedobject.h"
+#include "rtc_base/ref_counted_object.h"
 #include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {

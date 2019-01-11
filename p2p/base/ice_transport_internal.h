@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_ICETRANSPORTINTERNAL_H_
-#define P2P_BASE_ICETRANSPORTINTERNAL_H_
+#ifndef P2P_BASE_ICE_TRANSPORT_INTERNAL_H_
+#define P2P_BASE_ICE_TRANSPORT_INTERNAL_H_
 
 #include <stdint.h>
 #include <string>
@@ -18,13 +18,13 @@
 #include "absl/types/optional.h"
 #include "api/candidate.h"
 #include "api/transport/enums.h"
-#include "p2p/base/packettransportinternal.h"
+#include "p2p/base/packet_transport_internal.h"
 #include "p2p/base/port.h"
-#include "p2p/base/transportdescription.h"
+#include "p2p/base/transport_description.h"
 #include "rtc_base/network_constants.h"
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"
 
 namespace cricket {
 
@@ -287,4 +287,4 @@ class RTC_EXPORT IceTransportInternal : public rtc::PacketTransportInternal {
 
 }  // namespace cricket
 
-#endif  // P2P_BASE_ICETRANSPORTINTERNAL_H_
+#endif  // P2P_BASE_ICE_TRANSPORT_INTERNAL_H_

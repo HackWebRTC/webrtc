@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "sdk/android/src/jni/videoencoderfactorywrapper.h"
+#include "sdk/android/src/jni/video_encoder_factory_wrapper.h"
 
 #include "api/video_codecs/video_encoder.h"
 #include "common_types.h"  // NOLINT(build/include)
@@ -16,8 +16,8 @@
 #include "sdk/android/generated_video_jni/jni/VideoEncoderFactory_jni.h"
 #include "sdk/android/native_api/jni/class_loader.h"
 #include "sdk/android/native_api/jni/java_types.h"
-#include "sdk/android/src/jni/videocodecinfo.h"
-#include "sdk/android/src/jni/videoencoderwrapper.h"
+#include "sdk/android/src/jni/video_codec_info.h"
+#include "sdk/android/src/jni/video_encoder_wrapper.h"
 
 namespace webrtc {
 namespace jni {

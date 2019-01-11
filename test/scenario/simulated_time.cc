@@ -17,7 +17,7 @@
 
 #include "absl/types/optional.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/socketaddress.h"
+#include "rtc_base/socket_address.h"
 
 namespace webrtc {
 namespace test {

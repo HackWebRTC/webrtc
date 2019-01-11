@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/jseptransport.h"
+#include "pc/jsep_transport.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -19,10 +19,10 @@
 #include "absl/memory/memory.h"
 #include "api/array_view.h"
 #include "api/candidate.h"
-#include "p2p/base/p2pconstants.h"
-#include "p2p/base/p2ptransportchannel.h"
+#include "p2p/base/p2p_constants.h"
+#include "p2p/base/p2p_transport_channel.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/copyonwritebuffer.h"
+#include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/string_builder.h"
 

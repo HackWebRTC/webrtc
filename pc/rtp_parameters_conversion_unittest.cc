@@ -10,7 +10,7 @@
 
 #include <algorithm>
 
-#include "pc/rtpparametersconversion.h"
+#include "pc/rtp_parameters_conversion.h"
 #include "rtc_base/gunit.h"
 
 namespace webrtc {

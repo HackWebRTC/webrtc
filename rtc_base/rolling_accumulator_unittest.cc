@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/rollingaccumulator.h"
+#include "rtc_base/rolling_accumulator.h"
 
 #include "test/gtest.h"
 

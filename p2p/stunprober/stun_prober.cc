@@ -14,18 +14,18 @@
 #include <string>
 #include <utility>
 
-#include "p2p/base/packetsocketfactory.h"
+#include "p2p/base/packet_socket_factory.h"
 #include "p2p/base/stun.h"
-#include "p2p/stunprober/stunprober.h"
-#include "rtc_base/asyncpacketsocket.h"
-#include "rtc_base/asyncresolverinterface.h"
+#include "p2p/stunprober/stun_prober.h"
+#include "rtc_base/async_packet_socket.h"
+#include "rtc_base/async_resolver_interface.h"
 #include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/helpers.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/thread.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"
 
 namespace stunprober {
 

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "api/jsepicecandidate.h"
+#include "api/jsep_ice_candidate.h"
 
 #include <algorithm>
 #include <utility>

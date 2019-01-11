@@ -7,14 +7,14 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "sdk/android/native_api/peerconnection/peerconnectionfactory.h"
+#include "sdk/android/native_api/peerconnection/peer_connection_factory.h"
 
 #include <jni.h>
 
 #include <memory>
 #include <utility>
 
-#include "sdk/android/src/jni/pc/peerconnectionfactory.h"
+#include "sdk/android/src/jni/pc/peer_connection_factory.h"
 
 namespace webrtc {
 

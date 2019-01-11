@@ -15,7 +15,7 @@
 #include "api/video_codecs/sdp_video_format.h"
 #include "call/rtp_config.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/refcountedobject.h"
+#include "rtc_base/ref_counted_object.h"
 #include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {

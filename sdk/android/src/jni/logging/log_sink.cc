@@ -7,7 +7,7 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "sdk/android/src/jni/logging/logsink.h"
+#include "sdk/android/src/jni/logging/log_sink.h"
 
 #include "sdk/android/generated_logging_jni/jni/JNILogging_jni.h"
 

@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_REGATHERINGCONTROLLER_H_
-#define P2P_BASE_REGATHERINGCONTROLLER_H_
+#ifndef P2P_BASE_REGATHERING_CONTROLLER_H_
+#define P2P_BASE_REGATHERING_CONTROLLER_H_
 
-#include "p2p/base/icetransportinternal.h"
-#include "p2p/base/portallocator.h"
-#include "rtc_base/asyncinvoker.h"
+#include "p2p/base/ice_transport_internal.h"
+#include "p2p/base/port_allocator.h"
+#include "rtc_base/async_invoker.h"
 #include "rtc_base/random.h"
 #include "rtc_base/thread.h"
 
@@ -121,4 +121,4 @@ class BasicRegatheringController : public sigslot::has_slots<> {
 
 }  // namespace webrtc
 
-#endif  // P2P_BASE_REGATHERINGCONTROLLER_H_
+#endif  // P2P_BASE_REGATHERING_CONTROLLER_H_

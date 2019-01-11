@@ -7,7 +7,7 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "api/rtpparameters.h"
+#include "api/rtp_parameters.h"
 
 #include <algorithm>
 #include <string>

@@ -57,9 +57,9 @@
 #include <utility>
 
 #include "rtc_base/event.h"
-#include "rtc_base/messagehandler.h"
-#include "rtc_base/messagequeue.h"
-#include "rtc_base/refcountedobject.h"
+#include "rtc_base/message_handler.h"
+#include "rtc_base/message_queue.h"
+#include "rtc_base/ref_counted_object.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/thread.h"
 

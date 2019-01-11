@@ -14,8 +14,8 @@
 
 #include <string.h>
 
-#include "rtc_base/ipaddress.h"
-#include "rtc_base/socketaddress.h"
+#include "rtc_base/ip_address.h"
+#include "rtc_base/socket_address.h"
 #include "test/gtest.h"
 
 namespace rtc {

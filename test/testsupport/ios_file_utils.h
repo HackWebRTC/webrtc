@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef TEST_TESTSUPPORT_IOSFILEUTILS_H_
-#define TEST_TESTSUPPORT_IOSFILEUTILS_H_
+#ifndef TEST_TESTSUPPORT_IOS_FILE_UTILS_H_
+#define TEST_TESTSUPPORT_IOS_FILE_UTILS_H_
 
 #include <string>
 
@@ -23,4 +23,4 @@ std::string IOSResourcePath(std::string name, std::string extension);
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // TEST_TESTSUPPORT_IOSFILEUTILS_H_
+#endif  // TEST_TESTSUPPORT_IOS_FILE_UTILS_H_

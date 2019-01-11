@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_OPENSSLSTREAMADAPTER_H_
-#define RTC_BASE_OPENSSLSTREAMADAPTER_H_
+#ifndef RTC_BASE_OPENSSL_STREAM_ADAPTER_H_
+#define RTC_BASE_OPENSSL_STREAM_ADAPTER_H_
 
 #include <openssl/ossl_typ.h>
 
@@ -20,10 +20,10 @@
 #include <vector>
 
 #include "rtc_base/buffer.h"
-#include "rtc_base/messagequeue.h"
-#include "rtc_base/opensslidentity.h"
-#include "rtc_base/sslidentity.h"
-#include "rtc_base/sslstreamadapter.h"
+#include "rtc_base/message_queue.h"
+#include "rtc_base/openssl_identity.h"
+#include "rtc_base/ssl_identity.h"
+#include "rtc_base/ssl_stream_adapter.h"
 #include "rtc_base/stream.h"
 
 namespace rtc {
@@ -223,4 +223,4 @@ class OpenSSLStreamAdapter final : public SSLStreamAdapter {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_OPENSSLSTREAMADAPTER_H_
+#endif  // RTC_BASE_OPENSSL_STREAM_ADAPTER_H_

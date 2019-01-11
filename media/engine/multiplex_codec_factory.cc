@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "media/engine/multiplexcodecfactory.h"
+#include "media/engine/multiplex_codec_factory.h"
 
 #include <map>
 #include <string>
@@ -17,7 +17,7 @@
 #include "absl/strings/match.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "media/base/codec.h"
-#include "media/base/mediaconstants.h"
+#include "media/base/media_constants.h"
 #include "modules/video_coding/codecs/multiplex/include/multiplex_decoder_adapter.h"
 #include "modules/video_coding/codecs/multiplex/include/multiplex_encoder_adapter.h"
 #include "rtc_base/logging.h"

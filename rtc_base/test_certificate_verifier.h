@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_TESTCERTIFICATEVERIFIER_H_
-#define RTC_BASE_TESTCERTIFICATEVERIFIER_H_
+#ifndef RTC_BASE_TEST_CERTIFICATE_VERIFIER_H_
+#define RTC_BASE_TEST_CERTIFICATE_VERIFIER_H_
 
-#include "rtc_base/sslcertificate.h"
+#include "rtc_base/ssl_certificate.h"
 
 namespace rtc {
 
@@ -31,4 +31,4 @@ class TestCertificateVerifier : public SSLCertificateVerifier {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_TESTCERTIFICATEVERIFIER_H_
+#endif  // RTC_BASE_TEST_CERTIFICATE_VERIFIER_H_

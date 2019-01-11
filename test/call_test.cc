@@ -24,7 +24,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/event.h"
 #include "test/fake_encoder.h"
-#include "test/testsupport/fileutils.h"
+#include "test/testsupport/file_utils.h"
 
 namespace webrtc {
 namespace test {

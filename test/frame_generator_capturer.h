@@ -14,7 +14,7 @@
 #include <string>
 
 #include "api/video/video_frame.h"
-#include "rtc_base/criticalsection.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/task_queue.h"
 #include "test/frame_generator.h"
 #include "test/test_video_capturer.h"

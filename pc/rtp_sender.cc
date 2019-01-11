@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/rtpsender.h"
+#include "pc/rtp_sender.h"
 
 #include <utility>
 #include <vector>
 
 #include "api/audio_options.h"
-#include "api/mediastreaminterface.h"
-#include "media/base/mediaengine.h"
-#include "pc/statscollector.h"
+#include "api/media_stream_interface.h"
+#include "media/base/media_engine.h"
+#include "pc/stats_collector.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/helpers.h"
 #include "rtc_base/location.h"

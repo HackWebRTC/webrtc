@@ -10,15 +10,15 @@
 
 // Common definition for video, including fourcc and VideoFormat.
 
-#ifndef MEDIA_BASE_VIDEOCOMMON_H_
-#define MEDIA_BASE_VIDEOCOMMON_H_
+#ifndef MEDIA_BASE_VIDEO_COMMON_H_
+#define MEDIA_BASE_VIDEO_COMMON_H_
 
 #include <stdint.h>
 
 #include <string>
 
 #include "rtc_base/system/rtc_export.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"
 
 namespace cricket {
 
@@ -226,4 +226,4 @@ struct RTC_EXPORT VideoFormat : VideoFormatPod {
 
 }  // namespace cricket
 
-#endif  // MEDIA_BASE_VIDEOCOMMON_H_
+#endif  // MEDIA_BASE_VIDEO_COMMON_H_

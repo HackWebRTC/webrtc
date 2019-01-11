@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SDK_ANDROID_SRC_JNI_PC_MEDIACONSTRAINTS_H_
-#define SDK_ANDROID_SRC_JNI_PC_MEDIACONSTRAINTS_H_
+#ifndef SDK_ANDROID_SRC_JNI_PC_MEDIA_CONSTRAINTS_H_
+#define SDK_ANDROID_SRC_JNI_PC_MEDIA_CONSTRAINTS_H_
 
 #include <jni.h>
 #include <memory>
 
-#include "api/mediaconstraintsinterface.h"
+#include "api/media_constraints_interface.h"
 #include "sdk/android/native_api/jni/scoped_java_ref.h"
 
 namespace webrtc {
@@ -27,4 +27,4 @@ std::unique_ptr<MediaConstraintsInterface> JavaToNativeMediaConstraints(
 }  // namespace jni
 }  // namespace webrtc
 
-#endif  // SDK_ANDROID_SRC_JNI_PC_MEDIACONSTRAINTS_H_
+#endif  // SDK_ANDROID_SRC_JNI_PC_MEDIA_CONSTRAINTS_H_

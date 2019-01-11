@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_PSEUDOTCP_H_
-#define P2P_BASE_PSEUDOTCP_H_
+#ifndef P2P_BASE_PSEUDO_TCP_H_
+#define P2P_BASE_PSEUDO_TCP_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -246,4 +246,4 @@ class RTC_EXPORT PseudoTcp {
 
 }  // namespace cricket
 
-#endif  // P2P_BASE_PSEUDOTCP_H_
+#endif  // P2P_BASE_PSEUDO_TCP_H_

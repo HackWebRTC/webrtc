@@ -14,7 +14,7 @@
 #include <string>
 
 #include "rtc_base/gunit.h"
-#include "rtc_base/refcount.h"
+#include "rtc_base/ref_count.h"
 #include "test/gmock.h"
 
 using ::testing::_;

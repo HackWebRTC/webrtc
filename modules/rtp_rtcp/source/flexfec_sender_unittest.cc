@@ -10,7 +10,7 @@
 
 #include <vector>
 
-#include "api/rtpparameters.h"
+#include "api/rtp_parameters.h"
 #include "modules/rtp_rtcp/include/flexfec_sender.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/fec_test_helper.h"

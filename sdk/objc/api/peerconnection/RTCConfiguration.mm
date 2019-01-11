@@ -18,8 +18,8 @@
 #import "RTCIntervalRange+Private.h"
 #import "base/RTCLogging.h"
 
-#include "rtc_base/rtccertificategenerator.h"
-#include "rtc_base/sslidentity.h"
+#include "rtc_base/rtc_certificate_generator.h"
+#include "rtc_base/ssl_identity.h"
 
 @implementation RTCConfiguration
 

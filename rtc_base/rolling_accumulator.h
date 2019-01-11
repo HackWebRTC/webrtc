@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_ROLLINGACCUMULATOR_H_
-#define RTC_BASE_ROLLINGACCUMULATOR_H_
+#ifndef RTC_BASE_ROLLING_ACCUMULATOR_H_
+#define RTC_BASE_ROLLING_ACCUMULATOR_H_
 
 #include <stddef.h>
 #include <algorithm>
 #include <vector>
 
 #include "rtc_base/checks.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 
 namespace rtc {
 
@@ -164,4 +164,4 @@ class RollingAccumulator {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_ROLLINGACCUMULATOR_H_
+#endif  // RTC_BASE_ROLLING_ACCUMULATOR_H_

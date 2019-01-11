@@ -11,10 +11,10 @@
 #include <string>
 #include <vector>
 
-#include "p2p/base/portinterface.h"
-#include "pc/iceserverparsing.h"
-#include "rtc_base/ipaddress.h"
-#include "rtc_base/socketaddress.h"
+#include "p2p/base/port_interface.h"
+#include "pc/ice_server_parsing.h"
+#include "rtc_base/ip_address.h"
+#include "rtc_base/socket_address.h"
 #include "test/gtest.h"
 
 namespace webrtc {

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/localaudiosource.h"
+#include "pc/local_audio_source.h"
 
 #include "absl/types/optional.h"
 #include "test/gtest.h"

@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/rtpreceiver.h"
+#include "pc/rtp_receiver.h"
 
 #include <stddef.h>
 #include <utility>
 #include <vector>
 
-#include "api/mediastreamproxy.h"
-#include "api/mediastreamtrackproxy.h"
-#include "api/videosourceproxy.h"
-#include "pc/audiotrack.h"
-#include "pc/mediastream.h"
-#include "pc/videotrack.h"
+#include "api/media_stream_proxy.h"
+#include "api/media_stream_track_proxy.h"
+#include "api/video_track_source_proxy.h"
+#include "pc/audio_track.h"
+#include "pc/media_stream.h"
+#include "pc/video_track.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"

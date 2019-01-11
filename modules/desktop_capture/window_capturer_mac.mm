@@ -23,9 +23,9 @@
 #include "modules/desktop_capture/mac/full_screen_chrome_window_detector.h"
 #include "modules/desktop_capture/mac/window_list_utils.h"
 #include "modules/desktop_capture/window_finder_mac.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/macutils.h"
+#include "rtc_base/mac_utils.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/trace_event.h"
 

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/rtcstatscollector.h"
+#include "pc/rtc_stats_collector.h"
 
 #include <memory>
 #include <string>
@@ -17,16 +17,16 @@
 
 #include "absl/memory/memory.h"
 #include "api/candidate.h"
-#include "api/mediastreaminterface.h"
-#include "api/peerconnectioninterface.h"
-#include "media/base/mediachannel.h"
-#include "p2p/base/p2pconstants.h"
+#include "api/media_stream_interface.h"
+#include "api/peer_connection_interface.h"
+#include "media/base/media_channel.h"
+#include "p2p/base/p2p_constants.h"
 #include "p2p/base/port.h"
-#include "pc/peerconnection.h"
-#include "pc/rtcstatstraversal.h"
+#include "pc/peer_connection.h"
+#include "pc/rtc_stats_traversal.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/strings/string_builder.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"
 #include "rtc_base/trace_event.h"
 
 namespace webrtc {

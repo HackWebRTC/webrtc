@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "p2p/base/regatheringcontroller.h"
+#include "p2p/base/regathering_controller.h"
 
 namespace webrtc {
 

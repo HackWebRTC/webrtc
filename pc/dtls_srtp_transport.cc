@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/dtlssrtptransport.h"
+#include "pc/dtls_srtp_transport.h"
 
 #include <string.h>
 #include <string>
@@ -16,7 +16,7 @@
 
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/sslstreamadapter.h"
+#include "rtc_base/ssl_stream_adapter.h"
 
 namespace {
 // Value specified in RFC 5764.

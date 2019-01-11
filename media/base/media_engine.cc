@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "media/base/mediaengine.h"
+#include "media/base/media_engine.h"
 
 #include <stddef.h>
 #include <cstdint>
@@ -17,7 +17,7 @@
 
 #include "api/video/video_bitrate_allocation.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/stringencode.h"
+#include "rtc_base/string_encode.h"
 
 namespace cricket {
 

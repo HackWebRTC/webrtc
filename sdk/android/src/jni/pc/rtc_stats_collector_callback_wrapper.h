@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef SDK_ANDROID_SRC_JNI_PC_RTCSTATSCOLLECTORCALLBACKWRAPPER_H_
-#define SDK_ANDROID_SRC_JNI_PC_RTCSTATSCOLLECTORCALLBACKWRAPPER_H_
+#ifndef SDK_ANDROID_SRC_JNI_PC_RTC_STATS_COLLECTOR_CALLBACK_WRAPPER_H_
+#define SDK_ANDROID_SRC_JNI_PC_RTC_STATS_COLLECTOR_CALLBACK_WRAPPER_H_
 
 #include <jni.h>
 
-#include "api/peerconnectioninterface.h"
+#include "api/peer_connection_interface.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {
@@ -38,4 +38,4 @@ class RTCStatsCollectorCallbackWrapper : public RTCStatsCollectorCallback {
 }  // namespace jni
 }  // namespace webrtc
 
-#endif  // SDK_ANDROID_SRC_JNI_PC_RTCSTATSCOLLECTORCALLBACKWRAPPER_H_
+#endif  // SDK_ANDROID_SRC_JNI_PC_RTC_STATS_COLLECTOR_CALLBACK_WRAPPER_H_

@@ -13,12 +13,12 @@
 #include <limits>
 
 #include "absl/memory/memory.h"
-#include "api/datachannelinterface.h"
+#include "api/data_channel_interface.h"
 #include "rtc_base/logging.h"
 #include "sdk/android/generated_peerconnection_jni/jni/DataChannel_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/src/jni/jni_helpers.h"
-#include "sdk/android/src/jni/pc/datachannel.h"
+#include "sdk/android/src/jni/pc/data_channel.h"
 
 namespace webrtc {
 namespace jni {

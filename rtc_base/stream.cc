@@ -14,7 +14,7 @@
 
 #include "rtc_base/checks.h"
 #include "rtc_base/location.h"
-#include "rtc_base/messagequeue.h"
+#include "rtc_base/message_queue.h"
 #include "rtc_base/stream.h"
 #include "rtc_base/thread.h"
 
@@ -22,7 +22,7 @@
 #include <windows.h>
 
 #define fileno _fileno
-#include "rtc_base/stringutils.h"
+#include "rtc_base/string_utils.h"
 #endif
 
 namespace rtc {

@@ -7,16 +7,16 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "sdk/android/native_api/peerconnection/peerconnectionfactory.h"
+#include "sdk/android/native_api/peerconnection/peer_connection_factory.h"
 
 #include "absl/memory/memory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "logging/rtc_event_log/rtc_event_log_factory.h"
-#include "media/base/mediaengine.h"
-#include "media/engine/internaldecoderfactory.h"
-#include "media/engine/internalencoderfactory.h"
-#include "media/engine/webrtcmediaengine.h"
+#include "media/base/media_engine.h"
+#include "media/engine/internal_decoder_factory.h"
+#include "media/engine/internal_encoder_factory.h"
+#include "media/engine/webrtc_media_engine.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "rtc_base/logging.h"
 #include "sdk/android/generated_native_unittests_jni/jni/PeerConnectionFactoryInitializationHelper_jni.h"

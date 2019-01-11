@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/sctputils.h"
+#include "pc/sctp_utils.h"
 
 #include <stdint.h>
 
-#include "rtc_base/bytebuffer.h"
-#include "rtc_base/copyonwritebuffer.h"
+#include "rtc_base/byte_buffer.h"
+#include "rtc_base/copy_on_write_buffer.h"
 #include "test/gtest.h"
 
 class SctpUtilsTest : public testing::Test {

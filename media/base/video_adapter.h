@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MEDIA_BASE_VIDEOADAPTER_H_
-#define MEDIA_BASE_VIDEOADAPTER_H_
+#ifndef MEDIA_BASE_VIDEO_ADAPTER_H_
+#define MEDIA_BASE_VIDEO_ADAPTER_H_
 
 #include <stdint.h>
 #include <utility>
 
 #include "absl/types/optional.h"
-#include "media/base/videocommon.h"
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/criticalsection.h"
+#include "media/base/video_common.h"
+#include "rtc_base/constructor_magic.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/thread_annotations.h"
 
 namespace cricket {
@@ -134,4 +134,4 @@ class VideoAdapter {
 
 }  // namespace cricket
 
-#endif  // MEDIA_BASE_VIDEOADAPTER_H_
+#endif  // MEDIA_BASE_VIDEO_ADAPTER_H_

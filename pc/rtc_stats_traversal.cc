@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/rtcstatstraversal.h"
+#include "pc/rtc_stats_traversal.h"
 
 #include <memory>
 #include <string>

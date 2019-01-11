@@ -11,7 +11,7 @@
 
 #import "RTCVideoCodecConstants.h"
 
-#include "media/base/mediaconstants.h"
+#include "media/base/media_constants.h"
 
 NSString *const kRTCVideoCodecVp8Name = @(cricket::kVp8CodecName);
 NSString *const kRTCVideoCodecVp9Name = @(cricket::kVp9CodecName);

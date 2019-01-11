@@ -22,7 +22,7 @@
 #include "modules/audio_coding/neteq/tools/input_audio_file.h"
 #include "modules/audio_coding/neteq/tools/packet.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/stringencode.h"
+#include "rtc_base/string_encode.h"
 #include "test/gtest.h"
 
 namespace webrtc {

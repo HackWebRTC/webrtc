@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "sdk/android/src/jni/nativecapturerobserver.h"
+#include "sdk/android/src/jni/native_capturer_observer.h"
 
-#include "api/videosourceproxy.h"
+#include "api/video_track_source_proxy.h"
 #include "rtc_base/logging.h"
 #include "sdk/android/generated_video_jni/jni/NativeCapturerObserver_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"
-#include "sdk/android/src/jni/androidvideotracksource.h"
+#include "sdk/android/src/jni/android_video_track_source.h"
 
 namespace webrtc {
 namespace jni {

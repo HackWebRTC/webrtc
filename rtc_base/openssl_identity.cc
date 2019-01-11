@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/opensslidentity.h"
+#include "rtc_base/openssl_identity.h"
 
 #include <memory>
 #include <utility>
@@ -32,7 +32,7 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/openssl.h"
-#include "rtc_base/opensslutility.h"
+#include "rtc_base/openssl_utility.h"
 
 namespace rtc {
 

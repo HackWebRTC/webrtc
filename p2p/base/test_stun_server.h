@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_TESTSTUNSERVER_H_
-#define P2P_BASE_TESTSTUNSERVER_H_
+#ifndef P2P_BASE_TEST_STUN_SERVER_H_
+#define P2P_BASE_TEST_STUN_SERVER_H_
 
 #include "p2p/base/stun.h"
-#include "p2p/base/stunserver.h"
-#include "rtc_base/asyncudpsocket.h"
-#include "rtc_base/socketaddress.h"
+#include "p2p/base/stun_server.h"
+#include "rtc_base/async_udp_socket.h"
+#include "rtc_base/socket_address.h"
 #include "rtc_base/thread.h"
 
 namespace cricket {
@@ -42,4 +42,4 @@ class TestStunServer : StunServer {
 
 }  // namespace cricket
 
-#endif  // P2P_BASE_TESTSTUNSERVER_H_
+#endif  // P2P_BASE_TEST_STUN_SERVER_H_

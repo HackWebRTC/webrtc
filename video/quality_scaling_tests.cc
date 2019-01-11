@@ -11,7 +11,7 @@
 #include <string>
 
 #include "api/test/video/function_video_encoder_factory.h"
-#include "media/engine/internalencoderfactory.h"
+#include "media/engine/internal_encoder_factory.h"
 #include "modules/video_coding/codecs/h264/include/h264.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/codecs/vp9/include/vp9.h"

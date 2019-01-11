@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_TRANSPORTDESCRIPTIONFACTORY_H_
-#define P2P_BASE_TRANSPORTDESCRIPTIONFACTORY_H_
+#ifndef P2P_BASE_TRANSPORT_DESCRIPTION_FACTORY_H_
+#define P2P_BASE_TRANSPORT_DESCRIPTION_FACTORY_H_
 
 #include <memory>
 
-#include "p2p/base/icecredentialsiterator.h"
-#include "p2p/base/transportdescription.h"
-#include "rtc_base/rtccertificate.h"
+#include "p2p/base/ice_credentials_iterator.h"
+#include "p2p/base/transport_description.h"
+#include "rtc_base/rtc_certificate.h"
 
 namespace rtc {
 class SSLIdentity;
@@ -83,4 +83,4 @@ class TransportDescriptionFactory {
 
 }  // namespace cricket
 
-#endif  // P2P_BASE_TRANSPORTDESCRIPTIONFACTORY_H_
+#endif  // P2P_BASE_TRANSPORT_DESCRIPTION_FACTORY_H_

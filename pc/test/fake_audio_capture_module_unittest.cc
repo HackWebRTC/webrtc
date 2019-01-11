@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/test/fakeaudiocapturemodule.h"
+#include "pc/test/fake_audio_capture_module.h"
 
 #include <string.h>
 #include <algorithm>
 
-#include "rtc_base/criticalsection.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "test/gtest.h"

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/videotracksource.h"
+#include "pc/video_track_source.h"
 
 #include "rtc_base/checks.h"
 

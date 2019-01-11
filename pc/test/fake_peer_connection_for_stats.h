@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_TEST_FAKEPEERCONNECTIONFORSTATS_H_
-#define PC_TEST_FAKEPEERCONNECTIONFORSTATS_H_
+#ifndef PC_TEST_FAKE_PEER_CONNECTION_FOR_STATS_H_
+#define PC_TEST_FAKE_PEER_CONNECTION_FOR_STATS_H_
 
 #include <map>
 #include <memory>
@@ -19,10 +19,10 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
-#include "media/base/fakemediaengine.h"
-#include "pc/streamcollection.h"
-#include "pc/test/fakedatachannelprovider.h"
-#include "pc/test/fakepeerconnectionbase.h"
+#include "media/base/fake_media_engine.h"
+#include "pc/stream_collection.h"
+#include "pc/test/fake_data_channel_provider.h"
+#include "pc/test/fake_peer_connection_base.h"
 
 namespace webrtc {
 
@@ -384,4 +384,4 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase {
 
 }  // namespace webrtc
 
-#endif  // PC_TEST_FAKEPEERCONNECTIONFORSTATS_H_
+#endif  // PC_TEST_FAKE_PEER_CONNECTION_FOR_STATS_H_

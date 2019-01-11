@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "sdk/android/src/jni/pc/icecandidate.h"
+#include "sdk/android/src/jni/pc/ice_candidate.h"
 
 #include <string>
 
-#include "pc/webrtcsdp.h"
+#include "pc/webrtc_sdp.h"
 #include "sdk/android/generated_peerconnection_jni/jni/IceCandidate_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"
-#include "sdk/android/src/jni/pc/mediastreamtrack.h"
+#include "sdk/android/src/jni/pc/media_stream_track.h"
 
 namespace webrtc {
 namespace jni {

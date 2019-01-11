@@ -17,7 +17,7 @@
 
 #include "rtc_base/system/file_wrapper.h"
 #include "test/gtest.h"
-#include "test/testsupport/fileutils.h"
+#include "test/testsupport/file_utils.h"
 
 namespace webrtc {
 

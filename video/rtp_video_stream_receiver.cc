@@ -16,7 +16,7 @@
 
 #include "absl/memory/memory.h"
 
-#include "media/base/mediaconstants.h"
+#include "media/base/media_constants.h"
 #include "modules/pacing/packet_router.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "modules/rtp_rtcp/include/receive_statistics.h"

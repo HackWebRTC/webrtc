@@ -17,13 +17,13 @@
 #include <vector>
 
 #include "api/bitrate_constraints.h"
-#include "api/crypto/cryptooptions.h"
-#include "api/crypto/frameencryptorinterface.h"
+#include "api/crypto/crypto_options.h"
+#include "api/crypto/frame_encryptor_interface.h"
 #include "call/rtp_transport_controller_send_interface.h"
 #include "modules/congestion_controller/include/network_changed_observer.h"
 #include "modules/pacing/packet_router.h"
 #include "rtc_base/network/sent_packet.h"
-#include "rtc_base/networkroute.h"
+#include "rtc_base/network_route.h"
 #include "rtc_base/rate_limiter.h"
 #include "test/gmock.h"
 

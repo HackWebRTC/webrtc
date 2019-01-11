@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/sigslottester.h"
+#include "rtc_base/sigslot_tester.h"
 
 #include <string>
 

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/sdpserializer.h"
+#include "pc/sdp_serializer.h"
 
 #include <algorithm>
 #include <string>
@@ -17,8 +17,8 @@
 
 #include "api/jsep.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/string_encode.h"
 #include "rtc_base/string_to_number.h"
-#include "rtc_base/stringencode.h"
 #include "rtc_base/strings/string_builder.h"
 
 using cricket::RidDescription;

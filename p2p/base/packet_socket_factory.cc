@@ -10,7 +10,7 @@
 
 #include <string>
 
-#include "p2p/base/packetsocketfactory.h"
+#include "p2p/base/packet_socket_factory.h"
 
 namespace rtc {
 

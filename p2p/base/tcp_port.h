@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_TCPPORT_H_
-#define P2P_BASE_TCPPORT_H_
+#ifndef P2P_BASE_TCP_PORT_H_
+#define P2P_BASE_TCP_PORT_H_
 
 #include <list>
 #include <memory>
@@ -17,7 +17,7 @@
 
 #include "absl/memory/memory.h"
 #include "p2p/base/port.h"
-#include "rtc_base/asyncpacketsocket.h"
+#include "rtc_base/async_packet_socket.h"
 
 namespace cricket {
 
@@ -188,4 +188,4 @@ class TCPConnection : public Connection {
 
 }  // namespace cricket
 
-#endif  // P2P_BASE_TCPPORT_H_
+#endif  // P2P_BASE_TCP_PORT_H_

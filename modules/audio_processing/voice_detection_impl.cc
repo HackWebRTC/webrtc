@@ -14,7 +14,7 @@
 #include "common_audio/vad/include/webrtc_vad.h"
 #include "modules/audio_processing/audio_buffer.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 
 namespace webrtc {
 class VoiceDetectionImpl::Vad {

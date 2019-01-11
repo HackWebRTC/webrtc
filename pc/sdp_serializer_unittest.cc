@@ -13,7 +13,7 @@
 #include <utility>
 #include <vector>
 
-#include "pc/sdpserializer.h"
+#include "pc/sdp_serializer.h"
 #include "rtc_base/gunit.h"
 
 using ::testing::ValuesIn;

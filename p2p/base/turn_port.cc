@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "p2p/base/turnport.h"
+#include "p2p/base/turn_port.h"
 
 #include <algorithm>
 #include <functional>
@@ -18,12 +18,12 @@
 #include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 #include "p2p/base/stun.h"
-#include "rtc_base/asyncpacketsocket.h"
-#include "rtc_base/byteorder.h"
+#include "rtc_base/async_packet_socket.h"
+#include "rtc_base/byte_order.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/nethelpers.h"
-#include "rtc_base/socketaddress.h"
+#include "rtc_base/net_helpers.h"
+#include "rtc_base/socket_address.h"
 #include "rtc_base/strings/string_builder.h"
 
 namespace cricket {

@@ -18,7 +18,7 @@
 #include <assert.h>
 
 #include "modules/remote_bitrate_estimator/test/bwe_test_logging.h"
-#include "test/testsupport/fileutils.h"
+#include "test/testsupport/file_utils.h"
 
 namespace webrtc {
 namespace testing {

@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_BYTEBUFFER_H_
-#define RTC_BASE_BYTEBUFFER_H_
+#ifndef RTC_BASE_BYTE_BUFFER_H_
+#define RTC_BASE_BYTE_BUFFER_H_
 
 #include <stddef.h>
 #include <stdint.h>
 #include <string>
 
 #include "rtc_base/buffer.h"
-#include "rtc_base/byteorder.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/byte_order.h"
+#include "rtc_base/constructor_magic.h"
 
 namespace rtc {
 
@@ -201,4 +201,4 @@ class ByteBufferReader : public ByteBuffer {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_BYTEBUFFER_H_
+#endif  // RTC_BASE_BYTE_BUFFER_H_

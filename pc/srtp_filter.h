@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_SRTPFILTER_H_
-#define PC_SRTPFILTER_H_
+#ifndef PC_SRTP_FILTER_H_
+#define PC_SRTP_FILTER_H_
 
 #include <list>
 #include <map>
@@ -19,13 +19,13 @@
 
 #include "absl/types/optional.h"
 #include "api/array_view.h"
-#include "api/cryptoparams.h"
+#include "api/crypto_params.h"
 #include "api/jsep.h"
-#include "pc/sessiondescription.h"
+#include "pc/session_description.h"
 #include "rtc_base/buffer.h"
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/criticalsection.h"
-#include "rtc_base/sslstreamadapter.h"
+#include "rtc_base/constructor_magic.h"
+#include "rtc_base/critical_section.h"
+#include "rtc_base/ssl_stream_adapter.h"
 #include "rtc_base/thread_checker.h"
 
 // Forward declaration to avoid pulling in libsrtp headers here
@@ -143,4 +143,4 @@ class SrtpFilter {
 
 }  // namespace cricket
 
-#endif  // PC_SRTPFILTER_H_
+#endif  // PC_SRTP_FILTER_H_

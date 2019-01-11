@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_RTPTRANSPORT_H_
-#define PC_RTPTRANSPORT_H_
+#ifndef PC_RTP_TRANSPORT_H_
+#define PC_RTP_TRANSPORT_H_
 
 #include <string>
 
 #include "call/rtp_demuxer.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
-#include "pc/rtptransportinternal.h"
+#include "pc/rtp_transport_internal.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace rtc {
@@ -152,4 +152,4 @@ class RtpTransport : public RtpTransportInternal {
 
 }  // namespace webrtc
 
-#endif  // PC_RTPTRANSPORT_H_
+#endif  // PC_RTP_TRANSPORT_H_

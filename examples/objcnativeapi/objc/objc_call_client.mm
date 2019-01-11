@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "examples/objcnativeapi/objc/objccallclient.h"
+#include "examples/objcnativeapi/objc/objc_call_client.h"
 
 #include <utility>
 
@@ -20,10 +20,10 @@
 #include "absl/memory/memory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
-#include "api/peerconnectioninterface.h"
+#include "api/peer_connection_interface.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "logging/rtc_event_log/rtc_event_log_factory.h"
-#include "media/engine/webrtcmediaengine.h"
+#include "media/engine/webrtc_media_engine.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "sdk/objc/native/api/video_capturer.h"
 #include "sdk/objc/native/api/video_decoder_factory.h"

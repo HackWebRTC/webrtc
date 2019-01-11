@@ -16,24 +16,24 @@
 
 #include "absl/memory/memory.h"
 #include "api/call/audio_sink.h"
-#include "media/base/mediaconstants.h"
-#include "media/base/rtputils.h"
+#include "media/base/media_constants.h"
+#include "media/base/rtp_utils.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "rtc_base/bind.h"
-#include "rtc_base/byteorder.h"
+#include "rtc_base/byte_order.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/copyonwritebuffer.h"
+#include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/dscp.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/networkroute.h"
+#include "rtc_base/network_route.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/trace_event.h"
 // Adding 'nogncheck' to disable the gn include headers check to support modular
 // WebRTC build targets.
-#include "media/engine/webrtcvoiceengine.h"  // nogncheck
-#include "p2p/base/packettransportinternal.h"
-#include "pc/channelmanager.h"
-#include "pc/rtpmediautils.h"
+#include "media/engine/webrtc_voice_engine.h"  // nogncheck
+#include "p2p/base/packet_transport_internal.h"
+#include "pc/channel_manager.h"
+#include "pc/rtp_media_utils.h"
 
 namespace cricket {
 using rtc::Bind;

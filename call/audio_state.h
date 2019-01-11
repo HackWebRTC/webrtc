@@ -13,7 +13,7 @@
 #include "api/audio/audio_mixer.h"
 #include "modules/audio_device/include/audio_device.h"
 #include "modules/audio_processing/include/audio_processing.h"
-#include "rtc_base/refcount.h"
+#include "rtc_base/ref_count.h"
 #include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {

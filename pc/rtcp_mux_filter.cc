@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/rtcpmuxfilter.h"
+#include "pc/rtcp_mux_filter.h"
 
 #include "rtc_base/logging.h"
 

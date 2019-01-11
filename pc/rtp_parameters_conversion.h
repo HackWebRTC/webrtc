@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_RTPPARAMETERSCONVERSION_H_
-#define PC_RTPPARAMETERSCONVERSION_H_
+#ifndef PC_RTP_PARAMETERS_CONVERSION_H_
+#define PC_RTP_PARAMETERS_CONVERSION_H_
 
 #include <iosfwd>
 #include <vector>
 
 #include "absl/types/optional.h"
-#include "api/rtcerror.h"
-#include "api/rtpparameters.h"
+#include "api/rtc_error.h"
+#include "api/rtp_parameters.h"
 #include "media/base/codec.h"
-#include "media/base/streamparams.h"
-#include "pc/sessiondescription.h"
+#include "media/base/stream_params.h"
+#include "pc/session_description.h"
 
 namespace webrtc {
 
@@ -106,4 +106,4 @@ RtpParameters ToRtpParameters(
 
 }  // namespace webrtc
 
-#endif  // PC_RTPPARAMETERSCONVERSION_H_
+#endif  // PC_RTP_PARAMETERS_CONVERSION_H_

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef API_CRYPTO_CRYPTOOPTIONS_H_
-#define API_CRYPTO_CRYPTOOPTIONS_H_
+#ifndef API_CRYPTO_CRYPTO_OPTIONS_H_
+#define API_CRYPTO_CRYPTO_OPTIONS_H_
 
 #include <vector>
 
@@ -63,4 +63,4 @@ struct CryptoOptions {
 
 }  // namespace webrtc
 
-#endif  // API_CRYPTO_CRYPTOOPTIONS_H_
+#endif  // API_CRYPTO_CRYPTO_OPTIONS_H_

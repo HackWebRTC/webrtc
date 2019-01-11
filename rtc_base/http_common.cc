@@ -25,11 +25,11 @@
 #include <vector>
 
 #include "absl/strings/match.h"
-#include "rtc_base/cryptstring.h"  // for CryptString
-#include "rtc_base/httpcommon.h"
+#include "rtc_base/crypt_string.h"  // for CryptString
+#include "rtc_base/http_common.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/messagedigest.h"
-#include "rtc_base/socketaddress.h"
+#include "rtc_base/message_digest.h"
+#include "rtc_base/socket_address.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/third_party/base64/base64.h"  // for Base64
 #include "rtc_base/zero_memory.h"                // for ExplicitZeroMemory

@@ -10,10 +10,10 @@
 
 #include <memory>
 
-#include "p2p/base/fakeportallocator.h"
-#include "p2p/base/portallocator.h"
+#include "p2p/base/fake_port_allocator.h"
+#include "p2p/base/port_allocator.h"
 #include "rtc_base/thread.h"
-#include "rtc_base/virtualsocketserver.h"
+#include "rtc_base/virtual_socket_server.h"
 #include "test/gtest.h"
 
 static const char kContentName[] = "test content";

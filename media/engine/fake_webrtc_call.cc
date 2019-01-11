@@ -8,13 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "media/engine/fakewebrtccall.h"
+#include "media/engine/fake_webrtc_call.h"
 
 #include <algorithm>
 #include <utility>
 
 #include "api/call/audio_sink.h"
-#include "media/base/rtputils.h"
+#include "media/base/rtp_utils.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/gunit.h"
 

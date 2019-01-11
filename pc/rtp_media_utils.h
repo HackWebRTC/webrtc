@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_RTPMEDIAUTILS_H_
-#define PC_RTPMEDIAUTILS_H_
+#ifndef PC_RTP_MEDIA_UTILS_H_
+#define PC_RTP_MEDIA_UTILS_H_
 
-#include "api/rtptransceiverinterface.h"
+#include "api/rtp_transceiver_interface.h"
 
 namespace webrtc {
 
@@ -54,4 +54,4 @@ inline std::ostream& operator<<(  // no-presubmit-check TODO(webrtc:8982)
 
 }  // namespace webrtc
 
-#endif  // PC_RTPMEDIAUTILS_H_
+#endif  // PC_RTP_MEDIA_UTILS_H_

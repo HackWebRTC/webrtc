@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MEDIA_BASE_MEDIAENGINE_H_
-#define MEDIA_BASE_MEDIAENGINE_H_
+#ifndef MEDIA_BASE_MEDIA_ENGINE_H_
+#define MEDIA_BASE_MEDIA_ENGINE_H_
 
 #if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
 #include <CoreAudio/CoreAudio.h>
@@ -21,12 +21,12 @@
 
 #include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/audio_codecs/audio_encoder_factory.h"
-#include "api/crypto/cryptooptions.h"
-#include "api/rtpparameters.h"
+#include "api/crypto/crypto_options.h"
+#include "api/rtp_parameters.h"
 #include "call/audio_state.h"
 #include "media/base/codec.h"
-#include "media/base/mediachannel.h"
-#include "media/base/videocommon.h"
+#include "media/base/media_channel.h"
+#include "media/base/video_common.h"
 #include "rtc_base/platform_file.h"
 
 namespace webrtc {
@@ -155,4 +155,4 @@ webrtc::RtpParameters CreateRtpParametersWithEncodings(StreamParams sp);
 
 }  // namespace cricket
 
-#endif  // MEDIA_BASE_MEDIAENGINE_H_
+#endif  // MEDIA_BASE_MEDIA_ENGINE_H_

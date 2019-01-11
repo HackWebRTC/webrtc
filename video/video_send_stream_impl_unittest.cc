@@ -18,7 +18,7 @@
 #include "modules/utility/include/process_thread.h"
 #include "modules/video_coding/fec_controller_default.h"
 #include "rtc_base/experiments/alr_experiment.h"
-#include "rtc_base/fakeclock.h"
+#include "rtc_base/fake_clock.h"
 #include "rtc_base/task_queue_for_test.h"
 #include "test/field_trial.h"
 #include "test/gmock.h"

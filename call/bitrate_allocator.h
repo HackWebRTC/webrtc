@@ -20,7 +20,7 @@
 #include <vector>
 
 #include "api/call/bitrate_allocation.h"
-#include "rtc_base/bitrateallocationstrategy.h"
+#include "rtc_base/bitrate_allocation_strategy.h"
 #include "rtc_base/sequenced_task_checker.h"
 
 namespace webrtc {

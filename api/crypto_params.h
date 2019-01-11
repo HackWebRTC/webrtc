@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef API_CRYPTOPARAMS_H_
-#define API_CRYPTOPARAMS_H_
+#ifndef API_CRYPTO_PARAMS_H_
+#define API_CRYPTO_PARAMS_H_
 
 #include <string>
 
@@ -38,4 +38,4 @@ struct CryptoParams {
 
 }  // namespace cricket
 
-#endif  // API_CRYPTOPARAMS_H_
+#endif  // API_CRYPTO_PARAMS_H_

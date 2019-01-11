@@ -22,8 +22,8 @@
 #include "rtc_base/arraysize.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread_types.h"
+#include "rtc_base/string_utils.h"
 #include "rtc_base/strings/string_builder.h"
-#include "rtc_base/stringutils.h"
 #include "rtc_base/win/windows_version.h"
 
 using ATL::CComHeapPtr;

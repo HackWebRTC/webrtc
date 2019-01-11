@@ -23,7 +23,7 @@
 #include <shellapi.h> // must come after windows.h
 // clang-format on
 
-#include "rtc_base/stringutils.h"  // For ToUtf8
+#include "rtc_base/string_utils.h"  // For ToUtf8
 #endif
 
 namespace {

@@ -11,7 +11,7 @@
 #include <map>
 #include <vector>
 
-#include "api/crypto/cryptooptions.h"
+#include "api/crypto/crypto_options.h"
 #include "api/rtp_headers.h"
 #include "call/flexfec_receive_stream.h"
 #include "call/rtp_config.h"

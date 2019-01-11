@@ -8,14 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_FAKESSLIDENTITY_H_
-#define RTC_BASE_FAKESSLIDENTITY_H_
+#ifndef RTC_BASE_FAKE_SSL_IDENTITY_H_
+#define RTC_BASE_FAKE_SSL_IDENTITY_H_
 
 #include <memory>
 #include <vector>
 
-#include "rtc_base/sslcertificate.h"
-#include "rtc_base/sslidentity.h"
+#include "rtc_base/ssl_certificate.h"
+#include "rtc_base/ssl_identity.h"
 
 namespace rtc {
 
@@ -78,4 +78,4 @@ class FakeSSLIdentity : public SSLIdentity {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_FAKESSLIDENTITY_H_
+#endif  // RTC_BASE_FAKE_SSL_IDENTITY_H_

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_WEBRTCSESSIONDESCRIPTIONFACTORY_H_
-#define PC_WEBRTCSESSIONDESCRIPTIONFACTORY_H_
+#ifndef PC_WEBRTC_SESSION_DESCRIPTION_FACTORY_H_
+#define PC_WEBRTC_SESSION_DESCRIPTION_FACTORY_H_
 
 #include <stdint.h>
 #include <memory>
@@ -17,16 +17,16 @@
 #include <string>
 
 #include "api/jsep.h"
-#include "api/peerconnectioninterface.h"
-#include "p2p/base/transportdescription.h"
-#include "p2p/base/transportdescriptionfactory.h"
-#include "pc/mediasession.h"
-#include "pc/peerconnectioninternal.h"
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/messagehandler.h"
-#include "rtc_base/messagequeue.h"
-#include "rtc_base/rtccertificate.h"
-#include "rtc_base/rtccertificategenerator.h"
+#include "api/peer_connection_interface.h"
+#include "p2p/base/transport_description.h"
+#include "p2p/base/transport_description_factory.h"
+#include "pc/media_session.h"
+#include "pc/peer_connection_internal.h"
+#include "rtc_base/constructor_magic.h"
+#include "rtc_base/message_handler.h"
+#include "rtc_base/message_queue.h"
+#include "rtc_base/rtc_certificate.h"
+#include "rtc_base/rtc_certificate_generator.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
@@ -159,4 +159,4 @@ class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
 };
 }  // namespace webrtc
 
-#endif  // PC_WEBRTCSESSIONDESCRIPTIONFACTORY_H_
+#endif  // PC_WEBRTC_SESSION_DESCRIPTION_FACTORY_H_

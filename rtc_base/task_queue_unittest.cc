@@ -25,7 +25,7 @@
 #include "rtc_base/event.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/task_queue_for_test.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"
 #include "test/gtest.h"
 
 using rtc::test::TaskQueueForTest;

@@ -11,7 +11,7 @@
 #include <cstdint>
 #include <utility>
 
-#include "p2p/base/packetlossestimator.h"
+#include "p2p/base/packet_loss_estimator.h"
 #include "test/gtest.h"
 
 using cricket::PacketLossEstimator;

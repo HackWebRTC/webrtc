@@ -16,7 +16,7 @@
 
 #include "api/video/video_frame.h"
 #include "api/video/video_source_interface.h"
-#include "rtc_base/criticalsection.h"
+#include "rtc_base/critical_section.h"
 
 namespace webrtc {
 class Clock;

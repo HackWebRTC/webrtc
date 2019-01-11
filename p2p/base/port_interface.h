@@ -8,17 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_PORTINTERFACE_H_
-#define P2P_BASE_PORTINTERFACE_H_
+#ifndef P2P_BASE_PORT_INTERFACE_H_
+#define P2P_BASE_PORT_INTERFACE_H_
 
 #include <string>
 #include <vector>
 
 #include "absl/types/optional.h"
 #include "api/candidate.h"
-#include "p2p/base/transportdescription.h"
-#include "rtc_base/asyncpacketsocket.h"
-#include "rtc_base/socketaddress.h"
+#include "p2p/base/transport_description.h"
+#include "rtc_base/async_packet_socket.h"
+#include "rtc_base/socket_address.h"
 
 namespace rtc {
 class Network;
@@ -142,4 +142,4 @@ class PortInterface {
 
 }  // namespace cricket
 
-#endif  // P2P_BASE_PORTINTERFACE_H_
+#endif  // P2P_BASE_PORT_INTERFACE_H_

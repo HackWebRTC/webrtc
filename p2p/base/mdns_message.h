@@ -25,8 +25,8 @@
 #include <string>
 #include <vector>
 
-#include "rtc_base/bytebuffer.h"
-#include "rtc_base/ipaddress.h"
+#include "rtc_base/byte_buffer.h"
+#include "rtc_base/ip_address.h"
 #include "rtc_base/message_buffer_reader.h"
 
 namespace webrtc {

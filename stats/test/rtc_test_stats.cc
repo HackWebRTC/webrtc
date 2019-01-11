@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "stats/test/rtcteststats.h"
+#include "stats/test/rtc_test_stats.h"
 
 #include "rtc_base/checks.h"
 

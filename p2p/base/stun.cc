@@ -17,11 +17,11 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
-#include "rtc_base/byteorder.h"
+#include "rtc_base/byte_order.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/crc32.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/messagedigest.h"
+#include "rtc_base/message_digest.h"
 
 using rtc::ByteBufferReader;
 using rtc::ByteBufferWriter;

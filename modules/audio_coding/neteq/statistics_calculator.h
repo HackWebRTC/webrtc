@@ -15,7 +15,7 @@
 #include <string>
 
 #include "modules/audio_coding/neteq/include/neteq.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 
 namespace webrtc {
 

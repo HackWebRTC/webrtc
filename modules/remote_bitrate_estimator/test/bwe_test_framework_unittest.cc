@@ -15,9 +15,9 @@
 #include "modules/remote_bitrate_estimator/test/packet.h"
 #include "modules/remote_bitrate_estimator/test/packet_sender.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 #include "test/gtest.h"
-#include "test/testsupport/fileutils.h"
+#include "test/testsupport/file_utils.h"
 
 namespace webrtc {
 namespace testing {

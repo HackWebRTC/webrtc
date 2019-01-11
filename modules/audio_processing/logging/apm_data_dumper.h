@@ -25,7 +25,7 @@
 #include "common_audio/wav_file.h"
 #include "rtc_base/checks.h"
 #endif
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/constructor_magic.h"
 
 // Check to verify that the define is properly set.
 #if !defined(WEBRTC_APM_DEBUG_DUMP) || \

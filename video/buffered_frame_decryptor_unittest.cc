@@ -17,7 +17,7 @@
 #include "absl/memory/memory.h"
 #include "api/test/mock_frame_decryptor.h"
 #include "modules/video_coding/packet_buffer.h"
-#include "rtc_base/refcountedobject.h"
+#include "rtc_base/ref_counted_object.h"
 #include "system_wrappers/include/clock.h"
 #include "test/gmock.h"
 #include "test/gtest.h"

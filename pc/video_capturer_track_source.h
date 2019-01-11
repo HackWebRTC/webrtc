@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_VIDEOCAPTURERTRACKSOURCE_H_
-#define PC_VIDEOCAPTURERTRACKSOURCE_H_
+#ifndef PC_VIDEO_CAPTURER_TRACK_SOURCE_H_
+#define PC_VIDEO_CAPTURER_TRACK_SOURCE_H_
 
 #include <memory>
 
-#include "api/mediastreaminterface.h"
-#include "media/base/videocapturer.h"
-#include "media/base/videocommon.h"
-#include "pc/videotracksource.h"
-#include "rtc_base/asyncinvoker.h"
+#include "api/media_stream_interface.h"
+#include "media/base/video_capturer.h"
+#include "media/base/video_common.h"
+#include "pc/video_track_source.h"
+#include "rtc_base/async_invoker.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 
 // VideoCapturerTrackSource implements VideoTrackSourceInterface. It owns a
@@ -83,4 +83,4 @@ class VideoCapturerTrackSource : public VideoTrackSource,
 
 }  // namespace webrtc
 
-#endif  // PC_VIDEOCAPTURERTRACKSOURCE_H_
+#endif  // PC_VIDEO_CAPTURER_TRACK_SOURCE_H_

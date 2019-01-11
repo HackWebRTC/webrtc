@@ -13,13 +13,13 @@
 #include <string>
 
 #include "absl/memory/memory.h"
-#include "p2p/base/stunserver.h"
-#include "rtc_base/bytebuffer.h"
-#include "rtc_base/ipaddress.h"
+#include "p2p/base/stun_server.h"
+#include "rtc_base/byte_buffer.h"
+#include "rtc_base/ip_address.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/testclient.h"
+#include "rtc_base/test_client.h"
 #include "rtc_base/thread.h"
-#include "rtc_base/virtualsocketserver.h"
+#include "rtc_base/virtual_socket_server.h"
 #include "test/gtest.h"
 
 namespace cricket {

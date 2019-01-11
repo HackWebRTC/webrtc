@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_ATOMICOPS_H_
-#define RTC_BASE_ATOMICOPS_H_
+#ifndef RTC_BASE_ATOMIC_OPS_H_
+#define RTC_BASE_ATOMIC_OPS_H_
 
 #if defined(WEBRTC_WIN)
 // clang-format off
@@ -76,4 +76,4 @@ class AtomicOps {
 
 }  // namespace rtc
 
-#endif  // RTC_BASE_ATOMICOPS_H_
+#endif  // RTC_BASE_ATOMIC_OPS_H_

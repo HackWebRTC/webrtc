@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef API_ORTC_RTPTRANSPORTINTERFACE_H_
-#define API_ORTC_RTPTRANSPORTINTERFACE_H_
+#ifndef API_ORTC_RTP_TRANSPORT_INTERFACE_H_
+#define API_ORTC_RTP_TRANSPORT_INTERFACE_H_
 
 #include <string>
 
 #include "absl/types/optional.h"
-#include "api/ortc/packettransportinterface.h"
-#include "api/rtcerror.h"
+#include "api/ortc/packet_transport_interface.h"
+#include "api/rtc_error.h"
 #include "api/rtp_headers.h"
-#include "api/rtpparameters.h"
+#include "api/rtp_parameters.h"
 
 namespace webrtc {
 
@@ -91,4 +91,4 @@ class RtpTransportInterface {
 
 }  // namespace webrtc
 
-#endif  // API_ORTC_RTPTRANSPORTINTERFACE_H_
+#endif  // API_ORTC_RTP_TRANSPORT_INTERFACE_H_

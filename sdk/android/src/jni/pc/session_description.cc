@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "sdk/android/src/jni/pc/sessiondescription.h"
+#include "sdk/android/src/jni/pc/session_description.h"
 
 #include <string>
 

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_P2PCONSTANTS_H_
-#define P2P_BASE_P2PCONSTANTS_H_
+#ifndef P2P_BASE_P2P_CONSTANTS_H_
+#define P2P_BASE_P2P_CONSTANTS_H_
 
 #include <stddef.h>
 #include <stdint.h>
@@ -108,4 +108,4 @@ extern const int MIN_CONNECTION_LIFETIME;
 
 }  // namespace cricket
 
-#endif  // P2P_BASE_P2PCONSTANTS_H_
+#endif  // P2P_BASE_P2P_CONSTANTS_H_

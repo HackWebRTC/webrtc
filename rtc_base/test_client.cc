@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/testclient.h"
+#include "rtc_base/test_client.h"
 
 #include <string.h>
 #include <utility>
@@ -16,7 +16,7 @@
 #include "absl/memory/memory.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/thread.h"
-#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"
 
 namespace rtc {
 

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "media/base/videocommon.h"
+#include "media/base/video_common.h"
 
 #include "test/gtest.h"
 

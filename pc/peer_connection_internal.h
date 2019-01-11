@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_PEERCONNECTIONINTERNAL_H_
-#define PC_PEERCONNECTIONINTERNAL_H_
+#ifndef PC_PEER_CONNECTION_INTERNAL_H_
+#define PC_PEER_CONNECTION_INTERNAL_H_
 
 #include <map>
 #include <memory>
@@ -17,10 +17,10 @@
 #include <string>
 #include <vector>
 
-#include "api/peerconnectioninterface.h"
+#include "api/peer_connection_interface.h"
 #include "call/call.h"
-#include "pc/datachannel.h"
-#include "pc/rtptransceiver.h"
+#include "pc/data_channel.h"
+#include "pc/rtp_transceiver.h"
 
 namespace webrtc {
 
@@ -90,4 +90,4 @@ class PeerConnectionInternal : public PeerConnectionInterface {
 
 }  // namespace webrtc
 
-#endif  // PC_PEERCONNECTIONINTERNAL_H_
+#endif  // PC_PEER_CONNECTION_INTERNAL_H_

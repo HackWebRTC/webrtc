@@ -10,8 +10,8 @@
 
 #include <string>
 
-#ifndef TEST_TESTSUPPORT_FILEUTILS_OVERRIDE_H_
-#define TEST_TESTSUPPORT_FILEUTILS_OVERRIDE_H_
+#ifndef TEST_TESTSUPPORT_FILE_UTILS_OVERRIDE_H_
+#define TEST_TESTSUPPORT_FILE_UTILS_OVERRIDE_H_
 
 namespace webrtc {
 namespace test {
@@ -53,4 +53,4 @@ std::string ResourcePath(const std::string& name, const std::string& extension);
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // TEST_TESTSUPPORT_FILEUTILS_OVERRIDE_H_
+#endif  // TEST_TESTSUPPORT_FILE_UTILS_OVERRIDE_H_

@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_TESTUTILS_H_
-#define RTC_BASE_TESTUTILS_H_
+#ifndef RTC_BASE_TEST_UTILS_H_
+#define RTC_BASE_TEST_UTILS_H_
 
 // Utilities for testing rtc infrastructure in unittests
 
 #include <map>
 #include <utility>
 
-#include "rtc_base/asyncsocket.h"
+#include "rtc_base/async_socket.h"
 #include "rtc_base/stream.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 
@@ -137,4 +137,4 @@ class StreamSink : public sigslot::has_slots<> {
 }  // namespace testing
 }  // namespace webrtc
 
-#endif  // RTC_BASE_TESTUTILS_H_
+#endif  // RTC_BASE_TEST_UTILS_H_

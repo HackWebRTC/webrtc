@@ -17,7 +17,7 @@
 
 #include "api/call/transport.h"
 #include "api/rtp_headers.h"
-#include "api/rtpparameters.h"
+#include "api/rtp_parameters.h"
 #include "call/rtp_packet_sink_interface.h"
 
 namespace webrtc {

@@ -10,7 +10,7 @@
 
 #ifdef HAVE_WEBRTC_VOICE
 
-#include "media/engine/webrtcvoiceengine.h"
+#include "media/engine/webrtc_voice_engine.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -23,20 +23,20 @@
 #include "api/audio_codecs/audio_codec_pair_id.h"
 #include "api/call/audio_sink.h"
 #include "api/media_transport_interface.h"
-#include "media/base/audiosource.h"
-#include "media/base/mediaconstants.h"
-#include "media/base/streamparams.h"
+#include "media/base/audio_source.h"
+#include "media/base/media_constants.h"
+#include "media/base/stream_params.h"
 #include "media/engine/adm_helpers.h"
 #include "media/engine/apm_helpers.h"
 #include "media/engine/payload_type_mapper.h"
-#include "media/engine/webrtcmediaengine.h"
+#include "media/engine/webrtc_media_engine.h"
 #include "modules/audio_device/audio_device_impl.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"
 #include "modules/audio_processing/aec_dump/aec_dump_factory.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "rtc_base/arraysize.h"
-#include "rtc_base/byteorder.h"
-#include "rtc_base/constructormagic.h"
+#include "rtc_base/byte_order.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/helpers.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/race_checker.h"

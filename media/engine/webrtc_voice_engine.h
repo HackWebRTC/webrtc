@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MEDIA_ENGINE_WEBRTCVOICEENGINE_H_
-#define MEDIA_ENGINE_WEBRTCVOICEENGINE_H_
+#ifndef MEDIA_ENGINE_WEBRTC_VOICE_ENGINE_H_
+#define MEDIA_ENGINE_WEBRTC_VOICE_ENGINE_H_
 
 #include <map>
 #include <memory>
@@ -17,16 +17,16 @@
 #include <vector>
 
 #include "api/audio_codecs/audio_encoder_factory.h"
-#include "api/rtpreceiverinterface.h"
+#include "api/rtp_receiver_interface.h"
 #include "call/audio_state.h"
 #include "call/call.h"
-#include "media/base/rtputils.h"
+#include "media/base/rtp_utils.h"
 #include "media/engine/apm_helpers.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "pc/channel.h"
 #include "rtc_base/buffer.h"
-#include "rtc_base/constructormagic.h"
-#include "rtc_base/networkroute.h"
+#include "rtc_base/constructor_magic.h"
+#include "rtc_base/network_route.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread_checker.h"
@@ -326,4 +326,4 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
 };
 }  // namespace cricket
 
-#endif  // MEDIA_ENGINE_WEBRTCVOICEENGINE_H_
+#endif  // MEDIA_ENGINE_WEBRTC_VOICE_ENGINE_H_

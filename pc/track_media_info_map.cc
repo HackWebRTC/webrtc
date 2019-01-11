@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/trackmediainfomap.h"
+#include "pc/track_media_info_map.h"
 
 #include <string>
 #include <utility>

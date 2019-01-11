@@ -12,7 +12,7 @@
 #include <memory>
 
 #include "common_audio/smoothing_filter.h"
-#include "rtc_base/fakeclock.h"
+#include "rtc_base/fake_clock.h"
 #include "test/gtest.h"
 
 namespace webrtc {

@@ -18,7 +18,7 @@
 #include "modules/audio_coding/neteq/tools/rtp_generator.h"
 #include "rtc_base/checks.h"
 #include "system_wrappers/include/clock.h"
-#include "test/testsupport/fileutils.h"
+#include "test/testsupport/file_utils.h"
 
 using webrtc::NetEq;
 using webrtc::test::AudioLoop;

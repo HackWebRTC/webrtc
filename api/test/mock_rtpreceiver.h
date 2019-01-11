@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-#include "api/rtpreceiverinterface.h"
+#include "api/rtp_receiver_interface.h"
 #include "test/gmock.h"
 
 namespace webrtc {

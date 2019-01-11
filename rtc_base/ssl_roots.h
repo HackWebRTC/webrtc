@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_BASE_SSLROOTS_H_
-#define RTC_BASE_SSLROOTS_H_
+#ifndef RTC_BASE_SSL_ROOTS_H_
+#define RTC_BASE_SSL_ROOTS_H_
 
 // This file is the root certificates in C form that are needed to connect to
 // Google.
@@ -4283,4 +4283,4 @@ const size_t kSSLCertCertificateSizeList[] = {
 
 // clang-format on
 
-#endif  // RTC_BASE_SSLROOTS_H_
+#endif  // RTC_BASE_SSL_ROOTS_H_

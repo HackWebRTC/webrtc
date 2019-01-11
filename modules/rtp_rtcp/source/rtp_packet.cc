@@ -14,7 +14,7 @@
 #include <cstring>
 #include <utility>
 
-#include "api/rtpparameters.h"
+#include "api/rtp_parameters.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"

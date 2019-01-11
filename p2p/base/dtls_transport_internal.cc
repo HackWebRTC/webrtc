@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "p2p/base/dtlstransportinternal.h"
+#include "p2p/base/dtls_transport_internal.h"
 
 namespace cricket {
 

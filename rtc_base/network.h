@@ -19,10 +19,10 @@
 #include <string>
 #include <vector>
 
-#include "rtc_base/ipaddress.h"
+#include "rtc_base/ip_address.h"
 #include "rtc_base/mdns_responder_interface.h"
-#include "rtc_base/messagehandler.h"
-#include "rtc_base/networkmonitor.h"
+#include "rtc_base/message_handler.h"
+#include "rtc_base/network_monitor.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 
 #if defined(WEBRTC_POSIX)

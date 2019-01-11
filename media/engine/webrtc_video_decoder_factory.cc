@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "media/engine/webrtcvideodecoderfactory.h"
+#include "media/engine/webrtc_video_decoder_factory.h"
 
 #include "api/video_codecs/video_codec.h"
 #include "rtc_base/checks.h"

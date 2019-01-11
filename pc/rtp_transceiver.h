@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_RTPTRANSCEIVER_H_
-#define PC_RTPTRANSCEIVER_H_
+#ifndef PC_RTP_TRANSCEIVER_H_
+#define PC_RTP_TRANSCEIVER_H_
 
 #include <string>
 #include <vector>
 
-#include "api/rtptransceiverinterface.h"
-#include "pc/rtpreceiver.h"
-#include "pc/rtpsender.h"
+#include "api/rtp_transceiver_interface.h"
+#include "pc/rtp_receiver.h"
+#include "pc/rtp_sender.h"
 
 namespace webrtc {
 
@@ -216,4 +216,4 @@ END_PROXY_MAP();
 
 }  // namespace webrtc
 
-#endif  // PC_RTPTRANSCEIVER_H_
+#endif  // PC_RTP_TRANSCEIVER_H_

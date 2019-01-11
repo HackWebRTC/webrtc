@@ -8,20 +8,20 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "examples/androidnativeapi/jni/androidcallclient.h"
+#include "examples/androidnativeapi/jni/android_call_client.h"
 
 #include <utility>
 
 #include "absl/memory/memory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
-#include "api/peerconnectioninterface.h"
+#include "api/peer_connection_interface.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "examples/androidnativeapi/generated_jni/jni/CallClient_jni.h"
 #include "logging/rtc_event_log/rtc_event_log_factory.h"
-#include "media/engine/internaldecoderfactory.h"
-#include "media/engine/internalencoderfactory.h"
-#include "media/engine/webrtcmediaengine.h"
+#include "media/engine/internal_decoder_factory.h"
+#include "media/engine/internal_encoder_factory.h"
+#include "media/engine/webrtc_media_engine.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/native_api/video/wrapper.h"

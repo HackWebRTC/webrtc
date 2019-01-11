@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/mediasession.h"
+#include "pc/media_session.h"
 
 #include <algorithm>  // For std::find_if, std::sort.
 #include <functional>
@@ -21,13 +21,13 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "absl/types/optional.h"
-#include "api/cryptoparams.h"
+#include "api/crypto_params.h"
 #include "media/base/h264_profile_level_id.h"
-#include "media/base/mediaconstants.h"
-#include "p2p/base/p2pconstants.h"
-#include "pc/channelmanager.h"
-#include "pc/rtpmediautils.h"
-#include "pc/srtpfilter.h"
+#include "media/base/media_constants.h"
+#include "p2p/base/p2p_constants.h"
+#include "pc/channel_manager.h"
+#include "pc/rtp_media_utils.h"
+#include "pc/srtp_filter.h"
 #include "pc/unique_id_generator.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/helpers.h"

@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "p2p/base/turnserver.h"
+#include "p2p/base/turn_server.h"
 
-#include "p2p/base/basicpacketsocketfactory.h"
-#include "rtc_base/virtualsocketserver.h"
+#include "p2p/base/basic_packet_socket_factory.h"
+#include "rtc_base/virtual_socket_server.h"
 #include "test/gtest.h"
 
 // NOTE: This is a work in progress. Currently this file only has tests for

@@ -17,9 +17,9 @@
 #include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_encoder.h"
 #include "media/base/codec.h"
-#include "media/base/mediaconstants.h"
+#include "media/base/media_constants.h"
 #include "media/engine/encoder_simulcast_proxy.h"
-#include "media/engine/internalencoderfactory.h"
+#include "media/engine/internal_encoder_factory.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {

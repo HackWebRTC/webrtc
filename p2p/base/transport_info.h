@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef P2P_BASE_TRANSPORTINFO_H_
-#define P2P_BASE_TRANSPORTINFO_H_
+#ifndef P2P_BASE_TRANSPORT_INFO_H_
+#define P2P_BASE_TRANSPORT_INFO_H_
 
 #include <string>
 #include <vector>
 
 #include "api/candidate.h"
-#include "p2p/base/p2pconstants.h"
-#include "p2p/base/transportdescription.h"
+#include "p2p/base/p2p_constants.h"
+#include "p2p/base/transport_description.h"
 #include "rtc_base/helpers.h"
 
 namespace cricket {
@@ -39,4 +39,4 @@ typedef std::vector<TransportInfo> TransportInfos;
 
 }  // namespace cricket
 
-#endif  // P2P_BASE_TRANSPORTINFO_H_
+#endif  // P2P_BASE_TRANSPORT_INFO_H_

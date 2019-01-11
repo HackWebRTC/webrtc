@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "media/engine/scopedvideoencoder.h"
+#include "media/engine/scoped_video_encoder.h"
 
 #include <stddef.h>
 #include <stdint.h>
