@@ -689,6 +689,8 @@ rtc_static_library("rtc_numerics") {
     "numerics/moving_average.h",
     "numerics/moving_median_filter.h",
     "numerics/percentile_filter.h",
+    "numerics/samples_stats_counter.cc",
+    "numerics/samples_stats_counter.h",
     "numerics/sequence_number_util.h",
   ]
   deps = [
@@ -1402,6 +1404,7 @@ if (rtc_include_tests) {
       "numerics/moving_average_unittest.cc",
       "numerics/moving_median_filter_unittest.cc",
       "numerics/percentile_filter_unittest.cc",
+      "numerics/samples_stats_counter_unittest.cc",
       "numerics/sequence_number_util_unittest.cc",
     ]
     deps = [
