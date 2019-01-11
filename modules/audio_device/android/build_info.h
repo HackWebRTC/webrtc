@@ -69,7 +69,7 @@ class BuildInfo {
 
   // Ensures that this class can access a valid JNI interface pointer even
   // if the creating thread was not attached to the JVM.
-  AttachCurrentThreadIfNeeded attach_thread_if_needed_;
+  JvmThreadConnector attach_thread_if_needed_;
 
   // Provides access to the JNIEnv interface pointer and the JavaToStdString()
   // method which is used to translate Java strings to std strings.
