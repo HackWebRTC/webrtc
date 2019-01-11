@@ -240,6 +240,17 @@ class AudioProcessing : public rtc::RefCountInterface {
   // by changing the default values in the AudioProcessing::Config struct.
   // The config is applied by passing the struct to the ApplyConfig method.
   struct Config {
+    // Enabled the pre-amplifier. It amplifies the capture signal
+    // before any other processing is done.
+    struct PreAmplifier {
+      bool enabled = false;
+      float fixed_gain_factor = 1.f;
+    } pre_amplifier;
+
+    struct HighPassFilter {
+      bool enabled = false;
+    } high_pass_filter;
+
     struct EchoCanceller {
       bool enabled = false;
       bool mobile_mode = false;
@@ -248,20 +259,17 @@ class AudioProcessing : public rtc::RefCountInterface {
       bool legacy_moderate_suppression_level = false;
     } echo_canceller;
 
-    struct ResidualEchoDetector {
-      bool enabled = true;
-    } residual_echo_detector;
-
-    struct HighPassFilter {
+    // Enables background noise suppression.
+    struct NoiseSuppression {
       bool enabled = false;
-    } high_pass_filter;
+      enum Level { kLow, kModerate, kHigh, kVeryHigh };
+      Level level = kModerate;
+    } noise_suppression;
 
-    // Enabled the pre-amplifier. It amplifies the capture signal
-    // before any other processing is done.
-    struct PreAmplifier {
+    // Enables reporting of |has_voice| in webrtc::AudioProcessingStats.
+    struct VoiceDetection {
       bool enabled = false;
-      float fixed_gain_factor = 1.f;
-    } pre_amplifier;
+    } voice_detection;
 
     // Enables the next generation AGC functionality. This feature replaces the
     // standard methods of gain control in the previous AGC. Enabling this
@@ -283,15 +291,14 @@ class AudioProcessing : public rtc::RefCountInterface {
       } adaptive_digital;
     } gain_controller2;
 
+    struct ResidualEchoDetector {
+      bool enabled = true;
+    } residual_echo_detector;
+
     // Enables reporting of |output_rms_dbfs| in webrtc::AudioProcessingStats.
     struct LevelEstimation {
       bool enabled = false;
     } level_estimation;
-
-    // Enables reporting of |has_voice| in webrtc::AudioProcessingStats.
-    struct VoiceDetection {
-      bool enabled = false;
-    } voice_detection;
 
     // Explicit copy assignment implementation to avoid issues with memory
     // sanitizer complaints in case of self-assignment.

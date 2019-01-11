@@ -424,8 +424,7 @@ void AecDumpBasedSimulator::HandleMessage(
 
     if (msg.has_ns_enabled() || settings_.use_ns) {
       bool enable = settings_.use_ns ? *settings_.use_ns : msg.ns_enabled();
-      RTC_CHECK_EQ(AudioProcessing::kNoError,
-                   ap_->noise_suppression()->Enable(enable));
+      apm_config.noise_suppression.enabled = enable;
       if (settings_.use_verbose_logging) {
         std::cout << " ns_enabled: " << (enable ? "true" : "false")
                   << std::endl;
@@ -434,9 +433,8 @@ void AecDumpBasedSimulator::HandleMessage(
 
     if (msg.has_ns_level() || settings_.ns_level) {
       int level = settings_.ns_level ? *settings_.ns_level : msg.ns_level();
-      RTC_CHECK_EQ(AudioProcessing::kNoError,
-                   ap_->noise_suppression()->set_level(
-                       static_cast<NoiseSuppression::Level>(level)));
+      apm_config.noise_suppression.level =
+          static_cast<AudioProcessing::Config::NoiseSuppression::Level>(level);
       if (settings_.use_verbose_logging) {
         std::cout << " ns_level: " << level << std::endl;
       }

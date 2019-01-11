@@ -171,12 +171,11 @@ std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
                 kPeak;
   apm_config.gain_controller2.adaptive_digital.use_saturation_protector =
       use_agc2_adaptive_digital_saturation_protector;
+  apm_config.noise_suppression.enabled = use_ns;
   apm_config.voice_detection.enabled = use_vad;
-
   apm->ApplyConfig(apm_config);
 
   apm->gain_control()->Enable(use_agc);
-  apm->noise_suppression()->Enable(use_ns);
   apm->level_estimator()->Enable(use_le);
   apm->voice_detection()->Enable(use_vad);
   apm->gain_control()->enable_limiter(use_agc_limiter);

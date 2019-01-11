@@ -134,6 +134,7 @@ rtc_static_library("audio_processing") {
     ":audio_processing_statistics",
     ":config",
     ":gain_control_interface",
+    ":noise_suppression_proxy",
     "../..:webrtc_common",
     "../../api:array_view",
     "../../api/audio:aec3_config",
@@ -186,6 +187,17 @@ rtc_static_library("audio_processing") {
 rtc_source_set("gain_control_interface") {
   sources = [
     "include/gain_control.h",
+  ]
+}
+
+rtc_source_set("noise_suppression_proxy") {
+  sources = [
+    "noise_suppression_proxy.cc",
+    "noise_suppression_proxy.h",
+  ]
+  deps = [
+    ":api",
+    "../../rtc_base:macromagic",
   ]
 }
 

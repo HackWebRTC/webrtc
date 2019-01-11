@@ -588,8 +588,9 @@ TEST_F(DebugDumpTest, ToggleNs) {
   generator.StartRecording();
   generator.Process(100);
 
-  NoiseSuppression* ns = generator.apm()->noise_suppression();
-  EXPECT_EQ(AudioProcessing::kNoError, ns->Enable(!ns->is_enabled()));
+  AudioProcessing::Config apm_config = generator.apm()->GetConfig();
+  apm_config.noise_suppression.enabled = !apm_config.noise_suppression.enabled;
+  generator.apm()->ApplyConfig(apm_config);
 
   generator.Process(100);
   generator.StopRecording();

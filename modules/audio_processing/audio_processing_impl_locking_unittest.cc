@@ -527,21 +527,20 @@ bool AudioProcessingImplLockTest::MaybeEndTest() {
 void AudioProcessingImplLockTest::SetUp() {
   test_config_ = static_cast<TestConfig>(GetParam());
 
-  ASSERT_EQ(apm_->kNoError, apm_->level_estimator()->Enable(true));
   ASSERT_EQ(apm_->kNoError, apm_->gain_control()->Enable(true));
 
   ASSERT_EQ(apm_->kNoError,
             apm_->gain_control()->set_mode(GainControl::kAdaptiveDigital));
   ASSERT_EQ(apm_->kNoError, apm_->gain_control()->Enable(true));
 
-  ASSERT_EQ(apm_->kNoError, apm_->noise_suppression()->Enable(true));
-  ASSERT_EQ(apm_->kNoError, apm_->voice_detection()->Enable(true));
-
-  AudioProcessing::Config apm_config;
+  AudioProcessing::Config apm_config = apm_->GetConfig();
   apm_config.echo_canceller.enabled =
       (test_config_.aec_type != AecType::AecTurnedOff);
   apm_config.echo_canceller.mobile_mode =
       (test_config_.aec_type == AecType::BasicWebRtcAecSettingsWithAecMobile);
+  apm_config.noise_suppression.enabled = true;
+  apm_config.voice_detection.enabled = true;
+  apm_config.level_estimation.enabled = true;
   apm_->ApplyConfig(apm_config);
 
   Config config;
@@ -584,7 +583,7 @@ bool StatsProcessor::Process() {
     EXPECT_FALSE(apm_config.echo_canceller.enabled);
   }
   EXPECT_TRUE(apm_->gain_control()->is_enabled());
-  EXPECT_TRUE(apm_->noise_suppression()->is_enabled());
+  EXPECT_TRUE(apm_config.noise_suppression.enabled);
 
   // The below return values are not testable.
   apm_->noise_suppression()->speech_probability();
