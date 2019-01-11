@@ -124,9 +124,6 @@ declare_args() {
   # NDK r16 or above.
   rtc_enable_android_aaudio = false
 
-  # TODO(henrika): can this flag be removed?
-  rtc_enable_android_opensl = false
-
   # Link-Time Optimizations.
   # Executes code generation at link-time instead of compile-time.
   # https://gcc.gnu.org/wiki/LinkTimeOptimization
