@@ -358,11 +358,6 @@ class LogCall final {
   }
 };
 
-// TODO(bugs.webrtc.org/9278): Remove this once it's no longer used.
-struct LogMessageVoidify {
-  void operator&(std::ostream&) {}  // no-presubmit-check TODO(webrtc:8982)
-};
-
 }  // namespace webrtc_logging_impl
 
 // Direct use of this class is deprecated; please use the logging macros
@@ -508,13 +503,6 @@ class LogMessage {
 //////////////////////////////////////////////////////////////////////
 // Logging Helpers
 //////////////////////////////////////////////////////////////////////
-
-// DEPRECATED.
-// TODO(bugs.webrtc.org/9278): Remove once there are no more users.
-#define RTC_LOG_SEVERITY_PRECONDITION(sev) \
-  (rtc::LogMessage::IsNoop(sev))           \
-      ? static_cast<void>(0)               \
-      : rtc::webrtc_logging_impl::LogMessageVoidify()&
 
 #define RTC_LOG_FILE_LINE(sev, file, line)      \
   rtc::webrtc_logging_impl::LogCall() &         \
