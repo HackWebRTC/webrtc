@@ -319,14 +319,14 @@ TEST_F(TestVideoSenderWithMockEncoder, TestSetRate) {
               SetRateAllocation(new_rate_allocation, settings_.maxFramerate))
       .Times(1)
       .WillOnce(Return(0));
-  sender_->SetChannelParameters(new_bitrate_kbps * 1000, rate_allocator_.get(),
-                                nullptr);
+  sender_->SetChannelParameters(new_rate_allocation, settings_.maxFramerate);
   AddFrame();
   clock_.AdvanceTimeMilliseconds(kFrameIntervalMs);
 
   // Expect no call to encoder_.SetRates if the new bitrate is zero.
   EXPECT_CALL(encoder_, SetRateAllocation(_, _)).Times(0);
-  sender_->SetChannelParameters(0, rate_allocator_.get(), nullptr);
+  sender_->SetChannelParameters(VideoBitrateAllocation(),
+                                settings_.maxFramerate);
   AddFrame();
 }
 
@@ -363,8 +363,7 @@ TEST_F(TestVideoSenderWithMockEncoder, TestEncoderParametersForInternalSource) {
   EXPECT_CALL(encoder_, SetRateAllocation(new_rate_allocation, _))
       .Times(1)
       .WillOnce(Return(0));
-  sender_->SetChannelParameters(new_bitrate_kbps * 1000, rate_allocator_.get(),
-                                nullptr);
+  sender_->SetChannelParameters(new_rate_allocation, settings_.maxFramerate);
 }
 
 TEST_F(TestVideoSenderWithMockEncoder,
@@ -375,8 +374,9 @@ TEST_F(TestVideoSenderWithMockEncoder,
   // Expect initial call to SetChannelParameters. Rates are initialized through
   // InitEncode and expects no additional call before the framerate (or bitrate)
   // updates.
-  sender_->SetChannelParameters(settings_.startBitrate * 1000,
-                                rate_allocator_.get(), nullptr);
+  sender_->SetChannelParameters(
+      rate_allocator_->GetAllocation(settings_.startBitrate * 1000, kInputFps),
+      kInputFps);
   while (clock_.TimeInMilliseconds() < start_time + kRateStatsWindowMs) {
     AddFrame();
     clock_.AdvanceTimeMilliseconds(1000 / kInputFps);
@@ -390,8 +390,7 @@ TEST_F(TestVideoSenderWithMockEncoder,
   EXPECT_CALL(encoder_, SetRateAllocation(new_rate_allocation, kInputFps))
       .Times(1)
       .WillOnce(Return(0));
-  sender_->SetChannelParameters(new_bitrate_bps, rate_allocator_.get(),
-                                nullptr);
+  sender_->SetChannelParameters(new_rate_allocation, kInputFps);
   AddFrame();
 }
 
@@ -439,12 +438,13 @@ class TestVideoSenderWithVp8 : public TestVideoSender {
       AddFrame();
       // SetChannelParameters needs to be called frequently to propagate
       // framerate from the media optimization into the encoder.
-      // Note: SetChannelParameters fails if less than 2 frames are in the
-      // buffer since it will fail to calculate the framerate.
+      const VideoBitrateAllocation bitrate_allocation =
+          rate_allocator_->GetAllocation(available_bitrate_kbps_ * 1000,
+                                         static_cast<uint32_t>(framerate));
       if (i != 0) {
-        EXPECT_EQ(VCM_OK, sender_->SetChannelParameters(
-                              available_bitrate_kbps_ * 1000,
-                              rate_allocator_.get(), nullptr));
+        EXPECT_EQ(VCM_OK,
+                  sender_->SetChannelParameters(
+                      bitrate_allocation, static_cast<uint32_t>(framerate)));
       }
     }
   }

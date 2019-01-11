@@ -553,6 +553,16 @@ class VideoStreamEncoderTest : public ::testing::Test {
       force_init_encode_failed_ = force_failure;
     }
 
+    void SimulateOvershoot(double rate_factor) {
+      rtc::CritScope lock(&local_crit_sect_);
+      rate_factor_ = rate_factor;
+    }
+
+    uint32_t GetLastFramerate() {
+      rtc::CritScope lock(&local_crit_sect_);
+      return last_framerate_;
+    }
+
    private:
     int32_t Encode(const VideoFrame& input_image,
                    const CodecSpecificInfo* codec_specific_info,
@@ -599,6 +609,25 @@ class VideoStreamEncoderTest : public ::testing::Test {
       return res;
     }
 
+    int32_t SetRateAllocation(const VideoBitrateAllocation& rate_allocation,
+                              uint32_t framerate) {
+      rtc::CritScope lock(&local_crit_sect_);
+      VideoBitrateAllocation adjusted_rate_allocation;
+      for (size_t si = 0; si < kMaxSpatialLayers; ++si) {
+        for (size_t ti = 0; ti < kMaxTemporalStreams; ++ti) {
+          if (rate_allocation.HasBitrate(si, ti)) {
+            adjusted_rate_allocation.SetBitrate(
+                si, ti,
+                static_cast<uint32_t>(rate_allocation.GetBitrate(si, ti) *
+                                      rate_factor_));
+          }
+        }
+      }
+      last_framerate_ = framerate;
+      return FakeEncoder::SetRateAllocation(adjusted_rate_allocation,
+                                            framerate);
+    }
+
     rtc::CriticalSection local_crit_sect_;
     bool block_next_encode_ RTC_GUARDED_BY(local_crit_sect_) = false;
     rtc::Event continue_encode_event_;
@@ -610,6 +639,8 @@ class VideoStreamEncoderTest : public ::testing::Test {
     std::vector<std::unique_ptr<Vp8TemporalLayers>> allocated_temporal_layers_
         RTC_GUARDED_BY(local_crit_sect_);
     bool force_init_encode_failed_ RTC_GUARDED_BY(local_crit_sect_) = false;
+    double rate_factor_ RTC_GUARDED_BY(local_crit_sect_) = 1.0;
+    uint32_t last_framerate_ RTC_GUARDED_BY(local_crit_sect_) = 0;
   };
 
   class TestSink : public VideoStreamEncoder::EncoderSink {
@@ -2093,9 +2124,8 @@ TEST_F(VideoStreamEncoderTest, CallsBitrateObserver) {
       DefaultVideoBitrateAllocator(fake_encoder_.codec_config())
           .GetAllocation(kLowTargetBitrateBps, kDefaultFps);
 
-  // First called on bitrate updated, then again on first frame.
   EXPECT_CALL(bitrate_observer, OnBitrateAllocationUpdated(expected_bitrate))
-      .Times(2);
+      .Times(1);
   video_stream_encoder_->OnBitrateUpdated(kLowTargetBitrateBps, 0, 0);
 
   const int64_t kStartTimeMs = 1;
@@ -3156,9 +3186,6 @@ TEST_F(VideoStreamEncoderTest, DoesNotUpdateBitrateAllocationWhenSuspended) {
 
   MockBitrateObserver bitrate_observer;
   video_stream_encoder_->SetBitrateAllocationObserver(&bitrate_observer);
-
-  EXPECT_CALL(bitrate_observer, OnBitrateAllocationUpdated(_)).Times(1);
-  // Initial bitrate update.
   video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
   video_stream_encoder_->WaitUntilTaskQueueIsIdle();
 
@@ -3224,6 +3251,82 @@ TEST_F(VideoStreamEncoderTest,
   EXPECT_EQ(video_stream_encoder_->overuse_detector_proxy_->GetOptions()
                 .high_encode_usage_threshold_percent,
             hardware_options.high_encode_usage_threshold_percent);
+  video_stream_encoder_->Stop();
+}
+
+TEST_F(VideoStreamEncoderTest, DropsFramesWhenEncoderOvershoots) {
+  const int kFrameWidth = 320;
+  const int kFrameHeight = 240;
+  const int kFps = 30;
+  const int kTargetBitrateBps = 120000;
+  const int kNumFramesInRun = kFps * 5;  // Runs of five seconds.
+
+  video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
+
+  int64_t timestamp_ms = fake_clock_.TimeNanos() / rtc::kNumNanosecsPerMillisec;
+  max_framerate_ = kFps;
+
+  // Insert 3 seconds of video, verify number of drops with normal bitrate.
+  fake_encoder_.SimulateOvershoot(1.0);
+  int num_dropped = 0;
+  for (int i = 0; i < kNumFramesInRun; ++i) {
+    video_source_.IncomingCapturedFrame(
+        CreateFrame(timestamp_ms, kFrameWidth, kFrameHeight));
+    // Wait up to two frame durations for a frame to arrive.
+    if (!TimedWaitForEncodedFrame(timestamp_ms, 2 * 1000 / kFps)) {
+      ++num_dropped;
+    }
+    timestamp_ms += 1000 / kFps;
+  }
+
+  // Frame drops should be less than 5%
+  EXPECT_LT(num_dropped, 5 * kNumFramesInRun / 100);
+
+  // Make encoder produce frames at double the expected bitrate during 3 seconds
+  // of video, verify number of drops. Rate needs to be slightly changed in
+  // order to force the rate to be reconfigured.
+  fake_encoder_.SimulateOvershoot(2.0);
+  video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps + 1000, 0, 0);
+  num_dropped = 0;
+  for (int i = 0; i < kNumFramesInRun; ++i) {
+    video_source_.IncomingCapturedFrame(
+        CreateFrame(timestamp_ms, kFrameWidth, kFrameHeight));
+    // Wait up to two frame durations for a frame to arrive.
+    if (!TimedWaitForEncodedFrame(timestamp_ms, 2 * 1000 / kFps)) {
+      ++num_dropped;
+    }
+    timestamp_ms += 1000 / kFps;
+  }
+
+  // Frame drops should be more than 40%.
+  EXPECT_GT(num_dropped, 40 * kNumFramesInRun / 100);
+
+  video_stream_encoder_->Stop();
+}
+
+TEST_F(VideoStreamEncoderTest, ConfiguresCorrectFrameRate) {
+  const int kFrameWidth = 320;
+  const int kFrameHeight = 240;
+  const int kActualInputFps = 24;
+  const int kTargetBitrateBps = 120000;
+
+  ASSERT_GT(max_framerate_, kActualInputFps);
+
+  int64_t timestamp_ms = fake_clock_.TimeNanos() / rtc::kNumNanosecsPerMillisec;
+  max_framerate_ = kActualInputFps;
+  video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
+
+  // Insert 3 seconds of video, with an input fps lower than configured max.
+  for (int i = 0; i < kActualInputFps * 3; ++i) {
+    video_source_.IncomingCapturedFrame(
+        CreateFrame(timestamp_ms, kFrameWidth, kFrameHeight));
+    // Wait up to two frame durations for a frame to arrive.
+    WaitForEncodedFrame(timestamp_ms);
+    timestamp_ms += 1000 / kActualInputFps;
+  }
+
+  EXPECT_NEAR(kActualInputFps, fake_encoder_.GetLastFramerate(), 1);
+
   video_stream_encoder_->Stop();
 }
 
