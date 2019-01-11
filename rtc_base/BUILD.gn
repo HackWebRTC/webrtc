@@ -1350,9 +1350,6 @@ if (rtc_include_tests) {
 
   rtc_source_set("rtc_base_approved_unittests") {
     testonly = true
-    if (is_msan) {
-      cflags = [ "-fsanitize=memory" ]
-    }
     sources = [
       "atomic_ops_unittest.cc",
       "base64_unittest.cc",
