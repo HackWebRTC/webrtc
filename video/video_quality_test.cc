@@ -705,6 +705,8 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
         video_encoder_configs_[video_idx].encoder_specific_settings =
             new rtc::RefCountedObject<
                 VideoEncoderConfig::Vp9EncoderSpecificSettings>(vp9_settings);
+      } else if (params_.video[video_idx].codec == "H264") {
+        // Quality scaling is always on for H.264.
       } else {
         RTC_NOTREACHED() << "Automatic scaling not supported for codec "
                          << params_.video[video_idx].codec << ", stream "
@@ -1099,7 +1101,7 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
 
     CreateCapturers();
 
-    analyzer_->SetSource(video_sources_[0].get(), params_.ss[0].infer_streams);
+    analyzer_->SetSource(video_sources_[0].get(), true);
 
     for (size_t video_idx = 1; video_idx < num_video_streams_; ++video_idx) {
       video_send_streams_[video_idx]->SetSource(video_sources_[video_idx].get(),

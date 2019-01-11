@@ -124,9 +124,9 @@ TEST(FullStackTest, ForemanCifWithoutPacketLossVp9) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging foreman_cif;
   foreman_cif.call.send_side_bwe = true;
-  foreman_cif.video[0] = {true,   352,    288,   30,    700000,
-                          700000, 700000, false, "VP9", 1,
-                          0,      0,      false, false, false, "foreman_cif"};
+  foreman_cif.video[0] = {true,  352,          288, 30, 700000, 700000, 700000,
+                          false, "VP9",        1,   0,  0,      false,  false,
+                          true,  "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_net_delay_0_0_plr_0_VP9", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   fixture->RunWithAnalyzer(foreman_cif);
@@ -136,9 +136,9 @@ TEST_P(GenericDescriptorTest, ForemanCifPlr5Vp9) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging foreman_cif;
   foreman_cif.call.send_side_bwe = true;
-  foreman_cif.video[0] = {true,   352,     288,   30,    30000,
-                          500000, 2000000, false, "VP9", 1,
-                          0,      0,       false, false, false, "foreman_cif"};
+  foreman_cif.video[0] = {true,  352,          288, 30, 30000, 500000, 2000000,
+                          false, "VP9",        1,   0,  0,     false,  false,
+                          true,  "foreman_cif"};
   foreman_cif.analyzer = {GetTestName("foreman_cif_delay_50_0_plr_5_VP9"), 0.0,
                           0.0, kFullStackTestDurationSecs};
   foreman_cif.config->loss_percent = 5;
@@ -167,7 +167,7 @@ TEST(FullStackTest, GeneratorWithoutPacketLossVp9Profile2) {
   generator.call.send_side_bwe = true;
   generator.video[0] = {
       true, 352, 288, 30,    700000, 700000, 700000,          false, "VP9",
-      1,    0,   0,   false, false,  false,  "GeneratorI010", 0,     vp92};
+      1,    0,   0,   false, false,  true,   "GeneratorI010", 0,     vp92};
   generator.analyzer = {"generator_net_delay_0_0_plr_0_VP9Profile2", 0.0, 0.0,
                         kFullStackTestDurationSecs};
   fixture->RunWithAnalyzer(generator);
@@ -177,10 +177,9 @@ TEST(FullStackTest, ForemanCifWithoutPacketLossMultiplexI420Frame) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging foreman_cif;
   foreman_cif.call.send_side_bwe = true;
-  foreman_cif.video[0] = {true,   352,    288,   30,          700000,
-                          700000, 700000, false, "multiplex", 1,
-                          0,      0,      false, false,       false,
-                          "foreman_cif"};
+  foreman_cif.video[0] = {true,  352,          288, 30, 700000, 700000, 700000,
+                          false, "multiplex",  1,   0,  0,      false,  false,
+                          false, "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_net_delay_0_0_plr_0_Multiplex", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   fixture->RunWithAnalyzer(foreman_cif);
@@ -191,10 +190,9 @@ TEST(FullStackTest, GeneratorWithoutPacketLossMultiplexI420AFrame) {
 
   ParamsWithLogging generator;
   generator.call.send_side_bwe = true;
-  generator.video[0] = {true,   352,    288,   30,          700000,
-                        700000, 700000, false, "multiplex", 1,
-                        0,      0,      false, false,       false,
-                        "GeneratorI420A"};
+  generator.video[0] = {
+      true,        352, 288, 30, 700000, 700000, 700000, false,
+      "multiplex", 1,   0,   0,  false,  false,  false,  "GeneratorI420A"};
   generator.analyzer = {"generator_net_delay_0_0_plr_0_Multiplex", 0.0, 0.0,
                         kFullStackTestDurationSecs};
   fixture->RunWithAnalyzer(generator);
@@ -212,9 +210,9 @@ TEST(FullStackTest, MAYBE_ParisQcifWithoutPacketLoss) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging paris_qcif;
   paris_qcif.call.send_side_bwe = true;
-  paris_qcif.video[0] = {true,   176,    144,   30,    300000,
-                         300000, 300000, false, "VP8", 1,
-                         0,      0,      false, false, false, "paris_qcif"};
+  paris_qcif.video[0] = {true,   176,   144,   30,          300000, 300000,
+                         300000, false, "VP8", 1,           0,      0,
+                         false,  false, true,  "paris_qcif"};
   paris_qcif.analyzer = {"net_delay_0_0_plr_0", 36.0, 0.96,
                          kFullStackTestDurationSecs};
   fixture->RunWithAnalyzer(paris_qcif);
@@ -225,9 +223,9 @@ TEST_P(GenericDescriptorTest, ForemanCifWithoutPacketLoss) {
   // TODO(pbos): Decide on psnr/ssim thresholds for foreman_cif.
   ParamsWithLogging foreman_cif;
   foreman_cif.call.send_side_bwe = true;
-  foreman_cif.video[0] = {true,   352,    288,   30,    700000,
-                          700000, 700000, false, "VP8", 1,
-                          0,      0,      false, false, false, "foreman_cif"};
+  foreman_cif.video[0] = {true,  352,          288, 30, 700000, 700000, 700000,
+                          false, "VP8",        1,   0,  0,      false,  false,
+                          true,  "foreman_cif"};
   foreman_cif.analyzer = {GetTestName("foreman_cif_net_delay_0_0_plr_0"), 0.0,
                           0.0, kFullStackTestDurationSecs};
   foreman_cif.call.generic_descriptor = GenericDescriptorEnabled();
@@ -238,9 +236,9 @@ TEST_P(GenericDescriptorTest, ForemanCif30kbpsWithoutPacketLoss) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging foreman_cif;
   foreman_cif.call.send_side_bwe = true;
-  foreman_cif.video[0] = {true,  352,   288,   10,    30000,
-                          30000, 30000, false, "VP8", 1,
-                          0,     0,     false, false, false, "foreman_cif"};
+  foreman_cif.video[0] = {true,  352,          288, 10, 30000, 30000, 30000,
+                          false, "VP8",        1,   0,  0,     false, false,
+                          true,  "foreman_cif"};
   foreman_cif.analyzer = {GetTestName("foreman_cif_30kbps_net_delay_0_0_plr_0"),
                           0.0, 0.0, kFullStackTestDurationSecs};
   foreman_cif.call.generic_descriptor = GenericDescriptorEnabled();
@@ -258,7 +256,7 @@ TEST_P(GenericDescriptorTest,
   foreman_cif.call.send_side_bwe = true;
   foreman_cif.video[0] = {true,  352,          288, 10, 30000, 30000, 30000,
                           false, "VP8",        1,   0,  0,     false, false,
-                          false, "foreman_cif"};
+                          true,  "foreman_cif"};
   foreman_cif.analyzer = {
       GetTestName("foreman_cif_30kbps_net_delay_0_0_plr_0_trusted_rate_ctrl"),
       0.0, 0.0, kFullStackTestDurationSecs};
@@ -266,7 +264,7 @@ TEST_P(GenericDescriptorTest,
   fixture->RunWithAnalyzer(foreman_cif);
 }
 
-// Link capacity below default start rate. Automatic down scaling enabled.
+// Link capacity below default start rate.
 TEST(FullStackTest, ForemanCifLink150kbpsWithoutPacketLoss) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging foreman_cif;
@@ -285,9 +283,9 @@ TEST_P(GenericDescriptorTest, ForemanCifPlr5) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging foreman_cif;
   foreman_cif.call.send_side_bwe = true;
-  foreman_cif.video[0] = {true,   352,     288,   30,    30000,
-                          500000, 2000000, false, "VP8", 1,
-                          0,      0,       false, false, false, "foreman_cif"};
+  foreman_cif.video[0] = {true,  352,          288, 30, 30000, 500000, 2000000,
+                          false, "VP8",        1,   0,  0,     false,  false,
+                          true,  "foreman_cif"};
   foreman_cif.analyzer = {GetTestName("foreman_cif_delay_50_0_plr_5"), 0.0, 0.0,
                           kFullStackTestDurationSecs};
   foreman_cif.config->loss_percent = 5;
@@ -300,9 +298,9 @@ TEST_P(GenericDescriptorTest, ForemanCifPlr5Ulpfec) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging foreman_cif;
   foreman_cif.call.send_side_bwe = true;
-  foreman_cif.video[0] = {true,   352,     288,   30,    30000,
-                          500000, 2000000, false, "VP8", 1,
-                          0,      0,       true,  false, false, "foreman_cif"};
+  foreman_cif.video[0] = {true,  352,          288, 30, 30000, 500000, 2000000,
+                          false, "VP8",        1,   0,  0,     true,   false,
+                          true,  "foreman_cif"};
   foreman_cif.analyzer = {GetTestName("foreman_cif_delay_50_0_plr_5_ulpfec"),
                           0.0, 0.0, kFullStackTestDurationSecs};
   foreman_cif.config->loss_percent = 5;
@@ -315,9 +313,9 @@ TEST(FullStackTest, ForemanCifPlr5Flexfec) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging foreman_cif;
   foreman_cif.call.send_side_bwe = true;
-  foreman_cif.video[0] = {true,   352,     288,   30,    30000,
-                          500000, 2000000, false, "VP8", 1,
-                          0,      0,       false, true,  false, "foreman_cif"};
+  foreman_cif.video[0] = {true,  352,          288, 30, 30000, 500000, 2000000,
+                          false, "VP8",        1,   0,  0,     false,  true,
+                          true,  "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_delay_50_0_plr_5_flexfec", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   foreman_cif.config->loss_percent = 5;
@@ -329,9 +327,9 @@ TEST(FullStackTest, ForemanCif500kbpsPlr3Flexfec) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging foreman_cif;
   foreman_cif.call.send_side_bwe = true;
-  foreman_cif.video[0] = {true,   352,     288,   30,    30000,
-                          500000, 2000000, false, "VP8", 1,
-                          0,      0,       false, true,  false, "foreman_cif"};
+  foreman_cif.video[0] = {true,  352,          288, 30, 30000, 500000, 2000000,
+                          false, "VP8",        1,   0,  0,     false,  true,
+                          true,  "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_500kbps_delay_50_0_plr_3_flexfec", 0.0,
                           0.0, kFullStackTestDurationSecs};
   foreman_cif.config->loss_percent = 3;
@@ -344,9 +342,9 @@ TEST(FullStackTest, ForemanCif500kbpsPlr3Ulpfec) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging foreman_cif;
   foreman_cif.call.send_side_bwe = true;
-  foreman_cif.video[0] = {true,   352,     288,   30,    30000,
-                          500000, 2000000, false, "VP8", 1,
-                          0,      0,       true,  false, false, "foreman_cif"};
+  foreman_cif.video[0] = {true,  352,          288, 30, 30000, 500000, 2000000,
+                          false, "VP8",        1,   0,  0,     true,   false,
+                          true,  "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_500kbps_delay_50_0_plr_3_ulpfec", 0.0,
                           0.0, kFullStackTestDurationSecs};
   foreman_cif.config->loss_percent = 3;
@@ -361,9 +359,9 @@ TEST(FullStackTest, ForemanCifWithoutPacketlossH264) {
   // TODO(pbos): Decide on psnr/ssim thresholds for foreman_cif.
   ParamsWithLogging foreman_cif;
   foreman_cif.call.send_side_bwe = true;
-  foreman_cif.video[0] = {true,   352,    288,   30,     700000,
-                          700000, 700000, false, "H264", 1,
-                          0,      0,      false, false,  false, "foreman_cif"};
+  foreman_cif.video[0] = {true,  352,          288, 30, 700000, 700000, 700000,
+                          false, "H264",       1,   0,  0,      false,  false,
+                          true,  "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_net_delay_0_0_plr_0_H264", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   fixture->RunWithAnalyzer(foreman_cif);
@@ -373,9 +371,9 @@ TEST(FullStackTest, ForemanCif30kbpsWithoutPacketlossH264) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging foreman_cif;
   foreman_cif.call.send_side_bwe = true;
-  foreman_cif.video[0] = {true,  352,   288,   10,     30000,
-                          30000, 30000, false, "H264", 1,
-                          0,     0,     false, false,  false, "foreman_cif"};
+  foreman_cif.video[0] = {true,  352,          288, 10, 30000, 30000, 30000,
+                          false, "H264",       1,   0,  0,     false, false,
+                          true,  "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_30kbps_net_delay_0_0_plr_0_H264", 0.0,
                           0.0, kFullStackTestDurationSecs};
   fixture->RunWithAnalyzer(foreman_cif);
@@ -385,9 +383,9 @@ TEST_P(GenericDescriptorTest, ForemanCifPlr5H264) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging foreman_cif;
   foreman_cif.call.send_side_bwe = true;
-  foreman_cif.video[0] = {true,   352,     288,   30,     30000,
-                          500000, 2000000, false, "H264", 1,
-                          0,      0,       false, false,  false, "foreman_cif"};
+  foreman_cif.video[0] = {true,  352,          288, 30, 30000, 500000, 2000000,
+                          false, "H264",       1,   0,  0,     false,  false,
+                          true,  "foreman_cif"};
   foreman_cif.analyzer = {GetTestName("foreman_cif_delay_50_0_plr_5_H264"), 0.0,
                           0.0, kFullStackTestDurationSecs};
   foreman_cif.config->loss_percent = 5;
@@ -403,9 +401,9 @@ TEST(FullStackTest, ForemanCifPlr5H264SpsPpsIdrIsKeyframe) {
 
   ParamsWithLogging foreman_cif;
   foreman_cif.call.send_side_bwe = true;
-  foreman_cif.video[0] = {true,   352,     288,   30,     30000,
-                          500000, 2000000, false, "H264", 1,
-                          0,      0,       false, false,  false, "foreman_cif"};
+  foreman_cif.video[0] = {true,  352,          288, 30, 30000, 500000, 2000000,
+                          false, "H264",       1,   0,  0,     false,  false,
+                          true,  "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_delay_50_0_plr_5_H264_sps_pps_idr", 0.0,
                           0.0, kFullStackTestDurationSecs};
   foreman_cif.config->loss_percent = 5;
@@ -418,9 +416,9 @@ TEST(FullStackTest, ForemanCifPlr5H264Flexfec) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging foreman_cif;
   foreman_cif.call.send_side_bwe = true;
-  foreman_cif.video[0] = {true,   352,     288,   30,     30000,
-                          500000, 2000000, false, "H264", 1,
-                          0,      0,       false, true,   false, "foreman_cif"};
+  foreman_cif.video[0] = {true,  352,          288, 30, 30000, 500000, 2000000,
+                          false, "H264",       1,   0,  0,     false,  true,
+                          true,  "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_delay_50_0_plr_5_H264_flexfec", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   foreman_cif.config->loss_percent = 5;
@@ -434,9 +432,9 @@ TEST(FullStackTest, DISABLED_ForemanCifPlr5H264Ulpfec) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging foreman_cif;
   foreman_cif.call.send_side_bwe = true;
-  foreman_cif.video[0] = {true,   352,     288,   30,     30000,
-                          500000, 2000000, false, "H264", 1,
-                          0,      0,       true,  false,  false, "foreman_cif"};
+  foreman_cif.video[0] = {true,  352,          288, 30, 30000, 500000, 2000000,
+                          false, "H264",       1,   0,  0,     true,   false,
+                          true,  "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_delay_50_0_plr_5_H264_ulpfec", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   foreman_cif.config->loss_percent = 5;
@@ -449,9 +447,9 @@ TEST(FullStackTest, ForemanCif500kbps) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging foreman_cif;
   foreman_cif.call.send_side_bwe = true;
-  foreman_cif.video[0] = {true,   352,     288,   30,    30000,
-                          500000, 2000000, false, "VP8", 1,
-                          0,      0,       false, false, false, "foreman_cif"};
+  foreman_cif.video[0] = {true,  352,          288, 30, 30000, 500000, 2000000,
+                          false, "VP8",        1,   0,  0,     false,  false,
+                          true,  "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_500kbps", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   foreman_cif.config->queue_length_packets = 0;
@@ -464,9 +462,9 @@ TEST(FullStackTest, ForemanCif500kbpsLimitedQueue) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging foreman_cif;
   foreman_cif.call.send_side_bwe = true;
-  foreman_cif.video[0] = {true,   352,     288,   30,    30000,
-                          500000, 2000000, false, "VP8", 1,
-                          0,      0,       false, false, false, "foreman_cif"};
+  foreman_cif.video[0] = {true,  352,          288, 30, 30000, 500000, 2000000,
+                          false, "VP8",        1,   0,  0,     false,  false,
+                          true,  "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_500kbps_32pkts_queue", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   foreman_cif.config->queue_length_packets = 32;
@@ -479,9 +477,9 @@ TEST(FullStackTest, ForemanCif500kbps100ms) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging foreman_cif;
   foreman_cif.call.send_side_bwe = true;
-  foreman_cif.video[0] = {true,   352,     288,   30,    30000,
-                          500000, 2000000, false, "VP8", 1,
-                          0,      0,       false, false, false, "foreman_cif"};
+  foreman_cif.video[0] = {true,  352,          288, 30, 30000, 500000, 2000000,
+                          false, "VP8",        1,   0,  0,     false,  false,
+                          true,  "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_500kbps_100ms", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   foreman_cif.config->queue_length_packets = 0;
@@ -494,9 +492,9 @@ TEST_P(GenericDescriptorTest, ForemanCif500kbps100msLimitedQueue) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging foreman_cif;
   foreman_cif.call.send_side_bwe = true;
-  foreman_cif.video[0] = {true,   352,     288,   30,    30000,
-                          500000, 2000000, false, "VP8", 1,
-                          0,      0,       false, false, false, "foreman_cif"};
+  foreman_cif.video[0] = {true,  352,          288, 30, 30000, 500000, 2000000,
+                          false, "VP8",        1,   0,  0,     false,  false,
+                          true,  "foreman_cif"};
   foreman_cif.analyzer = {GetTestName("foreman_cif_500kbps_100ms_32pkts_queue"),
                           0.0, 0.0, kFullStackTestDurationSecs};
   foreman_cif.config->queue_length_packets = 32;
@@ -510,9 +508,9 @@ TEST(FullStackTest, ForemanCif500kbps100msLimitedQueueRecvBwe) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging foreman_cif;
   foreman_cif.call.send_side_bwe = false;
-  foreman_cif.video[0] = {true,   352,     288,   30,    30000,
-                          500000, 2000000, false, "VP8", 1,
-                          0,      0,       false, false, false, "foreman_cif"};
+  foreman_cif.video[0] = {true,  352,          288, 30, 30000, 500000, 2000000,
+                          false, "VP8",        1,   0,  0,     false,  false,
+                          true,  "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_500kbps_100ms_32pkts_queue_recv_bwe",
                           0.0, 0.0, kFullStackTestDurationSecs};
   foreman_cif.config->queue_length_packets = 32;
@@ -525,9 +523,9 @@ TEST(FullStackTest, ForemanCif1000kbps100msLimitedQueue) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging foreman_cif;
   foreman_cif.call.send_side_bwe = true;
-  foreman_cif.video[0] = {true,    352,     288,   30,    30000,
-                          2000000, 2000000, false, "VP8", 1,
-                          0,       0,       false, false, false, "foreman_cif"};
+  foreman_cif.video[0] = {true,  352,          288, 30, 30000, 2000000, 2000000,
+                          false, "VP8",        1,   0,  0,     false,   false,
+                          true,  "foreman_cif"};
   foreman_cif.analyzer = {"foreman_cif_1000kbps_100ms_32pkts_queue", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   foreman_cif.config->queue_length_packets = 32;
