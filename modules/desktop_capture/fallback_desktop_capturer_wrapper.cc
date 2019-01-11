@@ -80,6 +80,7 @@ FallbackDesktopCapturerWrapper::~FallbackDesktopCapturerWrapper() = default;
 
 void FallbackDesktopCapturerWrapper::Start(
     DesktopCapturer::Callback* callback) {
+  callback_ = callback;
   // FallbackDesktopCapturerWrapper catchs the callback of the main capturer,
   // and checks its return value to decide whether the secondary capturer should
   // be involved.
@@ -88,7 +89,6 @@ void FallbackDesktopCapturerWrapper::Start(
   // FallbackDesktopCapturerWrapper won't check its return value any more. It
   // will directly return to the input |callback|.
   secondary_capturer_->Start(callback);
-  callback_ = callback;
 }
 
 void FallbackDesktopCapturerWrapper::SetSharedMemoryFactory(

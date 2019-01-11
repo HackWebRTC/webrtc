@@ -32,8 +32,8 @@ BlankDetectorDesktopCapturerWrapper::~BlankDetectorDesktopCapturerWrapper() =
 
 void BlankDetectorDesktopCapturerWrapper::Start(
     DesktopCapturer::Callback* callback) {
-  capturer_->Start(this);
   callback_ = callback;
+  capturer_->Start(this);
 }
 
 void BlankDetectorDesktopCapturerWrapper::SetSharedMemoryFactory(
