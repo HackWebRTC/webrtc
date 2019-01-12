@@ -31,6 +31,19 @@ android {
 }
 
 task genWebrtcSrc(type:Exec) {
+    if (!new File(webrtc_repo).exists()) {
+        throw new IllegalArgumentException("webrtc_repo doesn't exist: ${webrtc_repo}")
+    }
+    if (!new File("${webrtc_repo}/${android_jar}").exists()) {
+        throw new IllegalArgumentException("android_jar doesn't exist: ${webrtc_repo}")
+    }
+    if (!new File(py2).exists()) {
+        throw new IllegalArgumentException("py2 doesn't exist: ${webrtc_repo}")
+    }
+    if (!new File(protoc).exists()) {
+        throw new IllegalArgumentException("protoc doesn't exist: ${webrtc_repo}")
+    }
+
     def buildDirFile = new File("${webrtc_repo}/${webrtc_build_dir}")
 
     workingDir webrtc_repo
