@@ -42,8 +42,6 @@ rtc_static_library("system_wrappers") {
   ]
 
   if (is_android) {
-    defines += [ "WEBRTC_THREAD_RR" ]
-
     if (build_with_mozilla) {
       include_dirs = [
         "/config/external/nspr",
@@ -58,17 +56,11 @@ rtc_static_library("system_wrappers") {
   }
 
   if (is_linux) {
-    defines += [ "WEBRTC_THREAD_RR" ]
-
     if (!build_with_chromium) {
       deps += [ ":cpu_features_linux" ]
     }
 
     libs += [ "rt" ]
-  }
-
-  if (is_ios || is_mac) {
-    defines += [ "WEBRTC_THREAD_RR" ]
   }
 
   if (is_win) {

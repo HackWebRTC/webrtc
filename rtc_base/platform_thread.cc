@@ -240,11 +240,7 @@ bool PlatformThread::SetPriority(ThreadPriority priority) {
   // thread priorities.
   return true;
 #else
-#ifdef WEBRTC_THREAD_RR
-  const int policy = SCHED_RR;
-#else
   const int policy = SCHED_FIFO;
-#endif
   const int min_prio = sched_get_priority_min(policy);
   const int max_prio = sched_get_priority_max(policy);
   if (min_prio == -1 || max_prio == -1) {
