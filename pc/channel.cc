@@ -256,35 +256,6 @@ bool BaseChannel::Enable(bool enable) {
   return true;
 }
 
-bool BaseChannel::AddRecvStream(const StreamParams& sp) {
-  demuxer_criteria_.ssrcs.insert(sp.first_ssrc());
-  if (!RegisterRtpDemuxerSink()) {
-    return false;
-  }
-  return InvokeOnWorker<bool>(RTC_FROM_HERE,
-                              Bind(&BaseChannel::AddRecvStream_w, this, sp));
-}
-
-bool BaseChannel::RemoveRecvStream(uint32_t ssrc) {
-  demuxer_criteria_.ssrcs.erase(ssrc);
-  if (!RegisterRtpDemuxerSink()) {
-    return false;
-  }
-  return InvokeOnWorker<bool>(
-      RTC_FROM_HERE, Bind(&BaseChannel::RemoveRecvStream_w, this, ssrc));
-}
-
-bool BaseChannel::AddSendStream(const StreamParams& sp) {
-  return InvokeOnWorker<bool>(
-      RTC_FROM_HERE, Bind(&MediaChannel::AddSendStream, media_channel(), sp));
-}
-
-bool BaseChannel::RemoveSendStream(uint32_t ssrc) {
-  return InvokeOnWorker<bool>(
-      RTC_FROM_HERE,
-      Bind(&MediaChannel::RemoveSendStream, media_channel(), ssrc));
-}
-
 bool BaseChannel::SetLocalContent(const MediaContentDescription* content,
                                   SdpType type,
                                   std::string* error_desc) {

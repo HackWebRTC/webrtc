@@ -407,11 +407,6 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     return true;
   }
 
-  bool AddStream1(int id) {
-    return channel1_->AddRecvStream(cricket::StreamParams::CreateLegacy(id));
-  }
-  bool RemoveStream1(int id) { return channel1_->RemoveRecvStream(id); }
-
   void SendRtp1() {
     media_channel1_->SendRtp(rtp_packet_.data(), rtp_packet_.size(),
                              rtc::PacketOptions());
@@ -670,18 +665,6 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
         channel2_->SetRemoteContent(&content, SdpType::kPrAnswer, NULL));
     EXPECT_TRUE(channel2_->SetRemoteContent(&content, SdpType::kAnswer, NULL));
     EXPECT_EQ(0, rtcp_mux_activated_callbacks2_);
-  }
-
-  // Test that Add/RemoveStream properly forward to the media channel.
-  void TestStreams() {
-    CreateChannels(0, 0);
-    EXPECT_TRUE(AddStream1(1));
-    EXPECT_TRUE(AddStream1(2));
-    EXPECT_EQ(2U, media_channel1_->recv_streams().size());
-    EXPECT_TRUE(RemoveStream1(2));
-    EXPECT_EQ(1U, media_channel1_->recv_streams().size());
-    EXPECT_TRUE(RemoveStream1(1));
-    EXPECT_EQ(0U, media_channel1_->recv_streams().size());
   }
 
   // Test that SetLocalContent and SetRemoteContent properly
@@ -1591,12 +1574,6 @@ std::unique_ptr<cricket::VideoChannel> ChannelTest<VideoTraits>::CreateChannel(
   return channel;
 }
 
-// override to add 0 parameter
-template <>
-bool ChannelTest<VideoTraits>::AddStream1(int id) {
-  return channel1_->AddRecvStream(cricket::StreamParams::CreateLegacy(id));
-}
-
 template <>
 void ChannelTest<VideoTraits>::CreateContent(
     int flags,
@@ -1684,10 +1661,6 @@ TEST_F(VoiceChannelSingleThreadTest, TestSetContentsRtcpMux) {
 
 TEST_F(VoiceChannelSingleThreadTest, TestSetContentsRtcpMuxWithPrAnswer) {
   Base::TestSetContentsRtcpMux();
-}
-
-TEST_F(VoiceChannelSingleThreadTest, TestStreams) {
-  Base::TestStreams();
 }
 
 TEST_F(VoiceChannelSingleThreadTest, TestChangeStreamParamsInContent) {
@@ -1839,10 +1812,6 @@ TEST_F(VoiceChannelDoubleThreadTest, TestSetContentsRtcpMuxWithPrAnswer) {
   Base::TestSetContentsRtcpMux();
 }
 
-TEST_F(VoiceChannelDoubleThreadTest, TestStreams) {
-  Base::TestStreams();
-}
-
 TEST_F(VoiceChannelDoubleThreadTest, TestChangeStreamParamsInContent) {
   Base::TestChangeStreamParamsInContent();
 }
@@ -1990,10 +1959,6 @@ TEST_F(VideoChannelSingleThreadTest, TestSetContentsRtcpMuxWithPrAnswer) {
   Base::TestSetContentsRtcpMux();
 }
 
-TEST_F(VideoChannelSingleThreadTest, TestStreams) {
-  Base::TestStreams();
-}
-
 TEST_F(VideoChannelSingleThreadTest, TestChangeStreamParamsInContent) {
   Base::TestChangeStreamParamsInContent();
 }
@@ -2139,10 +2104,6 @@ TEST_F(VideoChannelDoubleThreadTest, TestSetContentsRtcpMux) {
 
 TEST_F(VideoChannelDoubleThreadTest, TestSetContentsRtcpMuxWithPrAnswer) {
   Base::TestSetContentsRtcpMux();
-}
-
-TEST_F(VideoChannelDoubleThreadTest, TestStreams) {
-  Base::TestStreams();
 }
 
 TEST_F(VideoChannelDoubleThreadTest, TestChangeStreamParamsInContent) {
@@ -2334,10 +2295,6 @@ TEST_F(RtpDataChannelSingleThreadTest, TestSetContentsRtcpMux) {
   Base::TestSetContentsRtcpMux();
 }
 
-TEST_F(RtpDataChannelSingleThreadTest, TestStreams) {
-  Base::TestStreams();
-}
-
 TEST_F(RtpDataChannelSingleThreadTest, TestChangeStreamParamsInContent) {
   Base::TestChangeStreamParamsInContent();
 }
@@ -2416,10 +2373,6 @@ TEST_F(RtpDataChannelDoubleThreadTest, TestSetContentsNullOffer) {
 
 TEST_F(RtpDataChannelDoubleThreadTest, TestSetContentsRtcpMux) {
   Base::TestSetContentsRtcpMux();
-}
-
-TEST_F(RtpDataChannelDoubleThreadTest, TestStreams) {
-  Base::TestStreams();
 }
 
 TEST_F(RtpDataChannelDoubleThreadTest, TestChangeStreamParamsInContent) {

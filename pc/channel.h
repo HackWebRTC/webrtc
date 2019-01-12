@@ -124,12 +124,6 @@ class BaseChannel : public ChannelInterface,
 
   bool Enable(bool enable) override;
 
-  // TODO(zhihuang): These methods are used for testing and can be removed.
-  bool AddRecvStream(const StreamParams& sp);
-  bool RemoveRecvStream(uint32_t ssrc);
-  bool AddSendStream(const StreamParams& sp);
-  bool RemoveSendStream(uint32_t ssrc);
-
   const std::vector<StreamParams>& local_streams() const {
     return local_streams_;
   }
