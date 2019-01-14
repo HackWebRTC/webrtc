@@ -23,9 +23,11 @@ class RefCounter {
 
   void IncRef() { rtc::AtomicOps::Increment(&ref_count_); }
 
-  // TODO(nisse): Switch return type to RefCountReleaseStatus?
-  // Returns true if this was the last reference, and the resource protected by
-  // the reference counter can be deleted.
+  // Returns kDroppedLastRef if this call dropped the last reference; the caller
+  // should therefore free the resource protected by the reference counter.
+  // Otherwise, returns kOtherRefsRemained (note that in case of multithreading,
+  // some other caller may have dropped the last reference by the time this call
+  // returns; all we know is that we didn't do it).
   rtc::RefCountReleaseStatus DecRef() {
     return (rtc::AtomicOps::Decrement(&ref_count_) == 0)
                ? rtc::RefCountReleaseStatus::kDroppedLastRef
