@@ -254,6 +254,7 @@ if (rtc_include_tests) {
       "testsupport/frame_reader.h",
       "testsupport/frame_writer.h",
       "testsupport/mock/mock_frame_reader.h",
+      "testsupport/y4m_frame_reader.cc",
       "testsupport/y4m_frame_writer.cc",
       "testsupport/yuv_frame_reader.cc",
       "testsupport/yuv_frame_writer.cc",
@@ -352,6 +353,7 @@ if (rtc_include_tests) {
       "//testing/gmock",
       "//testing/gtest",
       "//third_party/abseil-cpp/absl/memory",
+      "//third_party/abseil-cpp/absl/strings",
     ]
     sources = [
       "direct_transport_unittest.cc",
@@ -363,6 +365,7 @@ if (rtc_include_tests) {
       "testsupport/always_passing_unittest.cc",
       "testsupport/perf_test_unittest.cc",
       "testsupport/test_artifacts_unittest.cc",
+      "testsupport/y4m_frame_reader_unittest.cc",
       "testsupport/y4m_frame_writer_unittest.cc",
       "testsupport/yuv_frame_reader_unittest.cc",
       "testsupport/yuv_frame_writer_unittest.cc",

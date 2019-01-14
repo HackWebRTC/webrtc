@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2018 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -13,29 +13,32 @@
 
 #include "api/video/i420_buffer.h"
 #include "rtc_base/scoped_ref_ptr.h"
-#include "test/frame_utils.h"
 #include "test/testsupport/file_utils.h"
 #include "test/testsupport/frame_reader.h"
 
 namespace webrtc {
 namespace test {
+namespace {
 
-YuvFrameReaderImpl::YuvFrameReaderImpl(std::string input_filename,
+// Size of header: "YUV4MPEG2 W50 H20 F30:1 C420\n"
+const size_t kFileHeaderSize = 29;
+// Size of header: "FRAME\n"
+const size_t kFrameHeaderSize = 6;
+
+}  // namespace
+
+Y4mFrameReaderImpl::Y4mFrameReaderImpl(std::string input_filename,
                                        int width,
                                        int height)
-    : input_filename_(input_filename),
-      frame_length_in_bytes_(width * height +
-                             2 * ((width + 1) / 2) * ((height + 1) / 2)),
-      width_(width),
-      height_(height),
-      number_of_frames_(-1),
-      input_file_(nullptr) {}
-
-YuvFrameReaderImpl::~YuvFrameReaderImpl() {
-  Close();
+    : YuvFrameReaderImpl(input_filename, width, height) {
+  frame_length_in_bytes_ += kFrameHeaderSize;
+  buffer_ = new uint8_t[kFileHeaderSize];
+}
+Y4mFrameReaderImpl::~Y4mFrameReaderImpl() {
+  delete[] buffer_;
 }
 
-bool YuvFrameReaderImpl::Init() {
+bool Y4mFrameReaderImpl::Init() {
   if (width_ <= 0 || height_ <= 0) {
     fprintf(stderr, "Frame width and height must be >0, was %d x %d\n", width_,
             height_);
@@ -47,45 +50,35 @@ bool YuvFrameReaderImpl::Init() {
             input_filename_.c_str());
     return false;
   }
-  // Calculate total number of frames.
   size_t source_file_size = GetFileSize(input_filename_);
   if (source_file_size <= 0u) {
     fprintf(stderr, "Found empty file: %s\n", input_filename_.c_str());
     return false;
   }
-  number_of_frames_ =
-      static_cast<int>(source_file_size / frame_length_in_bytes_);
+  if (fread(buffer_, 1, kFileHeaderSize, input_file_) < kFileHeaderSize) {
+    fprintf(stderr, "Failed to read file header from input file: %s\n",
+            input_filename_.c_str());
+    return false;
+  }
+  // Calculate total number of frames.
+  number_of_frames_ = static_cast<int>((source_file_size - kFileHeaderSize) /
+                                       frame_length_in_bytes_);
   return true;
 }
 
-rtc::scoped_refptr<I420Buffer> YuvFrameReaderImpl::ReadFrame() {
+rtc::scoped_refptr<I420Buffer> Y4mFrameReaderImpl::ReadFrame() {
   if (input_file_ == nullptr) {
     fprintf(stderr,
-            "YuvFrameReaderImpl is not initialized (input file is NULL)\n");
+            "Y4mFrameReaderImpl is not initialized (input file is NULL)\n");
     return nullptr;
   }
-  rtc::scoped_refptr<I420Buffer> buffer(
-      ReadI420Buffer(width_, height_, input_file_));
-  if (!buffer && ferror(input_file_)) {
-    fprintf(stderr, "Error reading from input file: %s\n",
+  if (fread(buffer_, 1, kFrameHeaderSize, input_file_) < kFrameHeaderSize &&
+      ferror(input_file_)) {
+    fprintf(stderr, "Failed to read frame header from input file: %s\n",
             input_filename_.c_str());
+    return nullptr;
   }
-  return buffer;
-}
-
-void YuvFrameReaderImpl::Close() {
-  if (input_file_ != nullptr) {
-    fclose(input_file_);
-    input_file_ = nullptr;
-  }
-}
-
-size_t YuvFrameReaderImpl::FrameLength() {
-  return frame_length_in_bytes_;
-}
-
-int YuvFrameReaderImpl::NumberOfFrames() {
-  return number_of_frames_;
+  return YuvFrameReaderImpl::ReadFrame();
 }
 
 }  // namespace test
