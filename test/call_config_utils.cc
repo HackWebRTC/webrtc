@@ -68,5 +68,59 @@ VideoReceiveStream::Config ParseVideoReceiveStreamJsonConfig(
   return receive_config;
 }
 
+Json::Value GenerateVideoReceiveStreamJsonConfig(
+    const VideoReceiveStream::Config& config) {
+  Json::Value root_json;
+
+  root_json["decoders"] = Json::Value(Json::arrayValue);
+  for (const auto& decoder : config.decoders) {
+    Json::Value decoder_json;
+    decoder_json["payload_type"] = decoder.payload_type;
+    decoder_json["payload_name"] = decoder.video_format.name;
+    decoder_json["codec_params"] = Json::Value(Json::arrayValue);
+    for (const auto& codec_param_entry : decoder.video_format.parameters) {
+      Json::Value codec_param_json;
+      codec_param_json[codec_param_entry.first] = codec_param_entry.second;
+      decoder_json["codec_params"].append(codec_param_json);
+    }
+    root_json["decoders"].append(decoder_json);
+  }
+
+  Json::Value rtp_json;
+  rtp_json["remote_ssrc"] = config.rtp.remote_ssrc;
+  rtp_json["local_ssrc"] = config.rtp.local_ssrc;
+  rtp_json["rtcp_mode"] = config.rtp.rtcp_mode == RtcpMode::kCompound
+                              ? "RtcpMode::kCompound"
+                              : "RtcpMode::kReducedSize";
+  rtp_json["remb"] = config.rtp.remb;
+  rtp_json["transport_cc"] = config.rtp.transport_cc;
+  rtp_json["nack"]["rtp_history_ms"] = config.rtp.nack.rtp_history_ms;
+  rtp_json["ulpfec_payload_type"] = config.rtp.ulpfec_payload_type;
+  rtp_json["red_payload_type"] = config.rtp.red_payload_type;
+  rtp_json["rtx_ssrc"] = config.rtp.rtx_ssrc;
+  rtp_json["rtx_payload_types"] = Json::Value(Json::arrayValue);
+
+  for (auto& kv : config.rtp.rtx_associated_payload_types) {
+    Json::Value val;
+    val[std::to_string(kv.first)] = kv.second;
+    rtp_json["rtx_payload_types"].append(val);
+  }
+
+  rtp_json["extensions"] = Json::Value(Json::arrayValue);
+  for (auto& ext : config.rtp.extensions) {
+    Json::Value ext_json;
+    ext_json["uri"] = ext.uri;
+    ext_json["id"] = ext.id;
+    ext_json["encrypt"] = ext.encrypt;
+    rtp_json["extensions"].append(ext_json);
+  }
+  root_json["rtp"] = rtp_json;
+
+  root_json["render_delay_ms"] = config.render_delay_ms;
+  root_json["target_delay_ms"] = config.target_delay_ms;
+
+  return root_json;
+}
+
 }  // namespace test.
 }  // namespace webrtc.

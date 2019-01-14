@@ -23,6 +23,10 @@ VideoReceiveStream::Config ParseVideoReceiveStreamJsonConfig(
     webrtc::Transport* transport,
     const Json::Value& json);
 
+// Serialize a VideoReceiveStream::Config into a Json object.
+Json::Value GenerateVideoReceiveStreamJsonConfig(
+    const VideoReceiveStream::Config& config);
+
 }  // namespace test
 }  // namespace webrtc
 

@@ -327,6 +327,7 @@ if (rtc_include_tests) {
 
   rtc_test("test_support_unittests") {
     deps = [
+      ":call_config_utils",
       ":direct_transport",
       ":fake_video_codecs",
       ":fileutils",
@@ -345,6 +346,7 @@ if (rtc_include_tests) {
       "../api/video:builtin_video_bitrate_allocator_factory",
       "../api/video:video_frame",
       "../api/video:video_frame_i420",
+      "../call:video_stream_api",
       "../modules/rtp_rtcp:rtp_rtcp",
       "../modules/video_capture",
       "../modules/video_coding:simulcast_test_fixture_impl",
@@ -358,6 +360,7 @@ if (rtc_include_tests) {
       "//third_party/abseil-cpp/absl/strings",
     ]
     sources = [
+      "call_config_utils_unittest.cc",
       "direct_transport_unittest.cc",
       "fake_vp8_encoder_unittest.cc",
       "frame_generator_unittest.cc",
