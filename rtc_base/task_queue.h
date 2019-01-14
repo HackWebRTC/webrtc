@@ -17,6 +17,7 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
+#include "api/task_queue/queued_task.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/system/rtc_export.h"
@@ -24,24 +25,9 @@
 
 namespace rtc {
 
-// Base interface for asynchronously executed tasks.
-// The interface basically consists of a single function, Run(), that executes
-// on the target queue.  For more details see the Run() method and TaskQueue.
-class QueuedTask {
- public:
-  QueuedTask() {}
-  virtual ~QueuedTask() {}
-
-  // Main routine that will run when the task is executed on the desired queue.
-  // The task should return |true| to indicate that it should be deleted or
-  // |false| to indicate that the queue should consider ownership of the task
-  // having been transferred.  Returning |false| can be useful if a task has
-  // re-posted itself to a different queue or is otherwise being re-used.
-  virtual bool Run() = 0;
-
- private:
-  RTC_DISALLOW_COPY_AND_ASSIGN(QueuedTask);
-};
+// TODO(danilchap): Remove the alias when all of webrtc is updated to use
+// webrtc::QueuedTask directly.
+using ::webrtc::QueuedTask;
 
 // Simple implementation of QueuedTask for use with rtc::Bind and lambdas.
 template <class Closure>

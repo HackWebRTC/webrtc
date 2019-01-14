@@ -14,7 +14,6 @@
 
 #include "modules/include/module.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/task_queue.h"
 #include "rtc_base/time_utils.h"
 #include "rtc_base/trace_event.h"
 
@@ -105,7 +104,7 @@ void ProcessThreadImpl::WakeUp(Module* module) {
   wake_up_.Set();
 }
 
-void ProcessThreadImpl::PostTask(std::unique_ptr<rtc::QueuedTask> task) {
+void ProcessThreadImpl::PostTask(std::unique_ptr<QueuedTask> task) {
   // Allowed to be called on any thread.
   {
     rtc::CritScope lock(&lock_);
@@ -204,7 +203,7 @@ bool ProcessThreadImpl::Process() {
     }
 
     while (!queue_.empty()) {
-      rtc::QueuedTask* task = queue_.front();
+      QueuedTask* task = queue_.front();
       queue_.pop();
       lock_.Leave();
       task->Run();
