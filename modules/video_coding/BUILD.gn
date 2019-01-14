@@ -23,7 +23,6 @@ rtc_static_library("encoded_frame") {
     "../../api/video:video_frame_i420",
     "../../modules:module_api",
     "../../modules:module_api_public",
-    "../../modules/video_coding:video_coding_utility",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base/experiments:alr_experiment",
@@ -249,6 +248,8 @@ rtc_source_set("codec_globals_headers") {
 rtc_source_set("video_coding_utility") {
   visibility = [ "*" ]
   sources = [
+    "utility/decoded_frames_history.cc",
+    "utility/decoded_frames_history.h",
     "utility/default_video_bitrate_allocator.cc",
     "utility/default_video_bitrate_allocator.h",
     "utility/frame_dropper.cc",
@@ -278,6 +279,7 @@ rtc_source_set("video_coding_utility") {
     ":video_codec_interface",
     "..:module_api",
     "../..:webrtc_common",
+    "../../api/video:encoded_frame",
     "../../api/video:encoded_image",
     "../../api/video:video_bitrate_allocation",
     "../../api/video:video_bitrate_allocator",
@@ -862,6 +864,7 @@ if (rtc_include_tests) {
       "test/stream_generator.cc",
       "test/stream_generator.h",
       "timing_unittest.cc",
+      "utility/decoded_frames_history_unittest.cc",
       "utility/default_video_bitrate_allocator_unittest.cc",
       "utility/frame_dropper_unittest.cc",
       "utility/framerate_controller_unittest.cc",

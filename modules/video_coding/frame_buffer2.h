@@ -14,7 +14,6 @@
 #include <array>
 #include <map>
 #include <memory>
-#include <set>
 #include <utility>
 #include <vector>
 
@@ -22,6 +21,7 @@
 #include "api/video/encoded_frame.h"
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "modules/video_coding/inter_frame_delay.h"
+#include "modules/video_coding/utility/decoded_frames_history.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/event.h"
@@ -132,10 +132,6 @@ class FrameBuffer {
   void PropagateDecodability(const FrameInfo& info)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
-  // Removes undecodable frames and moves decoded frame to the history.
-  void AdvanceLastDecodedFrame(FrameMap::iterator decoded)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
-
   // Update the corresponding FrameInfo of |frame| and all FrameInfos that
   // |frame| references.
   // Return false if |frame| will never be decodable, true otherwise.
@@ -161,7 +157,7 @@ class FrameBuffer {
 
   // Stores only undecoded frames.
   FrameMap frames_ RTC_GUARDED_BY(crit_);
-  std::set<VideoLayerFrameId> decoded_frames_history_ RTC_GUARDED_BY(crit_);
+  DecodedFramesHistory decoded_frames_history_ RTC_GUARDED_BY(crit_);
 
   rtc::CriticalSection crit_;
   Clock* const clock_;
@@ -169,8 +165,6 @@ class FrameBuffer {
   VCMJitterEstimator* const jitter_estimator_ RTC_GUARDED_BY(crit_);
   VCMTiming* const timing_ RTC_GUARDED_BY(crit_);
   VCMInterFrameDelay inter_frame_delay_ RTC_GUARDED_BY(crit_);
-  absl::optional<uint32_t> last_decoded_frame_timestamp_ RTC_GUARDED_BY(crit_);
-  absl::optional<VideoLayerFrameId> last_decoded_frame_ RTC_GUARDED_BY(crit_);
   absl::optional<VideoLayerFrameId> last_continuous_frame_
       RTC_GUARDED_BY(crit_);
   std::vector<FrameMap::iterator> frames_to_decode_ RTC_GUARDED_BY(crit_);
