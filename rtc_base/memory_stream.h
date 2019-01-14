@@ -36,10 +36,12 @@ class MemoryStream final : public StreamInterface {
                      size_t* bytes_written,
                      int* error) override;
   void Close() override;
-  bool SetPosition(size_t position) override;
-  bool GetPosition(size_t* position) const override;
   bool GetSize(size_t* size) const;
   bool ReserveSize(size_t size);
+
+  bool SetPosition(size_t position);
+  bool GetPosition(size_t* position) const;
+  void Rewind();
 
   char* GetBuffer() { return buffer_; }
   const char* GetBuffer() const { return buffer_; }

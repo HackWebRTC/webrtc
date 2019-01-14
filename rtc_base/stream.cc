@@ -77,14 +77,6 @@ void StreamInterface::PostEvent(int events, int err) {
   PostEvent(Thread::Current(), events, err);
 }
 
-bool StreamInterface::SetPosition(size_t position) {
-  return false;
-}
-
-bool StreamInterface::GetPosition(size_t* position) const {
-  return false;
-}
-
 bool StreamInterface::Flush() {
   return false;
 }
@@ -127,14 +119,6 @@ StreamResult StreamAdapterInterface::Write(const void* data,
 }
 void StreamAdapterInterface::Close() {
   stream_->Close();
-}
-
-bool StreamAdapterInterface::SetPosition(size_t position) {
-  return stream_->SetPosition(position);
-}
-
-bool StreamAdapterInterface::GetPosition(size_t* position) const {
-  return stream_->GetPosition(position);
 }
 
 bool StreamAdapterInterface::Flush() {
@@ -286,18 +270,6 @@ bool FileStream::SetPosition(size_t position) {
   if (!file_)
     return false;
   return (fseek(file_, static_cast<int>(position), SEEK_SET) == 0);
-}
-
-bool FileStream::GetPosition(size_t* position) const {
-  RTC_DCHECK(nullptr != position);
-  if (!file_)
-    return false;
-  long result = ftell(file_);
-  if (result < 0)
-    return false;
-  if (position)
-    *position = result;
-  return true;
 }
 
 bool FileStream::Flush() {

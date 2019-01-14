@@ -107,15 +107,6 @@ class StreamInterface : public MessageHandler {
   // Like the aforementioned method, but posts to the current thread.
   void PostEvent(int events, int err);
 
-  // Seek to a byte offset from the beginning of the stream.  Returns false if
-  // the stream does not support seeking, or cannot seek to the specified
-  // position.
-  virtual bool SetPosition(size_t position);
-
-  // Get the byte offset of the current position from the start of the stream.
-  // Returns false if the position is not known.
-  virtual bool GetPosition(size_t* position) const;
-
   // Return true if flush is successful.
   virtual bool Flush();
 
@@ -124,9 +115,6 @@ class StreamInterface : public MessageHandler {
   //
   // These methods are implemented in terms of other methods, for convenience.
   //
-
-  // Seek to the start of the stream.
-  inline bool Rewind() { return SetPosition(0); }
 
   // WriteAll is a helper function which repeatedly calls Write until all the
   // data is written, or something other than SR_SUCCESS is returned.  Note that
@@ -180,8 +168,6 @@ class StreamAdapterInterface : public StreamInterface,
                      int* error) override;
   void Close() override;
 
-  bool SetPosition(size_t position) override;
-  bool GetPosition(size_t* position) const override;
   bool Flush() override;
 
   void Attach(StreamInterface* stream, bool owned = true);
@@ -232,8 +218,7 @@ class FileStream : public StreamInterface {
                      size_t* written,
                      int* error) override;
   void Close() override;
-  bool SetPosition(size_t position) override;
-  bool GetPosition(size_t* position) const override;
+  virtual bool SetPosition(size_t position);
 
   bool Flush() override;
 
@@ -291,6 +276,19 @@ class FifoBuffer final : public StreamInterface {
                      size_t* bytes_written,
                      int* error) override;
   void Close() override;
+
+  // Seek to a byte offset from the beginning of the stream.  Returns false if
+  // the stream does not support seeking, or cannot seek to the specified
+  // position.
+  bool SetPosition(size_t position);
+
+  // Get the byte offset of the current position from the start of the stream.
+  // Returns false if the position is not known.
+  bool GetPosition(size_t* position) const;
+
+  // Seek to the start of the stream.
+  bool Rewind() { return SetPosition(0); }
+
   // GetReadData returns a pointer to a buffer which is owned by the stream.
   // The buffer contains data_len bytes.  null is returned if no data is
   // available, or if the method fails.  If the caller processes the data, it

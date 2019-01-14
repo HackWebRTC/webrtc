@@ -91,6 +91,10 @@ bool MemoryStream::GetPosition(size_t* position) const {
   return true;
 }
 
+void MemoryStream::Rewind() {
+  seek_position_ = 0;
+}
+
 bool MemoryStream::GetSize(size_t* size) const {
   if (size)
     *size = data_length_;

@@ -50,17 +50,6 @@ class TestStream : public StreamInterface {
 
   void Close() override {}
 
-  bool SetPosition(size_t position) override {
-    pos_ = position;
-    return true;
-  }
-
-  bool GetPosition(size_t* position) const override {
-    if (position)
-      *position = pos_;
-    return true;
-  }
-
  private:
   size_t pos_;
 };
@@ -76,26 +65,6 @@ bool VerifyTestBuffer(unsigned char* buffer, size_t len, unsigned char value) {
   // Ensure that we don't pass again without re-writing
   memset(buffer, 0, len);
   return passed;
-}
-
-void SeekTest(StreamInterface* stream, const unsigned char value) {
-  size_t bytes;
-  unsigned char buffer[13] = {0};
-  const size_t kBufSize = sizeof(buffer);
-
-  EXPECT_EQ(stream->Read(buffer, kBufSize, &bytes, nullptr), SR_SUCCESS);
-  EXPECT_EQ(bytes, kBufSize);
-  EXPECT_TRUE(VerifyTestBuffer(buffer, kBufSize, value));
-  EXPECT_TRUE(stream->GetPosition(&bytes));
-  EXPECT_EQ(13U, bytes);
-
-  EXPECT_TRUE(stream->SetPosition(7));
-
-  EXPECT_EQ(stream->Read(buffer, kBufSize, &bytes, nullptr), SR_SUCCESS);
-  EXPECT_EQ(bytes, kBufSize);
-  EXPECT_TRUE(VerifyTestBuffer(buffer, kBufSize, value + 7));
-  EXPECT_TRUE(stream->GetPosition(&bytes));
-  EXPECT_EQ(20U, bytes);
 }
 
 TEST(FifoBufferTest, TestAll) {

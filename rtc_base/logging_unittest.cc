@@ -40,8 +40,6 @@ class StringStream : public StreamInterface {
                      size_t* written,
                      int* error) override;
   void Close() override;
-  bool SetPosition(size_t position) override;
-  bool GetPosition(size_t* position) const override;
 
  private:
   std::string& str_;
@@ -91,19 +89,6 @@ StreamResult StringStream::Write(const void* data,
 }
 
 void StringStream::Close() {}
-
-bool StringStream::SetPosition(size_t position) {
-  if (position > str_.size())
-    return false;
-  read_pos_ = position;
-  return true;
-}
-
-bool StringStream::GetPosition(size_t* position) const {
-  if (position)
-    *position = read_pos_;
-  return true;
-}
 
 }  // namespace
 
