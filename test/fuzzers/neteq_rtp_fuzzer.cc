@@ -136,7 +136,7 @@ void FuzzOneInputTest(const uint8_t* data, size_t size) {
   // expected decoder type.
   const auto it = codecs.find(kPayloadType);
   RTC_CHECK(it != codecs.end());
-  RTC_CHECK(it->second == SdpAudioFormat("l16", 32000, 2));
+  RTC_CHECK(it->second == SdpAudioFormat("L16", 32000, 1));
 
   NetEqTest test(config, CreateBuiltinAudioDecoderFactory(), codecs, nullptr,
                  std::move(input), std::move(output), callbacks);
