@@ -49,7 +49,9 @@
 #include "rtc_base/fake_clock.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/numerics/safe_conversions.h"
+#include "rtc_base/timeutils.h"
 #include "test/field_trial.h"
+#include "test/frame_generator.h"
 #include "test/gmock.h"
 
 using cricket::FakeVideoCapturerWithTaskQueue;
@@ -480,11 +482,11 @@ TEST_F(WebRtcVideoEngineTest, UseFactoryForVp8WhenSupported) {
       channel->AddSendStream(cricket::StreamParams::CreateLegacy(kSsrc)));
   EXPECT_EQ(0, encoder_factory_->GetNumCreatedEncoders());
   EXPECT_TRUE(channel->SetSend(true));
-  FakeVideoCapturerWithTaskQueue capturer;
-  EXPECT_TRUE(channel->SetVideoSend(kSsrc, nullptr, &capturer));
-  EXPECT_EQ(cricket::CS_RUNNING,
-            capturer.Start(capturer.GetSupportedFormats()->front()));
-  EXPECT_TRUE(capturer.CaptureFrame());
+  webrtc::test::FrameForwarder frame_forwarder;
+  cricket::FakeFrameSource frame_source(1280, 720,
+                                        rtc::kNumMicrosecsPerSec / 30);
+  EXPECT_TRUE(channel->SetVideoSend(kSsrc, nullptr, &frame_forwarder));
+  frame_forwarder.IncomingCapturedFrame(frame_source.GetFrame());
   // Sending one frame will have allocate the encoder.
   ASSERT_TRUE(encoder_factory_->WaitForCreatedVideoEncoders(1));
   EXPECT_TRUE_WAIT(encoder_factory_->encoders()[0]->GetNumEncodedFrames() > 0,
@@ -567,19 +569,18 @@ TEST_F(WebRtcVideoEngineTest, PropagatesInputFrameTimestamp) {
   EXPECT_TRUE(
       channel->AddSendStream(cricket::StreamParams::CreateLegacy(kSsrc)));
 
-  FakeVideoCapturerWithTaskQueue capturer;
-  EXPECT_TRUE(channel->SetVideoSend(kSsrc, nullptr, &capturer));
-  capturer.Start(cricket::VideoFormat(1280, 720,
-                                      cricket::VideoFormat::FpsToInterval(60),
-                                      cricket::FOURCC_I420));
+  webrtc::test::FrameForwarder frame_forwarder;
+  cricket::FakeFrameSource frame_source(1280, 720,
+                                        rtc::kNumMicrosecsPerSec / 60);
+  EXPECT_TRUE(channel->SetVideoSend(kSsrc, nullptr, &frame_forwarder));
   channel->SetSend(true);
 
   FakeVideoSendStream* stream = fake_call->GetVideoSendStreams()[0];
 
-  EXPECT_TRUE(capturer.CaptureFrame());
+  frame_forwarder.IncomingCapturedFrame(frame_source.GetFrame());
   int64_t last_timestamp = stream->GetLastTimestamp();
   for (int i = 0; i < 10; i++) {
-    EXPECT_TRUE(capturer.CaptureFrame());
+    frame_forwarder.IncomingCapturedFrame(frame_source.GetFrame());
     int64_t timestamp = stream->GetLastTimestamp();
     int64_t interval = timestamp - last_timestamp;
 
@@ -590,14 +591,14 @@ TEST_F(WebRtcVideoEngineTest, PropagatesInputFrameTimestamp) {
     last_timestamp = timestamp;
   }
 
-  capturer.Start(cricket::VideoFormat(1280, 720,
-                                      cricket::VideoFormat::FpsToInterval(30),
-                                      cricket::FOURCC_I420));
-
-  EXPECT_TRUE(capturer.CaptureFrame());
+  frame_forwarder.IncomingCapturedFrame(
+      frame_source.GetFrame(1280, 720, webrtc::VideoRotation::kVideoRotation_0,
+                            rtc::kNumMicrosecsPerSec / 30));
   last_timestamp = stream->GetLastTimestamp();
   for (int i = 0; i < 10; i++) {
-    EXPECT_TRUE(capturer.CaptureFrame());
+    frame_forwarder.IncomingCapturedFrame(frame_source.GetFrame(
+        1280, 720, webrtc::VideoRotation::kVideoRotation_0,
+        rtc::kNumMicrosecsPerSec / 30));
     int64_t timestamp = stream->GetLastTimestamp();
     int64_t interval = timestamp - last_timestamp;
 
@@ -742,10 +743,10 @@ TEST_F(WebRtcVideoEngineTest, ChannelWithH264CanChangeToVp8) {
   encoder_factory_->AddSupportedVideoCodecType("VP8");
   encoder_factory_->AddSupportedVideoCodecType("H264");
 
-  // Set capturer.
-  FakeVideoCapturerWithTaskQueue capturer;
-  EXPECT_EQ(cricket::CS_RUNNING,
-            capturer.Start(capturer.GetSupportedFormats()->front()));
+  // Frame source.
+  webrtc::test::FrameForwarder frame_forwarder;
+  cricket::FakeFrameSource frame_source(1280, 720,
+                                        rtc::kNumMicrosecsPerSec / 30);
 
   std::unique_ptr<VideoMediaChannel> channel(engine_.CreateMediaChannel(
       call_.get(), GetMediaConfig(), VideoOptions(), webrtc::CryptoOptions()));
@@ -755,9 +756,9 @@ TEST_F(WebRtcVideoEngineTest, ChannelWithH264CanChangeToVp8) {
 
   EXPECT_TRUE(
       channel->AddSendStream(cricket::StreamParams::CreateLegacy(kSsrc)));
-  EXPECT_TRUE(channel->SetVideoSend(kSsrc, nullptr, &capturer));
+  EXPECT_TRUE(channel->SetVideoSend(kSsrc, nullptr, &frame_forwarder));
   // Sending one frame will have allocate the encoder.
-  EXPECT_TRUE(capturer.CaptureFrame());
+  frame_forwarder.IncomingCapturedFrame(frame_source.GetFrame());
 
   ASSERT_EQ_WAIT(1u, encoder_factory_->encoders().size(), kTimeout);
 
@@ -766,7 +767,7 @@ TEST_F(WebRtcVideoEngineTest, ChannelWithH264CanChangeToVp8) {
   EXPECT_TRUE(channel->SetSendParameters(new_parameters));
 
   // Sending one frame will switch encoder.
-  EXPECT_TRUE(capturer.CaptureFrame());
+  frame_forwarder.IncomingCapturedFrame(frame_source.GetFrame());
 
   EXPECT_EQ_WAIT(1u, encoder_factory_->encoders().size(), kTimeout);
 }
