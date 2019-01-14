@@ -177,14 +177,11 @@ void compressionOutputCallback(void *encoder,
 // no specific VideoToolbox profile for the specified level, AutoLevel will be
 // returned. The user must initialize the encoder with a resolution and
 // framerate conforming to the selected H264 level regardless.
-CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
-  const absl::optional<webrtc::H264::ProfileLevelId> profile_level_id =
-      webrtc::H264::ParseSdpProfileLevelId(videoFormat.parameters);
-  RTC_DCHECK(profile_level_id);
-  switch (profile_level_id->profile) {
+CFStringRef ExtractProfile(const webrtc::H264::ProfileLevelId &profile_level_id) {
+  switch (profile_level_id.profile) {
     case webrtc::H264::kProfileConstrainedBaseline:
     case webrtc::H264::kProfileBaseline:
-      switch (profile_level_id->level) {
+      switch (profile_level_id.level) {
         case webrtc::H264::kLevel3:
           return kVTProfileLevel_H264_Baseline_3_0;
         case webrtc::H264::kLevel3_1:
@@ -215,7 +212,7 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
       }
 
     case webrtc::H264::kProfileMain:
-      switch (profile_level_id->level) {
+      switch (profile_level_id.level) {
         case webrtc::H264::kLevel3:
           return kVTProfileLevel_H264_Main_3_0;
         case webrtc::H264::kLevel3_1:
@@ -247,7 +244,7 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
 
     case webrtc::H264::kProfileConstrainedHigh:
     case webrtc::H264::kProfileHigh:
-      switch (profile_level_id->level) {
+      switch (profile_level_id.level) {
         case webrtc::H264::kLevel3:
           return kVTProfileLevel_H264_High_3_0;
         case webrtc::H264::kLevel3_1:
@@ -278,16 +275,53 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
       }
   }
 }
+
+// The function returns the max allowed sample rate (pixels per second) that
+// can be processed by given encoder with |profile_level_id|.
+// See https://www.itu.int/rec/dologin_pub.asp?lang=e&id=T-REC-H.264-201610-S!!PDF-E&type=items
+// for details.
+NSUInteger GetMaxSampleRate(const webrtc::H264::ProfileLevelId &profile_level_id) {
+  switch (profile_level_id.level) {
+    case webrtc::H264::kLevel3:
+      return 10368000;
+    case webrtc::H264::kLevel3_1:
+      return 27648000;
+    case webrtc::H264::kLevel3_2:
+      return 55296000;
+    case webrtc::H264::kLevel4:
+    case webrtc::H264::kLevel4_1:
+      return 62914560;
+    case webrtc::H264::kLevel4_2:
+      return 133693440;
+    case webrtc::H264::kLevel5:
+      return 150994944;
+    case webrtc::H264::kLevel5_1:
+      return 251658240;
+    case webrtc::H264::kLevel5_2:
+      return 530841600;
+    case webrtc::H264::kLevel1:
+    case webrtc::H264::kLevel1_b:
+    case webrtc::H264::kLevel1_1:
+    case webrtc::H264::kLevel1_2:
+    case webrtc::H264::kLevel1_3:
+    case webrtc::H264::kLevel2:
+    case webrtc::H264::kLevel2_1:
+    case webrtc::H264::kLevel2_2:
+      // Zero means auto rate setting.
+      return 0;
+  }
+}
 }  // namespace
 
 @implementation RTCVideoEncoderH264 {
   RTCVideoCodecInfo *_codecInfo;
   std::unique_ptr<webrtc::BitrateAdjuster> _bitrateAdjuster;
   uint32_t _targetBitrateBps;
-  uint32_t _encoderFrameRate;
   uint32_t _encoderBitrateBps;
+  uint32_t _encoderFrameRate;
+  uint32_t _maxAllowedFrameRate;
   RTCH264PacketizationMode _packetizationMode;
-  CFStringRef _profile;
+  absl::optional<webrtc::H264::ProfileLevelId> _profile_level_id;
   RTCVideoEncoderCallback _callback;
   int32_t _width;
   int32_t _height;
@@ -311,8 +345,10 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
     _codecInfo = codecInfo;
     _bitrateAdjuster.reset(new webrtc::BitrateAdjuster(.5, .95));
     _packetizationMode = RTCH264PacketizationModeNonInterleaved;
-    _profile = ExtractProfile([codecInfo nativeSdpVideoFormat]);
-    RTC_LOG(LS_INFO) << "Using profile " << CFStringToString(_profile);
+    _profile_level_id =
+        webrtc::H264::ParseSdpProfileLevelId([codecInfo nativeSdpVideoFormat].parameters);
+    RTC_DCHECK(_profile_level_id);
+    RTC_LOG(LS_INFO) << "Using profile " << CFStringToString(ExtractProfile(*_profile_level_id));
     RTC_CHECK([codecInfo.name isEqualToString:kRTCVideoCodecH264Name]);
   }
   return self;
@@ -331,10 +367,20 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
   _height = settings.height;
   _mode = settings.mode;
 
+  uint32_t aligned_width = (((_width + 15) >> 4) << 4);
+  uint32_t aligned_height = (((_height + 15) >> 4) << 4);
+  _maxAllowedFrameRate = static_cast<uint32_t>(GetMaxSampleRate(*_profile_level_id) /
+                                               (aligned_width * aligned_height));
+
   // We can only set average bitrate on the HW encoder.
   _targetBitrateBps = settings.startBitrate * 1000;  // startBitrate is in kbps.
   _bitrateAdjuster->SetTargetBitrateBps(_targetBitrateBps);
-  _encoderFrameRate = settings.maxFramerate;
+  _encoderFrameRate = MIN(settings.maxFramerate, _maxAllowedFrameRate);
+  if (settings.maxFramerate > _maxAllowedFrameRate && _maxAllowedFrameRate > 0) {
+    RTC_LOG(LS_WARNING) << "Initial encoder frame rate setting " << settings.maxFramerate
+                        << " is larger than the "
+                        << "maximal allowed frame rate " << _maxAllowedFrameRate << ".";
+  }
 
   // TODO(tkchin): Try setting payload size via
   // kVTCompressionPropertyKey_MaxH264SliceBytes.
@@ -470,6 +516,11 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
 - (int)setBitrate:(uint32_t)bitrateKbit framerate:(uint32_t)framerate {
   _targetBitrateBps = 1000 * bitrateKbit;
   _bitrateAdjuster->SetTargetBitrateBps(_targetBitrateBps);
+  if (framerate > _maxAllowedFrameRate && _maxAllowedFrameRate > 0) {
+    RTC_LOG(LS_WARNING) << "Encoder frame rate setting " << framerate << " is larger than the "
+                        << "maximal allowed frame rate " << _maxAllowedFrameRate << ".";
+  }
+  framerate = MIN(framerate, _maxAllowedFrameRate);
   [self setBitrateBps:_bitrateAdjuster->GetAdjustedBitrateBps() frameRate:framerate];
   return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -616,7 +667,9 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
 - (void)configureCompressionSession {
   RTC_DCHECK(_compressionSession);
   SetVTSessionProperty(_compressionSession, kVTCompressionPropertyKey_RealTime, true);
-  SetVTSessionProperty(_compressionSession, kVTCompressionPropertyKey_ProfileLevel, _profile);
+  SetVTSessionProperty(_compressionSession,
+                       kVTCompressionPropertyKey_ProfileLevel,
+                       ExtractProfile(*_profile_level_id));
   SetVTSessionProperty(_compressionSession, kVTCompressionPropertyKey_AllowFrameReordering, false);
   [self setEncoderBitrateBps:_targetBitrateBps frameRate:_encoderFrameRate];
   // TODO(tkchin): Look at entropy mode and colorspace matrices.
@@ -655,8 +708,12 @@ CFStringRef ExtractProfile(webrtc::SdpVideoFormat videoFormat) {
 - (void)setEncoderBitrateBps:(uint32_t)bitrateBps frameRate:(uint32_t)frameRate {
   if (_compressionSession) {
     SetVTSessionProperty(_compressionSession, kVTCompressionPropertyKey_AverageBitRate, bitrateBps);
-    SetVTSessionProperty(
-        _compressionSession, kVTCompressionPropertyKey_ExpectedFrameRate, frameRate);
+
+    // With zero |_maxAllowedFrameRate|, we fall back to automatic frame rate detection.
+    if (_maxAllowedFrameRate > 0) {
+      SetVTSessionProperty(
+          _compressionSession, kVTCompressionPropertyKey_ExpectedFrameRate, frameRate);
+    }
 
     // TODO(tkchin): Add a helper method to set array value.
     int64_t dataLimitBytesPerSecondValue =
