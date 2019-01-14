@@ -41,12 +41,12 @@ void Decimate2x(rtc::ArrayView<const float, kBufSize24kHz> src,
 // Computes a gain threshold for a candidate pitch period given the initial and
 // the previous pitch period and gain estimates and the pitch period ratio used
 // to derive the candidate pitch period from the initial period.
-float ComputePitchGainThreshold(size_t candidate_pitch_period,
-                                size_t pitch_period_ratio,
-                                size_t initial_pitch_period,
+float ComputePitchGainThreshold(int candidate_pitch_period,
+                                int pitch_period_ratio,
+                                int initial_pitch_period,
                                 float initial_pitch_gain,
-                                size_t prev_pitch_period,
-                                size_t prev_pitch_gain);
+                                int prev_pitch_period,
+                                float prev_pitch_gain);
 
 // Computes the sum of squared samples for every sliding frame in the pitch
 // buffer. |yy_values| indexes are lags.
@@ -99,7 +99,7 @@ size_t RefinePitchPeriod48kHz(
 // refined pitch estimation data at 48 kHz.
 PitchInfo CheckLowerPitchPeriodsAndComputePitchGain(
     rtc::ArrayView<const float, kBufSize24kHz> pitch_buf,
-    size_t initial_pitch_period_48kHz,
+    int initial_pitch_period_48kHz,
     PitchInfo prev_pitch_48kHz);
 
 }  // namespace rnn_vad

@@ -39,7 +39,7 @@ TEST(RnnVadTest, PitchSearchBitExactness) {
       lp_residual_reader.first->ReadValue(&expected_pitch_period);
       lp_residual_reader.first->ReadValue(&expected_pitch_gain);
       PitchInfo pitch_info = pitch_estimator.Estimate(lp_residual);
-      EXPECT_EQ(static_cast<size_t>(expected_pitch_period), pitch_info.period);
+      EXPECT_EQ(static_cast<int>(expected_pitch_period), pitch_info.period);
       EXPECT_NEAR(expected_pitch_gain, pitch_info.gain, 1e-5f);
     }
   }

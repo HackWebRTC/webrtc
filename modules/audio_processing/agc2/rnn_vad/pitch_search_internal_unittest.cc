@@ -24,8 +24,9 @@ namespace rnn_vad {
 namespace test {
 namespace {
 
-constexpr std::array<size_t, 2> kTestPitchPeriods = {
-    3 * kMinPitch48kHz / 2, (3 * kMinPitch48kHz + kMaxPitch48kHz) / 2,
+constexpr std::array<int, 2> kTestPitchPeriods = {
+    3 * kMinPitch48kHz / 2,
+    (3 * kMinPitch48kHz + kMaxPitch48kHz) / 2,
 };
 constexpr std::array<float, 2> kTestPitchGains = {0.35f, 0.75f};
 
@@ -197,14 +198,14 @@ TEST(RnnVadTest, RefinePitchPeriod48kHzBitExactness) {
 class CheckLowerPitchPeriodsAndComputePitchGainTest
     : public testing::Test,
       public ::testing::WithParamInterface<
-          std::tuple<size_t, size_t, float, size_t, float>> {};
+          std::tuple<int, int, float, int, float>> {};
 
 TEST_P(CheckLowerPitchPeriodsAndComputePitchGainTest, BitExactness) {
   const auto params = GetParam();
-  const size_t initial_pitch_period = std::get<0>(params);
-  const size_t prev_pitch_period = std::get<1>(params);
+  const int initial_pitch_period = std::get<0>(params);
+  const int prev_pitch_period = std::get<1>(params);
   const float prev_pitch_gain = std::get<2>(params);
-  const size_t expected_pitch_period = std::get<3>(params);
+  const int expected_pitch_period = std::get<3>(params);
   const float expected_pitch_gain = std::get<4>(params);
   TestData test_data;
   {
