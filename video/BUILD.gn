@@ -165,8 +165,6 @@ rtc_source_set("video_stream_encoder_impl") {
   visibility = [ "*" ]
 
   # visibility = [ "../api/video:video_stream_encoder_create" ]
-  # In modules/video_coding, there's a dependency video_coding --> webrtc_vp8
-  allow_poison = [ "software_video_codecs" ]  # TODO(bugs.webrtc.org/7925): Remove.
   sources = [
     "overuse_frame_detector.cc",
     "overuse_frame_detector.h",

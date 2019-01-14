@@ -411,10 +411,7 @@ if (is_ios || is_mac) {
 
     rtc_static_library("ui_objc") {
       visibility = [ "*" ]
-      allow_poison = [
-        "audio_codecs",  # TODO(bugs.webrtc.org/8396): Remove.
-        "software_video_codecs",  # TODO(bugs.webrtc.org/7925): Remove.
-      ]
+      allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
       if (is_ios) {
         sources = [
           "objc/components/renderer/opengl/RTCDisplayLinkTimer.h",
@@ -442,10 +439,7 @@ if (is_ios || is_mac) {
     if (rtc_use_metal_rendering) {
       rtc_static_library("metal_objc") {
         visibility = [ "*" ]
-        allow_poison = [
-          "audio_codecs",  # TODO(bugs.webrtc.org/8396): Remove.
-          "software_video_codecs",  # TODO(bugs.webrtc.org/7925): Remove.
-        ]
+        allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
         sources = [
           "objc/components/renderer/metal/RTCMTLI420Renderer.h",
           "objc/components/renderer/metal/RTCMTLI420Renderer.mm",
@@ -507,10 +501,7 @@ if (is_ios || is_mac) {
 
     rtc_static_library("videocapture_objc") {
       visibility = [ "*" ]
-      allow_poison = [
-        "audio_codecs",  # TODO(bugs.webrtc.org/8396): Remove.
-        "software_video_codecs",  # TODO(bugs.webrtc.org/7925): Remove.
-      ]
+      allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
       sources = [
         "objc/components/capturer/RTCCameraVideoCapturer.h",
         "objc/components/capturer/RTCCameraVideoCapturer.m",
@@ -647,10 +638,7 @@ if (is_ios || is_mac) {
     # The applications which only use WebRTC DataChannel can depend on this.
     rtc_static_library("peerconnectionfactory_no_media_objc") {
       visibility = [ "*" ]
-      allow_poison = [
-        "audio_codecs",  # TODO(bugs.webrtc.org/8396): Remove.
-        "software_video_codecs",  # TODO(bugs.webrtc.org/7925): Remove.
-      ]
+      allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
       defines = [ "HAVE_NO_MEDIA" ]
 
       sources = [
@@ -701,10 +689,7 @@ if (is_ios || is_mac) {
 
     rtc_static_library("videorendereradapter_objc") {
       visibility = [ "*" ]
-      allow_poison = [
-        "audio_codecs",  # TODO(bugs.webrtc.org/8396): Remove.
-        "software_video_codecs",  # TODO(bugs.webrtc.org/7925): Remove.
-      ]
+      allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
       sources = [
         "objc/api/RTCVideoRendererAdapter+Private.h",
         "objc/api/RTCVideoRendererAdapter.h",
@@ -777,10 +762,7 @@ if (is_ios || is_mac) {
 
     rtc_static_library("peerconnectionfactory_base_objc") {
       visibility = [ "*" ]
-      allow_poison = [
-        "audio_codecs",  # TODO(bugs.webrtc.org/8396): Remove.
-        "software_video_codecs",  # TODO(bugs.webrtc.org/7925): Remove.
-      ]
+      allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
       configs += [
         "..:no_exit_time_destructors",
         "..:no_global_constructors",
@@ -1524,10 +1506,7 @@ if (is_ios || is_mac) {
     # The native API is currently experimental and may change without notice.
     rtc_static_library("native_api") {
       visibility = [ "*" ]
-      allow_poison = [
-        "audio_codecs",  # TODO(bugs.webrtc.org/8396): Remove.
-        "software_video_codecs",  # TODO(bugs.webrtc.org/7925): Remove.
-      ]
+      allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
       sources = [
         "objc/native/api/video_capturer.h",
         "objc/native/api/video_capturer.mm",
@@ -1630,10 +1609,7 @@ if (is_ios || is_mac) {
 
     rtc_static_library("videotoolbox_objc") {
       visibility = [ "*" ]
-      allow_poison = [
-        "audio_codecs",  # TODO(bugs.webrtc.org/8396): Remove.
-        "software_video_codecs",  # TODO(bugs.webrtc.org/7925): Remove.
-      ]
+      allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
       sources = [
         "objc/components/video_codec/RTCVideoDecoderFactoryH264.h",
         "objc/components/video_codec/RTCVideoDecoderFactoryH264.m",

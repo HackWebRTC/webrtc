@@ -248,8 +248,6 @@ rtc_static_library("rtc_internal_video_codecs") {
     "//third_party/abseil-cpp/absl/memory",
   ]
   sources = [
-    "engine/convert_legacy_video_factory.cc",
-    "engine/convert_legacy_video_factory.h",
     "engine/internal_decoder_factory.cc",
     "engine/internal_decoder_factory.h",
     "engine/internal_encoder_factory.cc",
@@ -259,20 +257,10 @@ rtc_static_library("rtc_internal_video_codecs") {
     "engine/multiplex_codec_factory.cc",
     "engine/multiplex_codec_factory.h",
     "engine/multiplexcodecfactory.h",
-    "engine/scoped_video_decoder.cc",
-    "engine/scoped_video_decoder.h",
-    "engine/scoped_video_encoder.cc",
-    "engine/scoped_video_encoder.h",
-    "engine/scopedvideodecoder.h",
-    "engine/scopedvideoencoder.h",
 
     # TODO(bugs.webrtc.org/7925): stop exporting this header once downstream
     # targets depend on :rtc_encoder_simulcast_proxy directly.
     "engine/encoder_simulcast_proxy.h",
-    "engine/webrtc_video_decoder_factory.h",
-    "engine/webrtc_video_encoder_factory.h",
-    "engine/webrtcvideodecoderfactory.h",
-    "engine/webrtcvideoencoderfactory.h",
   ]
 
   if (!build_with_chromium && is_clang) {
@@ -306,10 +294,7 @@ rtc_static_library("rtc_internal_video_codecs") {
 
 rtc_static_library("rtc_audio_video") {
   visibility = [ "*" ]
-  allow_poison = [
-    "audio_codecs",  # TODO(bugs.webrtc.org/8396): Remove.
-    "software_video_codecs",  # TODO(bugs.webrtc.org/7925): Remove.
-  ]
+  allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
   defines = []
   libs = []
   deps = [
@@ -342,17 +327,11 @@ rtc_static_library("rtc_audio_video") {
     "engine/simulcast.h",
     "engine/webrtc_media_engine.cc",
     "engine/webrtc_media_engine.h",
-    "engine/webrtc_video_decoder_factory.cc",
-    "engine/webrtc_video_decoder_factory.h",
-    "engine/webrtc_video_encoder_factory.cc",
-    "engine/webrtc_video_encoder_factory.h",
     "engine/webrtc_video_engine.cc",
     "engine/webrtc_video_engine.h",
     "engine/webrtc_voice_engine.cc",
     "engine/webrtc_voice_engine.h",
     "engine/webrtcmediaengine.h",
-    "engine/webrtcvideodecoderfactory.h",
-    "engine/webrtcvideoencoderfactory.h",
     "engine/webrtcvideoengine.h",
     "engine/webrtcvoiceengine.h",
   ]
@@ -381,9 +360,6 @@ rtc_static_library("rtc_audio_video") {
     deps += [ "../modules/audio_processing/aec_dump:aec_dump_impl" ]
   } else {
     deps += [ "../modules/audio_processing/aec_dump:null_aec_dump_factory" ]
-  }
-  if (rtc_use_builtin_sw_codecs) {
-    deps += [ ":rtc_internal_video_codecs" ]
   }
   deps += [
     ":rtc_constants",
@@ -467,10 +443,7 @@ rtc_static_library("rtc_data") {
 
 rtc_source_set("rtc_media") {
   visibility = [ "*" ]
-  allow_poison = [
-    "audio_codecs",  # TODO(bugs.webrtc.org/8396): Remove.
-    "software_video_codecs",  # TODO(bugs.webrtc.org/7925): Remove.
-  ]
+  allow_poison = [ "audio_codecs" ]  # TODO(bugs.webrtc.org/8396): Remove.
   deps = [
     ":rtc_audio_video",
     ":rtc_data",
@@ -634,7 +607,6 @@ if (rtc_include_tests) {
       "engine/simulcast_encoder_adapter_unittest.cc",
       "engine/simulcast_unittest.cc",
       "engine/webrtc_media_engine_unittest.cc",
-      "engine/webrtc_video_encoder_factory_unittest.cc",
       "engine/webrtc_video_engine_unittest.cc",
     ]
 

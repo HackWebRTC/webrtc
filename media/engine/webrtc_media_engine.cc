@@ -19,10 +19,6 @@
 #include "api/video_codecs/video_encoder_factory.h"
 #include "media/engine/webrtc_voice_engine.h"
 
-#if defined(USE_BUILTIN_SW_CODECS)
-#include "media/engine/convert_legacy_video_factory.h"
-#endif
-
 #ifdef HAVE_WEBRTC_VIDEO
 #include "media/engine/webrtc_video_engine.h"
 #else
@@ -30,107 +26,6 @@
 #endif
 
 namespace cricket {
-
-#if defined(USE_BUILTIN_SW_CODECS)
-namespace {
-
-MediaEngineInterface* CreateWebRtcMediaEngine(
-    webrtc::AudioDeviceModule* adm,
-    const rtc::scoped_refptr<webrtc::AudioEncoderFactory>&
-        audio_encoder_factory,
-    const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
-        audio_decoder_factory,
-    WebRtcVideoEncoderFactory* video_encoder_factory,
-    WebRtcVideoDecoderFactory* video_decoder_factory,
-    std::unique_ptr<webrtc::VideoBitrateAllocatorFactory>
-        video_bitrate_allocator_factory,
-    rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
-    rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing) {
-  std::unique_ptr<VideoEngineInterface> video_engine;
-#ifdef HAVE_WEBRTC_VIDEO
-  video_engine = absl::make_unique<WebRtcVideoEngine>(
-      DEPRECATED_ConvertVideoEncoderFactory(
-          std::unique_ptr<WebRtcVideoEncoderFactory>(video_encoder_factory)),
-      DEPRECATED_ConvertVideoDecoderFactory(
-          std::unique_ptr<WebRtcVideoDecoderFactory>(video_decoder_factory)),
-      std::move(video_bitrate_allocator_factory));
-#else
-  video_engine = absl::make_unique<NullWebRtcVideoEngine>();
-#endif
-  return new CompositeMediaEngine(
-      absl::make_unique<WebRtcVoiceEngine>(adm, audio_encoder_factory,
-                                           audio_decoder_factory, audio_mixer,
-                                           audio_processing),
-      std::move(video_engine));
-}
-
-}  // namespace
-
-MediaEngineInterface* WebRtcMediaEngineFactory::Create(
-    webrtc::AudioDeviceModule* adm,
-    const rtc::scoped_refptr<webrtc::AudioEncoderFactory>&
-        audio_encoder_factory,
-    const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
-        audio_decoder_factory,
-    WebRtcVideoEncoderFactory* video_encoder_factory,
-    WebRtcVideoDecoderFactory* video_decoder_factory) {
-  return WebRtcMediaEngineFactory::Create(
-      adm, audio_encoder_factory, audio_decoder_factory, video_encoder_factory,
-      video_decoder_factory,
-      webrtc::CreateBuiltinVideoBitrateAllocatorFactory());
-}
-
-MediaEngineInterface* WebRtcMediaEngineFactory::Create(
-    webrtc::AudioDeviceModule* adm,
-    const rtc::scoped_refptr<webrtc::AudioEncoderFactory>&
-        audio_encoder_factory,
-    const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
-        audio_decoder_factory,
-    WebRtcVideoEncoderFactory* video_encoder_factory,
-    WebRtcVideoDecoderFactory* video_decoder_factory,
-    std::unique_ptr<webrtc::VideoBitrateAllocatorFactory>
-        video_bitrate_allocator_factory) {
-  return CreateWebRtcMediaEngine(
-      adm, audio_encoder_factory, audio_decoder_factory, video_encoder_factory,
-      video_decoder_factory, std::move(video_bitrate_allocator_factory),
-      nullptr, webrtc::AudioProcessingBuilder().Create());
-}
-
-MediaEngineInterface* WebRtcMediaEngineFactory::Create(
-    webrtc::AudioDeviceModule* adm,
-    const rtc::scoped_refptr<webrtc::AudioEncoderFactory>&
-        audio_encoder_factory,
-    const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
-        audio_decoder_factory,
-    WebRtcVideoEncoderFactory* video_encoder_factory,
-    WebRtcVideoDecoderFactory* video_decoder_factory,
-    rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
-    rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing) {
-  return WebRtcMediaEngineFactory::Create(
-      adm, audio_encoder_factory, audio_decoder_factory, video_encoder_factory,
-      video_decoder_factory,
-      webrtc::CreateBuiltinVideoBitrateAllocatorFactory(), audio_mixer,
-      audio_processing);
-}
-
-MediaEngineInterface* WebRtcMediaEngineFactory::Create(
-    webrtc::AudioDeviceModule* adm,
-    const rtc::scoped_refptr<webrtc::AudioEncoderFactory>&
-        audio_encoder_factory,
-    const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
-        audio_decoder_factory,
-    WebRtcVideoEncoderFactory* video_encoder_factory,
-    WebRtcVideoDecoderFactory* video_decoder_factory,
-    std::unique_ptr<webrtc::VideoBitrateAllocatorFactory>
-        video_bitrate_allocator_factory,
-    rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
-    rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing) {
-  return CreateWebRtcMediaEngine(
-      adm, audio_encoder_factory, audio_decoder_factory, video_encoder_factory,
-      video_decoder_factory, std::move(video_bitrate_allocator_factory),
-      audio_mixer, audio_processing);
-}
-#endif
 
 std::unique_ptr<MediaEngineInterface> WebRtcMediaEngineFactory::Create(
     rtc::scoped_refptr<webrtc::AudioDeviceModule> adm,

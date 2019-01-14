@@ -20,8 +20,6 @@
 #include "media/engine/internal_decoder_factory.h"
 #include "media/engine/internal_encoder_factory.h"
 #include "media/engine/multiplex_codec_factory.h"
-#include "media/engine/webrtc_video_decoder_factory.h"
-#include "media/engine/webrtc_video_encoder_factory.h"
 #include "modules/audio_device/include/audio_device.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "modules/video_capture/video_capture_factory.h"

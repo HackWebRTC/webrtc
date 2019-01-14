@@ -120,11 +120,6 @@ class SSLIdentity;
 class Thread;
 }  // namespace rtc
 
-namespace cricket {
-class WebRtcVideoDecoderFactory;
-class WebRtcVideoEncoderFactory;
-}  // namespace cricket
-
 namespace webrtc {
 class AudioDeviceModule;
 class AudioMixer;

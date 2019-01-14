@@ -25,8 +25,6 @@ class Call;
 namespace cricket {
 
 class VideoMediaChannel;
-class WebRtcVideoDecoderFactory;
-class WebRtcVideoEncoderFactory;
 
 // Video engine implementation that does nothing and can be used in
 // CompositeMediaEngine.

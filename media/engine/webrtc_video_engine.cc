@@ -23,9 +23,6 @@
 #include "api/video_codecs/video_encoder_factory.h"
 #include "call/call.h"
 #include "media/engine/constants.h"
-#if defined(USE_BUILTIN_SW_CODECS)
-#include "media/engine/convert_legacy_video_factory.h"  // nogncheck
-#endif
 #include "media/engine/simulcast.h"
 #include "media/engine/webrtc_media_engine.h"
 #include "media/engine/webrtc_voice_engine.h"
@@ -435,21 +432,6 @@ void DefaultUnsignalledSsrcHandler::SetDefaultSink(
     channel->SetSink(*default_recv_ssrc, default_sink_);
   }
 }
-
-#if defined(USE_BUILTIN_SW_CODECS)
-WebRtcVideoEngine::WebRtcVideoEngine(
-    std::unique_ptr<WebRtcVideoEncoderFactory> external_video_encoder_factory,
-    std::unique_ptr<WebRtcVideoDecoderFactory> external_video_decoder_factory,
-    std::unique_ptr<webrtc::VideoBitrateAllocatorFactory>
-        video_bitrate_allocator_factory)
-    : decoder_factory_(ConvertVideoDecoderFactory(
-          std::move(external_video_decoder_factory))),
-      encoder_factory_(ConvertVideoEncoderFactory(
-          std::move(external_video_encoder_factory))),
-      bitrate_allocator_factory_(std::move(video_bitrate_allocator_factory)) {
-  RTC_LOG(LS_INFO) << "WebRtcVideoEngine::WebRtcVideoEngine()";
-}
-#endif
 
 WebRtcVideoEngine::WebRtcVideoEngine(
     std::unique_ptr<webrtc::VideoEncoderFactory> video_encoder_factory,
