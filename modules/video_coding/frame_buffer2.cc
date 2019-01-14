@@ -60,7 +60,9 @@ FrameBuffer::FrameBuffer(Clock* clock,
       stopped_(false),
       protection_mode_(kProtectionNack),
       stats_callback_(stats_callback),
-      last_log_non_decoded_ms_(-kLogNonDecodedIntervalMs) {}
+      last_log_non_decoded_ms_(-kLogNonDecodedIntervalMs),
+      add_rtt_to_playout_delay_(
+          webrtc::field_trial::IsEnabled("WebRTC-AddRttToPlayoutDelay")) {}
 
 FrameBuffer::~FrameBuffer() {}
 
@@ -214,8 +216,7 @@ FrameBuffer::ReturnReason FrameBuffer::NextFrame(
         timing_->SetJitterDelay(jitter_estimator_->GetJitterEstimate(rtt_mult));
         timing_->UpdateCurrentDelay(frame->RenderTime(), now_ms);
       } else {
-        if (RttMultExperiment::RttMultEnabled() ||
-            webrtc::field_trial::IsEnabled("WebRTC-AddRttToPlayoutDelay"))
+        if (RttMultExperiment::RttMultEnabled() || add_rtt_to_playout_delay_)
           jitter_estimator_->FrameNacked();
       }
 

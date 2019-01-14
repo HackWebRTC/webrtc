@@ -173,6 +173,8 @@ class FrameBuffer {
   VCMReceiveStatisticsCallback* const stats_callback_;
   int64_t last_log_non_decoded_ms_ RTC_GUARDED_BY(crit_);
 
+  const bool add_rtt_to_playout_delay_;
+
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(FrameBuffer);
 };
 
