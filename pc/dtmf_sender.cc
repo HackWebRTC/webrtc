@@ -77,8 +77,6 @@ DtmfSender::DtmfSender(rtc::Thread* signaling_thread,
       duration_(kDtmfDefaultDurationMs),
       inter_tone_gap_(kDtmfDefaultGapMs) {
   RTC_DCHECK(signaling_thread_);
-  // TODO(deadbeef): Once we can use shared_ptr and weak_ptr,
-  // do that instead of relying on a "destroyed" signal.
   if (provider_) {
     RTC_DCHECK(provider_->GetOnDestroyedSignal());
     provider_->GetOnDestroyedSignal()->connect(

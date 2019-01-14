@@ -65,7 +65,6 @@ class AudioState : public rtc::RefCountInterface {
   virtual Stats GetAudioInputStats() const = 0;
   virtual void SetStereoChannelSwapping(bool enable) = 0;
 
-  // TODO(solenberg): Replace scoped_refptr with shared_ptr once we can use it.
   static rtc::scoped_refptr<AudioState> Create(
       const AudioState::Config& config);
 
