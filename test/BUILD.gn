@@ -21,6 +21,7 @@ group("test") {
     ":test_renderer",
     ":test_support",
     ":video_test_common",
+    "pc/e2e",
     "pc/e2e/api:peer_connection_quality_test_fixture_api",
   ]
 
@@ -349,6 +350,7 @@ if (rtc_include_tests) {
       "../modules/video_coding:simulcast_test_fixture_impl",
       "../rtc_base:rtc_base_approved",
       "../test:single_threaded_task_queue",
+      "pc/e2e:e2e_unittests",
       "scenario:scenario_unittests",
       "//testing/gmock",
       "//testing/gtest",
