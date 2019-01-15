@@ -525,11 +525,14 @@ class VideoStreamEncoderTest : public ::testing::Test {
     }
 
     VideoEncoder::EncoderInfo GetEncoderInfo() const override {
-      EncoderInfo info;
       rtc::CritScope lock(&local_crit_sect_);
-      if (quality_scaling_) {
-        info.scaling_settings =
-            VideoEncoder::ScalingSettings(1, 2, kMinPixelsPerFrame);
+      EncoderInfo info;
+      if (initialized_) {
+        if (quality_scaling_) {
+          info.scaling_settings =
+              VideoEncoder::ScalingSettings(1, 2, kMinPixelsPerFrame);
+        }
+        info.is_hardware_accelerated = is_hardware_accelerated_;
       }
       return info;
     }
@@ -546,6 +549,11 @@ class VideoStreamEncoderTest : public ::testing::Test {
     void SetQualityScaling(bool b) {
       rtc::CritScope lock(&local_crit_sect_);
       quality_scaling_ = b;
+    }
+
+    void SetIsHardwareAccelerated(bool is_hardware_accelerated) {
+      rtc::CritScope lock(&local_crit_sect_);
+      is_hardware_accelerated_ = is_hardware_accelerated;
     }
 
     void ForceInitEncodeFailure(bool force_failure) {
@@ -606,6 +614,8 @@ class VideoStreamEncoderTest : public ::testing::Test {
       }
       if (force_init_encode_failed_)
         return -1;
+
+      initialized_ = true;
       return res;
     }
 
@@ -629,6 +639,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
     }
 
     rtc::CriticalSection local_crit_sect_;
+    bool initialized_ RTC_GUARDED_BY(local_crit_sect_) = false;
     bool block_next_encode_ RTC_GUARDED_BY(local_crit_sect_) = false;
     rtc::Event continue_encode_event_;
     uint32_t timestamp_ RTC_GUARDED_BY(local_crit_sect_) = 0;
@@ -636,6 +647,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
     int last_input_width_ RTC_GUARDED_BY(local_crit_sect_) = 0;
     int last_input_height_ RTC_GUARDED_BY(local_crit_sect_) = 0;
     bool quality_scaling_ RTC_GUARDED_BY(local_crit_sect_) = true;
+    bool is_hardware_accelerated_ RTC_GUARDED_BY(local_crit_sect_) = false;
     std::vector<std::unique_ptr<Vp8TemporalLayers>> allocated_temporal_layers_
         RTC_GUARDED_BY(local_crit_sect_);
     bool force_init_encode_failed_ RTC_GUARDED_BY(local_crit_sect_) = false;
@@ -3239,7 +3251,7 @@ TEST_F(VideoStreamEncoderTest,
   CpuOveruseOptions hardware_options;
   hardware_options.low_encode_usage_threshold_percent = 150;
   hardware_options.high_encode_usage_threshold_percent = 200;
-  encoder_factory_.SetIsHardwareAccelerated(true);
+  fake_encoder_.SetIsHardwareAccelerated(true);
 
   video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
   video_source_.IncomingCapturedFrame(

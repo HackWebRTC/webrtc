@@ -581,8 +581,10 @@ void VideoStreamEncoder::ReconfigureEncoder() {
   source_proxy_->SetMaxFramerate(max_framerate);
 
   // Keep the same encoder, as long as the video_format is unchanged.
+  // Encoder creation block is split in two since EncoderInfo needed to start
+  // CPU adaptation with the correct settings should be polled after
+  // encoder_->InitEncode().
   if (pending_encoder_creation_) {
-    pending_encoder_creation_ = false;
     if (encoder_) {
       video_sender_.RegisterExternalEncoder(nullptr, false);
     }
@@ -597,10 +599,6 @@ void VideoStreamEncoder::ReconfigureEncoder() {
         settings_.encoder_factory->QueryVideoEncoder(
             encoder_config_.video_format);
 
-    overuse_detector_->StopCheckForOveruse();
-    overuse_detector_->StartCheckForOveruse(
-        GetCpuOveruseOptions(settings_, info.is_hardware_accelerated), this);
-
     video_sender_.RegisterExternalEncoder(encoder_.get(),
                                           info.has_internal_source);
   }
@@ -612,6 +610,15 @@ void VideoStreamEncoder::ReconfigureEncoder() {
   if (!success) {
     RTC_LOG(LS_ERROR) << "Failed to configure encoder.";
     rate_allocator_.reset();
+  }
+
+  if (pending_encoder_creation_) {
+    overuse_detector_->StopCheckForOveruse();
+    overuse_detector_->StartCheckForOveruse(
+        GetCpuOveruseOptions(
+            settings_, encoder_->GetEncoderInfo().is_hardware_accelerated),
+        this);
+    pending_encoder_creation_ = false;
   }
 
   int num_layers;

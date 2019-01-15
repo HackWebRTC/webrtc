@@ -116,11 +116,15 @@ int MultiplexEncoderAdapter::InitEncode(const VideoCodec* inst,
     if (i != kAlphaCodecStreams - 1) {
       encoder_info_.implementation_name += ", ";
     }
+    // Uses hardware support if any of the encoders uses it.
+    // For example, if we are having issues with down-scaling due to
+    // pipelining delay in HW encoders we need higher encoder usage
+    // thresholds in CPU adaptation.
     if (i == 0) {
       encoder_info_.is_hardware_accelerated =
           encoder_impl_info.is_hardware_accelerated;
     } else {
-      encoder_info_.is_hardware_accelerated &=
+      encoder_info_.is_hardware_accelerated |=
           encoder_impl_info.is_hardware_accelerated;
     }
     encoder_info_.has_internal_source = false;

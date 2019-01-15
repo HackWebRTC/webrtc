@@ -88,7 +88,7 @@ VideoEncoder::EncoderInfo::EncoderInfo()
       supports_native_handle(false),
       implementation_name("unknown"),
       has_trusted_rate_controller(false),
-      is_hardware_accelerated(false),
+      is_hardware_accelerated(true),
       has_internal_source(false) {}
 
 VideoEncoder::EncoderInfo::EncoderInfo(const EncoderInfo&) = default;
