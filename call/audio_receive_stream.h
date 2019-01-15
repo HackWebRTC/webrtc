@@ -56,6 +56,7 @@ class AudioReceiveStream {
     uint64_t concealed_samples = 0;
     uint64_t concealment_events = 0;
     double jitter_buffer_delay_seconds = 0.0;
+    uint64_t jitter_buffer_emitted_count = 0;
     // Stats below DO NOT correspond directly to anything in the WebRTC stats
     float expand_rate = 0.0f;
     float speech_expand_rate = 0.0f;

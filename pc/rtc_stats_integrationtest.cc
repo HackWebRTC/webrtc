@@ -612,6 +612,8 @@ class RTCStatsReportVerifier {
       verifier.TestMemberIsNonNegative<double>(
           media_stream_track.jitter_buffer_delay);
       verifier.TestMemberIsNonNegative<uint64_t>(
+          media_stream_track.jitter_buffer_emitted_count);
+      verifier.TestMemberIsNonNegative<uint64_t>(
           media_stream_track.total_samples_received);
       verifier.TestMemberIsNonNegative<uint64_t>(
           media_stream_track.concealed_samples);
@@ -623,6 +625,8 @@ class RTCStatsReportVerifier {
           media_stream_track.delayed_packet_outage_samples);
     } else {
       verifier.TestMemberIsUndefined(media_stream_track.jitter_buffer_delay);
+      verifier.TestMemberIsUndefined(
+          media_stream_track.jitter_buffer_emitted_count);
       verifier.TestMemberIsUndefined(media_stream_track.total_samples_received);
       verifier.TestMemberIsUndefined(media_stream_track.concealed_samples);
       verifier.TestMemberIsUndefined(media_stream_track.concealment_events);

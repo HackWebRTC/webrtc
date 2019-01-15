@@ -445,6 +445,8 @@ ProduceMediaStreamTrackStatsFromVoiceReceiverInfo(
   }
   audio_track_stats->jitter_buffer_delay =
       voice_receiver_info.jitter_buffer_delay_seconds;
+  audio_track_stats->jitter_buffer_emitted_count =
+      voice_receiver_info.jitter_buffer_emitted_count;
   audio_track_stats->total_audio_energy =
       voice_receiver_info.total_output_energy;
   audio_track_stats->total_samples_received =

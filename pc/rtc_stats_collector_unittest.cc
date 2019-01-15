@@ -1425,6 +1425,7 @@ TEST_F(RTCStatsCollectorTest,
   voice_receiver_info.concealed_samples = 123;
   voice_receiver_info.concealment_events = 12;
   voice_receiver_info.jitter_buffer_delay_seconds = 3456;
+  voice_receiver_info.jitter_buffer_emitted_count = 13;
   voice_receiver_info.jitter_buffer_flushes = 7;
   voice_receiver_info.delayed_packet_outage_samples = 15;
 
@@ -1460,6 +1461,7 @@ TEST_F(RTCStatsCollectorTest,
   expected_remote_audio_track.concealed_samples = 123;
   expected_remote_audio_track.concealment_events = 12;
   expected_remote_audio_track.jitter_buffer_delay = 3456;
+  expected_remote_audio_track.jitter_buffer_emitted_count = 13;
   expected_remote_audio_track.jitter_buffer_flushes = 7;
   expected_remote_audio_track.delayed_packet_outage_samples = 15;
   ASSERT_TRUE(report->Get(expected_remote_audio_track.id()));

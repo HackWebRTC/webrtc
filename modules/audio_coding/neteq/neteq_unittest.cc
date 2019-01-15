@@ -1656,6 +1656,7 @@ void NetEqDecodingTestFaxMode::TestJitterBufferDelay(bool apply_packet_loss) {
   int packets_sent = 0;
   int packets_received = 0;
   int expected_delay = 0;
+  uint64_t expected_emitted_count = 0;
   while (packets_received < kNumPackets) {
     // Insert packet.
     if (packets_sent < kNumPackets) {
@@ -1679,6 +1680,7 @@ void NetEqDecodingTestFaxMode::TestJitterBufferDelay(bool apply_packet_loss) {
       // number of samples that are sent for play out.
       int current_delay_ms = packets_delay * kPacketLenMs;
       expected_delay += current_delay_ms * kSamples;
+      expected_emitted_count += kSamples;
     }
   }
 
@@ -1690,6 +1692,7 @@ void NetEqDecodingTestFaxMode::TestJitterBufferDelay(bool apply_packet_loss) {
   // Check jitter buffer delay.
   NetEqLifetimeStatistics stats = neteq_->GetLifetimeStatistics();
   EXPECT_EQ(expected_delay, static_cast<int>(stats.jitter_buffer_delay_ms));
+  EXPECT_EQ(expected_emitted_count, stats.jitter_buffer_emitted_count);
 }
 
 TEST_F(NetEqDecodingTestFaxMode, TestJitterBufferDelayWithoutLoss) {

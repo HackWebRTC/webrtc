@@ -70,6 +70,7 @@ struct NetEqLifetimeStatistics {
   uint64_t concealed_samples = 0;
   uint64_t concealment_events = 0;
   uint64_t jitter_buffer_delay_ms = 0;
+  uint64_t jitter_buffer_emitted_count = 0;
   // Below stat is not part of the spec.
   uint64_t voice_concealed_samples = 0;
   uint64_t delayed_packet_outage_samples = 0;
