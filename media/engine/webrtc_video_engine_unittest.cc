@@ -3359,45 +3359,24 @@ TEST_F(WebRtcVideoChannelTest, PreviousAdaptationDoesNotApplyToScreenshare) {
   ASSERT_EQ(1u, fake_call_->GetVideoSendStreams().size());
   FakeVideoSendStream* send_stream = fake_call_->GetVideoSendStreams().front();
 
-  EXPECT_TRUE(capturer.CaptureCustomFrame(1280, 720));
-  EXPECT_EQ(1, send_stream->GetNumberOfSwappedFrames());
-  EXPECT_EQ(1280, send_stream->GetLastWidth());
-  EXPECT_EQ(720, send_stream->GetLastHeight());
+  EXPECT_TRUE(send_stream->resolution_scaling_enabled());
+  // Dont' expect anything on framerate_scaling_enabled, since the default is
+  // transitioning from MAINTAIN_FRAMERATE to BALANCED.
 
-  // Trigger overuse.
-  rtc::VideoSinkWants wants;
-  wants.max_pixel_count =
-      send_stream->GetLastWidth() * send_stream->GetLastHeight() - 1;
-  send_stream->InjectVideoSinkWants(wants);
-  EXPECT_TRUE(capturer.CaptureCustomFrame(1280, 720));
-  EXPECT_EQ(2, send_stream->GetNumberOfSwappedFrames());
-  EXPECT_EQ(1280 * 3 / 4, send_stream->GetLastWidth());
-  EXPECT_EQ(720 * 3 / 4, send_stream->GetLastHeight());
-
-  // Switch to screen share. Expect no CPU adaptation.
+  // Switch to screen share. Expect no resolution scaling.
   cricket::VideoOptions screenshare_options;
   screenshare_options.is_screencast = true;
   channel_->SetVideoSend(last_ssrc_, &screenshare_options, &capturer);
-  EXPECT_TRUE(capturer.CaptureCustomFrame(1284, 724));
   ASSERT_EQ(2, fake_call_->GetNumCreatedSendStreams());
   send_stream = fake_call_->GetVideoSendStreams().front();
-  EXPECT_EQ(1, send_stream->GetNumberOfSwappedFrames());
-  EXPECT_EQ(1284, send_stream->GetLastWidth());
-  EXPECT_EQ(724, send_stream->GetLastHeight());
+  EXPECT_FALSE(send_stream->resolution_scaling_enabled());
 
-  // Switch back to the normal capturer. Expect the frame to be CPU adapted.
+  // Switch back to the normal capturer. Expect resolution scaling to be
+  // reenabled.
   channel_->SetVideoSend(last_ssrc_, &camera_options, &capturer);
-  send_stream = fake_call_->GetVideoSendStreams().front();
-  // We have a new fake send stream, so it doesn't remember the old sink wants.
-  // In practice, it will be populated from
-  // VideoStreamEncoder::VideoSourceProxy::SetSource(), so simulate that here.
-  send_stream->InjectVideoSinkWants(wants);
-  EXPECT_TRUE(capturer.CaptureCustomFrame(1280, 720));
   ASSERT_EQ(3, fake_call_->GetNumCreatedSendStreams());
   send_stream = fake_call_->GetVideoSendStreams().front();
-  EXPECT_EQ(1, send_stream->GetNumberOfSwappedFrames());
-  EXPECT_EQ(1280 * 3 / 4, send_stream->GetLastWidth());
-  EXPECT_EQ(720 * 3 / 4, send_stream->GetLastHeight());
+  EXPECT_TRUE(send_stream->resolution_scaling_enabled());
 
   EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, nullptr, nullptr));
 }
