@@ -16,6 +16,7 @@ group("test") {
   testonly = true
 
   deps = [
+    ":copy_to_file_audio_capturer",
     ":rtp_test_utils",
     ":test_common",
     ":test_renderer",
@@ -328,6 +329,7 @@ if (rtc_include_tests) {
   rtc_test("test_support_unittests") {
     deps = [
       ":call_config_utils",
+      ":copy_to_file_audio_capturer_unittest",
       ":direct_transport",
       ":fake_video_codecs",
       ":fileutils",
@@ -860,6 +862,36 @@ rtc_source_set("audio_codec_mocks") {
     "../api/audio_codecs:builtin_audio_decoder_factory",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
+    "//third_party/abseil-cpp/absl/memory",
+  ]
+}
+
+rtc_source_set("copy_to_file_audio_capturer") {
+  testonly = true
+  sources = [
+    "testsupport/copy_to_file_audio_capturer.cc",
+    "testsupport/copy_to_file_audio_capturer.h",
+  ]
+  deps = [
+    "../api:array_view",
+    "../common_audio:common_audio",
+    "../modules/audio_device:audio_device_impl",
+    "../rtc_base:rtc_base_approved",
+    "//third_party/abseil-cpp/absl/memory",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
+}
+
+rtc_source_set("copy_to_file_audio_capturer_unittest") {
+  testonly = true
+  sources = [
+    "testsupport/copy_to_file_audio_capturer_unittest.cc",
+  ]
+  deps = [
+    ":copy_to_file_audio_capturer",
+    ":fileutils",
+    ":test_support",
+    "../modules/audio_device:audio_device_impl",
     "//third_party/abseil-cpp/absl/memory",
   ]
 }

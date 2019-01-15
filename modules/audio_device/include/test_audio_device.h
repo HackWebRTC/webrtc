@@ -64,12 +64,12 @@ class TestAudioDeviceModule : public AudioDeviceModule {
   // -max_amplitude and +max_amplitude.
   class PulsedNoiseCapturer : public Capturer {
    public:
-    virtual ~PulsedNoiseCapturer() {}
+    ~PulsedNoiseCapturer() override {}
 
     virtual void SetMaxAmplitude(int16_t amplitude) = 0;
   };
 
-  virtual ~TestAudioDeviceModule() {}
+  ~TestAudioDeviceModule() override {}
 
   // Creates a new TestAudioDeviceModule. When capturing or playing, 10 ms audio
   // frames will be processed every 10ms / |speed|.
@@ -150,16 +150,16 @@ class TestAudioDeviceModule : public AudioDeviceModule {
       int sampling_frequency_in_hz,
       int num_channels = 1);
 
-  virtual int32_t Init() = 0;
-  virtual int32_t RegisterAudioCallback(AudioTransport* callback) = 0;
+  int32_t Init() override = 0;
+  int32_t RegisterAudioCallback(AudioTransport* callback) override = 0;
 
-  virtual int32_t StartPlayout() = 0;
-  virtual int32_t StopPlayout() = 0;
-  virtual int32_t StartRecording() = 0;
-  virtual int32_t StopRecording() = 0;
+  int32_t StartPlayout() override = 0;
+  int32_t StopPlayout() override = 0;
+  int32_t StartRecording() override = 0;
+  int32_t StopRecording() override = 0;
 
-  virtual bool Playing() const = 0;
-  virtual bool Recording() const = 0;
+  bool Playing() const override = 0;
+  bool Recording() const override = 0;
 
   // Blocks until the Renderer refuses to receive data.
   // Returns false if |timeout_ms| passes before that happens.
