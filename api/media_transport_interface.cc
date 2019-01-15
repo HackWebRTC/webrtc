@@ -157,6 +157,9 @@ MediaTransportFactory::CreateMediaTransport(
   return std::unique_ptr<MediaTransportInterface>(nullptr);
 }
 
+MediaTransportInterface::MediaTransportInterface() = default;
+MediaTransportInterface::~MediaTransportInterface() = default;
+
 void MediaTransportInterface::SetKeyFrameRequestCallback(
     MediaTransportKeyFrameRequestCallback* callback) {}
 
@@ -167,6 +170,9 @@ MediaTransportInterface::GetLatestTargetTransferRate() {
 
 void MediaTransportInterface::SetNetworkChangeCallback(
     MediaTransportNetworkChangeCallback* callback) {}
+
+void MediaTransportInterface::SetFirstAudioPacketReceivedObserver(
+    AudioPacketReceivedObserver* observer) {}
 
 void MediaTransportInterface::AddTargetTransferRateObserver(
     TargetTransferRateObserver* observer) {}
