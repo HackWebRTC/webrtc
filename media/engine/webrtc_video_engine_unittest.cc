@@ -3375,13 +3375,10 @@ TEST_F(WebRtcVideoChannelTest, PreviousAdaptationDoesNotApplyToScreenshare) {
   EXPECT_EQ(720 * 3 / 4, send_stream->GetLastHeight());
 
   // Switch to screen share. Expect no CPU adaptation.
-  FakeVideoCapturerWithTaskQueue screen_share(true);
-  ASSERT_EQ(cricket::CS_RUNNING,
-            screen_share.Start(screen_share.GetSupportedFormats()->front()));
   cricket::VideoOptions screenshare_options;
   screenshare_options.is_screencast = true;
-  channel_->SetVideoSend(last_ssrc_, &screenshare_options, &screen_share);
-  EXPECT_TRUE(screen_share.CaptureCustomFrame(1284, 724));
+  channel_->SetVideoSend(last_ssrc_, &screenshare_options, &capturer);
+  EXPECT_TRUE(capturer.CaptureCustomFrame(1284, 724));
   ASSERT_EQ(2, fake_call_->GetNumCreatedSendStreams());
   send_stream = fake_call_->GetVideoSendStreams().front();
   EXPECT_EQ(1, send_stream->GetNumberOfSwappedFrames());
