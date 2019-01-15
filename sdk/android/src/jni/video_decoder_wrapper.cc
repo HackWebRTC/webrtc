@@ -237,21 +237,21 @@ absl::optional<uint8_t> VideoDecoderWrapper::ParseQP(
   switch (codec_settings_.codecType) {
     case kVideoCodecVP8: {
       int qp_int;
-      if (vp8::GetQp(input_image._buffer, input_image._length, &qp_int)) {
+      if (vp8::GetQp(input_image.data(), input_image.size(), &qp_int)) {
         qp = qp_int;
       }
       break;
     }
     case kVideoCodecVP9: {
       int qp_int;
-      if (vp9::GetQp(input_image._buffer, input_image._length, &qp_int)) {
+      if (vp9::GetQp(input_image.data(), input_image.size(), &qp_int)) {
         qp = qp_int;
       }
       break;
     }
     case kVideoCodecH264: {
-      h264_bitstream_parser_.ParseBitstream(input_image._buffer,
-                                            input_image._length);
+      h264_bitstream_parser_.ParseBitstream(input_image.data(),
+                                            input_image.size());
       int qp_int;
       if (h264_bitstream_parser_.GetLastSliceQp(&qp_int)) {
         qp = qp_int;

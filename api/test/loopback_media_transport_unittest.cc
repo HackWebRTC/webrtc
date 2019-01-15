@@ -105,8 +105,8 @@ TEST(LoopbackMediaTransport, VideoDeliveredToSink) {
   testing::StrictMock<MockMediaTransportVideoSinkInterface> sink;
   uint8_t encoded_data[] = {1, 2, 3};
   EncodedImage encoded_image;
-  encoded_image._buffer = encoded_data;
-  encoded_image._length = sizeof(encoded_data);
+  encoded_image.set_buffer(encoded_data, sizeof(encoded_data));
+  encoded_image.set_size(sizeof(encoded_data));
 
   EXPECT_CALL(sink, OnData(1, testing::Property(
                                   &MediaTransportEncodedVideoFrame::frame_id,
@@ -114,12 +114,12 @@ TEST(LoopbackMediaTransport, VideoDeliveredToSink) {
       .WillOnce(testing::Invoke(
           [&encoded_image](int frame_id,
                            const MediaTransportEncodedVideoFrame& frame) {
-            EXPECT_NE(frame.encoded_image()._buffer, encoded_image._buffer);
-            EXPECT_EQ(frame.encoded_image()._length, encoded_image._length);
-            EXPECT_EQ(
-                0, memcmp(frame.encoded_image()._buffer, encoded_image._buffer,
-                          std::min(frame.encoded_image()._length,
-                                   encoded_image._length)));
+            EXPECT_NE(frame.encoded_image().data(), encoded_image.data());
+            EXPECT_EQ(frame.encoded_image().size(), encoded_image.size());
+            EXPECT_EQ(0,
+                      memcmp(frame.encoded_image().data(), encoded_image.data(),
+                             std::min(frame.encoded_image().size(),
+                                      encoded_image.size())));
           }));
 
   transport_pair.second()->SetReceiveVideoSink(&sink);

@@ -160,7 +160,7 @@ bool IvfFileWriter::WriteFrame(const EncodedImage& encoded_image,
 
   const size_t kFrameHeaderSize = 12;
   if (byte_limit_ != 0 &&
-      bytes_written_ + kFrameHeaderSize + encoded_image._length > byte_limit_) {
+      bytes_written_ + kFrameHeaderSize + encoded_image.size() > byte_limit_) {
     RTC_LOG(LS_WARNING) << "Closing IVF file due to reaching size limit: "
                         << byte_limit_ << " bytes.";
     Close();
@@ -168,16 +168,16 @@ bool IvfFileWriter::WriteFrame(const EncodedImage& encoded_image,
   }
   uint8_t frame_header[kFrameHeaderSize] = {};
   ByteWriter<uint32_t>::WriteLittleEndian(
-      &frame_header[0], static_cast<uint32_t>(encoded_image._length));
+      &frame_header[0], static_cast<uint32_t>(encoded_image.size()));
   ByteWriter<uint64_t>::WriteLittleEndian(&frame_header[4], timestamp);
   if (file_.Write(frame_header, kFrameHeaderSize) < kFrameHeaderSize ||
-      file_.Write(encoded_image._buffer, encoded_image._length) <
-          encoded_image._length) {
+      file_.Write(encoded_image.data(), encoded_image.size()) <
+          encoded_image.size()) {
     RTC_LOG(LS_ERROR) << "Unable to write frame to file.";
     return false;
   }
 
-  bytes_written_ += kFrameHeaderSize + encoded_image._length;
+  bytes_written_ += kFrameHeaderSize + encoded_image.size();
 
   ++num_frames_;
   return true;

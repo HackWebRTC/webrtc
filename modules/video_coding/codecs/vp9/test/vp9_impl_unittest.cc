@@ -243,7 +243,7 @@ TEST_F(TestVp9Impl, ParserQpEqualsEncodedQp) {
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
 
   int qp = 0;
-  ASSERT_TRUE(vp9::GetQp(encoded_frame._buffer, encoded_frame._length, &qp));
+  ASSERT_TRUE(vp9::GetQp(encoded_frame.data(), encoded_frame.size(), &qp));
   EXPECT_EQ(encoded_frame.qp_, qp);
 }
 

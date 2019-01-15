@@ -129,11 +129,10 @@ MediaTransportEncodedVideoFrame::MediaTransportEncodedVideoFrame(
 }
 
 void MediaTransportEncodedVideoFrame::Retain() {
-  if (encoded_image_._buffer && encoded_data_.empty()) {
-    encoded_data_ =
-        std::vector<uint8_t>(encoded_image_._buffer,
-                             encoded_image_._buffer + encoded_image_._length);
-    encoded_image_._buffer = encoded_data_.data();
+  if (encoded_image_.data() && encoded_data_.empty()) {
+    encoded_data_ = std::vector<uint8_t>(
+        encoded_image_.data(), encoded_image_.data() + encoded_image_.size());
+    encoded_image_.set_buffer(encoded_data_.data(), encoded_image_.size());
   }
 }
 

@@ -80,9 +80,9 @@ int32_t FakeH264Decoder::Decode(const EncodedImage& input,
                                 const CodecSpecificInfo* codec_specific_info,
                                 int64_t render_time_ms) {
   uint8_t value = 0;
-  for (size_t i = 0; i < input._length; ++i) {
+  for (size_t i = 0; i < input.size(); ++i) {
     uint8_t kStartCode[] = {0, 0, 0, 1};
-    if (i < input._length - sizeof(kStartCode) &&
+    if (i < input.size() - sizeof(kStartCode) &&
         !memcmp(&input._buffer[i], kStartCode, sizeof(kStartCode))) {
       i += sizeof(kStartCode) + 1;  // Skip start code and NAL header.
     }

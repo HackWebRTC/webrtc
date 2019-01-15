@@ -349,7 +349,7 @@ EncodedImageCallback::Result RtpVideoSender::OnEncodedImage(
     const EncodedImage& encoded_image,
     const CodecSpecificInfo* codec_specific_info,
     const RTPFragmentationHeader* fragmentation) {
-  fec_controller_->UpdateWithEncodedData(encoded_image._length,
+  fec_controller_->UpdateWithEncodedData(encoded_image.size(),
                                          encoded_image._frameType);
   rtc::CritScope lock(&crit_);
   RTC_DCHECK(!rtp_modules_.empty());
@@ -377,7 +377,7 @@ EncodedImageCallback::Result RtpVideoSender::OnEncodedImage(
   bool send_result = rtp_modules_[stream_index]->SendOutgoingData(
       encoded_image._frameType, rtp_config_.payload_type,
       encoded_image.Timestamp(), encoded_image.capture_time_ms_,
-      encoded_image._buffer, encoded_image._length, fragmentation,
+      encoded_image.data(), encoded_image.size(), fragmentation,
       &rtp_video_header, &frame_id);
   if (!send_result)
     return Result(Result::ERROR_SEND_FAILED);

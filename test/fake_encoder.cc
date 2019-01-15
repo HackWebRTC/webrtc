@@ -304,7 +304,7 @@ EncodedImageCallback::Result FakeH264Encoder::OnEncodedImage(
   }
   RTPFragmentationHeader fragmentation;
   if (current_idr_counter % kIdrFrequency == 0 &&
-      encoded_image._length > kSpsSize + kPpsSize + 1) {
+      encoded_image.size() > kSpsSize + kPpsSize + 1) {
     const size_t kNumSlices = 3;
     fragmentation.VerifyAndAllocateFragmentationHeader(kNumSlices);
     fragmentation.fragmentationOffset[0] = 0;
@@ -313,7 +313,7 @@ EncodedImageCallback::Result FakeH264Encoder::OnEncodedImage(
     fragmentation.fragmentationLength[1] = kPpsSize;
     fragmentation.fragmentationOffset[2] = kSpsSize + kPpsSize;
     fragmentation.fragmentationLength[2] =
-        encoded_image._length - (kSpsSize + kPpsSize);
+        encoded_image.size() - (kSpsSize + kPpsSize);
     const size_t kSpsNalHeader = 0x67;
     const size_t kPpsNalHeader = 0x68;
     const size_t kIdrNalHeader = 0x65;
@@ -324,13 +324,13 @@ EncodedImageCallback::Result FakeH264Encoder::OnEncodedImage(
     const size_t kNumSlices = 1;
     fragmentation.VerifyAndAllocateFragmentationHeader(kNumSlices);
     fragmentation.fragmentationOffset[0] = 0;
-    fragmentation.fragmentationLength[0] = encoded_image._length;
+    fragmentation.fragmentationLength[0] = encoded_image.size();
     const size_t kNalHeader = 0x41;
     encoded_image._buffer[fragmentation.fragmentationOffset[0]] = kNalHeader;
   }
   uint8_t value = 0;
   int fragment_counter = 0;
-  for (size_t i = 0; i < encoded_image._length; ++i) {
+  for (size_t i = 0; i < encoded_image.size(); ++i) {
     if (fragment_counter == fragmentation.fragmentationVectorSize ||
         i != fragmentation.fragmentationOffset[fragment_counter]) {
       encoded_image._buffer[i] = value++;

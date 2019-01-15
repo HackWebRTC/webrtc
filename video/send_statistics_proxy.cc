@@ -959,7 +959,7 @@ void SendStatisticsProxy::OnSendEncodedImage(
     }
   }
 
-  media_byte_rate_tracker_.AddSamples(encoded_image._length);
+  media_byte_rate_tracker_.AddSamples(encoded_image.size());
 
   // Initialize to current since |is_limited_in_resolution| is only updated
   // when an encoded frame is removed from the EncodedFrameMap.

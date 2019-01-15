@@ -85,18 +85,18 @@ class SimulcastTestFixtureImpl::TestEncodedImageCallback
         delete[] encoded_key_frame_._buffer;
         encoded_key_frame_.set_buffer(new uint8_t[encoded_image.capacity()],
                                       encoded_image.capacity());
-        encoded_key_frame_._length = encoded_image._length;
+        encoded_key_frame_.set_size(encoded_image.size());
         encoded_key_frame_._frameType = kVideoFrameKey;
         encoded_key_frame_._completeFrame = encoded_image._completeFrame;
         memcpy(encoded_key_frame_._buffer, encoded_image._buffer,
-               encoded_image._length);
+               encoded_image.size());
       } else {
         delete[] encoded_frame_._buffer;
         encoded_frame_.set_buffer(new uint8_t[encoded_image.capacity()],
                                   encoded_image.capacity());
-        encoded_frame_._length = encoded_image._length;
+        encoded_frame_.set_size(encoded_image.size());
         memcpy(encoded_frame_._buffer, encoded_image._buffer,
-               encoded_image._length);
+               encoded_image.size());
       }
     }
     if (is_vp8) {
@@ -858,11 +858,11 @@ void SimulcastTestFixtureImpl::TestDecodeWidthHeightSet() {
             encoded_frame[index].set_buffer(
                 new uint8_t[encoded_image.capacity()],
                 encoded_image.capacity());
-            encoded_frame[index]._length = encoded_image._length;
+            encoded_frame[index].set_size(encoded_image.size());
             encoded_frame[index]._frameType = encoded_image._frameType;
             encoded_frame[index]._completeFrame = encoded_image._completeFrame;
             memcpy(encoded_frame[index]._buffer, encoded_image._buffer,
-                   encoded_image._length);
+                   encoded_image.size());
             return EncodedImageCallback::Result(
                 EncodedImageCallback::Result::OK, 0);
           }));

@@ -144,8 +144,8 @@ TEST_P(RtpVideoSenderTest, SendOnOneModule) {
   encoded_image.SetTimestamp(1);
   encoded_image.capture_time_ms_ = 2;
   encoded_image._frameType = kVideoFrameKey;
-  encoded_image._buffer = &payload;
-  encoded_image._length = 1;
+  encoded_image.set_buffer(&payload, 1);
+  encoded_image.set_size(1);
 
   RtpVideoSenderTestFixture test({kSsrc1}, kPayloadType, {});
   EXPECT_NE(
@@ -174,8 +174,8 @@ TEST_P(RtpVideoSenderTest, SendSimulcastSetActive) {
   encoded_image_1.SetTimestamp(1);
   encoded_image_1.capture_time_ms_ = 2;
   encoded_image_1._frameType = kVideoFrameKey;
-  encoded_image_1._buffer = &payload;
-  encoded_image_1._length = 1;
+  encoded_image_1.set_buffer(&payload, 1);
+  encoded_image_1.set_size(1);
 
   RtpVideoSenderTestFixture test({kSsrc1, kSsrc2}, kPayloadType, {});
 
@@ -218,8 +218,9 @@ TEST_P(RtpVideoSenderTest, SendSimulcastSetActiveModules) {
   encoded_image_1.SetTimestamp(1);
   encoded_image_1.capture_time_ms_ = 2;
   encoded_image_1._frameType = kVideoFrameKey;
-  encoded_image_1._buffer = &payload;
-  encoded_image_1._length = 1;
+  encoded_image_1.set_buffer(&payload, 1);
+  encoded_image_1.set_size(1);
+
   EncodedImage encoded_image_2(encoded_image_1);
   encoded_image_2.SetSpatialIndex(1);
 

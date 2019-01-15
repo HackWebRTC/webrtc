@@ -17,9 +17,9 @@
 - (instancetype)initWithNativeEncodedImage:(webrtc::EncodedImage)encodedImage {
   if (self = [super init]) {
     // Wrap the buffer in NSData without copying, do not take ownership.
-    self.buffer = [NSData dataWithBytesNoCopy:encodedImage._buffer
-                                   length:encodedImage._length
-                             freeWhenDone:NO];
+    self.buffer = [NSData dataWithBytesNoCopy:encodedImage.data()
+                                       length:encodedImage.size()
+                                 freeWhenDone:NO];
     self.encodedWidth = rtc::dchecked_cast<int32_t>(encodedImage._encodedWidth);
     self.encodedHeight = rtc::dchecked_cast<int32_t>(encodedImage._encodedHeight);
     self.timeStamp = encodedImage.Timestamp();

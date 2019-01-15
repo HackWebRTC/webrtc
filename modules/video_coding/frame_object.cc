@@ -139,11 +139,6 @@ int64_t RtpFrameObject::RenderTime() const {
   return _renderTimeMs;
 }
 
-void RtpFrameObject::SetSize(size_t size) {
-  RTC_DCHECK_LE(size, capacity());
-  _length = size;
-}
-
 bool RtpFrameObject::delayed_by_retransmission() const {
   return times_nacked() > 0;
 }
@@ -188,7 +183,7 @@ void RtpFrameObject::AllocateBitstreamBuffer(size_t frame_size) {
     set_buffer(new uint8_t[new_size], new_size);
   }
 
-  _length = frame_size;
+  set_size(frame_size);
 }
 
 }  // namespace video_coding

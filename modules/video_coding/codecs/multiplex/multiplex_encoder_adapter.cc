@@ -275,9 +275,11 @@ EncodedImageCallback::Result MultiplexEncoderAdapter::OnEncodedImage(
   image_component.codec_type =
       PayloadStringToCodecType(associated_format_.name);
   image_component.encoded_image = encodedImage;
-  image_component.encoded_image._buffer = new uint8_t[encodedImage._length];
-  std::memcpy(image_component.encoded_image._buffer, encodedImage._buffer,
-              encodedImage._length);
+  image_component.encoded_image.set_buffer(new uint8_t[encodedImage.size()],
+                                           encodedImage.size());
+  image_component.encoded_image.set_size(encodedImage.size());
+  std::memcpy(image_component.encoded_image.data(), encodedImage.data(),
+              encodedImage.size());
 
   rtc::CritScope cs(&crit_);
   const auto& stashed_image_itr =

@@ -52,7 +52,7 @@ void VCMEncodedFrame::Reset() {
   _encodedHeight = 0;
   _completeFrame = false;
   _missingFrame = false;
-  _length = 0;
+  set_size(0);
   _codecSpecificInfo.codecType = kVideoCodecGeneric;
   _codec = kVideoCodecGeneric;
   rotation_ = kVideoRotation_0;

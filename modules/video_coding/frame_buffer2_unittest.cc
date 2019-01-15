@@ -91,10 +91,6 @@ class FrameObjectFake : public EncodedFrame {
   int64_t ReceivedTime() const override { return 0; }
 
   int64_t RenderTime() const override { return _renderTimeMs; }
-
-  // In EncodedImage |_length| is used to descibe its size and |_size| to
-  // describe its capacity.
-  void SetSize(int size) { _length = size; }
 };
 
 class VCMReceiveStatisticsCallbackMock : public VCMReceiveStatisticsCallback {
@@ -168,7 +164,7 @@ class TestFrameBuffer2 : public ::testing::Test {
     frame->is_last_spatial_layer = last_spatial_layer;
     // Add some data to buffer.
     frame->VerifyAndAllocate(kFrameSize);
-    frame->SetSize(kFrameSize);
+    frame->set_size(kFrameSize);
     for (size_t r = 0; r < references.size(); ++r)
       frame->references[r] = references[r];
 
@@ -491,7 +487,7 @@ TEST_F(TestFrameBuffer2, StatsCallback) {
   {
     std::unique_ptr<FrameObjectFake> frame(new FrameObjectFake());
     frame->VerifyAndAllocate(kFrameSize);
-    frame->SetSize(kFrameSize);
+    frame->set_size(kFrameSize);
     frame->id.picture_id = pid;
     frame->id.spatial_layer = 0;
     frame->SetTimestamp(ts);

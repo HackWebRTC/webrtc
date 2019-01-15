@@ -360,7 +360,7 @@ int32_t MediaCodecVideoDecoder::Decode(
     ALOGE << "Decode() - callback_ is NULL";
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
-  if (inputImage._buffer == NULL && inputImage._length > 0) {
+  if (inputImage.data() == NULL && inputImage.size() > 0) {
     ALOGE << "Decode() - inputImage is incorrect";
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
@@ -408,7 +408,7 @@ int32_t MediaCodecVideoDecoder::Decode(
     }
     key_frame_required_ = false;
   }
-  if (inputImage._length == 0) {
+  if (inputImage.size() == 0) {
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
 
@@ -476,35 +476,34 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
   RTC_CHECK(buffer) << "Indirect buffer??";
   size_t buffer_capacity =
       rtc::dchecked_cast<size_t>(jni->GetDirectBufferCapacity(j_input_buffer));
-  if (CheckException(jni) || buffer_capacity < inputImage._length) {
-    ALOGE << "Input frame size " << inputImage._length
+  if (CheckException(jni) || buffer_capacity < inputImage.size()) {
+    ALOGE << "Input frame size " << inputImage.size()
           << " is bigger than buffer size " << buffer_capacity;
     return ProcessHWErrorOnCodecThread();
   }
   jlong presentation_timestamp_us = static_cast<jlong>(
       static_cast<int64_t>(frames_received_) * 1000000 / codec_.maxFramerate);
-  memcpy(buffer, inputImage._buffer, inputImage._length);
+  memcpy(buffer, inputImage.data(), inputImage.size());
 
   if (frames_decoded_ < frames_decoded_logged_) {
     ALOGD << "Decoder frame in # " << frames_received_
           << ". Type: " << inputImage._frameType << ". Buffer # "
           << j_input_buffer_index
           << ". TS: " << presentation_timestamp_us / 1000
-          << ". Size: " << inputImage._length;
+          << ". Size: " << inputImage.size();
   }
 
   // Save input image timestamps for later output.
   frames_received_++;
-  current_bytes_ += inputImage._length;
+  current_bytes_ += inputImage.size();
   absl::optional<uint8_t> qp;
   if (codecType_ == kVideoCodecVP8) {
     int qp_int;
-    if (vp8::GetQp(inputImage._buffer, inputImage._length, &qp_int)) {
+    if (vp8::GetQp(inputImage.data(), inputImage.size(), &qp_int)) {
       qp = qp_int;
     }
   } else if (codecType_ == kVideoCodecH264) {
-    h264_bitstream_parser_.ParseBitstream(inputImage._buffer,
-                                          inputImage._length);
+    h264_bitstream_parser_.ParseBitstream(inputImage.data(), inputImage.size());
     int qp_int;
     if (h264_bitstream_parser_.GetLastSliceQp(&qp_int)) {
       qp = qp_int;
@@ -515,7 +514,7 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
   // Feed input to decoder.
   bool success = Java_MediaCodecVideoDecoder_queueInputBuffer(
       jni, j_media_codec_video_decoder_, j_input_buffer_index,
-      static_cast<int>(inputImage._length), presentation_timestamp_us,
+      static_cast<int>(inputImage.size()), presentation_timestamp_us,
       static_cast<int64_t>(inputImage.Timestamp()), inputImage.ntp_time_ms_);
   if (CheckException(jni) || !success) {
     ALOGE << "queueInputBuffer error";

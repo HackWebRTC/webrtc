@@ -41,11 +41,11 @@ class IvfFileWriterTest : public ::testing::Test {
                             int num_frames,
                             bool use_capture_tims_ms) {
     EncodedImage frame;
-    frame._buffer = dummy_payload;
+    frame.set_buffer(dummy_payload, sizeof(dummy_payload));
     frame._encodedWidth = width;
     frame._encodedHeight = height;
     for (int i = 1; i <= num_frames; ++i) {
-      frame._length = i % sizeof(dummy_payload);
+      frame.set_size(i % sizeof(dummy_payload));
       if (use_capture_tims_ms) {
         frame.capture_time_ms_ = i;
       } else {

@@ -138,8 +138,8 @@ VCMFrameBufferEnum VCMFrameBuffer::InsertPacket(
   } else if (retVal == -3) {
     return kOutOfBoundsPacket;
   }
-  // update length
-  _length = size() + static_cast<uint32_t>(retVal);
+  // update size
+  set_size(size() + static_cast<uint32_t>(retVal));
 
   _latestPacketTimeMs = timeInMs;
 
@@ -216,7 +216,7 @@ int VCMFrameBuffer::NumPackets() const {
 
 void VCMFrameBuffer::Reset() {
   TRACE_EVENT0("webrtc", "VCMFrameBuffer::Reset");
-  _length = 0;
+  set_size(0);
   _sessionInfo.Reset();
   _payloadType = 0;
   _nackCount = 0;
@@ -265,7 +265,7 @@ VCMFrameBufferStateEnum VCMFrameBuffer::GetState() const {
 void VCMFrameBuffer::PrepareForDecode(bool continuous) {
   TRACE_EVENT0("webrtc", "VCMFrameBuffer::PrepareForDecode");
   size_t bytes_removed = _sessionInfo.MakeDecodable();
-  _length -= bytes_removed;
+  set_size(size() - bytes_removed);
   // Transfer frame information to EncodedFrame and create any codec
   // specific information.
   _frameType = _sessionInfo.FrameType();

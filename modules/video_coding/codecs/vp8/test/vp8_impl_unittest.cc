@@ -98,8 +98,8 @@ class TestVp8Impl : public VideoCodecUnitTest {
 
   void VerifyQpParser(const EncodedImage& encoded_frame) const {
     int qp;
-    EXPECT_GT(encoded_frame._length, 0u);
-    ASSERT_TRUE(vp8::GetQp(encoded_frame._buffer, encoded_frame._length, &qp));
+    EXPECT_GT(encoded_frame.size(), 0u);
+    ASSERT_TRUE(vp8::GetQp(encoded_frame.data(), encoded_frame.size(), &qp));
     EXPECT_EQ(encoded_frame.qp_, qp) << "Encoder QP != parsed bitstream QP.";
   }
 };

@@ -135,7 +135,7 @@ static void RtpFragmentize(EncodedImage* encoded_image,
   const uint8_t start_code[4] = {0, 0, 0, 1};
   frag_header->VerifyAndAllocateFragmentationHeader(fragments_count);
   size_t frag = 0;
-  encoded_image->_length = 0;
+  encoded_image->set_size(0);
   for (int layer = 0; layer < info->iLayerNum; ++layer) {
     const SLayerBSInfo& layerInfo = info->sLayerInfo[layer];
     // Iterate NAL units making up this layer, noting fragments.
@@ -149,15 +149,15 @@ static void RtpFragmentize(EncodedImage* encoded_image,
       RTC_DCHECK_EQ(layerInfo.pBsBuf[layer_len + 2], start_code[2]);
       RTC_DCHECK_EQ(layerInfo.pBsBuf[layer_len + 3], start_code[3]);
       frag_header->fragmentationOffset[frag] =
-          encoded_image->_length + layer_len + sizeof(start_code);
+          encoded_image->size() + layer_len + sizeof(start_code);
       frag_header->fragmentationLength[frag] =
           layerInfo.pNalLengthInByte[nal] - sizeof(start_code);
       layer_len += layerInfo.pNalLengthInByte[nal];
     }
     // Copy the entire layer's data (including start codes).
-    memcpy(encoded_image->_buffer + encoded_image->_length, layerInfo.pBsBuf,
+    memcpy(encoded_image->data() + encoded_image->size(), layerInfo.pBsBuf,
            layer_len);
-    encoded_image->_length += layer_len;
+    encoded_image->set_size(encoded_image->size() + layer_len);
   }
 }
 
@@ -308,7 +308,7 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* inst,
     encoded_images_[i]._completeFrame = true;
     encoded_images_[i]._encodedWidth = codec_.simulcastStream[idx].width;
     encoded_images_[i]._encodedHeight = codec_.simulcastStream[idx].height;
-    encoded_images_[i]._length = 0;
+    encoded_images_[i].set_size(0);
   }
 
   SimulcastRateAllocator init_allocator(codec_);
@@ -519,10 +519,10 @@ int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
 
     // Encoder can skip frames to save bandwidth in which case
     // |encoded_images_[i]._length| == 0.
-    if (encoded_images_[i]._length > 0) {
+    if (encoded_images_[i].size() > 0) {
       // Parse QP.
-      h264_bitstream_parser_.ParseBitstream(encoded_images_[i]._buffer,
-                                            encoded_images_[i]._length);
+      h264_bitstream_parser_.ParseBitstream(encoded_images_[i].data(),
+                                            encoded_images_[i].size());
       h264_bitstream_parser_.GetLastSliceQp(&encoded_images_[i].qp_);
 
       // Deliver encoded image.

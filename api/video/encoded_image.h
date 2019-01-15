@@ -67,10 +67,10 @@ class RTC_EXPORT EncodedImage {
         color_space ? absl::make_optional(*color_space) : absl::nullopt;
   }
 
-  size_t size() const { return _length; }
+  size_t size() const { return size_; }
   void set_size(size_t new_size) {
     RTC_DCHECK_LE(new_size, capacity_);
-    _length = new_size;
+    size_ = new_size;
   }
   size_t capacity() const { return capacity_; }
 
@@ -89,8 +89,6 @@ class RTC_EXPORT EncodedImage {
   int64_t capture_time_ms_ = 0;
   FrameType _frameType = kVideoFrameDelta;
   uint8_t* _buffer;
-  // TODO(bugs.webrtc.org/9378): Rename to size_, capacity_ and make private.
-  size_t _length;
   VideoRotation rotation_ = kVideoRotation_0;
   VideoContentType content_type_ = VideoContentType::UNSPECIFIED;
   bool _completeFrame = false;
@@ -114,6 +112,7 @@ class RTC_EXPORT EncodedImage {
   } timing_;
 
  private:
+  size_t size_;      // Size of encoded frame data.
   size_t capacity_;  // Allocated size of _buffer.
   uint32_t timestamp_rtp_ = 0;
   absl::optional<int> spatial_index_;

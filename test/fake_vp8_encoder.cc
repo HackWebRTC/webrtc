@@ -121,7 +121,7 @@ EncodedImageCallback::Result FakeVP8Encoder::OnEncodedImage(
   uint8_t stream_idx = encoded_image.SpatialIndex().value_or(0);
   CodecSpecificInfo overrided_specific_info;
   temporal_layers_[stream_idx]->UpdateLayerConfig(encoded_image.Timestamp());
-  PopulateCodecSpecific(&overrided_specific_info, encoded_image._length,
+  PopulateCodecSpecific(&overrided_specific_info, encoded_image.size(),
                         encoded_image._frameType, stream_idx,
                         encoded_image.Timestamp());
 

@@ -82,6 +82,7 @@ std::vector<std::vector<FrameType>> GetTimingFrames(
       {delay_ms, kDefaultOutlierFrameSizePercent});
   callback.OnFrameRateChanged(kFramerate);
   int s, i;
+  std::vector<uint8_t> frame_data(max_frame_size);
   std::vector<std::vector<FrameType>> result(num_streams);
   for (s = 0; s < num_streams; ++s)
     callback.OnTargetBitrateChanged(average_frame_sizes[s] * kFramerate, s);
@@ -94,7 +95,8 @@ std::vector<std::vector<FrameType>> GetTimingFrames(
 
       EncodedImage image;
       CodecSpecificInfo codec_specific;
-      image._length = FrameSize(min_frame_size, max_frame_size, s, i);
+      image.set_buffer(frame_data.data(), frame_data.size());
+      image.set_size(FrameSize(min_frame_size, max_frame_size, s, i));
       image.capture_time_ms_ = current_timestamp;
       image.SetTimestamp(static_cast<uint32_t>(current_timestamp * 90));
       image.SetSpatialIndex(s);
@@ -187,7 +189,9 @@ TEST(TestVCMEncodedFrameCallback, NoTimingFrameIfNoEncodeStartTime) {
   EncodedImage image;
   CodecSpecificInfo codec_specific;
   int64_t timestamp = 1;
-  image._length = 500;
+  uint8_t frame_data[500];
+  image.set_buffer(frame_data, sizeof(frame_data));
+  image.set_size(sizeof(frame_data));
   image.capture_time_ms_ = timestamp;
   image.SetTimestamp(static_cast<uint32_t>(timestamp * 90));
   codec_specific.codecType = kVideoCodecGeneric;
@@ -218,7 +222,9 @@ TEST(TestVCMEncodedFrameCallback, AdjustsCaptureTimeForInternalSourceEncoder) {
   const int64_t kEncodeStartDelayMs = 2;
   const int64_t kEncodeFinishDelayMs = 10;
   int64_t timestamp = 1;
-  image._length = 500;
+  uint8_t frame_data[500];
+  image.set_buffer(frame_data, sizeof(frame_data));
+  image.set_size(sizeof(frame_data));
   image.capture_time_ms_ = timestamp;
   image.SetTimestamp(static_cast<uint32_t>(timestamp * 90));
   codec_specific.codecType = kVideoCodecGeneric;

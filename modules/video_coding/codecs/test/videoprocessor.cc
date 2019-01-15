@@ -51,8 +51,7 @@ size_t GetMaxNaluSizeBytes(const EncodedImage& encoded_frame,
     return 0;
 
   std::vector<webrtc::H264::NaluIndex> nalu_indices =
-      webrtc::H264::FindNaluIndices(encoded_frame._buffer,
-                                    encoded_frame._length);
+      webrtc::H264::FindNaluIndices(encoded_frame.data(), encoded_frame.size());
 
   RTC_CHECK(!nalu_indices.empty());
 
@@ -392,7 +391,7 @@ void VideoProcessor::FrameEncoded(
       frame_stat->encode_start_ns, encode_stop_ns - post_encode_time_ns_);
   frame_stat->target_bitrate_kbps =
       bitrate_allocation_.GetTemporalLayerSum(spatial_idx, temporal_idx) / 1000;
-  frame_stat->length_bytes = encoded_image._length;
+  frame_stat->length_bytes = encoded_image.size();
   frame_stat->frame_type = encoded_image._frameType;
   frame_stat->temporal_idx = temporal_idx;
   frame_stat->max_nalu_size_bytes = GetMaxNaluSizeBytes(encoded_image, config_);
@@ -554,7 +553,7 @@ const webrtc::EncodedImage* VideoProcessor::BuildAndStoreSuperframe(
   RTC_CHECK_GT(config_.NumberOfSpatialLayers(), 1);
 
   EncodedImage base_image;
-  RTC_CHECK_EQ(base_image._length, 0);
+  RTC_CHECK_EQ(base_image.size(), 0);
 
   // Each SVC layer is decoded with dedicated decoder. Find the nearest
   // non-dropped base frame and merge it and current frame into superframe.
@@ -568,29 +567,29 @@ const webrtc::EncodedImage* VideoProcessor::BuildAndStoreSuperframe(
       }
     }
   }
-  const size_t payload_size_bytes = base_image._length + encoded_image._length;
+  const size_t payload_size_bytes = base_image.size() + encoded_image.size();
   const size_t buffer_size_bytes =
       payload_size_bytes + EncodedImage::GetBufferPaddingBytes(codec);
 
   uint8_t* copied_buffer = new uint8_t[buffer_size_bytes];
   RTC_CHECK(copied_buffer);
 
-  if (base_image._length) {
+  if (base_image.size()) {
     RTC_CHECK(base_image._buffer);
-    memcpy(copied_buffer, base_image._buffer, base_image._length);
+    memcpy(copied_buffer, base_image.data(), base_image.size());
   }
-  memcpy(copied_buffer + base_image._length, encoded_image._buffer,
-         encoded_image._length);
+  memcpy(copied_buffer + base_image.size(), encoded_image.data(),
+         encoded_image.size());
 
   EncodedImage copied_image = encoded_image;
   copied_image = encoded_image;
   copied_image.set_buffer(copied_buffer, buffer_size_bytes);
-  copied_image._length = payload_size_bytes;
+  copied_image.set_size(payload_size_bytes);
 
   // Replace previous EncodedImage for this spatial layer.
-  uint8_t* old_buffer = merged_encoded_frames_.at(spatial_idx)._buffer;
-  if (old_buffer) {
-    delete[] old_buffer;
+  uint8_t* old_data = merged_encoded_frames_.at(spatial_idx).data();
+  if (old_data) {
+    delete[] old_data;
   }
   merged_encoded_frames_.at(spatial_idx) = copied_image;
 

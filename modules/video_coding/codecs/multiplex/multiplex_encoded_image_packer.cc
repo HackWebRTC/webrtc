@@ -128,7 +128,7 @@ MultiplexImageComponentHeader UnpackFrameHeader(uint8_t* buffer) {
 }
 
 void PackBitstream(uint8_t* buffer, MultiplexImageComponent image) {
-  memcpy(buffer, image.encoded_image._buffer, image.encoded_image._length);
+  memcpy(buffer, image.encoded_image.data(), image.encoded_image.size());
 }
 
 MultiplexImage::MultiplexImage(uint16_t picture_index,
@@ -170,7 +170,7 @@ EncodedImage MultiplexEncodedImagePacker::PackAndRelease(
     const size_t padding =
         EncodedImage::GetBufferPaddingBytes(images[i].codec_type);
     frame_header.bitstream_length =
-        static_cast<uint32_t>(images[i].encoded_image._length + padding);
+        static_cast<uint32_t>(images[i].encoded_image.size() + padding);
     bitstream_offset += frame_header.bitstream_length;
 
     frame_header.codec_type = images[i].codec_type;
@@ -188,9 +188,8 @@ EncodedImage MultiplexEncodedImagePacker::PackAndRelease(
     frame_headers.push_back(frame_header);
   }
 
-  combined_image._length = bitstream_offset;
-  combined_image.set_buffer(new uint8_t[combined_image._length],
-                            combined_image._length);
+  combined_image.set_buffer(new uint8_t[bitstream_offset], bitstream_offset);
+  combined_image.set_size(bitstream_offset);
 
   // header
   header_offset = PackHeader(combined_image._buffer, header);
@@ -268,7 +267,7 @@ MultiplexImage MultiplexEncodedImagePacker::Unpack(
         static_cast<size_t>(frame_headers[i].bitstream_length));
     const size_t padding =
         EncodedImage::GetBufferPaddingBytes(image_component.codec_type);
-    encoded_image._length = encoded_image.capacity() - padding;
+    encoded_image.set_size(encoded_image.capacity() - padding);
 
     image_component.encoded_image = encoded_image;
 

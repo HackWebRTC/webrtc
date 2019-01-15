@@ -45,11 +45,9 @@ class QpFrameChecker : public VideoCodecTestFixture::EncodedFrameChecker {
                          const EncodedImage& encoded_frame) const override {
     int qp;
     if (codec == kVideoCodecVP8) {
-      EXPECT_TRUE(
-          vp8::GetQp(encoded_frame._buffer, encoded_frame._length, &qp));
+      EXPECT_TRUE(vp8::GetQp(encoded_frame.data(), encoded_frame.size(), &qp));
     } else if (codec == kVideoCodecVP9) {
-      EXPECT_TRUE(
-          vp9::GetQp(encoded_frame._buffer, encoded_frame._length, &qp));
+      EXPECT_TRUE(vp9::GetQp(encoded_frame.data(), encoded_frame.size(), &qp));
     } else {
       RTC_NOTREACHED();
     }

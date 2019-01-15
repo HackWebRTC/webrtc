@@ -241,7 +241,7 @@ int32_t H264DecoderImpl::Decode(const EncodedImage& input_image,
     ReportError();
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
-  if (!input_image._buffer || !input_image._length) {
+  if (!input_image.data() || !input_image.size()) {
     ReportError();
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
@@ -254,24 +254,23 @@ int32_t H264DecoderImpl::Decode(const EncodedImage& input_image,
   // FFmpeg requires padding due to some optimized bitstream readers reading 32
   // or 64 bits at once and could read over the end. See avcodec_decode_video2.
   RTC_CHECK_GE(input_image.capacity(),
-               input_image._length +
+               input_image.size() +
                    EncodedImage::GetBufferPaddingBytes(kVideoCodecH264));
   // "If the first 23 bits of the additional bytes are not 0, then damaged MPEG
   // bitstreams could cause overread and segfault." See
   // AV_INPUT_BUFFER_PADDING_SIZE. We'll zero the entire padding just in case.
-  memset(input_image._buffer + input_image._length,
-         0,
+  memset(input_image._buffer + input_image.size(), 0,
          EncodedImage::GetBufferPaddingBytes(kVideoCodecH264));
 
   AVPacket packet;
   av_init_packet(&packet);
   packet.data = input_image._buffer;
-  if (input_image._length >
+  if (input_image.size() >
       static_cast<size_t>(std::numeric_limits<int>::max())) {
     ReportError();
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
-  packet.size = static_cast<int>(input_image._length);
+  packet.size = static_cast<int>(input_image.size());
   int64_t frame_timestamp_us = input_image.ntp_time_ms_ * 1000;  // ms -> μs
   av_context_->reordered_opaque = frame_timestamp_us;
 
@@ -318,8 +317,7 @@ int32_t H264DecoderImpl::Decode(const EncodedImage& input_image,
 
   absl::optional<uint8_t> qp;
   // TODO(sakal): Maybe it is possible to get QP directly from FFmpeg.
-  h264_bitstream_parser_.ParseBitstream(input_image._buffer,
-                                        input_image._length);
+  h264_bitstream_parser_.ParseBitstream(input_image.data(), input_image.size());
   int qp_int;
   if (h264_bitstream_parser_.GetLastSliceQp(&qp_int)) {
     qp.emplace(qp_int);

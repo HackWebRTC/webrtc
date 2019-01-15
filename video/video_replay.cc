@@ -225,8 +225,8 @@ class DecoderBitstreamFileWriter : public test::FakeDecoder {
                  bool /* missing_frames */,
                  const CodecSpecificInfo* /* codec_specific_info */,
                  int64_t /* render_time_ms */) override {
-    if (fwrite(encoded_frame._buffer, 1, encoded_frame._length, file_) <
-        encoded_frame._length) {
+    if (fwrite(encoded_frame.data(), 1, encoded_frame.size(), file_) <
+        encoded_frame.size()) {
       RTC_LOG_ERR(LS_ERROR) << "fwrite of encoded frame failed.";
       return WEBRTC_VIDEO_CODEC_ERROR;
     }

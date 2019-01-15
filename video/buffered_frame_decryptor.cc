@@ -87,7 +87,7 @@ BufferedFrameDecryptor::FrameDecision BufferedFrameDecryptor::DecryptFrame(
   }
   RTC_CHECK_LE(bytes_written, max_plaintext_byte_size);
   // Update the frame to contain just the written bytes.
-  frame->SetSize(bytes_written);
+  frame->set_size(bytes_written);
 
   // Indicate that all future fail to decrypt frames should be dropped.
   if (!first_frame_decrypted_) {

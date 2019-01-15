@@ -27,8 +27,8 @@ ScopedJavaLocalRef<jobject> NativeToJavaFrameType(JNIEnv* env,
 ScopedJavaLocalRef<jobject> NativeToJavaEncodedImage(
     JNIEnv* jni,
     const EncodedImage& image) {
-  ScopedJavaLocalRef<jobject> buffer =
-      NewDirectByteBuffer(jni, image._buffer, image._length);
+  ScopedJavaLocalRef<jobject> buffer = NewDirectByteBuffer(
+      jni, const_cast<uint8_t*>(image.data()), image.size());
   ScopedJavaLocalRef<jobject> frame_type =
       NativeToJavaFrameType(jni, image._frameType);
   ScopedJavaLocalRef<jobject> qp;

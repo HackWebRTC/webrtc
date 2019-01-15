@@ -1263,7 +1263,7 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
                               pkt->data.frame.sz);
   }
   memcpy(encoded_image_._buffer, pkt->data.frame.buf, pkt->data.frame.sz);
-  encoded_image_._length = pkt->data.frame.sz;
+  encoded_image_.set_size(pkt->data.frame.sz);
 
   const bool is_key_frame =
       (pkt->data.frame.flags & VPX_FRAME_IS_KEY) ? true : false;
@@ -1276,7 +1276,7 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
     encoded_image_._frameType = kVideoFrameKey;
     force_key_frame_ = false;
   }
-  RTC_DCHECK_LE(encoded_image_._length, encoded_image_.capacity());
+  RTC_DCHECK_LE(encoded_image_.size(), encoded_image_.capacity());
 
   memset(&codec_specific_, 0, sizeof(codec_specific_));
   absl::optional<int> spatial_index;
@@ -1288,7 +1288,7 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
     UpdateReferenceBuffers(*pkt, pics_since_key_);
   }
 
-  TRACE_COUNTER1("webrtc", "EncodedFrameSize", encoded_image_._length);
+  TRACE_COUNTER1("webrtc", "EncodedFrameSize", encoded_image_.size());
   encoded_image_.SetTimestamp(input_image_->timestamp());
   encoded_image_.capture_time_ms_ = input_image_->render_time_ms();
   encoded_image_.rotation_ = input_image_->rotation();
@@ -1315,7 +1315,7 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
 }
 
 void VP9EncoderImpl::DeliverBufferedFrame(bool end_of_picture) {
-  if (encoded_image_._length > 0) {
+  if (encoded_image_.size() > 0) {
     codec_specific_.codecSpecific.VP9.end_of_picture = end_of_picture;
 
     // No data partitioning in VP9, so 1 partition only.
@@ -1323,13 +1323,13 @@ void VP9EncoderImpl::DeliverBufferedFrame(bool end_of_picture) {
     RTPFragmentationHeader frag_info;
     frag_info.VerifyAndAllocateFragmentationHeader(1);
     frag_info.fragmentationOffset[part_idx] = 0;
-    frag_info.fragmentationLength[part_idx] = encoded_image_._length;
+    frag_info.fragmentationLength[part_idx] = encoded_image_.size();
     frag_info.fragmentationPlType[part_idx] = 0;
     frag_info.fragmentationTimeDiff[part_idx] = 0;
 
     encoded_complete_callback_->OnEncodedImage(encoded_image_, &codec_specific_,
                                                &frag_info);
-    encoded_image_._length = 0;
+    encoded_image_.set_size(0);
 
     if (codec_.mode == VideoCodecMode::kScreensharing) {
       const uint8_t spatial_idx = encoded_image_.SpatialIndex().value_or(0);
@@ -1432,13 +1432,13 @@ int VP9DecoderImpl::Decode(const EncodedImage& input_image,
   vpx_codec_iter_t iter = nullptr;
   vpx_image_t* img;
   uint8_t* buffer = input_image._buffer;
-  if (input_image._length == 0) {
+  if (input_image.size() == 0) {
     buffer = nullptr;  // Triggers full frame concealment.
   }
   // During decode libvpx may get and release buffers from |frame_buffer_pool_|.
   // In practice libvpx keeps a few (~3-4) buffers alive at a time.
   if (vpx_codec_decode(decoder_, buffer,
-                       static_cast<unsigned int>(input_image._length), 0,
+                       static_cast<unsigned int>(input_image.size()), 0,
                        VPX_DL_REALTIME)) {
     return WEBRTC_VIDEO_CODEC_ERROR;
   }

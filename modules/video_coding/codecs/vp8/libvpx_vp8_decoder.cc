@@ -161,7 +161,7 @@ int LibvpxVp8Decoder::Decode(const EncodedImage& input_image,
   if (decode_complete_callback_ == NULL) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
-  if (input_image._buffer == NULL && input_image._length > 0) {
+  if (input_image.data() == NULL && input_image.size() > 0) {
     // Reset to avoid requesting key frames too often.
     if (propagation_cnt_ > 0)
       propagation_cnt_ = 0;
@@ -249,10 +249,10 @@ int LibvpxVp8Decoder::Decode(const EncodedImage& input_image,
   }
 
   uint8_t* buffer = input_image._buffer;
-  if (input_image._length == 0) {
+  if (input_image.size() == 0) {
     buffer = NULL;  // Triggers full frame concealment.
   }
-  if (vpx_codec_decode(decoder_, buffer, input_image._length, 0,
+  if (vpx_codec_decode(decoder_, buffer, input_image.size(), 0,
                        kDecodeDeadlineRealtime)) {
     // Reset to avoid requesting key frames too often.
     if (propagation_cnt_ > 0) {

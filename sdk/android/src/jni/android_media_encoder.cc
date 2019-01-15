@@ -1047,7 +1047,7 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
       if (codec_type == kVideoCodecVP8 || codec_type == kVideoCodecVP9) {
         header.VerifyAndAllocateFragmentationHeader(1);
         header.fragmentationOffset[0] = 0;
-        header.fragmentationLength[0] = image->_length;
+        header.fragmentationLength[0] = image->size();
         header.fragmentationPlType[0] = 0;
         header.fragmentationTimeDiff[0] = 0;
         if (codec_type == kVideoCodecVP8) {

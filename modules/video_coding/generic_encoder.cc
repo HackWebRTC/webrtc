@@ -327,7 +327,7 @@ void VCMEncodedFrameCallback::FillTimingInfo(size_t simulcast_svc_idx,
 
     // Outliers trigger timing frames, but do not affect scheduled timing
     // frames.
-    if (outlier_frame_size && encoded_image->_length >= *outlier_frame_size) {
+    if (outlier_frame_size && encoded_image->size() >= *outlier_frame_size) {
       timing_flags |= VideoSendTiming::kTriggeredBySize;
     }
 
