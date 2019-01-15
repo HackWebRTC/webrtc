@@ -399,7 +399,8 @@ TEST_P(VideoSendStreamTest, SupportsVideoContentType) {
 TEST_P(VideoSendStreamTest, SupportsVideoTimingFrames) {
   class VideoTimingObserver : public test::SendTest {
    public:
-    VideoTimingObserver() : SendTest(kDefaultTimeoutMs) {
+    VideoTimingObserver()
+        : SendTest(kDefaultTimeoutMs), first_frame_sent_(false) {
       EXPECT_TRUE(parser_->RegisterRtpHeaderExtension(
           kRtpExtensionVideoTiming, test::kVideoTimingExtensionId));
     }
@@ -408,10 +409,13 @@ TEST_P(VideoSendStreamTest, SupportsVideoTimingFrames) {
       RTPHeader header;
       EXPECT_TRUE(parser_->Parse(packet, length, &header));
       // Only the last packet of the frame must have extension.
-      if (!header.markerBit)
+      // Also don't check packets of the second frame if they happen to get
+      // through before the test terminates.
+      if (!header.markerBit || first_frame_sent_)
         return SEND_PACKET;
       EXPECT_TRUE(header.extension.has_video_timing);
       observation_complete_.Set();
+      first_frame_sent_ = true;
       return SEND_PACKET;
     }
 
@@ -427,6 +431,9 @@ TEST_P(VideoSendStreamTest, SupportsVideoTimingFrames) {
     void PerformTest() override {
       EXPECT_TRUE(Wait()) << "Timed out while waiting for timing frames.";
     }
+
+   private:
+    bool first_frame_sent_;
   } test;
 
   RunBaseTest(&test);
