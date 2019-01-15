@@ -73,6 +73,16 @@ TEST(DecodedFramesHistory, HandlesNewLayer) {
   EXPECT_EQ(history.WasDecoded({1234, 2}), false);
 }
 
+TEST(DecodedFramesHistory, HandlesSkippedLayer) {
+  DecodedFramesHistory history(kHistorySize);
+  history.InsertDecoded({1234, 0}, 0);
+  history.InsertDecoded({1234, 2}, 0);
+  history.InsertDecoded({1235, 0}, 0);
+  history.InsertDecoded({1235, 1}, 0);
+  EXPECT_EQ(history.WasDecoded({1234, 1}), false);
+  EXPECT_EQ(history.WasDecoded({1235, 1}), true);
+}
+
 TEST(DecodedFramesHistory, HandlesBigJumpInPictureId) {
   DecodedFramesHistory history(kHistorySize);
   history.InsertDecoded({1234, 0}, 0);

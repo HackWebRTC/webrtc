@@ -31,8 +31,12 @@ void DecodedFramesHistory::InsertDecoded(const VideoLayerFrameId& frameid,
   last_decoded_frame_ = frameid;
   last_decoded_frame_timestamp_ = timestamp;
   if (static_cast<int>(layers_.size()) < frameid.spatial_layer + 1) {
+    size_t old_size = layers_.size();
     layers_.resize(frameid.spatial_layer + 1);
-    layers_[frameid.spatial_layer].buffer.resize(window_size_);
+    for (size_t i = old_size; i < layers_.size(); ++i) {
+      layers_[i].buffer.resize(window_size_);
+      layers_[i].last_stored_index = 0;
+    }
     layers_[frameid.spatial_layer].last_stored_index = frameid.picture_id;
     layers_[frameid.spatial_layer].buffer[frameid.picture_id % window_size_] =
         true;
