@@ -52,8 +52,6 @@ namespace voe {
 namespace {
 
 constexpr double kAudioSampleDurationSeconds = 0.01;
-constexpr int64_t kMaxRetransmissionWindowMs = 1000;
-constexpr int64_t kMinRetransmissionWindowMs = 30;
 
 // Video Sync.
 constexpr int kVoiceEngineMinMinPlayoutDelayMs = 0;
@@ -695,13 +693,6 @@ bool ChannelReceive::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
   if (rtt == 0) {
     // Waiting for valid RTT.
     return true;
-  }
-
-  int64_t nack_window_ms = rtt;
-  if (nack_window_ms < kMinRetransmissionWindowMs) {
-    nack_window_ms = kMinRetransmissionWindowMs;
-  } else if (nack_window_ms > kMaxRetransmissionWindowMs) {
-    nack_window_ms = kMaxRetransmissionWindowMs;
   }
 
   uint32_t ntp_secs = 0;
