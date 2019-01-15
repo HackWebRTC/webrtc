@@ -10,6 +10,7 @@
 
 package org.webrtc;
 
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -47,6 +48,7 @@ import org.webrtc.PeerConnection.IceConnectionState;
 import org.webrtc.PeerConnection.IceGatheringState;
 import org.webrtc.PeerConnection.PeerConnectionState;
 import org.webrtc.PeerConnection.SignalingState;
+import org.webrtc.PeerConnection.TlsCertPolicy;
 
 /** End-to-end tests for PeerConnection.java. */
 @RunWith(BaseJUnit4ClassRunner.class)
@@ -649,6 +651,109 @@ public class PeerConnectionTest {
 
     // assertEquals(threadsBeforeTest, threadsAfterTest);
     // Thread.sleep(100);
+  }
+
+  @Test
+  @SmallTest
+  public void testIceServerChanged() throws Exception {
+    PeerConnection.IceServer iceServer1 =
+        PeerConnection.IceServer.builder("turn:fake.example.com")
+            .setUsername("fakeUsername")
+            .setPassword("fakePassword")
+            .setTlsCertPolicy(TlsCertPolicy.TLS_CERT_POLICY_SECURE)
+            .setHostname("fakeHostname")
+            .setTlsAlpnProtocols(singletonList("fakeTlsAlpnProtocol"))
+            .setTlsEllipticCurves(singletonList("fakeTlsEllipticCurve"))
+            .createIceServer();
+    // Same as iceServer1.
+    PeerConnection.IceServer iceServer2 =
+        PeerConnection.IceServer.builder("turn:fake.example.com")
+            .setUsername("fakeUsername")
+            .setPassword("fakePassword")
+            .setTlsCertPolicy(TlsCertPolicy.TLS_CERT_POLICY_SECURE)
+            .setHostname("fakeHostname")
+            .setTlsAlpnProtocols(singletonList("fakeTlsAlpnProtocol"))
+            .setTlsEllipticCurves(singletonList("fakeTlsEllipticCurve"))
+            .createIceServer();
+    // Differs from iceServer1 by the url.
+    PeerConnection.IceServer iceServer3 =
+        PeerConnection.IceServer.builder("turn:fake.example2.com")
+            .setUsername("fakeUsername")
+            .setPassword("fakePassword")
+            .setTlsCertPolicy(TlsCertPolicy.TLS_CERT_POLICY_SECURE)
+            .setHostname("fakeHostname")
+            .setTlsAlpnProtocols(singletonList("fakeTlsAlpnProtocol"))
+            .setTlsEllipticCurves(singletonList("fakeTlsEllipticCurve"))
+            .createIceServer();
+    // Differs from iceServer1 by the username.
+    PeerConnection.IceServer iceServer4 =
+        PeerConnection.IceServer.builder("turn:fake.example.com")
+            .setUsername("fakeUsername2")
+            .setPassword("fakePassword")
+            .setTlsCertPolicy(TlsCertPolicy.TLS_CERT_POLICY_SECURE)
+            .setHostname("fakeHostname")
+            .setTlsAlpnProtocols(singletonList("fakeTlsAlpnProtocol"))
+            .setTlsEllipticCurves(singletonList("fakeTlsEllipticCurve"))
+            .createIceServer();
+    // Differs from iceServer1 by the password.
+    PeerConnection.IceServer iceServer5 =
+        PeerConnection.IceServer.builder("turn:fake.example.com")
+            .setUsername("fakeUsername")
+            .setPassword("fakePassword2")
+            .setTlsCertPolicy(TlsCertPolicy.TLS_CERT_POLICY_SECURE)
+            .setHostname("fakeHostname")
+            .setTlsAlpnProtocols(singletonList("fakeTlsAlpnProtocol"))
+            .setTlsEllipticCurves(singletonList("fakeTlsEllipticCurve"))
+            .createIceServer();
+    // Differs from iceServer1 by the TLS certificate policy.
+    PeerConnection.IceServer iceServer6 =
+        PeerConnection.IceServer.builder("turn:fake.example.com")
+            .setUsername("fakeUsername")
+            .setPassword("fakePassword")
+            .setTlsCertPolicy(TlsCertPolicy.TLS_CERT_POLICY_INSECURE_NO_CHECK)
+            .setHostname("fakeHostname")
+            .setTlsAlpnProtocols(singletonList("fakeTlsAlpnProtocol"))
+            .setTlsEllipticCurves(singletonList("fakeTlsEllipticCurve"))
+            .createIceServer();
+    // Differs from iceServer1 by the hostname.
+    PeerConnection.IceServer iceServer7 =
+        PeerConnection.IceServer.builder("turn:fake.example.com")
+            .setUsername("fakeUsername")
+            .setPassword("fakePassword")
+            .setTlsCertPolicy(TlsCertPolicy.TLS_CERT_POLICY_INSECURE_NO_CHECK)
+            .setHostname("fakeHostname2")
+            .setTlsAlpnProtocols(singletonList("fakeTlsAlpnProtocol"))
+            .setTlsEllipticCurves(singletonList("fakeTlsEllipticCurve"))
+            .createIceServer();
+    // Differs from iceServer1 by the TLS ALPN.
+    PeerConnection.IceServer iceServer8 =
+        PeerConnection.IceServer.builder("turn:fake.example.com")
+            .setUsername("fakeUsername")
+            .setPassword("fakePassword")
+            .setTlsCertPolicy(TlsCertPolicy.TLS_CERT_POLICY_INSECURE_NO_CHECK)
+            .setHostname("fakeHostname")
+            .setTlsAlpnProtocols(singletonList("fakeTlsAlpnProtocol2"))
+            .setTlsEllipticCurves(singletonList("fakeTlsEllipticCurve"))
+            .createIceServer();
+    // Differs from iceServer1 by the TLS elliptic curve.
+    PeerConnection.IceServer iceServer9 =
+        PeerConnection.IceServer.builder("turn:fake.example.com")
+            .setUsername("fakeUsername")
+            .setPassword("fakePassword")
+            .setTlsCertPolicy(TlsCertPolicy.TLS_CERT_POLICY_INSECURE_NO_CHECK)
+            .setHostname("fakeHostname")
+            .setTlsAlpnProtocols(singletonList("fakeTlsAlpnProtocol"))
+            .setTlsEllipticCurves(singletonList("fakeTlsEllipticCurve2"))
+            .createIceServer();
+
+    assertTrue(iceServer1.equals(iceServer2));
+    assertFalse(iceServer1.equals(iceServer3));
+    assertFalse(iceServer1.equals(iceServer4));
+    assertFalse(iceServer1.equals(iceServer5));
+    assertFalse(iceServer1.equals(iceServer6));
+    assertFalse(iceServer1.equals(iceServer7));
+    assertFalse(iceServer1.equals(iceServer8));
+    assertFalse(iceServer1.equals(iceServer9));
   }
 
   // TODO(fischman) MOAR test ideas:
