@@ -394,8 +394,6 @@ IceTransportState P2PTransportChannel::ComputeState() const {
 
 // Compute the current RTCIceTransportState as described in
 // https://www.w3.org/TR/webrtc/#dom-rtcicetransportstate
-// TODO(bugs.webrtc.org/9308): Return IceTransportState::kDisconnected when it
-// makes sense.
 // TODO(bugs.webrtc.org/9218): Avoid prematurely signalling kFailed once we have
 // implemented end-of-candidates signalling.
 webrtc::IceTransportState P2PTransportChannel::ComputeIceTransportState()
@@ -406,6 +404,13 @@ webrtc::IceTransportState P2PTransportChannel::ComputeIceTransportState()
       has_connection = true;
       break;
     }
+  }
+
+  if (!writable() && has_been_writable_) {
+    if (has_connection)
+      return webrtc::IceTransportState::kDisconnected;
+    else
+      return webrtc::IceTransportState::kFailed;
   }
 
   switch (gathering_state_) {
@@ -1878,6 +1883,23 @@ void P2PTransportChannel::SwitchSelectedConnection(Connection* conn) {
 // change, it should be called after all the connection states have changed. For
 // example, we call this at the end of SortConnectionsAndUpdateState.
 void P2PTransportChannel::UpdateState() {
+  // If our selected connection is "presumed writable" (TURN-TURN with no
+  // CreatePermission required), act like we're already writable to the upper
+  // layers, so they can start media quicker.
+  bool writable =
+      selected_connection_ && (selected_connection_->writable() ||
+                               PresumedWritable(selected_connection_));
+  SetWritable(writable);
+
+  bool receiving = false;
+  for (const Connection* connection : connections_) {
+    if (connection->receiving()) {
+      receiving = true;
+      break;
+    }
+  }
+  SetReceiving(receiving);
+
   IceTransportState state = ComputeState();
   webrtc::IceTransportState current_standardized_state =
       ComputeIceTransportState();
@@ -1927,22 +1949,6 @@ void P2PTransportChannel::UpdateState() {
     standardized_state_ = current_standardized_state;
     SignalIceTransportStateChanged(this);
   }
-  // If our selected connection is "presumed writable" (TURN-TURN with no
-  // CreatePermission required), act like we're already writable to the upper
-  // layers, so they can start media quicker.
-  bool writable =
-      selected_connection_ && (selected_connection_->writable() ||
-                               PresumedWritable(selected_connection_));
-  set_writable(writable);
-
-  bool receiving = false;
-  for (const Connection* connection : connections_) {
-    if (connection->receiving()) {
-      receiving = true;
-      break;
-    }
-  }
-  set_receiving(receiving);
 }
 
 void P2PTransportChannel::MaybeStopPortAllocatorSessions() {
@@ -2490,7 +2496,7 @@ Connection* P2PTransportChannel::MorePingable(Connection* conn1,
                         }));
 }
 
-void P2PTransportChannel::set_writable(bool writable) {
+void P2PTransportChannel::SetWritable(bool writable) {
   if (writable_ == writable) {
     return;
   }
@@ -2498,12 +2504,13 @@ void P2PTransportChannel::set_writable(bool writable) {
                       << ": Changed writable_ to " << writable;
   writable_ = writable;
   if (writable_) {
+    has_been_writable_ = true;
     SignalReadyToSend(this);
   }
   SignalWritableState(this);
 }
 
-void P2PTransportChannel::set_receiving(bool receiving) {
+void P2PTransportChannel::SetReceiving(bool receiving) {
   if (receiving_ == receiving) {
     return;
   }

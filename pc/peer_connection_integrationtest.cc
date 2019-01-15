@@ -512,6 +512,11 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
     return pc()->ice_connection_state();
   }
 
+  webrtc::PeerConnectionInterface::IceConnectionState
+  standardized_ice_connection_state() {
+    return pc()->standardized_ice_connection_state();
+  }
+
   webrtc::PeerConnectionInterface::IceGatheringState ice_gathering_state() {
     return pc()->ice_gathering_state();
   }
@@ -3811,6 +3816,8 @@ TEST_P(PeerConnectionIntegrationIceStatesTest, VerifyIceStates) {
             caller()->ice_gathering_state());
   ASSERT_EQ(PeerConnectionInterface::kIceConnectionNew,
             caller()->ice_connection_state());
+  ASSERT_EQ(PeerConnectionInterface::kIceConnectionNew,
+            caller()->standardized_ice_connection_state());
 
   // Start the call by creating the offer, setting it as the local description,
   // then sending it to the peer who will respond with an answer. This happens
@@ -3818,19 +3825,16 @@ TEST_P(PeerConnectionIntegrationIceStatesTest, VerifyIceStates) {
   // background.
   caller()->CreateAndSetAndSignalOffer();
 
-  ASSERT_EQ_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
-                 caller()->ice_connection_state(), kDefaultTimeout);
+  ASSERT_EQ(PeerConnectionInterface::kIceConnectionCompleted,
+            caller()->ice_connection_state());
+  ASSERT_EQ(PeerConnectionInterface::kIceConnectionCompleted,
+            caller()->standardized_ice_connection_state());
 
   // Verify that the observer was notified of the intermediate transitions.
   EXPECT_THAT(caller()->ice_connection_state_history(),
               ElementsAre(PeerConnectionInterface::kIceConnectionChecking,
                           PeerConnectionInterface::kIceConnectionConnected,
                           PeerConnectionInterface::kIceConnectionCompleted));
-  // After the ice transport transitions from checking to connected we revert
-  // back to new as the standard requires, as at that point the DTLS transport
-  // is in the "new" state while no transports are "connecting", "checking",
-  // "failed" or disconnected. This is pretty unintuitive, and we might want to
-  // amend the spec to handle this case more gracefully.
   EXPECT_THAT(
       caller()->peer_connection_state_history(),
       ElementsAre(PeerConnectionInterface::PeerConnectionState::kConnecting,
@@ -3847,12 +3851,18 @@ TEST_P(PeerConnectionIntegrationIceStatesTest, VerifyIceStates) {
   RTC_LOG(LS_INFO) << "Firewall rules applied";
   ASSERT_EQ_WAIT(PeerConnectionInterface::kIceConnectionDisconnected,
                  caller()->ice_connection_state(), kDefaultTimeout);
+  ASSERT_EQ_WAIT(PeerConnectionInterface::kIceConnectionDisconnected,
+                 caller()->standardized_ice_connection_state(),
+                 kDefaultTimeout);
 
   // Let ICE re-establish by removing the firewall rules.
   firewall()->ClearRules();
   RTC_LOG(LS_INFO) << "Firewall rules cleared";
   ASSERT_EQ_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
                  caller()->ice_connection_state(), kDefaultTimeout);
+  ASSERT_EQ_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
+                 caller()->standardized_ice_connection_state(),
+                 kDefaultTimeout);
 
   // According to RFC7675, if there is no response within 30 seconds then the
   // peer should consider the other side to have rejected the connection. This
@@ -3864,6 +3874,9 @@ TEST_P(PeerConnectionIntegrationIceStatesTest, VerifyIceStates) {
   RTC_LOG(LS_INFO) << "Firewall rules applied again";
   ASSERT_EQ_WAIT(PeerConnectionInterface::kIceConnectionFailed,
                  caller()->ice_connection_state(), kConsentTimeout);
+  ASSERT_EQ_WAIT(PeerConnectionInterface::kIceConnectionFailed,
+                 caller()->standardized_ice_connection_state(),
+                 kConsentTimeout);
 }
 
 // Tests that the best connection is set to the appropriate IPv4/IPv6 connection

@@ -944,7 +944,7 @@ TEST_F(JsepTransportControllerTest, SignalConnectionStateComplete) {
       cricket::IceTransportState::STATE_COMPLETED);
   fake_video_dtls->SetWritable(true);
   EXPECT_EQ_WAIT(cricket::kIceConnectionCompleted, connection_state_, kTimeout);
-  EXPECT_EQ(2, connection_state_signal_count_);
+  EXPECT_EQ(3, connection_state_signal_count_);
   EXPECT_EQ_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
                  ice_connection_state_, kTimeout);
   EXPECT_EQ(3, ice_connection_state_signal_count_);

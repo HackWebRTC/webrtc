@@ -370,9 +370,9 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
   bool IsRemoteCandidatePruned(const Candidate& cand) const;
 
   // Sets the writable state, signaling if necessary.
-  void set_writable(bool writable);
+  void SetWritable(bool writable);
   // Sets the receiving state, signaling if necessary.
-  void set_receiving(bool receiving);
+  void SetReceiving(bool receiving);
 
   std::string transport_name_;
   int component_;
@@ -429,6 +429,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
   uint32_t nomination_ = 0;
   bool receiving_ = false;
   bool writable_ = false;
+  bool has_been_writable_ = false;  // if writable_ has ever been true
 
   rtc::AsyncInvoker invoker_;
   absl::optional<rtc::NetworkRoute> network_route_;

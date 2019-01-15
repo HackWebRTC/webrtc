@@ -457,6 +457,8 @@ JsepTransportController::CreateDtlsTransport(const std::string& transport_name,
       this, &JsepTransportController::OnTransportRoleConflict_n);
   dtls->ice_transport()->SignalStateChanged.connect(
       this, &JsepTransportController::OnTransportStateChanged_n);
+  dtls->ice_transport()->SignalIceTransportStateChanged.connect(
+      this, &JsepTransportController::OnTransportStateChanged_n);
   return dtls;
 }
 
