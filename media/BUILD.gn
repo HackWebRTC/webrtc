@@ -570,10 +570,7 @@ if (rtc_include_tests) {
       "../modules/audio_processing:api",
       "../modules/audio_processing:mocks",
       "../modules/rtp_rtcp",
-
-      # TODO(http://crbug.com/908819): Add this dependency when Chromium
-      # android templates stop to consider *_module to have a special meaning.
-      # "../modules/video_capture:video_capture_module",
+      "../modules/video_capture:video_capture_module",
       "../modules/video_coding:video_codec_interface",
       "../modules/video_coding:webrtc_vp8",
       "../pc:rtc_pc",
