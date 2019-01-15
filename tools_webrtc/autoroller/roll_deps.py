@@ -29,7 +29,6 @@ def FindSrcDirPath():
 # Skip these dependencies (list without solution name prefix).
 DONT_AUTOROLL_THESE = [
   'src/examples/androidtests/third_party/gradle',
-  'src/third_party/ffmpeg',
 ]
 
 # These dependencies are missing in chromium/src/DEPS, either unused or already

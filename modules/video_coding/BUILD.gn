@@ -333,6 +333,7 @@ rtc_static_library("webrtc_h264") {
   ]
 
   if (rtc_use_h264) {
+    assert(!(is_win && !is_clang), "See: bugs.webrtc.org/9213#c13.")
     defines += [ "WEBRTC_USE_H264" ]
     sources += [
       "codecs/h264/h264_color_space.cc",
