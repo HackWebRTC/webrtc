@@ -57,7 +57,7 @@ class VideoQualityObserver {
   // Decoded timestamp of the last delayed frame.
   int64_t last_unfreeze_time_;
   rtc::SampleCounter render_interframe_delays_;
-  rtc::SampleCounter decode_interframe_delays_;
+  double sum_squared_interframe_delays_secs_;
   // An inter-frame delay is counted as a freeze if it's significantly longer
   // than average inter-frame delay.
   rtc::SampleCounter freezes_durations_;

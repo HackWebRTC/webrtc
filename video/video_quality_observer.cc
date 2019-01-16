@@ -11,6 +11,7 @@
 #include "video/video_quality_observer.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <string>
 
@@ -41,6 +42,7 @@ VideoQualityObserver::VideoQualityObserver(VideoContentType content_type)
       last_frame_pixels_(0),
       is_last_frame_blocky_(false),
       last_unfreeze_time_(0),
+      sum_squared_interframe_delays_secs_(0.0),
       time_in_resolution_ms_(3, 0),
       current_resolution_(Resolution::Low),
       num_resolution_downgrades_(0),
@@ -118,6 +120,15 @@ void VideoQualityObserver::UpdateHistograms() {
                                     num_freezes_per_minute);
     log_stream << uma_prefix << ".NumberFreezesPerMinute "
                << num_freezes_per_minute << "\n";
+
+    if (sum_squared_interframe_delays_secs_ > 0.0) {
+      int harmonic_framerate_fps = std::round(
+          video_duration_ms / (1000 * sum_squared_interframe_delays_secs_));
+      RTC_HISTOGRAM_COUNTS_SPARSE_100(uma_prefix + ".HarmonicFrameRate",
+                                      harmonic_framerate_fps);
+      log_stream << uma_prefix << ".HarmonicFrameRate "
+                 << harmonic_framerate_fps << "\n";
+    }
   }
   RTC_LOG(LS_INFO) << log_stream.str();
 }
@@ -134,7 +145,10 @@ void VideoQualityObserver::OnRenderedFrame(const VideoFrame& frame,
 
   if (!is_paused_ && num_frames_rendered_ > 1) {
     // Process inter-frame delay.
-    int64_t interframe_delay_ms = now_ms - last_frame_rendered_ms_;
+    const int64_t interframe_delay_ms = now_ms - last_frame_rendered_ms_;
+    const float interframe_delays_secs = interframe_delay_ms / 1000.0;
+    sum_squared_interframe_delays_secs_ +=
+        interframe_delays_secs * interframe_delays_secs;
     render_interframe_delays_.Add(interframe_delay_ms);
     absl::optional<int> avg_interframe_delay =
         render_interframe_delays_.Avg(kMinFrameSamplesToDetectFreeze);
