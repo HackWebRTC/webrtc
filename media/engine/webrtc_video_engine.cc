@@ -17,6 +17,7 @@
 #include <utility>
 
 #include "absl/strings/match.h"
+#include "api/video/video_codec_constants.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder.h"
@@ -246,8 +247,8 @@ bool GetVp9LayersFromFieldTrialGroup(size_t* num_spatial_layers,
              num_temporal_layers) != 2) {
     return false;
   }
-  const size_t kMaxSpatialLayers = 3;
-  if (*num_spatial_layers > kMaxSpatialLayers || *num_spatial_layers < 1)
+  if (*num_spatial_layers > webrtc::kMaxSpatialLayers ||
+      *num_spatial_layers < 1)
     return false;
 
   const size_t kMaxTemporalLayers = 3;

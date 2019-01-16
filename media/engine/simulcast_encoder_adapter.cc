@@ -18,7 +18,7 @@
 #include <utility>
 
 #include "api/video/i420_buffer.h"
-#include "api/video/video_bitrate_allocation.h"
+#include "api/video/video_codec_constants.h"
 #include "api/video/video_frame_buffer.h"
 #include "api/video/video_rotation.h"
 #include "api/video_codecs/video_encoder_factory.h"

@@ -13,6 +13,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <vector>
 
 #include "api/rtp_headers.h"
 #include "common_types.h"  // NOLINT(build/include)

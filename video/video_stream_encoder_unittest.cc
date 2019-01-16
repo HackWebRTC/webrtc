@@ -16,6 +16,7 @@
 
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "api/video/i420_buffer.h"
+#include "api/video/video_bitrate_allocation.h"
 #include "api/video_codecs/create_vp8_temporal_layers.h"
 #include "api/video_codecs/vp8_temporal_layers.h"
 #include "media/base/video_adapter.h"

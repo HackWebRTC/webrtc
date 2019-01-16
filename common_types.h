@@ -14,8 +14,6 @@
 #include <stddef.h>  // For size_t
 #include <cstdint>
 
-// TODO(sprang): Remove this include when all usage includes it directly.
-#include "api/video/video_bitrate_allocation.h"
 // TODO(bugs.webrtc.org/7660): Delete include once downstream code is updated.
 #include "api/video/video_codec_type.h"
 

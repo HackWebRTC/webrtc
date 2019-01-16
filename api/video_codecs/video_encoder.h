@@ -18,6 +18,7 @@
 #include "absl/types/optional.h"
 #include "api/video/encoded_image.h"
 #include "api/video/video_bitrate_allocation.h"
+#include "api/video/video_codec_constants.h"
 #include "api/video/video_frame.h"
 #include "api/video_codecs/video_codec.h"
 #include "rtc_base/checks.h"

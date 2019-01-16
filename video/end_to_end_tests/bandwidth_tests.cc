@@ -11,6 +11,7 @@
 #include "absl/memory/memory.h"
 #include "api/test/simulated_network.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
+#include "api/video/video_bitrate_allocation.h"
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"

@@ -12,6 +12,8 @@
 #define SDK_ANDROID_SRC_JNI_ENCODED_IMAGE_H_
 
 #include <jni.h>
+#include <vector>
+
 #include "common_types.h"  // NOLINT(build/include)
 
 #include "sdk/android/native_api/jni/scoped_java_ref.h"

@@ -14,6 +14,7 @@
 #include "absl/memory/memory.h"
 #include "api/test/simulated_network.h"
 #include "api/video/encoded_image.h"
+#include "api/video/video_bitrate_allocation.h"
 #include "call/call.h"
 #include "call/fake_network_pipe.h"
 #include "call/rtp_transport_controller_send.h"

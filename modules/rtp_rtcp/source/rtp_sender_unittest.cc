@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "api/video/video_codec_constants.h"
 #include "api/video/video_timing.h"
 #include "logging/rtc_event_log/events/rtc_event.h"
 #include "logging/rtc_event_log/mock/mock_rtc_event_log.h"
