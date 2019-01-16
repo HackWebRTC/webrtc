@@ -79,6 +79,8 @@ SendAudioStream::SendAudioStream(
   if (config.encoder.initial_frame_length != TimeDelta::ms(20))
     sdp_params["ptime"] =
         std::to_string(config.encoder.initial_frame_length.ms());
+  if (config.encoder.enable_dtx)
+    sdp_params["usedtx"] = "1";
 
   // SdpAudioFormat::num_channels indicates that the encoder is capable of
   // stereo, but the actual channel count used is based on the "stereo"
@@ -154,6 +156,10 @@ SendAudioStream::~SendAudioStream() {
 void SendAudioStream::Start() {
   send_stream_->Start();
   sender_->call_->SignalChannelNetworkState(MediaType::AUDIO, kNetworkUp);
+}
+
+void SendAudioStream::SetMuted(bool mute) {
+  send_stream_->SetMuted(mute);
 }
 
 ColumnPrinter SendAudioStream::StatsPrinter() {

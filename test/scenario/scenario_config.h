@@ -169,6 +169,7 @@ struct AudioStreamConfig {
     Encoder(const Encoder&);
     ~Encoder();
     bool allocate_bitrate = false;
+    bool enable_dtx = false;
     absl::optional<DataRate> fixed_rate;
     absl::optional<DataRate> min_rate;
     absl::optional<DataRate> max_rate;

@@ -29,6 +29,7 @@ class SendAudioStream {
   RTC_DISALLOW_COPY_AND_ASSIGN(SendAudioStream);
   ~SendAudioStream();
   void Start();
+  void SetMuted(bool mute);
   ColumnPrinter StatsPrinter();
 
  private:
