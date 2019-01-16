@@ -245,7 +245,7 @@ void SimulatedFeedback::OnPacketReceived(EmulatedIpPacket packet) {
 }
 
 SimulatedTimeClient::SimulatedTimeClient(
-    std::string log_filename,
+    std::unique_ptr<LogWriterFactoryInterface> log_writer_factory,
     SimulatedTimeClientConfig config,
     std::vector<PacketStreamConfig> stream_configs,
     std::vector<EmulatedNetworkNode*> send_link,
@@ -253,7 +253,8 @@ SimulatedTimeClient::SimulatedTimeClient(
     uint64_t send_receiver_id,
     uint64_t return_receiver_id,
     Timestamp at_time)
-    : network_controller_factory_(log_filename, config.transport),
+    : log_writer_factory_(std::move(log_writer_factory)),
+      network_controller_factory_(log_writer_factory_.get(), config.transport),
       send_link_(send_link),
       return_link_(return_link),
       sender_(send_link.front(), send_receiver_id),
@@ -274,11 +275,10 @@ SimulatedTimeClient::SimulatedTimeClient(
 
   CongestionProcess(at_time);
   network_controller_factory_.LogCongestionControllerStats(at_time);
-  if (!log_filename.empty()) {
-    std::string packet_log_name = log_filename + ".packets.txt";
-    packet_log_ = fopen(packet_log_name.c_str(), "w");
-    fprintf(packet_log_,
-            "transport_seq packet_size send_time recv_time feed_time\n");
+  if (log_writer_factory_) {
+    packet_log_ = log_writer_factory_->Create(".packets.txt");
+    packet_log_->Write(
+        "transport_seq packet_size send_time recv_time feed_time\n");
   }
 }
 
@@ -289,18 +289,17 @@ void SimulatedTimeClient::OnPacketReceived(EmulatedIpPacket packet) {
                                            packet.arrival_time);
   for (PacketResult& feedback : report.packet_feedbacks) {
     if (packet_log_)
-      fprintf(packet_log_, "%" PRId64 " %" PRId64 " %.3lf %.3lf %.3lf\n",
-              feedback.sent_packet.sequence_number,
-              feedback.sent_packet.size.bytes(),
-              feedback.sent_packet.send_time.seconds<double>(),
-              feedback.receive_time.seconds<double>(),
-              packet.arrival_time.seconds<double>());
+      LogWriteFormat(packet_log_.get(),
+                     "%" PRId64 " %" PRId64 " %.3lf %.3lf %.3lf\n",
+                     feedback.sent_packet.sequence_number,
+                     feedback.sent_packet.size.bytes(),
+                     feedback.sent_packet.send_time.seconds<double>(),
+                     feedback.receive_time.seconds<double>(),
+                     packet.arrival_time.seconds<double>());
   }
   Update(congestion_controller_->OnTransportPacketsFeedback(report));
 }
 SimulatedTimeClient::~SimulatedTimeClient() {
-  if (packet_log_)
-    fclose(packet_log_);
 }
 
 void SimulatedTimeClient::Update(NetworkControlUpdate update) {

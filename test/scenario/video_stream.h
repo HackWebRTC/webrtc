@@ -16,6 +16,7 @@
 #include "rtc_base/constructor_magic.h"
 #include "test/fake_encoder.h"
 #include "test/frame_generator_capturer.h"
+#include "test/logging/log_writer.h"
 #include "test/scenario/call_client.h"
 #include "test/scenario/column_printer.h"
 #include "test/scenario/network_node.h"
@@ -104,7 +105,7 @@ class VideoStreamPair {
   VideoStreamPair(CallClient* sender,
                   CallClient* receiver,
                   VideoStreamConfig config,
-                  std::string quality_log_file_name);
+                  std::unique_ptr<RtcEventLogOutput> quality_writer);
 
   const VideoStreamConfig config_;
 

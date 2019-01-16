@@ -16,6 +16,7 @@
 #include "api/transport/network_control.h"
 #include "api/transport/network_types.h"
 #include "api/units/timestamp.h"
+#include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/congestion_controller/bbr/bbr_factory.h"
 #include "modules/congestion_controller/bbr/bbr_network_controller.h"
 #include "modules/congestion_controller/test/controller_printer.h"
@@ -28,8 +29,8 @@ class BbrStatePrinter : public DebugStatePrinter {
   void Attach(bbr::BbrNetworkController*);
   bool Attached() const override;
 
-  void PrintHeaders(FILE* out) override;
-  void PrintValues(FILE* out) override;
+  void PrintHeaders(RtcEventLogOutput* out) override;
+  void PrintValues(RtcEventLogOutput* out) override;
 
   NetworkControlUpdate GetState(Timestamp at_time) const override;
 

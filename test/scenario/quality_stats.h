@@ -11,6 +11,7 @@
 #define TEST_SCENARIO_QUALITY_STATS_H_
 
 #include <deque>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -22,6 +23,7 @@
 #include "rtc_base/task_queue.h"
 #include "rtc_base/time_utils.h"
 #include "system_wrappers/include/clock.h"
+#include "test/logging/log_writer.h"
 #include "test/scenario/quality_info.h"
 #include "test/scenario/scenario_config.h"
 #include "test/statistics.h"
@@ -32,7 +34,7 @@ namespace test {
 class VideoQualityAnalyzer {
  public:
   VideoQualityAnalyzer(
-      std::string filename_or_empty,
+      std::unique_ptr<RtcEventLogOutput> writer,
       std::function<void(const VideoFrameQualityInfo&)> frame_info_handler);
   ~VideoQualityAnalyzer();
   void OnCapturedFrame(const VideoFrame& frame);
@@ -46,12 +48,12 @@ class VideoQualityAnalyzer {
   int64_t CapturedFrameCaptureTimeOffsetMs(const VideoFrame& captured) const;
   void PrintHeaders();
   void PrintFrameInfo(const VideoFrameQualityInfo& sample);
+  const std::unique_ptr<RtcEventLogOutput> writer_;
   std::vector<std::function<void(const VideoFrameQualityInfo&)>>
       frame_info_handlers_;
   std::deque<VideoFrame> captured_frames_;
   absl::optional<int64_t> first_capture_ntp_time_ms_;
   absl::optional<uint32_t> first_decode_rtp_timestamp_;
-  FILE* output_file_ = nullptr;
   rtc::TaskQueue task_queue_;
 };
 

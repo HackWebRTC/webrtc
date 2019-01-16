@@ -11,10 +11,12 @@
 
 #include <algorithm>
 
+#include "absl/memory/memory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "rtc_base/flags.h"
 #include "rtc_base/socket_address.h"
+#include "test/logging/file_log_writer.h"
 #include "test/scenario/network/network_emulation.h"
 #include "test/testsupport/file_utils.h"
 
@@ -27,6 +29,19 @@ namespace webrtc {
 namespace test {
 namespace {
 int64_t kMicrosPerSec = 1000000;
+std::unique_ptr<FileLogWriterFactory> GetScenarioLogManager(
+    std::string file_name) {
+  if (FLAG_scenario_logs && !file_name.empty()) {
+    std::string output_root = FLAG_out_root;
+    if (output_root.empty())
+      output_root = OutputPath() + "output_data/";
+
+    auto base_filename = output_root + file_name + ".";
+    RTC_LOG(LS_INFO) << "Saving scenario logs to: " << base_filename;
+    return absl::make_unique<FileLogWriterFactory>(base_filename);
+  }
+  return nullptr;
+}
 }
 
 RepeatedActivity::RepeatedActivity(TimeDelta interval,
@@ -54,30 +69,24 @@ Timestamp RepeatedActivity::NextTime() {
   return last_update_ + interval_;
 }
 
-Scenario::Scenario() : Scenario("", true) {}
+Scenario::Scenario()
+    : Scenario(std::unique_ptr<LogWriterFactoryInterface>(), true) {}
 
 Scenario::Scenario(std::string file_name) : Scenario(file_name, true) {}
 
 Scenario::Scenario(std::string file_name, bool real_time)
-    : real_time_mode_(real_time),
+    : Scenario(GetScenarioLogManager(file_name), real_time) {}
+
+Scenario::Scenario(
+    std::unique_ptr<LogWriterFactoryInterface> log_writer_factory,
+    bool real_time)
+    : log_writer_factory_(std::move(log_writer_factory)),
+      real_time_mode_(real_time),
       sim_clock_(100000 * kMicrosPerSec),
       clock_(real_time ? Clock::GetRealTimeClock() : &sim_clock_),
       audio_decoder_factory_(CreateBuiltinAudioDecoderFactory()),
       audio_encoder_factory_(CreateBuiltinAudioEncoderFactory()) {
-  if (FLAG_scenario_logs && !file_name.empty()) {
-    std::string output_root = FLAG_out_root;
-    if (output_root.empty())
-      output_root = OutputPath() + "output_data/";
-    if (output_root.back() == '/')
-      CreateDir(output_root);
-    for (size_t i = 0; i < file_name.size(); ++i) {
-      if (file_name[i] == '/')
-        CreateDir(output_root + file_name.substr(0, i));
-    }
-    base_filename_ = output_root + file_name;
-    RTC_LOG(LS_INFO) << "Saving scenario logs to: " << base_filename_;
-  }
-  if (!real_time_mode_ && !base_filename_.empty()) {
+  if (!real_time_mode_ && log_writer_factory_) {
     rtc::SetClockForTesting(&event_log_fake_clock_);
     event_log_fake_clock_.SetTimeNanos(sim_clock_.TimeInMicroseconds() * 1000);
   }
@@ -105,8 +114,7 @@ StatesPrinter* Scenario::CreatePrinter(std::string name,
   std::vector<ColumnPrinter> all_printers{TimePrinter()};
   for (auto& printer : printers)
     all_printers.push_back(printer);
-  StatesPrinter* printer =
-      new StatesPrinter(GetFullPathOrEmpty(name), all_printers);
+  StatesPrinter* printer = new StatesPrinter(GetLogWriter(name), all_printers);
   printers_.emplace_back(printer);
   printer->PrintHeaders();
   if (interval.IsFinite())
@@ -117,7 +125,7 @@ StatesPrinter* Scenario::CreatePrinter(std::string name,
 CallClient* Scenario::CreateClient(std::string name, CallClientConfig config) {
   RTC_DCHECK(real_time_mode_);
   CallClient* client =
-      new CallClient(clock_, name, GetFullPathOrEmpty(name), config);
+      new CallClient(clock_, GetLogWriterFactory(name), config);
   if (config.transport.state_log_interval.IsFinite()) {
     Every(config.transport.state_log_interval, [this, client]() {
       client->network_controller_factory_.LogCongestionControllerStats(Now());
@@ -182,9 +190,9 @@ SimulatedTimeClient* Scenario::CreateSimulatedTimeClient(
   uint64_t send_id = next_route_id_++;
   uint64_t return_id = next_route_id_++;
   SimulatedTimeClient* client = new SimulatedTimeClient(
-      GetFullPathOrEmpty(name), config, stream_configs, send_link, return_link,
+      GetLogWriterFactory(name), config, stream_configs, send_link, return_link,
       send_id, return_id, Now());
-  if (!base_filename_.empty() && !name.empty() &&
+  if (log_writer_factory_ && !name.empty() &&
       config.transport.state_log_interval.IsFinite()) {
     Every(config.transport.state_log_interval, [this, client]() {
       client->network_controller_factory_.LogCongestionControllerStats(Now());
@@ -283,12 +291,11 @@ VideoStreamPair* Scenario::CreateVideoStream(
 VideoStreamPair* Scenario::CreateVideoStream(
     std::pair<CallClient*, CallClient*> clients,
     VideoStreamConfig config) {
-  std::string quality_log_file_name;
+  std::unique_ptr<RtcEventLogOutput> quality_logger;
   if (config.analyzer.log_to_file)
-    quality_log_file_name =
-        GetFullPathOrEmpty(clients.first->name_ + ".video_quality.txt");
+    quality_logger = clients.first->GetLogWriter(".video_quality.txt");
   video_streams_.emplace_back(new VideoStreamPair(
-      clients.first, clients.second, config, quality_log_file_name));
+      clients.first, clients.second, config, std::move(quality_logger)));
   return video_streams_.back().get();
 }
 
@@ -364,7 +371,7 @@ void Scenario::RunUntil(TimeDelta max_duration,
       sim_clock_.AdvanceTimeMicroseconds(wait_time.us());
       // The fake clock is quite slow to update, we only update it if logging is
       // turned on to save time.
-      if (!base_filename_.empty())
+      if (!log_writer_factory_)
         event_log_fake_clock_.SetTimeNanos(sim_clock_.TimeInMicroseconds() *
                                            1000);
     }

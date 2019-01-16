@@ -32,6 +32,9 @@ class RtcEventLogOutput {
   // after the first time |false| is returned. Write() may not be called on
   // an inactive output sink.
   virtual bool Write(const std::string& output) = 0;
+
+  // Indicates that buffers should be written to disk if applicable.
+  virtual void Flush() {}
 };
 
 }  // namespace webrtc

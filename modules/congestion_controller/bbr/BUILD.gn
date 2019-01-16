@@ -128,6 +128,7 @@ if (rtc_include_tests) {
       "..:test_controller_printer",
       "../../../api/transport:network_control",
       "../../../api/units:timestamp",
+      "../../../logging:rtc_event_log_api",
       "../../../rtc_base:checks",
     ]
   }

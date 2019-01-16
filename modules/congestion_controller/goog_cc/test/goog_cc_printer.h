@@ -29,8 +29,8 @@ class GoogCcStatePrinter : public DebugStatePrinter {
   void Attach(GoogCcNetworkController*);
   bool Attached() const override;
 
-  void PrintHeaders(FILE* out) override;
-  void PrintValues(FILE* out) override;
+  void PrintHeaders(RtcEventLogOutput* out) override;
+  void PrintValues(RtcEventLogOutput* out) override;
 
   NetworkControlUpdate GetState(Timestamp at_time) const override;
 

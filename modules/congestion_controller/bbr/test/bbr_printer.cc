@@ -24,15 +24,17 @@ bool BbrStatePrinter::Attached() const {
   return controller_ != nullptr;
 }
 
-void BbrStatePrinter::PrintHeaders(FILE* out) {
-  fprintf(out, "bbr_mode bbr_recovery_state round_trip_count gain_cycle_index");
+void BbrStatePrinter::PrintHeaders(RtcEventLogOutput* out) {
+  LogWriteFormat(
+      out, "bbr_mode bbr_recovery_state round_trip_count gain_cycle_index");
 }
 
-void BbrStatePrinter::PrintValues(FILE* out) {
+void BbrStatePrinter::PrintValues(RtcEventLogOutput* out) {
   RTC_CHECK(controller_);
   bbr::BbrNetworkController::DebugState debug(*controller_);
-  fprintf(out, "%i %i %i %i", debug.mode, debug.recovery_state,
-          static_cast<int>(debug.round_trip_count), debug.gain_cycle_index);
+  LogWriteFormat(out, "%i %i %i %i", debug.mode, debug.recovery_state,
+                 static_cast<int>(debug.round_trip_count),
+                 debug.gain_cycle_index);
 }
 
 NetworkControlUpdate BbrStatePrinter::GetState(Timestamp at_time) const {

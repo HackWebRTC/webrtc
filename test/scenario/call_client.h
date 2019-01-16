@@ -19,6 +19,7 @@
 #include "modules/congestion_controller/test/controller_printer.h"
 #include "modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "rtc_base/constructor_magic.h"
+#include "test/logging/log_writer.h"
 #include "test/scenario/column_printer.h"
 #include "test/scenario/network/network_emulation.h"
 #include "test/scenario/network_node.h"
@@ -30,7 +31,7 @@ namespace test {
 class LoggingNetworkControllerFactory
     : public NetworkControllerFactoryInterface {
  public:
-  LoggingNetworkControllerFactory(std::string filename,
+  LoggingNetworkControllerFactory(LogWriterFactoryInterface* log_writer_factory,
                                   TransportControllerConfig config);
   RTC_DISALLOW_COPY_AND_ASSIGN(LoggingNetworkControllerFactory);
   ~LoggingNetworkControllerFactory();
@@ -46,7 +47,6 @@ class LoggingNetworkControllerFactory
   std::unique_ptr<NetworkControllerFactoryInterface> owned_cc_factory_;
   NetworkControllerFactoryInterface* cc_factory_ = nullptr;
   std::unique_ptr<ControlStatePrinter> cc_printer_;
-  FILE* cc_out_ = nullptr;
 };
 
 struct CallClientFakeAudio {
@@ -60,8 +60,7 @@ struct CallClientFakeAudio {
 class CallClient : public EmulatedNetworkReceiverInterface {
  public:
   CallClient(Clock* clock,
-             std::string name,
-             std::string log_filename,
+             std::unique_ptr<LogWriterFactoryInterface> log_writer_factory,
              CallClientConfig config);
   RTC_DISALLOW_COPY_AND_ASSIGN(CallClient);
 
@@ -73,6 +72,7 @@ class CallClient : public EmulatedNetworkReceiverInterface {
   }
 
   void OnPacketReceived(EmulatedIpPacket packet) override;
+  std::unique_ptr<RtcEventLogOutput> GetLogWriter(std::string name);
 
  private:
   friend class Scenario;
@@ -91,7 +91,7 @@ class CallClient : public EmulatedNetworkReceiverInterface {
   void AddExtensions(std::vector<RtpExtension> extensions);
 
   Clock* clock_;
-  const std::string name_;
+  const std::unique_ptr<LogWriterFactoryInterface> log_writer_factory_;
   LoggingNetworkControllerFactory network_controller_factory_;
   CallClientFakeAudio fake_audio_setup_;
   std::unique_ptr<Call> call_;

@@ -101,6 +101,7 @@ if (rtc_include_tests) {
       "../../api/units:time_delta",
       "../../api/units:timestamp",
       "../../rtc_base:checks",
+      "../../test/logging:log_writer",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
   }

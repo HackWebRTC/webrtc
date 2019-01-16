@@ -19,12 +19,10 @@ namespace webrtc {
 namespace test {
 
 VideoQualityAnalyzer::VideoQualityAnalyzer(
-    std::string filename_or_empty,
+    std::unique_ptr<RtcEventLogOutput> writer,
     std::function<void(const VideoFrameQualityInfo&)> frame_info_handler)
-    : task_queue_("VideoAnalyzer") {
-  if (!filename_or_empty.empty()) {
-    output_file_ = fopen(filename_or_empty.c_str(), "w");
-    RTC_CHECK(output_file_);
+    : writer_(std::move(writer)), task_queue_("VideoAnalyzer") {
+  if (writer_) {
     PrintHeaders();
     frame_info_handlers_.push_back(
         [this](const VideoFrameQualityInfo& info) { PrintFrameInfo(info); });
@@ -37,8 +35,6 @@ VideoQualityAnalyzer::~VideoQualityAnalyzer() {
   rtc::Event event;
   task_queue_.PostTask([&event] { event.Set(); });
   event.Wait(rtc::Event::kForever);
-  if (output_file_)
-    fclose(output_file_);
 }
 
 void VideoQualityAnalyzer::OnCapturedFrame(const VideoFrame& frame) {
@@ -114,15 +110,15 @@ int64_t VideoQualityAnalyzer::CapturedFrameCaptureTimeOffsetMs(
 }
 
 void VideoQualityAnalyzer::PrintHeaders() {
-  fprintf(output_file_, "capt recv_capt render width height psnr\n");
+  writer_->Write("capt recv_capt render width height psnr\n");
 }
 
 void VideoQualityAnalyzer::PrintFrameInfo(const VideoFrameQualityInfo& sample) {
-  fprintf(output_file_, "%.3f %.3f %.3f %i %i %.3f\n",
-          sample.capture_time.seconds<double>(),
-          sample.received_capture_time.seconds<double>(),
-          sample.render_time.seconds<double>(), sample.width, sample.height,
-          sample.psnr);
+  LogWriteFormat(writer_.get(), "%.3f %.3f %.3f %i %i %.3f\n",
+                 sample.capture_time.seconds<double>(),
+                 sample.received_capture_time.seconds<double>(),
+                 sample.render_time.seconds<double>(), sample.width,
+                 sample.height, sample.psnr);
 }
 
 void VideoQualityStats::HandleFrameInfo(VideoFrameQualityInfo sample) {

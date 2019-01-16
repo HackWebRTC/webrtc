@@ -11,7 +11,6 @@
 #define TEST_SCENARIO_SIMULATED_TIME_H_
 
 #include <stdint.h>
-#include <stdio.h>
 #include <deque>
 #include <map>
 #include <memory>
@@ -25,6 +24,7 @@
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "rtc_base/copy_on_write_buffer.h"
+#include "test/logging/log_writer.h"
 #include "test/scenario/call_client.h"
 #include "test/scenario/network_node.h"
 #include "test/scenario/scenario_config.h"
@@ -120,14 +120,15 @@ class SimulatedSender {
 // a more accurate simulation, use the real time only CallClient.
 class SimulatedTimeClient : EmulatedNetworkReceiverInterface {
  public:
-  SimulatedTimeClient(std::string log_filename,
-                      SimulatedTimeClientConfig config,
-                      std::vector<PacketStreamConfig> stream_configs,
-                      std::vector<EmulatedNetworkNode*> send_link,
-                      std::vector<EmulatedNetworkNode*> return_link,
-                      uint64_t send_receiver_id,
-                      uint64_t return_receiver_id,
-                      Timestamp at_time);
+  SimulatedTimeClient(
+      std::unique_ptr<LogWriterFactoryInterface> log_writer_factory,
+      SimulatedTimeClientConfig config,
+      std::vector<PacketStreamConfig> stream_configs,
+      std::vector<EmulatedNetworkNode*> send_link,
+      std::vector<EmulatedNetworkNode*> return_link,
+      uint64_t send_receiver_id,
+      uint64_t return_receiver_id,
+      Timestamp at_time);
   SimulatedTimeClient(const SimulatedTimeClient&) = delete;
   ~SimulatedTimeClient();
   void Update(NetworkControlUpdate update);
@@ -144,6 +145,7 @@ class SimulatedTimeClient : EmulatedNetworkReceiverInterface {
 
  private:
   friend class Scenario;
+  std::unique_ptr<LogWriterFactoryInterface> log_writer_factory_;
   LoggingNetworkControllerFactory network_controller_factory_;
   std::unique_ptr<NetworkControllerInterface> congestion_controller_;
   std::vector<EmulatedNetworkNode*> send_link_;
@@ -153,7 +155,7 @@ class SimulatedTimeClient : EmulatedNetworkReceiverInterface {
   TargetRateConstraints current_contraints_;
   DataRate target_rate_ = DataRate::Infinity();
   DataRate link_capacity_ = DataRate::Infinity();
-  FILE* packet_log_ = nullptr;
+  std::unique_ptr<RtcEventLogOutput> packet_log_;
 
   std::vector<std::unique_ptr<PacketStream>> packet_streams_;
 };
