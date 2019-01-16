@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "api/video/video_source_interface.h"
+#include "rtc_base/time_utils.h"
 #include "test/layer_filtering_transport.h"
 #include "test/rtp_file_writer.h"
 #include "test/statistics.h"

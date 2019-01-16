@@ -25,6 +25,7 @@
 #include "modules/bitrate_controller/include/mock/mock_bitrate_controller.h"
 #include "modules/pacing/packet_router.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
+#include "rtc_base/time_utils.h"
 #include "test/gtest.h"
 #include "test/mock_audio_decoder_factory.h"
 #include "test/mock_transport.h"

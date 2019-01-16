@@ -10,7 +10,9 @@
 #ifndef TEST_CALL_TEST_H_
 #define TEST_CALL_TEST_H_
 
+#include <map>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "api/test/video/function_video_decoder_factory.h"
