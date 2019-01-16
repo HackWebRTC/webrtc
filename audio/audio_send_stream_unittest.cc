@@ -227,12 +227,12 @@ struct ConfigHelper {
   void SetupMockForModifyEncoder() {
     // Let ModifyEncoder to invoke mock audio encoder.
     EXPECT_CALL(*channel_send_, ModifyEncoder(_))
-        .WillRepeatedly(Invoke(
+        .WillRepeatedly(
             [this](rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)>
                        modifier) {
               if (this->audio_encoder_)
                 modifier(&this->audio_encoder_);
-            }));
+            });
   }
 
   void SetupMockForSendTelephoneEvent() {
