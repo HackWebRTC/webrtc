@@ -10,11 +10,12 @@
 
 #include "api/rtc_error.h"
 
+#include "absl/strings/string_view.h"
 #include "rtc_base/arraysize.h"
 
 namespace {
 
-static const char* const kRTCErrorTypeNames[] = {
+const absl::string_view kRTCErrorTypeNames[] = {
     "NONE",
     "UNSUPPORTED_OPERATION",
     "UNSUPPORTED_PARAMETER",
@@ -52,10 +53,9 @@ void RTCError::set_message(std::string message) {
   message_ = std::move(message);
 }
 
-// TODO(jonasolsson): Change to use absl::string_view when it's available.
-std::string ToString(RTCErrorType error) {
+absl::string_view ToString(RTCErrorType error) {
   int index = static_cast<int>(error);
-  return std::string(kRTCErrorTypeNames[index]);
+  return kRTCErrorTypeNames[index];
 }
 
 }  // namespace webrtc
