@@ -1092,6 +1092,43 @@ TEST(FullStackTest, SimulcastVP8_3SL_Low) {
   fixture->RunWithAnalyzer(simulcast);
 }
 
+// This test assumes ideal network conditions with target bandwidth being
+// available and exercises WebRTC calls with a high target bitrate(100 Mbps).
+// Android32 bots can't handle this high bitrate, so disable test for those.
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_HighBitrateWithFakeCodec DISABLE_HighBitrateWithFakeCodec
+#else
+#define MAYBE_HighBitrateWithFakeCodec HighBitrateWithFakeCodec
+#endif  // defined(WEBRTC_ANDROID)
+TEST(FullStackTest, MAYBE_HighBitrateWithFakeCodec) {
+  auto fixture = CreateVideoQualityTestFixture();
+  const int target_bitrate = 100000000;
+  ParamsWithLogging generator;
+  generator.call.send_side_bwe = true;
+  generator.call.call_bitrate_config.min_bitrate_bps = target_bitrate;
+  generator.call.call_bitrate_config.start_bitrate_bps = target_bitrate;
+  generator.call.call_bitrate_config.max_bitrate_bps = target_bitrate;
+  generator.video[0] = {true,
+                        360,
+                        240,
+                        30,
+                        target_bitrate / 2,
+                        target_bitrate,
+                        target_bitrate * 2,
+                        false,
+                        "FakeCodec",
+                        1,
+                        0,
+                        0,
+                        false,
+                        false,
+                        false,
+                        "Generator"};
+  generator.analyzer = {"high_bitrate_with_fake_codec", 0.0, 0.0,
+                        kFullStackTestDurationSecs};
+  fixture->RunWithAnalyzer(generator);
+}
+
 TEST(FullStackTest, LargeRoomVP8_5thumb) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging large_room;

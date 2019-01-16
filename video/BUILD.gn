@@ -262,6 +262,7 @@ if (rtc_include_tests) {
       "../rtc_base:rtc_base_approved",
       "../rtc_base:rtc_base_tests_utils",
       "../system_wrappers",
+      "../test:fake_video_codecs",
       "../test:fileutils",
       "../test:perf_test",
       "../test:rtp_test_utils",

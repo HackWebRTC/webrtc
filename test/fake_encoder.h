@@ -36,6 +36,7 @@ namespace test {
 class FakeEncoder : public VideoEncoder {
  public:
   explicit FakeEncoder(Clock* clock);
+  FakeEncoder(Clock* clock, size_t buffer_size);
   virtual ~FakeEncoder() = default;
 
   // Sets max bitrate. Not thread-safe, call before registering the encoder.
@@ -91,7 +92,7 @@ class FakeEncoder : public VideoEncoder {
   uint32_t counter_ RTC_GUARDED_BY(crit_sect_);
   rtc::CriticalSection crit_sect_;
 
-  uint8_t encoded_buffer_[100000];
+  std::vector<uint8_t> encoded_buffer_;
   bool used_layers_[kMaxSimulcastStreams];
 
   // Current byte debt to be payed over a number of frames.

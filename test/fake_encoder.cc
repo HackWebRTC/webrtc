@@ -47,7 +47,9 @@ void WriteCounter(unsigned char* payload, uint32_t counter) {
 
 };  // namespace
 
-FakeEncoder::FakeEncoder(Clock* clock)
+FakeEncoder::FakeEncoder(Clock* clock) : FakeEncoder(clock, 100000) {}
+
+FakeEncoder::FakeEncoder(Clock* clock, size_t buffer_size)
     : clock_(clock),
       callback_(nullptr),
       configured_input_framerate_(-1),
@@ -56,7 +58,8 @@ FakeEncoder::FakeEncoder(Clock* clock)
       counter_(0),
       debt_bytes_(0) {
   // Generate some arbitrary not-all-zero data
-  for (size_t i = 0; i < sizeof(encoded_buffer_); ++i) {
+  encoded_buffer_.resize(buffer_size);
+  for (size_t i = 0; i < encoded_buffer_.size(); ++i) {
     encoded_buffer_[i] = static_cast<uint8_t>(i);
   }
   for (bool& used : used_layers_) {
@@ -130,12 +133,12 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
     specifics.codecType = kVideoCodecGeneric;
     std::unique_ptr<uint8_t[]> encoded_buffer(
         new uint8_t[frame_info.layers[i].size]);
-    memcpy(encoded_buffer.get(), encoded_buffer_,
+    memcpy(encoded_buffer.get(), encoded_buffer_.data(),
            frame_info.layers[i].size - 4);
     // Write a counter to the image to make each frame unique.
     WriteCounter(encoded_buffer.get() + frame_info.layers[i].size - 4, counter);
     EncodedImage encoded(encoded_buffer.get(), frame_info.layers[i].size,
-                         sizeof(encoded_buffer_));
+                         encoded_buffer_.size());
     encoded.SetTimestamp(input_image.timestamp());
     encoded.capture_time_ms_ = input_image.render_time_ms();
     encoded._frameType =
