@@ -1096,7 +1096,7 @@ TEST(FullStackTest, SimulcastVP8_3SL_Low) {
 // available and exercises WebRTC calls with a high target bitrate(100 Mbps).
 // Android32 bots can't handle this high bitrate, so disable test for those.
 #if defined(WEBRTC_ANDROID)
-#define MAYBE_HighBitrateWithFakeCodec DISABLE_HighBitrateWithFakeCodec
+#define MAYBE_HighBitrateWithFakeCodec DISABLED_HighBitrateWithFakeCodec
 #else
 #define MAYBE_HighBitrateWithFakeCodec HighBitrateWithFakeCodec
 #endif  // defined(WEBRTC_ANDROID)
