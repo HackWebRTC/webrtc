@@ -15,6 +15,8 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
+#include "p2p/base/ice_transport_internal.h"
+#include "p2p/base/no_op_dtls_transport.h"
 #include "p2p/base/port.h"
 #include "pc/srtp_filter.h"
 #include "rtc_base/bind.h"
@@ -409,23 +411,35 @@ void JsepTransportController::SetMediaTransportFactory(
   config_.media_transport_factory = media_transport_factory;
 }
 
-std::unique_ptr<cricket::DtlsTransportInternal>
-JsepTransportController::CreateDtlsTransport(const std::string& transport_name,
-                                             bool rtcp) {
-  RTC_DCHECK(network_thread_->IsCurrent());
+std::unique_ptr<cricket::IceTransportInternal>
+JsepTransportController::CreateIceTransport(const std::string transport_name,
+                                            bool rtcp) {
   int component = rtcp ? cricket::ICE_CANDIDATE_COMPONENT_RTCP
                        : cricket::ICE_CANDIDATE_COMPONENT_RTP;
 
-  std::unique_ptr<cricket::DtlsTransportInternal> dtls;
   if (config_.external_transport_factory) {
-    auto ice = config_.external_transport_factory->CreateIceTransport(
+    return config_.external_transport_factory->CreateIceTransport(
         transport_name, component);
+  } else {
+    return absl::make_unique<cricket::P2PTransportChannel>(
+        transport_name, component, port_allocator_, async_resolver_factory_,
+        config_.event_log);
+  }
+}
+
+std::unique_ptr<cricket::DtlsTransportInternal>
+JsepTransportController::CreateDtlsTransport(
+    std::unique_ptr<cricket::IceTransportInternal> ice) {
+  RTC_DCHECK(network_thread_->IsCurrent());
+
+  std::unique_ptr<cricket::DtlsTransportInternal> dtls;
+  if (config_.media_transport_factory) {
+    dtls = absl::make_unique<cricket::NoOpDtlsTransport>(
+        std::move(ice), config_.crypto_options);
+  } else if (config_.external_transport_factory) {
     dtls = config_.external_transport_factory->CreateDtlsTransport(
         std::move(ice), config_.crypto_options);
   } else {
-    auto ice = absl::make_unique<cricket::P2PTransportChannel>(
-        transport_name, component, port_allocator_, async_resolver_factory_,
-        config_.event_log);
     dtls = absl::make_unique<cricket::DtlsTransport>(
         std::move(ice), config_.crypto_options, config_.event_log);
   }
@@ -1032,26 +1046,30 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
                     "SDES and DTLS-SRTP cannot be enabled at the same time.");
   }
 
+  std::unique_ptr<cricket::IceTransportInternal> ice =
+      CreateIceTransport(content_info.name, /*rtcp=*/false);
+
+  std::unique_ptr<MediaTransportInterface> media_transport =
+      MaybeCreateMediaTransport(content_info, local, ice.get());
+
   std::unique_ptr<cricket::DtlsTransportInternal> rtp_dtls_transport =
-      CreateDtlsTransport(content_info.name, /*rtcp =*/false);
+      CreateDtlsTransport(std::move(ice));
 
   std::unique_ptr<cricket::DtlsTransportInternal> rtcp_dtls_transport;
   std::unique_ptr<RtpTransport> unencrypted_rtp_transport;
   std::unique_ptr<SrtpTransport> sdes_transport;
   std::unique_ptr<DtlsSrtpTransport> dtls_srtp_transport;
-  std::unique_ptr<MediaTransportInterface> media_transport;
 
   if (config_.rtcp_mux_policy !=
           PeerConnectionInterface::kRtcpMuxPolicyRequire &&
       content_info.type == cricket::MediaProtocolType::kRtp) {
-    rtcp_dtls_transport =
-        CreateDtlsTransport(content_info.name, /*rtcp =*/true);
+    RTC_DCHECK(media_transport == nullptr);
+    rtcp_dtls_transport = CreateDtlsTransport(
+        CreateIceTransport(content_info.name, /*rtcp=*/true));
   }
-  media_transport = MaybeCreateMediaTransport(
-      content_info, local, rtp_dtls_transport->ice_transport());
 
   // TODO(sukhanov): Do not create RTP/RTCP transports if media transport is
-  // used.
+  // used, and remove the no-op dtls transport when that's done.
   if (config_.disable_encryption) {
     unencrypted_rtp_transport = CreateUnencryptedRtpTransport(
         content_info.name, rtp_dtls_transport.get(), rtcp_dtls_transport.get());

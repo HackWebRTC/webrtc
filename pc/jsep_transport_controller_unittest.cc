@@ -16,6 +16,7 @@
 #include "api/test/fake_media_transport.h"
 #include "p2p/base/fake_dtls_transport.h"
 #include "p2p/base/fake_ice_transport.h"
+#include "p2p/base/no_op_dtls_transport.h"
 #include "p2p/base/transport_factory_interface.h"
 #include "p2p/base/transport_info.h"
 #include "pc/jsep_transport_controller.h"
@@ -418,10 +419,10 @@ TEST_F(JsepTransportControllerTest, GetMediaTransportInCaller) {
   FakeMediaTransportFactory fake_media_transport_factory;
   JsepTransportController::Config config;
 
-  config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyNegotiate;
+  config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyRequire;
   config.media_transport_factory = &fake_media_transport_factory;
   CreateJsepTransportController(config);
-  auto description = CreateSessionDescriptionWithoutBundle();
+  auto description = CreateSessionDescriptionWithBundleGroup();
   AddCryptoSettings(description.get());
 
   EXPECT_TRUE(transport_controller_
@@ -439,16 +440,20 @@ TEST_F(JsepTransportControllerTest, GetMediaTransportInCaller) {
 
   // Return nullptr for non-existing mids.
   EXPECT_EQ(nullptr, transport_controller_->GetMediaTransport(kVideoMid2));
+
+  EXPECT_EQ(cricket::kNoOpDtlsTransportComponent,
+            transport_controller_->GetDtlsTransport(kAudioMid1)->component())
+      << "Because media transport is used, expected no-op DTLS transport.";
 }
 
 TEST_F(JsepTransportControllerTest, GetMediaTransportInCallee) {
   FakeMediaTransportFactory fake_media_transport_factory;
   JsepTransportController::Config config;
 
-  config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyNegotiate;
+  config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyRequire;
   config.media_transport_factory = &fake_media_transport_factory;
   CreateJsepTransportController(config);
-  auto description = CreateSessionDescriptionWithoutBundle();
+  auto description = CreateSessionDescriptionWithBundleGroup();
   AddCryptoSettings(description.get());
   EXPECT_TRUE(transport_controller_
                   ->SetRemoteDescription(SdpType::kOffer, description.get())
@@ -465,6 +470,10 @@ TEST_F(JsepTransportControllerTest, GetMediaTransportInCallee) {
 
   // Return nullptr for non-existing mids.
   EXPECT_EQ(nullptr, transport_controller_->GetMediaTransport(kVideoMid2));
+
+  EXPECT_EQ(cricket::kNoOpDtlsTransportComponent,
+            transport_controller_->GetDtlsTransport(kAudioMid1)->component())
+      << "Because media transport is used, expected no-op DTLS transport.";
 }
 
 TEST_F(JsepTransportControllerTest, GetMediaTransportIsNotSetIfNoSdes) {
@@ -490,6 +499,10 @@ TEST_F(JsepTransportControllerTest, GetMediaTransportIsNotSetIfNoSdes) {
                   .ok());
 
   EXPECT_EQ(nullptr, transport_controller_->GetMediaTransport(kAudioMid1));
+  EXPECT_EQ(cricket::ICE_CANDIDATE_COMPONENT_RTP,
+            transport_controller_->GetDtlsTransport(kAudioMid1)->component())
+      << "Because media transport is NOT used (fallback to RTP), expected "
+         "actual DTLS transport for RTP";
 }
 
 TEST_F(JsepTransportControllerTest,
@@ -497,7 +510,7 @@ TEST_F(JsepTransportControllerTest,
   FakeMediaTransportFactory fake_media_transport_factory;
   JsepTransportController::Config config;
 
-  config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyNegotiate;
+  config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyRequire;
   config.media_transport_factory = &fake_media_transport_factory;
   CreateJsepTransportController(config);
   auto description = CreateSessionDescriptionWithoutBundle();
@@ -813,25 +826,24 @@ TEST_F(JsepTransportControllerTest,
   JsepTransportController::Config config;
   config.media_transport_factory = &fake_media_transport_factory;
   CreateJsepTransportController(config);
-  auto description = CreateSessionDescriptionWithoutBundle();
+
+  // Media Transport is only used with bundle.
+  auto description = CreateSessionDescriptionWithBundleGroup();
   AddCryptoSettings(description.get());
   EXPECT_TRUE(transport_controller_
                   ->SetLocalDescription(SdpType::kOffer, description.get())
                   .ok());
 
-  auto fake_audio_dtls = static_cast<FakeDtlsTransport*>(
-      transport_controller_->GetDtlsTransport(kAudioMid1));
-  auto fake_video_dtls = static_cast<FakeDtlsTransport*>(
-      transport_controller_->GetDtlsTransport(kVideoMid1));
-  fake_audio_dtls->SetWritable(true);
-  fake_video_dtls->SetWritable(true);
-  // Decreasing connection count from 2 to 1 triggers connection state event.
-  fake_audio_dtls->fake_ice_transport()->SetConnectionCount(2);
-  fake_audio_dtls->fake_ice_transport()->SetConnectionCount(1);
-  fake_video_dtls->fake_ice_transport()->SetConnectionCount(2);
-  fake_video_dtls->fake_ice_transport()->SetConnectionCount(1);
-  fake_audio_dtls->SetDtlsState(cricket::DTLS_TRANSPORT_CONNECTED);
-  fake_video_dtls->SetDtlsState(cricket::DTLS_TRANSPORT_CONNECTED);
+  auto fake_audio_ice = static_cast<cricket::FakeIceTransport*>(
+      transport_controller_->GetDtlsTransport(kAudioMid1)->ice_transport());
+  auto fake_video_ice = static_cast<cricket::FakeIceTransport*>(
+      transport_controller_->GetDtlsTransport(kVideoMid1)->ice_transport());
+  fake_audio_ice->SetConnectionCount(2);
+  fake_audio_ice->SetConnectionCount(1);
+  fake_video_ice->SetConnectionCount(2);
+  fake_video_ice->SetConnectionCount(1);
+  fake_audio_ice->SetWritable(true);
+  fake_video_ice->SetWritable(true);
 
   // Still not connected, because we are waiting for media transport.
   EXPECT_EQ_WAIT(cricket::kIceConnectionConnecting, connection_state_,
@@ -864,19 +876,17 @@ TEST_F(JsepTransportControllerTest,
                   ->SetLocalDescription(SdpType::kOffer, description.get())
                   .ok());
 
-  auto fake_audio_dtls = static_cast<FakeDtlsTransport*>(
-      transport_controller_->GetDtlsTransport(kAudioMid1));
-  auto fake_video_dtls = static_cast<FakeDtlsTransport*>(
-      transport_controller_->GetDtlsTransport(kVideoMid1));
-  fake_audio_dtls->SetWritable(true);
-  fake_video_dtls->SetWritable(true);
+  auto fake_audio_ice = static_cast<cricket::FakeIceTransport*>(
+      transport_controller_->GetDtlsTransport(kAudioMid1)->ice_transport());
+  auto fake_video_ice = static_cast<cricket::FakeIceTransport*>(
+      transport_controller_->GetDtlsTransport(kVideoMid1)->ice_transport());
+  fake_audio_ice->SetWritable(true);
+  fake_video_ice->SetWritable(true);
   // Decreasing connection count from 2 to 1 triggers connection state event.
-  fake_audio_dtls->fake_ice_transport()->SetConnectionCount(2);
-  fake_audio_dtls->fake_ice_transport()->SetConnectionCount(1);
-  fake_video_dtls->fake_ice_transport()->SetConnectionCount(2);
-  fake_video_dtls->fake_ice_transport()->SetConnectionCount(1);
-  fake_audio_dtls->SetDtlsState(cricket::DTLS_TRANSPORT_CONNECTED);
-  fake_video_dtls->SetDtlsState(cricket::DTLS_TRANSPORT_CONNECTED);
+  fake_audio_ice->SetConnectionCount(2);
+  fake_audio_ice->SetConnectionCount(1);
+  fake_video_ice->SetConnectionCount(2);
+  fake_video_ice->SetConnectionCount(1);
 
   FakeMediaTransport* media_transport = static_cast<FakeMediaTransport*>(
       transport_controller_->GetMediaTransport(kAudioMid1));

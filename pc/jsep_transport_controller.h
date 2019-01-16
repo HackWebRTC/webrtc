@@ -295,7 +295,9 @@ class JsepTransportController : public sigslot::has_slots<> {
       bool local);
 
   std::unique_ptr<cricket::DtlsTransportInternal> CreateDtlsTransport(
-      const std::string& transport_name,
+      std::unique_ptr<cricket::IceTransportInternal> ice);
+  std::unique_ptr<cricket::IceTransportInternal> CreateIceTransport(
+      const std::string transport_name,
       bool rtcp);
 
   std::unique_ptr<webrtc::RtpTransport> CreateUnencryptedRtpTransport(
