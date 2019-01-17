@@ -35,11 +35,35 @@ rtc_static_library("network_control") {
   ]
 
   deps = [
+    ":webrtc_key_value_config",
     "../units:data_rate",
     "../units:data_size",
     "../units:time_delta",
     "../units:timestamp",
     "//third_party/abseil-cpp/absl/types:optional",
+  ]
+}
+
+rtc_source_set("webrtc_key_value_config") {
+  visibility = [ "*" ]
+  sources = [
+    "webrtc_key_value_config.h",
+  ]
+  deps = [
+    "//third_party/abseil-cpp/absl/strings",
+  ]
+}
+
+rtc_source_set("field_trial_based_config") {
+  visibility = [ "*" ]
+  sources = [
+    "field_trial_based_config.cc",
+    "field_trial_based_config.h",
+  ]
+  deps = [
+    ":webrtc_key_value_config",
+    "../../system_wrappers:field_trial",
+    "//third_party/abseil-cpp/absl/strings",
   ]
 }
 
@@ -51,6 +75,7 @@ rtc_static_library("goog_cc") {
   ]
   deps = [
     ":network_control",
+    ":webrtc_key_value_config",
     "../../modules/congestion_controller/goog_cc",
     "//third_party/abseil-cpp/absl/memory",
   ]

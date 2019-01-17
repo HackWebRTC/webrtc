@@ -19,6 +19,7 @@
 
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
+#include "api/transport/field_trial_based_config.h"
 #include "api/transport/goog_cc_factory.h"
 #include "call/audio_receive_stream.h"
 #include "call/audio_send_stream.h"
@@ -1118,6 +1119,7 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
 
   RateStatistics acked_bitrate(250, 8000);
 #if !(BWE_TEST_LOGGING_COMPILE_TIME_ENABLE)
+  FieldTrialBasedConfig field_trial_config_;
   // The event_log_visualizer should normally not be compiled with
   // BWE_TEST_LOGGING_COMPILE_TIME_ENABLE since the normal plots won't work.
   // However, compiling with BWE_TEST_LOGGING, runnning with --plot_sendside_bwe
@@ -1126,7 +1128,8 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
   // we don't instantiate the AcknowledgedBitrateEstimator both here and in
   // SendSideCongestionController since that would lead to duplicate outputs.
   AcknowledgedBitrateEstimator acknowledged_bitrate_estimator(
-      absl::make_unique<BitrateEstimator>());
+      &field_trial_config_,
+      absl::make_unique<BitrateEstimator>(&field_trial_config_));
 #endif  // !(BWE_TEST_LOGGING_COMPILE_TIME_ENABLE)
   int64_t time_us =
       std::min({NextRtpTime(), NextRtcpTime(), NextProcessTime()});

@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/transport/webrtc_key_value_config.h"
 #include "modules/congestion_controller/goog_cc/delay_increase_detector_interface.h"
 #include "modules/congestion_controller/goog_cc/probe_bitrate_estimator.h"
 #include "modules/remote_bitrate_estimator/aimd_rate_control.h"
@@ -42,7 +43,8 @@ class DelayBasedBwe {
     bool backoff_in_alr;
   };
 
-  explicit DelayBasedBwe(RtcEventLog* event_log);
+  explicit DelayBasedBwe(const WebRtcKeyValueConfig* key_value_config,
+                         RtcEventLog* event_log);
   virtual ~DelayBasedBwe();
 
   Result IncomingPacketFeedbackVector(

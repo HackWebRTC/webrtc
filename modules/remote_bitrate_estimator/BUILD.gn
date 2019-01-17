@@ -129,6 +129,7 @@ if (rtc_include_tests) {
       "..:module_api_public",
       "../..:webrtc_common",
       "../../api:libjingle_peerconnection_api",
+      "../../api/transport:field_trial_based_config",
       "../../api/transport:network_control",
       "../../logging:mocks",
       "../../rtc_base:checks",

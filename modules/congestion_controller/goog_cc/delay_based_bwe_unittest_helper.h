@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 
+#include "api/transport/field_trial_based_config.h"
 #include "api/transport/network_types.h"
 #include "modules/congestion_controller/goog_cc/acknowledged_bitrate_estimator.h"
 #include "modules/congestion_controller/goog_cc/delay_based_bwe.h"
@@ -167,6 +168,7 @@ class DelayBasedBweTest : public ::testing::Test {
                               int64_t receiver_clock_offset_change_ms);
 
   static const uint32_t kDefaultSsrc;
+  FieldTrialBasedConfig field_trial_config_;
 
   std::unique_ptr<test::ScopedFieldTrials>
       field_trial;        // Must be initialized first.

@@ -16,7 +16,6 @@
 
 #include "modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 #include "rtc_base/logging.h"
-#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 
@@ -27,9 +26,10 @@ constexpr int kRateWindowMs = 150;
 const char kBweInitialThroughputWindowExperiment[] =
     "WebRTC-BweInitialThroughputWindowExperiment";
 
-int ReadInitialThroughputWindowSizeMs() {
+int ReadInitialThroughputWindowSizeMs(
+    const WebRtcKeyValueConfig* key_value_config) {
   std::string experiment_string =
-      webrtc::field_trial::FindFullName(kBweInitialThroughputWindowExperiment);
+      key_value_config->Lookup(kBweInitialThroughputWindowExperiment);
   int initial_window_ms = kInitialRateWindowMs;
   int parsed_values =
       sscanf(experiment_string.c_str(), "Enabled-%d", &initial_window_ms);
@@ -51,15 +51,16 @@ int ReadInitialThroughputWindowSizeMs() {
 
 }  // namespace
 
-BitrateEstimator::BitrateEstimator()
+BitrateEstimator::BitrateEstimator(const WebRtcKeyValueConfig* key_value_config)
     : sum_(0),
       initial_window_ms_(kInitialRateWindowMs),
       current_window_ms_(0),
       prev_time_ms_(-1),
       bitrate_estimate_(-1.0f),
       bitrate_estimate_var_(50.0f) {
-  if (field_trial::IsEnabled(kBweInitialThroughputWindowExperiment)) {
-    initial_window_ms_ = ReadInitialThroughputWindowSizeMs();
+  if (key_value_config->Lookup(kBweInitialThroughputWindowExperiment)
+          .find("Enabled") == 0) {
+    initial_window_ms_ = ReadInitialThroughputWindowSizeMs(key_value_config);
   }
 }
 

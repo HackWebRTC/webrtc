@@ -14,6 +14,7 @@
 #include <memory>
 
 #include "api/transport/network_types.h"
+#include "api/transport/webrtc_key_value_config.h"
 
 namespace webrtc {
 
@@ -39,6 +40,10 @@ struct NetworkControllerConfig {
   // Initial stream specific configuration, these are changed at any later time
   // by calls to OnStreamsConfig.
   StreamsConfig stream_based_config;
+
+  // Optional override of configuration of WebRTC internals. Using nullptr here
+  // indicates that the field trial API will be used.
+  const WebRtcKeyValueConfig* key_value_config = nullptr;
 };
 
 // NetworkControllerInterface is implemented by network controllers. A network

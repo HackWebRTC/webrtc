@@ -17,8 +17,10 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/transport/field_trial_based_config.h"
 #include "api/transport/network_control.h"
 #include "api/transport/network_types.h"
+#include "api/transport/webrtc_key_value_config.h"
 #include "api/units/data_rate.h"
 #include "api/units/data_size.h"
 #include "api/units/timestamp.h"
@@ -67,7 +69,9 @@ class GoogCcNetworkController : public NetworkControllerInterface {
   void MaybeTriggerOnNetworkChanged(NetworkControlUpdate* update,
                                     Timestamp at_time);
   PacerConfig GetPacingRates(Timestamp at_time) const;
+  const FieldTrialBasedConfig trial_based_config_;
 
+  const WebRtcKeyValueConfig* const key_value_config_;
   RtcEventLog* const event_log_;
   const bool packet_feedback_only_;
   FieldTrialFlag safe_reset_on_route_change_;

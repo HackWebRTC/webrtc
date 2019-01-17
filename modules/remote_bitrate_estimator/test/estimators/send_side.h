@@ -15,6 +15,7 @@
 #include <memory>
 #include <vector>
 
+#include "api/transport/field_trial_based_config.h"
 #include "logging/rtc_event_log/mock/mock_rtc_event_log.h"
 #include "modules/bitrate_controller/include/bitrate_controller.h"
 #include "modules/congestion_controller/goog_cc/acknowledged_bitrate_estimator.h"
@@ -45,6 +46,9 @@ class SendSideBweSender : public BweSender, public RemoteBitrateObserver {
                                uint32_t bitrate) override;
   int64_t TimeUntilNextProcess() override;
   void Process() override;
+
+ private:
+  FieldTrialBasedConfig field_trial_config_;
 
  protected:
   std::unique_ptr<BitrateController> bitrate_controller_;

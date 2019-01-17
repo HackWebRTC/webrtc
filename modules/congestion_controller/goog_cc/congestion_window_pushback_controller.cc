@@ -15,7 +15,6 @@
 
 #include "modules/congestion_controller/goog_cc/congestion_window_pushback_controller.h"
 #include "rtc_base/checks.h"
-#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 
@@ -29,10 +28,11 @@ const char kCongestionPushbackExperiment[] = "WebRTC-CongestionWindowPushback";
 const uint32_t kDefaultMinPushbackTargetBitrateBps = 30000;
 
 bool ReadCongestionWindowPushbackExperimentParameter(
+    const WebRtcKeyValueConfig* key_value_config,
     uint32_t* min_pushback_target_bitrate_bps) {
   RTC_DCHECK(min_pushback_target_bitrate_bps);
   std::string experiment_string =
-      webrtc::field_trial::FindFullName(kCongestionPushbackExperiment);
+      key_value_config->Lookup(kCongestionPushbackExperiment);
   int parsed_values = sscanf(experiment_string.c_str(), "Enabled-%" PRIu32,
                              min_pushback_target_bitrate_bps);
   if (parsed_values == 1) {
@@ -45,19 +45,23 @@ bool ReadCongestionWindowPushbackExperimentParameter(
 
 }  // namespace
 
-CongestionWindowPushbackController::CongestionWindowPushbackController()
-    : add_pacing_(field_trial::IsEnabled(
-          "WebRTC-AddPacingToCongestionWindowPushback")) {
+CongestionWindowPushbackController::CongestionWindowPushbackController(
+    const WebRtcKeyValueConfig* key_value_config)
+    : add_pacing_(
+          key_value_config->Lookup("WebRTC-AddPacingToCongestionWindowPushback")
+              .find("Enabled") == 0) {
   if (!ReadCongestionWindowPushbackExperimentParameter(
-          &min_pushback_target_bitrate_bps_)) {
+          key_value_config, &min_pushback_target_bitrate_bps_)) {
     min_pushback_target_bitrate_bps_ = kDefaultMinPushbackTargetBitrateBps;
   }
 }
 
 CongestionWindowPushbackController::CongestionWindowPushbackController(
+    const WebRtcKeyValueConfig* key_value_config,
     uint32_t min_pushback_target_bitrate_bps)
     : add_pacing_(
-          field_trial::IsEnabled("WebRTC-AddPacingToCongestionWindowPushback")),
+          key_value_config->Lookup("WebRTC-AddPacingToCongestionWindowPushback")
+              .find("Enabled") == 0),
       min_pushback_target_bitrate_bps_(min_pushback_target_bitrate_bps) {}
 
 void CongestionWindowPushbackController::UpdateOutstandingData(

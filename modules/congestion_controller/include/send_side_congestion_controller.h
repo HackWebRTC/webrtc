@@ -14,6 +14,8 @@
 #include <memory>
 #include <vector>
 
+#include "api/transport/field_trial_based_config.h"
+#include "api/transport/webrtc_key_value_config.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/congestion_controller/goog_cc/delay_based_bwe.h"
 #include "modules/congestion_controller/include/network_changed_observer.h"
@@ -48,10 +50,12 @@ class DEPRECATED_SendSideCongestionController
     : public SendSideCongestionControllerInterface {
  public:
   using Observer = NetworkChangedObserver;
-  DEPRECATED_SendSideCongestionController(const Clock* clock,
-                                          Observer* observer,
-                                          RtcEventLog* event_log,
-                                          PacedSender* pacer);
+  DEPRECATED_SendSideCongestionController(
+      const Clock* clock,
+      Observer* observer,
+      RtcEventLog* event_log,
+      PacedSender* pacer,
+      const WebRtcKeyValueConfig* key_value_config = nullptr);
   ~DEPRECATED_SendSideCongestionController() override;
 
   void RegisterPacketFeedbackObserver(
@@ -134,6 +138,8 @@ class DEPRECATED_SendSideCongestionController
   void LimitOutstandingBytes(size_t num_outstanding_bytes);
   void SendProbes(std::vector<ProbeClusterConfig> probe_configs)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(&probe_lock_);
+  const FieldTrialBasedConfig field_trial_config_;
+  const WebRtcKeyValueConfig* const key_value_config_;
   const Clock* const clock_;
   rtc::CriticalSection observer_lock_;
   Observer* observer_ RTC_GUARDED_BY(observer_lock_);

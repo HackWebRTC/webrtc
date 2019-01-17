@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
+#include "api/transport/field_trial_based_config.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/fake_clock.h"
 #include "test/gmock.h"
@@ -34,23 +35,26 @@ constexpr size_t kPayloadSize = 10;
 
 class MockBitrateEstimator : public BitrateEstimator {
  public:
+  using BitrateEstimator::BitrateEstimator;
   MOCK_METHOD2(Update, void(int64_t now_ms, int bytes));
   MOCK_CONST_METHOD0(bitrate_bps, absl::optional<uint32_t>());
   MOCK_METHOD0(ExpectFastRateChange, void());
 };
 
 struct AcknowledgedBitrateEstimatorTestStates {
+  FieldTrialBasedConfig field_trial_config;
   std::unique_ptr<AcknowledgedBitrateEstimator> acknowledged_bitrate_estimator;
   MockBitrateEstimator* mock_bitrate_estimator;
 };
 
 AcknowledgedBitrateEstimatorTestStates CreateTestStates() {
   AcknowledgedBitrateEstimatorTestStates states;
-  auto mock_bitrate_estimator = absl::make_unique<MockBitrateEstimator>();
+  auto mock_bitrate_estimator =
+      absl::make_unique<MockBitrateEstimator>(&states.field_trial_config);
   states.mock_bitrate_estimator = mock_bitrate_estimator.get();
   states.acknowledged_bitrate_estimator =
       absl::make_unique<AcknowledgedBitrateEstimator>(
-          std::move(mock_bitrate_estimator));
+          &states.field_trial_config, std::move(mock_bitrate_estimator));
   return states;
 }
 

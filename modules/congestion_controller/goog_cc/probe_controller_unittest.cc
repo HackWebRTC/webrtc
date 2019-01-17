@@ -9,6 +9,7 @@
  */
 #include <memory>
 
+#include "api/transport/field_trial_based_config.h"
 #include "api/transport/network_types.h"
 #include "api/units/data_rate.h"
 #include "api/units/timestamp.h"
@@ -43,7 +44,7 @@ constexpr int kBitrateDropTimeoutMs = 5000;
 class ProbeControllerTest : public ::testing::Test {
  protected:
   ProbeControllerTest() : clock_(100000000L) {
-    probe_controller_.reset(new ProbeController());
+    probe_controller_.reset(new ProbeController(&field_trial_config_));
   }
   ~ProbeControllerTest() override {}
 
@@ -56,6 +57,7 @@ class ProbeControllerTest : public ::testing::Test {
 
   int64_t NowMs() { return clock_.TimeInMilliseconds(); }
 
+  FieldTrialBasedConfig field_trial_config_;
   SimulatedClock clock_;
   std::unique_ptr<ProbeController> probe_controller_;
 };
@@ -223,7 +225,7 @@ TEST_F(ProbeControllerTest, PeriodicProbing) {
 }
 
 TEST_F(ProbeControllerTest, PeriodicProbingAfterReset) {
-  probe_controller_.reset(new ProbeController());
+  probe_controller_.reset(new ProbeController(&field_trial_config_));
   int64_t alr_start_time = clock_.TimeInMilliseconds();
 
   probe_controller_->SetAlrStartTimeMs(alr_start_time);

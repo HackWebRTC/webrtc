@@ -14,6 +14,7 @@
 #include <stdint.h>
 
 #include "absl/types/optional.h"
+#include "api/transport/webrtc_key_value_config.h"
 
 namespace webrtc {
 
@@ -24,7 +25,7 @@ namespace webrtc {
 // unrelated to congestion.
 class BitrateEstimator {
  public:
-  BitrateEstimator();
+  explicit BitrateEstimator(const WebRtcKeyValueConfig* key_value_config);
   virtual ~BitrateEstimator();
   virtual void Update(int64_t now_ms, int bytes);
 

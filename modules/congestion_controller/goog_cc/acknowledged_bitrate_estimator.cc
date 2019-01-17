@@ -18,7 +18,6 @@
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/numerics/safe_conversions.h"
-#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 
@@ -28,15 +27,20 @@ bool IsInSendTimeHistory(const PacketFeedback& packet) {
 }
 }  // namespace
 
-AcknowledgedBitrateEstimator::AcknowledgedBitrateEstimator()
-    : AcknowledgedBitrateEstimator(absl::make_unique<BitrateEstimator>()) {}
+AcknowledgedBitrateEstimator::AcknowledgedBitrateEstimator(
+    const WebRtcKeyValueConfig* key_value_config)
+    : AcknowledgedBitrateEstimator(
+          key_value_config,
+          absl::make_unique<BitrateEstimator>(key_value_config)) {}
 
 AcknowledgedBitrateEstimator::~AcknowledgedBitrateEstimator() {}
 
 AcknowledgedBitrateEstimator::AcknowledgedBitrateEstimator(
+    const WebRtcKeyValueConfig* key_value_config,
     std::unique_ptr<BitrateEstimator> bitrate_estimator)
     : account_for_unacknowledged_traffic_(
-          field_trial::IsEnabled("WebRTC-Bwe-AccountForUnacked")),
+          key_value_config->Lookup("WebRTC-Bwe-AccountForUnacked")
+              .find("Enabled") == 0),
       bitrate_estimator_(std::move(bitrate_estimator)) {}
 
 void AcknowledgedBitrateEstimator::IncomingPacketFeedbackVector(

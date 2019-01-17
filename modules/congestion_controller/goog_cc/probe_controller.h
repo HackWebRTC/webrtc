@@ -18,6 +18,7 @@
 
 #include "absl/types/optional.h"
 #include "api/transport/network_control.h"
+#include "api/transport/webrtc_key_value_config.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/system/unused.h"
 
@@ -30,7 +31,7 @@ class Clock;
 // bitrate is adjusted by an application.
 class ProbeController {
  public:
-  ProbeController();
+  explicit ProbeController(const WebRtcKeyValueConfig* key_value_config);
   ~ProbeController();
 
   RTC_WARN_UNUSED_RESULT std::vector<ProbeClusterConfig> SetBitrates(

@@ -14,7 +14,6 @@
 
 #include "absl/memory/memory.h"
 #include "logging/rtc_event_log/events/rtc_event_bwe_update_delay_based.h"
-#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 namespace {
@@ -25,7 +24,8 @@ constexpr double kDefaultTrendlineThresholdGain = 4.0;
 
 }  // namespace
 
-DelayBasedRateControllerConfig::DelayBasedRateControllerConfig()
+DelayBasedRateControllerConfig::DelayBasedRateControllerConfig(
+    const WebRtcKeyValueConfig* key_value_config)
     : enabled("Enabled"),
       no_ack_backoff_fraction("no_ack_frac", 0.8),
       no_ack_backoff_interval("no_ack_int", TimeDelta::ms(1000)),
@@ -44,14 +44,16 @@ DelayBasedRateControllerConfig::DelayBasedRateControllerConfig()
        &increase_rate, &stop_increase_after, &min_increase_interval,
        &first_period_increase_rate, &linear_increase_threshold,
        &reference_duration_offset},
-      field_trial::FindFullName("WebRTC-Bwe-DelayBasedRateController"));
+      key_value_config->Lookup("WebRTC-Bwe-DelayBasedRateController"));
 }
 DelayBasedRateControllerConfig::~DelayBasedRateControllerConfig() = default;
 
 DelayBasedRateController::DelayBasedRateController(
+    const WebRtcKeyValueConfig* key_value_config,
     RtcEventLog* event_log,
     TargetRateConstraints constraints)
-    : event_log_(event_log),
+    : conf_(key_value_config),
+      event_log_(event_log),
       overuse_detector_(new TrendlineEstimator(kDefaultTrendlineWindowSize,
                                                kDefaultTrendlineSmoothingCoeff,
                                                kDefaultTrendlineThresholdGain)),
