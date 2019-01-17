@@ -134,7 +134,7 @@
 // TODO(qingsi): Refactor the default implementation given by RtcHistogram,
 // which is already sparse, and remove the boundary argument from the macro.
 #define RTC_HISTOGRAM_ENUMERATION_SPARSE(name, sample, boundary) \
-  RTC_HISTOGRAM_COMMON_BLOCK(                                    \
+  RTC_HISTOGRAM_COMMON_BLOCK_SLOW(                               \
       name, sample,                                              \
       webrtc::metrics::SparseHistogramFactoryGetEnumeration(name, boundary))
 
@@ -149,7 +149,7 @@
 // Histogram for enumerators (evenly spaced buckets).
 // |boundary| should be above the max enumerator sample.
 #define RTC_HISTOGRAM_ENUMERATION(name, sample, boundary) \
-  RTC_HISTOGRAM_COMMON_BLOCK(                             \
+  RTC_HISTOGRAM_COMMON_BLOCK_SLOW(                        \
       name, sample,                                       \
       webrtc::metrics::HistogramFactoryGetEnumeration(name, boundary))
 
@@ -176,7 +176,6 @@
     }                                                                      \
   } while (0)
 
-// Deprecated.
 // The histogram is constructed/found for each call.
 // May be used for histograms with infrequent updates.`
 #define RTC_HISTOGRAM_COMMON_BLOCK_SLOW(name, sample, factory_get_invocation) \
