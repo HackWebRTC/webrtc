@@ -26,7 +26,7 @@
       "dimensions": [
         {
           "os": "Mac",
-          "pool": "Chrome"
+          "pool": "chrome.tests"
         }
       ]
     }
