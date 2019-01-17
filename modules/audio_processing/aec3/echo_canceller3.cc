@@ -276,13 +276,13 @@ const int kNumberOfHighPassBiQuads_16kHz = 1;
 
 class EchoCanceller3::RenderWriter {
  public:
-  RenderWriter(ApmDataDumper* data_dumper,
-               SwapQueue<std::vector<std::vector<float>>,
-                         Aec3RenderQueueItemVerifier>* render_transfer_queue,
-               std::unique_ptr<CascadedBiQuadFilter> render_highpass_filter,
-               int sample_rate_hz,
-               int frame_length,
-               int num_bands);
+  RenderWriter(
+      ApmDataDumper* data_dumper,
+      MessageQueue<std::vector<std::vector<float>>>* render_transfer_queue,
+      std::unique_ptr<CascadedBiQuadFilter> render_highpass_filter,
+      int sample_rate_hz,
+      int frame_length,
+      int num_bands);
   ~RenderWriter();
   void Insert(AudioBuffer* input);
 
@@ -293,15 +293,13 @@ class EchoCanceller3::RenderWriter {
   const int num_bands_;
   std::unique_ptr<CascadedBiQuadFilter> render_highpass_filter_;
   std::vector<std::vector<float>> render_queue_input_frame_;
-  SwapQueue<std::vector<std::vector<float>>, Aec3RenderQueueItemVerifier>*
-      render_transfer_queue_;
+  MessageQueue<std::vector<std::vector<float>>>* render_transfer_queue_;
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RenderWriter);
 };
 
 EchoCanceller3::RenderWriter::RenderWriter(
     ApmDataDumper* data_dumper,
-    SwapQueue<std::vector<std::vector<float>>, Aec3RenderQueueItemVerifier>*
-        render_transfer_queue,
+    MessageQueue<std::vector<std::vector<float>>>* render_transfer_queue,
     std::unique_ptr<CascadedBiQuadFilter> render_highpass_filter,
     int sample_rate_hz,
     int frame_length,
@@ -370,12 +368,10 @@ EchoCanceller3::EchoCanceller3(const EchoCanceller3Config& config,
       output_framer_(num_bands_),
       capture_blocker_(num_bands_),
       render_blocker_(num_bands_),
-      render_transfer_queue_(
-          kRenderTransferQueueSizeFrames,
-          std::vector<std::vector<float>>(
-              num_bands_,
-              std::vector<float>(frame_length_, 0.f)),
-          Aec3RenderQueueItemVerifier(num_bands_, frame_length_)),
+      render_transfer_queue_(kRenderTransferQueueSizeFrames,
+                             std::vector<std::vector<float>>(
+                                 num_bands_,
+                                 std::vector<float>(frame_length_, 0.f))),
       block_processor_(std::move(block_processor)),
       render_queue_output_frame_(num_bands_,
                                  std::vector<float>(frame_length_, 0.f)),

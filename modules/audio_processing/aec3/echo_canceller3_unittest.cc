@@ -461,7 +461,7 @@ class EchoCanceller3Tester {
 
   // This test verifies that the swapqueue is able to handle jitter in the
   // capture and render API calls.
-  void RunRenderSwapQueueVerificationTest() {
+  void RunRenderMessageQueueVerificationTest() {
     const EchoCanceller3Config config;
     EchoCanceller3 aec3(
         config, sample_rate_hz_, false,
@@ -502,7 +502,7 @@ class EchoCanceller3Tester {
 
   // This test verifies that a buffer overrun in the render swapqueue is
   // properly reported.
-  void RunRenderPipelineSwapQueueOverrunReturnValueTest() {
+  void RunRenderPipelineMessageQueueOverrunReturnValueTest() {
     EchoCanceller3 aec3(EchoCanceller3Config(), sample_rate_hz_, false);
 
     constexpr size_t kRenderTransferQueueSize = 30;
@@ -631,18 +631,18 @@ TEST(EchoCanceller3Buffering, RenderBitexactness) {
   }
 }
 
-TEST(EchoCanceller3Buffering, RenderSwapQueue) {
+TEST(EchoCanceller3Buffering, RenderMessageQueue) {
   for (auto rate : {8000, 16000}) {
     SCOPED_TRACE(ProduceDebugText(rate));
-    EchoCanceller3Tester(rate).RunRenderSwapQueueVerificationTest();
+    EchoCanceller3Tester(rate).RunRenderMessageQueueVerificationTest();
   }
 }
 
-TEST(EchoCanceller3Buffering, RenderSwapQueueOverrunReturnValue) {
+TEST(EchoCanceller3Buffering, RenderMessageQueueOverrunReturnValue) {
   for (auto rate : {8000, 16000, 32000, 48000}) {
     SCOPED_TRACE(ProduceDebugText(rate));
     EchoCanceller3Tester(rate)
-        .RunRenderPipelineSwapQueueOverrunReturnValueTest();
+        .RunRenderPipelineMessageQueueOverrunReturnValueTest();
   }
 }
 
