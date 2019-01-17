@@ -39,10 +39,8 @@ struct ThreadAttributes {
 
 PlatformThread::PlatformThread(ThreadRunFunctionDeprecated func,
                                void* obj,
-                               const char* thread_name)
-    : run_function_deprecated_(func),
-      obj_(obj),
-      name_(thread_name ? thread_name : "webrtc") {
+                               absl::string_view thread_name)
+    : run_function_deprecated_(func), obj_(obj), name_(thread_name) {
   RTC_DCHECK(func);
   RTC_DCHECK(name_.length() < 64);
   spawned_thread_checker_.DetachFromThread();
@@ -50,7 +48,7 @@ PlatformThread::PlatformThread(ThreadRunFunctionDeprecated func,
 
 PlatformThread::PlatformThread(ThreadRunFunction func,
                                void* obj,
-                               const char* thread_name,
+                               absl::string_view thread_name,
                                ThreadPriority priority /*= kNormalPriority*/)
     : run_function_(func), priority_(priority), obj_(obj), name_(thread_name) {
   RTC_DCHECK(func);

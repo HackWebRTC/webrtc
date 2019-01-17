@@ -272,6 +272,7 @@ rtc_source_set("platform_thread") {
     ":rtc_event",
     ":thread_checker",
     ":timeutils",
+    "//third_party/abseil-cpp/absl/strings",
   ]
 }
 
