@@ -27,7 +27,7 @@
 #include "api/video_codecs/builtin_video_encoder_factory.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
-#include "media/base/fake_video_capturer.h"
+#include "media/base/fake_frame_source.h"
 #include "modules/audio_device/include/audio_device.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "p2p/base/fake_port_allocator.h"
@@ -35,6 +35,7 @@
 #include "p2p/base/port_interface.h"
 #include "pc/peer_connection_factory.h"
 #include "pc/test/fake_audio_capture_module.h"
+#include "pc/test/fake_video_track_source.h"
 #include "rtc_base/socket_address.h"
 #include "test/gtest.h"
 
@@ -443,13 +444,12 @@ TEST_F(PeerConnectionFactoryTest, CreatePCUsingIPLiteralAddress) {
 // This test verifies the captured stream is rendered locally using a
 // local video track.
 TEST_F(PeerConnectionFactoryTest, LocalRendering) {
-  cricket::FakeVideoCapturerWithTaskQueue* capturer =
-      new cricket::FakeVideoCapturerWithTaskQueue();
-  // The source takes ownership of |capturer|, but we keep a raw pointer to
-  // inject fake frames.
-  rtc::scoped_refptr<VideoTrackSourceInterface> source(
-      factory_->CreateVideoSource(
-          std::unique_ptr<cricket::VideoCapturer>(capturer), NULL));
+  rtc::scoped_refptr<webrtc::FakeVideoTrackSource> source =
+      webrtc::FakeVideoTrackSource::Create(/*is_screencast=*/false);
+
+  cricket::FakeFrameSource frame_source(1280, 720,
+                                        rtc::kNumMicrosecsPerSec / 30);
+
   ASSERT_TRUE(source.get() != NULL);
   rtc::scoped_refptr<VideoTrackInterface> track(
       factory_->CreateVideoTrack("testlabel", source));
@@ -457,17 +457,17 @@ TEST_F(PeerConnectionFactoryTest, LocalRendering) {
   FakeVideoTrackRenderer local_renderer(track);
 
   EXPECT_EQ(0, local_renderer.num_rendered_frames());
-  EXPECT_TRUE(capturer->CaptureFrame());
+  source->InjectFrame(frame_source.GetFrame());
   EXPECT_EQ(1, local_renderer.num_rendered_frames());
   EXPECT_FALSE(local_renderer.black_frame());
 
   track->set_enabled(false);
-  EXPECT_TRUE(capturer->CaptureFrame());
+  source->InjectFrame(frame_source.GetFrame());
   EXPECT_EQ(2, local_renderer.num_rendered_frames());
   EXPECT_TRUE(local_renderer.black_frame());
 
   track->set_enabled(true);
-  EXPECT_TRUE(capturer->CaptureFrame());
+  source->InjectFrame(frame_source.GetFrame());
   EXPECT_EQ(3, local_renderer.num_rendered_frames());
   EXPECT_FALSE(local_renderer.black_frame());
 }

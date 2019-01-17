@@ -12,12 +12,13 @@
 #define PC_TEST_FAKE_VIDEO_TRACK_SOURCE_H_
 
 #include "api/media_stream_interface.h"
+#include "media/base/video_broadcaster.h"
 #include "pc/video_track_source.h"
 
 namespace webrtc {
 
-// A minimal implementation of VideoTrackSource, which doesn't produce
-// any frames.
+// A minimal implementation of VideoTrackSource. Includes a VideoBroadcaster for
+// injection of frames.
 class FakeVideoTrackSource : public VideoTrackSource {
  public:
   static rtc::scoped_refptr<FakeVideoTrackSource> Create(bool is_screencast) {
@@ -29,20 +30,23 @@ class FakeVideoTrackSource : public VideoTrackSource {
   }
 
   bool is_screencast() const override { return is_screencast_; }
-  void AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
-                       const rtc::VideoSinkWants& wants) override {}
-  void RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) {}
+
+  void InjectFrame(const VideoFrame& frame) {
+    video_broadcaster_.OnFrame(frame);
+  }
 
  protected:
   explicit FakeVideoTrackSource(bool is_screencast)
       : VideoTrackSource(false /* remote */), is_screencast_(is_screencast) {}
   ~FakeVideoTrackSource() override = default;
 
-  // Unused, since we override AddOrUpdateSink and RemoveSink above.
-  rtc::VideoSourceInterface<VideoFrame>* source() override { return nullptr; }
+  rtc::VideoSourceInterface<VideoFrame>* source() override {
+    return &video_broadcaster_;
+  }
 
  private:
   const bool is_screencast_;
+  rtc::VideoBroadcaster video_broadcaster_;
 };
 
 }  // namespace webrtc
