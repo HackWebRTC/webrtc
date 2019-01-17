@@ -41,6 +41,10 @@ NoOpDtlsTransport::NoOpDtlsTransport(
       this, &NoOpDtlsTransport::OnWritableState);
   ice_transport_->SignalReadyToSend.connect(this,
                                             &NoOpDtlsTransport::OnReadyToSend);
+  ice_transport_->SignalReceivingState.connect(
+      this, &NoOpDtlsTransport::OnReceivingState);
+  ice_transport_->SignalNetworkRouteChanged.connect(
+      this, &NoOpDtlsTransport::OnNetworkRouteChanged);
 }
 
 NoOpDtlsTransport::~NoOpDtlsTransport() {}
@@ -138,6 +142,18 @@ int NoOpDtlsTransport::SetOption(rtc::Socket::Option opt, int value) {
 
 int NoOpDtlsTransport::GetError() {
   return ice_transport_->GetError();
+}
+
+void NoOpDtlsTransport::OnNetworkRouteChanged(
+    absl::optional<rtc::NetworkRoute> network_route) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
+  SignalNetworkRouteChanged(network_route);
+}
+
+void NoOpDtlsTransport::OnReceivingState(
+    rtc::PacketTransportInternal* transport) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
+  SignalReceivingState(this);
 }
 
 }  // namespace cricket

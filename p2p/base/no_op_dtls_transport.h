@@ -89,6 +89,8 @@ class NoOpDtlsTransport : public DtlsTransportInternal {
  private:
   void OnReadyToSend(rtc::PacketTransportInternal* transport);
   void OnWritableState(rtc::PacketTransportInternal* transport);
+  void OnNetworkRouteChanged(absl::optional<rtc::NetworkRoute> network_route);
+  void OnReceivingState(rtc::PacketTransportInternal* transport);
 
   int SendPacket(const char* data,
                  size_t len,
