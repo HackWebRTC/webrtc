@@ -219,8 +219,6 @@ class PacketView {
 };
 
 class ParsedRtcEventLog {
-  friend class RtcEventLogTestHelper;
-
  public:
   enum class MediaType { ANY, AUDIO, VIDEO, DATA };
   enum class UnconfiguredHeaderExtensions {
