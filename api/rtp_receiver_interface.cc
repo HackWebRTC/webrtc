@@ -53,4 +53,9 @@ RtpReceiverInterface::GetFrameDecryptor() const {
   return nullptr;
 }
 
+rtc::scoped_refptr<DtlsTransportInterface>
+RtpReceiverInterface::dtls_transport() const {
+  return nullptr;
+}
+
 }  // namespace webrtc

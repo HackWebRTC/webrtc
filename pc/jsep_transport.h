@@ -189,7 +189,7 @@ class JsepTransport : public sigslot::has_slots<>,
     }
   }
 
-  rtc::scoped_refptr<webrtc::DtlsTransportInterface> RtpDtlsTransport() {
+  rtc::scoped_refptr<webrtc::DtlsTransport> RtpDtlsTransport() {
     return rtp_dtls_transport_;
   }
 

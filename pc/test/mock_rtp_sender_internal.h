@@ -26,10 +26,13 @@ class MockRtpSenderInternal : public RtpSenderInternal {
   MOCK_METHOD1(SetTrack, bool(MediaStreamTrackInterface*));
   MOCK_CONST_METHOD0(track, rtc::scoped_refptr<MediaStreamTrackInterface>());
   MOCK_CONST_METHOD0(ssrc, uint32_t());
+  MOCK_CONST_METHOD0(dtls_transport,
+                     rtc::scoped_refptr<DtlsTransportInterface>());
   MOCK_CONST_METHOD0(media_type, cricket::MediaType());
   MOCK_CONST_METHOD0(id, std::string());
   MOCK_CONST_METHOD0(stream_ids, std::vector<std::string>());
   MOCK_CONST_METHOD0(init_send_encodings, std::vector<RtpEncodingParameters>());
+  MOCK_METHOD1(set_transport, void(rtc::scoped_refptr<DtlsTransportInterface>));
   MOCK_METHOD0(GetParameters, RtpParameters());
   MOCK_METHOD1(SetParameters, RTCError(const RtpParameters&));
   MOCK_CONST_METHOD0(GetDtmfSender, rtc::scoped_refptr<DtmfSenderInterface>());

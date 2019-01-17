@@ -197,6 +197,8 @@ class PeerConnection : public PeerConnectionInternal,
 
   rtc::scoped_refptr<DtlsTransportInterface> LookupDtlsTransportByMid(
       const std::string& mid) override;
+  rtc::scoped_refptr<DtlsTransport> LookupDtlsTransportByMidInternal(
+      const std::string& mid);
 
   RTC_DEPRECATED bool StartRtcEventLog(rtc::PlatformFile file,
                                        int64_t max_size_bytes) override;

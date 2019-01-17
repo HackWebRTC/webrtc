@@ -117,7 +117,7 @@ class JsepTransportController : public sigslot::has_slots<> {
   const cricket::DtlsTransportInternal* GetRtcpDtlsTransport(
       const std::string& mid) const;
   // Gets the externally sharable version of the DtlsTransport.
-  rtc::scoped_refptr<webrtc::DtlsTransportInterface> LookupDtlsTransportByMid(
+  rtc::scoped_refptr<webrtc::DtlsTransport> LookupDtlsTransportByMid(
       const std::string& mid);
 
   MediaTransportInterface* GetMediaTransport(const std::string& mid) const;

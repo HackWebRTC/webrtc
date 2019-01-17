@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "api/crypto/frame_decryptor_interface.h"
+#include "api/dtls_transport_interface.h"
 #include "api/media_stream_interface.h"
 #include "api/media_types.h"
 #include "api/proxy.h"
@@ -92,6 +93,13 @@ class RtpReceiverObserverInterface {
 class RtpReceiverInterface : public rtc::RefCountInterface {
  public:
   virtual rtc::scoped_refptr<MediaStreamTrackInterface> track() const = 0;
+
+  // The dtlsTransport attribute exposes the DTLS transport on which the
+  // media is received. It may be null.
+  // https://w3c.github.io/webrtc-pc/#dom-rtcrtpreceiver-transport
+  // TODO(https://bugs.webrtc.org/907849) remove default implementation
+  virtual rtc::scoped_refptr<DtlsTransportInterface> dtls_transport() const;
+
   // The list of streams that |track| is associated with. This is the same as
   // the [[AssociatedRemoteMediaStreams]] internal slot in the spec.
   // https://w3c.github.io/webrtc-pc/#dfn-associatedremotemediastreams
@@ -146,6 +154,7 @@ class RtpReceiverInterface : public rtc::RefCountInterface {
 BEGIN_SIGNALING_PROXY_MAP(RtpReceiver)
 PROXY_SIGNALING_THREAD_DESTRUCTOR()
 PROXY_CONSTMETHOD0(rtc::scoped_refptr<MediaStreamTrackInterface>, track)
+PROXY_CONSTMETHOD0(rtc::scoped_refptr<DtlsTransportInterface>, dtls_transport)
 PROXY_CONSTMETHOD0(std::vector<std::string>, stream_ids)
 PROXY_CONSTMETHOD0(std::vector<rtc::scoped_refptr<MediaStreamInterface>>,
                    streams)

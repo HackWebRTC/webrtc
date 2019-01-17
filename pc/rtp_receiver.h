@@ -54,6 +54,8 @@ class RtpReceiverInternal : public RtpReceiverInterface {
   // receive packets on unsignaled SSRCs.
   virtual void SetupMediaChannel(uint32_t ssrc) = 0;
 
+  virtual void set_transport(
+      rtc::scoped_refptr<DtlsTransportInterface> dtls_transport) = 0;
   // This SSRC is used as an identifier for the receiver between the API layer
   // and the WebRtcVideoEngine, WebRtcVoiceEngine layer.
   virtual uint32_t ssrc() const = 0;
@@ -106,6 +108,9 @@ class AudioRtpReceiver : public ObserverInterface,
   rtc::scoped_refptr<MediaStreamTrackInterface> track() const override {
     return track_.get();
   }
+  rtc::scoped_refptr<DtlsTransportInterface> dtls_transport() const override {
+    return dtls_transport_;
+  }
   std::vector<std::string> stream_ids() const override;
   std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams()
       const override {
@@ -133,6 +138,10 @@ class AudioRtpReceiver : public ObserverInterface,
   uint32_t ssrc() const override { return ssrc_.value_or(0); }
   void NotifyFirstPacketReceived() override;
   void set_stream_ids(std::vector<std::string> stream_ids) override;
+  void set_transport(
+      rtc::scoped_refptr<DtlsTransportInterface> dtls_transport) override {
+    dtls_transport_ = dtls_transport;
+  }
   void SetStreams(const std::vector<rtc::scoped_refptr<MediaStreamInterface>>&
                       streams) override;
   void SetObserver(RtpReceiverObserverInterface* observer) override;
@@ -160,6 +169,7 @@ class AudioRtpReceiver : public ObserverInterface,
   bool received_first_packet_ = false;
   int attachment_id_ = 0;
   rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor_;
+  rtc::scoped_refptr<DtlsTransportInterface> dtls_transport_;
 };
 
 class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInternal> {
@@ -185,6 +195,9 @@ class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInternal> {
   // RtpReceiverInterface implementation
   rtc::scoped_refptr<MediaStreamTrackInterface> track() const override {
     return track_.get();
+  }
+  rtc::scoped_refptr<DtlsTransportInterface> dtls_transport() const override {
+    return dtls_transport_;
   }
   std::vector<std::string> stream_ids() const override;
   std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams()
@@ -213,6 +226,10 @@ class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInternal> {
   uint32_t ssrc() const override { return ssrc_.value_or(0); }
   void NotifyFirstPacketReceived() override;
   void set_stream_ids(std::vector<std::string> stream_ids) override;
+  void set_transport(
+      rtc::scoped_refptr<DtlsTransportInterface> dtls_transport) override {
+    dtls_transport_ = dtls_transport;
+  }
   void SetStreams(const std::vector<rtc::scoped_refptr<MediaStreamInterface>>&
                       streams) override;
 
@@ -257,6 +274,7 @@ class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInternal> {
   bool received_first_packet_ = false;
   int attachment_id_ = 0;
   rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor_;
+  rtc::scoped_refptr<DtlsTransportInterface> dtls_transport_;
 };
 
 }  // namespace webrtc

@@ -13,18 +13,10 @@
 
 #include <memory>
 
+#include "api/dtls_transport_interface.h"
 #include "logging/rtc_event_log/events/rtc_event.h"
 
 namespace webrtc {
-
-enum class DtlsTransportState {
-  kNew,
-  kConnecting,
-  kConnected,
-  kClosed,
-  kFailed,
-  kNumValues
-};
 
 class RtcEventDtlsTransportState : public RtcEvent {
  public:

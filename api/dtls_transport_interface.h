@@ -23,7 +23,9 @@ enum class DtlsTransportState {
   kConnecting,  // In the process of negotiating a secure connection.
   kConnected,   // Completed negotiation and verified fingerprints.
   kClosed,      // Intentionally closed.
-  kFailed  // Failure due to an error or failing to verify a remote fingerprint.
+  kFailed,      // Failure due to an error or failing to verify a remote
+                // fingerprint.
+  kNumValues
 };
 
 // This object gives snapshot information about the changeable state of a

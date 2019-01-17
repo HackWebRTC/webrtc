@@ -25,6 +25,8 @@ class MockRtpReceiverInternal : public RtpReceiverInternal {
   // RtpReceiverInterface methods.
   MOCK_METHOD1(SetTrack, void(MediaStreamTrackInterface*));
   MOCK_CONST_METHOD0(track, rtc::scoped_refptr<MediaStreamTrackInterface>());
+  MOCK_CONST_METHOD0(dtls_transport,
+                     rtc::scoped_refptr<DtlsTransportInterface>());
   MOCK_CONST_METHOD0(stream_ids, std::vector<std::string>());
   MOCK_CONST_METHOD0(streams,
                      std::vector<rtc::scoped_refptr<MediaStreamInterface>>());
@@ -46,6 +48,7 @@ class MockRtpReceiverInternal : public RtpReceiverInternal {
   MOCK_CONST_METHOD0(ssrc, uint32_t());
   MOCK_METHOD0(NotifyFirstPacketReceived, void());
   MOCK_METHOD1(set_stream_ids, void(std::vector<std::string>));
+  MOCK_METHOD1(set_transport, void(rtc::scoped_refptr<DtlsTransportInterface>));
   MOCK_METHOD1(
       SetStreams,
       void(const std::vector<rtc::scoped_refptr<MediaStreamInterface>>&));

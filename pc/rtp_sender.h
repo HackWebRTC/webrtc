@@ -50,6 +50,8 @@ class RtpSenderInternal : public RtpSenderInterface {
   virtual void set_stream_ids(const std::vector<std::string>& stream_ids) = 0;
   virtual void set_init_send_encodings(
       const std::vector<RtpEncodingParameters>& init_send_encodings) = 0;
+  virtual void set_transport(
+      rtc::scoped_refptr<DtlsTransportInterface> dtls_transport) = 0;
 
   virtual void Stop() = 0;
 
@@ -112,6 +114,10 @@ class AudioRtpSender : public DtmfProviderInterface,
     return track_;
   }
 
+  rtc::scoped_refptr<DtlsTransportInterface> dtls_transport() const override {
+    return dtls_transport_;
+  }
+
   uint32_t ssrc() const override { return ssrc_; }
 
   cricket::MediaType media_type() const override {
@@ -147,7 +153,10 @@ class AudioRtpSender : public DtmfProviderInterface,
   std::vector<RtpEncodingParameters> init_send_encodings() const override {
     return init_parameters_.encodings;
   }
-
+  void set_transport(
+      rtc::scoped_refptr<DtlsTransportInterface> dtls_transport) override {
+    dtls_transport_ = dtls_transport;
+  }
   void Stop() override;
 
   int AttachmentId() const override { return attachment_id_; }
@@ -173,6 +182,7 @@ class AudioRtpSender : public DtmfProviderInterface,
   cricket::VoiceMediaChannel* media_channel_ = nullptr;
   StatsCollector* stats_ = nullptr;
   rtc::scoped_refptr<AudioTrackInterface> track_;
+  rtc::scoped_refptr<DtlsTransportInterface> dtls_transport_;
   rtc::scoped_refptr<DtmfSenderInterface> dtmf_sender_proxy_;
   absl::optional<std::string> last_transaction_id_;
   uint32_t ssrc_ = 0;
@@ -205,6 +215,9 @@ class VideoRtpSender : public ObserverInterface,
   }
 
   uint32_t ssrc() const override { return ssrc_; }
+  rtc::scoped_refptr<DtlsTransportInterface> dtls_transport() const override {
+    return dtls_transport_;
+  }
 
   cricket::MediaType media_type() const override {
     return cricket::MEDIA_TYPE_VIDEO;
@@ -220,6 +233,10 @@ class VideoRtpSender : public ObserverInterface,
   }
   std::vector<RtpEncodingParameters> init_send_encodings() const override {
     return init_parameters_.encodings;
+  }
+  void set_transport(
+      rtc::scoped_refptr<DtlsTransportInterface> dtls_transport) override {
+    dtls_transport_ = dtls_transport;
   }
 
   RtpParameters GetParameters() override;
@@ -266,6 +283,7 @@ class VideoRtpSender : public ObserverInterface,
   bool stopped_ = false;
   int attachment_id_ = 0;
   rtc::scoped_refptr<FrameEncryptorInterface> frame_encryptor_;
+  rtc::scoped_refptr<DtlsTransportInterface> dtls_transport_;
 };
 
 }  // namespace webrtc

@@ -173,7 +173,7 @@ JsepTransportController::GetRtcpDtlsTransport(const std::string& mid) const {
   return jsep_transport->rtcp_dtls_transport();
 }
 
-rtc::scoped_refptr<webrtc::DtlsTransportInterface>
+rtc::scoped_refptr<webrtc::DtlsTransport>
 JsepTransportController::LookupDtlsTransportByMid(const std::string& mid) {
   auto jsep_transport = GetJsepTransportForMid(mid);
   if (!jsep_transport) {

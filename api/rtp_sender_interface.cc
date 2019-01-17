@@ -25,4 +25,9 @@ std::vector<RtpEncodingParameters> RtpSenderInterface::init_send_encodings()
   return {};
 }
 
+rtc::scoped_refptr<DtlsTransportInterface> RtpSenderInterface::dtls_transport()
+    const {
+  return nullptr;
+}
+
 }  // namespace webrtc

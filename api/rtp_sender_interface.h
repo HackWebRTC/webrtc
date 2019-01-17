@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "api/crypto/frame_encryptor_interface.h"
+#include "api/dtls_transport_interface.h"
 #include "api/dtmf_sender_interface.h"
 #include "api/media_stream_interface.h"
 #include "api/media_types.h"
@@ -35,6 +36,12 @@ class RtpSenderInterface : public rtc::RefCountInterface {
   // Fails if an audio track is set on a video RtpSender, or vice-versa.
   virtual bool SetTrack(MediaStreamTrackInterface* track) = 0;
   virtual rtc::scoped_refptr<MediaStreamTrackInterface> track() const = 0;
+
+  // The dtlsTransport attribute exposes the DTLS transport on which the
+  // media is sent. It may be null.
+  // https://w3c.github.io/webrtc-pc/#dom-rtcrtpsender-transport
+  // TODO(https://bugs.webrtc.org/907849) remove default implementation
+  virtual rtc::scoped_refptr<DtlsTransportInterface> dtls_transport() const;
 
   // Returns primary SSRC used by this sender for sending media.
   // Returns 0 if not yet determined.
@@ -91,6 +98,7 @@ BEGIN_SIGNALING_PROXY_MAP(RtpSender)
 PROXY_SIGNALING_THREAD_DESTRUCTOR()
 PROXY_METHOD1(bool, SetTrack, MediaStreamTrackInterface*)
 PROXY_CONSTMETHOD0(rtc::scoped_refptr<MediaStreamTrackInterface>, track)
+PROXY_CONSTMETHOD0(rtc::scoped_refptr<DtlsTransportInterface>, dtls_transport)
 PROXY_CONSTMETHOD0(uint32_t, ssrc)
 PROXY_CONSTMETHOD0(cricket::MediaType, media_type)
 PROXY_CONSTMETHOD0(std::string, id)

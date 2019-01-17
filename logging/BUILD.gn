@@ -421,6 +421,7 @@ rtc_source_set("ice_log") {
   deps = [
     ":rtc_event_log_api",
     "../api:libjingle_logging_api",
+    "../api:libjingle_peerconnection_api",
     "../rtc_base:rtc_base_approved",
     "//third_party/abseil-cpp/absl/memory",
   ]

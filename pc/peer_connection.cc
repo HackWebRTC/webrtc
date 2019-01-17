@@ -2106,6 +2106,18 @@ RTCError PeerConnection::ApplyLocalDescription(
     std::vector<rtc::scoped_refptr<RtpTransceiverInterface>> remove_list;
     std::vector<rtc::scoped_refptr<MediaStreamInterface>> removed_streams;
     for (auto transceiver : transceivers_) {
+      // 2.2.7.1.1.(6-9): Set sender and receiver's transport slots.
+      // Note that code paths that don't set MID won't be able to use
+      // information about DTLS transports.
+      if (transceiver->mid()) {
+        auto dtls_transport =
+            LookupDtlsTransportByMidInternal(*transceiver->mid());
+        transceiver->internal()->sender_internal()->set_transport(
+            dtls_transport);
+        transceiver->internal()->receiver_internal()->set_transport(
+            dtls_transport);
+      }
+
       const ContentInfo* content =
           FindMediaSectionForTransceiver(transceiver, local_description());
       if (!content) {
@@ -2548,7 +2560,7 @@ RTCError PeerConnection::ApplyRemoteDescription(
           now_receiving_transceivers.push_back(transceiver);
         }
       }
-      // 2.2.8.1.7: If direction is "sendonly" or "inactive", and transceiver's
+      // 2.2.8.1.9: If direction is "sendonly" or "inactive", and transceiver's
       // [[FiredDirection]] slot is either "sendrecv" or "recvonly", process the
       // removal of a remote track for the media description, given transceiver,
       // removeList, and muteTracks.
@@ -2558,16 +2570,25 @@ RTCError PeerConnection::ApplyRemoteDescription(
         ProcessRemovalOfRemoteTrack(transceiver, &remove_list,
                                     &removed_streams);
       }
-      // 2.2.8.1.8: Set transceiver's [[FiredDirection]] slot to direction.
+      // 2.2.8.1.10: Set transceiver's [[FiredDirection]] slot to direction.
       transceiver->internal()->set_fired_direction(local_direction);
-      // 2.2.8.1.9: If description is of type "answer" or "pranswer", then run
+      // 2.2.8.1.11: If description is of type "answer" or "pranswer", then run
       // the following steps:
       if (type == SdpType::kPrAnswer || type == SdpType::kAnswer) {
-        // 2.2.8.1.9.1: Set transceiver's [[CurrentDirection]] slot to
+        // 2.2.8.1.11.1: Set transceiver's [[CurrentDirection]] slot to
         // direction.
         transceiver->internal()->set_current_direction(local_direction);
+        // 2.2.8.1.11.[3-6]: Set the transport internal slots.
+        if (transceiver->mid()) {
+          auto dtls_transport =
+              LookupDtlsTransportByMidInternal(*transceiver->mid());
+          transceiver->internal()->sender_internal()->set_transport(
+              dtls_transport);
+          transceiver->internal()->receiver_internal()->set_transport(
+              dtls_transport);
+        }
       }
-      // 2.2.8.1.10: If the media description is rejected, and transceiver is
+      // 2.2.8.1.12: If the media description is rejected, and transceiver is
       // not already stopped, stop the RTCRtpTransceiver transceiver.
       if (content->rejected && !transceiver->stopped()) {
         RTC_LOG(LS_INFO) << "Stopping transceiver for MID=" << content->name
@@ -3442,6 +3463,11 @@ void PeerConnection::StopRtcEventLog() {
 
 rtc::scoped_refptr<DtlsTransportInterface>
 PeerConnection::LookupDtlsTransportByMid(const std::string& mid) {
+  return transport_controller_->LookupDtlsTransportByMid(mid);
+}
+
+rtc::scoped_refptr<DtlsTransport>
+PeerConnection::LookupDtlsTransportByMidInternal(const std::string& mid) {
   return transport_controller_->LookupDtlsTransportByMid(mid);
 }
 
