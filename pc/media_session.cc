@@ -425,11 +425,11 @@ static StreamParams CreateStreamParamsForNewSenderWithSsrcs(
   // Generate extra ssrc for include_flexfec_stream case.
   if (include_flexfec_stream) {
     // TODO(brandtr): Update when we support multistream protection.
-    if (result.ssrcs.size() == 1) {
+    if (primary_ssrcs.size() == 1) {
       for (uint32_t ssrc : primary_ssrcs) {
         result.AddFecFrSsrc(ssrc, ssrc_generator());
       }
-    } else if (!result.ssrcs.empty()) {
+    } else if (!primary_ssrcs.empty()) {
       RTC_LOG(LS_WARNING)
           << "Our FlexFEC implementation only supports protecting "
              "a single media streams. This session has multiple "
