@@ -75,7 +75,6 @@ rtc_static_library("aec3") {
     "matched_filter_lag_aggregator.h",
     "matrix_buffer.cc",
     "matrix_buffer.h",
-    "message_queue.h",
     "moving_average.cc",
     "moving_average.h",
     "render_buffer.cc",

@@ -24,12 +24,12 @@
 #include "modules/audio_processing/aec3/block_processor.h"
 #include "modules/audio_processing/aec3/cascaded_biquad_filter.h"
 #include "modules/audio_processing/aec3/frame_blocker.h"
-#include "modules/audio_processing/aec3/message_queue.h"
 #include "modules/audio_processing/audio_buffer.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/race_checker.h"
+#include "rtc_base/swap_queue.h"
 #include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
@@ -107,7 +107,7 @@ class EchoCanceller3 : public EchoControl {
  private:
   class RenderWriter;
 
-  // Empties the render MessageQueue.
+  // Empties the render SwapQueue.
   void EmptyRenderQueue();
 
   rtc::RaceChecker capture_race_checker_;
@@ -127,7 +127,8 @@ class EchoCanceller3 : public EchoControl {
   BlockFramer output_framer_ RTC_GUARDED_BY(capture_race_checker_);
   FrameBlocker capture_blocker_ RTC_GUARDED_BY(capture_race_checker_);
   FrameBlocker render_blocker_ RTC_GUARDED_BY(capture_race_checker_);
-  MessageQueue<std::vector<std::vector<float>>> render_transfer_queue_;
+  SwapQueue<std::vector<std::vector<float>>, Aec3RenderQueueItemVerifier>
+      render_transfer_queue_;
   std::unique_ptr<BlockProcessor> block_processor_
       RTC_GUARDED_BY(capture_race_checker_);
   std::vector<std::vector<float>> render_queue_output_frame_
