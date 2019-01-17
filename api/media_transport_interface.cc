@@ -95,7 +95,7 @@ MediaTransportEncodedVideoFrame& MediaTransportEncodedVideoFrame::operator=(
   referenced_frame_ids_ = o.referenced_frame_ids_;
   if (!encoded_data_.empty()) {
     // We own the underlying data.
-    encoded_image_._buffer = encoded_data_.data();
+    encoded_image_.set_buffer(encoded_data_.data(), encoded_data_.size());
   }
   return *this;
 }
@@ -110,8 +110,8 @@ MediaTransportEncodedVideoFrame& MediaTransportEncodedVideoFrame::operator=(
   referenced_frame_ids_ = std::move(o.referenced_frame_ids_);
   if (!encoded_data_.empty()) {
     // We take over ownership of the underlying data.
-    encoded_image_._buffer = encoded_data_.data();
-    o.encoded_image_._buffer = nullptr;
+    encoded_image_.set_buffer(encoded_data_.data(), encoded_data_.size());
+    o.encoded_image_.set_buffer(nullptr, 0);
   }
   return *this;
 }

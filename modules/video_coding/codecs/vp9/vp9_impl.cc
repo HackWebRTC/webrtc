@@ -187,9 +187,9 @@ VP9EncoderImpl::~VP9EncoderImpl() {
 int VP9EncoderImpl::Release() {
   int ret_val = WEBRTC_VIDEO_CODEC_OK;
 
-  if (encoded_image_._buffer != nullptr) {
-    delete[] encoded_image_._buffer;
-    encoded_image_._buffer = nullptr;
+  if (encoded_image_.data() != nullptr) {
+    delete[] encoded_image_.data();
+    encoded_image_.set_buffer(nullptr, 0);
   }
   if (encoder_ != nullptr) {
     if (inited_) {
@@ -392,8 +392,8 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   is_svc_ = (num_spatial_layers_ > 1 || num_temporal_layers_ > 1);
 
   // Allocate memory for encoded image
-  if (encoded_image_._buffer != nullptr) {
-    delete[] encoded_image_._buffer;
+  if (encoded_image_.data() != nullptr) {
+    delete[] encoded_image_.data();
   }
   size_t frame_capacity =
       CalcBufferSize(VideoType::kI420, codec_.width, codec_.height);
@@ -1258,11 +1258,11 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
   }
 
   if (pkt->data.frame.sz > encoded_image_.capacity()) {
-    delete[] encoded_image_._buffer;
+    delete[] encoded_image_.data();
     encoded_image_.set_buffer(new uint8_t[pkt->data.frame.sz],
                               pkt->data.frame.sz);
   }
-  memcpy(encoded_image_._buffer, pkt->data.frame.buf, pkt->data.frame.sz);
+  memcpy(encoded_image_.data(), pkt->data.frame.buf, pkt->data.frame.sz);
   encoded_image_.set_size(pkt->data.frame.sz);
 
   const bool is_key_frame =
@@ -1431,7 +1431,7 @@ int VP9DecoderImpl::Decode(const EncodedImage& input_image,
   }
   vpx_codec_iter_t iter = nullptr;
   vpx_image_t* img;
-  uint8_t* buffer = input_image._buffer;
+  const uint8_t* buffer = input_image.data();
   if (input_image.size() == 0) {
     buffer = nullptr;  // Triggers full frame concealment.
   }

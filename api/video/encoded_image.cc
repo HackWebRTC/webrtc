@@ -32,7 +32,7 @@ EncodedImage::EncodedImage() : EncodedImage(nullptr, 0, 0) {}
 EncodedImage::EncodedImage(const EncodedImage&) = default;
 
 EncodedImage::EncodedImage(uint8_t* buffer, size_t size, size_t capacity)
-    : _buffer(buffer), size_(size), capacity_(capacity) {}
+    : buffer_(buffer), size_(size), capacity_(capacity) {}
 
 void EncodedImage::SetEncodeTime(int64_t encode_start_ms,
                                  int64_t encode_finish_ms) {

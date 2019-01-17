@@ -323,7 +323,7 @@ void VideoCodecTestFixtureImpl::H264KeyframeChecker::CheckEncodedFrame(
       webrtc::H264::FindNaluIndices(encoded_frame.data(), encoded_frame.size());
   for (const webrtc::H264::NaluIndex& index : nalu_indices) {
     webrtc::H264::NaluType nalu_type = webrtc::H264::ParseNaluType(
-        encoded_frame._buffer[index.payload_start_offset]);
+        encoded_frame.data()[index.payload_start_offset]);
     if (nalu_type == webrtc::H264::NaluType::kSps) {
       contains_sps = true;
     } else if (nalu_type == webrtc::H264::NaluType::kPps) {

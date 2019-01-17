@@ -41,7 +41,7 @@ int PackHeader(uint8_t* buffer, MultiplexImageHeader header) {
   return offset;
 }
 
-MultiplexImageHeader UnpackHeader(uint8_t* buffer) {
+MultiplexImageHeader UnpackHeader(const uint8_t* buffer) {
   MultiplexImageHeader header;
   int offset = 0;
   header.component_count = ByteReader<uint8_t>::ReadBigEndian(buffer + offset);
@@ -95,7 +95,7 @@ int PackFrameHeader(uint8_t* buffer,
   return offset;
 }
 
-MultiplexImageComponentHeader UnpackFrameHeader(uint8_t* buffer) {
+MultiplexImageComponentHeader UnpackFrameHeader(const uint8_t* buffer) {
   MultiplexImageComponentHeader frame_header;
   int offset = 0;
 
@@ -192,14 +192,14 @@ EncodedImage MultiplexEncodedImagePacker::PackAndRelease(
   combined_image.set_size(bitstream_offset);
 
   // header
-  header_offset = PackHeader(combined_image._buffer, header);
+  header_offset = PackHeader(combined_image.data(), header);
   RTC_DCHECK_EQ(header.first_component_header_offset,
                 kMultiplexImageHeaderSize);
 
   // Frame Header
   for (size_t i = 0; i < images.size(); i++) {
-    int relative_offset = PackFrameHeader(
-        combined_image._buffer + header_offset, frame_headers[i]);
+    int relative_offset = PackFrameHeader(combined_image.data() + header_offset,
+                                          frame_headers[i]);
     RTC_DCHECK_EQ(relative_offset, kMultiplexImageComponentHeaderSize);
 
     header_offset = frame_headers[i].next_component_header_offset;
@@ -212,16 +212,16 @@ EncodedImage MultiplexEncodedImagePacker::PackAndRelease(
 
   // Augmenting Data
   if (multiplex_image.augmenting_data_size != 0) {
-    memcpy(combined_image._buffer + header.augmenting_data_offset,
+    memcpy(combined_image.data() + header.augmenting_data_offset,
            multiplex_image.augmenting_data.get(),
            multiplex_image.augmenting_data_size);
   }
 
   // Bitstreams
   for (size_t i = 0; i < images.size(); i++) {
-    PackBitstream(combined_image._buffer + frame_headers[i].bitstream_offset,
+    PackBitstream(combined_image.data() + frame_headers[i].bitstream_offset,
                   images[i]);
-    delete[] images[i].encoded_image._buffer;
+    delete[] images[i].encoded_image.data();
   }
 
   return combined_image;
@@ -229,14 +229,14 @@ EncodedImage MultiplexEncodedImagePacker::PackAndRelease(
 
 MultiplexImage MultiplexEncodedImagePacker::Unpack(
     const EncodedImage& combined_image) {
-  const MultiplexImageHeader& header = UnpackHeader(combined_image._buffer);
+  const MultiplexImageHeader& header = UnpackHeader(combined_image.data());
 
   std::vector<MultiplexImageComponentHeader> frame_headers;
   int header_offset = header.first_component_header_offset;
 
   while (header_offset > 0) {
     frame_headers.push_back(
-        UnpackFrameHeader(combined_image._buffer + header_offset));
+        UnpackFrameHeader(combined_image.data() + header_offset));
     header_offset = frame_headers.back().next_component_header_offset;
   }
 
@@ -246,7 +246,7 @@ MultiplexImage MultiplexEncodedImagePacker::Unpack(
     augmenting_data =
         std::unique_ptr<uint8_t[]>(new uint8_t[header.augmenting_data_size]);
     memcpy(augmenting_data.get(),
-           combined_image._buffer + header.augmenting_data_offset,
+           combined_image.data() + header.augmenting_data_offset,
            header.augmenting_data_size);
   }
 
@@ -263,7 +263,7 @@ MultiplexImage MultiplexEncodedImagePacker::Unpack(
     encoded_image.SetTimestamp(combined_image.Timestamp());
     encoded_image._frameType = frame_headers[i].frame_type;
     encoded_image.set_buffer(
-        combined_image._buffer + frame_headers[i].bitstream_offset,
+        combined_image.data() + frame_headers[i].bitstream_offset,
         static_cast<size_t>(frame_headers[i].bitstream_length));
     const size_t padding =
         EncodedImage::GetBufferPaddingBytes(image_component.codec_type);

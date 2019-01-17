@@ -249,9 +249,9 @@ VideoProcessor::~VideoProcessor() {
 
   // Deal with manual memory management of EncodedImage's.
   for (size_t i = 0; i < num_simulcast_or_spatial_layers_; ++i) {
-    uint8_t* buffer = merged_encoded_frames_.at(i)._buffer;
-    if (buffer) {
-      delete[] buffer;
+    uint8_t* data = merged_encoded_frames_.at(i).data();
+    if (data) {
+      delete[] data;
     }
   }
 }
@@ -575,7 +575,7 @@ const webrtc::EncodedImage* VideoProcessor::BuildAndStoreSuperframe(
   RTC_CHECK(copied_buffer);
 
   if (base_image.size()) {
-    RTC_CHECK(base_image._buffer);
+    RTC_CHECK(base_image.data());
     memcpy(copied_buffer, base_image.data(), base_image.size());
   }
   memcpy(copied_buffer + base_image.size(), encoded_image.data(),

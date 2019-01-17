@@ -278,7 +278,7 @@ TEST_P(TestMultiplexAdapter, CheckSingleFrameEncodedBitstream) {
   EXPECT_EQ(1, unpacked_frame.component_count);
   const MultiplexImageComponent& component = unpacked_frame.image_components[0];
   EXPECT_EQ(0, component.component_index);
-  EXPECT_NE(nullptr, component.encoded_image._buffer);
+  EXPECT_NE(nullptr, component.encoded_image.data());
   EXPECT_EQ(kVideoFrameKey, component.encoded_image._frameType);
 }
 
@@ -302,7 +302,7 @@ TEST_P(TestMultiplexAdapter, CheckDoubleFramesEncodedBitstream) {
     const MultiplexImageComponent& component =
         unpacked_frame.image_components[i];
     EXPECT_EQ(i, component.component_index);
-    EXPECT_NE(nullptr, component.encoded_image._buffer);
+    EXPECT_NE(nullptr, component.encoded_image.data());
     EXPECT_EQ(kVideoFrameKey, component.encoded_image._frameType);
   }
 }

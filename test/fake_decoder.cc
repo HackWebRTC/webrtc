@@ -83,11 +83,11 @@ int32_t FakeH264Decoder::Decode(const EncodedImage& input,
   for (size_t i = 0; i < input.size(); ++i) {
     uint8_t kStartCode[] = {0, 0, 0, 1};
     if (i < input.size() - sizeof(kStartCode) &&
-        !memcmp(&input._buffer[i], kStartCode, sizeof(kStartCode))) {
+        !memcmp(&input.data()[i], kStartCode, sizeof(kStartCode))) {
       i += sizeof(kStartCode) + 1;  // Skip start code and NAL header.
     }
-    if (input._buffer[i] != value) {
-      RTC_CHECK_EQ(value, input._buffer[i])
+    if (input.data()[i] != value) {
+      RTC_CHECK_EQ(value, input.data()[i])
           << "Bitstream mismatch between sender and receiver.";
       return -1;
     }

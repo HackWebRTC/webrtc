@@ -133,7 +133,7 @@ class EncodedFrameForMediaTransport : public video_coding::EncodedFrame {
 
     VerifyAndAllocate(frame.encoded_image().size());
     set_size(frame.encoded_image().size());
-    memcpy(_buffer, frame.encoded_image()._buffer, size());
+    memcpy(data(), frame.encoded_image().data(), size());
 
     _payloadType = static_cast<uint8_t>(frame.payload_type());
 

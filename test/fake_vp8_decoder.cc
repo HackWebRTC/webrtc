@@ -52,7 +52,7 @@ int32_t FakeVp8Decoder::Decode(const EncodedImage& input,
   if (input.size() < kMinPayLoadHeaderLength) {
     return WEBRTC_VIDEO_CODEC_ERROR;
   }
-  ParseFakeVp8(input._buffer, &width_, &height_);
+  ParseFakeVp8(input.data(), &width_, &height_);
 
   VideoFrame frame =
       VideoFrame::Builder()

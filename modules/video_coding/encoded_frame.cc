@@ -36,9 +36,9 @@ VCMEncodedFrame::~VCMEncodedFrame() {
 
 void VCMEncodedFrame::Free() {
   Reset();
-  if (_buffer != NULL) {
-    delete[] _buffer;
-    _buffer = NULL;
+  if (data() != nullptr) {
+    delete[] data();
+    set_buffer(nullptr, 0);
   }
 }
 
@@ -157,13 +157,13 @@ void VCMEncodedFrame::VerifyAndAllocate(size_t minimumSize) {
   size_t old_capacity = capacity();
   if (minimumSize > old_capacity) {
     // create buffer of sufficient size
-    uint8_t* old_buffer = _buffer;
+    uint8_t* old_data = data();
 
     set_buffer(new uint8_t[minimumSize], minimumSize);
-    if (old_buffer) {
+    if (old_data) {
       // copy old data
-      memcpy(_buffer, old_buffer, old_capacity);
-      delete[] old_buffer;
+      memcpy(data(), old_data, old_capacity);
+      delete[] old_data;
     }
   }
 }

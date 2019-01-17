@@ -127,7 +127,7 @@ static void RtpFragmentize(EncodedImage* encoded_image,
       new_capacity = required_capacity;
     }
     encoded_image->set_buffer(new uint8_t[new_capacity], new_capacity);
-    encoded_image_buffer->reset(encoded_image->_buffer);
+    encoded_image_buffer->reset(encoded_image->data());
   }
 
   // Iterate layers and NAL units, note each NAL unit as a fragment and copy
@@ -304,7 +304,7 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* inst,
         CalcBufferSize(VideoType::kI420, codec_.simulcastStream[idx].width,
                        codec_.simulcastStream[idx].height);
     encoded_images_[i].set_buffer(new uint8_t[new_capacity], new_capacity);
-    encoded_image_buffers_[i].reset(encoded_images_[i]._buffer);
+    encoded_image_buffers_[i].reset(encoded_images_[i].data());
     encoded_images_[i]._completeFrame = true;
     encoded_images_[i]._encodedWidth = codec_.simulcastStream[idx].width;
     encoded_images_[i]._encodedHeight = codec_.simulcastStream[idx].height;

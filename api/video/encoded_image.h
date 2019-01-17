@@ -75,12 +75,13 @@ class RTC_EXPORT EncodedImage {
   size_t capacity() const { return capacity_; }
 
   void set_buffer(uint8_t* buffer, size_t capacity) {
-    _buffer = buffer;
+    buffer_ = buffer;
     capacity_ = capacity;
   }
 
-  uint8_t* data() { return _buffer; }
-  const uint8_t* data() const { return _buffer; }
+  // TODO(bugs.webrtc.org/9378): When changed to owning the buffer, data() on a
+  // const object should return a const uint8_t*.
+  uint8_t* data() const { return buffer_; }
 
   uint32_t _encodedWidth = 0;
   uint32_t _encodedHeight = 0;
@@ -88,7 +89,6 @@ class RTC_EXPORT EncodedImage {
   int64_t ntp_time_ms_ = 0;
   int64_t capture_time_ms_ = 0;
   FrameType _frameType = kVideoFrameDelta;
-  uint8_t* _buffer;
   VideoRotation rotation_ = kVideoRotation_0;
   VideoContentType content_type_ = VideoContentType::UNSPECIFIED;
   bool _completeFrame = false;
@@ -112,6 +112,9 @@ class RTC_EXPORT EncodedImage {
   } timing_;
 
  private:
+  // TODO(bugs.webrtc.org/9378): Fix ownership. Currently not owning the data
+  // buffer.
+  uint8_t* buffer_;
   size_t size_;      // Size of encoded frame data.
   size_t capacity_;  // Allocated size of _buffer.
   uint32_t timestamp_rtp_ = 0;

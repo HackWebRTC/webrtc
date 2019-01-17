@@ -320,23 +320,23 @@ EncodedImageCallback::Result FakeH264Encoder::OnEncodedImage(
     const size_t kSpsNalHeader = 0x67;
     const size_t kPpsNalHeader = 0x68;
     const size_t kIdrNalHeader = 0x65;
-    encoded_image._buffer[fragmentation.fragmentationOffset[0]] = kSpsNalHeader;
-    encoded_image._buffer[fragmentation.fragmentationOffset[1]] = kPpsNalHeader;
-    encoded_image._buffer[fragmentation.fragmentationOffset[2]] = kIdrNalHeader;
+    encoded_image.data()[fragmentation.fragmentationOffset[0]] = kSpsNalHeader;
+    encoded_image.data()[fragmentation.fragmentationOffset[1]] = kPpsNalHeader;
+    encoded_image.data()[fragmentation.fragmentationOffset[2]] = kIdrNalHeader;
   } else {
     const size_t kNumSlices = 1;
     fragmentation.VerifyAndAllocateFragmentationHeader(kNumSlices);
     fragmentation.fragmentationOffset[0] = 0;
     fragmentation.fragmentationLength[0] = encoded_image.size();
     const size_t kNalHeader = 0x41;
-    encoded_image._buffer[fragmentation.fragmentationOffset[0]] = kNalHeader;
+    encoded_image.data()[fragmentation.fragmentationOffset[0]] = kNalHeader;
   }
   uint8_t value = 0;
   int fragment_counter = 0;
   for (size_t i = 0; i < encoded_image.size(); ++i) {
     if (fragment_counter == fragmentation.fragmentationVectorSize ||
         i != fragmentation.fragmentationOffset[fragment_counter]) {
-      encoded_image._buffer[i] = value++;
+      encoded_image.data()[i] = value++;
     } else {
       ++fragment_counter;
     }

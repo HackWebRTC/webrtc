@@ -55,7 +55,7 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
   SetPlayoutDelay(first_packet->video_header.playout_delay);
 
   AllocateBitstreamBuffer(frame_size);
-  bool bitstream_copied = packet_buffer_->GetBitstream(*this, _buffer);
+  bool bitstream_copied = packet_buffer_->GetBitstream(*this, data());
   RTC_DCHECK(bitstream_copied);
   _encodedWidth = first_packet->width;
   _encodedHeight = first_packet->height;
@@ -179,7 +179,7 @@ void RtpFrameObject::AllocateBitstreamBuffer(size_t frame_size) {
                                       ? EncodedImage::kBufferPaddingBytesH264
                                       : 0);
   if (capacity() < new_size) {
-    delete[] _buffer;
+    delete[] data();
     set_buffer(new uint8_t[new_size], new_size);
   }
 

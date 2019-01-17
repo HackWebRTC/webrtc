@@ -191,7 +191,7 @@ int LibvpxVp8Encoder::Release() {
 
   while (!encoded_images_.empty()) {
     EncodedImage& image = encoded_images_.back();
-    delete[] image._buffer;
+    delete[] image.data();
     encoded_images_.pop_back();
   }
   while (!encoders_.empty()) {
@@ -382,8 +382,8 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
   }
   for (int i = 0; i < number_of_streams; ++i) {
     // allocate memory for encoded image
-    if (encoded_images_[i]._buffer != NULL) {
-      delete[] encoded_images_[i]._buffer;
+    if (encoded_images_[i].data() != nullptr) {
+      delete[] encoded_images_[i].data();
     }
     size_t frame_capacity =
         CalcBufferSize(VideoType::kI420, codec_.width, codec_.height);
@@ -883,12 +883,12 @@ int LibvpxVp8Encoder::GetEncodedPartitions(const VideoFrame& input_image) {
           if (pkt->data.frame.sz + length >
               encoded_images_[encoder_idx].capacity()) {
             uint8_t* buffer = new uint8_t[pkt->data.frame.sz + length];
-            memcpy(buffer, encoded_images_[encoder_idx]._buffer, length);
-            delete[] encoded_images_[encoder_idx]._buffer;
+            memcpy(buffer, encoded_images_[encoder_idx].data(), length);
+            delete[] encoded_images_[encoder_idx].data();
             encoded_images_[encoder_idx].set_buffer(
                 buffer, pkt->data.frame.sz + length);
           }
-          memcpy(&encoded_images_[encoder_idx]._buffer[length],
+          memcpy(&encoded_images_[encoder_idx].data()[length],
                  pkt->data.frame.buf, pkt->data.frame.sz);
           encoded_images_[encoder_idx].set_size(
               encoded_images_[encoder_idx].size() + pkt->data.frame.sz);

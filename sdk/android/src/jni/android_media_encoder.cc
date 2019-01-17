@@ -1075,9 +1075,9 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
             H264::FindNaluIndices(payload, payload_size);
         if (nalu_idxs.empty()) {
           ALOGE << "Start code is not found!";
-          ALOGE << "Data:" << image->_buffer[0] << " " << image->_buffer[1]
-                << " " << image->_buffer[2] << " " << image->_buffer[3] << " "
-                << image->_buffer[4] << " " << image->_buffer[5];
+          ALOGE << "Data:" << image->data()[0] << " " << image->data()[1] << " "
+                << image->data()[2] << " " << image->data()[3] << " "
+                << image->data()[4] << " " << image->data()[5];
           ProcessHWError(true /* reset_if_fallback_unavailable */);
           return false;
         }

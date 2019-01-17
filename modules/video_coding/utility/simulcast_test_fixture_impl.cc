@@ -71,8 +71,8 @@ class SimulcastTestFixtureImpl::TestEncodedImageCallback
   }
 
   ~TestEncodedImageCallback() {
-    delete[] encoded_key_frame_._buffer;
-    delete[] encoded_frame_._buffer;
+    delete[] encoded_key_frame_.data();
+    delete[] encoded_frame_.data();
   }
 
   virtual Result OnEncodedImage(const EncodedImage& encoded_image,
@@ -82,20 +82,20 @@ class SimulcastTestFixtureImpl::TestEncodedImageCallback
     // Only store the base layer.
     if (encoded_image.SpatialIndex().value_or(0) == 0) {
       if (encoded_image._frameType == kVideoFrameKey) {
-        delete[] encoded_key_frame_._buffer;
+        delete[] encoded_key_frame_.data();
         encoded_key_frame_.set_buffer(new uint8_t[encoded_image.capacity()],
                                       encoded_image.capacity());
         encoded_key_frame_.set_size(encoded_image.size());
         encoded_key_frame_._frameType = kVideoFrameKey;
         encoded_key_frame_._completeFrame = encoded_image._completeFrame;
-        memcpy(encoded_key_frame_._buffer, encoded_image._buffer,
+        memcpy(encoded_key_frame_.data(), encoded_image.data(),
                encoded_image.size());
       } else {
-        delete[] encoded_frame_._buffer;
+        delete[] encoded_frame_.data();
         encoded_frame_.set_buffer(new uint8_t[encoded_image.capacity()],
                                   encoded_image.capacity());
         encoded_frame_.set_size(encoded_image.size());
-        memcpy(encoded_frame_._buffer, encoded_image._buffer,
+        memcpy(encoded_frame_.data(), encoded_image.data(),
                encoded_image.size());
       }
     }
@@ -861,7 +861,7 @@ void SimulcastTestFixtureImpl::TestDecodeWidthHeightSet() {
             encoded_frame[index].set_size(encoded_image.size());
             encoded_frame[index]._frameType = encoded_image._frameType;
             encoded_frame[index]._completeFrame = encoded_image._completeFrame;
-            memcpy(encoded_frame[index]._buffer, encoded_image._buffer,
+            memcpy(encoded_frame[index].data(), encoded_image.data(),
                    encoded_image.size());
             return EncodedImageCallback::Result(
                 EncodedImageCallback::Result::OK, 0);
@@ -896,7 +896,7 @@ void SimulcastTestFixtureImpl::TestDecodeWidthHeightSet() {
   EXPECT_EQ(0, decoder_->Decode(encoded_frame[2], false, NULL, 0));
 
   for (int i = 0; i < 3; ++i) {
-    delete [] encoded_frame[i]._buffer;
+    delete[] encoded_frame[i].data();
   }
 }
 
