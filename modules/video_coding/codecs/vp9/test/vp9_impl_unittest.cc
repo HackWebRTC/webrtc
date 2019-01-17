@@ -18,9 +18,16 @@
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
 #include "modules/video_coding/codecs/vp9/svc_config.h"
 #include "test/field_trial.h"
+#include "test/gmock.h"
+#include "test/gtest.h"
 #include "test/video_codec_settings.h"
 
 namespace webrtc {
+
+using testing::ElementsAreArray;
+using EncoderInfo = webrtc::VideoEncoder::EncoderInfo;
+using FramerateFractions =
+    absl::InlinedVector<uint8_t, webrtc::kMaxTemporalStreams>;
 
 namespace {
 const size_t kWidth = 1280;
@@ -846,6 +853,79 @@ TEST_F(TestVp9Impl, ScalabilityStructureIsAvailableInFlexibleMode) {
   CodecSpecificInfo codec_specific_info;
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
   EXPECT_TRUE(codec_specific_info.codecSpecific.VP9.ss_data_available);
+}
+
+TEST_F(TestVp9Impl, EncoderInfoFpsAllocation) {
+  const uint8_t kNumSpatialLayers = 3;
+  const uint8_t kNumTemporalLayers = 3;
+
+  codec_settings_.maxFramerate = 30;
+  codec_settings_.VP9()->numberOfSpatialLayers = kNumSpatialLayers;
+  codec_settings_.VP9()->numberOfTemporalLayers = kNumTemporalLayers;
+
+  for (uint8_t sl_idx = 0; sl_idx < kNumSpatialLayers; ++sl_idx) {
+    codec_settings_.spatialLayers[sl_idx].width = codec_settings_.width;
+    codec_settings_.spatialLayers[sl_idx].height = codec_settings_.height;
+    codec_settings_.spatialLayers[sl_idx].minBitrate =
+        codec_settings_.startBitrate;
+    codec_settings_.spatialLayers[sl_idx].maxBitrate =
+        codec_settings_.startBitrate;
+    codec_settings_.spatialLayers[sl_idx].targetBitrate =
+        codec_settings_.startBitrate;
+    codec_settings_.spatialLayers[sl_idx].active = true;
+    codec_settings_.spatialLayers[sl_idx].maxFramerate =
+        codec_settings_.maxFramerate;
+  }
+
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->InitEncode(&codec_settings_, 1 /* number of cores */,
+                                 0 /* max payload size (unused) */));
+
+  FramerateFractions expected_fps_allocation[kMaxSpatialLayers];
+  expected_fps_allocation[0].push_back(EncoderInfo::kMaxFramerateFraction / 4);
+  expected_fps_allocation[0].push_back(EncoderInfo::kMaxFramerateFraction / 2);
+  expected_fps_allocation[0].push_back(EncoderInfo::kMaxFramerateFraction);
+  expected_fps_allocation[1] = expected_fps_allocation[0];
+  expected_fps_allocation[2] = expected_fps_allocation[0];
+  EXPECT_THAT(encoder_->GetEncoderInfo().fps_allocation,
+              ::testing::ElementsAreArray(expected_fps_allocation));
+}
+
+TEST_F(TestVp9Impl, EncoderInfoFpsAllocationFlexibleMode) {
+  const uint8_t kNumSpatialLayers = 3;
+
+  codec_settings_.maxFramerate = 30;
+  codec_settings_.VP9()->numberOfSpatialLayers = kNumSpatialLayers;
+  codec_settings_.VP9()->numberOfTemporalLayers = 1;
+  codec_settings_.VP9()->flexibleMode = true;
+
+  for (uint8_t sl_idx = 0; sl_idx < kNumSpatialLayers; ++sl_idx) {
+    codec_settings_.spatialLayers[sl_idx].width = codec_settings_.width;
+    codec_settings_.spatialLayers[sl_idx].height = codec_settings_.height;
+    codec_settings_.spatialLayers[sl_idx].minBitrate =
+        codec_settings_.startBitrate;
+    codec_settings_.spatialLayers[sl_idx].maxBitrate =
+        codec_settings_.startBitrate;
+    codec_settings_.spatialLayers[sl_idx].targetBitrate =
+        codec_settings_.startBitrate;
+    codec_settings_.spatialLayers[sl_idx].active = true;
+    // Force different frame rates for different layers, to verify that total
+    // fraction is correct.
+    codec_settings_.spatialLayers[sl_idx].maxFramerate =
+        codec_settings_.maxFramerate / (kNumSpatialLayers - sl_idx);
+  }
+
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->InitEncode(&codec_settings_, 1 /* number of cores */,
+                                 0 /* max payload size (unused) */));
+
+  // No temporal layers allowed when spatial layers have different fps targets.
+  FramerateFractions expected_fps_allocation[kMaxSpatialLayers];
+  expected_fps_allocation[0].push_back(EncoderInfo::kMaxFramerateFraction / 3);
+  expected_fps_allocation[1].push_back(EncoderInfo::kMaxFramerateFraction / 2);
+  expected_fps_allocation[2].push_back(EncoderInfo::kMaxFramerateFraction);
+  EXPECT_THAT(encoder_->GetEncoderInfo().fps_allocation,
+              ::testing::ElementsAreArray(expected_fps_allocation));
 }
 
 class TestVp9ImplWithLayering

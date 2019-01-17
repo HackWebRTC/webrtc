@@ -31,6 +31,9 @@
 
 using ::testing::_;
 using ::testing::Return;
+using EncoderInfo = webrtc::VideoEncoder::EncoderInfo;
+using FramerateFractions =
+    absl::InlinedVector<uint8_t, webrtc::kMaxTemporalStreams>;
 
 namespace webrtc {
 namespace test {
@@ -219,6 +222,7 @@ class MockVideoEncoder : public VideoEncoder {
     info.has_trusted_rate_controller = has_trusted_rate_controller_;
     info.is_hardware_accelerated = is_hardware_accelerated_;
     info.has_internal_source = has_internal_source_;
+    info.fps_allocation[0] = fps_allocation_;
     return info;
   }
 
@@ -265,6 +269,10 @@ class MockVideoEncoder : public VideoEncoder {
     has_internal_source_ = has_internal_source;
   }
 
+  void set_fps_allocation(const FramerateFractions& fps_allocation) {
+    fps_allocation_ = fps_allocation;
+  }
+
   VideoBitrateAllocation last_set_bitrate() const { return last_set_bitrate_; }
 
  private:
@@ -277,6 +285,7 @@ class MockVideoEncoder : public VideoEncoder {
   bool has_internal_source_ = false;
   int32_t init_encode_return_value_ = 0;
   VideoBitrateAllocation last_set_bitrate_;
+  FramerateFractions fps_allocation_;
 
   VideoCodec codec_;
   EncodedImageCallback* callback_;
@@ -1083,6 +1092,35 @@ TEST_F(TestSimulcastEncoderAdapterFake, ReportsInternalSource) {
   helper_->factory()->encoders()[2]->set_has_internal_source(false);
   EXPECT_EQ(0, adapter_->InitEncode(&codec_, 1, 1200));
   EXPECT_FALSE(adapter_->GetEncoderInfo().has_internal_source);
+}
+
+TEST_F(TestSimulcastEncoderAdapterFake, ReportsFpsAllocation) {
+  SimulcastTestFixtureImpl::DefaultSettings(
+      &codec_, static_cast<const int*>(kTestTemporalLayerProfile),
+      kVideoCodecVP8);
+  codec_.numberOfSimulcastStreams = 3;
+  adapter_->RegisterEncodeCompleteCallback(this);
+  EXPECT_EQ(0, adapter_->InitEncode(&codec_, 1, 1200));
+  ASSERT_EQ(3u, helper_->factory()->encoders().size());
+
+  // Combination of three different supported mode:
+  // Simulcast stream 0 has undefined fps behavior.
+  // Simulcast stream 1 has three temporal layers.
+  // Simulcast stream 2 has 1 temporal layer.
+  FramerateFractions expected_fps_allocation[kMaxSpatialLayers];
+  expected_fps_allocation[1].push_back(EncoderInfo::kMaxFramerateFraction / 4);
+  expected_fps_allocation[1].push_back(EncoderInfo::kMaxFramerateFraction / 2);
+  expected_fps_allocation[1].push_back(EncoderInfo::kMaxFramerateFraction);
+  expected_fps_allocation[2].push_back(EncoderInfo::kMaxFramerateFraction);
+
+  // All encoders have internal source, simulcast adapter reports true.
+  for (size_t i = 0; i < codec_.numberOfSimulcastStreams; ++i) {
+    MockVideoEncoder* encoder = helper_->factory()->encoders()[i];
+    encoder->set_fps_allocation(expected_fps_allocation[i]);
+  }
+  EXPECT_EQ(0, adapter_->InitEncode(&codec_, 1, 1200));
+  EXPECT_THAT(adapter_->GetEncoderInfo().fps_allocation,
+              ::testing::ElementsAreArray(expected_fps_allocation));
 }
 
 }  // namespace test

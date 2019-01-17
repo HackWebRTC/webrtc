@@ -82,6 +82,8 @@ VideoEncoder::ScalingSettings::~ScalingSettings() {}
 // static
 constexpr VideoEncoder::ScalingSettings::KOff
     VideoEncoder::ScalingSettings::kOff;
+// static
+constexpr uint8_t VideoEncoder::EncoderInfo::kMaxFramerateFraction;
 
 VideoEncoder::EncoderInfo::EncoderInfo()
     : scaling_settings(VideoEncoder::ScalingSettings::kOff),
@@ -89,7 +91,10 @@ VideoEncoder::EncoderInfo::EncoderInfo()
       implementation_name("unknown"),
       has_trusted_rate_controller(false),
       is_hardware_accelerated(true),
-      has_internal_source(false) {}
+      has_internal_source(false),
+      fps_allocation{absl::InlinedVector<uint8_t, kMaxTemporalStreams>(
+          1,
+          kMaxFramerateFraction)} {}
 
 VideoEncoder::EncoderInfo::EncoderInfo(const EncoderInfo&) = default;
 

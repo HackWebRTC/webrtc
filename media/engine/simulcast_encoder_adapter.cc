@@ -312,6 +312,7 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
         encoder_info_.has_internal_source &=
             encoder_impl_info.has_internal_source;
       }
+      encoder_info_.fps_allocation[i] = encoder_impl_info.fps_allocation[0];
     }
   }
 

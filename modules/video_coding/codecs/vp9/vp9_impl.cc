@@ -1354,6 +1354,22 @@ VideoEncoder::EncoderInfo VP9EncoderImpl::GetEncoderInfo() const {
   info.has_trusted_rate_controller = trusted_rate_controller_;
   info.is_hardware_accelerated = false;
   info.has_internal_source = false;
+  for (size_t si = 0; si < num_spatial_layers_; ++si) {
+    info.fps_allocation[si].clear();
+    if (!codec_.spatialLayers[si].active) {
+      continue;
+    }
+    // This spatial layer may already use a fraction of the total frame rate.
+    const float sl_fps_fraction =
+        codec_.spatialLayers[si].maxFramerate / codec_.maxFramerate;
+    for (size_t ti = 0; ti < num_temporal_layers_; ++ti) {
+      const uint32_t decimator =
+          num_temporal_layers_ <= 1 ? 1 : config_->ts_rate_decimator[ti];
+      RTC_DCHECK_GT(decimator, 0);
+      info.fps_allocation[si].push_back(rtc::saturated_cast<uint8_t>(
+          EncoderInfo::kMaxFramerateFraction * (sl_fps_fraction / decimator)));
+    }
+  }
   return info;
 }
 

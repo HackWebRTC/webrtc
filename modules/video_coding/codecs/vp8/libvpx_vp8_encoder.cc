@@ -963,6 +963,31 @@ VideoEncoder::EncoderInfo LibvpxVp8Encoder::GetEncoderInfo() const {
                               ? VideoEncoder::ScalingSettings(
                                     kLowVp8QpThreshold, kHighVp8QpThreshold)
                               : VideoEncoder::ScalingSettings::kOff;
+  // |encoder_idx| is libvpx index where 0 is highest resolution.
+  // |si| is simulcast index, where 0 is lowest resolution.
+  for (size_t si = 0, encoder_idx = encoders_.size() - 1; si < encoders_.size();
+       ++si, --encoder_idx) {
+    info.fps_allocation[si].clear();
+    if ((codec_.numberOfSimulcastStreams > si &&
+         !codec_.simulcastStream[si].active) ||
+        (si == 0 && SimulcastUtility::IsConferenceModeScreenshare(codec_))) {
+      // No defined frame rate fractions if not active or if using
+      // ScreenshareLayers, leave vector empty and continue;
+      continue;
+    }
+    if (configurations_[encoder_idx].ts_number_layers <= 1) {
+      info.fps_allocation[si].push_back(EncoderInfo::kMaxFramerateFraction);
+    } else {
+      for (size_t ti = 0; ti < configurations_[encoder_idx].ts_number_layers;
+           ++ti) {
+        RTC_DCHECK_GT(configurations_[encoder_idx].ts_rate_decimator[ti], 0);
+        info.fps_allocation[si].push_back(rtc::saturated_cast<uint8_t>(
+            EncoderInfo::kMaxFramerateFraction /
+                configurations_[encoder_idx].ts_rate_decimator[ti] +
+            0.5));
+      }
+    }
+  }
 
   return info;
 }

@@ -11,10 +11,12 @@
 #ifndef API_VIDEO_CODECS_VIDEO_ENCODER_H_
 #define API_VIDEO_CODECS_VIDEO_ENCODER_H_
 
+#include <limits>
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "absl/container/inlined_vector.h"
 #include "absl/types/optional.h"
 #include "api/video/encoded_image.h"
 #include "api/video/video_bitrate_allocation.h"
@@ -120,6 +122,9 @@ class RTC_EXPORT VideoEncoder {
 
   // Struct containing metadata about the encoder implementing this interface.
   struct EncoderInfo {
+    static constexpr uint8_t kMaxFramerateFraction =
+        std::numeric_limits<uint8_t>::max();
+
     EncoderInfo();
     EncoderInfo(const EncoderInfo&);
 
@@ -159,6 +164,32 @@ class RTC_EXPORT VideoEncoder {
     // Internal source encoders are deprecated and support for them will be
     // phased out.
     bool has_internal_source;
+
+    // For each spatial layer (simulcast stream or SVC layer), represented as an
+    // element in |fps_allocation| a vector indicates how many temporal layers
+    // the encoder is using for that spatial layer.
+    // For each spatial/temporal layer pair, the frame rate fraction is given as
+    // an 8bit unsigned integer where 0 = 0% and 255 = 100%.
+    //
+    // If the vector is empty for a given spatial layer, it indicates that frame
+    // rates are not defined and we can't count on any specific frame rate to be
+    // generated. Likely this indicates Vp8TemporalLayersType::kBitrateDynamic.
+    //
+    // The encoder may update this on a per-frame basis in response to both
+    // internal and external signals.
+    //
+    // Spatial layers are treated independently, but temporal layers are
+    // cumulative. For instance, if:
+    //   fps_allocation[0][0] = kFullFramerate / 2;
+    //   fps_allocation[0][1] = kFullFramerate;
+    // Then half of the frames are in the base layer and half is in TL1, but
+    // since TL1 is assumed to depend on the base layer, the frame rate is
+    // indicated as the full 100% for the top layer.
+    //
+    // Defaults to a single spatial layer containing a single temporal layer
+    // with a 100% frame rate fraction.
+    absl::InlinedVector<uint8_t, kMaxTemporalStreams>
+        fps_allocation[kMaxSpatialLayers];
   };
 
   static VideoCodecVP8 GetDefaultVp8Settings();
