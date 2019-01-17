@@ -12,5 +12,25 @@ rtc_source_set("task_queue") {
   visibility = [ "*" ]
   public = [
     "queued_task.h",
+    "task_queue_priority.h",
+  ]
+}
+
+# TODO(bugs.webrtc.org/10191): Merge the target into task_queue target above
+# when support for link-time injection is dropped.
+rtc_source_set("task_queue_factory") {
+  visibility = [ "*" ]
+  public = [
+    "task_queue_base.h",
+    "task_queue_factory.h",
+  ]
+  sources = [
+    "task_queue_base.cc",
+  ]
+
+  deps = [
+    ":task_queue",
+    "//third_party/abseil-cpp/absl/base:core_headers",
+    "//third_party/abseil-cpp/absl/strings",
   ]
 }

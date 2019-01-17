@@ -18,6 +18,7 @@
 
 #include "absl/memory/memory.h"
 #include "api/task_queue/queued_task.h"
+#include "api/task_queue/task_queue_priority.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/system/rtc_export.h"
@@ -142,11 +143,7 @@ class RTC_LOCKABLE RTC_EXPORT TaskQueue {
  public:
   // TaskQueue priority levels. On some platforms these will map to thread
   // priorities, on others such as Mac and iOS, GCD queue priorities.
-  enum class Priority {
-    NORMAL = 0,
-    HIGH,
-    LOW,
-  };
+  using Priority = ::webrtc::TaskQueuePriority;
 
   explicit TaskQueue(const char* queue_name,
                      Priority priority = Priority::NORMAL);
