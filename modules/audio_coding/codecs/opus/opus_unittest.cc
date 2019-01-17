@@ -27,7 +27,7 @@ using ::testing::Values;
 using ::testing::Combine;
 
 // Maximum number of bytes in output bitstream.
-const size_t kMaxBytes = 2000;
+const size_t kMaxBytes = 1000;
 // Sample rate of Opus.
 const size_t kOpusRateKhz = 48;
 // Number of samples-per-channel in a 20 ms frame, sampled at 48 kHz.
@@ -86,14 +86,10 @@ OpusTest::OpusTest()
 void OpusTest::PrepareSpeechData(size_t channel,
                                  int block_length_ms,
                                  int loop_length_ms) {
-  std::map<int, std::string> channel_to_basename = {
-      {1, "audio_coding/testfile32kHz"},
-      {2, "audio_coding/teststereo32kHz"},
-      {4, "audio_coding/speech_4_channels_48k_one_second"}};
-  std::map<int, std::string> channel_to_suffix = {
-      {1, "pcm"}, {2, "pcm"}, {4, "wav"}};
   const std::string file_name = webrtc::test::ResourcePath(
-      channel_to_basename[channel], channel_to_suffix[channel]);
+      (channel == 1) ? "audio_coding/testfile32kHz"
+                     : "audio_coding/teststereo32kHz",
+      "pcm");
   if (loop_length_ms < block_length_ms) {
     loop_length_ms = block_length_ms;
   }
@@ -107,7 +103,7 @@ void OpusTest::SetMaxPlaybackRate(WebRtcOpusEncInst* encoder,
                                   int32_t set) {
   opus_int32 bandwidth;
   EXPECT_EQ(0, WebRtcOpus_SetMaxPlaybackRate(opus_encoder_, set));
-  EXPECT_EQ(0, WebRtcOpus_GetMaxPlaybackRate(opus_encoder_, &bandwidth));
+  opus_encoder_ctl(opus_encoder_->encoder, OPUS_GET_MAX_BANDWIDTH(&bandwidth));
   EXPECT_EQ(expect, bandwidth);
 }
 
@@ -358,13 +354,13 @@ TEST(OpusTest, OpusCreateFail) {
   // Test to see that an invalid pointer is caught.
   EXPECT_EQ(-1, WebRtcOpus_EncoderCreate(NULL, 1, 0));
   // Invalid channel number.
-  EXPECT_EQ(-1, WebRtcOpus_EncoderCreate(&opus_encoder, 257, 0));
+  EXPECT_EQ(-1, WebRtcOpus_EncoderCreate(&opus_encoder, 3, 0));
   // Invalid applciation mode.
   EXPECT_EQ(-1, WebRtcOpus_EncoderCreate(&opus_encoder, 1, 2));
 
   EXPECT_EQ(-1, WebRtcOpus_DecoderCreate(NULL, 1));
   // Invalid channel number.
-  EXPECT_EQ(-1, WebRtcOpus_DecoderCreate(&opus_decoder, 257));
+  EXPECT_EQ(-1, WebRtcOpus_DecoderCreate(&opus_decoder, 3));
 }
 
 // Test failing Free.
@@ -403,8 +399,7 @@ TEST_P(OpusTest, OpusEncodeDecode) {
 
   // Check application mode.
   opus_int32 app;
-  opus_multistream_encoder_ctl(opus_encoder_->encoder,
-                               OPUS_GET_APPLICATION(&app));
+  opus_encoder_ctl(opus_encoder_->encoder, OPUS_GET_APPLICATION(&app));
   EXPECT_EQ(application_ == 0 ? OPUS_APPLICATION_VOIP : OPUS_APPLICATION_AUDIO,
             app);
 
@@ -455,11 +450,6 @@ TEST_P(OpusTest, OpusSetComplexity) {
 }
 
 TEST_P(OpusTest, OpusSetBandwidth) {
-  if (channels_ > 2) {
-    // TODO(webrtc:10217): investigate why multi-stream Opus reports
-    // narrowband when it's configured with FULLBAND.
-    return;
-  }
   PrepareSpeechData(channels_, 20, 20);
 
   int16_t audio_type;
@@ -505,7 +495,7 @@ TEST_P(OpusTest, OpusForceChannels) {
   ASSERT_EQ(0,
             WebRtcOpus_EncoderCreate(&opus_encoder_, channels_, application_));
 
-  if (channels_ >= 2) {
+  if (channels_ == 2) {
     EXPECT_EQ(-1, WebRtcOpus_SetForceChannels(opus_encoder_, 3));
     EXPECT_EQ(0, WebRtcOpus_SetForceChannels(opus_encoder_, 2));
     EXPECT_EQ(0, WebRtcOpus_SetForceChannels(opus_encoder_, 1));
@@ -578,17 +568,17 @@ TEST_P(OpusTest, OpusEnableDisableDtx) {
   opus_int32 dtx;
 
   // DTX is off by default.
-  opus_multistream_encoder_ctl(opus_encoder_->encoder, OPUS_GET_DTX(&dtx));
+  opus_encoder_ctl(opus_encoder_->encoder, OPUS_GET_DTX(&dtx));
   EXPECT_EQ(0, dtx);
 
   // Test to enable DTX.
   EXPECT_EQ(0, WebRtcOpus_EnableDtx(opus_encoder_));
-  opus_multistream_encoder_ctl(opus_encoder_->encoder, OPUS_GET_DTX(&dtx));
+  opus_encoder_ctl(opus_encoder_->encoder, OPUS_GET_DTX(&dtx));
   EXPECT_EQ(1, dtx);
 
   // Test to disable DTX.
   EXPECT_EQ(0, WebRtcOpus_DisableDtx(opus_encoder_));
-  opus_multistream_encoder_ctl(opus_encoder_->encoder, OPUS_GET_DTX(&dtx));
+  opus_encoder_ctl(opus_encoder_->encoder, OPUS_GET_DTX(&dtx));
   EXPECT_EQ(0, dtx);
 
   // Free memory.
@@ -602,11 +592,6 @@ TEST_P(OpusTest, OpusDtxOff) {
 }
 
 TEST_P(OpusTest, OpusDtxOn) {
-  if (channels_ > 2) {
-    // TODO(webrtc:10218): adapt the test to the sizes and order of multi-stream
-    // DTX packets.
-    return;
-  }
   TestDtxEffect(true, 10);
   TestDtxEffect(true, 20);
   TestDtxEffect(true, 40);
@@ -738,12 +723,6 @@ TEST_P(OpusTest, OpusDurationEstimation) {
 }
 
 TEST_P(OpusTest, OpusDecodeRepacketized) {
-  if (channels_ > 2) {
-    // As per the Opus documentation
-    // https://mf4.xiph.org/jenkins/view/opus/job/opus/ws/doc/html/group__opus__repacketizer.html#details,
-    // multiple streams are not supported.
-    return;
-  }
   constexpr size_t kPackets = 6;
 
   PrepareSpeechData(channels_, 20, 20 * kPackets);
@@ -808,6 +787,6 @@ TEST_P(OpusTest, OpusDecodeRepacketized) {
 
 INSTANTIATE_TEST_CASE_P(VariousMode,
                         OpusTest,
-                        Combine(Values(1, 2, 4), Values(0, 1)));
+                        Combine(Values(1, 2), Values(0, 1)));
 
 }  // namespace webrtc

@@ -72,8 +72,7 @@ class OpusFrame : public AudioDecoder::EncodedAudioFrame {
 AudioDecoderOpusImpl::AudioDecoderOpusImpl(size_t num_channels)
     : channels_(num_channels) {
   RTC_DCHECK(num_channels == 1 || num_channels == 2);
-  const int error = WebRtcOpus_DecoderCreate(&dec_state_, channels_);
-  RTC_DCHECK(error == 0);
+  WebRtcOpus_DecoderCreate(&dec_state_, channels_);
   WebRtcOpus_DecoderInit(dec_state_);
 }
 
