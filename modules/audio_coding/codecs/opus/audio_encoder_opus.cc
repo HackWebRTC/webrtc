@@ -767,7 +767,9 @@ bool AudioEncoderOpusImpl::RecreateEncoderInstance(
                               AudioEncoderOpusConfig::ApplicationMode::kVoip
                           ? 0
                           : 1));
-  RTC_CHECK_EQ(0, WebRtcOpus_SetBitRate(inst_, GetBitrateBps(config)));
+  const int bitrate = GetBitrateBps(config);
+  RTC_CHECK_EQ(0, WebRtcOpus_SetBitRate(inst_, bitrate));
+  RTC_LOG(LS_INFO) << "Set Opus bitrate to " << bitrate << " bps.";
   if (config.fec_enabled) {
     RTC_CHECK_EQ(0, WebRtcOpus_EnableFec(inst_));
   } else {
@@ -830,17 +832,23 @@ void AudioEncoderOpusImpl::SetProjectedPacketLossRate(float fraction) {
 }
 
 void AudioEncoderOpusImpl::SetTargetBitrate(int bits_per_second) {
-  config_.bitrate_bps = rtc::SafeClamp<int>(
+  const int new_bitrate = rtc::SafeClamp<int>(
       bits_per_second, AudioEncoderOpusConfig::kMinBitrateBps,
       AudioEncoderOpusConfig::kMaxBitrateBps);
-  RTC_DCHECK(config_.IsOk());
-  RTC_CHECK_EQ(0, WebRtcOpus_SetBitRate(inst_, GetBitrateBps(config_)));
+  if (config_.bitrate_bps && *config_.bitrate_bps != new_bitrate) {
+    config_.bitrate_bps = new_bitrate;
+    RTC_DCHECK(config_.IsOk());
+    const int bitrate = GetBitrateBps(config_);
+    RTC_CHECK_EQ(0, WebRtcOpus_SetBitRate(inst_, bitrate));
+    RTC_LOG(LS_INFO) << "Set Opus bitrate to " << bitrate << " bps.";
+    bitrate_changed_ = true;
+  }
+
   const auto new_complexity = GetNewComplexity(config_);
   if (new_complexity && complexity_ != *new_complexity) {
     complexity_ = *new_complexity;
     RTC_CHECK_EQ(0, WebRtcOpus_SetComplexity(inst_, complexity_));
   }
-  bitrate_changed_ = true;
 }
 
 void AudioEncoderOpusImpl::ApplyAudioNetworkAdaptor() {
