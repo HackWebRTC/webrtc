@@ -39,15 +39,17 @@ void WriteToFileTask::UpdateBytesLeft(size_t event_byte_size) {
 }
 
 bool WriteToFileTask::Run() {
+  if (!debug_file_->is_open()) {
+    return true;
+  }
+
   ProtoString event_string;
   event_.SerializeToString(&event_string);
 
   const size_t event_byte_size = event_.ByteSizeLong();
 
   if (!IsRoomForNextEvent(event_byte_size)) {
-    // Ensure that no further events are written, even if they're smaller than
-    // the current event.
-    *num_bytes_left_for_log_ = 0;
+    debug_file_->CloseFile();
     return true;
   }
 

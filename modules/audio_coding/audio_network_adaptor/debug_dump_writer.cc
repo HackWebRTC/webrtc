@@ -67,13 +67,14 @@ class DebugDumpWriterImpl final : public DebugDumpWriter {
 #endif
 
  private:
-  FileWrapper dump_file_;
+  std::unique_ptr<FileWrapper> dump_file_;
 };
 
-DebugDumpWriterImpl::DebugDumpWriterImpl(FILE* file_handle) {
+DebugDumpWriterImpl::DebugDumpWriterImpl(FILE* file_handle)
+    : dump_file_(FileWrapper::Create()) {
 #if WEBRTC_ENABLE_PROTOBUF
-  dump_file_ = FileWrapper(file_handle);
-  RTC_CHECK(dump_file_.is_open());
+  dump_file_->OpenFromFileHandle(file_handle);
+  RTC_CHECK(dump_file_->is_open());
 #else
   RTC_NOTREACHED();
 #endif
@@ -109,7 +110,7 @@ void DebugDumpWriterImpl::DumpNetworkMetrics(
         *metrics.uplink_recoverable_packet_loss_fraction);
   }
 
-  DumpEventToFile(event, &dump_file_);
+  DumpEventToFile(event, dump_file_.get());
 #endif  // WEBRTC_ENABLE_PROTOBUF
 }
 
@@ -142,7 +143,7 @@ void DebugDumpWriterImpl::DumpEncoderRuntimeConfig(
   if (config.num_channels)
     dump_config->set_num_channels(*config.num_channels);
 
-  DumpEventToFile(event, &dump_file_);
+  DumpEventToFile(event, dump_file_.get());
 #endif  // WEBRTC_ENABLE_PROTOBUF
 }
 
@@ -156,7 +157,7 @@ void DebugDumpWriterImpl::DumpControllerManagerConfig(
   event.set_type(Event::CONTROLLER_MANAGER_CONFIG);
   event.mutable_controller_manager_config()->CopyFrom(
       controller_manager_config);
-  DumpEventToFile(event, &dump_file_);
+  DumpEventToFile(event, dump_file_.get());
 }
 #endif  // WEBRTC_ENABLE_PROTOBUF
 

@@ -20,57 +20,64 @@
 
 namespace webrtc {
 
+// TODO(tommi): Rename to rtc::File and move to base.
 class FileWrapper final {
  public:
-  // Opens a file, in read or write mode. Use the is_open() method on the
-  // returned object to check if the open operation was successful. The file is
-  // closed by the destructor.
-  static FileWrapper OpenReadOnly(const char* file_name_utf8);
-  static FileWrapper OpenWriteOnly(const char* file_name_utf8);
+  static const size_t kMaxFileNameSize = 1024;
 
-  FileWrapper() = default;
+  // Factory methods.
+  // TODO(tommi): Remove Create().
+  static FileWrapper* Create();
+  static FileWrapper Open(const char* file_name_utf8, bool read_only);
 
-  // Takes over ownership of |file|, closing it on destruction.
-  explicit FileWrapper(FILE* file) : file_(file) {}
-  ~FileWrapper() { Close(); }
+  FileWrapper(FILE* file, size_t max_size);
+  ~FileWrapper();
+
+  // Support for move semantics.
+  FileWrapper(FileWrapper&& other);
+  FileWrapper& operator=(FileWrapper&& other);
+
+  // Returns true if a file has been opened.
+  bool is_open() const { return file_ != nullptr; }
+
+  // Opens a file in read or write mode, decided by the read_only parameter.
+  bool OpenFile(const char* file_name_utf8, bool read_only);
+
+  // Initializes the wrapper from an existing handle.  The wrapper
+  // takes ownership of |handle| and closes it in CloseFile().
+  bool OpenFromFileHandle(FILE* handle);
+
+  void CloseFile();
+
+  // Limits the file size to |bytes|. Writing will fail after the cap
+  // is hit. Pass zero to use an unlimited size.
+  // TODO(tommi): Could we move this out into a separate class?
+  void SetMaxFileSize(size_t bytes);
+
+  // Flush any pending writes.  Note: Flushing when closing, is not required.
+  int Flush();
+
+  // Rewinds the file to the start.
+  int Rewind();
+  int Read(void* buf, size_t length);
+  bool Write(const void* buf, size_t length);
+
+ private:
+  FileWrapper();
+
+  void CloseFileImpl();
+  int FlushImpl();
+
+  // TODO(tommi): Remove the lock.
+  rtc::CriticalSection lock_;
+
+  FILE* file_ = nullptr;
+  size_t position_ = 0;
+  size_t max_size_in_bytes_ = 0;
 
   // Copying is not supported.
   FileWrapper(const FileWrapper&) = delete;
   FileWrapper& operator=(const FileWrapper&) = delete;
-
-  // Support for move semantics.
-  FileWrapper(FileWrapper&&);
-  FileWrapper& operator=(FileWrapper&&);
-
-  // Returns true if a file has been opened. If the file is not open, no methods
-  // but is_open and Close may be called.
-  bool is_open() const { return file_ != nullptr; }
-
-  // Closes the file, and implies Flush. Returns true on success, false if
-  // writing buffered data fails. On failure, the file is nevertheless closed.
-  // Calling Close on an already closed file does nothing and returns success.
-  bool Close();
-
-  // Write any buffered data to the underlying file. Returns true on success,
-  // false on write error. Note: Flushing when closing, is not required.
-  // TODO(nisse): Delete this method.
-  bool Flush();
-
-  // Seeks to the beginning of file. Returns true on success, false on failure,
-  // e.g., if the underlying file isn't seekable.
-  // TODO(nisse): Delete this method.
-  bool Rewind();
-
-  // Returns number of bytes read. Short count indicates EOF or error.
-  size_t Read(void* buf, size_t length);
-
-  // Returns true if all data was successfully written (or buffered), or false
-  // if there was an error. Writing buffered data can fail later, and is
-  // reported with return value from Flush or Close.
-  bool Write(const void* buf, size_t length);
-
- private:
-  FILE* file_ = nullptr;
 };
 
 }  // namespace webrtc

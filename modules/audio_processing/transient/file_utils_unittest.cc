@@ -158,20 +158,22 @@ TEST_F(TransientFileUtilsTest, MAYBE_ConvertDoubleToByteArray) {
 TEST_F(TransientFileUtilsTest, MAYBE_ReadInt16BufferFromFile) {
   std::string test_filename = kTestFileName;
 
-  FileWrapper file = FileWrapper::OpenReadOnly(test_filename.c_str());
-  ASSERT_TRUE(file.is_open()) << "File could not be opened:\n"
-                              << kTestFileName.c_str();
+  std::unique_ptr<FileWrapper> file(FileWrapper::Create());
+
+  file->OpenFile(test_filename.c_str(), true);  // Read only.
+  ASSERT_TRUE(file->is_open()) << "File could not be opened:\n"
+                               << kTestFileName.c_str();
 
   const size_t kBufferLength = 12;
   std::unique_ptr<int16_t[]> buffer(new int16_t[kBufferLength]);
 
   EXPECT_EQ(kBufferLength,
-            ReadInt16BufferFromFile(&file, kBufferLength, buffer.get()));
+            ReadInt16BufferFromFile(file.get(), kBufferLength, buffer.get()));
   EXPECT_EQ(22377, buffer[4]);
   EXPECT_EQ(16389, buffer[7]);
   EXPECT_EQ(17631, buffer[kBufferLength - 1]);
 
-  file.Rewind();
+  file->Rewind();
 
   // The next test is for checking the case where there are not as much data as
   // needed in the file, but reads to the end, and it returns the number of
@@ -179,7 +181,7 @@ TEST_F(TransientFileUtilsTest, MAYBE_ReadInt16BufferFromFile) {
   const size_t kBufferLenghtLargerThanFile = kBufferLength * 2;
   buffer.reset(new int16_t[kBufferLenghtLargerThanFile]);
   EXPECT_EQ(kBufferLength,
-            ReadInt16BufferFromFile(&file, kBufferLenghtLargerThanFile,
+            ReadInt16BufferFromFile(file.get(), kBufferLenghtLargerThanFile,
                                     buffer.get()));
   EXPECT_EQ(11544, buffer[0]);
   EXPECT_EQ(22377, buffer[4]);
@@ -196,22 +198,24 @@ TEST_F(TransientFileUtilsTest, MAYBE_ReadInt16BufferFromFile) {
 TEST_F(TransientFileUtilsTest, MAYBE_ReadInt16FromFileToFloatBuffer) {
   std::string test_filename = kTestFileName;
 
-  FileWrapper file = FileWrapper::OpenReadOnly(test_filename.c_str());
-  ASSERT_TRUE(file.is_open()) << "File could not be opened:\n"
-                              << kTestFileName.c_str();
+  std::unique_ptr<FileWrapper> file(FileWrapper::Create());
+
+  file->OpenFile(test_filename.c_str(), true);  // Read only.
+  ASSERT_TRUE(file->is_open()) << "File could not be opened:\n"
+                               << kTestFileName.c_str();
 
   const size_t kBufferLength = 12;
   std::unique_ptr<float[]> buffer(new float[kBufferLength]);
 
-  EXPECT_EQ(kBufferLength,
-            ReadInt16FromFileToFloatBuffer(&file, kBufferLength, buffer.get()));
+  EXPECT_EQ(kBufferLength, ReadInt16FromFileToFloatBuffer(
+                               file.get(), kBufferLength, buffer.get()));
 
   EXPECT_DOUBLE_EQ(11544, buffer[0]);
   EXPECT_DOUBLE_EQ(22377, buffer[4]);
   EXPECT_DOUBLE_EQ(16389, buffer[7]);
   EXPECT_DOUBLE_EQ(17631, buffer[kBufferLength - 1]);
 
-  file.Rewind();
+  file->Rewind();
 
   // The next test is for checking the case where there are not as much data as
   // needed in the file, but reads to the end, and it returns the number of
@@ -219,8 +223,8 @@ TEST_F(TransientFileUtilsTest, MAYBE_ReadInt16FromFileToFloatBuffer) {
   const size_t kBufferLenghtLargerThanFile = kBufferLength * 2;
   buffer.reset(new float[kBufferLenghtLargerThanFile]);
   EXPECT_EQ(kBufferLength,
-            ReadInt16FromFileToFloatBuffer(&file, kBufferLenghtLargerThanFile,
-                                           buffer.get()));
+            ReadInt16FromFileToFloatBuffer(
+                file.get(), kBufferLenghtLargerThanFile, buffer.get()));
   EXPECT_DOUBLE_EQ(11544, buffer[0]);
   EXPECT_DOUBLE_EQ(22377, buffer[4]);
   EXPECT_DOUBLE_EQ(16389, buffer[7]);
@@ -236,21 +240,23 @@ TEST_F(TransientFileUtilsTest, MAYBE_ReadInt16FromFileToFloatBuffer) {
 TEST_F(TransientFileUtilsTest, MAYBE_ReadInt16FromFileToDoubleBuffer) {
   std::string test_filename = kTestFileName;
 
-  FileWrapper file = FileWrapper::OpenReadOnly(test_filename.c_str());
-  ASSERT_TRUE(file.is_open()) << "File could not be opened:\n"
-                              << kTestFileName.c_str();
+  std::unique_ptr<FileWrapper> file(FileWrapper::Create());
+
+  file->OpenFile(test_filename.c_str(), true);  // Read only.
+  ASSERT_TRUE(file->is_open()) << "File could not be opened:\n"
+                               << kTestFileName.c_str();
 
   const size_t kBufferLength = 12;
   std::unique_ptr<double[]> buffer(new double[kBufferLength]);
 
-  EXPECT_EQ(kBufferLength, ReadInt16FromFileToDoubleBuffer(&file, kBufferLength,
-                                                           buffer.get()));
+  EXPECT_EQ(kBufferLength, ReadInt16FromFileToDoubleBuffer(
+                               file.get(), kBufferLength, buffer.get()));
   EXPECT_DOUBLE_EQ(11544, buffer[0]);
   EXPECT_DOUBLE_EQ(22377, buffer[4]);
   EXPECT_DOUBLE_EQ(16389, buffer[7]);
   EXPECT_DOUBLE_EQ(17631, buffer[kBufferLength - 1]);
 
-  file.Rewind();
+  file->Rewind();
 
   // The next test is for checking the case where there are not as much data as
   // needed in the file, but reads to the end, and it returns the number of
@@ -258,8 +264,8 @@ TEST_F(TransientFileUtilsTest, MAYBE_ReadInt16FromFileToDoubleBuffer) {
   const size_t kBufferLenghtLargerThanFile = kBufferLength * 2;
   buffer.reset(new double[kBufferLenghtLargerThanFile]);
   EXPECT_EQ(kBufferLength,
-            ReadInt16FromFileToDoubleBuffer(&file, kBufferLenghtLargerThanFile,
-                                            buffer.get()));
+            ReadInt16FromFileToDoubleBuffer(
+                file.get(), kBufferLenghtLargerThanFile, buffer.get()));
   EXPECT_DOUBLE_EQ(11544, buffer[0]);
   EXPECT_DOUBLE_EQ(22377, buffer[4]);
   EXPECT_DOUBLE_EQ(16389, buffer[7]);
@@ -274,20 +280,22 @@ TEST_F(TransientFileUtilsTest, MAYBE_ReadInt16FromFileToDoubleBuffer) {
 TEST_F(TransientFileUtilsTest, MAYBE_ReadFloatBufferFromFile) {
   std::string test_filename = kTestFileNamef;
 
-  FileWrapper file = FileWrapper::OpenReadOnly(test_filename.c_str());
-  ASSERT_TRUE(file.is_open()) << "File could not be opened:\n"
-                              << kTestFileNamef.c_str();
+  std::unique_ptr<FileWrapper> file(FileWrapper::Create());
+
+  file->OpenFile(test_filename.c_str(), true);  // Read only.
+  ASSERT_TRUE(file->is_open()) << "File could not be opened:\n"
+                               << kTestFileNamef.c_str();
 
   const size_t kBufferLength = 3;
   std::unique_ptr<float[]> buffer(new float[kBufferLength]);
 
   EXPECT_EQ(kBufferLength,
-            ReadFloatBufferFromFile(&file, kBufferLength, buffer.get()));
+            ReadFloatBufferFromFile(file.get(), kBufferLength, buffer.get()));
   EXPECT_FLOAT_EQ(kPi, buffer[0]);
   EXPECT_FLOAT_EQ(kE, buffer[1]);
   EXPECT_FLOAT_EQ(kAvogadro, buffer[2]);
 
-  file.Rewind();
+  file->Rewind();
 
   // The next test is for checking the case where there are not as much data as
   // needed in the file, but reads to the end, and it returns the number of
@@ -295,7 +303,7 @@ TEST_F(TransientFileUtilsTest, MAYBE_ReadFloatBufferFromFile) {
   const size_t kBufferLenghtLargerThanFile = kBufferLength * 2;
   buffer.reset(new float[kBufferLenghtLargerThanFile]);
   EXPECT_EQ(kBufferLength,
-            ReadFloatBufferFromFile(&file, kBufferLenghtLargerThanFile,
+            ReadFloatBufferFromFile(file.get(), kBufferLenghtLargerThanFile,
                                     buffer.get()));
   EXPECT_FLOAT_EQ(kPi, buffer[0]);
   EXPECT_FLOAT_EQ(kE, buffer[1]);
@@ -310,20 +318,22 @@ TEST_F(TransientFileUtilsTest, MAYBE_ReadFloatBufferFromFile) {
 TEST_F(TransientFileUtilsTest, MAYBE_ReadDoubleBufferFromFile) {
   std::string test_filename = kTestFileName;
 
-  FileWrapper file = FileWrapper::OpenReadOnly(test_filename.c_str());
-  ASSERT_TRUE(file.is_open()) << "File could not be opened:\n"
-                              << kTestFileName.c_str();
+  std::unique_ptr<FileWrapper> file(FileWrapper::Create());
+
+  file->OpenFile(test_filename.c_str(), true);  // Read only.
+  ASSERT_TRUE(file->is_open()) << "File could not be opened:\n"
+                               << kTestFileName.c_str();
 
   const size_t kBufferLength = 3;
   std::unique_ptr<double[]> buffer(new double[kBufferLength]);
 
   EXPECT_EQ(kBufferLength,
-            ReadDoubleBufferFromFile(&file, kBufferLength, buffer.get()));
+            ReadDoubleBufferFromFile(file.get(), kBufferLength, buffer.get()));
   EXPECT_DOUBLE_EQ(kPi, buffer[0]);
   EXPECT_DOUBLE_EQ(kE, buffer[1]);
   EXPECT_DOUBLE_EQ(kAvogadro, buffer[2]);
 
-  file.Rewind();
+  file->Rewind();
 
   // The next test is for checking the case where there are not as much data as
   // needed in the file, but reads to the end, and it returns the number of
@@ -331,7 +341,7 @@ TEST_F(TransientFileUtilsTest, MAYBE_ReadDoubleBufferFromFile) {
   const size_t kBufferLenghtLargerThanFile = kBufferLength * 2;
   buffer.reset(new double[kBufferLenghtLargerThanFile]);
   EXPECT_EQ(kBufferLength,
-            ReadDoubleBufferFromFile(&file, kBufferLenghtLargerThanFile,
+            ReadDoubleBufferFromFile(file.get(), kBufferLenghtLargerThanFile,
                                      buffer.get()));
   EXPECT_DOUBLE_EQ(kPi, buffer[0]);
   EXPECT_DOUBLE_EQ(kE, buffer[1]);
@@ -344,12 +354,14 @@ TEST_F(TransientFileUtilsTest, MAYBE_ReadDoubleBufferFromFile) {
 #define MAYBE_WriteInt16BufferToFile WriteInt16BufferToFile
 #endif
 TEST_F(TransientFileUtilsTest, MAYBE_WriteInt16BufferToFile) {
+  std::unique_ptr<FileWrapper> file(FileWrapper::Create());
+
   std::string kOutFileName =
       CreateTempFilename(test::OutputPath(), "utils_test");
 
-  FileWrapper file = FileWrapper::OpenWriteOnly(kOutFileName.c_str());
-  ASSERT_TRUE(file.is_open()) << "File could not be opened:\n"
-                              << kOutFileName.c_str();
+  file->OpenFile(kOutFileName.c_str(), false);  // Write mode.
+  ASSERT_TRUE(file->is_open()) << "File could not be opened:\n"
+                               << kOutFileName.c_str();
 
   const size_t kBufferLength = 3;
   std::unique_ptr<int16_t[]> written_buffer(new int16_t[kBufferLength]);
@@ -359,17 +371,17 @@ TEST_F(TransientFileUtilsTest, MAYBE_WriteInt16BufferToFile) {
   written_buffer[1] = 2;
   written_buffer[2] = 3;
 
-  EXPECT_EQ(kBufferLength,
-            WriteInt16BufferToFile(&file, kBufferLength, written_buffer.get()));
+  EXPECT_EQ(kBufferLength, WriteInt16BufferToFile(file.get(), kBufferLength,
+                                                  written_buffer.get()));
 
-  file.Close();
+  file->CloseFile();
 
-  file = FileWrapper::OpenReadOnly(kOutFileName.c_str());
-  ASSERT_TRUE(file.is_open()) << "File could not be opened:\n"
-                              << kOutFileName.c_str();
+  file->OpenFile(kOutFileName.c_str(), true);  // Read only.
+  ASSERT_TRUE(file->is_open()) << "File could not be opened:\n"
+                               << kOutFileName.c_str();
 
-  EXPECT_EQ(kBufferLength,
-            ReadInt16BufferFromFile(&file, kBufferLength, read_buffer.get()));
+  EXPECT_EQ(kBufferLength, ReadInt16BufferFromFile(file.get(), kBufferLength,
+                                                   read_buffer.get()));
   EXPECT_EQ(0, memcmp(written_buffer.get(), read_buffer.get(),
                       kBufferLength * sizeof(written_buffer[0])));
 }
@@ -380,12 +392,14 @@ TEST_F(TransientFileUtilsTest, MAYBE_WriteInt16BufferToFile) {
 #define MAYBE_WriteFloatBufferToFile WriteFloatBufferToFile
 #endif
 TEST_F(TransientFileUtilsTest, MAYBE_WriteFloatBufferToFile) {
+  std::unique_ptr<FileWrapper> file(FileWrapper::Create());
+
   std::string kOutFileName =
       CreateTempFilename(test::OutputPath(), "utils_test");
 
-  FileWrapper file = FileWrapper::OpenWriteOnly(kOutFileName.c_str());
-  ASSERT_TRUE(file.is_open()) << "File could not be opened:\n"
-                              << kOutFileName.c_str();
+  file->OpenFile(kOutFileName.c_str(), false);  // Write mode.
+  ASSERT_TRUE(file->is_open()) << "File could not be opened:\n"
+                               << kOutFileName.c_str();
 
   const size_t kBufferLength = 3;
   std::unique_ptr<float[]> written_buffer(new float[kBufferLength]);
@@ -395,17 +409,17 @@ TEST_F(TransientFileUtilsTest, MAYBE_WriteFloatBufferToFile) {
   written_buffer[1] = static_cast<float>(kE);
   written_buffer[2] = static_cast<float>(kAvogadro);
 
-  EXPECT_EQ(kBufferLength,
-            WriteFloatBufferToFile(&file, kBufferLength, written_buffer.get()));
+  EXPECT_EQ(kBufferLength, WriteFloatBufferToFile(file.get(), kBufferLength,
+                                                  written_buffer.get()));
 
-  file.Close();
+  file->CloseFile();
 
-  file = FileWrapper::OpenReadOnly(kOutFileName.c_str());
-  ASSERT_TRUE(file.is_open()) << "File could not be opened:\n"
-                              << kOutFileName.c_str();
+  file->OpenFile(kOutFileName.c_str(), true);  // Read only.
+  ASSERT_TRUE(file->is_open()) << "File could not be opened:\n"
+                               << kOutFileName.c_str();
 
-  EXPECT_EQ(kBufferLength,
-            ReadFloatBufferFromFile(&file, kBufferLength, read_buffer.get()));
+  EXPECT_EQ(kBufferLength, ReadFloatBufferFromFile(file.get(), kBufferLength,
+                                                   read_buffer.get()));
   EXPECT_EQ(0, memcmp(written_buffer.get(), read_buffer.get(),
                       kBufferLength * sizeof(written_buffer[0])));
 }
@@ -416,12 +430,14 @@ TEST_F(TransientFileUtilsTest, MAYBE_WriteFloatBufferToFile) {
 #define MAYBE_WriteDoubleBufferToFile WriteDoubleBufferToFile
 #endif
 TEST_F(TransientFileUtilsTest, MAYBE_WriteDoubleBufferToFile) {
+  std::unique_ptr<FileWrapper> file(FileWrapper::Create());
+
   std::string kOutFileName =
       CreateTempFilename(test::OutputPath(), "utils_test");
 
-  FileWrapper file = FileWrapper::OpenWriteOnly(kOutFileName.c_str());
-  ASSERT_TRUE(file.is_open()) << "File could not be opened:\n"
-                              << kOutFileName.c_str();
+  file->OpenFile(kOutFileName.c_str(), false);  // Write mode.
+  ASSERT_TRUE(file->is_open()) << "File could not be opened:\n"
+                               << kOutFileName.c_str();
 
   const size_t kBufferLength = 3;
   std::unique_ptr<double[]> written_buffer(new double[kBufferLength]);
@@ -431,17 +447,17 @@ TEST_F(TransientFileUtilsTest, MAYBE_WriteDoubleBufferToFile) {
   written_buffer[1] = kE;
   written_buffer[2] = kAvogadro;
 
-  EXPECT_EQ(kBufferLength, WriteDoubleBufferToFile(&file, kBufferLength,
+  EXPECT_EQ(kBufferLength, WriteDoubleBufferToFile(file.get(), kBufferLength,
                                                    written_buffer.get()));
 
-  file.Close();
+  file->CloseFile();
 
-  file = FileWrapper::OpenReadOnly(kOutFileName.c_str());
-  ASSERT_TRUE(file.is_open()) << "File could not be opened:\n"
-                              << kOutFileName.c_str();
+  file->OpenFile(kOutFileName.c_str(), true);  // Read only.
+  ASSERT_TRUE(file->is_open()) << "File could not be opened:\n"
+                               << kOutFileName.c_str();
 
-  EXPECT_EQ(kBufferLength,
-            ReadDoubleBufferFromFile(&file, kBufferLength, read_buffer.get()));
+  EXPECT_EQ(kBufferLength, ReadDoubleBufferFromFile(file.get(), kBufferLength,
+                                                    read_buffer.get()));
   EXPECT_EQ(0, memcmp(written_buffer.get(), read_buffer.get(),
                       kBufferLength * sizeof(written_buffer[0])));
 }
@@ -457,7 +473,7 @@ TEST_F(TransientFileUtilsTest, MAYBE_ExpectedErrorReturnValues) {
   double value;
   std::unique_ptr<int16_t[]> int16_buffer(new int16_t[1]);
   std::unique_ptr<double[]> double_buffer(new double[1]);
-  FileWrapper file;
+  std::unique_ptr<FileWrapper> file(FileWrapper::Create());
 
   EXPECT_EQ(-1, ConvertByteArrayToDouble(NULL, &value));
   EXPECT_EQ(-1, ConvertByteArrayToDouble(kPiBytes, NULL));
@@ -465,35 +481,37 @@ TEST_F(TransientFileUtilsTest, MAYBE_ExpectedErrorReturnValues) {
   EXPECT_EQ(-1, ConvertDoubleToByteArray(kPi, NULL));
 
   // Tests with file not opened.
-  EXPECT_EQ(0u, ReadInt16BufferFromFile(&file, 1, int16_buffer.get()));
-  EXPECT_EQ(0u, ReadInt16FromFileToDoubleBuffer(&file, 1, double_buffer.get()));
-  EXPECT_EQ(0u, ReadDoubleBufferFromFile(&file, 1, double_buffer.get()));
-  EXPECT_EQ(0u, WriteInt16BufferToFile(&file, 1, int16_buffer.get()));
-  EXPECT_EQ(0u, WriteDoubleBufferToFile(&file, 1, double_buffer.get()));
+  EXPECT_EQ(0u, ReadInt16BufferFromFile(file.get(), 1, int16_buffer.get()));
+  EXPECT_EQ(
+      0u, ReadInt16FromFileToDoubleBuffer(file.get(), 1, double_buffer.get()));
+  EXPECT_EQ(0u, ReadDoubleBufferFromFile(file.get(), 1, double_buffer.get()));
+  EXPECT_EQ(0u, WriteInt16BufferToFile(file.get(), 1, int16_buffer.get()));
+  EXPECT_EQ(0u, WriteDoubleBufferToFile(file.get(), 1, double_buffer.get()));
 
-  file = FileWrapper::OpenReadOnly(test_filename.c_str());
-  ASSERT_TRUE(file.is_open()) << "File could not be opened:\n"
-                              << kTestFileName.c_str();
+  file->OpenFile(test_filename.c_str(), true);  // Read only.
+  ASSERT_TRUE(file->is_open()) << "File could not be opened:\n"
+                               << kTestFileName.c_str();
 
   EXPECT_EQ(0u, ReadInt16BufferFromFile(NULL, 1, int16_buffer.get()));
-  EXPECT_EQ(0u, ReadInt16BufferFromFile(&file, 1, NULL));
-  EXPECT_EQ(0u, ReadInt16BufferFromFile(&file, 0, int16_buffer.get()));
+  EXPECT_EQ(0u, ReadInt16BufferFromFile(file.get(), 1, NULL));
+  EXPECT_EQ(0u, ReadInt16BufferFromFile(file.get(), 0, int16_buffer.get()));
 
   EXPECT_EQ(0u, ReadInt16FromFileToDoubleBuffer(NULL, 1, double_buffer.get()));
-  EXPECT_EQ(0u, ReadInt16FromFileToDoubleBuffer(&file, 1, NULL));
-  EXPECT_EQ(0u, ReadInt16FromFileToDoubleBuffer(&file, 0, double_buffer.get()));
+  EXPECT_EQ(0u, ReadInt16FromFileToDoubleBuffer(file.get(), 1, NULL));
+  EXPECT_EQ(
+      0u, ReadInt16FromFileToDoubleBuffer(file.get(), 0, double_buffer.get()));
 
   EXPECT_EQ(0u, ReadDoubleBufferFromFile(NULL, 1, double_buffer.get()));
-  EXPECT_EQ(0u, ReadDoubleBufferFromFile(&file, 1, NULL));
-  EXPECT_EQ(0u, ReadDoubleBufferFromFile(&file, 0, double_buffer.get()));
+  EXPECT_EQ(0u, ReadDoubleBufferFromFile(file.get(), 1, NULL));
+  EXPECT_EQ(0u, ReadDoubleBufferFromFile(file.get(), 0, double_buffer.get()));
 
   EXPECT_EQ(0u, WriteInt16BufferToFile(NULL, 1, int16_buffer.get()));
-  EXPECT_EQ(0u, WriteInt16BufferToFile(&file, 1, NULL));
-  EXPECT_EQ(0u, WriteInt16BufferToFile(&file, 0, int16_buffer.get()));
+  EXPECT_EQ(0u, WriteInt16BufferToFile(file.get(), 1, NULL));
+  EXPECT_EQ(0u, WriteInt16BufferToFile(file.get(), 0, int16_buffer.get()));
 
   EXPECT_EQ(0u, WriteDoubleBufferToFile(NULL, 1, double_buffer.get()));
-  EXPECT_EQ(0u, WriteDoubleBufferToFile(&file, 1, NULL));
-  EXPECT_EQ(0u, WriteDoubleBufferToFile(&file, 0, double_buffer.get()));
+  EXPECT_EQ(0u, WriteDoubleBufferToFile(file.get(), 1, NULL));
+  EXPECT_EQ(0u, WriteDoubleBufferToFile(file.get(), 0, double_buffer.get()));
 }
 
 }  // namespace webrtc

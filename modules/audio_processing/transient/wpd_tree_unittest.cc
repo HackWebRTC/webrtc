@@ -80,27 +80,31 @@ TEST(WPDTreeTest, CorrectnessBasedOnMatlabFiles) {
                kDaubechies8LowPassCoefficients, kDaubechies8CoefficientsLength,
                kLevels);
   // Allocate and open all matlab and out files.
-  FileWrapper matlab_files_data[kLeaves];
-  FileWrapper out_files_data[kLeaves];
+  std::unique_ptr<FileWrapper> matlab_files_data[kLeaves];
+  std::unique_ptr<FileWrapper> out_files_data[kLeaves];
 
   for (int i = 0; i < kLeaves; ++i) {
     // Matlab files.
+    matlab_files_data[i].reset(FileWrapper::Create());
+
     rtc::StringBuilder matlab_stream;
     matlab_stream << "audio_processing/transient/wpd" << i;
     std::string matlab_string = test::ResourcePath(matlab_stream.str(), "dat");
-    matlab_files_data[i] = FileWrapper::OpenReadOnly(matlab_string.c_str());
+    matlab_files_data[i]->OpenFile(matlab_string.c_str(), true);  // Read only.
 
-    bool file_opened = matlab_files_data[i].is_open();
+    bool file_opened = matlab_files_data[i]->is_open();
     ASSERT_TRUE(file_opened) << "File could not be opened.\n" << matlab_string;
 
     // Out files.
+    out_files_data[i].reset(FileWrapper::Create());
+
     rtc::StringBuilder out_stream;
     out_stream << test::OutputPath() << "wpd_" << i << ".out";
     std::string out_string = out_stream.str();
 
-    out_files_data[i] = FileWrapper::OpenWriteOnly(out_string.c_str());
+    out_files_data[i]->OpenFile(out_string.c_str(), false);  // Write mode.
 
-    file_opened = out_files_data[i].is_open();
+    file_opened = out_files_data[i]->is_open();
     ASSERT_TRUE(file_opened) << "File could not be opened.\n" << out_string;
   }
 
@@ -108,9 +112,11 @@ TEST(WPDTreeTest, CorrectnessBasedOnMatlabFiles) {
   std::string test_file_name = test::ResourcePath(
       "audio_processing/transient/ajm-macbook-1-spke16m", "pcm");
 
-  FileWrapper test_file = FileWrapper::OpenReadOnly(test_file_name.c_str());
+  std::unique_ptr<FileWrapper> test_file(FileWrapper::Create());
 
-  bool file_opened = test_file.is_open();
+  test_file->OpenFile(test_file_name.c_str(), true);  // Read only.
+
+  bool file_opened = test_file->is_open();
   ASSERT_TRUE(file_opened) << "File could not be opened.\n" << test_file_name;
 
   float test_buffer[kTestBufferSize];
@@ -123,8 +129,8 @@ TEST(WPDTreeTest, CorrectnessBasedOnMatlabFiles) {
   size_t frames_read = 0;
 
   // Read first buffer from the PCM test file.
-  size_t file_samples_read =
-      ReadInt16FromFileToFloatBuffer(&test_file, kTestBufferSize, test_buffer);
+  size_t file_samples_read = ReadInt16FromFileToFloatBuffer(
+      test_file.get(), kTestBufferSize, test_buffer);
   while (file_samples_read > 0 && frames_read < kMaxFramesToTest) {
     ++frames_read;
 
@@ -141,7 +147,7 @@ TEST(WPDTreeTest, CorrectnessBasedOnMatlabFiles) {
     for (int i = 0; i < kLeaves; ++i) {
       // Compare data values
       size_t matlab_samples_read = ReadDoubleBufferFromFile(
-          &matlab_files_data[i], kLeavesSamples, matlab_buffer);
+          matlab_files_data[i].get(), kLeavesSamples, matlab_buffer);
 
       ASSERT_EQ(kLeavesSamples, matlab_samples_read)
           << "Matlab test files are malformed.\n"
@@ -156,21 +162,22 @@ TEST(WPDTreeTest, CorrectnessBasedOnMatlabFiles) {
       }
 
       // Write results to out files.
-      WriteFloatBufferToFile(&out_files_data[i], kLeavesSamples, node_data);
+      WriteFloatBufferToFile(out_files_data[i].get(), kLeavesSamples,
+                             node_data);
     }
 
     // Read next buffer from the PCM test file.
     file_samples_read = ReadInt16FromFileToFloatBuffer(
-        &test_file, kTestBufferSize, test_buffer);
+        test_file.get(), kTestBufferSize, test_buffer);
   }
 
   // Close all matlab and out files.
   for (int i = 0; i < kLeaves; ++i) {
-    matlab_files_data[i].Close();
-    out_files_data[i].Close();
+    matlab_files_data[i]->CloseFile();
+    out_files_data[i]->CloseFile();
   }
 
-  test_file.Close();
+  test_file->CloseFile();
 }
 
 }  // namespace webrtc

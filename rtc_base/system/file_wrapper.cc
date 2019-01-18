@@ -34,13 +34,22 @@ FILE* FileOpen(const char* file_name_utf8, bool read_only) {
 }  // namespace
 
 // static
-FileWrapper FileWrapper::OpenReadOnly(const char* file_name_utf8) {
-  return FileWrapper(FileOpen(file_name_utf8, true));
+FileWrapper* FileWrapper::Create() {
+  return new FileWrapper();
 }
 
 // static
-FileWrapper FileWrapper::OpenWriteOnly(const char* file_name_utf8) {
-  return FileWrapper(FileOpen(file_name_utf8, false));
+FileWrapper FileWrapper::Open(const char* file_name_utf8, bool read_only) {
+  return FileWrapper(FileOpen(file_name_utf8, read_only), 0);
+}
+
+FileWrapper::FileWrapper() {}
+
+FileWrapper::FileWrapper(FILE* file, size_t max_size)
+    : file_(file), max_size_in_bytes_(max_size) {}
+
+FileWrapper::~FileWrapper() {
+  CloseFileImpl();
 }
 
 FileWrapper::FileWrapper(FileWrapper&& other) {
@@ -48,39 +57,95 @@ FileWrapper::FileWrapper(FileWrapper&& other) {
 }
 
 FileWrapper& FileWrapper::operator=(FileWrapper&& other) {
-  Close();
   file_ = other.file_;
+  max_size_in_bytes_ = other.max_size_in_bytes_;
+  position_ = other.position_;
   other.file_ = nullptr;
   return *this;
 }
 
-bool FileWrapper::Rewind() {
-  RTC_DCHECK(file_);
-  return fseek(file_, 0, SEEK_SET) == 0;
+void FileWrapper::CloseFile() {
+  rtc::CritScope lock(&lock_);
+  CloseFileImpl();
 }
 
-bool FileWrapper::Flush() {
-  RTC_DCHECK(file_);
-  return fflush(file_) == 0;
+int FileWrapper::Rewind() {
+  rtc::CritScope lock(&lock_);
+  if (file_ != nullptr) {
+    position_ = 0;
+    return fseek(file_, 0, SEEK_SET);
+  }
+  return -1;
 }
 
-size_t FileWrapper::Read(void* buf, size_t length) {
-  RTC_DCHECK(file_);
-  return fread(buf, 1, length, file_);
+void FileWrapper::SetMaxFileSize(size_t bytes) {
+  rtc::CritScope lock(&lock_);
+  max_size_in_bytes_ = bytes;
+}
+
+int FileWrapper::Flush() {
+  rtc::CritScope lock(&lock_);
+  return FlushImpl();
+}
+
+bool FileWrapper::OpenFile(const char* file_name_utf8, bool read_only) {
+  size_t length = strlen(file_name_utf8);
+  if (length > kMaxFileNameSize - 1)
+    return false;
+
+  rtc::CritScope lock(&lock_);
+  if (file_ != nullptr)
+    return false;
+
+  file_ = FileOpen(file_name_utf8, read_only);
+  return file_ != nullptr;
+}
+
+bool FileWrapper::OpenFromFileHandle(FILE* handle) {
+  if (!handle)
+    return false;
+  rtc::CritScope lock(&lock_);
+  CloseFileImpl();
+  file_ = handle;
+  return true;
+}
+
+int FileWrapper::Read(void* buf, size_t length) {
+  rtc::CritScope lock(&lock_);
+  if (file_ == nullptr)
+    return -1;
+
+  size_t bytes_read = fread(buf, 1, length, file_);
+  return static_cast<int>(bytes_read);
 }
 
 bool FileWrapper::Write(const void* buf, size_t length) {
-  RTC_DCHECK(file_);
-  return fwrite(buf, 1, length, file_) == length;
+  if (buf == nullptr)
+    return false;
+
+  rtc::CritScope lock(&lock_);
+
+  if (file_ == nullptr)
+    return false;
+
+  // Check if it's time to stop writing.
+  if (max_size_in_bytes_ > 0 && (position_ + length) > max_size_in_bytes_)
+    return false;
+
+  size_t num_bytes = fwrite(buf, 1, length, file_);
+  position_ += num_bytes;
+
+  return num_bytes == length;
 }
 
-bool FileWrapper::Close() {
-  if (file_ == nullptr)
-    return true;
-
-  bool success = fclose(file_) == 0;
+void FileWrapper::CloseFileImpl() {
+  if (file_ != nullptr)
+    fclose(file_);
   file_ = nullptr;
-  return success;
+}
+
+int FileWrapper::FlushImpl() {
+  return (file_ != nullptr) ? fflush(file_) : -1;
 }
 
 }  // namespace webrtc

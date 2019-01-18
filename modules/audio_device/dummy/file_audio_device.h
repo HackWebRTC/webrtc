@@ -154,8 +154,8 @@ class FileAudioDevice : public AudioDeviceGeneric {
   int64_t _lastCallPlayoutMillis;
   int64_t _lastCallRecordMillis;
 
-  FileWrapper _outputFile;
-  FileWrapper _inputFile;
+  FileWrapper& _outputFile;
+  FileWrapper& _inputFile;
   std::string _outputFilename;
   std::string _inputFilename;
 };
