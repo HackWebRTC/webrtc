@@ -52,17 +52,16 @@ class LossBasedBandwidthEstimation {
               TimeDelta last_round_trip_time);
   void UpdateAcknowledgedBitrate(DataRate acknowledged_bitrate,
                                  Timestamp at_time);
-  void MaybeReset(DataRate bitrate) {
-    if (config_.allow_resets)
-      loss_based_bitrate_ = bitrate;
-  }
-  void SetInitialBitrate(DataRate bitrate) { loss_based_bitrate_ = bitrate; }
+  void MaybeReset(DataRate bitrate);
+  void SetInitialBitrate(DataRate bitrate);
   bool Enabled() const { return config_.enabled; }
   void UpdateLossStatistics(const std::vector<PacketResult>& packet_results,
                             Timestamp at_time);
   DataRate GetEstimate() const { return loss_based_bitrate_; }
 
  private:
+  void Reset(DataRate bitrate);
+
   LossBasedControlConfig config_;
   double average_loss_;
   double average_loss_max_;

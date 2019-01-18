@@ -212,4 +212,19 @@ void LossBasedBandwidthEstimation::Update(Timestamp at_time,
   }
 }
 
+void LossBasedBandwidthEstimation::Reset(DataRate bitrate) {
+  loss_based_bitrate_ = bitrate;
+  average_loss_ = 0;
+  average_loss_max_ = 0;
+}
+
+void LossBasedBandwidthEstimation::MaybeReset(DataRate bitrate) {
+  if (config_.allow_resets)
+    Reset(bitrate);
+}
+
+void LossBasedBandwidthEstimation::SetInitialBitrate(DataRate bitrate) {
+  Reset(bitrate);
+}
+
 }  // namespace webrtc
