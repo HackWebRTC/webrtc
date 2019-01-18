@@ -452,15 +452,12 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   config_->rc_buf_sz = 1000;
   // Set the maximum target size of any key-frame.
   rc_max_intra_target_ = MaxIntraTarget(config_->rc_buf_optimal_sz);
-  if (inst->VP9().keyFrameInterval > 0) {
-    config_->kf_mode = VPX_KF_AUTO;
-    config_->kf_max_dist = inst->VP9().keyFrameInterval;
-    // Needs to be set (in svc mode) to get correct periodic key frame interval
-    // (will have no effect in non-svc).
-    config_->kf_min_dist = config_->kf_max_dist;
-  } else {
-    config_->kf_mode = VPX_KF_DISABLED;
-  }
+  // Key-frame interval is enforced manually by this wrapper.
+  config_->kf_mode = VPX_KF_DISABLED;
+  // TODO(webm:1592): work-around for libvpx issue, as it can still
+  // put some key-frames at will even in VPX_KF_DISABLED kf_mode.
+  config_->kf_max_dist = inst->VP9().keyFrameInterval;
+  config_->kf_min_dist = config_->kf_max_dist;
   config_->rc_resize_allowed = inst->VP9().automaticResizeOn ? 1 : 0;
   // Determine number of threads based on the image size and #cores.
   config_->g_threads =
@@ -489,7 +486,8 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   // External reference control is required for different frame rate on spatial
   // layers because libvpx generates rtp incompatible references in this case.
   external_ref_control_ = field_trial::IsEnabled("WebRTC-Vp9ExternalRefCtrl") ||
-                          different_framerates_used_;
+                          different_framerates_used_ ||
+                          inter_layer_pred_ == InterLayerPredMode::kOn;
 
   if (num_temporal_layers_ == 1) {
     gof_.SetGofInfoVP9(kTemporalStructureMode1);
@@ -733,6 +731,11 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
     }
   }
 
+  if (pics_since_key_ + 1 ==
+      static_cast<size_t>(codec_.VP9()->keyFrameInterval)) {
+    force_key_frame_ = true;
+  }
+
   vpx_svc_layer_id_t layer_id = {0};
   if (!force_key_frame_) {
     const size_t gof_idx = (pics_since_key_ + 1) % gof_.num_frames_in_gof;
@@ -921,6 +924,9 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
   vpx_svc_layer_id_t layer_id = {0};
   vpx_codec_control(encoder_, VP9E_GET_SVC_LAYER_ID, &layer_id);
 
+  // Can't have keyframe with non-zero temporal layer.
+  RTC_DCHECK(pics_since_key_ != 0 || layer_id.temporal_layer_id == 0);
+
   if (ss_info_needed_ && layer_id.temporal_layer_id == 0 &&
       layer_id.spatial_layer_id == 0) {
     // Force SS info after the layers configuration has changed.
@@ -976,15 +982,16 @@ void VP9EncoderImpl::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
   vp9_info->num_spatial_layers = num_active_spatial_layers_;
 
   vp9_info->num_ref_pics = 0;
+  FillReferenceIndices(pkt, pics_since_key_, vp9_info->inter_layer_predicted,
+                       vp9_info);
   if (vp9_info->flexible_mode) {
     vp9_info->gof_idx = kNoGofIdx;
-    FillReferenceIndices(pkt, pics_since_key_, vp9_info->inter_layer_predicted,
-                         vp9_info);
   } else {
     vp9_info->gof_idx =
         static_cast<uint8_t>(pics_since_key_ % gof_.num_frames_in_gof);
     vp9_info->temporal_up_switch = gof_.temporal_up_switch[vp9_info->gof_idx];
-    vp9_info->num_ref_pics = gof_.num_ref_pics[vp9_info->gof_idx];
+    RTC_DCHECK(vp9_info->num_ref_pics == gof_.num_ref_pics[vp9_info->gof_idx] ||
+               vp9_info->num_ref_pics == 0);
   }
 
   vp9_info->inter_pic_predicted = (!is_key_pic && vp9_info->num_ref_pics > 0);
@@ -1133,7 +1140,6 @@ void VP9EncoderImpl::UpdateReferenceBuffers(const vpx_codec_cx_pkt& pkt,
         ref_buf_[i] = frame_buf;
       }
     }
-
   } else {
     RTC_DCHECK_EQ(num_spatial_layers_, 1);
     RTC_DCHECK_EQ(num_temporal_layers_, 1);
@@ -1284,9 +1290,7 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
                         input_image_->timestamp());
   encoded_image_.SetSpatialIndex(spatial_index);
 
-  if (is_flexible_mode_) {
-    UpdateReferenceBuffers(*pkt, pics_since_key_);
-  }
+  UpdateReferenceBuffers(*pkt, pics_since_key_);
 
   TRACE_COUNTER1("webrtc", "EncodedFrameSize", encoded_image_.size());
   encoded_image_.SetTimestamp(input_image_->timestamp());

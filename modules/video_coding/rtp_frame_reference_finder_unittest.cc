@@ -135,6 +135,7 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
                     uint8_t tid = kNoTemporalIdx,
                     int32_t tl0 = kNoTl0PicIdx,
                     bool up_switch = false,
+                    bool inter_pic_predicted = true,
                     GofInfoVP9* ss = nullptr) {
     VCMPacket packet;
     auto& vp9_header =
@@ -150,6 +151,7 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
     vp9_header.spatial_idx = sid;
     vp9_header.tl0_pic_idx = tl0;
     vp9_header.temporal_up_switch = up_switch;
+    vp9_header.inter_pic_predicted = inter_pic_predicted && !keyframe;
     if (ss != nullptr) {
       vp9_header.ss_data_available = true;
       vp9_header.gof = *ss;
@@ -713,7 +715,7 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9GofInsertOneFrame) {
   GofInfoVP9 ss;
   ss.SetGofInfoVP9(kTemporalStructureMode1);
 
-  InsertVp9Gof(sn, sn, true, pid, 0, 0, 0, false, &ss);
+  InsertVp9Gof(sn, sn, true, pid, 0, 0, 0, false, false, &ss);
 
   CheckReferencesVp9(0, 0);
 }
@@ -751,7 +753,7 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9GofTemporalLayers_0) {
   GofInfoVP9 ss;
   ss.SetGofInfoVP9(kTemporalStructureMode1);  // Only 1 spatial layer.
 
-  InsertVp9Gof(sn, sn, true, pid, 0, 0, 0, false, &ss);
+  InsertVp9Gof(sn, sn, true, pid, 0, 0, 0, false, false, &ss);
   InsertVp9Gof(sn + 1, sn + 1, false, pid + 1, 0, 0, 1, false);
   InsertVp9Gof(sn + 2, sn + 2, false, pid + 2, 0, 0, 2, false);
   InsertVp9Gof(sn + 3, sn + 3, false, pid + 3, 0, 0, 3, false);
@@ -795,6 +797,27 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9GofTemporalLayers_0) {
   CheckReferencesVp9(19, 0, 18);
 }
 
+TEST_F(TestRtpFrameReferenceFinder, Vp9GofSpatialLayers_2) {
+  uint16_t pid = Rand();
+  uint16_t sn = Rand();
+  GofInfoVP9 ss;
+  ss.SetGofInfoVP9(kTemporalStructureMode1);  // Only 1 spatial layer.
+
+  InsertVp9Gof(sn, sn, true, pid, 0, 0, 0, false, false, &ss);
+  InsertVp9Gof(sn + 1, sn + 1, false, pid + 1, 0, 0, 1, false, true);
+  // Not inter_pic_predicted because it's the first frame with this layer.
+  InsertVp9Gof(sn + 2, sn + 2, false, pid + 1, 1, 0, 1, false, false);
+  InsertVp9Gof(sn + 3, sn + 3, false, pid + 2, 0, 0, 1, false, true);
+  InsertVp9Gof(sn + 4, sn + 4, false, pid + 2, 1, 0, 1, false, true);
+
+  ASSERT_EQ(5UL, frames_from_callback_.size());
+  CheckReferencesVp9(0, 0);
+  CheckReferencesVp9(1, 0, 0);
+  CheckReferencesVp9(1, 1);
+  CheckReferencesVp9(2, 0, 1);
+  CheckReferencesVp9(2, 1, 1);
+}
+
 TEST_F(TestRtpFrameReferenceFinder, Vp9GofTemporalLayersReordered_0) {
   uint16_t pid = Rand();
   uint16_t sn = Rand();
@@ -803,7 +826,7 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9GofTemporalLayersReordered_0) {
 
   InsertVp9Gof(sn + 2, sn + 2, false, pid + 2, 0, 0, 2, false);
   InsertVp9Gof(sn + 1, sn + 1, false, pid + 1, 0, 0, 1, false);
-  InsertVp9Gof(sn, sn, true, pid, 0, 0, 0, false, &ss);
+  InsertVp9Gof(sn, sn, true, pid, 0, 0, 0, false, false, &ss);
   InsertVp9Gof(sn + 4, sn + 4, false, pid + 4, 0, 0, 4, false);
   InsertVp9Gof(sn + 3, sn + 3, false, pid + 3, 0, 0, 3, false);
   InsertVp9Gof(sn + 5, sn + 5, false, pid + 5, 0, 0, 5, false);
@@ -851,14 +874,14 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9GofSkipFramesTemporalLayers_01) {
   GofInfoVP9 ss;
   ss.SetGofInfoVP9(kTemporalStructureMode2);  // 0101 pattern
 
-  InsertVp9Gof(sn, sn, true, pid, 0, 0, 0, false, &ss);
+  InsertVp9Gof(sn, sn, true, pid, 0, 0, 0, false, false, &ss);
   InsertVp9Gof(sn + 1, sn + 1, false, pid + 1, 0, 1, 0, false);
   // Skip GOF with tl0 1
-  InsertVp9Gof(sn + 4, sn + 4, true, pid + 4, 0, 0, 2, false, &ss);
+  InsertVp9Gof(sn + 4, sn + 4, true, pid + 4, 0, 0, 2, false, true, &ss);
   InsertVp9Gof(sn + 5, sn + 5, false, pid + 5, 0, 1, 2, false);
   // Skip GOF with tl0 3
   // Skip GOF with tl0 4
-  InsertVp9Gof(sn + 10, sn + 10, false, pid + 10, 0, 0, 5, false, &ss);
+  InsertVp9Gof(sn + 10, sn + 10, false, pid + 10, 0, 0, 5, false, true, &ss);
   InsertVp9Gof(sn + 11, sn + 11, false, pid + 11, 0, 1, 5, false);
 
   ASSERT_EQ(6UL, frames_from_callback_.size());
@@ -876,7 +899,7 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9GofSkipFramesTemporalLayers_0212) {
   GofInfoVP9 ss;
   ss.SetGofInfoVP9(kTemporalStructureMode3);  // 02120212 pattern
 
-  InsertVp9Gof(sn, sn, true, pid, 0, 0, 0, false, &ss);
+  InsertVp9Gof(sn, sn, true, pid, 0, 0, 0, false, false, &ss);
   InsertVp9Gof(sn + 1, sn + 1, false, pid + 1, 0, 2, 0, false);
   InsertVp9Gof(sn + 2, sn + 2, false, pid + 2, 0, 1, 0, false);
   InsertVp9Gof(sn + 3, sn + 3, false, pid + 3, 0, 2, 0, false);
@@ -889,7 +912,7 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9GofSkipFramesTemporalLayers_0212) {
 
   // Skip frames with tl0 = 1
 
-  InsertVp9Gof(sn + 8, sn + 8, true, pid + 8, 0, 0, 2, false, &ss);
+  InsertVp9Gof(sn + 8, sn + 8, true, pid + 8, 0, 0, 2, false, false, &ss);
   InsertVp9Gof(sn + 9, sn + 9, false, pid + 9, 0, 2, 2, false);
   InsertVp9Gof(sn + 10, sn + 10, false, pid + 10, 0, 1, 2, false);
   InsertVp9Gof(sn + 11, sn + 11, false, pid + 11, 0, 2, 2, false);
@@ -901,7 +924,7 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9GofSkipFramesTemporalLayers_0212) {
   CheckReferencesVp9(11, 0, 10);
 
   // Now insert frames with tl0 = 1
-  InsertVp9Gof(sn + 4, sn + 4, true, pid + 4, 0, 0, 1, false, &ss);
+  InsertVp9Gof(sn + 4, sn + 4, true, pid + 4, 0, 0, 1, false, true, &ss);
   InsertVp9Gof(sn + 7, sn + 7, false, pid + 7, 0, 2, 1, false);
 
   ASSERT_EQ(9UL, frames_from_callback_.size());
@@ -923,7 +946,7 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9GofTemporalLayers_01) {
   GofInfoVP9 ss;
   ss.SetGofInfoVP9(kTemporalStructureMode2);  // 0101 pattern
 
-  InsertVp9Gof(sn, sn, true, pid, 0, 0, 0, false, &ss);
+  InsertVp9Gof(sn, sn, true, pid, 0, 0, 0, false, false, &ss);
   InsertVp9Gof(sn + 1, sn + 1, false, pid + 1, 0, 1, 0, false);
   InsertVp9Gof(sn + 2, sn + 2, false, pid + 2, 0, 0, 1, false);
   InsertVp9Gof(sn + 3, sn + 3, false, pid + 3, 0, 1, 1, false);
@@ -974,7 +997,7 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9GofTemporalLayersReordered_01) {
   ss.SetGofInfoVP9(kTemporalStructureMode2);  // 01 pattern
 
   InsertVp9Gof(sn + 1, sn + 1, false, pid + 1, 0, 1, 0, false);
-  InsertVp9Gof(sn, sn, true, pid, 0, 0, 0, false, &ss);
+  InsertVp9Gof(sn, sn, true, pid, 0, 0, 0, false, false, &ss);
   InsertVp9Gof(sn + 2, sn + 2, false, pid + 2, 0, 0, 1, false);
   InsertVp9Gof(sn + 4, sn + 4, false, pid + 4, 0, 0, 2, false);
   InsertVp9Gof(sn + 3, sn + 3, false, pid + 3, 0, 1, 1, false);
@@ -1023,7 +1046,7 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9GofTemporalLayers_0212) {
   GofInfoVP9 ss;
   ss.SetGofInfoVP9(kTemporalStructureMode3);  // 0212 pattern
 
-  InsertVp9Gof(sn, sn, true, pid, 0, 0, 0, false, &ss);
+  InsertVp9Gof(sn, sn, true, pid, 0, 0, 0, false, false, &ss);
   InsertVp9Gof(sn + 1, sn + 1, false, pid + 1, 0, 2, 0, false);
   InsertVp9Gof(sn + 2, sn + 2, false, pid + 2, 0, 1, 0, false);
   InsertVp9Gof(sn + 3, sn + 3, false, pid + 3, 0, 2, 0, false);
@@ -1075,7 +1098,7 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9GofTemporalLayersReordered_0212) {
 
   InsertVp9Gof(sn + 2, sn + 2, false, pid + 2, 0, 1, 0, false);
   InsertVp9Gof(sn + 1, sn + 1, false, pid + 1, 0, 2, 0, false);
-  InsertVp9Gof(sn, sn, true, pid, 0, 0, 0, false, &ss);
+  InsertVp9Gof(sn, sn, true, pid, 0, 0, 0, false, false, &ss);
   InsertVp9Gof(sn + 3, sn + 3, false, pid + 3, 0, 2, 0, false);
   InsertVp9Gof(sn + 6, sn + 6, false, pid + 6, 0, 1, 1, false);
   InsertVp9Gof(sn + 5, sn + 5, false, pid + 5, 0, 2, 1, false);
@@ -1123,7 +1146,7 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9GofTemporalLayersUpSwitch_02120212) {
   GofInfoVP9 ss;
   ss.SetGofInfoVP9(kTemporalStructureMode4);  // 02120212 pattern
 
-  InsertVp9Gof(sn, sn, true, pid, 0, 0, 0, false, &ss);
+  InsertVp9Gof(sn, sn, true, pid, 0, 0, 0, false, false, &ss);
   InsertVp9Gof(sn + 1, sn + 1, false, pid + 1, 0, 2, 0, false);
   InsertVp9Gof(sn + 2, sn + 2, false, pid + 2, 0, 1, 0, false);
   InsertVp9Gof(sn + 3, sn + 3, false, pid + 3, 0, 2, 0, false);
@@ -1167,7 +1190,7 @@ TEST_F(TestRtpFrameReferenceFinder,
   ss.SetGofInfoVP9(kTemporalStructureMode4);  // 02120212 pattern
 
   InsertVp9Gof(sn + 1, sn + 1, false, pid + 1, 0, 2, 0, false);
-  InsertVp9Gof(sn, sn, true, pid, 0, 0, 0, false, &ss);
+  InsertVp9Gof(sn, sn, true, pid, 0, 0, 0, false, false, &ss);
   InsertVp9Gof(sn + 4, sn + 4, false, pid + 4, 0, 0, 1, false);
   InsertVp9Gof(sn + 2, sn + 2, false, pid + 2, 0, 1, 0, false);
   InsertVp9Gof(sn + 5, sn + 5, false, pid + 5, 0, 2, 1, false);
@@ -1209,11 +1232,11 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9GofTemporalLayersReordered_01_0212) {
   ss.SetGofInfoVP9(kTemporalStructureMode2);  // 01 pattern
 
   InsertVp9Gof(sn + 1, sn + 1, false, pid + 1, 0, 1, 0, false);
-  InsertVp9Gof(sn, sn, true, pid, 0, 0, 0, false, &ss);
+  InsertVp9Gof(sn, sn, true, pid, 0, 0, 0, false, false, &ss);
   InsertVp9Gof(sn + 3, sn + 3, false, pid + 3, 0, 1, 1, false);
   InsertVp9Gof(sn + 6, sn + 6, false, pid + 6, 0, 1, 2, false);
   ss.SetGofInfoVP9(kTemporalStructureMode3);  // 0212 pattern
-  InsertVp9Gof(sn + 4, sn + 4, false, pid + 4, 0, 0, 2, false, &ss);
+  InsertVp9Gof(sn + 4, sn + 4, false, pid + 4, 0, 0, 2, false, true, &ss);
   InsertVp9Gof(sn + 2, sn + 2, false, pid + 2, 0, 0, 1, false);
   InsertVp9Gof(sn + 5, sn + 5, false, pid + 5, 0, 2, 2, false);
   InsertVp9Gof(sn + 8, sn + 8, false, pid + 8, 0, 0, 3, false);
@@ -1332,7 +1355,7 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9GofPidJump) {
   GofInfoVP9 ss;
   ss.SetGofInfoVP9(kTemporalStructureMode3);
 
-  InsertVp9Gof(sn, sn, true, pid, 0, 0, 0, false, &ss);
+  InsertVp9Gof(sn, sn, true, pid, 0, 0, 0, false, false, &ss);
   InsertVp9Gof(sn + 1, sn + 1, false, pid + 1000, 0, 0, 1);
 }
 
@@ -1342,8 +1365,8 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9GofTl0Jump) {
   GofInfoVP9 ss;
   ss.SetGofInfoVP9(kTemporalStructureMode3);
 
-  InsertVp9Gof(sn, sn, true, pid + 0, 0, 0, 125, true, &ss);
-  InsertVp9Gof(sn + 1, sn + 1, false, pid + 1, 0, 0, 0, false, &ss);
+  InsertVp9Gof(sn, sn, true, pid + 0, 0, 0, 125, true, false, &ss);
+  InsertVp9Gof(sn + 1, sn + 1, false, pid + 1, 0, 0, 0, false, true, &ss);
 }
 
 TEST_F(TestRtpFrameReferenceFinder, Vp9GofTidTooHigh) {
@@ -1355,7 +1378,7 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9GofTidTooHigh) {
   ss.SetGofInfoVP9(kTemporalStructureMode2);
   ss.temporal_idx[1] = kMaxTemporalLayers;
 
-  InsertVp9Gof(sn, sn, true, pid, 0, 0, 0, false, &ss);
+  InsertVp9Gof(sn, sn, true, pid, 0, 0, 0, false, false, &ss);
   InsertVp9Gof(sn + 1, sn + 1, false, pid + 1, 0, 0, 1);
 
   ASSERT_EQ(1UL, frames_from_callback_.size());
@@ -1368,7 +1391,7 @@ TEST_F(TestRtpFrameReferenceFinder, Vp9GofZeroFrames) {
   GofInfoVP9 ss;
   ss.num_frames_in_gof = 0;
 
-  InsertVp9Gof(sn, sn, true, pid, 0, 0, 0, false, &ss);
+  InsertVp9Gof(sn, sn, true, pid, 0, 0, 0, false, false, &ss);
   InsertVp9Gof(sn + 1, sn + 1, false, pid + 1, 0, 0, 1);
 
   ASSERT_EQ(2UL, frames_from_callback_.size());

@@ -562,6 +562,11 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp9(
     }
   }
 
+  // Override GOF references.
+  if (!codec_header.inter_pic_predicted) {
+    frame->num_references = 0;
+  }
+
   UnwrapPictureIds(frame);
   return kHandOff;
 }
