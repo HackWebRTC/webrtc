@@ -190,17 +190,50 @@ FrameBuffer::ReturnReason FrameBuffer::NextFrame(
   {
     rtc::CritScope lock(&crit_);
     now_ms = clock_->TimeInMilliseconds();
+    // TODO(ilnik): remove |frames_out| use frames_to_decode_ directly.
     std::vector<EncodedFrame*> frames_out;
-    for (FrameMap::iterator& frame_it : frames_to_decode_) {
-      RTC_DCHECK(frame_it != frames_.end());
-      EncodedFrame* frame = frame_it->second.frame.release();
 
-      if (!frame->delayed_by_retransmission()) {
+    if (!frames_to_decode_.empty()) {
+      bool superframe_delayed_by_retransmission = false;
+      size_t superframe_size = 0;
+      EncodedFrame* first_frame = frames_to_decode_[0]->second.frame.get();
+      int64_t render_time_ms = first_frame->RenderTime();
+      int64_t receive_time_ms = first_frame->ReceivedTime();
+      // Gracefully handle bad RTP timestamps and render time issues.
+      if (HasBadRenderTiming(*first_frame, now_ms)) {
+        jitter_estimator_->Reset();
+        timing_->Reset();
+        render_time_ms =
+            timing_->RenderTimeMs(first_frame->Timestamp(), now_ms);
+      }
+
+      for (FrameMap::iterator& frame_it : frames_to_decode_) {
+        RTC_DCHECK(frame_it != frames_.end());
+        EncodedFrame* frame = frame_it->second.frame.release();
+
+        frame->SetRenderTime(render_time_ms);
+
+        superframe_delayed_by_retransmission |=
+            frame->delayed_by_retransmission();
+        receive_time_ms = std::max(receive_time_ms, frame->ReceivedTime());
+        superframe_size += frame->size();
+
+        PropagateDecodability(frame_it->second);
+        decoded_frames_history_.InsertDecoded(frame_it->first,
+                                              frame->Timestamp());
+
+        // Remove decoded frame and all undecoded frames before it.
+        frames_.erase(frames_.begin(), ++frame_it);
+
+        frames_out.push_back(frame);
+      }
+
+      if (!superframe_delayed_by_retransmission) {
         int64_t frame_delay;
 
-        if (inter_frame_delay_.CalculateDelay(frame->Timestamp(), &frame_delay,
-                                              frame->ReceivedTime())) {
-          jitter_estimator_->UpdateEstimate(frame_delay, frame->size());
+        if (inter_frame_delay_.CalculateDelay(first_frame->Timestamp(),
+                                              &frame_delay, receive_time_ms)) {
+          jitter_estimator_->UpdateEstimate(frame_delay, superframe_size);
         }
 
         float rtt_mult = protection_mode_ == kProtectionNackFEC ? 0.0 : 1.0;
@@ -208,32 +241,15 @@ FrameBuffer::ReturnReason FrameBuffer::NextFrame(
           rtt_mult = RttMultExperiment::GetRttMultValue();
         }
         timing_->SetJitterDelay(jitter_estimator_->GetJitterEstimate(rtt_mult));
-        timing_->UpdateCurrentDelay(frame->RenderTime(), now_ms);
+        timing_->UpdateCurrentDelay(render_time_ms, now_ms);
       } else {
         if (RttMultExperiment::RttMultEnabled() || add_rtt_to_playout_delay_)
           jitter_estimator_->FrameNacked();
       }
 
-      // Gracefully handle bad RTP timestamps and render time issues.
-      if (HasBadRenderTiming(*frame, now_ms)) {
-        jitter_estimator_->Reset();
-        timing_->Reset();
-        frame->SetRenderTime(timing_->RenderTimeMs(frame->Timestamp(), now_ms));
-      }
-
       UpdateJitterDelay();
       UpdateTimingFrameInfo();
-      PropagateDecodability(frame_it->second);
-
-      decoded_frames_history_.InsertDecoded(frame_it->first,
-                                            frame->Timestamp());
-
-      // Remove decoded frame and all undecoded frames before it.
-      frames_.erase(frames_.begin(), ++frame_it);
-
-      frames_out.push_back(frame);
     }
-
     if (!frames_out.empty()) {
       if (frames_out.size() == 1) {
         frame_out->reset(frames_out[0]);
