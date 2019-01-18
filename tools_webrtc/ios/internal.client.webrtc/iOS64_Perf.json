@@ -23,7 +23,7 @@
       "include": "perf_tests.json",
       "device type": "iPhone 7",
       "os": "11.0.3",
-      "max runtime seconds": 4500
+      "max runtime seconds": 7200
     }
   ]
 }
