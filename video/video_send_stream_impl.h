@@ -12,6 +12,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <atomic>
 #include <map>
 #include <memory>
 #include <vector>
@@ -35,6 +36,7 @@
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/task_queue.h"
+#include "rtc_base/task_utils/repeating_task.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/weak_ptr.h"
 #include "video/call_stats.h"
@@ -107,8 +109,6 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   absl::optional<float> configured_pacing_factor_;
 
  private:
-  class CheckEncoderActivityTask;
-
   // Implements BitrateAllocatorObserver.
   uint32_t OnBitrateUpdated(BitrateAllocationUpdate update) override;
 
@@ -131,7 +131,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   void StartupVideoSendStream();
   // Removes the bitrate observer, stops monitoring and notifies the video
   // encoder of the bitrate update.
-  void StopVideoSendStream();
+  void StopVideoSendStream() RTC_RUN_ON(worker_queue_);
 
   void ConfigureProtection();
   void ConfigureSsrcs();
@@ -146,9 +146,11 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
 
   rtc::TaskQueue* const worker_queue_;
 
-  rtc::CriticalSection encoder_activity_crit_sect_;
-  CheckEncoderActivityTask* check_encoder_activity_task_
-      RTC_GUARDED_BY(encoder_activity_crit_sect_);
+  RepeatingTaskHandle check_encoder_activity_task_
+      RTC_GUARDED_BY(worker_queue_);
+
+  std::atomic_bool activity_;
+  bool timed_out_ RTC_GUARDED_BY(worker_queue_);
 
   CallStats* const call_stats_;
   RtpTransportControllerSendInterface* const transport_;

@@ -19,7 +19,7 @@
 #include "rtc_base/experiments/quality_scaling_experiment.h"
 #include "rtc_base/numerics/moving_average.h"
 #include "rtc_base/sequenced_task_checker.h"
-#include "rtc_base/thread_annotations.h"
+#include "rtc_base/task_utils/repeating_task.h"
 
 namespace webrtc {
 
@@ -64,7 +64,6 @@ class QualityScaler {
                 int64_t sampling_period_ms);
 
  private:
-  class CheckQpTask;
   class QpSmoother;
 
   void CheckQp();
@@ -73,7 +72,7 @@ class QualityScaler {
   void ReportQpHigh();
   int64_t GetSamplingPeriodMs() const;
 
-  CheckQpTask* check_qp_task_ RTC_GUARDED_BY(&task_checker_);
+  RepeatingTaskHandle check_qp_task_ RTC_GUARDED_BY(&task_checker_);
   AdaptationObserverInterface* const observer_ RTC_GUARDED_BY(&task_checker_);
   rtc::SequencedTaskChecker task_checker_;
 

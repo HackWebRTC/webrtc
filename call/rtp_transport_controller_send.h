@@ -29,6 +29,7 @@
 #include "rtc_base/network_route.h"
 #include "rtc_base/race_checker.h"
 #include "rtc_base/task_queue.h"
+#include "rtc_base/task_utils/repeating_task.h"
 
 namespace webrtc {
 class Clock;
@@ -120,9 +121,6 @@ class RtpTransportControllerSend final
 
   // Implements CallStatsObserver interface
   void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override;
-
-  class PeriodicTask;
-
  private:
   void MaybeCreateControllers() RTC_RUN_ON(task_queue_);
   void UpdateInitialConstraints(TargetRateConstraints new_contraints)
@@ -181,10 +179,8 @@ class RtpTransportControllerSend final
   std::atomic<size_t> transport_overhead_bytes_per_packet_;
   bool network_available_ RTC_GUARDED_BY(task_queue_);
   bool packet_feedback_available_ RTC_GUARDED_BY(task_queue_);
-  PeriodicTask* pacer_queue_update_task_ RTC_GUARDED_BY(task_queue_)
-      RTC_PT_GUARDED_BY(task_queue_);
-  PeriodicTask* controller_task_ RTC_GUARDED_BY(task_queue_)
-      RTC_PT_GUARDED_BY(task_queue_);
+  RepeatingTaskHandle pacer_queue_update_task_ RTC_GUARDED_BY(task_queue_);
+  RepeatingTaskHandle controller_task_ RTC_GUARDED_BY(task_queue_);
   // Protects access to last_packet_feedback_vector_ in feedback adapter.
   // TODO(srte): Remove this checker when feedback adapter runs on task queue.
   rtc::RaceChecker worker_race_;

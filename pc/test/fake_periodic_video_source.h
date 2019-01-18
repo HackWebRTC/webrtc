@@ -18,6 +18,7 @@
 #include "media/base/fake_frame_source.h"
 #include "media/base/video_broadcaster.h"
 #include "rtc_base/task_queue.h"
+#include "rtc_base/task_utils/repeating_task.h"
 
 namespace webrtc {
 
@@ -38,10 +39,25 @@ class FakePeriodicVideoSource final
 
   FakePeriodicVideoSource() : FakePeriodicVideoSource(Config()) {}
   explicit FakePeriodicVideoSource(Config config)
-      : task_queue_(
+      : frame_source_(
+            config.width,
+            config.height,
+            config.frame_interval_ms * rtc::kNumMicrosecsPerMillisec,
+            config.timestamp_offset_ms * rtc::kNumMicrosecsPerMillisec),
+        task_queue_(
             absl::make_unique<rtc::TaskQueue>("FakePeriodicVideoTrackSource")) {
     thread_checker_.DetachFromThread();
-    task_queue_->PostTask(absl::make_unique<FrameTask>(config, &broadcaster_));
+    frame_source_.SetRotation(config.rotation);
+
+    TimeDelta frame_interval = TimeDelta::ms(config.frame_interval_ms);
+    RepeatingTaskHandle::Start(task_queue_.get(), [this, frame_interval] {
+      if (broadcaster_.wants().rotation_applied) {
+        broadcaster_.OnFrame(frame_source_.GetFrameRotationApplied());
+      } else {
+        broadcaster_.OnFrame(frame_source_.GetFrame());
+      }
+      return frame_interval;
+    });
   }
 
   void RemoveSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) override {
@@ -61,38 +77,10 @@ class FakePeriodicVideoSource final
   }
 
  private:
-  class FrameTask : public rtc::QueuedTask {
-   public:
-    FrameTask(Config config, rtc::VideoBroadcaster* broadcaster)
-        : frame_interval_ms_(config.frame_interval_ms),
-          frame_source_(
-              config.width,
-              config.height,
-              config.frame_interval_ms * rtc::kNumMicrosecsPerMillisec,
-              config.timestamp_offset_ms * rtc::kNumMicrosecsPerMillisec),
-          broadcaster_(broadcaster) {
-      frame_source_.SetRotation(config.rotation);
-    }
-
-    bool Run() override {
-      if (broadcaster_->wants().rotation_applied) {
-        broadcaster_->OnFrame(frame_source_.GetFrameRotationApplied());
-      } else {
-        broadcaster_->OnFrame(frame_source_.GetFrame());
-      }
-
-      rtc::TaskQueue::Current()->PostDelayedTask(absl::WrapUnique(this),
-                                                 frame_interval_ms_);
-      return false;
-    }
-    int frame_interval_ms_;
-    cricket::FakeFrameSource frame_source_;
-    rtc::VideoBroadcaster* broadcaster_;
-  };
-
   rtc::ThreadChecker thread_checker_;
 
   rtc::VideoBroadcaster broadcaster_;
+  cricket::FakeFrameSource frame_source_;
 
   std::unique_ptr<rtc::TaskQueue> task_queue_;
 };

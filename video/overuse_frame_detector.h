@@ -21,6 +21,7 @@
 #include "rtc_base/numerics/exp_filter.h"
 #include "rtc_base/sequenced_task_checker.h"
 #include "rtc_base/task_queue.h"
+#include "rtc_base/task_utils/repeating_task.h"
 #include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
@@ -108,8 +109,6 @@ class OveruseFrameDetector {
   CpuOveruseOptions options_;
 
  private:
-  class CheckOveruseTask;
-
   void EncodedFrameTimeMeasured(int encode_duration_ms);
   bool IsOverusing(int encode_usage_percent);
   bool IsUnderusing(int encode_usage_percent, int64_t time_now);
@@ -124,7 +123,7 @@ class OveruseFrameDetector {
 
   rtc::SequencedTaskChecker task_checker_;
   // Owned by the task queue from where StartCheckForOveruse is called.
-  CheckOveruseTask* check_overuse_task_;
+  RepeatingTaskHandle check_overuse_task_ RTC_GUARDED_BY(task_checker_);
 
   // Stats metrics.
   CpuOveruseMetricsObserver* const metrics_observer_;

@@ -26,16 +26,11 @@
 #include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
-class RtpTransportControllerSend::PeriodicTask : public rtc::QueuedTask {
- public:
-  virtual void Stop() = 0;
-};
-
 namespace {
 static const int64_t kRetransmitWindowSizeMs = 500;
 static const size_t kMaxOverheadBytes = 500;
 
-const int64_t PacerQueueUpdateIntervalMs = 25;
+constexpr TimeDelta kPacerQueueUpdateInterval = TimeDelta::Millis<25>();
 
 TargetRateConstraints ConvertConstraints(int min_bitrate_bps,
                                          int max_bitrate_bps,
@@ -57,56 +52,6 @@ TargetRateConstraints ConvertConstraints(const BitrateConstraints& contraints,
   return ConvertConstraints(contraints.min_bitrate_bps,
                             contraints.max_bitrate_bps,
                             contraints.start_bitrate_bps, clock);
-}
-
-// The template closure pattern is based on rtc::ClosureTask.
-template <class Closure>
-class PeriodicTaskImpl final : public RtpTransportControllerSend::PeriodicTask {
- public:
-  PeriodicTaskImpl(rtc::TaskQueue* task_queue,
-                   int64_t period_ms,
-                   Closure&& closure)
-      : task_queue_(task_queue),
-        period_ms_(period_ms),
-        closure_(std::forward<Closure>(closure)) {}
-  bool Run() override {
-    if (!running_)
-      return true;
-    closure_();
-    // absl::WrapUnique lets us repost this task on the TaskQueue.
-    task_queue_->PostDelayedTask(absl::WrapUnique(this), period_ms_);
-    // Return false to tell TaskQueue to not destruct this object, since we have
-    // taken ownership with absl::WrapUnique.
-    return false;
-  }
-  void Stop() override {
-    if (task_queue_->IsCurrent()) {
-      RTC_DCHECK(running_);
-      running_ = false;
-    } else {
-      task_queue_->PostTask([this] { Stop(); });
-    }
-  }
-
- private:
-  rtc::TaskQueue* const task_queue_;
-  const int64_t period_ms_;
-  typename std::remove_const<
-      typename std::remove_reference<Closure>::type>::type closure_;
-  bool running_ = true;
-};
-
-template <class Closure>
-static RtpTransportControllerSend::PeriodicTask* StartPeriodicTask(
-    rtc::TaskQueue* task_queue,
-    int64_t period_ms,
-    Closure&& closure) {
-  auto periodic_task = absl::make_unique<PeriodicTaskImpl<Closure>>(
-      task_queue, period_ms, std::forward<Closure>(closure));
-  RtpTransportControllerSend::PeriodicTask* periodic_task_ptr =
-      periodic_task.get();
-  task_queue->PostDelayedTask(std::move(periodic_task), period_ms);
-  return periodic_task_ptr;
 }
 }  // namespace
 
@@ -135,8 +80,6 @@ RtpTransportControllerSend::RtpTransportControllerSend(
       transport_overhead_bytes_per_packet_(0),
       network_available_(false),
       packet_feedback_available_(false),
-      pacer_queue_update_task_(nullptr),
-      controller_task_(nullptr),
       retransmission_rate_limiter_(clock, kRetransmitWindowSizeMs),
       task_queue_("rtp_send_controller") {
   initial_config_.constraints = ConvertConstraints(bitrate_config, clock_);
@@ -570,30 +513,24 @@ void RtpTransportControllerSend::UpdateInitialConstraints(
 }
 
 void RtpTransportControllerSend::StartProcessPeriodicTasks() {
-  if (!pacer_queue_update_task_) {
-    pacer_queue_update_task_ =
-        StartPeriodicTask(&task_queue_, PacerQueueUpdateIntervalMs, [this]() {
+  if (!pacer_queue_update_task_.Running()) {
+    pacer_queue_update_task_ = RepeatingTaskHandle::DelayedStart(
+        &task_queue_, kPacerQueueUpdateInterval, [this]() {
           RTC_DCHECK_RUN_ON(&task_queue_);
           TimeDelta expected_queue_time =
               TimeDelta::ms(pacer_.ExpectedQueueTimeMs());
           control_handler_->SetPacerQueue(expected_queue_time);
           UpdateControlState();
+          return kPacerQueueUpdateInterval;
         });
   }
-  if (controller_task_) {
-    // Stop is not synchronous, but is guaranteed to occur before the first
-    // invocation of the new controller task started below.
-    controller_task_->Stop();
-    controller_task_ = nullptr;
-  }
+  controller_task_.Stop();
   if (process_interval_.IsFinite()) {
-    // The controller task is owned by the task queue and lives until the task
-    // queue is destroyed or some time after Stop() is called, whichever comes
-    // first.
-    controller_task_ =
-        StartPeriodicTask(&task_queue_, process_interval_.ms(), [this]() {
+    controller_task_ = RepeatingTaskHandle::DelayedStart(
+        &task_queue_, process_interval_, [this]() {
           RTC_DCHECK_RUN_ON(&task_queue_);
           UpdateControllerWithTimeInterval();
+          return process_interval_;
         });
   }
 }

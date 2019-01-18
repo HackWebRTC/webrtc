@@ -21,55 +21,12 @@
 #include "rtc_base/critical_section.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/task_queue.h"
+#include "rtc_base/task_utils/repeating_task.h"
 #include "rtc_base/time_utils.h"
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 namespace test {
-
-class FrameGeneratorCapturer::InsertFrameTask : public rtc::QueuedTask {
- public:
-  explicit InsertFrameTask(FrameGeneratorCapturer* frame_generator_capturer)
-      : frame_generator_capturer_(frame_generator_capturer),
-        repeat_interval_ms_(-1),
-        next_run_time_ms_(-1) {}
-
- private:
-  bool Run() override {
-    // Check if the frame interval for this
-    // task queue is the same same as the current configured frame rate.
-    int interval_ms =
-        1000 / frame_generator_capturer_->GetCurrentConfiguredFramerate();
-    if (repeat_interval_ms_ != interval_ms) {
-      // Restart the timer if frame rate has changed since task was started.
-      next_run_time_ms_ = rtc::TimeMillis();
-      repeat_interval_ms_ = interval_ms;
-    }
-    // Schedule the next frame capture event to happen at approximately the
-    // correct absolute time point.
-    next_run_time_ms_ += interval_ms;
-
-    frame_generator_capturer_->InsertFrame();
-
-    int64_t now_ms = rtc::TimeMillis();
-    if (next_run_time_ms_ < now_ms) {
-      RTC_LOG(LS_ERROR) << "Frame Generator Capturer can't keep up with "
-                           "requested fps.";
-      rtc::TaskQueue::Current()->PostTask(absl::WrapUnique(this));
-    } else {
-      int64_t delay_ms = next_run_time_ms_ - now_ms;
-      RTC_DCHECK_GE(delay_ms, 0);
-      RTC_DCHECK_LE(delay_ms, interval_ms);
-      rtc::TaskQueue::Current()->PostDelayedTask(absl::WrapUnique(this),
-                                                 delay_ms);
-    }
-    return false;
-  }
-
-  webrtc::test::FrameGeneratorCapturer* const frame_generator_capturer_;
-  int repeat_interval_ms_;
-  int64_t next_run_time_ms_;
-};
 
 FrameGeneratorCapturer* FrameGeneratorCapturer::Create(
     int width,
@@ -158,10 +115,12 @@ bool FrameGeneratorCapturer::Init() {
   if (frame_generator_.get() == nullptr)
     return false;
 
-  int framerate_fps = GetCurrentConfiguredFramerate();
-  task_queue_.PostDelayedTask(absl::make_unique<InsertFrameTask>(this),
-                              1000 / framerate_fps);
-
+  RepeatingTaskHandle::DelayedStart(
+      &task_queue_, TimeDelta::seconds(1) / GetCurrentConfiguredFramerate(),
+      [this] {
+        InsertFrame();
+        return TimeDelta::seconds(1) / GetCurrentConfiguredFramerate();
+      });
   return true;
 }
 

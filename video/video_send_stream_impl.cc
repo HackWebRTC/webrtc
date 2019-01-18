@@ -44,6 +44,8 @@ static constexpr int kMaxVbaSizeDifferencePercent = 10;
 // Max time we will throttle similar video bitrate allocations.
 static constexpr int64_t kMaxVbaThrottleTimeMs = 500;
 
+constexpr TimeDelta kEncoderTimeOut = TimeDelta::Seconds<2>();
+
 bool TransportSeqNumExtensionConfigured(const VideoSendStream::Config& config) {
   const std::vector<RtpExtension>& extensions = config.rtp.extensions;
   return std::find_if(
@@ -179,58 +181,6 @@ PacingConfig::PacingConfig()
 PacingConfig::PacingConfig(const PacingConfig&) = default;
 PacingConfig::~PacingConfig() = default;
 
-// CheckEncoderActivityTask is used for tracking when the encoder last produced
-// and encoded video frame. If the encoder has not produced anything the last
-// kEncoderTimeOutMs we also want to stop sending padding.
-class VideoSendStreamImpl::CheckEncoderActivityTask : public rtc::QueuedTask {
- public:
-  static const int kEncoderTimeOutMs = 2000;
-  explicit CheckEncoderActivityTask(
-      const rtc::WeakPtr<VideoSendStreamImpl>& send_stream)
-      : activity_(0), send_stream_(std::move(send_stream)), timed_out_(false) {}
-
-  void Stop() {
-    RTC_CHECK(task_checker_.CalledSequentially());
-    send_stream_.reset();
-  }
-
-  void UpdateEncoderActivity() {
-    // UpdateEncoderActivity is called from VideoSendStreamImpl::Encoded on
-    // whatever thread the real encoder implementation run on. In the case of
-    // hardware encoders, there might be several encoders
-    // running in parallel on different threads.
-    rtc::AtomicOps::ReleaseStore(&activity_, 1);
-  }
-
- private:
-  bool Run() override {
-    RTC_CHECK(task_checker_.CalledSequentially());
-    if (!send_stream_)
-      return true;
-    if (!rtc::AtomicOps::AcquireLoad(&activity_)) {
-      if (!timed_out_) {
-        send_stream_->SignalEncoderTimedOut();
-      }
-      timed_out_ = true;
-    } else if (timed_out_) {
-      send_stream_->SignalEncoderActive();
-      timed_out_ = false;
-    }
-    rtc::AtomicOps::ReleaseStore(&activity_, 0);
-
-    rtc::TaskQueue::Current()->PostDelayedTask(
-        std::unique_ptr<rtc::QueuedTask>(this), kEncoderTimeOutMs);
-    // Return false to prevent this task from being deleted. Ownership has been
-    // transferred to the task queue when PostDelayedTask was called.
-    return false;
-  }
-  volatile int activity_;
-
-  rtc::SequencedTaskChecker task_checker_;
-  rtc::WeakPtr<VideoSendStreamImpl> send_stream_;
-  bool timed_out_;
-};
-
 VideoSendStreamImpl::VideoSendStreamImpl(
     SendStatisticsProxy* stats_proxy,
     rtc::TaskQueue* worker_queue,
@@ -254,7 +204,6 @@ VideoSendStreamImpl::VideoSendStreamImpl(
       stats_proxy_(stats_proxy),
       config_(config),
       worker_queue_(worker_queue),
-      check_encoder_activity_task_(nullptr),
       call_stats_(call_stats),
       transport_(transport),
       bitrate_allocator_(bitrate_allocator),
@@ -420,12 +369,25 @@ void VideoSendStreamImpl::StartupVideoSendStream() {
           encoder_bitrate_priority_, has_packet_feedback_});
   // Start monitoring encoder activity.
   {
-    rtc::CritScope lock(&encoder_activity_crit_sect_);
-    RTC_DCHECK(!check_encoder_activity_task_);
-    check_encoder_activity_task_ = new CheckEncoderActivityTask(weak_ptr_);
-    worker_queue_->PostDelayedTask(
-        std::unique_ptr<rtc::QueuedTask>(check_encoder_activity_task_),
-        CheckEncoderActivityTask::kEncoderTimeOutMs);
+    RTC_DCHECK(!check_encoder_activity_task_.Running());
+
+    activity_ = false;
+    timed_out_ = false;
+    check_encoder_activity_task_ =
+        RepeatingTaskHandle::DelayedStart(kEncoderTimeOut, [this] {
+          RTC_DCHECK_RUN_ON(worker_queue_);
+          if (!activity_) {
+            if (!timed_out_) {
+              SignalEncoderTimedOut();
+            }
+            timed_out_ = true;
+          } else if (timed_out_) {
+            SignalEncoderActive();
+            timed_out_ = false;
+          }
+          activity_ = false;
+          return kEncoderTimeOut;
+        });
   }
 
   video_stream_encoder_->SendKeyFrame();
@@ -443,18 +405,14 @@ void VideoSendStreamImpl::Stop() {
 
 void VideoSendStreamImpl::StopVideoSendStream() {
   bitrate_allocator_->RemoveObserver(this);
-  {
-    rtc::CritScope lock(&encoder_activity_crit_sect_);
-    check_encoder_activity_task_->Stop();
-    check_encoder_activity_task_ = nullptr;
-  }
+  check_encoder_activity_task_.Stop();
   video_stream_encoder_->OnBitrateUpdated(0, 0, 0);
   stats_proxy_->OnSetEncoderTargetRate(0);
 }
 
 void VideoSendStreamImpl::SignalEncoderTimedOut() {
   RTC_DCHECK_RUN_ON(worker_queue_);
-  // If the encoder has not produced anything the last kEncoderTimeOutMs and it
+  // If the encoder has not produced anything the last kEncoderTimeOut and it
   // is supposed to, deregister as BitrateAllocatorObserver. This can happen
   // if a camera stops producing frames.
   if (encoder_target_rate_bps_ > 0) {
@@ -601,11 +559,9 @@ EncodedImageCallback::Result VideoSendStreamImpl::OnEncodedImage(
   // Encoded is called on whatever thread the real encoder implementation run
   // on. In the case of hardware encoders, there might be several encoders
   // running in parallel on different threads.
-  {
-    rtc::CritScope lock(&encoder_activity_crit_sect_);
-    if (check_encoder_activity_task_)
-      check_encoder_activity_task_->UpdateEncoderActivity();
-  }
+
+  // Indicate that there still is activity going on.
+  activity_ = true;
 
   EncodedImageCallback::Result result(EncodedImageCallback::Result::OK);
   if (media_transport_) {

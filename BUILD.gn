@@ -517,6 +517,7 @@ if (rtc_include_tests) {
     testonly = true
     deps = [
       "modules/congestion_controller/goog_cc:goog_cc_slow_tests",
+      "rtc_base/task_utils:repeating_task_unittests",
       "test:test_main",
     ]
   }

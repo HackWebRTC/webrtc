@@ -518,43 +518,9 @@ OveruseFrameDetector::CreateProcessingUsage(const CpuOveruseOptions& options) {
   return instance;
 }
 
-class OveruseFrameDetector::CheckOveruseTask : public rtc::QueuedTask {
- public:
-  CheckOveruseTask(OveruseFrameDetector* overuse_detector,
-                   AdaptationObserverInterface* observer)
-      : overuse_detector_(overuse_detector), observer_(observer) {
-    rtc::TaskQueue::Current()->PostDelayedTask(
-        std::unique_ptr<rtc::QueuedTask>(this), kTimeToFirstCheckForOveruseMs);
-  }
-
-  void Stop() {
-    RTC_CHECK(task_checker_.CalledSequentially());
-    overuse_detector_ = nullptr;
-  }
-
- private:
-  bool Run() override {
-    RTC_CHECK(task_checker_.CalledSequentially());
-    if (!overuse_detector_)
-      return true;  // This will make the task queue delete this task.
-    overuse_detector_->CheckForOveruse(observer_);
-
-    rtc::TaskQueue::Current()->PostDelayedTask(
-        std::unique_ptr<rtc::QueuedTask>(this), kCheckForOveruseIntervalMs);
-    // Return false to prevent this task from being deleted. Ownership has been
-    // transferred to the task queue when PostDelayedTask was called.
-    return false;
-  }
-  rtc::SequencedTaskChecker task_checker_;
-  OveruseFrameDetector* overuse_detector_;
-  // Observer getting overuse reports.
-  AdaptationObserverInterface* observer_;
-};
-
 OveruseFrameDetector::OveruseFrameDetector(
     CpuOveruseMetricsObserver* metrics_observer)
-    : check_overuse_task_(nullptr),
-      metrics_observer_(metrics_observer),
+    : metrics_observer_(metrics_observer),
       num_process_times_(0),
       // TODO(nisse): Use absl::optional
       last_capture_time_us_(-1),
@@ -569,26 +535,25 @@ OveruseFrameDetector::OveruseFrameDetector(
   task_checker_.Detach();
 }
 
-OveruseFrameDetector::~OveruseFrameDetector() {
-  RTC_DCHECK(!check_overuse_task_) << "StopCheckForOverUse must be called.";
-}
+OveruseFrameDetector::~OveruseFrameDetector() {}
 
 void OveruseFrameDetector::StartCheckForOveruse(
     const CpuOveruseOptions& options,
     AdaptationObserverInterface* overuse_observer) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
-  RTC_DCHECK(!check_overuse_task_);
+  RTC_DCHECK(!check_overuse_task_.Running());
   RTC_DCHECK(overuse_observer != nullptr);
 
   SetOptions(options);
-  check_overuse_task_ = new CheckOveruseTask(this, overuse_observer);
+  check_overuse_task_ = RepeatingTaskHandle::DelayedStart(
+      TimeDelta::ms(kTimeToFirstCheckForOveruseMs), [this, overuse_observer] {
+        CheckForOveruse(overuse_observer);
+        return TimeDelta::ms(kCheckForOveruseIntervalMs);
+      });
 }
 void OveruseFrameDetector::StopCheckForOveruse() {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
-  if (check_overuse_task_) {
-    check_overuse_task_->Stop();
-    check_overuse_task_ = nullptr;
-  }
+  check_overuse_task_.Stop();
 }
 
 void OveruseFrameDetector::EncodedFrameTimeMeasured(int encode_duration_ms) {

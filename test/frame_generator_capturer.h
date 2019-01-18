@@ -84,8 +84,6 @@ class FrameGeneratorCapturer : public TestVideoCapturer {
   bool Init();
 
  private:
-  class InsertFrameTask;
-
   void InsertFrame();
   static bool Run(void* obj);
   int GetCurrentConfiguredFramerate();
