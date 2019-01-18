@@ -636,16 +636,15 @@ void RtpVideoSender::OnBitrateUpdated(uint32_t bitrate_bps,
   encoder_target_rate_bps_ = fec_controller_->UpdateFecRates(
       payload_bitrate_bps, framerate, fraction_loss, loss_mask_vector_, rtt);
 
+  uint32_t packetization_rate_bps = 0;
   if (account_for_packetization_overhead_) {
-    // Subtract packetization overhead from the encoder target. If rate is
-    // really low, cap the overhead at 50%. Since packetization is measured over
-    // an averaging window, it might intermittently be higher than encoder
-    // target (eg encoder pause event), so cap it to target.
-    const uint32_t packetization_rate_bps =
-        std::min(GetPacketizationOverheadRate(), encoder_target_rate_bps_);
-    encoder_target_rate_bps_ =
-        std::max(encoder_target_rate_bps_ - packetization_rate_bps,
-                 encoder_target_rate_bps_ / 2);
+    // Subtract packetization overhead from the encoder target. If target rate
+    // is really low, cap the overhead at 50%. This also avoids the case where
+    // |encoder_target_rate_bps_| is 0 due to encoder pause event while the
+    // packetization rate is positive since packets are still flowing.
+    packetization_rate_bps =
+        std::min(GetPacketizationOverheadRate(), encoder_target_rate_bps_ / 2);
+    encoder_target_rate_bps_ -= packetization_rate_bps;
   }
 
   loss_mask_vector_.clear();
@@ -664,8 +663,11 @@ void RtpVideoSender::OnBitrateUpdated(uint32_t bitrate_bps,
 
   // When the field trial "WebRTC-SendSideBwe-WithOverhead" is enabled
   // protection_bitrate includes overhead.
-  protection_bitrate_bps_ =
-      bitrate_bps - (encoder_target_rate_bps_ + encoder_overhead_rate_bps);
+  const uint32_t media_rate = encoder_target_rate_bps_ +
+                              encoder_overhead_rate_bps +
+                              packetization_rate_bps;
+  RTC_DCHECK_GE(bitrate_bps, media_rate);
+  protection_bitrate_bps_ = bitrate_bps - media_rate;
 }
 
 uint32_t RtpVideoSender::GetPayloadBitrateBps() const {
