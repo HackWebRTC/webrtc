@@ -112,14 +112,6 @@ rtc::scoped_refptr<AudioDeviceModuleForTest> AudioDeviceModule::CreateForTest(
   return audioDevice;
 }
 
-// TODO(bugs.webrtc.org/7306): deprecated.
-rtc::scoped_refptr<AudioDeviceModule> AudioDeviceModule::Create(
-    const int32_t id,
-    const AudioLayer audio_layer) {
-  RTC_LOG(INFO) << __FUNCTION__;
-  return AudioDeviceModule::Create(audio_layer);
-}
-
 AudioDeviceModuleImpl::AudioDeviceModuleImpl(const AudioLayer audioLayer)
     : audio_layer_(audioLayer) {
   RTC_LOG(INFO) << __FUNCTION__;
