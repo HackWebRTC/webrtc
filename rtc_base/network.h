@@ -153,12 +153,6 @@ class NetworkManagerBase : public NetworkManager {
   void GetNetworks(NetworkList* networks) const override;
   void GetAnyAddressNetworks(NetworkList* networks) override;
 
-  // Defaults to true.
-  // TODO(deadbeef): Remove this. Nothing but tests use this; IPv6 is enabled
-  // by default everywhere else.
-  bool ipv6_enabled() const { return ipv6_enabled_; }
-  void set_ipv6_enabled(bool enabled) { ipv6_enabled_ = enabled; }
-
   EnumerationPermission enumeration_permission() const override;
 
   bool GetDefaultLocalAddress(int family, IPAddress* ipaddr) const override;
@@ -194,7 +188,6 @@ class NetworkManagerBase : public NetworkManager {
   NetworkList networks_;
 
   NetworkMap networks_map_;
-  bool ipv6_enabled_;
 
   std::unique_ptr<rtc::Network> ipv4_any_address_network_;
   std::unique_ptr<rtc::Network> ipv6_any_address_network_;

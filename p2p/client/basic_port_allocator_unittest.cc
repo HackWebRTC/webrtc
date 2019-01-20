@@ -1242,10 +1242,6 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsNoAdapters) {
   turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
   AddTurnServers(kTurnUdpIntAddr, kTurnTcpIntAddr);
   AddTurnServers(kTurnUdpIntIPv6Addr, kTurnTcpIntIPv6Addr);
-  // Disable IPv6, because our test infrastructure doesn't support having IPv4
-  // behind a NAT but IPv6 not, or having an IPv6 NAT.
-  // TODO(deadbeef): Fix this.
-  network_manager_.set_ipv6_enabled(false);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
   EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,

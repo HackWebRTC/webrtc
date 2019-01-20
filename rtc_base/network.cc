@@ -264,8 +264,7 @@ webrtc::MdnsResponderInterface* NetworkManager::GetMdnsResponder() const {
 }
 
 NetworkManagerBase::NetworkManagerBase()
-    : enumeration_permission_(NetworkManager::ENUMERATION_ALLOWED),
-      ipv6_enabled_(true) {}
+    : enumeration_permission_(NetworkManager::ENUMERATION_ALLOWED) {}
 
 NetworkManagerBase::~NetworkManagerBase() {
   for (const auto& kv : networks_map_) {
@@ -289,17 +288,15 @@ void NetworkManagerBase::GetAnyAddressNetworks(NetworkList* networks) {
   }
   networks->push_back(ipv4_any_address_network_.get());
 
-  if (ipv6_enabled()) {
-    if (!ipv6_any_address_network_) {
-      const rtc::IPAddress ipv6_any_address(in6addr_any);
-      ipv6_any_address_network_.reset(new rtc::Network(
-          "any", "any", ipv6_any_address, 0, ADAPTER_TYPE_ANY));
-      ipv6_any_address_network_->set_default_local_address_provider(this);
-      ipv6_any_address_network_->AddIP(ipv6_any_address);
-      ipv6_any_address_network_->SetMdnsResponder(GetMdnsResponder());
-    }
-    networks->push_back(ipv6_any_address_network_.get());
+  if (!ipv6_any_address_network_) {
+    const rtc::IPAddress ipv6_any_address(in6addr_any);
+    ipv6_any_address_network_.reset(
+        new rtc::Network("any", "any", ipv6_any_address, 0, ADAPTER_TYPE_ANY));
+    ipv6_any_address_network_->set_default_local_address_provider(this);
+    ipv6_any_address_network_->AddIP(ipv6_any_address);
+    ipv6_any_address_network_->SetMdnsResponder(GetMdnsResponder());
   }
+  networks->push_back(ipv6_any_address_network_.get());
 }
 
 void NetworkManagerBase::GetNetworks(NetworkList* result) const {
@@ -520,10 +517,6 @@ void BasicNetworkManager::ConvertIfAddrs(struct ifaddrs* interfaces,
         cursor->ifa_addr->sa_family != AF_INET6) {
       continue;
     }
-    // Skip IPv6 if not enabled.
-    if (cursor->ifa_addr->sa_family == AF_INET6 && !ipv6_enabled()) {
-      continue;
-    }
     // Convert to InterfaceAddress.
     if (!ifaddrs_converter->ConvertIfAddrsToIPAddress(cursor, &ip, &mask)) {
       continue;
@@ -699,20 +692,16 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
             break;
           }
           case AF_INET6: {
-            if (ipv6_enabled()) {
-              sockaddr_in6* v6_addr =
-                  reinterpret_cast<sockaddr_in6*>(address->Address.lpSockaddr);
-              scope_id = v6_addr->sin6_scope_id;
-              ip = IPAddress(v6_addr->sin6_addr);
+            sockaddr_in6* v6_addr =
+                reinterpret_cast<sockaddr_in6*>(address->Address.lpSockaddr);
+            scope_id = v6_addr->sin6_scope_id;
+            ip = IPAddress(v6_addr->sin6_addr);
 
-              if (IsIgnoredIPv6(InterfaceAddress(ip))) {
-                continue;
-              }
-
-              break;
-            } else {
+            if (IsIgnoredIPv6(InterfaceAddress(ip))) {
               continue;
             }
+
+            break;
           }
           default: { continue; }
         }

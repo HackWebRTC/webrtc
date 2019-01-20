@@ -624,22 +624,10 @@ TEST_F(NetworkTest, TestCreateAndDumpNetworks) {
   manager.DumpNetworks();
 }
 
-// Test that we can toggle IPv6 on and off.
-// Crashes on Linux. See webrtc:4923.
-#if defined(WEBRTC_LINUX)
-#define MAYBE_TestIPv6Toggle DISABLED_TestIPv6Toggle
-#else
-#define MAYBE_TestIPv6Toggle TestIPv6Toggle
-#endif
-TEST_F(NetworkTest, MAYBE_TestIPv6Toggle) {
+TEST_F(NetworkTest, TestIPv6Toggle) {
   BasicNetworkManager manager;
   bool ipv6_found = false;
   NetworkManager::NetworkList list;
-#if !defined(WEBRTC_WIN)
-  // There should be at least one IPv6 network (fe80::/64 should be in there).
-  // TODO(thaloun): Disabling this test on windows for the moment as the test
-  // machines don't seem to have IPv6 installed on them at all.
-  manager.set_ipv6_enabled(true);
   list = GetNetworks(manager, true);
   for (NetworkManager::NetworkList::iterator it = list.begin();
        it != list.end(); ++it) {
@@ -649,22 +637,6 @@ TEST_F(NetworkTest, MAYBE_TestIPv6Toggle) {
     }
   }
   EXPECT_TRUE(ipv6_found);
-  for (NetworkManager::NetworkList::iterator it = list.begin();
-       it != list.end(); ++it) {
-    delete (*it);
-  }
-#endif
-  ipv6_found = false;
-  manager.set_ipv6_enabled(false);
-  list = GetNetworks(manager, true);
-  for (NetworkManager::NetworkList::iterator it = list.begin();
-       it != list.end(); ++it) {
-    if ((*it)->prefix().family() == AF_INET6) {
-      ipv6_found = true;
-      break;
-    }
-  }
-  EXPECT_FALSE(ipv6_found);
   for (NetworkManager::NetworkList::iterator it = list.begin();
        it != list.end(); ++it) {
     delete (*it);
