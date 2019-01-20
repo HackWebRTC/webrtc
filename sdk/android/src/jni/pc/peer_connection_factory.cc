@@ -26,6 +26,7 @@
 #include "rtc_base/thread.h"
 #include "sdk/android/generated_peerconnection_jni/jni/PeerConnectionFactory_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"
+#include "sdk/android/native_api/stacktrace/stacktrace.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 #include "sdk/android/src/jni/logging/log_sink.h"
 #include "sdk/android/src/jni/pc/android_network_monitor.h"
@@ -513,6 +514,10 @@ static void JNI_PeerConnectionFactory_DeleteLoggable(JNIEnv* jni) {
     rtc::LogMessage::RemoveLogToStream(jni_log_sink.get());
     jni_log_sink.reset();
   }
+}
+
+static void JNI_PeerConnectionFactory_PrintStackTrace(JNIEnv* env, jint tid) {
+  RTC_LOG(LS_WARNING) << StackTraceToString(GetStackTrace(tid));
 }
 
 }  // namespace jni

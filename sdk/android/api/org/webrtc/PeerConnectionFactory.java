@@ -11,6 +11,7 @@
 package org.webrtc;
 
 import android.content.Context;
+import android.os.Process;
 import android.support.annotation.Nullable;
 import java.util.List;
 import org.webrtc.Logging.Severity;
@@ -29,17 +30,32 @@ public class PeerConnectionFactory {
   private static final String TAG = "PeerConnectionFactory";
   private static final String VIDEO_CAPTURER_THREAD_NAME = "VideoCapturerThread";
 
+  /** Helper class holding both Java and C++ thread info. */
+  private static class ThreadInfo {
+    final Thread thread;
+    final int tid;
+
+    public static ThreadInfo getCurrent() {
+      return new ThreadInfo(Thread.currentThread(), Process.myTid());
+    }
+
+    private ThreadInfo(Thread thread, int tid) {
+      this.thread = thread;
+      this.tid = tid;
+    }
+  }
+
   private static volatile boolean internalTracerInitialized;
 
   // Remove these once deprecated static printStackTrace() is gone.
-  @Nullable private static Thread staticNetworkThread;
-  @Nullable private static Thread staticWorkerThread;
-  @Nullable private static Thread staticSignalingThread;
+  @Nullable private static ThreadInfo staticNetworkThread;
+  @Nullable private static ThreadInfo staticWorkerThread;
+  @Nullable private static ThreadInfo staticSignalingThread;
 
   private long nativeFactory;
-  @Nullable private volatile Thread networkThread;
-  @Nullable private volatile Thread workerThread;
-  @Nullable private volatile Thread signalingThread;
+  @Nullable private volatile ThreadInfo networkThread;
+  @Nullable private volatile ThreadInfo workerThread;
+  @Nullable private volatile ThreadInfo signalingThread;
 
   public static class InitializationOptions {
     final Context applicationContext;
@@ -471,24 +487,37 @@ public class PeerConnectionFactory {
     }
   }
 
-  private static void printStackTrace(@Nullable Thread thread, String threadName) {
-    if (thread != null) {
-      StackTraceElement[] stackTraces = thread.getStackTrace();
-      if (stackTraces.length > 0) {
-        Logging.w(TAG, threadName + " stacks trace:");
-        for (StackTraceElement stackTrace : stackTraces) {
-          Logging.w(TAG, stackTrace.toString());
-        }
+  private static void printStackTrace(
+      @Nullable ThreadInfo threadInfo, boolean printNativeStackTrace) {
+    if (threadInfo == null) {
+      // Thread callbacks have not been completed yet, ignore call.
+      return;
+    }
+    final String threadName = threadInfo.thread.getName();
+    StackTraceElement[] stackTraces = threadInfo.thread.getStackTrace();
+    if (stackTraces.length > 0) {
+      Logging.w(TAG, threadName + " stacktrace:");
+      for (StackTraceElement stackTrace : stackTraces) {
+        Logging.w(TAG, stackTrace.toString());
       }
+    }
+    if (printNativeStackTrace) {
+      // Imitate output from debuggerd/tombstone so that stack trace can easily be symbolized with
+      // ndk-stack.
+      Logging.w(TAG, "*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***");
+      Logging.w(TAG,
+          "pid: " + Process.myPid() + ", tid: " + threadInfo.tid + ", name: " + threadName
+              + "  >>> WebRTC <<<");
+      nativePrintStackTrace(threadInfo.tid);
     }
   }
 
   /** Deprecated, use non-static version instead. */
   @Deprecated
   public static void printStackTraces() {
-    printStackTrace(staticNetworkThread, "Network thread");
-    printStackTrace(staticWorkerThread, "Worker thread");
-    printStackTrace(staticSignalingThread, "Signaling thread");
+    printStackTrace(staticNetworkThread, /* printNativeStackTrace= */ false);
+    printStackTrace(staticWorkerThread, /* printNativeStackTrace= */ false);
+    printStackTrace(staticSignalingThread, /* printNativeStackTrace= */ false);
   }
 
   /**
@@ -497,28 +526,28 @@ public class PeerConnectionFactory {
    * attempt to print the C++ stack traces for these threads.
    */
   public void printInternalStackTraces(boolean printNativeStackTraces) {
-    printStackTrace(signalingThread, "Signaling thread");
-    printStackTrace(workerThread, "Worker thread");
-    printStackTrace(networkThread, "Network thread");
+    printStackTrace(signalingThread, printNativeStackTraces);
+    printStackTrace(workerThread, printNativeStackTraces);
+    printStackTrace(networkThread, printNativeStackTraces);
   }
 
   @CalledByNative
   private void onNetworkThreadReady() {
-    networkThread = Thread.currentThread();
+    networkThread = ThreadInfo.getCurrent();
     staticNetworkThread = networkThread;
     Logging.d(TAG, "onNetworkThreadReady");
   }
 
   @CalledByNative
   private void onWorkerThreadReady() {
-    workerThread = Thread.currentThread();
+    workerThread = ThreadInfo.getCurrent();
     staticWorkerThread = workerThread;
     Logging.d(TAG, "onWorkerThreadReady");
   }
 
   @CalledByNative
   private void onSignalingThreadReady() {
-    signalingThread = Thread.currentThread();
+    signalingThread = ThreadInfo.getCurrent();
     staticSignalingThread = signalingThread;
     Logging.d(TAG, "onSignalingThreadReady");
   }
@@ -558,4 +587,5 @@ public class PeerConnectionFactory {
   private static native long nativeGetNativePeerConnectionFactory(long factory);
   private static native void nativeInjectLoggable(JNILogging jniLogging, int severity);
   private static native void nativeDeleteLoggable();
+  private static native void nativePrintStackTrace(int tid);
 }

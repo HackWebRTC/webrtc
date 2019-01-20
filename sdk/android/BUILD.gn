@@ -784,6 +784,7 @@ if (is_android) {
       ":generated_peerconnection_jni",
       ":logging_jni",
       ":native_api_jni",
+      ":native_api_stacktrace",
       "../..:webrtc_common",
       "../../api:libjingle_peerconnection_api",
       "../../api/video_codecs:video_codecs_api",
