@@ -21,8 +21,6 @@
 namespace webrtc {
 namespace jni {
 
-PeerConnectionFactoryInterface* factoryFromJava(jlong j_p);
-
 // Helper struct for working around the fact that CreatePeerConnectionFactory()
 // comes in two flavors: either entirely automagical (constructing its own
 // threads and deleting them on teardown, but no external codec factory support)
@@ -31,15 +29,16 @@ PeerConnectionFactoryInterface* factoryFromJava(jlong j_p);
 // single thing for Java to hold and eventually free.
 class OwnedFactoryAndThreads {
  public:
-  OwnedFactoryAndThreads(std::unique_ptr<rtc::Thread> network_thread,
-                         std::unique_ptr<rtc::Thread> worker_thread,
-                         std::unique_ptr<rtc::Thread> signaling_thread,
-                         rtc::NetworkMonitorFactory* network_monitor_factory,
-                         PeerConnectionFactoryInterface* factory);
+  OwnedFactoryAndThreads(
+      std::unique_ptr<rtc::Thread> network_thread,
+      std::unique_ptr<rtc::Thread> worker_thread,
+      std::unique_ptr<rtc::Thread> signaling_thread,
+      rtc::NetworkMonitorFactory* network_monitor_factory,
+      const rtc::scoped_refptr<PeerConnectionFactoryInterface>& factory);
 
   ~OwnedFactoryAndThreads();
 
-  PeerConnectionFactoryInterface* factory() { return factory_; }
+  PeerConnectionFactoryInterface* factory() { return factory_.get(); }
   rtc::Thread* network_thread() { return network_thread_.get(); }
   rtc::Thread* signaling_thread() { return signaling_thread_.get(); }
   rtc::Thread* worker_thread() { return worker_thread_.get(); }
@@ -47,14 +46,13 @@ class OwnedFactoryAndThreads {
     return network_monitor_factory_;
   }
   void clear_network_monitor_factory() { network_monitor_factory_ = nullptr; }
-  void InvokeJavaCallbacksOnFactoryThreads();
 
  private:
   const std::unique_ptr<rtc::Thread> network_thread_;
   const std::unique_ptr<rtc::Thread> worker_thread_;
   const std::unique_ptr<rtc::Thread> signaling_thread_;
   rtc::NetworkMonitorFactory* network_monitor_factory_;
-  PeerConnectionFactoryInterface* factory_;  // Const after ctor except dtor.
+  const rtc::scoped_refptr<PeerConnectionFactoryInterface> factory_;
 };
 
 }  // namespace jni

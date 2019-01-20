@@ -18,10 +18,6 @@
 namespace webrtc {
 namespace jni {
 
-void PeerConnectionFactoryNetworkThreadReady();
-void PeerConnectionFactoryWorkerThreadReady();
-void PeerConnectionFactorySignalingThreadReady();
-
 // Creates java PeerConnectionFactory with specified |pcf|.
 jobject NativeToJavaPeerConnectionFactory(
     JNIEnv* jni,

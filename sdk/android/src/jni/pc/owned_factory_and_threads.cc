@@ -11,21 +11,16 @@
 #include "sdk/android/src/jni/pc/owned_factory_and_threads.h"
 
 #include "sdk/android/src/jni/jni_helpers.h"
-#include "sdk/android/src/jni/pc/peer_connection_factory.h"
 
 namespace webrtc {
 namespace jni {
-
-PeerConnectionFactoryInterface* factoryFromJava(jlong j_p) {
-  return reinterpret_cast<OwnedFactoryAndThreads*>(j_p)->factory();
-}
 
 OwnedFactoryAndThreads::OwnedFactoryAndThreads(
     std::unique_ptr<rtc::Thread> network_thread,
     std::unique_ptr<rtc::Thread> worker_thread,
     std::unique_ptr<rtc::Thread> signaling_thread,
     rtc::NetworkMonitorFactory* network_monitor_factory,
-    PeerConnectionFactoryInterface* factory)
+    const rtc::scoped_refptr<PeerConnectionFactoryInterface>& factory)
     : network_thread_(std::move(network_thread)),
       worker_thread_(std::move(worker_thread)),
       signaling_thread_(std::move(signaling_thread)),
@@ -33,20 +28,9 @@ OwnedFactoryAndThreads::OwnedFactoryAndThreads(
       factory_(factory) {}
 
 OwnedFactoryAndThreads::~OwnedFactoryAndThreads() {
-  factory_->Release();
   if (network_monitor_factory_ != nullptr) {
     rtc::NetworkMonitorFactory::ReleaseFactory(network_monitor_factory_);
   }
-}
-
-void OwnedFactoryAndThreads::InvokeJavaCallbacksOnFactoryThreads() {
-  RTC_LOG(LS_INFO) << "InvokeJavaCallbacksOnFactoryThreads.";
-  network_thread_->Invoke<void>(RTC_FROM_HERE,
-                                &PeerConnectionFactoryNetworkThreadReady);
-  worker_thread_->Invoke<void>(RTC_FROM_HERE,
-                               &PeerConnectionFactoryWorkerThreadReady);
-  signaling_thread_->Invoke<void>(RTC_FROM_HERE,
-                                  &PeerConnectionFactorySignalingThreadReady);
 }
 
 }  // namespace jni
