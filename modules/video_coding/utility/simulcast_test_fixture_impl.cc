@@ -212,7 +212,8 @@ void ConfigureStream(int width,
 void SimulcastTestFixtureImpl::DefaultSettings(
     VideoCodec* settings,
     const int* temporal_layer_profile,
-    VideoCodecType codec_type) {
+    VideoCodecType codec_type,
+    bool reverse_layer_order) {
   RTC_CHECK(settings);
   memset(settings, 0, sizeof(VideoCodec));
   settings->codecType = codec_type;
@@ -227,26 +228,34 @@ void SimulcastTestFixtureImpl::DefaultSettings(
   settings->numberOfSimulcastStreams = kNumberOfSimulcastStreams;
   settings->active = true;
   ASSERT_EQ(3, kNumberOfSimulcastStreams);
+  int layer_order[3] = {0, 1, 2};
+  if (reverse_layer_order) {
+    layer_order[0] = 2;
+    layer_order[2] = 0;
+  }
   settings->timing_frame_thresholds = {kDefaultTimingFramesDelayMs,
                                        kDefaultOutlierFrameSizePercent};
   ConfigureStream(kDefaultWidth / 4, kDefaultHeight / 4, kMaxBitrates[0],
                   kMinBitrates[0], kTargetBitrates[0],
-                  &settings->simulcastStream[0], temporal_layer_profile[0]);
+                  &settings->simulcastStream[layer_order[0]],
+                  temporal_layer_profile[0]);
   ConfigureStream(kDefaultWidth / 2, kDefaultHeight / 2, kMaxBitrates[1],
                   kMinBitrates[1], kTargetBitrates[1],
-                  &settings->simulcastStream[1], temporal_layer_profile[1]);
+                  &settings->simulcastStream[layer_order[1]],
+                  temporal_layer_profile[1]);
   ConfigureStream(kDefaultWidth, kDefaultHeight, kMaxBitrates[2],
                   kMinBitrates[2], kTargetBitrates[2],
-                  &settings->simulcastStream[2], temporal_layer_profile[2]);
-    if (codec_type == kVideoCodecVP8) {
-      settings->VP8()->denoisingOn = true;
-      settings->VP8()->automaticResizeOn = false;
-      settings->VP8()->frameDroppingOn = true;
-      settings->VP8()->keyFrameInterval = 3000;
-    } else {
-      settings->H264()->frameDroppingOn = true;
-      settings->H264()->keyFrameInterval = 3000;
-    }
+                  &settings->simulcastStream[layer_order[2]],
+                  temporal_layer_profile[2]);
+  if (codec_type == kVideoCodecVP8) {
+    settings->VP8()->denoisingOn = true;
+    settings->VP8()->automaticResizeOn = false;
+    settings->VP8()->frameDroppingOn = true;
+    settings->VP8()->keyFrameInterval = 3000;
+  } else {
+    settings->H264()->frameDroppingOn = true;
+    settings->H264()->keyFrameInterval = 3000;
+  }
 }
 
 SimulcastTestFixtureImpl::SimulcastTestFixtureImpl(

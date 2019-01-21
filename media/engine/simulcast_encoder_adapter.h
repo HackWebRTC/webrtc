@@ -83,11 +83,17 @@ class SimulcastEncoderAdapter : public VideoEncoder {
     bool send_stream;
   };
 
+  enum class StreamResolution {
+    OTHER,
+    HIGHEST,
+    LOWEST,
+  };
+
   // Populate the codec settings for each simulcast stream.
   void PopulateStreamCodec(const webrtc::VideoCodec& inst,
                            int stream_index,
                            uint32_t start_bitrate_kbps,
-                           bool highest_resolution_stream,
+                           StreamResolution stream_resolution,
                            webrtc::VideoCodec* stream_codec);
 
   bool Initialized() const;

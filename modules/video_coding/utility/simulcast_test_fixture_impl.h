@@ -55,7 +55,8 @@ class SimulcastTestFixtureImpl final : public SimulcastTestFixture {
 
   static void DefaultSettings(VideoCodec* settings,
                               const int* temporal_layer_profile,
-                              VideoCodecType codec_type);
+                              VideoCodecType codec_type,
+                              bool reverse_layer_order = false);
 
  private:
   class TestEncodedImageCallback;

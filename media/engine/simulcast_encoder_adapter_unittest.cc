@@ -428,10 +428,13 @@ class TestSimulcastEncoderAdapterFake : public ::testing::Test,
     // always be 0.
   }
 
-  void InitRefCodec(int stream_index, VideoCodec* ref_codec) {
+  void InitRefCodec(int stream_index,
+                    VideoCodec* ref_codec,
+                    bool reverse_layer_order = false) {
     *ref_codec = codec_;
     ref_codec->VP8()->numberOfTemporalLayers =
-        kTestTemporalLayerProfile[stream_index];
+        kTestTemporalLayerProfile[reverse_layer_order ? 2 - stream_index
+                                                      : stream_index];
     ref_codec->width = codec_.simulcastStream[stream_index].width;
     ref_codec->height = codec_.simulcastStream[stream_index].height;
     ref_codec->maxBitrate = codec_.simulcastStream[stream_index].maxBitrate;
@@ -961,6 +964,39 @@ TEST_F(TestSimulcastEncoderAdapterFake, DoesNotAlterMaxQpForScreenshare) {
   EXPECT_EQ(3u, helper_->factory()->encoders().size());
   ref_codec.qpMax = kLowMaxQp;
   VerifyCodec(ref_codec, 0);
+}
+
+TEST_F(TestSimulcastEncoderAdapterFake,
+       DoesNotAlterMaxQpForScreenshareReversedLayer) {
+  const int kHighMaxQp = 56;
+  const int kLowMaxQp = 46;
+
+  SimulcastTestFixtureImpl::DefaultSettings(
+      &codec_, static_cast<const int*>(kTestTemporalLayerProfile),
+      kVideoCodecVP8, true /* reverse_layer_order */);
+  codec_.numberOfSimulcastStreams = 3;
+  codec_.simulcastStream[2].qpMax = kHighMaxQp;
+  codec_.mode = VideoCodecMode::kScreensharing;
+
+  EXPECT_EQ(0, adapter_->InitEncode(&codec_, 1, 1200));
+  EXPECT_EQ(3u, helper_->factory()->encoders().size());
+
+  // Just check the lowest stream, which is the one that where the adapter
+  // might alter the max qp setting.
+  VideoCodec ref_codec;
+  InitRefCodec(2, &ref_codec, true /* reverse_layer_order */);
+  ref_codec.qpMax = kHighMaxQp;
+  ref_codec.VP8()->complexity = webrtc::VideoCodecComplexity::kComplexityHigher;
+  ref_codec.VP8()->denoisingOn = false;
+  ref_codec.startBitrate = 100;  // Should equal to the target bitrate.
+  VerifyCodec(ref_codec, 2);
+
+  // Change the max qp and try again.
+  codec_.simulcastStream[2].qpMax = kLowMaxQp;
+  EXPECT_EQ(0, adapter_->InitEncode(&codec_, 1, 1200));
+  EXPECT_EQ(3u, helper_->factory()->encoders().size());
+  ref_codec.qpMax = kLowMaxQp;
+  VerifyCodec(ref_codec, 2);
 }
 
 TEST_F(TestSimulcastEncoderAdapterFake, ActivatesCorrectStreamsInInitEncode) {

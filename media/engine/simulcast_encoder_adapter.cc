@@ -66,21 +66,6 @@ int NumberOfStreams(const webrtc::VideoCodec& codec) {
   return streams;
 }
 
-bool ValidSimulcastResolutions(const webrtc::VideoCodec& codec,
-                               int num_streams) {
-  if (codec.width != codec.simulcastStream[num_streams - 1].width ||
-      codec.height != codec.simulcastStream[num_streams - 1].height) {
-    return false;
-  }
-  for (int i = 0; i < num_streams; ++i) {
-    if (codec.width * codec.simulcastStream[i].height !=
-        codec.height * codec.simulcastStream[i].width) {
-      return false;
-    }
-  }
-  return true;
-}
-
 int VerifyCodec(const webrtc::VideoCodec* inst) {
   if (inst == nullptr) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
@@ -100,6 +85,12 @@ int VerifyCodec(const webrtc::VideoCodec* inst) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
   return WEBRTC_VIDEO_CODEC_OK;
+}
+
+bool StreamResolutionCompare(const webrtc::SimulcastStream& a,
+                             const webrtc::SimulcastStream& b) {
+  return std::tie(a.height, a.width, a.maxBitrate, a.maxFramerate) <
+         std::tie(b.height, b.width, b.maxBitrate, b.maxFramerate);
 }
 
 // An EncodedImageCallback implementation that forwards on calls to a
@@ -195,10 +186,6 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
   RTC_DCHECK_LE(number_of_streams, kMaxSimulcastStreams);
   const bool doing_simulcast = (number_of_streams > 1);
 
-  if (doing_simulcast && !ValidSimulcastResolutions(*inst, number_of_streams)) {
-    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
-  }
-
   codec_ = *inst;
   SimulcastRateAllocator rate_allocator(codec_);
   VideoBitrateAllocation allocation = rate_allocator.GetAllocation(
@@ -212,6 +199,19 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
   encoder_info_.supports_native_handle = true;
   encoder_info_.scaling_settings.thresholds = absl::nullopt;
   // Create |number_of_streams| of encoder instances and init them.
+
+  const auto minmax = std::minmax_element(
+      std::begin(codec_.simulcastStream),
+      std::begin(codec_.simulcastStream) + number_of_streams,
+      StreamResolutionCompare);
+  const auto lowest_resolution_stream_index =
+      std::distance(std::begin(codec_.simulcastStream), minmax.first);
+  const auto highest_resolution_stream_index =
+      std::distance(std::begin(codec_.simulcastStream), minmax.second);
+
+  RTC_DCHECK_LT(lowest_resolution_stream_index, number_of_streams);
+  RTC_DCHECK_LT(highest_resolution_stream_index, number_of_streams);
+
   for (int i = 0; i < number_of_streams; ++i) {
     VideoCodec stream_codec;
     uint32_t start_bitrate_kbps = start_bitrates[i];
@@ -223,11 +223,16 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
     } else {
       // Cap start bitrate to the min bitrate in order to avoid strange codec
       // behavior. Since sending will be false, this should not matter.
+      StreamResolution stream_resolution =
+          i == highest_resolution_stream_index
+              ? StreamResolution::HIGHEST
+              : i == lowest_resolution_stream_index ? StreamResolution::LOWEST
+                                                    : StreamResolution::OTHER;
+
       start_bitrate_kbps =
           std::max(codec_.simulcastStream[i].minBitrate, start_bitrate_kbps);
-      bool highest_resolution_stream = (i == (number_of_streams - 1));
-      PopulateStreamCodec(codec_, i, start_bitrate_kbps,
-                          highest_resolution_stream, &stream_codec);
+      PopulateStreamCodec(codec_, i, start_bitrate_kbps, stream_resolution,
+                          &stream_codec);
     }
 
     // TODO(ronghuawu): Remove once this is handled in LibvpxVp8Encoder.
@@ -511,7 +516,7 @@ void SimulcastEncoderAdapter::PopulateStreamCodec(
     const webrtc::VideoCodec& inst,
     int stream_index,
     uint32_t start_bitrate_kbps,
-    bool highest_resolution_stream,
+    StreamResolution stream_resolution,
     webrtc::VideoCodec* stream_codec) {
   *stream_codec = inst;
 
@@ -523,8 +528,7 @@ void SimulcastEncoderAdapter::PopulateStreamCodec(
   stream_codec->minBitrate = inst.simulcastStream[stream_index].minBitrate;
   stream_codec->qpMax = inst.simulcastStream[stream_index].qpMax;
   // Settings that are based on stream/resolution.
-  const bool lowest_resolution_stream = (stream_index == 0);
-  if (lowest_resolution_stream) {
+  if (stream_resolution == StreamResolution::LOWEST) {
     // Settings for lowest spatial resolutions.
     if (inst.mode == VideoCodecMode::kScreensharing) {
       if (experimental_boosted_screenshare_qp_) {
@@ -537,7 +541,7 @@ void SimulcastEncoderAdapter::PopulateStreamCodec(
   if (inst.codecType == webrtc::kVideoCodecVP8) {
     stream_codec->VP8()->numberOfTemporalLayers =
         inst.simulcastStream[stream_index].numberOfTemporalLayers;
-    if (!highest_resolution_stream) {
+    if (stream_resolution != StreamResolution::HIGHEST) {
       // For resolutions below CIF, set the codec |complexity| parameter to
       // kComplexityHigher, which maps to cpu_used = -4.
       int pixels_per_frame = stream_codec->width * stream_codec->height;
