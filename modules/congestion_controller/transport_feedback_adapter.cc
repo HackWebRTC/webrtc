@@ -31,7 +31,7 @@ const int64_t kBaseTimestampRangeSizeUs = kBaseTimestampScaleFactor * (1 << 24);
 
 LegacyTransportFeedbackAdapter::LegacyTransportFeedbackAdapter(
     const Clock* clock)
-    : send_time_history_(clock, kSendTimeHistoryWindowMs),
+    : send_time_history_(kSendTimeHistoryWindowMs),
       clock_(clock),
       current_offset_ms_(kNoTimestamp),
       last_timestamp_us_(kNoTimestamp),
@@ -70,7 +70,8 @@ void LegacyTransportFeedbackAdapter::AddPacket(
     const int64_t creation_time_ms = clock_->TimeInMilliseconds();
     send_time_history_.AddAndRemoveOld(
         PacketFeedback(creation_time_ms, sequence_number, length, local_net_id_,
-                       remote_net_id_, pacing_info));
+                       remote_net_id_, pacing_info),
+        creation_time_ms);
   }
 
   {

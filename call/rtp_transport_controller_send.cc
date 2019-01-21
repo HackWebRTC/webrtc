@@ -65,7 +65,6 @@ RtpTransportControllerSend::RtpTransportControllerSend(
       bitrate_configurator_(bitrate_config),
       process_thread_(ProcessThread::Create("SendControllerThread")),
       observer_(nullptr),
-      transport_feedback_adapter_(clock_),
       controller_factory_override_(controller_factory),
       controller_factory_fallback_(
           absl::make_unique<GoogCcNetworkControllerFactory>(event_log)),
@@ -443,8 +442,9 @@ void RtpTransportControllerSend::AddPacket(uint32_t ssrc,
   if (send_side_bwe_with_overhead_) {
     length += transport_overhead_bytes_per_packet_;
   }
-  transport_feedback_adapter_.AddPacket(ssrc, sequence_number, length,
-                                        pacing_info);
+  transport_feedback_adapter_.AddPacket(
+      ssrc, sequence_number, length, pacing_info,
+      Timestamp::ms(clock_->TimeInMilliseconds()));
 }
 
 void RtpTransportControllerSend::OnTransportFeedback(
@@ -452,7 +452,8 @@ void RtpTransportControllerSend::OnTransportFeedback(
   RTC_DCHECK_RUNS_SERIALIZED(&worker_race_);
 
   absl::optional<TransportPacketsFeedback> feedback_msg =
-      transport_feedback_adapter_.ProcessTransportFeedback(feedback);
+      transport_feedback_adapter_.ProcessTransportFeedback(
+          feedback, Timestamp::ms(clock_->TimeInMilliseconds()));
   if (feedback_msg) {
     task_queue_.PostTask([this, feedback_msg]() {
       RTC_DCHECK_RUN_ON(&task_queue_);

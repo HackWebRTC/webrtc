@@ -1076,7 +1076,7 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
   RtcEventLogNullImpl null_event_log;
   PacketRouter packet_router;
   PacedSender pacer(&clock, &packet_router, &null_event_log);
-  TransportFeedbackAdapter transport_feedback(&clock);
+  TransportFeedbackAdapter transport_feedback;
   auto factory = GoogCcNetworkControllerFactory(&null_event_log);
   TimeDelta process_interval = factory.GetProcessInterval();
   // TODO(holmer): Log the call config and use that here instead.
@@ -1144,7 +1144,8 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
         transport_feedback.AddPacket(
             rtp_packet.rtp.header.ssrc,
             rtp_packet.rtp.header.extension.transportSequenceNumber,
-            rtp_packet.rtp.total_length, PacedPacketInfo());
+            rtp_packet.rtp.total_length, PacedPacketInfo(),
+            Timestamp::us(rtp_packet.rtp.log_time_us()));
         rtc::SentPacket sent_packet(
             rtp_packet.rtp.header.extension.transportSequenceNumber,
             rtp_packet.rtp.log_time_us() / 1000);
@@ -1158,7 +1159,8 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
       RTC_DCHECK_EQ(clock.TimeInMicroseconds(), NextRtcpTime());
 
       auto feedback_msg = transport_feedback.ProcessTransportFeedback(
-          rtcp_iterator->transport_feedback);
+          rtcp_iterator->transport_feedback,
+          Timestamp::ms(clock.TimeInMilliseconds()));
       absl::optional<uint32_t> bitrate_bps;
       if (feedback_msg) {
         observer.Update(goog_cc->OnTransportPacketsFeedback(*feedback_msg));

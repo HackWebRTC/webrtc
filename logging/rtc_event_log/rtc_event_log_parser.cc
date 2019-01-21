@@ -1782,7 +1782,7 @@ const std::vector<MatchedSendArrivalTimes> GetNetworkTrace(
       parsed_log.transport_feedbacks(kIncomingPacket);
 
   SimulatedClock clock(0);
-  TransportFeedbackAdapter feedback_adapter(&clock);
+  TransportFeedbackAdapter feedback_adapter;
 
   auto rtp_iterator = outgoing_rtp.begin();
   auto rtcp_iterator = incoming_rtcp.begin();
@@ -1814,7 +1814,8 @@ const std::vector<MatchedSendArrivalTimes> GetNetworkTrace(
         feedback_adapter.AddPacket(
             rtp_packet.rtp.header.ssrc,
             rtp_packet.rtp.header.extension.transportSequenceNumber,
-            rtp_packet.rtp.total_length, PacedPacketInfo());
+            rtp_packet.rtp.total_length, PacedPacketInfo(),
+            Timestamp::ms(clock.TimeInMilliseconds()));
         sent_packet.packet_id =
             rtp_packet.rtp.header.extension.transportSequenceNumber;
         sent_packet.info.included_in_feedback = true;
@@ -1832,7 +1833,8 @@ const std::vector<MatchedSendArrivalTimes> GetNetworkTrace(
     if (clock.TimeInMicroseconds() >= NextRtcpTime()) {
       RTC_DCHECK_EQ(clock.TimeInMicroseconds(), NextRtcpTime());
       feedback_adapter.ProcessTransportFeedback(
-          rtcp_iterator->transport_feedback);
+          rtcp_iterator->transport_feedback,
+          Timestamp::ms(clock.TimeInMilliseconds()));
       std::vector<PacketFeedback> feedback =
           feedback_adapter.GetTransportFeedbackVector();
       SortPacketFeedbackVectorWithLoss(&feedback);

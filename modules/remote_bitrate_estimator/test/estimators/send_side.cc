@@ -41,7 +41,7 @@ SendSideBweSender::SendSideBweSender(int kbps,
       bwe_(new DelayBasedBwe(&field_trial_config_, nullptr)),
       feedback_observer_(bitrate_controller_.get()),
       clock_(clock),
-      send_time_history_(clock_, 10000),
+      send_time_history_(10000),
       has_received_ack_(false),
       last_acked_seq_num_(0),
       last_log_time_ms_(0) {
@@ -134,7 +134,8 @@ void SendSideBweSender::OnPacketsSent(const Packets& packets) {
       PacketFeedback packet_feedback(
           clock_->TimeInMilliseconds(), media_packet->header().sequenceNumber,
           media_packet->payload_size(), 0, 0, PacedPacketInfo());
-      send_time_history_.AddAndRemoveOld(packet_feedback);
+      send_time_history_.AddAndRemoveOld(packet_feedback,
+                                         clock_->TimeInMilliseconds());
       send_time_history_.OnSentPacket(media_packet->header().sequenceNumber,
                                       media_packet->sender_timestamp_ms());
     }

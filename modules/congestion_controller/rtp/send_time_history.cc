@@ -16,21 +16,19 @@
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 
-SendTimeHistory::SendTimeHistory(const Clock* clock,
-                                 int64_t packet_age_limit_ms)
-    : clock_(clock), packet_age_limit_ms_(packet_age_limit_ms) {}
+SendTimeHistory::SendTimeHistory(int64_t packet_age_limit_ms)
+    : packet_age_limit_ms_(packet_age_limit_ms) {}
 
 SendTimeHistory::~SendTimeHistory() {}
 
-void SendTimeHistory::AddAndRemoveOld(const PacketFeedback& packet) {
-  int64_t now_ms = clock_->TimeInMilliseconds();
+void SendTimeHistory::AddAndRemoveOld(const PacketFeedback& packet,
+                                      int64_t at_time_ms) {
   // Remove old.
   while (!history_.empty() &&
-         now_ms - history_.begin()->second.creation_time_ms >
+         at_time_ms - history_.begin()->second.creation_time_ms >
              packet_age_limit_ms_) {
     // TODO(sprang): Warn if erasing (too many) old items?
     RemovePacketBytes(history_.begin()->second);

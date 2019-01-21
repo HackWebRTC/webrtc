@@ -26,8 +26,7 @@ static const int kDefaultHistoryLengthMs = 1000;
 
 class SendTimeHistoryTest : public ::testing::Test {
  protected:
-  SendTimeHistoryTest()
-      : clock_(0), history_(&clock_, kDefaultHistoryLengthMs) {}
+  SendTimeHistoryTest() : clock_(0), history_(kDefaultHistoryLengthMs) {}
   ~SendTimeHistoryTest() {}
 
   virtual void SetUp() {}
@@ -40,7 +39,7 @@ class SendTimeHistoryTest : public ::testing::Test {
                              const PacedPacketInfo& pacing_info) {
     PacketFeedback packet(clock_.TimeInMilliseconds(), sequence_number, length,
                           0, 0, pacing_info);
-    history_.AddAndRemoveOld(packet);
+    history_.AddAndRemoveOld(packet, clock_.TimeInMilliseconds());
     history_.OnSentPacket(sequence_number, send_time_ms);
   }
 
@@ -54,7 +53,7 @@ TEST_F(SendTimeHistoryTest, SaveAndRestoreNetworkId) {
   int64_t now_ms = clock_.TimeInMilliseconds();
   for (int i = 1; i < 5; ++i) {
     PacketFeedback packet(now_ms, sequence_number, 1000, i, i - 1, kPacingInfo);
-    history_.AddAndRemoveOld(packet);
+    history_.AddAndRemoveOld(packet, clock_.TimeInMilliseconds());
     history_.OnSentPacket(sequence_number, now_ms);
     PacketFeedback restored(now_ms, sequence_number);
     EXPECT_TRUE(history_.GetFeedback(&restored, sequence_number++));
@@ -139,7 +138,7 @@ TEST_F(SendTimeHistoryTest, AddThenRemoveOutOfOrder) {
     PacketFeedback packet = sent_packets[i];
     packet.arrival_time_ms = PacketFeedback::kNotReceived;
     packet.send_time_ms = PacketFeedback::kNoSendTime;
-    history_.AddAndRemoveOld(packet);
+    history_.AddAndRemoveOld(packet, clock_.TimeInMilliseconds());
   }
   for (size_t i = 0; i < num_items; ++i)
     history_.OnSentPacket(sent_packets[i].sequence_number,
