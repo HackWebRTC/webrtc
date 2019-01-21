@@ -33,10 +33,7 @@ FakeFrameSource::FakeFrameSource(int width,
 }
 
 FakeFrameSource::FakeFrameSource(int width, int height, int interval_us)
-    : FakeFrameSource(width,
-                      height,
-                      interval_us,
-                      rtc::kNumMicrosecsPerMillisec) {}
+    : FakeFrameSource(width, height, interval_us, rtc::TimeMicros()) {}
 
 webrtc::VideoRotation FakeFrameSource::GetRotation() const {
   return rotation_;
