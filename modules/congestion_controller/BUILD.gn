@@ -46,6 +46,7 @@ rtc_static_library("congestion_controller") {
     "../../rtc_base:deprecation",
     "../../rtc_base:ptr_util",
     "../../rtc_base:rate_limiter",
+    "../../rtc_base/experiments:rate_control_settings",
     "../../rtc_base/network:sent_packet",
     "../../system_wrappers",
     "../../system_wrappers:field_trial",

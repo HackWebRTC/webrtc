@@ -28,6 +28,7 @@
 #include "modules/congestion_controller/goog_cc/probe_controller.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/experiments/rate_control_settings.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/network/sent_packet.h"
 #include "rtc_base/rate_limiter.h"
@@ -36,48 +37,7 @@
 namespace webrtc {
 namespace {
 
-const char kCwndExperiment[] = "WebRTC-CwndExperiment";
 const char kPacerPushbackExperiment[] = "WebRTC-PacerPushbackExperiment";
-
-// When CongestionWindowPushback is enabled, the pacer is oblivious to
-// the congestion window. The relation between outstanding data and
-// the congestion window affects encoder allocations directly.
-const char kCongestionPushbackExperiment[] = "WebRTC-CongestionWindowPushback";
-
-const int64_t kDefaultAcceptedQueueMs = 250;
-
-bool CwndExperimentEnabled(const WebRtcKeyValueConfig* const key_value_config) {
-  std::string experiment_string = key_value_config->Lookup(kCwndExperiment);
-  // The experiment is enabled iff the field trial string begins with "Enabled".
-  return experiment_string.find("Enabled") == 0;
-}
-
-bool ReadCwndExperimentParameter(
-    const WebRtcKeyValueConfig* const key_value_config,
-    int64_t* accepted_queue_ms) {
-  RTC_DCHECK(accepted_queue_ms);
-  std::string experiment_string = key_value_config->Lookup(kCwndExperiment);
-  int parsed_values =
-      sscanf(experiment_string.c_str(), "Enabled-%" PRId64, accepted_queue_ms);
-  if (parsed_values == 1) {
-    RTC_CHECK_GE(*accepted_queue_ms, 0)
-        << "Accepted must be greater than or equal to 0.";
-    return true;
-  }
-  return false;
-}
-
-std::unique_ptr<CongestionWindowPushbackController>
-MaybeCreateCongestionWindowPushbackController(
-    const WebRtcKeyValueConfig* const key_value_config) {
-  if (key_value_config->Lookup(kCongestionPushbackExperiment).find("Enabled") ==
-          0 &&
-      key_value_config->Lookup(kCwndExperiment).find("Enabled") == 0)
-    return absl::make_unique<CongestionWindowPushbackController>(
-        key_value_config);
-  return nullptr;
-}
-
 static const int64_t kRetransmitWindowSizeMs = 500;
 
 // Makes sure that the bitrate and the min, max values are in valid range.
@@ -152,24 +112,25 @@ DEPRECATED_SendSideCongestionController::
       min_bitrate_bps_(congestion_controller::GetMinBitrateBps()),
       probe_bitrate_estimator_(new ProbeBitrateEstimator(event_log_)),
       delay_based_bwe_(new DelayBasedBwe(key_value_config_, event_log_)),
-      in_cwnd_experiment_(CwndExperimentEnabled(key_value_config_)),
-      accepted_queue_ms_(kDefaultAcceptedQueueMs),
       was_in_alr_(false),
       send_side_bwe_with_overhead_(
           key_value_config_->Lookup("WebRTC-SendSideBwe-WithOverhead")
               .find("Enabled") == 0),
       transport_overhead_bytes_per_packet_(0),
       pacer_pushback_experiment_(
-          IsPacerPushbackExperimentEnabled(key_value_config_)),
-      congestion_window_pushback_controller_(
-          MaybeCreateCongestionWindowPushbackController(key_value_config_)) {
-  delay_based_bwe_->SetMinBitrate(DataRate::bps(min_bitrate_bps_));
-  if (in_cwnd_experiment_ &&
-      !ReadCwndExperimentParameter(key_value_config_, &accepted_queue_ms_)) {
-    RTC_LOG(LS_WARNING) << "Failed to parse parameters for CwndExperiment "
-                           "from field trial string. Experiment disabled.";
-    in_cwnd_experiment_ = false;
+          IsPacerPushbackExperimentEnabled(key_value_config_)) {
+  RateControlSettings experiment_params =
+      RateControlSettings::ParseFromKeyValueConfig(key_value_config);
+  if (experiment_params.UseCongestionWindow()) {
+    cwnd_experiment_parameter_ =
+        experiment_params.GetCongestionWindowAdditionalTimeMs();
   }
+  if (experiment_params.UseCongestionWindowPushback()) {
+    congestion_window_pushback_controller_ =
+        absl::make_unique<CongestionWindowPushbackController>(
+            key_value_config_);
+  }
+  delay_based_bwe_->SetMinBitrate(DataRate::bps(min_bitrate_bps_));
 }
 
 DEPRECATED_SendSideCongestionController::
@@ -185,8 +146,7 @@ void DEPRECATED_SendSideCongestionController::EnableCongestionWindowPushback(
   RTC_CHECK_GE(min_pushback_target_bitrate_bps, 0)
       << "Min pushback target bitrate must be greater than or equal to 0.";
 
-  in_cwnd_experiment_ = true;
-  accepted_queue_ms_ = accepted_queue_ms;
+  cwnd_experiment_parameter_ = accepted_queue_ms;
   congestion_window_pushback_controller_ =
       absl::make_unique<CongestionWindowPushbackController>(
           key_value_config_, min_pushback_target_bitrate_bps);
@@ -364,7 +324,7 @@ void DEPRECATED_SendSideCongestionController::OnSentPacket(
     return;
   transport_feedback_adapter_.OnSentPacket(sent_packet.packet_id,
                                            sent_packet.send_time_ms);
-  if (in_cwnd_experiment_)
+  if (cwnd_experiment_parameter_)
     LimitOutstandingBytes(transport_feedback_adapter_.GetOutstandingBytes());
 }
 
@@ -472,14 +432,14 @@ void DEPRECATED_SendSideCongestionController::OnTransportFeedback(
     rtc::CritScope cs(&probe_lock_);
     SendProbes(probe_controller_->RequestProbe(clock_->TimeInMilliseconds()));
   }
-  if (in_cwnd_experiment_) {
+  if (cwnd_experiment_parameter_) {
     LimitOutstandingBytes(transport_feedback_adapter_.GetOutstandingBytes());
   }
 }
 
 void DEPRECATED_SendSideCongestionController::LimitOutstandingBytes(
     size_t num_outstanding_bytes) {
-  RTC_DCHECK(in_cwnd_experiment_);
+  RTC_DCHECK(cwnd_experiment_parameter_);
   rtc::CritScope lock(&network_state_lock_);
   absl::optional<int64_t> min_rtt_ms =
       transport_feedback_adapter_.GetMinFeedbackLoopRtt();
@@ -489,7 +449,7 @@ void DEPRECATED_SendSideCongestionController::LimitOutstandingBytes(
     return;
   const size_t kMinCwndBytes = 2 * 1500;
   size_t max_outstanding_bytes =
-      std::max<size_t>((*min_rtt_ms + accepted_queue_ms_) *
+      std::max<size_t>((*min_rtt_ms + *cwnd_experiment_parameter_) *
                            last_reported_bitrate_bps_ / 1000 / 8,
                        kMinCwndBytes);
   if (congestion_window_pushback_controller_) {
