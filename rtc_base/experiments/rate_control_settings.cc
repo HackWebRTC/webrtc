@@ -73,8 +73,11 @@ RateControlSettings::RateControlSettings(
       congestion_window_pushback_(
           "cwnd_pushback",
           MaybeReadCongestionWindowPushbackExperimentParameter(
-              key_value_config)) {
-  ParseFieldTrial({&congestion_window_, &congestion_window_pushback_},
+              key_value_config)),
+      pacing_factor_("pacing_factor"),
+      alr_probing_("alr_probing", false) {
+  ParseFieldTrial({&congestion_window_, &congestion_window_pushback_,
+                   &pacing_factor_, &alr_probing_},
                   key_value_config->Lookup("WebRTC-VideoRateControl"));
 }
 
@@ -109,6 +112,14 @@ uint32_t RateControlSettings::CongestionWindowMinPushbackTargetBitrateBps()
     const {
   return congestion_window_pushback_.GetOptional().value_or(
       kDefaultMinPushbackTargetBitrateBps);
+}
+
+absl::optional<double> RateControlSettings::GetPacingFactor() const {
+  return pacing_factor_.GetOptional();
+}
+
+bool RateControlSettings::UseAlrProbing() const {
+  return alr_probing_.Get();
 }
 
 }  // namespace webrtc

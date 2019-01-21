@@ -14,6 +14,7 @@
 #include "absl/types/optional.h"
 #include "api/transport/webrtc_key_value_config.h"
 #include "rtc_base/experiments/field_trial_parser.h"
+#include "rtc_base/experiments/field_trial_units.h"
 
 namespace webrtc {
 
@@ -34,12 +35,17 @@ class RateControlSettings final {
   bool UseCongestionWindowPushback() const;
   uint32_t CongestionWindowMinPushbackTargetBitrateBps() const;
 
+  absl::optional<double> GetPacingFactor() const;
+  bool UseAlrProbing() const;
+
  private:
   explicit RateControlSettings(
       const WebRtcKeyValueConfig* const key_value_config);
 
   FieldTrialOptional<int> congestion_window_;
   FieldTrialOptional<int> congestion_window_pushback_;
+  FieldTrialOptional<double> pacing_factor_;
+  FieldTrialParameter<bool> alr_probing_;
 };
 
 }  // namespace webrtc

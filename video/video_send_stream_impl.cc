@@ -25,6 +25,7 @@
 #include "rtc_base/atomic_ops.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/experiments/alr_experiment.h"
+#include "rtc_base/experiments/rate_control_settings.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/scoped_ref_ptr.h"
@@ -204,6 +205,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
       stats_proxy_(stats_proxy),
       config_(config),
       worker_queue_(worker_queue),
+      timed_out_(false),
       call_stats_(call_stats),
       transport_(transport),
       bitrate_allocator_(bitrate_allocator),
@@ -278,9 +280,16 @@ VideoSendStreamImpl::VideoSendStreamImpl(
       configured_pacing_factor_ = alr_settings->pacing_factor;
       transport->SetQueueTimeLimit(alr_settings->max_paced_queue_time);
     } else {
-      transport->EnablePeriodicAlrProbing(false);
-      transport->SetPacingFactor(pacing_config_.pacing_factor);
-      configured_pacing_factor_ = pacing_config_.pacing_factor;
+      RateControlSettings rate_control_settings =
+          RateControlSettings::ParseFromFieldTrials();
+
+      transport->EnablePeriodicAlrProbing(
+          rate_control_settings.UseAlrProbing());
+      const double pacing_factor =
+          rate_control_settings.GetPacingFactor().value_or(
+              pacing_config_.pacing_factor);
+      transport->SetPacingFactor(pacing_factor);
+      configured_pacing_factor_ = pacing_factor;
       transport->SetQueueTimeLimit(pacing_config_.max_pacing_delay.Get().ms());
     }
   }
