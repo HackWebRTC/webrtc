@@ -18,6 +18,8 @@
 
 namespace webrtc {
 
+class RtpGenericFrameDescriptorExtension;
+
 // Data to put on the wire for FrameDescriptor rtp header extension.
 class RtpGenericFrameDescriptor {
  public:
@@ -35,9 +37,7 @@ class RtpGenericFrameDescriptor {
   void SetLastPacketInSubFrame(bool last) { end_of_subframe_ = last; }
 
   bool FirstSubFrameInFrame() const { return beginning_of_frame_; }
-  void SetFirstSubFrameInFrame(bool first) { beginning_of_frame_ = first; }
   bool LastSubFrameInFrame() const { return end_of_frame_; }
-  void SetLastSubFrameInFrame(bool last) { end_of_frame_ = last; }
 
   // Properties below undefined if !FirstPacketInSubFrame()
   // Valid range for temporal layer: [0, 7]
@@ -66,6 +66,10 @@ class RtpGenericFrameDescriptor {
   rtc::ArrayView<const uint8_t> GetByteRepresentation();
 
  private:
+  friend class RtpGenericFrameDescriptorExtension;
+  void SetFirstSubFrameInFrame(bool first) { beginning_of_frame_ = first; }
+  void SetLastSubFrameInFrame(bool last) { end_of_frame_ = last; }
+
   bool beginning_of_subframe_ = false;
   bool end_of_subframe_ = false;
   bool beginning_of_frame_ = true;

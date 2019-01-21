@@ -82,8 +82,6 @@ void AddRtpHeaderExtensions(const RTPVideoHeader& video_header,
     RtpGenericFrameDescriptor generic_descriptor;
     generic_descriptor.SetFirstPacketInSubFrame(first_packet);
     generic_descriptor.SetLastPacketInSubFrame(last_packet);
-    generic_descriptor.SetFirstSubFrameInFrame(true);
-    generic_descriptor.SetLastSubFrameInFrame(true);
 
     if (first_packet) {
       generic_descriptor.SetFrameId(
