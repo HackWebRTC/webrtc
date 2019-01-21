@@ -48,9 +48,9 @@ class WriteToFileTask : public rtc::QueuedTask {
 
   bool Run() override;
 
-  webrtc::FileWrapper* debug_file_;
+  webrtc::FileWrapper* const debug_file_;
   audioproc::Event event_;
-  int64_t* num_bytes_left_for_log_;
+  int64_t* const num_bytes_left_for_log_;
 };
 
 }  // namespace webrtc

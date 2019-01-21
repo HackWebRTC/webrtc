@@ -46,7 +46,7 @@ namespace webrtc {
 class AecDumpImpl : public AecDump {
  public:
   // Does member variables initialization shared across all c-tors.
-  AecDumpImpl(std::unique_ptr<FileWrapper> debug_file,
+  AecDumpImpl(FileWrapper debug_file,
               int64_t max_log_size_bytes,
               rtc::TaskQueue* worker_queue);
 
@@ -73,7 +73,7 @@ class AecDumpImpl : public AecDump {
  private:
   std::unique_ptr<WriteToFileTask> CreateWriteToFileTask();
 
-  std::unique_ptr<FileWrapper> debug_file_;
+  FileWrapper debug_file_;
   int64_t num_bytes_left_for_log_ = 0;
   rtc::RaceChecker race_checker_;
   rtc::TaskQueue* worker_queue_;
