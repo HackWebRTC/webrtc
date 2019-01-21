@@ -471,6 +471,9 @@ void VideoAnalyzer::PollStats() {
         decode_time_ms_.AddSample(receive_stats.decode_ms);
       if (receive_stats.max_decode_ms > 0)
         decode_time_max_ms_.AddSample(receive_stats.max_decode_ms);
+      if (receive_stats.width > 0 && receive_stats.height > 0) {
+        pixels_.AddSample(receive_stats.width * receive_stats.height);
+      }
     }
 
     if (audio_receive_stream_ != nullptr) {
@@ -579,6 +582,7 @@ void VideoAnalyzer::PrintResults() {
   PrintResult("fec_bitrate", fec_bitrate_bps_, " bps");
   PrintResult("send_bandwidth", send_bandwidth_bps_, " bps");
   PrintResult("time_between_freezes", time_between_freezes_, " ms");
+  PrintResult("pixels_per_frame", pixels_, " px");
 
   if (worst_frame_) {
     test::PrintResult("min_psnr", "", test_label_.c_str(), worst_frame_->psnr,

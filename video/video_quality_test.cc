@@ -1095,8 +1095,8 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
     CreateFlexfecStreams();
     CreateVideoStreams();
     analyzer_->SetSendStream(video_send_streams_[0]);
-    if (video_receive_streams_.size() == 1)
-      analyzer_->SetReceiveStream(video_receive_streams_[0]);
+    analyzer_->SetReceiveStream(
+        video_receive_streams_[params_.ss[0].selected_stream]);
 
     GetVideoSendStream()->SetSource(analyzer_->OutputInterface(),
                                     degradation_preference_);

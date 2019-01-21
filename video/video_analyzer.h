@@ -230,6 +230,7 @@ class VideoAnalyzer : public PacketReceiver,
   test::Statistics audio_expand_rate_ RTC_GUARDED_BY(comparison_lock_);
   test::Statistics audio_accelerate_rate_ RTC_GUARDED_BY(comparison_lock_);
   test::Statistics audio_jitter_buffer_ms_ RTC_GUARDED_BY(comparison_lock_);
+  test::Statistics pixels_ RTC_GUARDED_BY(comparison_lock_);
   // Rendered frame with worst PSNR is saved for further analysis.
   absl::optional<FrameWithPsnr> worst_frame_ RTC_GUARDED_BY(comparison_lock_);
 
