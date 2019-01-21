@@ -24,12 +24,7 @@
       "include": "real_device_tests.json",
       "device type": "iPhone 6s",
       "os": "11.4.1",
-      "dimensions": [
-        {
-          "os": "Mac",
-          "pool": "chrome.tests"
-        }
-      ]
+      "pool": "chrome.tests"
     }
   ],
   "expiration_time": 3600
