@@ -68,8 +68,8 @@ class RtpGenericFrameDescriptor {
  private:
   bool beginning_of_subframe_ = false;
   bool end_of_subframe_ = false;
-  bool beginning_of_frame_ = false;
-  bool end_of_frame_ = false;
+  bool beginning_of_frame_ = true;
+  bool end_of_frame_ = true;
 
   uint16_t frame_id_ = 0;
   uint8_t spatial_layers_ = 1;
