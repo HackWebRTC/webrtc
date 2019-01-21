@@ -112,6 +112,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
   void ResolveHostnameCandidate(const Candidate& candidate);
   void AddRemoteCandidate(const Candidate& candidate) override;
   void RemoveRemoteCandidate(const Candidate& candidate) override;
+  void RemoveAllRemoteCandidates() override;
   // Sets the parameters in IceConfig. We do not set them blindly. Instead, we
   // only update the parameter if it is considered set in |config|. For example,
   // a negative value of receiving_timeout will be considered "not set" and we
@@ -132,12 +133,12 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
   bool GetStats(std::vector<ConnectionInfo>* candidate_pair_stats_list,
                 std::vector<CandidateStats>* candidate_stats_list) override;
   absl::optional<int> GetRttEstimate() override;
+  const Connection* selected_connection() const override;
 
   // TODO(honghaiz): Remove this method once the reference of it in
   // Chromoting is removed.
   const Connection* best_connection() const { return selected_connection_; }
 
-  const Connection* selected_connection() const { return selected_connection_; }
   void set_incoming_only(bool value) { incoming_only_ = value; }
 
   // Note: These are only for testing purpose.

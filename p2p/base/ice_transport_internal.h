@@ -242,6 +242,8 @@ class RTC_EXPORT IceTransportInternal : public rtc::PacketTransportInternal {
 
   virtual void RemoveRemoteCandidate(const Candidate& candidate) = 0;
 
+  virtual void RemoveAllRemoteCandidates() = 0;
+
   virtual IceGatheringState gathering_state() const = 0;
 
   // Returns the current stats for this connection.
@@ -251,6 +253,8 @@ class RTC_EXPORT IceTransportInternal : public rtc::PacketTransportInternal {
   // Returns RTT estimate over the currently active connection, or an empty
   // absl::optional if there is none.
   virtual absl::optional<int> GetRttEstimate() = 0;
+
+  virtual const Connection* selected_connection() const = 0;
 
   sigslot::signal1<IceTransportInternal*> SignalGatheringState;
 

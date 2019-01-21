@@ -191,6 +191,8 @@ class FakeIceTransport : public IceTransportInternal {
     remote_candidates_.erase(it);
   }
 
+  void RemoveAllRemoteCandidates() override { remote_candidates_.clear(); }
+
   bool GetStats(ConnectionInfos* candidate_pair_stats_list,
                 CandidateStatsList* candidate_stats_list) override {
     CandidateStats candidate_stats;
@@ -203,6 +205,8 @@ class FakeIceTransport : public IceTransportInternal {
   }
 
   absl::optional<int> GetRttEstimate() override { return absl::nullopt; }
+
+  const Connection* selected_connection() const override { return nullptr; }
 
   // Fake PacketTransportInternal implementation.
   bool writable() const override { return writable_; }
