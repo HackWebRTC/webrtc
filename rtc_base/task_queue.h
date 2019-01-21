@@ -144,6 +144,7 @@ class RTC_LOCKABLE RTC_EXPORT TaskQueue {
   // TaskQueue priority levels. On some platforms these will map to thread
   // priorities, on others such as Mac and iOS, GCD queue priorities.
   using Priority = ::webrtc::TaskQueuePriority;
+  class Impl;
 
   explicit TaskQueue(const char* queue_name,
                      Priority priority = Priority::NORMAL);
@@ -187,7 +188,6 @@ class RTC_LOCKABLE RTC_EXPORT TaskQueue {
   }
 
  private:
-  class Impl;
   // TODO(danilchap): Remove when external implementaions of TaskQueue remove
   // these two functions.
   void PostTaskAndReply(std::unique_ptr<QueuedTask> task,
