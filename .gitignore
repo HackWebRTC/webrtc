@@ -66,4 +66,5 @@
 /rtc_tools/testing/golang/*/*.zip
 /x86-generic_out/
 /xcodebuild
+/.vscode
 !webrtc/*
