@@ -793,9 +793,8 @@ void EventLogAnalyzer::CreateIncomingDelayGraph(Plot* plot) {
 
   plot->SetXAxis(ToCallTimeSec(begin_time_), call_duration_s_, "Time (s)",
                  kLeftMargin, kRightMargin);
-  plot->SetSuggestedYAxis(0, 1, "Latency change (ms)", kBottomMargin,
-                          kTopMargin);
-  plot->SetTitle("Network latency (relative to first packet)");
+  plot->SetSuggestedYAxis(0, 1, "Delay (ms)", kBottomMargin, kTopMargin);
+  plot->SetTitle("Incoming network delay (relative to first packet)");
 }
 
 // Plot the fraction of packets lost (as perceived by the loss-based BWE).
@@ -1334,7 +1333,7 @@ void EventLogAnalyzer::CreateNetworkDelayFeedbackGraph(Plot* plot) {
   plot->SetXAxis(ToCallTimeSec(begin_time_), call_duration_s_, "Time (s)",
                  kLeftMargin, kRightMargin);
   plot->SetSuggestedYAxis(0, 10, "Delay (ms)", kBottomMargin, kTopMargin);
-  plot->SetTitle("Network delay (based on per-packet feedback)");
+  plot->SetTitle("Outgoing network delay (based on per-packet feedback)");
 }
 
 void EventLogAnalyzer::CreatePacerDelayGraph(Plot* plot) {
