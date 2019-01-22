@@ -724,7 +724,7 @@ rtc_source_set("rtc_json") {
   }
 }
 
-rtc_source_set("nethelpers") {
+rtc_source_set("net_helpers") {
   # TODO(bugs.webrtc.org/9987): This build target will soon contain
   #                             the following files:
   # sources = [
@@ -733,7 +733,7 @@ rtc_source_set("nethelpers") {
   # ]
 }
 
-rtc_source_set("asyncresolverinterface") {
+rtc_source_set("async_resolver_interface") {
   # TODO(bugs.webrtc.org/9987): This build target will soon contain
   #                             the following files:
   # sources = [
@@ -742,7 +742,7 @@ rtc_source_set("asyncresolverinterface") {
   # ]
 }
 
-rtc_source_set("ipaddress") {
+rtc_source_set("ip_address") {
   # TODO(bugs.webrtc.org/9987): This build target will soon contain
   #                             the following files:
   # sources = [
@@ -751,7 +751,7 @@ rtc_source_set("ipaddress") {
   # ]
 }
 
-rtc_source_set("socketaddress") {
+rtc_source_set("socket_address") {
   # TODO(bugs.webrtc.org/9987): This build target will soon contain
   #                             the following files:
   # sources = [
@@ -760,7 +760,7 @@ rtc_source_set("socketaddress") {
   # ]
 }
 
-rtc_source_set("nullsocketserver") {
+rtc_source_set("null_socket_server") {
   # TODO(bugs.webrtc.org/9987): This build target will soon contain
   #                             the following files:
   # sources = [
@@ -769,7 +769,7 @@ rtc_source_set("nullsocketserver") {
   # ]
 }
 
-rtc_source_set("socketserver") {
+rtc_source_set("socket_server") {
   # TODO(bugs.webrtc.org/9987): This build target will soon contain
   #                             the following files:
   # sources = [
@@ -800,7 +800,7 @@ rtc_source_set("threading") {
   # ]
 }
 
-rtc_source_set("socketfactory") {
+rtc_source_set("socket_factory") {
   # TODO(bugs.webrtc.org/9987): This build target will soon contain
   #                             the following files:
   # sources = [
@@ -808,7 +808,7 @@ rtc_source_set("socketfactory") {
   # ]
 }
 
-rtc_source_set("asyncsocket") {
+rtc_source_set("async_socket") {
   # TODO(bugs.webrtc.org/9987): This build target will soon contain
   #                             the following files:
   # sources = [
