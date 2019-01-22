@@ -464,6 +464,18 @@ class ParsedRtcEventLog {
   int64_t first_timestamp() const { return first_timestamp_; }
   int64_t last_timestamp() const { return last_timestamp_; }
 
+  std::vector<LoggedPacketInfo> GetPacketInfos(PacketDirection direction) const;
+  std::vector<LoggedPacketInfo> GetIncomingPacketInfos() const {
+    return GetPacketInfos(kIncomingPacket);
+  }
+  std::vector<LoggedPacketInfo> GetOutgoingPacketInfos() const {
+    return GetPacketInfos(kOutgoingPacket);
+  }
+  std::vector<LoggedIceCandidatePairConfig> GetIceCandidates() const;
+  std::vector<LoggedIceEvent> GetIceEvents() const;
+
+  std::vector<LoggedRouteChangeEvent> GetRouteChanges() const;
+
  private:
   bool ParseStreamInternal(
       std::istream& stream);  // no-presubmit-check TODO(webrtc:8982)
