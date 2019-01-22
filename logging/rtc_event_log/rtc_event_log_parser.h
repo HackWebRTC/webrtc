@@ -461,6 +461,15 @@ class ParsedRtcEventLog {
     }
   }
 
+  const std::vector<LoggedRtcpPacketLossNotification>& loss_notifications(
+      PacketDirection direction) {
+    if (direction == kIncomingPacket) {
+      return incoming_loss_notification_;
+    } else {
+      return outgoing_loss_notification_;
+    }
+  }
+
   int64_t first_timestamp() const { return first_timestamp_; }
   int64_t last_timestamp() const { return last_timestamp_; }
 
@@ -635,6 +644,8 @@ class ParsedRtcEventLog {
   std::vector<LoggedRtcpPacketRemb> outgoing_remb_;
   std::vector<LoggedRtcpPacketTransportFeedback> incoming_transport_feedback_;
   std::vector<LoggedRtcpPacketTransportFeedback> outgoing_transport_feedback_;
+  std::vector<LoggedRtcpPacketLossNotification> incoming_loss_notification_;
+  std::vector<LoggedRtcpPacketLossNotification> outgoing_loss_notification_;
 
   std::vector<LoggedStartEvent> start_log_events_;
   std::vector<LoggedStopEvent> stop_log_events_;

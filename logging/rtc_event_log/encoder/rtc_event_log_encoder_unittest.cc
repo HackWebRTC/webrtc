@@ -859,6 +859,46 @@ TEST_P(RtcEventLogEncoderTest, RtcEventRtcpTransportFeedback) {
   }
 }
 
+TEST_P(RtcEventLogEncoderTest, RtcEventRtcpLossNotification) {
+  if (force_repeated_fields_) {
+    return;
+  }
+
+  rtc::ScopedFakeClock fake_clock;
+  fake_clock.SetTimeMicros(static_cast<int64_t>(prng_.Rand<uint32_t>()) * 1000);
+
+  for (auto direction : {kIncomingPacket, kOutgoingPacket}) {
+    std::vector<rtcp::LossNotification> events;
+    events.reserve(event_count_);
+    std::vector<int64_t> timestamps_us(event_count_);
+    for (size_t i = 0; i < event_count_; ++i) {
+      timestamps_us[i] = rtc::TimeMicros();
+      events.emplace_back(gen_.NewLossNotification());
+      rtc::Buffer buffer = events[i].Build();
+      if (direction == kIncomingPacket) {
+        history_.push_back(
+            absl::make_unique<RtcEventRtcpPacketIncoming>(buffer));
+      } else {
+        history_.push_back(
+            absl::make_unique<RtcEventRtcpPacketOutgoing>(buffer));
+      }
+      fake_clock.AdvanceTimeMicros(prng_.Rand(0, 1000) * 1000);
+    }
+
+    std::string encoded =
+        encoder_->EncodeBatch(history_.begin(), history_.end());
+    ASSERT_TRUE(parsed_log_.ParseString(encoded));
+
+    const auto& loss_notifications = parsed_log_.loss_notifications(direction);
+    ASSERT_EQ(loss_notifications.size(), event_count_);
+
+    for (size_t i = 0; i < event_count_; ++i) {
+      verifier_.VerifyLoggedLossNotification(timestamps_us[i], events[i],
+                                             loss_notifications[i]);
+    }
+  }
+}
+
 TEST_P(RtcEventLogEncoderTest, RtcEventRtpPacketIncoming) {
   TestRtpPackets<RtcEventRtpPacketIncoming, LoggedRtpPacketIncoming>();
 }

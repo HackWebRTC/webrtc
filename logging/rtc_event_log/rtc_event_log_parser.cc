@@ -782,7 +782,8 @@ void StoreRtcpBlocks(
     std::vector<LoggedRtcpPacketSenderReport>* sr_list,
     std::vector<LoggedRtcpPacketReceiverReport>* rr_list,
     std::vector<LoggedRtcpPacketRemb>* remb_list,
-    std::vector<LoggedRtcpPacketNack>* nack_list) {
+    std::vector<LoggedRtcpPacketNack>* nack_list,
+    std::vector<LoggedRtcpPacketLossNotification>* loss_notification_list) {
   rtcp::CommonHeader header;
   for (const uint8_t* block = packet_begin; block < packet_end;
        block = header.NextPacket()) {
@@ -807,10 +808,22 @@ void StoreRtcpBlocks(
       }
     } else if (header.type() == rtcp::Remb::kPacketType &&
                header.fmt() == rtcp::Remb::kFeedbackMessageType) {
-      LoggedRtcpPacketRemb parsed_block;
-      parsed_block.timestamp_us = timestamp_us;
-      if (parsed_block.remb.Parse(header)) {
-        remb_list->push_back(std::move(parsed_block));
+      bool type_found = false;
+      if (!type_found) {
+        LoggedRtcpPacketRemb parsed_block;
+        parsed_block.timestamp_us = timestamp_us;
+        if (parsed_block.remb.Parse(header)) {
+          remb_list->push_back(std::move(parsed_block));
+          type_found = true;
+        }
+      }
+      if (!type_found) {
+        LoggedRtcpPacketLossNotification parsed_block;
+        parsed_block.timestamp_us = timestamp_us;
+        if (parsed_block.loss_notification.Parse(header)) {
+          loss_notification_list->push_back(std::move(parsed_block));
+          type_found = true;
+        }
       }
     } else if (header.type() == rtcp::Nack::kPacketType &&
                header.fmt() == rtcp::Nack::kFeedbackMessageType) {
@@ -937,6 +950,8 @@ void ParsedRtcEventLog::Clear() {
   outgoing_remb_.clear();
   incoming_transport_feedback_.clear();
   outgoing_transport_feedback_.clear();
+  incoming_loss_notification_.clear();
+  outgoing_loss_notification_.clear();
 
   start_log_events_.clear();
   stop_log_events_.clear();
@@ -1046,7 +1061,8 @@ bool ParsedRtcEventLog::ParseStream(
     const uint8_t* packet_end = packet_begin + incoming.rtcp.raw_data.size();
     StoreRtcpBlocks(timestamp_us, packet_begin, packet_end,
                     &incoming_transport_feedback_, &incoming_sr_, &incoming_rr_,
-                    &incoming_remb_, &incoming_nack_);
+                    &incoming_remb_, &incoming_nack_,
+                    &incoming_loss_notification_);
   }
 
   for (const auto& outgoing : outgoing_rtcp_packets_) {
@@ -1055,7 +1071,8 @@ bool ParsedRtcEventLog::ParseStream(
     const uint8_t* packet_end = packet_begin + outgoing.rtcp.raw_data.size();
     StoreRtcpBlocks(timestamp_us, packet_begin, packet_end,
                     &outgoing_transport_feedback_, &outgoing_sr_, &outgoing_rr_,
-                    &outgoing_remb_, &outgoing_nack_);
+                    &outgoing_remb_, &outgoing_nack_,
+                    &outgoing_loss_notification_);
   }
 
   // Store first and last timestamp events that might happen before the call is

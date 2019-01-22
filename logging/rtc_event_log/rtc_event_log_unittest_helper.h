@@ -38,6 +38,7 @@
 #include "logging/rtc_event_log/rtc_event_log_parser.h"
 #include "logging/rtc_event_log/rtc_stream_config.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/loss_notification.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/receiver_report.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/report_block.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/sender_report.h"
@@ -85,6 +86,7 @@ class EventGenerator {
   rtcp::Nack NewNack();
   rtcp::TransportFeedback NewTransportFeedback();
   rtcp::Remb NewRemb();
+  rtcp::LossNotification NewLossNotification();
 
   // |all_configured_exts| determines whether the RTP packet exhibits all
   // configured extensions, or a random subset thereof.
@@ -240,6 +242,10 @@ class EventVerifier {
   void VerifyLoggedRemb(int64_t log_time_us,
                         const rtcp::Remb& original_remb,
                         const LoggedRtcpPacketRemb& logged_remb);
+  void VerifyLoggedLossNotification(
+      int64_t log_time_us,
+      const rtcp::LossNotification& original_loss_notification,
+      const LoggedRtcpPacketLossNotification& logged_loss_notification);
 
   void VerifyLoggedStartEvent(int64_t start_time_us,
                               int64_t utc_start_time_us,

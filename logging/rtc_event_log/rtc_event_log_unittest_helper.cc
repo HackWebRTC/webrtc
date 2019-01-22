@@ -296,6 +296,17 @@ rtcp::Remb EventGenerator::NewRemb() {
   return remb;
 }
 
+rtcp::LossNotification EventGenerator::NewLossNotification() {
+  rtcp::LossNotification loss_notification;
+  const uint16_t last_decoded = prng_.Rand<uint16_t>();
+  const uint16_t last_received =
+      last_decoded + (prng_.Rand<uint16_t>() & 0x7fff);
+  const bool decodability_flag = prng_.Rand<bool>();
+  EXPECT_TRUE(
+      loss_notification.Set(last_decoded, last_received, decodability_flag));
+  return loss_notification;
+}
+
 std::unique_ptr<RtcEventRtcpPacketIncoming>
 EventGenerator::NewRtcpPacketIncoming() {
   enum class SupportedRtcpTypes {
@@ -955,6 +966,19 @@ void EventVerifier::VerifyLoggedRemb(int64_t log_time_us,
   EXPECT_EQ(log_time_us, logged_remb.log_time_us());
   EXPECT_EQ(original_remb.ssrcs(), logged_remb.remb.ssrcs());
   EXPECT_EQ(original_remb.bitrate_bps(), logged_remb.remb.bitrate_bps());
+}
+
+void EventVerifier::VerifyLoggedLossNotification(
+    int64_t log_time_us,
+    const rtcp::LossNotification& original_loss_notification,
+    const LoggedRtcpPacketLossNotification& logged_loss_notification) {
+  EXPECT_EQ(log_time_us, logged_loss_notification.log_time_us());
+  EXPECT_EQ(original_loss_notification.last_decoded(),
+            logged_loss_notification.loss_notification.last_decoded());
+  EXPECT_EQ(original_loss_notification.last_received(),
+            logged_loss_notification.loss_notification.last_received());
+  EXPECT_EQ(original_loss_notification.decodability_flag(),
+            logged_loss_notification.loss_notification.decodability_flag());
 }
 
 void EventVerifier::VerifyLoggedStartEvent(

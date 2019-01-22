@@ -25,6 +25,7 @@
 #include "logging/rtc_event_log/rtc_stream_config.h"
 #include "modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor_config.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/loss_notification.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/nack.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/receiver_report.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/remb.h"
@@ -345,8 +346,6 @@ struct LoggedRtcpPacketRemb {
   rtcp::Remb remb;
 };
 
-// TODO(eladalon): Add LossNotification.
-
 struct LoggedRtcpPacketNack {
   LoggedRtcpPacketNack() = default;
   LoggedRtcpPacketNack(int64_t timestamp_us, const rtcp::Nack& nack)
@@ -371,6 +370,20 @@ struct LoggedRtcpPacketTransportFeedback {
 
   int64_t timestamp_us;
   rtcp::TransportFeedback transport_feedback;
+};
+
+struct LoggedRtcpPacketLossNotification {
+  LoggedRtcpPacketLossNotification() = default;
+  LoggedRtcpPacketLossNotification(
+      int64_t timestamp_us,
+      const rtcp::LossNotification& loss_notification)
+      : timestamp_us(timestamp_us), loss_notification(loss_notification) {}
+
+  int64_t log_time_us() const { return timestamp_us; }
+  int64_t log_time_ms() const { return timestamp_us / 1000; }
+
+  int64_t timestamp_us;
+  rtcp::LossNotification loss_notification;
 };
 
 struct LoggedStartEvent {
