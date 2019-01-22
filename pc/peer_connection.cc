@@ -5237,7 +5237,7 @@ RTCError PeerConnection::PushdownMediaDescription(
                        ? channel->SetLocalContent(content_desc, type, &error)
                        : channel->SetRemoteContent(content_desc, type, &error);
     if (!success) {
-      LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER, std::move(error));
+      LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER, error);
     }
   }
 
@@ -5255,8 +5255,7 @@ RTCError PeerConnection::PushdownMediaDescription(
                 ? rtp_data_channel_->SetLocalContent(data_desc, type, &error)
                 : rtp_data_channel_->SetRemoteContent(data_desc, type, &error);
         if (!success) {
-          LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
-                               std::move(error));
+          LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER, error);
         }
       }
     }
