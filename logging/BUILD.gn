@@ -291,7 +291,6 @@ if (rtc_enable_protobuf) {
   rtc_static_library("rtc_event_log_parser") {
     visibility = [ "*" ]
     sources = [
-      "rtc_event_log/logged_events.cc",
       "rtc_event_log/logged_events.h",
       "rtc_event_log/rtc_event_log_parser.cc",
       "rtc_event_log/rtc_event_log_parser.h",
@@ -308,9 +307,6 @@ if (rtc_enable_protobuf) {
       ":rtc_event_log_proto",
       ":rtc_stream_config",
       "../api:libjingle_peerconnection_api",
-      "../api/units:data_rate",
-      "../api/units:time_delta",
-      "../api/units:timestamp",
       "../call:video_stream_api",
       "../modules/audio_coding:audio_network_adaptor",
       "../modules/congestion_controller/rtp:transport_feedback",
@@ -321,7 +317,6 @@ if (rtc_enable_protobuf) {
       "../rtc_base:deprecation",
       "../rtc_base:protobuf_utils",
       "../rtc_base:rtc_base_approved",
-      "../rtc_base:rtc_numerics",
       "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
     ]

@@ -28,7 +28,6 @@
 #include "logging/rtc_event_log/encoder/delta_encoding.h"
 #include "logging/rtc_event_log/encoder/rtc_event_log_encoder_common.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
-#include "logging/rtc_event_log/rtc_event_processor.h"
 #include "modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
 #include "modules/congestion_controller/rtp/transport_feedback_adapter.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
@@ -40,7 +39,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
-#include "rtc_base/numerics/sequence_number_util.h"
 #include "rtc_base/protobuf_utils.h"
 
 using webrtc_event_logging::ToSigned;
@@ -49,70 +47,6 @@ using webrtc_event_logging::ToUnsigned;
 namespace webrtc {
 
 namespace {
-constexpr size_t kIpv4Overhead = 20;
-constexpr size_t kIpv6Overhead = 40;
-constexpr size_t kUdpOverhead = 8;
-constexpr size_t kSrtpOverhead = 10;
-constexpr size_t kStunOverhead = 4;
-constexpr uint16_t kDefaultOverhead =
-    kUdpOverhead + kSrtpOverhead + kIpv4Overhead;
-
-// Starting at a multiple of common audio sample rate (48000) and video tick
-// rate (90000) to make a tick count of 0 to correspond to something without
-// decimals in base 10. Starting at 0 is not safe as it would cause negative
-// wraparound if the first timestamps are out of order.
-constexpr uint64_t kStartingCaptureTimeTicks = 90 * 48 * 1000;
-
-struct MediaStreamInfo {
-  MediaStreamInfo() : unwrap_capture_ticks(kStartingCaptureTimeTicks) {}
-  MediaStreamInfo(LoggedMediaType media_type, bool rtx)
-      : media_type(media_type),
-        rtx(rtx),
-        unwrap_capture_ticks(kStartingCaptureTimeTicks) {}
-  LoggedMediaType media_type = LoggedMediaType::kUnknown;
-  bool rtx = false;
-  SeqNumUnwrapper<uint32_t> unwrap_capture_ticks;
-};
-
-template <typename Iterable>
-void AddRecvStreamInfos(std::map<uint32_t, MediaStreamInfo>* streams,
-                        const Iterable configs,
-                        LoggedMediaType media_type) {
-  for (auto& conf : configs) {
-    streams->insert({conf.config.remote_ssrc, {media_type, false}});
-    if (conf.config.rtx_ssrc != 0)
-      streams->insert({conf.config.rtx_ssrc, {media_type, true}});
-  }
-}
-template <typename Iterable>
-void AddSendStreamInfos(std::map<uint32_t, MediaStreamInfo>* streams,
-                        const Iterable configs,
-                        LoggedMediaType media_type) {
-  for (auto& conf : configs) {
-    streams->insert({conf.config.local_ssrc, {media_type, false}});
-    if (conf.config.rtx_ssrc != 0)
-      streams->insert({conf.config.rtx_ssrc, {media_type, true}});
-  }
-}
-struct OverheadChangeEvent {
-  Timestamp timestamp;
-  uint16_t overhead;
-};
-std::vector<OverheadChangeEvent> GetOverheadChangingEvents(
-    const std::vector<LoggedRouteChangeEvent>& route_changes,
-    PacketDirection direction) {
-  std::vector<OverheadChangeEvent> overheads;
-  for (auto& event : route_changes) {
-    uint16_t new_overhead = direction == PacketDirection::kIncomingPacket
-                                ? event.return_overhead
-                                : event.send_overhead;
-    if (overheads.empty() || new_overhead != overheads.back().overhead) {
-      overheads.push_back({event.log_time, new_overhead});
-    }
-  }
-  return overheads;
-}
-
 // Conversion functions for legacy wire format.
 RtcpMode GetRuntimeRtcpMode(rtclog::VideoReceiveConfig::RtcpMode rtcp_mode) {
   switch (rtcp_mode) {
@@ -471,6 +405,23 @@ void GetHeaderExtensions(std::vector<RtpExtension>* header_extensions,
     int id = p.id();
     header_extensions->push_back(RtpExtension(name, id));
   }
+}
+
+void SortPacketFeedbackVectorWithLoss(std::vector<PacketFeedback>* vec) {
+  class LossHandlingPacketFeedbackComparator {
+   public:
+    inline bool operator()(const PacketFeedback& lhs,
+                           const PacketFeedback& rhs) {
+      if (lhs.arrival_time_ms != PacketFeedback::kNotReceived &&
+          rhs.arrival_time_ms != PacketFeedback::kNotReceived &&
+          lhs.arrival_time_ms != rhs.arrival_time_ms)
+        return lhs.arrival_time_ms < rhs.arrival_time_ms;
+      if (lhs.send_time_ms != rhs.send_time_ms)
+        return lhs.send_time_ms < rhs.send_time_ms;
+      return lhs.sequence_number < rhs.sequence_number;
+    }
+  };
+  std::sort(vec->begin(), vec->end(), LossHandlingPacketFeedbackComparator());
 }
 
 template <typename ProtoType, typename LoggedType>
@@ -1815,187 +1766,86 @@ ParsedRtcEventLog::MediaType ParsedRtcEventLog::GetMediaType(
   return MediaType::ANY;
 }
 
-std::vector<LoggedRouteChangeEvent> ParsedRtcEventLog::GetRouteChanges() const {
-  std::vector<LoggedRouteChangeEvent> route_changes;
-  for (auto& candidate : ice_candidate_pair_configs()) {
-    if (candidate.type == IceCandidatePairConfigType::kSelected) {
-      LoggedRouteChangeEvent route;
-      route.route_id = candidate.candidate_pair_id;
-      route.log_time = Timestamp::ms(candidate.log_time_ms());
-
-      route.send_overhead = kUdpOverhead + kSrtpOverhead + kIpv4Overhead;
-      if (candidate.remote_address_family ==
-          IceCandidatePairAddressFamily::kIpv6)
-        route.send_overhead += kIpv6Overhead - kIpv4Overhead;
-      if (candidate.remote_candidate_type != IceCandidateType::kLocal)
-        route.send_overhead += kStunOverhead;
-      route.return_overhead = kUdpOverhead + kSrtpOverhead + kIpv4Overhead;
-      if (candidate.remote_address_family ==
-          IceCandidatePairAddressFamily::kIpv6)
-        route.return_overhead += kIpv6Overhead - kIpv4Overhead;
-      if (candidate.remote_candidate_type != IceCandidateType::kLocal)
-        route.return_overhead += kStunOverhead;
-      route_changes.push_back(route);
-    }
-  }
-  return route_changes;
-}
-
-std::vector<LoggedPacketInfo> ParsedRtcEventLog::GetPacketInfos(
-    PacketDirection direction) const {
-  std::map<uint32_t, MediaStreamInfo> streams;
-  if (direction == PacketDirection::kIncomingPacket) {
-    AddRecvStreamInfos(&streams, audio_recv_configs(), LoggedMediaType::kAudio);
-    AddRecvStreamInfos(&streams, video_recv_configs(), LoggedMediaType::kVideo);
-  } else if (direction == PacketDirection::kOutgoingPacket) {
-    AddSendStreamInfos(&streams, audio_send_configs(), LoggedMediaType::kAudio);
-    AddSendStreamInfos(&streams, video_send_configs(), LoggedMediaType::kVideo);
-  }
-
-  TransportFeedbackAdapter feedback_adapter;
-  std::vector<OverheadChangeEvent> overheads =
-      GetOverheadChangingEvents(GetRouteChanges(), direction);
-  auto overhead_iter = overheads.begin();
-  std::vector<LoggedPacketInfo> packets;
-  std::map<int64_t, size_t> indices;
-  uint16_t current_overhead = kDefaultOverhead;
-  Timestamp last_log_time = Timestamp::Zero();
-
-  auto advance_time = [&](Timestamp new_log_time) {
-    if (overhead_iter != overheads.end() &&
-        new_log_time >= overhead_iter->timestamp) {
-      current_overhead = overhead_iter->overhead;
-      ++overhead_iter;
-    }
-    RTC_CHECK(new_log_time > last_log_time);
-    last_log_time = new_log_time;
-  };
-
-  auto rtp_handler = [&](const LoggedRtpPacket& rtp) {
-    advance_time(Timestamp::ms(rtp.log_time_ms()));
-    MediaStreamInfo* stream = &streams[rtp.header.ssrc];
-    uint64_t capture_ticks =
-        stream->unwrap_capture_ticks.Unwrap(rtp.header.timestamp);
-    // TODO(srte): Use logged sample rate when it is added to the format.
-    Timestamp capture_time = Timestamp::seconds(
-        capture_ticks /
-        (stream->media_type == LoggedMediaType::kAudio ? 48000.0 : 90000.0));
-    LoggedPacketInfo logged(rtp, stream->media_type, stream->rtx, capture_time);
-    logged.overhead = current_overhead;
-    if (rtp.header.extension.hasTransportSequenceNumber) {
-      logged.log_feedback_time = Timestamp::PlusInfinity();
-      rtc::SentPacket sent_packet;
-      sent_packet.send_time_ms = rtp.log_time_ms();
-      sent_packet.info.packet_size_bytes = rtp.total_length;
-      sent_packet.info.included_in_feedback = true;
-      sent_packet.packet_id = rtp.header.extension.transportSequenceNumber;
-      feedback_adapter.AddPacket(rtp.header.ssrc, sent_packet.packet_id,
-                                 rtp.total_length, PacedPacketInfo(),
-                                 Timestamp::ms(rtp.log_time_ms()));
-      auto sent_packet_msg = feedback_adapter.ProcessSentPacket(sent_packet);
-      RTC_CHECK(sent_packet_msg);
-      indices[sent_packet_msg->sequence_number] = packets.size();
-    }
-    packets.push_back(logged);
-  };
-
-  auto feedback_handler = [&](const LoggedRtcpPacketTransportFeedback& logged) {
-    advance_time(Timestamp::ms(logged.log_time_ms()));
-    auto msg = feedback_adapter.ProcessTransportFeedback(
-        logged.transport_feedback, Timestamp::ms(logged.log_time_ms()));
-    if (!msg.has_value() || msg->packet_feedbacks.empty())
-      return;
-
-    auto& last_fb = msg->packet_feedbacks.back();
-    Timestamp last_recv_time = last_fb.receive_time;
-    for (auto& fb : msg->packet_feedbacks) {
-      if (indices.find(fb.sent_packet.sequence_number) == indices.end()) {
-        RTC_LOG(LS_ERROR) << "Received feedback for unknown packet: "
-                          << fb.sent_packet.sequence_number;
-        continue;
-      }
-      LoggedPacketInfo* sent =
-          &packets[indices[fb.sent_packet.sequence_number]];
-      sent->reported_recv_time = fb.receive_time;
-      RTC_CHECK(sent->log_feedback_time.IsPlusInfinity());
-      sent->log_feedback_time = msg->feedback_time;
-      if (direction == PacketDirection::kOutgoingPacket) {
-        sent->feedback_hold_duration = last_recv_time - fb.receive_time;
-      } else {
-        sent->feedback_hold_duration =
-            Timestamp::ms(logged.log_time_ms()) - sent->log_packet_time;
-      }
-      sent->last_in_feedback = (&fb == &last_fb);
-    }
-  };
-
-  RtcEventProcessor process;
-  for (const auto& rtp_packets : rtp_packets_by_ssrc(direction)) {
-    process.AddEvents(rtp_packets.packet_view, rtp_handler);
-  }
-  if (direction == PacketDirection::kOutgoingPacket) {
-    process.AddEvents(incoming_transport_feedback_, feedback_handler);
-  } else {
-    process.AddEvents(outgoing_transport_feedback_, feedback_handler);
-  }
-  process.ProcessEventsInOrder();
-  return packets;
-}
-
-std::vector<LoggedIceCandidatePairConfig> ParsedRtcEventLog::GetIceCandidates()
-    const {
-  std::vector<LoggedIceCandidatePairConfig> candidates;
-  std::set<uint32_t> added;
-  for (auto& candidate : ice_candidate_pair_configs()) {
-    if (added.find(candidate.candidate_pair_id) == added.end()) {
-      candidates.push_back(candidate);
-      added.insert(candidate.candidate_pair_id);
-    }
-  }
-  return candidates;
-}
-
-std::vector<LoggedIceEvent> ParsedRtcEventLog::GetIceEvents() const {
-  using CheckType = IceCandidatePairEventType;
-  using ConfigType = IceCandidatePairConfigType;
-  using Combined = LoggedIceEventType;
-  std::map<CheckType, Combined> check_map(
-      {{CheckType::kCheckSent, Combined::kCheckSent},
-       {CheckType::kCheckReceived, Combined::kCheckReceived},
-       {CheckType::kCheckResponseSent, Combined::kCheckResponseSent},
-       {CheckType::kCheckResponseReceived, Combined::kCheckResponseReceived}});
-  std::map<ConfigType, Combined> config_map(
-      {{ConfigType::kAdded, Combined::kAdded},
-       {ConfigType::kUpdated, Combined::kUpdated},
-       {ConfigType::kDestroyed, Combined::kDestroyed},
-       {ConfigType::kSelected, Combined::kSelected}});
-  std::vector<LoggedIceEvent> log_events;
-  auto handle_check = [&](const LoggedIceCandidatePairEvent& check) {
-    log_events.push_back(LoggedIceEvent{check.candidate_pair_id,
-                                        Timestamp::ms(check.log_time_ms()),
-                                        check_map[check.type]});
-  };
-  auto handle_config = [&](const LoggedIceCandidatePairConfig& conf) {
-    log_events.push_back(LoggedIceEvent{conf.candidate_pair_id,
-                                        Timestamp::ms(conf.log_time_ms()),
-                                        config_map[conf.type]});
-  };
-  RtcEventProcessor process;
-  process.AddEvents(ice_candidate_pair_events(), handle_check);
-  process.AddEvents(ice_candidate_pair_configs(), handle_config);
-  return log_events;
-}
-
 const std::vector<MatchedSendArrivalTimes> GetNetworkTrace(
     const ParsedRtcEventLog& parsed_log) {
+  using RtpPacketType = LoggedRtpPacketOutgoing;
+  using TransportFeedbackType = LoggedRtcpPacketTransportFeedback;
+
+  std::multimap<int64_t, const RtpPacketType*> outgoing_rtp;
+  for (const auto& stream : parsed_log.outgoing_rtp_packets_by_ssrc()) {
+    for (const RtpPacketType& rtp_packet : stream.outgoing_packets)
+      outgoing_rtp.insert(
+          std::make_pair(rtp_packet.rtp.log_time_us(), &rtp_packet));
+  }
+
+  const std::vector<TransportFeedbackType>& incoming_rtcp =
+      parsed_log.transport_feedbacks(kIncomingPacket);
+
+  SimulatedClock clock(0);
+  TransportFeedbackAdapter feedback_adapter;
+
+  auto rtp_iterator = outgoing_rtp.begin();
+  auto rtcp_iterator = incoming_rtcp.begin();
+
+  auto NextRtpTime = [&]() {
+    if (rtp_iterator != outgoing_rtp.end())
+      return static_cast<int64_t>(rtp_iterator->first);
+    return std::numeric_limits<int64_t>::max();
+  };
+
+  auto NextRtcpTime = [&]() {
+    if (rtcp_iterator != incoming_rtcp.end())
+      return static_cast<int64_t>(rtcp_iterator->log_time_us());
+    return std::numeric_limits<int64_t>::max();
+  };
+
+  int64_t time_us = std::min(NextRtpTime(), NextRtcpTime());
+
   std::vector<MatchedSendArrivalTimes> rtp_rtcp_matched;
-  for (auto& packet :
-       parsed_log.GetPacketInfos(PacketDirection::kOutgoingPacket)) {
-    if (packet.log_feedback_time.IsFinite()) {
-      rtp_rtcp_matched.emplace_back(
-          packet.log_feedback_time.ms(), packet.log_packet_time.ms(),
-          packet.reported_recv_time.ms_or(-1), packet.size);
+  while (time_us != std::numeric_limits<int64_t>::max()) {
+    clock.AdvanceTimeMicroseconds(time_us - clock.TimeInMicroseconds());
+    if (clock.TimeInMicroseconds() >= NextRtpTime()) {
+      RTC_DCHECK_EQ(clock.TimeInMicroseconds(), NextRtpTime());
+      const RtpPacketType& rtp_packet = *rtp_iterator->second;
+      rtc::SentPacket sent_packet;
+      sent_packet.send_time_ms = rtp_packet.rtp.log_time_ms();
+      sent_packet.info.packet_size_bytes = rtp_packet.rtp.total_length;
+      if (rtp_packet.rtp.header.extension.hasTransportSequenceNumber) {
+        feedback_adapter.AddPacket(
+            rtp_packet.rtp.header.ssrc,
+            rtp_packet.rtp.header.extension.transportSequenceNumber,
+            rtp_packet.rtp.total_length, PacedPacketInfo(),
+            Timestamp::ms(clock.TimeInMilliseconds()));
+        sent_packet.packet_id =
+            rtp_packet.rtp.header.extension.transportSequenceNumber;
+        sent_packet.info.included_in_feedback = true;
+        sent_packet.info.included_in_allocation = true;
+        feedback_adapter.ProcessSentPacket(sent_packet);
+      } else {
+        sent_packet.info.included_in_feedback = false;
+        // TODO(srte): Make it possible to indicate that all packets are part of
+        // allocation.
+        sent_packet.info.included_in_allocation = false;
+        feedback_adapter.ProcessSentPacket(sent_packet);
+      }
+      ++rtp_iterator;
     }
+    if (clock.TimeInMicroseconds() >= NextRtcpTime()) {
+      RTC_DCHECK_EQ(clock.TimeInMicroseconds(), NextRtcpTime());
+      feedback_adapter.ProcessTransportFeedback(
+          rtcp_iterator->transport_feedback,
+          Timestamp::ms(clock.TimeInMilliseconds()));
+      std::vector<PacketFeedback> feedback =
+          feedback_adapter.GetTransportFeedbackVector();
+      SortPacketFeedbackVectorWithLoss(&feedback);
+      for (const PacketFeedback& packet : feedback) {
+        rtp_rtcp_matched.emplace_back(
+            clock.TimeInMilliseconds(), packet.send_time_ms,
+            packet.arrival_time_ms, packet.payload_size);
+      }
+      ++rtcp_iterator;
+    }
+    time_us = std::min(NextRtpTime(), NextRtcpTime());
   }
   return rtp_rtcp_matched;
 }
