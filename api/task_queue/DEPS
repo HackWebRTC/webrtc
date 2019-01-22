@@ -4,4 +4,7 @@ specific_include_rules = {
   "task_queue_impl\.h": [
     "+rtc_base/task_queue.h",
   ],
+  "task_queue_test\.h": [
+    "+test/gtest.h",
+  ],
 }
