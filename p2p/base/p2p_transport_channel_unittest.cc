@@ -4146,7 +4146,7 @@ TEST_F(P2PTransportChannelPingTest, TestGetState) {
   Connection* conn1 = WaitForConnectionTo(&ch, "1.1.1.1", 1, &clock);
   Connection* conn2 = WaitForConnectionTo(&ch, "2.2.2.2", 2, &clock);
   // Gathering complete with candidates.
-  EXPECT_EQ(webrtc::IceTransportState::kCompleted, ch.GetIceTransportState());
+  EXPECT_EQ(webrtc::IceTransportState::kConnected, ch.GetIceTransportState());
   ASSERT_TRUE(conn1 != nullptr);
   ASSERT_TRUE(conn2 != nullptr);
   // Now there are two connections, so the transport channel is connecting.

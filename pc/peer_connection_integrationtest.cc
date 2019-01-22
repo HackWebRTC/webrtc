@@ -3827,7 +3827,7 @@ TEST_P(PeerConnectionIntegrationIceStatesTest, VerifyIceStates) {
 
   ASSERT_EQ(PeerConnectionInterface::kIceConnectionCompleted,
             caller()->ice_connection_state());
-  ASSERT_EQ(PeerConnectionInterface::kIceConnectionCompleted,
+  ASSERT_EQ(PeerConnectionInterface::kIceConnectionConnected,
             caller()->standardized_ice_connection_state());
 
   // Verify that the observer was notified of the intermediate transitions.
@@ -3860,7 +3860,7 @@ TEST_P(PeerConnectionIntegrationIceStatesTest, VerifyIceStates) {
   RTC_LOG(LS_INFO) << "Firewall rules cleared";
   ASSERT_EQ_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
                  caller()->ice_connection_state(), kDefaultTimeout);
-  ASSERT_EQ_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
+  ASSERT_EQ_WAIT(PeerConnectionInterface::kIceConnectionConnected,
                  caller()->standardized_ice_connection_state(),
                  kDefaultTimeout);
 

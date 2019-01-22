@@ -394,7 +394,7 @@ IceTransportState P2PTransportChannel::ComputeState() const {
 
 // Compute the current RTCIceTransportState as described in
 // https://www.w3.org/TR/webrtc/#dom-rtcicetransportstate
-// TODO(bugs.webrtc.org/9218): Avoid prematurely signalling kFailed once we have
+// TODO(bugs.webrtc.org/9218): Start signaling kCompleted once we have
 // implemented end-of-candidates signalling.
 webrtc::IceTransportState P2PTransportChannel::ComputeIceTransportState()
     const {
@@ -413,23 +413,12 @@ webrtc::IceTransportState P2PTransportChannel::ComputeIceTransportState()
       return webrtc::IceTransportState::kFailed;
   }
 
-  switch (gathering_state_) {
-    case kIceGatheringComplete:
-      if (has_connection)
-        return webrtc::IceTransportState::kCompleted;
-      else
-        return webrtc::IceTransportState::kFailed;
-    case kIceGatheringNew:
-      return webrtc::IceTransportState::kNew;
-    case kIceGatheringGathering:
-      if (has_connection)
-        return webrtc::IceTransportState::kConnected;
-      else
-        return webrtc::IceTransportState::kChecking;
-    default:
-      RTC_NOTREACHED();
-      return webrtc::IceTransportState::kFailed;
-  }
+  if (gathering_state_ == kIceGatheringNew)
+    return webrtc::IceTransportState::kNew;
+  else if (has_connection)
+    return webrtc::IceTransportState::kConnected;
+  else
+    return webrtc::IceTransportState::kChecking;
 }
 
 void P2PTransportChannel::SetIceParameters(const IceParameters& ice_params) {
