@@ -185,6 +185,7 @@ rtc_source_set("video_stream_encoder") {
   ]
 
   deps = [
+    ":video_bitrate_allocator",
     ":video_bitrate_allocator_factory",
     ":video_frame",
 
