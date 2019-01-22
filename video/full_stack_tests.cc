@@ -102,7 +102,7 @@ std::string AppendFieldTrials(std::string new_trial_string) {
 class GenericDescriptorTest : public ::testing::TestWithParam<std::string> {
  public:
   GenericDescriptorTest()
-      : field_trial_(GetParam()),
+      : field_trial_(AppendFieldTrials(GetParam())),
         generic_descriptor_enabled_(
             field_trial::IsEnabled("WebRTC-GenericDescriptor")) {}
 
