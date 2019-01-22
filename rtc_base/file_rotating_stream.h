@@ -18,6 +18,7 @@
 
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/stream.h"
+#include "rtc_base/system/file_wrapper.h"
 
 namespace rtc {
 
@@ -98,8 +99,8 @@ class FileRotatingStream : public StreamInterface {
   const std::string dir_path_;
   const std::string file_prefix_;
 
-  // FileStream is used to write to the current file.
-  std::unique_ptr<FileStream> file_stream_;
+  // File we're currently writing to.
+  webrtc::FileWrapper file_;
   // Convenience storage for file names so we don't generate them over and over.
   std::vector<std::string> file_names_;
   size_t max_file_size_;

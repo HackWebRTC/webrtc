@@ -175,7 +175,6 @@ FileRotatingStream::FileRotatingStream(const std::string& dir_path,
                                        size_t num_files)
     : dir_path_(AddTrailingPathDelimiterIfNeeded(dir_path)),
       file_prefix_(file_prefix),
-      file_stream_(nullptr),
       max_file_size_(max_file_size),
       current_file_index_(0),
       rotation_index_(0),
@@ -194,10 +193,7 @@ FileRotatingStream::FileRotatingStream(const std::string& dir_path,
 FileRotatingStream::~FileRotatingStream() {}
 
 StreamState FileRotatingStream::GetState() const {
-  if (!file_stream_) {
-    return SS_CLOSED;
-  }
-  return file_stream_->GetState();
+  return (file_.is_open() ? SS_OPEN : SS_CLOSED);
 }
 
 StreamResult FileRotatingStream::Read(void* buffer,
@@ -213,7 +209,7 @@ StreamResult FileRotatingStream::Write(const void* data,
                                        size_t data_len,
                                        size_t* written,
                                        int* error) {
-  if (!file_stream_) {
+  if (!file_.is_open()) {
     std::fprintf(stderr, "Open() must be called before Write.\n");
     return SR_ERROR;
   }
@@ -221,26 +217,31 @@ StreamResult FileRotatingStream::Write(const void* data,
   RTC_DCHECK_LT(current_bytes_written_, max_file_size_);
   size_t remaining_bytes = max_file_size_ - current_bytes_written_;
   size_t write_length = std::min(data_len, remaining_bytes);
-  size_t local_written = 0;
-  if (!written) {
-    written = &local_written;
-  }
-  StreamResult result = file_stream_->Write(data, write_length, written, error);
-  current_bytes_written_ += *written;
 
+  if (!file_.Write(data, write_length)) {
+    return SR_ERROR;
+  }
+  if (disable_buffering_ && !file_.Flush()) {
+    return SR_ERROR;
+  }
+
+  current_bytes_written_ += write_length;
+  if (written) {
+    *written = write_length;
+  }
   // If we're done with this file, rotate it out.
   if (current_bytes_written_ >= max_file_size_) {
     RTC_DCHECK_EQ(current_bytes_written_, max_file_size_);
     RotateFiles();
   }
-  return result;
+  return SR_SUCCESS;
 }
 
 bool FileRotatingStream::Flush() {
-  if (!file_stream_) {
+  if (!file_.is_open()) {
     return false;
   }
-  return file_stream_->Flush();
+  return file_.Flush();
 }
 
 void FileRotatingStream::Close() {
@@ -261,11 +262,7 @@ bool FileRotatingStream::Open() {
 
 bool FileRotatingStream::DisableBuffering() {
   disable_buffering_ = true;
-  if (!file_stream_) {
-    std::fprintf(stderr, "Open() must be called before DisableBuffering().\n");
-    return false;
-  }
-  return file_stream_->DisableBuffering();
+  return true;
 }
 
 std::string FileRotatingStream::GetFilePath(size_t index) const {
@@ -279,29 +276,25 @@ bool FileRotatingStream::OpenCurrentFile() {
   // Opens the appropriate file in the appropriate mode.
   RTC_DCHECK_LT(current_file_index_, file_names_.size());
   std::string file_path = file_names_[current_file_index_];
-  file_stream_.reset(new FileStream());
 
   // We should always be writing to the zero-th file.
   RTC_DCHECK_EQ(current_file_index_, 0);
-  int error = 0;
-  if (!file_stream_->Open(file_path, "w+", &error)) {
-    std::fprintf(stderr, "Failed to open: %s Error: %i\n", file_path.c_str(),
+  int error;
+  file_ = webrtc::FileWrapper::OpenWriteOnly(file_path, &error);
+  if (!file_.is_open()) {
+    std::fprintf(stderr, "Failed to open: %s Error: %d\n", file_path.c_str(),
                  error);
-    file_stream_.reset();
     return false;
-  }
-  if (disable_buffering_) {
-    file_stream_->DisableBuffering();
   }
   return true;
 }
 
 void FileRotatingStream::CloseCurrentFile() {
-  if (!file_stream_) {
+  if (!file_.is_open()) {
     return;
   }
   current_bytes_written_ = 0;
-  file_stream_.reset();
+  file_.Close();
 }
 
 void FileRotatingStream::RotateFiles() {
@@ -416,12 +409,11 @@ size_t FileRotatingStreamReader::ReadAll(void* buffer, size_t size) const {
   size_t done = 0;
   for (const auto& file_name : file_names_) {
     if (done < size) {
-      FILE* f = fopen(file_name.c_str(), "rb");
-      if (!f) {
+      webrtc::FileWrapper f = webrtc::FileWrapper::OpenReadOnly(file_name);
+      if (!f.is_open()) {
         break;
       }
-      done += fread(static_cast<char*>(buffer) + done, 1, size - done, f);
-      fclose(f);
+      done += f.Read(static_cast<char*>(buffer) + done, size - done);
     } else {
       break;
     }

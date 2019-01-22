@@ -20,13 +20,27 @@
 
 namespace webrtc {
 
+// This class is a thin wrapper around FILE*. It's main features are that it
+// owns the FILE*, calling fclose on destruction, and that on windows, file
+// names passed to the open methods are always treated as utf-8, regardless of
+// system code page.
+
+// Most of the methods return only a success/fail indication. When needed, an
+// optional argument |int* error| should be added to all methods, in the same
+// way as for the OpenWriteOnly methods.
 class FileWrapper final {
  public:
   // Opens a file, in read or write mode. Use the is_open() method on the
-  // returned object to check if the open operation was successful. The file is
-  // closed by the destructor.
+  // returned object to check if the open operation was successful. On failure,
+  // and if |error| is non-null, the system errno value is stored at |*error|.
+  // The file is closed by the destructor.
   static FileWrapper OpenReadOnly(const char* file_name_utf8);
-  static FileWrapper OpenWriteOnly(const char* file_name_utf8);
+  static FileWrapper OpenReadOnly(const std::string& file_name_utf8);
+  static FileWrapper OpenWriteOnly(const char* file_name_utf8,
+                                   int* error = nullptr);
+
+  static FileWrapper OpenWriteOnly(const std::string& file_name_utf8,
+                                   int* error = nullptr);
 
   FileWrapper() = default;
 
@@ -53,7 +67,6 @@ class FileWrapper final {
 
   // Write any buffered data to the underlying file. Returns true on success,
   // false on write error. Note: Flushing when closing, is not required.
-  // TODO(nisse): Delete this method.
   bool Flush();
 
   // Seeks to the beginning of file. Returns true on success, false on failure,

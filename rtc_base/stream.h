@@ -192,6 +192,7 @@ class StreamAdapterInterface : public StreamInterface,
 // support asynchronous notification.
 ///////////////////////////////////////////////////////////////////////////////
 
+// TODO(bugs.webrtc.org/6463): Delete this class.
 class FileStream : public StreamInterface {
  public:
   FileStream();

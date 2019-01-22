@@ -92,11 +92,9 @@ class MAYBE_FileRotatingStreamTest : public ::testing::Test {
                           const size_t expected_length,
                           const std::string& file_path) {
     std::unique_ptr<uint8_t[]> buffer(new uint8_t[expected_length + 1]);
-    FileStream stream;
-    ASSERT_TRUE(stream.Open(file_path, "r", nullptr));
-    size_t size_read = 0;
-    EXPECT_EQ(rtc::SR_EOS, stream.ReadAll(buffer.get(), expected_length + 1,
-                                          &size_read, nullptr));
+    webrtc::FileWrapper f = webrtc::FileWrapper::OpenReadOnly(file_path);
+    ASSERT_TRUE(f.is_open());
+    size_t size_read = f.Read(buffer.get(), expected_length + 1);
     EXPECT_EQ(size_read, expected_length);
     EXPECT_EQ(0, memcmp(expected_contents, buffer.get(),
                         std::min(expected_length, size_read)));
@@ -129,12 +127,10 @@ TEST_F(MAYBE_FileRotatingStreamTest, EmptyWrite) {
   WriteAndFlush("a", 0);
 
   std::string logfile_path = stream_->GetFilePath(0);
-  FileStream stream;
-  ASSERT_TRUE(stream.Open(logfile_path, "r", nullptr));
+  webrtc::FileWrapper f = webrtc::FileWrapper::OpenReadOnly(logfile_path);
+  ASSERT_TRUE(f.is_open());
   char buf[1];
-  size_t read_nbytes;
-  int read_error;
-  EXPECT_EQ(SR_EOS, stream.Read(buf, sizeof(buf), &read_nbytes, &read_error));
+  EXPECT_EQ(0u, f.Read(buf, sizeof(buf)));
 }
 
 // Tests that a write operation followed by a read returns the expected data

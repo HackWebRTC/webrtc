@@ -10,6 +10,8 @@
 
 #include "rtc_base/system/file_wrapper.h"
 
+#include <cerrno>
+
 #ifdef _WIN32
 #include <Windows.h>
 #else
@@ -20,7 +22,7 @@
 
 namespace webrtc {
 namespace {
-FILE* FileOpen(const char* file_name_utf8, bool read_only) {
+FILE* FileOpen(const char* file_name_utf8, bool read_only, int* error) {
 #if defined(_WIN32)
   int len = MultiByteToWideChar(CP_UTF8, 0, file_name_utf8, -1, nullptr, 0);
   std::wstring wstr(len, 0);
@@ -29,18 +31,40 @@ FILE* FileOpen(const char* file_name_utf8, bool read_only) {
 #else
   FILE* file = fopen(file_name_utf8, read_only ? "rb" : "wb");
 #endif
+  if (!file && error) {
+    *error = errno;
+  }
   return file;
+}
+
+const char* GetCstrCheckNoEmbeddedNul(const std::string& s) {
+  const char* p = s.c_str();
+  RTC_CHECK_EQ(strlen(p), s.size())
+      << "Invalid filename, containing NUL character";
+  return p;
 }
 }  // namespace
 
 // static
 FileWrapper FileWrapper::OpenReadOnly(const char* file_name_utf8) {
-  return FileWrapper(FileOpen(file_name_utf8, true));
+  return FileWrapper(FileOpen(file_name_utf8, true, nullptr));
 }
 
 // static
-FileWrapper FileWrapper::OpenWriteOnly(const char* file_name_utf8) {
-  return FileWrapper(FileOpen(file_name_utf8, false));
+FileWrapper FileWrapper::OpenReadOnly(const std::string& file_name_utf8) {
+  return OpenReadOnly(GetCstrCheckNoEmbeddedNul(file_name_utf8));
+}
+
+// static
+FileWrapper FileWrapper::OpenWriteOnly(const char* file_name_utf8,
+                                       int* error /*=nullptr*/) {
+  return FileWrapper(FileOpen(file_name_utf8, false, error));
+}
+
+// static
+FileWrapper FileWrapper::OpenWriteOnly(const std::string& file_name_utf8,
+                                       int* error /*=nullptr*/) {
+  return OpenWriteOnly(GetCstrCheckNoEmbeddedNul(file_name_utf8), error);
 }
 
 FileWrapper::FileWrapper(FileWrapper&& other) {
