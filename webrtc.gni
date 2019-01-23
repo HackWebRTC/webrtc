@@ -717,7 +717,10 @@ if (is_mac) {
     modulemap_path = "$target_gen_dir/Modules/module.modulemap"
 
     mac_framework_bundle(target_name) {
-      forward_variables_from(invoker, "*", [])
+      forward_variables_from(invoker, "*", [ "configs" ])
+      if (defined(invoker.configs)) {
+        configs += invoker.configs
+      }
 
       framework_version = "A"
       framework_contents = [
