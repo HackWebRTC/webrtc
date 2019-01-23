@@ -17,7 +17,7 @@
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/scoped_ref_ptr.h"
-#include "system_wrappers/include/clock.h"
+#include "rtc_base/time_utils.h"
 
 namespace webrtc {
 
@@ -141,8 +141,7 @@ int32_t UlpfecReceiverImpl::AddReceivedRedPacket(
   }
   ++packet_counter_.num_packets;
   if (packet_counter_.first_packet_time_ms == -1) {
-    packet_counter_.first_packet_time_ms =
-        Clock::GetRealTimeClock()->TimeInMilliseconds();
+    packet_counter_.first_packet_time_ms = rtc::TimeMillis();
   }
 
   std::unique_ptr<ForwardErrorCorrection::ReceivedPacket>
