@@ -28,16 +28,16 @@
 #include "pc/channel_manager.h"
 #include "pc/rtp_media_utils.h"
 #include "pc/srtp_filter.h"
-#include "pc/unique_id_generator.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/helpers.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/third_party/base64/base64.h"
+#include "rtc_base/unique_id_generator.h"
 
 namespace {
 
+using rtc::UniqueRandomIdGenerator;
 using webrtc::RtpTransceiverDirection;
-using webrtc::UniqueRandomIdGenerator;
 
 const char kInline[] = "inline:";
 

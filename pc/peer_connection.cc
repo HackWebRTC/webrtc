@@ -42,7 +42,6 @@
 #include "pc/sctp_utils.h"
 #include "pc/sdp_utils.h"
 #include "pc/stream_collection.h"
-#include "pc/unique_id_generator.h"
 #include "pc/video_capturer_track_source.h"
 #include "pc/video_track.h"
 #include "rtc_base/bind.h"

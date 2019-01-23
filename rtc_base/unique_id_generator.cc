@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/unique_id_generator.h"
+#include "rtc_base/unique_id_generator.h"
 
 #include <limits>
 #include <vector>
@@ -17,11 +17,10 @@
 #include "rtc_base/string_encode.h"
 #include "rtc_base/string_to_number.h"
 
-namespace webrtc {
+namespace rtc {
 
 UniqueRandomIdGenerator::UniqueRandomIdGenerator() : known_ids_() {}
-UniqueRandomIdGenerator::UniqueRandomIdGenerator(
-    rtc::ArrayView<uint32_t> known_ids)
+UniqueRandomIdGenerator::UniqueRandomIdGenerator(ArrayView<uint32_t> known_ids)
     : known_ids_(known_ids.begin(), known_ids.end()) {}
 
 UniqueRandomIdGenerator::~UniqueRandomIdGenerator() = default;
@@ -29,7 +28,7 @@ UniqueRandomIdGenerator::~UniqueRandomIdGenerator() = default;
 uint32_t UniqueRandomIdGenerator::GenerateId() {
   while (true) {
     RTC_CHECK_LT(known_ids_.size(), std::numeric_limits<uint32_t>::max());
-    auto pair = known_ids_.insert(rtc::CreateRandomNonZeroId());
+    auto pair = known_ids_.insert(CreateRandomNonZeroId());
     if (pair.second) {
       return *pair.first;
     }
@@ -41,8 +40,7 @@ void UniqueRandomIdGenerator::AddKnownId(uint32_t value) {
 }
 
 UniqueStringGenerator::UniqueStringGenerator() : unique_number_generator_() {}
-UniqueStringGenerator::UniqueStringGenerator(
-    rtc::ArrayView<std::string> known_ids) {
+UniqueStringGenerator::UniqueStringGenerator(ArrayView<std::string> known_ids) {
   for (const std::string& str : known_ids) {
     AddKnownId(str);
   }
@@ -51,11 +49,11 @@ UniqueStringGenerator::UniqueStringGenerator(
 UniqueStringGenerator::~UniqueStringGenerator() = default;
 
 std::string UniqueStringGenerator::GenerateString() {
-  return rtc::ToString(unique_number_generator_.GenerateNumber());
+  return ToString(unique_number_generator_.GenerateNumber());
 }
 
 void UniqueStringGenerator::AddKnownId(const std::string& value) {
-  absl::optional<uint32_t> int_value = rtc::StringToNumber<uint32_t>(value);
+  absl::optional<uint32_t> int_value = StringToNumber<uint32_t>(value);
   // The underlying generator works for uint32_t values, so if the provided
   // value is not a uint32_t it will never be generated anyway.
   if (int_value.has_value()) {
@@ -63,4 +61,4 @@ void UniqueStringGenerator::AddKnownId(const std::string& value) {
   }
 }
 
-}  // namespace webrtc
+}  // namespace rtc

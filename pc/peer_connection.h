@@ -28,8 +28,8 @@
 #include "pc/rtp_transceiver.h"
 #include "pc/stats_collector.h"
 #include "pc/stream_collection.h"
-#include "pc/unique_id_generator.h"
 #include "pc/webrtc_session_description_factory.h"
+#include "rtc_base/unique_id_generator.h"
 
 namespace webrtc {
 
@@ -1062,7 +1062,7 @@ class PeerConnection : public PeerConnectionInternal,
   rtc::scoped_refptr<MediaStreamInterface> missing_msid_default_stream_;
   // MIDs will be generated using this generator which will keep track of
   // all the MIDs that have been seen over the life of the PeerConnection.
-  UniqueStringGenerator mid_generator_;
+  rtc::UniqueStringGenerator mid_generator_;
 
   SessionError session_error_ = SessionError::kNone;
   std::string session_error_desc_;

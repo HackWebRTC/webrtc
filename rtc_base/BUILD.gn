@@ -1028,6 +1028,8 @@ rtc_static_library("rtc_base") {
     "stream.h",
     "thread.cc",
     "thread.h",
+    "unique_id_generator.cc",
+    "unique_id_generator.h",
   ]
 
   if (build_with_chromium) {
@@ -1519,6 +1521,7 @@ if (rtc_include_tests) {
       "stream_unittest.cc",
       "test_client_unittest.cc",
       "thread_unittest.cc",
+      "unique_id_generator_unittest.cc",
     ]
     if (is_win) {
       sources += [

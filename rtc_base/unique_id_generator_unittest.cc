@@ -13,15 +13,15 @@
 #include "vector"
 
 #include "api/array_view.h"
-#include "pc/unique_id_generator.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/helpers.h"
+#include "rtc_base/unique_id_generator.h"
 #include "test/gmock.h"
 
 using ::testing::IsEmpty;
 using ::testing::Test;
 
-namespace webrtc {
+namespace rtc {
 
 template <typename Generator>
 class UniqueIdGeneratorTest : public Test {};
@@ -107,4 +107,4 @@ TYPED_TEST(UniqueIdGeneratorTest, AddedElementsAreNotGenerated) {
   EXPECT_THAT(intersection, IsEmpty());
 }
 
-}  // namespace webrtc
+}  // namespace rtc
