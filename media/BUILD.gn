@@ -345,12 +345,6 @@ rtc_static_library("rtc_audio_video") {
     suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 
-  if (rtc_opus_support_120ms_ptime) {
-    defines += [ "WEBRTC_OPUS_SUPPORT_120MS_PTIME=1" ]
-  } else {
-    defines += [ "WEBRTC_OPUS_SUPPORT_120MS_PTIME=0" ]
-  }
-
   include_dirs = []
 
   public_configs = []
@@ -391,6 +385,8 @@ rtc_static_library("rtc_audio_video") {
     "../rtc_base:rtc_base",
     "../rtc_base:rtc_task_queue",
     "../rtc_base:stringutils",
+    "../rtc_base/experiments:audio_allocation_settings",
+    "../rtc_base/experiments:field_trial_parser",
     "../rtc_base/experiments:normalize_simulcast_size_experiment",
     "../system_wrappers",
     "//third_party/abseil-cpp/absl/memory",

@@ -21,6 +21,7 @@
 #include "call/bitrate_allocator.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "rtc_base/constructor_magic.h"
+#include "rtc_base/experiments/audio_allocation_settings.h"
 #include "rtc_base/race_checker.h"
 #include "rtc_base/thread_checker.h"
 
@@ -121,6 +122,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   rtc::ThreadChecker pacer_thread_checker_;
   rtc::RaceChecker audio_capture_race_checker_;
   rtc::TaskQueue* worker_queue_;
+  const AudioAllocationSettings allocation_settings_;
   webrtc::AudioSendStream::Config config_;
   rtc::scoped_refptr<webrtc::AudioState> audio_state_;
   const std::unique_ptr<voe::ChannelSendInterface> channel_send_;
@@ -152,6 +154,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   };
   static ExtensionIds FindExtensionIds(
       const std::vector<RtpExtension>& extensions);
+  static int TransportSeqNumId(const Config& config);
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AudioSendStream);
 };

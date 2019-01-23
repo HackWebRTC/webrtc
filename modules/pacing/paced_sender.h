@@ -174,7 +174,7 @@ class PacedSender : public Pacer {
 
   const bool drain_large_queues_;
   const bool send_padding_if_silent_;
-  const bool video_blocks_audio_;
+  const bool pace_audio_;
   FieldTrialParameter<int> min_packet_limit_ms_;
 
   rtc::CriticalSection critsect_;

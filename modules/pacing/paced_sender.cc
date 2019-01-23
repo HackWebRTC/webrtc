@@ -51,7 +51,7 @@ PacedSender::PacedSender(const Clock* clock,
       drain_large_queues_(!field_trial::IsDisabled("WebRTC-Pacer-DrainQueue")),
       send_padding_if_silent_(
           field_trial::IsEnabled("WebRTC-Pacer-PadInSilence")),
-      video_blocks_audio_(!field_trial::IsDisabled("WebRTC-Pacer-BlockAudio")),
+      pace_audio_(!field_trial::IsDisabled("WebRTC-Pacer-BlockAudio")),
       min_packet_limit_ms_("", kDefaultMinPacketLimitMs),
       last_timestamp_ms_(clock_->TimeInMilliseconds()),
       paused_(false),
@@ -408,8 +408,7 @@ const RoundRobinPacketQueue::Packet* PacedSender::GetPendingPacket(
   // reinsert it if send fails.
   const RoundRobinPacketQueue::Packet* packet = &packets_.BeginPop();
   bool audio_packet = packet->priority == kHighPriority;
-  bool apply_pacing =
-      !audio_packet || account_for_audio_ || video_blocks_audio_;
+  bool apply_pacing = !audio_packet || pace_audio_;
   if (apply_pacing && (Congested() || (media_budget_.bytes_remaining() == 0 &&
                                        pacing_info.probe_cluster_id ==
                                            PacedPacketInfo::kNotAProbe))) {

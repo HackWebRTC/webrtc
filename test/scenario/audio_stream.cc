@@ -109,22 +109,6 @@ SendAudioStream::SendAudioStream(
       min_rate = *config.encoder.min_rate;
       max_rate = *config.encoder.max_rate;
     }
-    if (field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")) {
-      TimeDelta min_frame_length = TimeDelta::ms(20);
-      // Note, depends on WEBRTC_OPUS_SUPPORT_120MS_PTIME being set, which is
-      // the default.
-      TimeDelta max_frame_length = TimeDelta::ms(120);
-      DataSize rtp_overhead = DataSize::bytes(12);
-      // Note that this does not include rtp extension overhead and will not
-      // follow updates in the transport overhead over time.
-      DataSize total_overhead =
-          sender_->transport_.packet_overhead() + rtp_overhead;
-
-      min_rate += total_overhead / max_frame_length;
-      // In WebRTCVoiceEngine the max rate is also based on the max frame
-      // length.
-      max_rate += total_overhead / min_frame_length;
-    }
     send_config.min_bitrate_bps = min_rate.bps();
     send_config.max_bitrate_bps = max_rate.bps();
   }

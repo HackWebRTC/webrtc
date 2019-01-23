@@ -256,11 +256,11 @@ TEST_F(GoogCcNetworkControllerTest, OnNetworkRouteChanged) {
 
   // If the bitrate is reset to -1, the new starting bitrate will be
   // the minimum default bitrate.
-  const DataRate kDefaultMinBitrate = DataRate::bps(10000);
+  const DataRate kDefaultMinBitrate = DataRate::kbps(5);
   update = controller_->OnNetworkRouteChange(CreateRouteChange());
   EXPECT_EQ(update.target_rate->target_rate, kDefaultMinBitrate);
-  EXPECT_EQ(update.pacer_config->data_rate(),
-            kDefaultMinBitrate * kDefaultPacingRate);
+  EXPECT_NEAR(update.pacer_config->data_rate().bps<double>(),
+              kDefaultMinBitrate.bps<double>() * kDefaultPacingRate, 10);
   EXPECT_EQ(update.probe_cluster_configs.size(), 2u);
 }
 

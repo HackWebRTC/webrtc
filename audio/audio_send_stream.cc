@@ -206,6 +206,10 @@ AudioSendStream::ExtensionIds AudioSendStream::FindExtensionIds(
   return ids;
 }
 
+int AudioSendStream::TransportSeqNumId(const AudioSendStream::Config& config) {
+  return FindExtensionIds(config.rtp.extensions).transport_sequence_number;
+}
+
 void AudioSendStream::ConfigureStream(
     webrtc::internal::AudioSendStream* stream,
     const webrtc::AudioSendStream::Config& new_config,
@@ -251,18 +255,16 @@ void AudioSendStream::ConfigureStream(
   }
   bool transport_seq_num_id_changed =
       new_ids.transport_sequence_number != old_ids.transport_sequence_number;
-  if (first_time ||
-      (transport_seq_num_id_changed &&
-       !webrtc::field_trial::IsEnabled("WebRTC-Audio-ForceNoTWCC"))) {
+  if (first_time || (transport_seq_num_id_changed &&
+                     !stream->allocation_settings_.ForceNoAudioFeedback())) {
     if (!first_time) {
       channel_send->ResetSenderCongestionControlObjects();
     }
 
     RtcpBandwidthObserver* bandwidth_observer = nullptr;
-    bool has_transport_sequence_number =
-        new_ids.transport_sequence_number != 0 &&
-        !webrtc::field_trial::IsEnabled("WebRTC-Audio-ForceNoTWCC");
-    if (has_transport_sequence_number) {
+
+    if (stream->allocation_settings_.IncludeAudioInFeedback(
+            new_ids.transport_sequence_number != 0)) {
       channel_send->EnableSendTransportSequenceNumber(
           new_ids.transport_sequence_number);
       // Probing in application limited region is only used in combination with
@@ -308,15 +310,9 @@ void AudioSendStream::Start() {
     return;
   }
 
-  bool has_transport_sequence_number =
-      FindExtensionIds(config_.rtp.extensions).transport_sequence_number != 0 &&
-      !webrtc::field_trial::IsEnabled("WebRTC-Audio-ForceNoTWCC");
-  if (config_.min_bitrate_bps != -1 && config_.max_bitrate_bps != -1 &&
-      !config_.has_dscp &&
-      (has_transport_sequence_number ||
-       !webrtc::field_trial::IsEnabled("WebRTC-Audio-SendSideBwe") ||
-       webrtc::field_trial::IsEnabled("WebRTC-Audio-ABWENoTWCC"))) {
-    // Audio BWE is enabled.
+  if (allocation_settings_.IncludeAudioInAllocationOnStart(
+          config_.min_bitrate_bps, config_.max_bitrate_bps, config_.has_dscp,
+          TransportSeqNumId(config_))) {
     rtp_transport_->packet_sender()->SetAccountForAudioPackets(true);
     rtp_rtcp_module_->SetAsPartOfAllocation(true);
     ConfigureBitrateObserver(config_.min_bitrate_bps, config_.max_bitrate_bps,
@@ -539,16 +535,11 @@ bool AudioSendStream::SetupSendCodec(AudioSendStream* stream,
     return false;
   }
 
-  // If other side does not support audio TWCC and WebRTC-Audio-ABWENoTWCC is
-  // not enabled, do not update target audio bitrate if we are in
-  // WebRTC-Audio-SendSideBwe-For-Video experiment
-  const bool do_not_update_target_bitrate =
-      !webrtc::field_trial::IsEnabled("WebRTC-Audio-ABWENoTWCC") &&
-      webrtc::field_trial::IsEnabled("WebRTC-Audio-SendSideBwe-For-Video") &&
-      !FindExtensionIds(new_config.rtp.extensions).transport_sequence_number;
   // If a bitrate has been specified for the codec, use it over the
   // codec's default.
-  if (!do_not_update_target_bitrate && spec.target_bitrate_bps) {
+  if (stream->allocation_settings_.UpdateAudioTargetBitrate(
+          TransportSeqNumId(new_config)) &&
+      spec.target_bitrate_bps) {
     encoder->OnReceivedTargetAudioBitrate(*spec.target_bitrate_bps);
   }
 
@@ -611,19 +602,13 @@ bool AudioSendStream::ReconfigureSendCodec(AudioSendStream* stream,
     return SetupSendCodec(stream, new_config);
   }
 
-  // If other side does not support audio TWCC and WebRTC-Audio-ABWENoTWCC is
-  // not enabled, do not update target audio bitrate if we are in
-  // WebRTC-Audio-SendSideBwe-For-Video experiment
-  const bool do_not_update_target_bitrate =
-      !webrtc::field_trial::IsEnabled("WebRTC-Audio-ABWENoTWCC") &&
-      webrtc::field_trial::IsEnabled("WebRTC-Audio-SendSideBwe-For-Video") &&
-      !FindExtensionIds(new_config.rtp.extensions).transport_sequence_number;
-
   const absl::optional<int>& new_target_bitrate_bps =
       new_config.send_codec_spec->target_bitrate_bps;
   // If a bitrate has been specified for the codec, use it over the
   // codec's default.
-  if (!do_not_update_target_bitrate && new_target_bitrate_bps &&
+  if (stream->allocation_settings_.UpdateAudioTargetBitrate(
+          TransportSeqNumId(new_config)) &&
+      new_target_bitrate_bps &&
       new_target_bitrate_bps !=
           old_config.send_codec_spec->target_bitrate_bps) {
     CallEncoder(stream->channel_send_, [&](AudioEncoder* encoder) {
@@ -711,27 +696,22 @@ void AudioSendStream::ReconfigureBitrateObserver(
   // allow us to configure the bitrate observer if the new config has bitrate
   // limits set, but would only have us call RemoveBitrateObserver if we were
   // previously configured with bitrate limits.
-  int new_transport_seq_num_id =
-      FindExtensionIds(new_config.rtp.extensions).transport_sequence_number;
   if (stream->config_.min_bitrate_bps == new_config.min_bitrate_bps &&
       stream->config_.max_bitrate_bps == new_config.max_bitrate_bps &&
       stream->config_.bitrate_priority == new_config.bitrate_priority &&
-      (FindExtensionIds(stream->config_.rtp.extensions)
-               .transport_sequence_number == new_transport_seq_num_id ||
-       !webrtc::field_trial::IsEnabled("WebRTC-Audio-SendSideBwe"))) {
+      (TransportSeqNumId(stream->config_) == TransportSeqNumId(new_config) ||
+       stream->allocation_settings_.IgnoreSeqNumIdChange())) {
     return;
   }
 
-  bool has_transport_sequence_number = new_transport_seq_num_id != 0;
-  if (new_config.min_bitrate_bps != -1 && new_config.max_bitrate_bps != -1 &&
-      !new_config.has_dscp &&
-      (has_transport_sequence_number ||
-       !webrtc::field_trial::IsEnabled("WebRTC-Audio-SendSideBwe"))) {
+  if (stream->allocation_settings_.IncludeAudioInAllocationOnReconfigure(
+          new_config.min_bitrate_bps, new_config.max_bitrate_bps,
+          new_config.has_dscp, TransportSeqNumId(new_config))) {
     stream->rtp_transport_->packet_sender()->SetAccountForAudioPackets(true);
-    stream->rtp_rtcp_module_->SetAsPartOfAllocation(true);
     stream->ConfigureBitrateObserver(new_config.min_bitrate_bps,
                                      new_config.max_bitrate_bps,
                                      new_config.bitrate_priority);
+    stream->rtp_rtcp_module_->SetAsPartOfAllocation(true);
   } else {
     stream->rtp_transport_->packet_sender()->SetAccountForAudioPackets(false);
     stream->RemoveBitrateObserver();

@@ -37,6 +37,8 @@
 #include "rtc_base/arraysize.h"
 #include "rtc_base/byte_order.h"
 #include "rtc_base/constructor_magic.h"
+#include "rtc_base/experiments/field_trial_parser.h"
+#include "rtc_base/experiments/field_trial_units.h"
 #include "rtc_base/helpers.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/race_checker.h"
@@ -53,10 +55,6 @@ namespace {
 constexpr size_t kMaxUnsignaledRecvStreams = 4;
 
 constexpr int kNackRtpHistoryMs = 5000;
-
-// For SendSideBwe, Opus bitrate should be in the range between 6000 and 32000.
-const int kOpusMinBitrateBps = 6000;
-const int kOpusBitrateFbBps = 32000;
 
 const int kMinTelephoneEventCode = 0;  // RFC4733 (Section 2.3.1)
 const int kMaxTelephoneEventCode = 255;
@@ -564,8 +562,7 @@ RtpCapabilities WebRtcVoiceEngine::GetCapabilities() const {
   capabilities.header_extensions.push_back(
       webrtc::RtpExtension(webrtc::RtpExtension::kAudioLevelUri,
                            webrtc::RtpExtension::kAudioLevelDefaultId));
-  if (webrtc::field_trial::IsEnabled("WebRTC-Audio-SendSideBwe") &&
-      !webrtc::field_trial::IsEnabled("WebRTC-Audio-ABWENoTWCC")) {
+  if (allocation_settings_.EnableTransportSequenceNumberExtension()) {
     capabilities.header_extensions.push_back(webrtc::RtpExtension(
         webrtc::RtpExtension::kTransportSequenceNumberUri,
         webrtc::RtpExtension::kTransportSequenceNumberDefaultId));
@@ -729,8 +726,6 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
       const webrtc::CryptoOptions& crypto_options)
       : call_(call),
         config_(send_transport, media_transport),
-        send_side_bwe_with_overhead_(
-            webrtc::field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")),
         max_send_bitrate_bps_(max_send_bitrate_bps),
         rtp_parameters_(CreateRtpParametersWithOneEncoding()) {
     RTC_DCHECK(call);
@@ -991,43 +986,10 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
         config_.send_codec_spec &&
         absl::EqualsIgnoreCase(config_.send_codec_spec->format.name,
                                kOpusCodecName);
-    if (is_opus && webrtc::field_trial::IsEnabled("WebRTC-Audio-SendSideBwe")) {
-      config_.min_bitrate_bps = kOpusMinBitrateBps;
-
-      // This means that when RtpParameters is reset, we may change the
-      // encoder's bit rate immediately (through ReconfigureAudioSendStream()),
-      // meanwhile change the cap to the output of BWE.
-      config_.max_bitrate_bps =
-          rtp_parameters_.encodings[0].max_bitrate_bps
-              ? *rtp_parameters_.encodings[0].max_bitrate_bps
-              : kOpusBitrateFbBps;
-
-      // TODO(mflodman): Keep testing this and set proper values.
-      // Note: This is an early experiment currently only supported by Opus.
-      if (send_side_bwe_with_overhead_) {
-        const int max_packet_size_ms =
-            WEBRTC_OPUS_SUPPORT_120MS_PTIME ? 120 : 60;
-
-        // OverheadPerPacket = Ipv4(20B) + UDP(8B) + SRTP(10B) + RTP(12)
-        constexpr int kOverheadPerPacket = 20 + 8 + 10 + 12;
-
-        int min_overhead_bps =
-            kOverheadPerPacket * 8 * 1000 / max_packet_size_ms;
-
-        // We assume that |config_.max_bitrate_bps| before the next line is
-        // a hard limit on the payload bitrate, so we add min_overhead_bps to
-        // it to ensure that, when overhead is deducted, the payload rate
-        // never goes beyond the limit.
-        // Note: this also means that if a higher overhead is forced, we
-        // cannot reach the limit.
-        // TODO(minyue): Reconsider this when the signaling to BWE is done
-        // through a dedicated API.
-        config_.max_bitrate_bps += min_overhead_bps;
-
-        // In contrast to max_bitrate_bps, we let min_bitrate_bps always be
-        // reachable.
-        config_.min_bitrate_bps += min_overhead_bps;
-      }
+    if (is_opus && allocation_settings_.ConfigureRateAllocationRange()) {
+      config_.min_bitrate_bps = allocation_settings_.MinBitrateBps();
+      config_.max_bitrate_bps = allocation_settings_.MaxBitrateBps(
+          rtp_parameters_.encodings[0].max_bitrate_bps);
     }
   }
 
@@ -1064,9 +1026,9 @@ class WebRtcVoiceMediaChannel::WebRtcAudioSendStream
 
   rtc::ThreadChecker worker_thread_checker_;
   rtc::RaceChecker audio_capture_race_checker_;
+  const webrtc::AudioAllocationSettings allocation_settings_;
   webrtc::Call* call_ = nullptr;
   webrtc::AudioSendStream::Config config_;
-  const bool send_side_bwe_with_overhead_;
   // The stream is owned by WebRtcAudioSendStream and may be reallocated if
   // configuration changes.
   webrtc::AudioSendStream* stream_ = nullptr;

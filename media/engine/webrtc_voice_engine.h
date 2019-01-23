@@ -26,6 +26,7 @@
 #include "pc/channel.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/constructor_magic.h"
+#include "rtc_base/experiments/audio_allocation_settings.h"
 #include "rtc_base/network_route.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/task_queue.h"
@@ -105,6 +106,8 @@ class WebRtcVoiceEngine final : public VoiceEngineInterface {
 
   rtc::ThreadChecker signal_thread_checker_;
   rtc::ThreadChecker worker_thread_checker_;
+
+  const webrtc::AudioAllocationSettings allocation_settings_;
 
   // The audio device module.
   rtc::scoped_refptr<webrtc::AudioDeviceModule> adm_;

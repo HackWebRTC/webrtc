@@ -20,6 +20,24 @@ rtc_static_library("alr_experiment") {
   ]
 }
 
+rtc_static_library("audio_allocation_settings") {
+  sources = [
+    "audio_allocation_settings.cc",
+    "audio_allocation_settings.h",
+  ]
+  defines = []
+  if (rtc_opus_support_120ms_ptime) {
+    defines += [ "WEBRTC_OPUS_SUPPORT_120MS_PTIME=1" ]
+  } else {
+    defines += [ "WEBRTC_OPUS_SUPPORT_120MS_PTIME=0" ]
+  }
+  deps = [
+    ":field_trial_parser",
+    "../:rtc_base_approved",
+    "../../system_wrappers:field_trial",
+  ]
+}
+
 rtc_static_library("field_trial_parser") {
   sources = [
     "field_trial_parser.cc",
