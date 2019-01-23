@@ -94,14 +94,11 @@ class RtpTransportControllerSend final
   RtcpBandwidthObserver* GetBandwidthObserver() override;
   int64_t GetPacerQueuingDelayMs() const override;
   int64_t GetFirstPacketTimeMs() const override;
-  void SetPerPacketFeedbackAvailable(bool available) override;
   void EnablePeriodicAlrProbing(bool enable) override;
   void OnSentPacket(const rtc::SentPacket& sent_packet) override;
 
   void SetSdpBitrateParameters(const BitrateConstraints& constraints) override;
   void SetClientBitratePreferences(const BitrateSettings& preferences) override;
-
-  void SetAllocatedBitrateWithoutFeedback(uint32_t bitrate_bps) override;
 
   void OnTransportOverheadChanged(
       size_t transport_overhead_per_packet) override;
@@ -178,7 +175,6 @@ class RtpTransportControllerSend final
   // TODO(srte): Remove atomic when feedback adapter runs on task queue.
   std::atomic<size_t> transport_overhead_bytes_per_packet_;
   bool network_available_ RTC_GUARDED_BY(task_queue_);
-  bool packet_feedback_available_ RTC_GUARDED_BY(task_queue_);
   RepeatingTaskHandle pacer_queue_update_task_ RTC_GUARDED_BY(task_queue_);
   RepeatingTaskHandle controller_task_ RTC_GUARDED_BY(task_queue_);
   // Protects access to last_packet_feedback_vector_ in feedback adapter.

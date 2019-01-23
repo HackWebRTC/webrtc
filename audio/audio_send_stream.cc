@@ -320,8 +320,7 @@ void AudioSendStream::Start() {
     rtp_transport_->packet_sender()->SetAccountForAudioPackets(true);
     rtp_rtcp_module_->SetAsPartOfAllocation(true);
     ConfigureBitrateObserver(config_.min_bitrate_bps, config_.max_bitrate_bps,
-                             config_.bitrate_priority,
-                             has_transport_sequence_number);
+                             config_.bitrate_priority);
   } else {
     rtp_rtcp_module_->SetAsPartOfAllocation(false);
   }
@@ -729,10 +728,10 @@ void AudioSendStream::ReconfigureBitrateObserver(
       (has_transport_sequence_number ||
        !webrtc::field_trial::IsEnabled("WebRTC-Audio-SendSideBwe"))) {
     stream->rtp_transport_->packet_sender()->SetAccountForAudioPackets(true);
-    stream->ConfigureBitrateObserver(
-        new_config.min_bitrate_bps, new_config.max_bitrate_bps,
-        new_config.bitrate_priority, has_transport_sequence_number);
     stream->rtp_rtcp_module_->SetAsPartOfAllocation(true);
+    stream->ConfigureBitrateObserver(new_config.min_bitrate_bps,
+                                     new_config.max_bitrate_bps,
+                                     new_config.bitrate_priority);
   } else {
     stream->rtp_transport_->packet_sender()->SetAccountForAudioPackets(false);
     stream->RemoveBitrateObserver();
@@ -742,8 +741,7 @@ void AudioSendStream::ReconfigureBitrateObserver(
 
 void AudioSendStream::ConfigureBitrateObserver(int min_bitrate_bps,
                                                int max_bitrate_bps,
-                                               double bitrate_priority,
-                                               bool has_packet_feedback) {
+                                               double bitrate_priority) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   RTC_DCHECK_GE(max_bitrate_bps, min_bitrate_bps);
   rtc::Event thread_sync_event;
@@ -755,10 +753,10 @@ void AudioSendStream::ConfigureBitrateObserver(int min_bitrate_bps,
     config_.bitrate_priority = bitrate_priority;
     // This either updates the current observer or adds a new observer.
     bitrate_allocator_->AddObserver(
-        this, MediaStreamAllocationConfig{
-                  static_cast<uint32_t>(min_bitrate_bps),
-                  static_cast<uint32_t>(max_bitrate_bps), 0, true,
-                  config_.track_id, bitrate_priority, has_packet_feedback});
+        this,
+        MediaStreamAllocationConfig{static_cast<uint32_t>(min_bitrate_bps),
+                                    static_cast<uint32_t>(max_bitrate_bps), 0,
+                                    true, config_.track_id, bitrate_priority});
     thread_sync_event.Set();
   });
   thread_sync_event.Wait(rtc::Event::kForever);

@@ -151,14 +151,11 @@ class RtpTransportControllerSendInterface {
   virtual int64_t GetFirstPacketTimeMs() const = 0;
   virtual void EnablePeriodicAlrProbing(bool enable) = 0;
   virtual void OnSentPacket(const rtc::SentPacket& sent_packet) = 0;
-  virtual void SetPerPacketFeedbackAvailable(bool available) = 0;
 
   virtual void SetSdpBitrateParameters(
       const BitrateConstraints& constraints) = 0;
   virtual void SetClientBitratePreferences(
       const BitrateSettings& preferences) = 0;
-
-  virtual void SetAllocatedBitrateWithoutFeedback(uint32_t bitrate_bps) = 0;
 
   virtual void OnTransportOverheadChanged(
       size_t transport_overhead_per_packet) = 0;

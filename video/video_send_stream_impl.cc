@@ -375,7 +375,7 @@ void VideoSendStreamImpl::StartupVideoSendStream() {
           static_cast<uint32_t>(encoder_min_bitrate_bps_),
           encoder_max_bitrate_bps_, static_cast<uint32_t>(max_padding_bitrate_),
           !config_->suspend_below_min_bitrate, config_->track_id,
-          encoder_bitrate_priority_, has_packet_feedback_});
+          encoder_bitrate_priority_});
   // Start monitoring encoder activity.
   {
     RTC_DCHECK(!check_encoder_activity_task_.Running());
@@ -488,7 +488,7 @@ void VideoSendStreamImpl::SignalEncoderActive() {
           static_cast<uint32_t>(encoder_min_bitrate_bps_),
           encoder_max_bitrate_bps_, static_cast<uint32_t>(max_padding_bitrate_),
           !config_->suspend_below_min_bitrate, config_->track_id,
-          encoder_bitrate_priority_, has_packet_feedback_});
+          encoder_bitrate_priority_});
 }
 
 void VideoSendStreamImpl::OnEncoderConfigurationChanged(
@@ -557,7 +557,7 @@ void VideoSendStreamImpl::OnEncoderConfigurationChanged(
                   encoder_max_bitrate_bps_,
                   static_cast<uint32_t>(max_padding_bitrate_),
                   !config_->suspend_below_min_bitrate, config_->track_id,
-                  encoder_bitrate_priority_, has_packet_feedback_});
+                  encoder_bitrate_priority_});
   }
 }
 

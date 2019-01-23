@@ -78,7 +78,6 @@ RtpTransportControllerSend::RtpTransportControllerSend(
           field_trial::IsEnabled("WebRTC-AddPacingToCongestionWindowPushback")),
       transport_overhead_bytes_per_packet_(0),
       network_available_(false),
-      packet_feedback_available_(false),
       retransmission_rate_limiter_(clock, kRetransmitWindowSizeMs),
       task_queue_("rtp_send_controller") {
   initial_config_.constraints = ConvertConstraints(bitrate_config, clock_);
@@ -303,12 +302,6 @@ int64_t RtpTransportControllerSend::GetPacerQueuingDelayMs() const {
 int64_t RtpTransportControllerSend::GetFirstPacketTimeMs() const {
   return pacer_.FirstSentPacketTimeMs();
 }
-void RtpTransportControllerSend::SetPerPacketFeedbackAvailable(bool available) {
-  RTC_DCHECK_RUN_ON(&task_queue_);
-  packet_feedback_available_ = available;
-  if (!controller_)
-    MaybeCreateControllers();
-}
 void RtpTransportControllerSend::EnablePeriodicAlrProbing(bool enable) {
   task_queue_.PostTask([this, enable]() {
     RTC_DCHECK_RUN_ON(&task_queue_);
@@ -370,22 +363,6 @@ void RtpTransportControllerSend::SetClientBitratePreferences(
     RTC_LOG(LS_VERBOSE)
         << "WebRTC.RtpTransportControllerSend.SetClientBitratePreferences: "
         << "nothing to update";
-  }
-}
-
-void RtpTransportControllerSend::SetAllocatedBitrateWithoutFeedback(
-    uint32_t bitrate_bps) {
-  // Audio transport feedback will not be reported in this mode, instead update
-  // acknowledged bitrate estimator with the bitrate allocated for audio.
-  if (field_trial::IsEnabled("WebRTC-Audio-ABWENoTWCC")) {
-    // TODO(srte): Make sure it's safe to always report this and remove the
-    // field trial check.
-    task_queue_.PostTask([this, bitrate_bps]() {
-      RTC_DCHECK_RUN_ON(&task_queue_);
-      streams_config_.unacknowledged_rate_allocation =
-          DataRate::bps(bitrate_bps);
-      UpdateStreamsConfig();
-    });
   }
 }
 

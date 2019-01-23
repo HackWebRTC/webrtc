@@ -25,14 +25,6 @@ namespace webrtc {
 // TODO(srte): Update tests to reflect new interface.
 class LimitObserverWrapper : public BitrateAllocator::LimitObserver {
  public:
-  void OnAllocationLimitsChanged(uint32_t min_send_bitrate_bps,
-                                 uint32_t max_padding_bitrate_bps,
-                                 uint32_t total_bitrate_bps,
-                                 uint32_t allocated_without_feedback_bps,
-                                 bool has_packet_feedback) override {
-    OnAllocationLimitsChanged(min_send_bitrate_bps, max_padding_bitrate_bps,
-                              total_bitrate_bps);
-  }
   virtual void OnAllocationLimitsChanged(uint32_t min_send_bitrate_bps,
                                          uint32_t max_padding_bitrate_bps,
                                          uint32_t total_bitrate_bps) = 0;
@@ -107,7 +99,7 @@ class BitrateAllocatorTest : public ::testing::Test {
                    double bitrate_priority) {
     allocator_->AddObserver(
         observer, {min_bitrate_bps, max_bitrate_bps, pad_up_bitrate_bps,
-                   enforce_min_bitrate, track_id, bitrate_priority, false});
+                   enforce_min_bitrate, track_id, bitrate_priority});
   }
 
   NiceMock<MockLimitObserver> limit_observer_;
@@ -240,7 +232,7 @@ class BitrateAllocatorTestNoEnforceMin : public ::testing::Test {
                    double bitrate_priority) {
     allocator_->AddObserver(
         observer, {min_bitrate_bps, max_bitrate_bps, pad_up_bitrate_bps,
-                   enforce_min_bitrate, track_id, bitrate_priority, false});
+                   enforce_min_bitrate, track_id, bitrate_priority});
   }
   NiceMock<MockLimitObserver> limit_observer_;
   std::unique_ptr<BitrateAllocatorForTest> allocator_;

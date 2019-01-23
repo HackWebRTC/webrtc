@@ -475,8 +475,6 @@ void DEPRECATED_SendSideCongestionController::SetPacingFactor(
 
 void DEPRECATED_SendSideCongestionController::
     SetAllocatedBitrateWithoutFeedback(uint32_t bitrate_bps) {
-  acknowledged_bitrate_estimator_->SetAllocatedBitrateWithoutFeedback(
-      bitrate_bps);
 }
 
 void DEPRECATED_SendSideCongestionController::MaybeTriggerOnNetworkChanged() {
