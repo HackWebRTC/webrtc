@@ -35,6 +35,14 @@ const char kVp8TrustedRateControllerFieldTrialName[] =
 const char kVp9TrustedRateControllerFieldTrialName[] =
     "WebRTC-LibvpxVp9TrustedRateController";
 
+const char* kVideoHysteresisFieldTrialname =
+    "WebRTC-SimulcastUpswitchHysteresisPercent";
+const double kDefaultVideoHysteresisFactor = 1.0;
+const char* kScreenshareHysteresisFieldTrialname =
+    "WebRTC-SimulcastScreenshareUpswitchHysteresisPercent";
+// Default to 35% hysteresis for simulcast screenshare.
+const double kDefaultScreenshareHysteresisFactor = 1.35;
+
 absl::optional<int> MaybeReadCwndExperimentParameter(
     const WebRtcKeyValueConfig* const key_value_config) {
   int64_t accepted_queue_ms;
@@ -74,6 +82,18 @@ bool IsEnabled(const WebRtcKeyValueConfig* const key_value_config,
   return key_value_config->Lookup(key).find("Enabled") == 0;
 }
 
+double ParseHysteresisFactor(const WebRtcKeyValueConfig* const key_value_config,
+                             absl::string_view key,
+                             double default_value) {
+  std::string group_name = key_value_config->Lookup(key);
+  int percent = 0;
+  if (!group_name.empty() && sscanf(group_name.c_str(), "%d", &percent) == 1 &&
+      percent >= 0) {
+    return 1.0 + (percent / 100.0);
+  }
+  return default_value;
+}
+
 }  // namespace
 
 RateControlSettings::RateControlSettings(
@@ -89,11 +109,21 @@ RateControlSettings::RateControlSettings(
       trust_vp8_(
           "trust_vp8",
           IsEnabled(key_value_config, kVp8TrustedRateControllerFieldTrialName)),
-      trust_vp9_("trust_vp9",
-                 IsEnabled(key_value_config,
-                           kVp9TrustedRateControllerFieldTrialName)) {
+      trust_vp9_(
+          "trust_vp9",
+          IsEnabled(key_value_config, kVp9TrustedRateControllerFieldTrialName)),
+      video_hysteresis_("video_hysteresis",
+                        ParseHysteresisFactor(key_value_config,
+                                              kVideoHysteresisFieldTrialname,
+                                              kDefaultVideoHysteresisFactor)),
+      screenshare_hysteresis_(
+          "screenshare_hysteresis",
+          ParseHysteresisFactor(key_value_config,
+                                kScreenshareHysteresisFieldTrialname,
+                                kDefaultScreenshareHysteresisFactor)) {
   ParseFieldTrial({&congestion_window_, &congestion_window_pushback_,
-                   &pacing_factor_, &alr_probing_, &trust_vp8_, &trust_vp9_},
+                   &pacing_factor_, &alr_probing_, &trust_vp8_, &trust_vp9_,
+                   &video_hysteresis_, &screenshare_hysteresis_},
                   key_value_config->Lookup("WebRTC-VideoRateControl"));
 }
 
@@ -144,6 +174,14 @@ bool RateControlSettings::LibvpxVp8TrustedRateController() const {
 
 bool RateControlSettings::LibvpxVp9TrustedRateController() const {
   return trust_vp9_.Get();
+}
+
+double RateControlSettings::GetSimulcastVideoHysteresisFactor() const {
+  return video_hysteresis_.Get();
+}
+
+double RateControlSettings::GetSimulcastScreenshareHysteresisFactor() const {
+  return screenshare_hysteresis_.Get();
 }
 
 }  // namespace webrtc

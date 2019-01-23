@@ -41,6 +41,9 @@ class RateControlSettings final {
   bool LibvpxVp8TrustedRateController() const;
   bool LibvpxVp9TrustedRateController() const;
 
+  double GetSimulcastVideoHysteresisFactor() const;
+  double GetSimulcastScreenshareHysteresisFactor() const;
+
  private:
   explicit RateControlSettings(
       const WebRtcKeyValueConfig* const key_value_config);
@@ -51,6 +54,8 @@ class RateControlSettings final {
   FieldTrialParameter<bool> alr_probing_;
   FieldTrialParameter<bool> trust_vp8_;
   FieldTrialParameter<bool> trust_vp9_;
+  FieldTrialParameter<double> video_hysteresis_;
+  FieldTrialParameter<double> screenshare_hysteresis_;
 };
 
 }  // namespace webrtc

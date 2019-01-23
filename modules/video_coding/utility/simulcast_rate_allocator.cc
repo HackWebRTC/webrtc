@@ -20,6 +20,7 @@
 
 #include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/checks.h"
+#include "rtc_base/experiments/rate_control_settings.h"
 #include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
@@ -40,33 +41,6 @@ static const float kBaseHeavy3TlRateAllocation[kMaxTemporalStreams] = {
 
 const uint32_t kLegacyScreenshareTl0BitrateKbps = 200;
 const uint32_t kLegacyScreenshareTl1BitrateKbps = 1000;
-
-double GetHysteresisFactor(const VideoCodec& codec) {
-  double factor = 1.0;
-
-  std::string field_trial_name;
-  switch (codec.mode) {
-    case VideoCodecMode::kRealtimeVideo:
-      field_trial_name = "WebRTC-SimulcastUpswitchHysteresisPercent";
-      // Default to no hysteresis for simulcast video.
-      factor = 1.0;
-      break;
-    case VideoCodecMode::kScreensharing:
-      field_trial_name = "WebRTC-SimulcastScreenshareUpswitchHysteresisPercent";
-      // Default to 35% hysteresis for simulcast screenshare.
-      factor = 1.35;
-      break;
-  }
-
-  std::string group_name = webrtc::field_trial::FindFullName(field_trial_name);
-  int percent = 0;
-  if (!group_name.empty() && sscanf(group_name.c_str(), "%d", &percent) == 1 &&
-      percent >= 0) {
-    factor = 1.0 + (percent / 100.0);
-  }
-
-  return factor;
-}
 }  // namespace
 
 float SimulcastRateAllocator::GetTemporalRateAllocation(int num_layers,
@@ -83,7 +57,12 @@ float SimulcastRateAllocator::GetTemporalRateAllocation(int num_layers,
 }
 
 SimulcastRateAllocator::SimulcastRateAllocator(const VideoCodec& codec)
-    : codec_(codec), hysteresis_factor_(GetHysteresisFactor(codec)) {}
+    : codec_(codec),
+      hysteresis_factor_(codec.mode == VideoCodecMode::kScreensharing
+                             ? RateControlSettings::ParseFromFieldTrials()
+                                   .GetSimulcastScreenshareHysteresisFactor()
+                             : RateControlSettings::ParseFromFieldTrials()
+                                   .GetSimulcastVideoHysteresisFactor()) {}
 
 SimulcastRateAllocator::~SimulcastRateAllocator() = default;
 
