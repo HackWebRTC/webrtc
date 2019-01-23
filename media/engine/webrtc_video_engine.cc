@@ -1184,9 +1184,8 @@ bool WebRtcVideoChannel::AddRecvStream(const StreamParams& sp,
   ConfigureReceiverRtp(&config, &flexfec_config, sp);
 
   config.crypto_options = crypto_options_;
-  // TODO(nisse): Rename config variable to avoid negation.
-  config.disable_prerenderer_smoothing =
-      !video_config_.enable_prerenderer_smoothing;
+  config.enable_prerenderer_smoothing =
+      video_config_.enable_prerenderer_smoothing;
   if (!sp.stream_ids().empty()) {
     config.sync_group = sp.stream_ids()[0];
   }

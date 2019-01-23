@@ -316,6 +316,7 @@ TEST_F(RetransmissionEndToEndTest, ReceivesPliAndRecoversWithNack) {
 TEST_F(RetransmissionEndToEndTest, ReceivesPliAndRecoversWithoutNack) {
   ReceivesPliAndRecovers(0);
 }
+
 // This test drops second RTP packet with a marker bit set, makes sure it's
 // retransmitted and renders. Retransmission SSRCs are also checked.
 void RetransmissionEndToEndTest::DecodesRetransmittedFrame(bool enable_rtx,
@@ -399,7 +400,8 @@ void RetransmissionEndToEndTest::DecodesRetransmittedFrame(bool enable_rtx,
       RTC_DCHECK(!orig_renderer_);
       orig_renderer_ = (*receive_configs)[0].renderer;
       RTC_DCHECK(orig_renderer_);
-      (*receive_configs)[0].disable_prerenderer_smoothing = true;
+      // To avoid post-decode frame dropping, disable the prerender buffer.
+      (*receive_configs)[0].enable_prerenderer_smoothing = false;
       (*receive_configs)[0].renderer = this;
 
       (*receive_configs)[0].rtp.nack.rtp_history_ms = kNackRtpHistoryMs;

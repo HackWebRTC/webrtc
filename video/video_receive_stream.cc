@@ -198,6 +198,7 @@ VideoReceiveStream::VideoReceiveStream(
       rtp_stream_sync_(this) {
   RTC_LOG(LS_INFO) << "VideoReceiveStream: " << config_.ToString();
 
+  RTC_DCHECK(config_.renderer);
   RTC_DCHECK(process_thread_);
   RTC_DCHECK(call_stats_);
 
@@ -269,11 +270,13 @@ void VideoReceiveStream::SetSync(Syncable* audio_syncable) {
 
 void VideoReceiveStream::Start() {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_sequence_checker_);
-  if (decode_thread_.IsRunning())
-    return;
 
-  bool protected_by_fec = config_.rtp.protected_by_flexfec ||
-                          rtp_video_stream_receiver_.IsUlpfecEnabled();
+  if (decode_thread_.IsRunning()) {
+    return;
+  }
+
+  const bool protected_by_fec = config_.rtp.protected_by_flexfec ||
+                                rtp_video_stream_receiver_.IsUlpfecEnabled();
 
   frame_buffer_->Start();
 
@@ -284,16 +287,13 @@ void VideoReceiveStream::Start() {
 
   transport_adapter_.Enable();
   rtc::VideoSinkInterface<VideoFrame>* renderer = nullptr;
-  if (config_.renderer) {
-    if (config_.disable_prerenderer_smoothing) {
-      renderer = this;
-    } else {
-      incoming_video_stream_.reset(
-          new IncomingVideoStream(config_.render_delay_ms, this));
-      renderer = incoming_video_stream_.get();
-    }
+  if (config_.enable_prerenderer_smoothing) {
+    incoming_video_stream_.reset(
+        new IncomingVideoStream(config_.render_delay_ms, this));
+    renderer = incoming_video_stream_.get();
+  } else {
+    renderer = this;
   }
-  RTC_DCHECK(renderer != nullptr);
 
   for (const Decoder& decoder : config_.decoders) {
     std::unique_ptr<VideoDecoder> video_decoder =
@@ -329,6 +329,7 @@ void VideoReceiveStream::Start() {
                              &codec, num_cpu_cores_, false));
   }
 
+  RTC_DCHECK(renderer != nullptr);
   video_stream_decoder_.reset(new VideoStreamDecoder(
       &video_receiver_, &rtp_video_stream_receiver_,
       &rtp_video_stream_receiver_,
@@ -408,7 +409,6 @@ void VideoReceiveStream::OnFrame(const VideoFrame& video_frame) {
     // TODO(tommi): OnSyncOffsetUpdated grabs a lock.
     stats_proxy_.OnSyncOffsetUpdated(sync_offset_ms, estimated_freq_khz);
   }
-  // config_.renderer must never be null if we're getting this callback.
   config_.renderer->OnFrame(video_frame);
 
   // TODO(tommi): OnRenderFrame grabs a lock too.

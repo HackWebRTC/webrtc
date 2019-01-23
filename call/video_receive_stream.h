@@ -193,17 +193,16 @@ class VideoReceiveStream {
 
     MediaTransportInterface* media_transport = nullptr;
 
-    // Must not be 'nullptr' when the stream is started.
+    // Must always be set.
     rtc::VideoSinkInterface<VideoFrame>* renderer = nullptr;
 
     // Expected delay needed by the renderer, i.e. the frame will be delivered
     // this many milliseconds, if possible, earlier than the ideal render time.
-    // Only valid if 'renderer' is set.
     int render_delay_ms = 10;
 
-    // If set, pass frames on to the renderer as soon as they are
+    // If false, pass frames on to the renderer as soon as they are
     // available.
-    bool disable_prerenderer_smoothing = false;
+    bool enable_prerenderer_smoothing = true;
 
     // Identifier for an A/V synchronization group. Empty string to disable.
     // TODO(pbos): Synchronize streams in a sync group, not just video streams
