@@ -31,6 +31,7 @@
 #include "modules/video_coding/utility/simulcast_utility.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/experiments/field_trial_parser.h"
+#include "rtc_base/experiments/rate_control_settings.h"
 #include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/field_trial.h"
@@ -39,8 +40,6 @@
 
 namespace webrtc {
 namespace {
-const char kVp8TrustedRateControllerFieldTrial[] =
-    "WebRTC-LibvpxVp8TrustedRateController";
 #if defined(WEBRTC_IOS)
 const char kVP8IosMaxNumberOfThreadFieldTrial[] =
     "WebRTC-VP8IosMaxNumberOfThread";
@@ -162,8 +161,8 @@ LibvpxVp8Encoder::LibvpxVp8Encoder()
 LibvpxVp8Encoder::LibvpxVp8Encoder(std::unique_ptr<LibvpxInterface> interface)
     : libvpx_(std::move(interface)),
       experimental_cpu_speed_config_arm_(CpuSpeedExperiment::GetConfigs()),
-      trusted_rate_controller_(
-          field_trial::IsEnabled(kVp8TrustedRateControllerFieldTrial)),
+      trusted_rate_controller_(RateControlSettings::ParseFromFieldTrials()
+                                   .LibvpxVp8TrustedRateController()),
       encoded_complete_callback_(nullptr),
       inited_(false),
       timestamp_(0),

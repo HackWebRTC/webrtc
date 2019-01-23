@@ -30,6 +30,7 @@
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/video_coding/codecs/vp9/svc_rate_allocator.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/experiments/rate_control_settings.h"
 #include "rtc_base/keep_ref_until_done.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/time_utils.h"
@@ -39,9 +40,6 @@
 namespace webrtc {
 
 namespace {
-const char kVp9TrustedRateControllerFieldTrial[] =
-    "WebRTC-LibvpxVp9TrustedRateController";
-
 // Maps from gof_idx to encoder internal reference frame buffer index. These
 // maps work for 1,2 and 3 temporal layers with GOF length of 1,2 and 4 frames.
 uint8_t kRefBufIdx[4] = {0, 0, 0, 1};
@@ -170,8 +168,8 @@ VP9EncoderImpl::VP9EncoderImpl(const cricket::VideoCodec& codec)
       is_svc_(false),
       inter_layer_pred_(InterLayerPredMode::kOn),
       external_ref_control_(false),  // Set in InitEncode because of tests.
-      trusted_rate_controller_(
-          field_trial::IsEnabled(kVp9TrustedRateControllerFieldTrial)),
+      trusted_rate_controller_(RateControlSettings::ParseFromFieldTrials()
+                                   .LibvpxVp9TrustedRateController()),
       full_superframe_drop_(true),
       first_frame_in_picture_(true),
       ss_info_needed_(false),

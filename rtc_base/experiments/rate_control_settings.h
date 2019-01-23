@@ -38,6 +38,9 @@ class RateControlSettings final {
   absl::optional<double> GetPacingFactor() const;
   bool UseAlrProbing() const;
 
+  bool LibvpxVp8TrustedRateController() const;
+  bool LibvpxVp9TrustedRateController() const;
+
  private:
   explicit RateControlSettings(
       const WebRtcKeyValueConfig* const key_value_config);
@@ -46,6 +49,8 @@ class RateControlSettings final {
   FieldTrialOptional<int> congestion_window_pushback_;
   FieldTrialOptional<double> pacing_factor_;
   FieldTrialParameter<bool> alr_probing_;
+  FieldTrialParameter<bool> trust_vp8_;
+  FieldTrialParameter<bool> trust_vp9_;
 };
 
 }  // namespace webrtc

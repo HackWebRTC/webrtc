@@ -30,6 +30,11 @@ const char* kCongestionWindowPushbackFieldTrialName =
     "WebRTC-CongestionWindowPushback";
 const int kDefaultMinPushbackTargetBitrateBps = 30000;
 
+const char kVp8TrustedRateControllerFieldTrialName[] =
+    "WebRTC-LibvpxVp8TrustedRateController";
+const char kVp9TrustedRateControllerFieldTrialName[] =
+    "WebRTC-LibvpxVp9TrustedRateController";
+
 absl::optional<int> MaybeReadCwndExperimentParameter(
     const WebRtcKeyValueConfig* const key_value_config) {
   int64_t accepted_queue_ms;
@@ -64,6 +69,11 @@ absl::optional<int> MaybeReadCongestionWindowPushbackExperimentParameter(
   return absl::nullopt;
 }
 
+bool IsEnabled(const WebRtcKeyValueConfig* const key_value_config,
+               absl::string_view key) {
+  return key_value_config->Lookup(key).find("Enabled") == 0;
+}
+
 }  // namespace
 
 RateControlSettings::RateControlSettings(
@@ -75,9 +85,15 @@ RateControlSettings::RateControlSettings(
           MaybeReadCongestionWindowPushbackExperimentParameter(
               key_value_config)),
       pacing_factor_("pacing_factor"),
-      alr_probing_("alr_probing", false) {
+      alr_probing_("alr_probing", false),
+      trust_vp8_(
+          "trust_vp8",
+          IsEnabled(key_value_config, kVp8TrustedRateControllerFieldTrialName)),
+      trust_vp9_("trust_vp9",
+                 IsEnabled(key_value_config,
+                           kVp9TrustedRateControllerFieldTrialName)) {
   ParseFieldTrial({&congestion_window_, &congestion_window_pushback_,
-                   &pacing_factor_, &alr_probing_},
+                   &pacing_factor_, &alr_probing_, &trust_vp8_, &trust_vp9_},
                   key_value_config->Lookup("WebRTC-VideoRateControl"));
 }
 
@@ -120,6 +136,14 @@ absl::optional<double> RateControlSettings::GetPacingFactor() const {
 
 bool RateControlSettings::UseAlrProbing() const {
   return alr_probing_.Get();
+}
+
+bool RateControlSettings::LibvpxVp8TrustedRateController() const {
+  return trust_vp8_.Get();
+}
+
+bool RateControlSettings::LibvpxVp9TrustedRateController() const {
+  return trust_vp9_.Get();
 }
 
 }  // namespace webrtc
