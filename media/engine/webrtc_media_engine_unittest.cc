@@ -17,6 +17,7 @@
 #include "api/video_codecs/builtin_video_encoder_factory.h"
 #include "media/engine/webrtc_media_engine.h"
 #include "modules/audio_processing/include/audio_processing.h"
+#include "test/field_trial.h"
 #include "test/gtest.h"
 
 using webrtc::RtpExtension;
@@ -198,6 +199,25 @@ TEST(WebRtcMediaEngineTest, FilterRtpExtensions_RemoveRedundantBwe_1) {
   EXPECT_EQ(RtpExtension::kTransportSequenceNumberUri, filtered[0].uri);
 }
 
+TEST(WebRtcMediaEngineTest,
+     FilterRtpExtensions_RemoveRedundantBwe_1_KeepAbsSendTime) {
+  std::vector<RtpExtension> extensions;
+  webrtc::test::ScopedFieldTrials override_field_trials_(
+      "WebRTC-KeepAbsSendTimeExtension/Enabled/");
+  extensions.push_back(
+      RtpExtension(RtpExtension::kTransportSequenceNumberUri, 3));
+  extensions.push_back(RtpExtension(RtpExtension::kTimestampOffsetUri, 9));
+  extensions.push_back(RtpExtension(RtpExtension::kAbsSendTimeUri, 6));
+  extensions.push_back(
+      RtpExtension(RtpExtension::kTransportSequenceNumberUri, 1));
+  extensions.push_back(RtpExtension(RtpExtension::kTimestampOffsetUri, 14));
+  std::vector<webrtc::RtpExtension> filtered =
+      FilterRtpExtensions(extensions, SupportedExtensions2, true);
+  EXPECT_EQ(2u, filtered.size());
+  EXPECT_EQ(RtpExtension::kTransportSequenceNumberUri, filtered[0].uri);
+  EXPECT_EQ(RtpExtension::kAbsSendTimeUri, filtered[1].uri);
+}
+
 TEST(WebRtcMediaEngineTest, FilterRtpExtensions_RemoveRedundantBweEncrypted_1) {
   std::vector<RtpExtension> extensions;
   extensions.push_back(
@@ -216,6 +236,31 @@ TEST(WebRtcMediaEngineTest, FilterRtpExtensions_RemoveRedundantBweEncrypted_1) {
   EXPECT_EQ(2u, filtered.size());
   EXPECT_EQ(RtpExtension::kTransportSequenceNumberUri, filtered[0].uri);
   EXPECT_EQ(RtpExtension::kTransportSequenceNumberUri, filtered[1].uri);
+  EXPECT_NE(filtered[0].encrypt, filtered[1].encrypt);
+}
+
+TEST(WebRtcMediaEngineTest,
+     FilterRtpExtensions_RemoveRedundantBweEncrypted_1_KeepAbsSendTime) {
+  std::vector<RtpExtension> extensions;
+  webrtc::test::ScopedFieldTrials override_field_trials_(
+      "WebRTC-KeepAbsSendTimeExtension/Enabled/");
+  extensions.push_back(
+      RtpExtension(RtpExtension::kTransportSequenceNumberUri, 3));
+  extensions.push_back(
+      RtpExtension(RtpExtension::kTransportSequenceNumberUri, 4, true));
+  extensions.push_back(RtpExtension(RtpExtension::kTimestampOffsetUri, 9));
+  extensions.push_back(RtpExtension(RtpExtension::kAbsSendTimeUri, 6));
+  extensions.push_back(
+      RtpExtension(RtpExtension::kTransportSequenceNumberUri, 1));
+  extensions.push_back(
+      RtpExtension(RtpExtension::kTransportSequenceNumberUri, 2, true));
+  extensions.push_back(RtpExtension(RtpExtension::kTimestampOffsetUri, 14));
+  std::vector<webrtc::RtpExtension> filtered =
+      FilterRtpExtensions(extensions, SupportedExtensions2, true);
+  EXPECT_EQ(3u, filtered.size());
+  EXPECT_EQ(RtpExtension::kTransportSequenceNumberUri, filtered[0].uri);
+  EXPECT_EQ(RtpExtension::kTransportSequenceNumberUri, filtered[1].uri);
+  EXPECT_EQ(RtpExtension::kAbsSendTimeUri, filtered[2].uri);
   EXPECT_NE(filtered[0].encrypt, filtered[1].encrypt);
 }
 
