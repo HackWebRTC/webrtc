@@ -20,11 +20,8 @@
       "include": "common_tests.json",
       "device type": "iPhone 7",
       "os": "11.0",
-      "dimensions": [
-        { "os": "Mac-10.13.4", "pool": "Chrome" },
-        { "os": "Mac-10.13.5", "pool": "Chrome" },
-        { "os": "Mac-10.13.6", "pool": "Chrome" }
-      ],
+      "host os": "Mac-10.13",
+      "pool": "Chrome",
       "priority": 30
     }
   ]
