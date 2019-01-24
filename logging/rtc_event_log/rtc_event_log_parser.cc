@@ -1934,7 +1934,11 @@ std::vector<LoggedPacketInfo> ParsedRtcEventLog::GetPacketInfos(
       LoggedPacketInfo* sent =
           &packets[indices[fb.sent_packet.sequence_number]];
       sent->reported_recv_time = fb.receive_time;
-      RTC_CHECK(sent->log_feedback_time.IsPlusInfinity());
+      // Is we have received feedback with a valid receive time for this packet
+      // before, we keep the previous values.
+      if (sent->log_feedback_time.IsFinite() &&
+          sent->reported_recv_time.IsFinite())
+        continue;
       sent->log_feedback_time = msg->feedback_time;
       if (direction == PacketDirection::kOutgoingPacket) {
         sent->feedback_hold_duration = last_recv_time - fb.receive_time;
