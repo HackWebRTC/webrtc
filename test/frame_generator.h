@@ -29,7 +29,7 @@ namespace test {
 class FrameForwarder : public rtc::VideoSourceInterface<VideoFrame> {
  public:
   FrameForwarder();
-  virtual ~FrameForwarder();
+  ~FrameForwarder() override;
   // Forwards |video_frame| to the registered |sink_|.
   virtual void IncomingCapturedFrame(const VideoFrame& video_frame);
   rtc::VideoSinkWants sink_wants() const;
@@ -56,9 +56,7 @@ class FrameGenerator {
   virtual VideoFrame* NextFrame() = 0;
 
   // Change the capture resolution.
-  virtual void ChangeResolution(size_t width, size_t height) {
-    RTC_NOTREACHED();
-  }
+  virtual void ChangeResolution(size_t width, size_t height);
 
   enum class OutputType { I420, I420A, I010 };
 

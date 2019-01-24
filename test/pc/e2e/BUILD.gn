@@ -20,6 +20,9 @@ group("e2e") {
     ":quality_analyzing_video_encoder",
     ":single_process_encoded_image_id_injector",
   ]
+  if (rtc_include_tests) {
+    deps += [ ":video_quality_analyzer_injection_helper" ]
+  }
 }
 
 if (rtc_include_tests) {
@@ -127,6 +130,27 @@ rtc_source_set("quality_analyzing_video_encoder") {
 }
 
 if (rtc_include_tests) {
+  rtc_source_set("video_quality_analyzer_injection_helper") {
+    visibility = [ "*" ]
+    testonly = true
+    sources = [
+      "analyzer/video/video_quality_analyzer_injection_helper.cc",
+      "analyzer/video/video_quality_analyzer_injection_helper.h",
+    ]
+    deps = [
+      ":encoded_image_id_injector_api",
+      ":id_generator",
+      ":quality_analyzing_video_decoder",
+      ":quality_analyzing_video_encoder",
+      "../../../api/video:video_frame",
+      "../../../api/video_codecs:video_codecs_api",
+      "../../../test:video_test_common",
+      "../../../test:video_test_support",
+      "api:video_quality_analyzer_api",
+      "//third_party/abseil-cpp/absl/memory:memory",
+    ]
+  }
+
   rtc_source_set("single_process_encoded_image_id_injector_unittest") {
     testonly = true
     sources = [

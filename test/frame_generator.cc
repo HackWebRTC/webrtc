@@ -467,6 +467,10 @@ bool FrameForwarder::has_sinks() const {
   return sink_ != nullptr;
 }
 
+void FrameGenerator::ChangeResolution(size_t width, size_t height) {
+  RTC_NOTREACHED();
+}
+
 std::unique_ptr<FrameGenerator> FrameGenerator::CreateSquareGenerator(
     int width,
     int height,
