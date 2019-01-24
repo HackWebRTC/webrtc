@@ -27,7 +27,7 @@ TEST(ResidualEchoEstimator, NullResidualEchoPowerOutput) {
   EchoCanceller3Config config;
   AecState aec_state(config);
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-      RenderDelayBuffer::Create2(config, 3));
+      RenderDelayBuffer::Create(config, 3));
   std::vector<std::array<float, kFftLengthBy2Plus1>> H2;
   std::array<float, kFftLengthBy2Plus1> S2_linear;
   std::array<float, kFftLengthBy2Plus1> Y2;
@@ -44,11 +44,10 @@ TEST(ResidualEchoEstimator, NullResidualEchoPowerOutput) {
 TEST(ResidualEchoEstimator, DISABLED_BasicTest) {
   EchoCanceller3Config config;
   config.ep_strength.default_len = 0.f;
-  config.delay.min_echo_path_delay_blocks = 0;
   ResidualEchoEstimator estimator(config);
   AecState aec_state(config);
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-      RenderDelayBuffer::Create2(config, 3));
+      RenderDelayBuffer::Create(config, 3));
 
   std::array<float, kFftLengthBy2Plus1> E2_main;
   std::array<float, kFftLengthBy2Plus1> E2_shadow;

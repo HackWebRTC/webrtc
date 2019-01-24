@@ -62,7 +62,7 @@ class TestInputs {
 };
 
 TestInputs::TestInputs(const EchoCanceller3Config& cfg)
-    : render_delay_buffer_(RenderDelayBuffer::Create2(cfg, 1)),
+    : render_delay_buffer_(RenderDelayBuffer::Create(cfg, 1)),
       H2_(cfg.filter.main.length_blocks),
       x_(1, std::vector<float>(kBlockSize, 0.f)) {
   render_delay_buffer_->SetDelay(4);

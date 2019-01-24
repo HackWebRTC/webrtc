@@ -27,7 +27,6 @@ struct RTC_EXPORT EchoCanceller3Config {
   EchoCanceller3Config(const EchoCanceller3Config& e);
 
   struct Buffering {
-    bool use_new_render_buffering = true;
     size_t excess_render_detection_interval_blocks = 250;
     size_t max_allowed_excess_render_blocks = 8;
   } buffering;
@@ -38,12 +37,9 @@ struct RTC_EXPORT EchoCanceller3Config {
     size_t default_delay = 5;
     size_t down_sampling_factor = 4;
     size_t num_filters = 5;
-    size_t api_call_jitter_blocks = 26;
-    size_t min_echo_path_delay_blocks = 0;
     size_t delay_headroom_blocks = 2;
     size_t hysteresis_limit_1_blocks = 1;
     size_t hysteresis_limit_2_blocks = 1;
-    size_t skew_hysteresis_blocks = 3;
     size_t fixed_capture_delay_samples = 0;
     float delay_estimate_smoothing = 0.7f;
     float delay_candidate_detection_threshold = 0.2f;

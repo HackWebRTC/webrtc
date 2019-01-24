@@ -33,8 +33,6 @@ class RenderDelayBuffer {
 
   static RenderDelayBuffer* Create(const EchoCanceller3Config& config,
                                    size_t num_bands);
-  static RenderDelayBuffer* Create2(const EchoCanceller3Config& config,
-                                    size_t num_bands);
   virtual ~RenderDelayBuffer() = default;
 
   // Resets the buffer alignment.
@@ -63,9 +61,6 @@ class RenderDelayBuffer {
 
   // Returns the downsampled render buffer.
   virtual const DownsampledRenderBuffer& GetDownsampledRenderBuffer() const = 0;
-
-  // Returns whether the current delay is noncausal.
-  virtual bool CausalDelay(size_t delay) const = 0;
 
   // Returns the maximum non calusal offset that can occur in the delay buffer.
   static int DelayEstimatorOffset(const EchoCanceller3Config& config);

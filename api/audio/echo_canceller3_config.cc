@@ -94,12 +94,9 @@ bool EchoCanceller3Config::Validate(EchoCanceller3Config* config) {
   }
   res = res & Limit(&c->delay.default_delay, 0, 5000);
   res = res & Limit(&c->delay.num_filters, 0, 5000);
-  res = res & Limit(&c->delay.api_call_jitter_blocks, 1, 5000);
-  res = res & Limit(&c->delay.min_echo_path_delay_blocks, 0, 5000);
   res = res & Limit(&c->delay.delay_headroom_blocks, 0, 5000);
   res = res & Limit(&c->delay.hysteresis_limit_1_blocks, 0, 5000);
   res = res & Limit(&c->delay.hysteresis_limit_2_blocks, 0, 5000);
-  res = res & Limit(&c->delay.skew_hysteresis_blocks, 0, 5000);
   res = res & Limit(&c->delay.fixed_capture_delay_samples, 0, 5000);
   res = res & Limit(&c->delay.delay_estimate_smoothing, 0.f, 1.f);
   res = res & Limit(&c->delay.delay_candidate_detection_threshold, 0.f, 1.f);

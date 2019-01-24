@@ -39,7 +39,7 @@ TEST(EchoPathDelayEstimator, BasicApiCalls) {
   ApmDataDumper data_dumper(0);
   EchoCanceller3Config config;
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-      RenderDelayBuffer::Create2(config, 3));
+      RenderDelayBuffer::Create(config, 3));
   EchoPathDelayEstimator estimator(&data_dumper, config);
   std::vector<std::vector<float>> render(3, std::vector<float>(kBlockSize));
   std::vector<float> capture(kBlockSize);
@@ -65,7 +65,7 @@ TEST(EchoPathDelayEstimator, DelayEstimation) {
     for (size_t delay_samples : {30, 64, 150, 200, 800, 4000}) {
       SCOPED_TRACE(ProduceDebugText(delay_samples, down_sampling_factor));
       std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-          RenderDelayBuffer::Create2(config, 3));
+          RenderDelayBuffer::Create(config, 3));
       DelayBuffer<float> signal_delay_buffer(delay_samples);
       EchoPathDelayEstimator estimator(&data_dumper, config);
 
@@ -113,7 +113,7 @@ TEST(EchoPathDelayEstimator, NoDelayEstimatesForLowLevelRenderSignals) {
   ApmDataDumper data_dumper(0);
   EchoPathDelayEstimator estimator(&data_dumper, config);
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-      RenderDelayBuffer::Create2(EchoCanceller3Config(), 3));
+      RenderDelayBuffer::Create(EchoCanceller3Config(), 3));
   for (size_t k = 0; k < 100; ++k) {
     RandomizeSampleVector(&random_generator, render[0]);
     for (auto& render_k : render[0]) {
@@ -137,7 +137,7 @@ TEST(EchoPathDelayEstimator, DISABLED_WrongRenderBlockSize) {
   EchoCanceller3Config config;
   EchoPathDelayEstimator estimator(&data_dumper, config);
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-      RenderDelayBuffer::Create2(config, 3));
+      RenderDelayBuffer::Create(config, 3));
   std::vector<float> capture(kBlockSize);
   EXPECT_DEATH(estimator.EstimateDelay(
                    render_delay_buffer->GetDownsampledRenderBuffer(), capture),
@@ -152,7 +152,7 @@ TEST(EchoPathDelayEstimator, WrongCaptureBlockSize) {
   EchoCanceller3Config config;
   EchoPathDelayEstimator estimator(&data_dumper, config);
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-      RenderDelayBuffer::Create2(config, 3));
+      RenderDelayBuffer::Create(config, 3));
   std::vector<float> capture(std::vector<float>(kBlockSize - 1));
   EXPECT_DEATH(estimator.EstimateDelay(
                    render_delay_buffer->GetDownsampledRenderBuffer(), capture),
