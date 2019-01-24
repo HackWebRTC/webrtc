@@ -261,7 +261,7 @@ class RtpSenderTest : public ::testing::TestWithParam<bool> {
     const uint32_t kTimestamp = 1234;
     const uint8_t kPayloadType = 127;
     const int64_t kCaptureTimeMs = fake_clock_.TimeInMilliseconds();
-    char payload_name[RTP_PAYLOAD_NAME_SIZE] = "GENERIC";
+    const char payload_name[] = "GENERIC";
     EXPECT_EQ(0, rtp_sender_->RegisterPayload(payload_name, kPayloadType, 90000,
                                               0, 1500));
 
@@ -559,7 +559,7 @@ TEST_P(RtpSenderTestWithoutPacer, OnSendSideDelayUpdated) {
 
   const uint8_t kPayloadType = 127;
   const uint32_t kCaptureTimeMsToRtpTimestamp = 90;  // 90 kHz clock
-  char payload_name[RTP_PAYLOAD_NAME_SIZE] = "GENERIC";
+  const char payload_name[] = "GENERIC";
   RTPVideoHeader video_header;
   EXPECT_EQ(0, rtp_sender_->RegisterPayload(payload_name, kPayloadType,
                                             1000 * kCaptureTimeMsToRtpTimestamp,
@@ -1116,7 +1116,7 @@ TEST_P(RtpSenderTest, SendRedundantPayloads) {
 }
 
 TEST_P(RtpSenderTestWithoutPacer, SendGenericVideo) {
-  char payload_name[RTP_PAYLOAD_NAME_SIZE] = "GENERIC";
+  const char payload_name[] = "GENERIC";
   const uint8_t payload_type = 127;
   ASSERT_EQ(0, rtp_sender_->RegisterPayload(payload_name, payload_type, 90000,
                                             0, 1500));
@@ -1251,7 +1251,7 @@ TEST_P(RtpSenderTest, NoFlexfecForTimingFrames) {
   const uint32_t kTimestamp = 1234;
   const uint8_t kPayloadType = 127;
   const int64_t kCaptureTimeMs = fake_clock_.TimeInMilliseconds();
-  char payload_name[RTP_PAYLOAD_NAME_SIZE] = "GENERIC";
+  const char payload_name[] = "GENERIC";
   EXPECT_EQ(0, rtp_sender_->RegisterPayload(payload_name, kPayloadType, 90000,
                                             0, 1500));
   RTPVideoHeader video_header;
@@ -1494,7 +1494,7 @@ TEST_P(RtpSenderTest, FrameCountCallbacks) {
       nullptr, nullptr, &callback, nullptr, nullptr, nullptr,
       &retransmission_rate_limiter_, nullptr, false, nullptr, false, false));
   rtp_sender_->SetSSRC(kSsrc);
-  char payload_name[RTP_PAYLOAD_NAME_SIZE] = "GENERIC";
+  const char payload_name[] = "GENERIC";
   const uint8_t payload_type = 127;
   ASSERT_EQ(0, rtp_sender_->RegisterPayload(payload_name, payload_type, 90000,
                                             0, 1500));
@@ -1568,7 +1568,7 @@ TEST_P(RtpSenderTest, BitrateCallbacks) {
   // Overhead = 12 bytes RTP header + 1 byte generic header.
   const uint32_t kPacketOverhead = 13;
 
-  char payload_name[RTP_PAYLOAD_NAME_SIZE] = "GENERIC";
+  const char payload_name[] = "GENERIC";
   const uint8_t payload_type = 127;
   ASSERT_EQ(0, rtp_sender_->RegisterPayload(payload_name, payload_type, 90000,
                                             0, 1500));
@@ -1654,7 +1654,7 @@ TEST_P(RtpSenderTestWithoutPacer, StreamDataCountersCallbacks) {
 
   const uint8_t kRedPayloadType = 96;
   const uint8_t kUlpfecPayloadType = 97;
-  char payload_name[RTP_PAYLOAD_NAME_SIZE] = "GENERIC";
+  const char payload_name[] = "GENERIC";
   const uint8_t payload_type = 127;
   ASSERT_EQ(0, rtp_sender_->RegisterPayload(payload_name, payload_type, 90000,
                                             0, 1500));
@@ -1721,7 +1721,7 @@ TEST_P(RtpSenderTestWithoutPacer, StreamDataCountersCallbacks) {
 }
 
 TEST_P(RtpSenderAudioTest, SendAudio) {
-  char payload_name[RTP_PAYLOAD_NAME_SIZE] = "PAYLOAD_NAME";
+  const char payload_name[] = "PAYLOAD_NAME";
   const uint8_t payload_type = 127;
   ASSERT_EQ(0, rtp_sender_->RegisterPayload(payload_name, payload_type, 48000,
                                             0, 1500));
@@ -1741,7 +1741,7 @@ TEST_P(RtpSenderAudioTest, SendAudioWithAudioLevelExtension) {
   EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(kRtpExtensionAudioLevel,
                                                        kAudioLevelExtensionId));
 
-  char payload_name[RTP_PAYLOAD_NAME_SIZE] = "PAYLOAD_NAME";
+  const char payload_name[] = "PAYLOAD_NAME";
   const uint8_t payload_type = 127;
   ASSERT_EQ(0, rtp_sender_->RegisterPayload(payload_name, payload_type, 48000,
                                             0, 1500));

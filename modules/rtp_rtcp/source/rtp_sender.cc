@@ -274,7 +274,6 @@ int32_t RTPSender::RegisterPayload(absl::string_view payload_name,
                                    uint32_t frequency,
                                    size_t channels,
                                    uint32_t rate) {
-  RTC_DCHECK_LT(payload_name.size(), RTP_PAYLOAD_NAME_SIZE);
   rtc::CritScope lock(&send_critsect_);
 
   int32_t ret_val = 0;
