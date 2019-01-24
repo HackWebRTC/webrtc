@@ -57,7 +57,6 @@ bool Remb::Parse(const CommonHeader& packet) {
   }
   const uint8_t* const payload = packet.payload();
   if (kUniqueIdentifier != ByteReader<uint32_t>::ReadBigEndian(&payload[8])) {
-    RTC_LOG(LS_INFO) << "REMB identifier not found, not a REMB packet.";
     return false;
   }
   uint8_t number_of_ssrcs = payload[12];

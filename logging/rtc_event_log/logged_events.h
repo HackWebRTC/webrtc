@@ -345,6 +345,8 @@ struct LoggedRtcpPacketRemb {
   rtcp::Remb remb;
 };
 
+// TODO(eladalon): Add LossNotification.
+
 struct LoggedRtcpPacketNack {
   LoggedRtcpPacketNack() = default;
   LoggedRtcpPacketNack(int64_t timestamp_us, const rtcp::Nack& nack)

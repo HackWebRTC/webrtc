@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "api/video/video_bitrate_allocator.h"
 #include "common_types.h"  // NOLINT(build/include)
@@ -26,6 +27,7 @@
 #include "modules/rtp_rtcp/source/rtcp_packet/compound_packet.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/extended_reports.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/fir.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/loss_notification.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/nack.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/pli.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/rapid_resync_request.h"
@@ -73,6 +75,7 @@ struct RTCPReceiver::PacketInformation {
   uint32_t receiver_estimated_max_bitrate_bps = 0;
   std::unique_ptr<rtcp::TransportFeedback> transport_feedback;
   absl::optional<VideoBitrateAllocation> target_bitrate_allocation;
+  std::unique_ptr<rtcp::LossNotification> loss_notification;
 };
 
 // Structure for handing TMMBR and TMMBN rtcp messages (RFC5104, section 3.5.4).
@@ -869,12 +872,26 @@ void RTCPReceiver::HandleSrReq(const CommonHeader& rtcp_block,
 
 void RTCPReceiver::HandlePsfbApp(const CommonHeader& rtcp_block,
                                  PacketInformation* packet_information) {
-  rtcp::Remb remb;
-  if (remb.Parse(rtcp_block)) {
-    packet_information->packet_type_flags |= kRtcpRemb;
-    packet_information->receiver_estimated_max_bitrate_bps = remb.bitrate_bps();
-    return;
+  {
+    rtcp::Remb remb;
+    if (remb.Parse(rtcp_block)) {
+      packet_information->packet_type_flags |= kRtcpRemb;
+      packet_information->receiver_estimated_max_bitrate_bps =
+          remb.bitrate_bps();
+      return;
+    }
   }
+
+  {
+    auto loss_notification = absl::make_unique<rtcp::LossNotification>();
+    if (loss_notification->Parse(rtcp_block)) {
+      packet_information->packet_type_flags |= kRtcpLossNotification;
+      packet_information->loss_notification = std::move(loss_notification);
+      return;
+    }
+  }
+
+  RTC_LOG(LS_WARNING) << "Unknown PSFB-APP packet.";
 
   ++num_skipped_packets_;
 }
@@ -1011,6 +1028,16 @@ void RTCPReceiver::TriggerCallbacksFromRtcpPacket(
           << packet_information.receiver_estimated_max_bitrate_bps;
       rtcp_bandwidth_observer_->OnReceivedEstimatedBitrate(
           packet_information.receiver_estimated_max_bitrate_bps);
+    }
+    if (packet_information.packet_type_flags & kRtcpLossNotification) {
+      rtcp::LossNotification* loss_notification =
+          packet_information.loss_notification.get();
+      RTC_DCHECK(loss_notification);
+      RTC_LOG(LS_VERBOSE) << "Incoming Loss Notification: ("
+                          << loss_notification->last_decoded() << ", "
+                          << loss_notification->last_received() << ", "
+                          << loss_notification->decodability_flag() << ").";
+      // TODO(eladalon): Notify observer.
     }
     if ((packet_information.packet_type_flags & kRtcpSr) ||
         (packet_information.packet_type_flags & kRtcpRr)) {
