@@ -28,6 +28,7 @@
 #include "modules/rtp_rtcp/source/playout_delay_oracle.h"
 #include "modules/rtp_rtcp/source/rtp_packet_history.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_config.h"
+#include "modules/rtp_rtcp/source/rtp_utility.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/deprecation.h"
@@ -223,6 +224,9 @@ class RTPSender {
 
   void SetRtt(int64_t rtt_ms);
 
+ protected:
+  int32_t CheckPayloadType(int8_t payload_type, VideoCodecType* video_type);
+
  private:
   // Maps capture time in milliseconds to send-side delay in milliseconds.
   // Send-side delay is the difference between transmission time and capture
@@ -287,6 +291,7 @@ class RTPSender {
   size_t max_packet_size_;
 
   int8_t last_payload_type_ RTC_GUARDED_BY(send_critsect_);
+  std::map<int8_t, RtpUtility::Payload*> payload_type_map_;
 
   RtpHeaderExtensionMap rtp_header_extension_map_
       RTC_GUARDED_BY(send_critsect_);

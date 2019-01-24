@@ -26,6 +26,16 @@ const uint8_t kRtpMarkerBitMask = 0x80;
 
 namespace RtpUtility {
 
+struct Payload {
+  Payload(absl::string_view payload_name, const PayloadUnion& pu)
+      : typeSpecific(pu) {
+    size_t clipped_size = payload_name.copy(name, sizeof(name) - 1);
+    name[clipped_size] = '\0';
+  }
+  char name[RTP_PAYLOAD_NAME_SIZE];
+  PayloadUnion typeSpecific;
+};
+
 // Round up to the nearest size that is a multiple of 4.
 size_t Word32Align(size_t size);
 
