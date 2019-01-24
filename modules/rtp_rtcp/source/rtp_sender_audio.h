@@ -18,7 +18,6 @@
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/rtp_rtcp/source/dtmf_queue.h"
 #include "modules/rtp_rtcp/source/rtp_sender.h"
-#include "modules/rtp_rtcp/source/rtp_utility.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/one_time_event.h"
@@ -36,8 +35,7 @@ class RTPSenderAudio {
                                int8_t payload_type,
                                uint32_t frequency,
                                size_t channels,
-                               uint32_t rate,
-                               RtpUtility::Payload** payload);
+                               uint32_t rate);
 
   bool SendAudio(FrameType frame_type,
                  int8_t payload_type,

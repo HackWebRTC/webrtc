@@ -144,7 +144,6 @@ RTPSender::RTPSender(
       force_part_of_allocation_(false),
       max_packet_size_(IP_PACKET_SIZE - 28),  // Default is IP-v4/UDP.
       last_payload_type_(-1),
-      payload_type_map_(),
       rtp_header_extension_map_(extmap_allow_mixed),
       packet_history_(clock),
       flexfec_packet_history_(clock),
@@ -202,12 +201,6 @@ RTPSender::~RTPSender() {
   // variables but we grab them in all other methods. (what's the design?)
   // Start documenting what thread we're on in what method so that it's easier
   // to understand performance attributes and possibly remove locks.
-  while (!payload_type_map_.empty()) {
-    std::map<int8_t, RtpUtility::Payload*>::iterator it =
-        payload_type_map_.begin();
-    delete it->second;
-    payload_type_map_.erase(it);
-  }
 }
 
 rtc::ArrayView<const RtpExtensionSize> RTPSender::FecExtensionSizes() {
@@ -284,58 +277,19 @@ int32_t RTPSender::RegisterPayload(absl::string_view payload_name,
   RTC_DCHECK_LT(payload_name.size(), RTP_PAYLOAD_NAME_SIZE);
   rtc::CritScope lock(&send_critsect_);
 
-  std::map<int8_t, RtpUtility::Payload*>::iterator it =
-      payload_type_map_.find(payload_number);
-
-  if (payload_type_map_.end() != it) {
-    // We already use this payload type.
-    RtpUtility::Payload* payload = it->second;
-    RTC_DCHECK(payload);
-
-    // Check if it's the same as we already have.
-    if (absl::EqualsIgnoreCase(payload->name, payload_name)) {
-      if (audio_configured_ && payload->typeSpecific.is_audio()) {
-        auto& p = payload->typeSpecific.audio_payload();
-        if (rtc::SafeEq(p.format.clockrate_hz, frequency) &&
-            (p.rate == rate || p.rate == 0 || rate == 0)) {
-          p.rate = rate;
-          // Ensure that we update the rate if new or old is zero.
-          return 0;
-        }
-      }
-      if (!audio_configured_ && !payload->typeSpecific.is_audio()) {
-        return 0;
-      }
-    }
-    return -1;
-  }
   int32_t ret_val = 0;
-  RtpUtility::Payload* payload = nullptr;
   if (audio_configured_) {
     // TODO(mflodman): Change to CreateAudioPayload and make static.
     ret_val = audio_->RegisterAudioPayload(payload_name, payload_number,
-                                           frequency, channels, rate, &payload);
+                                           frequency, channels, rate);
   } else {
-    payload = video_->CreateVideoPayload(payload_name, payload_number);
+    video_->RegisterPayloadType(payload_number, payload_name);
   }
-  if (payload) {
-    payload_type_map_[payload_number] = payload;
-  }
+
   return ret_val;
 }
 
-int32_t RTPSender::DeRegisterSendPayload(int8_t payload_type) {
-  rtc::CritScope lock(&send_critsect_);
-
-  std::map<int8_t, RtpUtility::Payload*>::iterator it =
-      payload_type_map_.find(payload_type);
-
-  if (payload_type_map_.end() == it) {
-    return -1;
-  }
-  RtpUtility::Payload* payload = it->second;
-  delete payload;
-  payload_type_map_.erase(it);
+int32_t RTPSender::DeRegisterSendPayload(int8_t /* payload_type */) {
   return 0;
 }
 
@@ -384,37 +338,6 @@ void RTPSender::SetRtxPayloadType(int payload_type,
   rtx_payload_type_map_[associated_payload_type] = payload_type;
 }
 
-int32_t RTPSender::CheckPayloadType(int8_t payload_type,
-                                    VideoCodecType* video_type) {
-  rtc::CritScope lock(&send_critsect_);
-
-  if (payload_type < 0) {
-    RTC_LOG(LS_ERROR) << "Invalid payload_type " << payload_type << ".";
-    return -1;
-  }
-  if (last_payload_type_ == payload_type) {
-    if (!audio_configured_) {
-      *video_type = video_->VideoCodecType();
-    }
-    return 0;
-  }
-  std::map<int8_t, RtpUtility::Payload*>::iterator it =
-      payload_type_map_.find(payload_type);
-  if (it == payload_type_map_.end()) {
-    RTC_LOG(LS_WARNING) << "Payload type " << static_cast<int>(payload_type)
-                        << " not registered.";
-    return -1;
-  }
-  RtpUtility::Payload* payload = it->second;
-  RTC_DCHECK(payload);
-  if (payload->typeSpecific.is_video() && !audio_configured_) {
-    video_->SetVideoCodecType(
-        payload->typeSpecific.video_payload().videoCodecType);
-    *video_type = payload->typeSpecific.video_payload().videoCodecType;
-  }
-  return 0;
-}
-
 bool RTPSender::SendOutgoingData(FrameType frame_type,
                                  int8_t payload_type,
                                  uint32_t capture_timestamp,
@@ -441,13 +364,6 @@ bool RTPSender::SendOutgoingData(FrameType frame_type,
     if (!sending_media_)
       return true;
   }
-  VideoCodecType video_type = kVideoCodecGeneric;
-  if (CheckPayloadType(payload_type, &video_type) != 0) {
-    RTC_LOG(LS_ERROR) << "Don't send data with unknown payload type: "
-                      << static_cast<int>(payload_type) << ".";
-    return false;
-  }
-
   switch (frame_type) {
     case kAudioFrameSpeech:
     case kAudioFrameCN:
@@ -481,9 +397,9 @@ bool RTPSender::SendOutgoingData(FrameType frame_type,
                                           sequence_number);
     }
 
-    result = video_->SendVideo(video_type, frame_type, payload_type,
-                               rtp_timestamp, capture_time_ms, payload_data,
-                               payload_size, fragmentation, rtp_header,
+    result = video_->SendVideo(frame_type, payload_type, rtp_timestamp,
+                               capture_time_ms, payload_data, payload_size,
+                               fragmentation, rtp_header,
                                expected_retransmission_time_ms);
   }
 

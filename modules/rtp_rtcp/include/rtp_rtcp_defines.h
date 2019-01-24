@@ -41,47 +41,6 @@ const int kBogusRtpRateForAudioRtcp = 8000;
 // Minimum RTP header size in bytes.
 const uint8_t kRtpHeaderSize = 12;
 
-struct AudioPayload {
-  SdpAudioFormat format;
-  uint32_t rate;
-};
-
-struct VideoPayload {
-  VideoCodecType videoCodecType;
-  // The H264 profile only matters if videoCodecType == kVideoCodecH264.
-  H264::Profile h264_profile;
-};
-
-class PayloadUnion {
- public:
-  explicit PayloadUnion(const AudioPayload& payload);
-  explicit PayloadUnion(const VideoPayload& payload);
-  PayloadUnion(const PayloadUnion&);
-  PayloadUnion(PayloadUnion&&);
-  ~PayloadUnion();
-
-  PayloadUnion& operator=(const PayloadUnion&);
-  PayloadUnion& operator=(PayloadUnion&&);
-
-  bool is_audio() const {
-    return absl::holds_alternative<AudioPayload>(payload_);
-  }
-  bool is_video() const {
-    return absl::holds_alternative<VideoPayload>(payload_);
-  }
-  const AudioPayload& audio_payload() const {
-    return absl::get<AudioPayload>(payload_);
-  }
-  const VideoPayload& video_payload() const {
-    return absl::get<VideoPayload>(payload_);
-  }
-  AudioPayload& audio_payload() { return absl::get<AudioPayload>(payload_); }
-  VideoPayload& video_payload() { return absl::get<VideoPayload>(payload_); }
-
- private:
-  absl::variant<AudioPayload, VideoPayload> payload_;
-};
-
 enum ProtectionType { kUnprotectedPacket, kProtectedPacket };
 
 enum StorageType { kDontRetransmit, kAllowRetransmission };
