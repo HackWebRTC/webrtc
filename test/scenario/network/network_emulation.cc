@@ -99,8 +99,11 @@ void EmulatedNetworkNode::Process(Timestamp at_time) {
     RTC_CHECK(receiver);
     // We don't want to keep the lock here. Otherwise we would get a deadlock if
     // the receiver tries to push a new packet.
-    packet->packet.arrival_time = Timestamp::us(delivery_info.receive_time_us);
-    receiver->OnPacketReceived(std::move(packet->packet));
+    if (delivery_info.receive_time_us != PacketDeliveryInfo::kNotReceived) {
+      packet->packet.arrival_time =
+          Timestamp::us(delivery_info.receive_time_us);
+      receiver->OnPacketReceived(std::move(packet->packet));
+    }
     {
       rtc::CritScope crit(&lock_);
       while (!packets_.empty() && packets_.front().removed) {

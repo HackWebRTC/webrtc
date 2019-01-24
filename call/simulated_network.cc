@@ -145,29 +145,28 @@ std::vector<PacketDeliveryInfo> SimulatedNetwork::DequeueDeliverablePackets(
         if ((bursting_ && random_.Rand<double>() < prob_loss_bursting) ||
             (!bursting_ && random_.Rand<double>() < prob_start_bursting)) {
           bursting_ = true;
-          continue;
+          packet.arrival_time_us = PacketDeliveryInfo::kNotReceived;
         } else {
           bursting_ = false;
-        }
+          int64_t arrival_time_jitter_us = std::max(
+              random_.Gaussian(config.queue_delay_ms * 1000,
+                               config.delay_standard_deviation_ms * 1000),
+              0.0);
 
-        int64_t arrival_time_jitter_us = std::max(
-            random_.Gaussian(config.queue_delay_ms * 1000,
-                             config.delay_standard_deviation_ms * 1000),
-            0.0);
-
-        // If reordering is not allowed then adjust arrival_time_jitter
-        // to make sure all packets are sent in order.
-        if (!config.allow_reordering && !delay_link_.empty() &&
-            packet.arrival_time_us + arrival_time_jitter_us <
-                last_arrival_time_us) {
-          arrival_time_jitter_us =
-              last_arrival_time_us - packet.arrival_time_us;
-        }
-        packet.arrival_time_us += arrival_time_jitter_us;
-        if (packet.arrival_time_us >= last_arrival_time_us) {
-          last_arrival_time_us = packet.arrival_time_us;
-        } else {
-          needs_sort = true;
+          // If reordering is not allowed then adjust arrival_time_jitter
+          // to make sure all packets are sent in order.
+          if (!config.allow_reordering && !delay_link_.empty() &&
+              packet.arrival_time_us + arrival_time_jitter_us <
+                  last_arrival_time_us) {
+            arrival_time_jitter_us =
+                last_arrival_time_us - packet.arrival_time_us;
+          }
+          packet.arrival_time_us += arrival_time_jitter_us;
+          if (packet.arrival_time_us >= last_arrival_time_us) {
+            last_arrival_time_us = packet.arrival_time_us;
+          } else {
+            needs_sort = true;
+          }
         }
         delay_link_.emplace_back(std::move(packet));
       }
