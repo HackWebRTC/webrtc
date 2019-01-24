@@ -55,9 +55,9 @@ EncodedImage SingleProcessEncodedImageIdInjector::InjectId(
   return out;
 }
 
-std::pair<uint16_t, EncodedImage>
-SingleProcessEncodedImageIdInjector::ExtractId(const EncodedImage& source,
-                                               int coding_entity_id) {
+EncodedImageWithId SingleProcessEncodedImageIdInjector::ExtractId(
+    const EncodedImage& source,
+    int coding_entity_id) {
   EncodedImage out = source;
 
   size_t pos = 0;
@@ -92,7 +92,7 @@ SingleProcessEncodedImageIdInjector::ExtractId(const EncodedImage& source,
   }
   out.set_size(pos);
 
-  return std::pair<uint16_t, EncodedImage>(id.value(), out);
+  return EncodedImageWithId{id.value(), out};
 }
 
 SingleProcessEncodedImageIdInjector::ExtractionInfoVector::

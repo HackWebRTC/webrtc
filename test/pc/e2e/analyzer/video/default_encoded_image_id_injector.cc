@@ -64,7 +64,7 @@ EncodedImage DefaultEncodedImageIdInjector::InjectId(uint16_t id,
   return out;
 }
 
-std::pair<uint16_t, EncodedImage> DefaultEncodedImageIdInjector::ExtractId(
+EncodedImageWithId DefaultEncodedImageIdInjector::ExtractId(
     const EncodedImage& source,
     int coding_entity_id) {
   ExtendIfRequired(coding_entity_id);
@@ -100,7 +100,7 @@ std::pair<uint16_t, EncodedImage> DefaultEncodedImageIdInjector::ExtractId(
   }
   out.set_size(out_pos);
 
-  return std::pair<uint16_t, EncodedImage>(id.value(), out);
+  return EncodedImageWithId{id.value(), out};
 }
 
 void DefaultEncodedImageIdInjector::ExtendIfRequired(int coding_entity_id) {

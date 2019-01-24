@@ -47,8 +47,8 @@ class SingleProcessEncodedImageIdInjector : public EncodedImageIdInjector,
   EncodedImage InjectId(uint16_t id,
                         const EncodedImage& source,
                         int coding_entity_id) override;
-  std::pair<uint16_t, EncodedImage> ExtractId(const EncodedImage& source,
-                                              int coding_entity_id) override;
+  EncodedImageWithId ExtractId(const EncodedImage& source,
+                               int coding_entity_id) override;
 
  private:
   // Contains data required to extract frame id from EncodedImage and restore

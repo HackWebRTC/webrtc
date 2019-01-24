@@ -38,13 +38,13 @@ TEST(SingleProcessEncodedImageIdInjector, InjectExtract) {
   EncodedImage source(buffer.data(), 10, 10);
   source.SetTimestamp(123456789);
 
-  std::pair<uint16_t, EncodedImage> out =
+  EncodedImageWithId out =
       injector.ExtractId(injector.InjectId(512, source, 1), 2);
-  ASSERT_EQ(out.first, 512);
-  ASSERT_EQ(out.second.size(), 10ul);
-  ASSERT_EQ(out.second.capacity(), 10ul);
+  ASSERT_EQ(out.id, 512);
+  ASSERT_EQ(out.image.size(), 10ul);
+  ASSERT_EQ(out.image.capacity(), 10ul);
   for (int i = 0; i < 10; ++i) {
-    ASSERT_EQ(out.second.data()[i], i + 1);
+    ASSERT_EQ(out.image.data()[i], i + 1);
   }
 }
 
@@ -70,27 +70,27 @@ TEST(SingleProcessEncodedImageIdInjector, Inject3Extract3) {
   EncodedImage intermediate3 = injector.InjectId(520, source3, 1);
 
   // Extract ids in different order.
-  std::pair<uint16_t, EncodedImage> out3 = injector.ExtractId(intermediate3, 2);
-  std::pair<uint16_t, EncodedImage> out1 = injector.ExtractId(intermediate1, 2);
-  std::pair<uint16_t, EncodedImage> out2 = injector.ExtractId(intermediate2, 2);
+  EncodedImageWithId out3 = injector.ExtractId(intermediate3, 2);
+  EncodedImageWithId out1 = injector.ExtractId(intermediate1, 2);
+  EncodedImageWithId out2 = injector.ExtractId(intermediate2, 2);
 
-  ASSERT_EQ(out1.first, 510);
-  ASSERT_EQ(out1.second.size(), 10ul);
-  ASSERT_EQ(out1.second.capacity(), 10ul);
+  ASSERT_EQ(out1.id, 510);
+  ASSERT_EQ(out1.image.size(), 10ul);
+  ASSERT_EQ(out1.image.capacity(), 10ul);
   for (int i = 0; i < 10; ++i) {
-    ASSERT_EQ(out1.second.data()[i], i + 1);
+    ASSERT_EQ(out1.image.data()[i], i + 1);
   }
-  ASSERT_EQ(out2.first, 520);
-  ASSERT_EQ(out2.second.size(), 10ul);
-  ASSERT_EQ(out2.second.capacity(), 10ul);
+  ASSERT_EQ(out2.id, 520);
+  ASSERT_EQ(out2.image.size(), 10ul);
+  ASSERT_EQ(out2.image.capacity(), 10ul);
   for (int i = 0; i < 10; ++i) {
-    ASSERT_EQ(out2.second.data()[i], i + 11);
+    ASSERT_EQ(out2.image.data()[i], i + 11);
   }
-  ASSERT_EQ(out3.first, 520);
-  ASSERT_EQ(out3.second.size(), 10ul);
-  ASSERT_EQ(out3.second.capacity(), 10ul);
+  ASSERT_EQ(out3.id, 520);
+  ASSERT_EQ(out3.image.size(), 10ul);
+  ASSERT_EQ(out3.image.capacity(), 10ul);
   for (int i = 0; i < 10; ++i) {
-    ASSERT_EQ(out3.second.data()[i], i + 21);
+    ASSERT_EQ(out3.image.data()[i], i + 21);
   }
 }
 
@@ -125,15 +125,15 @@ TEST(SingleProcessEncodedImageIdInjector, InjectExtractFromConcatenated) {
                             concatenated_length);
 
   // Extract frame id from concatenated image
-  std::pair<uint16_t, EncodedImage> out = injector.ExtractId(concatenated, 2);
+  EncodedImageWithId out = injector.ExtractId(concatenated, 2);
 
-  ASSERT_EQ(out.first, 512);
-  ASSERT_EQ(out.second.size(), 3 * 10ul);
-  ASSERT_EQ(out.second.capacity(), 3 * 10ul);
+  ASSERT_EQ(out.id, 512);
+  ASSERT_EQ(out.image.size(), 3 * 10ul);
+  ASSERT_EQ(out.image.capacity(), 3 * 10ul);
   for (int i = 0; i < 10; ++i) {
-    ASSERT_EQ(out.second.data()[i], i + 1);
-    ASSERT_EQ(out.second.data()[i + 10], i + 11);
-    ASSERT_EQ(out.second.data()[i + 20], i + 21);
+    ASSERT_EQ(out.image.data()[i], i + 1);
+    ASSERT_EQ(out.image.data()[i + 10], i + 11);
+    ASSERT_EQ(out.image.data()[i + 20], i + 21);
   }
 }
 

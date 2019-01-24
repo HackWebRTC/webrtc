@@ -31,6 +31,11 @@ class EncodedImageIdInjector {
                                 int coding_entity_id) = 0;
 };
 
+struct EncodedImageWithId {
+  uint16_t id;
+  EncodedImage image;
+};
+
 // Extracts frame id from EncodedImage on decoder side.
 class EncodedImageIdExtractor {
  public:
@@ -39,9 +44,8 @@ class EncodedImageIdExtractor {
   // Returns encoded image id, extracted from payload and also encoded image
   // with its original payload. For concatenated spatial layers it should be the
   // same id. |coding_entity_id| is unique id of decoder or encoder.
-  virtual std::pair<uint16_t, EncodedImage> ExtractId(
-      const EncodedImage& source,
-      int coding_entity_id) = 0;
+  virtual EncodedImageWithId ExtractId(const EncodedImage& source,
+                                       int coding_entity_id) = 0;
 };
 
 }  // namespace test
