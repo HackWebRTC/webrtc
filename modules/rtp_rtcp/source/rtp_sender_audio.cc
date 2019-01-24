@@ -36,8 +36,7 @@ int32_t RTPSenderAudio::RegisterAudioPayload(absl::string_view payload_name,
                                              const int8_t payload_type,
                                              const uint32_t frequency,
                                              const size_t channels,
-                                             const uint32_t rate,
-                                             RtpUtility::Payload** payload) {
+                                             const uint32_t rate) {
   if (absl::EqualsIgnoreCase(payload_name, "cn")) {
     rtc::CritScope cs(&send_audio_critsect_);
     //  we can have multiple CNG payload types
@@ -65,10 +64,6 @@ int32_t RTPSenderAudio::RegisterAudioPayload(absl::string_view payload_name,
     dtmf_payload_freq_ = frequency;
     return 0;
   }
-  *payload = new RtpUtility::Payload(
-      payload_name,
-      PayloadUnion(AudioPayload{
-          SdpAudioFormat(payload_name, frequency, channels), rate}));
   return 0;
 }
 

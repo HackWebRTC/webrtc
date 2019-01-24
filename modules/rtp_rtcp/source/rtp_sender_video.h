@@ -21,7 +21,6 @@
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_config.h"
 #include "modules/rtp_rtcp/source/rtp_sender.h"
-#include "modules/rtp_rtcp/source/rtp_utility.h"
 #include "modules/rtp_rtcp/source/ulpfec_generator.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/one_time_event.h"
@@ -46,13 +45,7 @@ class RTPSenderVideo {
                  bool require_frame_encryption);
   virtual ~RTPSenderVideo();
 
-  virtual enum VideoCodecType VideoCodecType() const;
-
-  static RtpUtility::Payload* CreateVideoPayload(absl::string_view payload_name,
-                                                 int8_t payload_type);
-
-  bool SendVideo(enum VideoCodecType video_type,
-                 FrameType frame_type,
+  bool SendVideo(FrameType frame_type,
                  int8_t payload_type,
                  uint32_t capture_timestamp,
                  int64_t capture_time_ms,
@@ -62,7 +55,7 @@ class RTPSenderVideo {
                  const RTPVideoHeader* video_header,
                  int64_t expected_retransmission_time_ms);
 
-  void SetVideoCodecType(enum VideoCodecType type);
+  void RegisterPayloadType(int8_t payload_type, absl::string_view payload_name);
 
   // ULPFEC.
   void SetUlpfecConfig(int red_payload_type, int ulpfec_payload_type);
@@ -133,10 +126,15 @@ class RTPSenderVideo {
   RTPSender* const rtp_sender_;
   Clock* const clock_;
 
+  // Maps payload type to codec type, for packetization.
+  // TODO(nisse): Set on construction, to avoid lock.
+  rtc::CriticalSection payload_type_crit_;
+  std::map<int8_t, VideoCodecType> payload_type_map_
+      RTC_GUARDED_BY(payload_type_crit_);
+
   // Should never be held when calling out of this class.
   rtc::CriticalSection crit_;
 
-  enum VideoCodecType video_type_;
   int32_t retransmission_settings_ RTC_GUARDED_BY(crit_);
   VideoRotation last_rotation_ RTC_GUARDED_BY(crit_);
   absl::optional<ColorSpace> last_color_space_ RTC_GUARDED_BY(crit_);
