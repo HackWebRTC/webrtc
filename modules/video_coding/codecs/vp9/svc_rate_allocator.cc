@@ -227,6 +227,9 @@ uint32_t SvcRateAllocator::GetMaxBitrateBps(const VideoCodec& codec) {
 
 uint32_t SvcRateAllocator::GetPaddingBitrateBps(const VideoCodec& codec) {
   const size_t num_spatial_layers = GetNumActiveSpatialLayers(codec);
+  if (num_spatial_layers == 0) {
+    return 0;  // All layers are deactivated.
+  }
 
   if (codec.mode == VideoCodecMode::kRealtimeVideo) {
     float scale_factor = 0.0;

@@ -188,6 +188,15 @@ TEST(SvcRateAllocatorTest, DeativateLayers) {
   }
 }
 
+TEST(SvcRateAllocatorTest, NoPaddingIfAllLayersAreDeactivated) {
+  VideoCodec codec = Configure(1280, 720, 3, 1, false);
+  EXPECT_EQ(codec.VP9()->numberOfSpatialLayers, 3U);
+  // Deactivation of base layer deactivates all layers.
+  codec.spatialLayers[0].active = false;
+  uint32_t padding_bps = SvcRateAllocator::GetPaddingBitrateBps(codec);
+  EXPECT_EQ(padding_bps, 0U);
+}
+
 class SvcRateAllocatorTestParametrizedContentType
     : public testing::Test,
       public testing::WithParamInterface<bool> {
