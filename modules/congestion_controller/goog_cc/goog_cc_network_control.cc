@@ -574,7 +574,9 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
 
 NetworkControlUpdate GoogCcNetworkController::GetNetworkState(
     Timestamp at_time) const {
-  DataRate bandwidth = DataRate::bps(last_estimated_bitrate_bps_);
+  DataRate bandwidth = use_stable_bandwidth_estimate_
+                           ? bandwidth_estimation_->GetEstimatedLinkCapacity()
+                           : last_raw_target_rate_;
   TimeDelta rtt = TimeDelta::ms(last_estimated_rtt_ms_);
   NetworkControlUpdate update;
   update.target_rate = TargetTransferRate();

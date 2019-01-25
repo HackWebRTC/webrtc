@@ -371,7 +371,7 @@ void Scenario::RunUntil(TimeDelta max_duration,
       sim_clock_.AdvanceTimeMicroseconds(wait_time.us());
       // The fake clock is quite slow to update, we only update it if logging is
       // turned on to save time.
-      if (!log_writer_factory_)
+      if (log_writer_factory_)
         event_log_fake_clock_.SetTimeNanos(sim_clock_.TimeInMicroseconds() *
                                            1000);
     }

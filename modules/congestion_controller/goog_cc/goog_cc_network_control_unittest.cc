@@ -426,7 +426,7 @@ TEST_F(GoogCcNetworkControllerTest, StableEstimateDoesNotVaryInSteadyState) {
   SimulatedTimeClient* client = s.CreateSimulatedTimeClient(
       "send", config, {PacketStreamConfig()}, {send_net}, {ret_net});
   // Run for a while to allow the estimate to stabilize.
-  s.RunFor(TimeDelta::seconds(20));
+  s.RunFor(TimeDelta::seconds(30));
   DataRate min_estimate = DataRate::PlusInfinity();
   DataRate max_estimate = DataRate::MinusInfinity();
   // Measure variation in steady state.

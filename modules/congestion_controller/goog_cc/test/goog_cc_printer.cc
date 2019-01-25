@@ -33,7 +33,7 @@ bool GoogCcStatePrinter::Attached() const {
 
 void GoogCcStatePrinter::PrintHeaders(RtcEventLogOutput* out) {
   out->Write(
-      "rate_control_state rate_control_region alr_state"
+      "rate_control_state stable_estimate alr_state"
       " trendline trendline_modified_offset trendline_offset_threshold");
 }
 
