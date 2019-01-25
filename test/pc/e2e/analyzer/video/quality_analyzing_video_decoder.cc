@@ -29,7 +29,7 @@ QualityAnalyzingVideoDecoder::QualityAnalyzingVideoDecoder(
     VideoQualityAnalyzerInterface* analyzer)
     : id_(id),
       implementation_name_("AnalyzingDecoder-" +
-                           std::string(delegate_->ImplementationName())),
+                           std::string(delegate->ImplementationName())),
       delegate_(std::move(delegate)),
       extractor_(extractor),
       analyzer_(analyzer) {
