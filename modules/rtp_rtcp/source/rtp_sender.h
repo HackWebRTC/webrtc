@@ -197,8 +197,6 @@ class RTPSender {
   // header-extension-for-audio-level-indication.
   int32_t SetAudioLevel(uint8_t level_d_bov);
 
-  uint32_t MaxConfiguredBitrateVideo() const;
-
   // ULPFEC.
   void SetUlpfecConfig(int red_payload_type, int ulpfec_payload_type);
 
@@ -319,7 +317,6 @@ class RTPSender {
 
   // RTP variables
   uint32_t timestamp_offset_ RTC_GUARDED_BY(send_critsect_);
-  uint32_t remote_ssrc_ RTC_GUARDED_BY(send_critsect_);
   bool sequence_number_forced_ RTC_GUARDED_BY(send_critsect_);
   uint16_t sequence_number_ RTC_GUARDED_BY(send_critsect_);
   uint16_t sequence_number_rtx_ RTC_GUARDED_BY(send_critsect_);

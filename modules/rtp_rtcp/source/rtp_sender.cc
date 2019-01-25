@@ -161,7 +161,6 @@ RTPSender::RTPSender(
       send_packet_observer_(send_packet_observer),
       bitrate_callback_(bitrate_callback),
       // RTP variables
-      remote_ssrc_(0),
       sequence_number_forced_(false),
       last_rtp_timestamp_(0),
       capture_time_ms_(0),
