@@ -39,7 +39,6 @@ if (is_android) {
     sources = [
       "jni/android_call_client.cc",
       "jni/android_call_client.h",
-      "jni/androidcallclient.h",
       "jni/onload.cc",
     ]
 

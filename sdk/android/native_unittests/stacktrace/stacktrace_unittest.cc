@@ -12,7 +12,7 @@
 #include <dlfcn.h>
 #include <vector>
 #include "absl/memory/memory.h"
-#include "rtc_base/criticalsection.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/event.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"

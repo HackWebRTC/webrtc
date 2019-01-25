@@ -166,7 +166,6 @@ rtc_static_library("rtc_event_log_impl_encoder") {
     "rtc_event_log/encoder/rtc_event_log_encoder_common.h",
     "rtc_event_log/encoder/var_int.cc",
     "rtc_event_log/encoder/var_int.h",
-    "rtc_event_log/encoder/varint.h",
   ]
 
   defines = []
@@ -420,7 +419,6 @@ rtc_source_set("ice_log") {
     "rtc_event_log/events/rtc_event_ice_candidate_pair_config.h",
     "rtc_event_log/ice_logger.cc",
     "rtc_event_log/ice_logger.h",
-    "rtc_event_log/icelogger.h",
   ]
 
   deps = [

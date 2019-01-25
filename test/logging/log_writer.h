@@ -14,7 +14,7 @@
 #include <string>
 #include <utility>
 
-#include "api/rtceventlogoutput.h"
+#include "api/rtc_event_log_output.h"
 #include "rtc_base/strings/string_builder.h"
 
 namespace webrtc {
