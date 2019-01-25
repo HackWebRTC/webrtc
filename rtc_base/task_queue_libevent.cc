@@ -22,6 +22,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "api/scoped_refptr.h"
 #include "base/third_party/libevent/event.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/critical_section.h"
@@ -31,7 +32,6 @@
 #include "rtc_base/platform_thread_types.h"
 #include "rtc_base/ref_count.h"
 #include "rtc_base/ref_counted_object.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/system/unused.h"
 #include "rtc_base/task_queue_posix.h"
 #include "rtc_base/thread_annotations.h"

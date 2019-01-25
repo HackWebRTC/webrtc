@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "api/scoped_refptr.h"
 #include "api/video/video_content_type.h"
 #include "api/video/video_frame_buffer.h"
 #include "api/video/video_timing.h"
@@ -32,7 +33,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/experiments/rate_control_settings.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/field_trial.h"
 #include "third_party/libyuv/include/libyuv/scale.h"

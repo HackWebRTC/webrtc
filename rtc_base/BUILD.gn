@@ -79,6 +79,7 @@ rtc_source_set("rtc_base_approved") {
     ":safe_minmax",
     ":type_traits",
     "../api:array_view",
+    "../api:scoped_refptr",
     "../system_wrappers:field_trial",
     "experiments:field_trial_parser",
     "system:arch",
@@ -178,7 +179,6 @@ rtc_source_set("rtc_base_approved") {
     ":macromagic",
     ":platform_thread",
     ":platform_thread_types",
-    ":ptr_util",
     ":refcount",
     ":rtc_event",
     ":safe_conversions",
@@ -208,16 +208,6 @@ rtc_source_set("platform_thread_types") {
   sources = [
     "platform_thread_types.cc",
     "platform_thread_types.h",
-  ]
-}
-
-rtc_source_set("ptr_util") {
-  visibility = [ "*" ]
-  sources = [
-    "scoped_ref_ptr.h",
-  ]
-  deps = [
-    "../api:scoped_refptr",
   ]
 }
 
@@ -533,7 +523,7 @@ rtc_source_set("rtc_task_queue_api") {
   ]
   deps = [
     ":macromagic",
-    ":ptr_util",
+    "../api:scoped_refptr",
     "../api/task_queue",
     "system:rtc_export",
     "//third_party/abseil-cpp/absl/memory",
@@ -555,11 +545,11 @@ if (rtc_enable_libevent) {
       ":macromagic",
       ":platform_thread",
       ":platform_thread_types",
-      ":ptr_util",
       ":refcount",
       ":rtc_task_queue_api",
       ":safe_conversions",
       ":timeutils",
+      "../api:scoped_refptr",
       "system:unused",
     ]
     if (rtc_build_libevent) {
@@ -579,9 +569,9 @@ if (is_mac || is_ios) {
     deps = [
       ":checks",
       ":logging",
-      ":ptr_util",
       ":refcount",
       ":rtc_task_queue_api",
+      "../api:scoped_refptr",
     ]
   }
 }
@@ -598,12 +588,12 @@ if (is_win) {
       ":logging",
       ":macromagic",
       ":platform_thread",
-      ":ptr_util",
       ":refcount",
       ":rtc_event",
       ":rtc_task_queue_api",
       ":safe_conversions",
       ":timeutils",
+      "../api:scoped_refptr",
     ]
   }
 }
@@ -619,12 +609,12 @@ rtc_source_set("rtc_task_queue_stdlib") {
     ":logging",
     ":macromagic",
     ":platform_thread",
-    ":ptr_util",
     ":refcount",
     ":rtc_event",
     ":rtc_task_queue_api",
     ":safe_conversions",
     ":timeutils",
+    "../api:scoped_refptr",
   ]
 }
 
@@ -675,9 +665,9 @@ rtc_static_library("weak_ptr") {
     "weak_ptr.h",
   ]
   deps = [
-    ":ptr_util",
     ":refcount",
     ":sequenced_task_checker",
+    "../api:scoped_refptr",
   ]
 }
 
@@ -867,6 +857,7 @@ rtc_static_library("rtc_base") {
     ":stringutils",
     "..:webrtc_common",
     "../api:array_view",
+    "../api:scoped_refptr",
     "network:sent_packet",
     "system:file_wrapper",
     "third_party/base64",
@@ -1398,6 +1389,7 @@ if (rtc_include_tests) {
       ":stringutils",
       ":testclient",
       "../api:array_view",
+      "../api:scoped_refptr",
       "../api/units:time_delta",
       "../system_wrappers:system_wrappers",
       "../test:fileutils",

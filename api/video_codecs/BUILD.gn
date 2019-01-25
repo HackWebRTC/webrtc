@@ -32,6 +32,7 @@ rtc_source_set("video_codecs_api") {
   ]
 
   deps = [
+    "..:scoped_refptr",
     "../..:webrtc_common",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
@@ -59,8 +60,8 @@ rtc_static_library("builtin_video_decoder_factory") {
 
   deps = [
     ":video_codecs_api",
+    "../../api:scoped_refptr",
     "../../media:rtc_internal_video_codecs",
-    "../../rtc_base:ptr_util",
     "../../rtc_base/system:rtc_export",
     "//third_party/abseil-cpp/absl/memory",
   ]
@@ -79,11 +80,11 @@ rtc_static_library("builtin_video_encoder_factory") {
 
   deps = [
     ":video_codecs_api",
+    "../../api:scoped_refptr",
     "../../media:rtc_encoder_simulcast_proxy",
     "../../media:rtc_internal_video_codecs",
     "../../media:rtc_media_base",
     "../../rtc_base:checks",
-    "../../rtc_base:ptr_util",
     "../../rtc_base/system:rtc_export",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/strings",

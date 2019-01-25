@@ -14,9 +14,9 @@
 #include <vector>
 
 #include "api/audio_codecs/audio_encoder.h"
+#include "api/scoped_refptr.h"
 #include "modules/audio_coding/codecs/isac/locked_bandwidth_info.h"
 #include "rtc_base/constructor_magic.h"
-#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

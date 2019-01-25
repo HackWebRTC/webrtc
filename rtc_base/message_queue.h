@@ -19,11 +19,11 @@
 #include <queue>
 #include <vector>
 
+#include "api/scoped_refptr.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/location.h"
 #include "rtc_base/message_handler.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/socket_server.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread_annotations.h"

@@ -16,10 +16,10 @@
 
 #include <vector>
 
+#include "api/scoped_refptr.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/ref_count.h"
-#include "rtc_base/scoped_ref_ptr.h"
 
 struct vpx_codec_ctx;
 struct vpx_codec_frame_buffer;

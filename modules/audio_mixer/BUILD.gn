@@ -38,6 +38,7 @@ rtc_static_library("audio_mixer_impl") {
   deps = [
     ":audio_frame_manipulator",
     "../../api:array_view",
+    "../../api:scoped_refptr",
     "../../api/audio:audio_frame_api",
     "../../api/audio:audio_mixer_api",
     "../../audio/utility:audio_frame_operations",

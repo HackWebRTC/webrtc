@@ -18,6 +18,7 @@
 
 #include "api/audio_codecs/audio_encoder_factory.h"
 #include "api/rtp_receiver_interface.h"
+#include "api/scoped_refptr.h"
 #include "call/audio_state.h"
 #include "call/call.h"
 #include "media/base/rtp_utils.h"
@@ -28,7 +29,6 @@
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/experiments/audio_allocation_settings.h"
 #include "rtc_base/network_route.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread_checker.h"
 

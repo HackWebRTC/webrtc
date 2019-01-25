@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/scoped_refptr.h"
 #include "api/stats/rtc_stats_collector_callback.h"
 #include "api/stats/rtc_stats_report.h"
 #include "api/stats/rtcstats_objects.h"
@@ -28,7 +29,6 @@
 #include "pc/track_media_info_map.h"
 #include "rtc_base/async_invoker.h"
 #include "rtc_base/ref_count.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/ssl_identity.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/time_utils.h"

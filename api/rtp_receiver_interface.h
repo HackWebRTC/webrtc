@@ -23,8 +23,8 @@
 #include "api/media_types.h"
 #include "api/proxy.h"
 #include "api/rtp_parameters.h"
+#include "api/scoped_refptr.h"
 #include "rtc_base/ref_count.h"
-#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

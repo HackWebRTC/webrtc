@@ -15,6 +15,7 @@
 #include <sstream>
 
 #include "absl/memory/memory.h"
+#include "api/scoped_refptr.h"
 #include "api/video/i420_buffer.h"
 #include "api/video/video_frame.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
@@ -22,7 +23,6 @@
 #include "modules/video_capture/video_capture.h"
 #include "modules/video_capture/video_capture_factory.h"
 #include "rtc_base/critical_section.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/time_utils.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/frame_utils.h"

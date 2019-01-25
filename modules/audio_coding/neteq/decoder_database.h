@@ -17,10 +17,10 @@
 
 #include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/audio_codecs/audio_format.h"
+#include "api/scoped_refptr.h"
 #include "modules/audio_coding/codecs/cng/webrtc_cng.h"
 #include "modules/audio_coding/neteq/packet.h"
 #include "rtc_base/constructor_magic.h"
-#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

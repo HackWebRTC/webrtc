@@ -9,7 +9,7 @@
  */
 #include <vector>
 
-#include "rtc_base/scoped_ref_ptr.h"
+#include "api/scoped_refptr.h"
 #include "rtc_tools/frame_analyzer/reference_less_video_analysis_lib.h"
 #include "rtc_tools/video_file_reader.h"
 #include "test/gtest.h"

@@ -14,9 +14,9 @@
 #include <string>
 
 #include "api/media_stream_interface.h"
+#include "api/scoped_refptr.h"
 #include "pc/media_stream_track.h"
 #include "rtc_base/constructor_magic.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/thread_checker.h"
 
 namespace webrtc {

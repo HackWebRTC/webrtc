@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <vector>
 
+#include "api/scoped_refptr.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "api/video/video_bitrate_allocator.h"
 #include "api/video/video_frame.h"
@@ -30,7 +31,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/sequenced_task_checker.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/field_trial.h"

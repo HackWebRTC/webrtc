@@ -18,10 +18,10 @@
 #include <type_traits>
 #include <utility>
 
+#include "api/scoped_refptr.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/ref_counted_object.h"
-#include "rtc_base/scoped_ref_ptr.h"
 
 namespace rtc {
 

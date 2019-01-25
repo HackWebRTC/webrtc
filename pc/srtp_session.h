@@ -13,7 +13,7 @@
 
 #include <vector>
 
-#include "rtc_base/scoped_ref_ptr.h"
+#include "api/scoped_refptr.h"
 #include "rtc_base/thread_checker.h"
 
 // Forward declaration to avoid pulling in libsrtp headers here

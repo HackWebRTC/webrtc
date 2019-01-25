@@ -33,6 +33,7 @@ rtc_source_set("video_frame") {
 
   deps = [
     "..:array_view",
+    "..:scoped_refptr",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base/system:rtc_export",
@@ -48,6 +49,7 @@ rtc_source_set("video_frame_i420") {
   ]
   deps = [
     ":video_frame",
+    "..:scoped_refptr",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base",
     "../../rtc_base/memory:aligned_malloc",
@@ -65,6 +67,7 @@ rtc_source_set("video_frame_i010") {
   deps = [
     ":video_frame",
     ":video_frame_i420",
+    "..:scoped_refptr",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base",
     "../../rtc_base/memory:aligned_malloc",
@@ -211,7 +214,7 @@ rtc_source_set("video_stream_encoder_create") {
   deps = [
     ":video_frame",
     ":video_stream_encoder",
-    "../../rtc_base:ptr_util",
+    "../../api:scoped_refptr",
     "../../video:video_stream_encoder_impl",
     "../video_codecs:video_codecs_api",
     "//third_party/abseil-cpp/absl/memory",
@@ -230,10 +233,10 @@ rtc_static_library("builtin_video_bitrate_allocator_factory") {
     ":video_bitrate_allocator",
     ":video_bitrate_allocator_factory",
     "../../:webrtc_common",
+    "../../api:scoped_refptr",
     "../../media:rtc_media_base",
     "../../modules/video_coding:video_coding_utility",
     "../../modules/video_coding:webrtc_vp9_helpers",
-    "../../rtc_base:ptr_util",
     "../../rtc_base/system:fallthrough",
     "../video_codecs:video_codecs_api",
     "//third_party/abseil-cpp/absl/memory",

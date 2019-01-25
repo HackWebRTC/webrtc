@@ -17,10 +17,10 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
+#include "api/scoped_refptr.h"
 #include "api/task_queue/queued_task.h"
 #include "api/task_queue/task_queue_priority.h"
 #include "rtc_base/constructor_magic.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/thread_annotations.h"
 

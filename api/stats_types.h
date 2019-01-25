@@ -20,9 +20,9 @@
 #include <string>
 #include <vector>
 
+#include "api/scoped_refptr.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/ref_count.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/string_encode.h"
 #include "rtc_base/thread_checker.h"
 

@@ -14,9 +14,9 @@
 #include <string>
 
 #include "absl/strings/string_view.h"
+#include "api/scoped_refptr.h"
 #include "api/video/i420_buffer.h"
 #include "api/video/video_frame_buffer.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "test/gtest.h"
 #include "test/testsupport/file_utils.h"
 #include "test/testsupport/frame_reader.h"

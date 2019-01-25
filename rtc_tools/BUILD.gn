@@ -65,6 +65,7 @@ rtc_static_library("video_file_reader") {
     "video_file_reader.h",
   ]
   deps = [
+    "../api:scoped_refptr",
     "../api/video:video_frame",
     "../api/video:video_frame_i420",
     "../rtc_base:checks",
@@ -81,6 +82,7 @@ rtc_static_library("video_file_writer") {
   ]
   deps = [
     ":video_file_reader",
+    "../api:scoped_refptr",
     "../api/video:video_frame",
     "../api/video:video_frame_i420",
     "../rtc_base:rtc_base_approved",
@@ -105,6 +107,7 @@ rtc_static_library("video_quality_analysis") {
   deps = [
     ":video_file_reader",
     "../api:array_view",
+    "../api:scoped_refptr",
     "../api/video:video_frame",
     "../api/video:video_frame_i420",
     "../common_video",
@@ -127,7 +130,7 @@ rtc_executable("frame_analyzer") {
     ":video_file_reader",
     ":video_file_writer",
     ":video_quality_analysis",
-    "../rtc_base:ptr_util",
+    "../api:scoped_refptr",
     "../rtc_base:stringutils",
     "../test:perf_test",
     "//third_party/abseil-cpp/absl/strings",
@@ -159,8 +162,8 @@ if (!build_with_chromium) {
       ":command_line_parser",
       ":video_file_reader",
       ":video_quality_analysis",
+      "../api:scoped_refptr",
       "../api/video:video_frame",
-      "../rtc_base:ptr_util",
     ]
   }
 
@@ -173,8 +176,8 @@ if (!build_with_chromium) {
     deps = [
       ":video_file_reader",
       ":video_quality_analysis",
+      "../api:scoped_refptr",
       "../api/video:video_frame",
-      "../rtc_base:ptr_util",
     ]
   }
 
@@ -382,6 +385,7 @@ if (rtc_include_tests) {
       ":video_file_writer",
       ":video_quality_analysis",
       "../:webrtc_common",
+      "../api:scoped_refptr",
       "../api/video:video_frame",
       "../api/video:video_frame_i420",
       "../common_video:common_video",

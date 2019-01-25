@@ -16,13 +16,13 @@
 #include <memory>
 #include <vector>
 
+#include "api/scoped_refptr.h"
 #include "modules/desktop_capture/desktop_capture_options.h"
 #include "modules/desktop_capture/desktop_capturer.h"
 #include "modules/desktop_capture/desktop_region.h"
 #include "modules/desktop_capture/screen_capture_frame_queue.h"
 #include "modules/desktop_capture/win/dxgi_duplicator_controller.h"
 #include "modules/desktop_capture/win/dxgi_frame.h"
-#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

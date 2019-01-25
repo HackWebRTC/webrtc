@@ -14,8 +14,8 @@
 #include <cstdint>
 #include <memory>
 
+#include "api/scoped_refptr.h"
 #include "api/video/video_frame_buffer.h"
-#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 class AugmentedVideoFrameBuffer : public VideoFrameBuffer {

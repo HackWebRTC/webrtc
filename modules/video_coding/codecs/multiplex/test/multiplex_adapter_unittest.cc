@@ -16,6 +16,7 @@
 
 #include "absl/memory/memory.h"
 #include "absl/types/optional.h"
+#include "api/scoped_refptr.h"
 #include "api/test/mock_video_decoder_factory.h"
 #include "api/test/mock_video_encoder_factory.h"
 #include "api/video/encoded_image.h"
@@ -40,7 +41,6 @@
 #include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/keep_ref_until_done.h"
 #include "rtc_base/ref_counted_object.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/video_codec_settings.h"

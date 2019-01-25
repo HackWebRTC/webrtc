@@ -52,8 +52,8 @@ if (rtc_include_tests) {
     ]
     deps = [
       "../../../../api:array_view",
+      "../../../../api:scoped_refptr",
       "../../../../rtc_base:checks",
-      "../../../../rtc_base:ptr_util",
       "../../../../test:fileutils",
       "../../../../test:test_support",
       "//third_party/abseil-cpp/absl/memory",

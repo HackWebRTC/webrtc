@@ -78,6 +78,7 @@ rtc_static_library("rtc_media_base") {
   deps = [
     "../api:array_view",
     "../api:audio_options_api",
+    "../api:scoped_refptr",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
     "../rtc_base:rtc_task_queue",
@@ -190,6 +191,7 @@ rtc_static_library("rtc_simulcast_encoder_adapter") {
     "engine/simulcast_encoder_adapter.h",
   ]
   deps = [
+    "../api:scoped_refptr",
     "../api/video:video_codec_constants",
     "../api/video:video_frame",
     "../api/video:video_frame_i420",
@@ -302,6 +304,7 @@ rtc_static_library("rtc_audio_video") {
   defines = []
   libs = []
   deps = [
+    "../api:scoped_refptr",
     "../api/video:video_bitrate_allocation",
     "../api/video:video_bitrate_allocator_factory",
     "../modules/audio_processing:api",
@@ -460,6 +463,7 @@ if (rtc_include_tests) {
       ":rtc_audio_video",
       ":rtc_simulcast_encoder_adapter",
       "../api:libjingle_peerconnection_api",
+      "../api:scoped_refptr",
       "../api/video:encoded_image",
       "../api/video:video_frame_i420",
       "../call:video_stream_api",
@@ -564,6 +568,7 @@ if (rtc_include_tests) {
       ":rtc_constants",
       ":rtc_data",
       "../:webrtc_common",
+      "../api:scoped_refptr",
       "../api/test/video:function_video_factory",
       "../api/units:time_delta",
       "../api/video:video_frame_i420",

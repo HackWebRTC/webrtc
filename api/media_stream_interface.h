@@ -24,12 +24,12 @@
 
 #include "absl/types/optional.h"
 #include "api/audio_options.h"
+#include "api/scoped_refptr.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_sink_interface.h"
 #include "api/video/video_source_interface.h"
 #include "modules/audio_processing/include/audio_processing_statistics.h"
 #include "rtc_base/ref_count.h"
-#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

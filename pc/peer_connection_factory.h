@@ -18,10 +18,10 @@
 #include "api/media_stream_interface.h"
 #include "api/media_transport_interface.h"
 #include "api/peer_connection_interface.h"
+#include "api/scoped_refptr.h"
 #include "media/sctp/sctp_transport_internal.h"
 #include "pc/channel_manager.h"
 #include "rtc_base/rtc_certificate_generator.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/thread.h"
 
 namespace rtc {

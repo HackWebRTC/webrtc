@@ -18,10 +18,10 @@
 
 #include "api/data_channel_interface.h"
 #include "api/proxy.h"
+#include "api/scoped_refptr.h"
 #include "media/base/media_channel.h"
 #include "pc/channel.h"
 #include "rtc_base/async_invoker.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace webrtc {

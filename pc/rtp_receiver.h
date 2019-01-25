@@ -25,6 +25,7 @@
 #include "api/media_types.h"
 #include "api/rtp_parameters.h"
 #include "api/rtp_receiver_interface.h"
+#include "api/scoped_refptr.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_sink_interface.h"
 #include "api/video/video_source_interface.h"
@@ -33,7 +34,6 @@
 #include "pc/remote_audio_source.h"
 #include "pc/video_track_source.h"
 #include "rtc_base/ref_counted_object.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/thread.h"
 
 namespace webrtc {

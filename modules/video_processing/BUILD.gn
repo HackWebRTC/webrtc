@@ -27,6 +27,7 @@ rtc_static_library("video_processing") {
   deps = [
     ":denoiser_filter",
     "..:module_api",
+    "../../api:scoped_refptr",
     "../../api/video:video_frame",
     "../../api/video:video_frame_i420",
     "../../common_audio",
@@ -114,10 +115,10 @@ if (rtc_include_tests) {
     deps = [
       ":denoiser_filter",
       ":video_processing",
+      "../../api:scoped_refptr",
       "../../api/video:video_frame",
       "../../api/video:video_frame_i420",
       "../../common_video:common_video",
-      "../../rtc_base:ptr_util",
       "../../test:fileutils",
       "../../test:test_support",
       "../../test:video_test_common",

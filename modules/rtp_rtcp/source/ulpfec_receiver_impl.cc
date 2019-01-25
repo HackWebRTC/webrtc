@@ -14,9 +14,9 @@
 #include <memory>
 #include <utility>
 
+#include "api/scoped_refptr.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/time_utils.h"
 
 namespace webrtc {

@@ -62,9 +62,9 @@
 #ifndef RTC_BASE_CALLBACK_H_
 #define RTC_BASE_CALLBACK_H_
 
+#include "api/scoped_refptr.h"
 #include "rtc_base/ref_count.h"
 #include "rtc_base/ref_counted_object.h"
-#include "rtc_base/scoped_ref_ptr.h"
 
 namespace rtc {
 

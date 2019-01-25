@@ -25,9 +25,9 @@
 #include "api/crypto/frame_encryptor_interface.h"
 #include "api/media_transport_interface.h"
 #include "api/rtp_parameters.h"
+#include "api/scoped_refptr.h"
 #include "call/rtp_config.h"
 #include "modules/audio_processing/include/audio_processing_statistics.h"
-#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

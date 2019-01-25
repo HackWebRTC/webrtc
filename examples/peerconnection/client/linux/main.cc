@@ -12,6 +12,7 @@
 #include <gtk/gtk.h>
 #include <stdio.h>
 
+#include "api/scoped_refptr.h"
 #include "examples/peerconnection/client/conductor.h"
 #include "examples/peerconnection/client/flag_defs.h"
 #include "examples/peerconnection/client/linux/main_wnd.h"
@@ -20,7 +21,6 @@
 #include "rtc_base/message_queue.h"
 #include "rtc_base/physical_socket_server.h"
 #include "rtc_base/ref_counted_object.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/ssl_adapter.h"
 #include "rtc_base/thread.h"
 #include "system_wrappers/include/field_trial.h"

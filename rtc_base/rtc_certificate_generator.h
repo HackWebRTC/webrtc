@@ -14,9 +14,9 @@
 #include <stdint.h>
 
 #include "absl/types/optional.h"
+#include "api/scoped_refptr.h"
 #include "rtc_base/ref_count.h"
 #include "rtc_base/rtc_certificate.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/ssl_identity.h"
 #include "rtc_base/thread.h"
 

@@ -13,10 +13,10 @@
 #include <stdint.h>
 #include <memory>
 
+#include "api/scoped_refptr.h"
 #include "modules/desktop_capture/desktop_geometry.h"
 #include "modules/desktop_capture/screen_drawer.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "test/gtest.h"
 
 #if defined(USE_X11)

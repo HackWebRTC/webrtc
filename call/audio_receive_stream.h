@@ -23,8 +23,8 @@
 #include "api/media_transport_interface.h"
 #include "api/rtp_parameters.h"
 #include "api/rtp_receiver_interface.h"
+#include "api/scoped_refptr.h"
 #include "call/rtp_config.h"
-#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 class AudioSinkInterface;

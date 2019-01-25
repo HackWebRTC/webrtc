@@ -11,8 +11,8 @@
 #include <stdio.h>
 #include <string>
 
+#include "api/scoped_refptr.h"
 #include "api/video/i420_buffer.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "test/frame_utils.h"
 #include "test/testsupport/file_utils.h"
 #include "test/testsupport/frame_reader.h"

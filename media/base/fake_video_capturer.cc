@@ -14,11 +14,11 @@
 #include <cstdint>
 
 #include "absl/memory/memory.h"
+#include "api/scoped_refptr.h"
 #include "api/video/i420_buffer.h"
 #include "api/video/video_frame_buffer.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/time_utils.h"
 
 namespace cricket {

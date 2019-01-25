@@ -10,7 +10,7 @@
 #ifndef MODULES_DESKTOP_CAPTURE_DESKTOP_CAPTURE_OPTIONS_H_
 #define MODULES_DESKTOP_CAPTURE_DESKTOP_CAPTURE_OPTIONS_H_
 
-#include "rtc_base/scoped_ref_ptr.h"
+#include "api/scoped_refptr.h"
 #include "rtc_base/system/rtc_export.h"
 
 #if defined(USE_X11)

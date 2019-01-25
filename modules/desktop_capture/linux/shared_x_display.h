@@ -17,8 +17,8 @@
 #include <string>
 
 #include "api/ref_counted_base.h"
+#include "api/scoped_refptr.h"
 #include "rtc_base/constructor_magic.h"
-#include "rtc_base/scoped_ref_ptr.h"
 
 // Including Xlib.h will involve evil defines (Bool, Status, True, False), which
 // easily conflict with other headers.

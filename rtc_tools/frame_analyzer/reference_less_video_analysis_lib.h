@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 
-#include "rtc_base/scoped_ref_ptr.h"
+#include "api/scoped_refptr.h"
 #include "rtc_tools/video_file_reader.h"
 
 // Returns true if the frame is frozen based on psnr and ssim freezing

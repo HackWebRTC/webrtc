@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 
+#include "api/scoped_refptr.h"
 #include "modules/desktop_capture/desktop_geometry.h"
 #include "modules/desktop_capture/shared_desktop_frame.h"
 #include "modules/desktop_capture/win/d3d_device.h"
@@ -25,7 +26,6 @@
 #include "modules/desktop_capture/win/dxgi_context.h"
 #include "modules/desktop_capture/win/dxgi_frame.h"
 #include "rtc_base/critical_section.h"
-#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

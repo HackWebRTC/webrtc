@@ -12,13 +12,13 @@
 
 #include <string.h>
 
+#include "api/scoped_refptr.h"
 #include "api/video/i420_buffer.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_frame_buffer.h"
 #include "api/video/video_rotation.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/time_utils.h"
 
 namespace webrtc {

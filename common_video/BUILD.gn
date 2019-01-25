@@ -40,6 +40,7 @@ rtc_static_library("common_video") {
 
   deps = [
     "..:webrtc_common",
+    "../api:scoped_refptr",
     "../api/video:encoded_image",
     "../api/video:video_bitrate_allocation",
     "../api/video:video_bitrate_allocator",
@@ -87,6 +88,7 @@ if (rtc_include_tests) {
     deps = [
       ":common_video",
       "../:webrtc_common",
+      "../api:scoped_refptr",
       "../api/units:time_delta",
       "../api/video:video_frame",
       "../api/video:video_frame_i010",

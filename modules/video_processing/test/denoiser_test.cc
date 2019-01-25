@@ -14,12 +14,12 @@
 #include <memory>
 #include <string>
 
+#include "api/scoped_refptr.h"
 #include "api/video/i420_buffer.h"
 #include "api/video/video_frame_buffer.h"
 #include "modules/video_processing/util/denoiser_filter.h"
 #include "modules/video_processing/util/skin_detection.h"
 #include "modules/video_processing/video_denoiser.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "test/frame_utils.h"
 #include "test/gtest.h"
 #include "test/testsupport/file_utils.h"

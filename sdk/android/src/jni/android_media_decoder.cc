@@ -13,6 +13,7 @@
 #include <memory>
 #include <vector>
 
+#include "api/scoped_refptr.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "common_video/h264/h264_bitstream_parser.h"
 #include "common_video/include/i420_buffer_pool.h"
@@ -23,7 +24,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/time_utils.h"
 #include "sdk/android/generated_video_jni/jni/MediaCodecVideoDecoder_jni.h"

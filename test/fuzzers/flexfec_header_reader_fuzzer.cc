@@ -10,10 +10,10 @@
 
 #include <algorithm>
 
+#include "api/scoped_refptr.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/flexfec_header_reader_writer.h"
 #include "modules/rtp_rtcp/source/forward_error_correction.h"
-#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

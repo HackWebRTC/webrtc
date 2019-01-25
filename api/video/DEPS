@@ -8,21 +8,17 @@ specific_include_rules = {
 
   "i010_buffer\.h": [
     "+rtc_base/memory/aligned_malloc.h",
-    "+rtc_base/scoped_ref_ptr.h",
   ],
 
   "i420_buffer\.h": [
     "+rtc_base/memory/aligned_malloc.h",
-    "+rtc_base/scoped_ref_ptr.h",
   ],
 
   "video_frame\.h": [
-    "+rtc_base/scoped_ref_ptr.h",
   ],
 
   "video_frame_buffer\.h": [
     "+rtc_base/ref_count.h",
-    "+rtc_base/scoped_ref_ptr.h",
   ],
 
   "video_stream_decoder_create.cc": [

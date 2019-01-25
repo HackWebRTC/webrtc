@@ -10,8 +10,8 @@
 
 #include "media/engine/apm_helpers.h"
 
+#include "api/scoped_refptr.h"
 #include "modules/audio_processing/include/audio_processing.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 

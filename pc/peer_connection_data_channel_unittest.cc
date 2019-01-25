@@ -21,6 +21,7 @@
 #include "api/media_types.h"
 #include "api/peer_connection_interface.h"
 #include "api/peer_connection_proxy.h"
+#include "api/scoped_refptr.h"
 #include "api/test/fake_media_transport.h"
 #include "media/base/codec.h"
 #include "media/base/fake_media_engine.h"
@@ -39,7 +40,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/ref_counted_object.h"
 #include "rtc_base/rtc_certificate_generator.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/thread.h"
 #include "test/gtest.h"
 #ifdef WEBRTC_ANDROID

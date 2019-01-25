@@ -18,6 +18,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "api/scoped_refptr.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_rotation.h"
 #include "api/video/video_sink_interface.h"
@@ -25,7 +26,6 @@
 #include "modules/video_capture/video_capture_config.h"
 #include "modules/video_capture/video_capture_defines.h"
 #include "rtc_base/critical_section.h"
-#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

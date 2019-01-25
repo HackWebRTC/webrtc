@@ -23,11 +23,11 @@
 #include <new>
 #include <string>
 
+#include "api/scoped_refptr.h"
 #include "media/base/video_common.h"
 #include "modules/video_capture/video_capture.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/ref_counted_object.h"
-#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 namespace videocapturemodule {

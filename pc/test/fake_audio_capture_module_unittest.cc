@@ -13,9 +13,9 @@
 #include <string.h>
 #include <algorithm>
 
+#include "api/scoped_refptr.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "test/gtest.h"
 
 using std::min;

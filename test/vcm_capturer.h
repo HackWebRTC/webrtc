@@ -13,8 +13,8 @@
 #include <memory>
 #include <vector>
 
+#include "api/scoped_refptr.h"
 #include "modules/video_capture/video_capture.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "test/test_video_capturer.h"
 
 namespace webrtc {

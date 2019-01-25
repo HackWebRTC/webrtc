@@ -15,6 +15,7 @@
 
 #include <utility>
 
+#include "api/scoped_refptr.h"
 #include "modules/desktop_capture/desktop_capture_options.h"
 #include "modules/desktop_capture/desktop_capturer.h"
 #include "modules/desktop_capture/desktop_frame.h"
@@ -26,7 +27,6 @@
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/mac_utils.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/trace_event.h"
 
 namespace webrtc {

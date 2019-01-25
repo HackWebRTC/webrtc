@@ -14,6 +14,7 @@
 #include <memory>
 
 #include "absl/memory/memory.h"
+#include "api/scoped_refptr.h"
 #include "modules/desktop_capture/desktop_capture_types.h"
 #include "modules/desktop_capture/desktop_geometry.h"
 #include "modules/desktop_capture/linux/shared_x_display.h"
@@ -21,7 +22,6 @@
 #include "modules/desktop_capture/screen_drawer.h"
 #include "modules/desktop_capture/screen_drawer_lock_posix.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "system_wrappers/include/sleep.h"
 
 namespace webrtc {

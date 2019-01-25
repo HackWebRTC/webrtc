@@ -16,10 +16,10 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/scoped_refptr.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_codec.h"
 #include "rtc_base/ref_count.h"
-#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

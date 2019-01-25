@@ -504,6 +504,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
 
       deps = [
         "../api:libjingle_peerconnection_api",
+        "../api:scoped_refptr",
         "../api/audio_codecs:builtin_audio_decoder_factory",
         "../api/audio_codecs:builtin_audio_encoder_factory",
         "../api/video:builtin_video_bitrate_allocator_factory",
@@ -692,6 +693,7 @@ if (is_linux || is_win) {
       "../api:audio_options_api",
       "../api:create_peerconnection_factory",
       "../api:libjingle_peerconnection_api",
+      "../api:scoped_refptr",
       "../api/audio:audio_mixer_api",
       "../api/audio_codecs:audio_codecs_api",
       "../api/video:video_frame_i420",

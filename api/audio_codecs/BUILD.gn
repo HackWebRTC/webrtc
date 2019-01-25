@@ -31,6 +31,7 @@ rtc_source_set("audio_codecs_api") {
   deps = [
     "..:array_view",
     "..:bitrate_allocation",
+    "..:scoped_refptr",
     "../..:webrtc_common",
     "../../rtc_base:checks",
     "../../rtc_base:deprecation",
@@ -51,6 +52,7 @@ rtc_static_library("builtin_audio_decoder_factory") {
   ]
   deps = [
     ":audio_codecs_api",
+    "..:scoped_refptr",
     "../../rtc_base:rtc_base_approved",
     "L16:audio_decoder_L16",
     "g711:audio_decoder_g711",
@@ -81,6 +83,7 @@ rtc_static_library("builtin_audio_encoder_factory") {
   ]
   deps = [
     ":audio_codecs_api",
+    "..:scoped_refptr",
     "../../rtc_base:rtc_base_approved",
     "L16:audio_encoder_L16",
     "g711:audio_encoder_g711",

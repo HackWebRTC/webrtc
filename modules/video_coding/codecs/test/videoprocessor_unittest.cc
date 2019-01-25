@@ -11,6 +11,7 @@
 #include <memory>
 
 #include "absl/memory/memory.h"
+#include "api/scoped_refptr.h"
 #include "api/test/mock_video_decoder.h"
 #include "api/test/mock_video_encoder.h"
 #include "api/test/videocodec_test_fixture.h"
@@ -18,7 +19,6 @@
 #include "media/base/media_constants.h"
 #include "modules/video_coding/codecs/test/videocodec_test_stats_impl.h"
 #include "modules/video_coding/codecs/test/videoprocessor.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/task_queue_for_test.h"
 #include "test/gmock.h"
 #include "test/gtest.h"

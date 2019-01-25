@@ -391,6 +391,7 @@ rtc_static_library("isac_common") {
   deps = [
     ":isac_bwinfo",
     "../..:webrtc_common",
+    "../../api:scoped_refptr",
     "../../api/audio_codecs:audio_codecs_api",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
@@ -984,6 +985,7 @@ rtc_static_library("neteq") {
     "../..:webrtc_common",
     "../../api:array_view",
     "../../api:libjingle_peerconnection_api",
+    "../../api:scoped_refptr",
     "../../api/audio:audio_frame_api",
     "../../api/audio_codecs:audio_codecs_api",
     "../../common_audio",
@@ -1364,6 +1366,7 @@ if (rtc_include_tests) {
     defines = audio_coding_defines
 
     deps = audio_coding_deps + [
+             "../../api:scoped_refptr",
              "..:module_api",
              ":audio_coding",
              "../../api/audio_codecs:audio_codecs_api",

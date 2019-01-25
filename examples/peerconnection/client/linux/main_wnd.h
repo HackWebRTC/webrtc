@@ -16,11 +16,11 @@
 #include <string>
 
 #include "api/media_stream_interface.h"
+#include "api/scoped_refptr.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_sink_interface.h"
 #include "examples/peerconnection/client/main_wnd.h"
 #include "examples/peerconnection/client/peer_connection_client.h"
-#include "rtc_base/scoped_ref_ptr.h"
 
 // Forward declarations.
 typedef struct _GtkWidget GtkWidget;

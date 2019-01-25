@@ -16,12 +16,12 @@
 #include <memory>
 #include <vector>
 
+#include "api/scoped_refptr.h"
 #include "api/video/video_sink_interface.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/platform_thread.h"
-#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

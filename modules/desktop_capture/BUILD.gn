@@ -30,6 +30,7 @@ rtc_static_library("primitives") {
   ]
 
   deps = [
+    "../../api:scoped_refptr",
     "../../rtc_base:checks",
     "../../rtc_base/system:rtc_export",
     "//third_party/abseil-cpp/absl/memory",
@@ -46,6 +47,7 @@ if (rtc_include_tests) {
 
     sources = []
     deps = [
+      "../../api:scoped_refptr",
       "../../rtc_base:checks",
       "//third_party/abseil-cpp/absl/memory",
     ]
@@ -131,6 +133,7 @@ if (rtc_include_tests) {
 
     deps = [
       ":primitives",
+      "../../api:scoped_refptr",
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
       "../../system_wrappers",
@@ -236,6 +239,7 @@ if (is_mac) {
     deps = [
       ":desktop_capture_generic",
       ":primitives",
+      "../../api:scoped_refptr",
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base",
       "../../rtc_base:rtc_base_approved",
@@ -425,6 +429,7 @@ rtc_static_library("desktop_capture_generic") {
   deps = [
     ":primitives",
     "../../api:refcountedbase",
+    "../../api:scoped_refptr",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base",  # TODO(kjellander): Cleanup in bugs.webrtc.org/3806.
     "../../rtc_base/synchronization:rw_lock_wrapper",

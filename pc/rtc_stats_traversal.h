@@ -14,9 +14,9 @@
 #include <string>
 #include <vector>
 
+#include "api/scoped_refptr.h"
 #include "api/stats/rtc_stats.h"
 #include "api/stats/rtc_stats_report.h"
-#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

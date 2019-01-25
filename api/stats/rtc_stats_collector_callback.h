@@ -11,9 +11,9 @@
 #ifndef API_STATS_RTC_STATS_COLLECTOR_CALLBACK_H_
 #define API_STATS_RTC_STATS_COLLECTOR_CALLBACK_H_
 
+#include "api/scoped_refptr.h"
 #include "api/stats/rtc_stats_report.h"
 #include "rtc_base/ref_count.h"
-#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

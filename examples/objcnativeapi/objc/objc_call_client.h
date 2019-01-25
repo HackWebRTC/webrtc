@@ -15,8 +15,8 @@
 #include <string>
 
 #include "api/peer_connection_interface.h"
+#include "api/scoped_refptr.h"
 #include "rtc_base/critical_section.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/thread_checker.h"
 
 @class RTCVideoCapturer;

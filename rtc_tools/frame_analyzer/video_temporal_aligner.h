@@ -14,7 +14,7 @@
 #include <stddef.h>
 #include <vector>
 
-#include "rtc_base/scoped_ref_ptr.h"
+#include "api/scoped_refptr.h"
 #include "rtc_tools/video_file_reader.h"
 
 namespace webrtc {

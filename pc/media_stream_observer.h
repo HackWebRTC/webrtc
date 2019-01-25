@@ -12,7 +12,7 @@
 #define PC_MEDIA_STREAM_OBSERVER_H_
 
 #include "api/media_stream_interface.h"
-#include "rtc_base/scoped_ref_ptr.h"
+#include "api/scoped_refptr.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace webrtc {

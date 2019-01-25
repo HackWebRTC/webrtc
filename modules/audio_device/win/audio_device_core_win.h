@@ -26,8 +26,8 @@
 #include <mediaobj.h>     // IMediaObject
 #include <mmdeviceapi.h>  // MMDevice
 
+#include "api/scoped_refptr.h"
 #include "rtc_base/critical_section.h"
-#include "rtc_base/scoped_ref_ptr.h"
 
 // Use Multimedia Class Scheduler Service (MMCSS) to boost the thread priority
 #pragma comment(lib, "avrt.lib")

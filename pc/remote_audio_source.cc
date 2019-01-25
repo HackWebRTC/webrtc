@@ -15,11 +15,11 @@
 #include <string>
 
 #include "absl/memory/memory.h"
+#include "api/scoped_refptr.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_checker.h"
 

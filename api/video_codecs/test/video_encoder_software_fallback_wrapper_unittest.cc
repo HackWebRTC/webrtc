@@ -16,6 +16,7 @@
 
 #include "absl/memory/memory.h"
 #include "absl/types/optional.h"
+#include "api/scoped_refptr.h"
 #include "api/test/mock_video_encoder.h"
 #include "api/video/encoded_image.h"
 #include "api/video/i420_buffer.h"
@@ -33,7 +34,6 @@
 #include "modules/video_coding/include/video_error_codes.h"
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "rtc_base/fake_clock.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "test/field_trial.h"
 #include "test/gmock.h"
 #include "test/gtest.h"

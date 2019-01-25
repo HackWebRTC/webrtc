@@ -11,9 +11,9 @@
 #ifndef MODULES_AUDIO_DEVICE_INCLUDE_AUDIO_DEVICE_H_
 #define MODULES_AUDIO_DEVICE_INCLUDE_AUDIO_DEVICE_H_
 
+#include "api/scoped_refptr.h"
 #include "modules/audio_device/include/audio_device_defines.h"
 #include "rtc_base/ref_count.h"
-#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

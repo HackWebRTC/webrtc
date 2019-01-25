@@ -17,6 +17,7 @@
 #include <string>
 #include <utility>
 
+#include "api/scoped_refptr.h"
 #include "api/video/i420_buffer.h"
 #include "api/video/video_codec_constants.h"
 #include "api/video/video_frame_buffer.h"
@@ -26,7 +27,6 @@
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "rtc_base/atomic_ops.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "system_wrappers/include/field_trial.h"
 #include "third_party/libyuv/include/libyuv/scale.h"
 

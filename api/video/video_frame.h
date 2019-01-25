@@ -14,11 +14,11 @@
 #include <stdint.h>
 
 #include "absl/types/optional.h"
+#include "api/scoped_refptr.h"
 #include "api/video/color_space.h"
 #include "api/video/hdr_metadata.h"
 #include "api/video/video_frame_buffer.h"
 #include "api/video/video_rotation.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {

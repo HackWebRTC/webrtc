@@ -14,8 +14,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "api/scoped_refptr.h"
 #include "modules/audio_device/include/audio_device.h"
-#include "rtc_base/scoped_ref_ptr.h"
 
 namespace webrtc {
 

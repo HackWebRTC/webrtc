@@ -18,10 +18,10 @@
 #include <string>
 #include <vector>
 
+#include "api/scoped_refptr.h"
 #include "api/stats/rtc_stats.h"
 #include "rtc_base/ref_count.h"
 #include "rtc_base/ref_counted_object.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {

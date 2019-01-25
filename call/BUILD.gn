@@ -33,6 +33,7 @@ rtc_source_set("call_interfaces") {
     "..:webrtc_common",
     "../api:fec_controller_api",
     "../api:libjingle_peerconnection_api",
+    "../api:scoped_refptr",
     "../api:transport_api",
     "../api/audio:audio_mixer_api",
     "../api/audio_codecs:audio_codecs_api",

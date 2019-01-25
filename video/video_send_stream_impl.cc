@@ -17,6 +17,7 @@
 
 #include "api/crypto/crypto_options.h"
 #include "api/rtp_parameters.h"
+#include "api/scoped_refptr.h"
 #include "api/video_codecs/video_codec.h"
 #include "call/rtp_transport_controller_send_interface.h"
 #include "call/video_send_stream.h"
@@ -28,7 +29,6 @@
 #include "rtc_base/experiments/rate_control_settings.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/sequenced_task_checker.h"
 #include "rtc_base/thread_checker.h"
 #include "rtc_base/time_utils.h"

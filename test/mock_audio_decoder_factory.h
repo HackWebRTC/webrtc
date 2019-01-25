@@ -16,8 +16,8 @@
 
 #include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "api/scoped_refptr.h"
 #include "rtc_base/ref_counted_object.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "test/gmock.h"
 
 namespace webrtc {

@@ -25,6 +25,7 @@
 #include "absl/types/optional.h"
 #include "api/audio/echo_canceller3_config.h"
 #include "api/audio/echo_control.h"
+#include "api/scoped_refptr.h"
 #include "modules/audio_processing/include/audio_generator.h"
 #include "modules/audio_processing/include/audio_processing_statistics.h"
 #include "modules/audio_processing/include/config.h"
@@ -33,7 +34,6 @@
 #include "rtc_base/deprecation.h"
 #include "rtc_base/platform_file.h"
 #include "rtc_base/ref_count.h"
-#include "rtc_base/scoped_ref_ptr.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {

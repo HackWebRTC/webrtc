@@ -30,6 +30,7 @@ rtc_static_library("video_capture_module") {
     "..:module_api",
     "../..:webrtc_common",
     "../../api:libjingle_peerconnection_api",
+    "../../api:scoped_refptr",
     "../../api/video:video_frame",
     "../../api/video:video_frame_i420",
     "../../common_video",
@@ -52,6 +53,7 @@ rtc_static_library("video_capture") {
 
   deps = [
     ":video_capture_module",
+    "../../api:scoped_refptr",
     "../../rtc_base:rtc_base_approved",
     "../../system_wrappers",
   ]
@@ -74,6 +76,7 @@ if (!build_with_chromium) {
 
       deps = [
         ":video_capture_module",
+        "../../api:scoped_refptr",
         "../../rtc_base:rtc_base_approved",
         "../../system_wrappers",
       ]
@@ -96,6 +99,7 @@ if (!build_with_chromium) {
   rtc_source_set("video_capture_internal_impl") {
     deps = [
       ":video_capture_module",
+      "../../api:scoped_refptr",
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
       "../../system_wrappers",
@@ -186,6 +190,7 @@ if (!build_with_chromium) {
       deps = [
         ":video_capture_internal_impl",
         ":video_capture_module",
+        "../../api:scoped_refptr",
         "../../api/video:video_frame",
         "../../api/video:video_frame_i420",
         "../../common_video:common_video",

@@ -15,7 +15,7 @@
 #include <vector>
 
 #include "absl/strings/match.h"
-#include "rtc_base/scoped_ref_ptr.h"
+#include "api/scoped_refptr.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_tools/frame_analyzer/video_color_aligner.h"
 #include "rtc_tools/frame_analyzer/video_geometry_aligner.h"
