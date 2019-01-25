@@ -30,10 +30,6 @@ namespace webrtc {
 
 namespace {
 
-bool UseEarlyDelayDetection() {
-  return !field_trial::IsEnabled("WebRTC-Aec3EarlyDelayDetectionKillSwitch");
-}
-
 class RenderDelayControllerImpl final : public RenderDelayController {
  public:
   RenderDelayControllerImpl(const EchoCanceller3Config& config,
@@ -51,7 +47,6 @@ class RenderDelayControllerImpl final : public RenderDelayController {
  private:
   static int instance_count_;
   std::unique_ptr<ApmDataDumper> data_dumper_;
-  const bool use_early_delay_detection_;
   const int delay_headroom_blocks_;
   const int hysteresis_limit_1_blocks_;
   const int hysteresis_limit_2_blocks_;
@@ -108,7 +103,6 @@ RenderDelayControllerImpl::RenderDelayControllerImpl(
     int sample_rate_hz)
     : data_dumper_(
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
-      use_early_delay_detection_(UseEarlyDelayDetection()),
       delay_headroom_blocks_(
           static_cast<int>(config.delay.delay_headroom_blocks)),
       hysteresis_limit_1_blocks_(
