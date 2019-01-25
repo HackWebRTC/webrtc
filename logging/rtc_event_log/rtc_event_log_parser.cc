@@ -1891,12 +1891,18 @@ std::vector<LoggedPacketInfo> ParsedRtcEventLog::GetPacketInfos(
   auto rtp_handler = [&](const LoggedRtpPacket& rtp) {
     advance_time(Timestamp::ms(rtp.log_time_ms()));
     MediaStreamInfo* stream = &streams[rtp.header.ssrc];
-    uint64_t capture_ticks =
-        stream->unwrap_capture_ticks.Unwrap(rtp.header.timestamp);
-    // TODO(srte): Use logged sample rate when it is added to the format.
-    Timestamp capture_time = Timestamp::seconds(
-        capture_ticks /
-        (stream->media_type == LoggedMediaType::kAudio ? 48000.0 : 90000.0));
+    Timestamp capture_time = Timestamp::MinusInfinity();
+    if (!stream->rtx) {
+      // RTX copy the timestamp of the retransmitted packets. This means that
+      // RTX streams don't have a unique clock offset and frequency, so
+      // the RTP timstamps can't be unwrapped.
+      uint64_t capture_ticks =
+          stream->unwrap_capture_ticks.Unwrap(rtp.header.timestamp);
+      // TODO(srte): Use logged sample rate when it is added to the format.
+      capture_time = Timestamp::seconds(
+          capture_ticks /
+          (stream->media_type == LoggedMediaType::kAudio ? 48000.0 : 90000.0));
+    }
     LoggedPacketInfo logged(rtp, stream->media_type, stream->rtx, capture_time);
     logged.overhead = current_overhead;
     if (rtp.header.extension.hasTransportSequenceNumber) {

@@ -23,7 +23,7 @@ namespace webrtc {
 namespace rtc_units_impl {
 
 // UnitBase is a base class for implementing custom value types with a specific
-// unit. It provides type safety and sommonly useful operations. The undelying
+// unit. It provides type safety and commonly useful operations. The underlying
 // storage is always an int64_t, it's up to the unit implementation to choose
 // what scale it represents.
 //
