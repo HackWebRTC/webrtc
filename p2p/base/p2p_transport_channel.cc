@@ -10,11 +10,11 @@
 
 #include "p2p/base/p2p_transport_channel.h"
 
-#include <algorithm>
 #include <iterator>
 #include <set>
 #include <utility>
 
+#include "absl/algorithm/container.h"
 #include "api/candidate.h"
 #include "logging/rtc_event_log/ice_logger.h"
 #include "p2p/base/candidate_pair_interface.h"
@@ -1460,9 +1460,9 @@ void P2PTransportChannel::MaybeStartPinging() {
   }
 
   int64_t now = rtc::TimeMillis();
-  if (std::any_of(
-          connections_.begin(), connections_.end(),
-          [this, now](const Connection* c) { return IsPingable(c, now); })) {
+  if (absl::c_any_of(connections_, [this, now](const Connection* c) {
+        return IsPingable(c, now);
+      })) {
     RTC_LOG(LS_INFO) << ToString()
                      << ": Have a pingable connection for the first time; "
                         "starting to ping.";
@@ -1996,8 +1996,8 @@ void P2PTransportChannel::CheckAndPing() {
   // When the selected connection is not receiving or not writable, or any
   // active connection has not been pinged enough times, use the weak ping
   // interval.
-  bool need_more_pings_at_weak_interval = std::any_of(
-      connections_.begin(), connections_.end(), [](Connection* conn) {
+  bool need_more_pings_at_weak_interval =
+      absl::c_any_of(connections_, [](Connection* conn) {
         return conn->active() &&
                conn->num_pings_sent() < MIN_PINGS_AT_WEAK_PING_INTERVAL;
       });

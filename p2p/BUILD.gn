@@ -102,6 +102,7 @@ rtc_static_library("rtc_p2p") {
     "../rtc_base/third_party/sigslot",
     "../system_wrappers:field_trial",
     "../system_wrappers:metrics",
+    "//third_party/abseil-cpp/absl/algorithm:container",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/types:optional",

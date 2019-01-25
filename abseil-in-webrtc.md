@@ -20,6 +20,8 @@ adds the first use.
   `absl::is_trivially_copy_assignable`, and
   `absl::is_trivially_destructible` from `absl/meta/type_traits.h`.
 * `absl::variant` and related stuff from `absl/types/variant.h`.
+* The functions in `absl/algorithm/algorithm.h` and
+  `absl/algorithm/container.h`
 
 ## **Disallowed**
 
