@@ -36,12 +36,6 @@ namespace webrtc {
 namespace {
 constexpr int kSendStatsPollingIntervalMs = 1000;
 constexpr size_t kMaxComparisons = 10;
-// How often is keep alive message printed.
-constexpr int kKeepAliveIntervalSeconds = 30;
-// Interval between checking that the test is over.
-constexpr int kProbingIntervalMs = 500;
-constexpr int kKeepAliveIntervalIterations =
-    kKeepAliveIntervalSeconds * 1000 / kProbingIntervalMs;
 
 bool IsFlexfec(int payload_type) {
   return payload_type == test::CallTest::kFlexfecPayloadType;
@@ -69,7 +63,7 @@ VideoAnalyzer::VideoAnalyzer(test::LayerFilteringTransport* transport,
       send_stream_(nullptr),
       receive_stream_(nullptr),
       audio_receive_stream_(nullptr),
-      captured_frame_forwarder_(this, clock, duration_frames),
+      captured_frame_forwarder_(this, clock),
       test_label_(test_label),
       graph_data_output_file_(graph_data_output_file),
       graph_title_(graph_title),
@@ -83,7 +77,6 @@ VideoAnalyzer::VideoAnalyzer(test::LayerFilteringTransport* transport,
       frames_recorded_(0),
       frames_processed_(0),
       dropped_frames_(0),
-      captured_frames_(0),
       dropped_frames_before_first_encode_(0),
       dropped_frames_before_rendering_(0),
       last_render_time_(0),
@@ -340,16 +333,12 @@ void VideoAnalyzer::Wait() {
   stats_polling_thread_.Start();
 
   int last_frames_processed = -1;
-  int last_frames_captured = -1;
   int iteration = 0;
-
-  while (!done_.Wait(kProbingIntervalMs)) {
+  while (!done_.Wait(test::CallTest::kDefaultTimeoutMs)) {
     int frames_processed;
-    int frames_captured;
     {
       rtc::CritScope crit(&comparison_lock_);
       frames_processed = frames_processed_;
-      frames_captured = captured_frames_;
     }
 
     // Print some output so test infrastructure won't think we've crashed.
@@ -357,34 +346,23 @@ void VideoAnalyzer::Wait() {
         "Uh, I'm-I'm not quite dead, sir.",
         "Uh, I-I think uh, I could pull through, sir.",
         "Actually, I think I'm all right to come with you--"};
-    if (++iteration % kKeepAliveIntervalIterations == 0) {
-      printf("- %s\n", kKeepAliveMessages[iteration % 3]);
-    }
+    printf("- %s\n", kKeepAliveMessages[iteration++ % 3]);
 
     if (last_frames_processed == -1) {
       last_frames_processed = frames_processed;
-      last_frames_captured = frames_captured;
       continue;
     }
-    if (frames_processed == last_frames_processed &&
-        last_frames_captured == frames_captured) {
-      if (frames_captured < frames_to_process_) {
-        EXPECT_GT(frames_processed, last_frames_processed)
-            << "Analyzer stalled while waiting for test to finish.";
-      }
+    if (frames_processed == last_frames_processed) {
+      EXPECT_GT(frames_processed, last_frames_processed)
+          << "Analyzer stalled while waiting for test to finish.";
       done_.Set();
       break;
     }
     last_frames_processed = frames_processed;
-    last_frames_captured = frames_captured;
   }
 
   if (iteration > 0)
     printf("- Farewell, sweet Concorde!\n");
-
-  PrintResults();
-  if (graph_data_output_file_)
-    PrintSamplesToFile();
 
   stats_polling_thread_.Stop();
 }
@@ -538,6 +516,9 @@ bool VideoAnalyzer::CompareFrames() {
   StopExcludingCpuThreadTime();
 
   if (FrameProcessed()) {
+    PrintResults();
+    if (graph_data_output_file_)
+      PrintSamplesToFile();
     done_.Set();
     comparison_available_event_.Set();
     return false;
@@ -583,11 +564,6 @@ bool VideoAnalyzer::FrameProcessed() {
 
 void VideoAnalyzer::PrintResults() {
   StopMeasuringCpuProcessTime();
-  int frames_left;
-  {
-    rtc::CritScope crit(&crit_);
-    frames_left = frames_.size();
-  }
   rtc::CritScope crit(&comparison_lock_);
   // Record the time from the last freeze until the last rendered frame to
   // ensure we cover the full timespan of the session. Otherwise the metric
@@ -616,8 +592,7 @@ void VideoAnalyzer::PrintResults() {
   if (receive_stream_ != nullptr) {
     PrintResult("decode_time", decode_time_ms_, " ms");
   }
-  dropped_frames_ += dropped_frames_before_first_encode_ +
-                     dropped_frames_before_rendering_ + frames_left;
+
   test::PrintResult("dropped_frames", "", test_label_.c_str(), dropped_frames_,
                     "frames", false);
   test::PrintResult("cpu_usage", "", test_label_.c_str(), GetCpuUsagePercent(),
@@ -778,10 +753,7 @@ double VideoAnalyzer::GetAverageMediaBitrateBps() {
 void VideoAnalyzer::AddCapturedFrameForComparison(
     const VideoFrame& video_frame) {
   rtc::CritScope lock(&crit_);
-  if (captured_frames_ < frames_to_process_) {
-    ++captured_frames_;
-    frames_.push_back(video_frame);
-  }
+  frames_.push_back(video_frame);
 }
 
 void VideoAnalyzer::AddFrameComparison(const VideoFrame& reference,
@@ -872,14 +844,11 @@ VideoAnalyzer::Sample::Sample(int dropped,
 
 VideoAnalyzer::CapturedFrameForwarder::CapturedFrameForwarder(
     VideoAnalyzer* analyzer,
-    Clock* clock,
-    int frames_to_process)
+    Clock* clock)
     : analyzer_(analyzer),
       send_stream_input_(nullptr),
       video_source_(nullptr),
-      clock_(clock),
-      captured_frames_(0),
-      frames_to_process_(frames_to_process) {}
+      clock_(clock) {}
 
 void VideoAnalyzer::CapturedFrameForwarder::SetSource(
     VideoSourceInterface<VideoFrame>* video_source) {
@@ -897,8 +866,7 @@ void VideoAnalyzer::CapturedFrameForwarder::OnFrame(
   copy.set_timestamp(copy.ntp_time_ms() * 90);
   analyzer_->AddCapturedFrameForComparison(copy);
   rtc::CritScope lock(&crit_);
-  ++captured_frames_;
-  if (send_stream_input_ && captured_frames_ <= frames_to_process_)
+  if (send_stream_input_)
     send_stream_input_->OnFrame(copy);
 }
 
