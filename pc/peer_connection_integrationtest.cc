@@ -3638,6 +3638,28 @@ TEST_P(PeerConnectionIntegrationTest, MediaTransportBidirectionalVideo) {
   EXPECT_GE(first_stats.sent_video_frames, second_stats.received_video_frames);
 }
 
+TEST_P(PeerConnectionIntegrationTest,
+       MediaTransportDataChannelUsesRtpBidirectionalVideo) {
+  PeerConnectionInterface::RTCConfiguration rtc_config;
+  rtc_config.use_media_transport = false;
+  rtc_config.use_media_transport_for_data_channels = true;
+  rtc_config.enable_dtls_srtp = false;  // SDES is required for media transport.
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithConfigAndMediaTransportFactory(
+      rtc_config, rtc_config, loopback_media_transports()->first_factory(),
+      loopback_media_transports()->second_factory()));
+  ConnectFakeSignaling();
+
+  caller()->AddVideoTrack();
+  callee()->AddVideoTrack();
+  // Start offer/answer exchange and wait for it to complete.
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  MediaExpectations media_expectations;
+  media_expectations.ExpectBidirectionalVideo();
+  ASSERT_TRUE(ExpectNewFrames(media_expectations));
+}
+
 // Test that the ICE connection and gathering states eventually reach
 // "complete".
 TEST_P(PeerConnectionIntegrationTest, IceStatesReachCompletion) {

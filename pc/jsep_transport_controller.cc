@@ -402,13 +402,24 @@ void JsepTransportController::SetActiveResetSrtpParams(
   }
 }
 
-void JsepTransportController::SetMediaTransportFactory(
-    MediaTransportFactory* media_transport_factory) {
-  RTC_DCHECK(media_transport_factory == config_.media_transport_factory ||
+void JsepTransportController::SetMediaTransportSettings(
+    bool use_media_transport_for_media,
+    bool use_media_transport_for_data_channels) {
+  RTC_DCHECK(use_media_transport_for_media ==
+                 config_.use_media_transport_for_media ||
              jsep_transports_by_name_.empty())
-      << "You can only call SetMediaTransportFactory before "
-         "JsepTransportController created its first transport.";
-  config_.media_transport_factory = media_transport_factory;
+      << "You can only change media transport configuration before creating "
+         "the first transport.";
+
+  RTC_DCHECK(use_media_transport_for_data_channels ==
+                 config_.use_media_transport_for_data_channels ||
+             jsep_transports_by_name_.empty())
+      << "You can only change media transport configuration before creating "
+         "the first transport.";
+
+  config_.use_media_transport_for_media = use_media_transport_for_media;
+  config_.use_media_transport_for_data_channels =
+      use_media_transport_for_data_channels;
 }
 
 std::unique_ptr<cricket::IceTransportInternal>
@@ -433,7 +444,12 @@ JsepTransportController::CreateDtlsTransport(
   RTC_DCHECK(network_thread_->IsCurrent());
 
   std::unique_ptr<cricket::DtlsTransportInternal> dtls;
-  if (is_media_transport_factory_enabled_ && config_.media_transport_factory) {
+  // If media transport is used for both media and data channels,
+  // then we don't need to create DTLS.
+  // Otherwise, DTLS is still created.
+  if (is_media_transport_factory_enabled_ && config_.media_transport_factory &&
+      config_.use_media_transport_for_media &&
+      config_.use_media_transport_for_data_channels) {
     dtls = absl::make_unique<cricket::NoOpDtlsTransport>(
         std::move(ice), config_.crypto_options);
   } else if (config_.external_transport_factory) {
@@ -951,6 +967,11 @@ JsepTransportController::MaybeCreateMediaTransport(
     return nullptr;
   }
   if (config_.media_transport_factory == nullptr) {
+    return nullptr;
+  }
+
+  if (!config_.use_media_transport_for_media &&
+      !config_.use_media_transport_for_data_channels) {
     return nullptr;
   }
 

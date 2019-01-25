@@ -602,9 +602,9 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
     bool active_reset_srtp_params = false;
 
     // If MediaTransportFactory is provided in PeerConnectionFactory, this flag
-    // informs PeerConnection that it should use the MediaTransportInterface.
-    // It's invalid to set it to |true| if the MediaTransportFactory wasn't
-    // provided.
+    // informs PeerConnection that it should use the MediaTransportInterface for
+    // media (audio/video). It's invalid to set it to |true| if the
+    // MediaTransportFactory wasn't provided.
     bool use_media_transport = false;
 
     // If MediaTransportFactory is provided in PeerConnectionFactory, this flag

@@ -415,12 +415,48 @@ TEST_F(JsepTransportControllerTest, GetDtlsTransportWithRtcpMux) {
   EXPECT_EQ(nullptr, transport_controller_->GetMediaTransport(kAudioMid1));
 }
 
+TEST_F(JsepTransportControllerTest,
+       DtlsIsStillCreatedIfMediaTransportIsOnlyUsedForDataChannels) {
+  FakeMediaTransportFactory fake_media_transport_factory;
+  JsepTransportController::Config config;
+
+  config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  config.media_transport_factory = &fake_media_transport_factory;
+  config.use_media_transport_for_data_channels = true;
+  CreateJsepTransportController(config);
+  auto description = CreateSessionDescriptionWithBundleGroup();
+  AddCryptoSettings(description.get());
+
+  EXPECT_TRUE(transport_controller_
+                  ->SetLocalDescription(SdpType::kOffer, description.get())
+                  .ok());
+
+  FakeMediaTransport* media_transport = static_cast<FakeMediaTransport*>(
+      transport_controller_->GetMediaTransport(kAudioMid1));
+
+  ASSERT_NE(nullptr, media_transport);
+
+  // After SetLocalDescription, media transport should be created as caller.
+  EXPECT_TRUE(media_transport->is_caller());
+  EXPECT_TRUE(media_transport->pre_shared_key().has_value());
+
+  // Return nullptr for non-existing mids.
+  EXPECT_EQ(nullptr, transport_controller_->GetMediaTransport(kVideoMid2));
+
+  EXPECT_EQ(cricket::ICE_CANDIDATE_COMPONENT_RTP,
+            transport_controller_->GetDtlsTransport(kAudioMid1)->component())
+      << "Media transport for media was not enabled, and so DTLS transport "
+         "should be created.";
+}
+
 TEST_F(JsepTransportControllerTest, GetMediaTransportInCaller) {
   FakeMediaTransportFactory fake_media_transport_factory;
   JsepTransportController::Config config;
 
   config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyRequire;
   config.media_transport_factory = &fake_media_transport_factory;
+  config.use_media_transport_for_data_channels = true;
+  config.use_media_transport_for_media = true;
   CreateJsepTransportController(config);
   auto description = CreateSessionDescriptionWithBundleGroup();
   AddCryptoSettings(description.get());
@@ -452,6 +488,8 @@ TEST_F(JsepTransportControllerTest, GetMediaTransportInCallee) {
 
   config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyRequire;
   config.media_transport_factory = &fake_media_transport_factory;
+  config.use_media_transport_for_data_channels = true;
+  config.use_media_transport_for_media = true;
   CreateJsepTransportController(config);
   auto description = CreateSessionDescriptionWithBundleGroup();
   AddCryptoSettings(description.get());
@@ -482,6 +520,7 @@ TEST_F(JsepTransportControllerTest, GetMediaTransportIsNotSetIfNoSdes) {
 
   config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyNegotiate;
   config.media_transport_factory = &fake_media_transport_factory;
+  config.use_media_transport_for_media = true;
   CreateJsepTransportController(config);
   auto description = CreateSessionDescriptionWithoutBundle();
   EXPECT_TRUE(transport_controller_
@@ -512,6 +551,7 @@ TEST_F(JsepTransportControllerTest,
 
   config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyRequire;
   config.media_transport_factory = &fake_media_transport_factory;
+  config.use_media_transport_for_media = true;
   CreateJsepTransportController(config);
   auto description = CreateSessionDescriptionWithoutBundle();
   AddCryptoSettings(description.get());
@@ -821,10 +861,12 @@ TEST_F(JsepTransportControllerTest,
 }
 
 TEST_F(JsepTransportControllerTest,
-       SignalConnectionStateConnectedWithMediaTransport) {
+       SignalConnectionStateConnectedWithMediaTransportAndNoDtls) {
   FakeMediaTransportFactory fake_media_transport_factory;
   JsepTransportController::Config config;
   config.media_transport_factory = &fake_media_transport_factory;
+  config.use_media_transport_for_data_channels = true;
+  config.use_media_transport_for_media = true;
   CreateJsepTransportController(config);
 
   // Media Transport is only used with bundle.
@@ -865,16 +907,74 @@ TEST_F(JsepTransportControllerTest,
 }
 
 TEST_F(JsepTransportControllerTest,
+       SignalConnectionStateConnectedWithMediaTransport) {
+  FakeMediaTransportFactory fake_media_transport_factory;
+  JsepTransportController::Config config;
+  config.media_transport_factory = &fake_media_transport_factory;
+  config.use_media_transport_for_media = true;
+  CreateJsepTransportController(config);
+
+  // Media Transport is only used with bundle.
+  auto description = CreateSessionDescriptionWithBundleGroup();
+  AddCryptoSettings(description.get());
+  EXPECT_TRUE(transport_controller_
+                  ->SetLocalDescription(SdpType::kOffer, description.get())
+                  .ok());
+
+  auto fake_audio_dtls = static_cast<FakeDtlsTransport*>(
+      transport_controller_->GetDtlsTransport(kAudioMid1));
+  auto fake_video_dtls = static_cast<FakeDtlsTransport*>(
+      transport_controller_->GetDtlsTransport(kVideoMid1));
+
+  auto fake_audio_ice = static_cast<cricket::FakeIceTransport*>(
+      transport_controller_->GetDtlsTransport(kAudioMid1)->ice_transport());
+  auto fake_video_ice = static_cast<cricket::FakeIceTransport*>(
+      transport_controller_->GetDtlsTransport(kVideoMid1)->ice_transport());
+  fake_audio_ice->SetConnectionCount(2);
+  fake_audio_ice->SetConnectionCount(1);
+  fake_video_ice->SetConnectionCount(2);
+  fake_video_ice->SetConnectionCount(1);
+  fake_audio_ice->SetWritable(true);
+  fake_video_ice->SetWritable(true);
+  fake_audio_dtls->SetWritable(true);
+  fake_video_dtls->SetWritable(true);
+
+  // Still not connected, because we are waiting for media transport.
+  EXPECT_EQ_WAIT(cricket::kIceConnectionConnecting, connection_state_,
+                 kTimeout);
+
+  FakeMediaTransport* media_transport = static_cast<FakeMediaTransport*>(
+      transport_controller_->GetMediaTransport(kAudioMid1));
+
+  media_transport->SetState(webrtc::MediaTransportState::kWritable);
+  EXPECT_EQ_WAIT(cricket::kIceConnectionConnecting, connection_state_,
+                 kTimeout);
+
+  // Still waiting for the second media transport.
+  media_transport = static_cast<FakeMediaTransport*>(
+      transport_controller_->GetMediaTransport(kVideoMid1));
+  media_transport->SetState(webrtc::MediaTransportState::kWritable);
+
+  EXPECT_EQ_WAIT(cricket::kIceConnectionConnected, connection_state_, kTimeout);
+}
+
+TEST_F(JsepTransportControllerTest,
        SignalConnectionStateFailedWhenMediaTransportClosed) {
   FakeMediaTransportFactory fake_media_transport_factory;
   JsepTransportController::Config config;
   config.media_transport_factory = &fake_media_transport_factory;
+  config.use_media_transport_for_media = true;
   CreateJsepTransportController(config);
   auto description = CreateSessionDescriptionWithoutBundle();
   AddCryptoSettings(description.get());
   EXPECT_TRUE(transport_controller_
                   ->SetLocalDescription(SdpType::kOffer, description.get())
                   .ok());
+
+  auto fake_audio_dtls = static_cast<FakeDtlsTransport*>(
+      transport_controller_->GetDtlsTransport(kAudioMid1));
+  auto fake_video_dtls = static_cast<FakeDtlsTransport*>(
+      transport_controller_->GetDtlsTransport(kVideoMid1));
 
   auto fake_audio_ice = static_cast<cricket::FakeIceTransport*>(
       transport_controller_->GetDtlsTransport(kAudioMid1)->ice_transport());
@@ -887,6 +987,9 @@ TEST_F(JsepTransportControllerTest,
   fake_audio_ice->SetConnectionCount(1);
   fake_video_ice->SetConnectionCount(2);
   fake_video_ice->SetConnectionCount(1);
+
+  fake_audio_dtls->SetWritable(true);
+  fake_video_dtls->SetWritable(true);
 
   FakeMediaTransport* media_transport = static_cast<FakeMediaTransport*>(
       transport_controller_->GetMediaTransport(kAudioMid1));
