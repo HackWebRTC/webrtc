@@ -130,7 +130,7 @@ int main(int argc, char* argv[]) {
 
   if (!reference_video || !test_video) {
     fprintf(stderr, "Error opening video files\n");
-    return 0;
+    return 1;
   }
 
   const std::vector<size_t> matching_indices =
