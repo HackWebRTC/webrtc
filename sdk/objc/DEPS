@@ -3,7 +3,6 @@ include_rules = [
   "+components",
   "+helpers",
   "+sdk",
-  "+api",
   "+common_video/h264",
   "+common_video/include",
   "+common_video/libyuv/include",

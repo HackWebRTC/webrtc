@@ -1,5 +1,4 @@
 include_rules = [
-  "+api",
   "+common_video",
   "+logging/rtc_event_log/rtc_event_log_factory.h",
   "+media",
