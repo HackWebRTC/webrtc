@@ -411,7 +411,7 @@ rtc_source_set("mock_audio_device") {
 if (rtc_include_tests) {
   # TODO(kthelgason): Reenable these tests on simulator.
   # See bugs.webrtc.org/7812
-  if (is_ios && !use_ios_simulator) {
+  if (rtc_include_internal_audio_device && is_ios && !use_ios_simulator) {
     rtc_source_set("audio_device_ios_objc_unittests") {
       testonly = true
       visibility = [ ":*" ]
