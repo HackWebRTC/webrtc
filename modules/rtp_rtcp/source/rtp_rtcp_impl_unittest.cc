@@ -255,39 +255,7 @@ class RtpRtcpImplTest : public ::testing::Test {
   }
 };
 
-TEST_F(RtpRtcpImplTest, SetSelectiveRetransmissions_BaseLayer) {
-  sender_.impl_->SetSelectiveRetransmissions(kRetransmitBaseLayer);
-  EXPECT_EQ(kRetransmitBaseLayer, sender_.impl_->SelectiveRetransmissions());
-
-  // Send frames.
-  EXPECT_EQ(0, sender_.RtpSent());
-  SendFrame(&sender_, kBaseLayerTid);    // kSequenceNumber
-  SendFrame(&sender_, kHigherLayerTid);  // kSequenceNumber + 1
-  SendFrame(&sender_, kNoTemporalIdx);   // kSequenceNumber + 2
-  EXPECT_EQ(3, sender_.RtpSent());
-  EXPECT_EQ(kSequenceNumber + 2, sender_.LastRtpSequenceNumber());
-
-  // Min required delay until retransmit = 5 + RTT ms (RTT = 0).
-  clock_.AdvanceTimeMilliseconds(5);
-
-  // Frame with kBaseLayerTid re-sent.
-  IncomingRtcpNack(&sender_, kSequenceNumber);
-  EXPECT_EQ(4, sender_.RtpSent());
-  EXPECT_EQ(kSequenceNumber, sender_.LastRtpSequenceNumber());
-  // Frame with kHigherLayerTid not re-sent.
-  IncomingRtcpNack(&sender_, kSequenceNumber + 1);
-  EXPECT_EQ(4, sender_.RtpSent());
-  // Frame with kNoTemporalIdx re-sent.
-  IncomingRtcpNack(&sender_, kSequenceNumber + 2);
-  EXPECT_EQ(5, sender_.RtpSent());
-  EXPECT_EQ(kSequenceNumber + 2, sender_.LastRtpSequenceNumber());
-}
-
-TEST_F(RtpRtcpImplTest, SetSelectiveRetransmissions_HigherLayers) {
-  const uint8_t kSetting = kRetransmitBaseLayer + kRetransmitHigherLayers;
-  sender_.impl_->SetSelectiveRetransmissions(kSetting);
-  EXPECT_EQ(kSetting, sender_.impl_->SelectiveRetransmissions());
-
+TEST_F(RtpRtcpImplTest, RetransmitsAllLayers) {
   // Send frames.
   EXPECT_EQ(0, sender_.RtpSent());
   SendFrame(&sender_, kBaseLayerTid);    // kSequenceNumber

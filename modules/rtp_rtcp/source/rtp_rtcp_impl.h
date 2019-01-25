@@ -232,10 +232,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
 
   // (NACK) Negative acknowledgment part.
 
-  int SelectiveRetransmissions() const override;
-
-  int SetSelectiveRetransmissions(uint8_t settings) override;
-
   // Send a Negative acknowledgment packet.
   // TODO(philipel): Deprecate SendNACK and use SendNack instead.
   int32_t SendNACK(const uint16_t* nack_list, uint16_t size) override;

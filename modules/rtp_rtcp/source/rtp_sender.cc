@@ -650,19 +650,6 @@ bool RTPSender::SendPacketToNetwork(const RtpPacketToSend& packet,
   return true;
 }
 
-int RTPSender::SelectiveRetransmissions() const {
-  if (!video_)
-    return -1;
-  return video_->SelectiveRetransmissions();
-}
-
-int RTPSender::SetSelectiveRetransmissions(uint8_t settings) {
-  if (!video_)
-    return -1;
-  video_->SetSelectiveRetransmissions(settings);
-  return 0;
-}
-
 void RTPSender::OnReceivedNack(
     const std::vector<uint16_t>& nack_sequence_numbers,
     int64_t avg_rtt) {

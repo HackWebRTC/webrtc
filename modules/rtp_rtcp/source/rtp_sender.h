@@ -138,8 +138,6 @@ class RTPSender {
   size_t TimeToSendPadding(size_t bytes, const PacedPacketInfo& pacing_info);
 
   // NACK.
-  int SelectiveRetransmissions() const;
-  int SetSelectiveRetransmissions(uint8_t settings);
   void OnReceivedNack(const std::vector<uint16_t>& nack_sequence_numbers,
                       int64_t avg_rtt);
 

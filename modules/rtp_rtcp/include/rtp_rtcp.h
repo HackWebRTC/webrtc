@@ -384,21 +384,6 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
 
   // (NACK)
 
-  // TODO(holmer): Propagate this API to VideoEngine.
-  // Returns the currently configured selective retransmission settings.
-  virtual int SelectiveRetransmissions() const = 0;
-
-  // TODO(holmer): Propagate this API to VideoEngine.
-  // Sets the selective retransmission settings, which will decide which
-  // packets will be retransmitted if NACKed. Settings are constructed by
-  // combining the constants in enum RetransmissionMode with bitwise OR.
-  // All packets are retransmitted if kRetransmitAllPackets is set, while no
-  // packets are retransmitted if kRetransmitOff is set.
-  // By default all packets except FEC packets are retransmitted. For VP8
-  // with temporal scalability only base layer packets are retransmitted.
-  // Returns -1 on failure, otherwise 0.
-  virtual int SetSelectiveRetransmissions(uint8_t settings) = 0;
-
   // Sends a Negative acknowledgement packet.
   // Returns -1 on failure else 0.
   // TODO(philipel): Deprecate this and start using SendNack instead, mostly

@@ -653,16 +653,6 @@ uint32_t RTPSenderVideo::PacketizationOverheadBps() const {
       .value_or(0);
 }
 
-int RTPSenderVideo::SelectiveRetransmissions() const {
-  rtc::CritScope cs(&crit_);
-  return retransmission_settings_;
-}
-
-void RTPSenderVideo::SetSelectiveRetransmissions(uint8_t settings) {
-  rtc::CritScope cs(&crit_);
-  retransmission_settings_ = settings;
-}
-
 StorageType RTPSenderVideo::GetStorageType(
     uint8_t temporal_id,
     int32_t retransmission_settings,

@@ -676,17 +676,6 @@ void ModuleRtpRtcpImpl::SetTmmbn(std::vector<rtcp::TmmbItem> bounding_set) {
   rtcp_sender_.SetTmmbn(std::move(bounding_set));
 }
 
-// Returns the currently configured retransmission mode.
-int ModuleRtpRtcpImpl::SelectiveRetransmissions() const {
-  return rtp_sender_->SelectiveRetransmissions();
-}
-
-// Enable or disable a retransmission mode, which decides which packets will
-// be retransmitted if NACKed.
-int ModuleRtpRtcpImpl::SetSelectiveRetransmissions(uint8_t settings) {
-  return rtp_sender_->SetSelectiveRetransmissions(settings);
-}
-
 // Send a Negative acknowledgment packet.
 int32_t ModuleRtpRtcpImpl::SendNACK(const uint16_t* nack_list,
                                     const uint16_t size) {

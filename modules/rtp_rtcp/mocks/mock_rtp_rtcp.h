@@ -153,8 +153,6 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_CONST_METHOD0(TMMBR, bool());
   MOCK_METHOD1(SetTMMBRStatus, void(bool enable));
   MOCK_METHOD1(OnBandwidthEstimateUpdate, void(uint16_t bandwidth_kbit));
-  MOCK_CONST_METHOD0(SelectiveRetransmissions, int());
-  MOCK_METHOD1(SetSelectiveRetransmissions, int(uint8_t settings));
   MOCK_METHOD2(SendNACK, int32_t(const uint16_t* nack_list, uint16_t size));
   MOCK_METHOD1(SendNack, void(const std::vector<uint16_t>& sequence_numbers));
   MOCK_METHOD2(SetStorePacketsStatus,
