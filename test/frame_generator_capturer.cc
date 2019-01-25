@@ -78,6 +78,18 @@ FrameGeneratorCapturer* FrameGeneratorCapturer::CreateSlideGenerator(
   return capturer.release();
 }
 
+FrameGeneratorCapturer* FrameGeneratorCapturer::Create(
+    std::unique_ptr<FrameGenerator> frame_generator,
+    int target_fps,
+    Clock* clock) {
+  auto capturer = absl::make_unique<FrameGeneratorCapturer>(
+      clock, std::move(frame_generator), target_fps);
+  if (!capturer->Init())
+    return nullptr;
+
+  return capturer.release();
+}
+
 FrameGeneratorCapturer::FrameGeneratorCapturer(
     Clock* clock,
     std::unique_ptr<FrameGenerator> frame_generator,
